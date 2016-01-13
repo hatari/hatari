@@ -116,17 +116,15 @@ EmuTOS compatibility notes
 
 These comments apply to EmuTOS v0.9.x.
 
-Many commercial games and applications work fine with EmuTOS. This is
-because games (like Bombjack, Nebulus, Oids, Super Hang-On, Turrican,
-Xenon...) use directly the hardware which Hatari emulates just fine,
-and GEM applications use the correct higher level APIs (AES/VDI) for
-which EmuTOS has implementations.
+Many commercial games (e.g. Bombjack, Nebulus, Oids, Super Hang-On,
+Turrican, Xenon...) and almost all ST/STe/TT applications work fine
+with EmuTOS.
 
-EmuTOS AES support is somewhat buggy (mouse clicks and dragging
-doesn't always work properly) and VDI & line-A support is slowish.
+However, EmuTOS AES isn't yet completely compatible with normal TOS
+versions (see EmuTOS bugs.txt) and VDI & line-A support is slowish.
 Anybody wanting better AES/VDI support should install replacement for
-these, either the free XaAES + fVDI, or commercial solutions like
-NVDI (v2.5 doesn't work with EmuTOS, newer NVDI versions do).
+these, either the free XaAES + fVDI, or commercial solutions like NVDI
+(v2.5 doesn't work with EmuTOS, newer NVDI versions do).
 
 Because (even 192k version of) EmuTOS uses more memory than normal
 TOS, badly written (typically floppy-only) games may blindly overwrite
@@ -140,7 +138,8 @@ hooking into the IKBD interrupt vector.  They use unofficial system
 variables which location depends on the TOS version.  Try fixed
 version of STOS games.
 
-Support for large part of additional TT and Falcon features is missing.
+Support for some TT HW features and for large part of additional
+Falcon features is missing.
 
 Additionally, older EmuTOS versions (up to v0.9.1) lacked support for
 the (deprecated) line-A graphics functions which are used in many
@@ -158,8 +157,8 @@ To get extra debug output from EmuTOS, or to add your own debug
 statements, you need to recompile it from the source, after enabling
 the MIDI debug output in its config.h header file. Then start Hatari
 with the "--midi-out /dev/stderr" option and you will see EmuTOS debug
-output on Hatari's standard error (such as calls to missing OS
-functions).
+output on Hatari's standard error (such as calls to missing Falcon
+XBios functions).
 
 Some debug output can be gotten also from the pre-built 512k
 EmuTOS images by using Hatari "--natfeats on" option.
@@ -301,6 +300,7 @@ Demos:
 - Calimer-o-demo (by Oxygene)
 - Charts Compilation (by Next)
 - Coast II Coast (by Sector One, 4kB intro)
+- Coolism (music disk, by Effect)
 - Crisis (by Joska)
 - Cuddly Demos (by CareBears)
 - Darktrip (by Legend), doesn't work with >2MB of RAM
@@ -344,6 +344,7 @@ Demos:
 - SoWatt (by CareBears)
 - Sowatt sprite record (rec16e, by Oxygene)
 - ST NICCC 2000 (by Oxygene)
+- ST NICCC 2015 (by Checkpoint)
 - ST soccer (intro by Exceptions)
 - Stone tower (by FUN)
 - Superstar! (intro by Positivity/Dma-Sc/Ukko)
@@ -351,6 +352,7 @@ Demos:
 - Sweety (by DHS)
 - Synergy megademo (by Synergy)
 - Syntax Terror (by Delta Force)
+- The Stupendous Demo (by Pixel Twins, has couple of STE screen)
 - Transbeauce II (by BushWacKers)
 - Tut! (by Wildfire)
 - Twelve (by Paulo Simoes)
@@ -358,6 +360,7 @@ Demos:
 - Virtual (by Equinox)
 - Visualize (by Checkpoint)
 - Vodka demo (by Equinox, needs 512k EmuTOS)
+- We do not rip or recycle anything (by Spice Boys)
 - Yanartas (by Checkpoint)
 - YmRockerz musicdisks from "Wave upon Wave" to "Seven"
 - Xmas2000 (by Paranoid)
@@ -516,8 +519,7 @@ Med-rez games:
 
 GEM games:
 - 4 Gewinnt* (Connect four)
-- Awele v1.02 (in v1.01 menus close immediately after opening)
-- Ballerburg* (bug: mouse-over acts like click)
+- Awele (use v1.02, it fixes bugs in v1.01)
 - Centi
 - Chess* (works only from floppy)
 - Clicks* (needs wdialog)
@@ -566,6 +568,15 @@ GEM games:
 - WindowBall (breakout)
 - Wormania
 - zSudoku
+
+GEM games for EmuTOS >v0.9.5 (mouse clicks work):
+- Abalone
+- Ballerburg*
+- Minds (minesweeper)
+- Patience* (card solitaire, use latest v2.25)
+- Risky* (Risk board game)
+- Yams (minesweeper)
+- Yukon* (card solitaire)
 
 Monochrome games:
 - Backgammon    (line-A bitblits under GEM menu)
@@ -671,17 +682,10 @@ Mono games:
 - Ramses*           (causes panic as it tries to do crazy things with v_hide_c)
 
 GEM games:
-- Abalone   (dragging doesn't work)
 - Anduril   ('h' and 'j' keys don't work)
 - Bombs     (minesweeper, mouse clicks almost never work)
 - Checkers  (dragging doesn't work)
-- Dte       (mouse gets stuck)
 - Invaders* (needs EmuTOS >= 0.8.7, '-' key doesn't work)
-- Minds     (minesweeper, mouse clicks almost never work)
-- Patience* (dragging doesn't work, dialog selection persists)
-- Risky*    (dragging doesn't work)
-- Yams      (minesweeper, mouse clicks don't work)
-- Yukon*    (dragging doesn't work)
 
 
 Atari ST applications (including commercial)
@@ -806,16 +810,20 @@ Demos:
 - STE Wars (by Tony Barker)
 - STePS (by XiA/CPT)
 - STrange RoboTS (by Blabla)
+- STresSTeST by (Cream)
 - Summer Delights (by DHS)
 - Sventure intro (by Paradox)
 - Takeover (by Lamers)
 - TalkTalk2 (by XiA)
 - Techno drugs (by NLC)
+- Time Slices (by Defence Force)
 - Tribute to Rainbow TOS
 - Tyranny (by DHS)
 - UFO (by Dune & Sector1)
 - Unbeatable (by Masters of Electric City)
 - Vision (by POV)
+- We Were @ STNICCC 2015 (by Oxygene)
+  - Reset screen colors are wrong
 - XiTEC Presentation (by Omega)
 
 Color games:
@@ -826,6 +834,7 @@ Color games:
 - Atari Scene Card Battle (line-A bitblit)
 - Astrodia
 - Battletris+
+- BeGEMeD* (line-A bitblits)
 - Blat (line-A bitblit)
 - Boom (screen flashes during scrolling messages)
 - Breakdance (scene game, STOS, needs EmuTOS >v0.9.3)
@@ -846,6 +855,8 @@ Color games:
 - Power Up
 - R0x (line-A bitblit, screen sync issue)
 - Roger (line-A bitblit)
+- R-Type Deluxe
+  http://atari-forum.com/viewtopic.php?f=28&t=29047
 - Skulls (shareware "minesweeper")
 - Spy 4k
 - Stardust* (tunnel sequence demo)
@@ -862,8 +873,9 @@ Color games:
 - Zool (demo)
 
 Additionally, also all nice STe enhanced Paradize games work
-(attackwave, kolmik, mangapuzzle, nwdump, pairs, penta, pokersq,
-pooz, snax, spacebattle), and they all use line-A bitblits:
+(AttackWave, Kolmik, MangaPuzzle, NWDump, Pairs, Penta,
+PokerSquare, Pooz, Znax, SpaceBattle), and they all use
+line-A bitblits:
 	http://paradize.final-memory.org/games.shtml
 
 
@@ -901,12 +913,16 @@ Non-working games and music programs:
   http://homepage.ntlworld.com/kevcallahan/bombaman/
 - Cameleon (line-A bitblit, exits when starting game)
 - Hero (STOS, input doesn't work)
-- Protracker STE, Equinox version, NULL pointer crash on disk ops
-- Zaptastic (freezes at start after few Line-A 7 bitblits)
+- Protracker STE (Equinox version, NULL pointer crash on disk ops)
+- Zaptastic (freezes at start after few Line-A bitblits)
 
 
 Atari TT programs
 -----------------
+
+TT emulation requires 512kB version of EmuTOS (the one shipped with
+Hatari).  TT-low (256-color) mode support requires Jan 2016 or newer
+version of EmuTOS.
 
 Working applications:
 - Mandelbrot playtime (fracplay, uses FPU)
@@ -914,6 +930,7 @@ Working applications:
 Working demos:
 - 256mbrot, Bragg, Glasstro, Orion-B, Yabt (TT/Falcon intros by ray//.tSCc)
 - 4getful (by gwEm, 4KB intro TT-version)
+  - Has way too low volume
 - Adebug 3DTT demo (by Brainstorm)
 - CrY image viewer (by .tSCc)
 - Mandelbrot explorer (by .tSCc)
@@ -926,18 +943,19 @@ Working demos:
 
 Working games:
 - Capy (by YesCREW)
-- GEM NetHack v3.4.3 (VDI colors wrong)
-- GEM Slashem v3.3.1 (VDI colors wrong)
+- GEM NetHack v3.4.3
+- GEM Slashem v3.3.1
 - Oxyd (Falcon version)
 
 Broken programs:
 - PixArt4
-  - colors wrong, clicks to windows down draw anything (on Falcon colors are OK)
+  - Drawing needs 2016 EmuTOS version (evnt_multi() fixes)
+  - Crashes on startup if TT-RAM is present (unlike with TOS v3)
   - http://www.1632systems.co.uk/www/html/Product/pixart.htm
 - OpenTTD:
-  - Needs lots of TT-RAM
-  - EmuTOS doesn't support TT 256 color mode yet
- (- works on Falcon with FPU)
+  - Needs hundreds of MBs of TT-RAM
+  - Needs to be started from TT-low resolution
+ (- works also on Falcon with FPU, DSP can be disabled for speed)
 
 
 Falcon programs
@@ -963,6 +981,8 @@ Falcon demos
 Working demos:
 - 1600x600
 - 30l coke, needs DSP
+- 4getful (by gwEm, 4KB intro Falcon version)
+  - Has way too low volume
 - A Rh Positive 4k (by tSCc), needs DSP
 - Ascii (by Reservoir Gods), disable DSP
 - ATS (by DHS)
@@ -1061,6 +1081,7 @@ Games regressed in EmuTOS v0.8.x (not working anymore):
 
 Games working in EmuTOS >=v0.9.0:
 - Aces High (preview)
+- BeGEMeD* (Falcon version)
 - Blum
 - Cavemania (demo version)
 - Corsair
@@ -1091,8 +1112,6 @@ Games working in EmuTOS >=v0.9.0:
 - Willie's Adventure* (preview2)
 
 Games working in EmuTOS >v0.9.0:
-- GEM breakout
-  - problems with clicks
 - Jeu de Poker
   - needs 640x480@256 VGA mode
 - Landmine (GEM minesweeper)
@@ -1102,8 +1121,6 @@ Games working in EmuTOS >v0.9.0:
   - needs 256 color mode
 - Pac Them*
 - Santarun (GEM, slowish)
-- The Ultimate Minesweeper (16-color GEM game)
-  - Problems with clicks
 - Vertical Mayhem(+) (Columns clone)*
 - Zodiax (Falcon "R-type")
   - No sound (EmuTOS doesn't enabled sound matrix on boot)
@@ -1122,6 +1139,11 @@ Games working in EmuTOS >v0.9.3:
 
 Chainz, Jewels, Sweety and Poker games need to be started from 640x480
 mode, otherwise EmuTOS constrains mouse movements to too small area.
+
+Games working in EmuTOS >v0.9.5:
+- GEM breakout
+- The Ultimate Minesweeper (16-color GEM game)
+(Earlier EmuTOS versions have problems with mouse clicks)
 
 Games working with extra hacks:
 - Bugger, Bunion, SkyFall, Sworm games by Resorvoir Gods:
