@@ -458,7 +458,7 @@ static Uint8 *pVideoRasterDelayed = NULL;	/* Used in STE mode when changing vide
 static Uint8 *pVideoRaster;			/* Pointer to Video raster, after VideoBase in PC address space. Use to copy data on HBL */
 static bool bSteBorderFlag;			/* true when screen width has been switched to 336 (e.g. in Obsession) */
 static int NewSteBorderFlag = -1;		/* New value for next line */
-static bool bTTColorsSync, bTTColorsSTSync;	/* whether TT colors need conversion to SDL */
+static bool bTTColorsSync;			/* whether TT colors need conversion to SDL */
 
 int TTSpecialVideoMode;				/* TT special video mode */
 static int nPrevTTSpecialVideoMode;		/* TT special video mode */
@@ -2955,32 +2955,6 @@ static void Video_SetTTPaletteColor(int idx, Uint32 addr)
  */
 static void Video_UpdateTTPalette(int bpp)
 {
-	Uint32 ttpalette, src, dst;
-	Uint16 stcolor, ttcolor;
-	int i, offset, colors;
-
-	ttpalette = 0xff8400;
-
-	if (!bTTColorsSTSync)
-	{
-		/* sync TT ST-palette to TT-palette */
-		src = 0xff8240;	/* ST-palette */
-		offset = (IoMem_ReadWord(0xff8262) & 0x0f);
-		/*fprintf(stderr, "offset: %d\n", offset);*/
-		dst = ttpalette + offset * 16*SIZE_WORD;
-
-		for (i = 0; i < 16; i++)
-		{
-			stcolor = IoMem_ReadWord(src);
-			ttcolor = ((stcolor&0x777) << 1) | ((stcolor&0x888) >> 3);
-			IoMem_WriteWord(dst, ttcolor);
-			src += SIZE_WORD;
-			dst += SIZE_WORD;
-		}
-		bTTColorsSTSync = true;
-	}
-
-	colors = 1 << bpp;
 	if (bpp == 1 && TTRes == TT_HIGH_RES)
 	{
 		/* Monochrome mode... palette is hardwired (?) */
@@ -2995,6 +2969,9 @@ static void Video_UpdateTTPalette(int bpp)
 	}
 	else
 	{
+		Uint32 ttpalette = 0xff8400;
+		int i, colors = 1 << bpp;
+
 		for (i = 0; i < colors; i++)
 		{
 			Video_SetTTPaletteColor(i, ttpalette);
@@ -3026,11 +3003,7 @@ bool Video_RenderTTScreen(void)
 	}
 
 	/* colors need synching? */
-	if (!(bTTColorsSync && bTTColorsSTSync))
-	{
-		Video_UpdateTTPalette(bpp);
-	}
-	else if (TTSpecialVideoMode != nPrevTTSpecialVideoMode)
+	if (!bTTColorsSync || TTSpecialVideoMode != nPrevTTSpecialVideoMode)
 	{
 		Video_UpdateTTPalette(bpp);
 		nPrevTTSpecialVideoMode = TTSpecialVideoMode;
@@ -3056,7 +3029,7 @@ static void Video_DrawScreen(void)
 	if (bUseVDIRes)
 	{
 		if (ConfigureParams.System.nMachineType == MACHINE_TT
-		    && !(bTTColorsSync && bTTColorsSTSync))
+		    && !bTTColorsSync)
 		{
 			Video_UpdateTTPalette(VDIPlanes);
 		}
@@ -4028,19 +4001,59 @@ void Video_TTShiftMode_WriteWord(void)
 /*-----------------------------------------------------------------------*/
 /**
  * Write to TT color register (0xff8400)
+ *
+ * - Sync TT to ST color register
  */
 void Video_TTColorRegs_WriteWord(void)
 {
+	const Uint32 stpalette = 0xff8240;
+	const Uint32 ttpalette = 0xff8400;
+	Uint16 stcolor, ttcolor;
+	int page, offset;
+
+	page = (IoMem_ReadWord(0xff8262) & 0x0f);
+	offset = IoAccessCurrentAddress - (ttpalette + page * 16*SIZE_WORD);
+	if (offset >= 0 && offset < 16*SIZE_WORD)
+	{
+		ttcolor = IoMem_ReadWord(IoAccessCurrentAddress);
+		stcolor = ((ttcolor >> 1) & 0x777) | ((ttcolor >> 3) & 0x888);
+		IoMem_WriteWord(stpalette + offset, stcolor);
+#if 0
+		fprintf(stderr, "0x%x: 0x%x (TT) -> 0x%x: 0x%x (ST)\n",
+			IoAccessCurrentAddress, ttcolor,
+			stpalette + offset, stcolor);
+#endif
+	}
 	bTTColorsSync = false;
 }
 
 /*-----------------------------------------------------------------------*/
 /**
  * Write to ST color register on TT (0xff8240)
+ *
+ * Sync ST to TT color register
  */
 void Video_TTColorSTRegs_WriteWord(void)
 {
-	bTTColorsSTSync = false;
+	const Uint32 stpalette = 0xff8240;
+	const Uint32 ttpalette = 0xff8400;
+	Uint16 stcolor, ttcolor;
+	int page, offset;
+
+	page = (IoMem_ReadWord(0xff8262) & 0x0f);
+	offset = IoAccessCurrentAddress - stpalette;
+	assert(offset > 0 && offset < 16*SIZE_WORD);
+	offset += page * 16*SIZE_WORD;
+
+	stcolor = IoMem_ReadWord(IoAccessCurrentAddress);
+	ttcolor = ((stcolor&0x777) << 1) | ((stcolor&0x888) >> 3);
+	IoMem_WriteWord(ttpalette + offset, ttcolor);
+#if 0
+	fprintf(stderr, "0x%x: 0x%x (ST) -> 0x%x: 0x%x (TT)\n",
+		IoAccessCurrentAddress, stcolor,
+		ttpalette + offset, ttcolor);
+#endif
+	bTTColorsSync = false;
 }
 
 

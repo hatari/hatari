@@ -13,6 +13,7 @@ Emulation:
   - fix reading video counter $FF8205/07/09 after modifying it while
     display is ON.
   - fix location of the video counter's restart when screen runs at 60 Hz
+  - TT: sync ST & TT color registers immediately on write
 
 Emulator:
 - Better SDL2 support (e.g. resizable windows), SDL2 is now enabled by default
