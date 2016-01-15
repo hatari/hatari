@@ -5,6 +5,7 @@
 /* fake tracing flags */
 #include "log.h"
 Uint64 LogTraceFlags = 0;
+FILE *TraceFile;
 
 /* fake Hatari configuration variables for number parsing */
 #include "configuration.h"
