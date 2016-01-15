@@ -366,6 +366,9 @@
 /* 2015/12/31	[NP]	More accurate reloading of $ff8201/03 into $ff8205/07/09 at line 310 on	*/
 /*			cycle 48 (STF 50 Hz) and line 260 cycle 48 (STF 60 Hz) (used in Intro	*/
 /*			and Menu of 'Dark Side Of The Spoon' by ULM).				*/
+/* 2016/01/15	[NP]	Don't call Video_AddInterruptHBL if we're handling the special HBL to	*/
+/*			restart video counter (in case freq/res are modified between		*/
+/*			cycles 0 and 48)							*/
 
 
 const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
@@ -1287,7 +1290,10 @@ static void Video_WriteToShifter ( Uint8 Res )
 	if ( ( LineCycles <= LINE_START_CYCLE_50 ) && ( HblCounterVideo == nHBL ) )
 	{
 		nCyclesPerLine = Video_HBL_GetPos();
-		Video_AddInterruptHBL ( nCyclesPerLine );
+
+		/* Don't modify HBL's position now if we're handling the special HBL for video counter restart */
+		if ( RestartVideoCounter == false )
+			Video_AddInterruptHBL ( nCyclesPerLine );
 	}
 
 
@@ -1555,7 +1561,10 @@ void Video_Sync_WriteByte ( void )
 			int	CyclesPerLine_old = nCyclesPerLine;
 
 			nCyclesPerLine = Video_HBL_GetPos();
-			Video_AddInterruptHBL ( nCyclesPerLine );
+
+			/* Don't modify HBL's position now if we're handling the special HBL for video counter restart */
+			if ( RestartVideoCounter == false )
+				Video_AddInterruptHBL ( nCyclesPerLine );
 
 			/* In case we're mixing 50 Hz (512 cycles) and 60 Hz (508 cycles) lines on the same screen, */
 			/* we must update the position where the next VBL will happen (instead of the initial value in CyclesPerVBL) */
@@ -1821,7 +1830,7 @@ void Video_InterruptHandler_HBL ( void )
 	/* Check if video counter should be restarted on this HBL */
 	if ( RestartVideoCounter )
 	{
-//		fprintf ( stderr , "restart video counter hbl=%d cyc=%d\n" , HblCounterVideo , LineCycles);
+//		fprintf ( stderr , "restart video counter hbl=%d cyc=%d restart_cyc=%d\n" , HblCounterVideo , LineCycles, RestartVideoCounterCycle);
 		/* If HBL was delayed after RestartVideoCounterCycle, we can restart immediately if we have */
 		/* the correct freq/hbl combination */
 		if ( LineCycles >= RestartVideoCounterCycle )
