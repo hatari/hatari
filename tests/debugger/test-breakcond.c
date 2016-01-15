@@ -110,22 +110,26 @@ int main(int argc, const char *argv[])
 	/* address breakpoint + expression evalution with register */
 	char addr_pass[] = "pc + ($200*16/2 & 0xffff)";
 
-	const char *match_tests[] = {
-		"a0 = d0",
+	const char *nonmatching_tests[] = {
 		"( $200 ) . b > 200", /* byte access to avoid endianess */
 		"pc < $50000 && pc > $60000",
 		"pc > $50000 && pc < $54000",
-#define FAILING_BC_TEST_MATCHES 4
+		"d0 = a0",
+		"a0 = pc :trace",  /* matches, but :trace should hide that */
+		"a0 = pc :3",      /* matches, but not yet */
+		NULL
+	};
+	const char *matching_tests[] = {
+		"a0 = pc",	   /* tested with all above */
+		"( $200 ) . b > ( 200 ) . b :once",
 		"pc > $50000 && pc < $60000",
-		"( $200 ) . b > ( 200 ) . b",
-		"d0 = d1",
-		"a0 = pc",
+		"d0 = d1 :once :quiet",
+		"a0 = pc",	   /* tested alone */
 		NULL
 	};
 	const char *test;
-	char testidx[2] = "1";
-	int i, j, tests = 0, errors = 0;
-	int remaining_matches;
+	int total_tests = 0, total_errors = 0;
+	int i, errors;
 	bool use_dsp;
 
 	/* first automated tests... */
@@ -135,10 +139,10 @@ int main(int argc, const char *argv[])
 		fprintf(stderr, "-----------------\n- parsing '%s'\n", test);
 		if (BreakCond_Command(test, use_dsp)) {
 			fprintf(stderr, "***ERROR***: should have failed\n");
-			errors++;
+			total_errors++;
 		}
 	}
-	tests += i;
+	total_tests += i;
 	fprintf(stderr, "-----------------\n\n");
 	BreakCond_Command(CMD_LIST, use_dsp);
 	
@@ -147,16 +151,16 @@ int main(int argc, const char *argv[])
 		fprintf(stderr, "-----------------\n- parsing '%s'\n", test);
 		if (!BreakCond_Command(test, use_dsp)) {
 			fprintf(stderr, "***ERROR***: should have passed\n");
-			errors++;
+			total_errors++;
 		}
 	}
-	tests += i;
+	total_tests += i;
 	fprintf(stderr, "\nAddress PASS test for CPU:\n");
 	if (!BreakAddr_Command(addr_pass, use_dsp)) {
 		fprintf(stderr, "***ERROR***: should have passed\n");
-		errors++;
+		total_errors++;
 	}
-	tests += 1;
+	total_tests += 1;
 
 	fprintf(stderr, "-----------------\n\n");
 	BreakCond_Command(CMD_LIST, use_dsp);
@@ -164,74 +168,86 @@ int main(int argc, const char *argv[])
 	BreakCond_Command(CMD_REMOVE_ALL, use_dsp);
 	BreakCond_Command(CMD_LIST, use_dsp);
 	fprintf(stderr, "-----------------\n");
-
-	/* add conditions */
-	fprintf(stderr, "\nLast one(s) should match, first one(s) shouldn't:\n");
-	for (i = 0; (test = match_tests[i]); i++) {
-		fprintf(stderr, "-----------------\n- parsing '%s'\n", test);
-		if (!BreakCond_Command(test, use_dsp)) {
-			fprintf(stderr, "***ERROR***: should have passed\n");
-			errors++;
-		}
-	}
-	tests += i;
-	BreakCond_Command(CMD_LIST, use_dsp);
-	fprintf(stderr, "\n");
 	
 	/* set up registers etc */
 
-	/* fail indirect equality checks with zerod regs */
+	/* fail indirect equality checks with zeroed regs */
 	memset(STRam, 0, sizeof(STRam));
 	STMemory_WriteByte(0, 1);
-	/* !match: "( $200 ) > 200"
-	 *  match: "( $200 ) . w > ( 200 ) . b"
+	/* !match: "( $200 ) . b > 200"
+	 *  match: "( $200 ) . b > ( 200 ) . b"
 	 */
 	STMemory_WriteByte(0x200, 100);
 	STMemory_WriteByte(200, 0x20);
-	/*  match: "d0 = d1" */
-	SetCpuRegister("d0", 4);
-	SetCpuRegister("d1", 4);
 	/* !match: "pc < $50000  &&  pc > $60000"
 	 * !match: "pc < $50000  &&  pc > $54000"
 	 *  match: "pc > $50000  &&  pc < $60000"
 	 */
 	regs.pc = 0x58000;
+	/*  match: "d0 = d1"
+	 */
+	SetCpuRegister("d0", 4);
+	SetCpuRegister("d1", 4);
 	/* !match: "d0 = a0"
 	 *  match: "pc = a0"
 	 */
 	SetCpuRegister("a0", 0x58000);
-	
-	/* check matches */
-	while ((i = BreakCond_MatchCpu())) {
-		fprintf(stderr, "Removing matching CPU breakpoint %d...\n", i);
-		for (j = 0; (test = match_tests[j]); j++) {
-			if (BreakCond_MatchCpuExpression(i, test)) {
-				break;
+
+	/* add conditions */
+	fprintf(stderr, "\nBreakpoints that should NOT match:\n");
+	for (errors = i = 0; (test = nonmatching_tests[i]); i++) {
+		fprintf(stderr, "-----------------\n- parsing '%s'\n", test);
+		if (!BreakCond_Command(test, use_dsp)) {
+			fprintf(stderr, "***ERROR***: should have passed\n");
+			total_errors++;
+		} else {
+			/* does it match? */
+			if (BreakCond_MatchCpu()) {
+				fprintf(stderr, "***ERROR***: should NOT have matched\n");
+				errors++;
+				/* remove */
+				BreakCond_Command("1", use_dsp);
 			}
 		}
-		if (test) {
-			if (j < FAILING_BC_TEST_MATCHES) {
-				fprintf(stderr, "ERROR: breakpoint should not have matched!\n");
+	}
+	fprintf(stderr, "-----------------\n\n");
+	BreakCond_Command(CMD_LIST, use_dsp);
+	if (errors) {
+		total_errors += errors;
+		fprintf(stderr, "\nERROR: %d out of %d breakpoints matched!\n",
+			errors, i);
+	}
+	total_tests += i;
+
+	/* leave non-matching breakpoints, so that first matching
+	 * breakpoint is at after those, and test rest of matching
+	 * breakpoints as single breakpoints
+	 */
+
+	/* add conditions */
+	fprintf(stderr, "\nBreakpoints that should match:\n");
+	for (errors = i = 0; (test = matching_tests[i]); i++) {
+		fprintf(stderr, "-----------------\n- parsing '%s'\n", test);
+		if (!BreakCond_Command(test, use_dsp)) {
+			fprintf(stderr, "***ERROR***: should have passed\n");
+			total_errors++;
+		} else {
+			/* does it match? */
+			if (!BreakCond_MatchCpu()) {
+				fprintf(stderr, "***ERROR***: should have matched\n");
 				errors++;
 			}
-		} else {
-			fprintf(stderr, "WARNING: canonized breakpoint form didn't match\n");
-			errors++;
+			/* remove all */
+			BreakCond_Command(CMD_REMOVE_ALL, use_dsp);
 		}
-		testidx[0] = '0' + i;
-		BreakCond_Command(testidx, use_dsp); /* remove given */
 	}
-	remaining_matches = BreakCond_CpuBreakPointCount();
-	if (remaining_matches != FAILING_BC_TEST_MATCHES) {
-		fprintf(stderr, "ERROR: wrong number of breakpoints left (%d instead of %d)!\n",
-			remaining_matches, FAILING_BC_TEST_MATCHES);
-		errors++;
+	fprintf(stderr, "-----------------\n\n");
+	if (errors) {
+		total_errors += errors;
+		fprintf(stderr, "ERROR: %d out of %d breakpoints didn't match!\n\n",
+			errors, i);
 	}
-
-	fprintf(stderr, "\nOther breakpoints didn't match, removing the rest...\n");
-	BreakCond_Command(CMD_REMOVE_ALL, use_dsp);
-	BreakCond_Command(CMD_LIST, use_dsp);
-	fprintf(stderr, "-----------------\n");
+	total_tests += i;
 
 	/* ...last parse cmd line args as DSP breakpoints */
 	if (argc > 1) {
@@ -244,21 +260,19 @@ int main(int argc, const char *argv[])
 		fprintf(stderr, "-----------------\n\n");
 		BreakCond_Command("", use_dsp); /* list */
 
-		while ((i = BreakCond_MatchDsp())) {
-			fprintf(stderr, "Removing matching DSP breakpoint.\n");
-			testidx[0] = '0' + i;
-			BreakCond_Command(testidx, use_dsp); /* remove given */
+		if (BreakCond_MatchDsp()) {
+			fprintf(stderr, "There were matching DSP breakpoint(s).\n");
 		}
 
 		BreakCond_Command(CMD_REMOVE_ALL, use_dsp);
 		BreakCond_Command(CMD_LIST, use_dsp);
 		fprintf(stderr, "-----------------\n");
 	}
-	if (errors) {
+	if (total_errors) {
 		fprintf(stderr, "\n***Detected %d ERRORs in %d automated tests!***\n\n",
-			errors, tests);
+			total_errors, total_tests);
 	} else {
 		fprintf(stderr, "\nFinished without any errors!\n\n");
 	}
-	return errors;
+	return total_errors;
 }
