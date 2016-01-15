@@ -1,7 +1,7 @@
 /*
   Hatari - breakcond.c
 
-  Copyright (c) 2009-2012 by Eero Tamminen
+  Copyright (c) 2009-2016 by Eero Tamminen
 
   This file is distributed under the GNU General Public License, version 2
   or at your option any later version. Read the file gpl.txt for details.
@@ -128,7 +128,7 @@ static bc_breakpoints_t DspBreakPoints = {
 
 
 /* forward declarations */
-static int BreakCond_DoDelayedActions(bc_breakpoints_t *bps, int triggered);
+static void BreakCond_DoDelayedActions(bc_breakpoints_t *bps);
 static bool BreakCond_Remove(bc_breakpoints_t *bps, int position);
 static void BreakCond_Print(bc_breakpoint_t *bp);
 
@@ -323,15 +323,16 @@ static bool BreakCond_MatchConditions(bc_condition_t *condition, int count)
 
 
 /**
- * Show all breakpoints which conditions matched and return which matched
- * @return	index to last matching (non-tracing) breakpoint,
- *		or zero if none matched
+ * Check and show which breakpoints' conditions matched
+ * @return	true if (non-tracing) breakpoint was hit,
+ *		or false if none matched
  */
-static int BreakCond_MatchBreakPoints(bc_breakpoints_t *bps)
+static bool BreakCond_MatchBreakPoints(bc_breakpoints_t *bps)
 {
 	bc_breakpoint_t *bp;
 	bool changes = false;
-	int i, ret = 0;
+	bool hit = false;
+	int i;
 
 	/* array should not be changed while it's being traversed */
 	assert(likely(!bps->delayed_change));
@@ -377,32 +378,32 @@ static int BreakCond_MatchBreakPoints(bc_breakpoints_t *bps)
 			}
 			if (!bp->options.trace) {
 				/* index for current hit, they start from 1 */
-				ret = i + 1;
+				hit = true;
 			}
 			/* continue checking breakpoints to make sure all relevant actions get performed */
 		}
 	}
 	bps->delayed_change = false;
 	if (unlikely(changes)) {
-		ret = BreakCond_DoDelayedActions(bps, ret);
+		BreakCond_DoDelayedActions(bps);
 	}
-	return ret;
+	return hit;
 }
 
 /* ------------- breakpoint condition checking, public API ------------- */
 
 /**
- * Return matched CPU breakpoint index or zero for no hits.
+ * Return true if there were CPU breakpoint hits, false otherwise.
  */
-int BreakCond_MatchCpu(void)
+bool BreakCond_MatchCpu(void)
 {
 	return BreakCond_MatchBreakPoints(&CpuBreakPoints);
 }
 
 /**
- * Return matched DSP breakpoint index or zero for no hits.
+ * Return true if there were DSP breakpoint hits, false otherwise.
  */
-int BreakCond_MatchDsp(void)
+bool BreakCond_MatchDsp(void)
 {
 	return BreakCond_MatchBreakPoints(&DspBreakPoints);
 }
@@ -1610,13 +1611,9 @@ static void BreakCond_RemoveAll(bc_breakpoints_t *bps)
 }
 
 /**
- * Do delayed actions (remove breakpoints and old array alloc)
- * 
- * If those removals affect the triggered breakpoint index, update it.
- * 
- * Return updated breakpoint index.
+ * Do delayed breakpoint actions, remove breakpoints and old array alloc
  */
-static int BreakCond_DoDelayedActions(bc_breakpoints_t *bps, int triggered)
+static void BreakCond_DoDelayedActions(bc_breakpoints_t *bps)
 {
 	bc_options_t *options;
 	bool removed;
@@ -1633,12 +1630,8 @@ static int BreakCond_DoDelayedActions(bc_breakpoints_t *bps, int triggered)
 			options->deleted = false;
 			removed = BreakCond_Remove(bps, i);
 			ASSERT_VARIABLE(removed);
-			if (triggered >= i) {
-				triggered--;
-			}
 		}
 	}
-	return triggered;
 }
 
 

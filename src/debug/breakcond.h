@@ -20,8 +20,8 @@ extern bool BreakCond_GetHatariVariable(const char *name, Uint32 *value);
 extern const char BreakCond_Description[];
 extern const char BreakAddr_Description[];
 
-extern int BreakCond_MatchCpu(void);
-extern int BreakCond_MatchDsp(void);
+extern bool BreakCond_MatchCpu(void);
+extern bool BreakCond_MatchDsp(void);
 extern int BreakCond_CpuBreakPointCount(void);
 extern int BreakCond_DspBreakPointCount(void);
 extern bool BreakCond_Command(const char *expression, bool bForDsp);
