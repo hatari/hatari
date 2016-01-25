@@ -3077,11 +3077,19 @@ static void ExceptionX (int nr, uaecptr address)
 	}
 	else if (nr == 0x2d) {
 		/* Intercept BIOS (Trap #13) calls */
-		if (Bios())  return;
+		if (Bios()) {
+			fill_prefetch ();
+			regs.exception = 0;
+			return;
+		}
 	}
 	else if (nr == 0x2e) {
 		/* Intercept XBIOS (Trap #14) calls */
-		if (XBios())  return;
+		if (XBios()) {
+			fill_prefetch ();
+			regs.exception = 0;
+			return;
+		}
 	}
 #endif
 
