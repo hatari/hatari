@@ -2347,29 +2347,6 @@ static void Exception_ce000 (int nr)
 	exception_debug (nr);
 	MakeSR ();
 
-#ifdef WINUAE_FOR_HATARI
-	/* Handle Hatari GEM and BIOS traps */
-	if (nr == 0x22) {
-		/* Intercept VDI & AES exceptions (Trap #2) */
-		if (bVdiAesIntercept && VDI_AES_Entry()) {
-			/* Set 'PC' to address of 'VDI_OPCODE' illegal instruction.
-			* This will call OpCode_VDI() after completion of Trap call!
-			* This is used to modify specific VDI return vectors contents.
-			*/
-			VDI_OldPC = currpc;
-			currpc = CART_VDI_OPCODE_ADDR;
-		}
-	}
-	else if (nr == 0x2d) {
-		/* Intercept BIOS (Trap #13) calls */
-		if (Bios())  return;
-	}
-	else if (nr == 0x2e) {
-		/* Intercept XBIOS (Trap #14) calls */
-		if (XBios())  return;
-	}
-#endif
-
 	if (!regs.s) {
 		regs.usp = m68k_areg (regs, 7);
 		m68k_areg (regs, 7) = regs.isp;
@@ -2845,30 +2822,6 @@ static void Exception_normal (int nr)
 
 	interrupt = nr >= 24 && nr < 24 + 8;
 
-/* [NP] TODO : factorize in Hatari_Exception_Intercept() */
-#ifdef WINUAE_FOR_HATARI
-	if (nr == 0x22) {
-		/* Intercept VDI & AES exceptions (Trap #2) */
-		if (bVdiAesIntercept && VDI_AES_Entry()) {
-			/* Set 'PC' to address of 'VDI_OPCODE' illegal instruction.
-			 * This will call OpCode_VDI() after completion of Trap call!
-			 * This is used to modify specific VDI return vectors contents.
-			*/
-			currpc = m68k_getpc ();
-			VDI_OldPC = currpc;
-			currpc = CART_VDI_OPCODE_ADDR;
-		}
-	}
-	else if (nr == 0x2d) {
-		/* Intercept BIOS (Trap #13) calls */
-		if (Bios())  return;
-	}
-	else if (nr == 0x2e) {
-		/* Intercept XBIOS (Trap #14) calls */
-		if (XBios())  return;
-	}
-#endif
-
 #ifndef WINUAE_FOR_HATARI
 	if (interrupt && currprefs.cpu_model <= 68010)
 #else
@@ -3109,6 +3062,28 @@ static void ExceptionX (int nr, uaecptr address)
 	if (cpu_tracer) {
 		cputrace.state = nr;
 	}
+
+#ifdef WINUAE_FOR_HATARI
+	/* Handle Hatari GEM and BIOS traps */
+	if (nr == 0x22) {
+		/* Intercept VDI & AES exceptions (Trap #2) */
+		if (bVdiAesIntercept && VDI_AES_Entry()) {
+			/* Set 'PC' to address of 'VDI_OPCODE' illegal instruction.
+			 * This will call OpCode_VDI() after completion of Trap call!
+			 * Used to modify specific VDI return vectors contents. */
+			VDI_OldPC = m68k_getpc();
+			m68k_setpc(CART_VDI_OPCODE_ADDR);
+		}
+	}
+	else if (nr == 0x2d) {
+		/* Intercept BIOS (Trap #13) calls */
+		if (Bios())  return;
+	}
+	else if (nr == 0x2e) {
+		/* Intercept XBIOS (Trap #14) calls */
+		if (XBios())  return;
+	}
+#endif
 
 #ifdef JIT
 	if (currprefs.cachesize)
