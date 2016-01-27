@@ -682,10 +682,13 @@ Mono games:
 - Ramses*           (causes panic as it tries to do crazy things with v_hide_c)
 
 GEM games:
-- Anduril   ('h' and 'j' keys don't work)
+- Anduril   (input doesn't and won't work [1])
 - Bombs     (minesweeper, mouse clicks almost never work)
 - Checkers  (dragging doesn't work)
-- Invaders* (needs EmuTOS >= 0.8.7, '-' key doesn't work)
+- Invaders* (input doesn't and won't work [1])
+
+[1] uses illegal TOS 1.x specific method:
+	http://sourceforge.net/p/emutos/mailman/message/34785883/
 
 
 Atari ST applications (including commercial)
