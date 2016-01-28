@@ -543,7 +543,7 @@ static void TOS_CheckSysConfig(void)
 		ClocksTimings_InitMachine ( ConfigureParams.System.nMachineType );
 #if ENABLE_DSP_EMU
 		ConfigureParams.System.nDSPType = DSP_TYPE_EMU;
-		DSP_Init();
+		DSP_Enable();
 #endif
 		IoMem_Init();
 		ConfigureParams.System.nCpuFreq = 16;
