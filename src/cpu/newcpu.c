@@ -5084,7 +5084,7 @@ printf ( "run_3ce\n" );
 //fprintf ( stderr, "cyc_3ce %d\n" , currcycle );
 				/* Flush all CE cycles so far to update PendingInterruptCount */
 				M68000_AddCycles_CE ( currcycle * 2 / CYCLE_UNIT );
-				currcycle = 0;
+//				currcycle = 0;	// FIXME : uncomment this when using DSP_CyclesGlobalClockCounter in DSP_Run
 
 				/* We can have several interrupts at the same time before the next CPU instruction */
 				/* We must check for pending interrupt and call do_specialties_interrupt() only */
@@ -5337,7 +5337,7 @@ fprintf ( stderr , "cache valid %d tag1 %x lws1 %x ctag %x data %x mem=%x\n" , c
 //fprintf ( stderr, "cyc_2ce %d\n" , currcycle );
 				/* Flush all CE cycles so far to update PendingInterruptCount */
 				M68000_AddCycles_CE ( currcycle * 2 / CYCLE_UNIT );
-				currcycle = 0;
+//				currcycle = 0;	// FIXME : uncomment this when using DSP_CyclesGlobalClockCounter in DSP_Run
 
 				/* We can have several interrupts at the same time before the next CPU instruction */
 				/* We must check for pending interrupt and call do_specialties_interrupt() only */
