@@ -1408,8 +1408,8 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
     ROMmem_bank.start = ROMmem_start;
 
     /* IO memory: */
-    map_banks_ce(&IOmem_bank, IOmem_start>>16, 0x1, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
-    IOmem_bank.baseaddr = IOmemory;
+    map_banks_ce(&IOmem_bank, IOmem_start>>16, 0x1, 0, CE_MEMBANK_FAST16, CE_MEMBANK_NOT_CACHABLE);	/* [NP] tested on real STF, no bus wait for IO memory */
+    IOmem_bank.baseaddr = IOmemory;									/* except for some shifter registers */
     IOmem_bank.mask = IOmem_mask;
     IOmem_bank.start = IOmem_start;
 

@@ -687,6 +687,47 @@ int	M68000_WaitEClock ( void )
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Some hardware registers can only be accessed on a 4 cycles boundary
+ * (shifter color regs and shifter res reg).
+ * An extra delay should be added when needed if current cycle
+ * count is not multiple of 4.
+ */
+static void	M68000_SyncCpuBus ( bool read )
+{
+	Uint64	Cycles;
+	int	CyclesToNextBus;
+
+	if ( read )
+		Cycles = Cycles_GetClockCounterOnReadAccess();
+	else
+		Cycles = Cycles_GetClockCounterOnWriteAccess();
+
+	CyclesToNextBus = Cycles & 3;
+//fprintf ( stderr , "sync bus %lld %d\n" , Cycles, CyclesToNextBus );
+	if ( CyclesToNextBus != 0 )
+	{
+//fprintf ( stderr , "sync bus wait %lld %d\n" ,Cycles, 4-CyclesToNextBus );
+		M68000_WaitState ( 4 - CyclesToNextBus );
+	}
+}
+
+
+void	M68000_SyncCpuBus_OnReadAccess ( void )
+{
+	M68000_SyncCpuBus ( true );
+}
+
+
+void	M68000_SyncCpuBus_OnWriteAccess ( void )
+{
+	M68000_SyncCpuBus ( false );
+}
+
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * In case we modified the memory by accessing it directly (and bypassing
  * the CPU's cache mechanism), we need to flush the instruction and data
  * caches to force an update of the caches on the next accesses.

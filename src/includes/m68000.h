@@ -382,6 +382,8 @@ extern void M68000_Exception(Uint32 ExceptionNr , int ExceptionSource);
 extern void M68000_Update_intlev ( void );
 extern void M68000_WaitState(int WaitCycles);
 extern int M68000_WaitEClock ( void );
+extern void M68000_SyncCpuBus_OnReadAccess ( void );
+extern void M68000_SyncCpuBus_OnWriteAccess ( void );
 extern void M68000_Flush_Instr_Cache ( uaecptr addr , int size );
 extern void M68000_Flush_Data_Cache ( uaecptr addr , int size );
 extern void M68000_Flush_All_Caches ( uaecptr addr , int size );

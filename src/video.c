@@ -369,6 +369,9 @@
 /* 2016/01/15	[NP]	Don't call Video_AddInterruptHBL if we're handling the special HBL to	*/
 /*			restart video counter (in case freq/res are modified between		*/
 /*			cycles 0 and 48)							*/
+/* 2016/01/31	[NP]	Video registers can be accessed at cycles 4n or 4n+2, except colors and	*/
+/*			resolution which must use M68000_SyncCpuBus_OnRead/WriteAccess() to be	*/
+/*			at 4n. This requires to use CPU in cycle exact mode.			*/
 
 
 const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
@@ -555,7 +558,7 @@ static void	Video_SetSystemTimings ( void );
 
 static Uint32	Video_CalculateAddress ( void );
 static int	Video_GetMMUStartCycle ( int DisplayStartCycle );
-static void	Video_WriteToShifter ( Uint8 Res );
+static void	Video_WriteToShifterRes ( Uint8 Res );
 static void 	Video_Sync_SetDefaultStartEnd ( Uint8 Freq , int HblCounterVideo , int LineCycles );
 
 static int	Video_HBL_GetPos ( void );
@@ -1041,7 +1044,7 @@ static int Video_GetMMUStartCycle ( int DisplayStartCycle )
 /**
  * Write to VideoShifter (0xff8260), resolution bits
  */
-static void Video_WriteToShifter ( Uint8 Res )
+static void Video_WriteToShifterRes ( Uint8 Res )
 {
 	int FrameCycles, HblCounterVideo, LineCycles;
 
@@ -3468,6 +3471,9 @@ void Video_LineWidth_ReadByte(void)
  */
 void Video_ShifterMode_ReadByte(void)
 {
+	/* Access to shifter regs are on a 4 cycle boundary */
+	M68000_SyncCpuBus_OnReadAccess();
+
 	if (bUseHighRes)
 		IoMem[0xff8260] = 2;			/* If mono monitor, force to high resolution */
 
@@ -3544,6 +3550,9 @@ static void Video_ColorReg_WriteWord(void)
 	int idx;
 
 	addr = IoAccessCurrentAddress;
+
+	/* Access to shifter regs are on a 4 cycle boundary */
+	M68000_SyncCpuBus_OnWriteAccess();
 
 	/* Handle special case when writing only to the upper byte of the color reg */
 	if (nIoMemAccessSize == SIZE_BYTE && (IoAccessCurrentAddress & 1) == 0)
@@ -3626,6 +3635,9 @@ static void Video_ColorReg_ReadWord(void)
 	Uint16 col;
 	Uint32 addr;
 	addr = IoAccessCurrentAddress;
+
+	/* Access to shifter regs are on a 4 cycle boundary */
+	M68000_SyncCpuBus_OnReadAccess();
 
 	col = IoMem_ReadWord(addr);
 
@@ -3825,6 +3837,9 @@ void Video_ShifterMode_WriteByte(void)
 {
 	Uint8 VideoShifterByte;
 
+	/* Access to shifter regs are on a 4 cycle boundary */
+	M68000_SyncCpuBus_OnWriteAccess();
+
 	if (ConfigureParams.System.nMachineType == MACHINE_TT)
 	{
 		TTRes = IoMem_ReadByte(0xff8260) & 7;
@@ -3842,7 +3857,7 @@ void Video_ShifterMode_WriteByte(void)
 			IoMem_WriteByte(0xff8260,2);
 		}
 
-		Video_WriteToShifter(VideoShifterByte);
+		Video_WriteToShifterRes(VideoShifterByte);
 		Video_SetHBLPaletteMaskPointers();
 		*pHBLPaletteMasks &= 0xff00ffff;
 		/* Store resolution after palette mask and set resolution write bit: */
