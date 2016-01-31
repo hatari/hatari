@@ -131,8 +131,6 @@ uae_u32 wait_cpu_cycle_read (uaecptr addr, int mode)
 //		fprintf ( stderr , "mem wait read after %x %d %lu %lu\n" , addr , mode , currcycle / cpucycleunit , currcycle );
 	}
 
-	x_do_cycles_pre (CYCLE_UNIT);
-
 	if (mode < 0)
 		v = get_long (addr);
 	else if (mode > 0)
@@ -140,7 +138,7 @@ uae_u32 wait_cpu_cycle_read (uaecptr addr, int mode)
 	else if (mode == 0)
 		v = get_byte (addr);
 
-	x_do_cycles_post (CYCLE_UNIT, v);
+	x_do_cycles_post (2*CYCLE_UNIT, v);
 #endif						/* WINUAE_FOR_HATARI */
 
 	return v;
@@ -248,8 +246,6 @@ void wait_cpu_cycle_write (uaecptr addr, int mode, uae_u32 v)
 //		fprintf ( stderr , "mem wait write after %x %d %lu %lu\n" , addr , mode , currcycle / cpucycleunit , currcycle );
 	}
 
-	x_do_cycles_pre (CYCLE_UNIT);
-
 	if (mode < 0)
 		put_long (addr, v);
 	else if (mode > 0)
@@ -257,7 +253,7 @@ void wait_cpu_cycle_write (uaecptr addr, int mode, uae_u32 v)
 	else if (mode == 0)
 		put_byte (addr, v);
 
-	x_do_cycles_post (CYCLE_UNIT, v);
+	x_do_cycles_post (2*CYCLE_UNIT, v);
 #endif						/* WINUAE_FOR_HATARI */
 }
 
