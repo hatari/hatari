@@ -1545,6 +1545,11 @@ static void map_banks2 (addrbank *bank, int start, int size, int realsize, int q
 #endif
 			}
 			put_mem_bank ((bnr + hioffs) << 16, bank, realstart << 16);
+
+	  		/* Copy the CE parameters for bank/start */
+			ce_banktype[ (bnr + hioffs) ] = ce_banktype[ start ];
+			ce_cachable[ (bnr + hioffs) ] = ce_cachable[ start ];
+//printf ( "ce copy %x %x\n" , ce_banktype[ (bnr + hioffs) ] , ce_cachable[ (bnr + hioffs) ] );
 			real_left--;
 		}
 	}
@@ -1570,8 +1575,8 @@ void map_banks_nojitdirect (addrbank *bank, int start, int size, int realsize)
 
 void map_banks_ce (addrbank *bank, int start, int size, int realsize , int banktype, int cachable )
 {
-	map_banks2 (bank, start, size, realsize, 0);
 	fill_ce_banks (start, size, banktype, cachable );
+	map_banks2 (bank, start, size, realsize, 0);
 }
 
 
