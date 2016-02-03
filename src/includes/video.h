@@ -217,6 +217,8 @@ extern void Video_Color13_ReadWord(void);
 extern void Video_Color14_ReadWord(void);
 extern void Video_Color15_ReadWord(void);
 extern void Video_ShifterMode_WriteByte(void);
+extern void Video_HorScroll_Read_8264(void);
+extern void Video_HorScroll_Read_8265(void);
 extern void Video_HorScroll_Write_8264(void);
 extern void Video_HorScroll_Write_8265(void);
 extern void Video_HorScroll_Write(void);

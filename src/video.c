@@ -3913,13 +3913,33 @@ void Video_ShifterMode_WriteByte(void)
  *		the display starts 16 pixels earlier.
  */
 
+void Video_HorScroll_Read_8264(void)
+{
+	/* Access to shifter regs are on a 4 cycle boundary */
+	M68000_SyncCpuBus_OnReadAccess();
+}
+
+void Video_HorScroll_Read_8265(void)
+{
+	/* Access to shifter regs are on a 4 cycle boundary */
+	M68000_SyncCpuBus_OnReadAccess();
+	/* [NP] TODO : it seems ff8265 has some additional wait states */
+}
+
 void Video_HorScroll_Write_8264(void)
 {
+	/* Access to shifter regs are on a 4 cycle boundary */
+	M68000_SyncCpuBus_OnWriteAccess();
+
 	Video_HorScroll_Write();
 }
 
 void Video_HorScroll_Write_8265(void)
 {
+	/* Access to shifter regs are on a 4 cycle boundary */
+	M68000_SyncCpuBus_OnWriteAccess();
+	/* [NP] TODO : it seems ff8265 has some additional wait states */
+
 	Video_HorScroll_Write();
 }
 
