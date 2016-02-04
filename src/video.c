@@ -372,6 +372,8 @@
 /* 2016/01/31	[NP]	Video registers can be accessed at cycles 4n or 4n+2, except colors and	*/
 /*			resolution which must use M68000_SyncCpuBus_OnRead/WriteAccess() to be	*/
 /*			at 4n. This requires to use CPU in cycle exact mode.			*/
+/* 2016/02/04	[NP]	On STF, the switch back to low res to remove left border should be made	*/
+/*			at pos > 4. If made before, left border is not removed.			*/
 
 
 const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
@@ -1078,7 +1080,7 @@ static void Video_WriteToShifterRes ( Uint8 Res )
 	/* Remove left border : +26 bytes */
 	/* This can be done with a hi/lo res switch or a hi/med res switch */
 	if ( ( ShifterFrame.Res == 0x02 ) && ( Res == 0x00 )	/* switched from hi res to lo res */
-//	        && ( LineCycles >= 12 )				/* switch back to low res should be after cycle 8 */
+//	        && ( LineCycles >= 8 )				/* switch back to low res should be after cycle 8 */
 		&& ( ( ShifterFrame.ResPosHi.LineCycles < 12 ) || ( ShifterFrame.ResPosHi.LineCycles >= 504 ) )		/* switch to hi between 504 and 8 */
 	        && ( LineCycles <= (LINE_START_CYCLE_71+28) )
 	        && ( FrameCycles - ShifterFrame.ResPosHi.FrameCycles <= 32 ) )
@@ -1093,6 +1095,14 @@ static void Video_WriteToShifterRes ( Uint8 Res )
 			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = -8;		/* screen is shifted 8 pixels to the left */
 			LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect remove left 2 ste %d<->%d\n" ,
 				ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
+		}
+		else if ( ( ConfigureParams.System.nMachineType == MACHINE_ST )
+			&& ( LineCycles <= 4 ) )				/* on STF, if switch to lo/med before cycle 4, then left border is not removed */
+		{
+			/* Cancel hi res start position and update timings */
+			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = LINE_START_CYCLE_50;
+			/* In lo/med res, display start/end depends on the freq register in $ff820a */
+			Video_Sync_SetDefaultStartEnd ( IoMem[0xff820a] & 2 , HblCounterVideo , LineCycles );
 		}
 		else								/* other case for STF/STE -> add 26 bytes */
 		{
