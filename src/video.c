@@ -374,6 +374,9 @@
 /*			at 4n. This requires to use CPU in cycle exact mode.			*/
 /* 2016/02/04	[NP]	On STF, the switch back to low res to remove left border should be made	*/
 /*			at pos > 4. If made before, left border is not removed.			*/
+/* 2016/02/04	[NP]	Add support for left+2 at 50 Hz if switch back to 50 Hz is made at	*/
+/*			pos 54 (requires 2 cycle precision in CE mode) (wsdetect by Troed/Sync,	*/
+/*			report STF as WS1)							*/
 
 
 const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
@@ -1435,7 +1438,7 @@ void Video_Sync_WriteByte ( void )
 		/*   - On STE, switch can be on cycles 36/56 or 36/54 (no wake up state in STE) */
 		/* TODO : we should change HBL signal to be on cycles 508 or 512 (it will always be 512 for now) */
 		if ( ( ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle == LINE_START_CYCLE_60 )
-		        && ( LineCycles >= LINE_START_CYCLE_50 )	/* The line started in 60 Hz and continues in 50 Hz */
+		        && ( LineCycles >= LINE_START_CYCLE_50-2 )	/* The line started in 60 Hz and continues in 50 Hz */
 		        && ( LineCycles <= ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle ) )	/* change when line is active */
 		{
 			/* [FIXME] 'Panic' by Paulo Simoes, dont' trigger left+2 (need 2 cycles precision) */
@@ -1465,11 +1468,22 @@ void Video_Sync_WriteByte ( void )
 			}
 
 			/* Normal case where left+2 should be made */
+			/* - If switch to 50 Hz is made at cycle 54 (requires 2 cycle precision), */
+			/*   then the line will start 2 bytes earlier and will be 50 Hz (HBL at cycle 512) */
+			/* - If switch to 50 Hz is made at cycle >= 56 */
+			/*   then the line will start 2 bytes earlier and will be 60 Hz (HBL at cycle 508) */
+			else if ( LineCycles == LINE_START_CYCLE_50-2 )
+			{
+			  ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_LEFT_PLUS_2;
+			  ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle = LINE_END_CYCLE_50;
+			  LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect left+2 50Hz %d<->%d\n" ,
+				ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
+			}
 			else
 			{
 			  ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_LEFT_PLUS_2;
 			  ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle = LINE_END_CYCLE_50;
-			  LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect left+2 %d<->%d\n" ,
+			  LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect left+2 60Hz %d<->%d\n" ,
 				ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
 			}
 		}
