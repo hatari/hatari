@@ -959,6 +959,8 @@ static Uint32 Video_CalculateAddress ( void )
 
 		if (LineBorderMask & BORDERMASK_LEFT_OFF)
 			CurSize += BORDERBYTES_LEFT;
+		else if (LineBorderMask & BORDERMASK_LEFT_OFF_2_STE)
+			CurSize += BORDERBYTES_LEFT_2_STE;
 		else if (LineBorderMask & BORDERMASK_LEFT_PLUS_2)
 			CurSize += 2;
 		else if (bSteBorderFlag)			/* bigger line by 8 bytes on the left (STE specific) */
