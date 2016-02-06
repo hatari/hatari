@@ -2274,7 +2274,7 @@ static int iack_cycle(int nr)
 		if ( currprefs.cpu_cycle_exact )
 		{
 			/* In CE mode, iack_start = 0, no need to call x_do_cycles() */
-			//x_do_cycles ( ( iack_start + CPU_IACK_CYCLES_VIDEO + e_cycles ) * cpucycleunit );
+			//x_do_cycles ( ( iack_start + CPU_IACK_CYCLES_VIDEO_CE + e_cycles ) * cpucycleunit );
 			/* Flush all CE cycles so far before calling M68000_WaitEClock() */
 			M68000_AddCycles_CE ( currcycle * 2 / CYCLE_UNIT );
 			currcycle = 0;
@@ -2293,7 +2293,7 @@ static int iack_cycle(int nr)
 			currcycle = 0;
 		}
 		else
-			M68000_AddCycles ( e_cycles + CPU_IACK_CYCLES_VIDEO );
+			M68000_AddCycles ( e_cycles + CPU_IACK_CYCLES_VIDEO_CE );
 
 		CPU_IACK = true;
 		while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) )
@@ -2774,14 +2774,14 @@ static void add_approximate_exception_cycles(int nr)
 		cycles = 44 + 4; 
 #else
 	if ( nr >= 24 && nr <= 31 ) {
-		/* Atari's specific interrupts take 56 cycles instead of 44 */
-		/* We must subtract IACK cycles already counted into iack_cycle() */
+		/* Atari's specific interrupts take 56 cycles instead of 44 due to iack sequence */
+		/* We must subtract CPU_IACK_CYCLES_START cycles already counted into iack_cycle() */
 		if ( nr == 30 )					/* MFP/DSP */
-			cycles = 56-CPU_IACK_CYCLES_START-CPU_IACK_CYCLES_MFP;
+			cycles = 44-CPU_IACK_CYCLES_START;
 		else if ( nr == 28 )				/* VBL */
-			cycles = 56-CPU_IACK_CYCLES_START-CPU_IACK_CYCLES_VIDEO;
+			cycles = 44-CPU_IACK_CYCLES_START;
 		else if ( nr == 26 )				/* HBL */
-			cycles = 56-CPU_IACK_CYCLES_START-CPU_IACK_CYCLES_VIDEO;
+			cycles = 44-CPU_IACK_CYCLES_START;
 		else
 			cycles = 44+4;				/* Other interrupts (not used in Atari machines) */
 #endif
