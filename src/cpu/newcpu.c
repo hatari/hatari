@@ -4018,9 +4018,9 @@ static int do_specialties (int cycles)
 #endif
 	bool first = true;
 	while ((regs.spcflags & SPCFLAG_STOP) && !(regs.spcflags & SPCFLAG_BRK)) {
-	isstopped:
 //fprintf ( stderr , "stop wait %d %ld %ld\n" , currcycle , CyclesGlobalClockCounter );
 #ifndef WINUAE_FOR_HATARI
+	isstopped:
 		check_uae_int_request();
 		{
 			extern void bsdsock_fake_int_handler (void);
@@ -6567,8 +6567,8 @@ void m68k_dumpstate_2 (uaecptr pc, uaecptr *nextpc)
 	if (currprefs.mmu_model == 68030) {
 #ifndef WINUAE_FOR_HATARI
 		console_out_f (_T("SRP: %llX CRP: %llX\n"), srp_030, crp_030);
-#else
-		console_out_f (_T("SRP: %"PRIX64" CRP: %"PRIX64"\n"), srp_030, crp_030);
+#else		/* Use PRIX64 since MinGW on Windows does not know about %llx (?) */
+		console_out_f (_T("SRP: %"PRIX64" CRP: %"PRIX64"\n"), (uint64_t)srp_030, (uint64_t)crp_030);
 #endif
 		console_out_f (_T("TT0: %08X TT1: %08X TC: %08X\n"), tt0_030, tt1_030, tc_030);
 	}
