@@ -206,11 +206,11 @@ static inline void M68000_SetSR(Uint16 v)
 #define CPU_IACK_CYCLES_MFP_CE		12		/* vector sent by the MFP (TODO value not measured on real STF) */
 #define CPU_IACK_CYCLES_VIDEO_CE	10		/* auto vectored for HBL/VBL (value measured on real STF) */
 
-/* Values for IACK sequence when running in normal/prefetch mode */
+/* Values for IACK sequence when running in normal/prefetch mode or when using old UAE CPU */
 #define CPU_IACK_CYCLES_START		12		/* number of cycles before starting the IACK when not using CE mode */
 							/* (this should be a multiple of 4, else it will be rounded by M68000_AddCycles) */
 #define CPU_IACK_CYCLES_MFP		12		/* vector sent by the MFP */
-
+#define CPU_IACK_CYCLES_VIDEO		12		/* auto vectored for HBL/VBL */
 
 /* Informations about current CPU instruction */
 typedef struct {
