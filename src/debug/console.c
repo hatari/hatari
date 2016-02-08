@@ -250,4 +250,5 @@ void Console_Check(void)
 		map_character(chr);
 		break;
 	}
+	fflush(stdout);
 }
