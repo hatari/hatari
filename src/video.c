@@ -1846,8 +1846,11 @@ void Video_InterruptHandler_HBL ( void )
 
 	if (nHBL < nScanlinesPerFrame)
 	{
-		/* Update start cycle for next HBL */
-		ShifterFrame.ShifterLines[ nHBL ].StartCycle = FrameCycles - PendingCyclesOver;
+		/* Update start cycle for next HBL : start for previous HBL + number of cycles for previous line */
+//fprintf ( stderr , "hbl %llu\n" , CyclesGlobalClockCounter  );
+//if ( FrameCycles - PendingCyclesOver != ShifterFrame.ShifterLines[ nHBL-1 ].StartCycle + nCyclesPerLine )
+//  fprintf ( stderr , "mismatch StartCycle hbl %d : %d != %d\n" , nHBL , FrameCycles - PendingCyclesOver , ShifterFrame.ShifterLines[ nHBL-1 ].StartCycle + nCyclesPerLine );
+		ShifterFrame.ShifterLines[ nHBL ].StartCycle = ShifterFrame.ShifterLines[ nHBL-1 ].StartCycle + nCyclesPerLine;
 		LOG_TRACE(TRACE_VIDEO_HBL, "HBL %d start=%d %x\n", nHBL,
 		          ShifterFrame.ShifterLines[nHBL].StartCycle, ShifterFrame.ShifterLines[nHBL].StartCycle);
 
