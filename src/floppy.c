@@ -223,6 +223,36 @@ bool Floppy_IsWriteProtected(int Drive)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Test disk image for executable boot sector.
+ * The boot sector is executable if the 16 bit sum of its 256 words
+ * gives the value 0x1234.
+ */
+static bool Floppy_IsBootSectorExecutable(int Drive)
+{
+	Uint8 *pDiskBuffer;
+	int	sum , i;
+
+	if (EmulationDrives[Drive].bDiskInserted)
+	{
+		pDiskBuffer = EmulationDrives[Drive].pBuffer;
+
+		sum = 0;
+		for ( i=0 ; i<256 ; i++ )
+		{
+			sum += ( ( *pDiskBuffer << 8 ) + *(pDiskBuffer+1) );
+			pDiskBuffer += 2;
+		}
+
+		if ( ( sum & 0xffff ) == FLOPPY_BOOT_SECTOR_EXE_SUM )		/* 0x1234 */
+			return true;
+	}
+
+	return false;         /* Not executable */
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Test disk image for valid boot-sector.
  * It has been noticed that some disks, eg blank images made by the MakeDisk
  * utility or PaCifiST emulator fill in the boot-sector with incorrect information.
@@ -241,7 +271,7 @@ static bool Floppy_IsBootSectorOK(int Drive)
 
 		/* Check SPC (byte 13) for !=0 value. If is '0', invalid image and Hatari
 		 * won't be-able to read (nor will a real ST)! */
-		if (pDiskBuffer[13] != 0)
+		if ( (pDiskBuffer[13] != 0) ||  ( Floppy_IsBootSectorExecutable ( Drive ) == true ) )
 		{
 			return true;      /* Disk sector is OK! */
 		}
