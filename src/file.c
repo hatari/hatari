@@ -8,6 +8,7 @@
 */
 const char File_fileid[] = "Hatari file.c : " __DATE__ " " __TIME__;
 
+#include "main.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/time.h>
@@ -15,13 +16,13 @@ const char File_fileid[] = "Hatari file.c : " __DATE__ " " __TIME__;
 #include <unistd.h>
 #include <assert.h>
 #include <errno.h>
+#if HAVE_ZLIB_H
 #include <zlib.h>
-
+#endif
 #if defined(WIN32) && !defined(_VCWIN_)
 #include <winsock2.h>
 #endif
 
-#include "main.h"
 #include "dialog.h"
 #include "file.h"
 #include "createBlankImage.h"

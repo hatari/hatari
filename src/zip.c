@@ -8,14 +8,14 @@
 */
 const char ZIP_fileid[] = "Hatari zip.c : " __DATE__ " " __TIME__;
 
-#include <stdio.h>
-#include <stdlib.h>
+#include "main.h"
 #include <unistd.h>
 #include <dirent.h>
 #include <sys/types.h>
+#if HAVE_ZLIB_H
 #include <zlib.h>
+#endif
 
-#include "main.h"
 #include "dim.h"
 #include "file.h"
 #include "floppy.h"

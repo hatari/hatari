@@ -46,7 +46,7 @@
    PkWare has also a specification at :
       ftp://ftp.pkware.com/probdesc.zip */
 
-#ifndef _unz_H
+#if !defined(_unz_H) && defined(HAVE_ZLIB_H)
 #define _unz_H
 
 #ifdef __cplusplus
@@ -54,7 +54,7 @@ extern "C" {
 #endif
 
 #ifndef _ZLIB_H
-#include "zlib.h"
+#include <zlib.h>
 #endif
 
 #if defined(STRICTUNZIP) || defined(STRICTZIPUNZIP)

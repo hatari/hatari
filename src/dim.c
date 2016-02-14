@@ -8,9 +8,11 @@
 */
 const char DIM_fileid[] = "Hatari dim.c : " __DATE__ " " __TIME__;
 
-#include <zlib.h>
-
 #include "main.h"
+#if HAVE_ZLIB_H
+#include <zlib.h>
+#endif
+
 #include "file.h"
 #include "floppy.h"
 #include "dim.h"

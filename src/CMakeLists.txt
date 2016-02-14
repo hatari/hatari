@@ -8,7 +8,7 @@ set(SOURCES
 	keymap.c m68000.c main.c midi.c memorySnapShot.c mfp.c nf_scsidrv.c
 	paths.c  psg.c printer.c resolution.c rs232.c reset.c rtc.c
 	scandir.c stMemory.c screen.c screenConvert.c screenSnapShot.c
-	shortcut.c sound.c spec512.c statusbar.c str.c tos.c unzip.c utils.c
+	shortcut.c sound.c spec512.c statusbar.c str.c tos.c utils.c
 	vdi.c video.c wavFormat.c xbios.c ymFormat.c)
 
 # Disk image code is shared with the hmsa tool, so we put it into a library:
@@ -46,6 +46,7 @@ include_directories(${CMAKE_BINARY_DIR} ${SDL_INCLUDE_DIR} ${CPUDIR}
 
 if(ZLIB_FOUND)
 	include_directories(${ZLIB_INCLUDE_DIR})
+	set(SOURCES ${SOURCES} unzip.c)
 endif(ZLIB_FOUND)
 
 if(PNG_FOUND)
