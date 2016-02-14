@@ -26,6 +26,9 @@
 #define	FLOPPY_IMAGE_TYPE_IPF			4		/* handled by capsimage library */
 #define	FLOPPY_IMAGE_TYPE_STX			5
 
+#define	FLOPPY_BOOT_SECTOR_EXE_SUM		0x1234
+
+
 /* Structure for each drive connected as emulation */
 typedef struct
 {
