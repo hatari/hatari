@@ -591,6 +591,8 @@ static void	Video_AddInterruptHBL ( int Pos );
 static void	Video_ColorReg_WriteWord(void);
 static void	Video_ColorReg_ReadWord(void);
 
+static void	Video_TTColorReg_Sync_ST2TT(Uint32 addr, Uint16 stcolor);
+
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -3574,6 +3576,7 @@ void Video_LineWidth_WriteByte(void)
  */
 static void Video_ColorReg_WriteWord(void)
 {
+	const int machine = ConfigureParams.System.nMachineType;
 	Uint32 addr;
 	Uint16 col;
 	int idx;
@@ -3593,13 +3596,19 @@ static void Video_ColorReg_WriteWord(void)
 	else
 		col = IoMem_ReadWord(addr);
 
-	if (ConfigureParams.System.nMachineType == MACHINE_ST)
+	if (machine == MACHINE_ST || machine == MACHINE_TT)
 		col &= 0x777;			/* Mask off to ST 512 palette */
 	else
 		col &= 0xfff;			/* Mask off to STe 4096 palette */
 
 	addr &= 0xfffffffe;			/* Ensure addr is even to store the 16 bit color */
 	IoMem_WriteWord(addr, col);		/* (some games write 0xFFFF and read back to see if STe) */
+
+	if (machine == MACHINE_TT)
+	{
+		Video_TTColorReg_Sync_ST2TT(addr, col);
+		return;
+	}
 
 	idx = (addr - 0xff8240) / 2;		/* words */
 
@@ -4073,58 +4082,72 @@ void Video_TTShiftMode_WriteWord(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Write to TT color register (0xff8400)
+ * Write to TT color register area (at 0xff8400)
  *
- * - Sync TT to ST color register
+ * Sync TT to ST color register
+ * 
+ * Although registers themselves are word sized, writes to this area
+ * can be of any size. Hatari IO-area handling doesn't feed them here
+ * word sized as that would require 256 different handlers.
  */
-void Video_TTColorRegs_WriteWord(void)
+void Video_TTColorRegs_Write(void)
 {
 	const Uint32 stpalette = 0xff8240;
 	const Uint32 ttpalette = 0xff8400;
 	Uint16 stcolor, ttcolor;
-	int page, offset;
+	int page, offset, i;
+	Uint32 addr;
 
 	page = (IoMem_ReadWord(0xff8262) & 0x0f);
-	offset = IoAccessCurrentAddress - (ttpalette + page * 16*SIZE_WORD);
-	if (offset >= 0 && offset < 16*SIZE_WORD)
+
+	/* ensure even address for byte accesses */
+	addr = IoAccessCurrentAddress & 0xfffffffe;
+	
+	offset = addr - (ttpalette + page * 16*SIZE_WORD);
+
+	/* in case it was long access */
+	for (i = 0; i < nIoMemAccessSize; i += 2)
 	{
-		ttcolor = IoMem_ReadWord(IoAccessCurrentAddress);
+		/* outside ST->TT color reg mapping "page"? */
+		if (offset < 0 || offset >= 16*SIZE_WORD)
+			continue;
+
+		ttcolor = IoMem_ReadWord(addr);
 		stcolor = ((ttcolor >> 1) & 0x777) | ((ttcolor >> 3) & 0x888);
 		IoMem_WriteWord(stpalette + offset, stcolor);
 #if 0
-		fprintf(stderr, "0x%x: 0x%x (TT) -> 0x%x: 0x%x (ST)\n",
-			IoAccessCurrentAddress, ttcolor,
-			stpalette + offset, stcolor);
+		fprintf(stderr, "0x%x: 0x%03x (TT) -> 0x%x: 0x%03x (ST)\n",
+			addr, ttcolor, stpalette + offset, stcolor);
 #endif
+		offset += 2;
+		addr += 2;
 	}
 	bTTColorsSync = false;
 }
 
 /*-----------------------------------------------------------------------*/
 /**
- * Write to ST color register on TT (0xff8240)
+ * Write to ST color register on TT (starting at 0xff8240)
  *
- * Sync ST to TT color register
+ * Sync single ST color register value to TT register area
  */
-void Video_TTColorSTRegs_WriteWord(void)
+static void Video_TTColorReg_Sync_ST2TT(Uint32 addr, Uint16 stcolor)
 {
 	const Uint32 stpalette = 0xff8240;
 	const Uint32 ttpalette = 0xff8400;
-	Uint16 stcolor, ttcolor;
 	int page, offset;
+	Uint16 ttcolor;
 
 	page = (IoMem_ReadWord(0xff8262) & 0x0f);
-	offset = IoAccessCurrentAddress - stpalette;
+	offset = addr - stpalette;
 	assert(offset > 0 && offset < 16*SIZE_WORD);
 	offset += page * 16*SIZE_WORD;
 
-	stcolor = IoMem_ReadWord(IoAccessCurrentAddress);
 	ttcolor = ((stcolor&0x777) << 1) | ((stcolor&0x888) >> 3);
 	IoMem_WriteWord(ttpalette + offset, ttcolor);
 #if 0
-	fprintf(stderr, "0x%x: 0x%x (ST) -> 0x%x: 0x%x (TT)\n",
-		IoAccessCurrentAddress, stcolor,
-		ttpalette + offset, ttcolor);
+	fprintf(stderr, "0x%x: 0x%03x (ST) -> 0x%x: 0x%03x (TT)\n",
+		addr, stcolor, ttpalette + offset, ttcolor);
 #endif
 	bTTColorsSync = false;
 }
