@@ -4276,7 +4276,8 @@ static void m68k_run_1 (void)
 {
 	struct regstruct *r = &regs;
 	bool exit = false;
-printf ( "run_1\n" );
+
+	Log_Printf(LOG_DEBUG, "m68k_run_1\n");
 
 	while (!exit) {
 		TRY (prb) {
@@ -4375,7 +4376,8 @@ static void m68k_run_1_ce (void)
 	struct regstruct *r = &regs;
 	bool first = true;
 	bool exit = false;
-printf ( "run_1_ce\n" );
+
+	Log_Printf(LOG_DEBUG, "m68k_run_1_ce\n");
 
 	while (!exit) {
 		TRY (prb) {
@@ -4637,7 +4639,8 @@ typedef void compiled_handler (void);
 
 static void m68k_run_jit (void)
 {
-printf ( "run_jit\n" );
+	Log_Printf(LOG_DEBUG, "m68k_run_jit\n");
+
 	for (;;) {
 #ifdef WINUAE_FOR_HATARI
 		//m68k_dumpstate_file(stderr, NULL);
@@ -4731,7 +4734,11 @@ static void m68k_run_mmu060 (void)
 {
 	struct flag_struct f;
 	int halt = 0;
-printf ( "run_mmu060\n" );
+
+#ifdef WINUAE_FOR_HATARI
+	Log_Printf(LOG_DEBUG,  "m68k_run_mmu060\n");
+	f.cznv = regflags.cznv; f.x = regflags.x;  /* to silence GCC warning */
+#endif
 
 	while (!halt) {
 		TRY (prb) {
@@ -4821,7 +4828,11 @@ static void m68k_run_mmu040 (void)
 {
 	struct flag_struct f;
 	int halt = 0;
-printf ( "run_mmu040\n" );
+
+#ifdef WINUAE_FOR_HATARI
+	Log_Printf(LOG_DEBUG,  "m68k_run_mmu040\n");
+	f.cznv = regflags.cznv; f.x = regflags.x;  /* to silence GCC warning */
+#endif
 
 	while (!halt) {
 		TRY (prb) {
@@ -4915,7 +4926,11 @@ static void m68k_run_mmu030 (void)
 {
 	struct flag_struct f;
 	int halt = 0;
-printf ( "run_mmu030\n" );
+
+#ifdef WINUAE_FOR_HATARI
+	Log_Printf(LOG_DEBUG,  "m68k_run_mmu030\n");
+	f.cznv = regflags.cznv; f.x = regflags.x;  /* to silence GCC warning */
+#endif
 
 	mmu030_opcode_stageb = -1;
 	mmu030_fake_prefetch = -1;
@@ -5057,7 +5072,8 @@ static void m68k_run_3ce (void)
 {
 	struct regstruct *r = &regs;
 	bool exit = false;
-printf ( "run_3ce\n" );
+
+	Log_Printf(LOG_DEBUG, "m68k_run_3ce\n");
 
 	while (!exit) {
 		TRY(prb) {
@@ -5126,7 +5142,8 @@ static void m68k_run_3p(void)
 	struct regstruct *r = &regs;
 	bool exit = false;
 	int cycles;
-printf ( "run_3p\n" );
+
+	Log_Printf(LOG_DEBUG, "m68k_run_3p\n");
 
 	while (!exit)  {
 		TRY(prb) {
@@ -5203,7 +5220,8 @@ static void m68k_run_2ce (void)
 	struct regstruct *r = &regs;
 	bool exit = false;
 	bool first = true;
-printf ( "run_2ce\n" );
+
+	Log_Printf(LOG_DEBUG, "m68k_run_2ce\n");
 
 	while (!exit) {
 		TRY(prb) {
@@ -5388,7 +5406,8 @@ static void m68k_run_2p (void)
 {
 	struct regstruct *r = &regs;
 	bool exit = false;
-printf ( "run_2p\n" );
+
+	Log_Printf(LOG_DEBUG, "m68k_run_2p\n");
 
 	while (!exit) {
 		TRY(prb) {
@@ -5479,7 +5498,8 @@ static void m68k_run_2 (void)
 //	static int done;
 	struct regstruct *r = &regs;
 	bool exit = false;
-printf ( "run_2\n" );
+
+	Log_Printf(LOG_DEBUG, "m68k_run_2\n");
 
 	while (!exit) {
 		TRY(prb) {
@@ -5551,7 +5571,6 @@ printf ( "run_2\n" );
 #if 0
 static void m68k_run_mmu (void)
 {
-printf ( "run_mmu\n" );
 	for (;;) {
 #ifdef WINUAE_FOR_HATARI
 		//m68k_dumpstate_file(stderr, NULL);
@@ -5802,7 +5821,7 @@ printf ( "cpu change %d\n" , cpu_prefs_changed_flag );
 		}
 #endif
 		run_func();
-printf ( "exit m68k_run\n" );
+		Log_Printf(LOG_DEBUG, "exit m68k_run\n");
 	}
 #ifndef WINUAE_FOR_HATARI
 	protect_roms (false);
