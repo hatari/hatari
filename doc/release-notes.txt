@@ -15,21 +15,28 @@ Emulation:
   - fix location of the video counter's restart when screen runs at 60 Hz
   - TT: sync ST & TT color registers immediately on write
   - Falcon: handle byte access special case for ST color registers
+- Fixes to DSP addressing
 
 Emulator:
+- SDL GUI:
+  - Shortcuts can be configured in the keyboard dialog
+  - User can provide volume label when creating a floppy image
 - Better SDL2 support (e.g. resizable windows), SDL2 is now enabled by default
 - Preferred private configuration directory is now ~/.config/hatari (but the
   legacy location ~/.hatari is still used if the other one does not exist yet)
-- NatFeats SCSI driver for Linux
-- SDL GUI:
-  - User can provide volume label when creating a floppy image
-  - Shortcuts can be configured in the keyboard dialog
+- Support SDL key names in keymap files in addition to key codes
+- Support for rendering to 8-bit host screens removed
+- NatFeats SCSI driver for Linux added
 - Debugger:
   - Fix: close debugger log file only when explicitly requested,
          not when continuing emulation from debugger
   - Fix: direct DSP register, disasm and memdumps to debugger log
          file, similarly to CPU
   - Fix: direct CPU and DSP symbol traces to trace file, not stderr
+  - Fix: :once option when there's only one breakpoint (v1.9 regression)
+
+Other:
+- Allow building without Zlib
 
 Fixed demos:
 - spec512 image in the Intro of the Place To Be Again (video, restart counter)
