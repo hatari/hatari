@@ -902,8 +902,6 @@ bool VIDEL_renderScreen(void)
 /**
  * Write to videl ST palette registers (0xff8240-0xff825e)
  *
- * [Laurent]: The following note should be verified on Falcon before being applied.
- * 
  * Note that there's a special "strange" case when writing only to the upper byte
  * of the color reg (instead of writing 16 bits at once with .W/.L).
  * In that case, the byte written to address x is automatically written
@@ -924,15 +922,14 @@ static void Videl_ColorReg_WriteWord(void)
 	if (bUseHighRes || bUseVDIRes)               /* Don't store if hi-res or VDI resolution */
 		return;
 
-	/* Note from laurent: The following special case should be verified on the real Falcon before uncommenting */
-	/* Handle special case when writing only to the upper byte of the color reg */
-//	if ( ( nIoMemAccessSize == SIZE_BYTE ) && ( ( IoAccessCurrentAddress & 1 ) == 0 ) )
-//		col = ( IoMem_ReadByte(addr) << 8 ) + IoMem_ReadByte(addr);		/* copy upper byte into lower byte */
-	/* Same when writing only to the lower byte of the color reg */
-//	else if ( ( nIoMemAccessSize == SIZE_BYTE ) && ( ( IoAccessCurrentAddress & 1 ) == 1 ) )
-//		col = ( IoMem_ReadByte(addr) << 8 ) + IoMem_ReadByte(addr);		/* copy lower byte into upper byte */
+	/* Handle special case when writing only to the lower or
+	 * upper byte of the color reg: copy written byte also
+	 * to the other byte before masking the color value.
+	 */
+	if (nIoMemAccessSize == SIZE_BYTE)
+		col = (IoMem_ReadByte(addr) << 8) + IoMem_ReadByte(addr);
 	/* Usual case, writing a word or a long (2 words) */
-//	else
+	else
 		col = IoMem_ReadWord(addr);
 
 	col &= 0xfff;				/* Mask off to 4096 palette */

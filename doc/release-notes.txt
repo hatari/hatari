@@ -14,6 +14,7 @@ Emulation:
     display is ON.
   - fix location of the video counter's restart when screen runs at 60 Hz
   - TT: sync ST & TT color registers immediately on write
+  - Falcon: handle byte access special case for ST color registers
 
 Emulator:
 - Better SDL2 support (e.g. resizable windows), SDL2 is now enabled by default
