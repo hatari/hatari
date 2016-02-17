@@ -151,7 +151,7 @@ static void Blitter_AddCycles(int cycles)
 
 static void Blitter_FlushCycles(void)
 {
-	int op_cycles = INT_CONVERT_TO_INTERNAL(BlitterVars.op_cycles, INT_CPU_CYCLE);
+	int op_cycles = INT_CONVERT_TO_INTERNAL(BlitterVars.op_cycles >> nCpuFreqShift, INT_CPU_CYCLE);
 
 	BlitterVars.pass_cycles += BlitterVars.op_cycles;
 	BlitterVars.op_cycles = 0;
