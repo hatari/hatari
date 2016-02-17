@@ -2087,7 +2087,7 @@ static void exception_trace (int nr)
 		if (nr == 5 || nr == 6 || nr == 7 || (nr >= 32 && nr <= 47))
 			set_special (SPCFLAG_DOTRACE);
 	}
-	regs.t1 = regs.t0 = regs.m = 0;
+	regs.t1 = regs.t0 = 0;
 }
 
 static void exception_debug (int nr)
