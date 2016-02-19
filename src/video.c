@@ -377,6 +377,9 @@
 /* 2016/02/04	[NP]	Add support for left+2 at 50 Hz if switch back to 50 Hz is made at	*/
 /*			pos 54 (requires 2 cycle precision in CE mode) (wsdetect by Troed/Sync,	*/
 /*			report STF as WS1)							*/
+/* 2016/02/19	[NP]	Improve blank line detection when switching to 60 Hz at cycle 28 and	*/
+/*			switching back to 50 Hz before cycle 56 (allow combining blank line	*/
+/*			and left+2 in 'Closure' by Sync)					*/
 
 
 const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
@@ -1423,10 +1426,10 @@ void Video_Sync_WriteByte ( void )
 	        && ( HblCounterVideo >= nStartHBL )		/* only if display is on */
 	        && ( HblCounterVideo < nEndHBL + BlankLines ) )	/* only if display is on */
 	{
-		/* Blank line switching freq on STF : switch to 60 Hz on cycle 28, then go back to 50 Hz on cycle 36 */
+		/* Blank line switching freq on STF : switch to 60 Hz on cycle 28, then go back to 50 Hz before pal start (cycle 56) */
 		/* This creates a blank line where no signal is displayed, but the video counter will still change for this line */
 		/* This blank line can be combined with left/right border changes */
-		if ( ( FrameCycles - ShifterFrame.FreqPos60.FrameCycles <= 16 )
+		if ( ( LineCycles <= LINE_START_CYCLE_50 )
 	        	&& ( ShifterFrame.FreqPos60.LineCycles == LINE_EMPTY_CYCLE_71_STF )
 			&& ( ConfigureParams.System.nMachineType == MACHINE_ST ) )
 		{
