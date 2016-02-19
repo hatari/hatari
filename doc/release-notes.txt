@@ -15,6 +15,8 @@ Emulation:
   - fix location of the video counter's restart when screen runs at 60 Hz
   - TT: sync ST & TT color registers immediately on write
   - Falcon: handle byte access special case for ST color registers
+- Sound changes :
+  - DMA sound should be played even when start address = end address
 - Fixes to DSP addressing
 
 Emulator:
@@ -42,6 +44,7 @@ Fixed demos:
 - spec512 image in the Intro of the Place To Be Again (video, restart counter)
 - Menu screen in the Place To Be Again (video, writing/reading video
   counter during active display)
+- A Little Bit Insane by Lazer (no DMA sound during the demo)
 
 
  Version 1.9.0 (2015-09-10):

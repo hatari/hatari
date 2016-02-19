@@ -292,6 +292,10 @@ void DmaSnd_MemorySnapShot_Capture(bool bSave)
  * when 2 bytes or more are missing.
  * When end of frame is reached, we continue with a new frame if loop mode
  * is on, else we stop DMA Audio.
+ *
+ * NOTE : if frameEndAddr == frameStartAddr then the FIFO is updated anyway
+ * and sound should be played (this will be the same as playing a 2^24 bytes
+ * sample) (eg 'A Little Bit Insane' demo by Lazer)
  */
 static void DmaSnd_FIFO_Refill(void)
 {
@@ -299,13 +303,6 @@ static void DmaSnd_FIFO_Refill(void)
 	if ( ( nDmaSoundControl & DMASNDCTRL_PLAY ) == 0)
 		return;
 
-	/* If End Address == Start Address, don't update the FIFO */
-	if (dma.frameEndAddr == dma.frameStartAddr)
-	{
-		DmaSnd_EndOfFrameReached();			/* Stop dma audio if loop mode is off */
-		return;
-	}
-	
 	/* Refill the whole FIFO */
 	while ( DMASND_FIFO_SIZE - dma.FIFO_NbBytes >= 2 )
 	{
