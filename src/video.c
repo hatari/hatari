@@ -3599,7 +3599,7 @@ static void Video_ColorReg_WriteWord(void)
 	else
 		col = IoMem_ReadWord(addr);
 
-	if (machine == MACHINE_ST || machine == MACHINE_TT)
+	if (machine == MACHINE_ST)
 		col &= 0x777;			/* Mask off to ST 512 palette */
 	else
 		col &= 0xfff;			/* Mask off to STe 4096 palette */
