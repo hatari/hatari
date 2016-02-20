@@ -1766,8 +1766,10 @@ void Video_InterruptHandler_HBL ( void )
 	/* Handle the intermediate HBL interrupt used to restart video counter on HBL 310 or 260 */
 	if ( RestartVideoCounter )
 	{
+//		fprintf ( stderr , "restart video counter check nhbl=%d hbl=%d cyc=%d\n" , nHBL , HblCounterVideo , LineCycles);
 		if ( ( ( ( IoMem_ReadByte ( 0xff820a ) & 2 ) == 2 ) && ( nHBL == RESTART_VIDEO_COUNTER_LINE_50HZ ) )
-		  || ( ( ( IoMem_ReadByte ( 0xff820a ) & 2 ) == 0 ) && ( nHBL == RESTART_VIDEO_COUNTER_LINE_60HZ ) ) )
+		  || ( ( ( IoMem_ReadByte ( 0xff820a ) & 2 ) == 0 ) && ( nHBL == RESTART_VIDEO_COUNTER_LINE_60HZ )
+		    	&& ( nScanlinesPerFrame == SCANLINES_PER_FRAME_60HZ ) ) )
 		{
 			Video_RestartVideoCounter();
 			LOG_TRACE(TRACE_VIDEO_HBL, "HBL %d cyc=%d restart video counter 0x%x\n", nHBL, LineCycles, VideoBase );
@@ -1867,10 +1869,10 @@ void Video_InterruptHandler_HBL ( void )
 	/* Check if video counter should be restarted on this HBL */
 	if ( RestartVideoCounter )
 	{
-//		fprintf ( stderr , "restart video counter hbl=%d cyc=%d restart_cyc=%d\n" , HblCounterVideo , LineCycles, RestartVideoCounterCycle);
+//		fprintf ( stderr , "restart video counter nhbl=%d hbl=%d cyc=%d restart_cyc=%d\n" , nHBL , HblCounterVideo , LineCycles, RestartVideoCounterCycle);
 		/* If HBL was delayed after RestartVideoCounterCycle, we can restart immediately if we have */
-		/* the correct freq/hbl combination */
-		if ( LineCycles >= RestartVideoCounterCycle )
+		/* the correct freq/hbl combination (we need to check nHBL == HblCounterVideo for the WS1 case where LineCycles can be 508) */
+		if ( ( nHBL == HblCounterVideo ) && ( LineCycles >= RestartVideoCounterCycle ) )
 		{
 			if ( ( ( ( IoMem_ReadByte ( 0xff820a ) & 2 ) == 2 ) && ( nHBL == RESTART_VIDEO_COUNTER_LINE_50HZ ) )
 			  || ( ( ( IoMem_ReadByte ( 0xff820a ) & 2 ) == 0 ) && ( nHBL == RESTART_VIDEO_COUNTER_LINE_60HZ ) ) )
