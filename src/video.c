@@ -580,7 +580,6 @@ static void	Video_CopyScreenLineMono(void);
 static void	Video_CopyScreenLineColor(void);
 static void	Video_SetHBLPaletteMaskPointers(void);
 
-static void	Video_UpdateTTPalette(int bpp);
 static void	Video_DrawScreen(void);
 
 static void	Video_ResetShifterTimings(void);
@@ -3011,9 +3010,10 @@ static void Video_UpdateTTPalette(int bpp)
 	}
 	else if (bpp == 1)
 	{
-		/* Monochrome mode... palette is taken from first and last TT color */
-		Video_SetTTPaletteColor(0, 0xff8400);
-		Video_SetTTPaletteColor(1, 0xff85fe);
+		/* Duochrome mode... palette is taken last two TT colors */
+		int base = (IoMem_ReadWord(0xff8400) & 0x2) >> 1;
+		Video_SetTTPaletteColor(base, 0xff85fc);
+		Video_SetTTPaletteColor(base ^ 1, 0xff85fe);
 	}
 	else
 	{
