@@ -1306,10 +1306,10 @@ static void Video_WriteToShifterRes ( Uint8 Res )
 #endif
 
 
-	/* Update HBL's position only if display has not reached pos LINE_START_CYCLE_50 */
+	/* Update HBL's position only if display has not reached pos LINE_START_CYCLE_50-2 */
 	/* and HBL interrupt was already handled at the beginning of this line. */
 	/* This also changes the number of cycles per line. */
-	if ( ( LineCycles <= LINE_START_CYCLE_50 ) && ( HblCounterVideo == nHBL ) )
+	if ( ( LineCycles <= LINE_START_CYCLE_50-2 ) && ( HblCounterVideo == nHBL ) )
 	{
 		nCyclesPerLine = Video_HBL_GetPos();
 
@@ -1586,10 +1586,10 @@ void Video_Sync_WriteByte ( void )
 	/* to be updated first. */
 	if ( Freq != ShifterFrame.Freq )
 	{
-		/* Update HBL's position only if display has not reached pos LINE_START_CYCLE_50 */
+		/* Update HBL's position only if display has not reached pos LINE_START_CYCLE_50-2 */
 		/* and HBL interrupt was already handled at the beginning of this line. */
 		/* This also changes the number of cycles per line. */
-		if ( ( LineCycles <= LINE_START_CYCLE_50 ) && ( HblCounterVideo == nHBL ) )
+		if ( ( LineCycles <= LINE_START_CYCLE_50-2 ) && ( HblCounterVideo == nHBL ) )
 		{
 			int	CyclesPerLine_old = nCyclesPerLine;
 
