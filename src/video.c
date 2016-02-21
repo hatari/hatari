@@ -3133,7 +3133,13 @@ static void Video_AddInterrupt ( int Pos , interrupt_id Handler )
 	if ( LineCycles < Pos )			/* changed before reaching the new Pos on the current line */
 		CycInt_AddRelativeInterrupt ( Pos - LineCycles , INT_CPU_CYCLE, Handler );
 	else					/* Pos will be applied on next line */
-		CycInt_AddRelativeInterrupt ( Pos - LineCycles + nCyclesPerLine , INT_CPU_CYCLE, Handler );
+	{
+		if ( HblCounterVideo < nHBL )	/* special/rare case in WS1 where HBL happened before last cycles of the line */
+						/* (eg nCyclesPerLine can already be changed in case we switched to hi res at cycle 0) */
+			CycInt_AddRelativeInterrupt ( Pos + ShifterFrame.ShifterLines[nHBL].StartCycle - FrameCycles , INT_CPU_CYCLE, Handler );
+		else
+			CycInt_AddRelativeInterrupt ( Pos - LineCycles + nCyclesPerLine , INT_CPU_CYCLE, Handler );
+	}
 }
 
 
