@@ -3002,7 +3002,7 @@ static void Video_SetTTPaletteColor(int idx, Uint32 addr)
  */
 static void Video_UpdateTTPalette(int bpp)
 {
-	if (bpp == 1 && TTRes == TT_HIGH_RES)
+	if (TTRes == TT_HIGH_RES || (bUseVDIRes && bpp == 1))
 	{
 		/* Monochrome mode... palette is hardwired (?) */
 		Screen_SetPaletteColor(0, 255, 255, 255);
