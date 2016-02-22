@@ -332,9 +332,9 @@
 /*			earlier (fix STE demo "It's a girl 2" by Paradox).			*/
 /* 2014/02/22	[NP]	In Video_ColorReg_ReadWord(), don't set unused STF bits to rand() if	*/
 /*			the PC is not executing from the RAM between 0 and 4MB (fix 'Union Demo'*/
+/*			protection code running at address $ff8240).				*/
 /* 2014/03/21	[NP]	For STE in med res overscan at 60 Hz, add a 3 pixels shift to have	*/
 /*			bitmaps and color changes synchronised (fix 'HighResMode' by Paradox).	*/
-/*			protection code running at address $ff8240).				*/
 /* 2014/05/08	[NP]	In case we're mixing 50 Hz and 60 Hz lines (512 or 508 cycles), we must	*/
 /*			update the position where the VBL interrupt will happen (fix "keyboard	*/
 /*			no jitter" test program by Nyh, with 4 lines at 60 Hz and 160240 cycles	*/
