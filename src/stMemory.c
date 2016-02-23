@@ -138,7 +138,8 @@ void STMemory_SetDefaultConfig(void)
 	if ( ConfigureParams.System.bFastBoot
 	  || bUseVDIRes
 	  || ( ConfigureParams.Memory.nMemorySize > 4 && !bIsEmuTOS )
-	  || ( ConfigureParams.System.nMachineType == MACHINE_TT && ConfigureParams.System.bAddressSpace24 )
+	  || ( ConfigureParams.System.nMachineType == MACHINE_TT
+	       && ConfigureParams.System.bAddressSpace24 && !bIsEmuTOS )
 	  || ( ConfigureParams.System.nMachineType == MACHINE_FALCON && TTmemory ) )
 	{
 		/* Write magic values to sysvars to signal valid config */
