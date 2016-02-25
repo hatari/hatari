@@ -31,8 +31,6 @@ Emulation improvements
   with Sentry).
 
 - Improve disk image formats support:
-	- Add support for .STT images
-	  (created with the STEEM disk image program)
 	- Support .DIM images created with the "Get sectors: used" option
 
 - Real HD 6301 (keyboard processor of the ST) emulation.
@@ -156,7 +154,7 @@ Other potential Hatari functionality improvements
 
   These are more complicated ones:
 	- Monitoring reads & writes to specific address.  Hatari supports
-	  only tracing changes to values, not having breakpoints of
+	  only tracing changes to values, not having breakpoints on
 	  reading values or writing the same value.  Slow
 	- Showing breakpoints in instruction dumps.  Hatari breakpoints
 	  are more advanced than the trivial address breakpoints, so
@@ -182,7 +180,7 @@ Other potential Hatari functionality improvements
 on BerliOS hatari-devel mail thread for more info.)
 
 - MonST debugger features missing from Hatari debugger
-  (ones not mentioned in Steem features):
+  (ones not already mentioned in Steem feature list):
 	- Address breakpoints can have conditions that are evaluated
 	  only on that address
 	- Marking breakpoint types in disassembly (<count> for counted
