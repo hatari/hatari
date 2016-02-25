@@ -818,6 +818,9 @@ void DmaSnd_FrameStartLow_WriteByte(void)
 			IoMem_ReadByte(0xff8907) , dma.frameCounterAddr - dma.frameStartAddr , dma.frameEndAddr - dma.frameStartAddr  ,
 			FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
 	}
+
+	/* DMA address must be word-aligned, bit 0 at $ff8907 is always 0 */
+	IoMem[ 0xff8907 ] &= 0xfe;
 }
 
 void DmaSnd_FrameCountHigh_WriteByte(void)
@@ -890,6 +893,9 @@ void DmaSnd_FrameEndLow_WriteByte(void)
 			IoMem_ReadByte(0xff8913) , dma.frameCounterAddr - dma.frameStartAddr , dma.frameEndAddr - dma.frameStartAddr  ,
 			FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
 	}
+
+	/* DMA address must be word-aligned, bit 0 at $ff8613 is always 0 */
+	IoMem[ 0xff8913 ] &= 0xfe;
 }
 
 
