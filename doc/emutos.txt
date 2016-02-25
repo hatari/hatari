@@ -933,7 +933,6 @@ Working applications:
 Working demos:
 - 256mbrot, Bragg, Glasstro, Orion-B, Yabt (TT/Falcon intros by ray//.tSCc)
 - 4getful (by gwEm, 4KB intro TT-version)
-  - Has way too low volume
 - Adebug 3DTT demo (by Brainstorm)
 - CrY image viewer (by .tSCc)
 - Mandelbrot explorer (by .tSCc)
