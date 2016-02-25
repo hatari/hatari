@@ -147,6 +147,10 @@ is missing here, please remind me!):
 - Max Böhm: host <-> Atari filename encoding conversion routines and
   related changes needed to gemdos.c.
 
+- Roger Burrows: reported bugs in several areas including I/O memory
+  access & TT emulation (timer-C, video).  Ran some test programs on
+  real hardware and wrote some test programs himself.
+
 
  Code from other projects
  ------------------------
