@@ -127,21 +127,21 @@ is missing here, please remind me!):
 - Gilles Fetis: fixes to MMU emulation (from NeXT emulator project
   using Hatari code).
 
-- Peter Putnik (Petari, AtariZoll): for helping with tracking the
+- Peter Putnik (Petari, AtariZoll): Helped tracking the
   cause of the crash in Microprose Golf (FDC emulation). Also wrote
   some useful tools to handle floppies (flofor, floimg), as well as
   opcovat.tos to report valid/invalid opcodes with a real CPU and
   under emulation by testing all possible opcode combinations.
 
-- Jean Louis Guerin (DrCoolZic): for the 'Panzer' program, very useful
-  to test some FDC behaviours and timings on real hardware and to
+- Jean Louis Guerin (DrCoolZic): 'Panzer' program, very useful
+  for testing some FDC behaviours and timings on real hardware and to
   compare them with the emulated system. Also wrote some nice docs on
   WD1772 and methods commonly used for games' protections.
 
-- Christer Solskogen: for setting up an automatic build script on his
-  site, with up to date binary versions for Linux and Windows in 32
+- Christer Solskogen: Set up an automatic build script on his site,
+  providing up to date Hatari binaries for Linux and Windows in 32
   and 64 bit mode. Very useful for end users wishing to try the devel
-  version of Hatari, and lots of interesting build logs too for
+  versions of Hatari, and lots of interesting build logs too for
   various cpu architectures. See http://antarctica.no/~hatari/latest
 
 - Max Böhm: host <-> Atari filename encoding conversion routines and
