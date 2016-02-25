@@ -1,7 +1,7 @@
 /*
  * Hatari - nf_scsidrv.c
  * 
- * Copyright (C) 2015 by Uwe Seimet
+ * Copyright (C) 2015-2016 by Uwe Seimet
  *
  * This file is distributed under the GNU General Public License, version 2
  * or at your option any later version. Read the file gpl.txt for details.
@@ -54,8 +54,7 @@ static HANDLE_META_DATA handle_meta_data[SCSI_MAX_HANDLES];
 #if HAVE_UDEV
 static struct udev *udev;
 static struct udev_monitor *mon;
-static int fd;
-static fd_set udevFds;
+static int udev_mon_fd;
 static struct timeval tv;
 #endif
 
@@ -97,40 +96,47 @@ static void set_error(Uint32 handle, int errbit)
     }
 }
 
-#if HAVE_UDEV
 // udev-based check for media change
-static void check_mchg_udev(void)
+static bool check_mchg_udev(void)
 {
-    FD_ZERO(&udevFds);
-    FD_SET(fd, &udevFds);
+    bool changed = false;
 
-    int ret = select(fd + 1, &udevFds, 0, 0, &tv);
-    if(ret > 0 && FD_ISSET(fd, &udevFds))
+#if HAVE_UDEV
+    fd_set udevFds;
+
+    FD_ZERO(&udevFds);
+    FD_SET(udev_mon_fd, &udevFds);
+
+    int ret = select(udev_mon_fd + 1, &udevFds, 0, 0, &tv);
+    if(ret > 0 && FD_ISSET(udev_mon_fd, &udevFds))
     {
         struct udev_device *dev = udev_monitor_receive_device(mon);
-        const char *dev_type = udev_device_get_devtype(dev);
-        const char *action = udev_device_get_action(dev);
-        if(!strcmp("disk",  dev_type) && !strcmp("change", action))
+        while(dev)
         {
-            LOG_TRACE(TRACE_SCSIDRV, ": %s was changed",
-                      udev_device_get_devnode(dev));
-
-            // TODO Determine sg device name from block device name
-            // and only report media change for the actually affected device
-
-            // cErrMediach for all open handles
-            Uint32 i;
-            for(i = 0; i < SCSI_MAX_HANDLES; i++)
+            if(!changed)
             {
-                if(handle_meta_data[i].fd)
+                const char *dev_type = udev_device_get_devtype(dev);
+                const char *action = udev_device_get_action(dev);
+                if(!strcmp("disk", dev_type) && !strcmp("change", action))
                 {
-                    handle_meta_data[i].error |= 1;
+                    LOG_TRACE(TRACE_SCSIDRV, ": %s has been changed",
+                              udev_device_get_devnode(dev));
+
+                    // TODO Determine sg device name from block device name and
+                    // only report media change for the actually affected device
+
+                    changed = true;
                 }
             }
+
+            // Process all pending events
+            dev = udev_monitor_receive_device(mon);
         }
     }
-}
 #endif
+
+    return changed;
+}
 
 static int check_device_file(Uint32 id)
 {
@@ -206,7 +212,7 @@ static int scsidrv_open(Uint32 stack)
         mon = udev_monitor_new_from_netlink(udev, "udev");
         udev_monitor_filter_add_match_subsystem_devtype(mon, "block", NULL);
         udev_monitor_enable_receiving(mon);
-        fd = udev_monitor_get_fd(mon);
+        udev_mon_fd = udev_monitor_get_fd(mon);
 
         tv.tv_sec = 0;
         tv.tv_usec = 0;
@@ -301,7 +307,7 @@ static int scsidrv_inout(Uint32 stack)
     {
         if(sense_buffer)
         {
-            // Sense Key, ASC
+            // Sense Key and ASC
             sense_buffer[2] = 0x05;
             sense_buffer[12] = 0x25;
 
@@ -313,29 +319,54 @@ static int scsidrv_inout(Uint32 stack)
         return 2;
     }
 
-    struct sg_io_hdr io_hdr;
-    memset(&io_hdr, 0, sizeof(struct sg_io_hdr));
+    int status;
+    if(check_mchg_udev())
+    {
+        // cErrMediach for all open handles
+        Uint32 i;
+        for(i = 0; i < SCSI_MAX_HANDLES; i++)
+        {
+            if(handle_meta_data[i].fd)
+            {
+                handle_meta_data[i].error |= 1;
+            }
+        }
 
-    io_hdr.interface_id = 'S';
+        if(sense_buffer)
+        {
+            // Sense Key and ASC
+            sense_buffer[2] = 0x06;
+            sense_buffer[12] = 0x28;
+        }
 
-    io_hdr.dxfer_direction = dir ? SG_DXFER_TO_DEV : SG_DXFER_FROM_DEV;
-    if(!transfer_len) {
-        io_hdr.dxfer_direction = SG_DXFER_NONE;
+        status = 2;
     }
+    else
+    {
+        struct sg_io_hdr io_hdr;
+        memset(&io_hdr, 0, sizeof(struct sg_io_hdr));
+
+        io_hdr.interface_id = 'S';
+
+        io_hdr.dxfer_direction = dir ? SG_DXFER_TO_DEV : SG_DXFER_FROM_DEV;
+        if(!transfer_len) {
+            io_hdr.dxfer_direction = SG_DXFER_NONE;
+        }
     
-    io_hdr.dxferp = buffer;
-    io_hdr.dxfer_len = transfer_len;
+        io_hdr.dxferp = buffer;
+        io_hdr.dxfer_len = transfer_len;
 
-    io_hdr.sbp = sense_buffer;
-    io_hdr.mx_sb_len = 18;
+        io_hdr.sbp = sense_buffer;
+        io_hdr.mx_sb_len = 18;
 
-    io_hdr.cmdp = cmd;
-    io_hdr.cmd_len = cmd_len;
+        io_hdr.cmdp = cmd;
+        io_hdr.cmd_len = cmd_len;
 
-    io_hdr.timeout = timeout;
+        io_hdr.timeout = timeout;
 
-    int status = ioctl(handle_meta_data[handle].fd,
+        status = ioctl(handle_meta_data[handle].fd,
                        SG_IO, &io_hdr) < 0 ? -1 : io_hdr.status;
+    }
 
     if(status > 0 && sense_buffer)
     {
@@ -390,10 +421,6 @@ static int scsidrv_error(Uint32 stack)
     }
     else
     {
-#if HAVE_UDEV
-        check_mchg_udev();
-#endif
-
         int status = handle_meta_data[handle].error & errbit;
         handle_meta_data[handle].error &= ~errbit;
 
