@@ -8,12 +8,12 @@
 - Thomas Huth <huth at tuxfamily.org> : Project initiator and
   admin, currently more or less in hibernation mode.
 
-- Eero Tamminen <oak at helsinkinet fi> : Speed improvements & code
-  cleanup, small parts of the STE emulation, Python CLI, UI & TOS
-  tester + Hatari window embedding & remote control API, pause & auto
-  frameskip support, statusbar & overlay led, conditional breakpoints
-  and other debugger features, GEMDOS HD emulation improvements, PNG
-  saving.
+- Eero Tamminen <oak at helsinkinet fi> : Speedups, small parts of the
+  STE, TT & Falcon emulation, Python CLI & GUI, TOS tester + Hatari
+  window embedding & remote control API, pause & auto frameskip
+  support, statusbar & overlay led, profiling and conditional
+  breakpoint support and other debugger features, GEMDOS HD emulation
+  improvements, PNG saving.
 
 - Laurent Sallafranque: Many fixes and speedups to DSP emulation,
   DSP debugging support, crossbar emulation, falcon microphone
@@ -147,9 +147,10 @@ is missing here, please remind me!):
 - Max Böhm: host <-> Atari filename encoding conversion routines and
   related changes needed to gemdos.c.
 
-- Roger Burrows: reported bugs in several areas including I/O memory
-  access & TT emulation (timer-C, video).  Ran some test programs on
-  real hardware and wrote some test programs himself.
+- Roger Burrows: EmuTOS maintainer, reported bugs in several areas
+  including I/O memory access & TT emulation (timer-C, video).  Ran
+  some test programs on real hardware and wrote some test programs
+  himself.
 
 
  Code from other projects
@@ -157,6 +158,9 @@ is missing here, please remind me!):
 
 As a true open source project, Hatari also uses some code from other
 projects which we would like to acknowledge here:
+
+- Hatari binary releases include latest version of EmuTOS:
+  http://emutos.sourceforge.net/
 
 - Most of the original ST hardware emulation comes from the WinSTon
   source code which has been written by Paul Bates.
