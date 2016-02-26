@@ -344,31 +344,6 @@ void CycInt_AddRelativeInterrupt(int CycleTime, int CycleType, interrupt_id Hand
 
 /*-----------------------------------------------------------------------*/
 /**
- * Add interrupt to occur from now without offset
- */
-#if 0
-void CycInt_AddRelativeInterruptNoOffset(int CycleTime, int CycleType, interrupt_id Handler)
-{
-	/* Update list cycle counts before adding a new one, */
-	/* since CycInt_SetNewInterrupt can change the active int / PendingInterruptCount */
-	if ( ( ActiveInterrupt > 0 ) && ( PendingInterruptCount > 0 ) )
-		CycInt_UpdateInterrupt();
-
-//  nCyclesOver = 0;
-	InterruptHandlers[Handler].bUsed = true;
-	InterruptHandlers[Handler].Cycles = INT_CONVERT_TO_INTERNAL((Sint64)CycleTime , CycleType) + PendingInterruptCount;
-
-	/* Set new */
-	CycInt_SetNewInterrupt();
-
-	LOG_TRACE(TRACE_INT, "int add rel no_off video_cyc=%d handler=%d handler_cyc=%"PRId64" pending_count=%d\n",
-	               Cycles_GetCounter(CYCLES_COUNTER_VIDEO), Handler, InterruptHandlers[Handler].Cycles, PendingInterruptCount );
-}
-#endif
-
-
-/*-----------------------------------------------------------------------*/
-/**
  * Add interrupt to occur after CycleTime/CycleType + CycleOffset.
  * CycleOffset can be used to add another delay to the resulting
  * number of internal cycles (should be 0 most of the time, except in

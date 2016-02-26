@@ -62,7 +62,6 @@ extern void CycInt_MemorySnapShot_Capture(bool bSave);
 extern void CycInt_AcknowledgeInterrupt(void);
 extern void CycInt_AddAbsoluteInterrupt(int CycleTime, int CycleType, interrupt_id Handler);
 extern void CycInt_AddRelativeInterrupt(int CycleTime, int CycleType, interrupt_id Handler);
-extern void CycInt_AddRelativeInterruptNoOffset(int CycleTime, int CycleType, interrupt_id Handler);
 extern void CycInt_AddRelativeInterruptWithOffset(int CycleTime, int CycleType, interrupt_id Handler, int CycleOffset);
 extern void CycInt_ModifyInterrupt(int CycleTime, int CycleType, interrupt_id Handler);
 extern void CycInt_RemovePendingInterrupt(interrupt_id Handler);
