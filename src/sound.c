@@ -761,26 +761,6 @@ static ymu32	YM2149_RndCompute(void)
  * render possible tone's freq of 125 or 62.5 kHz (when per==1 or per==2)
  */
 
-#define NEWSTEP
-#ifndef NEWSTEP
-static ymu32	Ym2149_ToneStepCompute(ymu8 rHigh , ymu8 rLow)
-{
-	int	per;
-	yms64	step;
-
-	per = rHigh&15;
-	per = (per<<8)+rLow;
-
-	if  (per <= (int)(YM_ATARI_CLOCK/(YM_REPLAY_FREQ*7)) )
-		return 0;
-
-	step = YM_ATARI_CLOCK;
-	step <<= (15+16-3);
-	step /= (per * YM_REPLAY_FREQ);
-
-	return step;
-}
-#else
 static ymu32	Ym2149_ToneStepCompute(ymu8 rHigh , ymu8 rLow)
 {
 	int	per;
@@ -804,7 +784,8 @@ static ymu32	Ym2149_ToneStepCompute(ymu8 rHigh , ymu8 rLow)
 
 	return step;
 }
-#endif
+
+
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -819,23 +800,6 @@ static ymu32	Ym2149_ToneStepCompute(ymu8 rHigh , ymu8 rLow)
  * 	per==3   step=0x0f1dfe1   freq=41.7 kHz
  */
 
-#ifndef NEWSTEP
-static ymu32	Ym2149_NoiseStepCompute(ymu8 rNoise)
-{
-	int	per;
-	yms64	step;
-
-	per = (rNoise&0x1f);
-	if (per<3)
-		return 0;
-
-	step = YM_ATARI_CLOCK;
-	step <<= (16-1-3);
-	step /= (per * YM_REPLAY_FREQ);
-
-	return step;
-}
-#else
 static ymu32	Ym2149_NoiseStepCompute(ymu8 rNoise)
 {
 	int	per;
@@ -853,7 +817,8 @@ static ymu32	Ym2149_NoiseStepCompute(ymu8 rNoise)
 
 	return step;
 }
-#endif
+
+
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -908,77 +873,6 @@ static ymu32	Ym2149_EnvStepCompute(ymu8 rHigh , ymu8 rLow)
  * to all 0 bits or all 1 bits using a '-'
  */
 
-#ifndef NEWSTEP
-static ymsample	YM2149_NextSample(void)
-{
-	ymsample	sample;
-	int		bt;
-	ymu32		bn;
-	ymu16		Env3Voices;
-	ymu16		Tone3Voices;
-
-
-	/* Noise value : 0 or 0xffff */
-	if ( noisePos&0xffff0000 )
-	{
-		currentNoise = YM2149_RndCompute();
-		noisePos &= 0xffff;
-	}
-	bn = currentNoise;				/* 0 or 0xffff */
-
-	/* Get the 5 bits volume corresponding to the current envelope's position */
-	Env3Voices = YmEnvWaves[ envShape ][ envPos>>24 ];	/* integer part of envPos is in bits 24-31 */
-	Env3Voices &= EnvMask3Voices;			/* only keep volumes for voices using envelope */
-
-//fprintf ( stderr , "env %x %x %x\n" , Env3Voices , envStep , envPos );
-
-	/* Tone3Voices will contain the output state of each voice : 0 or 0x1f */
-	bt = ((((yms32)posA)>>31) | mixerTA) & (bn | mixerNA);	/* 0 or 0xffff */
-	Tone3Voices = bt & YM_MASK_1VOICE;			/* 0 or 0x1f */
-	bt = ((((yms32)posB)>>31) | mixerTB) & (bn | mixerNB);
-	Tone3Voices |= ( bt & YM_MASK_1VOICE ) << 5;
-	bt = ((((yms32)posC)>>31) | mixerTC) & (bn | mixerNC);
-	Tone3Voices |= ( bt & YM_MASK_1VOICE ) << 10;
-
-	/* Combine fixed volumes and envelope volumes and keep the resulting */
-	/* volumes depending on the output state of each voice (0 or 0x1f) */
-	Tone3Voices &= ( Env3Voices | Vol3Voices );
-
-	/* When a step period is 0, the represented frequency was filtered from the */
-	/* ouput of the YM2149. Thus, use the transient DC component of the sample. */
-	/* Note that the "-1" table offset is a "good fit" for the DC component.    */
-
-	if (stepA == 0  &&  (Tone3Voices & YM_MASK_A) > 1)
-		Tone3Voices -= 1;     /* Voice A AC component removed; Transient DC component remains */
-
-	if (stepB == 0  &&  (Tone3Voices & YM_MASK_B) > 1<<5)
-		Tone3Voices -= 1<<5;  /* Voice B AC component removed; Transient DC component remains */
-
-	if (stepC == 0  &&  (Tone3Voices & YM_MASK_C) > 1<<10)
-		Tone3Voices -= 1<<10; /* Voice C AC component removed; Transient DC component remains */
-
-	/* D/A conversion of the 3 volumes into a sample using a precomputed conversion table */
-
-	sample = ymout5[ Tone3Voices ];			/* 16 bits signed value */
-
-
-	/* Increment positions */
-	posA += stepA;
-	posB += stepB;
-	posC += stepC;
-	noisePos += noiseStep;
-
-	envPos += envStep;
-	if ( envPos >= (3*32) << 24 )			/* blocks 0, 1 and 2 were used (envPos 0 to 95) */
-		envPos -= (2*32) << 24;			/* replay/loop blocks 1 and 2 (envPos 32 to 95) */
-
-	/* Apply low pass filter ? */
-	if ( UseLowPassFilter )
-		return LowPassFilter(sample);
-	else
-		return PWMaliasFilter(sample);
-}
-#else
 static ymsample	YM2149_NextSample(void)
 {
 	ymsample	sample;
@@ -1047,7 +941,7 @@ static ymsample	YM2149_NextSample(void)
 	else
 		return PWMaliasFilter(sample);
 }
-#endif
+
 
 
 /*-----------------------------------------------------------------------*/
@@ -1055,11 +949,7 @@ static ymsample	YM2149_NextSample(void)
  * Update internal variables (steps, volume masks, ...) each
  * time an YM register is changed.
  */
-#ifndef NEWSTEP
-#define BIT_SHIFT 31
-#else
 #define BIT_SHIFT 24
-#endif
 void	Sound_WriteReg( int reg , Uint8 data )
 {
 	switch (reg)
