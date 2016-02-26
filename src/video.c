@@ -385,6 +385,8 @@
 /*			updating its delay on each freq change, we start it from the last HBL	*/
 /*			of the screen (which should be more similar to how real HW works)	*/
 /*			(eg 160240 cycles per VBL in "keyboard no jitter" test program by NyH).	*/
+/* 2016/02/26	[NP]	Add support for 'remove left' including a med res stabiliser, by doing	*/
+/*			hi/med/low switches at cycles 0/8/16 ('Closure' by Sync).		*/
 
 
 const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
@@ -1185,7 +1187,7 @@ static void Video_WriteToShifterRes ( Uint8 Res )
 	}
 
 	/* Start right border near middle of the line : -106 bytes */ 
-	/* Switch to hi res just before the start of the right border in hi res, then go back to lo/mid res */
+	/* Switch to hi res just before the start of the right border in hi res, then go back to lo/med res */
 	if ( ( ShifterFrame.Res == 0x02 )				/* switched from hi res */
 	        && ( ShifterFrame.ResPosHi.HBL == HblCounterVideo )	/* switch during the same line */
 	        && ( ShifterFrame.ResPosHi.LineCycles <= LINE_END_CYCLE_71+4 )	/* switched to hi res before cycle 164 */
@@ -1225,7 +1227,7 @@ static void Video_WriteToShifterRes ( Uint8 Res )
 		}
 	}
 
-	/* If left border is opened and we switch to medium resolution during the next cycles, */
+	/* If left border is opened with hi/lo and we switch to medium resolution during the next cycles, */
 	/* then we assume a med res overscan line instead of a low res overscan line. */
 	/* Note that in that case, the switch to med res can shift the display by 0-3 words */
 	/* Used in 'No Cooper' greetings by 1984 and 'Punish Your Machine' by Delta Force */
@@ -1251,11 +1253,18 @@ static void Video_WriteToShifterRes ( Uint8 Res )
 	if ( ( ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask & BORDERMASK_LEFT_OFF_MED )
 	        && ( Res == 0x00 ) && ( LineCycles <= LINE_SCROLL_1_CYCLE_50 ) )
 	{
-		/* The hi/med switch was a switch to do low res hardware scrolling, */
+		/* The hi/med switch was a switch to do low res hardware scrolling */
+		/* or to do a 'remove left' that includes a med res stabiliser, */
 		/* so we must cancel the med res overscan bit. */
 		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask &= (~BORDERMASK_OVERSCAN_MED_RES);
 
-		if ( LineCycles == LINE_SCROLL_13_CYCLE_50 )		/* cycle 20 */
+		if ( LineCycles == LINE_LEFT_STAB_LOW )			/* cycle 16 */
+		{
+			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect remove left with med stab\n" );
+			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = 0;
+		}
+
+		else if ( LineCycles == LINE_SCROLL_13_CYCLE_50 )	/* cycle 20 */
 		{
 			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 13 pixels right scroll\n" );
 			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = 13;
@@ -1287,7 +1296,7 @@ static void Video_WriteToShifterRes ( Uint8 Res )
 		&& ( ( ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask & ( 0xf << 20 ) ) == 0 )
 		&& ( Res == 0x00 ) && ( LineCycles <= 40 )  )
 	{
-		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask &= (~BORDERMASK_OVERSCAN_MED_RES);	/* cancel mid res */
+		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask &= (~BORDERMASK_OVERSCAN_MED_RES);	/* cancel med res */
 
 		if ( LineCycles == 28 )
 		{
@@ -2385,6 +2394,7 @@ static void Video_CopyScreenLineColor(void)
 		VideoOffset = -4;						/* 4 first bytes of the line are not shown */
 
 	/* Handle 4 pixels hardware scrolling ('ST Cnx' demo in 'Punish Your Machine') */
+	/* as well as 'remove left + med stab' ('Closure' demo Troed/Sync) */
 	/* Depending on the number of pixels, we need to compensate for some skipped words */
 	else if ( LineBorderMask & BORDERMASK_LEFT_OFF_MED )
 	{
@@ -2392,9 +2402,10 @@ static void Video_CopyScreenLineColor(void)
 		else if ( STF_PixelScroll == 9 )	VideoOffset = 0;
 		else if ( STF_PixelScroll == 5 )	VideoOffset = -2;
 		else if ( STF_PixelScroll == 1 )	VideoOffset = -4;
+		else if ( STF_PixelScroll == 0 )	VideoOffset = -4;	/* 'Closure' : no 4 pixels scroll, but planes are shifted */
 		else					VideoOffset = 0;	/* never used ? */
 
-		STF_PixelScroll -= 8;					/* removing left border in mid res also shifts display to the left */
+		STF_PixelScroll -= 8;					/* removing left border in med res also shifts display to the left */
 		// fprintf(stderr , "scr off %d %d\n" , STF_PixelScroll , VideoOffset);
 	}
 

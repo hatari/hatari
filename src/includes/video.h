@@ -77,6 +77,7 @@
 #define LINE_END_CYCLE_NO_RIGHT	460		/* 372 + 44*2 */
 #define LINE_END_CYCLE_50_2	(LINE_END_CYCLE_50+44*2)	/* 464, used in enchanted lands */
 #define LINE_END_CYCLE_FULL	512				/* used in enchanted lands */
+#define LINE_LEFT_STAB_LOW	16	/* remove left + med res stab using hi/med/lo switches */
 #define LINE_SCROLL_13_CYCLE_50	20	/* 13 pixels right "hardware" scrolling */
 #define LINE_SCROLL_9_CYCLE_50	24	/*  9 pixels right "hardware" scrolling */
 #define LINE_SCROLL_5_CYCLE_50	28	/*  5 pixels right "hardware" scrolling */
