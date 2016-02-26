@@ -162,79 +162,7 @@ void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr)
 	CycleColourIndex = (addr-0xff8240)>>1;
 
 	/* Find number of cycles into frame */
-#if 1
-
 	FrameCycles = Cycles_GetCounterOnWriteAccess(CYCLES_COUNTER_VIDEO);
-
-#else
-	/* FIXME [NP] We should use Cycles_GetCounterOnWriteAccess, but it wouldn't */
-	/* work when using multiple accesses instructions like move.l or movem	*/
-	/* To correct this, we use a few rules for the most common cases */
-	/* (should give a good approximation of a move.w or movem.l for example) */
-
-	if ( BusMode == BUS_MODE_BLITTER )
-	{
-		FrameCycles = Cycles_GetCounterOnWriteAccess(CYCLES_COUNTER_VIDEO);
-	}
-	else							/* BUS_MODE_CPU */
-	{
-		if ( OpcodeFamily == i_MVMLE )
-		{
-			/* In the case of movem, CurrentInstrCycles is dynamic (depends on the number */
-			/* of registers to transfer). The 4*n for .W or 8*n for .L is not counted in CurrentInstrCycles */
-			/* The last 4 cycles of a movem are for prefetch, so number of cycles is : */
-			/* x + 4*n + 4 (movem.w) or x + 8*n + 4 (movem.l)  with x + 4 = CurrentInstrCycles */
-			FrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO)
-			              + (CurrentInstrCycles & ~3);
-#if 0
-			if (nIoMemAccessSize == SIZE_LONG)	/* long access */
-				FrameCycles -= 0;
-			else					/* word access */
-				FrameCycles -= 4;
-#else
-			if (nIoMemAccessSize == SIZE_LONG)	/* long access from a movem.l */
-			{
-				//FrameCycle += -4 + IoAccessInstrCount * 8 - 4;
-				FrameCycles -= 0;		/* NOTE [NP] : this is used by old uae cpu core but does not happen */
-								/* on real HW because IO regs can't be accessesed with a long */
-								/* FIXME : fix old uae cpu to remove long accesses to memory for 68000 */
-			}
-			else					/* word access with movem.w or movem.l doing 2 words accesses per long */
-			{
-				FrameCycles += -4 + IoAccessInstrCount * 4;
-			}
-#endif
-		}
-		else if ( ( OpcodeFamily == i_ADD ) || ( OpcodeFamily == i_SUB ) )
-		{
-			FrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO)
-			              + (CurrentInstrCycles & ~3);
-			FrameCycles -= 0;			/* write is made at the end, after prefetch */
-		}
-		else						/* default case : write first, then prefetch (mostly for 'move') */
-		{
-			FrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO)
-			              + (CurrentInstrCycles & ~3);
-#if 0
-			if (nIoMemAccessSize == SIZE_LONG)	/* long access */
-				FrameCycles -= 8;
-			else					/* word/byte access */
-				FrameCycles -= 4;
-#else
-			if (nIoMemAccessSize == SIZE_LONG)	/* long access */
-				FrameCycles -= 8;
-			else					/* word/byte access */
-			{
-				if ( IoAccessInstrCount == 0 )	/* instruction does only 1 access */
-					FrameCycles -= 4;
-				else				/* instruction does multiple accesses (eg: move.l gives 2 word accesses) */
-					FrameCycles += -12 + IoAccessInstrCount * 4;	/* gives -8 or -4 */
-			}
-#endif
-		}
-	}
-
-#endif
 
 	/* Find scan line we are currently on and get index into cycle-palette table */
 	Video_ConvertPosition ( FrameCycles , &ScanLine , &nHorPos );	
