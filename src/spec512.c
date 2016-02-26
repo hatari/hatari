@@ -367,12 +367,7 @@ void Spec512_StartScanLine(void)
 
 	/* Update palette entries until we reach start of displayed screen */
 	ScanLineCycleCount = 0;
-//	for(i=0; i<((SCREEN_START_CYCLE-16)/4); i++)  /* This '16' is as we've already added in the 'move' instruction timing */
-#ifdef OLD_CYC_PAL
-	for (i=0; i<((LineStartCycle-SCREENBYTES_LEFT*2)/4 + 6); i++)	/* [NP] '6' is required to align pixels and colors */
-#else
 	for (i=0; i<((LineStartCycle-SCREENBYTES_LEFT*2)/4 + 7); i++)	/* [NP] '7' is required to align pixels and colors */
-#endif
 		Spec512_UpdatePaletteSpan();              /* Update palette for this 4-cycle period */
 
 	/* And skip for left border is not using overscan display to user */
