@@ -1294,8 +1294,6 @@ static void Video_WriteToShifterRes ( Uint8 Res )
 		}
 	}
 
-#define SCROLL2_4PX
-#ifdef SCROLL2_4PX
 	/* Left border was removed with a hi/lo switch, then a med res switch was made */
 	/* Depending on the low res switch, the screen will be shifted as a low res overscan line */
 	/* This is a different method than the one used by ST Connexion with only 3 res switches */
@@ -1327,7 +1325,6 @@ static void Video_WriteToShifterRes ( Uint8 Res )
 			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = 1;
 		}
 	}
-#endif
 
 
 	/* Update HBL's position only if display has not reached pos LINE_START_CYCLE_50-2 */
@@ -2382,7 +2379,6 @@ static void Video_CopyScreenLineColor(void)
 
 	else if ( LineBorderMask & BORDERMASK_LEFT_OFF )
 	{
-#ifdef SCROLL2_4PX
 		int	ShiftPixels = 0;
 
 		if      ( STF_PixelScroll == 13 )	{ VideoOffset = 2;	ShiftPixels = 8; }
@@ -2393,9 +2389,6 @@ static void Video_CopyScreenLineColor(void)
 		else					VideoOffset = -2;	/* Normal low res left border removal without 4 pixels scrolling */
 
 		STF_PixelScroll -= ShiftPixels;
-#else
-		VideoOffset = -2;						/* always 2 bytes in low res overscan */
-#endif
 	}
 
 	else if ( LineBorderMask & BORDERMASK_LEFT_OFF_2_STE )
