@@ -97,7 +97,8 @@ is missing here, please remind me!):
   working.
 
 - Cyprian Konador: Found some bugs in the blitter cycles emulation,
-  duochrome and samplehold modes for TT video emulation.
+  duochrome and samplehold modes for TT video emulation, reported some
+  infos about alt-ram and dma ranges.
 
 - Jerome Vernet: Some updates to the OS X Xcode project file and OS X
   GUI, supplied a french keymapping file for OS X.
