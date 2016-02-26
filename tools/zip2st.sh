@@ -1,12 +1,8 @@
 #!/bin/sh
-# Script for converting .ZIP archives to Atari .ST disk images
-# (for the Hatari emulator).
+# Script for converting .ZIP archives or directory contents
+# to Atari .ST disk images.
 
-# tools are present?
-if [ -z "$(which unzip)" ]; then
-	echo "ERROR: 'unzip' missing."
-	exit 2
-fi
+# required tools are present?
 if [ -z "$(which mformat)" ] || [ -z "$(which mcopy)" ]; then
 	echo "ERROR: 'mformat' or 'mcopy' (from 'mtools' package) missing."
 	exit 2
@@ -15,13 +11,15 @@ fi
 usage ()
 {
 	name=${0##*/}
-	echo "Convert a .zip archive file to a .st disk image."
+	echo "Convert a .zip archive file or directory"
+	echo "contents to a .st disk image."
 	echo
 	echo "Single intermediate directories in the zip"
-	echo "file are skipped."
+	echo "file are skipped (except AUTO/-folder)."
 	echo
 	echo "Usage:"
 	echo " $name srcname.zip [destname.st]"
+	echo " $name directory/ [destname.st]"
 	echo
 	echo "Example:"
 	echo " for zip in *.zip; do $name \$zip; done"
@@ -40,18 +38,22 @@ fi
 ZIPFILE=$1
 STFILE=$2
 
-if [ \! -f "$ZIPFILE" ]; then
-	usage "given zipfile $ZIPFILE is missing"
+if [ \! -e "$ZIPFILE" ]; then
+	usage "given ZIP file or directory '$ZIPFILE' is missing"
 fi
 
 if [ -z "$STFILE" ]; then
-	# if no STFILE path given, save it to current dir (remove path)
-	# and use the ZIPFILE name with the extension removed.
-	# (done with POSIX shell parameter expansion)
-	BASENAME=${ZIPFILE##*/}
-	BASENAME=${BASENAME%.zip}
+	# if no STFILE path given, target name based on ZIPFILE name
+	# (with extension removed)
+	BASENAME=${ZIPFILE%.zip}
 	BASENAME=${BASENAME%.ZIP}
-	STFILE=$BASENAME.st
+	if [ -z $(which basename) ]; then
+		# goes to same place as source directory
+		STFILE="$BASENAME".st
+	else
+		# basename can reliably give last path component
+		STFILE="$(basename $BASENAME)".st
+	fi
 fi
 if [ -f "$STFILE" ]; then
 	echo "ERROR: ST file '$STFILE' already exists, remove it first. Aborting..."
@@ -59,8 +61,7 @@ if [ -f "$STFILE" ]; then
 fi
 
 step=0
-TEMPDIR=`mktemp -d` || exit 2
-echo "Converting" $ZIPFILE "->" $TEMPDIR "->" $STFILE
+TEMPDIR=""
 
 # script exit/error handling
 exit_cleanup ()
@@ -71,26 +72,42 @@ exit_cleanup ()
 		echo
 		echo "ERROR, cleaning up..."
 	fi
-	echo "rm -rv $TEMPDIR"
-	rm -rv $TEMPDIR
+	if [ \! -z "$TEMPDIR" ]; then
+		echo "rm -rv $TEMPDIR"
+		rm -rv $TEMPDIR
+	fi
 	echo "Done."
 }
-trap exit_cleanup EXIT
 
-echo
-step=$(($step+1))
-echo "$step) Unzipping..."
-echo "unzip $ZIPFILE -d $TEMPDIR"
-unzip "$ZIPFILE" -d "$TEMPDIR" || exit 2
 
-# .zip files created with STZip sometimes have wrong access rights...
-echo "chmod -R u+rw $TEMPDIR/*"
-chmod -R u+rw $TEMPDIR/*
+if [ -d "$ZIPFILE" ]; then
+	echo "Converting '$ZIPFILE/' -> '$STFILE'"
+	ZIPDIR="$ZIPFILE"
+else
+	if [ -z "$(which unzip)" ]; then
+		echo "ERROR: 'unzip' tool missing."
+		exit 2
+	fi
+	TEMPDIR=`mktemp -d` || exit 2
+	echo "Converting '$ZIPFILE' -> '$TEMPDIR/' -> '$STFILE'"
+
+	trap exit_cleanup EXIT
+
+	echo
+	step=$(($step+1))
+	echo "$step) Unzipping..."
+	echo "unzip $ZIPFILE -d $TEMPDIR"
+	unzip "$ZIPFILE" -d "$TEMPDIR" || exit 2
+
+	# .zip files created with STZip sometimes have wrong access rights...
+	echo "chmod -R u+rw $TEMPDIR/*"
+	chmod -R u+rw $TEMPDIR/*
+	ZIPDIR=$TEMPDIR
+fi
 
 echo
 step=$(($step+1))
 echo "$step) Checking/skipping intermediate directories..."
-ZIPDIR=$TEMPDIR
 while true; do
 	count=$(ls $ZIPDIR|wc -l)
 	if [ $count -ne 1 ]; then

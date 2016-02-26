@@ -1,29 +1,32 @@
-.TH "ZIP2ST" "1" "2012-05-30" "Hatari" "Hatari utilities"
+.TH "ZIP2ST" "1" "2016-02-26" "Hatari" "Hatari utilities"
 .SH NAME
-zip2st \- a program for converting .zip archives to Atari .st disk images
+zip2st \- convert directory or .zip archive to .st disk image
 .SH SYNOPSIS
 .B zip2st
-.RI srcname.zip
+.RI <directory|srcname.zip>
 .RI [dstname.st]
 .SH DESCRIPTION
-zip2st can be used to convert a .zip file to a .st disk image.
+zip2st can be used to generate Atari .st disk image from directory
+and .zip archive contents.
 .PP
-If the destination filename is not given, use the name of the .zip
-file, without the extension, and save it in the current working
-directory.
+If the destination filename is not given, it's based on the source
+name, with the .zip extension removed and .st prefix added. If
+\fIbasename\fP tool is present, file is saved to current directory,
+otherwise to the directory where the source directory/archive is.
 .PP
-Any single directories (other than 'auto') at root of the zip archive
-are traversed down to avoid adding redundant intermediate directories
-from the zip file to the generated disk image.
+Any single directories (other than 'auto') within the source zip /
+directory hierarchy are traversed down, to avoid adding redundant
+intermediate directories to the generated disk image.
 .PP
 The .st disk image is a raw disk image, and can be written to a floppy
-using dd(1) or converted to .msa disk image with hmsa(1).
+using dd(1), or converted to a .msa disk image with \fIhmsa\fP(1).
 .PP
-The contents of the uncompressed zip file need to be smaller than
+The contents of the uncompressed zip file needs to be smaller than
 2.88MB (the largest floppy image size supported by Hatari).
 .PP
-If zip file has long file names, use \fIatari\-convert\-dir\fP script
-to convert them into Atari compatible ones, and zip them again.
+If the source file names are longer than 8+3, use \fIatari\-convert\-dir\fP
+script to convert them into Atari compatible ones.  If the files are
+within a .zip archive, you need to extract them before conversion.
 .PP
 .SH SEE ALSO
 .IR hmsa (1),
@@ -32,9 +35,10 @@ to convert them into Atari compatible ones, and zip them again.
 .IR hatari (1),
 .IR unzip (1),
 .IR mtools (1),
+.IR basename (1),
 .IR dd (1).
 .SH "AUTHOR"
-Written by Thomas Huth <huth at tuxfamily.org>.
+Written by Thomas Huth <huth at tuxfamily.org> and Eero Tamminen.
 .PP
 This manual page was written by Teemu Hukkanen <tjhukkan at iki.fi>
 for the Debian project and later modified by Eero Tamminen to
