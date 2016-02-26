@@ -126,7 +126,6 @@ int Cycles_GetInternalCycleOnReadAccess(void)
 	{
 		AddCycles = 4 + WaitStateCycles;
 	}
-//#if 0
 #ifdef WINUAE_FOR_HATARI
 	/* When using WinUAE CPU in CE mode, 'currcycle' will be the number of cycles */
 	/* inside the current opcode just before accessing memory. */
@@ -175,7 +174,6 @@ int Cycles_GetInternalCycleOnWriteAccess(void)
 	{
 		AddCycles = 4 + WaitStateCycles;
 	}
-//#if 0
 #ifdef WINUAE_FOR_HATARI
 	/* When using WinUAE CPU in CE mode, 'currcycle' will be the number of cycles */
 	/* inside the current opcode just before accessing memory. */
@@ -233,12 +231,6 @@ int Cycles_GetInternalCycleOnWriteAccess(void)
 
 		else
 		{
-#if 0
-			/* assume the behaviour of a 'move' (since this is the most */
-			/* common instr used when requiring cycle precise writes) */
-			if ( AddCycles >= 8 )
-				AddCycles -= 4;			/* last 4 cycles are for prefetch */
-#else
 			/* Default case : write first, then prefetch (mostly for 'move' since this is the most */
 			/* common instr used when requiring cycle precise writes) */
 			if (nIoMemAccessSize == SIZE_LONG)	/* long access */
@@ -250,8 +242,6 @@ int Cycles_GetInternalCycleOnWriteAccess(void)
 				else				/* instruction does multiple accesses (eg: move.l gives 2 word accesses) */
 					AddCycles += -12 + IoAccessInstrCount * 4;	/* gives -8 or -4 */
 			}
-
-#endif
 		}
 	}
 
