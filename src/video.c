@@ -444,6 +444,8 @@ const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
 #define BORDERMASK_LEFT_OFF_2_STE	0x200	/* shorter removal of left border with hi/lo res switch -> +20 bytes (STE only)*/
 #define BORDERMASK_BLANK_LINE		0x400	/* 60/50 Hz switch blanks the rest of the line, but video counter is still incremented */
 
+//#define CPU_WS1
+
 
 int STRes = ST_LOW_RES;                         /* current ST resolution */
 int TTRes;                                      /* TT shifter resolution mode */
@@ -734,9 +736,15 @@ static void	Video_SetSystemTimings(void)
 {
 	if ( ConfigureParams.System.nMachineType == MACHINE_ST )
 	{
+#ifndef CPU_WS1
 		LineRemoveTopCycle = LINE_REMOVE_TOP_CYCLE_STF;
 		LineRemoveBottomCycle = LINE_REMOVE_BOTTOM_CYCLE_STF;
 		VblVideoCycleOffset = VBL_VIDEO_CYCLE_OFFSET_STF;
+#else
+		LineRemoveTopCycle = LINE_REMOVE_TOP_CYCLE_STF-2;
+		LineRemoveBottomCycle = LINE_REMOVE_BOTTOM_CYCLE_STF-2;
+		VblVideoCycleOffset = VBL_VIDEO_CYCLE_OFFSET_STF-4;
+#endif
 	}
 	else				/* STE, TT */
 	{
@@ -3180,7 +3188,11 @@ static void Video_AddInterruptHBL ( int Pos )
 {
 //fprintf ( stderr , "add hbl pos=%d\n" , Pos );
 	if ( !bUseVDIRes )
+#ifndef CPU_WS1
 		Video_AddInterrupt ( Pos , INTERRUPT_VIDEO_HBL );
+#else
+		Video_AddInterrupt ( Pos-4 , INTERRUPT_VIDEO_HBL );
+#endif
 }
 
 
