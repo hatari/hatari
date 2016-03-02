@@ -4193,12 +4193,11 @@ void	FDC_DmaAddress_WriteByte ( void )
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	/* On STF/STE machines limited to 4MB of RAM, DMA address is also limited to $3fffff */
-	if ( ( IoAccessCurrentAddress == 0xff8609 )
-	  && ( (ConfigureParams.System.nMachineType == MACHINE_ST)
-	    || (ConfigureParams.System.nMachineType == MACHINE_STE)
-	    || (ConfigureParams.System.nMachineType == MACHINE_MEGA_STE) ) )
-		IoMem[ 0xff8609 ] &= 0x3f;
+	/* On STF/STE machines with <= 4MB of RAM, DMA addresses are limited to $3fffff */
+	if ( IoAccessCurrentAddress == 0xff8609 )
+	{
+		IoMem[ 0xff8609 ] &= DMA_MaskAddressHigh();
+	}
 
 	/* DMA address must be word-aligned, bit 0 at $ff860d is always 0 */
 	if ( IoAccessCurrentAddress == 0xff860d )

@@ -2348,6 +2348,7 @@ static void Video_CopyScreenLineColor(void)
 	int LineRes;
 	Uint8 *pVideoRasterEndLine;			/* addr of the last byte copied from pVideoRaster to pSTScreen (for HWScrollCount) */
 	int i;
+	Uint32 VideoMask;
 
 	LineBorderMask = ShifterFrame.ShifterLines[ nHBL ].BorderMask;
 	STF_PixelScroll = ShifterFrame.ShifterLines[ nHBL ].DisplayPixelShift;
@@ -2799,9 +2800,10 @@ static void Video_CopyScreenLineColor(void)
 	/* Each screen line copied to buffer is always same length */
 	pSTScreen += SCREENBYTES_LINE;
 
-	/* We must keep the new video address in a 24 bit space */
-	/* (in case it pointed to IO space and is now >= 0x1000000) */
-	pVideoRaster = ( ( pVideoRaster - STRam ) & 0xffffff ) + STRam;
+	/* We must keep the new video address in a 22 or 24 bit space depending on the machine type */
+	/* (for example in case it pointed to IO space and is now >= 0x1000000) */
+	VideoMask = ( DMA_MaskAddressHigh() << 16 ) | 0xffff;		/* 0x3fffff or 0xffffff */
+	pVideoRaster = ( ( pVideoRaster - STRam ) & VideoMask ) + STRam;
 //fprintf ( stderr , "video counter new=%x\n" , pVideoRaster-STRam );
 }
 
@@ -3367,13 +3369,19 @@ void Video_InterruptHandler_VBL ( void )
 /*-----------------------------------------------------------------------*/
 /**
  * Write to video address base high, med and low register (0xff8201/03/0d).
- * On STE, when a program writes to high or med registers, base low register
+ * On STE/TT, when a program writes to high or med registers, base low register
  * is reset to zero.
  */
-void Video_ScreenBaseSTE_WriteByte(void)
+void Video_ScreenBase_WriteByte(void)
 {
-	if ( ( IoAccessCurrentAddress == 0xff8201 ) || ( IoAccessCurrentAddress == 0xff8203 ) )
-		IoMem[0xff820d] = 0;          /* Reset screen base low register */
+	/* On STF/STE machines with <= 4MB of RAM, video addresses are limited to $3fffff */
+	if ( IoAccessCurrentAddress == 0xff8201 )
+		IoMem[ 0xff8201 ] &= DMA_MaskAddressHigh();
+
+	/* On STE/TT, reset screen base low register */
+	if ( ( ConfigureParams.System.nMachineType != MACHINE_ST )
+	  && ( ( IoAccessCurrentAddress == 0xff8201 ) || ( IoAccessCurrentAddress == 0xff8203 ) ) )
+		IoMem[0xff820d] = 0;
 
 	if (LOG_TRACE_LEVEL(TRACE_VIDEO_STE))
 	{
@@ -3413,7 +3421,7 @@ void Video_ScreenCounter_ReadByte(void)
 /*-----------------------------------------------------------------------*/
 /**
  * Write to video address counter (0xff8205, 0xff8207 and 0xff8209).
- * Called on STE only and like with base address, you cannot set lowest bit.
+ * Called on STE/TT only and like with base address, you cannot set lowest bit.
  *
  * As Hatari processes/converts one complete video line at a time, we have 3 cases :
  * - If display has not started yet for this line (left border), we can change pVideoRaster now.
@@ -3438,6 +3446,10 @@ void Video_ScreenCounter_WriteByte(void)
 
 	Video_GetPosition_OnWriteAccess ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
+	/* On STF/STE machines with <= 4MB of RAM, video addresses are limited to $3fffff */
+	if ( IoAccessCurrentAddress == 0xff8205 )
+		IoMem[ 0xff8205 ] &= DMA_MaskAddressHigh();
+
 	AddrByte = IoMem[ IoAccessCurrentAddress ];
 
 	/* Get current video address from the shifter */
@@ -3451,7 +3463,7 @@ void Video_ScreenCounter_WriteByte(void)
 	/* addr_new should now be the same as on a real STE */
 	/* Compute the new video address with one modified byte */
 	if ( IoAccessCurrentAddress == 0xff8205 )
-		addr_new = ( addr_new & 0x00ffff ) | ( ( AddrByte & 0x3f ) << 16 );
+		addr_new = ( addr_new & 0x00ffff ) | ( AddrByte << 16 );
 	else if ( IoAccessCurrentAddress == 0xff8207 )
 		addr_new = ( addr_new & 0xff00ff ) | ( AddrByte << 8 );
 	else if ( IoAccessCurrentAddress == 0xff8209 )

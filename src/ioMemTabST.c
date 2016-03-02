@@ -42,8 +42,8 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_ST[] =
 {
 	{ 0xff8001, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Memory configuration */
 
-	{ 0xff8201, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Video base high byte */
-	{ 0xff8203, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Video base med byte */
+	{ 0xff8201, SIZE_BYTE, IoMem_ReadWithoutInterception, Video_ScreenBase_WriteByte },	/* Video base high byte */
+	{ 0xff8203, SIZE_BYTE, IoMem_ReadWithoutInterception, Video_ScreenBase_WriteByte },	/* Video base med byte */
 	{ 0xff8205, SIZE_BYTE, Video_ScreenCounter_ReadByte, IoMem_WriteWithoutInterception },
 	{ 0xff8207, SIZE_BYTE, Video_ScreenCounter_ReadByte, IoMem_WriteWithoutInterception },
 	{ 0xff8209, SIZE_BYTE, Video_ScreenCounter_ReadByte, IoMem_WriteWithoutInterception },

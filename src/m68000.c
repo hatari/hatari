@@ -755,3 +755,44 @@ void	M68000_Flush_Data_Cache ( uaecptr addr , int size )
 
 
 
+/*-----------------------------------------------------------------------*/
+/**
+ * On real STF/STE hardware, DMA accesses are restricted to 4 MB (video addresses,
+ * FDC, STE DMA sound) in the range 0 - $3fffff (22 bits of address)
+ * When STF/STE are expanded beyond 4 MB, some special '_FRB' cookies variables
+ * need to be set in TOS to allocate an intermediate buffer in lower 4 MB
+ * that will be used to transfer data in RAM between 4 MB and 16 MB.
+ * This buffer is needed because real HW can't access RAM beyond 4 MB.
+ *
+ * In Hatari, we allow DMA addresses to use 24 bits when RAM size is set
+ * to 8 or 16 MB. This way any program / TOS version can make use of extra
+ * RAM beyond 4 MB without requiring an intermediate buffer.
+ *
+ * But it should be noted that programs using 24 bits of DMA addresses would
+ * not work on real HW ; this is just to make RAM expansion more transparent
+ * under emulation.
+ *
+ * We return a mask for bits 16-23 :
+ *  - 0x3f for compatibility with real HW and limit of 4 MB
+ *  - 0xff to allow DMA addresses beyond 4 MB (or for Falcon / TT)
+ */
+int	DMA_MaskAddressHigh ( void )
+{
+
+	if ( ( ConfigureParams.System.nMachineType == MACHINE_TT )
+	  || ( ConfigureParams.System.nMachineType == MACHINE_FALCON ) )
+	{
+		return 0xff;					/* Falcon / TT can access 24 bits with DMA */
+	}
+
+	else if ( ConfigureParams.Memory.nMemorySize > 4 )	/* ST/STE with more than 4 MB */
+		return 0xff;					/* Allow 'fake' 24 bits for DMA */
+
+	else							/* ST/STE with <= 4 MB */
+		return 0x3f;					/* Limit DMA range to 22 bits (same as real HW) */
+}
+
+
+
+
+

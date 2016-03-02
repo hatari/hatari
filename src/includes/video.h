@@ -176,7 +176,7 @@ extern void	Video_AddInterruptTimerB ( int Pos );
 extern void	Video_StartInterrupts ( int PendingCyclesOver );
 extern void	Video_InterruptHandler_VBL(void);
 
-extern void Video_ScreenBaseSTE_WriteByte(void);
+extern void Video_ScreenBase_WriteByte(void);
 extern void Video_ScreenCounter_ReadByte(void);
 extern void Video_ScreenCounter_WriteByte(void);
 extern void Video_Sync_ReadByte(void);

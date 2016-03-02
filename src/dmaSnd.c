@@ -794,6 +794,9 @@ void DmaSnd_FrameStartHigh_WriteByte(void)
 			IoMem_ReadByte(0xff8903) , dma.frameCounterAddr - dma.frameStartAddr , dma.frameEndAddr - dma.frameStartAddr  ,
 			FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
 	}
+
+	/* On STF/STE machines with <= 4MB of RAM, DMA addresses are limited to $3fffff */
+	IoMem[ 0xff8903 ] &= DMA_MaskAddressHigh();
 }
 
 void DmaSnd_FrameStartMed_WriteByte(void)
@@ -833,6 +836,9 @@ void DmaSnd_FrameCountHigh_WriteByte(void)
 			IoMem_ReadByte(0xff8909) , dma.frameCounterAddr - dma.frameStartAddr , dma.frameEndAddr - dma.frameStartAddr  ,
 			FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
 	}
+
+	/* On STF/STE machines with <= 4MB of RAM, DMA addresses are limited to $3fffff */
+	IoMem[ 0xff8909 ] &= DMA_MaskAddressHigh();
 }
 
 void DmaSnd_FrameCountMed_WriteByte(void)
@@ -869,6 +875,9 @@ void DmaSnd_FrameEndHigh_WriteByte(void)
 			IoMem_ReadByte(0xff890f) , dma.frameCounterAddr - dma.frameStartAddr , dma.frameEndAddr - dma.frameStartAddr  ,
 			FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
 	}
+
+	/* On STF/STE machines with <= 4MB of RAM, DMA addresses are limited to $3fffff */
+	IoMem[ 0xff890f ] &= DMA_MaskAddressHigh();
 }
 
 void DmaSnd_FrameEndMed_WriteByte(void)
