@@ -225,6 +225,7 @@ extern void Video_HorScroll_Write_8265(void);
 extern void Video_HorScroll_Write(void);
 extern void Video_TTShiftMode_WriteWord(void);
 extern void Video_TTColorRegs_Write(void);
+extern void Video_TTColorRegs_STRegWrite(void);
 
 extern void Video_Info(FILE *fp, Uint32 dummy);
 

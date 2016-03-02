@@ -604,8 +604,6 @@ static void	Video_AddInterruptHBL ( int Pos );
 static void	Video_ColorReg_WriteWord(void);
 static void	Video_ColorReg_ReadWord(void);
 
-static void	Video_TTColorReg_Sync_ST2TT(Uint32 addr, Uint16 stcolor);
-
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -3034,6 +3032,14 @@ static void Video_SetTTPaletteColor(int idx, Uint32 addr)
 }
 
 /**
+ * Which 256-color TT palette 16-color "bank" is mapped to ST(e) palette
+ */
+static int TTPaletteSTBank(void)
+{
+	return IoMem_ReadByte(0xff8263) & 0x0f;
+}
+
+/**
  * Convert TT palette to SDL palette
  */
 static void Video_UpdateTTPalette(int bpp)
@@ -3055,6 +3061,12 @@ static void Video_UpdateTTPalette(int bpp)
 	{
 		Uint32 ttpalette = 0xff8400;
 		int i, colors = 1 << bpp;
+
+		if (colors <= 16)
+		{
+			/* use correct ST palette bank */
+			ttpalette += TTPaletteSTBank() * 16*SIZE_WORD;
+		}
 
 		for (i = 0; i < colors; i++)
 		{
@@ -3675,12 +3687,6 @@ static void Video_ColorReg_WriteWord(void)
 	addr &= 0xfffffffe;			/* Ensure addr is even to store the 16 bit color */
 	IoMem_WriteWord(addr, col);		/* (some games write 0xFFFF and read back to see if STe) */
 
-	if (machine == MACHINE_TT)
-	{
-		Video_TTColorReg_Sync_ST2TT(addr, col);
-		return;
-	}
-
 	idx = (addr - 0xff8240) / 2;		/* words */
 
 	if (bUseHighRes || (bUseVDIRes && VDIPlanes == 1))
@@ -4131,12 +4137,34 @@ void Video_HorScroll_Write(void)
 		FrameCycles, LineCycles, nHBL, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles );
 }
 
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Helper for TT->ST color reg copies
+ */
+static void TT2STColor(Uint32 ttaddr, Uint32 staddr)
+{
+	Uint16 stcolor, ttcolor;
+
+	ttcolor = IoMem_ReadWord(ttaddr);
+	stcolor = ((ttcolor & 0xeee) >> 1) | ((ttcolor&0x111) << 3);
+	IoMem_WriteWord(staddr, stcolor);
+#if 0
+	fprintf(stderr, "0x%x: 0x%03x (TT) -> 0x%x: 0x%03x (ST)\n",
+		ttaddr, ttcolor, staddr, stcolor);
+#endif
+}
+
 /*-----------------------------------------------------------------------*/
 /**
  * Write to TT shifter mode register (0xff8262)
  */
 void Video_TTShiftMode_WriteWord(void)
 {
+	Uint32 stpalette = 0xff8240;
+	Uint32 ttpalette = 0xff8400;
+	int i;
+
 	TTRes = IoMem_ReadByte(0xff8262) & 7;
 	TTSpecialVideoMode = IoMem_ReadByte(0xff8262) & 0x90;
 
@@ -4149,7 +4177,22 @@ void Video_TTShiftMode_WriteWord(void)
 		Video_ShifterMode_WriteByte();
 		IoMem_WriteByte(0xff8262, TTRes | TTSpecialVideoMode);
 	}
+
+	/* ST palette needs to be updated in case there was a bank switch */
+	ttpalette += TTPaletteSTBank() * 16*SIZE_WORD;
+#if 0
+	fprintf(stderr, "TT ST Palette bank: %d\n", TTPaletteSTBank());
+#endif
+	for (i = 0; i < 16*SIZE_WORD; i += SIZE_WORD)
+	{
+		TT2STColor(ttpalette, stpalette);
+		ttpalette += SIZE_WORD;
+		stpalette += SIZE_WORD;
+	}
+	/* in case bank was switched and there are <= 16 colors */
+	bTTColorsSync = false;
 }
+
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -4159,37 +4202,28 @@ void Video_TTShiftMode_WriteWord(void)
  * 
  * Although registers themselves are word sized, writes to this area
  * can be of any size. Hatari IO-area handling doesn't feed them here
- * word sized as that would require 256 different handlers.
+ * word sized, that would require separate handler for each palette
+ * entry, and there are 256 of them.
  */
 void Video_TTColorRegs_Write(void)
 {
 	const Uint32 stpalette = 0xff8240;
 	const Uint32 ttpalette = 0xff8400;
-	Uint16 stcolor, ttcolor;
-	int page, offset, i;
+	int offset, i;
 	Uint32 addr;
-
-	page = (IoMem_ReadWord(0xff8262) & 0x0f);
 
 	/* ensure even address for byte accesses */
 	addr = IoAccessCurrentAddress & 0xfffffffe;
-	
-	offset = addr - (ttpalette + page * 16*SIZE_WORD);
+
+	offset = addr - (ttpalette + TTPaletteSTBank() * 16*SIZE_WORD);
 
 	/* in case it was long access */
 	for (i = 0; i < nIoMemAccessSize; i += 2)
 	{
-		/* outside ST->TT color reg mapping "page"? */
+		/* outside ST->TT color reg mapping bank? */
 		if (offset < 0 || offset >= 16*SIZE_WORD)
 			continue;
-
-		ttcolor = IoMem_ReadWord(addr);
-		stcolor = ((ttcolor >> 1) & 0x777) | ((ttcolor >> 3) & 0x888);
-		IoMem_WriteWord(stpalette + offset, stcolor);
-#if 0
-		fprintf(stderr, "0x%x: 0x%03x (TT) -> 0x%x: 0x%03x (ST)\n",
-			addr, ttcolor, stpalette + offset, stcolor);
-#endif
+		TT2STColor(addr, stpalette + offset);
 		offset += 2;
 		addr += 2;
 	}
@@ -4198,28 +4232,52 @@ void Video_TTColorRegs_Write(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Write to ST color register on TT (starting at 0xff8240)
+ * Write to ST color register area on TT (starting at 0xff8240)
  *
- * Sync single ST color register value to TT register area
+ * ST color register write on TT -> sync to TT color register
+ *
+ * Although registers themselves are word sized, writes to this area
+ * can be of any size. Hatari IO-area handling doesn't feed them here
+ * word sized, that would require separate handler for each palette
+ * entry.
  */
-static void Video_TTColorReg_Sync_ST2TT(Uint32 addr, Uint16 stcolor)
+void Video_TTColorRegs_STRegWrite(void)
 {
 	const Uint32 stpalette = 0xff8240;
 	const Uint32 ttpalette = 0xff8400;
-	int page, offset;
 	Uint16 ttcolor;
+	Uint16 stcolor;
+	int offset, i;
+	Uint32 addr;
 
-	page = (IoMem_ReadWord(0xff8262) & 0x0f);
+	/* byte writes don't have effect on TT */
+	if (nIoMemAccessSize < 2)
+		return;
+
+	addr = IoAccessCurrentAddress;
+
 	offset = addr - stpalette;
 	assert(offset > 0 && offset < 16*SIZE_WORD);
-	offset += page * 16*SIZE_WORD;
+	offset += TTPaletteSTBank() * 16*SIZE_WORD;
 
-	ttcolor = ((stcolor&0x777) << 1) | ((stcolor&0x888) >> 3);
-	IoMem_WriteWord(ttpalette + offset, ttcolor);
+	/* in case it was long access */
+	for (i = 0; i < nIoMemAccessSize; i += 2)
+	{
+		/* program may write 0xFFFF and read it back
+		 * to check for STe palette so need to be masked
+		 */
+		stcolor = IoMem_ReadWord(addr) & 0xfff;
+		IoMem_WriteWord(addr, stcolor);
+		/* Sync ST(e) color to TT register */
+		ttcolor = ((stcolor & 0x777) << 1) | ((stcolor & 0x888) >> 3);
+		IoMem_WriteWord(ttpalette + offset, ttcolor);
 #if 0
-	fprintf(stderr, "0x%x: 0x%03x (ST) -> 0x%x: 0x%03x (TT)\n",
-		addr, stcolor, ttpalette + offset, ttcolor);
+		fprintf(stderr, "0x%x: 0x%03x (ST) -> 0x%x: 0x%03x (TT)\n",
+			addr, stcolor, ttpalette + offset, ttcolor);
 #endif
+		offset += 2;
+		addr += 2;
+	}
 	bTTColorsSync = false;
 }
 
