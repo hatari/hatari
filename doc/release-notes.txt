@@ -13,7 +13,8 @@ Emulation:
   - fix reading video counter $FF8205/07/09 after modifying it while
     display is ON.
   - fix location of the video counter's restart when screen runs at 60 Hz
-  - TT: sync ST & TT color registers immediately on write
+  - TT: sync ST & TT color registers immediately on write, handle
+    palette bank setting correctly, fix duochrome colors
   - Falcon: handle byte access special case for ST color registers
 - Sound changes :
   - DMA sound should be played even when start address = end address
@@ -39,6 +40,8 @@ Emulator:
 
 Other:
 - Allow building without Zlib
+- zip2st tool can convert directories to .st image files,
+  not just .zip files.
 
 Fixed demos:
 - spec512 image in the Intro of the Place To Be Again (video, restart counter)
