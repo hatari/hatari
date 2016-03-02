@@ -148,6 +148,10 @@ is missing here, please remind me!):
 - Max Böhm: host <-> Atari filename encoding conversion routines and
   related changes needed to gemdos.c.
 
+- Douglas Little: wrote and run some test programs for 030 cycle
+  accuracy, tested & gave feedback on Hatari CPU & DSP profiler
+  features, debugged Hatari DSP emulation issues.
+
 - Roger Burrows: EmuTOS maintainer, reported bugs in several areas
   including I/O memory access & TT emulation (timer-C, video).  Ran
   some test programs on real hardware and wrote some test programs
