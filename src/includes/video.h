@@ -155,6 +155,8 @@ extern void	Video_MemorySnapShot_Capture(bool bSave);
 extern void 	Video_Reset(void);
 extern void	Video_Reset_Glue(void);
 
+extern void	Video_InitTimings(void);
+
 extern void	Video_ConvertPosition( int FrameCycles , int *pHBL , int *pLineCycles );
 extern void	Video_GetPosition( int *pFrameCycles , int *pHBL , int *pLineCycles );
 extern void	Video_GetPosition_OnWriteAccess( int *pFrameCycles , int *pHBL , int *pLineCycles );

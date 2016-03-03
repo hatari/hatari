@@ -568,6 +568,27 @@ typedef struct
 static SHIFTER_FRAME	ShifterFrame;
 
 
+#define	VIDEO_TIMING_STF_WS1		0
+#define	VIDEO_TIMING_STF_WS2		1
+#define	VIDEO_TIMING_STF_WS3		2
+#define	VIDEO_TIMING_STF_WS4		3
+#define	VIDEO_TIMING_STE		4		
+
+#define VIDEO_TIMING_DEFAULT		VIDEO_TIMING_STF_WS3
+#define VIDEO_TIMING_MAX_NB		5
+
+typedef struct
+{
+	int	nop;
+
+} VIDEO_TIMING;
+
+
+static VIDEO_TIMING	VideoTimings[ VIDEO_TIMING_MAX_NB ];
+static VIDEO_TIMING	*pVideoTiming;
+
+
+
 
 /*--------------------------------------------------------------*/
 /* Local functions prototypes                                   */
@@ -723,6 +744,20 @@ void Video_Reset_Glue(void)
 		VideoShifterByte = VDIRes;
 
 	IoMem_WriteByte(0xff8260, VideoShifterByte);
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+ * Init video timings values for all emulated machines.
+ * This should be called only once, when emulator starts
+ */
+void	Video_InitTimings(void)
+{
+	/* TODO */
+
+	/* Set timings to a default mode (this will be overriden after when choosing the emulated machine) */
+	pVideoTiming = &VideoTimings[ VIDEO_TIMING_DEFAULT ];
 }
 
 

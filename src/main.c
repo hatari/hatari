@@ -657,6 +657,7 @@ static void Main_Init_HW(void)
 	Joy_Init();
 	FDC_Init();
 	STX_Init();
+	Video_InitTimings();
 }
 
 /*-----------------------------------------------------------------------*/
