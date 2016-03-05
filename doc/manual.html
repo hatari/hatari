@@ -496,6 +496,14 @@ Spectrum512 screen conversion functions (0 &lt;= x &lt;= 512,
 &lt;x&gt;</p>
 <p class="paramdesc">Zoom (double) low resolution (1=no,
 2=yes)</p>
+<p class="parameter">--video-timing
+&lt;x&gt;</p>
+<p class="paramdesc">Wakeup State for MMU/GLUE (x=ws1/ws2/ws3/ws4/random,
+default ws3). When powering on, the STF will randomly choose one of these
+wake up states. The state will then affect the timings where border removals
+and other video tricks should be made, which can give different results on
+screen. For example, WS3 is known to be compatible with many demos, while WS1 can show
+more problems.</p>
 
 <h3>TT/Falcon specific display options</h3>
 <p>
