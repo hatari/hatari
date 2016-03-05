@@ -762,11 +762,15 @@ void	Video_InitTimings(void)
 /*-----------------------------------------------------------------------*/
 /*
  * Set specific video timings, depending on the system being emulated.
+ * - STF is known to have 4 possible states depending on the MMU/GLUE synchronisation
+ * - STE has MMU and GLUE merged in the same chip, so there's only 1 state
+ * (other video differences are sometimes visible on STF/STE, so there might be
+ * more states, affecting the shifter for example)
  */
 void	Video_SetTimings( MACHINETYPE MachineType , VIDEOTIMINGMODE Mode )
 {
 	int	Timing;
-printf ( "Video_SetSystemTimings %d %d\n" , MachineType , Mode );
+printf ( "Video_SetSystemTimings1 %d %d\n" , MachineType , Mode );
 
 
 	/* Default timing for TT/Falcon (not really important */
@@ -786,6 +790,7 @@ printf ( "Video_SetSystemTimings %d %d\n" , MachineType , Mode );
 		else if ( Mode == VIDEO_TIMING_MODE_WS3 )	Timing = VIDEO_TIMING_STF_WS3;
 		else 						Timing = VIDEO_TIMING_STF_WS4;
 	}
+printf ( "Video_SetSystemTimings2 %d %d\n" , MachineType , Mode );
 
 	pVideoTiming = &VideoTimings[ Timing ];
 

@@ -77,6 +77,7 @@ enum {
 	OPT_RESOLUTION_ST,
 	OPT_SPEC512,
 	OPT_ZOOM,
+	OPT_VIDEO_TIMING,
 	OPT_RESOLUTION,		/* TT/Falcon display options */
 	OPT_FORCE_MAX,
 	OPT_ASPECT,
@@ -233,6 +234,8 @@ static const opt_t HatariOptions[] = {
 	  "<x>", "Spec512 palette threshold (0 <= x <= 512, 0=disable)" },
 	{ OPT_ZOOM, "-z", "--zoom",
 	  "<x>", "Double small resolutions (1=no, 2=yes)" },
+	{ OPT_VIDEO_TIMING,   NULL, "--video-timing",
+	  "<x>", "Wakeup State for MMU/GLUE (x=ws1/ws2/ws3/ws4/random, default ws3)" },
 
 	{ OPT_HEADER, NULL, NULL, NULL, "TT/Falcon specific display" },
 	{ OPT_RESOLUTION, NULL, "--desktop",
@@ -1123,6 +1126,22 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				ConfigureParams.Screen.nMaxHeight *= 2;
 			}
 			ConfigureParams.Screen.nMaxHeight += STATUSBAR_MAX_HEIGHT;
+			break;
+
+		case OPT_VIDEO_TIMING:
+			i += 1;
+			if (strcasecmp(argv[i], "random") == 0)
+				ConfigureParams.System.VideoTimingMode = VIDEO_TIMING_MODE_RANDOM;
+			else if (strcasecmp(argv[i], "ws1") == 0)
+				ConfigureParams.System.VideoTimingMode = VIDEO_TIMING_MODE_WS1;
+			else if (strcasecmp(argv[i], "ws2") == 0)
+				ConfigureParams.System.VideoTimingMode = VIDEO_TIMING_MODE_WS2;
+			else if (strcasecmp(argv[i], "ws3") == 0)
+				ConfigureParams.System.VideoTimingMode = VIDEO_TIMING_MODE_WS3;
+			else if (strcasecmp(argv[i], "ws4") == 0)
+				ConfigureParams.System.VideoTimingMode = VIDEO_TIMING_MODE_WS4;
+			else
+				return Opt_ShowError(OPT_VIDEO_TIMING, argv[i], "Unknown video timing mode");
 			break;
 
 			/* Falcon/TT display options */
