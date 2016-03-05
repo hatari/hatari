@@ -35,6 +35,8 @@ const char TOS_fileid[] = "Hatari tos.c : " __DATE__ " " __TIME__;
 #include "vdi.h"
 #include "falcon/dsp.h"
 #include "clocks_timings.h"
+#include "screen.h"
+#include "video.h"
 
 bool bIsEmuTOS;
 Uint16 TosVersion;                      /* eg. 0x0100, 0x0102 */
@@ -519,6 +521,7 @@ static void TOS_CheckSysConfig(void)
 		IoMem_UnInit();
 		ConfigureParams.System.nMachineType = MACHINE_STE;
 		ClocksTimings_InitMachine ( ConfigureParams.System.nMachineType );
+		Video_SetTimings ( ConfigureParams.System.nMachineType , ConfigureParams.System.VideoTimingMode );
 		IoMem_Init();
 		ConfigureParams.System.nCpuFreq = 8;
 		ConfigureParams.System.nCpuLevel = 0;
@@ -530,6 +533,7 @@ static void TOS_CheckSysConfig(void)
 		IoMem_UnInit();
 		ConfigureParams.System.nMachineType = MACHINE_TT;
 		ClocksTimings_InitMachine ( ConfigureParams.System.nMachineType );
+		Video_SetTimings ( ConfigureParams.System.nMachineType , ConfigureParams.System.VideoTimingMode );
 		IoMem_Init();
 		ConfigureParams.System.nCpuFreq = 32;
 		ConfigureParams.System.nCpuLevel = 3;
@@ -541,6 +545,7 @@ static void TOS_CheckSysConfig(void)
 		IoMem_UnInit();
 		ConfigureParams.System.nMachineType = MACHINE_FALCON;
 		ClocksTimings_InitMachine ( ConfigureParams.System.nMachineType );
+		Video_SetTimings ( ConfigureParams.System.nMachineType , ConfigureParams.System.VideoTimingMode );
 #if ENABLE_DSP_EMU
 		ConfigureParams.System.nDSPType = DSP_TYPE_EMU;
 		DSP_Enable();
@@ -558,6 +563,7 @@ static void TOS_CheckSysConfig(void)
 		IoMem_UnInit();
 		ConfigureParams.System.nMachineType = MACHINE_ST;
 		ClocksTimings_InitMachine ( ConfigureParams.System.nMachineType );
+		Video_SetTimings ( ConfigureParams.System.nMachineType , ConfigureParams.System.VideoTimingMode );
 		IoMem_Init();
 		ConfigureParams.System.nCpuFreq = 8;
 		ConfigureParams.System.nCpuLevel = 0;
@@ -570,6 +576,7 @@ static void TOS_CheckSysConfig(void)
 		IoMem_UnInit();
 		ConfigureParams.System.nMachineType = MACHINE_STE;
 		ClocksTimings_InitMachine ( ConfigureParams.System.nMachineType );
+		Video_SetTimings ( ConfigureParams.System.nMachineType , ConfigureParams.System.VideoTimingMode );
 		IoMem_Init();
 		ConfigureParams.System.nCpuFreq = 8;
 		ConfigureParams.System.nCpuLevel = 0;

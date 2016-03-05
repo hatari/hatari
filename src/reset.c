@@ -57,6 +57,9 @@ static int Reset_ST(bool bCold)
 
 		Cart_ResetImage();          /* Load cartridge program into ROM memory. */
 		Cart_Patch();
+	
+		/* Video timings can change only on cold boot (wakeup states) */
+		Video_SetTimings ( ConfigureParams.System.nMachineType , ConfigureParams.System.VideoTimingMode );
 	}
 	CycInt_Reset();               /* Reset interrupts */
 	MFP_Reset();                  /* Setup MFP chip */

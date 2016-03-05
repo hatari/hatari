@@ -594,8 +594,6 @@ static VIDEO_TIMING	*pVideoTiming;
 /* Local functions prototypes                                   */
 /*--------------------------------------------------------------*/
 
-static void	Video_SetSystemTimings ( void );
-
 static Uint32	Video_CalculateAddress ( void );
 static int	Video_GetMMUStartCycle ( int DisplayStartCycle );
 static void	Video_WriteToShifterRes ( Uint8 Res );
@@ -678,7 +676,7 @@ void Video_Reset(void)
 	Video_Reset_Glue();
 
 	/* Set system specific timings */
-	Video_SetSystemTimings();
+	Video_SetTimings ( ConfigureParams.System.nMachineType , ConfigureParams.System.VideoTimingMode );
 
 	/* Reset VBL counter */
 	nVBLs = 0;
@@ -765,8 +763,34 @@ void	Video_InitTimings(void)
 /*
  * Set specific video timings, depending on the system being emulated.
  */
-static void	Video_SetSystemTimings(void)
+void	Video_SetTimings( MACHINETYPE MachineType , VIDEOTIMINGMODE Mode )
 {
+	int	Timing;
+printf ( "Video_SetSystemTimings %d %d\n" , MachineType , Mode );
+
+
+	/* Default timing for TT/Falcon (not really important */
+	/* as TT/Falcon don't use cycle precise video effects) */
+	Timing = VIDEO_TIMING_DEFAULT;
+
+	if ( ( MachineType == MACHINE_STE ) || ( MachineType == MACHINE_MEGA_STE ) )
+		Timing = VIDEO_TIMING_STE;			/* Only one choice for STE */
+
+	else							/* 4 wakeup states are possible for STF */
+	{
+		if ( Mode == VIDEO_TIMING_MODE_RANDOM )
+			Mode = VIDEO_TIMING_MODE_WS1 + rand() % 4;	/* random between the 4 modes WS1, WS2, WS3, WS4 */
+
+		if ( Mode == VIDEO_TIMING_MODE_WS1 )		Timing = VIDEO_TIMING_STF_WS1;
+		else if ( Mode == VIDEO_TIMING_MODE_WS2 )	Timing = VIDEO_TIMING_STF_WS2;
+		else if ( Mode == VIDEO_TIMING_MODE_WS3 )	Timing = VIDEO_TIMING_STF_WS3;
+		else 						Timing = VIDEO_TIMING_STF_WS4;
+	}
+
+	pVideoTiming = &VideoTimings[ Timing ];
+
+
+
 	if ( ConfigureParams.System.nMachineType == MACHINE_ST )
 	{
 #ifndef CPU_WS1

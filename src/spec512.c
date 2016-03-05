@@ -71,6 +71,7 @@ const char Spec512_fileid[] = "Hatari spec512.c : " __DATE__ " " __TIME__;
 #include <SDL_endian.h>
 
 #include "main.h"
+#include "configuration.h"
 #include "cycles.h"
 #include "cycInt.h"
 #include "m68000.h"
@@ -78,7 +79,6 @@ const char Spec512_fileid[] = "Hatari spec512.c : " __DATE__ " " __TIME__;
 #include "screen.h"
 #include "spec512.h"
 #include "video.h"
-#include "configuration.h"
 
 
 /* As 68000 clock multiple of 4 this mean we can only write to the palette this many time per scanline */

@@ -17,6 +17,7 @@ const char BreakCond_fileid[] = "Hatari breakcond.c : " __DATE__ " " __TIME__;
 #include <stdlib.h>
 #include "config.h"
 #include "main.h"
+#include "configuration.h"
 #include "file.h"
 #include "m68000.h"
 #include "memorySnapShot.h"

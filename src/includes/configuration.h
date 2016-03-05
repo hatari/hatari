@@ -321,6 +321,15 @@ typedef enum
 } FPUTYPE;
 #endif
 
+typedef enum
+{
+  VIDEO_TIMING_MODE_RANDOM = 0,
+  VIDEO_TIMING_MODE_WS1,
+  VIDEO_TIMING_MODE_WS2,
+  VIDEO_TIMING_MODE_WS3,
+  VIDEO_TIMING_MODE_WS4,
+} VIDEOTIMINGMODE;
+
 typedef struct
 {
   int nCpuLevel;
@@ -334,6 +343,7 @@ typedef struct
   bool bFastBoot;                 /* Enable to patch TOS for fast boot */
   bool bFastForward;
   bool bAddressSpace24;           /* Always set to true with old UAE cpu */
+  VIDEOTIMINGMODE VideoTimingMode;
 
 #if ENABLE_WINUAE_CPU
   bool bCycleExactCpu;

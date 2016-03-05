@@ -14,6 +14,7 @@
 const char VDI_fileid[] = "Hatari vdi.c : " __DATE__ " " __TIME__;
 
 #include "main.h"
+#include "configuration.h"
 #include "file.h"
 #include "gemdos.h"
 #include "m68000.h"
@@ -22,7 +23,6 @@ const char VDI_fileid[] = "Hatari vdi.c : " __DATE__ " " __TIME__;
 #include "stMemory.h"
 #include "vdi.h"
 #include "video.h"
-#include "configuration.h"
 
 
 Uint32 VDI_OldPC;                  /* When call Trap#2, store off PC */

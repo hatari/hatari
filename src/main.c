@@ -657,7 +657,6 @@ static void Main_Init_HW(void)
 	Joy_Init();
 	FDC_Init();
 	STX_Init();
-	Video_InitTimings();
 }
 
 /*-----------------------------------------------------------------------*/
@@ -689,6 +688,8 @@ static void Main_Init(void)
 	}
 
 	ClocksTimings_InitMachine ( ConfigureParams.System.nMachineType );
+        Video_SetTimings ( ConfigureParams.System.nMachineType , ConfigureParams.System.VideoTimingMode );
+
 	Resolution_Init();
 	SDLGui_Init();
 	Printer_Init();

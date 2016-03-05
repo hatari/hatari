@@ -780,6 +780,7 @@ void Configuration_SetDefault(void)
 	ConfigureParams.System.nDSPType = DSP_TYPE_NONE;
 	ConfigureParams.System.bAddressSpace24 = true;
 #endif
+	ConfigureParams.System.VideoTimingMode = VIDEO_TIMING_MODE_WS3;
 	ConfigureParams.System.bCompatibleCpu = true;
 	ConfigureParams.System.bBlitter = false;
 	ConfigureParams.System.bPatchTimerD = true;
@@ -847,6 +848,9 @@ void Configuration_Apply(bool bReset)
 
 	/* Init clocks for this machine */
 	ClocksTimings_InitMachine ( ConfigureParams.System.nMachineType );
+
+	/* Set video timings for this machine */
+	Video_SetTimings ( ConfigureParams.System.nMachineType , ConfigureParams.System.VideoTimingMode );
 
 	/* Sound settings */
 	/* SDL sound buffer in ms */

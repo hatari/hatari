@@ -9,6 +9,7 @@
 const char IoMemTabSTE_fileid[] = "Hatari ioMemTabSTE.c : " __DATE__ " " __TIME__;
 
 #include "main.h"
+#include "configuration.h"
 #include "dmaSnd.h"
 #include "fdc.h"
 #include "acia.h"
