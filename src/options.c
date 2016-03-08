@@ -1142,6 +1142,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				ConfigureParams.System.VideoTimingMode = VIDEO_TIMING_MODE_WS4;
 			else
 				return Opt_ShowError(OPT_VIDEO_TIMING, argv[i], "Unknown video timing mode");
+			fprintf(stderr, "\nvideo-timing : Work in progress, this option has no effect at the moment\n\n");
 			break;
 
 			/* Falcon/TT display options */
