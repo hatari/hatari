@@ -1887,18 +1887,6 @@ void Crossbar_Info(FILE *fp, Uint32 dummy)
 	char frqSTE[30], frq25Mhz[30], frq32Mhz[30];
 	char dataSize[15];
 
-	static const Uint32 Ste_SampleRates[4] = {
-		6258, 12517, 25033, 50066
-	};
-
-	static const Uint32 Falcon_SampleRates_25Mhz[15] = {
-		49170, 32780, 24585, 19668, 16390, 14049, 12292, 10927, 9834, 8940, 8195, 7565, 7024, 6556, 6146
-	};
-
-	static const Uint32 Falcon_SampleRates_32Mhz[15] = {
-		62500, 41666, 31250, 25000, 20833, 17857, 15624, 13889, 12500, 11363, 10416, 9615, 8928, 8333, 7812
-	};
-
 	if (ConfigureParams.System.nMachineType != MACHINE_FALCON) {
 		fprintf(fp, "Not Falcon - no Crossbar!\n");
 		return;
