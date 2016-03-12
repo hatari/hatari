@@ -2189,7 +2189,7 @@ static void ide_ioport_write(void *opaque, uint32_t addr, uint32_t val)
 				break;
 			case 0x03:   /* set transfer mode */
 			{
-				uint8_t val = s->nsector & 0x07;
+				uint8_t mval = s->nsector & 0x07;
 
 				switch (s->nsector >> 3)
 				{
@@ -2199,12 +2199,12 @@ static void ide_ioport_write(void *opaque, uint32_t addr, uint32_t val)
 					put_le16(s->identify_data + 88,0x3f);
 					break;
 				case 0x04: /* mdma mode */
-					put_le16(s->identify_data + 63,0x07 | (1 << (val + 8)));
+					put_le16(s->identify_data + 63,0x07 | (1 << (mval + 8)));
 					put_le16(s->identify_data + 88,0x3f);
 					break;
 				case 0x08: /* udma mode */
 					put_le16(s->identify_data + 63,0x07);
-					put_le16(s->identify_data + 88,0x3f | (1 << (val + 8)));
+					put_le16(s->identify_data + 88,0x3f | (1 << (mval + 8)));
 					break;
 				default:
 					goto abort_cmd;

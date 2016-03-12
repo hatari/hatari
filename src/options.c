@@ -1436,7 +1436,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			}
 			else if (strlen(argv[i]) == 1)
 			{
-				int drive = toupper(argv[i][0]);
+				drive = toupper(argv[i][0]);
 				if (drive >= 'C' && drive <= 'Z')
 				{
 					drive = drive - 'C' + DRIVE_C;
