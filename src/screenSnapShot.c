@@ -105,7 +105,7 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, FILE *fp, int png_compre
 		int CropLeft , int CropRight , int CropTop , int CropBottom )
 {
 	bool do_lock;
-	int y, ret = -1;
+	int y, ret;
 	int w = surface->w - CropLeft - CropRight;
 	int h = surface->h - CropTop - CropBottom;
 	Uint8 *src_ptr;
@@ -122,19 +122,23 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, FILE *fp, int png_compre
 	png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
 	if (!png_ptr) 
 	{
-		return ret;
+		return -1;
 	}
 	
 	/* Allocate/initialize the image information data. */
 	info_ptr = png_create_info_struct(png_ptr);
-	if (!info_ptr)
+	if (!info_ptr) {
+		ret = -1;
 		goto png_cleanup;
+	}
 
 	/* libpng ugliness: Set error handling when not supplying own
 	 * error handling functions in the png_create_write_struct() call.
 	 */
-	if (setjmp(png_jmpbuf(png_ptr)))
+	if (setjmp(png_jmpbuf(png_ptr))) {
+		ret = -1;
 		goto png_cleanup;
+	}
 
 	/* store current pos in fp (could be != 0 for avi recording) */
 	start = ftell ( fp );
