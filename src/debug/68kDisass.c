@@ -1730,7 +1730,6 @@ static OpcodeTableStruct	OpcodeTable[] = {
 static int	Disass68k(long addr, char *labelBuffer, char *opcodeBuffer, char *operandBuffer, char *commentBuffer)
 {
 	long	baseAddr = addr;
-	int		val;
 	int		i;
 	int		count = 0;
 	char	addressLabel[256];
@@ -1831,10 +1830,10 @@ static int	Disass68k(long addr, char *labelBuffer, char *opcodeBuffer, char *ope
 
 	case dtASCString:
 	{
-		int	count = 1;
-		unsigned short	val = Disass68kGetWord(addr+0);
+		unsigned short	opcval = Disass68kGetWord(addr+0);
+		count = 1;
 		strcpy(opcodeBuffer,"DC.B");
-		if((val >> 8) == 0)
+		if ((opcval >> 8) == 0)
 		{
 			strcat(operandBuffer, "0");
 		} else {
@@ -1871,6 +1870,7 @@ static int	Disass68k(long addr, char *labelBuffer, char *opcodeBuffer, char *ope
 	case dtFunctionPointer:
 	{
 		const char	*sp;
+		int		val;
 		val = (Disass68kGetWord(addr) << 16) | Disass68kGetWord(addr+2);
 		sp = Disass68kSymbolName(val, 2);
 		strcpy(opcodeBuffer,"DC.L");
@@ -1899,13 +1899,12 @@ more:
 	while(1)
 	{
 		unsigned short	opcode[5];
-		unsigned int	i;
 		OpcodeTableStruct	*ots = &OpcodeTable[index++];
 		int	size;
 		char	sizeChar = 0;
 		char	*dbuf;
 		int	ea;
-		unsigned int	maxop;
+		int	maxop;
 
 		if(ots->opcodeName == NULL)
 			break;
@@ -2027,10 +2026,10 @@ more:
 		ea = opcode[0] & 0x3F;
 		dbuf = operandBuffer;
 
-		maxop=(sizeof(ots->op)/sizeof(ots->op[0]));
+		maxop = (int)(sizeof(ots->op)/sizeof(ots->op[0]));
 		for(i=0; i<maxop; ++i)
 		{
-			int reg;
+			int reg, val;
 
 			switch(ots->op[i])
 			{
