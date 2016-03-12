@@ -58,7 +58,7 @@ void Keymap_Init(void)
 /**
  * Map SDL symbolic key to ST scan code
  */
-static const char Keymap_SymbolicToStScanCode(SDL_keysym* pKeySym)
+static char Keymap_SymbolicToStScanCode(SDL_keysym* pKeySym)
 {
 	char code;
 
