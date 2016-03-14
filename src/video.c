@@ -573,13 +573,38 @@ static SHIFTER_FRAME	ShifterFrame;
 #define	VIDEO_TIMING_STF_WS3		2
 #define	VIDEO_TIMING_STF_WS4		3
 #define	VIDEO_TIMING_STE		4		
+#define	VIDEO_TIMING_TT			5		
 
 #define VIDEO_TIMING_DEFAULT		VIDEO_TIMING_STF_WS3
-#define VIDEO_TIMING_MAX_NB		5
+#define VIDEO_TIMING_MAX_NB		6
 
 typedef struct
 {
-	int	nop;
+	char	VideoTimingName[ 20  ];
+
+	int	Preload_Start_Hi;		/*   0 (STE) */
+	int	H_Start_Hi;			/*   4 */
+	int	Blank_Stop_Low;			/*  30 */
+	int	Preload_Start_Low_60;		/*  36 (STE) */
+	int	H_Start_Low_60;			/*  52 */
+	int	Line_Set_Pal;			/*  54 */
+	int	Preload_Start_Low_50;		/*  40 (STE) */
+	int	H_Start_Low_50;			/*  56 */
+	int	H_Stop_Hi;			/* 164 */
+	int	Blank_Start_Hi;			/* 184 */
+	int	H_Stop_Low_60;			/* 372 */
+	int	H_Stop_Low_50;			/* 376 */
+	int	Blank_Start_Low;		/* 450 */
+	int	HSync_Start_Low;		/* 462 */
+	int	HSync_Stop_Low;			/* 502 */
+
+	int	RemoveTopBorder_Pos;		/* 502 */
+	int	RemoveBottomBorder_Pos;		/* 502 */
+
+	int	VblVideoCycleOffset;
+	int	Hbl_Int_Pos_Low_60;		/* 508 */
+	int	Hbl_Int_Pos_Low_50;		/* 512 */
+	int	Hbl_Int_Pos_Hi;			/* 224 */
 
 } VIDEO_TIMING;
 
@@ -593,6 +618,8 @@ static VIDEO_TIMING	*pVideoTiming;
 /*--------------------------------------------------------------*/
 /* Local functions prototypes                                   */
 /*--------------------------------------------------------------*/
+
+static void	Video_InitTimings_Copy ( VIDEO_TIMING *pSrc , VIDEO_TIMING *pDest , int inc );
 
 static Uint32	Video_CalculateAddress ( void );
 static int	Video_GetMMUStartCycle ( int DisplayStartCycle );
@@ -752,11 +779,127 @@ void Video_Reset_Glue(void)
  */
 void	Video_InitTimings(void)
 {
+	VIDEO_TIMING	*pVideoTiming1;
+	VIDEO_TIMING	*pVideoTiming2;
 	/* TODO */
 
-	/* Set timings to a default mode (this will be overriden after when choosing the emulated machine) */
+	/* Init all timings for STF machine */
+	pVideoTiming1 = &VideoTimings[ VIDEO_TIMING_STF_WS1 ];
+
+	/* Init all timings for WS1 mode */
+	strcpy ( pVideoTiming1->VideoTimingName , "WS1" );
+	pVideoTiming1->H_Start_Hi 		=   4;
+	pVideoTiming1->Blank_Stop_Low 		=  30;
+	pVideoTiming1->H_Start_Low_60 		=  52;
+	pVideoTiming1->Line_Set_Pal 		=  54;
+	pVideoTiming1->H_Start_Low_50 		=  56;
+	pVideoTiming1->H_Stop_Hi 		= 164;
+	pVideoTiming1->Blank_Start_Hi 		= 184;
+	pVideoTiming1->H_Stop_Low_60 		= 372;
+	pVideoTiming1->H_Stop_Low_50 		= 376;
+	pVideoTiming1->Blank_Start_Low 		= 450;
+	pVideoTiming1->HSync_Start_Low 		= 462;
+	pVideoTiming1->HSync_Stop_Low 		= 502;
+	pVideoTiming1->RemoveTopBorder_Pos 	= 502;
+	pVideoTiming1->RemoveBottomBorder_Pos 	= 502;
+	pVideoTiming1->VblVideoCycleOffset 	= VBL_VIDEO_CYCLE_OFFSET_STF - 4;
+	pVideoTiming1->Hbl_Int_Pos_Low_60	= CYCLES_PER_LINE_60HZ - 4;
+	pVideoTiming1->Hbl_Int_Pos_Low_50	= CYCLES_PER_LINE_50HZ - 4;
+	pVideoTiming1->Hbl_Int_Pos_Hi		= CYCLES_PER_LINE_71HZ - 4;
+
+	/* WS2/WS3/WS4 timings are derived from WS1 with an increment */	
+	pVideoTiming2 = &VideoTimings[ VIDEO_TIMING_STF_WS2 ];
+	strcpy ( pVideoTiming2->VideoTimingName , "WS2" );
+	Video_InitTimings_Copy ( pVideoTiming1 , pVideoTiming2 , 3 );
+	pVideoTiming2->VblVideoCycleOffset 	= VBL_VIDEO_CYCLE_OFFSET_STF;
+	pVideoTiming2->Hbl_Int_Pos_Low_60	= CYCLES_PER_LINE_60HZ;
+	pVideoTiming2->Hbl_Int_Pos_Low_50	= CYCLES_PER_LINE_50HZ;
+	pVideoTiming2->Hbl_Int_Pos_Hi		= CYCLES_PER_LINE_71HZ;
+
+	pVideoTiming2 = &VideoTimings[ VIDEO_TIMING_STF_WS3 ];
+	strcpy ( pVideoTiming2->VideoTimingName , "WS3" );
+	Video_InitTimings_Copy ( pVideoTiming1 , pVideoTiming2 , 1 );
+	pVideoTiming2->VblVideoCycleOffset 	= VBL_VIDEO_CYCLE_OFFSET_STF;
+	pVideoTiming2->Hbl_Int_Pos_Low_60	= CYCLES_PER_LINE_60HZ;
+	pVideoTiming2->Hbl_Int_Pos_Low_50	= CYCLES_PER_LINE_50HZ;
+	pVideoTiming2->Hbl_Int_Pos_Hi		= CYCLES_PER_LINE_71HZ;
+
+	pVideoTiming2 = &VideoTimings[ VIDEO_TIMING_STF_WS4 ];
+	strcpy ( pVideoTiming2->VideoTimingName , "WS4" );
+	Video_InitTimings_Copy ( pVideoTiming1 , pVideoTiming2 , 2 );
+	pVideoTiming2->VblVideoCycleOffset 	= VBL_VIDEO_CYCLE_OFFSET_STF;
+	pVideoTiming2->Hbl_Int_Pos_Low_60	= CYCLES_PER_LINE_60HZ;
+	pVideoTiming2->Hbl_Int_Pos_Low_50	= CYCLES_PER_LINE_50HZ;
+	pVideoTiming2->Hbl_Int_Pos_Hi		= CYCLES_PER_LINE_71HZ;
+
+
+	/* Init all timings for STE machine */
+	pVideoTiming1 = &VideoTimings[ VIDEO_TIMING_STE ];
+	strcpy ( pVideoTiming1->VideoTimingName , "STE" );
+	pVideoTiming1->Preload_Start_Hi		=   0;
+	pVideoTiming1->H_Start_Hi 		=   4;
+	pVideoTiming1->Blank_Stop_Low 		=  28;
+	pVideoTiming1->Preload_Start_Low_60 	=  36;
+	pVideoTiming1->H_Start_Low_60 		=  52;
+	pVideoTiming1->Line_Set_Pal 		=  56;		/* check 56 ? */
+	pVideoTiming1->Preload_Start_Low_50 	=  40;
+	pVideoTiming1->H_Start_Low_50 		=  56;
+	pVideoTiming1->H_Stop_Hi 		= 164;
+	pVideoTiming1->Blank_Start_Hi 		= 184;
+	pVideoTiming1->H_Stop_Low_60 		= 372;
+	pVideoTiming1->H_Stop_Low_50 		= 376;
+	pVideoTiming1->Blank_Start_Low 		= 448;
+	pVideoTiming1->HSync_Start_Low 		= 460;
+	pVideoTiming1->HSync_Stop_Low 		= 500;
+	pVideoTiming1->RemoveTopBorder_Pos 	= 500;
+	pVideoTiming1->RemoveBottomBorder_Pos 	= 500;
+	pVideoTiming2->VblVideoCycleOffset 	= VBL_VIDEO_CYCLE_OFFSET_STF;
+	pVideoTiming2->Hbl_Int_Pos_Low_60	= CYCLES_PER_LINE_60HZ;
+	pVideoTiming2->Hbl_Int_Pos_Low_50	= CYCLES_PER_LINE_50HZ;
+	pVideoTiming2->Hbl_Int_Pos_Hi		= CYCLES_PER_LINE_71HZ;
+
+	/* Use the STE timings for TT */
+	pVideoTiming2 = &VideoTimings[ VIDEO_TIMING_TT ];
+	strcpy ( pVideoTiming2->VideoTimingName , "TT" );
+	Video_InitTimings_Copy ( pVideoTiming1 , pVideoTiming2 , 0 );
+
+	/* Set timings to a default mode (this will be overriden later when choosing the emulated machine) */
 	pVideoTiming = &VideoTimings[ VIDEO_TIMING_DEFAULT ];
 }
+
+
+
+/*-----------------------------------------------------------------------*/
+/*
+ * Copy some video timings, adding 'inc' to the values that depend on
+ * wake up state.
+ */
+static void	Video_InitTimings_Copy ( VIDEO_TIMING *pSrc , VIDEO_TIMING *pDest , int inc )
+{
+	pDest->Preload_Start_Hi		= pSrc->Preload_Start_Hi + inc;
+	pDest->H_Start_Hi 		= pSrc->H_Start_Hi + inc;
+	pDest->Blank_Stop_Low 		= pSrc->Blank_Stop_Low + inc;
+	pDest->Preload_Start_Low_60	= pSrc->Preload_Start_Low_60 + inc;
+	pDest->H_Start_Low_60 		= pSrc->H_Start_Low_60 + inc;
+	pDest->Line_Set_Pal 		= pSrc->Line_Set_Pal + inc;
+	pDest->Preload_Start_Low_50	= pSrc->Preload_Start_Low_50 + inc;
+	pDest->H_Start_Low_50 		= pSrc->H_Start_Low_50 + inc;
+	pDest->H_Stop_Hi 		= pSrc->H_Stop_Hi + inc;
+	pDest->Blank_Start_Hi 		= pSrc->Blank_Start_Hi + inc;
+	pDest->H_Stop_Low_60 		= pSrc->H_Stop_Low_60 + inc;
+	pDest->H_Stop_Low_50 		= pSrc->H_Stop_Low_50 + inc;
+	pDest->Blank_Start_Low 		= pSrc->Blank_Start_Low + inc;
+	pDest->HSync_Start_Low 		= pSrc->HSync_Start_Low + inc;
+	pDest->HSync_Stop_Low 		= pSrc->HSync_Stop_Low + inc;
+	pDest->RemoveTopBorder_Pos	= pSrc->RemoveTopBorder_Pos + inc;
+	pDest->RemoveBottomBorder_Pos	= pSrc->RemoveBottomBorder_Pos + inc;
+
+	pDest->VblVideoCycleOffset	= pSrc->VblVideoCycleOffset;
+	pDest->Hbl_Int_Pos_Low_60	= pSrc->Hbl_Int_Pos_Low_60;
+	pDest->Hbl_Int_Pos_Low_50	= pSrc->Hbl_Int_Pos_Low_50;
+	pDest->Hbl_Int_Pos_Hi		= pSrc->Hbl_Int_Pos_Hi;
+}
+
 
 
 /*-----------------------------------------------------------------------*/
@@ -779,6 +922,9 @@ printf ( "Video_SetSystemTimings1 %d %d\n" , MachineType , Mode );
 
 	if ( ( MachineType == MACHINE_STE ) || ( MachineType == MACHINE_MEGA_STE ) )
 		Timing = VIDEO_TIMING_STE;			/* Only one choice for STE */
+
+	else if ( MachineType == MACHINE_TT )
+		Timing = VIDEO_TIMING_TT;			/* Use STE timings for TT */
 
 	else							/* 4 wakeup states are possible for STF */
 	{
