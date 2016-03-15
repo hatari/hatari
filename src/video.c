@@ -387,6 +387,7 @@
 /*			(eg 160240 cycles per VBL in "keyboard no jitter" test program by NyH).	*/
 /* 2016/02/26	[NP]	Add support for 'remove left' including a med res stabiliser, by doing	*/
 /*			hi/med/low switches at cycles 0/8/16 ('Closure' by Sync).		*/
+/* 2016/03/15	[NP]	Allow to have different video timings for all machines/wakeup states	*/
 
 
 const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
@@ -491,13 +492,8 @@ static int nPrevTTSpecialVideoMode;		/* TT special video mode */
 static int LastCycleScroll8264;			/* value of Cycles_GetCounterOnWriteAccess last time ff8264 was set for the current VBL */
 static int LastCycleScroll8265;			/* value of Cycles_GetCounterOnWriteAccess last time ff8265 was set for the current VBL */
 
-static int LineRemoveTopCycle = LINE_REMOVE_TOP_CYCLE_STF;
-static int LineRemoveBottomCycle = LINE_REMOVE_BOTTOM_CYCLE_STF;
-
 static bool RestartVideoCounter = false;	/* true when reaching the HBL to restart video counter */
 static int RestartVideoCounterCycle = RESTART_VIDEO_COUNTER_CYCLE_STF;		/* position on the line where video counter should be restarted */
-
-static int VblVideoCycleOffset = VBL_VIDEO_CYCLE_OFFSET_STF;
 
 int	LineTimerBCycle = LINE_END_CYCLE_50 + TIMERB_VIDEO_CYCLE_OFFSET;	/* position of the Timer B interrupt on active lines */
 int	TimerBEventCountCycleStart = -1;	/* value of Cycles_GetCounterOnWriteAccess last time timer B was started for the current VBL */
@@ -575,8 +571,9 @@ static SHIFTER_FRAME	ShifterFrame;
 #define	VIDEO_TIMING_STE		4		
 #define	VIDEO_TIMING_TT			5		
 
+#define VIDEO_TIMING_MAX_NB		6	/* Number of different timings structs we need to store */
+
 #define VIDEO_TIMING_DEFAULT		VIDEO_TIMING_STF_WS3
-#define VIDEO_TIMING_MAX_NB		6
 
 typedef struct
 {
@@ -611,7 +608,7 @@ typedef struct
 
 static VIDEO_TIMING	VideoTimings[ VIDEO_TIMING_MAX_NB ];
 static VIDEO_TIMING	*pVideoTiming;
-
+static int		VideoTiming;
 
 
 
@@ -912,54 +909,34 @@ static void	Video_InitTimings_Copy ( VIDEO_TIMING *pSrc , VIDEO_TIMING *pDest , 
  */
 void	Video_SetTimings( MACHINETYPE MachineType , VIDEOTIMINGMODE Mode )
 {
-	int	Timing;
 printf ( "Video_SetSystemTimings1 %d %d\n" , MachineType , Mode );
 
 
 	/* Default timing for TT/Falcon (not really important */
 	/* as TT/Falcon don't use cycle precise video effects) */
-	Timing = VIDEO_TIMING_DEFAULT;
+	VideoTiming = VIDEO_TIMING_DEFAULT;
 
 	if ( ( MachineType == MACHINE_STE ) || ( MachineType == MACHINE_MEGA_STE ) )
-		Timing = VIDEO_TIMING_STE;			/* Only one choice for STE */
+		VideoTiming = VIDEO_TIMING_STE;			/* Only one choice for STE */
 
 	else if ( MachineType == MACHINE_TT )
-		Timing = VIDEO_TIMING_TT;			/* Use STE timings for TT */
+		VideoTiming = VIDEO_TIMING_TT;			/* Only one choice for TT (same values as STE) */
 
 	else							/* 4 wakeup states are possible for STF */
 	{
 		if ( Mode == VIDEO_TIMING_MODE_RANDOM )
 			Mode = VIDEO_TIMING_MODE_WS1 + rand() % 4;	/* random between the 4 modes WS1, WS2, WS3, WS4 */
 
-		if ( Mode == VIDEO_TIMING_MODE_WS1 )		Timing = VIDEO_TIMING_STF_WS1;
-		else if ( Mode == VIDEO_TIMING_MODE_WS2 )	Timing = VIDEO_TIMING_STF_WS2;
-		else if ( Mode == VIDEO_TIMING_MODE_WS3 )	Timing = VIDEO_TIMING_STF_WS3;
-		else 						Timing = VIDEO_TIMING_STF_WS4;
+		if ( Mode == VIDEO_TIMING_MODE_WS1 )		VideoTiming = VIDEO_TIMING_STF_WS1;
+		else if ( Mode == VIDEO_TIMING_MODE_WS2 )	VideoTiming = VIDEO_TIMING_STF_WS2;
+		else if ( Mode == VIDEO_TIMING_MODE_WS3 )	VideoTiming = VIDEO_TIMING_STF_WS3;
+		else 						VideoTiming = VIDEO_TIMING_STF_WS4;
 	}
-printf ( "Video_SetSystemTimings2 %d %d\n" , MachineType , Mode );
 
-	pVideoTiming = &VideoTimings[ Timing ];
+	pVideoTiming = &VideoTimings[ VideoTiming ];
 
+printf ( "Video_SetSystemTimings2 %d %d -> %d (%s) %d %d %d\n" , MachineType , Mode , VideoTiming , pVideoTiming->VideoTimingName , pVideoTiming->RemoveTopBorder_Pos , pVideoTiming->RemoveBottomBorder_Pos , pVideoTiming->VblVideoCycleOffset );
 
-
-	if ( ConfigureParams.System.nMachineType == MACHINE_ST )
-	{
-#ifndef CPU_WS1
-		LineRemoveTopCycle = LINE_REMOVE_TOP_CYCLE_STF;
-		LineRemoveBottomCycle = LINE_REMOVE_BOTTOM_CYCLE_STF;
-		VblVideoCycleOffset = VBL_VIDEO_CYCLE_OFFSET_STF;
-#else
-		LineRemoveTopCycle = LINE_REMOVE_TOP_CYCLE_STF-2;
-		LineRemoveBottomCycle = LINE_REMOVE_BOTTOM_CYCLE_STF-2;
-		VblVideoCycleOffset = VBL_VIDEO_CYCLE_OFFSET_STF-4;
-#endif
-	}
-	else				/* STE, TT */
-	{
-		LineRemoveTopCycle = LINE_REMOVE_TOP_CYCLE_STE;
-		LineRemoveBottomCycle = LINE_REMOVE_BOTTOM_CYCLE_STE;
-		VblVideoCycleOffset = VBL_VIDEO_CYCLE_OFFSET_STE;
-	}
 }
 
 
@@ -1799,7 +1776,7 @@ void Video_Sync_WriteByte ( void )
 	else if ( Freq == 0x00 )					/* switch to 60 Hz */
 	{
 		if ( ( HblCounterVideo < VIDEO_START_HBL_60HZ-1 )	/* nStartHBL can change only if display is not ON yet */
-			|| ( ( HblCounterVideo == VIDEO_START_HBL_60HZ-1 ) && ( LineCycles <= LineRemoveTopCycle ) ) )
+			|| ( ( HblCounterVideo == VIDEO_START_HBL_60HZ-1 ) && ( LineCycles <= pVideoTiming->RemoveTopBorder_Pos ) ) )
 			nStartHBL = VIDEO_START_HBL_60HZ;
 
 		if ( ( HblCounterVideo < VIDEO_END_HBL_60HZ )		/* nEndHBL can change only if display is not OFF yet */
@@ -2105,7 +2082,7 @@ void Video_InterruptHandler_HBL ( void )
 	/* Add new VBL interrupt just after the last HBL (for example : VblVideoCycleOffset cycles after HBL 312 at 50 Hz) */
 	if (nHBL == nScanlinesPerFrame-1)
 	{
-		CycInt_AddRelativeInterrupt( NewHBLPos + VblVideoCycleOffset - PendingCyclesOver, INT_CPU_CYCLE, INTERRUPT_VIDEO_VBL);
+		CycInt_AddRelativeInterrupt( NewHBLPos + pVideoTiming->VblVideoCycleOffset - PendingCyclesOver, INT_CPU_CYCLE, INTERRUPT_VIDEO_VBL);
 	}
 #endif
 
@@ -2151,16 +2128,16 @@ static void Video_EndHBL(void)
 	//
 
 	/* Remove top border if the switch to 60 Hz was made during this vbl before cycle	*/
-	/* LineRemoveTopCycle on line 33 and if the switch to 50 Hz has not yet occurred or	*/
-	/* occurred before the 60 Hz or occurred after cycle LineRemoveTopCycle on line 33.	*/
+	/* RemoveTopBorder_Pos on line 33 and if the switch to 50 Hz has not yet occurred or	*/
+	/* occurred before the 60 Hz or occurred after cycle RemoveTopBorder_Pos on line 33.	*/
 	if ( ( nHBL == VIDEO_START_HBL_60HZ-1 )				/* last HBL before first line of a 60 Hz screen */
 		&& ( ShifterFrame.FreqPos60.VBL == nVBLs )		/* switch to 60 Hz during this VBL */
 		&& ( ( ShifterFrame.FreqPos60.HBL < nHBL )
-		    || ( ( ShifterFrame.FreqPos60.HBL == nHBL ) && ( ShifterFrame.FreqPos60.LineCycles <= LineRemoveTopCycle ) ) )
+		    || ( ( ShifterFrame.FreqPos60.HBL == nHBL ) && ( ShifterFrame.FreqPos60.LineCycles <= pVideoTiming->RemoveTopBorder_Pos ) ) )
 		&& (   ( ShifterFrame.FreqPos50.VBL < nVBLs )
 		    || ( ShifterFrame.FreqPos50.FrameCycles < ShifterFrame.FreqPos60.FrameCycles )
 		    || ( ShifterFrame.FreqPos50.HBL > nHBL )
-		    || ( ( ShifterFrame.FreqPos50.HBL == nHBL ) && ( ShifterFrame.FreqPos50.LineCycles > LineRemoveTopCycle ) ) ) )
+		    || ( ( ShifterFrame.FreqPos50.HBL == nHBL ) && ( ShifterFrame.FreqPos50.LineCycles > pVideoTiming->RemoveTopBorder_Pos ) ) ) )
 	{
 		/* Top border */
 		LOG_TRACE ( TRACE_VIDEO_BORDER_V , "detect remove top\n" );
@@ -2176,11 +2153,11 @@ static void Video_EndHBL(void)
 		&& ( ( OverscanMode & OVERSCANMODE_TOP ) == 0 )		/* and top border was not removed : this screen is only 60 Hz */
 		&& ( ShifterFrame.FreqPos50.VBL == nVBLs )		/* switch to 50 Hz during this VBL */
 		&& ( ( ShifterFrame.FreqPos50.HBL < nHBL )
-		    || ( ( ShifterFrame.FreqPos50.HBL == nHBL ) && ( ShifterFrame.FreqPos50.LineCycles <= LineRemoveBottomCycle-4 ) ) )
+		    || ( ( ShifterFrame.FreqPos50.HBL == nHBL ) && ( ShifterFrame.FreqPos50.LineCycles <= pVideoTiming->RemoveBottomBorder_Pos-4 ) ) )
 		&& (   ( ShifterFrame.FreqPos60.VBL < nVBLs )
 		    || ( ShifterFrame.FreqPos60.FrameCycles < ShifterFrame.FreqPos50.FrameCycles )
 		    || ( ShifterFrame.FreqPos60.HBL > nHBL )
-		    || ( ( ShifterFrame.FreqPos60.HBL == nHBL ) && ( ShifterFrame.FreqPos60.LineCycles > LineRemoveBottomCycle-4 ) ) ) )
+		    || ( ( ShifterFrame.FreqPos60.HBL == nHBL ) && ( ShifterFrame.FreqPos60.LineCycles > pVideoTiming->RemoveBottomBorder_Pos-4 ) ) ) )
 	{
 		LOG_TRACE ( TRACE_VIDEO_BORDER_V , "detect remove bottom 60Hz\n" );
 		OverscanMode |= OVERSCANMODE_BOTTOM;
@@ -2192,11 +2169,11 @@ static void Video_EndHBL(void)
 		&& ( ( OverscanMode & OVERSCANMODE_BOTTOM ) == 0 )	/* border was not already removed at line VIDEO_END_HBL_60HZ-1 */
 		&& ( ShifterFrame.FreqPos60.VBL == nVBLs )		/* switch to 60 Hz during this VBL */
 		&& ( ( ShifterFrame.FreqPos60.HBL < nHBL )
-		    || ( ( ShifterFrame.FreqPos60.HBL == nHBL ) && ( ShifterFrame.FreqPos60.LineCycles <= LineRemoveBottomCycle ) ) )
+		    || ( ( ShifterFrame.FreqPos60.HBL == nHBL ) && ( ShifterFrame.FreqPos60.LineCycles <= pVideoTiming->RemoveBottomBorder_Pos ) ) )
 		&& (   ( ShifterFrame.FreqPos50.VBL < nVBLs )
 		    || ( ShifterFrame.FreqPos50.FrameCycles < ShifterFrame.FreqPos60.FrameCycles )
 		    || ( ShifterFrame.FreqPos50.HBL > nHBL )
-		    || ( ( ShifterFrame.FreqPos50.HBL == nHBL ) && ( ShifterFrame.FreqPos50.LineCycles > LineRemoveBottomCycle ) ) ) )
+		    || ( ( ShifterFrame.FreqPos50.HBL == nHBL ) && ( ShifterFrame.FreqPos50.LineCycles > pVideoTiming->RemoveBottomBorder_Pos ) ) ) )
 	{
 		LOG_TRACE ( TRACE_VIDEO_BORDER_V , "detect remove bottom\n" );
 		OverscanMode |= OVERSCANMODE_BOTTOM;
@@ -3405,11 +3382,11 @@ static void Video_AddInterruptHBL ( int Pos )
 {
 //fprintf ( stderr , "add hbl pos=%d\n" , Pos );
 	if ( !bUseVDIRes )
-#ifndef CPU_WS1
+	{
+		if ( VideoTiming == VIDEO_TIMING_STF_WS1 )
+			Pos -= 4;
 		Video_AddInterrupt ( Pos , INTERRUPT_VIDEO_HBL );
-#else
-		Video_AddInterrupt ( Pos-4 , INTERRUPT_VIDEO_HBL );
-#endif
+	}
 }
 
 
@@ -3519,7 +3496,7 @@ void Video_InterruptHandler_VBL ( void )
 	VblJitterIndex %= VBL_JITTER_ARRAY_SIZE;
 	
 	/* Set frame cycles, used for Video Address */
-	Cycles_SetCounter(CYCLES_COUNTER_VIDEO, PendingCyclesOver + VblVideoCycleOffset);
+	Cycles_SetCounter(CYCLES_COUNTER_VIDEO, PendingCyclesOver + pVideoTiming->VblVideoCycleOffset);
 
 	/* Clear any key presses which are due to be de-bounced (held for one ST frame) */
 	Keymap_DebounceAllKeys();
