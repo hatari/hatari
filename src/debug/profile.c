@@ -533,7 +533,7 @@ const char Profile_Description[] =
 	"\tFirst can be limited just to named addresses with 'symbols'.\n"
 	"\tOptional count will limit how many items will be shown.\n"
 	"\n"
-	"'caches' shows histogram of CPU cache usage.\n"
+	"\t'caches' shows histogram of CPU cache usage.\n"
 	"\n"
 	"\t'addresses' lists the profiled addresses in order, with the\n"
 	"\tinstructions (currently) residing at them.  By default this\n"
