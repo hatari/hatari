@@ -802,7 +802,7 @@ Demos:
 - Realtime (by MJJ Prod)
 - Riverside (by DHS)
 - RGBeast (by Aggression)
-- SaboTagE Teaser (by Paradox)
+- SaboTagE (by Paradox)
 - Save the Earth (by Defence Force)
 - Sinfull Sinuses (by Chronicle)
 - Sierpinski overdose 4K (by GGN), med-rez+blitter only
