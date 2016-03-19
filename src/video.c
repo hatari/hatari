@@ -445,8 +445,6 @@ const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
 #define BORDERMASK_LEFT_OFF_2_STE	0x200	/* shorter removal of left border with hi/lo res switch -> +20 bytes (STE only)*/
 #define BORDERMASK_BLANK_LINE		0x400	/* 60/50 Hz switch blanks the rest of the line, but video counter is still incremented */
 
-//#define CPU_WS1
-
 
 int STRes = ST_LOW_RES;                         /* current ST resolution */
 int TTRes;                                      /* TT shifter resolution mode */
@@ -785,13 +783,13 @@ void	Video_InitTimings(void)
 
 	/* Init all timings for WS1 mode */
 	strcpy ( pVideoTiming1->VideoTimingName , "WS1" );
-	pVideoTiming1->H_Start_Hi 		=   4;
+	pVideoTiming1->H_Start_Hi 		=   4+1;
 	pVideoTiming1->Blank_Stop_Low 		=  30;
 	pVideoTiming1->H_Start_Low_60 		=  52;
 	pVideoTiming1->Line_Set_Pal 		=  54;
 	pVideoTiming1->H_Start_Low_50 		=  56;
-	pVideoTiming1->H_Stop_Hi 		= 164;
-	pVideoTiming1->Blank_Start_Hi 		= 184;
+	pVideoTiming1->H_Stop_Hi 		= 164+1;
+	pVideoTiming1->Blank_Start_Hi 		= 184+1;
 	pVideoTiming1->H_Stop_Low_60 		= 372;
 	pVideoTiming1->H_Stop_Low_50 		= 376;
 	pVideoTiming1->Blank_Start_Low 		= 450;
