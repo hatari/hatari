@@ -16,6 +16,7 @@ const char DlgHalt_fileid[] = "Hatari dlgHalt.c : " __DATE__ " " __TIME__;
 #include "dialog.h"
 #include "screen.h"
 #include "sdlgui.h"
+#include "m68000.h"
 
 #define DLGHALT_WARM	2
 #define DLGHALT_COLD	3
@@ -69,6 +70,7 @@ void Dialog_HaltDlg(void)
 			/* got here again, cold reset emulation to make sure we actually can exit */
 			fputs("Halt dialog invoked during Hatari shutdown, doing emulation cold reset...\n", stderr);
 			Reset_Cold();
+			M68000_SetSpecial(SPCFLAG_BRK);
 		} else {
 			bQuitProgram = true;
 		}
