@@ -2193,7 +2193,8 @@ static void Video_EndHBL(void)
 	/* 2 bytes to this line */
 	if ( ( ( ShifterFrame.ShifterLines[ nHBL ].BorderMask & BORDERMASK_RIGHT_MINUS_2 ) == 0 )
 	  && ( ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle != LINE_START_CYCLE_60 )		/* start could be 0 or 56 */
-	  && ( ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle == LINE_END_CYCLE_60 ) )
+	  && ( ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle == LINE_END_CYCLE_60 )
+	  && ( nHBL >= nStartHBL ) && ( nHBL < nEndHBL + BlankLines ) )	/* only if display is on */
 	{
 		ShifterFrame.ShifterLines[ nHBL ].BorderMask |= BORDERMASK_RIGHT_MINUS_2;
 		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect late right-2 %d<->%d\n" ,
@@ -2206,7 +2207,8 @@ static void Video_EndHBL(void)
 	/* This means left border had 2 bytes more to display */
 	if ( ( ( ShifterFrame.ShifterLines[ nHBL ].BorderMask & BORDERMASK_LEFT_PLUS_2 ) == 0 )
 	  && ( ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle == LINE_START_CYCLE_60 )
-	  && ( ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle != LINE_END_CYCLE_60 ) )		/* end could be 160, 372 or 460 */
+	  && ( ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle != LINE_END_CYCLE_60 )			/* end could be 160, 372 or 460 */
+	  && ( nHBL >= nStartHBL ) && ( nHBL < nEndHBL + BlankLines ) )	/* only if display is on */
 	{
 		ShifterFrame.ShifterLines[ nHBL ].BorderMask |= BORDERMASK_LEFT_PLUS_2;
 		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect late left+2 %d<->%d\n" ,
