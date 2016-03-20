@@ -4321,7 +4321,7 @@ void Video_TTColorRegs_STRegWrite(void)
 	addr = IoAccessCurrentAddress;
 
 	offset = addr - stpalette;
-	assert(offset > 0 && offset < 16*SIZE_WORD);
+	assert(offset >= 0 && offset < 16*SIZE_WORD);
 	offset += TTPaletteSTBank() * 16*SIZE_WORD;
 
 	/* in case it was long access */
