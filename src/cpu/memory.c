@@ -1422,12 +1422,12 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
     /* Illegal memory regions cause a bus error on the ST: */
     map_banks_ce(&BusErrMem_bank, 0xF10000 >> 16, 0x9, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
 
-
-    /* If MMU is disabled on TT/Falcon and we use full 32 bit addressing */
-    /* then we remap memory 00xxxxxx to FFxxxxxx (as a minimal replacement */
-    /* for the MMU's tables). Else, we get some crashes when booting TOS 3 and 4 */
+    /* According to the "Atari TT030 Hardware Reference Manual", the
+     * lowest 16 MBs (i.e. the 24-bit address space) are always mirrored
+     * to 0xff000000, so we remap memory 00xxxxxx to FFxxxxxx here. If not,
+     * we'd get some crashes when booting TOS 3 and 4 (e.g. both TOS 3.06
+     * and TOS 4.04 touch 0xffff8606 before setting up the MMU tables) */
     if ( ( ConfigureParams.System.bAddressSpace24 == false )
-      && ( ConfigureParams.System.bMMU == false )
       && ( ( ConfigureParams.System.nMachineType == MACHINE_TT )
 	|| ( ConfigureParams.System.nMachineType == MACHINE_FALCON ) ) )
     {
