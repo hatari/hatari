@@ -2222,9 +2222,10 @@ static int iack_cycle(int nr)
 #else
 	int iack_start = CPU_IACK_CYCLES_START;
 	int e_cycles;
+	int cycle_exact = currprefs.cpu_cycle_exact && !currprefs.mmu_model;
 
 	/* In cycle exact mode, the cycles before reaching IACK are already counted */
-	if ( currprefs.cpu_cycle_exact )
+	if (cycle_exact)
 		iack_start = 0;
 
 	/* Pending bits / vector number can change before the end of the IACK sequence. */
@@ -2243,7 +2244,7 @@ static int iack_cycle(int nr)
 
 		if ( vector < 0 )						/* No DSP, check MFP */
 		{
-			if ( currprefs.cpu_cycle_exact )
+			if (cycle_exact)
 			{
 				x_do_cycles ( ( iack_start + CPU_IACK_CYCLES_MFP ) * cpucycleunit );
 				/* Flush all CE cycles so far to update PendingInterruptCount */
@@ -2271,7 +2272,7 @@ static int iack_cycle(int nr)
 	}
 	else if ( ( nr == 26 ) || ( nr == 28 ) )				/* HBL / VBL */
 	{
-		if ( currprefs.cpu_cycle_exact )
+		if (cycle_exact)
 		{
 			/* In CE mode, iack_start = 0, no need to call x_do_cycles() */
 			//x_do_cycles ( ( iack_start + CPU_IACK_CYCLES_VIDEO_CE + e_cycles ) * cpucycleunit );
@@ -2285,7 +2286,7 @@ static int iack_cycle(int nr)
 		e_cycles = M68000_WaitEClock ();
 //		fprintf ( stderr , "wait e clock %d\n" , e_cycles);
 
-		if ( currprefs.cpu_cycle_exact )
+		if (cycle_exact)
 		{
 			x_do_cycles ( ( e_cycles + CPU_IACK_CYCLES_VIDEO_CE ) * cpucycleunit );
 			/* Flush all CE cycles so far to update PendingInterruptCount */
@@ -2311,7 +2312,7 @@ static int iack_cycle(int nr)
 	}
 
 	/* Add 4 idle cycles for CE mode. For non-CE mode, this will be counted in add_approximate_exception_cycles() */
-	if ( currprefs.cpu_cycle_exact )
+	if (cycle_exact)
 		x_do_cycles( 4 * cpucycleunit );
 #endif
 	return vector;
@@ -4046,7 +4047,7 @@ static int do_specialties (int cycles)
 #ifdef WINUAE_FOR_HATARI
 		if (!first)
 		{
-			if ( currprefs.cpu_cycle_exact )
+			if (currprefs.cpu_cycle_exact && !currprefs.mmu_model)
 			{
 				/* Flush all CE cycles so far to update PendingInterruptCount */
 				M68000_AddCycles_CE ( currcycle * 2 / CYCLE_UNIT );
