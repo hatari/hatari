@@ -326,7 +326,8 @@ static void TOS_FixRom(void)
 		    && (pPatch->Country == TosCountry || pPatch->Country == -1))
 		{
 #if ENABLE_WINUAE_CPU
-			bool use_mmu = ConfigureParams.System.bMMU;
+			bool use_mmu = ConfigureParams.System.bMMU &&
+			               ConfigureParams.System.nCpuLevel >= 3;
 #else
 			bool use_mmu = false;
 #endif
