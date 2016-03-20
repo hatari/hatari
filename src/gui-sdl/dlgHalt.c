@@ -70,10 +70,10 @@ void Dialog_HaltDlg(void)
 			/* got here again, cold reset emulation to make sure we actually can exit */
 			fputs("Halt dialog invoked during Hatari shutdown, doing emulation cold reset...\n", stderr);
 			Reset_Cold();
-			M68000_SetSpecial(SPCFLAG_BRK);
 		} else {
 			bQuitProgram = true;
 		}
+		M68000_SetSpecial(SPCFLAG_BRK);
 	}
 	SDL_ShowCursor(show);
 #if WITH_SDL2
