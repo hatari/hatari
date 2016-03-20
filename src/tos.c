@@ -512,7 +512,9 @@ bool TOS_AutoStartClose(FILE *fp)
 static void TOS_CheckSysConfig(void)
 {
 	int oldCpuLevel = ConfigureParams.System.nCpuLevel;
+	FPUTYPE oldFpuType = ConfigureParams.System.n_FPUType;
 	MACHINETYPE oldMachineType = ConfigureParams.System.nMachineType;
+
 	if (((TosVersion == 0x0106 || TosVersion == 0x0162) && ConfigureParams.System.nMachineType != MACHINE_STE)
 	    || (TosVersion == 0x0162 && ConfigureParams.System.nCpuLevel != 0))
 	{
@@ -587,12 +589,24 @@ static void TOS_CheckSysConfig(void)
 		             " ==> Switching to 68020 mode now.\n");
 		ConfigureParams.System.nCpuLevel = 2;
 	}
+#if ENABLE_WINUAE_CPU
+	else if ((TosVersion & 0x0f00) == 0x0300 &&
+	         (ConfigureParams.System.nCpuLevel < 2 || ConfigureParams.System.n_FPUType == FPU_NONE))
+	{
+		Log_AlertDlg(LOG_ERROR, "TOS versions 3.0x require a CPU >= 68020 with FPU.\n"
+		             " ==> Switching to 68030 mode with FPU now.\n");
+		ConfigureParams.System.nCpuLevel = 3;
+		ConfigureParams.System.n_FPUType = FPU_68882;
+	}
+#else
 	else if ((TosVersion & 0x0f00) == 0x0300 && ConfigureParams.System.nCpuLevel < 3)
 	{
-		Log_AlertDlg(LOG_ERROR, "TOS versions 3.0x require a CPU >= 68030.\n"
-		             " ==> Switching to 68030 mode now.\n");
+		Log_AlertDlg(LOG_ERROR, "TOS versions 3.0x require a CPU >= 68020 with FPU.\n"
+		             " ==> Switching to 68030 mode with FPU now.\n");
 		ConfigureParams.System.nCpuLevel = 3;
 	}
+#endif
+
 	/* TOS version triggered changes? */
 	if (ConfigureParams.System.nMachineType != oldMachineType)
 	{
@@ -612,7 +626,11 @@ static void TOS_CheckSysConfig(void)
 #endif
 		M68000_CheckCpuSettings();
 	}
-	else if (ConfigureParams.System.nCpuLevel != oldCpuLevel)
+	else if (ConfigureParams.System.nCpuLevel != oldCpuLevel
+#if ENABLE_WINUAE_CPU
+		 || ConfigureParams.System.n_FPUType != oldFpuType
+#endif
+		)
 	{
 		M68000_CheckCpuSettings();
 	}
