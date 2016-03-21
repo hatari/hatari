@@ -1043,27 +1043,7 @@ static int Screen_ComparePaletteMask(int res)
 			ScrUpdateFlag = PALETTEMASK_UPDATEFULL;
 		else
 			ScrUpdateFlag = 0x00000000;
-	}
 
-	/* Use VDI resolution? */
-	if (bUseVDIRes)
-	{
-		/* Force to VDI resolution screen, without overscan */
-		res = VDIRes;
-
-		/* Colors changed? */
-		if (HBLPalettes[0] != PrevHBLPalette[0])
-			pFrameBuffer->bFullUpdate = true;
-
-		/* Set bit to flag 'full update' */
-		if (pFrameBuffer->bFullUpdate)
-			ScrUpdateFlag = PALETTEMASK_UPDATEFULL;
-		else
-			ScrUpdateFlag = 0x00000000;
-	}
-	/* Are in Mono? Force to monochrome and no overscan */
-	else if (bUseHighRes)
-	{
 		/* Force to standard hi-resolution screen, without overscan */
 		res = ST_HIGH_RES;
 	}
@@ -1131,42 +1111,31 @@ static void Screen_SetConvertDetails(void)
 	/* Not in TV-Mode? Then double up on Y: */
 	bScrDoubleY = !(ConfigureParams.Screen.nMonitorType == MONITOR_TYPE_TV);
 
-	if (bUseVDIRes)
+	if (ConfigureParams.Screen.bAllowOverscan)  /* Use borders? */
 	{
-		/* Select screen draw for standard or VDI display */
-		STScreenLeftSkipBytes = 0;
-		STScreenWidthBytes = VDIWidth * VDIPlanes / 8;
-		STScreenStartHorizLine = 0;
-		STScreenEndHorizLine = VDIHeight;
-	}
-	else
-	{
-		if (ConfigureParams.Screen.bAllowOverscan)  /* Use borders? */
-		{
-			/* Always draw to WHOLE screen including ALL borders */
-			STScreenLeftSkipBytes = 0;              /* Number of bytes to skip on ST screen for left (border) */
+		/* Always draw to WHOLE screen including ALL borders */
+		STScreenLeftSkipBytes = 0;              /* Number of bytes to skip on ST screen for left (border) */
 
-			if (bUseHighRes)
-			{
-				pFrameBuffer->OverscanModeCopy = OverscanMode = OVERSCANMODE_NONE;
-				STScreenStartHorizLine = 0;
-				STScreenEndHorizLine = 400;
-			}
-			else
-			{
-				STScreenWidthBytes = SCREENBYTES_LINE;  /* Number of horizontal bytes in our ST screen */
-				STScreenStartHorizLine = OVERSCAN_TOP - nBorderPixelsTop;
-				STScreenEndHorizLine = OVERSCAN_TOP + 200 + nBorderPixelsBottom;
-			}
+		if (bUseHighRes)
+		{
+			pFrameBuffer->OverscanModeCopy = OverscanMode = OVERSCANMODE_NONE;
+			STScreenStartHorizLine = 0;
+			STScreenEndHorizLine = 400;
 		}
 		else
 		{
-			/* Only draw main area and centre on Y */
-			STScreenLeftSkipBytes = SCREENBYTES_LEFT;
-			STScreenWidthBytes = SCREENBYTES_MIDDLE;
-			STScreenStartHorizLine = OVERSCAN_TOP;
-			STScreenEndHorizLine = OVERSCAN_TOP + (bUseHighRes ? 400 : 200);
+			STScreenWidthBytes = SCREENBYTES_LINE;  /* Number of horizontal bytes in our ST screen */
+			STScreenStartHorizLine = OVERSCAN_TOP - nBorderPixelsTop;
+			STScreenEndHorizLine = OVERSCAN_TOP + 200 + nBorderPixelsBottom;
 		}
+	}
+	else
+	{
+		/* Only draw main area and centre on Y */
+		STScreenLeftSkipBytes = SCREENBYTES_LEFT;
+		STScreenWidthBytes = SCREENBYTES_MIDDLE;
+		STScreenStartHorizLine = OVERSCAN_TOP;
+		STScreenEndHorizLine = OVERSCAN_TOP + (bUseHighRes ? 400 : 200);
 	}
 }
 
@@ -1254,6 +1223,8 @@ static bool Screen_DrawFrame(bool bForceFlip)
 	static bool bPrevFrameWasSpec512 = false;
 	SDL_Rect *sbar_rect;
 
+	assert(!bUseVDIRes);
+
 	/* Scan palette/resolution masks for each line and build up palette/difference tables */
 	new_res = Screen_ComparePaletteMask(STRes);
 	/* Did we change resolution this frame - allocate new screen if did so */
@@ -1274,9 +1245,9 @@ static bool Screen_DrawFrame(bool bForceFlip)
 
 		/* Set details */
 		Screen_SetConvertDetails();
-		
+
 		/* Clear screen on full update to clear out borders and also interleaved lines */
-		if (pFrameBuffer->bFullUpdate && !bUseVDIRes)
+		if (pFrameBuffer->bFullUpdate)
 			Screen_ClearScreen();
 		
 		/* Call drawing for full-screen */
