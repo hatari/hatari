@@ -961,6 +961,11 @@ void	Video_ConvertPosition ( int FrameCycles , int *pHBL , int *pLineCycles )
 	{
 		*pHBL = 0;
 		*pLineCycles = FrameCycles - ShifterFrame.ShifterLines[ nHBL-1 ].StartCycle - nCyclesPerLine;
+		if ( *pLineCycles < 0 )					/* reading before end of last hbl (possible in WS1) */
+		{
+			*pHBL = nHBL-1;
+			*pLineCycles = FrameCycles - ShifterFrame.ShifterLines[ nHBL-1 ].StartCycle;
+		}
 	//fprintf ( stderr , "out of vbl FrameCycles %d CyclesPerVBL %d nHBL=%d %d %d\n" , FrameCycles , CyclesPerVBL, nHBL , *pHBL , *pLineCycles );
 	}
 
