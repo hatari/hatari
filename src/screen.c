@@ -193,7 +193,6 @@ static void Screen_SetDrawFunctions(int nBitCount, bool bDoubleLowRes)
 		else
 			ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_320x16Bit;
 		ScreenDrawFunctionsNormal[ST_MEDIUM_RES] = ConvertMediumRes_640x16Bit;
-		ScreenDrawFunctionsNormal[ST_HIGH_RES] = Screen_ConvertHighRes;
 	}
 	else /* Assume 32 bit drawing functions */
 	{
@@ -203,7 +202,6 @@ static void Screen_SetDrawFunctions(int nBitCount, bool bDoubleLowRes)
 		else
 			ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_320x32Bit;
 		ScreenDrawFunctionsNormal[ST_MEDIUM_RES] = ConvertMediumRes_640x32Bit;
-		ScreenDrawFunctionsNormal[ST_HIGH_RES] = Screen_ConvertHighRes;
 	}
 }
 
@@ -621,6 +619,56 @@ static void Screen_SetSTResolution(bool bForceChange)
 }
 
 
+/**
+ * Change resolution, according to the machine and display type
+ * that we're currently emulating.
+ */
+static void Screen_ChangeResolution(bool bForceChange)
+{
+	int hbpp = ConfigureParams.Screen.nForceBpp;
+
+	if (bUseVDIRes)
+	{
+		Screen_SetGenConvSize(VDIWidth, VDIHeight, hbpp, bForceChange);
+	}
+	else if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+	{
+		VIDEL_ZoomModeChanged(bForceChange);
+	}
+	else if (ConfigureParams.System.nMachineType == MACHINE_TT)
+	{
+		int width, height, bpp;
+		Video_GetTTRes(&width, &height, &bpp);
+		Screen_SetGenConvSize(width, height, hbpp, bForceChange);
+	}
+	else if (bUseHighRes)
+	{
+		Screen_SetGenConvSize(640, 400, hbpp, bForceChange);
+	}
+	else
+	{
+		Screen_SetSTResolution(bForceChange);
+	}
+
+	if (bInFullScreen || bGrabMouse)
+		SDL_WM_GrabInput(SDL_GRAB_ON);
+	else
+		SDL_WM_GrabInput(SDL_GRAB_OFF);
+}
+
+
+/**
+ * Change the resolution - but only if it was already initialized before
+ */
+void Screen_ModeChanged(bool bForceChange)
+{
+	if (sdlscrn)	/* Do it only if we're already up and running */
+	{
+		Screen_ChangeResolution(bForceChange);
+	}
+}
+
+
 /*-----------------------------------------------------------------------*/
 /**
  * Init Screen bitmap and buffers/tables needed for ST to PC screen conversion
@@ -665,10 +713,8 @@ void Screen_Init(void)
 
 	/* Set initial window resolution */
 	bInFullScreen = ConfigureParams.Screen.bFullScreen;
-	Screen_SetSTResolution(false);
-
-	if (bGrabMouse)
-		SDL_WM_GrabInput(SDL_GRAB_ON);
+	Screen_ChangeResolution(false);
+	ScreenDrawFunctionsNormal[ST_HIGH_RES] = Screen_ConvertHighRes;
 
 	Video_SetScreenRasters();                       /* Set rasters ready for first screen */
 
@@ -903,52 +949,6 @@ static void Screen_DidResolutionChange(int new_res)
 }
 
 
-/*-----------------------------------------------------------------------*/
-/**
- * Force things associated with changing between low/medium/high res.
- */
-void Screen_ModeChanged(bool bForceChange)
-{
-	int hbpp = ConfigureParams.Screen.nForceBpp;
-
-	if (!sdlscrn)
-	{
-		/* screen not yet initialized */
-		return;
-	}
-	/* Don't run this function if Videl emulation is running! */
-	if (bUseVDIRes)
-	{
-		Screen_SetGenConvSize(VDIWidth, VDIHeight, hbpp, bForceChange);
-	}
-	else if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
-	{
-		VIDEL_ZoomModeChanged(bForceChange);
-	}
-	else if (ConfigureParams.System.nMachineType == MACHINE_TT)
-	{
-		int width, height, bpp;
-		Video_GetTTRes(&width, &height, &bpp);
-		Screen_SetGenConvSize(width, height, hbpp, bForceChange);
-	}
-	else if (bUseHighRes)
-	{
-		Screen_SetGenConvSize(640, 400, hbpp, bForceChange);
-	}
-	else
-	{
-		/* Set new display mode, if differs from current */
-		Screen_SetSTResolution(bForceChange);
-		Screen_SetFullUpdate();
-	}
-	if (bInFullScreen || bGrabMouse)
-		SDL_WM_GrabInput(SDL_GRAB_ON);
-	else
-		SDL_WM_GrabInput(SDL_GRAB_OFF);
-}
-
-
-/*-----------------------------------------------------------------------*/
 /**
  * Compare current resolution on line with previous, and set 'UpdateLine' accordingly
  * Return if swap between low/medium resolution
