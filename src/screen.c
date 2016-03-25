@@ -496,11 +496,11 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 	return true;
 }
 
-/*-----------------------------------------------------------------------*/
+
 /**
- * Initialize SDL screen surface / set resolution.
+ * Initialize ST/STE screen resolution.
  */
-static void Screen_SetResolution(bool bForceChange)
+static void Screen_SetSTResolution(bool bForceChange)
 {
 	int Width, Height, nZoom, SBarHeight, BitCount, maxW, maxH;
 	bool bDoubleLowRes = false;
@@ -665,7 +665,7 @@ void Screen_Init(void)
 
 	/* Set initial window resolution */
 	bInFullScreen = ConfigureParams.Screen.bFullScreen;
-	Screen_SetResolution(false);
+	Screen_SetSTResolution(false);
 
 	if (bGrabMouse)
 		SDL_WM_GrabInput(SDL_GRAB_ON);
@@ -808,7 +808,7 @@ void Screen_EnterFullScreen(void)
 		}
 		else
 		{
-			Screen_SetResolution(true);
+			Screen_SetSTResolution(true);
 			Screen_ClearScreen();       /* Black out screen bitmap as will be invalid when return */
 		}
 
@@ -855,7 +855,7 @@ void Screen_ReturnFromFullScreen(void)
 		}
 		else
 		{
-			Screen_SetResolution(true);
+			Screen_SetSTResolution(true);
 		}
 
 		if (!Screen_WantToKeepResolution())
@@ -938,7 +938,7 @@ void Screen_ModeChanged(bool bForceChange)
 	else
 	{
 		/* Set new display mode, if differs from current */
-		Screen_SetResolution(bForceChange);
+		Screen_SetSTResolution(bForceChange);
 		Screen_SetFullUpdate();
 	}
 	if (bInFullScreen || bGrabMouse)
