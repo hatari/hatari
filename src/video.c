@@ -639,8 +639,8 @@ static void	Video_InitShifterLines(void);
 static void	Video_RestartVideoCounter(void);
 static void	Video_ClearOnVBL(void);
 
-static void	Video_AddInterrupt ( int Pos , interrupt_id Handler );
-static void	Video_AddInterruptHBL ( int Pos );
+static void	Video_AddInterrupt ( int Line , int Pos , interrupt_id Handler );
+static void	Video_AddInterruptHBL ( int Line , int Pos );
 
 static void	Video_ColorReg_WriteWord(void);
 static void	Video_ColorReg_ReadWord(void);
@@ -1524,13 +1524,13 @@ static void Video_WriteToShifterRes ( Uint8 Res )
 
 		/* Don't modify HBL's position now if we're handling the special HBL for video counter restart */
 		if ( RestartVideoCounter == false )
-			Video_AddInterruptHBL ( nCyclesPerLine );
+			Video_AddInterruptHBL ( HblCounterVideo , nCyclesPerLine );
 	}
 
 
 	/* Update Timer B's position */
 	LineTimerBCycle = Video_TimerB_GetPos ( HblCounterVideo );
-	Video_AddInterruptTimerB ( LineTimerBCycle );
+	Video_AddInterruptTimerB ( HblCounterVideo , LineCycles , LineTimerBCycle );
 
 
 	ShifterFrame.Res = Res;
@@ -1806,7 +1806,7 @@ void Video_Sync_WriteByte ( void )
 
 			/* Don't modify HBL's position now if we're handling the special HBL for video counter restart */
 			if ( RestartVideoCounter == false )
-				Video_AddInterruptHBL ( nCyclesPerLine );
+				Video_AddInterruptHBL ( HblCounterVideo , nCyclesPerLine );
 
 			/* In case we're mixing 50 Hz (512 cycles) and 60 Hz (508 cycles) lines on the same screen, */
 			/* we must update the position where the next VBL will happen (instead of the initial value in CyclesPerVBL) */
@@ -1825,7 +1825,7 @@ void Video_Sync_WriteByte ( void )
 
 		/* Update Timer B's position */
 		LineTimerBCycle = Video_TimerB_GetPos ( HblCounterVideo );
-		Video_AddInterruptTimerB ( LineTimerBCycle );
+		Video_AddInterruptTimerB ( HblCounterVideo , LineCycles , LineTimerBCycle );
 	}
 
 
@@ -1988,8 +1988,8 @@ void Video_InterruptHandler_HBL ( void )
 			LOG_TRACE(TRACE_VIDEO_HBL, "HBL %d cyc=%d restart video counter 0x%x\n", nHBL, LineCycles, VideoBase );
 		}
 
-		/* Restore the normal HBL interrupt */
-		Video_AddInterruptHBL ( Video_HBL_GetPos() );
+		/* Restore the normal HBL interrupt on the same line */
+		Video_AddInterruptHBL ( nHBL , Video_HBL_GetPos() );
 		RestartVideoCounter = false;
 		return;
 	}
@@ -2009,12 +2009,14 @@ void Video_InterruptHandler_HBL ( void )
 	LOG_TRACE ( TRACE_VIDEO_HBL , "HBL %d video_cyc=%d pending_cyc=%d jitter=%d\n" ,
 	               nHBL , FrameCycles , PendingCyclesOver , HblJitterArray[ HblJitterIndex ] );
 
+#ifdef HBL_OLD
 	/* Default cycle position for next HBL */
 	NewHBLPos = Video_HBL_GetPos();
 
-	/* Generate new HBL, if need to - there are 313 HBLs per frame in 50 Hz */
+	/* Generate new HBL on next line, if need to - there are 313 HBLs per frame in 50 Hz */
 	if (nHBL < nScanlinesPerFrame-1)
-		Video_AddInterruptHBL ( NewHBLPos );
+		Video_AddInterruptHBL ( nHBL+1 , NewHBLPos );
+#endif
 
 
 #ifndef VBL_NEW
@@ -2078,16 +2080,19 @@ void Video_InterruptHandler_HBL ( void )
 
 		/* Setup next HBL */
 		Video_StartHBL();
-	}
 
+		/* Default cycle position for next HBL */
+		NewHBLPos = Video_HBL_GetPos();
+		Video_AddInterruptHBL ( nHBL , NewHBLPos );
 
 #ifdef VBL_NEW
-	/* Add new VBL interrupt just after the last HBL (for example : VblVideoCycleOffset cycles after HBL 312 at 50 Hz) */
-	if (nHBL == nScanlinesPerFrame-1)
-	{
-		CycInt_AddRelativeInterrupt( NewHBLPos + pVideoTiming->VblVideoCycleOffset - PendingCyclesOver, INT_CPU_CYCLE, INTERRUPT_VIDEO_VBL);
-	}
+		/* Add new VBL interrupt just after the last HBL (for example : VblVideoCycleOffset cycles after HBL 312 at 50 Hz) */
+		if (nHBL == nScanlinesPerFrame-1)
+		{
+			CycInt_AddRelativeInterrupt( NewHBLPos + pVideoTiming->VblVideoCycleOffset - PendingCyclesOver, INT_CPU_CYCLE, INTERRUPT_VIDEO_VBL);
+		}
 #endif
+	}
 
 	/* Check if video counter should be restarted on this HBL */
 	if ( RestartVideoCounter )
@@ -2110,7 +2115,9 @@ void Video_InterruptHandler_HBL ( void )
 		/* This intermediate HBL interrupt will then set the real HBL interrupt at the end of the line */
 		else
 		{
-			Video_AddInterrupt ( RestartVideoCounterCycle , INTERRUPT_VIDEO_HBL );
+			// TODO : use Video_AddInterruptHBL after removing -4
+			//Video_AddInterruptHBL ( nHBL , NewHBLPos );
+			Video_AddInterrupt ( nHBL , RestartVideoCounterCycle , INTERRUPT_VIDEO_HBL );
 		}
 	}
 }
@@ -2351,6 +2358,7 @@ void Video_InterruptHandler_EndLine(void)
 		}
 
 //fprintf ( stderr , "new tb %d %d %d\n" , LineTimerBCycle , nCyclesPerLine , LineTimerBCycle - LineCycles + nCyclesPerLine );
+		// TODO : use Video_AddInterruptTimerB
 		CycInt_AddRelativeInterrupt ( LineTimerBCycle - LineCycles + nCyclesPerLine,
 					 INT_CPU_CYCLE, INTERRUPT_VIDEO_ENDLINE );
 	}
@@ -3360,16 +3368,26 @@ static void Video_DrawScreen(void)
  * already reached, then the interrupt is set on the next line.
  */
 
-static void Video_AddInterrupt ( int Pos , interrupt_id Handler )
+static void Video_AddInterrupt ( int Line , int Pos , interrupt_id Handler )
 {
 	int FrameCycles , HblCounterVideo , LineCycles;
+	int CycleToPos;
 
 	if ( nHBL >= nScanlinesPerFrame )
 	  return;				/* don't set a new hbl/timer B if we're on the last line, as the vbl will happen first */
 	
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
-//fprintf ( stderr , "add int pos=%d handler=%d LineCycles=%d nCyclesPerLine=%d \n" , Pos , Handler , LineCycles , nCyclesPerLine );
+//fprintf ( stderr , "add int pos=%d handler=%d LineCycles=%d nCyclesPerLine=%d\n" , Pos , Handler , LineCycles , nCyclesPerLine );
 
+#if 1
+	if ( Line <= nHBL )
+		CycleToPos = Pos + ShifterFrame.ShifterLines[Line].StartCycle - FrameCycles;
+	else					/* Pos is on the next line (after the current hbl) */
+		CycleToPos = Pos + ShifterFrame.ShifterLines[Line-1].StartCycle - FrameCycles + nCyclesPerLine;
+
+	CycInt_AddRelativeInterrupt ( CycleToPos , INT_CPU_CYCLE, Handler );
+//fprintf ( stderr , "add int pos=%d handler=%d LineCycles=%d nCyclesPerLine=%d -> %d cycles\n" , Pos , Handler , LineCycles , nCyclesPerLine , CycleToPos );
+#else
 	if ( LineCycles < Pos )			/* changed before reaching the new Pos on the current line */
 		CycInt_AddRelativeInterrupt ( Pos - LineCycles , INT_CPU_CYCLE, Handler );
 	else					/* Pos will be applied on next line */
@@ -3380,26 +3398,34 @@ static void Video_AddInterrupt ( int Pos , interrupt_id Handler )
 		else
 			CycInt_AddRelativeInterrupt ( Pos - LineCycles + nCyclesPerLine , INT_CPU_CYCLE, Handler );
 	}
+#endif
 }
 
 
-static void Video_AddInterruptHBL ( int Pos )
+static void Video_AddInterruptHBL ( int Line , int Pos )
 {
-//fprintf ( stderr , "add hbl pos=%d\n" , Pos );
+//fprintf ( stderr , "add hbl line=%d pos=%d\n" , Line , Pos );
 	if ( !bUseVDIRes )
 	{
 		if ( VideoTiming == VIDEO_TIMING_STF_WS1 )
 			Pos -= 4;
-		Video_AddInterrupt ( Pos , INTERRUPT_VIDEO_HBL );
+		Video_AddInterrupt ( Line , Pos , INTERRUPT_VIDEO_HBL );
 	}
 }
 
 
-void Video_AddInterruptTimerB ( int Pos )
+void Video_AddInterruptTimerB ( int LineVideo , int CycleVideo , int Pos )
 {
-//fprintf ( stderr , "add timerb pos=%d\n" , Pos );
+//fprintf ( stderr , "add timerb line=%d cycle=%d pos=%d\n" , LineVideo , CycleVideo , Pos );
 	if ( !bUseVDIRes )
-		Video_AddInterrupt ( Pos , INTERRUPT_VIDEO_ENDLINE );
+	{
+		/* If new position is not reached yet, next interrupt should be on current line */
+		/* else it should be on next line */
+		if ( Pos > CycleVideo )
+			Video_AddInterrupt ( LineVideo , Pos , INTERRUPT_VIDEO_ENDLINE );
+		else
+			Video_AddInterrupt ( LineVideo+1 , Pos , INTERRUPT_VIDEO_ENDLINE );
+	}
 }
 
 
@@ -3421,12 +3447,14 @@ void Video_StartInterrupts ( int PendingCyclesOver )
 	/* HBL/Timer B are not emulated in VDI mode */
 	if (!bUseVDIRes)
 	{
+		ShifterFrame.ShifterLines[0].StartCycle = 0;		/* 1st HBL always starts at cycle 0 */
+
 		Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
 		/* Set Timer B interrupt for line 0 */
 		Pos = Video_TimerB_GetPos ( 0 );
 		if ( Pos > FrameCycles )		/* check Pos for line 0 was not already reached */
-			Video_AddInterruptTimerB ( Pos );
+			Video_AddInterruptTimerB ( HblCounterVideo , LineCycles , Pos );
 		else					/* the VBL was delayed by more than 1 HBL, add an immediate timer B */
 		{
 			LOG_TRACE(TRACE_VIDEO_VBL , "VBL %d delayed too much video_cyc=%d >= pos=%d for first timer B, add immediate timer B\n" ,
@@ -3437,7 +3465,7 @@ void Video_StartInterrupts ( int PendingCyclesOver )
 		/* Set HBL interrupt for line 0 */
 		Pos = Video_HBL_GetPos();
 		if ( Pos > FrameCycles )		/* check Pos for line 0 was not already reached */
-			Video_AddInterruptHBL ( Pos );
+			Video_AddInterruptHBL ( HblCounterVideo , Pos );
 		else					/* the VBL was delayed by more than 1 HBL, add an immediate HBL */
 		{
 			LOG_TRACE(TRACE_VIDEO_VBL , "VBL %d delayed too much video_cyc=%d >= pos=%d for first HBL, add immediate HBL\n" ,

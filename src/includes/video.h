@@ -174,7 +174,7 @@ extern void	Video_SetScreenRasters(void);
 extern void	Video_GetTTRes(int *width, int *height, int *bpp);
 extern bool	Video_RenderTTScreen(void);
 
-extern void	Video_AddInterruptTimerB ( int Pos );
+extern void	Video_AddInterruptTimerB ( int LineVideo , int CycleVideo , int Pos );
 
 extern void	Video_StartInterrupts ( int PendingCyclesOver );
 extern void	Video_InterruptHandler_VBL(void);

@@ -1811,7 +1811,7 @@ void MFP_ActiveEdge_WriteByte(void)
 
 		/* Timer B position changed, update the next interrupt */
 		if ( LineTimerBCycle_old != LineTimerBCycle )
-			Video_AddInterruptTimerB ( LineTimerBCycle );
+			Video_AddInterruptTimerB ( HblCounterVideo , LineCycles , LineTimerBCycle );
 	}
 }
 
