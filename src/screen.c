@@ -512,69 +512,60 @@ static void Screen_SetSTResolution(bool bForceChange)
 	nScreenZoomX = 1;
 	nScreenZoomY = 1;
 
-	/* Determine which resolution to use */
-	if (bUseVDIRes)
+	if (STRes == ST_LOW_RES)
 	{
-		Width = VDIWidth;
-		Height = VDIHeight;
+		Width = 320;
+		Height = 200;
+		nZoom = 1;
 	}
-	else
+	else    /* else use 640x400, also for med-rez */
 	{
-		if (STRes == ST_LOW_RES)
- 		{
- 			Width = 320;
- 			Height = 200;
-			nZoom = 1;
- 		}
-		else    /* else use 640x400, also for med-rez */
- 		{
- 			Width = 640;
- 			Height = 400;
-			nZoom = 2;
- 		}
+		Width = 640;
+		Height = 400;
+		nZoom = 2;
+	}
 
-		/* Statusbar height for doubled screen size */
-		SBarHeight = Statusbar_GetHeightForSize(640, 400);
+	/* Statusbar height for doubled screen size */
+	SBarHeight = Statusbar_GetHeightForSize(640, 400);
 
-		Resolution_GetLimits(&maxW, &maxH, &BitCount, Screen_WantToKeepResolution());
+	Resolution_GetLimits(&maxW, &maxH, &BitCount, Screen_WantToKeepResolution());
 
-		/* Zoom if necessary, factors used for scaling mouse motions */
-		if (STRes == ST_LOW_RES &&
-		    2*Width <= maxW && 2*Height+SBarHeight <= maxH)
-		{
-			nZoom = 2;
-			Width *= 2;
-			Height *= 2;
-			nScreenZoomX = 2;
-			nScreenZoomY = 2;
-			bDoubleLowRes = true;
-		}
-		else if (STRes == ST_MEDIUM_RES)
-		{
-			/* med-rez conversion functions want always
-			 * to double vertically, they don't support
-			 * skipping that (only leaving doubled lines
-			 * black for the TV mode).
-			 */
-			nScreenZoomX = 1;
-			nScreenZoomY = 2;
- 		}
+	/* Zoom if necessary, factors used for scaling mouse motions */
+	if (STRes == ST_LOW_RES &&
+	    2*Width <= maxW && 2*Height+SBarHeight <= maxH)
+	{
+		nZoom = 2;
+		Width *= 2;
+		Height *= 2;
+		nScreenZoomX = 2;
+		nScreenZoomY = 2;
+		bDoubleLowRes = true;
+	}
+	else if (STRes == ST_MEDIUM_RES)
+	{
+		/* med-rez conversion functions want always
+		 * to double vertically, they don't support
+		 * skipping that (only leaving doubled lines
+		 * black for the TV mode).
+		 */
+		nScreenZoomX = 1;
+		nScreenZoomY = 2;
+	}
 
-		/* Adjust width/height for overscan borders, if mono or VDI we have no overscan */
-		if (ConfigureParams.Screen.bAllowOverscan && !bUseHighRes)
-		{
-			int leftX = maxW - Width;
-			int leftY = maxH - (Height + Statusbar_GetHeightForSize(Width, Height));
+	/* Adjust width/height for overscan borders, if mono or VDI we have no overscan */
+	if (ConfigureParams.Screen.bAllowOverscan && !bUseHighRes)
+	{
+		int leftX = maxW - Width;
+		int leftY = maxH - (Height + Statusbar_GetHeightForSize(Width, Height));
 
-			Screen_SetBorderPixels(leftX/nZoom, leftY/nZoom);
-			DEBUGPRINT(("resolution limit:\n\t%d x %d\nlimited resolution:\n\t", maxW, maxH));
-			DEBUGPRINT(("%d * (%d + %d + %d) x (%d + %d + %d)\n", nZoom,
-				    nBorderPixelsLeft, Width/nZoom, nBorderPixelsRight,
-				    nBorderPixelsTop, Height/nZoom, nBorderPixelsBottom));
-			Width += (nBorderPixelsRight + nBorderPixelsLeft)*nZoom;
-			Height += (nBorderPixelsTop + nBorderPixelsBottom)*nZoom;
-			DEBUGPRINT(("\t= %d x %d (+ statusbar)\n", Width, Height));
-		}
+		Screen_SetBorderPixels(leftX/nZoom, leftY/nZoom);
+		DEBUGPRINT(("resolution limit:\n\t%d x %d\nlimited resolution:\n\t", maxW, maxH));
+		DEBUGPRINT(("%d * (%d + %d + %d) x (%d + %d + %d)\n", nZoom,
+			    nBorderPixelsLeft, Width/nZoom, nBorderPixelsRight,
+			    nBorderPixelsTop, Height/nZoom, nBorderPixelsBottom));
+		Width += (nBorderPixelsRight + nBorderPixelsLeft)*nZoom;
+		Height += (nBorderPixelsTop + nBorderPixelsBottom)*nZoom;
+		DEBUGPRINT(("\t= %d x %d (+ statusbar)\n", Width, Height));
 	}
 
 	Screen_SetSTScreenOffsets();  
