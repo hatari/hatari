@@ -277,48 +277,48 @@ void ShortCut_ActKey(void)
 	switch (ShortCutKey)
 	{
 	 case SHORTCUT_OPTIONS:
-		Dialog_DoProperty();           /* Show options dialog */
+		Dialog_DoProperty();		/* Show options dialog */
 		break;
 	 case SHORTCUT_FULLSCREEN:
-		ShortCut_FullScreen();         /* Switch between fullscreen/windowed mode */
+		ShortCut_FullScreen();		/* Switch between fullscreen/windowed mode */
 		break;
 	 case SHORTCUT_MOUSEGRAB:
-		ShortCut_MouseGrab();          /* Toggle mouse grab */
+		ShortCut_MouseGrab();		/* Toggle mouse grab */
 		break;
 	 case SHORTCUT_COLDRESET:
 		Main_UnPauseEmulation();
-		Reset_Cold();                  /* Reset emulator with 'cold' (clear all) */
+		Reset_Cold();			/* Reset emulator with 'cold' (clear all) */
 		break;
 	 case SHORTCUT_WARMRESET:
 		Main_UnPauseEmulation();
-		Reset_Warm();                  /* Emulator 'warm' reset */
+		Reset_Warm();			/* Emulator 'warm' reset */
 		break;
 	 case SHORTCUT_SCREENSHOT:
-		ScreenSnapShot_SaveScreen();   /* Grab screenshot */
+		ScreenSnapShot_SaveScreen();	/* Grab screenshot */
 		break;
 	 case SHORTCUT_BOSSKEY:
-		ShortCut_BossKey();            /* Boss key */
+		ShortCut_BossKey();		/* Boss key */
 		break;
-	 case SHORTCUT_CURSOREMU:          /* Toggle joystick emu on/off */
+	 case SHORTCUT_CURSOREMU:		/* Toggle joystick emu on/off */
 		Joy_ToggleCursorEmulation();
 		break;
 	 case SHORTCUT_FASTFORWARD:
-		ShortCut_FastForward();       /* Toggle Min/Max speed */
+		ShortCut_FastForward();		/* Toggle Min/Max speed */
 		break;
 	 case SHORTCUT_RECANIM:
-		ShortCut_RecordAnimation();    /* Record animation */
+		ShortCut_RecordAnimation();	/* Record animation */
 		break;
 	 case SHORTCUT_RECSOUND:
-		ShortCut_RecordSound();        /* Toggle sound recording */
+		ShortCut_RecordSound();		/* Toggle sound recording */
 		break;
 	 case SHORTCUT_SOUND:
-		ShortCut_SoundOnOff();         /* Enable/disable sound */
+		ShortCut_SoundOnOff();		/* Enable/disable sound */
 		break;
 	 case SHORTCUT_DEBUG:
-		ShortCut_Debug();              /* Invoke the Debug UI */
+		ShortCut_Debug();		/* Invoke the Debug UI */
 		break;
 	 case SHORTCUT_PAUSE:
-		ShortCut_Pause();              /* Invoke Pause */
+		ShortCut_Pause();		/* Invoke Pause */
 		break;
 	 case SHORTCUT_JOY_0:
 		Joy_SwitchMode(0);
