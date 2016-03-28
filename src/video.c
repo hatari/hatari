@@ -615,6 +615,7 @@ static int		VideoTiming;
 /*--------------------------------------------------------------*/
 
 static void	Video_InitTimings_Copy ( VIDEO_TIMING *pSrc , VIDEO_TIMING *pDest , int inc );
+static void	Video_InitTimings_Round ( VIDEO_TIMING *pSrc );
 
 static Uint32	Video_CalculateAddress ( void );
 static int	Video_GetMMUStartCycle ( int DisplayStartCycle );
@@ -776,6 +777,7 @@ void	Video_InitTimings(void)
 {
 	VIDEO_TIMING	*pVideoTiming1;
 	VIDEO_TIMING	*pVideoTiming2;
+	int		i;
 	/* TODO */
 
 	/* Init all timings for STF machine */
@@ -848,15 +850,19 @@ void	Video_InitTimings(void)
 	pVideoTiming1->HSync_Stop_Low 		= 500;
 	pVideoTiming1->RemoveTopBorder_Pos 	= 500;
 	pVideoTiming1->RemoveBottomBorder_Pos 	= 500;
-	pVideoTiming2->VblVideoCycleOffset 	= VBL_VIDEO_CYCLE_OFFSET_STF;
-	pVideoTiming2->Hbl_Int_Pos_Low_60	= CYCLES_PER_LINE_60HZ;
-	pVideoTiming2->Hbl_Int_Pos_Low_50	= CYCLES_PER_LINE_50HZ;
-	pVideoTiming2->Hbl_Int_Pos_Hi		= CYCLES_PER_LINE_71HZ;
+	pVideoTiming1->VblVideoCycleOffset 	= VBL_VIDEO_CYCLE_OFFSET_STF;
+	pVideoTiming1->Hbl_Int_Pos_Low_60	= CYCLES_PER_LINE_60HZ;
+	pVideoTiming1->Hbl_Int_Pos_Low_50	= CYCLES_PER_LINE_50HZ;
+	pVideoTiming1->Hbl_Int_Pos_Hi		= CYCLES_PER_LINE_71HZ;
 
 	/* Use the STE timings for TT */
 	pVideoTiming2 = &VideoTimings[ VIDEO_TIMING_TT ];
 	strcpy ( pVideoTiming2->VideoTimingName , "TT" );
 	Video_InitTimings_Copy ( pVideoTiming1 , pVideoTiming2 , 0 );
+
+	/* All freq/res timings must be rounded to the lowest 2 cycles */
+	for ( i=0 ; i<VIDEO_TIMING_MAX_NB ; i++ )
+		Video_InitTimings_Round ( &VideoTimings[ i ] );
 
 	/* Set timings to a default mode (this will be overriden later when choosing the emulated machine) */
 	pVideoTiming = &VideoTimings[ VIDEO_TIMING_DEFAULT ];
@@ -867,7 +873,7 @@ void	Video_InitTimings(void)
 /*-----------------------------------------------------------------------*/
 /*
  * Copy some video timings, adding 'inc' to the values that depend on
- * wake up state.
+ * wakeup state.
  */
 static void	Video_InitTimings_Copy ( VIDEO_TIMING *pSrc , VIDEO_TIMING *pDest , int inc )
 {
@@ -899,6 +905,35 @@ static void	Video_InitTimings_Copy ( VIDEO_TIMING *pSrc , VIDEO_TIMING *pDest , 
 
 /*-----------------------------------------------------------------------*/
 /*
+ * Depending on the wakeup states, some freq/res checks will happen on
+ * a 1 cycle precision. As the CPU can only have a 2 cycles precision,
+ * we must round those values to the lowest 2 cycles.
+ */
+static void	Video_InitTimings_Round ( VIDEO_TIMING *pSrc )
+{
+	pSrc->Preload_Start_Hi &= 0xfffe;
+	pSrc->H_Start_Hi &= 0xfffe;
+	pSrc->Blank_Stop_Low &= 0xfffe;
+	pSrc->Preload_Start_Low_60 &= 0xfffe;
+	pSrc->H_Start_Low_60 &= 0xfffe;
+	pSrc->Line_Set_Pal &= 0xfffe;
+	pSrc->Preload_Start_Low_50 &= 0xfffe;
+	pSrc->H_Start_Low_50 &= 0xfffe;
+	pSrc->H_Stop_Hi &= 0xfffe;
+	pSrc->Blank_Start_Hi &= 0xfffe;
+	pSrc->H_Stop_Low_60 &= 0xfffe;
+	pSrc->H_Stop_Low_50 &= 0xfffe;
+	pSrc->Blank_Start_Low &= 0xfffe;
+	pSrc->HSync_Start_Low &= 0xfffe;
+	pSrc->HSync_Stop_Low &= 0xfffe;
+	pSrc->RemoveTopBorder_Pos &= 0xfffe;
+	pSrc->RemoveBottomBorder_Pos &= 0xfffe;
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/*
  * Set specific video timings, depending on the system being emulated.
  * - STF is known to have 4 possible states depending on the MMU/GLUE synchronisation
  * - STE has MMU and GLUE merged in the same chip, so there's only 1 state
@@ -907,7 +942,7 @@ static void	Video_InitTimings_Copy ( VIDEO_TIMING *pSrc , VIDEO_TIMING *pDest , 
  */
 void	Video_SetTimings( MACHINETYPE MachineType , VIDEOTIMINGMODE Mode )
 {
-printf ( "Video_SetSystemTimings1 %d %d\n" , MachineType , Mode );
+fprintf ( stderr , "Video_SetSystemTimings1 %d %d\n" , MachineType , Mode );
 
 
 	/* Default timing for TT/Falcon (not really important */
@@ -933,8 +968,14 @@ printf ( "Video_SetSystemTimings1 %d %d\n" , MachineType , Mode );
 
 	pVideoTiming = &VideoTimings[ VideoTiming ];
 
-printf ( "Video_SetSystemTimings2 %d %d -> %d (%s) %d %d %d\n" , MachineType , Mode , VideoTiming , pVideoTiming->VideoTimingName , pVideoTiming->RemoveTopBorder_Pos , pVideoTiming->RemoveBottomBorder_Pos , pVideoTiming->VblVideoCycleOffset );
+fprintf ( stderr , "Video_SetSystemTimings2 %d %d -> %d (%s) %d %d %d\n" , MachineType , Mode , VideoTiming , pVideoTiming->VideoTimingName , pVideoTiming->RemoveTopBorder_Pos , pVideoTiming->RemoveBottomBorder_Pos , pVideoTiming->VblVideoCycleOffset );
 
+}
+
+
+char	*Video_GetTimings_Name ( void )
+{
+	return pVideoTiming->VideoTimingName;
 }
 
 
