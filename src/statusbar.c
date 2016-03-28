@@ -484,6 +484,7 @@ void Statusbar_UpdateInfo(void)
 	switch (ConfigureParams.System.nMachineType) {
 	case MACHINE_ST:
 		end = Statusbar_AddString(end, "ST");
+		end += sprintf(end, "(%s)", Video_GetTimings_Name() );
 		break;
 	case MACHINE_STE:
 		end = Statusbar_AddString(end, "STE");
