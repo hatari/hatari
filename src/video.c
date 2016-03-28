@@ -491,7 +491,6 @@ static int LastCycleScroll8264;			/* value of Cycles_GetCounterOnWriteAccess las
 static int LastCycleScroll8265;			/* value of Cycles_GetCounterOnWriteAccess last time ff8265 was set for the current VBL */
 
 static bool RestartVideoCounter = false;	/* true when reaching the HBL to restart video counter */
-static int RestartVideoCounterCycle = RESTART_VIDEO_COUNTER_CYCLE_STF;		/* position on the line where video counter should be restarted */
 
 int	LineTimerBCycle = LINE_END_CYCLE_50 + TIMERB_VIDEO_CYCLE_OFFSET;	/* position of the Timer B interrupt on active lines */
 int	TimerBEventCountCycleStart = -1;	/* value of Cycles_GetCounterOnWriteAccess last time timer B was started for the current VBL */
@@ -595,6 +594,10 @@ typedef struct
 
 	int	RemoveTopBorder_Pos;		/* 502 */
 	int	RemoveBottomBorder_Pos;		/* 502 */
+
+	int	RestartVideoCounter_Line_60;	/* 260 */
+	int	RestartVideoCounter_Line_50;	/* 310 */
+	int	RestartVideoCounter_Pos;	/*  48 */
 
 	int	VblVideoCycleOffset;
 	int	Hbl_Int_Pos_Low_60;		/* 508 */
@@ -799,6 +802,9 @@ void	Video_InitTimings(void)
 	pVideoTiming1->HSync_Stop_Low 		= 502;
 	pVideoTiming1->RemoveTopBorder_Pos 	= 502;
 	pVideoTiming1->RemoveBottomBorder_Pos 	= 502;
+	pVideoTiming1->RestartVideoCounter_Line_60 	= RESTART_VIDEO_COUNTER_LINE_60HZ;	/* 260 */
+	pVideoTiming1->RestartVideoCounter_Line_50 	= RESTART_VIDEO_COUNTER_LINE_50HZ;	/* 310 */
+	pVideoTiming1->RestartVideoCounter_Pos 	= RESTART_VIDEO_COUNTER_CYCLE_STF;		/*  48	*/
 	pVideoTiming1->VblVideoCycleOffset 	= VBL_VIDEO_CYCLE_OFFSET_STF - 4;
 	pVideoTiming1->Hbl_Int_Pos_Low_60	= CYCLES_PER_LINE_60HZ - 4;
 	pVideoTiming1->Hbl_Int_Pos_Low_50	= CYCLES_PER_LINE_50HZ - 4;
@@ -850,6 +856,9 @@ void	Video_InitTimings(void)
 	pVideoTiming1->HSync_Stop_Low 		= 500;
 	pVideoTiming1->RemoveTopBorder_Pos 	= 500;
 	pVideoTiming1->RemoveBottomBorder_Pos 	= 500;
+	pVideoTiming1->RestartVideoCounter_Line_60 	= RESTART_VIDEO_COUNTER_LINE_60HZ;	/* 260 */
+	pVideoTiming1->RestartVideoCounter_Line_50 	= RESTART_VIDEO_COUNTER_LINE_50HZ;	/* 310 */
+	pVideoTiming1->RestartVideoCounter_Pos 	= RESTART_VIDEO_COUNTER_CYCLE_STE;		/*  52 */
 	pVideoTiming1->VblVideoCycleOffset 	= VBL_VIDEO_CYCLE_OFFSET_STF;
 	pVideoTiming1->Hbl_Int_Pos_Low_60	= CYCLES_PER_LINE_60HZ;
 	pVideoTiming1->Hbl_Int_Pos_Low_50	= CYCLES_PER_LINE_50HZ;
@@ -894,6 +903,10 @@ static void	Video_InitTimings_Copy ( VIDEO_TIMING *pSrc , VIDEO_TIMING *pDest , 
 	pDest->HSync_Stop_Low 		= pSrc->HSync_Stop_Low + inc;
 	pDest->RemoveTopBorder_Pos	= pSrc->RemoveTopBorder_Pos + inc;
 	pDest->RemoveBottomBorder_Pos	= pSrc->RemoveBottomBorder_Pos + inc;
+
+	pDest->RestartVideoCounter_Line_60	= pSrc->RestartVideoCounter_Line_60;
+	pDest->RestartVideoCounter_Line_50	= pSrc->RestartVideoCounter_Line_50;
+	pDest->RestartVideoCounter_Pos	= pSrc->RestartVideoCounter_Pos;
 
 	pDest->VblVideoCycleOffset	= pSrc->VblVideoCycleOffset;
 	pDest->Hbl_Int_Pos_Low_60	= pSrc->Hbl_Int_Pos_Low_60;
@@ -1142,22 +1155,6 @@ static Uint32 Video_CalculateAddress ( void )
 		else
 			VideoAddress = VideoBase + VIDEO_HEIGHT_HBL_MONO * ( BORDERBYTES_NORMAL / 2 );
 	}
-
-#if 0		// Not here anymore, see end of HBL and Video_RestartVideoCounter()
-	else if (FrameCycles > RestartVideoCounterCycle)
-	{
-		/* This is where ff8205/ff8207 are reloaded with the content of ff8201/ff8203 on a real ST */
-		/* (used in ULM DSOTS demos). VideoBase is also reloaded in Video_ClearOnVBL to be sure */
-		VideoBase = (Uint32)IoMem_ReadByte(0xff8201)<<16 | (Uint32)IoMem_ReadByte(0xff8203)<<8;
-		if (ConfigureParams.System.nMachineType != MACHINE_ST)
-		{
-			/* on STe 2 aligned, on TT 8 aligned. We do STe. */
-			VideoBase |= IoMem_ReadByte(0xff820d) & ~1;
-		}
-
-		VideoAddress = VideoBase;
-	}
-#endif
 
 	else
 	{
@@ -1877,10 +1874,6 @@ void Video_Sync_WriteByte ( void )
 		ShifterFrame.FreqPos50.FrameCycles = FrameCycles;
 		ShifterFrame.FreqPos50.HBL = HblCounterVideo;
 		ShifterFrame.FreqPos50.LineCycles = LineCycles;
-		if ( ConfigureParams.System.nMachineType == MACHINE_ST )
-			RestartVideoCounterCycle = RESTART_VIDEO_COUNTER_CYCLE_STF;
-		else			/* STE, TT */
-			RestartVideoCounterCycle = RESTART_VIDEO_COUNTER_CYCLE_STE;
 	}
 	else
 	{
@@ -1888,10 +1881,6 @@ void Video_Sync_WriteByte ( void )
 		ShifterFrame.FreqPos60.FrameCycles = FrameCycles;
 		ShifterFrame.FreqPos60.HBL = HblCounterVideo;
 		ShifterFrame.FreqPos60.LineCycles = LineCycles;
-		if ( ConfigureParams.System.nMachineType == MACHINE_ST )
-			RestartVideoCounterCycle = RESTART_VIDEO_COUNTER_CYCLE_STF;
-		else			/* STE, TT */
-			RestartVideoCounterCycle = RESTART_VIDEO_COUNTER_CYCLE_STE;
 	}
 }
 
@@ -2021,8 +2010,8 @@ void Video_InterruptHandler_HBL ( void )
 	if ( RestartVideoCounter )
 	{
 //		fprintf ( stderr , "restart video counter check nhbl=%d hbl=%d cyc=%d\n" , nHBL , HblCounterVideo , LineCycles);
-		if ( ( ( ( IoMem_ReadByte ( 0xff820a ) & 2 ) == 2 ) && ( nHBL == RESTART_VIDEO_COUNTER_LINE_50HZ ) )
-		  || ( ( ( IoMem_ReadByte ( 0xff820a ) & 2 ) == 0 ) && ( nHBL == RESTART_VIDEO_COUNTER_LINE_60HZ )
+		if ( ( ( ( IoMem_ReadByte ( 0xff820a ) & 2 ) == 2 ) && ( nHBL == pVideoTiming->RestartVideoCounter_Line_50 ) )
+		  || ( ( ( IoMem_ReadByte ( 0xff820a ) & 2 ) == 0 ) && ( nHBL == pVideoTiming->RestartVideoCounter_Line_60 )
 		    	&& ( nScanlinesPerFrame == SCANLINES_PER_FRAME_60HZ ) ) )
 		{
 			Video_RestartVideoCounter();
@@ -2138,13 +2127,13 @@ void Video_InterruptHandler_HBL ( void )
 	/* Check if video counter should be restarted on this HBL */
 	if ( RestartVideoCounter )
 	{
-//		fprintf ( stderr , "restart video counter nhbl=%d hbl=%d cyc=%d restart_cyc=%d\n" , nHBL , HblCounterVideo , LineCycles, RestartVideoCounterCycle);
-		/* If HBL was delayed after RestartVideoCounterCycle, we can restart immediately if we have */
+		//fprintf ( stderr , "restart video counter nhbl=%d hbl=%d cyc=%d restart_cyc=%d\n" , nHBL , HblCounterVideo , LineCycles, pVideoTiming->RestartVideoCounter_Pos);
+		/* If HBL was delayed after RestartVideoCounter_Pos, we can restart immediately if we have */
 		/* the correct freq/hbl combination (we need to check nHBL == HblCounterVideo for the WS1 case where LineCycles can be 508) */
-		if ( ( nHBL == HblCounterVideo ) && ( LineCycles >= RestartVideoCounterCycle ) )
+		if ( ( nHBL == HblCounterVideo ) && ( LineCycles >= pVideoTiming->RestartVideoCounter_Pos ) )
 		{
-			if ( ( ( ( IoMem_ReadByte ( 0xff820a ) & 2 ) == 2 ) && ( nHBL == RESTART_VIDEO_COUNTER_LINE_50HZ ) )
-			  || ( ( ( IoMem_ReadByte ( 0xff820a ) & 2 ) == 0 ) && ( nHBL == RESTART_VIDEO_COUNTER_LINE_60HZ ) ) )
+			if ( ( ( ( IoMem_ReadByte ( 0xff820a ) & 2 ) == 2 ) && ( nHBL == pVideoTiming->RestartVideoCounter_Line_50 ) )
+			  || ( ( ( IoMem_ReadByte ( 0xff820a ) & 2 ) == 0 ) && ( nHBL == pVideoTiming->RestartVideoCounter_Line_60 ) ) )
 			{
 				Video_RestartVideoCounter();
 				LOG_TRACE(TRACE_VIDEO_HBL, "HBL %d cyc=%d restart video counter 0x%x (immediate)\n", nHBL, LineCycles, VideoBase );
@@ -2152,13 +2141,13 @@ void Video_InterruptHandler_HBL ( void )
 			RestartVideoCounter = false;
 		}
 		
-		/* HBL was not delayed after RestartVideoCounterCycle, so we set an intermediate HBL interrupt */
+		/* HBL was not delayed after RestartVideoCounter_Pos, so we set an intermediate HBL interrupt */
 		/* This intermediate HBL interrupt will then set the real HBL interrupt at the end of the line */
 		else
 		{
 			// TODO : use Video_AddInterruptHBL after removing -4
 			//Video_AddInterruptHBL ( nHBL , NewHBLPos );
-			Video_AddInterrupt ( nHBL , RestartVideoCounterCycle , INTERRUPT_VIDEO_HBL );
+			Video_AddInterrupt ( nHBL , pVideoTiming->RestartVideoCounter_Pos , INTERRUPT_VIDEO_HBL );
 		}
 	}
 }
@@ -2342,7 +2331,7 @@ static void Video_StartHBL(void)
 		}
 
 		/* Handle accurate restart of video counter only in low/med res */
-		if ( ( nHBL == RESTART_VIDEO_COUNTER_LINE_50HZ ) || ( nHBL == RESTART_VIDEO_COUNTER_LINE_60HZ ) )
+		if ( ( nHBL == pVideoTiming->RestartVideoCounter_Line_50 ) || ( nHBL == pVideoTiming->RestartVideoCounter_Line_60 ) )
 			RestartVideoCounter = true;
 	}
 //fprintf (stderr , "Video_StartHBL %d %d %d\n", nHBL , ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle , ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle );
