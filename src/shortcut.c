@@ -30,6 +30,7 @@ const char ShortCut_fileid[] = "Hatari shortcut.c : " __DATE__ " " __TIME__;
 #include "video.h"
 #include "avi_record.h"
 #include "clocks_timings.h"
+#include "statusbar.h"
 
 static SHORTCUTKEYIDX ShortCutKey = SHORTCUT_NONE;  /* current shortcut key */
 
@@ -288,10 +289,12 @@ void ShortCut_ActKey(void)
 	 case SHORTCUT_COLDRESET:
 		Main_UnPauseEmulation();
 		Reset_Cold();			/* Reset emulator with 'cold' (clear all) */
+		Statusbar_UpdateInfo();		/* Some infos can change after 'reset' */
 		break;
 	 case SHORTCUT_WARMRESET:
 		Main_UnPauseEmulation();
 		Reset_Warm();			/* Emulator 'warm' reset */
+		Statusbar_UpdateInfo();		/* Some infos can change after 'reset' */
 		break;
 	 case SHORTCUT_SCREENSHOT:
 		ScreenSnapShot_SaveScreen();	/* Grab screenshot */
