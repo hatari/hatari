@@ -513,8 +513,10 @@ bool TOS_AutoStartClose(FILE *fp)
 static void TOS_CheckSysConfig(void)
 {
 	int oldCpuLevel = ConfigureParams.System.nCpuLevel;
-	FPUTYPE oldFpuType = ConfigureParams.System.n_FPUType;
 	MACHINETYPE oldMachineType = ConfigureParams.System.nMachineType;
+#if ENABLE_WINUAE_CPU
+	FPUTYPE oldFpuType = ConfigureParams.System.n_FPUType;
+#endif
 
 	if (((TosVersion == 0x0106 || TosVersion == 0x0162) && ConfigureParams.System.nMachineType != MACHINE_STE)
 	    || (TosVersion == 0x0162 && ConfigureParams.System.nCpuLevel != 0))
