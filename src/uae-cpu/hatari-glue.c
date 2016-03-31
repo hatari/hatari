@@ -164,13 +164,16 @@ void check_prefs_changed_cpu(void)
  */
 unsigned long OpCode_SysInit(uae_u32 opcode)
 {
-	/* Add any drives mapped by TOS in the interim */
-	ConnectedDriveMask |= STMemory_ReadLong(0x4c2);
-	/* Initialize the connected drive mask */
-	STMemory_WriteLong(0x4c2, ConnectedDriveMask);
+	Uint32 pc = M68000_GetPC();
 
-	if (!bInitGemDOS)
+	/* This is only valid if called from cartridge code */
+	if (pc >= 0xfa0000 && pc < 0xfc0000)
 	{
+		/* Add any drives mapped by TOS in the interim */
+		ConnectedDriveMask |= STMemory_ReadLong(0x4c2);
+		/* Initialize the connected drive mask */
+		STMemory_WriteLong(0x4c2, ConnectedDriveMask);
+
 		/* Init on boot - see cart.c */
 		GemDOS_Boot();
 
@@ -178,9 +181,16 @@ unsigned long OpCode_SysInit(uae_u32 opcode)
 		 * D0: LineA base, A1: Font base
 		 */
 		VDI_LineA(regs.regs[0], regs.regs[9]);
+
+		CpuDoNOP ();
+	}
+	else
+	{
+		/* illegal instruction */
+		op_illg(opcode);
+		fill_prefetch_0();
 	}
 
-	CpuDoNOP ();
 	return 4;
 }
 

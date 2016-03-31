@@ -3433,6 +3433,9 @@ void GemDOS_OpCode(void)
  */
 void GemDOS_Boot(void)
 {
+	if (bInitGemDOS)
+		GemDOS_Reset();
+
 	bInitGemDOS = true;
 
 	LOG_TRACE(TRACE_OS_GEMDOS, "Gemdos_Boot() at PC 0x%X\n", M68000_GetPC() );
