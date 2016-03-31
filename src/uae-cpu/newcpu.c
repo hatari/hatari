@@ -1061,7 +1061,9 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
 	    else if ( get_long(regs.instruction_pc) == 0x13f88e21 )				/* 13f8 8e21 move.b $ffff8e21.w,$xxxxx (Tymewarp) */
 	      put_byte ( get_long(regs.instruction_pc+4) , 0x00 );				/* dest content should not be changed to "ff" but keep its value "00" */
 
-	    fprintf(stderr,"Bus Error at address $%x, PC=$%x addr_e3=%x op_e3=%x\n", BusErrorAddress, currpc, get_long(m68k_areg(regs, 7)+10) , BusError_opcode);
+	    if (BusErrorAddress != 0xff8a00 || currpc < TosAddress || currpc > TosAddress + TosSize)
+	      fprintf(stderr, "Bus Error at address $%x, PC=$%x addr_e3=%x op_e3=%x\n",
+	              BusErrorAddress, currpc, get_long(m68k_areg(regs, 7)+10) , BusError_opcode);
 
 	    /* Check for double bus errors: */
 	    if (regs.spcflags & SPCFLAG_BUSERROR) {

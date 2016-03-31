@@ -2373,10 +2373,13 @@ static void Exception_ce000 (int nr)
 		x_put_word (m68k_areg (regs, 7) + 0, mode);
 		x_put_word (m68k_areg (regs, 7) + 2, last_fault_for_exception_3 >> 16);
 		x_do_cycles (2 * cpucycleunit);
+#ifndef WINUAE_FOR_HATARI
 		write_log (_T("Exception %d (%04x %x) at %x -> %x!\n"),
 			nr, last_op_for_exception_3, last_addr_for_exception_3, currpc, get_long_debug (4 * nr));
-#ifdef WINUAE_FOR_HATARI
-		fprintf(stderr,"%s Error at address $%x, PC=$%x addr_e3=%x op_e3=%x\n", nr==2?"Bus":"Address", last_fault_for_exception_3, currpc, last_addr_for_exception_3 , last_op_for_exception_3);
+#else
+		if (nr != 2 || last_fault_for_exception_3 != 0xff8a00 || currpc < TosAddress || currpc > TosAddress + TosSize)
+			fprintf(stderr,"%s Error at address $%x, PC=$%x addr_e3=%x op_e3=%x\n", nr==2?"Bus":"Address",
+			        last_fault_for_exception_3, currpc, last_addr_for_exception_3 , last_op_for_exception_3);
 #endif
 		goto kludge_me_do;
 	}
@@ -3017,9 +3020,12 @@ static void Exception_normal (int nr)
 			x_put_word (m68k_areg (regs, 7) + 6, last_op_for_exception_3);
 			x_put_word (m68k_areg (regs, 7) + 8, regs.sr);
 			x_put_long (m68k_areg (regs, 7) + 10, last_addr_for_exception_3);
+#ifndef WINUAE_FOR_HATARI
 			write_log (_T("Exception %d (%x) at %x -> %x!\n"), nr, last_fault_for_exception_3, currpc, get_long_debug (regs.vbr + 4 * vector_nr));
-#ifdef WINUAE_FOR_HATARI
-			fprintf(stderr,"%s Error at address $%x, PC=$%x addr_e3=%x op_e3=%x\n", nr==2?"Bus":"Address", last_fault_for_exception_3, currpc, last_addr_for_exception_3 , last_op_for_exception_3);
+#else
+			if (nr != 2 || last_fault_for_exception_3 != 0xff8a00 || currpc < TosAddress || currpc > TosAddress + TosSize)
+				fprintf(stderr,"%s Error at address $%x, PC=$%x addr_e3=%x op_e3=%x\n", nr==2?"Bus":"Address",
+				        last_fault_for_exception_3, currpc, last_addr_for_exception_3 , last_op_for_exception_3);
 #endif
 			goto kludge_me_do;
 		}
