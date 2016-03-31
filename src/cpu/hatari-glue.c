@@ -147,6 +147,24 @@ static void	CpuDoNOP ( void )
 
 
 /**
+ * Check whether PC is currently in ROM cartridge space - used
+ * to test whether our "illegal" Hatari opcodes should be handled
+ * or whether they are just "normal" illegal opcodes.
+ */
+static bool is_cart_pc(void)
+{
+	Uint32 pc = M68000_GetPC();
+
+	if (ConfigureParams.System.bAddressSpace24 || (pc >> 24) == 0xff)
+	{
+		pc &= 0x00ffffff;	/* Mask to 24-bit address */
+	}
+
+	return pc >= 0xfa0000 && pc < 0xfc0000;
+}
+
+
+/**
  * This function will be called at system init by the cartridge routine
  * (after gemdos init, before booting floppies).
  * The GEMDOS vector (#$84) is setup and we also initialize the connected
@@ -154,10 +172,7 @@ static void	CpuDoNOP ( void )
  */
 uae_u32 OpCode_SysInit(uae_u32 opcode)
 {
-	Uint32 pc = M68000_GetPC();
-
-	/* This is only valid if called from cartridge code */
-	if (pc >= 0xfa0000 && pc < 0xfc0000)
+	if (is_cart_pc())
 	{
 		/* Add any drives mapped by TOS in the interim */
 		ConnectedDriveMask |= STMemory_ReadLong(0x4c2);
@@ -177,7 +192,7 @@ uae_u32 OpCode_SysInit(uae_u32 opcode)
 	else
 	{
 		LOG_TRACE(TRACE_OS_GEMDOS | TRACE_OS_BASE | TRACE_OS_VDI | TRACE_OS_AES,
-			  "SYSINIT opcode invoked from 0x%x - not from cartridge trampoline\n", pc);
+			  "SYSINIT opcode invoked outside of cartridge space\n");
 		/* illegal instruction */
 		op_illg(opcode);
 		fill_prefetch();
@@ -193,17 +208,14 @@ uae_u32 OpCode_SysInit(uae_u32 opcode)
  */
 uae_u32 OpCode_GemDos(uae_u32 opcode)
 {
-	Uint32 pc = M68000_GetPC();
-
-	/* This is only valid if called from cartridge code */
-	if (pc >= 0xfa0000 && pc < 0xfc0000)
+	if (is_cart_pc())
 	{
 		GemDOS_OpCode();    /* handler code in gemdos.c */
 		CpuDoNOP();
 	}
 	else
 	{
-		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS opcode invoked from 0x%x - not from cartridge trampoline\n", pc);
+		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS opcode invoked outside of cartridge space\n");
 		/* illegal instruction */
 		op_illg(opcode);
 		fill_prefetch();
@@ -218,10 +230,8 @@ uae_u32 OpCode_GemDos(uae_u32 opcode)
  */
 uae_u32 OpCode_VDI(uae_u32 opcode)
 {
-	Uint32 pc = M68000_GetPC();
-
 	/* this is valid only after VDI trap, called from cartridge code */
-	if (VDI_OldPC && pc >= 0xfa0000 && pc < 0xfc0000)
+	if (VDI_OldPC && is_cart_pc())
 	{
 		VDI_Complete();
 
@@ -231,7 +241,7 @@ uae_u32 OpCode_VDI(uae_u32 opcode)
 	}
 	else
 	{
-		LOG_TRACE(TRACE_OS_VDI, "VDI opcode invoked from 0x%x - not from cartridge trampoline\n", pc);
+		LOG_TRACE(TRACE_OS_VDI, "VDI opcode invoked outside of cartridge space\n");
 		/* illegal instruction */
 		op_illg(opcode);
 	}

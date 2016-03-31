@@ -164,7 +164,7 @@ void check_prefs_changed_cpu(void)
  */
 unsigned long OpCode_SysInit(uae_u32 opcode)
 {
-	Uint32 pc = M68000_GetPC();
+	Uint32 pc = M68000_GetPC() & 0xffffff;
 
 	/* This is only valid if called from cartridge code */
 	if (pc >= 0xfa0000 && pc < 0xfc0000)
@@ -203,7 +203,7 @@ unsigned long OpCode_SysInit(uae_u32 opcode)
  */
 unsigned long OpCode_GemDos(uae_u32 opcode)
 {
-	Uint32 pc = M68000_GetPC();
+	Uint32 pc = M68000_GetPC() & 0xffffff;
 
 	/* This is only valid if called from cartridge code */
 	if (pc >= 0xfa0000 && pc < 0xfc0000)
@@ -228,7 +228,7 @@ unsigned long OpCode_GemDos(uae_u32 opcode)
  */
 unsigned long OpCode_VDI(uae_u32 opcode)
 {
-	Uint32 pc = M68000_GetPC();
+	Uint32 pc = M68000_GetPC() & 0xffffff;
 
 	/* this is valid only after VDI trap, called from cartridge code */
 	if (VDI_OldPC && pc >= 0xfa0000 && pc < 0xfc0000)
