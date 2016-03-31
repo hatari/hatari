@@ -58,8 +58,8 @@ void customreset(void)
 	/* Reseting the GLUE video chip should also set freq/res register to 0 */
 	Video_Reset_Glue ();
 
-        /* Reset the YM2149 (stop any sound) */
-        PSG_Reset ();
+	/* Reset the YM2149 (stop any sound) */
+	PSG_Reset ();
 
 	/* Reset the MFP */
 	MFP_Reset ();
@@ -93,7 +93,8 @@ int Init680x0(void)
 {
 	currprefs.cpu_level = changed_prefs.cpu_level = ConfigureParams.System.nCpuLevel;
 
-	switch (currprefs.cpu_level) {
+	switch (currprefs.cpu_level)
+	{
 		case 0 : currprefs.cpu_model = 68000; break;
 		case 1 : currprefs.cpu_model = 68010; break;
 		case 2 : currprefs.cpu_model = 68020; break;
@@ -231,7 +232,8 @@ uae_u32 OpCode_NatFeat_ID(uae_u32 opcode)
 {
 	Uint32 stack = Regs[REG_A7] + SIZE_LONG;	/* skip return address */
 
-	if (NatFeat_ID(stack, &(Regs[REG_D0]))) {
+	if (NatFeat_ID(stack, &(Regs[REG_D0])))
+	{
 		CpuDoNOP ();
 	}
 	return 4 * CYCLE_UNIT / 2;
@@ -247,24 +249,27 @@ uae_u32 OpCode_NatFeat_Call(uae_u32 opcode)
 	bool super;
 
 	super = ((SR & SR_SUPERMODE) == SR_SUPERMODE);
-	if (NatFeat_Call(stack, super, &(Regs[REG_D0]))) {
+	if (NatFeat_Call(stack, super, &(Regs[REG_D0])))
+	{
 		CpuDoNOP ();
 	}
 	return 4 * CYCLE_UNIT / 2;
 }
 
 
+TCHAR* buf_out (TCHAR *buffer, int *bufsize, const TCHAR *format, ...)
+{
+	va_list parms;
 
+	if (buffer == NULL)
+	{
+		return 0;
+	}
 
+	va_start (parms, format);
+	vsnprintf (buffer, (*bufsize) - 1, format, parms);
+	va_end (parms);
+	*bufsize -= _tcslen (buffer);
 
-TCHAR* buf_out (TCHAR *buffer, int *bufsize, const TCHAR *format, ...) {
-    va_list parms;
-    if (buffer == NULL) {
-        return 0;
-    }
-    va_start (parms, format);
-    vsnprintf (buffer, (*bufsize) - 1, format, parms);
-    va_end (parms);
-    *bufsize -= _tcslen (buffer);
-    return buffer + _tcslen (buffer);
+	return buffer + _tcslen (buffer);
 }
