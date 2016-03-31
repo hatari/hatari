@@ -201,9 +201,21 @@ unsigned long OpCode_SysInit(uae_u32 opcode)
  */
 unsigned long OpCode_GemDos(uae_u32 opcode)
 {
-	GemDOS_OpCode();    /* handler code in gemdos.c */
+	Uint32 pc = M68000_GetPC();
 
-	CpuDoNOP ();
+	/* This is only valid if called from cartridge code */
+	if (pc >= 0xfa0000 && pc < 0xfc0000)
+	{
+		GemDOS_OpCode();    /* handler code in gemdos.c */
+		CpuDoNOP();
+	}
+	else
+	{
+		/* illegal instruction */
+		op_illg(opcode);
+		fill_prefetch_0();
+	}
+
 	return 4;
 }
 
