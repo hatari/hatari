@@ -3457,7 +3457,8 @@ void GemDOS_Boot(void)
 	}
 	else
 	{
-		act_pd = STMemory_ReadLong(TosAddress + 0x28);
+		Uint32 osAddress = STMemory_ReadLong(0x4f2);
+		act_pd = STMemory_ReadLong(osAddress + 0x28);
 	}
 
 	/* Save old GEMDOS handler address */
