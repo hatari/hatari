@@ -176,6 +176,8 @@ uae_u32 OpCode_SysInit(uae_u32 opcode)
 	}
 	else
 	{
+		LOG_TRACE(TRACE_OS_GEMDOS | TRACE_OS_BASE | TRACE_OS_VDI | TRACE_OS_AES,
+			  "SYSINIT opcode invoked from 0x%x - not from cartridge trampoline\n", pc);
 		/* illegal instruction */
 		op_illg(opcode);
 		fill_prefetch();
@@ -201,6 +203,7 @@ uae_u32 OpCode_GemDos(uae_u32 opcode)
 	}
 	else
 	{
+		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS opcode invoked from 0x%x - not from cartridge trampoline\n", pc);
 		/* illegal instruction */
 		op_illg(opcode);
 		fill_prefetch();
@@ -228,6 +231,7 @@ uae_u32 OpCode_VDI(uae_u32 opcode)
 	}
 	else
 	{
+		LOG_TRACE(TRACE_OS_VDI, "VDI opcode invoked from 0x%x - not from cartridge trampoline\n", pc);
 		/* illegal instruction */
 		op_illg(opcode);
 	}
