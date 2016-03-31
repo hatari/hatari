@@ -174,13 +174,13 @@ unsigned long OpCode_SysInit(uae_u32 opcode)
 		/* Initialize the connected drive mask */
 		STMemory_WriteLong(0x4c2, ConnectedDriveMask);
 
-		/* Init on boot - see cart.c */
-		GemDOS_Boot();
+	/* Init on boot - see cart.c */
+	GemDOS_Boot();
 
-		/* Update LineA for extended VDI res
-		 * D0: LineA base, A1: Font base
-		 */
-		VDI_LineA(regs.regs[0], regs.regs[9]);
+	/* Update LineA for extended VDI res
+	 * D0: LineA base, A1: Font base
+	 */
+	VDI_LineA(regs.regs[0], regs.regs[9]);
 
 		CpuDoNOP ();
 	}
