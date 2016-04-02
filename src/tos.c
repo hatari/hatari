@@ -327,7 +327,7 @@ static void TOS_FixRom(void)
 		{
 #if ENABLE_WINUAE_CPU
 			bool use_mmu = ConfigureParams.System.bMMU &&
-			               ConfigureParams.System.nCpuLevel >= 3;
+			               ConfigureParams.System.nCpuLevel == 3;
 #else
 			bool use_mmu = false;
 #endif
