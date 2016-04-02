@@ -147,24 +147,24 @@ static const Uint8 pRomCheckOpcode306[] = { 0x60, 0x00, 0x00, 0xB0 };  /* BRA $e
 static const Uint8 pRomCheckOpcode404[] = { 0x60, 0x00, 0x00, 0x94 };  /* BRA $e00746 */
 static const Uint8 pBraOpcode[] = { 0x60 };  /* 0x60XX = BRA */
 
-static const Uint8 p060Pmove1[] = {	/* replace PMOVE */
+static const Uint8 p060movep1[] = {	/* replace MOVEP */
 	0x70, 0x0c,			/* moveq #12,d0 */
 	0x42, 0x30, 0x08, 0x00,		/* loop: clr.b 0,(d0,a0) */
 	0x55, 0x40,			/* subq  #2,d0 */
 	0x4a, 0x40,			/* tst.w d0 */
 	0x66, 0xf6,			/* bne.s loop */
 };
-static const Uint8 p060Pmove2[] = {		/* replace PMOVE */
+static const Uint8 p060movep2[] = {		/* replace MOVEP */
 	0x41, 0xf8, 0xfa, 0x26,			/* lea    0xfffffa26.w,a0 */
 	0x20, 0xfc, 0x00, 0x00, 0x00, 0x88,	/* move.l #$00000088,(a0)+ */
 	0x20, 0xbc, 0x00, 0x01, 0x00, 0x05,	/* move.l #$00010005,(a0) */
 	0x4a, 0x38, 0x0a, 0x87			/* tst.b  $a87.w */
 };
-static const Uint8 p060Pmove3_1[] = {		/* replace PMOVE */
+static const Uint8 p060movep3_1[] = {		/* replace MOVEP */
 	0x4e, 0xb9, 0x00, 0xe7, 0xf0, 0x00,	/* jsr     $e7f000 */
 	0x4e, 0x71				/* nop */
 };
-static const Uint8 p060Pmove3_2[] = {		/* replace PMOVE $28(a2),d7 */
+static const Uint8 p060movep3_2[] = {		/* replace MOVEP $28(a2),d7 */
 
 	0x00, 0x7c, 0x07, 0x00,			/* ori       #$700,sr */
 	0x1e, 0x2a, 0x00, 0x28,			/* move.b    $28(a2),d7 */
@@ -262,10 +262,10 @@ static const TOS_PATCH TosPatches[] =
   { 0x404, -1, pszRomCheck, TP_ALWAYS, 0xE006B0, 0x2E3C0007, 4, pRomCheckOpcode404 },
   { 0x404, -1, pszDmaBoot, TP_ALWAYS, 0xE01C9E, 0x62FC31FC, 2, pNopOpcodes },  /* Just a delay */
   { 0x404, -1, pszDmaBoot, TP_ALWAYS, 0xE01CB2, 0x62FC31FC, 2, pNopOpcodes },  /* Just a delay */
-  { 0x404, -1, pszFix060, TP_FIX_060, 0xE025E2, 0x01C80000, 12, p060Pmove1 },
-  { 0x404, -1, pszFix060, TP_FIX_060, 0xE02632, 0x41F8FA01, 20, p060Pmove2 },
-  { 0x404, -1, pszFix060, TP_FIX_060, 0xE02B1E, 0x007c0700, 8, p060Pmove3_1 },
-  { 0x404, -1, pszFix060, TP_FIX_060, 0xE7F000, 0xFFFFFFFF, sizeof( p060Pmove3_2 ), p060Pmove3_2 },
+  { 0x404, -1, pszFix060, TP_FIX_060, 0xE025E2, 0x01C80000, 12, p060movep1 },
+  { 0x404, -1, pszFix060, TP_FIX_060, 0xE02632, 0x41F8FA01, 20, p060movep2 },
+  { 0x404, -1, pszFix060, TP_FIX_060, 0xE02B1E, 0x007c0700, 8, p060movep3_1 },
+  { 0x404, -1, pszFix060, TP_FIX_060, 0xE7F000, 0xFFFFFFFF, sizeof( p060movep3_2 ), p060movep3_2 },
   { 0x404, -1, pszFalconExtraRAM, TP_ALWAYS, 0xE0096E, 0x70036100, 6, pFalconExtraRAM_1 },
   { 0x404, -1, pszFalconExtraRAM, TP_ALWAYS, 0xE7F100, 0xFFFFFFFF, sizeof( pFalconExtraRAM_2 ), pFalconExtraRAM_2 },
 
