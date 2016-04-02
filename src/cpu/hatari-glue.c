@@ -103,7 +103,8 @@ int Init680x0(void)
 		case 5 : currprefs.cpu_model = 68060; break;
 		default: fprintf (stderr, "Init680x0() : Error, cpu_level unknown\n");
 	}
-	
+
+	currprefs.int_no_unimplemented = changed_prefs.int_no_unimplemented = true;
 	currprefs.cpu_compatible = changed_prefs.cpu_compatible = ConfigureParams.System.bCompatibleCpu;
 	currprefs.address_space_24 = changed_prefs.address_space_24 = ConfigureParams.System.bAddressSpace24;
 	currprefs.cpu_cycle_exact = changed_prefs.cpu_cycle_exact = ConfigureParams.System.bCycleExactCpu;
