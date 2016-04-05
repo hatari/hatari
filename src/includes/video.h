@@ -31,6 +31,10 @@
   Pixels per NOP (high res)         : 16
 */
 
+#define	VIDEO_50HZ		50
+#define	VIDEO_60HZ		60
+#define	VIDEO_71HZ		71
+
 /* Scan lines per frame */
 #define SCANLINES_PER_FRAME_50HZ 313    /* Number of scan lines per frame in 50 Hz */
 #define SCANLINES_PER_FRAME_60HZ 263    /* Number of scan lines per frame in 60 Hz */
