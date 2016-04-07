@@ -1663,6 +1663,7 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	int HBL_Pos;
 	int nCyclesPerLine_new;
 	int Freq_match_found;
+	Uint32	BorderMask;
 
 
 	/* FreqHz will be 50, 60 or 71 */
@@ -1709,6 +1710,8 @@ if ( freq == 71 & pos <= start_hi )
   else if ( freq == 50  & pos <= start_pal )
     match_found;
     hbl = 512;
+    end = 376
+    left+2 50 Hz
 
   if ( STF & freq == 60 & pos > start_60 & pos <= start_50 )
     match_found;
@@ -1761,14 +1764,12 @@ freq_test_done
 
 	DE_start = ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle;
 	DE_end = ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle;
+	BorderMask = ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask;
 	HBL_Pos = -1;
 	nCyclesPerLine_new = -1;
 	Freq_match_found = 0;
 
 //fprintf ( stderr , "pom %d %d-%d %d-%d\n" , nHBL , nStartHBL , nEndHBL , DE_start , DE_end );
-	if ( ( HblCounterVideo < nStartHBL )			/* only if display is on */
-	  || ( HblCounterVideo >= nEndHBL + BlankLines ) )	/* only if display is on */
-	  goto Freq_Test_Done;
 
 	if ( LineCycles > DE_end )
 	  goto Freq_Test_Done;
@@ -1792,7 +1793,7 @@ freq_test_done
 
 	    if ( LineCycles == LINE_EMPTY_CYCLE_71_STF )
 	    {
-	      ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_BLANK_LINE;
+	      BorderMask |= BORDERMASK_BLANK_LINE;
 	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect blank line freq stf %d<->%d\n" , DE_start , DE_end );
 	    }
 
@@ -1800,7 +1801,7 @@ freq_test_done
 	    {
 	      DE_start = LINE_START_CYCLE_60;			/*  52 */
 
-	      ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_LEFT_PLUS_2;
+	      BorderMask |= BORDERMASK_LEFT_PLUS_2;
 	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect left+2 60Hz %d<->%d\n" , DE_start , DE_end );
 	    }
 	  }
@@ -1817,9 +1818,9 @@ freq_test_done
 	    {
 	      DE_start = LINE_START_CYCLE_50;			/*  56 */
 
-	      if ( ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask & BORDERMASK_LEFT_PLUS_2 )
+	      if ( BorderMask & BORDERMASK_LEFT_PLUS_2 )
 	      {
-		ShifterFrame.ShifterLines[ nHBL ].BorderMask &= ~BORDERMASK_LEFT_PLUS_2;
+		BorderMask &= ~BORDERMASK_LEFT_PLUS_2;
 		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "cancel left+2 %d<->%d\n" , DE_start , DE_end );
 	      }
 	    }
@@ -1831,6 +1832,7 @@ freq_test_done
 	    Freq_match_found = 1;
 	    HBL_Pos = pVideoTiming->Hbl_Int_Pos_Low_50;		/* 508/512 */
 	    nCyclesPerLine_new = CYCLES_PER_LINE_50HZ;
+	    DE_end = LINE_END_CYCLE_50;				/* 376 */
 
 	    LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect left+2 50Hz %d<->%d\n" , DE_start , DE_end );
 	  }
@@ -1846,7 +1848,7 @@ freq_test_done
 	      DE_start = 0 ;
 	      DE_end = 0;
 
-	      ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_EMPTY_LINE;
+	      BorderMask |= BORDERMASK_EMPTY_LINE;
 	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect empty line freq stf %d<->%d\n" , DE_start , DE_end );
 	    }
 	  }
@@ -1879,13 +1881,13 @@ freq_test_done
 
 	    if ( DE_start != LINE_START_CYCLE_60 )		/*  52 */
 	    {
-	      ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_RIGHT_MINUS_2;
+	      BorderMask |= BORDERMASK_RIGHT_MINUS_2;
 	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect right-2 %d<->%d\n" , DE_start , DE_end );
 	    }
 
-	    else if ( ShifterFrame.ShifterLines[ nHBL ].BorderMask & BORDERMASK_RIGHT_PLUS_2 )
+	    else if ( BorderMask & BORDERMASK_RIGHT_PLUS_2 )
 	    {
-	      ShifterFrame.ShifterLines[ nHBL ].BorderMask &= ~BORDERMASK_RIGHT_PLUS_2;
+	      BorderMask &= ~BORDERMASK_RIGHT_PLUS_2;
 	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "cancel right+2 %d<->%d\n" , DE_start , DE_end );
 	    }
 	  }
@@ -1898,15 +1900,16 @@ freq_test_done
 	  {
 	    DE_end = LINE_END_CYCLE_50;				/* 376 */
 
-	    if ( DE_start == LINE_START_CYCLE_60 )		/*  52 */
+	    if ( ( DE_start == LINE_START_CYCLE_60 )		/*  52 */
+	      && ( ( BorderMask & BORDERMASK_LEFT_PLUS_2 ) == 0 ) )
 	    {
-	      ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_RIGHT_PLUS_2;
-	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect right+2 %d<->%d\n" , DE_start , DE_end );
+	      BorderMask |= BORDERMASK_RIGHT_PLUS_2;
+	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect right+2 60 Hz %d<->%d\n" , DE_start , DE_end );
 	    }
 
-	    else if ( ShifterFrame.ShifterLines[ nHBL ].BorderMask & BORDERMASK_RIGHT_MINUS_2 )
+	    else if ( BorderMask & BORDERMASK_RIGHT_MINUS_2 )
 	    {
-	      ShifterFrame.ShifterLines[ nHBL ].BorderMask &= ~BORDERMASK_RIGHT_MINUS_2;
+	      BorderMask &= ~BORDERMASK_RIGHT_MINUS_2;
 	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "cancel right-2 %d<->%d\n" , DE_start , DE_end );
 	    }
 	  }
@@ -1920,12 +1923,12 @@ freq_test_done
 	  {
 	    DE_end = LINE_END_CYCLE_NO_RIGHT;			/* 460 */
 
-	    ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_RIGHT_OFF;
+	    BorderMask |= BORDERMASK_RIGHT_OFF;
 	    LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect remove right %d<->%d\n" , DE_start , DE_end );
 
-	    if ( ShifterFrame.ShifterLines[ nHBL ].BorderMask & ( BORDERMASK_RIGHT_MINUS_2 | BORDERMASK_RIGHT_PLUS_2 ) )
+	    if ( BorderMask & ( BORDERMASK_RIGHT_MINUS_2 | BORDERMASK_RIGHT_PLUS_2 ) )
 	    {
-	      ShifterFrame.ShifterLines[ nHBL ].BorderMask &= ~( BORDERMASK_RIGHT_MINUS_2 | BORDERMASK_RIGHT_PLUS_2 );
+	      BorderMask &= ~( BORDERMASK_RIGHT_MINUS_2 | BORDERMASK_RIGHT_PLUS_2 );
 	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "cancel right-/+2 %d<->%d\n" , DE_start , DE_end );
 	    }
 	  }
@@ -1934,7 +1937,8 @@ freq_test_done
 
 	/* Go here directly if there's no more Freq/Res changes to test */
 Freq_Test_Done:
-//fprintf ( stderr , "new DE %d<->%d\n" , DE_start , DE_end );
+	LOG_TRACE ( TRACE_VIDEO_BORDER_H , "video new DE %d<->%d hbl_pos=%d cycles_line=%d video_hbl_w=%d\n" ,
+		DE_start , DE_end , HBL_Pos , nCyclesPerLine_new , HblCounterVideo );
 
 
 	/* Update HBL's position only if display has not reached pos pVideoTiming->Line_Set_Pal */
@@ -1943,7 +1947,9 @@ Freq_Test_Done:
 	{
 		/* Don't modify HBL's position now if we're handling the special HBL for video counter restart */
 		if ( RestartVideoCounter == false )
-			Video_AddInterruptHBL ( HblCounterVideo , HBL_Pos );
+//			Video_AddInterruptHBL ( HblCounterVideo , HBL_Pos );
+			Video_AddInterruptHBL ( HblCounterVideo , HBL_Pos+ ( VideoTiming==VIDEO_TIMING_STF_WS1?4:0 ) );	// TODO TEMP : compensate -4 in Video_AddInterruptHBL
+//			Video_AddInterruptHBL ( HblCounterVideo , nCyclesPerLine_new );
 
 		/* In case we're mixing 50 Hz (512 cycles) and 60 Hz (508 cycles) lines on the same screen, */
 		/* we must update the position where the next VBL will happen (instead of the initial value in CyclesPerVBL) */
@@ -1962,8 +1968,9 @@ Freq_Test_Done:
 	/* Update Timer B's position if DE start/end changed (and this is not an empty 0 byte line) */
 	/* In most cases Timer B will count end of line events, but it can also count start of line events */
 	/* (eg 'Seven Gates Of Jambala') so we need to check both start/end values */
-	if ( ( ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle != DE_start )
-	  || ( ( ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle != DE_end ) && ( DE_end > 0 ) ) )
+	if ( ( DE_end > 0 )
+	    && ( ( ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle != DE_start )
+	      || ( ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle != DE_end ) ) )
 	{
 		LineTimerBCycle = Video_TimerB_GetPosFromDE ( DE_start , DE_end );
 		Video_AddInterruptTimerB ( HblCounterVideo , LineCycles , LineTimerBCycle );
@@ -1972,6 +1979,7 @@ Freq_Test_Done:
 	/* Save new values */
 	ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = DE_start;
 	ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle = DE_end;
+	ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask = BorderMask;
 	if ( nCyclesPerLine_new > 0 )
 		nCyclesPerLine = nCyclesPerLine_new;
 }
