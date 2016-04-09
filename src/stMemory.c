@@ -140,7 +140,8 @@ void STMemory_SetDefaultConfig(void)
 	  || ( ConfigureParams.Memory.nMemorySize > 4 && !bIsEmuTOS )
 	  || ( ConfigureParams.System.nMachineType == MACHINE_TT
 	       && ConfigureParams.System.bAddressSpace24 && !bIsEmuTOS )
-	  || ( ConfigureParams.System.nMachineType == MACHINE_FALCON && TTmemory ) )
+	  || ( ConfigureParams.System.nMachineType == MACHINE_FALCON
+	       && TTmemory && !bIsEmuTOS) )
 	{
 		/* Write magic values to sysvars to signal valid config */
 		STMemory_WriteLong(0x420, 0x752019f3);    /* memvalid */
