@@ -372,8 +372,8 @@ static const opt_t HatariOptions[] = {
 	  "<bool>", "Use 24-bit instead of 32-bit addressing mode" },
 	{ OPT_FPU_TYPE, NULL, "--fpu-type",
 	  "<x>", "FPU type (x=none/68881/68882/internal)" },
-	{ OPT_FPU_COMPATIBLE, NULL, "--fpu-compatible",
-	  "<bool>", "Use more compatible, but slower FPU emulation" },
+	/*{ OPT_FPU_COMPATIBLE, NULL, "--fpu-compatible",
+	  "<bool>", "Use more compatible, but slower FPU emulation" },*/
 	{ OPT_MMU, NULL, "--mmu",
 	  "<bool>", "Use MMU emulation" },
 #endif

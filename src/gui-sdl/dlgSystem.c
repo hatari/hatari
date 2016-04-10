@@ -117,8 +117,8 @@ static SGOBJ systemdlg[] =
 	{ SGRADIOBUT, 0, 0, 45,15, 7,1, "68881" },
 	{ SGRADIOBUT, 0, 0, 45,16, 7,1, "68882" },
 	{ SGRADIOBUT, 0, 0, 45,17, 14,1, "_internal" },
-	{ SGCHECKBOX, 0, 0, 45,19, 25,1, "_compatible" },
-	{ SGTEXT,     0, 0, 47,20, 12,1, "but slower" },
+	{ SGTEXT /*SGCHECKBOX*/, 0, 0, 45,19, 25,1, ""/*"_compatible"*/ },
+	{ SGTEXT,     0, 0, 47,20, 12,1, ""/*"but slower"*/ },
 #else
 	{ SGTEXT, 0, 0, 44,12, 14,10, "" },
 	{ SGTEXT, 0, 0, 45,12, 11,1, "" },
