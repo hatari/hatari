@@ -356,16 +356,18 @@ static const opt_t HatariOptions[] = {
 	{ OPT_CARTRIDGE, NULL, "--cartridge",
 	  "<file>", "Use ROM cartridge image <file>" },
 
+#if ENABLE_WINUAE_CPU
+	{ OPT_HEADER, NULL, NULL, NULL, "CPU/FPU/bus" },
+#else
 	{ OPT_HEADER, NULL, NULL, NULL, "CPU" },
+#endif
 	{ OPT_CPULEVEL,  NULL, "--cpulevel",
 	  "<x>", "Set the CPU type (x => 680x0) (EmuTOS/TOS 2.06 only!)" },
 	{ OPT_CPUCLOCK,  NULL, "--cpuclock",
 	  "<x>", "Set the CPU clock (x = 8/16/32)" },
 	{ OPT_COMPATIBLE, NULL, "--compatible",
 	  "<bool>", "Use a more compatible (but slower) 68000 CPU mode" },
-
 #if ENABLE_WINUAE_CPU
-	{ OPT_HEADER, NULL, NULL, NULL, "WinUAE CPU/FPU/bus" },
 	{ OPT_CPU_CYCLE_EXACT, NULL, "--cpu-exact",
 	  "<bool>", "Use cycle exact CPU emulation" },
 	{ OPT_CPU_ADDR24, NULL, "--addr24",
