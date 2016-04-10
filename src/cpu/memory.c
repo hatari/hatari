@@ -1281,7 +1281,6 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
 {
     int 	addr;
 
-    currprefs.address_space_24 = ConfigureParams.System.bAddressSpace24;	/* temp, do it in m68000.c */
     last_address_space_24 = currprefs.address_space_24;
 
     STmem_size = (nNewSTMemSize + 65535) & 0xFFFF0000;
@@ -1356,11 +1355,10 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
     /* Handle extra RAM on TT and Falcon starting at 0x1000000 and up to 0x80000000 */
     /* This requires the CPU to use 32 bit addressing */
     TTmemory = NULL;
-    if ( ConfigureParams.System.bAddressSpace24 == false )
+    if (!currprefs.address_space_24)
     {
-	/* If there's no extra RAM on a TT, region 0x01000000 - 0x80000000 (2047 MB) must return bus errors */
-	if ( ConfigureParams.System.nMachineType == MACHINE_TT )
-	    map_banks_ce ( &BusErrMem_bank, TTmem_start >> 16, ( TTmem_end - TTmem_start ) >> 16, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
+	/* If there's no Fast-RAM, region 0x01000000 - 0x80000000 (2047 MB) must return bus errors */
+	map_banks_ce ( &BusErrMem_bank, TTmem_start >> 16, ( TTmem_end - TTmem_start ) >> 16, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
 
 	if ( TTmem_size > 0 )
 	{
@@ -1427,9 +1425,7 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
      * to 0xff000000, so we remap memory 00xxxxxx to FFxxxxxx here. If not,
      * we'd get some crashes when booting TOS 3 and 4 (e.g. both TOS 3.06
      * and TOS 4.04 touch 0xffff8606 before setting up the MMU tables) */
-    if ( ( ConfigureParams.System.bAddressSpace24 == false )
-      && ( ( ConfigureParams.System.nMachineType == MACHINE_TT )
-	|| ( ConfigureParams.System.nMachineType == MACHINE_FALCON ) ) )
+    if (!currprefs.address_space_24)
     {
       /* Copy all 256 banks 0x0000-0x00FF to banks 0xFF00-0xFFFF */
       for ( addr=0x0 ; addr<=0x00ffffff ; addr+=0x10000 )

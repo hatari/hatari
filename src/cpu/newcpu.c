@@ -1480,6 +1480,9 @@ static void prefs_changed_cpu (void)
 	currprefs.int_no_unimplemented = changed_prefs.int_no_unimplemented;
 	currprefs.fpu_no_unimplemented = changed_prefs.fpu_no_unimplemented;
 	currprefs.blitter_cycle_exact = changed_prefs.blitter_cycle_exact;
+#ifdef WINUAE_FOR_HATARI
+	currprefs.address_space_24 = changed_prefs.address_space_24;
+#endif
 }
 
 static int check_prefs_changed_cpu2(void)
@@ -1493,6 +1496,7 @@ static int check_prefs_changed_cpu2(void)
 		|| currprefs.cpu_model != changed_prefs.cpu_model
 		|| currprefs.fpu_model != changed_prefs.fpu_model
 		|| currprefs.mmu_model != changed_prefs.mmu_model
+		|| currprefs.address_space_24 != changed_prefs.address_space_24  /* WINUAE_FOR_HATARI */
 		|| currprefs.int_no_unimplemented != changed_prefs.int_no_unimplemented
 		|| currprefs.fpu_no_unimplemented != changed_prefs.fpu_no_unimplemented
 		|| currprefs.cpu_compatible != changed_prefs.cpu_compatible
@@ -1522,11 +1526,10 @@ static int check_prefs_changed_cpu2(void)
 
 void check_prefs_changed_cpu(void)
 {
-#ifndef WINUAE_FOR_HATARI
-	return;				/* [NP] TODO : handle cpu change on the fly ? */
+#ifndef WINUAE_FOR_HATARI	/* [NP] TODO : handle cpu change on the fly ? */
 	if (!config_changed)
 		return;
-#else
+#endif
 
 	currprefs.cpu_idle = changed_prefs.cpu_idle;
 	currprefs.ppc_cpu_idle = changed_prefs.ppc_cpu_idle;
@@ -1536,7 +1539,6 @@ void check_prefs_changed_cpu(void)
 		set_special(SPCFLAG_MODE_CHANGE);
 		reset_frame_rate_hack();
 	}
-#endif
 }
 
 void init_m68k (void)
