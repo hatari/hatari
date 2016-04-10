@@ -95,27 +95,27 @@ int Init680x0(void)
 
 	switch (currprefs.cpu_level)
 	{
-		case 0 : currprefs.cpu_model = 68000; break;
-		case 1 : currprefs.cpu_model = 68010; break;
-		case 2 : currprefs.cpu_model = 68020; break;
-		case 3 : currprefs.cpu_model = 68030; break;
-		case 4 : currprefs.cpu_model = 68040; break;
-		case 5 : currprefs.cpu_model = 68060; break;
+		case 0 : changed_prefs.cpu_model = 68000; break;
+		case 1 : changed_prefs.cpu_model = 68010; break;
+		case 2 : changed_prefs.cpu_model = 68020; break;
+		case 3 : changed_prefs.cpu_model = 68030; break;
+		case 4 : changed_prefs.cpu_model = 68040; break;
+		case 5 : changed_prefs.cpu_model = 68060; break;
 		default: fprintf (stderr, "Init680x0() : Error, cpu_level unknown\n");
 	}
 
-	currprefs.int_no_unimplemented = changed_prefs.int_no_unimplemented = true;
-	currprefs.cpu_compatible = changed_prefs.cpu_compatible = ConfigureParams.System.bCompatibleCpu;
-	currprefs.address_space_24 = changed_prefs.address_space_24 = ConfigureParams.System.bAddressSpace24;
-	currprefs.cpu_cycle_exact = changed_prefs.cpu_cycle_exact = ConfigureParams.System.bCycleExactCpu;
-	currprefs.fpu_model = changed_prefs.fpu_model = ConfigureParams.System.n_FPUType;
-	currprefs.fpu_strict = changed_prefs.fpu_strict = ConfigureParams.System.bCompatibleFPU;
+	changed_prefs.int_no_unimplemented = true;
+	changed_prefs.cpu_compatible = ConfigureParams.System.bCompatibleCpu;
+	changed_prefs.address_space_24 = ConfigureParams.System.bAddressSpace24;
+	changed_prefs.cpu_cycle_exact = ConfigureParams.System.bCycleExactCpu;
+	changed_prefs.fpu_model = ConfigureParams.System.n_FPUType;
+	changed_prefs.fpu_strict = ConfigureParams.System.bCompatibleFPU;
 
 	/* Set the MMU model by taking the same value as CPU model */
 	/* MMU is only supported for CPU >=68030 */
-	currprefs.mmu_model = changed_prefs.mmu_model = 0;				/* MMU disabled by default */
-	if ( ( ConfigureParams.System.bMMU ) && ( currprefs.cpu_model >= 68030 ) )
-		currprefs.mmu_model = changed_prefs.mmu_model = currprefs.cpu_model;	/* MMU enabled */
+	changed_prefs.mmu_model = 0;				/* MMU disabled by default */
+	if (ConfigureParams.System.bMMU && changed_prefs.cpu_model >= 68030)
+		changed_prefs.mmu_model = currprefs.cpu_model;	/* MMU enabled */
 
 	init_m68k();
 
