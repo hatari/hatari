@@ -444,8 +444,6 @@ const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
 #define BORDERMASK_LEFT_OFF_MED		0x100	/* removal of left border with hi/med res switch -> +26 bytes (for 4 pixels hardware scrolling) */
 #define BORDERMASK_LEFT_OFF_2_STE	0x200	/* shorter removal of left border with hi/lo res switch -> +20 bytes (STE only)*/
 #define BORDERMASK_BLANK_LINE		0x400	/* 60/50 Hz switch blanks the rest of the line, but video counter is still incremented */
-#define BORDERMASK_RIGHT_PLUS_2		0x800	/* line starts in 60 Hz and ends later in 50 Hz -> +2 bytes on the right */
-
 
 int STRes = ST_LOW_RES;                         /* current ST resolution */
 int TTRes;                                      /* TT shifter resolution mode */
@@ -800,9 +798,9 @@ void	Video_InitTimings(void)
 	pVideoTiming1->Blank_Start_Hi 		= 184+1;
 	pVideoTiming1->H_Stop_Low_60 		= 372;
 	pVideoTiming1->H_Stop_Low_50 		= 376;
-	pVideoTiming1->Blank_Start_Low 		= 450;
-	pVideoTiming1->HSync_Start_Low 		= 462;
-	pVideoTiming1->HSync_Stop_Low 		= 502;
+	pVideoTiming1->Blank_Start_Low		= 450;
+	pVideoTiming1->HSync_Start_Low		= 462;
+	pVideoTiming1->HSync_Stop_Low		= 502;
 	pVideoTiming1->RemoveTopBorder_Pos 	= 502;
 	pVideoTiming1->RemoveBottomBorder_Pos 	= 502;
 	pVideoTiming1->RestartVideoCounter_Line_60 	= RESTART_VIDEO_COUNTER_LINE_60HZ;	/* 260 */
@@ -854,9 +852,9 @@ void	Video_InitTimings(void)
 	pVideoTiming1->Blank_Start_Hi 		= 184;
 	pVideoTiming1->H_Stop_Low_60 		= 372;
 	pVideoTiming1->H_Stop_Low_50 		= 376;
-	pVideoTiming1->Blank_Start_Low 		= 448;
-	pVideoTiming1->HSync_Start_Low 		= 460;
-	pVideoTiming1->HSync_Stop_Low 		= 500;
+	pVideoTiming1->Blank_Start_Low		= 448;
+	pVideoTiming1->HSync_Start_Low		= 460;
+	pVideoTiming1->HSync_Stop_Low		= 500;
 	pVideoTiming1->RemoveTopBorder_Pos 	= 500;
 	pVideoTiming1->RemoveBottomBorder_Pos 	= 500;
 	pVideoTiming1->RestartVideoCounter_Line_60 	= RESTART_VIDEO_COUNTER_LINE_60HZ;	/* 260 */
@@ -901,9 +899,9 @@ static void	Video_InitTimings_Copy ( VIDEO_TIMING *pSrc , VIDEO_TIMING *pDest , 
 	pDest->Blank_Start_Hi 		= pSrc->Blank_Start_Hi + inc;
 	pDest->H_Stop_Low_60 		= pSrc->H_Stop_Low_60 + inc;
 	pDest->H_Stop_Low_50 		= pSrc->H_Stop_Low_50 + inc;
-	pDest->Blank_Start_Low 		= pSrc->Blank_Start_Low + inc;
-	pDest->HSync_Start_Low 		= pSrc->HSync_Start_Low + inc;
-	pDest->HSync_Stop_Low 		= pSrc->HSync_Stop_Low + inc;
+	pDest->Blank_Start_Low		= pSrc->Blank_Start_Low + inc;
+	pDest->HSync_Start_Low		= pSrc->HSync_Start_Low + inc;
+	pDest->HSync_Stop_Low		= pSrc->HSync_Stop_Low + inc;
 	pDest->RemoveTopBorder_Pos	= pSrc->RemoveTopBorder_Pos + inc;
 	pDest->RemoveBottomBorder_Pos	= pSrc->RemoveBottomBorder_Pos + inc;
 
@@ -1877,41 +1875,21 @@ freq_test_done
 //fprintf ( stderr , "pom2\n" );
 	  if ( DE_end == LINE_END_CYCLE_50 )			/* 376 */
 	  {
-	    DE_end = LINE_END_CYCLE_60;				/* 372 */
-
-	    if ( DE_start != LINE_START_CYCLE_60 )		/*  52 */
-	    {
-	      BorderMask |= BORDERMASK_RIGHT_MINUS_2;
-	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect right-2 %d<->%d\n" , DE_start , DE_end );
-	    }
-
-	    else if ( BorderMask & BORDERMASK_RIGHT_PLUS_2 )
-	    {
-	      BorderMask &= ~BORDERMASK_RIGHT_PLUS_2;
-	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "cancel right+2 %d<->%d\n" , DE_start , DE_end );
-	    }
+	    BorderMask |= BORDERMASK_RIGHT_MINUS_2;
+	    LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect right-2 %d<->%d\n" , DE_start , DE_end );
 	  }
+
+	  DE_end = LINE_END_CYCLE_60;				/* 372 */
 	}
 
 	else if ( ( FreqHz == VIDEO_50HZ ) && ( LineCycles <= pVideoTiming->H_Stop_Low_60 ) )	/* 372 */
 	{
 //fprintf ( stderr , "pom3\n" );
-	  if ( DE_end == LINE_END_CYCLE_60 )			/* 372 */
+	  DE_end = LINE_END_CYCLE_50;				/* 376 */
+	  if ( BorderMask & BORDERMASK_RIGHT_MINUS_2 )
 	  {
-	    DE_end = LINE_END_CYCLE_50;				/* 376 */
-
-	    if ( ( DE_start == LINE_START_CYCLE_60 )		/*  52 */
-	      && ( ( BorderMask & BORDERMASK_LEFT_PLUS_2 ) == 0 ) )
-	    {
-	      BorderMask |= BORDERMASK_RIGHT_PLUS_2;
-	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect right+2 60 Hz %d<->%d\n" , DE_start , DE_end );
-	    }
-
-	    else if ( BorderMask & BORDERMASK_RIGHT_MINUS_2 )
-	    {
-	      BorderMask &= ~BORDERMASK_RIGHT_MINUS_2;
-	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "cancel right-2 %d<->%d\n" , DE_start , DE_end );
-	    }
+	    BorderMask &= ~BORDERMASK_RIGHT_MINUS_2;
+	    LOG_TRACE ( TRACE_VIDEO_BORDER_H , "cancel right-2 %d<->%d\n" , DE_start , DE_end );
 	  }
 	}
 
@@ -1926,10 +1904,10 @@ freq_test_done
 	    BorderMask |= BORDERMASK_RIGHT_OFF;
 	    LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect remove right %d<->%d\n" , DE_start , DE_end );
 
-	    if ( BorderMask & ( BORDERMASK_RIGHT_MINUS_2 | BORDERMASK_RIGHT_PLUS_2 ) )
+	    if ( BorderMask & BORDERMASK_RIGHT_MINUS_2 )
 	    {
-	      BorderMask &= ~( BORDERMASK_RIGHT_MINUS_2 | BORDERMASK_RIGHT_PLUS_2 );
-	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "cancel right-/+2 %d<->%d\n" , DE_start , DE_end );
+	      BorderMask &= ~BORDERMASK_RIGHT_MINUS_2;
+	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "cancel right-2 %d<->%d\n" , DE_start , DE_end );
 	    }
 	  }
 	}
