@@ -105,6 +105,7 @@ int Init680x0(void)
 	}
 
 	changed_prefs.int_no_unimplemented = true;
+	changed_prefs.fpu_no_unimplemented = true;
 	changed_prefs.cpu_compatible = ConfigureParams.System.bCompatibleCpu;
 	changed_prefs.address_space_24 = ConfigureParams.System.bAddressSpace24;
 	changed_prefs.cpu_cycle_exact = ConfigureParams.System.bCycleExactCpu;
