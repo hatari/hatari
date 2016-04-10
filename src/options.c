@@ -109,7 +109,6 @@ enum {
 	OPT_DRIVEB_HEADS,
 	OPT_DISKA,
 	OPT_DISKB,
-	OPT_SLOWFLOPPY,
 	OPT_FASTFLOPPY,
 	OPT_WRITEPROT_FLOPPY,
 	OPT_HARDDRIVE,
@@ -313,8 +312,6 @@ static const opt_t HatariOptions[] = {
 	  "<file>", "Set disk image for floppy drive A" },
 	{ OPT_DISKB, NULL, "--disk-b",
 	  "<file>", "Set disk image for floppy drive B" },
-	{ OPT_SLOWFLOPPY,   NULL, "--slowfdc",
-	  "<bool>", "Slow down floppy disk access emulation (deprecated, use --fastfdc)" },
 	{ OPT_FASTFLOPPY,   NULL, "--fastfdc",
 	  "<bool>", "Speed up floppy disk access emulation (can break some programs)" },
 	{ OPT_WRITEPROT_FLOPPY, NULL, "--protect-floppy",
@@ -1378,11 +1375,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				bLoadAutoSave = false;
 			else
 				return Opt_ShowError(OPT_ERROR, argv[i], "Not a disk image");
-			break;
-
-		case OPT_SLOWFLOPPY:
-			i++;
-			fprintf(stderr, "\nWarning: --slowfdc is not supported anymore, use --fastfdc\n\n");
 			break;
 
 		case OPT_FASTFLOPPY:
