@@ -116,7 +116,7 @@ int Init680x0(void)
 	/* MMU is only supported for CPU >=68030 */
 	changed_prefs.mmu_model = 0;				/* MMU disabled by default */
 	if (ConfigureParams.System.bMMU && changed_prefs.cpu_model >= 68030)
-		changed_prefs.mmu_model = currprefs.cpu_model;	/* MMU enabled */
+		changed_prefs.mmu_model = changed_prefs.cpu_model;	/* MMU enabled */
 
 	init_m68k();
 
