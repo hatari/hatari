@@ -483,7 +483,7 @@ static int DebugCpu_Continue(int nArgc, char *psArgv[])
 /**
  * Command: Single-step CPU
  */
-static int DebugCpu_Step(int nArgc, char *psArgv[])
+int DebugCpu_Step(int nArgc, char *psArgv[])
 {
 	nCpuSteps = 1;
 	return DEBUGGER_END;
