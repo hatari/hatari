@@ -537,15 +537,25 @@ static int DebugCpu_Next(int nArgc, char *psArgv[])
 		Uint32 optype, nextpc;
 
 		optype = DebugCpu_OpcodeType();
-		/* can this instruction be stepped normally? */
-		if (optype != CALL_SUBROUTINE && optype != CALL_EXCEPTION)
+		/* should this instruction be stepped normally, or is it
+		 * - subroutine call
+		 * - exception
+		 * - loop branch backwards
+		 */
+		if (optype == CALL_SUBROUTINE ||
+		    optype == CALL_EXCEPTION ||
+		    (optype == CALL_BRANCH &&
+		     (STMemory_ReadWord(M68000_GetPC()) & 0xf0f8) == 0x50c8 &&
+		     (Sint16)STMemory_ReadWord(M68000_GetPC()+SIZE_WORD) < 0))
+		{
+			nextpc = Disasm_GetNextPC(M68000_GetPC());
+			sprintf(command, "pc=$%x :once :quiet\n", nextpc);
+		}
+		else
 		{
 			nCpuSteps = 1;
 			return DEBUGGER_END;
 		}
-
-		nextpc = Disasm_GetNextPC(M68000_GetPC());
-		sprintf(command, "pc=$%x :once :quiet\n", nextpc);
 	}
 	/* use breakpoint, not steps */
 	if (BreakCond_Command(command, false))
