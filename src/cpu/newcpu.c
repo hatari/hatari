@@ -1485,9 +1485,6 @@ static void prefs_changed_cpu (void)
 	currprefs.int_no_unimplemented = changed_prefs.int_no_unimplemented;
 	currprefs.fpu_no_unimplemented = changed_prefs.fpu_no_unimplemented;
 	currprefs.blitter_cycle_exact = changed_prefs.blitter_cycle_exact;
-#ifdef WINUAE_FOR_HATARI
-	currprefs.address_space_24 = changed_prefs.address_space_24;
-#endif
 }
 
 static int check_prefs_changed_cpu2(void)
