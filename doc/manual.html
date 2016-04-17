@@ -3252,16 +3252,15 @@ Profile data accuracy from most to least accurate when Hatari's
 default emulation options are used is following:</p>
 <ul>
 <li>Executed CPU and DSP instruction counts are accurate.</li>
-<li>DSP cycles counts (and their variance information) should be accurate.
-    </li>
-<li>030 CPU instruction cache miss information (provided by WinUAE CPU core)
-    is assumed to be accurate.</li>
-<li>Cycles used by a given CPU instruction depend to some extent on what
-    instruction(s), and data in case of 030, was processed before it.
-    While Hatari has some (instruction pairing) heuristics to take
-    that into account for 68000, in general instruction cycles are
-    averages.  For 68000, cycles (provided by OldUAE CPU core) should
-    be fairly accurate, for 68030 they aren't (yet) not very accurate.</li>
+<li>68000 cycle counts have been tested to be accurate to within 1%.</li>
+<li>DSP cycle counts (and the variance information) should be accurate.</li>
+<li>030 CPU instruction cache hit/miss counts (provided by WinUAE CPU core)
+    are assumed to be accurate.</li>
+<li>As to 680x0 cycles... Cycles used by a given CPU instruction depend
+    on what instruction(s) is executed, where it was executed (ST or
+    TT-RAM) and what data was processed before it (was it cached).
+    E.g. 030 cycle counts can be off by tens of percents.</li>
+<li>FPU instruction cycles can be off by 2x.</li>
 </ul>
 
 
@@ -3373,7 +3372,7 @@ profiler cannot determine when exceptions are being handled:</p>
     has special code to handle EmuTOS AES switcher because of this).
     Typically this produces large list of functions that are finalized
     at profile end, so it should be easy to detect.</li>
-<li>Compilicated recursive calls seem to sometimes cause inclusive
+<li>Complicated recursive calls seem to sometimes cause inclusive
     costs (ones including costs of further subroutine calls) to be
     incorrect.  Sometimes this can be noticed by them being even
     &gt;100%.</li>
