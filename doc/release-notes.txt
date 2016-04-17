@@ -9,6 +9,8 @@
 Emulation:
 - GEMDOS HD:
   - Fix: Disable GEMDOS opcodes after GEMDOS drive is disabled
+  - Fix: GEMDOS HD can now be initialized multiple times, e.g. when running
+    EmuTOS RAM image from a normal TOS.
 - Video:
   - fix reading video counter $FF8205/07/09 after modifying it while
     display is ON.
@@ -19,6 +21,8 @@ Emulation:
 - Sound changes :
   - DMA sound should be played even when start address = end address
 - Fixes to DSP addressing
+- More accurate 68060 mode (removed instructions from previous CPU versions
+  are not emulated anymore)
 
 Emulator:
 - SDL GUI:
