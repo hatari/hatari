@@ -506,6 +506,7 @@ bool XBios(void)
 	case 88:	/* VsetMode */
 	case 90:	/* VsetSync */
 	case 91:	/* VgetSize */
+	case 95:	/* VcheckMode */
 	case 102:	/* Dsp_RemoveInterrupts */
 	case 112:	/* Dsp_TriggerHC */
 	case 117:	/* Dsp_InqSubrAbility */
