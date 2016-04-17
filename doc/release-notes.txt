@@ -36,7 +36,10 @@ Emulator:
   - Fix: direct DSP register, disasm and memdumps to debugger log
          file, similarly to CPU
   - Fix: direct CPU and DSP symbol traces to trace file, not stderr
-  - Fix: :once option when there's only one breakpoint (v1.9 regression)
+  - Fix: ':once' option when there's only one breakpoint (v1.9 regression)
+  - Fix: NatFeats NF_DEBUGGER command now actually drops to debugger
+  - 'n' (next) command run until (dbcc backwards branch) loop exits
+    (in addition to running until subroutine and exception calls return)
 
 Other:
 - Allow building without Zlib
