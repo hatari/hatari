@@ -44,6 +44,7 @@ Emulator:
   - Fix: NatFeats NF_DEBUGGER command now actually drops to debugger
   - 'n' (next) command run until (dbcc backwards branch) loop exits
     (in addition to running until subroutine and exception calls return)
+  - Also trace exception can be caught
 
 Other:
 - Allow building without Zlib

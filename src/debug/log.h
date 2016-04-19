@@ -25,13 +25,14 @@
 #define	EXCEPT_CHK	 (1<<4)
 #define	EXCEPT_TRAPV	 (1<<5)
 #define	EXCEPT_PRIVILEGE (1<<6)
-#define	EXCEPT_NOHANDLER (1<<7)
+#define	EXCEPT_TRACE     (1<<7)
+#define	EXCEPT_NOHANDLER (1<<8)
 
 /* DSP exception flags */
-#define EXCEPT_DSP	 (1<<8)
+#define EXCEPT_DSP	 (1<<9)
 
 /* whether to enable exception debugging on autostart */
-#define EXCEPT_AUTOSTART (1<<9)
+#define EXCEPT_AUTOSTART (1<<10)
 
 /* general flags */
 #define	EXCEPT_NONE	 (0)
