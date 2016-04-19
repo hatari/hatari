@@ -2102,7 +2102,12 @@ static void exception_debug (int nr)
 	console_out_f (_T("Exception %d, PC=%08X\n"), nr, M68K_GETPC);
 #endif
 #ifdef WINUAE_FOR_HATARI
-	DebugUI_Exceptions(nr, M68K_GETPC);
+	if (unlikely(ExceptionDebugMask & EXCEPT_NOHANDLER) && STMemory_ReadLong(regs.vbr + 4*nr) == 0) {
+        	fprintf(stderr,"Uninitialized exception handler #%i!\n", nr);
+		DebugUI(REASON_CPU_EXCEPTION);
+	} else {
+		DebugUI_Exceptions(nr, M68K_GETPC);
+	}
 #endif
 }
 
