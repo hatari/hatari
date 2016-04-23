@@ -28,11 +28,15 @@ Emulator:
 - SDL GUI:
   - Shortcuts can be configured in the keyboard dialog
   - User can provide volume label when creating a floppy image
-- Better SDL2 support (e.g. resizable windows), SDL2 is now enabled by default
+- Better SDL2 support:
+  - SDL2 is now enabled by default
+  - resizable windows, including ST/STE screen scaling
+  - "--desktop" option is used also for ST/STe instead of "--desktop-st"
 - Preferred private configuration directory is now ~/.config/hatari (but the
   legacy location ~/.hatari is still used if the other one does not exist yet)
 - Support SDL key names in keymap files in addition to key codes
 - Support for rendering to 8-bit host screens removed
+- Support for (buggy) RsConf() interception with --bios-intercept removed
 - NatFeats SCSI driver for Linux added
 - Debugger:
   - Fix: close debugger log file only when explicitly requested,
@@ -44,6 +48,7 @@ Emulator:
   - Fix: NatFeats NF_DEBUGGER command now actually drops to debugger
   - 'n' (next) command run until (dbcc backwards branch) loop exits
     (in addition to running until subroutine and exception calls return)
+  - Support Atari debugger XBios(11) / Dbmsg() API
   - Also trace exception can be caught
 
 Other:
