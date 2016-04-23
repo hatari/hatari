@@ -470,7 +470,8 @@ Free/shareware/PD games:
 - Dot 2 Dots (for kids)
 - Droid (floppy only, bootsector has 0 for reserved sectors)
 - Droid 2 (floppy only)*
-- Entombed
+- Entombed (doesn't show title, copyright, hiscore nor help after v0.8.6)
+  - TOS v2 shows title but not others and sound is wrong
 - Flip'em* (4KB puzzle)
 - French adaptations of classic games:
   Boulderdash, Demineur, Jewel, Qbert, Sokoban
@@ -662,8 +663,8 @@ Non-working color/mono/GEM Atari ST games
 
 These are all games that work with normal TOS from Hatari GEMDOS HD
 emulated drive, i.e. aren't hardcoded to run from a floppy.  Floppy
-only games aren't listed as main reason for them not working is larger
-memory usage of EmuTOS (which is too awkward to debug).
+only games aren't listed as main reason why some of them don't work
+is them overwriting TOS (or their own) memory.
 
 Non-working color STOS games (as expected):
 - Balls Up          (mouse input doesn't work)
@@ -693,11 +694,7 @@ Commercial color game demos (run from HD):
 Free/shareware color games:
 - Douglas Rockmoor  (joystick input doesn't work)
 - Downfall          (fire doesn't work)
-- Entombed          (doesn't show title, copyright, hiscore nor help after v0.8.6,
-                     TOS v2 shows title but not others and sound is wrong)
 - Fokker            (input doesn't work)
-- Quest for Galaxia (input doesn't work, except space for pause)
-- Insecticide       (input doesn't work, except space for pause)
 - Japlish           (line-A polygon lines, joystick input doesn't work)
 - Space invaders    (up works as fire, no other input works)
 
@@ -740,6 +737,7 @@ Working MIDI programs:
 - Dr T's Tiger Cub v2.0
 - EditTrack
 - EZ-Score
+- FinalCut Pro demo (needs <4MB RAM)
 - Henry Cosh's Accompanist
 - Ludwig
 - Miditree (floppy only, press "P" to play Xmas carrols)
@@ -748,7 +746,6 @@ Working MIDI programs:
 
 Not working:
 - Cubase lite (guesses etv_timer vector wrong -> panic)
-- FinalCut Pro demo (panic on MIDI play)
 
 MIDI programs are available from Tim's MIDI world:
 	http://tamw.atari-users.net/
@@ -794,7 +791,8 @@ Demos:
 - Devotion (by Excellence in Art)
 - Dynamite (by Unit 17)
 - E605 (by Light)
-- Ecstacy (by ICE)
+- Ecstasy part A (by Inner Circuit Explorers)
+- Ecstasy part B (by Inner Circuit Explorers)
 - French Kiss (by DHS)
 - Gobi Toons (by Dune)
 - Grimey (by Reservoir Gods)
@@ -929,19 +927,19 @@ EmuTOS version.
 Non-working Atari STE programs
 ------------------------------
 
-Partially working STE demos:
+Partially working STE demos (old info, maybe 0.8.x?):
 - 20 years megademo (by Atari scene collective)
-  - issues in some screens
+  - issues in some screens that are for STE
 - 20 years Atari STE megademo (by Paradox)
   - some screen don't work
-- Ecstasy part A (by Inner Circuit Explorers)
-  - stops in middle, after 3D flight part
 
 Non-working games and music programs:
 - Art for Kids demo (Bus error at $6, after vro_cpyfm)
 - Bombaman (joystick input doesn't work in game itself):
   http://homepage.ntlworld.com/kevcallahan/bombaman/
-- Cameleon (line-A bitblit, exits when starting game)
+- Cameleon (by Aggression, line-A bitblit)
+  - Fails like on ST with TOS 1.x/TOS v2
+  - With EmuTOS doesn't recognize it's on STE?
 - Hero (STOS, input doesn't work)
 - Protracker v2 STE, Equinox version
   - NULL pointer crash on disk ops with EmuTOS <=v0.9.3
