@@ -513,13 +513,16 @@ void GemDOS_Reset(void)
 	}
 	DTAIndex = 0;
 
-	for (i = 0; i < MAX_HARDDRIVES; i++)
+	if (emudrives)
 	{
-		if (emudrives[i])
+		for (i = 0; i < MAX_HARDDRIVES; i++)
 		{
-			/* Initialize current directory to the root of the drive */
-			strcpy(emudrives[i]->fs_currpath, emudrives[i]->hd_emulation_dir);
-			File_AddSlashToEndFileName(emudrives[i]->fs_currpath);
+			if (emudrives[i])
+			{
+				/* Initialize current directory to the root of the drive */
+				strcpy(emudrives[i]->fs_currpath, emudrives[i]->hd_emulation_dir);
+				File_AddSlashToEndFileName(emudrives[i]->fs_currpath);
+			}
 		}
 	}
 
