@@ -188,6 +188,15 @@ static bool XBios_Rsconf(Uint32 Params)
 		RS232_SetFlowControl(Ctrl);
 	}
 
+	/* TODO: return packed form of the ucr, rsr, scr and tsr register values:
+	 *
+	 * Bits 0..7: scr register
+	 * Bits 8..15: tsr register
+	 * Bits 16..23: rsr register
+	 * Bits 24..31: ucr register
+	 *
+	 * Regs[REG_D0] = ...;
+	 */
 	return true;
 }
 
@@ -205,9 +214,10 @@ static bool XBios_Scrdmp(Uint32 Params)
 
 	ScreenSnapShot_SaveScreen();
 
-	/* Correct return code? */
+	/* Scrdmp() doesn't have return value, but return something else than
+	 * function number to indicate this XBios opcode was implemented
+	 */
 	Regs[REG_D0] = 0;
-
 	return true;
 }
 
@@ -226,6 +236,8 @@ static bool XBios_HatariControl(Uint32 Params)
 		return false;
 
 	Control_ProcessBuffer(pText);
+
+	/* return value != function opcode, to indicate it's implemented */
 	Regs[REG_D0] = 0;
 	return true;
 }
@@ -288,9 +300,9 @@ static const char* XBios_Call2Name(Uint16 opcode)
 		"Bconmap",
 		NULL,	/* 45 */
 		"NVMaccess",
-		NULL,	/* 47 */
+		"Waketime", /* TOS 2.06 */
 		"Metainit",
-		NULL,	/* 49 */
+		NULL,	/* 49: rest of MetaDOS calls */
 		NULL,
 		NULL,
 		NULL,
@@ -306,7 +318,7 @@ static const char* XBios_Call2Name(Uint16 opcode)
 		NULL,
 		NULL,	/* 63 */
 		"Blitmode",
-		NULL,	/* 65 */
+		NULL,	/* 65: CENTScreen */
 		NULL,
 		NULL,
 		NULL,
