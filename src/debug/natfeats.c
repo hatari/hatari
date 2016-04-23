@@ -20,7 +20,7 @@ const char Natfeats_fileid[] = "Hatari natfeats.c : " __DATE__ " " __TIME__;
 #include "stMemory.h"
 #include "m68000.h"
 #include "natfeats.h"
-#include "debugcpu.h"
+#include "debugui.h"
 #include "nf_scsidrv.h"
 #include "log.h"
 
@@ -143,9 +143,7 @@ static bool nf_exit(Uint32 stack, Uint32 subid, Uint32 *retval)
 static bool nf_debugger(Uint32 stack, Uint32 subid, Uint32 *retval)
 {
 	LOG_TRACE(TRACE_NATFEATS, "NF_DEBUGGER()\n");
-	/* Make sure CPU core calls debugger check for stepping */
-	M68000_SetSpecial(SPCFLAG_DEBUGGER);
-	DebugCpu_Step(0, NULL);
+	DebugUI(REASON_PROGRAM);
 	return true;
 }
 

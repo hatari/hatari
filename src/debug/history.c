@@ -63,6 +63,8 @@ static const char* History_ReasonStr(debug_reason_t reason)
 		return "CPU steps";
 	case REASON_DSP_STEPS:
 		return "DSP steps";
+	case REASON_PROGRAM:
+		return "Program break";
 	case REASON_USER:
 		return "User break";
 	default:
