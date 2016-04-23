@@ -477,15 +477,21 @@ for borders / zooming</p>
 <h3>ST/STE specific display options</h3>
 <p class="parameter">--desktop-st
 &lt;bool&gt;</p>
-<p class="paramdesc">Whether fullscreen mode uses desktop
-resolution to avoid: messing multi-screen setups, several seconds
-delay needed by LCD monitors resolution switching and the resulting
-sound break. As Hatari ST/E display code doesn&rsquo;t support
-zooming (except low-rez doubling), it doesn&rsquo;t get scaled (by
-Hatari or monitor) when this is enabled. Therefore this is mainly
-useful only if you suffer from the described effects, but still
-want to grab mouse and remove other distractions from the screen
-just by toggling fullscreen mode. (disabled by default)</p>
+<p class="paramdesc">
+NOTE: this has effect only for SDL1 Hatari build.  In SDL2 build,
+<i>--desktop</i> option controls also ST/STe mode.</p>
+<p class="paramdesc">Whether to use desktop resolution on fullscreen
+to avoid issues related to resolution switching (messing multi-screen
+setups, several seconds delay needed for resolution switching by some
+LCD monitors and the resulting sound break). Otherwise fullscreen will
+use a resolution that is closest to the Hatari window size.</p>
+<p class="paramdesc">As Hatari ST/STe display code doesn't support
+zooming (except low-rez doubling), it doesn't get scaled (by Hatari or
+monitor) when this is enabled, and you may get large black borders
+around ST/STe screen. Therefore this is mainly useful only if you
+suffer from the described effects, but still want to grab mouse and
+remove other distractions from the screen just by toggling fullscreen
+mode. (disabled by default)</p>
 <p class="parameter">--spec512
 &lt;x&gt;</p>
 <p class="paramdesc">Hatari uses this threshold to decide

@@ -113,14 +113,22 @@ Force internal bitdepth (x = 8/15/16/32, 0=disable)
 .SH "ST/STE specific display options"
 .TP
 .B \-\-desktop\-st <bool>
-Whether fullscreen mode uses desktop resolution to avoid: messing
-multi-screen setups, several seconds delay needed by LCD monitors
-resolution switching and the resulting sound break. As Hatari ST/E
-display code doesn't support zooming (except low-rez doubling), it
-doesn't get scaled (by Hatari or monitor) when this is enabled.
+NOTE: this has effect only for SDL1 Hatari build.  In SDL2 build,
+\fB--desktop\fP option controls also ST/STe mode.
+
+Whether to use desktop resolution on fullscreen to avoid issues
+related to resolution switching (messing multi-screen setups, several
+seconds delay needed for resolution switching by some LCD monitors and
+the resulting sound break). Otherwise fullscreen will use a resolution
+that is closest to the Hatari window size.
+
+As Hatari ST/STe display code doesn't support zooming (except low-rez
+doubling), it doesn't get scaled (by Hatari or monitor) when this is
+enabled, and you may get large black borders around ST/STe screen.
 Therefore this is mainly useful only if you suffer from the described
 effects, but still want to grab mouse and remove other distractions
-from the screen just by toggling fullscreen mode. (disabled by default)
+from the screen just by toggling fullscreen mode. (disabled by
+default)
 .TP 
 .B \-\-spec512 <x>
 Hatari uses this threshold to decide when to render a screen with
