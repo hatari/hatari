@@ -43,7 +43,50 @@ void XBios_ToggleCommands(void)
 }
 
 
+/**
+ * XBIOS Scrdmp
+ * Call 20
+ */
+static bool XBios_Scrdmp(Uint32 Params)
+{
+	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x14 Scrdmp() at PC 0x%X\n" , M68000_GetPC());
+
+	if (!bXBiosCommands)
+		return false;
+
+	ScreenSnapShot_SaveScreen();
+
+	/* Scrdmp() doesn't have return value, but return something else than
+	 * function number to indicate this XBios opcode was implemented
+	 */
+	Regs[REG_D0] = 0;
+	return true;
+}
+
+
+/**
+ * XBIOS remote control interface for Hatari
+ * Call 255
+ */
+static bool XBios_HatariControl(Uint32 Params)
+{
+	const char *pText;
+	pText = (const char *)STMemory_STAddrToPointer(STMemory_ReadLong(Params));
+	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x%02X HatariControl(%s) at PC 0x%X\n", HATARI_CONTROL_OPCODE, pText, M68000_GetPC());
+
+	if (!bXBiosCommands)
+		return false;
+
+	Control_ProcessBuffer(pText);
+
+	/* return value != function opcode, to indicate it's implemented */
+	Regs[REG_D0] = 0;
+	return true;
+}
+
+
 #if ENABLE_TRACING
+
 /**
  * XBIOS Floppy Read
  * Call 8
@@ -133,57 +176,7 @@ static bool XBios_Devconnect(Uint32 Params)
 	return false;
 }
 
-#else /* !ENABLE_TRACING */
-#define XBios_Floprd(params)     false
-#define XBios_Flopwr(params)     false
-#define XBios_Rsconf(params)     false
-#define XBios_Devconnect(params) false
-#endif
 
-
-/**
- * XBIOS Scrdmp
- * Call 20
- */
-static bool XBios_Scrdmp(Uint32 Params)
-{
-	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x14 Scrdmp() at PC 0x%X\n" , M68000_GetPC());
-
-	if (!bXBiosCommands)
-		return false;
-
-	ScreenSnapShot_SaveScreen();
-
-	/* Scrdmp() doesn't have return value, but return something else than
-	 * function number to indicate this XBios opcode was implemented
-	 */
-	Regs[REG_D0] = 0;
-	return true;
-}
-
-
-/**
- * XBIOS remote control interface for Hatari
- * Call 255
- */
-static bool XBios_HatariControl(Uint32 Params)
-{
-	const char *pText;
-	pText = (const char *)STMemory_STAddrToPointer(STMemory_ReadLong(Params));
-	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x%02X HatariControl(%s) at PC 0x%X\n", HATARI_CONTROL_OPCODE, pText, M68000_GetPC());
-
-	if (!bXBiosCommands)
-		return false;
-
-	Control_ProcessBuffer(pText);
-
-	/* return value != function opcode, to indicate it's implemented */
-	Regs[REG_D0] = 0;
-	return true;
-}
-
-
-#if ENABLE_TRACING
 /**
  * Map XBIOS call opcode to XBIOS function name
  *
@@ -377,11 +370,19 @@ void XBios_Info(FILE *fp, Uint32 dummy)
 		}
 	}
 }
+
 #else /* !ENABLE_TRACING */
+
+#define XBios_Floprd(params)     false
+#define XBios_Flopwr(params)     false
+#define XBios_Rsconf(params)     false
+#define XBios_Devconnect(params) false
+
 void XBios_Info(FILE *fp, Uint32 bShowOpcodes)
 {
 	        fputs("Hatari isn't configured with ENABLE_TRACING\n", fp);
 }
+
 #endif /* !ENABLE_TRACING */
 
 
