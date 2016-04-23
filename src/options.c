@@ -1095,6 +1095,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 		case OPT_RESOLUTION_ST:
 #if WITH_SDL2
 			fprintf(stderr, "The --desktop-st option is not supported in this version (with SDL2)!\n");
+			i++;
 #else
 			ok = Opt_Bool(argv[++i], OPT_RESOLUTION_ST, &ConfigureParams.Screen.bKeepResolutionST);
 #endif
