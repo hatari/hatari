@@ -513,6 +513,16 @@ void GemDOS_Reset(void)
 	}
 	DTAIndex = 0;
 
+	for (i = 0; i < MAX_HARDDRIVES; i++)
+	{
+		if (emudrives[i])
+		{
+			/* Initialize current directory to the root of the drive */
+			strcpy(emudrives[i]->fs_currpath, emudrives[i]->hd_emulation_dir);
+			File_AddSlashToEndFileName(emudrives[i]->fs_currpath);
+		}
+	}
+
 	/* Reset */
 	bInitGemDOS = false;
 	CurrentDrive = nBootDrive;
@@ -695,10 +705,6 @@ void GemDOS_InitDrives(void)
 		// drive letter/number exists...
 		if (GEMDOS_DoesHostDriveFolderExist(emudrives[i]->hd_emulation_dir, DriveNumber))
 		{
-			/* initialize current directory string, too (initially the same as hd_emulation_dir) */
-			strcpy(emudrives[i]->fs_currpath, emudrives[i]->hd_emulation_dir);
-			File_AddSlashToEndFileName(emudrives[i]->fs_currpath);    /* Needs trailing slash! */
-
 			/* map drive */
 			Log_Printf(LOG_INFO, "GEMDOS HDD emulation, %c: <-> %s.\n",
 				   'A'+DriveNumber, emudrives[i]->hd_emulation_dir);
