@@ -4,7 +4,7 @@
   This file is distributed under the GNU General Public License, version 2
   or at your option any later version. Read the file gpl.txt for details.
 
-  XBios Handler (Trap #14)
+  XBios Handler (Trap #14) -  http://toshyp.atari.org/en/004014.html
 
   Intercept and direct XBios calls to allow saving screenshots in host format
   and to help with tracing/debugging.
@@ -20,26 +20,83 @@ const char XBios_fileid[] = "Hatari xbios.c : " __DATE__ " " __TIME__;
 #include "rs232.h"
 #include "screenSnapShot.h"
 #include "stMemory.h"
+#include "debugui.h"
 #include "xbios.h"
 
 
 #define HATARI_CONTROL_OPCODE 255
 
-/* whether to enable XBios(20/255) */
+/* whether to enable XBios(11/20/255) */
 static bool bXBiosCommands;
+
 
 void XBios_ToggleCommands(void)
 {
 	if (bXBiosCommands)
 	{
-		fprintf(stderr, "XBios 20/255 Hatari versions disabled.\n");
+		fprintf(stderr, "XBios 11/20/255 Hatari versions disabled.\n");
 		bXBiosCommands = false;
 	}
 	else
 	{
-		fprintf(stderr, "XBios 20/255 Hatari versions enabled: Scrdmp(), HatariControl().\n");
+		fprintf(stderr, "XBios 11/20/255 Hatari versions enabled: Dbmsg(), Scrdmp(), HatariControl().\n");
 		bXBiosCommands = true;
 	}
+}
+
+
+/**
+ * XBIOS Dbmsg
+ * Call 11
+ *
+ * Atari debugger API:
+ * http://dev-docs.atariforge.org/files/Atari_Debugger_1-24-1990.pdf
+ * http://toshyp.atari.org/en/004012.html#Dbmsg
+ */
+static bool XBios_Dbmsg(Uint32 Params)
+{
+	/* Read details from stack */
+	const Uint16 reserved = STMemory_ReadWord(Params);
+	const Uint16 msgnum = STMemory_ReadWord(Params+SIZE_WORD);
+	const Uint32 addr = STMemory_ReadLong(Params+SIZE_WORD+SIZE_WORD);
+
+	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x0B Dbmsg(%d, 0x%04X, 0x%x) at PC 0x%X\n",
+		  reserved, msgnum, addr, M68000_GetPC());
+
+	if (reserved != 5 || !bXBiosCommands)
+		return false;
+
+	fprintf(stderr, "Dbmsg: 0x%04X, 0x%x\n", msgnum, addr);
+
+	/* debugger message? */
+	if (msgnum >= 0xF000 && msgnum <= 0xF100)
+	{
+		const char *txt = (const char *)STMemory_STAddrToPointer(addr);
+		char buffer[256];
+
+		/* between non-halting message and debugger command IDs,
+		 * are halting messages with message lenght encoded in ID
+		 */
+		if (msgnum > 0xF000 && msgnum < 0xF100)
+		{
+			const int len = (msgnum & 0xFF);
+			memcpy(buffer, txt, len);
+			buffer[len] = '\0';
+			txt = buffer;
+		}
+		fprintf(stderr, "-> \"%s\"\n", txt);
+	}
+
+	/* not just a message? */
+	if (msgnum != 0xF000)
+	{
+		fprintf(stderr, "-> HALT");
+		DebugUI(REASON_PROGRAM);
+	}
+
+	/* return value != function opcode, to indicate it's implemented */
+	Regs[REG_D0] = 0;
+	return true;
 }
 
 
@@ -72,7 +129,8 @@ static bool XBios_HatariControl(Uint32 Params)
 {
 	const char *pText;
 	pText = (const char *)STMemory_STAddrToPointer(STMemory_ReadLong(Params));
-	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x%02X HatariControl(%s) at PC 0x%X\n", HATARI_CONTROL_OPCODE, pText, M68000_GetPC());
+	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x%02X HatariControl(%s) at PC 0x%X\n",
+		  HATARI_CONTROL_OPCODE, pText, M68000_GetPC());
 
 	if (!bXBiosCommands)
 		return false;
@@ -406,6 +464,8 @@ bool XBios(void)
 		return XBios_Floprd(Params);
 	case 9:
 		return XBios_Flopwr(Params);
+	case 11:
+		return XBios_Dbmsg(Params);
 	case 15:
 		return XBios_Rsconf(Params);
 	case 20:
@@ -521,7 +581,6 @@ bool XBios(void)
 			  M68000_GetPC());
 		return false;
 
-	case 11:	/* Dbmsg */
 	case 84:	/* EsetPalette */
 	case 85:	/* EgetPalette */
 	case 93:	/* VsetRGB */
