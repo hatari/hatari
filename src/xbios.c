@@ -6,7 +6,7 @@
 
   XBios Handler (Trap #14)
 
-  Intercept and direct some XBios calls to handle the RS-232 etc.
+  Intercept and direct XBios calls to allow saving screenshots in host format
   and to help with tracing/debugging.
 */
 const char XBios_fileid[] = "Hatari xbios.c : " __DATE__ " " __TIME__;
@@ -32,36 +32,15 @@ void XBios_ToggleCommands(void)
 {
 	if (bXBiosCommands)
 	{
-		fprintf(stderr, "XBios 15/20/255 parsing disabled.\n");
+		fprintf(stderr, "XBios 20/255 Hatari versions disabled.\n");
 		bXBiosCommands = false;
 	}
 	else
 	{
-		fprintf(stderr, "XBios 15/20/255 parsing enabled.\n");
+		fprintf(stderr, "XBios 20/255 Hatari versions enabled: Scrdmp(), HatariControl().\n");
 		bXBiosCommands = true;
 	}
 }
-
-/* List of Atari ST RS-232 baud rates */
-static const int BaudRates[] =
-{
-	19200, /* 0 */
-	9600,  /* 1 */
-	4800,  /* 2 */
-	3600,  /* 3 */
-	2400,  /* 4 */
-	2000,  /* 5 */
-	1800,  /* 6 */
-	1200,  /* 7 */
-	600,   /* 8 */
-	300,   /* 9 */
-	200,   /* 10 */
-	150,   /* 11 */
-	134,   /* 12 */
-	110,   /* 13 */
-	75,    /* 14 */
-	50     /* 15 */
-};
 
 
 #if ENABLE_TRACING
@@ -114,6 +93,26 @@ static bool XBios_Flopwr(Uint32 Params)
 
 
 /**
+ * XBIOS RsConf
+ * Call 15
+ */
+static bool XBios_Rsconf(Uint32 Params)
+{
+	Sint16 Baud, Ctrl, Ucr, Rsr, Tsr, Scr;
+
+	Baud = STMemory_ReadWord(Params);
+	Ctrl = STMemory_ReadWord(Params+SIZE_WORD);
+	Ucr = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD);
+	Rsr = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_WORD);
+	Tsr = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
+	Scr = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
+	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x0F Rsconf(%d, %d, %d, %d, %d, %d) at PC 0x%X\n",
+		   Baud, Ctrl, Ucr, Rsr, Tsr, Scr, M68000_GetPC());
+	return false;
+}
+
+
+/**
  * XBIOS Devconnect
  * Call 139
  */
@@ -137,68 +136,9 @@ static bool XBios_Devconnect(Uint32 Params)
 #else /* !ENABLE_TRACING */
 #define XBios_Floprd(params)     false
 #define XBios_Flopwr(params)     false
+#define XBios_Rsconf(params)     false
 #define XBios_Devconnect(params) false
 #endif
-
-
-/**
- * XBIOS RsConf
- * Call 15
- */
-static bool XBios_Rsconf(Uint32 Params)
-{
-	Sint16 Baud,Ctrl,Ucr;
-#if ENABLE_TRACING
-	Sint16 Rsr,Tsr,Scr;
-#endif
-
-	Baud = STMemory_ReadWord(Params);
-	Ctrl = STMemory_ReadWord(Params+SIZE_WORD);
-	Ucr = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD);
-#if ENABLE_TRACING
-	Rsr = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_WORD);
-	Tsr = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
-	Scr = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
-	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x0F Rsconf(%d, %d, %d, %d, %d, %d) at PC 0x%X\n",
-		   Baud, Ctrl, Ucr, Rsr, Tsr, Scr,
-		   M68000_GetPC());
-#endif
-	if (!bXBiosCommands)
-		return false;
-	
-	if (!ConfigureParams.RS232.bEnableRS232)
-		return false;
-
-	/* Set baud rate and other configuration, if RS232 emaulation is enabled */
-	if (Baud >= 0 && Baud < ARRAYSIZE(BaudRates))
-	{
-		/* Convert ST baud rate index to value */
-		int BaudRate = BaudRates[Baud];
-		/* And set new baud rate: */
-		RS232_SetBaudRate(BaudRate);
-	}
-
-	if (Ucr != -1)
-	{
-		RS232_HandleUCR(Ucr);
-	}
-
-	if (Ctrl != -1)
-	{
-		RS232_SetFlowControl(Ctrl);
-	}
-
-	/* TODO: return packed form of the ucr, rsr, scr and tsr register values:
-	 *
-	 * Bits 0..7: scr register
-	 * Bits 8..15: tsr register
-	 * Bits 16..23: rsr register
-	 * Bits 24..31: ucr register
-	 *
-	 * Regs[REG_D0] = ...;
-	 */
-	return true;
-}
 
 
 /**
