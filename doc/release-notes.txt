@@ -120,6 +120,7 @@ Emulator:
   - Fix: compilation when zlib is missing
   - Fix: bugs from Debian bug tracker:
 	 https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=716536
+	 https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=716084
 	 https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=688594
 - Additional TOS run-time patching:
   - Support fast boot also with TOS v3 & v4
