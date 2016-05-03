@@ -2506,10 +2506,15 @@ void Video_InterruptHandler_HBL ( void )
 		Video_AddInterruptHBL ( nHBL , NewHBLPos );
 
 #ifdef VBL_NEW
-		/* Add new VBL interrupt just after the last HBL (for example : VblVideoCycleOffset cycles after HBL 312 at 50 Hz) */
+		/* Add new VBL interrupt just after the last HBL (for example : VblVideoCycleOffset cycles after end of HBL 312 at 50 Hz) */
+		/* We setup VBL one HBL earlier (eg at nHBL=312 instead of 313) to be sure we don't miss it */
+		/* in case last HBL would be delayed too much (by more than VblVideoCycleOffset cycles) */
 		if (nHBL == nScanlinesPerFrame-1)
 		{
-			CycInt_AddRelativeInterrupt( NewHBLPos + pVideoTiming->VblVideoCycleOffset - PendingCyclesOver, INT_CPU_CYCLE, INTERRUPT_VIDEO_VBL);
+			int CyclesToVbl = ShifterFrame.ShifterLines[nHBL].StartCycle + nCyclesPerLine + pVideoTiming->VblVideoCycleOffset
+				- FrameCycles;
+			CycInt_AddRelativeInterrupt( CyclesToVbl, INT_CPU_CYCLE, INTERRUPT_VIDEO_VBL);
+//			CycInt_AddRelativeInterrupt( 4+ NewHBLPos + pVideoTiming->VblVideoCycleOffset - PendingCyclesOver, INT_CPU_CYCLE, INTERRUPT_VIDEO_VBL);
 		}
 #endif
 	}
