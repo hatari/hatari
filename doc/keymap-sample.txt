@@ -3,6 +3,7 @@
 #
 # Lines starting with a '#' or with a ';' are comments. All other lines
 # should contain exactly one key name and a scancode, separated by a comma.
+# Comment characters can be quoted with '\#' and '\;'.
 #
 # The key name is the libSDL symbolic name of the key, see the following
 # URL for a list: https://wiki.libsdl.org/SDL_Keycode
