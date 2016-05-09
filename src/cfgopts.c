@@ -358,9 +358,7 @@ int update_config(const char *filename, const struct Config_Tag configs[], const
 		}
 		if (numtokens)
 		{
-			savedtokenflags = malloc(numtokens * sizeof(char));
-			if (savedtokenflags)
-				memset(savedtokenflags, 0, numtokens * sizeof(char));
+			savedtokenflags = calloc(numtokens, sizeof(char));
 		}
 
 		for(;;)

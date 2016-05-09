@@ -657,13 +657,12 @@ void GemDOS_InitDrives(void)
 	/* intialize data for harddrive emulation: */
 	if (nMaxDrives > 0 && !emudrives)
 	{
-		emudrives = malloc(MAX_HARDDRIVES * sizeof(EMULATEDDRIVE *));
+		emudrives = calloc(MAX_HARDDRIVES, sizeof(EMULATEDDRIVE *));
 		if (!emudrives)
 		{
 			perror("GemDOS_InitDrives");
 			return;
 		}
-		memset(emudrives, 0, MAX_HARDDRIVES * sizeof(EMULATEDDRIVE *));
 	}
 
 	ImagePartitions = nAcsiPartitions + nIDEPartitions;

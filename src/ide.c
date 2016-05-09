@@ -2676,13 +2676,11 @@ void Ide_Init(void)
 	if (!ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
 		return;
 
-	opaque_ide_if = malloc(sizeof(IDEState) * 2);
+	opaque_ide_if = calloc(2, sizeof(IDEState));
 	hd_table[0] = malloc(sizeof(BlockDriverState));
 	hd_table[1] = malloc(sizeof(BlockDriverState));
 
 	assert(opaque_ide_if && hd_table[0] && hd_table[1]);
-
-	memset(opaque_ide_if, 0, sizeof(IDEState) * 2);
 
 	memset(hd_table[0], 0, sizeof(BlockDriverState));
 	memset(hd_table[1], 0, sizeof(BlockDriverState));
