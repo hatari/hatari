@@ -602,8 +602,8 @@ typedef struct
 	int	H_Stop_Low_60;			/* 372 */
 	int	H_Stop_Low_50;			/* 376 */
 	int	Blank_Start_Low;		/* 450 */
-	int	HSync_Start_Low;		/* 462 */
-	int	HSync_Stop_Low;			/* 502 */
+	int	HSync_Start_Offset_Low;		/* 462 or 458 */
+	int	HSync_Stop_Offset_Low;		/* 502 or 498 */
 
 	int	RemoveTopBorder_Pos;		/* 502 */
 	int	RemoveBottomBorder_Pos;		/* 502 */
@@ -802,23 +802,23 @@ void	Video_InitTimings(void)
 
 	/* Init all timings for WS1 mode */
 	strcpy ( pVideoTiming1->VideoTimingName , "WS1" );
-	pVideoTiming1->H_Start_Hi 		=   4+0;
+	pVideoTiming1->H_Start_Hi 		=   4;
 	pVideoTiming1->Blank_Stop_Low 		=  30;
 	pVideoTiming1->H_Start_Low_60 		=  52;
 	pVideoTiming1->Line_Set_Pal 		=  54;
 	pVideoTiming1->H_Start_Low_50 		=  56;
-	pVideoTiming1->H_Stop_Hi 		= 164+0;
-	pVideoTiming1->Blank_Start_Hi 		= 184+0;
+	pVideoTiming1->H_Stop_Hi 		= 164;
+	pVideoTiming1->Blank_Start_Hi 		= 184;
 	pVideoTiming1->H_Stop_Low_60 		= 372;
 	pVideoTiming1->H_Stop_Low_50 		= 376;
 	pVideoTiming1->Blank_Start_Low		= 450;
-	pVideoTiming1->HSync_Start_Low		= 462;
-	pVideoTiming1->HSync_Stop_Low		= 502;
+	pVideoTiming1->HSync_Start_Offset_Low	= -50;						/* 458/462 (line cycles-50) */
+	pVideoTiming1->HSync_Stop_Offset_Low	= -10;						/* 498/502 (line cycles-10) */
 	pVideoTiming1->RemoveTopBorder_Pos 	= 502;
 	pVideoTiming1->RemoveBottomBorder_Pos 	= 502;
 	pVideoTiming1->RestartVideoCounter_Line_60 	= RESTART_VIDEO_COUNTER_LINE_60HZ;	/* 260 */
 	pVideoTiming1->RestartVideoCounter_Line_50 	= RESTART_VIDEO_COUNTER_LINE_50HZ;	/* 310 */
-	pVideoTiming1->RestartVideoCounter_Pos 	= RESTART_VIDEO_COUNTER_CYCLE_STF;		/*  48	*/
+	pVideoTiming1->RestartVideoCounter_Pos 	= RESTART_VIDEO_COUNTER_CYCLE_STF;		/*  48 */
 	pVideoTiming1->VblVideoCycleOffset 	= VBL_VIDEO_CYCLE_OFFSET_STF - 4;
 	pVideoTiming1->Hbl_Int_Pos_Low_60	= CYCLES_PER_LINE_60HZ - 4;
 	pVideoTiming1->Hbl_Int_Pos_Low_50	= CYCLES_PER_LINE_50HZ - 4;
@@ -866,8 +866,8 @@ void	Video_InitTimings(void)
 	pVideoTiming1->H_Stop_Low_60 		= 372;
 	pVideoTiming1->H_Stop_Low_50 		= 376;
 	pVideoTiming1->Blank_Start_Low		= 448;
-	pVideoTiming1->HSync_Start_Low		= 460;
-	pVideoTiming1->HSync_Stop_Low		= 500;
+	pVideoTiming1->HSync_Start_Offset_Low	= -52;						/* 456/460 (line cycles-52) */
+	pVideoTiming1->HSync_Stop_Offset_Low	= -12;						/* 496/500 (line cycles-12) */
 	pVideoTiming1->RemoveTopBorder_Pos 	= 500;
 	pVideoTiming1->RemoveBottomBorder_Pos 	= 500;
 	pVideoTiming1->RestartVideoCounter_Line_60 	= RESTART_VIDEO_COUNTER_LINE_60HZ;	/* 260 */
@@ -913,8 +913,8 @@ static void	Video_InitTimings_Copy ( VIDEO_TIMING *pSrc , VIDEO_TIMING *pDest , 
 	pDest->H_Stop_Low_60 		= pSrc->H_Stop_Low_60 + inc;
 	pDest->H_Stop_Low_50 		= pSrc->H_Stop_Low_50 + inc;
 	pDest->Blank_Start_Low		= pSrc->Blank_Start_Low + inc;
-	pDest->HSync_Start_Low		= pSrc->HSync_Start_Low + inc;
-	pDest->HSync_Stop_Low		= pSrc->HSync_Stop_Low + inc;
+	pDest->HSync_Start_Offset_Low	= pSrc->HSync_Start_Offset_Low + inc;
+	pDest->HSync_Stop_Offset_Low	= pSrc->HSync_Stop_Offset_Low + inc;
 	pDest->RemoveTopBorder_Pos	= pSrc->RemoveTopBorder_Pos + inc;
 	pDest->RemoveBottomBorder_Pos	= pSrc->RemoveBottomBorder_Pos + inc;
 
@@ -951,8 +951,8 @@ static void	Video_InitTimings_Round ( VIDEO_TIMING *pSrc )
 	pSrc->H_Stop_Low_60 &= 0xfffe;
 	pSrc->H_Stop_Low_50 &= 0xfffe;
 	pSrc->Blank_Start_Low &= 0xfffe;
-	pSrc->HSync_Start_Low &= 0xfffe;
-	pSrc->HSync_Stop_Low &= 0xfffe;
+	pSrc->HSync_Start_Offset_Low &= 0xfffe;
+	pSrc->HSync_Stop_Offset_Low &= 0xfffe;
 	pSrc->RemoveTopBorder_Pos &= 0xfffe;
 	pSrc->RemoveBottomBorder_Pos &= 0xfffe;
 }
@@ -2023,32 +2023,32 @@ static void	Video_Sync_SetDefaultStartEnd ( Uint8 Freq , int HblCounterVideo , i
 
 /*
 
-if ( freq == 71 & pos <= start_hi )
-  match_found;
-  hbl = 224:
-  if ( !no_de )
-    start = 0;
-    end = 160;
-    remove left;
-    if ( left+2 )
-      cancel left+2;
+  if ( freq == 71 & pos <= start_hi )
+    match_found;
+    hbl = 224:
+    if ( !no_de )
+      start = 4;
+      end = 164;
+      remove left;
+      if ( left+2 )
+        cancel left+2;
 
-else if ( freq == 71 & pos <= 24 )
-  match_found;
-  hbl = 224:
-  if ( !no_de )
-    end = 160;
-    blank line no DE;
-    if ( left+2 )
-      cancel left+2;
+  else if ( freq == 71 & pos <= 24 )
+    match_found;
+    hbl = 224:
+    if ( !no_de )
+      end = 164;
+      blank line no DE;
+      if ( left+2 )
+        cancel left+2;
 
-else if ( freq != 71 )
-  if ( pos <= start_hi & remove left )
-    cancel remove left;
-  if ( pos <= 24 & blank line no DE & !ignore line )
-    cancel blank line no DE;
-  if ( blank line no DE )
-    goto freq_test_next
+  else if ( freq != 71 )
+    if ( pos <= start_hi & remove left )
+      cancel remove left;
+    if ( pos <= 24 & blank line no DE & !ignore line )
+      cancel blank line no DE;
+    if ( blank line no DE )
+      goto freq_test_next
 
   if ( freq == 60  & pos < start_pal )
     match_found;
@@ -2092,21 +2092,21 @@ freq_test_next
     goto freq_test_done
 
 
-if ( freq == 71 & pos <= end & pos <= end_hi & !no_de )
-  end=160;
-  stop middle;
-  if (right-2)
-    cancel right-2
+  if ( freq == 71 & pos <= end & pos <= end_hi & !no_de )
+    end=164;
+    stop middle;
+    if (right-2)
+      cancel right-2
 
-else if ( freq == 71 & pos <= end & !no_de )
-  end=512;
-  remove right / right full;
+  else if ( freq == 71 & pos <= end & !no_de )
+    end=512;
+    remove right / right full;
 
-else if ( freq == 71 & pos <= 460 )
-  empty line res 3 no sync;
+  else if ( freq == 71 & pos <= hsync_start_50/60 )
+    empty line res 3 no sync;
 
-else if ( freq == 71 & pos <= 500 )
-  empty line res 2 sync high;
+  else if ( freq == 71 & pos <= hsync_stop_50/60 )
+    empty line res 2 sync high;
 
 
   else if ( freq == 60 & pos <= end & pos <= end_60 & !no_de )
@@ -2130,7 +2130,7 @@ else if ( freq == 71 & pos <= 500 )
 
   else if ( freq == 60 & pos <= end & pos > end_60 & pos <= end_50 & !no_de )
     if ( end == 376 )
-      end=460;
+      end=hsync_start_50/60;
       remove right;
       if ( right-2 )
         cancel right-2;
@@ -2143,7 +2143,7 @@ else if ( freq == 71 & pos <= 500 )
     else if ( empty line res 3 no sync )
       cancel empty line res 3 no sync;
 
-  else if ( freq != 71 & pos <= 500 )
+  else if ( freq != 71 & pos <= hsync_stop_50/60 )
     if ( empty line res 2 sync high )
       cancel empty line res 2 sync high;
 
@@ -2382,7 +2382,8 @@ Freq_Test_Next:
 
 	}
 
-	else if ( ( FreqHz == VIDEO_71HZ ) && ( LineCycles <= 460 ) )
+	else if ( ( FreqHz == VIDEO_71HZ )
+		&& ( LineCycles <= nCyclesPerLine + pVideoTiming->HSync_Start_Offset_Low ) )	/* 458/462 depends on 50/60 freq (line cycles-50) */
 	{
 	  BorderMask |= BORDERMASK_NO_SYNC;
 	  ShifterFrame.ShifterLines[ HblCounterVideo+1 ].BorderMask |= ( BORDERMASK_BLANK | BORDERMASK_NO_DE | BORDERMASK_NO_COUNT );
@@ -2393,7 +2394,8 @@ Freq_Test_Next:
 	  LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect empty line res 3 no sync %d<->%d\n" , DE_start , DE_end );
 	}
 
-	else if ( ( FreqHz == VIDEO_71HZ ) && ( LineCycles <= 500 ) )
+	else if ( ( FreqHz == VIDEO_71HZ )
+		&& ( LineCycles <= nCyclesPerLine + pVideoTiming->HSync_Stop_Offset_Low ) )	/* 498/502 depends on 50/60 freq (line cycles-10) */
 	{
 	  BorderMask |= BORDERMASK_SYNC_HIGH;
 	  ShifterFrame.ShifterLines[ HblCounterVideo+1 ].BorderMask |= ( BORDERMASK_BLANK | BORDERMASK_NO_DE | BORDERMASK_NO_COUNT );
@@ -2463,7 +2465,7 @@ Freq_Test_Next:
 //fprintf ( stderr , "pom4\n" );
 	  if ( DE_end == pVideoTiming->H_Stop_Low_50 )		/* 376 */
 	  {
-	    DE_end = LINE_END_CYCLE_NO_RIGHT;			/* 460 */
+	    DE_end = nCyclesPerLine + pVideoTiming->HSync_Start_Offset_Low;	/* 458/462 depends on 50/60 freq (line cycles-50) */
 
 	    BorderMask |= BORDERMASK_RIGHT_OFF;
 	    LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect remove right %d<->%d\n" , DE_start , DE_end );
@@ -2476,12 +2478,13 @@ Freq_Test_Next:
 	  }
 	}
 
-	else if ( ( FreqHz != VIDEO_71HZ ) && ( LineCycles <= 460 ) )	/* FIXME : end depends on 50/60 freq (line cycles-50) */
+	else if ( ( FreqHz != VIDEO_71HZ )
+		&& ( LineCycles <= nCyclesPerLine + pVideoTiming->HSync_Start_Offset_Low ) )	/* 458/462 depends on 50/60 freq (line cycles-50) */
 	{
 //fprintf ( stderr , "pom5\n" );
 	  if ( LineCycles <= DE_end )
 	  {
-	    DE_end = LINE_END_CYCLE_NO_RIGHT;			/* 460 FIXME : end depends on 50/60 freq (line cycles-50) */
+	    DE_end = nCyclesPerLine + pVideoTiming->HSync_Start_Offset_Low;	/* 458/462 depends on 50/60 freq (line cycles-50) */
 
 	    if ( BorderMask & BORDERMASK_RIGHT_OFF_FULL )
 	    {
@@ -2502,7 +2505,8 @@ Freq_Test_Next:
 	  }
 	}
 
-	else if ( ( FreqHz != VIDEO_71HZ ) && ( LineCycles <= 500 ) )
+	else if ( ( FreqHz != VIDEO_71HZ )
+		&& ( LineCycles <= nCyclesPerLine + pVideoTiming->HSync_Stop_Offset_Low ) )	/* 498/502 depends on 50/60 freq (line cycles-10) */
 	{
 //fprintf ( stderr , "pom6\n" );
 	  if ( BorderMask & BORDERMASK_SYNC_HIGH )
