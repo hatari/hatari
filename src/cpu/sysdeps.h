@@ -334,8 +334,6 @@ extern void gettimeofday( struct timeval *tv, void *blah );
 #define O_RDWR   _O_RDWR
 #define O_CREAT  _O_CREAT
 #define O_TRUNC  _O_TRUNC
-#define strcasecmp _tcsicmp 
-#define strncasecmp _tcsncicmp 
 #include <sys/utime.h>
 #define utimbuf __utimbuf64
 #define USE_ZFILE
