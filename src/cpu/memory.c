@@ -159,8 +159,6 @@ int addr_valid (const TCHAR *txt, uaecptr addr, uae_u32 len)
 	return 1;
 }
 
-static int illegal_count;
-
 static uae_u32 REGPARAM3 dummy_lget (uaecptr) REGPARAM;
 static uae_u32 REGPARAM3 dummy_wget (uaecptr) REGPARAM;
 static uae_u32 REGPARAM3 dummy_bget (uaecptr) REGPARAM;
