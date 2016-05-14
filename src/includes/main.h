@@ -19,6 +19,10 @@
 #include <SDL_types.h>
 #include <stdbool.h>
 
+#if defined(_MSC_VER)
+#include "vs-fix.h"
+#endif
+
 #if __GNUC__ >= 3
 # define likely(x)      __builtin_expect (!!(x), 1)
 # define unlikely(x)    __builtin_expect (!!(x), 0)
