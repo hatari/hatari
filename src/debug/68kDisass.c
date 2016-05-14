@@ -5,14 +5,13 @@
  *	or at your option any later version. Read the file gpl.txt for details.
  ***/
 
-#include <stdio.h>
-#include <ctype.h>
-#include <strings.h>
-#include <stdlib.h>
-
-#include "config.h"
-#include "sysdeps.h"
 #include "main.h"
+#include <ctype.h>
+#if HAVE_STRINGS_H
+# include <strings.h>
+#endif
+
+#include "sysdeps.h"
 #include "configuration.h"
 #include "newcpu.h"
 #include "stMemory.h"

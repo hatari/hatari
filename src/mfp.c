@@ -127,6 +127,7 @@
 
 const char MFP_fileid[] = "Hatari mfp.c : " __DATE__ " " __TIME__;
 
+#include <stdint.h>		/* Needed for UINT64_MAX */
 #include "main.h"
 #include "configuration.h"
 #include "dmaSnd.h"

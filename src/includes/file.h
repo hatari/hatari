@@ -9,6 +9,7 @@
 #define HATARI_FILE_H
 
 #include "config.h"
+#include <sys/types.h>		/* Needed for off_t */
 
 #ifndef HAVE_FSEEKO
 #define fseeko fseek

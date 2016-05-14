@@ -8,15 +8,7 @@
   hd6301_cpu.c - this is the cpu core emulation for hd 6301 processor
 */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <SDL.h>
-
+#include "main.h"
 #include "hd6301_cpu.h"
 
 

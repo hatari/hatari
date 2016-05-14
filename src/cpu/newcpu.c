@@ -13,6 +13,8 @@
 
 #define MORE_ACCURATE_68020_PIPELINE 1
 
+#include <inttypes.h>		/* Needed for PRIX64 */
+
 #include "main.h"
 #include "compat.h"
 

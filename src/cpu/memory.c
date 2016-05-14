@@ -13,13 +13,12 @@
 const char Memory_fileid[] = "Hatari memory.c : " __DATE__ " " __TIME__;
 
 #include <SDL.h>
-#include "config.h"
+#include "main.h"
 #include "sysdeps.h"
 #include "hatari-glue.h"
 #include "maccess.h"
 #include "memory.h"
 
-#include "main.h"
 #include "tos.h"
 #include "ide.h"
 #include "ioMem.h"
