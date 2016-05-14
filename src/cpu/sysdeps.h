@@ -22,7 +22,6 @@
 #include <errno.h>
 #include <assert.h>
 #include <limits.h>
-//#include <tchar.h>
 #include "compat.h"
 
 #ifndef __STDC__

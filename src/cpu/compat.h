@@ -52,6 +52,12 @@ extern int quit_program;  // declared as "int quit_program = 0;" in main.c
 #define REGPARAM3
 #endif
 
+#if defined(_MSC_VER)
+
+#include <tchar.h>
+
+#else
+
 #ifndef TCHAR
 #define TCHAR char
 #endif
@@ -74,6 +80,8 @@ extern int quit_program;  // declared as "int quit_program = 0;" in main.c
 #define _T(x) x
 
 #define _vsntprintf printf
+
+#endif	/* _MSC_VER */
 
 #define f_out fprintf
 #define console_out printf
