@@ -11,7 +11,9 @@ const char File_fileid[] = "Hatari file.c : " __DATE__ " " __TIME__;
 #include "main.h"
 #include <sys/types.h>
 #include <sys/stat.h>
+#if HAVE_SYS_TIME_H
 #include <sys/time.h>
+#endif
 #include <fcntl.h>
 #include <unistd.h>
 #include <assert.h>
