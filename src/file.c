@@ -34,9 +34,6 @@ const char File_fileid[] = "Hatari file.c : " __DATE__ " " __TIME__;
 #ifdef HAVE_FLOCK
 # include <sys/file.h>
 #endif
-#ifndef HAVE_FTELLO
-#define ftello ftell
-#endif
 
 /*-----------------------------------------------------------------------*/
 /**

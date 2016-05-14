@@ -14,6 +14,9 @@
 #ifndef HAVE_FSEEKO
 #define fseeko fseek
 #endif
+#ifndef HAVE_FTELLO
+#define ftello ftell
+#endif
 
 extern void File_CleanFileName(char *pszFileName);
 extern void File_AddSlashToEndFileName(char *pszFileName);
