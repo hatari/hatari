@@ -45,9 +45,9 @@ const char Change_fileid[] = "Hatari change.c : " __DATE__ " " __TIME__;
 
 #define DEBUG 0
 #if DEBUG
-#define Dprintf(a...) printf(a)
+#define Dprintf(...) printf(__VA_ARGS__)
 #else
-#define Dprintf(a...)
+#define Dprintf(...)
 #endif
 
 /*-----------------------------------------------------------------------*/

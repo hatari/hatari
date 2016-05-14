@@ -203,17 +203,15 @@ extern Uint64 LogTraceFlags;
 
 #if ENABLE_TRACING
 
-#ifndef _VCWIN_
-#define	LOG_TRACE(level, args...) \
-	if (unlikely(LogTraceFlags & (level))) { fprintf(TraceFile, args); fflush(TraceFile); }
-#endif
+#define	LOG_TRACE(level, ...) \
+	if (unlikely(LogTraceFlags & (level))) { fprintf(TraceFile, __VA_ARGS__); fflush(TraceFile); }
+
 #define LOG_TRACE_LEVEL( level )	(unlikely(LogTraceFlags & (level)))
 
 #else		/* ENABLE_TRACING */
 
-#ifndef _VCWIN_
-#define LOG_TRACE(level, args...)	{}
-#endif
+#define LOG_TRACE(level, ...)	{}
+
 #define LOG_TRACE_LEVEL( level )	(0)
 
 #endif		/* ENABLE_TRACING */
@@ -222,9 +220,7 @@ extern Uint64 LogTraceFlags;
  * In code it's used in such a way that it will be optimized away when tracing
  * is disabled.
  */
-#ifndef _VCWIN_
-#define LOG_TRACE_PRINT(args...)	fprintf(TraceFile , args)
-#endif
+#define LOG_TRACE_PRINT(...)	fprintf(TraceFile , __VA_ARGS__)
 
 
 #endif		/* HATARI_LOG_H */
