@@ -365,11 +365,11 @@ static bool	Avi_RecordVideoStream_BMP ( RECORD_AVI_PARAMS *pAviParams )
 {
 	AVI_CHUNK	Chunk;
 	int		SizeImage;
-	Uint8		LineBuf[ 3 * pAviParams->Width ];			/* temp buffer to convert to 24-bit BGR format */
 	Uint8		*pBitmapIn , *pBitmapOut;
 	int		y;
 	int		NeedLock;
-	
+	Uint8		*LineBuf = alloca(3 * pAviParams->Width);		/* temp buffer to convert to 24-bit BGR format */
+
 	SizeImage = Avi_GetBmpSize ( pAviParams->Width , pAviParams->Height , pAviParams->BitCount );
 
 	/* Write the video frame header */

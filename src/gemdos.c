@@ -1095,10 +1095,11 @@ static int clip_to_83(char *name)
  */
 static bool add_path_component(char *path, int maxlen, const char *origname, bool is_dir)
 {
-	char *tmp, *match, name[strlen(origname) + 3];
+	char *tmp, *match;
 	int dot, namelen, pathlen;
 	int (*chr_conv)(int);
 	bool modified;
+	char *name = alloca(strlen(origname) + 3);
 
 	/* append separator */
 	pathlen = strlen(path);
@@ -1350,7 +1351,7 @@ void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName,
 		if ((s = strchr(filename, '\\')))
 		{
 			int dirlen = s - filename;
-			char dirname[dirlen+1];
+			char *dirname = alloca(dirlen + 1);
 			/* copy dirname */
 			strncpy(dirname, filename, dirlen);
 			dirname[dirlen] = '\0';
