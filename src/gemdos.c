@@ -30,7 +30,11 @@ const char Gemdos_fileid[] = "Hatari gemdos.c : " __DATE__ " " __TIME__;
 #include <sys/statvfs.h>
 #endif
 #include <sys/types.h>
+#if HAVE_UTIME_H
 #include <utime.h>
+#elif HAVE_SYS_UTIME_H
+#include <sys/utime.h>
+#endif
 #include <time.h>
 #include <ctype.h>
 #include <unistd.h>
