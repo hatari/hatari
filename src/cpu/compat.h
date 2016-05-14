@@ -40,17 +40,6 @@ extern int quit_program;  // declared as "int quit_program = 0;" in main.c
 //WinUae ChangeLog: Improve quitting/resetting behaviour: Move quit_program from GUI
 //WinUae ChangeLog: quit_program is now handled in vsync_handler() and m68k_go().
 
-#ifndef REGPARAM
-#define REGPARAM
-#endif
-
-#ifndef REGPARAM2
-#define REGPARAM2
-#endif
-
-#ifndef REGPARAM3
-#define REGPARAM3
-#endif
 
 #if defined(_MSC_VER)
 

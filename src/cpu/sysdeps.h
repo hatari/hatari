@@ -323,8 +323,8 @@ extern void gettimeofday( struct timeval *tv, void *blah );
 #ifdef REGPARAM2
 #undef REGPARAM2
 #endif
-#define REGPARAM2 __fastcall
-#define REGPARAM3 __fastcall
+#define REGPARAM2 /* __fastcall */
+#define REGPARAM3 /* __fastcall */
 #define REGPARAM
 
 #include <io.h>
@@ -382,6 +382,18 @@ extern void posixemu_closedir (DIR *);
 #endif
 
 #endif /* _WIN32 */
+
+#ifndef REGPARAM
+#define REGPARAM
+#endif
+
+#ifndef REGPARAM2
+#define REGPARAM2
+#endif
+
+#ifndef REGPARAM3
+#define REGPARAM3
+#endif
 
 #ifdef DONT_HAVE_POSIX
 
