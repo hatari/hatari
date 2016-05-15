@@ -372,4 +372,9 @@ else()
   message( "  - udev :\tnot found; needed to handle media changes in the NatFeats SCSI Driver on systems using 'udev'" )
 endif(UDEV_FOUND)
 
+if(NOT HAVE_SYS_TIMES_H)
+  message("\n  Note: times() function is missing (sys/times.h is not available)")
+  message("        ==> using inaccurate SDL_GetTicks() instead")
+endif()
+
 message( "" )
