@@ -367,9 +367,9 @@ else()
 endif(CAPSIMAGE_FOUND)
 
 if(UDEV_FOUND)
-  message( "  - udev :\tfound; allows handling media changing in the NatFeats SCSI Driver on systems using 'udev'" )
+  message( "  - udev :\tfound; allows media changes in the NatFeats SCSI Driver" )
 else()
-  message( "  - udev :\tnot found; needed to handle media changes in the NatFeats SCSI Driver on systems using 'udev'" )
+  message( "  - udev :\tnot found; needed to for media changes in the NatFeats SCSI Driver" )
 endif(UDEV_FOUND)
 
 if(NOT HAVE_SYS_TIMES_H)
