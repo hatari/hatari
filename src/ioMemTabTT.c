@@ -36,7 +36,7 @@ const char IoMemTabTT_fileid[] = "Hatari ioMemTabTT.c : " __DATE__ " " __TIME__;
 #include "blitter.h"
 
 /**
- * The register at $FF9201.b represents the DIP switches from the
+ * The register at $FF9200.b represents the DIP switches from the
  * TT motherboard. The meaning of the switches is as follows:
  *
  *   1      off (on = CaTTamaran installed, not an official setting)
@@ -44,12 +44,13 @@ const char IoMemTabTT_fileid[] = "Hatari ioMemTabTT.c : " __DATE__ " " __TIME__;
  *   7      on = 1.4mb HD floppy drive fitted
  *   8      off (on = Disables the DMA sound hardware)
  *
- * Switch 1 is represented by the highest bit in the $FF9201 register,
- * and switch 8 is represented by the lowest bit.
+ * Switch 1 is represented by the lowest bit in the $FF9200 register,
+ * and switch 8 is represented by the highest bit. Logic is inverted,
+ * i.e. when the switch is "on", the bit is 0.
  */
 static void IoMemTabTT_ReadDIPSwitches(void)
 {
-	IoMem_WriteWord(0xff9200, 0x02);
+	IoMem_WriteWord(0xff9200, 0xbf00);
 }
 
 /**
