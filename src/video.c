@@ -472,7 +472,6 @@ int nScreenRefreshRate = VIDEO_50HZ;		/* 50 or 60 Hz in color, 71 Hz in mono */
 Uint32 VideoBase;                               /* Base address in ST Ram for screen (read on each VBL) */
 
 #define VBL_NEW
-//#define TIMING_OLD
 
 int nVBLs;                                      /* VBL Counter */
 int nHBL;                                       /* HBL line */
@@ -2617,15 +2616,9 @@ void Video_Sync_WriteByte ( void )
 		/* This creates a blank line where no signal is displayed, but the video counter will still change for this line */
 		/* This blank line can be combined with left/right border changes */
 		/* TODO cause for this effect is not well known yet */
-#ifdef TIMING_OLD
-		if ( ( LineCycles <= LINE_START_CYCLE_50 )
-	        	&& ( ShifterFrame.FreqPos60.LineCycles == LINE_EMPTY_CYCLE_71_STF )
-			&& ( ConfigureParams.System.nMachineType == MACHINE_ST ) )
-#else
 		if ( ( LineCycles <= pVideoTiming->H_Start_Low_50 )
 	        	&& ( ShifterFrame.FreqPos60.LineCycles == LINE_EMPTY_CYCLE_71_STF )
 			&& ( ConfigureParams.System.nMachineType == MACHINE_ST ) )
-#endif
 		{
 			ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_BLANK_LINE;
 			LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect blank line freq stf\n"  );
@@ -2638,15 +2631,9 @@ void Video_Sync_WriteByte ( void )
 		/*   - On STF, switch must be on cycles 36/56 or 36/54 (depending on wakeup state) */
 		/*   - On STE, switch can be on cycles 36/56 or 36/54 (no wakeup state in STE) */
 		/* This should also change HBL signal to be on cycles 508 or 512 (see below) */
-#ifdef TIMING_OLD
-		if ( ( ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle == LINE_START_CYCLE_60 )
-		        && ( LineCycles >= LINE_START_CYCLE_50-2 )	/* The line started in 60 Hz and continues in 50 Hz */
-		        && ( LineCycles <= ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle ) )	/* change when line is active */
-#else
 		if ( ( ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle == LINE_START_CYCLE_60 )
 		        && ( LineCycles >= pVideoTiming->Line_Set_Pal )		/* The line started in 60 Hz and continues in 50 Hz */
 		        && ( LineCycles <= ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle ) )	/* change when line is active */
-#endif
 		{
 			/* [FIXME] 'Panic' by Paulo Simoes, dont' trigger left+2 (need 2 cycles precision) */
 			/* The switch to 50 Hz on line 34 cycle 56 should just start a normal 50 Hz line, not a left+2 */
@@ -2679,11 +2666,7 @@ void Video_Sync_WriteByte ( void )
 			/*   then the line will start 2 bytes earlier and will be 50 Hz (HBL at cycle 512) */
 			/* - If switch to 50 Hz is made at cycle >= 56 */
 			/*   then the line will start 2 bytes earlier and will be 60 Hz (HBL at cycle 508) */
-#ifdef TIMING_OLD
-			else if ( LineCycles == LINE_START_CYCLE_50-2 )
-#else
 			else if ( LineCycles == pVideoTiming->Line_Set_Pal )
-#endif
 			{
 			  ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_LEFT_PLUS_2;
 			  ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle = LINE_END_CYCLE_50;
@@ -2702,17 +2685,10 @@ void Video_Sync_WriteByte ( void )
 		/* Empty line switching freq on STF : start the line in 50 Hz, change to 60 Hz at the exact place */
 		/* where display is enabled in 50 Hz, then go back to 50 Hz. */
 		/* Due to 4 cycles precision instead of 2, we must accept a 60 Hz switch at pos 56 or 56+4 */
-#ifdef TIMING_OLD
-		else if ( ( FrameCycles - ShifterFrame.FreqPos60.FrameCycles <= 24 )
-			&& ( ( ShifterFrame.FreqPos60.LineCycles == LINE_START_CYCLE_50 ) || ( ShifterFrame.FreqPos60.LineCycles == LINE_START_CYCLE_50+4 ) )
-			&& ( LineCycles > LINE_START_CYCLE_50 )
-			&& ( ConfigureParams.System.nMachineType == MACHINE_ST ) )
-#else
 		else if ( ( FrameCycles - ShifterFrame.FreqPos60.FrameCycles <= 24 )
 			&& ( ShifterFrame.FreqPos60.LineCycles == pVideoTiming->H_Start_Low_50 )
 			&& ( LineCycles > pVideoTiming->H_Start_Low_50 )
 			&& ( ConfigureParams.System.nMachineType == MACHINE_ST ) )
-#endif
 		{
 			ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_EMPTY_LINE;
 			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = 0;
@@ -2723,18 +2699,10 @@ void Video_Sync_WriteByte ( void )
 
 		/* Empty line switching freq on STE : similar to STF above, but doesn't require a 2 cycles precision */
 		/* The switches are made at cycles 40/52 */
-#ifdef TIMING_OLD
-		else if ( ( FrameCycles - ShifterFrame.FreqPos60.FrameCycles <= 24 )
-			&& ( ShifterFrame.FreqPos60.LineCycles == 40 )
-			&& ( LineCycles == LINE_START_CYCLE_60 )
-			&& ( ConfigureParams.System.nMachineType == MACHINE_STE ) )
-#else
-		// TODO : move this part in the 50/60 switch case instead
 		else if ( ( FrameCycles - ShifterFrame.FreqPos60.FrameCycles <= 24 )
 			&& ( ShifterFrame.FreqPos60.LineCycles == pVideoTiming->Preload_Start_Low_50 )
 			&& ( LineCycles == pVideoTiming->H_Start_Low_60 )
 			&& ( ConfigureParams.System.nMachineType == MACHINE_STE ) )
-#endif
 		{
 			ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_EMPTY_LINE;
 			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = 0;
@@ -2746,15 +2714,9 @@ void Video_Sync_WriteByte ( void )
 #if 0
 		/* Remove 2 bytes to the right : start the line in 50 Hz (pos 0 or 56), change to 60 Hz before the position */
 		/* where display is disabled in 60 Hz, then go back to 50 Hz after this position */
-#ifdef TIMING_OLD
-		if ( ( LineCycles > LINE_END_CYCLE_60 )					/* back to 50 Hz after end of 60 Hz line */
-			&& ( ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle != LINE_START_CYCLE_60 )	/* start could be 0 or 56 */
-			&& ( ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle == LINE_END_CYCLE_60 ) )
-#else
 		if ( ( LineCycles > pVideoTiming->H_Stop_Low_60 )			/* back to 50 Hz after end of 60 Hz line */
 			&& ( ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle != LINE_START_CYCLE_60 )	/* start could be 0 or 56 */
 			&& ( ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle == LINE_END_CYCLE_60 ) )
-#endif
 		{
 			ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_RIGHT_MINUS_2;
 			LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect right-2 %d<->%d\n" ,
@@ -2784,13 +2746,8 @@ fprintf ( stderr , "test %d %d %d %d\n", LineCycles, pVideoTiming->H_Stop_Low_60
 		/* Remove right border, display 44 bytes more : switch to 60 Hz at the position where */
 		/* the line ends in 50 Hz. Some programs don't switch back to 50 Hz immediately */
 		/* (sync screen in SNY II), so we just check if freq changes to 60 Hz at the position where line should end in 50 Hz */
-#ifdef TIMING_OLD
-		else if ( ( LineCycles == LINE_END_CYCLE_50 )
-			&& ( ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle == LINE_END_CYCLE_50 ) )
-#else
 		else if ( ( LineCycles > pVideoTiming->H_Stop_Low_60 ) && ( LineCycles <= pVideoTiming->H_Stop_Low_50 )
 			&& ( ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle == LINE_END_CYCLE_50 ) )
-#endif
 		{
 			ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_RIGHT_OFF;
 			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle = LINE_END_CYCLE_NO_RIGHT;
