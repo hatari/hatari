@@ -459,6 +459,7 @@ Free/shareware/PD games:
 - Boom
 - Bugs* (line-A bitblits)
 - Candyman (line-A bitblits)
+- Catch Me If You Can* (+ STE support)
 - ChuChu Rocket* (Lite version for STFM)
 - Clogged Up
 - Cops and Robbers Too! (line-A bitblits)
@@ -702,15 +703,17 @@ Mono games:
 - Crystal Caves*    (line-A bitblit and draw/clear sprite, input doesn't work)
 - Macrowar          (line-A bitblit, joystick doesn't work)
 - Midimaze*         (joystick doesn't work)
-- Ramses*           (causes panic as it tries to do crazy things with v_hide_c)
+- Ramses*           (causes panic, will never work [1])
 
 GEM games:
-- Anduril   (input doesn't and won't work [1])
+- Anduril   (input doesn't and won't work [2])
 - Bombs     (minesweeper, mouse clicks almost never work)
 - Checkers  (dragging doesn't work)
-- Invaders* (input doesn't and won't work [1])
+- Invaders* (input doesn't and won't work [2])
 
-[1] uses illegal TOS 1.x specific method:
+[1] tries to do crazy things with _v_hide_c:
+	https://sourceforge.net/p/emutos/mailman/message/30605378/
+[2] uses illegal TOS 1.x specific method:
 	http://sourceforge.net/p/emutos/mailman/message/34785883/
 
 
@@ -730,7 +733,8 @@ Not working:
 - Spectrum512 (address error on XBios Kbdvbase() return value handling)
 
 Not working video / HD access programs:
-- STVidPlay (expects certain 2-byte HD driver sequence at hdv_rw ($476))
+- STVidPlay (expects certain 2-byte HD driver sequence at hdv_rw)
+  https://sourceforge.net/p/emutos/mailman/message/33595214/
 
 Working MIDI programs:
 - Dr T's KCS v4
@@ -746,6 +750,7 @@ Working MIDI programs:
 
 Not working:
 - Cubase lite (guesses etv_timer vector wrong -> panic)
+  https://sourceforge.net/p/emutos/mailman/message/29281984/
 
 MIDI programs are available from Tim's MIDI world:
 	http://tamw.atari-users.net/
@@ -1159,6 +1164,7 @@ Games working in EmuTOS >v0.9.3:
   - vga, press space at start to disable DSP use
 - Jewelz
   - vga, select hatari mode (F2)
+- King Solitaire
 - Risk 030 demo
   - Needs 640x480@16 VGA mode
 - Sweety Things
