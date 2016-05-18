@@ -471,8 +471,6 @@ Uint32 *pHBLPaletteMasks;
 int nScreenRefreshRate = VIDEO_50HZ;		/* 50 or 60 Hz in color, 71 Hz in mono */
 Uint32 VideoBase;                               /* Base address in ST Ram for screen (read on each VBL) */
 
-#define VBL_NEW
-
 int nVBLs;                                      /* VBL Counter */
 int nHBL;                                       /* HBL line */
 int nStartHBL;                                  /* Start HBL for visible screen */
@@ -2782,11 +2780,7 @@ fprintf ( stderr , "test %d %d %d %d\n", LineCycles, pVideoTiming->H_Stop_Low_60
 			/* we must update the position where the next VBL will happen (instead of the initial value in CyclesPerVBL) */
 			/* We check if number of cycles per line changes, and if so, we update the VBL's position */
 			/* As VBL is setup at the start of the last HBL, this check is only necessary on the last HBL */
-#ifndef VBL_NEW
-			if ( CyclesPerLine_old != nCyclesPerLine )
-#else
 			if ( ( nHBL == nScanlinesPerFrame-1 ) && ( CyclesPerLine_old != nCyclesPerLine ) )
-#endif
 			{
 				CyclesPerVBL += ( nCyclesPerLine - CyclesPerLine_old );		/* +4 or -4 */
 				CycInt_ModifyInterrupt ( nCyclesPerLine - CyclesPerLine_old , INT_CPU_CYCLE , INTERRUPT_VIDEO_VBL );
@@ -3009,26 +3003,6 @@ void Video_InterruptHandler_HBL ( void )
 #endif
 
 
-#ifndef VBL_NEW
-	/* In case we're mixing 50 Hz (512 cycles) and 60 Hz (508 cycles) lines on the same screen, */
-	/* we must update the position where the next VBL will happen (instead of the initial value in CyclesPerVBL) */
-	/* During a 50 Hz screen, each 60 Hz line will make the VBL happen 4 cycles earlier */
-        if ( ( nScanlinesPerFrame == SCANLINES_PER_FRAME_50HZ )
-	  && ( NewHBLPos == CYCLES_PER_LINE_60HZ ) )
-	{
-		CyclesPerVBL -= 4;
-		CycInt_ModifyInterrupt ( -4 , INT_CPU_CYCLE , INTERRUPT_VIDEO_VBL );
-	}
-	/* During a 60 Hz screen, each 50 Hz line will make the VBL happen 4 cycles later */
-        else if ( ( nScanlinesPerFrame == SCANLINES_PER_FRAME_60HZ )
-	  && ( NewHBLPos == CYCLES_PER_LINE_50HZ ) )
-	{
-		CyclesPerVBL += 4;
-		CycInt_ModifyInterrupt ( 4 , INT_CPU_CYCLE , INTERRUPT_VIDEO_VBL );
-	}
-#endif
-
-
 	/* Print traces if pending HBL bit changed just before IACK when HBL interrupt is allowed */
 	if ( ( CPU_IACK == true ) && ( regs.intmask < 2 ) )
 	{
@@ -3075,7 +3049,6 @@ void Video_InterruptHandler_HBL ( void )
 		NewHBLPos = Video_HBL_GetPos();
 		Video_AddInterruptHBL ( nHBL , NewHBLPos );
 
-#ifdef VBL_NEW
 		/* Add new VBL interrupt just after the last HBL (for example : VblVideoCycleOffset cycles after end of HBL 312 at 50 Hz) */
 		/* We setup VBL one HBL earlier (eg at nHBL=312 instead of 313) to be sure we don't miss it */
 		/* in case last HBL would be delayed too much (by more than VblVideoCycleOffset cycles) */
@@ -3084,9 +3057,7 @@ void Video_InterruptHandler_HBL ( void )
 			int CyclesToVbl = ShifterFrame.ShifterLines[nHBL].StartCycle + nCyclesPerLine + pVideoTiming->VblVideoCycleOffset
 				- FrameCycles;
 			CycInt_AddRelativeInterrupt( CyclesToVbl, INT_CPU_CYCLE, INTERRUPT_VIDEO_VBL);
-//			CycInt_AddRelativeInterrupt( 4+ NewHBLPos + pVideoTiming->VblVideoCycleOffset - PendingCyclesOver, INT_CPU_CYCLE, INTERRUPT_VIDEO_VBL);
 		}
-#endif
 	}
 
 	/* Check if video counter should be restarted on this HBL */
@@ -4484,10 +4455,8 @@ void Video_StartInterrupts ( int PendingCyclesOver )
 		}
 	}
 
-#ifdef VBL_NEW
 	/* When using VDI, we setup the next VBL here ; else it will be setup at the start of the last HBL */
 	else
-#endif
 	{
 		/* TODO replace CYCLES_PER_FRAME */
 		CyclesPerVBL = CYCLES_PER_FRAME;
