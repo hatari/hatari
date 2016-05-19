@@ -130,7 +130,7 @@ uae_u32 Ide_Mem_wget(uaecptr addr)
 		return -1;
 	}
 
-	if (addr == 0xf00000)
+	if (addr == 0xf00000 || addr == 0xf00002)
 	{
 		retval = ide_data_readw(opaque_ide_if, 0);
 	}
@@ -226,7 +226,7 @@ void Ide_Mem_wput(uaecptr addr, uae_u32 val)
 		return;
 	}
 
-	if (addr == 0xf00000)
+	if (addr == 0xf00000 || addr == 0xf00002)
 	{
 		ide_data_writew(opaque_ide_if, 0, val);
 	}
