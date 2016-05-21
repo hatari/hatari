@@ -554,7 +554,8 @@ static int bdrv_open(BlockDriverState *bs, const char *filename, int flags)
 	strlcpy(bs->filename, filename, sizeof(bs->filename));
 
 	bs->read_only = 0;
-
+	if (HDC_CheckAndGetSize(filename) <= 0)
+		return -1;
 	bs->fhndl = fopen(filename, "rb+");
 
 	if (!bs->fhndl) {

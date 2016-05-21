@@ -705,6 +705,43 @@ int HDC_PartitionCount(FILE *fp, const Uint64 tracelevel)
 }
 
 /**
+ * Check file size for sane values (non-zero, multiple of 512),
+ * and return the size
+ */
+off_t HDC_CheckAndGetSize(const char *filename)
+{
+	off_t filesize;
+
+	filesize = File_Length(filename);
+	if (filesize < 0)
+	{
+		Log_Printf(LOG_ERROR, "ERROR: unable to get HD image size of file '%s'!\n",
+		           filename);
+		if (sizeof(off_t) < 8)
+		{
+			Log_Printf(LOG_ERROR, "Note: This version of Hatari has been built"
+			                      " _without_ support for large files,\n"
+			                      "      so you can not use HD images > 2 GB.\n");
+		}
+		return -EFBIG;
+	}
+	if (filesize == 0)
+	{
+		Log_Printf(LOG_ERROR, "ERROR: Size of HD image file '%s' is empty.\n",
+		           filename);
+		return -EINVAL;
+	}
+	if ((filesize & 0x1ff) != 0)
+	{
+		Log_Printf(LOG_ERROR, "ERROR: HD image file '%s' has strange size!\n",
+		           filename);
+		return -EINVAL;
+	}
+
+	return filesize;
+}
+
+/**
  * Open a disk image file
  */
 static int HDC_InitDevice(SCSI_DEV *dev, char *filename)
@@ -715,18 +752,10 @@ static int HDC_InitDevice(SCSI_DEV *dev, char *filename)
 	dev->enabled = false;
 	Log_Printf(LOG_INFO, "Mounting hard drive image '%s'\n", filename);
 
-	/* Check size for sanity - is the length a multiple of 512? */
-	filesize = File_Length(filename);
+	/* Check size for sanity */
+	filesize = HDC_CheckAndGetSize(filename);
 	if (filesize < 0)
-	{
-		Log_Printf(LOG_ERROR, "ERROR: unable to access/get HD file size!\n");
-		return -EINVAL;
-	}
-	if (filesize <= 0 || (filesize & 0x1ff) != 0)
-	{
-		Log_Printf(LOG_ERROR, "ERROR: HD file has strange size!\n");
-		return -EINVAL;
-	}
+		return filesize;
 
 	fp = fopen(filename, "rb+");
 	if (fp == NULL)

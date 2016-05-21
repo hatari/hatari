@@ -61,6 +61,7 @@ extern void HDC_ResetCommandStatus(void);
 extern short int HDC_ReadCommandByte(int addr);
 extern void HDC_WriteCommandByte(int addr, Uint8 byte);
 extern int HDC_PartitionCount(FILE *fp, const Uint64 tracelevel);
+extern off_t HDC_CheckAndGetSize(const char *filename);
 
 void Ncr5380_Reset(void);
 
