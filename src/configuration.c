@@ -536,6 +536,7 @@ static const struct Config_Tag configs_System[] =
 	{ "bCompatibleFPU", Bool_Tag, &ConfigureParams.System.bCompatibleFPU },
 	{ "bMMU", Bool_Tag, &ConfigureParams.System.bMMU },
 #endif
+	{ "VideoTiming", Int_Tag, &ConfigureParams.System.VideoTimingMode },
 	{ NULL , Error_Tag, NULL }
 };
 
