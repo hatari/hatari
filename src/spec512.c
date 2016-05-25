@@ -247,7 +247,7 @@ void Spec512_StartFrame(void)
 
 	/* Ready for first call to 'Spec512_ScanLine' */
 	nScanLine = 0;
-	if (OverscanMode & OVERSCANMODE_TOP)
+	if (VerticalOverscan & V_OVERSCAN_NO_TOP)
 		nScanLine += OVERSCAN_TOP;
 
 	/* Skip to first line(where start to draw screen from) */

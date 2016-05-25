@@ -393,6 +393,7 @@
 /*			'shforstv' by Paulo Simoes work in all 4 wakeup states, TCB screen in	*/
 /*			Swedish New Year has a centered logo in WS2, Nostalgic demo main menu	*/
 /*			by Oxygene is correctly broken in WS2/4).				*/
+/* 2016/05/25	[NP]	Rewrite top/bottom border handling into Video_Update_Glue_State()	*/
 
 
 
@@ -457,13 +458,15 @@ const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
 #define BORDERMASK_NO_SYNC		0x4000
 #define BORDERMASK_SYNC_HIGH		0x8000
 
+#define NEW_TOP
+//#define STF_SHORT_TOP
 
 int STRes = ST_LOW_RES;                         /* current ST resolution */
 int TTRes;                                      /* TT shifter resolution mode */
 int nFrameSkips;                                /* speed up by skipping video frames */
 
 bool bUseHighRes;                               /* Use hi-res (ie Mono monitor) */
-int OverscanMode;                               /* OVERSCANMODE_xxxx for current display frame */
+int VerticalOverscan;				/* V_OVERSCAN_xxxx for current display frame */
 Uint16 HBLPalettes[HBL_PALETTE_LINES];          /* 1x16 colour palette per screen line, +1 line just incase write after line 200 */
 Uint16 *pHBLPalettes;                           /* Pointer to current palette lists, one per HBL */
 Uint32 HBLPaletteMasks[HBL_PALETTE_MASKS];      /* Bit mask of palette colours changes, top bit set is resolution change */
@@ -605,6 +608,15 @@ typedef struct
 	int	RemoveTopBorder_Pos;		/* 502 */
 	int	RemoveBottomBorder_Pos;		/* 502 */
 
+	int	V_Start_Line_50; 		/*  63 or 63-16 */
+	int	V_Start_Line_60;		/*  34 */
+	int	V_Start_Line_Hi;		/*  34 */
+	int	V_End_Line_50;			/* 263 or 263-16 */
+	int	V_End_Line_60;			/* 234 */
+	int	V_End_Line_Hi;			/* 434 */
+	int	V_End_Line_NoBottom_50;		/* 310 */
+	int	V_End_Line_NoBottom_60;		/* 263 */
+
 	int	RestartVideoCounter_Line_60;	/* 260 */
 	int	RestartVideoCounter_Line_50;	/* 310 */
 	int	RestartVideoCounter_Pos;	/*  48 */
@@ -677,7 +689,7 @@ void Video_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&nHBL, sizeof(nHBL));
 	MemorySnapShot_Store(&nStartHBL, sizeof(nStartHBL));
 	MemorySnapShot_Store(&nEndHBL, sizeof(nEndHBL));
-	MemorySnapShot_Store(&OverscanMode, sizeof(OverscanMode));
+	MemorySnapShot_Store(&VerticalOverscan, sizeof(VerticalOverscan));
 	MemorySnapShot_Store(HBLPalettes, sizeof(HBLPalettes));
 	MemorySnapShot_Store(HBLPaletteMasks, sizeof(HBLPaletteMasks));
 	MemorySnapShot_Store(&VideoBase, sizeof(VideoBase));
@@ -813,6 +825,14 @@ void	Video_InitTimings(void)
 	pVideoTiming1->HSync_Stop_Offset_Low	= -10;						/* 498/502 (line cycles-10) */
 	pVideoTiming1->RemoveTopBorder_Pos 	= 502;
 	pVideoTiming1->RemoveBottomBorder_Pos 	= 502;
+	pVideoTiming1->V_Start_Line_50 		= VIDEO_START_HBL_50HZ;				/*  63 or 63-16 */
+	pVideoTiming1->V_Start_Line_60 		= VIDEO_START_HBL_60HZ;				/*  34 */
+	pVideoTiming1->V_Start_Line_Hi 		= VIDEO_START_HBL_71HZ;				/*  34 */
+	pVideoTiming1->V_End_Line_50 		= VIDEO_END_HBL_50HZ;				/* 263 or 263-16 */
+	pVideoTiming1->V_End_Line_60 		= VIDEO_END_HBL_60HZ;				/* 234 */
+	pVideoTiming1->V_End_Line_Hi 		= VIDEO_END_HBL_71HZ;				/* 434 */
+	pVideoTiming1->V_End_Line_NoBottom_50	= pVideoTiming1->V_End_Line_50 + VIDEO_HEIGHT_BOTTOM_50HZ;	/* 310 (TODO:check on real HW) */
+	pVideoTiming1->V_End_Line_NoBottom_60	= pVideoTiming1->V_End_Line_60 + VIDEO_HEIGHT_BOTTOM_60HZ;	/* 263 (TODO:check on real HW) */
 	pVideoTiming1->RestartVideoCounter_Line_60 	= RESTART_VIDEO_COUNTER_LINE_60HZ;	/* 260 */
 	pVideoTiming1->RestartVideoCounter_Line_50 	= RESTART_VIDEO_COUNTER_LINE_50HZ;	/* 310 */
 	pVideoTiming1->RestartVideoCounter_Pos 	= RESTART_VIDEO_COUNTER_CYCLE_STF;		/*  48 */
@@ -820,7 +840,10 @@ void	Video_InitTimings(void)
 	pVideoTiming1->Hbl_Int_Pos_Low_60	= CYCLES_PER_LINE_60HZ - 4;
 	pVideoTiming1->Hbl_Int_Pos_Low_50	= CYCLES_PER_LINE_50HZ - 4;
 	pVideoTiming1->Hbl_Int_Pos_Hi		= CYCLES_PER_LINE_71HZ - 4;
-
+#ifdef STF_SHORT_TOP
+	pVideoTiming1->V_Start_Line_50 -= 16;
+	pVideoTiming1->V_End_Line_50 -= 16;
+#endif
 	/* WS2/WS3/WS4 timings are derived from WS1 with an increment */	
 	pVideoTiming2 = &VideoTimings[ VIDEO_TIMING_STF_WS2 ];
 	strcpy ( pVideoTiming2->VideoTimingName , "WS2" );
@@ -867,6 +890,14 @@ void	Video_InitTimings(void)
 	pVideoTiming1->HSync_Stop_Offset_Low	= -12;						/* 496/500 (line cycles-12) */
 	pVideoTiming1->RemoveTopBorder_Pos 	= 500;
 	pVideoTiming1->RemoveBottomBorder_Pos 	= 500;
+	pVideoTiming1->V_Start_Line_50 		= VIDEO_START_HBL_50HZ;				/*  63 */
+	pVideoTiming1->V_Start_Line_60 		= VIDEO_START_HBL_60HZ;				/*  34 */
+	pVideoTiming1->V_Start_Line_Hi 		= VIDEO_START_HBL_71HZ;				/*  34 */
+	pVideoTiming1->V_End_Line_50 		= VIDEO_END_HBL_50HZ;				/* 263 */
+	pVideoTiming1->V_End_Line_60 		= VIDEO_END_HBL_60HZ;				/* 234 */
+	pVideoTiming1->V_End_Line_Hi 		= VIDEO_END_HBL_71HZ;				/* 434 */
+	pVideoTiming1->V_End_Line_NoBottom_50	= pVideoTiming1->V_End_Line_50 + VIDEO_HEIGHT_BOTTOM_50HZ;	/* 310 */
+	pVideoTiming1->V_End_Line_NoBottom_60	= pVideoTiming1->V_End_Line_60 + VIDEO_HEIGHT_BOTTOM_60HZ;	/* 263 */
 	pVideoTiming1->RestartVideoCounter_Line_60 	= RESTART_VIDEO_COUNTER_LINE_60HZ;	/* 260 */
 	pVideoTiming1->RestartVideoCounter_Line_50 	= RESTART_VIDEO_COUNTER_LINE_50HZ;	/* 310 */
 	pVideoTiming1->RestartVideoCounter_Pos 	= RESTART_VIDEO_COUNTER_CYCLE_STE;		/*  52 */
@@ -914,6 +945,15 @@ static void	Video_InitTimings_Copy ( VIDEO_TIMING *pSrc , VIDEO_TIMING *pDest , 
 	pDest->HSync_Stop_Offset_Low	= pSrc->HSync_Stop_Offset_Low + inc;
 	pDest->RemoveTopBorder_Pos	= pSrc->RemoveTopBorder_Pos + inc;
 	pDest->RemoveBottomBorder_Pos	= pSrc->RemoveBottomBorder_Pos + inc;
+
+	pDest->V_Start_Line_50		= pSrc->V_Start_Line_50;
+	pDest->V_Start_Line_60		= pSrc->V_Start_Line_60;
+	pDest->V_Start_Line_Hi		= pSrc->V_Start_Line_Hi;
+	pDest->V_End_Line_50		= pSrc->V_End_Line_50;
+	pDest->V_End_Line_60		= pSrc->V_End_Line_60;
+	pDest->V_End_Line_Hi		= pSrc->V_End_Line_Hi;
+	pDest->V_End_Line_NoBottom_50	= pSrc->V_End_Line_NoBottom_50;
+	pDest->V_End_Line_NoBottom_60	= pSrc->V_End_Line_NoBottom_60;
 
 	pDest->RestartVideoCounter_Line_60	= pSrc->RestartVideoCounter_Line_60;
 	pDest->RestartVideoCounter_Line_50	= pSrc->RestartVideoCounter_Line_50;
@@ -2158,6 +2198,8 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	int nCyclesPerLine_new;
 	int Freq_match_found;
 	Uint32	BorderMask;
+	int Top_Pos;
+	int Bottom_Pos;
 
 
 	/* FreqHz will be 50, 60 or 71 */
@@ -2169,10 +2211,12 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 		FreqHz = ( IoMem[0xff820a] & 2 ) ? VIDEO_50HZ : VIDEO_60HZ;
 	}
 
-#if 1
+
+	/* GLUE will latch freq register 1 cycle later than res register */
+	/* To take this into account in our case, we subtract 1 cycle to the res write position */
+	/* that will be used for all the comparison in the state machine */
 	if ( WriteToRes )
 		LineCycles--;
-#endif
 
 
 	DE_start = ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle;
@@ -2519,9 +2563,6 @@ Freq_Test_Next:
 
 	/* Go here directly if there's no more Freq/Res changes to test */
 Freq_Test_Done:
-	LOG_TRACE ( TRACE_VIDEO_BORDER_H , "video new DE %d<->%d shift=%d border=%x hbl_pos=%d cycles_line=%d video_hbl_w=%d\n" ,
-		DE_start , DE_end , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift , BorderMask , HBL_Pos , nCyclesPerLine_new , HblCounterVideo  );
-
 
 	/* Update HBL's position only if display has not reached pos pVideoTiming->Line_Set_Pal */
 	/* and HBL interrupt was already handled at the beginning of this line. */
@@ -2560,6 +2601,109 @@ Freq_Test_Done:
 		LineTimerBCycle = Video_TimerB_GetPosFromDE ( DE_start , DE_end );
 		Video_AddInterruptTimerB ( HblCounterVideo , LineCycles , LineTimerBCycle );
 	}
+
+
+#ifdef NEW_TOP
+	/* Check if top/bottom borders' position should change */
+	/* If first displayed line is not reached yet, we can still change top border */
+	if ( ( HblCounterVideo < nStartHBL-1 )
+	  || ( ( HblCounterVideo == nStartHBL-1 ) && ( LineCycles <= pVideoTiming->RemoveTopBorder_Pos ) ) )
+	{
+		if ( FreqHz == VIDEO_71HZ )		Top_Pos = pVideoTiming->V_Start_Line_Hi;
+		else if ( FreqHz == VIDEO_60HZ )	Top_Pos = pVideoTiming->V_Start_Line_60;
+		else					Top_Pos = pVideoTiming->V_Start_Line_50;
+
+		/* Change position if new position is not reached yet */
+		if ( ( Top_Pos != nStartHBL )
+		  && ( ( HblCounterVideo < Top_Pos-1 )
+		    || ( ( HblCounterVideo == Top_Pos-1 ) && ( LineCycles <= pVideoTiming->RemoveTopBorder_Pos ) ) ) )
+		{
+			nStartHBL = Top_Pos;
+			/* If 50 Hz screen and first line is before 50 Hz position -> top border removed */
+			if ( ( nScreenRefreshRate == VIDEO_50HZ ) && ( nStartHBL < pVideoTiming->V_Start_Line_50 ) )
+				VerticalOverscan |= V_OVERSCAN_NO_TOP;
+			else
+				VerticalOverscan &= ~V_OVERSCAN_NO_TOP;
+
+			VerticalOverscan &= ~V_OVERSCAN_BOTTOM_NO_DE;
+		}
+		else
+		{
+			// TODO CHECK ON STF [NP] : if freq is changed after top_pos and before nStartHBL, then we get a screen
+			// where vertical DE is never activated ? (eg 60/50 Hz switch at end of line 62)
+			VerticalOverscan |= V_OVERSCAN_BOTTOM_NO_DE;
+		}
+	}
+
+	/* If last displayed line not reached yet, we can still change bottom border */
+	if ( ( HblCounterVideo < nEndHBL-1 )
+	  || ( ( HblCounterVideo == nEndHBL-1 ) && ( LineCycles <= pVideoTiming->RemoveBottomBorder_Pos ) ) )
+	{
+		if ( FreqHz == VIDEO_71HZ )		Bottom_Pos = pVideoTiming->V_End_Line_Hi;
+		else if ( FreqHz == VIDEO_60HZ )	Bottom_Pos = pVideoTiming->V_End_Line_60;
+		else					Bottom_Pos = pVideoTiming->V_End_Line_50;
+
+		if ( ( HblCounterVideo < pVideoTiming->V_End_Line_60-1 )		/* 234 */
+		  || ( ( HblCounterVideo == pVideoTiming->V_End_Line_60-1 ) && ( LineCycles <= pVideoTiming->RemoveBottomBorder_Pos ) ) )
+		{
+			if ( ( nScreenRefreshRate == VIDEO_60HZ ) && ( FreqHz != VIDEO_60HZ ) )
+			{
+				/* 60 Hz screen where freq != 60 Hz on last line -> bottom border removed */
+				nEndHBL = pVideoTiming->V_End_Line_NoBottom_60;
+				VerticalOverscan |= V_OVERSCAN_NO_BOTTOM_60;
+			}
+			else if ( ( nScreenRefreshRate == VIDEO_50HZ ) && ( FreqHz == VIDEO_60HZ ) )
+			{
+				/* 50 Hz screen ending at 60 Hz screen's position -> short bottom border (-29 lines) */
+				nEndHBL = pVideoTiming->V_End_Line_60;
+				VerticalOverscan |= V_OVERSCAN_BOTTOM_SHORT_50;
+			}
+			else
+			{
+				nEndHBL = Bottom_Pos;
+				VerticalOverscan &= ~( V_OVERSCAN_NO_BOTTOM_60 | V_OVERSCAN_BOTTOM_SHORT_50 );
+			}
+		}
+
+		else if ( ( HblCounterVideo < pVideoTiming->V_End_Line_50-1 )		/* 263 */
+		  || ( ( HblCounterVideo == pVideoTiming->V_End_Line_50-1 ) && ( LineCycles <= pVideoTiming->RemoveBottomBorder_Pos ) ) )
+		{
+			if ( VerticalOverscan & V_OVERSCAN_NO_BOTTOM_60 )
+			{
+				/* Bottom border already removed above, can't be changed now */
+			}
+			else if ( ( nScreenRefreshRate == VIDEO_50HZ ) && ( FreqHz != VIDEO_50HZ ) )
+			{
+				/* 50 Hz screen where freq != 50 Hz on last line -> bottom border removed */
+				nEndHBL = pVideoTiming->V_End_Line_NoBottom_50;
+				VerticalOverscan |= V_OVERSCAN_NO_BOTTOM_50;
+			}
+			else
+			{
+				nEndHBL = Bottom_Pos;
+				VerticalOverscan &= ~V_OVERSCAN_NO_BOTTOM_50;
+			}
+		}
+
+		else if ( ( HblCounterVideo < pVideoTiming->V_End_Line_Hi-1 )		/* 434 */
+		  || ( ( HblCounterVideo == pVideoTiming->V_End_Line_Hi-1 ) && ( LineCycles <= pVideoTiming->RemoveBottomBorder_Pos ) ) )
+		{
+			if ( VerticalOverscan & V_OVERSCAN_NO_BOTTOM_50 )
+			{
+				/* Bottom border already removed above, can't be changed now */
+			}
+			else
+			{
+				nEndHBL = Bottom_Pos;
+			}
+		}
+	}
+#endif
+
+
+	LOG_TRACE ( TRACE_VIDEO_BORDER_H , "video new V_DE %d<->%d H_DE %d<->%d shift=%d border=%x hbl_pos=%d cycles_line=%d video_hbl_w=%d\n" ,
+		nStartHBL , nEndHBL , DE_start , DE_end ,
+		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift , BorderMask , HBL_Pos , nCyclesPerLine_new , HblCounterVideo  );
 
 	/* Save new values */
 	ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = DE_start;
@@ -2797,14 +2941,15 @@ fprintf ( stderr , "test %d %d %d %d\n", LineCycles, pVideoTiming->H_Stop_Low_60
 	ShifterFrame.Freq = Freq;
 	if ( Freq == 0x02 )							/* 50 Hz */
 	{
+#ifndef NEW_TOP
 		if ( ( HblCounterVideo < VIDEO_START_HBL_50HZ )			/* nStartHBL can change only if display is not ON yet */
-		        && ( OverscanMode & OVERSCANMODE_TOP ) == 0 )		/* update only if top was not removed */
+		        && ( VerticalOverscan & V_OVERSCAN_NO_TOP ) == 0 )		/* update only if top was not removed */
 			nStartHBL = VIDEO_START_HBL_50HZ;
 
 		if ( ( HblCounterVideo < VIDEO_END_HBL_50HZ )			/* nEndHBL can change only if display is not OFF yet */
-		        && ( OverscanMode & OVERSCANMODE_BOTTOM ) == 0 )	/* update only if bottom was not removed */
+		        && ( VerticalOverscan & V_OVERSCAN_NO_BOTTOM_50 ) == 0 )	/* update only if bottom was not removed */
 			nEndHBL = VIDEO_END_HBL_50HZ;				/* 263 */
-
+#endif
 		ShifterFrame.FreqPos50.VBL = nVBLs;
 		ShifterFrame.FreqPos50.FrameCycles = FrameCycles;
 		ShifterFrame.FreqPos50.HBL = HblCounterVideo;
@@ -2812,14 +2957,15 @@ fprintf ( stderr , "test %d %d %d %d\n", LineCycles, pVideoTiming->H_Stop_Low_60
 	}
 	else									/* 60 Hz */
 	{
+#ifndef NEW_TOP
 		if ( ( HblCounterVideo < VIDEO_START_HBL_60HZ-1 )		/* nStartHBL can change only if display is not ON yet */
 			|| ( ( HblCounterVideo == VIDEO_START_HBL_60HZ-1 ) && ( LineCycles <= pVideoTiming->RemoveTopBorder_Pos ) ) )
 			nStartHBL = VIDEO_START_HBL_60HZ;
 
 		if ( ( HblCounterVideo < VIDEO_END_HBL_60HZ )			/* nEndHBL can change only if display is not OFF yet */
-		        && ( OverscanMode & OVERSCANMODE_BOTTOM ) == 0 )	/* update only if bottom was not removed */
+		        && ( VerticalOverscan & V_OVERSCAN_NO_BOTTOM_50 ) == 0 )	/* update only if bottom was not removed */
 			nEndHBL = VIDEO_END_HBL_60HZ;				/* 234 */
-
+#endif
 		ShifterFrame.FreqPos60.VBL = nVBLs;
 		ShifterFrame.FreqPos60.FrameCycles = FrameCycles;
 		ShifterFrame.FreqPos60.HBL = HblCounterVideo;
@@ -3103,6 +3249,7 @@ static void Video_EndHBL(void)
 	// Handle top/bottom borders removal when switching freq
 	//
 
+#ifndef NEW_TOP
 	/* Remove top border if the switch to 60 Hz was made during this vbl before cycle	*/
 	/* RemoveTopBorder_Pos on line 33 and if the switch to 50 Hz has not yet occurred or	*/
 	/* occurred before the 60 Hz or occurred after cycle RemoveTopBorder_Pos on line 33.	*/
@@ -3117,7 +3264,7 @@ static void Video_EndHBL(void)
 	{
 		/* Top border */
 		LOG_TRACE ( TRACE_VIDEO_BORDER_V , "detect remove top\n" );
-		OverscanMode |= OVERSCANMODE_TOP;	/* Set overscan bit */
+		VerticalOverscan |= V_OVERSCAN_NO_TOP;	/* Set overscan bit */
 		nStartHBL = VIDEO_START_HBL_60HZ;	/* New start screen line */
 		pHBLPaletteMasks -= OVERSCAN_TOP;	// FIXME useless ?
 		pHBLPalettes -= OVERSCAN_TOP;	// FIXME useless ?
@@ -3126,7 +3273,7 @@ static void Video_EndHBL(void)
 	/* Remove bottom border for a 60 Hz screen (tests are similar to the ones for top border) */
 	else if ( ( nHBL == VIDEO_END_HBL_60HZ + BlankLines - 1 )	/* last displayed line in 60 Hz */
 		&& ( nStartHBL == VIDEO_START_HBL_60HZ )		/* screen started in 60 Hz */
-		&& ( ( OverscanMode & OVERSCANMODE_TOP ) == 0 )		/* and top border was not removed : this screen is only 60 Hz */
+		&& ( ( VerticalOverscan & V_OVERSCAN_NO_TOP ) == 0 )		/* and top border was not removed : this screen is only 60 Hz */
 		&& ( ShifterFrame.FreqPos50.VBL == nVBLs )		/* switch to 50 Hz during this VBL */
 		&& ( ( ShifterFrame.FreqPos50.HBL < nHBL )
 		    || ( ( ShifterFrame.FreqPos50.HBL == nHBL ) && ( ShifterFrame.FreqPos50.LineCycles <= pVideoTiming->RemoveBottomBorder_Pos-4 ) ) )
@@ -3136,13 +3283,13 @@ static void Video_EndHBL(void)
 		    || ( ( ShifterFrame.FreqPos60.HBL == nHBL ) && ( ShifterFrame.FreqPos60.LineCycles > pVideoTiming->RemoveBottomBorder_Pos-4 ) ) ) )
 	{
 		LOG_TRACE ( TRACE_VIDEO_BORDER_V , "detect remove bottom 60Hz\n" );
-		OverscanMode |= OVERSCANMODE_BOTTOM;
+		VerticalOverscan |= V_OVERSCAN_NO_BOTTOM_60;
 		nEndHBL = SCANLINES_PER_FRAME_60HZ;	/* new end for a 60 Hz screen */
 	}
 
 	/* Remove bottom border for a 50 Hz screen (tests are similar to the ones for top border) */
 	else if ( ( nHBL == VIDEO_END_HBL_50HZ + BlankLines - 1 )	/* last displayed line in 50 Hz */
-		&& ( ( OverscanMode & OVERSCANMODE_BOTTOM ) == 0 )	/* border was not already removed at line VIDEO_END_HBL_60HZ-1 */
+		&& ( ( VerticalOverscan & V_OVERSCAN_NO_BOTTOM_50 ) == 0 )	/* border was not already removed at line VIDEO_END_HBL_60HZ-1 */
 		&& ( ShifterFrame.FreqPos60.VBL == nVBLs )		/* switch to 60 Hz during this VBL */
 		&& ( ( ShifterFrame.FreqPos60.HBL < nHBL )
 		    || ( ( ShifterFrame.FreqPos60.HBL == nHBL ) && ( ShifterFrame.FreqPos60.LineCycles <= pVideoTiming->RemoveBottomBorder_Pos ) ) )
@@ -3152,10 +3299,41 @@ static void Video_EndHBL(void)
 		    || ( ( ShifterFrame.FreqPos50.HBL == nHBL ) && ( ShifterFrame.FreqPos50.LineCycles > pVideoTiming->RemoveBottomBorder_Pos ) ) ) )
 	{
 		LOG_TRACE ( TRACE_VIDEO_BORDER_V , "detect remove bottom\n" );
-		OverscanMode |= OVERSCANMODE_BOTTOM;
+		VerticalOverscan |= V_OVERSCAN_NO_BOTTOM_50;
 		nEndHBL = VIDEO_END_HBL_50HZ+VIDEO_HEIGHT_BOTTOM_50HZ;	/* new end for a 50 Hz screen */
 	}
+#else
+	if ( ( nHBL == nStartHBL + BlankLines - 1 )
+	  && ( VerticalOverscan & V_OVERSCAN_NO_TOP ) )
+	{
+		/* 50 Hz screen where first line is before 50 Hz position -> top border removed */
+		LOG_TRACE ( TRACE_VIDEO_BORDER_V , "detect remove top\n" );
+		pHBLPaletteMasks -= OVERSCAN_TOP;	// FIXME useless ?
+		pHBLPalettes -= OVERSCAN_TOP;		// FIXME useless ?
+	}
 
+	else if ( ( nHBL == pVideoTiming->V_End_Line_50 + BlankLines - 1 )
+	  && ( VerticalOverscan & V_OVERSCAN_NO_BOTTOM_50 ) )
+	{
+		/* 50 Hz screen where freq != 50 Hz on last line -> bottom border removed */
+		LOG_TRACE ( TRACE_VIDEO_BORDER_V , "detect remove bottom\n" );
+	}
+
+	else if ( ( nHBL == pVideoTiming->V_End_Line_60 + BlankLines - 1 )
+	  && ( VerticalOverscan & V_OVERSCAN_NO_BOTTOM_60 ) )
+	{
+		/* 60 Hz screen where freq != 60 Hz on last line -> bottom border removed */
+		LOG_TRACE ( TRACE_VIDEO_BORDER_V , "detect remove bottom 60Hz\n" );
+	}
+
+	else if ( ( nHBL == pVideoTiming->V_End_Line_60 + BlankLines - 1 )
+	  && ( VerticalOverscan & V_OVERSCAN_BOTTOM_SHORT_50 ) )
+	{
+		/* 50 Hz screen ending at 60 Hz screen's position -> short bottom border (-29 lines) */
+		LOG_TRACE ( TRACE_VIDEO_BORDER_V , "detect short bottom border\n" );
+	}
+
+#endif
 
 	//
 	// Check some left/right borders effects that were not detected earlier
@@ -4150,7 +4328,7 @@ static void Video_ClearOnVBL(void)
 {
 	/* New screen, so first HBL */
 	nHBL = 0;
-	OverscanMode = OVERSCANMODE_NONE;
+	VerticalOverscan = V_OVERSCAN_NONE;
 
 	Video_ResetShifterTimings();
 
@@ -5502,17 +5680,18 @@ void Video_TTColorRegs_STRegWrite(void)
 void Video_Info(FILE *fp, Uint32 dummy)
 {
 	const char *mode;
-	switch (OverscanMode) {
-	case OVERSCANMODE_NONE:
+	switch (VerticalOverscan) {
+	case V_OVERSCAN_NONE:
 		mode = "none";
 		break;
-	case OVERSCANMODE_TOP:
+	case V_OVERSCAN_NO_TOP:
 		mode = "top";
 		break;
-	case OVERSCANMODE_BOTTOM:
+	case V_OVERSCAN_NO_BOTTOM_50:
+	case V_OVERSCAN_NO_BOTTOM_60:
 		mode = "bottom";
 		break;
-	case OVERSCANMODE_TOP|OVERSCANMODE_BOTTOM:
+	case V_OVERSCAN_NO_TOP|V_OVERSCAN_NO_BOTTOM_50:
 		mode = "top+bottom";
 		break;
 	default:

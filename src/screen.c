@@ -897,7 +897,7 @@ static void Screen_DidResolutionChange(int new_res)
 	else
 	{
 		/* Did change overscan mode? Causes full update */
-		if (pFrameBuffer->OverscanModeCopy != OverscanMode)
+		if (pFrameBuffer->VerticalOverscanCopy != VerticalOverscan)
 			pFrameBuffer->bFullUpdate = true;
 	}
 }
@@ -1020,7 +1020,7 @@ static int Screen_ComparePaletteMask(int res)
 	/* Set for monochrome? */
 	if (bUseHighRes)
 	{
-		OverscanMode = OVERSCANMODE_NONE;
+		VerticalOverscan = V_OVERSCAN_NONE;
 
 		/* Just copy mono colors */
 		if (HBLPalettes[0] & 0x777)
@@ -1148,7 +1148,7 @@ static void Screen_SetConvertDetails(void)
 
 			if (bUseHighRes)
 			{
-				pFrameBuffer->OverscanModeCopy = OverscanMode = OVERSCANMODE_NONE;
+				pFrameBuffer->VerticalOverscanCopy = VerticalOverscan = V_OVERSCAN_NONE;
 				STScreenStartHorizLine = 0;
 				STScreenEndHorizLine = 400;
 			}
@@ -1320,7 +1320,7 @@ static bool Screen_DrawFrame(bool bForceFlip)
 		
 		/* Clear flags, remember type of overscan as if change need screen full update */
 		pFrameBuffer->bFullUpdate = false;
-		pFrameBuffer->OverscanModeCopy = OverscanMode;
+		pFrameBuffer->VerticalOverscanCopy = VerticalOverscan;
 
 		/* And show to user */
 		if (bScreenContentsChanged || bForceFlip || sbar_rect)

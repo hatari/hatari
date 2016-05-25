@@ -63,7 +63,7 @@ typedef struct
   Uint32 HBLPaletteMasks[HBL_PALETTE_MASKS];
   Uint8 *pSTScreen;             /* Copy of screen built up during frame (copy each line on HBL to simulate monitor raster) */
   Uint8 *pSTScreenCopy;         /* Previous frames copy of above  */
-  int OverscanModeCopy;         /* Previous screen overscan mode */
+  int VerticalOverscanCopy;	/* Previous screen overscan mode */
   bool bFullUpdate;             /* Set TRUE to cause full update on next draw */
 } FRAMEBUFFER;
 
@@ -92,13 +92,6 @@ enum
 #define PALETTEMASK_UPDATEFULL  0x80000000
 #define PALETTEMASK_UPDATEMASK  (PALETTEMASK_UPDATEFULL|PALETTEMASK_UPDATEPAL|PALETTEMASK_UPDATERES)
 
-/* Overscan values */
-enum
-{
-  OVERSCANMODE_NONE,     /* 0x00 */
-  OVERSCANMODE_TOP,      /* 0x01 */
-  OVERSCANMODE_BOTTOM    /* 0x02 (Top+Bottom) 0x03 */
-};
 
 extern bool bGrabMouse;
 extern bool bInFullScreen;

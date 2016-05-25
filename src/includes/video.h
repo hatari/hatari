@@ -63,6 +63,7 @@
 
 #define VIDEO_END_HBL_50HZ	( VIDEO_START_HBL_50HZ + VIDEO_HEIGHT_HBL_COLOR )	/* 263 */
 #define VIDEO_END_HBL_60HZ	( VIDEO_START_HBL_60HZ + VIDEO_HEIGHT_HBL_COLOR )	/* 234 */
+#define VIDEO_END_HBL_71HZ	( VIDEO_START_HBL_71HZ + VIDEO_HEIGHT_HBL_MONO )	/* 434 */
 
 #define LINE_REMOVE_TOP_CYCLE_STF	504	/* switch to 60 Hz on line 33 should not occur after cycle 504 to remove top border */
 						/* switch to 50 Hz should occur after cycle 504 on line 33 */
@@ -70,6 +71,15 @@
 
 #define LINE_REMOVE_TOP_CYCLE_STE	500	/* on STE, switch can occur 4 cycles earlier than STF */
 #define LINE_REMOVE_BOTTOM_CYCLE_STE	500
+
+
+/* Values for VerticalOverscan */
+#define	V_OVERSCAN_NONE			0x00
+#define	V_OVERSCAN_NO_TOP		0x01
+#define	V_OVERSCAN_NO_BOTTOM_50		0x02
+#define	V_OVERSCAN_NO_BOTTOM_60		0x04
+#define	V_OVERSCAN_BOTTOM_SHORT_50	0x08
+#define	V_OVERSCAN_BOTTOM_NO_DE		0x10
 
 
 #define LINE_START_CYCLE_50	56
@@ -126,7 +136,7 @@ extern int nVBLs;
 extern int nHBL;
 extern int nStartHBL;
 extern int nEndHBL;
-extern int OverscanMode;
+extern int VerticalOverscan;
 extern Uint16 HBLPalettes[HBL_PALETTE_LINES];
 extern Uint16 *pHBLPalettes;
 extern Uint32 HBLPaletteMasks[HBL_PALETTE_MASKS];
