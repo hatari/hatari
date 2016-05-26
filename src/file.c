@@ -331,9 +331,9 @@ off_t File_Length(const char *pszFileName)
 	hDiskFile = fopen(pszFileName, "rb");
 	if (hDiskFile!=NULL)
 	{
-		fseek(hDiskFile, 0, SEEK_END);
+		fseeko(hDiskFile, 0, SEEK_END);
 		FileSize = ftello(hDiskFile);
-		fseek(hDiskFile, 0, SEEK_SET);
+		fseeko(hDiskFile, 0, SEEK_SET);
 		fclose(hDiskFile);
 		return FileSize;
 	}
