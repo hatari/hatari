@@ -347,46 +347,6 @@ static inline void cpu_to_be16wu(uint16_t *p, uint16_t v)
 }
 
 
-#if defined(WIN32)
-
-/* Remove possible conflicting TCHAR declaration from cpu/compat.h */
-#undef TCHAR
-
-#include <windows.h>
-
-static void *qemu_memalign(size_t alignment, size_t size)
-{
-    return VirtualAlloc(NULL, size, MEM_COMMIT, PAGE_READWRITE);
-}
-
-static void qemu_free(void *ptr)
-{
-    VirtualFree(ptr, 0, MEM_RELEASE);
-}
-
-#else
-
-static void *qemu_memalign(size_t alignment, size_t size)
-{
-#if HAVE_POSIX_MEMALIGN
-	int ret;
-	void *ptr;
-	ret = posix_memalign(&ptr, alignment, size);
-	if (ret != 0)
-		return NULL;
-	return ptr;
-#elif HAVE_MEMALIGN
-	return memalign(alignment, size);
-#else
-	return valloc(size);
-#endif
-}
-
-#define qemu_free free
-
-#endif
-
-
 #define le32_to_cpu SDL_SwapLE32
 #define le16_to_cpu SDL_SwapLE16
 #define cpu_to_le32 SDL_SwapLE32
@@ -2523,19 +2483,19 @@ static int guess_disk_lchs(IDEState *s,
 	struct partition *p;
 	uint32_t nr_sects;
 
-	buf = qemu_memalign(512, 512);
+	buf = malloc(SECTOR_SIZE);
 	if (buf == NULL)
 		return -1;
 	ret = bdrv_read(s->bs, 0, buf, 1);
 	if (ret < 0)
 	{
-		qemu_free(buf);
+		free(buf);
 		return -1;
 	}
 	/* test msdos magic */
 	if (buf[510] != 0x55 || buf[511] != 0xaa)
 	{
-		qemu_free(buf);
+		free(buf);
 		return -1;
 	}
 	for (i = 0; i < 4; i++)
@@ -2558,11 +2518,11 @@ static int guess_disk_lchs(IDEState *s,
 			*pcylinders = cylinders;
 			LOG_TRACE(TRACE_IDE, "IDE: guessed geometry LCHS=%d %d %d\n",
 			       cylinders, heads, sectors);
-			qemu_free(buf);
+			free(buf);
 			return 0;
 		}
 	}
-	qemu_free(buf);
+	free(buf);
 	return -1;
 }
 
@@ -2577,7 +2537,7 @@ static void ide_init2(IDEState *ide_state, BlockDriverState *hd0,
 	for (i = 0; i < 2; i++)
 	{
 		s = ide_state + i;
-		s->io_buffer = qemu_memalign(512, MAX_MULT_SECTORS*512 + 4);
+		s->io_buffer = malloc(MAX_MULT_SECTORS * 512 + 4);
 		assert(s->io_buffer);
 		if (i == 0)
 			s->bs = hd0;

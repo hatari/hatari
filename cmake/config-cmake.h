@@ -58,12 +58,6 @@
 /* Define to 1 if you have unix domain sockets */
 #cmakedefine HAVE_UNIX_DOMAIN_SOCKETS 1
 
-/* Define to 1 if you have the 'posix_memalign' function. */
-#cmakedefine HAVE_POSIX_MEMALIGN 1
-
-/* Define to 1 if you have the 'memalign' function. */
-#cmakedefine HAVE_MEMALIGN 1
-
 /* Define to 1 if you have the 'gettimeofday' function. */
 #cmakedefine HAVE_GETTIMEOFDAY 1
 
