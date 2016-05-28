@@ -794,9 +794,7 @@ printf ( "Video_SetSystemTimings2 %d %d\n" , MachineType , Mode );
 
 	pVideoTiming = &VideoTimings[ Timing ];
 
-
-
-	if ( ConfigureParams.System.nMachineType == MACHINE_ST )
+	if (MachineType == MACHINE_ST || MachineType == MACHINE_MEGA_ST)
 	{
 #ifndef CPU_WS1
 		LineRemoveTopCycle = LINE_REMOVE_TOP_CYCLE_STF;

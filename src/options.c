@@ -142,7 +142,6 @@ enum {
 	OPT_DSP,
 	OPT_TIMERD,
 	OPT_FASTBOOT,
-	OPT_RTC,
 	OPT_MICROPHONE,		/* sound options */
 	OPT_SOUND,
 	OPT_SOUNDBUFFERSIZE,
@@ -379,7 +378,7 @@ static const opt_t HatariOptions[] = {
 
 	{ OPT_HEADER, NULL, NULL, NULL, "Misc system" },
 	{ OPT_MACHINE,   NULL, "--machine",
-	  "<x>", "Select machine type (x = st/ste/tt/falcon)" },
+	  "<x>", "Select machine type (x = st/megast/ste/megaste/tt/falcon)" },
 	{ OPT_BLITTER,   NULL, "--blitter",
 	  "<bool>", "Use blitter emulation (ST only)" },
 	{ OPT_DSP,       NULL, "--dsp",
@@ -388,8 +387,6 @@ static const opt_t HatariOptions[] = {
 	  "<bool>", "Patch Timer-D (about doubles ST emulation speed)" },
 	{ OPT_FASTBOOT, NULL, "--fast-boot",
 	  "<bool>", "Patch TOS and memvalid system variables for faster boot" },
-	{ OPT_RTC,    NULL, "--rtc",
-	  "<bool>", "Enable real-time clock" },
 
 	{ OPT_HEADER, NULL, NULL, NULL, "Sound" },
 	{ OPT_MICROPHONE,   NULL, "--mic",
@@ -1651,11 +1648,23 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				ConfigureParams.System.nCpuLevel = 0;
 				ConfigureParams.System.nCpuFreq = 8;
 			}
+			else if (strcasecmp(argv[i], "megast") == 0)
+			{
+				ConfigureParams.System.nMachineType = MACHINE_MEGA_ST;
+				ConfigureParams.System.nCpuLevel = 0;
+				ConfigureParams.System.nCpuFreq = 8;
+			}
 			else if (strcasecmp(argv[i], "ste") == 0)
 			{
 				ConfigureParams.System.nMachineType = MACHINE_STE;
 				ConfigureParams.System.nCpuLevel = 0;
 				ConfigureParams.System.nCpuFreq = 8;
+			}
+			else if (strcasecmp(argv[i], "megaste") == 0)
+			{
+				ConfigureParams.System.nMachineType = MACHINE_MEGA_STE;
+				ConfigureParams.System.nCpuLevel = 0;
+				ConfigureParams.System.nCpuFreq = 16;
 			}
 			else if (strcasecmp(argv[i], "tt") == 0)
 			{
@@ -1677,8 +1686,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				return Opt_ShowError(OPT_MACHINE, argv[i], "Unknown machine type");
 			}
 #if ENABLE_WINUAE_CPU
-			if (ConfigureParams.System.nMachineType == MACHINE_ST ||
-			    ConfigureParams.System.nMachineType == MACHINE_STE)
+			if (Config_IsMachineST() || Config_IsMachineSTE())
 			{
 				ConfigureParams.System.bMMU = false;
 				ConfigureParams.System.bAddressSpace24 = true;
@@ -1687,7 +1695,9 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			{
 				ConfigureParams.System.bCompatibleFPU = true;
 				ConfigureParams.System.n_FPUType = FPU_68882;
-			} else {
+			}
+			else
+			{
 				ConfigureParams.System.n_FPUType = FPU_NONE;	/* TODO: or leave it as-is? */
 			}
 #endif
@@ -1707,10 +1717,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 		case OPT_FASTBOOT:
 			ok = Opt_Bool(argv[++i], OPT_FASTBOOT, &ConfigureParams.System.bFastBoot);
-			break;
-
-		case OPT_RTC:
-			ok = Opt_Bool(argv[++i], OPT_RTC, &ConfigureParams.System.bRealTimeClock);
 			break;
 
 		case OPT_DSP:

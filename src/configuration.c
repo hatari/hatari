@@ -515,16 +515,24 @@ static const struct Config_Tag configs_Midi[] =
 	{ NULL , Error_Tag, NULL }
 };
 
+/* Used to load system options from old config files */
+static int nOldMachineType;
+static bool bOldRealTimeClock;
+static const struct Config_Tag configs_System_Old[] =
+{
+	{ "nMachineType", Int_Tag, &nOldMachineType },
+	{ "bRealTimeClock", Bool_Tag, &bOldRealTimeClock },
+	{ NULL , Error_Tag, NULL }
+};
 /* Used to load/save system options */
 static const struct Config_Tag configs_System[] =
 {
 	{ "nCpuLevel", Int_Tag, &ConfigureParams.System.nCpuLevel },
 	{ "nCpuFreq", Int_Tag, &ConfigureParams.System.nCpuFreq },
 	{ "bCompatibleCpu", Bool_Tag, &ConfigureParams.System.bCompatibleCpu },
-	{ "nMachineType", Int_Tag, &ConfigureParams.System.nMachineType },
+	{ "nModelType", Int_Tag, &ConfigureParams.System.nMachineType },
 	{ "bBlitter", Bool_Tag, &ConfigureParams.System.bBlitter },
 	{ "nDSPType", Int_Tag, &ConfigureParams.System.nDSPType },
-	{ "bRealTimeClock", Bool_Tag, &ConfigureParams.System.bRealTimeClock },
 	{ "bPatchTimerD", Bool_Tag, &ConfigureParams.System.bPatchTimerD },
 	{ "bFastBoot", Bool_Tag, &ConfigureParams.System.bFastBoot },
 	{ "bFastForward", Bool_Tag, &ConfigureParams.System.bFastForward },
@@ -785,7 +793,6 @@ void Configuration_SetDefault(void)
 	ConfigureParams.System.bBlitter = false;
 	ConfigureParams.System.bPatchTimerD = true;
 	ConfigureParams.System.bFastBoot = false;
-	ConfigureParams.System.bRealTimeClock = false;
 	ConfigureParams.System.bFastForward = false;
 
 	/* Set defaults for Video */
@@ -965,6 +972,28 @@ void Configuration_Load(const char *psFileName)
 		return;
 	}
 
+	/* Try to load information from old config files */
+	nOldMachineType = -1;
+	Configuration_LoadSection(psFileName, configs_System_Old, "[System]");
+	switch (nOldMachineType)
+	{
+	 case 0:
+		if (!bOldRealTimeClock)
+			ConfigureParams.System.nMachineType = MACHINE_ST;
+		else
+			ConfigureParams.System.nMachineType = MACHINE_MEGA_ST;
+		break;
+	 case 1:
+		ConfigureParams.System.nMachineType = MACHINE_STE;
+		break;
+	 case 2:
+		ConfigureParams.System.nMachineType = MACHINE_TT;
+		break;
+	 case 3:
+		ConfigureParams.System.nMachineType = MACHINE_FALCON;
+		break;
+	}
+
 #if !WITH_SDL2	/* for old SDL1 keycode compatibility */
 	Configuration_LoadSection(psFileName, configs_ShortCutWithMod_Sdl1, "[ShortcutsWithModifiers]");
 	Configuration_LoadSection(psFileName, configs_ShortCutWithoutMod_Sdl1, "[ShortcutsWithoutModifiers]");
@@ -1106,7 +1135,7 @@ void Configuration_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&ConfigureParams.System.nMachineType, sizeof(ConfigureParams.System.nMachineType));
 	MemorySnapShot_Store(&ConfigureParams.System.bBlitter, sizeof(ConfigureParams.System.bBlitter));
 	MemorySnapShot_Store(&ConfigureParams.System.nDSPType, sizeof(ConfigureParams.System.nDSPType));
-	MemorySnapShot_Store(&ConfigureParams.System.bRealTimeClock, sizeof(ConfigureParams.System.bRealTimeClock));
+	MemorySnapShot_Store(&bOldRealTimeClock, sizeof(bOldRealTimeClock));	/* TODO: Can be removed later */
 	MemorySnapShot_Store(&ConfigureParams.System.bPatchTimerD, sizeof(ConfigureParams.System.bPatchTimerD));
 	MemorySnapShot_Store(&ConfigureParams.System.bAddressSpace24, sizeof(ConfigureParams.System.bAddressSpace24));
 

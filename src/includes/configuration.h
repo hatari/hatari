@@ -298,10 +298,11 @@ typedef struct
 typedef enum
 {
   MACHINE_ST,
+  MACHINE_MEGA_ST,
   MACHINE_STE,
+  MACHINE_MEGA_STE,
   MACHINE_TT,
-  MACHINE_FALCON,
-  MACHINE_MEGA_STE
+  MACHINE_FALCON
 } MACHINETYPE;
 
 typedef enum
@@ -338,7 +339,6 @@ typedef struct
   MACHINETYPE nMachineType;
   bool bBlitter;                  /* TRUE if Blitter is enabled */
   DSPTYPE nDSPType;               /* how to "emulate" DSP */
-  bool bRealTimeClock;
   bool bPatchTimerD;
   bool bFastBoot;                 /* Enable to patch TOS for fast boot */
   bool bFastForward;
@@ -391,7 +391,8 @@ extern char sConfigFileName[FILENAME_MAX];
 
 static inline bool Config_IsMachineST(void)
 {
-	return ConfigureParams.System.nMachineType == MACHINE_ST;
+	return ConfigureParams.System.nMachineType == MACHINE_ST ||
+	       ConfigureParams.System.nMachineType == MACHINE_MEGA_ST;
 }
 
 static inline bool Config_IsMachineSTE(void)

@@ -168,11 +168,22 @@ void IoMem_Init(void)
 
 	switch (ConfigureParams.System.nMachineType)
 	{
-		case MACHINE_ST:  pInterceptAccessFuncs = IoMemTable_ST; break;
-		case MACHINE_STE: pInterceptAccessFuncs = IoMemTable_STE; break;
-		case MACHINE_TT: pInterceptAccessFuncs = IoMemTable_TT; break;
-		case MACHINE_FALCON: pInterceptAccessFuncs = IoMemTable_Falcon; break;
-		default: abort(); /* bug */
+	 case MACHINE_ST:
+	 case MACHINE_MEGA_ST:
+		pInterceptAccessFuncs = IoMemTable_ST;
+		break;
+	 case MACHINE_STE:
+	 case MACHINE_MEGA_STE:
+		pInterceptAccessFuncs = IoMemTable_STE;
+		break;
+	 case MACHINE_TT:
+		pInterceptAccessFuncs = IoMemTable_TT;
+		break;
+	 case MACHINE_FALCON:
+		pInterceptAccessFuncs = IoMemTable_Falcon;
+		break;
+	 default:
+		abort(); /* bug */
 	}
 
 	/* Now set the correct handlers */
@@ -225,8 +236,9 @@ void IoMem_Init(void)
 		IoMem_SetBusErrorRegion(0xff8a00, 0xff8a3f);
 	}
 
-	/* Disable real time clock? */
-	if (!ConfigureParams.System.bRealTimeClock)
+	/* Disable real time clock on non-Mega machines */
+	if (ConfigureParams.System.nMachineType == MACHINE_ST
+	    || ConfigureParams.System.nMachineType == MACHINE_STE)
 	{
 		for (addr = 0xfffc21; addr <= 0xfffc3f; addr++)
 		{

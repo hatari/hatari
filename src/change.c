@@ -307,15 +307,14 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 		bReInitIDEEmu = true;
 	}
 
-	/* Did change blitter, rtc or system type? */
+	/* Did change blitter, DSP or system type? */
 	if (changed->System.bBlitter != current->System.bBlitter
 #if ENABLE_DSP_EMU
 	    || changed->System.nDSPType != current->System.nDSPType
 #endif
-	    || changed->System.bRealTimeClock != current->System.bRealTimeClock
 	    || changed->System.nMachineType != current->System.nMachineType)
 	{
-		Dprintf("- blitter/rtc/dsp/machine>\n");
+		Dprintf("- blitter/dsp/machine>\n");
 		IoMem_UnInit();
 		bReInitIoMem = true;
 	}

@@ -485,6 +485,9 @@ void Statusbar_UpdateInfo(void)
 	case MACHINE_ST:
 		end = Statusbar_AddString(end, "ST");
 		break;
+	case MACHINE_MEGA_ST:
+		end = Statusbar_AddString(end, "MegaST");
+		break;
 	case MACHINE_STE:
 		end = Statusbar_AddString(end, "STE");
 		break;
