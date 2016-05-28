@@ -1092,7 +1092,7 @@ bool Screen_GenDraw(uint32_t vaddr, int vw, int vh, int vbpp, int nextline,
 	if (!Screen_Lock())
 		return false;
 
-	if (ConfigureParams.System.nMachineType == MACHINE_ST)
+	if (Config_IsMachineST())
 		hscrolloffset = 0;
 	else
 		hscrolloffset = IoMem_ReadByte(0xff8265) & 0x0f;

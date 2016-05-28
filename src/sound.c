@@ -668,8 +668,7 @@ static void	Ym2149_BuildVolumeTable(void)
 
 	/* Normalise/center the values (convert from u16 to s16) */
 	/* On STE/TT, we use YM_OUTPUT_LEVEL>>1 to avoid overflow with DMA sound */
-	if ( (ConfigureParams.System.nMachineType == MACHINE_STE) || (ConfigureParams.System.nMachineType == MACHINE_MEGA_STE)
-		|| (ConfigureParams.System.nMachineType == MACHINE_TT) )
+	if (Config_IsMachineSTE() || ConfigureParams.System.nMachineType == MACHINE_TT)
 		YM2149_Normalise_5bit_Table ( ymout5_u16[0][0] , ymout5 , (YM_OUTPUT_LEVEL>>1) , YM_OUTPUT_CENTERED );
 	else
 		YM2149_Normalise_5bit_Table ( ymout5_u16[0][0] , ymout5 , YM_OUTPUT_LEVEL , YM_OUTPUT_CENTERED );
@@ -1273,7 +1272,7 @@ static void Sound_GenerateSamples(int SamplesToGenerate)
  		/* If Falcon emulation, crossbar does the job */
  		Crossbar_GenerateSamples(ActiveSndBufIdx, SamplesToGenerate);
 	}
-	else if (ConfigureParams.System.nMachineType != MACHINE_ST)
+	else if (!Config_IsMachineST())
 	{
 		for (i = 0; i < SamplesToGenerate; i++)
 		{
@@ -1283,7 +1282,7 @@ static void Sound_GenerateSamples(int SamplesToGenerate)
  		/* If Ste or TT emulation, DmaSnd does mixing and filtering */
  		DmaSnd_GenerateSamples(ActiveSndBufIdx, SamplesToGenerate);
 	}
-	else if (ConfigureParams.System.nMachineType == MACHINE_ST)
+	else
 	{
 		for (i = 0; i < SamplesToGenerate; i++)
 		{

@@ -4245,9 +4245,7 @@ void FDC_WriteDMAAddress ( Uint32 Address )
 		Address , nVBLs , FrameCycles, LineCycles, HblCounterVideo , M68000_GetPC() );
 
 	/* On STF/STE machines limited to 4MB of RAM, DMA address is also limited to $3fffff */
-	if ( (ConfigureParams.System.nMachineType == MACHINE_ST)
-	  || (ConfigureParams.System.nMachineType == MACHINE_STE)
-	  || (ConfigureParams.System.nMachineType == MACHINE_MEGA_STE) )
+	if (Config_IsMachineST() || Config_IsMachineSTE())
 		Address &= 0x3fffff;
 
 	Address &= 0xfffffffe;						/* Force bit 0 to 0 */

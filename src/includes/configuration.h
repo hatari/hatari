@@ -389,6 +389,17 @@ typedef struct
 extern CNF_PARAMS ConfigureParams;
 extern char sConfigFileName[FILENAME_MAX];
 
+static inline bool Config_IsMachineST(void)
+{
+	return ConfigureParams.System.nMachineType == MACHINE_ST;
+}
+
+static inline bool Config_IsMachineSTE(void)
+{
+	return ConfigureParams.System.nMachineType == MACHINE_STE ||
+	       ConfigureParams.System.nMachineType == MACHINE_MEGA_STE;
+}
+
 extern void Configuration_SetDefault(void);
 extern void Configuration_Apply(bool bReset);
 extern void Configuration_Load(const char *psFileName);

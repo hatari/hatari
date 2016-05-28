@@ -347,8 +347,7 @@ static void TOS_FixRom(void)
 				    || (pPatch->Flags == TP_HDIMAGE_OFF && !ACSI_EMU_ON
 				        && !ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage
 				        && ConfigureParams.System.bFastBoot)
-				    || (pPatch->Flags == TP_ANTI_STE
-				        && ConfigureParams.System.nMachineType == MACHINE_ST)
+				    || (pPatch->Flags == TP_ANTI_STE && Config_IsMachineST())
 				    || (pPatch->Flags == TP_ANTI_PMMU && !use_mmu)
 				    || (pPatch->Flags == TP_FIX_060 && ConfigureParams.System.nCpuLevel > 4)
 				   )
@@ -526,7 +525,7 @@ static void TOS_CheckSysConfig(void)
 	FPUTYPE oldFpuType = ConfigureParams.System.n_FPUType;
 #endif
 
-	if (((TosVersion == 0x0106 || TosVersion == 0x0162) && ConfigureParams.System.nMachineType != MACHINE_STE)
+	if (((TosVersion == 0x0106 || TosVersion == 0x0162) && !Config_IsMachineSTE())
 	    || (TosVersion == 0x0162 && ConfigureParams.System.nCpuLevel != 0))
 	{
 		Log_AlertDlg(LOG_ERROR, "TOS versions 1.06 and 1.62 are for Atari STE only.\n"
@@ -568,7 +567,7 @@ static void TOS_CheckSysConfig(void)
 		ConfigureParams.System.nCpuLevel = 3;
 	}
 	else if (TosVersion <= 0x0104 &&
-	         (ConfigureParams.System.nCpuLevel > 0 || ConfigureParams.System.nMachineType != MACHINE_ST))
+	         (ConfigureParams.System.nCpuLevel > 0 || !Config_IsMachineST()))
 	{
 		Log_AlertDlg(LOG_ERROR, "TOS versions <= 1.4 work only in\n"
 		             "ST mode and with a 68000 CPU.\n"
