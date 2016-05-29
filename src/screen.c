@@ -258,8 +258,7 @@ static void Screen_SetSTScreenOffsets(void)
  */
 static bool Screen_UseGenConvScreen(void)
 {
-	return ConfigureParams.System.nMachineType == MACHINE_FALCON
-		|| ConfigureParams.System.nMachineType == MACHINE_TT
+	return Config_IsMachineFalcon() || Config_IsMachineTT()
 		|| bUseHighRes || bUseVDIRes;
 }
 
@@ -620,11 +619,11 @@ static void Screen_ChangeResolution(bool bForceChange)
 	{
 		Screen_SetGenConvSize(VDIWidth, VDIHeight, hbpp, bForceChange);
 	}
-	else if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+	else if (Config_IsMachineFalcon())
 	{
 		VIDEL_ZoomModeChanged(bForceChange);
 	}
-	else if (ConfigureParams.System.nMachineType == MACHINE_TT)
+	else if (Config_IsMachineTT())
 	{
 		int width, height, bpp;
 		Video_GetTTRes(&width, &height, &bpp);
@@ -805,11 +804,11 @@ static void Screen_Refresh(void)
 		Screen_GenDraw(VideoBase, VDIWidth, VDIHeight, VDIPlanes,
 		               VDIWidth * VDIPlanes / 16, 0, 0, 0, 0);
 	}
-	else if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+	else if (Config_IsMachineFalcon())
 	{
 		VIDEL_renderScreen();
 	}
-	else if (ConfigureParams.System.nMachineType == MACHINE_TT)
+	else if (Config_IsMachineTT())
 	{
 		Video_RenderTTScreen();
 	}

@@ -730,7 +730,7 @@ static Uint32	FDC_FdcCyclesToCpuCycles ( Uint32 FdcCycles )
 	/* Our conversion expects FDC_Freq to be nearly the same as CPU_Freq (8 Mhz) */
 	/* but the Falcon uses a 16 MHz clock for the Ajax FDC */
 	/* FIXME : as stated above, this should be handled better, without involving 8 MHz CPU_Freq */
-	if ( ConfigureParams.System.nMachineType == MACHINE_FALCON )
+	if (Config_IsMachineFalcon())
 		FdcCycles *= 2;					/* correct delays for a 8 MHz FDC_Freq clock instead of 16 */
 
 //	CpuCycles = rint ( ( (Uint64)FdcCycles * MachineClocks.CPU_Freq ) / MachineClocks.FDC_Freq );
@@ -764,7 +764,7 @@ static Uint32	FDC_CpuCyclesToFdcCycles ( Uint32 CpuCycles )
 	/* Our conversion expects FDC_Freq to be nearly the same as CPU_Freq (8 Mhz) */
 	/* but the Falcon uses a 16 MHz clock for the Ajax FDC */
 	/* FIXME : as stated above, this should be handled better, without involving 8 MHz CPU_Freq */
-	if ( ConfigureParams.System.nMachineType == MACHINE_FALCON )
+	if (Config_IsMachineFalcon())
 		FdcCycles /= 2;					/* correct delays for a 8 MHz FDC_Freq clock instead of 16 */
 
 //fprintf ( stderr , "fdc state %d delay %d cpu cycles %d fdc cycles\n" , FDC.Command , CpuCycles , FdcCycles );
@@ -1502,7 +1502,7 @@ static Uint32	FDC_GetCyclesPerRev_FdcCycles ( int Drive )
 	/* Our conversion expects FDC_Freq to be nearly the same as CPU_Freq (8 Mhz) */
 	/* but the Falcon uses a 16 MHz clock for the Ajax FDC */
 	/* FIXME : this should be handled better, without involving 8 MHz CPU_Freq */
-	if ( ConfigureParams.System.nMachineType == MACHINE_FALCON )
+	if (Config_IsMachineFalcon())
 		FdcCyclesPerRev /= 2;					/* correct delays for a 8 MHz FDC_Freq clock instead of 16 */
 
 	return FdcCyclesPerRev;

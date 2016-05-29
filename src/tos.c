@@ -537,7 +537,7 @@ static void TOS_CheckSysConfig(void)
 		ConfigureParams.System.nCpuFreq = 8;
 		ConfigureParams.System.nCpuLevel = 0;
 	}
-	else if ((TosVersion & 0x0f00) == 0x0300 && ConfigureParams.System.nMachineType != MACHINE_TT)
+	else if ((TosVersion & 0x0f00) == 0x0300 && !Config_IsMachineTT())
 	{
 		Log_AlertDlg(LOG_ERROR, "TOS versions 3.0x are for Atari TT only.\n"
 		             " ==> Switching to TT mode now.\n");
@@ -549,7 +549,7 @@ static void TOS_CheckSysConfig(void)
 		ConfigureParams.System.nCpuFreq = 32;
 		ConfigureParams.System.nCpuLevel = 3;
 	}
-	else if ((TosVersion & 0x0f00) == 0x0400 && ConfigureParams.System.nMachineType != MACHINE_FALCON)
+	else if ((TosVersion & 0x0f00) == 0x0400 && !Config_IsMachineFalcon())
 	{
 		Log_AlertDlg(LOG_ERROR, "TOS versions 4.x are for Atari Falcon only.\n"
 		             " ==> Switching to Falcon mode now.\n");
@@ -579,8 +579,8 @@ static void TOS_CheckSysConfig(void)
 		ConfigureParams.System.nCpuFreq = 8;
 		ConfigureParams.System.nCpuLevel = 0;
 	}
-	else if ((TosVersion < 0x0300 && ConfigureParams.System.nMachineType == MACHINE_FALCON)
-	         || (TosVersion < 0x0200 && ConfigureParams.System.nMachineType == MACHINE_TT))
+	else if ((TosVersion < 0x0300 && Config_IsMachineFalcon())
+	         || (TosVersion < 0x0200 && Config_IsMachineTT()))
 	{
 		Log_AlertDlg(LOG_ERROR, "This TOS version does not work in TT/Falcon mode.\n"
 		             " ==> Switching to STE mode now.\n");
@@ -620,7 +620,7 @@ static void TOS_CheckSysConfig(void)
 	if (ConfigureParams.System.nMachineType != oldMachineType)
 	{
 #if ENABLE_WINUAE_CPU
-		if (ConfigureParams.System.nMachineType == MACHINE_TT)
+		if (Config_IsMachineTT())
 		{
 			ConfigureParams.System.bCompatibleFPU = true;
 			ConfigureParams.System.n_FPUType = FPU_68882;

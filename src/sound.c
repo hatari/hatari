@@ -1262,7 +1262,7 @@ static void Sound_GenerateSamples(int SamplesToGenerate)
 	if (SamplesToGenerate <= 0)
 		return;
 
-	if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+	if (Config_IsMachineFalcon())
 	{
 		for (i = 0; i < SamplesToGenerate; i++)
 		{

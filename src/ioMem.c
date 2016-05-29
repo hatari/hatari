@@ -129,9 +129,9 @@ void IoMem_Init(void)
 	/* Set default IO access handler (-> bus error) */
 	IoMem_SetBusErrorRegion(0xff8000, 0xffffff);
 
-
 	/* Initialize STe bus specific registers for Falcon in FALCON STe compatible bus mode */
-	if ((ConfigureParams.System.nMachineType == MACHINE_FALCON) && (falconBusMode == STE_BUS_COMPATIBLE)) {
+	if (Config_IsMachineFalcon() && falconBusMode == STE_BUS_COMPATIBLE)
+	{
 		for (addr = 0xff8000; addr < 0xffd426; addr++)
 		{
 			if ( ((addr >= 0xff8002) && (addr < 0xff8006)) ||
@@ -209,7 +209,7 @@ void IoMem_Init(void)
 	}
 
 	/* Set registers for Falcon DSP emulation */
-	if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+	if (Config_IsMachineFalcon())
 	{
 		switch (ConfigureParams.System.nDSPType)
 		{
@@ -248,7 +248,7 @@ void IoMem_Init(void)
 	}
 
 	/* Initialize PSG shadow registers for ST, STe, TT machines */
-	if (ConfigureParams.System.nMachineType != MACHINE_FALCON)
+	if (!Config_IsMachineFalcon())
 	{
 		for (addr = 0xff8804; addr < 0xff8900; addr++)
 		{

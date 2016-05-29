@@ -74,13 +74,12 @@ static int Reset_ST(bool bCold)
 	}
 	Floppy_Reset();			/* Reset Floppy */
 
-	if (ConfigureParams.System.nMachineType == MACHINE_FALCON
-	    || ConfigureParams.System.nMachineType == MACHINE_TT)
+	if (Config_IsMachineFalcon() || Config_IsMachineTT())
 	{
 		Ncr5380_Reset();
 	}
 
-	if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+	if (Config_IsMachineFalcon())
 	{
 		DSP_Reset();                  /* Reset the DSP */
 		Crossbar_Reset(bCold);        /* Reset Crossbar sound */
@@ -92,7 +91,7 @@ static int Reset_ST(bool bCold)
 	Sound_Reset();                /* Reset Sound */
 	ACIA_Reset( ACIA_Array );     /* ACIA */
 	IKBD_Reset(bCold);            /* Keyboard (after ACIA) */
-	if (ConfigureParams.System.nMachineType == MACHINE_FALCON && !bUseVDIRes)
+	if (Config_IsMachineFalcon() && !bUseVDIRes)
 		VIDEL_reset();
 	else
 		Screen_Reset();               /* Reset screen */

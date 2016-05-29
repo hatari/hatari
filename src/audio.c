@@ -239,7 +239,7 @@ void Audio_SetOutputAudioFreq(int nNewFrequency)
 		/* Set new frequency */
 		nAudioFrequency = nNewFrequency;
 
-		if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+		if (Config_IsMachineFalcon())
 		{
 			/* Compute Ratio between host computer sound frequency and Hatari's sound frequency. */
 			Crossbar_Compute_Ratio();

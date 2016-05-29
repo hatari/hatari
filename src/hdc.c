@@ -881,7 +881,7 @@ void HDC_UnInit(void)
  */
 void HDC_ResetCommandStatus(void)
 {
-	if (ConfigureParams.System.nMachineType != MACHINE_FALCON)
+	if (!Config_IsMachineFalcon())
 		AcsiBus.returnCode = 0;
 }
 
@@ -1118,7 +1118,7 @@ void HDC_WriteCommandByte(int addr, Uint8 byte)
 {
 	// fprintf(stderr, "HDC: Write cmd byte addr=%i, byte=%02x\n", addr, byte);
 
-	if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+	if (Config_IsMachineFalcon())
 		Ncr5380_WriteByte(addr, byte);
 	else if (bAcsiEmuOn)
 		Acsi_WriteCommandByte(addr, byte);
@@ -1130,7 +1130,7 @@ void HDC_WriteCommandByte(int addr, Uint8 byte)
 short int HDC_ReadCommandByte(int addr)
 {
 	Uint16 ret;
-	if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+	if (Config_IsMachineFalcon())
 		ret = Ncr5380_ReadByte(addr);
 	else
 		ret = AcsiBus.returnCode;	/* ACSI status */

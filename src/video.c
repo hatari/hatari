@@ -1865,7 +1865,8 @@ void Video_InterruptHandler_HBL ( void )
 
 	/* Videl Vertical counter increment (To be removed when Videl emulation is finished) */
 	/* VFC is incremented every half line, here, we increment it every line (should be completed) */
-	if (ConfigureParams.System.nMachineType == MACHINE_FALCON) {
+	if (Config_IsMachineFalcon())
+	{
 		vfc_counter += 1;
 	}
 
@@ -3182,23 +3183,22 @@ static void Video_DrawScreen(void)
 	/* Now draw the screen! */
 	if (bUseVDIRes)
 	{
-		if (ConfigureParams.System.nMachineType == MACHINE_TT
-		    && !bTTColorsSync)
+		if (Config_IsMachineTT() && !bTTColorsSync)
 		{
 			Video_UpdateTTPalette(VDIPlanes);
 		}
-		else if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+		else if (Config_IsMachineFalcon())
 		{
 			VIDEL_UpdateColors();
 		}
 		Screen_GenDraw(VideoBase, VDIWidth, VDIHeight, VDIPlanes,
 		               VDIWidth * VDIPlanes / 16, 0, 0, 0, 0);
 	}
-	else if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+	else if (Config_IsMachineFalcon())
 	{
 		VIDEL_renderScreen();
 	}
-	else if (ConfigureParams.System.nMachineType == MACHINE_TT)
+	else if (Config_IsMachineTT())
 	{
 		Video_RenderTTScreen();
 	}
@@ -3383,7 +3383,8 @@ void Video_InterruptHandler_VBL ( void )
 	Video_ClearOnVBL();
 
 	/* Videl Vertical counter reset (To be removed when Videl emulation is finished) */
-	if (ConfigureParams.System.nMachineType == MACHINE_FALCON) {
+	if (Config_IsMachineFalcon())
+	{
 		vfc_counter = 0;
 	}
 	
@@ -3649,7 +3650,7 @@ void Video_ShifterMode_ReadByte(void)
 
 	if (Config_IsMachineST())
 		IoMem[0xff8260] |= 0xfc;		/* On STF, set unused bits 2-7 to 1 */
-	else if (ConfigureParams.System.nMachineType == MACHINE_TT)
+	else if (Config_IsMachineTT())
 		IoMem[0xff8260] &= 0x07;		/* Only use bits 0, 1 and 2 */
 	else
 		IoMem[0xff8260] &= 0x03;		/* Only use bits 0 and 1, unused bits 2-7 are set to 0 */
@@ -4009,7 +4010,7 @@ void Video_ShifterMode_WriteByte(void)
 	/* Access to shifter regs are on a 4 cycle boundary */
 	M68000_SyncCpuBus_OnWriteAccess();
 
-	if (ConfigureParams.System.nMachineType == MACHINE_TT)
+	if (Config_IsMachineTT())
 	{
 		TTRes = IoMem_ReadByte(0xff8260) & 7;
 		/* Copy to TT shifter mode register: */
@@ -4343,7 +4344,8 @@ void Video_TTColorRegs_STRegWrite(void)
 void Video_Info(FILE *fp, Uint32 dummy)
 {
 	const char *mode;
-	switch (OverscanMode) {
+	switch (OverscanMode)
+	{
 	case OVERSCANMODE_NONE:
 		mode = "none";
 		break;

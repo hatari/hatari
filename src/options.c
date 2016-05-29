@@ -1691,7 +1691,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				ConfigureParams.System.bMMU = false;
 				ConfigureParams.System.bAddressSpace24 = true;
 			}
-			if (ConfigureParams.System.nMachineType == MACHINE_TT)
+			if (Config_IsMachineTT())
 			{
 				ConfigureParams.System.bCompatibleFPU = true;
 				ConfigureParams.System.n_FPUType = FPU_68882;

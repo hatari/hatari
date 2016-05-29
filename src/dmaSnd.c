@@ -971,7 +971,8 @@ void DmaSnd_InterruptHandler_Microwire(void)
 	int	cmd_len;
 
 	/* If emulated computer is the Falcon, let's the crossbar Microwire code do the job. */
-	if (ConfigureParams.System.nMachineType == MACHINE_FALCON) {
+	if (Config_IsMachineFalcon())
+	{
 		Crossbar_InterruptHandler_Microwire();
 		return;
 	}

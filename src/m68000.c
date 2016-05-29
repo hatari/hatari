@@ -778,12 +778,8 @@ void	M68000_Flush_Data_Cache ( uaecptr addr , int size )
  */
 int	DMA_MaskAddressHigh ( void )
 {
-
-	if ( ( ConfigureParams.System.nMachineType == MACHINE_TT )
-	  || ( ConfigureParams.System.nMachineType == MACHINE_FALCON ) )
-	{
+	if (Config_IsMachineTT() || Config_IsMachineFalcon())
 		return 0xff;					/* Falcon / TT can access 24 bits with DMA */
-	}
 
 	else if ( ConfigureParams.Memory.nMemorySize > 4 )	/* ST/STE with more than 4 MB */
 		return 0xff;					/* Allow 'fake' 24 bits for DMA */
@@ -791,8 +787,3 @@ int	DMA_MaskAddressHigh ( void )
 	else							/* ST/STE with <= 4 MB */
 		return 0x3f;					/* Limit DMA range to 22 bits (same as real HW) */
 }
-
-
-
-
-
