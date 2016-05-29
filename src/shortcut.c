@@ -17,7 +17,6 @@ const char ShortCut_fileid[] = "Hatari shortcut.c : " __DATE__ " " __TIME__;
 #include "floppy.h"
 #include "joy.h"
 #include "keymap.h"
-#include "m68000.h"
 #include "memorySnapShot.h"
 #include "reset.h"
 #include "screen.h"

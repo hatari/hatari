@@ -28,13 +28,12 @@ const char Screen_fileid[] = "Hatari screen.c : " __DATE__ " " __TIME__;
 
 #include <SDL.h>
 #include <SDL_endian.h>
+#include <assert.h>
 
 #include "main.h"
 #include "configuration.h"
 #include "avi_record.h"
-#include "ikbd.h"
 #include "log.h"
-#include "m68000.h"
 #include "paths.h"
 #include "options.h"
 #include "screen.h"
@@ -42,7 +41,6 @@ const char Screen_fileid[] = "Hatari screen.c : " __DATE__ " " __TIME__;
 #include "control.h"
 #include "convert/routines.h"
 #include "resolution.h"
-#include "sound.h"
 #include "spec512.h"
 #include "statusbar.h"
 #include "vdi.h"
