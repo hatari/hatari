@@ -133,7 +133,6 @@ static const char pszMouse[] = "big resolutions mouse driver";
 static const char pszRomCheck[] = "ROM checksum";
 static const char pszNoSteHw[] = "disable STE hardware access";
 static const char pszNoPmmu[] = "disable PMMU access";
-static const char pszHwDisable[] = "disable hardware access";
 static const char pszFix060[] = "replace code for 68060";
 static const char pszFalconExtraRAM[] = "enable extra TT RAM on Falcon";
 
