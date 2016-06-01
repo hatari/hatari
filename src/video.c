@@ -590,7 +590,8 @@ typedef struct
 
 	int	Preload_Start_Hi;		/*   0 (STE) */
 	int	H_Start_Hi;			/*   4 */
-	int	Blank_Stop_Low;			/*  30 */
+	int	Blank_Stop_Low_60;		/*  24 */
+	int	Blank_Stop_Low_50;		/*  28 */
 	int	Preload_Start_Low_60;		/*  36 (STE) */
 	int	H_Start_Low_60;			/*  52 */
 	int	Line_Set_Pal;			/*  54 */
@@ -811,7 +812,8 @@ void	Video_InitTimings(void)
 	/* Init all timings for WS1 mode */
 	strcpy ( pVideoTiming1->VideoTimingName , "WS1" );
 	pVideoTiming1->H_Start_Hi 		=   4;
-	pVideoTiming1->Blank_Stop_Low 		=  30;
+	pVideoTiming1->Blank_Stop_Low_60	=  24;
+	pVideoTiming1->Blank_Stop_Low_50	=  28;
 	pVideoTiming1->H_Start_Low_60 		=  52;
 	pVideoTiming1->Line_Set_Pal 		=  54;
 	pVideoTiming1->H_Start_Low_50 		=  56;
@@ -874,7 +876,8 @@ void	Video_InitTimings(void)
 	strcpy ( pVideoTiming1->VideoTimingName , "STE" );
 	pVideoTiming1->Preload_Start_Hi		=   0;
 	pVideoTiming1->H_Start_Hi 		=   4;
-	pVideoTiming1->Blank_Stop_Low 		=  28;
+	pVideoTiming1->Blank_Stop_Low_60	=  24;
+	pVideoTiming1->Blank_Stop_Low_50	=  28;
 	pVideoTiming1->Preload_Start_Low_60 	=  36;
 	pVideoTiming1->H_Start_Low_60 		=  52;
 	pVideoTiming1->Line_Set_Pal 		=  56;		/* check 56 ? */
@@ -929,7 +932,8 @@ static void	Video_InitTimings_Copy ( VIDEO_TIMING *pSrc , VIDEO_TIMING *pDest , 
 {
 	pDest->Preload_Start_Hi		= pSrc->Preload_Start_Hi + inc;
 	pDest->H_Start_Hi 		= pSrc->H_Start_Hi + inc;
-	pDest->Blank_Stop_Low 		= pSrc->Blank_Stop_Low + inc;
+	pDest->Blank_Stop_Low_60	= pSrc->Blank_Stop_Low_60 + inc;
+	pDest->Blank_Stop_Low_50	= pSrc->Blank_Stop_Low_50 + inc;
 	pDest->Preload_Start_Low_60	= pSrc->Preload_Start_Low_60 + inc;
 	pDest->H_Start_Low_60 		= pSrc->H_Start_Low_60 + inc;
 	pDest->Line_Set_Pal 		= pSrc->Line_Set_Pal + inc;
@@ -976,7 +980,8 @@ static void	Video_InitTimings_Round ( VIDEO_TIMING *pSrc )
 {
 	pSrc->Preload_Start_Hi &= 0xfffe;
 	pSrc->H_Start_Hi &= 0xfffe;
-	pSrc->Blank_Stop_Low &= 0xfffe;
+	pSrc->Blank_Stop_Low_60 &= 0xfffe;
+	pSrc->Blank_Stop_Low_50 &= 0xfffe;
 	pSrc->Preload_Start_Low_60 &= 0xfffe;
 	pSrc->H_Start_Low_60 &= 0xfffe;
 	pSrc->Line_Set_Pal &= 0xfffe;
@@ -2227,7 +2232,7 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	    }
 	  }
 
-	  else if ( ( FreqHz == VIDEO_71HZ ) && ( LineCycles <= 24 ) )
+	  else if ( ( FreqHz == VIDEO_71HZ ) && ( LineCycles <= pVideoTiming->Blank_Stop_Low_50 ) )
 	  {
 	    Freq_match_found = 1;
 	    HBL_Pos = pVideoTiming->Hbl_Int_Pos_Hi;		/* 220/224 */
@@ -2256,7 +2261,7 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	      ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = 0;
 	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "cancel remove left %d<->%d\n" , DE_start , DE_end );
 	    }
-	    if ( ( LineCycles <= 24 ) && ( BorderMask & ( BORDERMASK_BLANK | BORDERMASK_NO_DE ) )
+	    if ( ( LineCycles <= pVideoTiming->Blank_Stop_Low_50 ) && ( BorderMask & ( BORDERMASK_BLANK | BORDERMASK_NO_DE ) )
 		&& !( BorderMask & BORDERMASK_NO_COUNT ) )
 	    {
 	      BorderMask &= ~( BORDERMASK_BLANK | BORDERMASK_NO_DE );
@@ -2278,7 +2283,7 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	    nCyclesPerLine_new = CYCLES_PER_LINE_60HZ;
 	    DE_end = pVideoTiming->H_Stop_Low_60;		/* 372 */
 
-	    if ( LineCycles == LINE_EMPTY_CYCLE_71_STF )
+	    if ( LineCycles == pVideoTiming->Blank_Stop_Low_50 )
 	    {
 	      BorderMask |= BORDERMASK_BLANK;
 	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect blank line freq stf %d<->%d\n" , DE_start , DE_end );
