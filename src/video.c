@@ -1983,15 +1983,51 @@ static void Video_WriteToGlueShifterRes ( Uint8 Res )
  * is rather similar (on STE, GLUE and MMU chips were merged into the GST MCU chip
  * and we need to handle preload due to hscroll)
  *
- * As see on a real chip, freq and res registers are merged into a single
+ * As seen on a real chip, freq and res registers are merged into a single
  * state that can represent 3 values (50, 60 or 71 Hz).
  * The same method is used here, which means all comparisons are made relative to
  * the current video frequency (allowing for example to remove bottom border using
  * a switch to high resolution)
  */
 
+/*
+ * Examples of some common switches altering horizontal display start/end :
+ * - Remove left border : +26 bytes
+ *   This can be done with a hi/lo or a hi/med res switch between 504 and 8
+ * - Remove left border STE : +20 bytes
+ *   Switch back to lo/med should be at cycle 4
+ * - Start right border near middle of the line : -106 bytes
+ *   Switch to hi res just before the start of the right border in hi res, then go back to lo/med res
+ * - Empty line switching res on STF/STE : switch to hi res on cycle 28, then go back to med/lo res
+ *   This creates a 0 byte/blank line, the video counter won't change for this line
+ *   (used in Lemmings demo (part 2) in 'Nostalgic Demo' by Oxygene)
+ * - Empty line switching res on STF : switch to hi res just before the HBL (~502, hsync stop) then go back to lo/med res
+ *   Next HBL will be a 0 byte/blank line (used in 'No Buddies Land' and 'Delirious Demo IV / NGC')
+ * - Remove right border a second time after removing it a first time. Display will stop at cycle 512 instead of 460.
+ *   Switch to hi res at ~462 (hsync start); This removes left border on next line too (used in 'Enchanted Lands')
+ *   If right border was not removed, then we will get an empty line for the next HBL (used in 'Pax Plax Parralax' in 'Beyond' by Kruz)
+ * - Blank line switching freq on STF : switch to 60 Hz on cycle 28, then go back to 50 Hz before pal start (cycle 56)
+ *   This creates a blank line where no signal is displayed, but the video counter will still change for this line.
+ *   This blank line can be combined with left/right border changes (used in 'Overscan Demos - part 6' by Paulo Simoes and 'Closure' by Sync)
+ * - Add 2 bytes to left border : switch to 60 Hz before pos 52 to force an early start of the DE signal, then go back to 50 Hz.
+ *   Note that depending on where the 50 Hz switch is made the HBL signal will be at position 508 (60 Hz line) or 512 (50 Hz line)
+ *   Obtaining a +2 line with 512 cycles requires a 2 cycles precision and is "wakeup state" dependent
+ *    - If switch to 50 Hz is made at cycle 54 (requires 2 cycle precision), then the line will start 2 bytes earlier and will be 50 Hz (HBL at cycle 512)
+ *    - If switch to 50 Hz is made at cycle >= 56, then the line will start 2 bytes earlier and will be 60 Hz (HBL at cycle 508)
+ * - Empty line switching freq on STF : start the line in 50 Hz, change to 60 Hz at the exact place
+ *   where display is enabled in 50 Hz, then go back to 50 Hz.
+ *   This creates a 0 byte line (used in 'shforstv' by Paulo Simoes and 'Closure' by Sync)
+ * - Remove 2 bytes to the right : start the line in 50 Hz (pos 0 or 56) and change to 60 Hz before the position
+ *   where display is disabled in 60 Hz (optionally go back to 50 Hz after this position, but not necessary)
+ * - Remove right border : +44 bytes ; switch to 60 Hz at the position where the line ends in 50 Hz
+ *   Some programs don't switch back to 50 Hz immediately (Sync screen in 'SNY II', 'Closure' by Sync)
+ */
 
 /*
+  In Hatari, the state machine is updated only on every write to freq/res registers
+  (instead of doing it on every cycle as on real chip).
+  The following pseudo code should be equivalent to a state machine updated on
+  every cycle (but some rare cases/combinations could be missing)
 
   if ( freq == 71 & pos <= start_hi )
     match_found;
