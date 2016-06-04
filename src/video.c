@@ -2281,7 +2281,7 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	    {
 	      DE_end = pVideoTiming->H_Stop_Low_60;		/* 372 */
 	
-	      if ( LineCycles <= pVideoTiming->Blank_Stop_Low_50 )
+	      if ( ( LineCycles > pVideoTiming->Blank_Stop_Low_60 ) && ( LineCycles <= pVideoTiming->Blank_Stop_Low_50 ) )
 	      {
 		BorderMask |= BORDERMASK_BLANK;
 		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect blank line freq stf %d<->%d\n" , DE_start , DE_end );
