@@ -319,10 +319,7 @@ struct BlockDriverState {
 
     FILE *fhndl;
     void *opaque;
-
-    char filename[1024];
-    char backing_file[1024]; /* if non zero, the image is a diff of
-                                this file image */
+    off_t file_size;
     int media_changed;
 
     /* I/O stats (display with "info blockstats"). */
@@ -364,8 +361,7 @@ static inline void cpu_to_be16wu(uint16_t *p, uint16_t v)
  */
 static void bdrv_get_geometry(BlockDriverState *bs, uint64_t *nb_sectors_ptr)
 {
-	int64_t length;
-	length = File_Length(bs->filename);
+	off_t length = bs->file_size;
 
 	if (length < 0)
 		length = 0;
@@ -447,9 +443,9 @@ static int bdrv_read(BlockDriverState *bs, int64_t sector_num,
 	if (!bs->fhndl)
 		return -ENOMEDIUM;
 
-	len = nb_sectors * 512;
+	len = nb_sectors * SECTOR_SIZE;
 
-	if (fseeko(bs->fhndl, sector_num*512, SEEK_SET) != 0)
+	if (fseeko(bs->fhndl, sector_num * SECTOR_SIZE, SEEK_SET) != 0)
 	{
 		perror("bdrv_read");
 		return -errno;
@@ -485,9 +481,9 @@ static int bdrv_write(BlockDriverState *bs, int64_t sector_num,
 	if (bs->read_only)
 		return -EACCES;
 
-	len = nb_sectors * 512;
+	len = nb_sectors * SECTOR_SIZE;
 
-	if (fseeko(bs->fhndl, sector_num*512, SEEK_SET) != 0)
+	if (fseeko(bs->fhndl, sector_num * SECTOR_SIZE, SEEK_SET) != 0)
 	{
 		perror("bdrv_write");
 		return -errno;
@@ -511,13 +507,19 @@ static int bdrv_open(BlockDriverState *bs, const char *filename, int flags)
 {
 	Log_Printf(LOG_INFO, "Mounting IDE hard drive image %s\n", filename);
 
-	strlcpy(bs->filename, filename, sizeof(bs->filename));
-
 	bs->read_only = 0;
-	if (HDC_CheckAndGetSize(filename) <= 0)
+	bs->file_size = HDC_CheckAndGetSize(filename);
+	if (bs->file_size <= 0)
 		return -1;
-	bs->fhndl = fopen(filename, "rb+");
+	if (bs->file_size < 2 * 16 * 63 * SECTOR_SIZE)
+	{
+		Log_AlertDlg(LOG_ERROR, "IDE disk image size (%li bytes) is "
+		                        "too small for an IDE disk image "
+		                        "(min. 1032192 byte)", bs->file_size);
+		return -1;
+	}
 
+	bs->fhndl = fopen(filename, "rb+");
 	if (!bs->fhndl) {
 		/* Maybe the file is read-only? */
 		bs->fhndl = fopen(filename, "rb");
