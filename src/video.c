@@ -2361,7 +2361,6 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 //fprintf ( stderr , "pom0 %d-%d\n" , DE_start , DE_end );
 	/* If we found a match before DE_start, then there's no need */
 	/* to check between DE_start and DE_end */
-Freq_Test_Next:
 	if ( Freq_match_found )
 	  goto Freq_Test_Done;
 
@@ -2424,6 +2423,16 @@ Freq_Test_Next:
 	  LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect empty line res 2 sync high %d<->%d\n" , DE_start , DE_end );
 	}
 
+	else if ( FreqHz == VIDEO_71HZ )			/* rest of the line after HSync_Stop_Offset_Low */
+	{
+	  /* Next line will start as "remove left" by default (eg E605 by Light or DHS demos on STE) */
+	  ShifterFrame.ShifterLines[ HblCounterVideo+1 ].BorderMask |= BORDERMASK_LEFT_OFF;
+	  ShifterFrame.ShifterLines[ HblCounterVideo+1 ].DisplayStartCycle = pVideoTiming->H_Start_Hi;
+	  ShifterFrame.ShifterLines[ HblCounterVideo+1 ].DisplayEndCycle = pVideoTiming->H_Stop_Hi;
+	  ShifterFrame.ShifterLines[ HblCounterVideo+1 ].DisplayPixelShift = -4;		/* screen is shifted 4 pixels to the left */
+
+	  LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect remove left on next hbl %d<->%d\n" , DE_start , DE_end );
+	}
 
 	if ( ( FreqHz == VIDEO_60HZ ) && ( LineCycles <= DE_end ) && ( LineCycles <= pVideoTiming->H_Stop_Low_60 )	/* 372 */
 	  && !( BorderMask & BORDERMASK_NO_DE ) )
@@ -3296,6 +3305,8 @@ static void Video_StartHBL(void)
 		{
 			ShifterFrame.ShifterLines[ nHBL ].BorderMask |= BORDERMASK_LEFT_OFF;
 			ShifterFrame.ShifterLines[ nHBL ].DisplayPixelShift = -4;
+			LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect remove left %d<->%d\n" ,
+				ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle  , ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle );
 		}
 	}
 	else
@@ -3316,7 +3327,11 @@ static void Video_StartHBL(void)
 
 			/* If the whole screen is in 50 Hz, then this HBL will default to "left +2" */
 			if ( nScreenRefreshRate == VIDEO_50HZ )
+			{
 				ShifterFrame.ShifterLines[ nHBL ].BorderMask |= BORDERMASK_LEFT_PLUS_2;
+				LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect detect left+2 60Hz %d<->%d\n" ,
+					ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle  , ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle );
+			}
 		}
 
 		/* Handle accurate restart of video counter only in low/med res */
