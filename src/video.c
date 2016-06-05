@@ -394,7 +394,10 @@
 /*			Swedish New Year has a centered logo in WS2, Nostalgic demo main menu	*/
 /*			by Oxygene is correctly broken in WS2/4).				*/
 /* 2016/05/25	[NP]	Rewrite top/bottom border handling into Video_Update_Glue_State()	*/
-
+/* 2016/06/06	[NP]	Add preliminary support for STE timings in Video_Update_Glue_State().	*/
+/*			Similar to STF timings, with support for STE specific "left+20".	*/
+/*			(fix "We Were @" by Oxygene, "More or less 0", "Sea of colors" and more	*/
+/*			demos by DHS)								*/
 
 
 const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
@@ -2210,6 +2213,7 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	 * We need 2 different cases for ST and STE
 	 */
 
+	/*************** STF ***************/
 	if ( ConfigureParams.System.nMachineType == MACHINE_ST )
 	{
 	  if ( ( FreqHz == VIDEO_71HZ ) && ( LineCycles <= pVideoTiming->H_Start_Hi ) )
@@ -2353,9 +2357,157 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	  }
 	}
 
+	/*************** STE ***************/
 	else if ( ( ConfigureParams.System.nMachineType == MACHINE_STE )
 	    || ( ConfigureParams.System.nMachineType == MACHINE_MEGA_STE ) )
 	{
+	  if ( ( FreqHz == VIDEO_71HZ ) && ( LineCycles <= pVideoTiming->H_Start_Hi ) )
+	  {
+	    Freq_match_found = 1;
+	    HBL_Pos = pVideoTiming->Hbl_Int_Pos_Hi;		/* 220/224 */
+	    nCyclesPerLine_new = CYCLES_PER_LINE_71HZ;
+	    if ( !( BorderMask & BORDERMASK_NO_DE ) )
+	    {
+	      DE_start = pVideoTiming->H_Start_Hi;		/* 4 */
+	      DE_end = pVideoTiming->H_Stop_Hi;			/* 164 */
+
+	      BorderMask |= BORDERMASK_LEFT_OFF;
+	      ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = -4;		/* screen is shifted 4 pixels to the left */
+	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect remove left %d<->%d\n" , DE_start , DE_end );
+
+	      if ( BorderMask & BORDERMASK_LEFT_PLUS_2 )
+	      {
+		BorderMask &= ~BORDERMASK_LEFT_PLUS_2;
+		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "cancel left+2 %d<->%d\n" , DE_start , DE_end );
+	      }
+	    }
+	  }
+
+	  else if ( ( FreqHz == VIDEO_71HZ ) && ( LineCycles <= pVideoTiming->Blank_Stop_Low_50 ) )
+	  {
+	    Freq_match_found = 1;
+	    HBL_Pos = pVideoTiming->Hbl_Int_Pos_Hi;		/* 220/224 */
+	    nCyclesPerLine_new = CYCLES_PER_LINE_71HZ;
+	    if ( !( BorderMask & BORDERMASK_NO_DE ) )
+	    {
+	      DE_end = pVideoTiming->H_Stop_Hi;			/* 164 */
+
+	      BorderMask |= ( BORDERMASK_BLANK | BORDERMASK_NO_DE );
+	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect blank line no DE res stf %d<->%d\n" , DE_start , DE_end );
+	    }
+
+	    if ( BorderMask & BORDERMASK_LEFT_PLUS_2 )
+	    {
+	      BorderMask &= ~BORDERMASK_LEFT_PLUS_2;
+	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "cancel left+2 %d<->%d\n" , DE_start , DE_end );
+	    }
+	  }
+
+	  else if ( FreqHz != VIDEO_71HZ )
+	  {
+	    if ( ( LineCycles < pVideoTiming->H_Start_Hi ) && ( BorderMask & BORDERMASK_LEFT_OFF ) )
+	    {
+	      DE_start = FreqHz == VIDEO_50HZ ? pVideoTiming->H_Start_Low_50 : pVideoTiming->H_Start_Low_60;
+	      BorderMask &= ~BORDERMASK_LEFT_OFF;
+	      ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = 0;
+	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "cancel remove left %d<->%d\n" , DE_start , DE_end );
+	    }
+	    else if ( ( LineCycles == pVideoTiming->H_Start_Hi ) && ( BorderMask & BORDERMASK_LEFT_OFF ) )
+	    {
+	      DE_start = pVideoTiming->Preload_Start_Hi + 16;
+	      BorderMask &= ~BORDERMASK_LEFT_OFF;
+	      BorderMask |= BORDERMASK_LEFT_OFF_2_STE;
+	      ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = -8;		/* screen is shifted 8 pixels to the left */
+	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect remove left 2 ste %d<->%d\n" , DE_start , DE_end );
+	    }
+	    if ( ( LineCycles <= pVideoTiming->Blank_Stop_Low_50 ) && ( BorderMask & ( BORDERMASK_BLANK | BORDERMASK_NO_DE ) )
+		&& !( BorderMask & BORDERMASK_NO_COUNT ) )
+	    {
+	      BorderMask &= ~( BORDERMASK_BLANK | BORDERMASK_NO_DE );
+	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "cancel blank line no DE %d<->%d\n" , DE_start , DE_end );
+	    }
+	  }
+
+	  /* The line was in 50 Hz and continues in 60 Hz */
+	  if ( ( FreqHz == VIDEO_60HZ ) && ( LineCycles < pVideoTiming->Line_Set_Pal ) )
+	  {
+//fprintf ( stderr , "pom0a\n" );
+	    Freq_match_found = 1;
+	    HBL_Pos = pVideoTiming->Hbl_Int_Pos_Low_60;		/* 504/508 */
+	    nCyclesPerLine_new = CYCLES_PER_LINE_60HZ;
+	    if ( !( BorderMask & BORDERMASK_NO_DE ) )
+	    {
+	      DE_end = pVideoTiming->H_Stop_Low_60;		/* 372 */
+	
+	      if ( ( LineCycles > pVideoTiming->Blank_Stop_Low_60 ) && ( LineCycles <= pVideoTiming->Blank_Stop_Low_50 ) )
+	      {
+		BorderMask |= BORDERMASK_BLANK;
+		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect blank line freq stf %d<->%d\n" , DE_start , DE_end );
+	      }
+	
+	      if ( DE_start == pVideoTiming->H_Start_Low_50 )	/*  56 */
+	      {
+		DE_start = pVideoTiming->H_Start_Low_60;	/*  52 */
+	
+		BorderMask |= BORDERMASK_LEFT_PLUS_2;
+		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect left+2 60Hz %d<->%d\n" , DE_start , DE_end );
+	      }
+	    }
+	  }
+
+	  else if ( ( FreqHz == VIDEO_50HZ ) && ( LineCycles <= pVideoTiming->H_Start_Low_60 ) )
+	  {
+//fprintf ( stderr , "pom1a\n" );
+	    Freq_match_found = 1;
+	    HBL_Pos = pVideoTiming->Hbl_Int_Pos_Low_50;		/* 508/512 */
+	    nCyclesPerLine_new = CYCLES_PER_LINE_50HZ;
+	    if ( !( BorderMask & BORDERMASK_NO_DE ) )
+	    {
+	      DE_end = pVideoTiming->H_Stop_Low_50;		/* 376 */
+
+	      if ( DE_start == pVideoTiming->H_Start_Low_60 )	/*  52 */
+	      {
+		DE_start = pVideoTiming->H_Start_Low_50;	/*  56 */
+
+		if ( BorderMask & BORDERMASK_LEFT_PLUS_2 )
+		{
+		  BorderMask &= ~BORDERMASK_LEFT_PLUS_2;
+		  LOG_TRACE ( TRACE_VIDEO_BORDER_H , "cancel left+2 %d<->%d\n" , DE_start , DE_end );
+		}
+	      }
+	    }
+	  }
+
+	  else if ( ( FreqHz == VIDEO_50HZ ) && ( LineCycles <= pVideoTiming->Line_Set_Pal ) )
+	  {
+//fprintf ( stderr , "pom2a\n" );
+	    Freq_match_found = 1;
+	    HBL_Pos = pVideoTiming->Hbl_Int_Pos_Low_50;		/* 508/512 */
+	    nCyclesPerLine_new = CYCLES_PER_LINE_50HZ;
+	    if ( !( BorderMask & BORDERMASK_NO_DE ) )
+	    {
+	      DE_end = pVideoTiming->H_Stop_Low_50;		/* 376 */
+
+	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect left+2 50Hz %d<->%d\n" , DE_start , DE_end );
+	    }
+	  }
+
+	  if ( ( FreqHz == VIDEO_60HZ )
+	    && ( LineCycles > pVideoTiming->H_Start_Low_60 ) && ( LineCycles <= pVideoTiming->H_Start_Low_50 )
+	    && !( BorderMask & BORDERMASK_NO_DE ) )
+	  {
+	    Freq_match_found = 1;
+//fprintf ( stderr , "pom3a\n" );
+
+	    if ( DE_start == pVideoTiming->H_Start_Low_50 )	/*  56 */
+	    {
+	      DE_start = 0 ;
+	      DE_end = 0;
+
+	      BorderMask |= BORDERMASK_NO_DE;
+	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect line no DE freq stf %d<->%d\n" , DE_start , DE_end );
+	    }
+	  }
 	}
 
 
