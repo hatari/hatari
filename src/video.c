@@ -2190,7 +2190,8 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	/* GLUE will latch freq register 1 cycle later than res register */
 	/* To take this into account in our case, we subtract 1 cycle to the res write position */
 	/* that will be used for all the comparison in the state machine */
-	if ( WriteToRes )
+	if ( ( ConfigureParams.System.nMachineType == MACHINE_ST )
+	  && ( WriteToRes ) )
 		LineCycles--;
 
 
