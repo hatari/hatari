@@ -711,12 +711,15 @@ int HDC_PartitionCount(FILE *fp, const Uint64 tracelevel)
 off_t HDC_CheckAndGetSize(const char *filename)
 {
 	off_t filesize;
+	char shortname[48];
+
+	File_ShrinkName(shortname, filename, sizeof(shortname));
 
 	filesize = File_Length(filename);
 	if (filesize < 0)
 	{
-		Log_Printf(LOG_ERROR, "ERROR: unable to get HD image size of file '%s'!\n",
-		           filename);
+		Log_AlertDlg(LOG_ERROR, "Unable to get size of HD image file\n'%s'!",
+		             shortname);
 		if (sizeof(off_t) < 8)
 		{
 			Log_Printf(LOG_ERROR, "Note: This version of Hatari has been built"
@@ -727,14 +730,17 @@ off_t HDC_CheckAndGetSize(const char *filename)
 	}
 	if (filesize == 0)
 	{
-		Log_Printf(LOG_ERROR, "ERROR: Size of HD image file '%s' is empty.\n",
-		           filename);
+		Log_AlertDlg(LOG_ERROR, "Can not use HD image file\n'%s'\n"
+		                        "since the file is empty.",
+		             shortname);
 		return -EINVAL;
 	}
 	if ((filesize & 0x1ff) != 0)
 	{
-		Log_Printf(LOG_ERROR, "ERROR: HD image file '%s' has strange size!\n",
-		           filename);
+		Log_AlertDlg(LOG_ERROR, "Can not use the hard disk image file\n"
+		                        "'%s'\nsince its size is not a multiple"
+		                        " of 512.",
+		            shortname);
 		return -EINVAL;
 	}
 
