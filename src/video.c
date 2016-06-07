@@ -1639,16 +1639,30 @@ static void Video_WriteToGlueShifterRes ( Uint8 Res )
 	if ( ( ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask & BORDERMASK_LEFT_OFF )
 		&& ( Res == 0x00 ) && ( LineCycles == 20 )
 		&& ( ShifterFrame.ResPosHi.LineCycles == 4 )
-//		&& ( ShifterFrame.FreqPos50.LineCycles == 12 )
 		&& ( STMemory_ReadLong ( M68000_GetPC()-4 ) == 0x32883088 )	/* move.w a0,(a1) + move.w a0,(a0) */
 	   )
 	{
 		/* for now we simulate the same border as in ws1/3/4, but there's no med res in fact */
 		LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect remove left with no med stab closure ws2\n" );
 		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask = BORDERMASK_LEFT_OFF_MED;
-		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = 0;
+		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = 0;	/* see special case in Video_CopyScreenLineColor() */
 	}
 	/* TEMP for 'closure' in WS2 */
+
+	/* TEMP for 'closure' in STE mode */
+	/* -> stay in hi res for 16 cycles to do the stab (hi/50/lo at 0/8/16) */
+	if ( ( ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask & BORDERMASK_LEFT_OFF )
+		&& ( Res == 0x00 ) && ( LineCycles == 16 )
+		&& ( ShifterFrame.ResPosHi.LineCycles == 0 )
+		&& ( STMemory_ReadLong ( M68000_GetPC()-4 ) == 0x32883088 )	/* move.w a0,(a1) + move.w a0,(a0) */
+	   )
+	{
+		/* for now we simulate the same border as in ws1/3/4, but there's no med res in fact */
+		LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect remove left with no med stab closure ste\n" );
+		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask = BORDERMASK_LEFT_OFF_MED;
+		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = 0;	/* see special case in Video_CopyScreenLineColor() */
+	}
+	/* TEMP for 'closure' in STE mode */
 
 #endif
 
@@ -3794,14 +3808,26 @@ static void Video_CopyScreenLineColor(void)
 	/* Depending on the number of pixels, we need to compensate for some skipped words */
 	else if ( LineBorderMask & BORDERMASK_LEFT_OFF_MED )
 	{
+		/* TEMP for 'Closure' in STE : planes are shifted and pixels are not aligned */
+		if ( ( ConfigureParams.System.nMachineType == MACHINE_STE ) && ( STF_PixelScroll == 0 ) )
+		{
+			VideoOffset = -6;
+			STF_PixelScroll -= 10;					/* FIXME : should be measured on real STE */
+		}
+		/* TEMP for 'Closure' in STE : planes are shifted and pixels are not aligned */
+
+		else
+		{
 		if      ( STF_PixelScroll == 13 )	VideoOffset = 2;
 		else if ( STF_PixelScroll == 9 )	VideoOffset = 0;
 		else if ( STF_PixelScroll == 5 )	VideoOffset = -2;
 		else if ( STF_PixelScroll == 1 )	VideoOffset = -4;
-		else if ( STF_PixelScroll == 0 )	VideoOffset = -4;	/* 'Closure' : no 4 pixels scroll, but planes are shifted */
+		else if ( STF_PixelScroll == 0 )	VideoOffset = -4;	/* 'Closure' in STF : no 4 pixels scroll, but planes are shifted */
 		else					VideoOffset = 0;	/* never used ? */
 
 		STF_PixelScroll -= 8;					/* removing left border in med res also shifts display to the left */
+		}
+
 		// fprintf(stderr , "scr off %d %d\n" , STF_PixelScroll , VideoOffset);
 	}
 
