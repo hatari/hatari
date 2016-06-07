@@ -2072,11 +2072,22 @@ static void Video_WriteToGlueShifterRes ( Uint8 Res )
       if ( left+2 )
         cancel left+2;
 
+  else if ( freq == 71 & pos <= start_50 )
+    match_found;
+    hbl = 224:
+    if ( !no_de )
+      end = 164;
+      line no DE;
+      if ( left+2 )
+        cancel left+2;
+
   else if ( freq != 71 )
     if ( pos <= start_hi & remove left )
       cancel remove left;
     if ( pos <= blank_stop_50 & blank line no DE & !ignore line )
       cancel blank line no DE;
+    if ( pos <= start_50 & line no DE & !blank line & !ignore line )
+      cancel line no DE;
 
   if ( freq == 60  & pos < start_pal )
     match_found;
@@ -2274,6 +2285,26 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	    }
 	  }
 
+	  else if ( ( FreqHz == VIDEO_71HZ ) && ( LineCycles <= pVideoTiming->H_Start_Low_50 ) )
+	  {
+	    Freq_match_found = 1;
+	    HBL_Pos = pVideoTiming->Hbl_Int_Pos_Hi;		/* 220/224 */
+	    nCyclesPerLine_new = CYCLES_PER_LINE_71HZ;
+	    if ( !( BorderMask & BORDERMASK_NO_DE ) )
+	    {
+	      DE_end = pVideoTiming->H_Stop_Hi;			/* 164 */
+
+	      BorderMask |= BORDERMASK_NO_DE;
+	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect line no DE res stf %d<->%d\n" , DE_start , DE_end );
+	    }
+
+	    if ( BorderMask & BORDERMASK_LEFT_PLUS_2 )
+	    {
+	      BorderMask &= ~BORDERMASK_LEFT_PLUS_2;
+	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "cancel left+2 %d<->%d\n" , DE_start , DE_end );
+	    }
+	  }
+
 	  else if ( FreqHz != VIDEO_71HZ )
 	  {
 	    if ( ( LineCycles <= pVideoTiming->H_Start_Hi ) && ( BorderMask & BORDERMASK_LEFT_OFF ) )
@@ -2283,11 +2314,19 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	      ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = 0;
 	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "cancel remove left %d<->%d\n" , DE_start , DE_end );
 	    }
+
 	    if ( ( LineCycles <= pVideoTiming->Blank_Stop_Low_50 ) && ( BorderMask & ( BORDERMASK_BLANK | BORDERMASK_NO_DE ) )
 		&& !( BorderMask & BORDERMASK_NO_COUNT ) )
 	    {
 	      BorderMask &= ~( BORDERMASK_BLANK | BORDERMASK_NO_DE );
 	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "cancel blank line no DE %d<->%d\n" , DE_start , DE_end );
+	    }
+	    else if ( ( LineCycles <= pVideoTiming->H_Start_Low_50 ) && ( BorderMask & BORDERMASK_NO_DE ) && !( BorderMask & BORDERMASK_BLANK )
+		&& !( BorderMask & BORDERMASK_NO_COUNT ) )
+	    {
+	      /* we can cancel a "line no de", but not a "blank line no de" */
+	      BorderMask &= ~BORDERMASK_NO_DE;
+	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "cancel line no DE %d<->%d\n" , DE_start , DE_end );
 	    }
 	  }
 
@@ -2419,6 +2458,26 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	    }
 	  }
 
+	  else if ( ( FreqHz == VIDEO_71HZ ) && ( LineCycles <= pVideoTiming->Preload_Start_Low_50 ) )
+	  {
+	    Freq_match_found = 1;
+	    HBL_Pos = pVideoTiming->Hbl_Int_Pos_Hi;		/* 220/224 */
+	    nCyclesPerLine_new = CYCLES_PER_LINE_71HZ;
+	    if ( !( BorderMask & BORDERMASK_NO_DE ) )
+	    {
+	      DE_end = pVideoTiming->H_Stop_Hi;			/* 164 */
+
+	      BorderMask |= BORDERMASK_NO_DE;
+	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect line no DE res ste %d<->%d\n" , DE_start , DE_end );
+	    }
+
+	    if ( BorderMask & BORDERMASK_LEFT_PLUS_2 )
+	    {
+	      BorderMask &= ~BORDERMASK_LEFT_PLUS_2;
+	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "cancel left+2 %d<->%d\n" , DE_start , DE_end );
+	    }
+	  }
+
 	  else if ( FreqHz != VIDEO_71HZ )
 	  {
 	    if ( ( LineCycles < pVideoTiming->H_Start_Hi ) && ( BorderMask & BORDERMASK_LEFT_OFF ) )
@@ -2436,11 +2495,19 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	      ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = -8;		/* screen is shifted 8 pixels to the left */
 	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect remove left 2 ste %d<->%d\n" , DE_start , DE_end );
 	    }
+
 	    if ( ( LineCycles <= pVideoTiming->Blank_Stop_Low_50 ) && ( BorderMask & ( BORDERMASK_BLANK | BORDERMASK_NO_DE ) )
 		&& !( BorderMask & BORDERMASK_NO_COUNT ) )
 	    {
 	      BorderMask &= ~( BORDERMASK_BLANK | BORDERMASK_NO_DE );
 	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "cancel blank line no DE %d<->%d\n" , DE_start , DE_end );
+	    }
+	    else if ( ( LineCycles <= pVideoTiming->Preload_Start_Low_50 ) && ( BorderMask & BORDERMASK_NO_DE ) && !( BorderMask & BORDERMASK_BLANK )
+		&& !( BorderMask & BORDERMASK_NO_COUNT ) )
+	    {
+	      /* we can cancel a "line no de", but not a "blank line no de" */
+	      BorderMask &= ~BORDERMASK_NO_DE;
+	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "cancel line no DE %d<->%d\n" , DE_start , DE_end );
 	    }
 	  }
 
