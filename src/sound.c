@@ -668,7 +668,7 @@ static void	Ym2149_BuildVolumeTable(void)
 
 	/* Normalise/center the values (convert from u16 to s16) */
 	/* On STE/TT, we use YM_OUTPUT_LEVEL>>1 to avoid overflow with DMA sound */
-	if (Config_IsMachineSTE() || ConfigureParams.System.nMachineType == MACHINE_TT)
+	if (Config_IsMachineSTE() || Config_IsMachineTT())
 		YM2149_Normalise_5bit_Table ( ymout5_u16[0][0] , ymout5 , (YM_OUTPUT_LEVEL>>1) , YM_OUTPUT_CENTERED );
 	else
 		YM2149_Normalise_5bit_Table ( ymout5_u16[0][0] , ymout5 , YM_OUTPUT_LEVEL , YM_OUTPUT_CENTERED );

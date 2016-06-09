@@ -1028,7 +1028,7 @@ fprintf ( stderr , "Video_SetSystemTimings1 %d %d\n" , MachineType , Mode );
 	else if ( MachineType == MACHINE_TT )
 		VideoTiming = VIDEO_TIMING_TT;			/* Only one choice for TT (same values as STE) */
 
-	else							/* 4 wakeup states are possible for STF */
+	else if ( ( MachineType == MACHINE_ST ) || ( MachineType == MACHINE_MEGA_ST ) )	/* 4 wakeup states are possible for STF */
 	{
 		if ( Mode == VIDEO_TIMING_MODE_RANDOM )
 			Mode = VIDEO_TIMING_MODE_WS1 + rand() % 4;	/* random between the 4 modes WS1, WS2, WS3, WS4 */
@@ -2214,8 +2214,8 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	/* GLUE will latch freq register 1 cycle later than res register */
 	/* To take this into account in our case, we subtract 1 cycle to the res write position */
 	/* that will be used for all the comparison in the state machine */
-	if ( ( ConfigureParams.System.nMachineType == MACHINE_ST )
-	  && ( WriteToRes ) )
+	/* (this is not the case for the STE GST MCU) */
+	if ( Config_IsMachineST() && WriteToRes )
 		LineCycles--;
 
 
@@ -2235,7 +2235,7 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	 */
 
 	/*************** STF ***************/
-	if ( ConfigureParams.System.nMachineType == MACHINE_ST )
+	if ( Config_IsMachineST() )
 	{
 	  if ( ( FreqHz == VIDEO_71HZ ) && ( LineCycles <= pVideoTiming->H_Start_Hi ) )
 	  {
@@ -2407,8 +2407,7 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	}
 
 	/*************** STE ***************/
-	else if ( ( ConfigureParams.System.nMachineType == MACHINE_STE )
-	    || ( ConfigureParams.System.nMachineType == MACHINE_MEGA_STE ) )
+	else if ( Config_IsMachineSTE() )
 	{
 	  if ( ( FreqHz == VIDEO_71HZ ) && ( LineCycles <= pVideoTiming->H_Start_Hi ) )
 	  {
@@ -3834,7 +3833,7 @@ static void Video_CopyScreenLineColor(void)
 	/* to correct to have bitmaps and color changes in sync. */
 	/* For now we only shift for med @ 60 Hz, but this should be measured for all */
 	/* freq and low / med res combinations on a real STE (fix "HighResMode" demo by Paradox). */
-	if ( ( ConfigureParams.System.nMachineType == MACHINE_STE )
+	if ( Config_IsMachineSTE()
 	  && ( LineBorderMask & BORDERMASK_LEFT_OFF_MED )
 	  && ( nCyclesPerLine == 508 )
 	  )
@@ -3870,7 +3869,7 @@ static void Video_CopyScreenLineColor(void)
 	else if ( LineBorderMask & BORDERMASK_LEFT_OFF_MED )
 	{
 		/* TEMP for 'Closure' in STE : planes are shifted and pixels are not aligned */
-		if ( ( ConfigureParams.System.nMachineType == MACHINE_STE ) && ( STF_PixelScroll == 0 ) )
+		if ( Config_IsMachineSTE() && ( STF_PixelScroll == 0 ) )
 		{
 			VideoOffset = -6;
 			STF_PixelScroll -= 10;					/* FIXME : should be measured on real STE */
