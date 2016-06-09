@@ -157,6 +157,18 @@ void check_prefs_changed_cpu(void)
 
 
 /**
+ * Check whether PC is currently in ROM cartridge space - used
+ * to test whether our "illegal" Hatari opcodes should be handled
+ * or whether they are just "normal" illegal opcodes.
+ */
+static bool is_cart_pc(void)
+{
+	Uint32 pc = M68000_GetPC() & 0x00ffffff;
+	return pc >= 0xfa0000 && pc < 0xfc0000;
+}
+
+
+/**
  * This function will be called at system init by the cartridge routine
  * (after gemdos init, before booting floppies).
  * The GEMDOS vector (#$84) is setup and we also initialize the connected
@@ -164,13 +176,13 @@ void check_prefs_changed_cpu(void)
  */
 unsigned long OpCode_SysInit(uae_u32 opcode)
 {
-	/* Add any drives mapped by TOS in the interim */
-	ConnectedDriveMask |= STMemory_ReadLong(0x4c2);
-	/* Initialize the connected drive mask */
-	STMemory_WriteLong(0x4c2, ConnectedDriveMask);
-
-	if (!bInitGemDOS)
+	if (is_cart_pc())
 	{
+		/* Add any drives mapped by TOS in the interim */
+		ConnectedDriveMask |= STMemory_ReadLong(0x4c2);
+		/* Initialize the connected drive mask */
+		STMemory_WriteLong(0x4c2, ConnectedDriveMask);
+
 		/* Init on boot - see cart.c */
 		GemDOS_Boot();
 
@@ -178,9 +190,18 @@ unsigned long OpCode_SysInit(uae_u32 opcode)
 		 * D0: LineA base, A1: Font base
 		 */
 		VDI_LineA(regs.regs[0], regs.regs[9]);
+
+		CpuDoNOP ();
+	}
+	else
+	{
+		LOG_TRACE(TRACE_OS_GEMDOS | TRACE_OS_BASE | TRACE_OS_VDI | TRACE_OS_AES,
+			  "SYSINIT opcode invoked outside of cartridge space\n");
+		/* illegal instruction */
+		op_illg(opcode);
+		fill_prefetch_0();
 	}
 
-	CpuDoNOP ();
 	return 4;
 }
 
@@ -191,9 +212,19 @@ unsigned long OpCode_SysInit(uae_u32 opcode)
  */
 unsigned long OpCode_GemDos(uae_u32 opcode)
 {
-	GemDOS_OpCode();    /* handler code in gemdos.c */
+	if (is_cart_pc())
+	{
+		GemDOS_OpCode();    /* handler code in gemdos.c */
+		CpuDoNOP();
+	}
+	else
+	{
+		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS opcode invoked outside of cartridge space\n");
+		/* illegal instruction */
+		op_illg(opcode);
+		fill_prefetch_0();
+	}
 
-	CpuDoNOP ();
 	return 4;
 }
 
@@ -203,10 +234,8 @@ unsigned long OpCode_GemDos(uae_u32 opcode)
  */
 unsigned long OpCode_VDI(uae_u32 opcode)
 {
-	Uint32 pc = M68000_GetPC();
-
 	/* this is valid only after VDI trap, called from cartridge code */
-	if (VDI_OldPC && pc >= 0xfa0000 && pc < 0xfc0000)
+	if (VDI_OldPC && is_cart_pc())
 	{
 		VDI_Complete();
 
@@ -216,6 +245,7 @@ unsigned long OpCode_VDI(uae_u32 opcode)
 	}
 	else
 	{
+		LOG_TRACE(TRACE_OS_VDI, "VDI opcode invoked outside of cartridge space\n");
 		/* illegal instruction */
 		op_illg(opcode);
 	}

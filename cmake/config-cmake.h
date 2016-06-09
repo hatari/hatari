@@ -34,8 +34,17 @@
 /* Define to 1 if you have the <SDL_config.h> header file. */
 #cmakedefine HAVE_SDL_CONFIG_H 1
 
+/* Define to 1 if you have the <sys/time.h> header file. */
+#cmakedefine HAVE_SYS_TIME_H 1
+
 /* Define to 1 if you have the <sys/times.h> header file. */
 #cmakedefine HAVE_SYS_TIMES_H 1
+
+/* Define to 1 if you have the <utime.h> header file. */
+#cmakedefine HAVE_UTIME_H 1
+
+/* Define to 1 if you have the <sys/utime.h> header file. */
+#cmakedefine HAVE_SYS_UTIME_H 1
 
 /* Define to 1 if you have the `cfmakeraw' function. */
 #cmakedefine HAVE_CFMAKERAW 1
@@ -48,12 +57,6 @@
 
 /* Define to 1 if you have unix domain sockets */
 #cmakedefine HAVE_UNIX_DOMAIN_SOCKETS 1
-
-/* Define to 1 if you have the 'posix_memalign' function. */
-#cmakedefine HAVE_POSIX_MEMALIGN 1
-
-/* Define to 1 if you have the 'memalign' function. */
-#cmakedefine HAVE_MEMALIGN 1
 
 /* Define to 1 if you have the 'gettimeofday' function. */
 #cmakedefine HAVE_GETTIMEOFDAY 1

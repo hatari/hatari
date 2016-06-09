@@ -13,13 +13,12 @@
 const char Memory_fileid[] = "Hatari memory.c : " __DATE__ " " __TIME__;
 
 #include <SDL.h>
-#include "config.h"
+#include "main.h"
 #include "sysdeps.h"
 #include "hatari-glue.h"
 #include "maccess.h"
 #include "memory.h"
 
-#include "main.h"
 #include "tos.h"
 #include "ide.h"
 #include "ioMem.h"
@@ -159,8 +158,6 @@ int addr_valid (const TCHAR *txt, uaecptr addr, uae_u32 len)
 	}
 	return 1;
 }
-
-static int illegal_count;
 
 static uae_u32 REGPARAM3 dummy_lget (uaecptr) REGPARAM;
 static uae_u32 REGPARAM3 dummy_wget (uaecptr) REGPARAM;
@@ -1281,7 +1278,6 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
 {
     int 	addr;
 
-    currprefs.address_space_24 = ConfigureParams.System.bAddressSpace24;	/* temp, do it in m68000.c */
     last_address_space_24 = currprefs.address_space_24;
 
     STmem_size = (nNewSTMemSize + 65535) & 0xFFFF0000;
@@ -1356,11 +1352,10 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
     /* Handle extra RAM on TT and Falcon starting at 0x1000000 and up to 0x80000000 */
     /* This requires the CPU to use 32 bit addressing */
     TTmemory = NULL;
-    if ( ConfigureParams.System.bAddressSpace24 == false )
+    if (!currprefs.address_space_24)
     {
-	/* If there's no extra RAM on a TT, region 0x01000000 - 0x80000000 (2047 MB) must return bus errors */
-	if ( ConfigureParams.System.nMachineType == MACHINE_TT )
-	    map_banks_ce ( &BusErrMem_bank, TTmem_start >> 16, ( TTmem_end - TTmem_start ) >> 16, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
+	/* If there's no Fast-RAM, region 0x01000000 - 0x80000000 (2047 MB) must return bus errors */
+	map_banks_ce ( &BusErrMem_bank, TTmem_start >> 16, ( TTmem_end - TTmem_start ) >> 16, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
 
 	if ( TTmem_size > 0 )
 	{
@@ -1422,14 +1417,12 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
     /* Illegal memory regions cause a bus error on the ST: */
     map_banks_ce(&BusErrMem_bank, 0xF10000 >> 16, 0x9, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
 
-
-    /* If MMU is disabled on TT/Falcon and we use full 32 bit addressing */
-    /* then we remap memory 00xxxxxx to FFxxxxxx (as a minimal replacement */
-    /* for the MMU's tables). Else, we get some crashes when booting TOS 3 and 4 */
-    if ( ( ConfigureParams.System.bAddressSpace24 == false )
-      && ( ConfigureParams.System.bMMU == false )
-      && ( ( ConfigureParams.System.nMachineType == MACHINE_TT )
-	|| ( ConfigureParams.System.nMachineType == MACHINE_FALCON ) ) )
+    /* According to the "Atari TT030 Hardware Reference Manual", the
+     * lowest 16 MBs (i.e. the 24-bit address space) are always mirrored
+     * to 0xff000000, so we remap memory 00xxxxxx to FFxxxxxx here. If not,
+     * we'd get some crashes when booting TOS 3 and 4 (e.g. both TOS 3.06
+     * and TOS 4.04 touch 0xffff8606 before setting up the MMU tables) */
+    if (!currprefs.address_space_24)
     {
       /* Copy all 256 banks 0x0000-0x00FF to banks 0xFF00-0xFFFF */
       for ( addr=0x0 ; addr<=0x00ffffff ; addr+=0x10000 )

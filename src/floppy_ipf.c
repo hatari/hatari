@@ -53,9 +53,9 @@ typedef struct
 
 	bool			DriveEnabled[ MAX_FLOPPYDRIVES ];/* Is drive ON or OFF */
 	bool			DoubleSided[ MAX_FLOPPYDRIVES ];/* Is drive double sided or not */
+#endif
 
 	Sint64			FdcClock;			/* Current value of CyclesGlobalClockCounter */
-#endif
 } IPF_STRUCT;
 
 

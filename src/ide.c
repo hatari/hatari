@@ -130,7 +130,7 @@ uae_u32 Ide_Mem_wget(uaecptr addr)
 		return -1;
 	}
 
-	if (addr == 0xf00000)
+	if (addr == 0xf00000 || addr == 0xf00002)
 	{
 		retval = ide_data_readw(opaque_ide_if, 0);
 	}
@@ -226,7 +226,7 @@ void Ide_Mem_wput(uaecptr addr, uae_u32 val)
 		return;
 	}
 
-	if (addr == 0xf00000)
+	if (addr == 0xf00000 || addr == 0xf00002)
 	{
 		ide_data_writew(opaque_ide_if, 0, val);
 	}
@@ -319,10 +319,7 @@ struct BlockDriverState {
 
     FILE *fhndl;
     void *opaque;
-
-    char filename[1024];
-    char backing_file[1024]; /* if non zero, the image is a diff of
-                                this file image */
+    off_t file_size;
     int media_changed;
 
     /* I/O stats (display with "info blockstats"). */
@@ -347,46 +344,6 @@ static inline void cpu_to_be16wu(uint16_t *p, uint16_t v)
 }
 
 
-#if defined(WIN32)
-
-/* Remove possible conflicting TCHAR declaration from cpu/compat.h */
-#undef TCHAR
-
-#include <windows.h>
-
-static void *qemu_memalign(size_t alignment, size_t size)
-{
-    return VirtualAlloc(NULL, size, MEM_COMMIT, PAGE_READWRITE);
-}
-
-static void qemu_free(void *ptr)
-{
-    VirtualFree(ptr, 0, MEM_RELEASE);
-}
-
-#else
-
-static void *qemu_memalign(size_t alignment, size_t size)
-{
-#if HAVE_POSIX_MEMALIGN
-	int ret;
-	void *ptr;
-	ret = posix_memalign(&ptr, alignment, size);
-	if (ret != 0)
-		return NULL;
-	return ptr;
-#elif HAVE_MEMALIGN
-	return memalign(alignment, size);
-#else
-	return valloc(size);
-#endif
-}
-
-#define qemu_free free
-
-#endif
-
-
 #define le32_to_cpu SDL_SwapLE32
 #define le16_to_cpu SDL_SwapLE16
 #define cpu_to_le32 SDL_SwapLE32
@@ -404,8 +361,7 @@ static void *qemu_memalign(size_t alignment, size_t size)
  */
 static void bdrv_get_geometry(BlockDriverState *bs, uint64_t *nb_sectors_ptr)
 {
-	int64_t length;
-	length = File_Length(bs->filename);
+	off_t length = bs->file_size;
 
 	if (length < 0)
 		length = 0;
@@ -487,9 +443,9 @@ static int bdrv_read(BlockDriverState *bs, int64_t sector_num,
 	if (!bs->fhndl)
 		return -ENOMEDIUM;
 
-	len = nb_sectors * 512;
+	len = nb_sectors * SECTOR_SIZE;
 
-	if (fseeko(bs->fhndl, sector_num*512, SEEK_SET) != 0)
+	if (fseeko(bs->fhndl, sector_num * SECTOR_SIZE, SEEK_SET) != 0)
 	{
 		perror("bdrv_read");
 		return -errno;
@@ -525,9 +481,9 @@ static int bdrv_write(BlockDriverState *bs, int64_t sector_num,
 	if (bs->read_only)
 		return -EACCES;
 
-	len = nb_sectors * 512;
+	len = nb_sectors * SECTOR_SIZE;
 
-	if (fseeko(bs->fhndl, sector_num*512, SEEK_SET) != 0)
+	if (fseeko(bs->fhndl, sector_num * SECTOR_SIZE, SEEK_SET) != 0)
 	{
 		perror("bdrv_write");
 		return -errno;
@@ -551,12 +507,19 @@ static int bdrv_open(BlockDriverState *bs, const char *filename, int flags)
 {
 	Log_Printf(LOG_INFO, "Mounting IDE hard drive image %s\n", filename);
 
-	strlcpy(bs->filename, filename, sizeof(bs->filename));
-
 	bs->read_only = 0;
+	bs->file_size = HDC_CheckAndGetSize(filename);
+	if (bs->file_size <= 0)
+		return -1;
+	if (bs->file_size < 2 * 16 * 63 * SECTOR_SIZE)
+	{
+		Log_AlertDlg(LOG_ERROR, "IDE disk image size (%li bytes) is "
+		                        "too small for an IDE disk image "
+		                        "(min. 1032192 byte)", bs->file_size);
+		return -1;
+	}
 
 	bs->fhndl = fopen(filename, "rb+");
-
 	if (!bs->fhndl) {
 		/* Maybe the file is read-only? */
 		bs->fhndl = fopen(filename, "rb");
@@ -2511,7 +2474,7 @@ struct partition
 	uint8_t end_cyl;		/* end cylinder */
 	uint32_t start_sect;	/* starting sector counting from 0 */
 	uint32_t nr_sects;		/* nr of sectors in partition */
-} __attribute__((packed));
+};
 
 /* try to guess the disk logical geometry from the MSDOS partition table. Return 0 if OK, -1 if could not guess */
 static int guess_disk_lchs(IDEState *s,
@@ -2522,19 +2485,19 @@ static int guess_disk_lchs(IDEState *s,
 	struct partition *p;
 	uint32_t nr_sects;
 
-	buf = qemu_memalign(512, 512);
+	buf = malloc(SECTOR_SIZE);
 	if (buf == NULL)
 		return -1;
 	ret = bdrv_read(s->bs, 0, buf, 1);
 	if (ret < 0)
 	{
-		qemu_free(buf);
+		free(buf);
 		return -1;
 	}
 	/* test msdos magic */
 	if (buf[510] != 0x55 || buf[511] != 0xaa)
 	{
-		qemu_free(buf);
+		free(buf);
 		return -1;
 	}
 	for (i = 0; i < 4; i++)
@@ -2557,11 +2520,11 @@ static int guess_disk_lchs(IDEState *s,
 			*pcylinders = cylinders;
 			LOG_TRACE(TRACE_IDE, "IDE: guessed geometry LCHS=%d %d %d\n",
 			       cylinders, heads, sectors);
-			qemu_free(buf);
+			free(buf);
 			return 0;
 		}
 	}
-	qemu_free(buf);
+	free(buf);
 	return -1;
 }
 
@@ -2576,7 +2539,7 @@ static void ide_init2(IDEState *ide_state, BlockDriverState *hd0,
 	for (i = 0; i < 2; i++)
 	{
 		s = ide_state + i;
-		s->io_buffer = qemu_memalign(512, MAX_MULT_SECTORS*512 + 4);
+		s->io_buffer = malloc(MAX_MULT_SECTORS * 512 + 4);
 		assert(s->io_buffer);
 		if (i == 0)
 			s->bs = hd0;
@@ -2676,13 +2639,11 @@ void Ide_Init(void)
 	if (!ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
 		return;
 
-	opaque_ide_if = malloc(sizeof(IDEState) * 2);
+	opaque_ide_if = calloc(2, sizeof(IDEState));
 	hd_table[0] = malloc(sizeof(BlockDriverState));
 	hd_table[1] = malloc(sizeof(BlockDriverState));
 
 	assert(opaque_ide_if && hd_table[0] && hd_table[1]);
-
-	memset(opaque_ide_if, 0, sizeof(IDEState) * 2);
 
 	memset(hd_table[0], 0, sizeof(BlockDriverState));
 	memset(hd_table[1], 0, sizeof(BlockDriverState));

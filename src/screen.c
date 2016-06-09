@@ -28,13 +28,12 @@ const char Screen_fileid[] = "Hatari screen.c : " __DATE__ " " __TIME__;
 
 #include <SDL.h>
 #include <SDL_endian.h>
+#include <assert.h>
 
 #include "main.h"
 #include "configuration.h"
 #include "avi_record.h"
-#include "ikbd.h"
 #include "log.h"
-#include "m68000.h"
 #include "paths.h"
 #include "options.h"
 #include "screen.h"
@@ -42,7 +41,6 @@ const char Screen_fileid[] = "Hatari screen.c : " __DATE__ " " __TIME__;
 #include "control.h"
 #include "convert/routines.h"
 #include "resolution.h"
-#include "sound.h"
 #include "spec512.h"
 #include "statusbar.h"
 #include "vdi.h"
@@ -193,7 +191,6 @@ static void Screen_SetDrawFunctions(int nBitCount, bool bDoubleLowRes)
 		else
 			ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_320x16Bit;
 		ScreenDrawFunctionsNormal[ST_MEDIUM_RES] = ConvertMediumRes_640x16Bit;
-		ScreenDrawFunctionsNormal[ST_HIGH_RES] = Screen_ConvertHighRes;
 	}
 	else /* Assume 32 bit drawing functions */
 	{
@@ -203,7 +200,6 @@ static void Screen_SetDrawFunctions(int nBitCount, bool bDoubleLowRes)
 		else
 			ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_320x32Bit;
 		ScreenDrawFunctionsNormal[ST_MEDIUM_RES] = ConvertMediumRes_640x32Bit;
-		ScreenDrawFunctionsNormal[ST_HIGH_RES] = Screen_ConvertHighRes;
 	}
 }
 
@@ -262,8 +258,7 @@ static void Screen_SetSTScreenOffsets(void)
  */
 static bool Screen_UseGenConvScreen(void)
 {
-	return ConfigureParams.System.nMachineType == MACHINE_FALCON
-		|| ConfigureParams.System.nMachineType == MACHINE_TT
+	return Config_IsMachineFalcon() || Config_IsMachineTT()
 		|| bUseHighRes || bUseVDIRes;
 }
 
@@ -496,11 +491,11 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 	return true;
 }
 
-/*-----------------------------------------------------------------------*/
+
 /**
- * Initialize SDL screen surface / set resolution.
+ * Initialize ST/STE screen resolution.
  */
-static void Screen_SetResolution(bool bForceChange)
+static void Screen_SetSTResolution(bool bForceChange)
 {
 	int Width, Height, nZoom, SBarHeight, BitCount, maxW, maxH;
 	bool bDoubleLowRes = false;
@@ -514,69 +509,60 @@ static void Screen_SetResolution(bool bForceChange)
 	nScreenZoomX = 1;
 	nScreenZoomY = 1;
 
-	/* Determine which resolution to use */
-	if (bUseVDIRes)
+	if (STRes == ST_LOW_RES)
 	{
-		Width = VDIWidth;
-		Height = VDIHeight;
+		Width = 320;
+		Height = 200;
+		nZoom = 1;
 	}
-	else
+	else    /* else use 640x400, also for med-rez */
 	{
-		if (STRes == ST_LOW_RES)
- 		{
- 			Width = 320;
- 			Height = 200;
-			nZoom = 1;
- 		}
-		else    /* else use 640x400, also for med-rez */
- 		{
- 			Width = 640;
- 			Height = 400;
-			nZoom = 2;
- 		}
+		Width = 640;
+		Height = 400;
+		nZoom = 2;
+	}
 
-		/* Statusbar height for doubled screen size */
-		SBarHeight = Statusbar_GetHeightForSize(640, 400);
+	/* Statusbar height for doubled screen size */
+	SBarHeight = Statusbar_GetHeightForSize(640, 400);
 
-		Resolution_GetLimits(&maxW, &maxH, &BitCount, Screen_WantToKeepResolution());
+	Resolution_GetLimits(&maxW, &maxH, &BitCount, Screen_WantToKeepResolution());
 
-		/* Zoom if necessary, factors used for scaling mouse motions */
-		if (STRes == ST_LOW_RES &&
-		    2*Width <= maxW && 2*Height+SBarHeight <= maxH)
-		{
-			nZoom = 2;
-			Width *= 2;
-			Height *= 2;
-			nScreenZoomX = 2;
-			nScreenZoomY = 2;
-			bDoubleLowRes = true;
-		}
-		else if (STRes == ST_MEDIUM_RES)
-		{
-			/* med-rez conversion functions want always
-			 * to double vertically, they don't support
-			 * skipping that (only leaving doubled lines
-			 * black for the TV mode).
-			 */
-			nScreenZoomX = 1;
-			nScreenZoomY = 2;
- 		}
+	/* Zoom if necessary, factors used for scaling mouse motions */
+	if (STRes == ST_LOW_RES &&
+	    2*Width <= maxW && 2*Height+SBarHeight <= maxH)
+	{
+		nZoom = 2;
+		Width *= 2;
+		Height *= 2;
+		nScreenZoomX = 2;
+		nScreenZoomY = 2;
+		bDoubleLowRes = true;
+	}
+	else if (STRes == ST_MEDIUM_RES)
+	{
+		/* med-rez conversion functions want always
+		 * to double vertically, they don't support
+		 * skipping that (only leaving doubled lines
+		 * black for the TV mode).
+		 */
+		nScreenZoomX = 1;
+		nScreenZoomY = 2;
+	}
 
-		/* Adjust width/height for overscan borders, if mono or VDI we have no overscan */
-		if (ConfigureParams.Screen.bAllowOverscan && !bUseHighRes)
-		{
-			int leftX = maxW - Width;
-			int leftY = maxH - (Height + Statusbar_GetHeightForSize(Width, Height));
+	/* Adjust width/height for overscan borders, if mono or VDI we have no overscan */
+	if (ConfigureParams.Screen.bAllowOverscan && !bUseHighRes)
+	{
+		int leftX = maxW - Width;
+		int leftY = maxH - (Height + Statusbar_GetHeightForSize(Width, Height));
 
-			Screen_SetBorderPixels(leftX/nZoom, leftY/nZoom);
-			DEBUGPRINT(("resolution limit:\n\t%d x %d\nlimited resolution:\n\t", maxW, maxH));
-			DEBUGPRINT(("%d * (%d + %d + %d) x (%d + %d + %d)\n", nZoom,
-				    nBorderPixelsLeft, Width/nZoom, nBorderPixelsRight,
-				    nBorderPixelsTop, Height/nZoom, nBorderPixelsBottom));
-			Width += (nBorderPixelsRight + nBorderPixelsLeft)*nZoom;
-			Height += (nBorderPixelsTop + nBorderPixelsBottom)*nZoom;
-			DEBUGPRINT(("\t= %d x %d (+ statusbar)\n", Width, Height));
-		}
+		Screen_SetBorderPixels(leftX/nZoom, leftY/nZoom);
+		DEBUGPRINT(("resolution limit:\n\t%d x %d\nlimited resolution:\n\t", maxW, maxH));
+		DEBUGPRINT(("%d * (%d + %d + %d) x (%d + %d + %d)\n", nZoom,
+			    nBorderPixelsLeft, Width/nZoom, nBorderPixelsRight,
+			    nBorderPixelsTop, Height/nZoom, nBorderPixelsBottom));
+		Width += (nBorderPixelsRight + nBorderPixelsLeft)*nZoom;
+		Height += (nBorderPixelsTop + nBorderPixelsBottom)*nZoom;
+		DEBUGPRINT(("\t= %d x %d (+ statusbar)\n", Width, Height));
 	}
 
 	Screen_SetSTScreenOffsets();  
@@ -618,6 +604,56 @@ static void Screen_SetResolution(bool bForceChange)
 	Screen_SetDrawFunctions(sdlscrn->format->BitsPerPixel, bDoubleLowRes);
 
 	Screen_SetFullUpdate();           /* Cause full update of screen */
+}
+
+
+/**
+ * Change resolution, according to the machine and display type
+ * that we're currently emulating.
+ */
+static void Screen_ChangeResolution(bool bForceChange)
+{
+	int hbpp = ConfigureParams.Screen.nForceBpp;
+
+	if (bUseVDIRes)
+	{
+		Screen_SetGenConvSize(VDIWidth, VDIHeight, hbpp, bForceChange);
+	}
+	else if (Config_IsMachineFalcon())
+	{
+		VIDEL_ZoomModeChanged(bForceChange);
+	}
+	else if (Config_IsMachineTT())
+	{
+		int width, height, bpp;
+		Video_GetTTRes(&width, &height, &bpp);
+		Screen_SetGenConvSize(width, height, hbpp, bForceChange);
+	}
+	else if (bUseHighRes)
+	{
+		Screen_SetGenConvSize(640, 400, hbpp, bForceChange);
+	}
+	else
+	{
+		Screen_SetSTResolution(bForceChange);
+	}
+
+	if (bInFullScreen || bGrabMouse)
+		SDL_WM_GrabInput(SDL_GRAB_ON);
+	else
+		SDL_WM_GrabInput(SDL_GRAB_OFF);
+}
+
+
+/**
+ * Change the resolution - but only if it was already initialized before
+ */
+void Screen_ModeChanged(bool bForceChange)
+{
+	if (sdlscrn)	/* Do it only if we're already up and running */
+	{
+		Screen_ChangeResolution(bForceChange);
+	}
 }
 
 
@@ -665,10 +701,8 @@ void Screen_Init(void)
 
 	/* Set initial window resolution */
 	bInFullScreen = ConfigureParams.Screen.bFullScreen;
-	Screen_SetResolution(false);
-
-	if (bGrabMouse)
-		SDL_WM_GrabInput(SDL_GRAB_ON);
+	Screen_ChangeResolution(false);
+	ScreenDrawFunctionsNormal[ST_HIGH_RES] = Screen_ConvertHighRes;
 
 	Video_SetScreenRasters();                       /* Set rasters ready for first screen */
 
@@ -770,11 +804,11 @@ static void Screen_Refresh(void)
 		Screen_GenDraw(VideoBase, VDIWidth, VDIHeight, VDIPlanes,
 		               VDIWidth * VDIPlanes / 16, 0, 0, 0, 0);
 	}
-	else if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+	else if (Config_IsMachineFalcon())
 	{
 		VIDEL_renderScreen();
 	}
-	else if (ConfigureParams.System.nMachineType == MACHINE_TT)
+	else if (Config_IsMachineTT())
 	{
 		Video_RenderTTScreen();
 	}
@@ -808,7 +842,7 @@ void Screen_EnterFullScreen(void)
 		}
 		else
 		{
-			Screen_SetResolution(true);
+			Screen_SetSTResolution(true);
 			Screen_ClearScreen();       /* Black out screen bitmap as will be invalid when return */
 		}
 
@@ -855,7 +889,7 @@ void Screen_ReturnFromFullScreen(void)
 		}
 		else
 		{
-			Screen_SetResolution(true);
+			Screen_SetSTResolution(true);
 		}
 
 		if (!Screen_WantToKeepResolution())
@@ -903,52 +937,6 @@ static void Screen_DidResolutionChange(int new_res)
 }
 
 
-/*-----------------------------------------------------------------------*/
-/**
- * Force things associated with changing between low/medium/high res.
- */
-void Screen_ModeChanged(bool bForceChange)
-{
-	int hbpp = ConfigureParams.Screen.nForceBpp;
-
-	if (!sdlscrn)
-	{
-		/* screen not yet initialized */
-		return;
-	}
-	/* Don't run this function if Videl emulation is running! */
-	if (bUseVDIRes)
-	{
-		Screen_SetGenConvSize(VDIWidth, VDIHeight, hbpp, bForceChange);
-	}
-	else if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
-	{
-		VIDEL_ZoomModeChanged(bForceChange);
-	}
-	else if (ConfigureParams.System.nMachineType == MACHINE_TT)
-	{
-		int width, height, bpp;
-		Video_GetTTRes(&width, &height, &bpp);
-		Screen_SetGenConvSize(width, height, hbpp, bForceChange);
-	}
-	else if (bUseHighRes)
-	{
-		Screen_SetGenConvSize(640, 400, hbpp, bForceChange);
-	}
-	else
-	{
-		/* Set new display mode, if differs from current */
-		Screen_SetResolution(bForceChange);
-		Screen_SetFullUpdate();
-	}
-	if (bInFullScreen || bGrabMouse)
-		SDL_WM_GrabInput(SDL_GRAB_ON);
-	else
-		SDL_WM_GrabInput(SDL_GRAB_OFF);
-}
-
-
-/*-----------------------------------------------------------------------*/
 /**
  * Compare current resolution on line with previous, and set 'UpdateLine' accordingly
  * Return if swap between low/medium resolution
@@ -1043,27 +1031,7 @@ static int Screen_ComparePaletteMask(int res)
 			ScrUpdateFlag = PALETTEMASK_UPDATEFULL;
 		else
 			ScrUpdateFlag = 0x00000000;
-	}
 
-	/* Use VDI resolution? */
-	if (bUseVDIRes)
-	{
-		/* Force to VDI resolution screen, without overscan */
-		res = VDIRes;
-
-		/* Colors changed? */
-		if (HBLPalettes[0] != PrevHBLPalette[0])
-			pFrameBuffer->bFullUpdate = true;
-
-		/* Set bit to flag 'full update' */
-		if (pFrameBuffer->bFullUpdate)
-			ScrUpdateFlag = PALETTEMASK_UPDATEFULL;
-		else
-			ScrUpdateFlag = 0x00000000;
-	}
-	/* Are in Mono? Force to monochrome and no overscan */
-	else if (bUseHighRes)
-	{
 		/* Force to standard hi-resolution screen, without overscan */
 		res = ST_HIGH_RES;
 	}
@@ -1131,42 +1099,31 @@ static void Screen_SetConvertDetails(void)
 	/* Not in TV-Mode? Then double up on Y: */
 	bScrDoubleY = !(ConfigureParams.Screen.nMonitorType == MONITOR_TYPE_TV);
 
-	if (bUseVDIRes)
+	if (ConfigureParams.Screen.bAllowOverscan)  /* Use borders? */
 	{
-		/* Select screen draw for standard or VDI display */
-		STScreenLeftSkipBytes = 0;
-		STScreenWidthBytes = VDIWidth * VDIPlanes / 8;
-		STScreenStartHorizLine = 0;
-		STScreenEndHorizLine = VDIHeight;
-	}
-	else
-	{
-		if (ConfigureParams.Screen.bAllowOverscan)  /* Use borders? */
-		{
-			/* Always draw to WHOLE screen including ALL borders */
-			STScreenLeftSkipBytes = 0;              /* Number of bytes to skip on ST screen for left (border) */
+		/* Always draw to WHOLE screen including ALL borders */
+		STScreenLeftSkipBytes = 0;              /* Number of bytes to skip on ST screen for left (border) */
 
-			if (bUseHighRes)
-			{
+		if (bUseHighRes)
+		{
 				pFrameBuffer->VerticalOverscanCopy = VerticalOverscan = V_OVERSCAN_NONE;
-				STScreenStartHorizLine = 0;
-				STScreenEndHorizLine = 400;
-			}
-			else
-			{
-				STScreenWidthBytes = SCREENBYTES_LINE;  /* Number of horizontal bytes in our ST screen */
-				STScreenStartHorizLine = OVERSCAN_TOP - nBorderPixelsTop;
-				STScreenEndHorizLine = OVERSCAN_TOP + 200 + nBorderPixelsBottom;
-			}
+			STScreenStartHorizLine = 0;
+			STScreenEndHorizLine = 400;
 		}
 		else
 		{
-			/* Only draw main area and centre on Y */
-			STScreenLeftSkipBytes = SCREENBYTES_LEFT;
-			STScreenWidthBytes = SCREENBYTES_MIDDLE;
-			STScreenStartHorizLine = OVERSCAN_TOP;
-			STScreenEndHorizLine = OVERSCAN_TOP + (bUseHighRes ? 400 : 200);
+			STScreenWidthBytes = SCREENBYTES_LINE;  /* Number of horizontal bytes in our ST screen */
+			STScreenStartHorizLine = OVERSCAN_TOP - nBorderPixelsTop;
+			STScreenEndHorizLine = OVERSCAN_TOP + 200 + nBorderPixelsBottom;
 		}
+	}
+	else
+	{
+		/* Only draw main area and centre on Y */
+		STScreenLeftSkipBytes = SCREENBYTES_LEFT;
+		STScreenWidthBytes = SCREENBYTES_MIDDLE;
+		STScreenStartHorizLine = OVERSCAN_TOP;
+		STScreenEndHorizLine = OVERSCAN_TOP + (bUseHighRes ? 400 : 200);
 	}
 }
 
@@ -1254,6 +1211,8 @@ static bool Screen_DrawFrame(bool bForceFlip)
 	static bool bPrevFrameWasSpec512 = false;
 	SDL_Rect *sbar_rect;
 
+	assert(!bUseVDIRes);
+
 	/* Scan palette/resolution masks for each line and build up palette/difference tables */
 	new_res = Screen_ComparePaletteMask(STRes);
 	/* Did we change resolution this frame - allocate new screen if did so */
@@ -1274,9 +1233,9 @@ static bool Screen_DrawFrame(bool bForceFlip)
 
 		/* Set details */
 		Screen_SetConvertDetails();
-		
+
 		/* Clear screen on full update to clear out borders and also interleaved lines */
-		if (pFrameBuffer->bFullUpdate && !bUseVDIRes)
+		if (pFrameBuffer->bFullUpdate)
 			Screen_ClearScreen();
 		
 		/* Call drawing for full-screen */

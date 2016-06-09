@@ -13,6 +13,7 @@ extern Uint16 vfc_counter;			/* counter for VFC register $ff82a0 */
 
 extern bool VIDEL_renderScreen(void);
 
+extern void Videl_Init(void);
 extern void VIDEL_reset(void);
 
 extern void VIDEL_ZoomModeChanged(bool bForceChange);

@@ -46,6 +46,8 @@ const char RS232_fileid[] = "Hatari rs232.c : " __DATE__ " " __TIME__;
 static FILE *hComIn = NULL;        /* Handle to file for reading */
 static FILE *hComOut = NULL;       /* Handle to file for writing */
 
+#define  MAX_RS232INPUT_BUFFER    2048  /* Must be ^2 */
+
 static unsigned char InputBuffer_RS232[MAX_RS232INPUT_BUFFER];
 static int InputBuffer_Head=0, InputBuffer_Tail=0;
 static volatile bool bQuitThread = false;
@@ -437,7 +439,7 @@ void RS232_UnInit(void)
  *     1 1 : 5 Bits
  *   Bit 7: Frequency from TC and RC
  */
-void RS232_HandleUCR(Sint16 ucr)
+static void RS232_HandleUCR(Sint16 ucr)
 {
 #if HAVE_TERMIOS_H
 	int nCharSize;                   /* Bits per character: 5, 6, 7 or 8 */
@@ -468,7 +470,7 @@ void RS232_HandleUCR(Sint16 ucr)
 /**
  * Set baud rate configuration of RS-232.
  */
-bool RS232_SetBaudRate(int nBaud)
+static bool RS232_SetBaudRate(int nBaud)
 {
 #if HAVE_TERMIOS_H
 	int i;
@@ -607,23 +609,11 @@ void RS232_SetBaudRateFromTimerD(void)
 }
 
 
-/*-----------------------------------------------------------------------*/
-/**
- * Set flow control configuration of RS-232.
- */
-void RS232_SetFlowControl(Sint16 ctrl)
-{
-	Dprintf(("RS232_SetFlowControl(%i)\n", ctrl));
-
-	/* Not yet written */
-}
-
-
 /*----------------------------------------------------------------------- */
 /**
  * Pass bytes from emulator to RS-232
  */
-bool RS232_TransferBytesTo(Uint8 *pBytes, int nBytes)
+static bool RS232_TransferBytesTo(Uint8 *pBytes, int nBytes)
 {
 	/* Make sure there's a RS-232 connection if it's enabled */
 	if (ConfigureParams.RS232.bEnableRS232)
@@ -650,7 +640,7 @@ bool RS232_TransferBytesTo(Uint8 *pBytes, int nBytes)
 /**
  * Read characters from our internal input buffer (bytes from other machine)
  */
-bool RS232_ReadBytes(Uint8 *pBytes, int nBytes)
+static bool RS232_ReadBytes(Uint8 *pBytes, int nBytes)
 {
 	int i;
 
@@ -675,7 +665,7 @@ bool RS232_ReadBytes(Uint8 *pBytes, int nBytes)
 /**
  * Return true if bytes waiting!
  */
-bool RS232_GetStatus(void)
+static bool RS232_GetStatus(void)
 {
 	/* Connected? */
 	if (hComIn)

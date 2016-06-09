@@ -477,15 +477,21 @@ for borders / zooming</p>
 <h3>ST/STE specific display options</h3>
 <p class="parameter">--desktop-st
 &lt;bool&gt;</p>
-<p class="paramdesc">Whether fullscreen mode uses desktop
-resolution to avoid: messing multi-screen setups, several seconds
-delay needed by LCD monitors resolution switching and the resulting
-sound break. As Hatari ST/E display code doesn&rsquo;t support
-zooming (except low-rez doubling), it doesn&rsquo;t get scaled (by
-Hatari or monitor) when this is enabled. Therefore this is mainly
-useful only if you suffer from the described effects, but still
-want to grab mouse and remove other distractions from the screen
-just by toggling fullscreen mode. (disabled by default)</p>
+<p class="paramdesc">
+NOTE: this has effect only for SDL1 Hatari build.  In SDL2 build,
+<i>--desktop</i> option controls also ST/STe mode.</p>
+<p class="paramdesc">Whether to use desktop resolution on fullscreen
+to avoid issues related to resolution switching (messing multi-screen
+setups, several seconds delay needed for resolution switching by some
+LCD monitors and the resulting sound break). Otherwise fullscreen will
+use a resolution that is closest to the Hatari window size.</p>
+<p class="paramdesc">As Hatari ST/STe display code doesn't support
+zooming (except low-rez doubling), it doesn't get scaled (by Hatari or
+monitor) when this is enabled, and you may get large black borders
+around ST/STe screen. Therefore this is mainly useful only if you
+suffer from the described effects, but still want to grab mouse and
+remove other distractions from the screen just by toggling fullscreen
+mode. (disabled by default)</p>
 <p class="parameter">--spec512
 &lt;x&gt;</p>
 <p class="paramdesc">Hatari uses this threshold to decide
@@ -3252,16 +3258,15 @@ Profile data accuracy from most to least accurate when Hatari's
 default emulation options are used is following:</p>
 <ul>
 <li>Executed CPU and DSP instruction counts are accurate.</li>
-<li>DSP cycles counts (and their variance information) should be accurate.
-    </li>
-<li>030 CPU instruction cache miss information (provided by WinUAE CPU core)
-    is assumed to be accurate.</li>
-<li>Cycles used by a given CPU instruction depend to some extent on what
-    instruction(s), and data in case of 030, was processed before it.
-    While Hatari has some (instruction pairing) heuristics to take
-    that into account for 68000, in general instruction cycles are
-    averages.  For 68000, cycles (provided by OldUAE CPU core) should
-    be fairly accurate, for 68030 they aren't (yet) not very accurate.</li>
+<li>68000 cycle counts have been tested to be accurate to within 1%.</li>
+<li>DSP cycle counts (and the variance information) should be accurate.</li>
+<li>030 CPU instruction cache hit/miss counts (provided by WinUAE CPU core)
+    are assumed to be accurate.</li>
+<li>As to 680x0 cycles... Cycles used by a given CPU instruction depend
+    on what instruction(s) is executed, where it was executed (ST or
+    TT-RAM) and what data was processed before it (was it cached).
+    E.g. 030 cycle counts can be off by tens of percents.</li>
+<li>FPU instruction cycles can be off by 2x.</li>
 </ul>
 
 
@@ -3373,7 +3378,7 @@ profiler cannot determine when exceptions are being handled:</p>
     has special code to handle EmuTOS AES switcher because of this).
     Typically this produces large list of functions that are finalized
     at profile end, so it should be easy to detect.</li>
-<li>Compilicated recursive calls seem to sometimes cause inclusive
+<li>Complicated recursive calls seem to sometimes cause inclusive
     costs (ones including costs of further subroutine calls) to be
     incorrect.  Sometimes this can be noticed by them being even
     &gt;100%.</li>

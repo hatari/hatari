@@ -705,6 +705,49 @@ int HDC_PartitionCount(FILE *fp, const Uint64 tracelevel)
 }
 
 /**
+ * Check file size for sane values (non-zero, multiple of 512),
+ * and return the size
+ */
+off_t HDC_CheckAndGetSize(const char *filename)
+{
+	off_t filesize;
+	char shortname[48];
+
+	File_ShrinkName(shortname, filename, sizeof(shortname));
+
+	filesize = File_Length(filename);
+	if (filesize < 0)
+	{
+		Log_AlertDlg(LOG_ERROR, "Unable to get size of HD image file\n'%s'!",
+		             shortname);
+		if (sizeof(off_t) < 8)
+		{
+			Log_Printf(LOG_ERROR, "Note: This version of Hatari has been built"
+			                      " _without_ support for large files,\n"
+			                      "      so you can not use HD images > 2 GB.\n");
+		}
+		return -EFBIG;
+	}
+	if (filesize == 0)
+	{
+		Log_AlertDlg(LOG_ERROR, "Can not use HD image file\n'%s'\n"
+		                        "since the file is empty.",
+		             shortname);
+		return -EINVAL;
+	}
+	if ((filesize & 0x1ff) != 0)
+	{
+		Log_AlertDlg(LOG_ERROR, "Can not use the hard disk image file\n"
+		                        "'%s'\nsince its size is not a multiple"
+		                        " of 512.",
+		            shortname);
+		return -EINVAL;
+	}
+
+	return filesize;
+}
+
+/**
  * Open a disk image file
  */
 static int HDC_InitDevice(SCSI_DEV *dev, char *filename)
@@ -715,18 +758,10 @@ static int HDC_InitDevice(SCSI_DEV *dev, char *filename)
 	dev->enabled = false;
 	Log_Printf(LOG_INFO, "Mounting hard drive image '%s'\n", filename);
 
-	/* Check size for sanity - is the length a multiple of 512? */
-	filesize = File_Length(filename);
+	/* Check size for sanity */
+	filesize = HDC_CheckAndGetSize(filename);
 	if (filesize < 0)
-	{
-		Log_Printf(LOG_ERROR, "ERROR: unable to access/get HD file size!\n");
-		return -EINVAL;
-	}
-	if (filesize <= 0 || (filesize & 0x1ff) != 0)
-	{
-		Log_Printf(LOG_ERROR, "ERROR: HD file has strange size!\n");
-		return -EINVAL;
-	}
+		return filesize;
 
 	fp = fopen(filename, "rb+");
 	if (fp == NULL)
@@ -852,7 +887,7 @@ void HDC_UnInit(void)
  */
 void HDC_ResetCommandStatus(void)
 {
-	if (ConfigureParams.System.nMachineType != MACHINE_FALCON)
+	if (!Config_IsMachineFalcon())
 		AcsiBus.returnCode = 0;
 }
 
@@ -1089,7 +1124,7 @@ void HDC_WriteCommandByte(int addr, Uint8 byte)
 {
 	// fprintf(stderr, "HDC: Write cmd byte addr=%i, byte=%02x\n", addr, byte);
 
-	if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+	if (Config_IsMachineFalcon())
 		Ncr5380_WriteByte(addr, byte);
 	else if (bAcsiEmuOn)
 		Acsi_WriteCommandByte(addr, byte);
@@ -1101,7 +1136,7 @@ void HDC_WriteCommandByte(int addr, Uint8 byte)
 short int HDC_ReadCommandByte(int addr)
 {
 	Uint16 ret;
-	if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+	if (Config_IsMachineFalcon())
 		ret = Ncr5380_ReadByte(addr);
 	else
 		ret = AcsiBus.returnCode;	/* ACSI status */

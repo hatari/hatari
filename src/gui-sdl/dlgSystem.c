@@ -20,34 +20,35 @@ const char DlgSystem_fileid[] = "Hatari dlgSystem.c : " __DATE__ " " __TIME__;
 
 
 #define DLGSYS_ST          4
-#define DLGSYS_STE         5
-#define DLGSYS_TT          6
-#define DLGSYS_FALCON      7
-#define DLGSYS_68000      10
-#define DLGSYS_68010      11
-#define DLGSYS_68020      12
-#define DLGSYS_68030      13
-#define DLGSYS_68040      14
-#define DLGSYS_68060      15
-#define DLGSYS_8MHZ       18
-#define DLGSYS_16MHZ      19
-#define DLGSYS_32MHZ      20
-#define DLGSYS_DSPOFF     23
-#define DLGSYS_DSPDUMMY   24
-#define DLGSYS_DSPON      25
-#define DLGSYS_RTC        28
-#define DLGSYS_BLITTER    29
-#define DLGSYS_TIMERD     30
-#define DLGSYS_FASTBOOT   31
-#define DLGSYS_PREFETCH   32
-#define DLGSYS_CYC_EXACT  33
-#define DLGSYS_MMU_EMUL   34
-#define DLGSYS_24BITS     35
-#define DLGSYS_FPU_NONE   38
-#define DLGSYS_FPU_68881  39
-#define DLGSYS_FPU_68882  40
-#define DLGSYS_FPU_CPU_IN 41
-#define DLGSYS_FPU_COMPAT 42
+#define DLGSYS_MEGA_ST     5
+#define DLGSYS_STE         6
+#define DLGSYS_MEGA_STE    7
+#define DLGSYS_TT          8
+#define DLGSYS_FALCON      9
+#define DLGSYS_68000      12
+#define DLGSYS_68010      13
+#define DLGSYS_68020      14
+#define DLGSYS_68030      15
+#define DLGSYS_68040      16
+#define DLGSYS_68060      17
+#define DLGSYS_8MHZ       20
+#define DLGSYS_16MHZ      21
+#define DLGSYS_32MHZ      22
+#define DLGSYS_DSPOFF     25
+#define DLGSYS_DSPDUMMY   26
+#define DLGSYS_DSPON      27
+#define DLGSYS_BLITTER    30
+#define DLGSYS_TIMERD     31
+#define DLGSYS_FASTBOOT   32
+#define DLGSYS_PREFETCH   33
+#define DLGSYS_CYC_EXACT  34
+#define DLGSYS_MMU_EMUL   35
+#define DLGSYS_24BITS     36
+#define DLGSYS_FPU_NONE   39
+#define DLGSYS_FPU_68881  40
+#define DLGSYS_FPU_68882  41
+#define DLGSYS_FPU_CPU_IN 42
+#define DLGSYS_FPU_COMPAT 43
 
 
 static SGOBJ systemdlg[] =
@@ -55,14 +56,16 @@ static SGOBJ systemdlg[] =
 	{ SGBOX, 0, 0, 0,0, 60,25, NULL },
 	{ SGTEXT, 0, 0, 23,1, 14,1, "System options" },
 
-	{ SGBOX, 0, 0, 2,3, 14,8, NULL },
+	{ SGBOX, 0, 0, 2,3, 14,9, NULL },
 	{ SGTEXT, 0, 0, 3,3, 13,1, "Machine type" },
 	{ SGRADIOBUT, 0, 0, 3,5, 4,1, "_ST" },
-	{ SGRADIOBUT, 0, 0, 3,6, 5,1, "ST_E" },
-	{ SGRADIOBUT, 0, 0, 3,7, 4,1, "_TT" },
-	{ SGRADIOBUT, 0, 0, 3,8, 8,1, "_Falcon" },
+	{ SGRADIOBUT, 0, 0, 3,6, 9,1, "Meg_a ST" },
+	{ SGRADIOBUT, 0, 0, 3,7, 5,1, "ST_E" },
+	{ SGRADIOBUT, 0, 0, 3,8, 10,1, "Me_ga STE" },
+	{ SGRADIOBUT, 0, 0, 3,9, 4,1, "_TT" },
+	{ SGRADIOBUT, 0, 0, 3,10, 8,1, "_Falcon" },
 
-	{ SGBOX, 0, 0, 17,3, 13,8, NULL },
+	{ SGBOX, 0, 0, 17,3, 13,9, NULL },
 	{ SGTEXT, 0, 0, 19,3, 8,1, "CPU type" },
 	{ SGRADIOBUT, 0, 0, 19, 5, 7,1, "680_00" },
 	{ SGRADIOBUT, 0, 0, 19, 6, 7,1, "680_10" },
@@ -77,33 +80,32 @@ static SGOBJ systemdlg[] =
 	{ SGTEXT, 0, 0, 19,10, 7,1, "" },
 #endif
 
-	{ SGBOX, 0, 0, 31,3, 12,8, NULL },
+	{ SGBOX, 0, 0, 31,3, 12,9, NULL },
 	{ SGTEXT, 0, 0, 32,3, 15,1, "CPU clock" },
 	{ SGRADIOBUT, 0, 0, 32,5, 8,1, " _8 Mhz" },
 	{ SGRADIOBUT, 0, 0, 32,6, 8,1, "1_6 Mhz" },
 	{ SGRADIOBUT, 0, 0, 32,7, 8,1, "32 _Mhz" },
 
-	{ SGBOX, 0, 0, 44,3, 14,8, NULL },
+	{ SGBOX, 0, 0, 44,3, 14,9, NULL },
 	{ SGTEXT, 0, 0, 45,3, 11,1, "Falcon DSP" },
 	{ SGRADIOBUT, 0, 0, 45,5, 6,1, "_None" },
 	{ SGRADIOBUT, 0, 0, 45,6, 7,1, "Dumm_y" },
 	{ SGRADIOBUT, 0, 0, 45,7, 6,1, "Ful_l" },
 
 #ifdef ENABLE_WINUAE_CPU
-	{ SGBOX, 0, 0, 2,12, 41,10, NULL },
+	{ SGBOX, 0, 0, 2,13, 41,9, NULL },
 #else
-	{ SGBOX, 0, 0, 2,12, 56,9, NULL },
+	{ SGBOX, 0, 0, 2,13, 56,8, NULL },
 #endif
-	{ SGTEXT, 0, 0, 3,12, 11,1, "CPU & system parameters" },
-	{ SGCHECKBOX, 0, 0, 3,14, 27,1, "_Real time clock emulation" },
-	{ SGCHECKBOX, 0, 0, 3,15, 19,1, "_Blitter emulation" },
+	{ SGTEXT, 0, 0, 3,13, 11,1, "CPU & system parameters" },
+	{ SGCHECKBOX, 0, 0, 3,15, 20,1, "_Blitter in ST mode" },
 	{ SGCHECKBOX, 0, 0, 3,16, 15,1, "Patch Timer-_D" },
 	{ SGCHECKBOX, 0, 0, 3,17, 39,1, "Boot faster by _patching TOS & sysvars" },
 	{ SGCHECKBOX, 0, 0, 3,18, 23,1, "Prefetc_h mode, slower" },
 #ifdef ENABLE_WINUAE_CPU
 	{ SGCHECKBOX, 0, 0, 3,19, 22,1, "Cycle e_xact, slower" },
 	{ SGCHECKBOX, 0, 0, 3,20, 15,1, "MM_U emulation" },
-	{ SGCHECKBOX, 0, 0, 3,21, 21,1, "24 bits addressin_g" },
+	{ SGCHECKBOX, 0, 0, 3,21, 21,1, "24 bits add_ressing" },
 #else
 	{ SGTEXT, 0, 0, 3,19, 1,1, "" },
 	{ SGTEXT, 0, 0, 3,20, 1,1, "" },
@@ -111,23 +113,23 @@ static SGOBJ systemdlg[] =
 #endif
 
 #ifdef ENABLE_WINUAE_CPU
-	{ SGBOX, 0, 0, 44,12, 14,10, NULL },
-	{ SGTEXT, 0, 0, 45,12, 11,1, "FPU" },
-	{ SGRADIOBUT, 0, 0, 45,14, 6,1, "N_one" },
-	{ SGRADIOBUT, 0, 0, 45,15, 7,1, "68881" },
-	{ SGRADIOBUT, 0, 0, 45,16, 7,1, "68882" },
-	{ SGRADIOBUT, 0, 0, 45,17, 14,1, "_internal" },
-	{ SGCHECKBOX, 0, 0, 45,19, 25,1, "_compatible" },
-	{ SGTEXT,     0, 0, 47,20, 12,1, "but slower" },
+	{ SGBOX, 0, 0, 44,13, 14,9, NULL },
+	{ SGTEXT, 0, 0, 45,13, 11,1, "FPU" },
+	{ SGRADIOBUT, 0, 0, 45,15, 6,1, "N_one" },
+	{ SGRADIOBUT, 0, 0, 45,16, 7,1, "68881" },
+	{ SGRADIOBUT, 0, 0, 45,17, 7,1, "68882" },
+	{ SGRADIOBUT, 0, 0, 45,18, 14,1, "_internal" },
+	{ SGTEXT /*SGCHECKBOX*/, 0, 0, 45,20, 25,1, ""/*"_compatible"*/ },
+	{ SGTEXT,     0, 0, 47,21, 12,1, ""/*"but slower"*/ },
 #else
-	{ SGTEXT, 0, 0, 44,12, 14,10, "" },
-	{ SGTEXT, 0, 0, 45,12, 11,1, "" },
-	{ SGTEXT, 0, 0, 45,14, 6,1, "" },
-	{ SGTEXT, 0, 0, 45,15, 7,1, "" },
+	{ SGTEXT, 0, 0, 44,13, 14,9, "" },
+	{ SGTEXT, 0, 0, 45,13, 11,1, "" },
+	{ SGTEXT, 0, 0, 45,15, 6,1, "" },
 	{ SGTEXT, 0, 0, 45,16, 7,1, "" },
-	{ SGTEXT, 0, 0, 45,17, 14,1, "" },
-	{ SGTEXT, 0, 0, 45,19, 25,1, "" },
-	{ SGTEXT, 0, 0, 47,20, 12,1, "" },
+	{ SGTEXT, 0, 0, 45,17, 7,1, "" },
+	{ SGTEXT, 0, 0, 45,18, 14,1, "" },
+	{ SGTEXT, 0, 0, 45,20, 25,1, "" },
+	{ SGTEXT, 0, 0, 47,21, 12,1, "" },
 #endif
 	{ SGBUTTON, SG_DEFAULT, 0, 21,23, 20,1, "Back to main menu" },
 	{ SGSTOP, 0, 0, 0,0, 0,0, NULL }
@@ -194,12 +196,6 @@ void Dialog_SystemDlg(void)
 		systemdlg[DLGSYS_BLITTER].state |= SG_SELECTED;
 	else
 		systemdlg[DLGSYS_BLITTER].state &= ~SG_SELECTED;
-
-	/* Real time clock CPU */
-	if (ConfigureParams.System.bRealTimeClock)
-		systemdlg[DLGSYS_RTC].state |= SG_SELECTED;
-	else
-		systemdlg[DLGSYS_RTC].state &= ~SG_SELECTED;
 
 	/* Patch timer D */
 	if (ConfigureParams.System.bPatchTimerD)
@@ -292,7 +288,6 @@ void Dialog_SystemDlg(void)
 
 	ConfigureParams.System.bCompatibleCpu = (systemdlg[DLGSYS_PREFETCH].state & SG_SELECTED);
 	ConfigureParams.System.bBlitter = (systemdlg[DLGSYS_BLITTER].state & SG_SELECTED);
-	ConfigureParams.System.bRealTimeClock = (systemdlg[DLGSYS_RTC].state & SG_SELECTED);
 	ConfigureParams.System.bPatchTimerD = (systemdlg[DLGSYS_TIMERD].state & SG_SELECTED);
 	ConfigureParams.System.bFastBoot = (systemdlg[DLGSYS_FASTBOOT].state & SG_SELECTED);
 

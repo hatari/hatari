@@ -516,11 +516,11 @@ bool Joy_KeyUp(int symkey, int modkey)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Read from STE joypad buttons register (0xff9200)
+ * Read from STE joypad buttons register (0xff9201)
  */
-void Joy_StePadButtons_ReadWord(void)
+void Joy_StePadButtons_ReadByte(void)
 {
-	Uint16 nData = 0xffff;
+	Uint8 nData = 0xff;
 
 	if (ConfigureParams.Joysticks.Joy[JOYID_STEPADA].nJoystickMode != JOYSTICK_DISABLED
 	    && (nSteJoySelect & 0x0f) != 0x0f)
@@ -578,8 +578,8 @@ void Joy_StePadButtons_ReadWord(void)
 		}
 	}
 
-	Dprintf(("0xff9200 -> 0x%04x\n", nData));
-	IoMem_WriteWord(0xff9200, nData);
+	Dprintf(("0xff9201 -> 0x%04x\n", nData));
+	IoMem_WriteByte(0xff9201, nData);
 }
 
 

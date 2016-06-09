@@ -109,7 +109,6 @@ enum {
 	OPT_DRIVEB_HEADS,
 	OPT_DISKA,
 	OPT_DISKB,
-	OPT_SLOWFLOPPY,
 	OPT_FASTFLOPPY,
 	OPT_WRITEPROT_FLOPPY,
 	OPT_HARDDRIVE,
@@ -143,7 +142,6 @@ enum {
 	OPT_DSP,
 	OPT_TIMERD,
 	OPT_FASTBOOT,
-	OPT_RTC,
 	OPT_MICROPHONE,		/* sound options */
 	OPT_SOUND,
 	OPT_SOUNDBUFFERSIZE,
@@ -313,8 +311,6 @@ static const opt_t HatariOptions[] = {
 	  "<file>", "Set disk image for floppy drive A" },
 	{ OPT_DISKB, NULL, "--disk-b",
 	  "<file>", "Set disk image for floppy drive B" },
-	{ OPT_SLOWFLOPPY,   NULL, "--slowfdc",
-	  "<bool>", "Slow down floppy disk access emulation (deprecated, use --fastfdc)" },
 	{ OPT_FASTFLOPPY,   NULL, "--fastfdc",
 	  "<bool>", "Speed up floppy disk access emulation (can break some programs)" },
 	{ OPT_WRITEPROT_FLOPPY, NULL, "--protect-floppy",
@@ -356,31 +352,33 @@ static const opt_t HatariOptions[] = {
 	{ OPT_CARTRIDGE, NULL, "--cartridge",
 	  "<file>", "Use ROM cartridge image <file>" },
 
+#if ENABLE_WINUAE_CPU
+	{ OPT_HEADER, NULL, NULL, NULL, "CPU/FPU/bus" },
+#else
 	{ OPT_HEADER, NULL, NULL, NULL, "CPU" },
+#endif
 	{ OPT_CPULEVEL,  NULL, "--cpulevel",
 	  "<x>", "Set the CPU type (x => 680x0) (EmuTOS/TOS 2.06 only!)" },
 	{ OPT_CPUCLOCK,  NULL, "--cpuclock",
 	  "<x>", "Set the CPU clock (x = 8/16/32)" },
 	{ OPT_COMPATIBLE, NULL, "--compatible",
 	  "<bool>", "Use a more compatible (but slower) 68000 CPU mode" },
-
 #if ENABLE_WINUAE_CPU
-	{ OPT_HEADER, NULL, NULL, NULL, "WinUAE CPU/FPU/bus" },
 	{ OPT_CPU_CYCLE_EXACT, NULL, "--cpu-exact",
 	  "<bool>", "Use cycle exact CPU emulation" },
 	{ OPT_CPU_ADDR24, NULL, "--addr24",
 	  "<bool>", "Use 24-bit instead of 32-bit addressing mode" },
 	{ OPT_FPU_TYPE, NULL, "--fpu-type",
 	  "<x>", "FPU type (x=none/68881/68882/internal)" },
-	{ OPT_FPU_COMPATIBLE, NULL, "--fpu-compatible",
-	  "<bool>", "Use more compatible, but slower FPU emulation" },
+	/*{ OPT_FPU_COMPATIBLE, NULL, "--fpu-compatible",
+	  "<bool>", "Use more compatible, but slower FPU emulation" },*/
 	{ OPT_MMU, NULL, "--mmu",
 	  "<bool>", "Use MMU emulation" },
 #endif
 
 	{ OPT_HEADER, NULL, NULL, NULL, "Misc system" },
 	{ OPT_MACHINE,   NULL, "--machine",
-	  "<x>", "Select machine type (x = st/ste/tt/falcon)" },
+	  "<x>", "Select machine type (x = st/megast/ste/megaste/tt/falcon)" },
 	{ OPT_BLITTER,   NULL, "--blitter",
 	  "<bool>", "Use blitter emulation (ST only)" },
 	{ OPT_DSP,       NULL, "--dsp",
@@ -389,8 +387,6 @@ static const opt_t HatariOptions[] = {
 	  "<bool>", "Patch Timer-D (about doubles ST emulation speed)" },
 	{ OPT_FASTBOOT, NULL, "--fast-boot",
 	  "<bool>", "Patch TOS and memvalid system variables for faster boot" },
-	{ OPT_RTC,    NULL, "--rtc",
-	  "<bool>", "Enable real-time clock" },
 
 	{ OPT_HEADER, NULL, NULL, NULL, "Sound" },
 	{ OPT_MICROPHONE,   NULL, "--mic",
@@ -1096,6 +1092,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 		case OPT_RESOLUTION_ST:
 #if WITH_SDL2
 			fprintf(stderr, "The --desktop-st option is not supported in this version (with SDL2)!\n");
+			i++;
 #else
 			ok = Opt_Bool(argv[++i], OPT_RESOLUTION_ST, &ConfigureParams.Screen.bKeepResolutionST);
 #endif
@@ -1378,11 +1375,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				return Opt_ShowError(OPT_ERROR, argv[i], "Not a disk image");
 			break;
 
-		case OPT_SLOWFLOPPY:
-			i++;
-			fprintf(stderr, "\nWarning: --slowfdc is not supported anymore, use --fastfdc\n\n");
-			break;
-
 		case OPT_FASTFLOPPY:
 			ok = Opt_Bool(argv[++i], OPT_FASTFLOPPY, &ConfigureParams.DiskImage.FastFloppy);
 			break;
@@ -1656,11 +1648,23 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				ConfigureParams.System.nCpuLevel = 0;
 				ConfigureParams.System.nCpuFreq = 8;
 			}
+			else if (strcasecmp(argv[i], "megast") == 0)
+			{
+				ConfigureParams.System.nMachineType = MACHINE_MEGA_ST;
+				ConfigureParams.System.nCpuLevel = 0;
+				ConfigureParams.System.nCpuFreq = 8;
+			}
 			else if (strcasecmp(argv[i], "ste") == 0)
 			{
 				ConfigureParams.System.nMachineType = MACHINE_STE;
 				ConfigureParams.System.nCpuLevel = 0;
 				ConfigureParams.System.nCpuFreq = 8;
+			}
+			else if (strcasecmp(argv[i], "megaste") == 0)
+			{
+				ConfigureParams.System.nMachineType = MACHINE_MEGA_STE;
+				ConfigureParams.System.nCpuLevel = 0;
+				ConfigureParams.System.nCpuFreq = 16;
 			}
 			else if (strcasecmp(argv[i], "tt") == 0)
 			{
@@ -1682,17 +1686,18 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				return Opt_ShowError(OPT_MACHINE, argv[i], "Unknown machine type");
 			}
 #if ENABLE_WINUAE_CPU
-			if (ConfigureParams.System.nMachineType == MACHINE_ST ||
-			    ConfigureParams.System.nMachineType == MACHINE_STE)
+			if (Config_IsMachineST() || Config_IsMachineSTE())
 			{
 				ConfigureParams.System.bMMU = false;
 				ConfigureParams.System.bAddressSpace24 = true;
 			}
-			if (ConfigureParams.System.nMachineType == MACHINE_TT)
+			if (Config_IsMachineTT())
 			{
 				ConfigureParams.System.bCompatibleFPU = true;
 				ConfigureParams.System.n_FPUType = FPU_68882;
-			} else {
+			}
+			else
+			{
 				ConfigureParams.System.n_FPUType = FPU_NONE;	/* TODO: or leave it as-is? */
 			}
 #endif
@@ -1712,10 +1717,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 		case OPT_FASTBOOT:
 			ok = Opt_Bool(argv[++i], OPT_FASTBOOT, &ConfigureParams.System.bFastBoot);
-			break;
-
-		case OPT_RTC:
-			ok = Opt_Bool(argv[++i], OPT_RTC, &ConfigureParams.System.bRealTimeClock);
 			break;
 
 		case OPT_DSP:

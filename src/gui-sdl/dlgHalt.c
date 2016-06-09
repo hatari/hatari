@@ -16,6 +16,7 @@ const char DlgHalt_fileid[] = "Hatari dlgHalt.c : " __DATE__ " " __TIME__;
 #include "dialog.h"
 #include "screen.h"
 #include "sdlgui.h"
+#include "m68000.h"
 
 #define DLGHALT_WARM	2
 #define DLGHALT_COLD	3
@@ -72,6 +73,7 @@ void Dialog_HaltDlg(void)
 		} else {
 			bQuitProgram = true;
 		}
+		M68000_SetSpecial(SPCFLAG_BRK);
 	}
 	SDL_ShowCursor(show);
 #if WITH_SDL2

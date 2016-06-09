@@ -1040,9 +1040,7 @@ fprintf ( stderr , "Video_SetSystemTimings1 %d %d\n" , MachineType , Mode );
 	}
 
 	pVideoTiming = &VideoTimings[ VideoTiming ];
-
 fprintf ( stderr , "Video_SetSystemTimings2 %d %d -> %d (%s) %d %d %d\n" , MachineType , Mode , VideoTiming , pVideoTiming->VideoTimingName , pVideoTiming->RemoveTopBorder_Pos , pVideoTiming->RemoveBottomBorder_Pos , pVideoTiming->VblVideoCycleOffset );
-
 }
 
 
@@ -1070,8 +1068,7 @@ char	*Video_GetTimings_Name ( void )
 void	Video_ConvertPosition ( int FrameCycles , int *pHBL , int *pLineCycles )
 {
 	if ( ( nHBL == nScanlinesPerFrame )				/* rare case between end of last hbl and start of next VBL (during 64 cycles) */
-	  && ( ( ConfigureParams.System.nMachineType == MACHINE_ST )	/* for example, cycle 160336 will give HBL=0 and LineCycles=80 */
-	    || ( ConfigureParams.System.nMachineType == MACHINE_STE ) ) )
+	  && ( Config_IsMachineST() || Config_IsMachineSTE() ) )	/* for example, cycle 160336 will give HBL=0 and LineCycles=80 */
 	{
 		*pHBL = 0;
 		*pLineCycles = FrameCycles - ShifterFrame.ShifterLines[ nHBL-1 ].StartCycle - nCyclesPerLine;
@@ -1733,8 +1730,7 @@ static void Video_WriteToGlueShifterRes ( Uint8 Res )
 	        && ( LineCycles <= (LINE_START_CYCLE_71+28) )
 	        && ( FrameCycles - ShifterFrame.ResPosHi.FrameCycles <= 32 ) )
 	{
-		if ( ( ( ConfigureParams.System.nMachineType == MACHINE_STE )	/* special case for 504/4 and 508/4 on STE -> add 20 bytes to left border */
-			|| ( ConfigureParams.System.nMachineType == MACHINE_MEGA_STE ) )
+		if ( Config_IsMachineSTE() 	/* special case for 504/4 and 508/4 on STE -> add 20 bytes to left border */
 			&& ( ( ( ShifterFrame.ResPosHi.LineCycles == 504 ) && ( LineCycles == 4 ) )
 			  || ( ( ShifterFrame.ResPosHi.LineCycles == 508 ) && ( LineCycles == 4 ) ) ) )
 		{
@@ -1744,8 +1740,7 @@ static void Video_WriteToGlueShifterRes ( Uint8 Res )
 			LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect remove left 2 ste %d<->%d\n" ,
 				ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
 		}
-		else if ( ( ConfigureParams.System.nMachineType == MACHINE_ST )
-			&& ( LineCycles <= 4 ) )				/* on STF, if switch to lo/med before cycle 4, then left border is not removed */
+		else if (Config_IsMachineST() && LineCycles <= 4)		/* on STF, if switch to lo/med before cycle 4, then left border is not removed */
 		{
 			/* Cancel hi res start position and update timings */
 			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = LINE_START_CYCLE_50;
@@ -1779,7 +1774,7 @@ static void Video_WriteToGlueShifterRes ( Uint8 Res )
 	else if ( ( ShifterFrame.Res == 0x02 )			/* switched from hi res */
 		  && ( FrameCycles - ShifterFrame.ResPosHi.FrameCycles <= 16 )
 	          && ( ShifterFrame.ResPosHi.LineCycles == LINE_EMPTY_CYCLE_71_STF )
-		  && ( ConfigureParams.System.nMachineType == MACHINE_ST ) )
+		  && Config_IsMachineST() )
 	{
 		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_EMPTY_LINE;
 		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = 0;
@@ -1792,8 +1787,7 @@ static void Video_WriteToGlueShifterRes ( Uint8 Res )
 	else if ( ( ShifterFrame.Res == 0x02 )			/* switched from hi res */
 		  && ( FrameCycles - ShifterFrame.ResPosHi.FrameCycles <= 16 )
 	          && ( ShifterFrame.ResPosHi.LineCycles == LINE_EMPTY_CYCLE_71_STE )
-		  && ( ( ConfigureParams.System.nMachineType == MACHINE_STE )
-		      || ( ConfigureParams.System.nMachineType == MACHINE_MEGA_STE ) ) )
+		  && Config_IsMachineSTE() )
 	{
 		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_EMPTY_LINE;
 		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = 0;
@@ -2989,8 +2983,7 @@ void Video_Sync_WriteByte ( void )
 		/* This blank line can be combined with left/right border changes */
 		/* TODO cause for this effect is not well known yet */
 		if ( ( LineCycles <= pVideoTiming->H_Start_Low_50 )
-	        	&& ( ShifterFrame.FreqPos60.LineCycles == LINE_EMPTY_CYCLE_71_STF )
-			&& ( ConfigureParams.System.nMachineType == MACHINE_ST ) )
+			&& Config_IsMachineST() )
 		{
 			ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_BLANK_LINE;
 			LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect blank line freq stf\n"  );
@@ -3060,7 +3053,7 @@ void Video_Sync_WriteByte ( void )
 		else if ( ( FrameCycles - ShifterFrame.FreqPos60.FrameCycles <= 24 )
 			&& ( ShifterFrame.FreqPos60.LineCycles == pVideoTiming->H_Start_Low_50 )
 			&& ( LineCycles > pVideoTiming->H_Start_Low_50 )
-			&& ( ConfigureParams.System.nMachineType == MACHINE_ST ) )
+			&& Config_IsMachineST() )
 		{
 			ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_EMPTY_LINE;
 			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = 0;
@@ -3074,7 +3067,7 @@ void Video_Sync_WriteByte ( void )
 		else if ( ( FrameCycles - ShifterFrame.FreqPos60.FrameCycles <= 24 )
 			&& ( ShifterFrame.FreqPos60.LineCycles == pVideoTiming->Preload_Start_Low_50 )
 			&& ( LineCycles == pVideoTiming->H_Start_Low_60 )
-			&& ( ConfigureParams.System.nMachineType == MACHINE_STE ) )
+			&& Config_IsMachineSTE() )
 		{
 			ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_EMPTY_LINE;
 			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = 0;
@@ -3302,7 +3295,8 @@ void Video_InterruptHandler_HBL ( void )
 
 	/* Videl Vertical counter increment (To be removed when Videl emulation is finished) */
 	/* VFC is incremented every half line, here, we increment it every line (should be completed) */
-	if (ConfigureParams.System.nMachineType == MACHINE_FALCON) {
+	if (Config_IsMachineFalcon())
+	{
 		vfc_counter += 1;
 	}
 
@@ -3671,7 +3665,7 @@ static void Video_StoreFirstLinePalette(void)
 	for (i = 0; i < 16; i++)
 	{
 		HBLPalettes[i] = SDL_SwapBE16(*pp2++);
-		if ( ConfigureParams.System.nMachineType == MACHINE_ST)
+		if (Config_IsMachineST())
 			HBLPalettes[i] &= 0x777;			/* Force unused "random" bits to 0 */
 	}
 
@@ -4441,7 +4435,7 @@ static void Video_RestartVideoCounter(void)
 {
 	/* Get screen address pointer, aligned to 256 bytes on ST (ie ignore lowest byte) */
 	VideoBase = (Uint32)IoMem_ReadByte(0xff8201)<<16 | (Uint32)IoMem_ReadByte(0xff8203)<<8;
-	if (ConfigureParams.System.nMachineType != MACHINE_ST)
+	if (!Config_IsMachineST())
 	{
 		/* on STe 2 aligned, on TT 8 aligned. We do STe. */
 		VideoBase |= IoMem_ReadByte(0xff820d) & ~1;
@@ -4613,23 +4607,22 @@ static void Video_DrawScreen(void)
 	/* Now draw the screen! */
 	if (bUseVDIRes)
 	{
-		if (ConfigureParams.System.nMachineType == MACHINE_TT
-		    && !bTTColorsSync)
+		if (Config_IsMachineTT() && !bTTColorsSync)
 		{
 			Video_UpdateTTPalette(VDIPlanes);
 		}
-		else if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+		else if (Config_IsMachineFalcon())
 		{
 			VIDEL_UpdateColors();
 		}
 		Screen_GenDraw(VideoBase, VDIWidth, VDIHeight, VDIPlanes,
 		               VDIWidth * VDIPlanes / 16, 0, 0, 0, 0);
 	}
-	else if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+	else if (Config_IsMachineFalcon())
 	{
 		VIDEL_renderScreen();
 	}
-	else if (ConfigureParams.System.nMachineType == MACHINE_TT)
+	else if (Config_IsMachineTT())
 	{
 		Video_RenderTTScreen();
 	}
@@ -4832,7 +4825,8 @@ void Video_InterruptHandler_VBL ( void )
 	Video_ClearOnVBL();
 
 	/* Videl Vertical counter reset (To be removed when Videl emulation is finished) */
-	if (ConfigureParams.System.nMachineType == MACHINE_FALCON) {
+	if (Config_IsMachineFalcon())
+	{
 		vfc_counter = 0;
 	}
 	
@@ -4898,8 +4892,8 @@ void Video_ScreenBase_WriteByte(void)
 		IoMem[ 0xff8201 ] &= DMA_MaskAddressHigh();
 
 	/* On STE/TT, reset screen base low register */
-	if ( ( ConfigureParams.System.nMachineType != MACHINE_ST )
-	  && ( ( IoAccessCurrentAddress == 0xff8201 ) || ( IoAccessCurrentAddress == 0xff8203 ) ) )
+	if (!Config_IsMachineST() &&
+	    (IoAccessCurrentAddress == 0xff8201 || IoAccessCurrentAddress == 0xff8203))
 		IoMem[0xff820d] = 0;
 
 	if (LOG_TRACE_LEVEL(TRACE_VIDEO_STE))
@@ -5052,9 +5046,7 @@ void Video_ScreenCounter_WriteByte(void)
  */
 void Video_Sync_ReadByte(void)
 {
-	if ( (ConfigureParams.System.nMachineType == MACHINE_ST)
-	  || (ConfigureParams.System.nMachineType == MACHINE_STE)
-	  || (ConfigureParams.System.nMachineType == MACHINE_MEGA_STE) )
+	if (Config_IsMachineST() || Config_IsMachineSTE())
 		IoMem[0xff820a] |= 0xfc;		/* set unused bits 2-7 to 1 */
 }
 
@@ -5065,7 +5057,7 @@ void Video_Sync_ReadByte(void)
  */
 void Video_BaseLow_ReadByte(void)
 {
-	if (ConfigureParams.System.nMachineType == MACHINE_ST)
+	if (Config_IsMachineST())
 		IoMem[0xff820d] = 0;        /* On ST this is always 0 */
 
 	/* Note that you should not do anything here for STe because
@@ -5080,7 +5072,7 @@ void Video_BaseLow_ReadByte(void)
  */
 void Video_LineWidth_ReadByte(void)
 {
-	if (ConfigureParams.System.nMachineType == MACHINE_ST)
+	if (Config_IsMachineST())
 		IoMem[0xff820f] = 0;        /* On ST this is always 0 */
 
 	/* If we're not in STF mode, we use the value already stored in $ff820f */
@@ -5100,9 +5092,9 @@ void Video_Res_ReadByte(void)
 	if (bUseHighRes)
 		IoMem[0xff8260] = 2;			/* If mono monitor, force to high resolution */
 
-	if (ConfigureParams.System.nMachineType == MACHINE_ST)
+	if (Config_IsMachineST())
 		IoMem[0xff8260] |= 0xfc;		/* On STF, set unused bits 2-7 to 1 */
-	else if (ConfigureParams.System.nMachineType == MACHINE_TT)
+	else if (Config_IsMachineTT())
 		IoMem[0xff8260] &= 0x07;		/* Only use bits 0, 1 and 2 */
 	else
 		IoMem[0xff8260] &= 0x03;		/* Only use bits 0 and 1, unused bits 2-7 are set to 0 */
@@ -5168,7 +5160,6 @@ void Video_LineWidth_WriteByte(void)
  */
 static void Video_ColorReg_WriteWord(void)
 {
-	const int machine = ConfigureParams.System.nMachineType;
 	Uint32 addr;
 	Uint16 col;
 	int idx;
@@ -5188,7 +5179,7 @@ static void Video_ColorReg_WriteWord(void)
 	else
 		col = IoMem_ReadWord(addr);
 
-	if (machine == MACHINE_ST)
+	if (Config_IsMachineST())
 		col &= 0x777;			/* Mask off to ST 512 palette */
 	else
 		col &= 0xfff;			/* Mask off to STe 4096 palette */
@@ -5265,8 +5256,7 @@ static void Video_ColorReg_ReadWord(void)
 
 	col = IoMem_ReadWord(addr);
 
-	if ( (ConfigureParams.System.nMachineType == MACHINE_ST)
-	  && ( M68000_GetPC() < 0x400000 ) )				/* PC in RAM < 4MB */
+	if (Config_IsMachineST() && M68000_GetPC() < 0x400000)		/* PC in RAM < 4MB */
 	{
 		col = ( col & 0x777 ) | ( rand() & 0x888 );
 		IoMem_WriteWord ( addr , col );
@@ -5472,7 +5462,7 @@ void Video_Res_WriteByte(void)
 {
 	Uint8 VideoShifterByte;
 
-	if (ConfigureParams.System.nMachineType == MACHINE_TT)
+	if (Config_IsMachineTT())
 	{
 		TTRes = IoMem_ReadByte(0xff8260) & 7;
 		/* Copy to TT shifter mode register: */
@@ -5778,7 +5768,7 @@ void Video_TTColorRegs_STRegWrite(void)
 	addr = IoAccessCurrentAddress;
 
 	offset = addr - stpalette;
-	assert(offset > 0 && offset < 16*SIZE_WORD);
+	assert(offset >= 0 && offset < 16*SIZE_WORD);
 	offset += TTPaletteSTBank() * 16*SIZE_WORD;
 
 	/* in case it was long access */

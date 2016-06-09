@@ -342,7 +342,7 @@ void PSG_Set_DataRegister(Uint8 val)
 				/* Initiate a possible GPIP0 Printer BUSY interrupt */
 				MFP_InputOnChannel ( MFP_INT_GPIP0 , 0 );
 				/* Initiate a possible GPIP1 Falcon ACK interrupt */
-				if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+				if (Config_IsMachineFalcon())
 					MFP_InputOnChannel ( MFP_INT_GPIP1 , 0 );
 			}
 		}
@@ -372,7 +372,7 @@ void PSG_Set_DataRegister(Uint8 val)
 		FDC_SetDriveSide ( val_old & 7 , PSGRegisters[PSG_REG_IO_PORTA] & 7 );
 
 		/* handle Falcon specific bits in PORTA of the PSG */
-		if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+		if (Config_IsMachineFalcon())
 		{
 			/* Bit 3 - centronics port SELIN line (pin 17) */
 			/*

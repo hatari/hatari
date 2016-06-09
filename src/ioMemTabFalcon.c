@@ -138,6 +138,25 @@ static void IoMemTabFalcon_BusCtrl_WriteByte(void)
 }
 
 
+/**
+ * This register represents the configuration switches ("half moon" soldering
+ * points) on the Falcon's motherboard at location U46 and U47. The meaning
+ * of the switches is the following:
+ *
+ *  1-5   Not used
+ *   6    Connected = Quad Density Floppy; not connected = Don't care
+ *   7    Connected = AJAX FDC (1.44MB); not connected = 1772 FDC (720K)
+ *   8    Connected = No DMA sound; not connected = DMA Sound available
+ *
+ * Logic is inverted, i.e. connected means the corresponding bit is 0.
+ * Switch 8 is represented by the highest bit in the register.
+ */
+static void IoMemTabFalc_Switches_ReadByte(void)
+{
+	IoMem_WriteByte(0xff9200, 0xbf);
+}
+
+
 /*-----------------------------------------------------------------------*/
 /*
   List of functions to handle read/write hardware interceptions for a Falcon.
@@ -309,7 +328,8 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 
 	{ 0xff8c80, 8, IoMem_VoidRead, IoMem_WriteWithoutInterception },                        /* TODO: SCC */
 
-	{ 0xff9200, SIZE_WORD, Joy_StePadButtons_ReadWord, IoMem_WriteWithoutInterception }, /* Joypad fire buttons */
+	{ 0xff9200, SIZE_BYTE, IoMemTabFalc_Switches_ReadByte, IoMem_WriteWithoutInterception }, /* Falcon switches */
+	{ 0xff9201, SIZE_BYTE, Joy_StePadButtons_ReadByte, IoMem_WriteWithoutInterception }, /* Joypad fire buttons */
 	{ 0xff9202, SIZE_WORD, Joy_StePadMulti_ReadWord, Joy_StePadMulti_WriteWord },     /* Joypad directions/buttons/selection */
 	{ 0xff9206, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                         /* No bus error here ; fix Wotanoid game */
 	{ 0xff9210, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                         /* No bus error here */

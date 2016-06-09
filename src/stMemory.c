@@ -138,9 +138,8 @@ void STMemory_SetDefaultConfig(void)
 	if ( ConfigureParams.System.bFastBoot
 	  || bUseVDIRes
 	  || ( ConfigureParams.Memory.nMemorySize > 4 && !bIsEmuTOS )
-	  || ( ConfigureParams.System.nMachineType == MACHINE_TT
-	       && ConfigureParams.System.bAddressSpace24 && !bIsEmuTOS )
-	  || ( ConfigureParams.System.nMachineType == MACHINE_FALCON && TTmemory ) )
+	  || ( Config_IsMachineTT() && ConfigureParams.System.bAddressSpace24 && !bIsEmuTOS )
+	  || ( Config_IsMachineFalcon() && TTmemory && !bIsEmuTOS) )
 	{
 		/* Write magic values to sysvars to signal valid config */
 		STMemory_WriteLong(0x420, 0x752019f3);    /* memvalid */
@@ -156,12 +155,12 @@ void STMemory_SetDefaultConfig(void)
 
 		/* On Falcon, set bit6=1 at $ff8007 to simulate a warm start */
 		/* (else memory detection is not skipped after a cold start/reset) */
-		if ( ConfigureParams.System.nMachineType == MACHINE_FALCON )
+		if (Config_IsMachineFalcon())
 			STMemory_WriteByte ( 0xff8007, IoMem_ReadByte(0xff8007) | 0x40 );
 
 		/* On TT, set bit0=1 at $ff8e09 to simulate a warm start */
 		/* (else memory detection is not skipped after a cold start/reset) */
-		if ( ConfigureParams.System.nMachineType == MACHINE_TT )
+		if (Config_IsMachineTT())
 			STMemory_WriteByte ( 0xff8e09, IoMem_ReadByte(0xff8e09) | 0x01 );
 	}
 
@@ -228,7 +227,7 @@ void STMemory_SetDefaultConfig(void)
 	STMemory_WriteByte(0x424, nMemControllerByte);
 	IoMem_WriteByte(0xff8001, nMemControllerByte);
 
-	if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+	if (Config_IsMachineFalcon())
 	{
 		/* Set the Falcon memory and monitor configuration register:
 

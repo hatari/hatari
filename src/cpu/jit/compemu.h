@@ -33,8 +33,6 @@ typedef union {
     struct blockinfo_t* bi;
 } cacheline;
 
-extern signed long pissoff;
-
 #define USE_OPTIMIZER 0
 #define USE_LOW_OPTIMIZER 0
 #define USE_ALIAS 1

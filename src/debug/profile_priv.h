@@ -34,8 +34,8 @@ typedef struct {
 
 /* callee/caller information */
 typedef struct {
-	calltype_t   flags:8;	/* what kind of call it was */
-	unsigned int addr:24;	/* address for the caller */
+	calltype_t flags;	/* what kind of call it was */
+	Uint32 addr;		/* address for the caller */
 	Uint32 calls;		/* number of calls, exclusive */
 	counters_t all;		/* totals including everything called code does */
 	counters_t own;		/* totals excluding called code (=sum(all-out)) */

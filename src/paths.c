@@ -23,6 +23,8 @@ const char Paths_fileid[] = "Hatari paths.c : " __DATE__ " " __TIME__;
 
 #if defined(__MACOSX__)
 	#define HATARI_HOME_DIR "Library/Application Support/Hatari"
+#elif defined(WIN32)
+	#define HATARI_HOME_DIR "AppData\\Local\\Hatari"
 #else
 	#define HATARI_HOME_DIR ".config/hatari"
 #endif
@@ -239,7 +241,7 @@ static void Paths_InitHomeDirs(void)
 
 	/* Hatari home directory does not exists yet...
 	 * ... so let's try to create it: */
-#if !defined(__MACOSX__)
+#if !defined(__MACOSX__) && !defined(WIN32)
 	snprintf(sHatariHomeDir, FILENAME_MAX, "%s%c.config", sUserHomeDir,
 	         PATHSEP);
 	if (!File_DirExists(sHatariHomeDir))

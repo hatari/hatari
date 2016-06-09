@@ -108,31 +108,39 @@ static struct videl_s videl;
 Uint16 vfc_counter;			/* counter for VFC register $ff82a0 (to be internalized when VIDEL emulation is complete) */
 
 /**
- *  Called upon startup and when CPU encounters a RESET instruction.
+ * Called upon startup (and via VIDEL_reset())
  */
-void VIDEL_reset(void)
+void Videl_Init(void)
 {
-	videl.bUseSTShifter = false;				/* Use Falcon color palette by default */
-	videl.reg_ffff8006_save = IoMem_ReadByte(0xff8006);
-	videl.monitor_type = videl.reg_ffff8006_save & 0xc0;
-	
-	videl.hostColorsSync = false; 
-
-	vfc_counter = 0;
+	videl.hostColorsSync = false;
 
 	/* Default resolution to boot with */
 	videl.save_scrWidth = 640;
 	videl.save_scrHeight = 480;
-	videl.save_scrBpp = ConfigureParams.Screen.nForceBpp;
+	videl.save_scrBpp = 4;
+}
+
+/**
+ *  Called when CPU encounters a RESET instruction.
+ */
+void VIDEL_reset(void)
+{
+	Videl_Init();
 	Screen_SetGenConvSize(videl.save_scrWidth, videl.save_scrHeight,
-	                      videl.save_scrBpp, false);
+	                      ConfigureParams.Screen.nForceBpp, false);
+
+	videl.bUseSTShifter = false;				/* Use Falcon color palette by default */
+	videl.reg_ffff8006_save = IoMem_ReadByte(0xff8006);
+	videl.monitor_type = videl.reg_ffff8006_save & 0xc0;
+
+	vfc_counter = 0;
 
 	/* Reset IO register (some are not initialized by TOS) */
 	IoMem_WriteWord(0xff820e, 0);    /* Line offset */
 	IoMem_WriteWord(0xff8264, 0);    /* Horizontal scroll */
 
-	/* Init synch mode register */
-	 VIDEL_SyncMode_WriteByte();
+	/* Init sync mode register */
+	VIDEL_SyncMode_WriteByte();
 }
 
 /**

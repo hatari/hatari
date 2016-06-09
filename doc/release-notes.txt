@@ -9,6 +9,8 @@
 Emulation:
 - GEMDOS HD:
   - Fix: Disable GEMDOS opcodes after GEMDOS drive is disabled
+  - Fix: GEMDOS HD can now be initialized multiple times, e.g. when running
+    EmuTOS RAM image from a normal TOS.
 - Video:
   - fix reading video counter $FF8205/07/09 after modifying it while
     display is ON.
@@ -19,16 +21,22 @@ Emulation:
 - Sound changes :
   - DMA sound should be played even when start address = end address
 - Fixes to DSP addressing
+- More accurate 68060 mode (removed instructions from previous CPU versions
+  are not emulated anymore)
 
 Emulator:
 - SDL GUI:
   - Shortcuts can be configured in the keyboard dialog
   - User can provide volume label when creating a floppy image
-- Better SDL2 support (e.g. resizable windows), SDL2 is now enabled by default
+- Better SDL2 support:
+  - SDL2 is now enabled by default
+  - resizable windows, including ST/STE screen scaling
+  - "--desktop" option is used also for ST/STe instead of "--desktop-st"
 - Preferred private configuration directory is now ~/.config/hatari (but the
   legacy location ~/.hatari is still used if the other one does not exist yet)
 - Support SDL key names in keymap files in addition to key codes
 - Support for rendering to 8-bit host screens removed
+- Support for (buggy) RsConf() interception with --bios-intercept removed
 - NatFeats SCSI driver for Linux added
 - Debugger:
   - Fix: close debugger log file only when explicitly requested,
@@ -36,7 +44,12 @@ Emulator:
   - Fix: direct DSP register, disasm and memdumps to debugger log
          file, similarly to CPU
   - Fix: direct CPU and DSP symbol traces to trace file, not stderr
-  - Fix: :once option when there's only one breakpoint (v1.9 regression)
+  - Fix: ':once' option when there's only one breakpoint (v1.9 regression)
+  - Fix: NatFeats NF_DEBUGGER command now actually drops to debugger
+  - 'n' (next) command run until (dbcc backwards branch) loop exits
+    (in addition to running until subroutine and exception calls return)
+  - Support Atari debugger XBios(11) / Dbmsg() API
+  - Also trace exception can be caught
 
 Other:
 - Allow building without Zlib
@@ -107,6 +120,7 @@ Emulator:
   - Fix: compilation when zlib is missing
   - Fix: bugs from Debian bug tracker:
 	 https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=716536
+	 https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=716084
 	 https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=688594
 - Additional TOS run-time patching:
   - Support fast boot also with TOS v3 & v4

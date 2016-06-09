@@ -25,6 +25,7 @@ typedef enum {
 	REASON_DSP_BREAKPOINT,
 	REASON_CPU_STEPS,
 	REASON_DSP_STEPS,
+	REASON_PROGRAM,
 	REASON_USER        // e.g. keyboard shortcut
 } debug_reason_t;
 

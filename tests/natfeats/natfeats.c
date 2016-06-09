@@ -106,10 +106,10 @@ static void nf_showname(void)
 {
 	long id;
 	if (nf_ok && (id = nf_id("NF_NAME"))) {
-		long chars;
+		long chars = 0;
 		char buffer[64];
 		id |= 0x0001;  /* name + version */
-		chars = nf_call(id, buffer, (long)sizeof(buffer)-2);
+		chars = nf_call(id, buffer, (long)(sizeof(buffer)-2));
 		buffer[chars++] = '\n';
 		buffer[chars++] = '\0';
 		nf_print(buffer);
@@ -131,13 +131,16 @@ int main()
 {
 	long old_ff;
 	if (!nf_init()) {
+		Cconws("\r\nStart Hatari with '--natfeats yes' option!\r\n");
 		wait_key();
 		return 1;
 	}
 	old_ff = nf_fastforward(1);
 	nf_print("Emulator name:\n");
 	nf_showname();
-	nf_print("Shutting down...\n");
+	nf_print("Invoking debugger...\n");
+	nf_debugger();
+	nf_print("Restoring fastforward & shutting down...\n");
 	nf_fastforward(old_ff);
 	nf_exit(0);
 	wait_key();

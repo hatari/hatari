@@ -14,6 +14,7 @@ extern void DebugCpu_Check(void);
 extern void DebugCpu_SetDebugging(void);
 extern Uint32 DebugCpu_InstrCount(void);
 extern Uint32 DebugCpu_OpcodeType(void);
+
 extern int DebugCpu_DisAsm(int nArgc, char *psArgs[]);
 extern int DebugCpu_MemDump(int nArgc, char *psArgs[]);
 extern int DebugCpu_Register(int nArgc, char *psArgs[]);

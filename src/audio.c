@@ -239,14 +239,14 @@ void Audio_SetOutputAudioFreq(int nNewFrequency)
 		/* Set new frequency */
 		nAudioFrequency = nNewFrequency;
 
-		if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+		if (Config_IsMachineFalcon())
 		{
 			/* Compute Ratio between host computer sound frequency and Hatari's sound frequency. */
 			Crossbar_Compute_Ratio();
 		}
-		else if (ConfigureParams.System.nMachineType != MACHINE_ST)
+		else if (!Config_IsMachineST())
 		{
-			/* Adapt LMC filters to this new frequency */			
+			/* Adapt LMC filters to this new frequency */
 			DmaSnd_Init_Bass_and_Treble_Tables();
 		}
 
@@ -258,16 +258,8 @@ void Audio_SetOutputAudioFreq(int nNewFrequency)
 		}
 	}
 
-	if ((ConfigureParams.System.nMachineType == MACHINE_ST) &&
-		(nAudioFrequency >= 40000))
-	{
-		/* Apply YM2149 C10 filter. */
-		UseLowPassFilter = true;
-	}
-	else
-	{
-		UseLowPassFilter = false;
-	}
+	/* Apply YM2149 C10 filter? */
+	UseLowPassFilter = Config_IsMachineST() && nAudioFrequency >= 40000;
 }
 
 

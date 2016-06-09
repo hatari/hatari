@@ -47,6 +47,7 @@ static flagname_t ExceptionFlags[] = {
 	{ EXCEPT_CHK,       "chk" },
 	{ EXCEPT_TRAPV,     "trapv" },
 	{ EXCEPT_PRIVILEGE, "privilege" },
+	{ EXCEPT_TRACE,     "trace" },
 	{ EXCEPT_NOHANDLER, "nohandler" },
 
 	{ EXCEPT_DSP,       "dsp" },

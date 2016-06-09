@@ -11,7 +11,9 @@ const char File_fileid[] = "Hatari file.c : " __DATE__ " " __TIME__;
 #include "main.h"
 #include <sys/types.h>
 #include <sys/stat.h>
+#if HAVE_SYS_TIME_H
 #include <sys/time.h>
+#endif
 #include <fcntl.h>
 #include <unistd.h>
 #include <assert.h>
@@ -31,9 +33,6 @@ const char File_fileid[] = "Hatari file.c : " __DATE__ " " __TIME__;
 
 #ifdef HAVE_FLOCK
 # include <sys/file.h>
-#endif
-#ifndef HAVE_FTELLO
-#define ftello ftell
 #endif
 
 /*-----------------------------------------------------------------------*/
@@ -332,9 +331,9 @@ off_t File_Length(const char *pszFileName)
 	hDiskFile = fopen(pszFileName, "rb");
 	if (hDiskFile!=NULL)
 	{
-		fseek(hDiskFile, 0, SEEK_END);
+		fseeko(hDiskFile, 0, SEEK_END);
 		FileSize = ftello(hDiskFile);
-		fseek(hDiskFile, 0, SEEK_SET);
+		fseeko(hDiskFile, 0, SEEK_SET);
 		fclose(hDiskFile);
 		return FileSize;
 	}

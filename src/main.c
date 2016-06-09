@@ -58,6 +58,7 @@ const char Main_fileid[] = "Hatari main.c : " __DATE__ " " __TIME__;
 #include "hatari-glue.h"
 
 #include "falcon/dsp.h"
+#include "falcon/videl.h"
 
 #if HAVE_GETTIMEOFDAY
 #include <sys/time.h>
@@ -106,7 +107,6 @@ static Uint32 Main_GetTicks(void)
 	return ticks_to_msec * fields.tms_utime;
 }
 #else
-# warning "times() function missing, using inaccurate SDL_GetTicks() instead."
 # define Main_GetTicks SDL_GetTicks
 #endif
 
@@ -689,7 +689,7 @@ static void Main_Init(void)
 	}
 
 	ClocksTimings_InitMachine ( ConfigureParams.System.nMachineType );
-        Video_SetTimings ( ConfigureParams.System.nMachineType , ConfigureParams.System.VideoTimingMode );
+	Video_SetTimings ( ConfigureParams.System.nMachineType , ConfigureParams.System.VideoTimingMode );
 
 	Resolution_Init();
 	SDLGui_Init();
@@ -697,6 +697,7 @@ static void Main_Init(void)
 	RS232_Init();
 	Midi_Init();
 	Control_CheckUpdates();       /* enable window embedding? */
+	Videl_Init();
 	Screen_Init();
 	Main_SetTitle(NULL);
 

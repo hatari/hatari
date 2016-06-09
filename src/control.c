@@ -16,7 +16,9 @@ const char Control_fileid[] = "Hatari control.c : " __DATE__ " " __TIME__;
 #endif
 
 #include <sys/types.h>
+#if HAVE_SYS_TIME_H
 #include <sys/time.h>
+#endif
 #include <unistd.h>
 #include <ctype.h>
 #include <assert.h>

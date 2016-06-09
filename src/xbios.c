@@ -4,9 +4,9 @@
   This file is distributed under the GNU General Public License, version 2
   or at your option any later version. Read the file gpl.txt for details.
 
-  XBios Handler (Trap #14)
+  XBios Handler (Trap #14) -  http://toshyp.atari.org/en/004014.html
 
-  Intercept and direct some XBios calls to handle the RS-232 etc.
+  Intercept and direct XBios calls to allow saving screenshots in host format
   and to help with tracing/debugging.
 */
 const char XBios_fileid[] = "Hatari xbios.c : " __DATE__ " " __TIME__;
@@ -20,51 +20,131 @@ const char XBios_fileid[] = "Hatari xbios.c : " __DATE__ " " __TIME__;
 #include "rs232.h"
 #include "screenSnapShot.h"
 #include "stMemory.h"
+#include "debugui.h"
 #include "xbios.h"
 
 
 #define HATARI_CONTROL_OPCODE 255
 
-/* whether to enable XBios(20/255) */
+/* whether to enable XBios(11/20/255) */
 static bool bXBiosCommands;
+
 
 void XBios_ToggleCommands(void)
 {
 	if (bXBiosCommands)
 	{
-		fprintf(stderr, "XBios 15/20/255 parsing disabled.\n");
+		fprintf(stderr, "XBios 11/20/255 Hatari versions disabled.\n");
 		bXBiosCommands = false;
 	}
 	else
 	{
-		fprintf(stderr, "XBios 15/20/255 parsing enabled.\n");
+		fprintf(stderr, "XBios 11/20/255 Hatari versions enabled: Dbmsg(), Scrdmp(), HatariControl().\n");
 		bXBiosCommands = true;
 	}
 }
 
-/* List of Atari ST RS-232 baud rates */
-static const int BaudRates[] =
+
+/**
+ * XBIOS Dbmsg
+ * Call 11
+ *
+ * Atari debugger API:
+ * http://dev-docs.atariforge.org/files/Atari_Debugger_1-24-1990.pdf
+ * http://toshyp.atari.org/en/004012.html#Dbmsg
+ */
+static bool XBios_Dbmsg(Uint32 Params)
 {
-	19200, /* 0 */
-	9600,  /* 1 */
-	4800,  /* 2 */
-	3600,  /* 3 */
-	2400,  /* 4 */
-	2000,  /* 5 */
-	1800,  /* 6 */
-	1200,  /* 7 */
-	600,   /* 8 */
-	300,   /* 9 */
-	200,   /* 10 */
-	150,   /* 11 */
-	134,   /* 12 */
-	110,   /* 13 */
-	75,    /* 14 */
-	50     /* 15 */
-};
+	/* Read details from stack */
+	const Uint16 reserved = STMemory_ReadWord(Params);
+	const Uint16 msgnum = STMemory_ReadWord(Params+SIZE_WORD);
+	const Uint32 addr = STMemory_ReadLong(Params+SIZE_WORD+SIZE_WORD);
+
+	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x0B Dbmsg(%d, 0x%04X, 0x%x) at PC 0x%X\n",
+		  reserved, msgnum, addr, M68000_GetPC());
+
+	if (reserved != 5 || !bXBiosCommands)
+		return false;
+
+	fprintf(stderr, "Dbmsg: 0x%04X, 0x%x\n", msgnum, addr);
+
+	/* debugger message? */
+	if (msgnum >= 0xF000 && msgnum <= 0xF100)
+	{
+		const char *txt = (const char *)STMemory_STAddrToPointer(addr);
+		char buffer[256];
+
+		/* between non-halting message and debugger command IDs,
+		 * are halting messages with message lenght encoded in ID
+		 */
+		if (msgnum > 0xF000 && msgnum < 0xF100)
+		{
+			const int len = (msgnum & 0xFF);
+			memcpy(buffer, txt, len);
+			buffer[len] = '\0';
+			txt = buffer;
+		}
+		fprintf(stderr, "-> \"%s\"\n", txt);
+	}
+
+	/* not just a message? */
+	if (msgnum != 0xF000)
+	{
+		fprintf(stderr, "-> HALT");
+		DebugUI(REASON_PROGRAM);
+	}
+
+	/* return value != function opcode, to indicate it's implemented */
+	Regs[REG_D0] = 0;
+	return true;
+}
+
+
+/**
+ * XBIOS Scrdmp
+ * Call 20
+ */
+static bool XBios_Scrdmp(Uint32 Params)
+{
+	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x14 Scrdmp() at PC 0x%X\n" , M68000_GetPC());
+
+	if (!bXBiosCommands)
+		return false;
+
+	ScreenSnapShot_SaveScreen();
+
+	/* Scrdmp() doesn't have return value, but return something else than
+	 * function number to indicate this XBios opcode was implemented
+	 */
+	Regs[REG_D0] = 0;
+	return true;
+}
+
+
+/**
+ * XBIOS remote control interface for Hatari
+ * Call 255
+ */
+static bool XBios_HatariControl(Uint32 Params)
+{
+	const char *pText;
+	pText = (const char *)STMemory_STAddrToPointer(STMemory_ReadLong(Params));
+	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x%02X HatariControl(%s) at PC 0x%X\n",
+		  HATARI_CONTROL_OPCODE, pText, M68000_GetPC());
+
+	if (!bXBiosCommands)
+		return false;
+
+	Control_ProcessBuffer(pText);
+
+	/* return value != function opcode, to indicate it's implemented */
+	Regs[REG_D0] = 0;
+	return true;
+}
 
 
 #if ENABLE_TRACING
+
 /**
  * XBIOS Floppy Read
  * Call 8
@@ -114,6 +194,26 @@ static bool XBios_Flopwr(Uint32 Params)
 
 
 /**
+ * XBIOS RsConf
+ * Call 15
+ */
+static bool XBios_Rsconf(Uint32 Params)
+{
+	Sint16 Baud, Ctrl, Ucr, Rsr, Tsr, Scr;
+
+	Baud = STMemory_ReadWord(Params);
+	Ctrl = STMemory_ReadWord(Params+SIZE_WORD);
+	Ucr = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD);
+	Rsr = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_WORD);
+	Tsr = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
+	Scr = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
+	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x0F Rsconf(%d, %d, %d, %d, %d, %d) at PC 0x%X\n",
+		   Baud, Ctrl, Ucr, Rsr, Tsr, Scr, M68000_GetPC());
+	return false;
+}
+
+
+/**
  * XBIOS Devconnect
  * Call 139
  */
@@ -134,104 +234,7 @@ static bool XBios_Devconnect(Uint32 Params)
 	return false;
 }
 
-#else /* !ENABLE_TRACING */
-#define XBios_Floprd(params)     false
-#define XBios_Flopwr(params)     false
-#define XBios_Devconnect(params) false
-#endif
 
-
-/**
- * XBIOS RsConf
- * Call 15
- */
-static bool XBios_Rsconf(Uint32 Params)
-{
-	Sint16 Baud,Ctrl,Ucr;
-#if ENABLE_TRACING
-	Sint16 Rsr,Tsr,Scr;
-#endif
-
-	Baud = STMemory_ReadWord(Params);
-	Ctrl = STMemory_ReadWord(Params+SIZE_WORD);
-	Ucr = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD);
-#if ENABLE_TRACING
-	Rsr = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_WORD);
-	Tsr = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
-	Scr = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
-	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x0F Rsconf(%d, %d, %d, %d, %d, %d) at PC 0x%X\n",
-		   Baud, Ctrl, Ucr, Rsr, Tsr, Scr,
-		   M68000_GetPC());
-#endif
-	if (!bXBiosCommands)
-		return false;
-	
-	if (!ConfigureParams.RS232.bEnableRS232)
-		return false;
-
-	/* Set baud rate and other configuration, if RS232 emaulation is enabled */
-	if (Baud >= 0 && Baud < ARRAYSIZE(BaudRates))
-	{
-		/* Convert ST baud rate index to value */
-		int BaudRate = BaudRates[Baud];
-		/* And set new baud rate: */
-		RS232_SetBaudRate(BaudRate);
-	}
-
-	if (Ucr != -1)
-	{
-		RS232_HandleUCR(Ucr);
-	}
-
-	if (Ctrl != -1)
-	{
-		RS232_SetFlowControl(Ctrl);
-	}
-
-	return true;
-}
-
-
-/**
- * XBIOS Scrdmp
- * Call 20
- */
-static bool XBios_Scrdmp(Uint32 Params)
-{
-	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x14 Scrdmp() at PC 0x%X\n" , M68000_GetPC());
-
-	if (!bXBiosCommands)
-		return false;
-
-	ScreenSnapShot_SaveScreen();
-
-	/* Correct return code? */
-	Regs[REG_D0] = 0;
-
-	return true;
-}
-
-
-/**
- * XBIOS remote control interface for Hatari
- * Call 255
- */
-static bool XBios_HatariControl(Uint32 Params)
-{
-	const char *pText;
-	pText = (const char *)STMemory_STAddrToPointer(STMemory_ReadLong(Params));
-	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x%02X HatariControl(%s) at PC 0x%X\n", HATARI_CONTROL_OPCODE, pText, M68000_GetPC());
-
-	if (!bXBiosCommands)
-		return false;
-
-	Control_ProcessBuffer(pText);
-	Regs[REG_D0] = 0;
-	return true;
-}
-
-
-#if ENABLE_TRACING
 /**
  * Map XBIOS call opcode to XBIOS function name
  *
@@ -288,9 +291,9 @@ static const char* XBios_Call2Name(Uint16 opcode)
 		"Bconmap",
 		NULL,	/* 45 */
 		"NVMaccess",
-		NULL,	/* 47 */
+		"Waketime", /* TOS 2.06 */
 		"Metainit",
-		NULL,	/* 49 */
+		NULL,	/* 49: rest of MetaDOS calls */
 		NULL,
 		NULL,
 		NULL,
@@ -306,7 +309,7 @@ static const char* XBios_Call2Name(Uint16 opcode)
 		NULL,
 		NULL,	/* 63 */
 		"Blitmode",
-		NULL,	/* 65 */
+		NULL,	/* 65: CENTScreen */
 		NULL,
 		NULL,
 		NULL,
@@ -425,11 +428,19 @@ void XBios_Info(FILE *fp, Uint32 dummy)
 		}
 	}
 }
+
 #else /* !ENABLE_TRACING */
+
+#define XBios_Floprd(params)     false
+#define XBios_Flopwr(params)     false
+#define XBios_Rsconf(params)     false
+#define XBios_Devconnect(params) false
+
 void XBios_Info(FILE *fp, Uint32 bShowOpcodes)
 {
 	        fputs("Hatari isn't configured with ENABLE_TRACING\n", fp);
 }
+
 #endif /* !ENABLE_TRACING */
 
 
@@ -453,6 +464,8 @@ bool XBios(void)
 		return XBios_Floprd(Params);
 	case 9:
 		return XBios_Flopwr(Params);
+	case 11:
+		return XBios_Dbmsg(Params);
 	case 15:
 		return XBios_Rsconf(Params);
 	case 20:
@@ -506,6 +519,7 @@ bool XBios(void)
 	case 88:	/* VsetMode */
 	case 90:	/* VsetSync */
 	case 91:	/* VgetSize */
+	case 95:	/* VcheckMode */
 	case 102:	/* Dsp_RemoveInterrupts */
 	case 112:	/* Dsp_TriggerHC */
 	case 117:	/* Dsp_InqSubrAbility */
@@ -567,7 +581,6 @@ bool XBios(void)
 			  M68000_GetPC());
 		return false;
 
-	case 11:	/* Dbmsg */
 	case 84:	/* EsetPalette */
 	case 85:	/* EgetPalette */
 	case 93:	/* VsetRGB */

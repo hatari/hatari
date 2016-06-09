@@ -74,36 +74,22 @@ enum {
     ev2_max = 12
 };
 
-extern int pissoff_value;
-extern signed long pissoff;
-
-#define countdown pissoff
 #define do_cycles do_cycles_slow
 
 extern struct ev eventtab[ev_max];
 extern struct ev2 eventtab2[ev2_max];
 
-extern volatile bool vblank_found_chipset;
-extern volatile bool vblank_found_rtg;
 extern int hpos_offset;
 extern int maxhpos;
 
 STATIC_INLINE void cycles_do_special (void)
 {
-#ifdef JIT
-	if (currprefs.cachesize) {
-		if (pissoff >= 0)
-			pissoff = -1;
-	} else
-#endif
-	{
-		pissoff = 0;
-	}
+	/* Currently unused in Hatari */
 }
 
 STATIC_INLINE void do_extra_cycles (unsigned long cycles_to_add)
 {
-	pissoff -= cycles_to_add;
+	/* Currently unused in Hatari */
 }
 
 STATIC_INLINE unsigned long int get_cycles (void)

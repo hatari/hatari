@@ -35,12 +35,27 @@ const char IoMemTabTT_fileid[] = "Hatari ioMemTabTT.c : " __DATE__ " " __TIME__;
 #include "video.h"
 #include "blitter.h"
 
+/**
+ * The register at $FF9200.b represents the DIP switches from the
+ * TT motherboard. The meaning of the switches is as follows:
+ *
+ *   1      off (on = CaTTamaran installed, not an official setting)
+ *   2 - 6  off
+ *   7      on = 1.4mb HD floppy drive fitted
+ *   8      off (on = Disables the DMA sound hardware)
+ *
+ * Switch 1 is represented by the lowest bit in the $FF9200 register,
+ * and switch 8 is represented by the highest bit. Logic is inverted,
+ * i.e. when the switch is "on", the bit is 0.
+ */
+static void IoMemTabTT_ReadDIPSwitches(void)
+{
+	IoMem_WriteWord(0xff9200, 0xbf00);
+}
 
-/*-----------------------------------------------------------------------*/
-/*
-  List of functions to handle read/write hardware interceptions for a TT.
-  Note: This is not very well tested yet!
-*/
+/**
+ * List of functions to handle read/write hardware interceptions for a TT.
+ */
 const INTERCEPT_ACCESS_FUNC IoMemTable_TT[] =
 {
 	{ 0xff8000, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
@@ -125,7 +140,7 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_TT[] =
 	{ 0xff8e00, 16, IoMem_VoidRead, IoMem_WriteWithoutInterception },        /* VME Bus IO */
 
 	{ 0xff9000, SIZE_WORD, IoMem_VoidRead, IoMem_VoidWrite },                /* No bus error here */
-	{ 0xff9200, SIZE_WORD, IoMem_VoidRead, IoMem_VoidWrite },                /* DIP switches? */
+	{ 0xff9200, SIZE_WORD, IoMemTabTT_ReadDIPSwitches, IoMem_VoidWrite },    /* DIP switches */
 
 	{ 0xfffa01, SIZE_BYTE, MFP_GPIP_ReadByte, MFP_GPIP_WriteByte },
 	{ 0xfffa03, SIZE_BYTE, MFP_ActiveEdge_ReadByte, MFP_ActiveEdge_WriteByte },

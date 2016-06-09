@@ -45,9 +45,9 @@ const char Change_fileid[] = "Hatari change.c : " __DATE__ " " __TIME__;
 
 #define DEBUG 0
 #if DEBUG
-#define Dprintf(a...) printf(a)
+#define Dprintf(...) printf(__VA_ARGS__)
 #else
-#define Dprintf(a...)
+#define Dprintf(...)
 #endif
 
 /*-----------------------------------------------------------------------*/
@@ -307,15 +307,14 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 		bReInitIDEEmu = true;
 	}
 
-	/* Did change blitter, rtc or system type? */
+	/* Did change blitter, DSP or system type? */
 	if (changed->System.bBlitter != current->System.bBlitter
 #if ENABLE_DSP_EMU
 	    || changed->System.nDSPType != current->System.nDSPType
 #endif
-	    || changed->System.bRealTimeClock != current->System.bRealTimeClock
 	    || changed->System.nMachineType != current->System.nMachineType)
 	{
-		Dprintf("- blitter/rtc/dsp/machine>\n");
+		Dprintf("- blitter/dsp/machine>\n");
 		IoMem_UnInit();
 		bReInitIoMem = true;
 	}

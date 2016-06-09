@@ -39,7 +39,7 @@ extern void Joy_ToggleCursorEmulation(void);
 extern bool Joy_SwitchMode(int port);
 extern bool Joy_KeyDown(int symkey, int modkey);
 extern bool Joy_KeyUp(int symkey, int modkey);
-extern void Joy_StePadButtons_ReadWord(void);
+extern void Joy_StePadButtons_ReadByte(void);
 extern void Joy_StePadMulti_ReadWord(void);
 extern void Joy_StePadMulti_WriteWord(void);
 

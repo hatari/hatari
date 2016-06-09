@@ -13,6 +13,8 @@
 
 #define MORE_ACCURATE_68020_PIPELINE 1
 
+#include <inttypes.h>		/* Needed for PRIX64 */
+
 #include "main.h"
 #include "compat.h"
 
@@ -64,8 +66,6 @@
 bool check_prefs_changed_comp (void) { return false; }
 #endif
 #endif
-/* For faster JIT cycles handling */
-signed long pissoff = 0;
 
 /* Opcode of faulting instruction */
 static uae_u16 last_op_for_exception_3;
@@ -1310,15 +1310,19 @@ static void build_cpufunctbl (void)
 
 		/* unimplemented opcode? */
 		if (table->unimpclev > 0 && lvl >= table->unimpclev) {
-			if (currprefs.int_no_unimplemented && currprefs.cpu_model == 68060) {
-				cpufunctbl[opcode] = op_unimpl_1;
-				continue;
-			} else {
-				// emulate 68060 unimplemented instructions if int_no_unimplemented=false
-				if (currprefs.cpu_model != 68060 && table->unimpclev != 5) {
+			if (currprefs.cpu_model == 68060) {
+				// unimpclev == 5: not implemented in 68060.
+				if (currprefs.int_no_unimplemented && table->unimpclev == 5) {
+					cpufunctbl[opcode] = op_unimpl_1;
+					continue;
+				}
+				if (!currprefs.int_no_unimplemented || table->unimpclev != 5) {
 					cpufunctbl[opcode] = op_illg_1;
 					continue;
 				}
+			} else {
+				cpufunctbl[opcode] = op_illg_1;
+				continue;
 			}
 		}
 
@@ -1476,6 +1480,7 @@ static void prefs_changed_cpu (void)
 	currprefs.fpu_model = changed_prefs.fpu_model;
 	currprefs.mmu_model = changed_prefs.mmu_model;
 	currprefs.cpu_compatible = changed_prefs.cpu_compatible;
+	currprefs.address_space_24 = changed_prefs.address_space_24;
 	currprefs.cpu_cycle_exact = changed_prefs.cpu_cycle_exact;
 	currprefs.int_no_unimplemented = changed_prefs.int_no_unimplemented;
 	currprefs.fpu_no_unimplemented = changed_prefs.fpu_no_unimplemented;
@@ -1493,6 +1498,7 @@ static int check_prefs_changed_cpu2(void)
 		|| currprefs.cpu_model != changed_prefs.cpu_model
 		|| currprefs.fpu_model != changed_prefs.fpu_model
 		|| currprefs.mmu_model != changed_prefs.mmu_model
+		|| currprefs.address_space_24 != changed_prefs.address_space_24  /* WINUAE_FOR_HATARI */
 		|| currprefs.int_no_unimplemented != changed_prefs.int_no_unimplemented
 		|| currprefs.fpu_no_unimplemented != changed_prefs.fpu_no_unimplemented
 		|| currprefs.cpu_compatible != changed_prefs.cpu_compatible
@@ -1522,11 +1528,10 @@ static int check_prefs_changed_cpu2(void)
 
 void check_prefs_changed_cpu(void)
 {
-#ifndef WINUAE_FOR_HATARI
-	return;				/* [NP] TODO : handle cpu change on the fly ? */
+#ifndef WINUAE_FOR_HATARI	/* [NP] TODO : handle cpu change on the fly ? */
 	if (!config_changed)
 		return;
-#else
+#endif
 
 	currprefs.cpu_idle = changed_prefs.cpu_idle;
 	currprefs.ppc_cpu_idle = changed_prefs.ppc_cpu_idle;
@@ -1536,7 +1541,6 @@ void check_prefs_changed_cpu(void)
 		set_special(SPCFLAG_MODE_CHANGE);
 		reset_frame_rate_hack();
 	}
-#endif
 }
 
 void init_m68k (void)
@@ -2098,7 +2102,12 @@ static void exception_debug (int nr)
 	console_out_f (_T("Exception %d, PC=%08X\n"), nr, M68K_GETPC);
 #endif
 #ifdef WINUAE_FOR_HATARI
-	DebugUI_Exceptions(nr, M68K_GETPC);
+	if (unlikely(ExceptionDebugMask & EXCEPT_NOHANDLER) && STMemory_ReadLong(regs.vbr + 4*nr) == 0) {
+        	fprintf(stderr,"Uninitialized exception handler #%i!\n", nr);
+		DebugUI(REASON_CPU_EXCEPTION);
+	} else {
+		DebugUI_Exceptions(nr, M68K_GETPC);
+	}
 #endif
 }
 
@@ -2222,9 +2231,10 @@ static int iack_cycle(int nr)
 #else
 	int iack_start = CPU_IACK_CYCLES_START;
 	int e_cycles;
+	int cycle_exact = currprefs.cpu_cycle_exact && !currprefs.mmu_model;
 
 	/* In cycle exact mode, the cycles before reaching IACK are already counted */
-	if ( currprefs.cpu_cycle_exact )
+	if (cycle_exact)
 		iack_start = 0;
 
 	/* Pending bits / vector number can change before the end of the IACK sequence. */
@@ -2243,7 +2253,7 @@ static int iack_cycle(int nr)
 
 		if ( vector < 0 )						/* No DSP, check MFP */
 		{
-			if ( currprefs.cpu_cycle_exact )
+			if (cycle_exact)
 			{
 				x_do_cycles ( ( iack_start + CPU_IACK_CYCLES_MFP ) * cpucycleunit );
 				/* Flush all CE cycles so far to update PendingInterruptCount */
@@ -2271,7 +2281,7 @@ static int iack_cycle(int nr)
 	}
 	else if ( ( nr == 26 ) || ( nr == 28 ) )				/* HBL / VBL */
 	{
-		if ( currprefs.cpu_cycle_exact )
+		if (cycle_exact)
 		{
 			/* In CE mode, iack_start = 0, no need to call x_do_cycles() */
 			//x_do_cycles ( ( iack_start + CPU_IACK_CYCLES_VIDEO_CE + e_cycles ) * cpucycleunit );
@@ -2285,7 +2295,7 @@ static int iack_cycle(int nr)
 		e_cycles = M68000_WaitEClock ();
 //		fprintf ( stderr , "wait e clock %d\n" , e_cycles);
 
-		if ( currprefs.cpu_cycle_exact )
+		if (cycle_exact)
 		{
 			x_do_cycles ( ( e_cycles + CPU_IACK_CYCLES_VIDEO_CE ) * cpucycleunit );
 			/* Flush all CE cycles so far to update PendingInterruptCount */
@@ -2311,7 +2321,7 @@ static int iack_cycle(int nr)
 	}
 
 	/* Add 4 idle cycles for CE mode. For non-CE mode, this will be counted in add_approximate_exception_cycles() */
-	if ( currprefs.cpu_cycle_exact )
+	if (cycle_exact)
 		x_do_cycles( 4 * cpucycleunit );
 #endif
 	return vector;
@@ -2372,10 +2382,13 @@ static void Exception_ce000 (int nr)
 		x_put_word (m68k_areg (regs, 7) + 0, mode);
 		x_put_word (m68k_areg (regs, 7) + 2, last_fault_for_exception_3 >> 16);
 		x_do_cycles (2 * cpucycleunit);
+#ifndef WINUAE_FOR_HATARI
 		write_log (_T("Exception %d (%04x %x) at %x -> %x!\n"),
 			nr, last_op_for_exception_3, last_addr_for_exception_3, currpc, get_long_debug (4 * nr));
-#ifdef WINUAE_FOR_HATARI
-		fprintf(stderr,"%s Error at address $%x, PC=$%x addr_e3=%x op_e3=%x\n", nr==2?"Bus":"Address", last_fault_for_exception_3, currpc, last_addr_for_exception_3 , last_op_for_exception_3);
+#else
+		if (nr != 2 || last_fault_for_exception_3 != 0xff8a00 || currpc < TosAddress || currpc > TosAddress + TosSize)
+			fprintf(stderr,"%s Error at address $%x, PC=$%x addr_e3=%x op_e3=%x\n", nr==2?"Bus":"Address",
+			        last_fault_for_exception_3, currpc, last_addr_for_exception_3 , last_op_for_exception_3);
 #endif
 		goto kludge_me_do;
 	}
@@ -2713,11 +2726,7 @@ static void Exception_mmu (int nr, uaecptr oldpc)
 
 	if (!regs.s) {
 		regs.usp = m68k_areg (regs, 7);
-		if (currprefs.cpu_model == 68060) {
-			m68k_areg (regs, 7) = regs.isp;
-			if (interrupt)
-				regs.m = 0;
-		} else if (currprefs.cpu_model >= 68020) {
+		if (currprefs.cpu_model >= 68020 && currprefs.cpu_model < 68060) {
 			m68k_areg (regs, 7) = regs.m ? regs.msp : regs.isp;
 		} else {
 			m68k_areg (regs, 7) = regs.isp;
@@ -2725,7 +2734,7 @@ static void Exception_mmu (int nr, uaecptr oldpc)
 		regs.s = 1;
 		mmu_set_super (1);
 	}
-    
+
 	newpc = x_get_long (regs.vbr + 4 * nr);
 #if 0
 	write_log (_T("Exception %d: %08x -> %08x\n"), nr, currpc, newpc);
@@ -2743,7 +2752,13 @@ static void Exception_mmu (int nr, uaecptr oldpc)
 	} else if (nr == 5 || nr == 6 || nr == 7 || nr == 9) {
         Exception_build_stack_frame(oldpc, currpc, regs.mmu_ssw, nr, 0x2);
 	} else if (regs.m && interrupt) { /* M + Interrupt */
-        Exception_build_stack_frame(oldpc, currpc, regs.mmu_ssw, nr, 0x1);
+		Exception_build_stack_frame(oldpc, currpc, regs.mmu_ssw, nr, 0x0);
+		MakeSR();
+		regs.m = 0;
+		if (currprefs.cpu_model < 68060) {
+			regs.msp = m68k_areg(regs, 7);
+			Exception_build_stack_frame(oldpc, currpc, regs.mmu_ssw, nr, 0x1);
+		}
 	} else if (nr == 61) {
         Exception_build_stack_frame(oldpc, regs.instruction_pc, regs.mmu_ssw, nr, 0x0);
 	} else {
@@ -2834,11 +2849,7 @@ static void Exception_normal (int nr)
 
 	if (!regs.s) {
 		regs.usp = m68k_areg (regs, 7);
-		if (currprefs.cpu_model == 68060) {
-			m68k_areg (regs, 7) = regs.isp;
-			if (interrupt)
-				regs.m = 0;
-		} else if (currprefs.cpu_model >= 68020) {
+		if (currprefs.cpu_model >= 68020 && currprefs.cpu_model < 68060) {
 			m68k_areg (regs, 7) = regs.m ? regs.msp : regs.isp;
 		} else {
 			m68k_areg (regs, 7) = regs.isp;
@@ -2981,16 +2992,18 @@ static void Exception_normal (int nr)
 		} else if (regs.m && interrupt) { /* M + Interrupt */
 			m68k_areg (regs, 7) -= 2;
 			x_put_word (m68k_areg (regs, 7), vector_nr * 4);
-			m68k_areg (regs, 7) -= 4;
-			x_put_long (m68k_areg (regs, 7), currpc);
-			m68k_areg (regs, 7) -= 2;
-			x_put_word (m68k_areg (regs, 7), regs.sr);
-			regs.sr |= (1 << 13);
-			regs.msp = m68k_areg (regs, 7);
-			regs.m = 0;
-			m68k_areg (regs, 7) = regs.isp;
-			m68k_areg (regs, 7) -= 2;
-			x_put_word (m68k_areg (regs, 7), 0x1000 + vector_nr * 4);
+			if (currprefs.cpu_model < 68060) {
+				m68k_areg (regs, 7) -= 4;
+				x_put_long (m68k_areg (regs, 7), currpc);
+				m68k_areg (regs, 7) -= 2;
+				x_put_word (m68k_areg (regs, 7), regs.sr);
+				regs.sr |= (1 << 13);
+				regs.msp = m68k_areg(regs, 7);
+				regs.m = 0;
+				m68k_areg(regs, 7) = regs.isp;
+				m68k_areg (regs, 7) -= 2;
+				x_put_word (m68k_areg (regs, 7), 0x1000 + vector_nr * 4);
+			}
 		} else {
 			m68k_areg (regs, 7) -= 2;
 			x_put_word (m68k_areg (regs, 7), vector_nr * 4);
@@ -3016,9 +3029,12 @@ static void Exception_normal (int nr)
 			x_put_word (m68k_areg (regs, 7) + 6, last_op_for_exception_3);
 			x_put_word (m68k_areg (regs, 7) + 8, regs.sr);
 			x_put_long (m68k_areg (regs, 7) + 10, last_addr_for_exception_3);
+#ifndef WINUAE_FOR_HATARI
 			write_log (_T("Exception %d (%x) at %x -> %x!\n"), nr, last_fault_for_exception_3, currpc, get_long_debug (regs.vbr + 4 * vector_nr));
-#ifdef WINUAE_FOR_HATARI
-			fprintf(stderr,"%s Error at address $%x, PC=$%x addr_e3=%x op_e3=%x\n", nr==2?"Bus":"Address", last_fault_for_exception_3, currpc, last_addr_for_exception_3 , last_op_for_exception_3);
+#else
+			if (nr != 2 || last_fault_for_exception_3 != 0xff8a00 || currpc < TosAddress || currpc > TosAddress + TosSize)
+				fprintf(stderr,"%s Error at address $%x, PC=$%x addr_e3=%x op_e3=%x\n", nr==2?"Bus":"Address",
+				        last_fault_for_exception_3, currpc, last_addr_for_exception_3 , last_op_for_exception_3);
 #endif
 			goto kludge_me_do;
 		}
@@ -3032,6 +3048,9 @@ static void Exception_normal (int nr)
 #endif
 	m68k_areg (regs, 7) -= 2;
 	x_put_word (m68k_areg (regs, 7), regs.sr);
+	if (currprefs.cpu_model == 68060 && interrupt) {
+		regs.m = 0;
+	}
 kludge_me_do:
 	newpc = x_get_long (regs.vbr + 4 * vector_nr);
 	exception_in_exception = 0;
@@ -3155,7 +3174,7 @@ static void do_interrupt (int nr)
 	for (;;) {
 		Exception (nr + 24);
 		regs.intmask = nr;
-		if (!currprefs.cpu_compatible)
+		if (!currprefs.cpu_compatible || currprefs.cpu_model == 68060)
 			break;
 		if (m68k_interrupt_delay)
 			nr = regs.ipl;
@@ -4046,7 +4065,7 @@ static int do_specialties (int cycles)
 #ifdef WINUAE_FOR_HATARI
 		if (!first)
 		{
-			if ( currprefs.cpu_cycle_exact )
+			if (currprefs.cpu_cycle_exact && !currprefs.mmu_model)
 			{
 				/* Flush all CE cycles so far to update PendingInterruptCount */
 				M68000_AddCycles_CE ( currcycle * 2 / CYCLE_UNIT );

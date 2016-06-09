@@ -648,8 +648,13 @@ void Keymap_LoadRemapFile(char *pszFileName)
 			if (PCKeyCode < 10)
 			{
 				/* If it's not a valid number >= 10, then
-				 * assume we've got a symbolic key name */
-				PCKeyCode = Keymap_GetKeyFromName(szString);
+				 * assume we've got a symbolic key name
+				 */
+				int offset = 0;
+				/* quoted character (e.g. comment line char)? */
+				if (*szString == '\\' && strlen(szString) == 2)
+					offset = 1;
+				PCKeyCode = Keymap_GetKeyFromName(szString+offset);
 			}
 			p = strtok(NULL, "\n");
 			if (!p)
@@ -669,7 +674,8 @@ void Keymap_LoadRemapFile(char *pszFileName)
 			else
 			{
 				Log_Printf(LOG_WARN, "Could not parse keymap file:"
-				           " '%s', '%s'\n", szString, p);
+				           " '%s' (%d >= 8), '%s' (0 > %d <= %d)\n",
+					   szString, PCKeyCode, p, STScanCode, KBD_MAX_SCANCODE);
 			}
 		}
 	}

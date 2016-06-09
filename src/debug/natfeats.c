@@ -1,7 +1,7 @@
 /*
  * Hatari - natfeats.c
  * 
- * Copyright (C) 2012-2014 by Eero Tamminen
+ * Copyright (C) 2012-2016 by Eero Tamminen
  *
  * This file is distributed under the GNU General Public License, version 2
  * or at your option any later version. Read the file gpl.txt for details.
@@ -20,8 +20,8 @@ const char Natfeats_fileid[] = "Hatari natfeats.c : " __DATE__ " " __TIME__;
 #include "stMemory.h"
 #include "m68000.h"
 #include "natfeats.h"
+#include "debugui.h"
 #include "nf_scsidrv.h"
-#include "control.h"
 #include "log.h"
 
 
@@ -143,7 +143,7 @@ static bool nf_exit(Uint32 stack, Uint32 subid, Uint32 *retval)
 static bool nf_debugger(Uint32 stack, Uint32 subid, Uint32 *retval)
 {
 	LOG_TRACE(TRACE_NATFEATS, "NF_DEBUGGER()\n");
-	M68000_SetSpecial(SPCFLAG_DEBUGGER);
+	DebugUI(REASON_PROGRAM);
 	return true;
 }
 

@@ -30,7 +30,11 @@ const char Gemdos_fileid[] = "Hatari gemdos.c : " __DATE__ " " __TIME__;
 #include <sys/statvfs.h>
 #endif
 #include <sys/types.h>
+#if HAVE_UTIME_H
 #include <utime.h>
+#elif HAVE_SYS_UTIME_H
+#include <sys/utime.h>
+#endif
 #include <time.h>
 #include <ctype.h>
 #include <unistd.h>
@@ -513,6 +517,19 @@ void GemDOS_Reset(void)
 	}
 	DTAIndex = 0;
 
+	if (emudrives)
+	{
+		for (i = 0; i < MAX_HARDDRIVES; i++)
+		{
+			if (emudrives[i])
+			{
+				/* Initialize current directory to the root of the drive */
+				strcpy(emudrives[i]->fs_currpath, emudrives[i]->hd_emulation_dir);
+				File_AddSlashToEndFileName(emudrives[i]->fs_currpath);
+			}
+		}
+	}
+
 	/* Reset */
 	bInitGemDOS = false;
 	CurrentDrive = nBootDrive;
@@ -644,13 +661,12 @@ void GemDOS_InitDrives(void)
 	/* intialize data for harddrive emulation: */
 	if (nMaxDrives > 0 && !emudrives)
 	{
-		emudrives = malloc(MAX_HARDDRIVES * sizeof(EMULATEDDRIVE *));
+		emudrives = calloc(MAX_HARDDRIVES, sizeof(EMULATEDDRIVE *));
 		if (!emudrives)
 		{
 			perror("GemDOS_InitDrives");
 			return;
 		}
-		memset(emudrives, 0, MAX_HARDDRIVES * sizeof(EMULATEDDRIVE *));
 	}
 
 	ImagePartitions = nAcsiPartitions + nIDEPartitions;
@@ -695,10 +711,6 @@ void GemDOS_InitDrives(void)
 		// drive letter/number exists...
 		if (GEMDOS_DoesHostDriveFolderExist(emudrives[i]->hd_emulation_dir, DriveNumber))
 		{
-			/* initialize current directory string, too (initially the same as hd_emulation_dir) */
-			strcpy(emudrives[i]->fs_currpath, emudrives[i]->hd_emulation_dir);
-			File_AddSlashToEndFileName(emudrives[i]->fs_currpath);    /* Needs trailing slash! */
-
 			/* map drive */
 			Log_Printf(LOG_INFO, "GEMDOS HDD emulation, %c: <-> %s.\n",
 				   'A'+DriveNumber, emudrives[i]->hd_emulation_dir);
@@ -1087,10 +1099,11 @@ static int clip_to_83(char *name)
  */
 static bool add_path_component(char *path, int maxlen, const char *origname, bool is_dir)
 {
-	char *tmp, *match, name[strlen(origname) + 3];
+	char *tmp, *match;
 	int dot, namelen, pathlen;
 	int (*chr_conv)(int);
 	bool modified;
+	char *name = alloca(strlen(origname) + 3);
 
 	/* append separator */
 	pathlen = strlen(path);
@@ -1342,7 +1355,7 @@ void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName,
 		if ((s = strchr(filename, '\\')))
 		{
 			int dirlen = s - filename;
-			char dirname[dirlen+1];
+			char *dirname = alloca(dirlen + 1);
 			/* copy dirname */
 			strncpy(dirname, filename, dirlen);
 			dirname[dirlen] = '\0';
@@ -3433,6 +3446,9 @@ void GemDOS_OpCode(void)
  */
 void GemDOS_Boot(void)
 {
+	if (bInitGemDOS)
+		GemDOS_Reset();
+
 	bInitGemDOS = true;
 
 	LOG_TRACE(TRACE_OS_GEMDOS, "Gemdos_Boot() at PC 0x%X\n", M68000_GetPC() );
@@ -3454,7 +3470,8 @@ void GemDOS_Boot(void)
 	}
 	else
 	{
-		act_pd = STMemory_ReadLong(TosAddress + 0x28);
+		Uint32 osAddress = STMemory_ReadLong(0x4f2);
+		act_pd = STMemory_ReadLong(osAddress + 0x28);
 	}
 
 	/* Save old GEMDOS handler address */

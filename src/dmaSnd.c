@@ -656,10 +656,8 @@ static void DmaSnd_Apply_LMC(int nMixBufIdx, int nSamplesToGenerate)
  */
 void DmaSnd_STE_HBL_Update(void)
 {
-	if ( ( ConfigureParams.System.nMachineType != MACHINE_STE )
-	  && ( ConfigureParams.System.nMachineType != MACHINE_MEGA_STE ) )
+	if (!Config_IsMachineSTE())
 		return;
-
 
 	/* The DMA starts refilling the FIFO when display is OFF (eg cycle 376 in low res 50 Hz) */
 	DmaSnd_FIFO_Refill ();
@@ -973,7 +971,8 @@ void DmaSnd_InterruptHandler_Microwire(void)
 	int	cmd_len;
 
 	/* If emulated computer is the Falcon, let's the crossbar Microwire code do the job. */
-	if (ConfigureParams.System.nMachineType == MACHINE_FALCON) {
+	if (Config_IsMachineFalcon())
+	{
 		Crossbar_InterruptHandler_Microwire();
 		return;
 	}

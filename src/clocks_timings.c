@@ -180,7 +180,7 @@ void	ClocksTimings_InitMachine ( MACHINETYPE MachineType )
 {
 	memset ( (void *)&MachineClocks , 0 , sizeof ( MachineClocks ) );
 
-	if ( MachineType == MACHINE_ST )
+	if (MachineType == MACHINE_ST || MachineType == MACHINE_MEGA_ST)
 	{
 		int	CLK16, CLK8, CLK4, CLK2, CLK500;
 
@@ -362,7 +362,8 @@ Uint32	ClocksTimings_GetCyclesPerVBL ( MACHINETYPE MachineType , int ScreenRefre
 	CyclesPerVBL = MachineClocks.CPU_Freq / ScreenRefreshRate;			/* default value */
 
 	/* STF and STE have the same numbers of cycles per VBL */
-	if ( ( MachineType == MACHINE_ST ) || ( MachineType == MACHINE_STE ) )
+	if (MachineType == MACHINE_ST || MachineType == MACHINE_MEGA_ST
+	    || MachineType == MACHINE_STE)
 	{
 		if ( ScreenRefreshRate == 50 )
 			CyclesPerVBL = ATARI_STF_CYCLES_PER_VBL_PAL;
@@ -412,7 +413,8 @@ Uint32	ClocksTimings_GetVBLPerSec ( MACHINETYPE MachineType , int ScreenRefreshR
 	if ( RoundVBLPerSec == false )
 	{
 		/* STF and STE have the same numbers of cycles per VBL */
-		if ( ( MachineType == MACHINE_ST ) || ( MachineType == MACHINE_STE ) )
+		if (MachineType == MACHINE_ST || MachineType == MACHINE_MEGA_ST
+		    || MachineType == MACHINE_STE)
 			VBLPerSec = ( (Sint64)MachineClocks.CPU_Freq << CLOCKS_TIMINGS_SHIFT_VBL ) / ClocksTimings_GetCyclesPerVBL ( MachineType , ScreenRefreshRate );
 
 		/* For machines where cpu freq can be changed, we don't know the number of cycles per VBL */
@@ -447,7 +449,8 @@ Uint32	ClocksTimings_GetVBLDuration_micro ( MACHINETYPE MachineType , int Screen
 	if ( RoundVBLPerSec == false )
 	{
 		/* STF and STE have the same numbers of cycles per VBL */
-		if ( ( MachineType == MACHINE_ST ) || ( MachineType == MACHINE_STE ) )
+		if (MachineType == MACHINE_ST || MachineType == MACHINE_MEGA_ST
+		    || MachineType == MACHINE_STE)
 			VBLDuration_micro = (Uint32) (1000000.0 * ClocksTimings_GetCyclesPerVBL ( MachineType , ScreenRefreshRate ) / MachineClocks.CPU_Freq + 0.5);
 
 		/* For machines where cpu freq can be changed, we don't know the number of cycles per VBL */
@@ -487,7 +490,8 @@ Sint64	ClocksTimings_GetSamplesPerVBL ( MACHINETYPE MachineType , int ScreenRefr
 	if ( RoundVBLPerSec == false )
 	{
 		/* STF and STE have the same numbers of cycles per VBL */
-		if ( ( MachineType == MACHINE_ST ) || ( MachineType == MACHINE_STE ) )
+		if (MachineType == MACHINE_ST || MachineType == MACHINE_MEGA_ST
+		    || MachineType == MACHINE_STE)
 			SamplesPerVBL = ( ((Sint64)AudioFreq * ClocksTimings_GetCyclesPerVBL ( MachineType , ScreenRefreshRate ) ) << 28 ) / MachineClocks.CPU_Freq;
 
 		/* For machines where cpu freq can be changed, we don't know the number of cycles per VBL */
