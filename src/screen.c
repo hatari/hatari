@@ -94,7 +94,7 @@ static bool bScreenContentsChanged;     /* true if buffer changed and requires b
 static bool bScrDoubleY;                /* true if double on Y */
 static int ScrUpdateFlag;               /* Bit mask of how to update screen */
 
-/* These are used for the generic screen convertion functions */
+/* These are used for the generic screen conversion functions */
 static int genconv_width_req, genconv_height_req, genconv_bpp;
 static bool genconv_do_update;          /* HW surface is available -> the SDL need not to update the surface after ->pixel access */
 
@@ -1311,7 +1311,7 @@ bool Screen_Draw(void)
 
 /**
  * This is used to set the size of the SDL screen
- * when we're using the generic convertion functions.
+ * when we're using the generic conversion functions.
  */
 void Screen_SetGenConvSize(int width, int height, int bpp, bool bForceChange)
 {

@@ -75,7 +75,7 @@ static bool XBios_Dbmsg(Uint32 Params)
 		char buffer[256];
 
 		/* between non-halting message and debugger command IDs,
-		 * are halting messages with message lenght encoded in ID
+		 * are halting messages with message length encoded in ID
 		 */
 		if (msgnum > 0xF000 && msgnum < 0xF100)
 		{
