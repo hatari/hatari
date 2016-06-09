@@ -13,7 +13,7 @@
   code goes to the people from the Aranym project of course).
 
   Videl can run at 2 frequencies : 25.175 Mhz or 32 MHz
-  
+
   Hardware I/O registers:
 
 	$FFFF8006 (byte) : monitor type
@@ -27,7 +27,7 @@
 	$FFFF820D (byte) : VDL_VBL - Video Base Lo
 	$FFFF820E (word) : VDL_LOF - Offset to next line
 	$FFFF8210 (word) : VDL_LWD - Line Wide in Words
-	
+
 	$FFFF8240 (word) : VDL_STC - ST Palette Register 00
 	.........
 	$FFFF825E (word) : VDL_STC - ST Palette Register 15
@@ -36,7 +36,7 @@
 	$FFFF8264 (byte) : Horizontal scroll register shadow register
 	$FFFF8265 (byte) : Horizontal scroll register
 	$FFFF8266 (word) : Falcon shift mode
-	
+
 	$FFFF8280 (word) : HHC - Horizontal Hold Counter
 	$FFFF8282 (word) : HHT - Horizontal Hold Timer
 	$FFFF8284 (word) : HBB - Horizontal Border Begin
@@ -46,7 +46,7 @@
 	$FFFF828C (word) : HSS - Horizontal SS
 	$FFFF828E (word) : HFS - Horizontal FS
 	$FFFF8290 (word) : HEE - Horizontal EE
-	
+
 	$FFFF82A0 (word) : VFC - Vertical Frequency Counter
 	$FFFF82A2 (word) : VFT - Vertical Frequency Timer
 	$FFFF82A4 (word) : VBB - Vertical Border Begin
@@ -54,7 +54,7 @@
 	$FFFF82A8 (word) : VDB - Vertical Display Begin
 	$FFFF82AA (word) : VDE - Vertical Display End
 	$FFFF82AC (word) : VSS - Vertical SS
-	
+
 	$FFFF82C0 (word) : VCO - Video control
 	$FFFF82C2 (word) : VMD - Video mode
 
@@ -165,7 +165,7 @@ void VIDEL_FalconColorRegsWrite(void)
 }
 
 /**
- * VIDEL_Monitor_WriteByte : Contains memory and monitor configuration. 
+ * VIDEL_Monitor_WriteByte : Contains memory and monitor configuration.
  *                           This register is read only.
  */
 void VIDEL_Monitor_WriteByte(void)
@@ -177,7 +177,7 @@ void VIDEL_Monitor_WriteByte(void)
 }
 
 /**
- * VIDEL_SyncMode_WriteByte : Videl synchronization mode. 
+ * VIDEL_SyncMode_WriteByte : Videl synchronization mode.
  *             $FFFF820A [R/W] _______0  .................................. SYNC-MODE
                                      ||
                                      |+--Synchronisation [ 0:internal / 1:external ]
@@ -193,7 +193,7 @@ void VIDEL_SyncMode_WriteByte(void)
 		syncMode &= 0xfd;
 	else
 		syncMode |= 0x2;
-	
+
 	IoMem_WriteByte(0xff820a, syncMode);
 }
 
@@ -231,7 +231,7 @@ void VIDEL_ScreenCounter_WriteByte(void)
 	else if ( IoAccessCurrentAddress == 0xff8209 )
 		addr_new = ( addr_new & 0xffff00 ) | ( AddrByte );
 
-	// TODO: save the value in a table for the final rendering 
+	// TODO: save the value in a table for the final rendering
 }
 
 /**
@@ -274,7 +274,7 @@ void VIDEL_ScreenBase_WriteByte(void)
 }
 
 /**
-    VIDEL_ST_ShiftModeWriteByte : 
+    VIDEL_ST_ShiftModeWriteByte :
 	$FFFF8260 [R/W] B  ______10  ST Shift Mode
 	                         ||
 	                         ||                           others   vga
@@ -298,7 +298,7 @@ void VIDEL_ST_ShiftModeWriteByte(void)
 	LOG_TRACE(TRACE_VIDEL, "Videl : $ff8260 ST Shift Mode (STSHIFT) write: 0x%02x\n", st_shiftMode);
 
 	/* Bits 2-7 are set to 0 */
-	IoMem_WriteByte(0xff8260, st_shiftMode & 3); 
+	IoMem_WriteByte(0xff8260, st_shiftMode & 3);
 
 	/* Activate STE palette */
 	videl.bUseSTShifter = true;
@@ -332,10 +332,10 @@ void VIDEL_ST_ShiftModeWriteByte(void)
 	}
 
 	/* Set line width ($FFFF8210) */
-	IoMem_WriteWord(0xff8210, line_width); 
-	
+	IoMem_WriteWord(0xff8210, line_width);
+
 	/* Set video mode ($FFFF82C2) */
-	IoMem_WriteWord(0xff82c2, video_mode); 
+	IoMem_WriteWord(0xff82c2, video_mode);
 }
 
 /**
@@ -565,11 +565,11 @@ void VIDEL_VMD_WriteWord(void)
 static Uint32 VIDEL_getVideoramAddress(void)
 {
 	Uint32 videoBase;
-	
+
 	videoBase  = (Uint32) IoMem_ReadByte(0xff8201) << 16;
 	videoBase |= (Uint32) IoMem_ReadByte(0xff8203) << 8;
 	videoBase |= IoMem_ReadByte(0xff820d) & ~3;
-	
+
 	return videoBase;
 }
 
@@ -580,7 +580,7 @@ static Uint16 VIDEL_getScreenBpp(void)
 	Uint8  st_shift = IoMem_ReadByte(0xff8260);
 
 	/* to get bpp, we must examine f_shift and st_shift.
-	 * f_shift is valid if any of bits no. 10, 8 or 4 is set. 
+	 * f_shift is valid if any of bits no. 10, 8 or 4 is set.
 	 * Priority in f_shift is: 10 ">" 8 ">" 4, i.e.
 	 * if bit 10 set then bit 8 and bit 4 don't care...
 	 * If all these bits are 0 and ST shifter is written
@@ -612,7 +612,7 @@ static Uint16 VIDEL_getScreenBpp(void)
  *	left border + graphic area + right border
  *	left border  : hdb - hbe-offset
  *	right border : hbb - hde-offset
- *	Graphics display : starts at cycle HDB and ends at cycle HDE. 
+ *	Graphics display : starts at cycle HDB and ends at cycle HDE.
  */
 static int VIDEL_getScreenWidth(void)
 {
@@ -721,13 +721,13 @@ static int VIDEL_getScreenWidth(void)
  *	upper border + graphic area + lower border
  *	upper border : vdb - vbe
  *	lower border : vbb - vde
- *	Graphics display : starts at line VDB and ends at line VDE. 
+ *	Graphics display : starts at line VDB and ends at line VDE.
  *	If interlace mode off unit of VC-registers is half lines, else lines.
  */
 static int VIDEL_getScreenHeight(void)
 {
 	Uint16 vbb = IoMem_ReadWord(0xff82a4) & 0x07ff;
-	Uint16 vbe = IoMem_ReadWord(0xff82a6) & 0x07ff;  
+	Uint16 vbe = IoMem_ReadWord(0xff82a6) & 0x07ff;
 	Uint16 vdb = IoMem_ReadWord(0xff82a8) & 0x07ff;
 	Uint16 vde = IoMem_ReadWord(0xff82aa) & 0x07ff;
 	Uint16 vmode = IoMem_ReadWord(0xff82c2);
@@ -766,7 +766,7 @@ static int VIDEL_getScreenHeight(void)
 		videl.upperBorderSize >>= 1;
 		videl.lowerBorderSize >>= 1;
 	}
-	
+
 	if (vmode & 0x01) {		/* double */
 		videl.YSize >>= 1;
 		videl.upperBorderSize >>= 1;
@@ -784,11 +784,24 @@ void VIDEL_UpdateColors(void)
 {
 	int i, r, g, b, colors = 1 << videl.save_scrBpp;
 
-	if (videl.save_scrBpp > 8 || videl.hostColorsSync)
+	if (videl.hostColorsSync)
 		return;
 
 #define F_COLORS(i) IoMem_ReadByte(VIDEL_COLOR_REGS_BEGIN + (i))
 #define STE_COLORS(i)	IoMem_ReadByte(0xff8240 + (i))
+
+	/* True color mode ? */
+	if (videl.save_scrBpp > 8) {
+		/* Videl color 0 ($ffff9800) must be taken into account as it is the border color in true color mode */
+		r = F_COLORS(0) & 0xfc;
+		r |= r>>6;
+		g = F_COLORS(0 + 1) & 0xfc;
+		g |= g>>6;
+		b = F_COLORS(0 + 3) & 0xfc;
+		b |= b>>6;
+		Screen_SetPaletteColor(0, r,g,b);
+		return;
+	}
 
 	if (!videl.bUseSTShifter) {
 		for (i = 0; i < colors; i++) {
@@ -875,8 +888,8 @@ bool VIDEL_renderScreen(void)
 	if (!Screen_Lock())
 		return false;
 
-	/* 
-	   I think this implementation is naive: 
+	/*
+	   I think this implementation is naive:
 	   indeed, I suspect that we should instead skip lineoffset
 	   words each time we have read "more" than linewidth words
 	   (possibly "more" because of the number of bit planes).
@@ -1081,11 +1094,11 @@ void Videl_Info(FILE *fp, Uint32 dummy)
 	fprintf(fp, "\n-------------------------\n");
 
 	fprintf(fp, "Video base  : %08x\n",
-		(IoMem_ReadByte(0xff8201)<<16) + 
-		(IoMem_ReadByte(0xff8203)<<8)  + 
+		(IoMem_ReadByte(0xff8201)<<16) +
+		(IoMem_ReadByte(0xff8203)<<8)  +
 		 IoMem_ReadByte(0xff820d));
 	fprintf(fp, "Video count : %08x\n",
-		(IoMem_ReadByte(0xff8205)<<16) + 
-		(IoMem_ReadByte(0xff8207)<<8)  + 
+		(IoMem_ReadByte(0xff8205)<<16) +
+		(IoMem_ReadByte(0xff8207)<<8)  +
 		 IoMem_ReadByte(0xff8209));
 }
