@@ -591,7 +591,7 @@ static SHIFTER_FRAME	ShifterFrame;
 
 typedef struct
 {
-	char	VideoTimingName[ 20  ];
+	const char *VideoTimingName;
 
 	int	Preload_Start_Hi;		/*   0 (STE) */
 	int	H_Start_Hi;			/*   4 */
@@ -815,7 +815,7 @@ void	Video_InitTimings(void)
 	pVideoTiming1 = &VideoTimings[ VIDEO_TIMING_STF_WS1 ];
 
 	/* Init all timings for WS1 mode */
-	strcpy ( pVideoTiming1->VideoTimingName , "WS1" );
+	pVideoTiming1->VideoTimingName		= "WS1";
 	pVideoTiming1->H_Start_Hi 		=   4;
 	pVideoTiming1->Blank_Stop_Low_60	=  24;
 	pVideoTiming1->Blank_Stop_Low_50	=  28;
@@ -852,7 +852,7 @@ void	Video_InitTimings(void)
 #endif
 	/* WS2/WS3/WS4 timings are derived from WS1 with an increment */	
 	pVideoTiming2 = &VideoTimings[ VIDEO_TIMING_STF_WS2 ];
-	strcpy ( pVideoTiming2->VideoTimingName , "WS2" );
+	pVideoTiming2->VideoTimingName		= "WS2";
 	Video_InitTimings_Copy ( pVideoTiming1 , pVideoTiming2 , 3 );
 	pVideoTiming2->VblVideoCycleOffset 	= VBL_VIDEO_CYCLE_OFFSET_STF;
 	pVideoTiming2->Hbl_Int_Pos_Low_60	= CYCLES_PER_LINE_60HZ;
@@ -860,7 +860,7 @@ void	Video_InitTimings(void)
 	pVideoTiming2->Hbl_Int_Pos_Hi		= CYCLES_PER_LINE_71HZ;
 
 	pVideoTiming2 = &VideoTimings[ VIDEO_TIMING_STF_WS3 ];
-	strcpy ( pVideoTiming2->VideoTimingName , "WS3" );
+	pVideoTiming2->VideoTimingName		= "WS3";
 	Video_InitTimings_Copy ( pVideoTiming1 , pVideoTiming2 , 1 );
 	pVideoTiming2->VblVideoCycleOffset 	= VBL_VIDEO_CYCLE_OFFSET_STF;
 	pVideoTiming2->Hbl_Int_Pos_Low_60	= CYCLES_PER_LINE_60HZ;
@@ -868,7 +868,7 @@ void	Video_InitTimings(void)
 	pVideoTiming2->Hbl_Int_Pos_Hi		= CYCLES_PER_LINE_71HZ;
 
 	pVideoTiming2 = &VideoTimings[ VIDEO_TIMING_STF_WS4 ];
-	strcpy ( pVideoTiming2->VideoTimingName , "WS4" );
+	pVideoTiming2->VideoTimingName		= "WS4";
 	Video_InitTimings_Copy ( pVideoTiming1 , pVideoTiming2 , 2 );
 	pVideoTiming2->VblVideoCycleOffset 	= VBL_VIDEO_CYCLE_OFFSET_STF;
 	pVideoTiming2->Hbl_Int_Pos_Low_60	= CYCLES_PER_LINE_60HZ;
@@ -878,7 +878,7 @@ void	Video_InitTimings(void)
 
 	/* Init all timings for STE machine */
 	pVideoTiming1 = &VideoTimings[ VIDEO_TIMING_STE ];
-	strcpy ( pVideoTiming1->VideoTimingName , "STE" );
+	pVideoTiming1->VideoTimingName		= "STE";
 	pVideoTiming1->Preload_Start_Hi		=   0;
 	pVideoTiming1->H_Start_Hi 		=   4;
 	pVideoTiming1->Blank_Stop_Low_60	=  24;
@@ -915,7 +915,7 @@ void	Video_InitTimings(void)
 
 	/* Use the STE timings for TT */
 	pVideoTiming2 = &VideoTimings[ VIDEO_TIMING_TT ];
-	strcpy ( pVideoTiming2->VideoTimingName , "TT" );
+	pVideoTiming2->VideoTimingName = "TT";
 	Video_InitTimings_Copy ( pVideoTiming1 , pVideoTiming2 , 0 );
 
 	/* All freq/res timings must be rounded to the lowest 2 cycles */
@@ -1044,7 +1044,7 @@ fprintf ( stderr , "Video_SetSystemTimings2 %d %d -> %d (%s) %d %d %d\n" , Machi
 }
 
 
-char	*Video_GetTimings_Name ( void )
+const char	*Video_GetTimings_Name ( void )
 {
 	return pVideoTiming->VideoTimingName;
 }

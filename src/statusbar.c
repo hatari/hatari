@@ -483,8 +483,9 @@ void Statusbar_UpdateInfo(void)
 	/* machine type */
 	switch (ConfigureParams.System.nMachineType) {
 	case MACHINE_ST:
-		end = Statusbar_AddString(end, "ST");
-		end += sprintf(end, "(%s)", Video_GetTimings_Name() );
+		end = Statusbar_AddString(end, "ST(");
+		end = Statusbar_AddString(end, Video_GetTimings_Name());
+		*end++ = ')';
 		break;
 	case MACHINE_MEGA_ST:
 		end = Statusbar_AddString(end, "MegaST");
