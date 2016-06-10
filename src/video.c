@@ -3122,6 +3122,24 @@ fprintf ( stderr , "test %d %d %d %d\n", LineCycles, pVideoTiming->H_Stop_Low_60
 #endif
 
 
+	/* TEMP for 'Gen4 Demo' by Ziggy / OVR in WS2,WS3,WS4 : */
+	/* top border is removed 4 cycles too late (due to double STOP instruction ?) and trigger a wrong "left+2" */
+	if ( ( STMemory_ReadLong ( 0xc000 ) == 0x69676779 )			/* "iggy" */
+		&& ( M68000_GetPC() == 0x635e )
+		&& ( STMemory_ReadLong ( M68000_GetPC() ) == 0x11fc0002 )	/* move.b #2 */
+		&& ( ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask & BORDERMASK_LEFT_PLUS_2 )
+	   )
+	{
+		/* cancel a wrong left+2 */
+		LOG_TRACE(TRACE_VIDEO_BORDER_H , "cancel wrong left+2 gen4/ziggy\n" );
+		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask &= ~BORDERMASK_LEFT_PLUS_2;
+		ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle = pVideoTiming->H_Start_Low_50;
+		ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle = pVideoTiming->H_Stop_Low_50;
+		nCyclesPerLine = 512;
+	}
+	/* TEMP for 'Gen4 Demo' by Ziggy / OVR in WS2,WS3,WS4 : */
+
+
 	/* Store cycle position of freq 50/60 to check for top/bottom border removal in Video_EndHBL. */
 	ShifterFrame.Freq = Freq;
 	if ( Freq == 0x02 )							/* 50 Hz */
