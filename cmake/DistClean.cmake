@@ -12,7 +12,7 @@ if(UNIX)
 			src/uae-cpu/cpudefs.c src/uae-cpu/cpuemu.c
 			src/uae-cpu/cpustbl.c src/uae-cpu/cputbl.h
 			tools/hmsa/hmsa tools/debugger/gst2ascii
-			python-ui/conftypes.py)
+			python-ui/conftypes.py python-ui/*.pyc)
 		add_custom_command(TARGET distclean POST_BUILD
 			COMMAND rm -f ${CLEAN_FILE}
 			DEPENDS clean)
