@@ -27,7 +27,7 @@ endaddr         EQU $FFFFFE
                 move.w  #$20,-(SP)
                 trap    #1              ; Super
                 addq.l  #6,SP
-                move.w  D0,old_ssp
+                move.l  D0,old_ssp
 
                 clr.w   -(SP)
                 pea     filename
