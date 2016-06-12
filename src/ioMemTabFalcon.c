@@ -165,6 +165,50 @@ static void IoMemTabFalc_Switches_ReadByte(void)
 }
 
 
+/**
+ * Some IO memory ranges do not result in a bus error when accessed
+ * in STE-compatible bus mode and with single byte access.
+ */
+static void IoMemTabFalc_Compatible_ReadByte(void)
+{
+	if (nIoMemAccessSize != SIZE_BYTE || (IoMem_ReadByte(0xff8007) & 0x20) != 0)
+	{
+		M68000_BusError(IoAccessBaseAddress, BUS_ERROR_READ,
+		                nIoMemAccessSize, BUS_ERROR_ACCESS_DATA);
+	}
+}
+
+static void IoMemTabFalc_Compatible_WriteByte(void)
+{
+	if (nIoMemAccessSize != SIZE_BYTE || (IoMem_ReadByte(0xff8007) & 0x20) != 0)
+	{
+		M68000_BusError(IoAccessBaseAddress, BUS_ERROR_WRITE,
+		                nIoMemAccessSize, BUS_ERROR_ACCESS_DATA);
+	}
+}
+
+/**
+ * Some IO memory ranges do not result in a bus error when
+ * accessed in STE-compatible bus mode and with word access.
+ */
+static void IoMemTabFalc_Compatible_ReadWord(void)
+{
+	if (nIoMemAccessSize == SIZE_BYTE || (IoMem_ReadByte(0xff8007) & 0x20) != 0)
+	{
+		M68000_BusError(IoAccessBaseAddress, BUS_ERROR_READ,
+		                nIoMemAccessSize, BUS_ERROR_ACCESS_DATA);
+	}
+}
+
+static void IoMemTabFalc_Compatible_WriteWord(void)
+{
+	if (nIoMemAccessSize == SIZE_BYTE || (IoMem_ReadByte(0xff8007) & 0x20) != 0)
+	{
+		M68000_BusError(IoAccessBaseAddress, BUS_ERROR_WRITE,
+		                nIoMemAccessSize, BUS_ERROR_ACCESS_DATA);
+	}
+}
+
 /*-----------------------------------------------------------------------*/
 /*
   List of functions to handle read/write hardware interceptions for a Falcon.
@@ -240,6 +284,9 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 	{ 0xff82ae, 18,        IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus errors here */
 	{ 0xff82c0, SIZE_WORD, IoMem_ReadWithoutInterception, VIDEL_VCO_WriteWord },            /* VCO - Video control */
 	{ 0xff82c2, SIZE_WORD, IoMem_ReadWithoutInterception, VIDEL_VMD_WriteWord },            /* VMD - Video mode */
+
+	{ 0xff8560, SIZE_BYTE, IoMemTabFalc_Compatible_ReadByte, IoMemTabFalc_Compatible_WriteByte },
+	{ 0xff8564, SIZE_BYTE, IoMemTabFalc_Compatible_ReadByte, IoMemTabFalc_Compatible_WriteByte },
 
 	{ 0xff8604, SIZE_WORD, FDC_DiskControllerStatus_ReadWord, FDC_DiskController_WriteWord },
 	{ 0xff8606, SIZE_WORD, FDC_DmaStatus_ReadWord, FDC_DmaModeControl_WriteWord },
@@ -351,6 +398,15 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 	{ 0xff9222, SIZE_WORD, IoMem_VoidRead, IoMem_WriteWithoutInterception },          /* Lightpen Y position */
 
 	{ 0xff9800, 0x400, IoMem_ReadWithoutInterception, VIDEL_FalconColorRegsWrite },   /* Falcon Videl palette */
+
+	{ 0xffc020, SIZE_BYTE, IoMemTabFalc_Compatible_ReadByte, IoMemTabFalc_Compatible_WriteByte },
+	{ 0xffc021, SIZE_BYTE, IoMemTabFalc_Compatible_ReadByte, IoMemTabFalc_Compatible_WriteByte },
+	{ 0xffd020, SIZE_BYTE, IoMemTabFalc_Compatible_ReadByte, IoMemTabFalc_Compatible_WriteByte },
+	{ 0xffd074, SIZE_WORD, IoMemTabFalc_Compatible_ReadWord, IoMemTabFalc_Compatible_WriteWord },
+	{ 0xffd420, SIZE_BYTE, IoMemTabFalc_Compatible_ReadByte, IoMemTabFalc_Compatible_WriteByte },
+	{ 0xffd425, SIZE_BYTE, IoMemTabFalc_Compatible_ReadByte, IoMemTabFalc_Compatible_WriteByte },
+	{ 0xffd520, SIZE_WORD, IoMemTabFalc_Compatible_ReadWord, IoMemTabFalc_Compatible_WriteWord },
+	{ 0xffd530, SIZE_WORD, IoMemTabFalc_Compatible_ReadWord, IoMemTabFalc_Compatible_WriteWord },
 
 	{ 0xfffa00, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xfffa01, SIZE_BYTE, MFP_GPIP_ReadByte, MFP_GPIP_WriteByte },
