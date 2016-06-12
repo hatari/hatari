@@ -331,7 +331,6 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 	{ 0xff9200, SIZE_BYTE, IoMemTabFalc_Switches_ReadByte, IoMem_WriteWithoutInterception }, /* Falcon switches */
 	{ 0xff9201, SIZE_BYTE, Joy_StePadButtons_ReadByte, IoMem_WriteWithoutInterception }, /* Joypad fire buttons */
 	{ 0xff9202, SIZE_WORD, Joy_StePadMulti_ReadWord, Joy_StePadMulti_WriteWord },     /* Joypad directions/buttons/selection */
-	{ 0xff9206, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                         /* No bus error here ; fix Wotanoid game */
 	{ 0xff9210, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                         /* No bus error here */
 	{ 0xff9211, SIZE_BYTE, IoMem_VoidRead, IoMem_WriteWithoutInterception },          /* Joypad 0 X position (?) */
 	{ 0xff9212, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                         /* No bus error here */
