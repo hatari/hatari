@@ -171,6 +171,17 @@ static void IoMem_FixVoidAccessForMegaST(void)
 
 
 /**
+ * Mega-STE has an additional Cache/CPU control register compared to the normal STE.
+ * Here we fix up the table accordingly.
+ */
+static void IoMem_FixAccessForMegaSTE(void)
+{
+	pInterceptReadTable[ 0xff8e21 - 0xff8000 ] = IoMem_ReadWithoutInterception;
+	pInterceptWriteTable[ 0xff8e21 - 0xff8000 ] = IoMemTabMegaSTE_CacheCpuCtrl_WriteByte;
+}
+
+
+/**
  * Fix up table for Falcon in STE compatible bus mode (i.e. less bus errors)
  */
 static void IoMem_FixVoidAccessForCompatibleFalcon(void)
@@ -228,7 +239,10 @@ void IoMem_Init(void)
 		pInterceptAccessFuncs = IoMemTable_ST;
 		break;
 	 case MACHINE_STE:
+		pInterceptAccessFuncs = IoMemTable_STE;
+		break;
 	 case MACHINE_MEGA_STE:
+		IoMem_FixAccessForMegaSTE();
 		pInterceptAccessFuncs = IoMemTable_STE;
 		break;
 	 case MACHINE_TT:

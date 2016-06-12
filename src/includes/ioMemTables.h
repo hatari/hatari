@@ -28,4 +28,5 @@ extern void IoMemTabFalcon_DSPdummy(void (**readtab)(void), void (**writetab)(vo
 extern void IoMemTabFalcon_DSPemulation(void (**readtab)(void), void (**writetab)(void));
 #endif
 
+extern void IoMemTabMegaSTE_CacheCpuCtrl_WriteByte(void);
 #endif

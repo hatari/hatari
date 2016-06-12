@@ -15,6 +15,7 @@ const char IoMemTabSTE_fileid[] = "Hatari ioMemTabSTE.c : " __DATE__ " " __TIME_
 #include "acia.h"
 #include "ioMem.h"
 #include "ioMemTables.h"
+#include "m68000.h"
 #include "joy.h"
 #include "mfp.h"
 #include "midi.h"
@@ -24,6 +25,38 @@ const char IoMemTabSTE_fileid[] = "Hatari ioMemTabSTE.c : " __DATE__ " " __TIME_
 #include "screen.h"
 #include "video.h"
 #include "blitter.h"
+#include "statusbar.h"
+
+
+/**
+ * Take into account Mega STe Cache/Processor Control register $ff8e21.b
+	$FFFF8E21 Mega STe Cache/Processor Control
+		BIT 1 : Cache (0 - disabled, 1 - enabled)
+		BIT 0 : CPU Speed (0 - 8mhz, 1 - 16mhz)
+
+   We handle only bit 0, bit 1 is ignored (cache is not emulated)
+*/
+void IoMemTabMegaSTE_CacheCpuCtrl_WriteByte(void)
+{
+	Uint8 busCtrl = IoMem_ReadByte(0xff8e21);
+
+	/* 68000 Frequency changed ? */
+	/* We change freq only in 68000 mode for a normal MegaSTE */
+	if ( ConfigureParams.System.nCpuLevel == 0 )
+	{
+		if ((busCtrl & 0x1) == 1) {
+			/* 16 Mhz bus for 68000 */
+			nCpuFreqShift = 1;
+			ConfigureParams.System.nCpuFreq = 16;
+		}
+		else {
+			/* 8 Mhz bus for 68000 */
+			nCpuFreqShift = 0;
+			ConfigureParams.System.nCpuFreq = 8;
+		}
+	}
+	Statusbar_UpdateInfo();			/* Update clock speed in the status bar */
+}
 
 
 /*-----------------------------------------------------------------------*/
