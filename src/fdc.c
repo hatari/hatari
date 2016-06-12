@@ -3938,7 +3938,7 @@ void FDC_DiskControllerStatus_ReadWord ( void )
 	int EmulationMode;
 	int FDC_reg;
 
-	if (nIoMemAccessSize == SIZE_BYTE)
+	if (nIoMemAccessSize == SIZE_BYTE && !Config_IsMachineFalcon())
 	{
 		/* This register does not like to be accessed in byte mode on a normal ST */
 		M68000_BusError(IoAccessBaseAddress, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
@@ -4147,7 +4147,7 @@ void FDC_DmaModeControl_WriteWord ( void )
  */
 void FDC_DmaStatus_ReadWord ( void )
 {
-	if (nIoMemAccessSize == SIZE_BYTE)
+	if (nIoMemAccessSize == SIZE_BYTE && !Config_IsMachineFalcon())
 	{
 		/* This register does not like to be accessed in byte mode on a normal ST */
 		M68000_BusError(IoAccessBaseAddress, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
