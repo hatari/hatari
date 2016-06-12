@@ -114,7 +114,62 @@ static void IoMem_SetBusErrorRegion(Uint32 startaddr, Uint32 endaddr)
 }
 
 
-/*-----------------------------------------------------------------------*/
+/**
+ * Fill a region with void handlers.
+ */
+static void IoMem_SetVoidRegion(Uint32 startaddr, Uint32 endaddr)
+{
+	Uint32 addr;
+
+	for (addr = startaddr; addr <= endaddr; addr++)
+	{
+		pInterceptReadTable[addr - 0xff8000] = IoMem_VoidRead;
+		pInterceptWriteTable[addr - 0xff8000] = IoMem_VoidWrite;
+	}
+}
+
+
+/**
+ * Normal ST has two address which don't generate a bus error when
+ * compared to the Mega-ST. Mark them as void handlers here.
+ */
+static void IoMem_FixVoidAccessForST(void)
+{
+	IoMem_SetVoidRegion(0xff820f, 0xff820f);
+	IoMem_SetVoidRegion(0xff860f, 0xff860f);
+}
+
+/**
+ * Mega-ST has slightly different behavior with bus errors compared to
+ * the normal ST. Here we fix up the table accordingly.
+ */
+static void IoMem_FixVoidAccessForMegaST(void)
+{
+	int i;
+	Uint32 no_be_addrs[] =
+	{
+		0xff8200, 0xff8202, 0xff8204, 0xff8206, 0xff8208,
+		0xff820a, 0xff820c, 0xff8608, 0xff860a, 0xff860c, 0
+	};
+	Uint32 be_regions[][2] =
+	{
+		{ 0xff8000, 0xff8000 },
+		{ 0xff8002, 0xff800d },
+		{ 0xff8a3e, 0xff8a3f },
+		{ 0, 0 }
+	};
+
+	for (i = 0; no_be_addrs[i] != 0; i++)
+	{
+		IoMem_SetVoidRegion(no_be_addrs[i], no_be_addrs[i]);
+	}
+	for (i = 0; be_regions[i][0] != 0; i++)
+	{
+		IoMem_SetVoidRegion(be_regions[i][0], be_regions[i][1]);
+	}
+}
+
+
 /**
  * Create 'intercept' tables for hardware address access. Each 'intercept
  * table is a list of 0x8000 pointers to a list of functions to call when
@@ -169,7 +224,11 @@ void IoMem_Init(void)
 	switch (ConfigureParams.System.nMachineType)
 	{
 	 case MACHINE_ST:
+		IoMem_FixVoidAccessForST();
+		pInterceptAccessFuncs = IoMemTable_ST;
+		break;
 	 case MACHINE_MEGA_ST:
+		IoMem_FixVoidAccessForMegaST();
 		pInterceptAccessFuncs = IoMemTable_ST;
 		break;
 	 case MACHINE_STE:

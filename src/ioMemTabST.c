@@ -51,7 +51,6 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_ST[] =
 	{ 0xff820a, SIZE_BYTE, Video_Sync_ReadByte, Video_Sync_WriteByte },
 	{ 0xff820b, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xff820d, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },
-	{ 0xff820f, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },
 	{ 0xff8240, SIZE_WORD, Video_Color0_ReadWord, Video_Color0_WriteWord },			/* COLOR 0 */
 	{ 0xff8242, SIZE_WORD, Video_Color1_ReadWord, Video_Color1_WriteWord },			/* COLOR 1 */
 	{ 0xff8244, SIZE_WORD, Video_Color2_ReadWord, Video_Color2_WriteWord },			/* COLOR 2 */
@@ -76,7 +75,6 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_ST[] =
 	{ 0xff8609, SIZE_BYTE, FDC_DmaAddress_ReadByte, FDC_DmaAddress_WriteByte },		/* DMA base and counter high byte */
 	{ 0xff860b, SIZE_BYTE, FDC_DmaAddress_ReadByte, FDC_DmaAddress_WriteByte },		/* DMA base and counter med byte  */
 	{ 0xff860d, SIZE_BYTE, FDC_DmaAddress_ReadByte, FDC_DmaAddress_WriteByte },		/* DMA base and counter low byte  */
-	{ 0xff860f, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 
 	{ 0xff8800, SIZE_BYTE, PSG_ff8800_ReadByte, PSG_ff8800_WriteByte },
 	{ 0xff8801, SIZE_BYTE, PSG_ff880x_ReadByte, PSG_ff8801_WriteByte },
