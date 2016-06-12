@@ -37,12 +37,15 @@ const char IoMemTabFalc_fileid[] = "Hatari ioMemTabFalcon.c : " __DATE__ " " __T
 void IoMemTabFalcon_DSPnone(void (**readtab)(void), void (**writetab)(void))
 {
 	int i, offset;
+
 	offset = 0xffa200 - 0xff8000;
-	for (i = 0; i < 8; i++) {
+	for (i = 0; i < 8; i++)
+	{
 		readtab[offset+i] = IoMem_ReadWithoutInterception;
 	}
 	readtab[offset+2] = IoMem_VoidRead;	/* TODO: why this is needed */
-	for (i = 0; i < 8; i++) {
+	for (i = 0; i < 8; i++)
+	{
 		writetab[offset+i] = IoMem_WriteWithoutInterception;
 	}
 }
@@ -71,14 +74,17 @@ static void DSP_DummyInterruptStatus_ReadByte(void)
 void IoMemTabFalcon_DSPdummy(void (**readtab)(void), void (**writetab)(void))
 {
 	int i, offset;
+
 	offset = 0xffa200 - 0xff8000;
 	readtab[offset+0] = IoMem_ReadWithoutInterception;
 	readtab[offset+1] = DSP_DummyHostCommand_ReadByte;
 	readtab[offset+2] = DSP_DummyInterruptStatus_ReadByte;
-	for (i = 3; i < 8; i++) {
+	for (i = 3; i < 8; i++)
+	{
 		readtab[offset+i] = IoMem_ReadWithoutInterception;
 	}
-	for (i = 0; i < 8; i++) {
+	for (i = 0; i < 8; i++)
+	{
 		writetab[offset+i] = IoMem_WriteWithoutInterception;
 	}
 }
@@ -90,8 +96,10 @@ void IoMemTabFalcon_DSPdummy(void (**readtab)(void), void (**writetab)(void))
 void IoMemTabFalcon_DSPemulation(void (**readtab)(void), void (**writetab)(void))
 {
 	int i, offset;
+
 	offset = 0xffa200 - 0xff8000;
-	for (i = 0; i < 8; i++) {
+	for (i = 0; i < 8; i++)
+	{
 		readtab[offset+i]  = DSP_HandleReadAccess;
 		writetab[offset+i] = DSP_HandleWriteAccess;
 	}
@@ -111,7 +119,7 @@ void IoMemTabFalcon_DSPemulation(void (**readtab)(void), void (**writetab)(void)
 static void IoMemTabFalcon_BusCtrl_WriteByte(void)
 {
 	Uint8 busCtrl = IoMem_ReadByte(0xff8007);
-	
+
 	/* Set Falcon bus or STE compatible bus emulation */
 	if ((busCtrl & 0x20) == 0)
 		IoMem_Init_FalconInSTeBuscompatibilityMode(0);
@@ -134,7 +142,7 @@ static void IoMemTabFalcon_BusCtrl_WriteByte(void)
 			ConfigureParams.System.nCpuFreq = 8;
 		}
 	}
-	Statusbar_UpdateInfo();							/* Update clock speed in the status bar */
+	Statusbar_UpdateInfo();			/* Update clock speed in the status bar */
 }
 
 
