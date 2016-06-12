@@ -151,7 +151,7 @@ static void IoMem_FixVoidAccessForMegaST(void)
 		0xff8200, 0xff8202, 0xff8204, 0xff8206, 0xff8208,
 		0xff820a, 0xff820c, 0xff8608, 0xff860a, 0xff860c, 0
 	};
-	Uint32 be_regions[][2] =
+	Uint32 no_be_regions[][2] =
 	{
 		{ 0xff8000, 0xff8000 },
 		{ 0xff8002, 0xff800d },
@@ -163,9 +163,9 @@ static void IoMem_FixVoidAccessForMegaST(void)
 	{
 		IoMem_SetVoidRegion(no_be_addrs[i], no_be_addrs[i]);
 	}
-	for (i = 0; be_regions[i][0] != 0; i++)
+	for (i = 0; no_be_regions[i][0] != 0; i++)
 	{
-		IoMem_SetVoidRegion(be_regions[i][0], be_regions[i][1]);
+		IoMem_SetVoidRegion(no_be_regions[i][0], no_be_regions[i][1]);
 	}
 }
 
