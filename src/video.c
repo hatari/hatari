@@ -1661,6 +1661,21 @@ static void Video_WriteToGlueShifterRes ( Uint8 Res )
 	}
 	/* TEMP for 'closure' in STE mode */
 
+	/* TEMP for 'death of the left border' by TNT */
+	/* -> stay in hi res for 16 cycles (hi/lo at 0/16) without stabiliser */
+	if ( ( ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask & BORDERMASK_LEFT_OFF )
+		&& ( Res == 0x00 ) && ( LineCycles == 16 )
+		&& ( ShifterFrame.ResPosHi.LineCycles == 0 )
+		&& ( STMemory_ReadLong ( M68000_GetPC()-0x0c ) == 0x51c9fffc )	/* dbf d1,$fffc */
+		&& ( M68000_GetPC() == 0x72c )
+	   )
+	{
+		/* we simulate a 13 px scroll, which compensates for 2 bytes in the video planes */
+		LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect remove left with no stab dolb\n" );
+		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = 13;	/* see special case in Video_CopyScreenLineColor() */
+	}
+	/* TEMP for 'death of the left border' by TNT */
+
 #endif
 
 
