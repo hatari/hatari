@@ -149,7 +149,7 @@ static void IoMem_FixVoidAccessForMegaST(void)
 	Uint32 no_be_addrs[] =
 	{
 		0xff8200, 0xff8202, 0xff8204, 0xff8206, 0xff8208,
-		0xff820a, 0xff820c, 0xff8608, 0xff860a, 0xff860c, 0
+		0xff820c, 0xff8608, 0xff860a, 0xff860c, 0
 	};
 	Uint32 no_be_regions[][2] =
 	{
