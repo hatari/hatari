@@ -7,36 +7,48 @@
  --------------------
 
 Emulation:
-- GEMDOS HD:
+- Machine:
+  - Support for MegaST & MegaSTE machines added
+- HD:
   - Fix: Disable GEMDOS opcodes after GEMDOS drive is disabled
-  - Fix: GEMDOS HD can now be initialized multiple times, e.g. when running
-    EmuTOS RAM image from a normal TOS.
+  - Fix: GEMDOS HD can now be initialized multiple times,
+    e.g. when running EmuTOS RAM image from a normal TOS
+  - Fix: WORD access to IDE data register at 0xf00002
 - Video:
-  - fix reading video counter $FF8205/07/09 after modifying it while
-    display is ON.
-  - fix location of the video counter's restart when screen runs at 60 Hz
+  - Fix: reading video counter $FF8205/07/09 after modifying it
+    while display is ON
+  - Fix: location of the video counter's restart when screen runs at 60 Hz
   - TT: sync ST & TT color registers immediately on write, handle
     palette bank setting correctly, fix duochrome colors
   - Falcon: handle byte access special case for ST color registers
-- Sound changes :
+  - Falcon: border color support also in HiColor
+- Sound:
   - DMA sound should be played even when start address = end address
+- CPU:
+  - More accurate 68060 mode (instructions from previous CPU versions
+    removed in 68060 aren't accepted/emulated anymore)
+  - Misc bus error / IO mem register handling fixes for TT & Falcon
+    (e.g. add TT DIP switch register handler)
 - Fixes to DSP addressing
-- More accurate 68060 mode (removed instructions from previous CPU versions
-  are not emulated anymore)
 
 Emulator:
 - SDL GUI:
+  - MegaST/MegaSTe support
   - Shortcuts can be configured in the keyboard dialog
   - User can provide volume label when creating a floppy image
+  - Show dialog on HD image size issues
 - Better SDL2 support:
   - SDL2 is now enabled by default
-  - resizable windows, including ST/STE screen scaling
+  - Resizable windows, including ST/STE screen scaling
   - "--desktop" option is used also for ST/STe instead of "--desktop-st"
-- Preferred private configuration directory is now ~/.config/hatari (but the
-  legacy location ~/.hatari is still used if the other one does not exist yet)
-- Support SDL key names in keymap files in addition to key codes
-- Support for rendering to 8-bit host screens removed
-- Support for (buggy) RsConf() interception with --bios-intercept removed
+- Configuration:
+  - Hatari defaults to ST both with oldUAE & WinUAE CPU core
+  - Preferred private configuration directory is now ~/.config/hatari
+    on Linux/Unix (the legacy location ~/.hatari is still used if
+    the other one does not exist yet)
+  - Windows config location is now: AppData\Local\Hatari
+  - Support SDL key names in keymap files in addition to key codes
+  - Comment characters (#, ;) can also be mapped in keymap file
 - NatFeats SCSI driver for Linux added
 - Debugger:
   - Fix: close debugger log file only when explicitly requested,
@@ -50,6 +62,9 @@ Emulator:
     (in addition to running until subroutine and exception calls return)
   - Support Atari debugger XBios(11) / Dbmsg() API
   - Also trace exception can be caught
+- Removed features:
+  - Support for rendering to 8-bit host screens
+  - Support for (buggy) RsConf() interception with --bios-intercept
 
 Other:
 - Allow building without Zlib
