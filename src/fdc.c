@@ -735,7 +735,7 @@ static Uint32	FDC_FdcCyclesToCpuCycles ( Uint32 FdcCycles )
 
 //	CpuCycles = rint ( ( (Uint64)FdcCycles * MachineClocks.CPU_Freq ) / MachineClocks.FDC_Freq );
 	CpuCycles = rint ( ( (Uint64)FdcCycles * 8021247.L ) / MachineClocks.FDC_Freq );
-	CpuCycles >>= nCpuFreqShift;				/* Compensate for x2 or x4 cpu speed */
+//	CpuCycles >>= nCpuFreqShift;				/* Compensate for x2 or x4 cpu speed */
 
 //fprintf ( stderr , "fdc command %d machine %d fdc cycles %d cpu cycles %d\n" , FDC.Command , ConfigureParams.System.nMachineType , FdcCycles , CpuCycles );
 //if ( Delay==4104) Delay=4166;		// 4166 : decade demo
@@ -757,7 +757,7 @@ static Uint32	FDC_CpuCyclesToFdcCycles ( Uint32 CpuCycles )
 	int	FdcCycles;
 
 
-	CpuCycles <<= nCpuFreqShift;				/* Compensate for x2 or x4 cpu speed */
+//	CpuCycles <<= nCpuFreqShift;				/* Compensate for x2 or x4 cpu speed */
 //	FdcCycles = rint ( ( (Uint64)CpuCycles * MachineClocks.FDC_Freq ) / MachineClocks.CPU_Freq );
 	FdcCycles = rint ( ( (Uint64)CpuCycles * MachineClocks.FDC_Freq ) / 8021247.L );
 
