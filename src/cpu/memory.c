@@ -640,7 +640,8 @@ static uae_u32 SysMem_wget(uaecptr addr)
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
 
-    if(addr < 0x800 && !regs.s)
+    /* Only CPU will trigger bus error if bit S=0, not the blitter */
+    if(addr < 0x800 && !regs.s && BusMode == BUS_MODE_CPU)
     {
       M68000_BusError(addr, 1, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
       return 0;
@@ -682,10 +683,17 @@ static void SysMem_wput(uaecptr addr, uae_u32 w)
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
 
+    /* Only CPU will trigger bus error if bit S=0, not the blitter */
     if(addr < 0x8 || (addr < 0x800 && !regs.s))
     {
-      M68000_BusError(addr, 0, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
-      return;
+      if ( BusMode == BUS_MODE_CPU )
+      {
+	M68000_BusError(addr, 0, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
+	return;
+      }
+      /* If blitter writes < 0x8 then it should be ignored, else the write should be made */
+      else if ( ( BusMode == BUS_MODE_BLITTER ) && ( addr < 0x8 ) )
+	return;
     }
 
     do_put_mem_word(STmemory + addr, w);

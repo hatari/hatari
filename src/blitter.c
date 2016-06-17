@@ -238,6 +238,7 @@ static Uint16 Blitter_ReadWord(Uint32 addr)
 static void Blitter_WriteWord(Uint32 addr, Uint16 value)
 {
 	/* Call put_word only if the address doesn't point to a bus error region */
+	/* (also see SysMem_wput for addr < 0x8) */
 	if ( STMemory_CheckRegionBusError ( addr ) == false )
 		put_word ( addr , (Uint32)(value) );
 //fprintf ( stderr , "write %x %x %x\n" , addr , value , STMemory_CheckRegionBusError(addr) );
