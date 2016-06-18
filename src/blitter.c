@@ -190,19 +190,22 @@ static void Blitter_BusArbitration ( int RequestBusMode )
 	if ( RequestBusMode == BUS_MODE_BLITTER )	/* Bus is requested by the blitter */
 	{
 //fprintf ( stderr , "blitter start pc %x %x\n" , M68000_GetPC() , M68000_InstrPC );
-		cycles = 4;				/* Default case : take 4 cycles when going from cpu to blitter */
+		if ( ConfigureParams.System.nMachineType == MACHINE_MEGA_STE )
+			cycles = 8;			/* MegaSTE blitters need 4 extra cycle when requesting the bus */
+		else
+			cycles = 4;			/* Default case : take 4 cycles when going from cpu to blitter */
 
 		/* Different timing for some specific cases */
 
 		/* 'Relapse - Graphix Sound 2' by Cybernetics (overscan plasma using blitter) */
 		/* $e764 : move.b  d5,(a4) + dbra d1,$fff2 : 4 cycles of the dbra can be executed while blitter starts */
 		if ( STMemory_ReadLong ( M68000_InstrPC ) == 0x188551c9 )	/* PC = E764 */
-			cycles = 4-4;			/* 4 cycles less than default case */
+			cycles -= 4;			/* 4 cycles less than default case */
 	}
 
 	else						/* Bus is requested by the cpu */
 	{
-		cycles = 4;				/* Always 4 cycles ? */
+		cycles = 4;				/* Always 4 cycles (even for MegaSTE) */
 	}
 
 	/* Add arbitration cycles and update BusMode */
