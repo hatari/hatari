@@ -180,6 +180,7 @@ static void Blitter_FlushCycles(void)
  *  - t+0 : CPU can still run during 4 cycles and access bus
  *  - t+4 : bus arbitration takes 4 cycles (no access for cpu and blitter during this time)
  *  - t+8 : blitter owns the bus and starts tranferring data
+ * (in case of MegaSTE bus arbitration takes 8 cycles instead of 4)
  *
  * When blitter stops owning the bus in favor of the cpu, this seems to always take 4 cycles
  */
@@ -191,7 +192,7 @@ static void Blitter_BusArbitration ( int RequestBusMode )
 	{
 //fprintf ( stderr , "blitter start pc %x %x\n" , M68000_GetPC() , M68000_InstrPC );
 		if ( ConfigureParams.System.nMachineType == MACHINE_MEGA_STE )
-			cycles = 8;			/* MegaSTE blitters need 4 extra cycle when requesting the bus */
+			cycles = 8;			/* MegaSTE blitter needs 4 extra cycles when requesting the bus */
 		else
 			cycles = 4;			/* Default case : take 4 cycles when going from cpu to blitter */
 
