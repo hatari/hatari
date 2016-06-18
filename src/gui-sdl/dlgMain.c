@@ -15,8 +15,8 @@ const char DlgMain_fileid[] = "Hatari dlgMain.c : " __DATE__ " " __TIME__;
 #include "screen.h"
 
 
-#define MAINDLG_ABOUT    2
-#define MAINDLG_SYSTEM   3
+#define MAINDLG_SYSTEM   2
+#define MAINDLG_CPU      3
 #define MAINDLG_ROM      4
 #define MAINDLG_MEMORY   5
 #define MAINDLG_FLOPPYS  6
@@ -27,13 +27,14 @@ const char DlgMain_fileid[] = "Hatari dlgMain.c : " __DATE__ " " __TIME__;
 #define MAINDLG_KEYBD    11
 #define MAINDLG_DEVICES  12
 #define MAINDLG_SOUND    13
-#define MAINDLG_LOADCFG  14
-#define MAINDLG_SAVECFG  15
-#define MAINDLG_NORESET  16
-#define MAINDLG_RESET    17
-#define MAINDLG_OK       18
-#define MAINDLG_QUIT     19
-#define MAINDLG_CANCEL   20
+#define MAINDLG_ABOUT    14
+#define MAINDLG_LOADCFG  15
+#define MAINDLG_SAVECFG  16
+#define MAINDLG_NORESET  17
+#define MAINDLG_RESET    18
+#define MAINDLG_OK       19
+#define MAINDLG_QUIT     20
+#define MAINDLG_CANCEL   21
 
 
 /* The main dialog: */
@@ -41,8 +42,8 @@ static SGOBJ maindlg[] =
 {
 	{ SGBOX, 0, 0, 0,0, 50,19, NULL },
 	{ SGTEXT, 0, 0, 17,1, 16,1, "Hatari main menu" },
-	{ SGBUTTON, 0, 0,  2, 4, 13,1, "A_bout" },
-	{ SGBUTTON, 0, 0,  2, 6, 13,1, "S_ystem" },
+	{ SGBUTTON, 0, 0,  2, 4, 13,1, "S_ystem" },
+	{ SGBUTTON, 0, 0,  2, 6, 13,1, "CP_U" },
 	{ SGBUTTON, 0, 0,  2, 8, 13,1, "_ROM" },
 	{ SGBUTTON, 0, 0,  2,10, 13,1, "_Memory" },
 	{ SGBUTTON, 0, 0, 17, 4, 16,1, "_Floppy disks" },
@@ -53,8 +54,9 @@ static SGOBJ maindlg[] =
 	{ SGBUTTON, 0, 0, 35, 6, 13,1, "_Keyboard" },
 	{ SGBUTTON, 0, 0, 35, 8, 13,1, "D_evices" },
 	{ SGBUTTON, 0, 0, 35,10, 13,1, "S_ound" },
-	{ SGBUTTON, 0, 0,  7,13, 16,1, "_Load config." },
-	{ SGBUTTON, 0, 0, 27,13, 16,1, "_Save config." },
+	{ SGBUTTON, 0, 0,  2,13, 13,1, "A_bout" },
+	{ SGBUTTON, 0, 0, 17,13, 16,1, "_Load config" },
+	{ SGBUTTON, 0, 0, 35,13, 13,1, "_Save config" },
 	{ SGRADIOBUT, 0, 0, 3,15, 10,1, "_No Reset" },
 	{ SGRADIOBUT, 0, 0, 3,17, 15,1, "Reset ma_chine" },
 	{ SGBUTTON, SG_DEFAULT, 0, 21,15, 8,3, "OK" },
@@ -97,6 +99,9 @@ int Dialog_MainDlg(bool *bReset, bool *bLoadedSnapshot)
 		 case MAINDLG_ABOUT:
 			Dialog_AboutDlg();
 			break;
+		 case MAINDLG_CPU:
+			DlgCpu_Main();
+			break;
 		 case MAINDLG_FLOPPYS:
 			DlgFloppy_Main();
 			break;
@@ -113,7 +118,7 @@ int Dialog_MainDlg(bool *bReset, bool *bLoadedSnapshot)
 			Dialog_WindowDlg();
 			break;
 		 case MAINDLG_SYSTEM:
-			Dialog_SystemDlg();
+			DlgSystem_Main();
 			break;
 		 case MAINDLG_MEMORY:
 			if (Dialog_MemDlg())
