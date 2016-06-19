@@ -118,8 +118,7 @@ static void DlgDisk_BrowseDisk(char *dlgname, int drive, int diskid)
 		Floppy_SetDiskFileNameNone(drive);
 		dlgname[0] = '\0';
 	}
-	if (zip_path)
-		free(zip_path);
+	free(zip_path);
 	free(selname);
 }
 

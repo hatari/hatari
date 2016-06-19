@@ -249,8 +249,7 @@ static void ShortCut_InsertDisk(int drive)
 		else
 			Floppy_SetDiskFileNameNone(drive);
 
-		if (zip_path)
-			free(zip_path);
+		free(zip_path);
 		free(selname);
 		
 		Floppy_InsertDiskIntoDrive(0);

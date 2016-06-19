@@ -813,8 +813,7 @@ static char *DebugUI_GetCommand(char *input)
  */
 static void DebugUI_FreeCommand(char *input)
 {
-	if (input)
-		free(input);
+	free(input);
 }
 
 /**
@@ -1134,8 +1133,7 @@ bool DebugUI_ParseFile(const char *path, bool reinit)
 		if (chdir(dir) != 0)
 		{
 			perror("ERROR");
-			if (olddir)
-				free(olddir);
+			free(olddir);
 			free(dir);
 			fclose(fp);
 			return false;

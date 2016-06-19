@@ -141,8 +141,7 @@ char *DlgNewDisk_Main(void)
 			{
 				if (DlgNewDisk_CreateDisk(tmpname))
 				{
-					if (retname)
-						free(retname);
+					free(retname);
 					retname = tmpname;
 				}
 				else

@@ -1000,8 +1000,7 @@ static void	STX_FreeSaveSectorsStruct ( STX_SAVE_SECTOR_STRUCT *pSaveSectorsStru
 	if ( pSaveSectorsStruct[ Nb ].StructIsUsed == 0 )
 		return;						/* This structure is already free */
 
-	if ( pSaveSectorsStruct[ Nb ].pData )
-		free ( pSaveSectorsStruct[ Nb ].pData );
+	free(pSaveSectorsStruct[Nb].pData);
 
 	pSaveSectorsStruct[ Nb ].StructIsUsed = 0;
 }
@@ -1033,10 +1032,8 @@ static void	STX_FreeSaveTracksStructAll ( STX_SAVE_TRACK_STRUCT *pSaveTracksStru
  */
 static void	STX_FreeSaveTracksStruct ( STX_SAVE_TRACK_STRUCT *pSaveTracksStruct , int Nb )
 {
-	if ( pSaveTracksStruct[ Nb ].pDataWrite )
-		free ( pSaveTracksStruct[ Nb ].pDataWrite );
-	if ( pSaveTracksStruct[ Nb ].pDataRead )
-		free ( pSaveTracksStruct[ Nb ].pDataRead );
+	free(pSaveTracksStruct[Nb].pDataWrite);
+	free(pSaveTracksStruct[Nb].pDataRead);
 }
 
 

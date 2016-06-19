@@ -260,8 +260,7 @@ int scandir(const char *dirname, struct dirent ***namelist,
 				struct dirent **tempDir = (struct dirent **)calloc(sizeof(struct dirent*), NDir+33);
 				if (NDir)
 					memcpy(tempDir, dir, sizeof(struct dirent*)*NDir);
-				if (dir)
-					free(dir);
+				free(dir);
 				dir = tempDir;
 				NDir += 32;
 			}
