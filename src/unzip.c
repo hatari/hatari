@@ -55,13 +55,6 @@ const char Unzip_fileid[] = "Hatari unzip.c : " __DATE__ " " __TIME__;
 #define UNZ_MAXFILENAMEINZIP (256)
 #endif
 
-#ifndef ALLOC
-# define ALLOC(size) (malloc(size))
-#endif
-#ifndef TRYFREE
-# define TRYFREE(p) {if (p) free(p);}
-#endif
-
 #define SIZECENTRALDIRITEM (0x2e)
 #define SIZEZIPLOCALHEADER (0x1e)
 
@@ -264,8 +257,8 @@ local uLong unzlocal_SearchCentralDir(FILE *fin)
 	if (uMaxBack>uSizeFile)
 		uMaxBack = uSizeFile;
 
-	buf = (unsigned char*)ALLOC(BUFREADCOMMENT+4);
-	if (buf==NULL)
+	buf = malloc(BUFREADCOMMENT + 4);
+	if (!buf)
 		return 0;
 
 	uBackRead = 4;
@@ -298,7 +291,7 @@ local uLong unzlocal_SearchCentralDir(FILE *fin)
 		if (uPosFound!=0)
 			break;
 	}
-	TRYFREE(buf);
+	free(buf);
 	return uPosFound;
 }
 
@@ -396,7 +389,7 @@ unzFile ZEXPORT unzOpen (const char *path)
 	us.central_pos = central_pos;
 	us.pfile_in_zip_read = NULL;
 
-	s=(unz_s*)ALLOC(sizeof(unz_s));
+	s = malloc(sizeof(unz_s));
 	*s=us;
 	unzGoToFirstFile((unzFile)s);
 	return (unzFile)s;
@@ -420,7 +413,7 @@ int ZEXPORT unzClose (unzFile file)
 		unzCloseCurrentFile(file);
 
 	fclose(s->file);
-	TRYFREE(s);
+	free(s);
 	return UNZ_OK;
 }
 
@@ -860,19 +853,18 @@ int ZEXPORT unzOpenCurrentFile (unzFile file)
 				&offset_local_extrafield,&size_local_extrafield)!=UNZ_OK)
 		return UNZ_BADZIPFILE;
 
-	pfile_in_zip_read_info = (file_in_zip_read_info_s*)
-									    ALLOC(sizeof(file_in_zip_read_info_s));
-	if (pfile_in_zip_read_info==NULL)
+	pfile_in_zip_read_info = malloc(sizeof(file_in_zip_read_info_s));
+	if (!pfile_in_zip_read_info)
 		return UNZ_INTERNALERROR;
 
-	pfile_in_zip_read_info->read_buffer=(char*)ALLOC(UNZ_BUFSIZE);
+	pfile_in_zip_read_info->read_buffer = malloc(UNZ_BUFSIZE);
 	pfile_in_zip_read_info->offset_local_extrafield = offset_local_extrafield;
 	pfile_in_zip_read_info->size_local_extrafield = size_local_extrafield;
 	pfile_in_zip_read_info->pos_local_extrafield=0;
 
 	if (pfile_in_zip_read_info->read_buffer==NULL)
 	{
-		TRYFREE(pfile_in_zip_read_info);
+		free(pfile_in_zip_read_info);
 		return UNZ_INTERNALERROR;
 	}
 
@@ -1121,13 +1113,13 @@ int ZEXPORT unzCloseCurrentFile (unzFile file)
 	}
 
 
-	TRYFREE(pfile_in_zip_read_info->read_buffer);
+	free(pfile_in_zip_read_info->read_buffer);
 	pfile_in_zip_read_info->read_buffer = NULL;
 	if (pfile_in_zip_read_info->stream_initialised)
 		inflateEnd(&pfile_in_zip_read_info->stream);
 
 	pfile_in_zip_read_info->stream_initialised = 0;
-	TRYFREE(pfile_in_zip_read_info);
+	free(pfile_in_zip_read_info);
 
 	s->pfile_in_zip_read=NULL;
 
