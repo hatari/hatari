@@ -1595,24 +1595,16 @@
                                                             <rect key="frame" x="1" y="1" width="271" height="108"/>
                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                             <subviews>
-                                                                <button id="399">
-                                                                    <rect key="frame" x="16" y="82" width="239" height="18"/>
-                                                                    <autoresizingMask key="autoresizingMask"/>
-                                                                    <buttonCell key="cell" type="check" title="Emulation horloge Temps-Réel" bezelStyle="regularSquare" imagePosition="left" alignment="left" enabled="NO" inset="2" id="4424">
-                                                                        <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                                                                        <font key="font" metaFont="system"/>
-                                                                    </buttonCell>
-                                                                </button>
                                                                 <button id="405">
-                                                                    <rect key="frame" x="16" y="66" width="239" height="18"/>
+                                                                    <rect key="frame" x="16" y="80" width="239" height="18"/>
                                                                     <autoresizingMask key="autoresizingMask"/>
-                                                                    <buttonCell key="cell" type="check" title="Emulation Blitter" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="4430">
+                                                                    <buttonCell key="cell" type="check" title="Emulation Blitter en mode ST" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="4430">
                                                                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                                                         <font key="font" metaFont="cellTitle"/>
                                                                     </buttonCell>
                                                                 </button>
                                                                 <button id="401">
-                                                                    <rect key="frame" x="16" y="46" width="239" height="18"/>
+                                                                    <rect key="frame" x="16" y="60" width="239" height="18"/>
                                                                     <autoresizingMask key="autoresizingMask"/>
                                                                     <buttonCell key="cell" type="check" title="Patch Timer-D" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="4426">
                                                                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -1620,7 +1612,7 @@
                                                                     </buttonCell>
                                                                 </button>
                                                                 <button id="4718" userLabel="FastBoot">
-                                                                    <rect key="frame" x="16" y="29" width="239" height="18"/>
+                                                                    <rect key="frame" x="16" y="40" width="239" height="18"/>
                                                                     <autoresizingMask key="autoresizingMask"/>
                                                                     <buttonCell key="cell" type="check" title="Patch TOS pour Boot rapide" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="4719">
                                                                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -1628,7 +1620,7 @@
                                                                     </buttonCell>
                                                                 </button>
                                                                 <button id="402">
-                                                                    <rect key="frame" x="16" y="12" width="239" height="18"/>
+                                                                    <rect key="frame" x="16" y="18" width="239" height="18"/>
                                                                     <autoresizingMask key="autoresizingMask"/>
                                                                     <buttonCell key="cell" type="check" title="Prefetch Mode (plus lent)" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="4427">
                                                                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -2367,7 +2359,6 @@ DQ
                 <outlet property="ramSize" destination="804" id="814"/>
                 <outlet property="readRS232FromFile" destination="357" id="581"/>
                 <outlet property="realJoystick" destination="466" id="747"/>
-                <outlet property="realTime" destination="399" id="571"/>
                 <outlet property="resolution" destination="429" id="561"/>
                 <outlet property="showStatusBar" destination="4703" id="4711"/>
                 <outlet property="tosImage" destination="508" id="551"/>

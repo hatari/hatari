@@ -1348,7 +1348,7 @@
                                                     <button id="oZh-SZ-adv">
                                                         <rect key="frame" x="20" y="8" width="151" height="45"/>
                                                         <autoresizingMask key="autoresizingMask"/>
-                                                        <buttonCell key="cell" type="check" title="compatible  but slower" bezelStyle="regularSquare" imagePosition="left" alignment="left" enabled="NO" inset="2" id="VS5-yr-Yva">
+                                                        <buttonCell key="cell" type="check" title="compatible   but slower" bezelStyle="regularSquare" imagePosition="left" alignment="left" enabled="NO" inset="2" id="VS5-yr-Yva">
                                                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                                             <font key="font" metaFont="titleBar" size="12"/>
                                                         </buttonCell>
@@ -1595,24 +1595,16 @@
                                                             <rect key="frame" x="1" y="1" width="271" height="119"/>
                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                             <subviews>
-                                                                <button id="399">
-                                                                    <rect key="frame" x="16" y="93" width="239" height="18"/>
-                                                                    <autoresizingMask key="autoresizingMask"/>
-                                                                    <buttonCell key="cell" type="check" title="Real-time clock emulation" bezelStyle="regularSquare" imagePosition="left" alignment="left" enabled="NO" inset="2" id="4424">
-                                                                        <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                                                                        <font key="font" metaFont="cellTitle"/>
-                                                                    </buttonCell>
-                                                                </button>
                                                                 <button id="405">
-                                                                    <rect key="frame" x="16" y="73" width="239" height="18"/>
+                                                                    <rect key="frame" x="16" y="90" width="239" height="18"/>
                                                                     <autoresizingMask key="autoresizingMask"/>
-                                                                    <buttonCell key="cell" type="check" title="Blitter Emulation" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="4430">
+                                                                    <buttonCell key="cell" type="check" title="Blitter in ST mode" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="4430">
                                                                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                                                         <font key="font" metaFont="cellTitle"/>
                                                                     </buttonCell>
                                                                 </button>
                                                                 <button id="401">
-                                                                    <rect key="frame" x="16" y="53" width="239" height="18"/>
+                                                                    <rect key="frame" x="16" y="70" width="239" height="18"/>
                                                                     <autoresizingMask key="autoresizingMask"/>
                                                                     <buttonCell key="cell" type="check" title="Patch Timer-D" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="4426">
                                                                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -1620,7 +1612,7 @@
                                                                     </buttonCell>
                                                                 </button>
                                                                 <button id="4718" userLabel="FastBoot">
-                                                                    <rect key="frame" x="16" y="33" width="239" height="18"/>
+                                                                    <rect key="frame" x="16" y="50" width="239" height="18"/>
                                                                     <autoresizingMask key="autoresizingMask"/>
                                                                     <buttonCell key="cell" type="check" title="Patch TOS for Faster Boot" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="4719">
                                                                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -1628,7 +1620,7 @@
                                                                     </buttonCell>
                                                                 </button>
                                                                 <button id="MwH-QQ-ofn">
-                                                                    <rect key="frame" x="16" y="12" width="239" height="18"/>
+                                                                    <rect key="frame" x="16" y="30" width="239" height="18"/>
                                                                     <autoresizingMask key="autoresizingMask"/>
                                                                     <buttonCell key="cell" type="check" title="Prefetch mode, slower" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="FHv-Ng-fao">
                                                                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -2370,7 +2362,6 @@ DQ
                 <outlet property="ramSize" destination="804" id="814"/>
                 <outlet property="readRS232FromFile" destination="357" id="581"/>
                 <outlet property="realJoystick" destination="466" id="747"/>
-                <outlet property="realTime" destination="399" id="571"/>
                 <outlet property="resolution" destination="429" id="561"/>
                 <outlet property="showStatusBar" destination="4703" id="4711"/>
                 <outlet property="tosImage" destination="508" id="551"/>
