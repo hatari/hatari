@@ -660,7 +660,7 @@ static void	Video_EndHBL ( void );
 static void	Video_StartHBL ( void );
 
 static void	Video_StoreFirstLinePalette(void);
-static void	Video_StoreResolution(int y);
+static void	Video_StoreResolution(int y , bool start);
 static void	Video_CopyScreenLineMono(void);
 static void	Video_CopyScreenLineColor(void);
 static void	Video_SetHBLPaletteMaskPointers(void);
@@ -3541,8 +3541,8 @@ static void Video_EndHBL(void)
 	/* Are we in possible visible color display (including borders)? */
 	else if (nHBL >= nFirstVisibleHbl && nHBL < nLastVisibleHbl)
 	{
-		/* Store resolution for every line so can check for mix low/med screens */
-		Video_StoreResolution(nHBL-nFirstVisibleHbl);
+		/* Update resolution at the end of the line to check for mix low/med screens */
+		Video_StoreResolution(nHBL-nFirstVisibleHbl , false);
 
 		/* Copy line of screen to buffer to simulate TV raster trace
 		 * - required for mouse cursor display/game updates
@@ -3608,6 +3608,12 @@ static void Video_StartHBL(void)
 			RestartVideoCounter = true;
 	}
 //fprintf (stderr , "Video_StartHBL %d %d %d\n", nHBL , ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle , ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle );
+
+	if (nHBL >= nFirstVisibleHbl && nHBL < nLastVisibleHbl)
+	{
+		/* Store resolution at the beginning of the line */
+		Video_StoreResolution(nHBL-nFirstVisibleHbl , true);
+	}
 }
 
 
@@ -3714,8 +3720,13 @@ static void Video_StoreFirstLinePalette(void)
 /*-----------------------------------------------------------------------*/
 /**
  * Store resolution on each line (used to test if mixed low/medium resolutions)
+ * This functions is called twice per line :
+ *  - during Video_StartHBL (start=true) to set the default resolution when
+ *    starting a new line
+ *  - during Video_EndHBL (start=false) to update the resolution before rendering
+ *    the line on the screen (in case some border removals were used during this line)
  */
-static void Video_StoreResolution(int y)
+static void Video_StoreResolution(int y , bool start)
 {
 	Uint8 res;
 	int Mask;
@@ -3729,16 +3740,20 @@ static void Video_StoreResolution(int y)
 			y = HBL_PALETTE_MASKS - 1;			/* store in the last palette line */
 		}
 
+		if ( start )						/* Just store current resolution */
+			res = IoMem_ReadByte(0xff8260)&0x3;
+		else							/* Check if resolution needs to be forced to low/med */
+		{
+			res = ( HBLPaletteMasks[y] >> 16 ) & 0x3;
+			Mask = ShifterFrame.ShifterLines[ y+nFirstVisibleHbl ].BorderMask;
+
+			if ( Mask & BORDERMASK_OVERSCAN_MED_RES )	/* special case for med res to render the overscan line */
+				res = 1;				/* med res instead of low res */
+			else if ( Mask != BORDERMASK_NONE )		/* border removal : assume low res for the whole line */
+				res = 0;
+		}
+
 		HBLPaletteMasks[y] &= ~(0x3<<16);
-		res = IoMem_ReadByte(0xff8260)&0x3;
-
-		Mask = ShifterFrame.ShifterLines[ y+nFirstVisibleHbl ].BorderMask;
-
-		if ( Mask & BORDERMASK_OVERSCAN_MED_RES )		/* special case for med res to render the overscan line */
-			res = 1;					/* med res instead of low res */
-		else if ( Mask != BORDERMASK_NONE )			/* border removal : assume low res for the whole line */
-			res = 0;
-
 		HBLPaletteMasks[y] |= PALETTEMASK_RESOLUTION|((Uint32)res)<<16;
 
 #if 0
