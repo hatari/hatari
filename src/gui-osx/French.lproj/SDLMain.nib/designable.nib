@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="9531" systemVersion="15C50" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="10117" systemVersion="15F34" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none">
     <dependencies>
-        <deployment version="1050" identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="9531"/>
+        <deployment version="1080" identifier="macosx"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="10117"/>
         <capability name="box content view" minToolsVersion="7.0"/>
     </dependencies>
     <objects>
@@ -223,8 +223,8 @@
             </connections>
         </customObject>
         <customObject id="253" userLabel="Font Manager" customClass="NSFontManager"/>
-        <window title="Préférences Hatari" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" hidesOnDeactivate="YES" releasedWhenClosed="NO" visibleAtLaunch="NO" animationBehavior="default" id="326" userLabel="prefsWindow" customClass="NSPanel">
-            <windowStyleMask key="styleMask" titled="YES" closable="YES" documentModal="YES"/>
+        <window title="Préférences Hatari" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" hidesOnDeactivate="YES" releasedWhenClosed="NO" visibleAtLaunch="NO" animationBehavior="utilityWindow" id="326" userLabel="prefsWindow" customClass="NSPanel">
+            <windowStyleMask key="styleMask" titled="YES" closable="YES" utility="YES" documentModal="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="47" y="384" width="689" height="479"/>
             <rect key="screenRect" x="0.0" y="0.0" width="1280" height="778"/>
@@ -1278,7 +1278,7 @@
                                     </subviews>
                                 </view>
                             </tabViewItem>
-                            <tabViewItem label="Systéme" identifier="" id="397">
+                            <tabViewItem label="Système" identifier="" id="397">
                                 <view key="view" id="398">
                                     <rect key="frame" x="10" y="25" width="643" height="384"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -1286,13 +1286,13 @@
                                         <popUpButton verticalHuggingPriority="750" id="1222">
                                             <rect key="frame" x="166" y="194" width="171" height="26"/>
                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                            <popUpButtonCell key="cell" type="push" title="Gagesque" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" tag="1" inset="2" selectedItem="1226" id="4433">
+                                            <popUpButtonCell key="cell" type="push" title="Non" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" inset="2" selectedItem="1225" id="4433">
                                                 <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
                                                 <font key="font" metaFont="menu"/>
                                                 <menu key="menu" title="OtherViews" id="1224">
                                                     <items>
-                                                        <menuItem title="Non" id="1225"/>
-                                                        <menuItem title="Gagesque" state="on" tag="1" id="1226"/>
+                                                        <menuItem title="Non" state="on" id="1225"/>
+                                                        <menuItem title="Gagesque" tag="1" id="1226"/>
                                                         <menuItem title="Emuler" tag="2" id="1227"/>
                                                     </items>
                                                 </menu>
@@ -1316,17 +1316,17 @@
                                             </buttonCell>
                                         </button>
                                         <box autoresizesSubviews="NO" title="Machine" borderType="line" id="dFl-e3-IzW">
-                                            <rect key="frame" x="3" y="262" width="108" height="118"/>
+                                            <rect key="frame" x="3" y="222" width="108" height="158"/>
                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                             <view key="contentView" id="s1O-m2-71t">
-                                                <rect key="frame" x="1" y="1" width="106" height="102"/>
+                                                <rect key="frame" x="1" y="1" width="106" height="142"/>
                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                 <subviews>
                                                     <matrix verticalHuggingPriority="750" allowsEmptySelection="NO" autosizesCells="NO" id="406">
-                                                        <rect key="frame" x="18" y="14" width="70" height="78"/>
+                                                        <rect key="frame" x="10" y="14" width="87" height="124"/>
                                                         <autoresizingMask key="autoresizingMask"/>
                                                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
-                                                        <size key="cellSize" width="70" height="18"/>
+                                                        <size key="cellSize" width="87" height="19"/>
                                                         <size key="intercellSpacing" width="4" height="2"/>
                                                         <buttonCell key="prototype" type="radio" title="Radio" imagePosition="left" alignment="left" inset="2" id="4519">
                                                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -1338,17 +1338,25 @@
                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                                                     <font key="font" metaFont="titleBar" size="12"/>
                                                                 </buttonCell>
-                                                                <buttonCell type="radio" title="STE" imagePosition="left" alignment="left" tag="1" inset="2" id="865">
+                                                                <buttonCell type="radio" title="Mega ST" imagePosition="left" alignment="left" tag="1" inset="2" id="865">
                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                                                     <font key="font" metaFont="cellTitle"/>
                                                                 </buttonCell>
-                                                                <buttonCell type="radio" title="TT" imagePosition="left" alignment="left" tag="2" inset="2" id="866">
+                                                                <buttonCell type="radio" title="STE" imagePosition="left" alignment="left" tag="2" inset="2" id="866">
                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                                                     <font key="font" metaFont="cellTitle"/>
                                                                 </buttonCell>
-                                                                <buttonCell type="radio" title="Falcon" imagePosition="left" alignment="left" tag="3" inset="2" id="867">
+                                                                <buttonCell type="radio" title="Mega STE" imagePosition="left" alignment="left" tag="3" inset="2" id="867">
                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                                                     <font key="font" metaFont="cellTitle"/>
+                                                                </buttonCell>
+                                                                <buttonCell type="radio" title="TT" imagePosition="left" alignment="left" tag="4" inset="2" id="2xb-FZ-BrE">
+                                                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                                    <font key="font" metaFont="system"/>
+                                                                </buttonCell>
+                                                                <buttonCell type="radio" title="Falcon" imagePosition="left" alignment="left" tag="5" inset="2" id="7uR-r0-Y9T">
+                                                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                                    <font key="font" metaFont="system"/>
                                                                 </buttonCell>
                                                             </column>
                                                         </cells>
@@ -1416,7 +1424,7 @@
                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                                                     <font key="font" metaFont="cellTitle"/>
                                                                 </buttonCell>
-                                                                <buttonCell type="radio" title="680EC30+FPU" imagePosition="left" alignment="left" tag="3" inset="2" id="417">
+                                                                <buttonCell type="radio" title="68030" imagePosition="left" alignment="left" tag="3" inset="2" id="417">
                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                                                     <font key="font" metaFont="cellTitle"/>
                                                                 </buttonCell>
@@ -1590,9 +1598,9 @@
                                                                 <button id="399">
                                                                     <rect key="frame" x="16" y="82" width="239" height="18"/>
                                                                     <autoresizingMask key="autoresizingMask"/>
-                                                                    <buttonCell key="cell" type="check" title="Emulation horloge Temps-Réel" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="4424">
+                                                                    <buttonCell key="cell" type="check" title="Emulation horloge Temps-Réel" bezelStyle="regularSquare" imagePosition="left" alignment="left" enabled="NO" inset="2" id="4424">
                                                                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                                                                        <font key="font" metaFont="cellTitle"/>
+                                                                        <font key="font" metaFont="system"/>
                                                                     </buttonCell>
                                                                 </button>
                                                                 <button id="405">
@@ -2292,7 +2300,7 @@ DQ
                     </button>
                 </subviews>
             </view>
-            <point key="canvasLocation" x="-148.5" y="-2276.5"/>
+            <point key="canvasLocation" x="-266.5" y="-2329.5"/>
         </window>
         <customObject id="329" userLabel="PrefsController" customClass="PrefsController">
             <connections>
