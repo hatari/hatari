@@ -26,6 +26,10 @@ Emulation improvements
 	Note: last 3 programs can be autostarted fine with EmuTOS.
   Document that in manual (page) for the Hatari "autorun" feature.
 
+- Related to above, investigate why TOS v1.04 crashes shortly after
+  GEM programs started with autorun feature are exited.  If programs
+  are started from TOS v1.04 desktop, there's no crash.
+
 - Keyboard detection sometimes fails when --fast-forward is enabled
   while TOS boots / game is loaded (e.g. Falcon Snake game packed
   with Sentry).

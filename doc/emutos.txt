@@ -265,6 +265,7 @@ distribution).
 Games that are considered good quality & fun, are marked with "*".
 All the listed demos are quite OK. Most demos can be downloaded from:
 	http://pouet.net/
+	http://demozoo.org/
 
 First are listed ST demos, games, graphics & MIDI applications,
 then STE demos, games and music applications, then TT programs
@@ -305,8 +306,9 @@ Demos:
 - Anomaly (by MMJ-Prod)
 - April Fools (by DNT Crew)
 - Audiopacdemo (by X-Troll)
-- Breath (by Mystic Bytes)
+- Beast Scroll (by Joefish)
 - Beyond Imagination (by NLC), in GFA basic
+- Breath (by Mystic Bytes)
 - Calimer-o-demo (by Oxygene)
 - Charts Compilation (by Next)
 - Coast II Coast (by Sector One, 4kB intro)
@@ -577,6 +579,7 @@ GEM games:
 - Sixteen (puzzle)
 - Sliders
 - Snake
+- Sokoban* (http://peterlane.info/sokoban.html)
 - Solitair*
 - Spiegel ("mirrormagic")
 - Stello*
@@ -620,7 +623,7 @@ Monochrome games:
 - Lokomotive	(line-A bitblit)
 - MacPan*	(line-A draw/clear sprite)
 - MineFeld	(line-A draw/clear sprite)
-- Minigolf*     (line-A draw/clear sprite)
+- Minigolf*     (line-A draw/clear sprite, needs EmuTOS >=v0.9.6)
 - Monkey Business
 - Mr Dash
 - Pacballs      (line-A bitblit, needs EmuTOS >v0.9.5)
@@ -772,6 +775,7 @@ playback issues with demos and games.  You should use EmuTOS version
 
 Demos:
 - 1st Step (by Tobe/MJJ Prod)
+- 21 bobs (by Anima) - needs 50Hz
 - 32768 colors showdown (by Tronic of Effect)
 - 3D full (by Oxygene)
 - Again (by Paradox)
@@ -856,7 +860,7 @@ Demos:
 - Unbeatable (by Masters of Electric City)
 - Vision (by POV)
 - We Were @ STNICCC 2015 (by Oxygene)
-  - Reset screen colors are wrong
+  - Reset screen colors are wrong and scrolltext skewed
 - XiTEC Presentation (by Omega)
 
 Color games:
@@ -965,6 +969,7 @@ Working applications:
 Working demos:
 - 256mbrot, Bragg, Glasstro, Orion-B, Yabt (TT/Falcon intros by ray//.tSCc)
 - 4getful (by gwEm, 4KB intro TT-version)
+  - Use either EmuTOS <v0.9, or less accurate Hatari oldUAE CPU core
 - Adebug 3DTT demo (by Brainstorm)
 - CrY image viewer (by .tSCc)
 - Mandelbrot explorer (by .tSCc)
