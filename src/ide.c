@@ -513,7 +513,7 @@ static int bdrv_open(BlockDriverState *bs, const char *filename, int flags)
 		return -1;
 	if (bs->file_size < 2 * 16 * 63 * SECTOR_SIZE)
 	{
-		Log_AlertDlg(LOG_ERROR, "IDE disk image size (%li bytes) is "
+		Log_AlertDlg(LOG_ERROR, "IDE disk image size (%"PRId64" bytes) is "
 		                        "too small for an IDE disk image "
 		                        "(min. 1032192 byte)", bs->file_size);
 		return -1;
