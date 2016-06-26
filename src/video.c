@@ -2807,12 +2807,11 @@ Freq_Test_Done:
 	{
 		/* Don't modify HBL's position now if we're handling the special HBL for video counter restart */
 		if ( RestartVideoCounter == false )
-//			Video_AddInterruptHBL ( HblCounterVideo , HBL_Pos );
-			Video_AddInterruptHBL ( HblCounterVideo , HBL_Pos+ ( VideoTiming==VIDEO_TIMING_STF_WS1?4:0 ) );	// TODO TEMP : compensate -4 in Video_AddInterruptHBL
+			Video_AddInterruptHBL ( HblCounterVideo , HBL_Pos );
 
 		/* In case we're mixing 50 Hz (512 cycles) and 60 Hz (508 cycles) lines on the same screen, */
 		/* we must update the position where the next VBL will happen (instead of the initial value in CyclesPerVBL) */
-		/* We check if number of cycles per line changes, and if so, we update the VBL's position */
+		/* We check if number of cycles per line changes only on the last line, and if so, we update the VBL's position */
 		/* Since we setup VBL at the start of the last HBL, any change of number of cycles per line will */
 		/* in fact change the position of the next VBL */
 		if ( ( nCyclesPerLine_new > 0 )
@@ -3181,20 +3180,19 @@ fprintf ( stderr , "test %d %d %d %d\n", LineCycles, pVideoTiming->H_Stop_Low_60
  * In high res, the position is always the same.
  * This position also gives the number of CPU cycles per video line.
  */
-// TODO return pos / cycle per line
 static int Video_HBL_GetPos ( void )
 {
 	int Pos;
 
 	if ( ( IoMem_ReadByte ( 0xff8260 ) & 3 ) == 2 )		/* hi res */
-		Pos = CYCLES_PER_LINE_71HZ;
+		Pos = pVideoTiming->Hbl_Int_Pos_Hi;
 
 	else							/* low res or med res */
 	{
 		if ( IoMem_ReadByte ( 0xff820a ) & 2 )		/* 50 Hz, pos 512 */
-			Pos = CYCLES_PER_LINE_50HZ;
+			Pos = pVideoTiming->Hbl_Int_Pos_Low_50;
 		else                          			/* 60 Hz, pos 508 */
-			Pos = CYCLES_PER_LINE_60HZ;
+			Pos = pVideoTiming->Hbl_Int_Pos_Low_60;
 	}
 
 	return Pos;
@@ -3295,7 +3293,6 @@ void Video_InterruptHandler_HBL ( void )
 {
 	int FrameCycles , HblCounterVideo , LineCycles;
 	int PendingCyclesOver;
-	int NewHBLPos;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
@@ -3384,8 +3381,7 @@ void Video_InterruptHandler_HBL ( void )
 		Video_StartHBL();
 
 		/* Default cycle position for next HBL */
-		NewHBLPos = Video_HBL_GetPos();
-		Video_AddInterruptHBL ( nHBL , NewHBLPos );
+		Video_AddInterruptHBL ( nHBL , Video_HBL_GetPos() );
 
 		/* Add new VBL interrupt just after the last HBL (for example : VblVideoCycleOffset cycles after end of HBL 312 at 50 Hz) */
 		/* We setup VBL one HBL earlier (eg at nHBL=312 instead of 313) to be sure we don't miss it */
@@ -3419,9 +3415,7 @@ void Video_InterruptHandler_HBL ( void )
 		/* This intermediate HBL interrupt will then set the real HBL interrupt at the end of the line */
 		else
 		{
-			// TODO : use Video_AddInterruptHBL after removing -4
-			//Video_AddInterruptHBL ( nHBL , NewHBLPos );
-			Video_AddInterrupt ( nHBL , pVideoTiming->RestartVideoCounter_Pos , INTERRUPT_VIDEO_HBL );
+			Video_AddInterruptHBL ( nHBL , pVideoTiming->RestartVideoCounter_Pos );
 		}
 	}
 }
@@ -4736,8 +4730,6 @@ static void Video_AddInterruptHBL ( int Line , int Pos )
 //fprintf ( stderr , "add hbl line=%d pos=%d\n" , Line , Pos );
 	if ( !bUseVDIRes )
 	{
-		if ( VideoTiming == VIDEO_TIMING_STF_WS1 )
-			Pos -= 4;
 		Video_AddInterrupt ( Line , Pos , INTERRUPT_VIDEO_HBL );
 	}
 }
