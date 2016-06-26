@@ -14,55 +14,58 @@ const char DlgSystem_fileid[] = "Hatari dlgSystem.c : " __DATE__ " " __TIME__;
 #include "sdlgui.h"
 
 
-#define DLGSYS_ST          3
-#define DLGSYS_MEGA_ST     4
-#define DLGSYS_STE         5
-#define DLGSYS_MEGA_STE    6
-#define DLGSYS_TT          7
-#define DLGSYS_FALCON      8
-#define DLGSYS_DSPOFF     10
-#define DLGSYS_DSPDUMMY   11
-#define DLGSYS_DSPON      12
-#define DLGSYS_WSRND      14
-#define DLGSYS_WS1        15
-#define DLGSYS_WS2        16
-#define DLGSYS_WS3        17
-#define DLGSYS_WS4        18
-#define DLGSYS_BLITTER    19
-#define DLGSYS_TIMERD     20
-#define DLGSYS_FASTBOOT   21
+#define DLGSYS_ST          4
+#define DLGSYS_MEGA_ST     5
+#define DLGSYS_STE         6
+#define DLGSYS_MEGA_STE    7
+#define DLGSYS_TT          8
+#define DLGSYS_FALCON      9
+#define DLGSYS_WSRND      12
+#define DLGSYS_WS1        13
+#define DLGSYS_WS2        14
+#define DLGSYS_WS3        15
+#define DLGSYS_WS4        16
+#define DLGSYS_DSPOFF     19
+#define DLGSYS_DSPDUMMY   20
+#define DLGSYS_DSPON      21
+#define DLGSYS_BLITTER    22
+#define DLGSYS_TIMERD     23
+#define DLGSYS_FASTBOOT   24
 
 
 static SGOBJ systemdlg[] =
 {
-	{ SGBOX, 0, 0, 0,0, 56,17, NULL },
-	{ SGTEXT, 0, 0, 21,1, 14,1, "System options" },
+	{ SGBOX, 0, 0, 0,0, 50,18, NULL },
+	{ SGTEXT, 0, 0, 18,1, 14,1, "System options" },
 
-	{ SGTEXT, 0, 0, 2,3, 13,1, "Machine type:" },
-	{ SGRADIOBUT, 0, 0, 17,3, 4,1, "_ST" },
-	{ SGRADIOBUT, 0, 0, 17,4, 9,1, "Meg_a ST" },
-	{ SGRADIOBUT, 0, 0, 28,3, 5,1, "ST_E" },
-	{ SGRADIOBUT, 0, 0, 28,4, 10,1, "Me_ga STE" },
-	{ SGRADIOBUT, 0, 0, 40,3, 4,1, "_TT" },
-	{ SGRADIOBUT, 0, 0, 40,4, 8,1, "_Falcon" },
+	{ SGBOX, 0, 0, 2,3, 15,8, NULL },
+	{ SGTEXT, 0, 0, 3,3, 13,1, "Machine type:" },
+	{ SGRADIOBUT, 0, 0, 3,5, 4,1, "_ST" },
+	{ SGRADIOBUT, 0, 0, 3,6, 9,1, "Meg_a ST" },
+	{ SGRADIOBUT, 0, 0, 3,7, 5,1, "ST_E" },
+	{ SGRADIOBUT, 0, 0, 3,8, 10,1, "Me_ga STE" },
+	{ SGRADIOBUT, 0, 0, 3,9, 4,1, "_TT" },
+	{ SGRADIOBUT, 0, 0, 3,10, 8,1, "_Falcon" },
 
-	{ SGTEXT, 0, 0, 2,6, 12,1, "Falcon DSP:" },
-	{ SGRADIOBUT, 0, 0, 17,6, 6,1, "_None" },
-	{ SGRADIOBUT, 0, 0, 28,6, 7,1, "Dumm_y" },
-	{ SGRADIOBUT, 0, 0, 40,6, 6,1, "Ful_l" },
+	{ SGBOX, 0, 0, 18,3, 15,8, NULL },
+	{ SGTEXT, 0, 0, 19,3, 13,1, "Video timing:" },
+	{ SGRADIOBUT, 0, 0, 19,5, 8,1, "_Random" },
+	{ SGRADIOBUT, 0, 0, 19,6, 12,1, "Wakestate_1" },
+	{ SGRADIOBUT, 0, 0, 19,7, 12,1, "Wakestate_2" },
+	{ SGRADIOBUT, 0, 0, 19,8, 12,1, "Wakestate_3" },
+	{ SGRADIOBUT, 0, 0, 19,9, 12,1, "Wakestate_4" },
 
-	{ SGTEXT, 0, 0, 2,8, 13,1, "Video timing:" },
-	{ SGRADIOBUT, 0, 0, 17,8, 8,1, "_Random" },
-	{ SGRADIOBUT, 0, 0, 27,8, 12,1, "Wakestate_1" },
-	{ SGRADIOBUT, 0, 0, 27,9, 12,1, "Wakestate_2" },
-	{ SGRADIOBUT, 0, 0, 41,8, 12,1, "Wakestate_3" },
-	{ SGRADIOBUT, 0, 0, 41,9, 12,1, "Wakestate_4" },
+	{ SGBOX, 0, 0, 34,3, 14,8, NULL },
+	{ SGTEXT, 0, 0, 35,3, 12,1, "Falcon DSP:" },
+	{ SGRADIOBUT, 0, 0, 35,5, 6,1, "_None" },
+	{ SGRADIOBUT, 0, 0, 35,6, 7,1, "Dumm_y" },
+	{ SGRADIOBUT, 0, 0, 35,7, 6,1, "Ful_l" },
 
-	{ SGCHECKBOX, 0, 0, 3,11, 20,1, "_Blitter in ST mode" },
-	{ SGCHECKBOX, 0, 0, 3,12, 15,1, "Patch Timer-_D" },
-	{ SGCHECKBOX, 0, 0, 3,13, 39,1, "Boot faster by _patching TOS & sysvars" },
+	{ SGCHECKBOX, 0, 0, 3,12, 20,1, "_Blitter in ST mode" },
+	{ SGCHECKBOX, 0, 0, 3,13, 15,1, "Patch Timer-_D" },
+	{ SGCHECKBOX, 0, 0, 3,14, 39,1, "Boot faster by _patching TOS & sysvars" },
 
-	{ SGBUTTON, SG_DEFAULT, 0, 19,15, 20,1, "Back to main menu" },
+	{ SGBUTTON, SG_DEFAULT, 0, 16,16, 20,1, "Back to main menu" },
 	{ SGSTOP, 0, 0, 0,0, 0,0, NULL }
 };
 
