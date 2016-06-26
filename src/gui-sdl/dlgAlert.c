@@ -130,6 +130,7 @@ static int DlgAlert_ShowDlg(const char *text)
 	int lines, i, len, offset;
 	bool bOldMouseVisibility;
 	int nOldMouseX, nOldMouseY;
+	bool bWasEmuActive;
 
 #if WITH_SDL2
 	bool bOldMouseMode = SDL_GetRelativeMouseMode();
@@ -160,6 +161,8 @@ static int DlgAlert_ShowDlg(const char *text)
 		return false;
 	SDLGui_CenterDlg(alertdlg);
 
+	bWasEmuActive = Main_PauseEmulation(true);
+
 	SDL_GetMouseState(&nOldMouseX, &nOldMouseY);
 	bOldMouseVisibility = SDL_ShowCursor(SDL_QUERY);
 	SDL_ShowCursor(SDL_ENABLE);
@@ -173,6 +176,9 @@ static int DlgAlert_ShowDlg(const char *text)
 #if WITH_SDL2
 	SDL_SetRelativeMouseMode(bOldMouseMode);
 #endif
+
+	if (bWasEmuActive)
+		Main_UnPauseEmulation();
 
 	return (i == DLGALERT_OK);
 }
