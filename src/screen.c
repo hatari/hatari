@@ -387,7 +387,8 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 
 	if (sdlWindow)
 	{
-		SDL_SetWindowSize(sdlWindow, win_width, win_height);
+		if ((SDL_GetWindowFlags(sdlWindow) & SDL_WINDOW_MAXIMIZED) == 0)
+			SDL_SetWindowSize(sdlWindow, win_width, win_height);
 	}
 	else
 	{
