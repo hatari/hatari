@@ -21,10 +21,12 @@ if(ENABLE_OSX_BUNDLE)
 	    gui-osx/CreateFloppyController.m gui-osx/SDLMain.m)
 	set_source_files_properties(${GUIOSX_SOURCES} PROPERTIES LANGUAGE C)
 	set(GUIOSX_RSRCS
-	    gui-osx/Hatari.icns gui-osx/English.lproj gui-osx/French.lproj)
+	    gui-osx/Hatari.icns gui-osx/en.lproj gui-osx/fr.lproj)
 	set(GUIOSX_DOCS
 	    ${CMAKE_SOURCE_DIR}/doc/manual.html ${CMAKE_SOURCE_DIR}/doc/images
 	    ${CMAKE_SOURCE_DIR}/doc/compatibility.html)
+	# these are the OS X Interface Builder Files
+	set (HATARI_XIBS en.lproj/SDLMain fr.lproj/SDLMain)
 endif(ENABLE_OSX_BUNDLE)
 
 # When building for Windows, define specific sources for gui and resources
@@ -70,7 +72,10 @@ add_subdirectory(${CPUDIR})
 
 # When building for OSX, add specific sources
 if(ENABLE_OSX_BUNDLE)
-	add_executable(hatari MACOSX_BUNDLE ${GUIOSX_RSRCS} ${GUIOSX_DOCS} ${SOURCES} ${GUIOSX_SOURCES})
+	#find_library(SDL_FRAMEWORK SDL ${ADD_FRAMEWOK_PATH})
+	set(ADDITIONAL_INCLUDES ${FRAMEWORKS})
+	set_source_files_properties(${FRAMEWORKS} PROPERTIES MACOSX_PACKAGE_LOCATION Frameworks)
+	add_executable(hatari MACOSX_BUNDLE ${GUIOSX_RSRCS} ${GUIOSX_DOCS} ${SOURCES} ${GUIOSX_SOURCES} ${FRAMEWORKS})
 	set_target_properties(hatari PROPERTIES MACOSX_BUNDLE_INFO_PLIST
 			      ${CMAKE_CURRENT_SOURCE_DIR}/gui-osx/Info-Hatari.plist)
 	set(MACOSX_BUNDLE_ICON_FILE Hatari.icns)
@@ -82,21 +87,37 @@ if(ENABLE_OSX_BUNDLE)
 	# Create Hatari.app bundle
 	add_custom_target(osx_bundle_dirs
 			COMMAND mkdir -p ${BUNDLE_CONTENTS}/Resources
+			#COMMAND mkdir -p ${BUNDLE_CONTENTS}/Frameworks
 			COMMAND mkdir -p ${BUNDLE_CONTENTS}/MacOS
 			COMMAND cp ${CMAKE_CURRENT_SOURCE_DIR}/gui-osx/${MACOSX_BUNDLE_ICON_FILE}
 				   ${BUNDLE_CONTENTS}/Resources/${MACOSX_BUNDLE_ICON_FILE}
 			# Copy Localized .nib to Bundle
 			COMMAND cp -R ${CMAKE_CURRENT_SOURCE_DIR}/gui-osx/*.lproj ${BUNDLE_CONTENTS}/Resources/
-			COMMAND mkdir -p ${BUNDLE_CONTENTS}/Resources/English.lproj/HatariHelp
-			COMMAND cp -R ${GUIOSX_DOCS} ${BUNDLE_CONTENTS}/Resources/English.lproj/HatariHelp/
-			COMMAND mkdir -p ${BUNDLE_CONTENTS}/Resources/French.lproj/HatariHelp
-			COMMAND cp -R ${GUIOSX_DOCS} ${BUNDLE_CONTENTS}/Resources/French.lproj/HatariHelp/
+			COMMAND mkdir -p ${BUNDLE_CONTENTS}/Resources/en.lproj/HatariHelp
+			COMMAND cp -R ${GUIOSX_DOCS} ${BUNDLE_CONTENTS}/Resources/en.lproj/HatariHelp/
+			COMMAND mkdir -p ${BUNDLE_CONTENTS}/Resources/fr.lproj/HatariHelp
+			COMMAND cp -R ${GUIOSX_DOCS} ${BUNDLE_CONTENTS}/Resources/fr.lproj/HatariHelp/
 	)
 	add_dependencies(hatari osx_bundle_dirs)
 	set_source_files_properties(${GUIOSX_RSRCS} PROPERTIES
 				    MACOSX_PACKAGE_LOCATION Resources)
 	set_source_files_properties(${GUIOSX_DOCS} PROPERTIES
-				    MACOSX_PACKAGE_LOCATION Resources/English.lproj/HatariHelp)
+				    MACOSX_PACKAGE_LOCATION Resources/en.lproj/HatariHelp)
+
+	#find ibtool
+	find_program(IBTOOL ibtool HINTS "/usr/bin" "${OSX_DEVELOPER_ROOT}/usr/bin")
+	if (${IBTOOL} STREQUAL "IBTOOL-NOTFOUND")
+		message(SEND_ERROR "ibtool can not be found and is needed to compile the .xib files.
+			It should have been installed with the Apple developer tools. The default
+			system paths were searched in addition to ${OSX_DEVELOPER_ROOT}/usr/bin")
+	endif()
+	# Compile the .xib files using the 'ibtool' program with the destination being the app package
+	foreach(xib ${HATARI_XIBS})
+		add_custom_command (TARGET hatari POST_BUILD
+			COMMAND ${IBTOOL} --errors --warnings --notices --output-format human-readable-text
+				--compile ${BUNDLE_CONTENTS}/Resources/${xib}.nib ${CMAKE_CURRENT_SOURCE_DIR}/gui-osx/${xib}.xib
+			COMMENT "Compiling ${CMAKE_CURRENT_SOURCE_DIR}/gui-osx/${xib}.xib")
+	endforeach()
 
 # When building for Windows, add specific sources + method to compile .rc files
 elseif(WIN32)
