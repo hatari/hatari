@@ -2103,6 +2103,7 @@ static void Video_WriteToGlueShifterRes ( Uint8 Res )
     match_found;
     hbl = 508;
     end = 372;
+    right-2;
     if ( !no_de )
       if ( pos <= blank_stop_50 )
         blank line with DE;
@@ -2115,6 +2116,8 @@ static void Video_WriteToGlueShifterRes ( Uint8 Res )
     hbl = 512;
     if ( !no_de )
       end = 376;
+      if (right-2)
+        cancel right-2
       if ( start == 52 )
         start=56;
         if ( left+2 )
@@ -2319,7 +2322,15 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	  {
 	    if ( ( LineCycles <= pVideoTiming->H_Start_Hi ) && ( BorderMask & BORDERMASK_LEFT_OFF ) )
 	    {
-	      DE_start = FreqHz == VIDEO_50HZ ? pVideoTiming->H_Start_Low_50 : pVideoTiming->H_Start_Low_60;
+	      if ( FreqHz == VIDEO_50HZ )
+		DE_start = pVideoTiming->H_Start_Low_50;	/* 56 */
+	      else
+	      {
+		DE_start = pVideoTiming->H_Start_Low_60;	/* 52 */
+		BorderMask |= BORDERMASK_LEFT_PLUS_2;
+		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect left+2 60Hz %d<->%d\n" , DE_start , DE_end );
+	      }
+
 	      BorderMask &= ~BORDERMASK_LEFT_OFF;
 	      ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = 0;
 	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "cancel remove left %d<->%d\n" , DE_start , DE_end );
@@ -2351,6 +2362,9 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	    {
 	      DE_end = pVideoTiming->H_Stop_Low_60;		/* 372 */
 	
+	      BorderMask |= BORDERMASK_RIGHT_MINUS_2;
+	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect right-2 %d<->%d\n" , DE_start , DE_end );
+
 	      if ( ( LineCycles > pVideoTiming->Blank_Stop_Low_60 ) && ( LineCycles <= pVideoTiming->Blank_Stop_Low_50 ) )
 	      {
 		BorderMask |= BORDERMASK_BLANK;
@@ -2376,6 +2390,12 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	    if ( !( BorderMask & BORDERMASK_NO_DE ) )
 	    {
 	      DE_end = pVideoTiming->H_Stop_Low_50;		/* 376 */
+
+	      if ( BorderMask & BORDERMASK_RIGHT_MINUS_2 )
+	      {
+		BorderMask &= ~BORDERMASK_RIGHT_MINUS_2;
+		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "cancel right-2 %d<->%d\n" , DE_start , DE_end );
+	      }
 
 	      if ( DE_start == pVideoTiming->H_Start_Low_60 )	/*  52 */
 	      {
@@ -2491,7 +2511,15 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	  {
 	    if ( ( LineCycles < pVideoTiming->H_Start_Hi ) && ( BorderMask & BORDERMASK_LEFT_OFF ) )
 	    {
-	      DE_start = FreqHz == VIDEO_50HZ ? pVideoTiming->H_Start_Low_50 : pVideoTiming->H_Start_Low_60;
+	      if ( FreqHz == VIDEO_50HZ )
+		DE_start = pVideoTiming->H_Start_Low_50;	/* 56 */
+	      else
+	      {
+		DE_start = pVideoTiming->H_Start_Low_60;	/* 52 */
+		BorderMask |= BORDERMASK_LEFT_PLUS_2;
+		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect left+2 60Hz %d<->%d\n" , DE_start , DE_end );
+	      }
+
 	      BorderMask &= ~BORDERMASK_LEFT_OFF;
 	      ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = 0;
 	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "cancel remove left %d<->%d\n" , DE_start , DE_end );
@@ -2531,6 +2559,9 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	    {
 	      DE_end = pVideoTiming->H_Stop_Low_60;		/* 372 */
 	
+	      BorderMask |= BORDERMASK_RIGHT_MINUS_2;
+	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect right-2 %d<->%d\n" , DE_start , DE_end );
+
 	      if ( ( LineCycles > pVideoTiming->Blank_Stop_Low_60 ) && ( LineCycles <= pVideoTiming->Blank_Stop_Low_50 ) )
 	      {
 		BorderMask |= BORDERMASK_BLANK;
@@ -2563,6 +2594,12 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	    if ( !( BorderMask & BORDERMASK_NO_DE ) )
 	    {
 	      DE_end = pVideoTiming->H_Stop_Low_50;		/* 376 */
+
+	      if ( BorderMask & BORDERMASK_RIGHT_MINUS_2 )
+	      {
+		BorderMask &= ~BORDERMASK_RIGHT_MINUS_2;
+		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "cancel right-2 %d<->%d\n" , DE_start , DE_end );
+	      }
 
 	      if ( DE_start == pVideoTiming->H_Start_Low_60 )	/*  52 */
 	      {
@@ -3482,6 +3519,7 @@ static void Video_EndHBL(void)
 	}
 
 
+#if 0
 	//
 	// Check some left/right borders effects that were not detected earlier
 	// (this is usually due to staying in 60 Hz for too long, which is often a bad
@@ -3526,12 +3564,12 @@ static void Video_EndHBL(void)
 	else if ( ( ShifterFrame.ShifterLines[ nHBL ].BorderMask & BORDERMASK_LEFT_PLUS_2 )
 	  && ( ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle == pVideoTiming->H_Stop_Low_60 ) )
 	{
-		ShifterFrame.ShifterLines[ nHBL ].BorderMask &= ~BORDERMASK_LEFT_PLUS_2;
+ 		ShifterFrame.ShifterLines[ nHBL ].BorderMask &= ~BORDERMASK_LEFT_PLUS_2;
 //fprintf ( stderr , "cancel late left+2\n" );
-		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "cancel late left+2 %d<->%d\n" ,
-			ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle , ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle );
+ 		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "cancel late left+2 %d<->%d\n" ,
+ 			ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle , ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle );
 	}
-
+#endif
 
 
 	/* Store palette for very first line on screen - HBLPalettes[0] */
@@ -3603,11 +3641,11 @@ static void Video_StartHBL(void)
 				ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle = pVideoTiming->H_Start_Low_60;
 			ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle = pVideoTiming->H_Stop_Low_60;
 
-			/* If the whole screen is in 50 Hz, then this HBL will default to "left +2" */
+			/* If the whole screen is in 50 Hz, then this HBL will default to "left+2" + "right-2" (ie 60 Hz line) */
 			if ( nScreenRefreshRate == VIDEO_50HZ )
 			{
-				ShifterFrame.ShifterLines[ nHBL ].BorderMask |= BORDERMASK_LEFT_PLUS_2;
-				LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect left+2 60Hz %d<->%d\n" ,
+				ShifterFrame.ShifterLines[ nHBL ].BorderMask |= ( BORDERMASK_LEFT_PLUS_2 | BORDERMASK_RIGHT_MINUS_2 ) ;
+				LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect left+2 / right-2 60Hz %d<->%d\n" ,
 					ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle  , ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle );
 			}
 		}
