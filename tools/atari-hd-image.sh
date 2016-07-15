@@ -57,14 +57,6 @@ if [ \! -z $3 ]; then
 	partname=$3
 fi
 
-# check that there's enough space:
-# - partition + disk image (2.5x size just in case)
-freespace=$(df $diskfile | awk '/\//{print $4/1024}')
-if [ $freespace -lt $((5*$disksize/2)) ]; then
-	echo "ERROR: not enough space for partition creation!"
-	exit 1
-fi
-
 # check content
 convertdir=""
 if [ \! -z $4 ]; then
