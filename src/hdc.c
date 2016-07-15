@@ -654,15 +654,15 @@ int HDC_PartitionCount(FILE *fp, const Uint64 tracelevel)
 		{
 			boot = pinfo[0];
 			ptype = pinfo[4];
-			start = HDC_ReadInt32(pinfo, 8);
-			sectors = HDC_ReadInt32(pinfo, 12);
+			start = SDL_SwapLE32(*(long*)(pinfo+8));
+			sectors = SDL_SwapLE32(*(long*)(pinfo+12));
 			total += sectors;
-			LOG_TRACE(tracelevel, "- Partition %d: type=0x%02x, start=0x%08x, size=%d MB %s\n",
-				  i, ptype, start, sectors/2048, boot ? "(boot)" : "");
+			LOG_TRACE(tracelevel, "- Partition %d: type=0x%02x, start=0x%08x, size=%.1f MB %s%s\n",
+				  i, ptype, start, sectors/2048.0, boot ? "(boot)" : "", sectors ? "" : "(invalid)");
 			if (ptype)
 				parts++;
 		}
-		LOG_TRACE(tracelevel, "- Total size: %i MB in %d partitions\n", total/2048, parts);
+		LOG_TRACE(tracelevel, "- Total size: %.1f MB in %d partitions\n", total/2048.0, parts);
 	}
 	else
 	{
@@ -690,13 +690,13 @@ int HDC_PartitionCount(FILE *fp, const Uint64 tracelevel)
 			pid[3] = '\0';
 			start = HDC_ReadInt32(pinfo, 4);
 			sectors = HDC_ReadInt32(pinfo, 8);
-			LOG_TRACE(tracelevel, "- Partition %d: ID=%s, start=0x%08x, size=%d MB, flags=0x%x\n",
-				  i, pid, start, sectors/2048, flags);
+			LOG_TRACE(tracelevel, "- Partition %d: ID=%s, start=0x%08x, size=%.1f MB, flags=0x%x\n",
+				  i, pid, start, sectors/2048.0, flags);
 			if (flags & 0x1)
 				parts++;
 		}
 		total = HDC_ReadInt32(bootsector, 0x1C2);
-		LOG_TRACE(tracelevel, "- Total size: %i MB in %d partitions\n", total/2048, parts);
+		LOG_TRACE(tracelevel, "- Total size: %.1f MB in %d partitions\n", total/2048.0, parts);
 	}
 
 	if (fseeko(fp, offset, SEEK_SET) != 0)
