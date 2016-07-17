@@ -10,6 +10,7 @@
 #include "m68000.h"
 #include "main.h"
 #include "screen.h"
+#include "configuration.h"
 #include "video.h"
 
 #define VBL_VALUE 21
