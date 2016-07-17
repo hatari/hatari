@@ -44,6 +44,7 @@ const char DebugUI_fileid[] = "Hatari debugui.c : " __DATE__ " " __TIME__;
 #include "evaluate.h"
 #include "history.h"
 #include "symbols.h"
+#include "vars.h"
 
 FILE *debugOutput;
 
@@ -853,14 +854,14 @@ static const dbgcommand_t uicommand[] =
 	  "<directory>\n"
 	  "\tChange Hatari work directory.",
 	  false },
-	{ DebugUI_Evaluate, Symbols_MatchCpuAddress,
+	{ DebugUI_Evaluate, Vars_MatchCpuVariable,
 	  "evaluate", "e",
 	  "evaluate an expression",
 	  "<expression>\n"
 	  "\tEvaluate an expression and show the result.  Expression can\n"
-	  "\tinclude CPU register and symbol names, those are replaced\n"
-	  "\tby their values. Supported operators in expressions are,\n"
-	  "\tin the decending order of precedence:\n"
+	  "\tinclude CPU register & symbol and Hatari variable names.\n"
+	  "\tThose are replaced by their values. Supported operators in\n"
+	  "\texpressions are, in the decending order of precedence:\n"
 	  "\t\t(), +, -, ~, *, /, +, -, >>, <<, ^, &, |\n"
 	  "\tParenthesis will fetch a _long_ value from the address\n"
 	  "\tto what the value inside it evaluates to. Prefixes can be\n"
@@ -951,6 +952,12 @@ static const dbgcommand_t uicommand[] =
 	  "\tSelect Hatari tracing settings. 'help' shows all the available\n"
 	  "\tsettings.  For example, to enable CPU disassembly and VBL\n"
 	  "\ttracing, use:\n\t\ttrace cpu_disasm,video_hbl",
+	  false },
+	{ Vars_List, NULL,
+	  "variables", "v",
+	  "List variables",
+	  "\n"
+	  "\tList Hatari debugger variables and their values.",
 	  false },
 	{ DebugUI_QuitEmu, NULL,
 	  "quit", "q",

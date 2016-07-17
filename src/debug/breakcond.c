@@ -17,15 +17,13 @@ const char BreakCond_fileid[] = "Hatari breakcond.c : " __DATE__ " " __TIME__;
 #include <stdlib.h>
 #include "config.h"
 #include "main.h"
-#include "configuration.h"
 #include "file.h"
 #include "m68000.h"
 #include "memorySnapShot.h"
 #include "dsp.h"
 #include "stMemory.h"
 #include "str.h"
-#include "screen.h"	/* for defines needed by video.h */
-#include "video.h"	/* for Hatari video variable addresses */
+#include "vars.h"
 
 #include "debug_priv.h"
 #include "breakcond.h"
@@ -46,21 +44,6 @@ const char BreakCond_fileid[] = "Hatari breakcond.c : " __DATE__ " " __TIME__;
 #define BITMASK(x)      ((Uint32)(((unsigned long long)1<<(x))-1))
 
 #define BC_DEFAULT_DSP_SPACE 'P'
-
-typedef enum {	
-	/* plain number */
-	VALUE_TYPE_NUMBER     = 0,
-
-	/* functions to call to get value */
-	VALUE_TYPE_FUNCTION32 = 2,
-
-	/* internal Hatari value variables */
-	VALUE_TYPE_VAR32      = 4,
-
-	/* size must match register size used in BreakCond_ParseRegister() */
-	VALUE_TYPE_REG16      = 16,
-	VALUE_TYPE_REG32      = 32
-} value_t;
 
 static inline bool is_register_type(value_t vtype) {
 	/* type used for CPU/DSP registers */
@@ -437,189 +420,6 @@ typedef struct {
 } parser_state_t;
 
 
-/* Hatari variable name & address array items */
-typedef struct {
-	const char *name;
-	Uint32 *addr;
-	value_t vtype;
-	size_t bits;
-	const char *constraints;
-} var_addr_t;
-
-/* Accessor functions for calculated Hatari values */
-static Uint32 GetLineCycles(void)
-{
-	int dummy1, dummy2, lcycles;
-	Video_GetPosition(&dummy1, &dummy2 , &lcycles);
-	return lcycles;
-}
-static Uint32 GetFrameCycles(void)
-{
-	int dummy1, dummy2, fcycles;
-	Video_GetPosition(&fcycles, &dummy1, &dummy2);
-	return fcycles;
-}
-
-/* helpers for TOS OS call opcode accessor functions */
-#define INVALID_OPCODE 0xFFFFu
-
-static inline Uint16 getLineOpcode(Uint8 line)
-{
-	Uint32 pc;
-	Uint16 instr;
-	pc = M68000_GetPC();
-	instr = STMemory_ReadWord(pc);
-	/* for opcode X, Line-A = 0xA00X, Line-F = 0xF00X */
-	if ((instr >> 12) == line) {
-		return instr & 0xFF;
-	}
-	return INVALID_OPCODE;
-}
-static inline bool isTrap(Uint8 trap)
-{
-	Uint32 pc;
-	Uint16 instr;
-	pc = M68000_GetPC();
-	instr = STMemory_ReadWord(pc);
-	return (instr == (Uint16)0x4e40u + trap);
-}
-static inline Uint16 getControlOpcode(void)
-{
-	/* Control[] address from D1, opcode in Control[0] */
-	return STMemory_ReadWord(STMemory_ReadLong(Regs[REG_D1]));
-}
-static inline Uint16 getStackOpcode(void)
-{
-	return STMemory_ReadWord(Regs[REG_A7]);
-}
-
-/* Actual TOS OS call opcode accessor functions */
-static Uint32 GetLineAOpcode(void)
-{
-	return getLineOpcode(0xA);
-}
-static Uint32 GetLineFOpcode(void)
-{
-	return getLineOpcode(0xF);
-}
-static Uint32 GetGemdosOpcode(void)
-{
-	if (isTrap(1)) {
-		return getStackOpcode();
-	}
-	return INVALID_OPCODE;
-}
-static Uint32 GetBiosOpcode(void)
-{
-	if (isTrap(13)) {
-		return getStackOpcode();
-	}
-	return INVALID_OPCODE;
-}
-static Uint32 GetXbiosOpcode(void)
-{
-	if (isTrap(14)) {
-		return getStackOpcode();
-	}
-	return INVALID_OPCODE;
-}
-static Uint32 GetAesOpcode(void)
-{
-	if (isTrap(2)) {
-		Uint16 d0 = Regs[REG_D0];
-		if (d0 == 0xC8) {
-			return getControlOpcode();
-		} else if (d0 == 0xC9) {
-			/* same as appl_yield() */
-			return 0x11;
-		}
-	}
-	return INVALID_OPCODE;
-}
-static Uint32 GetVdiOpcode(void)
-{
-	if (isTrap(2)) {
-		Uint16 d0 = Regs[REG_D0];
-		if (d0 == 0x73) {
-			return getControlOpcode();
-		} else if (d0 == 0xFFFE) {
-			/* -2 = vq_[v]gdos() */
-			return 0xFFFE;
-		}
-	}
-	return INVALID_OPCODE;
-}
-
-static Uint32 GetNextPC(void)
-{
-	return Disasm_GetNextPC(M68000_GetPC());
-}
-
-/* sorted by variable name so that this can be bisected */
-static const var_addr_t hatari_vars[] = {
-	{ "AesOpcode", (Uint32*)GetAesOpcode, VALUE_TYPE_FUNCTION32, 16, "by default FFFF" },
-	{ "Basepage", (Uint32*)DebugInfo_GetBASEPAGE, VALUE_TYPE_FUNCTION32, 0, "invalid before Desktop is up" },
-	{ "BiosOpcode", (Uint32*)GetBiosOpcode, VALUE_TYPE_FUNCTION32, 16, "by default FFFF" },
-	{ "BSS", (Uint32*)DebugInfo_GetBSS, VALUE_TYPE_FUNCTION32, 0, "invalid before Desktop is up" },
-	{ "CpuInstr", (Uint32*)DebugCpu_InstrCount, VALUE_TYPE_FUNCTION32, 0, "CPU instructions count" },
-	{ "CpuOpcodeType", (Uint32*)DebugCpu_OpcodeType, VALUE_TYPE_FUNCTION32, 0, "CPU instruction type" },
-	{ "DATA", (Uint32*)DebugInfo_GetDATA, VALUE_TYPE_FUNCTION32, 0, "invalid before Desktop is up" },
-#if ENABLE_DSP_EMU
-	{ "DspInstr", (Uint32*)DebugDsp_InstrCount, VALUE_TYPE_FUNCTION32, 0, "DSP instructions count" },
-	{ "DspOpcodeType", (Uint32*)DebugDsp_OpcodeType, VALUE_TYPE_FUNCTION32, 0, "DSP instruction type" },
-#endif
-	{ "FrameCycles", (Uint32*)GetFrameCycles, VALUE_TYPE_FUNCTION32, 0, NULL },
-	{ "GemdosOpcode", (Uint32*)GetGemdosOpcode, VALUE_TYPE_FUNCTION32, 16, "by default FFFF" },
-	{ "HBL", (Uint32*)&nHBL, VALUE_TYPE_VAR32, sizeof(nHBL)*8, NULL },
-	{ "LineAOpcode", (Uint32*)GetLineAOpcode, VALUE_TYPE_FUNCTION32, 16, "by default FFFF" },
-	{ "LineCycles", (Uint32*)GetLineCycles, VALUE_TYPE_FUNCTION32, 0, "is always divisable by 4" },
-	{ "LineFOpcode", (Uint32*)GetLineFOpcode, VALUE_TYPE_FUNCTION32, 16, "by default FFFF" },
-	{ "NextPC", (Uint32*)GetNextPC, VALUE_TYPE_FUNCTION32, 0, NULL },
-	{ "TEXT", (Uint32*)DebugInfo_GetTEXT, VALUE_TYPE_FUNCTION32, 0, "invalid before Desktop is up" },
-	{ "TEXTEnd", (Uint32*)DebugInfo_GetTEXTEnd, VALUE_TYPE_FUNCTION32, 0, "invalid before Desktop is up" },
-	{ "VBL", (Uint32*)&nVBLs, VALUE_TYPE_VAR32, sizeof(nVBLs)*8, NULL },
-	{ "VdiOpcode", (Uint32*)GetVdiOpcode, VALUE_TYPE_FUNCTION32, 16, "by default FFFF" },
-	{ "XbiosOpcode", (Uint32*)GetXbiosOpcode, VALUE_TYPE_FUNCTION32, 16, "by default FFFF" }
-};
-
-
-/**
- * Readline match callback for CPU variable/symbol name completion.
- * STATE = 0 -> different text from previous one.
- * Return next match or NULL if no matches.
- */
-char *BreakCond_MatchCpuVariable(const char *text, int state)
-{
-	static int i, len;
-	const char *name;
-	
-	if (!state) {
-		/* first match */
-		len = strlen(text);
-		i = 0;
-	}
-	/* next match */
-	while (i < ARRAYSIZE(hatari_vars)) {
-		name = hatari_vars[i++].name;
-		if (strncasecmp(name, text, len) == 0)
-			return (strdup(name));
-	}
-	/* no variable match, check all CPU symbols */
-	return Symbols_MatchCpuAddress(text, state);
-}
-
-/**
- * Readline match callback for DSP variable/symbol name completion.
- * STATE = 0 -> different text from previous one.
- * Return next match or NULL if no matches.
- */
-char *BreakCond_MatchDspVariable(const char *text, int state)
-{
-	/* currently no DSP variables, check all DSP symbols */
-	return Symbols_MatchDspAddress(text, state);
-}
-
-
 /**
  * If given string is a Hatari variable name, set bc_value
  * fields accordingly and return true, otherwise return false.
@@ -627,49 +427,19 @@ char *BreakCond_MatchDspVariable(const char *text, int state)
 static bool BreakCond_ParseVariable(const char *name, bc_value_t *bc_value)
 {
 	const var_addr_t *hvar;
-	/* left, right, middle, direction */
-        int l, r, m, dir;
 
 	ENTERFUNC(("BreakCond_ParseVariable('%s')\n", name));
-	/* bisect */
-	l = 0;
-	r = ARRAYSIZE(hatari_vars) - 1;
-	do {
-		m = (l+r) >> 1;
-		hvar = hatari_vars + m;
-		dir = strcasecmp(name, hvar->name);
-		if (dir == 0) {
-			bc_value->value.reg32 = hvar->addr;
-			bc_value->valuetype = hvar->vtype;
-			bc_value->bits = hvar->bits;
-			assert(bc_value->bits == 32 || bc_value->valuetype !=  VALUE_TYPE_VAR32);
-			EXITFUNC(("-> true\n"));
-			return true;
-		}
-		if (dir < 0) {
-			r = m-1;
-		} else {
-			l = m+1;
-		}
-	} while (l <= r);
+	hvar = Vars_ParseVariable(name);
+	if (hvar) {
+		bc_value->value.reg32 = hvar->addr;
+		bc_value->valuetype = hvar->vtype;
+		bc_value->bits = hvar->bits;
+		assert(bc_value->bits == 32 || bc_value->valuetype !=  VALUE_TYPE_VAR32);
+		EXITFUNC(("-> true\n"));
+		return true;
+	}
 	EXITFUNC(("-> false\n"));
 	return false;
-}
-
-/**
- * If given string is a Hatari variable name, set value to given
- * variable value and return true, otherwise return false.
- */
-bool BreakCond_GetHatariVariable(const char *name, Uint32 *value)
-{
-	bc_value_t bc_value;
-	if (!BreakCond_ParseVariable(name, &bc_value)) {
-		return false;
-	}
-	bc_value.mask = 0xffffffff;
-	bc_value.is_indirect = false;
-	*value = BreakCond_GetValue(&bc_value);
-	return true;
 }
 
 
@@ -1652,14 +1422,9 @@ int BreakCond_MatchCpuExpression(int position, const char *expression)
 }
 
 
-/**
- * help
- */
-static void BreakCond_Help(void)
-{
-	Uint32 value;
-	int i;
-	fputs(
+/* ------------- breakpoint condition parsing, public API ------------ */
+
+static const char BreakCond_Help[] =
 "  condition = <value>[.mode] [& <mask>] <comparison> <value>[.mode]\n"
 "\n"
 "  where:\n"
@@ -1682,41 +1447,13 @@ static void BreakCond_Help(void)
 "  DSP addresses belong to different address spaces: P, X or Y. Note that\n"
 "  on DSP only R0-R7 registers can be used for memory addressing.\n"
 "\n"
-"  Valid Hatari variable names (and their current values) are:\n", stderr);
-	for (i = 0; i < ARRAYSIZE(hatari_vars); i++) {
-		const var_addr_t *hvar = hatari_vars + i;
-		switch (hvar->vtype) {
-		case VALUE_TYPE_FUNCTION32:
-			value = ((Uint32(*)(void))(hvar->addr))();
-			break;
-		case VALUE_TYPE_VAR32:
-			value = *(hvar->addr);
-			break;
-		default:
-			fprintf(stderr, "ERROR: variable '%s' has unsupported type '%d'\n",
-				hvar->name, hvar->vtype);
-			continue;
-		}
-		fprintf(stderr, "  - %s ($%x)", hvar->name, value);
-		if (hvar->constraints) {
-			fprintf(stderr, ", %s\n", hvar->constraints);
-		} else {
-			fprintf(stderr, "\n");
-		}
-	}
-	fputs(
-"\n"
 "  Examples:\n"
 "  	pc = $64543  &&  ($ff820).w & 3 = (a0)  &&  d0 = %1100\n"
 "       ($ffff9202).w ! ($ffff9202).w :trace\n"
 "  	(r0).x = 1 && (r0).y = 2\n"
 "\n"
-"  For breakpoint options, see 'help b'.\n",
-	      stderr);
-}
+"  For breakpoint options, see 'help b'.\n";
 
-
-/* ------------- breakpoint condition parsing, public API ------------ */
 
 const char BreakCond_Description[] =
 	"<condition> [&& <condition> ...] [:<option>] | <index> | help | all\n"
@@ -1824,7 +1561,7 @@ bool BreakCond_Command(const char *args, bool bForDsp)
 	
 	/* subcommands? */
 	if (strncmp(expression, "help", 4) == 0) {
-		BreakCond_Help();
+		fputs(BreakCond_Help, stderr);
 		goto cleanup;
 	}
 	if (strcmp(expression, "all") == 0) {

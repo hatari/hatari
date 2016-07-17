@@ -33,6 +33,7 @@ const char DebugCpu_fileid[] = "Hatari debugcpu.c : " __DATE__ " " __TIME__;
 #include "68kDisass.h"
 #include "console.h"
 #include "options.h"
+#include "vars.h"
 
 
 #define MEMDUMP_COLS   16      /* memdump, number of bytes per row */
@@ -688,7 +689,7 @@ static const dbgcommand_t cpucommands[] =
 	  "set CPU PC address breakpoints",
 	  BreakAddr_Description,
 	  true	},
-	{ DebugCpu_BreakCond, BreakCond_MatchCpuVariable,
+	{ DebugCpu_BreakCond, Vars_MatchCpuVariable,
 	  "breakpoint", "b",
 	  "set/remove/list conditional CPU breakpoints",
 	  BreakCond_Description,

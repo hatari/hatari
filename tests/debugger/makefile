@@ -102,7 +102,7 @@ test: $(TESTS)
 SOURCEDEPS = ../../src/debug/breakcond.c \
 	../../src/debug/debugcpu.c ../../src/debug/history.c \
 	../../src/debug/evaluate.c ../../src/debug/symbols.c \
-	../../src/str.c test-dummies.c
+	 ../../src/debug/vars.c ../../src/str.c test-dummies.c
 
 test-symbols: test-symbols.c $(SOURCEDEPS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)

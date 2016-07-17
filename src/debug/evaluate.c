@@ -22,7 +22,6 @@ const char Eval_fileid[] = "Hatari calculate.c : " __DATE__ " " __TIME__;
 #include <stdbool.h>
 #include <SDL_types.h>
 #include <inttypes.h>
-#include "breakcond.h"
 #include "configuration.h"
 #include "dsp.h"
 #include "debugcpu.h"
@@ -31,6 +30,8 @@ const char Eval_fileid[] = "Hatari calculate.c : " __DATE__ " " __TIME__;
 #include "m68000.h"
 #include "stMemory.h"
 #include "symbols.h"
+#include "vars.h"
+
 
 /* define which character indicates which type of number on expression  */
 #define PREFIX_BIN '%'                            /* binary decimal     */
@@ -220,7 +221,7 @@ static int getValue(const char *str, Uint32 *number, int *base, bool bForDsp)
 	*base = 0; /* no base (e.g. variable) */
 
 	/* internal Hatari variable? */
-	if (BreakCond_GetHatariVariable(name, number)) {
+	if (Vars_GetVariableValue(name, number)) {
 		return len;
 	}
 

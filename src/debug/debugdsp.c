@@ -538,7 +538,8 @@ static const dbgcommand_t dspcommands[] =
 	  "set DSP PC address breakpoints",
 	  BreakAddr_Description,
 	  true },
-	{ DebugDsp_BreakCond, BreakCond_MatchDspVariable,
+	/* currently no DSP variables, so checks that DSP symbol addresses */
+	{ DebugDsp_BreakCond, Symbols_MatchDspAddress,
 	  "dspbreak", "db",
 	  "set/remove/list conditional DSP breakpoints",
 	  BreakCond_Description,
