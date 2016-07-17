@@ -955,9 +955,10 @@ static const dbgcommand_t uicommand[] =
 	  false },
 	{ Vars_List, NULL,
 	  "variables", "v",
-	  "List variables",
+	  "List builtin symbols / variables",
 	  "\n"
-	  "\tList Hatari debugger variables and their values.",
+	  "\tList Hatari debugger builtin symbols / variables and their values.\n"
+	  "\tThey're accepted by breakpoints and evaluate command.",
 	  false },
 	{ DebugUI_QuitEmu, NULL,
 	  "quit", "q",

@@ -61,6 +61,7 @@ Emulator:
   - 'n' (next) command run until (dbcc backwards branch) loop exits
     (in addition to running until subroutine and exception calls return)
   - Support Atari debugger XBios(11) / Dbmsg() API
+  - 'variables' / 'v' command to list Hatari debugger's builtin symbols
   - Also trace exception can be caught
 - Removed features:
   - Support for rendering to 8-bit host screens

@@ -263,7 +263,7 @@ int Vars_List(int nArgc, char *psArgv[])
 {
 	Uint32 value;
 	int i;
-	fputs("Hatari debugger variables (values) usable in breakpoints are:\n", stderr);
+	fputs("Hatari debugger builtin symbols and their values are:\n", stderr);
 	for (i = 0; i < ARRAYSIZE(hatari_vars); i++) {
 		const var_addr_t *hvar = hatari_vars + i;
 		value = Vars_GetValue(hvar);
