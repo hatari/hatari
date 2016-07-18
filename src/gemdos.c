@@ -546,6 +546,8 @@ static bool GEMDOS_DoesHostDriveFolderExist(char* lpstrPath, int iDrive)
 {
 	bool bExist = false;
 
+	Log_Printf(LOG_DEBUG, "Checking GEMDOS %c: HDD: %s\n", 'A'+iDrive, lpstrPath);
+
 	if (access(lpstrPath, F_OK) != 0 )
 	{
 		/* Try lower case drive letter instead */
@@ -561,6 +563,10 @@ static bool GEMDOS_DoesHostDriveFolderExist(char* lpstrPath, int iDrive)
 		if (stat(lpstrPath, &status) == 0 && (status.st_mode & S_IFDIR) != 0)
 		{
 			bExist = true;
+		}
+		else
+		{
+			Log_Printf(LOG_WARN, "Not suitable as GEMDOS HDD dir: %s\n", lpstrPath);
 		}
 	}
 
@@ -584,7 +590,8 @@ static bool GemDOS_DetermineMaxPartitions(int *pnMaxDrives)
 
 	/* Scan through the main directory to see whether there are just single
 	 * letter sub-folders there (then use multi-partition mode) or if
-	 * arbitrary sub-folders are there (then use single-partition mode */
+	 * arbitrary sub-folders are there (then use single-partition mode)
+	 */
 	count = scandir(ConfigureParams.HardDisk.szHardDiskDirectories[0], &files, 0, alphasort);
 	if (count < 0)
 	{

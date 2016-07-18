@@ -890,6 +890,8 @@ static bool Opt_HandleArgument(const char *path)
 			dir = strdup(Paths_GetWorkingDir());
 			prgname = path;
 		}
+		Log_Printf(LOG_INFO, "ARG = autostart program: %s\n", prgname);
+
 		/* after above, dir should point to valid dir,
 		 * then make sure that given program from that
 		 * dir will be started.
@@ -902,6 +904,7 @@ static bool Opt_HandleArgument(const char *path)
 
 	/* GEMDOS HDD directory (as argument, or for the Atari program)? */
 	if (File_DirExists(path)) {
+		Log_Printf(LOG_INFO, "ARG = GEMDOS HD dir: %s\n", path);
 		if (Opt_StrCpy(OPT_HARDDRIVE, false, ConfigureParams.HardDisk.szHardDiskDirectories[0],
 			       path, sizeof(ConfigureParams.HardDisk.szHardDiskDirectories[0]),
 			       &ConfigureParams.HardDisk.bUseHardDiskDirectories)
@@ -926,6 +929,7 @@ static bool Opt_HandleArgument(const char *path)
 	/* disk image? */
 	if (Floppy_SetDiskFileName(0, path, NULL))
 	{
+		Log_Printf(LOG_INFO, "ARG = floppy image: %s\n", path);
 		ConfigureParams.HardDisk.bBootFromHardDisk = false;
 		bLoadAutoSave = false;
 		return true;

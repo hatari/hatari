@@ -578,7 +578,7 @@ void Configuration_SetDefault(void)
 	strcpy(ConfigureParams.Log.sLogFileName, "stderr");
 	strcpy(ConfigureParams.Log.sTraceFileName, "stderr");
 	ConfigureParams.Log.nExceptionDebugMask = DEFAULT_EXCEPTIONS;
-	ConfigureParams.Log.nTextLogLevel = LOG_TODO;
+	ConfigureParams.Log.nTextLogLevel = LOG_INFO;
 	ConfigureParams.Log.nAlertDlgLogLevel = LOG_ERROR;
 	ConfigureParams.Log.bConfirmQuit = true;
 	ConfigureParams.Log.bNatFeats = false;

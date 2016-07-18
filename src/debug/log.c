@@ -166,6 +166,7 @@ void Log_Default(void)
 {
 	hLogFile = stderr;
 	TraceFile = stderr;
+	TextLogLevel = LOG_INFO;
 }
 
 /*-----------------------------------------------------------------------*/
