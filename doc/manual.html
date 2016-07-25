@@ -313,9 +313,9 @@ it at:
 It is not the best solution for playing games or running other old software
 due to compatibility issues (see <span class="file">emutos.txt</span> for
 more details), but it's free and compatible with Hatari.</p>
-<p>If you do not specify a TOS image on the commandline nor can Hatari
-find a suitable TOS image in the default dir, you'll get the chance to
-select a TOS image file from the GUI. </p>
+<p>If you do not specify a TOS image on the commandline and Hatari
+cannot find a suitable TOS image in the default dir, you'll get the
+chance to select a TOS image file from the GUI. </p>
 
 <h3>Installation of the binary</h3>
 
@@ -636,7 +636,7 @@ the file attribute modifications for the GEMDOS HD
 emulation</p>
 <p class="parameter">--gemdos-case &lt;x&gt;</p>
 <p class="paramdesc">Specify whether new dir/filenames are forced to be
-in upper or lower case with the GEMDOS HD emulation. Off/upper/lower, off by default
+in upper or lower case with GEMDOS HD emulation. Off/upper/lower, off by default
 </p>
 <p class="parameter">-d, --harddrive
 &lt;dir&gt;</p>
@@ -696,7 +696,7 @@ disabled)</p>
 1 with EmuTOS or TOS &gt;= 2.06 only!)</p>
 <p class="parameter">--cpuclock
 &lt;x&gt;</p>
-<p class="paramdesc">Set the CPU clock (8, 16 or 32 Mhz)</p>
+<p class="paramdesc">Set the CPU clock (8, 16 or 32 MHz)</p>
 <p class="parameter">--compatible
 &lt;bool&gt;</p>
 <p class="paramdesc">Use a more compatible, but slower 68000
@@ -745,7 +745,7 @@ matches evenly with the STE/TT/Falcon sound DMA (6258, 12517,
 &lt;x&gt;</p>
 <p class="paramdesc">SDL&rsquo;s sound buffer size: 10-100,
 or 0 to use default buffer size. By default Hatari uses an SDL
-buffer size of 1024 samples, which gives approximatively 20-30 ms
+buffer size of 1024 samples, which gives approximately 20-30 ms
 of sound depending on the chosen sound frequency. Under some OS or
 with not fully supported sound card, this default setting can cause
 a bigger delay at lower frequency (nearly 0.5 sec). In that case,
@@ -785,7 +785,7 @@ flags.</p>
 <p class="parameter">--bios-intercept</p>
 <p class="paramdesc">
 Toggle XBios command parsing. Allows Atari programs to use all Hatari
-functionality and change Hatari state through Hatari specifit
+functionality and change Hatari state through Hatari specific
 XBios(255) calls. XBios(20) printscreen calls produce also Hatari
 screenshots.</p>
 <p class="parameter">--conout &lt;device&gt;</p>
@@ -869,9 +869,9 @@ the appropriate buttons.
 </p>
 <p>
 You can load the current settings from a configuration file by clicking
-on <span class="button">Load&nbsp;config.</span> and you can save
+on the <span class="button">Load&nbsp;config</span> button, and save
 the current settings to a configuration file by clicking on
-<span class="button">Save&nbsp;config.</span>.
+the <span class="button">Save&nbsp;config</span> button.
 </p>
 <p>
 Click <span class="button">OK</span> to go back and continue the emulation.
@@ -948,7 +948,7 @@ changes that you have made.
  Quite a bunch of programs do not work very well yet.
 </p>
 <p>
- For STE emulation a STE compatible TOS image, e.q. version 1.06, 1.62 or
+ For STE emulation a STE compatible TOS image, e.g. version 1.06, 1.62 or
  2.x, is strongly recommended. For TT emulation you need TOS 3.0x and for Falcon
  emulation you need TOS 4.0x. EmuTOS can be used on all machine types.
 </p>
@@ -991,7 +991,7 @@ changes that you have made.
 
 <p>
  The CPU clock option can be used to select the frequency that is used
- to clock the CPU. 8 Mhz is the standard for ST and STE and the most
+ to clock the CPU. 8 MHz is the standard for ST and STE and the most
  compatible frequency for old software.
  Use 16 MHz for Mega STE and Falcon emulation.
  The CPU in the TT was clocked with 32 MHz.
@@ -1003,7 +1003,7 @@ changes that you have made.
  power (more than 2 GHz) for full emulation. So if you have a slow host CPU,
  you can try if your Falcon program also runs with DSP disabled or in
  the &quot;dummy&quot; fake mode.
- Note that you can not change this option while the DSP based program already
+ Note that you cannot change this option while the DSP based program already
  runs.
 </p>
 <p>
@@ -1121,7 +1121,7 @@ ends with a 'b'.
 </p>
 <p>
  If you want, you can set Hatari to write-protect your disks. Atari ST
- virii can spread on disk images, so that can be a good idea. However,
+ viruses can spread on disk images, so that can be a good idea. However,
  note that some programs won't work correctly (or at all) with write
  protected disks, and things like saving highscores in games will fail.
 </p>
@@ -1204,7 +1204,7 @@ to file. You can select a new filename here.</p>
 snapshot from a file. Use the fileselector to select the snapshot to be
 restored.</p>
 <p><em>NOTE:</em> Memory snapshots are not interchangeable between
-different versions of Hatari. E.q. if you compile a newer Hatari, you
+different versions of Hatari. e.g. if you compile a newer Hatari, you
 cannot load your old memory snapshots back.</p>
 
 
@@ -1227,7 +1227,7 @@ For STE mode, use TOS 1.06, 1.62, 2.05 or 2.06.
 If you want to use the TT mode, you must specify a TOS 3.06 image here.
 And in Falcon mode, you have to use either TOS 4.00, 4.02, 4.04 or 4.92.
 However, you should always use TOS 4.04 for Falcon mode, it's the most common one.
-Also note that TOS 4.92 can not be booted from a boot disk (like it's done on a
+Also note that TOS 4.92 cannot be booted from a boot disk (like it's done on a
 real Falcon), you have to specify it directly in the TOS ROM setup dialog here.
 </p>
 <p>
@@ -1319,7 +1319,7 @@ resolutions for GEM. Select a resolution and color depth. Check to
 activate. This mode isn't affect by the other video options mentioned
 above. Uncheck to get back to a normal ST behaviour.<br />
 </p>
-<p><em>Note that there are several gotches with extended VDI
+<p><em>Note that there are several gotchas with extended VDI
 resolutions:</em></p>
 <ul>
 <li>Only GEM conformant applications work with them, 99% of all games
@@ -1434,7 +1434,7 @@ the screenshots and recorded videos.
  called "Symbolic" and "Scancode" are predefined.</p>
 <p>"Symbolic" tries to map the symbolic values of your PC keys
  to the ST keys. It should be working pretty good on all systems as long
- as your keyboard layout looks close to the standard english keyboard
+ as your keyboard layout looks close to the standard English keyboard
  layout. However, you might experience some problems with special keys like
  brackets etc.</p>
 <p>"Scancode" uses the scancode values of your PC keys for keyboard
@@ -1537,7 +1537,7 @@ Click on <span class="button">Browse</span> to select a suitable
 MIDI device files for MIDI input and output.</p>
 <p><span class="file">midi-linux.txt</span> file explains how to
 select the correct MIDI device file, how to set up software sound
-synthetizing on Linux (using Alsa) if your sound card/driver doesn't
+synthesizing on Linux (using Alsa) if your sound card/driver doesn't
 support MIDI, and how to set up MIDI networking e.g. between multiple
 Hatari instances.
 </p>
@@ -1726,9 +1726,9 @@ are used for the directions and <span class="key">right CTRL</span> key
 as the fire button. Otherwise they act as corresponding keys of the emulated
 Atari ST.</p>
 
-<p>NOTE: Problems with simultenous keypresses most likely aren't an
+<p>NOTE: Problems with simultaneous keypresses most likely aren't an
 issue in Hatari as many modern keyboards report/support only three
-simultenous key presses (or even just two depending on which keys
+simultaneous key presses (or even just two depending on which keys
 are in question).  Expensive gaming keyboards support more.</p>
 
 
@@ -1745,7 +1745,7 @@ hotkey combination or starting Hatari with the
 <span class="commandline">--grab</span> command line option
 grabs the mouse i.e. locks its movements to the Hatari window.
 Press the shortcut key (again) to go back to normal mouse behaviour
-which allows you to move mouse outside outside the Hatari window while
+which allows you to move mouse outside the Hatari window while
 Hatari is up and running. Note: pausing the emulation will also
 (temporarily) release the mouse grab.</p>
 <p>Middle button click emulates double click, which is very useful
@@ -1755,7 +1755,7 @@ impossible).</p>
 
 <h3>Emulated joystick</h3>
 
-<p>The Atari ST joysticks are emulated ofcourse allowing you to play
+<p>The Atari ST joysticks are emulated of course allowing you to play
 your favourite games with Hatari. </p>
 <p>The default mode is to use a connected PC joystick. You can use any
 joystick that is supported by your kernel / SDL library. If your joystick works
@@ -1961,7 +1961,7 @@ devices before giving them to Hatari.
 
 <h3>GEMDOS based hard drive emulation</h3>
 <p>
-With the GEMDOS HD emulation, you can easily "mount" a folder from the
+With GEMDOS HD emulation, you can easily "mount" a folder from the
 host file system to a drive of the emulated Atari.
 </p>
 <p>
@@ -1985,7 +1985,7 @@ GEMDOS HD emulated C: and D: drives.
 <p>
 GEMDOS HD emulation is an easy way to share files between the
 host system and the emulated Atari, but there are also some known
-limitations which are due to the way the GEMDOS HD emulation is
+limitations which are due to the way GEMDOS HD emulation is
 implemented:
 </p>
 <ul>
@@ -1997,10 +1997,10 @@ that order. You need to rename the files.</li>
 to a valid format.  If there are multiple files which converted
 names are identical in TOS-format, you see only one of those.</li>
 <li>It is not possible to use a cartridge image at the same time
-with the GEMDOS HD emulation (Hatari has its own cartridge code
+with GEMDOS HD emulation (Hatari has its own cartridge code
 that is used for GEMDOS HD emulation).</li>
 <li>Anything that installs its own GEMDOS handler, like MiNT, doesn't work
-with the GEMDOS HD emulation.  Such things need to be run from a real
+with GEMDOS HD emulation.  Such things need to be run from a real
 hard disk image.</li>
 <li>GEMDOS HD C: drive conflicts with the ACSI and IDE hard drives.
 If you want to use GEMDOS HD directory and ACSI/IDE disk images together,
@@ -2157,7 +2157,7 @@ ide-hd.image</span>".</p>
 the <a href="http://hddriver.seimet.de/en/downloads.html">demo version
 of HD Driver</a>, you can write files only to the C: partition, i.e. in
 above case only copy files from the hard disk image partition to the
-GEMDOS HD partition (with some write slowndowns included into the demo
+GEMDOS HD partition (with some write slowdowns included into the demo
 version). If you want to copy files to the hard disk image with
 the <em>demo</em> version of the HD Driver, you need to set the hard disk
 image as drive C:.</p>
@@ -2245,8 +2245,8 @@ from the loop device on top of the "hd" directory.
 </p>
 <p>
 After you've copied the relevant files to the "hd" directory, you need
-unmount the file system and remove the loop device binding before using
-the disk image from Hatari:
+to unmount the file system and remove the loop device binding before
+using the disk image from Hatari:
 </p>
 <pre>
 # umount $mountdir
@@ -2397,7 +2397,7 @@ D0 register values to a command, use "a0+d0".
 
 <p>
 Within arithmetic expressions parenthesis are used both to change
-the order of precendence <em>and</em> to indicate indirect addressing.
+the order of precedence <em>and</em> to indicate indirect addressing.
 Unlike with conditional breakpoint expressions (explained below), you
 cannot give size for the indirect addressing, a long value is always
 read from the RAM address given within parenthesis.  For example to
@@ -2407,7 +2407,7 @@ get a long value pointed by stack pointer + 2, use "(a7+2)".
 <p>
 Values of arithmetic expressions are always evaluated before being
 given to a command.  Except for "evaluate" and "address" commands,
-they always need to be marked with quotes (""). Besides arithmetics,
+they always need to be marked with quotes (""). Besides arithmetic,
 this can be used also to give symbol/register/variable values to
 commands that don't otherwise interpret them.  If command complains
 that it didn't recognize e.g. a register name, just put it to quotes
@@ -2581,7 +2581,7 @@ cannot re-compile it to have them, you have two options:
 <ul>
 <li>Convert the symbols to ASCII format understood by the Hatari debugger.
     Writing converters for other ASCII formats is easy, and Hatari already
-    contains covertors for DSP LOD files, <span class="commandline">nm</span>
+    contains converters for DSP LOD files, <span class="commandline">nm</span>
     output for MiNT/a.out binaries and AHCC map files.
 <li>Create the ASCII symbols file by hand while you're debugging a program.
 </ul>
@@ -2615,7 +2615,7 @@ starting with '#' (comments) are ignored.
 Debugger will automatically "relocate" the symbol addresses when it
 loads them from a program binary, but with ASCII symbol files you need
 to give the relocation offset(s) separately, unless the symbol names
-are for fixed adresses (like is the case e.g. with EmuTOS):
+are for fixed addresses (like is the case e.g. with EmuTOS):
 </p>
 <pre>
 symbols program.sym TEXT DATA BSS
@@ -2801,7 +2801,7 @@ b (a0) = "d0"
 <p>
 If you're interested only on certain bits in the value, you can use
 '&amp;' and a numeric mask on either side of comparison operator to
-mask the coresponding value, like this:
+mask the corresponding value, like this:
 <pre>
 b ($ff820).w &amp; 3 = (a0)  &amp;&amp;  (a1) = d0 &amp; %1100
 </pre>
@@ -2844,7 +2844,7 @@ b ($ffff9202).w ! ($ffff9202).w :trace
 <p>
 Because tracking breakpoint conditions will print the evaluated
 value when it changes, they're typically used with the trace option
-to track changes e.g. to some IO register.
+to track changes e.g. to some I/O register.
 </p>
 
 
@@ -2860,19 +2860,19 @@ unless tracking condition is given as the first one.
 
 <li>
 Hatari will internally update some register values without immediately
-updating the corresponding IO address range memory addresses.  For
+updating the corresponding I/O address range memory addresses.  For
 example the Busy bit for the internal Blitter control register is
-(internally) cleared when Blitter activity stops, but the actual IO
+(internally) cleared when Blitter activity stops, but the actual I/O
 address for that control register gets updated only when something
-actually writes or reads that IO address.  Many HW registers behave
+actually writes or reads that I/O address.  Many HW registers behave
 like this (status registers in FDC, ACIA, MFP, Blitter...).
 <br>
-For breakpoints that track just a single IO register memory address, or
+For breakpoints that track just a single I/O register memory address, or
 multiple ones of which <strong>none</strong> are modified by Hatari,
 only by emulated code, this is not a problem, they get triggered as
 expected.
 <br>
-However, if you have a breakpoint that tracks multiple IO registers
+However, if you have a breakpoint that tracks multiple I/O registers
 where some of them are updated by Hatari, for example to check that
 other Blitter registers aren't updated while control register
 indicates Blitter to be active (busy), things don't work as expected!
@@ -2930,7 +2930,7 @@ b  AesOpcode ! AesOpcode  &amp;&amp;  AesOpcode &lt; 0xffff  :trace
 
 <p>
 Hint: "info" command "aes", "bios", "gemdos", "vdi" and "xbios"
-subcommands for can be used to list the corresponding OS-call opcodes.
+subcommands can be used to list the corresponding OS-call opcodes.
 For example, to see the GEMDOS opcodes, use:</p>
 <pre>
 info gemdos 1
@@ -3427,7 +3427,7 @@ installed by Hatari, to:</p>
 
 <p>When the data is post-processed, you should always provide
 the post-processor symbols for the profile code!  Relying just on the
-symbol in the profile data can cause costs to be asssigned to wrong
+symbol in the profile data can cause costs to be assigned to wrong
 symbol, if symbol's code wasn't called through symbol's own address,
 but by jumping inside its code.</p>
 
@@ -3653,7 +3653,7 @@ is same as count for how many times first instruction is executed
 
 <p>While subroutine costs should be more accurate and relevant, due to
 code optimizations many of the functions are not called as subroutines
-(on m68k, using JSR/BSR), but just jumped or branced to.  Because of
+(on m68k, using JSR/BSR), but just jumped or branched to.  Because of
 this, it's useful to compare both subroutine and between-symbols
 costs.  One should be able to see from the profile disassembly which
 of the above cases is cause for the discrepancy in the values.</p>
@@ -3755,7 +3755,7 @@ $ hatari_profile.py -p -g <b>--ignore-to handler1,handler2</b> -r program.sym pr
 <p>In large callgraph most of the functions aren't really interesting,
 because their contribution to the cost is insignificant. You can
 remove large number of them with --no-leafs and --no-intermediate
-options, those options act <em>only</em> on on nodes which costs are below
+options, those options act <em>only</em> on nodes which costs are below
 given threshold.  Leaf nodes are ones which don't have any parents
 and/or children. Intermediate ones have only single parent and
 children (node calling itself is not taken into account).
@@ -3824,7 +3824,7 @@ sections.
 </dd>
 
 <dt><em>Tracing specific things in the system</em></dt>
-<dd>To trace e.g. all GEMDOS calls and IO operations, use:
+<dd>To trace e.g. all GEMDOS calls and I/O operations, use:
 <pre>
 trace  gemdos,io_all
 </pre>
@@ -3882,7 +3882,7 @@ b  d1 &gt; 9  &amp;&amp;  d1 &lt; 31
 
 <dt><em>Stopping when memory location has a specific value</em></dt>
 <dd>To stop when e.g. bit 1 of the Video Shifter Sync Mode byte at
-IO address $ff820a is set i.e. video frequency is 60Hz, set
+I/O address $ff820a is set i.e. video frequency is 60Hz, set
 a breakpoint on:
 <pre>
 b  ($ff820a).b & 2 = 2
@@ -3941,7 +3941,7 @@ GEMDOS 0x3D Fopen("TEST.TXT", read-only)
 
 <dt><em>Seeing code leading to a breakpoint</em></dt>
 <dd>To see CPU instructions executed before debugger was entered,
-you need to enabled history tracking <em>before</em> it. Whenever
+you need to enable history tracking <em>before</em> it. Whenever
 debugger is entered, you can then request given number (here 16) of
 past instructions to be shown:
 <pre>
@@ -4018,7 +4018,7 @@ symbols prg
 b  pc = _my_function  :quiet :noinit :file showstack.ini
 </pre>
 I.e. whenever 'my_function' address is called, quietly trigger a
-breakpoint without reseting profiling (callstack) information and run
+breakpoint without resetting profiling (callstack) information and run
 debugger command(s) from the 'showstack.ini' debugger script file,
 which contains following command:
 <pre>
@@ -4314,11 +4314,9 @@ GNU General Public License</a></p>
 
 <p>Emulation via software is an art and Hatari is an example of this.</p>
 <p>Emulation is to make a computer behave like a (probably) completely
-different machine on the lowest possible niveau.
+different machine on the lowest possible level.
 This includes CPU and custom chip emulation allowing software written
-for the emulated machine to be run without notice.
-A good emulator will run most of the software intended for the emulated
-platform without trouble.
+for the emulated machine to be run without it noticing a difference.
 </p>
 <p>
 The key to emulation is to simply do those things with a software
@@ -4342,8 +4340,8 @@ error-free using such a simple loop system.
 </p>
 <p>
 But in most cases the CPU emulation is the simplest part. Correct
-emulation of the various custom chips and hardware
-parts of the emulated system is much trickier.
+emulation of the various custom chips and hardware parts of the
+emulated system, and their proper synchronization, is much trickier.
 </p>
 
 <hr>
