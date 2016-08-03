@@ -978,7 +978,11 @@ void DmaSnd_InterruptHandler_Microwire(void)
 	}
 	
 	/* How many cycle was this sound interrupt delayed (>= 0) */
+#ifdef OLD_CPU_SHIFT
 	microwire.pendingCyclesOver += -INT_CONVERT_FROM_INTERNAL ( PendingInterruptCount , INT_CPU_CYCLE );
+#else
+	microwire.pendingCyclesOver += -INT_CONVERT_FROM_INTERNAL ( PendingInterruptCount , INT_CPU8_CYCLE );
+#endif
 	/* Remove this interrupt from list and re-order */
 	CycInt_AcknowledgeInterrupt();
 
@@ -1001,7 +1005,11 @@ void DmaSnd_InterruptHandler_Microwire(void)
 	{
 		/* No ==> start a new internal interrupt to continue to transfer the data */
 		microwire.pendingCyclesOver = 8 - microwire.pendingCyclesOver;
+#ifdef OLD_CPU_SHIFT
 		CycInt_AddRelativeInterrupt(microwire.pendingCyclesOver, INT_CPU_CYCLE, INTERRUPT_DMASOUND_MICROWIRE);
+#else
+		CycInt_AddRelativeInterrupt(microwire.pendingCyclesOver, INT_CPU8_CYCLE, INTERRUPT_DMASOUND_MICROWIRE);
+#endif
 	}
 	else 
 	{
@@ -1130,7 +1138,11 @@ void DmaSnd_MicrowireData_WriteWord(void)
 		/* Start shifting events to simulate a microwire transfer */
 		microwire.mwTransferSteps = 16;
 		microwire.pendingCyclesOver = 8;
+#ifdef OLD_CPU_SHIFT
 		CycInt_AddRelativeInterrupt(microwire.pendingCyclesOver, INT_CPU_CYCLE, INTERRUPT_DMASOUND_MICROWIRE);
+#else
+		CycInt_AddRelativeInterrupt(microwire.pendingCyclesOver, INT_CPU8_CYCLE, INTERRUPT_DMASOUND_MICROWIRE);
+#endif
 	}
 
 	if(LOG_TRACE_LEVEL(TRACE_DMASND))

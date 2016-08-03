@@ -4809,7 +4809,7 @@ static void m68k_run_mmu060 (void)
 				/* Run DSP 56k code if necessary */
 				if (bDspEnabled) {
 					DSP_Run(2 * cpu_cycles * 2 / CYCLE_UNIT);
-//					DSP_Run ( DSP_CPU_FREQ_RATIO * ( (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) << nCpuFreqShift ) );
+//					DSP_Run ( DSP_CPU_FREQ_RATIO * ( CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter ) );
 				}
 #endif
 			}
@@ -4908,7 +4908,7 @@ static void m68k_run_mmu040 (void)
 				/* Run DSP 56k code if necessary */
 				if (bDspEnabled) {
 					DSP_Run(2 * cpu_cycles * 2 / CYCLE_UNIT);
-//					DSP_Run ( DSP_CPU_FREQ_RATIO * ( (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) << nCpuFreqShift ) );
+//					DSP_Run ( DSP_CPU_FREQ_RATIO * ( CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter ) );
 				}
 #endif
 			}
@@ -5052,7 +5052,7 @@ insretry:
 				/* Run DSP 56k code if necessary */
 				if (bDspEnabled) {
 					DSP_Run(2 * cpu_cycles * 2 / CYCLE_UNIT);
-//					DSP_Run ( DSP_CPU_FREQ_RATIO * ( (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) << nCpuFreqShift ) );
+//					DSP_Run ( DSP_CPU_FREQ_RATIO * ( CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter ) );
 				}
 #endif
 			}
@@ -5140,7 +5140,7 @@ static void m68k_run_3ce (void)
 				/* Run DSP 56k code if necessary */
 				if (bDspEnabled) {
 					DSP_Run(2 * currcycle * 2 / CYCLE_UNIT);
-//					DSP_Run ( DSP_CPU_FREQ_RATIO * ( (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) << nCpuFreqShift ) );
+//					DSP_Run ( DSP_CPU_FREQ_RATIO * ( CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter ) );
 				}
 #endif
 			}
@@ -5217,7 +5217,7 @@ static void m68k_run_3p(void)
 				/* Run DSP 56k code if necessary */
 				if (bDspEnabled) {
 					DSP_Run(2 * cycles * 2 / CYCLE_UNIT);
-//					DSP_Run ( DSP_CPU_FREQ_RATIO * ( (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) << nCpuFreqShift ) );
+//					DSP_Run ( DSP_CPU_FREQ_RATIO * ( CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter ) );
 				}
 #endif
 			}
@@ -5398,8 +5398,8 @@ cont:
 				if (bDspEnabled) {
 //fprintf ( stderr, "dsp cyc_2ce %d\n" , currcycle );
 					DSP_Run(2 * currcycle * 2 / CYCLE_UNIT);
-//fprintf ( stderr, "dsp cyc_2ce %d - %d\n" , currcycle * 2 / CYCLE_UNIT , (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) << nCpuFreqShift );
-//					DSP_Run ( DSP_CPU_FREQ_RATIO * ( (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) << nCpuFreqShift ) );
+//fprintf ( stderr, "dsp cyc_2ce %d - %d\n" , currcycle * 2 / CYCLE_UNIT , (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) );
+//					DSP_Run ( DSP_CPU_FREQ_RATIO * ( CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter ) );
 				}
 #endif
 
@@ -5490,7 +5490,7 @@ static void m68k_run_2p (void)
 //if ( DSP_CPU_FREQ_RATIO * ( (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) << nCpuFreqShift )  - 2 * cpu_cycles * 2 / CYCLE_UNIT >= 8 )
 //fprintf ( stderr , "dsp %d %d\n" , 2 * cpu_cycles * 2 / CYCLE_UNIT , DSP_CPU_FREQ_RATIO * ( (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) << nCpuFreqShift ) );
 					DSP_Run(2 * cpu_cycles * 2 / CYCLE_UNIT);
-//					DSP_Run ( DSP_CPU_FREQ_RATIO * ( (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) << nCpuFreqShift ) );
+//					DSP_Run ( DSP_CPU_FREQ_RATIO * ( CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter ) );
 				}
 #endif
 
@@ -5572,7 +5572,7 @@ static void m68k_run_2 (void)
 				/* Run DSP 56k code if necessary */
 				if (bDspEnabled) {
 					DSP_Run(2 * cpu_cycles * 2 / CYCLE_UNIT);
-//					DSP_Run ( DSP_CPU_FREQ_RATIO * ( (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) << nCpuFreqShift ) );
+//					DSP_Run ( DSP_CPU_FREQ_RATIO * ( CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter ) );
 				}
 #endif
 			}

@@ -439,9 +439,8 @@ static void	ACIA_Set_Timers_IKBD ( void *pACIA )
  * (with cpu running at 8 MHz)
  * InternalCycleOffset allows to compensate for a != 0 value in PendingInterruptCount
  * to keep a constant baud rate.
- * TODO : we use a fixed 8 MHz clock and nCpuFreqShift to convert cycles for our
- * internal timers in cycInt.c. This should be replaced some days by using
- * MachineClocks.CPU_Freq and not using nCpuFreqShift anymore.
+ * TODO : we use a fixed 8 MHz clock to convert cycles for our internal timers
+ * in cycInt.c. This should be replaced some days by using MachineClocks.CPU_Freq.
  */
 static void	ACIA_Start_InterruptHandler_IKBD ( ACIA_STRUCT *pACIA , int InternalCycleOffset )
 {
@@ -451,12 +450,18 @@ static void	ACIA_Start_InterruptHandler_IKBD ( ACIA_STRUCT *pACIA , int Internal
 //	Cycles = MachineClocks.CPU_Freq / pACIA->TX_Clock;		/* Convert ACIA cycles in CPU cycles */
 	Cycles = 8021247 / pACIA->TX_Clock;				/* Convert ACIA cycles in CPU cycles, for a 8 MHz STF reference */
 	Cycles *= pACIA->Clock_Divider;
+#ifdef OLD_CPU_SHIFT
 	Cycles <<= nCpuFreqShift;					/* Compensate for x2 or x4 cpu speed */
+#endif
 
 	LOG_TRACE ( TRACE_ACIA, "acia %s start timer divider=%d cpu_cycles=%d VBL=%d HBL=%d\n" , pACIA->ACIA_Name ,
 		pACIA->Clock_Divider , Cycles , nVBLs , nHBL );
 
+#ifdef OLD_CPU_SHIFT
 	CycInt_AddRelativeInterruptWithOffset ( Cycles, INT_CPU_CYCLE, INTERRUPT_ACIA_IKBD , InternalCycleOffset );
+#else
+	CycInt_AddRelativeInterruptWithOffset ( Cycles, INT_CPU8_CYCLE, INTERRUPT_ACIA_IKBD , InternalCycleOffset );
+#endif
 }
 
 

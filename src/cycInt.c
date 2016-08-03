@@ -354,6 +354,7 @@ void CycInt_AddRelativeInterrupt(int CycleTime, int CycleType, interrupt_id Hand
  */
 void CycInt_AddRelativeInterruptWithOffset(int CycleTime, int CycleType, interrupt_id Handler, int CycleOffset)
 {
+//fprintf ( stderr , "int add rel %d type %d handler %d offset %d\n" , CycleTime,CycleType,Handler,CycleOffset );
 	assert(CycleTime >= 0);
 
 	/* Update list cycle counts with current PendingInterruptCount before adding a new int, */

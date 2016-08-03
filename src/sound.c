@@ -78,6 +78,7 @@ const char Sound_fileid[] = "Hatari sound.c : " __DATE__ " " __TIME__;
 #include "main.h"
 #include "audio.h"
 #include "cycles.h"
+#include "m68000.h"
 #include "configuration.h"
 #include "dmaSnd.h"
 #include "crossbar.h"
@@ -1201,6 +1202,10 @@ static int Sound_SetSamplesPassed(bool FillFrame)
 	int SamplesToGenerate;				/* How many samples are needed for this time-frame */
 
 	nSoundCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
+
+#ifndef OLD_CPU_SHIFT
+	nSoundCycles >>= nCpuFreqShift;
+#endif
 
 	/* example : 160256 cycles per VBL, 44Khz = 882 samples per VBL at 50 Hz */
 	/* 882/160256 samples per cpu clock cycle */

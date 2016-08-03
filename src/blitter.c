@@ -135,7 +135,7 @@ static BLITTER_OP_FUNC Blitter_ComputeLOP;
 
 /*-----------------------------------------------------------------------*/
 /**
- * Count blitter cycles
+ * Count blitter cycles (this assumes blitter and CPU runs at the same freq)
  */
 
 static void Blitter_AddCycles(int cycles)
@@ -144,14 +144,23 @@ static void Blitter_AddCycles(int cycles)
 
 	BlitterVars.op_cycles += all_cycles;
 
+#ifdef OLD_CPU_SHIFT
 	nCyclesMainCounter += all_cycles >> nCpuFreqShift;
 	CyclesGlobalClockCounter += all_cycles >> nCpuFreqShift;
+#else
+	nCyclesMainCounter += all_cycles;
+	CyclesGlobalClockCounter += all_cycles;
+#endif
 	WaitStateCycles = 0;
 }
 
 static void Blitter_FlushCycles(void)
 {
+#ifdef OLD_CPU_SHIFT
 	int op_cycles = INT_CONVERT_TO_INTERNAL(BlitterVars.op_cycles >> nCpuFreqShift, INT_CPU_CYCLE);
+#else
+	int op_cycles = INT_CONVERT_TO_INTERNAL(BlitterVars.op_cycles, INT_CPU_CYCLE);
+#endif
 
 	BlitterVars.pass_cycles += BlitterVars.op_cycles;
 	BlitterVars.op_cycles = 0;
@@ -625,7 +634,11 @@ static void Blitter_Start(void)
 	else
 	{
 		/* Continue blitting later */
+#ifdef OLD_CPU_SHIFT
 		CycInt_AddRelativeInterrupt(NONHOG_CYCLES, INT_CPU_CYCLE, INTERRUPT_BLITTER);
+#else
+		CycInt_AddRelativeInterrupt(NONHOG_CYCLES, INT_CPU_CYCLE, INTERRUPT_BLITTER);
+#endif
 	}
 }
 
@@ -1006,9 +1019,14 @@ void Blitter_Control_WriteByte(void)
 		}
 		else
 		{
-			/* Start blitting after some CPU cycles */
+			/* Start blitting after the end of current instruction */
+#ifdef OLD_CPU_SHIFT
 			CycInt_AddRelativeInterrupt((CurrentInstrCycles+WaitStateCycles)>>nCpuFreqShift,
 							 INT_CPU_CYCLE, INTERRUPT_BLITTER);
+#else
+			CycInt_AddRelativeInterrupt( CurrentInstrCycles+WaitStateCycles, INT_CPU_CYCLE, INTERRUPT_BLITTER);
+			/* [NP] TODO : use CycInt_AddRelativeInterrupt(0) instead to get an immediate interrupt */
+#endif
 		}
 	}
 }

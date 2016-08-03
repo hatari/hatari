@@ -509,7 +509,7 @@ static int LastCycleScroll8265;			/* value of Cycles_GetCounterOnWriteAccess las
 
 static bool RestartVideoCounter = false;	/* true when reaching the HBL to restart video counter */
 
-int	LineTimerBCycle = LINE_END_CYCLE_50 + TIMERB_VIDEO_CYCLE_OFFSET;	/* position of the Timer B interrupt on active lines */
+int	LineTimerBPos = LINE_END_CYCLE_50 + TIMERB_VIDEO_CYCLE_OFFSET;	/* position of the Timer B interrupt on active lines */
 int	TimerBEventCountCycleStart = -1;	/* value of Cycles_GetCounterOnWriteAccess last time timer B was started for the current VBL */
 
 int HblJitterIndex = 0;
@@ -639,6 +639,11 @@ static VIDEO_TIMING	*pVideoTiming;
 static int		VideoTiming;
 
 
+/* Convert a horizontal video position measured at 8 MHz on STF/STE */
+/* to the equivalent number of cycles when CPU runs at 8/16/32 MHz */
+#define VIDEO_HPOS_TO_CYCLE( pos )	( pos << nCpuFreqShift )
+#define VIDEO_CYCLE_TO_HPOS( cyc )	( cyc >> nCpuFreqShift )
+
 
 /*--------------------------------------------------------------*/
 /* Local functions prototypes                                   */
@@ -673,7 +678,7 @@ static void	Video_InitShifterLines(void);
 static void	Video_RestartVideoCounter(void);
 static void	Video_ClearOnVBL(void);
 
-static void	Video_AddInterrupt ( int Line , int Pos , interrupt_id Handler );
+static void	Video_AddInterrupt ( int Line , int PosCycles , interrupt_id Handler );
 static void	Video_AddInterruptHBL ( int Line , int Pos );
 
 static void	Video_ColorReg_WriteWord(void);
@@ -1085,6 +1090,7 @@ void	Video_ConvertPosition ( int FrameCycles , int *pHBL , int *pLineCycles )
 	{
 		*pHBL = nHBL;
 		*pLineCycles = FrameCycles - ShifterFrame.ShifterLines[ nHBL ].StartCycle;
+//	fprintf ( stderr , "conv pos nHBL=%d %d %d %d\n" , nHBL , FrameCycles , *pLineCycles , ShifterFrame.ShifterLines[ nHBL ].StartCycle );
 
 		if ( *pLineCycles < 0 )					/* reading from the previous video line */
 		{
@@ -1362,6 +1368,7 @@ static void Video_WriteToGlueShifterRes ( Uint8 Res )
 	int FrameCycles, HblCounterVideo, LineCycles;
 
 	Video_GetPosition_OnWriteAccess ( &FrameCycles , &HblCounterVideo , &LineCycles );
+	LineCycles = VIDEO_CYCLE_TO_HPOS ( LineCycles );
 
 	LOG_TRACE(TRACE_VIDEO_RES ,"shifter=0x%2.2X video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n",
 	               Res, FrameCycles, LineCycles, nHBL, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles );
@@ -1965,7 +1972,9 @@ static void Video_WriteToGlueShifterRes ( Uint8 Res )
 	if ( ( LineCycles <= LINE_START_CYCLE_50-2 ) && ( HblCounterVideo == nHBL ) )
 	{
 		nCyclesPerLine = Video_HBL_GetPos();
-
+#ifndef OLD_CPU_SHIFT
+		nCyclesPerLine <<= nCpuFreqShift;
+#endif
 		/* Don't modify HBL's position now if we're handling the special HBL for video counter restart */
 		if ( RestartVideoCounter == false )
 			Video_AddInterruptHBL ( HblCounterVideo , nCyclesPerLine );
@@ -1973,8 +1982,8 @@ static void Video_WriteToGlueShifterRes ( Uint8 Res )
 
 
 	/* Update Timer B's position */
-	LineTimerBCycle = Video_TimerB_GetPos ( HblCounterVideo );
-	Video_AddInterruptTimerB ( HblCounterVideo , LineCycles , LineTimerBCycle );
+	LineTimerBPos = Video_TimerB_GetPos ( HblCounterVideo );
+	Video_AddInterruptTimerB ( HblCounterVideo , LineCycles , LineTimerBPos );
 
 
 	ShifterFrame.Res = Res;
@@ -2846,7 +2855,14 @@ Freq_Test_Done:
 		/* Don't modify HBL's position now if we're handling the special HBL for video counter restart */
 		if ( RestartVideoCounter == false )
 			Video_AddInterruptHBL ( HblCounterVideo , HBL_Pos );
+
 		ShifterFrame.HBL_CyclePos = HBL_Pos;
+
+#ifndef OLD_CPU_SHIFT
+		if ( nCyclesPerLine_new > 0 )
+			nCyclesPerLine_new <<= nCpuFreqShift;
+#endif
+	// TODO group the 3 if's into 1
 
 		/* In case we're mixing 50 Hz (512 cycles) and 60 Hz (508 cycles) lines on the same screen, */
 		/* we must update the position where the next VBL will happen (instead of the initial value in CyclesPerVBL) */
@@ -2873,8 +2889,8 @@ Freq_Test_Done:
 	    && ( ( ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle != DE_start )
 	      || ( ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle != DE_end ) ) )
 	{
-		LineTimerBCycle = Video_TimerB_GetPosFromDE ( DE_start , DE_end );
-		Video_AddInterruptTimerB ( HblCounterVideo , LineCycles , LineTimerBCycle );
+		LineTimerBPos = Video_TimerB_GetPosFromDE ( DE_start , DE_end );
+		Video_AddInterruptTimerB ( HblCounterVideo , LineCycles , LineTimerBPos );
 	}
 
 
@@ -3007,6 +3023,7 @@ void Video_Sync_WriteByte ( void )
 	Freq = IoMem[0xff820a] & 2;
 
 	Video_GetPosition_OnWriteAccess ( &FrameCycles , &HblCounterVideo , &LineCycles );
+	LineCycles = VIDEO_CYCLE_TO_HPOS ( LineCycles );
 
 	LOG_TRACE(TRACE_VIDEO_SYNC ,"sync=0x%2.2X video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n",
 	               Freq, FrameCycles, LineCycles, nHBL, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles );
@@ -3218,6 +3235,9 @@ fprintf ( stderr , "test %d %d %d %d\n", LineCycles, pVideoTiming->H_Stop_Low_60
  * In low/med res, the position depends on the video frequency (50/60 Hz)
  * In high res, the position is always the same.
  * This position can change later when switching between hi res / 50 Hz / 60 Hz
+ *
+ * The position is measured for a CPU running at 8 MHz, it should be converted
+ * to the correct number of cycles when using higher CPU speed (16 or 32 MHz)
  */
 static int Video_HBL_GetDefaultPos ( void )
 {
@@ -3259,6 +3279,9 @@ static int Video_HBL_GetCurrentPos ( void )
  * on the value of the bit 3 in the MFP's AER.
  * If bit is 0, timer B will count end of line events (usual case),
  * but if bit is 1, timer B will count start of line events (eg Seven Gates Of Jambala)
+ *
+ * The position is measured for a CPU running at 8 MHz, it should be converted
+ * to the correct number of cycles when using higher CPU speed (16 or 32 MHz)
  */
 
 static int Video_TimerB_GetPosFromDE ( int DE_start , int DE_end )
@@ -3294,7 +3317,7 @@ int Video_TimerB_GetPos ( int LineNumber )
  * In high res, the position is always the same.
  */
 
-// TODO : use Video_TimerB_GetPosFromDE
+// TODO : use Video_TimerB_GetPosFromDE and Video_AddInterruptTimerB
 static int Video_TimerB_GetDefaultPos ( void )
 {
 	int Pos;
@@ -3348,6 +3371,9 @@ void Video_InterruptHandler_HBL ( void )
 
 	/* How many cycle was this HBL delayed (>= 0) */
 	PendingCyclesOver = -INT_CONVERT_FROM_INTERNAL ( PendingInterruptCount , INT_CPU_CYCLE );
+#ifndef OLD_CPU_SHIFT
+ 	PendingCyclesOver <<= nCpuFreqShift;
+#endif
 
 	/* Remove this interrupt from list and re-order */
 	CycInt_AcknowledgeInterrupt();
@@ -3367,6 +3393,7 @@ void Video_InterruptHandler_HBL ( void )
 
 		/* Restore the normal HBL interrupt on the same line */
 		Video_AddInterruptHBL ( nHBL , Video_HBL_GetCurrentPos() );
+
 		RestartVideoCounter = false;
 		return;
 	}
@@ -3386,7 +3413,6 @@ void Video_InterruptHandler_HBL ( void )
 	
 	LOG_TRACE ( TRACE_VIDEO_HBL , "HBL %d video_cyc=%d pending_cyc=%d jitter=%d\n" ,
 	               nHBL , FrameCycles , PendingCyclesOver , HblJitterArray[ HblJitterIndex ] );
-
 
 	/* Print traces if pending HBL bit changed just before IACK when HBL interrupt is allowed */
 	if ( ( CPU_IACK == true ) && ( regs.intmask < 2 ) )
@@ -3433,6 +3459,7 @@ void Video_InterruptHandler_HBL ( void )
 		/* Default cycle position for next HBL */
 		NewHBLPos = Video_HBL_GetDefaultPos();
 		ShifterFrame.HBL_CyclePos = NewHBLPos;
+//fprintf ( stderr , "NewHBLPos %d\n", NewHBLPos );
 		Video_AddInterruptHBL ( nHBL , NewHBLPos );
 
 		/* Add new VBL interrupt just after the last HBL (for example : VblVideoCycleOffset cycles after end of HBL 312 at 50 Hz) */
@@ -3440,8 +3467,13 @@ void Video_InterruptHandler_HBL ( void )
 		/* in case last HBL would be delayed too much (by more than VblVideoCycleOffset cycles) */
 		if (nHBL == nScanlinesPerFrame-1)
 		{
-			int CyclesToVbl = ShifterFrame.ShifterLines[nHBL].StartCycle + nCyclesPerLine + pVideoTiming->VblVideoCycleOffset
-				- FrameCycles;
+#ifdef OLD_CPU_SHIFT
+			int CyclesToVbl = ShifterFrame.ShifterLines[nHBL].StartCycle + nCyclesPerLine +
+				pVideoTiming->VblVideoCycleOffset - FrameCycles;
+#else
+			int CyclesToVbl = ShifterFrame.ShifterLines[nHBL].StartCycle + nCyclesPerLine +
+			       ( pVideoTiming->VblVideoCycleOffset << nCpuFreqShift ) - FrameCycles;
+#endif
 			CycInt_AddRelativeInterrupt( CyclesToVbl, INT_CPU_CYCLE, INTERRUPT_VIDEO_VBL);
 		}
 	}
@@ -3654,6 +3686,10 @@ static void Video_StartHBL(void)
 		if ( ( nHBL == pVideoTiming->RestartVideoCounter_Line_50 ) || ( nHBL == pVideoTiming->RestartVideoCounter_Line_60 ) )
 			RestartVideoCounter = true;
 	}
+
+#ifndef OLD_CPU_SHIFT
+ 	nCyclesPerLine <<= nCpuFreqShift;
+#endif
 //fprintf (stderr , "Video_StartHBL %d %d %d\n", nHBL , ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle , ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle );
 
 	if (nHBL >= nFirstVisibleHbl && nHBL < nLastVisibleHbl)
@@ -3705,18 +3741,25 @@ void Video_InterruptHandler_EndLine(void)
 			if ( HblCounterVideo == nHBL+1 )		/* int happened in fact on the next line nHBL+1 */
 				LineCycles += nCyclesPerLine;
 
-			LineTimerBCycle = Video_TimerB_GetDefaultPos ();
+			LineTimerBPos = Video_TimerB_GetDefaultPos ();
 		}
 
 		else							/* count start of line, no possible delay to handle */
 		{
-			LineTimerBCycle = Video_TimerB_GetDefaultPos ();
+			LineTimerBPos = Video_TimerB_GetDefaultPos ();
 		}
 
-//fprintf ( stderr , "new tb %d %d %d\n" , LineTimerBCycle , nCyclesPerLine , LineTimerBCycle - LineCycles + nCyclesPerLine );
 		// TODO : use Video_AddInterruptTimerB
-		CycInt_AddRelativeInterrupt ( LineTimerBCycle - LineCycles + nCyclesPerLine,
+#ifdef OLD_CPU_SHIFT
+//fprintf ( stderr , "new tb %d %d %d\n" , LineTimerBPos , nCyclesPerLine , LineTimerBPos - LineCycles + nCyclesPerLine );
+		CycInt_AddRelativeInterrupt ( LineTimerBPos - LineCycles + nCyclesPerLine,
 					 INT_CPU_CYCLE, INTERRUPT_VIDEO_ENDLINE );
+#else
+//fprintf ( stderr , "new tb %d %d %d\n" , LineTimerBPos , nCyclesPerLine , (LineTimerBPos<<nCpuFreqShift) - LineCycles + nCyclesPerLine );
+		LineTimerBPos <<= nCpuFreqShift;			/* convert Pos at 8 MHz into number of cycles at 8/16/32 MHz */
+		CycInt_AddRelativeInterrupt ( LineTimerBPos - LineCycles + nCyclesPerLine,
+					 INT_CPU_CYCLE, INTERRUPT_VIDEO_ENDLINE );
+#endif
 	}
 
 	/* Timer B occurs at END of first visible screen line in Event Count mode */
@@ -4414,6 +4457,8 @@ static void Video_SetHBLPaletteMaskPointers(void)
 
 	/* Find 'line' into palette - screen starts 63 lines down, less 29 for top overscan */
 	Video_ConvertPosition ( FrameCycles , &HblCounterVideo , &LineCycles );
+	LineCycles = VIDEO_CYCLE_TO_HPOS ( LineCycles );
+
 	Line = HblCounterVideo - nFirstVisibleHbl;
 
 	/* FIXME [NP] if the color change occurs after the last visible pixel of a line */
@@ -4477,6 +4522,10 @@ static void Video_ResetShifterTimings(void)
 		nFirstVisibleHbl = FIRST_VISIBLE_HBL_60HZ;
 		nLastVisibleHbl = FIRST_VISIBLE_HBL_60HZ + NUM_VISIBLE_LINES;
 	}
+
+#ifndef OLD_CPU_SHIFT
+	nCyclesPerLine <<= nCpuFreqShift;
+#endif
 
 	if (bUseHighRes)
 	{
@@ -4747,7 +4796,7 @@ static void Video_DrawScreen(void)
 static void Video_AddInterrupt ( int Line , int Pos , interrupt_id Handler )
 {
 	int FrameCycles , HblCounterVideo , LineCycles;
-	int CycleToPos;
+	int CyclesToPos;
 
 	if ( nHBL >= nScanlinesPerFrame )
 	  return;				/* don't set a new hbl/timer B if we're on the last line, as the vbl will happen first */
@@ -4756,13 +4805,19 @@ static void Video_AddInterrupt ( int Line , int Pos , interrupt_id Handler )
 //fprintf ( stderr , "add int pos=%d handler=%d LineCycles=%d nCyclesPerLine=%d\n" , Pos , Handler , LineCycles , nCyclesPerLine );
 
 #if 1
-	if ( Line <= nHBL )
-		CycleToPos = Pos + ShifterFrame.ShifterLines[Line].StartCycle - FrameCycles;
-	else					/* Pos is on the next line (after the current hbl) */
-		CycleToPos = Pos + ShifterFrame.ShifterLines[Line-1].StartCycle - FrameCycles + nCyclesPerLine;
 
-	CycInt_AddRelativeInterrupt ( CycleToPos , INT_CPU_CYCLE, Handler );
+#ifndef OLD_CPU_SHIFT
+	Pos <<= nCpuFreqShift;			/* convert Pos at 8 MHz into number of cycles at 8/16/32 MHz */
+#endif
+
+	if ( Line <= nHBL )
+		CyclesToPos = Pos + ShifterFrame.ShifterLines[Line].StartCycle - FrameCycles;
+	else					/* Pos is on the next line (after the current hbl) */
+		CyclesToPos = Pos + ShifterFrame.ShifterLines[Line-1].StartCycle - FrameCycles + nCyclesPerLine;
+
+	CycInt_AddRelativeInterrupt ( CyclesToPos , INT_CPU_CYCLE, Handler );
 //fprintf ( stderr , "add int pos=%d handler=%d LineCycles=%d nCyclesPerLine=%d -> %d cycles\n" , Pos , Handler , LineCycles , nCyclesPerLine , CycleToPos );
+
 #else
 	if ( LineCycles < Pos )			/* changed before reaching the new Pos on the current line */
 		CycInt_AddRelativeInterrupt ( Pos - LineCycles , INT_CPU_CYCLE, Handler );
@@ -4795,7 +4850,11 @@ void Video_AddInterruptTimerB ( int LineVideo , int CycleVideo , int Pos )
 	{
 		/* If new position is not reached yet, next interrupt should be on current line */
 		/* else it should be on next line */
+#ifdef OLD_CPU_SHIFT
 		if ( Pos > CycleVideo )
+#else
+		if ( ( Pos << nCpuFreqShift ) > CycleVideo )
+#endif
 			Video_AddInterrupt ( LineVideo , Pos , INTERRUPT_VIDEO_ENDLINE );
 		else
 			Video_AddInterrupt ( LineVideo+1 , Pos , INTERRUPT_VIDEO_ENDLINE );
@@ -4827,7 +4886,11 @@ void Video_StartInterrupts ( int PendingCyclesOver )
 
 		/* Set Timer B interrupt for line 0 */
 		Pos = Video_TimerB_GetPos ( 0 );
+#ifdef OLD_CPU_SHIFT
 		if ( Pos > FrameCycles )		/* check Pos for line 0 was not already reached */
+#else
+		if ( ( Pos << nCpuFreqShift ) > FrameCycles )	/* check Pos for line 0 was not already reached */
+#endif
 			Video_AddInterruptTimerB ( HblCounterVideo , LineCycles , Pos );
 		else					/* the VBL was delayed by more than 1 HBL, add an immediate timer B */
 		{
@@ -4839,7 +4902,11 @@ void Video_StartInterrupts ( int PendingCyclesOver )
 		/* Set HBL interrupt for line 0 */
 		Pos = Video_HBL_GetDefaultPos();
 		ShifterFrame.HBL_CyclePos = Pos;
+#ifdef OLD_CPU_SHIFT
 		if ( Pos > FrameCycles )		/* check Pos for line 0 was not already reached */
+#else
+		if ( ( Pos << nCpuFreqShift ) > FrameCycles )	/* check Pos for line 0 was not already reached */
+#endif
 			Video_AddInterruptHBL ( HblCounterVideo , Pos );
 		else					/* the VBL was delayed by more than 1 HBL, add an immediate HBL */
 		{
@@ -4852,12 +4919,9 @@ void Video_StartInterrupts ( int PendingCyclesOver )
 	/* When using VDI, we setup the next VBL here ; else it will be setup at the start of the last HBL */
 	else
 	{
-		/* TODO replace CYCLES_PER_FRAME */
-		CyclesPerVBL = CYCLES_PER_FRAME;
-		/* Note: Refresh rate less than 50 Hz does not make sense! */
-		assert(CyclesPerVBL <= CPU_FREQ/49);
-		/* Add new VBL interrupt: */
-		CycInt_AddRelativeInterrupt(CyclesPerVBL - PendingCyclesOver, INT_CPU_CYCLE, INTERRUPT_VIDEO_VBL);
+		/* Add new VBL interrupt */
+		CyclesPerVBL = nScanlinesPerFrame * nCyclesPerLine;		/* TODO [NP] use cpufreq / 50 instead ? */
+		CycInt_AddRelativeInterrupt( CyclesPerVBL - PendingCyclesOver , INT_CPU_CYCLE , INTERRUPT_VIDEO_VBL);
 	}
 }
 
@@ -4902,7 +4966,11 @@ void Video_InterruptHandler_VBL ( void )
 	VblJitterIndex %= VBL_JITTER_ARRAY_SIZE;
 	
 	/* Set frame cycles, used for Video Address */
+#ifdef OLD_CPU_SHIFT
 	Cycles_SetCounter(CYCLES_COUNTER_VIDEO, PendingCyclesOver + pVideoTiming->VblVideoCycleOffset);
+#else
+	Cycles_SetCounter(CYCLES_COUNTER_VIDEO, PendingCyclesOver + ( pVideoTiming->VblVideoCycleOffset << nCpuFreqShift ) );
+#endif
 
 	/* Clear any key presses which are due to be de-bounced (held for one ST frame) */
 	Keymap_DebounceAllKeys();
@@ -4994,6 +5062,7 @@ void Video_ScreenBase_WriteByte(void)
 		int FrameCycles, HblCounterVideo, LineCycles;
 
 		Video_GetPosition_OnWriteAccess ( &FrameCycles , &HblCounterVideo , &LineCycles );
+		LineCycles = VIDEO_CYCLE_TO_HPOS ( LineCycles );
 		
 		LOG_TRACE_PRINT ( "write ste video base=0x%x video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n" ,
 			(IoMem[0xff8201]<<16)+(IoMem[0xff8203]<<8)+IoMem[0xff820d] ,
@@ -5051,6 +5120,7 @@ void Video_ScreenCounter_WriteByte(void)
 	int MMUStartCycle;
 
 	Video_GetPosition_OnWriteAccess ( &FrameCycles , &HblCounterVideo , &LineCycles );
+	LineCycles = VIDEO_CYCLE_TO_HPOS ( LineCycles );
 
 	/* On STF/STE machines with <= 4MB of RAM, video addresses are limited to $3fffff */
 	if ( IoAccessCurrentAddress == 0xff8205 )
@@ -5215,6 +5285,7 @@ void Video_LineWidth_WriteByte(void)
 	int Delayed;
 
 	Video_GetPosition_OnWriteAccess ( &FrameCycles , &HblCounterVideo , &LineCycles );
+	LineCycles = VIDEO_CYCLE_TO_HPOS ( LineCycles );
 
 	NewWidth = IoMem_ReadByte(0xff820f);
 
@@ -5317,6 +5388,7 @@ static void Video_ColorReg_WriteWord(void)
 			int FrameCycles, HblCounterVideo, LineCycles;
 
 			Video_GetPosition_OnWriteAccess ( &FrameCycles , &HblCounterVideo , &LineCycles );
+			LineCycles = VIDEO_CYCLE_TO_HPOS ( LineCycles );
 
 			LOG_TRACE_PRINT ( "write col addr=%x col=%x video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n" ,
 				IoAccessCurrentAddress, col,
@@ -5360,6 +5432,7 @@ static void Video_ColorReg_ReadWord(void)
 		int FrameCycles, HblCounterVideo, LineCycles;
 
 		Video_GetPosition_OnReadAccess ( &FrameCycles , &HblCounterVideo , &LineCycles );
+		LineCycles = VIDEO_CYCLE_TO_HPOS ( LineCycles );
 
 		LOG_TRACE_PRINT ( "read col addr=%x col=%x video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n" ,
 			IoAccessCurrentAddress, col,
@@ -5673,6 +5746,7 @@ void Video_HorScroll_Write(void)
 	int Delayed;
 
 	Video_GetPosition_OnWriteAccess ( &FrameCycles , &HblCounterVideo , &LineCycles );
+	LineCycles = VIDEO_CYCLE_TO_HPOS ( LineCycles );
 
 	RegAddr = IoAccessCurrentAddress;		/* 0xff8264 or 0xff8265 */
 	ScrollCount = IoMem[ RegAddr ];
@@ -5919,3 +5993,4 @@ void Video_Info(FILE *fp, Uint32 dummy)
 
 	/* TODO: any other information that would be useful to show? */
 }
+

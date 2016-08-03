@@ -108,8 +108,6 @@
 #define BORDERBYTES_RIGHT	44
 #define BORDERBYTES_RIGHT_FULL	22
 
-/* Legacy defines: */
-#define CYCLES_PER_FRAME    (nScanlinesPerFrame*nCyclesPerLine)  /* Cycles per VBL @ 50fps = 160256 */
 
 
 #define VBL_VIDEO_CYCLE_OFFSET_STF	64			/* value of cycle counter when VBL signal is sent */
@@ -147,7 +145,7 @@ extern int nScreenRefreshRate;
 extern int nScanlinesPerFrame;
 extern int nCyclesPerLine;
 extern int TTSpecialVideoMode;
-extern int LineTimerBCycle;
+extern int LineTimerBPos;
 extern int TimerBEventCountCycleStart;
 
 #define HBL_JITTER_ARRAY_SIZE 5

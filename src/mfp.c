@@ -980,7 +980,11 @@ static int MFP_StartTimer_AB(Uint8 TimerControl, Uint16 TimerData, interrupt_id 
 			}
 			else
 			{
+#ifdef OLD_CPU_SHIFT
 				int	AddCurCycles = INT_CONVERT_TO_INTERNAL ( Cycles_GetInternalCycleOnWriteAccess() , INT_CPU_CYCLE );
+#else
+				int	AddCurCycles = INT_CONVERT_TO_INTERNAL ( Cycles_GetInternalCycleOnWriteAccess() , INT_CPU_CYCLE );
+#endif
 
 				/* Start timer from now? If not continue timer using PendingCycleOver */
 				if (bFirstTimer)
@@ -1082,7 +1086,11 @@ static int MFP_StartTimer_CD(Uint8 TimerControl, Uint16 TimerData, interrupt_id 
 			}
 			else
 			{
+#ifdef OLD_CPU_SHIFT
 				int	AddCurCycles = INT_CONVERT_TO_INTERNAL ( Cycles_GetInternalCycleOnWriteAccess() , INT_CPU_CYCLE );
+#else
+				int	AddCurCycles = INT_CONVERT_TO_INTERNAL ( Cycles_GetInternalCycleOnWriteAccess() , INT_CPU_CYCLE );
+#endif
 
 				/* Start timer from now? If not continue timer using PendingCycleOver */
 				if (bFirstTimer)
@@ -1316,7 +1324,11 @@ void MFP_InterruptHandler_TimerA(void)
 
 	/* Acknowledge in MFP circuit, pass bit,enable,pending */
 	if ((MFP_TACR&0xf) != 0)            /* Is timer OK? */
+#ifdef OLD_CPU_SHIFT
 		MFP_InputOnChannel ( MFP_INT_TIMER_A , INT_CONVERT_FROM_INTERNAL ( PendingCyclesOver , INT_CPU_CYCLE ) );
+#else
+		MFP_InputOnChannel ( MFP_INT_TIMER_A , INT_CONVERT_FROM_INTERNAL ( PendingCyclesOver , INT_CPU_CYCLE ) );
+#endif
 
 	/* Start next interrupt, if need one - from current cycle count */
 	TimerAClockCycles = MFP_StartTimer_AB(MFP_TACR, MFP_TADR, INTERRUPT_MFP_TIMERA, false, &TimerACanResume);
@@ -1338,7 +1350,11 @@ void MFP_InterruptHandler_TimerB(void)
 
 	/* Acknowledge in MFP circuit, pass bit, enable, pending */
 	if ((MFP_TBCR&0xf) != 0)            /* Is timer OK? */
+#ifdef OLD_CPU_SHIFT
 		MFP_InputOnChannel ( MFP_INT_TIMER_B , INT_CONVERT_FROM_INTERNAL ( PendingCyclesOver , INT_CPU_CYCLE ) );
+#else
+		MFP_InputOnChannel ( MFP_INT_TIMER_B , INT_CONVERT_FROM_INTERNAL ( PendingCyclesOver , INT_CPU_CYCLE ) );
+#endif
 
 	/* Start next interrupt, if need one - from current cycle count */
 	TimerBClockCycles = MFP_StartTimer_AB(MFP_TBCR, MFP_TBDR, INTERRUPT_MFP_TIMERB, false, &TimerBCanResume);
@@ -1360,7 +1376,11 @@ void MFP_InterruptHandler_TimerC(void)
 
 	/* Acknowledge in MFP circuit, pass bit, enable, pending */
 	if ((MFP_TCDCR&0x70) != 0)          /* Is timer OK? */
+#ifdef OLD_CPU_SHIFT
 		MFP_InputOnChannel ( MFP_INT_TIMER_C , INT_CONVERT_FROM_INTERNAL ( PendingCyclesOver , INT_CPU_CYCLE ) );
+#else
+		MFP_InputOnChannel ( MFP_INT_TIMER_C , INT_CONVERT_FROM_INTERNAL ( PendingCyclesOver , INT_CPU_CYCLE ) );
+#endif
 
 	/* Start next interrupt, if need one - from current cycle count */
 	TimerCClockCycles = MFP_StartTimer_CD((MFP_TCDCR>>4)&7, MFP_TCDR, INTERRUPT_MFP_TIMERC, false, &TimerCCanResume);
@@ -1382,7 +1402,11 @@ void MFP_InterruptHandler_TimerD(void)
 
 	/* Acknowledge in MFP circuit, pass bit, enable, pending */
 	if ((MFP_TCDCR&0x07) != 0)          /* Is timer OK? */
+#ifdef OLD_CPU_SHIFT
 		MFP_InputOnChannel ( MFP_INT_TIMER_D , INT_CONVERT_FROM_INTERNAL ( PendingCyclesOver , INT_CPU_CYCLE ) );
+#else
+		MFP_InputOnChannel ( MFP_INT_TIMER_D , INT_CONVERT_FROM_INTERNAL ( PendingCyclesOver , INT_CPU_CYCLE ) );
+#endif
 
 	/* Start next interrupt, if need one - from current cycle count */
 	TimerDClockCycles = MFP_StartTimer_CD(MFP_TCDCR&7, MFP_TDDR, INTERRUPT_MFP_TIMERD, false, &TimerDCanResume);
@@ -1660,6 +1684,9 @@ void MFP_TimerBData_ReadByte(void)
 		/* Cycle position of the start of the current instruction */
 		//pos_start = nFrameCycles % nCyclesPerLine;
 		Video_GetPosition ( &FrameCycles , &HblCounterVideo , &pos_start );
+#ifndef OLD_CPU_SHIFT
+		pos_start >>= nCpuFreqShift;
+#endif
 		/* Cycle position of the read for the current instruction (approximatively, we consider */
 		/* the read happens after 4 cycles (due to MFP wait states in that case)) */
 		/* This is quite a hack, but hard to do without proper 68000 read cycle emulation */
@@ -1673,10 +1700,10 @@ void MFP_TimerBData_ReadByte(void)
 		/* If Timer B's change happens before the read cycle of the current instruction, we must return */
 		/* the current value - 1 (because MFP_TimerB_EventCount_Interrupt was not called yet) */
 		if ( (nHBL >= nStartHBL ) && ( nHBL < nEndHBL )	/* ensure display is ON and timer B can happen */
-			&& ( LineTimerBCycle > pos_start ) && ( LineTimerBCycle < pos_read ) )
+			&& ( LineTimerBPos > pos_start ) && ( LineTimerBPos < pos_read ) )
 		{
 			LOG_TRACE(TRACE_MFP_READ , "mfp read TB overlaps pos_start=%d TB_pos=%d pos_read=%d nHBL=%d \n",
-					pos_start, LineTimerBCycle, pos_read , HblCounterVideo );
+					pos_start, LineTimerBPos, pos_read , HblCounterVideo );
 
 			TB_count--;
 			if ( TB_count == 0 )			/* going from 1 to 0 : timer restart, reload data reg */
@@ -1782,37 +1809,37 @@ void MFP_ActiveEdge_WriteByte(void)
 	if ( ( AER_old & ( 1 << 3 ) ) != ( MFP_AER & ( 1 << 3 ) ) )
 	{
 		int FrameCycles, HblCounterVideo, LineCycles;
-		int LineTimerBCycle_old = LineTimerBCycle;
+		int LineTimerBPos_old = LineTimerBPos;
 
 		Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
 		/* 0 -> 1, timer B is now counting start of line events (cycle 56+28) */
 		if ( ( AER_old & ( 1 << 3 ) ) == 0 )
 		{
-			LineTimerBCycle = Video_TimerB_GetPos ( HblCounterVideo );
+			LineTimerBPos = Video_TimerB_GetPos ( HblCounterVideo );
 
 			LOG_TRACE((TRACE_VIDEO_HBL | TRACE_MFP_WRITE),
 					"mfp/video AER bit 3 0->1, timer B triggers on start of line,"
 					" old_pos=%d new_pos=%d video_cyc=%d %d@%d pc=%x instr_cyc=%d\n",
-					LineTimerBCycle_old, LineTimerBCycle,
+					LineTimerBPos_old, LineTimerBPos,
 					FrameCycles, LineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles);
 		}
 
 		/* 1 -> 0, timer B is now counting end of line events (cycle 376+28) */
 		else if ( ( AER_old & ( 1 << 3 ) ) != 0 )
 		{
-			LineTimerBCycle = Video_TimerB_GetPos ( HblCounterVideo );
+			LineTimerBPos = Video_TimerB_GetPos ( HblCounterVideo );
 
 			LOG_TRACE((TRACE_VIDEO_HBL | TRACE_MFP_WRITE),
 					"mfp/video AER bit 3 1->0, timer B triggers on end of line,"
 					" old_pos=%d new_pos=%d video_cyc=%d %d@%d pc=%x instr_cyc=%d\n",
-					LineTimerBCycle_old, LineTimerBCycle,
+					LineTimerBPos_old, LineTimerBPos,
 					FrameCycles, LineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles);
 		}
 
 		/* Timer B position changed, update the next interrupt */
-		if ( LineTimerBCycle_old != LineTimerBCycle )
-			Video_AddInterruptTimerB ( HblCounterVideo , LineCycles , LineTimerBCycle );
+		if ( LineTimerBPos_old != LineTimerBPos )
+			Video_AddInterruptTimerB ( HblCounterVideo , LineCycles , LineTimerBPos );
 	}
 }
 
