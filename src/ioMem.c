@@ -171,13 +171,19 @@ static void IoMem_FixVoidAccessForMegaST(void)
 
 
 /**
- * Mega-STE has an additional Cache/CPU control register compared to the normal STE.
- * Here we fix up the table accordingly.
+ * Fix up the IO memory access table for the Mega STE.
  */
 static void IoMem_FixAccessForMegaSTE(void)
 {
-	pInterceptReadTable[ 0xff8e21 - 0xff8000 ] = IoMem_ReadWithoutInterception;
-	pInterceptWriteTable[ 0xff8e21 - 0xff8000 ] = IoMemTabMegaSTE_CacheCpuCtrl_WriteByte;
+	/* Mega-STE has an additional Cache/CPU control register compared to the normal STE. */
+	pInterceptReadTable[0xff8e21 - 0xff8000] = IoMem_ReadWithoutInterception;
+	pInterceptWriteTable[0xff8e21 - 0xff8000] = IoMemTabMegaSTE_CacheCpuCtrl_WriteByte;
+
+	/* VME bus - we don't support it yet, but TOS uses FF8E09 to detect the Mega-STE */
+	pInterceptReadTable[0xff8e09 - 0xff8000] = IoMem_ReadWithoutInterception;
+	pInterceptWriteTable[0xff8e09 - 0xff8000] = IoMem_WriteWithoutInterception;
+	pInterceptReadTable[0xff8e0b - 0xff8000] = IoMem_ReadWithoutInterception;
+	pInterceptWriteTable[0xff8e0b - 0xff8000] = IoMem_WriteWithoutInterception;
 }
 
 
