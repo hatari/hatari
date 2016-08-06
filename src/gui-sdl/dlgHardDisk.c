@@ -62,7 +62,7 @@ static SGOBJ diskdlg[] =
 	{ SGTEXT, 0, 0, 3,10, 58,1, NULL },
 
 	{ SGCHECKBOX, 0, 0, 8,12, 42,1, "Atari <-> _host 8-bit file name conversion" },
-	{ SGCHECKBOX, 0, 0, 8,13, 42,1, "After ACSI/IDE _partitions (experimental)" },
+	{ SGCHECKBOX, 0, 0, 8,13, 42,1, "Add GEMDOS HD after ACSI/IDE _partitions" },
 
 	{ SGTEXT, 0, 0, 8,15, 31,1, "Write protection:" },
 	{ SGRADIOBUT, 0, 0, 26,15, 5,1, "O_ff" },
