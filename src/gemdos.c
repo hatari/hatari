@@ -354,12 +354,11 @@ static bool fsfirst_match(const char *pat, const char *name)
 
 	if (name[0] == '.')
 		return false;           /* skip .* files */
-	if (strcmp(pat,"*.*")==0)
-		return true;            /* match everything */
-	if (strcasecmp(pat,name)==0)
-		return true;            /* exact case insensitive match */
 
-	dot = strrchr(name, '.');	/* '*' matches everything except _last_ '.' */
+	dot = strrchr(name, '.');	/* '*' matches everything except last dot in name */
+	if (dot && p[0] == '*' && p[1] == 0)
+		return false;		/* plain '*' must not match anything with extension */
+
 	while (*n)
 	{
 		if (*p=='*')
@@ -368,23 +367,27 @@ static bool fsfirst_match(const char *pat, const char *name)
 				n++;
 			p++;
 		}
-		else
+		else if (*p=='?' && *n)
 		{
-			if (*p=='?' && *n)
-			{
-				n++;
-				p++;
-			}
-			else
-			{
-				if (toupper((unsigned char)*p++) != toupper((unsigned char)*n++))
-					return false;
-			}
+			n++;
+			p++;
 		}
+		else if (toupper((unsigned char)*p++) != toupper((unsigned char)*n++))
+			return false;
 	}
 
-	/* The name matches the pattern if it ends here, too */
-	return (*p == 0 || (*p == '*' && *(p+1) == 0));
+	/* printf("'%s': '%s' -> '%s' : '%s' -> %d\n", name, pat, n, p); */
+
+	/* The traversed name matches the pattern, if pattern also
+	 * ends here, or with '*'. '*' for extension matches also
+	 * filenames without extension, so pattern ending with
+	 * '.*' will also be a match.
+	 */
+	return (
+		(p[0] == 0) ||
+		(p[0] == '*' && p[1] == 0) ||
+		(p[0] == '.' && p[1] == '*' && p[2] == 0)
+	       );
 }
 
 

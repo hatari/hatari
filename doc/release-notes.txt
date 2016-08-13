@@ -14,6 +14,8 @@ Emulation:
   - Fix: GEMDOS HD can now be initialized multiple times,
     e.g. when running EmuTOS RAM image from a normal TOS
   - Fix: WORD access to IDE data register at 0xf00002
+  - Fix: '*.*' pattern with GEMDOS HD should match also files
+          without extension
 - Video:
   - Fix: reading video counter $FF8205/07/09 after modifying it
     while display is ON
