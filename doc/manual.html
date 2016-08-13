@@ -1989,6 +1989,10 @@ limitations which are due to the way GEMDOS HD emulation is
 implemented:
 </p>
 <ul>
+<li>Fforce() file handle redirection works <em>only</em> for standard
+handles used with GEMDOS <em>file</em> functions, like Fwrite() to standard
+output that is redirected to a file.  File redirection is NOT supported
+e.g. for GEMDOS Ccon* console functions.
 <li>Directory entries are returned in a (case-insensitively) sorted
 order, for consistency.  E.g. moving files to a different directory and
 back (without changing their names) like AUTOSORT does, doesn't change
