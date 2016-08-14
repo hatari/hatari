@@ -1372,7 +1372,7 @@ static int get_fp_value (uae_u32 opcode, uae_u16 extra, fpdata *src, uaecptr old
 	uae_u32 ad = 0;
 	static const int sz1[8] = { 4, 4, 12, 12, 2, 8, 1, 0 };
 	static const int sz2[8] = { 4, 4, 12, 12, 2, 8, 2, 0 };
-	uae_u32 exts[3];
+	uae_u32 exts[3] = { 0 };
 	int doext = 0;
 
 	if (!(extra & 0x4000)) {
