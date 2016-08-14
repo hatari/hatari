@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <title>Hatari User's Manual</title>
   <meta name="description"
@@ -44,7 +44,7 @@
 	.key { color:#550000; font-family:Courier,monospace; font-size:90% }
 	.backdropped { background:#ffffee; }
 	.image {margin-left: 5px; margin-right: 5px; border-width:2px; border-style:solid; border-color:#eeeeff; padding:1cm; text-align:center; }
-	.floatimage { clear:right; float:right; margin-left:0.5cm; border-width:2px; border-style:solid; border-color:#eeeeff; padding:0.5cm; }
+	.floatimage { clear:right; float:right; margin-left:1.5ex; border-width:2px; border-style:solid; border-color:#eeeeff; padding:1.5ex; }
 	.clearboth { clear:both; }
 
 	table.keytable { border:1px solid; }
@@ -878,7 +878,7 @@ Click <span class="button">OK</span> to go back and continue the emulation.
 All changed options will be applied.
 </p>
 <p>
-Select the <span class="button">Reset&nbsp;machine</span> option if you
+Select the <em>&quot;Reset machine&quot;</em> option if you
 want the emulated machine to perform a cold reset. This is equal to
 switching the power off and on again on a real Atari machine.
 </p>
@@ -912,16 +912,21 @@ changes that you have made.
 <p>
  You can use the three buttons in the upper right corner for additional folder
  navigation. Click the <span class="button">..</span> button to go up one level
- in the directory tree. Click the <span class="button">~</span> button to return
- to your home directory. The <span class="button">/</span> button can be clicked
- to go to the root directory of the file system.
+ in the directory tree. The <span class="button">CWD</span> button takes you
+ to the current working directory (i.e. the folder that was current when
+ Hatari has been started). Click the <span class="button">~</span> button to
+ return to your home directory. The <span class="button">/</span> button can
+ be clicked to go to the root directory of the file system.
 </p>
-
+<p>
+ When you tick the <em>&quot;Show hidden files&quot;</em> setting, Hatari will
+ also show files that start with a dot in the file selection dialog.
+</p>
 
 <h4 class="gui">The System Dialog</h4>
 
 <div class="floatimage">
-  <img src="images/system.png" width="600" height="400"
+  <img src="images/system.png" width="500" height="288"
        alt="Hatari's GUI - the system dialog" />
 </div>
 
@@ -931,27 +936,110 @@ changes that you have made.
 </p>
 <p>
  The machine type option is used to select the type of Atari computer to
- be emulated. The ST was the very first 16/32-bit computer from Atari.
- Most older games and demos require an ST. The STE was introduced some years
- later and had some more advanced hardware features. There are not that many
- demos or games that really require an STE but since most normal ST games/demos
- also work with an STE, it's normally safe to always work in STE mode.
- <br />
- TT and Falcon are more advanced, but they are not as compatible to the ST as
- the STE was. Therefore many old games and demos do not work with these machine
- types anymore. There were only very few programs that were made for the TT
- exclusively, while there were some interesting games and demos specially made
- for the Falcon.
- <br />
+ be emulated:
+</p>
+<ul>
+ <li>
+  The <strong>ST</strong> was the very first 16/32-bit computer from Atari.
+  Most older games and demos require an ST. TOS 1.00, 1.02, 1.04 or 2.06
+  is required for running in ST mode.</li>
+ <li>
+  The <strong>Mega-ST</strong> was an slightly improved version which also
+  provided the so-called blitter chip (for accelerating certain graphic
+  operations) and a Real Time Clock (RTC) chip.
+ </li>
+ <li>
+  The <strong>STE</strong> was introduced some years later and had some more
+  advanced hardware features, like the blitter chip, hardware scrolling and
+  DMA sample sound (but no Real Time Clock). There are not that many demos or
+  games that really require an STE but since most normal ST games/demos also
+  work with an STE, it's normally safe to always work in STE mode.
+  Also make sure to use TOS version 1.06, 1.62 or 2.0x with this machine type.
+ </li>
+ <li>
+  The <strong>Mega-STE</strong> was an improved version of the STE, with
+  16 MHz (instead of 8 MHz) CPU frequency and a built-in Real Time Clock chip.
+ </li>
+ <li>
+   The <strong>TT</strong> was the advanced workstation from Atari. It
+   featured a 32MHz 68030 CPU, a very high monochrome resolution, and a
+   lot of interfaces. However, compatibility was not as high as with the
+   other machines. For TT emulation you need TOS 3.0x.
+ </li>
+ <li>
+  The <strong>Falcon</strong> was Atari's last computer, using a 16 MHz 68030
+  CPU and some more interesting new hardware feature, like the Videl graphic
+  chip and DSP 56001 for sound. You need TOS 4.0x for running in Falcon mode.
+ </li> 
+</ul>
+<p>
  <em>Note:</em> Falcon and especially TT emulation are still considered as
- experimental and incomplete.
- Quite a bunch of programs do not work very well yet.
+ experimental and incomplete, so quite a bunch of programs do not work very
+ well yet.
+ Also a lot of old games and demos do not work with these machine types
+ anymore since the hardware is quite a bit different. There were only very
+ few programs that were made for the TT exclusively, while there were some
+ interesting games and demos specially made for the Falcon.
+</p>
+
+<p>
+ The video timings (&quot;wakestate&quot;) settings influence the internal
+ timings of the ST video chip emulation. You normally do not have to change
+ these unless you know what you are doing, only some very few demos require
+ a special setting here.
+</p>
+
+<p>
+ For Falcon mode, you can choose whether you want to disable DSP emulation,
+ fake it or enable full emulation. Most Falcon programs only play sound or work
+ correctly when you enable the DSP emulation, but it needs a lot of host CPU
+ power (more than 2 GHz) for full emulation. So if you have a slow host CPU,
+ you can try if your Falcon program also runs with DSP disabled or in
+ the &quot;dummy&quot; fake mode.
+ Note that you cannot change this option while the DSP based program already
+ runs.
 </p>
 <p>
- For STE emulation a STE compatible TOS image, e.g. version 1.06, 1.62 or
- 2.x, is strongly recommended. For TT emulation you need TOS 3.0x and for Falcon
- emulation you need TOS 4.0x. EmuTOS can be used on all machine types.
+ The check boxes in the &quot;CPU and system parameters&quot; section can
+ be used to fine-tune the machine and CPU types.
 </p>
+<p>
+ The Blitter option can be set to enable Blitter emulation in plain ST mode.
+ The Blitter is a custom chip that accelerates some graphical operations.
+ Note that in Mega-ST, STE and Falcon mode, the Blitter is always enabled
+ (since these machines have always been sold with a Blitter chip). The TT
+ was always shipped without the Blitter chip.
+</p>
+<p>
+ The &quot;Patch Timer-D&quot; option changes the Timer-D initialization from
+ TOS. TOS uses the MFP timer D as a baudrate generator for RS232. However, the
+ TOS default value slows down the emulation. The patch gives you a better
+ performance.  It is normally safe to enable the patch, but if you encounter a
+ program that does not work, you can try to disable the patch to see if it
+ works better.
+</p>
+<p>
+ With the &quot;Boot faster&quot; option, Hatari patches the TOS ROM and some
+ system variables, to speed up the boot process of the emulated system, e.g.
+ by simulating a warm reset. This is a convenient option, but some very few old
+ programs rely on an unmodified boot process, so in rare cases this option has
+ to be switched off to get those programs running.
+</p>
+<p>
+ <em>NOTE:</em> The emulated Atari system is very very sensitive to all of
+ these options and it is strongly recommended to reset the emulation after
+ changing them (for most things that's done automatically).
+ Most settings are also selected automatically when one uses the
+ <span class="commandline">--machine</span> command line option.
+</p>
+
+
+<h4 class="gui">The CPU Dialog</h4>
+
+<div class="floatimage">
+  <img src="images/cpu.png" width="460" height="368"
+       alt="Hatari's GUI - the CPU dialog" />
+</div>
 
 <p>
  The CPU type option can be used to select the level of the central processing
@@ -996,52 +1084,7 @@ changes that you have made.
  Use 16 MHz for Mega STE and Falcon emulation.
  The CPU in the TT was clocked with 32 MHz.
 </p>
-<p>
- For Falcon mode, you can choose whether you want to disable DSP emulation,
- fake it or enable full emulation. Most Falcon programs only play sound or work
- correctly when you enable the DSP emulation, but it needs a lot of host CPU
- power (more than 2 GHz) for full emulation. So if you have a slow host CPU,
- you can try if your Falcon program also runs with DSP disabled or in
- the &quot;dummy&quot; fake mode.
- Note that you cannot change this option while the DSP based program already
- runs.
-</p>
-<p>
- The check boxes in the &quot;CPU and system parameters&quot; section can
- be used to fine-tune the machine and CPU types.
-</p>
-<p>
- If you enable the "Real time clock emulation" switch, a RTC (like the ones
- that could be found in the Mega-ST and Mega-STE computers) will be emulated
- based on the time of the host computer.
- This option is only affects the emulation of ST and STE machines. TT and
- Falcon used a different kind of RTC (which is not optional and thus always
- enabled in Hatari).
- Note: You need at least TOS 1.02 for proper RTC emulation, TOS 1.00 does
- not support this.
-</p>
-<p>
- The next check box can be used to enable/disable Blitter emulation.
- The Blitter is a custom chip that accelerates some graphical operations.
- This switch only toggles the Blitter in plain ST mode. In STE and Falcon mode,
- the Blitter is always enabled (since these machines have always been sold
- with a Blitter chip). The TT was always shipped without the Blitter chip.
-</p>
-<p>
- The &quot;Patch Timer-D&quot; option changes the Timer-D initialization from
- TOS. TOS uses the MFP timer D as a baudrate generator for RS232. However, the
- TOS default value slows down the emulation. The patch gives you a better
- performance.  It is normally safe to enable the patch, but if you encounter a
- program that does not work, you can try to disable the patch to see if it
- works better.
-</p>
-<p>
- With the &quot;Boot faster&quot; option, Hatari patches the TOS ROM and some
- system variables, to speed up the boot process of the emulated system, e.g.
- by simulating a warm reset. This is a convenient option, but some very few old
- programs rely on an unmodified boot process, so in rare cases this option has
- to be switched off to get those programs running.
-</p>
+
 <p>
  The &quot;Prefetch mode&quot; option is used to enable the emulation of 68k
  address errors and the so-called CPU prefetch buffer. This is needed for best
@@ -1052,21 +1095,14 @@ changes that you have made.
  The &quot;Cycle exact&quot;, the &quot;MMU emulation&quot; and
  &quot;24-bit addressing&quot; option are only available in the
  &quot;WinUAE&quot; builds
- of Hatari. They are considered as experimental and should be switched off
- unless you know what you are doing.
+ of Hatari. They are considered as experimental and should only be changed
+ if you know what you are doing.
 </p>
 <p>
  The FPU settings are also only available with the &quot;WinUAE&quot; builds
  of Hatari. They can be used to select the type of floating point unit of CPUs
- &gt;= 68020. In the normal builds of Hatari, the FPU is always enabled for
+ &gt;= 68020. In the non-WinUAE builds of Hatari, the FPU is always enabled for
  68030 and 68040 CPUs.
-</p>
-<p>
- <em>NOTE:</em> The emulated Atari system is very very sensitive to all of
- these options and it is strongly recommended to reset the emulation after
- changing them (for most things that's done automatically).
- The correct CPU type and clock are automatically selected when one uses the
- <span class="commandline">--machine</span> command line option.
 </p>
 
 
