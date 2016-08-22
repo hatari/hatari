@@ -623,6 +623,8 @@ static void HDC_EmulateCommandPacket(SCSI_CTRLR *ctr)
  * - Support also Atari ICD (12 entries, at offset 0x156) and
  *   extended partition schemes.  Linux kernel has code for those:
  *   http://lxr.free-electrons.com/source/block/partitions/atari.c
+ *   Normal and extended partition tables are described in:
+ *   http://dev-docs.atariforge.org/files/AHDI_3_RN_4-18-1990.pdf
  * - Support partition tables with other endianness
  */
 int HDC_PartitionCount(FILE *fp, const Uint64 tracelevel)
@@ -674,6 +676,7 @@ int HDC_PartitionCount(FILE *fp, const Uint64 tracelevel)
 		 */
 		char c, pid[4];
 		int j, flags;
+		bool extended;
 
 		LOG_TRACE(tracelevel, "ATARI MBR:\n");
 		pinfo = bootsector + 0x1C6;
@@ -688,10 +691,14 @@ int HDC_PartitionCount(FILE *fp, const Uint64 tracelevel)
 				pid[j] = c;
 			}
 			pid[3] = '\0';
+			extended = strcmp("XGM", pid) == 0;
 			start = HDC_ReadInt32(pinfo, 4);
 			sectors = HDC_ReadInt32(pinfo, 8);
-			LOG_TRACE(tracelevel, "- Partition %d: ID=%s, start=0x%08x, size=%.1f MB, flags=0x%x\n",
-				  i, pid, start, sectors/2048.0, flags);
+			LOG_TRACE(tracelevel,
+				  "- Partition %d: ID=%s, start=0x%08x, size=%.1f MB, flags=0x%x %s%s\n",
+				  i, pid, start, sectors/2048.0, flags,
+				  (flags & 0x80) ? "(boot)": "",
+				  extended ? "(extended)" : "");
 			if (flags & 0x1)
 				parts++;
 		}
