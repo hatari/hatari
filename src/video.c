@@ -2429,6 +2429,12 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	    {
 	      DE_end = pVideoTiming->H_Stop_Low_50;		/* 376 */
 
+	      if ( BorderMask & BORDERMASK_RIGHT_MINUS_2 )
+	      {
+		BorderMask &= ~BORDERMASK_RIGHT_MINUS_2;
+		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "cancel right-2 %d<->%d\n" , DE_start , DE_end );
+	      }
+
 	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect left+2 50Hz %d<->%d\n" , DE_start , DE_end );
 	    }
 	  }
@@ -2632,6 +2638,12 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	    if ( !( BorderMask & BORDERMASK_NO_DE ) )
 	    {
 	      DE_end = pVideoTiming->H_Stop_Low_50;		/* 376 */
+
+	      if ( BorderMask & BORDERMASK_RIGHT_MINUS_2 )
+	      {
+		BorderMask &= ~BORDERMASK_RIGHT_MINUS_2;
+		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "cancel right-2 %d<->%d\n" , DE_start , DE_end );
+	      }
 
 	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect left+2 50Hz ste %d<->%d\n" , DE_start , DE_end );
 	    }
