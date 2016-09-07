@@ -158,7 +158,7 @@ static int MemorySnapShot_fseek(MSS_File fhndl, int pos)
  * Open/Create snapshot file, and set flag so 'MemorySnapShot_Store' knows
  * how to handle data.
  */
-static bool MemorySnapShot_OpenFile(const char *pszFileName, bool bSave)
+static bool MemorySnapShot_OpenFile(const char *pszFileName, bool bSave, bool bConfirm)
 {
 	char VersionString[] = VERSION_STRING;
 #if ENABLE_WINUAE_CPU
@@ -176,7 +176,7 @@ static bool MemorySnapShot_OpenFile(const char *pszFileName, bool bSave)
 	 */
 	if (bSave)
 	{
-		if (!File_QueryOverwrite(pszFileName))
+		if (bConfirm && !File_QueryOverwrite(pszFileName))
 			return false;
 
 		/* Save */
@@ -301,7 +301,7 @@ void MemorySnapShot_Capture(const char *pszFileName, bool bConfirm)
 	Uint32 magic = SNAPSHOT_MAGIC;
 
 	/* Set to 'saving' */
-	if (MemorySnapShot_OpenFile(pszFileName, true))
+	if (MemorySnapShot_OpenFile(pszFileName, true, bConfirm))
 	{
 		/* Capture each files details */
 		Configuration_MemorySnapShot_Capture(true);
@@ -346,6 +346,8 @@ void MemorySnapShot_Capture(const char *pszFileName, bool bConfirm)
 		Log_AlertDlg(LOG_ERROR, "Unable to save memory state to file.");
 	else if (bConfirm)
 		Log_AlertDlg(LOG_INFO, "Memory state file saved.");
+	else
+		Log_Printf(LOG_INFO, "Memory state file saved.");
 }
 
 
@@ -358,7 +360,7 @@ void MemorySnapShot_Restore(const char *pszFileName, bool bConfirm)
 	Uint32 magic;
 
 	/* Set to 'restore' */
-	if (MemorySnapShot_OpenFile(pszFileName, false))
+	if (MemorySnapShot_OpenFile(pszFileName, false, bConfirm))
 	{
 		Configuration_MemorySnapShot_Capture(false);
 		TOS_MemorySnapShot_Capture(false);
@@ -423,6 +425,8 @@ void MemorySnapShot_Restore(const char *pszFileName, bool bConfirm)
 		Log_AlertDlg(LOG_ERROR, "Unable to restore memory state from file.");
 	else if (bConfirm)
 		Log_AlertDlg(LOG_INFO, "Memory state file restored.");
+	else
+		Log_Printf(LOG_INFO, "Memory state file restored.");
 }
 
 

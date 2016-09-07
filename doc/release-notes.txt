@@ -34,6 +34,9 @@ Emulation:
 - Fixes to DSP addressing
 
 Emulator:
+- Generic fixes:
+  - Autosave to already existing file works first time after v1.4
+    (dialog for file overwrite got automatically canceled on exit)
 - SDL GUI:
   - MegaST/MegaSTe support
   - Shortcuts can be configured in the keyboard dialog
