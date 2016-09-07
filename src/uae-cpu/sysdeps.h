@@ -150,5 +150,8 @@ typedef uae_u32 uaecptr;
 #ifndef REGPARAM2
 # define REGPARAM2
 #endif
+#ifndef REGPARAM3
+# define REGPARAM3
+#endif
 
 #endif /* ifndef UAE_SYSDEPS_H */
