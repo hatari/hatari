@@ -177,14 +177,16 @@ static bool MemorySnapShot_OpenFile(const char *pszFileName, bool bSave, bool bC
 	if (bSave)
 	{
 		if (bConfirm && !File_QueryOverwrite(pszFileName))
+		{
+			/* info for debugger invocation */
+			Log_Printf(LOG_INFO, "Save canceled.");
 			return false;
-
+		}
 		/* Save */
 		CaptureFile = MemorySnapShot_fopen(pszFileName, "wb");
 		if (!CaptureFile)
 		{
-			fprintf(stderr, "Failed to open save file '%s': %s\n",
-			        pszFileName, strerror(errno));
+			Log_Printf(LOG_WARN, "Save file open error: %s",strerror(errno));
 			bCaptureError = true;
 			return false;
 		}
@@ -201,8 +203,7 @@ static bool MemorySnapShot_OpenFile(const char *pszFileName, bool bSave, bool bC
 		CaptureFile = MemorySnapShot_fopen(pszFileName, "rb");
 		if (!CaptureFile)
 		{
-			fprintf(stderr, "Failed to open file '%s': %s\n",
-			        pszFileName, strerror(errno));
+			Log_Printf(LOG_WARN, "File open error: %s", strerror(errno));
 			bCaptureError = true;
 			return false;
 		}
@@ -343,11 +344,11 @@ void MemorySnapShot_Capture(const char *pszFileName, bool bConfirm)
 
 	/* Did error */
 	if (bCaptureError)
-		Log_AlertDlg(LOG_ERROR, "Unable to save memory state to file.");
+		Log_AlertDlg(LOG_ERROR, "Unable to save memory state to file: %s", pszFileName);
 	else if (bConfirm)
-		Log_AlertDlg(LOG_INFO, "Memory state file saved.");
+		Log_AlertDlg(LOG_INFO, "Memory state file saved: %s", pszFileName);
 	else
-		Log_Printf(LOG_INFO, "Memory state file saved.");
+		Log_Printf(LOG_INFO, "Memory state file saved: %s", pszFileName);
 }
 
 
@@ -422,11 +423,11 @@ void MemorySnapShot_Restore(const char *pszFileName, bool bConfirm)
 
 	/* Did error? */
 	if (bCaptureError)
-		Log_AlertDlg(LOG_ERROR, "Unable to restore memory state from file.");
+		Log_AlertDlg(LOG_ERROR, "Unable to restore memory state from file: %s", pszFileName);
 	else if (bConfirm)
-		Log_AlertDlg(LOG_INFO, "Memory state file restored.");
+		Log_AlertDlg(LOG_INFO, "Memory state file restored: %s", pszFileName);
 	else
-		Log_Printf(LOG_INFO, "Memory state file restored.");
+		Log_Printf(LOG_INFO, "Memory state file restored: %s", pszFileName);
 }
 
 
