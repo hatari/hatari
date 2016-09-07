@@ -241,9 +241,9 @@ void dummy_put (uaecptr addr, int size, uae_u32 val)
 #endif
 }
 
-uae_u32 dummy_get (uaecptr addr, int size, bool inst)
+uae_u32 dummy_get (uaecptr addr, int size, bool inst, uae_u32 defvalue)
 {
-	uae_u32 v = NONEXISTINGDATA;
+	uae_u32 v = defvalue;
 
 #ifndef WINUAE_FOR_HATARI
 #if FLASHEMU
@@ -304,7 +304,7 @@ static uae_u32 REGPARAM2 dummy_lget (uaecptr addr)
 #endif
 	if (illegal_mem)
 		dummylog (0, addr, 4, 0, 0);
-	return dummy_get (addr, 4, false);
+	return dummy_get (addr, 4, false, NONEXISTINGDATA);
 }
 uae_u32 REGPARAM2 dummy_lgeti (uaecptr addr)
 {
@@ -313,7 +313,7 @@ uae_u32 REGPARAM2 dummy_lgeti (uaecptr addr)
 #endif
 	if (illegal_mem)
 		dummylog (0, addr, 4, 0, 1);
-	return dummy_get (addr, 4, true);
+	return dummy_get (addr, 4, true, NONEXISTINGDATA);
 }
 
 static uae_u32 REGPARAM2 dummy_wget (uaecptr addr)
@@ -329,7 +329,7 @@ static uae_u32 REGPARAM2 dummy_wget (uaecptr addr)
 #endif
 	if (illegal_mem)
 		dummylog (0, addr, 2, 0, 0);
-	return dummy_get (addr, 2, false);
+	return dummy_get (addr, 2, false, NONEXISTINGDATA);
 }
 uae_u32 REGPARAM2 dummy_wgeti (uaecptr addr)
 {
@@ -338,7 +338,7 @@ uae_u32 REGPARAM2 dummy_wgeti (uaecptr addr)
 #endif
 	if (illegal_mem)
 		dummylog (0, addr, 2, 0, 1);
-	return dummy_get (addr, 2, true);
+	return dummy_get (addr, 2, true, NONEXISTINGDATA);
 }
 
 static uae_u32 REGPARAM2 dummy_bget (uaecptr addr)
@@ -348,7 +348,7 @@ static uae_u32 REGPARAM2 dummy_bget (uaecptr addr)
 #endif
 	if (illegal_mem)
 		dummylog (0, addr, 1, 0, 0);
-	return dummy_get (addr, 1, false);
+	return dummy_get (addr, 1, false, NONEXISTINGDATA);
 }
 
 static void REGPARAM2 dummy_lput (uaecptr addr, uae_u32 l)

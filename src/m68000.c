@@ -292,6 +292,7 @@ void M68000_Start(void)
  *	cpu_level : not used anymore
  *	cpu_compatible : 0/false (no prefetch for 68000/20/30)  1/true (prefetch opcode for 68000/20/30)
  *	cpu_cycle_exact : 0/false   1/true (most accurate, implies cpu_compatible)
+ *	cpu_memory_cycle_exact : 0/false   1/true (most accurate, implies cpu_compatible)
  *	address_space_24 : 1 (68000/10 and 68030 LC for Falcon), 0 (68020/30/40/60)
  *	fpu_model : 0, 68881 (external), 68882 (external), 68040 (cpu) , 68060 (cpu)
  *	fpu_strict : true/false (more accurate rounding)
@@ -303,6 +304,7 @@ void M68000_Start(void)
  *	cpu_clock_multiplier : used to speed up/slow down clock by multiple of 2 in CE mode. In Hatari
  *			we use nCpuFreqShift, so this should always be set to 2<<8 = 512 to get the same
  *			cpucycleunit as in non CE mode.
+ *	cachesize : size of cache in MB when using JIT. Not used in Hatari at the moment, set it to 0
  */
 void M68000_CheckCpuSettings(void)
 {
@@ -340,6 +342,7 @@ void M68000_CheckCpuSettings(void)
 
 	changed_prefs.address_space_24 = ConfigureParams.System.bAddressSpace24;
 	changed_prefs.cpu_cycle_exact = ConfigureParams.System.bCycleExactCpu;
+	changed_prefs.cpu_memory_cycle_exact = ConfigureParams.System.bCycleExactCpu;
 	changed_prefs.fpu_model = ConfigureParams.System.n_FPUType;
 	changed_prefs.fpu_strict = ConfigureParams.System.bCompatibleFPU;
 
@@ -354,6 +357,8 @@ void M68000_CheckCpuSettings(void)
 	currprefs.m68k_speed = changed_prefs.m68k_speed = 0;
 	currprefs.cpu_clock_multiplier = changed_prefs.cpu_clock_multiplier = 2 << 8;
 
+	/* We don't use JIT */
+	currprefs.cachesize = changed_prefs.cachesize = 0;
 #else
 	if (ConfigureParams.System.nCpuLevel > 4)
 		ConfigureParams.System.nCpuLevel = 4;

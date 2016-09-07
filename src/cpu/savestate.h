@@ -6,6 +6,10 @@
   * (c) 1999-2001 Toni Wilen
   */
 
+#ifndef UAE_SAVESTATE_H
+#define UAE_SAVESTATE_H
+
+#include "uae/types.h"
 
 /* functions to save byte,word or long word
  * independent of CPU's endianness */
@@ -220,6 +224,9 @@ extern uae_u8 *save_a3000hram (int *);
 extern uae_u8 *restore_rom (uae_u8 *);
 extern uae_u8 *save_rom (int, int *, uae_u8 *);
 
+extern uae_u8 *save_expansion_info(int*, uae_u8*);
+extern uae_u8 *restore_expansion_info(uae_u8*);
+
 extern uae_u8 *restore_action_replay (uae_u8 *);
 extern uae_u8 *save_action_replay (int *, uae_u8 *);
 extern uae_u8 *restore_hrtmon (uae_u8 *);
@@ -263,3 +270,5 @@ extern int savestate_dorewind (int);
 extern void savestate_listrewind (void);
 extern void statefile_save_recording (const TCHAR*);
 extern void savestate_capture_request (void);
+
+#endif /* UAE_SAVESTATE_H */

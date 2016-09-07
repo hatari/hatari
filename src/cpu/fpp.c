@@ -27,6 +27,8 @@
 
 #include "options_cpu.h"
 #include "memory.h"
+#include "uae/attributes.h"
+#include "uae/vm.h"
 #include "custom.h"
 #include "events.h"
 #include "newcpu.h"
@@ -39,11 +41,6 @@
 
 #ifdef WITH_SOFTFLOAT
 #include "softfloatx80.h"
-#endif
-
-#ifdef X86_MSVC_ASSEMBLY
-#define X86_MSVC_ASSEMBLY_FPU
-#define NATIVE_FPUCW
 #endif
 
 #define DEBUG_FPP 0
@@ -144,7 +141,7 @@ static floatx80 fxzero;
 static floatx80 fx_1e0, fx_1e1, fx_1e2, fx_1e4, fx_1e8;
 struct float_status_t fxstatus;
 #endif
-static fptype fsizes[] = { -128.0, 127.0, -32768.0, 32767.0, -2147483648.0, 2147483647.0 };
+static const fptype fsizes[] = { -128.0, 127.0, -32768.0, 32767.0, -2147483648.0, 2147483647.0 };
 
 #define FP_INEXACT (1 << 9)
 #define FP_DIVBYZERO (1 << 10)
@@ -512,81 +509,138 @@ bool fpu_get_constant(fpdata *fp, int cr)
 	return fpu_get_constant_fp(fp, cr);
 }
 
-static void native_set_fpucw (uae_u32 m68k_cw)
-{
 #ifdef WITH_SOFTFLOAT
-	if (currprefs.fpu_softfloat) {
-		switch((m68k_cw >> 6) & 3)
-		{
-			case 0: // X
-			default: // undefined
-				fxstatus.float_rounding_precision = 80;
-			break;
-			case 1: // S
-				fxstatus.float_rounding_precision = 32;
-			break;
-			case 2: // D
-				fxstatus.float_rounding_precision = 64;
-			break;
-		}
-		switch((m68k_cw >> 4) & 3)
-		{
-			case 0: // to neareset
-				fxstatus.float_rounding_precision = float_round_nearest_even;
-			break;
-			case 1: // to zero
-				fxstatus.float_rounding_mode = float_round_to_zero;
-			break;
-			case 2: // to minus
-				fxstatus.float_rounding_mode = float_round_down;
-			break;
-			case 3: // to plus
-				fxstatus.float_rounding_mode = float_round_up;
-			break;
-		}
-	} else
+
+static inline void set_fpucw_softfloat(uae_u32 m68k_cw)
+{
+	switch((m68k_cw >> 6) & 3) {
+	case 0: // X
+	default: // undefined
+		fxstatus.float_rounding_precision = 80;
+		break;
+	case 1: // S
+		fxstatus.float_rounding_precision = 32;
+		break;
+	case 2: // D
+		fxstatus.float_rounding_precision = 64;
+		break;
+	}
+	switch((m68k_cw >> 4) & 3) {
+	case 0: // to neareset
+		fxstatus.float_rounding_precision = float_round_nearest_even;
+		break;
+	case 1: // to zero
+		fxstatus.float_rounding_mode = float_round_to_zero;
+		break;
+	case 2: // to minus
+		fxstatus.float_rounding_mode = float_round_down;
+		break;
+	case 3: // to plus
+		fxstatus.float_rounding_mode = float_round_up;
+		break;
+	}
+	return;
+}
+
+#endif /* WITH_SOFTFLOAT */
+
+#ifndef WINUAE_FOR_HATARI
+// TODO [NP] enable this part later for faster fpu (need vm.cpp and mmap.cpp too)
+#if defined(CPU_i386) || defined(CPU_x86_64)
+
+/* The main motivation for dynamically creating an x86(-64) function in
+ * memory is because MSVC (x64) does not allow you to use inline assembly,
+ * and the x86-64 versions of _control87/_controlfp functions only modifies
+ * SSE2 registers. */
+
+static uae_u16 x87_cw = 0;
+static uae_u8 *x87_fldcw_code = NULL;
+typedef void (uae_cdecl *x87_fldcw_function)(void);
+
+static void init_fpucw_x87(void)
+{
+	if (x87_fldcw_code) {
+		return;
+	}
+	x87_fldcw_code = (uae_u8 *) uae_vm_alloc(
+		uae_vm_page_size(), UAE_VM_32BIT, UAE_VM_READ_WRITE_EXECUTE);
+	uae_u8 *c = x87_fldcw_code;
+	/* mov eax,0x0 */
+	*(c++) = 0xb8;
+	*(c++) = 0x00;
+	*(c++) = 0x00;
+	*(c++) = 0x00;
+	*(c++) = 0x00;
+#ifdef CPU_x86_64
+	/* Address override prefix */
+	*(c++) = 0x67;
 #endif
-	{
-#ifdef NATIVE_FPUCW
-#ifdef _WIN32
-		static int ex = 0;
-		// RN, RZ, RM, RP
-		static const unsigned int fp87_round[4] = { _RC_NEAR, _RC_CHOP, _RC_DOWN, _RC_UP };
-		// Extend X, Single S, Double D, Undefined
-		static const unsigned int fp87_prec[4] = { _PC_64 , _PC_24 , _PC_53, 0 };
+	/* fldcw WORD PTR [eax+addr] */
+	*(c++) = 0xd9;
+	*(c++) = 0xa8;
+	*(c++) = (((uintptr_t) &x87_cw)      ) & 0xff;
+	*(c++) = (((uintptr_t) &x87_cw) >>  8) & 0xff;
+	*(c++) = (((uintptr_t) &x87_cw) >> 16) & 0xff;
+	*(c++) = (((uintptr_t) &x87_cw) >> 24) & 0xff;
+	/* ret */
+	*(c++) = 0xc3;
+	/* Write-protect the function */
+	uae_vm_protect(x87_fldcw_code, uae_vm_page_size(), UAE_VM_READ_EXECUTE);
+}
+
+static inline void set_fpucw_x87(uae_u32 m68k_cw)
+{
+#ifdef _MSC_VER
+	static int ex = 0;
+	// RN, RZ, RM, RP
+	static const unsigned int fp87_round[4] = { _RC_NEAR, _RC_CHOP, _RC_DOWN, _RC_UP };
+	// Extend X, Single S, Double D, Undefined
+	static const unsigned int fp87_prec[4] = { _PC_64, _PC_24, _PC_53, 0 };
+	int round = (m68k_cw >> 4) & 3;
 #ifdef WIN64
-		_controlfp (ex | fp87_round[(m68k_cw >> 4) & 3], _MCW_RC);
+	// x64 only sets SSE2, must also call x87_fldcw_code() to set FPU rounding mode.
+	_controlfp(ex | fp87_round[round], _MCW_RC);
 #else
-		_control87 (ex | fp87_round[(m68k_cw >> 4) & 3] | fp87_prec[(m68k_cw >> 6) & 3], _MCW_RC | _MCW_PC);
+	int prec = (m68k_cw >> 6) & 3;
+	// x86 sets both FPU and SSE2 rounding mode, don't need x87_fldcw_code()
+	_control87(ex | fp87_round[round] | fp87_prec[prec], _MCW_RC | _MCW_PC);
+	return;
 #endif
-#else
+#endif
 	static const uae_u16 x87_cw_tab[] = {
 		0x137f, 0x1f7f, 0x177f, 0x1b7f,	/* Extended */
 		0x107f, 0x1c7f, 0x147f, 0x187f,	/* Single */
 		0x127f, 0x1e7f, 0x167f, 0x1a7f,	/* Double */
 		0x137f, 0x1f7f, 0x177f, 0x1b7f	/* undefined */
 	};
-#if USE_X86_FPUCW
-		uae_u16 x87_cw = x87_cw_tab[(m68k_cw >> 4) & 0xf];
-
-#if defined(X86_MSVC_ASSEMBLY)
-		__asm {
-			fldcw word ptr x87_cw
-		}
-#elif defined(X86_ASSEMBLY)
-		__asm__ ("fldcw %0" : : "m" (*&x87_cw));
+	x87_cw = x87_cw_tab[(m68k_cw >> 4) & 0xf];
+#if defined(X86_MSVC_ASSEMBLY) && 0
+	__asm { fldcw word ptr x87_cw }
+#elif defined(__GNUC__) && 0
+	__asm__("fldcw %0" : : "m" (*&x87_cw));
+#else
+	((x87_fldcw_function) x87_fldcw_code)();
 #endif
-#endif
-#endif
-#endif
-	}
 }
 
-#if defined(uae_s64) /* Close enough for government work? */
-typedef uae_s64 tointtype;
-#else
-typedef uae_s32 tointtype;
+#endif /* defined(CPU_i386) || defined(CPU_x86_64) */
+#endif /* ! WINUAE_FOR_HATARI */
+
+static void native_set_fpucw(uae_u32 m68k_cw)
+{
+#ifdef WITH_SOFTFLOAT
+	if (currprefs.fpu_softfloat) {
+		set_fpucw_softfloat(m68k_cw);
+	}
 #endif
+#ifndef WINUAE_FOR_HATARI
+#if defined(CPU_i386) || defined(CPU_x86_64)
+	set_fpucw_x87(m68k_cw);
+#endif
+#endif /* ! WINUAE_FOR_HATARI */
+}
+
+typedef uae_s64 tointtype;
 
 /*
 static void fpu_format_error (void)
@@ -951,7 +1005,7 @@ static tointtype toint(fpdata *src, int size)
 #ifdef WITH_SOFTFLOAT
 	if (currprefs.fpu_softfloat) {
 		if (floatx80_compare(src->fpx, fxsizes[size * 2 + 0], fxstatus) == float_relation_greater)
-			return floatx80_to_int32(fxsizes[size * 2 + 0], fxstatus);	
+			return floatx80_to_int32(fxsizes[size * 2 + 0], fxstatus);
 		if (floatx80_compare(src->fpx, fxsizes[size * 2 + 1], fxstatus) == float_relation_less)
 			return floatx80_to_int32(fxsizes[size * 2 + 1], fxstatus);
 		return floatx80_to_int32(src->fpx, fxstatus);
@@ -1028,7 +1082,7 @@ static bool fp_is_infinity (fpdata *fpd)
 #ifdef _MSC_VER
 	return !_finite (fpd->fp);
 #elif defined(HAVE_ISINF)
-	return isinf (fpd->fp);
+	return isinf(fpd->fp);
 #else
 	return false;
 #endif
@@ -1069,7 +1123,7 @@ uae_u32 fpp_get_fpsr (void)
 	if (answer & (1 << 10))
 		answer |= 0x10; // DZ = DZ
 	if (answer & ((1 << 12) | (1 << 9) | (1 << 8)))
-		answer |= 0x08; // INEX = INEX1 | INEX2 | OVFL 
+		answer |= 0x08; // INEX = INEX1 | INEX2 | OVFL
 
 	regs.fpsr = answer;
 
@@ -1372,7 +1426,11 @@ static int get_fp_value (uae_u32 opcode, uae_u16 extra, fpdata *src, uaecptr old
 	uae_u32 ad = 0;
 	static const int sz1[8] = { 4, 4, 12, 12, 2, 8, 1, 0 };
 	static const int sz2[8] = { 4, 4, 12, 12, 2, 8, 2, 0 };
+#ifndef WINUAE_FOR_HATARI
+	uae_u32 exts[3];
+#else
 	uae_u32 exts[3] = { 0 };
+#endif
 	int doext = 0;
 
 	if (!(extra & 0x4000)) {
@@ -2168,7 +2226,7 @@ void fpuop_save (uae_u32 opcode)
 		int frame_size_real = currprefs.fpu_model == 68882 ? 0x3c : 0x1c;;
 		int frame_size = regs.fpu_state == 0 ? 0 : frame_size_real;
 		uae_u32 frame_id = regs.fpu_state == 0 ? ((frame_size_real - 4) << 16) : (fpu_version << 24) | ((frame_size_real - 4) << 16);
-	
+		
 		if (currprefs.mmu_model) {
 			if (incr < 0) {
 				for (i = 0; i < (frame_size / 4) - 1; i++) {
@@ -2657,7 +2715,7 @@ static bool arithmetic_fp(fptype src, int reg, int extra)
 			return false;
 	}
 	// round to float?
-	if (sgl || (extra & 0x44) == 0x40)
+	if (sgl || (extra & 0x44) == 0x40 || ((regs.fpcr >> 6) & 3) == 1)
 		fround (reg);
 	MAKE_FPSR (&regs.fp[reg].fp);
 	return true;
@@ -3114,6 +3172,12 @@ void fpuop_arithmetic (uae_u32 opcode, uae_u16 extra)
 
 void fpu_reset (void)
 {
+#ifndef WINUAE_FOR_HATARI
+#if defined(CPU_i386) || defined(CPU_x86_64)
+	init_fpucw_x87();
+#endif
+#endif /* ! WINUAE_FOR_HATARI */
+
 	regs.fpcr = regs.fpsr = regs.fpiar = 0;
 	regs.fpu_exp_state = 0;
 	fpset (&regs.fp_result, 1);
@@ -3142,6 +3206,7 @@ uae_u8 *restore_fpu (uae_u8 *src)
 	int i;
 	uae_u32 flags;
 
+	fpu_reset();
 	changed_prefs.fpu_model = currprefs.fpu_model = restore_u32 ();
 	flags = restore_u32 ();
 	for (i = 0; i < 8; i++) {

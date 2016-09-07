@@ -25,7 +25,4 @@ extern uae_u32 OpCode_VDI(uae_u32 opcode);
 extern uae_u32 OpCode_NatFeat_ID(uae_u32 opcode);
 extern uae_u32 OpCode_NatFeat_Call(uae_u32 opcode);
 
-#define write_log printf
-
-
 #endif /* HATARI_GLUE_H */

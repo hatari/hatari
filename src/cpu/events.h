@@ -1,6 +1,3 @@
-#ifndef EVENTS_H
-#define EVENTS_H
-
  /*
   * UAE - The Un*x Amiga Emulator
   *
@@ -12,9 +9,14 @@
   * Copyright 1995-1998 Bernd Schmidt
   */
 
+#ifndef UAE_EVENTS_H
+#define UAE_EVENTS_H
+
+#include "uae/types.h"
+
 #undef EVENT_DEBUG
 
-#include "rpt.h"
+#include "machdep/rpt.h"
 
 extern frame_time_t vsyncmintime, vsyncmaxtime, vsyncwaittime;
 extern int vsynctimebase, syncbase;
@@ -123,6 +125,7 @@ STATIC_INLINE bool cycles_in_range (unsigned long endcycles)
 
 extern void MISC_handler (void);
 extern void event2_newevent_xx (int no, evt t, uae_u32 data, evfunc2 func);
+extern void event2_newevent_x_replace(evt t, uae_u32 data, evfunc2 func);
 
 STATIC_INLINE void event2_newevent_x (int no, evt t, uae_u32 data, evfunc2 func)
 {
@@ -147,5 +150,4 @@ STATIC_INLINE void event2_remevent (int no)
 	eventtab2[no].active = 0;
 }
 
-
-#endif
+#endif /* UAE_EVENTS_H */

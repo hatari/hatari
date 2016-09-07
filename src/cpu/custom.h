@@ -6,8 +6,11 @@
   * (c) 1995 Bernd Schmidt
   */
 
-#ifndef WINUAE_CUSTOM_H
-#define WINUAE_CUSTOM_H
+#ifndef UAE_CUSTOM_H
+#define UAE_CUSTOM_H
+
+#include "uae/types.h"
+#include "machdep/rpt.h"
 
 /* These are the masks that are ORed together in the chipset_mask option.
  * If CSMASK_AGA is set, the ECS bits are guaranteed to be set as well.  */
@@ -33,12 +36,11 @@ extern void init_row_map (void);
 extern void init_hz_normal (void);
 extern void init_custom (void);
 
-extern bool picasso_requested_on;
-extern bool picasso_on;
+extern bool picasso_requested_on, picasso_requested_forced_on, picasso_on;
 extern void set_picasso_hack_rate (int hz);
 
 /* Set to 1 to leave out the current frame in average frame time calculation.
- * Useful if the debugger was active.  */
+* Useful if the debugger was active.  */
 extern int bogusframe;
 extern unsigned long int hsync_counter;
 
@@ -54,7 +56,7 @@ extern int n_frames;
 
 STATIC_INLINE int dmaen (unsigned int dmamask)
 {
-    return (dmamask & dmacon) && (dmacon & 0x200);
+	return (dmamask & dmacon) && (dmacon & 0x200);
 }
 
 
@@ -62,7 +64,7 @@ STATIC_INLINE int dmaen (unsigned int dmamask)
 #define SPCFLAG_COPPER 4
 #define SPCFLAG_INT 8
 //#define SPCFLAG_BRK 16
-//#define SPCFLAG_EXTRA_CYCLES 32
+//#define SPCFLAG_UAEINT 32
 //#define SPCFLAG_TRACE 64
 //#define SPCFLAG_DOTRACE 128
 //#define SPCFLAG_DOINT 256 /* arg, JIT fails without this.. */
@@ -81,11 +83,12 @@ extern uae_u16 adkcon;
 extern unsigned int joy0dir, joy1dir;
 extern int joy0button, joy1button;
 
-extern void INTREQ (uae_u16);
-extern void INTREQ_0 (uae_u16);
-extern void INTREQ_f (uae_u16);
-extern void send_interrupt (int num, int delay);
-extern uae_u16 INTREQR (void);
+extern void INTREQ(uae_u16);
+extern bool INTREQ_0(uae_u16);
+extern void INTREQ_f(uae_u16);
+extern void send_interrupt(int num, int delay);
+extern void rethink_uae_int(void);
+extern uae_u16 INTREQR(void);
 
 
 #define DMA_AUD0      0x0001
@@ -100,14 +103,17 @@ extern uae_u16 INTREQR (void);
 #define DMA_MASTER    0x0200
 #define DMA_BLITPRI   0x0400
 
-#define CYCLE_REFRESH	0x01
-#define CYCLE_STROBE	0x02
-#define CYCLE_MISC	0x04
-#define CYCLE_SPRITE	0x08
-#define CYCLE_COPPER	0x10
-#define CYCLE_BLITTER	0x20
-#define CYCLE_CPU	0x40
-#define CYCLE_CPUNASTY	0x80
+#define CYCLE_REFRESH	1
+#define CYCLE_STROBE	2
+#define CYCLE_MISC		3
+#define CYCLE_SPRITE	4
+#define CYCLE_COPPER	5
+#define CYCLE_BLITTER	6
+#define CYCLE_CPU		7
+#define CYCLE_CPUNASTY	8
+#define CYCLE_COPPER_SPECIAL 0x10
+
+#define CYCLE_MASK 0x0f
 
 #ifdef AGA
 /* AGA mode color lookup tables */
@@ -123,6 +129,7 @@ extern int xbluecolor_s, xbluecolor_b, xbluecolor_m;
 #define RES_MAX 2
 #define VRES_NONDOUBLE 0
 #define VRES_DOUBLE 1
+#define VRES_QUAD 2
 #define VRES_MAX 1
 
 /* calculate shift depending on resolution (replaced "decided_hires ? 4 : 8") */
@@ -132,15 +139,15 @@ extern int xbluecolor_s, xbluecolor_b, xbluecolor_m;
 #if AMIGA_ONLY
 STATIC_INLINE int GET_RES_DENISE (uae_u16 con0)
 {
-    if (!(currprefs.chipset_mask & CSMASK_ECS_DENISE))
-	con0 &= ~0x40;
-    return ((con0) & 0x8000) ? RES_HIRES : ((con0) & 0x40) ? RES_SUPERHIRES : RES_LORES;
+	if (!(currprefs.chipset_mask & CSMASK_ECS_DENISE))
+		con0 &= ~0x40; // SUPERHIRES
+	return ((con0) & 0x40) ? RES_SUPERHIRES : ((con0) & 0x8000) ? RES_HIRES : RES_LORES;
 }
 STATIC_INLINE int GET_RES_AGNUS (uae_u16 con0)
 {
-    if (!(currprefs.chipset_mask & CSMASK_ECS_AGNUS))
-	con0 &= ~0x40;
-    return ((con0) & 0x8000) ? RES_HIRES : ((con0) & 0x40) ? RES_SUPERHIRES : RES_LORES;
+	if (!(currprefs.chipset_mask & CSMASK_ECS_AGNUS))
+		con0 &= ~0x40; // SUPERHIRES
+	return ((con0) & 0x40) ? RES_SUPERHIRES : ((con0) & 0x8000) ? RES_HIRES : RES_LORES;
 }
 #endif // AMIGA_ONLY
 
@@ -149,20 +156,20 @@ STATIC_INLINE int GET_RES_AGNUS (uae_u16 con0)
 /* Compute the number of bitplanes from a value written to BPLCON0  */
 STATIC_INLINE int GET_PLANES(uae_u16 bplcon0)
 {
-    if ((bplcon0 & 0x0010) && (bplcon0 & 0x7000))
-	return 0;
-    if (bplcon0 & 0x0010)
-	return 8;
-    return (bplcon0 >> 12) & 7;
+	if ((bplcon0 & 0x0010) && (bplcon0 & 0x7000))
+		return 0; // >8 planes = 0 planes
+	if (bplcon0 & 0x0010)
+		return 8; // AGA 8-planes bit
+	return (bplcon0 >> 12) & 7; // normal planes bits
 }
 
 extern void fpscounter_reset (void);
 extern unsigned long idletime;
-extern int lightpen_x, lightpen_y, lightpen_cx, lightpen_cy;
+extern int lightpen_x, lightpen_y, lightpen_cx, lightpen_cy, lightpen_active, lightpen_enabled;
 
 struct customhack {
-    uae_u16 v;
-    int vpos, hpos;
+	uae_u16 v;
+	int vpos, hpos;
 };
 void customhack_put (struct customhack *ch, uae_u16 v, int hpos);
 uae_u16 customhack_get (struct customhack *ch, int hpos);
@@ -177,5 +184,4 @@ extern void wait_cpu_cycle_write (uaecptr addr, int mode, uae_u32 v);
 extern uae_u32 wait_cpu_cycle_read_ce020 (uaecptr addr, int mode);
 extern void wait_cpu_cycle_write_ce020 (uaecptr addr, int mode, uae_u32 v);
 
-#endif /* WINUAE_CUSTOM_H */
-
+#endif /* UAE_CUSTOM_H */

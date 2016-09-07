@@ -1817,6 +1817,7 @@ void mmu030_put_atc_generic(uaecptr addr, uae_u32 val, int l, uae_u32 fc, int si
 	    phys_put_long(physical_addr, val);
 
 }
+
 uae_u32 mmu030_get_atc_generic(uaecptr addr, int l, uae_u32 fc, int size, int flags, bool checkwrite) {
     uae_u32 page_index = addr & mmu030.translation.page.mask;
     uae_u32 addr_mask = mmu030.translation.page.imask;

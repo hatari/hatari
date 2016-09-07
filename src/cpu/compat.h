@@ -12,65 +12,10 @@
 #ifndef HATARI_COMPAT_H
 #define HATARI_COMPAT_H
 
-#include <stdbool.h>
+#include "uae/string.h"
 
-#include "sysconfig.h"
-
-/* This define is here to remove some Amiga specific code when compiling */
-/* It results in ' #if 0 ' code in newcpu.c code */
-#define AMIGA_ONLY 0
-
-
-#define WINUAE_FOR_HATARI
-
-
-/* this defione is here for newcpu.c compatibility.
- * In WinUae, it's defined in debug.h" */
-#ifndef MAX_LINEWIDTH
-#define MAX_LINEWIDTH 100
-#endif
-
-#define RTAREA_DEFAULT 0xf00000
-
-/* Laurent */
-/* here only to allow newcpu.c to compile */
-/* Should be removed when newcpu.c 'll be relooked for hatari only*/
-extern int vpos;
-extern int quit_program;  // declared as "int quit_program = 0;" in main.c
-//WinUae ChangeLog: Improve quitting/resetting behaviour: Move quit_program from GUI
-//WinUae ChangeLog: quit_program is now handled in vsync_handler() and m68k_go().
-
-
-#if defined(_MSC_VER)
-
-#include <tchar.h>
-
-#else
-
-#ifndef TCHAR
-#define TCHAR char
-#endif
-
-//#ifndef STATIC_INLINE
-//#define STATIC_INLINE static inline
-//#endif
-
-#define _vsnprintf vsnprintf
-#define _tcsncmp strncmp
-#define _istspace isspace
-#define _tcscmp strcmp
-#define _tcslen strlen
-#define _tcsstr strstr
-#define _tcscpy strcpy
-#define _tcsncpy strncpy
-#define _tcscat strcat
-#define _stprintf sprintf
 #define strnicmp strncasecmp
-#define _T(x) x
 
-#define _vsntprintf printf
-
-#endif	/* _MSC_VER */
 
 #define f_out fprintf
 #define console_out printf
@@ -79,4 +24,7 @@ extern int quit_program;  // declared as "int quit_program = 0;" in main.c
 #define error_log printf
 #define gui_message console_out_f
 
+#define uae_log printf
+
 #endif
+
