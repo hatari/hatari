@@ -618,7 +618,7 @@ void PSG_ff8803_WriteByte(void)
 void PSG_Info(FILE *fp, Uint32 dummy)
 {
 	int i;
-	for(i = 0; i < ARRAYSIZE(PSGRegisters); i++)
+	for(i = 0; i < ARRAY_SIZE(PSGRegisters); i++)
 	{
 		fprintf(fp, "Reg $%02X : $%02X\n", i, PSGRegisters[i]);
 	}

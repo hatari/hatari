@@ -182,7 +182,7 @@ char *Vars_MatchCpuVariable(const char *text, int state)
 		i = 0;
 	}
 	/* next match */
-	while (i < ARRAYSIZE(hatari_vars)) {
+	while (i < ARRAY_SIZE(hatari_vars)) {
 		name = hatari_vars[i++].name;
 		if (strncasecmp(name, text, len) == 0)
 			return (strdup(name));
@@ -204,7 +204,7 @@ const var_addr_t *Vars_ParseVariable(const char *name)
 
 	/* bisect */
 	l = 0;
-	r = ARRAYSIZE(hatari_vars) - 1;
+	r = ARRAY_SIZE(hatari_vars) - 1;
 	do {
 		m = (l+r) >> 1;
 		hvar = hatari_vars + m;
@@ -264,7 +264,7 @@ int Vars_List(int nArgc, char *psArgv[])
 	Uint32 value;
 	int i;
 	fputs("Hatari debugger builtin symbols and their values are:\n", stderr);
-	for (i = 0; i < ARRAYSIZE(hatari_vars); i++) {
+	for (i = 0; i < ARRAY_SIZE(hatari_vars); i++) {
 		const var_addr_t *hvar = hatari_vars + i;
 		value = Vars_GetValue(hvar);
 		fprintf(stderr, "  - %s: $%X / #%d", hvar->name, value, value);

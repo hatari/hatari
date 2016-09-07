@@ -339,7 +339,7 @@ static int DebugUI_SetOptions(int argc, char *argv[])
 	}
 	arg = argv[1];
 
-	for (i = 0; i < ARRAYSIZE(bases); i++)
+	for (i = 0; i < ARRAY_SIZE(bases); i++)
 	{
 		if (strcasecmp(bases[i].name, arg) == 0)
 		{
@@ -427,7 +427,7 @@ static int DebugUI_Rename(int argc, char *argv[])
 static char *DebugUI_MatchReset(const char *text, int state)
 {
 	static const char* types[] = {	"cold", "hard", "soft", "warm" };
-	return DebugUI_MatchHelper(types, ARRAYSIZE(types), text, state);
+	return DebugUI_MatchHelper(types, ARRAY_SIZE(types), text, state);
 }
 static int DebugUI_Reset(int argc, char *argv[])
 {
@@ -614,7 +614,7 @@ static int DebugUI_ParseCommand(const char *input_orig)
 		delim = " \t";
 
 	/* Separate arguments and put the pointers into psArgs */
-	for (nArgc = 1; nArgc < ARRAYSIZE(psArgs); nArgc++)
+	for (nArgc = 1; nArgc < ARRAY_SIZE(psArgs); nArgc++)
 	{
 		psArgs[nArgc] = strtok(NULL, delim);
 		if (psArgs[nArgc] == NULL)
@@ -991,7 +991,7 @@ void DebugUI_Init(void)
 	cpucmds = DebugCpu_Init(&cpucmd);
 
 	/* on first time copy the command structures to a single table */
-	debugCommands = ARRAYSIZE(uicommand);
+	debugCommands = ARRAY_SIZE(uicommand);
 	debugCommand = malloc(sizeof(dbgcommand_t) * (dspcmds + cpucmds + debugCommands));
 	assert(debugCommand);
 	
@@ -1242,7 +1242,7 @@ void DebugUI_Exceptions(int nr, long pc)
 		{ EXCEPT_TRACE,     "Trace" }			/* 9 */
 	};
 	nr -= 2;
-	if (nr < 0  || nr >= ARRAYSIZE(ex))
+	if (nr < 0  || nr >= ARRAY_SIZE(ex))
 		return;
 	if (!(ExceptionDebugMask & ex[nr].flag))
 		return;

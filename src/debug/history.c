@@ -248,7 +248,7 @@ static void History_Save(const char *name)
 char *History_Match(const char *text, int state)
 {
 	static const char* cmds[] = { "cpu", "dsp", "off", "save" };
-	return DebugUI_MatchHelper(cmds, ARRAYSIZE(cmds), text, state);
+	return DebugUI_MatchHelper(cmds, ARRAY_SIZE(cmds), text, state);
 }
 
 /**

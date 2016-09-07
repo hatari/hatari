@@ -319,7 +319,7 @@ static bool symbols_print_prg_info(Uint32 tabletype, Uint32 prgflags, Uint16 rel
 	}
 	fprintf(stderr, "%s, reloc=%d, program flags:", info, relocflag);
 	/* bit flags */
-	for (i = 0; i < ARRAYSIZE(flags); i++) {
+	for (i = 0; i < ARRAY_SIZE(flags); i++) {
 		if (prgflags & flags[i].flag) {
 			fprintf(stderr, " %s", flags[i].name);
 		}
@@ -933,7 +933,7 @@ char *Symbols_MatchCommand(const char *text, int state)
 	static const char* subs[] = {
 		"addr", "free", "name", "prg"
 	};
-	return DebugUI_MatchHelper(subs, ARRAYSIZE(subs), text, state);
+	return DebugUI_MatchHelper(subs, ARRAY_SIZE(subs), text, state);
 }
 
 const char Symbols_Description[] =
@@ -1001,7 +1001,7 @@ int Symbols_Command(int nArgc, char *psArgs[])
 
 	/* get offsets */
 	offsets[0] = 0;
-	for (i = 0; i < ARRAYSIZE(offsets); i++) {
+	for (i = 0; i < ARRAY_SIZE(offsets); i++) {
 		if (i+2 < nArgc) {
 			int dummy;
 			Eval_Expression(psArgs[i+2], &(offsets[i]), &dummy, listtype==TYPE_DSP);

@@ -241,7 +241,7 @@ bool NatFeat_ID(Uint32 stack, Uint32 *retval)
 	name = (const char *)STMemory_STAddrToPointer ( ptr );
 	LOG_TRACE(TRACE_NATFEATS, "NF ID(0x%x \"%s\")\n", ptr, name);
 
-	for (i = 0; i < ARRAYSIZE(features); i++) {
+	for (i = 0; i < ARRAY_SIZE(features); i++) {
 		if (strcmp(features[i].name, name) == 0) {
 			*retval = IDX2MASTERID(i);
 			return true;
@@ -265,7 +265,7 @@ bool NatFeat_Call(Uint32 stack, bool super, Uint32 *retval)
 	unsigned int idx = MASTERID2IDX(subid);
 	subid = MASKOUTMASTERID(subid);
 
-	if (idx >= ARRAYSIZE(features)) {
+	if (idx >= ARRAY_SIZE(features)) {
 		LOG_TRACE(TRACE_NATFEATS, "ERROR: invalid NF ID %d requested\n", idx);
 		return true; /* undefined */
 	}

@@ -1999,7 +1999,7 @@ char *Opt_MatchOption(const char *text, int state)
 		i = 0;
 	}
 	/* next match */
-	while (i < ARRAYSIZE(HatariOptions)) {
+	while (i < ARRAY_SIZE(HatariOptions)) {
 		name = HatariOptions[i++].str;
 		if (name && strncasecmp(name, text, len) == 0)
 			return (strdup(name));

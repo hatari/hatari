@@ -395,7 +395,7 @@ const char* Log_SetExceptionDebugMask (const char *FlagsStr)
 	const char *errstr;
 
 	Uint64 mask = EXCEPT_NONE;
-	errstr = Log_ParseOptionFlags(FlagsStr, ExceptionFlags, ARRAYSIZE(ExceptionFlags), &mask);
+	errstr = Log_ParseOptionFlags(FlagsStr, ExceptionFlags, ARRAY_SIZE(ExceptionFlags), &mask);
 	ConfigureParams.Log.nExceptionDebugMask = mask;
 	return errstr;
 }
@@ -414,7 +414,7 @@ const char* Log_SetTraceOptions (const char *FlagsStr)
 	const char *errstr;
 
 	LogTraceFlags = TRACE_NONE;
-	errstr = Log_ParseOptionFlags(FlagsStr, TraceFlags, ARRAYSIZE(TraceFlags), &LogTraceFlags);
+	errstr = Log_ParseOptionFlags(FlagsStr, TraceFlags, ARRAY_SIZE(TraceFlags), &LogTraceFlags);
 
 	/* Enable Hatari flags needed for tracing selected items */
 	if (LogTraceFlags & (TRACE_OS_AES|TRACE_OS_VDI))
@@ -442,7 +442,7 @@ char *Log_MatchTrace(const char *text, int state)
 		i = 0;
 	}
 	/* next match */
-	while (i < ARRAYSIZE(TraceFlags)) {
+	while (i < ARRAY_SIZE(TraceFlags)) {
 		name = TraceFlags[i++].name;
 		if (strncasecmp(name, text, len) == 0)
 			return (strdup(name));

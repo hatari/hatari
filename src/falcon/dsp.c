@@ -488,28 +488,28 @@ void DSP_Info(FILE *fp, Uint32 dummy)
 
 	fputs("DSP core information:\n", fp);
 
-	for (i = 0; i < ARRAYSIZE(stackname); i++) {
+	for (i = 0; i < ARRAY_SIZE(stackname); i++) {
 		fprintf(fp, "- %s stack:", stackname[i]);
-		for (j = 0; j < ARRAYSIZE(dsp_core.stack[0]); j++) {
+		for (j = 0; j < ARRAY_SIZE(dsp_core.stack[0]); j++) {
 			fprintf(fp, " %04hx", dsp_core.stack[i][j]);
 		}
 		fputs("\n", fp);
 	}
 
 	fprintf(fp, "- Interrupt IPL:");
-	for (i = 0; i < ARRAYSIZE(dsp_core.interrupt_ipl); i++) {
+	for (i = 0; i < ARRAY_SIZE(dsp_core.interrupt_ipl); i++) {
 		fprintf(fp, " %04hx", dsp_core.interrupt_ipl[i]);
 	}
 	fputs("\n", fp);
 
 	fprintf(fp, "- Pending ints: ");
-	for (i = 0; i < ARRAYSIZE(dsp_core.interrupt_isPending); i++) {
+	for (i = 0; i < ARRAY_SIZE(dsp_core.interrupt_isPending); i++) {
 		fprintf(fp, " %04hx", dsp_core.interrupt_isPending[i]);
 	}
 	fputs("\n", fp);
 
 	fprintf(fp, "- Hostport:");
-	for (i = 0; i < ARRAYSIZE(dsp_core.hostport); i++) {
+	for (i = 0; i < ARRAY_SIZE(dsp_core.hostport); i++) {
 		fprintf(fp, " %02x", dsp_core.hostport[i]);
 	}
 	fputs("\n", fp);
@@ -652,7 +652,7 @@ int DSP_GetRegisterAddress(const char *regname, Uint32 **addr, Uint32 *mask)
 	
 	/* bisect */
 	l = 0;
-	r = ARRAYSIZE(registers) - 1;
+	r = ARRAY_SIZE(registers) - 1;
 	do {
 		m = (l+r) >> 1;
 		for (i = 0; i < len; i++) {

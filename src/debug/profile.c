@@ -91,7 +91,7 @@ static void output_caller_info(FILE *fp, caller_t *info, Uint32 *typeaddr)
 	if (info->flags) {	/* calltypes supported? */
 		fputc(' ', fp);
 		typecount = 0;
-		for (k = 0; k < ARRAYSIZE(flaginfo); k++) {
+		for (k = 0; k < ARRAY_SIZE(flaginfo); k++) {
 			if (info->flags & flaginfo[k].bit) {
 				fputc(flaginfo[k].chr, fp);
 				typecount++;
@@ -128,7 +128,7 @@ void Profile_ShowCallers(FILE *fp, int sites, callee_t *callsite, const char * (
 	/* legend */
 	fputs("# <callee>: <caller1> = <calls> <types>[ <inclusive/totals>[ <exclusive/totals>]], <caller2> ..., <callee name>", fp);
 	fputs("\n# types: ", fp);
-	for (i = 0; i < ARRAYSIZE(flaginfo); i++) {
+	for (i = 0; i < ARRAY_SIZE(flaginfo); i++) {
 		fprintf(fp, "%c = %s, ", flaginfo[i].chr, flaginfo[i].info);
 	}
 	fputs("\n# totals: calls/instructions/cycles/i-misses/d-hits\n", fp);
@@ -502,7 +502,7 @@ char *Profile_Match(const char *text, int state)
 		"addresses", "callers", "caches", "counts", "cycles", "d-hits", "i-misses",
 		"loops", "off", "on", "save", "stack", "stats", "symbols"
 	};
-	return DebugUI_MatchHelper(names, ARRAYSIZE(names), text, state);
+	return DebugUI_MatchHelper(names, ARRAY_SIZE(names), text, state);
 }
 
 const char Profile_Description[] =

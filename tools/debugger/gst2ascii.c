@@ -58,7 +58,7 @@ typedef struct {
 #define PATHSEP '/'
 #endif
 
-#define ARRAYSIZE(x) (int)(sizeof(x)/sizeof(x[0]))
+#define ARRAY_SIZE(x) (int)(sizeof(x)/sizeof(x[0]))
 
 static const char *PrgPath;
 
@@ -103,7 +103,7 @@ static symbol_list_t* usage(const char *msg)
 		"its profiler data post-processor.\n"
 		"\n"
 		"Options:\n", name);
-	for (i = 0; i < ARRAYSIZE(OptInfo); i++) {
+	for (i = 0; i < ARRAY_SIZE(OptInfo); i++) {
 		fprintf(stderr, "\t-%c\t%s\n", OptInfo[i].opt, OptInfo[i].desc);
 	}
 	if (msg) {
@@ -294,7 +294,7 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, uint32
 				continue;
 			}
 			/* useless symbols GCC (v2) seems to add to every object? */
-			for (j = 0; j < ARRAYSIZE(gcc_sym); j++) {
+			for (j = 0; j < ARRAY_SIZE(gcc_sym); j++) {
 				if (strcmp(name, gcc_sym[j]) == 0) {
 					ofiles++;
 					j = -1;
@@ -383,7 +383,7 @@ static bool symbols_print_prg_info(Uint32 tabletype, Uint32 prgflags, Uint16 rel
 	}
 	fprintf(stderr, "%s, reloc=%d, program flags:", info, relocflag);
 	/* bit flags */
-	for (i = 0; i < ARRAYSIZE(flags); i++) {
+	for (i = 0; i < ARRAY_SIZE(flags); i++) {
 		if (prgflags & flags[i].flag) {
 			fprintf(stderr, " %s", flags[i].name);
 		}

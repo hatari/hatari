@@ -218,7 +218,7 @@ static char *DebugCpu_MatchRegister(const char *text, int state)
 		"d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7",
 		"pc", "sr"
 	};
-	return DebugUI_MatchHelper(regs, ARRAYSIZE(regs), text, state);
+	return DebugUI_MatchHelper(regs, ARRAY_SIZE(regs), text, state);
 }
 
 
@@ -501,7 +501,7 @@ static char *DebugCpu_MatchNext(const char *text, int state)
 	static const char* ntypes[] = {
 		"branch", "exception", "exreturn", "return", "subcall", "subreturn"
 	};
-	return DebugUI_MatchHelper(ntypes, ARRAYSIZE(ntypes), text, state);
+	return DebugUI_MatchHelper(ntypes, ARRAY_SIZE(ntypes), text, state);
 }
 
 /**
@@ -785,7 +785,7 @@ int DebugCpu_Init(const dbgcommand_t **table)
 	disasm_addr = 0;
 	
 	*table = cpucommands;
-	return ARRAYSIZE(cpucommands);
+	return ARRAY_SIZE(cpucommands);
 }
 
 /**

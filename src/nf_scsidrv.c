@@ -464,7 +464,7 @@ static const struct
 
 bool nf_scsidrv(Uint32 stack, Uint32 subid, Uint32 *retval)
 {
-	if (subid >= ARRAYSIZE(operations))
+	if (subid >= ARRAY_SIZE(operations))
 	{
 		*retval = -1;
 

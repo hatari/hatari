@@ -153,7 +153,7 @@ void Joy_Init(void)
 			bJoystickWorking[i] = true;
 			Log_Printf(LOG_DEBUG, "Joystick %i: %s\n", i, Joy_GetName(i));
 			/* determine joystick axis mapping for given SDL joystick name, last is default: */
-			for (j = 0; j < ARRAYSIZE(AxisMappingTable)-1; j++) {
+			for (j = 0; j < ARRAY_SIZE(AxisMappingTable)-1; j++) {
 				/* check if ID string matches the one reported by SDL: */
 				if(strncmp(AxisMappingTable[j].SDLJoystickName, Joy_GetName(i), strlen(AxisMappingTable[j].SDLJoystickName)) == 0)
 					break;

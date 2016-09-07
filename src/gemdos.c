@@ -482,12 +482,12 @@ void GemDOS_Init(void)
 
 	/* Clear handles structure */
 	memset(FileHandles, 0, sizeof(FileHandles));
-	for(i = 0; i < ARRAYSIZE(ForcedHandles); i++)
+	for(i = 0; i < ARRAY_SIZE(ForcedHandles); i++)
 	{
 		GemDOS_UnforceFileHandle(i);
 	}
 	/* Clear DTAs */
-	for(i = 0; i < ARRAYSIZE(InternalDTAs); i++)
+	for(i = 0; i < ARRAY_SIZE(InternalDTAs); i++)
 	{
 		InternalDTAs[i].bUsed = false;
 		InternalDTAs[i].nentries = 0;
@@ -506,11 +506,11 @@ void GemDOS_Reset(void)
 	int i;
 
 	/* Init file handles table */
-	for (i = 0; i < ARRAYSIZE(FileHandles); i++)
+	for (i = 0; i < ARRAY_SIZE(FileHandles); i++)
 	{
 		GemDOS_CloseFileHandle(i);
 	}
-	for(i = 0; i < ARRAYSIZE(ForcedHandles); i++)
+	for(i = 0; i < ARRAY_SIZE(ForcedHandles); i++)
 	{
 		GemDOS_UnforceFileHandle(i);
 	}
@@ -848,11 +848,11 @@ void GemDOS_MemorySnapShot_Capture(bool bSave)
 	if (!bSave)
 	{
 		/* Clear file handles  */
-		for(i = 0; i < ARRAYSIZE(FileHandles); i++)
+		for(i = 0; i < ARRAY_SIZE(FileHandles); i++)
 		{
 			GemDOS_CloseFileHandle(i);
 		}
-		for(i = 0; i < ARRAYSIZE(ForcedHandles); i++)
+		for(i = 0; i < ARRAY_SIZE(ForcedHandles); i++)
 		{
 			GemDOS_UnforceFileHandle(i);
 		}
@@ -869,7 +869,7 @@ static int GemDOS_FindFreeFileHandle(void)
 	int i;
 
 	/* Scan our file list for free slot */
-	for(i = 0; i < ARRAYSIZE(FileHandles); i++)
+	for(i = 0; i < ARRAY_SIZE(FileHandles); i++)
 	{
 		if (!FileHandles[i].bUsed)
 			return i;
@@ -906,7 +906,7 @@ static int GemDOS_GetValidFileHandle(int Handle)
 	int Forced = -1;
 
 	/* Has handle been aliased with Fforce()? */
-	if (Handle >= 0 && Handle < ARRAYSIZE(ForcedHandles)
+	if (Handle >= 0 && Handle < ARRAY_SIZE(ForcedHandles)
 	    && ForcedHandles[Handle].Handle != UNFORCED_HANDLE)
 	{
 		if (GemDOS_BasepageMatches(ForcedHandles[Handle].Basepage))
@@ -927,7 +927,7 @@ static int GemDOS_GetValidFileHandle(int Handle)
 		Handle -= BASE_FILEHANDLE;
 	}
 	/* handle is valid for current program and in our handle table? */
-	if (Handle >= 0 && Handle < ARRAYSIZE(FileHandles)
+	if (Handle >= 0 && Handle < ARRAY_SIZE(FileHandles)
 	    && FileHandles[Handle].bUsed)
 	{
 		Uint32 current = STMemory_ReadLong(act_pd);
@@ -2051,7 +2051,7 @@ static bool GemDOS_Close(Uint32 Params)
 	GemDOS_CloseFileHandle(Handle);
 
 	/* unalias handle */
-	for (i = 0; i < ARRAYSIZE(ForcedHandles); i++)
+	for (i = 0; i < ARRAY_SIZE(ForcedHandles); i++)
 	{
 		if (ForcedHandles[i].Handle == Handle)
 			GemDOS_UnforceFileHandle(i);
@@ -2479,9 +2479,9 @@ static bool GemDOS_Force(Uint32 Params)
 		/* assume it was TOS one -> let TOS handle it */
 		return false;
 	}
-	if (std < 0 || std >= ARRAYSIZE(ForcedHandles))
+	if (std < 0 || std >= ARRAY_SIZE(ForcedHandles))
 	{
-		Log_Printf(LOG_WARN, "Warning: forcing of non-standard %d (> %d) handle ignored.\n", std, ARRAYSIZE(ForcedHandles));
+		Log_Printf(LOG_WARN, "Warning: forcing of non-standard %d (> %d) handle ignored.\n", std, ARRAY_SIZE(ForcedHandles));
 		return false;
 	}
 	/* mark given standard handle redirected by this process */
@@ -2950,7 +2950,7 @@ static void GemDOS_TerminateClose(void)
 	Uint32 current = STMemory_ReadLong(act_pd);
 
 	closed = 0;
-	for (i = 0; i < ARRAYSIZE(FileHandles); i++)
+	for (i = 0; i < ARRAY_SIZE(FileHandles); i++)
 	{
 		if (FileHandles[i].Basepage == current)
 		{
@@ -2959,7 +2959,7 @@ static void GemDOS_TerminateClose(void)
 		}
 	}
 	unforced = 0;
-	for (i = 0; i < ARRAYSIZE(ForcedHandles); i++)
+	for (i = 0; i < ARRAY_SIZE(ForcedHandles); i++)
 	{
 		if (ForcedHandles[i].Basepage == current)
 		{
@@ -3114,7 +3114,7 @@ static const char* GemDOS_Opcode2Name(Uint16 opcode)
 		"Frename",
 		"Fdatime"
 	};
-	if (opcode < ARRAYSIZE(names))
+	if (opcode < ARRAY_SIZE(names))
 		return names[opcode];
 	return "MiNT?";
 }
@@ -3162,7 +3162,7 @@ void GemDOS_Info(FILE *fp, Uint32 bShowOpcodes)
 	}
 
 	fputs("\nInternal Fsfirst() DTAs:\n", fp);
-	for(used = i = 0; i < ARRAYSIZE(InternalDTAs); i++)
+	for(used = i = 0; i < ARRAY_SIZE(InternalDTAs); i++)
 	{
 		int j, centry, entries;
 
@@ -3186,7 +3186,7 @@ void GemDOS_Info(FILE *fp, Uint32 bShowOpcodes)
 		fputs("- None in use.\n", fp);
 
 	fputs("\nOpen GEMDOS HDD file handles:\n", fp);
-	for (used = i = 0; i < ARRAYSIZE(FileHandles); i++)
+	for (used = i = 0; i < ARRAY_SIZE(FileHandles); i++)
 	{
 		if (!FileHandles[i].bUsed)
 			continue;
@@ -3197,7 +3197,7 @@ void GemDOS_Info(FILE *fp, Uint32 bShowOpcodes)
 	if (!used)
 		fputs("- None.\n", fp);
 	fputs("\nForced GEMDOS HDD file handles:\n", fp);
-	for (used = i = 0; i < ARRAYSIZE(ForcedHandles); i++)
+	for (used = i = 0; i < ARRAY_SIZE(ForcedHandles); i++)
 	{
 		if (ForcedHandles[i].Handle == UNFORCED_HANDLE)
 			continue;

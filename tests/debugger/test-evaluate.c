@@ -50,7 +50,7 @@ int main(int argc, const char *argv[])
 
 	fprintf(stderr, "\nExpressions that should FAIL:\n");
 
-	for (i = 0; i < ARRAYSIZE(failure); i++) {
+	for (i = 0; i < ARRAY_SIZE(failure); i++) {
 		expression = failure[i];
 		fprintf(stderr, "- '%s'\n", expression);
 		errstr = Eval_Expression(expression, &result, &offset, false);
@@ -67,7 +67,7 @@ int main(int argc, const char *argv[])
 
 	fprintf(stderr, "\nExpressions that should SUCCEED with given result:\n");
 
-	for (i = 0; i < ARRAYSIZE(success); i++) {
+	for (i = 0; i < ARRAY_SIZE(success); i++) {
 		expression = success[i].expression;
 		fprintf(stderr, "- '%s'\n", expression);
 		errstr = Eval_Expression(expression, &result, &offset, false);

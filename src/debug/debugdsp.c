@@ -53,7 +53,7 @@ static char *DebugDsp_MatchRegister(const char *text, int state)
 		"omr", "pc", "sp", "sr", "ssh", "ssl",
 		"x0", "x1", "y0", "y1",
 	};
-	return DebugUI_MatchHelper(regs, ARRAYSIZE(regs), text, state);
+	return DebugUI_MatchHelper(regs, ARRAY_SIZE(regs), text, state);
 }
 
 /**
@@ -317,7 +317,7 @@ static char *DebugDsp_MatchNext(const char *text, int state)
 	static const char* ntypes[] = {
 		"branch", "exreturn", "return", "subcall", "subreturn"
 	};
-	return DebugUI_MatchHelper(ntypes, ARRAYSIZE(ntypes), text, state);
+	return DebugUI_MatchHelper(ntypes, ARRAY_SIZE(ntypes), text, state);
 }
 
 /**
@@ -615,7 +615,7 @@ int DebugDsp_Init(const dbgcommand_t **table)
 	dsp_mem_space = 'P';
 
 	*table = dspcommands;
-	return ARRAYSIZE(dspcommands);
+	return ARRAY_SIZE(dspcommands);
 }
 
 /**

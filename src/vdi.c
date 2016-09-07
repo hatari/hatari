@@ -381,7 +381,7 @@ static const char* AESName_10[] = {
 static const char* AES_Opcode2Name(Uint16 opcode)
 {
 	int code = opcode - 10;
-	if (code >= 0 && code < ARRAYSIZE(AESName_10) && AESName_10[code])
+	if (code >= 0 && code < ARRAY_SIZE(AESName_10) && AESName_10[code])
 		return AESName_10[code];
 	else
 		return "???";
@@ -394,7 +394,7 @@ static void AES_OpcodeInfo(FILE *fp, Uint16 opcode)
 {
 	int code = opcode - 10;
 	fprintf(fp, "AES call %3hd ", opcode);
-	if (code >= 0 && code < ARRAYSIZE(AESName_10) && AESName_10[code])
+	if (code >= 0 && code < ARRAY_SIZE(AESName_10) && AESName_10[code])
 	{
 		bool first = true;
 		int i, items;
@@ -403,7 +403,7 @@ static void AES_OpcodeInfo(FILE *fp, Uint16 opcode)
 
 		items = 0;
 		/* there are so few of these that linear search is fine */
-		for (i = 0; i < ARRAYSIZE(AESStrings); i++)
+		for (i = 0; i < ARRAY_SIZE(AESStrings); i++)
 		{
 			/* something that can be shown? */
 			if (AESStrings[i].code == opcode)
@@ -642,30 +642,30 @@ static const char* VDI_Opcode2Name(Uint16 opcode, Uint16 subcode)
 
 	if (opcode == 5)
 	{
-		if (subcode < ARRAYSIZE(names_opcode5)) {
+		if (subcode < ARRAY_SIZE(names_opcode5)) {
 			return names_opcode5[subcode];
 		}
 		if (subcode >= 98) {
 			subcode -= 98;
-			if (subcode < ARRAYSIZE(names_opcode5_98)) {
+			if (subcode < ARRAY_SIZE(names_opcode5_98)) {
 				return names_opcode5_98[subcode];
 			}
 		}
 	}
 	else if (opcode == 11)
 	{
-		if (subcode < ARRAYSIZE(names_opcode11)) {
+		if (subcode < ARRAY_SIZE(names_opcode11)) {
 			return names_opcode11[subcode];
 		}
 	}
-	else if (opcode < ARRAYSIZE(names_0))
+	else if (opcode < ARRAY_SIZE(names_0))
 	{
 		return names_0[opcode];
 	}
 	else if (opcode >= 100)
 	{
 		opcode -= 100;
-		if (opcode < ARRAYSIZE(names_100))
+		if (opcode < ARRAY_SIZE(names_100))
 		{
 			return names_100[opcode];
 		}

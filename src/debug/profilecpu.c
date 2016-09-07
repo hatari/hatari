@@ -310,13 +310,13 @@ void Profile_CpuShowCaches(void)
 		return;
 	}
 	show_histogram("Instruction cache hits per instruction",
-		       ARRAYSIZE(cpu_profile.i_hit_counts), cpu_profile.i_hit_counts);
+		       ARRAY_SIZE(cpu_profile.i_hit_counts), cpu_profile.i_hit_counts);
 	show_histogram("Instruction cache misses per instruction",
-		       ARRAYSIZE(cpu_profile.i_miss_counts), cpu_profile.i_miss_counts);
+		       ARRAY_SIZE(cpu_profile.i_miss_counts), cpu_profile.i_miss_counts);
 	show_histogram("Data cache hits per instruction",
-		       ARRAYSIZE(cpu_profile.d_hit_counts), cpu_profile.d_hit_counts);
+		       ARRAY_SIZE(cpu_profile.d_hit_counts), cpu_profile.d_hit_counts);
 	show_histogram("Data cache misses per instruction",
-		       ARRAYSIZE(cpu_profile.d_miss_counts), cpu_profile.d_miss_counts);
+		       ARRAY_SIZE(cpu_profile.d_miss_counts), cpu_profile.d_miss_counts);
 }
 #else
 void Profile_CpuShowCaches(void) {

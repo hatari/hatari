@@ -411,7 +411,7 @@ static const char* XBios_Call2Name(Uint16 opcode)
 		NULL,	/* 164 */
 		"WavePlay"
 	};
-	if (opcode < ARRAYSIZE(names) && names[opcode]) {
+	if (opcode < ARRAY_SIZE(names) && names[opcode]) {
 		return names[opcode];
 	}
 	return "???";

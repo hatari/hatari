@@ -97,7 +97,7 @@ static const char* Bios_Call2Name(Uint16 opcode)
 		"Rwabs",  "Setexc",  "Tickcal","Getbpb",
 		"Bcostat","Mediach", "Drvmap", "Kbshift"
 	};
-	if (opcode < ARRAYSIZE(names) && names[opcode]) {
+	if (opcode < ARRAY_SIZE(names) && names[opcode]) {
 		return names[opcode];
 	}
 	return "???";

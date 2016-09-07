@@ -354,7 +354,7 @@ void Dialog_WindowDlg(void)
 	else
 		windowdlg[DLGSCRN_NONE].state |= SG_SELECTED;
 
-	for (i = 0; i < ARRAYSIZE(skip_frames); i++)
+	for (i = 0; i < ARRAY_SIZE(skip_frames); i++)
 	{
 		if (ConfigureParams.Screen.nFrameSkips >= skip_frames[i])
 			skip = i;
