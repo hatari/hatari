@@ -28,14 +28,14 @@ const char Joy_fileid[] = "Hatari joy.c : " __DATE__ " " __TIME__;
 #define Dprintf(a)
 #endif
 
-#define JOY_BUTTON1  1
-#define JOY_BUTTON2  2
+#define JOYREADING_BUTTON1  1		/* bit 0 */
+#define JOYREADING_BUTTON2  2		/* bit 1 */
 
 typedef struct
 {
 	int XPos,YPos;                /* the actually read axis values in range of -32768...0...32767 */
 	int XAxisID,YAxisID;          /* the IDs of the physical PC joystick's axis to be used to gain ST joystick axis input */
-	int Buttons;                  /* JOY_BUTTON1 */
+	int Buttons;                  /* JOYREADING_BUTTON1 */
 } JOYREADING;
 
 typedef struct
@@ -206,7 +206,7 @@ static bool Joy_ReadJoystick(int nSdlJoyID, JOYREADING *pJoyReading)
 	pJoyReading->Buttons = SDL_JoystickGetButton(sdlJoystick[nSdlJoyID], 0);
 	/* Sets bit #1 if button #2 is pressed: */
 	if (SDL_JoystickGetButton(sdlJoystick[nSdlJoyID], 1))
-		pJoyReading->Buttons |= JOY_BUTTON2;
+		pJoyReading->Buttons |= JOYREADING_BUTTON2;
 
 	return true;
 }
@@ -275,11 +275,11 @@ Uint8 Joy_GetStickData(int nStJoyId)
 			nData |= ATARIJOY_BITMASK_RIGHT;
 
 		/* PC Joystick button 1 is set as ST joystick button */
-		if (JoyReading.Buttons & JOY_BUTTON1)
+		if (JoyReading.Buttons & JOYREADING_BUTTON1)
 			nData |= ATARIJOY_BITMASK_FIRE;
 
 		/* Enable PC Joystick button 2 to mimick space bar (For XenonII, Flying Shark etc...) */
-		if (nStJoyId == JOYID_JOYSTICK1 && (JoyReading.Buttons & JOY_BUTTON2))
+		if (nStJoyId == JOYID_JOYSTICK1 && (JoyReading.Buttons & JOYREADING_BUTTON2))
 		{
 			if (ConfigureParams.Joysticks.Joy[nStJoyId].bEnableJumpOnFire2)
 			{

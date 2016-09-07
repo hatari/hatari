@@ -98,13 +98,13 @@ extern void IoMem_UnInit(void);
 extern void IoMem_Init_FalconInSTeBuscompatibilityMode(Uint8 value);
 
 
-extern uae_u32 IoMem_bget(uaecptr addr);
-extern uae_u32 IoMem_wget(uaecptr addr);
-extern uae_u32 IoMem_lget(uaecptr addr);
+extern uae_u32 REGPARAM3 IoMem_bget(uaecptr addr);
+extern uae_u32 REGPARAM3 IoMem_wget(uaecptr addr);
+extern uae_u32 REGPARAM3 IoMem_lget(uaecptr addr);
 
-extern void IoMem_bput(uaecptr addr, uae_u32 val);
-extern void IoMem_wput(uaecptr addr, uae_u32 val);
-extern void IoMem_lput(uaecptr addr, uae_u32 val);
+extern void REGPARAM3 IoMem_bput(uaecptr addr, uae_u32 val);
+extern void REGPARAM3 IoMem_wput(uaecptr addr, uae_u32 val);
+extern void REGPARAM3 IoMem_lput(uaecptr addr, uae_u32 val);
 
 extern void IoMem_BusErrorEvenReadAccess(void);
 extern void IoMem_BusErrorOddReadAccess(void);

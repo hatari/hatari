@@ -56,8 +56,8 @@ static uae_u32 TTmem_mask;
 #define IOmem_mask  (IOmem_size - 1)
 
 /* Some prototypes: */
-static int STmem_check (uaecptr addr, uae_u32 size) REGPARAM;
-static uae_u8 *STmem_xlate (uaecptr addr) REGPARAM;
+static int REGPARAM3 STmem_check (uaecptr addr, uae_u32 size) REGPARAM;
+static uae_u8 REGPARAM3 *STmem_xlate (uaecptr addr) REGPARAM;
 
 
 
@@ -387,7 +387,7 @@ static int REGPARAM2 dummy_check (uaecptr addr, uae_u32 size)
 	return 0;
 }
 
-static uae_u8 *dummy_xlate(uaecptr addr)
+static uae_u8 REGPARAM3 *dummy_xlate(uaecptr addr)
 {
     write_log("Your Atari program just did something terribly stupid:"
               " dummy_xlate($%x)\n", addr);
@@ -489,7 +489,7 @@ uae_u8 *REGPARAM3 sub_bank_xlate(uaecptr addr) REGPARAM
 
 /* **** This memory bank only generates bus errors **** */
 
-static uae_u32 BusErrMem_lget(uaecptr addr)
+static uae_u32 REGPARAM3 BusErrMem_lget(uaecptr addr)
 {
     print_illegal_counted("Bus error lget", addr);
 
@@ -497,7 +497,7 @@ static uae_u32 BusErrMem_lget(uaecptr addr)
     return 0;
 }
 
-static uae_u32 BusErrMem_wget(uaecptr addr)
+static uae_u32 REGPARAM3 BusErrMem_wget(uaecptr addr)
 {
     print_illegal_counted("Bus error wget", addr);
 
@@ -505,7 +505,7 @@ static uae_u32 BusErrMem_wget(uaecptr addr)
     return 0;
 }
 
-static uae_u32 BusErrMem_bget(uaecptr addr)
+static uae_u32 REGPARAM3 BusErrMem_bget(uaecptr addr)
 {
     print_illegal_counted("Bus error bget", addr);
 
@@ -513,28 +513,28 @@ static uae_u32 BusErrMem_bget(uaecptr addr)
     return 0;
 }
 
-static void BusErrMem_lput(uaecptr addr, uae_u32 l)
+static void REGPARAM3 BusErrMem_lput(uaecptr addr, uae_u32 l)
 {
     print_illegal_counted("Bus error lput", addr);
 
     M68000_BusError(addr, 0, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
 }
 
-static void BusErrMem_wput(uaecptr addr, uae_u32 w)
+static void REGPARAM3 BusErrMem_wput(uaecptr addr, uae_u32 w)
 {
     print_illegal_counted("Bus error wput", addr);
 
     M68000_BusError(addr, 0, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
 }
 
-static void BusErrMem_bput(uaecptr addr, uae_u32 b)
+static void REGPARAM3 BusErrMem_bput(uaecptr addr, uae_u32 b)
 {
     print_illegal_counted("Bus error bput", addr);
 
     M68000_BusError(addr, 0, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
 }
 
-static int BusErrMem_check(uaecptr addr, uae_u32 size)
+static int REGPARAM3 BusErrMem_check(uaecptr addr, uae_u32 size)
 {
     if (illegal_mem)
 	write_log ("Bus error check at %08lx\n", (long)addr);
@@ -542,7 +542,7 @@ static int BusErrMem_check(uaecptr addr, uae_u32 size)
     return 0;
 }
 
-static uae_u8 *BusErrMem_xlate (uaecptr addr)
+static uae_u8 REGPARAM3 *BusErrMem_xlate (uaecptr addr)
 {
     write_log("Your Atari program just did something terribly stupid:"
               " BusErrMem_xlate($%x)\n", addr);
@@ -557,56 +557,56 @@ static uae_u8 *BusErrMem_xlate (uaecptr addr)
 /*static uae_u8 *STmemory;*/
 #define STmemory STRam
 
-static uae_u32 STmem_lget(uaecptr addr)
+static uae_u32 REGPARAM3 STmem_lget(uaecptr addr)
 {
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
     return do_get_mem_long(STmemory + addr);
 }
 
-static uae_u32 STmem_wget(uaecptr addr)
+static uae_u32 REGPARAM3 STmem_wget(uaecptr addr)
 {
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
     return do_get_mem_word(STmemory + addr);
 }
 
-static uae_u32 STmem_bget(uaecptr addr)
+static uae_u32 REGPARAM3 STmem_bget(uaecptr addr)
 {
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
     return STmemory[addr];
 }
 
-static void STmem_lput(uaecptr addr, uae_u32 l)
+static void REGPARAM3 STmem_lput(uaecptr addr, uae_u32 l)
 {
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
     do_put_mem_long(STmemory + addr, l);
 }
 
-static void STmem_wput(uaecptr addr, uae_u32 w)
+static void REGPARAM3 STmem_wput(uaecptr addr, uae_u32 w)
 {
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
     do_put_mem_word(STmemory + addr, w);
 }
 
-static void STmem_bput(uaecptr addr, uae_u32 b)
+static void REGPARAM3 STmem_bput(uaecptr addr, uae_u32 b)
 {
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
     STmemory[addr] = b;
 }
 
-static int STmem_check(uaecptr addr, uae_u32 size)
+static int REGPARAM3 STmem_check(uaecptr addr, uae_u32 size)
 {
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
     return (addr + size) <= STmem_size;
 }
 
-static uae_u8 *STmem_xlate(uaecptr addr)
+static uae_u8 REGPARAM3 *STmem_xlate(uaecptr addr)
 {
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
@@ -621,7 +621,7 @@ static uae_u8 *STmem_xlate(uaecptr addr)
  * 8 bytes of the ST memory are also a mirror of the TOS ROM, so they are write
  * protected!
  */
-static uae_u32 SysMem_lget(uaecptr addr)
+static uae_u32 REGPARAM3 SysMem_lget(uaecptr addr)
 {
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
@@ -635,7 +635,7 @@ static uae_u32 SysMem_lget(uaecptr addr)
     return do_get_mem_long(STmemory + addr);
 }
 
-static uae_u32 SysMem_wget(uaecptr addr)
+static uae_u32 REGPARAM3 SysMem_wget(uaecptr addr)
 {
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
@@ -650,7 +650,7 @@ static uae_u32 SysMem_wget(uaecptr addr)
     return do_get_mem_word(STmemory + addr);
 }
 
-static uae_u32 SysMem_bget(uaecptr addr)
+static uae_u32 REGPARAM3 SysMem_bget(uaecptr addr)
 {
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
@@ -664,7 +664,7 @@ static uae_u32 SysMem_bget(uaecptr addr)
     return STmemory[addr];
 }
 
-static void SysMem_lput(uaecptr addr, uae_u32 l)
+static void REGPARAM3 SysMem_lput(uaecptr addr, uae_u32 l)
 {
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
@@ -678,7 +678,7 @@ static void SysMem_lput(uaecptr addr, uae_u32 l)
     do_put_mem_long(STmemory + addr, l);
 }
 
-static void SysMem_wput(uaecptr addr, uae_u32 w)
+static void REGPARAM3 SysMem_wput(uaecptr addr, uae_u32 w)
 {
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
@@ -699,7 +699,7 @@ static void SysMem_wput(uaecptr addr, uae_u32 w)
     do_put_mem_word(STmemory + addr, w);
 }
 
-static void SysMem_bput(uaecptr addr, uae_u32 b)
+static void REGPARAM3 SysMem_bput(uaecptr addr, uae_u32 b)
 {
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
@@ -724,34 +724,34 @@ static void SysMem_bput(uaecptr addr, uae_u32 b)
  * prefetch register to decode the next opcode (tested on a real STF)
  */
 
-static uae_u32 VoidMem_lget(uaecptr addr)
+static uae_u32 REGPARAM3 VoidMem_lget(uaecptr addr)
 {
     return 0;
 }
 
-static uae_u32 VoidMem_wget(uaecptr addr)
+static uae_u32 REGPARAM3 VoidMem_wget(uaecptr addr)
 {
     return 0;
 }
 
-static uae_u32 VoidMem_bget(uaecptr addr)
+static uae_u32 REGPARAM3 VoidMem_bget(uaecptr addr)
 {
     return 0;
 }
 
-static void VoidMem_lput(uaecptr addr, uae_u32 l)
+static void REGPARAM3 VoidMem_lput(uaecptr addr, uae_u32 l)
 {
 }
 
-static void VoidMem_wput(uaecptr addr, uae_u32 w)
+static void REGPARAM3 VoidMem_wput(uaecptr addr, uae_u32 w)
 {
 }
 
-static void VoidMem_bput (uaecptr addr, uae_u32 b)
+static void REGPARAM3 VoidMem_bput (uaecptr addr, uae_u32 b)
 {
 }
 
-static int VoidMem_check(uaecptr addr, uae_u32 size)
+static int REGPARAM3 VoidMem_check(uaecptr addr, uae_u32 size)
 {
     if (illegal_mem)
 	write_log ("Void memory check at %08lx\n", (long)addr);
@@ -759,7 +759,7 @@ static int VoidMem_check(uaecptr addr, uae_u32 size)
     return 0;
 }
 
-static uae_u8 *VoidMem_xlate (uaecptr addr)
+static uae_u8 REGPARAM3 *VoidMem_xlate (uaecptr addr)
 {
     write_log("Your Atari program just did something terribly stupid:"
               " VoidMem_xlate($%x)\n", addr);
@@ -772,56 +772,56 @@ static uae_u8 *VoidMem_xlate (uaecptr addr)
 
 uae_u8 *TTmemory;
 
-static uae_u32 TTmem_lget(uaecptr addr)
+static uae_u32 REGPARAM3 TTmem_lget(uaecptr addr)
 {
     addr -= TTmem_start & TTmem_mask;
     addr &= TTmem_mask;
     return do_get_mem_long(TTmemory + addr);
 }
 
-static uae_u32 TTmem_wget(uaecptr addr)
+static uae_u32 REGPARAM3 TTmem_wget(uaecptr addr)
 {
     addr -= TTmem_start & TTmem_mask;
     addr &= TTmem_mask;
     return do_get_mem_word(TTmemory + addr);
 }
 
-static uae_u32 TTmem_bget(uaecptr addr)
+static uae_u32 REGPARAM3 TTmem_bget(uaecptr addr)
 {
     addr -= TTmem_start & TTmem_mask;
     addr &= TTmem_mask;
     return TTmemory[addr];
 }
 
-static void TTmem_lput(uaecptr addr, uae_u32 l)
+static void REGPARAM3 TTmem_lput(uaecptr addr, uae_u32 l)
 {
     addr -= TTmem_start & TTmem_mask;
     addr &= TTmem_mask;
     do_put_mem_long(TTmemory + addr, l);
 }
 
-static void TTmem_wput(uaecptr addr, uae_u32 w)
+static void REGPARAM3 TTmem_wput(uaecptr addr, uae_u32 w)
 {
     addr -= TTmem_start & TTmem_mask;
     addr &= TTmem_mask;
     do_put_mem_word(TTmemory + addr, w);
 }
 
-static void TTmem_bput(uaecptr addr, uae_u32 b)
+static void REGPARAM3 TTmem_bput(uaecptr addr, uae_u32 b)
 {
     addr -= TTmem_start & TTmem_mask;
     addr &= TTmem_mask;
     TTmemory[addr] = b;
 }
 
-static int TTmem_check(uaecptr addr, uae_u32 size)
+static int REGPARAM3 TTmem_check(uaecptr addr, uae_u32 size)
 {
     addr -= TTmem_start & TTmem_mask;
     addr &= TTmem_mask;
     return (addr + size) <= TTmem_size;
 }
 
-static uae_u8 *TTmem_xlate(uaecptr addr)
+static uae_u8 REGPARAM3 *TTmem_xlate(uaecptr addr)
 {
     addr -= TTmem_start & TTmem_mask;
     addr &= TTmem_mask;
@@ -833,56 +833,56 @@ static uae_u8 *TTmem_xlate(uaecptr addr)
 
 uae_u8 *ROMmemory;
 
-static uae_u32 ROMmem_lget(uaecptr addr)
+static uae_u32 REGPARAM3 ROMmem_lget(uaecptr addr)
 {
     addr -= ROMmem_start & ROMmem_mask;
     addr &= ROMmem_mask;
     return do_get_mem_long(ROMmemory + addr);
 }
 
-static uae_u32 ROMmem_wget(uaecptr addr)
+static uae_u32 REGPARAM3 ROMmem_wget(uaecptr addr)
 {
     addr -= ROMmem_start & ROMmem_mask;
     addr &= ROMmem_mask;
     return do_get_mem_word(ROMmemory + addr);
 }
 
-static uae_u32 ROMmem_bget(uaecptr addr)
+static uae_u32 REGPARAM3 ROMmem_bget(uaecptr addr)
 {
     addr -= ROMmem_start & ROMmem_mask;
     addr &= ROMmem_mask;
     return ROMmemory[addr];
 }
 
-static void ROMmem_lput(uaecptr addr, uae_u32 b)
+static void REGPARAM3 ROMmem_lput(uaecptr addr, uae_u32 b)
 {
     print_illegal_counted("Illegal ROMmem lput", addr);
 
     M68000_BusError(addr, 0, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
 }
 
-static void ROMmem_wput(uaecptr addr, uae_u32 b)
+static void REGPARAM3 ROMmem_wput(uaecptr addr, uae_u32 b)
 {
     print_illegal_counted("Illegal ROMmem wput", addr);
 
     M68000_BusError(addr, 0, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
 }
 
-static void ROMmem_bput(uaecptr addr, uae_u32 b)
+static void REGPARAM3 ROMmem_bput(uaecptr addr, uae_u32 b)
 {
     print_illegal_counted("Illegal ROMmem bput", addr);
 
     M68000_BusError(addr, 0, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
 }
 
-static int ROMmem_check(uaecptr addr, uae_u32 size)
+static int REGPARAM3 ROMmem_check(uaecptr addr, uae_u32 size)
 {
     addr -= ROMmem_start & ROMmem_mask;
     addr &= ROMmem_mask;
     return (addr + size) <= ROMmem_size;
 }
 
-static uae_u8 *ROMmem_xlate(uaecptr addr)
+static uae_u8 REGPARAM3 *ROMmem_xlate(uaecptr addr)
 {
     addr -= ROMmem_start & ROMmem_mask;
     addr &= ROMmem_mask;
@@ -895,14 +895,14 @@ static uae_u8 *ROMmem_xlate(uaecptr addr)
 
 static uae_u8 *IdeMemory;
 
-static int IdeMem_check(uaecptr addr, uae_u32 size)
+static int REGPARAM3 IdeMem_check(uaecptr addr, uae_u32 size)
 {
     addr -= IdeMem_start;
     addr &= IdeMem_mask;
     return (addr + size) <= IdeMem_size;
 }
 
-static uae_u8 *IdeMem_xlate(uaecptr addr)
+static uae_u8 REGPARAM3 *IdeMem_xlate(uaecptr addr)
 {
     addr -= IdeMem_start;
     addr &= IdeMem_mask;
@@ -915,14 +915,14 @@ static uae_u8 *IdeMem_xlate(uaecptr addr)
 
 uae_u8 *IOmemory;
 
-static int IOmem_check(uaecptr addr, uae_u32 size)
+static int REGPARAM3 IOmem_check(uaecptr addr, uae_u32 size)
 {
     addr -= IOmem_start;
     addr &= IOmem_mask;
     return (addr + size) <= IOmem_size;
 }
 
-static uae_u8 *IOmem_xlate(uaecptr addr)
+static uae_u8 REGPARAM3 *IOmem_xlate(uaecptr addr)
 {
     addr -= IOmem_start;
     addr &= IOmem_mask;

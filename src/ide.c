@@ -80,7 +80,7 @@ static uint32_t fcha2io(uint32_t address)
 /**
  * Handle byte read access from IDE IO memory.
  */
-uae_u32 Ide_Mem_bget(uaecptr addr)
+uae_u32 REGPARAM3 Ide_Mem_bget(uaecptr addr)
 {
 	int ideport;
 	uint8_t retval;
@@ -117,7 +117,7 @@ uae_u32 Ide_Mem_bget(uaecptr addr)
 /**
  * Handle word read access from IDE IO memory.
  */
-uae_u32 Ide_Mem_wget(uaecptr addr)
+uae_u32 REGPARAM3 Ide_Mem_wget(uaecptr addr)
 {
 	uint16_t retval;
 
@@ -147,7 +147,7 @@ uae_u32 Ide_Mem_wget(uaecptr addr)
 /**
  * Handle long-word read access from IDE IO memory.
  */
-uae_u32 Ide_Mem_lget(uaecptr addr)
+uae_u32 REGPARAM3 Ide_Mem_lget(uaecptr addr)
 {
 	uint32_t retval;
 
@@ -180,7 +180,7 @@ uae_u32 Ide_Mem_lget(uaecptr addr)
 /**
  * Handle byte write access to IDE IO memory.
  */
-void Ide_Mem_bput(uaecptr addr, uae_u32 val)
+void REGPARAM3 Ide_Mem_bput(uaecptr addr, uae_u32 val)
 {
 	int ideport;
 
@@ -212,7 +212,7 @@ void Ide_Mem_bput(uaecptr addr, uae_u32 val)
 /**
  * Handle word write access to IDE IO memory.
  */
-void Ide_Mem_wput(uaecptr addr, uae_u32 val)
+void REGPARAM3 Ide_Mem_wput(uaecptr addr, uae_u32 val)
 {
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 	val &= 0x0ffff;
@@ -236,7 +236,7 @@ void Ide_Mem_wput(uaecptr addr, uae_u32 val)
 /**
  * Handle long-word write access to IDE IO memory.
  */
-void Ide_Mem_lput(uaecptr addr, uae_u32 val)
+void REGPARAM3 Ide_Mem_lput(uaecptr addr, uae_u32 val)
 {
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
