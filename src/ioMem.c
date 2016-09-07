@@ -374,7 +374,7 @@ void IoMem_UnInit(void)
 /**
  * Handle byte read access from IO memory.
  */
-uae_u32 IoMem_bget(uaecptr addr)
+uae_u32 REGPARAM3 IoMem_bget(uaecptr addr)
 {
 	Uint8 val;
 
@@ -425,7 +425,7 @@ uae_u32 IoMem_bget(uaecptr addr)
 /**
  * Handle word read access from IO memory.
  */
-uae_u32 IoMem_wget(uaecptr addr)
+uae_u32 REGPARAM3 IoMem_wget(uaecptr addr)
 {
 	Uint32 idx;
 	Uint16 val;
@@ -490,7 +490,7 @@ uae_u32 IoMem_wget(uaecptr addr)
 /**
  * Handle long-word read access from IO memory.
  */
-uae_u32 IoMem_lget(uaecptr addr)
+uae_u32 REGPARAM3 IoMem_lget(uaecptr addr)
 {
 	Uint32 idx;
 	Uint32 val;
@@ -558,7 +558,7 @@ uae_u32 IoMem_lget(uaecptr addr)
 /**
  * Handle byte write access to IO memory.
  */
-void IoMem_bput(uaecptr addr, uae_u32 val)
+void REGPARAM3 IoMem_bput(uaecptr addr, uae_u32 val)
 {
 	/* Check if access is made by a new instruction or by the same instruction doing multiple byte accesses */
 	if ( IoAccessInstrPrevClock == CyclesGlobalClockCounter )
@@ -604,7 +604,7 @@ void IoMem_bput(uaecptr addr, uae_u32 val)
 /**
  * Handle word write access to IO memory.
  */
-void IoMem_wput(uaecptr addr, uae_u32 val)
+void REGPARAM3 IoMem_wput(uaecptr addr, uae_u32 val)
 {
 	Uint32 idx;
 
@@ -665,7 +665,7 @@ void IoMem_wput(uaecptr addr, uae_u32 val)
 /**
  * Handle long-word write access to IO memory.
  */
-void IoMem_lput(uaecptr addr, uae_u32 val)
+void REGPARAM3 IoMem_lput(uaecptr addr, uae_u32 val)
 {
 	Uint32 idx;
 	int n;
