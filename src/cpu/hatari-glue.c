@@ -172,7 +172,7 @@ static bool is_cart_pc(void)
  * The GEMDOS vector (#$84) is setup and we also initialize the connected
  * drive mask and Line-A  variables (for an extended VDI resolution) from here.
  */
-uae_u32 OpCode_SysInit(uae_u32 opcode)
+uae_u32 REGPARAM3 OpCode_SysInit(uae_u32 opcode)
 {
 	if (is_cart_pc())
 	{
@@ -208,7 +208,7 @@ uae_u32 OpCode_SysInit(uae_u32 opcode)
  * Intercept GEMDOS calls.
  * Used for GEMDOS HD emulation (see gemdos.c).
  */
-uae_u32 OpCode_GemDos(uae_u32 opcode)
+uae_u32 REGPARAM3 OpCode_GemDos(uae_u32 opcode)
 {
 	if (is_cart_pc())
 	{
@@ -230,7 +230,7 @@ uae_u32 OpCode_GemDos(uae_u32 opcode)
 /**
  * This is called after completion of each VDI call
  */
-uae_u32 OpCode_VDI(uae_u32 opcode)
+uae_u32 REGPARAM3 OpCode_VDI(uae_u32 opcode)
 {
 	/* this is valid only after VDI trap, called from cartridge code */
 	if (VDI_OldPC && is_cart_pc())
@@ -256,7 +256,7 @@ uae_u32 OpCode_VDI(uae_u32 opcode)
 /**
  * Emulator Native Features ID opcode interception.
  */
-uae_u32 OpCode_NatFeat_ID(uae_u32 opcode)
+uae_u32 REGPARAM3 OpCode_NatFeat_ID(uae_u32 opcode)
 {
 	Uint32 stack = Regs[REG_A7] + SIZE_LONG;	/* skip return address */
 
@@ -270,7 +270,7 @@ uae_u32 OpCode_NatFeat_ID(uae_u32 opcode)
 /**
  * Emulator Native Features call opcode interception.
  */
-uae_u32 OpCode_NatFeat_Call(uae_u32 opcode)
+uae_u32 REGPARAM3 OpCode_NatFeat_Call(uae_u32 opcode)
 {
 	Uint32 stack = Regs[REG_A7] + SIZE_LONG;	/* skip return address */
 	Uint16 SR = M68000_GetSR();
