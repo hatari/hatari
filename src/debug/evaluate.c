@@ -60,7 +60,7 @@ const char Eval_fileid[] = "Hatari calculate.c : " __DATE__ " " __TIME__;
 static struct {
 	const char *error;		/* global error code		*/
 	bool valid;			/* value validation		*/
-} id = {0, 0};
+} id = { NULL, 0 };
 
 /* parenthesis and function stacks					*/
 static struct {

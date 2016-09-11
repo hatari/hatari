@@ -831,7 +831,7 @@ static uae_u8 REGPARAM3 *TTmem_xlate(uaecptr addr)
 
 /* **** ROM memory **** */
 
-uae_u8 *ROMmemory;
+static uae_u8 *ROMmemory;
 
 static uae_u32 REGPARAM3 ROMmem_lget(uaecptr addr)
 {
@@ -913,7 +913,7 @@ static uae_u8 REGPARAM3 *IdeMem_xlate(uaecptr addr)
 /* Hardware IO memory */
 /* see also ioMem.c */
 
-uae_u8 *IOmemory;
+static uae_u8 *IOmemory;
 
 static int REGPARAM3 IOmem_check(uaecptr addr, uae_u32 size)
 {

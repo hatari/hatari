@@ -114,7 +114,7 @@ static void Paths_GetExecDirFromPATH(const char *argv0, char *pExecDir, int nMax
 			strlcpy(pExecDir, pAct, nMaxLen);
 			break;
 		}
-		pAct = strtok (0, pToken);
+		pAct = strtok (NULL, pToken);
   	}
 
 	free(pPathEnv);
@@ -164,7 +164,7 @@ static char *Paths_InitExecDir(const char *argv0)
 	/* If we do not have the execdir yet, analyze argv[0] and the PATH: */
 	if (psExecDir[0] == 0)
 	{
-		if (strchr(argv0, PATHSEP) == 0)
+		if (strchr(argv0, PATHSEP) == NULL)
 		{
 			/* No separator in argv[0], we have to explore PATH... */
 			Paths_GetExecDirFromPATH(argv0, psExecDir, FILENAME_MAX);

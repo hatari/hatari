@@ -291,7 +291,7 @@ TCHAR* buf_out (TCHAR *buffer, int *bufsize, const TCHAR *format, ...)
 
 	if (buffer == NULL)
 	{
-		return 0;
+		return NULL;
 	}
 
 	va_start (parms, format);

@@ -56,7 +56,7 @@ static int ipl_fetched;
 static int optimized_flags;
 
 #ifdef WINUAE_FOR_HATARI
-long nCurInstrCycPos;				/* Hatari only : Stores where we have to patch in the current cycles value */
+static long nCurInstrCycPos;	/* Hatari only : Stores where we have to patch in the current cycles value */
 #endif
 
 #define GF_APDI 1
