@@ -148,7 +148,9 @@ static const fptype fsizes[] = { -128.0, 127.0, -32768.0, 32767.0, -2147483648.0
 #define FP_UNDERFLOW (1 << 11)
 #define FP_OVERFLOW (1 << 12)
 #define FP_OPERAND (1 << 13)
+#ifndef WINUAE_FOR_HATARI
 #define FP_SNAN (1 << 14)
+#endif
 #define FP_BSUN (1 << 15)
 
 STATIC_INLINE void MAKE_FPSR (fptype *fp)
