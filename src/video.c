@@ -650,12 +650,10 @@ static int		VideoTiming;
 /*--------------------------------------------------------------*/
 
 static void	Video_InitTimings_Copy ( VIDEO_TIMING *pSrc , VIDEO_TIMING *pDest , int inc );
-static void	Video_InitTimings_Round ( VIDEO_TIMING *pSrc );
 
 static Uint32	Video_CalculateAddress ( void );
 static int	Video_GetMMUStartCycle ( int DisplayStartCycle );
 static void	Video_WriteToGlueShifterRes ( Uint8 Res );
-static void	Video_Sync_SetDefaultStartEnd ( Uint8 Freq , int HblCounterVideo , int LineCycles );
 static void	Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , int LineCycles , bool WriteToRes );
 
 static int	Video_HBL_GetDefaultPos ( void );
@@ -815,7 +813,6 @@ void	Video_InitTimings(void)
 {
 	VIDEO_TIMING	*pVideoTiming1;
 	VIDEO_TIMING	*pVideoTiming2;
-	int		i;
 
 	/* Init all timings for STF machine */
 	pVideoTiming1 = &VideoTimings[ VIDEO_TIMING_STF_WS1 ];
@@ -924,10 +921,6 @@ void	Video_InitTimings(void)
 	pVideoTiming2->VideoTimingName = "TT";
 	Video_InitTimings_Copy ( pVideoTiming1 , pVideoTiming2 , 0 );
 
-	/* All freq/res timings must be rounded to the lowest 2 cycles */
-// 	for ( i=0 ; i<VIDEO_TIMING_MAX_NB ; i++ )
-// 		Video_InitTimings_Round ( &VideoTimings[ i ] );
-
 	/* Set timings to a default mode (this will be overriden later when choosing the emulated machine) */
 	pVideoTiming = &VideoTimings[ VIDEO_TIMING_DEFAULT ];
 }
@@ -979,35 +972,6 @@ static void	Video_InitTimings_Copy ( VIDEO_TIMING *pSrc , VIDEO_TIMING *pDest , 
 	pDest->Hbl_Int_Pos_Hi		= pSrc->Hbl_Int_Pos_Hi;
 }
 
-
-
-/*-----------------------------------------------------------------------*/
-/*
- * Depending on the wakeup states, some freq/res checks will happen on
- * a 1 cycle precision. As the CPU can only have a 2 cycles precision,
- * we must round those values to the lowest 2 cycles.
- */
-static void	Video_InitTimings_Round ( VIDEO_TIMING *pSrc )
-{
-	pSrc->Preload_Start_Hi &= 0xfffe;
-	pSrc->H_Start_Hi &= 0xfffe;
-	pSrc->Blank_Stop_Low_60 &= 0xfffe;
-	pSrc->Blank_Stop_Low_50 &= 0xfffe;
-	pSrc->Preload_Start_Low_60 &= 0xfffe;
-	pSrc->H_Start_Low_60 &= 0xfffe;
-	pSrc->Line_Set_Pal &= 0xfffe;
-	pSrc->Preload_Start_Low_50 &= 0xfffe;
-	pSrc->H_Start_Low_50 &= 0xfffe;
-	pSrc->H_Stop_Hi &= 0xfffe;
-	pSrc->Blank_Start_Hi &= 0xfffe;
-	pSrc->H_Stop_Low_60 &= 0xfffe;
-	pSrc->H_Stop_Low_50 &= 0xfffe;
-	pSrc->Blank_Start_Low &= 0xfffe;
-	pSrc->HSync_Start_Offset_Low &= 0xfffe;
-	pSrc->HSync_Stop_Offset_Low &= 0xfffe;
-	pSrc->RemoveTopBorder_Pos &= 0xfffe;
-	pSrc->RemoveBottomBorder_Pos &= 0xfffe;
-}
 
 
 
@@ -1362,7 +1326,6 @@ static int Video_GetMMUStartCycle ( int DisplayStartCycle )
 /**
  * Write to VideoShifter (0xff8260), resolution bits
  */
-#if 1
 static void Video_WriteToGlueShifterRes ( Uint8 Res )
 {
 	int FrameCycles, HblCounterVideo, LineCycles;
@@ -1378,7 +1341,6 @@ static void Video_WriteToGlueShifterRes ( Uint8 Res )
 	if ( Res == ShifterFrame.Res )
 		return;						/* do nothing */
 
-//fprintf ( stderr , "video addr 1 %x\n" , Video_CalculateAddress() );
 
 	Video_Update_Glue_State ( FrameCycles , HblCounterVideo , LineCycles , true );
 
@@ -1396,158 +1358,7 @@ static void Video_WriteToGlueShifterRes ( Uint8 Res )
 			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
 	}
 
-#if 0
-	if ( Res == 0x02 )					/* switch to high res */
-	{
-		if ( LineCycles < ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle )	/* start could be 0,52,56 */
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = LINE_START_CYCLE_71;
 
-		if ( ( LineCycles < ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle )	/* end could be 160,372,376,460 */
-		  && ( LineCycles < LINE_END_CYCLE_71 ) )
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle = LINE_END_CYCLE_71;
-	}
-	else							/* switch to lo/med res */
-	{
-		/* In lo/med res, display start/end depends on the freq register in $ff820a */
-		Video_Sync_SetDefaultStartEnd ( IoMem[0xff820a] & 2 , HblCounterVideo , LineCycles );
-	}
-
-
-	/* Remove left border : +26 bytes */
-	/* This can be done with a hi/lo res switch or a hi/med res switch */
-	if ( ( ShifterFrame.Res == 0x02 ) && ( Res == 0x00 )	/* switched from hi res to lo res */
-//	        && ( LineCycles >= 8 )				/* switch back to low res should be after cycle 8 */
-		&& ( ( ShifterFrame.ResPosHi.LineCycles < 12 ) || ( ShifterFrame.ResPosHi.LineCycles >= 504 ) )		/* switch to hi between 504 and 8 */
-	        && ( LineCycles <= (LINE_START_CYCLE_71+28) )
-	        && ( FrameCycles - ShifterFrame.ResPosHi.FrameCycles <= 32 ) )
-	{
-		if ( ( ( ConfigureParams.System.nMachineType == MACHINE_STE )	/* special case for 504/4 and 508/4 on STE -> add 20 bytes to left border */
-			|| ( ConfigureParams.System.nMachineType == MACHINE_MEGA_STE ) )
-			&& ( ( ( ShifterFrame.ResPosHi.LineCycles == 504 ) && ( LineCycles == 4 ) )
-			  || ( ( ShifterFrame.ResPosHi.LineCycles == 508 ) && ( LineCycles == 4 ) ) ) )
-		{
-			ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_LEFT_OFF_2_STE;
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = LINE_START_CYCLE_71+16;	/* starts 16 pixels later */
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = -8;		/* screen is shifted 8 pixels to the left */
-			LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect remove left 2 ste %d<->%d\n" ,
-				ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
-		}
-		else if ( ( ConfigureParams.System.nMachineType == MACHINE_ST )
-			&& ( LineCycles <= 4 ) )				/* on STF, if switch to lo/med before cycle 4, then left border is not removed */
-		{
-			/* Cancel hi res start position and update timings */
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = LINE_START_CYCLE_50;
-			/* In lo/med res, display start/end depends on the freq register in $ff820a */
-			Video_Sync_SetDefaultStartEnd ( IoMem[0xff820a] & 2 , HblCounterVideo , LineCycles );
-		}
-		else								/* other case for STF/STE -> add 26 bytes */
-		{
-			ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_LEFT_OFF;
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = LINE_START_CYCLE_71;
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = -4;		/* screen is shifted 4 pixels to the left */
-			LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect remove left %d<->%d\n" ,
-				ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
-		}
-	}
-
-	if ( ( ShifterFrame.Res == 0x02 ) && ( Res == 0x01 )	/* switched from hi res to med res */
-	        && ( LineCycles <= (LINE_START_CYCLE_71+20) )
-	        && ( FrameCycles - ShifterFrame.ResPosHi.FrameCycles <= 30 ) )
-	{
-		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_LEFT_OFF_MED;	/* a later switch to low res might gives right scrolling */
-		/* By default, this line will be in med res, except if we detect hardware scrolling later */
-		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_OVERSCAN_MED_RES | ( 2 << 20 );
-		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = LINE_START_CYCLE_71;
-		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect remove left med %d<->%d\n" ,
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
-	}
-
-	/* Empty line switching res on STF : switch to hi res on cycle 28, then go back to med/lo res */
-	/* This creates a 0 byte line, the video counter won't change for this line */
-	else if ( ( ShifterFrame.Res == 0x02 )			/* switched from hi res */
-		  && ( FrameCycles - ShifterFrame.ResPosHi.FrameCycles <= 16 )
-	          && ( ShifterFrame.ResPosHi.LineCycles == LINE_EMPTY_CYCLE_71_STF )
-		  && ( ConfigureParams.System.nMachineType == MACHINE_ST ) )
-	{
-		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_EMPTY_LINE;
-		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = 0;
-		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle = 0;
-		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect empty line res %d<->%d\n" ,
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
-	}
-
-	/* Empty line switching res on STE (switch is 4 cycles later than on STF) */
-	else if ( ( ShifterFrame.Res == 0x02 )			/* switched from hi res */
-		  && ( FrameCycles - ShifterFrame.ResPosHi.FrameCycles <= 16 )
-	          && ( ShifterFrame.ResPosHi.LineCycles == LINE_EMPTY_CYCLE_71_STE )
-		  && ( ( ConfigureParams.System.nMachineType == MACHINE_STE )
-		      || ( ConfigureParams.System.nMachineType == MACHINE_MEGA_STE ) ) )
-	{
-		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_EMPTY_LINE;
-		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = 0;
-		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle = 0;
-		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect empty line res %d<->%d\n" ,
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
-	}
-
-	/* Empty line switching res on STF : switch to hi res just before the HBL then go back to lo/med res */
-	/* Next HBL will be an empty line (used in 'No Buddies Land' and 'Delirious Demo IV / NGC') */
-	else if ( ( ShifterFrame.Res == 0x02 )			/* switched from hi res */
-	          && ( ( ShifterFrame.ResPosHi.LineCycles == 500-4 ) || ( ShifterFrame.ResPosHi.LineCycles == 500 ) )
-	          && ( LineCycles == 508 ) )
-	{
-		ShifterFrame.ShifterLines[ HblCounterVideo+1 ].BorderMask |= BORDERMASK_EMPTY_LINE;
-		ShifterFrame.ShifterLines[ HblCounterVideo+1 ].DisplayStartCycle = 0;
-		ShifterFrame.ShifterLines[ HblCounterVideo+1 ].DisplayEndCycle = 0;
-		BlankLines++;						/* no video signal at all for this line */
-		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect empty line res 2 %d<->%d for nHBL=%d\n" ,
-			ShifterFrame.ShifterLines[ HblCounterVideo+1 ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo+1 ].DisplayEndCycle , nHBL+1 );
-	}
-
-	/* Start right border near middle of the line : -106 bytes */
-	/* Switch to hi res just before the start of the right border in hi res, then go back to lo/med res */
-	if ( ( ShifterFrame.Res == 0x02 )				/* switched from hi res */
-	        && ( ShifterFrame.ResPosHi.HBL == HblCounterVideo )	/* switch during the same line */
-	        && ( ShifterFrame.ResPosHi.LineCycles <= LINE_END_CYCLE_71+4 )	/* switched to hi res before cycle 164 */
-	        && ( LineCycles >= LINE_END_CYCLE_71+4 ) )		/* switch to lo res after cycle 164 */
-	{
-		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_STOP_MIDDLE;
-		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle = LINE_END_CYCLE_71;
-		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect stop middle %d<->%d\n" ,
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
-	}
-
-	/* Remove right border a second time after removing it a first time. Display will */
-	/* stop at cycle 512 instead of 460. */
-	/* This removes left border on next line too (used in 'Enchanted Lands') */
-	/* If right border was not removed, then we will get an empty line for the next HBL (used in Beyond by Kruz) */
-	if ( ( ShifterFrame.Res == 0x02 )				/* switched from hi res */
-	        && ( LineCycles > LINE_END_CYCLE_50_2 )			/* switch to low just after end of right border */
-	        && ( ShifterFrame.ResPosHi.LineCycles <= LINE_END_CYCLE_50_2 )	/* switch to hi just before end of right border */
-	        && ( FrameCycles - ShifterFrame.ResPosHi.FrameCycles <= 20 ) )
-	{
-		if ( ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask & BORDERMASK_RIGHT_OFF )		/* Enchanted Lands */
-		{
-			ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_RIGHT_OFF_FULL;
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle = LINE_END_CYCLE_FULL;
-			ShifterFrame.ShifterLines[ HblCounterVideo+1 ].BorderMask |= BORDERMASK_LEFT_OFF;	/* no left border on next line */
-			ShifterFrame.ShifterLines[ HblCounterVideo+1 ].DisplayStartCycle = LINE_START_CYCLE_71;
-			LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect remove right full %d<->%d\n" ,
-				ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
-		}
-		else									/* Pax Plax Parralax in Beyond by Kruz */
-		{
-			ShifterFrame.ShifterLines[ HblCounterVideo+1 ].BorderMask = BORDERMASK_EMPTY_LINE;
-			ShifterFrame.ShifterLines[ HblCounterVideo+1 ].DisplayStartCycle = 0;
-			ShifterFrame.ShifterLines[ HblCounterVideo+1 ].DisplayEndCycle = 0;
-			LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect empty line res 3 %d<->%d for nHBL=%d\n" ,
-				ShifterFrame.ShifterLines[ HblCounterVideo+1 ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo+1 ].DisplayEndCycle , nHBL+1 );
-		}
-	}
-#endif
-//fprintf ( stderr , "video addr 2 %x\n" , Video_CalculateAddress() );
-
-#if 1
 	/* If left border is opened with hi/lo and we switch to medium resolution during the next cycles, */
 	/* then we assume a med res overscan line instead of a low res overscan line. */
 	/* Note that in that case, the switch to med res can shift the display by 0-3 words */
@@ -1684,8 +1495,6 @@ static void Video_WriteToGlueShifterRes ( Uint8 Res )
 	}
 	/* TEMP for 'death of the left border' by TNT */
 
-#endif
-
 
 	/* Store cycle position of this change of resolution */
 	ShifterFrame.Res = Res;
@@ -1711,305 +1520,6 @@ static void Video_WriteToGlueShifterRes ( Uint8 Res )
 		ShifterFrame.ResPosLo.LineCycles = LineCycles;
 	}
 }
-
-
-#else
-static void Video_WriteToGlueShifterRes ( Uint8 Res )
-{
-	int FrameCycles, HblCounterVideo, LineCycles;
-
-	Video_GetPosition_OnWriteAccess ( &FrameCycles , &HblCounterVideo , &LineCycles );
-
-	LOG_TRACE(TRACE_VIDEO_RES ,"shifter=0x%2.2X video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n",
-	               Res, FrameCycles, LineCycles, nHBL, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles );
-
-
-	/* Ignore consecutive writes of the same value */
-	if ( Res == ShifterFrame.Res )
-		return;						/* do nothing */
-
-
-	if ( Res == 0x02 )					/* switch to high res */
-	{
-		if ( LineCycles < ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle )	/* start could be 0,52,56 */
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = LINE_START_CYCLE_71;
-
-		if ( ( LineCycles < ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle )	/* end could be 160,372,376,460 */
-		  && ( LineCycles < LINE_END_CYCLE_71 ) )
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle = LINE_END_CYCLE_71;
-	}
-	else							/* switch to lo/med res */
-	{
-		/* In lo/med res, display start/end depends on the freq register in $ff820a */
-		Video_Sync_SetDefaultStartEnd ( IoMem[0xff820a] & 2 , HblCounterVideo , LineCycles );
-	}
-
-
-	/* Remove left border : +26 bytes */
-	/* This can be done with a hi/lo res switch or a hi/med res switch */
-	if ( ( ShifterFrame.Res == 0x02 ) && ( Res == 0x00 )	/* switched from hi res to lo res */
-//	        && ( LineCycles >= 8 )				/* switch back to low res should be after cycle 8 */
-		&& ( ( ShifterFrame.ResPosHi.LineCycles < 12 ) || ( ShifterFrame.ResPosHi.LineCycles >= 504 ) )		/* switch to hi between 504 and 8 */
-	        && ( LineCycles <= (LINE_START_CYCLE_71+28) )
-	        && ( FrameCycles - ShifterFrame.ResPosHi.FrameCycles <= 32 ) )
-	{
-		if ( Config_IsMachineSTE() 	/* special case for 504/4 and 508/4 on STE -> add 20 bytes to left border */
-			&& ( ( ( ShifterFrame.ResPosHi.LineCycles == 504 ) && ( LineCycles == 4 ) )
-			  || ( ( ShifterFrame.ResPosHi.LineCycles == 508 ) && ( LineCycles == 4 ) ) ) )
-		{
-			ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_LEFT_OFF_2_STE;
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = LINE_START_CYCLE_71+16;	/* starts 16 pixels later */
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = -8;		/* screen is shifted 8 pixels to the left */
-			LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect remove left 2 ste %d<->%d\n" ,
-				ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
-		}
-		else if (Config_IsMachineST() && LineCycles <= 4)		/* on STF, if switch to lo/med before cycle 4, then left border is not removed */
-		{
-			/* Cancel hi res start position and update timings */
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = LINE_START_CYCLE_50;
-			/* In lo/med res, display start/end depends on the freq register in $ff820a */
-			Video_Sync_SetDefaultStartEnd ( IoMem[0xff820a] & 2 , HblCounterVideo , LineCycles );
-		}
-		else								/* other case for STF/STE -> add 26 bytes */
-		{
-			ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_LEFT_OFF;
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = LINE_START_CYCLE_71;
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = -4;		/* screen is shifted 4 pixels to the left */
-			LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect remove left %d<->%d\n" ,
-				ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
-		}
-	}
-
-	if ( ( ShifterFrame.Res == 0x02 ) && ( Res == 0x01 )	/* switched from hi res to med res */
-	        && ( LineCycles <= (LINE_START_CYCLE_71+20) )
-	        && ( FrameCycles - ShifterFrame.ResPosHi.FrameCycles <= 30 ) )
-	{
-		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_LEFT_OFF_MED;	/* a later switch to low res might gives right scrolling */
-		/* By default, this line will be in med res, except if we detect hardware scrolling later */
-		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_OVERSCAN_MED_RES | ( 2 << 20 );
-		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = LINE_START_CYCLE_71;
-		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect remove left med %d<->%d\n" ,
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
-	}
-
-	/* Empty line switching res on STF : switch to hi res on cycle 28, then go back to med/lo res */
-	/* This creates a 0 byte line, the video counter won't change for this line */
-	else if ( ( ShifterFrame.Res == 0x02 )			/* switched from hi res */
-		  && ( FrameCycles - ShifterFrame.ResPosHi.FrameCycles <= 16 )
-	          && ( ShifterFrame.ResPosHi.LineCycles == LINE_EMPTY_CYCLE_71_STF )
-		  && Config_IsMachineST() )
-	{
-		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_EMPTY_LINE;
-		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = 0;
-		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle = 0;
-		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect empty line res %d<->%d\n" ,
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
-	}
-
-	/* Empty line switching res on STE (switch is 4 cycles later than on STF) */
-	else if ( ( ShifterFrame.Res == 0x02 )			/* switched from hi res */
-		  && ( FrameCycles - ShifterFrame.ResPosHi.FrameCycles <= 16 )
-	          && ( ShifterFrame.ResPosHi.LineCycles == LINE_EMPTY_CYCLE_71_STE )
-		  && Config_IsMachineSTE() )
-	{
-		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_EMPTY_LINE;
-		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = 0;
-		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle = 0;
-		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect empty line res %d<->%d\n" ,
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
-	}
-
-	/* Empty line switching res on STF : switch to hi res just before the HBL then go back to lo/med res */
-	/* Next HBL will be an empty line (used in 'No Buddies Land' and 'Delirious Demo IV / NGC') */
-	else if ( ( ShifterFrame.Res == 0x02 )			/* switched from hi res */
-	          && ( ( ShifterFrame.ResPosHi.LineCycles == 500-4 ) || ( ShifterFrame.ResPosHi.LineCycles == 500 ) )
-	          && ( LineCycles == 508 ) )
-	{
-		ShifterFrame.ShifterLines[ HblCounterVideo+1 ].BorderMask |= BORDERMASK_EMPTY_LINE;
-		ShifterFrame.ShifterLines[ HblCounterVideo+1 ].DisplayStartCycle = 0;
-		ShifterFrame.ShifterLines[ HblCounterVideo+1 ].DisplayEndCycle = 0;
-		BlankLines++;						/* no video signal at all for this line */
-		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect empty line res 2 %d<->%d for nHBL=%d\n" ,
-			ShifterFrame.ShifterLines[ HblCounterVideo+1 ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo+1 ].DisplayEndCycle , nHBL+1 );
-	}
-
-	/* Start right border near middle of the line : -106 bytes */
-	/* Switch to hi res just before the start of the right border in hi res, then go back to lo/med res */
-	if ( ( ShifterFrame.Res == 0x02 )				/* switched from hi res */
-	        && ( ShifterFrame.ResPosHi.HBL == HblCounterVideo )	/* switch during the same line */
-	        && ( ShifterFrame.ResPosHi.LineCycles <= LINE_END_CYCLE_71+4 )	/* switched to hi res before cycle 164 */
-	        && ( LineCycles >= LINE_END_CYCLE_71+4 ) )		/* switch to lo res after cycle 164 */
-	{
-		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_STOP_MIDDLE;
-		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle = LINE_END_CYCLE_71;
-		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect stop middle %d<->%d\n" ,
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
-	}
-
-	/* Remove right border a second time after removing it a first time. Display will */
-	/* stop at cycle 512 instead of 460. */
-	/* This removes left border on next line too (used in 'Enchanted Lands') */
-	/* If right border was not removed, then we will get an empty line for the next HBL (used in Beyond by Kruz) */
-	if ( ( ShifterFrame.Res == 0x02 )				/* switched from hi res */
-	        && ( LineCycles > LINE_END_CYCLE_50_2 )			/* switch to low just after end of right border */
-	        && ( ShifterFrame.ResPosHi.LineCycles <= LINE_END_CYCLE_50_2 )	/* switch to hi just before end of right border */
-	        && ( FrameCycles - ShifterFrame.ResPosHi.FrameCycles <= 20 ) )
-	{
-		if ( ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask & BORDERMASK_RIGHT_OFF )		/* Enchanted Lands */
-		{
-			ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_RIGHT_OFF_FULL;
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle = LINE_END_CYCLE_FULL;
-			ShifterFrame.ShifterLines[ HblCounterVideo+1 ].BorderMask |= BORDERMASK_LEFT_OFF;	/* no left border on next line */
-			ShifterFrame.ShifterLines[ HblCounterVideo+1 ].DisplayStartCycle = LINE_START_CYCLE_71;
-			LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect remove right full %d<->%d\n" ,
-				ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
-		}
-		else									/* Pax Plax Parralax in Beyond by Kruz */
-		{
-			ShifterFrame.ShifterLines[ HblCounterVideo+1 ].BorderMask = BORDERMASK_EMPTY_LINE;
-			ShifterFrame.ShifterLines[ HblCounterVideo+1 ].DisplayStartCycle = 0;
-			ShifterFrame.ShifterLines[ HblCounterVideo+1 ].DisplayEndCycle = 0;
-			LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect empty line res 3 %d<->%d for nHBL=%d\n" ,
-				ShifterFrame.ShifterLines[ HblCounterVideo+1 ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo+1 ].DisplayEndCycle , nHBL+1 );
-		}
-	}
-
-	/* If left border is opened with hi/lo and we switch to medium resolution during the next cycles, */
-	/* then we assume a med res overscan line instead of a low res overscan line. */
-	/* Note that in that case, the switch to med res can shift the display by 0-3 words */
-	/* Used in 'No Cooper' greetings by 1984 and 'Punish Your Machine' by Delta Force */
-	if ( ( ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask & BORDERMASK_LEFT_OFF )
-	        && ( Res == 0x01 ) )
-	{
-		if ( ( LineCycles == LINE_LEFT_MED_CYCLE_1 )		/* 'No Cooper' timing */
-		  || ( LineCycles == LINE_LEFT_MED_CYCLE_1+16 )	)	/* 'No Cooper' timing while removing bottom border */
-		{
-			LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect med res overscan offset 0 byte\n" );
-			ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_OVERSCAN_MED_RES | ( 0 << 20 );
-		}
-		else if ( LineCycles == LINE_LEFT_MED_CYCLE_2 )		/* 'Best Part Of The Creation / PYM' timing */
-		{
-			LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect med res overscan offset 2 bytes\n" );
-			ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_OVERSCAN_MED_RES | ( 2 << 20 );
-		}
-	}
-
-	/* If left border was opened with a hi/med res switch we need to check */
-	/* if the switch to low res can trigger a right hardware scrolling. */
-	/* We store the pixels count in DisplayPixelShift */
-	if ( ( ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask & BORDERMASK_LEFT_OFF_MED )
-	        && ( Res == 0x00 ) && ( LineCycles <= LINE_SCROLL_1_CYCLE_50 ) )
-	{
-		/* The hi/med switch was a switch to do low res hardware scrolling */
-		/* or to do a 'remove left' that includes a med res stabiliser, */
-		/* so we must cancel the med res overscan bit. */
-		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask &= (~BORDERMASK_OVERSCAN_MED_RES);
-
-		if ( LineCycles == LINE_LEFT_STAB_LOW )			/* cycle 16 */
-		{
-			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect remove left with med stab\n" );
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = 0;
-		}
-
-		else if ( LineCycles == LINE_SCROLL_13_CYCLE_50 )	/* cycle 20 */
-		{
-			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 13 pixels right scroll\n" );
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = 13;
-		}
-		else if ( LineCycles == LINE_SCROLL_9_CYCLE_50 )	/* cycle 24 */
-		{
-			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 9 pixels right scroll\n" );
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = 9;
-		}
-		else if ( LineCycles == LINE_SCROLL_5_CYCLE_50 )	/* cycle 28 */
-		{
-			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 5 pixels right scroll\n" );
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = 5;
-		}
-		else if ( LineCycles == LINE_SCROLL_1_CYCLE_50 )	/* cycle 32 */
-		{
-			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 1 pixel right scroll\n" );
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = 1;
-		}
-	}
-
-	/* Left border was removed with a hi/lo switch, then a med res switch was made */
-	/* Depending on the low res switch, the screen will be shifted as a low res overscan line */
-	/* This is a different method than the one used by ST Connexion with only 3 res switches */
-	/* (so we must cancel the med res overscan bit) */
-	if ( ( ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask & BORDERMASK_OVERSCAN_MED_RES )
-		&& ( ( ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask & ( 0xf << 20 ) ) == 0 )
-		&& ( Res == 0x00 ) && ( LineCycles <= 40 )  )
-	{
-		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask &= (~BORDERMASK_OVERSCAN_MED_RES);	/* cancel med res */
-
-		if ( LineCycles == 28 )
-		{
-			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 13 pixels right scroll 2\n" );
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = 13;
-		}
-		else if ( LineCycles == 32 )
-		{
-			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 9 pixels right scroll 2\n" );
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = 9;
-		}
-		else if ( LineCycles == 36 )
-		{
-			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 5 pixels right scroll 2\n" );
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = 5;
-		}
-		else if ( LineCycles == 40 )
-		{
-			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 1 pixel right scroll 2\n" );
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = 1;
-		}
-	}
-
-
-	/* Update HBL's position only if display has not reached pos LINE_START_CYCLE_50-2 */
-	/* and HBL interrupt was already handled at the beginning of this line. */
-	/* This also changes the number of cycles per line. */
-	if ( ( LineCycles <= LINE_START_CYCLE_50-2 ) && ( HblCounterVideo == nHBL ) )
-	{
-		nCyclesPerLine = Video_HBL_GetPos();
-#ifndef OLD_CPU_SHIFT
-		nCyclesPerLine <<= nCpuFreqShift;
-#endif
-		/* Don't modify HBL's position now if we're handling the special HBL for video counter restart */
-		if ( RestartVideoCounter == false )
-			Video_AddInterruptHBL ( HblCounterVideo , nCyclesPerLine );
-	}
-
-
-	/* Update Timer B's position */
-	LineTimerBPos = Video_TimerB_GetPos ( HblCounterVideo );
-	Video_AddInterruptTimerB ( HblCounterVideo , LineCycles , LineTimerBPos );
-
-
-	ShifterFrame.Res = Res;
-	if ( Res == 0x02 )						/* high res */
-	{
-		ShifterFrame.ResPosHi.VBL = nVBLs;
-		ShifterFrame.ResPosHi.FrameCycles = FrameCycles;
-		ShifterFrame.ResPosHi.HBL = HblCounterVideo;
-		ShifterFrame.ResPosHi.LineCycles = LineCycles;
-	}
-	else if ( Res == 0x01 )						/* med res */
-	{
-		ShifterFrame.ResPosMed.VBL = nVBLs;
-		ShifterFrame.ResPosMed.FrameCycles = FrameCycles;
-		ShifterFrame.ResPosMed.HBL = HblCounterVideo;
-		ShifterFrame.ResPosMed.LineCycles = LineCycles;
-	}
-	else								/* low res */
-	{
-		ShifterFrame.ResPosLo.VBL = nVBLs;
-		ShifterFrame.ResPosLo.FrameCycles = FrameCycles;
-		ShifterFrame.ResPosLo.HBL = HblCounterVideo;
-		ShifterFrame.ResPosLo.LineCycles = LineCycles;
-	}
-}
-#endif
 
 
 
@@ -2137,6 +1647,8 @@ static void Video_WriteToGlueShifterRes ( Uint8 Res )
     hbl = 512;
     if ( !no_de )
       end = 376
+      if (right-2)
+        cancel right-2
       left+2 50 Hz
 
   if ( STF & freq == 60 & pos > start_60 & pos <= start_50 & !no_de )
@@ -2930,13 +2442,13 @@ Freq_Test_Done:
 			else
 				VerticalOverscan &= ~V_OVERSCAN_NO_TOP;
 
-			VerticalOverscan &= ~V_OVERSCAN_BOTTOM_NO_DE;
+			VerticalOverscan &= ~V_OVERSCAN_NO_DE;
 		}
 		else
 		{
 			// TODO CHECK ON STF [NP] : if freq is changed after top_pos and before nStartHBL, then we get a screen
 			// where vertical DE is never activated ? (eg 60/50 Hz switch at end of line 62)
-			VerticalOverscan |= V_OVERSCAN_BOTTOM_NO_DE;
+			VerticalOverscan |= V_OVERSCAN_NO_DE;
 		}
 	}
 
@@ -3052,156 +2564,6 @@ void Video_Sync_WriteByte ( void )
 
 
 	Video_Update_Glue_State ( FrameCycles , HblCounterVideo , LineCycles , false );
-
-
-#if 0
-	if ( ( Freq == 0x02 )					/* switched from 60 Hz to 50 Hz ? */
-	        && ( HblCounterVideo >= nStartHBL )		/* only if display is on */
-	        && ( HblCounterVideo < nEndHBL + BlankLines ) )	/* only if display is on */
-	{
-		/* Blank line switching freq on STF : switch to 60 Hz on cycle 28, then go back to 50 Hz before pal start (cycle 56) */
-		/* This creates a blank line where no signal is displayed, but the video counter will still change for this line */
-		/* This blank line can be combined with left/right border changes */
-		/* TODO cause for this effect is not well known yet */
-		if ( ( LineCycles <= pVideoTiming->H_Start_Low_50 )
-			&& Config_IsMachineST() )
-		{
-			ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_BLANK_LINE;
-			LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect blank line freq stf\n"  );
-		}
-
-		/* Add 2 bytes to left border : switch to 60 Hz before LINE_START_CYCLE_60 to force an early start */
-		/* of the DE signal, then go back to 50 Hz. Note that depending on where the 50 Hz switch is made */
-		/* the HBL signal will be at position 508 (60 Hz line) or 512 (50 Hz line) */
-		/* Obtaining a +2 line with 512 cycles requires a 2 cycles precision and is "wakeup state" dependent : */
-		/*   - On STF, switch must be on cycles 36/56 or 36/54 (depending on wakeup state) */
-		/*   - On STE, switch can be on cycles 36/56 or 36/54 (no wakeup state in STE) */
-		/* This should also change HBL signal to be on cycles 508 or 512 (see below) */
-		if ( ( ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle == LINE_START_CYCLE_60 )
-		        && ( LineCycles >= pVideoTiming->Line_Set_Pal )		/* The line started in 60 Hz and continues in 50 Hz */
-		        && ( LineCycles <= ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle ) )	/* change when line is active */
-		{
-			/* [FIXME] 'Panic' by Paulo Simoes, dont' trigger left+2 (need 2 cycles precision) */
-			/* The switch to 50 Hz on line 34 cycle 56 should just start a normal 50 Hz line, not a left+2 */
-			/* For now, we detect that we're running 'Panic' and if so we don't do left+2 (ugly hack...) */
-			if ( ( STMemory_ReadLong ( M68000_GetPC() ) == 0x4e7352b8 )
-			  && ( STMemory_ReadLong ( M68000_GetPC()+4 ) == 0x04664e73 )
-			  && ( HblCounterVideo == 34 ) && ( LineCycles == 56 ) )
-			{
-				ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = LINE_START_CYCLE_50;
-			}
-			/* Same for WinUAE's cpu core : GetPC() points to the current instr, not to the next one */
-			if ( ( STMemory_ReadLong ( M68000_GetPC()+2 ) == 0x4e7352b8 )
-			  && ( STMemory_ReadLong ( M68000_GetPC()+4+2 ) == 0x04664e73 )
-			  && ( HblCounterVideo == 34 ) && ( LineCycles == 56 ) )
-			{
-				ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = LINE_START_CYCLE_50;
-			}
-
-			/* [FIXME] 'Gen 4 Demo' by Ziggy Stardust / OVR. Same problem as 'Panic' above */
-			/* The switch to 50 Hz on line 34 cycle 56 should just start a normal 50 Hz line, not a left+2 */
-			else if ( ( STMemory_ReadLong ( M68000_InstrPC+2 ) == 0x0002820a )
-			  && ( STMemory_ReadLong ( M68000_GetPC()+12 ) == 0x10388209 )
-			  && ( HblCounterVideo == 34 ) && ( LineCycles == 56 ) )
-			{
-			        ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = LINE_START_CYCLE_50;
-			}
-
-			/* Normal case where left+2 should be made */
-			/* - If switch to 50 Hz is made at cycle 54 (requires 2 cycle precision), */
-			/*   then the line will start 2 bytes earlier and will be 50 Hz (HBL at cycle 512) */
-			/* - If switch to 50 Hz is made at cycle >= 56 */
-			/*   then the line will start 2 bytes earlier and will be 60 Hz (HBL at cycle 508) */
-			else if ( LineCycles == pVideoTiming->Line_Set_Pal )
-			{
-			  ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_LEFT_PLUS_2;
-			  ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle = LINE_END_CYCLE_50;
-			  LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect left+2 50Hz %d<->%d\n" ,
-				ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
-			}
-			else
-			{
-			  ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_LEFT_PLUS_2;
-			  ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle = LINE_END_CYCLE_50;
-			  LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect left+2 60Hz %d<->%d\n" ,
-				ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
-			}
-		}
-
-		/* Empty line switching freq on STF : start the line in 50 Hz, change to 60 Hz at the exact place */
-		/* where display is enabled in 50 Hz, then go back to 50 Hz. */
-		/* Due to 4 cycles precision instead of 2, we must accept a 60 Hz switch at pos 56 or 56+4 */
-		else if ( ( FrameCycles - ShifterFrame.FreqPos60.FrameCycles <= 24 )
-			&& ( ShifterFrame.FreqPos60.LineCycles == pVideoTiming->H_Start_Low_50 )
-			&& ( LineCycles > pVideoTiming->H_Start_Low_50 )
-			&& Config_IsMachineST() )
-		{
-			ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_EMPTY_LINE;
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = 0;
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle = 0;
-			LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect empty line freq stf %d<->%d\n" ,
-				ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
-		}
-
-		/* Empty line switching freq on STE : similar to STF above, but doesn't require a 2 cycles precision */
-		/* The switches are made at cycles 40/52 */
-		else if ( ( FrameCycles - ShifterFrame.FreqPos60.FrameCycles <= 24 )
-			&& ( ShifterFrame.FreqPos60.LineCycles == pVideoTiming->Preload_Start_Low_50 )
-			&& ( LineCycles == pVideoTiming->H_Start_Low_60 )
-			&& Config_IsMachineSTE() )
-		{
-			ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_EMPTY_LINE;
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = 0;
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle = 0;
-			LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect empty line freq ste %d<->%d\n" ,
-				ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
-		}
-
-#if 0
-		/* Remove 2 bytes to the right : start the line in 50 Hz (pos 0 or 56), change to 60 Hz before the position */
-		/* where display is disabled in 60 Hz, then go back to 50 Hz after this position */
-		if ( ( LineCycles > pVideoTiming->H_Stop_Low_60 )			/* back to 50 Hz after end of 60 Hz line */
-			&& ( ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle != LINE_START_CYCLE_60 )	/* start could be 0 or 56 */
-			&& ( ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle == LINE_END_CYCLE_60 ) )
-		{
-			ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_RIGHT_MINUS_2;
-			LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect right-2 %d<->%d\n" ,
-				ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
-		}
-#endif
-	}
-
-
-	if ( ( Freq == 0x00 )					/* switched from 50 Hz to 60 Hz ? */
-	        && ( HblCounterVideo >= nStartHBL )		/* only if display is on */
-	        && ( HblCounterVideo < nEndHBL + BlankLines ) )	/* only if display is on */
-	{
-fprintf ( stderr , "test %d %d %d %d\n", LineCycles, pVideoTiming->H_Stop_Low_60 , ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle, ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle );
-		/* Remove 2 bytes to the right : start the line in 50 Hz (pos 0 or 56) and change to 60 Hz before the position */
-		/* where display is disabled in 60 Hz (optionally go back to 50 Hz after this position, but not necessary) */
-		if ( ( LineCycles <= pVideoTiming->H_Stop_Low_60 )			/* go to 60 Hz before end of 60 Hz line */
-			&& ( ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle != LINE_START_CYCLE_60 )	/* start could be 0 or 56 */
-			&& ( ( ShifterFrame.ShifterLines[ nHBL ].BorderMask & BORDERMASK_RIGHT_MINUS_2 ) == 0 ) )
-		{
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle = LINE_END_CYCLE_60;
-			ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_RIGHT_MINUS_2;
-			LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect right-2 %d<->%d\n" ,
-				ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
-		}
-
-		/* Remove right border, display 44 bytes more : switch to 60 Hz at the position where */
-		/* the line ends in 50 Hz. Some programs don't switch back to 50 Hz immediately */
-		/* (sync screen in SNY II), so we just check if freq changes to 60 Hz at the position where line should end in 50 Hz */
-		else if ( ( LineCycles > pVideoTiming->H_Stop_Low_60 ) && ( LineCycles <= pVideoTiming->H_Stop_Low_50 )
-			&& ( ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle == LINE_END_CYCLE_50 ) )
-		{
-			ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_RIGHT_OFF;
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle = LINE_END_CYCLE_NO_RIGHT;
-			LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect remove right %d<->%d\n" ,
-				ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
-		}
-	}
-#endif
 
 
 	/* TEMP for 'Gen4 Demo' by Ziggy / OVR in WS2,WS3,WS4 : */
@@ -3563,59 +2925,6 @@ static void Video_EndHBL(void)
 	}
 
 
-#if 0
-	//
-	// Check some left/right borders effects that were not detected earlier
-	// (this is usually due to staying in 60 Hz for too long, which is often a bad
-	// coding practice as it can distort the display on a real ST)
-	//
-
-	/* Special case when the line was not started in 60 Hz, then switched to 60 Hz */
-	/* and was not restored to 50 Hz before the end of the line. In that case, the */
-	/* line ends 2 bytes earlier on the right (line can start at LINE_START_CYCLE_71/50) */
-	/* Some programs also turn to 60 Hz too early during the active display of the last */
-	/* line to remove the bottom border (FNIL by TNT), in that case, we should also remove */
-	/* 2 bytes to this line */
-	if ( ( ( ShifterFrame.ShifterLines[ nHBL ].BorderMask & BORDERMASK_RIGHT_MINUS_2 ) == 0 )
-	  && ( ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle != pVideoTiming->H_Start_Low_60 )	/* start could be 0 or 56 */
-	  && ( ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle == pVideoTiming->H_Stop_Low_60 )
-	  && ( nHBL >= nStartHBL ) && ( nHBL < nEndHBL + BlankLines ) )	/* only if display is on */
-	{
-		ShifterFrame.ShifterLines[ nHBL ].BorderMask |= BORDERMASK_RIGHT_MINUS_2;
-//fprintf ( stderr , "detect late right-2\n" );
-		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect late right-2 %d<->%d\n" ,
-			ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle , ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle );
-	}
-
-
-	/* Similar case when line started in 60 Hz but did not end at the usual LINE_END_CYCLE_60 position */
-	/* (line can end at LINE_END_CYCLE_71/50 or have right border removed) */
-	/* This means left border had 2 bytes more to display */
-	if ( ( ( ShifterFrame.ShifterLines[ nHBL ].BorderMask & BORDERMASK_LEFT_PLUS_2 ) == 0 )
-	  && ( ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle == pVideoTiming->H_Start_Low_60 )
-	  && ( ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle != pVideoTiming->H_Stop_Low_60 )	/* end could be 160, 372 or 460 */
-	  && ( nHBL >= nStartHBL ) && ( nHBL < nEndHBL + BlankLines ) )	/* only if display is on */
-	{
-		ShifterFrame.ShifterLines[ nHBL ].BorderMask |= BORDERMASK_LEFT_PLUS_2;
-//fprintf ( stderr , "detect late left+2\n" );
-		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect late left+2 %d<->%d\n" ,
-			ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle , ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle );
-	}
-
-
-	/* Although a 'left+2' was detected earlier, the freq was switched back to 60 Hz during DE, so the line is just */
-	/* a normal 60 Hz line ; we must cancel the 'left+2' flag */
-	else if ( ( ShifterFrame.ShifterLines[ nHBL ].BorderMask & BORDERMASK_LEFT_PLUS_2 )
-	  && ( ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle == pVideoTiming->H_Stop_Low_60 ) )
-	{
- 		ShifterFrame.ShifterLines[ nHBL ].BorderMask &= ~BORDERMASK_LEFT_PLUS_2;
-//fprintf ( stderr , "cancel late left+2\n" );
- 		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "cancel late left+2 %d<->%d\n" ,
- 			ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle , ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle );
-	}
-#endif
-
-
 	/* Store palette for very first line on screen - HBLPalettes[0] */
 	if (nHBL == nFirstVisibleHbl-1)
 	{
@@ -3857,18 +3166,6 @@ static void Video_StoreResolution(int y , bool start)
 
 		HBLPaletteMasks[y] &= ~(0x3<<16);
 		HBLPaletteMasks[y] |= PALETTEMASK_RESOLUTION|((Uint32)res)<<16;
-
-#if 0
-		if ( ( Mask == BORDERMASK_NONE )			/* no border trick, store the current res */
-		        || ( res == 0 ) || ( res == 1 ) )			/* if border trick, ignore passage to hi res */
-			HBLPaletteMasks[y] |= PALETTEMASK_RESOLUTION|((Uint32)res)<<16;
-		else						/* border removal or hi res : assume low res for the whole line */
-			HBLPaletteMasks[y] |= (0)<<16;
-
-		/* special case for med res to render the overscan line */
-		if ( Mask & BORDERMASK_OVERSCAN_MED_RES )
-			HBLPaletteMasks[y] |= PALETTEMASK_RESOLUTION|((Uint32)1)<<16;	/* med res instead of low res */
-#endif
 
 //   fprintf ( stderr , "store res %d line %d %x %x\n" , res , y , Mask , HBLPaletteMasks[y] );
 	}
@@ -4816,8 +4113,6 @@ static void Video_AddInterrupt ( int Line , int Pos , interrupt_id Handler )
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 //fprintf ( stderr , "add int pos=%d handler=%d LineCycles=%d nCyclesPerLine=%d\n" , Pos , Handler , LineCycles , nCyclesPerLine );
 
-#if 1
-
 #ifndef OLD_CPU_SHIFT
 	Pos <<= nCpuFreqShift;			/* convert Pos at 8 MHz into number of cycles at 8/16/32 MHz */
 #endif
@@ -4829,19 +4124,6 @@ static void Video_AddInterrupt ( int Line , int Pos , interrupt_id Handler )
 
 	CycInt_AddRelativeInterrupt ( CyclesToPos , INT_CPU_CYCLE, Handler );
 //fprintf ( stderr , "add int pos=%d handler=%d LineCycles=%d nCyclesPerLine=%d -> %d cycles\n" , Pos , Handler , LineCycles , nCyclesPerLine , CycleToPos );
-
-#else
-	if ( LineCycles < Pos )			/* changed before reaching the new Pos on the current line */
-		CycInt_AddRelativeInterrupt ( Pos - LineCycles , INT_CPU_CYCLE, Handler );
-	else					/* Pos will be applied on next line */
-	{
-		if ( HblCounterVideo < nHBL )	/* special/rare case in WS1 where HBL happened before last cycles of the line */
-						/* (eg nCyclesPerLine can already be changed in case we switched to hi res at cycle 0) */
-			CycInt_AddRelativeInterrupt ( Pos + ShifterFrame.ShifterLines[nHBL].StartCycle - FrameCycles , INT_CPU_CYCLE, Handler );
-		else
-			CycInt_AddRelativeInterrupt ( Pos - LineCycles + nCyclesPerLine , INT_CPU_CYCLE, Handler );
-	}
-#endif
 }
 
 
