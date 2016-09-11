@@ -105,6 +105,8 @@ const char crossbar_fileid[] = "Hatari Crossbar.c : " __DATE__ " " __TIME__;
 #include "microphone.h"
 #include "stMemory.h"
 #include "dsp.h"
+#include "clocks_timings.h"
+
 
 
 #define DACBUFFER_SIZE    2048
@@ -1117,12 +1119,20 @@ static void Crossbar_Recalculate_Clocks_Cycles(void)
 	crossbar.clock32_cycles_counter = 0;
 
 	/* Calculate 25 Mhz clock cycles */
+#ifdef OLD_CPU_SHIFT
 	cyclesClk = ((double)CPU_FREQ / Crossbar_DetectSampleRate(25)) / (double)(crossbar.playTracks) / 2.0;
+#else
+	cyclesClk = ((double)MachineClocks.CPU_Freq / Crossbar_DetectSampleRate(25)) / (double)(crossbar.playTracks) / 2.0;
+#endif
 	crossbar.clock25_cycles = (int)(cyclesClk);
 	crossbar.clock25_cycles_decimal = (int)((cyclesClk - (double)(crossbar.clock25_cycles)) * (double)DECIMAL_PRECISION);
 
 	/* Calculate 32 Mhz clock cycles */
+#ifdef OLD_CPU_SHIFT
 	cyclesClk = ((double)CPU_FREQ / Crossbar_DetectSampleRate(32)) / (double)(crossbar.playTracks) / 2.0;
+#else
+	cyclesClk = ((double)MachineClocks.CPU_Freq / Crossbar_DetectSampleRate(32)) / (double)(crossbar.playTracks) / 2.0;
+#endif
 	crossbar.clock32_cycles = (int)(cyclesClk);
 	crossbar.clock32_cycles_decimal = (int)((cyclesClk - (double)(crossbar.clock32_cycles)) * (double)DECIMAL_PRECISION);
 
