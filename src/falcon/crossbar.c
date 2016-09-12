@@ -115,7 +115,6 @@ const char crossbar_fileid[] = "Hatari Crossbar.c : " __DATE__ " " __TIME__;
 
 /* Crossbar internal functions */
 static int  Crossbar_DetectSampleRate(Uint16 clock);
-static void Crossbar_Recalculate_Clocks_Cycles(void);
 static void Crossbar_Start_InterruptHandler_25Mhz(void);
 static void Crossbar_Start_InterruptHandler_32Mhz(void);
 
@@ -1111,7 +1110,7 @@ void Crossbar_CodecStatus_WriteWord(void)
 /**
  * Recalculates internal clocks 25 Mhz and 32 Mhz cycles
  */
-static void Crossbar_Recalculate_Clocks_Cycles(void)
+void Crossbar_Recalculate_Clocks_Cycles(void)
 {
 	double cyclesClk;
 
@@ -1122,7 +1121,8 @@ static void Crossbar_Recalculate_Clocks_Cycles(void)
 #ifdef OLD_CPU_SHIFT
 	cyclesClk = ((double)CPU_FREQ / Crossbar_DetectSampleRate(25)) / (double)(crossbar.playTracks) / 2.0;
 #else
-	cyclesClk = ((double)MachineClocks.CPU_Freq / Crossbar_DetectSampleRate(25)) / (double)(crossbar.playTracks) / 2.0;
+	/* Take nCpuFreqShift into account to keep a constant sound rate at all cpu freq */
+	cyclesClk = ((double)( ( ( MachineClocks.CPU_Freq / 2 ) << nCpuFreqShift ) ) / Crossbar_DetectSampleRate(25)) / (double)(crossbar.playTracks) / 2.0;
 #endif
 	crossbar.clock25_cycles = (int)(cyclesClk);
 	crossbar.clock25_cycles_decimal = (int)((cyclesClk - (double)(crossbar.clock25_cycles)) * (double)DECIMAL_PRECISION);
@@ -1131,7 +1131,8 @@ static void Crossbar_Recalculate_Clocks_Cycles(void)
 #ifdef OLD_CPU_SHIFT
 	cyclesClk = ((double)CPU_FREQ / Crossbar_DetectSampleRate(32)) / (double)(crossbar.playTracks) / 2.0;
 #else
-	cyclesClk = ((double)MachineClocks.CPU_Freq / Crossbar_DetectSampleRate(32)) / (double)(crossbar.playTracks) / 2.0;
+	/* Take nCpuFreqShift into account to keep a constant sound rate at all cpu freq */
+	cyclesClk = ((double)( ( ( MachineClocks.CPU_Freq / 2 ) << nCpuFreqShift ) ) / Crossbar_DetectSampleRate(32)) / (double)(crossbar.playTracks) / 2.0;
 #endif
 	crossbar.clock32_cycles = (int)(cyclesClk);
 	crossbar.clock32_cycles_decimal = (int)((cyclesClk - (double)(crossbar.clock32_cycles)) * (double)DECIMAL_PRECISION);

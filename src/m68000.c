@@ -86,6 +86,7 @@ const char M68000_fileid[] = "Hatari m68000.c : " __DATE__ " " __TIME__;
 #include "savestate.h"
 #include "stMemory.h"
 #include "tos.h"
+#include "falcon/crossbar.h"
 
 #if ENABLE_DSP_EMU
 #include "dsp.h"
@@ -308,6 +309,8 @@ void M68000_Start(void)
  */
 void M68000_CheckCpuSettings(void)
 {
+	int	Freq_old = nCpuFreqShift;
+
 	if (ConfigureParams.System.nCpuFreq < 12)
 	{
 		ConfigureParams.System.nCpuFreq = 8;
@@ -323,6 +326,10 @@ void M68000_CheckCpuSettings(void)
 		ConfigureParams.System.nCpuFreq = 16;
 		nCpuFreqShift = 1;
 	}
+
+	if ( Freq_old != nCpuFreqShift )
+		M68000_ChangeCpuFreq();
+
 	changed_prefs.cpu_level = ConfigureParams.System.nCpuLevel;
 	changed_prefs.cpu_compatible = ConfigureParams.System.bCompatibleCpu;
 
@@ -791,4 +798,22 @@ int	DMA_MaskAddressHigh ( void )
 
 	else							/* ST/STE with <= 4 MB */
 		return 0x3f;					/* Limit DMA range to 22 bits (same as real HW) */
+}
+
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * This function should be called when the cpu freq is changed, to update
+ * other components that depend on it.
+ *
+ * For now, only Falcon mode requires some updates for the crossbar
+ */
+void	M68000_ChangeCpuFreq ( void )
+{
+	if ( Config_IsMachineFalcon() )
+	{
+		Crossbar_Recalculate_Clocks_Cycles();
+	}
 }

@@ -131,6 +131,8 @@ static void IoMemTabFalcon_BusCtrl_WriteByte(void)
 	/* not if CPU is 68040 or 68060 is used */
 	if ( ConfigureParams.System.nCpuLevel == 3 )
 	{
+		int Freq_old = nCpuFreqShift;
+
 		if ((busCtrl & 0x1) == 1) {
 			/* 16 Mhz bus for 68030 */
 			nCpuFreqShift = 1;
@@ -141,6 +143,9 @@ static void IoMemTabFalcon_BusCtrl_WriteByte(void)
 			nCpuFreqShift = 0;
 			ConfigureParams.System.nCpuFreq = 8;
 		}
+
+		if ( Freq_old != nCpuFreqShift )
+			M68000_ChangeCpuFreq();
 	}
 	Statusbar_UpdateInfo();			/* Update clock speed in the status bar */
 }

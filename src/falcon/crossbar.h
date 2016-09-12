@@ -28,6 +28,9 @@ void Crossbar_Compute_Ratio(void);
 /* Called by mfp.c */
 extern void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate);
 
+/* Called by m68000.c */
+extern void Crossbar_Recalculate_Clocks_Cycles(void);
+
 extern void Crossbar_Reset(bool bCold);
 extern void Crossbar_MemorySnapShot_Capture(bool bSave);
 
