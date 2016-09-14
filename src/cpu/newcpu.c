@@ -5721,11 +5721,13 @@ static void m68k_run_3p(void)
 
 				(*cpufunctbl[r->opcode])(r->opcode);
 
+#ifndef WINUAE_FOR_HATARI
 				cpu_cycles = 1 * CYCLE_UNIT;
 				cycles = adjust_cycles(cpu_cycles);
 				do_cycles(cycles);
-#ifdef WINUAE_FOR_HATARI
-				M68000_AddCycles(cycles * 2 / CYCLE_UNIT);
+#else
+				cycles = cpu_cycles = CYCLE_UNIT / 2;
+				M68000_AddCycles_CE(cycles * 2 / CYCLE_UNIT);
 
 				if ( WaitStateCycles ) {
 					/* Add some extra cycles to simulate a wait state */
