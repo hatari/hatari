@@ -301,3 +301,17 @@ TCHAR* buf_out (TCHAR *buffer, int *bufsize, const TCHAR *format, ...)
 
 	return buffer + _tcslen (buffer);
 }
+
+void error_log(const TCHAR *format, ...)
+{
+	va_list parms;
+
+	va_start(parms, format);
+	vfprintf(stderr, format, parms);
+	va_end(parms);
+
+	if (format[strlen(format) - 1] != '\n')
+	{
+		fputc('\n', stderr);
+	}
+}

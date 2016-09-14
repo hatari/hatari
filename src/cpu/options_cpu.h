@@ -884,6 +884,7 @@ extern void machdep_free (void);
 extern struct uae_prefs currprefs, changed_prefs;
 extern void fixup_cpu (struct uae_prefs *prefs);
 extern void check_prefs_changed_cpu (void);
+extern void error_log (const TCHAR*, ...);
 
 #endif
 

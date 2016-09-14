@@ -21,7 +21,6 @@
 #define console_out printf
 //#define console_out_f printf
 #define console_out_f(...)	{ if ( console_out_FILE ) fprintf ( console_out_FILE , __VA_ARGS__ ); else printf ( __VA_ARGS__ ); }
-#define error_log printf
 #define gui_message console_out_f
 
 #define uae_log printf
