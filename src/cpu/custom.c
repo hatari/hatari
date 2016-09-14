@@ -455,11 +455,6 @@ void fixup_cpu (struct uae_prefs *p)
 	if (p->cpu_model >= 68040 && p->cachesize && p->cpu_compatible)
 		p->cpu_compatible = false;
 
-	if (p->cpu_model >= 68040 && p->cpu_cycle_exact) {
-		p->cpu_cycle_exact = 0;
-		error_log (_T("68040/060 cycle-exact is not supported."));
-	}
-
 	if ((p->cpu_model < 68030 || p->cachesize) && p->mmu_model) {
 		error_log (_T("MMU emulation requires 68030/040/060 and it is not JIT compatible."));
 		p->mmu_model = 0;

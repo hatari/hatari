@@ -5641,6 +5641,7 @@ static void m68k_run_3ce (void)
 					LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
 					m68k_disasm_file(stderr, m68k_getpc (), NULL, 1);
 				}
+				currcycle = CYCLE_UNIT / 2;	/* Assume at least 1 cycle per instruction */
 #endif
 				r->instruction_pc = m68k_getpc();
 				r->opcode = get_iword_cache_040(0);
@@ -5651,7 +5652,7 @@ static void m68k_run_3ce (void)
 				(*cpufunctbl[r->opcode])(r->opcode);
 
 #ifdef WINUAE_FOR_HATARI
-//fprintf ( stderr, "cyc_3ce %d\n" , currcycle );
+//fprintf ( stderr, "cyc_3ce %ld\n" , currcycle );
 				/* Flush all CE cycles so far to update PendingInterruptCount */
 				M68000_AddCycles_CE ( currcycle * 2 / CYCLE_UNIT );
 //				currcycle = 0;	// FIXME : uncomment this when using DSP_CyclesGlobalClockCounter in DSP_Run
