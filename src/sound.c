@@ -1245,7 +1245,12 @@ static int Sound_SetSamplesPassed(bool FillFrame)
 	if ( ( SamplesToGenerate > MIXBUFFER_SIZE - nGeneratedSamples ) && ( ConfigureParams.System.bFastForward == false )
 	    && ( ConfigureParams.Sound.bEnableSound == true ) )
 	{
-		Log_Printf ( LOG_WARN , "Your system is too slow, some sound samples were not correctly emulated\n" );
+		static int logcnt = 0;
+		if (logcnt++ < 50)
+		{
+			Log_Printf(LOG_WARN, "Your system is too slow, "
+			           "some sound samples were not correctly emulated\n");
+		}
 		Sound_BufferIndexNeedReset = true;
 	}
 
