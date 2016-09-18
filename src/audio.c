@@ -156,9 +156,8 @@ void Audio_Init(void)
 		int samples = (desiredAudioSpec.freq / 1000) * SdlAudioBufferSize;
 		int power2 = 1;
 		while ( power2 < samples )		/* compute the power of 2 just above samples */
-                        power2 *= 2;
+			power2 *= 2;
 
-//fprintf ( stderr , "samples %d power %d\n" , samples , power2 );
 		desiredAudioSpec.samples = power2;	/* number of samples corresponding to the requested SdlAudioBufferSize */
 	}
 
@@ -172,8 +171,12 @@ void Audio_Init(void)
 		return;
 	}
 
+#if WITH_SDL2						/* SDL2 does not set desiredAudioSpec.size anymore */
+	SoundBufferSize = desiredAudioSpec.samples;
+#else
 	SoundBufferSize = desiredAudioSpec.size;	/* May be different than the requested one! */
 	SoundBufferSize /= 4;				/* bytes -> samples (16 bit signed stereo -> 4 bytes per sample) */
+#endif
 	if (SoundBufferSize > MIXBUFFER_SIZE/2)
 	{
 		fprintf(stderr, "Warning: Soundbuffer size is too big!\n");
