@@ -853,10 +853,7 @@ void HDC_UnInit(void)
 {
 	int i;
 
-	if (!bAcsiEmuOn)
-		return;
-
-	for (i = 0; i < MAX_ACSI_DEVS; i++)
+	for (i = 0; bAcsiEmuOn && i < MAX_ACSI_DEVS; i++)
 	{
 		if (!AcsiBus.devs[i].enabled)
 			continue;
@@ -882,7 +879,8 @@ void HDC_UnInit(void)
 	ScsiBus.resp = NULL;
 #endif
 
-	nNumDrives -= nAcsiPartitions;
+	if (bAcsiEmuOn)
+		nNumDrives -= nAcsiPartitions;
 	nAcsiPartitions = 0;
 	bAcsiEmuOn = false;
 }
