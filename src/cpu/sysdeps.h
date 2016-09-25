@@ -54,7 +54,7 @@ using namespace std;
 #define CPU_i386 1
 #elif defined(__arm__) || defined(_M_ARM)
 #define CPU_arm 1
-#elif defined(__powerpc__) || defined(_M_PPC)
+#elif defined(__powerpc__) || defined(_M_PPC) || defined(__ppc__) || defined(__ppc64__)
 #define CPU_powerpc 1
 #else
 #error unrecognized CPU type
