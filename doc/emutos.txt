@@ -492,6 +492,7 @@ Free/shareware/PD games:
 - Hero (RPG)
 - Hexmines*
 - Jetpac
+- Killing Spree (2014 preview by TLB at Atarimania)
 - Laserball 2014
 - LeMans (uses line-A)
 - Master Breakout
@@ -879,7 +880,7 @@ Color games:
 - Dynabusters+*
 - Frantick
 - Giana Sisters STE rewrite: (needs EmuTOS >v0.9.3)
-  http://www.atari-forum.com/viewtopic.php?f=3&t=26360
+  http://atari-forum.com/viewtopic.php?f=3&t=26360
 - H Mec 2 (line-A bitblit)
 - Micromachines preview (by .tscc)
 - Mr Boomer (line-A bitblit)
@@ -888,7 +889,9 @@ Color games:
 - Operation Garfield
 - Pacman on E
 - Pacmania* STE/overscan rewrite: (needs EmuTOS >v0.9.3)
-  http://www.atari-forum.com/viewtopic.php?f=3&t=24635
+  http://atari-forum.com/viewtopic.php?f=3&t=24635
+- Pole Position STE rewrite
+  http://atari-forum.com/viewtopic.php?f=3&t=26068
 - Power Up
 - R0x (line-A bitblit, screen sync issue)
 - Roger (line-A bitblit)
