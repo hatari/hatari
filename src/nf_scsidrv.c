@@ -38,7 +38,7 @@ const char NfScsiDrv_fileid[] = "Hatari nf_scsidrv.c : " __DATE__ " " __TIME__;
 #define BUS_FEATURES 0x02
 // The transfer length may depend on the device, 65536 should always be safe
 #define BUS_TRANSFER_LEN 65536
-// The maximum number of SCSI Driver handles, must be the same as in stub
+// The maximum number of SCSI Driver handles, must be the same as in the stub
 #define SCSI_MAX_HANDLES 32
 
 
@@ -83,6 +83,7 @@ static void write_word(Uint32 addr, Uint16 value)
 	STMemory_WriteWord(addr, value);
 }
 
+// Sets the error status
 static void set_error(Uint32 handle, int errbit)
 {
 	Uint32 i;
@@ -96,7 +97,9 @@ static void set_error(Uint32 handle, int errbit)
 	}
 }
 
-// udev-based check for media change
+// udev-based check for media change. When udev is active media change messages
+// are handled globally by udev, i.e. that media changes cannot directly be
+// detected by the SCSI Driver. The SCSI Driver has to query udev instead.
 static bool check_mchg_udev(void)
 {
 	bool changed = false;
@@ -139,6 +142,7 @@ static bool check_mchg_udev(void)
 	return changed;
 }
 
+// Checks whether a device exists by checking for the device file name
 static int check_device_file(Uint32 id)
 {
 	char device_file[16];
@@ -178,6 +182,7 @@ static int scsidrv_interface_features(Uint32 stack)
 	return 0;
 }
 
+// SCSI Driver: InquireBus()
 static int scsidrv_inquire_bus(Uint32 stack)
 {
 	Uint32 id = read_stack_long(&stack);
@@ -200,6 +205,7 @@ static int scsidrv_inquire_bus(Uint32 stack)
 	return -1;
 }
 
+// SCSI Driver: Open()
 static int scsidrv_open(Uint32 stack)
 {
 	char device_file[16];
@@ -252,6 +258,7 @@ static int scsidrv_open(Uint32 stack)
 	return 0;
 }
 
+// SCSI Driver: Close()
 static int scsidrv_close(Uint32 stack)
 {
 	Uint32 handle = read_stack_long(&stack);
@@ -270,6 +277,7 @@ static int scsidrv_close(Uint32 stack)
 	return 0;
 }
 
+// SCSI Driver: In() and Out()
 static int scsidrv_inout(Uint32 stack)
 {
 	Uint32 handle = read_stack_long(&stack);
@@ -406,6 +414,7 @@ static int scsidrv_inout(Uint32 stack)
 	return status;
 }
 
+// SCSI Driver: Error()
 static int scsidrv_error(Uint32 stack)
 {
 	Uint32 handle = read_stack_long(&stack);
@@ -438,6 +447,7 @@ static int scsidrv_error(Uint32 stack)
 	}
 }
 
+// SCSI Driver: CheckDev()
 static int scsidrv_check_dev(Uint32 stack)
 {
 	Uint32 id = read_stack_long(&stack);
