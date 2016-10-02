@@ -4636,13 +4636,10 @@ static void m68k_run_1 (void)
 				cpu_cycles = adjust_cycles (cpu_cycles);
 
 #ifdef WINUAE_FOR_HATARI
-				M68000_AddCyclesWithPairing(cpu_cycles * 2 / CYCLE_UNIT);
-
-        			if ( WaitStateCycles ) {
-					/* Add some extra cycles to simulate a wait state */
-					M68000_AddCycles(WaitStateCycles);
-					WaitStateCycles = 0;
-				}
+				/* Also add some extra cycles to simulate some wait state */
+				/* TODO  [NP] do this in all m68k_run_xx() */
+				M68000_AddCyclesWithPairing(cpu_cycles * 2 / CYCLE_UNIT + WaitStateCycles);
+				WaitStateCycles = 0;
 
 				/* We can have several interrupts at the same time before the next CPU instruction */
 				/* We must check for pending interrupt and call do_specialties_interrupt() only */
