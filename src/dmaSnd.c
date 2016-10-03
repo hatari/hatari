@@ -510,6 +510,12 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 		return;
 	}
 
+	/* DMA Anti-alias filter */
+	if (DmaSnd_DetectSampleRate() >  nAudioFrequency)
+		DmaSnd_LowPass = true;
+	else
+		DmaSnd_LowPass = false;
+
 
 	/* DMA Audio ON or FIFO not empty yet */
 
@@ -1259,16 +1265,14 @@ static Sint16 DmaSnd_LowPassFilterLeft(Sint16 in)
 	static	Sint16	out = 0;
 
 	if (DmaSnd_LowPass)
-	{
 		out = lowPassFilter[0] + (lowPassFilter[1]<<1) + in;
-		lowPassFilter[0] = lowPassFilter[1];
-		lowPassFilter[1] = in;
+	else
+		out = lowPassFilter[1] << 2;
 
-		return out; /* Filter Gain = 4 */
-	}else
-	{
-		return in << 2;
-	}
+	lowPassFilter[0] = lowPassFilter[1];
+	lowPassFilter[1] = in;
+
+	return out; /* Filter Gain = 4 */
 }
 
 /**
@@ -1280,16 +1284,14 @@ static Sint16 DmaSnd_LowPassFilterRight(Sint16 in)
 	static	Sint16	out = 0;
 
 	if (DmaSnd_LowPass)
-	{
 		out = lowPassFilter[0] + (lowPassFilter[1]<<1) + in;
-		lowPassFilter[0] = lowPassFilter[1];
-		lowPassFilter[1] = in;
+	else
+		out = lowPassFilter[1] << 2;
 
-		return out; /* Filter Gain = 4 */
-	}else
-	{
-		return in << 2;
-	}
+	lowPassFilter[0] = lowPassFilter[1];
+	lowPassFilter[1] = in;
+
+	return out; /* Filter Gain = 4 */
 }
 
 /**
@@ -1404,10 +1406,4 @@ void DmaSnd_Init_Bass_and_Treble_Tables(void)
 	/* Initialize IIR Filter Gain and use as a Volume Control */
 	lmc1992.left_gain = (microwire.leftVolume * (Uint32)microwire.masterVolume) * (2.0/(65536.0*65536.0));
 	lmc1992.right_gain = (microwire.rightVolume * (Uint32)microwire.masterVolume) * (2.0/(65536.0*65536.0));
-
-	/* Anti-alias filter is not required when nAudioFrequency == 50066 Hz */
-	if (nAudioFrequency>50000 && nAudioFrequency<50100)
-		DmaSnd_LowPass = false;
-	else
-		DmaSnd_LowPass = true;
 }
