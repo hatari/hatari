@@ -11,6 +11,14 @@
 
 #include "SDL.h"
 
+#if SDL_MAJOR_VERSION > 1
+#define SDL_FULLSCREEN SDL_WINDOW_FULLSCREEN
+#define SDL_keysym SDL_Keysym
+#define KMOD_LMETA KMOD_LGUI
+#define KMOD_RMETA KMOD_RGUI
+#endif
+
+
 /* Call this instead of exit(), so we can clean up SDL: atexit() is evil. */
 static void quit(int rc)
 {
@@ -55,41 +63,48 @@ static void PrintKey(SDL_keysym *sym, int pressed)
 {
 	/* Print the keycode, name and state */
 	if ( sym->sym ) {
-		printf("Key %s: %3d - %s ",
+		printf("Key %s: 0x%2x - %s ",
 		       pressed ?  "pressed " : "released",
 		       sym->sym, SDL_GetKeyName(sym->sym));
 	} else {
-		printf("Unknown Key (scancode = %d) %s ",
+		printf("Unknown Key (scancode = 0x%2x) %s ",
 		       sym->scancode,
 		       pressed ?  "pressed" : "released");
 	}
 	print_modifiers();
 
+#if SDL_MAJOR_VERSION < 2
 	/* Print the translated character, if one exists */
 	if ( sym->unicode ) {
 		/* Is it a control-character? */
 		if ( sym->unicode < ' ' ) {
 			printf(" (^%c)", sym->unicode+'@');
 		} else {
-#ifdef UNICODE
+# ifdef UNICODE
 			printf(" (%c)", sym->unicode);
-#else
+# else
 			/* This is a Latin-1 program, so only show 8-bits */
 			if ( !(sym->unicode & 0xFF00) )
 				printf(" (%c)", sym->unicode);
 			else
 				printf(" (0x%X)", sym->unicode);
-#endif
+# endif
 		}
 	}
+#endif
 	printf("\n");
 }
 
 int main(int argc, char *argv[])
 {
+#if SDL_MAJOR_VERSION > 1
+	SDL_Window *window;
+#endif
+	Uint32 videoflags = 0;
 	SDL_Event event;
+	int wd = 640;
+	int ht = 480;
 	int done;
-	Uint32 videoflags;
 
 	/* Initialize SDL */
 	if ( SDL_Init(SDL_INIT_VIDEO) < 0 ) {
@@ -97,21 +112,44 @@ int main(int argc, char *argv[])
 		return(1);
 	}
 
-	videoflags = SDL_SWSURFACE;
 	while( argc > 1 ) {
 		--argc;
 		if ( argv[argc] && !strcmp(argv[argc], "-fullscreen") ) {
-			videoflags |= SDL_FULLSCREEN;
+			videoflags = SDL_FULLSCREEN;
 		} else {
 			fprintf(stderr, "Usage: %s [-fullscreen]\n", argv[0]);
 			quit(1);
 		}
 	}
 
-	/* Set 640x480 video mode */
-	if ( SDL_SetVideoMode(640, 480, 0, videoflags) == NULL ) {
-		fprintf(stderr, "Couldn't set 640x480 video mode: %s\n",
-			SDL_GetError());
+#if SDL_MAJOR_VERSION > 1
+	if (videoflags & SDL_WINDOW_FULLSCREEN) {
+		SDL_DisplayMode dm;
+		videoflags |= SDL_WINDOW_FULLSCREEN_DESKTOP | SDL_WINDOW_BORDERLESS | SDL_WINDOW_INPUT_GRABBED;
+		if (SDL_GetDesktopDisplayMode(0, &dm)) {
+			fprintf(stderr, "SDL_GetDesktopDisplayMode failed: %s", SDL_GetError());
+			quit(1);
+		}
+		wd = dm.w;
+		ht = dm.h;
+	} else {
+		videoflags = SDL_WINDOW_RESIZABLE;
+	}
+
+	window = SDL_CreateWindow("CheckKeys",
+				  SDL_WINDOWPOS_UNDEFINED,
+				  SDL_WINDOWPOS_UNDEFINED,
+				  wd, ht, videoflags);
+	if (!window) {
+		fprintf(stderr, "Failed to create %dx%d window: %s\n",
+			wd, ht, SDL_GetError());
+		quit(2);
+	}
+#else   /* SDL1 */
+	videoflags |= SDL_SWSURFACE;
+	if ( SDL_SetVideoMode(wd, ht, 0, videoflags) == NULL ) {
+		fprintf(stderr, "Couldn't set %dx%d video mode: %s\n",
+			wd, ht, SDL_GetError());
 		quit(2);
 	}
 
@@ -121,6 +159,7 @@ int main(int argc, char *argv[])
 	/* Enable auto repeat for keyboard input */
 	SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY,
 	                    SDL_DEFAULT_REPEAT_INTERVAL);
+#endif
 
 	puts("Click to the window to quit.\n");
 
