@@ -323,7 +323,7 @@ void Crossbar_Reset(bool bCold)
 	memset(dac.buffer_right, 0, sizeof(dac.buffer_right));
 	dac.readPosition_float = 0;
 	dac.readPosition = 0;
-	dac.writePosition = 0;
+	dac.writePosition = (dac.readPosition+DACBUFFER_SIZE/2)%DACBUFFER_SIZE;
 
 	/* ADC inits */
 	memset(adc.buffer_left, 0, sizeof(adc.buffer_left));
@@ -405,6 +405,10 @@ void Crossbar_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&adc, sizeof(adc));
 	MemorySnapShot_Store(&dspXmit, sizeof(dspXmit));
 	MemorySnapShot_Store(&dspReceive, sizeof(dspReceive));
+
+	/* After restoring, update the clock/freq counters */
+	if ( !bSave )
+		Crossbar_Recalculate_Clocks_Cycles();
 }
 
 
@@ -473,6 +477,7 @@ void Crossbar_DmaCtrlReg_WriteByte(void)
 	Uint8 sndCtrl = IoMem_ReadByte(0xff8901);
 
 	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8901 (additional Sound DMA control) write: 0x%02x\n", sndCtrl);
+//Crossbar_Start_InterruptHandler_25Mhz();
 
 	crossbar.dmaSelected = (sndCtrl & 0x80) >> 7;
 
@@ -1122,7 +1127,7 @@ void Crossbar_Recalculate_Clocks_Cycles(void)
 	cyclesClk = ((double)CPU_FREQ / Crossbar_DetectSampleRate(25)) / (double)(crossbar.playTracks) / 2.0;
 #else
 	/* Take nCpuFreqShift into account to keep a constant sound rate at all cpu freq */
-	cyclesClk = ((double)( ( ( MachineClocks.CPU_Freq / 2 ) << nCpuFreqShift ) ) / Crossbar_DetectSampleRate(25)) / (double)(crossbar.playTracks) / 2.0;
+	cyclesClk = ((double)( ( CPU_FREQ << nCpuFreqShift ) ) / Crossbar_DetectSampleRate(25)) / (double)(crossbar.playTracks) / 2.0;
 #endif
 	crossbar.clock25_cycles = (int)(cyclesClk);
 	crossbar.clock25_cycles_decimal = (int)((cyclesClk - (double)(crossbar.clock25_cycles)) * (double)DECIMAL_PRECISION);
@@ -1132,7 +1137,7 @@ void Crossbar_Recalculate_Clocks_Cycles(void)
 	cyclesClk = ((double)CPU_FREQ / Crossbar_DetectSampleRate(32)) / (double)(crossbar.playTracks) / 2.0;
 #else
 	/* Take nCpuFreqShift into account to keep a constant sound rate at all cpu freq */
-	cyclesClk = ((double)( ( ( MachineClocks.CPU_Freq / 2 ) << nCpuFreqShift ) ) / Crossbar_DetectSampleRate(32)) / (double)(crossbar.playTracks) / 2.0;
+	cyclesClk = ((double)( ( CPU_FREQ << nCpuFreqShift ) ) / Crossbar_DetectSampleRate(32)) / (double)(crossbar.playTracks) / 2.0;
 #endif
 	crossbar.clock32_cycles = (int)(cyclesClk);
 	crossbar.clock32_cycles_decimal = (int)((cyclesClk - (double)(crossbar.clock32_cycles)) * (double)DECIMAL_PRECISION);
@@ -1154,6 +1159,10 @@ void Crossbar_Recalculate_Clocks_Cycles(void)
 
 	// Compute Ratio between host computer sound frequency and Hatari's sound frequency.
 	Crossbar_Compute_Ratio();
+
+	// Ensure dac.writePosition is correctly set based on current dac.readPosition
+	// -> force dac.wordCount=0 to update dac.writePosition on next call to Crossbar_GenerateSamples()
+	dac.wordCount = 0;
 }
 
 /**
@@ -1197,6 +1206,7 @@ static void Crossbar_Start_InterruptHandler_25Mhz(void)
 {
 	Uint32 cycles_25;
 
+//fprintf ( stderr , "int25 %x %x %x %x\n" , crossbar.clock25_cycles, crossbar.clock25_cycles_counter, crossbar.clock25_cycles_decimal, crossbar.pendingCyclesOver25 );
 	cycles_25 = crossbar.clock25_cycles;
 	crossbar.clock25_cycles_counter += crossbar.clock25_cycles_decimal;
 
@@ -1469,6 +1479,7 @@ static void Crossbar_Process_DMAPlay_Transfer(void)
 		}
 	}
 
+//fprintf ( stderr , "cbar %x %x %x\n" , dmaPlay.frameCounter , value , increment_frame );
 	if (dmaPlay.isConnectedToDspInHandShakeMode) {
 		/* Handshake mode */
 		if (dmaPlay.handshakeMode_Frame == 0)
@@ -1534,6 +1545,7 @@ static void Crossbar_Process_DMAPlay_Transfer(void)
 		/* Send a TimerA_Int at end of replay buffer if enabled */
 		if (dmaPlay.timerA_int) {
 			if (MFP_TACR == 0x08) {       /* Is timer A in Event Count mode? */
+//fprintf ( stderr , "loop %x %x\n" , dmaPlay.frameCounter , dmaPlay.frameLen );
 				MFP_TimerA_EventCount_Interrupt();
 				LOG_TRACE(TRACE_CROSSBAR, "Crossbar : MFP Timer A interrupt from DMA play\n");
 			}
@@ -1770,6 +1782,10 @@ static void Crossbar_SendDataToDAC(Sint16 value, Uint16 sample_pos)
 {
 	Uint16 track = crossbar.track_monitored * 2;
 
+//fprintf ( stderr , "datadac %x %x\n" , value , dac.writePosition );
+	/* Increase counter for each sample received by the DAC */
+	dac.wordCount++;
+
 	if (sample_pos == track) {
 		/* Left channel */
 		dac.buffer_left[dac.writePosition] = value;
@@ -1788,9 +1804,12 @@ static void Crossbar_SendDataToDAC(Sint16 value, Uint16 sample_pos)
  */
 void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 {
-	int i, j, nBufIdx;
+	int i, nBufIdx;
 	int n;
 	Sint16 adc_leftData, adc_rightData, dac_LeftData, dac_RightData;
+	Sint16 dac_read_left, dac_read_right;
+
+//fprintf ( stderr , "gen %03x %03x %03x %03x\n" , dac.writePosition , dac.readPosition , (dac.writePosition-dac.readPosition)%DACBUFFER_SIZE , nSamplesToGenerate );
 
 	if (crossbar.isDacMuted) {
 		/* Output sound = 0 */
@@ -1801,7 +1820,7 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 		}
 
 		/* Counters are refreshed for when DAC becomes unmuted */
-		dac.readPosition = dac.writePosition;
+		dac.readPosition = (dac.writePosition-DACBUFFER_SIZE/2)%DACBUFFER_SIZE;
 		crossbar.adc2dac_readBufferPosition = adc.writePosition;
 		return;
 	}
@@ -1836,6 +1855,17 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 		}
 
 		/* DAC mixing (direct ADC + crossbar) */
+		/* If DAC didn't receive any data, we force left/right value to 0 */
+		if ( dac.wordCount == 0 )			/* Nothing received */
+		{
+			dac_read_left = 0;
+			dac_read_right = 0;
+		}
+		else
+		{
+			dac_read_left = dac.buffer_left[dac.readPosition];
+			dac_read_right = dac.buffer_right[dac.readPosition];
+		}
 		switch (crossbar.codecInputSource) {
 			case 0:
 			default: /* Just here to remove compiler's warnings */
@@ -1850,15 +1880,15 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 				break;
 			case 2:
 				/* Crossbar->DAC sound only */
-				dac_LeftData = dac.buffer_left[dac.readPosition];
-				dac_RightData = dac.buffer_right[dac.readPosition];
+				dac_LeftData = dac_read_left;
+				dac_RightData = dac_read_right;
 				break;
 			case 3:
 				/* Mixing Direct ADC sound with Crossbar->DMA sound */
 				dac_LeftData = ((adc_leftData * crossbar.gainSettingLeft) >> 14) +
-						dac.buffer_left[dac.readPosition];
-				dac_RightData = ((adc_rightData  * crossbar.gainSettingRight) >> 14) +
-						dac.buffer_right[dac.readPosition];
+						dac_read_left;
+				dac_RightData = ((adc_rightData * crossbar.gainSettingRight) >> 14) +
+						dac_read_right;
 				break;
 		}
 
@@ -1869,6 +1899,7 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 		dac.readPosition_float += crossbar.frequence_ratio;
 		n = dac.readPosition_float >> 32;				/* number of samples to skip */
 
+#if 0
 		if (n) {
 			// It becomes safe to zero old data if tail has moved
 			for (j=0; j<n; j++) {
@@ -1876,6 +1907,7 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 				dac.buffer_right[(dac.readPosition+j) % DACBUFFER_SIZE] = 0;
 			}
 		}
+#endif
 
 		dac.readPosition = (dac.readPosition + n) % DACBUFFER_SIZE;
 		dac.readPosition_float &= 0xffffffff;			/* only keep the fractional part */
@@ -1886,6 +1918,15 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 		crossbar.adc2dac_readBufferPosition = (crossbar.adc2dac_readBufferPosition + n) % DACBUFFER_SIZE;
 		crossbar.adc2dac_readBufferPosition_float &= 0xffffffff;			/* only keep the fractional part */
 	}
+
+	/* If the DAC didn't receive any data since last call to Crossbar_GenerateSamples() */
+	/* then we need to adjust dac.writePosition to be always ahead of dac.readPosition */
+	if ( dac.wordCount == 0 )
+	{
+		fprintf ( stderr , "fix writepos %x (readpos %x)\n" , (dac.readPosition+DACBUFFER_SIZE/2)%DACBUFFER_SIZE , dac.readPosition );
+		dac.writePosition = (dac.readPosition+DACBUFFER_SIZE/2)%DACBUFFER_SIZE;
+	}
+	dac.wordCount = 0;
 }
 
 

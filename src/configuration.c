@@ -33,6 +33,7 @@ const char Configuration_fileid[] = "Hatari configuration.c : " __DATE__ " " __T
 #include "fdc.h"
 #include "dsp.h"
 #include "joy.h"
+#include "falcon/crossbar.h"
 
 
 CNF_PARAMS ConfigureParams;                 /* List of configuration for the emulator */
@@ -873,6 +874,10 @@ void Configuration_Apply(bool bReset)
 
 	YmVolumeMixing = ConfigureParams.Sound.YmVolumeMixing;
 	Sound_SetYmVolumeMixing();
+
+	/* Falcon : update clocks values if sound freq changed  */
+	if ( Config_IsMachineFalcon() )
+		Crossbar_Recalculate_Clocks_Cycles();
 
 	/* Check/constrain CPU settings and change corresponding
 	 * UAE cpu_level & cpu_compatible variables
