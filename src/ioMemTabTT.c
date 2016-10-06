@@ -54,19 +54,6 @@ static void IoMemTabTT_ReadDIPSwitches(void)
 }
 
 /**
- * The value in the upper 7 bits of VME GPIO register 1 is used by TOS 3.06 as
- * some kind of boot partition selector when jumping into the boot sector of an
- * ACSI disk. These bits should be 0 so that AHDI detects the partitions right.
- * The lowest bit in this register seem to trigger something in the memory
- * detection algorithm of TOS ... when it is 0, TOS crashes when Hatari is
- * running with bAddressSpace24 == true.
- */
-static void IoMemTabTT_ReadVmeGP1(void)
-{
-	IoMem_WriteByte(0xff8e09, 0x01);
-}
-
-/**
  * List of functions to handle read/write hardware interceptions for a TT.
  */
 const INTERCEPT_ACCESS_FUNC IoMemTable_TT[] =
@@ -148,14 +135,14 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_TT[] =
 
 	//{ 0xff8c80, 8, IoMem_VoidRead, IoMem_WriteWithoutInterception },         /* SCC */
 
-	{ 0xff8e01, 1, IoMem_VoidRead, IoMem_WriteWithoutInterception },         /* VME bus sys int mask */
-	{ 0xff8e03, 1, IoMem_VoidRead, IoMem_WriteWithoutInterception },         /* VME bus sys int state */
-	{ 0xff8e05, 1, IoMem_VoidRead, IoMem_WriteWithoutInterception },         /* VME bus sys interrupter */
-	{ 0xff8e07, 1, IoMem_VoidRead, IoMem_WriteWithoutInterception },         /* VME bus vme interrupter */
-	{ 0xff8e09, 1, IoMemTabTT_ReadVmeGP1, IoMem_WriteWithoutInterception },  /* VME bus GPIO 1 */
-	{ 0xff8e0b, 1, IoMem_VoidRead_00, IoMem_WriteWithoutInterception },      /* VME bus GPIO 2 */
-	{ 0xff8e0d, 1, IoMem_VoidRead, IoMem_WriteWithoutInterception },         /* VME bus vme int mask */
-	{ 0xff8e0f, 1, IoMem_VoidRead, IoMem_WriteWithoutInterception },         /* VME bus vme int state */
+	{ 0xff8e01, 1, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception },         /* SCU system interrupt mask */
+	{ 0xff8e03, 1, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception },         /* SCU system interrupt state */
+	{ 0xff8e05, 1, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception },         /* SCU system interrupter */
+	{ 0xff8e07, 1, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception },         /* SCU VME interrupter */
+	{ 0xff8e09, 1, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception },         /* SCU general purpose 1 */
+	{ 0xff8e0b, 1, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception },         /* SCU general purpose 2 */
+	{ 0xff8e0d, 1, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception },         /* SCU VME interrupt mask */
+	{ 0xff8e0f, 1, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception },         /* SCU VME interrupt state */
 
 	{ 0xff9000, SIZE_WORD, IoMem_VoidRead, IoMem_VoidWrite },                /* No bus error here */
 	{ 0xff9200, SIZE_WORD, IoMemTabTT_ReadDIPSwitches, IoMem_VoidWrite },    /* DIP switches */
