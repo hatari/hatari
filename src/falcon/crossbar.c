@@ -477,7 +477,6 @@ void Crossbar_DmaCtrlReg_WriteByte(void)
 	Uint8 sndCtrl = IoMem_ReadByte(0xff8901);
 
 	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8901 (additional Sound DMA control) write: 0x%02x\n", sndCtrl);
-//Crossbar_Start_InterruptHandler_25Mhz();
 
 	crossbar.dmaSelected = (sndCtrl & 0x80) >> 7;
 
@@ -1206,7 +1205,7 @@ static void Crossbar_Start_InterruptHandler_25Mhz(void)
 {
 	Uint32 cycles_25;
 
-//fprintf ( stderr , "int25 %x %x %x %x\n" , crossbar.clock25_cycles, crossbar.clock25_cycles_counter, crossbar.clock25_cycles_decimal, crossbar.pendingCyclesOver25 );
+//fprintf ( stderr , "start int25 %x %x %x %x\n" , crossbar.clock25_cycles, crossbar.clock25_cycles_counter, crossbar.clock25_cycles_decimal, crossbar.pendingCyclesOver25 );
 	cycles_25 = crossbar.clock25_cycles;
 	crossbar.clock25_cycles_counter += crossbar.clock25_cycles_decimal;
 
@@ -1234,6 +1233,7 @@ static void Crossbar_Start_InterruptHandler_32Mhz(void)
 {
 	Uint32 cycles_32;
 
+//fprintf ( stderr , "start int32 %x %x %x %x\n" , crossbar.clock32_cycles, crossbar.clock32_cycles_counter, crossbar.clock32_cycles_decimal, crossbar.pendingCyclesOver32 );
 	cycles_32 = crossbar.clock32_cycles;
 	crossbar.clock32_cycles_counter += crossbar.clock32_cycles_decimal;
 
@@ -1260,6 +1260,7 @@ static void Crossbar_Start_InterruptHandler_32Mhz(void)
  */
 void Crossbar_InterruptHandler_25Mhz(void)
 {
+//fprintf ( stderr , "int25 %x\n" , crossbar.pendingCyclesOver25 );
 	/* How many cycle was this sound interrupt delayed (>= 0) */
 	crossbar.pendingCyclesOver25 += -INT_CONVERT_FROM_INTERNAL ( PendingInterruptCount , INT_CPU_CYCLE );
 
@@ -1298,6 +1299,7 @@ void Crossbar_InterruptHandler_25Mhz(void)
  */
 void Crossbar_InterruptHandler_32Mhz(void)
 {
+//fprintf ( stderr , "int32 %x\n" , crossbar.pendingCyclesOver32 );
 	/* How many cycle was this sound interrupt delayed (>= 0) */
 	crossbar.pendingCyclesOver32 += -INT_CONVERT_FROM_INTERNAL ( PendingInterruptCount , INT_CPU_CYCLE );
 
@@ -1545,7 +1547,6 @@ static void Crossbar_Process_DMAPlay_Transfer(void)
 		/* Send a TimerA_Int at end of replay buffer if enabled */
 		if (dmaPlay.timerA_int) {
 			if (MFP_TACR == 0x08) {       /* Is timer A in Event Count mode? */
-//fprintf ( stderr , "loop %x %x\n" , dmaPlay.frameCounter , dmaPlay.frameLen );
 				MFP_TimerA_EventCount_Interrupt();
 				LOG_TRACE(TRACE_CROSSBAR, "Crossbar : MFP Timer A interrupt from DMA play\n");
 			}

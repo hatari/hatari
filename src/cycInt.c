@@ -457,6 +457,16 @@ bool CycInt_InterruptActive(interrupt_id Handler)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Return the number of the active interrupt (0 means no active int)
+ */
+int CycInt_GetActiveInt(void)
+{
+	return ActiveInterrupt;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Return cycles passed for an interrupt handler
  */
 int CycInt_FindCyclesPassed(interrupt_id Handler, int CycleType)

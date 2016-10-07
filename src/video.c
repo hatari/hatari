@@ -4253,7 +4253,12 @@ void Video_InterruptHandler_VBL ( void )
 	PendingCyclesOver = -INT_CONVERT_FROM_INTERNAL ( PendingInterruptCount , INT_CPU_CYCLE );    /* +ve */
 
 	/* Remove this interrupt from list and re-order */
-	CycInt_AcknowledgeInterrupt();
+	/* NOTE [NP] : in case ShortCut_ActKey above was used to change some parameters that require */
+	/* a reset, then the current int won't be the VBL handler anymore. In that case we should not */
+	/* acknowledge else this will ack another int and this will break Falcon DMA sound for example */
+	/* TODO : see above to handle shortcut keys in the main CPU loop */
+	if ( CycInt_GetActiveInt() == INTERRUPT_VIDEO_VBL )
+		CycInt_AcknowledgeInterrupt();
 
 	/* Increment the vbl jitter index */
 	VblJitterIndex++;

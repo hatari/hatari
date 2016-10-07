@@ -91,6 +91,7 @@ extern void CycInt_ModifyInterrupt(int CycleTime, int CycleType, interrupt_id Ha
 extern void CycInt_RemovePendingInterrupt(interrupt_id Handler);
 extern void CycInt_ResumeStoppedInterrupt(interrupt_id Handler);
 extern bool CycInt_InterruptActive(interrupt_id Handler);
+extern int CycInt_GetActiveInt(void);
 extern int CycInt_FindCyclesPassed(interrupt_id Handler, int CycleType);
 
 #endif /* ifndef HATARI_CYCINT_H */
