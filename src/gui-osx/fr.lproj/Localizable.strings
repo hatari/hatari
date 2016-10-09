@@ -10,7 +10,7 @@
 "Cancel"="Annuler";
 "Warm reset!"="Reset à chaud";
 "Really reset the emulator?"="Tout travail ne sera pas sauvegardé. Cliquez sur Annuler pour continuer sans Reset";
-"Quit" = "Quit" ;
+"Quit" = "Quitter" ;
 "Cold reset!"="Reset à froid";
 
 "Detected double bus error => CPU halted!\nEmulation needs to be reset.\n" = "Double erreur de bus => Arrêt du CPU\n Reset de l'émulation obligatoire." ;

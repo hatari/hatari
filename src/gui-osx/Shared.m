@@ -7,7 +7,7 @@
   Helper code used by the other Cocoa code files
 
   June 2006, Sébastien Molines - Created
-  2013, M. SARO
+  2013, 2016 M. SARO
 */
 
 #import <Cocoa/Cocoa.h>
@@ -39,7 +39,7 @@
 // On closure of the NSWindow, end the modal session
 - (void) windowWillClose:(NSNotification *)notification
 {
-	NSWindow *windowAboutToClose = [notification object];
+	NSWindow *windowAboutToClose = notification.object ;
 	
 	// Is this our modal window?
 	if (windowAboutToClose == modalWindow)
@@ -71,7 +71,7 @@ void GuiOsx_ExportPathString(NSString* path, char* szTarget, size_t cchTarget)
 void GuiOsx_Pause(void)
 {
 	// Pause emulation
-	Main_PauseEmulation(false);
+	Main_PauseEmulation(true);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -104,25 +104,25 @@ NSOpenPanel *openPanel ;
 	BOOL        btOk ;
 
 	openPanel = [NSOpenPanel openPanel];
-	[openPanel	setCanChooseDirectories: chooseDir];
-	[openPanel	setCanChooseFiles: !chooseDir];
-	[openPanel	setAllowsMultipleSelection:NO] ;
+	openPanel.canChooseDirectories = chooseDir ;
+	openPanel.canChooseFiles = !chooseDir;
+	openPanel.allowsMultipleSelection = NO ;
 	if (types != nil) 
-	 {	[openPanel	setAllowedFileTypes:types] ;
-		[openPanel	setAllowsOtherFileTypes:YES] ;  } ;
-	if (titre != nil)  [openPanel setTitle:titre] ;
+	 {	openPanel.allowedFileTypes = types ;
+		openPanel.allowsOtherFileTypes = YES ;  } ;
+	if (titre != nil) openPanel.title = titre ;
 
-	if ([openPanel respondsToSelector:@selector(setDirectoryURL:)])
-	 {	if (defoDir!=nil)  [openPanel setDirectoryURL:[NSURL fileURLWithPath:defoDir isDirectory:YES]] ;	// A partir de 10.6
-		if (defoFile!=nil) [openPanel setNameFieldStringValue:defoFile] ;
-		btOk = [openPanel runModal] == NSOKButton ;                                         // Ok ?
+//	if ([openPanel respondsToSelector:@selector(setDirectoryURL:)])
+	 {	if (defoDir!=nil)  openPanel.directoryURL = [NSURL fileURLWithPath:defoDir isDirectory:YES] ;	// A partir de 10.6
+		if (defoFile!=nil) openPanel.nameFieldStringValue = defoFile ;
+		btOk = [openPanel runModal] == NSModalResponseOK ;                                         			// Ok ?
 	 }
-	else
-	 	btOk = [openPanel runModalForDirectory:defoDir file:defoFile] == NSOKButton	;	// avant 10.6
+//	else
+//	 	btOk = [openPanel runModalForDirectory:defoDir file:defoFile] == NSModalResponseOK;					// avant 10.6
 
 	if (btOk)
-	 {	lesURLs = [openPanel URLs] ;
-		if ((lesURLs != nil) && ([lesURLs count] != 0))
+	 {	lesURLs = openPanel.URLs ;
+		if ((lesURLs != nil) && (lesURLs.count != 0))
 				return [[lesURLs objectAtIndex:0] path] ;
 	 } ;
 	return @"" ;
@@ -142,24 +142,24 @@ NSOpenPanel *openPanel ;
 	BOOL        btOk ;
 
 	savPanel = [NSSavePanel savePanel];
-	[savPanel setCanCreateDirectories:creatDir];
+	savPanel.canCreateDirectories = creatDir ;
 	if (types != nil)
-	 {	[savPanel setAllowedFileTypes:types] ;
-		[savPanel setAllowsOtherFileTypes:YES] ; } ;
-	if (titre != nil)  [savPanel setTitle:titre] ;
+	 {	savPanel.allowedFileTypes = types ;
+		savPanel.allowsOtherFileTypes = YES ; } ;
+	if (titre != nil)  savPanel.title = titre ;
 
-	if ([savPanel respondsToSelector:@selector(setDirectoryURL:)])
-	 {	if (defoDir!=nil)  [savPanel setDirectoryURL:[NSURL fileURLWithPath:defoDir isDirectory:YES]] ;	// A partir de 10.6
-		if (defoFile!=nil) [savPanel setNameFieldStringValue:defoFile] ;
-		btOk = [savPanel runModal] == NSOKButton ;										// Ok?
+//	if ([savPanel respondsToSelector:@selector(setDirectoryURL:)])
+	 {	if (defoDir!=nil)  savPanel.directoryURL = [NSURL fileURLWithPath:defoDir isDirectory:YES] ;	// A partir de 10.6
+		if (defoFile!=nil) savPanel.nameFieldStringValue = defoFile ;
+		btOk = [savPanel runModal] == NSModalResponseOK;												// Ok?
 	 }
-	else
-		btOk = [savPanel runModalForDirectory:defoDir file:defoFile] == NSOKButton ;	// Ok ? deprecated en 10.6
+//	else
+//		btOk = [savPanel runModalForDirectory:defoDir file:defoFile] == NSOKButton ;					// Ok ? deprecated en 10.6
 
 	if (btOk)
-	 {	lURL = [savPanel URL] ;
+	 {	lURL = savPanel.URL ;
 		if (lURL != nil)
-			return [lURL path] ;
+			return lURL.path ;
 	 } ;
 	return @"" ;
 }
@@ -172,13 +172,13 @@ NSOpenPanel *openPanel ;
 	NSArray		*thelist ;
 
 	if (thepath == nil) return @"" ;
-	if ([thepath length] == 0) return @"" ;
+	if (thepath.length == 0) return @"" ;
 	if (![afilemanager fileExistsAtPath:thepath])
-	 {	thend = [thepath lastPathComponent] ;
-	 	return [[self localpath:[thepath stringByDeletingLastPathComponent] :afilemanager] stringByAppendingPathComponent:thend] ;
+	 {	thend = thepath.lastPathComponent ;
+	 	return [[self localpath:thepath.stringByDeletingLastPathComponent :afilemanager] stringByAppendingPathComponent:thend] ;
 	 } ;
 	thelist = [afilemanager  componentsToDisplayForPath:thepath] ;				// convert in matrix
-	if ( [thelist count] != 0)
+	if ( thelist.count != 0)
 		return [NSString pathWithComponents:thelist] ;                          // return localized path
 	else
 		return thepath ;
@@ -198,14 +198,14 @@ NSOpenPanel *openPanel ;
 	NSString *apath ;
 
 	apath = [self localpath:thepath] ;
-	if ([apath length] == 0) return @"" ;
-	here = [self localpath:[@"~/" stringByExpandingTildeInPath]] ;
+	if (apath.length == 0) return @"" ;
+	here = [self localpath: @"~/".stringByExpandingTildeInPath ] ;
 	if (([apath rangeOfString:here].location) != NSNotFound)
-		return [NSString stringWithFormat:@"~%@", [apath substringFromIndex:[here length]]] ;
+		return [NSString stringWithFormat:@"~%@", [apath substringFromIndex:here.length ]] ;
 	return apath;
 }
 
-// NSAlert available 10.3 to 10.9
+// NSAlert available 10.3 to 10.9 ..... 10.11
 //
 - (NSInteger)myAlerte:(NSUInteger)style Txt:(NSString *)Txt firstB:(NSString *)firstB alternateB:(NSString *)alternateB
 										otherB:(NSString *)otherB informativeTxt:(NSString *)informativeT
@@ -214,11 +214,8 @@ NSOpenPanel *openPanel ;
 	NSInteger	ret ;
 
 	lalerte = [[NSAlert alloc] init] ;
-	[lalerte setAlertStyle:style] ;
-	if (Txt == nil)
-		[lalerte setMessageText:@"Hatari"] ;
-	else
-		[lalerte setMessageText:Txt] ;
+	lalerte.alertStyle = style ;
+	lalerte.messageText = Txt == nil ? @"Hatari" : Txt ;
 	[lalerte addButtonWithTitle:firstB] ;
 	if (alternateB != nil)	[lalerte addButtonWithTitle:alternateB] ;
 	if (otherB != nil)		[lalerte addButtonWithTitle:otherB] ;
@@ -226,11 +223,12 @@ NSOpenPanel *openPanel ;
 	ret = [lalerte runModal] ;
 	[lalerte release] ;
 	switch (ret) {
-	case NSAlertFirstButtonReturn : return NSAlertDefaultReturn ;
-									break ;
-	case NSAlertSecondButtonReturn: return NSAlertAlternateReturn ;
-									break ;
-	default :						return NSAlertOtherReturn ;
+	case NSAlertFirstButtonReturn :
+		return NSAlertFirstButtonReturn;
+	case NSAlertSecondButtonReturn:
+		return NSAlertSecondButtonReturn;
+	default:
+		return NSAlertFirstButtonReturn;
 	} ;
 }
 

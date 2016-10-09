@@ -8,8 +8,10 @@
 
   Feb-Mar 2006, Sébastien Molines - Created
   Jan 2006, Sébastien Molines - Updated for recent emulator updates
-  Miguel SARO, J. VERNET
+  2013 : Miguel SARO, J. VERNET
+  2016 : J. VERNET - Updated for 1.9.0
 */
+
 // bOKDialog = Dialog_MainDlg(&bForceReset, &bLoadedSnapshot);   // prise des préférences
 // TODO: Set the default paths to MacOS-friendly values
 // TODO: Move hardcoded string to localizable resources (e.g. string "Reset the emulator?")
@@ -230,7 +232,7 @@ char szPath[FILENAME_MAX];
 
 - (IBAction)finished:(id)sender
 {
-	Main_RequestQuit(0) ;
+	//Main_RequestQuit(0) ;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -239,28 +241,29 @@ char szPath[FILENAME_MAX];
 /*  Returns: TRUE is the user selected a path, FALSE if he/she aborted   */
 /*-----------------------------------------------------------------------*/
 - (BOOL)choosePathForControl:(NSTextField*)textField chooseDirectories:(BOOL)chooseDirectories defaultInitialDir:(NSString*)defaultInitialDir 
-																					mutString:(NSMutableString *)mutString what:(NSArray *)what
+    mutString:(NSMutableString *)mutString what:(NSArray *)what
 {
 	NSString *directoryToOpen ;
 	NSString *fileToPreselect ;
 	NSString *newPath ;
 
-	if ((mutString != nil) && ([mutString length] > 2))
-	 {	directoryToOpen = [mutString stringByDeletingLastPathComponent];			// There is existing path: we use it.
-		fileToPreselect = [mutString lastPathComponent]; }
+	if ((mutString != nil) && (mutString.length > 2))
+	 {	directoryToOpen = mutString.stringByDeletingLastPathComponent ;		// There is existing path: we use it.
+		fileToPreselect = mutString.lastPathComponent ; }
 	else
-	 {	directoryToOpen = [defaultInitialDir stringByExpandingTildeInPath];			// no path: use user's directory
+	 {	directoryToOpen = defaultInitialDir.stringByExpandingTildeInPath ;	// no path: use user's directory
 		fileToPreselect = nil; } ;
 
-	newPath = [NSApp hopenfile:chooseDirectories defoDir:directoryToOpen defoFile:fileToPreselect types:what];
-	if ([newPath length] != 0)														// user canceled if empty
+	newPath = [NSApp hopenfile:chooseDirectories defoDir:directoryToOpen
+                      defoFile:fileToPreselect types:what];
+	if (newPath.length != 0)												// user canceled if empty
 	{
-		[mutString setString:[NSString stringWithString:newPath]] ;					// save this path
-		[textField setStringValue:[NSApp pathUser:newPath]];						// show localized path
+		[mutString setString:[NSString stringWithString:newPath]] ;			// save this path
+		[textField setStringValue:[NSApp pathUser:newPath]];				// show localized path
 		return YES;
 	} ;
 
-	return NO;																		// Selection aborted
+	return NO;																// Selection aborted
 }
 
 
@@ -271,10 +274,12 @@ char szPath[FILENAME_MAX];
 //
 /*-----------------------------------------------------------------------*/
 
-- (void)insertFloppyImageIntoDrive:(int)drive forTextField:(NSTextField*)floppyTextField  realPath:(NSMutableString *)realPath
+- (void)insertFloppyImageIntoDrive:(int)drive forTextField:(NSTextField*)floppyTextField
+                          realPath:(NSMutableString *)realPath
 {
-	if ([self choosePathForControl:floppyTextField  chooseDirectories:NO defaultInitialDir:imgeDir
-											mutString:realPath  what:[NSArray arrayWithObjects:allF,nil]])
+	if ([self choosePathForControl:floppyTextField  chooseDirectories:NO
+                 defaultInitialDir:imgeDir
+                         mutString:realPath  what:@[allF]])
 		
 		Floppy_SetDiskFileName(drive, [realPath cStringUsingEncoding:NSASCIIStringEncoding], NULL);
 		// Insert the floppy image at this path  ????
@@ -286,11 +291,11 @@ char szPath[FILENAME_MAX];
 {
 BOOL flag1, flag2;
 
-	if ((route==nil) || ([route length]==0))  return @"~" ;
+	if ((route==nil) || (route.length == 0))  return @"~" ;
 	flag1 = [[NSFileManager defaultManager] fileExistsAtPath:route isDirectory:&flag2] ;
 	if (flag1 && !flag2)
 		return route ;
-	return [route stringByDeletingLastPathComponent] ;
+	return route.stringByDeletingLastPathComponent ;
 }
 
 //
@@ -298,15 +303,15 @@ BOOL flag1, flag2;
 //
 - (IBAction)chooseCartridgeImage:(id)sender;
 {
-	[self choosePathForControl: cartridgeImage chooseDirectories:NO defaultInitialDir:[self initial:cartridge]			// cartridge
-												mutString:cartridge  what:[NSArray arrayWithObjects:allC,nil]];
+    [self choosePathForControl: cartridgeImage chooseDirectories:NO defaultInitialDir:[self initial:cartridge]                              // cartridge
+        mutString:cartridge  what:@[allC]];
 }
 
 
 - (IBAction)chooseDefaultImagesLocation:(id)sender
 {
-	[self choosePathForControl: defaultImagesLocation chooseDirectories:YES defaultInitialDir:[self initial:imgeDir]	// images location
-												mutString:imgeDir  what:nil];
+	[self choosePathForControl: defaultImagesLocation chooseDirectories:YES defaultInitialDir:[self initial:imgeDir]                                // images location
+        mutString:imgeDir  what:nil];
 }
 
 - (IBAction)chooseFloppyImageA:(id)sender
@@ -322,62 +327,62 @@ BOOL flag1, flag2;
 - (IBAction)chooseGemdosImage:(id)sender																				// directory for Gemdos
 {
 	[self choosePathForControl: gemdosImage chooseDirectories:YES defaultInitialDir:INITIAL_DIR(gemdos)					// gemdos
-												mutString:gemdos  what:nil] ;
-	if ([gemdos length] >2 ) [gemdosImage setStringValue:[NSApp pathUser:gemdos]] ;
+                mutString:gemdos  what:nil] ;
+	if (gemdos.length >2 ) [gemdosImage setStringValue:[NSApp pathUser:gemdos]] ;
 }
 
 - (IBAction)chooseHdImage:(id)sender
 {
 	[self choosePathForControl: hdImage chooseDirectories:NO defaultInitialDir:[self initial:hrdDisk]					// HD image ?
-												mutString:hrdDisk  what:[NSArray arrayWithObjects:@"img",@"hdv",nil]] ;
+            mutString:hrdDisk  what:@[@"img",@"hdv"]] ;
 }
 
 - (IBAction)chooseIdeMasterHdImage:(id)sender
 {
 	[self choosePathForControl: ideMasterHdImage chooseDirectories:NO defaultInitialDir:[self initial:masterIDE]		// IDE master
-												mutString:masterIDE  what:[NSArray arrayWithObject:@"hdv"]];
+            mutString:masterIDE  what:@[@"hdv"]];
 }
 
 - (IBAction)chooseIdeSlaveHdImage:(id)sender
 {
 	[self choosePathForControl: ideSlaveHdImage chooseDirectories:NO defaultInitialDir:[self initial:slaveIDE]			// IDE slave
-												mutString:slaveIDE  what:[NSArray arrayWithObject:@"hdv"]];
+            mutString:slaveIDE  what:@[@"hdv"]];
 }
 
 - (IBAction)chooseKeyboardMappingFile:(id)sender
 {
 	[self choosePathForControl: keyboardMappingFile chooseDirectories:NO defaultInitialDir:[self initial:keyboard]		// keyboard mapping
-												mutString:keyboard  what:[NSArray arrayWithObjects:@"txt",@"map",nil]];
+            mutString:keyboard  what:@[@"txt",@"map"]];
 }
 
 - (IBAction)chooseMidiOutputFile:(id)sender
 {
 	[self choosePathForControl: writeMidiToFile chooseDirectories:NO defaultInitialDir:[self initial:midiOut]			// midi output 
-												mutString:midiOut  what:[NSArray arrayWithObject:@"mid"]];
+            mutString:midiOut  what:@[@"mid"]];
 }
 
 - (IBAction)choosePrintToFile:(id)sender
 {
 	[self choosePathForControl: printToFile chooseDirectories:NO defaultInitialDir:[self initial:printit]				// print to file
-												mutString:printit  what:[NSArray arrayWithObject:@"prn"]];
+            mutString:printit  what:@[@"prn"]];
 }
 
 - (IBAction)chooseRS232InputFile:(id)sender
 {
 	[self choosePathForControl: readRS232FromFile chooseDirectories:NO defaultInitialDir:[self initial:rs232In]			// RS232 input
-												mutString:rs232In  what:nil];
+        mutString:rs232In  what:nil];
 }
 
 - (IBAction)chooseRS232OutputFile:(id)sender
 {
 	[self choosePathForControl: writeRS232ToFile chooseDirectories:NO defaultInitialDir:[self initial:rs232Out]			// RS232 output
-												mutString:rs232Out  what:nil];
+        mutString:rs232Out  what:nil];
 }
 
 - (IBAction)chooseTosImage:(id)sender;
 {
 	[self choosePathForControl: tosImage chooseDirectories:NO defaultInitialDir:[self initial:TOS]						// TOS image
-												mutString:TOS  what:[NSArray arrayWithObjects:allT,nil]];
+        mutString:TOS  what:@[allT]];
 }
 
 
@@ -390,8 +395,8 @@ BOOL flag1, flag2;
 	Floppy_SetDiskFileNameNone(0);
 	
 	// Refresh  control & mutablestring
-	[floppyImageA setStringValue:@""];
-	[floppyA setString:@""] ;
+	floppyImageA.stringValue = @"" ;
+	floppyA.string = @"" ;
 }
 
 - (IBAction)ejectFloppyB:(id)sender
@@ -399,36 +404,40 @@ BOOL flag1, flag2;
 	Floppy_SetDiskFileNameNone(1);
 
 	// Refresh  control & mutablestring
-	[floppyImageB setStringValue:@""];
-	[floppyB setString:@""] ;
+	floppyImageB.stringValue = @"" ;
+	floppyB.string = @"" ;
 }
 
 - (IBAction)ejectGemdosImage:(id)sender
 {
-	// Clear the control. Later. saveAllControls will set the ConfigureParams accordingly to signal this is ejected
-	[gemdosImage setStringValue:@""];
-	[gemdos setString:@""] ;
+	// Clear the control. Later. saveAllControls will set the ConfigureParams accordingly
+	// to signal this is ejected
+	gemdosImage.stringValue = @"" ;
+	gemdos.string = @"" ;
 }
 
 - (IBAction)ejectHdImage:(id)sender
 {
-	// Clear the control. Later. saveAllControls will set the ConfigureParams accordingly to signal this is ejected
-	[hdImage setStringValue:@""];
-	[hrdDisk setString:@""] ;
+	// Clear the control. Later. saveAllControls will set the ConfigureParams accordingly
+	// to signal this is ejected
+	hdImage.stringValue = @"" ;
+	hrdDisk.string = @"" ;
 }
 
 - (IBAction)ejectIdeMasterHdImage:(id)sender
 {
-	// Clear the control. Later. saveAllControls will set the ConfigureParams accordingly to signal this is ejected
-	[ideMasterHdImage setStringValue:@""];
-	[masterIDE setString:@""] ;
+	// Clear the control. Later. saveAllControls will set the ConfigureParams accordingly
+	// to signal this is ejected
+	ideMasterHdImage.stringValue = @"" ;
+	masterIDE.string = @"" ;
 }
 
 - (IBAction)ejectIdeSlaveHdImage:(id)sender
 {
-	// Clear the control. Later. saveAllControls will set the ConfigureParams accordingly to signal this is ejected
-	[ideSlaveHdImage setStringValue:@""];
-	[slaveIDE setString:@""] ;
+	// Clear the control. Later. saveAllControls will set the ConfigureParams accordingly
+	// to signal this is ejected
+	ideSlaveHdImage.stringValue = @"" ;
+	slaveIDE.string = @"" ;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -443,23 +452,24 @@ BOOL flag1, flag2;
 	BOOL		btOk ;
 
 	ru = [NSString stringWithCString:(Paths_GetHatariHome()) encoding:NSASCIIStringEncoding] ;
-	[opnPanel setAllowedFileTypes:[NSArray arrayWithObject:@"cfg"]] ;
-	[opnPanel setCanChooseDirectories: NO];
-	[opnPanel setCanChooseFiles: YES];
-	[opnPanel setAccessoryView:partage] ;
-
-	if ([opnPanel respondsToSelector:@selector(setDirectoryURL:)])
-	 {	[opnPanel setDirectoryURL:[NSURL fileURLWithPath:ru isDirectory:YES]] ;
-		[opnPanel setNameFieldStringValue:@"hatari"] ;
-		btOk = [opnPanel runModal] == NSModalResponseOK;										// Ok ?
+	opnPanel.allowedFileTypes = @[@"cfg"] ;
+	opnPanel.canChooseDirectories = NO ;
+	opnPanel.canChooseFiles = YES ;
+	opnPanel.accessoryView = partage ;
+//10.5 ?
+//	if ([opnPanel respondsToSelector:@selector(setDirectoryURL:)])
+	 {	opnPanel.directoryURL = [NSURL fileURLWithPath:ru isDirectory:YES] ;
+		opnPanel.nameFieldStringValue = @"hatari" ;
+		btOk = [opnPanel runModal] == NSModalResponseOK;								// Ok ?
 	 }
-	else
-        btOk = [opnPanel runModalForDirectory:ru file:@"hatari"] == NSModalResponseOK; //NSOKButton 	;
+// 10.5 ?
+//	else
+//        btOk = [opnPanel runModalForDirectory:ru file:@"hatari"] == NSModalResponseOK; //NSOKButton 	;
 
 	if (!btOk)  return ;																// Cancel
 
-	lesURLs = [opnPanel URLs] ;
-	if ((lesURLs == nil) || ([lesURLs count] == 0))
+	lesURLs = opnPanel.URLs ;
+	if ((lesURLs == nil) || (lesURLs.count == 0))
 		return ;
 
 	[configNm setString:[[lesURLs objectAtIndex:0] path]] ;
@@ -483,21 +493,22 @@ NSString	*ru ;
 BOOL		btOk ;
 
 	ru = [NSString stringWithCString:(Paths_GetHatariHome()) encoding:NSASCIIStringEncoding] ;
-	[savPanel setAllowedFileTypes:[NSArray arrayWithObject:@"cfg"]] ;
-	[savPanel setAccessoryView:hartage] ;
-
-	if ([savPanel respondsToSelector:@selector(setDirectoryURL:)])
-	 {	[savPanel setDirectoryURL:[NSURL fileURLWithPath:ru isDirectory:YES]] ;			// Since OS X 10.6
-		[savPanel setNameFieldStringValue:@"hatari"] ;
-		btOk = [savPanel runModal] == NSModalResponseOK ;											// Ok ?
+	savPanel.allowedFileTypes = @[@"cfg"] ;
+	savPanel.accessoryView = hartage ;
+//10.5
+//	if ([savPanel respondsToSelector:@selector(setDirectoryURL:)])
+	 {	savPanel.directoryURL = [NSURL fileURLWithPath:ru isDirectory:YES] ;			// Since OS X 10.6
+		savPanel.nameFieldStringValue = @"hatari" ;
+		btOk = [savPanel runModal] == NSModalResponseOK ;								// Ok ?
 	 }
-	else
-        btOk = [savPanel runModalForDirectory:ru file:@"hatari"] == NSModalResponseOK; //NSOKButton ;		// avant 10.6
+//10.5
+//	else
+//        btOk = [savPanel runModalForDirectory:ru file:@"hatari"] == NSModalResponseOK; //NSOKButton ;		// avant 10.6
 
 	if (!btOk)
 		return ;                                                                        // Cancel
 
-	[configNm setString:[[savPanel URL] path]];
+	[configNm setString: savPanel.URL.path ];
 
 																	// Make a non-const C string out of it
 	[configNm getCString:sConfigFileName maxLength:FILENAME_MAX encoding:NSASCIIStringEncoding];
@@ -510,10 +521,10 @@ BOOL		btOk ;
 NSString  *defaultDirectory ;
 
 	defaultDirectory = [NSString stringWithCString:(Paths_GetHatariHome()) encoding:NSASCIIStringEncoding] ;
-	if ([opnPanel respondsToSelector:@selector(setDirectoryURL:)])
-		[opnPanel setDirectoryURL:[NSURL fileURLWithPath:defaultDirectory isDirectory:YES]] ;
-	else
-		[opnPanel setDirectory:defaultDirectory] ;
+//	if ([opnPanel respondsToSelector:@selector(setDirectoryURL:)])
+		opnPanel.directoryURL = [NSURL fileURLWithPath:defaultDirectory isDirectory:YES] ;
+//	else
+//		[opnPanel setDirectory:defaultDirectory] ;
 }
 
 - (IBAction)halle:(id)sender
@@ -521,10 +532,10 @@ NSString  *defaultDirectory ;
 NSString  *defaultDirectory ;
 
 	defaultDirectory = [NSString stringWithCString:(Paths_GetHatariHome()) encoding:NSASCIIStringEncoding] ;
-	if ([savPanel respondsToSelector:@selector(setDirectoryURL:)])
-		[savPanel setDirectoryURL:[NSURL fileURLWithPath:defaultDirectory isDirectory:YES]] ;
-	else 
-		[savPanel setDirectory:defaultDirectory] ;
+//	if ([savPanel respondsToSelector:@selector(setDirectoryURL:)])
+		savPanel.directoryURL = [NSURL fileURLWithPath:defaultDirectory isDirectory:YES] ;
+//	else 
+//		[savPanel setDirectory:defaultDirectory] ;
 }
 
 
@@ -554,7 +565,7 @@ NSString  *defaultDirectory ;
 		SDLKey key = Preferences_KeysForJoysticks[i];
 		const char* szKeyName = SDL_GetKeyName(key);
 		[dropDown addItemWithTitle:[[NSString stringWithCString:szKeyName encoding:NSASCIIStringEncoding] capitalizedString]];	
-		[[dropDown lastItem] setTag:key];
+		dropDown.lastItem.tag = key ;
 	}
 }
 
@@ -589,13 +600,13 @@ NSString  *defaultDirectory ;
 			{
 				const char* szJoystickName = Joy_GetName(i);
 				[realJoystick addItemWithTitle:[[NSString stringWithCString:szJoystickName encoding:NSASCIIStringEncoding] capitalizedString]];
-				[[realJoystick lastItem] setTag:i];
+				realJoystick.lastItem.tag = i ;
 			}
 		}
 		else	// No real joysticks: Disable the controls
 		{
-			[[joystickMode cellWithTag:1] setEnabled:FALSE];
-			[realJoystick setEnabled:FALSE];
+			[joystickMode cellWithTag:1].enabled = FALSE ;
+			realJoystick.enabled = FALSE ;
 		}
 		
 		bInitialized = true;
@@ -610,11 +621,11 @@ NSString  *defaultDirectory ;
 	[self setAllControls];
 
 	// Display the window
-	ModalWrapper *mw=[[ModalWrapper alloc] init];
+	ModalWrapper *mw = [[ModalWrapper alloc] init];
 	
 	[mw runModal:window];
 	
-	[mw release];								// */
+	[mw release];			// */
 	
 	// solve bug screen-reset: close and kill preference windows before
 	// M. Saro, 2013
@@ -624,8 +635,9 @@ NSString  *defaultDirectory ;
         // Check if change need reset
         if (Change_DoNeedReset(&CurrentParams, &ConfigureParams))
         {
-            applyChanges = [NSApp myAlerte:NSInformationalAlertStyle Txt:nil firstB:localize(@"Don't reset") alternateB:localize(@"Reset")
-											otherB:nil informativeTxt:localize(@"Must be reset") ] == NSAlertAlternateReturn ;
+            applyChanges = [NSApp myAlerte:NSInformationalAlertStyle Txt:nil
+                firstB:localize(@"Don't reset") alternateB:localize(@"Reset")
+                otherB:nil informativeTxt:localize(@"Must be reset") ] == NSAlertSecondButtonReturn ;
 			if (applyChanges)
 				Change_CopyChangedParamsToConfiguration(&CurrentParams, &ConfigureParams, true) ;
             else
@@ -666,8 +678,21 @@ NSString  *defaultDirectory ;
 {
 
 	// Import the floppy paths into their controls.
-	IMPORT_TEXTFIELD(floppyImageA, floppyA, ConfigureParams.DiskImage.szDiskFileName[0]);				// le A
-	IMPORT_TEXTFIELD(floppyImageB, floppyB, ConfigureParams.DiskImage.szDiskFileName[1]);				// le B
+	//Disk A
+	IMPORT_TEXTFIELD(floppyImageA, floppyA, ConfigureParams.DiskImage.szDiskFileName[0]);
+	IMPORT_SWITCH(enableDriveA, ConfigureParams.DiskImage.EnableDriveA);
+	if(ConfigureParams.DiskImage.DriveA_NumberOfHeads==1)
+		[driveA_NumberOfHeads setState:NSOffState];
+	else
+		[driveA_NumberOfHeads setState:NSOnState];
+
+	//Disk B
+	IMPORT_TEXTFIELD(floppyImageB, floppyB, ConfigureParams.DiskImage.szDiskFileName[1]);		// le B
+	IMPORT_SWITCH(enableDriveB,ConfigureParams.DiskImage.EnableDriveB);
+	if(ConfigureParams.DiskImage.DriveB_NumberOfHeads==1)
+		[driveB_NumberOfHeads setState:NSOffState];
+	else
+		[driveB_NumberOfHeads setState:NSOnState];
 
 	// Import all the preferences into their controls
 	IMPORT_TEXTFIELD(cartridgeImage, cartridge, ConfigureParams.Rom.szCartridgeImageFileName);
@@ -682,6 +707,14 @@ NSString  *defaultDirectory ;
 	IMPORT_SWITCH(autoInsertB, ConfigureParams.DiskImage.bAutoInsertDiskB);
 	IMPORT_SWITCH(blitter, ConfigureParams.System.bBlitter);
 	IMPORT_SWITCH(bootFromHD, ConfigureParams.HardDisk.bBootFromHardDisk);
+	//1.9.0 New Option
+	IMPORT_SWITCH(bFilenameConversion, ConfigureParams.HardDisk.bFilenameConversion);
+	if (ConfigureParams.HardDisk.nGemdosDrive == DRIVE_SKIP)
+		[nGemdosDrive setState:NSOnState];
+	else
+		[nGemdosDrive setState:NSOffState];
+
+	IMPORT_SWITCH(nGemdosDrive, ConfigureParams.HardDisk.nGemdosDrive);
 	IMPORT_SWITCH(captureOnChange, ConfigureParams.Screen.bCrop);
 	IMPORT_RADIO(colorDepth, ConfigureParams.Screen.nVdiColors);
 	IMPORT_SWITCH(compatibleCpu, ConfigureParams.System.bCompatibleCpu);
@@ -726,29 +759,37 @@ NSString  *defaultDirectory ;
 	
 	[widthStepper setDoubleValue:[maxZoomedWidth intValue]];
 	[heightStepper setDoubleValue:[maxZoomedHeight intValue]];
-	
-    //deal with TT RAM Size Stepper
-#ifdef ENABLE_WINUAE_CPU
-    IMPORT_NTEXTFIELD(TTRAMSizeValue, ConfigureParams.Memory.nTTRamSize);
-    [TTRAMSizeStepper setDoubleValue:[TTRAMSizeValue intValue]];
-    IMPORT_SWITCH(cycleExactCPU, ConfigureParams.System.bCycleExactCpu);
-    IMPORT_SWITCH(MMU_Emulation, ConfigureParams.System.bMMU);
-    IMPORT_SWITCH(adressSpace24, ConfigureParams.System.bAddressSpace24);
-    //IMPORT_RADIO(FPUType, ConfigureParams.System.n_FPUType);
-    if (ConfigureParams.System.n_FPUType == FPU_NONE)
-        [FPUType selectCellWithTag:0];
-    else if (ConfigureParams.System.n_FPUType == FPU_68881)
-        [FPUType selectCellWithTag:1];
-    else if (ConfigureParams.System.n_FPUType == FPU_68882)
-        [FPUType selectCellWithTag:2];
-    else if (ConfigureParams.System.n_FPUType == FPU_CPU)
-        [FPUType selectCellWithTag:3];
-    IMPORT_SWITCH(CompatibleFPU, ConfigureParams.System.bCompatibleFPU);
 
+	//1.9.1 Video Timing
+	switch(ConfigureParams.System.VideoTimingMode)
+	{
+	 case VIDEO_TIMING_MODE_RANDOM:[videoTiming selectItemWithTag:0];break;
+	 case VIDEO_TIMING_MODE_WS1:[videoTiming selectItemWithTag:1];break;
+	 case VIDEO_TIMING_MODE_WS2:[videoTiming selectItemWithTag:2];break;
+	 case VIDEO_TIMING_MODE_WS3:[videoTiming selectItemWithTag:3];break;
+	 case VIDEO_TIMING_MODE_WS4:[videoTiming selectItemWithTag:4];break;
+	}
+
+	//deal with TT RAM Size Stepper
+#ifdef ENABLE_WINUAE_CPU
+	IMPORT_NTEXTFIELD(TTRAMSizeValue, ConfigureParams.Memory.nTTRamSize);
+	[TTRAMSizeStepper setDoubleValue:[TTRAMSizeValue intValue]];
+	IMPORT_SWITCH(cycleExactCPU, ConfigureParams.System.bCycleExactCpu);
+	IMPORT_SWITCH(MMU_Emulation, ConfigureParams.System.bMMU);
+	IMPORT_SWITCH(adressSpace24, ConfigureParams.System.bAddressSpace24);
+	//IMPORT_RADIO(FPUType, ConfigureParams.System.n_FPUType);
+	if (ConfigureParams.System.n_FPUType == FPU_NONE)
+		[FPUType selectCellWithTag:0];
+	else if (ConfigureParams.System.n_FPUType == FPU_68881)
+		[FPUType selectCellWithTag:1];
+	else if (ConfigureParams.System.n_FPUType == FPU_68882)
+		[FPUType selectCellWithTag:2];
+	else if (ConfigureParams.System.n_FPUType == FPU_CPU)
+		[FPUType selectCellWithTag:3];
+	IMPORT_SWITCH(CompatibleFPU, ConfigureParams.System.bCompatibleFPU);
 #endif
 
 	int i;
-
 	for (i = 0; i <= DLGSOUND_50KHZ-DLGSOUND_11KHZ; i++)
 	{
 		if (ConfigureParams.Sound.nPlaybackFreq > nSoundFreqs[i]-500
@@ -758,8 +799,7 @@ NSString  *defaultDirectory ;
 			break;
 		}
 	}
-	
-	
+
 	if (ConfigureParams.Screen.nVdiWidth >= 1024)
 		[resolution selectCellWithTag:(2)];
 	else if (ConfigureParams.Screen.nVdiWidth >= 768)
@@ -774,7 +814,7 @@ NSString  *defaultDirectory ;
 	}
 	else
 	{
-		[hdImage setStringValue:@""]; [hrdDisk setString:@""] ;
+		hdImage.stringValue = @""; hrdDisk.string = @"" ;
 	}
 	
 	// If the IDE HD flag is set, load the IDE HD path, otherwise make it blank
@@ -785,7 +825,7 @@ NSString  *defaultDirectory ;
 	}
 	else
 	{
-		[ideMasterHdImage setStringValue:@""]; [masterIDE setString:@""] ;
+		ideMasterHdImage.stringValue = @"" ; [masterIDE setString:@""] ;
 	}
 	//Slave
 	if (ConfigureParams.HardDisk.bUseIdeSlaveHardDiskImage)
@@ -794,7 +834,7 @@ NSString  *defaultDirectory ;
 	}
 	else
 	{
-		[ideSlaveHdImage setStringValue:@""]; [slaveIDE setString:@""] ;
+		ideSlaveHdImage.stringValue = @"" ; [slaveIDE setString:@""] ;
 	}
 	
 	// If the Gemdos flag is set, load the Gemdos path, otherwise make it blank
@@ -806,7 +846,7 @@ NSString  *defaultDirectory ;
 	}
 	else
 	{
-		[gemdosImage setStringValue:@""]; [gemdos setString:@""];
+		gemdosImage.stringValue = @"" ; [gemdos setString:@""];
 	}
 	
 	// Set the per-joystick controls
@@ -827,22 +867,22 @@ NSString  *defaultDirectory ;
 	int nJoystickMode;
 	EXPORT_RADIO(joystickMode, nJoystickMode);
 	BOOL bUsingKeyboard = (nJoystickMode == JOYSTICK_KEYBOARD);
-	[joystickUp setEnabled:bUsingKeyboard];
-	[joystickRight setEnabled:bUsingKeyboard];
-	[joystickDown setEnabled:bUsingKeyboard];
-	[joystickLeft setEnabled:bUsingKeyboard];
-	[joystickFire setEnabled:bUsingKeyboard];
+	joystickUp.enabled = bUsingKeyboard;
+	joystickRight.enabled = bUsingKeyboard;
+	joystickDown.enabled = bUsingKeyboard;
+	joystickLeft.enabled = bUsingKeyboard;
+	joystickFire.enabled = bUsingKeyboard;
 
 	// Resolution and colour depth depend on Extended GEM VDI resolution
 	BOOL bUsingVDI;
 	EXPORT_SWITCH(useVDIResolution, bUsingVDI);
-	[resolution setEnabled:bUsingVDI];
-	[colorDepth setEnabled:bUsingVDI];
+	resolution.enabled = bUsingVDI;
+	colorDepth.enabled = bUsingVDI;
 	
 	// Playback quality depends on enable sound
 	BOOL bSoundEnabled;
 	EXPORT_SWITCH(enableSound, bSoundEnabled);
-	[playbackQuality setEnabled:bSoundEnabled];
+	playbackQuality.enabled = bSoundEnabled ;
 }
 
 
@@ -912,11 +952,32 @@ NSString  *defaultDirectory ;
 	EXPORT_TEXTFIELD(midiOut, ConfigureParams.Midi.sMidiOutFileName);
 	EXPORT_TEXTFIELD(rs232Out, ConfigureParams.RS232.szOutFileName);
 
-	//EXPORT_TEXTFIELD(cartridgeImage, ConfigureParams.Rom.szCartridgeImageFileName);
-	
+	//Disk A
+
+	EXPORT_SWITCH(enableDriveA, ConfigureParams.DiskImage.EnableDriveA);
+	if([driveA_NumberOfHeads state]==NSOnState)
+		ConfigureParams.DiskImage.DriveA_NumberOfHeads=2;
+	else
+		ConfigureParams.DiskImage.DriveA_NumberOfHeads=1;
+
+	//Disk B
+	EXPORT_SWITCH(enableDriveB,ConfigureParams.DiskImage.EnableDriveB);
+	if([driveB_NumberOfHeads state]==NSOnState)
+		ConfigureParams.DiskImage.DriveB_NumberOfHeads=2;
+	else
+		ConfigureParams.DiskImage.DriveB_NumberOfHeads=1;
+
 	EXPORT_SWITCH(autoInsertB, ConfigureParams.DiskImage.bAutoInsertDiskB);
 	EXPORT_SWITCH(blitter, ConfigureParams.System.bBlitter);
 	EXPORT_SWITCH(bootFromHD, ConfigureParams.HardDisk.bBootFromHardDisk);
+	// 1.9.0 new options in Disk
+	EXPORT_SWITCH(bFilenameConversion, ConfigureParams.HardDisk.bFilenameConversion);
+
+	if ([nGemdosDrive state]==NSOnState)
+		ConfigureParams.HardDisk.nGemdosDrive = DRIVE_SKIP;
+	else
+		ConfigureParams.HardDisk.nGemdosDrive = DRIVE_C;
+
 	EXPORT_SWITCH(captureOnChange, ConfigureParams.Screen.bCrop);
 	EXPORT_RADIO(colorDepth, ConfigureParams.Screen.nVdiColors);
 	EXPORT_SWITCH(compatibleCpu, ConfigureParams.System.bCompatibleCpu);
@@ -955,27 +1016,36 @@ NSString  *defaultDirectory ;
 
 	EXPORT_NTEXTFIELD(maxZoomedWidth, ConfigureParams.Screen.nMaxWidth);
 	EXPORT_NTEXTFIELD(maxZoomedHeight, ConfigureParams.Screen.nMaxHeight);
-    
+
+	// VIDEO TIMING
+	switch([videoTiming selectedTag])
+	{
+	 case 0: ConfigureParams.System.VideoTimingMode=VIDEO_TIMING_MODE_RANDOM; break;
+	 case 1: ConfigureParams.System.VideoTimingMode=VIDEO_TIMING_MODE_WS1; break;
+	 case 2: ConfigureParams.System.VideoTimingMode=VIDEO_TIMING_MODE_WS2; break;
+	 case 3: ConfigureParams.System.VideoTimingMode=VIDEO_TIMING_MODE_WS3; break;
+	 case 4: ConfigureParams.System.VideoTimingMode=VIDEO_TIMING_MODE_WS4; break;
+	}
 #ifdef ENABLE_WINUAE_CPU
-    EXPORT_NTEXTFIELD(TTRAMSizeValue, ConfigureParams.Memory.nTTRamSize);
-    EXPORT_SWITCH(cycleExactCPU, ConfigureParams.System.bCycleExactCpu);
-    EXPORT_SWITCH(MMU_Emulation, ConfigureParams.System.bMMU);
-    EXPORT_SWITCH(adressSpace24, ConfigureParams.System.bAddressSpace24);
-    //EXPORT_RADIO(FPUType, ConfigureParams.System.n_FPUType);
-    if([[FPUType selectedCell] tag]==0)
-        ConfigureParams.System.n_FPUType = FPU_NONE;
-    else if([[FPUType selectedCell] tag]==1)
-        ConfigureParams.System.n_FPUType = FPU_68881;
-    else if([[FPUType selectedCell] tag]==2)
-        ConfigureParams.System.n_FPUType = FPU_68882;
-    else if([[FPUType selectedCell] tag]==3)
-        ConfigureParams.System.n_FPUType = FPU_CPU;
-    EXPORT_SWITCH(CompatibleFPU, ConfigureParams.System.bCompatibleFPU);
+	EXPORT_NTEXTFIELD(TTRAMSizeValue, ConfigureParams.Memory.nTTRamSize);
+	EXPORT_SWITCH(cycleExactCPU, ConfigureParams.System.bCycleExactCpu);
+	EXPORT_SWITCH(MMU_Emulation, ConfigureParams.System.bMMU);
+	EXPORT_SWITCH(adressSpace24, ConfigureParams.System.bAddressSpace24);
+	//EXPORT_RADIO(FPUType, ConfigureParams.System.n_FPUType); 		//[[FPUType selectedCell] tag]
+	if(FPUType.selectedCell.tag == 0 )
+		ConfigureParams.System.n_FPUType = FPU_NONE;
+	else if(FPUType.selectedCell.tag == 1 )
+		ConfigureParams.System.n_FPUType = FPU_68881;
+	else if(FPUType.selectedCell.tag == 2 )
+		ConfigureParams.System.n_FPUType = FPU_68882;
+	else if(FPUType.selectedCell.tag == 3 )
+		ConfigureParams.System.n_FPUType = FPU_CPU;
+	EXPORT_SWITCH(CompatibleFPU, ConfigureParams.System.bCompatibleFPU);
 #endif
 
 	ConfigureParams.Sound.nPlaybackFreq = nSoundFreqs[[[playbackQuality selectedCell] tag]];
 
-	switch ([[resolution selectedCell] tag])
+	switch (resolution.selectedCell.tag )
 	{
 	 case 0:
 		ConfigureParams.Screen.nVdiWidth = 640;
@@ -992,7 +1062,7 @@ NSString  *defaultDirectory ;
 	}
 
 	// Define the HD flag, and export the HD path if one is selected
-	if ([hrdDisk length] > 0)
+	if (hrdDisk.length > 0)
 	{
 		EXPORT_TEXTFIELD(hrdDisk, ConfigureParams.Acsi[0].sDeviceFile);
 		ConfigureParams.Acsi[0].bUseDevice = true;
@@ -1003,7 +1073,7 @@ NSString  *defaultDirectory ;
 	}
 
 	// Define the IDE HD flag, and export the IDE HD path if one is selected
-	if ([masterIDE length] > 0)
+	if (masterIDE.length > 0)
 	{
 		EXPORT_TEXTFIELD(masterIDE, ConfigureParams.HardDisk.szIdeMasterHardDiskImage);
 		ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage = YES;
@@ -1014,7 +1084,7 @@ NSString  *defaultDirectory ;
 	}
 	
 	// IDE Slave
-	if ([slaveIDE length] > 0)
+	if (slaveIDE.length > 0)
 	{
 		EXPORT_TEXTFIELD(slaveIDE, ConfigureParams.HardDisk.szIdeSlaveHardDiskImage);
 		ConfigureParams.HardDisk.bUseIdeSlaveHardDiskImage = YES;
@@ -1025,7 +1095,7 @@ NSString  *defaultDirectory ;
 	}
 	
 	// Define the Gemdos flag, and export the Gemdos path if one is selected
-	if ([gemdos length] > 0)
+	if (gemdos.length > 0)
 	{
 		EXPORT_TEXTFIELD(gemdos, ConfigureParams.HardDisk.szHardDiskDirectories[0]);
 		ConfigureParams.HardDisk.bUseHardDiskDirectories = YES;
@@ -1043,20 +1113,20 @@ NSString  *defaultDirectory ;
 
 - (IBAction) setWidth:(id)sender;
 {
-	NSLog(@"Change Max Zoom width: %d", [sender intValue]);
-    [maxZoomedWidth setIntValue: [sender intValue]];
+	NSLog(@"Change Max Zoom width: %d", [sender intValue] );
+		maxZoomedWidth.intValue = [sender intValue] ;
 }
 
 - (IBAction) setHeight:(id)sender;
 {
 	NSLog(@"Change Max Zoom height: %d", [sender intValue]);
-    [maxZoomedHeight setIntValue: [sender intValue]];
+		maxZoomedHeight.intValue = [sender intValue] ;
 }
 
 - (IBAction)setTTRAMSize:(id)sender
 {
-    NSLog(@"Change TTRAMSize: %d", [sender intValue]);
-    [TTRAMSizeValue setIntValue: [sender intValue]];
+	NSLog(@"Change TTRAMSize: %d", [sender intValue]);
+	TTRAMSizeValue.intValue = [sender intValue] ;
     
 }
 
@@ -1065,9 +1135,9 @@ NSString  *defaultDirectory ;
 	static PrefsController *prefs = nil;
 	if (!prefs)
 		prefs = [[PrefsController alloc] init];
-	
+
 	return prefs;
-}																	// */
+}										// */
 
 - (void)awakeFromNib
 {
@@ -1089,13 +1159,13 @@ NSString  *defaultDirectory ;
 	opnPanel = [NSOpenPanel openPanel]; [opnPanel retain] ;
 	savPanel = [NSSavePanel savePanel]; [savPanel retain] ;
 #ifdef ENABLE_WINUAE_CPU
-    [cycleExactCPU setEnabled:true];
-    [MMU_Emulation setEnabled:true];
-    [adressSpace24 setEnabled:true];
-    [TTRAMSizeValue setEnabled:true];
-    [CompatibleFPU setEnabled:true];
-    [FPUType setEnabled:true];
-    [bCell68060 setEnabled:true];
+	cycleExactCPU.enabled = true;
+	MMU_Emulation.enabled = true;
+	adressSpace24.enabled = true;
+	TTRAMSizeValue.enabled = true;
+	CompatibleFPU.enabled = true;
+	FPUType.enabled = true;
+	bCell68060.enabled = true;
 #endif
     
 }

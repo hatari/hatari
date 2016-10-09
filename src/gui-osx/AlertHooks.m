@@ -30,12 +30,14 @@ int HookedAlertNotice(const char* szMessage)
 	firstPv = [message rangeOfString:@"'"] ;
 	lastPv = [message rangeOfString:@"'" options:NSBackwardsSearch] ;
 
-	if ((cantTOS.location == NSNotFound) || (firstPv.location==lastPv.location))                    // traitement normal
+	if ((cantTOS.location == NSNotFound) || (firstPv.location==lastPv.location))          // traitement normal
 		return ([NSApp myAlerte:NSInformationalAlertStyle Txt:nil firstB:localize(@"Ok") alternateB:localize(@"Cancel")
-												otherB:nil informativeTxt:message ] == NSAlertDefaultReturn );
-	else																							// traitement can not load
+			otherB:nil informativeTxt:message ] == NSAlertFirstButtonReturn
+			//NSAlertDefaultReturn
+			);
+	else									// traitement can not load
 		return ([NSApp myAlerte:NSCriticalAlertStyle Txt:nil firstB:localize(@"Ok") alternateB:nil otherB:nil
-									informativeTxt:localize(@"Can not load TOS file:") ]  == NSAlertDefaultReturn) ;
+		        informativeTxt:localize(@"Can not load TOS file:") ]  == NSAlertFirstButtonReturn) ;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -45,10 +47,15 @@ int HookedAlertNotice(const char* szMessage)
 int HookedAlertQuery(const char* szMessage)
 {
 	NSString *message ;
+	int ret;
 
 	message = localize([NSString stringWithCString:szMessage encoding:NSASCIIStringEncoding]) ;
-	return  [NSApp myAlerte:NSInformationalAlertStyle Txt:nil firstB:localize(@"Ok") alternateB:localize(@"Cancel")
-														otherB:nil informativeTxt:message ] ;
+	ret=  [NSApp myAlerte:NSInformationalAlertStyle Txt:nil firstB:localize(@"Ok") alternateB:localize(@"Cancel")
+	       otherB:nil informativeTxt:message ] ;
+	if(ret==NSAlertFirstButtonReturn)
+		return true; //OK
+	else
+		return false; // otherwise false
 }
 
 #endif
