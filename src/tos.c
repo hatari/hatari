@@ -648,6 +648,11 @@ static void TOS_CheckSysConfig(void)
 		Log_AlertDlg(LOG_ERROR, "Please use at least TOS v1.04 for the HD directory emulation "
 			     "(all required GEMDOS functionality isn't completely emulated for this TOS version).");
 	}
+	if (Config_IsMachineFalcon() && bUseVDIRes && !bIsEmuTOS)
+	{
+		Log_AlertDlg(LOG_ERROR, "Please use EmuTOS for proper VDI results in Falcon mode "
+			     "(TOS 4 doesn't fully support VDI).");
+	}
 }
 
 
