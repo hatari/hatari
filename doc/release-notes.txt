@@ -17,6 +17,11 @@ Emulation:
   - Fix: '*.*' pattern with GEMDOS HD should match also files
           without extension
 - Video:
+  - Full rewrite of the GLUE state machine, including support for the
+    4 wakeup states in STF mode, as well as more accurate video timings
+    (hbl, timer b, top/bottom and left/right removal, mixing 50/60/71 Hz
+    lines)
+  - Correctly shows the last 8 pixels for STE 224 byte overscan
   - Fix: reading video counter $FF8205/07/09 after modifying it
     while display is ON
   - Fix: location of the video counter's restart when screen runs at 60 Hz
@@ -24,14 +29,26 @@ Emulation:
     palette bank setting correctly, fix duochrome colors
   - Falcon: handle byte access special case for ST color registers
   - Falcon: border color support also in HiColor
+  - better hbl/timer b interrupts when CPU runs at 16/32 MHz
 - Sound:
   - DMA sound should be played even when start address = end address
+  - Greatly improve Falcon DMA sound
 - CPU:
+  - use WinUAE CPU for STF/STE mode too, not just Falcon (old CPU core
+    is considered deprecated)
+  - improved IACK and simultaneous interrupts
+  - access IO regs on 2 cycle boundaries when possible
   - More accurate 68060 mode (instructions from previous CPU versions
     removed in 68060 aren't accepted/emulated anymore)
   - Misc bus error / IO mem register handling fixes for TT & Falcon
     (e.g. add TT DIP switch register handler)
+- Blitter:
+  - Better bus arbitration when blitter is started
+  - Don't cause bus error when accessing regions causing CPU bus error
 - Fixes to DSP addressing
+- Floppy:
+  - Fix the value of the WPT bit when inserting/ejecting a write protected
+    floppy
 
 Emulator:
 - Generic fixes:
@@ -77,11 +94,22 @@ Other:
 - zip2st tool can convert directories to .st image files,
   not just .zip files.
 
+Fixed games:
+- Chainz and Jewelz by Paradize (blitter, bus errors)
+
 Fixed demos:
 - spec512 image in the Intro of the Place To Be Again (video, restart counter)
 - Menu screen in the Place To Be Again (video, writing/reading video
   counter during active display)
 - A Little Bit Insane by Lazer (no DMA sound during the demo)
+- LoSTE and Closure by Sync (video, wakeup states and glue timings)
+- Death of the left border by TNT (video, stabilizer)
+- Gen4 Demo by Ziggy / Overlanders (video)
+- Suretrip 49% by Checkpoint (cpu, exceptions stacking)
+- Tymewarp by YM Rockerz (megaste mode, cpu control at $ff8e21)
+- overscan plasma in Graphics Sound 2 in Relapse by Cybernetic (blitter)
+- RGBeast by Agression (blitter)
+- Drone by DHS, PhotoChrome Viewer by DML (video, last 8 pixels)
 
 
  Version 1.9.0 (2015-09-10):
