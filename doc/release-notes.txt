@@ -71,7 +71,7 @@ Emulator:
   - Windows config location is now: AppData\Local\Hatari
   - Support SDL key names in keymap files in addition to key codes
   - Comment characters (#, ;) can also be mapped in keymap file
-- NatFeats SCSI driver for Linux added
+- Added NatFeats SCSI (NF_SCSI) driver for Linux version of Hatari
 - Debugger:
   - Fix: close debugger log file only when explicitly requested,
          not when continuing emulation from debugger
@@ -110,6 +110,10 @@ Fixed demos:
 - overscan plasma in Graphics Sound 2 in Relapse by Cybernetic (blitter)
 - RGBeast by Agression (blitter)
 - Drone by DHS, PhotoChrome Viewer by DML (video, last 8 pixels)
+
+Notes:
+  TOS NF_SCSI driver is available from:
+  http://hddriver.seimet.de/en/downloads.html
 
 
  Version 1.9.0 (2015-09-10):
