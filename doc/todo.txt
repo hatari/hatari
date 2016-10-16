@@ -55,6 +55,8 @@ Emulation improvements
 
 - Improve TT and/or Falcon emulation, especially VIDEL, e.g:
   - Palette switching during screen drawing
+  - Video timings for the Falcon Videl chip (60Hz support):
+    https://listengine.tuxfamily.org/lists.tuxfamily.org/hatari-devel/2016/07/msg00013.html
   - ST screen modes centering when Videl borders are enabled
   - Videl video register access (e.g. VIDEL_ScreenCounter_ReadByte()
     never changes the register value unless it had first specifically
