@@ -221,8 +221,6 @@ on BerliOS hatari-devel mail thread for more info.)
 	  SDL_Delay()s & fgetc() could be replaced (at least on unix)
 	  with select() and fread().  Or just remove the rs232 thread
 	  and use an interrupt for it...
-	- The commented out rs232 stuff could be removed from gemdos.c
-	  (RS emulation is done at HW, not Gemdos level).
 
 - Improve directory handling:
 	- Currently screenshots & anim go always to current dir,

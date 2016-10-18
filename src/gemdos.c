@@ -54,7 +54,6 @@ const char Gemdos_fileid[] = "Hatari gemdos.c : " __DATE__ " " __TIME__;
 #include "m68000.h"
 #include "memorySnapShot.h"
 #include "printer.h"
-#include "rs232.h"
 #include "statusbar.h"
 #include "scandir.h"
 #include "stMemory.h"
