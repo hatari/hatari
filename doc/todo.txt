@@ -225,11 +225,6 @@ Bug reports
   against bad register values:
   http://listengine.tuxfamily.org/lists.tuxfamily.org/hatari-devel/2012/02/msg00082.html
 
-- When playing Tautology 2 I noticed the mod player sound goes in and out of
-  sync. fading into crackle and back. (Using Hatari 1.4 with TOS 4.04 on Mac
-  OS X 10.6.5)
-  http://developer.berlios.de/bugs/?func=detailbug&bug_id=17781&group_id=10436
-
 - Problem: On real Falcon there is a minor feature in videl. You can simply
   fade whole screen to black, if you just clear the Horizontal Border End
   ($ffff8286) and start fading colors from 0 to 255 to $ffff9800 or vice versa.
