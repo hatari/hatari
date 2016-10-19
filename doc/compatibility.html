@@ -639,15 +639,14 @@ for border removal).</p>
 <!-- double disk pouet.net version doesn't work unlike above single disk one
       <a href="http://pouet.net/prod.php?which=1287">Suretrip 49%</a></td>
 -->
-      <td class="major">1.9</td>
-      <td>Crashes in fullscreen screen.  Worked with Hatari v1.6.2.
-      Depends on very complex VBL/HBL timing when both instructions
-      happens at the same time on line 0</td>
+      <td>2.0</td>
+      <td>Requires Hatari &ge; 2.0 to work, else the fullscreen tunnel part
+        will crash after a few seconds (due to complex VBL/HBL exception timing)</td>
     </tr>
     <tr>
       <td>Dead Braincells:
       <a href="http://www.pouet.net/prod.php?which=29701">Monoscreen</a></td>
-      <td class="minor">1.9+</td>
+      <td class="minor">1.9</td>
       <td>(Partial) monochrome overscan isn't supported by Hatari.
           Demo requires manual monitor timings adjustments to work
 	  (which may be SM124 specific)</td>
@@ -867,6 +866,21 @@ for border removal).</p>
       <td>Uses its own IKBD 6301 routine</td>
     </tr>
     <tr>
+      <td>Sync:
+      <a href="http://pouet.net/prod.php?which=61839">The LoSTE screens</a></td>
+      <td>2.0</td>
+      <td>Uses 2 cycle precision to create 0 byte lines on STF/STE and requires
+          wakeup states emulation for STF</td>
+    </tr>
+    <tr>
+      <td>Sync:
+      <a href="http://pouet.net/prod.php?which=66787">{Closure}</a></td>
+      <td>2.0</td>
+      <td>Very technical demo requiring accurate emulation of many items :
+          2 cycle precision, wakeup states emulation for STF, new overscan line
+          with no stabiliser on the right. A real benchmark for emulators !</td>
+    </tr>
+    <tr>
       <td>The CareBears:
       <a href="http://www.pouet.net/prod.php?which=754">SoWatt</a></td>
       <td>1.0</td>
@@ -914,8 +928,8 @@ for border removal).</p>
     <tr>
       <td>TNT Crew:
       <a href="http://pouet.net/prod.php?which=29414">Death of the left border</a></td>
-      <td class="minor">1.1</td>
-      <td>Planes are shifted</td>
+      <td class="minor">2.0</td>
+      <td>Planes are shifted, but Hatari &ge; 2.0 includes a temporary fix for this</td>
     </tr>
     <tr>
       <td>TOS Crew:
@@ -1626,7 +1640,7 @@ are just STE enhanced.  These are marked with '*'.</p>
     <tr>
       <td>Defence Force:
       <a href="http://www.pouet.net/prod.php?which=66703">Time Slices</a></td>
-      <td class="minor">1.9+</td>
+      <td class="minor">2.0</td>
       <td>Monochrome. Vertical STNICCC2015 scroll text is missing
           and some parts of the screen have inverted colors:
 	  https://www.youtube.com/watch?v=RlpP7JVImGA</td>
@@ -1819,7 +1833,7 @@ does only on STE</td>
     <tr>
       <td>Oxygene:
       <a href="http://www.pouet.net/prod.php?which=66702">We Were @</a></td>
-      <td>1.9+</td>
+      <td>2.0</td>
       <td>Blitter + overscan. 4MB</td>
     </tr>
     <tr>
@@ -3649,7 +3663,7 @@ stated to require that.</p>
     <tr>
       <td>The Pixel Twins:
       <a href="http://www.pouet.net/prod.php?which=66760">Wee Gift</a></td>
-      <td class="minor">1.9+</td>
+      <td class="minor">2.0</td>
       <td>yes</td>
       <td>emu</td>
       <td>Needs FPU. Real time ray-tracing. Freezes late in the demo</td>
@@ -3657,7 +3671,7 @@ stated to require that.</p>
     <tr>
       <td>The Pixel Twins:
       <a href="http://www.pouet.net/prod.php?which=66698">Zero Three Zero</a></td>
-      <td>1.9+</td>
+      <td>2.0</td>
       <td>yes</td>
       <td>emu</td>
       <td>Needs FPU. Real time ray-tracing</td>
