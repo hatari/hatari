@@ -40,17 +40,6 @@ Emulation improvements
 - Real HD 6301 (keyboard processor of the ST) emulation.
   (Current special casing is enough for all known demos using 6301)
 
-- Finish upgrading the CPU core of Hatari to the latest WinUAE
-  which has better cycle accuracy needed by some programs:
-	- Add Exception debugging support
-	- Instead of calling Reset_Cold()/m68k_reset()/uae_reset()
-	  directly from newcpu.c, show user a notice (dialog)
-	  about what happened and let user do the reboot
-	  (see "Emulation reset, old-UAE vs. WinUAE core" mail-thread)
-	- Make WinUAE core ST/STE emulation as good as with old UAE core
-	- Document cmdline options for selecting prefetch etc
-	  once they're stable
-
 - Get the games/demos working that are marked as non-working in the manual.
 
 - Improve TT and/or Falcon emulation, especially VIDEL, e.g:
@@ -71,12 +60,6 @@ Emulation improvements
 
 - Add SCC serial port emulation for Falcon/TT mode.
 
-- Disable VDI mode for TOS v4 as it doesn't support it (and VDI mode
-  is redundant as Falcon's Videl allows similar resolutions)
-
-- Fix falcon sound quality (sound is sometimes noisy).
-  Sound is also toggling between nice to noise with some demos.
-
 - DSP emulation / Falcon sound matrix:
 	- Dsp SSI internal clock (is it used on falcon ?)
 	- Verify DSP instructions cycle count, especially with external RAM
@@ -90,6 +73,7 @@ Emulation improvements
   For improved compatibility (e.g. the game "Yolanda") it would be better to
   skip this step, but we then run into multiple other problems, see:
   http://listengine.tuxfamily.org/lists.tuxfamily.org/hatari-devel/2011/12/msg00123.html
+  -> We should emulate the MMU memory bank configuration at $FF8001
 
 
 Programs known as not fully functional (not an exhaustive list)
@@ -206,15 +190,11 @@ on BerliOS hatari-devel mail thread for more info.)
 	- User variables which values can be set & used in expressions
 
 - Improved screen handling:
-	- Direct 16-bit & 32-bit support for monochrome and VDI modes
-	  (currently they're converted through 8-bit surface)
 	- Line based screen change detection/checks:
 		- blit only changed lines
 		- simpler / faster (LED) overlay handling
 	- x3 and x4 zooming routines for ST-Low resolution
 	- Include some fancy zooming routines like 2xSaI or Super-Eagle
-	- Add support for hardware accelerated zooming with
-	  SDL YUV overlays or OpenGL
 
 - Check/clean RS232 code:
 	- polls at 2/20ms intervals and reads data byte at the time.
