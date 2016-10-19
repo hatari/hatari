@@ -9,6 +9,10 @@
 Emulation:
 - Machine:
   - Support for MegaST & MegaSTE machines added
+    (this also replaces the Real Time Clock / RTC option, since this chip
+    is only available on the Mega machines)
+  - The general purpose registers of the TT SCU are now correctly emulated
+    (this fixes the problem with AHDI not finding any partitions during boot)
 - HD:
   - Fix: Disable GEMDOS opcodes after GEMDOS drive is disabled
   - Fix: GEMDOS HD can now be initialized multiple times,
