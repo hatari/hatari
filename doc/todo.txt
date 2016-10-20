@@ -221,10 +221,6 @@ Bug reports
   Videl screen address counter doesn't advance (its read & write IO functions
   are no-ops, a regression from 2012 commit 22d3c9f30097).
 
-- Atari programs can crash Hatari in Falcon mode because sound DMA code isn't robust
-  against bad register values:
-  http://listengine.tuxfamily.org/lists.tuxfamily.org/hatari-devel/2012/02/msg00082.html
-
 - Problem: On real Falcon there is a minor feature in videl. You can simply
   fade whole screen to black, if you just clear the Horizontal Border End
   ($ffff8286) and start fading colors from 0 to 255 to $ffff9800 or vice versa.
