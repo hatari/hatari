@@ -1,6 +1,6 @@
 /* Localized versions of Info.plist keys */
 
 CFBundleName = "Hatari";
-CFBundleShortVersionString = "Hatari(fr) version F 1.9.0 ";
-CFBundleGetInfoString = "Hatari version 1.9.0 , Copyright 2015, T. Huth.";
-NSHumanReadableCopyright = "Copyright 2015, T. Huth.";﻿
+CFBundleShortVersionString = "Hatari(fr) version F 2.0.0 ";
+CFBundleGetInfoString = "Hatari version 2.0.0 , Copyright 2016, T. Huth.";
+NSHumanReadableCopyright = "Copyright 2016, T. Huth.";﻿

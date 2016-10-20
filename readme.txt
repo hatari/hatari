@@ -2,7 +2,7 @@
 
                                     Hatari
 
-                             Version 1.9, September 2015
+                             Version 2.0, October 2016
 
                           http://hatari.tuxfamily.org/
 
@@ -121,31 +121,18 @@ build tree. You can then install the emulator by typing "make install".
 
  3.1) WinUAE and "old" UAE CPU cores
 
-By default Hatari is built with the "old" UAE CPU core used in the
-earlier Hatari releases, but versions starting from v1.5 support also
-new & experimental WinUAE CPU core which offers more cycle accurate
-030 & DSP emulation and from v1.6 onwards also working 030 MMU
-emulation.
+Up to version 1.9, Hatari had 2 different CPU cores : the "old" UAE CPU core
+used for STF/STE and the WinUAE CPU core for better TT/Falcon emulation.
+Default was to use the old UAE CPU core.
 
-The WinUAE CPU core can be enabled by toggling the ENABLE_WINUAE_CPU
-variable in the Hatari CMake configuration (e.g. with the interactive
-"ccmake" program).  Alternatively, you can run "./configure
---enable-winuae-cpu", which will run cmake with the correct
-parameters.
+Starting with Hatari 2.0, all the STF/STE specific code from the old CPU core
+was integrated into the new WinUAE CPU core. Some improvements were
+also added to the new CPU Core, greatly improving cycle accuracy and low
+level 680xx emulation.
 
-The plan is to eventually have WinUAE CPU core enabled by default and
-deprecate the "old" UAE CPU core, but currently WinUAE CPU core:
-- is lacking all the ST/STE specific tweaks and proper testing
-  for ST/STE compatibility
-- despite better emulation, it still doesn't run all the Falcon
-  programs that run with the "old" core although it works better
-  for most of them
-- doesn't have full debugger support
-
-It's recommended to use Hatari built with the "old" (default) UAE CPU
-core for ST/STE emulation and the new WinUAE core for Falcon emulation.
-And test also the old core if Falcon programs don't work with the new
-one...
+As such, the new CPU core is now the default for all emulated machines and
+the old CPU core should be removed soon (it can still be used
+by running "./configure --enable-old-uae-cpu")
 
 
  3.2) IPF support using capsimage library

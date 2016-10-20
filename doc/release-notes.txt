@@ -3,8 +3,8 @@
                                    --------
                                 Release Notes
 
- Development version:
- --------------------
+ Version 2.0.0 (2016-10-xx)
+ ---------------------------
 
 Emulation:
 - Machine:
