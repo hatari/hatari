@@ -35,6 +35,8 @@ the EmuTOS website.
 
 The tos.img file included with the latest Hatari releases is
 the etos512k.img[1] from a preceding EmuTOS release:
+- Hatari v2.0.0:
+  http://sourceforge.net/projects/emutos/files/emutos/0.9.6/
 - Hatari v1.9.0:
   http://sourceforge.net/projects/emutos/files/emutos/0.9.4/
 - Hatari v1.8.0:
