@@ -1924,7 +1924,7 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 	/* then we need to adjust dac.writePosition to be always ahead of dac.readPosition */
 	if ( dac.wordCount == 0 )
 	{
-		fprintf ( stderr , "fix writepos %x (readpos %x)\n" , (dac.readPosition+DACBUFFER_SIZE/2)%DACBUFFER_SIZE , dac.readPosition );
+//		fprintf ( stderr , "fix writepos %x (readpos %x)\n" , (dac.readPosition+DACBUFFER_SIZE/2)%DACBUFFER_SIZE , dac.readPosition );
 		dac.writePosition = (dac.readPosition+DACBUFFER_SIZE/2)%DACBUFFER_SIZE;
 	}
 	dac.wordCount = 0;
