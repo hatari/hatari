@@ -2128,8 +2128,8 @@ the Hatari "--dsp" option:
 <ul>
   <li><b>none</b>: No emulation.
       If program doesn't need/use DSP, this is the best option.</li>
-  <li><b>emu</b>: Experimental DSP emulation.  Needed if program
-      requires DSP. On by default for Falcon. Slow.</li>
+  <li><b>emu</b>: DSP emulation.  Needed if program requires DSP.
+      On by default for Falcon. Slow.</li>
   <li><b>dummy</b>: Faked DSP response to DSP commands.
       Some rare programs that need DSP may also work with faked DSP.
       This is much faster than the real DSP emulation.</li>
@@ -2141,11 +2141,10 @@ the column contains "-". The column for whether the program works and
 for whether it has (working) sound have "yes" when this is true and
 otherwise "-".</p>
 
-<p><b>Note:</b> many timing critical demos (for example ones using
+<p>If something works only with either WinUAE or oldUAE CPU core,
+that's documented.  Many timing critical demos (for example ones using
 NoCrew's DSP MP2-player) that are marked as working in the list below,
-<em>work only with the experimental WinUAE CPU core</em>. Please see
-Hatari readme.txt on how to enable that.  If program works only with
-old UAE core, that's noted separately.</p>
+<em>work only with the (default) WinUAE CPU core</em>.</p>
 
 <p>Due to incomplete VIDEL emulation and some remaining emulation
 cycle accuracy issues, some Falcon programs don't work yet.</p>
@@ -2397,13 +2396,13 @@ cycle accuracy issues, some Falcon programs don't work yet.</p>
       <td>Needs 14MB RAM</td>
     </tr>
     <tr>
-      <td>Golden Island (demo)</td>
-      <td>1.9</td>
+      <td>Golden Island (v1.24 demo)</td>
+      <td>2.0</td>
       <td>yes</td>
       <td>-</td>
-      <td>VGA only.  Freezes with WinUAE CPU core due to CPU-DSP
-      emulation cycle accuracy. Works with OldUAE and worked with
-      v1.8 WinUAE CPU core</td>
+      <td>VGA only.  Works fully with old UAE CPU emulation. With WinUAE CPU core
+          v1.8 or later, freezes due to CPU-DSP emulation cycle inaccuracy
+	  (0xFFFFA202 access), unless music is disabled at start</td>
     </tr>
     <tr>
       <td>Gravon (demo)</td>
