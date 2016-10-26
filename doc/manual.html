@@ -1206,9 +1206,11 @@ ends with a 'b'.
  emulated as the Atari hard drive.
 </p>
 <p>
- Check "Boot from HD" to set given hard disk image / directory as
- TOS boot device. This option is checked by default if you specify a
- hard disk image or a directory via the command line.
+ Check "Boot from HD" to set given hard disk image / directory as TOS
+ boot device (if ACSI or IDE is enabled, it's C:, otherwise it's the
+ first specified GEMDOS HD drive).  With command line options, the value
+ of this setting depends on whether you specify floppy image or harddisk
+ later on the command line (later one takes precedence).
 </p>
 <p>
  Removing the check from the "Allow GEMDOS drive modification" option
