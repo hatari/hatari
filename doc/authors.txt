@@ -157,6 +157,19 @@ is missing here, please remind me!):
   some test programs on real hardware and wrote some test programs
   himself.
 
+- Jorge Cwik (Ijor): creator of Pasti STX disk image. Reverse-engineered
+  some decapped STF chips (GLUE, MMU, Shifter) and many low level description
+  of the STF inner work, very useful to improve emulation accuracy.
+
+- Paulo Simoes (ljkb): made some of the first descriptions of wakestates,
+  as well as documenting all positions where hi/lo and 50/60 switches
+  can create specific lines' length.
+
+- Troed Sangberg (Troed of Sync): accurate description of the GLUE state
+  machine for STF/STE in all wakestates (display signal, sync signal, ...)
+  and the resulting lines' length used in overscan / hardscroll. Coder
+  of the '{Closure}' demo which makes huge use of these techniques.
+
 
  Code from other projects
  ------------------------

@@ -36,6 +36,7 @@ Emulation:
   - better hbl/timer b interrupts when CPU runs at 16/32 MHz
 - Sound:
   - DMA sound should be played even when start address = end address
+  - Increase STE DMA volume when compared to the YM2149 volume
   - Greatly improve Falcon DMA sound
 - CPU:
   - use WinUAE CPU for STF/STE mode too, not just Falcon (old CPU core
