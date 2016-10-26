@@ -165,7 +165,7 @@ is missing here, please remind me!):
   as well as documenting all positions where hi/lo and 50/60 switches
   can create specific lines' length.
 
-- Troed Sandberg (Troed of Sync): accurate description of the GLUE state
+- Troed Sangberg (Troed of Sync): accurate description of the GLUE state
   machine for STF/STE in all wakestates (display signal, sync signal, ...)
   and the resulting lines' length used in overscan / hardscroll. Coder
   of the '{Closure}' demo which makes huge use of these techniques.
