@@ -107,7 +107,7 @@ is missing here, please remind me!):
   partition support patches.
 
 - Uwe Seimet: IDE emulation improvements, GEMDOS HD emulation
-  improvement suggestions and SCSI Driver for Linux.
+  improvement suggestions and NatFeats SCSI Driver code for Linux.
 
 - Anders Eriksson (Evil/DHS): Helped improving STE's emulation by
   running many tests programs and providing the source code for some
