@@ -266,6 +266,7 @@ Fixed programs:
 Known regressions (see compatibility list):
 - Suretrip demo by Checkpoint
 - Golden Island game demo with WinUAE CPU core
+- TT-version of 4getful demo with WinUAE CPU core
 
 
  Version 1.8.0 (2014-07-30):
