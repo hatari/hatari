@@ -1247,7 +1247,7 @@ static void IKBD_CheckForDoubleClicks(void)
 
 		Keyboard.bLButtonDown = DoubleClickPattern[Keyboard.LButtonDblClk];
 		Keyboard.LButtonDblClk++;
-		if (Keyboard.LButtonDblClk >= 13)             /* Check for end of sequence */
+		if (Keyboard.LButtonDblClk >= ARRAY_SIZE(DoubleClickPattern))
 		{
 			Keyboard.LButtonDblClk = 0;
 			Keyboard.bLButtonDown = false;
@@ -1273,7 +1273,7 @@ static void IKBD_CheckForDoubleClicks(void)
 
 		Keyboard.bRButtonDown = DoubleClickPattern[Keyboard.RButtonDblClk];
 		Keyboard.RButtonDblClk++;
-		if (Keyboard.RButtonDblClk >= 13)             /* Check for end of sequence */
+		if (Keyboard.RButtonDblClk >= ARRAY_SIZE(DoubleClickPattern))
 		{
 			Keyboard.RButtonDblClk = 0;
 			Keyboard.bRButtonDown = false;
