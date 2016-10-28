@@ -223,11 +223,6 @@ Uint8 Joy_GetStickData(int nStJoyId)
 {
 	Uint8 nData = 0;
 	JOYREADING JoyReading;
-	int nSdlJoyId;
-	int nAxes; /* how many joystick axes are on the current selected SDL joystick? */
-
-	nSdlJoyId = ConfigureParams.Joysticks.Joy[nStJoyId].nJoyId;
-	nAxes = SDL_JoystickNumAxes(sdlJoystick[nSdlJoyId]);
 
 	/* Are we emulating the joystick via the keyboard? */
 	if (ConfigureParams.Joysticks.Joy[nStJoyId].nJoystickMode == JOYSTICK_KEYBOARD)
@@ -238,9 +233,16 @@ Uint8 Joy_GetStickData(int nStJoyId)
 			nData = nJoyKeyEmu[nStJoyId];
 		}
 	}
-	else if (ConfigureParams.Joysticks.Joy[nStJoyId].nJoystickMode == JOYSTICK_REALSTICK
-	         && bJoystickWorking[nSdlJoyId])
+	else if (ConfigureParams.Joysticks.Joy[nStJoyId].nJoystickMode == JOYSTICK_REALSTICK)
 	{
+		int nSdlJoyId;
+		int nAxes;	/* How many axes are there on the corresponding SDL joystick? */
+
+		nSdlJoyId = ConfigureParams.Joysticks.Joy[nStJoyId].nJoyId;
+		if (nSdlJoyId < 0 || !bJoystickWorking[nSdlJoyId])
+			return 0;
+		nAxes = SDL_JoystickNumAxes(sdlJoystick[nSdlJoyId]);
+
 		/* get joystick axis from configuration settings and make them plausible */
 		JoyReading.XAxisID = sdlJoystickMapping[nSdlJoyId]->XAxisID;
 		JoyReading.YAxisID = sdlJoystickMapping[nSdlJoyId]->YAxisID;
