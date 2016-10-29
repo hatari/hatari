@@ -170,6 +170,9 @@ is missing here, please remind me!):
   and the resulting lines' length used in overscan / hardscroll. Coder
   of the '{Closure}' demo which makes huge use of these techniques.
 
+- Christian Zietz: recovered many original ASIC schemas for Atari's chips
+  and helped in reverse-engineering the behaviour of those chips.
+
 
  Code from other projects
  ------------------------
