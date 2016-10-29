@@ -293,7 +293,9 @@ void DmaSnd_MemorySnapShot_Capture(bool bSave)
  * When end of frame is reached, we continue with a new frame if loop mode
  * is on, else we stop DMA Audio.
  *
- * NOTE : if frameEndAddr == frameStartAddr then the FIFO is updated anyway
+ * NOTE : as verified on real STE, if frameEndAddr == frameStartAddr and
+ * repeat is ON, then frame counter is increased anyway and end of frame
+ * interrupt is not generated. In that case, the FIFO is updated
  * and sound should be played (this will be the same as playing a 2^24 bytes
  * sample) (eg 'A Little Bit Insane' demo by Lazer)
  */
@@ -411,6 +413,10 @@ static int DmaSnd_DetectSampleRate(void)
  * This function is called when a new sound frame is started.
  * It copies the start and end address from the I/O registers and set
  * the frame counter addr to the start of this new frame.
+ *
+ * NOTE : as verified on real STE, if frameEndAddr == frameStartAddr and
+ * repeat is OFF, then DMA sound is turned off immediately and end of frame
+ * interrupt is not generated (eg 'Amberstar cracktro' by DNT Crew / Fuzion)
  */
 static void DmaSnd_StartNewFrame(void)
 {
@@ -420,6 +426,12 @@ static void DmaSnd_StartNewFrame(void)
 	dma.frameCounterAddr = dma.frameStartAddr;
 
 	LOG_TRACE(TRACE_DMASND, "DMA snd new frame start=%x end=%x\n", dma.frameStartAddr, dma.frameEndAddr);
+
+	if ( ( dma.frameStartAddr == dma.frameEndAddr ) && ( ( nDmaSoundControl & DMASNDCTRL_PLAYLOOP ) == 0 ) )
+	{
+		nDmaSoundControl &= ~DMASNDCTRL_PLAY;
+		LOG_TRACE(TRACE_DMASND, "DMA snd stopped because new frame start=end=%x and repeat=off\n", dma.frameStartAddr);
+	}
 }
 
 
@@ -722,7 +734,7 @@ void DmaSnd_SoundControl_ReadWord(void)
  */
 void DmaSnd_SoundControl_WriteWord(void)
 {
-	Uint16 nNewSndCtrl;
+	Uint16 DMASndCtrl_old;
 
 	if(LOG_TRACE_LEVEL(TRACE_DMASND))
 	{
@@ -736,21 +748,20 @@ void DmaSnd_SoundControl_WriteWord(void)
         /* Before starting/stopping DMA sound, create samples up until this point with current values */
 	Sound_Update(false);
 
-	nNewSndCtrl = IoMem_ReadWord(0xff8900) & 3;
+	DMASndCtrl_old = nDmaSoundControl;
+	nDmaSoundControl = IoMem_ReadWord(0xff8900) & 3;
 
-	if (!(nDmaSoundControl & DMASNDCTRL_PLAY) && (nNewSndCtrl & DMASNDCTRL_PLAY))
+	if (!(DMASndCtrl_old & DMASNDCTRL_PLAY) && (nDmaSoundControl & DMASNDCTRL_PLAY))
 	{
 		LOG_TRACE(TRACE_DMASND, "DMA snd control write: starting dma sound output\n");
 		DmaInitSample = true;
 		frameCounter_float = 0;
-		DmaSnd_StartNewFrame();
+		DmaSnd_StartNewFrame();			/* this can clear DMASNDCTRL_PLAY */
 	}
-	else if ((nDmaSoundControl & DMASNDCTRL_PLAY) && !(nNewSndCtrl & DMASNDCTRL_PLAY))
+	else if ((DMASndCtrl_old & DMASNDCTRL_PLAY) && !(nDmaSoundControl & DMASNDCTRL_PLAY))
 	{
 		LOG_TRACE(TRACE_DMASND, "DMA snd control write: stopping dma sound output\n");
 	}
-
-	nDmaSoundControl = nNewSndCtrl;
 }
 
 
