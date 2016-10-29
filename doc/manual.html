@@ -689,7 +689,7 @@ you are doing!</p>
 (only works if GEMDOS HD emulation and extended VDI resolution are
 disabled)</p>
 
-<h3>CPU options</h3>
+<h3>Common CPU options</h3>
 <p class="parameter">
 --cpulevel &lt;x&gt;</p>
 <p class="paramdesc">Specify CPU (680x0) to use (use x &gt;=
@@ -701,6 +701,16 @@ disabled)</p>
 &lt;bool&gt;</p>
 <p class="paramdesc">Use a more compatible, but slower 68000
 CPU mode with better prefetch accuracy and cycle counting</p>
+
+<h3>WinUAE CPU core options</h3>
+<p class="parameter">--cpu-exact &lt;bool&gt;</p>
+<p class="paramdesc">Use cycle exact CPU emulation (cache emulation)</p>
+<p class="parameter">--addr24 &lt;bool&gt;</p>
+<p class="paramdesc">Use 24-bit instead of 32-bit addressing mode (24-bit is enabled by default)</p>
+<p class="parameter">--fpu &lt;x&gt;</p>
+<p class="paramdesc">FPU type (x=none/68881/68882/internal)</p>
+<p class="parameter">--mmu &lt;bool&gt;</p>
+<p class="paramdesc">Use MMU emulation</p>
 
 <h3>Misc system options</h3>
 <p class="parameter">

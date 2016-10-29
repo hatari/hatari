@@ -322,7 +322,7 @@ this enabled unless you know what you are doing!
 Use ROM cartridge image <file> (only works if GEMDOS HD emulation and
 extended VDI resolution are disabled)
 
-.SH "CPU options"
+.SH "Common CPU options"
 .TP 
 .B \-\-cpulevel <x>
 Specify CPU (680x0) to use (use x >= 1 with EmuTOS or TOS >= 2.06 only!)
@@ -333,6 +333,21 @@ Set the CPU clock (8, 16 or 32 Mhz)
 .B \-\-compatible <bool>
 Use a more compatible, but slower 68000 CPU mode with
 better prefetch accuracy and cycle counting
+
+.SH "WinUAE CPU core options"
+.TP
+.B \-\-cpu\-exact <bool>
+Use cycle exact CPU emulation (cache emulation)
+.TP
+.B \-\-addr24 <bool>
+Use 24-bit instead of 32-bit addressing mode
+(24-bit is enabled by default)
+.TP
+.B \-\-fpu <x>
+FPU type (x=none/68881/68882/internal)
+.TP
+.B \-\-mmu <bool>
+Use MMU emulation
 
 .SH "Misc system options"
 .TP 
