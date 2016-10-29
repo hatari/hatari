@@ -21,14 +21,14 @@ export HATARI_SYSTEM_CONFDIR=$conf
 
 # example setup for Hatari UI
 $path/$name.py --right "about,|,run,pause,forward,|,reset,|,quit" --embed $*
-exit 0
+exit $?
 
 # test setup without embedding, duplicate toggles
 $path/$name.py --top "about,run,pause,quit" \
 --panel "Testpanel,pause,>,close" \
 --bottom "sound,|,forward,pause,|,Testpanel" \
 $*
-exit 0
+exit $?
 
 # test setup with embedding and all available controls
 $path/$name.py --embed \
@@ -39,4 +39,4 @@ $path/$name.py --embed \
 --bottom "forward,full,Misc,Keys,input,display,debug,trace" \
 --right "forward,full,Misc,Keys,input,display,Help=98" \
 $*
-exit 0
+exit $?
