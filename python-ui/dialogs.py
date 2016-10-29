@@ -807,6 +807,8 @@ class TraceDialog(HatariUIDialog):
         "keymap",
         "midi",
         "ide",
+        "os_base",
+        "scsidrv"
     ]
     def __init__(self, parent):
         self.savedpoints = None
