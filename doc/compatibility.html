@@ -1486,7 +1486,7 @@ are just STE enhanced.  These are marked with '*'.</p>
       <td>Uses DMA sound</td>
     </tr>
     <tr>
-      <td>Stardust<br>(tunnel demo)</td>
+      <td>Stardust<br />(tunnel demo)</td>
       <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
@@ -1542,7 +1542,8 @@ are just STE enhanced.  These are marked with '*'.</p>
       <td>&nbsp;</td>
     </tr>
     <tr>
-      <td><a href="http://www.umich.edu/~archive/atari/Games/Space/zero_5.zip">Zero-5</a><br>(ST review demo)</td>
+      <td><a
+href="http://www.umich.edu/~archive/atari/Games/Space/zero_5.zip">Zero-5</a><br />(ST Review -demo)</td>
       <td class="minor">2.0</td>
       <td>STE DMA sound, Blitter and palette.  STE joypad / mouse control.
       Mouse cursor flickers in menus.  Demo crashes after landing on moon,
@@ -2015,10 +2016,9 @@ this section lists only TT-specific games and demos.</p>
   <tbody>
     <tr>
       <td><a href="http://yescrew.atari.org/eng/products.htm#capy">Capy</a></td>
-      <td>1.9</td>
-      <td>TT-medium only. Some version(s) bus error due to DSP register check
-          (although they should support TT with chip music).  Main menu works
-          unreliably (doesn't always react to indicated keys).</td>
+      <td>2.0</td>
+      <td>VGA/TT-medium only. Some version(s) bus error due to DSP register
+          check (although they should support TT with chip music)</td>
     </tr>
     <tr>
       <td><a href="http://atari-forum.com/viewtopic.php?f=26&amp;t=13658&amp;start=50">OpenTTD</a></td>
@@ -2149,7 +2149,9 @@ NoCrew's DSP MP2-player) that are marked as working in the list below,
 <em>work only with the (default) WinUAE CPU core</em>.</p>
 
 <p>Due to incomplete VIDEL emulation and some remaining emulation
-cycle accuracy issues, some Falcon programs don't work yet.</p>
+cycle accuracy issues, some Falcon programs don't work yet.  Most
+games work with RGB monitor, those requiring VGA one are indicated
+separately.</p>
 
 
 <h3>Falcon games</h3>
@@ -2182,31 +2184,35 @@ cycle accuracy issues, some Falcon programs don't work yet.</p>
     </tr>
     <tr>
       <td>Addsub</td>
-      <td class="minor">1.6</td>
+      <td class="minor">2.0</td>
       <td>-</td>
       <td>-</td>
-      <td>Exits when joystick is used</td>
+      <td>Cannot be played. Exits when joystick up is used,
+          often also on second startup</td>
     </tr>
     <tr>
-      <td><a href="http://devilsdoorbell.com/">Bad Mood (game)</a></td>
-      <td class="minor">1.7</td>
+      <td><a href="http://devilsdoorbell.com/">Bad Mood (2016 game)</a></td>
+      <td class="major">2.0</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Enhanced Doom I/II port and engine rewrite.  Requires WinUAE
-      CPU core, DSP and 14 MB RAM. Statusbar doesn't show due to Videl
-      emulation omissions, unless "--natfeats yes" is used to tell
-      game to use Hatari specific/heavier statusbar drawing mode.
+      <td>Enhanced Doom I/II port and engine rewrite. Game requires WinUAE
+      CPU core, DSP and 14 MB RAM. WAD cache creation crashes/freezes,
+      so one needs to get pre-built cache. Statusbar doesn't show due
+      to Videl emulation omissions, unless "--natfeats yes" is used to
+      tell game to use Hatari specific/heavier statusbar drawing mode.
       Some parts have clear speed differences to real Falcon due to
       CPU, FPU (instruction too fast) and Videl emulation
       (screen updated only at VBL) inaccuracies</td>
     </tr>
     <tr>
-      <td><a href="http://www.klockars.net/bad_mood.html">Bad Mood (old viewer)</a></td>
+      <td><a href="http://www.klockars.net/bad_mood.html">Bad Mood<br />(90's demo)</a></td>
       <td>1.3</td>
       <td>-</td>
       <td>emu</td>
-      <td>Old Doom level viewer. All tested versions (v2.14a, v307a)
-          work with Doom wad, but look wrong with Heretic wad</td>
+      <td>Old Doom level viewer. All tested versions (v2.14a, v307a) work
+          with Doom1 WAD, but look wrong with Heretic WAD (although it's
+	  <a href="http://files.dhs.nu/party/sillyventure2013/mag2013/Magstuff/badmood.htm">claimed</a>
+	  to work also with that)</td>
     </tr>
     <tr>
       <td>Blackhole</td>
@@ -2259,19 +2265,18 @@ cycle accuracy issues, some Falcon programs don't work yet.</p>
     </tr>
     <tr>
       <td><a href="http://yescrew.atari.org/eng/products.htm#capy">Capy</a></td>
-      <td class="minor">1.9</td>
+      <td>2.0</td>
       <td>yes</td>
       <td>emu</td>
-      <td>TT-medium/VGA (640x480x16) only. Main menu works unreliably
-          (doesn't always react to indicated keys).</td>
+      <td>VGA/TT-medium (640x480x16) only</td>
     </tr>
     <tr>
       <td><a href="http://pouet.net/prod.php?which=29351">Cavemania (demo)</a></td>
-      <td class="minor">1.9</td>
+      <td class="minor">2.0</td>
       <td>yes</td>
       <td>-</td>
       <td>Some menus are black (space gets through them).
-          Screen bottom has garbage. Background music with DSP emu</td>
+          Game area bottom shows garbage. Background music with DSP emu</td>
     </tr>
     <tr>
       <td><a href="http://paradize.final-memory.org/games.shtml">ChainZ</a></td>
@@ -2290,11 +2295,11 @@ cycle accuracy issues, some Falcon programs don't work yet.</p>
     </tr>
     <tr>
       <td><a href="http://demozoo.org/productions/55648/">Color runner</a></td>
-      <td class="major">1.9+</td>
+      <td class="major">2.0</td>
       <td>yes</td>
       <td>-</td>
       <td>Unable to start game (only joypad fire works, not directions).
-          Music with DSP. VGA for correct screen height</td>
+          Music with DSP. 14MB, joypad only. VGA for correct screen height</td>
     </tr>
     <tr>
       <td>Columns by Deadheart (demo)</td>
@@ -2346,11 +2351,11 @@ cycle accuracy issues, some Falcon programs don't work yet.</p>
       <td>With earlier Hatari versions (1.4) worked also without DSP emulation</td>
     </tr> 
     <tr>
-      <td><a href="http://reboot.atari.org/downfall-f030/downfall-falcon.html">DownFall</a></td>
+      <td><a http://reboot.atari.org/new-reboot/downfallfalcon.html">DownFall</a></td>
       <td>1.5</td>
       <td>yes</td>
       <td>-</td>
-      <td>Music is rather noisy.</td>
+      <td>Music is very noisy</td>
     </tr> 
     <tr>
       <td>Epi-Lepsie</td>
@@ -2425,7 +2430,7 @@ cycle accuracy issues, some Falcon programs don't work yet.</p>
       <td>1.4</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Nice.</td>
+      <td>Nice</td>
     </tr>
     <tr>
       <td>Hexogan (v0.6)</td>
@@ -2464,11 +2469,11 @@ cycle accuracy issues, some Falcon programs don't work yet.</p>
     </tr>
     <tr>
       <td><a href="http://www.sebastien-pastore.com/killing/">Killing Impact</a></td>
-      <td class="major">1.6</td>
+      <td class="major">2.0</td>
       <td>yes</td>
       <td>-</td>
       <td>Modern version of Joust, up to 4 players.  Sound with DSP.
-          Game screen colors etc are all wrong.</td>
+          Game screen colors etc are all wrong</td>
     </tr>
     <tr>
       <td>King Solitaire</td>
@@ -2493,10 +2498,12 @@ cycle accuracy issues, some Falcon programs don't work yet.</p>
     </tr> 
     <tr>
       <td>Lasers and Hommes (DLDH2)</td>
-      <td>1.6</td>
+      <td class="major">2.0</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Slow</td>
+      <td>With WinUAE CPU core requires MMU to start.
+          Freezes after first two screens, worked with
+          Hatari v1.6. Slow</td>
     </tr>
     <tr>
       <td>Les Dinosaures (demo)</td>
@@ -2528,12 +2535,13 @@ cycle accuracy issues, some Falcon programs don't work yet.</p>
     </tr>
     <tr>
       <td><a href="http://pouet.net/prod.php?which=28903">Men at War (preview)</a></td>
-      <td class="minor">1.9</td>
+      <td class="minor">2.0</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Requires now both WinUAE CPU core and DSP to be enabled. Bullets
-          aren't visible. Cannot be auto-started (freezes like without DSP).
-	  Separate intro program flickers, and double bus errors at end</td>
+      <td>Requires both WinUAE CPU core and DSP to be enabled and 4/8MB.
+          Bullets aren't visible. Cannot be auto-started (freezes like
+          without DSP). Separate intro program flickers, and double bus
+          errors at end</td>
     </tr>
     <tr>
       <td>Milanopol</td>
@@ -2544,7 +2552,7 @@ cycle accuracy issues, some Falcon programs don't work yet.</p>
     </tr>
     <tr>
       <td>Mini F1 demo</td>
-      <td class="major">1.8</td>
+      <td class="major">2.0</td>
       <td>-</td>
       <td>-</td>
       <td>Freezes when the game would start.  Sound is just noise.
@@ -2552,14 +2560,14 @@ cycle accuracy issues, some Falcon programs don't work yet.</p>
     </tr>
     <tr>
       <td>Moongame</td>
-      <td class="major">1.6</td>
+      <td class="major">2.0</td>
       <td>-</td>
       <td>emu</td>
       <td>Pointer cannot be moved in the game menu</td>
     </tr>
     <tr>
       <td>Moonspeeder (preview 2)</td>
-      <td class="major">1.8</td>
+      <td class="major">2.0</td>
       <td>-</td>
       <td>emu</td>
       <td>lst*.* files need to be renamed as game searches them with
@@ -2568,7 +2576,7 @@ cycle accuracy issues, some Falcon programs don't work yet.</p>
     </tr>
     <tr>
       <td>Mouse trap</td>
-      <td class="major">1.8</td>
+      <td class="major">2.0</td>
       <td>yes</td>
       <td>-</td>
       <td>Initial game screen looks OK, then suddenly screen mode gets wrong</td>
@@ -2578,7 +2586,7 @@ cycle accuracy issues, some Falcon programs don't work yet.</p>
       <td>1.6</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Some versions work, some get stuck at start with white screen</td>
+      <td>v1.50 of game works, v1.00 gets stuck at start with white screen</td>
     </tr>
     <tr>
       <td>Neurobot.108</td>
@@ -2589,14 +2597,14 @@ cycle accuracy issues, some Falcon programs don't work yet.</p>
     </tr>
     <tr>
       <td>Nibe2</td>
-      <td class="minor">1.4</td>
+      <td class="minor">2.0</td>
       <td>-</td>
       <td>-</td>
       <td>Videl emu doesn't support rasters in title screen</td>
     </tr>
     <tr>
       <td>Offworld Security</td>
-      <td>1.8+</td>
+      <td>1.9</td>
       <td>yes</td>
       <td>-</td>
       <td>In earlier Hatari versions startup screen was black</td>
@@ -2627,18 +2635,18 @@ cycle accuracy issues, some Falcon programs don't work yet.</p>
       <td>1.0</td>
       <td>yes</td>
       <td>-</td>
-      <td>Some display problems</td>
+      <td>Some garbage temporarily visible in screen changes</td>
     </tr>
     <tr>
       <td><a href="http://www.fatal-design.com/pinball/">Pinball Dreams</a></td>
-      <td class="major">1.6</td>
+      <td class="major">2.0</td>
       <td>yes</td>
       <td>-</td>
-      <td>Main menu works only with WinUAE core.  Actual game screen is scrambled / doesn't work.</td>
+      <td>Main menu works only with WinUAE core.  Actual game screen is scrambled / doesn't work</td>
     </tr>
     <tr>
       <td>Pingo98</td>
-      <td class="minor">1.6</td>
+      <td class="minor">2.0</td>
       <td>yes</td>
       <td>emu</td>
       <td>Colors wrong in classic version, TC version just exits.
@@ -2727,21 +2735,15 @@ cycle accuracy issues, some Falcon programs don't work yet.</p>
       <td>yes</td>
       <td>emu</td>
       <td>A Doom like game.  Both the 1996 preview and 1997 shareware
-          versions work fine.  Doesn't work if auto-started.</td>
+          versions work fine.  Doesn't work if auto-started</td>
     </tr>
     <tr>
-      <td>SBM v0.8</td>
-      <td>1.0</td>
-      <td>-</td>
-      <td>-</td>
-      <td>Nice Bomberman clone</td>
-    </tr>
-    <tr>
-      <td>SBM v1.03</td>
+      <td>SBM</td>
       <td>1.6</td>
       <td>-</td>
       <td>-</td>
-      <td>Requires WinUAE CPU core</td>
+      <td>Nice bomberman clone. v0.8 works fine, v1.03
+          crashes randomly and requires WinUAE core</td>
     </tr>
     <tr>
       <td>Shangai (demo)</td>
@@ -2780,7 +2782,7 @@ cycle accuracy issues, some Falcon programs don't work yet.</p>
     </tr>
     <tr>
       <td>Sokoban by FUN</td>
-      <td class="major">1.6</td>
+      <td class="major">2.0</td>
       <td>yes</td>
       <td>emu</td>
       <td>VGA 640x480x16 only, Exception 2 + Pterm(-1) after loading data</td>
@@ -2836,10 +2838,11 @@ cycle accuracy issues, some Falcon programs don't work yet.</p>
     </tr>
     <tr>
       <td>Tank Blaster</td>
-      <td>1.3</td>
+      <td class="major">2.0</td>
       <td>yes</td>
       <td>-</td>
-      <td></td>
+      <td>Requires old UAE CPU core, or disabling CPU exact + compatible
+	  modes for WinUAE CPU core</td>
     </tr>
     <tr>
       <td>TeknoBalls</td>
@@ -2861,7 +2864,7 @@ cycle accuracy issues, some Falcon programs don't work yet.</p>
       <td>yes</td>
       <td>-</td>
       <td>Nice Mahjongg variant. Supports Joypad (configurable).
-          Background music with DSP emu enabled.</td>
+          Background music with DSP emu enabled</td>
     </tr>
     <tr>
       <td><a href="http://www.vinc17.org/tetrhex/index_eng.html">Tetrhex</a></td>
@@ -2893,18 +2896,18 @@ cycle accuracy issues, some Falcon programs don't work yet.</p>
     </tr>
     <tr>
       <td><a href="http://pouet.net/prod.php?which=28905">Tron 2</a></td>
-      <td class="major">1.6</td>
+      <td>2.0</td>
       <td>yes</td>
       <td>dummy emu</td>
-      <td>Screen scrambled in v1.6, worked fine in v1.0 - v1.4. Background music if DSP emu enabled</td>
+      <td>VGA only. Background music if DSP emu enabled</td>
     </tr>
     <tr>
       <td>TsccTron (preview)</td>
-      <td class="minor">1.6</td>
+      <td class="minor">2.0</td>
       <td>yes</td>
       <td>-</td>
-      <td>Works only occasionally, bottom screen black.
-          Background music if DSP emu enabled</td>
+      <td>Requires WinUAE CPU core, bottom screen black
+          (palette tricks?). Background music if DSP emu enabled</td>
     </tr>
     <tr>
       <td>TUM</td>
@@ -2915,10 +2918,14 @@ cycle accuracy issues, some Falcon programs don't work yet.</p>
     </tr>
     <tr>
       <td>Ufo War</td>
-      <td class="major">1.6</td>
+      <td class="major">2.0</td>
       <td>yes</td>
       <td>-</td>
-      <td>Screen scrambled. With DSP emu, bg music for a while</td>
+      <td>256-color, 80-column, no interlace video mode only.
+          Screen scrambled.  With GEMDOS HD, after a while does
+	  invalid Fread() and terminates with error code.  With disk
+	  image, lot of "pBank flags mismatch" and FDC DMA warnings.
+	  Background music with DSP emu</td>
     </tr>
     <tr>
       <td>Ultimate Arena (demo)</td>
@@ -2936,10 +2943,10 @@ cycle accuracy issues, some Falcon programs don't work yet.</p>
     </tr>
     <tr>
       <td>Watership</td>
-      <td class="minor">1.6</td>
+      <td>2.0</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Some glitches at the bottom of the screen</td>
+      <td>Use VGA display, RGB has glitches at screen bottom</td>
     </tr>
     <tr>
       <td><a href="http://newbeat.atari.org/main.php?page=productions">Willie Adventurer</a></td>
