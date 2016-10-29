@@ -68,6 +68,8 @@ Emulator:
   - SDL2 is now enabled by default
   - Resizable windows, including ST/STE screen scaling
   - "--desktop" option is used also for ST/STe instead of "--desktop-st"
+- Command line:
+  - Renamed --fpu-type option to --fpu
 - Configuration:
   - Hatari defaults to ST both with oldUAE & WinUAE CPU core
   - Preferred private configuration directory is now ~/.config/hatari

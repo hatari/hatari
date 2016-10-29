@@ -368,7 +368,7 @@ static const opt_t HatariOptions[] = {
 	  "<bool>", "Use cycle exact CPU emulation" },
 	{ OPT_CPU_ADDR24, NULL, "--addr24",
 	  "<bool>", "Use 24-bit instead of 32-bit addressing mode" },
-	{ OPT_FPU_TYPE, NULL, "--fpu-type",
+	{ OPT_FPU_TYPE, NULL, "--fpu",
 	  "<x>", "FPU type (x=none/68881/68882/internal)" },
 	/*{ OPT_FPU_COMPATIBLE, NULL, "--fpu-compatible",
 	  "<bool>", "Use more compatible, but slower FPU emulation" },*/
