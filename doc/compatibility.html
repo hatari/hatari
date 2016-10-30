@@ -2838,7 +2838,7 @@ separately.</p>
     </tr>
     <tr>
       <td>Tank Blaster</td>
-      <td class="major">2.0</td>
+      <td class="minor">2.0</td>
       <td>yes</td>
       <td>-</td>
       <td>Requires old UAE CPU core, or disabling CPU exact + compatible
@@ -3092,7 +3092,7 @@ stated to require that.</p>
       </td>
       <td class="minor">2.0</td>
       <td>yes</td>
-      <td>none/dummy</td>
+      <td>none</td>
       <td>Works with oldUAE CPU core, with WinUAE CPU core
           DSP needs to be disabled</td>
     </tr>
@@ -3429,18 +3429,29 @@ stated to require that.</p>
     <tr>
       <td>Lazer:
       <a href="http://pouet.net/prod.php?which=17782">Autowaschen Verboten</a></td>
-      <td>1.3</td>
+      <td class="minor">2.0</td>
       <td>yes</td>
       <td>emu</td>
-      <td></td>
+      <tr>Works with old UAE CPU core, but freezes at title screen
+          with Hatari &gt;=v1.9 WinUAE CPU core unless CPU exact +
+	  compatible modes are disabled</td>
+    </tr>
+    <tr>
+      <td>Lazer:
+      <a href="http://pouet.net/prod.php?which=17965">Dan's Lustiges Kinderfest</a></td>
+      <td class="minor">2.0</td>
+      <td>yes</td>
+      <td>emu</td> 
+      <tr>Same issue as with Oergs</td>
     </tr>
     <tr>
       <td>Lazer:
       <a href="http://pouet.net/prod.php?which=17957">Gurkensalad</a></td>
-      <td>1.3</td>
+      <td class="major">2.0</td>
       <td>-</td>
       <td>emu</td>
-      <td>4K</td>
+      <td>4K.  Freezes after a while with Hatari 1.8 or newer.
+          Worked with v1.3</td>
     </tr>
     <tr>
       <td>Lazer:
@@ -3448,24 +3459,28 @@ stated to require that.</p>
       <td>1.6</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Requires WinUAE CPU core</td>
+      <td>Nice. Requires WinUAE CPU core</td>
     </tr>
     <tr>
       <td>Lazer:
       <a href="http://pouet.net/prod.php?which=28749">Oergs</a></td>
-      <td class="major">2.0</td>
+      <td class="minor">2.0</td>
       <td>yes</td>
-      <td>emu</td>
-      <td>Requires old UAE CPU core, with WinUAE CPU core constantly
-          complains about illegal DSP instructions</td>
+      <td>emu</td> 
+      <tr>Works with old UAE CPU core, but not with Hatari
+	  &gt;=v1.9 WinUAE CPU core (complains about illegal
+	  DSP instructions) unless CPU exact + compatible
+	  modes are disabled</td>
     </tr>
     <tr>
       <td>Lazer:
       <a href="http://pouet.net/prod.php?which=8585">Warum</a></td>
-      <td>1.3</td>
+      <td class="minor">2.0</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Nice</td>
+      <tr>Works with old UAE CPU core, but freezes in torus screen
+          with Hatari &gt;=v1.9 WinUAE CPU core unless CPU exact +
+	  compatible modes are disabled</td>
     </tr>
     <tr>
       <td>Light:
@@ -3591,10 +3606,10 @@ stated to require that.</p>
     <tr>
       <td>NoCrew:
       <a href="http://www.pouet.net/prod.php?which=15140">Stocasto</a></td>
-      <td class="major">1.6</td>
+      <td>2.0</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Bombs on startup (in v1.5 it froze, but in later stage)</td>
+      <td></td>
     </tr>
     <tr>
       <td>Opium:
@@ -3763,11 +3778,13 @@ stated to require that.</p>
     <tr>
       <td>Tony Benett:
       <a href="http://pouet.net/prod.php?which=28853">Virtual City</a></td>
-      <td class="major">2.0</td>
+      <td class="minor">2.0</td>
       <td>-</td>
       <td>emu</td>
       <td>HiColor, drawing the city requires DSP emulation.
-      <td>Crashes at start with WinUAE CPU core, works with old UAE CPU core</td>
+          Works with old UAE CPU core, but crashes with Hatari
+	  &gt;=v1.9 WinUAE CPU core unless CPU exact + compatible
+	  modes are disabled</td>
     </tr>
     <tr>
       <td>Toons:
@@ -3784,7 +3801,8 @@ stated to require that.</p>
       <td>1.6</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Uses NoCrew DSP MP2-player</td>
+      <td>Uses NoCrew DSP MP2-player.  60Hz RGB mode shows garbage,
+          other mode selections work</td>
     </tr>
     <tr>
       <td>Wildfire:
@@ -3950,7 +3968,7 @@ site.</p>
     </tr>
     <tr>
       <td><a href="http://www.pouet.net/prod.php?which=56822">Hextracker</a></td>
-      <td class="major">1.7</td>
+      <td class="major">2.0</td>
       <td>-</td>
       <td>Freezes at start waiting Videl screen address counter to change</td>
     </tr>
