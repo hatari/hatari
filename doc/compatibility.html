@@ -3020,18 +3020,21 @@ stated to require that.</p>
     <tr>
       <td>An cool:
       <a href="http://pouet.net/prod.php?which=24781">The Keff demo</a></td>
-      <td class="major">1.8+</td>
+      <td class="major">2.0</td>
       <td>yes</td>
       <td>-</td>
-      <td>gets stuck after dragons pic with circle on black screen</td>
+      <td>Gets stuck after dragons pic + bus error on black screen
+          when tunnel screen should start</td>
     </tr>
     <tr>
       <td>Aura:
       <a href="http://pouet.net/prod.php?which=15730">E.X.Illusion</a></td>
-      <td>1.6</td>
+      <td class="major">2.0</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Needs WinUAE core in Hatari v1.6</td>
+      <td>Needs WinUAE CPU core.  Music stops to DSP stack overflow
+          right at beginning and demo freezes shortly after that.
+	  Worked in Hatari v1.6</td>
     </tr>
     <tr>
       <td>Avena:
@@ -3077,28 +3080,38 @@ stated to require that.</p>
     <tr>
       <td>Collapze:
       <a href="http://www.pouet.net/prod.php?which=54343">Sidetracked</a></td>
-      <td class="major">1.4</td>
-      <td>-</td>
-      <td>emu</td>
-      <td>Musicdemo GFA interface looks completely broken + mouse doesn't work properly</td>
-    </tr>
-    <tr>
-      <td>Crac:
-      <a href="http://www.pouet.net/prod.php?which=16681">Bound</a>,
-      <a href="http://www.pouet.net/prod.php?which=23587">Bound 2</a>,
-      <a href="http://www.pouet.net/prod.php?which=23588">Bound 3</a>
-      </td>
-      <td>1.3</td>
+      <td class="minor">2.0</td>
       <td>yes</td>
       <td>emu</td>
-      <td></td>
+      <td>VGA-only GFA musicdemo with DSP playback. Screen isn't
+          cleared properly when switching between text outputs.</td>
     </tr>
     <tr>
       <td>Crac:
+      <a href="http://www.pouet.net/prod.php?which=16681">Bound</a>
+      </td>
+      <td class="minor">2.0</td>
+      <td>yes</td>
+      <td>none/dummy</td>
+      <td>Works with oldUAE CPU core, with WinUAE CPU core
+          DSP needs to be disabled</td>
+    </tr>
+    <tr>
+      <td>Crac:
+      <a href="http://www.pouet.net/prod.php?which=23587">Bound 2</a>
+      </td>
+      <td class="major">2.0</td>
+      <td>yes</td>
+      <td>emu</td>
+      <td>Freezes waiting on DSP interrupt</td>
+    </tr>
+    <tr>
+      <td>Crac:
+      <a href="http://www.pouet.net/prod.php?which=23588">Bound 3</a>,
       <a href="http://www.pouet.net/prod.php?which=23589">Bound 4</a>,
       <a href="http://www.pouet.net/prod.php?which=23589">Bound 5</a>
       </td>
-      <td class="major">1.8</td>
+      <td class="major">2.0</td>
       <td>yes</td>
       <td>emu</td>
       <td>Expects Videl screen address counter to change</td>
@@ -3106,10 +3119,12 @@ stated to require that.</p>
     <tr>
       <td>Cream:
       <a href="http://jfhaslam.atari.org/downloads/bin_vga.zip">Binliner preview</a></td>
-      <td class="minor">1.6</td>
+      <td class="minor">2.0</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Freaky screen works. Land &amp; Worship screens die to illegal instruction 4afc</td>
+      <td>Freaky screen works. Land &amp; Worship screens die to
+          illegal instruction 4afc. Readme says these work only
+	  with 100Hz VGA</td>
     </tr>
     <tr>
       <td>Cruor:
@@ -3138,7 +3153,7 @@ stated to require that.</p>
     <tr>
       <td>Dekadence:
       <a href="http://www.pouet.net/prod.php?which=64683">Payback 2015</a></td>
-      <td class="major">1.8+</td>
+      <td class="major">2.0</td>
       <td>-</td>
       <td>-</td>
       <td>Doesn't continue from startup logo</td>
@@ -3397,11 +3412,11 @@ stated to require that.</p>
     <tr>
       <td>ICE:
       <a href="http://www.umich.edu/%7Earchive/atari/Falcon/Games/tron2001.lzh">Tron2001</a></td>
-      <td class="minor">1.4</td>
+      <td>2.0</td>
       <td>yes</td>
       <td>-</td>
-      <td>Bus error at startup unless IDE enabled. Screen resolution or
-          update issues. Non-interactive game(?) demo.</td>
+      <td>Bus error at startup unless IDE enabled.
+          Non-interactive game(?) demo</td>
     </tr>
     <tr>
       <td>Impulse:
@@ -3438,10 +3453,11 @@ stated to require that.</p>
     <tr>
       <td>Lazer:
       <a href="http://pouet.net/prod.php?which=28749">Oergs</a></td>
-      <td>1.3</td>
+      <td class="major">2.0</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Barely an intro</td>
+      <td>Requires old UAE CPU core, with WinUAE CPU core constantly
+          complains about illegal DSP instructions</td>
     </tr>
     <tr>
       <td>Lazer:
@@ -3494,7 +3510,7 @@ stated to require that.</p>
     <tr>
       <td>MJJ Prod:
       <a href="http://pouet.net/prod.php?which=28764">Bound 42</a></td>
-      <td class="minor">1.4</td>
+      <td class="minor">2.0</td>
       <td>yes</td>
       <td>emu</td>
       <td>Crashes at cyan millstone screen</td>
@@ -3747,19 +3763,20 @@ stated to require that.</p>
     <tr>
       <td>Tony Benett:
       <a href="http://pouet.net/prod.php?which=28853">Virtual City</a></td>
-      <td>1.1</td>
+      <td class="major">2.0</td>
       <td>-</td>
       <td>emu</td>
-      <td>HiColor, drawing the city requires DSP emulation</td>
+      <td>HiColor, drawing the city requires DSP emulation.
+      <td>Crashes at start with WinUAE CPU core, works with old UAE CPU core</td>
     </tr>
     <tr>
       <td>Toons:
       <a href="http://pouet.net/prod.php?which=8584">Yepyha</a></td>
-      <td class="major">1.6</td>
+      <td>2.0</td>
       <td>yes</td>
-      <td>-</td>
-      <td>Strange screen sizes, stops in middle.  With DSP, has
-          background music, but stops earlier to DSP stack overflow</td>
+      <td>emu</td>
+      <td>Strange screen sizes. Black screen after ant screen
+      just waits for keypress before showing credits</td>
     </tr>
     <tr>
       <td>T.O.Y.S:
@@ -3796,7 +3813,7 @@ stated to require that.</p>
     <tr>
       <td>Unknown:
       <a href="http://falcdemos.atari.org/archive/unknown/1993.rot3dbmp/">ROT3DBMP</a></td>
-      <td>1.8+</td>
+      <td>1.9</td>
       <td>-</td>
       <td>emu</td>
       <td>Streams data to DSP without synchronization</td>
