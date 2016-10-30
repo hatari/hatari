@@ -30,20 +30,20 @@ int HookedAlertNotice(const char* szMessage)
 	firstPv = [message rangeOfString:@"'"] ;
 	lastPv = [message rangeOfString:@"'" options:NSBackwardsSearch] ;
 
-	if ((cantTOS.location == NSNotFound) || (firstPv.location==lastPv.location))          // traitement normal
+	if ((cantTOS.location == NSNotFound) || (firstPv.location==lastPv.location))         // TOS can be found
 		return ([NSApp myAlerte:NSInformationalAlertStyle Txt:nil firstB:localize(@"Ok") alternateB:localize(@"Cancel")
 			otherB:nil informativeTxt:message ] == NSAlertFirstButtonReturn
 			//NSAlertDefaultReturn
 			);
-	else									// traitement can not load
+	else			// TOS can be found
 		return ([NSApp myAlerte:NSCriticalAlertStyle Txt:nil firstB:localize(@"Ok") alternateB:nil otherB:nil
 		        informativeTxt:localize(@"Can not load TOS file:") ]  == NSAlertFirstButtonReturn) ;
 }
 
-/*-----------------------------------------------------------------------*/
-/*
-  Displays a Cocoa alert with a choice (OK and Cancel buttons)
-*/
+/*----------------------------------------------------------------------*/
+/* Displays a Cocoa alert with a choice (OK and Cancel buttons)			*/
+/*----------------------------------------------------------------------*/
+
 int HookedAlertQuery(const char* szMessage)
 {
 	NSString *message ;

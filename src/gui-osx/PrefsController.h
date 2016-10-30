@@ -81,12 +81,12 @@
 	IBOutlet NSButton *cycleExactCPU; //bCycleExactCpu
 	IBOutlet NSButton *MMU_Emulation;
 	IBOutlet NSButton *adressSpace24; //bAddressSpace24
-	__unsafe_unretained IBOutlet NSStepper *TTRAMSizeStepper;
-	__unsafe_unretained IBOutlet NSTextField *TTRAMSizeValue;
-	IBOutlet NSButton *CompatibleFPU;
+	IBOutlet NSStepper *TTRAMSizeStepper;
+	IBOutlet NSTextField *TTRAMSizeValue;
+	//IBOutlet NSButton *CompatibleFPU;
 	IBOutlet NSMatrix *FPUType;
 
-	__unsafe_unretained IBOutlet NSButtonCell *bCell68060;
+	IBOutlet NSButtonCell *bCell68060;
 
 	// load/save state
 	IBOutlet NSPopUpButton *enableDSP;

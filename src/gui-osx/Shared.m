@@ -27,7 +27,7 @@
 	[window setDelegate:self];
 
 	// Change emulation and UI state
-	GuiOsx_Pause();
+	GuiOsx_Pause(true);
 	
 	// Run it as modal
 	[NSApp runModalForWindow:window];
@@ -52,9 +52,8 @@
 @end
 
 /*-----------------------------------------------------------------------*/
-/*
-  Helper function to write the contents of a path as an NSString to a string
-*/
+/*Helper function to write the contents of a path as an NSString to a string*/
+/*----------------------------------------------------------------------*/
 void GuiOsx_ExportPathString(NSString* path, char* szTarget, size_t cchTarget)
 {
 	NSCAssert((szTarget), @"Target buffer must not be null.");
@@ -64,28 +63,28 @@ void GuiOsx_ExportPathString(NSString* path, char* szTarget, size_t cchTarget)
 	[path getCString:szTarget maxLength:cchTarget-1 encoding:NSASCIIStringEncoding] ;
 }
 
-/*-----------------------------------------------------------------------*/
-/*
-  Pauses emulation
-*/
-void GuiOsx_Pause(void)
+/*----------------------------------------------------------------------*/
+/*Pauses emulation														*/
+/* Added the visualize option for 2.0.0									*/
+/*----------------------------------------------------------------------*/
+void GuiOsx_Pause(bool visualize)
 {
 	// Pause emulation
-	Main_PauseEmulation(true);
+	Main_PauseEmulation(visualize);
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Switches back to emulation mode
-*/
+/*Switches back to emulation mode										*/
+/*----------------------------------------------------------------------*/
 void GuiOsx_Resume(void)
 {
 	// Resume emulation
 	Main_UnPauseEmulation();
 }
 
-//-----------------------------------------------------------------------------------------------------------
+/*----------------------------------------------------------------------*/
 // Add global services.  6 methods
+/*----------------------------------------------------------------------*/
 
 @implementation NSApplication (service)
 
@@ -96,7 +95,7 @@ void GuiOsx_Resume(void)
 	return [self hopenfile:chooseDir defoDir:defoDir defoFile:defoFile types:types titre:nil] ;
 }
 
-
+/*----------------------------------------------------------------------*/
 - (NSString *)hopenfile:(BOOL)chooseDir defoDir:(NSString *)defoDir defoFile:(NSString *)defoFile types:(NSArray *)types titre:(NSString *)titre
 {
 NSOpenPanel *openPanel ;
@@ -128,13 +127,14 @@ NSOpenPanel *openPanel ;
 	return @"" ;
 }
 
+/*----------------------------------------------------------------------*/
 // Save file
 //
 - (NSString *)hsavefile:(BOOL)creatDir defoDir:(NSString *)defoDir defoFile:(NSString *)defoFile types:(NSArray *)types
 {
 	return [self hsavefile:creatDir defoDir:defoDir defoFile:defoFile types:types titre:nil] ;
 }
-
+/*----------------------------------------------------------------------*/
 - (NSString *)hsavefile:(BOOL)creatDir defoDir:(NSString *)defoDir defoFile:(NSString *)defoFile types:(NSArray *)types titre:(NSString *)titre
 {
 	NSSavePanel *savPanel ;
@@ -163,7 +163,7 @@ NSOpenPanel *openPanel ;
 	 } ;
 	return @"" ;
 }
-
+/*----------------------------------------------------------------------*/
 // Returne localized path
 //
 - (NSString *)localpath:(NSString *)thepath :(NSFileManager *)afilemanager
@@ -189,7 +189,7 @@ NSOpenPanel *openPanel ;
 	NSFileManager *afilemanager = [NSFileManager defaultManager] ;              // call "default manager"
 	return [self localpath:thepath :afilemanager] ;
 }
-
+/*----------------------------------------------------------------------*/
 //  return a localized path related to user home directoryr   ~/
 //
 - (NSString *)pathUser:(NSString *)thepath
@@ -204,7 +204,7 @@ NSOpenPanel *openPanel ;
 		return [NSString stringWithFormat:@"~%@", [apath substringFromIndex:here.length ]] ;
 	return apath;
 }
-
+/*----------------------------------------------------------------------*/
 // NSAlert available 10.3 to 10.9 ..... 10.11
 //
 - (NSInteger)myAlerte:(NSUInteger)style Txt:(NSString *)Txt firstB:(NSString *)firstB alternateB:(NSString *)alternateB

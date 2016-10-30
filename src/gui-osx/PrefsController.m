@@ -33,8 +33,8 @@
 #include "joy.h"
 
 // Macros to transfer data between Cocoa controls and Hatari data structures
-
 // de l'affichage vers la structure  (saveAllControls)
+
 #define EXPORT_TEXTFIELD(mutablStrng, target) [mutablStrng getCString:target maxLength:sizeof((target))-1 encoding:NSASCIIStringEncoding]
 #define EXPORT_NTEXTFIELD(nstextfield, target) target = [nstextfield intValue]
 #define EXPORT_SWITCH(nsbutton, target) target = ([(nsbutton) state] == NSOnState)
@@ -53,7 +53,7 @@
 #define INITIAL_DIR(dossier) [dossier length] < 2 ? @"~" : dossier
 
 // Back up of the current configuration parameters
-//
+
 CNF_PARAMS CurrentParams;
 
 
@@ -229,14 +229,13 @@ static const int nSoundFreqs[] =
 
 char szPath[FILENAME_MAX];
 
-
+// not used
 - (IBAction)finished:(id)sender
 {
 	//Main_RequestQuit(0) ;
 }
 
 /*-----------------------------------------------------------------------*/
-/*                                                                       */
 /*  Helper method for Choose buttons                                     */
 /*  Returns: TRUE is the user selected a path, FALSE if he/she aborted   */
 /*-----------------------------------------------------------------------*/
@@ -267,12 +266,10 @@ char szPath[FILENAME_MAX];
 }
 
 
-//-----------------------------------------------------------------------*/
-//
-//  Helper method to insert a floppy image
-//  TODO: Add code to restrict to known file types
-//
-/*-----------------------------------------------------------------------*/
+/*----------------------------------------------------------------------*/
+/*  Helper method to insert a floppy image								*/
+/*  TODO: Add code to restrict to known file types						*/
+/*----------------------------------------------------------------------*/
 
 - (void)insertFloppyImageIntoDrive:(int)drive forTextField:(NSTextField*)floppyTextField
                           realPath:(NSMutableString *)realPath
@@ -298,87 +295,87 @@ BOOL flag1, flag2;
 	return route.stringByDeletingLastPathComponent ;
 }
 
-//
+/*----------------------------------------------------------------------*/
 //  Methods for all the "Choose" buttons
-//
+/*----------------------------------------------------------------------*/
 - (IBAction)chooseCartridgeImage:(id)sender;
 {
     [self choosePathForControl: cartridgeImage chooseDirectories:NO defaultInitialDir:[self initial:cartridge]                              // cartridge
         mutString:cartridge  what:@[allC]];
 }
 
-
+/*----------------------------------------------------------------------*/
 - (IBAction)chooseDefaultImagesLocation:(id)sender
 {
 	[self choosePathForControl: defaultImagesLocation chooseDirectories:YES defaultInitialDir:[self initial:imgeDir]                                // images location
         mutString:imgeDir  what:nil];
 }
-
+/*----------------------------------------------------------------------*/
 - (IBAction)chooseFloppyImageA:(id)sender
 {
-	[self insertFloppyImageIntoDrive:0 forTextField:floppyImageA realPath:floppyA];										// floppy A
+	[self insertFloppyImageIntoDrive:0 forTextField:floppyImageA realPath:floppyA];						// floppy A
 }
-
+/*----------------------------------------------------------------------*/
 - (IBAction)chooseFloppyImageB:(id)sender
 {
-	[self insertFloppyImageIntoDrive:1 forTextField:floppyImageB realPath:floppyB];										// floppy B
+	[self insertFloppyImageIntoDrive:1 forTextField:floppyImageB realPath:floppyB];						// floppy B
 }
-
-- (IBAction)chooseGemdosImage:(id)sender																				// directory for Gemdos
+/*----------------------------------------------------------------------*/
+- (IBAction)chooseGemdosImage:(id)sender																// directory for Gemdos
 {
-	[self choosePathForControl: gemdosImage chooseDirectories:YES defaultInitialDir:INITIAL_DIR(gemdos)					// gemdos
+	[self choosePathForControl: gemdosImage chooseDirectories:YES defaultInitialDir:INITIAL_DIR(gemdos)	// gemdos
                 mutString:gemdos  what:nil] ;
 	if (gemdos.length >2 ) [gemdosImage setStringValue:[NSApp pathUser:gemdos]] ;
 }
-
+/*----------------------------------------------------------------------*/
 - (IBAction)chooseHdImage:(id)sender
 {
-	[self choosePathForControl: hdImage chooseDirectories:NO defaultInitialDir:[self initial:hrdDisk]					// HD image ?
+	[self choosePathForControl: hdImage chooseDirectories:NO defaultInitialDir:[self initial:hrdDisk]	// HD image ?
             mutString:hrdDisk  what:@[@"img",@"hdv"]] ;
 }
-
+/*----------------------------------------------------------------------*/
 - (IBAction)chooseIdeMasterHdImage:(id)sender
 {
 	[self choosePathForControl: ideMasterHdImage chooseDirectories:NO defaultInitialDir:[self initial:masterIDE]		// IDE master
             mutString:masterIDE  what:@[@"hdv"]];
 }
-
+/*----------------------------------------------------------------------*/
 - (IBAction)chooseIdeSlaveHdImage:(id)sender
 {
 	[self choosePathForControl: ideSlaveHdImage chooseDirectories:NO defaultInitialDir:[self initial:slaveIDE]			// IDE slave
             mutString:slaveIDE  what:@[@"hdv"]];
 }
-
+/*----------------------------------------------------------------------*/
 - (IBAction)chooseKeyboardMappingFile:(id)sender
 {
 	[self choosePathForControl: keyboardMappingFile chooseDirectories:NO defaultInitialDir:[self initial:keyboard]		// keyboard mapping
             mutString:keyboard  what:@[@"txt",@"map"]];
 }
-
+/*----------------------------------------------------------------------*/
 - (IBAction)chooseMidiOutputFile:(id)sender
 {
 	[self choosePathForControl: writeMidiToFile chooseDirectories:NO defaultInitialDir:[self initial:midiOut]			// midi output 
             mutString:midiOut  what:@[@"mid"]];
 }
-
+/*----------------------------------------------------------------------*/
 - (IBAction)choosePrintToFile:(id)sender
 {
 	[self choosePathForControl: printToFile chooseDirectories:NO defaultInitialDir:[self initial:printit]				// print to file
             mutString:printit  what:@[@"prn"]];
 }
-
+/*----------------------------------------------------------------------*/
 - (IBAction)chooseRS232InputFile:(id)sender
 {
 	[self choosePathForControl: readRS232FromFile chooseDirectories:NO defaultInitialDir:[self initial:rs232In]			// RS232 input
         mutString:rs232In  what:nil];
 }
-
+/*----------------------------------------------------------------------*/
 - (IBAction)chooseRS232OutputFile:(id)sender
 {
 	[self choosePathForControl: writeRS232ToFile chooseDirectories:NO defaultInitialDir:[self initial:rs232Out]			// RS232 output
         mutString:rs232Out  what:nil];
 }
-
+/*----------------------------------------------------------------------*/
 - (IBAction)chooseTosImage:(id)sender;
 {
 	[self choosePathForControl: tosImage chooseDirectories:NO defaultInitialDir:[self initial:TOS]						// TOS image
@@ -386,10 +383,9 @@ BOOL flag1, flag2;
 }
 
 
-/*-----------------------------------------------------------------------*/
-/*                                                                       */
-/*  Methods for the "Eject" buttons                                      */
-/*-----------------------------------------------------------------------*/
+/*----------------------------------------------------------------------*/
+//  Methods for the "Eject" buttons
+/*----------------------------------------------------------------------*/
 - (IBAction)ejectFloppyA:(id)sender
 {
 	Floppy_SetDiskFileNameNone(0);
@@ -398,7 +394,7 @@ BOOL flag1, flag2;
 	floppyImageA.stringValue = @"" ;
 	floppyA.string = @"" ;
 }
-
+/*----------------------------------------------------------------------*/
 - (IBAction)ejectFloppyB:(id)sender
 {
 	Floppy_SetDiskFileNameNone(1);
@@ -407,7 +403,7 @@ BOOL flag1, flag2;
 	floppyImageB.stringValue = @"" ;
 	floppyB.string = @"" ;
 }
-
+/*----------------------------------------------------------------------*/
 - (IBAction)ejectGemdosImage:(id)sender
 {
 	// Clear the control. Later. saveAllControls will set the ConfigureParams accordingly
@@ -415,7 +411,7 @@ BOOL flag1, flag2;
 	gemdosImage.stringValue = @"" ;
 	gemdos.string = @"" ;
 }
-
+/*----------------------------------------------------------------------*/
 - (IBAction)ejectHdImage:(id)sender
 {
 	// Clear the control. Later. saveAllControls will set the ConfigureParams accordingly
@@ -423,7 +419,7 @@ BOOL flag1, flag2;
 	hdImage.stringValue = @"" ;
 	hrdDisk.string = @"" ;
 }
-
+/*----------------------------------------------------------------------*/
 - (IBAction)ejectIdeMasterHdImage:(id)sender
 {
 	// Clear the control. Later. saveAllControls will set the ConfigureParams accordingly
@@ -431,7 +427,7 @@ BOOL flag1, flag2;
 	ideMasterHdImage.stringValue = @"" ;
 	masterIDE.string = @"" ;
 }
-
+/*----------------------------------------------------------------------*/
 - (IBAction)ejectIdeSlaveHdImage:(id)sender
 {
 	// Clear the control. Later. saveAllControls will set the ConfigureParams accordingly
@@ -440,10 +436,9 @@ BOOL flag1, flag2;
 	slaveIDE.string = @"" ;
 }
 
-/*-----------------------------------------------------------------------*/
-/**
- * Methods for the "Load Config" button
- */
+/*----------------------------------------------------------------------*/
+/* Methods for the "Load Config" button									*/
+/*----------------------------------------------------------------------*/
 
 - (IBAction)loadConfigFrom:(id)sender
 {
@@ -456,17 +451,17 @@ BOOL flag1, flag2;
 	opnPanel.canChooseDirectories = NO ;
 	opnPanel.canChooseFiles = YES ;
 	opnPanel.accessoryView = partage ;
-//10.5 ?
-//	if ([opnPanel respondsToSelector:@selector(setDirectoryURL:)])
+	//10.5 ?
+	//	if ([opnPanel respondsToSelector:@selector(setDirectoryURL:)])
 	 {	opnPanel.directoryURL = [NSURL fileURLWithPath:ru isDirectory:YES] ;
 		opnPanel.nameFieldStringValue = @"hatari" ;
-		btOk = [opnPanel runModal] == NSModalResponseOK;								// Ok ?
+		btOk = [opnPanel runModal] == NSModalResponseOK;				// Ok ?
 	 }
-// 10.5 ?
-//	else
-//        btOk = [opnPanel runModalForDirectory:ru file:@"hatari"] == NSModalResponseOK; //NSOKButton 	;
+	// 10.5 ?
+	//	else
+	//        btOk = [opnPanel runModalForDirectory:ru file:@"hatari"] == NSModalResponseOK; //NSOKButton 	;
 
-	if (!btOk)  return ;																// Cancel
+	if (!btOk)  return ;												// Cancel
 
 	lesURLs = opnPanel.URLs ;
 	if ((lesURLs == nil) || (lesURLs.count == 0))
@@ -474,36 +469,36 @@ BOOL flag1, flag2;
 
 	[configNm setString:[[lesURLs objectAtIndex:0] path]] ;
 
-		// Make a non-const C string out of it
+	// Make a non-const C string out of it
 	[configNm getCString:sConfigFileName maxLength:FILENAME_MAX encoding:NSASCIIStringEncoding];
 
-		// Load the config into ConfigureParams
+	// Load the config into ConfigureParams
 	Configuration_Load(sConfigFileName);
 
-		// Refresh all the controls to match ConfigureParams
+	// Refresh all the controls to match ConfigureParams
 	[self setAllControls];
 }
 
-/**
- * Methods for the "Save Config" button  (bottom preference window)
- */
+/*----------------------------------------------------------------------*/
+// Methods for the "Save Config" button  (bottom preference window)		
+/*----------------------------------------------------------------------*/
 - (IBAction)saveConfigAs:(id)sender
 {
-NSString	*ru ;
-BOOL		btOk ;
+	NSString	*ru ;
+	BOOL		btOk ;
 
 	ru = [NSString stringWithCString:(Paths_GetHatariHome()) encoding:NSASCIIStringEncoding] ;
 	savPanel.allowedFileTypes = @[@"cfg"] ;
 	savPanel.accessoryView = hartage ;
-//10.5
-//	if ([savPanel respondsToSelector:@selector(setDirectoryURL:)])
+	//10.5
+	//	if ([savPanel respondsToSelector:@selector(setDirectoryURL:)])
 	 {	savPanel.directoryURL = [NSURL fileURLWithPath:ru isDirectory:YES] ;			// Since OS X 10.6
 		savPanel.nameFieldStringValue = @"hatari" ;
 		btOk = [savPanel runModal] == NSModalResponseOK ;								// Ok ?
 	 }
-//10.5
-//	else
-//        btOk = [savPanel runModalForDirectory:ru file:@"hatari"] == NSModalResponseOK; //NSOKButton ;		// avant 10.6
+	//10.5
+	//	else
+	//        btOk = [savPanel runModalForDirectory:ru file:@"hatari"] == NSModalResponseOK; //NSOKButton ;		// avant 10.6
 
 	if (!btOk)
 		return ;                                                                        // Cancel
@@ -515,34 +510,33 @@ BOOL		btOk ;
 	[self saveAllControls] ;										// Save the config from ConfigureParams		
 	Configuration_Save();											// [self configSave:configNm] ;
 }
-
+/*----------------------------------------------------------------------*/
 - (IBAction)aller:(id)sender
 {
-NSString  *defaultDirectory ;
+	NSString  *defaultDirectory ;
 
 	defaultDirectory = [NSString stringWithCString:(Paths_GetHatariHome()) encoding:NSASCIIStringEncoding] ;
-//	if ([opnPanel respondsToSelector:@selector(setDirectoryURL:)])
+	//	if ([opnPanel respondsToSelector:@selector(setDirectoryURL:)])
 		opnPanel.directoryURL = [NSURL fileURLWithPath:defaultDirectory isDirectory:YES] ;
-//	else
-//		[opnPanel setDirectory:defaultDirectory] ;
+	//	else
+	//		[opnPanel setDirectory:defaultDirectory] ;
 }
-
+/*----------------------------------------------------------------------*/
 - (IBAction)halle:(id)sender
 {
-NSString  *defaultDirectory ;
+	NSString  *defaultDirectory ;
 
 	defaultDirectory = [NSString stringWithCString:(Paths_GetHatariHome()) encoding:NSASCIIStringEncoding] ;
-//	if ([savPanel respondsToSelector:@selector(setDirectoryURL:)])
+	//	if ([savPanel respondsToSelector:@selector(setDirectoryURL:)])
 		savPanel.directoryURL = [NSURL fileURLWithPath:defaultDirectory isDirectory:YES] ;
-//	else 
-//		[savPanel setDirectory:defaultDirectory] ;
+	//	else
+	//		[savPanel setDirectory:defaultDirectory] ;
 }
 
 
-/*-----------------------------------------------------------------------*/
-/*
-  Commits and closes         Ok button in preferences window
-*/
+/*----------------------------------------------------------------------*/
+//Commits and closes         Ok button in preferences window
+/*----------------------------------------------------------------------*/
 - (IBAction)commitAndClose:(id)sender
 {
 
@@ -553,7 +547,7 @@ NSString  *defaultDirectory ;
 
 
 }
-
+/*----------------------------------------------------------------------*/
 // Populate Joystick key dropdown
 
 - (void)initKeysDropDown:(NSPopUpButton*)dropDown
@@ -570,11 +564,12 @@ NSString  *defaultDirectory ;
 }
 
 
-/*--------------------------------------------------------------------------*/
-/*Displays the Preferences dialog   Ouverture de la fenêtre des préférences */
-/*--------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------*/
+//Displays the Preferences dialog   Ouverture de la fenêtre des préférences
+/*----------------------------------------------------------------------*/
 - (IBAction)loadPrefs:(id)sender
 {
+	//GuiOsx_Pause(true);
 	[configNm setString:[NSString stringWithCString:sConfigFileName encoding:NSASCIIStringEncoding]] ;
 
 	if (!bInitialized)
@@ -631,7 +626,7 @@ NSString  *defaultDirectory ;
 	// M. Saro, 2013
 
     //if(Ok button in preferences Windows)
-    {
+    //{
         // Check if change need reset
         if (Change_DoNeedReset(&CurrentParams, &ConfigureParams))
         {
@@ -645,18 +640,17 @@ NSString  *defaultDirectory ;
         }
         else
             Change_CopyChangedParamsToConfiguration(&CurrentParams, &ConfigureParams, false); //Apply config without reset
-    }
+    //}
     // else // not OK button
     // {
     //      ConfigureParams = CurrentParams; //Restore backup params
     // }
-    
+	
 }
 
-/*-----------------------------------------------------------------------*/
-/*
-  Updates the controls following a change in the joystick selection
-*/
+/*----------------------------------------------------------------------*/
+//Updates the controls following a change in the joystick selection
+/*----------------------------------------------------------------------*/
 - (IBAction)changeViewedJoystick:(id)sender
 {
 	// Save the pre-joystick controls, as we are about to change them
@@ -670,10 +664,9 @@ NSString  *defaultDirectory ;
 }
 
 
-/*-----------------------------------------------------------------------*/
-/*
-  Initializes all controls, transfert des préférences dans la fenêtre
-*/
+/*----------------------------------------------------------------------*/
+//Initializes all controls, transfert des préférences dans la fenêtre
+/*----------------------------------------------------------------------*/
 - (void)setAllControls
 {
 
@@ -777,7 +770,7 @@ NSString  *defaultDirectory ;
 	IMPORT_SWITCH(cycleExactCPU, ConfigureParams.System.bCycleExactCpu);
 	IMPORT_SWITCH(MMU_Emulation, ConfigureParams.System.bMMU);
 	IMPORT_SWITCH(adressSpace24, ConfigureParams.System.bAddressSpace24);
-	//IMPORT_RADIO(FPUType, ConfigureParams.System.n_FPUType);
+	
 	if (ConfigureParams.System.n_FPUType == FPU_NONE)
 		[FPUType selectCellWithTag:0];
 	else if (ConfigureParams.System.n_FPUType == FPU_68881)
@@ -786,14 +779,15 @@ NSString  *defaultDirectory ;
 		[FPUType selectCellWithTag:2];
 	else if (ConfigureParams.System.n_FPUType == FPU_CPU)
 		[FPUType selectCellWithTag:3];
-	IMPORT_SWITCH(CompatibleFPU, ConfigureParams.System.bCompatibleFPU);
+	//not needed anymore
+	//IMPORT_SWITCH(CompatibleFPU, ConfigureParams.System.bCompatibleFPU);
 #endif
-
+	
 	int i;
 	for (i = 0; i <= DLGSOUND_50KHZ-DLGSOUND_11KHZ; i++)
 	{
 		if (ConfigureParams.Sound.nPlaybackFreq > nSoundFreqs[i]-500
-		    && ConfigureParams.Sound.nPlaybackFreq < nSoundFreqs[i]+500)
+			&& ConfigureParams.Sound.nPlaybackFreq < nSoundFreqs[i]+500)
 		{
 			[playbackQuality selectCellWithTag:(i)];
 			break;
@@ -857,9 +851,9 @@ NSString  *defaultDirectory ;
 }
 
 
-/*------------------------------------------------------------------------*/
-/* Updates the enabled states of controls who depend on other controls    */
-/**************************************************************************/
+/*----------------------------------------------------------------------*/
+/* Updates the enabled states of controls who depend on other controls  */
+/*----------------------------------------------------------------------*/
 
 - (IBAction)updateEnabledStates:(id)sender
 {
@@ -886,9 +880,9 @@ NSString  *defaultDirectory ;
 }
 
 
-/*-----------------------------------------------------------------------*/
-/* Updates the joystick controls to match the new joystick selection     */
-/*************************************************************************/
+/*----------------------------------------------------------------------*/
+/* Updates the joystick controls to match the new joystick selection    */
+/*----------------------------------------------------------------------*/
 
 - (void)setJoystickControls
 {
@@ -897,13 +891,13 @@ NSString  *defaultDirectory ;
 
 	// Data validation: If the JoyID is out of bounds, correct it and, if set to use real joystick, change to disabled
 	if ( (ConfigureParams.Joysticks.Joy[nCurrentJoystick].nJoyId < 0)
-	|| (ConfigureParams.Joysticks.Joy[nCurrentJoystick].nJoyId >= cRealJoysticks) )
+		|| (ConfigureParams.Joysticks.Joy[nCurrentJoystick].nJoyId >= cRealJoysticks) )
 	{
 		ConfigureParams.Joysticks.Joy[nCurrentJoystick].nJoyId = 0;
 		if (ConfigureParams.Joysticks.Joy[nCurrentJoystick].nJoystickMode == JOYSTICK_REALSTICK)
 		{
 			ConfigureParams.Joysticks.Joy[nCurrentJoystick].nJoystickMode = JOYSTICK_DISABLED;
-		}	
+		}
 	}
 
 	// Don't change the realJoystick dropdown if none is available (to keep "(None available)" selected)
@@ -922,8 +916,9 @@ NSString  *defaultDirectory ;
 }
 
 
-/*-----------------------------------------------------------------------*/
-/*   Saves the setting for the joystick currently being viewed           */
+/*----------------------------------------------------------------------*/
+//   Saves the setting for the joystick currently being viewed
+/*----------------------------------------------------------------------*/
 - (void)saveJoystickControls
 {
 	EXPORT_RADIO(joystickMode, ConfigureParams.Joysticks.Joy[nCurrentJoystick].nJoystickMode);	
@@ -937,8 +932,9 @@ NSString  *defaultDirectory ;
 }
 
 
-/*-----------------------------------------------------------------------*/
-/* Saves the settings for all controls                                   */
+/*----------------------------------------------------------------------*/
+// Saves the settings for all controls
+/*----------------------------------------------------------------------*/
 - (void)saveAllControls
 {
 	// Export the preference controls into their vars
@@ -1031,7 +1027,6 @@ NSString  *defaultDirectory ;
 	EXPORT_SWITCH(cycleExactCPU, ConfigureParams.System.bCycleExactCpu);
 	EXPORT_SWITCH(MMU_Emulation, ConfigureParams.System.bMMU);
 	EXPORT_SWITCH(adressSpace24, ConfigureParams.System.bAddressSpace24);
-	//EXPORT_RADIO(FPUType, ConfigureParams.System.n_FPUType); 		//[[FPUType selectedCell] tag]
 	if(FPUType.selectedCell.tag == 0 )
 		ConfigureParams.System.n_FPUType = FPU_NONE;
 	else if(FPUType.selectedCell.tag == 1 )
@@ -1040,7 +1035,8 @@ NSString  *defaultDirectory ;
 		ConfigureParams.System.n_FPUType = FPU_68882;
 	else if(FPUType.selectedCell.tag == 3 )
 		ConfigureParams.System.n_FPUType = FPU_CPU;
-	EXPORT_SWITCH(CompatibleFPU, ConfigureParams.System.bCompatibleFPU);
+	//not needed anymore
+	//EXPORT_SWITCH(CompatibleFPU, ConfigureParams.System.bCompatibleFPU);
 #endif
 
 	ConfigureParams.Sound.nPlaybackFreq = nSoundFreqs[[[playbackQuality selectedCell] tag]];
@@ -1109,6 +1105,7 @@ NSString  *defaultDirectory ;
 	[self saveJoystickControls];
 }
 
+/*----------------------------------------------------------------------*/
 // Max Zoomed Adjust
 
 - (IBAction) setWidth:(id)sender;
@@ -1117,12 +1114,14 @@ NSString  *defaultDirectory ;
 		maxZoomedWidth.intValue = [sender intValue] ;
 }
 
+/*----------------------------------------------------------------------*/
 - (IBAction) setHeight:(id)sender;
 {
 	NSLog(@"Change Max Zoom height: %d", [sender intValue]);
 		maxZoomedHeight.intValue = [sender intValue] ;
 }
 
+/*----------------------------------------------------------------------*/
 - (IBAction)setTTRAMSize:(id)sender
 {
 	NSLog(@"Change TTRAMSize: %d", [sender intValue]);
@@ -1137,8 +1136,9 @@ NSString  *defaultDirectory ;
 		prefs = [[PrefsController alloc] init];
 
 	return prefs;
-}										// */
+}
 
+/*----------------------------------------------------------------------*/
 - (void)awakeFromNib
 {
 	cartridge = [NSMutableString stringWithCapacity:50] ; [cartridge setString:@""] ; [cartridge retain] ;
@@ -1163,7 +1163,7 @@ NSString  *defaultDirectory ;
 	MMU_Emulation.enabled = true;
 	adressSpace24.enabled = true;
 	TTRAMSizeValue.enabled = true;
-	CompatibleFPU.enabled = true;
+	//CompatibleFPU.enabled = true;
 	FPUType.enabled = true;
 	bCell68060.enabled = true;
 #endif

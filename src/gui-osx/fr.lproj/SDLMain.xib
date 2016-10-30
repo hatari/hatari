@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="10117" systemVersion="15G31" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="10117" systemVersion="15G1004" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none">
     <dependencies>
         <deployment version="1080" identifier="macosx"/>
         <development version="5100" identifier="xcode"/>
@@ -1593,14 +1593,6 @@ DQ
                                                             </column>
                                                         </cells>
                                                     </matrix>
-                                                    <button id="Zwc-an-Vav">
-                                                        <rect key="frame" x="6" y="21" width="122" height="18"/>
-                                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                                        <buttonCell key="cell" type="check" title="FPU Compatible" bezelStyle="regularSquare" imagePosition="left" enabled="NO" state="on" inset="2" id="Pbd-bC-3nj">
-                                                            <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                                                            <font key="font" metaFont="cellTitle"/>
-                                                        </buttonCell>
-                                                    </button>
                                                 </subviews>
                                             </view>
                                             <color key="borderColor" white="0.0" alpha="0.41999999999999998" colorSpace="calibratedWhite"/>
@@ -2404,7 +2396,6 @@ DQ
         </window>
         <customObject id="329" userLabel="PrefsController" customClass="PrefsController">
             <connections>
-                <outlet property="CompatibleFPU" destination="Zwc-an-Vav" id="rIU-S5-ATP"/>
                 <outlet property="FPUType" destination="0SB-uo-oFJ" id="JLl-zf-Nye"/>
                 <outlet property="FastBootPatch" destination="4718" id="4734"/>
                 <outlet property="HDWriteProtection" destination="4668" id="4681"/>
@@ -2432,6 +2423,7 @@ DQ
                 <outlet property="driveA_NumberOfHeads" destination="cai-Yf-vK1" id="1gq-NF-i0s"/>
                 <outlet property="driveB_NumberOfHeads" destination="o7J-Ow-mLW" id="irQ-SH-876"/>
                 <outlet property="enableAutoFire" destination="755" id="756"/>
+                <outlet property="enableDSP" destination="1222" id="m91-qF-rol"/>
                 <outlet property="enableDriveA" destination="pa1-9N-kti" id="3ol-CD-lNO"/>
                 <outlet property="enableDriveB" destination="Zpe-8h-6CF" id="QUk-Y8-ePr"/>
                 <outlet property="enableMidi" destination="365" id="578"/>

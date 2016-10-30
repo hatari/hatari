@@ -10,9 +10,10 @@
 #ifndef _SDLMain_h_
 #define _SDLMain_h_
 #import <Cocoa/Cocoa.h>
+#import "SDL.h"
 
 
-@interface HatariAppDelegate : NSObject  // <NSApplicationDelegate>
+@interface HatariAppDelegate : NSObject // SDLApplication// NSObject  // <NSApplicationDelegate>
 {
     IBOutlet NSMenuItem *beginCaptureAnim;
     IBOutlet NSMenuItem *endCaptureAnim;

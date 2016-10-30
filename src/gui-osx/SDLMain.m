@@ -117,9 +117,9 @@ char szPath[FILENAME_MAX] ;											// for general use
 	return TRUE;
 }
 
-
+/*----------------------------------------------------------------------*/
 // Called when the internal event loop has just started running
-//
+/*----------------------------------------------------------------------*/
 - (void) applicationDidFinishLaunching: (NSNotification *) note
 {
 	int status;
@@ -138,7 +138,9 @@ char szPath[FILENAME_MAX] ;											// for general use
 	exit(status) ;
 }
 
+/*----------------------------------------------------------------------*/
 // Hatari Stuff
+/*----------------------------------------------------------------------*/
 - (IBAction)prefsMenu:(id)sender
 {
 	static int in_propdialog =  0;
@@ -155,36 +157,36 @@ char szPath[FILENAME_MAX] ;											// for general use
 	[[PrefsController prefs] loadPrefs:sender];
 }														// */
 
-
+/*----------------------------------------------------------------------*/
 - (IBAction)debugUI:(id)sender
 {
 	DebugUI(REASON_USER);
 }
-
+/*----------------------------------------------------------------------*/
 - (IBAction)warmReset:(id)sender
 {
 	if ([NSApp myAlerte:NSInformationalAlertStyle Txt:localize(@"Warm reset!") firstB:localize(@"OK") alternateB:localize(@"Cancel")
 			otherB:nil informativeTxt:localize(@"Really reset the emulator?")] == NSAlertFirstButtonReturn )
 		Reset_Warm();
 } 
-
+/*----------------------------------------------------------------------*/
 - (IBAction)coldReset:(id)sender
 {
 	if ([NSApp myAlerte:NSInformationalAlertStyle Txt:localize(@"Cold reset") firstB:localize(@"OK") alternateB:localize(@"Cancel")
 			otherB:nil informativeTxt:localize(@"Really reset the emulator?")] == NSAlertFirstButtonReturn )
 		Reset_Cold();
 }
-
+/*----------------------------------------------------------------------*/
 - (IBAction)insertDiskA:(id)sender
 {
 	[self insertDisk:0] ;
 }
-
+/*----------------------------------------------------------------------*/
 - (IBAction)insertDiskB:(id)sender
 {
 	[self insertDisk:1] ;
 }
-
+/*----------------------------------------------------------------------*/
 - (void)insertDisk:(int)disque 
 {
 	NSString	*aDisk ;
@@ -196,15 +198,15 @@ char szPath[FILENAME_MAX] ;											// for general use
 	Floppy_SetDiskFileName(disque, szPath, NULL) ;
 	Floppy_InsertDiskIntoDrive(disque) ;
 }
+/*----------------------------------------------------------------------*/
 - (IBAction)quit:(id)sender
 {
 	Main_RequestQuit(0) ;
 }
 
-/*-----------------------------------------------------------------------*/
-/*
- Controls the enabled state of the menu items
- */
+/*----------------------------------------------------------------------*/
+/*Controls the enabled state of the menu items							*/
+/*----------------------------------------------------------------------*/
 - (BOOL)validateMenuItem:(NSMenuItem*)item
 {
 	if (item == beginCaptureAnim)
@@ -226,6 +228,8 @@ char szPath[FILENAME_MAX] ;											// for general use
 
 	return YES;
 }
+
+/*----------------------------------------------------------------------*/
 
 - (NSString*)displayFileSelection:(const char*)pathInParams preferredFileName:(NSString*)preferredFileName allowedExtensions:(NSArray*)allowedExtensions
 {
@@ -261,17 +265,17 @@ char szPath[FILENAME_MAX] ;											// for general use
 
 	return nil;
 }
-
+/*----------------------------------------------------------------------*/
 - (IBAction)captureScreen:(id)sender
 {
-	GuiOsx_Pause();
+	GuiOsx_Pause(false);
 	ScreenSnapShot_SaveScreen();
 	GuiOsx_Resume();
 }
-
+/*----------------------------------------------------------------------*/
 - (IBAction)captureAnimation:(id)sender
 {
-	GuiOsx_Pause();
+	GuiOsx_Pause(false);
 	if(!Avi_AreWeRecording()) {
 		NSString* path = [self displayFileSelection:ConfigureParams.Video.AviRecordFile preferredFileName:@"hatari.avi"
 									 allowedExtensions:@[@"avi"]];
@@ -290,17 +294,17 @@ char szPath[FILENAME_MAX] ;											// for general use
 	}
 	GuiOsx_Resume();
 }
-
+/*----------------------------------------------------------------------*/
 - (IBAction)endCaptureAnimation:(id)sender
 {
-	GuiOsx_Pause();
+	GuiOsx_Pause(false);
 	Avi_StopRecording();
 	GuiOsx_Resume();
 }
-
+/*----------------------------------------------------------------------*/
 - (IBAction)captureSound:(id)sender
 {
-	GuiOsx_Pause();
+	GuiOsx_Pause(true);
 	NSString* path = [self displayFileSelection:ConfigureParams.Sound.szYMCaptureFileName preferredFileName:@"hatari.wav"
 								 allowedExtensions:@[@"ym", @"wav"]];
 	if(path) {
@@ -309,17 +313,17 @@ char szPath[FILENAME_MAX] ;											// for general use
 	}
 	GuiOsx_Resume();
 }
-
+/*----------------------------------------------------------------------*/
 - (IBAction)endCaptureSound:(id)sender
 {
-	GuiOsx_Pause();
+	GuiOsx_Pause(false);
 	Sound_EndRecording();
 	GuiOsx_Resume();
 }
-
+/*----------------------------------------------------------------------*/
 - (IBAction)saveMemorySnap:(id)sender
 {
-	GuiOsx_Pause();
+	GuiOsx_Pause(true);
 
 	NSString* path = [self displayFileSelection:ConfigureParams.Memory.szMemoryCaptureFileName preferredFileName:@"hatari.sav"
         allowedExtensions:@[@"sav"]];
@@ -330,7 +334,7 @@ char szPath[FILENAME_MAX] ;											// for general use
 
 	GuiOsx_Resume();
 }
-
+/*----------------------------------------------------------------------*/
 - (IBAction)restoreMemorySnap:(id)sender
 {
 	NSString *directoryToOpen;
@@ -338,7 +342,7 @@ char szPath[FILENAME_MAX] ;											// for general use
 	NSString *oldPath ;
 	NSString *newPath ;
 
-	GuiOsx_Pause();
+	GuiOsx_Pause(true);
 
 	// Get the path from the user settings
 	oldPath = [NSString stringWithCString:(ConfigureParams.Memory.szMemoryCaptureFileName) encoding:NSASCIIStringEncoding];
@@ -356,7 +360,7 @@ char szPath[FILENAME_MAX] ;											// for general use
 
 	GuiOsx_Resume();
 }
-
+/*----------------------------------------------------------------------*/
 - (IBAction)doFullScreen:(id)sender
 {
 	// A call to Screen_EnterFullScreen() would be required, but this causes a crash when using
@@ -374,7 +378,7 @@ char szPath[FILENAME_MAX] ;											// for general use
 	SDL_PushEvent((SDL_Event*)&event);	// Send the F11 key release
 }
 
-
+/*----------------------------------------------------------------------*/
 - (IBAction)help:(id)sender
 {
 	NSString *the_help;
@@ -383,7 +387,7 @@ char szPath[FILENAME_MAX] ;											// for general use
 
 	[[NSWorkspace sharedWorkspace] openFile:the_help];
 }
-
+/*----------------------------------------------------------------------*/
 - (IBAction)compat:(id)sender
 {
 	NSString *the_help ;
@@ -392,11 +396,11 @@ char szPath[FILENAME_MAX] ;											// for general use
 
 	[[NSWorkspace sharedWorkspace] openFile:the_help];
 }
-
+/*----------------------------------------------------------------------*/
 - (IBAction)PauseMenu:(id)sender {
 	if(!emulationPaused)
 	{
-		GuiOsx_Pause();
+		GuiOsx_Pause(true);
 		emulationPaused=YES;
 		[pauseMenuItem setState:NSOnState];
 	}
@@ -407,7 +411,7 @@ char szPath[FILENAME_MAX] ;											// for general use
 		[pauseMenuItem setState:NSOffState];
 	}
 }
-
+/*----------------------------------------------------------------------*/
 - (IBAction)openConfig:(id)sender
 {
 	BOOL		applyChanges ;
@@ -421,7 +425,7 @@ char szPath[FILENAME_MAX] ;											// for general use
 	// commit back to the configuration settings if choosing user confirm)
 	CurrentParams = ConfigureParams;
 
-	GuiOsx_Pause();
+	GuiOsx_Pause(true);
 
 	newCfg = [NSApp hopenfile:NO defoDir:nil defoFile:ConfigFile types:@[@"cfg"] ] ;
 
@@ -444,19 +448,19 @@ char szPath[FILENAME_MAX] ;											// for general use
 	GuiOsx_Resume();
 }
 
-
+/*----------------------------------------------------------------------*/
 - (IBAction)saveConfig:(id)sender {
 }
 
 @end
-
+/*----------------------------------------------------------------------*/
 static int IsRootCwd()
 {
 	char buf[MAXPATHLEN];
 	char *cwd = getcwd(buf, sizeof (buf));
 	return (cwd && (strcmp(cwd, "/") == 0));
 }
-
+/*----------------------------------------------------------------------*/
 static int IsTenPointNineOrLater()
 {
 	// OK for 10.9, but before ??
@@ -465,7 +469,7 @@ static int IsTenPointNineOrLater()
 
 	return r;
 }
-
+/*----------------------------------------------------------------------*/
 static int IsFinderLaunch(const int argc, char **argv)
 {
 	/* -psn_XXX is passed if we are launched from Finder in 10.8 and earlier */
@@ -484,8 +488,9 @@ static int IsFinderLaunch(const int argc, char **argv)
 #ifdef main
 #  undef main
 #endif
-
+/*----------------------------------------------------------------------*/
 // Main entry point to executable - should *not* be SDL_main!
+/*----------------------------------------------------------------------*/
 int main (int argc, char **argv)
 {
 	// Copy the arguments into a global variable
