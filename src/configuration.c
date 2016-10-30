@@ -542,7 +542,7 @@ static const struct Config_Tag configs_System[] =
 #if ENABLE_WINUAE_CPU
 	{ "bCycleExactCpu", Bool_Tag, &ConfigureParams.System.bCycleExactCpu },
 	{ "n_FPUType", Int_Tag, &ConfigureParams.System.n_FPUType },
-	{ "bCompatibleFPU", Bool_Tag, &ConfigureParams.System.bCompatibleFPU },
+/* JIT	{ "bCompatibleFPU", Bool_Tag, &ConfigureParams.System.bCompatibleFPU }, */
 	{ "bMMU", Bool_Tag, &ConfigureParams.System.bMMU },
 #endif
 	{ "VideoTiming", Int_Tag, &ConfigureParams.System.VideoTimingMode },
@@ -778,7 +778,7 @@ void Configuration_SetDefault(void)
 	ConfigureParams.System.bAddressSpace24 = true;
 #if ENABLE_WINUAE_CPU
 	ConfigureParams.System.n_FPUType = FPU_NONE;
-	ConfigureParams.System.bCompatibleFPU = true;
+	ConfigureParams.System.bCompatibleFPU = true; /* JIT */
 	ConfigureParams.System.bMMU = false;
 	ConfigureParams.System.bCycleExactCpu = true;
 #endif

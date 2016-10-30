@@ -13,6 +13,7 @@ const char DlgCpu_fileid[] = "Hatari dlgCpu.c : " __DATE__ " " __TIME__;
 #include "dialog.h"
 #include "sdlgui.h"
 
+#define FPU_JIT 0
 
 #define DLGCPU_68000      4
 #define DLGCPU_68010      5
@@ -27,12 +28,18 @@ const char DlgCpu_fileid[] = "Hatari dlgCpu.c : " __DATE__ " " __TIME__;
 #define DLGCPU_FPU_68881  18
 #define DLGCPU_FPU_68882  19
 #define DLGCPU_FPU_CPU_IN 20
-#define DLGCPU_FPU_COMPAT 21
+#if FPU_JIT
+#define DLGCPU_FPU_JIT_COMPAT 21
 #define DLGCPU_PREFETCH   25
 #define DLGCPU_CYC_EXACT  26
 #define DLGCPU_MMU_EMUL   27
 #define DLGCPU_24BITS     28
-
+#else
+#define DLGCPU_PREFETCH   23
+#define DLGCPU_CYC_EXACT  24
+#define DLGCPU_MMU_EMUL   25
+#define DLGCPU_24BITS     26
+#endif
 
 static SGOBJ cpudlg[] =
 {
@@ -67,14 +74,15 @@ static SGOBJ cpudlg[] =
 	{ SGRADIOBUT, 0, 0, 31,6, 7,1, "68881" },
 	{ SGRADIOBUT, 0, 0, 31,7, 7,1, "68882" },
 	{ SGRADIOBUT, 0, 0, 31,8, 10,1, "_internal" },
-	{ SGCHECKBOX, 0, 0, 31,10, 12,1, "_compatible" },
+# if FPU_JIT
+	{ SGCHECKBOX, 0, 0, 31,10, 12,1, "_compatible," },
 	{ SGTEXT,     0, 0, 33,11, 12,1, "but slower" },
-
+# endif
 #else
-	{ SGTEXT, 0, 0, 31,5, 10,1, "config not" },
-	{ SGTEXT, 0, 0, 31,6, 10,1, "available" },
-	{ SGTEXT, 0, 0, 31,7, 10,1, "in old" },
-	{ SGTEXT, 0, 0, 31,8, 10,1, "UAE mode" },
+	{ SGTEXT, 0, 0, 31,5, 10,1, "FPU config" },
+	{ SGTEXT, 0, 0, 31,6, 10,1, "unavailable" },
+	{ SGTEXT, 0, 0, 31,7, 10,1, "in old UAE" },
+	{ SGTEXT, 0, 0, 31,8, 10,1, "CPU core" },
 	{ SGTEXT, 0, 0, 31,10, 25,1, "" },
 	{ SGTEXT, 0, 0, 33,11, 12,1, "" },
 #endif
@@ -159,11 +167,13 @@ void DlgCpu_Main(void)
 	else
 		cpudlg[DLGCPU_FPU_CPU_IN].state |= SG_SELECTED;
 
-	/* More compatible FPU */
+	/* More compatible FPU JIT */
+# if FPU_JIT
 	if (ConfigureParams.System.bCompatibleFPU)
-		cpudlg[DLGCPU_FPU_COMPAT].state |= SG_SELECTED;
+		cpudlg[DLGCPU_FPU_JIT_COMPAT].state |= SG_SELECTED;
 	else
-		cpudlg[DLGCPU_FPU_COMPAT].state &= ~SG_SELECTED;
+		cpudlg[DLGCPU_FPU_JIT_COMPAT].state &= ~SG_SELECTED;
+# endif
 
 	/* MMU Emulation */
 	if (ConfigureParams.System.bMMU)
@@ -210,6 +220,8 @@ void DlgCpu_Main(void)
 	else
 		ConfigureParams.System.n_FPUType = FPU_CPU;
 
-	ConfigureParams.System.bCompatibleFPU = (cpudlg[DLGCPU_FPU_COMPAT].state & SG_SELECTED);
+# if FPU_JIT
+	ConfigureParams.System.bCompatibleFPU = (cpudlg[DLGCPU_FPU_JIT_COMPAT].state & SG_SELECTED);
+# endif
 #endif
 }

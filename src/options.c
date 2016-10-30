@@ -134,7 +134,7 @@ enum {
 	OPT_CPU_CYCLE_EXACT,	/* WinUAE CPU/FPU/bus options */
 	OPT_CPU_ADDR24,
 	OPT_FPU_TYPE,
-	OPT_FPU_COMPATIBLE,
+/*	OPT_FPU_JIT_COMPAT, */
 	OPT_MMU,
 #endif
 	OPT_MACHINE,		/* system options */
@@ -370,8 +370,8 @@ static const opt_t HatariOptions[] = {
 	  "<bool>", "Use 24-bit instead of 32-bit addressing mode" },
 	{ OPT_FPU_TYPE, NULL, "--fpu",
 	  "<x>", "FPU type (x=none/68881/68882/internal)" },
-	/*{ OPT_FPU_COMPATIBLE, NULL, "--fpu-compatible",
-	  "<bool>", "Use more compatible, but slower FPU emulation" },*/
+	/*{ OPT_FPU_JIT_COMPAT, NULL, "--fpu-compatible",
+	  "<bool>", "Use more compatible, but slower FPU JIT emulation" },*/
 	{ OPT_MMU, NULL, "--mmu",
 	  "<bool>", "Use MMU emulation" },
 #endif
@@ -1632,11 +1632,11 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			}
 			bLoadAutoSave = false;
 			break;
-
-		case OPT_FPU_COMPATIBLE:
+/*
+		case OPT_FPU_JIT_COMPAT:
 			ok = Opt_Bool(argv[++i], OPT_FPU_COMPATIBLE, &ConfigureParams.System.bCompatibleFPU);
 			break;
-
+*/
 		case OPT_MMU:
 			ok = Opt_Bool(argv[++i], OPT_MMU, &ConfigureParams.System.bMMU);
 			bLoadAutoSave = false;
