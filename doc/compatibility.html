@@ -3243,7 +3243,7 @@ stated to require that.</p>
     <tr>
       <td>DNT Crew:
       <a href="http://pouet.net/prod.php?which=16806">Agony</a></td>
-      <td class="minor">1.4</td>
+      <td class="minor">2.0</td>
       <td>yes</td>
       <td>emu</td>
       <td>After few screens freezes with black screen</td>
@@ -3251,11 +3251,13 @@ stated to require that.</p>
     <tr>
       <td>DNT Crew:
       <a href="http://www.pouet.net/prod.php?which=16807">Chaos A.D.</a>*</td>
-      <td class="minor">1.5</td>
+      <td class="minor">2.0</td>
       <td>yes</td>
       <td>emu</td>
       <td>Uses its own IKBD 6301 routine to decode the demo's protection.
-	Demo runs correctly but sound is rather noisy</td>
+	  Sound is rather noisy. First plasma is half the correct height
+	  (and doubled with oldUAE CPU core). WinUAE CPU core freezes in
+	  rotating DNT logo screen, just before end credits</td>
     </tr>
     <tr>
       <td>DrTypo:
@@ -3482,12 +3484,20 @@ stated to require that.</p>
 	  compatible modes are disabled</td>
     </tr>
     <tr>
+      <td>Level 42:
+      <a href="http://www.pouet.net/prod.php?which=28750">Apollo 13</a></td>
+      <td>2.0</td>
+      <td>-</td>
+      <td>emu</td>
+      <td></td>
+    </tr>
+    <tr>
       <td>Light:
       <a href="http://www.pouet.net/prod.php?which=17189">680xx</a></td>
-      <td>1.3</td>
+      <td>2.0</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Music is broken</td>
+      <td></td>
     </tr>
     <tr>
       <td>Lineout:
@@ -3540,11 +3550,11 @@ stated to require that.</p>
     <tr>
       <td>Mystic bytes:
       <a href="http://pouet.net/prod.php?which=24801">Chosneck Supplement (e5)</a></td>
-      <td>1.4</td>
+      <td class="minor">2.0</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Needs 14MB RAM.  Music notes screen colors aren't right
-          (Hatari Videl emu doesn't support palette cycling?)</td>
+      <td>Needs 14MB RAM. Intro shows only with oldUAE CPU core.
+          RGB 50Hz mode doesn't work, others do</td>
     </tr>
     <tr>
       <td>Mystic bytes:
@@ -3742,13 +3752,21 @@ stated to require that.</p>
     </tr>
     <tr>
       <td>tSCc:
-      <a href="http://pouet.net/prod.php?which=1015">30L Coke</a> &amp;
-      <a href="http://pouet.net/prod.php?which=1014">A Rh positive</a></td>
+      <a href="http://pouet.net/prod.php?which=1015">30L Coke</a>
       <td>1.3</td>
       <td>-</td>
       <td>emu</td>
-      <td>4K demos. Rh positive flickers a bit</td>
+      <td>4K demo</td>
     </tr>
+    <tr>
+      <td>tSCc:
+      <a href="http://pouet.net/prod.php?which=1014">A Rh positive</a></td>
+      <td class="minor">2.0</td>
+      <td>-</td>
+      <td>emu</td>
+      <td>4K demo. Works with old UAE CPU core, but bus errors
+          with Hatari &gt;=v1.9 WinUAE CPU core unless CPU exact +
+	  compatible modes are disabled</td>
     <tr>
       <td>tSCc:
       <a href="http://www.pouet.net/prod.php?which=16426">Beams</a>
@@ -3818,6 +3836,14 @@ stated to require that.</p>
       <td>-</td>
       <td>emu</td>
       <td>Requires FPU and DSP</td>
+    </tr>
+    <tr>
+      <td>Wildfire:
+      <a href="http://www.pouet.net/prod.php?which=16819">ALT-party invtro</a></td>
+      <td>2.0</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>Music with DSP</td>
     </tr>
     <tr>
       <td>Unknown:
