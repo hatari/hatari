@@ -2191,6 +2191,13 @@ separately.</p>
           often also on second startup</td>
     </tr>
     <tr>
+      <td><a href="https://demozoo.org/productions/59217/">Ausbruch</a></td>
+      <td>1.0</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>Use STE joypad. Background music if DSP emu enabled</td>
+    </tr>
+    <tr>
       <td><a href="http://devilsdoorbell.com/">Bad Mood (2016 game)</a></td>
       <td class="major">2.0</td>
       <td>yes</td>
@@ -2357,6 +2364,23 @@ separately.</p>
       <td>-</td>
       <td>Music is very noisy</td>
     </tr> 
+    <tr>
+      <td><a href="https://demozoo.org/productions/65504/">Dry Egg</a></td>
+      <td>1.8</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>Music with DSP.  Use joypad for control.
+          Bus Error writing at address $e00000 with TOS v4,
+          works with EmuTOS</td>
+    </tr>
+    <tr>
+      <td><a href="https://demozoo.org/productions/65505/">DuSau</a></td>
+      <td>1.9</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>Music with DSP. Use "--gemdos-drive e",
+          expects to be run from E:</td>
+    </tr>
     <tr>
       <td>Epi-Lepsie</td>
       <td>1.4</td>
@@ -2809,13 +2833,6 @@ separately.</p>
       <td>Play solitaire against computer</td>
     </tr>
     <tr>
-      <td>Steinbruch</td>
-      <td>1.0</td>
-      <td>yes</td>
-      <td>-</td>
-      <td>Use STE joypad. Background music if DSP emu enabled</td>
-    </tr>
-    <tr>
       <td><a href="http://paradize.final-memory.org/games.shtml">Sweety Thingies</a></td>
       <td>1.6</td>
       <td>yes</td>
@@ -3188,15 +3205,15 @@ stated to require that.</p>
       <td>1.0</td>
       <td>yes</td>
       <td>-</td>
-      <td>Fast. Needs FPU. Background music with DSP emu</td>
+      <td>Fast. Needs FPU. Music with DSP</td>
     </tr>
     <tr>
       <td>DHS:
       <a href="http://pouet.net/prod.php?which=2165">Don't Break The Oath</a></td>
       <td>1.5</td>
+      <td>yes</td>
       <td>-</td>
-      <td>-</td>
-      <td>Needs 14MB RAM and FPU. Uses NoCrew DSP MP2-player</td>
+      <td>Needs 14MB RAM + FPU, music with DSP (NoCrew DSP MP2-player)</td>
     </tr>
     <tr>
       <td>DHS:
@@ -3226,11 +3243,9 @@ stated to require that.</p>
       <td>DHS:
       <a href="http://pouet.net/prod.php?which=24780">Outline 2006 invite</a></td>
       <td>1.5</td>
+      <td>yes</td>
       <td>-</td>
-      <td>-</td>
-      <td>Needs 14MB RAM, uses NoCrew DSP MP2-player
-      (recommended: --memory 14 --cpuclock 32 --dsp none --monitor vga
-      --sound off --fast-forward yes)</td>
+      <td>Needs 14MB RAM + FPU, music with DSP (NoCrew DSP MP2-player)</td>
     </tr>
     <tr>
       <td>Digital Chaos:
@@ -3374,10 +3389,10 @@ stated to require that.</p>
     <tr>
       <td>Fit:
       <a href="http://www.pouet.net/prod.php?which=26083">Stercus Accidit</a></td>
-      <td>1.8+</td>
+      <td>1.9</td>
       <td>yes</td>
       <td>emu</td>
-      <td>8MB + FPU, .tSCc port from Amiga</td>
+      <td>8MB + internal FPU, .tSCc port from Amiga</td>
     </tr>
     <tr>
       <td>Fun Industries:
@@ -3526,10 +3541,10 @@ stated to require that.</p>
     <tr>
       <td>Mind Design:
       <a href="http://www.pouet.net/prod.php?which=28761">4some</a></td>
-      <td class="minor">1.9</td>
+      <td>2.0</td>
       <td>-</td>
       <td>-</td>
-      <td>Requires FPU. Hangs/crashes in plasma screen with WinUAE CPU core and also with VGA version</td>
+      <td>Requires FPU + 8MB RAM</td>
     </tr>
     <tr>
       <td>MJJ Prod:
@@ -3743,12 +3758,12 @@ stated to require that.</p>
     <tr>
       <td>Trio:
       <a href="http://www.pouet.net/prod.php?which=15974">X-tasie</a></td>
-      <td class="minor">1.7</td>
-      <td>-</td>
-      <td>-</td>
+      <td class="minor">2.0</td>
+      <td>yes</td>
+      <td>emu</td>
       <td>Demo requires 030 MMU, i.e. it only runs with WinUAE CPU core and when
-          MMU has been enabled. There is a Videl emulation problem left when
-          the user moves the mouse during the first screen.</td>
+          MMU has been enabled. There's a Videl emulation problem left when
+          user moves mouse (before clicking) in the first screen</td>
     </tr>
     <tr>
       <td>tSCc:
