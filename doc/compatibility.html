@@ -2450,6 +2450,14 @@ separately.</p>
       <td>Atoms clone</td>
     </tr>
     <tr>
+      <td><a href="http://www.pouet.net/prod.php?which=50840">Grenzüberschreitung</a></td>
+      <td class="minor">2.0</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>Tron, using Lua-interpreter. In game menu,
+          joypad directions work, fire doesn't</td>
+    </tr>
+    <tr>
       <td><a href="http://www.pouet.net/prod.php?which=17762">H2O</a></td>
       <td>1.4</td>
       <td>yes</td>
@@ -3160,20 +3168,20 @@ stated to require that.</p>
       <td></td>
     </tr>
     <tr>
-      <td>DHS:
-      <a href="http://www.pouet.net/prod.php?which=1760">128dist</a></td>
-      <td>1.7</td>
-      <td>-</td>
-      <td>-</td>
-      <td>Requires FPU</td>
-    </tr>
-    <tr>
       <td>Dekadence:
       <a href="http://www.pouet.net/prod.php?which=64683">Payback 2015</a></td>
       <td class="major">2.0</td>
       <td>-</td>
       <td>-</td>
       <td>Doesn't continue from startup logo</td>
+    </tr>
+    <tr>
+      <td>DHS:
+      <a href="http://www.pouet.net/prod.php?which=1760">128dist</a></td>
+      <td>1.7</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Requires FPU</td>
     </tr>
     <tr>
       <td>DHS:
@@ -3201,11 +3209,29 @@ stated to require that.</p>
     </tr>
     <tr>
       <td>DHS:
+      <a href="http://www.pouet.net/prod.php?which=54432">Amanita</a></td>
+      <td>2.0</td>
+      <td>yes</td>
+      <td>emu</td>
+      <td>Music disk, DSP playback</td>
+    </tr>
+    <tr>
+      <td>DHS:
       <a href="http://www.pouet.net/prod.php?which=985">A.T.S</a></td>
       <td>1.0</td>
       <td>yes</td>
       <td>-</td>
       <td>Fast. Needs FPU. Music with DSP</td>
+    </tr>
+    <tr>
+      <td>DHS:
+      <a href="http://pouet.net/prod.php?which=53186">Codein</a>,
+      <a href="http://pouet.net/prod.php?which=25677">Derealization</a>
+      </td>
+      <td class="major">2.0</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>060 + FPU + 32MB TT-RAM.  Doesn't start, dies to FPU exception</td>
     </tr>
     <tr>
       <td>DHS:
@@ -3301,10 +3327,11 @@ stated to require that.</p>
     <tr>
       <td>EKO:
       <a href="http://www.pouet.net/prod.php?which=25916">Epidemic musicdisk</a></td>
-      <td class="major">1.4</td>
+      <td class="major">2.0</td>
       <td>yes</td>
       <td>-</td>
-      <td>Bombs out when it comes to the menu</td>
+      <td>Bus error for $fffffd write when drawing menu, if space pressed
+          in EKO logo screen, otherwise illegal instruction $7bf1 earlier</td>
     </tr>
     <tr>
       <td>EKO:
@@ -3325,10 +3352,11 @@ stated to require that.</p>
     <tr>
       <td>Escape:
       <a href="http://pouet.net/prod.php?which=15676">_</a></td>
-      <td class="major">1.6</td>
+      <td class="major">2.0</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Freezes or exits after few screens to illegal DSP instructions</td>
+      <td>With WinUAE CPU emu, crashes at start without MMU.
+          Freezes or exits after few screens to illegal DSP instructions</td>
     </tr>
     <tr>
       <td>Escape:
@@ -3348,11 +3376,19 @@ stated to require that.</p>
     </tr>
     <tr>
       <td>EXA:
-      <a href="http://www.pouet.net/prod.php?which=17784">Entcarte</a></td>
-      <td class="major">1.8</td>
+      <a href="http://www.pouet.net/prod.php?which=17784">Entracte</a></td>
+      <td class="major">2.0</td>
       <td>-</td>
       <td>-</td>
-      <td>Bombs immediately</td>
+      <td>Uses MMU. Terminates immediately</td>
+    </tr>
+    <tr>
+      <td>EXA:
+      <a href="http://www.pouet.net/prod.php?which=17778">Evolution</a></td>
+      <td class="major">2.0</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Uses MMU. Terminates immediately</td>
     </tr>
     <tr>
       <td>Extream:
@@ -3539,6 +3575,14 @@ stated to require that.</p>
       <td></td>
     </tr>
     <tr>
+      <td>MadWizards:
+      <a href="http://pouet.net/prod.php?which=59135">Kioea</a></td>
+      <td class="major">2.0</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>060 + 14MB + 64MB TT-RAM.  Freezes on loading screen</td>
+    </tr>
+    <tr>
       <td>Mind Design:
       <a href="http://www.pouet.net/prod.php?which=28761">4some</a></td>
       <td>2.0</td>
@@ -3557,10 +3601,12 @@ stated to require that.</p>
     <tr>
       <td>Mugwumps:
       <a href="http://pouet.net/prod.php?which=15917">Cycedelic knockout</a></td>
-      <td>1.8+</td>
+      <td>1.9</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Nice techno + color cycling</td>
+      <td>Works with old UAE CPU core, but bus errors
+          with Hatari &gt;=v1.9 WinUAE CPU core unless CPU exact +
+	  compatible modes are disabled</td>
     </tr>
     <tr>
       <td>Mystic bytes:
@@ -3590,10 +3636,10 @@ stated to require that.</p>
     <tr>
       <td>Mystic bytes:
       <a href="http://www.pouet.net/prod.php?which=28778">Virtual Dream</a></td>
-      <td class="major">1.7</td>
+      <td>2.0</td>
       <td>-</td>
       <td>-</td>
-      <td>Requires FPU. Crashes with bus error after a few seconds</td>
+      <td>4K. Requires FPU. Needs to be started from HiColor mode</td>
     </tr>
     <tr>
       <td>New Beat:
@@ -3630,10 +3676,10 @@ stated to require that.</p>
     <tr>
       <td>NoCrew:
       <a href="http://www.pouet.net/prod.php?which=15140">Stocasto</a></td>
-      <td>2.0</td>
+      <td class="minor">2.0</td>
       <td>yes</td>
       <td>emu</td>
-      <td></td>
+      <td>No sound, otherwise works</td>
     </tr>
     <tr>
       <td>Opium:
@@ -3654,10 +3700,19 @@ stated to require that.</p>
     <tr>
       <td>Orion_:
       <a href="http://www.pouet.net/prod.php?which=64508">Unexpected Fun</a></td>
-      <td class="minor">1.9</td>
+      <td class="minor">2.0</td>
       <td>yes</td>
       <td>-</td>
       <td>needs 8 MB TT ram, music with DSP.  Colors are wrong</td>
+    </tr>
+    <tr>
+      <td>Orion_:
+      <a href="http://www.pouet.net/prod.php?which=58045">We Reached Stars</a></td>
+      <td class="major">2.0</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>needs 060, 8 MB TT ram, music with DSP. Polygon mountains
+          part is missing all details and demo freezes after that</td>
     </tr>
     <tr>
       <td>Paranoia:
@@ -3721,7 +3776,8 @@ stated to require that.</p>
       <td>1.9</td>
       <td>yes</td>
       <td>-</td>
-      <td>Require 060 + FPU + 4MB / 32MB TT-RAM (DSP + sound can be disabled to speed up emulation)</td>
+      <td>Require 060 + FPU + 4MB / 64MB TT-RAM.  Music with DSP
+         (DSP + sound can be disabled to speed up emulation a lot)</td>
     </tr>
     <tr>
       <td>The Pixel Twins:
