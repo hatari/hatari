@@ -59,7 +59,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog -n hatari
 
-* Thu Oct xx 2016 - Nicolas Pomarede
+* Thu Nov 04 2016 - Nicolas Pomarede
 - Hatari version 2.0.0
 
 * Thu Sep 10 2015 - Nicolas Pomarede

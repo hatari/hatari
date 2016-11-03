@@ -3,7 +3,7 @@
                                    --------
                                 Release Notes
 
- Version 2.0.0 (2016-10-xx)
+ Version 2.0.0 (2016-11-04)
  ---------------------------
 
 Emulation:
@@ -19,7 +19,7 @@ Emulation:
     e.g. when running EmuTOS RAM image from a normal TOS
   - Fix: WORD access to IDE data register at 0xf00002
   - Fix: '*.*' pattern with GEMDOS HD should match also files
-          without extension
+    without extension
 - Video:
   - Full rewrite of the GLUE state machine, including support for the
     4 wakeup states in STF mode, as well as more accurate video timings
@@ -35,7 +35,7 @@ Emulation:
   - Falcon: border color support also in HiColor
   - better hbl/timer b interrupts when CPU runs at 16/32 MHz
 - Sound:
-  - DMA sound should be played even when start address = end address
+  - Special cases for STE DMA sound when start address = end address
   - Increase STE DMA volume when compared to the YM2149 volume
   - Greatly improve Falcon DMA sound
 - CPU:
