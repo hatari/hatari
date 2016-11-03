@@ -466,7 +466,7 @@ static char Keymap_PcToStScanCode(SDL_keysym* keysym)
 
 	 /* Special Keys */
 	 case SDLK_PRINT:    return 0x62;  /* Help */
-	 case SDLK_SCROLL:   return 0x61;  /* Undo */
+	 case SDLK_SCROLLOCK: return 0x61; /* Undo */
 	 case SDLK_PAGEUP:   return 0x63;  /* Keypad ( */
 	 case SDLK_PAGEDOWN: return 0x64;  /* Keypad ) */
 	 case SDLK_HOME:     return 0x47;  /* Home */
