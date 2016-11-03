@@ -290,10 +290,10 @@ static char Keymap_PcToStScanCode(SDL_keysym* pKeySym)
 	 case SDL_SCANCODE_PAUSE: return 0x61;
 	 case SDL_SCANCODE_INSERT: return 0x52;
 	 case SDL_SCANCODE_HOME: return 0x47;
-	 case SDL_SCANCODE_PAGEUP: return 0x62;
+	 case SDL_SCANCODE_PAGEUP: return 0x63;
 	 case SDL_SCANCODE_DELETE: return 0x53;
 	 case SDL_SCANCODE_END: return 0x2b;
-	 case SDL_SCANCODE_PAGEDOWN: return 0x61;
+	 case SDL_SCANCODE_PAGEDOWN: return 0x64;
 	 case SDL_SCANCODE_RIGHT: return 0x4d;
 	 case SDL_SCANCODE_LEFT: return 0x4b;
 	 case SDL_SCANCODE_DOWN: return 0x50;
@@ -465,8 +465,10 @@ static char Keymap_PcToStScanCode(SDL_keysym* keysym)
 	 case SDLK_KP_ENTER:    return 0x72;  /* NumPad Enter */
 
 	 /* Special Keys */
-	 case SDLK_PAGEUP:   return 0x62;  /* F11 => Help */
-	 case SDLK_PAGEDOWN: return 0x61;  /* F12 => Undo */
+	 case SDLK_PRINT:    return 0x62;  /* Help */
+	 case SDLK_SCROLL:   return 0x61;  /* Undo */
+	 case SDLK_PAGEUP:   return 0x63;  /* Keypad ( */
+	 case SDLK_PAGEDOWN: return 0x64;  /* Keypad ) */
 	 case SDLK_HOME:     return 0x47;  /* Home */
 	 case SDLK_END:      return 0x60;  /* End => "<>" on German Atari kbd */
 	 case SDLK_UP:       return 0x48;  /* Arrow Up */
