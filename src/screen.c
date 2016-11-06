@@ -399,7 +399,8 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 	sdlRenderer = SDL_CreateRenderer(sdlWindow, -1, 0);
 	if (!sdlWindow || !sdlRenderer)
 	{
-		fprintf(stderr,"Failed to create window or renderer!\n");
+		fprintf(stderr,"Failed to create %dx%d window or renderer!\n",
+		       win_width, win_height);
 		exit(-1);
 	}
 	else
@@ -430,7 +431,8 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 		                               width, height);
 		if (!sdlTexture)
 		{
-			fprintf(stderr,"Failed to create texture!\n");
+			fprintf(stderr,"Failed to create %dx%d@%d texture!\n",
+			       width, height, bitdepth);
 			exit(-3);
 		}
 	}
