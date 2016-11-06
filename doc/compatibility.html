@@ -3063,6 +3063,14 @@ stated to require that.</p>
     </tr>
     <tr>
       <td>Avena:
+      <a href="http://pouet.net/prod.php?which=15737">DSP fishes</a></td>
+      <td>2.0</td>
+      <td>-</td>
+      <td>emu</td>
+      <td>3K</td>
+    </tr>
+    <tr>
+      <td>Avena:
       <a href="http://pouet.net/prod.php?which=1177">Sonolumineszenz</a></td>
       <td>1.3</td>
       <td>yes</td>
@@ -3161,7 +3169,7 @@ stated to require that.</p>
     </tr>
     <tr>
       <td>Cruor:
-      <a href="http://www.pouet.net/prod.php?which=15453">The mountains flight</a></td>
+      <a href="http://www.pouet.net/prod.php?which=15454">The mountains flight</a></td>
       <td>1.3</td>
       <td>yes</td>
       <td>emu</td>
@@ -3319,10 +3327,12 @@ stated to require that.</p>
     <tr>
       <td>EKO:
       <a href="http://www.pouet.net/prod.php?which=8572">E.K.O System</a></td>
-      <td>1.6</td>
+      <td class="minor">2.0</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Requires WinUAE CPU core</td>
+      <td>Requires WinUAE CPU core. In middle of demo (e.g. mech screen)
+          and just before greets, there's "crossbar DMA Play: Illegal buffer size"
+	  error, noise and in first case, music missing for new minutes</td>
     </tr>
     <tr>
       <td>EKO:
@@ -3339,7 +3349,9 @@ stated to require that.</p>
       <td>1.3</td>
       <td>yes</td>
       <td>emu</td>
-      <td></td>
+      <!-- All screens in Pouet.net screenshot work, but there's no
+           video of this, so don't know whether end is OK -->
+      <td>Ends in "Illegal instruction: 0049"</td>
     </tr>
     <tr>
       <td>EKO:
@@ -3364,7 +3376,8 @@ stated to require that.</p>
       <td>1.3</td>
       <td>yes</td>
       <td>emu</td>
-      <td>"Classic" from 2001</td>
+      <td>Classic from 2001. With WinUAE CPU emu, needs MMU
+         (otherwise crashes in screen that comes after "stone spiral")</td>
     </tr> 
    <tr>
       <td>Escape:
@@ -3417,10 +3430,11 @@ stated to require that.</p>
     <tr>
       <td>Fit:
       <a href="http://pouet.net/prod.php?which=990">Mahabharata</a></td>
-      <td>1.3</td>
+      <td class="major">2.0</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Bombay-style...</td>
+      <td>Bombay-style... Hatari exits to "Failed to create
+          5120x516@32 texture".  Works fine with v1.9</td>
     </tr>
     <tr>
       <td>Fit:
@@ -3623,7 +3637,7 @@ stated to require that.</p>
       <td>1.4</td>
       <td>yes</td>
       <td>emu</td>
-      <td>14MB RAM + (EC)030 + FPU. Works only with old CPU.</td>
+      <td>14MB RAM + FPU</td>
     </tr>
     <tr>
       <td>Mystic bytes:
