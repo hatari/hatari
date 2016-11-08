@@ -496,6 +496,8 @@ typedef struct {
 	int		BytesToTransfer;
 } FDC_DMA_STRUCT;
 
+Uint32	FDC_DMA_Address;					// TODO : move into FDC_DMA_STRUCT (which will change memory snapshot)
+
 
 typedef struct {
 	bool		Enabled;
@@ -4196,47 +4198,69 @@ void	FDC_DmaAddress_ReadByte ( void )
 /*-----------------------------------------------------------------------*/
 /**
  * Write hi/med/low DMA address byte at $ff8609/0b/0d
+ *
+ * NOTE [NP] : as described by Ijor in http://atari-forum.com/viewtopic.php?f=16&t=30289
+ * the STF DMA address counter uses a ripple carry adder that will increment middle byte
+ * when bit 7 of lower byte goes from 1 to 0 (same for middle/high bytes)
+ * To avoid possible error with this carry, DMA address bytes should be written in the order
+ * low, middle, high (as specified by Atari documentations) and not high/middle/low
  */
 void	FDC_DmaAddress_WriteByte ( void )
 {
+	Uint32 Address;
+	Uint32 Address_old;
 	int FrameCycles, HblCounterVideo, LineCycles;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	/* On STF/STE machines with <= 4MB of RAM, DMA addresses are limited to $3fffff */
-	if ( IoAccessCurrentAddress == 0xff8609 )
-	{
-		IoMem[ 0xff8609 ] &= DMA_MaskAddressHigh();
-	}
-
-	/* DMA address must be word-aligned, bit 0 at $ff860d is always 0 */
-	if ( IoAccessCurrentAddress == 0xff860d )
-		IoMem[ 0xff860d ] &= 0xfe;
-
-	LOG_TRACE(TRACE_FDC, "fdc write dma address %x val=0x%02x address=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n" ,
-		IoAccessCurrentAddress , IoMem[ IoAccessCurrentAddress ] , FDC_GetDMAAddress() ,
+	LOG_TRACE(TRACE_FDC, "fdc write dma address %x val=0x%02x VBL=%d video_cyc=%d %d@%d pc=%x\n" ,
+		IoAccessCurrentAddress , IoMem[ IoAccessCurrentAddress ] ,
 		nVBLs , FrameCycles, LineCycles, HblCounterVideo , M68000_GetPC() );
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Get DMA address used to transfer data between FDC and RAM
- */
-Uint32 FDC_GetDMAAddress(void)
-{
-	Uint32 Address;
 
 	/* Build up 24-bit address from hardware registers */
 	Address = ((Uint32)STMemory_ReadByte(0xff8609)<<16) | ((Uint32)STMemory_ReadByte(0xff860b)<<8) | (Uint32)STMemory_ReadByte(0xff860d);
 
-	return Address;
+	/* On STF, DMA address uses a "ripple carry adder" which can trigger when writing to $ff860b/0d */
+	if ( Config_IsMachineST() )
+	{
+		Address_old = FDC_GetDMAAddress();
+
+		if ( ( Address_old & 0x80 ) && !( Address & 0x80 ) )		/* Bit 7 goes from 1 to 0 */
+		{
+			Address += 0x100;					/* Increase middle byte (and high byte if needed) */
+//fprintf ( stderr , "fdc write dma address detect ripple carry at $ff860d old=0x%x new=0x%x\n" , Address_old , Address );
+			LOG_TRACE(TRACE_FDC, "fdc write dma address detect ripple carry at $ff860d old=0x%x new=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n" ,
+				Address_old , Address ,
+				nVBLs , FrameCycles, LineCycles, HblCounterVideo , M68000_GetPC() );
+		}
+		else if ( ( Address_old & 0x8000 ) && !( Address & 0x8000 ) )	/* Bit 15 goes from 1 to 0 */
+		{
+			Address += 0x10000;					/* Increase high byte */
+//fprintf ( stderr , "fdc write dma address detect ripple carry at $ff860b old=0x%x new=0x%x\n" , Address_old , Address );
+			LOG_TRACE(TRACE_FDC, "fdc write dma address detect ripple carry at $ff860b old=0x%x new=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n" ,
+				Address_old , Address ,
+				nVBLs , FrameCycles, LineCycles, HblCounterVideo , M68000_GetPC() );
+		}
+	}
+
+	/* Store new address as DMA address and update $ff8609/0b/0d */
+	FDC_WriteDMAAddress ( Address );
 }
 
 
 /*-----------------------------------------------------------------------*/
 /**
- * Write a new address to the FDC DMA address registers at $ff8909/0b/0d
+ * Get DMA address used to transfer data between FDC/HDC and RAM
+ */
+Uint32 FDC_GetDMAAddress(void)
+{
+	return FDC_DMA_Address;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Write a new address to the FDC/HDC DMA address registers at $ff8909/0b/0d
  * As verified on real STF, DMA address high byte written at $ff8609 is masked
  * with 0x3f :
  *	move.b #$ff,$ff8609
@@ -4248,22 +4272,23 @@ Uint32 FDC_GetDMAAddress(void)
 void FDC_WriteDMAAddress ( Uint32 Address )
 {
 	int FrameCycles, HblCounterVideo, LineCycles;
+	Uint32 dma_mask;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	LOG_TRACE(TRACE_FDC, "fdc write 0x%x to dma address VBL=%d video_cyc=%d %d@%d pc=%x\n" ,
+	LOG_TRACE(TRACE_FDC, "fdc write dma address new=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n" ,
 		Address , nVBLs , FrameCycles, LineCycles, HblCounterVideo , M68000_GetPC() );
 
-	/* On STF/STE machines limited to 4MB of RAM, DMA address is also limited to $3fffff */
-	if (Config_IsMachineST() || Config_IsMachineSTE())
-		Address &= 0x3fffff;
-
-	Address &= 0xfffffffe;						/* Force bit 0 to 0 */
+	/* Mask DMA address : */
+	/*  - DMA address must be word-aligned, bit 0 at $ff860d is always 0 */
+	/*  - On STF/STE machines limited to 4MB of RAM, DMA address is also limited to $3fffff */
+	dma_mask = 0xff00fffe | ( DMA_MaskAddressHigh() << 16 );		/* Force bit 0 to 0 */
+	FDC_DMA_Address = Address & dma_mask;
 
 	/* Store as 24-bit address */
-	STMemory_WriteByte(0xff8609, Address>>16);
-	STMemory_WriteByte(0xff860b, Address>>8);
-	STMemory_WriteByte(0xff860d, Address);
+	STMemory_WriteByte(0xff8609, FDC_DMA_Address>>16);
+	STMemory_WriteByte(0xff860b, FDC_DMA_Address>>8);
+	STMemory_WriteByte(0xff860d, FDC_DMA_Address);
 }
 
 
