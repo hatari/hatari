@@ -162,6 +162,11 @@ void STMemory_SetDefaultConfig(void)
 		/* (else memory detection is not skipped after a cold start/reset) */
 		if (Config_IsMachineTT())
 			STMemory_WriteByte ( 0xff8e09, IoMem_ReadByte(0xff8e09) | 0x01 );
+
+		/* TOS 3.0x and 4.0x check _hz200 and always do a memory test
+		 * if the machine runs less than 80 seconds */
+		if (!bIsEmuTOS && TosVersion >= 0x300)
+			STMemory_WriteLong(0x4ba, 80 * 200);
 	}
 
 	/* Set memory size, adjust for extra VDI screens if needed. */
