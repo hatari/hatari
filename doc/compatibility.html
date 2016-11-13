@@ -2150,8 +2150,8 @@ NoCrew's DSP MP2-player) that are marked as working in the list below,
 
 <p>Due to incomplete VIDEL emulation and some remaining emulation
 cycle accuracy issues, some Falcon programs don't work yet.  Most
-games work with RGB monitor, those requiring VGA one are indicated
-separately.</p>
+games and demos work with RGB monitor, those requiring VGA one are
+indicated separately.</p>
 
 
 <h3>Falcon games</h3>
@@ -3066,9 +3066,9 @@ if demo is stated to require that.</p>
       <td class="major">2.0</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Needs WinUAE CPU core.  Music stops to DSP stack overflow
-          right at beginning and demo freezes shortly after that.
-	  Worked in Hatari v1.6</td>
+      <td>Needs WinUAE CPU core + MMU.  Freezes to Illegal instruction
+          4afc, a bit later if (buggy) DSP player is disable at
+	  demo startup by keeping CTRL down. Worked in Hatari v1.6</td>
     </tr>
     <tr>
       <td>Avena:
@@ -3109,8 +3109,7 @@ if demo is stated to require that.</p>
       <td>1.4</td>
       <td>yes</td>
       <td>-</td>
-      <td>AVR animation/music with Brainstorm player.
-          Background music with DSP emu</td>
+      <td>AVR animation+music with Brainstorm player</td>
     </tr>
     <tr>
       <td>Cerebral Vortex / Dune / Sector One
@@ -3262,12 +3261,12 @@ if demo is stated to require that.</p>
     <tr>
       <td>DHS:
       <a href="http://www.pouet.net/prod.php?which=987">Dream Dimension</a></td>
-      <td class="minor">2.0</td>
+      <td>2.0</td>
       <td>yes</td>
       <td>-</td>
-      <td>Requires FPU and oldUAE CPU core.  With WinUAE CPU core
-          complains that "Sorry, you don't have enough free ST-RAM
-	  to run this demo".  Music with DSP</td>
+      <td>Music with DSP. Requires FPU, and with WinUAE CPU core also MMU
+          (otherwise complains "Sorry, you don't have enough free ST-RAM
+	  to run this demo")</td>
     </tr>
     <tr>
       <td>DHS / Evolution / New Beat:
@@ -3477,10 +3476,10 @@ if demo is stated to require that.</p>
     <tr>
       <td>Fun Industries:
       <a href="http://pouet.net/prod.php?which=1172">Fungle Beats</a></td>
-      <td>1.6</td>
+      <td>1.8</td>
       <td>yes</td>
       <td>-</td>
-      <td>Needs WinUAE CPU core.  Background music with DSP emu</td>
+      <td>Background music with DSP emu</td>
     </tr>
     <tr>
       <td>Gaston:
@@ -3518,20 +3517,18 @@ if demo is stated to require that.</p>
     <tr>
       <td>Lazer:
       <a href="http://pouet.net/prod.php?which=17782">Autowaschen Verboten</a></td>
-      <td class="minor">2.0</td>
+      <td>2.0</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Works with old UAE CPU core, but freezes at title screen
-          with Hatari &gt;=v1.9 WinUAE CPU core unless CPU exact +
-	  compatible modes are disabled</td>
+      <td>With WinUAE CPU core, requires MMU to be enabled</td>
     </tr>
     <tr>
       <td>Lazer:
       <a href="http://pouet.net/prod.php?which=17965">Dan's Lustiges Kinderfest</a></td>
-      <td class="minor">2.0</td>
+      <td>2.0</td>
       <td>yes</td>
       <td>emu</td> 
-      <td>Same issue as with Oergs</td>
+      <td>With WinUAE CPU core, requires MMU to be enabled</td>
     </tr>
     <tr>
       <td>Lazer:
@@ -3552,23 +3549,18 @@ if demo is stated to require that.</p>
     <tr>
       <td>Lazer:
       <a href="http://pouet.net/prod.php?which=28749">Oergs</a></td>
-      <td class="minor">2.0</td>
+      <td>2.0</td>
       <td>yes</td>
       <td>emu</td> 
-      <td>Works with old UAE CPU core, but not with Hatari
-	  &gt;=v1.9 WinUAE CPU core (complains about illegal
-	  DSP instructions) unless CPU exact + compatible
-	  modes are disabled</td>
+      <td>With WinUAE CPU core, requires MMU to be enabled</td>
     </tr>
     <tr>
       <td>Lazer:
       <a href="http://pouet.net/prod.php?which=8585">Warum</a></td>
-      <td class="minor">2.0</td>
+      <td>2.0</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Works with old UAE CPU core, but freezes in torus screen
-          with Hatari &gt;=v1.9 WinUAE CPU core unless CPU exact +
-	  compatible modes are disabled</td>
+      <td>With WinUAE CPU core, requires MMU to be enabled</td>
     </tr>
     <tr>
       <td>Level 42:
@@ -3640,9 +3632,7 @@ if demo is stated to require that.</p>
       <td>1.9</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Works with old UAE CPU core, but bus errors
-          with Hatari &gt;=v1.9 WinUAE CPU core unless CPU exact +
-	  compatible modes are disabled</td>
+      <td>With WinUAE CPU core, requires MMU to be enabled</td>
     </tr>
     <tr>
       <td>Mystic bytes:
@@ -3683,7 +3673,8 @@ if demo is stated to require that.</p>
       <td>1.1</td>
       <td>-</td>
       <td>-</td>
-      <td>Very nice 4K demo from New Beat</td>
+      <td>Nice 4K demo from New Beat (Flu and Blue are
+          emulation-wise both very lightweight)</td>
     </tr>
     <tr>
       <td>New Beat:
@@ -3691,7 +3682,7 @@ if demo is stated to require that.</p>
       <td>1.1</td>
       <td>yes</td>
       <td>-</td>
-      <td>Very nice 4K demo from New Beat. Flu requires FPU</td>
+      <td>Nice 4K demo from New Beat. Flu requires FPU</td>
     </tr>
     <tr>
       <td>New Beat:
@@ -3720,10 +3711,11 @@ if demo is stated to require that.</p>
     <tr>
       <td>Opium:
       <a href="http://www.pouet.net/prod.php?which=17822">Chrome Dragon</a></td>
-      <td>1.0</td>
+      <td class="minor">2.0</td>
       <td>yes</td>
       <td>-</td>
-      <td>With Hatari v1.6, needs WinUAE core</td>
+      <td>Requires RGB. At least since v1.8, music is missing and
+         freezes late in demo, when textured donut zooms out</td>
     </tr>
     <tr>
       <td>Opium:
@@ -3739,7 +3731,8 @@ if demo is stated to require that.</p>
       <td class="minor">2.0</td>
       <td>yes</td>
       <td>-</td>
-      <td>needs 8 MB TT ram, music with DSP.  Colors are wrong</td>
+      <td>needs 8 MB TT ram, music with DSP.
+          Swimming screen colors are wrong</td>
     </tr>
     <tr>
       <td>Orion_:
@@ -3751,9 +3744,26 @@ if demo is stated to require that.</p>
           part is missing all details and demo freezes after that</td>
     </tr>
     <tr>
+      <td>Paradox:
+      <a href="http://pouet.net/prod.php?which=60896">2x1287</a></td>
+      <td class="minor">2.0</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>Scenes from the demo scene. Music with DSP.
+          With WinUAE CPU core, starts only with VGA</td>
+    </tr>
+    <tr>
       <td>Paranoia:
       <a href="http://www.pouet.net/prod.php?which=6659">Illusion 64</a></td>
       <td>1.3</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>Background music with DSP emu</td>
+    </tr>
+    <tr>
+      <td>Paranoia:
+      <a href="http://www.pouet.net/prod.php?which=3297">Rock Solid +</a></td>
+      <td>2.0</td>
       <td>yes</td>
       <td>-</td>
       <td>Background music with DSP emu</td>
@@ -3784,11 +3794,12 @@ if demo is stated to require that.</p>
     </tr>
     <tr>
       <td>Reservoir Gods:
-      <a href="http://rg.atari.org/demos.htm">Ascii, SnowStorm, HongTron</a></td>
+      <a href="http://rg.atari.org/demos.htm">ASCII Art Intro, SnowStorm, Snowtro</a></td>
       <td>1.0</td>
-      <td>-</td>
-      <td>-</td>
-      <td>Intros by RG</td>
+      <td>yes</td>
+      <td>emu</td>
+      <td>Intros by RG. Require DSP (for music) with newer Hatari versions.
+          "Snowtro" cannot be auto-started</td>
     </tr>
     <tr>
       <td>Shadows:
@@ -3868,18 +3879,15 @@ if demo is stated to require that.</p>
     <tr>
       <td>tSCc:
       <a href="http://pouet.net/prod.php?which=1014">A Rh positive</a></td>
-      <td class="minor">2.0</td>
+      <td>2.0</td>
       <td>-</td>
       <td>emu</td>
-      <td>4K demo. Works with old UAE CPU core, but bus errors
-          with Hatari &gt;=v1.9 WinUAE CPU core unless CPU exact +
-	  compatible modes are disabled</td>
+      <td>4K. With WinUAE CPU core, requires MMU to be enabled</td>
     <tr>
       <td>tSCc:
-      <a href="http://www.pouet.net/prod.php?which=16426">Beams</a>
-      (Falcon version)</td>
+      <a href="http://www.pouet.net/prod.php?which=16426">Beams</a> (Falcon version)</td>
       <td>1.5</td>
-      <td>-</td>
+      <td>yes</td>
       <td>-</td>
       <td>Nice demo, NoCrew DSP MP2-music</td>
     </tr>
@@ -3887,8 +3895,8 @@ if demo is stated to require that.</p>
       <td>tSCc:
       <a href="http://pouet.net/prod.php?which=977">Six Sievert</a></td>
       <td>1.3</td>
-      <td>-</td>
-      <td>-</td>
+      <td>yes</td>
+      <td>emu</td>
       <td></td>
     </tr>
     <tr>
@@ -3905,13 +3913,11 @@ if demo is stated to require that.</p>
     <tr>
       <td>Tony Benett:
       <a href="http://pouet.net/prod.php?which=28853">Virtual City</a></td>
-      <td class="minor">2.0</td>
+      <td>2.0</td>
       <td>-</td>
       <td>emu</td>
       <td>HiColor, drawing the city requires DSP emulation.
-          Works with old UAE CPU core, but crashes with Hatari
-	  &gt;=v1.9 WinUAE CPU core unless CPU exact + compatible
-	  modes are disabled</td>
+          With WinUAE CPU core, requires MMU to be enabled</td>
     </tr>
     <tr>
       <td>Toons:
@@ -3919,8 +3925,8 @@ if demo is stated to require that.</p>
       <td>2.0</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Strange screen sizes. Black screen after ant screen
-      just waits for keypress before showing credits</td>
+      <td>Strange screen sizes + black screen after 3D ant screen
+          which just waits for Enter key before showing credits</td>
     </tr>
     <tr>
       <td>T.O.Y.S:

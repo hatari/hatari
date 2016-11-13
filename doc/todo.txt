@@ -20,7 +20,8 @@ Emulation improvements
 	- Fun's "Men at War" game or its intro don't start
 	- "Push It" game crashes if auto-started
 	- NoCrew: Aggressive Party II 128k combo ("Whirlpool") bombs
-	- RG: "Sworm" & "Sky Fall" games want to access A: & B: when autostarted
+	- RG: "Sworm" & "Sky Fall" games and "Snowtro" intro
+	  want to access A: & B: when autostarted
 	- JAM packer packed version of Tony Benett' "Virtual City" demo bombs
 	- Sentry 2.2 packed version of Shadows' "Firestarter" demo bombs
 	Note: last 3 programs can be autostarted fine with EmuTOS.
