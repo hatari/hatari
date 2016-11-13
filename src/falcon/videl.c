@@ -623,8 +623,7 @@ static int VIDEL_getScreenWidth(void)
 	/* X Size of the Display area */
 	videl.XSize = (IoMem_ReadWord(0xff8210) & 0x03ff) * 16 / bpp;
 
-	/* Sanity check - don't allow unusable huge resolutions!
-	 * FIXME: We should maybe calculate the XSize from HDE/HDB instead? */
+	/* Sanity check - don't allow unusable huge resolutions! */
 	while (videl.XSize > 1200)
 		videl.XSize /= 2;
 
