@@ -18,7 +18,7 @@ Emulation improvements
 	- Colors in 2-plane VDI resolution are not set correctly
 	- "Running" game preview and shareware versions crash
 	- Fun's "Men at War" game or its intro don't start
-	- "Push It" game crashes if auto-started
+	- "Push It" and "Aazohm Krypth" games crash if auto-started
 	- NoCrew: Aggressive Party II 128k combo ("Whirlpool") bombs
 	- RG: "Sworm" & "Sky Fall" games and "Snowtro" intro
 	  want to access A: & B: when autostarted
