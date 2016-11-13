@@ -623,9 +623,13 @@ static int VIDEL_getScreenWidth(void)
 	/* X Size of the Display area */
 	videl.XSize = (IoMem_ReadWord(0xff8210) & 0x03ff) * 16 / bpp;
 
-	/* Sanity check - don't allow unusable huge resolutions!
-	 * FIXME: We should maybe calculate the XSize from HDE/HDB instead? */
-	while (videl.XSize > 1200)
+	/* Sanity check - don't use unsupported texture sizes for SDL2:
+	 *   http://answers.unity3d.com/questions/563094/mobile-max-texture-size.html
+	 * (largest currently known real Videl width is ~1600)
+	 *
+	 * FIXME: We should maybe calculate the XSize from HDE/HDB instead?
+	 */
+	while (videl.XSize > 2048)
 		videl.XSize /= 2;
 
 	/* If the user disabled the borders display from the gui, we suppress them */
