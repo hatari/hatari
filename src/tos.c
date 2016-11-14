@@ -396,6 +396,9 @@ static void TOS_CreateAutoInf(void)
 	const char *contents, *infname, *prgname;
 	int offset, size, max;
 	FILE *fp;
+#if defined(WIN32)	/* unfortunately tmpfile() needs administrative privileges on windows, so this needs special care */
+	char *ptr;
+#endif
 
 	/* in case TOS didn't for some reason close it on previous boot */
 	TOS_AutoStartClose(TosAutoStart.file);
@@ -444,7 +447,16 @@ static void TOS_CreateAutoInf(void)
 	assert(offset < size);
 
 	/* create the autostart file */
+#if defined(WIN32)	/* unfortunately tmpfile() needs administrative privileges on windows, so this needs special care */
+	ptr=WinTmpFile();
+	if( ptr!=NULL )
+		fp=fopen(ptr,"w+b");
+	else
+		fp=NULL;
+#else
 	fp = tmpfile();
+#endif
+
 	if (!(fp
 	      && fwrite(contents, offset, 1, fp) == 1
 	      && fwrite(prgname, strlen(prgname), 1, fp) == 1
@@ -825,3 +837,4 @@ int TOS_LoadImage(void)
 
 	return 0;
 }
+

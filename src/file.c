@@ -30,6 +30,7 @@ const char File_fileid[] = "Hatari file.c : " __DATE__ " " __TIME__;
 #include "createBlankImage.h"
 #include "str.h"
 #include "zip.h"
+#include "log.h"
 
 #ifdef HAVE_FLOCK
 # include <sys/file.h>
@@ -923,3 +924,42 @@ void File_HandleDotDirs(char *path)
 		}
 	}
 }
+
+
+#if defined(WIN32)
+static TCHAR szTempFileName[MAX_PATH];
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Get temporary filename for Windows
+ */
+char* WinTmpFile(void)
+{
+	DWORD dwRetVal = 0;
+	UINT uRetVal   = 0;
+	TCHAR lpTempPathBuffer[MAX_PATH];
+
+	/* Gets the temp path env string (no guarantee it's a valid path) */
+	dwRetVal = GetTempPath(MAX_PATH,		/* length of the buffer */
+                           lpTempPathBuffer);		/* buffer for path */
+	if (dwRetVal > MAX_PATH || (dwRetVal == 0))
+	{
+		Log_Printf(LOG_ERROR, "GetTempPath failed.\n");
+		return NULL;
+	}
+
+	/* Generates a temporary file name */
+	uRetVal = GetTempFileName(lpTempPathBuffer,	/* directory for tmp files */
+                              TEXT("HATARI"),		/* temp file name prefix */
+                              0,			/* create unique name */
+                              szTempFileName);		/* buffer for name */
+	if (uRetVal == 0)
+	{
+		Log_Printf(LOG_ERROR, "GetTempFileName failed.\n");
+		return NULL;
+	}
+	return (char*)szTempFileName;
+}
+#endif
+
+
