@@ -2391,11 +2391,12 @@ indicated separately.</p>
     </tr> 
    <tr>
       <td>Evolution Dino Dudes<br />(aka. Humans)</td>
-      <td class="major">1.3</td>
+      <td class="major">2.0</td>
+      <td>yes</td>
       <td>-</td>
-      <td>-</td>
-      <td>Intro and menu work, but graphics are distorted in game.<br />
-          (Game writes twice to the $ff820e register during one VBL!)</td>
+      <td>Needs joypad. Sound with DSP. Intro and menu work,
+          but graphics are distorted in game itself (writes
+	  twice to the $ff820e register during one VBL!)</td>
     </tr>
     <tr>
       <td>Falcon Fighter II</td>
@@ -2535,8 +2536,8 @@ indicated separately.</p>
       <td>yes</td>
       <td>emu</td>
       <td>With WinUAE CPU core requires MMU to start.
-          Freezes after first two screens, worked with
-          Hatari v1.6. Slow</td>
+          Freezes after first two screens, waiting Videl
+          screen address counter to change</td>
     </tr>
     <tr>
       <td>Les Dinosaures (demo)</td>
@@ -2601,11 +2602,12 @@ indicated separately.</p>
     <tr>
       <td>Moonspeeder (preview 2)</td>
       <td class="major">2.0</td>
-      <td>-</td>
+      <td>Yes</td>
       <td>emu</td>
-      <td>lst*.* files need to be renamed as game searches them with
-          different name (space before dot).  Pointer cannot be moved
-	  in the game menu (preview 1 works, but is non-interactive)</td>
+      <td>Pointer frozen in menu as Videl address counter doesn't
+          advance. lst*.* files need to be renamed with GEMDOS HD
+	  emulation as game searches them with different name (space
+	  before dot). Preview 1 works, but is non-interactive</td>
     </tr>
     <tr>
       <td>Mouse trap</td>
@@ -2864,11 +2866,10 @@ indicated separately.</p>
     </tr>
     <tr>
       <td>Tank Blaster</td>
-      <td class="minor">2.0</td>
+      <td>2.0</td>
       <td>yes</td>
       <td>-</td>
-      <td>Requires old UAE CPU core, or disabling CPU exact + compatible
-	  modes for WinUAE CPU core</td>
+      <td>With WinUAE CPU core, requires MMU</td>
     </tr>
     <tr>
       <td>TeknoBalls</td>
@@ -3143,6 +3144,15 @@ if demo is stated to require that.</p>
       <td>Crac:
       <a href="http://www.pouet.net/prod.php?which=23587">Bound 2</a>
       </td>
+      <td>2.0</td>
+      <td>yes</td>
+      <td>emu</td>
+      <td>With WinUAE CPU core, requires MMU, or disabling CPU exact mode</td>
+    </tr>
+    <tr>
+      <td>Crac:
+      <a href="http://www.pouet.net/prod.php?which=23589">Bound 4</a>
+      </td>
       <td class="major">2.0</td>
       <td>yes</td>
       <td>emu</td>
@@ -3151,8 +3161,7 @@ if demo is stated to require that.</p>
     <tr>
       <td>Crac:
       <a href="http://www.pouet.net/prod.php?which=23588">Bound 3</a>,
-      <a href="http://www.pouet.net/prod.php?which=23589">Bound 4</a>,
-      <a href="http://www.pouet.net/prod.php?which=23589">Bound 5</a>
+      <a href="http://www.pouet.net/prod.php?which=25559">Bound 5</a>
       </td>
       <td class="major">2.0</td>
       <td>yes</td>
@@ -4028,7 +4037,7 @@ site.</p>
       <td>-</td>
       <td>Crashes with a &quot;MOVE.W $fff20000,D0&quot; instruction.
         It's unclear why this works on a real Falcon.
-        The separate imageviewers work fine.</td>
+        The separate imageviewers work fine</td>
     </tr>
     <tr>
       <td><a href="http://pagesperso-orange.fr/didierm/index-e.htm">Aniplayer</a></td>
@@ -4112,7 +4121,8 @@ site.</p>
       <td><a href="http://www.pouet.net/prod.php?which=56822">Hextracker</a></td>
       <td class="major">2.0</td>
       <td>-</td>
-      <td>Freezes at start waiting Videl screen address counter to change</td>
+      <td>Freezes at start waiting Videl screen address counter to
+          change. Crashes after that's fixed</td>
     </tr>
     <tr>
       <td><a href="http://pouet.net/prod.php?which=29348">Indypaint</a></td>
