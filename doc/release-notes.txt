@@ -23,6 +23,9 @@ Fixed demos:
 - Bound 3
 - Mahabharata (with SDL2)
 
+Fixed programs:
+- Hextracker (for Falcon)
+
 
  Version 2.0.0 (2016-11-04)
  ---------------------------
