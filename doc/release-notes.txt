@@ -3,6 +3,18 @@
                                    --------
                                 Release Notes
 
+
+ Version 2.x.x (XXXX-XX-XX)
+ ---------------------------
+
+Emulator:
+- Support memory check skipping also on TOS v3 & v4
+- Fix TOS v2 & v3 Atari logo display in extended VDI resolutions
+
+Fixed demos:
+- Mahabharata (with SDL2)
+
+
  Version 2.0.0 (2016-11-04)
  ---------------------------
 
