@@ -218,11 +218,6 @@ on BerliOS hatari-devel mail thread for more info.)
 Bug reports
 -----------
 
-- "Ishar 3", "Lasers and Hommes", Moonspeeder, "Bound 3" & "Bound 5"
-  demos and Hextracker freeze at start with Falcon emulation because
-  Videl screen address counter doesn't advance (its read & write IO
-  functions are no-ops, a regression from 2012 commit 22d3c9f30097).
-
 - Problem: On real Falcon there is a minor feature in videl. You can simply
   fade whole screen to black, if you just clear the Horizontal Border End
   ($ffff8286) and start fading colors from 0 to 255 to $ffff9800 or vice versa.

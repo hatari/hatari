@@ -85,7 +85,9 @@ struct videl_s {
 	bool   bUseSTShifter;			/* whether to use ST or Falcon palette */
 	Uint8  reg_ffff8006_save;		/* save reg_ffff8006 as it's a read only register */
 	Uint8  monitor_type;			/* 00 Monochrome (SM124) / 01 Color (SC1224) / 10 VGA Color / 11 Television ($FFFF8006) */
-	Uint32 videoBaseAddr;			/* Video base address, refreshed after each VBL */
+
+	Uint32 videoRaster;			/* Video raster offset, restarted on each VBL */
+	Uint16 vertFreqCounter;			/* Counter for VFC register $ff82a0, restarted on each VBL */
 
 	Sint16 leftBorderSize;			/* Size of the left border */
 	Sint16 rightBorderSize;			/* Size of the right border */
@@ -103,7 +105,6 @@ struct videl_s {
 
 static struct videl_s videl;
 
-Uint16 vfc_counter;			/* counter for VFC register $ff82a0 (to be internalized when VIDEL emulation is complete) */
 
 /**
  * Called upon startup (and via VIDEL_reset())
@@ -131,7 +132,7 @@ void VIDEL_reset(void)
 	videl.reg_ffff8006_save = IoMem_ReadByte(0xff8006);
 	videl.monitor_type = videl.reg_ffff8006_save & 0xc0;
 
-	vfc_counter = 0;
+	VIDEL_RestartVideoCounter();
 
 	/* Reset IO register (some are not initialized by TOS) */
 	IoMem_WriteWord(0xff820e, 0);    /* Line offset */
@@ -148,7 +149,6 @@ void VIDEL_MemorySnapShot_Capture(bool bSave)
 {
 	/* Save/Restore details */
 	MemorySnapShot_Store(&videl, sizeof(videl));
-	MemorySnapShot_Store(&vfc_counter, sizeof(vfc_counter));
 }
 
 /**
@@ -200,10 +200,7 @@ void VIDEL_SyncMode_WriteByte(void)
  */
 void VIDEL_ScreenCounter_ReadByte(void)
 {
-//	Uint32 addr;	// To be used
-	Uint32 addr = 0; // To be removed
-
-	// addr = Videl_CalculateAddress();		/* TODO: get current video address */
+	Uint32 addr = videl.videoRaster;
 	IoMem[0xff8205] = ( addr >> 16 ) & 0xff;
 	IoMem[0xff8207] = ( addr >> 8 ) & 0xff;
 	IoMem[0xff8209] = addr & 0xff;
@@ -216,10 +213,8 @@ void VIDEL_ScreenCounter_ReadByte(void)
  */
 void VIDEL_ScreenCounter_WriteByte(void)
 {
-	Uint32 addr_new = 0;
-	Uint8 AddrByte;
-
-	AddrByte = IoMem[ IoAccessCurrentAddress ];
+	Uint32 addr_new = videl.videoRaster;
+	Uint8 AddrByte = IoMem[ IoAccessCurrentAddress ];
 
 	/* Compute the new video address with one modified byte */
 	if ( IoAccessCurrentAddress == 0xff8205 )
@@ -229,7 +224,8 @@ void VIDEL_ScreenCounter_WriteByte(void)
 	else if ( IoAccessCurrentAddress == 0xff8209 )
 		addr_new = ( addr_new & 0xffff00 ) | ( AddrByte );
 
-	// TODO: save the value in a table for the final rendering
+	videl.videoRaster = addr_new;
+	LOG_TRACE(TRACE_VIDEL, "Videl : $ff8205/07/09 Sync Mode write: 0x%08x\n", addr_new);
 }
 
 /**
@@ -479,8 +475,8 @@ void VIDEL_HEE_WriteWord(void)
  */
 void VIDEL_VFC_ReadWord(void)
 {
-	IoMem_WriteWord(0xff82a0, vfc_counter);
-	LOG_TRACE(TRACE_VIDEL, "Videl : $ff82a0 Vertical Frequency Counter (VFC) read: 0x%04x\n", vfc_counter);
+	IoMem_WriteWord(0xff82a0, videl.vertFreqCounter);
+	LOG_TRACE(TRACE_VIDEL, "Videl : $ff82a0 Vertical Frequency Counter (VFC) read: 0x%04x\n", videl.vertFreqCounter);
 }
 
 /**
@@ -570,6 +566,31 @@ static Uint32 VIDEL_getVideoramAddress(void)
 
 	return videoBase;
 }
+
+/**
+ * Reset appropriate registers on VBL etc
+ */
+void VIDEL_RestartVideoCounter(void)
+{
+	videl.videoRaster = VIDEL_getVideoramAddress();
+	/* counter for VFC register $ff82a0 */
+	videl.vertFreqCounter = 0;
+}
+
+/**
+ * Increment appropriate registers on HBL
+ */
+void VIDEL_VideoRasterHBL(void)
+{
+	int lineoffset = IoMem_ReadWord(0xff820e) & 0x01ff; /* 9 bits */
+	int linewidth = IoMem_ReadWord(0xff8210) & 0x03ff;  /* 10 bits */
+
+	videl.videoRaster += linewidth + lineoffset;
+
+	/* TODO: VFC is incremented every half line, here, we increment it every line */
+	videl.vertFreqCounter++;
+}
+
 
 static Uint16 VIDEL_getScreenBpp(void)
 {
@@ -863,7 +884,7 @@ bool VIDEL_renderScreen(void)
 
 	bool change = false;
 
-	videl.videoBaseAddr = VIDEL_getVideoramAddress(); // Todo: to be removed when all code is in Videl
+	Uint32 videoBase = VIDEL_getVideoramAddress();
 
 	if (vw > 0 && vw != videl.save_scrWidth) {
 		LOG_TRACE(TRACE_VIDEL, "Videl : width change from %d to %d\n", videl.save_scrWidth, vw);
@@ -913,7 +934,7 @@ bool VIDEL_renderScreen(void)
 
 	VIDEL_UpdateColors();
 
-	Screen_GenConvert(&STRam[videl.videoBaseAddr], videl.XSize, videl.YSize,
+	Screen_GenConvert(&STRam[videoBase], videl.XSize, videl.YSize,
 	                  videl.save_scrBpp, nextline, hscrolloffset,
 	                  videl.leftBorderSize, videl.rightBorderSize,
 	                  videl.upperBorderSize, videl.lowerBorderSize);

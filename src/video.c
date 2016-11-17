@@ -2773,11 +2773,9 @@ void Video_InterruptHandler_HBL ( void )
 	}
 
 
-	/* Videl Vertical counter increment (To be removed when Videl emulation is finished) */
-	/* VFC is incremented every half line, here, we increment it every line (should be completed) */
 	if (Config_IsMachineFalcon())
 	{
-		vfc_counter += 1;
+		VIDEL_VideoRasterHBL();
 	}
 
 	
@@ -2807,7 +2805,10 @@ void Video_InterruptHandler_HBL ( void )
 	M68000_Exception(EXCEPTION_NR_HBLANK , M68000_EXC_SRC_AUTOVEC);	/* Horizontal blank interrupt, level 2 */
 
 
-	Video_EndHBL();					/* Check some borders removal and copy line to display buffer */
+	if (!Config_IsMachineFalcon())
+	{
+		Video_EndHBL();				/* Check some borders removal and copy line to display buffer */
+	}
 
 	DmaSnd_STE_HBL_Update();			/* Update STE DMA sound if needed */
 
@@ -3908,7 +3909,10 @@ static void Video_ClearOnVBL(void)
 
 	Video_ResetShifterTimings();
 
-	Video_RestartVideoCounter();
+        if (Config_IsMachineFalcon())
+		VIDEL_RestartVideoCounter();
+	else
+		Video_RestartVideoCounter();
 
 	pSTScreen = pFrameBuffer->pSTScreen;
 
@@ -4283,12 +4287,6 @@ void Video_InterruptHandler_VBL ( void )
 	nVBLs++;
 	/* Set video registers for frame */
 	Video_ClearOnVBL();
-
-	/* Videl Vertical counter reset (To be removed when Videl emulation is finished) */
-	if (Config_IsMachineFalcon())
-	{
-		vfc_counter = 0;
-	}
 	
 	/* Since we don't execute HBL functions in VDI mode, we've got to
 	 * initialize the first HBL palette here when VDI mode is enabled. */

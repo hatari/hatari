@@ -7,11 +7,20 @@
  Version 2.x.x (XXXX-XX-XX)
  ---------------------------
 
+Emulation:
+- Add (dumb) Videl address counter emulation
+
 Emulator:
 - Support memory check skipping also on TOS v3 & v4
 - Fix TOS v2 & v3 Atari logo display in extended VDI resolutions
 
+Fixed games:
+- Ishar 3
+- Lasers and Hommes
+- Moonspeeder (preview 2)
+
 Fixed demos:
+- Bound 3
 - Mahabharata (with SDL2)
 
 

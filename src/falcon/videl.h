@@ -8,9 +8,6 @@
 #ifndef HATARI_VIDEL_H
 #define HATARI_VIDEL_H
 
-/* To be removed when Videl emulation is complete */
-extern Uint16 vfc_counter;			/* counter for VFC register $ff82a0 */
-
 extern bool VIDEL_renderScreen(void);
 
 extern void Videl_Init(void);
@@ -18,6 +15,9 @@ extern void VIDEL_reset(void);
 
 extern void VIDEL_ZoomModeChanged(bool bForceChange);
 extern void VIDEL_UpdateColors(void);
+
+extern void VIDEL_RestartVideoCounter(void);
+extern void VIDEL_VideoRasterHBL(void);
 
 /* Called from ioMemTabFalcon.c */
 extern void VIDEL_Monitor_WriteByte(void);
