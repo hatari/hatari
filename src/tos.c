@@ -113,6 +113,7 @@ enum
 	TP_ANTI_STE,          /* Apply patch only if running on plain ST */
 	TP_ANTI_PMMU,         /* Apply patch only if no PMMU is available */
 	TP_FIX_060,           /* Apply patch only if CPU is 68060 */
+	TP_VDIRES,            /* Apply patch only if VDI is used */
 };
 
 /* This structure is used for patching the TOS ROMs */
@@ -135,6 +136,7 @@ static const char pszNoSteHw[] = "disable STE hardware access";
 static const char pszNoPmmu[] = "disable PMMU access";
 static const char pszFix060[] = "replace code for 68060";
 static const char pszFalconExtraRAM[] = "enable extra TT RAM on Falcon";
+static const char pszAtariLogo[] = "draw Atari Logo";
 
 //static Uint8 pRtsOpcode[] = { 0x4E, 0x75 };  /* 0x4E75 = RTS */
 static const Uint8 pNopOpcodes[] = { 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71,
@@ -145,6 +147,45 @@ static const Uint8 pRomCheckOpcode206[] = { 0x60, 0x00, 0x00, 0x98 };  /* BRA $e
 static const Uint8 pRomCheckOpcode306[] = { 0x60, 0x00, 0x00, 0xB0 };  /* BRA $e00886 */
 static const Uint8 pRomCheckOpcode404[] = { 0x60, 0x00, 0x00, 0x94 };  /* BRA $e00746 */
 static const Uint8 pBraOpcode[] = { 0x60 };  /* 0x60XX = BRA */
+
+/*
+ * Routine for drawing the Atari logo.
+ * When this function is called, A0 contains a pointer to a 96x86x1 image.
+ * We cannot use the vdi yet (the screen workstation has not yet been opened),
+ * but we can take into account extended VDI modes.
+ */
+static const Uint8 pAtariLogo[] = {
+	0x3e, 0x3c, 0x00, 0x01,     /* move.w    #planes, d7; number will be patched below */
+	0x2c, 0x3c, 0, 0, 1, 64,    /* move.l    #linewidth, d6; number will be patched below */
+	0x22, 0x78, 0x04, 0x4e,     /* movea.l   (_v_bas_ad).w,a1 */
+	0xd3, 0xc6,                 /* adda.l    d6,a1 ; start drawing at 5th line */
+	0xd3, 0xc6,                 /* adda.l    d6,a1 */
+	0xd3, 0xc6,                 /* adda.l    d6,a1 */
+	0xd3, 0xc6,                 /* adda.l    d6,a1 */
+	0xd3, 0xc6,                 /* adda.l    d6,a1 */
+	0x30, 0x3c, 0x00, 0x55,     /* move.w    #$0055,d0 ; 86 lines of data */
+/* logocol1: */
+	0x72, 0x05,                 /* moveq.l   #5,d1 ; 6 words of data per line */
+	0x24, 0x49,                 /* movea.l   a1,a2 */
+/* logocol2: */
+	0x34, 0x18,                 /* move.w    (a0)+,d2 */
+	0x36, 0x07,                 /* move.w    d7,d3 */
+	0x53, 0x43,                 /* subq.w    #1,d3 */
+/* logocol3: */
+	0x34, 0xc2,                 /* move.w    d2,(a2)+ */
+	0x51, 0xcb, 0xff, 0xfc,     /* dbf       d3,logocol3 */
+	0x51, 0xc9, 0xff, 0xf2,     /* dbf       d1,logocol2 */
+	0xd3, 0xc6,                 /* adda.l    d6,a1 */
+	0x51, 0xc8, 0xff, 0xe8,     /* dbf       d0,logocol1 */
+	0x4e, 0x71,                 /* nops to end of original routine */
+	0x4e, 0x71,
+	0x4e, 0x71,
+	0x4e, 0x71,
+	0x4e, 0x71,
+	0x4e, 0x71,
+	0x4e, 0x71,
+	0x4e, 0x71
+};
 
 static const Uint8 p060movep1[] = {	/* replace MOVEP */
 	0x70, 0x0c,			/* moveq #12,d0 */
@@ -235,12 +276,14 @@ static const TOS_PATCH TosPatches[] =
   /* as we've changed bytes in the ROM! So, just skip anyway! */
   { 0x206, -1, pszRomCheck, TP_ALWAYS, 0xE007FA, 0x2E3C0001, 4, pRomCheckOpcode206 },
   { 0x206, -1, pszDmaBoot, TP_HDIMAGE_OFF, 0xE00898, 0x610000E0, 4, pNopOpcodes }, /* BSR.W $E0097A */
+  { 0x206, -1, pszAtariLogo, TP_VDIRES, 0xE0076C, 0x1038044c, sizeof( pAtariLogo ), pAtariLogo },
 
   { 0x306, -1, pszRomCheck, TP_ALWAYS, 0xE007D4, 0x2E3C0001, 4, pRomCheckOpcode306 },
   { 0x306, -1, pszNoPmmu, TP_ANTI_PMMU, 0xE00068, 0xF0394000, 24, pNopOpcodes }, /* pmove : TC=0 TT0=0 TT1=0 -> disable MMU */
   { 0x306, -1, pszNoPmmu, TP_ANTI_PMMU, 0xE01702, 0xF0394C00, 32, pNopOpcodes }, /* pmove : CRP=80000002 00000700 TC=80f04445 TT0=017e8107 TT1=807e8507 -> */
   { 0x306, -1, pszFix060, TP_FIX_060, 0xe024dc, 0x01C80000, 12, p060movep1 },
   { 0x306, -1, pszFix060, TP_FIX_060, 0xe024fa, 0x01C80000, 12, p060movep1 },
+  { 0x306, -1, pszAtariLogo, TP_VDIRES, 0xE00754, 0x1038044c, sizeof( pAtariLogo ), pAtariLogo },
 
   { 0x400, -1, pszNoPmmu, TP_ANTI_PMMU, 0xE00064, 0xF0394000, 24, pNopOpcodes }, /* pmove : TC=0 TT0=0 TT1=0 -> disable MMU */
   { 0x400, -1, pszNoPmmu, TP_ANTI_PMMU, 0xE0148A, 0xF0394C00, 32, pNopOpcodes },
@@ -313,6 +356,7 @@ static void TOS_FixRom(void)
 	int nGoodPatches, nBadPatches;
 	short TosCountry;
 	const TOS_PATCH *pPatch;
+	Uint32 logopatch_addr = 0;
 
 	/* We can't patch RAM TOS images (yet) */
 	if (bRamTosImage && TosVersion != 0x0492)
@@ -348,6 +392,7 @@ static void TOS_FixRom(void)
 				        && ConfigureParams.System.bFastBoot)
 				    || (pPatch->Flags == TP_ANTI_STE && Config_IsMachineST())
 				    || (pPatch->Flags == TP_ANTI_PMMU && !use_mmu)
+				    || (pPatch->Flags == TP_VDIRES && bUseVDIRes)
 				    || (pPatch->Flags == TP_FIX_060 && ConfigureParams.System.nCpuLevel > 4)
 				   )
 				{
@@ -355,6 +400,8 @@ static void TOS_FixRom(void)
 					Log_Printf(LOG_DEBUG, "Applying TOS patch '%s'.\n", pPatch->pszName);
 					memcpy(&RomMem[pPatch->Address], pPatch->pNewData, pPatch->Size);
 					nGoodPatches += 1;
+					if (strcmp(pPatch->pszName, pszAtariLogo) == 0)
+						logopatch_addr = pPatch->Address;
 				}
 				else
 				{
@@ -369,6 +416,13 @@ static void TOS_FixRom(void)
 			}
 		}
 		pPatch += 1;
+	}
+
+	/* patch some values into the "Draw logo" patch */
+	if (logopatch_addr != 0)
+	{
+		STMemory_WriteWord(logopatch_addr + 2, VDIPlanes);
+		STMemory_WriteLong(logopatch_addr + 6, VDIWidth * VDIPlanes / 8);
 	}
 
 	Log_Printf(LOG_DEBUG, "Applied %i TOS patches, %i patches failed.\n",
