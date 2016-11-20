@@ -912,7 +912,8 @@ static const dbgcommand_t uicommand[] =
 	  "parse", "p",
 	  "get debugger commands from file",
 	  "[filename]\n"
-	  "\tRead debugger commands from given file and do them.",
+	  "\tRead debugger commands from given file and do them.\n"
+	  "\tCurrent directory is script directory during this."
 	  false },
 	{ DebugUI_Rename, NULL,
 	  "rename", "",
@@ -1115,6 +1116,8 @@ void DebugUI(debug_reason_t reason)
  */
 bool DebugUI_ParseFile(const char *path, bool reinit)
 {
+	int recurse;
+	static int recursing;
 	char *olddir, *dir, *cmd, *input, *expanded, *slash;
 	FILE *fp;
 
@@ -1150,6 +1153,9 @@ bool DebugUI_ParseFile(const char *path, bool reinit)
 	}
 	free(dir);
 
+	recurse = recursing;
+	recursing = true;
+
 	input = NULL;
 	for (;;)
 	{
@@ -1176,6 +1182,7 @@ bool DebugUI_ParseFile(const char *path, bool reinit)
 		DebugUI_ParseCommand(cmd);
 		free(expanded);
 	}
+	recursing = false;
 
 	free(input);
 	fclose(fp);
@@ -1189,10 +1196,17 @@ bool DebugUI_ParseFile(const char *path, bool reinit)
 		free(olddir);
 	}
 
-	if (reinit)
+	if (!recurse)
 	{
-		DebugCpu_SetDebugging();
-		DebugDsp_SetDebugging();
+		/* only top-level (non-recursed) call has valid re-init info,
+		 * as that's the only one that can get directly called from
+		 * breakpoints
+		 */
+		if (reinit)
+		{
+			DebugCpu_SetDebugging();
+			DebugDsp_SetDebugging();
+		}
 	}
 	return true;
 }
