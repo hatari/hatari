@@ -2326,10 +2326,19 @@ xterm -T "Hatari debug window" -e hatari
 </pre>
 
 <p>
-To run debugger commands at Hatari startup, one can use the "--parse
-&lt;file&gt;" command line option.  This is useful e.g. for debugging
-TOS or some demo startup code, or if you always want to use some
-specific debugger setup (breakpoints etc).
+To run debugger commands from a file at Hatari startup, one can use
+the "--parse &lt;file&gt;" command line option.  This is useful e.g.
+for debugging TOS or some demo startup code, or if you always want to
+use some specific debugger setup (breakpoints etc).
+</p>
+
+<p>
+Note that when debugger scripts are run, current directory is set to
+the currently running script's directory i.e. all file operations are
+relative to it.  After script finishes, earlier current directory is
+restored.  To set current directory from a setup script, e.g. for
+scripts run at breakpoints, you need to give '-f' option for the
+'cd' command.
 </p>
 
 
@@ -2372,15 +2381,18 @@ Generic commands:
            cd (  ) : change directory
      evaluate ( e) : evaluate an expression
          help ( h) : print help
-      history (hi) : show last CPU & DSP PC values & executed instructions
+      history (hi) : show last CPU/DSP PC values & executed instructions
          info ( i) : show machine/OS information
          lock (  ) : specify information to show on entering the debugger
       logfile ( f) : open or close log file
         parse ( p) : get debugger commands from file
+       rename (  ) : rename given file
+        reset (  ) : reset emulation
        setopt ( o) : set Hatari command line and debugger options
     stateload (  ) : restore emulation state
     statesave (  ) : save emulation state
         trace ( t) : select Hatari tracing settings
+    variables ( v) : List builtin symbols / variables
          quit ( q) : quit emulator
 
 CPU commands:
@@ -2395,7 +2407,7 @@ CPU commands:
       savebin (  ) : save memory to a file
       symbols (  ) : load CPU symbols & their addresses
          step ( s) : single-step CPU
-         next ( n) : step CPU, proceeding through subroutine calls
+         next ( n) : step CPU through subroutine calls / to given instruction type
          cont ( c) : continue emulation / CPU single-stepping
 
 DSP commands:
@@ -2407,7 +2419,7 @@ DSP commands:
    dspprofile (dp) : profile DSP code
        dspreg (dr) : read/write DSP registers
       dspstep (ds) : single-step DSP
-      dspnext (dn) : step DSP, proceeding through subroutine calls
+      dspnext (dn) : step DSP through subroutine calls / to given instruction type
       dspcont (dc) : continue emulation / DSP single-stepping
 </pre>
 
@@ -2937,7 +2949,7 @@ indicates Blitter to be active (busy), things don't work as expected!
 <p>
 In addition to loaded symbols, the debugger supports also setting
 conditional breakpoints on values of some "virtual" variables listed
-by "b help". For example:
+by "variables" (v) command. For example:
 </p>
 <ul>
 <li>If you want the emulation to stop on the first instruction of
@@ -3081,19 +3093,29 @@ triggers) if you omit the instruction count.
 <p>
 If you want to continue just to the next instruction, use "s" (step)
 command to continue for exactly one instruction, or "n" (next), if you
-want to skip subroutine and exception calls.  "ds" and "dn" commands
-do the same for DSP.
+want to skip subroutine + exception calls and DBCC branching backwards
+(i.e. loops).  "ds" and "dn" commands do the same for DSP (except that
+"dn" doesn't skip loops).
 </p>
 
 <p>
 You can also continue with the "n" until instruction of certain
 type is encountered, by giving it the instruction type:
 <ul>
-<li>"branch" matches branch instructions: BCC, BRA, DBCC, JMP</li>
-<li>"subcall" matches subroutine calls: BSR, JSR</li>
-<li>"subreturn" matches return from subroutine: RTD, RTR, RTS</li>
-<li>"exception" matches exceptions: BKPT, ILLG, STOP, TRAP, TRAPV</li>
-<li>"exreturn" matches return from exception: RTE</li>
+<li>"branch" matches branch instructions:<br>
+    CPU: BCC, BRA, DBCC, JMP<br>
+    DSP: DO/ENDO JCC, JCLR, JMP, JSET, REP</li>
+<li>"subcall" matches subroutine calls:<br>
+    CPU: BSR, JSR<br>
+    DSP: JSCC, JSCLR, JSSET, JSR</li>
+<li>"subreturn" matches return from subroutine:<br>
+    CPU: RTD, RTR, RTS<br>
+    DSP: RTS</li>
+<li>"exception" matches exceptions:<br>
+    CPU: BKPT, ILLG, STOP, TRAP, TRAPV</li>
+<li>"exreturn" matches return from exception:<br>
+    CPU: RTE<br>
+    DSP: RTI</li>
 <li>"return" matches both subroutine and exception returns</li>
 </ul>
 

@@ -13,6 +13,11 @@ Emulation:
 Emulator:
 - Support memory check skipping also on TOS v3 & v4
 - Fix TOS v2 & v3 Atari logo display in extended VDI resolutions
+- Debugger:
+  - Add "CycleCounter" variable
+  - Add "-f" option to 'cd' so that setup scripts can specify
+    what directory is used after currently invoked script(s)
+    have finished
 
 Fixed games:
 - Ishar 3
