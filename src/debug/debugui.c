@@ -57,6 +57,9 @@ static char lastResult[10];
 /* parse debugger commands from here on init */
 static const char *parseFileName;
 
+/* to which directory to change after (potentially recursed) scripts parsing finishes */
+static char *finalDir;
+
 
 /**
  * Save/Restore snapshot of debugging session variables
@@ -397,6 +400,14 @@ static int DebugUI_SetTracing(int argc, char *argv[])
  */
 static int DebugUI_ChangeDir(int argc, char *argv[])
 {
+	if (argc == 3 && strcmp("-f", argv[2]) == 0)
+	{
+		if (finalDir)
+			free(finalDir);
+		finalDir = strdup(argv[1]);
+		fprintf(stderr, "Will switch to '%s' dir after all scripts have finished.\n", argv[1]);
+		return DEBUGGER_CMDDONE;
+	}
 	if (argc == 2)
 	{
 		if (chdir(argv[1]) == 0)
@@ -851,8 +862,9 @@ static const dbgcommand_t uicommand[] =
 	{ DebugUI_ChangeDir, NULL,
 	  "cd", "",
 	  "change directory",
-	  "<directory>\n"
-	  "\tChange Hatari work directory.",
+	  "<directory> [-f]\n"
+	  "\tChange Hatari work directory. With '-f', directory is\n"
+	  "\tchanged only after all script files have been parsed.",
 	  false },
 	{ DebugUI_Evaluate, Vars_MatchCpuVariable,
 	  "evaluate", "e",
@@ -913,7 +925,9 @@ static const dbgcommand_t uicommand[] =
 	  "get debugger commands from file",
 	  "[filename]\n"
 	  "\tRead debugger commands from given file and do them.\n"
-	  "\tCurrent directory is script directory during this."
+	  "\tCurrent directory is script directory during this.\n"
+	  "\tTo specify directory to be used also for breakpoint\n"
+	  "\tscripts execution, use '-f' option for 'cd' command.",
 	  false },
 	{ DebugUI_Rename, NULL,
 	  "rename", "",
@@ -1198,6 +1212,16 @@ bool DebugUI_ParseFile(const char *path, bool reinit)
 
 	if (!recurse)
 	{
+		/* current script (or something called by it) specified final dir */
+		if (finalDir)
+		{
+			if (chdir(finalDir) != 0)
+				perror("ERROR");
+			else
+				fprintf(stderr, "Delayed change to '%s' dir.\n", finalDir);
+			free(finalDir);
+			finalDir = NULL;
+		}
 		/* only top-level (non-recursed) call has valid re-init info,
 		 * as that's the only one that can get directly called from
 		 * breakpoints
