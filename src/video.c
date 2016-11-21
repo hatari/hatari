@@ -3909,7 +3909,7 @@ static void Video_ClearOnVBL(void)
 
 	Video_ResetShifterTimings();
 
-        if (Config_IsMachineFalcon())
+        if (Config_IsMachineFalcon() && !bUseVDIRes)
 		VIDEL_RestartVideoCounter();
 	else
 		Video_RestartVideoCounter();
