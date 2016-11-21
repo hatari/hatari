@@ -1303,7 +1303,7 @@ static bool Screen_DrawFrame(bool bForceFlip)
  */
 bool Screen_Draw(void)
 {
-	if (bQuitProgram || !VideoBase)
+	if (bQuitProgram)
 	{
 		return false;
 	}

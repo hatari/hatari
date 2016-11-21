@@ -24,7 +24,8 @@ Emulation improvements
 	  want to access A: & B: when autostarted
 	- JAM packer packed version of Tony Benett' "Virtual City" demo bombs
 	- Sentry 2.2 packed version of Shadows' "Firestarter" demo bombs
-	Note: last 3 programs can be autostarted fine with EmuTOS.
+	- Hextracker v0.849 crashes with TOS v4
+	Note: at least last 3 programs can be autostarted fine with EmuTOS.
   Document that in manual (page) for the Hatari "autorun" feature.
 
 - Related to above, investigate why TOS v1.04 crashes shortly after

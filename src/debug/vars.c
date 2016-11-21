@@ -29,6 +29,12 @@ const char Vars_fileid[] = "Hatari vars.c : " __DATE__ " " __TIME__;
 #include "vars.h"
 
 
+static Uint32 GetCycleCounter(void)
+{
+	/* 64-bit, so only lower 32-bits are returned */
+	return CyclesGlobalClockCounter;
+}
+
 /* Accessor functions for calculated Hatari values */
 static Uint32 GetLineCycles(void)
 {
@@ -146,6 +152,7 @@ static const var_addr_t hatari_vars[] = {
 	{ "BSS", (Uint32*)DebugInfo_GetBSS, VALUE_TYPE_FUNCTION32, 0, "invalid before Desktop is up" },
 	{ "CpuInstr", (Uint32*)DebugCpu_InstrCount, VALUE_TYPE_FUNCTION32, 0, "CPU instructions count" },
 	{ "CpuOpcodeType", (Uint32*)DebugCpu_OpcodeType, VALUE_TYPE_FUNCTION32, 0, "internal CPU instruction type" },
+	{ "CycleCounter", (Uint32*)GetCycleCounter, VALUE_TYPE_FUNCTION32, 0, "global cycles counter (lower 32-bits)" },
 	{ "DATA", (Uint32*)DebugInfo_GetDATA, VALUE_TYPE_FUNCTION32, 0, "invalid before Desktop is up" },
 #if ENABLE_DSP_EMU
 	{ "DspInstr", (Uint32*)DebugDsp_InstrCount, VALUE_TYPE_FUNCTION32, 0, "DSP instructions count" },

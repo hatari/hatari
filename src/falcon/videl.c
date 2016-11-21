@@ -82,12 +82,11 @@ const char VIDEL_fileid[] = "Hatari videl.c : " __DATE__ " " __TIME__;
 
 
 struct videl_s {
-	bool   bUseSTShifter;			/* whether to use ST or Falcon palette */
 	Uint8  reg_ffff8006_save;		/* save reg_ffff8006 as it's a read only register */
 	Uint8  monitor_type;			/* 00 Monochrome (SM124) / 01 Color (SC1224) / 10 VGA Color / 11 Television ($FFFF8006) */
 
-	Uint32 videoRaster;			/* Video raster offset, restarted on each VBL */
 	Uint16 vertFreqCounter;			/* Counter for VFC register $ff82a0, restarted on each VBL */
+	Uint32 videoRaster;			/* Video raster offset, restarted on each VBL */
 
 	Sint16 leftBorderSize;			/* Size of the left border */
 	Sint16 rightBorderSize;			/* Size of the right border */
@@ -101,6 +100,7 @@ struct videl_s {
 	Uint16 save_scrBpp;			/* save screen Bpp to detect a change of bitplan mode */
 
 	bool hostColorsSync;			/* Sync palette with host's */
+	bool bUseSTShifter;			/* whether to use ST or Falcon palette */
 };
 
 static struct videl_s videl;
