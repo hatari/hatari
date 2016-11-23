@@ -897,7 +897,7 @@ Color games:
 - Pole Position STE rewrite
   http://atari-forum.com/viewtopic.php?f=3&t=26068
 - Power Up
-- R0x (line-A bitblit, screen sync issue)
+- R0x (line-A bitblit)
 - Roger (line-A bitblit)
 - R-Type Deluxe
   http://atari-forum.com/viewtopic.php?f=28&t=29047
