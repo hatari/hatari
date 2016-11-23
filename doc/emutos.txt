@@ -527,6 +527,7 @@ Free/shareware/PD games:
 - Superfly (floppy only)
 - Sweeper
 - Tanx*
+- Tiles Osmosis
 - Time Bandit
 - Teserae*
 - The lost world (line-A bitblits)
@@ -879,6 +880,7 @@ Color games:
 - Boom (screen flashes during scrolling messages)
 - Breakdance (scene game, STOS, needs EmuTOS >v0.9.3)
 - ChuChu Rocket* (full version)
+- Crash Time Plumber
 - Dynabusters+*
 - Frantick
 - Giana Sisters STE rewrite: (needs EmuTOS >v0.9.3)
