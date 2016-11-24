@@ -137,6 +137,7 @@ static const char pszNoPmmu[] = "disable PMMU access";
 static const char pszFix060[] = "replace code for 68060";
 static const char pszFalconExtraRAM[] = "enable extra TT RAM on Falcon";
 static const char pszAtariLogo[] = "draw Atari Logo";
+static const char pszSTbook[] = "disable MCU access on ST-Book";
 
 //static Uint8 pRtsOpcode[] = { 0x4E, 0x75 };  /* 0x4E75 = RTS */
 static const Uint8 pNopOpcodes[] = { 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71,
@@ -277,6 +278,12 @@ static const TOS_PATCH TosPatches[] =
   { 0x206, -1, pszRomCheck, TP_ALWAYS, 0xE007FA, 0x2E3C0001, 4, pRomCheckOpcode206 },
   { 0x206, -1, pszDmaBoot, TP_HDIMAGE_OFF, 0xE00898, 0x610000E0, 4, pNopOpcodes }, /* BSR.W $E0097A */
   { 0x206, -1, pszAtariLogo, TP_VDIRES, 0xE0076C, 0x1038044c, sizeof( pAtariLogo ), pAtariLogo },
+
+  { 0x208, -1, pszDmaBoot, TP_HDIMAGE_OFF, 0xE00806, 0x610000E8, 4, pNopOpcodes }, /* BSR.W $E008F0 */
+  { 0x208, -1, pszAtariLogo, TP_VDIRES, 0xE006B4, 0x1038044c, sizeof( pAtariLogo ), pAtariLogo },
+  { 0x208, -1, pszSTbook, TP_ALWAYS, 0xE00066, 0x303900d0, 18, pNopOpcodes },
+  { 0x208, -1, pszSTbook, TP_ALWAYS, 0xE000D6, 0x4a7900d0, 6, pNopOpcodes },
+  { 0x208, -1, pszSTbook, TP_ALWAYS, 0xE009FE, 0x303900d0, 14, pNopOpcodes },
 
   { 0x306, -1, pszRomCheck, TP_ALWAYS, 0xE007D4, 0x2E3C0001, 4, pRomCheckOpcode306 },
   { 0x306, -1, pszNoPmmu, TP_ANTI_PMMU, 0xE00068, 0xF0394000, 24, pNopOpcodes }, /* pmove : TC=0 TT0=0 TT1=0 -> disable MMU */
@@ -782,6 +789,8 @@ int TOS_LoadImage(void)
 	/* Now, look at start of image to find Version number and address */
 	TosVersion = SDL_SwapBE16(*(Uint16 *)&pTosFile[2]);
 	TosAddress = SDL_SwapBE32(*(Uint32 *)&pTosFile[8]);
+	if (TosVersion == 0x206 && SDL_SwapBE16(*(Uint16 *)&pTosFile[30]) == 0x186A)
+		TosVersion = 0x208;
 
 	/* Check for reasonable TOS version: */
 	if (TosVersion == 0x000 && TosSize == 16384)
