@@ -173,6 +173,8 @@ is missing here, please remind me!):
 - Christian Zietz: recovered many original ASIC schemas for Atari's chips
   and helped in reverse-engineering the behaviour of those chips.
 
+- Thorsten Otto: Some improvements to the code that patches the TOS ROMs.
+
 
  Code from other projects
  ------------------------
