@@ -720,7 +720,7 @@ off_t HDC_CheckAndGetSize(const char *filename)
 	off_t filesize;
 	char shortname[48];
 
-	File_ShrinkName(shortname, filename, sizeof(shortname));
+	File_ShrinkName(shortname, filename, sizeof(shortname) - 1);
 
 	filesize = File_Length(filename);
 	if (filesize < 0)

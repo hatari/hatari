@@ -533,6 +533,9 @@ char * File_MakePath(const char *pDir, const char *pName, const char *pExt)
 /**
  * Shrink a file name to a certain length and insert some dots if we cut
  * something away (useful for showing file names in a dialog).
+ * Note: maxlen is the maximum length of the destination string, _not_
+ * including the final '\0' byte! So the destination buffer has to be
+ * at least one byte bigger than maxlen.
  */
 void File_ShrinkName(char *pDestFileName, const char *pSrcFileName, int maxlen)
 {
