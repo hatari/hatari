@@ -11,20 +11,26 @@ Emulation:
 - Add (dumb) Videl address counter emulation
 
 Emulator:
+- Initial patching for ST-Book ROM
 - Support memory check skipping also on TOS v3 & v4
-- Fix TOS v2 & v3 Atari logo display in extended VDI resolutions
+- Extended VDI mode font selected based on VDI height
+- Fix: TOS v2 & v3 Atari logo display in extended VDI resolutions
+- Fix: Limit Videl widths for GLES2 SDL2 backends
+- Fix: off-by-one error in ACSI image file name handling
+- Fix: Normal users cannot use tmpfile() directly under Windows
+- Fix: DESTDIR support for RPM packaging
 - Debugger:
   - Add "CycleCounter" variable
   - Add "-f" option to 'cd' so that setup scripts can specify
     what directory is used after currently invoked script(s)
     have finished
 
-Fixed games:
+Fixed Falcon games:
 - Ishar 3
 - Lasers and Hommes
 - Moonspeeder (preview 2)
 
-Fixed demos:
+Fixed Falcon demos:
 - Bound 3
 - Mahabharata (with SDL2)
 
