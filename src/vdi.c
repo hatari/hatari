@@ -837,22 +837,63 @@ bool VDI_AES_Entry(void)
  */
 void VDI_LineA(Uint32 linea, Uint32 fontbase)
 {
+	Uint32 fontadr, font1, font2;
+
 	LineABase = linea;
 	FontBase = fontbase;
 
 	if (bUseVDIRes)
 	{
-		int cel_ht = STMemory_ReadWord(linea-46);             /* v_cel_ht */
+		int cel_ht, cel_wd;
+
+		fontadr = STMemory_ReadLong(linea-0x1cc); /* def_font */
+		if (fontadr == 0)
+		{
+			/* get 8x8 font header */
+			font1 = STMemory_ReadLong(fontbase + 4);
+			/* get 8x16 font header */
+			font2 = STMemory_ReadLong(fontbase + 8);
+			/* remove DEFAULT flag from 8x8 font */
+			STMemory_WriteWord(font1 + 66, STMemory_ReadWord(font1 + 66) & ~0x01);
+			/* remove DEFAULT flag from 8x16 font */
+			STMemory_WriteWord(font2 + 66, STMemory_ReadWord(font2 + 66) & ~0x01);
+			/* choose new font */
+			if (VDIHeight >= 400)
+			{
+				fontadr = font2;
+			} else
+			{
+				fontadr = font1;
+			}
+			/* make this new default font */
+			STMemory_WriteLong(linea-0x1cc, fontadr);
+			/* set DEFAULT flag for choosen font */
+			STMemory_WriteWord(fontadr + 66, STMemory_ReadWord(fontadr + 66) | 0x01);
+		}
+		cel_wd = STMemory_ReadWord(fontadr + 52);
+		cel_ht = STMemory_ReadWord(fontadr + 82);
+		if (cel_wd <= 0)
+		{
+			Log_Printf(LOG_WARN, "VDI Line-A init failed due to bad cell width!\n");
+			return;
+		}
 		if (cel_ht <= 0)
 		{
 			Log_Printf(LOG_WARN, "VDI Line-A init failed due to bad cell height!\n");
 			return;
 		}
-		STMemory_WriteWord(linea-44, (VDIWidth/8)-1);         /* v_cel_mx (cols-1) */
+
+		STMemory_WriteWord(linea-46, cel_ht);                 /* v_cel_ht */
+		STMemory_WriteWord(linea-44, (VDIWidth/cel_wd)-1);    /* v_cel_mx (cols-1) */
 		STMemory_WriteWord(linea-42, (VDIHeight/cel_ht)-1);   /* v_cel_my (rows-1) */
 		STMemory_WriteWord(linea-40, cel_ht*((VDIWidth*VDIPlanes)/8));  /* v_cel_wr */
 
+		STMemory_WriteLong(linea-22, STMemory_ReadLong(fontadr + 76)); /* v_fnt_ad */
+		STMemory_WriteWord(linea-18, STMemory_ReadWord(fontadr + 38)); /* v_fnt_nd */
+		STMemory_WriteWord(linea-16, STMemory_ReadWord(fontadr + 36)); /* v_fnt_st */
+		STMemory_WriteWord(linea-14, STMemory_ReadWord(fontadr + 80)); /* v_fnt_wd */
 		STMemory_WriteWord(linea-12, VDIWidth);               /* v_rez_hz */
+		STMemory_WriteLong(linea-10, STMemory_ReadLong(fontadr + 72)); /* v_off_ad */
 		STMemory_WriteWord(linea-4, VDIHeight);               /* v_rez_vt */
 		STMemory_WriteWord(linea-2, (VDIWidth*VDIPlanes)/8);  /* bytes_lin */
 		STMemory_WriteWord(linea+0, VDIPlanes);               /* planes */
