@@ -21,7 +21,7 @@ if(ENABLE_OSX_BUNDLE)
 	    gui-osx/CreateFloppyController.m gui-osx/SDLMain.m)
 	set_source_files_properties(${GUIOSX_SOURCES} PROPERTIES LANGUAGE C)
 	set(GUIOSX_RSRCS
-	    gui-osx/Hatari.icns gui-osx/en.lproj gui-osx/fr.lproj)
+	    gui-osx/Hatari.icns gui-osx/stdisk.png gui-osx/en.lproj gui-osx/fr.lproj)
 	set(GUIOSX_DOCS
 	    ${CMAKE_SOURCE_DIR}/doc/manual.html ${CMAKE_SOURCE_DIR}/doc/images
 	    ${CMAKE_SOURCE_DIR}/doc/compatibility.html)
@@ -91,18 +91,18 @@ if(ENABLE_OSX_BUNDLE)
 			COMMAND mkdir -p ${BUNDLE_CONTENTS}/MacOS
 			COMMAND cp ${CMAKE_CURRENT_SOURCE_DIR}/gui-osx/${MACOSX_BUNDLE_ICON_FILE}
 				   ${BUNDLE_CONTENTS}/Resources/${MACOSX_BUNDLE_ICON_FILE}
-			# Copy Localized .nib to Bundle
+			# Copy Localized .nib and help to Bundle
 			COMMAND cp -R ${CMAKE_CURRENT_SOURCE_DIR}/gui-osx/*.lproj ${BUNDLE_CONTENTS}/Resources/
-			COMMAND mkdir -p ${BUNDLE_CONTENTS}/Resources/en.lproj/HatariHelp
-			COMMAND cp -R ${GUIOSX_DOCS} ${BUNDLE_CONTENTS}/Resources/en.lproj/HatariHelp/
-			COMMAND mkdir -p ${BUNDLE_CONTENTS}/Resources/fr.lproj/HatariHelp
-			COMMAND cp -R ${GUIOSX_DOCS} ${BUNDLE_CONTENTS}/Resources/fr.lproj/HatariHelp/
+			COMMAND mkdir -p ${BUNDLE_CONTENTS}/Resources/HatariHelp
+			COMMAND cp -R ${GUIOSX_DOCS} ${BUNDLE_CONTENTS}/Resources/HatariHelp/
+			#COMMAND mkdir -p ${BUNDLE_CONTENTS}/Resources/fr.lproj/HatariHelp
+			#COMMAND cp -R ${GUIOSX_DOCS} ${BUNDLE_CONTENTS}/Resources/fr.lproj/HatariHelp/
 	)
 	add_dependencies(hatari osx_bundle_dirs)
 	set_source_files_properties(${GUIOSX_RSRCS} PROPERTIES
 				    MACOSX_PACKAGE_LOCATION Resources)
 	set_source_files_properties(${GUIOSX_DOCS} PROPERTIES
-				    MACOSX_PACKAGE_LOCATION Resources/en.lproj/HatariHelp)
+				    MACOSX_PACKAGE_LOCATION Resources/HatariHelp)
 
 	#find ibtool
 	find_program(IBTOOL ibtool HINTS "/usr/bin" "${OSX_DEVELOPER_ROOT}/usr/bin")
@@ -116,6 +116,7 @@ if(ENABLE_OSX_BUNDLE)
 		add_custom_command (TARGET hatari POST_BUILD
 			COMMAND ${IBTOOL} --errors --warnings --notices --output-format human-readable-text
 				--compile ${BUNDLE_CONTENTS}/Resources/${xib}.nib ${CMAKE_CURRENT_SOURCE_DIR}/gui-osx/${xib}.xib
+			COMMAND rm ${BUNDLE_CONTENTS}/Resources/${xib}.xib
 			COMMENT "Compiling ${CMAKE_CURRENT_SOURCE_DIR}/gui-osx/${xib}.xib")
 	endforeach()
 
