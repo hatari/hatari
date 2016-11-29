@@ -2492,16 +2492,16 @@ indicated separately.</p>
     </tr>
     <tr>
       <td>Ishar 1, 2</td>
-      <td class="major">2.0</td>
+      <td>2.0+</td>
+      <td>yes</td>
       <td>-</td>
-      <td>?</td>
-      <td>Freezes at start</td>
+      <td>Work only from a floppy</td>
     </tr>
     <tr>
       <td>Ishar 3</td>
       <td>2.0+</td>
+      <td>yes</td>
       <td>-</td>
-      <td>?</td>
       <td></td>
     </tr>
     <tr>
@@ -3079,12 +3079,14 @@ if demo is stated to require that.</p>
     <tr>
       <td>Aura:
       <a href="http://pouet.net/prod.php?which=15730">E.X.Illusion</a></td>
-      <td class="major">2.0</td>
+      <td class="minor">2.0</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Needs WinUAE CPU core + MMU.  Freezes to Illegal instruction
-          4afc, a bit later if (buggy) DSP player is disable at
-	  demo startup by keeping CTRL down. Worked in Hatari v1.6</td>
+      <td>Needs WinUAE CPU core.  CPU prefetch + cycle exact mode need
+          to be disabled, otherwise demo freezes to DSP stack overflow
+	  or to illegal instruction 4afc (if DSP player is disabled at
+	  demo startup by keeping CTRL down). Worked without these in
+	  Hatari v1.6</td>
     </tr>
     <tr>
       <td>Avena:
@@ -3273,10 +3275,12 @@ if demo is stated to require that.</p>
       <a href="http://pouet.net/prod.php?which=53186">Codein</a>,
       <a href="http://pouet.net/prod.php?which=25677">Derealization</a>
       </td>
-      <td class="major">2.0</td>
+      <td class="minor">2.0</td>
       <td>yes</td>
       <td>-</td>
-      <td>060 + FPU + 32MB TT-RAM.  Doesn't start, dies to FPU exception</td>
+      <td>WinUAE CPU only. 030 + cycle exact disabled + internal FPU and
+          4MB + 32MB TT-RAM (less for Codein). Supposed to work with 060,
+	  but that dies to FPU exception at start. Music with DSP emu</td>
     </tr>
     <tr>
       <td>DHS:
@@ -3355,6 +3359,16 @@ if demo is stated to require that.</p>
       <td>-</td>
       <td>emu</td>
       <td>At least 4MB RAM, FPU and VGA monitor</td>
+    </tr>
+    <tr>
+      <td>Dune
+      <a href="http://www.pouet.net/prod.php?which=68566">Electric Night</a></td>
+      <td>2.0</td>
+      <td>yes</td>
+      <td>emu</td>
+      <td>With WinUAE CPU core max frameskip isn't enough on most
+          screens on 3GHz i3-540, although with oldAUE CPU core
+	  it works without frameskip (except for credits at end)</td>
     </tr>
     <tr>
       <td>Dune / Sector One

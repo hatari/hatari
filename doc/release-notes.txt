@@ -26,7 +26,7 @@ Emulator:
     have finished
 
 Fixed Falcon games:
-- Ishar 3
+- Ishar 1, 2 and 3
 - Lasers and Hommes
 - Moonspeeder (preview 2)
 
