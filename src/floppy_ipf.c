@@ -334,11 +334,13 @@ bool	IPF_Insert ( int Drive , Uint8 *pImageBuffer , long ImageSize )
 	if ( ImageType == citError )
 	{
 		fprintf ( stderr , "IPF : error CAPSGetImageTypeMemory\n" );
+		CAPSRemImage ( ImageId ) ;
 		return false;
 	}
 	else if ( ImageType == citUnknown )
 	{
 		fprintf ( stderr , "IPF : unknown image type\n" );
+		CAPSRemImage ( ImageId ) ;
 		return false;
 	}
 
