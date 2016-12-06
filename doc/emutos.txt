@@ -693,10 +693,11 @@ Commercial color game demos (run from HD):
 - Brain Blaster / The Teller demo (input doesn't work)
 - Cauldron demo     (input doesn't work, fire doesn't start game)
 - Gods demo
-  - with 512k, bus error on $fd6b22 read after first monster appears
-  - with 192k, address error at $264cc01f later in the game
+  - with 512k & TOS v2, read bus error when first monster appears
+  - with 192k, address error later in the game
   - above is when running from HD (-> monsters look like garbage,
-    also with real TOS), with floppy, most EmuTOS Fopen()s fail
+    also with real TOS)
+  - with floppy, both EmuTOS & TOS v2 fail during loading
 - Striker demo      (input doesn't work)
 
 Free/shareware color games:
@@ -710,18 +711,13 @@ Mono games:
 - Crystal Caves*    (line-A bitblit and draw/clear sprite, input doesn't work)
 - Macrowar          (line-A bitblit, joystick doesn't work)
 - Midimaze*         (joystick doesn't work)
-- Ramses*           (causes panic, will never work [1])
+- Ramses*           (panic, see EmuTOS incompatible.txt)
 
-GEM games:
-- Anduril   (input doesn't and won't work [2])
+GEM games (input issues):
+- Anduril   (see EmuTOS incompatible.txt)
 - Bombs     (minesweeper, mouse clicks almost never work)
 - Checkers  (dragging doesn't work)
-- Invaders* (input doesn't and won't work [2])
-
-[1] tries to do crazy things with _v_hide_c:
-	https://sourceforge.net/p/emutos/mailman/message/30605378/
-[2] uses illegal TOS 1.x specific method:
-	http://sourceforge.net/p/emutos/mailman/message/34785883/
+- Invaders* (see EmuTOS incompatible.txt)
 
 
 Atari ST applications (including commercial)
@@ -740,8 +736,7 @@ Not working:
 - Spectrum512 (address error on XBios Kbdvbase() return value handling)
 
 Not working video / HD access programs:
-- STVidPlay (expects certain 2-byte HD driver sequence at hdv_rw)
-  https://sourceforge.net/p/emutos/mailman/message/33595214/
+- STVidPlay (see EmuTOS incompatible.txt)
 
 Working MIDI programs:
 - Dr T's KCS v4
@@ -756,8 +751,7 @@ Working MIDI programs:
 - Sequencer One
 
 Not working:
-- Cubase lite (guesses etv_timer vector wrong -> panic)
-  https://sourceforge.net/p/emutos/mailman/message/29281984/
+- Cubase lite (see EmuTOS incompatible.txt)
 
 MIDI programs are available from Tim's MIDI world:
 	http://tamw.atari-users.net/
@@ -910,6 +904,7 @@ Color games:
 - Substation* (demo)
 - The chronicles of Omega
 - Tomtar
+- Trapped II (DMA audio, line-A functions 1, 2, 3, 5, 7, 9)
 - Ultimate Arena v1.3 light (slow with EmuTOS)
 - Utopos* (demo)
 - Wolfenstein3D v0.8a* (a bit unstable)
@@ -951,16 +946,15 @@ Partially working STE demos (old info, maybe 0.8.x?):
 
 Non-working games and music programs:
 - Art for Kids demo (Bus error at $6, after vro_cpyfm)
+  - with 512k image, bus errors already at startup
 - Bombaman (joystick input doesn't work in game itself):
   http://homepage.ntlworld.com/kevcallahan/bombaman/
-- Cameleon (by Aggression, line-A bitblit)
-  - Fails like on ST with TOS 1.x/TOS v2
-  - With EmuTOS doesn't recognize it's on STE?
-- Hero (STOS, input doesn't work)
+- Cameleon (see EmuTOS incompatible.txt)
+- Hero (STOS, see EmuTOS incompatible.txt)
 - Protracker v2 STE, Equinox version
-  - NULL pointer crash on disk ops with EmuTOS <=v0.9.3
-  - Bus error on startup with EmuTOS >=v0.9.4
-- Zaptastic (freezes at start after few Line-A bitblits)
+  - http://www.pouet.net/prod.php?which=13381
+  - NULL pointer crash on disk ops
+- Zaptastic (input doesn't work at startup screen)
 
 
 Atari TT programs
@@ -996,7 +990,7 @@ Working games:
 Broken programs:
 - PixArt4
   - Drawing needs 2016 EmuTOS version (evnt_multi() fixes)
-  - Crashes on startup if TT-RAM is present (unlike with TOS v3)
+  - Bus error on startup if TT-RAM is present (unlike with TOS v3)
   - http://www.1632systems.co.uk/www/html/Product/pixart.htm
 - OpenTTD:
   - Needs hundreds of MBs of TT-RAM
@@ -1192,6 +1186,11 @@ Games working in EmuTOS >v0.9.5:
 - The Ultimate Minesweeper (16-color GEM game)
 (Earlier EmuTOS versions have problems with mouse clicks)
 
+Games working in EmuTOS >0.9.6:
+- Chorensha (old, non-DSP version)
+- Block Blizzard preview (uses line-A)
+- Masters of Chaos (multiplayer "dungeon master")
+
 Games working with extra hacks:
 - Bugger, Bunion, SkyFall, Sworm games by Resorvoir Gods:
   - use an undocumented TOS4 vector for keyboard input instead of accessing
@@ -1203,23 +1202,19 @@ Games working with extra hacks:
 
 Games that might be possible to get working (they show something
 and/or don't use DSP XBios calls or DSP sound matrix):
-- Block Blizzard preview: stops when loading
-- Bomb Squad: crashes to bus error wget at 00fc0002
-- Chorensha: works except for joystick directions
+- Bomb Squad: graphics look wrong (HiColor?)
 - Confusion (demos 1 & 2): title screen doesn't come up
 - Conquest of Elysium: screen with garbage
 - Gold island (demo, vga only), parts of blits are missing
-- Des Lazers & des Hommes: game area graphics are missing
-  (they're rendered with DSP)
+- Des Lazers & des Hommes, game area graphics are missing (they're rendered with DSP)
 - It's Great (start from st-med rez): mouse doesn't work
-- Masters of Chaos: starts, but then doesn't react to input
-- Men at War: freezes at startup
+- Men at War: freezes at startup (uses sound matrix)
 - Multibriques: colors are wrong
 - Neurobot: just exits
-- Painium: Intro works, but game itself exits to corrupted desktop
-- Tetrhex: panics after trying to set 256 color mode
-- Tron 2: M68000 Bus Error reading at address $4.
-- TsccTron: M68000 Bus Error reading at address $0.
+- Painium: exception 15 panic when pressing fire in game itself
+- Tetrhex: bus error panic after trying to set 256 color mode
+- Tron 2: illegal instruction panic on startup
+- TsccTron: bus error reading at address $0 at startup
 
 
 Falcon applications
