@@ -888,12 +888,12 @@ Color games:
 - Pacman on E
 - Pacmania* STE/overscan rewrite: (needs EmuTOS >v0.9.3)
   http://atari-forum.com/viewtopic.php?f=3&t=24635
-- Pole Position STE rewrite
+- Pole Position (arcade conversion)
   http://atari-forum.com/viewtopic.php?f=3&t=26068
 - Power Up
 - R0x (line-A bitblit)
 - Roger (line-A bitblit)
-- R-Type Deluxe
+- R-Type Deluxe (arcade conversion)
   http://atari-forum.com/viewtopic.php?f=28&t=29047
 - Skulls (shareware "minesweeper")
 - Spy 4k
