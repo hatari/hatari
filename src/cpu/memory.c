@@ -717,26 +717,30 @@ static void REGPARAM3 SysMem_bput(uaecptr addr, uae_u32 b)
 /*
  * **** Void memory ****
  * Between the ST-RAM end and the 4 MB barrier, there is a void memory space:
- * Reading always returns the same value and writing does nothing at all.
- * [NP] : this is not correct, reading does not always return 0, when there's
- * no memory, it will return the latest data that was read on the bus.
+ * Reading depends on current activity on the bus and writing does nothing at all.
+ *
+ * [NP] : When there's no memory, it will return the latest data that was read on the bus.
  * In many cases, this will return the word that was just read in the 68000's
  * prefetch register to decode the next opcode (tested on a real STF)
+ *
+ * STF : this seems to always return the last data word on the bus read by the CPU (tested on real STF)
+ * STE : result seems also related to what the shifter displays, it can be data read by the CPU or by
+ *       the shifter ; for now do the same as STF [TODO improve this ? No program are known to depend on it]
  */
 
 static uae_u32 REGPARAM3 VoidMem_lget(uaecptr addr)
 {
-    return 0;
+    return ( regs.db<<16 ) | regs.db;
 }
 
 static uae_u32 REGPARAM3 VoidMem_wget(uaecptr addr)
 {
-    return 0;
+    return regs.db;
 }
 
 static uae_u32 REGPARAM3 VoidMem_bget(uaecptr addr)
 {
-    return 0;
+    return regs.db;
 }
 
 static void REGPARAM3 VoidMem_lput(uaecptr addr, uae_u32 l)
