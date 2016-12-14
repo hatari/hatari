@@ -175,6 +175,8 @@ extern char *Log_MatchTrace(const char *text, int state);
 
 #define TRACE_SCSIDRV		 (1ll<<52)
     
+#define TRACE_MEM		 (1ll<<53)
+
 #define	TRACE_NONE		 (0)
 #define	TRACE_ALL		 (~0)
 

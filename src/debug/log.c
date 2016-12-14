@@ -146,6 +146,8 @@ static flagname_t TraceFlags[] = {
 
 	{ TRACE_SCSIDRV		 , "scsidrv" } ,
 
+	{ TRACE_MEM		 , "mem" } ,
+
 	{ TRACE_ALL		 , "all" }
 };
 #endif /* ENABLE_TRACING */
