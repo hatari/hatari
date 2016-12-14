@@ -153,7 +153,7 @@ bool Change_DoNeedReset(CNF_PARAMS *current, CNF_PARAMS *changed)
 #endif
 
 	/* Did change size of memory? */
-	if (current->Memory.nMemorySize != changed->Memory.nMemorySize)
+	if (current->Memory.STRamSize_KB != changed->Memory.STRamSize_KB)
 		return true;
 
 	/* MIDI related IRQs start/stop needs reset */

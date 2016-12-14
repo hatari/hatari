@@ -30,6 +30,7 @@ extern Uint32 STRamEnd;
 
 
 extern bool STMemory_SafeCopy(Uint32 addr, Uint8 *src, unsigned int len, const char *name);
+extern int	STMemory_RAM_Validate_Size_KB ( int TotalMem );
 extern void STMemory_MemorySnapShot_Capture(bool bSave);
 extern void STMemory_SetDefaultConfig(void);
 extern bool STMemory_CheckAreaType ( Uint32 addr , int size , int mem_type );

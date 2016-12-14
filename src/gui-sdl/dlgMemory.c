@@ -15,20 +15,22 @@ const char DlgMemory_fileid[] = "Hatari dlgMemory.c : " __DATE__ " " __TIME__;
 #include "options.h"
 
 
-#define DLGMEM_512KB    4
-#define DLGMEM_1MB      5
-#define DLGMEM_2MB      6
-#define DLGMEM_4MB      7
-#define DLGMEM_8MB      8
-#define DLGMEM_14MB     9
-#define DLGMEM_TTRAM_LESS    11
-#define DLGMEM_TTRAM_TEXT    12
-#define DLGMEM_TTRAM_MORE    13
-#define DLGMEM_FILENAME 17
-#define DLGMEM_SAVE     18
-#define DLGMEM_RESTORE  19
-#define DLGMEM_AUTOSAVE 20
-#define DLGMEM_EXIT     21
+#define DLGMEM_256KB	4
+#define DLGMEM_512KB	5
+#define DLGMEM_1MB	6
+#define DLGMEM_2MB	7
+#define DLGMEM_2_5MB	8
+#define DLGMEM_4MB	9
+#define DLGMEM_8MB	10
+#define DLGMEM_14MB	11
+#define DLGMEM_TTRAM_LESS	13
+#define DLGMEM_TTRAM_TEXT	14
+#define DLGMEM_TTRAM_MORE	15
+#define DLGMEM_FILENAME	20
+#define DLGMEM_SAVE	21
+#define DLGMEM_RESTORE	22
+#define DLGMEM_AUTOSAVE	23
+#define DLGMEM_EXIT	24
 
 
 /* String for TT RAM size */
@@ -44,31 +46,34 @@ static char dlgSnapShotName[36+1];
 /* The memory dialog: */
 static SGOBJ memorydlg[] =
 {
-	{ SGBOX, 0, 0, 0,0, 40,24, NULL },
+	{ SGBOX, 0, 0, 0,0, 40,25, NULL },
 
-	{ SGBOX, 0, 0, 1,1, 38,9, NULL },
+	{ SGBOX, 0, 0, 1,1, 38,10, NULL },
 	{ SGTEXT, 0, 0, 15,2, 12,1, "Memory setup" },
 	{ SGTEXT, 0, 0, 4,4, 12,1, "ST-RAM size:" },
-	{ SGRADIOBUT, 0, 0, 18,4, 9,1, "_512 KiB" },
-	{ SGRADIOBUT, 0, 0, 18,5, 7,1, "_1 MiB" },
-	{ SGRADIOBUT, 0, 0, 18,6, 7,1, "_2 MiB" },
-	{ SGRADIOBUT, 0, 0, 29,4, 7,1, "_4 MiB" },
-	{ SGRADIOBUT, 0, 0, 29,5, 7,1, "_8 MiB" },
-	{ SGRADIOBUT, 0, 0, 29,6, 8,1, "14 _MiB" },
-	{ SGTEXT,     0, 0,  4,8,12,1, "TT-RAM size:" },
-	{ SGBUTTON,   0, 0, 18,8, 1,1, "\x04", SG_SHORTCUT_LEFT },
-	{ SGTEXT,     0, 0, 20,8, 3,1, sTTRamSize },
-	{ SGBUTTON,   0, 0, 24,8, 1,1, "\x03", SG_SHORTCUT_RIGHT },
+	{ SGRADIOBUT, 0, 0, 18,4, 9,1, "256 KiB" },
+	{ SGRADIOBUT, 0, 0, 18,5, 9,1, "_512 KiB" },
+	{ SGRADIOBUT, 0, 0, 18,6, 7,1, "_1 MiB" },
+	{ SGRADIOBUT, 0, 0, 18,7, 7,1, "_2 MiB" },
+	{ SGRADIOBUT, 0, 0, 29,4, 7,1, "2.5 MiB" },
+	{ SGRADIOBUT, 0, 0, 29,5, 7,1, "_4 MiB" },
+	{ SGRADIOBUT, 0, 0, 29,6, 7,1, "_8 MiB" },
+	{ SGRADIOBUT, 0, 0, 29,7, 8,1, "14 _MiB" },
+	{ SGTEXT,     0, 0,  4,9,12,1, "TT-RAM size:" },
+	{ SGBUTTON,   0, 0, 18,9, 1,1, "\x04", SG_SHORTCUT_LEFT },
+	{ SGTEXT,     0, 0, 20,9, 3,1, sTTRamSize },
+	{ SGBUTTON,   0, 0, 24,9, 1,1, "\x03", SG_SHORTCUT_RIGHT },
+	{ SGTEXT,     0, 0, 26,9,12,1, "MiB" },
 
-	{ SGBOX,      0, 0,  1,11, 38,10, NULL },
-	{ SGTEXT,     0, 0, 12,12, 17,1, "Memory state save" },
-	{ SGTEXT,     0, 0,  2,14, 20,1, "Snap-shot file name:" },
-	{ SGTEXT,     0, 0,  2,15, 36,1, dlgSnapShotName },
-	{ SGBUTTON,   0, 0,  8,17, 10,1, "_Save" },
-	{ SGBUTTON,   0, 0, 22,17, 10,1, "_Restore" },
-	{ SGCHECKBOX, 0, 0,  2,19, 34,1, "_Load/save state at start-up/exit" },
+	{ SGBOX,      0, 0,  1,12, 38,10, NULL },
+	{ SGTEXT,     0, 0, 12,13, 17,1, "Memory state save" },
+	{ SGTEXT,     0, 0,  2,15, 20,1, "Snap-shot file name:" },
+	{ SGTEXT,     0, 0,  2,16, 36,1, dlgSnapShotName },
+	{ SGBUTTON,   0, 0,  8,18, 10,1, "_Save" },
+	{ SGBUTTON,   0, 0, 22,18, 10,1, "_Restore" },
+	{ SGCHECKBOX, 0, 0,  2,20, 34,1, "_Load/save state at start-up/exit" },
 
-	{ SGBUTTON, SG_DEFAULT, 0, 10,22, 20,1, "Back to main menu" },
+	{ SGBUTTON, SG_DEFAULT, 0, 10,23, 20,1, "Back to main menu" },
 	{ SGSTOP, 0, 0, 0,0, 0,0, NULL }
 };
 
@@ -85,26 +90,32 @@ bool Dialog_MemDlg(void)
 
 	SDLGui_CenterDlg(memorydlg);
 
-	for (i = DLGMEM_512KB; i <= DLGMEM_14MB; i++)
+	for (i = DLGMEM_256KB; i <= DLGMEM_14MB; i++)
 	{
 		memorydlg[i].state &= ~SG_SELECTED;
 	}
 
-	switch (ConfigureParams.Memory.nMemorySize)
+	switch (ConfigureParams.Memory.STRamSize_KB)
 	{
-	 case 0:
+	 case 256:
+		memorydlg[DLGMEM_256KB].state |= SG_SELECTED;
+		break;
+	 case 512:
 		memorydlg[DLGMEM_512KB].state |= SG_SELECTED;
 		break;
-	 case 1:
+	 case 1024:
 		memorydlg[DLGMEM_1MB].state |= SG_SELECTED;
 		break;
-	 case 2:
+	 case 2*1024:
 		memorydlg[DLGMEM_2MB].state |= SG_SELECTED;
 		break;
-	 case 4:
+	 case 2*1024+512:
+		memorydlg[DLGMEM_2_5MB].state |= SG_SELECTED;
+		break;
+	 case 4*1024:
 		memorydlg[DLGMEM_4MB].state |= SG_SELECTED;
 		break;
-	 case 8:
+	 case 8*1024:
 		memorydlg[DLGMEM_8MB].state |= SG_SELECTED;
 		break;
 	 default:
@@ -165,18 +176,22 @@ bool Dialog_MemDlg(void)
 
 	/* Read new values from dialog: */
 
-	if (memorydlg[DLGMEM_512KB].state & SG_SELECTED)
-		ConfigureParams.Memory.nMemorySize = 0;
+	if (memorydlg[DLGMEM_256KB].state & SG_SELECTED)
+		ConfigureParams.Memory.STRamSize_KB = 256;
+	else if (memorydlg[DLGMEM_512KB].state & SG_SELECTED)
+		ConfigureParams.Memory.STRamSize_KB = 512;
 	else if (memorydlg[DLGMEM_1MB].state & SG_SELECTED)
-		ConfigureParams.Memory.nMemorySize = 1;
+		ConfigureParams.Memory.STRamSize_KB = 1024;
 	else if (memorydlg[DLGMEM_2MB].state & SG_SELECTED)
-		ConfigureParams.Memory.nMemorySize = 2;
+		ConfigureParams.Memory.STRamSize_KB = 2*1024;
+	else if (memorydlg[DLGMEM_2_5MB].state & SG_SELECTED)
+		ConfigureParams.Memory.STRamSize_KB = 2*1024+512;
 	else if (memorydlg[DLGMEM_4MB].state & SG_SELECTED)
-		ConfigureParams.Memory.nMemorySize = 4;
+		ConfigureParams.Memory.STRamSize_KB = 4*1024;
 	else if (memorydlg[DLGMEM_8MB].state & SG_SELECTED)
-		ConfigureParams.Memory.nMemorySize = 8;
+		ConfigureParams.Memory.STRamSize_KB = 8*1024;
 	else
-		ConfigureParams.Memory.nMemorySize = 14;
+		ConfigureParams.Memory.STRamSize_KB = 14*1024;
 
 	ConfigureParams.Memory.nTTRamSize = memsize;
 	ConfigureParams.Memory.bAutoSave = (memorydlg[DLGMEM_AUTOSAVE].state & SG_SELECTED);

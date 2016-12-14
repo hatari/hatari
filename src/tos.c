@@ -743,11 +743,7 @@ int TOS_LoadImage(void)
 	bTosImageLoaded = false;
 
 	/* Calculate end of RAM */
-	if (ConfigureParams.Memory.nMemorySize > 0
-	    && ConfigureParams.Memory.nMemorySize <= 14)
-		STRamEnd = ConfigureParams.Memory.nMemorySize * 0x100000;
-	else
-		STRamEnd = 0x80000;   /* 512 KiB */
+	STRamEnd = ConfigureParams.Memory.STRamSize_KB * 1024;
 
 	/* Load TOS image into memory so that we can check its version */
 	TosVersion = 0;

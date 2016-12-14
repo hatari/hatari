@@ -74,6 +74,30 @@ bool STMemory_SafeCopy(Uint32 addr, Uint8 *src, unsigned int len, const char *na
 }
 
 /**
+ * Check if "TotalMem" bytes is a valid value for the ST RAM size
+ * and return the corresponding number of KB.
+ * TotalMem can be expressed in MB if <= 14, else in KB
+ * We list the most usual sizes, some more could be added if needed (eg 512+128 = 640 KB RAM ?)
+ */
+int	STMemory_RAM_Validate_Size_KB ( int TotalMem )
+{
+	/* Old format where ST RAM size was in MB between 0 and 14 */
+	if ( TotalMem == 0 )
+		return 512 * 1024;
+	else if ( TotalMem <= 14 )
+		return TotalMem * 1024;
+
+	/* New format where ST RAM size is in KB */
+	else if (  ( TotalMem ==  256 ) || ( TotalMem ==  512 ) || ( TotalMem == 1024 )
+		|| ( TotalMem == 2048 ) || ( TotalMem == 2560 ) || ( TotalMem == 4096 )
+		|| ( TotalMem == 8*1024 ) || ( TotalMem == 14*1024 ) )
+		return TotalMem;
+
+	return -1;
+}
+
+
+/**
  * Save/Restore snapshot of RAM / ROM variables
  * ('MemorySnapShot_Store' handles type)
  */
@@ -137,7 +161,7 @@ void STMemory_SetDefaultConfig(void)
 	 *  the RAM content after those tests) */
 	if ( ConfigureParams.System.bFastBoot
 	  || bUseVDIRes
-	  || ( ConfigureParams.Memory.nMemorySize > 4 && !bIsEmuTOS )
+	  || ( ConfigureParams.Memory.STRamSize_KB > (4*1024) && !bIsEmuTOS )
 	  || ( Config_IsMachineTT() && ConfigureParams.System.bAddressSpace24 && !bIsEmuTOS )
 	  || ( Config_IsMachineFalcon() && TTmemory && !bIsEmuTOS) )
 	{
@@ -225,8 +249,8 @@ void STMemory_SetDefaultConfig(void)
 
 	/* Set memory controller byte according to different memory sizes */
 	/* Setting per bank: %00=128k %01=512k %10=2Mb %11=reserved. - e.g. %1010 means 4Mb */
-	if (ConfigureParams.Memory.nMemorySize <= 4)
-		nMemControllerByte = MemControllerTable[ConfigureParams.Memory.nMemorySize];
+	if (ConfigureParams.Memory.STRamSize_KB <= 4*1024)
+		nMemControllerByte = MemControllerTable[ConfigureParams.Memory.STRamSize_KB/1024];	/* TODO */
 	else
 		nMemControllerByte = 0x0f;
 	STMemory_WriteByte(0x424, nMemControllerByte);
@@ -272,18 +296,18 @@ void STMemory_SetDefaultConfig(void)
 		I also set the bit 3 and 2 at value 01 are mentioned in the register description.
 		*/
 
-		if (ConfigureParams.Memory.nMemorySize == 14)     /* 14 Meg */
+		if (ConfigureParams.Memory.STRamSize_KB == 14*1024)	/* 14 Meg */
 			nFalcSysCntrl = 0x26;
-		else if (ConfigureParams.Memory.nMemorySize == 8) /* 8 Meg */
+		else if (ConfigureParams.Memory.STRamSize_KB == 8*1024)	/* 8 Meg */
 			nFalcSysCntrl = 0x24;
-		else if (ConfigureParams.Memory.nMemorySize == 4) /* 4 Meg */
+		else if (ConfigureParams.Memory.STRamSize_KB == 4*1024)	/* 4 Meg */
 			nFalcSysCntrl = 0x16;
-		else if (ConfigureParams.Memory.nMemorySize == 2) /* 2 Meg */
+		else if (ConfigureParams.Memory.STRamSize_KB == 2*1024)	/* 2 Meg */
 			nFalcSysCntrl = 0x14;
-		else if (ConfigureParams.Memory.nMemorySize == 1) /* 1 Meg */
+		else if (ConfigureParams.Memory.STRamSize_KB == 1024)	/* 1 Meg */
 			nFalcSysCntrl = 0x06;
 		else
-			nFalcSysCntrl = 0x04;                     /* 512 Ko */
+			nFalcSysCntrl = 0x04;				/* 512 Ko */
 
 		switch(ConfigureParams.Screen.nMonitorType) {
 			case MONITOR_TYPE_TV:

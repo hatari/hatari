@@ -793,7 +793,7 @@ int	DMA_MaskAddressHigh ( void )
 	if (Config_IsMachineTT() || Config_IsMachineFalcon())
 		return 0xff;					/* Falcon / TT can access 24 bits with DMA */
 
-	else if ( ConfigureParams.Memory.nMemorySize > 4 )	/* ST/STE with more than 4 MB */
+	else if (ConfigureParams.Memory.STRamSize_KB > 4*1024)	/* ST/STE with more than 4 MB */
 		return 0xff;					/* Allow 'fake' 24 bits for DMA */
 
 	else							/* ST/STE with <= 4 MB */

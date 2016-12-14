@@ -423,6 +423,7 @@ void Statusbar_UpdateInfo(void)
 {
 	int i;
 	char *end = DefaultMessage.msg;
+	int size;
 
 	/* CPU MHz */
 	if (ConfigureParams.System.nCpuFreq > 9) {
@@ -463,18 +464,15 @@ void Statusbar_UpdateInfo(void)
 	}
 #endif
 
-	/* amount of memory */
+	/* amount of memory in MB */
 	*end++ = ' ';
-	if (ConfigureParams.Memory.nMemorySize > 9) {
-		*end++ = '1';
-		*end++ = '0' + ConfigureParams.Memory.nMemorySize % 10;
-	} else {
-		if (ConfigureParams.Memory.nMemorySize) {
-			*end++ = '0' + ConfigureParams.Memory.nMemorySize;
-		} else {
-			end = Statusbar_AddString(end, "0.5");
-		}
-	}
+	size = ConfigureParams.Memory.STRamSize_KB;
+	end += sprintf(end, "%d", size / 1024);
+	if ( size % 1024 == 256 )
+		end += sprintf(end, ".25");
+	else if ( size % 1024 == 512 )
+		end += sprintf(end, ".5");
+
 	if (TTmemory && ConfigureParams.Memory.nTTRamSize) {
 		end += sprintf(end, "/%i", ConfigureParams.Memory.nTTRamSize);
 	}

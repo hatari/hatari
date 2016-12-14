@@ -34,6 +34,7 @@ const char Configuration_fileid[] = "Hatari configuration.c : " __DATE__ " " __T
 #include "dsp.h"
 #include "joy.h"
 #include "falcon/crossbar.h"
+#include "stMemory.h"
 
 
 CNF_PARAMS ConfigureParams;                 /* List of configuration for the emulator */
@@ -393,7 +394,7 @@ static const struct Config_Tag configs_Sound[] =
 /* Used to load/save memory options */
 static const struct Config_Tag configs_Memory[] =
 {
-	{ "nMemorySize", Int_Tag, &ConfigureParams.Memory.nMemorySize },
+	{ "nMemorySize", Int_Tag, &ConfigureParams.Memory.STRamSize_KB },
 	{ "nTTRamSize", Int_Tag, &ConfigureParams.Memory.nTTRamSize },
 	{ "bAutoSave", Bool_Tag, &ConfigureParams.Memory.bAutoSave },
 	{ "szMemoryCaptureFileName", String_Tag, ConfigureParams.Memory.szMemoryCaptureFileName },
@@ -702,8 +703,8 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Shortcut.withModifier[SHORTCUT_PAD_B] = SDLK_F4;
 
 	/* Set defaults for Memory */
-	ConfigureParams.Memory.nMemorySize = 1;     /* 1 MiB */
-	ConfigureParams.Memory.nTTRamSize = 0;     /* disabled */
+	ConfigureParams.Memory.STRamSize_KB = 1024;	/* 1 MiB */
+	ConfigureParams.Memory.nTTRamSize = 0;		/* disabled */
 	ConfigureParams.Memory.bAutoSave = false;
 	sprintf(ConfigureParams.Memory.szMemoryCaptureFileName, "%s%chatari.sav",
 	        psHomeDir, PATHSEP);
@@ -819,6 +820,7 @@ void Configuration_SetDefault(void)
 void Configuration_Apply(bool bReset)
 {
 	int i;
+	int size;
 
 	if (bReset)
 	{
@@ -846,6 +848,12 @@ void Configuration_Apply(bool bReset)
 	{
 		ConfigureParams.Screen.nForceBpp = 0;
 	}
+
+	/* Check/convert ST RAM size in KB */
+	size = STMemory_RAM_Validate_Size_KB ( ConfigureParams.Memory.STRamSize_KB );
+	if ( size < 0 )
+		size = 1024;
+	ConfigureParams.Memory.STRamSize_KB = size;
 
 	/* Init clocks for this machine */
 	ClocksTimings_InitMachine ( ConfigureParams.System.nMachineType );
@@ -1096,7 +1104,7 @@ void Configuration_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(ConfigureParams.Rom.szTosImageFileName, sizeof(ConfigureParams.Rom.szTosImageFileName));
 	MemorySnapShot_Store(ConfigureParams.Rom.szCartridgeImageFileName, sizeof(ConfigureParams.Rom.szCartridgeImageFileName));
 
-	MemorySnapShot_Store(&ConfigureParams.Memory.nMemorySize, sizeof(ConfigureParams.Memory.nMemorySize));
+	MemorySnapShot_Store(&ConfigureParams.Memory.STRamSize_KB, sizeof(ConfigureParams.Memory.STRamSize_KB));
 	MemorySnapShot_Store(&ConfigureParams.Memory.nTTRamSize, sizeof(ConfigureParams.Memory.nTTRamSize));
 
 	MemorySnapShot_Store(&ConfigureParams.DiskImage.szDiskFileName[0], sizeof(ConfigureParams.DiskImage.szDiskFileName[0]));

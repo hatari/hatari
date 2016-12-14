@@ -42,6 +42,8 @@ const char Options_fileid[] = "Hatari options.c : " __DATE__ " " __TIME__;
 #include "hatari-glue.h"
 #include "68kDisass.h"
 #include "xbios.h"
+#include "stMemory.h"
+
 
 bool bLoadAutoSave;        /* Load autosave memory snapshot at startup */
 bool bLoadMemorySave;      /* Load memory snapshot provided via option at startup */
@@ -1508,11 +1510,12 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			/* Memory options */
 		case OPT_MEMSIZE:
 			memsize = atoi(argv[++i]);
-			if (memsize < 0 || memsize > 14)
+			memsize = STMemory_RAM_Validate_Size_KB ( memsize );
+			if (memsize < 0)
 			{
 				return Opt_ShowError(OPT_MEMSIZE, argv[i], "Invalid memory size");
 			}
-			ConfigureParams.Memory.nMemorySize = memsize;
+			ConfigureParams.Memory.STRamSize_KB = memsize;
 			bLoadAutoSave = false;
 			break;
 
