@@ -148,7 +148,7 @@ bool Change_DoNeedReset(CNF_PARAMS *current, CNF_PARAMS *changed)
 		return true;
 
 	/* Did change size of TT-RAM? */
-	if (current->Memory.nTTRamSize != changed->Memory.nTTRamSize)
+	if (current->Memory.TTRamSize_KB != changed->Memory.TTRamSize_KB)
 		return true;
 #endif
 

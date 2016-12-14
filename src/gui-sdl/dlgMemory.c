@@ -122,7 +122,7 @@ bool Dialog_MemDlg(void)
 		memorydlg[DLGMEM_14MB].state |= SG_SELECTED;
 		break;
 	}
-	memsize = ConfigureParams.Memory.nTTRamSize;
+	memsize = ConfigureParams.Memory.TTRamSize_KB/1024;
 #if ENABLE_WINUAE_CPU
 	sprintf(sTTRamSize, "%3i", memsize);
 #else
@@ -193,7 +193,8 @@ bool Dialog_MemDlg(void)
 	else
 		ConfigureParams.Memory.STRamSize_KB = 14*1024;
 
-	ConfigureParams.Memory.nTTRamSize = memsize;
+	ConfigureParams.Memory.TTRamSize_KB = memsize*1024;
+
 	ConfigureParams.Memory.bAutoSave = (memorydlg[DLGMEM_AUTOSAVE].state & SG_SELECTED);
 
 	return false;

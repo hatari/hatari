@@ -473,8 +473,8 @@ void Statusbar_UpdateInfo(void)
 	else if ( size % 1024 == 512 )
 		end += sprintf(end, ".5");
 
-	if (TTmemory && ConfigureParams.Memory.nTTRamSize) {
-		end += sprintf(end, "/%i", ConfigureParams.Memory.nTTRamSize);
+	if (TTmemory && ConfigureParams.Memory.TTRamSize_KB) {
+		end += sprintf(end, "/%i", ConfigureParams.Memory.TTRamSize_KB/1024);
 	}
 	end = Statusbar_AddString(end, "MB ");
 

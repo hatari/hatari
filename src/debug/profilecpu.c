@@ -131,7 +131,7 @@ static inline Uint32 address2index(Uint32 pc)
 			pc += TosSize;
 		}
 #if ENABLE_WINUAE_CPU
-	} else if (TTmemory && pc >= TTRAM_START && pc < TTRAM_START + 1024*1024*(unsigned)ConfigureParams.Memory.nTTRamSize) {
+	} else if (TTmemory && pc >= TTRAM_START && pc < TTRAM_START + 1024*(unsigned)ConfigureParams.Memory.TTRamSize_KB) {
 		pc += STRamEnd + TosSize + CART_SIZE - TTRAM_START;
 #endif
 	} else {
@@ -263,8 +263,8 @@ void Profile_CpuShowStats(void)
 	fprintf(stderr, "Cartridge ROM (0x%X-%X):\n", CART_START, CART_END);
 	show_cpu_area_stats(&cpu_profile.rom);
 
-	if (TTmemory && ConfigureParams.Memory.nTTRamSize) {
-		fprintf(stderr, "TT-RAM (0x%X-%X):\n", TTRAM_START, TTRAM_START + 1024*1024*ConfigureParams.Memory.nTTRamSize);
+	if (TTmemory && ConfigureParams.Memory.TTRamSize_KB) {
+		fprintf(stderr, "TT-RAM (0x%X-%X):\n", TTRAM_START, TTRAM_START + 1024*ConfigureParams.Memory.TTRamSize_KB);
 		show_cpu_area_stats(&cpu_profile.ttram);
 	}
 
@@ -713,8 +713,8 @@ void Profile_CpuSave(FILE *out)
 	if (text && (text < TosAddress || text >= TTRAM_START)) {
 		fprintf(out, "PROGRAM_TEXT:\t0x%06x-0x%06x\n", text, DebugInfo_GetTEXTEnd());
 	}
-	if (TTmemory && ConfigureParams.Memory.nTTRamSize) {
-		end = TTRAM_START + 1024*1024*ConfigureParams.Memory.nTTRamSize;
+	if (TTmemory && ConfigureParams.Memory.TTRamSize_KB) {
+		end = TTRAM_START + 1024*ConfigureParams.Memory.TTRamSize_KB;
 		fprintf(out, "TT_RAM:\t\t0x%08x-0x%08x\n", TTRAM_START, end);
 	} else if (end < CART_END) {
 		end = CART_END;
@@ -749,8 +749,8 @@ bool Profile_CpuStart(void)
 
 	/* Shouldn't change within same debug session */
 	size = (STRamEnd + CART_SIZE + TosSize) / 2;
-	if (TTmemory && ConfigureParams.Memory.nTTRamSize) {
-		size += ConfigureParams.Memory.nTTRamSize * 1024*1024/2;
+	if (TTmemory && ConfigureParams.Memory.TTRamSize_KB) {
+		size += ConfigureParams.Memory.TTRamSize_KB * 1024/2;
 	}
 
 	/* Add one entry for catching invalid PC values */
@@ -1201,8 +1201,8 @@ void Profile_CpuStop(void)
 
 	/* user didn't change RAM or TOS size in the meanwhile? */
 	size = stsize = (STRamEnd + CART_SIZE + TosSize) / 2;
-	if (TTmemory && ConfigureParams.Memory.nTTRamSize) {
-		size += ConfigureParams.Memory.nTTRamSize * 1024*1024/2;
+	if (TTmemory && ConfigureParams.Memory.TTRamSize_KB) {
+		size += ConfigureParams.Memory.TTRamSize_KB * 1024/2;
 	}
 	assert(cpu_profile.size == size);
 

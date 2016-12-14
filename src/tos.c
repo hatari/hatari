@@ -821,7 +821,7 @@ int TOS_LoadImage(void)
 		ConfigureParams.System.bAddressSpace24 = true;
 		M68000_CheckCpuSettings();
 	}
-	else if (ConfigureParams.Memory.nTTRamSize)
+	else if (ConfigureParams.Memory.TTRamSize_KB)
 	{
 		switch (ConfigureParams.System.nMachineType)
 		{
@@ -850,7 +850,7 @@ int TOS_LoadImage(void)
 
 	/* (Re-)Initialize the memory banks: */
 	memory_uninit();
-	memory_init(STRamEnd, ConfigureParams.Memory.nTTRamSize*1024*1024, TosAddress);
+	memory_init(STRamEnd, ConfigureParams.Memory.TTRamSize_KB*1024, TosAddress);
 
 	/* Clear Upper memory (ROM and IO memory) */
 	memset(&RomMem[0xe00000], 0, 0x200000);
