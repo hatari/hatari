@@ -689,6 +689,21 @@ bool memory_region_bus_error ( uaecptr addr )
 
 
 /*
+ * Initialize the standard RAM memory banks
+ */
+void memory_map_Standard_RAM ( Uint32 MMU_Bank0_Size , Uint32 MMU_Bank1_Size )
+{
+    map_banks(&SysMem_bank, 0x00, 1);
+    /* Between STRamEnd and 4MB barrier, there is void space: */
+    map_banks(&VoidMem_bank, 0x08, 0x38);
+    /* Space between 4MB barrier and TOS ROM causes a bus error: */
+    map_banks(&BusErrMem_bank, 0x400000 >> 16, 0xA0);
+    /* Now map main ST RAM, overwriting the void and bus error regions if necessary: */
+    map_banks(&STmem_bank, 0x01, (STmem_size >> 16) - 1);
+}
+
+
+/*
  * Initialize the memory banks
  */
 void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMemStart)
@@ -751,14 +766,8 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
     BusErrMem_bank.baseaddr = NULL;			/* No real memory allocated for this region */
 
 
-    /* Map the ST system RAM: */
-    map_banks(&SysMem_bank, 0x00, 1);
-    /* Between STRamEnd and 4MB barrier, there is void space: */
-    map_banks(&VoidMem_bank, 0x08, 0x38);
-    /* Space between 4MB barrier and TOS ROM causes a bus error: */
-    map_banks(&BusErrMem_bank, 0x400000 >> 16, 0xA0);
-    /* Now map main ST RAM, overwriting the void and bus error regions if necessary: */
-    map_banks(&STmem_bank, 0x01, (STmem_size >> 16) - 1);
+    /* Map the standard RAM (Max is 4 MB on unmodified STF/STE) */
+    memory_map_Standard_RAM ( MMU_Bank0_Size , MMU_Bank1_Size );
 
 
     /* Handle extra RAM on TT and Falcon starting at 0x1000000 and up to 0x80000000 */
