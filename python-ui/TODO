@@ -4,6 +4,11 @@ TODO
 This lists potential TODO items that aren't listed in the Hatari/UI
 sources.
 
+* WinUAE CPU core specific configuration options:
+  - MMU
+  - FPU
+  - 32-bit addressing
+
 * Separate "Atari monitor" and "Hatari window" settings dialogs
   (move options from "Display" and monitor setting from "Machine"
   dialogs to here and add VDI options to Atari Monitor dialog)
@@ -47,11 +52,10 @@ sources.
     - needs support also to Hatari src/screenSnapShot.c
 
 * Supporting other, less important Hatari configuration options:
-  - HD booting, toggling disk-b autoinsertion
-  - something for multiple GEMDOS partition directories
+  - keyboard repeat, key mapping type & file, mouse warping & grabbing
+  - HD booting, something for multiple GEMDOS partition directories
   - separate A/B disk paths for images that are within ZIP archives
   - joystick autofire toggling, defining the keys for joyemu
-  - keyboard repeat, key mapping type and file, mouse grabbing
   - vdi planes and size, SDL bpp forcing, spec512 threshold, ST blitter
   - cartridge image (where? it has many limitations)
   - log file and levels, console output, bios intercept, run-VBLs
