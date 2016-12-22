@@ -269,8 +269,8 @@ class HatariConfigMapping(ConfigStore):
     }
     "access methods to Hatari configuration file variables and command line options"
     def __init__(self, hatari):
-        userconfdir = ".hatari"
-        ConfigStore.__init__(self, userconfdir)
+        confdirs = [".config/hatari", ".hatari"]
+        ConfigStore.__init__(self, confdirs)
         conffilename = "hatari.cfg"
         self.load(self.get_filepath(conffilename))
 
