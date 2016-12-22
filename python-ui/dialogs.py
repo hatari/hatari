@@ -2,7 +2,7 @@
 #
 # Classes for the Hatari UI dialogs
 #
-# Copyright (C) 2008-2015 by Eero Tamminen
+# Copyright (C) 2008-2016 by Eero Tamminen
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -954,14 +954,11 @@ class MachineDialog(HatariUIDialog):
 
         vbox = gtk.VBox()
         self.compatible = gtk.CheckButton("Compatible CPU")
-        self.rtc = gtk.CheckButton("Real-time clock")
         self.timerd = gtk.CheckButton("Patch Timer-D")
         self.compatible.set_tooltip_text("Needed for overscan and other timing sensitive things to work correctly")
-        self.rtc.set_tooltip_text("Some rare games and demos don't work with this")
         self.timerd.set_tooltip_text("Improves ST/STE emulation performance, but some rare demos/games don't work with this")
         vbox.add(self.compatible)
         vbox.add(self.timerd)
-        vbox.add(self.rtc)
         table_add_widget_row(table, row, "Misc.:", vbox, fullspan)
         row += 1
 
@@ -988,7 +985,6 @@ class MachineDialog(HatariUIDialog):
             self.tos.set_filename(tos)
         self.compatible.set_active(config.get_compatible())
         self.timerd.set_active(config.get_timerd())
-        self.rtc.set_active(config.get_rtc())
 
     def _get_active_radio(self, radios):
         idx = 0
@@ -1009,7 +1005,6 @@ class MachineDialog(HatariUIDialog):
         config.set_tos(self.tos.get_filename())
         config.set_compatible(self.compatible.get_active())
         config.set_timerd(self.timerd.get_active())
-        config.set_rtc(self.rtc.get_active())
         config.flush_updates()
 
     def run(self, config):

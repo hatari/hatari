@@ -3,7 +3,7 @@
 # Classes for Hatari emulator instance and mapping its congfiguration
 # variables with its command line option.
 #
-# Copyright (C) 2008-2015 by Eero Tamminen
+# Copyright (C) 2008-2016 by Eero Tamminen
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -59,6 +59,20 @@ class Hatari:
         except IOError:
             pass
         return error
+
+    def is_winuae(self):
+        "check whether Hatari has WinUAE CPU core (=more features) or oldUAE one"
+        result = False
+        pipe = os.popen(self.hataribin + " -h")
+        for line in pipe.readlines():
+            if line.find("--mmu") >= 0:
+                result = True
+                break
+        try:
+            pipe.close()
+        except IOError:
+            pass
+        return result
 
     def save_config(self):
         os.popen(self.hataribin + " --saveconfig")
@@ -267,6 +281,8 @@ class HatariConfigMapping(ConfigStore):
         "printout": ("[Printer]", "szPrintToFileName", "Printer output"),
         "soundout": ("[Sound]", "szYMCaptureFileName", "Sound output")
     }
+    has_modeltype = True  # from v2.0 onwards
+    has_keepstres = True  # only with SDL1
     "access methods to Hatari configuration file variables and command line options"
     def __init__(self, hatari):
         confdirs = [".config/hatari", ".hatari"]
@@ -279,6 +295,11 @@ class HatariConfigMapping(ConfigStore):
         self._desktop_w = 0
         self._desktop_h = 0
         self._options = []
+        self._winuae = hatari.is_winuae()
+        # initialize has_* attribs for things that may not be anymore
+        # valid on Hatari config file and/or command line
+        self.get_machine()
+        self.get_desktop_st()
 
     def validate(self):
         "exception is thrown if the loaded configuration isn't compatible"
@@ -358,23 +379,45 @@ class HatariConfigMapping(ConfigStore):
 
     # ------------ machine ---------------
     def get_machine_types(self):
-        return ("ST", "STE", "TT", "Falcon")
+        if self.has_modeltype:
+            return ("ST", "MegaST", "STE", "MegaSTE", "TT", "Falcon")
+        else:
+            return ("ST", "STE", "TT", "Falcon")
 
     def get_machine(self):
-        return self.get("[System]", "nMachineType")
+        try:
+            return self.get("[System]", "nModelType")
+        except KeyError:
+            self.has_modeltype = False
+            return self.get("[System]", "nMachineType")
+
+    def has_accurate_winsize(self):
+        if self.has_modeltype:
+            return (self.get_machine() < 4)
+        else:
+            return (self.get_machine() < 2)
 
     def set_machine(self, value):
-        self.set("[System]", "nMachineType", value)
-        self._change_option("--machine %s" % ("st", "ste", "tt", "falcon")[value])
+        if self.has_modeltype:
+            self.set("[System]", "nModelType", value)
+            self._change_option("--machine %s" % ("st", "megast", "ste", "megaste", "tt", "falcon")[value])
+        else:
+            self.set("[System]", "nMachineType", value)
+            self._change_option("--machine %s" % ("st", "ste", "tt", "falcon")[value])
 
     # ------------ CPU level ---------------
     def get_cpulevel_types(self):
-        return ("68000", "68010", "68020", "68EC030+FPU", "68040")
+        if self._winuae:
+            return ("68000", "68010", "68020", "68E030", "68040", "68060")
+        else:
+            return ("68000", "68010", "68020", "68EC030+FPU", "68040")
 
     def get_cpulevel(self):
         return self.get("[System]", "nCpuLevel")
 
     def set_cpulevel(self, value):
+        if value == 5: # WinUAE 060
+            value = 6
         self.set("[System]", "nCpuLevel", value)
         self._change_option("--cpulevel %d" % value)
 
@@ -422,14 +465,6 @@ class HatariConfigMapping(ConfigStore):
     def set_timerd(self, value):
         self.set("[System]", "bPatchTimerD", value)
         self._change_option("--timer-d %s" % str(value))
-
-    # ------------ RTC ---------------
-    def get_rtc(self):
-        return self.get("[System]", "bRealTimeClock")
-
-    def set_rtc(self, value):
-        self.set("[System]", "bRealTimeClock", value)
-        self._change_option("--rtc %s" % str(value))
 
     # ------------ fastforward ---------------
     def get_fastforward(self):
@@ -756,18 +791,23 @@ class HatariConfigMapping(ConfigStore):
     # --------- keep desktop res -----------
     def get_desktop(self):
         return self.get("[Screen]", "bKeepResolution")
-    
+
     def set_desktop(self, value):
         self.set("[Screen]", "bKeepResolution", value)
         self._change_option("--desktop %s" % str(value))
 
     # --------- keep desktop res - st ------
     def get_desktop_st(self):
-        return self.get("[Screen]", "bKeepResolutionST")
-    
+        try:
+            return self.get("[Screen]", "bKeepResolutionST")
+        except KeyError:
+            self.has_keepstres = False
+            return False
+
     def set_desktop_st(self, value):
-        self.set("[Screen]", "bKeepResolutionST", value)
-        self._change_option("--desktop-st %s" % str(value))
+        if self.has_keepstres:
+            self.set("[Screen]", "bKeepResolutionST", value)
+            self._change_option("--desktop-st %s" % str(value))
 
     # ------------ force max ---------------
     def get_force_max(self):
@@ -863,11 +903,11 @@ class HatariConfigMapping(ConfigStore):
             return (width, height)
         
         # window sizes for other than ST & STE can differ
-        if self.get("[System]", "nMachineType") not in (0, 1):
-            print("WARNING: neither ST nor STE machine, window size inaccurate!")
-            videl = True
-        else:
+        if self.has_accurate_winsize():
             videl = False
+        else:
+            print("WARNING: With Videl, window size is unknown -> may be inaccurate!")
+            videl = True
 
         # mono monitor?
         if self.get_monitor() == 0:

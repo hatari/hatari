@@ -2,6 +2,14 @@
 User visible changes in Hatari (Python Gtk) UI
 ----------------------------------------------
 
+2016-12 (Hatari v2.0 fixes):
+- Add support for new nModelType config option (with MegaST/STE
+  options), but still support also old nMachineType option
+- Hatari doesn't anymore support separate RTC option, remove
+- Support for keeping ST resolution option is enabled based on
+  config file content (it's supported only by Hatari SDL1 builds)
+- Initial WinUAE vs. OldUAE CPU core support
+
 2015-05:
 - Add support for --gemdos-drive, --ttram option features
   and new tracepoints
