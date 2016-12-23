@@ -624,7 +624,7 @@ static void Screen_ChangeResolution(bool bForceChange)
 	}
 	else if (Config_IsMachineFalcon())
 	{
-		VIDEL_ZoomModeChanged(bForceChange);
+		Videl_ScreenModeChanged(bForceChange);
 	}
 	else if (Config_IsMachineTT())
 	{

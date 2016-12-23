@@ -13,7 +13,7 @@ extern bool VIDEL_renderScreen(void);
 extern void Videl_Init(void);
 extern void VIDEL_reset(void);
 
-extern void VIDEL_ZoomModeChanged(bool bForceChange);
+extern void Videl_ScreenModeChanged(bool bForceChange);
 extern void VIDEL_UpdateColors(void);
 
 extern void VIDEL_RestartVideoCounter(void);

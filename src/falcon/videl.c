@@ -67,6 +67,7 @@ const char VIDEL_fileid[] = "Hatari videl.c : " __DATE__ " " __TIME__;
 
 #include "main.h"
 #include "configuration.h"
+#include "avi_record.h"
 #include "memorySnapShot.h"
 #include "ioMem.h"
 #include "log.h"
@@ -75,8 +76,8 @@ const char VIDEL_fileid[] = "Hatari videl.c : " __DATE__ " " __TIME__;
 #include "statusbar.h"
 #include "stMemory.h"
 #include "videl.h"
-#include "video.h"				/* for bUseHighRes variable, maybe unuseful (Laurent) */
-#include "vdi.h"				/* for bUseVDIRes variable,  maybe unuseful (Laurent) */
+#include "video.h"				/* for bUseHighRes variable */
+#include "vdi.h"				/* for bUseVDIRes variable */
 
 #define VIDEL_COLOR_REGS_BEGIN	0xff9800
 
@@ -860,10 +861,27 @@ void VIDEL_UpdateColors(void)
 }
 
 
-/* User selected another zoom mode, so set a new screen resolution now */
-void VIDEL_ZoomModeChanged(bool bForceChange)
+void Videl_ScreenModeChanged(bool bForceChange)
 {
-	int bpp = videl.save_scrBpp == 16 ? 16 : ConfigureParams.Screen.nForceBpp;
+	int bpp;
+
+	if (ConfigureParams.Screen.nForceBpp)
+	{
+		bpp = ConfigureParams.Screen.nForceBpp;
+	}
+	else if (Avi_AreWeRecording())
+	{
+		/* Avoid changing the bpp if we are recording */
+		bpp = sdlscrn->format->BitsPerPixel;
+	}
+	else
+	{
+		/* Using SDL's 16 bpp conversion function is a bit faster */
+		bpp = (videl.save_scrBpp == 16) ? 16 : 0;
+	}
+
+	LOG_TRACE(TRACE_VIDEL, "Videl : video mode change to %dx%d@%d\n",
+	          videl.save_scrWidth, videl.save_scrHeight, videl.save_scrBpp);
 
 	Screen_SetGenConvSize(videl.save_scrWidth, videl.save_scrHeight,
 	                      bpp, bForceChange);
@@ -902,8 +920,7 @@ bool VIDEL_renderScreen(void)
 		change = true;
 	}
 	if (change) {
-		LOG_TRACE(TRACE_VIDEL, "Videl : video mode change to %dx%d@%d\n", videl.save_scrWidth, videl.save_scrHeight, videl.save_scrBpp);
-		Screen_SetGenConvSize(videl.save_scrWidth, videl.save_scrHeight, videl.save_scrBpp == 16 ? 16 : ConfigureParams.Screen.nForceBpp, false);
+		Videl_ScreenModeChanged(false);
 	}
 
 	if (vw < 32 || vh < 32) {
