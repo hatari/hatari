@@ -624,7 +624,7 @@ typedef struct
 
 	int	RestartVideoCounter_Line_60;	/* 260 */
 	int	RestartVideoCounter_Line_50;	/* 310 */
-	int	RestartVideoCounter_Pos;	/*  48 */
+	int	RestartVideoCounter_Pos;	/*  56 */
 
 	int	VblVideoCycleOffset;
 	int	Hbl_Int_Pos_Low_60;		/* 508 */
@@ -844,7 +844,7 @@ void	Video_InitTimings(void)
 	pVideoTiming1->V_End_Line_NoBottom_60	= pVideoTiming1->V_End_Line_60 + VIDEO_HEIGHT_BOTTOM_60HZ;	/* 263 (TODO:check on real HW) */
 	pVideoTiming1->RestartVideoCounter_Line_60 	= RESTART_VIDEO_COUNTER_LINE_60HZ;	/* 260 */
 	pVideoTiming1->RestartVideoCounter_Line_50 	= RESTART_VIDEO_COUNTER_LINE_50HZ;	/* 310 */
-	pVideoTiming1->RestartVideoCounter_Pos 	= RESTART_VIDEO_COUNTER_CYCLE_STF;		/*  48 */
+	pVideoTiming1->RestartVideoCounter_Pos 	= RESTART_VIDEO_COUNTER_CYCLE_STF;		/*  56 */
 	pVideoTiming1->VblVideoCycleOffset 	= VBL_VIDEO_CYCLE_OFFSET_STF - 4;
 	pVideoTiming1->Hbl_Int_Pos_Low_60	= CYCLES_PER_LINE_60HZ - 4;
 	pVideoTiming1->Hbl_Int_Pos_Low_50	= CYCLES_PER_LINE_50HZ - 4;
@@ -910,7 +910,7 @@ void	Video_InitTimings(void)
 	pVideoTiming1->V_End_Line_NoBottom_60	= pVideoTiming1->V_End_Line_60 + VIDEO_HEIGHT_BOTTOM_60HZ;	/* 263 */
 	pVideoTiming1->RestartVideoCounter_Line_60 	= RESTART_VIDEO_COUNTER_LINE_60HZ;	/* 260 */
 	pVideoTiming1->RestartVideoCounter_Line_50 	= RESTART_VIDEO_COUNTER_LINE_50HZ;	/* 310 */
-	pVideoTiming1->RestartVideoCounter_Pos 	= RESTART_VIDEO_COUNTER_CYCLE_STE;		/*  52 */
+	pVideoTiming1->RestartVideoCounter_Pos 	= RESTART_VIDEO_COUNTER_CYCLE_STE;		/*  60 */
 	pVideoTiming1->VblVideoCycleOffset 	= VBL_VIDEO_CYCLE_OFFSET_STF;
 	pVideoTiming1->Hbl_Int_Pos_Low_60	= CYCLES_PER_LINE_60HZ;
 	pVideoTiming1->Hbl_Int_Pos_Low_50	= CYCLES_PER_LINE_50HZ;
