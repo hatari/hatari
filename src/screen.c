@@ -317,10 +317,6 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 	    && sdlscrn->format->BitsPerPixel == bitdepth && !bForceChange)
 		return false;
 
-	/* We can not continue recording with a different resolution */
-	if (Avi_AreWeRecording())
-		Avi_StopRecording();
-
 #ifdef _MUDFLAP
 	if (sdlscrn)
 	{

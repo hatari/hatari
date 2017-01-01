@@ -445,7 +445,8 @@ static bool	Avi_RecordVideoStream_PNG ( RECORD_AVI_PARAMS *pAviParams )
 		goto png_error;
 
 	/* Write the video frame data */
-	SizeImage = ScreenSnapShot_SavePNG_ToFile ( pAviParams->Surface , pAviParams->FileOut ,
+	SizeImage = ScreenSnapShot_SavePNG_ToFile(pAviParams->Surface,
+		pAviParams->Width, pAviParams->Height, pAviParams->FileOut,
 		pAviParams->VideoCodecCompressionLevel , PNG_FILTER_NONE ,
 		pAviParams->CropLeft , pAviParams->CropRight , pAviParams->CropTop , pAviParams->CropBottom );
 	if ( SizeImage <= 0 )

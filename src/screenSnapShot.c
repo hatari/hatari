@@ -89,7 +89,7 @@ static int ScreenSnapShot_SavePNG(SDL_Surface *surface, const char *filename)
 		bottom = 0;
 
 	/* default compression/filter and configured cropping */
-	ret = ScreenSnapShot_SavePNG_ToFile(surface, fp, -1, -1, 0, 0, 0, bottom);
+	ret = ScreenSnapShot_SavePNG_ToFile(surface, 0, 0, fp, -1, -1, 0, 0, 0, bottom);
 
 	fclose (fp);
 	return ret;					/* >0 if OK, -1 if error */
@@ -101,15 +101,16 @@ static int ScreenSnapShot_SavePNG(SDL_Surface *surface, const char *filename)
  * Return png file size > 0 for success.
  * This function is also used by avi_record.c to save individual frames as png images.
  */
-int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, FILE *fp, int png_compression_level, int png_filter ,
+int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
+		FILE *fp, int png_compression_level, int png_filter,
 		int CropLeft , int CropRight , int CropTop , int CropBottom )
 {
 	bool do_lock;
 	int y, ret;
-	int w = surface->w - CropLeft - CropRight;
-	int h = surface->h - CropTop - CropBottom;
+	int sw = surface->w - CropLeft - CropRight;
+	int sh = surface->h - CropTop - CropBottom;
 	Uint8 *src_ptr;
-	Uint8 rowbuf[3*surface->w];
+	Uint8 *rowbuf;
 	SDL_PixelFormat *fmt = surface->format;
 	png_infop info_ptr = NULL;
 	png_structp png_ptr;
@@ -117,7 +118,14 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, FILE *fp, int png_compre
 	char key[] = "Title";
 	char text[] = "Hatari screenshot";
 	long start;
-	
+
+	if (!dw)
+		dw = sw;
+	if (!dh)
+		dh = sh;
+
+	rowbuf = alloca(3 * dw);
+
 	/* Create and initialize the png_struct with error handler functions. */
 	png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
 	if (!png_ptr) 
@@ -147,7 +155,7 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, FILE *fp, int png_compre
 	png_init_io(png_ptr, fp);
 
 	/* image data properties */
-	png_set_IHDR(png_ptr, info_ptr, w, h, 8, PNG_COLOR_TYPE_RGB,
+	png_set_IHDR(png_ptr, info_ptr, dw, dh, 8, PNG_COLOR_TYPE_RGB,
 		     PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT,
 		     PNG_FILTER_TYPE_DEFAULT);
 
@@ -169,22 +177,27 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, FILE *fp, int png_compre
 	png_write_info(png_ptr, info_ptr);
 
 	/* write surface data rows one at a time (after cropping if necessary) */
-	src_ptr = (Uint8 *)surface->pixels + CropTop * surface->pitch + CropLeft * surface->format->BytesPerPixel;
 	do_lock = SDL_MUSTLOCK(surface);
-	for (y = 0; y < h; y++)
+	for (y = 0; y < dh; y++)
 	{
 		/* need to lock the surface while accessing it directly */
 		if (do_lock)
 			SDL_LockSurface(surface);
+
+
+		src_ptr = (Uint8 *)surface->pixels
+		          + (CropTop + y * sh / dh) * surface->pitch
+		          + CropLeft * surface->format->BytesPerPixel;
+
 		switch (fmt->BytesPerPixel)
 		{
 		 case 2:
 			/* unpack 16-bit RGB pixels */
-			PixelConvert_16to24Bits(rowbuf, (Uint16*)src_ptr, w, fmt);
+			PixelConvert_16to24Bits(rowbuf, (Uint16*)src_ptr, dw, surface);
 			break;
 		 case 4:
 			/* unpack 32-bit RGBA pixels */
-			PixelConvert_32to24Bits(rowbuf, (Uint32*)src_ptr, w, fmt);
+			PixelConvert_32to24Bits(rowbuf, (Uint32*)src_ptr, dw, surface);
 			break;
 		 default:
 			abort();
@@ -192,7 +205,6 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, FILE *fp, int png_compre
 		/* and unlock surface before syscalls */
 		if (do_lock)
 			SDL_UnlockSurface(surface);
-		src_ptr += surface->pitch;
 		png_write_row(png_ptr, rowbuf);
 	}
 
