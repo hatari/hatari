@@ -177,6 +177,21 @@ struct utimbuf
 #define L_tmpnam 128 /* ought to be safe */
 #endif
 
+#ifdef WINUAE_FOR_HATARI  /* Types are provided by uae/types.h already */
+
+#if SIZEOF_LONG_LONG == 8
+#define VAL64(a) (a ## LL)
+#define UVAL64(a) (a ## uLL)
+#elif SIZEOF___INT64 == 8
+#define VAL64(a) (a)
+#define UVAL64(a) (a)
+#elif SIZEOF_LONG == 8
+#define VAL64(a) (a ## l)
+#define UVAL64(a) (a ## ul)
+#endif
+
+#else  /* WINUAE_FOR_HATARI */
+
 /* If char has more then 8 bits, good night. */
 typedef unsigned char uae_u8;
 typedef signed char uae_s8;
@@ -225,6 +240,8 @@ typedef uae_u32 uaecptr;
 #define VAL64(a) (a ## l)
 #define UVAL64(a) (a ## ul)
 #endif
+
+#endif /* WINUAE_FOR_HATARI */
 
 void atomic_and(volatile uae_atomic *p, uae_u32 v);
 void atomic_or(volatile uae_atomic *p, uae_u32 v);
