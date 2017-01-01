@@ -528,8 +528,10 @@ void Control_ReparentWindow(int width, int height, bool noembed)
 	Window parent_win, sdl_win;
 	const char *parent_win_id;
 	SDL_SysWMinfo info;
-#if !WITH_SDL2
 	Window wm_win;
+#if WITH_SDL2
+	Window dw1, *dw2;
+	unsigned int nwin;
 #endif
 
 	parent_win_id = getenv("PARENT_WIN_ID");
@@ -547,27 +549,27 @@ void Control_ReparentWindow(int width, int height, bool noembed)
 		Log_Printf(LOG_WARN, "Failed to get SDL_GetWMInfo()\n");
 		return;
 	}
+
 	display = info.info.x11.display;
 	sdl_win = info.info.x11.window;
 #if !WITH_SDL2
 	wm_win = info.info.x11.wmwindow;
 	info.info.x11.lock_func();
+#else
+	XQueryTree(display, sdl_win, &dw1, &wm_win, &dw2, &nwin);
 #endif
 	if (noembed)
 	{
-#if !WITH_SDL2
 		/* show WM window again */
 		XMapWindow(display, wm_win);
-#endif
 	}
 	else
 	{
 		char buffer[12];  /* 32-bits in hex (+ '\r') + '\n' + '\0' */
 
-#if !WITH_SDL2
 		/* hide WM window for Hatari */
 		XUnmapWindow(display, wm_win);
-#endif
+
 		/* reparent main Hatari window to given parent */
 		XReparentWindow(display, sdl_win, parent_win, 0, 0);
 
