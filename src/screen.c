@@ -491,6 +491,8 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 		Control_ReparentWindow(width, height, bInFullScreen);
 	}
 
+	Avi_SetSurface(sdlscrn);
+
 	return true;
 }
 

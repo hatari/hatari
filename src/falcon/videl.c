@@ -67,12 +67,12 @@ const char VIDEL_fileid[] = "Hatari videl.c : " __DATE__ " " __TIME__;
 
 #include "main.h"
 #include "configuration.h"
-#include "avi_record.h"
 #include "memorySnapShot.h"
 #include "ioMem.h"
 #include "log.h"
 #include "screen.h"
 #include "screenConvert.h"
+#include "avi_record.h"
 #include "statusbar.h"
 #include "stMemory.h"
 #include "videl.h"

@@ -49,26 +49,35 @@ static inline void PixelConvert_32to24Bits(Uint8 *dst, Uint32 *src, int w, SDL_P
 /**
  * Unpack 16-bit RGB pixels to 24-bit BGR pixels
  */
-static inline void PixelConvert_16to24Bits_BGR(Uint8 *dst, Uint16 *src, int w, SDL_PixelFormat *fmt)
+static inline void PixelConvert_16to24Bits_BGR(Uint8 *dst, Uint16 *src, int dw, SDL_Surface *surf)
 {
-	int x;
-	for (x = 0; x < w; x++, src++) {
-		*dst++ = (((*src & fmt->Bmask) >> fmt->Bshift) << fmt->Bloss);
-		*dst++ = (((*src & fmt->Gmask) >> fmt->Gshift) << fmt->Gloss);
-		*dst++ = (((*src & fmt->Rmask) >> fmt->Rshift) << fmt->Rloss);
+	SDL_PixelFormat *fmt = surf->format;
+	Uint16 sval;
+	int dx;
+
+	for (dx = 0; dx < dw; dx++)
+	{
+		sval = src[dx * surf->w / dw];
+		*dst++ = (((sval & fmt->Bmask) >> fmt->Bshift) << fmt->Bloss);
+		*dst++ = (((sval & fmt->Gmask) >> fmt->Gshift) << fmt->Gloss);
+		*dst++ = (((sval & fmt->Rmask) >> fmt->Rshift) << fmt->Rloss);
 	}
 }
 
 /**
  *  unpack 32-bit RGBA pixels to 24-bit BGR pixels
  */
-static inline void PixelConvert_32to24Bits_BGR(Uint8 *dst, Uint32 *src, int w, SDL_PixelFormat *fmt)
+static inline void PixelConvert_32to24Bits_BGR(Uint8 *dst, Uint32 *src, int dw, SDL_Surface *surf)
 {
-	int x;
-	for (x = 0; x < w; x++, src++)
+	SDL_PixelFormat *fmt = surf->format;
+	Uint32 sval;
+	int dx;
+
+	for (dx = 0; dx < dw; dx++)
 	{
-		*dst++ = (((*src & fmt->Bmask) >> fmt->Bshift) << fmt->Bloss);
-		*dst++ = (((*src & fmt->Gmask) >> fmt->Gshift) << fmt->Gloss);
-		*dst++ = (((*src & fmt->Rmask) >> fmt->Rshift) << fmt->Rloss);
+		sval = src[dx * surf->w / dw];
+		*dst++ = (((sval & fmt->Bmask) >> fmt->Bshift) << fmt->Bloss);
+		*dst++ = (((sval & fmt->Gmask) >> fmt->Gshift) << fmt->Gloss);
+		*dst++ = (((sval & fmt->Rmask) >> fmt->Rshift) << fmt->Rloss);
 	}
 }

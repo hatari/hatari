@@ -366,7 +366,7 @@ static bool	Avi_RecordVideoStream_BMP ( RECORD_AVI_PARAMS *pAviParams )
 	AVI_CHUNK	Chunk;
 	int		SizeImage;
 	Uint8		*pBitmapIn , *pBitmapOut;
-	int		y;
+	int		y, src_y;
 	int		NeedLock;
 	Uint8		*LineBuf = alloca(3 * pAviParams->Width);		/* temp buffer to convert to 24-bit BGR format */
 
@@ -386,27 +386,27 @@ static bool	Avi_RecordVideoStream_BMP ( RECORD_AVI_PARAMS *pAviParams )
 	/* Write the video frame data */
 	NeedLock = SDL_MUSTLOCK( pAviParams->Surface );
 
-	/* Points to the top left pixel after cropping borders */
-	/* For BMP format, frame is stored from bottom to top (origin is in bottom left corner) */
-	/* and bytes are in BGR order (not RGB) */
-	pBitmapIn = (Uint8 *)pAviParams->Surface->pixels
-			+ pAviParams->Surface->pitch * ( pAviParams->CropTop + pAviParams->Height )
-			+ pAviParams->CropLeft * pAviParams->Surface->format->BytesPerPixel;
-
 	for ( y=0 ; y<pAviParams->Height ; y++ )
 	{
 		if ( NeedLock )
 			SDL_LockSurface ( pAviParams->Surface );
 
-		pBitmapIn -= pAviParams->Surface->pitch;			/* go from bottom to top */
+		/* Points to the top left pixel after cropping borders. For BMP
+		 * format, frame is stored from bottom to top (origin is in
+		 * bottom left corner) and bytes are in BGR order (not RGB) */
+		src_y = pAviParams->Surface->h - 1 - pAviParams->CropTop - pAviParams->CropBottom;
+		src_y = src_y - y * (src_y + 1) / pAviParams->Height;
+		pBitmapIn = (Uint8 *)pAviParams->Surface->pixels
+			+ pAviParams->Surface->pitch * src_y
+			+ pAviParams->CropLeft * pAviParams->Surface->format->BytesPerPixel;
 
 		pBitmapOut = LineBuf;
 		switch ( pAviParams->Surface->format->BytesPerPixel ) {
 		 case 2:
-			PixelConvert_16to24Bits_BGR(LineBuf, (Uint16 *)pBitmapIn, pAviParams->Width, pAviParams->Surface->format);
+			PixelConvert_16to24Bits_BGR(LineBuf, (Uint16 *)pBitmapIn, pAviParams->Width, pAviParams->Surface);
 			break;
 		 case 4:
-			PixelConvert_32to24Bits_BGR(LineBuf, (Uint32 *)pBitmapIn, pAviParams->Width, pAviParams->Surface->format);
+			PixelConvert_32to24Bits_BGR(LineBuf, (Uint32 *)pBitmapIn, pAviParams->Width, pAviParams->Surface);
 			break;
 		 default:
 			abort();
@@ -1006,6 +1006,10 @@ bool	Avi_StartRecording ( char *FileName , bool CropGui , Uint32 Fps , Uint32 Fp
 	return false;
 }
 
+void Avi_SetSurface(SDL_Surface *surf)
+{
+	AviParams.Surface = surf;
+}
 
 bool	Avi_StopRecording ( void )
 {
