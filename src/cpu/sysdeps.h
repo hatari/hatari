@@ -190,6 +190,9 @@ struct utimbuf
 #define UVAL64(a) (a ## ul)
 #endif
 
+#define uae_s64 uae_s64
+#define uae_u64 uae_u64
+
 #else  /* WINUAE_FOR_HATARI */
 
 /* If char has more then 8 bits, good night. */
