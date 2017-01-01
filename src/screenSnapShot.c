@@ -171,26 +171,23 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, FILE *fp, int png_compre
 	/* write surface data rows one at a time (after cropping if necessary) */
 	src_ptr = (Uint8 *)surface->pixels + CropTop * surface->pitch + CropLeft * surface->format->BytesPerPixel;
 	do_lock = SDL_MUSTLOCK(surface);
-	for (y = 0; y < h; y++) {
+	for (y = 0; y < h; y++)
+	{
 		/* need to lock the surface while accessing it directly */
 		if (do_lock)
 			SDL_LockSurface(surface);
-		switch (fmt->BytesPerPixel) {
-		case 1:
-			/* unpack 8-bit data with RGB palette */
-			PixelConvert_8to24Bits(rowbuf, src_ptr, w, fmt->palette->colors);
-			break;
-		case 2:
+		switch (fmt->BytesPerPixel)
+		{
+		 case 2:
 			/* unpack 16-bit RGB pixels */
 			PixelConvert_16to24Bits(rowbuf, (Uint16*)src_ptr, w, fmt);
 			break;
-		case 3:
-			/* PNG can handle 24-bits */
-			break;
-		case 4:
+		 case 4:
 			/* unpack 32-bit RGBA pixels */
 			PixelConvert_32to24Bits(rowbuf, (Uint32*)src_ptr, w, fmt);
 			break;
+		 default:
+			abort();
 		}
 		/* and unlock surface before syscalls */
 		if (do_lock)

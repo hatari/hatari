@@ -14,19 +14,6 @@
 /*----------------------------------------------------------------------*/
 
 /**
- * Unpack 8-bit data with RGB palette to 24-bit RGB pixels
- */
-static inline void PixelConvert_8to24Bits(Uint8 *dst, Uint8 *src, int w, SDL_Color *colors)
-{
-	int x;
-	for (x = 0; x < w; x++, src++) {
-		*dst++ = colors[*src].r;
-		*dst++ = colors[*src].g;
-		*dst++ = colors[*src].b;
-	}
-}
-
-/**
  * Unpack 16-bit RGB pixels to 24-bit RGB pixels
  */
 static inline void PixelConvert_16to24Bits(Uint8 *dst, Uint16 *src, int w, SDL_PixelFormat *fmt)
@@ -60,19 +47,6 @@ static inline void PixelConvert_32to24Bits(Uint8 *dst, Uint32 *src, int w, SDL_P
 /*----------------------------------------------------------------------*/
 
 /**
- * Unpack 8-bit data with RGB palette to 24-bit BGR pixels
- */
-static inline void PixelConvert_8to24Bits_BGR(Uint8 *dst, Uint8 *src, int w, SDL_Color *colors)
-{
-	int x;
-	for (x = 0; x < w; x++, src++) {
-		*dst++ = colors[*src].b;
-		*dst++ = colors[*src].g;
-		*dst++ = colors[*src].r;
-	}
-}
-
-/**
  * Unpack 16-bit RGB pixels to 24-bit BGR pixels
  */
 static inline void PixelConvert_16to24Bits_BGR(Uint8 *dst, Uint16 *src, int w, SDL_PixelFormat *fmt)
@@ -82,25 +56,6 @@ static inline void PixelConvert_16to24Bits_BGR(Uint8 *dst, Uint16 *src, int w, S
 		*dst++ = (((*src & fmt->Bmask) >> fmt->Bshift) << fmt->Bloss);
 		*dst++ = (((*src & fmt->Gmask) >> fmt->Gshift) << fmt->Gloss);
 		*dst++ = (((*src & fmt->Rmask) >> fmt->Rshift) << fmt->Rloss);
-	}
-}
-
-/**
- *  unpack 24-bit RGB pixels to 24-bit BGR pixels
- */
-static inline void PixelConvert_24to24Bits_BGR(Uint8 *dst, Uint8 *src, int w)
-{
-	int x;
-	for (x = 0; x < w; x++, src += 3) {
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-		*dst++ = src[2];	/* B */
-		*dst++ = src[1];	/* G */
-		*dst++ = src[0];	/* R */
-#else
-		*dst++ = src[0];	/* B */
-		*dst++ = src[1];	/* G */
-		*dst++ = src[2];	/* R */
-#endif
 	}
 }
 

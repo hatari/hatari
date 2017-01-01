@@ -402,14 +402,14 @@ static bool	Avi_RecordVideoStream_BMP ( RECORD_AVI_PARAMS *pAviParams )
 
 		pBitmapOut = LineBuf;
 		switch ( pAviParams->Surface->format->BytesPerPixel ) {
-			case 1 :	PixelConvert_8to24Bits_BGR(LineBuf, pBitmapIn, pAviParams->Width, pAviParams->Surface->format->palette->colors);
-					break;
-			case 2 :	PixelConvert_16to24Bits_BGR(LineBuf, (Uint16 *)pBitmapIn, pAviParams->Width, pAviParams->Surface->format);
-					break;
-			case 3 :	PixelConvert_24to24Bits_BGR(LineBuf, pBitmapIn, pAviParams->Width);
-					break;
-			case 4 :	PixelConvert_32to24Bits_BGR(LineBuf, (Uint32 *)pBitmapIn, pAviParams->Width, pAviParams->Surface->format);
-					break;
+		 case 2:
+			PixelConvert_16to24Bits_BGR(LineBuf, (Uint16 *)pBitmapIn, pAviParams->Width, pAviParams->Surface->format);
+			break;
+		 case 4:
+			PixelConvert_32to24Bits_BGR(LineBuf, (Uint32 *)pBitmapIn, pAviParams->Width, pAviParams->Surface->format);
+			break;
+		 default:
+			abort();
 		}
 
 		if ( NeedLock )
