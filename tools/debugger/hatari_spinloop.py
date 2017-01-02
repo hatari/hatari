@@ -94,7 +94,7 @@ def parse(fname):
 
 if __name__ == "__main__":
     if len(sys.argv) != 2 or not os.path.exists(sys.argv[1]):
-        print __doc__
+        print(__doc__)
         sys.exit(1)
     data = parse(sys.argv[1])
     output(data, sys.stdout.write)

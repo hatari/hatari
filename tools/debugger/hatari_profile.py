@@ -2,7 +2,7 @@
 #
 # Hatari profile data processor
 #
-# 2013 (C) Eero Tamminen, licensed under GPL v2+
+# 2013-2017 (C) Eero Tamminen, licensed under GPL v2+
 #
 """
 A tool for post-processing emulator HW profiling data.
@@ -222,7 +222,7 @@ class Output:
         try:
             self.set_output(open(fname, "w"))
             return fname
-        except IOError, err:
+        except IOError as err:
             self.warning(err)
         return None
 
@@ -444,7 +444,7 @@ class ProfileSymbols(Output):
                 return False
             oldname = symbols[addr]
             lendiff = abs(len(name) - len(oldname))
-            minlen = min(len(name), min(oldname))
+            minlen = min(len(name), len(oldname))
             # don't warn about object name replacements,
             # or adding/removing short prefix or postfix
             if not (oldname.endswith('.o') or
@@ -551,7 +551,7 @@ class ProfileSymbols(Output):
         # should be called only after profile addresses has started
         if self.symbols:
             if self.symbols_need_sort:
-                self.symbols_sorted = self.symbols.keys()
+                self.symbols_sorted = list(self.symbols.keys())
                 self.symbols_sorted.sort()
                 self.symbols_need_sort = False
             idx = bisect_right(self.symbols_sorted, addr) - 1
@@ -1101,20 +1101,19 @@ class ProfileSorter:
         self.field = None
         self.show_subcosts = subcosts
 
-    def _cmp_field(self, i, j):
-        "compare currently selected field in profile data"
-        field = self.field
-        return cmp(self.profile[i].cost[field], self.profile[j].cost[field])
+    def _cmp_field(self, i):
+        "return currently selected field in profile data"
+        return self.profile[i].cost[self.field]
 
     def get_combined_limit(self, field, count, limit):
         "return percentage for given profile field that satisfies both count & limit constraint"
         if not count:
             return limit
-        keys = self.profile.keys()
+        keys = list(self.profile.keys())
         if len(keys) <= count:
             return 0.0
         self.field = field
-        keys.sort(self._cmp_field, None, True)
+        keys.sort(key=self._cmp_field, reverse=True)
         total = self.stats.totals[field]
         function = self.profile[keys[count]]
         if self.show_subcosts and function.subtotal:
@@ -1209,8 +1208,8 @@ class ProfileSorter:
         if self.stats.totals[field] == 0:
             return
         self.field = field
-        keys = self.profile.keys()
-        keys.sort(self._cmp_field, None, True)
+        keys = list(self.profile.keys())
+        keys.sort(key=self._cmp_field, reverse=True)
         self._output_list(keys, count, limit, show_info)
 
 
@@ -1462,10 +1461,10 @@ label="%s";
                         to_remove[addr] = True
                         continue
                     # refers just to itself?
-                    if children == 1 and addr == function.child.keys()[0]:
+                    if children == 1 and addr == tuple(function.child.keys())[0]:
                         to_remove[addr] = True
                         continue
-                    if parents == 1 and addr == function.parent.keys()[0]:
+                    if parents == 1 and addr == tuple(function.parent.keys())[0]:
                         to_remove[addr] = True
                         continue
                 if self.remove_intermediate:
@@ -1773,7 +1772,7 @@ class Main(Output):
         "open given path in given mode & return file object"
         try:
             return open(path, mode)
-        except IOError, err:
+        except IOError as err:
             self.usage("opening given '%s' file in mode '%s' failed:\n\t%s" % (path, mode, err))
 
     def get_value(self, opt, arg, tofloat):
