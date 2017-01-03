@@ -344,7 +344,7 @@ class HatariConfigMapping(ConfigStore):
     # ------------ paths ---------------
     def get_paths(self):
         paths = []
-        for key, item in self._paths.items():
+        for key, item in list(self._paths.items()):
             paths.append((key, self.get(item[0], item[1]), item[2]))
         return paths
     

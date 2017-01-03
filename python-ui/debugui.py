@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python2
 #
 # A Debug UI for the Hatari, part of PyGtk Hatari UI
 #

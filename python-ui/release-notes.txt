@@ -2,6 +2,9 @@
 User visible changes in Hatari (Python Gtk) UI
 ----------------------------------------------
 
+2017-01:
+- Fix for systems where "python" is Python v3
+
 2016-12 (Hatari v2.0 fixes):
 - Add support for new nModelType config option (with MegaST/STE
   options), but still support also old nMachineType option

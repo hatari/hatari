@@ -1,12 +1,14 @@
-Code:
-- config.py	- Hatari configuration INI file handling
+UI code:  (Python2-only due to PyGtk dependency)
 - debugui.py	- Debugger UI (works also as standalone)
 - dialogs.py	- Different dialogs shown by Hatari UI
+- hatariui.py	- Hatari UI main: option handling, main window etc
+- uihelpers.py	- Misc helpers for Hatari UI
+
+Other code:
+- config.py	- Hatari configuration INI file handling
 - hatari.py	- Communication with Hatari and config option handling
 - hatariui	- Wrapper script for hatariui.py with suitable default options
-- hatariui.py	- Hatari UI main: option handling, main window etc
 - Makefile	- Rules for installing
-- uihelpers.py	- Misc helpers for Hatari UI
 
 Data files:
 - hatari-icon.png	- Window icon
