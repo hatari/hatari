@@ -1,6 +1,4 @@
-#!/usr/bin/python2
-#
-# for Python3, remove sorting cmp function
+#!/usr/bin/env python
 """
 Script to copy Atari files with (potentially) too long names from
 source directory into target directory, using in latter file names
@@ -31,14 +29,14 @@ def check_conflicts(srcdir, dstdir):
     # how much to clip from paths
     srcskip = len(srcdir)+1
     dstskip = len(dstdir)+1
-    print "\nNames that aren't unique:"
+    print("\nNames that aren't unique:")
     conflicts = False
     for key,names in newnames.items():
         if len(names) > 1:
             conflicts = True
-            print "- %s: %s" % (key[dstskip:], [name[srcskip:] for name in names])
+            print("- %s: %s" % (key[dstskip:], [name[srcskip:] for name in names]))
     if not conflicts:
-        print "- none, all OK!"
+        print("- none, all OK!")
 
 def hash_names(original, newname):
     if newname not in newnames:
@@ -56,20 +54,12 @@ def clip_name(name):
     # TODO: map non-ASCII characters
     return name.upper()
 
-def dirs_last(a, b):
-    # in alphabetical order, dirs last
-    adir = os.path.isdir(a)
-    bdir = os.path.isdir(b)
-    if adir and bdir:
-        return cmp(a, b)
-    if adir:
-        return 1
-    if bdir:
-        return -1
-    return cmp(a, b)
+def dirs_last(path):
+    # order first by type, then (case-insensitively) by name
+    return (os.path.isdir(path), path.upper())
 
 def convert_dir(srcdir, dstdir):
-    print "\n%s/ -> %s/:" % (srcdir, dstdir)
+    print("\n%s/ -> %s/:" % (srcdir, dstdir))
     try:
         os.mkdir(dstdir)
     except OSError:
@@ -77,7 +67,7 @@ def convert_dir(srcdir, dstdir):
         return
     # directory sorting requires full names
     dircontents = [os.path.join(srcdir, x) for x in os.listdir(srcdir)]
-    for original in sorted(dircontents, cmp=dirs_last):
+    for original in sorted(dircontents, key=dirs_last):
         origname = os.path.basename(original)
         clipname = clip_name(origname)
         newname = os.path.join(dstdir, clipname)
@@ -85,7 +75,7 @@ def convert_dir(srcdir, dstdir):
         if os.path.isdir(original):
             convert_dir(original, newname)
         else:
-            print "- %s -> %s" % (origname, clipname)
+            print("- %s -> %s" % (origname, clipname))
             try:
                 shutil.copyfile(original, newname)
             except IOError:
