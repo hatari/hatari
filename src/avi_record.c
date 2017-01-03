@@ -395,7 +395,7 @@ static bool	Avi_RecordVideoStream_BMP ( RECORD_AVI_PARAMS *pAviParams )
 		 * format, frame is stored from bottom to top (origin is in
 		 * bottom left corner) and bytes are in BGR order (not RGB) */
 		src_y = pAviParams->Surface->h - 1 - pAviParams->CropTop - pAviParams->CropBottom;
-		src_y = src_y - y * (src_y + 1) / pAviParams->Height;
+		src_y = src_y - (y * (src_y + 1) + pAviParams->Height/2) / pAviParams->Height;
 		pBitmapIn = (Uint8 *)pAviParams->Surface->pixels
 			+ pAviParams->Surface->pitch * src_y
 			+ pAviParams->CropLeft * pAviParams->Surface->format->BytesPerPixel;

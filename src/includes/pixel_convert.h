@@ -24,7 +24,7 @@ static inline void PixelConvert_16to24Bits(Uint8 *dst, Uint16 *src, int dw, SDL_
 
 	for (dx = 0; dx < dw; dx++)
 	{
-		sval = src[dx * surf->w / dw];
+		sval = src[(dx * surf->w + dw/2) / dw];
 		*dst++ = (((sval & fmt->Rmask) >> fmt->Rshift) << fmt->Rloss);
 		*dst++ = (((sval & fmt->Gmask) >> fmt->Gshift) << fmt->Gloss);
 		*dst++ = (((sval & fmt->Bmask) >> fmt->Bshift) << fmt->Bloss);
@@ -42,7 +42,7 @@ static inline void PixelConvert_32to24Bits(Uint8 *dst, Uint32 *src, int dw, SDL_
 
 	for (dx = 0; dx < dw; dx++)
 	{
-		sval = src[dx * surf->w / dw];
+		sval = src[(dx * surf->w + dw/2) / dw];
 		*dst++ = (((sval & fmt->Rmask) >> fmt->Rshift) << fmt->Rloss);
 		*dst++ = (((sval & fmt->Gmask) >> fmt->Gshift) << fmt->Gloss);
 		*dst++ = (((sval & fmt->Bmask) >> fmt->Bshift) << fmt->Bloss);
@@ -66,7 +66,7 @@ static inline void PixelConvert_16to24Bits_BGR(Uint8 *dst, Uint16 *src, int dw, 
 
 	for (dx = 0; dx < dw; dx++)
 	{
-		sval = src[dx * surf->w / dw];
+		sval = src[(dx * surf->w + dw/2) / dw];
 		*dst++ = (((sval & fmt->Bmask) >> fmt->Bshift) << fmt->Bloss);
 		*dst++ = (((sval & fmt->Gmask) >> fmt->Gshift) << fmt->Gloss);
 		*dst++ = (((sval & fmt->Rmask) >> fmt->Rshift) << fmt->Rloss);
@@ -84,7 +84,7 @@ static inline void PixelConvert_32to24Bits_BGR(Uint8 *dst, Uint32 *src, int dw, 
 
 	for (dx = 0; dx < dw; dx++)
 	{
-		sval = src[dx * surf->w / dw];
+		sval = src[(dx * surf->w + dw/2) / dw];
 		*dst++ = (((sval & fmt->Bmask) >> fmt->Bshift) << fmt->Bloss);
 		*dst++ = (((sval & fmt->Gmask) >> fmt->Gshift) << fmt->Gloss);
 		*dst++ = (((sval & fmt->Rmask) >> fmt->Rshift) << fmt->Rloss);

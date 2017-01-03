@@ -186,7 +186,7 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
 
 
 		src_ptr = (Uint8 *)surface->pixels
-		          + (CropTop + y * sh / dh) * surface->pitch
+		          + (CropTop + (y * sh + dh/2) / dh) * surface->pitch
 		          + CropLeft * surface->format->BytesPerPixel;
 
 		switch (fmt->BytesPerPixel)
