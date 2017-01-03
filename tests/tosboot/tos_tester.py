@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # 
-# Copyright (C) 2012-2015 by Eero Tamminen <oak at helsinkinet fi>
+# Copyright (C) 2012-2017 by Eero Tamminen <oak at helsinkinet fi>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ def add_hconsole_paths():
         if os.path.isfile(f):
             f = os.path.dirname(f)
             sys.path.append(f)
-            print "Added local hconsole path: %s" % f
+            print("Added local hconsole path: %s" % f)
             break
     sys.path += ["/usr/local/share/hatari/hconsole",
                  "/usr/share/hatari/hconsole"]
@@ -95,7 +95,7 @@ class TOS:
     
     def _add_version(self):
         "get TOS version and whether it's EmuTOS & supports GEMDOS HD"
-        f = open(self.path)
+        f = open(self.path, 'rb')
         f.seek(0x2, 0)
         version = (ord(f.read(1)) << 8) + ord(f.read(1))
         # older TOS versions don't support autostarting
@@ -140,9 +140,9 @@ class TOS:
             raise AssertionError("'%s' TOS version 0x%x isn't valid" % (name, version))
         
         if self.etos:
-            print "%s is EmuTOS v%x %dkB" % (name, version, size)
+            print("%s is EmuTOS v%x %dkB" % (name, version, size))
         else:
-            print "%s is normal TOS v%x" % (name, version)
+            print("%s is normal TOS v%x" % (name, version))
         # 0: whether / how long to wait to dismiss memory test
         # 1: how long to wait until concluding test failed
         # 2: list of machines supported by this TOS version
@@ -223,7 +223,7 @@ class Config:
             self.usage(error)
         self.handle_options(opts)
         self.images = self.check_images(paths)
-        print "Test configuration:\n\t", self.disks, self.graphics, self.machines, self.memsizes, self.ttrams
+        print("Test configuration:\n\t", self.disks, self.graphics, self.machines, self.memsizes, self.ttrams)
 
     
     def check_images(self, paths):
@@ -278,8 +278,8 @@ class Config:
     def usage(self, msg=None):
         "output program usage information"
         name = os.path.basename(sys.argv[0])
-        print __doc__
-        print("""
+        print(__doc__)
+        print(("""
 Usage: %s [options] <TOS image files>
 
 Options:
@@ -303,9 +303,9 @@ For example:
 \t--ttrams 0,32 \\
 \t--graphics mono,rgb \\
 \t-bool --compatible,--rtc
-""" % (name, self.all_disks, self.all_graphics, self.all_machines, self.all_memsizes, self.ttrams, name))
+""" % (name, self.all_disks, self.all_graphics, self.all_machines, self.all_memsizes, self.ttrams, name)))
         if msg:
-            print("ERROR: %s\n" % msg)
+            print(("ERROR: %s\n" % msg))
         sys.exit(1)
     
     
@@ -429,9 +429,9 @@ class Tester:
     def alarm_handler(self, signum, dummy):
         "output error if (timer) signal came before passing current test stage"
         if signum == signal.SIGALRM:
-            print "ERROR: timeout triggered -> test FAILED"
+            print("ERROR: timeout triggered -> test FAILED")
         else:
-            print "ERROR: unknown signal %d received" % signum
+            print("ERROR: unknown signal %d received" % signum)
             raise AssertionError
     
     def create_config(self):
@@ -496,27 +496,27 @@ class Tester:
         # check file truncate
         error = verify_file_empty(self.textoutput)
         if error:
-            print "ERROR: file wasn't truncated:\n\t%s" % error
+            print("ERROR: file wasn't truncated:\n\t%s" % error)
             os.rename(self.textoutput, "%s.%s" % (self.textoutput, identity))
             ok = False
         # check serial output
         error = verify_file_match(self.textinput, self.serialout)
         if error:
-            print "ERROR: serial output doesn't match input:\n\t%s" % error
+            print("ERROR: serial output doesn't match input:\n\t%s" % error)
             os.rename(self.serialout, "%s.%s" % (self.serialout, identity))
             ok = False
         # check printer output
         error = verify_file_match(self.textinput, self.printout)
         if error:
             if tos.etos or tos.version > 0x206 or (tos.version == 0x100 and memory > 1):
-                print "ERROR: printer output doesn't match input (EmuTOS, TOS v1.00 or >v2.06)\n\t%s" % error
+                print("ERROR: printer output doesn't match input (EmuTOS, TOS v1.00 or >v2.06)\n\t%s" % error)
                 os.rename(self.printout, "%s.%s" % (self.printout, identity))
                 ok = False
             else:
                 if os.path.exists(self.printout):
                     error = verify_file_empty(self.printout)
                     if error:
-                        print "WARNING: unexpected printer output (TOS v1.02 - TOS v2.06):\n\t%s" % error
+                        print("WARNING: unexpected printer output (TOS v1.02 - TOS v2.06):\n\t%s" % error)
                         os.rename(self.printout, "%s.%s" % (self.printout, identity))
         self.cleanup_test_files()
         return ok
@@ -524,20 +524,20 @@ class Tester:
 
     def wait_fifo(self, fifo, timeout):
         "wait_fifo(fifo) -> wait until fifo has input until given timeout"
-        print("Waiting %ss for fifo '%s' input..." % (timeout, self.fifofile))
+        print(("Waiting %ss for fifo '%s' input..." % (timeout, self.fifofile)))
         sets = select.select([fifo], [], [], timeout)
         if sets[0]:
-            print "...test program is READY, read what's in its fifo:",
+            print("...test program is READY, read what's in its fifo...")
             try:
                 # read can block, make sure it's eventually interrupted
                 signal.alarm(timeout)
                 line = fifo.readline().strip()
                 signal.alarm(0)
-                print line
+                print(line)
                 return (True, (line == "success"))
             except IOError:
                 pass
-        print "ERROR: TIMEOUT without fifo input, BOOT FAILED"
+        print("ERROR: TIMEOUT without fifo input, BOOT FAILED")
         return (False, False)
     
     
@@ -552,7 +552,7 @@ class Tester:
             signal.alarm(0)
             return fifo
         except IOError:
-            print "ERROR: fifo open IOError!"
+            print("ERROR: fifo open IOError!")
             return None
 
     def test(self, identity, testargs, tos, memory):
@@ -561,7 +561,7 @@ class Tester:
         instance = hconsole.Main(self.defaults + testargs, False)
         fifo = self.open_fifo(tos.fullwait)
         if not fifo:
-            print "ERROR: failed to get fifo to Hatari!"
+            print("ERROR: failed to get fifo to Hatari!")
             self.get_screenshot(instance, identity)
             instance.run("kill")
             return (False, False, False, False)
@@ -578,7 +578,7 @@ class Tester:
         if tests_ok:
             output_ok = self.verify_output(identity, tos, memory)
         else:
-            print "TODO: collect info on failure, regs etc"
+            print("TODO: collect info on failure, regs etc")
             output_ok = False
         
         # get screenshot after a small wait (to guarantee all
@@ -643,9 +643,9 @@ class Tester:
         self.results = {}
         for tos in config.images:
             self.results[tos.name] = []
-            print
-            print "***** TESTING: %s *****" % tos.name
-            print
+            print()
+            print("***** TESTING: %s *****" % tos.name)
+            print()
             count = 0
             for machine in config.machines:
                 if machine not in tos.machines:
@@ -678,7 +678,7 @@ class Tester:
         "summarize test results"
         cases = [0, 0, 0, 0]
         passed = [0, 0, 0, 0]
-        tosnames = self.results.keys()
+        tosnames = list(self.results.keys())
         tosnames.sort()
         
         report = open(self.report, "w")
@@ -714,17 +714,17 @@ class Tester:
         report.write("\n")
         
         # print report out too
-        print "--- %s ---" % self.report
+        print("--- %s ---" % self.report)
         report = open(self.report, "r")
         for line in report.readlines():
-            print line.strip()
+            print(line.strip())
 
 
 # -----------------------------------------------
 def main():
     "tester main function"
     info = "Hatari TOS bootup tester"
-    print "\n%s\n%s\n" % (info, "-"*len(info))
+    print("\n%s\n%s\n" % (info, "-"*len(info)))
     config = Config(sys.argv)
     tester = Tester()
     tester.run(config)
