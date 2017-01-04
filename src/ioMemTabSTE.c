@@ -66,7 +66,7 @@ void IoMemTabMegaSTE_CacheCpuCtrl_WriteByte(void)
 const INTERCEPT_ACCESS_FUNC IoMemTable_STE[] =
 {
 	{ 0xff8000, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
-	{ 0xff8001, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Memory configuration */
+	{ 0xff8001, SIZE_BYTE, STMemory_MMU_Config_ReadByte, STMemory_MMU_Config_WriteByte },	/* Memory configuration */
 	{ 0xff8002, 14,        IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus errors here */
 
 	{ 0xff8200, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */

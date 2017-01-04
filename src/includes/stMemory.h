@@ -29,8 +29,22 @@ extern uae_u32 TTmem_size;
 extern Uint32 STRamEnd;
 
 
+#define	MEM_BANK_SIZE_128	( 128 * 1024 )		/* 00b */
+#define	MEM_BANK_SIZE_512	( 512 * 1024 )		/* 01b */
+#define	MEM_BANK_SIZE_2048	( 2048 * 1024 )		/* 10b */
+
+extern Uint32	RAM_Bank0_Size;
+extern Uint32	RAM_Bank1_Size;
+
+extern Uint32	MMU_Bank0_Size;
+extern Uint32	MMU_Bank1_Size;
+
+
+
+extern void STMemory_Init ( int RAM_Size_Byte );
+extern void STMemory_Reset ( bool bCold );
+
 extern bool STMemory_SafeCopy(Uint32 addr, Uint8 *src, unsigned int len, const char *name);
-extern int	STMemory_RAM_Validate_Size_KB ( int TotalMem );
 extern void STMemory_MemorySnapShot_Capture(bool bSave);
 extern void STMemory_SetDefaultConfig(void);
 extern bool STMemory_CheckAreaType ( Uint32 addr , int size , int mem_type );
@@ -45,5 +59,12 @@ extern Uint32	STMemory_Read ( Uint32 addr , int size );
 extern Uint32	STMemory_ReadLong ( Uint32 addr );
 extern Uint16	STMemory_ReadWord ( Uint32 addr );
 extern Uint8	STMemory_ReadByte ( Uint32 addr );
+
+extern void	STMemory_MMU_Config_ReadByte ( void );
+extern void	STMemory_MMU_Config_WriteByte ( void );
+
+extern int	STMemory_RAM_Validate_Size_KB ( int TotalMem );
+extern bool	STMemory_RAM_SetBankSize ( int TotalMem , Uint32 *pBank0_Size , Uint32 *pBank1_Size , Uint8 *pMMU_Conf );
+extern Uint32	STMemory_MMU_Translate_Addr ( Uint32 addr_logical );
 
 #endif

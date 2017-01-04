@@ -221,7 +221,7 @@ static void IoMemTabFalc_Compatible_WriteWord(void)
 const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 {
 	{ 0xff8000, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
-	{ 0xff8001, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Memory configuration */
+	{ 0xff8001, SIZE_BYTE, STMemory_MMU_Config_ReadByte, STMemory_MMU_Config_WriteByte },	/* Memory configuration */
 	{ 0xff8006, SIZE_BYTE, IoMem_ReadWithoutInterception, VIDEL_Monitor_WriteByte },        /* Falcon monitor and memory configuration */
 	{ 0xff8007, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMemTabFalcon_BusCtrl_WriteByte }, /* Falcon bus configuration */
 	{ 0xff800C, SIZE_WORD, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */

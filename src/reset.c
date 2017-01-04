@@ -61,6 +61,8 @@ static int Reset_ST(bool bCold)
 		/* Video timings can change only on cold boot (wakeup states) */
 		Video_SetTimings ( ConfigureParams.System.nMachineType , ConfigureParams.System.VideoTimingMode );
 	}
+
+	STMemory_Reset (bCold);
 	CycInt_Reset();               /* Reset interrupts */
 	MFP_Reset();                  /* Setup MFP chip */
 	Video_Reset();                /* Reset video */

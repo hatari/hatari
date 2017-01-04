@@ -701,6 +701,8 @@ static void Main_Init(void)
 	Screen_Init();
 	Main_SetTitle(NULL);
 
+	STMemory_Init ( ConfigureParams.Memory.STRamSize_KB * 1024 );
+
 	ACIA_Init( ACIA_Array , MachineClocks.ACIA_Freq , MachineClocks.ACIA_Freq );
 	IKBD_Init();			/* After ACIA_Init */
 

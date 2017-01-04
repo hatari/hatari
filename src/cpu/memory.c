@@ -613,6 +613,56 @@ static uae_u8 REGPARAM3 *STmem_xlate(uaecptr addr)
     return STmemory + addr;
 }
 
+/* Same functions for ST RAM but with MMU/MCU enabled to translate addresses */
+
+static uae_u32 REGPARAM3 STmem_lget_MMU(uaecptr addr)
+{
+    addr -= STmem_start & STmem_mask;
+    addr &= STmem_mask;
+    addr = STMemory_MMU_Translate_Addr ( addr );
+    return do_get_mem_long(STmemory + addr);
+}
+
+static uae_u32 REGPARAM3 STmem_wget_MMU(uaecptr addr)
+{
+    addr -= STmem_start & STmem_mask;
+    addr &= STmem_mask;
+    addr = STMemory_MMU_Translate_Addr ( addr );
+    return do_get_mem_word(STmemory + addr);
+}
+
+static uae_u32 REGPARAM3 STmem_bget_MMU(uaecptr addr)
+{
+    addr -= STmem_start & STmem_mask;
+    addr &= STmem_mask;
+    addr = STMemory_MMU_Translate_Addr ( addr );
+    return STmemory[addr];
+}
+
+static void REGPARAM3 STmem_lput_MMU(uaecptr addr, uae_u32 l)
+{
+    addr -= STmem_start & STmem_mask;
+    addr &= STmem_mask;
+    addr = STMemory_MMU_Translate_Addr ( addr );
+    do_put_mem_long(STmemory + addr, l);
+}
+
+static void REGPARAM3 STmem_wput_MMU(uaecptr addr, uae_u32 w)
+{
+    addr -= STmem_start & STmem_mask;
+    addr &= STmem_mask;
+    addr = STMemory_MMU_Translate_Addr ( addr );
+    do_put_mem_word(STmemory + addr, w);
+}
+
+static void REGPARAM3 STmem_bput_MMU(uaecptr addr, uae_u32 b)
+{
+    addr -= STmem_start & STmem_mask;
+    addr &= STmem_mask;
+    addr = STMemory_MMU_Translate_Addr ( addr );
+    STmemory[addr] = b;
+}
+
 
 /*
  * **** ST RAM system memory ****
@@ -710,6 +760,106 @@ static void REGPARAM3 SysMem_bput(uaecptr addr, uae_u32 b)
       return;
     }
 
+    STmemory[addr] = b;
+}
+
+/* Same functions for ST RAM system but with MMU/MCU enabled to translate addresses */
+
+static uae_u32 REGPARAM3 SysMem_lget_MMU(uaecptr addr)
+{
+    addr -= STmem_start & STmem_mask;
+    addr &= STmem_mask;
+
+    if(addr < 0x800 && !regs.s)
+    {
+      M68000_BusError(addr, 1, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
+      return 0;
+    }
+
+    addr = STMemory_MMU_Translate_Addr ( addr );
+    return do_get_mem_long(STmemory + addr);
+}
+
+static uae_u32 REGPARAM3 SysMem_wget_MMU(uaecptr addr)
+{
+    addr -= STmem_start & STmem_mask;
+    addr &= STmem_mask;
+
+    /* Only CPU will trigger bus error if bit S=0, not the blitter */
+    if(addr < 0x800 && !regs.s && BusMode == BUS_MODE_CPU)
+    {
+      M68000_BusError(addr, 1, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
+      return 0;
+    }
+
+    addr = STMemory_MMU_Translate_Addr ( addr );
+    return do_get_mem_word(STmemory + addr);
+}
+
+static uae_u32 REGPARAM3 SysMem_bget_MMU(uaecptr addr)
+{
+    addr -= STmem_start & STmem_mask;
+    addr &= STmem_mask;
+
+    if(addr < 0x800 && !regs.s)
+    {
+      M68000_BusError(addr, 1, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
+      return 0;
+    }
+
+    addr = STMemory_MMU_Translate_Addr ( addr );
+    return STmemory[addr];
+}
+
+static void REGPARAM3 SysMem_lput_MMU(uaecptr addr, uae_u32 l)
+{
+    addr -= STmem_start & STmem_mask;
+    addr &= STmem_mask;
+
+    if(addr < 0x8 || (addr < 0x800 && !regs.s))
+    {
+      M68000_BusError(addr, 0, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
+      return;
+    }
+
+    addr = STMemory_MMU_Translate_Addr ( addr );
+    do_put_mem_long(STmemory + addr, l);
+}
+
+static void REGPARAM3 SysMem_wput_MMU(uaecptr addr, uae_u32 w)
+{
+    addr -= STmem_start & STmem_mask;
+    addr &= STmem_mask;
+
+    /* Only CPU will trigger bus error if bit S=0, not the blitter */
+    if(addr < 0x8 || (addr < 0x800 && !regs.s))
+    {
+      if ( BusMode == BUS_MODE_CPU )
+      {
+	M68000_BusError(addr, 0, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
+	return;
+      }
+      /* If blitter writes < 0x8 then it should be ignored, else the write should be made */
+      else if ( ( BusMode == BUS_MODE_BLITTER ) && ( addr < 0x8 ) )
+	return;
+    }
+
+    addr = STMemory_MMU_Translate_Addr ( addr );
+    do_put_mem_word(STmemory + addr, w);
+}
+
+static void REGPARAM3 SysMem_bput_MMU(uaecptr addr, uae_u32 b)
+{
+    addr -= STmem_start & STmem_mask;
+    addr &= STmem_mask;
+
+    if(addr < 0x8 || (addr < 0x800 && !regs.s))
+    {
+      M68000_BusError(addr, 0, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
+      return;
+    }
+
+    addr = STMemory_MMU_Translate_Addr ( addr );
     STmemory[addr] = b;
 }
 
@@ -968,6 +1118,22 @@ static addrbank SysMem_bank =
     SysMem_lput, SysMem_wput, SysMem_bput,
     STmem_xlate, STmem_check, NULL, "sys_mem" , "Sys memory",
     SysMem_lget, SysMem_wget, ABFLAG_RAM
+};
+
+static addrbank STmem_bank_MMU =			/* similar to STmem_bank with MMU/MCU enabled */
+{
+    STmem_lget_MMU, STmem_wget_MMU, STmem_bget_MMU,
+    STmem_lput_MMU, STmem_wput_MMU, STmem_bput_MMU,
+    STmem_xlate, STmem_check, NULL, "st_mem" , "ST memory + MMU",
+    STmem_lget_MMU, STmem_wget_MMU, ABFLAG_RAM
+};
+
+static addrbank SysMem_bank_MMU =			/* similar to STmem_bank with MMU/MCU enabled */
+{
+    SysMem_lget_MMU, SysMem_wget_MMU, SysMem_bget_MMU,
+    SysMem_lput_MMU, SysMem_wput_MMU, SysMem_bput_MMU,
+    STmem_xlate, STmem_check, NULL, "sys_mem" , "Sys memory + MMU",
+    SysMem_lget_MMU, SysMem_wget_MMU, ABFLAG_RAM
 };
 
 static addrbank VoidMem_bank =
@@ -1284,19 +1450,86 @@ static void fill_ce_banks (int start, int size, int banktype, int cachable )
 
 
 /*
- * Initialize the memory banks
+ * Initialize the standard RAM memory banks
+ *   - Unmodified STF/STE can have a max of 4 MB, but we can allow up to 14 MB
+ *     if RAM detection code is bypassed in the ROM (see tos.c)
+ *   - Falcon/TT can have up to 14 MB
+ * Depending on the current config, we enable MMU/MCU to translate addresses on
+ * each access (eg during boot when TOS checks RAM size)
+ *
+ * Most of the time, MMU bank size will be the same as RAM bank size and we use the "usual" non-MMU version
+ * which considers logical address == physical address and gives faster result
+ *
+ * See stMemory.c for the address translation used by the MMU/MCU
  */
-void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMemStart)
+void memory_map_Standard_RAM ( Uint32 MMU_Bank0_Size , Uint32 MMU_Bank1_Size )
+{
+fprintf ( stderr , "memory_map_Standard_RAM %d %d %d\n" , STmem_size , MMU_Bank0_Size, MMU_Bank1_Size );
+
+	/* Between 0 and 4MB barrier, we default to void space */
+	map_banks_ce(&VoidMem_bank, 0x00, 0x400000 >> 16, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
+
+	/* Space between 4MB barrier and TOS ROM causes a bus error */
+	map_banks_ce(&BusErrMem_bank, 0x400000 >> 16, 0xA0, 0 , CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
+
+	/* Now map main ST RAM, overwriting the void and bus error regions if necessary */
+	/*  - Map the ST system RAM from 0 to 0x10000 (required for supervisor check between 0x0 and 0x800) */
+	/*  - Map rest of the ST RAM from 0x10000 to STmem_size */
+	/* If possible/needed we enable MMU/MCU translation for maximum accuracy (when sizes of banks differ between MMU and RAM) */
+	if ( ( Config_IsMachineST() || Config_IsMachineSTE() )
+	  && ( !ConfigureParams.System.bFastBoot )
+	  && ( STmem_size <= 0x400000 )
+	  && ( ( MMU_Bank0_Size != RAM_Bank0_Size ) || ( ( RAM_Bank1_Size > 0 ) && ( MMU_Bank1_Size != RAM_Bank1_Size ) ) )
+	  )
+	{
+		/* We map memory according to the logical MMU configuration and we will translate addresses on each memory access. */
+		/* RAM bank 0 can never be empty, but RAM bank 1 can be empty. If there's no RAM bank 1, then we must */
+		/* use 'Void' region directly, we don't map it to STmem_bank_MMU */
+fprintf ( stderr , "memory_map_Standard_RAM_2 %d %d %d\n" , STmem_size , MMU_Bank0_Size, MMU_Bank1_Size );
+
+		/* Map RAM bank 0 to MMU bank 0 */
+		map_banks_ce(&SysMem_bank_MMU, 0x00, 0x10000 >> 16, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_CACHABLE);
+		map_banks_ce(&STmem_bank_MMU, 0x10000 >> 16, ( MMU_Bank0_Size - 0x10000 ) >> 16,
+			0, CE_MEMBANK_CHIP16, CE_MEMBANK_CACHABLE);
+
+		/* If RAM bank 1 exists, we map it after MMU bank 0 ; else we keep void region */
+		if ( RAM_Bank1_Size > 0 )
+			map_banks_ce(&STmem_bank_MMU, MMU_Bank0_Size >> 16, MMU_Bank1_Size >> 16,
+				0, CE_MEMBANK_CHIP16, CE_MEMBANK_CACHABLE);
+
+		/* There's a special case when bank0=128 and bank1=2048 : addresses between $40000 and $80000 */
+		/* are returning 'void' region too, which creates a "hole" in the memory mapping */
+		/* (this might be a bug / forgotten case by Atari in the STF non-IMP MMU as this memory */
+		/* configuration was certainly never used in real machines) */
+		if ( ( MMU_Bank0_Size == MEM_BANK_SIZE_128 ) && ( MMU_Bank1_Size == MEM_BANK_SIZE_2048 ) )
+		{
+			map_banks_ce(&VoidMem_bank, 0x40000 >> 16, 0x40000 >> 16, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
+		}
+	}
+	else
+	{
+		/* Don't enable MMU address translation */
+		map_banks_ce(&SysMem_bank, 0x00, 0x10000 >> 16, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_CACHABLE);
+		map_banks_ce(&STmem_bank, 0x10000 >> 16, ( STmem_size - 0x10000 ) >> 16, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_CACHABLE);
+	}
+}
+
+
+/*
+ * Initialize all the memory banks
+ */
+void memory_init(uae_u32 NewSTMemSize, uae_u32 NewTTMemSize, uae_u32 NewRomMemStart)
 {
     int 	addr;
 
     last_address_space_24 = currprefs.address_space_24;
 
-    STmem_size = (nNewSTMemSize + 65535) & 0xFFFF0000;
-    TTmem_size = (nNewTTMemSize + 65535) & 0xFFFF0000;
+    /* Round to next multiple of 65536 bytes */
+    STmem_size = (NewSTMemSize + 65535) & 0xFFFF0000;
+    TTmem_size = (NewTTMemSize + 65535) & 0xFFFF0000;
 
     /*write_log("memory_init: STmem_size=$%x, TTmem_size=$%x, ROM-Start=$%x,\n",
-              STmem_size, TTmem_size, nNewRomMemStart);*/
+              STmem_size, TTmem_size, NewRomMemStart);*/
 
 #if ENABLE_SMALL_MEM
 
@@ -1346,19 +1579,21 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
     SysMem_bank.mask = STmem_mask;
     SysMem_bank.start = STmem_start;
 
+    STmem_bank_MMU.baseaddr = STmemory;
+    STmem_bank_MMU.mask = STmem_mask;
+    STmem_bank_MMU.start = STmem_start;
+
+    SysMem_bank_MMU.baseaddr = STmemory;
+    SysMem_bank_MMU.mask = STmem_mask;
+    SysMem_bank_MMU.start = STmem_start;
+
     dummy_bank.baseaddr = NULL;				/* No real memory allocated for this region */
     VoidMem_bank.baseaddr = NULL;			/* No real memory allocated for this region */
     BusErrMem_bank.baseaddr = NULL;			/* No real memory allocated for this region */
 
 
-    /* Map the ST system RAM: */
-    map_banks_ce(&SysMem_bank, 0x00, 1, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_CACHABLE);
-    /* Between STRamEnd and 4MB barrier, there is void space: */
-    map_banks_ce(&VoidMem_bank, 0x08, 0x38, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
-    /* Space between 4MB barrier and TOS ROM causes a bus error: */
-    map_banks_ce(&BusErrMem_bank, 0x400000 >> 16, 0xA0, 0 , CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
-    /* Now map main ST RAM, overwriting the void and bus error regions if necessary: */
-    map_banks_ce(&STmem_bank, 0x01, (STmem_size >> 16) - 1, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_CACHABLE);
+    /* Map the standard RAM (Max is 4 MB on unmodified STF/STE) */
+    memory_map_Standard_RAM ( MMU_Bank0_Size , MMU_Bank1_Size );
 
 
     /* Handle extra RAM on TT and Falcon starting at 0x1000000 and up to 0x80000000 */
@@ -1393,12 +1628,12 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
 
     /* ROM memory: */
     /* Depending on which ROM version we are using, the other ROM region is illegal! */
-    if(nNewRomMemStart == 0xFC0000)
+    if(NewRomMemStart == 0xFC0000)
     {
         map_banks_ce(&ROMmem_bank, 0xFC0000 >> 16, 0x3, 0, CE_MEMBANK_FAST16, CE_MEMBANK_CACHABLE);	/* [NP] tested on real STF, no bus wait from ROM */
         map_banks_ce(&BusErrMem_bank, 0xE00000 >> 16, 0x10, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
     }
-    else if(nNewRomMemStart == 0xE00000)
+    else if(NewRomMemStart == 0xE00000)
     {
         map_banks_ce(&ROMmem_bank, 0xE00000 >> 16, 0x10, 0, CE_MEMBANK_FAST16, CE_MEMBANK_CACHABLE);	/* [NP] tested on real STF, no bus wait from ROM */
         map_banks_ce(&BusErrMem_bank, 0xFC0000 >> 16, 0x3, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
