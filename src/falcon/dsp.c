@@ -233,29 +233,32 @@ void DSP_Run(int nHostCycles)
 
 	DSP_CyclesGlobalClockCounter = CyclesGlobalClockCounter;
 
-        save_cycles += nHostCycles * 2;
+	save_cycles += nHostCycles * 2;
 
-        if (dsp_core.running == 0)
-                return;
+	if (dsp_core.running == 0)
+		return;
 
-        if (save_cycles <= 0)
-                return;
+	if (save_cycles <= 0)
+		return;
 
-        if (unlikely(bDspDebugging)) {
-                while (save_cycles > 0)
-                {
-                        dsp56k_execute_instruction();
-                        save_cycles -= dsp_core.instr_cycle;
-                        DebugDsp_Check();
-                }
-        } else {
-		//	fprintf(stderr, "--> %d\n", save_cycles);
-                while (save_cycles > 0)
-                {
-                        dsp56k_execute_instruction();
-                        save_cycles -= dsp_core.instr_cycle;
-                }
-        }
+	if (unlikely(bDspDebugging))
+	{
+		while (save_cycles > 0)
+		{
+			dsp56k_execute_instruction();
+			save_cycles -= dsp_core.instr_cycle;
+			DebugDsp_Check();
+		}
+	}
+	else
+	{
+		// fprintf(stderr, "--> %d\n", save_cycles);
+		while (save_cycles > 0)
+		{
+			dsp56k_execute_instruction();
+			save_cycles -= dsp_core.instr_cycle;
+		}
+	}
 
 #endif
 } 
