@@ -345,7 +345,10 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 	else
 	{
 		int deskw, deskh;
-		sdlVideoFlags  = SDL_WINDOW_RESIZABLE;
+		if (getenv("PARENT_WIN_ID") != NULL)	/* Embedded window? */
+			sdlVideoFlags = SDL_WINDOW_BORDERLESS;
+		else
+			sdlVideoFlags = SDL_WINDOW_RESIZABLE;
 		/* Make sure that window is not bigger than current desktop */
 		Resolution_GetDesktopSize(&deskw, &deskh);
 		if (win_width > deskw)

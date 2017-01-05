@@ -583,7 +583,9 @@ void Control_ReparentWindow(int width, int height, bool noembed)
 				perror("Control_ReparentWindow write");
 		}
 	}
-#if !WITH_SDL2
+#if WITH_SDL2
+	XSync(display, false);
+#else
 	info.info.x11.unlock_func();
 #endif
 }
