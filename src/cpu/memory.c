@@ -1485,7 +1485,7 @@ fprintf ( stderr , "memory_map_Standard_RAM %d %d %d\n" , STmem_size , MMU_Bank0
 		/* We map memory according to the logical MMU configuration and we will translate addresses on each memory access. */
 		/* RAM bank 0 can never be empty, but RAM bank 1 can be empty. If there's no RAM bank 1, then we must */
 		/* use 'Void' region directly, we don't map it to STmem_bank_MMU */
-fprintf ( stderr , "memory_map_Standard_RAM_2 %d %d %d\n" , STmem_size , MMU_Bank0_Size, MMU_Bank1_Size );
+fprintf ( stderr , "memory_map_Standard_RAM - enable MMU %d %d %d\n" , STmem_size , MMU_Bank0_Size, MMU_Bank1_Size );
 
 		/* Map RAM bank 0 to MMU bank 0 */
 		map_banks_ce(&SysMem_bank_MMU, 0x00, 0x10000 >> 16, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_CACHABLE);
@@ -1528,6 +1528,7 @@ void memory_init(uae_u32 NewSTMemSize, uae_u32 NewTTMemSize, uae_u32 NewRomMemSt
     STmem_size = (NewSTMemSize + 65535) & 0xFFFF0000;
     TTmem_size = (NewTTMemSize + 65535) & 0xFFFF0000;
 
+//fprintf ( stderr , "memory_init: STmem_size=$%x, TTmem_size=$%x, ROM-Start=$%x,\n", STmem_size, TTmem_size, NewRomMemStart);
     /*write_log("memory_init: STmem_size=$%x, TTmem_size=$%x, ROM-Start=$%x,\n",
               STmem_size, TTmem_size, NewRomMemStart);*/
 

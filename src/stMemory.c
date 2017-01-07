@@ -132,11 +132,21 @@ void STMemory_MemorySnapShot_Capture(bool bSave)
 {
 	MemorySnapShot_Store(&STRamEnd, sizeof(STRamEnd));
 
+	/* After restoring RAM/MMU bank sizes we must call memory_map_Standard_RAM() */
+	MemorySnapShot_Store(&RAM_Bank0_Size, sizeof(RAM_Bank0_Size));
+	MemorySnapShot_Store(&RAM_Bank1_Size, sizeof(RAM_Bank1_Size));
+	MemorySnapShot_Store(&MMU_Bank0_Size, sizeof(MMU_Bank0_Size));
+	MemorySnapShot_Store(&MMU_Bank1_Size, sizeof(MMU_Bank1_Size));
+	MemorySnapShot_Store(&MMU_Conf_Expected, sizeof(MMU_Conf_Expected));
+	
 	/* Only save/restore area of memory machine is set to, eg 1Mb */
 	MemorySnapShot_Store(STRam, STRamEnd);
 
 	/* And Cart/TOS/Hardware area */
 	MemorySnapShot_Store(&RomMem[0xE00000], 0x200000);
+
+	if ( !bSave )
+		memory_map_Standard_RAM ( MMU_Bank0_Size , MMU_Bank1_Size );
 }
 
 
