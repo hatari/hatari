@@ -131,7 +131,7 @@ static struct cache040 icaches040[CACHESETS040];
 static struct cache040 dcaches040[CACHESETS040];
 
 static int fallback_cpu_model, fallback_mmu_model, fallback_fpu_model;
-static int fallback_cpu_compatible, fallback_cpu_address_space_24;
+static bool fallback_cpu_compatible, fallback_cpu_address_space_24;
 static struct regstruct fallback_regs;
 static int fallback_new_cpu_model;
 
@@ -140,6 +140,8 @@ int OpcodeFamily;
 int BusCyclePenalty = 0;
 
 FILE *console_out_FILE = NULL;
+
+int uae_quit_program = 0;			/* from main.cpp */
 #endif
 
 
@@ -303,7 +305,13 @@ STATIC_INLINE void clear_trace (void)
 #if CPUTRACE_DEBUG
 	validate_trace ();
 #endif
+	if (cputrace.memoryoffset == MAX_CPUTRACESIZE)
+		return;
 	struct cputracememory *ctm = &cputrace.ctm[cputrace.memoryoffset++];
+	if (cputrace.memoryoffset == MAX_CPUTRACESIZE) {
+		write_log(_T("CPUTRACE overflow, stopping tracing.\n"));
+		return;
+	}
 	ctm->mode = 0;
 	cputrace.cyclecounter = 0;
 	cputrace.cyclecounter_pre = cputrace.cyclecounter_post = 0;
@@ -313,7 +321,13 @@ static void set_trace (uaecptr addr, int accessmode, int size)
 #if CPUTRACE_DEBUG
 	validate_trace ();
 #endif
+	if (cputrace.memoryoffset == MAX_CPUTRACESIZE)
+		return;
 	struct cputracememory *ctm = &cputrace.ctm[cputrace.memoryoffset++];
+	if (cputrace.memoryoffset == MAX_CPUTRACESIZE) {
+		write_log(_T("CPUTRACE overflow, stopping tracing.\n"));
+		return;
+	}
 	ctm->addr = addr;
 	ctm->data = 0xdeadf00d;
 	ctm->mode = accessmode | (size << 4);
@@ -1692,13 +1706,11 @@ void init_m68k (void)
 
 	write_log (_T("%d CPU functions\n"), nr_cpuop_funcs);
 
+#ifdef WINUAE_FOR_HATARI
+	/* Hatari : TODO remove these 2 lines as in winuae 3.4.0 */
+	/* and do it only in m68k_go by setting uae_quit_program=UAE_RESET */
 	build_cpufunctbl ();
 	set_x_funcs ();
-
-#ifdef JIT
-	/* We need to check whether NATMEM settings have changed
-	* before starting the CPU */
-	check_prefs_changed_comp(false);
 #endif
 }
 
@@ -3530,6 +3542,7 @@ static void cpu_do_fallback(void)
 		memory_map_dump();
 		m68k_setpc(fallback_regs.pc);
 	} else {
+		// 68000/010/EC020
 		memory_restore();
 		expansion_cpu_fallback();
 		memory_map_dump();
@@ -4225,7 +4238,7 @@ static int do_specialties (int cycles)
 		if (m68k_reset_delay) {
 			int vsynccnt = 60;
 			int vsyncstate = -1;
-			while (vsynccnt > 0 && !quit_program) {
+			while (vsynccnt > 0 && !uae_quit_program) {
 				x_do_cycles(8 * CYCLE_UNIT);
 				if (regs.spcflags & SPCFLAG_COPPER)
 					do_copper();
@@ -6346,22 +6359,22 @@ void m68k_go (int may_quit)
 		if (currprefs.inprecfile[0] && input_play) {
 			inprec_open (currprefs.inprecfile, NULL);
 			changed_prefs.inprecfile[0] = currprefs.inprecfile[0] = 0;
-			quit_program = UAE_RESET;
+			uae_quit_program = UAE_RESET;
 		}
 		if (input_play || input_record)
 			inprec_startup ();
 
-		if (quit_program > 0) {
+		if (uae_quit_program > 0) {
 			int restored = 0;
-			cpu_keyboardreset = quit_program == UAE_RESET_KEYBOARD;
-			cpu_hardreset = ((quit_program == UAE_RESET_HARD ? 1 : 0) | hardboot) != 0;
+			cpu_keyboardreset = uae_quit_program == UAE_RESET_KEYBOARD;
+			cpu_hardreset = ((uae_quit_program == UAE_RESET_HARD ? 1 : 0) | hardboot) != 0;
 
-			if (quit_program == UAE_QUIT)
+			if (uae_quit_program == UAE_QUIT)
 				break;
 
 			hsync_counter = 0;
 			vsync_counter = 0;
-			quit_program = 0;
+			uae_quit_program = 0;
 			hardboot = 0;
 
 #ifdef SAVESTATE
@@ -6372,12 +6385,12 @@ void m68k_go (int may_quit)
 			else if (savestate_state == STATE_REWIND)
 				savestate_rewind ();
 #endif
-#ifndef WINUAE_FOR_HATARI
 			if (cpu_hardreset)
 				m68k_reset_restore();
 			prefs_changed_cpu();
+			build_cpufunctbl();
+			set_x_funcs();
 			set_cycles (start_cycles);
-#endif
 			custom_reset (cpu_hardreset != 0, cpu_keyboardreset);
 			m68k_reset2 (cpu_hardreset != 0);
 			if (cpu_hardreset) {

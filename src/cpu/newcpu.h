@@ -748,6 +748,19 @@ void cpu_semaphore_release(void);
 bool execute_other_cpu(int until);
 void execute_other_cpu_single(void);
 
+
+/* From uae.h */
+#define UAE_QUIT 1
+#define UAE_RESET 2
+#define UAE_RESET_KEYBOARD 3
+#define UAE_RESET_HARD 4
+
+extern int uae_quit_program;
+/* From uae.h */
+
+
+
+
 #ifdef WINUAE_FOR_HATARI
 /*** Hatari ***/
 

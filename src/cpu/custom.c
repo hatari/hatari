@@ -502,12 +502,12 @@ void uae_reset (int hardreset)
 {
 	currprefs.quitstatefile[0] = changed_prefs.quitstatefile[0] = 0;
 
-	if (quit_program == 0) {
-		quit_program = -2;
+	if (uae_quit_program == 0) {
+		uae_quit_program = -UAE_RESET;
+		if (keyboardreset)
+			uae_quit_program = -UAE_RESET_KEYBOARD;
 		if (hardreset)
-			quit_program = -3;
-	}
-
+			uae_quit_program = -UAE_RESET_HARD;
 }
 #endif
 

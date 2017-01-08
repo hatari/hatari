@@ -52,6 +52,17 @@ struct strlist {
 
 #define INTERNALEVENT_COUNT 1
 
+#if 0
+struct uae_input_device_event
+{
+	uae_s16 eventid[MAX_INPUT_SUB_EVENT_ALL];
+	TCHAR *custom[MAX_INPUT_SUB_EVENT_ALL];
+	uae_u64 flags[MAX_INPUT_SUB_EVENT_ALL];
+	uae_u8 port[MAX_INPUT_SUB_EVENT_ALL];
+	uae_s16 extra;
+};
+#endif
+
 struct uae_input_device {
 	TCHAR *name;
 	TCHAR *configname;
@@ -102,6 +113,11 @@ struct jport {
 #define CONFIG_TYPE_HOST 2
 #define CONFIG_TYPE_NORESET 4
 #define CONFIG_BLEN 2560
+
+#define MOUSEUNTRAP_NONE 0
+#define MOUSEUNTRAP_MIDDLEBUTTON 1
+#define MOUSEUNTRAP_MAGIC 2
+#define MOUSEUNTRAP_BOTH 3
 
 #define TABLET_OFF 0
 #define TABLET_MOUSEHACK 1
@@ -251,6 +267,8 @@ enum { CP_GENERIC = 1, CP_CDTV, CP_CDTVCR, CP_CD32, CP_A500, CP_A500P, CP_A600, 
 #define MONITOREMU_AVIDEO24 8
 #define MONITOREMU_FIRECRACKER24 9
 #define MONITOREMU_DCTV 10
+#define MONITOREMU_OPALVISION 11
+#define MONITOREMU_COLORBURST 12
 
 #define MAX_FILTERSHADERS 4
 
@@ -343,6 +361,7 @@ struct romconfig
 	int device_settings;
 	int subtype;
 	void *unitdata;
+	TCHAR configtext[256];
 	struct boardromconfig *back;
 };
 #define MAX_BOARD_ROMS 2
@@ -369,7 +388,12 @@ struct ramboard
 	uae_u8 product;
 	uae_u8 autoconfig[16];
 	bool autoconfig_inuse;
+	bool manual_config;
+	bool no_reset_unmap;
 	int device_order;
+	uae_u32 start_address;
+	uae_u32 end_address;
+	uae_u32 write_address;
 };
 struct expansion_params
 {
@@ -428,6 +452,8 @@ struct uae_prefs {
 	int sound_volume_paula;
 	int sound_volume_cd;
 	int sound_volume_board;
+	int sound_volume_midi;
+	int sound_volume_genlock;
 	bool sound_stereo_swap_paula;
 	bool sound_stereo_swap_ahi;
 	bool sound_auto;
@@ -490,13 +516,18 @@ struct uae_prefs {
 	bool immediate_blits;
 	int waiting_blits;
 	unsigned int chipset_mask;
+	bool keyboard_connected;
 #endif
 	bool ntscmode;
 #ifndef WINUAE_FOR_HATARI
 	bool genlock;
 	int genlock_image;
 	int genlock_mix;
+	int genlock_scale;
+	int genlock_aspect;
+	bool genlock_alpha;
 	TCHAR genlock_image_file[MAX_DPATH];
+	TCHAR genlock_video_file[MAX_DPATH];
 	int monitoremu;
 	double chipset_refreshrate;
 	struct chipset_refresh cr[MAX_CHIPSET_REFRESH + 2];
@@ -696,7 +727,6 @@ struct uae_prefs {
 
 	/* Target specific options */
 
-	bool win32_middle_mouse;
 	bool win32_logfile;
 	bool win32_notaskbarbutton;
 	bool win32_nonotificationicon;
@@ -775,7 +805,7 @@ struct uae_prefs {
 	int input_mouse_speed;
 	int input_tablet;
 	bool tablet_library;
-	bool input_magic_mouse;
+	int input_mouse_untrap;
 	int input_magic_mouse_cursor;
 	int input_keyboard_type;
 	int input_autoswitch;
@@ -864,7 +894,6 @@ extern int cfgfile_configuration_change (int);
 extern void fixup_prefs_dimensions (struct uae_prefs *prefs);
 extern void fixup_prefs (struct uae_prefs *prefs, bool userconfig);
 extern void fixup_cpu (struct uae_prefs *prefs);
-extern bool cfgfile_board_enabled(struct uae_prefs *p, int romtype, int devnum);
 extern void cfgfile_compatibility_romtype(struct uae_prefs *p);
 extern void cfgfile_compatibility_rtg(struct uae_prefs *p);
 

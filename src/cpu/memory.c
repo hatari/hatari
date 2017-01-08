@@ -101,6 +101,9 @@ static bool needmman (void)
 
 static void nocanbang (void)
 {
+	if (canbang) {
+		write_log(_T("Switching JIT direct off!\n"));
+	}
 	canbang = 0;
 }
 #endif
@@ -229,6 +232,7 @@ void dummy_put (uaecptr addr, int size, uae_u32 val)
 	if (addr >= 0xf00000 && addr < 0xf80000 && size < 2)
 		flash_write(addr, val);
 #endif
+
 	if (gary_nonrange(addr) || (size > 1 && gary_nonrange(addr + size - 1))) {
 		if (gary_timeout)
 			gary_wait (addr, size, true);
@@ -253,7 +257,27 @@ uae_u32 dummy_get (uaecptr addr, int size, bool inst, uae_u32 defvalue)
 		return 8;
 	}
 #endif
-
+#if ACA500x_DEVELOPMENT
+	if (addr == 0xb03000) {
+		return 0xffff;
+	}
+	if (addr == 0xb07000) {
+		return 0x0000;
+	}
+	if (addr == 0xb2f800) {
+		return 0xffff;
+	}
+	if (addr == 0xb3b800) {
+		return 0x0000;
+	}
+	if (addr == 0xb3f800) {
+		return currprefs.cpu_model > 68000 ? 0x0000 : 0xffff;
+	}
+	if (addr == 0xb0b000) {
+		extern bool isideint(void);
+		return isideint() ? 0xffff : 0x0000;
+	}
+#endif
 	if (gary_nonrange(addr) || (size > 1 && gary_nonrange(addr + size - 1))) {
 		if (gary_timeout)
 			gary_wait (addr, size, false);
@@ -320,12 +344,6 @@ static uae_u32 REGPARAM2 dummy_wget (uaecptr addr)
 {
 #ifdef JIT
 	special_mem |= S_READ;
-#endif
-#if 0
-	if (addr == 0xb0b000) {
-		extern uae_u16 isideint(void);
-		return isideint();
-	}
 #endif
 	if (illegal_mem)
 		dummylog (0, addr, 2, 0, 0);
@@ -1187,13 +1205,15 @@ static addrbank IOmem_bank =
 bool mapped_malloc (addrbank *ab)
 {
 	ab->startmask = ab->start;
-	ab->baseaddr = xcalloc (uae_u8, ab->allocated + 4);
+	ab->baseaddr = xcalloc (uae_u8, ab->reserved_size + 4);
+	ab->allocated_size =  ab->baseaddr != NULL ? ab->reserved_size : 0;
 	return ab->baseaddr != NULL; 
 }
 
 void mapped_free (addrbank *ab)
 {
 	xfree(ab->baseaddr);
+	ab->allocated_size = 0;
 	ab->baseaddr = NULL; 
 }
 
@@ -1231,7 +1251,7 @@ static shmpiece *find_shmpiece (uae_u8 *base, bool safe)
 		if (safe)
 #endif
 			return 0;
-		write_log (_T("NATMEM: Failure to find mapping at %08X, %p\n"), base - NATMEM_OFFSET, base);
+		write_log (_T("NATMEM: Failure to find mapping at %08lx, %p\n"), base - NATMEM_OFFSET, base);
 		nocanbang ();
 		return 0;
 	}
@@ -1259,7 +1279,7 @@ static void delete_shmmaps (uae_u32 start, uae_u32 size)
 				size = x->size;
 			}
 
-			shmdt (x->native_address);
+			uae_shmdt (x->native_address);
 			size -= x->size;
 			start += x->size;
 			if (x->next)
@@ -1288,6 +1308,9 @@ static void add_shmmaps (uae_u32 start, addrbank *what)
 	if (!base)
 		return;
 
+	if (what->jit_read_flag && what->jit_write_flag)
+		return;
+
 	x = find_shmpiece (base, false);
 	if (!x)
 		return;
@@ -1295,7 +1318,7 @@ static void add_shmmaps (uae_u32 start, addrbank *what)
 	y = xmalloc (shmpiece, 1);
 	*y = *x;
 	base = ((uae_u8 *) NATMEM_OFFSET) + start;
-	y->native_address = (uae_u8*)shmat (y->id, base, 0);
+	y->native_address = (uae_u8*)uae_shmat (what, y->id, base, 0);
 	if (y->native_address == (void *) -1) {
 		write_log (_T("NATMEM: Failure to map existing at %08x (%p)\n"), start, base);
 		dumplist ();
@@ -1319,24 +1342,49 @@ bool mapped_malloc (addrbank *ab)
 	bool rtgmem = (ab->flags & ABFLAG_RTG) != 0;
 	static int recurse;
 
-	ab->startmask = ab->start;
-	if (!needmman () && (!rtgmem || currprefs.cpu_model < 68020)) {
-		nocanbang ();
-		ab->flags &= ~ABFLAG_DIRECTMAP;
-		if (ab->flags & ABFLAG_NOALLOC) {
+	if (ab->allocated_size) {
+		write_log(_T("mapped_malloc with memory bank '%s' already allocated!?\n"), ab->name);
+	}
+	ab->allocated_size = 0;
+
+	if (ab->label && ab->label[0] == '*') {
+		if (ab->start == 0 || ab->start == 0xffffffff) {
+			write_log(_T("mapped_malloc(*) without start address!\n"));
+			return false;
+		}
+	}
+
+	struct uae_mman_data md = { 0 };
+	uaecptr start = ab->start;
+	if (uae_mman_info(ab, &md)) {
+		start = md.start;
+	}
+	ab->startmask = start;
+        if (!md.directsupport || (ab->flags & ABFLAG_ALLOCINDIRECT)) {
+                if (!(ab->flags & ABFLAG_ALLOCINDIRECT)) {
+                        if (canbang) {
+                                write_log(_T("JIT direct switched off: %s\n"), ab->name);
+                        }
+                        nocanbang();
+                }
+                ab->flags &= ~ABFLAG_DIRECTMAP;
+                if (ab->flags & ABFLAG_NOALLOC) {
+                        ab->allocated_size = ab->reserved_size;
 #if MAPPED_MALLOC_DEBUG
 			write_log(_T("mapped_malloc noalloc %s\n"), ab->name);
 #endif
 			return true;
 		}
-		ab->baseaddr = xcalloc (uae_u8, ab->allocated + 4);
+		ab->baseaddr = xcalloc (uae_u8, ab->reserved_size + 4);
+		if (ab->baseaddr)
+			ab->allocated_size = ab->reserved_size;
 #if MAPPED_MALLOC_DEBUG
 		write_log(_T("mapped_malloc nodirect %s %p\n"), ab->name, ab->baseaddr);
 #endif
 		return ab->baseaddr != NULL;
 	}
 
-	id = shmget (IPC_PRIVATE, ab->allocated, 0x1ff, ab->label);
+	id = uae_shmget (UAE_IPC_PRIVATE, ab, 0x1ff);
 	if (id == -1) {
 		nocanbang ();
 		if (recurse)
@@ -1347,16 +1395,17 @@ bool mapped_malloc (addrbank *ab)
 		return ab->baseaddr != NULL;
 	}
 	if (!(ab->flags & ABFLAG_NOALLOC)) {
-		answer = shmat (ab, id, 0, 0);
-		shmctl (id, IPC_RMID, NULL);
+		answer = uae_shmat (ab, id, 0, 0);
+		uae_shmctl (id, UAE_IPC_RMID, NULL);
 	} else {
+		write_log(_T("MMAN: mapped_malloc using existing baseaddr %p\n"), ab->baseaddr);
 		answer = ab->baseaddr;
 	}
 	if (answer != (void *) -1) {
 		x = xmalloc (shmpiece, 1);
 		x->native_address = (uae_u8*)answer;
 		x->id = id;
-		x->size = ab->allocated;
+		x->size = ab->reserved_size;
 		x->name = ab->label;
 		x->next = shm_start;
 		x->prev = NULL;
@@ -1364,6 +1413,8 @@ bool mapped_malloc (addrbank *ab)
 			x->next->prev = x;
 		shm_start = x;
 		ab->baseaddr = x->native_address;
+		if (ab->baseaddr)
+			ab->allocated_size = ab->reserved_size;
 		ab->flags |= ABFLAG_DIRECTMAP;
 #if MAPPED_MALLOC_DEBUG
 		write_log(_T("mapped_malloc direct %s %p\n"), ab->name, ab->baseaddr);
@@ -1380,14 +1431,15 @@ bool mapped_malloc (addrbank *ab)
 	write_log(_T("mapped_malloc indirect %s %p\n"), ab->name, ab->baseaddr);
 #endif
 	return ab->baseaddr != NULL;}
+}
 
 #endif
 
 static void init_mem_banks (void)
 {
-	int i;
-
-	for (i = 0; i < MEMORY_BANKS; i++)
+	unsigned int i;
+        // unsigned so i << 16 won't overflow to negative when i >= 32768
+        for (i = 0; i < MEMORY_BANKS; i++)
 		put_mem_bank (i << 16, &dummy_bank, 0);
 #ifdef NATMEM_OFFSET
 	delete_shmmaps (0, 0xFFFF0000);

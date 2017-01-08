@@ -107,7 +107,10 @@ typedef struct {
 	uae_u32 mask;
 	uae_u32 startmask;
 	uae_u32 start;
-	uae_u32 allocated;
+	// if RAM: size of allocated RAM. Zero if failed.
+	uae_u32 allocated_size;
+	// size of bank (if IO or before RAM allocation)
+	uae_u32 reserved_size;
 } addrbank;
 
 #define MEMORY_MIN_SUBBANK 1024
@@ -125,16 +128,19 @@ struct autoconfig_info
 {
 	struct uae_prefs *prefs;
 	bool doinit;
+	bool postinit;
 	int devnum;
 	uae_u8 autoconfig_raw[128];
 	uae_u8 autoconfig_bytes[16];
 	TCHAR name[128];
 	const uae_u8 *autoconfigp;
+	bool autoconfig_automatic;
 	uae_u32 start;
 	uae_u32 size;
 	int zorro;
 	const TCHAR *label;
 	addrbank *addrbank;
+	uaecptr write_bank_address;
 	struct romconfig *rc;
 	uae_u32 last_high_ram;
 	const struct cpuboardsubtype *cst;
@@ -149,6 +155,7 @@ struct autoconfig_info
 	bool hardwired;
 	bool (*get_params)(struct uae_prefs*, struct expansion_params*);
 	bool (*set_params)(struct uae_prefs*, struct expansion_params*);
+	void *userdata;
 };
 #endif
 
@@ -226,7 +233,7 @@ static int REGPARAM2 name ## _check (uaecptr addr, uae_u32 size) \
 { \
 	addr -= name ## _bank.start & name ## _bank.mask; \
 	addr &= name ## _bank.mask; \
-	return (addr + size) <= name ## _bank.allocated; \
+	return (addr + size) <= name ## _bank.allocated_size; \
 }
 #define MEMORY_XLATE(name) \
 static uae_u8 *REGPARAM3 name ## _xlate (uaecptr addr) REGPARAM; \
@@ -334,7 +341,7 @@ static int REGPARAM2 name ## index ## _check (uaecptr addr, uae_u32 size) \
 { \
 	addr -= name ## _bank[index].start & name ## _bank[index].mask; \
 	addr &= name ## _bank[index].mask; \
-	return (addr + size) <= name ## _bank[index].allocated; \
+	return (addr + size) <= name ## _bank[index].allocated_size; \
 }
 #define MEMORY_ARRAY_XLATE(name, index) \
 static uae_u8 *REGPARAM3 name ## index ## _xlate (uaecptr addr) REGPARAM; \
@@ -367,7 +374,7 @@ extern addrbank rtarea_bank;
 extern addrbank filesys_bank;
 extern addrbank uaeboard_bank;
 extern addrbank expamem_bank;
-extern addrbank expamem_null, expamem_none, expamem_nonautoconfig;
+extern addrbank expamem_null, expamem_none;
 extern addrbank fastmem_bank[MAX_RAM_BOARDS];
 extern addrbank fastmem_nojit_bank[MAX_RAM_BOARDS];
 extern addrbank *gfxmem_banks[MAX_RTG_BOARDS];
@@ -462,18 +469,25 @@ extern void memory_init(uae_u32 NewSTMemSize, uae_u32 NewTTMemSize, uae_u32 NewR
 extern void memory_uninit (void);
 extern void map_banks (addrbank *bank, int first, int count, int realsize);
 extern void map_banks_z2(addrbank *bank, int first, int count);
+extern uae_u32 map_banks_z2_autosize(addrbank *bank, int first);
 extern void map_banks_z3(addrbank *bank, int first, int count);
 extern bool validate_banks_z2(addrbank *bank, int start, int size);
 extern bool validate_banks_z3(addrbank *bank, int start, int size);
 extern void map_banks_quick (addrbank *bank, int first, int count, int realsize);
 extern void map_banks_nojitdirect (addrbank *bank, int first, int count, int realsize);
 extern void map_banks_cond (addrbank *bank, int first, int count, int realsize);
+extern void map_overlay (int chip);
 #ifdef WINUAE_FOR_HATARI
 extern void map_banks_ce (addrbank *bank, int first, int count, int realsize, int banktype, int cachable);
 #endif
 extern void memory_hardreset (void);
 extern void memory_clear (void);
+#ifndef WINUAE_FOR_HATARI
 extern void free_fastmemory (int);
+extern void set_roms_modified (void);
+extern void reload_roms(void);
+extern bool read_kickstart_version(struct uae_prefs *p);
+#endif
 
 #define longget(addr) (call_mem_get_func(get_mem_bank(addr).lget, addr))
 #define wordget(addr) (call_mem_get_func(get_mem_bank(addr).wget, addr))
