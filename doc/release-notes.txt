@@ -9,11 +9,16 @@
 
 Emulation:
 - Add (dumb) Videl address counter emulation
+- Support STF/STE MMU at $FF8001 and address translation
+  (TOS memory routines don't need to be patched anymore)
 
 Emulator:
 - Initial patching for ST-Book ROM
 - Support memory check skipping also on TOS v3 & v4
 - Extended VDI mode font selected based on VDI height
+- Support scaling AVI recording (PNG/BMP) frames
+- Fix: don't switch bitdepth when recording AVI
+- Fix: X11 window embedding (to Python GUI) with SDL2
 - Fix: TOS v2 & v3 Atari logo display in extended VDI resolutions
 - Fix: Limit Videl widths for GLES2 SDL2 backends
 - Fix: off-by-one error in ACSI image file name handling
@@ -24,6 +29,12 @@ Emulator:
   - Add "-f" option to 'cd' so that setup scripts can specify
     what directory is used after currently invoked script(s)
     have finished
+
+Other changes:
+- Fix: Python GUI updated for Hatari v2.0
+- Fix: Python GUI explicitly uses Python v2 (Arch Linux)
+- FIX: Python tools made compatible both to Python v2 & v3 (Arch Linux)
+- Fix: icon symlink generation (rpmbuild chroot)
 
 Fixed Falcon games:
 - Ishar 1, 2 and 3
@@ -36,6 +47,9 @@ Fixed Falcon demos:
 
 Fixed programs:
 - Hextracker (for Falcon)
+
+Fixed ST/STE demos:
+- Sprite32 by Leonard (RESTART_VIDEO_COUNTER on line 310/260)
 
 
  Version 2.0.0 (2016-11-04)
