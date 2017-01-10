@@ -2,6 +2,12 @@
 ; 68000 code that is used for starting programs from the emulated GEMDOS harddisk
 ; and for using bigger VDI resolutions
 
+; See cartData.c for instruction to compile this file
+
+	; Force pc relative mode
+	opt	a+
+
+
 ; Hatari's "illegal" (free) opcodes:
 GEMDOS_OPCODE		equ	8
 SYSINIT_OPCODE		equ 10
@@ -24,7 +30,7 @@ _longframe		equ $059E
 	dc.l	infoprgend-infoprgstart		; C-BSIZ, offset: $14
 	dc.b	'HATARI.TOS',0,0			; C-NAME
 
-	.even
+	even
 
 
 old_gemdos:		ds.l	1			; has to match the CART_OLDGEMDOS define!
@@ -400,7 +406,7 @@ infotext:
 
 
 hatarix32:
-	ibytes	'cart_mus.x32'
+	incbin	'cart_mus.x32'
 
 
 infoprgend:
