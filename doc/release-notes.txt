@@ -9,13 +9,18 @@
 
 Emulation:
 - Add (dumb) Videl address counter emulation
+- Emulate ripple carry adder "bug" in DMA address counter on STF
+- More accurate position for reloading video counter on line 310/260
 - Support STF/STE MMU at $FF8001 and address translation
   (TOS memory routines don't need to be patched anymore)
+- Better results when reading "void" region between end of RAM and 4MB
+  (return latest data seen on the bus on STF/STE)
 
 Emulator:
 - Initial patching for ST-Book ROM
 - Support memory check skipping also on TOS v3 & v4
 - Extended VDI mode font selected based on VDI height
+- Allow RAM size values in KiB instead of MiB
 - Support scaling AVI recording (PNG/BMP) frames
 - Fix: don't switch bitdepth when recording AVI
 - Fix: X11 window embedding (to Python GUI) with SDL2
