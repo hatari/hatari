@@ -15,8 +15,13 @@ const char CartData_fileid[] = "Hatari cartData.c : " __DATE__ " " __TIME__;
 /*
   This is the assembled code from cart_asm.s with our gemdos handler.
   NOTE: Remove first 0x1c (PRG_HEADER_SIZE) bytes from the assembled program
-  file or use an assembler like TurboAss that can generate absolute binary images.
-  (I am using TurboAss and  hexdump -v -e ' 16/1 "0x%02x," "\n" '  to create it).
+  file or use an assembler like TurboAss or vasm that can generate absolute binary images.
+
+  For example :
+	vasmm68k_mot -devpac -showopt -o cart_asm.bin -Fbin cart_asm.s
+	hexdump -v -e ' 16/1 "0x%02x," "\n" ' cart_asm.bin > cart_asm.txt
+  Then replace the data below in Cart_data[] with the content of cart_asm.txt
+  (edit the last line to remove empty "0x,")
  */
 const Uint8 Cart_data[] =
 {
