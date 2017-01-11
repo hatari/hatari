@@ -176,7 +176,9 @@ is missing here, please remind me!):
 
 - Thorsten Otto: Some improvements to the code that patches the TOS ROMs.
 
-- Andreas Grabher : FPU improvements using the SoftFloat library
+- Andreas Grabher : FPU improvements using the SoftFloat library,
+  most of the 030 MMU implementation and few bug reports & patches
+  for the DSP emulation
 
 
  Code from other projects
@@ -188,7 +190,7 @@ projects which we would like to acknowledge here:
 - Hatari binary releases include latest version of EmuTOS:
   http://emutos.sourceforge.net/
 
-- Most of the original ST hardware emulation comes from the WinSTon
+- Most of the original ST hardware emulation came from the WinSTon
   source code which has been written by Paul Bates.
   (http://www.sourceforge.net/projects/winston/)
 
@@ -229,4 +231,3 @@ projects which we would like to acknowledge here:
 - The MMU emulation for the 68030 has been taken from the NeXT emulator
   Previous (thanks to Andreas Grabher!). Since Hatari 1.9, this is now
   taken from WinUAE which uses the same code base.
-
