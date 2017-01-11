@@ -176,6 +176,8 @@ is missing here, please remind me!):
 
 - Thorsten Otto: Some improvements to the code that patches the TOS ROMs.
 
+- Andreas Grabher : FPU improvements using the SoftFloat library
+
 
  Code from other projects
  ------------------------
