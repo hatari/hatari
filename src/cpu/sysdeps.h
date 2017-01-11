@@ -157,10 +157,6 @@ using namespace std;
 #include <errno.h>
 #include <assert.h>
 
-#if EEXIST == ENOTEMPTY
-#define BROKEN_OS_PROBABLY_AIX
-#endif
-
 #ifdef __NeXT__
 #define S_IRUSR S_IREAD
 #define S_IWUSR S_IWRITE
@@ -171,10 +167,6 @@ struct utimbuf
     time_t actime;
     time_t modtime;
 };
-#endif
-
-#ifndef L_tmpnam
-#define L_tmpnam 128 /* ought to be safe */
 #endif
 
 #ifdef WINUAE_FOR_HATARI  /* Types are provided by uae/types.h already */
