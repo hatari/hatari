@@ -366,6 +366,9 @@ void M68000_CheckCpuSettings(void)
 
 	/* We don't use JIT */
 	currprefs.cachesize = changed_prefs.cachesize = 0;
+
+	/* We don't use SoftFloat yet */
+	currprefs.fpu_softfloat = false;
 #else
 	if (ConfigureParams.System.nCpuLevel > 4)
 		ConfigureParams.System.nCpuLevel = 4;
