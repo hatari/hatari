@@ -1875,7 +1875,7 @@ static uaecptr ShowEA (void *f, uaecptr pc, uae_u16 opcode, int reg, amodes mode
 			{
 				fpdata fp;
 				to_single(&fp, get_ilong_debug(pc));
-				_stprintf(buffer, _T("#%e"), fp.fp);
+				_stprintf(buffer, _T("#%s"), fp_print(&fp));
 				pc += 4;
 			}
 			break;
@@ -1883,7 +1883,7 @@ static uaecptr ShowEA (void *f, uaecptr pc, uae_u16 opcode, int reg, amodes mode
 			{
 				fpdata fp;
 				to_double(&fp, get_ilong_debug(pc), get_ilong_debug(pc + 4));
-				_stprintf(buffer, _T("#%e"), fp.fp);
+				_stprintf(buffer, _T("#%s"), fp_print(&fp));
 				pc += 8;
 			}
 			break;
@@ -1891,11 +1891,7 @@ static uaecptr ShowEA (void *f, uaecptr pc, uae_u16 opcode, int reg, amodes mode
 		{
 			fpdata fp;
 			to_exten(&fp, get_ilong_debug(pc), get_ilong_debug(pc + 4), get_ilong_debug(pc + 8));
-#if USE_LONG_DOUBLE
-			_stprintf(buffer, _T("#%Le"), fp.fp);
-#else
-			_stprintf(buffer, _T("#%e"), fp.fp);
-#endif
+			_stprintf(buffer, _T("#%s"), fp_print(&fp));
 			pc += 12;
 			break;
 		}

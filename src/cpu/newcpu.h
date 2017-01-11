@@ -41,9 +41,7 @@
 #define SPCFLAG_MODE_CHANGE 0x800
 #define SPCFLAG_DSP 0x1000
 
-#ifdef WITH_SOFTFLOAT
-#include <softfloat.h>
-#endif
+#include <softfloat/softfloat.h>
 
 #ifndef SET_CFLG
 
@@ -173,9 +171,7 @@ extern struct mmufixup mmufixup[2];
 typedef struct
 {
 	fptype fp;
-#ifdef WITH_SOFTFLOAT
 	floatx80 fpx;
-#endif
 } fpdata;
 
 struct regstruct
