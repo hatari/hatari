@@ -46,7 +46,10 @@ Uint32	MMU_Bank1_Size;		/* Logical MMU RAM size for bank1 (in bytes) : 128, 512 
 Uint8	MMU_Conf_Expected;	/* Expected value for $FF8001 corresponding to ST RAM size if <= 4MB */
 
 
+static void	STMemory_MMU_ConfToBank ( Uint8 MMU_conf , Uint32 *pBank0 , Uint32 *pBank1 );
 static int	STMemory_MMU_Size ( Uint8 MMU_conf );
+static int	STMemory_MMU_Size_TT ( Uint8 MMU_conf );
+
 static Uint32	STMemory_MMU_Translate_Addr_STF ( Uint32 addr_logical , int RAM_Bank_Size , int MMU_Bank_Size );
 static Uint32	STMemory_MMU_Translate_Addr_STE ( Uint32 addr_logical , int RAM_Bank_Size , int MMU_Bank_Size );
 
@@ -78,8 +81,7 @@ void	STMemory_Reset ( bool bCold )
 	if ( bCold )
 	{
 		IoMem[ 0xff8001 ] = 0x0;
-		MMU_Bank0_Size = STMemory_MMU_Size ( ( IoMem[ 0xff8001 ] >> 2 ) & 3  );
-		MMU_Bank1_Size = STMemory_MMU_Size ( IoMem[ 0xff8001 ] & 3  );
+		STMemory_MMU_ConfToBank ( IoMem[ 0xff8001 ] , &MMU_Bank0_Size , &MMU_Bank1_Size );
 	}
 }
 
@@ -581,17 +583,71 @@ STE :
     - C302183-001 : Mega STE
 
 
-Regarding physical RAM, bank 1 can be empty or not, but bank 0 must always be filled (due to the way TOS
+Regarding physical RAM on STF/STE, bank 1 can be empty or not, but bank 0 must always be filled (due to the way TOS
 checks for available RAM and size, memory detection would give wrong results if bank 0 was empty and bank 1 was filled,
 as bank 0 would be considered as 128 KB in such cases)
+
+
+TT :
+  The TT had several possibilities for memory extensions :
+    - on board "slow" dual purpose (system/shifter) memory : 16 chips of 4 bit memory using 256 kbits or 1024 kbits modules
+      Most (all ?) TT were shipped with 2 MB of on board RAM (ie 256 kbits chips).
+      Using 1024 kbits chips, it's possible to get 8 MB of RAM
+    - daughterboard "slow" dual purpose memory : similar to on board RAM, you get 2 MB or 8 MB
+      - CA400313-xxx : 2 MB board by Atari
+      - CA401059-xxx : 2 or 8 MB board by Atari
+    - extension board using the VME BUS ; such RAM can't be used for shifter and it's slower than fast RAM
+    - fast RAM : up to 256 MB of "fast" single purpose RAM could be added. It can't be used for shifter,
+      but it can be used with TT DMA specific chips. As this RAM is not shared with the shifter, it's much faster
+      (there's no bus cycle penalty every 250 ns as with dual purpose memory)
+
+As tested by some people, if the TT has 8 MB on board and 8 MB on the daughterboard of "slow" dual purpose RAM,
+then the resulting memory will be limited to 10 MB (addr 0x000000 to 0xA00000) and not to 14 or 16 MB,
+the rest is reserved for cartridge, VME, ROM, IO regs
+
+
+MMU configuration at $FF8001 :
+  This register is used to specify the memory bank sizes used by the MMU to translate logical addresses
+  into physical ones. Under normal operations, it should match the size of the physical RAM.
+
+  STF/STE :  bits 2-3 = size of bank 0    bits 0-1 = size of bank 1
+    bank size : 00 = 128 KB   01=512 KB   10=2048 KB   11=reserved
+
+  TT : only bit 1 is used (there's only 1 bank)
+    bank size : 0 = 2 MB (uses 256 kbits chips)   1 = 8 MB (uses 1024 kits chips)
 
 */
 
 
 
 
+static void	STMemory_MMU_ConfToBank ( Uint8 MMU_conf , Uint32 *pBank0 , Uint32 *pBank1 )
+{
+	if ( Config_IsMachineTT() )
+	{
+		*pBank0 = STMemory_MMU_Size_TT ( ( MMU_conf >> 1 ) & 1  );
+		*pBank1 = 0;
+	}
+
+	else
+	{
+		*pBank0 = STMemory_MMU_Size ( ( MMU_conf >> 2 ) & 3  );
+
+		/* - STF with non-IMP MMU can have 2 different size of banks */
+		/* - STF with IMP MMU and STE use bank0 value for the 2 banks (ie bank1=bank0 in all cases) */
+		if ( Config_IsMachineST() )
+			*pBank1 = STMemory_MMU_Size ( MMU_conf & 3  );
+		else
+			*pBank1 = MMU_Bank0_Size;
+	}
+}
+
+
+
+
 /**
- * Return the number of bytes for a given MMU bank configuration
+ * Return the number of bytes for a given MMU bank configuration on STF/STE
+ * Possible values are 00, 01 or 10
  */
 static int	STMemory_MMU_Size ( Uint8 MMU_conf )
 {
@@ -599,6 +655,19 @@ static int	STMemory_MMU_Size ( Uint8 MMU_conf )
 	else if ( MMU_conf == 1 )	return MEM_BANK_SIZE_512;
 	else if ( MMU_conf == 2 )	return MEM_BANK_SIZE_2048;
 	else				return 0;			/* invalid */
+}
+
+
+
+
+/**
+ * Return the number of bytes for a given MMU bank configuration on TT
+ * Possible values are 0 or 1
+ */
+static int	STMemory_MMU_Size_TT ( Uint8 MMU_conf )
+{
+	if ( MMU_conf == 0 )		return MEM_BANK_SIZE_2048;
+	else				return MEM_BANK_SIZE_8192;
 }
 
 
@@ -632,14 +701,7 @@ void	STMemory_MMU_Config_WriteByte ( void )
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	MMU_Bank0_Size = STMemory_MMU_Size ( ( IoMem[ 0xff8001 ] >> 2 ) & 3  );
-
-	/* - STF with non-IMP MMU can have 2 different size of banks */
-	/* - STF with IMP MMU and STE use bank0 value for the 2 banks (ie bank1=bank0 in all cases) */
-	if ( Config_IsMachineST() )
-		MMU_Bank1_Size = STMemory_MMU_Size ( IoMem[ 0xff8001 ] & 3  );
-	else
-		MMU_Bank1_Size = MMU_Bank0_Size;
+	STMemory_MMU_ConfToBank ( IoMem[ 0xff8001 ] , &MMU_Bank0_Size , &MMU_Bank1_Size );
 
 	memory_map_Standard_RAM ( MMU_Bank0_Size , MMU_Bank1_Size );
 

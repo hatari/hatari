@@ -32,6 +32,7 @@ extern Uint32 STRamEnd;
 #define	MEM_BANK_SIZE_128	( 128 * 1024 )		/* 00b */
 #define	MEM_BANK_SIZE_512	( 512 * 1024 )		/* 01b */
 #define	MEM_BANK_SIZE_2048	( 2048 * 1024 )		/* 10b */
+#define	MEM_BANK_SIZE_8192	( 8192 * 1024 )		/* for TT */
 
 extern Uint32	RAM_Bank0_Size;
 extern Uint32	RAM_Bank1_Size;
