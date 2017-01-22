@@ -305,7 +305,7 @@ Demos:
 - 4getful (by gwEm, 4KB intro)
 - 4kker (by Checkpoint, 4KB intro)
 - Ambience (by Chaos)
-- Anomaly (by MMJ-Prod)
+- Anomaly (by MMJ Prod)
 - April Fools (by DNT Crew)
 - Audiopacdemo (by X-Troll)
 - Beast Scroll (by Joefish)
@@ -341,6 +341,7 @@ Demos:
 - Ooh Crikey (by Lost Boys)
 - Outline 2008 invite (by DHS)
 - Outline 2010 invite (by Checkpoint)
+- OutRun Music demo (by FedePede)
 - Overdose (by Aggression)
 - Overdrive (by Phalanx)
 - Pandemonium (by Chaos)
@@ -350,8 +351,9 @@ Demos:
 - Posh (by Checkpoint)
 - POV disk 165 (except for EiL 99 invite)
 - Punish your machine (by Delta Force)
-- Rebirth (by MMJ production)
+- Rebirth (by MMJ Prod)
 - RGB plasma (by Omega, panic at return to desktop)
+- Santa Claus Barbie Was Drunk As A Cochon (by MJJ Prod)
 - Save The Earth (by Defence Force)
 - Second Reality 2013 (by Checkpoint, crash at end)
 - SillyVenture 2k10 & 2k11 (invitros by Mystic Bytes & Aggression)
@@ -1027,6 +1029,7 @@ Working demos:
 - Ascii (by Reservoir Gods), disable DSP
 - ATS (by DHS)
 - Autowachen Verboten (by Lazer)
+- Binliner (preview by Avena)
 - Birdshow
 - Bugs from outer space (by Impulse)
   - bad sound
