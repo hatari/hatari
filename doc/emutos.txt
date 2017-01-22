@@ -352,6 +352,7 @@ Demos:
 - POV disk 165 (except for EiL 99 invite)
 - Punish your machine (by Delta Force)
 - Rebirth (by MMJ Prod)
+- Remote Entry #2 - 11110 Edition (by Spice Boys)
 - RGB plasma (by Omega, panic at return to desktop)
 - Santa Claus Barbie Was Drunk As A Cochon (by MJJ Prod)
 - Save The Earth (by Defence Force)
@@ -370,6 +371,7 @@ Demos:
 - Sweety (by DHS)
 - Synergy megademo (by Synergy)
 - Syntax Terror (by Delta Force)
+- Temptation aka Project "A" (by NoExtra)
 - The Stupendous Demo (by Pixel Twins, has couple of STE screen)
 - The Union demo
 - The World According to Nordlicht (needs EmuTOS 2016-04-17)
@@ -1086,6 +1088,8 @@ Partly working demos:
 - Illness (by Escape)
   - freezes after a while to
     Bus error lget at 4e700cb9
+- I want you to remember (by KÜA Software & Pixel Twins)
+  - No music as it needs DSP
 - Jesterday (by POV)
   - Music demo, but no music as it needs DSP
 - Oergs (by Lazer)
