@@ -111,6 +111,7 @@ int Init680x0(void)
 	changed_prefs.cpu_cycle_exact = ConfigureParams.System.bCycleExactCpu;
 	changed_prefs.fpu_model = ConfigureParams.System.n_FPUType;
 	changed_prefs.fpu_strict = ConfigureParams.System.bCompatibleFPU;
+	changed_prefs.fpu_softfloat = ConfigureParams.System.bSoftFloatFPU;
 
 	/* Set the MMU model by taking the same value as CPU model */
 	/* MMU is only supported for CPU >=68030 */

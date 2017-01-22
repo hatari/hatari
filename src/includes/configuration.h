@@ -349,6 +349,7 @@ typedef struct
   bool bCycleExactCpu;
   FPUTYPE n_FPUType;
   bool bCompatibleFPU;            /* More compatible FPU */
+  bool bSoftFloatFPU;
   bool bMMU;                      /* TRUE if MMU is enabled */
 #endif
 } CNF_SYSTEM;

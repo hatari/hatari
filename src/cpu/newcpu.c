@@ -1608,6 +1608,7 @@ static void prefs_changed_cpu (void)
 	currprefs.cpu_memory_cycle_exact = changed_prefs.cpu_memory_cycle_exact;
 	currprefs.int_no_unimplemented = changed_prefs.int_no_unimplemented;
 	currprefs.fpu_no_unimplemented = changed_prefs.fpu_no_unimplemented;
+	currprefs.fpu_softfloat = changed_prefs.fpu_softfloat;
 	currprefs.blitter_cycle_exact = changed_prefs.blitter_cycle_exact;
 }
 

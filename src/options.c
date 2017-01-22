@@ -137,6 +137,7 @@ enum {
 	OPT_CPU_ADDR24,
 	OPT_FPU_TYPE,
 /*	OPT_FPU_JIT_COMPAT, */
+	OPT_FPU_SOFTFLOAT,
 	OPT_MMU,
 #endif
 	OPT_MACHINE,		/* system options */
@@ -374,6 +375,8 @@ static const opt_t HatariOptions[] = {
 	  "<x>", "FPU type (x=none/68881/68882/internal)" },
 	/*{ OPT_FPU_JIT_COMPAT, NULL, "--fpu-compatible",
 	  "<bool>", "Use more compatible, but slower FPU JIT emulation" },*/
+	{ OPT_FPU_SOFTFLOAT, NULL, "--fpu-softfloat",
+	  "<bool>", "Use full software FPU emulation" },
 	{ OPT_MMU, NULL, "--mmu",
 	  "<bool>", "Use MMU emulation" },
 #endif
@@ -1640,6 +1643,10 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			ok = Opt_Bool(argv[++i], OPT_FPU_COMPATIBLE, &ConfigureParams.System.bCompatibleFPU);
 			break;
 */
+		case OPT_FPU_SOFTFLOAT:
+			ok = Opt_Bool(argv[++i], OPT_FPU_SOFTFLOAT, &ConfigureParams.System.bSoftFloatFPU);
+			break;
+
 		case OPT_MMU:
 			ok = Opt_Bool(argv[++i], OPT_MMU, &ConfigureParams.System.bMMU);
 			bLoadAutoSave = false;
