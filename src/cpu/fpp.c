@@ -887,6 +887,7 @@ static int get_fpu_version (void)
 
 static void fpu_null (void)
 {
+	int i;
 	regs.fpu_state = 0;
 	regs.fpu_exp_state = 0;
 	regs.fpcr = 0;
@@ -894,7 +895,7 @@ static void fpu_null (void)
 	regs.fpiar = 0;
 	fpset(&regs.fp_result, 1);
 	fpclear (&regs.fp_result);
-	for (int i = 0; i < 8; i++)
+	for (i = 0; i < 8; i++)
 		fpnan (&regs.fp[i]);
 }
 
