@@ -453,6 +453,7 @@ Commercial game demos/previews:
 - Videokid demo (floppy only)
 
 Free/shareware/PD games:
+- 2048 (by Paradize)
 - Alterra
 - Archon 4KB
 - Alien Blockade* (quixx)
@@ -550,6 +551,7 @@ Med-rez games:
 - Poker solitaire
 
 GEM games:
+- 2048 (by Rajah Lone)
 - 4 Gewinnt* (Connect four)
 - Awele (use v1.02, it fixes bugs in v1.01)
 - Centi
