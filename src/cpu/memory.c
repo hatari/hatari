@@ -691,12 +691,14 @@ static void REGPARAM3 STmem_bput_MMU(uaecptr addr, uae_u32 b)
  */
 static uae_u32 REGPARAM3 SysMem_lget(uaecptr addr)
 {
+    uaecptr addr_in = addr;
+
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
 
     if(addr < 0x800 && !regs.s)
     {
-      M68000_BusError(addr, 1, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
+      M68000_BusError(addr_in, 1, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
       return 0;
     }
 
@@ -705,13 +707,15 @@ static uae_u32 REGPARAM3 SysMem_lget(uaecptr addr)
 
 static uae_u32 REGPARAM3 SysMem_wget(uaecptr addr)
 {
+    uaecptr addr_in = addr;
+
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
 
     /* Only CPU will trigger bus error if bit S=0, not the blitter */
     if(addr < 0x800 && !regs.s && BusMode == BUS_MODE_CPU)
     {
-      M68000_BusError(addr, 1, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
+      M68000_BusError(addr_in, 1, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
       return 0;
     }
 
@@ -720,12 +724,14 @@ static uae_u32 REGPARAM3 SysMem_wget(uaecptr addr)
 
 static uae_u32 REGPARAM3 SysMem_bget(uaecptr addr)
 {
+    uaecptr addr_in = addr;
+
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
 
     if(addr < 0x800 && !regs.s)
     {
-      M68000_BusError(addr, 1, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
+      M68000_BusError(addr_in, 1, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
       return 0;
     }
 
@@ -734,12 +740,14 @@ static uae_u32 REGPARAM3 SysMem_bget(uaecptr addr)
 
 static void REGPARAM3 SysMem_lput(uaecptr addr, uae_u32 l)
 {
+    uaecptr addr_in = addr;
+
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
 
     if(addr < 0x8 || (addr < 0x800 && !regs.s))
     {
-      M68000_BusError(addr, 0, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
+      M68000_BusError(addr_in, 0, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
       return;
     }
 
@@ -748,6 +756,8 @@ static void REGPARAM3 SysMem_lput(uaecptr addr, uae_u32 l)
 
 static void REGPARAM3 SysMem_wput(uaecptr addr, uae_u32 w)
 {
+    uaecptr addr_in = addr;
+
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
 
@@ -756,7 +766,7 @@ static void REGPARAM3 SysMem_wput(uaecptr addr, uae_u32 w)
     {
       if ( BusMode == BUS_MODE_CPU )
       {
-	M68000_BusError(addr, 0, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
+	M68000_BusError(addr_in, 0, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
 	return;
       }
       /* If blitter writes < 0x8 then it should be ignored, else the write should be made */
@@ -769,12 +779,14 @@ static void REGPARAM3 SysMem_wput(uaecptr addr, uae_u32 w)
 
 static void REGPARAM3 SysMem_bput(uaecptr addr, uae_u32 b)
 {
+    uaecptr addr_in = addr;
+
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
 
     if(addr < 0x8 || (addr < 0x800 && !regs.s))
     {
-      M68000_BusError(addr, 0, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
+      M68000_BusError(addr_in, 0, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
       return;
     }
 
@@ -785,12 +797,14 @@ static void REGPARAM3 SysMem_bput(uaecptr addr, uae_u32 b)
 
 static uae_u32 REGPARAM3 SysMem_lget_MMU(uaecptr addr)
 {
+    uaecptr addr_in = addr;
+
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
 
     if(addr < 0x800 && !regs.s)
     {
-      M68000_BusError(addr, 1, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
+      M68000_BusError(addr_in, 1, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
       return 0;
     }
 
@@ -800,13 +814,15 @@ static uae_u32 REGPARAM3 SysMem_lget_MMU(uaecptr addr)
 
 static uae_u32 REGPARAM3 SysMem_wget_MMU(uaecptr addr)
 {
+    uaecptr addr_in = addr;
+
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
 
     /* Only CPU will trigger bus error if bit S=0, not the blitter */
     if(addr < 0x800 && !regs.s && BusMode == BUS_MODE_CPU)
     {
-      M68000_BusError(addr, 1, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
+      M68000_BusError(addr_in, 1, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
       return 0;
     }
 
@@ -816,12 +832,14 @@ static uae_u32 REGPARAM3 SysMem_wget_MMU(uaecptr addr)
 
 static uae_u32 REGPARAM3 SysMem_bget_MMU(uaecptr addr)
 {
+    uaecptr addr_in = addr;
+
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
 
     if(addr < 0x800 && !regs.s)
     {
-      M68000_BusError(addr, 1, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
+      M68000_BusError(addr_in, 1, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
       return 0;
     }
 
@@ -831,12 +849,14 @@ static uae_u32 REGPARAM3 SysMem_bget_MMU(uaecptr addr)
 
 static void REGPARAM3 SysMem_lput_MMU(uaecptr addr, uae_u32 l)
 {
+    uaecptr addr_in = addr;
+
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
 
     if(addr < 0x8 || (addr < 0x800 && !regs.s))
     {
-      M68000_BusError(addr, 0, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
+      M68000_BusError(addr_in, 0, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
       return;
     }
 
@@ -846,6 +866,8 @@ static void REGPARAM3 SysMem_lput_MMU(uaecptr addr, uae_u32 l)
 
 static void REGPARAM3 SysMem_wput_MMU(uaecptr addr, uae_u32 w)
 {
+    uaecptr addr_in = addr;
+
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
 
@@ -854,7 +876,7 @@ static void REGPARAM3 SysMem_wput_MMU(uaecptr addr, uae_u32 w)
     {
       if ( BusMode == BUS_MODE_CPU )
       {
-	M68000_BusError(addr, 0, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
+	M68000_BusError(addr_in, 0, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
 	return;
       }
       /* If blitter writes < 0x8 then it should be ignored, else the write should be made */
@@ -868,12 +890,14 @@ static void REGPARAM3 SysMem_wput_MMU(uaecptr addr, uae_u32 w)
 
 static void REGPARAM3 SysMem_bput_MMU(uaecptr addr, uae_u32 b)
 {
+    uaecptr addr_in = addr;
+
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
 
     if(addr < 0x8 || (addr < 0x800 && !regs.s))
     {
-      M68000_BusError(addr, 0, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
+      M68000_BusError(addr_in, 0, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
       return;
     }
 

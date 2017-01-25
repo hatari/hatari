@@ -84,13 +84,14 @@ uae_u32 REGPARAM3 Ide_Mem_bget(uaecptr addr)
 {
 	int ideport;
 	uint8_t retval;
+	uaecptr addr_in = addr;
 
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
 	if (addr >= 0xf00040 || !ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
 	{
 		/* invalid memory addressing --> bus error */
-		M68000_BusError(addr, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
+		M68000_BusError(addr_in, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
 		return -1;
 	}
 
@@ -120,13 +121,14 @@ uae_u32 REGPARAM3 Ide_Mem_bget(uaecptr addr)
 uae_u32 REGPARAM3 Ide_Mem_wget(uaecptr addr)
 {
 	uint16_t retval;
+	uaecptr addr_in = addr;
 
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
 	if (addr >= 0xf00040 || !ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
 	{
 		/* invalid memory addressing --> bus error */
-		M68000_BusError(addr, BUS_ERROR_READ, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
+		M68000_BusError(addr_in, BUS_ERROR_READ, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
 		return -1;
 	}
 
@@ -150,13 +152,14 @@ uae_u32 REGPARAM3 Ide_Mem_wget(uaecptr addr)
 uae_u32 REGPARAM3 Ide_Mem_lget(uaecptr addr)
 {
 	uint32_t retval;
+	uaecptr addr_in = addr;
 
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
 	if (addr >= 0xf00040 || !ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
 	{
 		/* invalid memory addressing --> bus error */
-		M68000_BusError(addr, BUS_ERROR_READ, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
+		M68000_BusError(addr_in, BUS_ERROR_READ, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
 		return -1;
 	}
 
@@ -183,6 +186,7 @@ uae_u32 REGPARAM3 Ide_Mem_lget(uaecptr addr)
 void REGPARAM3 Ide_Mem_bput(uaecptr addr, uae_u32 val)
 {
 	int ideport;
+	uaecptr addr_in = addr;
 
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 	val &= 0x0ff;
@@ -192,7 +196,7 @@ void REGPARAM3 Ide_Mem_bput(uaecptr addr, uae_u32 val)
 	if (addr >= 0xf00040 || !ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
 	{
 		/* invalid memory addressing --> bus error */
-		M68000_BusError(addr, BUS_ERROR_WRITE, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
+		M68000_BusError(addr_in, BUS_ERROR_WRITE, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
 		return;
 	}
 
@@ -214,6 +218,8 @@ void REGPARAM3 Ide_Mem_bput(uaecptr addr, uae_u32 val)
  */
 void REGPARAM3 Ide_Mem_wput(uaecptr addr, uae_u32 val)
 {
+	uaecptr addr_in = addr;
+
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 	val &= 0x0ffff;
 
@@ -222,7 +228,7 @@ void REGPARAM3 Ide_Mem_wput(uaecptr addr, uae_u32 val)
 	if (addr >= 0xf00040 || !ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
 	{
 		/* invalid memory addressing --> bus error */
-		M68000_BusError(addr, BUS_ERROR_WRITE, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
+		M68000_BusError(addr_in, BUS_ERROR_WRITE, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
 		return;
 	}
 
@@ -238,6 +244,8 @@ void REGPARAM3 Ide_Mem_wput(uaecptr addr, uae_u32 val)
  */
 void REGPARAM3 Ide_Mem_lput(uaecptr addr, uae_u32 val)
 {
+	uaecptr addr_in = addr;
+
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
 	LOG_TRACE(TRACE_IDE, "IDE: lput($%x, $%x)\n", addr, val);
@@ -245,7 +253,7 @@ void REGPARAM3 Ide_Mem_lput(uaecptr addr, uae_u32 val)
 	if (addr >= 0xf00040 || !ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
 	{
 		/* invalid memory addressing --> bus error */
-		M68000_BusError(addr, BUS_ERROR_WRITE, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
+		M68000_BusError(addr_in, BUS_ERROR_WRITE, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
 		return;
 	}
 

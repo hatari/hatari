@@ -40,13 +40,15 @@ const char IoMem_fileid[] = "Hatari ioMem.c : " __DATE__ " " __TIME__;
 #include "newcpu.h"
 
 
-static void (*pInterceptReadTable[0x8000])(void);     /* Table with read access handlers */
-static void (*pInterceptWriteTable[0x8000])(void);    /* Table with write access handlers */
+static void (*pInterceptReadTable[0x8000])(void);	/* Table with read access handlers */
+static void (*pInterceptWriteTable[0x8000])(void);	/* Table with write access handlers */
 
-int nIoMemAccessSize;                                 /* Set to 1, 2 or 4 according to byte, word or long word access */
-Uint32 IoAccessBaseAddress;                           /* Stores the base address of the IO mem access */
-Uint32 IoAccessCurrentAddress;                        /* Current byte address while handling WORD and LONG accesses */
-static int nBusErrorAccesses;                         /* Needed to count bus error accesses */
+int nIoMemAccessSize;					/* Set to 1, 2 or 4 according to byte, word or long word access */
+Uint32 IoAccessFullAddress;				/* Store the complete 32 bit address received in the IoMem_xxx() handler */
+							/* (this is the address to write on the stack in case of a bus error) */
+Uint32 IoAccessBaseAddress;				/* Stores the base address of the IO mem access (masked on 24 bits) */
+Uint32 IoAccessCurrentAddress;				/* Current byte address while handling WORD and LONG accesses (masked on 24 bits) */
+static int nBusErrorAccesses;				/* Needed to count bus error accesses */
 
 
 /*
@@ -381,6 +383,8 @@ uae_u32 REGPARAM3 IoMem_bget(uaecptr addr)
 {
 	Uint8 val;
 
+	IoAccessFullAddress = addr;			/* Store initial 32 bits address (eg for bus error stack) */
+
 	/* Check if access is made by a new instruction or by the same instruction doing multiple byte accesses */
 	if ( IoAccessInstrPrevClock == CyclesGlobalClockCounter )
 		IoAccessInstrCount++;			/* Same instruction, increase access count */
@@ -398,7 +402,7 @@ uae_u32 REGPARAM3 IoMem_bget(uaecptr addr)
 	if (addr < 0xff8000 || !regs.s)
 	{
 		/* invalid memory addressing --> bus error */
-		M68000_BusError(addr, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
+		M68000_BusError(IoAccessFullAddress, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
 		return -1;
 	}
 
@@ -412,13 +416,13 @@ uae_u32 REGPARAM3 IoMem_bget(uaecptr addr)
 	/* Check if we read from a bus-error region */
 	if (nBusErrorAccesses == 1)
 	{
-		M68000_BusError(addr, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
+		M68000_BusError(IoAccessFullAddress, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
 		return -1;
 	}
 
 	val = IoMem[addr];
 
-	LOG_TRACE(TRACE_IOMEM_RD, "IO read.b $%06x = $%02x pc=%x\n", addr, val, M68000_GetPC());
+	LOG_TRACE(TRACE_IOMEM_RD, "IO read.b $%08x = $%02x pc=%x\n", IoAccessFullAddress, val, M68000_GetPC());
 
 	return val;
 }
@@ -432,6 +436,8 @@ uae_u32 REGPARAM3 IoMem_wget(uaecptr addr)
 {
 	Uint32 idx;
 	Uint16 val;
+
+	IoAccessFullAddress = addr;			/* Store initial 32 bits address (eg for bus error stack) */
 
 	/* Check if access is made by a new instruction or by the same instruction doing multiple word accesses */
 	if ( IoAccessInstrPrevClock == CyclesGlobalClockCounter )
@@ -451,7 +457,7 @@ uae_u32 REGPARAM3 IoMem_wget(uaecptr addr)
 	if (addr < 0xff8000 || !regs.s)
 	{
 		/* invalid memory addressing --> bus error */
-		M68000_BusError(addr, BUS_ERROR_READ, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
+		M68000_BusError(IoAccessFullAddress, BUS_ERROR_READ, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
 		return -1;
 	}
 	if (addr > 0xfffffe)
@@ -477,13 +483,13 @@ uae_u32 REGPARAM3 IoMem_wget(uaecptr addr)
 	/* Check if we completely read from a bus-error region */
 	if (nBusErrorAccesses == 2)
 	{
-		M68000_BusError(addr, BUS_ERROR_READ, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
+		M68000_BusError(IoAccessFullAddress, BUS_ERROR_READ, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
 		return -1;
 	}
 
 	val = IoMem_ReadWord(addr);
 
-	LOG_TRACE(TRACE_IOMEM_RD, "IO read.w $%06x = $%04x pc=%x\n", addr, val, M68000_GetPC());
+	LOG_TRACE(TRACE_IOMEM_RD, "IO read.w $%08x = $%04x pc=%x\n", IoAccessFullAddress, val, M68000_GetPC());
 
 	return val;
 }
@@ -498,6 +504,8 @@ uae_u32 REGPARAM3 IoMem_lget(uaecptr addr)
 	Uint32 idx;
 	Uint32 val;
 	int n;
+
+	IoAccessFullAddress = addr;			/* Store initial 32 bits address (eg for bus error stack) */
 
 	/* Check if access is made by a new instruction or by the same instruction doing multiple long accesses */
 	if ( IoAccessInstrPrevClock == CyclesGlobalClockCounter )
@@ -516,7 +524,7 @@ uae_u32 REGPARAM3 IoMem_lget(uaecptr addr)
 	if (addr < 0xff8000 || !regs.s)
 	{
 		/* invalid memory addressing --> bus error */
-		M68000_BusError(addr, BUS_ERROR_READ, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
+		M68000_BusError(IoAccessFullAddress, BUS_ERROR_READ, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
 		return -1;
 	}
 	if (addr > 0xfffffc)
@@ -545,13 +553,13 @@ uae_u32 REGPARAM3 IoMem_lget(uaecptr addr)
 	/* Check if we completely read from a bus-error region */
 	if (nBusErrorAccesses == 4)
 	{
-		M68000_BusError(addr, BUS_ERROR_READ, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
+		M68000_BusError(IoAccessFullAddress, BUS_ERROR_READ, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
 		return -1;
 	}
 
 	val = IoMem_ReadLong(addr);
 
-	LOG_TRACE(TRACE_IOMEM_RD, "IO read.l $%06x = $%08x pc=%x\n", addr, val, M68000_GetPC());
+	LOG_TRACE(TRACE_IOMEM_RD, "IO read.l $%08x = $%08x pc=%x\n", IoAccessFullAddress, val, M68000_GetPC());
 
 	return val;
 }
@@ -563,6 +571,8 @@ uae_u32 REGPARAM3 IoMem_lget(uaecptr addr)
  */
 void REGPARAM3 IoMem_bput(uaecptr addr, uae_u32 val)
 {
+	IoAccessFullAddress = addr;			/* Store initial 32 bits address (eg for bus error stack) */
+
 	/* Check if access is made by a new instruction or by the same instruction doing multiple byte accesses */
 	if ( IoAccessInstrPrevClock == CyclesGlobalClockCounter )
 		IoAccessInstrCount++;			/* Same instruction, increase access count */
@@ -577,12 +587,12 @@ void REGPARAM3 IoMem_bput(uaecptr addr, uae_u32 val)
 
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
-	LOG_TRACE(TRACE_IOMEM_WR, "IO write.b $%06x = $%02x pc=%x\n", addr, val&0xff, M68000_GetPC());
+	LOG_TRACE(TRACE_IOMEM_WR, "IO write.b $%08x = $%02x pc=%x\n", IoAccessFullAddress, val&0xff, M68000_GetPC());
 
 	if (addr < 0xff8000 || !regs.s)
 	{
 		/* invalid memory addressing --> bus error */
-		M68000_BusError(addr, BUS_ERROR_WRITE, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
+		M68000_BusError(IoAccessFullAddress, BUS_ERROR_WRITE, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
 		return;
 	}
 
@@ -598,7 +608,7 @@ void REGPARAM3 IoMem_bput(uaecptr addr, uae_u32 val)
 	/* Check if we wrote to a bus-error region */
 	if (nBusErrorAccesses == 1)
 	{
-		M68000_BusError(addr, BUS_ERROR_WRITE, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
+		M68000_BusError(IoAccessFullAddress, BUS_ERROR_WRITE, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
 	}
 }
 
@@ -610,6 +620,8 @@ void REGPARAM3 IoMem_bput(uaecptr addr, uae_u32 val)
 void REGPARAM3 IoMem_wput(uaecptr addr, uae_u32 val)
 {
 	Uint32 idx;
+
+	IoAccessFullAddress = addr;			/* Store initial 32 bits address (eg for bus error stack) */
 
 	/* Check if access is made by a new instruction or by the same instruction doing multiple word accesses */
 	if ( IoAccessInstrPrevClock == CyclesGlobalClockCounter )
@@ -626,12 +638,12 @@ void REGPARAM3 IoMem_wput(uaecptr addr, uae_u32 val)
 
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
-	LOG_TRACE(TRACE_IOMEM_WR, "IO write.w $%06x = $%04x pc=%x\n", addr, val&0xffff, M68000_GetPC());
+	LOG_TRACE(TRACE_IOMEM_WR, "IO write.w $%08x = $%04x pc=%x\n", IoAccessFullAddress, val&0xffff, M68000_GetPC());
 
 	if (addr < 0x00ff8000 || !regs.s)
 	{
 		/* invalid memory addressing --> bus error */
-		M68000_BusError(addr, BUS_ERROR_WRITE, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
+		M68000_BusError(IoAccessFullAddress, BUS_ERROR_WRITE, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
 		return;
 	}
 	if (addr > 0xfffffe)
@@ -659,7 +671,7 @@ void REGPARAM3 IoMem_wput(uaecptr addr, uae_u32 val)
 	/* Check if we wrote to a bus-error region */
 	if (nBusErrorAccesses == 2)
 	{
-		M68000_BusError(addr, BUS_ERROR_WRITE, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
+		M68000_BusError(IoAccessFullAddress, BUS_ERROR_WRITE, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
 	}
 }
 
@@ -672,6 +684,8 @@ void REGPARAM3 IoMem_lput(uaecptr addr, uae_u32 val)
 {
 	Uint32 idx;
 	int n;
+
+	IoAccessFullAddress = addr;			/* Store initial 32 bits address (eg for bus error stack) */
 
 	/* Check if access is made by a new instruction or by the same instruction doing multiple long accesses */
 	if ( IoAccessInstrPrevClock == CyclesGlobalClockCounter )
@@ -687,12 +701,12 @@ void REGPARAM3 IoMem_lput(uaecptr addr, uae_u32 val)
 
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
-	LOG_TRACE(TRACE_IOMEM_WR, "IO write.l $%06x = $%08x pc=%x\n", addr, val, M68000_GetPC());
+	LOG_TRACE(TRACE_IOMEM_WR, "IO write.l $%08x = $%08x pc=%x\n", IoAccessFullAddress, val, M68000_GetPC());
 
 	if (addr < 0xff8000 || !regs.s)
 	{
 		/* invalid memory addressing --> bus error */
-		M68000_BusError(addr, BUS_ERROR_WRITE, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
+		M68000_BusError(IoAccessFullAddress, BUS_ERROR_WRITE, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
 		return;
 	}
 	if (addr > 0xfffffc)
@@ -723,7 +737,7 @@ void REGPARAM3 IoMem_lput(uaecptr addr, uae_u32 val)
 	/* Check if we wrote to a bus-error region */
 	if (nBusErrorAccesses == 4)
 	{
-		M68000_BusError(addr, BUS_ERROR_WRITE, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
+		M68000_BusError(IoAccessFullAddress, BUS_ERROR_WRITE, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
 	}
 }
 

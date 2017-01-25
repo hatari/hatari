@@ -178,7 +178,7 @@ static void IoMemTabFalc_Compatible_ReadByte(void)
 {
 	if (nIoMemAccessSize != SIZE_BYTE || (IoMem_ReadByte(0xff8007) & 0x20) != 0)
 	{
-		M68000_BusError(IoAccessBaseAddress, BUS_ERROR_READ,
+		M68000_BusError(IoAccessFullAddress, BUS_ERROR_READ,
 		                nIoMemAccessSize, BUS_ERROR_ACCESS_DATA);
 	}
 }
@@ -187,7 +187,7 @@ static void IoMemTabFalc_Compatible_WriteByte(void)
 {
 	if (nIoMemAccessSize != SIZE_BYTE || (IoMem_ReadByte(0xff8007) & 0x20) != 0)
 	{
-		M68000_BusError(IoAccessBaseAddress, BUS_ERROR_WRITE,
+		M68000_BusError(IoAccessFullAddress, BUS_ERROR_WRITE,
 		                nIoMemAccessSize, BUS_ERROR_ACCESS_DATA);
 	}
 }
@@ -200,7 +200,7 @@ static void IoMemTabFalc_Compatible_ReadWord(void)
 {
 	if (nIoMemAccessSize == SIZE_BYTE || (IoMem_ReadByte(0xff8007) & 0x20) != 0)
 	{
-		M68000_BusError(IoAccessBaseAddress, BUS_ERROR_READ,
+		M68000_BusError(IoAccessFullAddress, BUS_ERROR_READ,
 		                nIoMemAccessSize, BUS_ERROR_ACCESS_DATA);
 	}
 }
@@ -209,7 +209,7 @@ static void IoMemTabFalc_Compatible_WriteWord(void)
 {
 	if (nIoMemAccessSize == SIZE_BYTE || (IoMem_ReadByte(0xff8007) & 0x20) != 0)
 	{
-		M68000_BusError(IoAccessBaseAddress, BUS_ERROR_WRITE,
+		M68000_BusError(IoAccessFullAddress, BUS_ERROR_WRITE,
 		                nIoMemAccessSize, BUS_ERROR_ACCESS_DATA);
 	}
 }
