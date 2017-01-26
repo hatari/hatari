@@ -1,4 +1,4 @@
-; GEMDOS test program to signify that boot succceeded
+; GEMDOS test program to signify that boot succeeded
 .C [-iinclude]
 gemdos.prg
 =

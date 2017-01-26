@@ -19,7 +19,7 @@
 /*------- success / failure ----- */
 
 /* anything failing changes 'msg' to failure,
- * write_midi() expects them to be of same lenght.
+ * write_midi() expects them to be of same length.
  */
 static const char success[] = SUCCESS;
 static const char failure[] = FAILURE;

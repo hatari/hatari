@@ -169,7 +169,7 @@ Fixed demos:
 - Suretrip 49% by Checkpoint (cpu, exceptions stacking)
 - Tymewarp by YM Rockerz (megaste mode, cpu control at $ff8e21)
 - overscan plasma in Graphics Sound 2 in Relapse by Cybernetic (blitter)
-- RGBeast by Agression (blitter)
+- RGBeast by Aggression (blitter)
 - Drone by DHS, PhotoChrome Viewer by DML (video, last 8 pixels)
 
 Notes:

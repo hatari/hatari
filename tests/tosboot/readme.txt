@@ -28,7 +28,7 @@ There's also "screenshot-report.sh" script to generate a HTML report
 out of the screenshots saved by TOS tester which will list missing
 tests and any differences in the produced screenshots.  For that, you
 need "reference" directory to contain screenshots from an earlier,
-succesful run of TOS tester.
+successful run of TOS tester.
 
 
 Usage

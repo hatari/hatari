@@ -111,7 +111,7 @@ int main(int argc, const char *argv[])
 	char addr_pass[] = "pc + ($200*16/2 & 0xffff)";
 
 	const char *nonmatching_tests[] = {
-		"( $200 ) . b > 200", /* byte access to avoid endianess */
+		"( $200 ) . b > 200", /* byte access to avoid endianness */
 		"pc < $50000 && pc > $60000",
 		"pc > $50000 && pc < $54000",
 		"d0 = a0",

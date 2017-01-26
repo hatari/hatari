@@ -18,7 +18,7 @@ Profiling information for code addresses is summed together and
 assigned to (function) symbols to which those addresses belong to.
 All addresses between two symbol names (in profile file) or symbol
 addresses (read from symbols files) are assumed to belong to the
-preceeding function/symbol.
+preceding function/symbol.
 
 Tool output will contain at least:
 - (deduced) call counts,
@@ -315,7 +315,7 @@ class FunctionStats:
 # ---------------------------------------------------------------------
 class InstructionStats:
     "statistics on all instructions"
-    # not changable, these are expectatations about the data fields
+    # not changeable, these are expectatations about the data fields
     # in this, FunctionStats, ProfileCallers and ProfileGraph classes
     callcount_field = 0
     instructions_field = 1
@@ -547,7 +547,7 @@ class ProfileSymbols(Output):
         return None
 
     def get_preceeding_symbol(self, addr):
-        "resolve non-function addresses to preceeding function name+offset"
+        "resolve non-function addresses to preceding function name+offset"
         # should be called only after profile addresses has started
         if self.symbols:
             if self.symbols_need_sort:
@@ -1004,7 +1004,7 @@ class EmulatorProfile(Output):
             # continuation may skip to a function which name is not visible in profile file
             name, offset = self.symbols.get_preceeding_symbol(addr)
             symaddr = addr - offset
-            # if changed area, preceeding symbol can be before area start,
+            # if changed area, preceding symbol can be before area start,
             # so need to check both address, and name having changed
             if symaddr > function.addr and name != function.name:
                 addr = symaddr

@@ -91,7 +91,7 @@ for arg in $*; do
 	shift
 done
 
-# calculate command line lenght and append zero just in case
+# calculate command line length and append zero just in case
 cmdlen=$(wc -c $args | awk '{print $1}')
 echo -n "\0" >> $args
 if [ $cmdlen -gt 126 ]; then

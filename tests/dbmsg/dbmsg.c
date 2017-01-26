@@ -32,7 +32,7 @@ int main()
 	/* Print NULL-terminated string */
 	Dbmsg(5, DB_NULLSTRING, (uint32_t)"Please print NULLSTRING");
 
-	/* Print give string (which lenght is encoded to msg_num),
+	/* Print give string (which length is encoded to msg_num),
 	 * and invoking debugger / halt
 	 */
 	Dbmsg(5, DB_STRING(sizeof(str)-1), (uint32_t)str);

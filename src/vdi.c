@@ -867,7 +867,7 @@ void VDI_LineA(Uint32 linea, Uint32 fontbase)
 			}
 			/* make this new default font */
 			STMemory_WriteLong(linea-0x1cc, fontadr);
-			/* set DEFAULT flag for choosen font */
+			/* set DEFAULT flag for chosen font */
 			STMemory_WriteWord(fontadr + 66, STMemory_ReadWord(fontadr + 66) | 0x01);
 		}
 		cel_wd = STMemory_ReadWord(fontadr + 52);

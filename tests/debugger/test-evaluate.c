@@ -40,7 +40,7 @@ int main(int argc, const char *argv[])
 	const char *expression, *errstr;
 	Uint32 result;
 
-	/* set values needed by above succesful calculations */
+	/* set values needed by above successful calculations */
 	nVBLs = VBL_VALUE;
 	memset(Regs, 0, sizeof(Regs));
 	Regs[REG_D0] = 10;

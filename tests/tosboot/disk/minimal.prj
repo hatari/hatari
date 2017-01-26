@@ -1,4 +1,4 @@
-; trivial GEMDOS program to signify that boot succceeded
+; trivial GEMDOS program to signify that boot succeeded
 .C [-iinclude]
 minimal.prg
 =
