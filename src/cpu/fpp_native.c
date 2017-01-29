@@ -817,6 +817,20 @@ static void fp_mul(fpdata *a, fpdata *b)
 {
 	a->fp = a->fp * b->fp;
 }
+static void fp_sglmul(fpdata *a, fpdata *b)
+{
+	a->fp = a->fp * b->fp;
+	fpp_roundsgl(a);
+}
+static void fp_sgldiv(fpdata *a, fpdata *b)
+{
+	a->fp = a->fp / b->fp;
+	fpp_roundsgl(a);
+}
+
+static void fp_normalize(fpdata *a)
+{
+}
 
 void fp_init_native(void)
 {
@@ -856,6 +870,8 @@ void fp_init_native(void)
 	fpp_round32 = fp_round32;
 	fpp_round64 = fp_round64;
 
+	fpp_normalize = fp_normalize;
+
 	fpp_int = fp_int;
 	fpp_sinh = fp_sinh;
 	fpp_intrz = fp_intrz;
@@ -888,4 +904,6 @@ void fp_init_native(void)
 	fpp_rem = fp_rem;
 	fpp_scale = fp_scale;
 	fpp_sub = fp_sub;
+	fpp_sgldiv = fp_sgldiv;
+	fpp_sglmul = fp_sglmul;
 }
