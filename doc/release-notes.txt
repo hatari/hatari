@@ -15,6 +15,7 @@ Emulation:
   (TOS memory routines don't need to be patched anymore)
 - Better results when reading "void" region between end of RAM and 4MB
   (return latest data seen on the bus on STF/STE)
+- Fix error in 68030 instruction cache when using prefetch/CE mode
 
 Emulator:
 - Initial patching for ST-Book ROM
@@ -45,10 +46,14 @@ Fixed Falcon games:
 - Ishar 1, 2 and 3
 - Lasers and Hommes
 - Moonspeeder (preview 2)
+- Boom preview (68030 instr-cache)
 
 Fixed Falcon demos:
 - Bound 3
 - Mahabharata (with SDL2)
+- Echos, E.X. Illusion, Hmmm, Autowaschen Verboten, Dan's Lustiges Kinderfest,
+  Warum, Cycedelic knockout, A Rh positive, Virtual City (68030 instr-cache)
+
 
 Fixed programs:
 - Hextracker (for Falcon)
