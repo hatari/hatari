@@ -9474,6 +9474,15 @@ void continue_020_prefetch(void)
 	fill_prefetch_020_ntx();
 }
 
+void continue_ce030_prefetch(void)
+{
+	fill_prefetch_030_ntx();
+}
+void continue_030_prefetch(void)
+{
+	fill_prefetch_030_ntx();
+}
+
 void fill_prefetch_020(void)
 {
 	fill_prefetch_020_ntx();

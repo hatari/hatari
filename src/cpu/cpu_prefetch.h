@@ -159,6 +159,7 @@ STATIC_INLINE void m68k_do_rts_ce020 (void)
 
 #ifdef CPUEMU_22
 
+extern void continue_030_prefetch(void);
 extern uae_u32 get_word_030_prefetch(int);
 
 STATIC_INLINE void put_long_030(uaecptr addr, uae_u32 v)
@@ -223,6 +224,7 @@ STATIC_INLINE void m68k_do_rts_030(void)
 
 #ifdef CPUEMU_23
 
+extern void continue_ce020_prefetch(void);
 extern uae_u32 get_word_ce030_prefetch(int);
 
 STATIC_INLINE void put_long_ce030 (uaecptr addr, uae_u32 v)

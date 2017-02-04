@@ -261,10 +261,17 @@ static void get_prefetch_020_continue(void)
 {
 	if (!isprefetch020())
 		return;
-	if (using_ce020)
-		printf("\tcontinue_ce020_prefetch();\n");
-	else
-		printf ("\tcontinue_020_prefetch();\n");
+	if (using_ce020) {
+		if (using_ce020 > 1)
+			printf("\tcontinue_ce030_prefetch();\n");
+		else
+			printf("\tcontinue_ce020_prefetch();\n");
+	} else {
+		if (using_prefetch_020 > 1)
+			printf ("\tcontinue_030_prefetch();\n");
+		else
+			printf ("\tcontinue_020_prefetch();\n");
+	}
 }
 
 static void returntail (bool iswrite)
