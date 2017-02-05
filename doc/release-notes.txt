@@ -43,20 +43,22 @@ Other changes:
 - Fix: icon symlink generation (rpmbuild chroot)
 
 Fixed Falcon games:
-- Ishar 1, 2 and 3
-- Lasers and Hommes
-- Moonspeeder (preview 2)
-- Boom preview (68030 instr-cache)
+- Ishar 1, 2 & 3, Lasers and Hommes, Moonspeeder preview 2
+  (Videl video counter)
+- Boom preview, Lasers and Hommes, Tank Blaster
+  (68030 instr-cache)
 
 Fixed Falcon demos:
-- Bound 3
+- Bound 3 (Videl video counter)
 - Mahabharata (with SDL2)
-- Echos, E.X. Illusion, Hmmm, Autowaschen Verboten, Dan's Lustiges Kinderfest,
-  Warum, Cycedelic knockout, A Rh positive, Virtual City (68030 instr-cache)
+- A Rh positive, Autowaschen Verboten, Bound, Codein, Cycedelic
+  knockout, Dan's Lustiges Kinderfest, Derealization, Echos, E.X.
+  Illusion, Hmmm, Oergs, Polygon Discount, Warum, Virtual City
+  (68030 instr-cache)
 
 
 Fixed programs:
-- Hextracker (for Falcon)
+- Hextracker (Videl video counter)
 
 Fixed ST/STE demos:
 - Sprite32 by Leonard (RESTART_VIDEO_COUNTER on line 310/260)
