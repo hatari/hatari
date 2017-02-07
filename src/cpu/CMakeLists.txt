@@ -85,4 +85,5 @@ endif(CMAKE_COMPILER_IS_GNUCC)
 add_library(UaeCpu ${CPUEMU_SRCS} cpudefs.c cpummu.c cpummu030.c custom.c
 		   debug.c events.c hatari-glue.c memory.c newcpu_common.c
 		   readcpu.c newcpu.c writelog.c
-		   fpp.c fpp_native.c fpp_softfloat.c softfloat/softfloat.c)
+		   fpp.c fpp_native.c fpp_softfloat.c
+		   softfloat/softfloat.c softfloat/softfloat_extension.c)
