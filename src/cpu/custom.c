@@ -186,8 +186,19 @@ uae_u32 wait_cpu_cycle_read_ce020 (uaecptr addr, int mode)
 	SETIFCHIP
 
 #else						/* WINUAE_FOR_HATARI */
-	sync_ce020 ();
-	x_do_cycles_pre (CYCLE_UNIT);
+
+//fprintf ( stderr , "wait read ce020 glob %lu\n" , CyclesGlobalClockCounter );
+//fprintf ( stderr , "wait read ce020 %lu %lu\n" , currcycle / cpucycleunit , currcycle );
+	int bus_pos = ( CyclesGlobalClockCounter + currcycle*2/CYCLE_UNIT ) & 3;
+	if ( ( bus_pos & 2 ) == 2 )
+//	if ( bus_pos )
+	{
+//		fprintf ( stderr , "mem wait read %x %d %lu %lu\n" , addr , mode , currcycle / cpucycleunit , currcycle );
+		x_do_cycles ((4-bus_pos)*cpucycleunit);
+//		fprintf ( stderr , "mem wait read after %x %d %lu %lu\n" , addr , mode , currcycle / cpucycleunit , currcycle );
+	}
+
+//fprintf ( stderr , "wait read2 ce020 %lu %lu\n" , currcycle / cpucycleunit , currcycle );
 
 	if (mode < 0)
 		v = get_long (addr);
@@ -196,8 +207,10 @@ uae_u32 wait_cpu_cycle_read_ce020 (uaecptr addr, int mode)
 	else if (mode == 0)
 		v = get_byte (addr);
 
-	if (currprefs.cpu_model == 68020)
-		x_do_cycles_post (CYCLE_UNIT / 2, v);
+//fprintf ( stderr , "wait read3 ce020 %lu %lu\n" , currcycle / cpucycleunit , currcycle );
+	x_do_cycles_post (3*cpucycleunit, v);
+//fprintf ( stderr , "wait read4 ce020 %lu %lu\n" , currcycle / cpucycleunit , currcycle );
+
 #endif						/* WINUAE_FOR_HATARI */
 
 	return v;
@@ -294,8 +307,18 @@ void wait_cpu_cycle_write_ce020 (uaecptr addr, int mode, uae_u32 v)
 	SETIFCHIP
 
 #else						/* WINUAE_FOR_HATARI */
-	sync_ce020 ();
-	x_do_cycles_pre (CYCLE_UNIT);
+
+//fprintf ( stderr , "wait read ce020 %lu %lu\n" , currcycle / cpucycleunit , currcycle );
+	int bus_pos = ( CyclesGlobalClockCounter + currcycle*2/CYCLE_UNIT ) & 3;
+	if ( ( bus_pos & 2 ) == 2 )
+//	if ( bus_pos )
+	{
+//		fprintf ( stderr , "mem wait read %x %d %lu %lu\n" , addr , mode , currcycle / cpucycleunit , currcycle );
+		x_do_cycles ((4-bus_pos)*cpucycleunit);
+//		fprintf ( stderr , "mem wait read after %x %d %lu %lu\n" , addr , mode , currcycle / cpucycleunit , currcycle );
+	}
+
+//fprintf ( stderr , "wait read2 ce020 %lu %lu\n" , currcycle / cpucycleunit , currcycle );
 
 	if (mode < 0)
 		put_long (addr, v);
@@ -304,8 +327,10 @@ void wait_cpu_cycle_write_ce020 (uaecptr addr, int mode, uae_u32 v)
 	else if (mode == 0)
 		put_byte (addr, v);
 
-	if (currprefs.cpu_model == 68020)
-		x_do_cycles_post (CYCLE_UNIT / 2, v);
+//fprintf ( stderr , "wait read3 ce020 %lu %lu\n" , currcycle / cpucycleunit , currcycle );
+	x_do_cycles_post (3*cpucycleunit, v);
+//fprintf ( stderr , "wait read4 ce020 %lu %lu\n" , currcycle / cpucycleunit , currcycle );
+
 #endif						/* WINUAE_FOR_HATARI */
 }
 

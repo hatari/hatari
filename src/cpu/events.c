@@ -16,5 +16,6 @@
 
 void do_cycles_slow (unsigned long cycles_to_add)
 {
+//fprintf ( stderr , "  do_cycles_slow add=%d curr=%d -> new=%d\n" , cycles_to_add , currcycle , currcycle+cycles_to_add );
 	currcycle += cycles_to_add;
 }

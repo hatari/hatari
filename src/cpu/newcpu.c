@@ -8376,6 +8376,7 @@ uae_u32 get_word_020_prefetch (int o)
 uae_u32 mem_access_delay_long_read_ce020 (uaecptr addr)
 {
 	uae_u32 v;
+//fprintf ( stderr , "long read ce020 %lu %lu\n" , currcycle / cpucycleunit , currcycle );
 	RESET_CE020_CYCLES;
 	STORE_CE020_CYCLES;
 	switch (ce_banktype[addr >> 16])
@@ -8407,7 +8408,9 @@ uae_u32 mem_access_delay_long_read_ce020 (uaecptr addr)
 		v = get_long (addr);
 		break;
 	}
+//fprintf ( stderr , "long read2 ce020 %lu %lu\n" , currcycle / cpucycleunit , currcycle );
 	ADD_CE020_CYCLES;
+//fprintf ( stderr , "long read3 ce020 %lu %lu\n" , currcycle / cpucycleunit , currcycle );
 	return v;
 }
 
@@ -8605,6 +8608,7 @@ STATIC_INLINE struct cache030 *getcache030 (struct cache030 *cp, uaecptr addr, u
 	c = &cp[index];
 	*tagp = tag;
 	*lwsp = lws;
+//fprintf ( stderr , "getcache addr=%x index=%x tag=%x lws=%x\n" , addr , index , tag , lws );
 	return c;
 }
 
@@ -8623,7 +8627,7 @@ static void fill_icache030 (uae_u32 addr)
 	uae_u32 tag;
 	uae_u32 data;
 	struct cache030 *c;
-//fprintf ( stderr , "fill ica %x\n" , addr );
+//fprintf ( stderr , "fill icache030 %x %x %x\n" , addr , regs.cacr , regs.cacheholdingaddr020 );
 
 	addr &= ~3;
 	if (regs.cacheholdingaddr020 == addr)
@@ -8633,7 +8637,7 @@ static void fill_icache030 (uae_u32 addr)
 		// cache hit
 		regs.cacheholdingaddr020 = addr;
 		regs.cacheholdingdata020 = c->data[lws];
-//fprintf ( stderr , "fill ica %x -> hit %x\n" , addr , regs.cacheholdingdata020 );
+//fprintf ( stderr , "fill ica %x -> hit %x %x\n" , addr , regs.cacheholdingdata020 , regs.cacr );
 #ifdef WINUAE_FOR_HATARI
 		CpuInstruction.I_Cache_hit++;
 #endif
@@ -8642,8 +8646,17 @@ static void fill_icache030 (uae_u32 addr)
 
 	// cache miss
 	if (currprefs.cpu_cycle_exact) {
+#if 1
 		if (!regs.ce020memcycle_data)
 			regs.ce020memcycles = 0;
+#else
+		if (!regs.ce020memcycle_data) {
+//fprintf ( stderr ,"fill icache030 ce020memcycles=%d\n" , regs.ce020memcycles );
+			if (regs.ce020memcycles > 0)
+				x_do_cycles (regs.ce020memcycles);
+			regs.ce020memcycles = 0;
+		}
+#endif
 		regs.ce020memcycle_data = false;
 		unsigned long cycs = get_cycles ();
 		data = mem_access_delay_longi_read_ce020 (addr);
@@ -8909,6 +8922,7 @@ uae_u32 get_word_ce030_prefetch (int o)
 	uae_u32 pc = m68k_getpc () + o;
 	uae_u32 v;
 
+//fprintf ( stderr , "get_word_ce030_prefetch %d pc=%x\n" , currcycle , pc);
 	if (pc & 2) {
 		v = regs.prefetch020[0] & 0xffff;
 #if MORE_ACCURATE_68020_PIPELINE
@@ -8952,6 +8966,8 @@ uae_u32 get_word_030_prefetch(int o)
 		pipeline_020(regs.prefetch020[1] >> 16, pc);
 #endif
 	}
+//if ( ( v & 0xffff ) != ( get_word(pc) & 0xffff ) )
+//  fprintf ( stderr , "prefetch mismatch pc=%x prefetch=%x != mem=%x, i-cache error ?\n" , pc , v&0xffff , get_word(pc)&0xffff );
 	return v;
 }
 
@@ -9396,6 +9412,7 @@ void check_t0_trace(void)
 
 void fill_prefetch_030_ntx (void)
 {
+//fprintf ( stderr , "fill_prefetch_030_ntx %d\n" , currcycle);
 	uaecptr pc = m68k_getpc ();
 	uaecptr pc2 = pc;
 	pc &= ~3;
@@ -9407,10 +9424,12 @@ void fill_prefetch_030_ntx (void)
 		do_cycles_ce020_internal(2);
 	regs.prefetch020[0] = regs.cacheholdingdata020;
 
+//fprintf ( stderr , "fill_prefetch_030_ntx2 %d\n" , currcycle);
 	fill_icache030 (pc + 4);
 	if (currprefs.cpu_cycle_exact)
 		do_cycles_ce020_internal(2);
 	regs.prefetch020[1] = regs.cacheholdingdata020;
+//fprintf ( stderr , "fill_prefetch_030_ntx3 %d\n" , currcycle);
 
 #if MORE_ACCURATE_68020_PIPELINE
 	if (pc2 & 2) {
@@ -9426,6 +9445,7 @@ void fill_prefetch_030_ntx (void)
 		regs.irc = get_word_ce030_prefetch (0);
 	else
 		regs.irc = get_word_030_prefetch(0);
+//fprintf ( stderr , "fill_prefetch_030_ntx4 %d\n" , currcycle);
 }
 
 void fill_prefetch_020_ntx(void)
