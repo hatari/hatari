@@ -51,10 +51,11 @@ Fixed Falcon games:
 Fixed Falcon demos:
 - Bound 3 (Videl video counter)
 - Mahabharata (Videl widths with SDL2)
-- A Rh positive, Autowaschen Verboten, Bound, Bound 42, Codein,
-  Cycedelic knockout, Dan's Lustiges Kinderfest, Derealization,
-  Echos, E.X. Illusion, Hmmm, Oergs, Polygon Discount, Warum,
-  Virtual City (68030 instr-cache)
+- 2x1287, A Rh positive, Are you experienced, Autowaschen Verboten,
+  Bound, Bound 42, Codein, Cycedelic knockout, Dan's Lustiges
+  Kinderfest, Derealization, Dream Dimension, Echos, E.X. Illusion,
+  Geranium, Hex Pistols, Hmmm, Oergs, Polygon Discount, Terrorize your
+  soul, Warum, Virtual City (68030 instr-cache)
 
 Fixed TT versions of demos:
 - 4getful, Beams (68030 instr-cache)

@@ -3167,7 +3167,7 @@ if demo is stated to require that.</p>
       <td>yes</td>
       <td>emu</td>
       <td>VGA-only GFA musicdemo with DSP playback. Screen isn't
-          cleared properly when switching between text outputs</td>
+          cleared properly when switching between greets and info texts</td>
     </tr>
     <tr>
       <td>Crac:
@@ -3305,12 +3305,10 @@ if demo is stated to require that.</p>
     <tr>
       <td>DHS:
       <a href="http://www.pouet.net/prod.php?which=987">Dream Dimension</a></td>
-      <td>2.0</td>
+      <td>2.1 dev</td>
       <td>yes</td>
       <td>-</td>
-      <td>Music with DSP. Requires FPU, and with WinUAE CPU core also MMU
-          (otherwise complains "Sorry, you don't have enough free ST-RAM
-	  to run this demo")</td>
+      <td>Music with DSP. Requires FPU</td>
     </tr>
     <tr>
       <td>DHS / Evolution / New Beat:
@@ -3393,21 +3391,21 @@ if demo is stated to require that.</p>
     <tr>
       <td>EKO:
       <a href="http://www.pouet.net/prod.php?which=1180">Are You Experienced?</a></td>
-      <td>2.0</td>
+      <td>2.1 dev</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Works fully only with WinUAE CPU emu.
-          Requires MMU, otherwise crashes at start</td>
+      <td>Works fully only with WinUAE CPU emu</td>
     </tr>
     <tr>
       <td>EKO:
       <a href="http://www.pouet.net/prod.php?which=8572">E.K.O System</a></td>
-      <td class="minor">2.0</td>
+      <td class="minor">2.1 dev</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Requires WinUAE CPU core. In middle of demo (e.g. mech screen)
-          and just before greets, there's "crossbar DMA Play: Illegal buffer size"
-	  error, noise and in first case, music missing for new minutes</td>
+      <td>Requires WinUAE CPU core. Transition to "3D pears" screen is just
+          "Betty Boo" picture scroll down+up with some garbage lines
+	  instead of screen split. Part before the end texts is
+	  missing all the small 3D models for demo group names</td>
     </tr>
     <tr>
       <td>EKO:
@@ -3424,9 +3422,7 @@ if demo is stated to require that.</p>
       <td>1.3</td>
       <td>yes</td>
       <td>emu</td>
-      <!-- All screens in Pouet.net screenshot work, but there's no
-           video of this, so don't know whether end is OK -->
-      <td>Ends in "Illegal instruction: 0049"</td>
+      <td></td>
     </tr>
     <tr>
       <td>EKO:
@@ -3442,7 +3438,7 @@ if demo is stated to require that.</p>
       <td class="major">2.0</td>
       <td>yes</td>
       <td>emu</td>
-      <td>With WinUAE CPU emu, crashes at start without MMU.
+      <td>Terminates during startup if started without MMU.
           Freezes or exits after few screens to illegal DSP instructions</td>
     </tr>
     <tr>
@@ -3467,7 +3463,7 @@ if demo is stated to require that.</p>
       <td class="major">2.0</td>
       <td>-</td>
       <td>-</td>
-      <td>Uses MMU. Terminates immediately</td>
+      <td>Counts CPU cycles at start and exits because Hatari is not accurate enough</td>
     </tr>
     <tr>
       <td>EXA:
@@ -3475,7 +3471,7 @@ if demo is stated to require that.</p>
       <td class="major">2.0</td>
       <td>-</td>
       <td>-</td>
-      <td>Uses MMU. Terminates immediately</td>
+      <td>Counts CPU cycles at start and exits because Hatari is not accurate enough</td>
     </tr>
     <tr>
       <td>Extream:
@@ -3496,10 +3492,10 @@ if demo is stated to require that.</p>
     <tr>
       <td>Fit:
       <a href="http://www.pouet.net/prod.php?which=17311">Hex Pistols</a></td>
-      <td>1.9</td>
+      <td>2.1 dev</td>
       <td>yes</td>
       <td>emu</td>
-      <td>14MB + MMU + FPU, .tSCc port from Amiga</td>
+      <td>14MB + FPU, .tSCc port from Amiga</td>
     </tr>
     <tr>
       <td>Fit:
@@ -3714,11 +3710,12 @@ if demo is stated to require that.</p>
     <tr>
       <td>Mystic bytes:
       <a href="http://pouet.net/prod.php?which=24801">Chosneck Supplement (e5)</a></td>
-      <td class="minor">2.0</td>
+      <td>2.0</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Needs 14MB RAM. Intro shows only with oldUAE CPU core.
-          RGB 50Hz mode doesn't work, others do</td>
+      <td>14MB RAM. GEM shell requires starting from desktop.
+          Intro requires FPU.  Main program doesn't work with
+	  RGB 50Hz mode, only other ones</td>
     </tr>
     <tr>
       <td>Mystic bytes:
@@ -3825,11 +3822,10 @@ if demo is stated to require that.</p>
     <tr>
       <td>Paradox:
       <a href="http://pouet.net/prod.php?which=60896">2x1287</a></td>
-      <td class="minor">2.0</td>
+      <td>2.1 dev</td>
       <td>yes</td>
       <td>-</td>
-      <td>Scenes from the demo scene. Music with DSP.
-          With WinUAE CPU core, starts only with VGA</td>
+      <td>Scenes from the demo scene. Music with DSP</td>
     </tr>
     <tr>
       <td>Paranoia:
@@ -3982,13 +3978,13 @@ if demo is stated to require that.</p>
     <tr>
       <td>tSCc:
       <a href="http://pouet.net/prod.php?which=1013">Terrorize your soul</a></td>
-      <td class="major">2.0</td>
+      <td class="minor">2.1 dev</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Music is mostly silent or noise and demo doesn't run until
-          end. With WinUAE CPU core it crashes after red blobs screen
-	  to illegal DSP instruction, with oldUAE, it doesn't advance
-	  from that screen</td>
+      <td>Music is mostly silent or noise. Hatari's constant "illegal DSP
+          instruction" messages slow down hugely two last screens and greets
+	  (last "firecube" screen isn't show in demo's Youtube video).
+	  With oldUAE, freezes after red blobs screen</td>
     </tr>
     <tr>
       <td>Tony Benett:
