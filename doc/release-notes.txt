@@ -30,6 +30,7 @@ Emulator:
 - Fix: off-by-one error in ACSI image file name handling
 - Fix: Normal users cannot use tmpfile() directly under Windows
 - Fix: DESTDIR support for RPM packaging
+- Fix: rate-limit DSP illegal instruction warnings output
 - Debugger:
   - Add "CycleCounter" variable
   - Add "-f" option to 'cd' so that setup scripts can specify
@@ -56,6 +57,7 @@ Fixed Falcon demos:
   Kinderfest, Derealization, Dream Dimension, Echos, E.X. Illusion,
   Geranium, Hex Pistols, Hmmm, Oergs, Polygon Discount, Terrorize your
   soul, Warum, Virtual City (68030 instr-cache)
+- Terrorize your soul (DSP warnings 100x slowdown)
 
 Fixed TT versions of demos:
 - 4getful, Beams (68030 instr-cache)

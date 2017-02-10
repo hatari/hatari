@@ -697,6 +697,13 @@ static const dsp_interrupt_t dsp_interrupt[12] = {
 	{DSP_INTER_SSI_TRX_DATA	,	0x10, 2, "SSI tramsmit"}
 };
 
+static struct {
+	int limit;
+	int count;
+	Uint32 inst;
+	Uint16 pc;
+} dsp_error;
+
 
 /**********************************
  *	Emulator kernel
@@ -707,6 +714,8 @@ void dsp56k_init_cpu(void)
 	dsp56k_disasm_init();
 	isDsp_in_disasm_mode = false;
 	start_time = SDL_GetTicks();
+	memset(&dsp_error, 0, sizeof(dsp_error));
+	dsp_error.limit = 1;
 	num_inst = 0;
 }
 
@@ -1849,11 +1858,28 @@ static void dsp_undefined(void)
 {
 	if (isDsp_in_disasm_mode == false) {
 		cur_inst_len = 0;
-		fprintf(stderr, "Dsp: 0x%04x: 0x%06x Illegal instruction\n",dsp_core.pc, cur_inst);
 		/* Add some artificial CPU cycles to avoid being stuck in an infinite loop */
 		dsp_core.instr_cycle += 100;
-	}
-	else {
+
+		/* Rate limit identical messages. Required to make
+		 * "Terrorize your soul" demo run at usable speed
+		 */
+		dsp_error.count++;
+		if (cur_inst != dsp_error.inst || dsp_core.pc != dsp_error.pc ||
+		    dsp_error.count >= dsp_error.limit) {
+			dsp_error.inst = cur_inst;
+			dsp_error.pc = dsp_core.pc;
+			fprintf(stderr, "Dsp: 0x%04hx: 0x%06x Illegal instruction (%dx times)\n",
+				dsp_error.pc, dsp_error.inst, dsp_error.count);
+			if (dsp_error.count >= dsp_error.limit) {
+				/* next message after 2x more hits */
+				dsp_error.limit *= 2;
+			} else {
+				dsp_error.limit = 1;
+			}
+			dsp_error.count = 0;
+		}
+	} else {
 		cur_inst_len = 1;
 		dsp_core.instr_cycle = 0;
 	}
