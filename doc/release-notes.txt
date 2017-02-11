@@ -16,6 +16,7 @@ Emulation:
 - Better results when reading "void" region between end of RAM and 4MB
   (return latest data seen on the bus on STF/STE)
 - Fix error in 68030 instruction cache when using prefetch/CE mode
+- More accurate memory access timings for Falcon 38030
 
 Emulator:
 - Initial patching for ST-Book ROM
@@ -50,6 +51,7 @@ Fixed Falcon games:
   (68030 instr-cache)
 
 Fixed Falcon demos:
+- Bound 2, E.K.O system (memory access timings)
 - Bound 3 (Videl video counter)
 - Mahabharata (Videl widths with SDL2)
 - 2x1287, A Rh positive, Are you experienced, Autowaschen Verboten,

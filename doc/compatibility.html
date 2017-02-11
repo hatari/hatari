@@ -2229,7 +2229,7 @@ indicated separately.</p>
     </tr>
     <tr>
       <td><a href="http://devilsdoorbell.com/">Bad Mood (2016 game)</a></td>
-      <td class="major">2.0</td>
+      <td class="minor">2.0</td>
       <td>yes</td>
       <td>emu</td>
       <td>Enhanced Doom I/II port and engine rewrite. Game requires WinUAE
@@ -3180,10 +3180,10 @@ if demo is stated to require that.</p>
     <tr>
       <td>Crac:
       <a href="http://www.pouet.net/prod.php?which=23587">Bound 2</a></td>
-      <td class="minor">2.0</td>
+      <td>2.0</td>
       <td>yes</td>
       <td>emu</td>
-      <td>With WinUAE CPU core, requires disabling CPU exact mode</td>
+      <td></td>
     </tr>
     <tr>
       <td>Crac:
@@ -3345,10 +3345,11 @@ if demo is stated to require that.</p>
     <tr>
       <td>DNT Crew:
       <a href="http://pouet.net/prod.php?which=16806">Agony</a></td>
-      <td class="minor">2.0</td>
+      <td class="major">2.0</td>
       <td>yes</td>
       <td>emu</td>
-      <td>After few screens freezes when bouncing ball fades to black</td>
+      <td>Freezes after few screens (when bouncing ball fades to black),
+          waiting VFC (0xFFFF82A0) to get 0x20F value</td>
     </tr>
     <tr>
       <td>DNT Crew:
@@ -3359,8 +3360,9 @@ if demo is stated to require that.</p>
       <td>Uses its own IKBD 6301 routine to decode the demo's protection.
 	  Sound is rather noisy. First plasma is half the correct height
 	  (and doubled with oldUAE CPU core). Picture before dot tunnel
-	  (on white background) isn't visible. WinUAE CPU core freezes
-	  in rotating DNT logo screen, just before end credits</td>
+	  (on white background) isn't visible. Freezes at start of rotating
+	  DNT logo screen (just before end credits), waiting DSP interrupt
+	  (0xFFFFA202 to get non-zero)</td>
     </tr>
     <tr>
       <td>DrTypo:
@@ -3399,13 +3401,11 @@ if demo is stated to require that.</p>
     <tr>
       <td>EKO:
       <a href="http://www.pouet.net/prod.php?which=8572">E.K.O System</a></td>
-      <td class="minor">2.1 dev</td>
+      <td>2.1 dev</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Requires WinUAE CPU core. Transition to "3D pears" screen is just
-          "Betty Boo" picture scroll down+up with some garbage lines
-	  instead of screen split. Part before the end texts is
-	  missing all the small 3D models for demo group names</td>
+      <td>Requires WinUAE CPU core. "Betty Boo" picture is missing split
+          screen transition to it and from it (shown in Youtube video)</td>
     </tr>
     <tr>
       <td>EKO:
