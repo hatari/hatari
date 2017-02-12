@@ -93,6 +93,7 @@ static void (*ScreenDrawFunctionsNormal[3])(void); /* Screen draw functions */
 static bool bScreenContentsChanged;     /* true if buffer changed and requires blitting */
 static bool bScrDoubleY;                /* true if double on Y */
 static int ScrUpdateFlag;               /* Bit mask of how to update screen */
+static bool bRGBTableInSync;            /* Is RGB table up to date? */
 
 /* These are used for the generic screen conversion functions */
 static int genconv_width_req, genconv_height_req, genconv_bpp;
@@ -492,6 +493,8 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 
 	Avi_SetSurface(sdlscrn);
 
+	bRGBTableInSync = false;
+
 	return true;
 }
 
@@ -594,7 +597,6 @@ static void Screen_SetSTResolution(bool bForceChange)
 
 	if (Screen_SetSDLVideoSize(Width, Height, BitCount, bForceChange))
 	{
-		Screen_SetupRGBTable();         /* Create color conversion table */
 		Statusbar_Init(sdlscrn);
 
 		/* screen area without the statusbar */
@@ -602,6 +604,12 @@ static void Screen_SetSTResolution(bool bForceChange)
 		STScreenRect.y = 0;
 		STScreenRect.w = sdlscrn->w;
 		STScreenRect.h = sdlscrn->h - Statusbar_GetHeight();
+	}
+
+	if (!bRGBTableInSync)
+	{
+		Screen_SetupRGBTable();   /* Create color conversion table */
+		bRGBTableInSync = true;
 	}
 
 	/* Set drawing functions */
