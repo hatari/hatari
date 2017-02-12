@@ -27,7 +27,6 @@
 #endif
 #define WINDOWS
 #define ZLIB_WINAPI
-//#define USE_SOFT_LONG_DOUBLE
 #define PACKAGE_STRING "WinUAE"
 #else	/* ! WINUAE_FOR_HATARI */
 #define MAX_DPATH 1000

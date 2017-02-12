@@ -32,7 +32,6 @@
 #include "cpummu030.h"
 #include "cpu_prefetch.h"
 #include "savestate.h"
-#include "md-fpp.h"
 #include "fpp.h"
 #ifdef WINUAE_FOR_HATARI
 #include "debug.h"
@@ -6393,6 +6392,7 @@ void m68k_go (int may_quit)
 			if (cpu_hardreset)
 				m68k_reset_restore();
 			prefs_changed_cpu();
+			fpu_modechange();
 			build_cpufunctbl();
 			set_x_funcs();
 			set_cycles (start_cycles);
