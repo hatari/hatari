@@ -2756,12 +2756,13 @@ void fpuop_arithmetic (uae_u32 opcode, uae_u16 extra)
 void fpu_modechange(void)
 {
 	uae_u32 temp_ext[8][3];
+	int i;
 
 	if (currprefs.fpu_softfloat == changed_prefs.fpu_softfloat)
 		return;
 	currprefs.fpu_softfloat = changed_prefs.fpu_softfloat;
 
-	for (int i = 0; i < 8; i++) {
+	for (i = 0; i < 8; i++) {
 		fpp_from_exten_fmovem(&regs.fp[i], &temp_ext[i][0], &temp_ext[i][1], &temp_ext[i][2]);
 	}
 	if (currprefs.fpu_softfloat && !changed_prefs.fpu_softfloat) {
@@ -2769,7 +2770,7 @@ void fpu_modechange(void)
 	} else if (!currprefs.fpu_softfloat && changed_prefs.fpu_softfloat) {
 		fp_init_softfloat();
 	}
-	for (int i = 0; i < 8; i++) {
+	for (i = 0; i < 8; i++) {
 		fpp_to_exten_fmovem(&regs.fp[i], temp_ext[i][0], temp_ext[i][1], temp_ext[i][2]);
 	}
 }
