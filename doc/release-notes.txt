@@ -16,7 +16,7 @@ Emulation:
 - Better results when reading "void" region between end of RAM and 4MB
   (return latest data seen on the bus on STF/STE)
 - Fix error in 68030 instruction cache when using prefetch/CE mode
-- More accurate memory access timings for Falcon 38030
+- More accurate memory access timings for Falcon 68030
 
 Emulator:
 - Initial patching for ST-Book ROM
