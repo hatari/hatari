@@ -695,15 +695,12 @@ Non-working color STOS games (as expected):
 - Sudoku Universe*  (mouse input doesn't work)
 - Trackball         (mouse doesn't work)
 
-Commercial color game demos (run from HD):
+Commercial color game demos:
 - Brain Blaster / The Teller demo (input doesn't work)
 - Cauldron demo     (input doesn't work, fire doesn't start game)
 - Gods demo
-  - with 512k & TOS v2, read bus error when first monster appears
-  - with 192k, address error later in the game
-  - above is when running from HD (-> monsters look like garbage,
-    also with real TOS)
-  - with floppy, both EmuTOS & TOS v2 fail during loading
+  - works properly only from floppy
+  - requires "high-RAM" EmuTOS build, otherwise overwrites itself
 - Striker demo      (input doesn't work)
 
 Free/shareware color games:
@@ -879,8 +876,9 @@ Color games:
 - Blat (line-A bitblit)
 - Boom (screen flashes during scrolling messages)
 - Breakdance (scene game, STOS, needs EmuTOS >v0.9.3)
-- ChuChu Rocket* (full version)
+- ChuChu Rocket* (full version, needs EmuTOS >0.9.7)
 - Crash Time Plumber
+- Droid STE rewrite (WIP)
 - Dynabusters+*
 - Frantick
 - Giana Sisters STE rewrite: (needs EmuTOS >v0.9.3)
