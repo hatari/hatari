@@ -537,6 +537,7 @@ void Statusbar_UpdateInfo(void)
 		default:
 			*end++ = '?';
 		}
+		end += sprintf(end, " %d Hz" , nScreenRefreshRate);
 	}
 
 	/* joystick type */

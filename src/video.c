@@ -433,6 +433,7 @@ const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
 #include "avi_record.h"
 #include "ikbd.h"
 #include "floppy_ipf.h"
+#include "statusbar.h"
 
 
 /* The border's mask allows to keep track of all the border tricks		*/
@@ -3799,8 +3800,10 @@ static void Video_SetHBLPaletteMaskPointers(void)
 static void Video_ResetShifterTimings(void)
 {
 	Uint8 nSyncByte;
+	int RefreshRate_prev;
 
 	nSyncByte = IoMem_ReadByte(0xff820a);
+	RefreshRate_prev = nScreenRefreshRate;
 
 	if ((IoMem_ReadByte(0xff8260) & 3) == 2)
 	{
@@ -3853,6 +3856,10 @@ static void Video_ResetShifterTimings(void)
 	TimerBEventCountCycleStart = -1;		/* reset timer B activation cycle for this VBL */
 
 	BlankLines = 0;
+
+	/* Update refresh rate in status bar if necessary */
+	if ( RefreshRate_prev != nScreenRefreshRate )
+		Statusbar_UpdateInfo ();
 }
 
 
