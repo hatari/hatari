@@ -75,6 +75,7 @@ enum {
 	OPT_MAXWIDTH,
 	OPT_MAXHEIGHT,
 	OPT_FORCEBPP,
+	OPT_DISABLE_VIDEO,
 	OPT_BORDERS,		/* ST/STE display options */
 	OPT_RESOLUTION_ST,
 	OPT_SPEC512,
@@ -225,6 +226,8 @@ static const opt_t HatariOptions[] = {
 	  "<x>", "Maximum window height for borders & zooming" },
 	{ OPT_FORCEBPP, NULL, "--bpp",
 	  "<x>", "Force internal bitdepth (x = 15/16/32, 0=disable)" },
+	{ OPT_DISABLE_VIDEO,   NULL, "--disable-video",
+	  "<bool>", "Run emulation without displaying video (audio only)" },
 
 	{ OPT_HEADER, NULL, NULL, NULL, "ST/STE specific display" },
 	{ OPT_BORDERS, NULL, "--borders",
@@ -1091,6 +1094,10 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			}
 			fprintf(stderr, "Hatari window BPP = %d.\n", planes);
 			ConfigureParams.Screen.nForceBpp = planes;
+			break;
+
+		case OPT_DISABLE_VIDEO:
+			ok = Opt_Bool(argv[++i], OPT_DISABLE_VIDEO, &ConfigureParams.Screen.DisableVideo);
 			break;
 
 			/* ST/STE display options */

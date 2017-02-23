@@ -1176,6 +1176,10 @@ static void Screen_Blit(SDL_Rect *sbar_rect)
 {
 	unsigned char *pTmpScreen;
 
+	/* Don't update anything on screen if video output is disabled */
+	if ( ConfigureParams.Screen.DisableVideo )
+		return;
+
 #if 0	/* double buffering cannot be used with partial screen updates */
 # if NUM_FRAMEBUFFERS > 1
 	if (bInFullScreen && (sdlscrn->flags & SDL_DOUBLEBUF))
@@ -1465,6 +1469,10 @@ void Screen_GenConvUpdate(SDL_Rect *extra, bool forced)
 {
 	SDL_Rect rects[2];
 	int count = 1;
+
+	/* Don't update anything on screen if video output is disabled */
+	if ( ConfigureParams.Screen.DisableVideo )
+		return;
 
 	if (!forced && !genconv_do_update) // the HW surface is available
 		return;

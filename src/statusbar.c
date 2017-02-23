@@ -744,6 +744,10 @@ SDL_Rect* Statusbar_Update(SDL_Surface *surf, bool do_update)
 	SDL_Rect *last_rect;
 	int i, updates;
 
+	/* Don't update anything on screen if video output is disabled */
+	if ( ConfigureParams.Screen.DisableVideo )
+		return NULL;
+
 	assert(surf);
 	if (!(StatusbarHeight && ConfigureParams.Screen.bShowStatusbar)) {
 		last_rect = NULL;

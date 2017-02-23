@@ -751,6 +751,7 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Screen.nMaxWidth = 2*NUM_VISIBLE_LINE_PIXELS;
 	ConfigureParams.Screen.nMaxHeight = 2*NUM_VISIBLE_LINES+STATUSBAR_MAX_HEIGHT;
 	ConfigureParams.Screen.bForceMax = false;
+	ConfigureParams.Screen.DisableVideo = false;
 #if WITH_SDL2
 	ConfigureParams.Screen.nRenderScaleQuality = 0;
 	ConfigureParams.Screen.bUseVsync = false;

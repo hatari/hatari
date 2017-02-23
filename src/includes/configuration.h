@@ -274,6 +274,7 @@ typedef struct
   int nRenderScaleQuality;
   bool bUseVsync;
 #endif
+  bool DisableVideo;
 } CNF_SCREEN;
 
 
