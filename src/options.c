@@ -48,6 +48,8 @@ const char Options_fileid[] = "Hatari options.c : " __DATE__ " " __TIME__;
 bool bLoadAutoSave;        /* Load autosave memory snapshot at startup */
 bool bLoadMemorySave;      /* Load memory snapshot provided via option at startup */
 bool AviRecordOnStartup;   /* Start avi recording at startup */
+bool BenchmarkMode;	   /* Start in benchmark mode (try to run at maximum emulation */
+			   /* speed allowed by the CPU). Disable audio/video for best results */
 
 int ConOutDevice = CONOUT_DEVICE_NONE; /* device number for xconout device to track */
 
@@ -170,6 +172,7 @@ enum {
 	OPT_LOGLEVEL,
 	OPT_ALERTLEVEL,
 	OPT_RUNVBLS,
+	OPT_BENCHMARK,
 	OPT_ERROR,
 	OPT_CONTINUE
 };
@@ -447,6 +450,8 @@ static const opt_t HatariOptions[] = {
 	  "<x>", "Show dialog for log messages above given level" },
 	{ OPT_RUNVBLS, NULL, "--run-vbls",
 	  "<x>", "Exit after x VBLs" },
+	{ OPT_BENCHMARK, NULL, "--benchmark",
+	  NULL, "Start in benchmark mode (use with --run-vbls" },
 
 	{ OPT_ERROR, NULL, NULL, NULL, NULL }
 };
@@ -1983,6 +1988,10 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			Main_SetRunVBLs(atol(argv[++i]));
 			break;
 		       
+		case OPT_BENCHMARK:
+			BenchmarkMode= true;
+			break;
+
 		case OPT_ERROR:
 			/* unknown option or missing option parameter */
 			return false;

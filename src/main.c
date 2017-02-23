@@ -324,10 +324,14 @@ void Main_WaitOnVbl(void)
 	nDelay = DestTicks - CurrentTicks;
 
 	/* Do not wait if we are in fast forward mode or if we are totally out of sync */
+	/* or if we are in benchmark mode */
 	if (ConfigureParams.System.bFastForward == true
-	    || nDelay < -4*FrameDuration_micro || nDelay > 50*FrameDuration_micro)
+	    || nDelay < -4*FrameDuration_micro || nDelay > 50*FrameDuration_micro
+	    || BenchmarkMode )
+
 	{
-		if (ConfigureParams.System.bFastForward == true)
+		if ( ( ConfigureParams.System.bFastForward == true )
+		  || ( BenchmarkMode == true ) )
 		{
 			if (!nFirstMilliTick)
 				nFirstMilliTick = Main_GetTicks();
@@ -341,6 +345,7 @@ void Main_WaitOnVbl(void)
 		DestTicks = CurrentTicks + FrameDuration_micro;
 		return;
 	}
+
 	/* If automatic frameskip is enabled and delay's more than twice
 	 * the effect of single frameskip, decrease frameskip
 	 */

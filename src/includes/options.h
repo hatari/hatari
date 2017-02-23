@@ -10,6 +10,7 @@
 extern bool bLoadAutoSave;
 extern bool bLoadMemorySave;
 extern bool AviRecordOnStartup;
+extern bool BenchmarkMode;
 extern int ConOutDevice;
 
 #define CONOUT_DEVICE_NONE 127 /* valid ones are 0-7 */

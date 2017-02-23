@@ -483,6 +483,12 @@ Show dialog for log messages above given level
 .TP
 .B \-\-run\-vbls <x>
 Exit after X VBLs
+.TP
+.B \-\-benchmark
+Start in benchmark mode (use with --run-vbls).
+This allows to measure the speed of the emulation in frames per second
+by running at maximum speed (don't wait for VBL). Disable audio/video
+output to have as little OS overhead as possible
 
 .SH "INPUT HANDLING"
 Hatari provides special input handling for different purposes.
