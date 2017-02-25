@@ -356,7 +356,7 @@ Use MMU emulation
 .SH "Misc system options"
 .TP 
 .B \-\-machine <x>
-Select machine type (x = st, ste, tt or falcon)
+Select machine type (x = st, megast, ste, megaste, tt or falcon)
 .TP 
 .B \-\-blitter <bool>
 Enable blitter emulation (ST only)
@@ -372,9 +372,6 @@ most of the interrupts.
 .B \-\-fast\-boot <bool>
 Patch TOS and initialize the so-called "memvalid" system variables to by-pass
 the memory test of TOS, so that the system boots faster.
-.TP
-.B \-\-rtc <bool>
-Enable real-time clock
 
 .SH "Sound options"
 .TP 
