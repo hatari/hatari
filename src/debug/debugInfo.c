@@ -152,6 +152,22 @@ static Uint32 GetBasepageValue(unsigned offset)
 }
 
 /**
+ * DebugInfo_DTA: if no DTA address given, get one from current
+ * basepage and ask GEMDOS to show its info.
+ */
+static void DebugInfo_DTA(FILE *fp, Uint32 dta_addr)
+{
+	if (!dta_addr) {
+		dta_addr = GetBasepageValue(0x20);
+		if (!dta_addr) {
+			fprintf(fp, "ERROR: no valid basepage!\n");
+			return;
+		}
+	}
+	GemDOS_InfoDTA(fp, dta_addr);
+}
+
+/**
  * DebugInfo_GetTEXT: return current program TEXT segment address
  * or zero if basepage missing/invalid.  For virtual debugger variable.
  */
@@ -652,6 +668,7 @@ static const struct {
 	{ true, "dspmemdump",DebugInfo_DspMemDump, DebugInfo_DspMemArgs, "Dump DSP memory from given <space> <address>" },
 	{ true, "dspregs",   DebugInfo_DspRegister,NULL, "Show DSP register contents" },
 #endif
+	{ false, "dta",      DebugInfo_DTA,       NULL, "Show current [or given] DTA information" },
 	{ true, "file",      DebugInfo_FileParse, DebugInfo_FileArgs, "Parse commands from given debugger input <file>" },
 	{ false,"gemdos",    GemDOS_Info,          NULL, "Show GEMDOS HDD emu information (with <value>, show opcodes)" },
 	{ true, "history",   History_Show,         NULL, "Show history of last <count> instructions" },

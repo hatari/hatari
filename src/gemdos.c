@@ -85,10 +85,12 @@ EMULATEDDRIVE **emudrives = NULL;
 #define TOS_NAMELEN  14
 
 typedef struct {
+  /* GEMDOS internals */
   Uint8 index[2];
   Uint8 magic[4];
-  char dta_pat[TOS_NAMELEN];
-  char dta_sattrib;
+  char dta_pat[TOS_NAMELEN]; /* unused */
+  char dta_sattrib;          /* unused */
+  /* TOS API */
   char dta_attrib;
   Uint8 dta_time[2];
   Uint8 dta_date[2];
@@ -533,6 +535,7 @@ void GemDOS_Reset(void)
 	}
 
 	/* Reset */
+	act_pd = 0;
 	CurrentDrive = nBootDrive;
 	Symbols_RemoveCurrentProgram();
 }
@@ -3158,8 +3161,57 @@ void GemDOS_Info(FILE *fp, Uint32 bShowOpcodes)
 		fputs("- None.\n", fp);
 }
 
+/**
+ * Show given DTA info
+ * (works also without GEMDOS HD emu)
+ */
+void GemDOS_InfoDTA(FILE *fp, Uint32 dta_addr)
+{
+	DTA *dta;
+	Uint32 magic;
+	char name[TOS_NAMELEN+1];
+
+	fprintf(fp, "DTA (0x%x):\n", dta_addr);
+	if (act_pd)
+	{
+		Uint32 basepage = STMemory_ReadLong(act_pd);
+		Uint32 dta_curr = STMemory_ReadLong(basepage + BASEPAGE_OFFSET_DTA);
+		if (dta_addr != dta_curr)
+		{
+			fprintf(fp, "- NOTE: given DTA (0x%x) is not current program one (0x%x)\n",
+				dta_addr, dta_curr);
+		}
+		if (dta_addr >= basepage && dta_addr + sizeof(DTA) < basepage + BASEPAGE_SIZE)
+		{
+			const char *msg = (dta_addr == basepage + 0x80) ? ", replacing command line" : "";
+			fprintf(fp, "- NOTE: DTA (0x%x) is within current program basepage (0x%x)%s!\n",
+				dta_addr, basepage, msg);
+		}
+	}
+	if (!STMemory_CheckAreaType(dta_addr, sizeof(DTA), ABFLAG_RAM)) {
+		fprintf(fp, "- ERROR: invalid memory address!\n");
+		return;
+	}
+	dta = (DTA *)STMemory_STAddrToPointer(dta_addr);
+	memcpy(name, dta->dta_name, TOS_NAMELEN);
+	name[TOS_NAMELEN] = '\0';
+	magic = do_get_mem_long(dta->magic);
+	fprintf(fp, "- magic: 0x%08x (GEMDOS HD = 0x%08x)\n", magic, DTA_MAGIC_NUMBER);
+	if (magic == DTA_MAGIC_NUMBER)
+		fprintf(fp, "- index: 0x%04x\n", do_get_mem_word(dta->index));
+	fprintf(fp, "- attr: 0x%x\n", dta->dta_attrib);
+	fprintf(fp, "- time: 0x%04x\n", do_get_mem_word(dta->dta_time));
+	fprintf(fp, "- date: 0x%04x\n", do_get_mem_word(dta->dta_date));
+	fprintf(fp, "- size: %d\n", do_get_mem_long(dta->dta_size));
+	fprintf(fp, "- name: '%s'\n", name);
+}
+
 #else /* !ENABLE_TRACING */
 void GemDOS_Info(FILE *fp, Uint32 bShowOpcodes)
+{
+	fputs("Hatari isn't configured with ENABLE_TRACING\n", fp);
+}
+void GemDOS_InfoDTA(FILE *fp, Uint32 addrDTA)
 {
 	fputs("Hatari isn't configured with ENABLE_TRACING\n", fp);
 }
