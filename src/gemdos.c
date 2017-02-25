@@ -65,6 +65,10 @@ const char Gemdos_fileid[] = "Hatari gemdos.c : " __DATE__ " " __TIME__;
 /* Maximum supported length of a GEMDOS path: */
 #define MAX_GEMDOS_PATH 256
 
+#define BASEPAGE_SIZE (0x80+0x80)  /* info + command line */
+#define BASEPAGE_OFFSET_DTA 0x20
+#define BASEPAGE_OFFSET_PARENT 0x24
+
 /* Have we re-directed GemDOS vector to our own routines yet? */
 bool bInitGemDOS;
 
@@ -94,6 +98,7 @@ typedef struct {
 
 #define DTA_MAGIC_NUMBER  0x12983476
 #define MAX_DTAS_FILES    256      /* Must be ^2 */
+#define MAX_DTAS_MASK     (MAX_DTAS_FILES-1)
 #define CALL_PEXEC_ROUTINE 3       /* Call our cartridge pexec routine */
 
 #define  BASE_FILEHANDLE     64    /* Our emulation handles - MUST not be valid TOS ones, but MUST be <256 */
@@ -135,9 +140,6 @@ typedef struct
 static FILE_HANDLE  FileHandles[MAX_FILE_HANDLES];
 static INTERNAL_DTA InternalDTAs[MAX_DTAS_FILES];
 static int DTAIndex;        /* Circular index into above */
-static Uint32 DTA_Gemdos;   /* DTA address in ST memory space */
-static DTA *pDTA;           /* Our GEMDOS hard drive Disk Transfer Address structure */
-			    /* This a direct pointer to DTA_Gemdos using STMemory_STAddrToPointer() */
 static Uint16 CurrentDrive; /* Current drive (0=A,1=B,2=C etc...) */
 static Uint32 act_pd;       /* Used to get a pointer to the current basepage */
 static Uint16 nAttrSFirst;  /* File attribute for SFirst/Snext */
@@ -277,7 +279,7 @@ static Uint8 GemDOS_ConvertAttribute(mode_t mode)
  * Populate the DTA buffer with file info.
  * @return   0 if entry is ok, 1 if entry should be skipped, < 0 for errors.
  */
-static int PopulateDTA(char *path, struct dirent *file)
+static int PopulateDTA(char *path, struct dirent *file, DTA *pDTA, Uint32 DTA_Gemdos)
 {
 	/* TODO: host file path can be longer than MAX_GEMDOS_PATH */
 	char tempstr[MAX_GEMDOS_PATH];
@@ -324,22 +326,22 @@ static int PopulateDTA(char *path, struct dirent *file)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Clear a used DTA structure.
+ * Clear given DTA structure.
  */
-static void ClearInternalDTA(void)
+static void ClearInternalDTA(int idx)
 {
 	int i;
 
 	/* clear the old DTA structure */
-	if (InternalDTAs[DTAIndex].found != NULL)
+	if (InternalDTAs[idx].found != NULL)
 	{
-		for (i=0; i < InternalDTAs[DTAIndex].nentries; i++)
-			free(InternalDTAs[DTAIndex].found[i]);
-		free(InternalDTAs[DTAIndex].found);
-		InternalDTAs[DTAIndex].found = NULL;
+		for (i = 0; i < InternalDTAs[idx].nentries; i++)
+			free(InternalDTAs[idx].found[i]);
+		free(InternalDTAs[idx].found);
+		InternalDTAs[idx].found = NULL;
 	}
-	InternalDTAs[DTAIndex].nentries = 0;
-	InternalDTAs[DTAIndex].bUsed = false;
+	InternalDTAs[idx].nentries = 0;
+	InternalDTAs[idx].bUsed = false;
 }
 
 
@@ -453,6 +455,23 @@ static void GemDOS_UnforceFileHandle(int i)
 	ForcedHandles[i].Basepage = 0;
 }
 
+/**
+ * Clear & un-force all file handles
+ */
+static void GemDOS_ClearAllFileHandles(void)
+{
+	int i;
+
+	for(i = 0; i < ARRAY_SIZE(FileHandles); i++)
+	{
+		GemDOS_CloseFileHandle(i);
+	}
+	for(i = 0; i < ARRAY_SIZE(ForcedHandles); i++)
+	{
+		GemDOS_UnforceFileHandle(i);
+	}
+}
+
 /*-----------------------------------------------------------------------*/
 
 /**
@@ -479,18 +498,12 @@ void GemDOS_Init(void)
 	int i;
 	bInitGemDOS = false;
 
-	/* Clear handles structure */
-	memset(FileHandles, 0, sizeof(FileHandles));
-	for(i = 0; i < ARRAY_SIZE(ForcedHandles); i++)
-	{
-		GemDOS_UnforceFileHandle(i);
-	}
+	GemDOS_ClearAllFileHandles();
+
 	/* Clear DTAs */
 	for(i = 0; i < ARRAY_SIZE(InternalDTAs); i++)
 	{
-		InternalDTAs[i].bUsed = false;
-		InternalDTAs[i].nentries = 0;
-		InternalDTAs[i].found = NULL;
+		ClearInternalDTA(i);
 	}
 	DTAIndex = 0;
 }
@@ -504,20 +517,7 @@ void GemDOS_Reset(void)
 {
 	int i;
 
-	/* Init file handles table */
-	for (i = 0; i < ARRAY_SIZE(FileHandles); i++)
-	{
-		GemDOS_CloseFileHandle(i);
-	}
-	for(i = 0; i < ARRAY_SIZE(ForcedHandles); i++)
-	{
-		GemDOS_UnforceFileHandle(i);
-	}
-	for (DTAIndex = 0; DTAIndex < MAX_DTAS_FILES; DTAIndex++)
-	{
-		ClearInternalDTA();
-	}
-	DTAIndex = 0;
+	GemDOS_Init();
 
 	if (emudrives)
 	{
@@ -533,11 +533,8 @@ void GemDOS_Reset(void)
 	}
 
 	/* Reset */
-	bInitGemDOS = false;
 	CurrentDrive = nBootDrive;
 	Symbols_RemoveCurrentProgram();
-	DTA_Gemdos = 0x0;
-	pDTA = NULL;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -744,7 +741,7 @@ void GemDOS_InitDrives(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Un-init the GEMDOS drive
+ * Un-init GEMDOS drives
  */
 void GemDOS_UnInitDrives(void)
 {
@@ -776,7 +773,7 @@ void GemDOS_UnInitDrives(void)
  */
 void GemDOS_MemorySnapShot_Capture(bool bSave)
 {
-	int i;
+	int i, dummy;
 	bool bEmudrivesAvailable;
 
 	/* Save/Restore the emudrives structure */
@@ -826,35 +823,14 @@ void GemDOS_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&DTAIndex,sizeof(DTAIndex));
 	MemorySnapShot_Store(&bInitGemDOS,sizeof(bInitGemDOS));
 	MemorySnapShot_Store(&act_pd, sizeof(act_pd));
-	if (bSave)
-	{
-		/* Store the value in ST memory space */
-		MemorySnapShot_Store ( &DTA_Gemdos , sizeof(DTA_Gemdos) );
-	}
-	else
-	{
-		/* Restore the value in ST memory space and update pDTA */
-		MemorySnapShot_Store ( &DTA_Gemdos , sizeof(DTA_Gemdos) );
-		if ( DTA_Gemdos == 0x0 )
-			pDTA = NULL;
-		else
-			pDTA = (DTA *)STMemory_STAddrToPointer( DTA_Gemdos );
-	}
+	MemorySnapShot_Store(&dummy, sizeof(dummy)); /* redundant DTA_Gemdos */
 	MemorySnapShot_Store(&CurrentDrive,sizeof(CurrentDrive));
 	/* Don't save file handles as files may have changed which makes
 	 * it impossible to get a valid handle back
 	 */
 	if (!bSave)
 	{
-		/* Clear file handles  */
-		for(i = 0; i < ARRAY_SIZE(FileHandles); i++)
-		{
-			GemDOS_CloseFileHandle(i);
-		}
-		for(i = 0; i < ARRAY_SIZE(ForcedHandles); i++)
-		{
-			GemDOS_UnforceFileHandle(i);
-		}
+		GemDOS_ClearAllFileHandles();
 	}
 }
 
@@ -887,11 +863,11 @@ static bool GemDOS_BasepageMatches(Uint32 checkbase)
 {
 	int maxparents = 12; /* prevent basepage parent loops */
 	Uint32 basepage = STMemory_ReadLong(act_pd);
-	while (maxparents-- > 0 && STMemory_CheckAreaType ( basepage, 0x100, ABFLAG_RAM ) )
+	while (maxparents-- > 0 && STMemory_CheckAreaType(basepage, BASEPAGE_SIZE, ABFLAG_RAM))
 	{
 		if (basepage == checkbase)
 			return true;
-		basepage = STMemory_ReadLong(basepage + 0x24);	/* parent */
+		basepage = STMemory_ReadLong(basepage + BASEPAGE_OFFSET_PARENT);
 	}
 	return false;
 }
@@ -1433,34 +1409,6 @@ static bool GemDOS_SetDrv(Uint32 Params)
 	return false;
 }
 
-
-/*-----------------------------------------------------------------------*/
-/**
- * GEMDOS Set Disk Transfer Address (DTA)
- * Call 0x1A
- */
-static bool GemDOS_SetDTA(Uint32 Params)
-{
-	/*  Look up on stack to find where DTA is */
-	DTA_Gemdos = STMemory_ReadLong(Params);
-
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x1A Fsetdta(0x%x) at PC 0x%X\n", DTA_Gemdos,
-		  M68000_GetPC());
-
-	if ( STMemory_CheckAreaType ( DTA_Gemdos, sizeof(DTA), ABFLAG_RAM ) )
-	{
-		/* Store as PC pointer */
-		pDTA = (DTA *)STMemory_STAddrToPointer(DTA_Gemdos);
-	}
-	else
-	{
-		Log_Printf(LOG_WARN, "GEMDOS Fsetdta() failed due to invalid DTA address 0x%x\n", DTA_Gemdos);
-		DTA_Gemdos = 0x0;
-		pDTA = NULL;
-	}
-	/* redirect to TOS */
-	return false;
-}
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -2629,17 +2577,17 @@ static bool GemDOS_SNext(void)
 	struct dirent **temp;
 	int Index;
 	int ret;
+	DTA *pDTA;
+	Uint32 DTA_Gemdos;
 
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x4F Fsnext() at PC 0x%X\n" , M68000_GetPC());
 
 	/* Refresh pDTA pointer (from the current basepage) */
-	DTA_Gemdos = STMemory_ReadLong(STMemory_ReadLong(act_pd)+32);
+	DTA_Gemdos = STMemory_ReadLong(STMemory_ReadLong(act_pd) + BASEPAGE_OFFSET_DTA);
 
 	if ( !STMemory_CheckAreaType ( DTA_Gemdos, sizeof(DTA), ABFLAG_RAM ) )
 	{
 		Log_Printf(LOG_WARN, "GEMDOS Fsnext() failed due to invalid DTA address 0x%x\n", DTA_Gemdos);
-		DTA_Gemdos = 0x0;
-		pDTA = NULL;
 		Regs[REG_D0] = GEMDOS_EINTRN;    /* "internal error */
 		return true;
 	}
@@ -2653,7 +2601,7 @@ static bool GemDOS_SNext(void)
 	}
 
 	/* Find index into our list of structures */
-	Index = do_get_mem_word(pDTA->index) & (MAX_DTAS_FILES-1);
+	Index = do_get_mem_word(pDTA->index) & MAX_DTAS_MASK;
 
 	if (nAttrSFirst == GEMDOS_FILE_ATTRIB_VOLUME_LABEL)
 	{
@@ -2672,7 +2620,8 @@ static bool GemDOS_SNext(void)
 		}
 
 		ret = PopulateDTA(InternalDTAs[Index].path,
-				  temp[InternalDTAs[Index].centry++]);
+				  temp[InternalDTAs[Index].centry++],
+				  pDTA, DTA_Gemdos);
 	} while (ret == 1);
 
 	if (ret < 0)
@@ -2702,6 +2651,8 @@ static bool GemDOS_SFirst(Uint32 Params)
 	int Drive;
 	DIR *fsdir;
 	int i,j,count;
+	DTA *pDTA;
+	Uint32 DTA_Gemdos;
 
 	/* Find filename to search for */
 	pszFileName = (char *)STMemory_STAddrToPointer(STMemory_ReadLong(Params));
@@ -2722,13 +2673,11 @@ static bool GemDOS_SFirst(Uint32 Params)
 		                    szActualFileName, sizeof(szActualFileName));
 
 	/* Refresh pDTA pointer (from the current basepage) */
-	DTA_Gemdos = STMemory_ReadLong(STMemory_ReadLong(act_pd)+32);
+	DTA_Gemdos = STMemory_ReadLong(STMemory_ReadLong(act_pd) + BASEPAGE_OFFSET_DTA);
 
 	if ( !STMemory_CheckAreaType ( DTA_Gemdos, sizeof(DTA), ABFLAG_RAM ) )
 	{
 		Log_Printf(LOG_WARN, "GEMDOS Fsfirst() failed due to invalid DTA address 0x%x\n", DTA_Gemdos);
-		DTA_Gemdos = 0x0;
-		pDTA = NULL;
 		Regs[REG_D0] = GEMDOS_EINTRN;    /* "internal error */
 		return true;
 	}
@@ -2744,7 +2693,7 @@ static bool GemDOS_SFirst(Uint32 Params)
 	do_put_mem_long(pDTA->magic, DTA_MAGIC_NUMBER);
 
 	if (InternalDTAs[DTAIndex].bUsed == true)
-		ClearInternalDTA();
+		ClearInternalDTA(DTAIndex);
 	InternalDTAs[DTAIndex].bUsed = true;
 
 	/* Were we looking for the volume label? */
@@ -2814,7 +2763,7 @@ static bool GemDOS_SFirst(Uint32 Params)
 	GemDOS_SNext();
 	/* increment DTA index */
 	DTAIndex++;
-	DTAIndex &= (MAX_DTAS_FILES-1);
+	DTAIndex &= MAX_DTAS_MASK;
 
 	return true;
 }
@@ -3264,9 +3213,6 @@ void GemDOS_OpCode(void)
 	 case 0x0e:
 		Finished = GemDOS_SetDrv(Params);
 		break;
-	 case 0x1a:
-		Finished = GemDOS_SetDTA(Params);
-		break;
 	 case 0x31:
 		Finished = GemDOS_Ptermres(Params);
 		break;
@@ -3370,6 +3316,7 @@ void GemDOS_OpCode(void)
 
 	case 0x09:	/* Cconws */
 	case 0x0A:	/* Cconrs */
+	case 0x1A:	/* Fsetdta */
 	case 0x20:	/* Super */
 	case 0x48:	/* Malloc */
 	case 0x49:	/* Mfree */
