@@ -403,6 +403,12 @@
 /* 2017/02/24	[NP]	If a line has right-2/left+2 on a 60 Hz screen, then it should be	*/
 /*			considered as a normal 60 Hz line (fix 60 Hz bottom border removal in	*/
 /*			'Protracker 2.1' and 'Neochrome master' when running at 60 Hz)		*/
+/* 2017/02/24	[NP]	Don't change DE_end / right-2 unless DE_start has been set, else it	*/
+/*			could mean the freq change overlaps with the next HBL handler on line	*/
+/*			n+1 (eg: move at cycle 508 line n that changes freq to 60Hz at cycle 4	*/
+/*			line n+1, before handler for new HBL n+1 was called) (fix wrong right-2	*/
+/*			during 60 Hz bottom border removal in 'Protracker 2.1' and 'Neochrome	*/
+/*			master' when running at 60 Hz)						*/
 
 
 const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
@@ -1885,10 +1891,13 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	    nCyclesPerLine_new = CYCLES_PER_LINE_60HZ;
 	    if ( !( BorderMask & BORDERMASK_NO_DE ) )
 	    {
-	      DE_end = pVideoTiming->H_Stop_Low_60;		/* 372 */
-	
-	      BorderMask |= BORDERMASK_RIGHT_MINUS_2;
-	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect right-2 %d<->%d\n" , DE_start , DE_end );
+	      if ( DE_start > 0 )				/* ie only if StartHBL was called */
+		{
+		  DE_end = pVideoTiming->H_Stop_Low_60;		/* 372 */
+
+		  BorderMask |= BORDERMASK_RIGHT_MINUS_2;
+		  LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect right-2 %d<->%d\n" , DE_start , DE_end );
+		}
 
 	      if ( ( LineCycles > pVideoTiming->Blank_Stop_Low_60 ) && ( LineCycles <= pVideoTiming->Blank_Stop_Low_50 ) )
 	      {
@@ -2088,10 +2097,13 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	    nCyclesPerLine_new = CYCLES_PER_LINE_60HZ;
 	    if ( !( BorderMask & BORDERMASK_NO_DE ) )
 	    {
-	      DE_end = pVideoTiming->H_Stop_Low_60;		/* 372 */
-	
-	      BorderMask |= BORDERMASK_RIGHT_MINUS_2;
-	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect right-2 %d<->%d\n" , DE_start , DE_end );
+	      if ( DE_start > 0 )				/* ie only if StartHBL was called */
+		{
+		  DE_end = pVideoTiming->H_Stop_Low_60;		/* 372 */
+
+		  BorderMask |= BORDERMASK_RIGHT_MINUS_2;
+		  LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect right-2 %d<->%d\n" , DE_start , DE_end );
+		}
 
 	      if ( ( LineCycles > pVideoTiming->Blank_Stop_Low_60 ) && ( LineCycles <= pVideoTiming->Blank_Stop_Low_50 ) )
 	      {
