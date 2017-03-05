@@ -76,12 +76,15 @@ extern "C" {
 #define DSP_HOST_HSR		0x29	/* Host status register */
 #define DSP_HOST_HRX		0x2b	/* Host receive register */
 #define DSP_HOST_HTX		0x2b	/* Host transmit register */
-#define DSP_SSI_CRA		0x2c	/* Ssi control register A */
-#define DSP_SSI_CRB		0x2d	/* Ssi control register B */
-#define DSP_SSI_SR		0x2e	/* Ssi status register */
-#define DSP_SSI_TSR		0x2e	/* Ssi time slot register */
-#define DSP_SSI_RX		0x2f	/* Ssi receive register */
-#define DSP_SSI_TX		0x2f	/* Ssi transmit register */
+#define DSP_SSI_CRA		0x2c	/* SSI control register A */
+#define DSP_SSI_CRB		0x2d	/* SSI control register B */
+#define DSP_SSI_SR		0x2e	/* SSI status register */
+#define DSP_SSI_TSR		0x2e	/* SSI time slot register */
+#define DSP_SSI_RX		0x2f	/* SSI receive register */
+#define DSP_SSI_TX		0x2f	/* SSI transmit register */
+#define DSP_SCI_SCR		0x30	/* SCI control register */
+#define DSP_SCI_SSR		0x31	/* SCI status register */
+#define DSP_SCI_SCCR		0x32	/* SCI clock control register */
 #define DSP_BCR			0x3e	/* Port A bus control register */
 #define DSP_IPR			0x3f	/* Interrupt priority register */
 

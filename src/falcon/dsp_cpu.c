@@ -1295,7 +1295,7 @@ static void write_memory_raw(int space, Uint16 address, Uint32 value)
 					dsp_core_hostport_dspwrite();
 					break;
 				case DSP_HOST_HCR:
-					dsp_core.periph[DSP_SPACE_X][DSP_HOST_HCR] = value;
+					dsp_core.periph[DSP_SPACE_X][DSP_HOST_HCR] = value & 0x1f;
 					/* Set HF3 and HF2 accordingly on the host side */
 					dsp_core.hostport[CPU_HOST_ISR] &=
 						BITMASK(8)-((1<<CPU_HOST_ISR_HF3)|(1<<CPU_HOST_ISR_HF2));
@@ -3350,7 +3350,44 @@ static void dsp_rep_reg(void)
 
 static void dsp_reset(void)
 {
-	/* Reset external peripherals */
+	/* Clear the IPR register */
+	write_memory(DSP_SPACE_X, 0xffc0 + DSP_IPR, 0);
+
+	/* Software reset all on-chip peripherals */
+
+	/* HOST_HCR x:$FFE8 : clear the full register */
+	write_memory(DSP_SPACE_X, 0xffc0 + DSP_HOST_HCR, 0);
+
+	/* HOST_ICR $0 : clear the full register */
+	dsp_core_write_host(CPU_HOST_ICR, 0);
+
+	/* HOST_CVR $1 : set the register to $12 */
+	dsp_core_write_host(CPU_HOST_CVR, 0x12);
+
+	/* HOST_ISR $2 : set the bits TRDY and TXDE 1, other bits to 0 */
+	dsp_core.hostport[CPU_HOST_ISR] = (1<<CPU_HOST_ISR_TRDY)|(1<<CPU_HOST_ISR_TXDE);
+
+	/* HOST_IVR $3 : set the register to $0f */
+	dsp_core_write_host(CPU_HOST_IVR, 0x0f);
+
+	/* SSI_CRA x:$FFEC : clear the full register */
+	write_memory(DSP_SPACE_X, 0xffc0 + DSP_SSI_CRA, 0);
+
+	/* SSI_CRB x:$FFED : clear the full register */
+	write_memory(DSP_SPACE_X, 0xffc0 + DSP_SSI_CRB, 0);
+
+	/* SSI_SR x:$FFEE : set the register to $40 */
+	write_memory(DSP_SPACE_X, 0xffc0 + DSP_SSI_SR, 1<<DSP_SSI_SR_TDE);
+
+	/* SCI_SCR x:$FFF0 : clear the full register (not used in the Falcon) */
+	write_memory(DSP_SPACE_X, 0xffc0 + DSP_SCI_SCR, 0);
+
+	/* SCI_SSR x:$FFF1 : clear the register to $3 (not used in the Falcon) */
+	write_memory(DSP_SPACE_X, 0xffc0 + DSP_SCI_SSR, 3);
+
+	/* SCI_SCCR x:$FFF2 : clear the full register (not used in the Falcon) */
+	write_memory(DSP_SPACE_X, 0xffc0 + DSP_SCI_SCCR, 0);
+
 	dsp_core.instr_cycle += 2;
 }
 
