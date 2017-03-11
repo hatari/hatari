@@ -64,11 +64,11 @@ EmuTOS image files.
     for ST and STE programs, only the 512k image contains
     support for all the hardware and languages.
 
-Note for EmuTOS before 0.8.6:
-  In order to work with Hatari, EmuTOS 0.8.5 and earlier require
+Note for Hatari <= v2.0 with EmuTOS <= v0.8.5:
+  In order to work with Hatari, EmuTOS v0.8.5 and earlier require
   the FastBoot option to be enabled. This is used to skip some memory
-  tests (that Hatari doesn't support yet) when EmuTOS tries to
-  determine the available RAM size.
+  tests (that Hatari v2.0 and earlier do not support) when EmuTOS
+  tries to determine the available RAM size.
 
 
 What is EmuTOS
@@ -76,11 +76,10 @@ What is EmuTOS
 
 EmuTOS is a single-user single-tasking operating system for the 32-bit
 Atari computers and emulators.  It can be used as a replacement for
-the TOS images typically needed today for using the emulators and it is
-also running on some real hardware, like the Atari Mega STE and Atari
-ColdFire.  All the source code is open and free, licensed under the
-GNU General Public License (GPL).  A copy of the GNU GPL can be found
-in the gpl.txt file.
+the TOS images needed for using the emulators, and its latest versions
+support also wide variety of real hardware.  All the source code is
+open and free, licensed under the GNU General Public License (GPL).
+A copy of the GNU GPL can be found in the gpl.txt file.
 
 EmuTOS has its home at SourceForge:
        http://sourceforge.net/projects/emutos
@@ -105,8 +104,9 @@ TOS ROM images:
 
 * This includes users of Atari FPGA clones, such as MiST:
 	http://code.google.com/p/mist-board/
-  and users of new "Atari" machines, like Atari ColdFire Project:
+  users of new "Atari" machines, like Atari ColdFire Project:
 	http://acp.atari.org/
+  and even Amiga (WinUAE) emulator and real Amiga hardware.
 
 * EmuTOS also allows using ACSI disk images with Hatari TT/Falcon
   emulation, whereas TOS 3 & 4 support only IDE and SCSI disks.
@@ -122,17 +122,21 @@ Many commercial games (e.g. Bombjack, Nebulus, Oids, Super Hang-On,
 Turrican, Xenon...) and almost all ST/STe/TT applications work fine
 with EmuTOS.
 
-However, EmuTOS AES isn't yet completely compatible with normal TOS
-versions (see EmuTOS bugs.txt) and VDI & line-A support is slowish.
-Anybody wanting better AES/VDI support should install replacement for
-these, either the free XaAES + fVDI, or commercial solutions like NVDI
-(v2.5 doesn't work with EmuTOS, newer NVDI versions do).
+However, while very close, EmuTOS AES isn't yet 100% compatible with
+normal TOS versions (see EmuTOS bugs.txt) and its VDI & line-A support
+is slowish. Anybody wanting better AES/VDI support should install
+replacement for these, either the free XaAES + fVDI, or commercial
+solutions like NVDI (v2.5 doesn't work with EmuTOS, newer NVDI
+versions do).
 
-Because (even 192k version of) EmuTOS uses more memory than normal
-TOS, badly written (typically floppy-only) games may blindly overwrite
-EmuTOS memory and it will then crash when the program calls an OS
-function depending on overwritten values.  ST/STE games that work from
-HD and/or with newer TOS versions, should be fine.
+Because (even 192k version of) EmuTOS uses a bit more memory than
+normal TOS, badly written (typically floppy-only) games may blindly
+overwrite EmuTOS memory. They also often rely on (undocumented) TOS
+internal variables & functions being at specific memory location. They
+will crash when they they call these bogus addresses, use bogus
+values, or call OS functions which internal state they had overwritten
+with garbage.  Whereas ST/STE games that work from HD and/or with
+newer TOS versions, should be fine.
 
 Input (e.g. joystick) doesn't work in original (STOS) games that
 access it through other means than XBIOS function Kbdvbase() or by
@@ -140,8 +144,8 @@ hooking into the IKBD interrupt vector.  They use unofficial system
 variables which location depends on the TOS version.  Try fixed
 version of STOS games.
 
-Support for some TT HW features and for large part of additional
-Falcon features is missing.
+Support for some TT HW features and for DSP XBios functions &
+Falcon 16-bit resolution are also missing.
 
 Additionally, older EmuTOS versions (up to v0.9.1) lacked support for
 the (deprecated) line-A graphics functions which are used in many
@@ -206,10 +210,10 @@ Returning to emulation...
 (In above example '>' indicates what you type to debugger.)
 
 Then when the debugger is invoked at program startup, you can ask it to:
-- collect CPU instruction history,
-- break on exceptions that trigger the panic,
-- load symbols and profile what happens as this will
-  provide EmuTOS callstack when debugger is entered, and
+- collect CPU instruction history
+- break on exceptions that trigger the panic
+- load symbols + profile what happens, as these will
+  provide EmuTOS callstack when debugger is entered
 - trace all OS calls and line-A opcodes leading to the panic
 with:
 -----------
@@ -259,8 +263,8 @@ The compatibility lists below cater mainly for users who don't have
 Atari HW and therefore won't have (legal) version of commercial Atari
 software and most likely lack motivation to investigate applications
 very deeply (Linux offers better alternatives nowadays for most of
-that). I.e. the lists skip commercial software and concentrate on
-EmuTOS compatibility of freely available games and demos (including
+that). I.e. the lists skip (most) commercial software and concentrate
+on EmuTOS compatibility of freely available games and demos (including
 commercial games that have been released later on for free
 distribution).
 
@@ -292,8 +296,8 @@ gotten to work by using EmuTOS cartridge image (it uses less memory
 than normal EmuTOS), like this:
 	hatari --tos etos192uk.img --cartridge etoscart.img floppy.img
 
-(Above is issue mainly in EmuTOS v0.9.5 and older. Since March 2016,
-EmuTOS internals are re-ordered so that more important areas for such
+(Above is issue mainly in EmuTOS v0.9.5 and older. In v0.9.6, EmuTOS
+internals were re-ordered so that more important areas for such
 programs are less likely to be overwritten.)
 
 Mostly the non-working games "Panic" EmuTOS during their startup,
@@ -391,7 +395,7 @@ Color toys:
 - Fplanet
 - Schnapfl
 
-Commercial game demos/previews:
+Commercial game demos/previews (many of these are pretty good):
 - Baby Jo demo (floppy only)
 - Babel demo
 - Beast II demo
@@ -405,7 +409,7 @@ Commercial game demos/previews:
 - Chips Challenge demo
 - Civilization demo
 - Cloud Kingdoms demo
-- Conqueror demo*
+- Conqueror demo
 - Defender II demo (needs EmuTOS >v0.9.3)
 - Creatures demo
 - Fire & Ice demo
@@ -431,7 +435,7 @@ Commercial game demos/previews:
 - Mig29 Super Fulcrum demo
 - Moonshine Racers demo
 - Nitro demo
-- Oids demo*
+- Oids demo
 - Parasol Stars demo
 - Photon Storm demo
 - Pipemania demo
@@ -444,7 +448,7 @@ Commercial game demos/previews:
 - Rolling Ronny demo
 - Rotoplex demo
 - Space Crusade demo
-- Space Harrier (line-A functions, commercial)
+- Space Harrier (line-A functions, in Atari PowerPack)
 - Stormball demo
 - Super Stario Land demo
 - Thunderstrike demo
@@ -474,7 +478,7 @@ Free/shareware/PD games:
 - Cops and Robbers Too! (line-A bitblits)
 - Crapman*
 - Cybernetix
-- Dave Munsie games* (shareware)
+- Dave Munsie games* (shareware released later as freeware)
   http://www.atarimania.com/list_games_atari-st-munsie-dave_team_950_S_G.html
 - Donkey Island (adventure)
 - Dot 2 Dots (for kids)
@@ -532,6 +536,7 @@ Free/shareware/PD games:
 - Superfly (floppy only)
 - Sweeper
 - Tanx*
+- Terraboink
 - Tiles Osmosis
 - Time Bandit
 - Teserae*
@@ -700,7 +705,8 @@ Commercial color game demos:
 - Cauldron demo     (input doesn't work, fire doesn't start game)
 - Gods demo
   - works properly only from floppy
-  - requires "high-RAM" EmuTOS build, otherwise overwrites itself
+  - requires "high-RAM" EmuTOS build, otherwise overwrites itself:
+    make 512 UNIQUE=uk DEF="-DSTATIC_ALT_RAM_ADDRESS=0x00080000 -DCONF_WITH_FRB=0"
 - Striker demo      (input doesn't work)
 
 Free/shareware color games:
@@ -957,7 +963,7 @@ Non-working games and music programs:
 - Hero (STOS, see EmuTOS incompatible.txt)
 - Protracker v2 STE, Equinox version
   - http://www.pouet.net/prod.php?which=13381
-  - NULL pointer crash on disk ops
+  - see EmuTOS incompatible.txt
 - Zaptastic (input doesn't work at startup screen)
 
 
@@ -965,8 +971,8 @@ Atari TT programs
 -----------------
 
 TT emulation requires 512kB version of EmuTOS (the one shipped with
-Hatari).  TT-low (256-color) mode and sound support requires March
-2016 or newer version (>v0.9.5) of EmuTOS.
+Hatari).  TT-low (256-color) mode and sound support requires EmuTOS
+v0.9.6 or newer.
 
 Working applications:
 - Mandelbrot playtime (fracplay, uses FPU)
