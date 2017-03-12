@@ -311,6 +311,7 @@ Demos:
 - Ambience (by Chaos)
 - Anomaly (by MMJ Prod)
 - April Fools (by DNT Crew)
+- Arsenite (by Dekadence)
 - Audiopacdemo (by X-Troll)
 - Beast Scroll (by Joefish)
 - Beyond Imagination (by NLC), in GFA basic
@@ -324,6 +325,7 @@ Demos:
 - Cuddly Demos (by CareBears)
 - Darktrip (by Legend), doesn't work with >2MB of RAM
 - Dark Side of the Spoon (by ULM)
+- DataSTorm Invite (by Genesis Project)
 - Death of the Clock Cycles (by Aggression)
 - Dimensio (by Condemned)
 - Eat my bollocks (by Equinox)
@@ -1068,6 +1070,7 @@ Working demos:
   - works before v0.9.1, but without sounds
 - Terrorize Your Soul (by tSCc)
   - fonts and colors aren't right on all screens
+- Tiny Things (no music as it's on DSP)
 - Videl visions slideshow
 - Virtual City, needs DSP
   - freezes at exit
@@ -1115,6 +1118,7 @@ but don't work with EmuTOS at all:
   panic with bus error:
   M68000 Bus Error reading at address $3b4.
 - Tere Ra'I (by Cerebral Vortex / Dune / Sector One)
+- Silly Venture 2k16 invitro (by Dune / Mystic Bytes)
 - Unexpected Fun (by Orion_)
   - these exit as Dsp_Lock() fails
 
