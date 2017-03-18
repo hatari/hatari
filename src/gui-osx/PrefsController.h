@@ -70,19 +70,19 @@
 	IBOutlet NSMatrix *cpuType;
 	IBOutlet NSMatrix *cpuClock;
 	IBOutlet NSMatrix *machineType;
-	IBOutlet NSMatrix *ramSize;
-	IBOutlet NSButton *compatibleCpu; //bCompatibleCpu
+	IBOutlet NSMatrix *ramSize;					// ram size
+	IBOutlet NSButton *compatibleCpu; 			// bCompatibleCpu
 	IBOutlet NSButton *blitter;
 	IBOutlet NSButton *realTime;
 	IBOutlet NSButton *patchTimerD;
 	IBOutlet NSButton *FastBootPatch;
 	IBOutlet NSPopUpButton *videoTiming;
 	// for ENABLE_WINUAE_CPU CORE
-	IBOutlet NSButton *cycleExactCPU; //bCycleExactCpu
+	IBOutlet NSButton *cycleExactCPU;			//bCycleExactCpu
 	IBOutlet NSButton *MMU_Emulation;
-	IBOutlet NSButton *adressSpace24; //bAddressSpace24
-	IBOutlet NSStepper *TTRAMSizeStepper;
-	IBOutlet NSTextField *TTRAMSizeValue;
+	IBOutlet NSButton *adressSpace24;			// bAddressSpace24
+	IBOutlet NSStepper *TTRAMSizeStepper; 		// MS 12-2016
+	IBOutlet NSTextField *TTRAMSizeValue;		// MS 12-2016
 	//IBOutlet NSButton *CompatibleFPU;
 	IBOutlet NSMatrix *FPUType;
 

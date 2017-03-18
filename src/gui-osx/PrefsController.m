@@ -300,7 +300,7 @@ BOOL flag1, flag2;
 /*----------------------------------------------------------------------*/
 - (IBAction)chooseCartridgeImage:(id)sender;
 {
-    [self choosePathForControl: cartridgeImage chooseDirectories:NO defaultInitialDir:[self initial:cartridge]                              // cartridge
+    [self choosePathForControl: cartridgeImage chooseDirectories:NO defaultInitialDir:[self initial:cartridge]  // cartridge
         mutString:cartridge  what:@[allC]];
 }
 
@@ -630,7 +630,7 @@ BOOL flag1, flag2;
         // Check if change need reset
         if (Change_DoNeedReset(&CurrentParams, &ConfigureParams))
         {
-            applyChanges = [NSApp myAlerte:NSInformationalAlertStyle Txt:nil
+            applyChanges = [NSApp myAlerte:NSAlertStyleInformational Txt:nil
                 firstB:localize(@"Don't reset") alternateB:localize(@"Reset")
                 otherB:nil informativeTxt:localize(@"Must be reset") ] == NSAlertSecondButtonReturn ;
 			if (applyChanges)
@@ -722,7 +722,7 @@ BOOL flag1, flag2;
 	IMPORT_RADIO(machineType, ConfigureParams.System.nMachineType);
 	IMPORT_RADIO(monitor, ConfigureParams.Screen.nMonitorType);
 	IMPORT_SWITCH(patchTimerD, ConfigureParams.System.bPatchTimerD);
-	IMPORT_RADIO(ramSize, ConfigureParams.Memory.nMemorySize);
+	IMPORT_RADIO(ramSize, ConfigureParams.Memory.STRamSize_KB); // MS  12-2016
 	IMPORT_SWITCH(fastFDC, ConfigureParams.DiskImage.FastFloppy);
 	IMPORT_SWITCH(useBorders, ConfigureParams.Screen.bAllowOverscan);
 	IMPORT_SWITCH(useVDIResolution, ConfigureParams.Screen.bUseExtVdiResolutions);
@@ -765,7 +765,9 @@ BOOL flag1, flag2;
 
 	//deal with TT RAM Size Stepper
 #ifdef ENABLE_WINUAE_CPU
-	IMPORT_NTEXTFIELD(TTRAMSizeValue, ConfigureParams.Memory.nTTRamSize);
+	int ttramsize_MB=ConfigureParams.Memory.TTRamSize_KB/1024 ;	//JV 12-2016
+
+	IMPORT_NTEXTFIELD(TTRAMSizeValue, ttramsize_MB); 			// MS 12-2016
 	[TTRAMSizeStepper setDoubleValue:[TTRAMSizeValue intValue]];
 	IMPORT_SWITCH(cycleExactCPU, ConfigureParams.System.bCycleExactCpu);
 	IMPORT_SWITCH(MMU_Emulation, ConfigureParams.System.bMMU);
@@ -988,7 +990,7 @@ BOOL flag1, flag2;
 	EXPORT_RADIO(machineType, ConfigureParams.System.nMachineType);
 	EXPORT_RADIO(monitor, ConfigureParams.Screen.nMonitorType);
 	EXPORT_SWITCH(patchTimerD, ConfigureParams.System.bPatchTimerD);
-	EXPORT_RADIO(ramSize, ConfigureParams.Memory.nMemorySize);
+	EXPORT_RADIO(ramSize, ConfigureParams.Memory.STRamSize_KB);							// MS 12-2016
 	EXPORT_SWITCH(fastFDC, ConfigureParams.DiskImage.FastFloppy);
 	EXPORT_SWITCH(useBorders, ConfigureParams.Screen.bAllowOverscan);
 	EXPORT_SWITCH(useVDIResolution, ConfigureParams.Screen.bUseExtVdiResolutions);
@@ -1023,7 +1025,11 @@ BOOL flag1, flag2;
 	 case 4: ConfigureParams.System.VideoTimingMode=VIDEO_TIMING_MODE_WS4; break;
 	}
 #ifdef ENABLE_WINUAE_CPU
-	EXPORT_NTEXTFIELD(TTRAMSizeValue, ConfigureParams.Memory.nTTRamSize);
+	int ttramsizeMB=[TTRAMSizeValue intValue]*1024;										//JV 12-2016
+	ConfigureParams.Memory.TTRamSize_KB=ttramsizeMB;
+
+	//EXPORT_NTEXTFIELD(TTRAMSizeValue, ConfigureParams.Memory.TTRamSize_KB);			// MS 12-2016
+
 	EXPORT_SWITCH(cycleExactCPU, ConfigureParams.System.bCycleExactCpu);
 	EXPORT_SWITCH(MMU_Emulation, ConfigureParams.System.bMMU);
 	EXPORT_SWITCH(adressSpace24, ConfigureParams.System.bAddressSpace24);
