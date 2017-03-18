@@ -1553,8 +1553,9 @@ fprintf ( stderr , "memory_map_Standard_RAM %d %d %d\n" , STmem_size , MMU_Bank0
 	/*  - Map rest of the ST RAM from 0x10000 to STmem_size */
 	/* If possible/needed we enable MMU/MCU translation for maximum accuracy (when sizes of banks differ between MMU and RAM) */
 	if ( ( Config_IsMachineST() || Config_IsMachineSTE() )
-	  && ( !ConfigureParams.System.bFastBoot )
-	  && ( STmem_size <= 0x400000 )
+	  && !ConfigureParams.System.bFastBoot
+	  && !ConfigureParams.Screen.bUseExtVdiResolutions
+	  && STmem_size <= 0x400000
 	  && ( ( MMU_Bank0_Size != RAM_Bank0_Size ) || ( ( RAM_Bank1_Size > 0 ) && ( MMU_Bank1_Size != RAM_Bank1_Size ) ) )
 	  )
 	{

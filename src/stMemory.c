@@ -277,18 +277,13 @@ void STMemory_SetDefaultConfig(void)
 		fprintf(stderr, "VDI mode memtop: 0x%x, phystop: 0x%x (screensize: %d kB, memtop->phystop: %d kB)\n",
 			memtop, phystop, (screensize+511) / 1024, (phystop-memtop+511) / 1024);
 
-	/* If possible we don't override memory detection, TOS will do it */
-	if ( ( Config_IsMachineST() || Config_IsMachineSTE() )
-	  && ( !ConfigureParams.System.bFastBoot )
-	  && ( ConfigureParams.Memory.STRamSize_KB <= 4*1024 ) )
+	/* If possible we don't override memory detection, TOS will do it
+	 * (in that case MMU/MCU can be correctly emulated, and we do nothing
+	 * and let TOS do its own memory tests using $FF8001) */
+	if (!(Config_IsMachineST() || Config_IsMachineSTE())
+	    || ConfigureParams.System.bFastBoot || bUseVDIRes
+	    || ConfigureParams.Memory.STRamSize_KB > 4*1024)
 	{
-		/* In that case MMU/MCU is correctly emulated, so we do nothing */
-		/* and let TOS do its own memory tests using $FF8001 */
-fprintf ( stderr , "use tos ff8001\n" );
-	}
-	else
-	{
-fprintf ( stderr , "override tos ff8001\n" );
 		/* Set memory controller byte according to different memory sizes */
 		/* Setting per bank : %00=128k %01=512k %10=2Mb %11=reserved. - e.g. %1010 means 4Mb */
 		if (ConfigureParams.Memory.STRamSize_KB <= 4*1024)
