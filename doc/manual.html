@@ -585,7 +585,7 @@ from &lt;file&gt;</p>
 <p class="paramdesc">Enable serial port support and use
 &lt;file&gt; as the output device</p>
 
-<h3>Disk options</h3>
+<h3>Floppy drive options</h3>
 <p class="parameter">--drive-a
 &lt;bool&gt;</p>
 <p class="paramdesc">Enable/disable drive A (default is on)</p>
@@ -609,6 +609,18 @@ from &lt;file&gt;</p>
 <p class="paramdesc">Write protect floppy image contents
 (on/off/auto). With "auto" option write protection is according to
 the disk image file attributes</p>
+
+<h3>Hard drive options</h3>
+<p class="parameter">-d, --harddrive
+&lt;dir&gt;</p>
+<p class="paramdesc">GEMDOS HD emulation. Emulate hard disk partition(s)
+with &lt;dir&gt; contents. If directory contains only single letter
+(C-Z) subdirectories, each of these subdirectories will be treated
+as a separate partition, otherwise the given directory itself will
+be assigned to drive "C:". In the multiple partition case, the
+letters used as the subdirectory names will determine to which
+drives/partitions they&rsquo;re assigned. If &lt;dir&gt; is
+an empty string, then harddrive's emulation is disabled</p>
 <p class="parameter">--protect-hd
 &lt;x&gt;</p>
 <p class="paramdesc">Write protect hard drive &lt;dir&gt;
@@ -620,16 +632,21 @@ emulation</p>
 <p class="paramdesc">Specify whether new dir/filenames are forced to be
 in upper or lower case with GEMDOS HD emulation. Off/upper/lower, off by default
 </p>
-<p class="parameter">-d, --harddrive
-&lt;dir&gt;</p>
-<p class="paramdesc">Emulate hard disk partition(s) with
-&lt;dir&gt; contents. If directory contains only single letter
-(C-Z) subdirectories, each of these subdirectories will be treated
-as a separate partition, otherwise the given directory itself will
-be assigned to drive "C:". In the multiple partition case, the
-letters used as the subdirectory names will determine to which
-drives/partitions they&rsquo;re assigned. If &lt;dir&gt; is
-an empty string, then harddrive's emulation is disabled</p>
+<p class="parameter">--gemdos-time &lt;x&gt;</p>
+<p class="paramdesc">Specify what file modification timestamps should be used,
+emulation internal (atari) ones, or ones from the machine (host) on which
+the machine is running. While Atari emulation and host clocks are in sync
+at Hatari startup, they will diverge while emulation is running, especially
+if you use fast forward.  Default is "atari".  If you modify files accessed
+by the Atari side, directly from the host side while Hatari is already
+running, you may want to use "host" option</p>
+<p class="parameter">--gemdos-conv &lt;bool&gt;</p>
+<p class="paramdesc">Whether GEMDOS file names with 8-bit (non-ASCII) characters
+are converted between Atari and host character sets. On Linux, host file
+name character set is assumed to be UTF-8. This option is disabled by
+default, in case you've transferred files from Atari machine without
+proper file name conversion (e.g. by zipping them on Atari and
+unzipping on PC)</p>
 <p class="parameter">--acsi
 &lt;file&gt;</p>
 <p class="paramdesc">Emulate an ACSI hard drive with an image

@@ -265,8 +265,8 @@ write protection is according to the disk image file attributes
 .SH "Hard drive options"
 .TP
 .B \-d, \-\-harddrive <dir>
-Emulate harddrive partition(s) with <dir> contents.  If directory
-contains only single letter (C-Z) subdirectories, each of these
+GEMDOS HD emulation.  Emulate harddrive partition(s) with <dir> contents.
+If directory contains only single letter (C-Z) subdirectories, each of these
 subdirectories will be treated as a separate partition, otherwise the
 given directory itself will be assigned to drive "C:". In the multiple
 partition case, the letters used as the subdirectory names will
@@ -283,17 +283,26 @@ emulation
 Specify whether new dir/filenames are forced to be in upper or lower case
 with the GEMDOS HD emulation. Off/upper/lower, off by default
 .TP
+.B \-\-gemdos\-time <x>
+Specify what file modification timestamps should be used, emulation
+internal (atari) ones, or ones from the machine (host) on which the
+machine is running. While Atari emulation and host clocks are in sync
+at Hatari startup, they will diverge while emulation is running,
+especially if you use fast forward.  Default is "atari".  If you
+modify files accessed by the Atari side, directly from the host side
+while Hatari is already running, you may want to use "host" option
+.TP
 .B \-\-gemdos\-conv <bool>
 Whether GEMDOS file names with 8-bit (non-ASCII) characters are
 converted between Atari and host character sets. On Linux, host file
 name character set is assumed to be UTF-8. This option is disabled by
 default, in case you've transferred files from Atari machine without
 proper file name conversion (e.g. by zipping them on Atari and
-unzipping on PC).
+unzipping on PC)
 .TP
 .B \-\-acsi <id>=<file>
 Emulate an ACSI hard disk with given BUS ID (0-7) using image <file>.
-If just filename is given, it's assigned to BUS ID 0.
+If just filename is given, it's assigned to BUS ID 0
 .TP 
 .B \-\-ide\-master <file>
 Emulate an IDE master hard disk with an image <file>

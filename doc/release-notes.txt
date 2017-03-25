@@ -25,6 +25,8 @@ Emulator:
 - Extended VDI mode font selected based on VDI height
 - Allow RAM size values in KiB instead of MiB
 - Support scaling AVI recording (PNG/BMP) frames
+- Add "--gemdos-time <atari/host>" option so that user can specify
+  whether emulation or host timestamps are used with GEMDOS HD files
 - Fix: don't switch bitdepth when recording AVI
 - Fix: X11 window embedding (to Python GUI) with SDL2
 - Fix: TOS v2 & v3 Atari logo display in extended VDI resolutions
