@@ -223,6 +223,11 @@ static bool GemDOS_SetFileInformation(int Handle, DATETIME *DateTime)
 	 * the file after it's modification time is changed.
 	 */
 	fflush(FileHandles[Handle].FileHandle);
+
+	/* use host modification times instead of Atari ones? */
+	if (ConfigureParams.HardDisk.bGemdosHostTime)
+		return true;
+
 	filename = FileHandles[Handle].szActualName;
 	
 	/* Bits: 0-4 = secs/2, 5-10 = mins, 11-15 = hours (24-hour format) */

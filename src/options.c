@@ -119,6 +119,7 @@ enum {
 	OPT_HARDDRIVE,
 	OPT_WRITEPROT_HD,
 	OPT_GEMDOS_CASE,
+	OPT_GEMDOS_HOSTTIME,
 	OPT_GEMDOS_CONVERT,
 	OPT_GEMDOS_DRIVE,
 	OPT_ACSIHDIMAGE,
@@ -332,6 +333,8 @@ static const opt_t HatariOptions[] = {
 	  "<x>", "Write protect harddrive <dir> contents (on/off/auto)" },
 	{ OPT_GEMDOS_CASE, NULL, "--gemdos-case",
 	  "<x>", "Forcibly up/lowercase new GEMDOS dir/filenames (off/upper/lower)" },
+	{ OPT_GEMDOS_HOSTTIME, NULL, "--gemdos-time",
+	  "<x>", "Which timestamps to use for GEMDOS files (atari/host)" },
 	{ OPT_GEMDOS_CONVERT, NULL, "--gemdos-conv",
 	  "<bool>", "Atari GEMDOS <-> host (UTF-8) file name conversion" },
 	{ OPT_GEMDOS_DRIVE, NULL, "--gemdos-drive",
@@ -1434,6 +1437,16 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				ConfigureParams.HardDisk.nGemdosCase = GEMDOS_LOWER;
 			else
 				return Opt_ShowError(OPT_GEMDOS_CASE, argv[i], "Unknown option value");
+			break;
+
+		case OPT_GEMDOS_HOSTTIME:
+			i += 1;
+			if (strcasecmp(argv[i], "atari") == 0)
+				ConfigureParams.HardDisk.bGemdosHostTime = false;
+			else if (strcasecmp(argv[i], "host") == 0)
+				ConfigureParams.HardDisk.bGemdosHostTime = true;
+			else
+				return Opt_ShowError(OPT_GEMDOS_HOSTTIME, argv[i], "Unknown option value");
 			break;
 
 		case OPT_GEMDOS_CONVERT:

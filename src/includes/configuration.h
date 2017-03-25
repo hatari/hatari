@@ -210,6 +210,7 @@ typedef struct
   WRITEPROTECTION nWriteProtection;
   GEMDOS_CHR_CONV nGemdosCase;
   bool bFilenameConversion;
+  bool bGemdosHostTime;
   bool bBootFromHardDisk;
   char szHardDiskDirectories[MAX_HARDDRIVES][FILENAME_MAX];
   char szIdeMasterHardDiskImage[FILENAME_MAX];
