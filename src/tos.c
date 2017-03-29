@@ -59,8 +59,6 @@ static struct {
 	FILE *file;          /* file pointer to contents of INF file */
 	char prgname[16];    /* TOS name of the program to auto start */
 	const char *infname; /* name of the INF file TOS will try to match */
-	int match_count;     /* how many times INF was matched after boot */
-	int match_max;       /* how many times TOS needs it to be matched */
 } TosAutoStart;
 
 /* autostarted program name will be added after first '\' character */
@@ -455,7 +453,7 @@ void TOS_AutoStart(const char *prgname)
 static void TOS_CreateAutoInf(void)
 {
 	const char *contents, *infname, *prgname;
-	int offset, size, max;
+	int offset, size;
 	FILE *fp;
 #if defined(WIN32)	/* unfortunately tmpfile() needs administrative privileges on windows, so this needs special care */
 	char *ptr;
@@ -481,7 +479,6 @@ static void TOS_CreateAutoInf(void)
 		infname = "C:\\EMUDESK.INF";
 		size = sizeof(emudesk_inf);
 		contents = emudesk_inf;
-		max = 1;
 	} else {
 		/* need to match file TOS searches first */
 		if (TosVersion >= 0x0200)
@@ -490,14 +487,11 @@ static void TOS_CreateAutoInf(void)
 			infname = "DESKTOP.INF";
 		size = sizeof(desktop_inf);
 		contents = desktop_inf;
-		max = 1;
 	}
 	/* infname needs to be exactly the same string that given
 	 * TOS version gives for GEMDOS to find.
 	 */
 	TosAutoStart.infname = infname;
-	TosAutoStart.match_max = max;
-	TosAutoStart.match_count = 0;
 
 	/* find where to insert the program name */
 	for (offset = 0; offset < size; )
@@ -562,17 +556,14 @@ bool TOS_AutoStartClose(FILE *fp)
 {
 	if (fp && fp == TosAutoStart.file)
 	{
-		if (++TosAutoStart.match_count >= TosAutoStart.match_max)
-		{
-			/* Remove autostart INF file after TOS has
-			 * read it enough times to do autostarting.
-			 * Otherwise user may try change desktop settings
-			 * and save them, but they would be lost.
-			 */
-			fclose(TosAutoStart.file);
-			TosAutoStart.file = NULL;
-			Log_Printf(LOG_WARN, "Autostart file removed.\n");
-		}
+		/* Remove autostart INF file after TOS has
+		 * read it enough times to do autostarting.
+		 * Otherwise user may try change desktop settings
+		 * and save them, but they would be lost.
+		 */
+		fclose(TosAutoStart.file);
+		TosAutoStart.file = NULL;
+		Log_Printf(LOG_WARN, "Autostart file removed.\n");
 		return true;
 	}
 	return false;
