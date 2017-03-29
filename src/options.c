@@ -1496,7 +1496,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			if (strlen(str) > 2 && isdigit(str[0]) && str[1] == '=')
 			{
 				drive = str[0] - '0';
-				if (drive < 0 || drive > 7)
+				if (drive < 0 || drive >= MAX_ACSI_DEVS)
 					return Opt_ShowError(OPT_ACSIHDIMAGE, str, "Invalid ACSI drive <id>, must be 0-7");
 				str += 2;
 			}
@@ -2002,7 +2002,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 		       
 		case OPT_BENCHMARK:
-			BenchmarkMode= true;
+			BenchmarkMode = true;
 			break;
 
 		case OPT_ERROR:
