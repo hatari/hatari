@@ -33,7 +33,6 @@ Emulator:
 - Fix: Limit Videl widths for GLES2 SDL2 backends
 - Fix: off-by-one error in ACSI image file name handling
 - Fix: Normal users cannot use tmpfile() directly under Windows
-- Fix: DESTDIR support for RPM packaging
 - Fix: rate-limit DSP illegal instruction warnings output
 - Debugger:
   - Add "CycleCounter" variable
@@ -45,8 +44,9 @@ Emulator:
 Other changes:
 - Fix: Python GUI updated for Hatari v2.0
 - Fix: Python GUI explicitly uses Python v2 (Arch Linux)
-- FIX: Python tools made compatible both to Python v2 & v3 (Arch Linux)
+- Fix: Python tools made compatible both to Python v2 & v3 (Arch Linux)
 - Fix: icon symlink generation (rpmbuild chroot)
+- Fix: DESTDIR support for RPM packaging
 
 Fixed Falcon games:
 - Ishar 1, 2 & 3, Lasers and Hommes, Moonspeeder preview 2
