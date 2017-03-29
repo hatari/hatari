@@ -24,7 +24,7 @@ if(ENABLE_OSX_BUNDLE)
 	    gui-osx/Hatari.icns gui-osx/stdisk.png gui-osx/en.lproj gui-osx/fr.lproj)
 	set(GUIOSX_DOCS
 	    ${CMAKE_SOURCE_DIR}/doc/manual.html ${CMAKE_SOURCE_DIR}/doc/images
-	    ${CMAKE_SOURCE_DIR}/doc/compatibility.html)
+	    ${CMAKE_SOURCE_DIR}/doc/compatibility.html ${CMAKE_SOURCE_DIR}/doc/toc.js )
 	# these are the OS X Interface Builder Files
 	set (HATARI_XIBS en.lproj/SDLMain fr.lproj/SDLMain)
 endif(ENABLE_OSX_BUNDLE)
