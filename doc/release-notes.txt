@@ -25,6 +25,9 @@ Emulator:
 - Extended VDI mode font selected based on VDI height
 - Allow RAM size values in KiB instead of MiB
 - Support scaling AVI recording (PNG/BMP) frames
+- Add "--auto" option to autostart programs from somewhere
+  else than C: root, and to enable required GEMDOS interception
+  without full GEMDOS HD emulation
 - Add "--gemdos-time <atari/host>" option so that user can specify
   whether emulation or host timestamps are used with GEMDOS HD files
 - Fix: don't switch bitdepth when recording AVI

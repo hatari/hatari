@@ -31,7 +31,9 @@ As an argument one can give either a name of a directory that should
 be emulated as a virtual GEMDOS hard disk, a floppy disk image or an
 Atari program that should be autostarted.  In the last case the
 program's directory will be used as the C: drive from where this
-program will be started.
+program will be started.  These shortcuts correspond to "-d <dir>",
+"--disk-a <floppy image>" and "-d <dir> --auto C:\<program>"
+options.
 .PP
 Booting will be done from the disk image or directory that's given
 last on the command line as an option or the argument (and which
@@ -63,6 +65,13 @@ Load keyboard mapping from <file>
 .TP 
 .B \-\-fast\-forward <bool>
 On fast machine helps skipping (fast forwarding) Hatari output
+.TP 
+.B \-\-auto <program>
+Autostarts given program, if TOS finds it.  Program needs to
+be given with full path it will have under emulation, for
+example "C:\\DIR\\PROGRAM.PRG". This is implemented by providing
+TOS a virtual INF file, including that path as what TOS should
+start automatically
 
 .SH "Common display options"
 .TP 

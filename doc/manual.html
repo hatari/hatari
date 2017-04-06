@@ -353,11 +353,10 @@ to take effect.</p>
 <li>An Atari program that should be autostarted.  In this case
     the program's directory will be used as the C: drive from
     where this program will be started.
-    (Note that autostarting a program might not work if you've also
-    specified a floppy image for drive A: on command line or in config
-    file which contains a desktop.inf/newdesk.inf/emutos.inf file on
-    it.)</li>
+</li>
 </ul>
+(These arguments are shortcuts for "--disk-a", "--harddisk" and "--auto"
+options listed below.)
 
 <p>Booting will be done from the disk image or directory that's given
 last on the command line as an option or the argument (and which
@@ -403,6 +402,10 @@ user configuration files
 &lt;bool&gt;</p>
 <p class="paramdesc">On fast machine helps skipping (fast
 forwarding) Hatari output</p>
+<p class="parameter">--auto &lt;program&gt;</p>
+<p class="paramdesc">Autostarts given program, if TOS finds it.
+Program needs to be given with full path it will have under
+emulation, for example "C:\DIR\PROGRAM.PRG"</p>
 
 <h3>Common display options</h3>
 <p class="parameter">-m,
