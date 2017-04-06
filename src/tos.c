@@ -57,14 +57,14 @@ static const char * const pszTosNameExts[] =
 
 static struct {
 	FILE *file;          /* file pointer to contents of INF file */
-	char prgname[16];    /* TOS name of the program to auto start */
+	char *prgname;       /* TOS name of the program to auto start */
 	const char *infname; /* name of the INF file TOS will try to match */
 } TosAutoStart;
 
-/* autostarted program name will be added after first '\' character */
+/* autostarted program name will be added befere first '@' character */
 static const char emudesk_inf[] =
 "#E 9A 07\r\n"
-"#Z 01 C:\\@\r\n"
+"#Z 01 @\r\n"
 "#W 00 00 02 06 26 0C 08 C:\\*.*@\r\n"
 "#W 00 00 02 08 26 0C 00 @\r\n"
 "#W 00 00 02 0A 26 0C 00 @\r\n"
@@ -85,7 +85,7 @@ static const char desktop_inf[] =
 "#b001000\r\n"
 "#c7770007000600070055200505552220770557075055507703111302\r\n"
 "#d\r\n"
-"#Z 01 C:\\@\r\n"
+"#Z 01 @\r\n"
 "#E D8 11\r\n"
 "#W 00 00 10 01 17 17 13 C:\\*.*@\r\n"
 "#W 00 00 08 0B 1D 0D 00 @\r\n"
@@ -439,11 +439,48 @@ static void TOS_FixRom(void)
 /**
  * Set name of program that will be auto started after TOS boots.
  * Supported only from TOS 1.04 forward.
+ *
+ * If program lacks a path, "C:\" will be added.
+ *
+ * Returns true if OK, false for obviously invalid path specification.
  */
-void TOS_AutoStart(const char *prgname)
+bool TOS_AutoStartSet(const char *name)
 {
-	Str_Filename2TOSname(prgname, TosAutoStart.prgname);
+	char *prgname;
+	int len = strlen(name);
+	char drive = toupper(name[0]);
+
+	if (drive >= 'A' && drive <= 'Z' && name[1] == ':' && name[2] == '\\')
+	{
+		/* full path */
+		int offset;
+		prgname = malloc(len+1);
+		offset = strrchr(name, '\\') - name + 1;
+		/* copy/upcase path part */
+		memcpy(prgname, name, offset);
+		prgname[offset] = '\0';
+		Str_ToUpper(prgname);
+		/* copy/upcase file part */
+		Str_Filename2TOSname(name+offset, prgname+offset);
+	}
+	else if (strchr(name, '\\'))
+	{
+		/* partial path not accepted */
+		return false;
+	}
+	else
+	{
+		/* just program -> add path */
+		prgname = malloc(3 + len + 1);
+		strcpy(prgname, "C:\\");
+		Str_Filename2TOSname(name, prgname+3);
+	}
+	if (TosAutoStart.prgname)
+		free(TosAutoStart.prgname);
+	TosAutoStart.prgname = prgname;
+	return true;
 }
+
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -464,7 +501,7 @@ static void TOS_CreateAutoInf(void)
 
 	prgname = TosAutoStart.prgname;
 	/* autostart not enabled? */
-	if (!*prgname)
+	if (!prgname)
 		return;
 
 	/* autostart not supported? */
@@ -476,7 +513,10 @@ static void TOS_CreateAutoInf(void)
 
 	if (bIsEmuTOS)
 	{
-		infname = "C:\\EMUDESK.INF";
+		if (ConfigureParams.HardDisk.bBootFromHardDisk)
+			infname = "C:\\EMUDESK.INF";
+		else
+			infname = "A:\\EMUDESK.INF";
 		size = sizeof(emudesk_inf);
 		contents = emudesk_inf;
 	} else {
@@ -494,9 +534,9 @@ static void TOS_CreateAutoInf(void)
 	TosAutoStart.infname = infname;
 
 	/* find where to insert the program name */
-	for (offset = 0; offset < size; )
+	for (offset = 0; offset < size; offset++)
 	{
-		if (contents[offset++] == '\\')
+		if (contents[offset] == '@')
 			break;
 	}
 	assert(offset < size);

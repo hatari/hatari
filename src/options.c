@@ -64,6 +64,7 @@ enum {
 	OPT_CONFIGFILE,
 	OPT_KEYMAPFILE,
 	OPT_FASTFORWARD,
+	OPT_AUTOSTART,
 	OPT_MONO,		/* common display options */
 	OPT_MONITOR,
 	OPT_FULLSCREEN,
@@ -202,6 +203,8 @@ static const opt_t HatariOptions[] = {
 	  "<file>", "Read (additional) keyboard mappings from <file>" },
 	{ OPT_FASTFORWARD, NULL, "--fast-forward",
 	  "<bool>", "Help skipping stuff on fast machine" },
+	{ OPT_AUTOSTART, NULL, "--auto",
+	  "<x>", "Atari program autostarting with Atari path" },
 
 	{ OPT_HEADER, NULL, NULL, NULL, "Common display" },
 	{ OPT_MONO,      "-m", "--mono",
@@ -912,7 +915,7 @@ static bool Opt_HandleArgument(const char *path)
 		 * then make sure that given program from that
 		 * dir will be started.
 		 */
-		TOS_AutoStart(prgname);
+		TOS_AutoStartSet(prgname);
 	}
 	if (dir) {
 		path = dir;
@@ -996,6 +999,13 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 		case OPT_FASTFORWARD:
 			ok = Opt_Bool(argv[++i], OPT_FASTFORWARD, &ConfigureParams.System.bFastForward);
+			break;
+
+		case OPT_AUTOSTART:
+			if (!(ok = TOS_AutoStartSet(argv[++i])))
+			{
+				return Opt_ShowError(OPT_AUTOSTART, argv[i], "Invalid drive specified for autostart path");
+			}
 			break;
 
 		case OPT_CONFIGFILE:
