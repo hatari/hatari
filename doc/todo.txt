@@ -12,25 +12,19 @@ Emulation improvements
 - Add fastload program header flag support to GEMDOS HD emulation
   (If PF_FASTLOAD flag is set, clear just BSS, not heap)
 
-- Investigate what TOS version/functionality doesn't work for (Falcon)
+- Investigate what TOS version/functionality doesn't work for
   programs started from the DESKTOP/NEWDESK.INF and why, e.g:
 	- Printing doesn't work with TOS versions v1.02 - v2.06
+	- Key & mouse button input gives blitter register access
+	  bus errors after exiting autostarted program with
+	  TOS v2.x on ST machine (no problem on STE)
 	- Colors in 2-plane VDI resolution are not set correctly
-	- "Running" game preview and shareware versions crash
-	- Fun's "Men at War" game or its intro don't start
-	- "Push It" and "Aazohm Krypth" games crash if auto-started
-	- NoCrew: Aggressive Party II 128k combo ("Whirlpool") bombs
-	- RG: "Sworm" & "Sky Fall" games and "Snowtro" intro
+	- Fun's "Men at War" Falcon game background color is wrong
+	- RG: "Falcon Sworm" & "Sky Fall" games and "Snowtro" intro
 	  want to access A: & B: when autostarted
-	- JAM packer packed version of Tony Benett' "Virtual City" demo bombs
-	- Sentry 2.2 packed version of Shadows' "Firestarter" demo bombs
-	- Hextracker v0.849 crashes with TOS v4
-	Note: at least last 3 programs can be autostarted fine with EmuTOS.
+	- Hextracker v0.849 freezes waiting Falcon
+	  VideoAddressCounter change
   Document that in manual (page) for the Hatari "autorun" feature.
-
-- Related to above, investigate why TOS v1.04 crashes shortly after
-  GEM programs started with autorun feature are exited.  If programs
-  are started from TOS v1.04 desktop, there's no crash.
 
 - Keyboard detection sometimes fails when --fast-forward is enabled
   while TOS boots / game is loaded (e.g. Falcon Snake game packed

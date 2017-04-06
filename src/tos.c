@@ -61,7 +61,11 @@ static struct {
 	const char *infname; /* name of the INF file TOS will try to match */
 } TosAutoStart;
 
-/* autostarted program name will be added befere first '@' character */
+/* autostarted program name will be added befere first
+ * '@' character in the INF files
+ */
+
+/* EmuDesk INF file format differs slightly from normal TOS */
 static const char emudesk_inf[] =
 "#E 9A 07\r\n"
 "#Z 01 @\r\n"
@@ -80,28 +84,65 @@ static const char emudesk_inf[] =
 "#F 08 FF *.TOS@ @\r\n"
 "#T 00 03 03 FF   TRASH@ @\r\n";
 
+/* TOS v1.04 works only with DESKTOP.INF from that version
+ * (it crashes with newer INF after autobooted program exits),
+ * later v1.x TOS versions work also with this
+ */
 static const char desktop_inf[] =
 "#a000000\r\n"
-"#b001000\r\n"
-"#c7770007000600070055200505552220770557075055507703111302\r\n"
+"#b000000\r\n"
+"#c7770007000600070055200505552220770557075055507703111103\r\n"
 "#d\r\n"
 "#Z 01 @\r\n"
-"#E D8 11\r\n"
-"#W 00 00 10 01 17 17 13 C:\\*.*@\r\n"
-"#W 00 00 08 0B 1D 0D 00 @\r\n"
+"#E 18 11\r\n"
+"#W 00 00 00 07 26 0C 09 C:\\*.*@\r\n"
+"#W 00 00 02 0B 26 09 00 @\r\n"
 "#W 00 00 0A 0F 1A 09 00 @\r\n"
 "#W 00 00 0E 01 1A 09 00 @\r\n"
-"#M 00 00 05 FF A DISK A@ @\r\n"
-"#M 00 01 05 FF B DISK B@ @\r\n"
-"#M 00 02 05 FF C DISK C@ @\r\n"
+"#M 01 00 00 FF C HARD DISK@ @\r\n"
+"#M 00 00 00 FF A FLOPPY DISK@ @\r\n"
+"#M 00 01 00 FF B FLOPPY DISK@ @\r\n"
 "#T 00 03 02 FF   TRASH@ @\r\n"
 "#F FF 04   @ *.*@\r\n"
 "#D FF 01   @ *.*@\r\n"
-"#P 03 04   @ *.*@\r\n"
 "#G 03 FF   *.APP@ @\r\n"
 "#G 03 FF   *.PRG@ @\r\n"
 "#P 03 FF   *.TTP@ @\r\n"
-"#F 03 04   *.TOS@ @\r\n";
+"#F 03 04   *.TOS@ @\r\n"
+"\032\r\n";
+
+/* TOS v2.x and newer have also different format, using
+ * TOS v1.04 INF file would result in bogus resolution with TOS v4
+ */
+static const char newdesk_inf[] =
+"#a000000\r\n"
+"#b000000\r\n"
+"#c7770007000600070055200505552220770557075055507703111103\r\n"
+"#d\r\n"
+"#Z 01 @\r\n"
+"#K 4F 53 4C 00 46 42 43 57 45 58 00 00 00 00 00 00 00 00 00 00 00 00 00 52 00 00 4D 56 50 00 @\r\n"
+"#E 18 01 00 06\r\n"
+"#Q 41 40 43 40 43 40\r\n"
+"#W 00 00 00 07 26 0C 00 C:\\*.*@\r\n"
+"#W 00 00 02 0B 26 09 00 @\r\n"
+"#W 00 00 0A 0F 1A 09 00 @\r\n"
+"#W 00 00 0E 01 1A 09 00 @\r\n"
+"#W 00 00 04 07 26 0C 00 @\r\n"
+"#W 00 00 0C 0B 26 09 00 @\r\n"
+"#W 00 00 08 0F 1A 09 00 @\r\n"
+"#W 00 00 06 01 1A 09 00 @\r\n"
+"#M 00 01 00 FF C HARD DISK@ @\r\n"
+"#M 00 00 00 FF A FLOPPY DISK@ @\r\n"
+"#M 01 00 00 FF B FLOPPY DISK@ @\r\n"
+"#T 00 03 02 FF   TRASH@ @\r\n"
+"#N FF 04 000 @ *.*@ @\r\n"
+"#D FF 01 000 @ *.*@ @\r\n"
+"#G 03 FF 000 *.APP@ @ @\r\n"
+"#G 03 FF 000 *.PRG@ @ @\r\n"
+"#Y 03 FF 000 *.GTP@ @ @\r\n"
+"#P 03 FF 000 *.TTP@ @ @\r\n"
+"#F 03 04 000 *.TOS@ @ @\r\n";
+
 
 /* Flags that define if a TOS patch should be applied */
 enum
@@ -589,12 +630,17 @@ static void TOS_CreateAutoInf(void)
 			infname = "A:\\EMUDESK.INF";
 		size = sizeof(emudesk_inf);
 		contents = emudesk_inf;
-	} else {
-		/* need to match file TOS searches first */
-		if (TosVersion >= 0x0200)
-			infname = "NEWDESK.INF";
-		else
-			infname = "DESKTOP.INF";
+	}
+	/* need to match file TOS searches first */
+	else if (TosVersion >= 0x0200)
+	{
+		infname = "NEWDESK.INF";
+		size = sizeof(newdesk_inf);
+		contents = newdesk_inf;
+	}
+	else
+	{
+		infname = "DESKTOP.INF";
 		size = sizeof(desktop_inf);
 		contents = desktop_inf;
 	}
