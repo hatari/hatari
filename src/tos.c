@@ -637,6 +637,20 @@ static void TOS_CreateAutoInf(void)
 	Log_Printf(LOG_WARN, "Virtual autostart file '%s' created for '%s'.\n", infname, prgname);
 }
 
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Whether autostarting needs GEMDOS
+ * interception or Fopen() check enabling
+ */
+bool TOS_AutoStarting(autostart_t t)
+{
+	if (t == AUTOSTART_FOPEN)
+		return (bool)TosAutoStart.file;
+	else
+		return (bool)TosAutoStart.prgname;
+}
+
 /*-----------------------------------------------------------------------*/
 /**
  * If given name matches autostart file, return its handle, NULL otherwise

@@ -1844,6 +1844,12 @@ static bool GemDOS_Create(Uint32 Params)
 
 
 /*-----------------------------------------------------------------------*/
+static inline bool redirect_to_TOS(void)
+{
+	LOG_TRACE(TRACE_OS_GEMDOS|TRACE_OS_BASE, "-> to TOS\n");
+	return false;
+}
+
 /**
  * GEMDOS Open file
  * Call 0x3D
@@ -1859,6 +1865,7 @@ static bool GemDOS_Open(Uint32 Params)
 	};
 	int Drive, Index, Mode;
 	FILE *AutostartHandle;
+	bool bToTos = false;
 
 	/* Find filename */
 	pszFileName = (char *)STMemory_STAddrToPointer(STMemory_ReadLong(Params));
@@ -1873,15 +1880,19 @@ static bool GemDOS_Open(Uint32 Params)
 
 	if (!ISHARDDRIVE(Drive))
 	{
-		/* redirect to TOS */
-		LOG_TRACE(TRACE_OS_GEMDOS|TRACE_OS_BASE, "-> to TOS\n");
-		return false;
+		if (TOS_AutoStarting(AUTOSTART_FOPEN))
+			bToTos = true;
+		else
+			return redirect_to_TOS();
 	}
 
 	/* Find slot to store file handle, as need to return WORD handle for ST  */
 	Index = GemDOS_FindFreeFileHandle();
 	if (Index == -1)
 	{
+		if (bToTos)
+			return redirect_to_TOS();
+
 		/* No free handles, return error code */
 		Regs[REG_D0] = GEMDOS_ENHNDL;       /* No more handles */
 		return true;
@@ -1896,6 +1907,8 @@ static bool GemDOS_Open(Uint32 Params)
 	else
 	{
 		struct stat FileStat;
+		if (bToTos)
+			return redirect_to_TOS();
 
 		/* Convert to hard drive filename */
 		GemDOS_CreateHardDriveFileName(Drive, pszFileName,
@@ -3466,10 +3479,12 @@ void GemDOS_Boot(void)
 
 	LOG_TRACE(TRACE_OS_GEMDOS, "Gemdos_Boot() at PC 0x%X\n", M68000_GetPC() );
 
-	/* install our gemdos handler, if -e or --harddrive option used,
-	 * or user wants to do GEMDOS tracing
+	/* install our gemdos handler, if user has enabled either
+	 * GEMDOS HD, autostarting or GEMDOS tracing
 	 */
-	if (!GEMDOS_EMU_ON && !(LogTraceFlags & (TRACE_OS_GEMDOS|TRACE_OS_BASE)))
+	if (!GEMDOS_EMU_ON &&
+	    !TOS_AutoStarting(AUTOSTART_INTERCEPT) &&
+	    !(LogTraceFlags & (TRACE_OS_GEMDOS|TRACE_OS_BASE)))
 		return;
 
 	/* Get the address of the p_run variable that points to the actual basepage */
