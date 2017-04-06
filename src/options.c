@@ -870,6 +870,23 @@ Uint32 Opt_GetNoParachuteFlag(void)
 
 
 /**
+ * Do final validation for the earlier + parsed options
+ *
+ * Return false if they fail validation.
+ */
+static bool Opt_ValidateOptions(void)
+{
+	const char *err;
+
+	if ((err = TOS_AutoStartInvalidDrive()))
+	{
+		return Opt_ShowError(OPT_AUTOSTART, err, "Required autostart drive isn't enabled");
+	}
+	return true;
+}
+
+
+/**
  * Return true if given path points to an Atari program, false otherwise.
  */
 bool Opt_IsAtariProgram(const char *path)
@@ -976,7 +993,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 	{
 		/* last argument can be a non-option */
 		if (argv[i][0] != '-' && i+1 == argc)
-			return Opt_HandleArgument(argv[i]);
+			return Opt_HandleArgument(argv[i]) && Opt_ValidateOptions();
 
 		/* WhichOption() checks also that there is an argument,
 		 * so we don't need to check that below
@@ -2029,7 +2046,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 		}
 	}
 
-	return true;
+	return Opt_ValidateOptions();
 }
 
 /**

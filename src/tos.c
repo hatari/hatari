@@ -481,6 +481,76 @@ bool TOS_AutoStartSet(const char *name)
 	return true;
 }
 
+/*-----------------------------------------------------------------------*/
+/**
+ * Trivial checks on whether autostart program drive may exist.
+ *
+ * Return NULL if it could, otherwise return the invalid autostart path.
+ */
+const char *TOS_AutoStartInvalidDrive(void)
+{
+	char drive;
+	const char *path = TosAutoStart.prgname;
+
+	if (!path)
+		return NULL;
+	drive = path[0];
+
+	if (drive == 'A')
+	{
+		if (ConfigureParams.DiskImage.EnableDriveA && ConfigureParams.DiskImage.szDiskFileName[0][0])
+			return NULL;
+	}
+	else if (drive == 'B')
+	{
+		if (ConfigureParams.DiskImage.EnableDriveB && ConfigureParams.DiskImage.szDiskFileName[1][0])
+			return NULL;
+	}
+	/* exact drive checking for hard drives would require:
+	 *
+	 * For images:
+	 * - finding out what partitions each of the IDE master &
+	 *   Slave, 8 ACSI, and 8 SCSI images do have, *and*
+	 * - finding out which of those partitions the native Atari
+	 *   harddisk driver happens to support...
+	 * -> not feasible
+	 *
+	 * For GEMDOS HD:
+	 * - If multiple partitions are specified, which ones
+	 * - If not, what is the single partition drive letter
+	 *
+	 * So, just check that some harddisk is enabled for C: ->
+	 */
+
+	/* GEMDOS HD */
+	else if (ConfigureParams.HardDisk.bUseHardDiskDirectories && ConfigureParams.HardDisk.szHardDiskDirectories[0])
+	{
+		return NULL;
+	}
+	/* IDE */
+	else if (ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage && ConfigureParams.HardDisk.szIdeMasterHardDiskImage[0])
+	{
+		return NULL;
+	}
+	else if (ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage && ConfigureParams.HardDisk.szIdeMasterHardDiskImage[0])
+	{
+		return NULL;
+	}
+	else
+	{
+		/* ACSI / SCSI */
+		int i;
+		for (i = 0; i < MAX_ACSI_DEVS; i++)
+		{
+			if (ConfigureParams.Acsi[i].bUseDevice && ConfigureParams.Acsi[i].sDeviceFile[0])
+				return NULL;
+			if (ConfigureParams.Scsi[i].bUseDevice && ConfigureParams.Scsi[i].sDeviceFile[0])
+				return NULL;
+		}
+	}
+	/* error */
+	return path;
+}
 
 /*-----------------------------------------------------------------------*/
 /**

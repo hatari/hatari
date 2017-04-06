@@ -18,6 +18,7 @@ extern int nNumDrives;
 
 extern void TOS_MemorySnapShot_Capture(bool bSave);
 extern bool TOS_AutoStartSet(const char *prgname);
+extern const char *TOS_AutoStartInvalidDrive(void);
 extern FILE *TOS_AutoStartOpen(const char *filename);
 extern bool TOS_AutoStartClose(FILE *fp);
 extern int TOS_LoadImage(void);
