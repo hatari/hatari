@@ -34,6 +34,7 @@ Emulator:
 - Fix: off-by-one error in ACSI image file name handling
 - Fix: Normal users cannot use tmpfile() directly under Windows
 - Fix: rate-limit DSP illegal instruction warnings output
+- Fix: Use separate INF files for TOS v1 and v2+ autostarting
 - Debugger:
   - Add "CycleCounter" variable
   - Add "info dta [addr]" command
@@ -53,6 +54,8 @@ Fixed Falcon games:
   (Videl video counter)
 - Boom preview, Lasers and Hommes, Tank Blaster
   (68030 instr-cache)
+- Aazohm Krypth, Men at War, Push It, Running, Sky Fall, Sworm
+  (autostarting)
 
 Fixed Falcon demos:
 - Bound 2, E.K.O system (memory access timings)
@@ -64,12 +67,14 @@ Fixed Falcon demos:
   Geranium, Hex Pistols, Hmmm, Oergs, Polygon Discount, Terrorize your
   soul, Warum, Virtual City (68030 instr-cache)
 - Terrorize your soul (DSP warnings 100x slowdown)
+- Firestarter, Virtual City, Whirlpool
+  (autostarting with packed demos)
 
 Fixed TT versions of demos:
 - 4getful, Beams (68030 instr-cache)
 
 Fixed programs for Falcon:
-- Hextracker (Videl video counter)
+- Hextracker (Videl video counter, when not auto-started)
 
 Fixed ST/STE demos:
 - Sprite32 by Leonard (RESTART_VIDEO_COUNTER on line 310/260)
