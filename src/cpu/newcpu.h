@@ -26,7 +26,7 @@
 #define M68000_EXC_SRC_INT_DSP	4	/* DSP interrupt exception */
 
 
-/* Special flags */
+/* Special flags (from custom.h) */
 #define SPCFLAG_DEBUGGER 1
 #define SPCFLAG_STOP 2
 #define SPCFLAG_BUSERROR 4
@@ -211,14 +211,14 @@ struct regstruct
 #ifdef JIT
 	fpdata fp_result;
 #endif
-	uae_u32 fp_result_status;
 	uae_u32 fpcr, fpsr, fpiar;
 	uae_u32 fpu_state;
 	uae_u32 fpu_exp_state;
-	fpdata exp_src1, exp_src2;
-	uae_u32 exp_pack[3];
-	uae_u16 exp_opcode, exp_extra, exp_type;
-	uae_u16 exp_size;
+	uae_u16 fp_opword;
+	uaecptr fp_ea;
+	uae_u32 fp_exp_pend, fp_unimp_pend;
+	bool fpu_exp_pre;
+	bool fp_unimp_ins;
 	bool fp_exception;
 	bool fp_branch;
 #endif
@@ -246,7 +246,11 @@ struct regstruct
 	int pipeline_pos;
 	int pipeline_r8[2];
 	int pipeline_stop;
-	int ce020memcycles;
+
+	int ce020endcycle;
+	int ce020startcycle;
+	int ce020prefetchendcycle;
+
 	int ce020extracycles;
 	bool ce020memcycle_data;
 	int ce020_tail;
@@ -739,6 +743,7 @@ extern bool can_cpu_tracer (void);
 #define CPU_HALT_PCI_CONFLICT 8
 #define CPU_HALT_CPU_STUCK 9
 #define CPU_HALT_SSP_IN_NON_EXISTING_ADDRESS 10
+#define CPU_HALT_INVALID_START_ADDRESS 11
 
 void cpu_semaphore_get(void);
 void cpu_semaphore_release(void);

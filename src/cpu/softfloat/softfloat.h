@@ -97,7 +97,7 @@ this code that are retained.
  */
 typedef uint8_t flag;
 
-#define LIT64( a ) a##LL
+#define LIT64( a ) a##ULL
 
 /*----------------------------------------------------------------------------
 | Software IEC/IEEE floating-point ordering relations
@@ -152,11 +152,9 @@ typedef uint64_t float64;
 #define const_float64(x) (x)
 #endif
 typedef struct {
-    uint64_t low;
     uint16_t high;
+    uint64_t low;
 } floatx80;
-#define make_floatx80(exp, mant) ((floatx80) { mant, exp })
-#define make_floatx80_init(exp, mant) { .low = mant, .high = exp }
 typedef struct {
 #ifdef HOST_WORDS_BIGENDIAN
     uint64_t high, low;
@@ -164,8 +162,6 @@ typedef struct {
     uint64_t low, high;
 #endif
 } float128;
-#define make_float128(high_, low_) ((float128) { .high = high_, .low = low_ })
-#define make_float128_init(high_, low_) { .high = high_, .low = low_ }
 
 /*----------------------------------------------------------------------------
 | Software IEC/IEEE floating-point underflow tininess-detection mode.
@@ -190,16 +186,31 @@ enum {
 | Software IEC/IEEE floating-point exception flags.
 *----------------------------------------------------------------------------*/
 enum {
-    float_flag_invalid   =  1,
-	float_flag_denormal = 2,
-    float_flag_divbyzero =  4,
-    float_flag_overflow  =  8,
-    float_flag_underflow = 16,
-    float_flag_inexact   = 32,
-	float_flag_signaling = 64
-//    float_flag_input_denormal = 64,
-//    float_flag_output_denormal = 128
+    float_flag_invalid   = 0x01,
+	float_flag_denormal  = 0x02,
+    float_flag_divbyzero = 0x04,
+    float_flag_overflow  = 0x08,
+    float_flag_underflow = 0x10,
+    float_flag_inexact   = 0x20,
+	float_flag_signaling = 0x40,
+	float_flag_decimal =   0x80
 };
+
+/*----------------------------------------------------------------------------
+ | Variables for storing sign, exponent and significand of overflowed or 
+ | underflowed extended double-precision floating-point value.
+ | Variables for storing sign, exponent and significand of internal extended 
+ | double-precision floating-point value for external use.
+ *----------------------------------------------------------------------------*/
+
+extern flag floatx80_internal_sign;
+extern int32_t floatx80_internal_exp;
+extern uint64_t floatx80_internal_sig;
+extern int32_t floatx80_internal_exp0;
+extern uint64_t floatx80_internal_sig0;
+extern uint64_t floatx80_internal_sig1;
+extern int8_t floatx80_internal_precision;
+extern int8_t floatx80_internal_mode;
 
 typedef struct float_status {
     signed char float_detect_tininess;
@@ -213,6 +224,18 @@ typedef struct float_status {
     flag default_nan_mode;
     flag snan_bit_is_one;
 } float_status;
+
+/*----------------------------------------------------------------------------
+ | Function for getting sign, exponent and significand of extended
+ | double-precision floating-point intermediate result for external use.
+ *----------------------------------------------------------------------------*/
+floatx80 getFloatInternalOverflow( void );
+floatx80 getFloatInternalUnderflow( void );
+floatx80 getFloatInternalRoundedAll( void );
+floatx80 getFloatInternalRoundedSome( void );
+floatx80 getFloatInternalUnrounded( void );
+floatx80 getFloatInternalFloatx80( void );
+uint64_t getFloatInternalGRS( void );
 
 static inline void set_float_detect_tininess(int val, float_status *status)
 {
@@ -330,7 +353,9 @@ enum {
 /*----------------------------------------------------------------------------
 | Software IEC/IEEE integer-to-floating-point conversion routines.
 *----------------------------------------------------------------------------*/
-floatx80 int32_to_floatx80(int32_t, float_status *status);
+
+floatx80 int32_to_floatx80(int32_t);
+floatx80 int64_to_floatx80(int64_t);
 
 /*----------------------------------------------------------------------------
 | Software IEC/IEEE single-precision conversion routines.
@@ -342,6 +367,7 @@ floatx80 float32_to_floatx80_allowunnormal(float32, float_status *status);
 | Software IEC/IEEE double-precision conversion routines.
 *----------------------------------------------------------------------------*/
 floatx80 float64_to_floatx80(float64, float_status *status);
+
 floatx80 float64_to_floatx80_allowunnormal( float64 a, float_status *status );
 
 /*----------------------------------------------------------------------------
@@ -354,11 +380,12 @@ int8_t floatx80_to_int8(floatx80, float_status *status);
 #endif
 int32_t floatx80_to_int32_round_to_zero(floatx80, float_status *status);
 int64_t floatx80_to_int64(floatx80, float_status *status);
-int64_t floatx80_to_int64_round_to_zero(floatx80, float_status *status);
 float32 floatx80_to_float32(floatx80, float_status *status);
 float64 floatx80_to_float64(floatx80, float_status *status);
 #ifdef SOFTFLOAT_68K
 floatx80 floatx80_to_floatx80( floatx80, float_status *status);
+floatx80 floatdecimal_to_floatx80(floatx80, float_status *status);
+floatx80 floatx80_to_floatdecimal(floatx80, int32_t*, float_status *status);
 #endif
 
 uint64_t extractFloatx80Frac( floatx80 a );
@@ -371,14 +398,11 @@ floatx80 floatx80_round_to_float64( floatx80, float_status *status );
 floatx80 floatx80_round32( floatx80, float_status *status);
 floatx80 floatx80_round64( floatx80, float_status *status);
 
-#ifdef SOFTFLOAT_68K
-//flag floatx80_is_zero( floatx80 );
-//flag floatx80_is_infinity( floatx80 );
-//flag floatx80_is_negative( floatx80 );
-//flag floatx80_is_denormal( floatx80 );
-//flag floatx80_is_unnormal( floatx80 );
-//flag floatx80_is_normal( floatx80 );
+flag floatx80_eq( floatx80, floatx80, float_status *status);
+flag floatx80_le( floatx80, floatx80, float_status *status);
+flag floatx80_lt( floatx80, floatx80, float_status *status);
 
+#ifdef SOFTFLOAT_68K
 // functions are in softfloat.c
 floatx80 floatx80_move( floatx80 a, float_status *status );
 floatx80 floatx80_abs( floatx80 a, float_status *status );
@@ -393,25 +417,25 @@ floatx80 floatx80_sgldiv( floatx80 a, floatx80 b, float_status *status );
 floatx80 floatx80_cmp( floatx80 a, floatx80 b, float_status *status );
 floatx80 floatx80_tst( floatx80 a, float_status *status );
 
-// functions are in softfloat_extension.c
-floatx80 floatx80_acos_check(floatx80 a, flag *e, float_status *status);
-floatx80 floatx80_asin_check(floatx80 a, flag *e, float_status *status);
-floatx80 floatx80_atan_check(floatx80 a, flag *e, float_status *status);
-floatx80 floatx80_atanh_check(floatx80 a, flag *e, float_status *status);
-floatx80 floatx80_cos_check(floatx80 a, flag *e, float_status *status);
-floatx80 floatx80_cosh_check(floatx80 a, flag *e, float_status *status);
-floatx80 floatx80_etox_check(floatx80 a, flag *e, float_status *status);
-floatx80 floatx80_etoxm1_check(floatx80 a, flag *e, float_status *status);
-floatx80 floatx80_log10_check(floatx80 a, flag *e, float_status *status);
-floatx80 floatx80_log2_check(floatx80 a, flag *e, float_status *status);
-floatx80 floatx80_logn_check(floatx80 a, flag *e, float_status *status);
-floatx80 floatx80_lognp1_check(floatx80 a, flag *e, float_status *status);
-floatx80 floatx80_sin_check(floatx80 a, flag *e, float_status *status);
-floatx80 floatx80_sinh_check(floatx80 a, flag *e, float_status *status);
-floatx80 floatx80_tan_check(floatx80 a, flag *e, float_status *status);
-floatx80 floatx80_tanh_check(floatx80 a, flag *e, float_status *status);
-floatx80 floatx80_tentox_check(floatx80 a, flag *e, float_status *status);
-floatx80 floatx80_twotox_check(floatx80 a, flag *e, float_status *status);
+// functions are in softfloat_fpsp.c
+floatx80 floatx80_acos(floatx80 a, float_status *status);
+floatx80 floatx80_asin(floatx80 a, float_status *status);
+floatx80 floatx80_atan(floatx80 a, float_status *status);
+floatx80 floatx80_atanh(floatx80 a, float_status *status);
+floatx80 floatx80_cos(floatx80 a, float_status *status);
+floatx80 floatx80_cosh(floatx80 a, float_status *status);
+floatx80 floatx80_etox(floatx80 a, float_status *status);
+floatx80 floatx80_etoxm1(floatx80 a, float_status *status);
+floatx80 floatx80_log10(floatx80 a, float_status *status);
+floatx80 floatx80_log2(floatx80 a, float_status *status);
+floatx80 floatx80_logn(floatx80 a, float_status *status);
+floatx80 floatx80_lognp1(floatx80 a, float_status *status);
+floatx80 floatx80_sin(floatx80 a, float_status *status);
+floatx80 floatx80_sinh(floatx80 a, float_status *status);
+floatx80 floatx80_tan(floatx80 a, float_status *status);
+floatx80 floatx80_tanh(floatx80 a, float_status *status);
+floatx80 floatx80_tentox(floatx80 a, float_status *status);
+floatx80 floatx80_twotox(floatx80 a, float_status *status);
 #endif
 
 // functions originally internal to softfloat.c
@@ -419,9 +443,6 @@ void normalizeFloatx80Subnormal( uint64_t aSig, int32_t *zExpPtr, uint64_t *zSig
 floatx80 packFloatx80( flag zSign, int32_t zExp, uint64_t zSig );
 floatx80 roundAndPackFloatx80(int8_t roundingPrecision, flag zSign, int32_t zExp, uint64_t zSig0, uint64_t zSig1, float_status *status);
 
-// functions are in softfloat-specialize.h
-//floatx80 propagateFloatx80NaNOneArg( floatx80 a, float_status *status );
-//floatx80 propagateFloatx80NaN( floatx80 a, floatx80 b, float_status *status );
 /*----------------------------------------------------------------------------
 | Software IEC/IEEE extended double-precision operations.
 *----------------------------------------------------------------------------*/
@@ -431,9 +452,8 @@ floatx80 floatx80_sub(floatx80, floatx80, float_status *status);
 floatx80 floatx80_mul(floatx80, floatx80, float_status *status);
 floatx80 floatx80_div(floatx80, floatx80, float_status *status);
 floatx80 floatx80_sqrt(floatx80, float_status *status);
-
-//flag floatx80_is_signaling_nan(floatx80);
 floatx80 floatx80_normalize(floatx80);
+floatx80 floatx80_denormalize(floatx80, flag);
 
 static inline int floatx80_is_zero_or_denormal(floatx80 a)
 {
@@ -466,10 +486,5 @@ static inline bool floatx80_invalid_encoding(floatx80 a)
 #define floatx80_pi make_floatx80(0x4000, 0xc90fdaa22168c235LL)
 #define floatx80_half make_floatx80(0x3ffe, 0x8000000000000000LL)
 #define floatx80_infinity make_floatx80(0x7fff, 0x8000000000000000LL)
-
-/*----------------------------------------------------------------------------
-| The pattern for a default generated extended double-precision NaN.
-*----------------------------------------------------------------------------*/
-//floatx80 floatx80_default_nan(float_status *status);
 
 #endif /* SOFTFLOAT_H */

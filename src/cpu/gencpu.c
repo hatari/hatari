@@ -104,7 +104,7 @@ static const char *srcblrmw, *srcwlrmw, *srcllrmw;
 static const char *dstblrmw, *dstwlrmw, *dstllrmw;
 static const char *srcbrmw, *srcwrmw, *srclrmw;
 static const char *dstbrmw, *dstwrmw, *dstlrmw;
-static const char *prefetch_long, *prefetch_word;
+static const char *prefetch_long, *prefetch_word, *prefetch_opcode;
 static const char *srcli, *srcwi, *srcbi, *nextl, *nextw;
 static const char *srcld, *dstld;
 static const char *srcwd, *dstwd;
@@ -949,10 +949,9 @@ static void addopcycles_ce20 (int h, int t, int c, int subhead)
 		}
 		if (1) {
 			if (h > 0) {
-				printf ("\tif (regs.ce020memcycles > %d * cpucycleunit)\n", h);
-				printf ("\t\tregs.ce020memcycles = %d * cpucycleunit;\n", h);
+				printf ("\tlimit_cycles_ce020(%d);\n", h);
 			} else {
-				printf ("\tregs.ce020memcycles = 0;\n");
+				printf ("\tlimit_all_cycles_ce020();\n");
 			}
 		}
 	}
@@ -996,8 +995,9 @@ static void addopcycles_ce20 (int h, int t, int c, int subhead)
 
 	if (h < 0)
 		h = 0;
-	
-	//c = 0;
+
+	if (c < 8) // HACK
+		c = 0;
 	
 	// c = internal cycles needed after head cycles and before tail cycles. Not total cycles.
 	addcycles_ce020_5 ("op", h, t, c - h - t, -subhead);
@@ -1018,22 +1018,25 @@ static void addopcycles_ce20 (int h, int t, int c, int subhead)
 
 static void addop_ce020 (struct instr *curi, int subhead)
 {
-	if (!isce020())
-		return;
-	int h = curi->head;
-	int t = curi->tail;
-	int c = curi->clocks;
-#if 0
-	if ((((curi->sduse & 2) && !isreg (curi->smode)) || (((curi->sduse >> 4) & 2) && !isreg (curi->dmode))) && using_waitstates) {
-		t += using_waitstates;
-		c += using_waitstates;
+	if (isce020()) {
+		int h = curi->head;
+		int t = curi->tail;
+		int c = curi->clocks;
+	#if 0
+		if ((((curi->sduse & 2) && !isreg (curi->smode)) || (((curi->sduse >> 4) & 2) && !isreg (curi->dmode))) && using_waitstates) {
+			t += using_waitstates;
+			c += using_waitstates;
+		}
+	#endif
+		addopcycles_ce20 (h, t, c, -subhead);
 	}
-#endif
-	addopcycles_ce20 (h, t, c, -subhead);
 }
 
 static void addcycles_ea_ce020_5 (const char *ea, int h, int t, int c, int oph)
 {
+	if (!isce020())
+		return;
+
 	head_cycs (h + oph);
 
 //	if (!h && !h && !c && !oph)
@@ -1041,7 +1044,7 @@ static void addcycles_ea_ce020_5 (const char *ea, int h, int t, int c, int oph)
 
 	c = c - h - t;
 
-	//c = 0;
+	c = 0; // HACK
 
 	if (!oph) {
 		printf ("\t/* ea H:%d,T:%d,C:%d %s */\n", h, t, c, ea);
@@ -1058,10 +1061,9 @@ static void addcycles_ea_ce020_5 (const char *ea, int h, int t, int c, int oph)
 	}
 
 	if (h) {
-		printf ("\tif (regs.ce020memcycles > %d * cpucycleunit)\n", h);
-		printf ("\t\tregs.ce020memcycles = %d * cpucycleunit;\n", h);
+		printf ("\tlimit_cycles_ce020(%d);\n", h);
 	} else {
-		printf ("\tregs.ce020memcycles = 0;\n");
+		printf ("\tlimit_all_cycles_ce020();\n");
 	}
 
 	if (1 && c > 0) {
@@ -1785,7 +1787,7 @@ static void genamode (struct instr *curi, amodes mode, const char *reg, wordsize
 		// we have fixup already active = this genamode call is destination mode and we can now clear previous source fixup.
 		clearmmufixup (0);
 	}
-	if (isce020() && curi)
+	if (curi)
 		addop_ce020 (curi, subhead);
 }
 
@@ -2794,6 +2796,7 @@ static void resetvars (void)
 	got_ea_ce020 = false;
 	
 	prefetch_long = NULL;
+	prefetch_opcode = NULL;
 	srcli = NULL;
 	srcbi = NULL;
 	disp000 = "get_disp_ea_000";
@@ -2850,6 +2853,7 @@ static void resetvars (void)
 			disp020 = "x_get_disp_ea_ce020";
 			prefetch_word = "get_word_ce020_prefetch";
 			prefetch_long = "get_long_ce020_prefetch";
+			prefetch_opcode = "get_word_ce020_prefetch_opcode";
 			srcli = "x_get_ilong";
 			srcwi = "x_get_iword";
 			srcbi = "x_get_ibyte";
@@ -2867,6 +2871,7 @@ static void resetvars (void)
 			disp020 = "x_get_disp_ea_ce030";
 			prefetch_long = "get_long_ce030_prefetch";
 			prefetch_word = "get_word_ce030_prefetch";
+			prefetch_opcode = "get_word_ce030_prefetch_opcode";
 			srcli = "x_get_ilong";
 			srcwi = "x_get_iword";
 			srcbi = "x_get_ibyte";
@@ -3106,6 +3111,8 @@ static void resetvars (void)
 		dstwlrmw = dstw;
 		dstllrmw = dstl;
 	}
+	if (!prefetch_opcode)
+		prefetch_opcode = prefetch_word;
 
 }
 
@@ -3675,8 +3682,10 @@ static void gen_opcode (unsigned int opcode)
 				sync_m68k_pc ();
 
 			} else {
+
 				int prefetch_done = 0, flags;
 				int dualprefetch = curi->dmode == absl && (curi->smode != Dreg && curi->smode != Areg && curi->smode != imm);
+
 				genamode (curi, curi->smode, "srcreg", curi->size, "src", 1, 0, 0);
 				flags = GF_MOVE | GF_APDI;
 				//if (curi->size == sz_long && (curi->smode == Dreg || curi->smode == Areg))
@@ -3917,7 +3926,10 @@ static void gen_opcode (unsigned int opcode)
 		    printf ("\t\tif (frame == 0x0) { m68k_areg (regs, 7) += offset; break; }\n");
 		    printf ("\t\telse if (frame == 0x1) { m68k_areg (regs, 7) += offset; }\n");
 		    printf ("\t\telse if (frame == 0x2) { m68k_areg (regs, 7) += offset + 4; break; }\n");
-		    if (using_mmu == 68060) {
+			if (cpu_level >= 4) {
+				printf ("\t\telse if (frame == 0x3) { m68k_areg (regs, 7) += offset + 4; break; }\n");
+			}
+   		    if (using_mmu == 68060) {
 				printf ("\t\telse if (frame == 0x4) { m68k_do_rte_mmu060 (a); m68k_areg (regs, 7) += offset + 8; break; }\n");
 			} else if (cpu_level >= 4) {
 				printf ("\t\telse if (frame == 0x4) { m68k_areg (regs, 7) += offset + 8; break; }\n");
@@ -5532,6 +5544,12 @@ end:
 	sync_m68k_pc ();
 	did_prefetch = 0;
 	ipl_fetched = 0;
+	if (cpu_level >= 2 && !using_ce && !using_ce020) {
+		int v = curi->clocks;
+		if (v < 4)
+			v = 4;
+		count_cycles = insn_n_cycles = v;
+	}
 }
 
 static void generate_includes (FILE * f, int id)

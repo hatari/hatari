@@ -1129,7 +1129,7 @@ static uae_u8 REGPARAM3 *IOmem_xlate(uaecptr addr)
 
 /* **** Address banks **** */
 
-static addrbank dummy_bank =
+addrbank dummy_bank =
 {
     dummy_lget, dummy_wget, dummy_bget,
     dummy_lput, dummy_wput, dummy_bput,

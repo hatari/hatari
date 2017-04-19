@@ -1,8 +1,11 @@
 
-extern void fp_init_native(void);
-extern void fp_init_softfloat(void);
-extern void fpsr_set_exception(uae_u32 exception);
-extern void fpu_modechange(void);
+/* single   : S  8*E 23*F */
+/* double   : S 11*E 52*F */
+/* extended : S 15*E 64*F */
+/* E = 0 & F = 0 -> 0 */
+/* E = MAX & F = 0 -> Infin */
+/* E = MAX & F # 0 -> NotANumber */
+/* E = biased by 127 (single) ,1023 (double) ,16383 (extended) */
 
 #define FPSR_BSUN       0x00008000
 #define FPSR_SNAN       0x00004000
@@ -13,12 +16,18 @@ extern void fpu_modechange(void);
 #define FPSR_INEX2      0x00000200
 #define FPSR_INEX1      0x00000100
 
+extern void fp_init_native(void);
+extern void fp_init_softfloat(void);
+extern void fpsr_set_exception(uae_u32 exception);
+extern void fpu_modechange(void);
+
 #if defined(CPU_i386) || defined(CPU_x86_64)
 extern void init_fpucw_x87(void);
 #endif
 
 typedef void (*FPP_ABQS)(fpdata*, fpdata*, uae_u64*, uae_u8*);
 typedef void (*FPP_AB)(fpdata*, fpdata*);
+typedef void (*FPP_ABP)(fpdata*, fpdata*, int);
 typedef void (*FPP_A)(fpdata*);
 
 typedef bool (*FPP_IS)(fpdata*);
@@ -41,7 +50,12 @@ typedef void (*FPP_FROM_DOUBLE)(fpdata*, uae_u32*, uae_u32*);
 typedef void (*FPP_TO_EXTEN)(fpdata*, uae_u32, uae_u32, uae_u32);
 typedef void (*FPP_FROM_EXTEN)(fpdata*, uae_u32*, uae_u32*, uae_u32*);
 
-typedef const TCHAR* (*FPP_PRINT)(fpdata*);
+typedef void (*FPP_PACK)(fpdata*, uae_u32*, int);
+
+typedef const TCHAR* (*FPP_PRINT)(fpdata*,int);
+typedef uae_u32 (*FPP_GET32)(void);
+
+typedef void (*FPP_DENORMALIZE)(fpdata*,int);
 
 extern FPP_PRINT fpp_print;
 
@@ -64,6 +78,9 @@ extern FPP_TO_NATIVE fpp_to_native;
 extern FPP_TO_INT fpp_to_int;
 extern FPP_FROM_INT fpp_from_int;
 
+extern FPP_PACK fpp_to_pack;
+extern FPP_PACK fpp_from_pack;
+
 extern FPP_TO_SINGLE fpp_to_single;
 extern FPP_FROM_SINGLE fpp_from_single;
 extern FPP_TO_DOUBLE fpp_to_double;
@@ -79,11 +96,19 @@ extern FPP_A fpp_round32;
 extern FPP_A fpp_round64;
 
 extern FPP_A fpp_normalize;
+extern FPP_DENORMALIZE fpp_denormalize;
+extern FPP_A fpp_get_internal_overflow;
+extern FPP_A fpp_get_internal_underflow;
+extern FPP_A fpp_get_internal_round_all;
+extern FPP_A fpp_get_internal_round;
+extern FPP_A fpp_get_internal_round_exten;
+extern FPP_A fpp_get_internal;
+extern FPP_GET32 fpp_get_internal_grs;
 
 extern FPP_AB fpp_int;
 extern FPP_AB fpp_sinh;
 extern FPP_AB fpp_intrz;
-extern FPP_AB fpp_sqrt;
+extern FPP_ABP fpp_sqrt;
 extern FPP_AB fpp_lognp1;
 extern FPP_AB fpp_etoxm1;
 extern FPP_AB fpp_tanh;
@@ -98,22 +123,22 @@ extern FPP_AB fpp_tentox;
 extern FPP_AB fpp_logn;
 extern FPP_AB fpp_log10;
 extern FPP_AB fpp_log2;
-extern FPP_AB fpp_abs;
+extern FPP_ABP fpp_abs;
 extern FPP_AB fpp_cosh;
-extern FPP_AB fpp_neg;
+extern FPP_ABP fpp_neg;
 extern FPP_AB fpp_acos;
 extern FPP_AB fpp_cos;
 extern FPP_AB fpp_getexp;
 extern FPP_AB fpp_getman;
-extern FPP_AB fpp_div;
+extern FPP_ABP fpp_div;
 extern FPP_ABQS fpp_mod;
-extern FPP_AB fpp_add;
-extern FPP_AB fpp_mul;
+extern FPP_ABP fpp_add;
+extern FPP_ABP fpp_mul;
 extern FPP_ABQS fpp_rem;
 extern FPP_AB fpp_scale;
-extern FPP_AB fpp_sub;
+extern FPP_ABP fpp_sub;
 extern FPP_AB fpp_sgldiv;
 extern FPP_AB fpp_sglmul;
 extern FPP_AB fpp_cmp;
 extern FPP_AB fpp_tst;
-extern FPP_AB fpp_move;
+extern FPP_ABP fpp_move;

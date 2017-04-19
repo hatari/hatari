@@ -721,12 +721,10 @@ extern void REGPARAM3 chipmem_bput (uaecptr, uae_u32) REGPARAM;
 extern uae_u32 REGPARAM3 chipmem_agnus_wget (uaecptr) REGPARAM;
 extern void REGPARAM3 chipmem_agnus_wput (uaecptr, uae_u32) REGPARAM;
 
+extern addrbank dummy_bank;
+
 /* 68020+ Chip RAM DMA contention emulation */
 extern void REGPARAM3 chipmem_bput_c2 (uaecptr, uae_u32) REGPARAM;
-
-#ifndef WINUAE_FOR_HATARI
-extern addrbank dummy_bank;
-#endif
 
 extern uae_u32 (REGPARAM3 *chipmem_lget_indirect)(uaecptr) REGPARAM;
 extern uae_u32 (REGPARAM3 *chipmem_wget_indirect)(uaecptr) REGPARAM;

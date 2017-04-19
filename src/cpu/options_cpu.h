@@ -475,7 +475,6 @@ struct uae_prefs {
 	bool comp_constjump;
 	int cachesize;
 	bool fpu_strict;
-
 	bool fpu_softfloat;
 
 #ifndef WINUAE_FOR_HATARI
@@ -508,6 +507,8 @@ struct uae_prefs {
 	bool lightboost_strobo;
 	int lightboost_strobo_ratio;
 	bool gfx_grayscale;
+	bool lightpen_crosshair;
+	int lightpen_offset[2];
 
 	struct gfx_filterdata gf[2];
 
