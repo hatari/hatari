@@ -404,6 +404,9 @@ flag floatx80_lt( floatx80, floatx80, float_status *status);
 
 #ifdef SOFTFLOAT_68K
 // functions are in softfloat.c
+floatx80 roundSaveFloatx80Internal( int8_t roundingPrecision, flag zSign, int32_t zExp, uint64_t zSig0, uint64_t zSig1, float_status *status );
+void getRoundedFloatInternal( int8_t roundingPrecision, flag *pzSign, int32_t *pzExp, uint64_t *pzSig );
+floatx80 roundSigAndPackFloatx80( int8_t roundingPrecision, flag zSign, int32_t zExp, uint64_t zSig0, uint64_t zSig1, float_status *status );
 floatx80 floatx80_move( floatx80 a, float_status *status );
 floatx80 floatx80_abs( floatx80 a, float_status *status );
 floatx80 floatx80_neg( floatx80 a, float_status *status );

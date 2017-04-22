@@ -456,7 +456,7 @@ static void fpsr_check_arithmetic_exception(uae_u32 mask, fpdata *src, uae_u32 o
 			regs.fpu_exp_state = 1; // 68040 UNIMP frame
 
 			uae_u32 reg = (extra >> 7) & 7;
-			uae_u32 size = (extra >> 10) & 7;
+			int size = (extra >> 10) & 7;
 
 			fsave_data.fpiarcu = regs.fpiar;
 
@@ -1874,6 +1874,8 @@ void fpuop_save (uae_u32 opcode)
 	if (fault_if_no_fpu (opcode, 0, ad, pc))
 		return;
 
+//	write_log(_T("FSAVE %08x %08x\n"), M68K_GETPC, ad);
+
 	if (currprefs.fpu_model == 68060) {
 
 		/* 12 byte 68060 NULL/IDLE/EXCP frame.  */
@@ -2100,7 +2102,7 @@ void fpuop_restore (uae_u32 opcode)
 	int fpu_version = get_fpu_version();
 	int frame_version;
 	uaecptr pc = m68k_getpc () - 2;
-	uae_u32 ad;
+	uae_u32 ad, ad_orig;
 	uae_u32 d;
 
 	regs.fp_exception = false;
@@ -2119,7 +2121,10 @@ void fpuop_restore (uae_u32 opcode)
 
 	if (fault_if_no_fpu (opcode, 0, ad, pc))
 		return;
+	ad_orig = ad;
 	regs.fpiar = pc;
+
+//	write_log(_T("FRESTORE %08x %08x\n"), M68K_GETPC, ad);
 
 	// FRESTORE does not support predecrement
 
@@ -2150,7 +2155,7 @@ void fpuop_restore (uae_u32 opcode)
 				regs.fp_exp_pend = 48 + v;
 			}
 		} else if (ff) {
-			write_log (_T("FRESTORE invalid frame format %02X!\n"), ff);
+			write_log (_T("FRESTORE invalid frame format %02X! ADDR=%08x\n"), ff, ad_orig);
 			Exception(14);
 			return;
 		} else {
@@ -2219,7 +2224,7 @@ void fpuop_restore (uae_u32 opcode)
 						
 						fpsr_check_arithmetic_exception(0, &src, regs.fp_opword, cmdreg1b, regs.fp_ea);
 					} else {
-						write_log (_T("FRESTORE resume of opclass %d instruction not supported!\n"), opclass);
+						write_log (_T("FRESTORE resume of opclass %d instruction not supported %08x\n"), opclass, ad_orig);
 					}
 				}
 
@@ -2232,7 +2237,7 @@ void fpuop_restore (uae_u32 opcode)
 				regs.fpu_state = 1;
 				regs.fpu_exp_state = 0;
 			} else {
-				write_log (_T("FRESTORE invalid frame size %02X!\n"), frame_size);
+				write_log (_T("FRESTORE invalid frame size %02X %08x\n"), frame_size, ad_orig);
 
 				Exception(14);
 				return;
@@ -2241,7 +2246,7 @@ void fpuop_restore (uae_u32 opcode)
 		} else if (frame_version == 0x00) { // null frame
 			fpu_null();
 		} else {
-			write_log (_T("FRESTORE invalid frame version %02X!\n"), frame_version);
+			write_log (_T("FRESTORE invalid frame version %02X %08x\n"), frame_version, ad_orig);
 			Exception(14);
 			return;
 		}
@@ -2279,17 +2284,17 @@ void fpuop_restore (uae_u32 opcode)
 					regs.fp_exp_pend = 0;
 				}
 			} else if (frame_size == 0xB4 || frame_size == 0xD4) {
-				write_log (_T("FRESTORE of busy frame not supported\n"));
+				write_log (_T("FRESTORE of busy frame not supported %08x\n"), ad_orig);
 				ad += frame_size;
 			} else {
-				write_log (_T("FRESTORE invalid frame size %02X!\n"), frame_size);
+				write_log (_T("FRESTORE invalid frame size %02X %08x\n"), frame_size, ad_orig);
 				Exception(14);
 				return;
 			}
 		} else if (frame_version == 0x00) { // null frame
 			fpu_null();
 		} else {
-			write_log (_T("FRESTORE invalid frame version %02X!\n"), frame_version);
+			write_log (_T("FRESTORE invalid frame version %02X %08x\n"), frame_version, ad_orig);
 			Exception(14);
 			return;
 		}
