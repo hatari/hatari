@@ -26,19 +26,39 @@ BUILD_CONFIG = -m --machine tt --tos $(BUILD_TOS)
 DIR = disk
 
 # AHCC related files expected for building by disk/ahcc-* hconsole scripts
-AHCC_FILES = $(DIR)/ahcc_p.ttp $(DIR)/include $(DIR)/lib
+AHCC_FILES  = $(DIR)/ahcc_p.ttp $(DIR)/include $(DIR)/lib
+BUILD_TOOLS = $(AHCC_FILES) $(BUILD_TOS)
+
+.PHONY: toolcheck
+
+
+# Building test programs requires:
+# - EmuTOS, AHCC and installed Hatari
+#
+# before running make:
+# - symlink etos512k.img and ahcc_p.ttp + its include & lib dirs
+#   under $(DIR)/ subdir
+#
+# -> otherwise toolcheck fails
+
+toolcheck:
+	@which hatari
+	@for i in $(BUILD_TOOLS); do \
+		if [ \! -e $$i ]; then \
+			echo "ERROR: required re-build file '$$i' missing!"; \
+			false; \
+		fi; \
+	done
+
+
+# build the full and minimal GEMDOS emu testers.
 
 
 GEMDOS_TEST   = $(DIR)/GEMDOS.PRG
 GEMDOS_SCRIPT = $(DIR)/ahcc-gemdos
-GEMDOS_DEP    = $(DIR)/gemdos.c $(DIR)/common.c $(DIR)/gemdos.prj $(AHCC_FILES) $(BUILD_TOS)
+GEMDOS_DEP    = $(DIR)/gemdos.c $(DIR)/common.c $(DIR)/gemdos.prj toolcheck
 
-# build the full GEMDOS emu tester.
-# requires:
-# - EmuTOS, AHCC and installed Hatari
-# before running make:
-# - symlink etos512k.img and ahcc_p.ttp + its include & lib dirs
-#   under $(DIR)/ subdir
+# build the full GEMDOS tester
 $(GEMDOS_TEST): $(GEMDOS_DEP)
 	$(RM) $(DIR)/*.O $(DIR)/*.MAP $(DIR)/*.tmp
 	../../tools/hconsole/hconsole.py $(GEMDOS_SCRIPT) -- $(BUILD_CONFIG) $(DIR)
@@ -47,9 +67,9 @@ $(GEMDOS_TEST): $(GEMDOS_DEP)
 
 MINIMAL_TEST   = $(DIR)/MINIMAL.PRG
 MINIMAL_SCRIPT = $(DIR)/ahcc-minimal
-MINIMAL_DEP    = $(DIR)/minimal.c $(DIR)/common.c $(DIR)/minimal.prj $(AHCC_FILES) $(BUILD_TOS)
+MINIMAL_DEP    = $(DIR)/minimal.c $(DIR)/common.c $(DIR)/minimal.prj toolcheck
 
-# build the minimal tester
+# build the minimal GEMDOS tester
 $(MINIMAL_TEST): $(MINIMAL_DEP)
 	$(RM) $(DIR)/*.O $(DIR)/*.MAP $(DIR)/*.tmp
 	../../tools/hconsole/hconsole.py $(MINIMAL_SCRIPT) -- $(BUILD_CONFIG) $(DIR)
