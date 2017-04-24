@@ -909,6 +909,7 @@ void FDC_Reset ( bool bCold )
 	FDC.CommandType = 0;
 	FDC.InterruptCond = 0;
 	FDC.IRQ_Signal = 0;
+	FDC_ClearIRQ();					/* Propagate IRQ signal to MFP GPIP5 */
 
 	FDC.IndexPulse_Counter = 0;
 	for ( i=0 ; i<MAX_FLOPPYDRIVES ; i++ )
