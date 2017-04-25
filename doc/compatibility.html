@@ -3238,10 +3238,16 @@ if demo is stated to require that.</p>
     <tr>
       <td>Dekadence:
       <a href="http://www.pouet.net/prod.php?which=64683">Payback 2015</a></td>
-      <td class="major">2.0</td>
+      <td>2.0+</td>
+      <td>yes</td>
       <td>-</td>
-      <td>-</td>
-      <td>Doesn't continue from startup logo</td>
+      <td>Needs FPU and TT-RAM. Startup takes several minutes and demo
+          is slow, so it's better just to disable DSP + sound to make
+	  fast forward faster:
+	  --machine falcon --cpulevel 6 --cpuclock 32 --fpu internal
+	  --dsp none --sound off --fast-forward yes
+	  -s 14 --ttram 64 --addr24 off
+	  </td>
     </tr>
     <tr>
       <td>DHS:
@@ -3712,10 +3718,15 @@ if demo is stated to require that.</p>
     <tr>
       <td>MadWizards:
       <a href="http://pouet.net/prod.php?which=59135">Kioea</a></td>
-      <td class="major">2.0</td>
-      <td>yes</td>
+      <td>2.0+</td>
+      <td>"yes"</td>
       <td>-</td>
-      <td>060 + 14MB + 64MB TT-RAM.  Freezes on loading screen</td>
+      <td>060 + 14MB + 64MB TT-RAM + FPU.  Startup takes over 10 minutes
+          and demo is also otherwise so slow that it's better to disable
+	  sound and DSP to speed up fast forwarding:
+	  --machine falcon --dsp none --cpulevel 6 --cpuclock 32
+	  --fpu internal --sound off --fast-forward yes
+	  --add24 off --ttram 64 -s 14</td>
     </tr>
     <tr>
       <td>Mind Design:
