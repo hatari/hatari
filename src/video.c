@@ -3285,6 +3285,10 @@ static void Video_CopyScreenLineColor(void)
 	LineBorderMask = ShifterFrame.ShifterLines[ nHBL ].BorderMask;
 	STF_PixelScroll = ShifterFrame.ShifterLines[ nHBL ].DisplayPixelShift;
 
+	/* We must keep the new video address in a 22 or 24 bit space depending on the machine type */
+	/* (for example in case it pointed to IO space and is now >= 0x1000000) */
+	VideoMask = ( DMA_MaskAddressHigh() << 16 ) | 0xffff;		/* 0x3fffff or 0xffffff */
+
 	/* Get resolution for this line (in case of mixed low/med screen) */
 	i = nHBL-nFirstVisibleHbl;
 	if ( i >= HBL_PALETTE_MASKS )
@@ -3435,7 +3439,15 @@ static void Video_CopyScreenLineColor(void)
 		else
 		{
 			/* normal middle part (160 bytes) */
+//#define MMU_TEST
+#ifndef MMU_TEST
 			memcpy(pSTScreen+SCREENBYTES_LEFT, pVideoRaster, SCREENBYTES_MIDDLE);
+#else
+			/* Use a slower/more accurate rendering where each word is dynamically read from memory */
+			/* (this is used to test MMU translation and when video address points after end of RAM) */
+			for ( i=0 ; i<80 ; i++ )
+				do_put_mem_word ( pSTScreen+SCREENBYTES_LEFT+i*2 , (Uint16)get_word ( ( pVideoRaster-STRam+i*2 ) & VideoMask ) );
+#endif
 			pVideoRaster += SCREENBYTES_MIDDLE;
 		}
 
@@ -3757,7 +3769,6 @@ static void Video_CopyScreenLineColor(void)
 
 	/* We must keep the new video address in a 22 or 24 bit space depending on the machine type */
 	/* (for example in case it pointed to IO space and is now >= 0x1000000) */
-	VideoMask = ( DMA_MaskAddressHigh() << 16 ) | 0xffff;		/* 0x3fffff or 0xffffff */
 	pVideoRaster = ( ( pVideoRaster - STRam ) & VideoMask ) + STRam;
 //fprintf ( stderr , "video counter new=%x\n" , pVideoRaster-STRam );
 }
