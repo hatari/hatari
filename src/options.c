@@ -1021,7 +1021,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 		case OPT_AUTOSTART:
 			if (!(ok = TOS_AutoStartSet(argv[++i])))
 			{
-				return Opt_ShowError(OPT_AUTOSTART, argv[i], "Invalid drive specified for autostart path");
+				return Opt_ShowError(OPT_AUTOSTART, argv[i], "Invalid drive and/or path specified for autostart program");
 			}
 			break;
 

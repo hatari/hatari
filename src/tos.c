@@ -491,18 +491,38 @@ bool TOS_AutoStartSet(const char *name)
 	int len = strlen(name);
 	char drive = toupper(name[0]);
 
-	if (drive >= 'A' && drive <= 'Z' && name[1] == ':' && name[2] == '\\')
+	if (drive >= 'A' && drive <= 'Z' && name[1] == ':')
 	{
 		/* full path */
+		const char *ptr;
 		int offset;
-		prgname = malloc(len+1);
-		offset = strrchr(name, '\\') - name + 1;
+		prgname = malloc(len+2);
+		ptr = strrchr(name, '\\');
+		if (ptr)
+			offset = ptr - name + 1;
+		else
+			offset = 2;
 		/* copy/upcase path part */
 		memcpy(prgname, name, offset);
 		prgname[offset] = '\0';
 		Str_ToUpper(prgname);
-		/* copy/upcase file part */
-		Str_Filename2TOSname(name+offset, prgname+offset);
+
+		if (name[2] != '\\')
+		{
+			/* NOT OK: A:DIR\NAME.PRG */
+			if (ptr)
+			{
+				free(prgname);
+				return false;
+			}
+			/* A:NAME.PRG -> A:\NAME.PRG */
+			prgname[offset] = '\\';
+			/* copy/upcase file part */
+			Str_Filename2TOSname(name+offset, prgname+offset+1);
+		} else {
+			/* copy/upcase file part */
+			Str_Filename2TOSname(name+offset, prgname+offset);
+		}
 	}
 	else if (strchr(name, '\\'))
 	{
