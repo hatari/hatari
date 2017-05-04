@@ -477,6 +477,7 @@ void VIDEL_HEE_WriteWord(void)
 void VIDEL_VFC_ReadWord(void)
 {
 	IoMem_WriteWord(0xff82a0, videl.vertFreqCounter);
+	videl.vertFreqCounter++;
 	LOG_TRACE(TRACE_VIDEL, "Videl : $ff82a0 Vertical Frequency Counter (VFC) read: 0x%04x\n", videl.vertFreqCounter);
 }
 

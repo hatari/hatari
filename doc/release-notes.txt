@@ -8,7 +8,7 @@
  ---------------------------
 
 Emulation:
-- Add (dumb) Videl address counter emulation
+- Add (dumb) Videl address and vertical frequency counters emulation
 - Emulate ripple carry adder "bug" in DMA address counter on STF
 - More accurate position for reloading video counter on line 310/260
 - Support STF/STE MMU at $FF8001 and address translation
@@ -63,6 +63,7 @@ Fixed Falcon games:
 Fixed Falcon demos:
 - Bound 2, E.K.O system (memory access timings)
 - Bound 3 (Videl video counter)
+- Agony & Chaos A.D. don't freeze anymore (vertical frequency counter)
 - Mahabharata (Videl widths with SDL2)
 - 2x1287, A Rh positive, Are you experienced, Autowaschen Verboten,
   Bound, Bound 42, Codein, Cycedelic knockout, Dan's Lustiges
