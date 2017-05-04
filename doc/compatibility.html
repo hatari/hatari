@@ -2630,8 +2630,9 @@ indicated separately.</p>
       <td class="major">2.0</td>
       <td>-</td>
       <td>-</td>
-      <td>Freezes when the game would start.  Sound is just noise.
-          Constant "crossbar DMA Play: Illegal buffer size" messages</td>
+      <td>Freezes when the game would start (until VideoAddressCounter == $2A?).
+          Constant "crossbar DMA Play: Illegal buffer size 0" messages.
+	  Sound is just noise</td>
     </tr>
     <tr>
       <td>Moongame</td>
@@ -3208,7 +3209,7 @@ if demo is stated to require that.</p>
       <td class="major">2.0</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Freezes waiting on DSP interrupt</td>
+      <td>Freezes waiting on DSP interrupt (or Video Address Counter?)</td>
     </tr>
     <tr>
       <td>Crac:
@@ -3360,11 +3361,11 @@ if demo is stated to require that.</p>
     <tr>
       <td>DNT Crew:
       <a href="http://pouet.net/prod.php?which=16806">Agony</a></td>
-      <td class="major">2.0</td>
+      <td class="minor">2.1 dev</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Freezes after few screens (when bouncing ball fades to black),
-          waiting VFC (0xFFFF82A0) to get 0x20F value</td>
+      <td>After bouncing ball fades to black, gfx aren't quite right due
+          to incomplete VFC emulation</td>
     </tr>
     <tr>
       <td>DNT Crew:
@@ -3375,9 +3376,7 @@ if demo is stated to require that.</p>
       <td>Uses its own IKBD 6301 routine to decode the demo's protection.
 	  Sound is rather noisy. First plasma is half the correct height
 	  (and doubled with oldUAE CPU core). Picture before dot tunnel
-	  (on white background) isn't visible. Freezes at start of rotating
-	  DNT logo screen (just before end credits), waiting DSP interrupt
-	  (0xFFFFA202 to get non-zero)</td>
+	  (on white background) isn't visible</td>
     </tr>
     <tr>
       <td>DrTypo:
