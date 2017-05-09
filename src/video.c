@@ -409,6 +409,8 @@
 /*			line n+1, before handler for new HBL n+1 was called) (fix wrong right-2	*/
 /*			during 60 Hz bottom border removal in 'Protracker 2.1' and 'Neochrome	*/
 /*			master' when running at 60 Hz)						*/
+/* 2017/05/09	[NP]	Add support for 4 pixel hardscroll propagated on every line (fix	*/
+/*			beescrn4.prg by Paulo Simoes)						*/
 
 
 const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
@@ -1458,6 +1460,42 @@ static void Video_WriteToGlueShifterRes ( Uint8 Res )
 			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 1 pixel right scroll 2\n" );
 			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = 1;
 		}
+	}
+
+	/* Paulo Simoes' 4 pixel hardscroll on the whole screen, without removing left border */
+	/* All following lines will be shifted too, not just the one where the med/low switch happens */
+	if ( ( ShifterFrame.Res == 0x01 ) && ( Res == 0x00 )		/* switched from med res to low res */
+		&& ( ShifterFrame.ResPosMed.LineCycles == 84 ) )	/* med res at cycle 84 */
+	{
+		/* The med/low switch was a switch to do low res hardware scrolling */
+		if ( LineCycles == 100 )
+		{
+			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 13 pixels right scroll 3\n" );
+			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = 13;
+		}
+		else if ( LineCycles == 104 )
+		{
+			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 9 pixels right scroll 3\n" );
+			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = 9;
+			pVideoRaster -= 2;
+		}
+		else if ( LineCycles == 92 )
+		{
+			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 5 pixels right scroll 3\n" );
+			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = 5;
+			pVideoRaster -= 4;
+		}
+		else if ( LineCycles == 96 )
+		{
+			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 1 pixel right scroll 3\n" );
+			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = 1;
+			pVideoRaster -= 6;
+		}
+
+		/* Mark all the following lines as shifted too */
+		int i;
+		for ( i=HblCounterVideo+1 ; i<MAX_SCANLINES_PER_FRAME ; i++ )
+			ShifterFrame.ShifterLines[ i ].DisplayPixelShift = ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift;
 	}
 
 	/* TEMP for 'closure' in WS2 */
