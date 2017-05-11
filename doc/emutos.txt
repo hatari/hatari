@@ -614,11 +614,13 @@ GEM games:
 GEM games needing EmuTOS >v0.9.5 (for mouse clicks to work):
 - Abalone
 - Ballerburg*
-- Minds (minesweeper)
+- Bombs     (minesweeper, needs EmuTOS >v0.9.8)
+- Minds*    (minesweeper)
 - Patience* (card solitaire, use latest v2.25)
-- Risky* (Risk board game)
-- Yams (minesweeper)
-- Yukon* (card solitaire)
+- Risky*    (Risk board game)
+- Checkers  (needs EmuTOS >v0.9.8)
+- Yams      (minesweeper)
+- Yukon*    (card solitaire)
 
 Monochrome games:
 - Backgammon    (line-A bitblits under GEM menu)
@@ -726,8 +728,6 @@ Mono games:
 
 GEM games (input issues):
 - Anduril   (see EmuTOS incompatible.txt)
-- Bombs     (minesweeper, mouse clicks almost never work)
-- Checkers  (dragging doesn't work)
 - Invaders* (see EmuTOS incompatible.txt)
 
 
@@ -978,6 +978,8 @@ v0.9.6 or newer.
 
 Working applications:
 - Mandelbrot playtime (fracplay, uses FPU)
+- PixArt4 (requires EmuTOS >v0.9.8)
+  - http://www.1632systems.co.uk/www/html/Product/pixart.htm
 
 Working demos:
 - 256mbrot, Bragg, Glasstro, Orion-B, Yabt (TT/Falcon intros by ray//.tSCc)
@@ -1000,10 +1002,6 @@ Working games:
 - Oxyd (Falcon version)
 
 Broken programs:
-- PixArt4
-  - Drawing needs 2016 EmuTOS version (evnt_multi() fixes)
-  - Bus error on startup if TT-RAM is present (unlike with TOS v3)
-  - http://www.1632systems.co.uk/www/html/Product/pixart.htm
 - OpenTTD:
   - Needs hundreds of MBs of TT-RAM
   - Needs to be started from TT-low resolution
