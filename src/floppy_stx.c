@@ -1522,9 +1522,11 @@ int	FDC_NextSectorID_FdcCycles_STX ( Uint8 Drive , Uint8 NumberOfHeads , Uint8 T
 		return -1;
 
 	/* Compare CurrentPos_FdcCycles with each sector's position in ascending order */
+	/* (minus 4 bytes, see below) */
 	for ( i=0 ; i<pStxTrack->SectorsCount ; i++ )
 	{
-		if ( CurrentPos_FdcCycles < (int)pStxTrack->pSectorsStruct[ i ].BitPosition*FDC_DELAY_CYCLE_MFM_BIT )	/* 1 bit = 32 cycles at 8 MHz */
+		if ( CurrentPos_FdcCycles < (int)pStxTrack->pSectorsStruct[ i ].BitPosition*FDC_DELAY_CYCLE_MFM_BIT /* 1 bit = 32 cycles at 8 MHz */
+					 - 4 * FDC_DELAY_CYCLE_MFM_BYTE )
 			break;						/* We found the next sector */
 	}
 
