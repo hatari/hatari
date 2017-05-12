@@ -1932,12 +1932,13 @@ static int FDC_CmdCompleteCommon ( bool DoInt )
  * NOTE [NP] : in the case of Hatari when using ST/MSA images, the track is always the correct one,
  * so the verify will always be good (except if no disk is inserted or the physical head is
  * not on the same track as FDC.TR)
- * This function could be improved to support other images format where logical track
- * could be different from physical track (eg Pasti)
+ * For STX images, verify track might fail on purpose with some protection
  */
 static bool FDC_VerifyTrack ( void )
 {
 	int	FrameCycles, HblCounterVideo, LineCycles;
+	Uint8	Next_TR;
+	Uint8	Next_CRC_OK;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
@@ -1950,12 +1951,23 @@ static bool FDC_VerifyTrack ( void )
 		return false;
 	}
 
-	/* Most of the time, the physical track and the track register should be the same. */
-	/* Else, it means TR was not correctly set before running the type I command */
-	if ( FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack != FDC.TR )
+	/* Check if the current ID Field is the one we're looking for (same track and correct CRC) */
+	if ( EmulationDrives[ FDC.DriveSelSignal ].ImageType == FLOPPY_IMAGE_TYPE_STX )
 	{
-		LOG_TRACE(TRACE_FDC, "fdc type I verify track failed TR=0x%x head=0x%x drive=%d VBL=%d video_cyc=%d %d@%d pc=%x\n",
-			FDC.TR , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.DriveSelSignal ,
+		Next_TR = FDC_NextSectorID_TR_STX ();
+		Next_CRC_OK = FDC_NextSectorID_CRC_OK_STX ();
+	}
+	else
+	{
+		Next_TR = FDC_NextSectorID_TR_ST ();
+		Next_CRC_OK = FDC_NextSectorID_CRC_OK_ST ();
+	}
+
+	/* ST/MSA image will always be correct, only STX can fail depending on some protections */
+	if ( ( Next_TR != FDC.TR ) || ( Next_CRC_OK == 0 ) )
+	{
+		LOG_TRACE(TRACE_FDC, "fdc type I verify track failed ID_TR=0x%x TR=0x%x crc_ok=%d head=0x%x drive=%d VBL=%d video_cyc=%d %d@%d pc=%x\n",
+			Next_TR , FDC.TR , Next_CRC_OK , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.DriveSelSignal ,
 			nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 		return false;
