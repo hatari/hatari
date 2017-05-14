@@ -144,10 +144,9 @@ record MFM exact copies of original games, including the protection.
 Version 4.2 of the library allows to access IPF files, while the more recent
 version 5.1 fixes some bugs, as well as adding support for CTR files.
 
-Since version 5.1 is not yet available for all OSes in binary form, Hatari
-still default to version 4.2 (but you can compile capsimage 5.1 sources
-to build your library). You can change this by modifying "SET(CAPSIMAGE_VERSION 4)"
-into cmake/FindCapsImage.cmake
+Hatari defaults to version 5.1, but you can also use the older 4.2 version
+if 5.1 is not available for your OS. You can change this by modifying
+"SET(CAPSIMAGE_VERSION 5)" into cmake/FindCapsImage.cmake
 
 Refer to http://softpres.org/download and get the corresponding file
 from the "User Distribution" section that matches your OS.
