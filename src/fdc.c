@@ -215,6 +215,7 @@ ACSI DMA and Floppy Disk Controller(FDC)
 
 /*-----------------------------------------------------------------------*/
 
+/* Status register */
 #define	FDC_STR_BIT_BUSY			0x01
 #define	FDC_STR_BIT_INDEX			0x02		/* type I */
 #define	FDC_STR_BIT_DRQ				0x02		/* type II and III */
@@ -227,16 +228,6 @@ ACSI DMA and Floppy Disk Controller(FDC)
 #define	FDC_STR_BIT_WPRT			0x40
 #define	FDC_STR_BIT_MOTOR_ON			0x80
 
-
-#define	FDC_COMMAND_BIT_VERIFY			(1<<2)		/* 0=no verify after type I, 1=verify after type I */
-#define	FDC_COMMAND_BIT_HEAD_LOAD		(1<<2)		/* for type II/III 0=no extra delay, 1=add 30 ms delay to set the head */
-#define	FDC_COMMAND_BIT_SPIN_UP			(1<<3)		/* 0=enable motor's spin up, 1=disable motor's spin up */
-#define	FDC_COMMAND_BIT_UPDATE_TRACK		(1<<4)		/* 0=don't update TR after type I, 1=update TR after type I */
-#define	FDC_COMMAND_BIT_MULTIPLE_SECTOR		(1<<4)		/* 0=read/write only 1 sector, 1=read/write many sectors */
-
-
-#define FDC_INTERRUPT_COND_IP			(1<<2)		/* Force interrupt on Index Pulse */
-#define FDC_INTERRUPT_COND_IMMEDIATE		(1<<3)		/* Force interrupt immediate */
 
 
 /* FDC Emulation commands used in FDC.Command */
@@ -428,7 +419,7 @@ enum
 
 #define	FDC_STEP_RATE				( FDC.CR & 0x03 )	/* Bits 0 and 1 of the current type I command */
 
-static int FDC_StepRate_ms[] = { 6 , 12 , 2 , 3 };		/* Controlled by bits 1 and 0 (r1/r0) in type I commands */
+int FDC_StepRate_ms[] = { 6 , 12 , 2 , 3 };			/* Controlled by bits 1 and 0 (r1/r0) in type I commands */
 
 
 
@@ -1107,6 +1098,16 @@ Uint8	FDC_DMA_FIFO_Pull ( void )
 	FDC_DMA.ff8604_recent_val = ( FDC_DMA.ff8604_recent_val & 0xff00 ) | Byte;
 
 	return Byte;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Reset the buffer used to transfer data between the FDC and the DMA
+ */
+int	FDC_DMA_GetSectorCount ( void )
+{
+	return FDC_DMA.SectorCount;
 }
 
 
@@ -3258,7 +3259,7 @@ static int FDC_TypeI_Restore(void)
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	LOG_TRACE(TRACE_FDC, "fdc type I restore spinup=%s verify=%s steprate=%d drive=%d tr=0x%x head_track=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
+	LOG_TRACE(TRACE_FDC, "fdc type I restore spinup=%s verify=%s steprate_ms=%d drive=%d tr=0x%x head_track=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
 		  ( FDC.CR & FDC_COMMAND_BIT_SPIN_UP ) ? "off" : "on" ,
 		  ( FDC.CR & FDC_COMMAND_BIT_VERIFY ) ? "on" : "off" ,
 		  FDC_StepRate_ms[ FDC_STEP_RATE ] ,
@@ -3282,7 +3283,7 @@ static int FDC_TypeI_Seek ( void )
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	LOG_TRACE(TRACE_FDC, "fdc type I seek dest_track=0x%x spinup=%s verify=%s steprate=%d drive=%d tr=0x%x head_track=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
+	LOG_TRACE(TRACE_FDC, "fdc type I seek dest_track=0x%x spinup=%s verify=%s steprate_ms=%d drive=%d tr=0x%x head_track=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
 		  FDC.DR,
 		  ( FDC.CR & FDC_COMMAND_BIT_SPIN_UP ) ? "off" : "on" ,
 		  ( FDC.CR & FDC_COMMAND_BIT_VERIFY ) ? "on" : "off" ,
@@ -3307,7 +3308,7 @@ static int FDC_TypeI_Step ( void )
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	LOG_TRACE(TRACE_FDC, "fdc type I step %d spinup=%s verify=%s steprate=%d drive=%d tr=0x%x head_track=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
+	LOG_TRACE(TRACE_FDC, "fdc type I step %d spinup=%s verify=%s steprate_ms=%d drive=%d tr=0x%x head_track=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
 		  FDC.StepDirection,
 		  ( FDC.CR & FDC_COMMAND_BIT_SPIN_UP ) ? "off" : "on" ,
 		  ( FDC.CR & FDC_COMMAND_BIT_VERIFY ) ? "on" : "off" ,
@@ -3332,7 +3333,7 @@ static int FDC_TypeI_StepIn(void)
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	LOG_TRACE(TRACE_FDC, "fdc type I step in spinup=%s verify=%s steprate=%d drive=%d tr=0x%x head_track=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
+	LOG_TRACE(TRACE_FDC, "fdc type I step in spinup=%s verify=%s steprate_ms=%d drive=%d tr=0x%x head_track=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
 		  ( FDC.CR & FDC_COMMAND_BIT_SPIN_UP ) ? "off" : "on" ,
 		  ( FDC.CR & FDC_COMMAND_BIT_VERIFY ) ? "on" : "off" ,
 		  FDC_StepRate_ms[ FDC_STEP_RATE ] ,
@@ -3357,7 +3358,7 @@ static int FDC_TypeI_StepOut ( void )
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	LOG_TRACE(TRACE_FDC, "fdc type I step out spinup=%s verify=%s steprate=%d drive=%d tr=0x%x head_track=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
+	LOG_TRACE(TRACE_FDC, "fdc type I step out spinup=%s verify=%s steprate_ms=%d drive=%d tr=0x%x head_track=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
 		  ( FDC.CR & FDC_COMMAND_BIT_SPIN_UP ) ? "off" : "on" ,
 		  ( FDC.CR & FDC_COMMAND_BIT_VERIFY ) ? "on" : "off" ,
 		  FDC_StepRate_ms[ FDC_STEP_RATE ] ,

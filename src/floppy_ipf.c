@@ -23,6 +23,7 @@ const char floppy_ipf_fileid[] = "Hatari floppy_ipf.c : " __DATE__ " " __TIME__;
 #include "memorySnapShot.h"
 #include "screen.h"
 #include "video.h"
+#include "m68000.h"
 #include "cycles.h"
 
 #ifdef HAVE_CAPSIMAGE
@@ -67,6 +68,7 @@ static void	IPF_CallBack_Trk ( struct CapsFdc *pc , CapsULong State );
 static void	IPF_CallBack_Irq ( struct CapsFdc *pc , CapsULong State );
 static void	IPF_CallBack_Drq ( struct CapsFdc *pc , CapsULong State );
 static void	IPF_Drive_Update_Enable_Side ( void );
+static void	IPF_FDC_LogCommand ( Uint8 Command );
 #endif
 
 
@@ -663,8 +665,10 @@ void	IPF_FDC_WriteReg ( Uint8 Reg , Uint8 Byte )
 	return;						/* This should not be reached (an IPF image can't be inserted without capsimage) */
 
 #else
-	LOG_TRACE(TRACE_FDC, "fdc ipf write reg=%d data=0x%x VBL=%d HBL=%d\n" , Reg , Byte , nVBLs , nHBL );
-
+	if ( Reg == 0 )					/* more detailled logs for command register */
+		IPF_FDC_LogCommand ( Byte );
+	else
+		LOG_TRACE(TRACE_FDC, "fdc ipf write reg=%d data=0x%x VBL=%d HBL=%d\n" , Reg , Byte , nVBLs , nHBL );
 	
 #if CAPS_LIB_REL_REV >= 501
 	/* In the case of CTR images, we must reset the revolution counter */
@@ -745,6 +749,102 @@ void	IPF_FDC_StatusBar ( Uint8 *pCommand , Uint8 *pHead , Uint8 *pTrack , Uint8 
 #endif
 }
 
+
+
+static void	IPF_FDC_LogCommand ( Uint8 Command )
+{
+	Uint8	Head , Track , Sector , Side , DataReg;
+	int	Drive;
+	int	FrameCycles, HblCounterVideo, LineCycles;
+	char	buf[ 200 ];
+
+
+	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+
+	Drive = IPF_State.Fdc.driveact;
+	if ( Drive < 0 )				/* If no drive enabled, use drive O for Head/Side */
+		Drive = 0;
+
+	/* We read directly in the structures, to be sure we don't change emulation's state */
+	Head	= IPF_State.Drive[ Drive ].track;
+	Track 	= IPF_State.Fdc.r_track;
+	Sector	= IPF_State.Fdc.r_sector;
+	DataReg	= IPF_State.Fdc.r_data;
+	Side	= IPF_State.Drive[ Drive ].side;
+
+	if      ( ( Command & 0xf0 ) == 0x00 )						/* Restore */
+		sprintf ( buf , "type I restore spinup=%s verify=%s steprate=%d drive=%d tr=0x%x head_track=0x%x" ,
+			( Command & FDC_COMMAND_BIT_SPIN_UP ) ? "off" : "on" ,
+			( Command & FDC_COMMAND_BIT_VERIFY ) ? "on" : "off" ,
+			FDC_StepRate_ms[ Command & 0x03 ] , Drive , Track , Head );
+
+	else if ( ( Command & 0xf0 ) == 0x10 )						/* Seek */
+		sprintf ( buf , "type I seek dest_track=0x%x spinup=%s verify=%s steprate=%d drive=%d tr=0x%x head_track=0x%x" ,
+			DataReg , ( Command & FDC_COMMAND_BIT_SPIN_UP ) ? "off" : "on" ,
+			( Command & FDC_COMMAND_BIT_VERIFY ) ? "on" : "off" ,
+			FDC_StepRate_ms[ Command & 0x03 ] , Drive , Track , Head );
+
+	else if ( ( Command & 0xe0 ) == 0x20 )						/* Step */
+		sprintf ( buf , "type I step %d spinup=%s verify=%s steprate_ms=%d drive=%d tr=0x%x head_track=0x%x",
+			( IPF_State.Fdc.lineout & CAPSFDC_LO_DIRC ) ? 1 : -1 ,
+			( Command & FDC_COMMAND_BIT_SPIN_UP ) ? "off" : "on" ,
+			( Command & FDC_COMMAND_BIT_VERIFY ) ? "on" : "off" ,
+			FDC_StepRate_ms[ Command & 0x03 ] , Drive , Track , Head );
+
+	else if ( ( Command & 0xe0 ) == 0x40 )						/* Step In */
+		sprintf ( buf , "type I step in spinup=%s verify=%s steprate=%d drive=%d tr=0x%x head_track=0x%x" ,
+			( Command & FDC_COMMAND_BIT_SPIN_UP ) ? "off" : "on" ,
+			( Command & FDC_COMMAND_BIT_VERIFY ) ? "on" : "off" ,
+			FDC_StepRate_ms[ Command & 0x03 ] , Drive , Track , Head );
+
+	else if ( ( Command & 0xe0 ) == 0x60 )						/* Step Out */
+		sprintf ( buf , "type I step out spinup=%s verify=%s steprate=%d drive=%d tr=0x%x head_track=0x%x" ,
+			( Command & FDC_COMMAND_BIT_SPIN_UP ) ? "off" : "on" ,
+			( Command & FDC_COMMAND_BIT_VERIFY ) ? "on" : "off" ,
+			FDC_StepRate_ms[ Command & 0x03 ] , Drive , Track , Head );
+
+	else if ( ( Command & 0xe0 ) == 0x80 )						/* Read Sector */
+		sprintf ( buf , "type II read sector sector=0x%x multi=%s spinup=%s settle=%s tr=0x%x head_track=0x%x"
+			      " side=%d drive=%d dmasector=%d addr=0x%x",
+			Sector, ( Command & FDC_COMMAND_BIT_MULTIPLE_SECTOR ) ? "on" : "off" ,
+			( Command & FDC_COMMAND_BIT_SPIN_UP ) ? "off" : "on" ,
+			( Command & FDC_COMMAND_BIT_HEAD_LOAD ) ? "on" : "off" ,
+			Track , Head , Side , Drive , FDC_DMA_GetSectorCount() , FDC_GetDMAAddress() );
+
+	else if ( ( Command & 0xe0 ) == 0xa0 )						/* Write Sector */
+		sprintf ( buf , "type II write sector sector=0x%x multi=%s spinup=%s settle=%s tr=0x%x head_track=0x%x"
+			      " side=%d drive=%d dmasector=%d addr=0x%x",
+			Sector, ( Command & FDC_COMMAND_BIT_MULTIPLE_SECTOR ) ? "on" : "off" ,
+			( Command & FDC_COMMAND_BIT_SPIN_UP ) ? "off" : "on" ,
+			( Command & FDC_COMMAND_BIT_HEAD_LOAD ) ? "on" : "off" ,
+			Track , Head , Side , Drive , FDC_DMA_GetSectorCount() , FDC_GetDMAAddress() );
+
+	else if ( ( Command & 0xf0 ) == 0xc0 )						/* Read Address */
+		sprintf ( buf , "type III read address spinup=%s settle=%s tr=0x%x head_track=0x%x side=%d drive=%d addr=0x%x" ,
+			( Command & FDC_COMMAND_BIT_SPIN_UP ) ? "off" : "on" ,
+			( Command & FDC_COMMAND_BIT_HEAD_LOAD ) ? "on" : "off" ,
+			Track , Head , Side , Drive , FDC_GetDMAAddress() );
+
+	else if ( ( Command & 0xf0 ) == 0xe0 )						/* Read Track */
+		sprintf ( buf , "type III read track spinup=%s settle=%s tr=0x%x head_track=0x%x side=%d drive=%d addr=0x%x" ,
+			( Command & FDC_COMMAND_BIT_SPIN_UP ) ? "off" : "on" ,
+			( Command & FDC_COMMAND_BIT_HEAD_LOAD ) ? "on" : "off" ,
+			Track , Head , Side , Drive , FDC_GetDMAAddress() );
+
+	else if ( ( Command & 0xf0 ) == 0xf0 )						/* Write Track */
+		sprintf ( buf , "type III write track spinup=%s settle=%s tr=0x%x head_track=0x%x side=%d drive=%d addr=0x%x" ,
+			( Command & FDC_COMMAND_BIT_SPIN_UP ) ? "off" : "on" ,
+			( Command & FDC_COMMAND_BIT_HEAD_LOAD ) ? "on" : "off" ,
+			Track , Head , Side , Drive , FDC_GetDMAAddress() );
+
+	else										/* Force Int */
+		sprintf ( buf , "type IV force int 0x%x irq=%d index=%d" ,
+			Command , ( Command & 0x8 ) >> 3 , ( Command & 0x4 ) >> 2 );
+
+
+	LOG_TRACE(TRACE_FDC, "fdc ipf %s VBL=%d video_cyc=%d %d@%d pc=%x\n" ,
+			buf , nVBLs , FrameCycles, LineCycles, HblCounterVideo , M68000_GetPC() );
+}
 
 
 

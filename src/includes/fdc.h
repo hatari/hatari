@@ -45,6 +45,20 @@
 #define	FDC_IRQ_SOURCE_OTHER			(1<<4)		/* IRQ set by other parts (IPF) */
 
 
+/* Option bits in the command register */
+#define	FDC_COMMAND_BIT_VERIFY			(1<<2)		/* 0=no verify after type I, 1=verify after type I */
+#define	FDC_COMMAND_BIT_HEAD_LOAD		(1<<2)		/* for type II/III 0=no extra delay, 1=add 30 ms delay to set the head */
+#define	FDC_COMMAND_BIT_SPIN_UP			(1<<3)		/* 0=enable motor's spin up, 1=disable motor's spin up */
+#define	FDC_COMMAND_BIT_UPDATE_TRACK		(1<<4)		/* 0=don't update TR after type I, 1=update TR after type I */
+#define	FDC_COMMAND_BIT_MULTIPLE_SECTOR		(1<<4)		/* 0=read/write only 1 sector, 1=read/write many sectors */
+
+
+#define	FDC_INTERRUPT_COND_IP			(1<<2)		/* Force interrupt on Index Pulse */
+#define	FDC_INTERRUPT_COND_IMMEDIATE		(1<<3)		/* Force interrupt immediate */
+
+extern int	FDC_StepRate_ms[];
+
+
 extern void	FDC_MemorySnapShot_Capture ( bool bSave );
 extern void	FDC_Init ( void );
 extern void	FDC_Reset ( bool bCold );
@@ -78,6 +92,7 @@ extern void	FDC_DmaStatus_ReadWord ( void );
 extern int	FDC_DMA_GetModeControl_R_WR ( void );
 extern void	FDC_DMA_FIFO_Push ( Uint8 Byte );
 extern Uint8	FDC_DMA_FIFO_Pull ( void );
+extern int	FDC_DMA_GetSectorCount ( void );
 
 extern void	FDC_Buffer_Reset ( void );
 extern void	FDC_Buffer_Add_Timing ( Uint8 Byte , Uint16 Timing );
