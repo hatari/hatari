@@ -751,6 +751,7 @@ void	IPF_FDC_StatusBar ( Uint8 *pCommand , Uint8 *pHead , Uint8 *pTrack , Uint8 
 
 
 
+#ifdef HAVE_CAPSIMAGE
 static void	IPF_FDC_LogCommand ( Uint8 Command )
 {
 	Uint8	Head , Track , Sector , Side , DataReg;
@@ -845,6 +846,7 @@ static void	IPF_FDC_LogCommand ( Uint8 Command )
 	LOG_TRACE(TRACE_FDC, "fdc ipf %s VBL=%d video_cyc=%d %d@%d pc=%x\n" ,
 			buf , nVBLs , FrameCycles, LineCycles, HblCounterVideo , M68000_GetPC() );
 }
+#endif
 
 
 
