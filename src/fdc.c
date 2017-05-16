@@ -1103,7 +1103,7 @@ Uint8	FDC_DMA_FIFO_Pull ( void )
 
 /*-----------------------------------------------------------------------*/
 /**
- * Reset the buffer used to transfer data between the FDC and the DMA
+ * Return the value of FDC_DMA.SectorCount (used in floppy_ipf.c)
  */
 int	FDC_DMA_GetSectorCount ( void )
 {
