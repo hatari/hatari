@@ -550,19 +550,7 @@ static int symbols_show(symbol_list_t* list)
 		entries = list->addresses;
 	}
 	for (entry = entries, i = 0; i < list->count; i++, entry++) {
-		switch (entry->type) {
-		case SYMTYPE_TEXT:
-			symchar = 'T';
-			break;
-		case SYMTYPE_DATA:
-			symchar = 'D';
-			break;
-		case SYMTYPE_BSS:
-			symchar = 'B';
-			break;
-		default:
-			symchar = '?';
-		}
+		symchar = symbol_char(entry->type);
 		fprintf(stdout, "0x%08x %c %s\n",
 			entry->address, symchar, entry->name);
 	}
