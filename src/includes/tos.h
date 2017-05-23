@@ -16,17 +16,7 @@ extern bool bRamTosImage;
 extern unsigned int ConnectedDriveMask;
 extern int nNumDrives;
 
-typedef enum {
-	AUTOSTART_INTERCEPT,
-	AUTOSTART_FOPEN
-} autostart_t;
-
 extern void TOS_MemorySnapShot_Capture(bool bSave);
-extern bool TOS_AutoStartSet(const char *prgname);
-extern const char *TOS_AutoStartInvalidDrive(void);
-extern bool TOS_AutoStarting(autostart_t t);
-extern FILE *TOS_AutoStartOpen(const char *filename);
-extern bool TOS_AutoStartClose(FILE *fp);
 extern int TOS_LoadImage(void);
 
 #endif

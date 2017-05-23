@@ -9,7 +9,7 @@ set(SOURCES
 	paths.c  psg.c printer.c resolution.c rs232.c reset.c rtc.c
 	scandir.c stMemory.c screen.c screenConvert.c screenSnapShot.c
 	shortcut.c sound.c spec512.c statusbar.c str.c tos.c utils.c
-	vdi.c video.c wavFormat.c xbios.c ymFormat.c)
+	vdi.c inffile.c video.c wavFormat.c xbios.c ymFormat.c)
 
 # Disk image code is shared with the hmsa tool, so we put it into a library:
 add_library(Floppy createBlankImage.c dim.c msa.c st.c zip.c)

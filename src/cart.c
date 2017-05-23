@@ -28,6 +28,7 @@ const char Cart_fileid[] = "Hatari cart.c : " __DATE__ " " __TIME__;
 #include "log.h"
 #include "m68000.h"
 #include "stMemory.h"
+#include "inffile.h"
 #include "tos.h"
 #include "vdi.h"
 #include "hatari-glue.h"

@@ -36,7 +36,7 @@ const char Options_fileid[] = "Hatari options.c : " __DATE__ " " __TIME__;
 #include "vdi.h"
 #include "joy.h"
 #include "log.h"
-#include "tos.h"
+#include "inffile.h"
 #include "paths.h"
 #include "avi_record.h"
 #include "hatari-glue.h"
