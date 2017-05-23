@@ -41,6 +41,7 @@ Emulator:
 - Debugger:
   - Add "CycleCounter" variable
   - Add "info dta [addr]" command
+  - Add absolute symbols support in addition to BSS/DATA/TEXT ones
   - Add "-f" option to 'cd' so that setup scripts can specify
     what directory is used after currently invoked script(s)
     have finished
