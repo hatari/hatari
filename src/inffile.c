@@ -10,6 +10,7 @@ const char INFFILE_fileid[] = "Hatari inffile.c : " __DATE__ " " __TIME__;
 
 #include <SDL_endian.h>
 #include <assert.h>
+#include <errno.h>
 
 #include "main.h"
 #include "configuration.h"
@@ -17,6 +18,10 @@ const char INFFILE_fileid[] = "Hatari inffile.c : " __DATE__ " " __TIME__;
 #include "log.h"
 #include "str.h"
 #include "tos.h"
+
+/* debug/test options */
+#define INF_DEBUG  0         /* doesn't remove virtual INF file after use */
+#define ETOS_OWN_INF 1       /* use EmuTOS specific INF file contents */
 
 static struct {
 	FILE *file;          /* file pointer to contents of INF file */
@@ -247,10 +252,10 @@ const char *INF_AutoStartValidate(void)
 /*-----------------------------------------------------------------------*/
 /**
  * Create a temporary TOS INF file which will start autostart program.
- * 
+ *
  * File has TOS version specific differences, so it needs to be re-created
  * on each boot in case user changed TOS version.
- * 
+ *
  * Called at end of TOS ROM loading.
  */
 void INF_AutoStartCreate(void)
@@ -283,8 +288,13 @@ void INF_AutoStartCreate(void)
 			infname = "C:\\EMUDESK.INF";
 		else
 			infname = "A:\\EMUDESK.INF";
+#if ETOS_OWN_INF
 		size = sizeof(emudesk_inf);
 		contents = emudesk_inf;
+#else
+		size = sizeof(desktop_inf);
+		contents = desktop_inf;
+#endif
 	}
 	/* need to match file TOS searches first */
 	else if (TosVersion >= 0x0200)
@@ -314,13 +324,21 @@ void INF_AutoStartCreate(void)
 
 	/* create the autostart file */
 #if defined(WIN32)	/* unfortunately tmpfile() needs administrative privileges on windows, so this needs special care */
-	ptr=WinTmpFile();
-	if( ptr!=NULL )
-		fp=fopen(ptr,"w+b");
+	ptr = WinTmpFile();
+	if (ptr != NULL)
+		fp = fopen(ptr,"w+b");
 	else
-		fp=NULL;
+		fp = NULL;
 #else
+# if INF_DEBUG
+	{
+		const char *debugfile = "/tmp/hatari-desktop-inf.txt";
+		fprintf(stderr, "autostart: '%s'\n", debugfile);
+		fp = fopen(debugfile, "w+b");
+	}
+# else
 	fp = tmpfile();
+# endif
 #endif
 
 	if (!(fp
@@ -331,7 +349,8 @@ void INF_AutoStartCreate(void)
 	{
 		if (fp)
 			fclose(fp);
-		Log_Printf(LOG_ERROR, "Failed to create autostart file for '%s'!\n", TosAutoStart.prgname);
+		Log_Printf(LOG_ERROR, "Failed to create autostart file for '%s': %s!\n",
+			   TosAutoStart.prgname, strerror(errno));
 		return;
 	}
 	TosAutoStart.file = fp;

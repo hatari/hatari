@@ -2115,8 +2115,8 @@ static bool GemDOS_Read(Uint32 Params)
 	
 	if (ferror(FileHandles[Handle].FileHandle))
 	{
-		Log_Printf(LOG_WARN, "GEMDOS failed to read from '%s'\n",
-			   FileHandles[Handle].szActualName );
+		Log_Printf(LOG_WARN, "GEMDOS failed to read from '%s': %s\n",
+			   FileHandles[Handle].szActualName, strerror(errno));
 		Regs[REG_D0] = errno2gemdos(errno, ERROR_FILE);
 	} else
 		/* Return number of bytes read */
