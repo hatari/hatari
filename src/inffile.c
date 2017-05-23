@@ -19,9 +19,8 @@ const char INFFILE_fileid[] = "Hatari inffile.c : " __DATE__ " " __TIME__;
 #include "str.h"
 #include "tos.h"
 
-/* debug/test options */
-#define INF_DEBUG  0         /* doesn't remove virtual INF file after use */
-#define ETOS_OWN_INF 1       /* use EmuTOS specific INF file contents */
+#define INF_DEBUG  1         /* doesn't remove virtual INF file after use */
+#define ETOS_OWN_INF 0       /* use EmuTOS specific INF file contents */
 
 static struct {
 	FILE *file;          /* file pointer to contents of INF file */
@@ -29,14 +28,25 @@ static struct {
 	const char *infname; /* name of the INF file TOS will try to match */
 } TosAutoStart;
 
-/* autostarted program name will be added befere first
- * '@' character in the INF files
+
+/* autostarted program name will be added before the first
+ * '@' character in the INF files #Z line
+ * (first value is 00: TOS, 01: GEM).
+ *
+ * Resolution is specified in the second hex value in #E line.
+ *
+ * TOS versions expect both of these to be within certain
+ * number of bytes from the beginning of the file, and there
+ * are also TOS version specific limits on the INF file sizes.
+ *
+ * More documentation on the DESKTOP.INF file content:
+ * http://st-news.com/issues/st-news-volume-2-issue-6/education/the-desktopinf-file/
  */
 
 /* EmuDesk INF file format differs slightly from normal TOS */
 static const char emudesk_inf[] =
-"#E 9A 07\r\n"
 "#Z 01 @\r\n"
+"#E 9A 07\r\n"
 "#W 00 00 02 06 26 0C 08 C:\\*.*@\r\n"
 "#W 00 00 02 08 26 0C 00 @\r\n"
 "#W 00 00 02 0A 26 0C 00 @\r\n"
@@ -251,6 +261,49 @@ const char *INF_AutoStartValidate(void)
 	return path;
 }
 
+/**
+ * Skip rest of INF file line and return index after its end.
+ */
+static int skip_line(const char *contents, int offset, int size)
+{
+	char chr;
+	for (; offset < size; offset++)
+	{
+		chr = contents[offset];
+		if (chr == '\r' || chr == '\n')
+		{
+			chr = contents[++offset];
+			if (chr == '\r' || chr == '\n')
+				offset++;
+			return offset;
+		}
+	}
+	Log_Printf(LOG_WARN, "Malformed INF file '%s' as input, autostart likely to fail!\n", TosAutoStart.prgname);
+	return offset;
+}
+
+/**
+ * Return INF file autostart line format suitable for given
+ * program type, based on program name extension.
+ */
+static const char *prg_format(const char *prgname)
+{
+	const char *ext;
+	int size;
+
+	size = strlen(prgname);
+	if (size > 4)
+		ext = prgname + size - 4;
+	else
+		ext = prgname;
+
+	if (strcmp(ext, ".TTP") == 0 ||strcmp(ext, ".TOS") == 0)
+		return "#Z 00 %s@\r\n"; /* TOS program */
+	else
+		return "#Z 01 %s@\r\n"; /* GEM program */
+}
+
+
 /*-----------------------------------------------------------------------*/
 /**
  * Create a temporary TOS INF file which will start autostart program.
@@ -262,8 +315,8 @@ const char *INF_AutoStartValidate(void)
  */
 void INF_AutoStartCreate(void)
 {
-	const char *contents, *infname, *prgname;
-	int offset, size;
+	const char *contents, *infname, *prgname, *format;
+	int offset, size, off_prg, off_rez;
 	FILE *fp;
 #if defined(WIN32)	/* unfortunately tmpfile() needs administrative privileges on windows, so this needs special care */
 	char *ptr;
@@ -316,14 +369,6 @@ void INF_AutoStartCreate(void)
 	 */
 	TosAutoStart.infname = infname;
 
-	/* find where to insert the program name */
-	for (offset = 0; offset < size; offset++)
-	{
-		if (contents[offset] == '@')
-			break;
-	}
-	assert(offset < size);
-
 	/* create the autostart file */
 #if defined(WIN32)	/* unfortunately tmpfile() needs administrative privileges on windows, so this needs special care */
 	ptr = WinTmpFile();
@@ -342,17 +387,61 @@ void INF_AutoStartCreate(void)
 	fp = tmpfile();
 # endif
 #endif
-
-	if (!(fp
-	      && fwrite(contents, offset, 1, fp) == 1
-	      && fwrite(prgname, strlen(prgname), 1, fp) == 1
-	      && fwrite(contents+offset, size-offset-1, 1, fp) == 1
-	      && fseek(fp, 0, SEEK_SET) == 0))
+	if (!fp)
 	{
-		if (fp)
-			fclose(fp);
 		Log_Printf(LOG_ERROR, "Failed to create autostart file for '%s': %s!\n",
 			   TosAutoStart.prgname, strerror(errno));
+		return;
+	}
+
+	format = prg_format(prgname);
+
+	/* find where to insert the program name and resolution */
+	off_prg = off_rez = 0;
+	for (offset = 0; offset < size-7; offset++)
+	{
+		if (contents[offset] != '#')
+			continue;
+
+		if (contents[offset+1] == 'Z')
+		{
+			fwrite(contents+off_prg, offset-off_prg, 1, fp);
+			if (!off_prg)
+				fprintf(fp, format, prgname);
+			offset = skip_line(contents, offset, size-1);
+			off_prg = offset;
+		}
+		if (contents[offset+1] == 'E')
+		{
+			/* INF file with autostart line missing?
+			 * -> add one
+			 *
+			 * Assumes #Z is before #E as it seems to normally be,
+			 * and should be in above static INF file contents.
+			 */
+			fwrite(contents+off_prg, offset-off_prg, 1, fp);
+			if (!off_prg)
+				fprintf(fp, format, prgname);
+			/* write resolution info */
+			fwrite(contents+offset, 6, 1, fp);
+			/* TODO: replace with requested resolution info! */
+			fwrite(contents+offset+6, 2, 1, fp);
+			offset += 8;
+			off_rez = offset;
+			break;
+		}
+	}
+	if (!(off_rez && off_prg))
+	{
+		fclose(fp);
+		Log_Printf(LOG_ERROR, "Autostarting disabled, '%s' is not a valid INF file!\n", infname);
+		return;
+	}
+	/* write rest of INF file & seek back to start */
+	if (!(fwrite(contents+offset, size-offset-1, 1, fp) && fseek(fp, 0, SEEK_SET) == 0))
+	{
+		fclose(fp);
+		Log_Printf(LOG_ERROR, "Autostart '%s' file writing failed!\n", TosAutoStart.prgname);
 		return;
 	}
 	TosAutoStart.file = fp;
