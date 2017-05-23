@@ -19,8 +19,8 @@ const char INFFILE_fileid[] = "Hatari inffile.c : " __DATE__ " " __TIME__;
 #include "str.h"
 #include "tos.h"
 
-#define INF_DEBUG  1         /* doesn't remove virtual INF file after use */
-#define ETOS_OWN_INF 0       /* use EmuTOS specific INF file contents */
+#define INF_DEBUG  0         /* doesn't remove virtual INF file after use */
+#define ETOS_OWN_INF 1       /* use EmuTOS specific INF file contents */
 
 static struct {
 	FILE *file;          /* file pointer to contents of INF file */
