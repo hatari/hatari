@@ -29,7 +29,8 @@
 typedef enum {
 	SYMTYPE_TEXT = 1,
 	SYMTYPE_DATA = 2,
-	SYMTYPE_BSS  = 4
+	SYMTYPE_BSS  = 4,
+	SYMTYPE_ABS  = 8
 } symtype_t;
 
 typedef struct {
@@ -194,6 +195,7 @@ static char symbol_char(int type)
 	case SYMTYPE_TEXT: return 'T';
 	case SYMTYPE_DATA: return 'D';
 	case SYMTYPE_BSS:  return 'B';
+	case SYMTYPE_ABS:  return 'A';
 	default: return '?';
 	}
 }
@@ -269,6 +271,11 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, uint32
 				dtypes++;
 				continue;
 			}
+			if ((symid & 0x4000) == 0x4000) {
+				symtype = SYMTYPE_ABS;
+				section = NULL;
+				break;
+			}
 			fprintf(stderr, "WARNING: ignoring symbol '%s' in slot %d of unknown type 0x%x.\n", name, i, symid);
 			continue;
 		}
@@ -305,18 +312,20 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, uint32
 				continue;
 			}
 		}
-		address += section->offset;
-		if (address > section->end) {
-			/* VBCC has 1 symbol outside of its section */
-			if (++outside > 2) {
-				/* potentially buggy version of VBCC vlink used */
-				fprintf(stderr, "ERROR: too many invalid offsets, skipping rest of symbols!\n");
-				symbol_list_free(list);
-				return INVALID_SYMBOL_OFFSETS;
+		if (section) {
+			address += section->offset;
+			if (address > section->end) {
+				/* VBCC has 1 symbol outside of its section */
+				if (++outside > 2) {
+					/* potentially buggy version of VBCC vlink used */
+					fprintf(stderr, "ERROR: too many invalid offsets, skipping rest of symbols!\n");
+					symbol_list_free(list);
+					return INVALID_SYMBOL_OFFSETS;
+				}
+				fprintf(stderr, "WARNING: ignoring symbol '%s' of %c type in slot %d with invalid offset 0x%x (>= 0x%x).\n",
+					name, symbol_char(symtype), i, address, section->end);
+				continue;
 			}
-			fprintf(stderr, "WARNING: ignoring symbol '%s' of %c type in slot %d with invalid offset 0x%x (>= 0x%x).\n",
-				name, symbol_char(symtype), i, address, section->end);
-			continue;
 		}
 		list->names[count].address = address;
 		list->names[count].type = symtype;
@@ -582,6 +591,9 @@ int main(int argc, const char *argv[])
 			break;
 		case 't':
 			Options.notypes |= SYMTYPE_TEXT;
+			break;
+		case 'a':
+			Options.notypes |= SYMTYPE_ABS;
 			break;
 		case 'l':
 			Options.no_local = true;

@@ -153,6 +153,7 @@ static char symbol_char(int type)
 	case SYMTYPE_TEXT: return 'T';
 	case SYMTYPE_DATA: return 'D';
 	case SYMTYPE_BSS:  return 'B';
+	case SYMTYPE_ABS:  return 'A';
 	default: return '?';
 	}
 }
@@ -228,6 +229,11 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, symtyp
 				dtypes++;
 				continue;
 			}
+			if ((symid & 0x4000) == 0x4000) {
+				symtype = SYMTYPE_ABS;
+				section = NULL;
+				break;
+			}
 			fprintf(stderr, "WARNING: ignoring symbol '%s' in slot %d of unknown type 0x%x.\n", name, i, symid);
 			continue;
 		}
@@ -243,18 +249,20 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, symtyp
 			ofiles++;
 			continue;
 		}
-		address += section->offset;
-		if (address > section->end) {
-			/* VBCC has 1 symbol outside of its section */
-			if (++outside > 2) {
-				/* potentially buggy version of VBCC vlink used */
-				fprintf(stderr, "ERROR: too many invalid offsets, skipping rest of symbols!\n");
-				symbol_list_free(list);
-				return INVALID_SYMBOL_OFFSETS;
+		if (section) {
+			address += section->offset;
+			if (address > section->end) {
+				/* VBCC has 1 symbol outside of its section */
+				if (++outside > 2) {
+					/* potentially buggy version of VBCC vlink used */
+					fprintf(stderr, "ERROR: too many invalid offsets, skipping rest of symbols!\n");
+					symbol_list_free(list);
+					return INVALID_SYMBOL_OFFSETS;
+				}
+				fprintf(stderr, "WARNING: ignoring symbol '%s' of %c type in slot %d with invalid offset 0x%x (>= 0x%x).\n",
+					name, symbol_char(symtype), i, address, section->end);
+				continue;
 			}
-			fprintf(stderr, "WARNING: ignoring symbol '%s' of %c type in slot %d with invalid offset 0x%x (>= 0x%x).\n",
-				name, symbol_char(symtype), i, address, section->end);
-			continue;
 		}
 		list->names[count].address = address;
 		list->names[count].type = symtype;
@@ -494,6 +502,10 @@ static symbol_list_t* symbols_load_ascii(FILE *fp, Uint32 *offsets, Uint32 maxad
 		case 'B':
 			symtype = SYMTYPE_BSS;
 			offset = offsets[2];
+			break;
+		case 'A':
+			symtype = SYMTYPE_ABS;
+			offset = 0;
 			break;
 		default:
 			fprintf(stderr, "WARNING: unrecognized symbol type '%c' on line %d, skipping.\n", symchar, line);
