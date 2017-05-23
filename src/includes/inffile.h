@@ -13,8 +13,9 @@ typedef enum {
 	AUTOSTART_FOPEN
 } autostart_t;
 
-extern bool INF_AutoStartSet(const char *prgname);
-extern const char *INF_AutoStartValidate(void);
+extern bool INF_AutoStartSet(const char *prgname, int opt_id);
+extern bool INF_AutoStartSetResolution(const char *str, int opt_id);
+extern int INF_AutoStartValidate(const char **val, const char **err);
 extern void INF_AutoStartCreate(void);
 extern bool INF_AutoStarting(autostart_t t);
 extern FILE *INF_AutoStartOpen(const char *filename);

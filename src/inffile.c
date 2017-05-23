@@ -18,6 +18,9 @@ const char INFFILE_fileid[] = "Hatari inffile.c : " __DATE__ " " __TIME__;
 #include "log.h"
 #include "str.h"
 #include "tos.h"
+/* both for bUseHighRes */
+#include "screen.h"
+#include "video.h"
 
 #define INF_DEBUG  0         /* doesn't remove virtual INF file after use */
 #define ETOS_OWN_INF 1       /* use EmuTOS specific INF file contents */
@@ -26,6 +29,11 @@ static struct {
 	FILE *file;          /* file pointer to contents of INF file */
 	char *prgname;       /* TOS name of the program to auto start */
 	const char *infname; /* name of the INF file TOS will try to match */
+	int reso;            /* resolution setting for #E line */
+/* for validation */
+	int reso_id;
+	const char *reso_str;
+	int prgname_id;
 } TosAutoStart;
 
 
@@ -133,7 +141,7 @@ static const char newdesk_inf[] =
  *
  * Returns true if OK, false for obviously invalid path specification.
  */
-bool INF_AutoStartSet(const char *name)
+bool INF_AutoStartSet(const char *name, int opt_id)
 {
 	char *prgname;
 	int len = strlen(name);
@@ -187,33 +195,127 @@ bool INF_AutoStartSet(const char *name)
 	if (TosAutoStart.prgname)
 		free(TosAutoStart.prgname);
 	TosAutoStart.prgname = prgname;
+	TosAutoStart.prgname_id = opt_id;
 	return true;
 }
 
+
 /*-----------------------------------------------------------------------*/
 /**
- * Trivial checks on whether autostart program drive may exist.
+ * Set specified resolution when autostarting.
  *
- * Return NULL if it could, otherwise return the invalid autostart path.
+ *   0: no override
+ * 1-3: ST/STE resolutions:
+ *      - ST low, med, high
+ * 4-6: TT/Falcon resolutions:
+ *      - TT med, high, low
+ *      - Falcon 80 cols, N/A, 40 cols
+ *
+ * Return true for success, false otherwise.
  */
-const char *INF_AutoStartValidate(void)
+bool INF_AutoStartSetResolution(const char *str, int opt_id)
 {
-	char drive;
+	int reso = atoi(str);
+	if (reso < 1 || reso > 6)
+		return false;
+
+	TosAutoStart.reso = reso;
+	TosAutoStart.reso_id = opt_id;
+	TosAutoStart.reso_str = str;
+	return true;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Validate autostart options against Hatari settings:
+ * - program drive
+ * - resolution
+ *
+ * If there's a problem, return problematic option ID
+ * and set val & err strings, otherwise just return zero.
+ */
+int INF_AutoStartValidate(const char **val, const char **err)
+{
 	const char *path = TosAutoStart.prgname;
+	int extra = 0;
+	char drive;
 
 	if (!path)
-		return NULL;
+		return 0;
+
+	/* validate resolution */
+	if (TosAutoStart.reso)
+	{
+		*val = TosAutoStart.reso_str;
+		switch(ConfigureParams.System.nMachineType)
+		{
+		case MACHINE_STE:
+		case MACHINE_MEGA_STE:
+			/* blitter bit */
+			extra = 0x10;
+		case MACHINE_ST:
+		case MACHINE_MEGA_ST:
+			if (bUseHighRes && TosAutoStart.reso != 3)
+			{
+				*err = "invalid ST/STE mono resolution";
+				return TosAutoStart.reso_id;
+			}
+			else if (TosAutoStart.reso > 2)
+			{
+				*err = "invalid ST/STE color resolution";
+				return TosAutoStart.reso_id;
+			}
+			TosAutoStart.reso_id |= extra;
+			break;
+
+		case MACHINE_FALCON:
+			if (TosAutoStart.reso == 5)
+			{
+				*err = "TT-mono is invalid Falcon resolution";
+				return TosAutoStart.reso_id;
+			}
+			if (bUseHighRes && TosAutoStart.reso != 3)
+			{
+				*err = "invalid Falcon mono resolution";
+				return TosAutoStart.reso_id;
+			}
+			extra = 0x10;
+			/* TODO:
+			 * Falcon resolution setting doesn't have effect,
+			 * seems that #E Falcon settings in columns 6 & 7
+			 * are also needed:
+			 * - line doubling / interlace
+			 * - ST compat, RGB/VGA, columns & #colors
+			 * */
+		case MACHINE_TT:
+			if (bUseHighRes && TosAutoStart.reso != 5)
+			{
+				*err = "invalid TT monochrome resolution";
+				return TosAutoStart.reso_id;
+			}
+			if (TosAutoStart.reso > 6)
+			{
+				*err = "invalid TT/Falcon resolution";
+				return TosAutoStart.reso_id;
+			}
+			TosAutoStart.reso_id |= extra;
+			break;
+		}
+	}
+
+	/* validate autostart program drive */
 	drive = path[0];
 
 	if (drive == 'A')
 	{
 		if (ConfigureParams.DiskImage.EnableDriveA && ConfigureParams.DiskImage.szDiskFileName[0][0])
-			return NULL;
+			return 0;
 	}
 	else if (drive == 'B')
 	{
 		if (ConfigureParams.DiskImage.EnableDriveB && ConfigureParams.DiskImage.szDiskFileName[1][0])
-			return NULL;
+			return 0;
 	}
 	/* exact drive checking for hard drives would require:
 	 *
@@ -234,16 +336,16 @@ const char *INF_AutoStartValidate(void)
 	/* GEMDOS HD */
 	else if (ConfigureParams.HardDisk.bUseHardDiskDirectories && ConfigureParams.HardDisk.szHardDiskDirectories[0])
 	{
-		return NULL;
+		return 0;
 	}
 	/* IDE */
 	else if (ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage && ConfigureParams.HardDisk.szIdeMasterHardDiskImage[0])
 	{
-		return NULL;
+		return 0;
 	}
 	else if (ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage && ConfigureParams.HardDisk.szIdeMasterHardDiskImage[0])
 	{
-		return NULL;
+		return 0;
 	}
 	else
 	{
@@ -252,13 +354,15 @@ const char *INF_AutoStartValidate(void)
 		for (i = 0; i < MAX_ACSI_DEVS; i++)
 		{
 			if (ConfigureParams.Acsi[i].bUseDevice && ConfigureParams.Acsi[i].sDeviceFile[0])
-				return NULL;
+				return 0;
 			if (ConfigureParams.Scsi[i].bUseDevice && ConfigureParams.Scsi[i].sDeviceFile[0])
-				return NULL;
+				return 0;
 		}
 	}
 	/* error */
-	return path;
+	*val = TosAutoStart.prgname;
+	*err = "Required autostart drive isn't enabled";
+	return TosAutoStart.prgname_id;
 }
 
 /**
@@ -422,10 +526,14 @@ void INF_AutoStartCreate(void)
 			fwrite(contents+off_prg, offset-off_prg, 1, fp);
 			if (!off_prg)
 				fprintf(fp, format, prgname);
-			/* write resolution info */
+			/* #E line start */
 			fwrite(contents+offset, 6, 1, fp);
-			/* TODO: replace with requested resolution info! */
-			fwrite(contents+offset+6, 2, 1, fp);
+			/* requested resolution, or default? */
+			if (TosAutoStart.reso)
+				fprintf(fp, "%02x", TosAutoStart.reso);
+			else
+				fwrite(contents+offset+6, 2, 1, fp);
+			/* rest of #E */
 			offset += 8;
 			off_rez = offset;
 			break;

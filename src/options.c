@@ -161,6 +161,7 @@ enum {
 	OPT_DEBUG,
 	OPT_EXCEPTIONS,
 	OPT_BIOSINTERCEPT,
+	OPT_TOS_RESOLUTION,
 	OPT_CONOUT,
 	OPT_DISASM,
 	OPT_NATFEATS,
@@ -428,6 +429,8 @@ static const opt_t HatariOptions[] = {
 	  "<flags>", "Exceptions invoking debugger, see '--debug-except help'" },
 	{ OPT_BIOSINTERCEPT, NULL, "--bios-intercept",
 	  NULL, "Toggle XBios command parsing support" },
+	{ OPT_TOS_RESOLUTION,   NULL, "--tos-res",
+	  "<x>", "Autostart resolution (ST: 1-3, TT/Falcon: 4-6)" },
 	{ OPT_CONOUT,   NULL, "--conout",
 	  "<device>", "Show console output (0-7, 2=VT-52 terminal)" },
 	{ OPT_DISASM,   NULL, "--disasm",
@@ -876,11 +879,12 @@ Uint32 Opt_GetNoParachuteFlag(void)
  */
 static bool Opt_ValidateOptions(void)
 {
-	const char *err;
+	const char *err, *val;
+	int opt_id;
 
-	if ((err = INF_AutoStartValidate()))
+	if ((opt_id = INF_AutoStartValidate(&val, &err)))
 	{
-		return Opt_ShowError(OPT_AUTOSTART, err, "Required autostart drive isn't enabled");
+		return Opt_ShowError(opt_id, val, err);
 	}
 	return true;
 }
@@ -932,7 +936,7 @@ static bool Opt_HandleArgument(const char *path)
 		 * then make sure that given program from that
 		 * dir will be started.
 		 */
-		INF_AutoStartSet(prgname);
+		INF_AutoStartSet(prgname, OPT_AUTOSTART);
 	}
 	if (dir) {
 		path = dir;
@@ -1019,7 +1023,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_AUTOSTART:
-			if (!(ok = INF_AutoStartSet(argv[++i])))
+			if (!(ok = INF_AutoStartSet(argv[++i], OPT_AUTOSTART)))
 			{
 				return Opt_ShowError(OPT_AUTOSTART, argv[i], "Invalid drive and/or path specified for autostart program");
 			}
@@ -1925,6 +1929,14 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 		case OPT_BIOSINTERCEPT:
 			XBios_ToggleCommands();
+			break;
+
+		case OPT_TOS_RESOLUTION:
+			i += 1;
+			if (!INF_AutoStartSetResolution(argv[i], OPT_TOS_RESOLUTION))
+			{
+				return Opt_ShowError(OPT_TOS_RESOLUTION, argv[i], "Invalid resolution");
+			}
 			break;
 
 		case OPT_CONOUT:
