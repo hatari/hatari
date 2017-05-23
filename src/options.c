@@ -878,7 +878,7 @@ static bool Opt_ValidateOptions(void)
 {
 	const char *err;
 
-	if ((err = TOS_AutoStartInvalidDrive()))
+	if ((err = INF_AutoStartValidate()))
 	{
 		return Opt_ShowError(OPT_AUTOSTART, err, "Required autostart drive isn't enabled");
 	}
@@ -932,7 +932,7 @@ static bool Opt_HandleArgument(const char *path)
 		 * then make sure that given program from that
 		 * dir will be started.
 		 */
-		TOS_AutoStartSet(prgname);
+		INF_AutoStartSet(prgname);
 	}
 	if (dir) {
 		path = dir;
@@ -1019,7 +1019,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_AUTOSTART:
-			if (!(ok = TOS_AutoStartSet(argv[++i])))
+			if (!(ok = INF_AutoStartSet(argv[++i])))
 			{
 				return Opt_ShowError(OPT_AUTOSTART, argv[i], "Invalid drive and/or path specified for autostart program");
 			}

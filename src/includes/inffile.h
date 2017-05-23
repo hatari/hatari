@@ -13,11 +13,11 @@ typedef enum {
 	AUTOSTART_FOPEN
 } autostart_t;
 
-extern bool TOS_AutoStartSet(const char *prgname);
-extern const char *TOS_AutoStartInvalidDrive(void);
-extern void TOS_CreateAutoInf(void);
-extern bool TOS_AutoStarting(autostart_t t);
-extern FILE *TOS_AutoStartOpen(const char *filename);
-extern bool TOS_AutoStartClose(FILE *fp);
+extern bool INF_AutoStartSet(const char *prgname);
+extern const char *INF_AutoStartValidate(void);
+extern void INF_AutoStartCreate(void);
+extern bool INF_AutoStarting(autostart_t t);
+extern FILE *INF_AutoStartOpen(const char *filename);
+extern bool INF_AutoStartClose(FILE *fp);
 
 #endif

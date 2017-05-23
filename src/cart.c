@@ -122,7 +122,7 @@ void Cart_ResetImage(void)
 	 * But don't use it on TOS 0.00, it does not work there.
 	 */
 	PatchIllegal = false;				/* By default, don't patch opcodes */
-	if ((bUseVDIRes || TOS_AutoStarting(AUTOSTART_INTERCEPT) ||
+	if ((bUseVDIRes || INF_AutoStarting(AUTOSTART_INTERCEPT) ||
 	     ConfigureParams.HardDisk.bUseHardDiskDirectories ||
 	    LogTraceFlags & (TRACE_OS_GEMDOS | TRACE_OS_BASE | TRACE_OS_VDI | TRACE_OS_AES))
 	    && TosVersion >= 0x100)

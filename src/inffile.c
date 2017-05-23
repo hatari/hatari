@@ -116,7 +116,7 @@ static const char newdesk_inf[] =
  *
  * Returns true if OK, false for obviously invalid path specification.
  */
-bool TOS_AutoStartSet(const char *name)
+bool INF_AutoStartSet(const char *name)
 {
 	char *prgname;
 	int len = strlen(name);
@@ -179,7 +179,7 @@ bool TOS_AutoStartSet(const char *name)
  *
  * Return NULL if it could, otherwise return the invalid autostart path.
  */
-const char *TOS_AutoStartInvalidDrive(void)
+const char *INF_AutoStartValidate(void)
 {
 	char drive;
 	const char *path = TosAutoStart.prgname;
@@ -253,7 +253,7 @@ const char *TOS_AutoStartInvalidDrive(void)
  * 
  * Called at end of TOS ROM loading.
  */
-void TOS_CreateAutoInf(void)
+void INF_AutoStartCreate(void)
 {
 	const char *contents, *infname, *prgname;
 	int offset, size;
@@ -263,7 +263,7 @@ void TOS_CreateAutoInf(void)
 #endif
 
 	/* in case TOS didn't for some reason close it on previous boot */
-	TOS_AutoStartClose(TosAutoStart.file);
+	INF_AutoStartClose(TosAutoStart.file);
 
 	prgname = TosAutoStart.prgname;
 	/* autostart not enabled? */
@@ -344,7 +344,7 @@ void TOS_CreateAutoInf(void)
  * Whether autostarting needs GEMDOS
  * interception or Fopen() check enabling
  */
-bool TOS_AutoStarting(autostart_t t)
+bool INF_AutoStarting(autostart_t t)
 {
 	if (t == AUTOSTART_FOPEN)
 		return (bool)TosAutoStart.file;
@@ -356,7 +356,7 @@ bool TOS_AutoStarting(autostart_t t)
 /**
  * If given name matches autostart file, return its handle, NULL otherwise
  */
-FILE *TOS_AutoStartOpen(const char *filename)
+FILE *INF_AutoStartOpen(const char *filename)
 {
 	if (TosAutoStart.file && strcmp(filename, TosAutoStart.infname) == 0)
 	{
@@ -377,7 +377,7 @@ FILE *TOS_AutoStartOpen(const char *filename)
  * If given handle matches autostart file, close it and return true,
  * false otherwise.
  */
-bool TOS_AutoStartClose(FILE *fp)
+bool INF_AutoStartClose(FILE *fp)
 {
 	if (fp && fp == TosAutoStart.file)
 	{

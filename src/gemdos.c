@@ -1881,7 +1881,7 @@ static bool GemDOS_Open(Uint32 Params)
 
 	if (!ISHARDDRIVE(Drive))
 	{
-		if (TOS_AutoStarting(AUTOSTART_FOPEN))
+		if (INF_AutoStarting(AUTOSTART_FOPEN))
 			bToTos = true;
 		else
 			return redirect_to_TOS();
@@ -1899,7 +1899,7 @@ static bool GemDOS_Open(Uint32 Params)
 		return true;
 	}
 
-	if ((AutostartHandle = TOS_AutoStartOpen(pszFileName)))
+	if ((AutostartHandle = INF_AutoStartOpen(pszFileName)))
 	{
 		strcpy(szActualFileName, pszFileName);
 		FileHandles[Index].FileHandle = AutostartHandle;
@@ -2013,7 +2013,7 @@ static bool GemDOS_Close(Uint32 Params)
 	}
 	
 	/* Close file and free up handle table */
-	if (TOS_AutoStartClose(FileHandles[Handle].FileHandle))
+	if (INF_AutoStartClose(FileHandles[Handle].FileHandle))
 	{
 		FileHandles[Handle].bUsed = false;
 	}
@@ -3484,7 +3484,7 @@ void GemDOS_Boot(void)
 	 * GEMDOS HD, autostarting or GEMDOS tracing
 	 */
 	if (!GEMDOS_EMU_ON &&
-	    !TOS_AutoStarting(AUTOSTART_INTERCEPT) &&
+	    !INF_AutoStarting(AUTOSTART_INTERCEPT) &&
 	    !(LogTraceFlags & (TRACE_OS_GEMDOS|TRACE_OS_BASE)))
 		return;
 

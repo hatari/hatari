@@ -701,8 +701,8 @@ int TOS_LoadImage(void)
 	free(pTosFile);
 
 	bTosImageLoaded = true;
-	TOS_CreateAutoInf();
 
+	INF_AutoStartCreate();
 	return 0;
 }
 
