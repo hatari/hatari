@@ -54,13 +54,15 @@ static const char emudesk_inf[] =
 
 /* TOS v1.04 works only with DESKTOP.INF from that version
  * (it crashes with newer INF after autobooted program exits),
- * later v1.x TOS versions work also with this
+ * later v1.x TOS versions work also with this.
+ *
+ * Trailing spaces on #d line are significant for TOS parsing.
  */
 static const char desktop_inf[] =
 "#a000000\r\n"
 "#b000000\r\n"
 "#c7770007000600070055200505552220770557075055507703111103\r\n"
-"#d\r\n"
+"#d                                             \r\n"
 "#Z 01 @\r\n"
 "#E 18 11\r\n"
 "#W 00 00 00 07 26 0C 09 C:\\*.*@\r\n"
