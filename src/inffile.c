@@ -15,12 +15,10 @@ const char INFFILE_fileid[] = "Hatari inffile.c : " __DATE__ " " __TIME__;
 #include "main.h"
 #include "configuration.h"
 #include "inffile.h"
+#include "options.h"
 #include "log.h"
 #include "str.h"
 #include "tos.h"
-/* both for bUseHighRes */
-#include "screen.h"
-#include "video.h"
 
 #define INF_DEBUG  0         /* doesn't remove virtual INF file after use */
 #define ETOS_OWN_INF 1       /* use EmuTOS specific INF file contents */
@@ -230,7 +228,6 @@ bool INF_AutoStartSetResolution(const char *str, int opt_id)
 /**
  * Validate autostart options against Hatari settings:
  * - program drive
- * - resolution
  *
  * If there's a problem, return problematic option ID
  * and set val & err strings, otherwise just return zero.
@@ -238,71 +235,10 @@ bool INF_AutoStartSetResolution(const char *str, int opt_id)
 int INF_AutoStartValidate(const char **val, const char **err)
 {
 	const char *path = TosAutoStart.prgname;
-	int extra = 0;
 	char drive;
 
 	if (!path)
 		return 0;
-
-	/* validate resolution */
-	if (TosAutoStart.reso)
-	{
-		*val = TosAutoStart.reso_str;
-		switch(ConfigureParams.System.nMachineType)
-		{
-		case MACHINE_STE:
-		case MACHINE_MEGA_STE:
-			/* blitter bit */
-			extra = 0x10;
-		case MACHINE_ST:
-		case MACHINE_MEGA_ST:
-			if (bUseHighRes && TosAutoStart.reso != 3)
-			{
-				*err = "invalid ST/STE mono resolution";
-				return TosAutoStart.reso_id;
-			}
-			else if (TosAutoStart.reso > 2)
-			{
-				*err = "invalid ST/STE color resolution";
-				return TosAutoStart.reso_id;
-			}
-			TosAutoStart.reso_id |= extra;
-			break;
-
-		case MACHINE_FALCON:
-			if (TosAutoStart.reso == 5)
-			{
-				*err = "TT-mono is invalid Falcon resolution";
-				return TosAutoStart.reso_id;
-			}
-			if (bUseHighRes && TosAutoStart.reso != 3)
-			{
-				*err = "invalid Falcon mono resolution";
-				return TosAutoStart.reso_id;
-			}
-			extra = 0x10;
-			/* TODO:
-			 * Falcon resolution setting doesn't have effect,
-			 * seems that #E Falcon settings in columns 6 & 7
-			 * are also needed:
-			 * - line doubling / interlace
-			 * - ST compat, RGB/VGA, columns & #colors
-			 * */
-		case MACHINE_TT:
-			if (bUseHighRes && TosAutoStart.reso != 5)
-			{
-				*err = "invalid TT monochrome resolution";
-				return TosAutoStart.reso_id;
-			}
-			if (TosAutoStart.reso > 6)
-			{
-				*err = "invalid TT/Falcon resolution";
-				return TosAutoStart.reso_id;
-			}
-			TosAutoStart.reso_id |= extra;
-			break;
-		}
-	}
 
 	/* validate autostart program drive */
 	drive = path[0];
@@ -365,6 +301,89 @@ int INF_AutoStartValidate(const char **val, const char **err)
 	return TosAutoStart.prgname_id;
 }
 
+
+/**
+ * Resolution needs to be validated later, here, because we don't
+ * know the final machine type when options are parsed, as it can
+ * change later when TOS is loaded.
+ *
+ * If there's a problem, return problematic option ID
+ * and set val & err strings, otherwise just return zero.
+ */
+static int INF_AutoStartValidateResolution(const char **val, const char **err)
+{
+	int monitor = ConfigureParams.Screen.nMonitorType;
+	int extra = 0;
+
+	/* validate resolution */
+	if (!TosAutoStart.reso)
+		return 0;
+
+	*val = TosAutoStart.reso_str;
+
+	switch(ConfigureParams.System.nMachineType)
+	{
+	case MACHINE_STE:
+	case MACHINE_MEGA_STE:
+		/* blitter bit */
+		extra = 0x10;
+	case MACHINE_ST:
+	case MACHINE_MEGA_ST:
+		if (monitor == MONITOR_TYPE_MONO && TosAutoStart.reso != 3)
+		{
+			TosAutoStart.reso = 3;
+			Log_Printf(LOG_WARN, "With mono monitor, TOS can use only resolution %d, correcting.\n", TosAutoStart.reso);
+		}
+		else if (TosAutoStart.reso > 2)
+		{
+			*err = "invalid ST/STE color resolution";
+			return TosAutoStart.reso_id;
+		}
+		TosAutoStart.reso_id |= extra;
+		break;
+
+	case MACHINE_FALCON:
+		if (monitor == MONITOR_TYPE_MONO && TosAutoStart.reso != 3)
+		{
+			TosAutoStart.reso = 3;
+			Log_Printf(LOG_WARN, "With mono monitor, TOS can use only resolution %d, correcting.\n", TosAutoStart.reso);
+		}
+		else if (TosAutoStart.reso == 5)
+		{
+			*err = "TT-mono is invalid Falcon resolution";
+			return TosAutoStart.reso_id;
+		}
+		else
+		{
+			Log_Printf(LOG_WARN, "TOS resolution setting doesn't work with Falcon (yet)\n");
+		}
+		extra = 0x10;
+		/* TODO:
+		 * Falcon resolution setting doesn't have effect,
+		 * seems that #E Falcon settings in columns 6 & 7
+		 * are also needed:
+		 * - line doubling / interlace
+		 * - ST compat, RGB/VGA, columns & #colors
+		 */
+		break;
+
+	case MACHINE_TT:
+		if (monitor == MONITOR_TYPE_MONO && TosAutoStart.reso != 5)
+		{
+			TosAutoStart.reso = 5;
+			Log_Printf(LOG_WARN, "With mono monitor, TOS can use only resolution %d, correcting.\n", TosAutoStart.reso);
+		}
+		TosAutoStart.reso_id |= extra;
+		break;
+	}
+	Log_Printf(LOG_INFO, "Resulting INF file resolution: %d.\n", TosAutoStart.reso);
+
+	if (bIsEmuTOS)
+		Log_Printf(LOG_WARN, "TOS resolution setting doesn't work with EmuTOS (yet)\n");
+	return 0;
+}
+
+/*-----------------------------------------------------------------------*/
 /**
  * Skip rest of INF file line and return index after its end.
  */
@@ -415,16 +434,24 @@ static const char *prg_format(const char *prgname)
  * File has TOS version specific differences, so it needs to be re-created
  * on each boot in case user changed TOS version.
  *
- * Called at end of TOS ROM loading.
+ * Called at end of TOS ROM loading, returns zero for OK, non-zero for error.
  */
-void INF_AutoStartCreate(void)
+int INF_AutoStartCreate(void)
 {
 	const char *contents, *infname, *prgname, *format;
 	int offset, size, off_prg, off_rez;
+	const char *err, *val;
+	int opt_id;
 	FILE *fp;
 #if defined(WIN32)	/* unfortunately tmpfile() needs administrative privileges on windows, so this needs special care */
 	char *ptr;
 #endif
+
+	if ((opt_id = INF_AutoStartValidateResolution(&val, &err)))
+	{
+		Opt_ShowError(opt_id, val, err);
+		return -3;
+	}
 
 	/* in case TOS didn't for some reason close it on previous boot */
 	INF_AutoStartClose(TosAutoStart.file);
@@ -432,13 +459,13 @@ void INF_AutoStartCreate(void)
 	prgname = TosAutoStart.prgname;
 	/* autostart not enabled? */
 	if (!prgname)
-		return;
+		return 0;
 
 	/* autostart not supported? */
 	if (TosVersion < 0x0104)
 	{
 		Log_Printf(LOG_WARN, "Only TOS versions >= 1.04 support autostarting!\n");
-		return;
+		return 0;
 	}
 
 	if (bIsEmuTOS)
@@ -495,7 +522,7 @@ void INF_AutoStartCreate(void)
 	{
 		Log_Printf(LOG_ERROR, "Failed to create autostart file for '%s': %s!\n",
 			   TosAutoStart.prgname, strerror(errno));
-		return;
+		return 0;
 	}
 
 	format = prg_format(prgname);
@@ -543,17 +570,18 @@ void INF_AutoStartCreate(void)
 	{
 		fclose(fp);
 		Log_Printf(LOG_ERROR, "Autostarting disabled, '%s' is not a valid INF file!\n", infname);
-		return;
+		return 0;
 	}
 	/* write rest of INF file & seek back to start */
 	if (!(fwrite(contents+offset, size-offset-1, 1, fp) && fseek(fp, 0, SEEK_SET) == 0))
 	{
 		fclose(fp);
 		Log_Printf(LOG_ERROR, "Autostart '%s' file writing failed!\n", TosAutoStart.prgname);
-		return;
+		return 0;
 	}
 	TosAutoStart.file = fp;
 	Log_Printf(LOG_WARN, "Virtual autostart file '%s' created for '%s'.\n", infname, prgname);
+	return 0;
 }
 
 

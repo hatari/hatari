@@ -543,6 +543,8 @@ static void TOS_CheckSysConfig(void)
  * Load TOS Rom image file into ST memory space and fix image so it can be
  * emulated correctly.  Pre TOS 1.06 are loaded at 0xFC0000 and later ones
  * at 0xE00000.
+ *
+ * Return zero if all OK, non-zero value for error.
  */
 int TOS_LoadImage(void)
 {
@@ -702,7 +704,6 @@ int TOS_LoadImage(void)
 
 	bTosImageLoaded = true;
 
-	INF_AutoStartCreate();
-	return 0;
+	return INF_AutoStartCreate();
 }
 

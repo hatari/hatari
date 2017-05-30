@@ -430,7 +430,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_BIOSINTERCEPT, NULL, "--bios-intercept",
 	  NULL, "Toggle XBios command parsing support" },
 	{ OPT_TOS_RESOLUTION,   NULL, "--tos-res",
-	  "<x>", "Autostart resolution (ST: 1-3, TT/Falcon: 4-6)" },
+	  "<x>", "Autostart resolution (ST low:1 med:2, TT low:4 med:6)" },
 	{ OPT_CONOUT,   NULL, "--conout",
 	  "<device>", "Show console output (0-7, 2=VT-52 terminal)" },
 	{ OPT_DISASM,   NULL, "--disasm",
@@ -607,7 +607,7 @@ static void Opt_ShowHelp(void)
  * otherwise 'value' is show as the option user gave.
  * Return false if error string was given, otherwise true
  */
-static bool Opt_ShowError(unsigned int optid, const char *value, const char *error)
+bool Opt_ShowError(unsigned int optid, const char *value, const char *error)
 {
 	const opt_t *opt;
 
