@@ -19,6 +19,7 @@ const char INFFILE_fileid[] = "Hatari inffile.c : " __DATE__ " " __TIME__;
 #include "log.h"
 #include "str.h"
 #include "tos.h"
+#include "vdi.h"
 
 #define INF_DEBUG  0         /* doesn't remove virtual INF file after use */
 #define ETOS_OWN_INF 1       /* use EmuTOS specific INF file contents */
@@ -315,7 +316,21 @@ static int INF_AutoStartValidateResolution(const char **val, const char **err)
 	int monitor = ConfigureParams.Screen.nMonitorType;
 	int extra = 0;
 
-	/* validate resolution */
+	/* VDI resolution overrides TOS resolution setting */
+	if (bUseVDIRes)
+	{
+		int newres = VDIRes + 1;
+		if (TosAutoStart.reso != newres)
+		{
+			if (TosAutoStart.reso)
+				Log_Printf(LOG_WARN, "Overriding TOS resolution %d with VDI resolution %d.\n",
+					   TosAutoStart.reso, newres);
+			TosAutoStart.reso = newres;
+		}
+		return 0;
+	}
+
+	/* validate given TOS resolution */
 	if (!TosAutoStart.reso)
 		return 0;
 
