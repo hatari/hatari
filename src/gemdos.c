@@ -516,16 +516,13 @@ void GemDOS_Init(void)
 	DTAIndex = 0;
 }
 
-
 /*-----------------------------------------------------------------------*/
 /**
- * Reset GemDOS file system
+ * Initialize GemDOS drives current paths (to drive root)
  */
-void GemDOS_Reset(void)
+static void GemDOS_InitCurPaths(void)
 {
 	int i;
-
-	GemDOS_Init();
 
 	if (emudrives)
 	{
@@ -539,6 +536,16 @@ void GemDOS_Reset(void)
 			}
 		}
 	}
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Reset GemDOS file system
+ */
+void GemDOS_Reset(void)
+{
+	GemDOS_Init();
+	GemDOS_InitCurPaths();
 
 	/* Reset */
 	act_pd = 0;
@@ -745,6 +752,13 @@ void GemDOS_InitDrives(void)
 			emudrives[i] = NULL;
 		}
 	}
+
+	/* Set current paths in case Atari -> host GEMDOS path mapping
+	 * is needed before TOS boots GEMDOS up (at which point they're
+	 * also initialized), like happens with autostart INF file
+	 * handling.
+	 */
+	GemDOS_InitCurPaths();
 }
 
 
@@ -3126,9 +3140,10 @@ void GemDOS_Info(FILE *fp, Uint32 bShowOpcodes)
 	{
 		if (!emudrives[i])
 			continue;
-		fprintf(fp, "- %c: %s\n",
+		fprintf(fp, "- %c: %s\n  curpath: %s\n",
 			'A' + emudrives[i]->drive_number,
-			emudrives[i]->hd_emulation_dir);
+			emudrives[i]->hd_emulation_dir,
+			emudrives[i]->fs_currpath);
 	}
 
 	fputs("\nInternal Fsfirst() DTAs:\n", fp);
