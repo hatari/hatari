@@ -16,6 +16,8 @@ const char INFFILE_fileid[] = "Hatari inffile.c : " __DATE__ " " __TIME__;
 #include "configuration.h"
 #include "inffile.h"
 #include "options.h"
+#include "gemdos.h"
+#include "file.h"
 #include "log.h"
 #include "str.h"
 #include "tos.h"
@@ -398,6 +400,91 @@ static int INF_AutoStartValidateResolution(const char **val, const char **err)
 	return 0;
 }
 
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Get suitable Atari desktop configuration file for current TOS version,
+ * either by loading existing file, or creating default one if there isn't
+ * a pre-existing one.
+ *
+ * Return INF file contents and set its name & size to args.
+ */
+static char *get_inf_file(const char **set_infname, int *set_size)
+{
+	char *hostname;
+	const char *contents, *infname;
+	Uint8 *host_content;
+	long host_size;
+	int size;
+
+	/* infname needs to be exactly the same string that given
+	 * TOS version gives for GEMDOS to find.
+	 */
+	if (bIsEmuTOS)
+	{
+		if (ConfigureParams.HardDisk.bBootFromHardDisk)
+			infname = "C:\\EMUDESK.INF";
+		else
+			infname = "A:\\EMUDESK.INF";
+#if ETOS_OWN_INF
+		size = sizeof(emudesk_inf);
+		contents = emudesk_inf;
+#else
+		size = sizeof(desktop_inf);
+		contents = desktop_inf;
+#endif
+	}
+	/* need to match file TOS searches first */
+	else if (TosVersion >= 0x0200)
+	{
+		infname = "NEWDESK.INF";
+		size = sizeof(newdesk_inf);
+		contents = newdesk_inf;
+	}
+	else
+	{
+		infname = "DESKTOP.INF";
+		size = sizeof(desktop_inf);
+		contents = desktop_inf;
+	}
+	*set_infname = infname;
+	*set_size = size;
+
+	/* Existing INF can be modified only through GEMDOS hard disk,
+	 * i.e. boot needs to be from C:, which needs to be GEMDOS HD
+	 */
+	if (!(ConfigureParams.HardDisk.bBootFromHardDisk && GemDOS_IsDriveEmulated(2)))
+	{
+#if INF_DEBUG
+	fprintf(stderr, "No GEMDOS HD boot drive, using builtin INF autostart file.\n");
+#endif
+		return strdup(contents);
+	}
+
+	hostname = malloc(FILENAME_MAX);
+	assert(hostname);
+
+	/* convert to host file name, and read that */
+	GemDOS_CreateHardDriveFileName(2, infname, hostname, FILENAME_MAX);
+#if INF_DEBUG
+	GemDOS_Info(stderr, 0);
+	fprintf(stderr, "Checking for existing '%s' -> '%s' INF file...\n", infname, hostname);
+#endif
+	host_content = File_Read(hostname, &host_size, NULL);
+
+	if (host_content)
+	{
+		Log_Printf(LOG_INFO, "Using modified '%s' file for autostarting.\n", hostname);
+		free(hostname);
+		*set_size = host_size;
+		return (char *)host_content;
+	}
+	Log_Printf(LOG_INFO, "Using builtin '%s' file for autostarting.\n", infname);
+	free(hostname);
+	return strdup(contents);
+}
+
+
 /*-----------------------------------------------------------------------*/
 /**
  * Skip rest of INF file line and return index after its end.
@@ -441,84 +528,20 @@ static const char *prg_format(const char *prgname)
 		return "#Z 01 %s@\r\n"; /* GEM program */
 }
 
-
-/*-----------------------------------------------------------------------*/
 /**
- * Create a temporary TOS INF file which will start autostart program.
+ * Create modified, temporary INF file that contains the required
+ * autostart and resolution information.
  *
- * File has TOS version specific differences, so it needs to be re-created
- * on each boot in case user changed TOS version.
- *
- * Called at end of TOS ROM loading.
+ * Return FILE* pointer to it.
  */
-void INF_AutoStartCreate(void)
+static FILE* write_inf_file(const char *contents, int size)
 {
-	const char *contents, *infname, *prgname, *format;
-	int offset, size, off_prg, off_rez;
-	const char *err, *val;
-	int opt_id;
+	const char *format, *infname, *prgname;
+	int offset, off_prg, off_rez;
 	FILE *fp;
+
 #if defined(WIN32)	/* unfortunately tmpfile() needs administrative privileges on windows, so this needs special care */
-	char *ptr;
-#endif
-
-	if ((opt_id = INF_AutoStartValidateResolution(&val, &err)))
-	{
-		Opt_ShowError(opt_id, val, err);
-		bQuitProgram = true;
-		return;
-	}
-
-	/* in case TOS didn't for some reason close it on previous boot */
-	INF_AutoStartClose(TosAutoStart.file);
-
-	prgname = TosAutoStart.prgname;
-	/* autostart not enabled? */
-	if (!prgname)
-		return;
-
-	/* autostart not supported? */
-	if (TosVersion < 0x0104)
-	{
-		Log_Printf(LOG_WARN, "Only TOS versions >= 1.04 support autostarting!\n");
-		return;
-	}
-
-	if (bIsEmuTOS)
-	{
-		if (ConfigureParams.HardDisk.bBootFromHardDisk)
-			infname = "C:\\EMUDESK.INF";
-		else
-			infname = "A:\\EMUDESK.INF";
-#if ETOS_OWN_INF
-		size = sizeof(emudesk_inf);
-		contents = emudesk_inf;
-#else
-		size = sizeof(desktop_inf);
-		contents = desktop_inf;
-#endif
-	}
-	/* need to match file TOS searches first */
-	else if (TosVersion >= 0x0200)
-	{
-		infname = "NEWDESK.INF";
-		size = sizeof(newdesk_inf);
-		contents = newdesk_inf;
-	}
-	else
-	{
-		infname = "DESKTOP.INF";
-		size = sizeof(desktop_inf);
-		contents = desktop_inf;
-	}
-	/* infname needs to be exactly the same string that given
-	 * TOS version gives for GEMDOS to find.
-	 */
-	TosAutoStart.infname = infname;
-
-	/* create the autostart file */
-#if defined(WIN32)	/* unfortunately tmpfile() needs administrative privileges on windows, so this needs special care */
-	ptr = WinTmpFile();
+	char *ptr = WinTmpFile();
 	if (ptr != NULL)
 		fp = fopen(ptr,"w+b");
 	else
@@ -534,11 +557,14 @@ void INF_AutoStartCreate(void)
 	fp = tmpfile();
 # endif
 #endif
+	prgname = TosAutoStart.prgname;
+	infname = TosAutoStart.infname;
+
 	if (!fp)
 	{
 		Log_Printf(LOG_ERROR, "Failed to create autostart file for '%s': %s!\n",
-			   TosAutoStart.prgname, strerror(errno));
-		return;
+			   prgname, strerror(errno));
+		return NULL;
 	}
 
 	format = prg_format(prgname);
@@ -586,17 +612,63 @@ void INF_AutoStartCreate(void)
 	{
 		fclose(fp);
 		Log_Printf(LOG_ERROR, "Autostarting disabled, '%s' is not a valid INF file!\n", infname);
-		return;
+		return NULL;
 	}
 	/* write rest of INF file & seek back to start */
 	if (!(fwrite(contents+offset, size-offset-1, 1, fp) && fseek(fp, 0, SEEK_SET) == 0))
 	{
 		fclose(fp);
-		Log_Printf(LOG_ERROR, "Autostart '%s' file writing failed!\n", TosAutoStart.prgname);
+		Log_Printf(LOG_ERROR, "Autostart '%s' file writing failed!\n", prgname);
+		return NULL;
+	}
+
+	Log_Printf(LOG_WARN, "Virtual autostart file '%s' created for '%s'.\n", infname, prgname);
+	return fp;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Create a temporary TOS INF file which will start autostart program.
+ *
+ * File has TOS version specific differences, so it needs to be re-created
+ * on each boot in case user changed TOS version.
+ *
+ * Called at end of TOS ROM loading.
+ */
+void INF_AutoStartCreate(void)
+{
+	char *contents;
+	const char *err, *val;
+	int size, opt_id;
+
+	if ((opt_id = INF_AutoStartValidateResolution(&val, &err)))
+	{
+		Opt_ShowError(opt_id, val, err);
+		bQuitProgram = true;
 		return;
 	}
-	TosAutoStart.file = fp;
-	Log_Printf(LOG_WARN, "Virtual autostart file '%s' created for '%s'.\n", infname, prgname);
+
+	/* in case TOS didn't for some reason close it on previous boot */
+	INF_AutoStartClose(TosAutoStart.file);
+
+	/* autostart not enabled? */
+	if (!TosAutoStart.prgname)
+		return;
+
+	/* autostart not supported? */
+	if (TosVersion < 0x0104)
+	{
+		Log_Printf(LOG_WARN, "Only TOS versions >= 1.04 support autostarting!\n");
+		return;
+	}
+
+	contents = get_inf_file(&TosAutoStart.infname, &size);
+	if (contents)
+	{
+		TosAutoStart.file = write_inf_file(contents, size);
+		free(contents);
+	}
 }
 
 
