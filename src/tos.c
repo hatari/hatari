@@ -704,6 +704,7 @@ int TOS_LoadImage(void)
 
 	bTosImageLoaded = true;
 
-	return INF_AutoStartCreate();
+	INF_AutoStartCreate();
+	return 0;
 }
 

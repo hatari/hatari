@@ -449,9 +449,9 @@ static const char *prg_format(const char *prgname)
  * File has TOS version specific differences, so it needs to be re-created
  * on each boot in case user changed TOS version.
  *
- * Called at end of TOS ROM loading, returns zero for OK, non-zero for error.
+ * Called at end of TOS ROM loading.
  */
-int INF_AutoStartCreate(void)
+void INF_AutoStartCreate(void)
 {
 	const char *contents, *infname, *prgname, *format;
 	int offset, size, off_prg, off_rez;
@@ -465,7 +465,8 @@ int INF_AutoStartCreate(void)
 	if ((opt_id = INF_AutoStartValidateResolution(&val, &err)))
 	{
 		Opt_ShowError(opt_id, val, err);
-		return -3;
+		bQuitProgram = true;
+		return;
 	}
 
 	/* in case TOS didn't for some reason close it on previous boot */
@@ -474,13 +475,13 @@ int INF_AutoStartCreate(void)
 	prgname = TosAutoStart.prgname;
 	/* autostart not enabled? */
 	if (!prgname)
-		return 0;
+		return;
 
 	/* autostart not supported? */
 	if (TosVersion < 0x0104)
 	{
 		Log_Printf(LOG_WARN, "Only TOS versions >= 1.04 support autostarting!\n");
-		return 0;
+		return;
 	}
 
 	if (bIsEmuTOS)
@@ -537,7 +538,7 @@ int INF_AutoStartCreate(void)
 	{
 		Log_Printf(LOG_ERROR, "Failed to create autostart file for '%s': %s!\n",
 			   TosAutoStart.prgname, strerror(errno));
-		return 0;
+		return;
 	}
 
 	format = prg_format(prgname);
@@ -585,18 +586,17 @@ int INF_AutoStartCreate(void)
 	{
 		fclose(fp);
 		Log_Printf(LOG_ERROR, "Autostarting disabled, '%s' is not a valid INF file!\n", infname);
-		return 0;
+		return;
 	}
 	/* write rest of INF file & seek back to start */
 	if (!(fwrite(contents+offset, size-offset-1, 1, fp) && fseek(fp, 0, SEEK_SET) == 0))
 	{
 		fclose(fp);
 		Log_Printf(LOG_ERROR, "Autostart '%s' file writing failed!\n", TosAutoStart.prgname);
-		return 0;
+		return;
 	}
 	TosAutoStart.file = fp;
 	Log_Printf(LOG_WARN, "Virtual autostart file '%s' created for '%s'.\n", infname, prgname);
-	return 0;
 }
 
 

@@ -16,7 +16,7 @@ typedef enum {
 extern bool INF_AutoStartSet(const char *prgname, int opt_id);
 extern bool INF_AutoStartSetResolution(const char *str, int opt_id);
 extern int INF_AutoStartValidate(const char **val, const char **err);
-extern int INF_AutoStartCreate(void);
+extern void INF_AutoStartCreate(void);
 extern bool INF_AutoStarting(autostart_t t);
 extern FILE *INF_AutoStartOpen(const char *filename);
 extern bool INF_AutoStartClose(FILE *fp);

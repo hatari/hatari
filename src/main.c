@@ -735,7 +735,8 @@ static void Main_Init(void)
 	}
 	if (!bTosImageLoaded || bQuitProgram)
 	{
-		fprintf(stderr, "Failed to load TOS image!\n");
+		if (!bTosImageLoaded)
+			fprintf(stderr, "Failed to load TOS image!\n");
 		SDL_Quit();
 		exit(-2);
 	}
