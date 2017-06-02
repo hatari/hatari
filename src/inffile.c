@@ -468,18 +468,18 @@ static char *get_inf_file(const char **set_infname, int *set_size)
 	GemDOS_CreateHardDriveFileName(2, infname, hostname, FILENAME_MAX);
 #if INF_DEBUG
 	GemDOS_Info(stderr, 0);
-	fprintf(stderr, "Checking for existing '%s' -> '%s' INF file...\n", infname, hostname);
+	fprintf(stderr, "\nChecking for existing INF file '%s' -> '%s'...\n", infname, hostname);
 #endif
 	host_content = File_Read(hostname, &host_size, NULL);
 
 	if (host_content)
 	{
-		Log_Printf(LOG_INFO, "Using modified '%s' file for autostarting.\n", hostname);
+		Log_Printf(LOG_INFO, "Going to modify '%s' for autostarting.\n", hostname);
 		free(hostname);
 		*set_size = host_size;
 		return (char *)host_content;
 	}
-	Log_Printf(LOG_INFO, "Using builtin '%s' file for autostarting.\n", infname);
+	Log_Printf(LOG_INFO, "Using builtin '%s' for autostarting.\n", infname);
 	free(hostname);
 	return strdup(contents);
 }
@@ -491,7 +491,9 @@ static char *get_inf_file(const char **set_infname, int *set_size)
  */
 static int skip_line(const char *contents, int offset, int size)
 {
+	int orig = offset;
 	char chr;
+
 	for (; offset < size; offset++)
 	{
 		chr = contents[offset];
@@ -503,7 +505,8 @@ static int skip_line(const char *contents, int offset, int size)
 			return offset;
 		}
 	}
-	Log_Printf(LOG_WARN, "Malformed INF file '%s' as input, autostart likely to fail!\n", TosAutoStart.prgname);
+	Log_Printf(LOG_WARN, "Malformed INF file '%s', no line end at offsets %d-%d, autostart likely to fail!\n",
+		   TosAutoStart.prgname, orig, offset);
 	return offset;
 }
 
@@ -593,8 +596,11 @@ static FILE* write_inf_file(const char *contents, int size)
 			 * and should be in above static INF file contents.
 			 */
 			fwrite(contents+off_prg, offset-off_prg, 1, fp);
-			if (!off_prg)
+			if (prgname && !off_prg)
+			{
+				off_prg = offset;
 				fprintf(fp, format, prgname);
+			}
 			/* #E line start */
 			fwrite(contents+offset, 6, 1, fp);
 			/* requested resolution, or default? */
@@ -611,7 +617,7 @@ static FILE* write_inf_file(const char *contents, int size)
 	if (!(off_rez && off_prg))
 	{
 		fclose(fp);
-		Log_Printf(LOG_ERROR, "Autostarting disabled, '%s' is not a valid INF file!\n", infname);
+		Log_Printf(LOG_ERROR, "'%s' not a valid INF file, #E resolution line missing -> autostarting disabled!\n", infname);
 		return NULL;
 	}
 	/* write rest of INF file & seek back to start */
