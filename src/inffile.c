@@ -316,7 +316,6 @@ int INF_AutoStartValidate(const char **val, const char **err)
 static int INF_AutoStartValidateResolution(const char **val, const char **err)
 {
 	int monitor = ConfigureParams.Screen.nMonitorType;
-	int extra = 0;
 
 	/* VDI resolution overrides TOS resolution setting */
 	if (bUseVDIRes)
@@ -329,74 +328,87 @@ static int INF_AutoStartValidateResolution(const char **val, const char **err)
 					   TosAutoStart.reso, newres);
 			TosAutoStart.reso = newres;
 		}
-		return 0;
 	}
-
-	/* validate given TOS resolution */
-	if (!TosAutoStart.reso)
-		return 0;
-
-	*val = TosAutoStart.reso_str;
-
-	switch(ConfigureParams.System.nMachineType)
+	else
 	{
-	case MACHINE_STE:
-	case MACHINE_MEGA_STE:
-		/* blitter bit */
-		extra = 0x10;
-	case MACHINE_ST:
-	case MACHINE_MEGA_ST:
-		if (monitor == MONITOR_TYPE_MONO && TosAutoStart.reso != 3)
-		{
-			TosAutoStart.reso = 3;
-			Log_Printf(LOG_WARN, "With mono monitor, TOS can use only resolution %d, correcting.\n", TosAutoStart.reso);
-		}
-		else if (TosAutoStart.reso > 2)
-		{
-			*err = "invalid ST/STE color resolution";
-			return TosAutoStart.reso_id;
-		}
-		TosAutoStart.reso_id |= extra;
-		break;
+		/* validate given TOS resolution */
+		if (!TosAutoStart.reso)
+			return 0;
 
-	case MACHINE_FALCON:
-		if (monitor == MONITOR_TYPE_MONO && TosAutoStart.reso != 3)
-		{
-			TosAutoStart.reso = 3;
-			Log_Printf(LOG_WARN, "With mono monitor, TOS can use only resolution %d, correcting.\n", TosAutoStart.reso);
-		}
-		else if (TosAutoStart.reso == 5)
-		{
-			*err = "TT-mono is invalid Falcon resolution";
-			return TosAutoStart.reso_id;
-		}
-		else
-		{
-			Log_Printf(LOG_WARN, "TOS resolution setting doesn't work with Falcon (yet)\n");
-		}
-		extra = 0x10;
-		/* TODO:
-		 * Falcon resolution setting doesn't have effect,
-		 * seems that #E Falcon settings in columns 6 & 7
-		 * are also needed:
-		 * - line doubling / interlace
-		 * - ST compat, RGB/VGA, columns & #colors
-		 */
-		break;
+		*val = TosAutoStart.reso_str;
 
-	case MACHINE_TT:
-		if (monitor == MONITOR_TYPE_MONO && TosAutoStart.reso != 5)
+		switch(ConfigureParams.System.nMachineType)
 		{
-			TosAutoStart.reso = 5;
-			Log_Printf(LOG_WARN, "With mono monitor, TOS can use only resolution %d, correcting.\n", TosAutoStart.reso);
+		case MACHINE_STE:
+		case MACHINE_MEGA_STE:
+		case MACHINE_ST:
+		case MACHINE_MEGA_ST:
+			if (monitor == MONITOR_TYPE_MONO && TosAutoStart.reso != 3)
+			{
+				TosAutoStart.reso = 3;
+				Log_Printf(LOG_WARN, "With mono monitor, TOS can use only resolution %d, correcting.\n", TosAutoStart.reso);
+			}
+			else if (TosAutoStart.reso > 2)
+			{
+				*err = "invalid ST/STE color resolution";
+				return TosAutoStart.reso_id;
+			}
+			break;
+
+		case MACHINE_FALCON:
+			if (monitor == MONITOR_TYPE_MONO && TosAutoStart.reso != 3)
+			{
+				TosAutoStart.reso = 3;
+				Log_Printf(LOG_WARN, "With mono monitor, TOS can use only resolution %d, correcting.\n", TosAutoStart.reso);
+			}
+			else if (TosAutoStart.reso == 5)
+			{
+				*err = "TT-mono is invalid Falcon resolution";
+				return TosAutoStart.reso_id;
+			}
+			else
+			{
+				Log_Printf(LOG_WARN, "TOS resolution setting doesn't work with Falcon (yet)\n");
+			}
+			/* TODO:
+			 * Falcon resolution setting doesn't have effect,
+			 * seems that #E Falcon settings in columns 6 & 7
+			 * are also needed:
+			 * - line doubling / interlace
+			 * - ST compat, RGB/VGA, columns & #colors
+			 */
+			break;
+
+		case MACHINE_TT:
+			if (monitor == MONITOR_TYPE_MONO && TosAutoStart.reso != 5)
+			{
+				TosAutoStart.reso = 5;
+				Log_Printf(LOG_WARN, "With mono monitor, TOS can use only resolution %d, correcting.\n", TosAutoStart.reso);
+			}
+			break;
 		}
-		TosAutoStart.reso_id |= extra;
-		break;
 	}
-	Log_Printf(LOG_INFO, "Resulting INF file resolution: %d.\n", TosAutoStart.reso);
 
 	if (bIsEmuTOS)
+	{
 		Log_Printf(LOG_WARN, "TOS resolution setting doesn't work with EmuTOS (yet)\n");
+	}
+	else if (TosVersion >= 0x0160)
+	{
+		switch(ConfigureParams.System.nMachineType)
+		{
+		case MACHINE_STE:
+		case MACHINE_MEGA_STE:
+		case MACHINE_FALCON:
+			/* enable blitter */
+			TosAutoStart.reso |= 0x10;
+			break;
+		default:
+			break;
+		}
+	}
+
+	Log_Printf(LOG_INFO, "Resulting INF file resolution: %02x.\n", TosAutoStart.reso);
 	return 0;
 }
 
