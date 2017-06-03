@@ -73,7 +73,7 @@
 
 # second line: a z e r t y u i o p ^ $
 #
- Tab,15 	
+ Tab,15
  a,16
  z,17
  e,18
@@ -111,8 +111,8 @@
  v,47
  b,48
  n,49
- ,,50    # comma      44,50
- ;,51    # semicolon  59,51
+ 44,50    # comma
+ 59,51    # semicolon
  :,52
  =,53
 
