@@ -23,8 +23,7 @@ const char INFFILE_fileid[] = "Hatari inffile.c : " __DATE__ " " __TIME__;
 #include "tos.h"
 #include "vdi.h"
 
-#define INF_DEBUG  0         /* doesn't remove virtual INF file after use */
-#define ETOS_OWN_INF 1       /* use EmuTOS specific INF file contents */
+#define INF_DEBUG  0         /* debug output + leaves virtual INF file behind */
 
 static struct {
 	FILE *file;          /* file pointer to contents of INF file */
@@ -42,7 +41,10 @@ static struct {
  * '@' character in the INF files #Z line
  * (first value is 00: TOS, 01: GEM).
  *
- * Resolution is specified in the second hex value in #E line.
+ * Resolution is specified in the 2nd hex value in #E line
+ * in normal TOS and EmuTOS <= 0.9.6, and in 4th hex value
+ * in EmuTOS >= 0.9.7.  Hatari supports only latter EmuTOS
+ * versions.
  *
  * TOS versions expect both of these to be within certain
  * number of bytes from the beginning of the file, and there
@@ -52,53 +54,59 @@ static struct {
  * http://st-news.com/issues/st-news-volume-2-issue-6/education/the-desktopinf-file/
  */
 
-/* EmuDesk INF file format differs slightly from normal TOS */
+/* EmuDesk INF file format and values differ from normal TOS */
 static const char emudesk_inf[] =
+"#R 01\r\n"
 "#Z 01 @\r\n"
-"#E 9A 07\r\n"
-"#W 00 00 02 06 26 0C 08 C:\\*.*@\r\n"
+"#E 1A 61 FF 00 00\r\n"
+"#W 00 00 02 06 26 0C 00 C:\\*.*@\r\n"
 "#W 00 00 02 08 26 0C 00 @\r\n"
 "#W 00 00 02 0A 26 0C 00 @\r\n"
 "#W 00 00 02 0D 26 0C 00 @\r\n"
+"#W 00 00 00 00 14 0B 00 @\r\n"
+"#W 00 00 00 00 14 0B 00 @\r\n"
+"#W 00 00 00 00 14 0B 00 @\r\n"
 "#M 00 00 01 FF A DISK A@ @\r\n"
 "#M 01 00 01 FF B DISK B@ @\r\n"
-"#M 02 00 01 FF C DISK C@ @\r\n"
-"#F FF 28 @ *.*@\r\n"
+"#M 02 00 00 FF C DISK C@ @\r\n"
+"#F FF 07 @ *.*@ 000 @\r\n"
+"#N FF 07 @ *.*@ 000 @\r\n"
 "#D FF 02 @ *.*@\r\n"
-"#G 08 FF *.APP@ @\r\n"
-"#G 08 FF *.PRG@ @\r\n"
-"#P 08 FF *.TTP@ @\r\n"
-"#F 08 FF *.TOS@ @\r\n"
+"#Y 06 FF *.GTP@ @ 000 @\r\n"
+"#G 06 FF *.APP@ @ 000 @\r\n"
+"#G 06 FF *.PRG@ @ 000 @\r\n"
+"#P 06 FF *.TTP@ @ 000 @\r\n"
+"#F 06 FF *.TOS@ @ 000 @\r\n"
 "#T 00 03 03 FF   TRASH@ @\r\n";
 
 /* TOS v1.04 works only with DESKTOP.INF from that version
  * (it crashes with newer INF after autobooted program exits),
  * later v1.x TOS versions work also with this.
  *
- * Trailing spaces on #d line are significant for TOS parsing.
+ * Trailing spaces are significant for TOS parsing.
  */
 static const char desktop_inf[] =
 "#a000000\r\n"
 "#b000000\r\n"
 "#c7770007000600070055200505552220770557075055507703111103\r\n"
 "#d                                             \r\n"
-"#Z 01 @\r\n"
-"#E 18 11\r\n"
+"#Z 01 @ \r\n"
+"#E 18 11 \r\n"
 "#W 00 00 00 07 26 0C 09 C:\\*.*@\r\n"
 "#W 00 00 02 0B 26 09 00 @\r\n"
 "#W 00 00 0A 0F 1A 09 00 @\r\n"
 "#W 00 00 0E 01 1A 09 00 @\r\n"
-"#M 01 00 00 FF C HARD DISK@ @\r\n"
-"#M 00 00 00 FF A FLOPPY DISK@ @\r\n"
-"#M 00 01 00 FF B FLOPPY DISK@ @\r\n"
-"#T 00 03 02 FF   TRASH@ @\r\n"
-"#F FF 04   @ *.*@\r\n"
-"#D FF 01   @ *.*@\r\n"
-"#G 03 FF   *.APP@ @\r\n"
-"#G 03 FF   *.PRG@ @\r\n"
-"#P 03 FF   *.TTP@ @\r\n"
-"#F 03 04   *.TOS@ @\r\n"
-"\032\r\n";
+"#M 01 00 00 FF C HARD DISK@ @ \r\n"
+"#M 00 00 00 FF A FLOPPY DISK@ @ \r\n"
+"#M 00 01 00 FF B FLOPPY DISK@ @ \r\n"
+"#T 00 03 02 FF   TRASH@ @ \r\n"
+"#F FF 04   @ *.*@ \r\n"
+"#D FF 01   @ *.*@ \r\n"
+"#G 03 FF   *.APP@ @ \r\n"
+"#G 03 FF   *.PRG@ @ \r\n"
+"#P 03 FF   *.TTP@ @ \r\n"
+"#F 03 04   *.TOS@ @ \r\n"
+"\032";
 
 /* TOS v2.x and newer have also different format, using
  * TOS v1.04 INF file would result in bogus resolution with TOS v4
@@ -107,11 +115,11 @@ static const char newdesk_inf[] =
 "#a000000\r\n"
 "#b000000\r\n"
 "#c7770007000600070055200505552220770557075055507703111103\r\n"
-"#d\r\n"
-"#Z 01 @\r\n"
+"#d                                             \r\n"
+"#Z 01 @ \r\n"
 "#K 4F 53 4C 00 46 42 43 57 45 58 00 00 00 00 00 00 00 00 00 00 00 00 00 52 00 00 4D 56 50 00 @\r\n"
-"#E 18 01 00 06\r\n"
-"#Q 41 40 43 40 43 40\r\n"
+"#E 18 01 00 06 \r\n"
+"#Q 41 40 43 40 43 40 \r\n"
 "#W 00 00 00 07 26 0C 00 C:\\*.*@\r\n"
 "#W 00 00 02 0B 26 09 00 @\r\n"
 "#W 00 00 0A 0F 1A 09 00 @\r\n"
@@ -120,17 +128,17 @@ static const char newdesk_inf[] =
 "#W 00 00 0C 0B 26 09 00 @\r\n"
 "#W 00 00 08 0F 1A 09 00 @\r\n"
 "#W 00 00 06 01 1A 09 00 @\r\n"
-"#M 00 01 00 FF C HARD DISK@ @\r\n"
-"#M 00 00 00 FF A FLOPPY DISK@ @\r\n"
-"#M 01 00 00 FF B FLOPPY DISK@ @\r\n"
-"#T 00 03 02 FF   TRASH@ @\r\n"
-"#N FF 04 000 @ *.*@ @\r\n"
-"#D FF 01 000 @ *.*@ @\r\n"
-"#G 03 FF 000 *.APP@ @ @\r\n"
-"#G 03 FF 000 *.PRG@ @ @\r\n"
-"#Y 03 FF 000 *.GTP@ @ @\r\n"
-"#P 03 FF 000 *.TTP@ @ @\r\n"
-"#F 03 04 000 *.TOS@ @ @\r\n";
+"#N FF 04 000 @ *.*@ @ \r\n"
+"#D FF 01 000 @ *.*@ @ \r\n"
+"#G 03 FF 000 *.APP@ @ @ \r\n"
+"#G 03 FF 000 *.PRG@ @ @ \r\n"
+"#Y 03 FF 000 *.GTP@ @ @ \r\n"
+"#P 03 FF 000 *.TTP@ @ @ \r\n"
+"#F 03 04 000 *.TOS@ @ @ \r\n"
+"#M 00 01 00 FF C HARD DISK@ @ \r\n"
+"#M 00 00 00 FF A FLOPPY DISK@ @ \r\n"
+"#M 01 00 00 FF B FLOPPY DISK@ @ \r\n"
+"#T 00 03 02 FF   TRASH@ @ \r\n";
 
 
 /*-----------------------------------------------------------------------*/
@@ -438,13 +446,8 @@ static char *get_inf_file(const char **set_infname, int *set_size)
 			infname = "C:\\EMUDESK.INF";
 		else
 			infname = "A:\\EMUDESK.INF";
-#if ETOS_OWN_INF
 		size = sizeof(emudesk_inf);
 		contents = emudesk_inf;
-#else
-		size = sizeof(desktop_inf);
-		contents = desktop_inf;
-#endif
 	}
 	/* need to match file TOS searches first */
 	else if (TosVersion >= 0x0200)
@@ -538,9 +541,9 @@ static const char *prg_format(const char *prgname)
 		ext = prgname;
 
 	if (strcmp(ext, ".TTP") == 0 ||strcmp(ext, ".TOS") == 0)
-		return "#Z 00 %s@\r\n"; /* TOS program */
+		return "#Z 00 %s@ \r\n"; /* TOS program */
 	else
-		return "#Z 01 %s@\r\n"; /* GEM program */
+		return "#Z 01 %s@ \r\n"; /* GEM program */
 }
 
 /**
