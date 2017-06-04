@@ -311,6 +311,32 @@ int INF_AutoStartValidate(const char **val, const char **err)
 
 
 /**
+ * Map / set VDI to INF file resolution
+ */
+static int vdi2inf(int mode)
+{
+	int res = TosAutoStart.reso;
+	int newres = mode + 1;
+	if (res != newres)
+	{
+		if (res)
+			Log_Printf(LOG_WARN, "Overriding TOS resolution %d with VDI resolution %d.\n",
+				   res, newres);
+		res = newres;
+	}
+	return res;
+}
+
+/**
+ * Map / set VDI to INF file resolution
+ */
+extern void INF_AutoStartSetVdiMode(int vdi_res)
+{
+	TosAutoStart.reso = vdi2inf(vdi_res);
+}
+
+
+/**
  * Resolution needs to be validated later, here, because we don't
  * know the final machine type when options are parsed, as it can
  * change later when TOS is loaded.
@@ -334,14 +360,7 @@ static int INF_AutoStartValidateResolution(int *set_res, const char **val, const
 	/* VDI resolution overrides TOS resolution setting */
 	if (bUseVDIRes)
 	{
-		int newres = VDIRes + 1;
-		if (res != newres)
-		{
-			if (res)
-				Log_Printf(LOG_WARN, "Overriding TOS resolution %d with VDI resolution %d.\n",
-					   res, newres);
-			res = newres;
-		}
+		res = vdi2inf(VDIRes);
 	}
 	else
 	{
