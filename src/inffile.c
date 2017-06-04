@@ -374,6 +374,11 @@ static int INF_AutoStartValidateResolution(const char **val, const char **err)
 				TosAutoStart.reso = 5;
 				Log_Printf(LOG_WARN, "With mono monitor, TOS can use only resolution %d, correcting.\n", TosAutoStart.reso);
 			}
+			else if (TosAutoStart.reso == 5)
+			{
+				*err = "invalid TT color resolution";
+				return TosAutoStart.reso_id;
+			}
 			break;
 
 		case MACHINE_FALCON:
