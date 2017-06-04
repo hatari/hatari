@@ -29,7 +29,7 @@ static struct {
 	FILE *file;          /* file pointer to contents of INF file */
 	char *prgname;       /* TOS name of the program to auto start */
 	const char *infname; /* name of the INF file TOS will try to match */
-	int reso;            /* resolution setting for #E line */
+	int reso;            /* resolution setting value request for #E line */
 /* for validation */
 	int reso_id;
 	const char *reso_str;
@@ -326,26 +326,29 @@ int INF_AutoStartValidate(const char **val, const char **err)
  * If there's a problem, return problematic option ID
  * and set val & err strings, otherwise just return zero.
  */
-static int INF_AutoStartValidateResolution(const char **val, const char **err)
+static int INF_AutoStartValidateResolution(int *set_res, const char **val, const char **err)
 {
-	int monitor = ConfigureParams.Screen.nMonitorType;
+	int res = TosAutoStart.reso;
+	*set_res = 0;
 
 	/* VDI resolution overrides TOS resolution setting */
 	if (bUseVDIRes)
 	{
 		int newres = VDIRes + 1;
-		if (TosAutoStart.reso != newres)
+		if (res != newres)
 		{
-			if (TosAutoStart.reso)
+			if (res)
 				Log_Printf(LOG_WARN, "Overriding TOS resolution %d with VDI resolution %d.\n",
-					   TosAutoStart.reso, newres);
-			TosAutoStart.reso = newres;
+					   res, newres);
+			res = newres;
 		}
 	}
 	else
 	{
+		int monitor = ConfigureParams.Screen.nMonitorType;
+
 		/* validate given TOS resolution */
-		if (!TosAutoStart.reso)
+		if (!res)
 			return 0;
 
 		*val = TosAutoStart.reso_str;
@@ -356,12 +359,12 @@ static int INF_AutoStartValidateResolution(const char **val, const char **err)
 		case MACHINE_MEGA_STE:
 		case MACHINE_ST:
 		case MACHINE_MEGA_ST:
-			if (monitor == MONITOR_TYPE_MONO && TosAutoStart.reso != 3)
+			if (monitor == MONITOR_TYPE_MONO && res != 3)
 			{
-				TosAutoStart.reso = 3;
-				Log_Printf(LOG_WARN, "With mono monitor, TOS can use only resolution %d, correcting.\n", TosAutoStart.reso);
+				res = 3;
+				Log_Printf(LOG_WARN, "With mono monitor, TOS can use only resolution %d, correcting.\n", res);
 			}
-			else if (TosAutoStart.reso > 2)
+			else if (res > 2)
 			{
 				*err = "invalid ST/STE color resolution";
 				return TosAutoStart.reso_id;
@@ -369,12 +372,12 @@ static int INF_AutoStartValidateResolution(const char **val, const char **err)
 			break;
 
 		case MACHINE_TT:
-			if (monitor == MONITOR_TYPE_MONO && TosAutoStart.reso != 5)
+			if (monitor == MONITOR_TYPE_MONO && res != 5)
 			{
-				TosAutoStart.reso = 5;
-				Log_Printf(LOG_WARN, "With mono monitor, TOS can use only resolution %d, correcting.\n", TosAutoStart.reso);
+				res = 5;
+				Log_Printf(LOG_WARN, "With mono monitor, TOS can use only resolution %d, correcting.\n", res);
 			}
-			else if (TosAutoStart.reso == 5)
+			else if (res == 5)
 			{
 				*err = "invalid TT color resolution";
 				return TosAutoStart.reso_id;
@@ -382,12 +385,12 @@ static int INF_AutoStartValidateResolution(const char **val, const char **err)
 			break;
 
 		case MACHINE_FALCON:
-			if (monitor == MONITOR_TYPE_MONO && TosAutoStart.reso != 3)
+			if (monitor == MONITOR_TYPE_MONO && res != 3)
 			{
-				TosAutoStart.reso = 3;
-				Log_Printf(LOG_WARN, "With mono monitor, TOS can use only resolution %d, correcting.\n", TosAutoStart.reso);
+				res = 3;
+				Log_Printf(LOG_WARN, "With mono monitor, TOS can use only resolution %d, correcting.\n", res);
 			}
-			else if (TosAutoStart.reso == 5)
+			else if (res == 5)
 			{
 				*err = "TT-mono is invalid Falcon resolution";
 				return TosAutoStart.reso_id;
@@ -409,7 +412,10 @@ static int INF_AutoStartValidateResolution(const char **val, const char **err)
 
 	if (bIsEmuTOS)
 	{
-		Log_Printf(LOG_WARN, "TOS resolution setting doesn't work with EmuTOS (yet)\n");
+		/* map values 0-6: N/A, ST low, med, high, TT med, high, low */
+		unsigned char map[] = { 0, 0, 1, 2, 4, 6, 7 };
+		res = map[res];
+		Log_Printf(LOG_INFO, "Remapped resolution for EmuTOS.\n");
 	}
 	else if (TosVersion >= 0x0160)
 	{
@@ -419,14 +425,15 @@ static int INF_AutoStartValidateResolution(const char **val, const char **err)
 		case MACHINE_MEGA_STE:
 		case MACHINE_FALCON:
 			/* enable blitter */
-			TosAutoStart.reso |= 0x10;
+			res |= 0x10;
 			break;
 		default:
 			break;
 		}
 	}
 
-	Log_Printf(LOG_INFO, "Resulting INF file resolution: %02x.\n", TosAutoStart.reso);
+	Log_Printf(LOG_INFO, "Resulting INF file resolution: %02x -> %02x.\n", TosAutoStart.reso, res);
+	*set_res = res;
 	return 0;
 }
 
@@ -439,13 +446,16 @@ static int INF_AutoStartValidateResolution(const char **val, const char **err)
  *
  * Return INF file contents and set its name & size to args.
  */
-static char *get_inf_file(const char **set_infname, int *set_size)
+static char *get_inf_file(const char **set_infname, int *set_size, int *res_col)
 {
 	char *hostname;
 	const char *contents, *infname;
 	Uint8 *host_content;
 	long host_size;
 	int size;
+
+	/* default position of the 2 digit hex code for resolution on #E line */
+	*res_col = 6;
 
 	/* infname needs to be exactly the same string that given
 	 * TOS version gives for GEMDOS to find.
@@ -458,6 +468,7 @@ static char *get_inf_file(const char **set_infname, int *set_size)
 			infname = "A:\\EMUDESK.INF";
 		size = sizeof(emudesk_inf);
 		contents = emudesk_inf;
+		*res_col = 12;
 	}
 	/* need to match file TOS searches first */
 	else if (TosVersion >= 0x0200)
@@ -562,10 +573,10 @@ static const char *prg_format(const char *prgname)
  *
  * Return FILE* pointer to it.
  */
-static FILE* write_inf_file(const char *contents, int size)
+static FILE* write_inf_file(const char *contents, int size, int res, int res_col)
 {
 	const char *format, *infname, *prgname;
-	int offset, off_prg, off_rez;
+	int offset, off_prg, off_rez, endcheck;
 	FILE *fp;
 
 #if defined(WIN32)	/* unfortunately tmpfile() needs administrative privileges on windows, so this needs special care */
@@ -597,9 +608,10 @@ static FILE* write_inf_file(const char *contents, int size)
 
 	format = prg_format(prgname);
 
-	/* find where to insert the program name and resolution */
+	endcheck = size-res_col-2-2;
 	off_prg = off_rez = 0;
-	for (offset = 0; offset < size-7; offset++)
+	/* find where to insert the program name and resolution */
+	for (offset = 0; offset < endcheck; offset++)
 	{
 		if (contents[offset] != '#')
 			continue;
@@ -626,15 +638,19 @@ static FILE* write_inf_file(const char *contents, int size)
 				off_prg = offset;
 				fprintf(fp, format, prgname);
 			}
-			/* #E line start */
-			fwrite(contents+offset, 6, 1, fp);
-			/* requested resolution, or default? */
+			/* write #E line start */
+			fwrite(contents+offset, res_col, 1, fp);
+			/* write requested resolution, or default?
+			 * 
+			 * (TosAutoStart.reso tells if there's request,
+			 * 'res' tells the actual value to use)
+			 */
 			if (TosAutoStart.reso)
-				fprintf(fp, "%02x", TosAutoStart.reso);
+				fprintf(fp, "%02x", res);
 			else
-				fwrite(contents+offset+6, 2, 1, fp);
-			/* rest of #E */
-			offset += 8;
+				fwrite(contents+offset+res_col, 2, 1, fp);
+			/* set point to rest of #E */
+			offset += res_col + 2;
 			off_rez = offset;
 			break;
 		}
@@ -671,9 +687,9 @@ void INF_AutoStartCreate(void)
 {
 	char *contents;
 	const char *err, *val;
-	int size, opt_id;
+	int size, res, res_col, opt_id;
 
-	if ((opt_id = INF_AutoStartValidateResolution(&val, &err)))
+	if ((opt_id = INF_AutoStartValidateResolution(&res, &val, &err)))
 	{
 		Opt_ShowError(opt_id, val, err);
 		bQuitProgram = true;
@@ -694,10 +710,10 @@ void INF_AutoStartCreate(void)
 		return;
 	}
 
-	contents = get_inf_file(&TosAutoStart.infname, &size);
+	contents = get_inf_file(&TosAutoStart.infname, &size, &res_col);
 	if (contents)
 	{
-		TosAutoStart.file = write_inf_file(contents, size);
+		TosAutoStart.file = write_inf_file(contents, size, res, res_col);
 		free(contents);
 	}
 }
