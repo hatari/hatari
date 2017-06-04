@@ -214,11 +214,8 @@ bool INF_AutoStartSet(const char *name, int opt_id)
  * Set specified resolution when autostarting.
  *
  *   0: no override
- * 1-3: ST/STE resolutions:
- *      - ST low, med, high
- * 4-6: TT/Falcon resolutions:
- *      - TT med, high, low
- *      - Falcon 80 cols, N/A, 40 cols
+ * 1-3: ST/STE resolutions
+ * 4-6: TT/Falcon resolutions
  *
  * Return true for success, false otherwise.
  */
@@ -318,6 +315,14 @@ int INF_AutoStartValidate(const char **val, const char **err)
  * know the final machine type when options are parsed, as it can
  * change later when TOS is loaded.
  *
+ * Resolution settings are:
+ *   0: no override
+ * 1-3: ST/STE resolutions:
+ *      - ST low, med, high
+ * 4-6: TT/Falcon resolutions:
+ *      - TT med, high, low
+ *      - Falcon 80 cols, N/A, 40 cols
+ *
  * If there's a problem, return problematic option ID
  * and set val & err strings, otherwise just return zero.
  */
@@ -363,6 +368,14 @@ static int INF_AutoStartValidateResolution(const char **val, const char **err)
 			}
 			break;
 
+		case MACHINE_TT:
+			if (monitor == MONITOR_TYPE_MONO && TosAutoStart.reso != 5)
+			{
+				TosAutoStart.reso = 5;
+				Log_Printf(LOG_WARN, "With mono monitor, TOS can use only resolution %d, correcting.\n", TosAutoStart.reso);
+			}
+			break;
+
 		case MACHINE_FALCON:
 			if (monitor == MONITOR_TYPE_MONO && TosAutoStart.reso != 3)
 			{
@@ -385,14 +398,6 @@ static int INF_AutoStartValidateResolution(const char **val, const char **err)
 			 * - line doubling / interlace
 			 * - ST compat, RGB/VGA, columns & #colors
 			 */
-			break;
-
-		case MACHINE_TT:
-			if (monitor == MONITOR_TYPE_MONO && TosAutoStart.reso != 5)
-			{
-				TosAutoStart.reso = 5;
-				Log_Printf(LOG_WARN, "With mono monitor, TOS can use only resolution %d, correcting.\n", TosAutoStart.reso);
-			}
 			break;
 		}
 	}
