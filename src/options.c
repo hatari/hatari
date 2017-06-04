@@ -67,6 +67,7 @@ enum {
 	OPT_AUTOSTART,
 	OPT_MONO,		/* common display options */
 	OPT_MONITOR,
+	OPT_TOS_RESOLUTION,
 	OPT_FULLSCREEN,
 	OPT_WINDOW,
 	OPT_GRAB,
@@ -161,7 +162,6 @@ enum {
 	OPT_DEBUG,
 	OPT_EXCEPTIONS,
 	OPT_BIOSINTERCEPT,
-	OPT_TOS_RESOLUTION,
 	OPT_CONOUT,
 	OPT_DISASM,
 	OPT_NATFEATS,
@@ -212,6 +212,8 @@ static const opt_t HatariOptions[] = {
 	  NULL, "Start in monochrome mode instead of color" },
 	{ OPT_MONITOR,      NULL, "--monitor",
 	  "<x>", "Select monitor type (x = mono/rgb/vga/tv)" },
+	{ OPT_TOS_RESOLUTION,   NULL, "--tos-res",
+	  "<x>", "TOS resolution (ST low:1 med:2, TT low:4 med:6)" },
 	{ OPT_FULLSCREEN,"-f", "--fullscreen",
 	  NULL, "Start emulator in fullscreen mode" },
 	{ OPT_WINDOW,    "-w", "--window",
@@ -429,8 +431,6 @@ static const opt_t HatariOptions[] = {
 	  "<flags>", "Exceptions invoking debugger, see '--debug-except help'" },
 	{ OPT_BIOSINTERCEPT, NULL, "--bios-intercept",
 	  NULL, "Toggle XBios command parsing support" },
-	{ OPT_TOS_RESOLUTION,   NULL, "--tos-res",
-	  "<x>", "Autostart resolution (ST low:1 med:2, TT low:4 med:6)" },
 	{ OPT_CONOUT,   NULL, "--conout",
 	  "<device>", "Show console output (0-7, 2=VT-52 terminal)" },
 	{ OPT_DISASM,   NULL, "--disasm",
@@ -1070,6 +1070,14 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				return Opt_ShowError(OPT_MONITOR, argv[i], "Unknown monitor type");
 			}
 			bLoadAutoSave = false;
+			break;
+
+		case OPT_TOS_RESOLUTION:
+			i += 1;
+			if (!INF_AutoStartSetResolution(argv[i], OPT_TOS_RESOLUTION))
+			{
+				return Opt_ShowError(OPT_TOS_RESOLUTION, argv[i], "Invalid resolution");
+			}
 			break;
 
 		case OPT_FULLSCREEN:
@@ -1929,14 +1937,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 		case OPT_BIOSINTERCEPT:
 			XBios_ToggleCommands();
-			break;
-
-		case OPT_TOS_RESOLUTION:
-			i += 1;
-			if (!INF_AutoStartSetResolution(argv[i], OPT_TOS_RESOLUTION))
-			{
-				return Opt_ShowError(OPT_TOS_RESOLUTION, argv[i], "Invalid resolution");
-			}
 			break;
 
 		case OPT_CONOUT:

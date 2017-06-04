@@ -510,12 +510,12 @@ static char *get_inf_file(const char **set_infname, int *set_size, int *res_col)
 
 	if (host_content)
 	{
-		Log_Printf(LOG_INFO, "Going to modify '%s' for autostarting.\n", hostname);
+		Log_Printf(LOG_INFO, "Going to modify '%s'.\n", hostname);
 		free(hostname);
 		*set_size = host_size;
 		return (char *)host_content;
 	}
-	Log_Printf(LOG_INFO, "Using builtin '%s' for autostarting.\n", infname);
+	Log_Printf(LOG_INFO, "Using builtin '%s'.\n", infname);
 	free(hostname);
 	return strdup(contents);
 }
@@ -523,7 +523,8 @@ static char *get_inf_file(const char **set_infname, int *set_size, int *res_col)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Skip rest of INF file line and return index after its end.
+ * Skip rest of INF file line.
+ * Return index after its end, or zero for error.
  */
 static int skip_line(const char *contents, int offset, int size)
 {
@@ -541,9 +542,9 @@ static int skip_line(const char *contents, int offset, int size)
 			return offset;
 		}
 	}
-	Log_Printf(LOG_WARN, "Malformed INF file '%s', no line end at offsets %d-%d, autostart likely to fail!\n",
+	Log_Printf(LOG_WARN, "Malformed INF file '%s', no line end at offsets %d-%d!\n",
 		   TosAutoStart.prgname, orig, offset);
-	return offset;
+	return 0;
 }
 
 /**
@@ -601,14 +602,17 @@ static FILE* write_inf_file(const char *contents, int size, int res, int res_col
 
 	if (!fp)
 	{
-		Log_Printf(LOG_ERROR, "Failed to create autostart file for '%s': %s!\n",
-			   prgname, strerror(errno));
+		Log_Printf(LOG_ERROR, "Failed to create virtual INF file '%s': %s!\n",
+			   infname, strerror(errno));
 		return NULL;
 	}
 
-	format = prg_format(prgname);
+	if (prgname)
+		format = prg_format(prgname);
 
+	/* need to fit at least 2 res digits + \r\n */
 	endcheck = size-res_col-2-2;
+	/* positions after prog info & resolution info */
 	off_prg = off_rez = 0;
 	/* find where to insert the program name and resolution */
 	for (offset = 0; offset < endcheck; offset++)
@@ -616,23 +620,28 @@ static FILE* write_inf_file(const char *contents, int size, int res, int res_col
 		if (contents[offset] != '#')
 			continue;
 
-		if (contents[offset+1] == 'Z')
+		/* replace autostart line only when requested */
+		if (prgname && contents[offset+1] == 'Z')
 		{
 			fwrite(contents+off_prg, offset-off_prg, 1, fp);
+			/* write only first #Z line, skip rest */
 			if (!off_prg)
 				fprintf(fp, format, prgname);
 			offset = skip_line(contents, offset, size-1);
+			if (!offset)
+				break;
 			off_prg = offset;
 		}
+		/* resolution line always written */
 		if (contents[offset+1] == 'E')
 		{
-			/* INF file with autostart line missing?
-			 * -> add one
-			 *
-			 * Assumes #Z is before #E as it seems to normally be,
-			 * and should be in above static INF file contents.
-			 */
 			fwrite(contents+off_prg, offset-off_prg, 1, fp);
+			/* INF file with autostart line missing?
+			 *
+			 * It's assumed that #Z is always before #E,
+			 * if it exits. So write one when requested,
+			 * if it hasn't been written yet.
+			 */
 			if (prgname && !off_prg)
 			{
 				off_prg = offset;
@@ -655,28 +664,30 @@ static FILE* write_inf_file(const char *contents, int size, int res, int res_col
 			break;
 		}
 	}
-	if (!(off_rez && off_prg))
+	if (!off_rez)
 	{
 		fclose(fp);
-		Log_Printf(LOG_ERROR, "'%s' not a valid INF file, #E resolution line missing -> autostarting disabled!\n", infname);
+		Log_Printf(LOG_ERROR, "'%s' not a valid INF file, #E resolution line missing -> autostarting / resolution setting not possible!\n", infname);
 		return NULL;
 	}
 	/* write rest of INF file & seek back to start */
 	if (!(fwrite(contents+offset, size-offset-1, 1, fp) && fseek(fp, 0, SEEK_SET) == 0))
 	{
 		fclose(fp);
-		Log_Printf(LOG_ERROR, "Autostart '%s' file writing failed!\n", prgname);
+		Log_Printf(LOG_ERROR, "Virtual '%s' file writing failed!\n", infname);
 		return NULL;
 	}
-
-	Log_Printf(LOG_WARN, "Virtual autostart file '%s' created for '%s'.\n", infname, prgname);
+	if (prgname)
+		Log_Printf(LOG_WARN, "Virtual '%s' autostart file created for '%s'.\n", infname, prgname);
+	else
+		Log_Printf(LOG_WARN, "Virtual '%s' resolution override file created.\n", infname);
 	return fp;
 }
 
 
 /*-----------------------------------------------------------------------*/
 /**
- * Create a temporary TOS INF file which will start autostart program.
+ * Create a temporary TOS INF file for autostarting and resolution selection.
  *
  * File has TOS version specific differences, so it needs to be re-created
  * on each boot in case user changed TOS version.
@@ -699,14 +710,14 @@ void INF_AutoStartCreate(void)
 	/* in case TOS didn't for some reason close it on previous boot */
 	INF_AutoStartClose(TosAutoStart.file);
 
-	/* autostart not enabled? */
-	if (!TosAutoStart.prgname)
+	/* INF overriding needed? */
+	if (!(TosAutoStart.prgname || TosAutoStart.reso))
 		return;
 
-	/* autostart not supported? */
+	/* GEMDOS HD / INF overriding not supported? */
 	if (TosVersion < 0x0104)
 	{
-		Log_Printf(LOG_WARN, "Only TOS versions >= 1.04 support autostarting!\n");
+		Log_Printf(LOG_WARN, "Only TOS versions >= 1.04 support autostarting & resolution overriding!\n");
 		return;
 	}
 
@@ -728,8 +739,7 @@ bool INF_AutoStarting(autostart_t t)
 {
 	if (t == AUTOSTART_FOPEN)
 		return (bool)TosAutoStart.file;
-	else
-		return (bool)TosAutoStart.prgname;
+	return (((bool)TosAutoStart.prgname) || ((bool)TosAutoStart.reso));
 }
 
 /*-----------------------------------------------------------------------*/
@@ -746,7 +756,7 @@ FILE *INF_AutoStartOpen(const char *filename)
 			ExceptionDebugMask = ConfigureParams.Log.nExceptionDebugMask & ~EXCEPT_AUTOSTART;
 			fprintf(stderr, "Exception debugging enabled (0x%x).\n", ExceptionDebugMask);
 		}
-		Log_Printf(LOG_WARN, "Autostart file '%s' for '%s' matched.\n", filename, TosAutoStart.prgname);
+		Log_Printf(LOG_WARN, "Virtual INF file '%s' matched.\n", filename);
 		return TosAutoStart.file;
 	}
 	return NULL;
@@ -768,7 +778,7 @@ bool INF_AutoStartClose(FILE *fp)
 		 */
 		fclose(TosAutoStart.file);
 		TosAutoStart.file = NULL;
-		Log_Printf(LOG_WARN, "Autostart file removed.\n");
+		Log_Printf(LOG_WARN, "Virtual INF file removed.\n");
 		return true;
 	}
 	return false;
