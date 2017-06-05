@@ -25,9 +25,15 @@ Emulator:
 - Extended VDI mode font selected based on VDI height
 - Allow RAM size values in KiB instead of MiB
 - Support scaling AVI recording (PNG/BMP) frames
-- Add "--auto" option to autostart programs from somewhere
-  else than C: root, and to enable required GEMDOS interception
-  without full GEMDOS HD emulation
+- Virtual INF file handling improvements:
+  - Add "--auto" option to autostart programs also from somewhere
+    else than C: root, and to enable required GEMDOS interception
+    without full GEMDOS HD emulation
+  - Add --tos-res option to specify TOS ST/STE/TT resolution
+    for color monitors, with or without autostart.  Also enables
+    blitter for machines & TOS versions supporting it
+  - Uses existing INF file as base, if one exists
+  - If not, asks TOS to open window for boot drive
 - Add "--gemdos-time <atari/host>" option so that user can specify
   whether emulation or host timestamps are used with GEMDOS HD files
 - Fix: don't switch bitdepth when recording AVI
@@ -47,6 +53,7 @@ Emulator:
     have finished
 
 Other changes:
+- Add French keyboard mapping that works also with SDL2
 - Fix: Python GUI updated for Hatari v2.0
 - Fix: Python GUI explicitly uses Python v2 (Arch Linux)
 - Fix: Python tools made compatible both to Python v2 & v3 (Arch Linux)
