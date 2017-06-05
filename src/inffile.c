@@ -57,7 +57,6 @@ static struct {
 /* EmuDesk INF file format and values differ from normal TOS */
 static const char emudesk_inf[] =
 "#R 01\r\n"
-"#Z 01 @\r\n"
 "#E 1A 61 FF 00 00\r\n"
 "#W 00 00 02 06 26 0C 00 C:\\*.*@\r\n"
 "#W 00 00 02 08 26 0C 00 @\r\n"
@@ -90,7 +89,6 @@ static const char desktop_inf[] =
 "#b000000\r\n"
 "#c7770007000600070055200505552220770557075055507703111103\r\n"
 "#d                                             \r\n"
-"#Z 01 @ \r\n"
 "#E 18 11 \r\n"
 "#W 00 00 00 07 26 0C 09 C:\\*.*@\r\n"
 "#W 00 00 02 0B 26 09 00 @\r\n"
@@ -116,7 +114,6 @@ static const char newdesk_inf[] =
 "#b000000\r\n"
 "#c7770007000600070055200505552220770557075055507703111103\r\n"
 "#d                                             \r\n"
-"#Z 01 @ \r\n"
 "#K 4F 53 4C 00 46 42 43 57 45 58 00 00 00 00 00 00 00 00 00 00 00 00 00 52 00 00 4D 56 50 00 @\r\n"
 "#E 18 01 00 06 \r\n"
 "#Q 41 40 43 40 43 40 \r\n"
