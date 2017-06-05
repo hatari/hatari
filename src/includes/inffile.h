@@ -13,13 +13,13 @@ typedef enum {
 	AUTOSTART_FOPEN
 } autostart_t;
 
-extern bool INF_AutoStartSet(const char *prgname, int opt_id);
-extern bool INF_AutoStartSetResolution(const char *str, int opt_id);
-extern void INF_AutoStartSetVdiMode(int vdi_res);
-extern int INF_AutoStartValidate(const char **val, const char **err);
-extern void INF_AutoStartCreate(void);
-extern bool INF_AutoStarting(autostart_t t);
-extern FILE *INF_AutoStartOpen(const char *filename);
-extern bool INF_AutoStartClose(FILE *fp);
+extern bool INF_SetAutoStart(const char *prgname, int opt_id);
+extern bool INF_SetResolution(const char *resolution, int opt_id);
+extern void INF_SetVdiMode(int vdi_res);
+extern int INF_ValidateAutoStart(const char **val, const char **err);
+extern void INF_CreateOverride(void);
+extern bool INF_Overriding(autostart_t t);
+extern FILE *INF_OpenOverride(const char *filename);
+extern bool INF_CloseOverride(FILE *fp);
 
 #endif

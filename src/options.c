@@ -882,7 +882,7 @@ static bool Opt_ValidateOptions(void)
 	const char *err, *val;
 	int opt_id;
 
-	if ((opt_id = INF_AutoStartValidate(&val, &err)))
+	if ((opt_id = INF_ValidateAutoStart(&val, &err)))
 	{
 		return Opt_ShowError(opt_id, val, err);
 	}
@@ -936,7 +936,7 @@ static bool Opt_HandleArgument(const char *path)
 		 * then make sure that given program from that
 		 * dir will be started.
 		 */
-		INF_AutoStartSet(prgname, OPT_AUTOSTART);
+		INF_SetAutoStart(prgname, OPT_AUTOSTART);
 	}
 	if (dir) {
 		path = dir;
@@ -1023,7 +1023,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_AUTOSTART:
-			if (!(ok = INF_AutoStartSet(argv[++i], OPT_AUTOSTART)))
+			if (!(ok = INF_SetAutoStart(argv[++i], OPT_AUTOSTART)))
 			{
 				return Opt_ShowError(OPT_AUTOSTART, argv[i], "Invalid drive and/or path specified for autostart program");
 			}
@@ -1074,7 +1074,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 		case OPT_TOS_RESOLUTION:
 			i += 1;
-			if (!INF_AutoStartSetResolution(argv[i], OPT_TOS_RESOLUTION))
+			if (!INF_SetResolution(argv[i], OPT_TOS_RESOLUTION))
 			{
 				return Opt_ShowError(OPT_TOS_RESOLUTION, argv[i], "Invalid resolution");
 			}

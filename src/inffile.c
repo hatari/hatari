@@ -4,7 +4,7 @@
   This file is distributed under the GNU General Public License, version 2
   or at your option any later version. Read the file gpl.txt for details.
 
-  TOS *.INF file overloading for autostarting.
+  TOS *.INF file overloading for autostarting & TOS resolution overriding.
 */
 const char INFFILE_fileid[] = "Hatari inffile.c : " __DATE__ " " __TIME__;
 
@@ -150,7 +150,7 @@ static const char newdesk_inf[] =
  *
  * Returns true if OK, false for obviously invalid path specification.
  */
-bool INF_AutoStartSet(const char *name, int opt_id)
+bool INF_SetAutoStart(const char *name, int opt_id)
 {
 	char *prgname;
 	int len = strlen(name);
@@ -211,7 +211,7 @@ bool INF_AutoStartSet(const char *name, int opt_id)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Set specified resolution when autostarting.
+ * Set specified TOS resolution override.
  *
  *   0: no override
  * 1-3: ST/STE resolutions
@@ -219,7 +219,7 @@ bool INF_AutoStartSet(const char *name, int opt_id)
  *
  * Return true for success, false otherwise.
  */
-bool INF_AutoStartSetResolution(const char *str, int opt_id)
+bool INF_SetResolution(const char *str, int opt_id)
 {
 	int reso;
 
@@ -255,7 +255,7 @@ bool INF_AutoStartSetResolution(const char *str, int opt_id)
  * If there's a problem, return problematic option ID
  * and set val & err strings, otherwise just return zero.
  */
-int INF_AutoStartValidate(const char **val, const char **err)
+int INF_ValidateAutoStart(const char **val, const char **err)
 {
 	const char *path = TosAutoStart.prgname;
 	char drive;
@@ -345,7 +345,7 @@ static int vdi2inf(int mode)
 /**
  * Map / set VDI to INF file resolution
  */
-extern void INF_AutoStartSetVdiMode(int vdi_res)
+extern void INF_SetVdiMode(int vdi_res)
 {
 	TosAutoStart.reso = vdi2inf(vdi_res);
 }
@@ -367,7 +367,7 @@ extern void INF_AutoStartSetVdiMode(int vdi_res)
  * If there's a problem, return problematic option ID
  * and set val & err strings, otherwise just return zero.
  */
-static int INF_AutoStartValidateResolution(int *set_res, const char **val, const char **err)
+static int INF_ValidateResolution(int *set_res, const char **val, const char **err)
 {
 	int res = TosAutoStart.reso;
 	*set_res = 0;
@@ -624,7 +624,7 @@ static FILE* write_inf_file(const char *contents, int size, int res, int res_col
 # if INF_DEBUG
 	{
 		const char *debugfile = "/tmp/hatari-desktop-inf.txt";
-		fprintf(stderr, "autostart: '%s'\n", debugfile);
+		fprintf(stderr, "Virtual INF file: '%s'\n", debugfile);
 		fp = fopen(debugfile, "w+b");
 	}
 # else
@@ -701,7 +701,7 @@ static FILE* write_inf_file(const char *contents, int size, int res, int res_col
 	if (!off_rez)
 	{
 		fclose(fp);
-		Log_Printf(LOG_ERROR, "'%s' not a valid INF file, #E resolution line missing -> autostarting / resolution setting not possible!\n", infname);
+		Log_Printf(LOG_ERROR, "'%s' not a valid INF file, #E resolution line missing -> autostarting / resolution overriding not possible!\n", infname);
 		return NULL;
 	}
 	/* write rest of INF file & seek back to start */
@@ -721,20 +721,20 @@ static FILE* write_inf_file(const char *contents, int size, int res, int res_col
 
 /*-----------------------------------------------------------------------*/
 /**
- * Create a temporary TOS INF file for autostarting and resolution selection.
+ * Create a temporary TOS INF file for autostarting and resolution overriding.
  *
  * File has TOS version specific differences, so it needs to be re-created
  * on each boot in case user changed TOS version.
  *
  * Called at end of TOS ROM loading.
  */
-void INF_AutoStartCreate(void)
+void INF_CreateOverride(void)
 {
 	char *contents;
 	const char *err, *val;
 	int size, res, res_col, opt_id;
 
-	if ((opt_id = INF_AutoStartValidateResolution(&res, &val, &err)))
+	if ((opt_id = INF_ValidateResolution(&res, &val, &err)))
 	{
 		Opt_ShowError(opt_id, val, err);
 		bQuitProgram = true;
@@ -742,7 +742,7 @@ void INF_AutoStartCreate(void)
 	}
 
 	/* in case TOS didn't for some reason close it on previous boot */
-	INF_AutoStartClose(TosAutoStart.file);
+	INF_CloseOverride(TosAutoStart.file);
 
 	/* INF overriding needed? */
 	if (!(TosAutoStart.prgname || TosAutoStart.reso))
@@ -766,10 +766,10 @@ void INF_AutoStartCreate(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Whether autostarting needs GEMDOS
+ * Whether INF file overriding needs GEMDOS
  * interception or Fopen() check enabling
  */
-bool INF_AutoStarting(autostart_t t)
+bool INF_Overriding(autostart_t t)
 {
 	if (t == AUTOSTART_FOPEN)
 		return (bool)TosAutoStart.file;
@@ -778,9 +778,9 @@ bool INF_AutoStarting(autostart_t t)
 
 /*-----------------------------------------------------------------------*/
 /**
- * If given name matches autostart file, return its handle, NULL otherwise
+ * If given name matches virtual INF file name, return its handle, NULL otherwise
  */
-FILE *INF_AutoStartOpen(const char *filename)
+FILE *INF_OpenOverride(const char *filename)
 {
 	if (TosAutoStart.file && strcmp(filename, TosAutoStart.infname) == 0)
 	{
@@ -798,15 +798,15 @@ FILE *INF_AutoStartOpen(const char *filename)
 
 /*-----------------------------------------------------------------------*/
 /**
- * If given handle matches autostart file, close it and return true,
+ * If given handle matches virtual INF file, close it and return true,
  * false otherwise.
  */
-bool INF_AutoStartClose(FILE *fp)
+bool INF_CloseOverride(FILE *fp)
 {
 	if (fp && fp == TosAutoStart.file)
 	{
-		/* Remove autostart INF file after TOS has
-		 * read it enough times to do autostarting.
+		/* Remove virtual INF file after TOS has
+		 * read it enough times to do autostarting etc.
 		 * Otherwise user may try change desktop settings
 		 * and save them, but they would be lost.
 		 */

@@ -1879,7 +1879,7 @@ static bool GemDOS_Open(Uint32 Params)
 		"read-only", "write-only", "read/write", "read/write"
 	};
 	int Drive, Index, Mode;
-	FILE *AutostartHandle;
+	FILE *OverrideHandle;
 	bool bToTos = false;
 
 	/* Find filename */
@@ -1895,7 +1895,7 @@ static bool GemDOS_Open(Uint32 Params)
 
 	if (!ISHARDDRIVE(Drive))
 	{
-		if (INF_AutoStarting(AUTOSTART_FOPEN))
+		if (INF_Overriding(AUTOSTART_FOPEN))
 			bToTos = true;
 		else
 			return redirect_to_TOS();
@@ -1913,10 +1913,10 @@ static bool GemDOS_Open(Uint32 Params)
 		return true;
 	}
 
-	if ((AutostartHandle = INF_AutoStartOpen(pszFileName)))
+	if ((OverrideHandle = INF_OpenOverride(pszFileName)))
 	{
 		strcpy(szActualFileName, pszFileName);
-		FileHandles[Index].FileHandle = AutostartHandle;
+		FileHandles[Index].FileHandle = OverrideHandle;
 		RealMode = "read-only";
 	}
 	else
@@ -2027,7 +2027,7 @@ static bool GemDOS_Close(Uint32 Params)
 	}
 	
 	/* Close file and free up handle table */
-	if (INF_AutoStartClose(FileHandles[Handle].FileHandle))
+	if (INF_CloseOverride(FileHandles[Handle].FileHandle))
 	{
 		FileHandles[Handle].bUsed = false;
 	}
@@ -3499,7 +3499,7 @@ void GemDOS_Boot(void)
 	 * GEMDOS HD, autostarting or GEMDOS tracing
 	 */
 	if (!GEMDOS_EMU_ON &&
-	    !INF_AutoStarting(AUTOSTART_INTERCEPT) &&
+	    !INF_Overriding(AUTOSTART_INTERCEPT) &&
 	    !(LogTraceFlags & (TRACE_OS_GEMDOS|TRACE_OS_BASE)))
 		return;
 

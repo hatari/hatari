@@ -132,7 +132,7 @@ void VDI_SetResolution(int GEMColor, int WidthRequest, int HeightRequest)
 	       WidthRequest, HeightRequest, VDIPlanes, VDIWidth, VDIHeight, VDIPlanes);
 
 	/* INF file overriding so that (re-)boot uses correct bit-depth */
-	INF_AutoStartSetVdiMode(VDIRes);
+	INF_SetVdiMode(VDIRes);
 }
 
 
