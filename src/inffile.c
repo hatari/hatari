@@ -58,7 +58,6 @@ static struct {
 static const char emudesk_inf[] =
 "#R 01\r\n"
 "#E 1A 61 FF 00 00\r\n"
-"#W 00 00 02 06 26 0C 00 C:\\*.*@\r\n"
 "#W 00 00 02 08 26 0C 00 @\r\n"
 "#W 00 00 02 0A 26 0C 00 @\r\n"
 "#W 00 00 02 0D 26 0C 00 @\r\n"
@@ -90,7 +89,6 @@ static const char desktop_inf[] =
 "#c7770007000600070055200505552220770557075055507703111103\r\n"
 "#d                                             \r\n"
 "#E 18 11 \r\n"
-"#W 00 00 00 07 26 0C 09 C:\\*.*@\r\n"
 "#W 00 00 02 0B 26 09 00 @\r\n"
 "#W 00 00 0A 0F 1A 09 00 @\r\n"
 "#W 00 00 0E 01 1A 09 00 @\r\n"
@@ -117,7 +115,6 @@ static const char newdesk_inf[] =
 "#K 4F 53 4C 00 46 42 43 57 45 58 00 00 00 00 00 00 00 00 00 00 00 00 00 52 00 00 4D 56 50 00 @\r\n"
 "#E 18 01 00 06 \r\n"
 "#Q 41 40 43 40 43 40 \r\n"
-"#W 00 00 00 07 26 0C 00 C:\\*.*@\r\n"
 "#W 00 00 02 0B 26 09 00 @\r\n"
 "#W 00 00 0A 0F 1A 09 00 @\r\n"
 "#W 00 00 0E 01 1A 09 00 @\r\n"
@@ -471,6 +468,63 @@ static int INF_ValidateResolution(int *set_res, const char **val, const char **e
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Get builtin INF file contents which open window for the boot drive,
+ * if any.
+ *
+ * NOTE: this won't work for EmuTOS because it opens INF file second
+ * time to read window info, at which point the temporary virtual INF
+ * file has already disappeared.  Real TOS versions read INF file
+ * only once and work fine.
+ */
+static char *get_builtin_inf(const char *contents)
+{
+	/* line to open window (for boot drive) */
+	static const char drivewin[] = "#W 00 00 02 06 26 0C 00 X:\\*.*@\r\n";
+	int winlen, inflen, winoffset1, winoffset2, driveoffset;
+	const char *winline;
+	char *inf;
+
+	assert(contents);
+
+	inflen = strlen(contents);
+	winlen = strlen(drivewin);
+	inf = malloc(inflen + winlen);
+	assert(inf);
+
+	/* drive letter offset on drive window line */
+	driveoffset = strchr(drivewin, 'X') - drivewin;
+
+	/* first copy everything until first window line */
+	winline = strstr(contents, "#W");
+	assert(winline);
+	winoffset2 = winoffset1 = winline - contents;
+	memcpy(inf, contents, winoffset1);
+
+	/* then comes boot drive window line, if any */
+	if (ConfigureParams.HardDisk.bBootFromHardDisk)
+	{
+		/* C:, ignore IDE/ACSI for now */
+		if (GemDOS_IsDriveEmulated(2))
+		{
+			strcpy(inf + winoffset1, drivewin);
+			inf[winoffset1 + driveoffset] = 'C';
+			winoffset2 += winlen;
+		}
+	}
+	else if (ConfigureParams.DiskImage.EnableDriveA && ConfigureParams.DiskImage.szDiskFileName[0][0])
+	{
+		/* A: */
+		strcpy(inf + winoffset1, drivewin);
+		inf[winoffset1 + driveoffset] = 'A';
+		winoffset2 += winlen;
+	}
+	/* finally copy rest */
+	strcpy(inf + winoffset2, contents + winoffset1);
+
+	return inf;
+}
+
+/**
  * Get suitable Atari desktop configuration file for current TOS version,
  * either by loading existing file, or creating default one if there isn't
  * a pre-existing one.
@@ -525,7 +579,7 @@ static char *get_inf_file(const char **set_infname, int *set_size, int *res_col)
 #if INF_DEBUG
 	fprintf(stderr, "No GEMDOS HD boot drive, using builtin INF autostart file.\n");
 #endif
-		return strdup(contents);
+		return get_builtin_inf(contents);
 	}
 
 	hostname = malloc(FILENAME_MAX);
@@ -548,7 +602,7 @@ static char *get_inf_file(const char **set_infname, int *set_size, int *res_col)
 	}
 	Log_Printf(LOG_INFO, "Using builtin '%s'.\n", infname);
 	free(hostname);
-	return strdup(contents);
+	return get_builtin_inf(contents);
 }
 
 
