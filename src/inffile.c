@@ -34,7 +34,7 @@ static struct {
 	int reso_id;
 	const char *reso_str;
 	int prgname_id;
-} TosAutoStart;
+} TosOverride;
 
 
 /* autostarted program name will be added before the first
@@ -201,10 +201,10 @@ bool INF_SetAutoStart(const char *name, int opt_id)
 		strcpy(prgname, "C:\\");
 		Str_Filename2TOSname(name, prgname+3);
 	}
-	if (TosAutoStart.prgname)
-		free(TosAutoStart.prgname);
-	TosAutoStart.prgname = prgname;
-	TosAutoStart.prgname_id = opt_id;
+	if (TosOverride.prgname)
+		free(TosOverride.prgname);
+	TosOverride.prgname = prgname;
+	TosOverride.prgname_id = opt_id;
 	return true;
 }
 
@@ -240,9 +240,9 @@ bool INF_SetResolution(const char *str, int opt_id)
 		if (reso < 1 || reso > 6)
 			return false;
 	}
-	TosAutoStart.reso = reso;
-	TosAutoStart.reso_id = opt_id;
-	TosAutoStart.reso_str = str;
+	TosOverride.reso = reso;
+	TosOverride.reso_id = opt_id;
+	TosOverride.reso_str = str;
 	return true;
 }
 
@@ -257,7 +257,7 @@ bool INF_SetResolution(const char *str, int opt_id)
  */
 int INF_ValidateAutoStart(const char **val, const char **err)
 {
-	const char *path = TosAutoStart.prgname;
+	const char *path = TosOverride.prgname;
 	char drive;
 
 	if (!path)
@@ -319,9 +319,9 @@ int INF_ValidateAutoStart(const char **val, const char **err)
 		}
 	}
 	/* error */
-	*val = TosAutoStart.prgname;
+	*val = TosOverride.prgname;
 	*err = "Required autostart drive isn't enabled";
-	return TosAutoStart.prgname_id;
+	return TosOverride.prgname_id;
 }
 
 
@@ -330,7 +330,7 @@ int INF_ValidateAutoStart(const char **val, const char **err)
  */
 static int vdi2inf(int mode)
 {
-	int res = TosAutoStart.reso;
+	int res = TosOverride.reso;
 	int newres = mode + 1;
 	if (res != newres)
 	{
@@ -347,7 +347,7 @@ static int vdi2inf(int mode)
  */
 extern void INF_SetVdiMode(int vdi_res)
 {
-	TosAutoStart.reso = vdi2inf(vdi_res);
+	TosOverride.reso = vdi2inf(vdi_res);
 }
 
 
@@ -369,7 +369,7 @@ extern void INF_SetVdiMode(int vdi_res)
  */
 static int INF_ValidateResolution(int *set_res, const char **val, const char **err)
 {
-	int res = TosAutoStart.reso;
+	int res = TosOverride.reso;
 	*set_res = 0;
 
 	/* VDI resolution overrides TOS resolution setting */
@@ -385,7 +385,7 @@ static int INF_ValidateResolution(int *set_res, const char **val, const char **e
 		if (!res)
 			return 0;
 
-		*val = TosAutoStart.reso_str;
+		*val = TosOverride.reso_str;
 
 		switch(ConfigureParams.System.nMachineType)
 		{
@@ -401,7 +401,7 @@ static int INF_ValidateResolution(int *set_res, const char **val, const char **e
 			else if (res > 2)
 			{
 				*err = "invalid ST/STE color resolution";
-				return TosAutoStart.reso_id;
+				return TosOverride.reso_id;
 			}
 			break;
 
@@ -414,7 +414,7 @@ static int INF_ValidateResolution(int *set_res, const char **val, const char **e
 			else if (res == 5)
 			{
 				*err = "invalid TT color resolution";
-				return TosAutoStart.reso_id;
+				return TosOverride.reso_id;
 			}
 			break;
 
@@ -427,7 +427,7 @@ static int INF_ValidateResolution(int *set_res, const char **val, const char **e
 			else if (res == 5)
 			{
 				*err = "TT-mono is invalid Falcon resolution";
-				return TosAutoStart.reso_id;
+				return TosOverride.reso_id;
 			}
 			else
 			{
@@ -466,7 +466,7 @@ static int INF_ValidateResolution(int *set_res, const char **val, const char **e
 		}
 	}
 
-	Log_Printf(LOG_INFO, "Resulting INF file resolution: %02x -> %02x.\n", TosAutoStart.reso, res);
+	Log_Printf(LOG_INFO, "Resulting INF file resolution: %02x -> %02x.\n", TosOverride.reso, res);
 	*set_res = res;
 	return 0;
 }
@@ -577,7 +577,7 @@ static int skip_line(const char *contents, int offset, int size)
 		}
 	}
 	Log_Printf(LOG_WARN, "Malformed INF file '%s', no line end at offsets %d-%d!\n",
-		   TosAutoStart.prgname, orig, offset);
+		   TosOverride.prgname, orig, offset);
 	return 0;
 }
 
@@ -631,8 +631,8 @@ static FILE* write_inf_file(const char *contents, int size, int res, int res_col
 	fp = tmpfile();
 # endif
 #endif
-	prgname = TosAutoStart.prgname;
-	infname = TosAutoStart.infname;
+	prgname = TosOverride.prgname;
+	infname = TosOverride.infname;
 
 	if (!fp)
 	{
@@ -685,10 +685,10 @@ static FILE* write_inf_file(const char *contents, int size, int res, int res_col
 			fwrite(contents+offset, res_col, 1, fp);
 			/* write requested resolution, or default?
 			 * 
-			 * (TosAutoStart.reso tells if there's request,
+			 * (TosOverride.reso tells if there's request,
 			 * 'res' tells the actual value to use)
 			 */
-			if (TosAutoStart.reso)
+			if (TosOverride.reso)
 				fprintf(fp, "%02x", res);
 			else
 				fwrite(contents+offset+res_col, 2, 1, fp);
@@ -742,10 +742,10 @@ void INF_CreateOverride(void)
 	}
 
 	/* in case TOS didn't for some reason close it on previous boot */
-	INF_CloseOverride(TosAutoStart.file);
+	INF_CloseOverride(TosOverride.file);
 
 	/* INF overriding needed? */
-	if (!(TosAutoStart.prgname || TosAutoStart.reso))
+	if (!(TosOverride.prgname || TosOverride.reso))
 		return;
 
 	/* GEMDOS HD / INF overriding not supported? */
@@ -755,10 +755,10 @@ void INF_CreateOverride(void)
 		return;
 	}
 
-	contents = get_inf_file(&TosAutoStart.infname, &size, &res_col);
+	contents = get_inf_file(&TosOverride.infname, &size, &res_col);
 	if (contents)
 	{
-		TosAutoStart.file = write_inf_file(contents, size, res, res_col);
+		TosOverride.file = write_inf_file(contents, size, res, res_col);
 		free(contents);
 	}
 }
@@ -772,8 +772,8 @@ void INF_CreateOverride(void)
 bool INF_Overriding(autostart_t t)
 {
 	if (t == AUTOSTART_FOPEN)
-		return (bool)TosAutoStart.file;
-	return (((bool)TosAutoStart.prgname) || ((bool)TosAutoStart.reso));
+		return (bool)TosOverride.file;
+	return (((bool)TosOverride.prgname) || ((bool)TosOverride.reso));
 }
 
 /*-----------------------------------------------------------------------*/
@@ -782,7 +782,7 @@ bool INF_Overriding(autostart_t t)
  */
 FILE *INF_OpenOverride(const char *filename)
 {
-	if (TosAutoStart.file && strcmp(filename, TosAutoStart.infname) == 0)
+	if (TosOverride.file && strcmp(filename, TosOverride.infname) == 0)
 	{
 		/* whether to "autostart" also exception debugging? */
 		if (ConfigureParams.Log.nExceptionDebugMask & EXCEPT_AUTOSTART)
@@ -791,7 +791,7 @@ FILE *INF_OpenOverride(const char *filename)
 			fprintf(stderr, "Exception debugging enabled (0x%x).\n", ExceptionDebugMask);
 		}
 		Log_Printf(LOG_WARN, "Virtual INF file '%s' matched.\n", filename);
-		return TosAutoStart.file;
+		return TosOverride.file;
 	}
 	return NULL;
 }
@@ -803,15 +803,15 @@ FILE *INF_OpenOverride(const char *filename)
  */
 bool INF_CloseOverride(FILE *fp)
 {
-	if (fp && fp == TosAutoStart.file)
+	if (fp && fp == TosOverride.file)
 	{
 		/* Remove virtual INF file after TOS has
 		 * read it enough times to do autostarting etc.
 		 * Otherwise user may try change desktop settings
 		 * and save them, but they would be lost.
 		 */
-		fclose(TosAutoStart.file);
-		TosAutoStart.file = NULL;
+		fclose(TosOverride.file);
+		TosOverride.file = NULL;
 		Log_Printf(LOG_WARN, "Virtual INF file removed.\n");
 		return true;
 	}
