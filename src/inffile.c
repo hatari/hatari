@@ -221,10 +221,25 @@ bool INF_AutoStartSet(const char *name, int opt_id)
  */
 bool INF_AutoStartSetResolution(const char *str, int opt_id)
 {
-	int reso = atoi(str);
-	if (reso < 1 || reso > 6)
-		return false;
+	int reso;
 
+	/* map to values used by real TOS INF files */
+	if (strcmp(str, "low") == 0)
+		reso = 1;
+	else if (strcmp(str, "med") == 0)
+		reso = 2;
+	else if (strcmp(str, "high") == 0)
+		reso = 3;
+	else if (strcmp(str, "ttmed") == 0)
+		reso = 4;
+	else if (strcmp(str, "ttlow") == 0)
+		reso = 6;
+	else
+	{
+		reso = atoi(str);
+		if (reso < 1 || reso > 6)
+			return false;
+	}
 	TosAutoStart.reso = reso;
 	TosAutoStart.reso_id = opt_id;
 	TosAutoStart.reso_str = str;
