@@ -23,13 +23,30 @@ const char INFFILE_fileid[] = "Hatari inffile.c : " __DATE__ " " __TIME__;
 #include "tos.h"
 #include "vdi.h"
 
-#define INF_DEBUG  0         /* debug output + leaves virtual INF file behind */
+/* debug output + leaves virtual INF file behind */
+#define INF_DEBUG 0
+
+/* TOS resolution numbers used in Atari TOS INF files.
+ *
+ * Note: EmuTOS uses different numbers, so these are re-mapped.
+ */
+typedef enum {
+	RES_UNSET,	/* 0 */
+	RES_ST_LOW,	/* 1 */
+	RES_ST_MED,	/* 2 */
+	RES_ST_HIGH,	/* 3 */
+	RES_TT_MED,	/* 4, also Falcon 80 cols mode */
+	RES_TT_HIGH,	/* 5 */
+	RES_TT_LOW,	/* 6, also Falcon 40 cols mode */
+	RES_COUNT
+} res_value_t;
+
 
 static struct {
 	FILE *file;          /* file pointer to contents of INF file */
 	char *prgname;       /* TOS name of the program to auto start */
 	const char *infname; /* name of the INF file TOS will try to match */
-	int reso;            /* resolution setting value request for #E line */
+	res_value_t reso;    /* resolution setting value request for #E line */
 /* for validation */
 	int reso_id;
 	const char *reso_str;
@@ -207,10 +224,6 @@ bool INF_SetAutoStart(const char *name, int opt_id)
 /**
  * Set specified TOS resolution override.
  *
- *   0: no override
- * 1-3: ST/STE resolutions
- * 4-6: TT/Falcon resolutions
- *
  * Return true for success, false otherwise.
  */
 bool INF_SetResolution(const char *str, int opt_id)
@@ -219,19 +232,19 @@ bool INF_SetResolution(const char *str, int opt_id)
 
 	/* map to values used by real TOS INF files */
 	if (strcmp(str, "low") == 0)
-		reso = 1;
+		reso = RES_ST_LOW;
 	else if (strcmp(str, "med") == 0)
-		reso = 2;
+		reso = RES_ST_MED;
 	else if (strcmp(str, "high") == 0)
-		reso = 3;
+		reso = RES_ST_HIGH;
 	else if (strcmp(str, "ttmed") == 0)
-		reso = 4;
+		reso = RES_TT_MED;
 	else if (strcmp(str, "ttlow") == 0)
-		reso = 6;
+		reso = RES_TT_LOW;
 	else
 	{
 		reso = atoi(str);
-		if (reso < 1 || reso > 6)
+		if (reso <= RES_UNSET || reso >= RES_COUNT)
 			return false;
 	}
 	TosOverride.reso = reso;
@@ -322,10 +335,10 @@ int INF_ValidateAutoStart(const char **val, const char **err)
 /**
  * Map / set VDI to INF file resolution
  */
-static int vdi2inf(int mode)
+static res_value_t vdi2inf(res_value_t mode)
 {
-	int res = TosOverride.reso;
-	int newres = mode + 1;
+	res_value_t res = TosOverride.reso;
+	res_value_t newres = mode + 1;
 	if (res != newres)
 	{
 		if (res)
@@ -363,7 +376,7 @@ extern void INF_SetVdiMode(int vdi_res)
  */
 static int INF_ValidateResolution(int *set_res, const char **val, const char **err)
 {
-	int res = TosOverride.reso;
+	res_value_t res = TosOverride.reso;
 	*set_res = 0;
 
 	/* VDI resolution overrides TOS resolution setting */
@@ -387,40 +400,40 @@ static int INF_ValidateResolution(int *set_res, const char **val, const char **e
 		case MACHINE_MEGA_STE:
 		case MACHINE_ST:
 		case MACHINE_MEGA_ST:
-			if (monitor == MONITOR_TYPE_MONO && res != 3)
+			if (monitor == MONITOR_TYPE_MONO && res != RES_ST_HIGH)
 			{
-				res = 3;
-				Log_Printf(LOG_WARN, "With mono monitor, TOS can use only resolution %d, correcting.\n", res);
+				res = RES_ST_HIGH;
+				Log_Printf(LOG_WARN, "With mono monitor, TOS can use only mono resolution, correcting.\n");
 			}
-			else if (res > 2)
+			else if (res >= RES_ST_HIGH)
 			{
-				*err = "invalid ST/STE color resolution";
+				*err = "invalid ST/STE color TOS resolution";
 				return TosOverride.reso_id;
 			}
 			break;
 
 		case MACHINE_TT:
-			if (monitor == MONITOR_TYPE_MONO && res != 5)
+			if (monitor == MONITOR_TYPE_MONO && res != RES_TT_HIGH)
 			{
-				res = 5;
-				Log_Printf(LOG_WARN, "With mono monitor, TOS can use only resolution %d, correcting.\n", res);
+				res = RES_TT_HIGH;
+				Log_Printf(LOG_WARN, "With mono monitor, TOS can use only mono resolution, correcting.\n");
 			}
-			else if (res == 5)
+			else if (res == RES_TT_HIGH)
 			{
-				*err = "invalid TT color resolution";
+				*err = "invalid TT color TOS resolution";
 				return TosOverride.reso_id;
 			}
 			break;
 
 		case MACHINE_FALCON:
-			if (monitor == MONITOR_TYPE_MONO && res != 3)
+			if (monitor == MONITOR_TYPE_MONO && res != RES_ST_HIGH)
 			{
-				res = 3;
-				Log_Printf(LOG_WARN, "With mono monitor, TOS can use only resolution %d, correcting.\n", res);
+				res = RES_ST_HIGH;
+				Log_Printf(LOG_WARN, "With mono monitor, TOS can use only mono resolution, correcting.\n");
 			}
-			else if (res == 5)
+			else if (res == RES_TT_HIGH)
 			{
-				*err = "TT-mono is invalid Falcon resolution";
+				*err = "TT-mono is invalid Falcon TOS resolution";
 				return TosOverride.reso_id;
 			}
 			else
@@ -443,7 +456,7 @@ static int INF_ValidateResolution(int *set_res, const char **val, const char **e
 		/* map values 0-6: N/A, ST low, med, high, TT med, high, low */
 		unsigned char map[] = { 0, 0, 1, 2, 4, 6, 7 };
 		res = map[res];
-		Log_Printf(LOG_INFO, "Remapped resolution for EmuTOS.\n");
+		Log_Printf(LOG_INFO, "Remapped TOS resolution for EmuTOS.\n");
 	}
 	else if (TosVersion >= 0x0160)
 	{
@@ -460,7 +473,7 @@ static int INF_ValidateResolution(int *set_res, const char **val, const char **e
 		}
 	}
 
-	Log_Printf(LOG_INFO, "Resulting INF file resolution: %02x -> %02x.\n", TosOverride.reso, res);
+	Log_Printf(LOG_INFO, "Resulting INF file TOS resolution: 0x%02x -> 0x%02x.\n", TosOverride.reso, res);
 	*set_res = res;
 	return 0;
 }
@@ -765,7 +778,7 @@ static FILE* write_inf_file(const char *contents, int size, int res, int res_col
 	if (prgname)
 		Log_Printf(LOG_WARN, "Virtual '%s' autostart file created for '%s'.\n", infname, prgname);
 	else
-		Log_Printf(LOG_WARN, "Virtual '%s' resolution override file created.\n", infname);
+		Log_Printf(LOG_WARN, "Virtual '%s' TOS resolution override file created.\n", infname);
 	return fp;
 }
 
