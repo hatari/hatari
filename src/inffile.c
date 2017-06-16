@@ -674,7 +674,7 @@ static const char *prg_format(const char *prgname)
  */
 static FILE* write_inf_file(const char *contents, int size, int res, int res_col)
 {
-	const char *format, *infname, *prgname;
+	const char *infname, *prgname, *format = NULL;
 	int offset, off_prg, off_rez, endcheck;
 	FILE *fp;
 
