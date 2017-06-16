@@ -3,7 +3,7 @@
 
 
 To update to a newer WinUAE's version, a diff should be made between
-WinUAE 3.5.0 8 sources and the newer sources, then the resulting patch
+WinUAE 3.5.0 sources and the newer sources, then the resulting patch
 should be applied to the files in this directory.
 
 Most files are similar to WinUAE's ones, so patches should apply in

@@ -665,7 +665,7 @@ void	IPF_FDC_WriteReg ( Uint8 Reg , Uint8 Byte )
 	return;						/* This should not be reached (an IPF image can't be inserted without capsimage) */
 
 #else
-	if ( Reg == 0 )					/* more detailled logs for command register */
+	if ( Reg == 0 )					/* more detailed logs for command register */
 		IPF_FDC_LogCommand ( Byte );
 	else
 		LOG_TRACE(TRACE_FDC, "fdc ipf write reg=%d data=0x%x VBL=%d HBL=%d\n" , Reg , Byte , nVBLs , nHBL );
