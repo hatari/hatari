@@ -46,7 +46,16 @@ typedef		yms16			ymsample;	/* Output samples are mono 16bits signed PCM */
 #define YM_MODEL_MIXING			3		/* Use circuit analysis model to build ymout5[] */
 
 extern int	YmVolumeMixing;
-extern bool	UseLowPassFilter;
+
+#define		YM2149_LPF_FILTER_NONE			0
+#define		YM2149_LPF_FILTER_LPF_STF		1
+#define		YM2149_LPF_FILTER_PWM			2
+extern int	YM2149_LPF_Filter;
+
+#define		YM2149_HPF_FILTER_NONE			0
+#define		YM2149_HPF_FILTER_IIR			1
+extern int	YM2149_HPF_Filter;
+
 
 extern void Sound_Init(void);
 extern void Sound_Reset(void);
