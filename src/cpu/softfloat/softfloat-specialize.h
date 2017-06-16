@@ -324,6 +324,7 @@ static inline floatx80 propagateFloatx80NaN( floatx80 a, floatx80 b, float_statu
 #ifndef SOFTFLOAT_68K
     flag bIsNaN;
 #endif
+
     aIsNaN = floatx80_is_nan( a );
     aIsSignalingNaN = floatx80_is_signaling_nan( a );
     bIsSignalingNaN = floatx80_is_signaling_nan( b );

@@ -171,7 +171,7 @@ static void native_set_fpucw(uae_u32 m68k_cw)
 /* Functions for setting host/library modes and getting status */
 static void fp_set_mode(uae_u32 mode_control)
 {
-	if (mode_control == fpu_mode_control)
+	if (mode_control == fpu_mode_control && !currprefs.compfpu)
 		return;
     switch(mode_control & FPCR_ROUNDING_PRECISION) {
         case FPCR_PRECISION_EXTENDED: // X
@@ -1282,3 +1282,21 @@ void fp_init_native(void)
 	fpp_tst = fp_tst;
 	fpp_move = fp_move;
 }
+
+double softfloat_tan(double v)
+{
+	struct float_status f = { 0 };
+	uae_u32 w1, w2;
+	fpdata fpd = { 0 };
+
+	fpd.fp = v;
+	set_floatx80_rounding_precision(80, &f);
+	set_float_rounding_mode(float_round_to_zero, &f);
+	fp_from_double(&fpd, &w1, &w2);
+	floatx80 fv = float64_to_floatx80(((uae_u64)w1 << 32) | w2, &fs);
+	fv = floatx80_tan(fv, &fs);
+	float64 f64 = floatx80_to_float64(fv, &fs);
+	fp_to_double(&fpd, f64 >> 32, (uae_u32)f64);
+	return fpd.fp;
+}
+
