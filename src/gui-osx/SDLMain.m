@@ -34,6 +34,7 @@
 #import "clocks_timings.h"
 #import "change.h"
 
+extern void Main_RequestQuit(int exitval) ;
 
 #ifdef SDL_USE_CPS
 // Portions of CPS.h

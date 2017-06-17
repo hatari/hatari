@@ -181,6 +181,8 @@ is missing here, please remind me!):
   most of the 030 MMU implementation and few bug reports & patches
   for the DSP emulation
 
+- Miguel Saro (Cocoa Pod) : Some updates to the OS X GUI
+
 
  Code from other projects
  ------------------------
