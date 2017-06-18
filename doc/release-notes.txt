@@ -20,12 +20,26 @@ Emulation:
 - improve bottom border removal on 60 Hz screen
 
 Emulator:
-- Initial patching for ST-Book ROM
-- Support memory check skipping also on TOS v3 & v4
-- Extended VDI mode font selected based on VDI height
-- Allow RAM size values in KiB instead of MiB
-- Support scaling AVI recording (PNG/BMP) frames
-- Virtual INF file handling improvements:
+- Miscellaneous:
+  - Initial patching for ST-Book ROM
+  - Fix: rate-limit DSP illegal instruction warnings output
+- Disk handling:
+  - Add "--gemdos-time <atari/host>" option so that user can specify
+    whether emulation or host timestamps are used with GEMDOS HD files
+  - Fix: off-by-one error in ACSI image file name handling
+- Memory handling:
+  - Support memory check skipping also on TOS v3 & v4
+  - Allow RAM size values in KiB instead of MiB
+- Display handling:
+  - Add --resizable option to control whether Hatari SDL2 window
+    can be resized (= turn it off to prevent accidental resizes)
+  - Support scaling AVI recording (PNG/BMP) frames
+  - Extended VDI mode font selected based on VDI height
+  - Fix: don't switch bitdepth when recording AVI
+  - Fix: X11 window embedding (to Python GUI) with SDL2
+  - Fix: TOS v2 & v3 Atari logo display in extended VDI resolutions
+  - Fix: Limit Videl widths for GLES2 SDL2 backends
+- Virtual INF file handling:
   - Add "--auto" option to autostart programs also from somewhere
     else than C: root, and to enable required GEMDOS interception
     without full GEMDOS HD emulation
@@ -34,17 +48,9 @@ Emulator:
     blitter for machines & TOS versions supporting it
   - Uses existing INF file as base, if one exists
   - If not, asks TOS to open window for boot drive
-- Add "--gemdos-time <atari/host>" option so that user can specify
-  whether emulation or host timestamps are used with GEMDOS HD files
-- Fix: don't switch bitdepth when recording AVI
-- Fix: X11 window embedding (to Python GUI) with SDL2
-- Fix: TOS v2 & v3 Atari logo display in extended VDI resolutions
-- Fix: Limit Videl widths for GLES2 SDL2 backends
-- Fix: off-by-one error in ACSI image file name handling
-- Fix: Normal users cannot use tmpfile() directly under Windows
-- Fix: rate-limit DSP illegal instruction warnings output
-- Fix: Use separate INF files for TOS v1 and v2+ autostarting
-- Debugger:
+  - Fix: Use separate INF files for TOS v1 and v2+ autostarting
+  - Fix: Normal users cannot use tmpfile() directly under Windows
+- Debugger improvements:
   - Add "CycleCounter" variable
   - Add "info dta [addr]" command
   - Add absolute symbols support in addition to BSS/DATA/TEXT ones
