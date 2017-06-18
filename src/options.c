@@ -71,6 +71,7 @@ enum {
 	OPT_FULLSCREEN,
 	OPT_WINDOW,
 	OPT_GRAB,
+	OPT_RESIZABLE,
 	OPT_FRAMESKIPS,
 	OPT_SLOWDOWN,
 	OPT_MOUSE_WARP,
@@ -220,6 +221,8 @@ static const opt_t HatariOptions[] = {
 	  NULL, "Start emulator in windowed mode" },
 	{ OPT_GRAB, NULL, "--grab",
 	  NULL, "Grab mouse (also) in windowed mode" },
+	{ OPT_RESIZABLE,    NULL, "--resizable",
+	  "<bool>", "Allow window resizing" },
 	{ OPT_FRAMESKIPS, NULL, "--frameskips",
 	  "<x>", "Skip <x> frames after each shown frame (0=off, >4=auto/max)" },
 	{ OPT_SLOWDOWN, NULL, "--slowdown",
@@ -1092,6 +1095,15 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			bGrabMouse = true;
 			break;
 
+		case OPT_RESIZABLE:
+#if WITH_SDL2
+			ok = Opt_Bool(argv[++i], OPT_RESIZABLE, &ConfigureParams.Screen.bResizable);
+#else
+			fprintf(stderr, "The --resizable option is supported only in SDL2 build!\n");
+			i++;
+#endif
+			break;
+
 		case OPT_FRAMESKIPS:
 			skips = atoi(argv[++i]);
 			if (skips < 0)
@@ -1154,7 +1166,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 		case OPT_RESOLUTION_ST:
 #if WITH_SDL2
-			fprintf(stderr, "The --desktop-st option is not supported in this version (with SDL2)!\n");
+			fprintf(stderr, "The --desktop-st option is not supported in SDL2 build!\n");
 			i++;
 #else
 			ok = Opt_Bool(argv[++i], OPT_RESOLUTION_ST, &ConfigureParams.Screen.bKeepResolutionST);

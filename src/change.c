@@ -200,6 +200,7 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	     || changed->Screen.bShowStatusbar != current->Screen.bShowStatusbar
 #if WITH_SDL2
 	     || changed->Screen.nRenderScaleQuality != current->Screen.nRenderScaleQuality
+	     || changed->Screen.bResizable != current->Screen.bResizable
 	     || changed->Screen.bUseVsync != current->Screen.bUseVsync
 #endif
 	    ))

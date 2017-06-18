@@ -100,8 +100,9 @@ static SGOBJ monitordlg[] =
 #define DLGSCRN_RECANIM     30
 #if WITH_SDL2
 #define DLGSCRN_LINEARSCALE 33
-#define DLGSCRN_VSYNC       34
-#define DLGSCRN_EXIT_WINDOW 35
+#define DLGSCRN_RESIZABLE   34
+#define DLGSCRN_VSYNC       35
+#define DLGSCRN_EXIT_WINDOW 36
 #else
 #define DLGSCRN_EXIT_WINDOW 31
 #endif
@@ -165,8 +166,9 @@ static SGOBJ windowdlg[] =
 #if WITH_SDL2
 	{ SGBOX,      0, 0,  1,18, 50,4, NULL },
 	{ SGTEXT,     0, 0, 20,18, 12,1, "SDL2 options" },
-	{ SGCHECKBOX, 0, 0,  4,20, 20,1, "Use linear scal_ing" },
-	{ SGCHECKBOX, 0, 0, 28,20, 11,1, "Use _VSync" },
+	{ SGCHECKBOX, 0, 0,  4,20, 20,1, "Linear scal_ing" },
+	{ SGCHECKBOX, 0, 0, 23,20, 20,1, "Resi_zable" },
+	{ SGCHECKBOX, 0, 0, 36,20, 11,1, "_VSync" },
 	{ SGBUTTON, SG_DEFAULT, 0, 17,23, 20,1, "Back to main menu" },
 #else
 	{ SGBUTTON, SG_DEFAULT, 0, 17,18, 20,1, "Back to main menu" },
@@ -382,6 +384,10 @@ void Dialog_WindowDlg(void)
 
 #if WITH_SDL2
 	/* SDL2 options */
+	if (ConfigureParams.Screen.bResizable)
+		windowdlg[DLGSCRN_RESIZABLE].state |= SG_SELECTED;
+	else
+		windowdlg[DLGSCRN_RESIZABLE].state &= ~SG_SELECTED;
 	if (ConfigureParams.Screen.nRenderScaleQuality)
 		windowdlg[DLGSCRN_LINEARSCALE].state |= SG_SELECTED;
 	else
@@ -481,6 +487,7 @@ void Dialog_WindowDlg(void)
 	ConfigureParams.Screen.bCrop = (windowdlg[DLGSCRN_CROP].state & SG_SELECTED);
 
 #if WITH_SDL2
+	ConfigureParams.Screen.bResizable = (windowdlg[DLGSCRN_RESIZABLE].state & SG_SELECTED);
 	ConfigureParams.Screen.nRenderScaleQuality = (windowdlg[DLGSCRN_LINEARSCALE].state & SG_SELECTED) ? 1 : 0;
 	ConfigureParams.Screen.bUseVsync = (windowdlg[DLGSCRN_VSYNC].state & SG_SELECTED);
 #endif

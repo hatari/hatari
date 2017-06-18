@@ -73,7 +73,9 @@ static const struct Config_Tag configs_Screen[] =
 	{ "nFrameSkips", Int_Tag, &ConfigureParams.Screen.nFrameSkips },
 	{ "bFullScreen", Bool_Tag, &ConfigureParams.Screen.bFullScreen },
 	{ "bKeepResolution", Bool_Tag, &ConfigureParams.Screen.bKeepResolution },
-#if !WITH_SDL2
+#if WITH_SDL2
+	{ "bResizable", Bool_Tag, &ConfigureParams.Screen.bResizable },
+#else
 	{ "bKeepResolutionST", Bool_Tag, &ConfigureParams.Screen.bKeepResolutionST },
 #endif
 	{ "bAllowOverscan", Bool_Tag, &ConfigureParams.Screen.bAllowOverscan },
@@ -732,7 +734,9 @@ void Configuration_SetDefault(void)
 	/* Set defaults for Screen */
 	ConfigureParams.Screen.bFullScreen = false;
 	ConfigureParams.Screen.bKeepResolution = true;
-#if !WITH_SDL2
+#if WITH_SDL2
+	ConfigureParams.Screen.bResizable = true;
+#else
 	ConfigureParams.Screen.bKeepResolutionST = false;
 #endif
 	ConfigureParams.Screen.nFrameSkips = AUTO_FRAMESKIP_LIMIT;
