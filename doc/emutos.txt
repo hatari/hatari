@@ -450,7 +450,7 @@ Commercial game demos/previews (many of these are pretty good):
 - Rolling Ronny demo
 - Rotoplex demo
 - Space Crusade demo
-- Space Harrier (line-A functions, in Atari PowerPack)
+- Space Harrier (line-A copy raster & line, in Atari PowerPack)
 - Stormball demo
 - Super Stario Land demo
 - Thunderstrike demo
@@ -507,7 +507,7 @@ Free/shareware/PD games:
 - Jetpac
 - Killing Spree (2014 preview by TLB at Atarimania)
 - Laserball 2014
-- LeMans (uses line-A)
+- LeMans (line-A get pixel, draw line, bitblit, show mouse)
 - Master Breakout
 - Maze*
 - Mem* (line-A bitblits)
@@ -675,7 +675,7 @@ Mono/GEM toys:
 - Mandala
 - Planet (celectial body calculations)
 - Pyro
-- Robugs* (GEM UI, line-A fillrect + spritedraw)
+- Robugs* (GEM UI, line-A fillrect + sprite draw)
 - ST life
 - Wator (slow)
 - Worm farm
@@ -738,7 +738,7 @@ Working drawing / image viewing programs:
 - Degas Elite, see http://www.youtube.com/watch?v=G4st-x4-BJg (at 16:30)
 - Iffcnv, IFF convertor/viewer
 - ImCon v1.1, image converter/viewer
-- Neochrome master (line-A bitblk, text, line)
+- Neochrome master (line-A bitblit, text, line)
 - Photochrome v4 (all buttons don't work)
 - Speed of Light v3.8
 - Spslide, Spec512 viewer
@@ -1203,7 +1203,7 @@ Games working in EmuTOS >v0.9.5:
 
 Games working in EmuTOS >0.9.6:
 - Chorensha (old, non-DSP version)
-- Block Blizzard preview (uses line-A)
+- Block Blizzard preview (line-A bitblit + hide cursor / show mouse)
 - Masters of Chaos (multiplayer "dungeon master")
 
 Games working with extra hacks:
