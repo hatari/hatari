@@ -10,6 +10,7 @@
   Jan 2006, Sébastien Molines - Updated for recent emulator updates
   2013 : Miguel SARO, J. VERNET
   2016 : J. VERNET - Updated for 1.9.0
+  2017 : Miguel SARO resizable
 */
 
 // bOKDialog = Dialog_MainDlg(&bForceReset, &bLoadedSnapshot);   // prise des préférences
@@ -744,6 +745,7 @@ BOOL flag1, flag2;
 
 	//1.9.0 SDL2
 	IMPORT_SWITCH(SDL2UseLinearScaling, ConfigureParams.Screen.nRenderScaleQuality);
+	IMPORT_SWITCH(SDL2Resizable, ConfigureParams.Screen.bResizable) ;				// MS 06-2017
 	IMPORT_SWITCH(SDL2UseVSync, ConfigureParams.Screen.bUseVsync);
 
 	//deal with the Max Zoomed Stepper
@@ -1010,6 +1012,7 @@ BOOL flag1, flag2;
 	EXPORT_RADIO(YMVoicesMixing,ConfigureParams.Sound.YmVolumeMixing);
 	//1.9.0 SDL2
 	EXPORT_SWITCH(SDL2UseLinearScaling, ConfigureParams.Screen.nRenderScaleQuality);
+	EXPORT_SWITCH(SDL2Resizable, ConfigureParams.Screen.bResizable) ;					// MS 06-2017
 	EXPORT_SWITCH(SDL2UseVSync, ConfigureParams.Screen.bUseVsync);
 
 	EXPORT_NTEXTFIELD(maxZoomedWidth, ConfigureParams.Screen.nMaxWidth);

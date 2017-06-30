@@ -1233,18 +1233,26 @@ DQ
                                                 <rect key="frame" x="1" y="1" width="604" height="74"/>
                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                 <subviews>
-                                                    <button id="Sco-Iv-wnc">
-                                                        <rect key="frame" x="18" y="38" width="135" height="18"/>
+                                                    <button misplaced="YES" id="Sco-Iv-wnc">
+                                                        <rect key="frame" x="18" y="52" width="135" height="18"/>
                                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                         <buttonCell key="cell" type="check" title="Use Linear Scaling" bezelStyle="regularSquare" imagePosition="left" inset="2" id="TdS-TX-oGj">
                                                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                                             <font key="font" metaFont="system"/>
                                                         </buttonCell>
                                                     </button>
-                                                    <button id="Hti-Yj-SZa">
-                                                        <rect key="frame" x="18" y="18" width="88" height="18"/>
+                                                    <button misplaced="YES" id="Hti-Yj-SZa">
+                                                        <rect key="frame" x="18" y="4" width="88" height="18"/>
                                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                         <buttonCell key="cell" type="check" title="Use VSync" bezelStyle="regularSquare" imagePosition="left" inset="2" id="wLX-Os-YkN">
+                                                            <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                            <font key="font" metaFont="system"/>
+                                                        </buttonCell>
+                                                    </button>
+                                                    <button misplaced="YES" id="6Qc-ZR-WJc">
+                                                        <rect key="frame" x="18" y="28" width="162" height="18"/>
+                                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                        <buttonCell key="cell" type="check" title="Resizable" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="g7x-9J-1xC">
                                                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                                             <font key="font" metaFont="system"/>
                                                         </buttonCell>
@@ -2387,6 +2395,7 @@ DQ
                 <outlet property="FastBootPatch" destination="4718" id="4734"/>
                 <outlet property="HDWriteProtection" destination="4668" id="4681"/>
                 <outlet property="MMU_Emulation" destination="39w-d7-zDS" id="Pzs-It-jZi"/>
+                <outlet property="SDL2Resizable" destination="6Qc-ZR-WJc" id="825-XQ-INr"/>
                 <outlet property="SDL2UseLinearScaling" destination="Sco-Iv-wnc" id="MwD-a7-vKU"/>
                 <outlet property="SDL2UseVSync" destination="Hti-Yj-SZa" id="hVb-NE-5eH"/>
                 <outlet property="TTRAMSizeStepper" destination="fv9-7a-2KO" id="lxM-bQ-6dz"/>
