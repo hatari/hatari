@@ -501,7 +501,7 @@ static char *get_builtin_inf(const char *contents)
 
 	inflen = strlen(contents);
 	winlen = strlen(drivewin);
-	inf = malloc(inflen + winlen);
+	inf = malloc(inflen + winlen + 1);
 	assert(inf);
 
 	/* drive letter offset on drive window line */
