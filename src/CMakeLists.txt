@@ -43,8 +43,8 @@ else()
 	set(CPUDIR uae-cpu)
 endif(ENABLE_WINUAE_CPU)
 
-include_directories(${CMAKE_BINARY_DIR} ${SDL_INCLUDE_DIR} ${CPUDIR}
-		    includes debug falcon)
+include_directories(includes debug falcon
+		    ${CMAKE_BINARY_DIR} ${SDL_INCLUDE_DIR} ${CPUDIR})
 
 if(ZLIB_FOUND)
 	include_directories(${ZLIB_INCLUDE_DIR})
