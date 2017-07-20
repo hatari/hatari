@@ -551,6 +551,7 @@ void GemDOS_Reset(void)
 	act_pd = 0;
 	CurrentDrive = nBootDrive;
 	Symbols_RemoveCurrentProgram();
+	INF_CreateOverride();
 }
 
 /*-----------------------------------------------------------------------*/

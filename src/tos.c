@@ -25,7 +25,6 @@ const char TOS_fileid[] = "Hatari tos.c : " __DATE__ " " __TIME__;
 #include "file.h"
 #include "gemdos.h"
 #include "hdc.h"
-#include "inffile.h"
 #include "ioMem.h"
 #include "log.h"
 #include "m68000.h"
@@ -703,8 +702,6 @@ int TOS_LoadImage(void)
 	free(pTosFile);
 
 	bTosImageLoaded = true;
-
-	INF_CreateOverride();
 	return 0;
 }
 
