@@ -61,6 +61,7 @@ typedef struct _LARGE_INTEGER
 
 #ifdef CPUEMU_13
 
+#ifndef WINUAE_FOR_HATARI
 uae_u8 cycle_line[256 + 1];
 
 static void sync_ce020 (void)
@@ -76,7 +77,6 @@ static void sync_ce020 (void)
 	}
 }
 
-#ifndef WINUAE_FOR_HATARI
 #define SETIFCHIP \
 	if (addr < 0xd80000) \
 		last_custom_value1 = v;

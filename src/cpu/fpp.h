@@ -21,6 +21,9 @@ extern void fp_init_softfloat(void);
 extern void fpsr_set_exception(uae_u32 exception);
 extern void fpu_modechange(void);
 
+extern double softfloat_tan(double v);
+
+
 #if defined(CPU_i386) || defined(CPU_x86_64)
 extern void init_fpucw_x87(void);
 #endif

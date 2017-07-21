@@ -74,6 +74,17 @@ uae_u32 mmu030_disp_store[2];
 uae_u32 mmu030_fmovem_store[2];
 struct mmu030_access mmu030_ad[MAX_MMU030_ACCESS];
 
+#if MMU_DPAGECACHE030
+#define MMUFASTCACHE_ENTRIES030 256
+struct mmufastcache030
+{
+	uae_u32 log;
+	uae_u32 phys;
+};
+static struct mmufastcache030 atc_data_cache_read[MMUFASTCACHE_ENTRIES030];
+static struct mmufastcache030 atc_data_cache_write[MMUFASTCACHE_ENTRIES030];
+#endif
+
 /* for debugging messages */
 char table_letter[4] = {'A','B','C','D'};
 
@@ -116,7 +127,8 @@ static struct {
         struct {
             uae_u32 mask;
 			uae_u32 imask;
-            uae_u8 size;
+            uae_u32 size;
+			uae_u32 size3m;
         } page;
         
         uae_u8 init_shift;
@@ -135,9 +147,17 @@ static struct {
     /* Condition */
     bool enabled;
     uae_u16 status;
+
+#if MMU_IPAGECACHE030
+#if MMU_DIRECT_ACCESS
+	uae_u8 *mmu030_last_physical_address_real;
+#else
+	uae_u32 mmu030_last_physical_address;
+#endif
+	uae_u32 mmu030_last_logical_address;
+#endif
+
 } mmu030;
-
-
 
 /* MMU Status Register
  *
@@ -179,16 +199,120 @@ static struct {
 #define MMUSR_TRANSP_ACCESS     0x0040
 #define MMUSR_NUM_LEVELS_MASK   0x0007
 
+/* -- ATC flushing functions -- */
 
+static void mmu030_flush_cache(uaecptr addr)
+{
+#if MMU_IPAGECACHE030
+	mmu030.mmu030_last_logical_address = 0xffffffff;
+#endif
+#if MMU_DPAGECACHE030
+	if (addr == 0xffffffff) {
+		memset(&atc_data_cache_read, 0xff, sizeof atc_data_cache_read);
+		memset(&atc_data_cache_write, 0xff, sizeof atc_data_cache_write);
+	} else {
+		uae_u32 idx = ((addr & mmu030.translation.page.imask) >> mmu030.translation.page.size3m) | 7;
+		int i;
+		for (i = 0; i < MMUFASTCACHE_ENTRIES030; i++) {
+			if ((atc_data_cache_read[i].log | 7) == idx)
+				atc_data_cache_read[i].log = 0xffffffff;
+			if ((atc_data_cache_write[i].log | 7) == idx)
+				atc_data_cache_write[i].log = 0xffffffff;
+		}
+	}
+#endif
+}
+
+/* This function flushes ATC entries depending on their function code */
+static void mmu030_flush_atc_fc(uae_u32 fc_base, uae_u32 fc_mask) {
+    int i;
+    for (i=0; i<ATC030_NUM_ENTRIES; i++) {
+        if (((fc_base&fc_mask)==(mmu030.atc[i].logical.fc&fc_mask)) &&
+            mmu030.atc[i].logical.valid) {
+            mmu030.atc[i].logical.valid = false;
+#if MMU030_OP_DBG_MSG
+            write_log(_T("ATC: Flushing %08X\n"), mmu030.atc[i].physical.addr);
+#endif
+		}
+    }
+	mmu030_flush_cache(0xffffffff);
+}
+
+/* This function flushes ATC entries depending on their logical address
+ * and their function code */
+static void mmu030_flush_atc_page_fc(uaecptr logical_addr, uae_u32 fc_base, uae_u32 fc_mask) {
+    int i;
+	logical_addr &= mmu030.translation.page.imask;
+    for (i=0; i<ATC030_NUM_ENTRIES; i++) {
+        if (((fc_base&fc_mask)==(mmu030.atc[i].logical.fc&fc_mask)) &&
+            (mmu030.atc[i].logical.addr == logical_addr) &&
+            mmu030.atc[i].logical.valid) {
+            mmu030.atc[i].logical.valid = false;
+#if MMU030_OP_DBG_MSG
+            write_log(_T("ATC: Flushing %08X\n"), mmu030.atc[i].physical.addr);
+#endif
+		}
+    }
+	mmu030_flush_cache(logical_addr);
+}
+
+/* This function flushes ATC entries depending on their logical address */
+static void mmu030_flush_atc_page(uaecptr logical_addr) {
+    int i;
+	logical_addr &= mmu030.translation.page.imask;
+    for (i=0; i<ATC030_NUM_ENTRIES; i++) {
+        if ((mmu030.atc[i].logical.addr == logical_addr) &&
+            mmu030.atc[i].logical.valid) {
+            mmu030.atc[i].logical.valid = false;
+#if MMU030_OP_DBG_MSG
+            write_log(_T("ATC: Flushing %08X\n"), mmu030.atc[i].physical.addr);
+#endif
+		}
+    }
+	mmu030_flush_cache(logical_addr);
+}
+
+/* This function flushes all ATC entries */
+void mmu030_flush_atc_all(void) {
+#if MMU030_OP_DBG_MSG
+	write_log(_T("ATC: Flushing all entries\n"));
+#endif
+	int i;
+    for (i=0; i<ATC030_NUM_ENTRIES; i++) {
+        mmu030.atc[i].logical.valid = false;
+    }
+	mmu030_flush_cache(0xffffffff);
+}
 
 /* -- MMU instructions -- */
+
+static bool mmu_op30_invea(uae_u32 opcode)
+{
+	int eamode = (opcode >> 3) & 7;
+	int rreg = opcode & 7;
+
+	// Dn, An, (An)+, -(An), immediate and PC-relative not allowed
+	if (eamode == 0 || eamode == 1 || eamode == 3 || eamode == 4 || eamode == 6 || (eamode == 7 && rreg > 1))
+		return true;
+	return false;
+}
 
 bool mmu_op30_pmove (uaecptr pc, uae_u32 opcode, uae_u16 next, uaecptr extra)
 {
 	int preg = (next >> 10) & 31;
 	int rw = (next >> 9) & 1;
 	int fd = (next >> 8) & 1;
-    
+ 	int unused = (next & 0xff);
+   
+	if (mmu_op30_invea(opcode))
+		return true;
+	// unused low 8 bits must be zeroed
+	if (unused)
+		return true;
+	// read and fd set?
+	if (rw && fd)
+		return true;
+
 #if MMU030_OP_DBG_MSG
     switch (preg) {
         case 0x10:
@@ -259,6 +383,10 @@ bool mmu_op30_pmove (uaecptr pc, uae_u32 opcode, uae_u16 next, uaecptr extra)
             }
             break;
         case 0x18: // MMUSR
+			if (fd) {
+				// FD must be always zero when MMUSR read or write
+				return true;
+			}
             if (rw)
                 x_put_word (extra, mmusr_030);
             else
@@ -282,11 +410,10 @@ bool mmu_op30_pmove (uaecptr pc, uae_u32 opcode, uae_u16 next, uaecptr extra)
             break;
         default:
             write_log (_T("Bad PMOVE at %08x\n"),m68k_getpc());
-            op_illg (opcode);
             return true;
 	}
     
-    if (!fd && !rw && !(preg==0x18)) {
+    if (!fd && !rw && preg != 0x18) {
         mmu030_flush_atc_all();
     }
 	tt_enabled = (tt0_030 & TT_ENABLE) || (tt1_030 & TT_ENABLE);
@@ -302,19 +429,13 @@ bool mmu_op30_ptest (uaecptr pc, uae_u32 opcode, uae_u16 next, uaecptr extra)
     int a = (next >> 8) & 1;
     int areg = (next&0xE0)>>5;
     uae_u32 fc = mmu_op30_helper_get_fc(next);
-        
     bool write = rw ? false : true;
-
     uae_u32 ret = 0;
-    
-    /* Check this - datasheet says:
-     * "When the instruction specifies an address translation cache search
-     *  with an address register operand, the MC68030 takes an F-line
-     *  unimplemented instruction exception."
-     */
-    if (!level && a) { /* correct ? */
+
+	if (mmu_op30_invea(opcode))
+		return true;
+    if (!level && a) {
         write_log(_T("PTEST: Bad instruction causing F-line unimplemented instruction exception!\n"));
-        Exception(11); /* F-line unimplemented instruction exception */
         return true;
     }
         
@@ -348,12 +469,17 @@ bool mmu_op30_ptest (uaecptr pc, uae_u32 opcode, uae_u16 next, uaecptr extra)
 	return false;
 }
 
-bool mmu_op30_pload (uaecptr pc, uae_u32 opcode, uae_u16 next, uaecptr extra)
+static bool mmu_op30_pload (uaecptr pc, uae_u32 opcode, uae_u16 next, uaecptr extra)
 {
     int rw = (next >> 9) & 1;
-    uae_u32 fc = mmu_op30_helper_get_fc(next);
-    
+  	int unused = (next & (0x100 | 0x80 | 0x40 | 0x20));
+	uae_u32 fc = mmu_op30_helper_get_fc(next);
     bool write = rw ? false : true;
+
+	if (mmu_op30_invea(opcode))
+		return true;
+	if (unused)
+		return true;
 
 #if 0
     write_log (_T("PLOAD%c: Create ATC entry for %08X, FC = %i\n"), write?'W':'R', extra, fc);
@@ -366,9 +492,10 @@ bool mmu_op30_pload (uaecptr pc, uae_u32 opcode, uae_u16 next, uaecptr extra)
 
 bool mmu_op30_pflush (uaecptr pc, uae_u32 opcode, uae_u16 next, uaecptr extra)
 {
-    uae_u16 mode = (next&0x1C00)>>10;
-    uae_u32 fc_mask = (uae_u32)(next&0x00E0)>>5;
+	uae_u16 mode = (next >> 8) & 31;
+    uae_u32 fc_mask = (uae_u32)(next & 0x00E0) >> 5;
     uae_u32 fc_base = mmu_op30_helper_get_fc(next);
+	uae_u32 fc_bits = next & 0x7f;
     
 #if 0
     switch (mode) {
@@ -390,19 +517,24 @@ bool mmu_op30_pflush (uaecptr pc, uae_u32 opcode, uae_u16 next, uaecptr extra)
 #endif
     
     switch (mode) {
-        case 0x1:
+		case 0x00:
+			return mmu_op30_pload(pc, opcode, next, extra);
+        case 0x04:
+			if (fc_bits)
+				return true;
             mmu030_flush_atc_all();
             break;
-        case 0x4:
+        case 0x10:
             mmu030_flush_atc_fc(fc_base, fc_mask);
             break;
-        case 0x6:
+        case 0x18:
+			if (mmu_op30_invea(opcode))
+				return true;
             mmu030_flush_atc_page_fc(extra, fc_base, fc_mask);
             break;
-            
         default:
             write_log(_T("PFLUSH ERROR: bad mode! (%i)\n"),mode);
-            break;
+			return true;
     }
 	return false;
 }
@@ -425,67 +557,6 @@ uae_u32 mmu_op30_helper_get_fc(uae_u16 next) {
             return 0;
     }
 }
-
-
-/* -- ATC flushing functions -- */
-
-/* This function flushes ATC entries depending on their function code */
-void mmu030_flush_atc_fc(uae_u32 fc_base, uae_u32 fc_mask) {
-    int i;
-    for (i=0; i<ATC030_NUM_ENTRIES; i++) {
-        if (((fc_base&fc_mask)==(mmu030.atc[i].logical.fc&fc_mask)) &&
-            mmu030.atc[i].logical.valid) {
-            mmu030.atc[i].logical.valid = false;
-#if MMU030_OP_DBG_MSG
-            write_log(_T("ATC: Flushing %08X\n"), mmu030.atc[i].physical.addr);
-#endif
-		}
-    }
-}
-
-/* This function flushes ATC entries depending on their logical address
- * and their function code */
-void mmu030_flush_atc_page_fc(uaecptr logical_addr, uae_u32 fc_base, uae_u32 fc_mask) {
-    int i;
-	logical_addr &= mmu030.translation.page.imask;
-    for (i=0; i<ATC030_NUM_ENTRIES; i++) {
-        if (((fc_base&fc_mask)==(mmu030.atc[i].logical.fc&fc_mask)) &&
-            (mmu030.atc[i].logical.addr == logical_addr) &&
-            mmu030.atc[i].logical.valid) {
-            mmu030.atc[i].logical.valid = false;
-#if MMU030_OP_DBG_MSG
-            write_log(_T("ATC: Flushing %08X\n"), mmu030.atc[i].physical.addr);
-#endif
-		}
-    }
-}
-
-/* This function flushes ATC entries depending on their logical address */
-void mmu030_flush_atc_page(uaecptr logical_addr) {
-    int i;
-	logical_addr &= mmu030.translation.page.imask;
-    for (i=0; i<ATC030_NUM_ENTRIES; i++) {
-        if ((mmu030.atc[i].logical.addr == logical_addr) &&
-            mmu030.atc[i].logical.valid) {
-            mmu030.atc[i].logical.valid = false;
-#if MMU030_OP_DBG_MSG
-            write_log(_T("ATC: Flushing %08X\n"), mmu030.atc[i].physical.addr);
-#endif
-		}
-    }
-}
-
-/* This function flushes all ATC entries */
-void mmu030_flush_atc_all(void) {
-#if MMU030_OP_DBG_MSG
-	write_log(_T("ATC: Flushing all entries\n"));
-#endif
-	int i;
-    for (i=0; i<ATC030_NUM_ENTRIES; i++) {
-        mmu030.atc[i].logical.valid = false;
-    }
-}
-
 
 /* Transparent Translation Registers (TT0 and TT1)
  *
@@ -571,49 +642,6 @@ TT_info mmu030_decode_tt(uae_u32 TT) {
     return ret;
 }
 
-/* This function compares the address with both transparent
- * translation registers and returns the result */
-int mmu030_match_ttr(uaecptr addr, uae_u32 fc, bool write)
-{
-    int tt0, tt1;
-
-    bool cache_inhibit = false; /* TODO: pass to memory access function */
-    
-    tt0 = mmu030_do_match_ttr(tt0_030, mmu030.transparent.tt0, addr, fc, write);
-    if (tt0&TT_OK_MATCH) {
-        cache_inhibit = (tt0_030&TT_CI) ? true : false;
-    }
-    tt1 = mmu030_do_match_ttr(tt1_030, mmu030.transparent.tt1, addr, fc, write);
-    if (tt1&TT_OK_MATCH) {
-        if (!cache_inhibit) {
-            cache_inhibit = (tt1_030&TT_CI) ? true : false;
-        }
-    }
-    
-    return (tt0|tt1);
-}
-int mmu030_match_ttr_access(uaecptr addr, uae_u32 fc, bool write)
-{
-    int tt0, tt1;
-	if (!tt_enabled)
-		return 0;
-    tt0 = mmu030_do_match_ttr(tt0_030, mmu030.transparent.tt0, addr, fc, write);
-    tt1 = mmu030_do_match_ttr(tt1_030, mmu030.transparent.tt1, addr, fc, write);
-    return (tt0|tt1) & TT_OK_MATCH;
-}
-
-/* Locked Read-Modify-Write */
-int mmu030_match_lrmw_ttr_access(uaecptr addr, uae_u32 fc)
-{
-    int tt0, tt1;
-
- 	if (!tt_enabled)
-		return 0;
-    tt0 = mmu030_do_match_lrmw_ttr(tt0_030, mmu030.transparent.tt0, addr, fc);
-    tt1 = mmu030_do_match_lrmw_ttr(tt1_030, mmu030.transparent.tt1, addr, fc);
-    return (tt0|tt1) & TT_OK_MATCH;
-}
-
 /* This function checks if an address matches a transparent
  * translation register */
 
@@ -621,7 +649,7 @@ int mmu030_match_lrmw_ttr_access(uaecptr addr, uae_u32 fc)
  * If !(tt&TT_RMW) neither the read nor the write portion
  * of a read-modify-write cycle is transparently translated! */
 
-int mmu030_do_match_ttr(uae_u32 tt, TT_info comp, uaecptr addr, uae_u32 fc, bool write)
+static int mmu030_do_match_ttr(uae_u32 tt, TT_info comp, uaecptr addr, uae_u32 fc, bool write)
 {
 	if (tt & TT_ENABLE)	{	/* transparent translation enabled */
         
@@ -646,7 +674,8 @@ int mmu030_do_match_ttr(uae_u32 tt, TT_info comp, uaecptr addr, uae_u32 fc, bool
 	return TT_NO_MATCH;
 }
 
-int mmu030_do_match_lrmw_ttr(uae_u32 tt, TT_info comp, uaecptr addr, uae_u32 fc)
+#if 0
+static int mmu030_do_match_lrmw_ttr(uae_u32 tt, TT_info comp, uaecptr addr, uae_u32 fc)
 {
 	if ((tt & TT_ENABLE) && (tt & TT_RWM))	{	/* transparent translation enabled */
         
@@ -662,8 +691,54 @@ int mmu030_do_match_lrmw_ttr(uae_u32 tt, TT_info comp, uaecptr addr, uae_u32 fc)
 	}
 	return TT_NO_MATCH;
 }
+#endif
 
+/* This function compares the address with both transparent
+ * translation registers and returns the result */
 
+static int mmu030_match_ttr(uaecptr addr, uae_u32 fc, bool write)
+{
+    int tt0, tt1;
+
+    bool cache_inhibit = false; /* TODO: pass to memory access function */
+    
+    tt0 = mmu030_do_match_ttr(tt0_030, mmu030.transparent.tt0, addr, fc, write);
+    if (tt0&TT_OK_MATCH) {
+        cache_inhibit = (tt0_030&TT_CI) ? true : false;
+    }
+    tt1 = mmu030_do_match_ttr(tt1_030, mmu030.transparent.tt1, addr, fc, write);
+    if (tt1&TT_OK_MATCH) {
+        if (!cache_inhibit) {
+            cache_inhibit = (tt1_030&TT_CI) ? true : false;
+        }
+    }
+    
+    return (tt0|tt1);
+}
+
+static int mmu030_match_ttr_access(uaecptr addr, uae_u32 fc, bool write)
+{
+    int tt0, tt1;
+	if (!tt_enabled)
+		return 0;
+    tt0 = mmu030_do_match_ttr(tt0_030, mmu030.transparent.tt0, addr, fc, write);
+    tt1 = mmu030_do_match_ttr(tt1_030, mmu030.transparent.tt1, addr, fc, write);
+    return (tt0|tt1) & TT_OK_MATCH;
+}
+
+#if 0
+/* Locked Read-Modify-Write */
+static int mmu030_match_lrmw_ttr_access(uaecptr addr, uae_u32 fc)
+{
+    int tt0, tt1;
+
+ 	if (!tt_enabled)
+		return 0;
+    tt0 = mmu030_do_match_lrmw_ttr(tt0_030, mmu030.transparent.tt0, addr, fc);
+    tt1 = mmu030_do_match_lrmw_ttr(tt1_030, mmu030.transparent.tt1, addr, fc);
+    return (tt0|tt1) & TT_OK_MATCH;
+}
+#endif
 
 /* Translation Control Register:
  *
@@ -742,6 +817,12 @@ static void mmu030_do_fake_prefetch(void)
 
 bool mmu030_decode_tc(uae_u32 TC, bool check)
 {
+#if MMU_IPAGECACHE030
+	mmu030.mmu030_last_logical_address = 0xffffffff;
+#endif
+
+	if (currprefs.mmu_ec)
+		TC &= ~TC_ENABLE_TRANSLATION;
     /* Set MMU condition */    
     if (TC & TC_ENABLE_TRANSLATION) {
 		if (!mmu030.enabled && check)
@@ -769,10 +850,10 @@ bool mmu030_decode_tc(uae_u32 TC, bool check)
     
     /* Extract initial shift and page size values from TC register */
     mmu030.translation.page.size = (TC & TC_PS_MASK) >> 20;
+    mmu030.translation.page.size3m =  mmu030.translation.page.size - 3;
     mmu030.translation.init_shift = (TC & TC_IS_MASK) >> 16;
 	regs.mmu_page_size = 1 << mmu030.translation.page.size;
 
-    
 	write_log(_T("68030 MMU enabled. Page size = %d PC=%08x\n"), regs.mmu_page_size, M68K_GETPC);
 
 	if (mmu030.translation.page.size<8) {
@@ -927,7 +1008,24 @@ bool mmu030_decode_rp(uae_u64 RP) {
 #endif
 }
 
-
+static void mmu030_atc_handle_history_bit(int entry_num) {
+    int j;
+    mmu030.atc[entry_num].mru = 1;
+    for (j=0; j<ATC030_NUM_ENTRIES; j++) {
+        if (!mmu030.atc[j].mru)
+            break;
+    }
+    /* If there are no more zero-bits, reset all */
+    if (j==ATC030_NUM_ENTRIES) {
+        for (j=0; j<ATC030_NUM_ENTRIES; j++) {
+            mmu030.atc[j].mru = 0;
+        }
+        mmu030.atc[entry_num].mru = 1;
+#if MMU030_ATC_DBG_MSG
+        write_log(_T("ATC: No more history zero-bits. Reset all.\n"));
+#endif
+	}
+}
 
 /* Descriptors */
 
@@ -1517,6 +1615,8 @@ uae_u32 mmu030_table_search(uaecptr addr, uae_u32 fc, bool write, int level) {
     mmu030.atc[i].physical.modified = (mmu030.status&MMUSR_MODIFIED) ? true : false;
     mmu030.atc[i].physical.write_protect = (mmu030.status&MMUSR_WRITE_PROTECTED) ? true : false;
 
+	mmu030_flush_cache(mmu030.atc[i].logical.addr);
+
 #if MMU030_ATC_DBG_MSG    
     write_log(_T("ATC create entry(%i): logical = %08X, physical = %08X, FC = %i\n"), i,
               mmu030.atc[i].logical.addr, mmu030.atc[i].physical.addr,
@@ -1641,203 +1741,136 @@ void mmu030_page_fault(uaecptr addr, bool read, int flags, uae_u32 fc) {
 	THROW(2);
 }
 
-void mmu030_put_long_atc(uaecptr addr, uae_u32 val, int l, uae_u32 fc) {
-    uae_u32 page_index = addr & mmu030.translation.page.mask;
-    uae_u32 addr_mask = mmu030.translation.page.imask;
-    
-    uae_u32 physical_addr = mmu030.atc[l].physical.addr&addr_mask;
-#if MMU030_ATC_DBG_MSG
-    write_log(_T("ATC match(%i): page addr = %08X, index = %08X (lput %08X)\n"),
-              l, physical_addr, page_index, val);
+static void mmu030_add_data_read_cache(uaecptr addr, uaecptr phys, uae_u32 fc)
+{
+#if MMU_DPAGECACHE030
+	uae_u32 idx1 = ((addr & mmu030.translation.page.imask) >>  mmu030.translation.page.size3m) | fc;
+	uae_u32 idx2 = idx1 & (MMUFASTCACHE_ENTRIES030 - 1);
+	if (idx2 < MMUFASTCACHE_ENTRIES030 - 1) {
+		atc_data_cache_read[idx2].log = idx1;
+		atc_data_cache_read[idx2].phys = phys;
+	}
 #endif
-    physical_addr += page_index;
-    
-    if (mmu030.atc[l].physical.bus_error || mmu030.atc[l].physical.write_protect) {
-        mmu030_page_fault(addr, false, MMU030_SSW_SIZE_L, fc);
-        return;
-    }
-
-    phys_put_long(physical_addr, val);
 }
 
-void mmu030_put_word_atc(uaecptr addr, uae_u16 val, int l, uae_u32 fc) {
-    uae_u32 page_index = addr & mmu030.translation.page.mask;
-    uae_u32 addr_mask = mmu030.translation.page.imask;
-    
-    uae_u32 physical_addr = mmu030.atc[l].physical.addr&addr_mask;
-#if MMU030_ATC_DBG_MSG
-    write_log(_T("ATC match(%i): page addr = %08X, index = %08X (wput %04X)\n"),
-              l, physical_addr, page_index, val);
+static void mmu030_add_data_write_cache(uaecptr addr, uaecptr phys, uae_u32 fc)
+{
+#if MMU_DPAGECACHE030
+	uae_u32 idx1 = ((addr & mmu030.translation.page.imask) >>  mmu030.translation.page.size3m) | fc;
+	uae_u32 idx2 = idx1 & (MMUFASTCACHE_ENTRIES030 - 1);
+	if (idx2 < MMUFASTCACHE_ENTRIES030 - 1) {
+		atc_data_cache_write[idx2].log = idx1;
+		atc_data_cache_write[idx2].phys = phys;
+	}
 #endif
-    physical_addr += page_index;
-    
-    if (mmu030.atc[l].physical.bus_error || mmu030.atc[l].physical.write_protect) {
-        mmu030_page_fault(addr, false, MMU030_SSW_SIZE_W, fc);
-        return;
-    }
-
-    phys_put_word(physical_addr, val);
 }
 
-void mmu030_put_byte_atc(uaecptr addr, uae_u8 val, int l, uae_u32 fc) {
+static uaecptr mmu030_put_atc(uaecptr addr, int l, uae_u32 fc, uae_u32 size) {
     uae_u32 page_index = addr & mmu030.translation.page.mask;
     uae_u32 addr_mask = mmu030.translation.page.imask;
-    
     uae_u32 physical_addr = mmu030.atc[l].physical.addr&addr_mask;
+
 #if MMU030_ATC_DBG_MSG
-    write_log(_T("ATC match(%i): page addr = %08X, index = %08X (bput %02X)\n"),
-              l, physical_addr, page_index, val);
+    write_log(_T("ATC match(%i): page addr = %08X, index = %08X\n"),
+              l, physical_addr, page_index);
 #endif
-    physical_addr += page_index;
     
     if (mmu030.atc[l].physical.bus_error || mmu030.atc[l].physical.write_protect) {
         mmu030_page_fault(addr, false, MMU030_SSW_SIZE_B, fc);
-        return;
-    }
-
-    phys_put_byte(physical_addr, val);
-}
-
-uae_u32 mmu030_get_long_atc(uaecptr addr, int l, uae_u32 fc) {
-    uae_u32 page_index = addr & mmu030.translation.page.mask;
-    uae_u32 addr_mask = mmu030.translation.page.imask;
-    
-    uae_u32 physical_addr = mmu030.atc[l].physical.addr&addr_mask;
-#if MMU030_ATC_DBG_MSG
-    write_log(_T("ATC match(%i): page addr = %08X, index = %08X (lget %08X)\n"), l,
-              physical_addr, page_index, phys_get_long(physical_addr+page_index));
-#endif
-    physical_addr += page_index;
-    
-    if (mmu030.atc[l].physical.bus_error) {
-        mmu030_page_fault(addr, true, MMU030_SSW_SIZE_L, fc);
         return 0;
     }
 
-    return phys_get_long(physical_addr);
+ 	mmu030_add_data_write_cache(addr, physical_addr, fc);
+
+	return physical_addr + page_index;
 }
 
-static uae_u32 mmu030_get_ilong_atc(uaecptr addr, int l, uae_u32 fc) {
+static uaecptr mmu030_get_atc(uaecptr addr, int l, uae_u32 fc, uae_u32 size) {
+    uae_u32 page_index = addr & mmu030.translation.page.mask;
+    uae_u32 addr_mask = mmu030.translation.page.imask;
+    uae_u32 physical_addr = mmu030.atc[l].physical.addr&addr_mask;
+
+#if MMU030_ATC_DBG_MSG
+    write_log(_T("ATC match(%i): page addr = %08X, index = %08X\n"), l,
+              physical_addr, page_index);
+#endif
+   
+    if (mmu030.atc[l].physical.bus_error) {
+        mmu030_page_fault(addr, true, size, fc);
+        return 0;
+    }
+
+	mmu030_add_data_read_cache(addr, physical_addr, fc);
+
+	return physical_addr + page_index;
+}
+
+static uaecptr mmu030_get_i_atc(uaecptr addr, int l, uae_u32 fc, uae_u32 size) {
 	uae_u32 page_index = addr & mmu030.translation.page.mask;
 	uae_u32 addr_mask = mmu030.translation.page.imask;
-
 	uae_u32 physical_addr = mmu030.atc[l].physical.addr&addr_mask;
+
 #if MMU030_ATC_DBG_MSG
-	write_log(_T("ATC match(%i): page addr = %08X, index = %08X (lget %08X)\n"), l,
-		physical_addr, page_index, phys_get_long(physical_addr + page_index));
+	write_log(_T("ATC match(%i): page addr = %08X, index = %08X\n"), l,
+		physical_addr, page_index);
 #endif
-	physical_addr += page_index;
 
 	if (mmu030.atc[l].physical.bus_error) {
-		mmu030_page_fault(addr, true, MMU030_SSW_SIZE_L, fc);
+		mmu030_page_fault(addr, true, size, fc);
 		return 0;
 	}
 
-	return x_phys_get_ilong(physical_addr);
-}
-
-uae_u16 mmu030_get_word_atc(uaecptr addr, int l, uae_u32 fc) {
-    uae_u32 page_index = addr & mmu030.translation.page.mask;
-    uae_u32 addr_mask = mmu030.translation.page.imask;
-    
-    uae_u32 physical_addr = mmu030.atc[l].physical.addr&addr_mask;
-#if MMU030_ATC_DBG_MSG
-    write_log(_T("ATC match(%i): page addr = %08X, index = %08X (wget %04X)\n"), l,
-              physical_addr, page_index, phys_get_word(physical_addr+page_index));
+#if MMU_IPAGECACHE030
+#if MMU_DIRECT_ACCESS
+	mmu030.mmu030_last_physical_address_real = get_real_address(physical_addr);
+#else
+	mmu030.mmu030_last_physical_address = physical_addr;
 #endif
-    physical_addr += page_index;
-    
-    if (mmu030.atc[l].physical.bus_error) {
-        mmu030_page_fault(addr, true, MMU030_SSW_SIZE_W, fc);
-        return 0;
-    }
-    
-    return phys_get_word(physical_addr);
-}
-
-static uae_u16 mmu030_get_iword_atc(uaecptr addr, int l, uae_u32 fc) {
-	uae_u32 page_index = addr & mmu030.translation.page.mask;
-	uae_u32 addr_mask = mmu030.translation.page.imask;
-
-	uae_u32 physical_addr = mmu030.atc[l].physical.addr&addr_mask;
-#if MMU030_ATC_DBG_MSG
-	write_log(_T("ATC match(%i): page addr = %08X, index = %08X (wget %04X)\n"), l,
-		physical_addr, page_index, phys_get_word(physical_addr + page_index));
+	mmu030.mmu030_last_logical_address = (addr & mmu030.translation.page.imask) | fc;
 #endif
-	physical_addr += page_index;
 
-	if (mmu030.atc[l].physical.bus_error) {
-		mmu030_page_fault(addr, true, MMU030_SSW_SIZE_W, fc);
-		return 0;
-	}
-
-	return x_phys_get_iword(physical_addr);
-}
-
-uae_u8 mmu030_get_byte_atc(uaecptr addr, int l, uae_u32 fc) {
-    uae_u32 page_index = addr & mmu030.translation.page.mask;
-    uae_u32 addr_mask = mmu030.translation.page.imask;
-    
-    uae_u32 physical_addr = mmu030.atc[l].physical.addr&addr_mask;
-#if MMU030_ATC_DBG_MSG
-    write_log(_T("ATC match(%i): page addr = %08X, index = %08X (bget %02X)\n"), l,
-              physical_addr, page_index, phys_get_byte(physical_addr+page_index));
-#endif
-    physical_addr += page_index;
-    
-    if (mmu030.atc[l].physical.bus_error) {
-        mmu030_page_fault(addr, true, MMU030_SSW_SIZE_B, fc);
-        return 0;
-    }
-
-    return phys_get_byte(physical_addr);
+	return physical_addr + page_index;
 }
 
 /* Generic versions of above */
-void mmu030_put_atc_generic(uaecptr addr, uae_u32 val, int l, uae_u32 fc, int size, int flags) {
+static uaecptr mmu030_put_atc_generic(uaecptr addr, int l, uae_u32 fc, int flags) {
     uae_u32 page_index = addr & mmu030.translation.page.mask;
     uae_u32 addr_mask = mmu030.translation.page.imask;
-    
     uae_u32 physical_addr = mmu030.atc[l].physical.addr & addr_mask;
+
 #if MMU030_ATC_DBG_MSG
     write_log(_T("ATC match(%i): page addr = %08X, index = %08X (bput %02X)\n"),
               l, physical_addr, page_index, val);
 #endif
-    physical_addr += page_index;
     
     if (mmu030.atc[l].physical.write_protect || mmu030.atc[l].physical.bus_error) {
 		mmu030_page_fault(addr, false, flags, fc);
-        return;
+        return 0;
     }
-	if (size == sz_byte)
-	    phys_put_byte(physical_addr, val);
-	else if (size == sz_word)
-	    phys_put_word(physical_addr, val);
-	else
-	    phys_put_long(physical_addr, val);
 
+	mmu030_add_data_write_cache(addr, physical_addr, fc);
+
+	return physical_addr + page_index;
 }
 
-uae_u32 mmu030_get_atc_generic(uaecptr addr, int l, uae_u32 fc, int size, int flags, bool checkwrite) {
+static uae_u32 mmu030_get_atc_generic(uaecptr addr, int l, uae_u32 fc, int flags, bool checkwrite) {
     uae_u32 page_index = addr & mmu030.translation.page.mask;
     uae_u32 addr_mask = mmu030.translation.page.imask;
-    
     uae_u32 physical_addr = mmu030.atc[l].physical.addr & addr_mask;
+
 #if MMU030_ATC_DBG_MSG
-    write_log(_T("ATC match(%i): page addr = %08X, index = %08X (bget %02X)\n"), l,
-              physical_addr, page_index, phys_get_byte(physical_addr+page_index));
+    write_log(_T("ATC match(%i): page addr = %08X, index = %08X\n"), l,
+              physical_addr, page_index);
 #endif
-    physical_addr += page_index;
     
 	if (mmu030.atc[l].physical.bus_error || (checkwrite && mmu030.atc[l].physical.write_protect)) {
         mmu030_page_fault(addr, true, flags, fc);
         return 0;
     }
-	if (size == sz_byte)
-		return phys_get_byte(physical_addr);
-	else if (size == sz_word)
-		return phys_get_word(physical_addr);
-	return phys_get_long(physical_addr);
+
+	mmu030_add_data_read_cache(addr, physical_addr, fc);
+
+	return physical_addr + page_index;
 }
 
 
@@ -1845,7 +1878,7 @@ uae_u32 mmu030_get_atc_generic(uaecptr addr, int l, uae_u32 fc, int size, int fl
  * by comparing the logical address and function code to the values
  * stored in the ATC entries. If a matching entry is found it sets
  * the history bit and returns the cache index of the entry. */
-int mmu030_logical_is_in_atc(uaecptr addr, uae_u32 fc, bool write) {
+static int mmu030_logical_is_in_atc(uaecptr addr, uae_u32 fc, bool write) {
     uaecptr logical_addr = 0;
     uae_u32 addr_mask = mmu030.translation.page.imask;
 	uae_u32 maddr = addr & addr_mask;
@@ -1879,26 +1912,6 @@ int mmu030_logical_is_in_atc(uaecptr addr, uae_u32 fc, bool write) {
     return -1;
 }
 
-void mmu030_atc_handle_history_bit(int entry_num) {
-    int j;
-    mmu030.atc[entry_num].mru = 1;
-    for (j=0; j<ATC030_NUM_ENTRIES; j++) {
-        if (!mmu030.atc[j].mru)
-            break;
-    }
-    /* If there are no more zero-bits, reset all */
-    if (j==ATC030_NUM_ENTRIES) {
-        for (j=0; j<ATC030_NUM_ENTRIES; j++) {
-            mmu030.atc[j].mru = 0;
-        }
-        mmu030.atc[entry_num].mru = 1;
-#if MMU030_ATC_DBG_MSG
-        write_log(_T("ATC: No more history zero-bits. Reset all.\n"));
-#endif
-	}
-}
-
-
 /* Memory access functions:
  * If the address matches one of the transparent translation registers
  * use it directly as physical address, else check ATC for the
@@ -1906,221 +1919,262 @@ void mmu030_atc_handle_history_bit(int entry_num) {
  * create a new ATC entry and then look up the physical address. 
  */
 
-void mmu030_put_long(uaecptr addr, uae_u32 val, uae_u32 fc) {
-    
-	//                                        addr,super,write
-	if ((!mmu030.enabled) || (mmu030_match_ttr_access(addr,fc,true)) || (fc==7)) {
-		phys_put_long(addr,val);
-		return;
-    }
-
-    int atc_line_num = mmu030_logical_is_in_atc(addr, fc, true);
-
-    if (atc_line_num>=0) {
-        mmu030_put_long_atc(addr, val, atc_line_num, fc);
-    } else {
-        mmu030_table_search(addr,fc,true,0);
-        mmu030_put_long_atc(addr, val, mmu030_logical_is_in_atc(addr,fc,true), fc);
-    }
-}
-
-void mmu030_put_word(uaecptr addr, uae_u16 val, uae_u32 fc) {
-    
-	//                                        addr,super,write
-	if ((!mmu030.enabled) || (mmu030_match_ttr_access(addr,fc,true)) || (fc==7)) {
-		phys_put_word(addr,val);
-		return;
-    }
-    
-    int atc_line_num = mmu030_logical_is_in_atc(addr, fc, true);
-    
-    if (atc_line_num>=0) {
-        mmu030_put_word_atc(addr, val, atc_line_num, fc);
-    } else {
-        mmu030_table_search(addr, fc, true, 0);
-        mmu030_put_word_atc(addr, val, mmu030_logical_is_in_atc(addr,fc,true), fc);
-    }
-}
-
-void mmu030_put_byte(uaecptr addr, uae_u8 val, uae_u32 fc) {
-    
-	//                                        addr,super,write
-	if ((!mmu030.enabled) || (mmu030_match_ttr_access(addr, fc, true)) || (fc==7)) {
-		phys_put_byte(addr,val);
-		return;
-    }
-    
-    int atc_line_num = mmu030_logical_is_in_atc(addr, fc, true);
-
-    if (atc_line_num>=0) {
-        mmu030_put_byte_atc(addr, val, atc_line_num, fc);
-    } else {
-        mmu030_table_search(addr, fc, true, 0);
-        mmu030_put_byte_atc(addr, val, mmu030_logical_is_in_atc(addr,fc,true), fc);
-    }
-}
-
-uae_u32 mmu030_get_ilong(uaecptr addr, uae_u32 fc) {
-
-	//                                        addr,super,write
-	if ((!mmu030.enabled) || (mmu030_match_ttr_access(addr, fc, false)) || (fc == 7)) {
-		return x_phys_get_ilong(addr);
+void mmu030_put_long(uaecptr addr, uae_u32 val, uae_u32 fc)
+{
+    if (((fc != 7) || (!tt_enabled || !mmu030_match_ttr_access(addr,fc,true))) && (mmu030.enabled)) {
+#if MMU_DPAGECACHE030
+		uae_u32 idx1 = ((addr & mmu030.translation.page.imask) >> mmu030.translation.page.size3m) | fc;
+		uae_u32 idx2 = idx1 & (MMUFASTCACHE_ENTRIES030 - 1);
+		if (atc_data_cache_write[idx2].log == idx1) {
+			addr = atc_data_cache_write[idx2].phys | (addr & mmu030.translation.page.mask);
+		} else
+#endif
+		{
+			int atc_line_num = mmu030_logical_is_in_atc(addr, fc, true);
+			if (atc_line_num>=0) {
+				addr = mmu030_put_atc(addr, atc_line_num, fc, MMU030_SSW_SIZE_L);
+			} else {
+				mmu030_table_search(addr,fc,true,0);
+				addr = mmu030_put_atc(addr, mmu030_logical_is_in_atc(addr,fc,true), fc, MMU030_SSW_SIZE_L);
+			}
+		}
 	}
-
-	int atc_line_num = mmu030_logical_is_in_atc(addr, fc, false);
-
-	if (atc_line_num >= 0) {
-		return mmu030_get_ilong_atc(addr, atc_line_num, fc);
-	}
-	else {
-		mmu030_table_search(addr, fc, false, 0);
-		return mmu030_get_ilong_atc(addr, mmu030_logical_is_in_atc(addr, fc, false), fc);
-	}
+	x_phys_put_long(addr,val);
 }
-uae_u32 mmu030_get_long(uaecptr addr, uae_u32 fc) {
-    
-	//                                        addr,super,write
-	if ((!mmu030.enabled) || (mmu030_match_ttr_access(addr,fc,false)) || (fc==7)) {
-		return phys_get_long(addr);
-    }
-    
-    int atc_line_num = mmu030_logical_is_in_atc(addr, fc, false);
 
-    if (atc_line_num>=0) {
-        return mmu030_get_long_atc(addr, atc_line_num, fc);
-    } else {
-        mmu030_table_search(addr, fc, false, 0);
-        return mmu030_get_long_atc(addr, mmu030_logical_is_in_atc(addr,fc,false), fc);
-    }
+void mmu030_put_word(uaecptr addr, uae_u16 val, uae_u32 fc)
+{
+    if (((fc != 7) || (!tt_enabled || !mmu030_match_ttr_access(addr,fc,true))) && (mmu030.enabled)) {
+#if MMU_DPAGECACHE030
+		uae_u32 idx1 = ((addr & mmu030.translation.page.imask) >> mmu030.translation.page.size3m) | fc;
+		uae_u32 idx2 = idx1 & (MMUFASTCACHE_ENTRIES030 - 1);
+		if (atc_data_cache_write[idx2].log == idx1) {
+			addr = atc_data_cache_write[idx2].phys | (addr & mmu030.translation.page.mask);
+		} else
+#endif
+		{
+			int atc_line_num = mmu030_logical_is_in_atc(addr, fc, true);
+			if (atc_line_num>=0) {
+				addr = mmu030_put_atc(addr, atc_line_num, fc, MMU030_SSW_SIZE_W);
+			} else {
+				mmu030_table_search(addr, fc, true, 0);
+				addr = mmu030_put_atc(addr,  mmu030_logical_is_in_atc(addr,fc,true), fc, MMU030_SSW_SIZE_W);
+			}
+		}
+	}
+	x_phys_put_word(addr,val);
+}
+
+void mmu030_put_byte(uaecptr addr, uae_u8 val, uae_u32 fc)
+{
+    if (((fc != 7) || (!tt_enabled || !mmu030_match_ttr_access(addr,fc,true))) && (mmu030.enabled)) {
+#if MMU_DPAGECACHE030
+		uae_u32 idx1 = ((addr & mmu030.translation.page.imask) >> mmu030.translation.page.size3m) | fc;
+		uae_u32 idx2 = idx1 & (MMUFASTCACHE_ENTRIES030 - 1);
+		if (atc_data_cache_write[idx2].log == idx1) {
+			addr = atc_data_cache_write[idx2].phys | (addr & mmu030.translation.page.mask);
+		} else
+#endif
+		{
+			int atc_line_num = mmu030_logical_is_in_atc(addr, fc, true);
+			if (atc_line_num>=0) {
+				addr = mmu030_put_atc(addr, atc_line_num, fc, MMU030_SSW_SIZE_B);
+			} else {
+				mmu030_table_search(addr, fc, true, 0);
+				addr = mmu030_put_atc(addr, mmu030_logical_is_in_atc(addr,fc,true), fc, MMU030_SSW_SIZE_B);
+			}
+		}
+	}
+	x_phys_put_byte(addr,val);
+}
+
+
+uae_u32 mmu030_get_long(uaecptr addr, uae_u32 fc)
+{
+   if (((fc != 7) || (!tt_enabled || !mmu030_match_ttr_access(addr,fc,false))) && (mmu030.enabled)) {
+#if MMU_DPAGECACHE030
+		uae_u32 idx1 = ((addr & mmu030.translation.page.imask) >> mmu030.translation.page.size3m) | fc;
+		uae_u32 idx2 = idx1 & (MMUFASTCACHE_ENTRIES030 - 1);
+		if (atc_data_cache_read[idx2].log == idx1) {
+			addr = atc_data_cache_read[idx2].phys | (addr & mmu030.translation.page.mask);
+		} else
+#endif
+		{
+			int atc_line_num = mmu030_logical_is_in_atc(addr, fc, false);
+			if (atc_line_num>=0) {
+				addr = mmu030_get_atc(addr, atc_line_num, fc, MMU030_SSW_SIZE_L);
+			} else {
+				mmu030_table_search(addr, fc, false, 0);
+				addr = mmu030_get_atc(addr, mmu030_logical_is_in_atc(addr,fc,false), fc, MMU030_SSW_SIZE_L);
+			}
+		}
+	}
+	return x_phys_get_long(addr);
+}
+
+uae_u16 mmu030_get_word(uaecptr addr, uae_u32 fc)
+{
+   if (((fc != 7) || (!tt_enabled || !mmu030_match_ttr_access(addr,fc,false))) && (mmu030.enabled)) {
+#if MMU_DPAGECACHE030
+		uae_u32 idx1 = ((addr & mmu030.translation.page.imask) >> mmu030.translation.page.size3m) | fc;
+		uae_u32 idx2 = idx1 & (MMUFASTCACHE_ENTRIES030 - 1);
+		if (atc_data_cache_read[idx2].log == idx1) {
+			addr = atc_data_cache_read[idx2].phys | (addr & mmu030.translation.page.mask);
+		} else
+#endif
+		{
+			int atc_line_num = mmu030_logical_is_in_atc(addr, fc, false);
+		    if (atc_line_num>=0) {
+				addr = mmu030_get_atc(addr, atc_line_num, fc, MMU030_SSW_SIZE_W);
+			} else {
+				mmu030_table_search(addr, fc, false, 0);
+				addr = mmu030_get_atc(addr, mmu030_logical_is_in_atc(addr,fc,false), fc, MMU030_SSW_SIZE_W);
+			}
+		}
+	}
+	return x_phys_get_word(addr);
+}
+
+uae_u8 mmu030_get_byte(uaecptr addr, uae_u32 fc)
+{
+   if (((fc != 7) || (!tt_enabled || !mmu030_match_ttr_access(addr,fc,false))) && (mmu030.enabled)) {
+#if MMU_DPAGECACHE030
+		uae_u32 idx1 = ((addr & mmu030.translation.page.imask) >> mmu030.translation.page.size3m) | fc;
+		uae_u32 idx2 = idx1 & (MMUFASTCACHE_ENTRIES030 - 1);
+		if (atc_data_cache_read[idx2].log == idx1) {
+			addr = atc_data_cache_read[idx2].phys | (addr & mmu030.translation.page.mask);
+		} else
+#endif
+		{
+			int atc_line_num = mmu030_logical_is_in_atc(addr, fc, false);
+			if (atc_line_num>=0) {
+				addr = mmu030_get_atc(addr, atc_line_num, fc, MMU030_SSW_SIZE_B);
+			} else {
+				mmu030_table_search(addr, fc, false, 0);
+				addr = mmu030_get_atc(addr, mmu030_logical_is_in_atc(addr,fc,false), fc, MMU030_SSW_SIZE_B);
+			}
+		}
+	}
+	return x_phys_get_byte(addr);
+}
+
+
+uae_u32 mmu030_get_ilong(uaecptr addr, uae_u32 fc)
+{
+#if MMU_IPAGECACHE030
+	if (((addr & mmu030.translation.page.imask) | fc) == mmu030.mmu030_last_logical_address) {
+#if MMU_DIRECT_ACCESS
+		uae_u8 *p = &mmu030.mmu030_last_physical_address_real[addr & mmu030.translation.page.mask];
+		return (p[0] << 24) | (p[1] << 16) | (p[2] << 8) | (p[3]);
+#else
+		return x_phys_get_ilong(mmu030.mmu030_last_physical_address + (addr & mmu030.translation.page.mask));
+#endif
+	}
+	mmu030.mmu030_last_logical_address = 0xffffffff;
+#endif
+
+	if (((fc != 7) || (!tt_enabled || !mmu030_match_ttr_access(addr,fc,false))) && (mmu030.enabled)) {
+		int atc_line_num = mmu030_logical_is_in_atc(addr, fc, false);
+		if (atc_line_num >= 0) {
+			addr = mmu030_get_i_atc(addr, atc_line_num, fc, MMU030_SSW_SIZE_L);
+		} else {
+			mmu030_table_search(addr, fc, false, 0);
+			addr = mmu030_get_i_atc(addr, mmu030_logical_is_in_atc(addr, fc, false), fc, MMU030_SSW_SIZE_L);
+		}
+	}
+	return x_phys_get_ilong(addr);
 }
 
 uae_u16 mmu030_get_iword(uaecptr addr, uae_u32 fc) {
 
-	//                                        addr,super,write
-	if ((!mmu030.enabled) || (mmu030_match_ttr_access(addr, fc, false)) || (fc == 7)) {
-		return x_phys_get_iword(addr);
+#if MMU_IPAGECACHE030
+	if (((addr & mmu030.translation.page.imask) | fc) == mmu030.mmu030_last_logical_address) {
+#if MMU_DIRECT_ACCESS
+		uae_u8 *p = &mmu030.mmu030_last_physical_address_real[addr & mmu030.translation.page.mask];
+		return (p[0] << 8) | p[1];
+#else
+		return x_phys_get_iword(mmu030.mmu030_last_physical_address + (addr & mmu030.translation.page.mask));
+#endif
 	}
+	mmu030.mmu030_last_logical_address = 0xffffffff;
+#endif
 
-	int atc_line_num = mmu030_logical_is_in_atc(addr, fc, false);
-
-	if (atc_line_num >= 0) {
-		return mmu030_get_iword_atc(addr, atc_line_num, fc);
-	} else {
-		mmu030_table_search(addr, fc, false, 0);
-		return mmu030_get_iword_atc(addr, mmu030_logical_is_in_atc(addr, fc, false), fc);
+	if (((fc != 7) || (!tt_enabled || !mmu030_match_ttr_access(addr,fc,false))) && (mmu030.enabled)) {
+		int atc_line_num = mmu030_logical_is_in_atc(addr, fc, false);
+		if (atc_line_num >= 0) {
+			addr = mmu030_get_i_atc(addr, atc_line_num, fc, MMU030_SSW_SIZE_W);
+		} else {
+			mmu030_table_search(addr, fc, false, 0);
+			addr = mmu030_get_i_atc(addr, mmu030_logical_is_in_atc(addr, fc, false), fc, MMU030_SSW_SIZE_W);
+		}
 	}
+	return x_phys_get_iword(addr);
 }
-uae_u16 mmu030_get_word(uaecptr addr, uae_u32 fc) {
-    
-	//                                        addr,super,write
-	if ((!mmu030.enabled) || (mmu030_match_ttr_access(addr,fc,false)) || (fc==7)) {
-		return phys_get_word(addr);
-    }
-    
-    int atc_line_num = mmu030_logical_is_in_atc(addr, fc, false);
-
-    if (atc_line_num>=0) {
-        return mmu030_get_word_atc(addr, atc_line_num, fc);
-    } else {
-        mmu030_table_search(addr, fc, false, 0);
-        return mmu030_get_word_atc(addr, mmu030_logical_is_in_atc(addr,fc,false), fc);
-    }
-}
-
-uae_u8 mmu030_get_byte(uaecptr addr, uae_u32 fc) {
-    
-	//                                        addr,super,write
-	if ((!mmu030.enabled) || (mmu030_match_ttr_access(addr,fc,false)) || (fc==7)) {
-		return phys_get_byte(addr);
-    }
-    
-    int atc_line_num = mmu030_logical_is_in_atc(addr, fc, false);
-
-    if (atc_line_num>=0) {
-        return mmu030_get_byte_atc(addr, atc_line_num, fc);
-    } else {
-        mmu030_table_search(addr, fc, false, 0);
-        return mmu030_get_byte_atc(addr, mmu030_logical_is_in_atc(addr,fc,false), fc);
-    }
-}
-
 
 /* Not commonly used access function */
-void mmu030_put_generic(uaecptr addr, uae_u32 val, uae_u32 fc, int size, int accesssize, int flags) {
-    
-	//                                        addr,super,write
-	if ((!mmu030.enabled) || (mmu030_match_ttr_access(addr, fc, true)) || (fc==7)) {
-		if (size == sz_byte)
-			phys_put_byte(addr, val);
-		else if (size == sz_word)
-			phys_put_word(addr, val);
-		else
-			phys_put_long(addr, val);
-		return;
-    }
-    
-    int atc_line_num = mmu030_logical_is_in_atc(addr, fc, true);
-    if (atc_line_num>=0) {
-        mmu030_put_atc_generic(addr, val, atc_line_num, fc, size, flags);
-    } else {
-        mmu030_table_search(addr, fc, true, 0);
-		atc_line_num = mmu030_logical_is_in_atc(addr, fc, true);
-		if (accesssize == sz_byte)
-			flags |= MMU030_SSW_SIZE_B;
-		else if (accesssize == sz_word)
-			flags |= MMU030_SSW_SIZE_W;
-        mmu030_put_atc_generic(addr, val, atc_line_num, fc, size, flags);
-    }
-}
-static uae_u32 mmu030_get_generic_lrmw(uaecptr addr, uae_u32 fc, int size, int accesssize, int flags) {
-    
-	//                                        addr,super,write
-	if ((!mmu030.enabled) || (mmu030_match_lrmw_ttr_access(addr,fc)) || (fc==7)) {
-		if (size == sz_byte)
-			return phys_get_byte(addr);
-		else if (size == sz_word)
-			return phys_get_word(addr);
-		return phys_get_long(addr);
-    }
-    
-    int atc_line_num = mmu030_logical_is_in_atc(addr, fc, true);
-    if (atc_line_num>=0) {
-        return mmu030_get_atc_generic(addr, atc_line_num, fc, size, flags, true);
-    } else {
-        mmu030_table_search(addr, fc, true, 0);
-		atc_line_num = mmu030_logical_is_in_atc(addr, fc, true);
-		if (accesssize == sz_byte)
-			flags |= MMU030_SSW_SIZE_B;
-		else if (accesssize == sz_word)
-			flags |= MMU030_SSW_SIZE_W;
-        return mmu030_get_atc_generic(addr, atc_line_num, fc, size, flags, true);
-    }
-}
-uae_u32 mmu030_get_generic(uaecptr addr, uae_u32 fc, int size, int accesssize, int flags) {
-	if (flags & MMU030_SSW_RM) {
-		return mmu030_get_generic_lrmw(addr, fc, size, accesssize, flags);
+void mmu030_put_generic(uaecptr addr, uae_u32 val, uae_u32 fc, int size, int flags)
+{
+	if (((fc != 7) || (!tt_enabled || !mmu030_match_ttr_access(addr,fc,true))) && (mmu030.enabled)) {
+		int atc_line_num = mmu030_logical_is_in_atc(addr, fc, true);
+		if (atc_line_num>=0) {
+			addr = mmu030_put_atc_generic(addr, atc_line_num, fc, flags);
+		} else {
+			mmu030_table_search(addr, fc, true, 0);
+			atc_line_num = mmu030_logical_is_in_atc(addr, fc, true);
+			addr = mmu030_put_atc_generic(addr, atc_line_num, fc, flags);
+		}
 	}
-	//                                        addr,super,write
-	if ((!mmu030.enabled) || (mmu030_match_ttr_access(addr,fc,false)) || (fc==7)) {
-		if (size == sz_byte)
-			return phys_get_byte(addr);
-		else if (size == sz_word)
-			return phys_get_word(addr);
-		return phys_get_long(addr);
-    }
-    
-    int atc_line_num = mmu030_logical_is_in_atc(addr, fc, false);
-    if (atc_line_num>=0) {
-        return mmu030_get_atc_generic(addr, atc_line_num, fc, size, flags, false);
-    } else {
-        mmu030_table_search(addr, fc, false, 0);
-		atc_line_num = mmu030_logical_is_in_atc(addr, fc, false);
-		if (accesssize == sz_byte)
-			flags |= MMU030_SSW_SIZE_B;
-		else if (accesssize == sz_word)
-			flags |= MMU030_SSW_SIZE_W;
-        return mmu030_get_atc_generic(addr, atc_line_num, fc, size, flags, false);
-    }
+
+	if (size == sz_byte)
+		x_phys_put_byte(addr, val);
+	else if (size == sz_word)
+		x_phys_put_word(addr, val);
+	else
+		x_phys_put_long(addr, val);
+}
+
+static uae_u32 mmu030_get_generic_lrmw(uaecptr addr, uae_u32 fc, int size, int flags)
+{
+	if (((fc != 7) || (!tt_enabled || !mmu030_match_ttr_access(addr,fc,false))) && (mmu030.enabled)) {
+		int atc_line_num = mmu030_logical_is_in_atc(addr, fc, true);
+		if (atc_line_num>=0) {
+			addr = mmu030_get_atc_generic(addr, atc_line_num, fc, flags, true);
+		} else {
+			mmu030_table_search(addr, fc, true, 0);
+			atc_line_num = mmu030_logical_is_in_atc(addr, fc, true);
+			addr = mmu030_get_atc_generic(addr, atc_line_num, fc, flags, true);
+		}
+	}
+
+	if (size == sz_byte)
+		return x_phys_get_byte(addr);
+	else if (size == sz_word)
+		return x_phys_get_word(addr);
+	return x_phys_get_long(addr);
+}
+
+uae_u32 mmu030_get_generic(uaecptr addr, uae_u32 fc, int size, int flags)
+{
+	if (flags & MMU030_SSW_RM) {
+		return mmu030_get_generic_lrmw(addr, fc, size, flags);
+	}
+
+	if (((fc != 7) || (!tt_enabled || !mmu030_match_ttr_access(addr,fc,false))) && (mmu030.enabled)) {
+		int atc_line_num = mmu030_logical_is_in_atc(addr, fc, false);
+		if (atc_line_num>=0) {
+			addr = mmu030_get_atc_generic(addr, atc_line_num, fc, flags, false);
+		} else {
+			mmu030_table_search(addr, fc, false, 0);
+			atc_line_num = mmu030_logical_is_in_atc(addr, fc, false);
+			addr = mmu030_get_atc_generic(addr, atc_line_num, fc, flags, false);
+		}
+	}
+
+	if (size == sz_byte)
+		return x_phys_get_byte(addr);
+	else if (size == sz_word)
+		return x_phys_get_word(addr);
+	return x_phys_get_long(addr);
 }
 
 
@@ -2129,44 +2183,45 @@ uae_u32 uae_mmu030_get_lrmw(uaecptr addr, int size)
 {
     uae_u32 fc = (regs.s ? 4 : 0) | 1;
 	if (size == sz_byte) {
-		return mmu030_get_generic(addr, fc, size, size, MMU030_SSW_RM);
+		return mmu030_get_generic(addr, fc, size, MMU030_SSW_RM | MMU030_SSW_SIZE_B);
 	} else if (size == sz_word) {
 		if (unlikely(is_unaligned(addr, 2)))
 			return mmu030_get_word_unaligned(addr, fc, MMU030_SSW_RM);
 		else
-			return mmu030_get_generic(addr, fc, size, size, MMU030_SSW_RM);
+			return mmu030_get_generic(addr, fc, size, MMU030_SSW_RM | MMU030_SSW_SIZE_W);
 	} else {
 		if (unlikely(is_unaligned(addr, 4)))
 			return mmu030_get_long_unaligned(addr, fc, MMU030_SSW_RM);
 		else
-			return mmu030_get_generic(addr, fc, size, size, MMU030_SSW_RM);
+			return mmu030_get_generic(addr, fc, size, MMU030_SSW_RM | MMU030_SSW_SIZE_L);
 	}
 }
 void uae_mmu030_put_lrmw(uaecptr addr, uae_u32 val, int size)
 {
     uae_u32 fc = (regs.s ? 4 : 0) | 1;
 	if (size == sz_byte) {
-		mmu030_put_generic(addr, val, fc, size, size, MMU030_SSW_RM);
+		mmu030_put_generic(addr, val, fc, size, MMU030_SSW_RM | MMU030_SSW_SIZE_B);
 	} else if (size == sz_word) {
 		if (unlikely(is_unaligned(addr, 2)))
 			mmu030_put_word_unaligned(addr, val, fc, MMU030_SSW_RM);
 		else
-			mmu030_put_generic(addr, val, fc, size, size, MMU030_SSW_RM);
+			mmu030_put_generic(addr, val, fc, size, MMU030_SSW_RM | MMU030_SSW_SIZE_W);
 	} else {
 		if (unlikely(is_unaligned(addr, 4)))
 			mmu030_put_long_unaligned(addr, val, fc, MMU030_SSW_RM);
 		else
-			mmu030_put_generic(addr, val, fc, size, size, MMU030_SSW_RM);
+			mmu030_put_generic(addr, val, fc, size, MMU030_SSW_RM | MMU030_SSW_SIZE_L);
 	}
 }
 uae_u16 REGPARAM2 mmu030_get_word_unaligned(uaecptr addr, uae_u32 fc, int flags)
 {
 	uae_u16 res;
     
-	res = (uae_u16)mmu030_get_generic(addr, fc, sz_byte, sz_word, flags) << 8;
+	flags |= MMU030_SSW_SIZE_W;
+	res = (uae_u16)mmu030_get_generic(addr, fc, sz_byte, flags) << 8;
 	SAVE_EXCEPTION;
 	TRY(prb) {
-		res |= mmu030_get_generic(addr + 1, fc, sz_byte, sz_word, flags);
+		res |= mmu030_get_generic(addr + 1, fc, sz_byte, flags);
 		RESTORE_EXCEPTION;
 	}
 	CATCH(prb) {
@@ -2180,6 +2235,7 @@ uae_u32 REGPARAM2 mmu030_get_ilong_unaligned(uaecptr addr, uae_u32 fc, int flags
 {
 	uae_u32 res;
 
+	flags |= MMU030_SSW_SIZE_L;
 	res = (uae_u32)mmu030_get_iword(addr, fc) << 16;
 	SAVE_EXCEPTION;
 	TRY(prb) {
@@ -2197,11 +2253,12 @@ uae_u32 REGPARAM2 mmu030_get_long_unaligned(uaecptr addr, uae_u32 fc, int flags)
 {
 	uae_u32 res;
     
+	flags |= MMU030_SSW_SIZE_L;
 	if (likely(!(addr & 1))) {
-		res = (uae_u32)mmu030_get_generic(addr, fc, sz_word, sz_long, flags) << 16;
+		res = (uae_u32)mmu030_get_generic(addr, fc, sz_word, flags) << 16;
 		SAVE_EXCEPTION;
 		TRY(prb) {
-			res |= mmu030_get_generic(addr + 2, fc, sz_word, sz_long, flags);
+			res |= mmu030_get_generic(addr + 2, fc, sz_word, flags);
 			RESTORE_EXCEPTION;
 		}
 		CATCH(prb) {
@@ -2209,12 +2266,12 @@ uae_u32 REGPARAM2 mmu030_get_long_unaligned(uaecptr addr, uae_u32 fc, int flags)
 			THROW_AGAIN(prb);
 		} ENDTRY
 	} else {
-		res = (uae_u32)mmu030_get_generic(addr, fc, sz_byte, sz_long, flags) << 8;
+		res = (uae_u32)mmu030_get_generic(addr, fc, sz_byte, flags) << 8;
 		SAVE_EXCEPTION;
 		TRY(prb) {
-			res = (res | mmu030_get_generic(addr + 1, fc, sz_byte, sz_long, flags)) << 8;
-			res = (res | mmu030_get_generic(addr + 2, fc, sz_byte, sz_long, flags)) << 8;
-			res |= mmu030_get_generic(addr + 3, fc, sz_byte, sz_long, flags);
+			res = (res | mmu030_get_generic(addr + 1, fc, sz_byte, flags)) << 8;
+			res = (res | mmu030_get_generic(addr + 2, fc, sz_byte, flags)) << 8;
+			res |= mmu030_get_generic(addr + 3, fc, sz_byte, flags);
 			RESTORE_EXCEPTION;
 		}
 		CATCH(prb) {
@@ -2228,16 +2285,17 @@ uae_u32 REGPARAM2 mmu030_get_long_unaligned(uaecptr addr, uae_u32 fc, int flags)
 
 void REGPARAM2 mmu030_put_long_unaligned(uaecptr addr, uae_u32 val, uae_u32 fc, int flags)
 {
+	flags |= MMU030_SSW_SIZE_L;
 	SAVE_EXCEPTION;
 	TRY(prb) {
 		if (likely(!(addr & 1))) {
-			mmu030_put_generic(addr, val >> 16, fc, sz_word, sz_long, flags);
-			mmu030_put_generic(addr + 2, val, fc, sz_word, sz_long, flags);
+			mmu030_put_generic(addr, val >> 16, fc, sz_word, flags);
+			mmu030_put_generic(addr + 2, val, fc, sz_word, flags);
 		} else {
-			mmu030_put_generic(addr, val >> 24, fc, sz_byte, sz_long, flags);
-			mmu030_put_generic(addr + 1, val >> 16, fc, sz_byte, sz_long, flags);
-			mmu030_put_generic(addr + 2, val >> 8, fc, sz_byte, sz_long, flags);
-			mmu030_put_generic(addr + 3, val, fc, sz_byte, sz_long, flags);
+			mmu030_put_generic(addr, val >> 24, fc, sz_byte, flags);
+			mmu030_put_generic(addr + 1, val >> 16, fc, sz_byte, flags);
+			mmu030_put_generic(addr + 2, val >> 8, fc, sz_byte, flags);
+			mmu030_put_generic(addr + 3, val, fc, sz_byte, flags);
 		}
 		RESTORE_EXCEPTION;
 	}
@@ -2250,10 +2308,11 @@ void REGPARAM2 mmu030_put_long_unaligned(uaecptr addr, uae_u32 val, uae_u32 fc, 
 
 void REGPARAM2 mmu030_put_word_unaligned(uaecptr addr, uae_u16 val, uae_u32 fc, int flags)
 {
+	flags |= MMU030_SSW_SIZE_W;
 	SAVE_EXCEPTION;
 	TRY(prb) {
-		mmu030_put_generic(addr, val >> 8, fc, sz_byte, sz_word, flags);
-		mmu030_put_generic(addr + 1, val, fc, sz_byte, sz_word, flags);
+		mmu030_put_generic(addr, val >> 8, fc, sz_byte, flags);
+		mmu030_put_generic(addr + 1, val, fc, sz_byte, flags);
 		RESTORE_EXCEPTION;
 	}
 	CATCH(prb) {
@@ -2282,7 +2341,7 @@ static uaecptr mmu030_get_addr_atc(uaecptr addr, int l, uae_u32 fc, bool write) 
 uaecptr mmu030_translate(uaecptr addr, bool super, bool data, bool write)
 {
 	int fc = (super ? 4 : 0) | (data ? 1 : 2);
-	if ((!mmu030.enabled) || (mmu030_match_ttr(addr,fc,write)&TT_OK_MATCH) || (fc==7)) {
+	if ((fc==7) || (mmu030_match_ttr(addr,fc,write)&TT_OK_MATCH) || (!mmu030.enabled)) {
 		return addr;
     }
     int atc_line_num = mmu030_logical_is_in_atc(addr, fc, write);
@@ -2295,7 +2354,6 @@ uaecptr mmu030_translate(uaecptr addr, bool super, bool data, bool write)
     }
 }
 
-#ifndef WINUAE_FOR_HATARI
 static uae_u32 get_dcache_byte(uaecptr addr)
 {
 	return read_dcache030(addr, 0);
@@ -2320,13 +2378,15 @@ static void put_dcache_long(uaecptr addr, uae_u32 v)
 {
 	write_dcache030(addr, v, 2);
 }
-#endif
 
 /* MMU Reset */
 void mmu030_reset(int hardreset)
 {
     /* A CPU reset causes the E-bits of TC and TT registers to be zeroed. */
     mmu030.enabled = false;
+#if MMU_IPAGECACHE030
+	mmu030.mmu030_last_logical_address = 0xffffffff;
+#endif
 	regs.mmu_page_size = 0;
 	if (hardreset >= 0) {
 		tc_030 &= ~TC_ENABLE_TRANSLATION;
@@ -2349,9 +2409,21 @@ void mmu030_set_funcs(void)
 	if (currprefs.cpu_memory_cycle_exact || currprefs.cpu_compatible) {
 		x_phys_get_iword = get_word_icache030;
 		x_phys_get_ilong = get_long_icache030;
+		x_phys_get_byte = get_dcache_byte;
+		x_phys_get_word = get_dcache_word;
+		x_phys_get_long = get_dcache_long;
+		x_phys_put_byte = put_dcache_byte;
+		x_phys_put_word = put_dcache_word;
+		x_phys_put_long = put_dcache_long;
 	} else {
 		x_phys_get_iword = phys_get_word;
 		x_phys_get_ilong = phys_get_long;
+		x_phys_get_byte = phys_get_byte;
+		x_phys_get_word = phys_get_word;
+		x_phys_get_long = phys_get_long;
+		x_phys_put_byte = phys_put_byte;
+		x_phys_put_word = phys_put_word;
+		x_phys_put_long = phys_put_long;
 	}
 }
 

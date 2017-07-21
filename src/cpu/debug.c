@@ -47,6 +47,7 @@
 //#include "uae/io.h"
 //#include "uae/ppc.h"
 //#include "drawing.h"
+//#include "devices.h"
 
 #ifdef WINUAE_FOR_HATARI
 #include "stMemory.h"
@@ -125,6 +126,7 @@ static const TCHAR help[] = {
 	_T("  r                     Dump state of the CPU.\n")
 	_T("  r <reg> <value>       Modify CPU registers (Dx,Ax,USP,ISP,VBR,...).\n")
 	_T("  m <address> [<lines>] Memory dump starting at <address>.\n")
+	_T("  a <address>           Assembler.\n")
 	_T("  d <address> [<lines>] Disassembly starting at <address>.\n")
 	_T("  t [instructions]      Step one or more instructions.\n")
 	_T("  z                     Step through one instruction - useful for JSR, DBRA etc.\n")
@@ -154,11 +156,14 @@ static const TCHAR help[] = {
 	_T("  Cl                    List currently found trainer addresses.\n")
 	_T("  D[idxzs <[max diff]>] Deep trainer. i=new value must be larger, d=smaller,\n")
 	_T("                        x = must be same, z = must be different, s = restart.\n")
-	_T("  W <address> <values[.x] separated by space> Write into Amiga memory.\n")
-	_T("  W <address> 'string' Write into Amiga memory.\n")
+	_T("  W <addr> <values[.x] separated by space> Write into Amiga memory.\n")
+	_T("  W <addr> 'string'     Write into Amiga memory.\n")
+	_T("  Wf <addr> <endaddr> <bytes or string like above>, fill memory.\n")
+	_T("  Wc <addr> <endaddr> <destaddr>, copy memory.\n")
 	_T("  w <num> <address> <length> <R/W/I/F/C> [<value>[.x]] (read/write/opcode/freeze/mustchange).\n")
 	_T("                        Add/remove memory watchpoints.\n")
 	_T("  wd [<0-1>]            Enable illegal access logger. 1 = enable break.\n")
+	_T("  L <file> <addr> <n>   Load a block of Amiga memory.\n")
 	_T("  S <file> <addr> <n>   Save a block of Amiga memory.\n")
 	_T("  s \"<string>\"/<values> [<addr>] [<length>]\n")
 	_T("                        Search for string/bytes.\n")
@@ -177,6 +182,7 @@ static const TCHAR help[] = {
 	_T("  v <vpos> [<hpos>]     Show DMA data (accurate only in cycle-exact mode).\n")
 	_T("                        v [-1 to -4] = enable visual DMA debugger.\n")
 	_T("  vh [<ratio> <lines>]  \"Heat map\"\n")
+	_T("  I <custom event>      Send custom event string\n")
 	_T("  ?<value>              Hex ($ and 0x)/Bin (%)/Dec (!) converter and calculator.\n")
 #ifdef _WIN32
 	_T("  x                     Close debugger.\n")
@@ -296,9 +302,13 @@ uae_u32 get_byte_debug (uaecptr addr)
 		regs.s = (debug_mmu_mode & 4) != 0;
 		TRY(p) {
 			if (currprefs.mmu_model == 68030) {
-				v = mmu030_get_generic (addr, debug_mmu_mode, sz_byte, sz_byte, 0);
+				v = mmu030_get_generic (addr, debug_mmu_mode, sz_byte, MMU030_SSW_SIZE_B);
 			} else {
-				v = mmu_get_user_byte (addr, regs.s != 0, (debug_mmu_mode & 1) ? true : false, false, sz_byte);
+				if (debug_mmu_mode & 1) {
+					v = mmu_get_iword(addr, sz_byte);
+				} else {
+					v = mmu_get_user_byte (addr, regs.s != 0, false, sz_byte);
+				}
 			}
 		} CATCH(p) {
 		} ENDTRY
@@ -320,9 +330,13 @@ uae_u32 get_word_debug (uaecptr addr)
 		regs.s = (debug_mmu_mode & 4) != 0;
 		TRY(p) {
 			if (currprefs.mmu_model == 68030) {
-				v = mmu030_get_generic (addr, debug_mmu_mode, sz_word, sz_word, 0);
+				v = mmu030_get_generic (addr, debug_mmu_mode, sz_word, MMU030_SSW_SIZE_W);
 			} else {
-				v = mmu_get_user_word (addr, regs.s != 0, (debug_mmu_mode & 1) ? true : false, false, sz_word);
+				if (debug_mmu_mode & 1) {
+					v = mmu_get_iword(addr, sz_word);
+				} else {
+					v = mmu_get_user_word (addr, regs.s != 0, false, sz_word);
+				}
 			}
 		} CATCH(p) {
 		} ENDTRY
@@ -344,9 +358,13 @@ uae_u32 get_long_debug (uaecptr addr)
 		regs.s = (debug_mmu_mode & 4) != 0;
 		TRY(p) {
 			if (currprefs.mmu_model == 68030) {
-				v = mmu030_get_generic (addr, debug_mmu_mode, sz_long, sz_long, 0);
+				v = mmu030_get_generic (addr, debug_mmu_mode, sz_long, MMU030_SSW_SIZE_L);
 			} else {
-				v = mmu_get_user_long (addr, regs.s != 0, (debug_mmu_mode & 1) ? true : false, false, sz_long);
+				if (debug_mmu_mode & 1) {
+					v = mmu_get_ilong(addr, sz_long);
+				} else {
+					v = mmu_get_user_long (addr, regs.s != 0, false, sz_long);
+				}
 			}
 		} CATCH(p) {
 		} ENDTRY
@@ -397,7 +415,7 @@ static int safe_addr (uaecptr addr, int size)
 		regs.s = (debug_mmu_mode & 4) != 0;
 		TRY(p) {
 			if (currprefs.mmu_model >= 68040)
-				addr = mmu_translate (addr, regs.s != 0, (debug_mmu_mode & 1), false);
+				addr = mmu_translate (addr, 0, regs.s != 0, (debug_mmu_mode & 1), false, size);
 			else
 				addr = mmu030_translate (addr, regs.s != 0, (debug_mmu_mode & 1), false);
 		} CATCH(p) {
@@ -1941,7 +1959,6 @@ static void decode_dma_record (int hpos, int vpos, int toggle, bool logfile)
 	cycles = vsync_cycles;
 	if (toggle)
 		cycles -= maxvpos * maxhpos * CYCLE_UNIT;
-	cnt = 0;
 	while (h < maxh) {
 		int col = 9;
 		int cols = 8;
@@ -2464,7 +2481,16 @@ struct breakpoint_node bpnodes[BREAKPOINT_TOTAL];
 static addrbank **debug_mem_banks;
 static addrbank *debug_mem_area;
 struct memwatch_node mwnodes[MEMWATCH_TOTAL];
+static int mwnodes_cnt;
 static struct memwatch_node mwhit;
+
+#define MUNGWALL_SLOTS 16
+struct mungwall_data
+{
+	int slots;
+	uae_u32 start[MUNGWALL_SLOTS], end[MUNGWALL_SLOTS];
+};
+static struct mungwall_data **mungwall;
 
 static uae_u8 *illgdebug, *illghdebug;
 static int illgdebug_break;
@@ -2778,10 +2804,27 @@ void restore_debug_memwatch_finish (void)
 	}
 }
 
+static void mungwall_memwatch(uaecptr addr, int rwi, int size, uae_u32 valp)
+{
+	struct mungwall_data *mwd = mungwall[addr >> 16];
+	if (!mwd)
+		return;
+	for (int i = 0; i < mwd->slots; i++) {
+		if (!mwd->end[i])
+			continue;
+		if (addr + size > mwd->start[i] && addr < mwd->end[i]) {
+
+		}
+	}
+}
+
 static int memwatch_func (uaecptr addr, int rwi, int size, uae_u32 *valp, uae_u32 accessmask, uae_u32 reg)
 {
 	int i, brk;
 	uae_u32 val = *valp;
+
+	if (mungwall)
+		mungwall_memwatch(addr, rwi, size, val);
 
 	if (illgdebug)
 		illg_debug_do (addr, rwi, size, val);
@@ -2792,7 +2835,7 @@ static int memwatch_func (uaecptr addr, int rwi, int size, uae_u32 *valp, uae_u3
 	addr = munge24 (addr);
 	if (smc_table && (rwi >= 2))
 		smc_detector (addr, rwi, size, valp);
-	for (i = 0; i < MEMWATCH_TOTAL; i++) {
+	for (i = 0; i < mwnodes_cnt; i++) {
 		struct memwatch_node *m = &mwnodes[i];
 		uaecptr addr2 = m->addr;
 		uaecptr addr3 = addr2 + m->size;
@@ -3221,11 +3264,13 @@ static void memwatch_remap (uaecptr addr)
 static void memwatch_setup (void)
 {
 	memwatch_reset ();
+	mwnodes_cnt = 0;
 	for (int i = 0; i < MEMWATCH_TOTAL; i++) {
 		struct memwatch_node *m = &mwnodes[i];
 		uae_u32 size = 0;
 		if (!m->size)
 			continue;
+		mwnodes_cnt++;
 		while (size < m->size) {
 			memwatch_remap (m->addr + size);
 			size += 65536;
@@ -3527,58 +3572,130 @@ static void memwatch (TCHAR **c)
 	memwatch_dump (num);
 }
 
-static void writeintomem (TCHAR **c)
+static void copymem(TCHAR **c)
 {
-	uae_u32 addr = 0;
-	uae_u32 val = 0;
-	TCHAR cc;
-	int len = 1;
+	uae_u32 addr = 0, eaddr = 0, dst = 0;
 
 	ignore_ws(c);
+	if (!more_params (c))
+		return;
 	addr = readhex (c);
-
 	ignore_ws (c);
 	if (!more_params (c))
 		return;
-	cc = peekchar (c);
-	if (cc == '\'' || cc == '\"') {
-		next_char (c);
-		while (more_params (c)) {
-			TCHAR str[2];
-			char *astr;
-			cc = next_char (c);
-			if (cc == '\'' || cc == '\"')
-				break;
-			str[0] = cc;
-			str[1] = 0;
-			astr = ua (str);
-			put_byte (addr, astr[0]);
-			xfree (astr);
+	eaddr = readhex (c);
+	ignore_ws (c);
+	if (!more_params (c))
+		return;
+	dst = readhex (c);
+
+	if (addr >= eaddr)
+		return;
+	uae_u32 addrb = addr;
+	uae_u32 dstb = dst;
+	uae_u32 len = eaddr - addr;
+	if (dst <= addr) {
+		while (addr < eaddr) {
+			put_byte(dst, get_byte(addr));
 			addr++;
+			dst++;
 		}
 	} else {
-		for (;;) {
-			ignore_ws (c);
-			if (!more_params (c))
-				break;
-			val = readhex (c, &len);
-		
-			if (len == 4) {
-				put_long (addr, val);
-				cc = 'L';
-			} else if (len == 2) {
-				put_word (addr, val);
-				cc = 'W';
-			} else if (len == 1) {
-				put_byte (addr, val);
-				cc = 'B';
-			} else {
-				break;
-			}
-			console_out_f (_T("Wrote %X (%u) at %08X.%c\n"), val, val, addr, cc);
-			addr += len;
+		dst += eaddr - addr;
+		while (addr < eaddr) {
+			dst--;
+			eaddr--;
+			put_byte(dst, get_byte(eaddr));
 		}
 	}
+	console_out_f(_T("Copied from %08x - %08x to %08x - %08x\n"), addrb, addrb + len - 1, dstb, dstb + len - 1);
+}
+
+static void writeintomem (TCHAR **c)
+{
+	uae_u32 addr = 0;
+	uae_u32 eaddr = 0xffffffff;
+	uae_u32 val = 0;
+	TCHAR cc;
+	int len = 1;
+	bool fillmode = false;
+
+	if (**c == 'f') {
+		fillmode = true;
+		(*c)++;
+	} else if (**c == 'c') {
+		(*c)++;
+		copymem(c);
+		return;
+	}
+
+	ignore_ws(c);
+	addr = readhex (c);
+	ignore_ws (c);
+
+	if (fillmode) {
+		if (!more_params (c))
+			return;
+		eaddr = readhex(c);
+		ignore_ws (c);
+	}
+
+	if (!more_params (c))
+		return;
+	TCHAR *cb = *c;
+	cc = peekchar (c);
+	uae_u32 addrc = addr;
+	for(;;) {
+		uae_u32 addrb = addr;
+		*c = cb;
+		if (cc == '\'' || cc == '\"') {
+			next_char (c);
+			while (more_params (c)) {
+				TCHAR str[2];
+				char *astr;
+				cc = next_char (c);
+				if (cc == '\'' || cc == '\"')
+					break;
+				str[0] = cc;
+				str[1] = 0;
+				astr = ua (str);
+				put_byte (addr, astr[0]);
+				xfree (astr);
+				addr++;
+				if (addr >= eaddr)
+					break;
+			}
+		} else {
+			for (;;) {
+				ignore_ws (c);
+				if (!more_params (c))
+					break;
+				val = readhex (c, &len);
+
+				if (len == 4) {
+					put_long (addr, val);
+					cc = 'L';
+				} else if (len == 2) {
+					put_word (addr, val);
+					cc = 'W';
+				} else if (len == 1) {
+					put_byte (addr, val);
+					cc = 'B';
+				} else {
+					break;
+				}
+				if (!fillmode)
+					console_out_f (_T("Wrote %X (%u) at %08X.%c\n"), val, val, addr, cc);
+				addr += len;
+				if (addr >= eaddr)
+					break;
+			}
+		}
+		if (eaddr == 0xffffffff || addr <= addrb || addr >= eaddr)
+			break;
+	}
+	if (eaddr != 0xffffffff)
+		console_out_f(_T("Wrote data to %08x - %08x\n"), addrc, addr);
 }
 
 static uae_u8 *dump_xlate (uae_u32 addr)
@@ -3707,6 +3824,8 @@ static void memory_map_dump_3(UaeMemoryMap *map, int log)
 
 				if (a1 != &dummy_bank) {
 					for (int m = 0; m < mirrored2; m++) {
+						if (map->num_regions >= UAE_MEMORY_REGIONS_MAX)
+							break;
 						UaeMemoryRegion *r = &map->regions[map->num_regions];
 						r->start = (j << 16) + bankoffset + region_size * m;
 						r->size = region_size;
@@ -4405,7 +4524,7 @@ static int process_breakpoint (TCHAR **c)
 	return 1;
 }
 
-static void savemem (TCHAR **cc)
+static void saveloadmem (TCHAR **cc, bool save)
 {
 	uae_u8 b;
 	uae_u32 src, src2, len, len2;
@@ -4434,19 +4553,34 @@ static void savemem (TCHAR **cc)
 		console_out_f (_T("Couldn't open file '%s'\n"), name);
 		return;
 	}
-	while (len > 0) {
-		b = get_byte_debug (src);
-		src++;
-		len--;
-		if (fwrite (&b, 1, 1, fp) != 1) {
-			console_out (_T("Error writing file\n"));
-			break;
+	if (save) {
+		while (len > 0) {
+			b = get_byte_debug (src);
+			src++;
+			len--;
+			if (fwrite (&b, 1, 1, fp) != 1) {
+				console_out (_T("Error writing file\n"));
+				break;
+			}
 		}
+		if (len == 0)
+			console_out_f (_T("Wrote %08X - %08X (%d bytes) to '%s'\n"),
+				src2, src2 + len2, len2, name);
+	} else {
+		while (len > 0) {
+			if (fread(&b, 1, 1, fp) != 1) {
+				console_out (_T("Error reading file\n"));
+				break;
+			}
+			put_byte (src, b);
+			src++;
+			len--;
+		}
+		if (len == 0)
+			console_out_f (_T("Read %08X - %08X (%d bytes) to '%s'\n"),
+				src2, src2 + len2, len2, name);
 	}
 	fclose (fp);
-	if (len == 0)
-		console_out_f (_T("Wrote %08X - %08X (%d bytes) to '%s'\n"),
-		src2, src2 + len2, len2, name);
 	return;
 S_argh:
 	console_out (_T("S-command needs more arguments!\n"));
@@ -4990,8 +5124,8 @@ static void dma_disasm(int frames, int vp, int hp, int frames_end, int vp_end, i
 	}
 }
 
-static uaecptr nxdis, nxmem;
-static bool ppcmode;
+static uaecptr nxdis, nxmem, asmaddr;
+static bool ppcmode, asmmode;
 
 static bool debug_line (TCHAR *input)
 {
@@ -4999,10 +5133,45 @@ static bool debug_line (TCHAR *input)
 	uaecptr addr;
 
 	inptr = input;
+
+	if (asmmode) {
+		if (more_params(&inptr)) {
+			if (!_tcsicmp(inptr, _T("x"))) {
+				asmmode = false;
+				return false;
+			}
+			uae_u16 asmout[16];
+			int inss = m68k_asm(inptr, asmout, asmaddr);
+			if (inss > 0) {
+				for (int i = 0; i < inss; i++) {
+					put_word(asmaddr + i * 2, asmout[i]);
+				}
+				m68k_disasm(asmaddr, &nxdis, 1);
+				asmaddr = nxdis;
+			}
+			console_out_f(_T("%08X "), asmaddr);
+			return false;
+		} else {
+			asmmode = false;
+			return false;
+		}
+	}
+
 	cmd = next_char (&inptr);
 
 	switch (cmd)
 	{
+		case 'I':
+		if (more_params (&inptr)) {
+			static int recursive;
+			if (!recursive) {
+				recursive++;
+				handle_custom_event(inptr, 0);
+				device_check_config();
+				recursive--;
+			}
+		}
+		break;
 		case 'c': dumpcia (); dumpdisk (_T("DEBUG")); dumpcustom (); break;
 		case 'i':
 		{
@@ -5041,7 +5210,8 @@ static bool debug_line (TCHAR *input)
 		case 'C': cheatsearch (&inptr); break;
 		case 'W': writeintomem (&inptr); break;
 		case 'w': memwatch (&inptr); break;
-		case 'S': savemem (&inptr); break;
+		case 'S': saveloadmem (&inptr, true); break;
+		case 'L': saveloadmem (&inptr, false); break;
 		case 's':
 			if (*inptr == 'c') {
 				screenshot (1, 1);
@@ -5061,6 +5231,26 @@ static bool debug_line (TCHAR *input)
 				searchmem (&inptr);
 			}
 			break;
+		case 'a':
+			asmaddr = nxdis;
+			if (more_params(&inptr)) {
+				asmaddr = readhex(&inptr);
+				if (more_params(&inptr)) {
+					uae_u16 asmout[16];
+					int inss = m68k_asm(inptr, asmout, asmaddr);
+					if (inss > 0) {
+						for (int i = 0; i < inss; i++) {
+							put_word(asmaddr + i * 2, asmout[i]);
+						}
+						m68k_disasm(asmaddr, &nxdis, 1);
+						asmaddr = nxdis;
+						return false;
+					}
+				}
+			}
+			asmmode = true;
+			console_out_f(_T("%08X "), asmaddr);
+		break;
 		case 'd':
 			{
 				if (*inptr == 'i') {
@@ -5435,13 +5625,13 @@ static bool debug_line (TCHAR *input)
 					console_out_f (_T("S%dD%d="), super, data);
 					TRY(prb) {
 						if (currprefs.mmu_model >= 68040)
-							addrp = mmu_translate (addrl, super, data, false);
+							addrp = mmu_translate (addrl, 0, super, data, false, sz_long);
 						else
 							addrp = mmu030_translate (addrl, super, data, false);
 						console_out_f (_T("%08X"), addrp);
 						TRY(prb2) {
 							if (currprefs.mmu_model >= 68040)
-								addrp = mmu_translate (addrl, super, data, true);
+								addrp = mmu_translate (addrl, 0, super, data, true, sz_long);
 							else
 								addrp = mmu030_translate (addrl, super, data, true);
 							console_out_f (_T(" RW"));
