@@ -58,8 +58,9 @@
 #define VIDEO_HEIGHT_HBL_COLOR  200	/* This is usually the height of the screen */
 #define VIDEO_HEIGHT_HBL_MONO   400
 
-#define VIDEO_HEIGHT_BOTTOM_50HZ 47	/* number of lines in a 50 Hz bottom border */
-#define VIDEO_HEIGHT_BOTTOM_60HZ 29	/* number of lines in a 60 Hz bottom border */
+#define VIDEO_HEIGHT_BOTTOM_50HZ 45	/* number of extra pixel lines in a 50 Hz screen when removing bottom border */
+					/* (2 extra lines can be displayed by doing a 2nd 60/50 Hz switch at the end of the removed bottom border) */
+#define VIDEO_HEIGHT_BOTTOM_60HZ 24	/* number of extra pixel lines in a 60 Hz screen when removing bottom border */
 
 #define VIDEO_END_HBL_50HZ	( VIDEO_START_HBL_50HZ + VIDEO_HEIGHT_HBL_COLOR )	/* 263 */
 #define VIDEO_END_HBL_60HZ	( VIDEO_START_HBL_60HZ + VIDEO_HEIGHT_HBL_COLOR )	/* 234 */
