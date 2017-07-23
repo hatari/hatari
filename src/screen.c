@@ -699,6 +699,13 @@ void Screen_Init(void)
 	}
 	pFrameBuffer = &FrameBuffers[0];
 
+	/* Set initial window resolution */
+	bInFullScreen = ConfigureParams.Screen.bFullScreen;
+	Screen_ChangeResolution(false);
+	ScreenDrawFunctionsNormal[ST_HIGH_RES] = Screen_ConvertHighRes;
+
+	Video_SetScreenRasters();                       /* Set rasters ready for first screen */
+
 	/* Load and set icon */
 	snprintf(sIconFileName, sizeof(sIconFileName), "%s%chatari-icon.bmp",
 	         Paths_GetDataDir(), PATHSEP);
@@ -714,13 +721,6 @@ void Screen_Init(void)
 #endif
 		SDL_FreeSurface(pIconSurf);
 	}
-
-	/* Set initial window resolution */
-	bInFullScreen = ConfigureParams.Screen.bFullScreen;
-	Screen_ChangeResolution(false);
-	ScreenDrawFunctionsNormal[ST_HIGH_RES] = Screen_ConvertHighRes;
-
-	Video_SetScreenRasters();                       /* Set rasters ready for first screen */
 
 	/* Configure some SDL stuff: */
 	SDL_ShowCursor(SDL_DISABLE);
