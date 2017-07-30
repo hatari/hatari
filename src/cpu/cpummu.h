@@ -236,8 +236,7 @@ extern uae_u32 atc_last_ins_laddr, atc_last_ins_paddr;
 #endif
 
 #if MMU_DPAGECACHE
-//#define MMUFASTCACHE_ENTRIES 256
-#define MMUFASTCACHE_ENTRIES 16
+#define MMUFASTCACHE_ENTRIES 256
 struct mmufastcache
 {
 	uae_u32 log;
@@ -272,7 +271,7 @@ static ALWAYS_INLINE uae_u32 mmu_get_ilong(uaecptr addr, int size)
 		}
 #endif
 	}
-	return phys_get_long(addr);
+	return x_phys_get_ilong(addr);
 }
 
 static ALWAYS_INLINE uae_u16 mmu_get_iword(uaecptr addr, int size)
@@ -294,7 +293,7 @@ static ALWAYS_INLINE uae_u16 mmu_get_iword(uaecptr addr, int size)
 		}
 #endif
 	}
-	return phys_get_word(addr);
+	return x_phys_get_iword(addr);
 }
 
 

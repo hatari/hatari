@@ -1342,7 +1342,7 @@ static void add_shmmaps (uae_u32 start, addrbank *what)
 	y = xmalloc (shmpiece, 1);
 	*y = *x;
 	base = ((uae_u8 *) NATMEM_OFFSET) + start;
-	y->native_address = (uae_u8*)uae_shmat (what, y->id, base, 0);
+	y->native_address = (uae_u8*)uae_shmat (what, y->id, base, 0, NULL);
 	if (y->native_address == (void *) -1) {
 		write_log (_T("NATMEM: Failure to map existing at %08x (%p)\n"), start, base);
 		dumplist ();
@@ -1419,7 +1419,7 @@ bool mapped_malloc (addrbank *ab)
 		return ab->baseaddr != NULL;
 	}
 	if (!(ab->flags & ABFLAG_NOALLOC)) {
-		answer = uae_shmat (ab, id, 0, 0);
+		answer = uae_shmat (iab, id, NULL, 0, &md));
 		uae_shmctl (id, UAE_IPC_RMID, NULL);
 	} else {
 		write_log(_T("MMAN: mapped_malloc using existing baseaddr %p\n"), ab->baseaddr);
@@ -1496,9 +1496,10 @@ bool memory_region_bus_error ( uaecptr addr )
  *  CE_MEMBANK_CIA	Amiga only, for CIA chips
  *
  * Possible values for ce_cachable :
- *  bit 0 : cachable yes/no (for 68030 data cache)
- *  bit 1 : burst mode allowed when caching yes/no (for 68030 data cache)
- *	(not used, check for CE_MEMBANK_FAST32 instead)
+ *  bit 0 : cachable yes/no for data
+ *  bit 1 : burst mode allowed when caching data yes/no
+ *  bit 7 : cachable yes/no for instructions
+ *  bit 6 : burst mode allowed when caching instructions yes/no
  */
 static void init_ce_banks (void)
 {
@@ -1565,16 +1566,16 @@ fprintf ( stderr , "memory_map_Standard_RAM %d %d %d\n" , STmem_size , MMU_Bank0
 fprintf ( stderr , "memory_map_Standard_RAM - enable MMU %d %d %d\n" , STmem_size , MMU_Bank0_Size, MMU_Bank1_Size );
 
 		/* Map RAM bank 0 to MMU bank 0 */
-		map_banks_ce(&SysMem_bank_MMU, 0x00, 0x10000 >> 16, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_CACHABLE);
+		map_banks_ce(&SysMem_bank_MMU, 0x00, 0x10000 >> 16, 0, CE_MEMBANK_CHIP16, CACHE_ENABLE_BOTH);
 		map_banks_ce(&STmem_bank_MMU, 0x10000 >> 16, ( MMU_Bank0_Size - 0x10000 ) >> 16,
-			0, CE_MEMBANK_CHIP16, CE_MEMBANK_CACHABLE);
+			0, CE_MEMBANK_CHIP16, CACHE_ENABLE_BOTH);
 
 		/* If RAM bank 1 exists, we map it after MMU bank 0 ; else we keep void region */
 		if ( RAM_Bank1_Size > 0 )
 			map_banks_ce(&STmem_bank_MMU, MMU_Bank0_Size >> 16, MMU_Bank1_Size >> 16,
-				0, CE_MEMBANK_CHIP16, CE_MEMBANK_CACHABLE);
+				0, CE_MEMBANK_CHIP16, CACHE_ENABLE_BOTH);
 
-		/* There's a special case when bank0=128 and bank1=2048 : addresses between $40000 and $80000 */
+		/* [NP] There's a special case when bank0=128 and bank1=2048 : addresses between $40000 and $80000 */
 		/* are returning 'void' region too, which creates a "hole" in the memory mapping */
 		/* (this might be a bug / forgotten case by Atari in the STF non-IMP MMU as this memory */
 		/* configuration was certainly never used in real machines) */
@@ -1586,8 +1587,8 @@ fprintf ( stderr , "memory_map_Standard_RAM - enable MMU %d %d %d\n" , STmem_siz
 	else
 	{
 		/* Don't enable MMU address translation */
-		map_banks_ce(&SysMem_bank, 0x00, 0x10000 >> 16, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_CACHABLE);
-		map_banks_ce(&STmem_bank, 0x10000 >> 16, ( STmem_size - 0x10000 ) >> 16, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_CACHABLE);
+		map_banks_ce(&SysMem_bank, 0x00, 0x10000 >> 16, 0, CE_MEMBANK_CHIP16, CACHE_ENABLE_BOTH);
+		map_banks_ce(&STmem_bank, 0x10000 >> 16, ( STmem_size - 0x10000 ) >> 16, 0, CE_MEMBANK_CHIP16, CACHE_ENABLE_BOTH);
 	}
 }
 
@@ -1689,7 +1690,7 @@ void memory_init(uae_u32 NewSTMemSize, uae_u32 NewTTMemSize, uae_u32 NewRomMemSt
 	    if ( TTmemory != NULL )
 	    {
 		/* 32 bit RAM for CPU only + cache/burst allowed */
-		map_banks_ce ( &TTmem_bank, TTmem_start >> 16, TTmem_size >> 16, 0, CE_MEMBANK_FAST32, CE_MEMBANK_CACHABLE_BURST );
+		map_banks_ce ( &TTmem_bank, TTmem_start >> 16, TTmem_size >> 16, 0, CE_MEMBANK_FAST32, CACHE_ENABLE_ALL);
 		TTmem_mask = 0xffffffff;
 		TTmem_bank.baseaddr = TTmemory;
 		TTmem_bank.mask = TTmem_mask;
@@ -1708,12 +1709,12 @@ void memory_init(uae_u32 NewSTMemSize, uae_u32 NewTTMemSize, uae_u32 NewRomMemSt
     /* Depending on which ROM version we are using, the other ROM region is illegal! */
     if(NewRomMemStart == 0xFC0000)
     {
-        map_banks_ce(&ROMmem_bank, 0xFC0000 >> 16, 0x3, 0, CE_MEMBANK_FAST16, CE_MEMBANK_CACHABLE);	/* [NP] tested on real STF, no bus wait from ROM */
+        map_banks_ce(&ROMmem_bank, 0xFC0000 >> 16, 0x3, 0, CE_MEMBANK_FAST16, CACHE_ENABLE_BOTH);	/* [NP] tested on real STF, no bus wait from ROM */
         map_banks_ce(&BusErrMem_bank, 0xE00000 >> 16, 0x10, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
     }
     else if(NewRomMemStart == 0xE00000)
     {
-        map_banks_ce(&ROMmem_bank, 0xE00000 >> 16, 0x10, 0, CE_MEMBANK_FAST16, CE_MEMBANK_CACHABLE);	/* [NP] tested on real STF, no bus wait from ROM */
+        map_banks_ce(&ROMmem_bank, 0xE00000 >> 16, 0x10, 0, CE_MEMBANK_FAST16, CACHE_ENABLE_BOTH);	/* [NP] tested on real STF, no bus wait from ROM */
         map_banks_ce(&BusErrMem_bank, 0xFC0000 >> 16, 0x3, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
     }
     else
@@ -1722,7 +1723,7 @@ void memory_init(uae_u32 NewSTMemSize, uae_u32 NewTTMemSize, uae_u32 NewRomMemSt
     }
 
     /* Cartridge memory: */
-    map_banks_ce(&ROMmem_bank, 0xFA0000 >> 16, 0x2, 0, CE_MEMBANK_FAST16, CE_MEMBANK_CACHABLE);		/* [NP] tested on real STF, no bus wait from cartridge */
+    map_banks_ce(&ROMmem_bank, 0xFA0000 >> 16, 0x2, 0, CE_MEMBANK_FAST16, CACHE_ENABLE_BOTH);		/* [NP] tested on real STF, no bus wait from cartridge */
     ROMmem_bank.baseaddr = ROMmemory;
     ROMmem_bank.mask = ROMmem_mask;
     ROMmem_bank.start = ROMmem_start;

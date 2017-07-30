@@ -164,10 +164,17 @@ struct autoconfig_info
 #define CE_MEMBANK_CHIP32 2
 #define CE_MEMBANK_CIA 3
 #define CE_MEMBANK_FAST16 4
+//#define CE_MEMBANK_FAST16_EXTRA_ACCURACY 5
+#define CACHE_ENABLE_DATA 0x01
+#define CACHE_ENABLE_DATA_BURST 0x02
+#define CACHE_ENABLE_INS 0x80
+#define CACHE_ENABLE_INS_BURST 0x40
+#define CACHE_ENABLE_BOTH (CACHE_ENABLE_DATA | CACHE_ENABLE_INS)
+#define CACHE_ENABLE_ALL (CACHE_ENABLE_BOTH | CACHE_ENABLE_INS_BURST | CACHE_ENABLE_DATA_BURST)
+#define CACHE_DISABLE_MMU 0x10
+
 #ifdef WINUAE_FOR_HATARI
 #define CE_MEMBANK_NOT_CACHABLE		0
-#define CE_MEMBANK_CACHABLE		(1)
-#define CE_MEMBANK_CACHABLE_BURST	(1|2)
 #endif
 extern uae_u8 ce_banktype[65536], ce_cachable[65536];
 
@@ -398,11 +405,11 @@ extern void rtarea_init(void);
 extern void rtarea_free(void);
 extern void rtarea_init_mem(void);
 extern void rtarea_setup(void);
-extern void expamem_init (void);
 extern void expamem_reset (void);
 extern void expamem_next (addrbank *mapped, addrbank *next);
 extern void expamem_shutup (addrbank *mapped);
 extern bool expamem_z3hack(struct uae_prefs*);
+extern void expansion_cpu_fallback(void);
 extern void set_expamem_z3_hack_mode(int);
 extern uaecptr expamem_board_pointer, expamem_highmem_pointer;
 extern uaecptr expamem_z3_pointer_real, expamem_z3_pointer_uae;
@@ -748,10 +755,15 @@ typedef struct shmpiece_reg {
 
 extern shmpiece *shm_start;
 
+extern uae_u8* natmem_offset;
+extern uae_u8 *natmem_reserved;
+extern uae_u32 natmem_reserved_size;
+
 #endif
 
 extern bool mapped_malloc (addrbank*);
 extern void mapped_free (addrbank*);
+extern void a3000_fakekick (int);
 
 extern uaecptr strcpyha_safe (uaecptr dst, const uae_char *src);
 extern uae_char *strcpyah_safe (uae_char *dst, uaecptr src, int maxsize);
@@ -785,4 +797,5 @@ typedef struct UaeMemoryMap {
 } UaeMemoryMap;
 
 void uae_memory_map(UaeMemoryMap *map);
+
 #endif /* UAE_MEMORY_H */
