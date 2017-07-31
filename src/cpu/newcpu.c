@@ -10219,6 +10219,7 @@ uae_u32 fill_icache040(uae_u32 addr)
 	struct cache040 *c;
 	int line;
 	static int lastline; 
+	int i;
 
 	if (!(regs.cacr & 0x8000)) {
 		uae_u32 addr2 = addr & ~15;
@@ -10241,7 +10242,7 @@ uae_u32 fill_icache040(uae_u32 addr)
 	lws = (addr >> 2) & 3;
 	addr &= ~15;
 	c = &icaches040[index];
-	for (int i = 0; i < CACHELINES040; i++) {
+	for (i = 0; i < CACHELINES040; i++) {
 		if (c->valid[lastline] && c->tag[lastline] == tag) {
 			// cache hit
 			icachelinecnt++;
