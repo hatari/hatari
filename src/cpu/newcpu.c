@@ -1345,7 +1345,7 @@ void flush_cpu_caches(bool force)
 	int i;
 
 	if (currprefs.cpu_model == 68020) {
-		if (regs.cacr & 0x08) { // clear instr cache
+		if ((regs.cacr & 0x08) || force) { // clear instr cache
 			for (i = 0; i < CACHELINES020; i++)
 				caches020[i].valid = 0;
 			regs.cacr &= ~0x08;
@@ -1355,7 +1355,7 @@ void flush_cpu_caches(bool force)
 			regs.cacr &= ~0x04;
 		}
 	} else if (currprefs.cpu_model == 68030) {
-		if (regs.cacr & 0x08) { // clear instr cache
+		if ((regs.cacr & 0x08) || force) { // clear instr cache
 			if (doflush) {
 				for (i = 0; i < CACHELINES030; i++) {
 					icaches030[i].valid[0] = 0;
@@ -1370,7 +1370,7 @@ void flush_cpu_caches(bool force)
 			icaches030[(regs.caar >> 4) & (CACHELINES030 - 1)].valid[(regs.caar >> 2) & 3] = 0;
 			regs.cacr &= ~0x04;
 		}
-		if (regs.cacr & 0x800) { // clear data cache
+		if ((regs.cacr & 0x800) || force) { // clear data cache
 			if (doflush) {
 				for (i = 0; i < CACHELINES030; i++) {
 					dcaches030[i].valid[0] = 0;
@@ -1403,9 +1403,49 @@ void flush_cpu_caches(bool force)
 void flush_cpu_caches_040(uae_u16 opcode)
 {
 	int cache = (opcode >> 6) & 3;
-	if (!(cache & 2))
-		return;
-	flush_cpu_caches(true);
+	int scope = (opcode >> 3) & 3;
+	int areg = opcode & 7;
+	uaecptr addr = m68k_areg(regs, areg);
+	bool push = (opcode & 0x20) != 0;
+	uae_u32 k, j, i, ii;
+
+	regs.prefetch020addr = 0xffffffff;
+	for (k = 0; k < 2; k++) {
+		if (cache & (1 << k)) {
+			if (scope == 3) {
+				// all
+				flush_cpu_caches(true);
+			} else {
+				uae_u32 pagesize;
+				if (scope == 2) {
+					// page
+					pagesize = mmu_pagesize_8k ? 8192 : 4096;
+				} else {
+					// line
+					pagesize = 16;
+				}
+				addr &= ~(pagesize - 1);
+				for (j = 0; j < pagesize; j += 16, addr += 16) {
+					int index = (addr >> 4) & (cachesets04060minus1);
+					uae_u32 tag = addr & ~((cachesets04060 << 4) - 1);
+					struct cache040 *c = k ? &icaches040[index] : &dcaches040[index];
+					for (i = 0; i < CACHELINES040; i++) {
+						if (c->valid[i] && c->tag[i] == tag) {
+							// data cache not yet in use
+							for (ii = 0; ii < 4; ii++) {
+								if (c->dirty[i][ii]) {
+									c->dirty[i][ii] = false;
+									if (push)
+										put_long(addr + ii * 4, c->data[i][ii]);
+								}
+							}
+							c->valid[i] = false;
+						}
+					}
+				}
+			}
+		}
+	}
 }
 
 void set_cpu_caches (bool flush)
@@ -1446,21 +1486,21 @@ static uae_u32 REGPARAM2 op_unimpl_1 (uae_u32 opcode)
 	return 4;
 }
 
-// generic+direct, generic+direct+jit, generic+indirect, more compatible, cycle-exact, mmu, mmu+more compatible
-static const struct cputbl *cputbls[6][7] =
+// generic+direct, generic+direct+jit, generic+indirect, more compatible, cycle-exact, mmu, mmu+more compatible, mmu+mc+ce
+static const struct cputbl *cputbls[6][8] =
 {
 	// 68000
-	{ op_smalltbl_5_ff, op_smalltbl_45_ff, op_smalltbl_55_ff, op_smalltbl_12_ff, op_smalltbl_14_ff, NULL, NULL },
+	{ op_smalltbl_5_ff, op_smalltbl_45_ff, op_smalltbl_55_ff, op_smalltbl_12_ff, op_smalltbl_14_ff, NULL, NULL, NULL },
 	// 68010
-	{ op_smalltbl_4_ff, op_smalltbl_44_ff, op_smalltbl_54_ff, op_smalltbl_11_ff, op_smalltbl_13_ff, NULL, NULL },
+	{ op_smalltbl_4_ff, op_smalltbl_44_ff, op_smalltbl_54_ff, op_smalltbl_11_ff, op_smalltbl_13_ff, NULL, NULL, NULL },
 	// 68020
-	{ op_smalltbl_3_ff, op_smalltbl_43_ff, op_smalltbl_53_ff, op_smalltbl_20_ff, op_smalltbl_21_ff, NULL, NULL },
+	{ op_smalltbl_3_ff, op_smalltbl_43_ff, op_smalltbl_53_ff, op_smalltbl_20_ff, op_smalltbl_21_ff, NULL, NULL, NULL },
 	// 68030
-	{ op_smalltbl_2_ff, op_smalltbl_42_ff, op_smalltbl_52_ff, op_smalltbl_22_ff, op_smalltbl_23_ff, op_smalltbl_32_ff, op_smalltbl_34_ff },
+	{ op_smalltbl_2_ff, op_smalltbl_42_ff, op_smalltbl_52_ff, op_smalltbl_22_ff, op_smalltbl_23_ff, op_smalltbl_32_ff, op_smalltbl_34_ff, op_smalltbl_35_ff },
 	// 68040
-	{ op_smalltbl_1_ff, op_smalltbl_41_ff, op_smalltbl_51_ff, op_smalltbl_25_ff, op_smalltbl_25_ff, op_smalltbl_31_ff, op_smalltbl_31_ff },
+	{ op_smalltbl_1_ff, op_smalltbl_41_ff, op_smalltbl_51_ff, op_smalltbl_25_ff, op_smalltbl_25_ff, op_smalltbl_31_ff, op_smalltbl_31_ff, op_smalltbl_31_ff },
 	// 68060
-	{ op_smalltbl_0_ff, op_smalltbl_40_ff, op_smalltbl_50_ff, op_smalltbl_24_ff, op_smalltbl_24_ff, op_smalltbl_33_ff, op_smalltbl_33_ff }
+	{ op_smalltbl_0_ff, op_smalltbl_40_ff, op_smalltbl_50_ff, op_smalltbl_24_ff, op_smalltbl_24_ff, op_smalltbl_33_ff, op_smalltbl_33_ff, op_smalltbl_33_ff }
 };
 
 static void build_cpufunctbl (void)
@@ -1472,7 +1512,9 @@ static void build_cpufunctbl (void)
 
 	if (!currprefs.cachesize) {
 		if (currprefs.mmu_model) {
-			if (currprefs.cpu_compatible)
+			if (currprefs.cpu_cycle_exact)
+				mode = 7;
+			else if (currprefs.cpu_compatible)
 				mode = 6;
 			else
 				mode = 5;
@@ -1745,7 +1787,10 @@ static void prefs_changed_cpu (void)
 		}
 	}
 	currprefs.mmu_ec = changed_prefs.mmu_ec;
-	currprefs.cpu_compatible = changed_prefs.cpu_compatible;
+	if (currprefs.cpu_compatible != changed_prefs.cpu_compatible) {
+		currprefs.cpu_compatible = changed_prefs.cpu_compatible;
+		flush_cpu_caches(true);
+	}
 	currprefs.address_space_24 = changed_prefs.address_space_24;
 	currprefs.cpu_cycle_exact = changed_prefs.cpu_cycle_exact;
 	currprefs.cpu_memory_cycle_exact = changed_prefs.cpu_memory_cycle_exact;
@@ -3643,6 +3688,7 @@ static void m68k_reset2(bool hardreset)
 	mmufixup[0].reg = -1;
 	mmufixup[1].reg = -1;
 	mmu030_cache_state = CACHE_ENABLE_ALL;
+	mmu_cache_state = CACHE_ENABLE_ALL;
 	cachesets04060 = currprefs.cpu_model == 68060 ? CACHESETS060 : CACHESETS040;
 	cachesets04060minus1 = cachesets04060 - 1;
 	if (currprefs.mmu_model >= 68040) {
@@ -5547,6 +5593,12 @@ static void opcodedebug (uae_u32 pc, uae_u16 opcode, bool full)
 	}
 }
 
+static void check_halt(void)
+{
+	if (regs.halted)
+		do_specialties (0);
+}
+
 void cpu_halt (int id)
 {
 #ifndef WINUAE_FOR_HATARI
@@ -5578,6 +5630,7 @@ static void m68k_run_mmu060 (void)
 	struct flag_struct f;
 	int halt = 0;
 
+	check_halt();
 #ifdef WINUAE_FOR_HATARI
 	Log_Printf(LOG_DEBUG,  "m68k_run_mmu060\n");
 	f.cznv = regflags.cznv; f.x = regflags.x;  /* to silence GCC warning */
@@ -5672,6 +5725,7 @@ static void m68k_run_mmu040 (void)
 	struct flag_struct f;
 	int halt = 0;
 
+	check_halt();
 #ifdef WINUAE_FOR_HATARI
 	Log_Printf(LOG_DEBUG,  "m68k_run_mmu040\n");
 	f.cznv = regflags.cznv; f.x = regflags.x;  /* to silence GCC warning */
@@ -5777,6 +5831,7 @@ static void m68k_run_mmu030 (void)
 
 	mmu030_opcode_stageb = -1;
 	mmu030_fake_prefetch = -1;
+	check_halt();
 	while(!halt) {
 		TRY (prb) {
 			for (;;) {
@@ -5830,8 +5885,10 @@ insretry:
 				for (;;) {
 					regs.opcode = regs.irc = mmu030_opcode;
 					mmu030_idx = 0;
-					count_instr (regs.opcode);
-					do_cycles (cpu_cycles);
+					if (!currprefs.cpu_cycle_exact) {
+						count_instr (regs.opcode);
+						do_cycles (cpu_cycles);
+					}
 					mmu030_retry = false;
 
 					cpu_cycles = (*cpufunctbl[regs.opcode])(regs.opcode);
@@ -9727,6 +9784,7 @@ static void fill_icache030 (uae_u32 addr)
 		regs.cacheholdingdata_valid = 0;
 		regs.cacheholdingaddr020 = 0xffffffff;
 		regs.cacheholdingdata020 = 0xffffffff;
+		end_020_cycle_prefetch(false);
 		return;
 	} ENDTRY
 
@@ -10165,6 +10223,7 @@ uae_u32 get_word_030_prefetch (int o)
 	v = regs.prefetch020[0];
 	regs.prefetch020[0] = regs.prefetch020[1];
 	regs.prefetch020[1] = regs.prefetch020[2];
+	regs.prefetch020_valid[2] = false;
 	if (!regs.prefetch020_valid[1]) {
 		do_access_or_bus_error(0xffffffff, pc);
 	}
@@ -10215,68 +10274,86 @@ uae_u32 get_long_icache030(uaecptr addr)
 uae_u32 fill_icache040(uae_u32 addr)
 {
 	int index, lws;
-	uae_u32 tag;
+	uae_u32 tag, addr2;
 	struct cache040 *c;
 	int line;
+	uae_u8 cm = CACHE_ENABLE_ALL;
 	static int lastline; 
 	int i;
 
-	if (!(regs.cacr & 0x8000)) {
-		uae_u32 addr2 = addr & ~15;
-		lws = (addr >> 2) & 3;
-		addr &= ~3;
-		if (regs.prefetch020addr == addr2)
-			return regs.prefetch040[lws];
-		regs.prefetch020addr = addr2;
+	addr2 = addr & ~15;
+	lws = (addr >> 2) & 3;
+
+	if (regs.prefetch020addr == addr2)
+		return regs.prefetch040[lws];
+
+	if (regs.cacr & 0x8000) {
+
+		index = (addr >> 4) & (cachesets04060minus1);
+		tag = regs.s | (addr & ~((cachesets04060 << 4) - 1));
+		c = &icaches040[index];
+		for (i = 0; i < CACHELINES040; i++) {
+			if (c->valid[lastline] && c->tag[lastline] == tag) {
+				// cache hit
+				if (!(cm & CACHE_ENABLE_INS)) {
+					c->valid[lastline] = false;
+					goto end;
+				}
+				icachelinecnt++;
+				x_do_cycles(1 * cpucycleunit);
+#ifdef WINUAE_FOR_HATARI
+				CpuInstruction.I_Cache_hit++;
+#endif
+				return c->data[lastline][lws];
+			}
+			lastline++;
+			lastline &= (CACHELINES040 - 1);
+		}
+		// cache miss
+		cm = mmu_cache_state;
+		regs.prefetch020addr = 0xffffffff;
 		regs.prefetch040[0] = icache_fetch(addr2 +  0);
 		regs.prefetch040[1] = icache_fetch(addr2 +  4);
 		regs.prefetch040[2] = icache_fetch(addr2 +  8);
 		regs.prefetch040[3] = icache_fetch(addr2 + 12);
+		regs.prefetch020addr = addr2;
+		if (!(cm & CACHE_ENABLE_INS))
+			goto end;
+
+		if (c->valid[0] && c->valid[1] && c->valid[2] && c->valid[3]) {
+			line = (icachelinecnt >> 1) & (CACHELINES040 - 1);
+		} else {
+			for (line = 0; line < CACHELINES040; line++) {
+				if (c->valid[line] == false)
+					break;
+			}
+		}
+		c->tag[line] = tag;
+		c->valid[line] = true;
+		c->data[line][0] = regs.prefetch040[0];
+		c->data[line][1] = regs.prefetch040[1];
+		c->data[line][2] = regs.prefetch040[2];
+		c->data[line][3] = regs.prefetch040[3];
 		if (!currprefs.cpu_memory_cycle_exact)
 			x_do_cycles(4 * cpucycleunit);
-		return regs.prefetch040[lws];
-	}
-
-	index = (addr >> 4) & (cachesets04060minus1);
-	tag = regs.s | (addr & ~((cachesets04060 << 4) - 1));
-	lws = (addr >> 2) & 3;
-	addr &= ~15;
-	c = &icaches040[index];
-	for (i = 0; i < CACHELINES040; i++) {
-		if (c->valid[lastline] && c->tag[lastline] == tag) {
-			// cache hit
-			icachelinecnt++;
-			x_do_cycles(1 * cpucycleunit);
 #ifdef WINUAE_FOR_HATARI
-			CpuInstruction.I_Cache_hit++;
+		CpuInstruction.I_Cache_miss++;
 #endif
-			return c->data[lastline][lws];
+		return c->data[line][lws];
 
-		}
-		lastline++;
-		lastline &= (CACHELINES040 - 1);
 	}
-	// cache miss
-	if (c->valid[0] && c->valid[1] && c->valid[2] && c->valid[3]) {
-		line = (icachelinecnt >> 1) & (CACHELINES040 - 1);
-	} else {
-		for (line = 0; line < CACHELINES040; line++) {
-			if (c->valid[line] == false)
-				break;
-		}
-	}
-	c->tag[line] = tag;
-	c->valid[line] = true;
-	c->data[line][0] = icache_fetch(addr +  0);
-	c->data[line][1] = icache_fetch(addr +  4);
-	c->data[line][2] = icache_fetch(addr +  8);
-	c->data[line][3] = icache_fetch(addr + 12);
+
+end:
+	if (regs.prefetch020addr == addr2)
+		return regs.prefetch040[lws];
+	regs.prefetch020addr = addr2;
+	regs.prefetch040[0] = icache_fetch(addr2 +  0);
+	regs.prefetch040[1] = icache_fetch(addr2 +  4);
+	regs.prefetch040[2] = icache_fetch(addr2 +  8);
+	regs.prefetch040[3] = icache_fetch(addr2 + 12);
 	if (!currprefs.cpu_memory_cycle_exact)
 		x_do_cycles(4 * cpucycleunit);
-#ifdef WINUAE_FOR_HATARI
-	CpuInstruction.I_Cache_miss++;
-#endif
-	return c->data[line][lws];
+	return regs.prefetch040[lws];
 }
 
 #if 0
