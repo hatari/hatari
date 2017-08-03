@@ -5891,6 +5891,9 @@ insretry:
 					}
 					mmu030_retry = false;
 
+#ifdef WINUAE_FOR_HATARI
+					currcycle = 0;
+#endif
 					cpu_cycles = (*cpufunctbl[regs.opcode])(regs.opcode);
 					cnt--; // so that we don't get in infinite loop if things go horribly wrong
 					if (!mmu030_retry)
@@ -5908,6 +5911,8 @@ insretry:
 				cpu_cycles = adjust_cycles (cpu_cycles);
 
 #ifdef WINUAE_FOR_HATARI
+if ( !currprefs.cpu_cycle_exact )
+{
 				M68000_AddCycles(cpu_cycles * 2 / CYCLE_UNIT);
 
 				if ( WaitStateCycles ) {
@@ -5925,12 +5930,47 @@ insretry:
 					CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
 				if ( MFP_UpdateNeeded == true )
 					MFP_UpdateIRQ ( 0 );
+}
+else
+{
+//fprintf ( stderr, "cyc_2ce %d\n" , currcycle );
+				/* Flush all CE cycles so far to update PendingInterruptCount */
+				M68000_AddCycles_CE ( currcycle * 2 / CYCLE_UNIT );
+//				currcycle = 0;	// FIXME : uncomment this when using DSP_CyclesGlobalClockCounter in DSP_Run
+
+				/* We can have several interrupts at the same time before the next CPU instruction */
+				/* We must check for pending interrupt and call do_specialties_interrupt() only */
+				/* if the cpu is not in the STOP state. Else, the int could be acknowledged now */
+				/* and prevent exiting the STOP state when calling do_specialties() after. */
+				/* For performance, we first test PendingInterruptCount, then regs.spcflags */
+				while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
+					CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
+				if ( MFP_UpdateNeeded == true )
+					MFP_UpdateIRQ ( 0 );
+
+				if (regs.spcflags || time_for_interrupt ()) {
+					if (do_specialties (0))
+						return;
+				}
+#ifdef WINUAE_FOR_HATARI
+				/* Run DSP 56k code if necessary */
+				if (bDspEnabled) {
+//fprintf ( stderr, "dsp cyc_2ce %d\n" , currcycle );
+					DSP_Run(2 * currcycle * 2 / CYCLE_UNIT);
+//fprintf ( stderr, "dsp cyc_2ce %d - %d\n" , currcycle * 2 / CYCLE_UNIT , (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) );
+//					DSP_Run ( DSP_CPU_FREQ_RATIO * ( CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter ) );
+				}
 #endif
+
+				regs.ipl = regs.ipl_pin;
+}
+#endif
+if ( !currprefs.cpu_cycle_exact )
+{
 				if (regs.spcflags) {
 					if (do_specialties (cpu_cycles))
 						return;
 				}
-
 #ifdef WINUAE_FOR_HATARI
 				/* Run DSP 56k code if necessary */
 				if (bDspEnabled) {
@@ -5938,6 +5978,7 @@ insretry:
 //					DSP_Run ( DSP_CPU_FREQ_RATIO * ( CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter ) );
 				}
 #endif
+}
 			}
 		} CATCH (prb) {
 
