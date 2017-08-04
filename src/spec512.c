@@ -207,7 +207,7 @@ void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr)
 		int FrameCycles, HblCounterVideo, LineCycles;
 
 		Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
-		LOG_TRACE_PRINT("spec store col line %d cyc=%d col=%x idx=%d video_cyc=%d %d@%d pc=%x instr_cyc=%d\n",
+		LOG_TRACE_PRINT("spec store col line %d cyc=%d col=%03x idx=%d video_cyc=%d %d@%d pc=%x instr_cyc=%d\n",
 				ScanLine, nHorPos, CycleColour, CycleColourIndex, FrameCycles,
 				LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
 	}

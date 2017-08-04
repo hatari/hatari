@@ -78,4 +78,10 @@ extern void Blitter_MemorySnapShot_Capture(bool bSave);
 extern void Blitter_InterruptHandler(void);
 extern void Blitter_Info(FILE *fp, Uint32 arg);
 
+extern void Blitter_HOG_CPU_mem_access_before ( int bus_count );
+extern void Blitter_HOG_CPU_mem_access_after ( int bus_count );
+extern int  Blitter_Check_Simultaneous_CPU ( void );
+extern void Blitter_HOG_CPU_do_cycles_after ( int cycles );
+
+
 #endif /* BLITTER_H */

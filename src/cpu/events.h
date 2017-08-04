@@ -30,6 +30,9 @@ extern void compute_vsynctime (void);
 extern void init_eventtab (void);
 extern void do_cycles_ce (unsigned long cycles);
 ////extern void do_cycles_ce_internal (unsigned long cycles);
+#ifdef WINUAE_FOR_HATARI
+extern void do_cycles_ce_with_blitter (unsigned long cycles);
+#endif
 #ifndef WINUAE_FOR_HATARI
 extern void do_cycles_ce020 (unsigned long cycles);
 ///extern void do_cycles_ce020_internal (unsigned long cycles);
