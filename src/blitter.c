@@ -167,8 +167,10 @@ Uint16		Blitter_CountBusCpu;				/* To count bus accesses made by the CPU */
 #define	BLITTER_CYCLES_PER_BUS_WRITE		4		/* The blitter takes 4 cycles to write 1 memory word on STE */
 
 
+Uint16		BlitterState_ContinueLater;			/* 0=false / 1=true  TODO move into BLITTERSTATE */
+
+
 // TODO		utiliser do_cycle_ce_blitter
-// TODO		interrompre entre read et write
 // TODO		ne pas skipper les cycles en // jusqu'au bus access si le dernier blit prend moins de cycles que le DIV
 
 
@@ -183,6 +185,7 @@ static void Blitter_AddCycles(int cycles)
 
 	BlitterVars.op_cycles += all_cycles;
 //fprintf ( stderr , "blitter add_cyc cyc=%d total=%d cur_cyc=%lu\n" , all_cycles , BlitterVars.op_cycles , currcycle/cpucycleunit );
+//fprintf ( stderr , "blitter src %x dst %x ycount %d\n" , BlitterRegs.src_addr , BlitterRegs.dst_addr , BlitterRegs.lines );
 
 	nCyclesMainCounter += all_cycles;
 	CyclesGlobalClockCounter += all_cycles;
@@ -313,13 +316,19 @@ static void Blitter_WriteWord(Uint32 addr, Uint16 value)
  */
 static bool Blitter_ContinueNonHog ( void )
 {
-
 	if ( Blitter_CountBusBlitter < NONHOG_BUS_BLITTER - Blitter_HOG_CPU_BusCountError )
 		return true;
 	else
 		return false;
-
 }
+
+
+/* Macro to check if blitter can continue and do a 'return' if not */
+#define	BLITTER_RETURN_IF_MAX_BUS_REACHED		if ( !BlitterVars.hog && !Blitter_ContinueNonHog() ) return 0;
+
+/* Macro to suspend this transfer for now and keep src/dst to continue later */
+#define	BLITTER_CONTINUE_LATER_IF_MAX_BUS_REACHED	if ( !BlitterVars.hog && !Blitter_ContinueNonHog() ) \
+								{ BlitterState_ContinueLater = 1; return ; }
 
 
 
@@ -327,20 +336,6 @@ static bool Blitter_ContinueNonHog ( void )
 /**
  * Blitter emulation - level 1
  */
-
-static void Blitter_BeginLine(void)
-{
-	BlitterVars.src_words = BlitterVars.src_words_reset;
-}
-
-static void Blitter_SetState(Uint8 fxsr, Uint8 nfsr, Uint16 end_mask)
-{
-	BlitterState.end_mask = end_mask;
-	BlitterState.have_src = false;
-	BlitterState.have_dst = false;
-	BlitterState.fxsr = fxsr;
-	BlitterState.nfsr = nfsr;
-}
 
 static void Blitter_SourceShift(void)
 {
@@ -432,7 +427,11 @@ static Uint16 Blitter_HOP_2(void)
 
 static Uint16 Blitter_HOP_3(void)
 {
-	return Blitter_SourceRead() & Blitter_GetHalftoneWord();
+	Uint16 src;
+
+	src = Blitter_SourceRead();
+	BLITTER_RETURN_IF_MAX_BUS_REACHED;
+	return src & Blitter_GetHalftoneWord();
 }
 
 static BLITTER_OP_FUNC Blitter_HOP_Table [4] =
@@ -459,12 +458,20 @@ static Uint16 Blitter_LOP_0(void)
 
 static Uint16 Blitter_LOP_1(void)
 {
-	return Blitter_ComputeHOP() & Blitter_DestRead();
+	Uint16	hop;
+
+	hop = Blitter_ComputeHOP();
+	BLITTER_RETURN_IF_MAX_BUS_REACHED;
+	return hop & Blitter_DestRead();
 }
 
 static Uint16 Blitter_LOP_2(void)
 {
-	return Blitter_ComputeHOP() & ~Blitter_DestRead();
+	Uint16	hop;
+
+	hop = Blitter_ComputeHOP();
+	BLITTER_RETURN_IF_MAX_BUS_REACHED;
+	return hop & ~Blitter_DestRead();
 }
 
 static Uint16 Blitter_LOP_3(void)
@@ -474,7 +481,11 @@ static Uint16 Blitter_LOP_3(void)
 
 static Uint16 Blitter_LOP_4(void)
 {
-	return ~Blitter_ComputeHOP() & Blitter_DestRead();
+	Uint16	hop;
+
+	hop = Blitter_ComputeHOP();
+	BLITTER_RETURN_IF_MAX_BUS_REACHED;
+	return ~hop & Blitter_DestRead();
 }
 
 static Uint16 Blitter_LOP_5(void)
@@ -484,22 +495,38 @@ static Uint16 Blitter_LOP_5(void)
 
 static Uint16 Blitter_LOP_6(void)
 {
-	return Blitter_ComputeHOP() ^ Blitter_DestRead();
+	Uint16	hop;
+
+	hop = Blitter_ComputeHOP();
+	BLITTER_RETURN_IF_MAX_BUS_REACHED;
+	return hop ^ Blitter_DestRead();
 }
 
 static Uint16 Blitter_LOP_7(void)
 {
-	return Blitter_ComputeHOP() | Blitter_DestRead();
+	Uint16	hop;
+
+	hop = Blitter_ComputeHOP();
+	BLITTER_RETURN_IF_MAX_BUS_REACHED;
+	return hop | Blitter_DestRead();
 }
 
 static Uint16 Blitter_LOP_8(void)
 {
-	return ~Blitter_ComputeHOP() & ~Blitter_DestRead();
+	Uint16	hop;
+
+	hop = Blitter_ComputeHOP();
+	BLITTER_RETURN_IF_MAX_BUS_REACHED;
+	return ~hop & ~Blitter_DestRead();
 }
 
 static Uint16 Blitter_LOP_9(void)
 {
-	return ~Blitter_ComputeHOP() ^ Blitter_DestRead();
+	Uint16	hop;
+
+	hop = Blitter_ComputeHOP();
+	BLITTER_RETURN_IF_MAX_BUS_REACHED;
+	return ~hop ^ Blitter_DestRead();
 }
 
 static Uint16 Blitter_LOP_A(void)
@@ -509,7 +536,11 @@ static Uint16 Blitter_LOP_A(void)
 
 static Uint16 Blitter_LOP_B(void)
 {
-	return Blitter_ComputeHOP() | ~Blitter_DestRead();
+	Uint16	hop;
+
+	hop = Blitter_ComputeHOP();
+	BLITTER_RETURN_IF_MAX_BUS_REACHED;
+	return hop | ~Blitter_DestRead();
 }
 
 static Uint16 Blitter_LOP_C(void)
@@ -519,12 +550,20 @@ static Uint16 Blitter_LOP_C(void)
 
 static Uint16 Blitter_LOP_D(void)
 {
-	return ~Blitter_ComputeHOP() | Blitter_DestRead();
+	Uint16	hop;
+
+	hop = Blitter_ComputeHOP();
+	BLITTER_RETURN_IF_MAX_BUS_REACHED;
+	return ~hop | Blitter_DestRead();
 }
 
 static Uint16 Blitter_LOP_E(void)
 {
-	return ~Blitter_ComputeHOP() | ~Blitter_DestRead();
+	Uint16	hop;
+
+	hop = Blitter_ComputeHOP();
+	BLITTER_RETURN_IF_MAX_BUS_REACHED;
+	return ~hop | ~Blitter_DestRead();
 }
 
 static Uint16 Blitter_LOP_F(void)
@@ -559,18 +598,61 @@ static void Blitter_Select_LOP(void)
 
 /* end LOP */
 
-static Uint16 Blitter_ComputeMask(void)
+
+/*-----------------------------------------------------------------------*/
+/*
+ * If BlitterState_ContinueLater==1, it means we're resuming from a previous
+ * Blitter_ProcessWord() call that did not complete because we reached
+ * maximum number of bus accesses. In that case, we continue from the latest
+ * state, keeping the values we already have for src_word and dst_word.
+ */
+
+static void Blitter_BeginLine(void)
 {
-	return (Blitter_ComputeLOP() & BlitterState.end_mask) |
-			(Blitter_DestRead() & ~BlitterState.end_mask);
+	if ( BlitterState_ContinueLater )				/* Resuming, don't start a new line */
+		return;
+
+	BlitterVars.src_words = BlitterVars.src_words_reset;
+}
+
+static void Blitter_SetState(Uint8 fxsr, Uint8 nfsr, Uint16 end_mask)
+{
+	BlitterState.fxsr = fxsr;
+	BlitterState.nfsr = nfsr;
+	BlitterState.end_mask = end_mask;
+
+	if ( BlitterState_ContinueLater )
+		BlitterState_ContinueLater = 0;				/* Resuming, keep previous values of have_src / have_dst */
+	else
+	{
+		BlitterState.have_src = false;
+		BlitterState.have_dst = false;
+	}
+}
+
+static Uint16 Blitter_ComputeMask(Uint16 lop)
+{
+	return (lop & BlitterState.end_mask) | (Blitter_DestRead() & ~BlitterState.end_mask);
 }
 
 static void Blitter_ProcessWord(void)
 {
-	/* when NFSR, a read-modify-write is always performed */
-	Uint16 dst_data = ((BlitterState.nfsr || BlitterState.end_mask != 0xFFFF)
-							? Blitter_ComputeMask()
-							: Blitter_ComputeLOP());
+	Uint16	lop;
+	Uint16	dst_data;
+
+	lop = Blitter_ComputeLOP();
+	BLITTER_CONTINUE_LATER_IF_MAX_BUS_REACHED;
+
+	/* When NFSR or mask is not all '1', a read-modify-write is always performed */
+	if ( BlitterState.nfsr || ( BlitterState.end_mask != 0xFFFF ) )
+	{
+		dst_data = Blitter_ComputeMask( lop );
+		BLITTER_CONTINUE_LATER_IF_MAX_BUS_REACHED;
+	}
+	else
+	{
+		dst_data = lop;
+	}
 
 	Blitter_WriteWord(BlitterRegs.dst_addr, dst_data);
 
@@ -587,6 +669,9 @@ static void Blitter_ProcessWord(void)
 
 static void Blitter_EndLine(void)
 {
+	if ( BlitterState_ContinueLater )			/* We will continue later, don't end this line for now */
+		return;
+
 	--BlitterRegs.lines;
 	BlitterRegs.words = BlitterVars.dst_words_reset;
 
@@ -664,19 +749,19 @@ static void Blitter_Start(void)
 int FrameCycles, HblCounterVideo, LineCycles;
 Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-// fprintf ( stderr , "blitter start %d video_cyc=%d %d@%d\n" , nCyclesMainCounter , FrameCycles , LineCycles, HblCounterVideo );
+//fprintf ( stderr , "blitter start %d video_cyc=%d %d@%d\n" , nCyclesMainCounter , FrameCycles , LineCycles, HblCounterVideo );
 
-	/* select HOP & LOP funcs */
+	/* Select HOP & LOP funcs */
 	Blitter_Select_HOP();
 	Blitter_Select_LOP();
 
-	/* setup vars */
+	/* Setup vars */
 	BlitterVars.pass_cycles = 0;
 	BlitterVars.op_cycles = 0;
 	BlitterVars.src_words_reset = BlitterVars.dst_words_reset + BlitterVars.fxsr - BlitterVars.nfsr;
 	Blitter_CountBusBlitter = 0;
 
-	/* bus arbitration */
+	/* Bus arbitration */
 	Blitter_BusArbitration ( BUS_MODE_BLITTER );
 	BlitterPhase = BLITTER_PHASE_RUN_TRANSFER;
 
@@ -692,7 +777,7 @@ Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 	while ( BlitterRegs.lines > 0
 	       && ( BlitterVars.hog || Blitter_ContinueNonHog() ) );
 
-	/* bus arbitration */
+	/* Bus arbitration */
 	Blitter_BusArbitration ( BUS_MODE_CPU );
 
 	BlitterRegs.ctrl = (BlitterRegs.ctrl & 0xF0) | BlitterVars.line;
@@ -1110,10 +1195,12 @@ void Blitter_Control_WriteByte(void)
 				Blitter_CyclesBeforeStart = 4 + 4;
 				BlitterPhase = BLITTER_PHASE_PRE_START;
 				Blitter_HOG_CPU_BusCountError = 0;
+				BlitterState_ContinueLater = 0;
 			}
 			else
 			{
 				Blitter_HOG_CPU_BusCountError = 0;
+				BlitterState_ContinueLater = 0;
 				/* Start blitting after the end of current instruction */
 				CycInt_AddRelativeInterrupt( CurrentInstrCycles+WaitStateCycles, INT_CPU_CYCLE, INTERRUPT_BLITTER);
 			}
@@ -1194,7 +1281,6 @@ void Blitter_Info(FILE *fp, Uint32 dummy)
 
 static void	Blitter_HOG_CPU ( int bus_count )
 {
-
 // fprintf ( stderr , "cpu_bus after phase=%d bus=%d %x %d cur_cyc=%lu start_acces=%d\n" , BlitterPhase , BusMode , BlitterRegs.ctrl , Blitter_CountBusCpu , currcycle/cpucycleunit,Blitter_HOG_CPU_BlitterStartDuringBusAccess );
 
 	if ( BlitterPhase & BLITTER_PHASE_COUNT_CPU_BUS )
@@ -1220,7 +1306,6 @@ static void	Blitter_HOG_CPU ( int bus_count )
 
 static void	Blitter_BUS_Finish ( void )
 {
-
 // fprintf ( stderr , "cpu_bus before phase=%d bus=%d %x %d cur_cyc=%lu start_acces=%d\n" , BlitterPhase , BusMode , BlitterRegs.ctrl , Blitter_CountBusCpu , currcycle/cpucycleunit , Blitter_HOG_CPU_BlitterStartDuringBusAccess );
 	if ( BlitterPhase & BLITTER_PHASE_IGNORE_LAST_CPU_CYCLES )
 	{
@@ -1278,7 +1363,7 @@ void	Blitter_HOG_CPU_mem_access_after ( int bus_count )
 int	Blitter_Check_Simultaneous_CPU ( void )
 {
 	static int cpu_skip_cycles = 0;
-// fprintf ( stderr , "blitter simult phase=%d bus=%d %x cur_cyc=%lu\n" , BlitterPhase , BusMode , BlitterRegs.ctrl , currcycle/cpucycleunit );
+//fprintf ( stderr , "blitter simult phase=%d bus=%d %x cur_cyc=%lu\n" , BlitterPhase , BusMode , BlitterRegs.ctrl , currcycle/cpucycleunit );
 
 	if ( BlitterPhase & BLITTER_PHASE_IGNORE_LAST_CPU_CYCLES )
 	{
@@ -1302,7 +1387,7 @@ int	Blitter_Check_Simultaneous_CPU ( void )
  */
  void	Blitter_HOG_CPU_do_cycles_after ( int cycles )
 {
-// fprintf ( stderr , "blitter do_cyc_after phase=%d bus=%d %x cyc=%d cur_cyc=%lu\n" , BlitterPhase , BusMode , BlitterRegs.ctrl , cycles , currcycle/cpucycleunit );
+//fprintf ( stderr , "blitter do_cyc_after phase=%d bus=%d %x cyc=%d cur_cyc=%lu\n" , BlitterPhase , BusMode , BlitterRegs.ctrl , cycles , currcycle/cpucycleunit );
 
 	if ( BlitterPhase == BLITTER_PHASE_PRE_START )
 	{
