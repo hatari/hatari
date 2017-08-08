@@ -154,6 +154,9 @@ Uint16		Blitter_CyclesBeforeStart;			/* Number of cycles after setting busy bit 
 Uint8		Blitter_HOG_CPU_FromBusAccess;			/* 0 or 1 (false/true) */
 Uint8		Blitter_HOG_CPU_BlitterStartDuringBusAccess;	/* 0 or 1 (false/true) */
 Uint16		Blitter_HOG_CPU_BusCountError;			/* 0 or 1, subtracted from NONHOG_BUS_BLITTER to give 64 or 63 */
+Uint16		Blitter_HOG_CPU_IgnoreMaxCpuCycles;		/* Max number of blitter cycles during which the CPU might run in parallel */
+								/* (unless the CPU is stalled earlier by a bus access) */
+
 
 /* Cycles to run for in non-hog mode */
 #define NONHOG_BUS_BLITTER	64
@@ -171,7 +174,7 @@ Uint16		BlitterState_ContinueLater;			/* 0=false / 1=true  TODO move into BLITTE
 
 
 // TODO		utiliser do_cycle_ce_blitter
-// TODO		ne pas skipper les cycles en // jusqu'au bus access si le dernier blit prend moins de cycles que le DIV
+// TODO		call flush_cycles after every add
 
 
 /*-----------------------------------------------------------------------*/
@@ -328,7 +331,10 @@ static bool Blitter_ContinueNonHog ( void )
 
 /* Macro to suspend this transfer for now and keep src/dst to continue later */
 #define	BLITTER_CONTINUE_LATER_IF_MAX_BUS_REACHED	if ( !BlitterVars.hog && !Blitter_ContinueNonHog() ) \
-								{ BlitterState_ContinueLater = 1; return ; }
+			{ \
+				/* fprintf ( stderr , "blitter suspended before write word\n" ); */ \
+				BlitterState_ContinueLater = 1; return; \
+			}
 
 
 
@@ -791,10 +797,12 @@ Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 		MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_GPU_DONE , MFP_GPIP_STATE_LOW );
 
 		BlitterPhase = BLITTER_PHASE_STOP | BLITTER_PHASE_IGNORE_LAST_CPU_CYCLES;
+		Blitter_HOG_CPU_IgnoreMaxCpuCycles = BlitterVars.pass_cycles;
 	}
 	else
 	{
 		BlitterPhase = BLITTER_PHASE_COUNT_CPU_BUS | BLITTER_PHASE_IGNORE_LAST_CPU_CYCLES;
+		Blitter_HOG_CPU_IgnoreMaxCpuCycles = BlitterVars.pass_cycles;
 
 		/* Continue blitting later */
 		if ( currprefs.cpu_cycle_exact )
@@ -1281,7 +1289,7 @@ void Blitter_Info(FILE *fp, Uint32 dummy)
 
 static void	Blitter_HOG_CPU ( int bus_count )
 {
-// fprintf ( stderr , "cpu_bus after phase=%d bus=%d %x %d cur_cyc=%lu start_acces=%d\n" , BlitterPhase , BusMode , BlitterRegs.ctrl , Blitter_CountBusCpu , currcycle/cpucycleunit,Blitter_HOG_CPU_BlitterStartDuringBusAccess );
+//fprintf ( stderr , "cpu_bus after phase=%d bus=%d %x %d cur_cyc=%lu start_acces=%d\n" , BlitterPhase , BusMode , BlitterRegs.ctrl , Blitter_CountBusCpu , currcycle/cpucycleunit,Blitter_HOG_CPU_BlitterStartDuringBusAccess );
 
 	if ( BlitterPhase & BLITTER_PHASE_COUNT_CPU_BUS )
 	{
@@ -1304,34 +1312,30 @@ static void	Blitter_HOG_CPU ( int bus_count )
 
 
 
-static void	Blitter_BUS_Finish ( void )
-{
-// fprintf ( stderr , "cpu_bus before phase=%d bus=%d %x %d cur_cyc=%lu start_acces=%d\n" , BlitterPhase , BusMode , BlitterRegs.ctrl , Blitter_CountBusCpu , currcycle/cpucycleunit , Blitter_HOG_CPU_BlitterStartDuringBusAccess );
-	if ( BlitterPhase & BLITTER_PHASE_IGNORE_LAST_CPU_CYCLES )
-	{
-// fprintf ( stderr , "blitter finish cur_cyc=%lu now=%lld\n" , currcycle/cpucycleunit , CyclesGlobalClockCounter );
-		BlitterPhase &= ~BLITTER_PHASE_IGNORE_LAST_CPU_CYCLES;
-	}
-
-}
-
-
-
 /*-----------------------------------------------------------------------*/
 /**
  * This is called from the CPU emulation before doing a memory access.
  */
 void	Blitter_HOG_CPU_mem_access_before ( int bus_count )
 {
+//fprintf ( stderr , "cpu_bus before phase=%d bus=%d %x %d cur_cyc=%lu start_acces=%d\n" , BlitterPhase , BusMode , BlitterRegs.ctrl , Blitter_CountBusCpu , currcycle/cpucycleunit , Blitter_HOG_CPU_BlitterStartDuringBusAccess );
+
 	Blitter_HOG_CPU_FromBusAccess = 1;			/* CPU bus access in progress */
 
-	/* [NP] It seems there's a bug in the blitter when it counts his own bus accesses : */
+	/* NOTE [NP] It seems there's a bug in the blitter when it counts his own bus accesses : */
 	/* if a CPU bus access happens during the "pre start" blitter phase, then the blitter will wrongly */
 	/* count it as a blitter bus access and will do only 63 bus accesses during copy instead of 64 */
 	if ( BlitterPhase == BLITTER_PHASE_PRE_START )
 		Blitter_HOG_CPU_BusCountError = 1;
 
-	Blitter_BUS_Finish ();
+	/* If the bus is accessed by the CPU and we're ignoring CPU cycles that occurred in parallel */
+	/* during the blitter's transfer, then we disable IGNORE_LAST_CPU_CYCLES as the CPU was stalled */
+	/* after this point because it couldn't access the bus (which was owned by the blitter) */
+	else if ( BlitterPhase & BLITTER_PHASE_IGNORE_LAST_CPU_CYCLES )
+	{
+// fprintf ( stderr , "blitter finish cur_cyc=%lu now=%lld\n" , currcycle/cpucycleunit , CyclesGlobalClockCounter );
+		BlitterPhase &= ~BLITTER_PHASE_IGNORE_LAST_CPU_CYCLES;	/* No more CPU in parallel, stop ignoring next CPU cycles */
+	}
 }
 
 
@@ -1358,6 +1362,8 @@ void	Blitter_HOG_CPU_mem_access_after ( int bus_count )
  * if part of an instruction was executed simultaneously to the blitter.
  * If so, we don't count those CPU cycles (as they were already counted
  * during the blitter part) and we skip the "do_cycles()"
+ * We skip CPU cycles until Blitter_HOG_CPU_IgnoreMaxCpuCycles=0 or until
+ * we reach a bus access (whichever comes first)
  */
 
 int	Blitter_Check_Simultaneous_CPU ( void )
@@ -1367,8 +1373,12 @@ int	Blitter_Check_Simultaneous_CPU ( void )
 
 	if ( BlitterPhase & BLITTER_PHASE_IGNORE_LAST_CPU_CYCLES )
 	{
+		Blitter_HOG_CPU_IgnoreMaxCpuCycles -= 2;
+		if ( Blitter_HOG_CPU_IgnoreMaxCpuCycles <= 0 )
+			BlitterPhase &= ~BLITTER_PHASE_IGNORE_LAST_CPU_CYCLES;	/* No more CPU in parallel, stop ignoring next CPU cycles */
+
 		cpu_skip_cycles += 2;
-//fprintf ( stderr , "blitter cpu skip %d cycles\n" , cpu_skip_cycles );
+//fprintf ( stderr , "blitter cpu skip %d cycles, max skip %d\n" , cpu_skip_cycles , Blitter_HOG_CPU_IgnoreMaxCpuCycles );
 		return 1;					/* Skip next do_cycles() */
 	}
 
