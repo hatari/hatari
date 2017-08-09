@@ -43,9 +43,6 @@ const char Blitter_fileid[] = "Hatari blitter.c : " __DATE__ " " __TIME__;
 #include "video.h"
 #include "hatari-glue.h"
 
-#if ENABLE_WINUAE_CPU
-#include "cpu/events.h"						/* For do_cycles_ce / do_cycles_ce_with_blitter in cpu/custom.c */
-#endif
 
 /* BLiTTER registers, incs are signed, others unsigned */
 #define REG_HT_RAM	0xff8a00				/* - 0xff8a1e */
@@ -201,11 +198,13 @@ static void Blitter_FlushCycles(void)
 	BlitterVars.pass_cycles += BlitterVars.op_cycles;
 	BlitterVars.op_cycles = 0;
 
+#if ENABLE_WINUAE_CPU
 	if ( ( currprefs.cpu_cycle_exact ) && ( currcycle > 0 ) )	/* In CE mode, flush cycles already counted in the current cpu instruction */
 	{
 		M68000_AddCycles_CE ( currcycle * 2 / CYCLE_UNIT );
  		currcycle = 0;
 	}
+#endif
 
 	PendingInterruptCount -= op_cycles;
 	while (PendingInterruptCount <= 0 && PendingInterruptFunction)
