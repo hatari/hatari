@@ -10,6 +10,10 @@
 #ifndef BLITTER_H
 #define BLITTER_H
 
+
+extern Uint16	BlitterPhase;
+
+
 extern void Blitter_Halftone00_ReadWord(void);
 extern void Blitter_Halftone01_ReadWord(void);
 extern void Blitter_Halftone02_ReadWord(void);

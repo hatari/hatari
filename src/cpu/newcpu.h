@@ -593,6 +593,9 @@ extern uae_u32 get_long_icache040(uaecptr addr);
 extern void (*x_do_cycles)(unsigned long);
 extern void (*x_do_cycles_pre)(unsigned long);
 extern void (*x_do_cycles_post)(unsigned long, uae_u32);
+#ifdef WINUAE_FOR_HATARI
+void set_x_funcs_hatari_blitter (int flag);
+#endif
 
 extern uae_u32 REGPARAM3 x_get_disp_ea_020 (uae_u32 base, int idx) REGPARAM;
 extern uae_u32 REGPARAM3 x_get_disp_ea_ce020 (uae_u32 base, int idx) REGPARAM;

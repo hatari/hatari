@@ -772,6 +772,32 @@ void	M68000_Flush_Data_Cache ( uaecptr addr , int size )
 
 /*-----------------------------------------------------------------------*/
 /**
+ * When running in 68000 CE mode, allow to change the "do_cycles" functions
+ * in the cpu emulation depending on the blitter state.
+ *  - if the blitter is not busy, we keep the 'normal' 68000 CE "do_cycles" functions
+ *  - if the blitter is busy, we use a slightly slower "do_cycles" to accurately
+ *    count bus accesses made by the blitter and the CPU
+ *
+ * This limits the overhead of emulating cycle exact blitter bus accesses when blitter is OFF.
+ */
+void	M68000_SetBlitter_CE ( bool state )
+{
+#ifdef WINUAE_FOR_HATARI
+//fprintf ( stderr , "M68000_SetBlitter_CE state=%s\n" , state ? "on" : "off" );
+	if ( state )
+	{
+		set_x_funcs_hatari_blitter ( 1 );		/* on */
+	}
+	else
+	{
+		set_x_funcs_hatari_blitter ( 0 );		/* off */
+	}
+#endif
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * On real STF/STE hardware, DMA accesses are restricted to 4 MB (video addresses,
  * FDC, STE DMA sound) in the range 0 - $3fffff (22 bits of address)
  * When STF/STE are expanded beyond 4 MB, some special '_FRB' cookies variables

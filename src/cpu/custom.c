@@ -359,7 +359,7 @@ void do_cycles_ce (unsigned long cycles)
 
 #ifdef WINUAE_FOR_HATARI
 /* Same as do_cycles_ce() with cycle exact blitter support */
-void do_cycles_ce_with_blitter (unsigned long cycles)
+void do_cycles_ce_hatari_blitter (unsigned long cycles)
 {
 	cycles += extra_cycle;
 	while (cycles >= CYCLE_UNIT) {

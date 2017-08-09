@@ -402,6 +402,7 @@ extern void M68000_SyncCpuBus_OnWriteAccess ( void );
 extern void M68000_Flush_Instr_Cache ( uaecptr addr , int size );
 extern void M68000_Flush_Data_Cache ( uaecptr addr , int size );
 extern void M68000_Flush_All_Caches ( uaecptr addr , int size );
+extern void M68000_SetBlitter_CE ( bool ce_mode );
 extern int DMA_MaskAddressHigh ( void );
 extern void M68000_ChangeCpuFreq ( void );
 
