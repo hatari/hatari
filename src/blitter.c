@@ -130,8 +130,8 @@ static BLITTERVARS	BlitterVars;
 static BLITTERSTATE	BlitterState;
 static Uint16		BlitterHalftone[16];
 
-static BLITTER_OP_FUNC Blitter_ComputeHOP;
-static BLITTER_OP_FUNC Blitter_ComputeLOP;
+static BLITTER_OP_FUNC	Blitter_ComputeHOP;
+static BLITTER_OP_FUNC	Blitter_ComputeLOP;
 
 
 
@@ -169,6 +169,9 @@ static Uint16	Blitter_CountBusCpu;				/* To count bus accesses made by the CPU *
 
 Uint16		BlitterState_ContinueLater;			/* 0=false / 1=true  TODO move into BLITTERSTATE */
 
+/* Return 'true' if CE mode can be enabled for blitter (ie when using 68000 CE mode) */
+#define	BLITTER_RUN_CE		( ( currprefs.cpu_cycle_exact ) && ( currprefs.cpu_level == 0 ) )
+
 
 
 /*-----------------------------------------------------------------------*/
@@ -199,7 +202,7 @@ static void Blitter_FlushCycles(void)
 	BlitterVars.op_cycles = 0;
 
 #if ENABLE_WINUAE_CPU
-	if ( ( currprefs.cpu_cycle_exact ) && ( currcycle > 0 ) )	/* In CE mode, flush cycles already counted in the current cpu instruction */
+	if ( BLITTER_RUN_CE )					/* In CE mode, flush cycles already counted in the current cpu instruction */
 	{
 		M68000_AddCycles_CE ( currcycle * 2 / CYCLE_UNIT );
  		currcycle = 0;
@@ -329,10 +332,10 @@ static bool Blitter_ContinueNonHog ( void )
 
 /* Macro to suspend this transfer for now and keep src/dst to continue later */
 #define	BLITTER_CONTINUE_LATER_IF_MAX_BUS_REACHED	if ( !BlitterVars.hog && !Blitter_ContinueNonHog() ) \
-			{ \
-				/* fprintf ( stderr , "blitter suspended before write word\n" ); */ \
-				BlitterState_ContinueLater = 1; return; \
-			}
+	{ \
+	  /* fprintf ( stderr , "blitter suspended before write word have_src=%d have_dst=%d\n" , BlitterState.have_src ,BlitterState.have_dst ); */ \
+	  BlitterState_ContinueLater = 1; return; \
+	}
 
 
 
@@ -787,26 +790,33 @@ Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
 	if (BlitterRegs.lines == 0)
 	{
-		/* We're done, clear busy and hog bits */
+		/* Blit complete, clear busy and hog bits */
 		BlitterRegs.ctrl &= ~(0x80|0x40);
 
 		/* Busy=0, set line to low/0 and request interrupt */
 		MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_GPU_DONE , MFP_GPIP_STATE_LOW );
 
-		BlitterPhase = BLITTER_PHASE_STOP | BLITTER_PHASE_IGNORE_LAST_CPU_CYCLES;
-		Blitter_HOG_CPU_IgnoreMaxCpuCycles = BlitterVars.pass_cycles;
+		BlitterPhase = BLITTER_PHASE_STOP;
+
+		if ( BLITTER_RUN_CE )
+		{
+			/* In CE mode, we check if a CPU instruction could have ran in parallel to the blitter */
+			BlitterPhase |= BLITTER_PHASE_IGNORE_LAST_CPU_CYCLES;
+			Blitter_HOG_CPU_IgnoreMaxCpuCycles = BlitterVars.pass_cycles;
+		}
 	}
 	else
 	{
-		BlitterPhase = BLITTER_PHASE_COUNT_CPU_BUS | BLITTER_PHASE_IGNORE_LAST_CPU_CYCLES;
-		Blitter_HOG_CPU_IgnoreMaxCpuCycles = BlitterVars.pass_cycles;
+		/* Blit not complete yet in non-hog mode, give back the bus to the CPU */
+		BlitterPhase = BLITTER_PHASE_COUNT_CPU_BUS;
 
-		/* Continue blitting after 64 bus accesses in 68000 CE mode */
-		if ( ( currprefs.cpu_cycle_exact ) && ( currprefs.cpu_level == 0 ) )
+		if ( BLITTER_RUN_CE )
 		{
+			/* Continue blitting after 64 bus accesses in 68000 CE mode + check for parallel CPU instruction */
+			BlitterPhase |= BLITTER_PHASE_IGNORE_LAST_CPU_CYCLES;
+			Blitter_HOG_CPU_IgnoreMaxCpuCycles = BlitterVars.pass_cycles;
 			Blitter_CountBusCpu = 0;		/* Reset CPU bus counter */
 		}
-
 		else
 		{
 			/* In non-cycle exact 68000 mode, we run the CPU for 64*4=256 cpu cycles, */
@@ -1167,7 +1177,7 @@ void Blitter_Control_WriteByte(void)
 	 * 0x80: busy bit
 	 * - Turn on Blitter activity and stay "1" until copy finished
 	 * 0x40: Blit-mode bit
-	 * - 0: Blit mode, CPU and Blitter get 64 clockcycles in turns
+	 * - 0: Blit mode, CPU and Blitter get 64 bus accesses in turns
 	 * - 1: HOG Mode, Blitter reserves and hogs the bus for as long
 	 *      as the copy takes, CPU and DMA get no Bus access
 	 * 0x20: Smudge mode
@@ -1210,23 +1220,31 @@ void Blitter_Control_WriteByte(void)
 		else
 		{
 			/* Start blitter after a small delay */
-			if ( ( currprefs.cpu_cycle_exact ) && ( currprefs.cpu_level == 0 ) )
+			/* In non-hog mode, the cpu can "restart" the blitter immediately (without waiting */
+			/* for 64 cpu bus accesses) by setting busy bit. This means we should reset */
+			/* BlitterState_ContinueLater only if the blitter was stopped before ; */
+			/* else if the blitter is restarted we must keep the value of BlitterState_ContinueLater */
+			if ( BLITTER_RUN_CE )
 			{
-				/* 68000 CE : 4 cycles to complete current bus write to ctrl reg + 4 cycles before blitter request the bus */
-				M68000_SetBlitter_CE ( true );
+				if ( BlitterPhase == BLITTER_PHASE_STOP )	/* Only when blitter is started (not when restarted) */
+				{
+					M68000_SetBlitter_CE ( true );
+					BlitterState_ContinueLater = 0;
+				}
 
+				/* 68000 CE : 4 cycles to complete current bus write to ctrl reg + 4 cycles before blitter request the bus */
 				Blitter_CyclesBeforeStart = 4 + 4;
 				BlitterPhase = BLITTER_PHASE_PRE_START;
 				Blitter_HOG_CPU_BusCountError = 0;
-				BlitterState_ContinueLater = 0;
 			}
 			else
 			{
-				/* Non 68000 CE mode : start blitting after the end of current instruction */
-				M68000_SetBlitter_CE ( false );
+				if ( BlitterPhase == BLITTER_PHASE_STOP )	/* Only when blitter is started (not when restarted) */
+				{
+					BlitterState_ContinueLater = 0;
+				}
 
-				Blitter_HOG_CPU_BusCountError = 0;
-				BlitterState_ContinueLater = 0;
+				/* Non 68000 CE mode : start blitting after the end of current instruction */
 				CycInt_AddRelativeInterrupt( CurrentInstrCycles+WaitStateCycles, INT_CPU_CYCLE, INTERRUPT_BLITTER);
 			}
 		}
