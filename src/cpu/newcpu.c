@@ -848,7 +848,7 @@ void set_x_funcs_hatari_blitter (int flag)
 {
 	if ( flag == 0 )
 	{
-fprintf ( stderr , "restore blitter x_funcs\n" );
+//fprintf ( stderr , "restore blitter x_funcs\n" );
 		/* disable blitter, restore functions if needed */
 		if ( x_do_cycles_hatari_blitter_save )
 		{
@@ -859,7 +859,7 @@ fprintf ( stderr , "restore blitter x_funcs\n" );
 	}
 	else
 	{
-fprintf ( stderr , "save/set blitter x_funcs\n" );
+//fprintf ( stderr , "save/set blitter x_funcs\n" );
 		/* save current functions */
 		x_do_cycles_hatari_blitter_save		= x_do_cycles;
 		x_do_cycles_pre_hatari_blitter_save	= x_do_cycles_pre;

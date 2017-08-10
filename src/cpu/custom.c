@@ -347,10 +347,7 @@ void do_cycles_ce (unsigned long cycles)
 		if (bltstate != BLT_done)
 			decide_blitter (hpos);
 #endif						/* WINUAE_FOR_HATARI */
-		if ( Blitter_Check_Simultaneous_CPU() == 0 )
-			do_cycles (1 * CYCLE_UNIT);
-		Blitter_HOG_CPU_do_cycles_after ( 2 );
-
+		do_cycles (1 * CYCLE_UNIT);
 		cycles -= CYCLE_UNIT;
 	}
 	extra_cycle = cycles;
