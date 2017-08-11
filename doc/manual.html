@@ -128,7 +128,7 @@ Recent versions of Hatari even feature STE, Falcon and basic TT emulation.
   <li>Printer port emulation on hardware level (print to file)</li>
   <li>RS232 emulation</li>
   <li>MIDI input/output/through emulation</li>
-  <li>Mega ST real time clock</li>
+  <li>Mega ST(E) real time clock (for Mega-ST and Mega-STE mode)</li>
   <li>IKBD emulation (keyboard, mouse and joystick) with custom
     keyboard mapping</li>
   <li>joystick emulation via cursor keys and joystick emulation via a
@@ -163,6 +163,10 @@ Recent versions of Hatari even feature STE, Falcon and basic TT emulation.
   <li>STE joypads</li>
   <li>TOS versions 1.06, 1.62, 2.05 and 2.06 (and EmuTOS) can be used in STE mode.</li>
 </ul>
+<p>
+Hatari can also emulate a Mega-STE, which had slightly different hardware
+compared to a normal STE (like a built-in real time clock chip).
+</p>
 
 <h4>Experimental TT hardware emulation</h4>
 <p>There is support for following additional TT features:</p>
@@ -172,6 +176,10 @@ Recent versions of Hatari even feature STE, Falcon and basic TT emulation.
   <li>RAM up to 14MiB (ST-RAM) and up to 256 MiB (TT-RAM)</li>
   <li>Only TOS version 3.06 (and EmuTOS) can be used in TT mode.</li>
 </ul>
+<p>
+Note that TT emulation is incomplete &ndash; additional hardware like the
+second MFP and the SCC UARTs is not emulated yet.
+</p>
 
 <h4>Falcon hardware emulation</h4>
 <p>There is support for following additional Falcon features:</p>
