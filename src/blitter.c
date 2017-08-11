@@ -24,6 +24,92 @@
  * ----------------------------------------------------------------------------
  */
 
+
+
+/*
+
+  NOTES [NP] : As of August 2017, the blitter code was partly rewritten to allow cycle exact bus accesses
+  between the blitter and the CPU, allowing to have CPU instruction running in parallel to the blitter
+  when the CPU doesn't need to access the bus.
+
+  The internal work of the blitter regarding bus accesses was deduced from studying many cases
+  on a real STE, including several demos using the blitter with overscan, some tests programs on
+  www.atari-forum.com (from Cyprian Konador), as well as my own tests on an STE.
+
+  Depending on the CPU instruction used to start the blitter, we can see that the next instruction
+  can be partially or totally executed during the blit, or that it will be executed only after the blit is done.
+
+  To understand the reason for this parallel execution, we must know the sequence used by the blitter
+  until it gets the bus and start transferring data.
+
+  Based on several examples, possible sequence when starting the blitter seems to be :
+   - t+0 : write to FF8A3C is complete or blitter "restarts" itself in non-hog mode
+   - t+0 : CPU can still run during 4 cycles and access bus
+   - t+4 : bus arbitration takes 4 cycles (no access for CPU and blitter during this time)
+   - t+8 : blitter owns the bus and starts transferring data
+
+  In case of MegaSTE, the arbitration to grant the bus to the blitter takes 8 cycles instead of 4.
+  But when bus is granted back to the CPU, it takes 4 cycles on both STE and MegaSTE.
+
+  We can see there's a 4 cycles latency between when the busy bit is set and when the blitter asks
+  for a bus grant. It's during these 4 cycles that part of the next CPU instruction can be run, if the
+  current instruction that started the blitter doesn't need the bus anymore.
+
+  For example :
+   - move.b d0,(a0) + nop	: MOVE.B will do a write then a read to prefetch the next instruction
+				-> NOP will run after the blit
+   - bset #7,(a0) + nop		: BSET will read first then finish with a write
+				-> NOP will run before the blit
+   - bset #7,(a0) + mulu dx,dy	: BSET will read first then finish with a write. Then mulu will prefetch before the blit starts
+				-> MULU will run in parallel to the blitter
+   - bset #7,(a0) + divu dx,dy	: BSET will read first then finish with a write. Then divu will run internal cycles and finish with a prefetch
+				-> all the cycles from the DIVU will run in parallel to the blitter until we reach the DIVU's prefetch
+
+  So, by interleaving CPU instructions with some blitter transfers, it is possible to run part of those instructions
+  in parallel to the blitter, thus saving CPU cycles on some costly instructions (div,mul,...)
+
+  - Number of bus shared between CPU and blitter : as described in Atari developers documentation,
+    when HOG mode is disabled the blitter will run during 64 bus accesses (read or write), then it
+    will give the bus to the CPU for 64 bus accesses too. But in some cases (see below), a possible
+    bug in the blitter will make it use the bus during only 63 accesses instead of 64.
+
+  - As verified on a real STE, when the blitter owns the bus in non-hog mode, it will give back the bus to the CPU
+    exactly after the 64th (or 63th) bus access, not just after writing the result of the current word transfer.
+    For the emulation, this means the blitter's state must be preserved to be able to resume after any bus read
+    made by the blitter (blitter's operations can have between 0 and 2 reads and 1 write).
+
+  - Blitter doing only 63 bus accesses instead of 64 in non-hog mode : my guess is that in non-hog mode the blitter
+    will always count bus accesses as soon as busy bit is set, even when it has not started to transfer its own data.
+    So, if the CPU does a bus access during the 4 cycles latency between t+0 and t+4 above, then this CPU bus access
+    will be counted by the blitter as a blitter bus access, thus effectively losing one bus access and doing
+    only 63 bus accesses after that (before granting the bus to the CPU for the next 64 bus accesses).
+
+
+  Some examples of demos requiring cycle exact blitter mode to correctly work :
+   - 'Relapse - Graphix Sound 2' by Cybernetics (overscan plasma using blitter)
+		This demo uses a self-calibration routine to adapt blitter code to the MegaSTE.
+		$e764 : move.b  d5,(a4) + dbra d1,$fff2 : 4 cycles of the dbra can be executed while blitter starts
+
+
+  From an emulation point of view, the code needed for cycle exact blitter mode requires to intercept
+  bus accesses before and after they occur, as well as intercepting "do_cycle" before and after too.
+
+  Parallel execution of the CPU is obtained by skipping as many CPU cycles as the blitter ran,
+  or by skipping CPU cycles until the next CPU bus access (at which point the CPU would stall).
+
+*/
+
+/*
+
+  TODO : as measured on STE (as well as on Falcon), the blitter produces strange results when
+  each line is only 1 word (xcount=1) and when nfsr/fxsr are set at the same time : in some cases
+  an extra word will be read, depending also on whether src X increment is >0 or <0.
+  This was discussed in may 2017 in Hatari mailing list and a model still need to be found to cover all cases.
+
+*/
+
+
+
 const char Blitter_fileid[] = "Hatari blitter.c : " __DATE__ " " __TIME__;
 
 #include <SDL_types.h>
@@ -119,6 +205,10 @@ typedef struct
 	Uint8	have_dst;
 	Uint8	fxsr;
 	Uint8	nfsr;
+
+	Uint16	CountBusBlitter;				/* To count bus accesses made by the blitter */
+	Uint16	CountBusCpu;					/* To count bus accesses made by the CPU */
+	Uint8	ContinueLater;					/* 0=false / 1=true */
 } BLITTERSTATE;
 
 
@@ -150,24 +240,18 @@ static Uint16	Blitter_CyclesBeforeStart;			/* Number of cycles after setting bus
 
 static Uint8	Blitter_HOG_CPU_FromBusAccess;			/* 0 or 1 (false/true) */
 static Uint8	Blitter_HOG_CPU_BlitterStartDuringBusAccess;	/* 0 or 1 (false/true) */
-static Uint16	Blitter_HOG_CPU_BusCountError;			/* 0 or 1, subtracted from NONHOG_BUS_BLITTER to give 64 or 63 */
+static Uint16	Blitter_HOG_CPU_BusCountError;			/* 0 or 1 (false/true) */
 static Uint16	Blitter_HOG_CPU_IgnoreMaxCpuCycles;		/* Max number of blitter cycles during which the CPU might run in parallel */
 								/* (unless the CPU is stalled earlier by a bus access) */
 
 
-/* Cycles to run for in non-hog mode */
-#define NONHOG_BUS_BLITTER	64
-#define NONHOG_BUS_CPU		64
-
-static Uint16	Blitter_CountBusBlitter;			/* To count bus accesses made by the blitter */
-static Uint16	Blitter_CountBusCpu;				/* To count bus accesses made by the CPU */
-
+/* Number of bus accesses allocated to blitter and CPU in non-hog mode */
+#define BLITTER_NONHOG_BUS_BLITTER		64		/* Can also be 63, see Blitter_HOG_CPU_BusCountError */
+#define BLITTER_NONHOG_BUS_CPU			64
 
 #define	BLITTER_CYCLES_PER_BUS_READ		4		/* The blitter takes 4 cycles to read 1 memory word on STE */
 #define	BLITTER_CYCLES_PER_BUS_WRITE		4		/* The blitter takes 4 cycles to write 1 memory word on STE */
 
-
-Uint16		BlitterState_ContinueLater;			/* 0=false / 1=true  TODO move into BLITTERSTATE */
 
 /* Return 'true' if CE mode can be enabled for blitter (ie when using 68000 CE mode) */
 #define	BLITTER_RUN_CE		( ( currprefs.cpu_cycle_exact ) && ( currprefs.cpu_level == 0 ) )
@@ -223,16 +307,11 @@ static void Blitter_FlushCycles(void)
  * partially execute the next instruction in parallel to the blitter
  * (until an access to the BUS is needed by the CPU).
  *
- * NOTE [NP] : this is mostly handled with hardcoded cases for now, as it
- * requires cycle exact emulation to exactly know when bus is accessed
- * by the CPU to prefetch the next word.
- * More tests are needed on a real STE to have a proper model of this.
- *
  * Based on several examples, possible sequence when starting the blitter seems to be :
  *  - t+0 : write to FF8A3C
  *  - t+0 : CPU can still run during 4 cycles and access bus
  *  - t+4 : bus arbitration takes 4 cycles (no access for cpu and blitter during this time)
- *  - t+8 : blitter owns the bus and starts tranferring data
+ *  - t+8 : blitter owns the bus and starts transferring data
  * (in case of MegaSTE bus arbitration takes 8 cycles instead of 4)
  *
  * When blitter stops owning the bus in favor of the cpu, this seems to always take 4 cycles
@@ -290,7 +369,7 @@ static Uint16 Blitter_ReadWord(Uint32 addr)
 		value = (Uint16)get_word ( addr );
 //fprintf ( stderr , "read %x %x %x\n" , addr , value , STMemory_CheckRegionBusError(addr) );
 
-	Blitter_CountBusBlitter++;
+	BlitterState.CountBusBlitter++;
 	Blitter_AddCycles ( BLITTER_CYCLES_PER_BUS_READ );
 	Blitter_FlushCycles();
 
@@ -305,7 +384,7 @@ static void Blitter_WriteWord(Uint32 addr, Uint16 value)
 		put_word ( addr , (Uint32)(value) );
 //fprintf ( stderr , "write %x %x %x\n" , addr , value , STMemory_CheckRegionBusError(addr) );
 
-	Blitter_CountBusBlitter++;
+	BlitterState.CountBusBlitter++;
 	Blitter_AddCycles ( BLITTER_CYCLES_PER_BUS_WRITE );
 	Blitter_FlushCycles();
 }
@@ -320,7 +399,7 @@ static void Blitter_WriteWord(Uint32 addr, Uint16 value)
  */
 static bool Blitter_ContinueNonHog ( void )
 {
-	if ( Blitter_CountBusBlitter < NONHOG_BUS_BLITTER - Blitter_HOG_CPU_BusCountError )
+	if ( BlitterState.CountBusBlitter < BLITTER_NONHOG_BUS_BLITTER )
 		return true;
 	else
 		return false;
@@ -334,7 +413,7 @@ static bool Blitter_ContinueNonHog ( void )
 #define	BLITTER_CONTINUE_LATER_IF_MAX_BUS_REACHED	if ( !BlitterVars.hog && !Blitter_ContinueNonHog() ) \
 	{ \
 	  /* fprintf ( stderr , "blitter suspended before write word have_src=%d have_dst=%d\n" , BlitterState.have_src ,BlitterState.have_dst ); */ \
-	  BlitterState_ContinueLater = 1; return; \
+	  BlitterState.ContinueLater = 1; return; \
 	}
 
 
@@ -608,7 +687,7 @@ static void Blitter_Select_LOP(void)
 
 /*-----------------------------------------------------------------------*/
 /*
- * If BlitterState_ContinueLater==1, it means we're resuming from a previous
+ * If BlitterState.ContinueLater==1, it means we're resuming from a previous
  * Blitter_ProcessWord() call that did not complete because we reached
  * maximum number of bus accesses. In that case, we continue from the latest
  * state, keeping the values we already have for src_word and dst_word.
@@ -616,7 +695,7 @@ static void Blitter_Select_LOP(void)
 
 static void Blitter_BeginLine(void)
 {
-	if ( BlitterState_ContinueLater )				/* Resuming, don't start a new line */
+	if ( BlitterState.ContinueLater )				/* Resuming, don't start a new line */
 		return;
 
 	BlitterVars.src_words = BlitterVars.src_words_reset;
@@ -628,8 +707,8 @@ static void Blitter_SetState(Uint8 fxsr, Uint8 nfsr, Uint16 end_mask)
 	BlitterState.nfsr = nfsr;
 	BlitterState.end_mask = end_mask;
 
-	if ( BlitterState_ContinueLater )
-		BlitterState_ContinueLater = 0;				/* Resuming, keep previous values of have_src / have_dst */
+	if ( BlitterState.ContinueLater )
+		BlitterState.ContinueLater = 0;				/* Resuming, keep previous values of have_src / have_dst */
 	else
 	{
 		BlitterState.have_src = false;
@@ -676,7 +755,7 @@ static void Blitter_ProcessWord(void)
 
 static void Blitter_EndLine(void)
 {
-	if ( BlitterState_ContinueLater )			/* We will continue later, don't end this line for now */
+	if ( BlitterState.ContinueLater )			/* We will continue later, don't end this line for now */
 		return;
 
 	--BlitterRegs.lines;
@@ -766,7 +845,9 @@ Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 	BlitterVars.pass_cycles = 0;
 	BlitterVars.op_cycles = 0;
 	BlitterVars.src_words_reset = BlitterVars.dst_words_reset + BlitterVars.fxsr - BlitterVars.nfsr;
-	Blitter_CountBusBlitter = 0;
+	BlitterState.CountBusBlitter = 0;
+	if ( Blitter_HOG_CPU_BusCountError )
+		BlitterState.CountBusBlitter++;				/* Bug in the blitter : count 1 CPU access as a blitter access */
 
 	/* Bus arbitration */
 	Blitter_BusArbitration ( BUS_MODE_BLITTER );
@@ -815,13 +896,13 @@ Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 			/* Continue blitting after 64 bus accesses in 68000 CE mode + check for parallel CPU instruction */
 			BlitterPhase |= BLITTER_PHASE_IGNORE_LAST_CPU_CYCLES;
 			Blitter_HOG_CPU_IgnoreMaxCpuCycles = BlitterVars.pass_cycles;
-			Blitter_CountBusCpu = 0;		/* Reset CPU bus counter */
+			BlitterState.CountBusCpu = 0;		/* Reset CPU bus counter */
 		}
 		else
 		{
 			/* In non-cycle exact 68000 mode, we run the CPU for 64*4=256 cpu cycles, */
 			/* which gives a good approximation */
-			CycInt_AddRelativeInterrupt ( NONHOG_BUS_CPU*4, INT_CPU_CYCLE, INTERRUPT_BLITTER );
+			CycInt_AddRelativeInterrupt ( BLITTER_NONHOG_BUS_CPU*4, INT_CPU_CYCLE, INTERRUPT_BLITTER );
 		}
 	}
 }
@@ -1226,14 +1307,14 @@ void Blitter_Control_WriteByte(void)
 			/* Start blitter after a small delay */
 			/* In non-hog mode, the cpu can "restart" the blitter immediately (without waiting */
 			/* for 64 cpu bus accesses) by setting busy bit. This means we should reset */
-			/* BlitterState_ContinueLater only if the blitter was stopped before ; */
-			/* else if the blitter is restarted we must keep the value of BlitterState_ContinueLater */
+			/* BlitterState.ContinueLater only if the blitter was stopped before ; */
+			/* else if the blitter is restarted we must keep the value of BlitterState.ContinueLater */
 			if ( BLITTER_RUN_CE )
 			{
 				if ( ( ctrl_old & 0x80 ) == 0 )			/* Only when blitter is started (not when restarted) */
 				{
 					M68000_SetBlitter_CE ( true );
-					BlitterState_ContinueLater = 0;
+					BlitterState.ContinueLater = 0;
 				}
 
 				/* 68000 CE : 4 cycles to complete current bus write to ctrl reg + 4 cycles before blitter request the bus */
@@ -1245,7 +1326,7 @@ void Blitter_Control_WriteByte(void)
 			{
 				if ( ( ctrl_old & 0x80 ) == 0 )			/* Only when blitter is started (not when restarted) */
 				{
-					BlitterState_ContinueLater = 0;
+					BlitterState.ContinueLater = 0;
 				}
 
 				/* Non 68000 CE mode : start blitting after the end of current instruction */
@@ -1284,7 +1365,7 @@ void Blitter_Skew_WriteByte(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Handler which continues blitting after 64 bus cycles.
+ * Handler which continues blitting after 64 bus cycles in non-CE mode
  */
 void Blitter_InterruptHandler(void)
 {
@@ -1306,9 +1387,17 @@ void Blitter_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&BlitterRegs, sizeof(BlitterRegs));
 	MemorySnapShot_Store(&BlitterVars, sizeof(BlitterVars));
 	MemorySnapShot_Store(&BlitterHalftone, sizeof(BlitterHalftone));
+	MemorySnapShot_Store(&BlitterState, sizeof(BlitterState));
 
+	MemorySnapShot_Store(&BlitterPhase, sizeof(BlitterPhase));
 
-	/* TODO : save new CE variables + call M68000_SetBlitter_CE on restore if phase!=0 */
+	if ( !bSave )
+	{
+		/* On restore, we set blitter specific CPU functions if needed */
+		if ( BlitterPhase && BLITTER_RUN_CE )
+			M68000_SetBlitter_CE ( true );
+	}
+
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1338,29 +1427,6 @@ void Blitter_Info(FILE *fp, Uint32 dummy)
 }
 
 
-static void	Blitter_HOG_CPU ( int bus_count )
-{
-//fprintf ( stderr , "cpu_bus after phase=%d bus=%d %x %d cur_cyc=%lu start_acces=%d\n" , BlitterPhase , BusMode , BlitterRegs.ctrl , Blitter_CountBusCpu , currcycle/cpucycleunit,Blitter_HOG_CPU_BlitterStartDuringBusAccess );
-
-	if ( BlitterPhase & BLITTER_PHASE_COUNT_CPU_BUS )
-	{
-		if ( Blitter_HOG_CPU_BlitterStartDuringBusAccess )
-		{
-			Blitter_HOG_CPU_BlitterStartDuringBusAccess = 0;
-			return;
-		}
-		
-		Blitter_CountBusCpu += bus_count;
-		if ( Blitter_CountBusCpu >= NONHOG_BUS_CPU )
-		{
-			Blitter_CyclesBeforeStart = 4;
-			BlitterPhase = BLITTER_PHASE_PRE_START;
-			Blitter_HOG_CPU_BusCountError = 0;
-		}
-	}
-
-}
-
 
 
 /*-----------------------------------------------------------------------*/
@@ -1369,13 +1435,13 @@ static void	Blitter_HOG_CPU ( int bus_count )
  */
 void	Blitter_HOG_CPU_mem_access_before ( int bus_count )
 {
-//fprintf ( stderr , "cpu_bus before phase=%d bus=%d %x %d cur_cyc=%lu start_acces=%d\n" , BlitterPhase , BusMode , BlitterRegs.ctrl , Blitter_CountBusCpu , currcycle/cpucycleunit , Blitter_HOG_CPU_BlitterStartDuringBusAccess );
+//fprintf ( stderr , "cpu_bus before phase=%d bus=%d %x %d cur_cyc=%lu start_acces=%d\n" , BlitterPhase , BusMode , BlitterRegs.ctrl , BlitterState.CountBusCpu , currcycle/cpucycleunit , Blitter_HOG_CPU_BlitterStartDuringBusAccess );
 
 	Blitter_HOG_CPU_FromBusAccess = 1;			/* CPU bus access in progress */
 
 	/* NOTE [NP] It seems there's a bug in the blitter when it counts his own bus accesses : */
 	/* if a CPU bus access happens during the "pre start" blitter phase, then the blitter will wrongly */
-	/* count it as a blitter bus access and will do only 63 bus accesses during copy instead of 64 */
+	/* count it as a blitter bus access and will do only 63 bus accesses during copy instead of 64 in non-hog mode */
 	if ( BlitterPhase == BLITTER_PHASE_PRE_START )
 		Blitter_HOG_CPU_BusCountError = 1;
 
@@ -1398,7 +1464,25 @@ void	Blitter_HOG_CPU_mem_access_before ( int bus_count )
  */
 void	Blitter_HOG_CPU_mem_access_after ( int bus_count )
 {
-	Blitter_HOG_CPU ( bus_count );
+//fprintf ( stderr , "cpu_bus after phase=%d bus=%d %x %d cur_cyc=%lu start_acces=%d\n" , BlitterPhase , BusMode , BlitterRegs.ctrl , BlitterState.CountBusCpu , currcycle/cpucycleunit,Blitter_HOG_CPU_BlitterStartDuringBusAccess );
+
+	if ( BlitterPhase & BLITTER_PHASE_COUNT_CPU_BUS )
+	{
+		if ( Blitter_HOG_CPU_BlitterStartDuringBusAccess )
+		{
+			Blitter_HOG_CPU_BlitterStartDuringBusAccess = 0;
+			return;
+		}
+		
+		BlitterState.CountBusCpu += bus_count;
+		if ( BlitterState.CountBusCpu >= BLITTER_NONHOG_BUS_CPU )
+		{
+			Blitter_CyclesBeforeStart = 4;
+			BlitterPhase = BLITTER_PHASE_PRE_START;
+			Blitter_HOG_CPU_BusCountError = 0;
+		}
+	}
+
 
 	Blitter_HOG_CPU_FromBusAccess = 0;			/* CPU bus access is done */
 }

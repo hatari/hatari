@@ -98,7 +98,8 @@ is missing here, please remind me!):
 
 - Cyprian Konador: Found some bugs in the blitter cycles emulation,
   duochrome and samplehold modes for TT video emulation, reported some
-  infos about alt-ram and dma ranges.
+  infos about alt-ram and dma ranges. Also provided some test programs
+  to show cpu/blitter bus sharing and parallel execution.
 
 - Jerome Vernet: Some updates to the OS X Xcode project file and OS X
   GUI, supplied a french keymapping file for OS X.
