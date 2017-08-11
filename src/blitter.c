@@ -322,19 +322,9 @@ static void Blitter_BusArbitration ( int RequestBusMode )
 
 	if ( RequestBusMode == BUS_MODE_BLITTER )	/* Bus is requested by the blitter */
 	{
+		cycles = 4;				/* Default case : take 4 cycles when going from cpu to blitter */
 		if ( ConfigureParams.System.nMachineType == MACHINE_MEGA_STE )
 			cycles = 8;			/* MegaSTE blitter needs 4 extra cycles when requesting the bus */
-		else
-			cycles = 4;			/* Default case : take 4 cycles when going from cpu to blitter */
-
-// 		/* Different timing for some specific cases */
-// 
-// 		/* 'Relapse - Graphix Sound 2' by Cybernetics (overscan plasma using blitter) */
-// 		/* $e764 : move.b  d5,(a4) + dbra d1,$fff2 : 4 cycles of the dbra can be executed while blitter starts */
-// 		if ( STMemory_ReadLong ( M68000_InstrPC ) == 0x188551c9 )	/* PC = E764 */
-// 			cycles -= 4;			/* 4 cycles less than default case */
-// 
-
 // fprintf ( stderr , "blitter bus start pc %x %x cyc=%d cur_cyc=%lu\n" , M68000_GetPC() , M68000_InstrPC , cycles , currcycle/cpucycleunit );
 	}
 
@@ -1300,7 +1290,7 @@ void Blitter_Control_WriteByte(void)
 		if (BlitterRegs.lines == 0)
 		{
 			/* Blitter transfer is already complete, clear busy and hog bits */
-			BlitterRegs.ctrl &= ~(0x80|0x40);
+			BlitterRegs.ctrl &= ~(0x80|0x40);			// TODO : check on real STE, does it clear hog bit too ?
 		}
 		else
 		{
@@ -1339,7 +1329,8 @@ void Blitter_Control_WriteByte(void)
 	{
 		/* If busy bit is forced to 0 (to stop the blitter in non-hog mode), we must update */
 		/* the interrupt line too */
-		BlitterRegs.ctrl &= ~(0x80|0x40);
+		// TODO : check on real STE, does it clear hog bit too ? It seems not, else 'Relapse' demo will fail in some parts
+//		BlitterRegs.ctrl &= ~(0x80|0x40);
 
 		/* Busy=0, set line to low/0 and request interrupt */
 		MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_GPU_DONE , MFP_GPIP_STATE_LOW );
