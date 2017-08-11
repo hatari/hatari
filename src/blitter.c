@@ -1173,6 +1173,8 @@ void Blitter_LogOp_WriteByte(void)
  */
 void Blitter_Control_WriteByte(void)
 {
+	Uint8	ctrl_old;
+
 	/* Control register bits:
 	 * 0x80: busy bit
 	 * - Turn on Blitter activity and stay "1" until copy finished
@@ -1189,14 +1191,16 @@ void Blitter_Control_WriteByte(void)
 	 * The lowest 4 bits contain the Halftone pattern line number
 	 */
 
+	ctrl_old = BlitterRegs.ctrl;
+
 	if (LOG_TRACE_LEVEL(TRACE_BLITTER))
 	{
 		int FrameCycles, HblCounterVideo, LineCycles;
 
 		Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-		LOG_TRACE_PRINT("blitter write ctrl=%x video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" ,
-				IoMem_ReadByte(REG_CONTROL) ,
+		LOG_TRACE_PRINT("blitter write ctrl=%02x ctrl_old=%02x video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" ,
+				IoMem_ReadByte(REG_CONTROL) , ctrl_old ,
 				FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles );
 	}
 
@@ -1214,7 +1218,7 @@ void Blitter_Control_WriteByte(void)
 	{
 		if (BlitterRegs.lines == 0)
 		{
-			/* We're done, clear busy and hog bits */
+			/* Blitter transfer is already complete, clear busy and hog bits */
 			BlitterRegs.ctrl &= ~(0x80|0x40);
 		}
 		else
@@ -1226,7 +1230,7 @@ void Blitter_Control_WriteByte(void)
 			/* else if the blitter is restarted we must keep the value of BlitterState_ContinueLater */
 			if ( BLITTER_RUN_CE )
 			{
-				if ( BlitterPhase == BLITTER_PHASE_STOP )	/* Only when blitter is started (not when restarted) */
+				if ( ( ctrl_old & 0x80 ) == 0 )			/* Only when blitter is started (not when restarted) */
 				{
 					M68000_SetBlitter_CE ( true );
 					BlitterState_ContinueLater = 0;
@@ -1239,7 +1243,7 @@ void Blitter_Control_WriteByte(void)
 			}
 			else
 			{
-				if ( BlitterPhase == BLITTER_PHASE_STOP )	/* Only when blitter is started (not when restarted) */
+				if ( ( ctrl_old & 0x80 ) == 0 )			/* Only when blitter is started (not when restarted) */
 				{
 					BlitterState_ContinueLater = 0;
 				}
@@ -1252,7 +1256,16 @@ void Blitter_Control_WriteByte(void)
 
 	else					/* busy bit clear */
 	{
+		/* If busy bit is forced to 0 (to stop the blitter in non-hog mode), we must update */
+		/* the interrupt line too */
+		BlitterRegs.ctrl &= ~(0x80|0x40);
+
+		/* Busy=0, set line to low/0 and request interrupt */
+		MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_GPU_DONE , MFP_GPIP_STATE_LOW );
+
 		BlitterPhase = BLITTER_PHASE_STOP;
+		if ( BLITTER_RUN_CE )
+			M68000_SetBlitter_CE ( false );
 	}
 }
 
