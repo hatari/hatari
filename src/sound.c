@@ -337,8 +337,6 @@ static ymu16	YM2149_TonePer		(ymu8 rHigh , ymu8 rLow , ymu16 *pTone_force);
 static ymu16	YM2149_NoisePer		(ymu8 rNoise);
 static ymu16	YM2149_EnvPer		(ymu8 rHigh , ymu8 rLow);
 static void	YM2149_TonePerFilter	(ymu16 per , ymu16 *pTone_force);
-static ymsample	YM2149_NextSample	(void);
-static ymsample	YM2149_NextSample_250	(void);
 
 static int	Sound_SetSamplesPassed(bool FillFrame);
 static void	Sound_GenerateSamples(int SamplesToGenerate);
@@ -1025,6 +1023,8 @@ static void	YM2149_TonePerFilter (ymu16 per , ymu16 *pTone_force)
  * to all 0 bits or all 1 bits using a '-'
  */
 
+#ifndef YM_250
+
 static ymsample	YM2149_NextSample(void)
 {
 	ymsample	sample;
@@ -1096,7 +1096,7 @@ static ymsample	YM2149_NextSample(void)
 		return sample;
 }
 
-
+#else
 
 static ymsample	YM2149_NextSample_250(void)
 {
@@ -1206,7 +1206,7 @@ static ymsample	YM2149_NextSample_250(void)
 		return sample;
 }
 
-
+#endif
 
 /*-----------------------------------------------------------------------*/
 /**
