@@ -123,6 +123,10 @@ bool Dialog_MemDlg(void)
 		break;
 	}
 	memsize = ConfigureParams.Memory.TTRamSize_KB/1024;
+	if (memsize < DLG_TTRAM_MIN)
+		memsize = DLG_TTRAM_MIN;
+	else if (memsize > DLG_TTRAM_MAX)
+		memsize = DLG_TTRAM_MAX;
 #if ENABLE_WINUAE_CPU
 	sprintf(sTTRamSize, "%3i", memsize);
 #else

@@ -295,7 +295,12 @@ static int PopulateDTA(char *path, struct dirent *file, DTA *pDTA, Uint32 DTA_Ge
 	DATETIME DateTime;
 	int nFileAttr, nAttrMask;
 
-	snprintf(tempstr, sizeof(tempstr), "%s%c%s", path, PATHSEP, file->d_name);
+	if (snprintf(tempstr, sizeof(tempstr), "%s%c%s",
+	             path, PATHSEP, file->d_name) >= (int)sizeof(tempstr))
+	{
+		fprintf(stderr, "PopulateDTA: path is too long.\n");
+		return -1;
+	}
 
 	if (stat(tempstr, &filestat) != 0)
 	{

@@ -465,23 +465,29 @@ static const char	*Disass68kSymbolName(long addr, int size)
 static const char	*Disass68kRegname(int reg)
 {
 	static char		regName[3];
-	switch(reg)
-	{
-	case 0x00: case 0x01: case 0x02: case 0x03: case 0x04: case 0x05: case 0x06: case 0x07:
-		sprintf(regName, "%c%d", (options & doptRegisterSmall ? 'd' : 'D'), reg);
-		break;
 
-	case 0x0F:
-		if(options & doptStackSP)	// display A7 as SP
-		{
-			if(options & doptRegisterSmall)
-				return "sp";
-			return "SP";
-		}
-	case 0x08: case 0x09: case 0x0A: case 0x0B: case 0x0C: case 0x0D: case 0x0E:
-		sprintf(regName, "%c%d", (options & doptRegisterSmall ? 'a' : 'A'), reg & 7);
-		break;
+	if (reg == 0x0F && (options & doptStackSP) != 0)
+	{
+		/* display A7 as SP */
+		return (options & doptRegisterSmall) ? "sp" : "SP";
 	}
+
+	if (reg >= 0x0 && reg <= 0x7)
+	{
+		regName[0] = (options & doptRegisterSmall) ? 'd' : 'D';
+	}
+	else if (reg >= 0x8 && reg <= 0xf)
+	{
+		regName[0] = (options & doptRegisterSmall) ? 'a' : 'A';
+	}
+	else
+	{
+		regName[0] = '?';
+	}
+
+	regName[1] = '0' + (reg & 7);
+	regName[2] = 0;
+
 	return regName;
 }
 
