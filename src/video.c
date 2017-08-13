@@ -441,6 +441,7 @@ const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
 #include "video.h"
 #include "ymFormat.h"
 #include "falcon/videl.h"
+#include "blitter.h"
 #include "avi_record.h"
 #include "ikbd.h"
 #include "floppy_ipf.h"
