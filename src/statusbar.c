@@ -219,7 +219,6 @@ static int Statusbar_BlitterGetLinesOn ( int max_h )
 	double	res;
 
 	res = ( max_h * Blitter_StatsGetRate() ) / 100.0;
-
 	return ceil(res);
 }
 
@@ -365,7 +364,6 @@ void Statusbar_Init(SDL_Surface *surf)
 	// xoffset += FDCTextRect.w;
 
 	/* draw frameskip on the right */
-//	FrameSkipsRect.x = surf->w - 15*fontw;
 	FrameSkipsRect.x = surf->w - 21*fontw;
 	FrameSkipsRect.y = yoffset;
 	SDLGui_Text(FrameSkipsRect.x, FrameSkipsRect.y, "FS:");
