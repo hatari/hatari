@@ -4391,6 +4391,9 @@ void Video_InterruptHandler_VBL ( void )
 	/* Generate 1/50th second of sound sample data, to be played by sound thread */
 	Sound_Update_VBL();
 
+	/* Update the blitter's stats for the previous VBL */
+	Blitter_StatsUpdateRate ( (int)( CyclesGlobalClockCounter - PendingCyclesOver - VBL_ClockCounter ) );
+
 	LOG_TRACE(TRACE_VIDEO_VBL , "VBL %d video_cyc=%d pending_cyc=%d jitter=%d vbl_cycles=%d\n" ,
 			nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) , PendingCyclesOver , VblJitterArray[ VblJitterIndex ] ,
 			(int)( CyclesGlobalClockCounter - PendingCyclesOver - VBL_ClockCounter ) );

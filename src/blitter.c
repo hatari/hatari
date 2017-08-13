@@ -181,8 +181,9 @@ typedef struct
 /* Blitter vars */
 typedef struct
 {
-	int	pass_cycles;
-	int	op_cycles;
+	Uint32	pass_cycles;
+	Uint32	op_cycles;
+	Uint32	total_cycles;
 	Uint32	buffer;
 	Uint32	src_words_reset;
 	Uint32	dst_words_reset;
@@ -257,17 +258,48 @@ static Uint16	Blitter_HOG_CPU_IgnoreMaxCpuCycles;		/* Max number of blitter cycl
 #define	BLITTER_RUN_CE		( ( currprefs.cpu_cycle_exact ) && ( currprefs.cpu_level == 0 ) )
 
 
+/* Used to compute the blitter's usage during each VBL (for statusbar) */
+static int	BlitterStatsRate;
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Compute some stats for the blitter's usage during a period (eg one VBL)
+ * Used to determine a percent per VBL and show a led in the statusbar
+ */
+void	Blitter_StatsUpdateRate ( int period_cycles )
+{
+	int percent;
+
+	if ( period_cycles == 0 )
+		percent = 0;
+	else
+		percent = ceil ( 100.0 * BlitterVars.total_cycles / period_cycles );
+
+//fprintf ( stderr , "blitter %d %%\n" , percent );
+	BlitterVars.total_cycles = 0;
+	BlitterStatsRate = percent;
+}
+
+
+int	Blitter_StatsGetRate ( void )
+{
+	return BlitterStatsRate;
+}
+
+
 
 /*-----------------------------------------------------------------------*/
 /**
  * Count blitter cycles (this assumes blitter and CPU runs at the same freq)
  */
-
 static void Blitter_AddCycles(int cycles)
 {
 	int all_cycles = cycles + WaitStateCycles;
 
 	BlitterVars.op_cycles += all_cycles;
+	BlitterVars.total_cycles += all_cycles;
 //fprintf ( stderr , "blitter add_cyc cyc=%d total=%d cur_cyc=%lu\n" , all_cycles , BlitterVars.op_cycles , currcycle/cpucycleunit );
 //fprintf ( stderr , "blitter src %x dst %x ycount %d\n" , BlitterRegs.src_addr , BlitterRegs.dst_addr , BlitterRegs.lines );
 

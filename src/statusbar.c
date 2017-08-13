@@ -49,6 +49,7 @@ const char Statusbar_fileid[] = "Hatari statusbar.c : " __DATE__ " " __TIME__;
 #include "vdi.h"
 #include "fdc.h"
 #include "stMemory.h"
+#include "blitter.h"
 
 #define DEBUG 0
 #if DEBUG
@@ -94,8 +95,12 @@ static enum {
 static SDL_Rect RecLedRect;
 static bool bOldRecording;
 
+static SDL_Rect BltLedRect;
+static int BltLed_lines_on;
+
 /* led colors */
 static Uint32 LedColor[ MAX_LED_STATE ];
+static Uint32 BltColorOn, BltColorOff;
 static Uint32 RecColorOn, RecColorOff;
 static Uint32 GrayBg, LedColorBg;
 
@@ -205,6 +210,22 @@ void Statusbar_SetFloppyLed(drive_index_t drive, drive_led_t state)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Compute the number of lines to fill with color BltColorOn, depending
+ * on the blitter's activity per VBL
+ * return a value between 0 and max_h (included)
+ */
+static int Statusbar_BlitterGetLinesOn ( int max_h )
+{
+	double	res;
+
+	res = ( max_h * Blitter_StatsGetRate() ) / 100.0;
+
+	return ceil(res);
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Set overlay led size/pos on given screen to internal Rect
  * and free previous resources.
  */
@@ -251,6 +272,8 @@ void Statusbar_Init(SDL_Surface *surf)
 	LedColor[ LED_STATE_ON ]	= SDL_MapRGB(surf->format, 0x00, 0xc0, 0x00);
 	LedColor[ LED_STATE_ON_BUSY ]	= SDL_MapRGB(surf->format, 0x00, 0xe0, 0x00);
 	LedColorBg  = SDL_MapRGB(surf->format, 0x00, 0x00, 0x00);
+	BltColorOff = SDL_MapRGB(surf->format, 0x40, 0x00, 0x00);
+	BltColorOn  = SDL_MapRGB(surf->format, 0xe0, 0x00, 0x00);
 	RecColorOff = SDL_MapRGB(surf->format, 0x40, 0x00, 0x00);
 	RecColorOn  = SDL_MapRGB(surf->format, 0xe0, 0x00, 0x00);
 	GrayBg      = SDL_MapRGB(surf->format, 0xc0, 0xc0, 0xc0);
@@ -342,7 +365,8 @@ void Statusbar_Init(SDL_Surface *surf)
 	// xoffset += FDCTextRect.w;
 
 	/* draw frameskip on the right */
-	FrameSkipsRect.x = surf->w - 15*fontw;
+//	FrameSkipsRect.x = surf->w - 15*fontw;
+	FrameSkipsRect.x = surf->w - 21*fontw;
 	FrameSkipsRect.y = yoffset;
 	SDLGui_Text(FrameSkipsRect.x, FrameSkipsRect.y, "FS:");
 	FrameSkipsRect.x += 3 * fontw + fontw/2;
@@ -356,6 +380,15 @@ void Statusbar_Init(SDL_Surface *surf)
 	}
 
 	nOldFrameSkips = 0;
+
+	/* draw blitter led box on the right */
+	BltLedRect = LedRect;
+	BltLedRect.x = surf->w - 7*fontw - BltLedRect.w;
+	ledbox.x = BltLedRect.x - 1;
+	SDLGui_Text(ledbox.x - 4*fontw - fontw/2, yoffset, "BLT:");
+	SDL_FillRect(surf, &ledbox, LedColorBg);
+	SDL_FillRect(surf, &BltLedRect, BltColorOff);
+	BltLed_lines_on = 0;
 
 	/* draw recording led box on the right */
 	RecLedRect = LedRect;
@@ -743,6 +776,7 @@ SDL_Rect* Statusbar_Update(SDL_Surface *surf, bool do_update)
 	static SDL_Rect rect;
 	SDL_Rect *last_rect;
 	int i, updates;
+	int BltLed_lines_on_new;
 
 	/* Don't update anything on screen if video output is disabled */
 	if ( ConfigureParams.Screen.DisableVideo )
@@ -825,6 +859,30 @@ SDL_Rect* Statusbar_Update(SDL_Surface *surf, bool do_update)
 		DEBUGPRINT(("FS = %s\n", fscount));
 		last_rect = &FrameSkipsRect;
 		updates++;
+	}
+
+	/* Blitter : draw 'BltLed_lines_on_new' lines with color BltColorOn */
+	/* and the rest with color BltColorOff. This gives some kind of vu-meter */
+	BltLed_lines_on_new = Statusbar_BlitterGetLinesOn( BltLedRect.h );
+	if ( BltLed_lines_on_new != BltLed_lines_on ) {
+		BltLed_lines_on = BltLed_lines_on_new;
+		if ( BltLed_lines_on > 0 )
+		{
+			rect = BltLedRect;
+			rect.y += rect.h - BltLed_lines_on;
+			rect.h = BltLed_lines_on;
+			SDL_FillRect(surf, &rect, BltColorOn);
+			last_rect = &rect;
+			updates++;
+		}
+		if ( BltLed_lines_on < BltLedRect.h )
+		{
+			rect = BltLedRect;
+			rect.h -= BltLed_lines_on;
+			SDL_FillRect(surf, &rect, BltColorOff);
+			last_rect = &rect;
+			updates++;
+		}
 	}
 
 	if ((bRecordingYM || bRecordingWav || bRecordingAvi)
