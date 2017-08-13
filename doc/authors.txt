@@ -150,7 +150,7 @@ is missing here, please remind me!):
   related changes needed to gemdos.c.
 
 - Douglas Little: wrote and run some test programs for 030 cycle
-  accuracy, tested & gave feedback on Hatari CPU & DSP profiler
+  accuracy and FPU, tested & gave feedback on Hatari CPU & DSP profiler
   features, debugged Hatari DSP emulation issues.
 
 - Roger Burrows: EmuTOS maintainer, reported bugs in several areas
@@ -201,10 +201,11 @@ projects which we would like to acknowledge here:
 - The original CPU core has been taken from UAE which has been written
   by Bernd Schmidt and others. (http://uae.coresystems.de/)
 
-- The new alternative CPU core has been taken from WinUAE which is
+- The current CPU & FPU cores have been taken from WinUAE which is
   maintained by Toni Wilen. Huge thanks to Toni for accepting ideas
   and patches not specific to Amiga emulation, as well as keeping on
-  improving the accuracy of 68000/20/30 CPU. (http://www.winuae.net/)
+  improving the accuracy of 68000/20/30 CPU and FPUs.
+  (http://www.winuae.net/)
 
 - Some parts have been taken from the emulator STonX that has been
   written by Marinos Yannikos and Martin Griffiths.

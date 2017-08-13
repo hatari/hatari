@@ -15,6 +15,7 @@ Emulation:
   (TOS memory routines don't need to be patched anymore)
 - Better results when reading "void" region between end of RAM and 4MB
   (return latest data seen on the bus on STF/STE)
+- Support for undocumented 68882/68881 FPU constants (from WinUAE)
 - Fix error in 68030 instruction cache when using prefetch/CE mode
 - More accurate memory access timings for Falcon 68030
 - improve bottom border removal on 60 Hz screen
@@ -89,7 +90,7 @@ Fixed Falcon demos:
   (autostarting with packed demos)
 
 Fixed TT versions of demos:
-- 4getful, Beams (68030 instr-cache)
+- 4getful, Beams (68030 instr-cache, undocumented FPU constants)
 
 Fixed programs for Falcon:
 - Hextracker (Videl video counter, when not auto-started)
