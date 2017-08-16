@@ -924,7 +924,7 @@ void	Video_InitTimings(void)
 	pVideoTiming1->RestartVideoCounter_Line_60 	= RESTART_VIDEO_COUNTER_LINE_60HZ;	/* 260 */
 	pVideoTiming1->RestartVideoCounter_Line_50 	= RESTART_VIDEO_COUNTER_LINE_50HZ;	/* 310 */
 	pVideoTiming1->RestartVideoCounter_Pos 	= RESTART_VIDEO_COUNTER_CYCLE_STE;		/*  60 */
-	pVideoTiming1->VblVideoCycleOffset 	= VBL_VIDEO_CYCLE_OFFSET_STF;
+	pVideoTiming1->VblVideoCycleOffset 	= VBL_VIDEO_CYCLE_OFFSET_STE;
 	pVideoTiming1->Hbl_Int_Pos_Low_60	= CYCLES_PER_LINE_60HZ;
 	pVideoTiming1->Hbl_Int_Pos_Low_50	= CYCLES_PER_LINE_50HZ;
 	pVideoTiming1->Hbl_Int_Pos_Hi		= CYCLES_PER_LINE_71HZ;
