@@ -5676,7 +5676,6 @@ static void m68k_run_mmu060 (void)
 	check_halt();
 #ifdef WINUAE_FOR_HATARI
 	Log_Printf(LOG_DEBUG,  "m68k_run_mmu060\n");
-	f.cznv = regflags.cznv; f.x = regflags.x;  /* to silence GCC warning */
 #endif
 
 	while (!halt) {
@@ -5771,7 +5770,6 @@ static void m68k_run_mmu040 (void)
 	check_halt();
 #ifdef WINUAE_FOR_HATARI
 	Log_Printf(LOG_DEBUG,  "m68k_run_mmu040\n");
-	f.cznv = regflags.cznv; f.x = regflags.x;  /* to silence GCC warning */
 #endif
 
 	while (!halt) {
@@ -5869,7 +5867,6 @@ static void m68k_run_mmu030 (void)
 
 #ifdef WINUAE_FOR_HATARI
 	Log_Printf(LOG_DEBUG,  "m68k_run_mmu030\n");
-	f.cznv = regflags.cznv; f.x = regflags.x;  /* to silence GCC warning */
 #endif
 
 	mmu030_opcode_stageb = -1;
@@ -5928,18 +5925,25 @@ insretry:
 				for (;;) {
 					regs.opcode = regs.irc = mmu030_opcode;
 					mmu030_idx = 0;
-					if (!currprefs.cpu_cycle_exact) {
-						count_instr (regs.opcode);
-						do_cycles (cpu_cycles);
-					}
+
 					mmu030_retry = false;
 
+					if (!currprefs.cpu_cycle_exact) {
+
+						count_instr (regs.opcode);
+						do_cycles (cpu_cycles);
+
+						cpu_cycles = (*cpufunctbl[regs.opcode])(regs.opcode);
+
+					} else {
 #ifdef WINUAE_FOR_HATARI
-					currcycle = 0;
+						currcycle = 0;
 #endif
-					cpu_cycles = (*cpufunctbl[regs.opcode])(regs.opcode);
-					cnt--; // so that we don't get in infinite loop if things go horribly wrong
-					if (!mmu030_retry)
+						(*cpufunctbl[regs.opcode])(regs.opcode);
+
+						wait_memory_cycles();
+					}
+
 						break;
 					if (cnt < 0) {
 						cpu_halt (CPU_HALT_CPU_STUCK);
@@ -5951,69 +5955,32 @@ insretry:
 
 				mmu030_opcode = -1;
 
-				cpu_cycles = adjust_cycles (cpu_cycles);
+				if (!currprefs.cpu_cycle_exact) {
 
+					cpu_cycles = adjust_cycles (cpu_cycles);
 #ifdef WINUAE_FOR_HATARI
-if ( !currprefs.cpu_cycle_exact )
-{
-				M68000_AddCycles(cpu_cycles * 2 / CYCLE_UNIT);
+					M68000_AddCycles(cpu_cycles * 2 / CYCLE_UNIT);
 
-				if ( WaitStateCycles ) {
-					/* Add some extra cycles to simulate a wait state */
-					M68000_AddCycles(WaitStateCycles);
-					WaitStateCycles = 0;
-				}
+					if ( WaitStateCycles ) {
+						/* Add some extra cycles to simulate a wait state */
+						M68000_AddCycles(WaitStateCycles);
+						WaitStateCycles = 0;
+					}
 
-				/* We can have several interrupts at the same time before the next CPU instruction */
-				/* We must check for pending interrupt and call do_specialties_interrupt() only */
-				/* if the cpu is not in the STOP state. Else, the int could be acknowledged now */
-				/* and prevent exiting the STOP state when calling do_specialties() after. */
-				/* For performance, we first test PendingInterruptCount, then regs.spcflags */
-				while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
-					CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
-				if ( MFP_UpdateNeeded == true )
-					MFP_UpdateIRQ ( 0 );
-}
-else
-{
-//fprintf ( stderr, "cyc_2ce %d\n" , currcycle );
-				/* Flush all CE cycles so far to update PendingInterruptCount */
-				M68000_AddCycles_CE ( currcycle * 2 / CYCLE_UNIT );
-//				currcycle = 0;	// FIXME : uncomment this when using DSP_CyclesGlobalClockCounter in DSP_Run
-
-				/* We can have several interrupts at the same time before the next CPU instruction */
-				/* We must check for pending interrupt and call do_specialties_interrupt() only */
-				/* if the cpu is not in the STOP state. Else, the int could be acknowledged now */
-				/* and prevent exiting the STOP state when calling do_specialties() after. */
-				/* For performance, we first test PendingInterruptCount, then regs.spcflags */
-				while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
-					CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
-				if ( MFP_UpdateNeeded == true )
-					MFP_UpdateIRQ ( 0 );
-
-				if (regs.spcflags || time_for_interrupt ()) {
-					if (do_specialties (0))
-						return;
-				}
-#ifdef WINUAE_FOR_HATARI
-				/* Run DSP 56k code if necessary */
-				if (bDspEnabled) {
-//fprintf ( stderr, "dsp cyc_2ce %d\n" , currcycle );
-					DSP_Run(2 * currcycle * 2 / CYCLE_UNIT);
-//fprintf ( stderr, "dsp cyc_2ce %d - %d\n" , currcycle * 2 / CYCLE_UNIT , (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) );
-//					DSP_Run ( DSP_CPU_FREQ_RATIO * ( CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter ) );
-				}
+					/* We can have several interrupts at the same time before the next CPU instruction */
+					/* We must check for pending interrupt and call do_specialties_interrupt() only */
+					/* if the cpu is not in the STOP state. Else, the int could be acknowledged now */
+					/* and prevent exiting the STOP state when calling do_specialties() after. */
+					/* For performance, we first test PendingInterruptCount, then regs.spcflags */
+					while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
+						CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
+					if ( MFP_UpdateNeeded == true )
+						MFP_UpdateIRQ ( 0 );
 #endif
-
-				regs.ipl = regs.ipl_pin;
-}
-#endif
-if ( !currprefs.cpu_cycle_exact )
-{
-				if (regs.spcflags) {
-					if (do_specialties (cpu_cycles))
-						return;
-				}
+					if (regs.spcflags) {
+						if (do_specialties (cpu_cycles))
+							return;
+					}
 #ifdef WINUAE_FOR_HATARI
 				/* Run DSP 56k code if necessary */
 				if (bDspEnabled) {
@@ -6021,8 +5988,47 @@ if ( !currprefs.cpu_cycle_exact )
 //					DSP_Run ( DSP_CPU_FREQ_RATIO * ( CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter ) );
 				}
 #endif
-}
+
+				} else {
+
+#ifdef WINUAE_FOR_HATARI
+//fprintf ( stderr, "cyc_2ce %d\n" , currcycle );
+					/* Flush all CE cycles so far to update PendingInterruptCount */
+					M68000_AddCycles_CE ( currcycle * 2 / CYCLE_UNIT );
+//					currcycle = 0;	// FIXME : uncomment this when using DSP_CyclesGlobalClockCounter in DSP_Run
+
+					/* We can have several interrupts at the same time before the next CPU instruction */
+					/* We must check for pending interrupt and call do_specialties_interrupt() only */
+					/* if the cpu is not in the STOP state. Else, the int could be acknowledged now */
+					/* and prevent exiting the STOP state when calling do_specialties() after. */
+					/* For performance, we first test PendingInterruptCount, then regs.spcflags */
+					while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
+						CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
+					if ( MFP_UpdateNeeded == true )
+						MFP_UpdateIRQ ( 0 );
+#endif
+
+					if (regs.spcflags || time_for_interrupt ()) {
+						if (do_specialties (0))
+							return;
+					}
+
+#ifdef WINUAE_FOR_HATARI
+					/* Run DSP 56k code if necessary */
+					if (bDspEnabled) {
+//fprintf ( stderr, "dsp cyc_2ce %d\n" , currcycle );
+						DSP_Run(2 * currcycle * 2 / CYCLE_UNIT);
+//fprintf ( stderr, "dsp cyc_2ce %d - %d\n" , currcycle * 2 / CYCLE_UNIT , (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) );
+//						DSP_Run ( DSP_CPU_FREQ_RATIO * ( CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter ) );
+					}
+#endif
+
+					regs.ipl = regs.ipl_pin;
+
+				}
+
 			}
+
 		} CATCH (prb) {
 
 			if (mmu030_opcode == -1 && currprefs.cpu_compatible) {
