@@ -19,6 +19,7 @@ Emulation:
 - Fix error in 68030 instruction cache when using prefetch/CE mode
 - More accurate memory access timings for Falcon 68030
 - improve bottom border removal on 60 Hz screen
+- Fix STE video counter timings regression
 
 Emulator:
 - Miscellaneous:
@@ -97,6 +98,7 @@ Fixed programs for Falcon:
 
 Fixed ST/STE demos:
 - Sprite32 by Leonard (RESTART_VIDEO_COUNTER on line 310/260)
+- Jam-Cols by ICE (STE video counter timings broken in v2.0)
 
 Fixed ST/STE programs:
 - Protracker 2.1 and Neochrome Master 2.8 (shifter, bottom border at 60 Hz)
