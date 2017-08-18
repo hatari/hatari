@@ -17,8 +17,8 @@
 
 
 #define UAEMAJOR 3
-#define UAEMINOR 5
-#define UAESUBREV 1
+#define UAEMINOR 6
+#define UAESUBREV 0
 
 typedef enum { KBD_LANG_US, KBD_LANG_DK, KBD_LANG_DE, KBD_LANG_SE, KBD_LANG_FR, KBD_LANG_IT, KBD_LANG_ES } KbdLang;
 
@@ -522,6 +522,7 @@ struct uae_prefs {
 
 	bool immediate_blits;
 	int waiting_blits;
+	double blitter_speed_throttle;
 	unsigned int chipset_mask;
 	bool keyboard_connected;
 #endif
@@ -673,6 +674,7 @@ struct uae_prefs {
 	bool int_no_unimplemented;
 	bool fpu_no_unimplemented;
 	bool address_space_24;
+	bool cpu_data_cache;
 	bool picasso96_nocustom;
 	int picasso96_modeflags;
 	int cpu_model_fallback;

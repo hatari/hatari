@@ -1333,7 +1333,7 @@ static void maybeaddop_ce020 (int flags)
 * the calling routine handles Apdi and Aipi modes.
 * gb-- movem == 2 means the same thing but for a MOVE16 instruction */
 
-/* fixup indicates if we want to fix up adress registers in pre decrement
+/* fixup indicates if we want to fix up address registers in pre decrement
 * or post increment mode now (0) or later (1). A value of 2 will then be
 * used to do the actual fix up. This allows to do all memory readings
 * before any register is modified, and so to rerun operation without
@@ -4070,6 +4070,8 @@ static void gen_opcode (unsigned int opcode)
 		printf ("\tuaecptr pc = %s;\n", getpc);
 		if (using_indirect > 0 && !using_ce020 && !using_prefetch_020 && !using_ce) {
 			printf("\tm68k_do_rtsi_jit ();\n");
+		} else if (using_mmu) {
+			printf ("\tm68k_do_rts_mmu%s ();\n", mmu_postfix);
 		} else if (using_ce020 == 1) {
 			add_head_cycs (1);
 			printf ("\tm68k_do_rts_ce020 ();\n");
@@ -4078,8 +4080,6 @@ static void gen_opcode (unsigned int opcode)
 			printf ("\tm68k_do_rts_ce030 ();\n");
 		} else if (using_ce) {
 			printf ("\tm68k_do_rts_ce ();\n");
-		} else if (using_mmu) {
-			printf ("\tm68k_do_rts_mmu%s ();\n", mmu_postfix);
 		} else if (using_prefetch || using_prefetch_020) {
 			printf ("\tm68k_do_rtsi ();\n");
 		} else {
@@ -4228,14 +4228,14 @@ static void gen_opcode (unsigned int opcode)
 		addcycles000 (2);
 		if (using_indirect > 0 && !using_ce020 && !using_prefetch_020 && !using_ce) {
 			printf("\tm68k_do_bsri_jit (%s + %d, s);\n", getpc, m68k_pc_offset);
+		} else if (using_mmu) {
+			printf ("\tm68k_do_bsr_mmu%s (%s + %d, s);\n", mmu_postfix, getpc, m68k_pc_offset);
 		} else if (using_ce020 == 1) {
 			printf ("\tm68k_do_bsr_ce020 (%s + %d, s);\n", getpc, m68k_pc_offset);
 		} else if (using_ce020 == 2) {
 			printf ("\tm68k_do_bsr_ce030 (%s + %d, s);\n", getpc, m68k_pc_offset);
 		} else if (using_ce) {
 			printf ("\tm68k_do_bsr_ce (%s + %d, s);\n", getpc, m68k_pc_offset);
-		} else if (using_mmu) {
-			printf ("\tm68k_do_bsr_mmu%s (%s + %d, s);\n", mmu_postfix, getpc, m68k_pc_offset);
 		} else if (using_prefetch || using_prefetch_020) {
 			printf ("\tm68k_do_bsri (%s + %d, s);\n", getpc, m68k_pc_offset);
 		} else {

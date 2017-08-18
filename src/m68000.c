@@ -293,10 +293,12 @@ void M68000_Start(void)
  *	cpu_level : not used anymore
  *	cpu_compatible : 0/false (no prefetch for 68000/20/30)  1/true (prefetch opcode for 68000/20/30)
  *	cpu_cycle_exact : 0/false   1/true (most accurate, implies cpu_compatible)
- *	cpu_memory_cycle_exact : 0/false   1/true (most accurate, implies cpu_compatible)
+ *	cpu_memory_cycle_exact : 0/false   1/true (less accurate than cpu_cycle_exact)
+ *	cpu_data_cache : 0/false (don't emulate caches)   1/true (emulate instr/data caches for 68020/30/40/60)
  *	address_space_24 : 1 (68000/10 and 68030 LC for Falcon), 0 (68020/30/40/60)
  *	fpu_model : 0, 68881 (external), 68882 (external), 68040 (cpu) , 68060 (cpu)
  *	fpu_strict : true/false (more accurate rounding)
+ *	fpu_softfloat : 0/false (faster but less accurate, use host's cpu/fpu)   1/true (most accurate but slower)
  *	mmu_model : 0, 68030, 68040, 68060
  *
  *	m68k_speed : -1=don't adjust cycle  >=0 use m68k_speed_throttle to precisely adjust cycles
@@ -369,6 +371,9 @@ void M68000_CheckCpuSettings(void)
 
 	/* We don't use SoftFloat yet */
 	currprefs.fpu_softfloat = false;
+
+	/* Always emulate instr/data caches for cpu >= 68020 */
+	changed_prefs.cpu_data_cache = true;
 #else
 	if (ConfigureParams.System.nCpuLevel > 4)
 		ConfigureParams.System.nCpuLevel = 4;
@@ -745,8 +750,7 @@ void	M68000_SyncCpuBus_OnWriteAccess ( void )
 void	M68000_Flush_All_Caches ( uaecptr addr , int size )
 {
 #ifdef WINUAE_FOR_HATARI
-	M68000_Flush_Instr_Cache ( addr , size );
-	M68000_Flush_Data_Cache ( addr , size );
+	flush_cpu_caches(true);
 #endif
 }
 
@@ -755,7 +759,7 @@ void	M68000_Flush_Instr_Cache ( uaecptr addr , int size )
 {
 #ifdef WINUAE_FOR_HATARI
 	/* Instruction cache for cpu >= 68020 */
-	flush_instr_cache ( addr , size );
+	flush_cpu_caches(true);
 #endif
 }
 
@@ -763,8 +767,8 @@ void	M68000_Flush_Instr_Cache ( uaecptr addr , int size )
 void	M68000_Flush_Data_Cache ( uaecptr addr , int size )
 {
 #ifdef WINUAE_FOR_HATARI
-	/* Data cache for cpu >= 68030 is only emulated with WinUAE */
-	flush_dcache ( addr , size );
+	/* Data cache for cpu >= 68030 */
+	flush_cpu_caches(true);
 #endif
 }
 

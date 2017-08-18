@@ -82,6 +82,7 @@ struct mmufastcache030
 {
 	uae_u32 log;
 	uae_u32 phys;
+	uae_u8 cs;
 };
 static struct mmufastcache030 atc_data_cache_read[MMUFASTCACHE_ENTRIES030];
 static struct mmufastcache030 atc_data_cache_write[MMUFASTCACHE_ENTRIES030];
@@ -594,7 +595,7 @@ uae_u32 mmu_op30_helper_get_fc(uae_u16 next) {
  *
  */
 
-/* TT comparision results */
+/* TT comparison results */
 #define TT_NO_MATCH	0x1
 #define TT_OK_MATCH	0x2
 #define TT_NO_READ  0x4
@@ -1485,7 +1486,7 @@ uae_u32 mmu030_table_search(uaecptr addr, uae_u32 fc, bool write, int level) {
                     descr[0] |= DESCR_U;
                     descr_modified = true;
                 }
-                /* write modified descriptor if neccessary */
+                /* write modified descriptor if necessary */
                 if (descr_modified) {
                     phys_put_long(descr_addr[descr_num], descr[0]);
                 }
@@ -1551,7 +1552,7 @@ uae_u32 mmu030_table_search(uaecptr addr, uae_u32 fc, bool write, int level) {
     stop_search:
         ; /* Make compiler happy */
     } CATCH(prb) {
-        /* We jump to this place, if a bus error occured during table search.
+        /* We jump to this place, if a bus error occurred during table search.
          * bBusErrorReadWrite is set in m68000.c, M68000_BusError: read = 1 */
         if (bBusErrorReadWrite) {
             descr_num--;
@@ -1765,6 +1766,7 @@ static void mmu030_add_data_read_cache(uaecptr addr, uaecptr phys, uae_u32 fc)
 	if (idx2 < MMUFASTCACHE_ENTRIES030 - 1) {
 		atc_data_cache_read[idx2].log = idx1;
 		atc_data_cache_read[idx2].phys = phys;
+		atc_data_cache_read[idx2].cs = mmu030_cache_state;
 	}
 #endif
 }
@@ -1777,6 +1779,7 @@ static void mmu030_add_data_write_cache(uaecptr addr, uaecptr phys, uae_u32 fc)
 	if (idx2 < MMUFASTCACHE_ENTRIES030 - 1) {
 		atc_data_cache_write[idx2].log = idx1;
 		atc_data_cache_write[idx2].phys = phys;
+		atc_data_cache_write[idx2].cs = mmu030_cache_state;
 	}
 #endif
 }
@@ -1959,6 +1962,7 @@ void mmu030_put_long(uaecptr addr, uae_u32 val, uae_u32 fc)
 		uae_u32 idx2 = idx1 & (MMUFASTCACHE_ENTRIES030 - 1);
 		if (atc_data_cache_write[idx2].log == idx1) {
 			addr = atc_data_cache_write[idx2].phys | (addr & mmu030.translation.page.mask);
+			mmu030_cache_state = atc_data_cache_write[idx2].cs;
 		} else
 #endif
 		{
@@ -1984,6 +1988,7 @@ void mmu030_put_word(uaecptr addr, uae_u16 val, uae_u32 fc)
 		uae_u32 idx2 = idx1 & (MMUFASTCACHE_ENTRIES030 - 1);
 		if (atc_data_cache_write[idx2].log == idx1) {
 			addr = atc_data_cache_write[idx2].phys | (addr & mmu030.translation.page.mask);
+			mmu030_cache_state = atc_data_cache_write[idx2].cs;
 		} else
 #endif
 		{
@@ -2009,6 +2014,7 @@ void mmu030_put_byte(uaecptr addr, uae_u8 val, uae_u32 fc)
 		uae_u32 idx2 = idx1 & (MMUFASTCACHE_ENTRIES030 - 1);
 		if (atc_data_cache_write[idx2].log == idx1) {
 			addr = atc_data_cache_write[idx2].phys | (addr & mmu030.translation.page.mask);
+			mmu030_cache_state = atc_data_cache_write[idx2].cs;
 		} else
 #endif
 		{
@@ -2035,6 +2041,7 @@ uae_u32 mmu030_get_long(uaecptr addr, uae_u32 fc)
 		uae_u32 idx2 = idx1 & (MMUFASTCACHE_ENTRIES030 - 1);
 		if (atc_data_cache_read[idx2].log == idx1) {
 			addr = atc_data_cache_read[idx2].phys | (addr & mmu030.translation.page.mask);
+			mmu030_cache_state = atc_data_cache_read[idx2].cs;
 		} else
 #endif
 		{
@@ -2060,6 +2067,7 @@ uae_u16 mmu030_get_word(uaecptr addr, uae_u32 fc)
 		uae_u32 idx2 = idx1 & (MMUFASTCACHE_ENTRIES030 - 1);
 		if (atc_data_cache_read[idx2].log == idx1) {
 			addr = atc_data_cache_read[idx2].phys | (addr & mmu030.translation.page.mask);
+			mmu030_cache_state = atc_data_cache_read[idx2].cs;
 		} else
 #endif
 		{
@@ -2085,6 +2093,7 @@ uae_u8 mmu030_get_byte(uaecptr addr, uae_u32 fc)
 		uae_u32 idx2 = idx1 & (MMUFASTCACHE_ENTRIES030 - 1);
 		if (atc_data_cache_read[idx2].log == idx1) {
 			addr = atc_data_cache_read[idx2].phys | (addr & mmu030.translation.page.mask);
+			mmu030_cache_state = atc_data_cache_read[idx2].cs;
 		} else
 #endif
 		{
@@ -2462,27 +2471,27 @@ uaecptr mmu030_translate(uaecptr addr, bool super, bool data, bool write)
 #ifndef WINUAE_FOR_HATARI
 static uae_u32 get_dcache_byte(uaecptr addr)
 {
-	return read_dcache030(addr, 0, (regs.s ? 4 : 0) | 1);
+	return read_dcache030_bget(addr, (regs.s ? 4 : 0) | 1);
 }
 static uae_u32 get_dcache_word(uaecptr addr)
 {
-	return read_dcache030(addr, 1, (regs.s ? 4 : 0) | 1);
+	return read_dcache030_wget(addr, (regs.s ? 4 : 0) | 1);
 }
 static uae_u32 get_dcache_long(uaecptr addr)
 {
-	return read_dcache030(addr, 2, (regs.s ? 4 : 0) | 1);
+	return read_dcache030_lget(addr, (regs.s ? 4 : 0) | 1);
 }
 static void put_dcache_byte(uaecptr addr, uae_u32 v)
 {
-	write_dcache030(addr, v, 0, (regs.s ? 4 : 0) | 1);
+	write_dcache030_bput(addr, v, (regs.s ? 4 : 0) | 1);
 }
 static void put_dcache_word(uaecptr addr, uae_u32 v)
 {
-	write_dcache030(addr, v, 1, (regs.s ? 4 : 0) | 1);
+	write_dcache030_wput(addr, v, (regs.s ? 4 : 0) | 1);
 }
 static void put_dcache_long(uaecptr addr, uae_u32 v)
 {
-	write_dcache030(addr, v, 2, (regs.s ? 4 : 0) | 1);
+	write_dcache030_lput(addr, v, (regs.s ? 4 : 0) | 1);
 }
 #endif
 
@@ -2533,7 +2542,6 @@ void mmu030_set_funcs(void)
 		x_phys_put_long = phys_put_long;
 	}
 }
-
 
 void m68k_do_rte_mmu030 (uaecptr a7)
 {

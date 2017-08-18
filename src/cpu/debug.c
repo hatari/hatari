@@ -125,6 +125,7 @@ static const TCHAR help[] = {
 	_T("  c                     Dump state of the CIA, disk drives and custom registers.\n")
 	_T("  r                     Dump state of the CPU.\n")
 	_T("  r <reg> <value>       Modify CPU registers (Dx,Ax,USP,ISP,VBR,...).\n")
+	_T("  rc[d]                 Show CPU instruction or data cache contents.\n")
 	_T("  m <address> [<lines>] Memory dump starting at <address>.\n")
 	_T("  a <address>           Assembler.\n")
 	_T("  d <address> [<lines>] Disassembly starting at <address>.\n")
@@ -163,7 +164,7 @@ static const TCHAR help[] = {
 	_T("  w <num> <address> <length> <R/W/I/F/C> [<value>[.x]] (read/write/opcode/freeze/mustchange).\n")
 	_T("                        Add/remove memory watchpoints.\n")
 	_T("  wd [<0-1>]            Enable illegal access logger. 1 = enable break.\n")
-	_T("  L <file> <addr> <n>   Load a block of Amiga memory.\n")
+	_T("  L <file> <addr> [<n>] Load a block of Amiga memory.\n")
 	_T("  S <file> <addr> <n>   Save a block of Amiga memory.\n")
 	_T("  s \"<string>\"/<values> [<addr>] [<length>]\n")
 	_T("                        Search for string/bytes.\n")
@@ -307,7 +308,7 @@ uae_u32 get_byte_debug (uaecptr addr)
 				if (debug_mmu_mode & 1) {
 					v = mmu_get_iword(addr, sz_byte);
 				} else {
-					v = mmu_get_user_byte (addr, regs.s != 0, false, sz_byte);
+					v = mmu_get_user_byte (addr, regs.s != 0, false, sz_byte, false);
 				}
 			}
 		} CATCH(p) {
@@ -335,7 +336,7 @@ uae_u32 get_word_debug (uaecptr addr)
 				if (debug_mmu_mode & 1) {
 					v = mmu_get_iword(addr, sz_word);
 				} else {
-					v = mmu_get_user_word (addr, regs.s != 0, false, sz_word);
+					v = mmu_get_user_word (addr, regs.s != 0, false, sz_word, false);
 				}
 			}
 		} CATCH(p) {
@@ -363,7 +364,7 @@ uae_u32 get_long_debug (uaecptr addr)
 				if (debug_mmu_mode & 1) {
 					v = mmu_get_ilong(addr, sz_long);
 				} else {
-					v = mmu_get_user_long (addr, regs.s != 0, false, sz_long);
+					v = mmu_get_user_long (addr, regs.s != 0, false, sz_long, false);
 				}
 			}
 		} CATCH(p) {
@@ -3728,6 +3729,8 @@ typedef struct UaeMemoryMap {
 } UaeMemoryMap;
 #endif
 
+static const TCHAR *bankmodes[] = { _T("F32"), _T("C16"), _T("C32"), _T("CIA"), _T("F16"), _T("F16X") };
+
 static void memory_map_dump_3(UaeMemoryMap *map, int log)
 {
 	bool imold;
@@ -3803,10 +3806,12 @@ static void memory_map_dump_3(UaeMemoryMap *map, int log)
 					size_out /= 1024;
 					size_ext = 'M';
 				}
-#if 1
-				_stprintf (txt, _T("%08X %7d%c/%d = %7d%c %s"), (j << 16) | bankoffset, size_out, size_ext,
-					mirrored, mirrored ? size_out / mirrored : size_out, size_ext, name);
-#endif
+				_stprintf (txt, _T("%08X %7d%c/%d = %7d%c %s%s %s %s"), (j << 16) | bankoffset, size_out, size_ext,
+					mirrored, mirrored ? size_out / mirrored : size_out, size_ext,
+					(a1->flags & ABFLAG_CACHE_ENABLE_INS) ? _T("I") : _T("-"),
+					(a1->flags & ABFLAG_CACHE_ENABLE_DATA) ? _T("D") : _T("-"),
+					bankmodes[ce_banktype[j]],
+					name);
 				tmp[0] = 0;
 				if ((a1->flags & ABFLAG_ROM) && mirrored) {
 					TCHAR *p = txt + _tcslen (txt);
@@ -3845,7 +3850,6 @@ static void memory_map_dump_3(UaeMemoryMap *map, int log)
 						map->num_regions += 1;
 					}
 				}
-#if 1
 				_tcscat (txt, _T("\n"));
 				if (log > 0)
 					write_log (_T("%s"), txt);
@@ -3857,7 +3861,6 @@ static void memory_map_dump_3(UaeMemoryMap *map, int log)
 					else if (log == 0)
 						console_out (tmp);
 				}
-#endif
 				if (!sb)
 					break;
 				bankoffset = bankoffset2;
@@ -4527,7 +4530,8 @@ static int process_breakpoint (TCHAR **c)
 static void saveloadmem (TCHAR **cc, bool save)
 {
 	uae_u8 b;
-	uae_u32 src, src2, len, len2;
+	uae_u32 src, src2;
+	int len, len2;
 	TCHAR *name;
 	FILE *fp;
 
@@ -4545,12 +4549,17 @@ static void saveloadmem (TCHAR **cc, bool save)
 	if (!more_params (cc))
 		goto S_argh;
 	src2 = src = readhex (cc);
-	if (!more_params (cc))
-		goto S_argh;
-	len2 = len = readhex (cc);
-	fp = uae_tfopen (name, _T("wb"));
+	if (save) {
+		if (!more_params(cc))
+			goto S_argh;
+	}
+	len2 = len = -1;
+	if (more_params(cc)) {
+		len2 = len = readhex (cc);
+	}
+	fp = uae_tfopen (name, save ? _T("wb") : _T("rb"));
 	if (fp == NULL) {
-		console_out_f (_T("Couldn't open file '%s'\n"), name);
+		console_out_f (_T("Couldn't open file '%s'.\n"), name);
 		return;
 	}
 	if (save) {
@@ -4559,31 +4568,36 @@ static void saveloadmem (TCHAR **cc, bool save)
 			src++;
 			len--;
 			if (fwrite (&b, 1, 1, fp) != 1) {
-				console_out (_T("Error writing file\n"));
+				console_out (_T("Error writing file.\n"));
 				break;
 			}
 		}
 		if (len == 0)
-			console_out_f (_T("Wrote %08X - %08X (%d bytes) to '%s'\n"),
+			console_out_f (_T("Wrote %08X - %08X (%d bytes) to '%s'.\n"),
 				src2, src2 + len2, len2, name);
 	} else {
-		while (len > 0) {
+		len2 = 0;
+		while (len != 0) {
 			if (fread(&b, 1, 1, fp) != 1) {
-				console_out (_T("Error reading file\n"));
+				if (len > 0)
+					console_out (_T("Unexpected end of file.\n"));
+				len = 0;
 				break;
 			}
 			put_byte (src, b);
 			src++;
-			len--;
+			if (len > 0)
+				len--;
+			len2++;
 		}
 		if (len == 0)
-			console_out_f (_T("Read %08X - %08X (%d bytes) to '%s'\n"),
+			console_out_f (_T("Read %08X - %08X (%d bytes) to '%s'.\n"),
 				src2, src2 + len2, len2, name);
 	}
 	fclose (fp);
 	return;
 S_argh:
-	console_out (_T("S-command needs more arguments!\n"));
+	console_out (_T("Command needs more arguments!\n"));
 }
 
 static void searchmem (TCHAR **cc)
@@ -5198,12 +5212,14 @@ static bool debug_line (TCHAR *input)
 		case 'e': dump_custom_regs (tolower(*inptr) == 'a'); break;
 		case 'r':
 			{
-				if (*inptr == 'c')
-					m68k_dumpcache ();
-				else if (more_params(&inptr))
+				if (*inptr == 'c') {
+					next_char(&inptr);
+					m68k_dumpcache (*inptr == 'd');
+				} else if (more_params(&inptr)) {
 					m68k_modify (&inptr);
-				else
+				} else {
 					m68k_dumpstate (&nextpc);
+				}
 			}
 			break;
 		case 'D': deepcheatsearch (&inptr); break;
@@ -5475,11 +5491,16 @@ static bool debug_line (TCHAR *input)
 				if (*inptr == 'm' && inptr[1] == 'u') {
 					if (currprefs.mmu_model) {
 						inptr += 2;
-						if (more_params (&inptr))
-							debug_mmu_mode = readint (&inptr);
-						else
-							debug_mmu_mode = 0;
-						console_out_f (_T("MMU translation function code = %d\n"), debug_mmu_mode);
+						if (inptr[0] == 'd') {
+							if (currprefs.mmu_model >= 68040)
+								mmu_dump_tables();
+						} else {
+							if (more_params (&inptr))
+								debug_mmu_mode = readint (&inptr);
+							else
+								debug_mmu_mode = 0;
+							console_out_f (_T("MMU translation function code = %d\n"), debug_mmu_mode);
+						}
 					}
 					break;
 				}
