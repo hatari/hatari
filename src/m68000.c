@@ -354,6 +354,7 @@ void M68000_CheckCpuSettings(void)
 	changed_prefs.cpu_memory_cycle_exact = ConfigureParams.System.bCycleExactCpu;
 	changed_prefs.fpu_model = ConfigureParams.System.n_FPUType;
 	changed_prefs.fpu_strict = ConfigureParams.System.bCompatibleFPU;
+	changed_prefs.fpu_softfloat = ConfigureParams.System.bSoftFloatFPU;
 
 	/* Update the MMU model by taking the same value as CPU model */
 	/* MMU is only supported for CPU >=68030, this is later checked in custom.c fixup_cpu() */
@@ -368,9 +369,6 @@ void M68000_CheckCpuSettings(void)
 
 	/* We don't use JIT */
 	currprefs.cachesize = changed_prefs.cachesize = 0;
-
-	/* We don't use SoftFloat yet */
-	currprefs.fpu_softfloat = false;
 
 	/* Always emulate instr/data caches for cpu >= 68020 */
 	changed_prefs.cpu_data_cache = true;

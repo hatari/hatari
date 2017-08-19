@@ -1312,7 +1312,6 @@ static void set_x_funcs (void)
 		x_next_iword = next_iword_cache040;
 		x_next_ilong = next_ilong_cache040;
 		if (currprefs.cpu_data_cache) {
-fprintf ( stderr , "pom0\n" );
 			x_put_long = put_long_cache_040;
 			x_put_word = put_word_cache_040;
 			x_put_byte = put_byte_cache_040;
@@ -1320,7 +1319,6 @@ fprintf ( stderr , "pom0\n" );
 			x_get_word = get_word_cache_040;
 			x_get_byte = get_byte_cache_040;
 		} else {
-fprintf ( stderr , "pom1\n" );
 			x_get_byte = mem_access_delay_byte_read_c040;
 			x_get_word = mem_access_delay_word_read_c040;
 			x_get_long = mem_access_delay_long_read_c040;
