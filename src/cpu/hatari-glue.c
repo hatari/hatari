@@ -104,6 +104,10 @@ int Init680x0(void)
 		default: fprintf (stderr, "Init680x0() : Error, cpu_level unknown\n");
 	}
 
+	/* Only 68040/60 can have 'internal' FPU */
+	if ( ( ConfigureParams.System.n_FPUType == FPU_CPU ) && ( changed_prefs.cpu_model < 68040 ) )
+		ConfigureParams.System.n_FPUType = FPU_NONE;
+
 	changed_prefs.int_no_unimplemented = true;
 	changed_prefs.fpu_no_unimplemented = true;
 	changed_prefs.cpu_compatible = ConfigureParams.System.bCompatibleCpu;

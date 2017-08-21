@@ -485,7 +485,7 @@ void Statusbar_UpdateInfo(void)
 		end = Statusbar_AddString(end, "68882");
 		break;
 	case FPU_CPU:
-		end = Statusbar_AddString(end, "040");
+		end = ( ConfigureParams.System.nCpuLevel == 5 ? Statusbar_AddString(end, "060") : Statusbar_AddString(end, "040") );
 		break;
 	default:
 		*end++ = '-';
