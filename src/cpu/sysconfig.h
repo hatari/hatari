@@ -34,7 +34,7 @@
 
 #ifndef UAE_MINI
 
-//#define DEBUGGER
+#define DEBUGGER
 #define FILESYS /* filesys emulation */
 #define UAE_FILESYS_THREADS
 //#define AUTOCONFIG /* autoconfig support, fast ram, harddrives etc.. */
