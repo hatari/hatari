@@ -14,7 +14,7 @@
   codecs. So far, supported codecs are :
    - BMP : uncompressed RGB images. Very fast to save, very few cpu needed
      but requires a lot of disk bandwidth and a lot of space.
-   - PNG : compressed RBG images. Depending on the compression level, this
+   - PNG : compressed RGB images. Depending on the compression level, this
      can require more cpu and could slow down Hatari. As compressed images
      are much smaller than BMP images, this will require less space on disk
      and much less disk bandwidth. Compression levels 3 or 4 give good
@@ -26,12 +26,22 @@
 
   Sound is saved as 16 bits pcm stereo, using the current Hatari sound output
   frequency. For best accuracy, sound frequency should be a multiple of the
-  video frequency ; this means 44.1 kHz is the best choice for 50/60 Hz video.
+  video frequency (to get an integer number of samples per frame) ; this means
+  44.1 or 48 kHz are the best choices for 50/60 Hz video.
 
   The AVI file is divided into multiple chunks. Hatari will save one video stream
   and one audio stream, so the overall structure of the file is the following :
 
-  RIFF avi
+  Previously, Hatari was limited to a standard AVI file < 4GB (using 32 bit offsets).
+  Since 08/2017, we support the Open DML AVI file format extension, which allows AVI files
+  of any size (using 64 bits offsets). In that case, the AVI file is divided in
+  several RIFF chunks. The 1st chunk is a standard RIFF AVI chunk, the next ones
+  are RIFF AVIX extension chunks. Each RIFF chunk will contain 1 movi chunk
+  and each movi chunk will contain 2 indexes (video and audio).
+  All the movi's indexes are then indexed in a super index stored in the main
+  RIFF AVI file header.
+
+  RIFF AVI
       LIST
 	hdrl
 	  avih
@@ -39,10 +49,15 @@
 	    strl
 	      strh (vids)
 	      strf
+	      indx
 	  LIST
 	    strl
 	      strh (auds)
 	      strf
+	      indx
+	  LIST
+	    odml
+	      dmlh
       LIST
 	INFO
       LIST
@@ -50,7 +65,17 @@
 	  00db
 	  01wb
 	  ...
-      idx1
+	  ix00
+	  ix01
+  RIFF AVIX
+      LIST
+	movi
+	  00db
+	  01wb
+	  ...
+	  ix00
+	  ix01
+  ...
 */
 
 const char AVIRecord_fileid[] = "Hatari avi_record.c : " __DATE__ " " __TIME__;
@@ -80,14 +105,14 @@ const char AVIRecord_fileid[] = "Hatari avi_record.c : " __DATE__ " " __TIME__;
 
 typedef struct
 {
-	Uint8			ChunkName[4];		/* '00db', '01wb', 'idx1' */
+	Uint8			ChunkName[4];		/* '00db', '00dc', '01wb', 'ix00' , 'ix01' */
 	Uint8			ChunkSize[4];
 } AVI_CHUNK;
 
 
 typedef struct
 {
-	Uint8			identifier[4];		/* '00db', '01wb', 'idx1' */
+	Uint8			identifier[4];		/* '00db', '00dc', '01wb', 'ix00' , 'ix01' */
 	Uint8			flags[4];
 	Uint8			offset[4];
 	Uint8			length[4];
@@ -119,6 +144,56 @@ typedef struct
 } AVI_STREAM_HEADER;
 
 
+#define	AVI_SUPER_INDEX_SIZE	256			/* Up to 256 entries in a super index */
+
+#define AVI_INDEX_OF_INDEXES	0x00			/* Possibles values for index_type */
+#define AVI_INDEX_OF_CHUNKS	0x01
+
+typedef struct
+{
+	Uint8			offset[8];		/* 64 bit offset in avi file */
+	Uint8			size[4];
+	Uint8			duration[4];
+} AVI_STREAM_SUPER_INDEX_ENTRY;
+
+typedef struct
+{
+	Uint8			ChunkName[4];		/* 'indx' */
+	Uint8			ChunkSize[4];
+
+	Uint8			longs_per_entry[2];	/* 4 */
+	Uint8			index_sub_type;		/* 0 */
+	Uint8			index_type;		/* must be AVI_INDEX_OF_INDEXES */
+	Uint8			entries_in_use[4];
+	Uint8			chunk_id[4];		/* '00db', '00dc', '01wb' */
+	Uint8			reserved[12];
+	AVI_STREAM_SUPER_INDEX_ENTRY	index[AVI_SUPER_INDEX_SIZE];
+} AVI_STREAM_SUPER_INDEX;
+
+
+typedef struct
+{
+	Uint8			offset[4];		/* 32 bit offset in current 'movi' chunk */
+	Uint8			size[4];
+} AVI_STREAM_INDEX_ENTRY;
+
+typedef struct
+{
+	Uint8			ChunkName[4];		/* 'ix00', 'ix01' */
+	Uint8			ChunkSize[4];
+
+	Uint8			longs_per_entry[2];	/* 2 */
+	Uint8			index_sub_type;		/* must be 0 */
+	Uint8			index_type;		/* must be AVI_INDEX_OF_CHUNKS */
+	Uint8			entries_in_use[4];
+	Uint8			chunk_id[4];		/* '00db', '00dc', '01wb' */
+	Uint8			base_offset[8];		/* all offsets in index array are relative to this */
+	Uint8			reserved[4];
+
+//	AVI_STREAM_INDEX_ENTRY	*index;			/* array size is dynamic, don't include it here */
+} AVI_STREAM_INDEX;
+
+
 typedef struct
 {
 	Uint8			ChunkName[4];		/* 'strf' */
@@ -145,6 +220,7 @@ typedef struct
 	Uint8			Name[4];		/* 'strl' */
 	AVI_STREAM_HEADER	Header;			/* 'strh' */
 	AVI_STREAM_FORMAT_VIDS	Format;			/* 'strf' */
+	AVI_STREAM_SUPER_INDEX	SuperIndex;		/* 'indx' */
 } AVI_STREAM_LIST_VIDS;
 
 
@@ -170,6 +246,7 @@ typedef struct
 	Uint8			Name[4];		/* 'strl' */
 	AVI_STREAM_HEADER	Header;			/* 'strh' */
 	AVI_STREAM_FORMAT_AUDS	Format;			/* 'strf' */
+	AVI_STREAM_SUPER_INDEX	SuperIndex;		/* 'indx' */
 } AVI_STREAM_LIST_AUDS;
 
 
@@ -181,7 +258,7 @@ typedef struct {
 	Uint8			max_bytes_per_second[4];
 	Uint8			padding_granularity[4];
 	Uint8			flags[4];
-	Uint8			total_frames[4];
+	Uint8			total_frames[4];	/* total number of frames in the 1st 'movi' chunk */
 	Uint8			init_frame[4];
 	Uint8			nb_streams[4];
 	Uint8			buffer_size[4];
@@ -201,6 +278,24 @@ typedef struct
 	Uint8			Name[4];		/* 'hdrl' */
 	AVI_STREAM_AVIH		Header;
 } AVI_STREAM_LIST_AVIH;
+
+
+typedef struct {
+	Uint8			ChunkName[4];		/* 'dmlh' */
+	Uint8			ChunkSize[4];
+
+	Uint8			total_frames[4];	/* total number of frames in the whole avi file */
+	Uint8			reserved[244];
+} AVI_STREAM_DMLH;
+
+typedef struct
+{
+	Uint8			ChunkName[4];		/* 'LIST' */
+	Uint8			ChunkSize[4];
+
+	Uint8			Name[4];		/* 'odml' */
+	AVI_STREAM_DMLH		Header;
+} AVI_STREAM_LIST_ODML;
 
 
 typedef struct {
@@ -245,21 +340,34 @@ typedef struct {
   
   AVI_STREAM_LIST_VIDS		VideoStream;
   AVI_STREAM_LIST_AUDS		AudioStream;
-  
+
+  AVI_STREAM_LIST_ODML  	Odml;
+
 } AVI_FILE_HEADER;
 
 
 
 #define	AUDIO_STREAM_WAVE_FORMAT_PCM		0x0001
 
-#define	VIDEO_STREAM_RGB			0x00000000			/* fourcc for BMP video frames */
-#define	VIDEO_STREAM_PNG			"MPNG"				/* fourcc for PNG video frames */
+#define	VIDEO_STREAM_RGB			0x00000000		/* fourcc for BMP video frames */
+#define	VIDEO_STREAM_PNG			"MPNG"			/* fourcc for PNG video frames */
 
-#define	AVIF_HASINDEX				0x00000010			/* index at the end of the file */
-#define	AVIF_ISINTERLEAVED			0x00000100			/* data are interleaved */
-#define	AVIF_TRUSTCKTYPE			0x00000800			/* trust chunk type */
+#define	AVIF_HASINDEX				0x00000010		/* index at the end of the file */
+#define	AVIF_ISINTERLEAVED			0x00000100		/* data are interleaved */
+#define	AVIF_TRUSTCKTYPE			0x00000800		/* trust chunk type */
 
-#define	AVIIF_KEYFRAME				0x00000010			/* frame is a keyframe */
+#define	AVIIF_KEYFRAME				0x00000010		/* frame is a keyframe */
+
+
+#define	AVI_FRAME_INDEX_ALLOC_SIZE		50000			/* How many more entries to alloc each time pAviFrameIndex is full */
+									/* We use 50000 (~800 KB) at a time to avoid allocating too often */
+typedef struct {
+  Uint32	VideoFrame_Pos;
+  Uint32	VideoFrame_Length;
+  Uint32	AudioFrame_Pos;
+  Uint32	AudioFrame_Length;
+} RECORD_AVI_FRAME_INDEX;
+
 
 
 typedef struct {
@@ -286,10 +394,29 @@ typedef struct {
   int		BitCount;
   FILE		*FileOut;				/* file to write to */
   int		TotalVideoFrames;			/* number of recorded video frames */
+  int		TotalAudioFrames;			/* number of recorded audio frames */
   int		TotalAudioSamples;			/* number of recorded audio samples */
-  long		MoviChunkPosStart;			/* as returned by ftell() */
-  long		MoviChunkPosEnd;			/* as returned by ftell() */
+
+  off_t		RiffChunkPosStart;			/* as returned by ftello() */
+  off_t		MoviChunkPosStart;
+
+  int		MoviChunkCount;				/* current 'movi' chunk nbr (0..n) */
+  off_t		VideoFrames_Base_Offset;		/* for video indexes */
+  off_t		AudioFrames_Base_Offset;		/* for audio indexes */
+
+  off_t		SuperIndexChunk_Video_Pos;
+  off_t		SuperIndexChunk_Audio_Pos;
+
+  /* Internal video/audio index, written to file at the end of each 'movi' chunk */
+  RECORD_AVI_FRAME_INDEX	*pAviFrameIndex;	/* array of max AviFrameIndex_AllocSize entries */
+  int			AviFrameIndex_AllocSize;	/* Number of elements allocated in *pAviFrameIndex */
+  int			AviFrameIndex_Count;		/* Number of elements used in *pAviFrameIndex (must be <AllocSize) */
+
 } RECORD_AVI_PARAMS;
+
+
+#define	AVI_MOVI_CHUNK_MAX_SIZE			( 1024 * 1024 * 1024 )	/* Max size in bytes of a 'movi' chunk : we take 1 GB */
+							/* As we have 256 entries in the super index, this gives a max filesize of 256 GB */
 
 
 
@@ -300,10 +427,24 @@ static RECORD_AVI_PARAMS	AviParams;
 static AVI_FILE_HEADER		AviFileHeader;
 
 
+
+
+static void	Avi_StoreU8 ( Uint8 *p , Uint8 val );
 static void	Avi_StoreU16 ( Uint8 *p , Uint16 val );
 static void	Avi_StoreU32 ( Uint8 *p , Uint32 val );
+static void	Avi_StoreU64 ( Uint8 *p , Uint64 val );
 static void	Avi_Store4cc ( Uint8 *p , const char *text );
-static Uint32	Avi_ReadU32 ( Uint8 *p );
+
+static bool	Avi_FrameIndex_GrowIfNeeded ( RECORD_AVI_PARAMS *pAviParams );
+static bool	Avi_FrameIndex_Free ( RECORD_AVI_PARAMS *pAviParams );
+static bool	Avi_FrameIndex_Add ( RECORD_AVI_PARAMS *pAviParams , int type , off_t Frame_Pos , int Frame_Length );
+
+static bool	Avi_WriteMoviIndex ( RECORD_AVI_PARAMS *pAviParams , AVI_FILE_HEADER *pAviFileHeader ,
+				     int type , off_t *pPosition , int *pSize , int *pDuration );
+static bool	Avi_WriteMoviAllIndexes ( RECORD_AVI_PARAMS *pAviParams , AVI_FILE_HEADER *pAviFileHeader );
+
+static bool	Avi_CloseMoviChunk ( RECORD_AVI_PARAMS *pAviParams , AVI_FILE_HEADER *pAviFileHeader );
+static bool	Avi_CreateNewMoviChunk ( RECORD_AVI_PARAMS *pAviParams , AVI_FILE_HEADER *pAviFileHeader );
 
 static int	Avi_GetBmpSize ( int Width , int Height , int BitCount );
 
@@ -314,12 +455,17 @@ static bool	Avi_RecordVideoStream_PNG ( RECORD_AVI_PARAMS *pAviParams );
 static bool	Avi_RecordAudioStream_PCM ( RECORD_AVI_PARAMS *pAviParams , Sint16 pSamples[][2], int SampleIndex, int SampleLength );
 
 static void	Avi_BuildFileHeader ( RECORD_AVI_PARAMS *pAviParams , AVI_FILE_HEADER *pAviFileHeader );
-static bool	Avi_BuildIndex ( RECORD_AVI_PARAMS *pAviParams );
 
 static bool	Avi_StartRecording_WithParams ( RECORD_AVI_PARAMS *pAviParams , char *AviFileName );
 static bool	Avi_StopRecording_WithParams ( RECORD_AVI_PARAMS *pAviParams );
 
 
+
+
+static void	Avi_StoreU8 ( Uint8 *p , Uint8 val )
+{
+	*p++ = val;
+}
 
 
 static void	Avi_StoreU16 ( Uint8 *p , Uint16 val )
@@ -342,23 +488,394 @@ static void	Avi_StoreU32 ( Uint8 *p , Uint32 val )
 }
 
 
+static void	Avi_StoreU64 ( Uint8 *p , Uint64 val )
+{
+	*p++ = val & 0xff;
+	val >>= 8;
+	*p++ = val & 0xff;
+	val >>= 8;
+	*p++ = val & 0xff;
+	val >>= 8;
+	*p++ = val & 0xff;
+	val >>= 8;
+	*p++ = val & 0xff;
+	val >>= 8;
+	*p++ = val & 0xff;
+	val >>= 8;
+	*p++ = val & 0xff;
+	val >>= 8;
+	*p = val & 0xff;
+}
+
+
 static void	Avi_Store4cc ( Uint8 *p , const char *text )
 {
 	memcpy ( p , text , 4 );
 }
 
 
-static Uint32	Avi_ReadU32 ( Uint8 *p )
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Check if our internal index array is full or not (to add new index frames)
+ * If the array is full, we extend it by allocating AVI_FRAME_INDEX_ALLOC_SIZE
+ * new entries in the current array.
+ */
+static	bool	Avi_FrameIndex_GrowIfNeeded ( RECORD_AVI_PARAMS *pAviParams )
 {
-	return (p[3]<<24) + (p[2]<<16) + (p[1]<<8) +p[0];
+	void	*mem;
+
+
+	if ( pAviParams->pAviFrameIndex == NULL )				/* Nothing allocated so far */
+	{
+		mem = malloc ( sizeof ( RECORD_AVI_FRAME_INDEX ) * AVI_FRAME_INDEX_ALLOC_SIZE );
+		if ( mem == NULL )
+			return false;
+		pAviParams->AviFrameIndex_AllocSize = AVI_FRAME_INDEX_ALLOC_SIZE;
+		pAviParams->AviFrameIndex_Count = 0;
+	}
+	else if ( pAviParams->AviFrameIndex_Count == pAviParams->AviFrameIndex_AllocSize )	/* Grow an existing array */
+	{
+		mem = realloc ( pAviParams->pAviFrameIndex ,
+				sizeof ( RECORD_AVI_FRAME_INDEX ) * ( pAviParams->AviFrameIndex_AllocSize + AVI_FRAME_INDEX_ALLOC_SIZE ) );
+		if ( mem == NULL )
+			return false;
+		pAviParams->AviFrameIndex_AllocSize += AVI_FRAME_INDEX_ALLOC_SIZE;
+	}
+	else
+		return true;							/* Enough space for now */
+
+	pAviParams->pAviFrameIndex = mem;
+//fprintf ( stderr , "avi_grow2 max=%d cur=%d\n" , pAviParams->AviFrameIndex_AllocSize , pAviParams->AviFrameIndex_Count );
+	return true;
 }
+
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Free our internal index array
+ */
+static	bool	Avi_FrameIndex_Free ( RECORD_AVI_PARAMS *pAviParams )
+{
+	if ( pAviParams->pAviFrameIndex != NULL )
+		free ( pAviParams->pAviFrameIndex );
+	return true;
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Store the position / length of a frame in our internal index array
+ * If 'type' = 0, we store a video frame, else we store an audio frame
+ * If the last video frame exceed AVI_MOVI_CHUNK_MAX_SIZE, we create a new
+ * 'movi' chunk to handle avi files > 4GB
+ */
+static	bool	Avi_FrameIndex_Add ( RECORD_AVI_PARAMS *pAviParams , int type , off_t Frame_Pos , int Frame_Length )
+{
+//fprintf ( stderr , "avi_add type=%d pos=%ld length=%d count=%d %d %d\n" , type , Frame_Pos , Frame_Length , pAviParams->AviFrameIndex_Count , pAviParams->TotalVideoFrames , pAviParams->TotalAudioFrames );
+	if ( Avi_FrameIndex_GrowIfNeeded ( pAviParams ) == false )
+		return false;
+
+	if ( type == 0 )							/* Video frame */
+	{
+		if ( pAviParams->AviFrameIndex_Count == 0 )			/* The 1st frame will be the base offset for all entries in the index */
+			pAviParams->VideoFrames_Base_Offset = Frame_Pos;
+
+		pAviParams->pAviFrameIndex[ pAviParams->AviFrameIndex_Count ].VideoFrame_Pos = (Uint32)(Frame_Pos - pAviParams->VideoFrames_Base_Offset );
+		pAviParams->pAviFrameIndex[ pAviParams->AviFrameIndex_Count ].VideoFrame_Length = Frame_Length;
+	}
+	else									/* Audio frame */
+	{
+		if ( pAviParams->AviFrameIndex_Count == 0 )			/* The 1st frame will be the base offset for all entries in the index */
+			pAviParams->AudioFrames_Base_Offset = Frame_Pos;
+
+		pAviParams->pAviFrameIndex[ pAviParams->AviFrameIndex_Count ].AudioFrame_Pos = (Uint32)(Frame_Pos - pAviParams->AudioFrames_Base_Offset );
+		pAviParams->pAviFrameIndex[ pAviParams->AviFrameIndex_Count ].AudioFrame_Length = Frame_Length;
+	}
+
+	/* If positions were stored for these audio and video frames, increment index counter for next frames */
+	if ( pAviParams->TotalVideoFrames == pAviParams->TotalAudioFrames )
+	{
+		pAviParams->AviFrameIndex_Count++;
+
+		/* If we exceed the size of a 'movi' chunk with the video frame we just added to the index, */
+		/* we "close" it and we create a new 'movi' chunk */
+		if ( pAviParams->pAviFrameIndex[ pAviParams->AviFrameIndex_Count - 1 ].VideoFrame_Pos > AVI_MOVI_CHUNK_MAX_SIZE )
+			return Avi_CreateNewMoviChunk ( pAviParams , &AviFileHeader );
+	}
+
+	return true;
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Write one index (video or audio)
+ * If 'type' = 0, we write a video index 'ix00', else we write an audio index 'ix01'.
+ * We return the value for Position, Size and Duration that must be stored in the corresponding super index entry
+ *  - for video super index, duration = entries_in_use in the video index (=AviFrameIndex_Count)
+ *  - for audio super index, duration = sum of all AudioFrame_Length
+ */
+static	bool	Avi_WriteMoviIndex ( RECORD_AVI_PARAMS *pAviParams , AVI_FILE_HEADER *pAviFileHeader ,
+				     int type , off_t *pPosition , int *pSize , int *pDuration )
+{
+	AVI_STREAM_INDEX	IndexChunk;
+	int			IndexChunk_Size;
+	AVI_STREAM_INDEX_ENTRY	IndexEntry;
+	int	i;
+
+
+//fprintf ( stderr , "avi_write_index type=%d count=%d %d %d\n" , type , pAviParams->AviFrameIndex_Count , pAviParams->TotalVideoFrames , pAviParams->TotalAudioFrames );
+	memset ( &IndexChunk , 0 , sizeof ( IndexChunk ) );
+
+	*pPosition = ftello ( pAviParams->FileOut );
+
+	/* Write the 'ix0#' chunk header */
+	if ( type == 0 )							/* Video index */
+	{
+		Avi_Store4cc ( IndexChunk.ChunkName , "ix00" );
+		if ( pAviParams->VideoCodec == AVI_RECORD_VIDEO_CODEC_BMP )
+			Avi_Store4cc ( IndexChunk.chunk_id , "00db" );
+		else if ( pAviParams->VideoCodec == AVI_RECORD_VIDEO_CODEC_PNG )
+			Avi_Store4cc ( IndexChunk.chunk_id , "00dc" );
+		Avi_StoreU64 ( IndexChunk.base_offset , pAviParams->VideoFrames_Base_Offset );
+		*pDuration = pAviParams->AviFrameIndex_Count;			/* For video super index, duration=entries_in_use */
+	}
+	else									/* Audio index */
+	{
+		Avi_Store4cc ( IndexChunk.ChunkName , "ix01" );
+		if ( pAviParams->AudioCodec == AVI_RECORD_AUDIO_CODEC_PCM )
+			Avi_Store4cc ( IndexChunk.chunk_id , "01wb" );
+		Avi_StoreU64 ( IndexChunk.base_offset , pAviParams->AudioFrames_Base_Offset );
+		*pDuration = 0;
+	}
+
+	IndexChunk_Size = sizeof ( AVI_STREAM_INDEX ) + sizeof ( AVI_STREAM_INDEX_ENTRY ) * pAviParams->AviFrameIndex_Count - 8;
+	Avi_StoreU32 ( IndexChunk.ChunkSize , IndexChunk_Size );
+	*pSize = IndexChunk_Size+8;						/* For video super index */
+
+	Avi_StoreU16 ( IndexChunk.longs_per_entry , 2 );
+	Avi_StoreU8 ( &(IndexChunk.index_sub_type) , 0 );
+	Avi_StoreU8 ( &(IndexChunk.index_type) , AVI_INDEX_OF_CHUNKS );
+	Avi_StoreU32 ( IndexChunk.entries_in_use , pAviParams->AviFrameIndex_Count );
+
+	/* Write the header */
+	if ( fwrite ( &IndexChunk , sizeof ( AVI_STREAM_INDEX ) , 1 , pAviParams->FileOut ) != 1 )
+	{
+		perror ( "Avi_WriteMoviIndex" );
+		Log_AlertDlg ( LOG_ERROR, "AVI recording : failed to write index header" );
+		return false;
+	}
+
+	/* Write the index array */
+	for ( i=0 ; i<pAviParams->AviFrameIndex_Count ; i++ )
+	{
+		if ( type == 0 )
+		{
+			Avi_StoreU32 ( IndexEntry.offset , pAviParams->pAviFrameIndex[ i ].VideoFrame_Pos );
+			Avi_StoreU32 ( IndexEntry.size , pAviParams->pAviFrameIndex[ i ].VideoFrame_Length );
+		}
+		else
+		{
+			Avi_StoreU32 ( IndexEntry.offset , pAviParams->pAviFrameIndex[ i ].AudioFrame_Pos );
+			Avi_StoreU32 ( IndexEntry.size , pAviParams->pAviFrameIndex[ i ].AudioFrame_Length );
+			*pDuration += pAviParams->pAviFrameIndex[ i ].AudioFrame_Length;	/* For audio super index, duration=sum of all audio frames length */
+		}
+
+		if ( fwrite ( &IndexEntry , sizeof ( IndexEntry ) , 1 , pAviParams->FileOut ) != 1 )
+		{
+			perror ( "Avi_WriteMoviIndex" );
+			Log_AlertDlg ( LOG_ERROR, "AVI recording : failed to write index entry" );
+			return false;
+		}
+	}
+
+	return true;
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Write video and audio indexes at the current file position (after the
+ * 'movi' data) and update the 2 super indexes in the avi header.
+ */
+static	bool	Avi_WriteMoviAllIndexes ( RECORD_AVI_PARAMS *pAviParams , AVI_FILE_HEADER *pAviFileHeader )
+{
+	off_t	IndexPos;
+	int	IndexSize;
+	int	IndexDuration;
+
+
+	/* Write video index + update super index */
+	if ( Avi_WriteMoviIndex ( pAviParams , pAviFileHeader , 0 , &IndexPos , &IndexSize , &IndexDuration ) == false )
+		return false;
+
+	Avi_StoreU64 ( pAviFileHeader->VideoStream.SuperIndex.index[ pAviParams->MoviChunkCount ].offset , IndexPos );
+	Avi_StoreU32 ( pAviFileHeader->VideoStream.SuperIndex.index[ pAviParams->MoviChunkCount ].size , IndexSize );
+	Avi_StoreU32 ( pAviFileHeader->VideoStream.SuperIndex.index[ pAviParams->MoviChunkCount ].duration , IndexDuration );
+	Avi_StoreU32 ( pAviFileHeader->VideoStream.SuperIndex.entries_in_use , pAviParams->MoviChunkCount + 1 );
+
+
+	/* Write audio index + update super index */
+	if ( Avi_WriteMoviIndex ( pAviParams , pAviFileHeader , 1 , &IndexPos , &IndexSize , &IndexDuration ) == false )
+		return false;
+
+	Avi_StoreU64 ( pAviFileHeader->AudioStream.SuperIndex.index[ pAviParams->MoviChunkCount ].offset , IndexPos );
+	Avi_StoreU32 ( pAviFileHeader->AudioStream.SuperIndex.index[ pAviParams->MoviChunkCount ].size , IndexSize );
+	Avi_StoreU32 ( pAviFileHeader->AudioStream.SuperIndex.index[ pAviParams->MoviChunkCount ].duration , IndexDuration );
+	Avi_StoreU32 ( pAviFileHeader->AudioStream.SuperIndex.entries_in_use , pAviParams->MoviChunkCount + 1 );
+
+
+	return true;
+}
+
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Complete the current 'movi' chunk (when starting a new 'movi' chunk' or
+ * when recording is stopped)
+ */
+static	bool	Avi_CloseMoviChunk ( RECORD_AVI_PARAMS *pAviParams , AVI_FILE_HEADER *pAviFileHeader )
+{
+	off_t	Pos_End;
+	Uint8	TempSize[4];
+
+
+//fprintf ( stderr , "avi_close_movi nb=%d fr=%d\n" , pAviParams->MoviChunkCount , pAviParams->TotalVideoFrames );
+	/* Write the index chunks just after the 'movi' data */
+	if ( Avi_WriteMoviAllIndexes ( pAviParams , pAviFileHeader ) == false )
+	{
+		return false;
+	}
+
+
+	Pos_End = ftello ( pAviParams->FileOut );
+
+	/* Update the size of the 'movi' chunk (including the indexes) */
+	Avi_StoreU32 ( TempSize , Pos_End - pAviParams->MoviChunkPosStart - 8 );
+	if ( fseeko ( pAviParams->FileOut , pAviParams->MoviChunkPosStart+4 , SEEK_SET ) != 0 )
+	{
+		perror ( "Avi_CloseMoviChunk" );
+		Log_AlertDlg ( LOG_ERROR, "AVI recording : failed to seek to movi start" );
+		return false;
+	}
+	if ( fwrite ( TempSize , sizeof ( TempSize ) , 1 , pAviParams->FileOut ) != 1 )
+	{
+		perror ( "Avi_CloseMoviChunk" );
+		Log_AlertDlg ( LOG_ERROR, "AVI recording : failed to write movi size" );
+		return false;
+	}
+
+
+	Avi_StoreU32 ( pAviFileHeader->Odml.Header.total_frames , pAviParams->TotalVideoFrames );	/* number of video frames */
+
+	/* If an AVI file has more than 1 'movi' chunk (to support >4 GB file), then AVI header */
+	/* should be updated with only the informations of the 1st chunk (to keep a standard non-odml AVI header) */
+	if ( pAviParams->MoviChunkCount == 0 )
+	{
+		Avi_StoreU32 ( pAviFileHeader->RiffHeader.filesize , Pos_End - 8 );	/* 32 bits, limited to 4GB */
+		Avi_StoreU32 ( pAviFileHeader->AviHeader.Header.total_frames , pAviParams->TotalVideoFrames );	/* number of video frames */
+		Avi_StoreU32 ( pAviFileHeader->VideoStream.Header.data_length , pAviParams->TotalVideoFrames );	/* number of video frames */
+		Avi_StoreU32 ( pAviFileHeader->AudioStream.Header.data_length , pAviParams->TotalAudioSamples );/* number of audio samples */
+	}
+
+	/* For 'riff' / 'movi' chunks 2 ... n */
+	else
+	{
+		Avi_StoreU32 ( TempSize , (Uint32)(Pos_End - pAviParams->RiffChunkPosStart - 8 ) );
+		if ( fseeko ( pAviParams->FileOut , pAviParams->RiffChunkPosStart+4 , SEEK_SET ) != 0 )
+		{
+			perror ( "Avi_CloseMoviChunk" );
+			Log_AlertDlg ( LOG_ERROR, "AVI recording : failed to seek to riff start" );
+			return false;
+		}
+		if ( fwrite ( TempSize , sizeof ( TempSize ) , 1 , pAviParams->FileOut ) != 1 )
+		{
+			perror ( "Avi_CloseMoviChunk" );
+			Log_AlertDlg ( LOG_ERROR, "AVI recording : failed to write riff size" );
+			return false;
+		}
+	}
+
+
+	if ( fseeko ( pAviParams->FileOut , 0 , SEEK_END ) != 0 )
+	{
+		perror ( "Avi_CloseMoviChunk" );
+		Log_AlertDlg ( LOG_ERROR, "AVI recording : failed to seek to end of file" );
+		return false;
+	}
+
+	return true;
+}
+
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Create a new 'movi' chunk. This uses the ODML extended AVIX chunk to
+ * record several 'movi' chunk in a single avi file (allowing to handle
+ * files > 4GB).
+ */
+static	bool	Avi_CreateNewMoviChunk ( RECORD_AVI_PARAMS *pAviParams , AVI_FILE_HEADER *pAviFileHeader )
+{
+	RIFF_HEADER		RiffHeader;
+	AVI_STREAM_LIST_MOVI	ListMovi;
+
+
+	/* Complete current 'movi' chunk + write indexes */
+	if ( Avi_CloseMoviChunk ( pAviParams , pAviFileHeader ) == false )
+	{
+		return false;
+	}
+
+	pAviParams->MoviChunkCount++;
+	pAviParams->AviFrameIndex_Count = 0;
+//fprintf ( stderr , "avi_create_movi nb=%d fr=%d\n" , pAviParams->MoviChunkCount , pAviParams->TotalVideoFrames );
+
+	/* Write a new RIFF / AVIX header */
+	Avi_Store4cc ( RiffHeader.signature , "RIFF" );
+	Avi_StoreU32 ( RiffHeader.filesize , 0 );				/* completed when closing this chunk */
+	Avi_Store4cc ( RiffHeader.type , "AVIX" );
+	pAviParams->RiffChunkPosStart = ftello ( pAviParams->FileOut );
+	if ( fwrite ( &RiffHeader , sizeof ( RiffHeader ) , 1 , pAviParams->FileOut ) != 1 )
+	{
+		perror ( "Avi_CreateNewMoviChunk" );
+		Log_AlertDlg ( LOG_ERROR, "AVI recording : failed to write next riff header" );
+		return false;
+	}
+
+	/* Write a new 'movi' header */
+	Avi_Store4cc ( ListMovi.ChunkName , "LIST" );
+	Avi_StoreU32 ( ListMovi.ChunkSize , 0 );				/* completed when closing this chunk */
+	Avi_Store4cc ( ListMovi.Name , "movi" );
+	pAviParams->MoviChunkPosStart = ftello ( pAviParams->FileOut );
+	if ( fwrite ( &ListMovi , sizeof ( ListMovi ) , 1 , pAviParams->FileOut ) != 1 )
+	{
+		perror ( "Avi_CreateNewMoviChunk" );
+		Log_AlertDlg ( LOG_ERROR, "AVI recording : failed to write next movi header" );
+		return false;
+	}
+
+	return true;
+}
+
+
+
 
 
 static int	Avi_GetBmpSize ( int Width , int Height , int BitCount )
 {
 	return ( Width * Height * BitCount / 8 );						/* bytes in one video frame */
 }
-
 
 
 static bool	Avi_RecordVideoStream_BMP ( RECORD_AVI_PARAMS *pAviParams )
@@ -374,7 +891,7 @@ static bool	Avi_RecordVideoStream_BMP ( RECORD_AVI_PARAMS *pAviParams )
 
 	/* Write the video frame header */
 	Avi_Store4cc ( Chunk.ChunkName , "00db" );				/* stream 0, uncompressed DIB bytes */
-	Avi_StoreU32 ( Chunk.ChunkSize , SizeImage );					/* max size of RGB image */
+	Avi_StoreU32 ( Chunk.ChunkSize , SizeImage );				/* max size of RGB image */
 	if ( fwrite ( &Chunk , sizeof ( Chunk ) , 1 , pAviParams->FileOut ) != 1 )
 	{
 		perror ( "Avi_RecordVideoStream_BMP" );
@@ -433,12 +950,12 @@ static bool	Avi_RecordVideoStream_PNG ( RECORD_AVI_PARAMS *pAviParams )
 {
 	AVI_CHUNK	Chunk;
 	int		SizeImage;
-	long		ChunkPos;
+	off_t		ChunkPos;
 	Uint8	TempSize[4];
 	
 
 	/* Write the video frame header */
-	ChunkPos = ftell ( pAviParams->FileOut );
+	ChunkPos = ftello ( pAviParams->FileOut );
 	Avi_Store4cc ( Chunk.ChunkName , "00dc" );				/* stream 0, compressed DIB bytes */
 	Avi_StoreU32 ( Chunk.ChunkSize , 0 );					/* size of PNG image (-> completed later) */
 	if ( fwrite ( &Chunk , sizeof ( Chunk ) , 1 , pAviParams->FileOut ) != 1 )
@@ -459,13 +976,13 @@ static bool	Avi_RecordVideoStream_PNG ( RECORD_AVI_PARAMS *pAviParams )
 
 	/* Update the size of the video chunk */
 	Avi_StoreU32 ( TempSize , SizeImage );
-	if ( fseek ( pAviParams->FileOut , ChunkPos+4 , SEEK_SET ) != 0 )
+	if ( fseeko ( pAviParams->FileOut , ChunkPos+4 , SEEK_SET ) != 0 )
 		goto png_error;
 	if ( fwrite ( TempSize , sizeof ( TempSize ) , 1 , pAviParams->FileOut ) != 1 )
 		goto png_error;
 
 	/* Go to the end of the video frame data */
-	if ( fseek ( pAviParams->FileOut , 0 , SEEK_END ) != 0 )
+	if ( fseeko ( pAviParams->FileOut , 0 , SEEK_END ) != 0 )
 		goto png_error;
 	return true;
 
@@ -480,6 +997,10 @@ png_error:
 
 bool	Avi_RecordVideoStream ( void )
 {
+	off_t		Pos_Start , Pos_End;
+
+	Pos_Start = ftello ( AviParams.FileOut );
+
 	if ( AviParams.VideoCodec == AVI_RECORD_VIDEO_CODEC_BMP )
 	{
 		if ( Avi_RecordVideoStream_BMP ( &AviParams ) == false )
@@ -501,7 +1022,15 @@ bool	Avi_RecordVideoStream ( void )
 		return false;
 	}
 
-	if (++AviParams.TotalVideoFrames % ( AviParams.Fps / AviParams.Fps_scale ) == 0)
+	Pos_End = ftello ( AviParams.FileOut );
+	AviParams.TotalVideoFrames++;
+
+	/* Store index for this video frame */
+	Pos_Start += 8;								/* skip header */
+	if ( Avi_FrameIndex_Add ( &AviParams , 0 , Pos_Start , (Uint32)( Pos_End - Pos_Start ) ) == false )
+		return false;
+
+	if (AviParams.TotalVideoFrames % ( AviParams.Fps / AviParams.Fps_scale ) == 0)
 	{
 		int secs = AviParams.TotalVideoFrames / ( AviParams.Fps / AviParams.Fps_scale );
 		char str[6] = "00:00";
@@ -554,6 +1083,10 @@ static bool	Avi_RecordAudioStream_PCM ( RECORD_AVI_PARAMS *pAviParams , Sint16 p
 
 bool	Avi_RecordAudioStream ( Sint16 pSamples[][2] , int SampleIndex , int SampleLength )
 {
+	off_t		Pos_Start , Pos_End;
+
+	Pos_Start = ftello ( AviParams.FileOut );
+
 	if ( AviParams.AudioCodec == AVI_RECORD_AUDIO_CODEC_PCM )
 	{
 		if ( Avi_RecordAudioStream_PCM ( &AviParams , pSamples , SampleIndex , SampleLength ) == false )
@@ -566,7 +1099,15 @@ bool	Avi_RecordAudioStream ( Sint16 pSamples[][2] , int SampleIndex , int Sample
 		return false;
 	}
 
+	Pos_End = ftello ( AviParams.FileOut );
+	AviParams.TotalAudioFrames++;
 	AviParams.TotalAudioSamples += SampleLength;
+
+	/* Store index for this audio frame */
+	Pos_Start += 8;								/* skip header */
+	if ( Avi_FrameIndex_Add ( &AviParams , 1 , Pos_Start , (Uint32)( Pos_End - Pos_Start ) ) == false )
+		return false;
+
 	return true;
 }
 
@@ -589,15 +1130,16 @@ static void	Avi_BuildFileHeader ( RECORD_AVI_PARAMS *pAviParams , AVI_FILE_HEADE
 
 	SizeImage = 0;
 	if ( pAviParams->VideoCodec == AVI_RECORD_VIDEO_CODEC_BMP )
-		SizeImage = Avi_GetBmpSize ( Width , Height , BitCount );		/* size of a BMP image */
+		SizeImage = Avi_GetBmpSize ( Width , Height , BitCount );			/* size of a BMP image */
 	else if ( pAviParams->VideoCodec == AVI_RECORD_VIDEO_CODEC_PNG )
-		SizeImage = Avi_GetBmpSize ( Width , Height , BitCount );		/* max size of a PNG image */
+		SizeImage = Avi_GetBmpSize ( Width , Height , BitCount );			/* max size of a PNG image */
 
 
 	/* RIFF / AVI headers */
 	Avi_Store4cc ( pAviFileHeader->RiffHeader.signature , "RIFF" );
 	Avi_StoreU32 ( pAviFileHeader->RiffHeader.filesize , 0 );				/* total file size (-> completed later) */
 	Avi_Store4cc ( pAviFileHeader->RiffHeader.type , "AVI " );
+	pAviParams->RiffChunkPosStart = 0;
 
 	Avi_Store4cc ( pAviFileHeader->AviHeader.ChunkName , "LIST" );
 	Avi_StoreU32 ( pAviFileHeader->AviHeader.ChunkSize , sizeof ( AVI_STREAM_LIST_AVIH )
@@ -622,7 +1164,7 @@ static void	Avi_BuildFileHeader ( RECORD_AVI_PARAMS *pAviParams , AVI_FILE_HEADE
 	Avi_StoreU32 ( pAviFileHeader->AviHeader.Header.length , 0 );				/* reserved */
 
 
-	/* Video Stream */
+	/* Video Stream : strl ( strh + strf + indx ) */
 	Avi_Store4cc ( pAviFileHeader->VideoStream.ChunkName , "LIST" );
 	Avi_StoreU32 ( pAviFileHeader->VideoStream.ChunkSize , sizeof ( AVI_STREAM_LIST_VIDS ) - 8 );
 	Avi_Store4cc ( pAviFileHeader->VideoStream.Name , "strl" );
@@ -681,8 +1223,19 @@ static void	Avi_BuildFileHeader ( RECORD_AVI_PARAMS *pAviParams , AVI_FILE_HEADE
 		Avi_StoreU32 ( pAviFileHeader->VideoStream.Format.clr_important , 0 );		/* no color map */
 	}
 
+	Avi_Store4cc ( pAviFileHeader->VideoStream.SuperIndex.ChunkName , "indx" );
+	Avi_StoreU32 ( pAviFileHeader->VideoStream.SuperIndex.ChunkSize , sizeof ( AVI_STREAM_SUPER_INDEX ) - 8 );
+	Avi_StoreU16 ( pAviFileHeader->VideoStream.SuperIndex.longs_per_entry , 4 );
+	Avi_StoreU8 ( &(pAviFileHeader->VideoStream.SuperIndex.index_sub_type) , 0 );
+	Avi_StoreU8 ( &(pAviFileHeader->VideoStream.SuperIndex.index_type) , AVI_INDEX_OF_INDEXES );
+	Avi_StoreU32 ( pAviFileHeader->VideoStream.SuperIndex.entries_in_use , 0 );		/* number of entries (-> completed later) */
+	if ( pAviParams->VideoCodec == AVI_RECORD_VIDEO_CODEC_BMP )
+		Avi_Store4cc ( pAviFileHeader->VideoStream.SuperIndex.chunk_id , "00db" );
+	else if ( pAviParams->VideoCodec == AVI_RECORD_VIDEO_CODEC_PNG )
+		Avi_Store4cc ( pAviFileHeader->VideoStream.SuperIndex.chunk_id , "00dc" );
 
-	/* Audio Stream */
+
+	/* Audio Stream  : strl ( strh + strf + indx ) */
 	Avi_Store4cc ( pAviFileHeader->AudioStream.ChunkName , "LIST" );
 	Avi_StoreU32 ( pAviFileHeader->AudioStream.ChunkSize , sizeof ( AVI_STREAM_LIST_AUDS ) - 8 );
 	Avi_Store4cc ( pAviFileHeader->AudioStream.Name , "strl" );
@@ -719,74 +1272,28 @@ static void	Avi_BuildFileHeader ( RECORD_AVI_PARAMS *pAviParams , AVI_FILE_HEADE
 		Avi_StoreU16 ( pAviFileHeader->AudioStream.Format.bits_per_sample , 16 );
 		Avi_StoreU16 ( pAviFileHeader->AudioStream.Format.ext_size , 0 );
 	}
+
+	Avi_Store4cc ( pAviFileHeader->AudioStream.SuperIndex.ChunkName , "indx" );
+	Avi_StoreU32 ( pAviFileHeader->AudioStream.SuperIndex.ChunkSize , sizeof ( AVI_STREAM_SUPER_INDEX ) - 8 );
+	Avi_StoreU16 ( pAviFileHeader->AudioStream.SuperIndex.longs_per_entry , 4 );
+	Avi_StoreU8 ( &(pAviFileHeader->AudioStream.SuperIndex.index_sub_type) , 0 );
+	Avi_StoreU8 ( &(pAviFileHeader->AudioStream.SuperIndex.index_type) , AVI_INDEX_OF_INDEXES );
+	Avi_StoreU32 ( pAviFileHeader->AudioStream.SuperIndex.entries_in_use , 0 );			/* number of entries (-> completed later) */
+	if ( pAviParams->AudioCodec == AVI_RECORD_AUDIO_CODEC_PCM )				/* 16 bits stereo pcm */
+		Avi_Store4cc ( pAviFileHeader->AudioStream.SuperIndex.chunk_id , "01wb" );
+
+
+	/* ODML infos */
+	Avi_Store4cc ( pAviFileHeader->Odml.ChunkName , "LIST" );
+	Avi_StoreU32 ( pAviFileHeader->Odml.ChunkSize , sizeof ( AVI_STREAM_LIST_ODML ) - 8 );
+	Avi_Store4cc ( pAviFileHeader->Odml.Name , "odml" );
+
+	Avi_Store4cc ( pAviFileHeader->Odml.Header.ChunkName , "dmlh" );
+	Avi_StoreU32 ( pAviFileHeader->Odml.Header.ChunkSize , sizeof ( AVI_STREAM_DMLH ) - 8 );
+	Avi_StoreU32 ( pAviFileHeader->Odml.Header.total_frames , 0 );				/* number of video frames (-> completed later) */
 }
 
 
-static bool	Avi_BuildIndex ( RECORD_AVI_PARAMS *pAviParams )
-{
-	AVI_CHUNK	Chunk;
-	long		IndexChunkPosStart;
-	long		Pos , PosWrite;
-	Uint8		TempSize[4];
-	AVI_CHUNK_INDEX	ChunkIndex;
-	Uint32		Size;
-
-	if (fseek(pAviParams->FileOut, 0, SEEK_END) != 0)			/* go to the end of the file */
-		goto index_error;
-
-	/* Write the 'idx1' chunk header */
-	IndexChunkPosStart = ftell ( pAviParams->FileOut );
-	Avi_Store4cc ( Chunk.ChunkName , "idx1" );				/* stream 0, uncompressed DIB bytes */
-	Avi_StoreU32 ( Chunk.ChunkSize , 0 );					/* index size (-> completed later) */
-	if ( fwrite ( &Chunk , sizeof ( Chunk ) , 1 , pAviParams->FileOut ) != 1 )
-		goto index_error;
-	PosWrite = ftell ( pAviParams->FileOut );				/* position to start writing indexes */
-
-	/* Go to the first data chunk in the 'movi' chunk */
-	if (fseek(pAviParams->FileOut, pAviParams->MoviChunkPosStart + sizeof(AVI_STREAM_LIST_MOVI), SEEK_SET) != 0)
-		goto index_error;
-	Pos = ftell ( pAviParams->FileOut );
-
-	/* Build the index : we seek/read one data chunk and seek/write the */
-	/* corresponding infos at the end of the index, until we reach the */
-	/* end of the 'movi' chunk. */
-	while ( Pos < pAviParams->MoviChunkPosEnd )
-	{
-		/* Read the header for this data chunk: ChunkName and ChunkSize */
-		if (fread(&Chunk, sizeof(Chunk), 1, pAviParams->FileOut) != 1)
-			goto index_error;
-		Size = Avi_ReadU32 ( Chunk.ChunkSize );
-
-		/* Write the index infos for this chunk */
-		if (fseek(pAviParams->FileOut, PosWrite, SEEK_SET) != 0)
-			goto index_error;
-		Avi_Store4cc ( ChunkIndex.identifier , (char *)Chunk.ChunkName );	/* 00dc, 00db, 01wb, ... */
-		Avi_StoreU32 ( ChunkIndex.flags , AVIIF_KEYFRAME );		/* AVIIF_KEYFRAME */
-		Avi_StoreU32 ( ChunkIndex.offset , Pos - pAviParams->MoviChunkPosStart - 8  );	/* pos relative to 'movi' */
-		Avi_StoreU32 ( ChunkIndex.length , Size );
-		if (fwrite ( &ChunkIndex , sizeof ( ChunkIndex ) , 1 , pAviParams->FileOut ) != 1)
-			goto index_error;
-		PosWrite = ftell ( pAviParams->FileOut );			/* position for the next index */
-
-		/* Go to the next data chunk in the 'movi' chunk */
-		Pos = Pos + sizeof ( Chunk ) + Size;				/* position of the next data chunk */
-		if (fseek(pAviParams->FileOut, Pos, SEEK_SET) != 0)
-			goto index_error;
-	}
-
-	/* Update the size of the 'idx1' chunk */
-	Avi_StoreU32 ( TempSize , PosWrite - IndexChunkPosStart - 8 );
-	if ( fseek ( pAviParams->FileOut , IndexChunkPosStart+4 , SEEK_SET ) != 0 )
-		goto index_error;
-	if ( fwrite ( TempSize , sizeof ( TempSize ) , 1 , pAviParams->FileOut ) != 1 )
-		goto index_error;
-	return true;
-
-index_error:
-	perror ( "Avi_BuildIndex" );
-	Log_AlertDlg ( LOG_ERROR, "AVI recording : failed to create index header" );
-	return false;
-}
 
 
 static bool	Avi_StartRecording_WithParams ( RECORD_AVI_PARAMS *pAviParams , char *AviFileName )
@@ -820,6 +1327,14 @@ static bool	Avi_StartRecording_WithParams ( RECORD_AVI_PARAMS *pAviParams , char
 	{
 		perror ( "AviStartRecording" );
 		Log_AlertDlg ( LOG_ERROR, "AVI recording : failed to open file" );
+		return false;
+	}
+
+	/* Alloc memory to store frames' index */
+	if ( Avi_FrameIndex_GrowIfNeeded ( pAviParams ) == false )
+	{
+		perror ( "AviStartRecording" );
+		Log_AlertDlg ( LOG_ERROR, "AVI recording : failed to alloc index memory" );
 		return false;
 	}
 
@@ -859,9 +1374,9 @@ static bool	Avi_StartRecording_WithParams ( RECORD_AVI_PARAMS *pAviParams , char
 
 	/* Write the MOVI header */
 	Avi_Store4cc ( ListMovi.ChunkName , "LIST" );
-	Avi_StoreU32 ( ListMovi.ChunkSize , 0 );					/* completed when recording stops */
+	Avi_StoreU32 ( ListMovi.ChunkSize , 0 );				/* completed when recording stops */
 	Avi_Store4cc ( ListMovi.Name , "movi" );
-	pAviParams->MoviChunkPosStart = ftell ( pAviParams->FileOut );
+	pAviParams->MoviChunkPosStart = ftello ( pAviParams->FileOut );
 	if ( fwrite ( &ListMovi , sizeof ( ListMovi ) , 1 , pAviParams->FileOut ) != 1 )
 	{
 		perror ( "AviStartRecording" );
@@ -881,49 +1396,25 @@ static bool	Avi_StartRecording_WithParams ( RECORD_AVI_PARAMS *pAviParams , char
 
 static bool	Avi_StopRecording_WithParams ( RECORD_AVI_PARAMS *pAviParams )
 {
-	long	FileSize;
-	Uint8	TempSize[4];
-
-
 	if ( bRecordingAvi == false )						/* no recording ? */
 		return true;
 
-	/* Update the size of the 'movi' chunk */
-	if (fseek(pAviParams->FileOut, 0, SEEK_END) != 0)			/* go to the end of the 'movi' chunk */
-		goto stoprec_error;
-	pAviParams->MoviChunkPosEnd = ftell ( pAviParams->FileOut );
-	Avi_StoreU32 ( TempSize , pAviParams->MoviChunkPosEnd - pAviParams->MoviChunkPosStart - 8 );
 
-	if ( fseek ( pAviParams->FileOut , pAviParams->MoviChunkPosStart+4 , SEEK_SET ) != 0 )
-		goto stoprec_error;
-	if ( fwrite ( TempSize , sizeof ( TempSize ) , 1 , pAviParams->FileOut ) != 1 )
+	/* Complete the current 'movi' chunk */
+	if ( Avi_CloseMoviChunk ( pAviParams , &AviFileHeader ) == false )
 		goto stoprec_error;
 
-	/* Build the index chunk */
-	if ( ! Avi_BuildIndex ( pAviParams ) )
-	{
-		perror ( "AviStopRecording" );
-		Log_AlertDlg ( LOG_ERROR, "AVI recording : failed to build index" );
-		return false;
-	}
-
-	/* Update the avi header (file size, number of output frames, ...) */
-	if (fseek(pAviParams->FileOut, 0, SEEK_END) != 0)			/* go to the end of the file */
-		goto stoprec_error;
-	FileSize = ftell ( pAviParams->FileOut );
-
-	Avi_StoreU32 ( AviFileHeader.RiffHeader.filesize , FileSize - 8 );	/* 32 bits, limited to 4GB */
-	Avi_StoreU32 ( AviFileHeader.AviHeader.Header.total_frames , pAviParams->TotalVideoFrames );	/* number of video frames */
-	Avi_StoreU32 ( AviFileHeader.VideoStream.Header.data_length , pAviParams->TotalVideoFrames );	/* number of video frames */
-	Avi_StoreU32 ( AviFileHeader.AudioStream.Header.data_length , pAviParams->TotalAudioSamples );	/* number of audio samples */
-
-	if ( fseek ( pAviParams->FileOut , 0 , SEEK_SET ) != 0 )
+	/* Write the updated AVI header */
+	if ( fseeko ( pAviParams->FileOut , 0 , SEEK_SET ) != 0 )
 		goto stoprec_error;
 	if ( fwrite ( &AviFileHeader , sizeof ( AviFileHeader ) , 1 , pAviParams->FileOut ) != 1 )
 		goto stoprec_error;
 
 	/* Close the file */
 	fclose ( pAviParams->FileOut );
+
+	/* Free index' memory */
+	Avi_FrameIndex_Free ( pAviParams );
 
 	Log_AlertDlg ( LOG_INFO, "AVI recording has been stopped");
 	bRecordingAvi = false;
@@ -932,6 +1423,7 @@ static bool	Avi_StopRecording_WithParams ( RECORD_AVI_PARAMS *pAviParams )
 
 stoprec_error:
 	fclose (pAviParams->FileOut);
+	Avi_FrameIndex_Free ( pAviParams );
 	perror("AviStopRecording");
 	Log_AlertDlg(LOG_ERROR, "AVI recording : failed to update header");
 	return false;
