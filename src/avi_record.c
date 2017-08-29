@@ -356,8 +356,6 @@ typedef struct {
 #define	AVIF_ISINTERLEAVED			0x00000100		/* data are interleaved */
 #define	AVIF_TRUSTCKTYPE			0x00000800		/* trust chunk type */
 
-#define	AVIIF_KEYFRAME				0x00000010		/* frame is a keyframe */
-
 
 #define	AVI_FRAME_INDEX_ALLOC_SIZE		50000			/* How many more entries to alloc each time pAviFrameIndex is full */
 									/* We use 50000 (~800 KB) at a time to avoid allocating too often */
@@ -437,7 +435,7 @@ static void	Avi_Store4cc ( Uint8 *p , const char *text );
 
 static bool	Avi_FrameIndex_GrowIfNeeded ( RECORD_AVI_PARAMS *pAviParams );
 static bool	Avi_FrameIndex_Free ( RECORD_AVI_PARAMS *pAviParams );
-static bool	Avi_FrameIndex_Add ( RECORD_AVI_PARAMS *pAviParams , int type , off_t Frame_Pos , int Frame_Length );
+static bool	Avi_FrameIndex_Add ( RECORD_AVI_PARAMS *pAviParams , AVI_FILE_HEADER *pAviFileHeader , int type , off_t Frame_Pos , int Frame_Length );
 
 static bool	Avi_WriteMoviIndex ( RECORD_AVI_PARAMS *pAviParams , AVI_FILE_HEADER *pAviFileHeader ,
 				     int type , off_t *pPosition , int *pSize , int *pDuration );
@@ -574,7 +572,7 @@ static	bool	Avi_FrameIndex_Free ( RECORD_AVI_PARAMS *pAviParams )
  * If the last video frame exceed AVI_MOVI_CHUNK_MAX_SIZE, we create a new
  * 'movi' chunk to handle avi files > 4GB
  */
-static	bool	Avi_FrameIndex_Add ( RECORD_AVI_PARAMS *pAviParams , int type , off_t Frame_Pos , int Frame_Length )
+static	bool	Avi_FrameIndex_Add ( RECORD_AVI_PARAMS *pAviParams , AVI_FILE_HEADER *pAviFileHeader , int type , off_t Frame_Pos , int Frame_Length )
 {
 //fprintf ( stderr , "avi_add type=%d pos=%ld length=%d count=%d %d %d\n" , type , Frame_Pos , Frame_Length , pAviParams->AviFrameIndex_Count , pAviParams->TotalVideoFrames , pAviParams->TotalAudioFrames );
 	if ( Avi_FrameIndex_GrowIfNeeded ( pAviParams ) == false )
@@ -605,7 +603,7 @@ static	bool	Avi_FrameIndex_Add ( RECORD_AVI_PARAMS *pAviParams , int type , off_
 		/* If we exceed the size of a 'movi' chunk with the video frame we just added to the index, */
 		/* we "close" it and we create a new 'movi' chunk */
 		if ( pAviParams->pAviFrameIndex[ pAviParams->AviFrameIndex_Count - 1 ].VideoFrame_Pos > AVI_MOVI_CHUNK_MAX_SIZE )
-			return Avi_CreateNewMoviChunk ( pAviParams , &AviFileHeader );
+			return Avi_CreateNewMoviChunk ( pAviParams , pAviFileHeader );
 	}
 
 	return true;
@@ -1027,7 +1025,7 @@ bool	Avi_RecordVideoStream ( void )
 
 	/* Store index for this video frame */
 	Pos_Start += 8;								/* skip header */
-	if ( Avi_FrameIndex_Add ( &AviParams , 0 , Pos_Start , (Uint32)( Pos_End - Pos_Start ) ) == false )
+	if ( Avi_FrameIndex_Add ( &AviParams , &AviFileHeader , 0 , Pos_Start , (Uint32)( Pos_End - Pos_Start ) ) == false )
 		return false;
 
 	if (AviParams.TotalVideoFrames % ( AviParams.Fps / AviParams.Fps_scale ) == 0)
@@ -1105,7 +1103,7 @@ bool	Avi_RecordAudioStream ( Sint16 pSamples[][2] , int SampleIndex , int Sample
 
 	/* Store index for this audio frame */
 	Pos_Start += 8;								/* skip header */
-	if ( Avi_FrameIndex_Add ( &AviParams , 1 , Pos_Start , (Uint32)( Pos_End - Pos_Start ) ) == false )
+	if ( Avi_FrameIndex_Add ( &AviParams , &AviFileHeader , 1 , Pos_Start , (Uint32)( Pos_End - Pos_Start ) ) == false )
 		return false;
 
 	return true;
