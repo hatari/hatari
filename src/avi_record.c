@@ -1030,12 +1030,14 @@ bool	Avi_RecordVideoStream ( void )
 
 	if (AviParams.TotalVideoFrames % ( AviParams.Fps / AviParams.Fps_scale ) == 0)
 	{
-		int secs = AviParams.TotalVideoFrames / ( AviParams.Fps / AviParams.Fps_scale );
-		char str[6] = "00:00";
-		str[0] = '0' + (secs / 60) / 10;
-		str[1] = '0' + (secs / 60) % 10;
-		str[3] = '0' + (secs % 60) / 10;
-		str[4] = '0' + (secs % 60) % 10;
+		char str[20];
+		int secs , hours , mins;
+
+		secs = AviParams.TotalVideoFrames / ( AviParams.Fps / AviParams.Fps_scale );
+		hours = secs / 3600;
+		mins = ( secs % 3600 ) / 60;
+		secs = secs % 60;
+		snprintf ( str , 20 , "%d:%02d:%02d" , hours , mins , secs );
 		Main_SetTitle(str);
 	}
 	return true;
