@@ -405,7 +405,7 @@ static void TOS_CheckSysConfig(void)
 	FPUTYPE oldFpuType = ConfigureParams.System.n_FPUType;
 #endif
 
-	if (((TosVersion == 0x0106 || TosVersion == 0x0162) && !Config_IsMachineSTE())
+	if (((TosVersion == 0x0106 || TosVersion == 0x0162) && ConfigureParams.System.nMachineType != MACHINE_STE)
 	    || (TosVersion == 0x0162 && ConfigureParams.System.nCpuLevel != 0))
 	{
 		Log_AlertDlg(LOG_ERROR, "TOS versions 1.06 and 1.62 are for Atari STE only.\n"
