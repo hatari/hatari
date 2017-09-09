@@ -17,8 +17,6 @@
 
 #define strnicmp strncasecmp
 
-
-#define f_out fprintf
 #define console_out printf
 //#define console_out_f printf
 #define console_out_f(...)	{ if ( console_out_FILE ) fprintf ( console_out_FILE , __VA_ARGS__ ); else printf ( __VA_ARGS__ ); }

@@ -35,3 +35,15 @@ void write_log_standard (const char *fmt, ...)
 #endif
     va_end (ap);
 }
+
+void f_out (void *f, const TCHAR *format, ...)
+{
+	va_list parms;
+
+	if (f == NULL)
+		return;
+
+	va_start (parms, format);
+	vfprintf (f, format, parms);
+	va_end (parms);
+}
