@@ -1,10 +1,4 @@
-
-cmake_minimum_required(VERSION 2.6 FATAL_ERROR)
-
-if(POLICY CMP0026)
-	# Should be removed if cmake_minimum_required >= 2.8.8
-	cmake_policy(SET CMP0026 OLD)
-endif(POLICY CMP0026)
+cmake_minimum_required(VERSION 2.8.8 FATAL_ERROR)
 
 project(Hatari C)
 
