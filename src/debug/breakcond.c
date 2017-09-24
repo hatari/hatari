@@ -45,11 +45,6 @@ const char BreakCond_fileid[] = "Hatari breakcond.c : " __DATE__ " " __TIME__;
 
 #define BC_DEFAULT_DSP_SPACE 'P'
 
-static inline bool is_register_type(value_t vtype) {
-	/* type used for CPU/DSP registers */
-	return (vtype == VALUE_TYPE_REG16 || vtype == VALUE_TYPE_REG32);
-}
-
 typedef struct {
 	bool is_indirect;
 	char dsp_space;	/* DSP has P, X, Y address spaces, zero if not DSP */
