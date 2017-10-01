@@ -998,9 +998,6 @@ static void	Video_InitTimings_Copy ( VIDEO_TIMING *pSrc , VIDEO_TIMING *pDest , 
  */
 void	Video_SetTimings( MACHINETYPE MachineType , VIDEOTIMINGMODE Mode )
 {
-fprintf ( stderr , "Video_SetSystemTimings1 %d %d\n" , MachineType , Mode );
-
-
 	/* Default timing for TT/Falcon (not really important */
 	/* as TT/Falcon don't use cycle precise video effects) */
 	VideoTiming = VIDEO_TIMING_DEFAULT;
@@ -1023,7 +1020,10 @@ fprintf ( stderr , "Video_SetSystemTimings1 %d %d\n" , MachineType , Mode );
 	}
 
 	pVideoTiming = &VideoTimings[ VideoTiming ];
-fprintf ( stderr , "Video_SetSystemTimings2 %d %d -> %d (%s) %d %d %d\n" , MachineType , Mode , VideoTiming , pVideoTiming->VideoTimingName , pVideoTiming->RemoveTopBorder_Pos , pVideoTiming->RemoveBottomBorder_Pos , pVideoTiming->VblVideoCycleOffset );
+
+	Log_Printf(LOG_DEBUG, "Video_SetSystemTimings %d %d -> %d (%s) %d %d %d\n", MachineType, Mode,
+	           VideoTiming, pVideoTiming->VideoTimingName, pVideoTiming->RemoveTopBorder_Pos,
+	           pVideoTiming->RemoveBottomBorder_Pos, pVideoTiming->VblVideoCycleOffset);
 }
 
 

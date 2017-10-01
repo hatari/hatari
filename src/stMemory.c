@@ -263,7 +263,7 @@ void STMemory_SetDefaultConfig(void)
 		if (screensize > limit)
 		{
 			phystop = memtop + limit;
-			fprintf(stderr, "WARNING: too large VDI mode for TOS v3 memory detection to work correctly!\n");
+			Log_Printf(LOG_WARN, "WARNING: too large VDI mode for TOS v3 memory detection to work correctly!\n");
 		}
 		else
 			phystop = STRamEnd;
@@ -274,8 +274,10 @@ void STMemory_SetDefaultConfig(void)
 	STMemory_WriteLong(0x436, memtop);
 	STMemory_WriteLong(0x42e, phystop);
 	if (bUseVDIRes)
-		fprintf(stderr, "VDI mode memtop: 0x%x, phystop: 0x%x (screensize: %d kB, memtop->phystop: %d kB)\n",
-			memtop, phystop, (screensize+511) / 1024, (phystop-memtop+511) / 1024);
+	{
+		Log_Printf(LOG_DEBUG, "VDI mode memtop: 0x%x, phystop: 0x%x (screensize: %d kB, memtop->phystop: %d kB)\n",
+		           memtop, phystop, (screensize+511) / 1024, (phystop-memtop+511) / 1024);
+	}
 
 	/* If possible we don't override memory detection, TOS will do it
 	 * (in that case MMU/MCU can be correctly emulated, and we do nothing
@@ -395,7 +397,8 @@ bool	STMemory_CheckAreaType ( Uint32 addr , int size , int mem_type )
 
 	if ( ( pBank->flags & mem_type ) == 0 )
 	{
-		fprintf(stderr, "pBank flags mismatch: 0x%x & 0x%x (RAM = 0x%x)\n", pBank->flags, mem_type, ABFLAG_RAM);
+		Log_Printf(LOG_ERROR, "pBank flags mismatch: 0x%x & 0x%x (RAM = 0x%x)\n",
+		           pBank->flags, mem_type, ABFLAG_RAM);
 		return false;
 	}
 
@@ -760,11 +763,12 @@ bool	STMemory_RAM_SetBankSize ( int TotalMem , Uint32 *pBank0_Size , Uint32 *pBa
 
 	else
 	{
-		fprintf ( stderr , "Invalid RAM size %d KB for MMU banks\n", TotalMem_KB );
+		Log_Printf(LOG_ERROR, "Invalid RAM size %d KB for MMU banks\n", TotalMem_KB);
 		return false;
 	}
 
-fprintf ( stderr , "STMemory_RAM_SetBankSize total=%d KB bank0=%d KB bank1=%d KB MMU=%x\n" , TotalMem_KB, *pBank0_Size, *pBank1_Size, *pMMU_Conf );
+	Log_Printf(LOG_DEBUG, "STMemory_RAM_SetBankSize total=%d KB bank0=%d KB bank1=%d KB MMU=%x\n",
+	           TotalMem_KB, *pBank0_Size, *pBank1_Size, *pMMU_Conf);
 	*pBank0_Size *= 1024;
 	*pBank1_Size *= 1024;
 	return true;

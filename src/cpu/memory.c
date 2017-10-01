@@ -1541,7 +1541,7 @@ static void fill_ce_banks (int start, int size, int banktype, int cachable )
  */
 void memory_map_Standard_RAM ( Uint32 MMU_Bank0_Size , Uint32 MMU_Bank1_Size )
 {
-fprintf ( stderr , "memory_map_Standard_RAM %d %d %d\n" , STmem_size , MMU_Bank0_Size, MMU_Bank1_Size );
+	Log_Printf(LOG_DEBUG, "memory_map_Standard_RAM %d %d %d\n", STmem_size, MMU_Bank0_Size, MMU_Bank1_Size);
 
 	/* Between 0 and 4MB barrier, we default to void space */
 	map_banks_ce(&VoidMem_bank, 0x00, 0x400000 >> 16, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
@@ -1563,7 +1563,8 @@ fprintf ( stderr , "memory_map_Standard_RAM %d %d %d\n" , STmem_size , MMU_Bank0
 		/* We map memory according to the logical MMU configuration and we will translate addresses on each memory access. */
 		/* RAM bank 0 can never be empty, but RAM bank 1 can be empty. If there's no RAM bank 1, then we must */
 		/* use 'Void' region directly, we don't map it to STmem_bank_MMU */
-fprintf ( stderr , "memory_map_Standard_RAM - enable MMU %d %d %d\n" , STmem_size , MMU_Bank0_Size, MMU_Bank1_Size );
+		Log_Printf(LOG_DEBUG, "memory_map_Standard_RAM - enable MMU %d %d %d\n",
+		           STmem_size, MMU_Bank0_Size, MMU_Bank1_Size);
 
 		/* Map RAM bank 0 to MMU bank 0 */
 		map_banks_ce(&SysMem_bank_MMU, 0x00, 0x10000 >> 16, 0, CE_MEMBANK_CHIP16, CACHE_ENABLE_BOTH);
