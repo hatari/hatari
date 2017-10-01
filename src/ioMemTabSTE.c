@@ -40,9 +40,9 @@ void IoMemTabMegaSTE_CacheCpuCtrl_WriteByte(void)
 {
 	Uint8 busCtrl = IoMem_ReadByte(0xff8e21);
 
-	/* 68000 Frequency changed ? */
-	/* We change freq only in 68000 mode for a normal MegaSTE */
-	if ( ConfigureParams.System.nCpuLevel == 0 )
+	/* 68000 Frequency changed ? We change freq only in 68000 mode for a
+	 * normal MegaSTE, if the user did not request a faster one manually */
+	if (ConfigureParams.System.nCpuLevel == 0 && ConfigureParams.System.nCpuFreq <= 16)
 	{
 		if ((busCtrl & 0x1) == 1) {
 			/* 16 Mhz bus for 68000 */

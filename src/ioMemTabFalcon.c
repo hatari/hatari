@@ -126,10 +126,10 @@ static void IoMemTabFalcon_BusCtrl_WriteByte(void)
 	else
 		IoMem_Init_FalconInSTeBuscompatibilityMode(1);
 
-	/* 68030 Frequency changed ? */
-	/* We change freq only in 68030 mode for a normal Falcon, */
-	/* not if CPU is 68040 or 68060 is used */
-	if ( ConfigureParams.System.nCpuLevel == 3 )
+	/* 68030 Frequency changed ? We change freq only in 68030 mode
+	 * for a normal Falcon, not if CPU is 68040 or 68060 is used,
+	 * or if the user requested a faster frequency manually */
+	if (ConfigureParams.System.nCpuLevel == 3 && ConfigureParams.System.nCpuFreq <= 16)
 	{
 		int Freq_old = nCpuFreqShift;
 
