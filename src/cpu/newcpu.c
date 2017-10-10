@@ -2286,16 +2286,47 @@ static void showea_val(TCHAR *buffer, uae_u16 opcode, uaecptr addr, int size)
 		return;
 	buffer += _tcslen(buffer);
 	if (debug_safe_addr(addr, datasizes[size])) {
+		bool cached = false;
 		switch (size)
 		{
 			case sz_byte:
-			_stprintf(buffer, _T(" [%02x]"), get_byte_debug(addr));
+			{
+				uae_u8 v = get_byte_cache_debug(addr, &cached);
+				uae_u8 v2 = v;
+				if (cached)
+					v2 = get_byte_debug(addr);
+				if (v != v2) {
+					_stprintf(buffer, _T(" [%02x:%02x]"), v, v2);
+				} else {
+					_stprintf(buffer, _T(" [%s%02x]"), cached ? _T("*") : _T(""), v);
+				}
+			}
 			break;
 			case sz_word:
-			_stprintf(buffer, _T(" [%04x]"), get_word_debug(addr));
+			{
+				uae_u16 v = get_word_cache_debug(addr, &cached);
+				uae_u16 v2 = v;
+				if (cached)
+					v2 = get_word_debug(addr);
+				if (v != v2) {
+					_stprintf(buffer, _T(" [%04x:%04x]"), v, v2);
+				} else {
+					_stprintf(buffer, _T(" [%s%04x]"), cached ? _T("*") : _T(""), v);
+				}
+			}
 			break;
 			case sz_long:
-			_stprintf(buffer, _T(" [%08x]"), get_long_debug(addr));
+			{
+				uae_u32 v = get_long_cache_debug(addr, &cached);
+				uae_u32 v2 = v;
+				if (cached)
+					v2 = get_long_debug(addr);
+				if (v != v2) {
+					_stprintf(buffer, _T(" [%08x:%08x]"), v, v2);
+				} else {
+					_stprintf(buffer, _T(" [%s%08x]"), cached ? _T("*") : _T(""), v);
+				}
+			}
 			break;
 			case sz_single:
 			{
@@ -2717,6 +2748,13 @@ STATIC_INLINE int adjust_cycles (int cycles)
 	return cycles + mc;
 }
 
+void m68k_cancel_idle(void)
+{
+#ifndef WINUAE_FOR_HATARI
+	cpu_last_stop_vpos = -1;
+#endif
+}
+
 static void m68k_set_stop(void)
 {
 	if (regs.stopped)
@@ -2724,7 +2762,9 @@ static void m68k_set_stop(void)
 	regs.stopped = 1;
 	set_special(SPCFLAG_STOP);
 #ifndef WINUAE_FOR_HATARI
-	cpu_last_stop_vpos = vpos;
+	if (cpu_last_stop_vpos >= 0) {
+		cpu_last_stop_vpos = vpos;
+	}
 #endif
 }
 
@@ -2733,8 +2773,10 @@ static void m68k_unset_stop(void)
 	regs.stopped = 0;
 	unset_special(SPCFLAG_STOP);
 #ifndef WINUAE_FOR_HATARI
-	cpu_stopped_lines += vpos - cpu_last_stop_vpos;
-	cpu_last_stop_vpos = vpos;
+	if (cpu_last_stop_vpos >= 0) {
+		cpu_stopped_lines += vpos - cpu_last_stop_vpos;
+		cpu_last_stop_vpos = vpos;
+	}
 #endif
 }
 
@@ -5060,7 +5102,7 @@ static int do_specialties (int cycles)
 #endif
 
 #ifndef WINUAE_FOR_HATARI
-	while ((regs.spcflags & SPCFLAG_BLTNASTY) && dmaen (DMA_BLITTER) && cycles > 0 && !currprefs.blitter_cycle_exact) {
+	while ((regs.spcflags & SPCFLAG_BLTNASTY) && dmaen (DMA_BLITTER) && cycles > 0 && ((currprefs.waiting_blits && currprefs.cpu_model >= 68020) || !currprefs.blitter_cycle_exact)) {
 		int c = blitnasty ();
 		if (c < 0) {
 			break;
@@ -6043,9 +6085,8 @@ void cpu_halt (int id)
 			MakeSR ();
 			audio_deactivate ();
 		}
-		set_special(SPCFLAG_CHECK);
 	}
-
+	set_special(SPCFLAG_CHECK);
 #else
 	Dialog_HaltDlg();
 #endif
@@ -6330,6 +6371,8 @@ insretry:
 						wait_memory_cycles();
 					}
 
+					cnt--; // so that we don't get in infinite loop if things go horribly wrong
+					if (!mmu030_retry)
 						break;
 					if (cnt < 0) {
 						cpu_halt (CPU_HALT_CPU_STUCK);
@@ -6917,6 +6960,7 @@ static void m68k_run_2p (void)
 
 					cpu_cycles = (*cpufunctbl[r->opcode])(r->opcode);
 					cpu_cycles = adjust_cycles (cpu_cycles);
+
 				}
 cont:
 #ifdef WINUAE_FOR_HATARI
@@ -10588,6 +10632,60 @@ static void dcache030_maybe_burst(uaecptr addr, struct cache030 *c, int lws)
 	}
 }
 
+static uae_u32 read_dcache030_debug(uaecptr addr, uae_u32 size, uae_u32 fc, bool *cached)
+{
+	static const uae_u32 mask[3] = { 0x000000ff, 0x0000ffff, 0xffffffff };
+	struct cache030 *c1, *c2;
+	int lws1, lws2;
+	uae_u32 tag1, tag2;
+	int aligned = addr & 3;
+	uae_u32 v1, v2;
+	int width = 8 << size;
+	int offset = 8 * aligned;
+	uae_u32 out;
+
+	*cached = false;
+	if (!currprefs.cpu_data_cache) {
+		if (size == 0)
+			return get_byte_debug(addr);
+		if (size == 1)
+			return get_word_debug(addr);
+		return get_long_debug(addr);
+	}
+
+	c1 = getdcache030(dcaches030, addr, &tag1, &lws1);
+	addr &= ~3;
+	if (!c1->valid[lws1] || c1->tag != tag1 || c1->fc != fc) {
+		v1 = get_long_debug(addr);
+	} else {
+		// Cache hit, inhibited caching do not prevent read hits.
+		v1 = c1->data[lws1];
+		*cached = true;
+	}
+
+	// only one long fetch needed?
+	if (width + offset <= 32) {
+		out = v1 >> (32 - (offset + width));
+		out &= mask[size];
+		return out;
+	}
+
+	// no, need another one
+	addr += 4;
+	c2 = getdcache030(dcaches030, addr, &tag2, &lws2);
+	if (!c2->valid[lws2] || c2->tag != tag2 || c2->fc != fc) {
+		v2 = get_long_debug(addr);
+	} else {
+		v2 = c2->data[lws2];
+		*cached = true;
+	}
+
+	uae_u64 v64 = ((uae_u64)v1 << 32) | v2;
+	out = (uae_u32)(v64 >> (64 - (offset + width)));
+	out &= mask[size];
+	return out;
+}
+
 // [HATARI] Define next line to check for 68030 data cache mismatch after every write
 //#define WINUAE_FOR_HATARI_DEBUG_CACHE
 #ifdef WINUAE_FOR_HATARI_DEBUG_CACHE
@@ -11280,6 +11378,39 @@ static int dcache040_fill_line(int index, uae_u32 tag, uaecptr addr)
 	return line;
 }
 
+static uae_u32 read_dcache040_debug(uae_u32 addr, int size, bool *cached)
+{
+	int index;
+	uae_u32 tag;
+	struct cache040 *c;
+	int line;
+	uae_u32 addr_o = addr;
+	uae_u8 cs = mmu_cache_state;
+
+	*cached = false;
+	if (!currprefs.cpu_data_cache)
+		goto nocache;
+	if (!(regs.cacr & 0x80000000))
+		goto nocache;
+
+	addr &= ~15;
+	index = (addr >> 4) & cachedsets04060mask;
+	tag = addr & cachedtag04060mask;
+	c = &dcaches040[index];
+	for (line = 0; line < CACHELINES040; line++) {
+		if (c->valid[line] && c->tag[line] == tag) {
+			// cache hit
+			return dcache040_get_data(addr_o, c, line, size);
+		}
+	}
+nocache:
+	if (size == 0)
+		return get_byte_debug(addr);
+	if (size == 1)
+		return get_word_debug(addr);
+	return get_long_debug(addr);
+}
+
 static uae_u32 read_dcache040(uae_u32 addr, int size, uae_u32 (*fetch)(uaecptr))
 {
 	int index;
@@ -11479,6 +11610,38 @@ uae_u32 next_ilong_cache040(void)
 	uae_u32 r = get_long_icache040(m68k_getpci());
 	m68k_incpci(4);
 	return r;
+}
+
+uae_u32 get_byte_cache_debug(uaecptr addr, bool *cached)
+{
+	*cached = false;
+	if (currprefs.cpu_model == 68030) {
+		return read_dcache030_debug(addr, 0, regs.s ? 5 : 1, cached);
+	} else if (currprefs.cpu_model >= 68040) {
+		return read_dcache040_debug(addr, 0, cached);
+	}
+	return get_byte_debug(addr);
+}
+uae_u32 get_word_cache_debug(uaecptr addr, bool *cached)
+{
+	*cached = false;
+	if (currprefs.cpu_model == 68030) {
+		return read_dcache030_debug(addr, 1, regs.s ? 5 : 1, cached);
+	} else if (currprefs.cpu_model >= 68040) {
+		return read_dcache040_debug(addr, 1, cached);
+	}
+	return get_word_debug(addr);
+}
+
+uae_u32 get_long_cache_debug(uaecptr addr, bool *cached)
+{
+	*cached = false;
+	if (currprefs.cpu_model == 68030) {
+		return read_dcache030_debug(addr, 2, regs.s ? 5 : 1, cached);
+	} else if (currprefs.cpu_model >= 68040) {
+		return read_dcache040_debug(addr, 2, cached);
+	}
+	return get_long_debug(addr);
 }
 
 void check_t0_trace(void)

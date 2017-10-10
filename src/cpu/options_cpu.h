@@ -353,6 +353,7 @@ struct gfx_filterdata
 
 #define MAX_DUPLICATE_EXPANSION_BOARDS 4
 #define MAX_EXPANSION_BOARDS 20
+#define ROMCONFIG_CONFIGTEXT_LEN 256
 struct boardromconfig;
 struct romconfig
 {
@@ -364,7 +365,7 @@ struct romconfig
 	int device_settings;
 	int subtype;
 	void *unitdata;
-	TCHAR configtext[256];
+	TCHAR configtext[ROMCONFIG_CONFIGTEXT_LEN];
 	uae_u16 manufacturer;
 	uae_u8 product;
 	uae_u8 autoconfig[16];
