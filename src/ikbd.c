@@ -72,6 +72,7 @@ const char IKBD_fileid[] = "Hatari ikbd.c : " __DATE__ " " __TIME__;
 /*			(this could happen if a program called the 'RESET' instruction in a loop, then	*/
 /*			we lost the F12 key for example)  (fix endless RESET when doing a warm reset	*/
 /*			(alt+r) during the 'Vodka Demo' by 'Equinox', only solution was to kill Hatari)	*/
+/* 2017/10/27	[TS]	Add Audio Sculpture 6301 program checksum and emulation				*/
 
 
 #include "main.h"
@@ -361,6 +362,10 @@ static void IKBD_CustomCodeHandler_DragonnelsMenu_Read ( void );
 static void IKBD_CustomCodeHandler_DragonnelsMenu_Write ( Uint8 aciabyte );
 static void IKBD_CustomCodeHandler_ChaosAD_Read ( void );
 static void IKBD_CustomCodeHandler_ChaosAD_Write ( Uint8 aciabyte );
+static void IKBD_CustomCodeHandler_AudioSculpture_Color_Read ( void );
+static void IKBD_CustomCodeHandler_AudioSculpture_Mono_Read ( void );
+static void IKBD_CustomCodeHandler_AudioSculpture_Read ( bool ColorMode );
+static void IKBD_CustomCodeHandler_AudioSculpture_Write ( Uint8 aciabyte );
 
 
 static int	MemoryLoadNbBytesTotal = 0;		/* total number of bytes to send with the command 0x20 */
@@ -422,6 +427,24 @@ CustomCodeDefinitions[] =
 		IKBD_CustomCodeHandler_ChaosAD_Read ,
 		IKBD_CustomCodeHandler_ChaosAD_Write ,
 		"Chaos A.D."
+	},
+	{
+		0xbc0c206d,
+		IKBD_CustomCodeHandler_CommonBoot ,
+		91 ,
+		0x119b26ed ,
+		IKBD_CustomCodeHandler_AudioSculpture_Color_Read ,
+		IKBD_CustomCodeHandler_AudioSculpture_Write ,
+		"Audio Sculpture Color"
+	},
+	{
+		0xbc0c206d ,
+		IKBD_CustomCodeHandler_CommonBoot ,
+		91 ,
+		0x63b5f4df ,
+		IKBD_CustomCodeHandler_AudioSculpture_Mono_Read ,
+		IKBD_CustomCodeHandler_AudioSculpture_Write ,
+		"Audio Sculpture Mono"
 	}
 };
 
@@ -1727,6 +1750,24 @@ void IKBD_PressSTKey(Uint8 ScanCode, bool bPress)
 	/* If we're executing a custom IKBD program, call it to process the key event */
 	if ( IKBD_ExeMode && pIKBD_CustomCodeHandler_Read )
 		(*pIKBD_CustomCodeHandler_Read) ();
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Check if a key is pressed in the ScanCodeState array
+ * Return the scancode >= 0 for the first key we find, else return -1
+ * if no key is pressed
+ */
+static int IKBD_CheckPressedKey(void)
+{
+	unsigned int	i;
+
+	for (i=0 ; i<sizeof(ScanCodeState) ; i++ )
+		if ( ScanCodeState[ i ] )
+			return i;
+
+	return -1;
 }
 
 
@@ -3054,6 +3095,68 @@ static void IKBD_CustomCodeHandler_ChaosAD_Write ( Uint8 aciabyte )
 		/* the program will terminate itself and leave Execution mode */
 		if ( aciabyte == 0x08 )
 			IKBD_Boot_ROM ( false );
+	}
+}
+
+/*----------------------------------------------------------------------*/
+/* Audio Sculpture decryption support					*/
+/* The main executable is decrypted with a key extracted from a   	*/
+/* previously uploaded program in the 6301. When the magic value 0x42 	*/
+/* is sent to fffc02 it will output the two bytes 0x4b and 0x13		*/
+/* and exit the custom handler again					*/
+/* [NP] The custom program has 2 parts :				*/
+/*  - 1st part is used during the intro and wait for key 'space' in	*/
+/*    color mode or any key in mono mode (but intro screen in mono	*/
+/*    exits automatically without testing a key !)			*/
+/*  - 2nd part wait to receive $42 from the ACIA, then send $4b and $13	*/
+/*----------------------------------------------------------------------*/
+
+static bool ASmagic = false;
+
+static void IKBD_CustomCodeHandler_AudioSculpture_Color_Read ( void )
+{
+	IKBD_CustomCodeHandler_AudioSculpture_Read ( true );
+}
+
+static void IKBD_CustomCodeHandler_AudioSculpture_Mono_Read ( void )
+{
+	IKBD_CustomCodeHandler_AudioSculpture_Read ( false );
+}
+
+static void IKBD_CustomCodeHandler_AudioSculpture_Read ( bool ColorMode )
+{
+	Uint8		res = 0;
+	static int	ReadCount = 0;
+
+	if ( ASmagic )
+	{
+		ReadCount++;
+		if ( ReadCount == 2 )			/* We're done reading out the 2 bytes, exit the custom handler */
+		{
+			IKBD_Boot_ROM ( false );
+			ASmagic = false;
+			ReadCount = 0;
+		}
+	}
+
+	else if ( ( ( ColorMode == false ) && ( IKBD_CheckPressedKey() >= 0 ) )		/* wait for any key in mono mode */
+		|| ScanCodeState[ 0x39 ] )		/* wait for 'space' key in color mode */
+	{
+		res = 0x39;				/* send scancode for 'space' */
+		IKBD_Send_Byte_Delay ( res , 0 );
+	}
+}
+
+static void IKBD_CustomCodeHandler_AudioSculpture_Write ( Uint8 aciabyte )
+{
+	Uint8		Magic = 0x42;
+	Uint8		Key[] = { 0x4b , 0x13 };
+
+	if ( aciabyte == Magic )
+	{
+		ASmagic = true;
+		IKBD_Send_Byte_Delay ( Key[0] , 0 );
+		IKBD_Send_Byte_Delay ( Key[1] , 0 );
 	}
 }
 
