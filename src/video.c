@@ -411,6 +411,9 @@
 /*			master' when running at 60 Hz)						*/
 /* 2017/05/09	[NP]	Add support for 4 pixel hardscroll propagated on every line (fix	*/
 /*			beescrn4.prg by Paulo Simoes)						*/
+/* 2017/10/30	[NP]	In Video_ResetShifterTimings, use VIDEO_HEIGHT_HBL_MONO only if screen	*/
+/*			is in Mono mode and video resolution=high (fix 'Audio Sculpture' when	*/
+/*			running in Mono mode)							*/
 
 
 const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
@@ -3916,7 +3919,10 @@ static void Video_ResetShifterTimings(void)
 	nCyclesPerLine <<= nCpuFreqShift;
 #endif
 
-	if (bUseHighRes)
+	/* Use VIDEO_HEIGHT_HBL_MONO only when using Mono mode and video resolution = high */
+	/* For other cases (low/med res) in color or Mono mode, we use VIDEO_HEIGHT_HBL_COLOR */
+	/* (fix 'Audio Sculpture' which temporarily switches to low res even when started in Mono mode) */
+	if ( bUseHighRes && ( nScreenRefreshRate == VIDEO_71HZ ) )
 	{
 		nEndHBL = nStartHBL + VIDEO_HEIGHT_HBL_MONO;
 	}
