@@ -863,6 +863,7 @@ void Configuration_Apply(bool bReset)
 	if ( size < 0 )
 		size = 1024;
 	ConfigureParams.Memory.STRamSize_KB = size;
+	STMemory_Init ( ConfigureParams.Memory.STRamSize_KB * 1024 );
 
 	/* Init clocks for this machine */
 	ClocksTimings_InitMachine ( ConfigureParams.System.nMachineType );

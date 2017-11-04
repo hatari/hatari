@@ -1541,7 +1541,7 @@ static void fill_ce_banks (int start, int size, int banktype, int cachable )
  */
 void memory_map_Standard_RAM ( Uint32 MMU_Bank0_Size , Uint32 MMU_Bank1_Size )
 {
-	Log_Printf(LOG_DEBUG, "memory_map_Standard_RAM %d %d %d\n", STmem_size, MMU_Bank0_Size, MMU_Bank1_Size);
+	Log_Printf(LOG_DEBUG, "memory_map_Standard_RAM total=%d ram0=%d ram1=%d mmu0=%d mmu1=%d\n", STmem_size, RAM_Bank0_Size, RAM_Bank1_Size, MMU_Bank0_Size, MMU_Bank1_Size);
 
 	/* Between 0 and 4MB barrier, we default to void space */
 	map_banks_ce(&VoidMem_bank, 0x00, 0x400000 >> 16, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
