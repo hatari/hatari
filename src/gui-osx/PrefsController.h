@@ -117,6 +117,8 @@
 	IBOutlet NSTextField *readRS232FromFile;			// T
 	IBOutlet NSButton *enableMidi;
 	IBOutlet NSTextField *writeMidiToFile;				// T
+	__unsafe_unretained IBOutlet NSPopUpButton *midiInPort;
+	__unsafe_unretained IBOutlet NSPopUpButton *midiOutPort;
 
 	// Other
 

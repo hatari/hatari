@@ -32,6 +32,7 @@
 #include "paths.h"
 #include "keymap.h"
 #include "joy.h"
+#include "midi.h"
 
 // Macros to transfer data between Cocoa controls and Hatari data structures
 // de l'affichage vers la structure  (saveAllControls)
@@ -559,9 +560,50 @@ BOOL flag1, flag2;
 	{
 		SDLKey key = Preferences_KeysForJoysticks[i];
 		const char* szKeyName = SDL_GetKeyName(key);
-		[dropDown addItemWithTitle:[[NSString stringWithCString:szKeyName encoding:NSASCIIStringEncoding] capitalizedString]];	
+		[dropDown addItemWithTitle:[[NSString stringWithCString:szKeyName encoding:NSASCIIStringEncoding] capitalizedString]];
 		dropDown.lastItem.tag = key ;
 	}
+}
+
+
+// ----------------------------------------------------------------------------
+// populate MIDI dropdowns
+//
+- (void)initMidiDropdowns
+{
+	[midiInPort  removeAllItems];
+	[midiOutPort removeAllItems];
+	const char* szinPortName = "Off";
+	[midiInPort  addItemWithTitle:[NSString stringWithCString:szinPortName encoding:NSASCIIStringEncoding]];
+	[midiOutPort addItemWithTitle:[NSString stringWithCString:szinPortName encoding:NSASCIIStringEncoding]];
+	
+	int i = 0;
+	const char* portName;
+	while ((portName = Midi_Host_GetPortName(i++, true)))
+		[midiInPort addItemWithTitle:[NSString stringWithCString:portName encoding:NSASCIIStringEncoding]];
+	i = 0;
+	while ((portName = Midi_Host_GetPortName(i++, false)))
+		[midiOutPort addItemWithTitle:[NSString stringWithCString:portName encoding:NSASCIIStringEncoding]];
+}
+
+// ----------------------------------------------------------------------------
+// ConfigureParams -> GUI controls
+//
+- (void)setMidiDropdowns
+{
+	[midiInPort  selectItemWithTitle:[NSString stringWithCString:ConfigureParams.Midi.sMidiInPortName  encoding:NSASCIIStringEncoding]];
+	[midiOutPort selectItemWithTitle:[NSString stringWithCString:ConfigureParams.Midi.sMidiOutPortName encoding:NSASCIIStringEncoding]];
+}
+
+// ----------------------------------------------------------------------------
+// GUI controls -> ConfigureParams
+//
+- (void)saveMidiDropdowns
+{
+	strncpy(ConfigureParams.Midi.sMidiInPortName,  [[midiInPort  titleOfSelectedItem] UTF8String], FILENAME_MAX);
+	strncpy(ConfigureParams.Midi.sMidiOutPortName, [[midiOutPort titleOfSelectedItem] UTF8String], FILENAME_MAX);
+	ConfigureParams.Midi.sMidiInPortName[FILENAME_MAX-1]  = 0;
+	ConfigureParams.Midi.sMidiOutPortName[FILENAME_MAX-1] = 0;
 }
 
 
@@ -604,7 +646,10 @@ BOOL flag1, flag2;
 			[joystickMode cellWithTag:1].enabled = FALSE ;
 			realJoystick.enabled = FALSE ;
 		}
-		
+
+		// Fill MIDI dropdowns
+		[self initMidiDropdowns];
+
 		bInitialized = true;
 	}
 
@@ -846,10 +891,13 @@ BOOL flag1, flag2;
 	{
 		gemdosImage.stringValue = @"" ; [gemdos setString:@""];
 	}
-	
+
 	// Set the per-joystick controls
 	[self setJoystickControls];
-	
+
+	// -- MIDI
+	[self setMidiDropdowns];
+
 	// Update the controls' enabled states
 	[self updateEnabledStates:self];
 }
@@ -1112,6 +1160,9 @@ BOOL flag1, flag2;
 
 	// Save the per-joystick controls
 	[self saveJoystickControls];
+
+	// -- MIDI
+	[self saveMidiDropdowns];
 }
 
 /*----------------------------------------------------------------------*/
