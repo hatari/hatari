@@ -8,6 +8,7 @@
 */
 const char DlgDevice_fileid[] = "Hatari dlgDevice.c : " __DATE__ " " __TIME__;
 
+#include <assert.h>
 #include "main.h"
 #include "configuration.h"
 #include "dialog.h"
@@ -25,11 +26,21 @@ const char DlgDevice_fileid[] = "Hatari dlgDevice.c : " __DATE__ " " __TIME__;
 #define DEVDLG_RS232INBROWSE   13
 #define DEVDLG_RS232INNAME     14
 #define DEVDLG_MIDIENABLE      16
+#ifndef HAVE_PORTMIDI
 #define DEVDLG_MIDIINBROWSE    18
 #define DEVDLG_MIDIINNAME      19
 #define DEVDLG_MIDIOUTBROWSE   21
 #define DEVDLG_MIDIOUTNAME     22
 #define DEVDLG_EXIT            23
+#else
+#define DEVDLG_PREVIN          18
+#define DEVDLG_NEXTIN          19
+#define DEVDLG_MIDIINNAME      21
+#define DEVDLG_PREVOUT         23
+#define DEVDLG_NEXTOUT         24
+#define DEVDLG_MIDIOUTNAME     26
+#define DEVDLG_EXIT            27
+#endif
 
 
 #define MAX_DLG_FILENAME 46+1
@@ -62,16 +73,46 @@ static SGOBJ devicedlg[] =
 
 	{ SGBOX, 0, 0, 1,15, 50,6, NULL },
  	{ SGCHECKBOX, 0, 0, 2,15, 23,1, "Enable _MIDI emulation" },
+#ifndef HAVE_PORTMIDI
  	{ SGTEXT, 0, 0, 2,17, 26,1, "Read MIDI input from file:" },
  	{ SGBUTTON,   0, 0, 42,17, 8,1, "Brow_se" },
  	{ SGTEXT, 0, 0, 3,18, 46,1, dlgMidiInName },
  	{ SGTEXT, 0, 0, 2,19, 26,1, "Write MIDI output to file:" },
  	{ SGBUTTON,   0, 0, 42,19, 8,1, "Brows_e" },
  	{ SGTEXT, 0, 0, 3,20, 46,1, dlgMidiOutName },
-
+#else
+ 	{ SGTEXT, 0, 0, 5,17, 7,1, "input:" },
+	{ SGBUTTON, 0, 0,  12,17, 3,1, "\x04", SG_SHORTCUT_LEFT },
+	{ SGBUTTON, 0, 0, 15,17, 3,1, "\x03", SG_SHORTCUT_RIGHT },
+	{ SGBOX, 0, 0, 18,17, 32,1, NULL },
+	{ SGTEXT, 0, 0, 19,17, 30,1, dlgMidiInName },
+ 	{ SGTEXT, 0, 0, 4,19, 7,1, "output:" },
+	{ SGBUTTON, 0, 0,  12,19, 3,1, "\x04", SG_SHORTCUT_LEFT },
+	{ SGBUTTON, 0, 0, 15,19, 3,1, "\x03", SG_SHORTCUT_RIGHT },
+	{ SGBOX, 0, 0, 18,19, 32,1, NULL },
+	{ SGTEXT, 0, 0, 19,19, 30,1, dlgMidiOutName },
+#endif
  	{ SGBUTTON, SG_DEFAULT, 0, 16,22, 20,1, "Back to main menu" },
 	{ SGSTOP, 0, 0, 0,0, 0,0, NULL }
 };
+
+
+#ifdef HAVE_PORTMIDI
+#include "midi.h"
+static int midiInput  = -1;
+static int midiOutput = -1;
+
+static void setupMidiControls(void)
+{
+	const char *inportName,*outportName;
+	midiInput  = Midi_Host_GetPortIndex(ConfigureParams.Midi.sMidiInPortName,  true);
+	midiOutput = Midi_Host_GetPortIndex(ConfigureParams.Midi.sMidiOutPortName, false);
+	inportName  = (midiInput  < 0) ? "Off" : ConfigureParams.Midi.sMidiInPortName;
+	outportName = (midiOutput < 0) ? "Off" : ConfigureParams.Midi.sMidiOutPortName;
+	File_ShrinkName(dlgMidiInName,  inportName,  devicedlg[DEVDLG_MIDIINNAME].w);
+	File_ShrinkName(dlgMidiOutName, outportName, devicedlg[DEVDLG_MIDIOUTNAME].w);
+}
+#endif
 
 
 /*-----------------------------------------------------------------------*/
@@ -81,6 +122,9 @@ static SGOBJ devicedlg[] =
 void Dialog_DeviceDlg(void)
 {
 	int but;
+#ifdef HAVE_PORTMIDI
+	const char* portName;
+#endif
 
 	SDLGui_CenterDlg(devicedlg);
 
@@ -103,8 +147,12 @@ void Dialog_DeviceDlg(void)
 		devicedlg[DEVDLG_MIDIENABLE].state |= SG_SELECTED;
 	else
 		devicedlg[DEVDLG_MIDIENABLE].state &= ~SG_SELECTED;
+#ifndef HAVE_PORTMIDI
 	File_ShrinkName(dlgMidiInName, ConfigureParams.Midi.sMidiInFileName, devicedlg[DEVDLG_MIDIINNAME].w);
 	File_ShrinkName(dlgMidiOutName, ConfigureParams.Midi.sMidiOutFileName, devicedlg[DEVDLG_MIDIOUTNAME].w);
+#else
+	setupMidiControls();
+#endif
 
 	/* The devices dialog main loop */
 	do
@@ -131,6 +179,7 @@ void Dialog_DeviceDlg(void)
                                               devicedlg[DEVDLG_RS232INNAME].w,
                                               true);
 			break;
+#ifndef HAVE_PORTMIDI
 		 case DEVDLG_MIDIINBROWSE:              /* Choose a new MIDI file */
 			SDLGui_FileConfSelect("MIDI input:", dlgMidiInName,
                                               ConfigureParams.Midi.sMidiInFileName,
@@ -143,6 +192,42 @@ void Dialog_DeviceDlg(void)
                                               devicedlg[DEVDLG_MIDIOUTNAME].w,
                                               true);
 			break;
+#else
+		case DEVDLG_PREVIN:
+			if (midiInput >= 0)
+			{
+				midiInput--;
+				portName = (midiInput == -1) ? "Off" : Midi_Host_GetPortName(midiInput, true);
+				if (portName)
+					File_ShrinkName(dlgMidiInName, portName, devicedlg[DEVDLG_MIDIINNAME].w);
+			}
+			break;
+		case DEVDLG_NEXTIN:
+			portName = Midi_Host_GetPortName(midiInput + 1, true);
+			if (portName)
+			{
+				midiInput++;
+				File_ShrinkName(dlgMidiInName, portName, devicedlg[DEVDLG_MIDIINNAME].w);
+			}
+			break;
+		case DEVDLG_PREVOUT:
+			if (midiOutput >= 0)
+			{
+				midiOutput--;
+				portName = (midiOutput == -1) ? "Off" : Midi_Host_GetPortName(midiOutput, false);
+				if (portName)
+					File_ShrinkName(dlgMidiOutName, portName, devicedlg[DEVDLG_MIDIOUTNAME].w);
+			}
+			break;
+		case DEVDLG_NEXTOUT:
+			portName = Midi_Host_GetPortName(midiOutput + 1, false);
+			if (portName)
+			{
+				midiOutput++;
+				File_ShrinkName(dlgMidiOutName, portName, devicedlg[DEVDLG_MIDIOUTNAME].w);
+			}
+			break;
+#endif
 		}
 	}
 	while (but != DEVDLG_EXIT && but != SDLGUI_QUIT
@@ -152,4 +237,10 @@ void Dialog_DeviceDlg(void)
 	ConfigureParams.Printer.bEnablePrinting = (devicedlg[DEVDLG_PRNENABLE].state & SG_SELECTED);
 	ConfigureParams.RS232.bEnableRS232 = (devicedlg[DEVDLG_RS232ENABLE].state & SG_SELECTED);
 	ConfigureParams.Midi.bEnableMidi = (devicedlg[DEVDLG_MIDIENABLE].state & SG_SELECTED);
+#ifdef HAVE_PORTMIDI
+	assert(sizeof(dlgMidiInName) <= sizeof(ConfigureParams.Midi.sMidiInPortName));
+	strcpy(ConfigureParams.Midi.sMidiInPortName, dlgMidiInName);
+	assert(sizeof(dlgMidiOutName) <= sizeof(ConfigureParams.Midi.sMidiOutPortName));
+	strcpy(ConfigureParams.Midi.sMidiOutPortName, dlgMidiOutName);
+#endif
 }
