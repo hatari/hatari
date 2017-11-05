@@ -332,9 +332,14 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 
 	/* Did change MIDI settings? */
 	if (current->Midi.bEnableMidi != changed->Midi.bEnableMidi
-	    || ((strcmp(changed->Midi.sMidiOutFileName, current->Midi.sMidiOutFileName)
-	         || strcmp(changed->Midi.sMidiInFileName, current->Midi.sMidiInFileName))
-	        && changed->Midi.bEnableMidi))
+#ifdef HAVE_PORTMIDI
+	    || strcmp(changed->Midi.sMidiOutPortName, current->Midi.sMidiOutPortName)
+	    || strcmp(changed->Midi.sMidiInPortName, current->Midi.sMidiInPortName)
+#else
+	    || strcmp(changed->Midi.sMidiOutFileName, current->Midi.sMidiOutFileName)
+	    || strcmp(changed->Midi.sMidiInFileName, current->Midi.sMidiInFileName)
+#endif
+	    )
 	{
 		Dprintf("- midi>\n");
 		Midi_UnInit();

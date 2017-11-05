@@ -107,8 +107,12 @@ enum {
 	OPT_JOYSTICK4,
 	OPT_JOYSTICK5,
 	OPT_PRINTER,
+#ifdef HAVE_PORTMIDI
+	OPT_MIDI,
+#else
 	OPT_MIDI_IN,
 	OPT_MIDI_OUT,
+#endif
 	OPT_RS232_IN,
 	OPT_RS232_OUT,
 	OPT_DRIVEA,		/* disk options */
@@ -308,10 +312,15 @@ static const opt_t HatariOptions[] = {
 	  "<type>", "Set joystick type (none/keys/real) for given port" },
 	{ OPT_PRINTER,   NULL, "--printer",
 	  "<file>", "Enable printer support and write data to <file>" },
+#ifdef HAVE_PORTMIDI
+	{ OPT_MIDI,   NULL, "--midi",
+	  "<bool>", "Whether to use MIDI (with PortMidi devices)" },
+#else
 	{ OPT_MIDI_IN,   NULL, "--midi-in",
 	  "<file>", "Enable MIDI and use <file> as the input device" },
 	{ OPT_MIDI_OUT,  NULL, "--midi-out",
 	  "<file>", "Enable MIDI and use <file> as the output device" },
+#endif
 	{ OPT_RS232_IN,  NULL, "--rs232-in",
 	  "<file>", "Enable serial port and use <file> as the input device" },
 	{ OPT_RS232_OUT, NULL, "--rs232-out",
@@ -1376,6 +1385,11 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 					&ConfigureParams.Printer.bEnablePrinting);
 			break;
 
+#ifdef HAVE_PORTMIDI
+		case OPT_MIDI:
+			ok = Opt_Bool(argv[++i], OPT_MIDI, &ConfigureParams.Midi.bEnableMidi);
+			break;
+#else
 		case OPT_MIDI_IN:
 			i += 1;
 			ok = Opt_StrCpy(OPT_MIDI_IN, true, ConfigureParams.Midi.sMidiInFileName,
@@ -1389,7 +1403,8 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 					argv[i], sizeof(ConfigureParams.Midi.sMidiOutFileName),
 					&ConfigureParams.Midi.bEnableMidi);
 			break;
-      
+#endif
+
 		case OPT_RS232_IN:
 			i += 1;
 			ok = Opt_StrCpy(OPT_RS232_IN, true, ConfigureParams.RS232.szInFileName,

@@ -517,6 +517,8 @@ static const struct Config_Tag configs_Midi[] =
 	{ "bEnableMidi", Bool_Tag, &ConfigureParams.Midi.bEnableMidi },
 	{ "sMidiInFileName", String_Tag, ConfigureParams.Midi.sMidiInFileName },
 	{ "sMidiOutFileName", String_Tag, ConfigureParams.Midi.sMidiOutFileName },
+	{ "sMidiInPortName", String_Tag, ConfigureParams.Midi.sMidiInPortName },
+	{ "sMidiOutPortName", String_Tag, ConfigureParams.Midi.sMidiOutPortName },
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -730,6 +732,8 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Midi.bEnableMidi = false;
 	strcpy(ConfigureParams.Midi.sMidiInFileName, "/dev/snd/midiC1D0");
 	strcpy(ConfigureParams.Midi.sMidiOutFileName, "/dev/snd/midiC1D0");
+	strcpy(ConfigureParams.Midi.sMidiInPortName, "Off");
+	strcpy(ConfigureParams.Midi.sMidiOutPortName, "Off");
 
 	/* Set defaults for Screen */
 	ConfigureParams.Screen.bFullScreen = false;

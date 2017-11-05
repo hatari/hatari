@@ -295,6 +295,8 @@ typedef struct
   bool bEnableMidi;
   char sMidiInFileName[FILENAME_MAX];
   char sMidiOutFileName[FILENAME_MAX];
+  char sMidiInPortName[FILENAME_MAX];
+  char sMidiOutPortName[FILENAME_MAX];
 } CNF_MIDI;
 
 
