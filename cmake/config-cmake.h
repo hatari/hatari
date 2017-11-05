@@ -9,6 +9,9 @@
 /* Define if you have the PortAudio library */
 #cmakedefine HAVE_PORTAUDIO 1
 
+/* Define if you have the PortMidi library */
+#cmakedefine HAVE_PORTMIDI 1
+
 /* Define if you have the capsimage library */
 #cmakedefine HAVE_CAPSIMAGE 1
 #cmakedefine CAPSIMAGE_VERSION @CAPSIMAGE_VERSION@

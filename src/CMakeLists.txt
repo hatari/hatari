@@ -166,6 +166,10 @@ if(PORTAUDIO_FOUND)
 	target_link_libraries(hatari ${PORTAUDIO_LIBRARY})
 endif(PORTAUDIO_FOUND)
 
+if(PORTMIDI_FOUND)
+	target_link_libraries(hatari ${PORTMIDI_LIBRARY})
+endif(PORTMIDI_FOUND)
+
 if(CAPSIMAGE_FOUND)
 	target_link_libraries(hatari ${CAPSIMAGE_LIBRARY})
 endif(CAPSIMAGE_FOUND)
