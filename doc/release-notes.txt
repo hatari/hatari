@@ -22,6 +22,7 @@ Emulation:
 - Fix STE video counter timings regression
 
 Emulator:
+- MIDI support for Windows & OSX (with PortMidi library)
 - Miscellaneous:
   - Initial patching for ST-Book ROM
   - Fix: rate-limit DSP illegal instruction warnings output

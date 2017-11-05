@@ -241,11 +241,14 @@ Set joystick type (none/keys/real) for given port
 .B \-\-printer <file>
 Enable printer support and write data to <file>
 .TP 
+.B \-\-midi <bool>
+Whether to enable MIDI support (PortMidi only)
+.TP 
 .B \-\-midi\-in <filename>
-Enable MIDI support and write MIDI data to <file>
+Enable MIDI support and write raw MIDI data to <file> (Linux only)
 .TP 
 .B \-\-midi\-out <filename>
-Enable MIDI support and read MIDI data from <file>
+Enable MIDI support and read raw MIDI data from <file> (Linux only)
 .TP 
 .B \-\-rs232\-in <filename>
 Enable serial port support and use <file> as the input device

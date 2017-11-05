@@ -184,6 +184,9 @@ is missing here, please remind me!):
 
 - Miguel Saro (Cocoa Pod) : Some updates to the OS X GUI
 
+- Jari Kleimola : PortMidi support which allows MIDI usage on
+  Windows & OSX + required SDL & OSX GUI changes
+
 
  Code from other projects
  ------------------------
