@@ -858,6 +858,8 @@ static void Symbols_Show(symbol_list_t* list, const char *sorttype)
 	symbol_t *entry, *entries;
 	char symchar;
 	int i;
+	int rows, cols;
+	char line[256];
 	
 	if (!list) {
 		fprintf(stderr, "No symbols!\n");
@@ -872,13 +874,18 @@ static void Symbols_Show(symbol_list_t* list, const char *sorttype)
 	fprintf(stderr, "%s symbols sorted by %s:\n",
 		(list == CpuSymbolsList ? "CPU" : "DSP"), sorttype);
 
+	DebugUI_GetScreenSize(&rows, &cols);
+	if (rows < 20)
+		rows = 20;
+	rows--;
 	for (entry = entries, i = 0; i < list->count; i++, entry++) {
 		symchar = symbol_char(entry->type);
 		fprintf(stderr, "0x%08x %c %s\n",
 			entry->address, symchar, entry->name);
-		if (i && i % 20 == 0) {
+		if ((i + 1) % rows == 0) {
 			fprintf(stderr, "--- q to exit listing, just enter to continue --- ");
-			if (toupper(getchar()) == 'Q') {
+			if (fgets(line, sizeof(line), stdin) == NULL ||
+				toupper(line[0]) == 'Q') {
 				return;
 			}
 		}

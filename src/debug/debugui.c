@@ -818,6 +818,14 @@ static char *DebugUI_GetCommand(char *input)
 	return Str_Trim(readline("> "));
 }
 
+/**
+ * Get readlines idea of the terminal size
+ */
+void DebugUI_GetScreenSize(int *rows, int *cols)
+{
+	rl_get_screen_size(rows, cols);
+}
+
 #else /* !HAVE_LIBREADLINE */
 
 /**
@@ -826,6 +834,21 @@ static char *DebugUI_GetCommand(char *input)
 static void DebugUI_FreeCommand(char *input)
 {
 	free(input);
+}
+
+/**
+ * Get number of lines/columns for terminal output
+ */
+void DebugUI_GetScreenSize(int *rows, int *cols)
+{
+	const char *p;
+
+	*rows = 24;
+	*cols = 80;
+	if ((p = getenv("LINES")) != NULL)
+		*rows = (int)strtol(p, NULL, 0);
+	if ((p = getenv("COLUMS")) != NULL)
+		*cols = (int)strtol(p, NULL, 0);
 }
 
 /**
