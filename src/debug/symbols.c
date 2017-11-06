@@ -34,6 +34,7 @@ const char Symbols_fileid[] = "Hatari symbols.c : " __DATE__ " " __TIME__;
 #include "debugInfo.h"
 #include "evaluate.h"
 #include "configuration.h"
+#include "a.out.h"
 
 typedef struct {
 	char *name;
@@ -46,6 +47,7 @@ typedef struct {
 	int symbols;		/* initial symbol count */
 	symbol_t *addresses;	/* items sorted by address */
 	symbol_t *names;	/* items sorted by symbol name */
+	char *strtab;
 } symbol_list_t;
 
 typedef struct {
@@ -59,6 +61,8 @@ typedef struct {
  */
 #define MAX_SYM_SIZE 32
 
+/* Magic used to denote symbols in GNU-style (a.out) format */
+#define SYMBOL_FORMAT_GNU 0x474E555f
 
 /* TODO: add symbol name/address file names to configuration? */
 static symbol_list_t *CpuSymbolsList;
@@ -322,6 +326,208 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, symtyp
 }
 
 
+/* Utility macro. Get a 16- or 32 bit value from a pointer to
+   unsigned char. */
+#define get16be(c) (((c)[0] << 8) | ((c)[1]))
+#define get32be(c) (((uint32_t)((c)[0]) << 24) | ((uint32_t)((c)[1]) << 16) | ((uint32_t)((c)[2]) << 8) | ((uint32_t)((c)[3])))
+
+/**
+ * Load symbols of given type and the symbol address addresses from
+ * a.out format symbol table, and add given offsets to the addresses:
+ * Return symbols list or NULL for failure.
+ */
+static symbol_list_t* symbols_load_gnu(FILE *fp, prg_section_t *sections, symtype_t gettype, Uint32 tablesize, Uint32 stroff, Uint32 strsize)
+{
+	size_t slots = tablesize / SIZEOF_STRUCT_NLIST;
+	size_t i;
+	size_t strx;
+	unsigned char *p;
+	symbol_t *sym;
+	uint32_t nread;
+	symbol_list_t *list;
+	unsigned char n_type;
+	unsigned char n_other;
+	unsigned short n_desc;
+	int dtypes, locals, ofiles, count, outside;
+	size_t len;
+	static char invalid[] = "<invalid>";
+	static char empty[] = "";
+	prg_section_t *section;
+
+	if (!(list = symbol_list_alloc(slots))) {
+		return NULL;
+	}
+
+	list->strtab = (char *)malloc(tablesize + strsize);
+
+	if (list->strtab == NULL)
+	{
+		symbol_list_free(list);
+		return NULL;
+	}
+
+	nread = fread(list->strtab, tablesize + strsize, 1, fp);
+	if (nread != 1)
+	{
+		perror("ERROR: reading symbols failed");
+		symbol_list_free(list);
+		return NULL;
+	}
+
+	p = (unsigned char *)list->strtab;
+	sym = list->names;
+
+	outside = dtypes = ofiles = locals = count = 0;
+	for (i = 0; i < slots; i++)
+	{
+		strx = get32be(p);
+		p += 4;
+		n_type = *p++;
+		n_other = *p++;
+		n_desc = get16be(p);
+		p += 2;
+		sym->address = get32be(p);
+		p += 4;
+		if (strx)
+		{
+			if (strx >= strsize)
+			{
+				fprintf(stderr, "symbol name index %x out of range\n", (unsigned int)strx);
+				sym->name = invalid;
+			} else
+			{
+				sym->name = list->strtab + strx + stroff;
+			}
+		} else
+		{
+			sym->name = empty;
+		}
+		if (n_type & N_STAB)
+		{
+			dtypes++;
+			continue;
+		}
+		section = NULL;
+		switch (n_type & (N_TYPE|N_EXT))
+		{
+		case N_UNDF:
+		case N_UNDF|N_EXT:
+			/* shouldn't happen here */
+			locals++;
+			continue;
+		case N_ABS:
+		case N_ABS|N_EXT:
+			sym->type = SYMTYPE_ABS;
+			break;
+		case N_TEXT:
+			len = strlen(sym->name);
+			if (strchr(sym->name, '/') || (len > 2 && sym->name[len-2] == '.' && sym->name[len-1] == 'o')) {
+				ofiles++;
+				continue;
+			}
+			sym->type = SYMTYPE_TEXT;
+			section = &(sections[0]);
+			break;
+		case N_TEXT|N_EXT:
+			sym->type = SYMTYPE_TEXT;
+			section = &(sections[0]);
+			break;
+		case N_DATA:
+		case N_DATA|N_EXT:
+			sym->type = SYMTYPE_DATA;
+			section = &(sections[1]);
+			break;
+		case N_BSS:
+		case N_BSS|N_EXT:
+		case N_COMM:
+		case N_COMM|N_EXT:
+			sym->type = SYMTYPE_BSS;
+			section = &(sections[2]);
+			break;
+		case N_FN:
+			ofiles++;
+			continue;
+		case N_SIZE:
+		case N_WARNING:
+		case N_SETA:
+		case N_SETT:
+		case N_SETD:
+		case N_SETB:
+		case N_SETV:
+			dtypes++;
+			continue;
+		case N_WEAKU:
+		case N_WEAKT:
+		case N_WEAKD:
+		case N_WEAKB:
+			locals++;
+			continue;
+		default:
+			fprintf(stderr, "WARNING: ignoring symbol '%s' in slot %u of unknown type 0x%x.\n", sym->name, (unsigned int)i, n_type);
+			continue;
+		}
+		/*
+		 * the value of a common symbol is its size, not its address:
+		 */
+		if (((n_type & N_TYPE) == N_COMM) ||
+			(((n_type & N_EXT) && (n_type & N_TYPE) == N_UNDF && sym->address != 0)))
+		{
+			/* if we ever want to know a symbols size, get that here */
+			fprintf(stderr, "WARNING: ignoring common symbol '%s' in slot %u.\n", sym->name, (unsigned int)i);
+			continue;
+		}
+		if (!(gettype & sym->type)) {
+			continue;
+		}
+		if (sym->name[0] == '.' && sym->name[1] == 'L') {
+			locals++;
+			continue;
+		}
+		if (section) {
+			sym->address += sections[0].offset;
+			if (sym->address > (section->end + 1)) {
+				++outside;
+#if 0
+				/* VBCC has 1 symbol outside of its section */
+				if (outside > 2) {
+					/* potentially buggy version of VBCC vlink used */
+					fprintf(stderr, "ERROR: too many invalid offsets, skipping rest of symbols!\n");
+					symbol_list_free(list);
+					return NULL;
+				}
+#endif
+				fprintf(stderr, "WARNING: ignoring symbol '%s' of %c type in slot %u with invalid offset 0x%x (>= 0x%x).\n",
+					sym->name, symbol_char(sym->type), (unsigned int)i, sym->address, section->end);
+				continue;
+			}
+		}
+		sym++;
+		count++;
+		(void) n_desc;
+		(void) n_other;
+	}
+
+	if (dtypes) {
+		fprintf(stderr, "NOTE: ignored %d debugging symbols.\n", dtypes);
+	}
+	if (locals) {
+		fprintf(stderr, "NOTE: ignored %d unnamed / local symbols (= name starts with '.L').\n", locals);
+	}
+	if (ofiles) {
+		/* object file path names most likely get truncated and
+		 * as result cause unnecessary symbol name conflicts in
+		 * addition to object file addresses conflicting with
+		 * first symbol in the object file.
+		 */
+		fprintf(stderr, "NOTE: ignored %d object file names (= name has '/' or ends in '.o').\n", ofiles);
+	}
+
+	list->symbols = slots;
+	list->count = count;
+	return list;
+}
+
+
 /**
  * Print program header information.
  * Return false for unrecognized symbol table type.
@@ -344,6 +550,9 @@ static bool symbols_print_prg_info(Uint32 tabletype, Uint32 prgflags, Uint16 rel
 	switch (tabletype) {
 	case 0x4D694E54:	/* "MiNT" */
 		info = "GCC/MiNT executable, GST symbol table";
+		break;
+	case SYMBOL_FORMAT_GNU:	/* "GNU_" */
+		info = "GCC/MiNT executable, a.out symbol table";
 		break;
 	case 0x0:
 		info = "TOS executable, DRI / GST symbol table";
@@ -382,6 +591,9 @@ static symbol_list_t* symbols_load_binary(FILE *fp, symtype_t gettype)
 	int offset, reads = 0;
 	Uint16 relocflag;
 	symbol_list_t* symbols;
+	Uint32 symoff = 0;
+	Uint32 stroff = 0;
+	Uint32 strsize = 0;
 
 	/* get TEXT, DATA & BSS section sizes */
 	fseek(fp, 2, SEEK_SET);
@@ -407,6 +619,76 @@ static symbol_list_t* symbols_load_binary(FILE *fp, symtype_t gettype)
 	if (reads != 7) {
 		fprintf(stderr, "ERROR: program header reading failed!\n");
 		return NULL;
+	}
+	/*
+	 * check for GNU-style symbol table in aexec header
+	 */
+	if (tabletype == 0x4D694E54) { /* MiNT */
+		Uint32 magic1, magic2;
+		Uint32 dummy;
+		Uint32 a_text, a_data, a_bss, a_syms, a_entry, a_trsize, a_drsize;
+		Uint32 g_tparel_pos, g_tparel_size, g_stkpos, g_symbol_format;
+
+		reads  = fread(&magic1, sizeof(magic1), 1, fp);
+		magic1 = SDL_SwapBE32(magic1);
+		reads += fread(&magic2, sizeof(magic2), 1, fp);
+		magic2 = SDL_SwapBE32(magic2);
+		if (reads == 2 &&
+			((magic1 == 0x283a001a && magic2 == 0x4efb48fa) || 	/* Original binutils: move.l 28(pc),d4; jmp 0(pc,d4.l) */
+			 (magic1 == 0x203a001a && magic2 == 0x4efb08fa))) {	/* binutils >= 2.18-mint-20080209: move.l 28(pc),d0; jmp 0(pc,d0.l) */
+			reads += fread(&dummy, sizeof(dummy), 1, fp);	/* skip a_info */
+			reads += fread(&a_text, sizeof(a_text), 1, fp);
+			a_text = SDL_SwapBE32(a_text);
+			reads += fread(&a_data, sizeof(a_data), 1, fp);
+			a_data = SDL_SwapBE32(a_data);
+			reads += fread(&a_bss, sizeof(a_bss), 1, fp);
+			a_bss = SDL_SwapBE32(a_bss);
+			reads += fread(&a_syms, sizeof(a_syms), 1, fp);
+			a_syms = SDL_SwapBE32(a_syms);
+			reads += fread(&a_entry, sizeof(a_entry), 1, fp);
+			a_entry = SDL_SwapBE32(a_entry);
+			reads += fread(&a_trsize, sizeof(a_trsize), 1, fp);
+			a_trsize = SDL_SwapBE32(a_trsize);
+			reads += fread(&a_drsize, sizeof(a_drsize), 1, fp);
+			a_drsize = SDL_SwapBE32(a_drsize);
+			reads += fread(&g_tparel_pos, sizeof(g_tparel_pos), 1, fp);
+			g_tparel_pos = SDL_SwapBE32(g_tparel_pos);
+			reads += fread(&g_tparel_size, sizeof(g_tparel_size), 1, fp);
+			g_tparel_size = SDL_SwapBE32(g_tparel_size);
+			reads += fread(&g_stkpos, sizeof(g_stkpos), 1, fp);
+			g_stkpos = SDL_SwapBE32(g_stkpos);
+			reads += fread(&g_symbol_format, sizeof(g_symbol_format), 1, fp);
+			g_symbol_format = SDL_SwapBE32(g_symbol_format);
+			if (g_symbol_format == 0)
+			{
+				tabletype = SYMBOL_FORMAT_GNU;
+			}
+			if ((a_text + (256 - 28)) != textlen)
+				fprintf(stderr, "warning: insonsistent text segment size %08x != %08x\n", textlen, a_text + (256 - 28));
+			if (a_data != datalen)
+				fprintf(stderr, "warning: insonsistent data segment size %08x != %08x\n", datalen, a_data);
+			if (a_bss != bsslen)
+				fprintf(stderr, "warning: insonsistent bss segment size %08x != %08x\n", bsslen, a_bss);
+			/*
+			 * the symbol table size in the GEMDOS header includes the string table,
+			 * the symbol table size in the exec header does not.
+			 */
+			if (tabletype == SYMBOL_FORMAT_GNU)
+			{
+				strsize = tablesize - a_syms;
+				tablesize = a_syms;
+				stroff = a_syms;
+			}
+
+			textlen = a_text + (256 - 28);
+			datalen = a_data;
+			bsslen = a_bss;
+			symoff = 0x100 + /* sizeof(extended exec header) */
+				a_text +
+				a_data +
+				a_trsize +
+				a_drsize;
+		}
 	}
 	if (!symbols_print_prg_info(tabletype, prgflags, relocflag)) {
 		return NULL;
@@ -437,26 +719,37 @@ static symbol_list_t* symbols_load_binary(FILE *fp, symtype_t gettype)
 	sections[2].offset = start;
 	sections[2].end = start + bsslen - 1;
 
-	/* go to start of symbol table */
-	offset = 0x1C + textlen + datalen;
-	if (fseek(fp, offset, SEEK_SET) < 0) {
-		perror("ERROR: seeking to symbol table failed");
-		return NULL;
-	}
-	fprintf(stderr, "Trying to load symbol table at offset 0x%x...\n", offset);
-	symbols = symbols_load_dri(fp, sections, gettype, tablesize);
-
-	if (symbols == INVALID_SYMBOL_OFFSETS && fseek(fp, offset, SEEK_SET) == 0) {
-		fprintf(stderr, "Re-trying with TEXT-relative BSS/DATA section offsets...\n");
-		start = DebugInfo_GetTEXT();
-		sections[1].offset = start;
-		sections[2].offset = start;
-		sections[1].end += textlen;
-		sections[2].end += (textlen + datalen);
+	if (tabletype == SYMBOL_FORMAT_GNU) {
+		/* go to start of symbol table */
+		offset = symoff;
+		if (fseek(fp, offset, SEEK_SET) < 0) {
+			perror("ERROR: seeking to symbol table failed");
+			return NULL;
+		}
+		fprintf(stderr, "Trying to load symbol table at offset 0x%x...\n", offset);
+		symbols = symbols_load_gnu(fp, sections, gettype, tablesize, stroff, strsize);
+	} else {
+		/* go to start of symbol table */
+		offset = 0x1C + textlen + datalen;
+		if (fseek(fp, offset, SEEK_SET) < 0) {
+			perror("ERROR: seeking to symbol table failed");
+			return NULL;
+		}
+		fprintf(stderr, "Trying to load symbol table at offset 0x%x...\n", offset);
 		symbols = symbols_load_dri(fp, sections, gettype, tablesize);
-	}
-	if (symbols == INVALID_SYMBOL_OFFSETS) {
-		return NULL;
+
+		if (symbols == INVALID_SYMBOL_OFFSETS && fseek(fp, offset, SEEK_SET) == 0) {
+			fprintf(stderr, "Re-trying with TEXT-relative BSS/DATA section offsets...\n");
+			start = DebugInfo_GetTEXT();
+			sections[1].offset = start;
+			sections[2].offset = start;
+			sections[1].end += textlen;
+			sections[2].end += (textlen + datalen);
+			symbols = symbols_load_dri(fp, sections, gettype, tablesize);
+		}
+		if (symbols == INVALID_SYMBOL_OFFSETS) {
+			return NULL;
+		}
 	}
 	return symbols;
 }
@@ -638,8 +931,13 @@ static void Symbols_Free(symbol_list_t* list)
 		return;
 	}
 	assert(list->count);
-	for (i = 0; i < list->count; i++) {
-		free(list->names[i].name);
+	if (list->strtab) {
+		free(list->strtab);
+		list->strtab = NULL;
+	} else {
+		for (i = 0; i < list->count; i++) {
+			free(list->names[i].name);
+		}
 	}
 	free(list->addresses);
 	free(list->names);
