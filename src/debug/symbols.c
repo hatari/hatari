@@ -86,8 +86,6 @@ static int symbols_by_address(const void *s1, const void *s2)
 	if (addr1 > addr2) {
 		return 1;
 	}
-	fprintf(stderr, "WARNING: symbols '%s' & '%s' have the same 0x%x address.\n",
-		((const symbol_t*)s1)->name, ((const symbol_t*)s2)->name, addr1);
 	return 0;
 }
 
@@ -101,13 +99,42 @@ static int symbols_by_name(const void *s1, const void *s2)
 	int ret;
 
 	ret = strcmp(name1, name2);
-	if (!ret) {
-		fprintf(stderr, "WARNING: addresses 0x%x & 0x%x have the same '%s' name.\n",
-			((const symbol_t*)s1)->address, ((const symbol_t*)s2)->address, name1);
-	}
 	return ret;
 }
 
+/**
+ * check for duplicate addresses in symbol list
+ */
+static void symbols_check_addresses(const symbol_t *syms, int count)
+{
+	int i, j;
+
+	for (i = 0; i < (count - 1); i++)
+	{
+		for (j = i + 1; j < count && syms[i].address == syms[j].address; j++) {
+			fprintf(stderr, "WARNING: symbols '%s' & '%s' have the same 0x%x address.\n",
+				syms[i].name, syms[j].name, syms[i].address);
+			i = j;
+		}
+	}
+}
+
+/**
+ * check for duplicate names in symbol list
+ */
+static void symbols_check_names(const symbol_t *syms, int count)
+{
+	int i, j;
+
+	for (i = 0; i < (count - 1); i++)
+	{
+		for (j = i + 1; j < count && strcmp(syms[i].name, syms[j].name) == 0; j++) {
+			fprintf(stderr, "WARNING: addresses 0x%x & 0x%x have the same '%s' name.\n",
+				syms[i].address, syms[j].address, syms[i].name);
+			i = j;
+		}
+	}
+}
 
 /**
  * Allocate symbol list & names for given number of items.
@@ -588,6 +615,12 @@ static symbol_list_t* Symbols_Load(const char *filename, Uint32 *offsets, Uint32
 	/* sort both lists, with different criteria */
 	qsort(list->addresses, list->count, sizeof(symbol_t), symbols_by_address);
 	qsort(list->names, list->count, sizeof(symbol_t), symbols_by_name);
+
+	/* check for duplicate addresses */
+	symbols_check_addresses(list->addresses, list->count);
+
+	/* check for duplicate names */
+	symbols_check_names(list->names, list->count);
 
 	fprintf(stderr, "Loaded %d symbols from '%s'.\n", list->count, filename);
 	return list;
