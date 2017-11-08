@@ -78,10 +78,10 @@ typedef struct
 static IPF_STRUCT	IPF_State;			/* All variables related to the IPF support */
 
 
+static bool	IPF_Eject_RawStreamImage ( int Drive );
 #ifdef HAVE_CAPSIMAGE
 static char	*IPF_FilenameFindTrackSide (char *FileName);
 static bool	IPF_Insert_RawStreamImage ( int Drive );
-static bool	IPF_Eject_RawStreamImage ( int Drive );
 
 static void	IPF_CallBack_Trk ( struct CapsFdc *pc , CapsULong State );
 static void	IPF_CallBack_Irq ( struct CapsFdc *pc , CapsULong State );
@@ -113,19 +113,21 @@ void IPF_MemorySnapShot_Capture(bool bSave)
 		StructSize = sizeof ( IPF_State );	/* 0 if HAVE_CAPSIMAGE is not defined */
 		MemorySnapShot_Store(&StructSize, sizeof(StructSize));
 		if ( StructSize > 0 )
+		{
 			MemorySnapShot_Store(&IPF_State, sizeof(IPF_State));
 
-		/* Save the content of IPF_RawStreamImage[] */
-		for ( Drive=0 ; Drive < MAX_FLOPPYDRIVES ; Drive++ )
-			for ( Track=0 ; Track<IPF_MAX_TRACK_RAW_STREAM_IMAGE ; Track++ )
-				for ( Side=0 ; Side<IPF_MAX_SIDE_RAW_STREAM_IMAGE ; Side++ )
-				{
-					TrackSize = IPF_RawStreamImage[ Drive ][ Track ][Side].TrackSize;
-//					fprintf ( stderr , "IPF : save raw stream drive=%d track=%d side=%d : %d\n" , Drive , Track , Side , TrackSize );
-					MemorySnapShot_Store(&TrackSize, sizeof(TrackSize));
-					if ( TrackSize > 0 )
-						MemorySnapShot_Store(IPF_RawStreamImage[ Drive ][ Track ][Side].TrackData, TrackSize);
-				}
+			/* Save the content of IPF_RawStreamImage[] */
+			for ( Drive=0 ; Drive < MAX_FLOPPYDRIVES ; Drive++ )
+				for ( Track=0 ; Track<IPF_MAX_TRACK_RAW_STREAM_IMAGE ; Track++ )
+					for ( Side=0 ; Side<IPF_MAX_SIDE_RAW_STREAM_IMAGE ; Side++ )
+					{
+						TrackSize = IPF_RawStreamImage[ Drive ][ Track ][Side].TrackSize;
+//						fprintf ( stderr , "IPF : save raw stream drive=%d track=%d side=%d : %d\n" , Drive , Track , Side , TrackSize );
+						MemorySnapShot_Store(&TrackSize, sizeof(TrackSize));
+						if ( TrackSize > 0 )
+							MemorySnapShot_Store(IPF_RawStreamImage[ Drive ][ Track ][Side].TrackData, TrackSize);
+					}
+		}
 	}
 
 	else						/* Restoring snapshot */
@@ -242,6 +244,7 @@ bool IPF_FileNameIsIPF(const char *pszFileName, bool bAllowGZ)
  * a pointer to this string.
  * If not found, we return NULL
  */
+#ifdef HAVE_CAPSIMAGE
 static char *IPF_FilenameFindTrackSide (char *FileName)
 {
 	char	ext[] = ".raw";
@@ -266,6 +269,7 @@ static char *IPF_FilenameFindTrackSide (char *FileName)
 
 	return NULL;
 }
+#endif
 
 
 /*-----------------------------------------------------------------------*/
@@ -651,9 +655,12 @@ bool	IPF_Eject ( int Drive )
 /*
  * When ejecting a RAW stream image we must free all the individual tracks
  */
-#ifdef HAVE_CAPSIMAGE
 static bool	IPF_Eject_RawStreamImage ( int Drive )
 {
+#ifndef HAVE_CAPSIMAGE
+	return true;
+
+#else
 	int	Track , Side;
 
 return true;						/* This function is not used for now, always return true */
@@ -670,8 +677,8 @@ return true;						/* This function is not used for now, always return true */
 		}
 
 	return true;
-}
 #endif
+}
 
 
 
