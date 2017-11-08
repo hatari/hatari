@@ -11,6 +11,7 @@ const char DebugDsp_fileid[] = "Hatari debugdsp.c : " __DATE__ " " __TIME__;
 
 #include <stdio.h>
 #include <ctype.h>
+#include <limits.h>
 
 #include "config.h"
 
@@ -103,12 +104,18 @@ error_msg:
 /**
  * Check whether given address matches any DSP symbol and whether
  * there's profiling information available for it.  If yes, show it.
+ * 
+ * @return true if symbol was shown, false otherwise
  */
-static void DebugDsp_ShowAddressInfo(Uint16 addr, FILE *fp)
+static bool DebugDsp_ShowAddressInfo(Uint16 addr, FILE *fp)
 {
 	const char *symbol = Symbols_GetByDspAddress(addr);
 	if (symbol)
+	{
 		fprintf(fp, "%s:\n", symbol);
+		return true;
+	}
+	return false;
 }
 
 
@@ -119,6 +126,7 @@ int DebugDsp_DisAsm(int nArgc, char *psArgs[])
 {
 	Uint32 lower, upper;
 	Uint16 dsp_disasm_upper = 0;
+	int shown, lines = INT_MAX;
 
 	if (!bDspEnabled)
 	{
@@ -164,15 +172,13 @@ int DebugDsp_DisAsm(int nArgc, char *psArgs[])
 	}
 	if (!dsp_disasm_upper)
 	{
-		int lines = ConfigureParams.Debugger.nDisasmLines;
-		if ( dsp_disasm_addr < (0xFFFF - lines))
-			dsp_disasm_upper = dsp_disasm_addr + lines;
-		else
-			dsp_disasm_upper = 0xFFFF;
+		lines = DebugUI_GetPageLines(ConfigureParams.Debugger.nDisasmLines, 8);
+		dsp_disasm_upper = 0xFFFF;
 	}
 	fprintf(debugOutput, "DSP disasm 0x%hx-0x%hx:\n", dsp_disasm_addr, dsp_disasm_upper);
-	while (dsp_disasm_addr < dsp_disasm_upper) {
-		DebugDsp_ShowAddressInfo(dsp_disasm_addr, debugOutput);
+	for (shown = 1; shown < lines && dsp_disasm_addr < dsp_disasm_upper; shown++) {
+		if (DebugDsp_ShowAddressInfo(dsp_disasm_addr, debugOutput))
+			shown++;
 		dsp_disasm_addr = DSP_DisasmAddress(debugOutput, dsp_disasm_addr, dsp_disasm_addr);
 	}
 	fflush(debugOutput);
@@ -260,7 +266,7 @@ int DebugDsp_MemDump(int nArgc, char *psArgs[])
 
 	if (!dsp_memdump_upper)
 	{
-		int lines = ConfigureParams.Debugger.nMemdumpLines;
+		int lines = DebugUI_GetPageLines(ConfigureParams.Debugger.nMemdumpLines, 8);
 		if ( dsp_memdump_addr < (0xFFFF - lines))
 			dsp_memdump_upper = dsp_memdump_addr + lines;
 		else

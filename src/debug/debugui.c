@@ -821,7 +821,7 @@ static char *DebugUI_GetCommand(char *input)
 /**
  * Get readlines idea of the terminal size
  */
-void DebugUI_GetScreenSize(int *rows, int *cols)
+static void DebugUI_GetScreenSize(int *rows, int *cols)
 {
 	rl_get_screen_size(rows, cols);
 }
@@ -839,7 +839,7 @@ static void DebugUI_FreeCommand(char *input)
 /**
  * Get number of lines/columns for terminal output
  */
-void DebugUI_GetScreenSize(int *rows, int *cols)
+static void DebugUI_GetScreenSize(int *rows, int *cols)
 {
 	const char *p;
 
@@ -876,6 +876,29 @@ static char *DebugUI_GetCommand(char *input)
 }
 
 #endif /* !HAVE_LIBREADLINE */
+
+/**
+ * How many lines to "page" when user invokes calling command.
+ *
+ * If config value is >=0, use that.  If it's negative, get number of lines
+ * from screensize. If even that's not defined, fall back to default value.
+ *
+ * @return Number of lines to output at the time.
+ */
+int DebugUI_GetPageLines(int config, int defvalue)
+{
+	int rows, cols;
+
+	if (config >= 0) {
+		return config;
+	}
+	DebugUI_GetScreenSize(&rows, &cols);
+	/* leave 1 line for pager prompt */
+	if (--rows > 0) {
+		return rows;
+	}
+	return defvalue;
+}
 
 
 static const dbgcommand_t uicommand[] =

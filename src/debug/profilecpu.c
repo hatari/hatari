@@ -22,6 +22,7 @@ const char Profilecpu_fileid[] = "Hatari profilecpu.c : " __DATE__ " " __TIME__;
 #include "68kDisass.h"
 #include "profile.h"
 #include "profile_priv.h"
+#include "debug_priv.h"
 #include "stMemory.h"
 #include "symbols.h"
 #include "tos.h"
@@ -331,7 +332,7 @@ void Profile_CpuShowCaches(void) {
 Uint32 Profile_CpuShowAddresses(Uint32 lower, Uint32 upper, FILE *out)
 {
 	int oldcols[DISASM_COLUMNS], newcols[DISASM_COLUMNS];
-	int show, shown, active;
+	int show, shown, addrs, active;
 	const char *symbol;
 	cpu_profile_item_t *data;
 	Uint32 idx, end, size;
@@ -353,7 +354,7 @@ Uint32 Profile_CpuShowAddresses(Uint32 lower, Uint32 upper, FILE *out)
 		}
 	} else {
 		end = size;
-		show = ConfigureParams.Debugger.nDisasmLines;
+		show = DebugUI_GetPageLines(ConfigureParams.Debugger.nDisasmLines, 0);
 		if (!show || show > active) {
 			show = active;
 		}
@@ -365,26 +366,30 @@ Uint32 Profile_CpuShowAddresses(Uint32 lower, Uint32 upper, FILE *out)
 	Disasm_SetColumns(newcols);
 
 	fputs("# disassembly with profile data: <instructions percentage>% (<sum of instructions>, <sum of cycles>, <sum of i-cache misses>, <sum of d-cache hits>)\n", out);
+	shown = 2; /* first and last printf */
 
-	nextpc = 0;
+	addrs = nextpc = 0;
 	idx = address2index(lower);
-	for (shown = 0; shown < show && idx < end; idx++) {
+	for (; shown < show && idx < end; idx++) {
 		if (!data[idx].count) {
 			continue;
 		}
 		addr = index2address(idx);
 		if (addr != nextpc && nextpc) {
 			fprintf(out, "[...]\n");
+			shown++;
 		}
 		symbol = Symbols_GetByCpuAddress(addr);
 		if (symbol) {
 			fprintf(out, "%s:\n", symbol);
+			shown++;
 		}
 		/* NOTE: column setup works only with 68kDisass disasm engine! */
 		Disasm(out, addr, &nextpc, 1);
 		shown++;
+		addrs++;
 	}
-	printf("Disassembled %d (of active %d) CPU addresses.\n", shown, active);
+	printf("Disassembled %d (of active %d) CPU addresses.\n", addrs, active);
 
 	/* restore disassembly columns */
 	Disasm_SetColumns(oldcols);

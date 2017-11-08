@@ -19,6 +19,7 @@ const char Profiledsp_fileid[] = "Hatari profiledsp.c : " __DATE__ " " __TIME__;
 #include "dsp.h"
 #include "profile.h"
 #include "profile_priv.h"
+#include "debug_priv.h"
 #include "symbols.h"
 /* for VBL info */
 #include "screen.h"
@@ -118,7 +119,7 @@ void Profile_DspShowStats(void)
  */
 Uint16 Profile_DspShowAddresses(Uint32 addr, Uint32 upper, FILE *out)
 {
-	int show, shown, active;
+	int show, shown, addrs, active;
 	dsp_profile_item_t *data;
 	Uint16 nextpc;
 	Uint32 end;
@@ -138,30 +139,34 @@ Uint16 Profile_DspShowAddresses(Uint32 addr, Uint32 upper, FILE *out)
 		}
 		show = active;
 	} else {
-		show = ConfigureParams.Debugger.nDisasmLines;
+		show = DebugUI_GetPageLines(ConfigureParams.Debugger.nDisasmLines, 0);
 		if (!show || show > active) {
 			show = active;
 		}
 	}
 
 	fputs("# disassembly with profile data: <instructions percentage>% (<sum of instructions>, <sum of cycles>, <max cycle difference>)\n", out);
+	shown = 2; /* first and last printf */
 
-	nextpc = 0;
-	for (shown = 0; shown < show && addr < end; addr++) {
+	addrs = nextpc = 0;
+	for (; shown < show && addr < end; addr++) {
 		if (!data[addr].count) {
 			continue;
 		}
 		if (addr != nextpc && nextpc) {
 			fputs("[...]\n", out);
+			shown++;
 		}
 		symbol = Symbols_GetByDspAddress(addr);
 		if (symbol) {
 			fprintf(out, "%s:\n", symbol);
+			shown++;
 		}
 		nextpc = DSP_DisasmAddress(out, addr, addr);
+		addrs++;
 		shown++;
 	}
-	printf("Disassembled %d (of active %d) DSP addresses.\n", shown, active);
+	printf("Disassembled %d (of active %d) DSP addresses.\n", addrs, active);
 	return nextpc;
 }
 

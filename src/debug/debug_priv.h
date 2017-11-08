@@ -25,6 +25,7 @@ typedef struct
 extern FILE *debugOutput;
 
 extern int DebugUI_PrintCmdHelp(const char *psCmd);
+extern int DebugUI_GetPageLines(int config, int defvalue);
 
 extern char *DebugUI_MatchHelper(const char **strings, int items, const char *text, int state);
 

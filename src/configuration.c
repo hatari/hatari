@@ -594,8 +594,8 @@ void Configuration_SetDefault(void)
 
 	/* Set defaults for debugger */
 	ConfigureParams.Debugger.nNumberBase = 10;
-	ConfigureParams.Debugger.nDisasmLines = 8;
-	ConfigureParams.Debugger.nMemdumpLines = 8;
+	ConfigureParams.Debugger.nDisasmLines = -1; /* <0: use terminal size */
+	ConfigureParams.Debugger.nMemdumpLines = -1; /* <0: use terminal size */
 	/* external one has nicer output, but isn't as complete as UAE one */
 	ConfigureParams.Debugger.bDisasmUAE = false;
 	ConfigureParams.Debugger.nDisasmOptions = Disasm_GetOptions();

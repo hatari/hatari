@@ -890,9 +890,8 @@ static void Symbols_Show(symbol_list_t* list, const char *sorttype)
 {
 	symbol_t *entry, *entries;
 	char symchar;
-	int i;
-	int rows, cols;
-	char line[256];
+	int i, rows;
+	char line[80];
 	
 	if (!list) {
 		fprintf(stderr, "No symbols!\n");
@@ -907,10 +906,8 @@ static void Symbols_Show(symbol_list_t* list, const char *sorttype)
 	fprintf(stderr, "%s symbols sorted by %s:\n",
 		(list == CpuSymbolsList ? "CPU" : "DSP"), sorttype);
 
-	DebugUI_GetScreenSize(&rows, &cols);
-	if (rows < 20)
-		rows = 20;
-	rows--;
+	rows = DebugUI_GetPageLines(ConfigureParams.Debugger.nMemdumpLines, 20);
+
 	for (entry = entries, i = 0; i < list->count; i++, entry++) {
 		symchar = symbol_char(entry->type);
 		fprintf(stderr, "0x%08x %c %s\n",

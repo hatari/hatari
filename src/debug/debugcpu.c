@@ -11,6 +11,7 @@ const char DebugCpu_fileid[] = "Hatari debugcpu.c : " __DATE__ " " __TIME__;
 
 #include <stdio.h>
 #include <ctype.h>
+#include <limits.h>
 
 #include "config.h"
 
@@ -143,12 +144,18 @@ static int DebugCpu_SaveBin(int nArgc, char *psArgs[])
 /**
  * Check whether given address matches any CPU symbol and whether
  * there's profiling information available for it.  If yes, show it.
+ * 
+ * @return true if symbol was shown, false otherwise
  */
-static void DebugCpu_ShowAddressInfo(Uint32 addr, FILE *fp)
+static bool DebugCpu_ShowAddressInfo(Uint32 addr, FILE *fp)
 {
 	const char *symbol = Symbols_GetByCpuAddress(addr);
 	if (symbol)
+	{
 		fprintf(fp, "%s:\n", symbol);
+		return true;
+	}
+	return false;
 }
 
 /**
@@ -157,7 +164,7 @@ static void DebugCpu_ShowAddressInfo(Uint32 addr, FILE *fp)
 int DebugCpu_DisAsm(int nArgc, char *psArgs[])
 {
 	Uint32 disasm_upper = 0;
-	int insts, max_insts;
+	int shown, lines = INT_MAX;
 	uaecptr nextpc;
 
 	if (nArgc > 1)
@@ -183,20 +190,17 @@ int DebugCpu_DisAsm(int nArgc, char *psArgs[])
 	}
 
 	/* limit is topmost address or instruction count */
-	if (disasm_upper)
-	{
-		max_insts = INT_MAX;
-	}
-	else
+	if (!disasm_upper)
 	{
 		disasm_upper = 0xFFFFFFFF;
-		max_insts = ConfigureParams.Debugger.nDisasmLines;
+		lines = DebugUI_GetPageLines(ConfigureParams.Debugger.nDisasmLines, 8);
 	}
 
 	/* output a range */
-	for (insts = 0; insts < max_insts && disasm_addr < disasm_upper; insts++)
+	for (shown = 0; shown < lines && disasm_addr < disasm_upper; shown++)
 	{
-		DebugCpu_ShowAddressInfo(disasm_addr, debugOutput);
+		if (DebugCpu_ShowAddressInfo(disasm_addr, debugOutput))
+			shown++;
 		Disasm(debugOutput, (uaecptr)disasm_addr, &nextpc, 1);
 		disasm_addr = nextpc;
 	}
@@ -391,7 +395,8 @@ int DebugCpu_MemDump(int nArgc, char *psArgs[])
 
 	if (!memdump_upper)
 	{
-		memdump_upper = memdump_addr + MEMDUMP_COLS * ConfigureParams.Debugger.nMemdumpLines;
+		int lines = DebugUI_GetPageLines(ConfigureParams.Debugger.nMemdumpLines, 8);
+		memdump_upper = memdump_addr + MEMDUMP_COLS * lines;
 	}
 
 	while (memdump_addr < memdump_upper)
