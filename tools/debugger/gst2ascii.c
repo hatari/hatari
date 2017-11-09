@@ -6,10 +6,10 @@
  * This file is distributed under the GNU General Public License, version 2
  * or at your option any later version. Read the file gpl.txt for details.
  * 
- * Convert DRI/GST symbol table in a binary into ASCII symbols file accepted
- * by Hatari debugger and its profiler data post-processor.  This will also
- * allow manual editing of the symbol table (removing irrelevant labels or
- * adding missing symbols for functions).
+ * Convert DRI/GST and a.out format symbol table in a binary into ASCII symbols
+ * file accepted by Hatari debugger and its profiler data post-processor.
+ * This will also allow manual editing of the symbol table (removing irrelevant
+ * labels or adding missing symbols for functions).
  */
 
 #include <ctype.h>
@@ -53,8 +53,14 @@ typedef struct {
 	uint32_t end;
 } prg_section_t;
 
-/* Magic used to denote symbols in GNU-style (a.out) format */
-#define SYMBOL_FORMAT_GNU 0x474E555f
+/* Magic used to denote different symbol table formats */
+#define SYMBOL_FORMAT_GNU  0x474E555f	/* "MiNT" */
+#define SYMBOL_FORMAT_MINT 0x4D694E54	/* "GNU_" */
+#define SYMBOL_FORMAT_DRI  0x0
+
+/* Magic identifying Atari programs */
+#define ATARI_PROGRAM_MAGIC 0x601A
+
 
 /* ------------------ options & usage ------------------ */
 
@@ -104,8 +110,8 @@ static symbol_list_t* usage(const char *msg)
 		"\n"
 		"Usage: %s [options] <Atari program>\n"
 		"\n"
-		"Outputs given program DRI/GST symbol table content\n"
-		"in ASCII format accepted by Hatari debugger and\n"
+		"Outputs given program (DRI/GST or a.out format) symbol table\nn"
+		"content in ASCII format accepted by Hatari debugger and its\n"
 		"its profiler data post-processor.\n"
 		"\n"
 		"Options:\n", name);
@@ -645,13 +651,13 @@ static bool symbols_print_prg_info(Uint32 tabletype, Uint32 prgflags, Uint16 rel
 	int i;
 
 	switch (tabletype) {
-	case 0x4D694E54:	/* "MiNT" */
+	case SYMBOL_FORMAT_MINT: /* "MiNT" */
 		info = "GCC/MiNT executable, GST symbol table";
 		break;
-	case SYMBOL_FORMAT_GNU:	/* "GNU_" */
+	case SYMBOL_FORMAT_GNU:	 /* "GNU_" */
 		info = "GCC/MiNT executable, a.out symbol table";
 		break;
-	case 0x0:
+	case SYMBOL_FORMAT_DRI:
 		info = "TOS executable, DRI / GST symbol table";
 		break;
 	default:
@@ -719,7 +725,7 @@ static symbol_list_t* symbols_load_binary(FILE *fp)
 	/*
 	 * check for GNU-style symbol table in aexec header
 	 */
-	if (tabletype == 0x4D694E54) { /* MiNT */
+	if (tabletype == SYMBOL_FORMAT_MINT) { /* MiNT */
 		Uint32 magic1, magic2;
 		Uint32 dummy;
 		Uint32 a_text, a_data, a_bss, a_syms, a_entry, a_trsize, a_drsize;
@@ -760,11 +766,11 @@ static symbol_list_t* symbols_load_binary(FILE *fp)
 				tabletype = SYMBOL_FORMAT_GNU;
 			}
 			if ((a_text + (256 - 28)) != textlen)
-				fprintf(stderr, "warning: insonsistent text segment size %08x != %08x\n", textlen, a_text + (256 - 28));
+				fprintf(stderr, "warning: inconsistent text segment size %08x != %08x\n", textlen, a_text + (256 - 28));
 			if (a_data != datalen)
-				fprintf(stderr, "warning: insonsistent data segment size %08x != %08x\n", datalen, a_data);
+				fprintf(stderr, "warning: inconsistent data segment size %08x != %08x\n", datalen, a_data);
 			if (a_bss != bsslen)
-				fprintf(stderr, "warning: insonsistent bss segment size %08x != %08x\n", bsslen, a_bss);
+				fprintf(stderr, "warning: inconsistent bss segment size %08x != %08x\n", bsslen, a_bss);
 			/*
 			 * the symbol table size in the GEMDOS header includes the string table,
 			 * the symbol table size in the exec header does not.
@@ -867,7 +873,7 @@ static symbol_list_t* symbols_load(const char *filename)
 		return usage("reading program file failed");
 	}
 
-	if (SDL_SwapBE16(magic) != 0x601A) {
+	if (SDL_SwapBE16(magic) != ATARI_PROGRAM_MAGIC) {
 		return usage("file isn't an Atari program file");
 	}
 	list = symbols_load_binary(fp);

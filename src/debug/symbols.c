@@ -10,7 +10,7 @@
  * matching, TAB completion support etc.
  * 
  * Symbol/address information is read either from:
- * - A program file's DRI/GST format symbol table, or
+ * - A program file's DRI/GST or a.out format symbol table, or
  * - ASCII file which contents are subset of "nm" output i.e. composed of
  *   a hexadecimal addresses followed by a space, letter indicating symbol
  *   type (T = text/code, D = data, B = BSS), space and the symbol name.
@@ -61,8 +61,11 @@ typedef struct {
  */
 #define MAX_SYM_SIZE 32
 
-/* Magic used to denote symbols in GNU-style (a.out) format */
-#define SYMBOL_FORMAT_GNU 0x474E555f
+/* Magic used to denote different symbol table formats */
+#define SYMBOL_FORMAT_GNU  0x474E555f	/* "MiNT" */
+#define SYMBOL_FORMAT_MINT 0x4D694E54	/* "GNU_" */
+#define SYMBOL_FORMAT_DRI  0x0
+
 
 /* TODO: add symbol name/address file names to configuration? */
 static symbol_list_t *CpuSymbolsList;
@@ -548,13 +551,13 @@ static bool symbols_print_prg_info(Uint32 tabletype, Uint32 prgflags, Uint16 rel
 	int i;
 
 	switch (tabletype) {
-	case 0x4D694E54:	/* "MiNT" */
+	case SYMBOL_FORMAT_MINT: /* "MiNT" */
 		info = "GCC/MiNT executable, GST symbol table";
 		break;
-	case SYMBOL_FORMAT_GNU:	/* "GNU_" */
+	case SYMBOL_FORMAT_GNU:	 /* "GNU_" */
 		info = "GCC/MiNT executable, a.out symbol table";
 		break;
-	case 0x0:
+	case SYMBOL_FORMAT_DRI:
 		info = "TOS executable, DRI / GST symbol table";
 		break;
 	default:
@@ -623,7 +626,7 @@ static symbol_list_t* symbols_load_binary(FILE *fp, symtype_t gettype)
 	/*
 	 * check for GNU-style symbol table in aexec header
 	 */
-	if (tabletype == 0x4D694E54) { /* MiNT */
+	if (tabletype == SYMBOL_FORMAT_MINT) { /* MiNT */
 		Uint32 magic1, magic2;
 		Uint32 dummy;
 		Uint32 a_text, a_data, a_bss, a_syms, a_entry, a_trsize, a_drsize;
@@ -664,11 +667,11 @@ static symbol_list_t* symbols_load_binary(FILE *fp, symtype_t gettype)
 				tabletype = SYMBOL_FORMAT_GNU;
 			}
 			if ((a_text + (256 - 28)) != textlen)
-				fprintf(stderr, "warning: insonsistent text segment size %08x != %08x\n", textlen, a_text + (256 - 28));
+				fprintf(stderr, "warning: inconsistent text segment size %08x != %08x\n", textlen, a_text + (256 - 28));
 			if (a_data != datalen)
-				fprintf(stderr, "warning: insonsistent data segment size %08x != %08x\n", datalen, a_data);
+				fprintf(stderr, "warning: inconsistent data segment size %08x != %08x\n", datalen, a_data);
 			if (a_bss != bsslen)
-				fprintf(stderr, "warning: insonsistent bss segment size %08x != %08x\n", bsslen, a_bss);
+				fprintf(stderr, "warning: inconsistent bss segment size %08x != %08x\n", bsslen, a_bss);
 			/*
 			 * the symbol table size in the GEMDOS header includes the string table,
 			 * the symbol table size in the exec header does not.
@@ -1288,8 +1291,9 @@ const char Symbols_Description[] =
 	"\tLoads symbol names and their addresses from the given file.\n"
 	"\tIf there were previously loaded symbols, they're replaced.\n"
 	"\n"
-	"\tGiving 'prg' instead of a file name, loads DRI/GST symbol table\n"
-	"\tfrom the last program executed through the GEMDOS HD emulation.\n"
+	"\tGiving 'prg' instead of a file name, loads (DRI/GST or a.out\n"
+	"\tformat) symbol table from the last program executed through\n"
+	"\tthe GEMDOS HD emulation.\n"
 	"\n"
 	"\tGiving either 'name' or 'addr' instead of a file name, will\n"
 	"\tlist the currently loaded symbols.  Giving 'free' will remove\n"
