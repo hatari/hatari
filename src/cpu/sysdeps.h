@@ -556,12 +556,20 @@ extern void log_close (FILE *f);
 /* Else, if using SDL, try SDL's endian functions. */
 # ifdef USE_SDL
 #  include <SDL_endian.h>
-#  define bswap_16(x) SDL_Swap16(x)
-#  define bswap_32(x) SDL_Swap32(x)
+#  ifndef bswap_16
+#    define bswap_16(x) SDL_Swap16(x)
+#  endif
+#  ifndef bswap_32
+#    define bswap_32(x) SDL_Swap32(x)
+#  endif
 # else
 /* Otherwise, we'll roll our own. */
-#  define bswap_16(x) (((x) >> 8) | (((x) & 0xFF) << 8))
-#  define bswap_32(x) (((x) << 24) | (((x) << 8) & 0x00FF0000) | (((x) >> 8) & 0x0000FF00) | ((x) >> 24))
+#  ifndef bswap_16
+#    define bswap_16(x) (((x) >> 8) | (((x) & 0xFF) << 8))
+#  endif
+#  ifndef bswap_32
+#    define bswap_32(x) (((x) << 24) | (((x) << 8) & 0x00FF0000) | (((x) >> 8) & 0x0000FF00) | ((x) >> 24))
+#  endif
 # endif
 #endif
 
