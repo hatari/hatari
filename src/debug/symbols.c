@@ -362,11 +362,6 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, symtyp
 }
 
 
-/* Utility macro. Get a 16- or 32 bit value from a pointer to
-   unsigned char. */
-#define get16be(c) (((c)[0] << 8) | ((c)[1]))
-#define get32be(c) (((uint32_t)((c)[0]) << 24) | ((uint32_t)((c)[1]) << 16) | ((uint32_t)((c)[2]) << 8) | ((uint32_t)((c)[3])))
-
 /**
  * Load symbols of given type and the symbol address addresses from
  * a.out format symbol table, and add given offsets to the addresses:
@@ -417,13 +412,13 @@ static symbol_list_t* symbols_load_gnu(FILE *fp, prg_section_t *sections, symtyp
 	weak = invalid = outside = dtypes = notypes = ofiles = locals = count = 0;
 	for (i = 0; i < slots; i++)
 	{
-		strx = get32be(p);
+		strx = SDL_SwapBE32(*(Uint32*)p);
 		p += 4;
 		n_type = *p++;
 		n_other = *p++;
-		n_desc = get16be(p);
+		n_desc = SDL_SwapBE16(*(Uint16*)p);
 		p += 2;
-		address = get32be(p);
+		address = SDL_SwapBE32(*(Uint32*)p);
 		p += 4;
 		name = dummy;
 		if (!strx) {
@@ -455,9 +450,6 @@ static symbol_list_t* symbols_load_gnu(FILE *fp, prg_section_t *sections, symtyp
 			symtype = SYMTYPE_ABS;
 			break;
 		case N_TEXT:
-			symtype = SYMTYPE_TEXT;
-			section = &(sections[0]);
-			break;
 		case N_TEXT|N_EXT:
 			symtype = SYMTYPE_TEXT;
 			section = &(sections[0]);
