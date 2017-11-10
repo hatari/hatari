@@ -594,9 +594,9 @@ static void	IKBD_Boot_ROM ( bool ClearAllRAM )
 
 
 	/* Remove any custom handlers used to emulate code loaded to the 6301's RAM */
-	if ( IKBD_ExeMode == true )
+	if ( ( MemoryLoadNbBytesLeft != 0 ) || ( IKBD_ExeMode == true ) )
 	{
-		LOG_TRACE ( TRACE_IKBD_ALL , "ikbd custom exe off\n" );
+		LOG_TRACE ( TRACE_IKBD_ALL , "ikbd stop memory load and turn off custom exe\n" );
 
 		MemoryLoadNbBytesLeft = 0;
 		pIKBD_CustomCodeHandler_Read = NULL;
@@ -1845,11 +1845,13 @@ static void IKBD_CheckResetDisableBug(void)
 /*-----------------------------------------------------------------------*/
 /**
  * When a byte is received by the IKBD, it is added to a small 8 byte buffer.
- * If the first byte is a valid command, we wait for additionnal bytes if needed
- * and then we execute the command's handler.
- * If the first byte is not a valid command or after a successful command, we
- * empty the input buffer (extra bytes, if any, are lost)
- * If the input buffer is full when a new byte is received, the new byte is lost.
+ * - If the first byte is a valid command, we wait for additionnal bytes if needed
+ *   and then we execute the command's handler.
+ * - If the first byte is not a valid command or after a successful command, we
+ *   empty the input buffer (extra bytes, if any, are lost)
+ * - If the input buffer is full when a new byte is received, the new byte is lost.
+ * - In case the first byte read is not a valid command then IKBD does nothing
+ *   (it doesn't return any byte to indicate the command was not recognized)
  */
 static void IKBD_RunKeyboardCommand(Uint8 aciabyte)
 {
