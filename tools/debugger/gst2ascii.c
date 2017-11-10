@@ -239,6 +239,31 @@ static char symbol_char(int type)
 	}
 }
 
+/**
+ * Return true if symbol name matches internal GCC symbol name,
+ * or is object / file name.
+ */
+static bool symbol_remove_obj(const char *name)
+{
+	static const char *gcc_sym[] = {
+		"___gnu_compiled_c",
+		"gcc2_compiled."
+	};
+	int i, len = strlen(name);
+	/* object / file name? */
+	if (len > 2 && ((name[len-2] == '.' && name[len-1] == 'o') || strchr(name, '/'))) {
+		return true;
+	}
+	/* useless symbols GCC (v2) seems to add to every object? */
+	for (i = 0; i < ARRAY_SIZE(gcc_sym); i++) {
+		if (strcmp(name, gcc_sym[i]) == 0) {
+			return true;
+		}
+	}
+	return false;
+}
+
+
 #define INVALID_SYMBOL_OFFSETS ((symbol_list_t*)1)
 
 /**
@@ -249,7 +274,7 @@ static char symbol_char(int type)
  */
 static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, uint32_t tablesize)
 {
-	int i, count, symbols, outside;
+	int i, count, symbols, outside, invalid;
 	int notypes, dtypes, locals, ofiles;
 	prg_section_t *section;
 	symbol_list_t *list;
@@ -268,7 +293,7 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, uint32
 		return NULL;
 	}
 
-	outside = dtypes = notypes = ofiles = locals = count = 0;
+	invalid = outside = dtypes = notypes = ofiles = locals = count = 0;
 	for (i = 1; i <= symbols; i++) {
 		/* read DRI symbol table slot */
 		if (fread(name, 8, 1, fp) != 1 ||
@@ -316,6 +341,7 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, uint32
 				break;
 			}
 			fprintf(stderr, "WARNING: ignoring symbol '%s' in slot %d of unknown type 0x%x.\n", name, i, symid);
+			invalid++;
 			continue;
 		}
 		if (Options.notypes & symtype) {
@@ -329,25 +355,8 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, uint32
 			}
 		}
 		if (Options.no_obj) {
-			const char *gcc_sym[] = {
-				"___gnu_compiled_c",
-				"gcc2_compiled."
-			};
-			int j, len = strlen(name);
-			/* object / file name? */
-			if (len > 2 && ((name[len-2] == '.' && name[len-1] == 'o') || strchr(name, '/'))) {
+			if (symbol_remove_obj(name)) {
 				ofiles++;
-				continue;
-			}
-			/* useless symbols GCC (v2) seems to add to every object? */
-			for (j = 0; j < ARRAY_SIZE(gcc_sym); j++) {
-				if (strcmp(name, gcc_sym[j]) == 0) {
-					ofiles++;
-					j = -1;
-					break;
-				}
-			}
-			if (j < 0) {
 				continue;
 			}
 		}
@@ -363,6 +372,7 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, uint32
 				}
 				fprintf(stderr, "WARNING: ignoring symbol '%s' of %c type in slot %d with invalid offset 0x%x (>= 0x%x).\n",
 					name, symbol_char(symtype), i, address, section->end);
+				invalid++;
 				continue;
 			}
 		}
@@ -377,11 +387,14 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, uint32
 		symbol_list_free(list);
 		return NULL;
 	}
-	if (notypes) {
-		fprintf(stderr, "NOTE: ignored %d unwanted symbol types.\n", notypes);
+	if (invalid) {
+		fprintf(stderr, "NOTE: ignored %d invalid symbols.\n", invalid);
 	}
 	if (dtypes) {
-		fprintf(stderr, "NOTE: ignored %d globally defined equated values.\n", dtypes);
+		fprintf(stderr, "NOTE: ignored %d debugging symbols.\n", dtypes);
+	}
+	if (notypes) {
+		fprintf(stderr, "NOTE: ignored %d other unwanted symbol types.\n", notypes);
 	}
 	if (locals) {
 		fprintf(stderr, "NOTE: ignored %d unnamed / local symbols (= name starts with '.L').\n", locals);
@@ -416,16 +429,17 @@ static symbol_list_t* symbols_load_gnu(FILE *fp, prg_section_t *sections, Uint32
 	size_t i;
 	size_t strx;
 	unsigned char *p;
+	char *name;
 	symbol_t *sym;
+	symtype_t symtype;
+	uint32_t address;
 	uint32_t nread;
 	symbol_list_t *list;
 	unsigned char n_type;
 	unsigned char n_other;
 	unsigned short n_desc;
-	int dtypes, locals, ofiles, count, outside, notypes;
-	size_t len;
-	static char invalid[] = "<invalid>";
-	static char empty[] = "";
+	static char dummy[] = "<invalid>";
+	int dtypes, locals, ofiles, count, outside, notypes, invalid, weak;
 	prg_section_t *section;
 
 	if (!(list = symbol_list_alloc(slots))) {
@@ -451,7 +465,7 @@ static symbol_list_t* symbols_load_gnu(FILE *fp, prg_section_t *sections, Uint32
 	p = (unsigned char *)list->strtab;
 	sym = list->names;
 
-	outside = dtypes = ofiles = locals = count = notypes = 0;
+	weak = invalid = outside = dtypes = notypes = ofiles = locals = count = 0;
 	for (i = 0; i < slots; i++)
 	{
 		strx = get32be(p);
@@ -460,22 +474,20 @@ static symbol_list_t* symbols_load_gnu(FILE *fp, prg_section_t *sections, Uint32
 		n_other = *p++;
 		n_desc = get16be(p);
 		p += 2;
-		sym->address = get32be(p);
+		address = get32be(p);
 		p += 4;
-		if (strx)
-		{
-			if (strx >= strsize)
-			{
-				fprintf(stderr, "symbol name index %x out of range\n", (unsigned int)strx);
-				sym->name = invalid;
-			} else
-			{
-				sym->name = list->strtab + strx + stroff;
-			}
-		} else
-		{
-			sym->name = empty;
+		name = dummy;
+		if (!strx) {
+			invalid++;
+			continue;
 		}
+		if (strx >= strsize) {
+			fprintf(stderr, "symbol name index %x out of range\n", (unsigned int)strx);
+			invalid++;
+			continue;
+		}
+		name = list->strtab + strx + stroff;
+
 		if (n_type & N_STAB)
 		{
 			dtypes++;
@@ -487,39 +499,34 @@ static symbol_list_t* symbols_load_gnu(FILE *fp, prg_section_t *sections, Uint32
 		case N_UNDF:
 		case N_UNDF|N_EXT:
 			/* shouldn't happen here */
-			locals++;
+			weak++;
 			continue;
 		case N_ABS:
 		case N_ABS|N_EXT:
-			sym->type = SYMTYPE_ABS;
+			symtype = SYMTYPE_ABS;
 			break;
 		case N_TEXT:
-			len = strlen(sym->name);
-			if (strchr(sym->name, '/') || (len > 2 && sym->name[len-2] == '.' && sym->name[len-1] == 'o')) {
-				ofiles++;
-				continue;
-			}
-			sym->type = SYMTYPE_TEXT;
+			symtype = SYMTYPE_TEXT;
 			section = &(sections[0]);
 			break;
 		case N_TEXT|N_EXT:
-			sym->type = SYMTYPE_TEXT;
+			symtype = SYMTYPE_TEXT;
 			section = &(sections[0]);
 			break;
 		case N_DATA:
 		case N_DATA|N_EXT:
-			sym->type = SYMTYPE_DATA;
+			symtype = SYMTYPE_DATA;
 			section = &(sections[1]);
 			break;
 		case N_BSS:
 		case N_BSS|N_EXT:
 		case N_COMM:
 		case N_COMM|N_EXT:
-			sym->type = SYMTYPE_BSS;
+			symtype = SYMTYPE_BSS;
 			section = &(sections[2]);
 			break;
-		case N_FN:
-			ofiles++;
+		case N_FN: /* filenames, not object addresses? */
+			dtypes++;
 			continue;
 		case N_SIZE:
 		case N_WARNING:
@@ -534,59 +541,44 @@ static symbol_list_t* symbols_load_gnu(FILE *fp, prg_section_t *sections, Uint32
 		case N_WEAKT:
 		case N_WEAKD:
 		case N_WEAKB:
-			locals++;
+			weak++;
 			continue;
 		default:
-			fprintf(stderr, "WARNING: ignoring symbol '%s' in slot %u of unknown type 0x%x.\n", sym->name, (unsigned int)i, n_type);
+			fprintf(stderr, "WARNING: ignoring symbol '%s' in slot %u of unknown type 0x%x.\n", name, (unsigned int)i, n_type);
+			invalid++;
 			continue;
 		}
 		/*
 		 * the value of a common symbol is its size, not its address:
 		 */
 		if (((n_type & N_TYPE) == N_COMM) ||
-			(((n_type & N_EXT) && (n_type & N_TYPE) == N_UNDF && sym->address != 0)))
+			(((n_type & N_EXT) && (n_type & N_TYPE) == N_UNDF && address != 0)))
 		{
 			/* if we ever want to know a symbols size, get that here */
 			fprintf(stderr, "WARNING: ignoring common symbol '%s' in slot %u.\n", sym->name, (unsigned int)i);
+			dtypes++;
 			continue;
 		}
-		if (Options.notypes & sym->type) {
+		if (Options.notypes & symtype) {
 			notypes++;
 			continue;
 		}
 		if (Options.no_local) {
-			if (sym->name[0] == '.' && sym->name[1] == 'L') {
+			if (name[0] == '.' && name[1] == 'L') {
 				locals++;
 				continue;
 			}
 		}
 		if (Options.no_obj) {
-			const char *gcc_sym[] = {
-				"___gnu_compiled_c",
-				"gcc2_compiled."
-			};
-			int j, len = strlen(sym->name);
-			/* object / file name? */
-			if (len > 2 && ((sym->name[len-2] == '.' && sym->name[len-1] == 'o') || strchr(sym->name, '/'))) {
+			if (symbol_remove_obj(name)) {
 				ofiles++;
-				continue;
-			}
-			/* useless symbols GCC (v2) seems to add to every object? */
-			for (j = 0; j < ARRAY_SIZE(gcc_sym); j++) {
-				if (strcmp(sym->name, gcc_sym[j]) == 0) {
-					ofiles++;
-					j = -1;
-					break;
-				}
-			}
-			if (j < 0) {
 				continue;
 			}
 		}
 		if (section) {
-			sym->address += sections[0].offset;
-			if (sym->address > (section->end + 1)) {
-				++outside;
+			address += sections[0].offset;
+			if (address > (section->end + 1)) {
+				outside++;
 #if 0
 				/* VBCC has 1 symbol outside of its section */
 				if (outside > 2) {
@@ -597,21 +589,32 @@ static symbol_list_t* symbols_load_gnu(FILE *fp, prg_section_t *sections, Uint32
 				}
 #endif
 				fprintf(stderr, "WARNING: ignoring symbol '%s' of %c type in slot %u with invalid offset 0x%x (>= 0x%x).\n",
-					sym->name, symbol_char(sym->type), (unsigned int)i, sym->address, section->end);
+					name, symbol_char(symtype), (unsigned int)i, address, section->end);
+				invalid++;
 				continue;
 			}
 		}
+		sym->address = address;
+		sym->type = symtype;
+		sym->name = name;
+//printf("name: %s\n", name);
 		sym++;
 		count++;
 		(void) n_desc;
 		(void) n_other;
 	}
 
-	if (notypes) {
-		fprintf(stderr, "NOTE: ignored %d unwanted symbol types.\n", notypes);
+	if (invalid) {
+		fprintf(stderr, "NOTE: ignored %d invalid symbols.\n", invalid);
 	}
 	if (dtypes) {
 		fprintf(stderr, "NOTE: ignored %d debugging symbols.\n", dtypes);
+	}
+	if (weak) {
+		fprintf(stderr, "NOTE: ignored %d weak / undefined symbols.\n", weak);
+	}
+	if (notypes) {
+		fprintf(stderr, "NOTE: ignored %d other unwanted symbol types.\n", notypes);
 	}
 	if (locals) {
 		fprintf(stderr, "NOTE: ignored %d unnamed / local symbols (= name starts with '.L').\n", locals);
