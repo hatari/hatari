@@ -76,8 +76,8 @@ static const char *PrgPath;
 
 static struct {
 	symtype_t notypes;
-	bool no_obj;
 	bool no_local;
+	bool no_obj;
 	bool sort_name;
 } Options;
 
@@ -91,12 +91,13 @@ static symbol_list_t* usage(const char *msg)
 		const char opt;
 		const char *desc;
 	} OptInfo[] = {
-		{ 'n', "sort by name (not address)" },
+		{ 'a', "no absolute symbols (are values, not addresses)" },
 		{ 'b', "no BSS symbols" },
 		{ 'd', "no DATA symbols" },
 		{ 't', "no TEXT symbols" },
 		{ 'l', "no local (.L*) symbols" },
 		{ 'o', "no object symbols (filenames or GCC internals)" },
+		{ 'n', "sort by name (not address)" },
 	};
 	const char *name;
 	int i;
@@ -110,9 +111,9 @@ static symbol_list_t* usage(const char *msg)
 		"\n"
 		"Usage: %s [options] <Atari program>\n"
 		"\n"
-		"Outputs given program (DRI/GST or a.out format) symbol table\nn"
+		"Outputs given program (DRI/GST or a.out format) symbol table\n"
 		"content in ASCII format accepted by Hatari debugger and its\n"
-		"its profiler data post-processor.\n"
+		"profiler data post-processor.\n"
 		"\n"
 		"Options:\n", name);
 	for (i = 0; i < ARRAY_SIZE(OptInfo); i++) {
@@ -165,7 +166,14 @@ static void symbols_check_addresses(const symbol_t *syms, int count)
 
 	for (i = 0; i < (count - 1); i++)
 	{
+		/* absolute symbols have values, not addresses */
+		if (syms[i].type == SYMTYPE_ABS) {
+			continue;
+		}
 		for (j = i + 1; j < count && syms[i].address == syms[j].address; j++) {
+			if (syms[j].type == SYMTYPE_ABS) {
+				continue;
+			}
 			fprintf(stderr, "WARNING: symbols '%s' & '%s' have the same 0x%x address.\n",
 				syms[i].name, syms[j].name, syms[i].address);
 			i = j;
@@ -932,7 +940,7 @@ static int symbols_show(symbol_list_t* list)
 			entry->address, symchar, entry->name);
 	}
 
-	fprintf(stderr, "%d symbols processed.\n", list->count);
+	fprintf(stderr, "%d (unignored) symbols processed.\n", list->count);
 	return 0;
 }
 
@@ -949,8 +957,9 @@ int main(int argc, const char *argv[])
 			break;
 		}
 		switch(tolower((unsigned char)argv[i][1])) {
-		case 'n':
-			Options.sort_name = true;
+		case 'a':
+			Options.notypes |= SYMTYPE_ABS;
+			break;
 		case 'b':
 			Options.notypes |= SYMTYPE_BSS;
 			break;
@@ -960,14 +969,14 @@ int main(int argc, const char *argv[])
 		case 't':
 			Options.notypes |= SYMTYPE_TEXT;
 			break;
-		case 'a':
-			Options.notypes |= SYMTYPE_ABS;
-			break;
 		case 'l':
 			Options.no_local = true;
 			break;
 		case 'o':
 			Options.no_obj = true;
+			break;
+		case 'n':
+			Options.sort_name = true;
 			break;
 		default:
 			usage("unknown option");

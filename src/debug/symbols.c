@@ -118,7 +118,14 @@ static void symbols_check_addresses(const symbol_t *syms, int count)
 
 	for (i = 0; i < (count - 1); i++)
 	{
+		/* absolute symbols have values, not addresses */
+		if (syms[i].type == SYMTYPE_ABS) {
+			continue;
+		}
 		for (j = i + 1; j < count && syms[i].address == syms[j].address; j++) {
+			if (syms[j].type == SYMTYPE_ABS) {
+				continue;
+			}
 			fprintf(stderr, "WARNING: symbols '%s' & '%s' have the same 0x%x address.\n",
 				syms[i].name, syms[j].name, syms[i].address);
 			i = j;
