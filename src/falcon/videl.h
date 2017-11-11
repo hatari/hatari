@@ -28,6 +28,7 @@ extern void VIDEL_ScreenCounter_WriteByte(void);
 extern void VIDEL_StColorRegsWrite(void);
 extern void VIDEL_FalconColorRegsWrite(void);
 extern void VIDEL_LineOffset_WriteWord(void);
+extern void VIDEL_LineOffset_ReadWord(void);
 extern void VIDEL_Line_Width_WriteWord(void);
 extern void VIDEL_HorScroll64_WriteByte(void);
 extern void VIDEL_HorScroll65_WriteByte(void);

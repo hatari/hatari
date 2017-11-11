@@ -110,7 +110,7 @@ void IoMemTabFalcon_DSPemulation(void (**readtab)(void), void (**writetab)(void)
 /**
  * Take into account the Falcon Bus Control register $ff8007.b
 	$FFFF8007 Falcon Bus Control
-		BIT 6 : F30 Start (0=Cold, 1=Warm) 
+		BIT 6 : F30 Start (0=Cold, 1=Warm)
 		BIT 5 : STe Bus Emulation (0=on)
 		BIT 3 : Blitter Flag (0=on, 1=off)
 		BIT 2 : Blitter (0=8mhz, 1=16mhz)
@@ -241,7 +241,7 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 	{ 0xff820b, SIZE_BYTE, IoMem_VoidRead_00, IoMem_VoidWrite },                            /* No bus error here : return 0 not ff */
 	{ 0xff820c, SIZE_BYTE, IoMem_VoidRead_00, IoMem_VoidWrite },                            /* No bus error here : return 0 not ff */
 	{ 0xff820d, SIZE_BYTE, IoMem_ReadWithoutInterception, VIDEL_ScreenBase_WriteByte },     /* Video base low byte */
-	{ 0xff820e, SIZE_WORD, IoMem_ReadWithoutInterception, VIDEL_LineOffset_WriteWord },     /* Falcon line offset */
+	{ 0xff820e, SIZE_WORD, VIDEL_LineOffset_ReadWord, VIDEL_LineOffset_WriteWord },         /* Falcon line offset */
 	{ 0xff8210, SIZE_WORD, IoMem_ReadWithoutInterception, VIDEL_Line_Width_WriteWord },     /* Falcon line width */
 	{ 0xff8212, 46       , IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 

@@ -230,6 +230,17 @@ void VIDEL_ScreenCounter_WriteByte(void)
 }
 
 /**
+ * VIDEL_LineOffset_ReadWord: $FFFF820E [R/W] W _______876543210  Line Offset
+ * How many words are added to the end of display line, i.e. how many words are
+ * 'behind' the display.
+ */
+void VIDEL_LineOffset_ReadWord(void)
+{
+	/* Unused bits are read as zero, so I mask them (Laurent) */
+	IoMem[0xff820e] &= 0x1ff;
+}
+
+/**
  * VIDEL_LineOffset_WriteWord: $FFFF820E [R/W] W _______876543210  Line Offset
  * How many words are added to the end of display line, i.e. how many words are
  * 'behind' the display.
