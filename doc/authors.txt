@@ -176,7 +176,8 @@ is missing here, please remind me!):
   decoding)
 
 - Thorsten Otto: Some improvements to the code that patches the TOS ROMs,
-  absolute symbols support.
+  a.out symbol table & absolute symbols support and few debugger
+  usability improvements
 
 - Andreas Grabher : FPU improvements using the SoftFloat library,
   most of the 030 MMU implementation and few bug reports & patches

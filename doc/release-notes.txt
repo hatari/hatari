@@ -56,7 +56,12 @@ Emulator:
 - Debugger improvements:
   - Add "CycleCounter" variable
   - Add "info dta [addr]" command
+  - Add support for reading GNU-style a.out (GCC default)
+    symbol table format in addition to DRI/GST symbols
   - Add absolute symbols support in addition to BSS/DATA/TEXT ones
+  - Use terminal size for paging (disassembly, memdump, symbols)
+    commands. NOTE: remove old dDisasmLines & nMemdumpLines options
+    from Hatari config file, or set them to -1, to enable this!
   - Add "-f" option to 'cd' so that setup scripts can specify
     what directory is used after currently invoked script(s)
     have finished

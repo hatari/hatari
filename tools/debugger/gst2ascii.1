@@ -2,31 +2,32 @@
 .\" First parameter, NAME, should be all caps
 .\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
 .\" other parameters are allowed: see man(7), man(1)
-.TH "GST2ASCII" "1" "2014-05-08" "Hatari" "Hatari utilities"
+.TH "GST2ASCII" "1" "2017-11-11" "Hatari" "Hatari utilities"
 .SH "NAME"
-gst2ascii \- Output Atari program DRI/GST format symbol table
+gst2ascii \- Filter and output Atari program symbol table as ASCII
 .SH "SYNOPSIS"
 .B gst2ascii
 .RI  [options]
 .RI  <program>
 .SH "DESCRIPTION"
-\fIgst2ascii\fP reads DRI/GST symbol table from given Atari program and
-outputs it in the ASCII format understood by Hatari debugger and its
-profiler data post-processor (which doesn't accept any other format). 
+\fIgst2ascii\fP reads GNU-style a.out or traditional DRI/GST symbol
+table from given Atari program and outputs it in the ASCII format
+understood by Hatari debugger and its profiler data post-processor
+(latter doesn't accept any other format).
 .PP
-There are some options to filter the symbol table content and the
-resulting ASCII output is easy to edit also by hand, if other symbols
-(for e.g. loop labels) need to be removed or missing function symbols
-need to be added.
+There are some options to filter the symbol table content, and the
+resulting ASCII output is easy to edit also by hand, in case other
+symbols (e.g. loop labels) need to be removed from it, or missing
+function symbols need to be added to it.
 .SH "OPTIONS"
 .TP
-\fB-n\fP
-Sort symbol output by symbol name, not by their addresses.
+\fB-a\fP
+Filter absolute (= value, not address) symbols out from the output.
 .TP
 \fB-b\fP
 Filter BSS symbols out from the output.
 .TP
-\fB-b\fP
+\fB-d\fP
 Filter DATA symbols out from the output.
 .TP
 \fB-t\fP
@@ -38,6 +39,9 @@ they don't have names, just numbers.
 .TP
 \fB-o\fP
 Filter symbols for object files (*.o) out.
+.TP
+\fB-n\fP
+Sort symbol output by symbol name, not by their addresses.
 .SH "NOTES"
 If you have problems, try with 'nm -n <program>' instead
 (Atari or cross-compiler version). If \fInm\fP works,
