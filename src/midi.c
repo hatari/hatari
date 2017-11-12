@@ -515,9 +515,9 @@ int Midi_Host_GetPortIndex(const char* portName, bool forInput)
  * closes current midi port (if any) and opens 'portName' if MIDI enabled
  * returns true if successful, false otherwise
  */
-static bool Midi_Host_SwitchPort(const char* portName, bool forInput)
-{	
 #ifdef HAVE_PORTMIDI
+static bool Midi_Host_SwitchPort(const char* portName, bool forInput)
+{
 	int i, count;
 	bool err;
 
@@ -563,10 +563,10 @@ static bool Midi_Host_SwitchPort(const char* portName, bool forInput)
 		LOG_TRACE(TRACE_MIDI, "MIDI: output port %d '%s' open %s\n", i, portName, err ? "succeeded" : "failed");
 		return err;
 	}
-#endif
+
 	return false;
 }
-
+#endif
 
 /**
  * returns byte from input stream, or EOF if it is empty
