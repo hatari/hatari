@@ -210,9 +210,9 @@ static bool symbol_remove_obj(const char *name)
 		"gcc2_compiled."
 	};
 	int i, len = strlen(name);
-	/* object / file name? */
-	if (len > 2 && ((name[len-2] == '.' && name[len-1] == 'o') || strchr(name, '/'))) {
-		return true;
+	/* object (.a or .o) / file name? */
+	if (len > 2 && ((name[len-2] == '.' && (name[len-1] == 'a' || name[len-1] == 'o')) || strchr(name, '/'))) {
+		    return true;
 	}
 	/* useless symbols GCC (v2) seems to add to every object? */
 	for (i = 0; i < ARRAY_SIZE(gcc_sym); i++) {
@@ -352,7 +352,7 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, symtyp
 		 * addition to object file addresses conflicting with
 		 * first symbol in the object file.
 		 */
-		fprintf(stderr, "NOTE: ignored %d object symbols (= name has '/', ends in '.o' or is GCC internal).\n", ofiles);
+		fprintf(stderr, "NOTE: ignored %d object symbols (= name has '/', ends in '.[ao]' or is GCC internal).\n", ofiles);
 	}
 	list->symbols = symbols;
 	list->count = count;
@@ -549,7 +549,7 @@ static symbol_list_t* symbols_load_gnu(FILE *fp, prg_section_t *sections, symtyp
 		 * addition to object file addresses conflicting with
 		 * first symbol in the object file.
 		 */
-		fprintf(stderr, "NOTE: ignored %d object symbols (= name has '/', ends in '.o' or is GCC internal).\n", ofiles);
+		fprintf(stderr, "NOTE: ignored %d object symbols (= name has '/', ends in '.[ao]' or is GCC internal).\n", ofiles);
 	}
 
 	list->symbols = slots;
