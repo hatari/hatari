@@ -5,7 +5,7 @@
 # 2013-2017 (C) Eero Tamminen, licensed under GPL v2+
 #
 """
-A tool for post-processing emulator HW profiling data.
+A tool for post-processing Hatari emulator HW profiling data.
 
 In Hatari debugger you get (CPU) profiling data with the following
 commands (for Falcon DSP data, prefix commands with 'dsp'):
@@ -28,10 +28,10 @@ Tool output will contain at least:
 If profile data contains other information (e.g. cache misses),
 that is also shown.
 
-Provided symbol information should be in same format as for Hatari
-debugger 'symbols' command.  Note that files containing absolute
-addresses and ones containing relatives addresses need to be given
-with different options!
+Provided symbol information should be in the same format as for
+the Hatari debugger 'symbols' command.  Note that files containing
+absolute addresses and ones containing relatives addresses need to
+be given with different options!
 
 
 Usage: hatari-profile [options] <profile files>
@@ -80,16 +80,16 @@ For each given profile file, output is:
 
 
 When both -l and -f options are specified, they're combined.  Produced
-lists contain at least the number of items specified for -f option,
-and more if there are additional items which percentage of the total
-value is larger than one given for -l option.  In callgraphs these
-options mainly affect which nodes are highlighted.
+lists contain at least the number of items specified for the -f option,
+and more, if there are additional items which percentage of the total
+value is larger than the one given for the -l option.  In callgraphs
+these options mainly affect which nodes are highlighted.
 
 
 If profile includes "caller" information, -p option can be used to see:
 - costs also for everything else that a subroutine calls,
-- subroutine's "own" cost, which exclude costs for any further
-  subroutine calls that it does.
+- subroutine's "own" cost, which excludes costs for any further
+  subroutine calls that it did
 (For more information on how these differ from normally shown costs,
 see Profiling section in Hatari manual.)
 
@@ -99,15 +99,15 @@ Nodes with subroutine costs are shown as diamonds in the callgraphs.
 Call information filtering options:
         --no-calls <[bersux]+>	remove calls of given types, default = 'rux'
 	--ignore-to <list>	ignore calls to these symbols
-	--compact		leave only single connection for symbols
-        			that are directly connected
+	--compact		leave only single connection between symbols
+        			which are connected through single node path
 
-(Give --no-calls option an unknown type to see type descriptions.)
+(Give --no-calls option other char than [bersux] to see type descriptions.)
 
 <list> is a comma separate list of symbol names, like this:
 	--ignore-to _int_timerc,_int_vbl
 
-These options change which calls are reported for functions and can
+These options change which calls are reported for functions, and can
 affect the shape & complexity of the graph a lot.  If you e.g. want
 to see just nodes with costs specific to -p option, use "--no-calls
 berux" option.
@@ -117,8 +117,9 @@ handling switches [1], give handler names to --ignore-to option.
 In callgraphs, one can then investigate them separately using
 "no-calls '' --only <name>" options.
 
-[1] Switching to interrupt handler gets recorded as "a call" to it
-    by the profiler, and such "calls" can happen at any time.
+[1] CPU being interrupted by an interrupt handler gets recorded as
+    "a call" to that handler by the profiler, and because such "calls"
+    can happen at any time, then can mess graphs badly
 
 NOTE: costs shown with -p option include costs of exception handling
 code that interrupts the function calls.  Normally effect of this
@@ -153,8 +154,8 @@ if intermediate nodes have been removed with above options.
 
 
 Callgraph visualization options:
-	--mark <list>	  	  mark nodes which names contain any
-        			  of the listed string(s)
+	--mark <list>	  	  color nodes which names contain any
+        			  of the listed string(s) differently
         -e, --emph-limit <limit>  percentage limit for highlighted nodes
 
 When -e limit is given, it is used for deciding which nodes to
