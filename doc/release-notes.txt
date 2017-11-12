@@ -62,6 +62,8 @@ Emulator:
   - Use terminal size for paging (disassembly, memdump, symbols)
     commands. NOTE: remove old dDisasmLines & nMemdumpLines options
     from Hatari config file, or set them to -1, to enable this!
+  - Add 'nSymbolLines' configuration option to specify how many
+    lines 'symbols' command pages
   - TEXTEnd value is now TEXT+TextSize, instead of TEXT+TextSize-1
   - Add "-f" option to 'cd' so that setup scripts can specify
     what directory is used after currently invoked script(s)

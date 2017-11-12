@@ -1228,7 +1228,7 @@ static void Symbols_Show(symbol_list_t* list, const char *sorttype)
 	fprintf(stderr, "%s symbols sorted by %s:\n",
 		(list == CpuSymbolsList ? "CPU" : "DSP"), sorttype);
 
-	rows = DebugUI_GetPageLines(ConfigureParams.Debugger.nMemdumpLines, 20);
+	rows = DebugUI_GetPageLines(ConfigureParams.Debugger.nSymbolLines, 20);
 
 	for (entry = entries, i = 0; i < list->count; i++, entry++) {
 		symchar = symbol_char(entry->type);

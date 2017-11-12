@@ -59,8 +59,9 @@ static const struct Config_Tag configs_Log[] =
 static const struct Config_Tag configs_Debugger[] =
 {
 	{ "nNumberBase", Int_Tag, &ConfigureParams.Debugger.nNumberBase },
-	{ "nDisasmLines", Int_Tag, &ConfigureParams.Debugger.nDisasmLines },
+	{ "nSymbolLines", Int_Tag, &ConfigureParams.Debugger.nSymbolLines },
 	{ "nMemdumpLines", Int_Tag, &ConfigureParams.Debugger.nMemdumpLines },
+	{ "nDisasmLines", Int_Tag, &ConfigureParams.Debugger.nDisasmLines },
 	{ "nDisasmOptions", Int_Tag, &ConfigureParams.Debugger.nDisasmOptions },
 	{ "bDisasmUAE", Bool_Tag, &ConfigureParams.Debugger.bDisasmUAE },
 	{ NULL , Error_Tag, NULL }
@@ -594,8 +595,9 @@ void Configuration_SetDefault(void)
 
 	/* Set defaults for debugger */
 	ConfigureParams.Debugger.nNumberBase = 10;
-	ConfigureParams.Debugger.nDisasmLines = -1; /* <0: use terminal size */
+	ConfigureParams.Debugger.nSymbolLines = -1; /* <0: use terminal size */
 	ConfigureParams.Debugger.nMemdumpLines = -1; /* <0: use terminal size */
+	ConfigureParams.Debugger.nDisasmLines = -1; /* <0: use terminal size */
 	/* external one has nicer output, but isn't as complete as UAE one */
 	ConfigureParams.Debugger.bDisasmUAE = false;
 	ConfigureParams.Debugger.nDisasmOptions = Disasm_GetOptions();

@@ -29,8 +29,9 @@ typedef struct
 typedef struct
 {
   int nNumberBase;
-  int nDisasmLines;
+  int nSymbolLines;
   int nMemdumpLines;
+  int nDisasmLines;
   int nDisasmOptions;
   bool bDisasmUAE;
 } CNF_DEBUGGER;
