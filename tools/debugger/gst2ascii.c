@@ -1,7 +1,7 @@
 /*
  * Hatari - gst2ascii.c
  * 
- * Copyright (C) 2013-2015 by Eero Tamminen
+ * Copyright (C) 2013-2017 by Eero Tamminen
  * 
  * This file is distributed under the GNU General Public License, version 2
  * or at your option any later version. Read the file gpl.txt for details.
@@ -597,7 +597,6 @@ static symbol_list_t* symbols_load_gnu(FILE *fp, prg_section_t *sections, Uint32
 		sym->address = address;
 		sym->type = symtype;
 		sym->name = name;
-//printf("name: %s\n", name);
 		sym++;
 		count++;
 		(void) n_desc;
