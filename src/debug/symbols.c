@@ -792,8 +792,10 @@ static symbol_list_t* symbols_load_ascii(FILE *fp, Uint32 *offsets, Uint32 maxad
 	symtype_t symtype;
 
 	/* count content lines */
-	symbols = 0;
+	line = symbols = 0;
 	while (fgets(buffer, sizeof(buffer), fp)) {
+		line++;
+
 		/* skip comments (AHCC SYM file comments start with '*') */
 		if (*buffer == '#' || *buffer == '*') {
 			continue;
@@ -803,10 +805,15 @@ static symbol_list_t* symbols_load_ascii(FILE *fp, Uint32 *offsets, Uint32 maxad
 		if (!*buf) {
 			continue;
 		}
+		if (!isxdigit(*buf)) {
+			fprintf(stderr, "ERROR: line %d doesn't start with an address.\n", line);
+			return NULL;
+		}
 		symbols++;
 	}
 	if (!symbols) {
 		fprintf(stderr, "ERROR: no symbols.\n");
+		return NULL;
 	}
 
 	fseek(fp, 0, SEEK_SET);
