@@ -224,8 +224,6 @@ static bool symbol_remove_obj(const char *name)
 }
 
 
-#define INVALID_SYMBOL_OFFSETS ((symbol_list_t*)1)
-
 /**
  * Load symbols of given type and the symbol address addresses from
  * DRI/GST format symbol table, and add given offsets to the addresses:
@@ -234,7 +232,7 @@ static bool symbol_remove_obj(const char *name)
  */
 static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, symtype_t gettype, Uint32 tablesize)
 {
-	int i, count, symbols, outside, invalid;
+	int i, count, symbols, invalid;
 	int notypes, dtypes, locals, ofiles;
 	prg_section_t *section;
 	symbol_list_t *list;
@@ -253,7 +251,7 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, symtyp
 		return NULL;
 	}
 
-	invalid = outside = dtypes = notypes = ofiles = locals = count = 0;
+	invalid = dtypes = notypes = ofiles = locals = count = 0;
 	for (i = 1; i <= symbols; i++) {
 		/* read DRI symbol table slot */
 		if (fread(name, 8, 1, fp) != 1 ||
@@ -319,14 +317,7 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, symtyp
 		if (section) {
 			address += section->offset;
 			if (address > section->end) {
-				/* VBCC has 1 symbol outside of its section */
-				if (++outside > 2) {
-					/* potentially buggy version of VBCC vlink used */
-					fprintf(stderr, "ERROR: too many invalid offsets, skipping rest of symbols!\n");
-					symbol_list_free(list);
-					return INVALID_SYMBOL_OFFSETS;
-				}
-				fprintf(stderr, "WARNING: ignoring symbol '%s' of %c type in slot %d with invalid offset 0x%x (>= 0x%x).\n",
+				fprintf(stderr, "WARNING: ignoring symbol '%s' of type %c in slot %d with invalid offset 0x%x (>= 0x%x).\n",
 					name, symbol_char(symtype), i, address, section->end);
 				invalid++;
 				continue;
@@ -390,7 +381,7 @@ static symbol_list_t* symbols_load_gnu(FILE *fp, prg_section_t *sections, symtyp
 	unsigned char n_other;
 	unsigned short n_desc;
 	static char dummy[] = "<invalid>";
-	int dtypes, locals, ofiles, count, outside, notypes, invalid, weak;
+	int dtypes, locals, ofiles, count, notypes, invalid, weak;
 	prg_section_t *section;
 
 	if (!(list = symbol_list_alloc(slots))) {
@@ -416,7 +407,7 @@ static symbol_list_t* symbols_load_gnu(FILE *fp, prg_section_t *sections, symtyp
 	p = (unsigned char *)list->strtab;
 	sym = list->names;
 
-	weak = invalid = outside = dtypes = notypes = ofiles = locals = count = 0;
+	weak = invalid = dtypes = notypes = ofiles = locals = count = 0;
 	for (i = 0; i < slots; i++)
 	{
 		strx = SDL_SwapBE32(*(Uint32*)p);
@@ -522,17 +513,7 @@ static symbol_list_t* symbols_load_gnu(FILE *fp, prg_section_t *sections, symtyp
 		if (section) {
 			address += sections[0].offset;	/* all GNU symbol addresses are TEXT relative */
 			if (address > section->end) {
-				outside++;
-#if 0
-				/* VBCC has 1 symbol outside of its section */
-				if (outside > 2) {
-					/* potentially buggy version of VBCC vlink used */
-					fprintf(stderr, "ERROR: too many invalid offsets, skipping rest of symbols!\n");
-					symbol_list_free(list);
-					return NULL;
-				}
-#endif
-				fprintf(stderr, "WARNING: ignoring symbol '%s' of %c type in slot %u with invalid offset 0x%x (>= 0x%x).\n",
+				fprintf(stderr, "WARNING: ignoring symbol '%s' of type %c in slot %u with invalid offset 0x%x (>= 0x%x).\n",
 					name, symbol_char(symtype), (unsigned int)i, address, section->end);
 				invalid++;
 				continue;
@@ -793,17 +774,6 @@ static symbol_list_t* symbols_load_binary(FILE *fp, symtype_t gettype)
 		}
 		fprintf(stderr, "Trying to load symbol table at offset 0x%x...\n", offset);
 		symbols = symbols_load_dri(fp, sections, gettype, tablesize);
-
-		if (symbols == INVALID_SYMBOL_OFFSETS && fseek(fp, offset, SEEK_SET) == 0) {
-			fprintf(stderr, "Re-trying with TEXT-relative BSS/DATA section offsets...\n");
-			start = DebugInfo_GetTEXT();
-			sections[1].offset = start;
-			sections[2].offset = start;
-			symbols = symbols_load_dri(fp, sections, gettype, tablesize);
-		}
-		if (symbols == INVALID_SYMBOL_OFFSETS) {
-			return NULL;
-		}
 	}
 	return symbols;
 }
