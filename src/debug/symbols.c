@@ -520,8 +520,8 @@ static symbol_list_t* symbols_load_gnu(FILE *fp, prg_section_t *sections, symtyp
 			continue;
 		}
 		if (section) {
-			address += sections[0].offset;
-			if (address > (section->end + 1)) {
+			address += sections[0].offset;	/* all GNU symbol addresses are TEXT relative */
+			if (address > section->end) {
 				outside++;
 #if 0
 				/* VBCC has 1 symbol outside of its section */
@@ -755,18 +755,25 @@ static symbol_list_t* symbols_load_binary(FILE *fp, symtype_t gettype)
 	}
 	sections[0].offset = start;
 	sections[0].end = start + textlen;
-	if (DebugInfo_GetTEXTEnd() != sections[0].end - 1) {
+	if (DebugInfo_GetTEXTEnd() != sections[0].end) {
 		fprintf(stderr, "ERROR: given program TEXT section size differs from one in RAM!\n");
 		return NULL;
 	}
 
 	start = DebugInfo_GetDATA();
 	sections[1].offset = start;
-	sections[1].end = start + datalen - 1;
+	sections[1].end = start + datalen;
 
 	start = DebugInfo_GetBSS();
 	sections[2].offset = start;
-	sections[2].end = start + bsslen - 1;
+	sections[2].end = start + bsslen;
+
+	if (sections[0].end != sections[1].offset) {
+		fprintf(stderr, "WARNIGN: DATA start doesn't match TEXT start + size!\n");
+	}
+	if (sections[1].end != sections[2].offset) {
+		fprintf(stderr, "WARNIGN: BSS start doesn't match DATA start + size!\n");
+	}
 
 	if (tabletype == SYMBOL_FORMAT_GNU) {
 		/* go to start of symbol table */
@@ -792,8 +799,6 @@ static symbol_list_t* symbols_load_binary(FILE *fp, symtype_t gettype)
 			start = DebugInfo_GetTEXT();
 			sections[1].offset = start;
 			sections[2].offset = start;
-			sections[1].end += textlen;
-			sections[2].end += (textlen + datalen);
 			symbols = symbols_load_dri(fp, sections, gettype, tablesize);
 		}
 		if (symbols == INVALID_SYMBOL_OFFSETS) {

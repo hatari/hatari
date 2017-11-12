@@ -176,14 +176,14 @@ Uint32 DebugInfo_GetTEXT(void)
 	return GetBasepageValue(0x08);
 }
 /**
- * DebugInfo_GetTEXTEnd: return current program TEXT segment end address
+ * DebugInfo_GetTEXTEnd: return address following current program TEXT segment
  * or zero if basepage missing/invalid.  For virtual debugger variable.
  */
 Uint32 DebugInfo_GetTEXTEnd(void)
 {
 	Uint32 addr = GetBasepageValue(0x08);
 	if (addr) {
-		return addr + GetBasepageValue(0x0C) - 1;
+		return addr + GetBasepageValue(0x0C);
 	}
 	return 0;
 }

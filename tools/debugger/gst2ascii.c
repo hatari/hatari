@@ -115,6 +115,10 @@ static symbol_list_t* usage(const char *msg)
 		"content in ASCII format accepted by Hatari debugger and its\n"
 		"profiler data post-processor.\n"
 		"\n"
+		"All symbol addresses are output as TEXT relative, i.e. you need\n"
+		"to give only that as section address for the Hatari debugger:\n"
+		"\tsymbols <filename> TEXT\n"
+		"\n"
 		"Options:\n", name);
 	for (i = 0; i < ARRAY_SIZE(OptInfo); i++) {
 		fprintf(stderr, "\t-%c\t%s\n", OptInfo[i].opt, OptInfo[i].desc);
@@ -576,8 +580,8 @@ static symbol_list_t* symbols_load_gnu(FILE *fp, prg_section_t *sections, Uint32
 			}
 		}
 		if (section) {
-			address += sections[0].offset;
-			if (address > (section->end + 1)) {
+			address += sections[0].offset;	/* all GNU symbol addresses are TEXT relative */
+			if (address > section->end) {
 				outside++;
 #if 0
 				/* VBCC has 1 symbol outside of its section */
@@ -802,15 +806,15 @@ static symbol_list_t* symbols_load_binary(FILE *fp)
 		return NULL;
 	}
 
-	if (tabletype == SYMBOL_FORMAT_GNU) {
-		/* symbols already have suitable offsets, so only acceptable end position needs to be calculated */
-		sections[0].offset = 0;
-		sections[0].end = textlen;
-		sections[1].offset = textlen;
-		sections[1].end = textlen + datalen;
-		sections[2].offset = textlen + datalen;
-		sections[2].end = textlen + datalen + bsslen;
+	/* symbols already have suitable offsets, so only acceptable end position needs to be calculated */
+	sections[0].offset = 0;
+	sections[0].end = textlen;
+	sections[1].offset = textlen;
+	sections[1].end = textlen + datalen;
+	sections[2].offset = textlen + datalen;
+	sections[2].end = textlen + datalen + bsslen;
 
+	if (tabletype == SYMBOL_FORMAT_GNU) {
 		/* go to start of symbol table */
 		offset = symoff;
 		if (fseek(fp, offset, SEEK_SET) < 0) {
@@ -820,14 +824,6 @@ static symbol_list_t* symbols_load_binary(FILE *fp)
 		fprintf(stderr, "Trying to load symbol table at offset 0x%x...\n", offset);
 		symbols = symbols_load_gnu(fp, sections, tablesize, stroff, strsize);
 	} else {
-		/* symbols already have suitable offsets, so only acceptable end position needs to be calculated */
-		sections[0].offset = 0;
-		sections[0].end = textlen;
-		sections[1].offset = 0;
-		sections[1].end = datalen;
-		sections[2].offset = 0;
-		sections[2].end = bsslen;
-
 		/* go to start of symbol table */
 		offset = 0x1C + textlen + datalen;
 		if (fseek(fp, offset, SEEK_SET) < 0) {
@@ -839,8 +835,8 @@ static symbol_list_t* symbols_load_binary(FILE *fp)
 
 		if (symbols == INVALID_SYMBOL_OFFSETS && fseek(fp, offset, SEEK_SET) == 0) {
 			fprintf(stderr, "Re-trying with TEXT-relative BSS/DATA section offsets...\n");
-			sections[1].end += textlen;
-			sections[2].end += (textlen + datalen);
+			sections[1].offset = 0;
+			sections[2].offset = 0;
 			symbols = symbols_load_dri(fp, sections, tablesize);
 			if (symbols) {
 				fprintf(stderr, "Load symbols without giving separate BSS/DATA offsets (they're TEXT relative).\n");

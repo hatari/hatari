@@ -10,13 +10,17 @@ gst2ascii \- Filter and output Atari program symbol table as ASCII
 .RI  [options]
 .RI  <program>
 .SH "DESCRIPTION"
-\fIgst2ascii\fP reads GNU-style a.out or traditional DRI/GST symbol
+\fIgst2ascii\fP reads (GNU-style a.out or traditional DRI/GST) symbol
 table from given Atari program and outputs it in the ASCII format
 understood by Hatari debugger and its profiler data post-processor
 (latter doesn't accept any other format).
 .PP
-There are some options to filter the symbol table content, and the
-resulting ASCII output is easy to edit also by hand, in case other
+All symbol addresses output by the tool are TEXT relative, so
+when loading them in Hatari debugger, one needs to give just TEXT
+as offset for the 'symbols' command.
+.PP
+There are some options for filtering the symbol table content, and
+the resulting ASCII output is easy to edit also by hand, in case other
 symbols (e.g. loop labels) need to be removed from it, or missing
 function symbols need to be added to it.
 .SH "OPTIONS"
