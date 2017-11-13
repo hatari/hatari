@@ -2911,11 +2911,6 @@ static void exception_check_trace (int nr)
 
 static void exception_debug (int nr)
 {
-#ifdef DEBUGGER
-	if (!exception_debugging)
-		return;
-	console_out_f (_T("Exception %d, PC=%08X\n"), nr, M68K_GETPC);
-#endif
 #ifdef WINUAE_FOR_HATARI
 	if (unlikely(ExceptionDebugMask & EXCEPT_NOHANDLER) && STMemory_ReadLong(regs.vbr + 4*nr) == 0) {
         	fprintf(stderr,"Uninitialized exception handler #%i!\n", nr);
@@ -2923,6 +2918,12 @@ static void exception_debug (int nr)
 	} else {
 		DebugUI_Exceptions(nr, M68K_GETPC);
 	}
+#else
+#ifdef DEBUGGER
+	if (!exception_debugging)
+		return;
+	console_out_f (_T("Exception %d, PC=%08X\n"), nr, M68K_GETPC);
+#endif
 #endif
 }
 
