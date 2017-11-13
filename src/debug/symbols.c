@@ -1337,7 +1337,7 @@ const char Symbols_Description[] =
  */
 int Symbols_Command(int nArgc, char *psArgs[])
 {
-	enum { TYPE_NONE, TYPE_CPU, TYPE_DSP } listtype;
+	enum { TYPE_CPU, TYPE_DSP } listtype;
 	Uint32 offsets[3], maxaddr;
 	symbol_list_t *list;
 	const char *file;
@@ -1346,20 +1346,18 @@ int Symbols_Command(int nArgc, char *psArgs[])
 	if (strcmp("dspsymbols", psArgs[0]) == 0) {
 		listtype = TYPE_DSP;
 		maxaddr = 0xFFFF;
-	} else if (strcmp("symbols", psArgs[0]) == 0) {
+	} else {
 		listtype = TYPE_CPU;
 		if ( ConfigureParams.System.bAddressSpace24 )
 			maxaddr = 0x00FFFFFF;
 		else
 			maxaddr = 0xFFFFFFFF;
+	}
+	if (nArgc < 2) {
+		file = "name";
 	} else {
-		listtype = TYPE_NONE;
-		maxaddr = 0;
+		file = psArgs[1];
 	}
-	if (nArgc < 2 || listtype == TYPE_NONE) {
-		return DebugUI_PrintCmdHelp(psArgs[0]);
-	}
-	file = psArgs[1];
 
 	/* handle special cases */
 	if (strcmp(file, "name") == 0 || strcmp(file, "addr") == 0) {
