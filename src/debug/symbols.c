@@ -110,11 +110,12 @@ static int symbols_by_name(const void *s1, const void *s2)
 }
 
 /**
- * check for duplicate addresses in symbol list
+ * Check for duplicate addresses in symbol list
+ * Return number of duplicates
  */
-static void symbols_check_addresses(const symbol_t *syms, int count)
+static int symbols_check_addresses(const symbol_t *syms, int count)
 {
-	int i, j;
+	int i, j, dups = 0;
 
 	for (i = 0; i < (count - 1); i++)
 	{
@@ -126,28 +127,33 @@ static void symbols_check_addresses(const symbol_t *syms, int count)
 			if (syms[j].type == SYMTYPE_ABS) {
 				continue;
 			}
-			fprintf(stderr, "WARNING: symbols '%s' & '%s' have the same 0x%x address.\n",
+			fprintf(stderr,	"WARNING: symbols '%s' & '%s' have the same 0x%x address\n",
 				syms[i].name, syms[j].name, syms[i].address);
+			dups++;
 			i = j;
 		}
 	}
+	return dups;
 }
 
 /**
- * check for duplicate names in symbol list
+ * Check for duplicate names in symbol list
+ * Return number of duplicates
  */
-static void symbols_check_names(const symbol_t *syms, int count)
+static int symbols_check_names(const symbol_t *syms, int count)
 {
-	int i, j;
+	int i, j, dups = 0;
 
 	for (i = 0; i < (count - 1); i++)
 	{
 		for (j = i + 1; j < count && strcmp(syms[i].name, syms[j].name) == 0; j++) {
-			fprintf(stderr, "WARNING: addresses 0x%x & 0x%x have the same '%s' name.\n",
+			fprintf(stderr,	"WARNING: addresses 0x%x & 0x%x have the same '%s' name\n",
 				syms[i].address, syms[j].address, syms[i].name);
+			dups++;
 			i = j;
 		}
 	}
+	return dups;
 }
 
 /**
@@ -941,10 +947,13 @@ static symbol_list_t* Symbols_Load(const char *filename, Uint32 *offsets, Uint32
 	qsort(list->names, list->count, sizeof(symbol_t), symbols_by_name);
 
 	/* check for duplicate addresses */
-	symbols_check_addresses(list->addresses, list->count);
-
+	if (symbols_check_addresses(list->addresses, list->count)) {
+		fprintf(stderr, "-> Hatari profiles/dissassembly will show only one of the symbols for given address!\n");
+	}
 	/* check for duplicate names */
-	symbols_check_names(list->names, list->count);
+	if (symbols_check_names(list->names, list->count)) {
+		fprintf(stderr, "-> Hatari symbol expansion can match only one of the addresses for name duplicates!\n");
+	}
 
 	fprintf(stderr, "Loaded %d symbols from '%s'.\n", list->count, filename);
 	return list;
