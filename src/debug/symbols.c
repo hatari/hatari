@@ -43,10 +43,11 @@ typedef struct {
 } symbol_t;
 
 typedef struct {
-	int count;		/* final symbol count */
 	int symbols;		/* initial symbol count */
-	symbol_t *addresses;	/* items sorted by address */
-	symbol_t *names;	/* items sorted by symbol name */
+	int namecount;		/* final symbol count */
+	int addrcount;		/* TEXT symbol address count */
+	symbol_t *addresses;	/* TEXT items sorted by address */
+	symbol_t *names;	/* all items sorted by symbol name */
 	char *strtab;
 } symbol_list_t;
 
@@ -80,37 +81,53 @@ static bool AutoLoadFailed;
 /* ------------------ load and free functions ------------------ */
 
 /**
- * compare function for qsort() to sort according to symbol address
+ * compare function for qsort() to sort according to
+ * symbol type & address.  Text section symbols will
+ * be sorted first.
  */
 static int symbols_by_address(const void *s1, const void *s2)
 {
-	Uint32 addr1 = ((const symbol_t*)s1)->address;
-	Uint32 addr2 = ((const symbol_t*)s2)->address;
+	const symbol_t *sym1 = (const symbol_t*)s1;
+	const symbol_t *sym2 = (const symbol_t*)s2;
 
-	if (addr1 < addr2) {
+	/* first sort by type */
+	if (sym1->type < sym2->type) {
 		return -1;
 	}
-	if (addr1 > addr2) {
+	if (sym1->type > sym2->type) {
+		return 1;
+	}
+	/* then by address */
+	if (sym1->address < sym2->address) {
+		return -1;
+	}
+	if (sym1->address > sym2->address) {
 		return 1;
 	}
 	return 0;
 }
 
 /**
- * compare function for qsort() to sort according to symbol name
+ * compare function for qsort() to sort according to
+ * symbol name & address
  */
 static int symbols_by_name(const void *s1, const void *s2)
 {
-	const char* name1 = ((const symbol_t*)s1)->name;
-	const char* name2 = ((const symbol_t*)s2)->name;
+	const symbol_t *sym1 = (const symbol_t*)s1;
+	const symbol_t *sym2 = (const symbol_t*)s2;
 	int ret;
 
-	ret = strcmp(name1, name2);
-	return ret;
+	/* first by name */
+	ret = strcmp(sym1->name, sym2->name);
+	if (ret) {
+		return ret;
+	}
+	/* then by address */
+	return (sym1->address - sym2->address);
 }
 
 /**
- * Check for duplicate addresses in symbol list
+ * Check for duplicate addresses in TEXT symbol list
  * Return number of duplicates
  */
 static int symbols_check_addresses(const symbol_t *syms, int count)
@@ -119,14 +136,7 @@ static int symbols_check_addresses(const symbol_t *syms, int count)
 
 	for (i = 0; i < (count - 1); i++)
 	{
-		/* absolute symbols have values, not addresses */
-		if (syms[i].type == SYMTYPE_ABS) {
-			continue;
-		}
 		for (j = i + 1; j < count && syms[i].address == syms[j].address; j++) {
-			if (syms[j].type == SYMTYPE_ABS) {
-				continue;
-			}
 			fprintf(stderr,	"WARNING: symbols '%s' & '%s' have the same 0x%x address\n",
 				syms[i].name, syms[j].name, syms[i].address);
 			dups++;
@@ -361,7 +371,7 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, symtyp
 		fprintf(stderr, "NOTE: ignored %d object symbols (= name has '/', ends in '.[ao]' or is GCC internal).\n", ofiles);
 	}
 	list->symbols = symbols;
-	list->count = count;
+	list->namecount = count;
 	return list;
 }
 
@@ -559,7 +569,7 @@ static symbol_list_t* symbols_load_gnu(FILE *fp, prg_section_t *sections, symtyp
 	}
 
 	list->symbols = slots;
-	list->count = count;
+	list->namecount = count;
 	return list;
 }
 
@@ -883,8 +893,59 @@ static symbol_list_t* symbols_load_ascii(FILE *fp, Uint32 *offsets, Uint32 maxad
 		count++;
 	}
 	list->symbols = symbols;
-	list->count = count;
+	list->namecount = count;
 	return list;
+}
+
+/**
+ * Remove full duplicates from the sorted names list
+ * and trim the allocation to remaining symbols
+ */
+static void symbols_trim_names(symbol_list_t* list)
+{
+	symbol_t *sym = list->names;
+	int i, next, count, dups;
+
+	count = list->namecount;
+	for (dups = i = 0; i < count - 1; i++) {
+		next = i + 1;
+		if (strcmp(sym[i].name, sym[next].name) == 0 &&
+		    sym[i].address == sym[next].address &&
+		    sym[i].type == sym[next].type) {
+			/* remove duplicate */
+			memmove(sym+i, sym+next, (count-next) * sizeof(symbol_t));
+			count--;
+			dups++;
+		}
+	}
+	if (dups || list->namecount < list->symbols) {
+		list->names = realloc(list->names, i * sizeof(symbol_t));
+		assert(list->names);
+		list->namecount = i;
+	}
+	if (dups) {
+		fprintf(stderr, "WARNING: removed %d complete symbol duplicates\n", dups);
+	}
+}
+
+/**
+ * Trim the sorted address list to contain only TEXT symbols.
+ */
+static void symbols_trim_addresses(symbol_list_t* list)
+{
+	symbol_t *sym = list->addresses;
+	int i;
+
+	for (i = 0; i < list->namecount; i++) {
+		if (sym[i].type != SYMTYPE_TEXT) {
+			break;
+		}
+	}
+	if (i < list->namecount) {
+		list->addresses = realloc(list->addresses, i * sizeof(symbol_t));
+		assert(list->addresses);
+	}
+	list->addrcount = i;
 }
 
 /**
@@ -926,36 +987,37 @@ static symbol_list_t* Symbols_Load(const char *filename, Uint32 *offsets, Uint32
 		return NULL;
 	}
 
-	if (list->count < list->symbols) {
-		if (!list->count) {
-			fprintf(stderr, "ERROR: no valid symbols in '%s', loading failed!\n", filename);
-			symbol_list_free(list);
-			return NULL;
-		}
-		/* parsed less than there were "content" lines */
-		list->names = realloc(list->names, list->count * sizeof(symbol_t));
-		assert(list->names);
+	if (!list->namecount) {
+		fprintf(stderr, "ERROR: no valid symbols in '%s', loading failed!\n", filename);
+		symbol_list_free(list);
+		return NULL;
 	}
 
-	/* copy name list to address list */
-	list->addresses = malloc(list->count * sizeof(symbol_t));
-	assert(list->addresses);
-	memcpy(list->addresses, list->names, list->count * sizeof(symbol_t));
+	/* sort and trim names list */
+	qsort(list->names, list->namecount, sizeof(symbol_t), symbols_by_name);
+	symbols_trim_names(list);
 
-	/* sort both lists, with different criteria */
-	qsort(list->addresses, list->count, sizeof(symbol_t), symbols_by_address);
-	qsort(list->names, list->count, sizeof(symbol_t), symbols_by_name);
-
-	/* check for duplicate addresses */
-	if (symbols_check_addresses(list->addresses, list->count)) {
-		fprintf(stderr, "-> Hatari profiles/dissassembly will show only one of the symbols for given address!\n");
-	}
 	/* check for duplicate names */
-	if (symbols_check_names(list->names, list->count)) {
+	if (symbols_check_names(list->names, list->namecount)) {
 		fprintf(stderr, "-> Hatari symbol expansion can match only one of the addresses for name duplicates!\n");
 	}
 
-	fprintf(stderr, "Loaded %d symbols from '%s'.\n", list->count, filename);
+	/* copy name list to address list */
+	list->addresses = malloc(list->namecount * sizeof(symbol_t));
+	assert(list->addresses);
+	memcpy(list->addresses, list->names, list->namecount * sizeof(symbol_t));
+
+	/* sort address list and trim to contain just TEXT symbols */
+	qsort(list->addresses, list->namecount, sizeof(symbol_t), symbols_by_address);
+	symbols_trim_addresses(list);
+
+	/* check for duplicate addresses */
+	if (symbols_check_addresses(list->addresses, list->addrcount)) {
+		fprintf(stderr, "-> Hatari profiles/dissassembly will show only one of the symbols for given address!\n");
+	}
+
+	fprintf(stderr, "Loaded %d symbols (%d TEXT) from '%s'.\n",
+		list->namecount, list->addrcount, filename);
 	return list;
 }
 
@@ -970,12 +1032,12 @@ static void Symbols_Free(symbol_list_t* list)
 	if (!list) {
 		return;
 	}
-	assert(list->count);
+	assert(list->namecount);
 	if (list->strtab) {
 		free(list->strtab);
 		list->strtab = NULL;
 	} else {
-		for (i = 0; i < list->count; i++) {
+		for (i = 0; i < list->namecount; i++) {
 			free(list->names[i].name);
 		}
 	}
@@ -984,8 +1046,9 @@ static void Symbols_Free(symbol_list_t* list)
 
 	/* catch use of freed list */
 	list->addresses = NULL;
+	list->addrcount = 0;
 	list->names = NULL;
-	list->count = 0;
+	list->namecount = 0;
 	free(list);
 }
 
@@ -1014,7 +1077,7 @@ static char* Symbols_MatchByName(symbol_list_t* list, symtype_t symtype, const c
 
 	/* next match */
 	entry = list->names;
-	while (i < list->count) {
+	while (i < list->namecount) {
 		if ((entry[i].type & symtype) &&
 		    strncmp(entry[i].name, text, len) == 0) {
 			return strdup(entry[i++].name);
@@ -1081,7 +1144,7 @@ static const symbol_t* Symbols_SearchByName(symbol_list_t* list, symtype_t symty
 
 	/* bisect */
 	l = 0;
-	r = list->count - 1;
+	r = list->namecount - 1;
 	do {
 		m = (l+r) >> 1;
 		dir = strcmp(entries[m].name, name);
@@ -1146,7 +1209,7 @@ static int Symbols_SearchByAddress(symbol_list_t* list, Uint32 addr)
 
 	/* bisect */
 	l = 0;
-	r = list->count - 1;
+	r = list->addrcount - 1;
 	do {
 		m = (l+r) >> 1;
 		curr = entries[m].address;
@@ -1210,13 +1273,13 @@ int Symbols_GetDspAddressIndex(Uint32 addr)
 /**
  * Return how many symbols are loaded/available
  */
-int Symbols_CpuCount(void)
+int Symbols_CpuAddrCount(void)
 {
-	return (CpuSymbolsList ? CpuSymbolsList->count : 0);
+	return (CpuSymbolsList ? CpuSymbolsList->addrcount : 0);
 }
-int Symbols_DspCount(void)
+int Symbols_DspAddrCount(void)
 {
-	return (DspSymbolsList ? DspSymbolsList->count : 0);
+	return (DspSymbolsList ? DspSymbolsList->addrcount : 0);
 }
 
 /* ---------------- symbol showing ------------------ */
@@ -1227,8 +1290,9 @@ int Symbols_DspCount(void)
 static void Symbols_Show(symbol_list_t* list, const char *sorttype)
 {
 	symbol_t *entry, *entries;
+	const char *symtype;
+	int i, rows, count;
 	char symchar;
-	int i, rows;
 	char line[80];
 	
 	if (!list) {
@@ -1238,15 +1302,19 @@ static void Symbols_Show(symbol_list_t* list, const char *sorttype)
 
 	if (strcmp("addr", sorttype) == 0) {
 		entries = list->addresses;
+		count = list->addrcount;
+		symtype = " TEXT";
 	} else {
 		entries = list->names;
+		count = list->namecount;
+		symtype = "";
 	}
-	fprintf(stderr, "%s symbols sorted by %s:\n",
-		(list == CpuSymbolsList ? "CPU" : "DSP"), sorttype);
+	fprintf(stderr, "%s%s symbols sorted by %s:\n",
+		(list == CpuSymbolsList ? "CPU" : "DSP"), symtype, sorttype);
 
 	rows = DebugUI_GetPageLines(ConfigureParams.Debugger.nSymbolLines, 20);
 
-	for (entry = entries, i = 0; i < list->count; i++, entry++) {
+	for (entry = entries, i = 0; i < count; i++, entry++) {
 		symchar = symbol_char(entry->type);
 		fprintf(stderr, "0x%08x %c %s\n",
 			entry->address, symchar, entry->name);

@@ -647,7 +647,7 @@ void Profile_CpuShowCounts(int show, bool only_symbols)
 		return;
 	}
 
-	symbols = Symbols_CpuCount();
+	symbols = Symbols_CpuAddrCount();
 	if (!symbols) {
 		fprintf(stderr, "ERROR: no CPU symbols loaded!\n");
 		return;
@@ -768,7 +768,7 @@ bool Profile_CpuStart(void)
 	       (int)sizeof(*cpu_profile.data)*size/(1024*1024));
 	cpu_profile.size = size;
 
-	Profile_AllocCallinfo(&(cpu_callinfo), Symbols_CpuCount(), "CPU");
+	Profile_AllocCallinfo(&(cpu_callinfo), Symbols_CpuAddrCount(), "CPU");
 
 	/* special hack for EmuTOS */
 	etos_switcher = PC_UNDEFINED;

@@ -9,7 +9,7 @@
 #define HATARI_SYMBOLS_H
 
 typedef enum {
-	SYMTYPE_TEXT = 1,
+	SYMTYPE_TEXT = 1,  /* Needs to be smallest number for sorting! */
 	SYMTYPE_DATA = 2,
 	SYMTYPE_BSS  = 4,
 	SYMTYPE_ABS  = 8,
@@ -36,8 +36,8 @@ extern const char* Symbols_GetByDspAddress(Uint32 addr);
 extern int Symbols_GetCpuAddressIndex(Uint32 addr);
 extern int Symbols_GetDspAddressIndex(Uint32 addr);
 /* how many symbols are loaded */
-extern int Symbols_CpuCount(void);
-extern int Symbols_DspCount(void);
+extern int Symbols_CpuAddrCount(void);
+extern int Symbols_DspAddrCount(void);
 /* handlers for automatic program symbol loading */
 extern void Symbols_RemoveCurrentProgram(void);
 extern void Symbols_ChangeCurrentProgram(const char *path);

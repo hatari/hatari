@@ -275,7 +275,7 @@ void Profile_DspShowCounts(int show, bool only_symbols)
 		return;
 	}
 
-	symbols = Symbols_DspCount();
+	symbols = Symbols_DspAddrCount();
 	if (!symbols) {
 		fprintf(stderr, "ERROR: no DSP symbols loaded!\n");
 		return;
@@ -370,7 +370,7 @@ bool Profile_DspStart(void)
 	printf("Allocated DSP profile buffer (%d KB).\n",
 	       (int)sizeof(*dsp_profile.data)*DSP_PROFILE_ARR_SIZE/1024);
 
-	Profile_AllocCallinfo(&(dsp_callinfo), Symbols_DspCount(), "DSP");
+	Profile_AllocCallinfo(&(dsp_callinfo), Symbols_DspAddrCount(), "DSP");
 
 	item = dsp_profile.data;
 	for (i = 0; i < DSP_PROFILE_ARR_SIZE; i++, item++) {
