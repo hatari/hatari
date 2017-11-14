@@ -1340,8 +1340,9 @@ void Symbols_RemoveCurrentProgram(void)
 		free(CurrentProgramPath);
 		CurrentProgramPath = NULL;
 
-		if (SymbolsAreForProgram) {
+		if (SymbolsAreForProgram && CpuSymbolsList) {
 			Symbols_Free(CpuSymbolsList);
+			fprintf(stderr, "Program exit, removing its symbols.\n");
 			CpuSymbolsList = NULL;
 		}
 	}
@@ -1386,19 +1387,24 @@ void Symbols_LoadCurrentProgram(void)
 char *Symbols_MatchCommand(const char *text, int state)
 {
 	static const char* subs[] = {
-		"addr", "free", "name", "prg"
+		"addr", "free", "name", "prg", "prgres"
 	};
 	return DebugUI_MatchHelper(subs, ARRAY_SIZE(subs), text, state);
 }
 
 const char Symbols_Description[] =
-	"<filename|prg|addr|name|free> [<T offset> [<D offset> <B offset>]]\n"
+	"<filename|prg|prgres|addr|name|free> [<T offset> [<D offset> <B offset>]]\n"
 	"\tLoads symbol names and their addresses from the given file.\n"
 	"\tIf there were previously loaded symbols, they're replaced.\n"
 	"\n"
 	"\tGiving 'prg' instead of a file name, loads (DRI/GST or a.out\n"
 	"\tformat) symbol table from the last program executed through\n"
 	"\tthe GEMDOS HD emulation.\n"
+	"\n"
+	"\t'prgres' is same as 'prg' but symbols won't be automatically\n"
+	"\tfreed when the program exits. Before starting same or another\n"
+	"\tprogram, you need to 'free' these symbols to switch back to\n"
+	"\tsymbol autoloading.\n"
 	"\n"
 	"\tGiving either 'name' or 'addr' instead of a file name, will\n"
 	"\tlist the currently loaded symbols.  Giving 'free' will remove\n"
@@ -1416,6 +1422,7 @@ int Symbols_Command(int nArgc, char *psArgs[])
 {
 	enum { TYPE_CPU, TYPE_DSP } listtype;
 	Uint32 offsets[3], maxaddr;
+	bool resident = false;
 	symbol_list_t *list;
 	const char *file;
 	int i;
@@ -1465,12 +1472,13 @@ int Symbols_Command(int nArgc, char *psArgs[])
 		}
 	}
 
-	if (strcmp(file, "prg") == 0) {
+	if (strcmp(file, "prg") == 0 || strcmp(file, "prgres") == 0) {
 		file = CurrentProgramPath;
 		if (!file) {
 			fprintf(stderr, "ERROR: no program loaded (through GEMDOS HD emu)!\n");
 			return DEBUGGER_CMDDONE;
 		}
+		resident = true;
 	}
 	list = Symbols_Load(file, offsets, maxaddr);
 	if (list) {
@@ -1480,6 +1488,11 @@ int Symbols_Command(int nArgc, char *psArgs[])
 		} else {
 			Symbols_Free(DspSymbolsList);
 			DspSymbolsList = list;
+		}
+		/* resident program, disable symbols auto-free? */
+		if (resident) {
+			fprintf(stderr, "Symbols set to be resident!\n");
+			SymbolsAreForProgram = false;
 		}
 	} else {
 		DebugUI_PrintCmdHelp(psArgs[0]);
