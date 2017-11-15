@@ -148,7 +148,7 @@ class UIHelp:
         self.view_url("http://hatari.tuxfamily.org/", "Hatari home page")
 
     def view_hatariui_page(self, dummy=None):
-        self.view_url("http://koti.mbnet.fi/tammat/hatari/hatari-ui.shtml", "Hatari UI home page")
+        self.view_url("http://eerott.mbnet.fi/hatari/hatari-ui.shtml", "Hatari UI home page")
 
 
 # --------------------------------------------------------
