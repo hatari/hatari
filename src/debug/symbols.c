@@ -74,8 +74,12 @@ static symbol_list_t *DspSymbolsList;
 
 /* path for last loaded program (through GEMDOS HD emulation) */
 static char *CurrentProgramPath;
+/* whether current symbols were loaded from a program file */
 static bool SymbolsAreForProgram;
+/* prevent repeated failing on every debugger invocation */
 static bool AutoLoadFailed;
+/* load symbols on program start, and keep them after its termination */
+static bool KeepProgramSymbols;
 
 
 /* ------------------ load and free functions ------------------ */
@@ -1330,17 +1334,23 @@ static void Symbols_Show(symbol_list_t* list, const char *sorttype)
 
 /* ---------------- binary load handling ------------------ */
 
-
 /**
- * Remove last opened program path.
+ * If symbols are set resident, load them if they aren't yet loaded,
+ * otherwise remove them along with program path.
+ *
+ * Called on GEMDOS reset and when program terminates
+ * (unless terminated with Ptermres()).
  */
 void Symbols_RemoveCurrentProgram(void)
 {
 	if (CurrentProgramPath) {
+		if (KeepProgramSymbols) {
+			Symbols_LoadCurrentProgram();
+		}
 		free(CurrentProgramPath);
 		CurrentProgramPath = NULL;
 
-		if (SymbolsAreForProgram && CpuSymbolsList) {
+		if (CpuSymbolsList && SymbolsAreForProgram && !KeepProgramSymbols) {
 			Symbols_Free(CpuSymbolsList);
 			fprintf(stderr, "Program exit, removing its symbols.\n");
 			CpuSymbolsList = NULL;
@@ -1350,18 +1360,33 @@ void Symbols_RemoveCurrentProgram(void)
 }
 
 /**
- * Set last opened program path.
+ * Set last opened program path and remove symbols if they
+ * didn't get remove beforehand.
+ *
+ * Called on first Fopen() after Pexec().
  */
 void Symbols_ChangeCurrentProgram(const char *path)
 {
 	if (Opt_IsAtariProgram(path)) {
-		Symbols_RemoveCurrentProgram();
+		if (KeepProgramSymbols) {
+			if (CpuSymbolsList && SymbolsAreForProgram) {
+				Symbols_Free(CpuSymbolsList);
+				fprintf(stderr, "Program launch, removing previous program symbols.\n");
+				CpuSymbolsList = NULL;
+			}
+			if (CurrentProgramPath) {
+				free(CurrentProgramPath);
+			}
+		} else {
+			Symbols_RemoveCurrentProgram();
+		}
 		CurrentProgramPath = strdup(path);
 	}
 }
 
 /**
  * Load symbols for last opened program.
+ * Called when debugger is invoked.
  */
 void Symbols_LoadCurrentProgram(void)
 {
@@ -1387,33 +1412,38 @@ void Symbols_LoadCurrentProgram(void)
 char *Symbols_MatchCommand(const char *text, int state)
 {
 	static const char* subs[] = {
-		"addr", "free", "name", "prg", "prgres"
+		"addr", "free", "name", "prg", "resident"
 	};
 	return DebugUI_MatchHelper(subs, ARRAY_SIZE(subs), text, state);
 }
 
 const char Symbols_Description[] =
-	"<filename|prg|prgres|addr|name|free> [<T offset> [<D offset> <B offset>]]\n"
-	"\tLoads symbol names and their addresses from the given file.\n"
-	"\tIf there were previously loaded symbols, they're replaced.\n"
+	"<filename|prg|resident|addr|name|free> [<T offset> [<D offset> <B offset>]]\n"
 	"\n"
-	"\tGiving 'prg' instead of a file name, loads (DRI/GST or a.out\n"
+	"\tBy default, symbols are loaded from the currently executing program's\n"
+	"\tbinary automatically when entering the debugger, IF program is started\n"
+	"\tthrough GEMDOS HD, and they're freed when that program terminates.\n"
+	"\n"
+	"\tAbove corresponds to 'prg' command which loads (DRI/GST or a.out\n"
 	"\tformat) symbol table from the last program executed through\n"
 	"\tthe GEMDOS HD emulation.\n"
 	"\n"
-	"\t'prgres' is same as 'prg' but symbols won't be automatically\n"
-	"\tfreed when the program exits. Before starting same or another\n"
-	"\tprogram, you need to 'free' these symbols to switch back to\n"
-	"\tsymbol autoloading.\n"
+	"\t'resident' command toggles debugger to load symbols before program\n"
+	"\tterminates, and to defer their freeing until another program is\n"
+	"\tstarted.\n"
 	"\n"
-	"\tGiving either 'name' or 'addr' instead of a file name, will\n"
-	"\tlist the currently loaded symbols.  Giving 'free' will remove\n"
-	"\tthe loaded symbols.\n"
+	"\tIf program lacks symbols, or it's not run through the GEMDOS HD\n"
+	"\temulation, user can ask symbols to be loaded from an unstripped\n"
+	"\tversion of the binary, or from an ASCII symbols file produced by\n"
+	"\tthe 'nm' and (Hatari) 'gst2ascii' tools.\n"
 	"\n"
-	"\tIf one base address/offset is given, its added to all addresses.\n"
-	"\tIf three offsets are given (and non-zero), they're applied to\n"
-	"\ttext (T), data (D) and BSS (B) symbols.  Given offsets are used\n"
-	"\tonly when loading ASCII symbol files.";
+	"\tWith ASCII symbols files, given (non-zero) offset(s) are added to\n"
+	"\ttext (T), data (D) and BSS (B) symbols.  Typically one uses debugger\n"
+	"\tTEXT, sometimes also DATA & BSS, variables for this.\n"
+	"\n"
+	"\t'name' and 'addr' commands list the currently loaded symbols.\n"
+	"\n"
+	"\t'free' command removes the loaded symbols.";
 
 /**
  * Handle debugger 'symbols' command and its arguments
@@ -1422,7 +1452,6 @@ int Symbols_Command(int nArgc, char *psArgs[])
 {
 	enum { TYPE_CPU, TYPE_DSP } listtype;
 	Uint32 offsets[3], maxaddr;
-	bool resident = false;
 	symbol_list_t *list;
 	const char *file;
 	int i;
@@ -1441,6 +1470,27 @@ int Symbols_Command(int nArgc, char *psArgs[])
 		file = "name";
 	} else {
 		file = psArgs[1];
+	}
+
+	/* toggle whether to autoload symbols on program start,
+	 * and keep them until next program start (=resident),
+	 * OR only loading them when entering the debugger and
+	 * freeing them when program terminates.
+	 */
+	if (strcmp(file, "resident") == 0) {
+		KeepProgramSymbols = !KeepProgramSymbols;
+		if (KeepProgramSymbols) {
+			Symbols_LoadCurrentProgram();
+			fprintf(stderr, "Program symbols are resident.\n");
+		} else {
+			fprintf(stderr, "Program symbols are not resident.\n");
+			if (!CurrentProgramPath) {
+				/* make sure normal autoloading isn't prevented */
+				Symbols_Free(CpuSymbolsList);
+				CpuSymbolsList = NULL;
+			}
+		}
+		return DEBUGGER_CMDDONE;
 	}
 
 	/* handle special cases */
@@ -1472,13 +1522,12 @@ int Symbols_Command(int nArgc, char *psArgs[])
 		}
 	}
 
-	if (strcmp(file, "prg") == 0 || strcmp(file, "prgres") == 0) {
+	if (strcmp(file, "prg") == 0) {
 		file = CurrentProgramPath;
 		if (!file) {
 			fprintf(stderr, "ERROR: no program loaded (through GEMDOS HD emu)!\n");
 			return DEBUGGER_CMDDONE;
 		}
-		resident = true;
 	}
 	list = Symbols_Load(file, offsets, maxaddr);
 	if (list) {
@@ -1488,11 +1537,6 @@ int Symbols_Command(int nArgc, char *psArgs[])
 		} else {
 			Symbols_Free(DspSymbolsList);
 			DspSymbolsList = list;
-		}
-		/* resident program, disable symbols auto-free? */
-		if (resident) {
-			fprintf(stderr, "Symbols set to be resident!\n");
-			SymbolsAreForProgram = false;
 		}
 	} else {
 		DebugUI_PrintCmdHelp(psArgs[0]);
