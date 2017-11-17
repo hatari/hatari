@@ -354,6 +354,14 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, symtyp
 		symbol_list_free(list);
 		return NULL;
 	}
+	list->symbols = symbols;
+	list->namecount = count;
+
+	/* skip verbose output when symbol loading is forced */
+	if (KeepProgramSymbols) {
+		return list;
+	}
+
 	if (invalid) {
 		fprintf(stderr, "NOTE: ignored %d invalid symbols.\n", invalid);
 	}
@@ -374,8 +382,6 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, symtyp
 		 */
 		fprintf(stderr, "NOTE: ignored %d object symbols (= name has '/', ends in '.[ao]' or is GCC internal).\n", ofiles);
 	}
-	list->symbols = symbols;
-	list->namecount = count;
 	return list;
 }
 
@@ -547,6 +553,13 @@ static symbol_list_t* symbols_load_gnu(FILE *fp, prg_section_t *sections, symtyp
 		(void) n_desc;
 		(void) n_other;
 	}
+	list->symbols = slots;
+	list->namecount = count;
+
+	/* skip verbose output when symbol loading is forced */
+	if (KeepProgramSymbols) {
+		return list;
+	}
 
 	if (invalid) {
 		fprintf(stderr, "NOTE: ignored %d invalid symbols.\n", invalid);
@@ -571,9 +584,6 @@ static symbol_list_t* symbols_load_gnu(FILE *fp, prg_section_t *sections, symtyp
 		 */
 		fprintf(stderr, "NOTE: ignored %d object symbols (= name has '/', ends in '.[ao]' or is GCC internal).\n", ofiles);
 	}
-
-	list->symbols = slots;
-	list->namecount = count;
 	return list;
 }
 
@@ -1001,11 +1011,6 @@ static symbol_list_t* Symbols_Load(const char *filename, Uint32 *offsets, Uint32
 	qsort(list->names, list->namecount, sizeof(symbol_t), symbols_by_name);
 	symbols_trim_names(list);
 
-	/* check for duplicate names */
-	if (symbols_check_names(list->names, list->namecount)) {
-		fprintf(stderr, "-> Hatari symbol expansion can match only one of the addresses for name duplicates!\n");
-	}
-
 	/* copy name list to address list */
 	list->addresses = malloc(list->namecount * sizeof(symbol_t));
 	assert(list->addresses);
@@ -1015,9 +1020,16 @@ static symbol_list_t* Symbols_Load(const char *filename, Uint32 *offsets, Uint32
 	qsort(list->addresses, list->namecount, sizeof(symbol_t), symbols_by_address);
 	symbols_trim_addresses(list);
 
-	/* check for duplicate addresses */
-	if (symbols_check_addresses(list->addresses, list->addrcount)) {
-		fprintf(stderr, "-> Hatari profiles/dissassembly will show only one of the symbols for given address!\n");
+	/* skip verbose output when symbol loading is forced */
+	if (!KeepProgramSymbols) {
+		/* check for duplicate names */
+		if (symbols_check_names(list->names, list->namecount)) {
+			fprintf(stderr, "-> Hatari symbol expansion can match only one of the addresses for name duplicates!\n");
+		}
+		/* check for duplicate addresses */
+		if (symbols_check_addresses(list->addresses, list->addrcount)) {
+			fprintf(stderr, "-> Hatari profiles/dissassembly will show only one of the symbols for given address!\n");
+		}
 	}
 
 	fprintf(stderr, "Loaded %d symbols (%d TEXT) from '%s'.\n",
@@ -1481,9 +1493,9 @@ int Symbols_Command(int nArgc, char *psArgs[])
 		KeepProgramSymbols = !KeepProgramSymbols;
 		if (KeepProgramSymbols) {
 			Symbols_LoadCurrentProgram();
-			fprintf(stderr, "Program symbols are resident.\n");
+			fprintf(stderr, "Program symbols will always be loaded (with reduced warnings)\nand kept resident until next program start.\n");
 		} else {
-			fprintf(stderr, "Program symbols are not resident.\n");
+			fprintf(stderr, "Program symbols will be removed when program terminates.\n");
 			if (!CurrentProgramPath) {
 				/* make sure normal autoloading isn't prevented */
 				Symbols_Free(CpuSymbolsList);
