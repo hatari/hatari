@@ -45,8 +45,9 @@ typedef struct {
 typedef struct {
 	int symbols;		/* initial symbol count */
 	int namecount;		/* final symbol count */
-	int addrcount;		/* TEXT symbol address count */
-	symbol_t *addresses;	/* TEXT items sorted by address */
+	int codecount;		/* TEXT symbol address count */
+	int datacount;		/* DATA/BSS symbol address count */
+	symbol_t *addresses;	/* TEXT + DATA/BSS items sorted by address */
 	symbol_t *names;	/* all items sorted by symbol name */
 	char *strtab;
 } symbol_list_t;
@@ -94,14 +95,16 @@ static int symbols_by_address(const void *s1, const void *s2)
 	const symbol_t *sym1 = (const symbol_t*)s1;
 	const symbol_t *sym2 = (const symbol_t*)s2;
 
-	/* first sort by type */
-	if (sym1->type < sym2->type) {
-		return -1;
+	/* separate TEXT type addresses from others */
+	if (sym1->type != sym2->type) {
+		if (sym1->type == SYMTYPE_TEXT) {
+			return -1;
+		}
+		if (sym2->type == SYMTYPE_TEXT) {
+			return 1;
+		}
 	}
-	if (sym1->type > sym2->type) {
-		return 1;
-	}
-	/* then by address */
+	/* then sort by address */
 	if (sym1->address < sym2->address) {
 		return -1;
 	}
@@ -140,7 +143,14 @@ static int symbols_check_addresses(const symbol_t *syms, int count)
 
 	for (i = 0; i < (count - 1); i++)
 	{
+		/* absolute symbols have values, not addresses */
+		if (syms[i].type == SYMTYPE_ABS) {
+			continue;
+		}
 		for (j = i + 1; j < count && syms[i].address == syms[j].address; j++) {
+			if (syms[j].type == SYMTYPE_ABS) {
+				continue;
+			}
 			fprintf(stderr,	"WARNING: symbols '%s' & '%s' have the same 0x%x address\n",
 				syms[i].name, syms[j].name, syms[i].address);
 			dups++;
@@ -943,7 +953,7 @@ static void symbols_trim_names(symbol_list_t* list)
 }
 
 /**
- * Trim the sorted address list to contain only TEXT symbols.
+ * Separate TEXT symbols from other symbols in address list.
  */
 static void symbols_trim_addresses(symbol_list_t* list)
 {
@@ -955,11 +965,8 @@ static void symbols_trim_addresses(symbol_list_t* list)
 			break;
 		}
 	}
-	if (i < list->namecount) {
-		list->addresses = realloc(list->addresses, i * sizeof(symbol_t));
-		assert(list->addresses);
-	}
-	list->addrcount = i;
+	list->codecount = i;
+	list->datacount = list->namecount - i;
 }
 
 /**
@@ -1026,14 +1033,17 @@ static symbol_list_t* Symbols_Load(const char *filename, Uint32 *offsets, Uint32
 		if (symbols_check_names(list->names, list->namecount)) {
 			fprintf(stderr, "-> Hatari symbol expansion can match only one of the addresses for name duplicates!\n");
 		}
-		/* check for duplicate addresses */
-		if (symbols_check_addresses(list->addresses, list->addrcount)) {
-			fprintf(stderr, "-> Hatari profiles/dissassembly will show only one of the symbols for given address!\n");
+		/* check for duplicate TEXT & other addresses */
+		if (symbols_check_addresses(list->addresses, list->codecount)) {
+			fprintf(stderr, "-> Hatari profile/dissassembly will show only one of the TEXT symbols for given address!\n");
+		}
+		if (symbols_check_addresses(list->addresses + list->codecount, list->datacount)) {
+			fprintf(stderr, "-> Hatari dissassembly will show only one of the symbols for given address!\n");
 		}
 	}
 
 	fprintf(stderr, "Loaded %d symbols (%d TEXT) from '%s'.\n",
-		list->namecount, list->addrcount, filename);
+		list->namecount, list->codecount, filename);
 	return list;
 }
 
@@ -1062,7 +1072,8 @@ static void Symbols_Free(symbol_list_t* list)
 
 	/* catch use of freed list */
 	list->addresses = NULL;
-	list->addrcount = 0;
+	list->codecount = 0;
+	list->datacount = 0;
 	list->names = NULL;
 	list->namecount = 0;
 	free(list);
@@ -1144,23 +1155,17 @@ char* Symbols_MatchDspDataAddress(const char *text, int state)
 /* ---------------- symbol name -> address search ------------------ */
 
 /**
- * Search symbol of given type by name.
+ * Binary search symbol of given type by name.
  * Return symbol if name matches, zero otherwise.
  */
-static const symbol_t* Symbols_SearchByName(symbol_list_t* list, symtype_t symtype, const char *name)
+static const symbol_t* Symbols_SearchByName(symbol_t* entries, int count, symtype_t symtype, const char *name)
 {
-	symbol_t *entries;
 	/* left, right, middle */
         int l, r, m, dir;
 
-	if (!list) {
-		return NULL;
-	}
-	entries = list->names;
-
 	/* bisect */
 	l = 0;
-	r = list->namecount - 1;
+	r = count - 1;
 	do {
 		m = (l+r) >> 1;
 		dir = strcmp(entries[m].name, name);
@@ -1177,55 +1182,47 @@ static const symbol_t* Symbols_SearchByName(symbol_list_t* list, symtype_t symty
 }
 
 /**
- * Set given CPU symbol's address to variable and return TRUE if one was found.
+ * Set given symbol's address to variable and return true if one
+ * was found from given list.
  */
-bool Symbols_GetCpuAddress(symtype_t symtype, const char *name, Uint32 *addr)
+static bool Symbols_GetAddress(symbol_list_t* list, symtype_t symtype, const char *name, Uint32 *addr)
 {
 	const symbol_t *entry;
-	entry = Symbols_SearchByName(CpuSymbolsList, symtype, name);
+	if (!(list && list->names)) {
+		return false;
+	}
+	entry = Symbols_SearchByName(list->names, list->namecount, symtype, name);
 	if (entry) {
 		*addr = entry->address;
 		return true;
 	}
 	return false;
 }
-
-/**
- * Set given DSP symbol's address to variable and return TRUE if one was found.
- */
+bool Symbols_GetCpuAddress(symtype_t symtype, const char *name, Uint32 *addr)
+{
+	return Symbols_GetAddress(CpuSymbolsList, symtype, name, addr);
+}
 bool Symbols_GetDspAddress(symtype_t symtype, const char *name, Uint32 *addr)
 {
-	const symbol_t *entry;
-	entry = Symbols_SearchByName(DspSymbolsList, symtype, name);
-	if (entry) {
-		*addr = entry->address;
-		return true;
-	}
-	return false;
+	return Symbols_GetAddress(DspSymbolsList, symtype, name, addr);
 }
 
 
 /* ---------------- symbol address -> name search ------------------ */
 
 /**
- * Search symbol by address.
+ * Binary search symbol by address in given sorted list.
  * Return symbol index if address matches, -1 otherwise.
  */
-static int Symbols_SearchByAddress(symbol_list_t* list, Uint32 addr)
+static int Symbols_SearchByAddress(symbol_t* entries, int count, Uint32 addr)
 {
-	symbol_t *entries;
 	/* left, right, middle */
         int l, r, m;
 	Uint32 curr;
 
-	if (!list) {
-		return -1;
-	}
-	entries = list->addresses;
-
 	/* bisect */
 	l = 0;
-	r = list->addrcount - 1;
+	r = count - 1;
 	do {
 		m = (l+r) >> 1;
 		curr = entries[m].address;
@@ -1242,60 +1239,69 @@ static int Symbols_SearchByAddress(symbol_list_t* list, Uint32 addr)
 }
 
 /**
- * Search CPU symbol by address.
- * Return symbol name if address matches, NULL otherwise.
+ * Search symbol in given list by type & address.
+ * Return symbol name if there's a match, NULL otherwise.
+ * TEXT symbols will be matched before other symbol types.
  * Returned name is valid only until next Symbols_* function call.
  */
-const char* Symbols_GetByCpuAddress(Uint32 addr)
+static const char* Symbols_GetByAddress(symbol_list_t* list, Uint32 addr, symtype_t type)
 {
-	int idx = Symbols_SearchByAddress(CpuSymbolsList, addr);
-	if (idx < 0) {
+	if (!(list && list->addresses)) {
 		return NULL;
 	}
-	return CpuSymbolsList->addresses[idx].name;
-}
-/**
- * Search DSP symbol by address.
- * Return symbol name if address matches, NULL otherwise.
- * Returned name is valid only until next Symbols_* function call.
- */
-const char* Symbols_GetByDspAddress(Uint32 addr)
-{
-	int idx = Symbols_SearchByAddress(DspSymbolsList, addr);
-	if (idx < 0) {
-		return NULL;
+	if (type & SYMTYPE_TEXT) {
+		int i = Symbols_SearchByAddress(list->addresses, list->codecount, addr);
+		if (i >= 0) {
+			return list->addresses[i].name;
+		}
 	}
-	return DspSymbolsList->addresses[idx].name;
+	if (type & ~SYMTYPE_TEXT) {
+		int i = Symbols_SearchByAddress(list->addresses + list->codecount, list->datacount, addr);
+		if (i >= 0) {
+			return list->addresses[list->codecount + i].name;
+		}
+	}
+	return NULL;
+}
+const char* Symbols_GetByCpuAddress(Uint32 addr, symtype_t type)
+{
+	return Symbols_GetByAddress(CpuSymbolsList, addr, type);
+}
+const char* Symbols_GetByDspAddress(Uint32 addr, symtype_t type)
+{
+	return Symbols_GetByAddress(DspSymbolsList, addr, type);
 }
 
 /**
- * Search CPU symbol by address.
+ * Search given list for TEXT symbol by address.
  * Return symbol index if address matches, -1 otherwise.
  */
-int Symbols_GetCpuAddressIndex(Uint32 addr)
+static int Symbols_GetCodeIndex(symbol_list_t* list, Uint32 addr)
 {
-	return Symbols_SearchByAddress(CpuSymbolsList, addr);	
+	if (!list) {
+		return -1;
+	}
+	return Symbols_SearchByAddress(list->addresses, list->codecount, addr);
+}
+int Symbols_GetCpuCodeIndex(Uint32 addr)
+{
+	return Symbols_GetCodeIndex(CpuSymbolsList, addr);
+}
+int Symbols_GetDspCodeIndex(Uint32 addr)
+{
+	return Symbols_GetCodeIndex(DspSymbolsList, addr);
 }
 
 /**
- * Search DSP symbol by address.
- * Return symbol index if address matches, -1 otherwise.
+ * Return how many TEXT symbols are loaded/available
  */
-int Symbols_GetDspAddressIndex(Uint32 addr)
+int Symbols_CpuCodeCount(void)
 {
-	return Symbols_SearchByAddress(DspSymbolsList, addr);	
+	return (CpuSymbolsList ? CpuSymbolsList->codecount : 0);
 }
-
-/**
- * Return how many symbols are loaded/available
- */
-int Symbols_CpuAddrCount(void)
+int Symbols_DspCodeCount(void)
 {
-	return (CpuSymbolsList ? CpuSymbolsList->addrcount : 0);
-}
-int Symbols_DspAddrCount(void)
-{
-	return (DspSymbolsList ? DspSymbolsList->addrcount : 0);
+	return (DspSymbolsList ? DspSymbolsList->codecount : 0);
 }
 
 /* ---------------- symbol showing ------------------ */
@@ -1303,10 +1309,10 @@ int Symbols_DspAddrCount(void)
 /**
  * Show symbols from given list with paging.
  */
-static void Symbols_Show(symbol_list_t* list, const char *sorttype)
+static void Symbols_Show(symbol_list_t* list, const char *sortcmd)
 {
 	symbol_t *entry, *entries;
-	const char *symtype;
+	const char *symtype, *sorttype;
 	int i, rows, count;
 	char symchar;
 	char line[80];
@@ -1316,18 +1322,22 @@ static void Symbols_Show(symbol_list_t* list, const char *sorttype)
 		return;
 	}
 
-	if (strcmp("addr", sorttype) == 0) {
+	if (strcmp("code", sortcmd) == 0) {
+		sorttype = "address";
 		entries = list->addresses;
-		count = list->addrcount;
+		count = list->codecount;
 		symtype = " TEXT";
+	} else if (strcmp("data", sortcmd) == 0) {
+		sorttype = "address";
+		entries = list->addresses + list->codecount;
+		count = list->datacount;
+		symtype = " DATA/BSS/ABS";
 	} else {
+		sorttype = "name";
 		entries = list->names;
 		count = list->namecount;
 		symtype = "";
 	}
-	fprintf(stderr, "%s%s symbols sorted by %s:\n",
-		(list == CpuSymbolsList ? "CPU" : "DSP"), symtype, sorttype);
-
 	rows = DebugUI_GetPageLines(ConfigureParams.Debugger.nSymbolLines, 20);
 
 	for (entry = entries, i = 0; i < count; i++, entry++) {
@@ -1338,10 +1348,13 @@ static void Symbols_Show(symbol_list_t* list, const char *sorttype)
 			fprintf(stderr, "--- q to exit listing, just enter to continue --- ");
 			if (fgets(line, sizeof(line), stdin) == NULL ||
 				toupper(line[0]) == 'Q') {
-				return;
+				break;
 			}
 		}
 	}
+	fprintf(stderr, "%d %s%s symbols (of %d) sorted by %s.\n", i,
+		(list == CpuSymbolsList ? "CPU" : "DSP"),
+		symtype, count, sorttype);
 }
 
 /* ---------------- binary load handling ------------------ */
@@ -1424,13 +1437,13 @@ void Symbols_LoadCurrentProgram(void)
 char *Symbols_MatchCommand(const char *text, int state)
 {
 	static const char* subs[] = {
-		"addr", "free", "name", "prg", "resident"
+		"code", "data", "free", "name", "prg", "resident"
 	};
 	return DebugUI_MatchHelper(subs, ARRAY_SIZE(subs), text, state);
 }
 
 const char Symbols_Description[] =
-	"<filename|prg|resident|addr|name|free> [<T offset> [<D offset> <B offset>]]\n"
+	"<filename|prg|resident|code|data|name|free> [<T offset> [<D offset> <B offset>]]\n"
 	"\n"
 	"\tBy default, symbols are loaded from the currently executing program's\n"
 	"\tbinary automatically when entering the debugger, IF program is started\n"
@@ -1453,7 +1466,9 @@ const char Symbols_Description[] =
 	"\ttext (T), data (D) and BSS (B) symbols.  Typically one uses debugger\n"
 	"\tTEXT, sometimes also DATA & BSS, variables for this.\n"
 	"\n"
-	"\t'name' and 'addr' commands list the currently loaded symbols.\n"
+	"\t'name' command lists the currently loaded symbols, sorted by name.\n"
+	"\t'code' and 'data' commands list them sorted by address. 'code' lists\n"
+	"\tonly TEXT symbols, 'data' DATA/BSS/ABS symbols.\n"
 	"\n"
 	"\t'free' command removes the loaded symbols.";
 
@@ -1506,7 +1521,7 @@ int Symbols_Command(int nArgc, char *psArgs[])
 	}
 
 	/* handle special cases */
-	if (strcmp(file, "name") == 0 || strcmp(file, "addr") == 0) {
+	if (strcmp(file, "name") == 0 || strcmp(file, "code") == 0 || strcmp(file, "data") == 0) {
 		list = (listtype == TYPE_DSP ? DspSymbolsList : CpuSymbolsList);
 		Symbols_Show(list, file);
 		return DEBUGGER_CMDDONE;

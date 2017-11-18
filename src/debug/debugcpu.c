@@ -149,7 +149,7 @@ static int DebugCpu_SaveBin(int nArgc, char *psArgs[])
  */
 static bool DebugCpu_ShowAddressInfo(Uint32 addr, FILE *fp)
 {
-	const char *symbol = Symbols_GetByCpuAddress(addr);
+	const char *symbol = Symbols_GetByCpuAddress(addr, SYMTYPE_ALL);
 	if (symbol)
 	{
 		fprintf(fp, "%s:\n", symbol);

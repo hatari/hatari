@@ -20,11 +20,11 @@ const char Profilecpu_fileid[] = "Hatari profilecpu.c : " __DATE__ " " __TIME__;
 #include "dsp.h"
 #include "m68000.h"
 #include "68kDisass.h"
+#include "symbols.h"
 #include "profile.h"
 #include "profile_priv.h"
 #include "debug_priv.h"
 #include "stMemory.h"
-#include "symbols.h"
 #include "tos.h"
 #include "screen.h"
 #include "video.h"
@@ -379,7 +379,7 @@ Uint32 Profile_CpuShowAddresses(Uint32 lower, Uint32 upper, FILE *out)
 			fprintf(out, "[...]\n");
 			shown++;
 		}
-		symbol = Symbols_GetByCpuAddress(addr);
+		symbol = Symbols_GetByCpuAddress(addr, SYMTYPE_TEXT);
 		if (symbol) {
 			fprintf(out, "%s:\n", symbol);
 			shown++;
@@ -647,7 +647,7 @@ void Profile_CpuShowCounts(int show, bool only_symbols)
 		return;
 	}
 
-	symbols = Symbols_CpuAddrCount();
+	symbols = Symbols_CpuCodeCount();
 	if (!symbols) {
 		fprintf(stderr, "ERROR: no CPU symbols loaded!\n");
 		return;
@@ -660,7 +660,7 @@ void Profile_CpuShowCounts(int show, bool only_symbols)
 	for (end = sort_arr + active; sort_arr < end; sort_arr++) {
 
 		addr = index2address(*sort_arr);
-		name = Symbols_GetByCpuAddress(addr);
+		name = Symbols_GetByCpuAddress(addr, SYMTYPE_TEXT);
 		if (!name) {
 			continue;
 		}
@@ -686,7 +686,7 @@ static const char * addr2name(Uint32 addr, Uint64 *total)
 {
 	Uint32 idx = address2index(addr);
 	*total = cpu_profile.data[idx].count;
-	return Symbols_GetByCpuAddress(addr);
+	return Symbols_GetByCpuAddress(addr, SYMTYPE_TEXT);
 }
 
 /**
@@ -768,7 +768,7 @@ bool Profile_CpuStart(void)
 	       (int)sizeof(*cpu_profile.data)*size/(1024*1024));
 	cpu_profile.size = size;
 
-	Profile_AllocCallinfo(&(cpu_callinfo), Symbols_CpuAddrCount(), "CPU");
+	Profile_AllocCallinfo(&(cpu_callinfo), Symbols_CpuCodeCount(), "CPU");
 
 	/* special hack for EmuTOS */
 	etos_switcher = PC_UNDEFINED;
@@ -900,7 +900,7 @@ static void collect_calls(Uint32 pc, counters_t *counters)
 	}
 
 	/* address is one which we're tracking? */
-	idx = Symbols_GetCpuAddressIndex(pc);
+	idx = Symbols_GetCpuCodeIndex(pc);
 	if (unlikely(idx >= 0)) {
 
 		flag = cpu_opcode_type(family, prev_pc, pc);
@@ -1285,7 +1285,7 @@ void Profile_CpuGetPointers(bool **enabled, Uint32 **disasm_addr)
 /**
  * Get callinfo & symbol search pointers for stack walking.
  */
-void Profile_CpuGetCallinfo(callinfo_t **callinfo, const char* (**get_symbol)(Uint32))
+void Profile_CpuGetCallinfo(callinfo_t **callinfo, const char* (**get_symbol)(Uint32, symtype_t))
 {
 	*callinfo = &(cpu_callinfo);
 	*get_symbol = Symbols_GetByCpuAddress;

@@ -109,7 +109,7 @@ error_msg:
  */
 static bool DebugDsp_ShowAddressInfo(Uint16 addr, FILE *fp)
 {
-	const char *symbol = Symbols_GetByDspAddress(addr);
+	const char *symbol = Symbols_GetByDspAddress(addr, SYMTYPE_ALL);
 	if (symbol)
 	{
 		fprintf(fp, "%s:\n", symbol);

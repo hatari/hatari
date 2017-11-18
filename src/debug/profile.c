@@ -20,9 +20,9 @@ const char Profile_fileid[] = "Hatari profile.c : " __DATE__ " " __TIME__;
 #include "configuration.h"
 #include "clocks_timings.h"
 #include "evaluate.h"
+#include "symbols.h"
 #include "profile.h"
 #include "profile_priv.h"
-#include "symbols.h"
 
 profile_loop_t profile_loop;
 
@@ -405,7 +405,7 @@ Uint32 Profile_CallEnd(callinfo_t *callinfo, counters_t *totalcost)
 /**
  * Add costs to all functions still in call stack
  */
-void Profile_FinalizeCalls(callinfo_t *callinfo, counters_t *totalcost, const char* (*get_symbol)(Uint32 addr))
+void Profile_FinalizeCalls(callinfo_t *callinfo, counters_t *totalcost, const char* (*get_symbol)(Uint32, symtype_t))
 {
 	Uint32 addr;
 	if (!callinfo->depth) {
@@ -415,7 +415,8 @@ void Profile_FinalizeCalls(callinfo_t *callinfo, counters_t *totalcost, const ch
 	while (callinfo->depth > 0) {
 		Profile_CallEnd(callinfo, totalcost);
 		addr = callinfo->stack[callinfo->depth].callee_addr;
-		fprintf(stderr, "- 0x%x: %s (return = 0x%x)\n", addr, get_symbol(addr),
+		fprintf(stderr, "- 0x%x: %s (return = 0x%x)\n",
+			addr, get_symbol(addr, SYMTYPE_TEXT),
 			callinfo->stack[callinfo->depth].ret_addr);
 	}
 }
@@ -428,7 +429,7 @@ static void Profile_ShowStack(bool forDsp)
 	int i;
 	Uint32 addr;
 	callinfo_t *callinfo;
-	const char* (*get_symbol)(Uint32 addr);
+	const char* (*get_symbol)(Uint32, symtype_t);
 
 	if (forDsp) {
 		Profile_DspGetCallinfo(&callinfo, &get_symbol);
@@ -442,8 +443,9 @@ static void Profile_ShowStack(bool forDsp)
 
 	for (i = 0; i < callinfo->depth; i++) {
 		addr = callinfo->stack[i].callee_addr;
-		fprintf(stderr, "- 0x%x: %s (return = 0x%x)\n", addr,
-			get_symbol(addr), callinfo->stack[i].ret_addr);
+		fprintf(stderr, "- 0x%x: %s (return = 0x%x)\n",
+			addr, get_symbol(addr, SYMTYPE_TEXT),
+			callinfo->stack[i].ret_addr);
 	}
 }
 

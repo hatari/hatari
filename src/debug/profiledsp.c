@@ -17,10 +17,10 @@ const char Profiledsp_fileid[] = "Hatari profiledsp.c : " __DATE__ " " __TIME__;
 #include "configuration.h"
 #include "clocks_timings.h"
 #include "dsp.h"
+#include "symbols.h"
 #include "profile.h"
 #include "profile_priv.h"
 #include "debug_priv.h"
-#include "symbols.h"
 /* for VBL info */
 #include "screen.h"
 #include "video.h"
@@ -157,7 +157,7 @@ Uint16 Profile_DspShowAddresses(Uint32 addr, Uint32 upper, FILE *out)
 			fputs("[...]\n", out);
 			shown++;
 		}
-		symbol = Symbols_GetByDspAddress(addr);
+		symbol = Symbols_GetByDspAddress(addr, SYMTYPE_TEXT);
 		if (symbol) {
 			fprintf(out, "%s:\n", symbol);
 			shown++;
@@ -275,7 +275,7 @@ void Profile_DspShowCounts(int show, bool only_symbols)
 		return;
 	}
 
-	symbols = Symbols_DspAddrCount();
+	symbols = Symbols_DspCodeCount();
 	if (!symbols) {
 		fprintf(stderr, "ERROR: no DSP symbols loaded!\n");
 		return;
@@ -286,7 +286,7 @@ void Profile_DspShowCounts(int show, bool only_symbols)
 	for (end = sort_arr + active; sort_arr < end; sort_arr++) {
 
 		addr = *sort_arr;
-		name = Symbols_GetByDspAddress(addr);
+		name = Symbols_GetByDspAddress(addr, SYMTYPE_TEXT);
 		if (!name) {
 			continue;
 		}
@@ -308,7 +308,7 @@ void Profile_DspShowCounts(int show, bool only_symbols)
 static const char * addr2name(Uint32 addr, Uint64 *total)
 {
 	*total = dsp_profile.data[addr].count;
-	return Symbols_GetByDspAddress(addr);
+	return Symbols_GetByDspAddress(addr, SYMTYPE_TEXT);
 }
 
 /**
@@ -370,7 +370,7 @@ bool Profile_DspStart(void)
 	printf("Allocated DSP profile buffer (%d KB).\n",
 	       (int)sizeof(*dsp_profile.data)*DSP_PROFILE_ARR_SIZE/1024);
 
-	Profile_AllocCallinfo(&(dsp_callinfo), Symbols_DspAddrCount(), "DSP");
+	Profile_AllocCallinfo(&(dsp_callinfo), Symbols_DspCodeCount(), "DSP");
 
 	item = dsp_profile.data;
 	for (i = 0; i < DSP_PROFILE_ARR_SIZE; i++, item++) {
@@ -520,7 +520,7 @@ static void collect_calls(Uint16 pc, counters_t *counters)
 	}
 
 	/* address is one which we're tracking? */
-	idx = Symbols_GetDspAddressIndex(pc);
+	idx = Symbols_GetDspCodeIndex(pc);
 	if (unlikely(idx >= 0)) {
 
 		flag = dsp_opcode_type(prev_pc, pc);
@@ -723,7 +723,7 @@ void Profile_DspGetPointers(bool **enabled, Uint32 **disasm_addr)
 /**
  * Get callinfo & symbol search pointers for stack walking.
  */
-void Profile_DspGetCallinfo(callinfo_t **callinfo, const char* (**get_symbol)(Uint32))
+void Profile_DspGetCallinfo(callinfo_t **callinfo, const char* (**get_symbol)(Uint32, symtype_t))
 {
 	*callinfo = &(dsp_callinfo);
 	*get_symbol = Symbols_GetByDspAddress;

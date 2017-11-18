@@ -30,14 +30,14 @@ extern char* Symbols_MatchDspDataAddress(const char *text, int state);
 extern bool Symbols_GetCpuAddress(symtype_t symtype, const char *name, Uint32 *addr);
 extern bool Symbols_GetDspAddress(symtype_t symtype, const char *name, Uint32 *addr);
 /* symbol address -> name search */
-extern const char* Symbols_GetByCpuAddress(Uint32 addr);
-extern const char* Symbols_GetByDspAddress(Uint32 addr);
-/* symbol address -> index */
-extern int Symbols_GetCpuAddressIndex(Uint32 addr);
-extern int Symbols_GetDspAddressIndex(Uint32 addr);
-/* how many symbols are loaded */
-extern int Symbols_CpuAddrCount(void);
-extern int Symbols_DspAddrCount(void);
+extern const char* Symbols_GetByCpuAddress(Uint32 addr, symtype_t symtype);
+extern const char* Symbols_GetByDspAddress(Uint32 addr, symtype_t symtype);
+/* TEXT symbol address -> index */
+extern int Symbols_GetCpuCodeIndex(Uint32 addr);
+extern int Symbols_GetDspCodeIndex(Uint32 addr);
+/* how many TEXT symbols are loaded */
+extern int Symbols_CpuCodeCount(void);
+extern int Symbols_DspCodeCount(void);
 /* handlers for automatic program symbol loading */
 extern void Symbols_RemoveCurrentProgram(void);
 extern void Symbols_ChangeCurrentProgram(const char *path);
