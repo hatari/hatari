@@ -64,6 +64,9 @@ Emulator:
     from Hatari config file, or set them to -1, to enable this!
   - Add 'nSymbolLines' configuration option to specify how many
     lines 'symbols' command pages
+  - 'symbols resident' toggles whether program symbols are
+    removed when program terminates, or only when next one starts
+  - 'symbols addr' is split into 'symbols code' & 'symbols data'
   - TEXTEnd value is now TEXT+TextSize, instead of TEXT+TextSize-1
   - Add "-f" option to 'cd' so that setup scripts can specify
     what directory is used after currently invoked script(s)
@@ -72,6 +75,7 @@ Emulator:
 Other changes:
 - Add French keyboard mapping that works also with SDL2
 - All symbols output by gst2ascii are now TEXT relative
+  and it support also a.out format symbol tables
 - Fix: Python GUI updated for Hatari v2.0
 - Fix: Python GUI explicitly uses Python v2 (Arch Linux)
 - Fix: Python tools made compatible both to Python v2 & v3 (Arch Linux)
