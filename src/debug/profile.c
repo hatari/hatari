@@ -645,6 +645,8 @@ static bool Profile_Loops(int nArgc, char *psArgs[])
 			profile_loop.filename = NULL;
 			fclose(profile_loop.fp);
 			profile_loop.fp = NULL;
+		} else {
+			fprintf(stderr, "ERROR: no file name for saving the loop profiling information.\n");
 		}
 	}
 	return true;
