@@ -17,7 +17,8 @@ Contents:
    3.3 Notes for Linux distribution packagers
        3.3.1 Known distro problems
 4. Running Hatari
-5. Contact
+5. Hatari tools and their run-time dependencies
+6. Contact
 
 
  1) License
@@ -232,7 +233,23 @@ doc/manual.html. Here are just some hints for the impatient people:
   Pressing ALTGR-q will quit the emulator.
 
 
- 5) Contact
+ 5) Hatari tools and their run-time dependencies
+ -----------------------------------------------
+
+While Hatari installs few binary tools binaries:
+- hmsa (converts between MSA & ST disk images)
+- gst2ascii (outputs a.out and DRI/GST debug symbol table contents)
+
+Most of its tools are python and shell scripts. Their run-time
+dependencies are:
+- python (hatariui, hconsole, hatari_profile, atari-convert-dir)
+- python-gtk2 (hatariui)
+- mkdosfs (atari-hd-image)
+- mtools (atari-hd-image / zip2st)
+- unzip (zip2st)
+
+
+ 6) Contact
  ----------
 
 If you want to contact the authors of Hatari, please have a look at the file
