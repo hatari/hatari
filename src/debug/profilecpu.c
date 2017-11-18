@@ -307,7 +307,7 @@ static void show_histogram(const char *title, int count, Uint32 *items)
 void Profile_CpuShowCaches(void)
 {
 	if (!(cpu_profile.all.i_misses || cpu_profile.all.d_hits)) {
-		fprintf(stderr, "No instruction/data cache information.");
+		fprintf(stderr, "No instruction/data cache information.\n");
 		return;
 	}
 	show_histogram("Instruction cache hits per instruction",
