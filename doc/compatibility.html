@@ -3456,11 +3456,12 @@ if demo is stated to require that.</p>
     <tr>
       <td>Escape:
       <a href="http://pouet.net/prod.php?which=15676">_</a></td>
-      <td class="major">2.0</td>
+      <td class="major">2.1 dev</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Terminates during startup if started without MMU.
-          Freezes or exits after few screens to illegal DSP instructions</td>
+      <td>Freezes at startup waiting DSP interrupt.  Earlier terminated during
+          startup if started without MMU and froze or exited after few screens
+	  to illegal DSP instructions</td>
     </tr>
     <tr>
       <td>Escape:
@@ -3513,10 +3514,12 @@ if demo is stated to require that.</p>
     <tr>
       <td>Extream:
       <a href="http://pouet.net/prod.php?which=13601">Whirlpool 128k</a></td>
-      <td>1.3</td>
+      <td class="major">2.1 dev</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Transitions look a bit strange</td>
+      <td>Freezes at startup unless cycle-exact and prefetch are
+          disabled (worked in v2.0 without them). Uses strange
+	  resolution / screen transitions</td>
     </tr>
     <tr>
       <td>Fit:
@@ -4146,14 +4149,6 @@ site.</p>
       <td></td>
     </tr>
     <tr>
-      <td>Apex (demo)</td>
-      <td class="major">2.0</td>
-      <td>-</td>
-      <td>Crashes with a &quot;MOVE.W $fff20000,D0&quot; instruction.
-        It's unclear why this works on a real Falcon.
-        The separate imageviewers work fine</td>
-    </tr>
-    <tr>
       <td><a href="http://pagesperso-orange.fr/didierm/index-e.htm">Aniplayer</a></td>
       <td class="minor">2.0</td>
       <td>emu</td>
@@ -4161,6 +4156,12 @@ site.</p>
            DSP synchronization error when trying to play MP2/MP3.
 	   Mpeg 1 videos either look incorrect, or lose DSP sync.
 	   Old Quicktime and AVI videos OK</td>
+    </tr>
+    <tr>
+      <td><a href="http://www.leonik.net/dml/sec_apex.py">Apex Media</td>
+      <td>2.1 dev</td>
+      <td>-</td>
+      <td>The latest v2.41 works fine, as do the separate viewers</td>
     </tr>
     <tr>
       <td><a href="http://deunstg.free.fr/sct1/s_avi030.htm">AVI 030</a></td>
@@ -4269,6 +4270,13 @@ site.</p>
           ("hatari-prg-args.sh -s 14 --ttram 256 --machine falcon --tos tos404.img
           --dsp none --addr24 off --fpu internal -- ./scummvm-m68020-olivier.ttp
           -c scummvm.cfg")</td>
+    </tr>
+    <tr>
+      <td><a href="http://www.axxim.de/r3dias/R3_Vocoder3.htm">Voxx</a></td>
+      <td class="major">2.1 dev</td>
+      <td>emu</td>
+      <td>Freezes after showing startup log, no user-space instructions are executed
+          on TOS interrupts.  Requires VGA with 640x480@16 resolution at minimum</td>
     </tr>
     <tr>
       <td>Whip</td>
