@@ -201,8 +201,8 @@ class Hatari:
             return False
         return True
     
-    def run(self, extra_args = None, parent_win = None):
-        "run([parent window][,embedding args]), runs Hatari"
+    def run(self, extra_args = None, parent_id = None):
+        "run([embedding args][,parent window ID]), runs Hatari"
         # if parent_win given, embed Hatari to it
         pid = os.fork()
         if pid < 0:
@@ -218,8 +218,8 @@ class Hatari:
         else:
             # child runs Hatari
             env = os.environ
-            if parent_win:
-                self._set_embed_env(env, parent_win)
+            if parent_id:
+                self._set_embed_env(env, parent_id)
             # callers need to take care of confirming quitting
             args = [self.hataribin, "--confirm-quit", "off"]
             if self.server:
@@ -229,11 +229,7 @@ class Hatari:
             print("RUN:", args)
             os.execvpe(self.hataribin, args, env)
 
-    def _set_embed_env(self, env, parent_win):
-        if sys.platform == 'win32':
-            win_id = parent_win.handle
-        else:
-            win_id = parent_win.xid
+    def _set_embed_env(self, env, win_id):
         # tell SDL to use given widget's window
         #env["SDL_WINDOWID"] = str(win_id)
 

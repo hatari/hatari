@@ -191,7 +191,7 @@ class UICallbacks:
             args += self.floppy
         if self.hatariwin:
             size = self.hatariwin.window.get_size()
-            self.hatari.run(args, self.hatariwin.window)
+            self.hatari.run(args, self.hatariwin.get_id())
             # get notifications of Hatari window size changes
             self.hatari.enable_embed_info()
             socket = self.hatari.get_control_socket().fileno()
