@@ -50,6 +50,15 @@ static void ShortCut_FullScreen(void)
 	}
 }
 
+/*-----------------------------------------------------------------------*/
+/**
+ * Shortcut to toggle borders
+ */
+static void ShortCut_Borders(void)
+{
+	ConfigureParams.Screen.bAllowOverscan = !ConfigureParams.Screen.bAllowOverscan;
+	Screen_ModeChanged(false);  /* false: re-create window only if size changed */
+}
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -280,6 +289,9 @@ void ShortCut_ActKey(void)
 		break;
 	 case SHORTCUT_FULLSCREEN:
 		ShortCut_FullScreen();		/* Switch between fullscreen/windowed mode */
+		break;
+	 case SHORTCUT_BORDERS:
+		ShortCut_Borders();		/* Toggle Atari borders */
 		break;
 	 case SHORTCUT_MOUSEGRAB:
 		ShortCut_MouseGrab();		/* Toggle mouse grab */

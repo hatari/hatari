@@ -72,6 +72,7 @@ static SGOBJ keyboarddlg[] =
 static char *sc_names[SHORTCUT_KEYS] = {
 	"Edit settings",
 	"Toggle fullscreen",
+	"Toggle borders",
 	"Grab mouse",
 	"Cold reset",
 	"Warm reset",

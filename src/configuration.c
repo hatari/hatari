@@ -329,6 +329,7 @@ static const struct Config_Tag configs_ShortCutWithMod[] =
 {
 	{ "kOptions",    Key_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_OPTIONS] },
 	{ "kFullScreen", Key_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_FULLSCREEN] },
+	{ "kBorders",    Key_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_BORDERS] },
 	{ "kMouseMode",  Key_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_MOUSEGRAB] },
 	{ "kColdReset",  Key_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_COLDRESET] },
 	{ "kWarmReset",  Key_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_WARMRESET] },
@@ -357,6 +358,7 @@ static const struct Config_Tag configs_ShortCutWithoutMod[] =
 {
 	{ "kOptions",    Key_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_OPTIONS] },
 	{ "kFullScreen", Key_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_FULLSCREEN] },
+	{ "kBorders",    Key_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_BORDERS] },
 	{ "kMouseMode",  Key_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_MOUSEGRAB] },
 	{ "kColdReset",  Key_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_COLDRESET] },
 	{ "kWarmReset",  Key_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_WARMRESET] },
@@ -692,6 +694,7 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Shortcut.withModifier[SHORTCUT_DEBUG] = SDLK_PAUSE;
 	ConfigureParams.Shortcut.withModifier[SHORTCUT_OPTIONS] = SDLK_o;
 	ConfigureParams.Shortcut.withModifier[SHORTCUT_FULLSCREEN] = SDLK_f;
+	ConfigureParams.Shortcut.withModifier[SHORTCUT_BORDERS] = SDLK_b;
 	ConfigureParams.Shortcut.withModifier[SHORTCUT_MOUSEGRAB] = SDLK_m;
 	ConfigureParams.Shortcut.withModifier[SHORTCUT_COLDRESET] = SDLK_c;
 	ConfigureParams.Shortcut.withModifier[SHORTCUT_WARMRESET] = SDLK_r;

@@ -25,6 +25,7 @@ Emulator:
 - MIDI support for Windows & OSX (with PortMidi library)
 - Miscellaneous:
   - Initial patching for ST-Book ROM
+  - Add keyboard shortcut for toggling borders
   - Fix: rate-limit DSP illegal instruction warnings output
 - Disk handling:
   - Add "--gemdos-time <atari/host>" option so that user can specify
