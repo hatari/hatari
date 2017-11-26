@@ -279,7 +279,7 @@ class Config:
         "output program usage information"
         name = os.path.basename(sys.argv[0])
         print(__doc__)
-        print(("""
+        print("""
 Usage: %s [options] <TOS image files>
 
 Options:
@@ -303,9 +303,9 @@ For example:
 \t--ttrams 0,32 \\
 \t--graphics mono,rgb \\
 \t-bool --compatible,--rtc
-""" % (name, self.all_disks, self.all_graphics, self.all_machines, self.all_memsizes, self.ttrams, name)))
+""" % (name, self.all_disks, self.all_graphics, self.all_machines, self.all_memsizes, self.ttrams, name))
         if msg:
-            print(("ERROR: %s\n" % msg))
+            print("ERROR: %s\n" % msg)
         sys.exit(1)
     
     
@@ -524,7 +524,7 @@ class Tester:
 
     def wait_fifo(self, fifo, timeout):
         "wait_fifo(fifo) -> wait until fifo has input until given timeout"
-        print(("Waiting %ss for fifo '%s' input..." % (timeout, self.fifofile)))
+        print("Waiting %ss for fifo '%s' input..." % (timeout, self.fifofile))
         sets = select.select([fifo], [], [], timeout)
         if sets[0]:
             print("...test program is READY, read what's in its fifo...")
