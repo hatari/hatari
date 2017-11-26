@@ -123,6 +123,8 @@ class Hatari:
 
     def _assert_hatari_compatibility(self):
         "check Hatari compatibility and return error string if it's not"
+        print("Using following Hatari binary:")
+        os.system("which %s" % self.hataribin)
         error = True
         pipe = os.popen(self.hataribin + " -h")
         for line in pipe.readlines():
