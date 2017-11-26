@@ -414,8 +414,10 @@ class Tester:
     fifofile  = output + "midi-out"
     bootauto  = "bootauto.st.gz" # TOS old not to support GEMDOS HD either
     bootdesk  = "bootdesk.st.gz"
+    floppyprg = "A:\MINIMAL.PRG"
     hdimage   = "hd.img"
     ideimage  = "hd.img"	 # for now use the same image as for ACSI
+    hdprg     = "C:\MINIMAL.PRG"
     results   = None
     
     def __init__(self):
@@ -625,16 +627,24 @@ class Tester:
         if disk == "gemdos":
             # use Hatari autostart, must be last thing added to testargs!
             testargs += [self.testprg]
+        # HD supporting TOSes support also INF file autostart, so
+        # with them test program can be run with the supplied INF
+        # file.
+        #
+        # However, in case of VDI resolutions the VDI resolution
+        # setting requires overriding the INF file...
+        #
+        # -> always specify directly which program to autostart
+        #    with --auto
         elif disk == "floppy":
             if tos.supports_gemdos_hd():
-                # GEMDOS HD supporting TOSes support also INF file autostart
-                testargs += ["--disk-a", self.bootdesk]
+                testargs += ["--disk-a", self.bootdesk, "--auto", self.floppyprg]
             else:
                 testargs += ["--disk-a", self.bootauto]
         elif disk == "acsi":
-            testargs += ["--acsi", self.hdimage]
+            testargs += ["--acsi", self.hdimage, "--auto", self.hdprg]
         elif disk == "ide":
-            testargs += ["--ide-master", self.ideimage]
+            testargs += ["--ide-master", self.ideimage, "--auto", self.hdprg]
         else:
             raise AssertionError("unknown disk type '%s'" % disk)
 
