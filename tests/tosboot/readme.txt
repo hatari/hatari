@@ -34,6 +34,12 @@ successful run of TOS tester.
 Usage
 -----
 
+NOTE: TOS tester works *only* with Hatari versions that are built with
+raw MIDI device support, NOT with PortMidi support.  This is because
+TOS tester communicates to the emulated test programs through FIFO
+file given to Hatari as MIDI input/output file, whereas PortMidi
+allows communication only to real MIDI devices.
+
 If you want to test Hatari version that isn't in your PATH,
 you need to give PATH for the Hatari binary you want to test,
 like this:
