@@ -125,6 +125,9 @@ Note that it's enought to give the whole set of HW configurations to
 TOS tester, it will automatically select a suitable subset of HW
 combinations to test, for each given TOS versions.
 
+Unless you're specifically testing FDC timings or memory detection
+compatibility, you can use --fast option to speed up TOS bootup a lot.
+
 
 Potential TODOs
 ---------------

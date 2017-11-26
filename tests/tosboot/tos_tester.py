@@ -284,7 +284,8 @@ Usage: %s [options] <TOS image files>
 
 Options:
 \t-h, --help\tthis help
-\t-f, --fast\tdo tests with "--fastfdc yes --fast-forward yes"
+\t-f, --fast\tspeed up boot with less accurate emulation:
+\t\t\t"--fast-forward yes --fast-boot yes --fastfdc yes --timer-d yes"
 \t-d, --disks\t%s
 \t-g, --graphics\t%s
 \t-m, --machines\t%s
@@ -617,7 +618,8 @@ class Tester:
             testargs += ["--monitor", monitor]
         
         if config.fast:
-            testargs += ["--fastfdc", "yes", "--fast-forward", "yes"]
+            testargs += ["--fast-forward", "yes", "--fast-boot", "yes",
+                         "--fastfdc", "yes", "--timer-d", "yes"]
         
         if disk == "gemdos":
             # use Hatari autostart, must be last thing added to testargs!
