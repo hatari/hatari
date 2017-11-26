@@ -223,7 +223,8 @@ class Config:
             self.usage(error)
         self.handle_options(opts)
         self.images = self.check_images(paths)
-        print("Test configuration:\n\t", self.disks, self.graphics, self.machines, self.memsizes, self.ttrams)
+        configs = (self.disks, self.graphics, self.machines, self.memsizes, self.ttrams, self.bools)
+        print("Test configuration:\n\t%s %s %s RAM=%s TTRAM=%s bool=%s\n" % configs)
 
     
     def check_images(self, paths):
