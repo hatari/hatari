@@ -645,9 +645,7 @@ class Tester:
         self.results = {}
         for tos in config.images:
             self.results[tos.name] = []
-            print()
-            print("***** TESTING: %s *****" % tos.name)
-            print()
+            print("\n***** TESTING: %s *****\n" % tos.name)
             count = 0
             for machine in config.machines:
                 if machine not in tos.machines:
