@@ -10480,11 +10480,12 @@ static void fill_icache030 (uae_u32 addr)
 #if VALIDATE_68030_DATACACHE
 static void validate_dcache030(void)
 {
-	for (int i = 0; i < CACHELINES030; i++) {
+	int i,j;
+	for (i = 0; i < CACHELINES030; i++) {
 		struct cache030 *c = &dcaches030[i];
 		uae_u32 addr = c->tag & ~((CACHELINES030 << 4) - 1);
 		addr |= i << 4;
-		for (int j = 0; j < 4; j++) {
+		for (j = 0; j < 4; j++) {
 			if (c->valid[j]) {
 				uae_u32 v = get_long(addr);
 				if (v != c->data[j]) {
@@ -10567,7 +10568,9 @@ static void write_dcache030x(uaecptr addr, uae_u32 val, uae_u32 size, uae_u32 fc
 			if (hit || wa) {
 				if (hit) {
 					c2->data[lws2] &= ~(mask[size] << (width + offset - 32));
-					c2->data[lws2] |= val << (width + offset - 32);
+//					c2->data[lws2] |= val << (width + offset - 32);
+if ( size == 2 )	c2->data[lws2] |= val << ((4 - aligned) * 8);
+else			c2->data[lws2] |= val << 8;
 				} else {
 					c2->valid[lws2] = false;
 				}
