@@ -16,6 +16,10 @@ is missing here, please remind me!):
   some test programs on real hardware and wrote some test programs
   himself.
 
+- Vincent Riviere: EmuTOS maintainer, reported bugs about GEMDOS HD,
+  TOS ROM handling, 32-bit IDE transfers, bus error fault in 24-bit,
+  Debian bugs on Hatari Python UI, debugger enhancement suggestions.
+
 - Fredrik Noring : Tracked down a bug in the blitter emulation and a
   bug in the PSG shadow register emulation.
 
@@ -49,3 +53,8 @@ is missing here, please remind me!):
   with a lot of technical questions about the ST.
 
 - Steve Kemp : Found some possible buffer overflows.
+
+- Alexandre Rebert : Debian bugs on Hatari command line option
+  handling crashes.
+
+- Michael Tautschnig : Debian bug on ConfigureParams handling issue.
