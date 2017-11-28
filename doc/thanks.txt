@@ -1,0 +1,51 @@
+
+Following people contributed ideas or helped to find bugs in Hatari etc.,
+so we'd like to say thank you here (listed in random order - and if someone
+is missing here, please remind me!):
+
+- Anders Eriksson (Evil/DHS): Helped improving STE's emulation by
+  running many tests programs and providing the source code for some
+  non-working demos.
+
+- Douglas Little: wrote and run some test programs for 030 cycle
+  accuracy and FPU, tested & gave feedback on Hatari CPU & DSP profiler
+  features, debugged Hatari DSP emulation issues.
+
+- Roger Burrows: EmuTOS maintainer, reported bugs in several areas
+  including I/O memory access & TT emulation (timer-C, video).  Ran
+  some test programs on real hardware and wrote some test programs
+  himself.
+
+- Fredrik Noring : Tracked down a bug in the blitter emulation and a
+  bug in the PSG shadow register emulation.
+
+- Jean Louis Guerin (DrCoolZic): 'Panzer' program, very useful
+  for testing some FDC behaviours and timings on real hardware and to
+  compare them with the emulated system. Also wrote some nice docs on
+  WD1772 and methods commonly used for games' protections.
+
+- George Nakos : Helped to track down a bug in the GEMDOS HD emulation.
+
+- Pieter van der Meer : Traced a bug in the VIDEL emulation.
+
+- nash67: tested hundreds (!) of games from various CD compilations
+  and reported the non working ones on atari-forum.com. Huge thanks for
+  that tedious work, it helped tracking down some less common cases
+  not used in demos (keyboard, joystick, FDC, tos, ...).
+
+- Jorge Cwik (Ijor): creator of Pasti STX disk image. Reverse-engineered
+  some decapped STF chips (GLUE, MMU, Shifter) and many low level description
+  of the STF inner work, very useful to improve emulation accuracy.
+
+- Paulo Simoes (ljkb): made some of the first descriptions of wakestates,
+  as well as documenting all positions where hi/lo and 50/60 switches
+  can create specific lines' length.
+
+- Christian Zietz: recovered many original ASIC schemas for Atari's chips
+  and helped in reverse-engineering the behaviour of those chips (MMU address
+  decoding)
+
+- Matthias Alles : He initiated the port of Hatari to MiNT and helped
+  with a lot of technical questions about the ST.
+
+- Steve Kemp : Found some possible buffer overflows.

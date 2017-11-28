@@ -23,9 +23,8 @@
  Contributors:
  -------------
 
-Following people contributed code or patches to this projects and/or
-helped to find bugs in Hatari (listed in random order - and if someone
-is missing here, please remind me!):
+Following people contributed code or patches to this projects (listed in
+random order - and if someone is missing here, please remind us!):
 
 - Jean-Baptiste Berlioz <tobe at freemind-tobe.com> : Cycle accurate
   Blitter emulation.
@@ -60,24 +59,13 @@ is missing here, please remind me!):
 
 - Philippe Gerin : Fixed a bug in the CPU core (bus errors problem).
 
-- Steve Kemp : Found some possible buffer overflows.
-
-- George Nakos : Helped to track down a bug in the GEMDOS HD emulation.
-
-- Pieter van der Meer : Traced a bug in the VIDEL emulation.
-
 - Patrice Mandin : Some improvements of the autoconf build system files,
   original author of the DSP emulation core.
 
 - Martin Doering : Code for compiling the font data into the executable
   and some other ideas for cleaning up the source code.
 
-- Matthias Alles : He initiated the port of Hatari to MiNT and helped
-  with a lot of technical questions about the ST.
-
 - Ventzislav Tzvetkov : Joystick closing patch, Hatari for AmigaOS.
-
-- "Jo" (?) : Patches for compiling Hatari on a 64-bit Alpha machine.
 
 - Stefan Berndtsson <stefan at nocrew.org> : Patches to get Hatari
   running on big endian machines.
@@ -90,15 +78,12 @@ is missing here, please remind me!):
 
 - Mark Keates : Patches for compiling Hatari with MinGW.
 
-- Fredrik Noring : Tracked down a bug in the blitter emulation and a
-  bug in the PSG shadow register emulation.
-
 - Volker Seebode: Fix to ASCI emulation to get other than AHDI drivers
   working.
 
-- Cyprian Konador: Found some bugs in the blitter cycles emulation,
-  duochrome and samplehold modes for TT video emulation, reported some
-  infos about alt-ram and dma ranges. Also provided some test programs
+- Cyprian Konador: Found some bugs in the blitter cycles emulation, provided
+  patches for duochrome and samplehold modes for TT video emulation, reported
+  some infos about alt-ram and dma ranges. Also provided some test programs
   to show cpu/blitter bus sharing and parallel execution.
 
 - Jerome Vernet: Some updates to the OS X Xcode project file and OS X
@@ -110,10 +95,6 @@ is missing here, please remind me!):
 - Uwe Seimet: IDE emulation improvements, GEMDOS HD emulation
   improvement suggestions and NatFeats SCSI Driver code for Linux.
 
-- Anders Eriksson (Evil/DHS): Helped improving STE's emulation by
-  running many tests programs and providing the source code for some
-  non-working demos.
-
 - Markus Fritze: New m68k disassembler with more Motorola like syntax
   and options for controlling how the output looks.
 
@@ -121,59 +102,24 @@ is missing here, please remind me!):
 
 - Markus Heiden: SCSI class 1 (ICD) command support for drives > 1 GB
 
-- nash67: tested hundreds (!) of games from various CD compilations
-  and reported the non working ones on atari-forum.com. Huge thanks for
-  that tedious work, it helped tracking down some less common cases
-  not used in demos (keyboard, joystick, FDC, tos, ...).
-
 - Gilles Fetis: fixes to MMU emulation (from NeXT emulator project
   using Hatari code).
-
-- Peter Putnik (Petari, AtariZoll): Helped tracking the
-  cause of the crash in Microprose Golf (FDC emulation). Also wrote
-  some useful tools to handle floppies (flofor, floimg), as well as
-  opcovat.tos to report valid/invalid opcodes with a real CPU and
-  under emulation by testing all possible opcode combinations.
-
-- Jean Louis Guerin (DrCoolZic): 'Panzer' program, very useful
-  for testing some FDC behaviours and timings on real hardware and to
-  compare them with the emulated system. Also wrote some nice docs on
-  WD1772 and methods commonly used for games' protections.
 
 - Christer Solskogen: Set up an automatic build script on his site,
   providing up to date Hatari binaries for Linux and Windows in 32
   and 64 bit mode. Very useful for end users wishing to try the devel
   versions of Hatari, and lots of interesting build logs too for
   various cpu architectures. See http://antarctica.no/~hatari/latest
+  He also provided a patch for fixing compilation problems on OS X.
 
 - Max Böhm: host <-> Atari filename encoding conversion routines and
   related changes needed to gemdos.c.
-
-- Douglas Little: wrote and run some test programs for 030 cycle
-  accuracy and FPU, tested & gave feedback on Hatari CPU & DSP profiler
-  features, debugged Hatari DSP emulation issues.
-
-- Roger Burrows: EmuTOS maintainer, reported bugs in several areas
-  including I/O memory access & TT emulation (timer-C, video).  Ran
-  some test programs on real hardware and wrote some test programs
-  himself.
-
-- Jorge Cwik (Ijor): creator of Pasti STX disk image. Reverse-engineered
-  some decapped STF chips (GLUE, MMU, Shifter) and many low level description
-  of the STF inner work, very useful to improve emulation accuracy.
-
-- Paulo Simoes (ljkb): made some of the first descriptions of wakestates,
-  as well as documenting all positions where hi/lo and 50/60 switches
-  can create specific lines' length.
 
 - Troed Sangberg (Troed of Sync): accurate description of the GLUE state
   machine for STF/STE in all wakestates (display signal, sync signal, ...)
   and the resulting lines' length used in overscan / hardscroll. Coder
   of the '{Closure}' demo which makes huge use of these techniques.
-
-- Christian Zietz: recovered many original ASIC schemas for Atari's chips
-  and helped in reverse-engineering the behaviour of those chips (MMU address
-  decoding)
+  He also provided a patch for Audio Sculpture's custom IKBD program.
 
 - Thorsten Otto: Some improvements to the code that patches the TOS ROMs,
   a.out symbol table & absolute symbols support and few debugger
