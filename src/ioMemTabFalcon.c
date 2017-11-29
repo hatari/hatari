@@ -131,21 +131,14 @@ static void IoMemTabFalcon_BusCtrl_WriteByte(void)
 	 * or if the user requested a faster frequency manually */
 	if (ConfigureParams.System.nCpuLevel == 3 && ConfigureParams.System.nCpuFreq <= 16)
 	{
-		int Freq_old = nCpuFreqShift;
-
 		if ((busCtrl & 0x1) == 1) {
 			/* 16 Mhz bus for 68030 */
-			nCpuFreqShift = 1;
-			ConfigureParams.System.nCpuFreq = 16;
+			Configuration_ChangeCpuFreq ( 16 );
 		}
 		else {
 			/* 8 Mhz bus for 68030 */
-			nCpuFreqShift = 0;
-			ConfigureParams.System.nCpuFreq = 8;
+			Configuration_ChangeCpuFreq ( 8 );
 		}
-
-		if ( Freq_old != nCpuFreqShift )
-			M68000_ChangeCpuFreq();
 	}
 	Statusbar_UpdateInfo();			/* Update clock speed in the status bar */
 }

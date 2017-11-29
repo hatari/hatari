@@ -415,7 +415,7 @@ static void TOS_CheckSysConfig(void)
 		ClocksTimings_InitMachine ( ConfigureParams.System.nMachineType );
 		Video_SetTimings ( ConfigureParams.System.nMachineType , ConfigureParams.System.VideoTimingMode );
 		IoMem_Init();
-		ConfigureParams.System.nCpuFreq = 8;
+		Configuration_ChangeCpuFreq ( 8 );
 		ConfigureParams.System.nCpuLevel = 0;
 	}
 	else if ((TosVersion & 0x0f00) == 0x0300 && !Config_IsMachineTT())
@@ -427,7 +427,7 @@ static void TOS_CheckSysConfig(void)
 		ClocksTimings_InitMachine ( ConfigureParams.System.nMachineType );
 		Video_SetTimings ( ConfigureParams.System.nMachineType , ConfigureParams.System.VideoTimingMode );
 		IoMem_Init();
-		ConfigureParams.System.nCpuFreq = 32;
+		Configuration_ChangeCpuFreq ( 32 );
 		ConfigureParams.System.nCpuLevel = 3;
 	}
 	else if ((TosVersion & 0x0f00) == 0x0400 && !Config_IsMachineFalcon())
@@ -443,7 +443,7 @@ static void TOS_CheckSysConfig(void)
 		DSP_Enable();
 #endif
 		IoMem_Init();
-		ConfigureParams.System.nCpuFreq = 16;
+		Configuration_ChangeCpuFreq ( 16 );
 		ConfigureParams.System.nCpuLevel = 3;
 	}
 	else if (TosVersion <= 0x0104 &&
@@ -457,7 +457,7 @@ static void TOS_CheckSysConfig(void)
 		ClocksTimings_InitMachine ( ConfigureParams.System.nMachineType );
 		Video_SetTimings ( ConfigureParams.System.nMachineType , ConfigureParams.System.VideoTimingMode );
 		IoMem_Init();
-		ConfigureParams.System.nCpuFreq = 8;
+		Configuration_ChangeCpuFreq ( 8 );
 		ConfigureParams.System.nCpuLevel = 0;
 	}
 	else if (TosVersion < 0x0300 &&
@@ -470,7 +470,7 @@ static void TOS_CheckSysConfig(void)
 		ClocksTimings_InitMachine ( ConfigureParams.System.nMachineType );
 		Video_SetTimings ( ConfigureParams.System.nMachineType , ConfigureParams.System.VideoTimingMode );
 		IoMem_Init();
-		ConfigureParams.System.nCpuFreq = 8;
+		Configuration_ChangeCpuFreq ( 8 );
 		ConfigureParams.System.nCpuLevel = 0;
 	}
 	else if ((TosVersion & 0x0f00) == 0x0400 && ConfigureParams.System.nCpuLevel < 2)

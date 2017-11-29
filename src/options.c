@@ -1683,7 +1683,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			{
 				return Opt_ShowError(OPT_CPUCLOCK, argv[i], "Invalid CPU clock");
 			}
-			ConfigureParams.System.nCpuFreq = cpuclock;
+			Configuration_ChangeCpuFreq ( cpuclock );
 			bLoadAutoSave = false;
 			break;
 
@@ -1751,31 +1751,31 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			{
 				ConfigureParams.System.nMachineType = MACHINE_ST;
 				ConfigureParams.System.nCpuLevel = 0;
-				ConfigureParams.System.nCpuFreq = 8;
+				Configuration_ChangeCpuFreq ( 8 );
 			}
 			else if (strcasecmp(argv[i], "megast") == 0)
 			{
 				ConfigureParams.System.nMachineType = MACHINE_MEGA_ST;
 				ConfigureParams.System.nCpuLevel = 0;
-				ConfigureParams.System.nCpuFreq = 8;
+				Configuration_ChangeCpuFreq ( 8 );
 			}
 			else if (strcasecmp(argv[i], "ste") == 0)
 			{
 				ConfigureParams.System.nMachineType = MACHINE_STE;
 				ConfigureParams.System.nCpuLevel = 0;
-				ConfigureParams.System.nCpuFreq = 8;
+				Configuration_ChangeCpuFreq ( 8 );
 			}
 			else if (strcasecmp(argv[i], "megaste") == 0)
 			{
 				ConfigureParams.System.nMachineType = MACHINE_MEGA_STE;
 				ConfigureParams.System.nCpuLevel = 0;
-				ConfigureParams.System.nCpuFreq = 16;
+				Configuration_ChangeCpuFreq ( 16 );
 			}
 			else if (strcasecmp(argv[i], "tt") == 0)
 			{
 				ConfigureParams.System.nMachineType = MACHINE_TT;
 				ConfigureParams.System.nCpuLevel = 3;
-				ConfigureParams.System.nCpuFreq = 32;
+				Configuration_ChangeCpuFreq ( 32 );
 			}
 			else if (strcasecmp(argv[i], "falcon") == 0)
 			{
@@ -1784,7 +1784,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 #endif
 				ConfigureParams.System.nMachineType = MACHINE_FALCON;
 				ConfigureParams.System.nCpuLevel = 3;
-				ConfigureParams.System.nCpuFreq = 16;
+				Configuration_ChangeCpuFreq ( 16 );
 			}
 			else
 			{

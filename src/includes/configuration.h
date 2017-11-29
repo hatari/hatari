@@ -425,5 +425,6 @@ extern void Configuration_Apply(bool bReset);
 extern void Configuration_Load(const char *psFileName);
 extern void Configuration_Save(void);
 extern void Configuration_MemorySnapShot_Capture(bool bSave);
+extern void Configuration_ChangeCpuFreq ( int CpuFreq_new );
 
 #endif

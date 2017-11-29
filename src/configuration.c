@@ -791,7 +791,7 @@ void Configuration_SetDefault(void)
 	/* Set defaults for System */
 	ConfigureParams.System.nMachineType = MACHINE_ST;
 	ConfigureParams.System.nCpuLevel = 0;
-	ConfigureParams.System.nCpuFreq = 8;
+	ConfigureParams.System.nCpuFreq = 8;	nCpuFreqShift = 0;
 	ConfigureParams.System.nDSPType = DSP_TYPE_NONE;
 	ConfigureParams.System.bAddressSpace24 = true;
 #if ENABLE_WINUAE_CPU
@@ -1176,3 +1176,46 @@ void Configuration_MemorySnapShot_Capture(bool bSave)
 	if (!bSave)
 		Configuration_Apply(true);
 }
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * This function should be called each time the CPU freq is changed.
+ * It will update the main configuration, as well as the corresponding
+ * value for nCpuFreqShift
+ *
+ * In case the new CPU freq is different from the current CPU freq, we
+ * also call M68000_ChangeCpuFreq to update some low level hardware related values
+ */
+void Configuration_ChangeCpuFreq ( int CpuFreq_new )
+{
+	int	CpuFreq_old = ConfigureParams.System.nCpuFreq;
+
+//fprintf ( stderr , "changing cpu freq %d -> %d\n" , ConfigureParams.System.nCpuFreq , CpuFreq_new );
+
+	/* In case value is not exactly 8, 16 or 32, then we change it so */
+	if ( CpuFreq_new < 12 )
+	{
+		ConfigureParams.System.nCpuFreq = 8;
+		nCpuFreqShift = 0;
+	}
+	else if ( CpuFreq_new > 26 )
+	{
+		ConfigureParams.System.nCpuFreq = 32;
+		nCpuFreqShift = 2;
+	}
+	else
+	{
+		ConfigureParams.System.nCpuFreq = 16;
+		nCpuFreqShift = 1;
+	}
+
+	if ( CpuFreq_old != CpuFreq_new )
+	{
+		M68000_ChangeCpuFreq();
+
+	}
+}
+
+

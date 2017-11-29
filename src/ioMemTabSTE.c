@@ -46,13 +46,11 @@ void IoMemTabMegaSTE_CacheCpuCtrl_WriteByte(void)
 	{
 		if ((busCtrl & 0x1) == 1) {
 			/* 16 Mhz bus for 68000 */
-			nCpuFreqShift = 1;
-			ConfigureParams.System.nCpuFreq = 16;
+			Configuration_ChangeCpuFreq ( 16 );
 		}
 		else {
 			/* 8 Mhz bus for 68000 */
-			nCpuFreqShift = 0;
-			ConfigureParams.System.nCpuFreq = 8;
+			Configuration_ChangeCpuFreq ( 8 );
 		}
 	}
 	Statusbar_UpdateInfo();			/* Update clock speed in the status bar */

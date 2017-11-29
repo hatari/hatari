@@ -197,11 +197,11 @@ void DlgCpu_Main(void)
 	}
 
 	if (cpudlg[DLGCPU_32MHZ].state & SG_SELECTED)
-		ConfigureParams.System.nCpuFreq = 32;
+		Configuration_ChangeCpuFreq ( 32 );
 	else if (cpudlg[DLGCPU_16MHZ].state & SG_SELECTED)
-		ConfigureParams.System.nCpuFreq = 16;
+		Configuration_ChangeCpuFreq ( 16 );
 	else
-		ConfigureParams.System.nCpuFreq = 8;
+		Configuration_ChangeCpuFreq ( 8 );
 
 	ConfigureParams.System.bCompatibleCpu = (cpudlg[DLGCPU_PREFETCH].state & SG_SELECTED);
 
