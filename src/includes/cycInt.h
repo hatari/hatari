@@ -40,23 +40,6 @@ typedef enum
 #define	INT_CPU_TO_INTERNAL	9600
 #define	INT_MFP_TO_INTERNAL	31333
 
-#ifdef OLD_CPU_SHIFT
-
-/* Convert cpu or mfp cycles to internal cycles */
-#define INT_CONVERT_TO_INTERNAL( cyc , type )	( type == INT_CPU_CYCLE ? (cyc)*INT_CPU_TO_INTERNAL : (cyc)*INT_MFP_TO_INTERNAL )
-/*
-#define INT_CONVERT_TO_INTERNAL( cyc , type )	( type == INT_CPU_CYCLE ? cyc*INT_CPU_TO_INTERNAL :\
-	( ( (cyc*INT_MFP_TO_INTERNAL + INT_CPU_TO_INTERNAL*4 - 1) / (INT_CPU_TO_INTERNAL*4) ) * INT_CPU_TO_INTERNAL*4 ) )
-*/
-
-/* Convert internal cycles to real mfp or cpu cycles */
-/* Rounding is important : for example 9500 internal is 0.98 cpu and should give 1 cpu cycle, not 0 */
-/* so we do (9500+9600-1)/9600 to get the closest higher integer */
-//#define INT_CONVERT_FROM_INTERNAL( cyc , type )	( type == INT_CPU_CYCLE ? (cyc+INT_CPU_TO_INTERNAL-1)/INT_CPU_TO_INTERNAL : (cyc+INT_MFP_TO_INTERNAL-1)/INT_MFP_TO_INTERNAL )
-#define INT_CONVERT_FROM_INTERNAL( cyc , type )	( type == INT_CPU_CYCLE ? (cyc)/INT_CPU_TO_INTERNAL : ((cyc)+INT_MFP_TO_INTERNAL-1)/INT_MFP_TO_INTERNAL )
-
-#else	/* ! OLD_CPU_SHIFT */
-
 /* Convert cpu or mfp cycles to internal cycles */
 #define INT_CONVERT_TO_INTERNAL( cyc , type )	( type == INT_CPU_CYCLE ? (cyc)*INT_CPU_TO_INTERNAL : \
 	       					  type == INT_MFP_CYCLE ? ( (cyc)*INT_MFP_TO_INTERNAL ) << nCpuFreqShift : \
@@ -74,8 +57,6 @@ typedef enum
 #define INT_CONVERT_FROM_INTERNAL( cyc , type )	( type == INT_CPU_CYCLE ? (cyc)/INT_CPU_TO_INTERNAL : \
 	       					  type == INT_MFP_CYCLE ? ( ((cyc)+INT_MFP_TO_INTERNAL-1)/INT_MFP_TO_INTERNAL ) >> nCpuFreqShift : \
 						  ( (cyc)/INT_CPU_TO_INTERNAL ) >> nCpuFreqShift )
-
-#endif
 
 
 extern void (*PendingInterruptFunction)(void);

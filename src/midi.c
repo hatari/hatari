@@ -45,13 +45,8 @@ const char Midi_fileid[] = "Hatari midi.c : " __DATE__ " " __TIME__;
  * Serial line is set to 31250 bps, 1 start bit, 8 bits, 1 stop, no parity, which gives 256 cycles
  * per bit at 8 MHz, and 2560 cycles to transfer 10 bits
  */
-#ifdef OLD_CPU_SHIFT
-#define	MIDI_TRANSFER_BIT_CYCLE		256
-#define	MIDI_TRANSFER_BYTE_CYCLE	(MIDI_TRANSFER_BIT_CYCLE * 10)
-#else
 #define	MIDI_TRANSFER_BIT_CYCLE		( 256 << nCpuFreqShift )
 #define	MIDI_TRANSFER_BYTE_CYCLE	(MIDI_TRANSFER_BIT_CYCLE * 10)
-#endif
 
 static Uint8 MidiControlRegister;
 static Uint8 MidiStatusRegister;
@@ -125,11 +120,7 @@ void Midi_Reset(void)
 	TSR_Complete_Time = 0;
 
 	/* Set timer */
-#ifdef OLD_CPU_SHIFT
 	CycInt_AddRelativeInterrupt ( MIDI_TRANSFER_BYTE_CYCLE , INT_CPU_CYCLE , INTERRUPT_MIDI );
-#else
-	CycInt_AddRelativeInterrupt ( MIDI_TRANSFER_BYTE_CYCLE , INT_CPU_CYCLE , INTERRUPT_MIDI );
-#endif
 }
 
 
@@ -343,11 +334,7 @@ void Midi_InterruptHandler_Update(void)
 #endif
 
 	/* Set timer */
-#ifdef OLD_CPU_SHIFT
 	CycInt_AddRelativeInterrupt ( MIDI_TRANSFER_BYTE_CYCLE , INT_CPU_CYCLE , INTERRUPT_MIDI );
-#else
-	CycInt_AddRelativeInterrupt ( MIDI_TRANSFER_BYTE_CYCLE , INT_CPU_CYCLE , INTERRUPT_MIDI );
-#endif
 }
 
 

@@ -727,11 +727,7 @@ static Uint32	FDC_FdcCyclesToCpuCycles ( Uint32 FdcCycles )
 
 //	CpuCycles = rint ( ( (Uint64)FdcCycles * MachineClocks.CPU_Freq ) / MachineClocks.FDC_Freq );
 	CpuCycles = rint ( ( (Uint64)FdcCycles * 8021247.L ) / MachineClocks.FDC_Freq );
-#ifdef OLD_CPU_SHIFT
-//	CpuCycles >>= nCpuFreqShift;				/* Compensate for x2 or x4 cpu speed */
-#else
 	CpuCycles <<= nCpuFreqShift;				/* Convert to x1 or x2 or x4 cpu speed */
-#endif
 
 //fprintf ( stderr , "fdc command %d machine %d fdc cycles %d cpu cycles %d\n" , FDC.Command , ConfigureParams.System.nMachineType , FdcCycles , CpuCycles );
 //if ( Delay==4104) Delay=4166;		// 4166 : decade demo
@@ -752,11 +748,8 @@ static Uint32	FDC_CpuCyclesToFdcCycles ( Uint32 CpuCycles )
 	int	FdcCycles;
 
 
-#ifdef OLD_CPU_SHIFT
-//	CpuCycles <<= nCpuFreqShift;				/* Compensate for x2 or x4 cpu speed */
-#else
 	CpuCycles >>= nCpuFreqShift;				/* Compensate for x2 or x4 cpu speed */
-#endif
+
 //	FdcCycles = rint ( ( (Uint64)CpuCycles * MachineClocks.FDC_Freq ) / MachineClocks.CPU_Freq );
 	FdcCycles = rint ( ( (Uint64)CpuCycles * MachineClocks.FDC_Freq ) / 8021247.L );
 
@@ -784,11 +777,7 @@ static void	FDC_StartTimer_FdcCycles ( int FdcCycles , int InternalCycleOffset )
 	if ( ( ConfigureParams.DiskImage.FastFloppy ) && ( FdcCycles > FDC_FAST_FDC_FACTOR ) )
 		FdcCycles /= FDC_FAST_FDC_FACTOR;
 
-#ifdef OLD_CPU_SHIFT
 	CycInt_AddRelativeInterruptWithOffset ( FDC_FdcCyclesToCpuCycles ( FdcCycles ) , INT_CPU_CYCLE , INTERRUPT_FDC , InternalCycleOffset );
-#else
-	CycInt_AddRelativeInterruptWithOffset ( FDC_FdcCyclesToCpuCycles ( FdcCycles ) , INT_CPU_CYCLE , INTERRUPT_FDC , InternalCycleOffset );
-#endif
 }
 
 

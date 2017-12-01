@@ -609,11 +609,7 @@ static void	IKBD_Boot_ROM ( bool ClearAllRAM )
 	/* is stuck. We use a timer to emulate the time needed for this part */
 	/* (eg Lotus Turbo Esprit 2 requires at least a delay of 50000 cycles */
 	/* or it will crash during start up) */
-#ifdef OLD_CPU_SHIFT
-	CycInt_AddRelativeInterrupt( IKBD_RESET_CYCLES , INT_CPU_CYCLE , INTERRUPT_IKBD_RESETTIMER );
-#else
 	CycInt_AddRelativeInterrupt( IKBD_RESET_CYCLES , INT_CPU8_CYCLE , INTERRUPT_IKBD_RESETTIMER );
-#endif
 
 
 	/* Add auto-update function to the queue */
@@ -621,11 +617,7 @@ static void	IKBD_Boot_ROM ( bool ClearAllRAM )
 	/* when RESET instruction is called in a loop in less than 150000 cycles */
 	Keyboard.AutoSendCycles = 150000;				/* approx every VBL */
 	if ( CycInt_InterruptActive ( INTERRUPT_IKBD_AUTOSEND ) == false )
-#ifdef OLD_CPU_SHIFT
-		CycInt_AddRelativeInterrupt ( Keyboard.AutoSendCycles, INT_CPU_CYCLE, INTERRUPT_IKBD_AUTOSEND );
-#else
 		CycInt_AddRelativeInterrupt ( Keyboard.AutoSendCycles, INT_CPU8_CYCLE, INTERRUPT_IKBD_AUTOSEND );
-#endif
 
 	LOG_TRACE ( TRACE_IKBD_ALL , "ikbd reset done, starting reset timer\n" );
 }
@@ -1799,11 +1791,7 @@ void IKBD_InterruptHandler_AutoSend(void)
 	}
 
 	/* Trigger this auto-update function again after a while */
-#ifdef OLD_CPU_SHIFT
-	CycInt_AddRelativeInterrupt(Keyboard.AutoSendCycles, INT_CPU_CYCLE, INTERRUPT_IKBD_AUTOSEND);
-#else
 	CycInt_AddRelativeInterrupt(Keyboard.AutoSendCycles, INT_CPU8_CYCLE, INTERRUPT_IKBD_AUTOSEND);
-#endif
 
 	/* We don't send keyboard data automatically within the first few
 	 * VBLs to avoid that TOS gets confused during its boot time */
@@ -2308,12 +2296,8 @@ static void IKBD_Cmd_SetJoystickMonitoring(void)
 		Rate = 1;
 
 	Cycles = 8021247 * Rate / 100;
-#ifdef OLD_CPU_SHIFT
-	Cycles <<= nCpuFreqShift;					/* Compensate for x2 or x4 cpu speed */
-	CycInt_AddRelativeInterrupt ( Cycles, INT_CPU_CYCLE, INTERRUPT_IKBD_AUTOSEND );
-#else
 	CycInt_AddRelativeInterrupt ( Cycles, INT_CPU8_CYCLE, INTERRUPT_IKBD_AUTOSEND );
-#endif
+
 	Keyboard.AutoSendCycles = Cycles;
 }
 

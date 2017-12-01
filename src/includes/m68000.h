@@ -247,14 +247,7 @@ extern const char *OpcodeName[];
 static inline void M68000_AddCycles(int cycles)
 {
 	cycles = (cycles + 3) & ~3;
-#ifdef OLD_CPU_SHIFT
-	cycles = cycles >> nCpuFreqShift;
-
 	PendingInterruptCount -= INT_CONVERT_TO_INTERNAL ( cycles , INT_CPU_CYCLE );
-#else
-//	PendingInterruptCount -= INT_CONVERT_TO_INTERNAL_NO_FREQSHIFT ( cycles , INT_CPU_CYCLE );
-	PendingInterruptCount -= INT_CONVERT_TO_INTERNAL ( cycles , INT_CPU_CYCLE );
-#endif
 	nCyclesMainCounter += cycles;
 	CyclesGlobalClockCounter += cycles;
 }
@@ -345,14 +338,7 @@ static inline void M68000_AddCyclesWithPairing(int cycles)
 		cycles = (cycles + 3) & ~3;		/* no pairing, round current instr to 4 cycles */
 	}
 
-#ifdef OLD_CPU_SHIFT
-	cycles = cycles >> nCpuFreqShift;
-
 	PendingInterruptCount -= INT_CONVERT_TO_INTERNAL ( cycles , INT_CPU_CYCLE );
-#else
-//	PendingInterruptCount -= INT_CONVERT_TO_INTERNAL_NO_FREQSHIFT ( cycles , INT_CPU_CYCLE );
-	PendingInterruptCount -= INT_CONVERT_TO_INTERNAL ( cycles , INT_CPU_CYCLE );
-#endif
 
 	nCyclesMainCounter += cycles;
 	CyclesGlobalClockCounter += cycles;
@@ -372,14 +358,7 @@ static inline void M68000_AddCyclesWithPairing(int cycles)
  */
 static inline void M68000_AddCycles_CE(int cycles)
 {
-#ifdef OLD_CPU_SHIFT
-	cycles = cycles >> nCpuFreqShift;
-
-	PendingInterruptCount -= INT_CONVERT_TO_INTERNAL(cycles, INT_CPU_CYCLE);
-#else
-//	PendingInterruptCount -= INT_CONVERT_TO_INTERNAL_NO_FREQSHIFT ( cycles , INT_CPU_CYCLE );
 	PendingInterruptCount -= INT_CONVERT_TO_INTERNAL ( cycles , INT_CPU_CYCLE );
-#endif
 
 	nCyclesMainCounter += cycles;
 	CyclesGlobalClockCounter += cycles;

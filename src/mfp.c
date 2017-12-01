@@ -980,11 +980,7 @@ static int MFP_StartTimer_AB(Uint8 TimerControl, Uint16 TimerData, interrupt_id 
 			}
 			else
 			{
-#ifdef OLD_CPU_SHIFT
 				int	AddCurCycles = INT_CONVERT_TO_INTERNAL ( Cycles_GetInternalCycleOnWriteAccess() , INT_CPU_CYCLE );
-#else
-				int	AddCurCycles = INT_CONVERT_TO_INTERNAL ( Cycles_GetInternalCycleOnWriteAccess() , INT_CPU_CYCLE );
-#endif
 
 				/* Start timer from now? If not continue timer using PendingCycleOver */
 				if (bFirstTimer)
@@ -1086,11 +1082,7 @@ static int MFP_StartTimer_CD(Uint8 TimerControl, Uint16 TimerData, interrupt_id 
 			}
 			else
 			{
-#ifdef OLD_CPU_SHIFT
 				int	AddCurCycles = INT_CONVERT_TO_INTERNAL ( Cycles_GetInternalCycleOnWriteAccess() , INT_CPU_CYCLE );
-#else
-				int	AddCurCycles = INT_CONVERT_TO_INTERNAL ( Cycles_GetInternalCycleOnWriteAccess() , INT_CPU_CYCLE );
-#endif
 
 				/* Start timer from now? If not continue timer using PendingCycleOver */
 				if (bFirstTimer)
@@ -1324,11 +1316,7 @@ void MFP_InterruptHandler_TimerA(void)
 
 	/* Acknowledge in MFP circuit, pass bit,enable,pending */
 	if ((MFP_TACR&0xf) != 0)            /* Is timer OK? */
-#ifdef OLD_CPU_SHIFT
 		MFP_InputOnChannel ( MFP_INT_TIMER_A , INT_CONVERT_FROM_INTERNAL ( PendingCyclesOver , INT_CPU_CYCLE ) );
-#else
-		MFP_InputOnChannel ( MFP_INT_TIMER_A , INT_CONVERT_FROM_INTERNAL ( PendingCyclesOver , INT_CPU_CYCLE ) );
-#endif
 
 	/* Start next interrupt, if need one - from current cycle count */
 	TimerAClockCycles = MFP_StartTimer_AB(MFP_TACR, MFP_TADR, INTERRUPT_MFP_TIMERA, false, &TimerACanResume);
@@ -1350,11 +1338,7 @@ void MFP_InterruptHandler_TimerB(void)
 
 	/* Acknowledge in MFP circuit, pass bit, enable, pending */
 	if ((MFP_TBCR&0xf) != 0)            /* Is timer OK? */
-#ifdef OLD_CPU_SHIFT
 		MFP_InputOnChannel ( MFP_INT_TIMER_B , INT_CONVERT_FROM_INTERNAL ( PendingCyclesOver , INT_CPU_CYCLE ) );
-#else
-		MFP_InputOnChannel ( MFP_INT_TIMER_B , INT_CONVERT_FROM_INTERNAL ( PendingCyclesOver , INT_CPU_CYCLE ) );
-#endif
 
 	/* Start next interrupt, if need one - from current cycle count */
 	TimerBClockCycles = MFP_StartTimer_AB(MFP_TBCR, MFP_TBDR, INTERRUPT_MFP_TIMERB, false, &TimerBCanResume);
@@ -1376,11 +1360,7 @@ void MFP_InterruptHandler_TimerC(void)
 
 	/* Acknowledge in MFP circuit, pass bit, enable, pending */
 	if ((MFP_TCDCR&0x70) != 0)          /* Is timer OK? */
-#ifdef OLD_CPU_SHIFT
 		MFP_InputOnChannel ( MFP_INT_TIMER_C , INT_CONVERT_FROM_INTERNAL ( PendingCyclesOver , INT_CPU_CYCLE ) );
-#else
-		MFP_InputOnChannel ( MFP_INT_TIMER_C , INT_CONVERT_FROM_INTERNAL ( PendingCyclesOver , INT_CPU_CYCLE ) );
-#endif
 
 	/* Start next interrupt, if need one - from current cycle count */
 	TimerCClockCycles = MFP_StartTimer_CD((MFP_TCDCR>>4)&7, MFP_TCDR, INTERRUPT_MFP_TIMERC, false, &TimerCCanResume);
@@ -1402,11 +1382,7 @@ void MFP_InterruptHandler_TimerD(void)
 
 	/* Acknowledge in MFP circuit, pass bit, enable, pending */
 	if ((MFP_TCDCR&0x07) != 0)          /* Is timer OK? */
-#ifdef OLD_CPU_SHIFT
 		MFP_InputOnChannel ( MFP_INT_TIMER_D , INT_CONVERT_FROM_INTERNAL ( PendingCyclesOver , INT_CPU_CYCLE ) );
-#else
-		MFP_InputOnChannel ( MFP_INT_TIMER_D , INT_CONVERT_FROM_INTERNAL ( PendingCyclesOver , INT_CPU_CYCLE ) );
-#endif
 
 	/* Start next interrupt, if need one - from current cycle count */
 	TimerDClockCycles = MFP_StartTimer_CD(MFP_TCDCR&7, MFP_TDDR, INTERRUPT_MFP_TIMERD, false, &TimerDCanResume);
@@ -1684,9 +1660,8 @@ void MFP_TimerBData_ReadByte(void)
 		/* Cycle position of the start of the current instruction */
 		//pos_start = nFrameCycles % nCyclesPerLine;
 		Video_GetPosition ( &FrameCycles , &HblCounterVideo , &pos_start );
-#ifndef OLD_CPU_SHIFT
 		pos_start >>= nCpuFreqShift;
-#endif
+
 		/* Cycle position of the read for the current instruction (approximatively, we consider */
 		/* the read happens after 4 cycles (due to MFP wait states in that case)) */
 		/* This is quite a hack, but hard to do without proper 68000 read cycle emulation */

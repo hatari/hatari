@@ -450,18 +450,11 @@ static void	ACIA_Start_InterruptHandler_IKBD ( ACIA_STRUCT *pACIA , int Internal
 //	Cycles = MachineClocks.CPU_Freq / pACIA->TX_Clock;		/* Convert ACIA cycles in CPU cycles */
 	Cycles = 8021247 / pACIA->TX_Clock;				/* Convert ACIA cycles in CPU cycles, for a 8 MHz STF reference */
 	Cycles *= pACIA->Clock_Divider;
-#ifdef OLD_CPU_SHIFT
-	Cycles <<= nCpuFreqShift;					/* Compensate for x2 or x4 cpu speed */
-#endif
 
 	LOG_TRACE ( TRACE_ACIA, "acia %s start timer divider=%d cpu_cycles=%d VBL=%d HBL=%d\n" , pACIA->ACIA_Name ,
 		pACIA->Clock_Divider , Cycles , nVBLs , nHBL );
 
-#ifdef OLD_CPU_SHIFT
-	CycInt_AddRelativeInterruptWithOffset ( Cycles, INT_CPU_CYCLE, INTERRUPT_ACIA_IKBD , InternalCycleOffset );
-#else
 	CycInt_AddRelativeInterruptWithOffset ( Cycles, INT_CPU8_CYCLE, INTERRUPT_ACIA_IKBD , InternalCycleOffset );
-#endif
 }
 
 

@@ -166,14 +166,13 @@ void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr)
 
 	/* Find scan line we are currently on and get index into cycle-palette table */
 	Video_ConvertPosition ( FrameCycles , &ScanLine , &nHorPos );	
-#ifndef OLD_CPU_SHIFT
-	if ( nCpuFreqShift )
+
+	if ( nCpuFreqShift )				/* if cpu freq is 16 or 32 MHz */
 	{
 		/* Convert cycle position to 8 MHz equivalent and round to 4 cycles */
 		nHorPos >>= nCpuFreqShift;
 		nHorPos &= ~3;
 	}
-#endif
 
 	if (ScanLine > MAX_SCANLINES_PER_FRAME)
 		return;
@@ -320,9 +319,7 @@ void Spec512_EndScanLine(void)
 {
 	int	CycleEnd = nCyclesPerLine;
 
-#ifndef OLD_CPU_SHIFT
-	CycleEnd >>= nCpuFreqShift;
-#endif
+	CycleEnd >>= nCpuFreqShift;			/* Convert cycle position to 8 MHz equivalent */
 	/* Continue to reads palette until complete so have correct version for next line */
 	while (ScanLineCycleCount < CycleEnd)
 		Spec512_UpdatePaletteSpan();
