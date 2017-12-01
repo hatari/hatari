@@ -874,6 +874,9 @@ void Configuration_Apply(bool bReset)
 	ConfigureParams.Memory.STRamSize_KB = size;
 	STMemory_Init ( ConfigureParams.Memory.STRamSize_KB * 1024 );
 
+	/* Update variables depending on the new CPU Freq (to do before other ClocksTimings_xxx functions) */
+	Configuration_ChangeCpuFreq ( ConfigureParams.System.nCpuFreq );
+
 	/* Init clocks for this machine */
 	ClocksTimings_InitMachine ( ConfigureParams.System.nMachineType );
 
@@ -1186,7 +1189,8 @@ void Configuration_MemorySnapShot_Capture(bool bSave)
  * value for nCpuFreqShift
  *
  * In case the new CPU freq is different from the current CPU freq, we
- * also call M68000_ChangeCpuFreq to update some low level hardware related values
+ * also call MClocksTimings_UpdateCpuFreqEmul and 68000_ChangeCpuFreq
+ * to update some low level hardware related values
  */
 void Configuration_ChangeCpuFreq ( int CpuFreq_new )
 {
@@ -1211,10 +1215,11 @@ void Configuration_ChangeCpuFreq ( int CpuFreq_new )
 		nCpuFreqShift = 1;
 	}
 
+	ClocksTimings_UpdateCpuFreqEmul ( ConfigureParams.System.nMachineType , nCpuFreqShift );
+
 	if ( CpuFreq_old != CpuFreq_new )
 	{
 		M68000_ChangeCpuFreq();
-
 	}
 }
 

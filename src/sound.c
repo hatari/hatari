@@ -1479,11 +1479,9 @@ static int Sound_SetSamplesPassed(bool FillFrame)
 	int nSoundCycles;
 	int SamplesToGenerate;				/* How many samples are needed for this time-frame */
 
+	// TODO use the difference with previous value of CyclesGlobalClockCounter (when FillFrame==true) instead of CYCLES_COUNTER_VIDEO
 	nSoundCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
-
-#ifndef OLD_CPU_SHIFT
-	nSoundCycles >>= nCpuFreqShift;
-#endif
+//fprintf ( stderr , "nSoundCycles %d SamplesPerFrame %d\n" , nSoundCycles , SamplesPerFrame );
 
 	/* example : 160256 cycles per VBL, 44Khz = 882 samples per VBL at 50 Hz */
 	/* 882/160256 samples per cpu clock cycle */
@@ -1614,6 +1612,7 @@ void Sound_Update(bool FillFrame)
 
 	/* Find how many samples to generate */
 	SamplesToGenerate = Sound_SetSamplesPassed( FillFrame );
+//fprintf ( stderr , "sound update %d %d\n" , FillFrame , SamplesToGenerate );
 
 	/* And generate */
 	Sound_GenerateSamples( SamplesToGenerate );

@@ -11,7 +11,7 @@
 
 
 
-/* All the possible clock frequencies used in the supported machines. */
+/* All the possible clock frequencies in Hz used in the supported machines. */
 /* When a value is 0, the corresponding part is not available in this model */
 
 typedef struct
@@ -20,7 +20,7 @@ typedef struct
   Uint32        MCLK_Freq;
   Uint32        BUS_Freq;
 
-  Uint32        CPU_Freq;
+  Uint32        CPU_Freq;			/* 'normal' CPU Freq (eg 8 MHz for ST or 16 MHz for Falcon) */
   Uint32        FPU_Freq;
   Uint32        DMA_Freq;
   Uint32        MFP_Freq;
@@ -49,6 +49,8 @@ typedef struct
   Uint32        CODEC_Freq;
   Uint32        DSP_Freq;
 
+  /* Common to all machines, runtime variables */
+  Uint32        CPU_Freq_Emul;			/* Freq in Hz at which the CPU is emulated (taking nCpuFreqShift and CPU_Freq into account) */
 
 } CLOCKS_STRUCT;
 
@@ -64,6 +66,7 @@ extern bool	RoundVBLPerSec;
 /* Functions' prototypes */
 
 void	ClocksTimings_InitMachine ( MACHINETYPE MachineType );
+void	ClocksTimings_UpdateCpuFreqEmul ( MACHINETYPE MachineType , int nCpuFreqShift );
 Uint32	ClocksTimings_GetCyclesPerVBL ( MACHINETYPE MachineType , int ScreenRefreshRate );
 Uint32	ClocksTimings_GetVBLPerSec ( MACHINETYPE MachineType , int ScreenRefreshRate );
 Uint32	ClocksTimings_GetVBLDuration_micro ( MACHINETYPE MachineType , int ScreenRefreshRate );

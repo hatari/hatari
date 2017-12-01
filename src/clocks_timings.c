@@ -126,6 +126,7 @@ const char ClocksTimings_fileid[] = "Hatari clocks_timings.c : " __DATE__ " " __
 #include "configuration.h"
 #include "log.h"
 #include "clocks_timings.h"
+#include "m68000.h"
 
 
 
@@ -178,6 +179,7 @@ bool	RoundVBLPerSec = false;						/* if false, don't round number of VBL to 50/6
 
 void	ClocksTimings_InitMachine ( MACHINETYPE MachineType )
 {
+//fprintf ( stderr , "clock init mach=%d shift=%d\n" , MachineType , nCpuFreqShift );
 	memset ( (void *)&MachineClocks , 0 , sizeof ( MachineClocks ) );
 
 	if (MachineType == MACHINE_ST || MachineType == MACHINE_MEGA_ST)
@@ -264,10 +266,7 @@ void	ClocksTimings_InitMachine ( MACHINETYPE MachineType )
 
 		/* Special case : the Mega STE has an internal 16 MHz CPU clock */
 		/* but it can be set to 8 MHz for compatibility with STE using $FF8E21 */
-		/* We use 8 MHz here to get correct cycles and sound samples per VBL */
-//		MachineClocks.CPU_Freq		= CLK16;				/* 16 MHz (CLK16) */
-		MachineClocks.CPU_Freq		= CLK8;					/* 8 MHz (CLK8) */
-
+		MachineClocks.CPU_Freq		= CLK16;				/* 16 MHz (CLK16) */
 		MachineClocks.FPU_Freq		= CLK16;				/* 16 MHz (CLK16) */
 		MachineClocks.DMA_Freq		= CLK8;					/* 8 MHz (CLK8) */
 		MachineClocks.DMA_Audio_Freq	= SCLK;					/* 8 MHz (SCLK) */
@@ -346,27 +345,67 @@ void	ClocksTimings_InitMachine ( MACHINETYPE MachineType )
 	}
 
 
+	/* Update some other variables depending on the current nCpuFreqShift */
+	ClocksTimings_UpdateCpuFreqEmul ( MachineType , nCpuFreqShift );
 }
-
 
 
 
 
 /*-----------------------------------------------------------------------------------------*/
 /**
- * Return the number of VBL per second, depending on the video settings and the cpu freq.
- * This value is only known for STF/STE running at 50, 60 or 71 Hz.
- * For the other machines, we return CPU_Freq / ScreenRefreshRate
+ * Update the number of emulated cycles per second for the current CPU settings, depending on the
+ * base CPU freq in MachineClocks.CPU_Freq and nCpuFreqShift
+ *
+ * We use CPU_Freq as a base (instead of fixed values of 8, 16 or 32 MHz) to handle different CPU
+ * clocks in case the machine is a PAL or NTSC model for example (in which cases CPU_Freq
+ * values are slightly different)
  */
+void	ClocksTimings_UpdateCpuFreqEmul ( MACHINETYPE MachineType , int nCpuFreqShift )
+{
+	Uint32 Cpu_Freq_Emul;
 
+	Cpu_Freq_Emul = MachineClocks.CPU_Freq;
+
+	/* Machines where the base CPU is 8 MHz */
+	if (MachineType == MACHINE_ST || MachineType == MACHINE_MEGA_ST
+	    || MachineType == MACHINE_STE)
+	{
+		Cpu_Freq_Emul <<= nCpuFreqShift;			/* 8, 16 or 32 MHz */
+	}
+
+	/* Machines where the base CPU is 16 MHz */
+	else if (MachineType == MACHINE_MEGA_STE || MachineType == MACHINE_FALCON )
+	{
+		if ( nCpuFreqShift == 0 )	Cpu_Freq_Emul >>= 1;	/*  8 MHz */
+		else if ( nCpuFreqShift == 2 )	Cpu_Freq_Emul <<= 1;	/* 32 MHz */
+	}
+
+	/* Machines where the base CPU is 32 MHz */
+	else if (MachineType == MACHINE_TT )
+	{
+		if ( nCpuFreqShift == 0 )	Cpu_Freq_Emul >>= 2;	/*  8 MHz */
+		else if ( nCpuFreqShift == 1 )	Cpu_Freq_Emul >>= 1;	/* 16 MHz */
+	}
+
+	MachineClocks.CPU_Freq_Emul = Cpu_Freq_Emul;
+//fprintf ( stderr , "clock cpu freq mach=%d shift=%d base=%d -> %d\n" , MachineType , nCpuFreqShift , MachineClocks.CPU_Freq , MachineClocks.CPU_Freq_Emul );
+}
+
+
+
+
+/*-----------------------------------------------------------------------------------------*/
+/**
+ * Return the number of cycles per VBL, depending on the video settings and the simulated cpu freq.
+ * This value is only precisely known for STF/STE running at 50, 60 or 71 Hz.
+ * For the other machines, we return CPU_Freq_Emul / ScreenRefreshRate
+ */
 Uint32	ClocksTimings_GetCyclesPerVBL ( MACHINETYPE MachineType , int ScreenRefreshRate )
 {
 	Uint32	CyclesPerVBL;
 
-
-	CyclesPerVBL = MachineClocks.CPU_Freq / ScreenRefreshRate;			/* default value */
-
-	/* STF and STE have the same numbers of cycles per VBL */
+	/* STF and STE have the same numbers of cycles per VBL (numbers are for an 8 MHz CPU) */
 	if (MachineType == MACHINE_ST || MachineType == MACHINE_MEGA_ST
 	    || MachineType == MACHINE_STE || MachineType == MACHINE_MEGA_STE)
 	{
@@ -377,15 +416,18 @@ Uint32	ClocksTimings_GetCyclesPerVBL ( MACHINETYPE MachineType , int ScreenRefre
 		else if ( ScreenRefreshRate == 71 )
 			CyclesPerVBL = ATARI_STF_CYCLES_PER_VBL_HI;
 		else
-			CyclesPerVBL = MachineClocks.CPU_Freq / ScreenRefreshRate;	/* should not happen */
+			CyclesPerVBL = MachineClocks.CPU_Freq / ScreenRefreshRate;	/* unknown refresh rate, should not happen */
+
+		/* At this point CyclesPerVBL is the number of cycles per VBL for a 8 MHz CPU */
+		/* We need to apply nCpuFreqShift to get the number of cycles at the currently simulated CPU speed (8, 16 or 32 MHz) */
+		CyclesPerVBL <<= nCpuFreqShift;
 	}
 
-	/* For machines where cpu freq can be changed, we don't know the number of cycles per VBL */
-	/* -> TODO, for now comment code to keep the default value from above */
-	//else if ( ( MachineType == MACHINE_MEGA_STE ) || ( MachineType == MACHINE_TT ) || ( MachineType == MACHINE_FALCON ) )
-	//	CyclesPerVBL = MachineClocks.CPU_Freq / ScreenRefreshRate;
+	/* For machines where cpu freq can be changed, the number of cycles per VBL is not constant */
+	else										/* MACHINE_TT or MACHINE_FALCON */
+		CyclesPerVBL = MachineClocks.CPU_Freq_Emul / ScreenRefreshRate;
 
-
+//fprintf ( stderr , "clock cycles per vbl %d %d -> %d\n" , MachineType , ScreenRefreshRate , CyclesPerVBL );
 	return CyclesPerVBL;
 }
 
@@ -394,10 +436,10 @@ Uint32	ClocksTimings_GetCyclesPerVBL ( MACHINETYPE MachineType , int ScreenRefre
 
 /*-----------------------------------------------------------------------------------------*/
 /**
- * Return the number of VBL per second, depending on the video settings and the cpu freq.
+ * Return the number of VBL per second, depending on the video settings and the simulated cpu freq.
  * Since the cpu freq is not an exact multiple of the number of cycles per VBL, the real
  * value slightly differs from the usual 50/60 Hz.
- * Precise values are needed in STE mode to synchronize cpu and dma sound (as they both use
+ * Precise (not rounded) values are needed in STE mode to synchronize cpu and dma sound (as they both use
  * 2 different clocks).
  * example for STF/STE :
  *	PAL  STF/STE video PAL :	50.053 VBL/sec
@@ -407,28 +449,22 @@ Uint32	ClocksTimings_GetCyclesPerVBL ( MACHINETYPE MachineType , int ScreenRefre
  *
  * The returned number of VBL per sec is << 24 (=CLOCKS_TIMINGS_SHIFT_VBL) to simulate floating point using Uint32.
  */
-
 Uint32	ClocksTimings_GetVBLPerSec ( MACHINETYPE MachineType , int ScreenRefreshRate )
 {
 	Uint32	VBLPerSec;							/* Upper 8 bits are for int part, 24 lower bits for float part */
 
 
-	VBLPerSec = ScreenRefreshRate << CLOCKS_TIMINGS_SHIFT_VBL;		/* default rounded value */
-
-	if ( RoundVBLPerSec == false )
+	if ( RoundVBLPerSec == true )
 	{
-		/* STF and STE have the same numbers of cycles per VBL */
-		if (MachineType == MACHINE_ST || MachineType == MACHINE_MEGA_ST
-		    || MachineType == MACHINE_STE || MachineType == MACHINE_MEGA_STE)
-			VBLPerSec = ( (Sint64)MachineClocks.CPU_Freq << CLOCKS_TIMINGS_SHIFT_VBL ) / ClocksTimings_GetCyclesPerVBL ( MachineType , ScreenRefreshRate );
-
-		/* For machines where cpu freq can be changed, we don't know the number of cycles per VBL */
-		/* -> TODO, for now comment code to keep the default value from above */
-		//else if ( ( MachineType == MACHINE_MEGA_STE ) || ( MachineType == MACHINE_TT ) || ( MachineType == MACHINE_FALCON ) )
-		//	VBLPerSec = ScreenRefreshRate << CLOCKS_TIMINGS_SHIFT_VBL;
+		VBLPerSec = ScreenRefreshRate << CLOCKS_TIMINGS_SHIFT_VBL;
 	}
 
+	else
+	{
+		VBLPerSec = ( (Sint64)MachineClocks.CPU_Freq_Emul << CLOCKS_TIMINGS_SHIFT_VBL ) / ClocksTimings_GetCyclesPerVBL ( MachineType , ScreenRefreshRate );
+	}
 
+//fprintf ( stderr , "clock vbl per sec %d %d %d -> %d\n" , MachineType , MachineClocks.CPU_Freq_Emul , ScreenRefreshRate , VBLPerSec );
 	return VBLPerSec;
 }
 
@@ -443,28 +479,21 @@ Uint32	ClocksTimings_GetVBLPerSec ( MACHINETYPE MachineType , int ScreenRefreshR
  *	PAL  STF/STE video PAL :	19979 micro sec  (instead of 20000 for 50 Hz)
  *	PAL  STF/STE video NTSC :	16656 micro sec  (instead of 16667 for 60 Hz)
  */
-
 Uint32	ClocksTimings_GetVBLDuration_micro ( MACHINETYPE MachineType , int ScreenRefreshRate )
 {
 	Uint32	VBLDuration_micro;
 
-
-	VBLDuration_micro = (Uint32) (1000000.0 / ScreenRefreshRate + 0.5);	/* default rounded value, round to closest integer */
-
-	if ( RoundVBLPerSec == false )
+	if ( RoundVBLPerSec == true )
 	{
-		/* STF and STE have the same numbers of cycles per VBL */
-		if (MachineType == MACHINE_ST || MachineType == MACHINE_MEGA_ST
-		    || MachineType == MACHINE_STE || MachineType == MACHINE_MEGA_STE)
-			VBLDuration_micro = (Uint32) (1000000.0 * ClocksTimings_GetCyclesPerVBL ( MachineType , ScreenRefreshRate ) / MachineClocks.CPU_Freq + 0.5);
-
-		/* For machines where cpu freq can be changed, we don't know the number of cycles per VBL */
-		/* -> TODO, for now comment code to keep the default value from above */
-		//else if ( ( MachineType == MACHINE_MEGA_STE ) || ( MachineType == MACHINE_TT ) || ( MachineType == MACHINE_FALCON ) )
-		//	VBLDuration_micro = (Uint32) (1000000.0 / ScreenRefreshRate + 0.5);
+		VBLDuration_micro = (Uint32) (1000000.0 / ScreenRefreshRate + 0.5);
 	}
 
+	else
+	{
+		VBLDuration_micro = (Uint32) (1000000.0 * ClocksTimings_GetCyclesPerVBL ( MachineType , ScreenRefreshRate ) / MachineClocks.CPU_Freq_Emul + 0.5);
+	}
 
+//fprintf ( stderr , "clock vbl duration %d %d %d -> %d\n" , MachineType , MachineClocks.CPU_Freq_Emul , ScreenRefreshRate , VBLDuration_micro );
 	return VBLDuration_micro;
 }
 
@@ -484,29 +513,21 @@ Uint32	ClocksTimings_GetVBLDuration_micro ( MACHINETYPE MachineType , int Screen
  *	PAL  STF/STE video PAL :	881.07 samples per VBL  (instead of 882 for 50 Hz)
  *					44053.56 samples for 50 VBLs (instead of 44100 for 1 sec at 50 Hz)
  */
-
 Sint64	ClocksTimings_GetSamplesPerVBL ( MACHINETYPE MachineType , int ScreenRefreshRate , int AudioFreq )
 {
 	Sint64	SamplesPerVBL;
 
-
-	SamplesPerVBL = ( ((Sint64)AudioFreq) << 28 ) / ScreenRefreshRate;		/* default value */
-
-	if ( RoundVBLPerSec == false )
+	if ( RoundVBLPerSec == true )
 	{
-		/* STF and STE have the same numbers of cycles per VBL */
-		if (MachineType == MACHINE_ST || MachineType == MACHINE_MEGA_ST
-		    || MachineType == MACHINE_STE || MachineType == MACHINE_MEGA_STE)
-			SamplesPerVBL = ( ((Sint64)AudioFreq * ClocksTimings_GetCyclesPerVBL ( MachineType , ScreenRefreshRate ) ) << 28 ) / MachineClocks.CPU_Freq;
-
-		/* For machines where cpu freq can be changed, we don't know the number of cycles per VBL */
-		/* -> TODO, for now comment code to keep the default value from above */
-		//else if ( ( MachineType == MACHINE_MEGA_STE ) || ( MachineType == MACHINE_TT ) || ( MachineType == MACHINE_FALCON ) )
-		//	SamplesPerVBL = ( ((Sint64)AudioFreq) << 28 ) / ScreenRefreshRate;
+		SamplesPerVBL = ( ((Sint64)AudioFreq) << 28 ) / ScreenRefreshRate;
 	}
 
+	else
+	{
+		SamplesPerVBL = ( ((Sint64)AudioFreq * ClocksTimings_GetCyclesPerVBL ( MachineType , ScreenRefreshRate ) ) << 28 ) / MachineClocks.CPU_Freq_Emul;
+	}
 
+//fprintf ( stderr , "clock sample per vbl %d %d %d -> %ld\n" , MachineType , MachineClocks.CPU_Freq_Emul , AudioFreq , SamplesPerVBL );
 	return SamplesPerVBL;
 }
-
 
