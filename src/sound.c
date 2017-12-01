@@ -1479,27 +1479,6 @@ static int Sound_SetSamplesPassed(bool FillFrame)
 	int nSoundCycles;
 	int SamplesToGenerate;				/* How many samples are needed for this time-frame */
 
-	// TODO use the difference with previous value of CyclesGlobalClockCounter (when FillFrame==true) instead of CYCLES_COUNTER_VIDEO
-	nSoundCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
-//fprintf ( stderr , "nSoundCycles %d SamplesPerFrame %d\n" , nSoundCycles , SamplesPerFrame );
-
-	/* example : 160256 cycles per VBL, 44Khz = 882 samples per VBL at 50 Hz */
-	/* 882/160256 samples per cpu clock cycle */
-
-	/* Total number of samples that we should have at this point of the VBL */
-	SamplesToGenerate = nSoundCycles * SamplesPerFrame
-		/ ClocksTimings_GetCyclesPerVBL ( ConfigureParams.System.nMachineType , nScreenRefreshRate );
-
-//if (SamplesToGenerate > SamplesPerFrame )
-//fprintf ( stderr , "over run %d %d\n" , SamplesPerFrame , SamplesToGenerate );
-
-	if (SamplesToGenerate > SamplesPerFrame)
-		SamplesToGenerate = SamplesPerFrame;
-
-	SamplesToGenerate -= CurrentSamplesNb;		/* don't count samples that were already generated up to now */
-	if ( SamplesToGenerate < 0 )
-		SamplesToGenerate = 0;
-
 
 	/* If we're called from the VBL interrupt (FillFrame==true), we must ensure we have */
 	/* an exact total of SamplesPerFrame samples during a full VBL (we take into account */
@@ -1507,9 +1486,32 @@ static int Sound_SetSamplesPassed(bool FillFrame)
 	if ( FillFrame )
 	{
 		SamplesToGenerate = SamplesPerFrame - CurrentSamplesNb;	/* how many samples are missing to reach SamplesPerFrame */
-		if ( SamplesToGenerate < 0 )
-			SamplesToGenerate = 0;
 	}
+
+	else
+	{
+		// TODO use the difference with previous value of CyclesGlobalClockCounter (when FillFrame==true) instead of CYCLES_COUNTER_VIDEO
+		nSoundCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
+//fprintf ( stderr , "nSoundCycles %d SamplesPerFrame %d\n" , nSoundCycles , SamplesPerFrame );
+
+		/* example : 160256 cycles per VBL, 44Khz = 882 samples per VBL at 50 Hz */
+		/* 882/160256 samples per cpu clock cycle */
+
+		/* Total number of samples that we should have at this point of the VBL */
+		SamplesToGenerate = nSoundCycles * SamplesPerFrame
+			/ ClocksTimings_GetCyclesPerVBL ( ConfigureParams.System.nMachineType , nScreenRefreshRate );
+
+//if (SamplesToGenerate > SamplesPerFrame )
+//fprintf ( stderr , "over run %d %d\n" , SamplesPerFrame , SamplesToGenerate );
+
+		if (SamplesToGenerate > SamplesPerFrame)
+			SamplesToGenerate = SamplesPerFrame;
+
+		SamplesToGenerate -= CurrentSamplesNb;		/* don't count samples that were already generated up to now */
+	}
+
+	if ( SamplesToGenerate < 0 )
+		SamplesToGenerate = 0;
 
 	/* Check we don't fill the sound's ring buffer before it's played by Audio_Callback()	*/
 	/* This should never happen, except if the system suffers major slowdown due to	other	*/
