@@ -243,7 +243,7 @@ static void show_cpu_area_stats(profile_area_t *area)
 	fprintf(stderr, "- used cycles:\n  %"PRIu64" (%.2f%% of all)\n  = %.5fs\n",
 		area->counters.cycles,
 		100.0 * area->counters.cycles / cpu_profile.all.cycles,
-		(double)area->counters.cycles / MachineClocks.CPU_Freq);
+		(double)area->counters.cycles / MachineClocks.CPU_Freq_Emul);
 	if (area->overflow) {
 		fprintf(stderr, "  *** COUNTER OVERFLOW! ***\n");
 	}
@@ -270,7 +270,7 @@ void Profile_CpuShowStats(void)
 	}
 
 	fprintf(stderr, "\n= %.5fs\n",
-		(double)cpu_profile.all.cycles / MachineClocks.CPU_Freq);
+		(double)cpu_profile.all.cycles / MachineClocks.CPU_Freq_Emul);
 }
 
 #if ENABLE_WINUAE_CPU

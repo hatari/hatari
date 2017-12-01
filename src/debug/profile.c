@@ -572,7 +572,7 @@ static bool Profile_Save(const char *fname, bool bForDsp)
 		freq = MachineClocks.DSP_Freq;
 		proc = "DSP";
 	} else {
-		freq = MachineClocks.CPU_Freq;
+		freq = MachineClocks.CPU_Freq_Emul;
 		proc = "CPU";
 	}
 #if ENABLE_WINUAE_CPU
