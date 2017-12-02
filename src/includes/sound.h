@@ -56,6 +56,11 @@ extern int	YM2149_LPF_Filter;
 #define		YM2149_HPF_FILTER_IIR			1
 extern int	YM2149_HPF_Filter;
 
+#define		YM2149_RESAMPLE_METHOD_NEAREST			0
+#define		YM2149_RESAMPLE_METHOD_WEIGHTED_AVERAGE_2	1
+#define		YM2149_RESAMPLE_METHOD_WEIGHTED_AVERAGE_N	2
+extern int	YM2149_Resample_Method;
+
 
 extern void Sound_Init(void);
 extern void Sound_Reset(void);
