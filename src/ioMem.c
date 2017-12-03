@@ -329,24 +329,17 @@ void IoMem_Init(void)
 		}
 	}
 
-	/* Initialize PSG shadow registers for ST, STe, TT machines */
+	/* Falcon PSG shadow register range setup (to void access) is already
+	 * done above as part of the IoMem_FixVoidAccessForCompatibleFalcon()
+	 * call (in STE bus compatible mode, otherwise they bus error)
+	 */
 	if (!Config_IsMachineFalcon())
 	{
+		/* Initialize PSG shadow registers for ST, STe, TT machines */
 		for (addr = 0xff8804; addr < 0xff8900; addr++)
 		{
 			pInterceptReadTable[addr - 0xff8000] = pInterceptReadTable[(addr & 0xfff803) - 0xff8000];
 			pInterceptWriteTable[addr - 0xff8000] = pInterceptWriteTable[(addr & 0xfff803) - 0xff8000];
-		}
-	}
-	else {
-		/* Initialize PSG shadow registers for Falcon machine when in STe bus compatibility mode */
-		if (falconBusMode == STE_BUS_COMPATIBLE) {
-			for (addr = 0xff8804; addr < 0xff8900; addr++)
-			{
-				pInterceptReadTable[addr - 0xff8000] = IoMem_VoidRead;     /* For 'read' */
-				pInterceptWriteTable[addr - 0xff8000] = IoMem_VoidWrite;   /* and 'write' */
-			}
-
 		}
 	}
 }
