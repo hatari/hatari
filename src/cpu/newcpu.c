@@ -10327,7 +10327,6 @@ void mem_access_delay_long_write_ce020 (uaecptr addr, uae_u32 v)
 
 
 // 68030 caches aren't so simple as 68020 cache..
-
 STATIC_INLINE struct cache030 *geticache030 (struct cache030 *cp, uaecptr addr, uae_u32 *tagp, int *lwsp)
 {
 	int index, lws;
@@ -10393,7 +10392,8 @@ static void fill_icache030 (uae_u32 addr)
 	if (regs.cacheholdingaddr020 == addr || regs.cacheholdingdata_valid == 0)
 		return;
 	c = geticache030 (icaches030, addr, &tag, &lws);
-	if (c->valid[lws] && c->tag == tag) {
+//	if (c->valid[lws] && c->tag == tag) {
+	if ((regs.cacr & 1) && c->valid[lws] && c->tag == tag) {
 		// cache hit
 		regs.cacheholdingaddr020 = addr;
 		regs.cacheholdingdata020 = c->data[lws];
