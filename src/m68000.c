@@ -730,14 +730,17 @@ void	M68000_SyncCpuBus_OnWriteAccess ( void )
  */
 void	M68000_Flush_All_Caches ( uaecptr addr , int size )
 {
+//fprintf ( stderr , "M68000_Flush_All_Caches\n" );
 #ifdef WINUAE_FOR_HATARI
 	flush_cpu_caches(true);
+	invalidate_cpu_data_caches();
 #endif
 }
 
 
 void	M68000_Flush_Instr_Cache ( uaecptr addr , int size )
 {
+//fprintf ( stderr , "M68000_Flush_Instr_Cache\n" );
 #ifdef WINUAE_FOR_HATARI
 	/* Instruction cache for cpu >= 68020 */
 	flush_cpu_caches(true);
@@ -747,9 +750,10 @@ void	M68000_Flush_Instr_Cache ( uaecptr addr , int size )
 
 void	M68000_Flush_Data_Cache ( uaecptr addr , int size )
 {
+//fprintf ( stderr , "M68000_Flush_Data_Cache\n" );
 #ifdef WINUAE_FOR_HATARI
 	/* Data cache for cpu >= 68030 */
-	flush_cpu_caches(true);
+	invalidate_cpu_data_caches();
 #endif
 }
 

@@ -1547,7 +1547,7 @@ bool set_cpu_tracer (bool state)
 	return is_cpu_tracer ();
 }
 
-static void invalidate_cpu_data_caches(void)
+void invalidate_cpu_data_caches(void)
 {
 	int i,j;
 

@@ -657,6 +657,9 @@ extern void m68k_disasm_file (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt);
 #endif
 
 extern void set_cpu_caches (bool flush);
+#ifdef WINUAE_FOR_HATARI
+extern void invalidate_cpu_data_caches(void);
+#endif
 extern void flush_cpu_caches(bool flush);
 extern void flush_cpu_caches_040(uae_u16 opcode);
 extern void REGPARAM3 MakeSR (void) REGPARAM;
