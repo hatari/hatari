@@ -86,6 +86,19 @@ static bool KeepProgramSymbols;
 /* ------------------ load and free functions ------------------ */
 
 /**
+ * return true if given symbol name is object/library/file name
+ */
+static bool is_obj_file(const char *name)
+{
+	int len = strlen(name);
+	/* object (.a or .o) / file name? */
+	if (len > 2 && ((name[len-2] == '.' && (name[len-1] == 'a' || name[len-1] == 'o')) || strchr(name, '/'))) {
+		    return true;
+	}
+	return false;
+}
+
+/**
  * compare function for qsort() to sort according to
  * symbol type & address.  Text section symbols will
  * be sorted first.
@@ -134,7 +147,8 @@ static int symbols_by_name(const void *s1, const void *s2)
 }
 
 /**
- * Check for duplicate addresses in TEXT symbol list
+ * Check for duplicate addresses in symbol list
+ * (called separately for TEXT & non-TEXT symbols)
  * Return number of duplicates
  */
 static int symbols_check_addresses(const symbol_t *syms, int count)
@@ -149,6 +163,13 @@ static int symbols_check_addresses(const symbol_t *syms, int count)
 		}
 		for (j = i + 1; j < count && syms[i].address == syms[j].address; j++) {
 			if (syms[j].type == SYMTYPE_ABS) {
+				continue;
+			}
+			/* ASCII symbol files contain also object file addresses,
+			 * those will often have the same address as the first symbol
+			 * in given object -> no point warning about them
+			 */
+			if (is_obj_file(syms[i].name) || is_obj_file(syms[j].name)) {
 				continue;
 			}
 			fprintf(stderr,	"WARNING: symbols '%s' & '%s' have the same 0x%x address\n",
@@ -171,6 +192,10 @@ static int symbols_check_names(const symbol_t *syms, int count)
 	for (i = 0; i < (count - 1); i++)
 	{
 		for (j = i + 1; j < count && strcmp(syms[i].name, syms[j].name) == 0; j++) {
+			/* this is common case for object files having different sections */
+			if (syms[i].type != syms[j].type && is_obj_file(syms[i].name)) {
+				continue;
+			}
 			fprintf(stderr,	"WARNING: addresses 0x%x & 0x%x have the same '%s' name\n",
 				syms[i].address, syms[j].address, syms[i].name);
 			dups++;
@@ -239,10 +264,10 @@ static bool symbol_remove_obj(const char *name)
 		"___gnu_compiled_c",
 		"gcc2_compiled."
 	};
-	int i, len = strlen(name);
-	/* object (.a or .o) / file name? */
-	if (len > 2 && ((name[len-2] == '.' && (name[len-1] == 'a' || name[len-1] == 'o')) || strchr(name, '/'))) {
-		    return true;
+	int i;
+
+	if (is_obj_file(name)) {
+		return true;
 	}
 	/* useless symbols GCC (v2) seems to add to every object? */
 	for (i = 0; i < ARRAY_SIZE(gcc_sym); i++) {
