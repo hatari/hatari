@@ -624,7 +624,11 @@ struct uae_prefs {
 	bool cs_cia6526;
 	bool cs_bytecustomwritebug;
 	bool cs_color_burst;
+	bool cs_romisslow;
+	bool cs_toshibagary;
+	int cs_unmapped_space;
 	int cs_hacks;
+	int cs_ciatype[2];
 
 	struct boardromconfig expansionboard[MAX_EXPANSION_BOARDS];
 
@@ -706,6 +710,7 @@ struct uae_prefs {
 	uae_u32 custom_memory_sizes[MAX_CUSTOM_MEMORY_ADDRS];
 	uae_u32 custom_memory_mask[MAX_CUSTOM_MEMORY_ADDRS];
 	int uaeboard;
+	bool uaeboard_nodiag;
 	int uaeboard_order;
 
 	bool kickshifter;
@@ -886,12 +891,14 @@ extern void cfgfile_save_options (struct zfile *f, struct uae_prefs *p, int type
 extern int target_get_display (const TCHAR*);
 extern const TCHAR *target_get_display_name (int, bool);
 
+extern struct uae_prefs *cfgfile_open(const TCHAR *filename, int *type);
+extern void cfgfile_close(struct uae_prefs *p);
 extern int cfgfile_load (struct uae_prefs *p, const TCHAR *filename, int *type, int ignorelink, int userconfig);
 extern int cfgfile_save (struct uae_prefs *p, const TCHAR *filename, int);
 extern void cfgfile_parse_line (struct uae_prefs *p, TCHAR *, int);
 extern void cfgfile_parse_lines (struct uae_prefs *p, const TCHAR *, int);
 extern int cfgfile_parse_option (struct uae_prefs *p, const TCHAR *option, TCHAR *value, int);
-extern int cfgfile_get_description (const TCHAR *filename, TCHAR *description, TCHAR *hostlink, TCHAR *hardwarelink, int *type);
+extern int cfgfile_get_description (struct uae_prefs *p, const TCHAR *filename, TCHAR *description, TCHAR *hostlink, TCHAR *hardwarelink, int *type);
 extern void cfgfile_show_usage (void);
 extern int cfgfile_searchconfig(const TCHAR *in, int index, TCHAR *out, int outsize);
 extern uae_u32 cfgfile_uaelib(TrapContext *ctx, int mode, uae_u32 name, uae_u32 dst, uae_u32 maxlen);
@@ -908,6 +915,7 @@ extern void fixup_prefs (struct uae_prefs *prefs, bool userconfig);
 extern void fixup_cpu (struct uae_prefs *prefs);
 extern void cfgfile_compatibility_romtype(struct uae_prefs *p);
 extern void cfgfile_compatibility_rtg(struct uae_prefs *p);
+extern bool cfgfile_detect_art(struct uae_prefs *p, TCHAR *path);
 
 extern void check_prefs_changed_custom (void);
 extern void check_prefs_changed_cpu (void);

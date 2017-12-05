@@ -1174,7 +1174,7 @@ static void set_x_funcs (void)
 				x_do_cycles_pre = do_cycles;
 				x_do_cycles_post = do_cycles_post;
 			} else if (currprefs.cpu_model == 68030 && !currprefs.cachesize) {
-				x_prefetch = get_word_020_prefetch;
+				x_prefetch = get_word_030_prefetch;
 				x_get_ilong = get_long_030_prefetch;
 				x_get_iword = get_word_030_prefetch;
 				x_get_ibyte = NULL;
@@ -1615,10 +1615,10 @@ void flush_cpu_caches(bool force)
 			regs.cacr &= ~0x400;
 		}
 	} else if (currprefs.cpu_model >= 68040) {
-		mmu_flush_cache();
-		icachelinecnt = 0;
-		icachehalfline = 0;
-		if (doflush || force) {
+		if (doflush && force) {
+			mmu_flush_cache();
+			icachelinecnt = 0;
+			icachehalfline = 0;
 			for (i = 0; i < CACHESETS060; i++) {
 				for (j = 0; j < CACHELINES040; j++) {
 					icaches040[i].valid[j] = false;
@@ -2721,7 +2721,7 @@ STATIC_INLINE int in_rom (uaecptr pc)
 
 STATIC_INLINE int in_rtarea (uaecptr pc)
 {
-	return (munge24 (pc) & 0xFFFF0000) == rtarea_base && uae_boot_rom_type;
+	return (munge24 (pc) & 0xFFFF0000) == rtarea_base && (uae_boot_rom_type || currprefs.uaeboard > 0);
 }
 #endif
 
@@ -9872,7 +9872,7 @@ static void fill_icache020 (uae_u32 addr, bool opcode)
 	index = (addr >> 2) & (CACHELINES020 - 1);
 	tag = regs.s | (addr & ~((CACHELINES020 << 2) - 1));
 	c = &caches020[index];
-	if (c->valid && c->tag == tag) {
+	if ((regs.cacr & 1) && c->valid && c->tag == tag) {
 		// cache hit
 		regs.cacheholdingaddr020 = addr;
 		regs.cacheholdingdata020 = c->data;
@@ -9900,9 +9900,8 @@ static void fill_icache020 (uae_u32 addr, bool opcode)
 	data = icache_fetch(addr);
 	end_020_cycle_prefetch(opcode);
 
-	if (!(regs.cacr & 1)) {
-		c->valid = false;
-	} else if (!(regs.cacr & 2)) {
+	// enabled and not frozen
+	if ((regs.cacr & 1) && !(regs.cacr & 2)) {
 		c->tag = tag;
 		c->valid = true;
 		c->data = data;
@@ -10392,7 +10391,6 @@ static void fill_icache030 (uae_u32 addr)
 	if (regs.cacheholdingaddr020 == addr || regs.cacheholdingdata_valid == 0)
 		return;
 	c = geticache030 (icaches030, addr, &tag, &lws);
-//	if (c->valid[lws] && c->tag == tag) {
 	if ((regs.cacr & 1) && c->valid[lws] && c->tag == tag) {
 		// cache hit
 		regs.cacheholdingaddr020 = addr;
@@ -10510,7 +10508,7 @@ static void validate_dcache030_read(uae_u32 addr, uae_u32 ov, int size)
 		ov &= 0xff;
 	}
 	if (ov2 != ov) {
-		write_log(_T("Address %08x data cache mismatch %08x != %08x\n"), addr, ov2, ov);
+		write_log(_T("Address read %08x data cache mismatch %08x != %08x\n"), addr, ov2, ov);
 	}
 }
 #endif
@@ -10551,11 +10549,11 @@ static void write_dcache030x(uaecptr addr, uae_u32 val, uae_u32 size, uae_u32 fc
 			return;
 		}
 
-		val <<= (32 - width);
 		if (hit || wa) {
 			if (hit) {
+				uae_u32 val_left_aligned = val << (32 - width);
 				c1->data[lws1] &= ~(mask[size] >> offset);
-				c1->data[lws1] |= val >> offset;
+				c1->data[lws1] |= val_left_aligned >> offset;
 			} else {
 				c1->valid[lws1] = false;
 			}
@@ -10567,10 +10565,8 @@ static void write_dcache030x(uaecptr addr, uae_u32 val, uae_u32 size, uae_u32 fc
 			hit = c2->tag == tag2 && c2->fc == fc && c2->valid[lws2];
 			if (hit || wa) {
 				if (hit) {
-					c2->data[lws2] &= ~(mask[size] << (width + offset - 32));
-//					c2->data[lws2] |= val << (width + offset - 32);
-if ( size == 2 )	c2->data[lws2] |= val << ((4 - aligned) * 8);
-else			c2->data[lws2] |= val << 8;
+					c2->data[lws2] &= 0xffffffff >> (width + offset - 32);
+					c2->data[lws2] |= val << (32 - (width + offset - 32));
 				} else {
 					c2->valid[lws2] = false;
 				}
