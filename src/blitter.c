@@ -1431,21 +1431,22 @@ void Blitter_Info(FILE *fp, Uint32 dummy)
 {
 	BLITTERREGS *regs = &BlitterRegs;
 
-	fprintf(fp, "src addr:  0x%06x\n", regs->src_addr);
-	fprintf(fp, "dst addr:  0x%06x\n", regs->dst_addr);
-	fprintf(fp, "words:     %u\n", regs->words);
-	fprintf(fp, "lines:     %u\n", regs->lines);
-	fprintf(fp, "src X-inc: %hd\n", regs->src_x_incr);
-	fprintf(fp, "src Y-inc: %hd\n", regs->src_y_incr);
-	fprintf(fp, "dst X-inc: %hd\n", regs->dst_x_incr);
-	fprintf(fp, "dst Y-inc: %hd\n", regs->dst_y_incr);
-	fprintf(fp, "end mask1: 0x%04x\n", regs->end_mask_1);
-	fprintf(fp, "end mask2: 0x%04x\n", regs->end_mask_2);
-	fprintf(fp, "end mask3: 0x%04x\n", regs->end_mask_3);
-	fprintf(fp, "HOP:       0x%02x\n", regs->hop);
-	fprintf(fp, "LOP:       0x%02x\n", regs->lop);
-	fprintf(fp, "control:   0x%02x\n", regs->ctrl);
-	fprintf(fp, "skew:      0x%02x\n", regs->skew);
+	fprintf(fp, "src addr  (0x%x): 0x%06x\n", REG_SRC_ADDR, regs->src_addr);
+	fprintf(fp, "dst addr  (0x%x): 0x%06x\n", REG_DST_ADDR, regs->dst_addr);
+	fprintf(fp, "words     (0x%x): %u\n",     REG_X_COUNT, regs->words);
+	fprintf(fp, "lines     (0x%x): %u\n",     REG_Y_COUNT, regs->lines);
+	fprintf(fp, "src X-inc (0x%x): %hd\n",    REG_SRC_X_INC, regs->src_x_incr);
+	fprintf(fp, "src Y-inc (0x%x): %hd\n",    REG_SRC_Y_INC, regs->src_y_incr);
+	fprintf(fp, "dst X-inc (0x%x): %hd\n",    REG_DST_X_INC, regs->dst_x_incr);
+	fprintf(fp, "dst Y-inc (0x%x): %hd\n",    REG_DST_Y_INC, regs->dst_y_incr);
+	fprintf(fp, "end mask1 (0x%x): 0x%04x\n", REG_END_MASK1, regs->end_mask_1);
+	fprintf(fp, "end mask2 (0x%x): 0x%04x\n", REG_END_MASK2, regs->end_mask_2);
+	fprintf(fp, "end mask3 (0x%x): 0x%04x\n", REG_END_MASK3, regs->end_mask_3);
+	fprintf(fp, "HOP       (0x%x): 0x%02x\n", REG_BLIT_HOP, regs->hop);
+	fprintf(fp, "LOP       (0x%x): 0x%02x\n", REG_BLIT_LOP, regs->lop);
+	/* List control bits: busy, hog/blit, smudge, n/a, 4bits for line number ? */
+	fprintf(fp, "control   (0x%x): 0x%02x\n", REG_CONTROL, regs->ctrl);
+	fprintf(fp, "skew      (0x%x): 0x%02x\n", REG_SKEW, regs->skew);
 	fprintf(fp, "Note: internally changed register values aren't visible to breakpoints\nor in memdump output until emulated code reads or writes them!\n");
 }
 
