@@ -2,6 +2,15 @@
 #
 # minimal Linux init script for registering Hatari as binfmt_misc
 # handler for TOS binaries
+#
+# NOTE: newer Debian derived distributions have convenience functionality
+# for this.  Just put something like this to /usr/share/binfmts/hatari:
+#	package hatari
+#	interpreter /usr/bin/hatari
+#	magic \x60\x1a
+# And call these when Hatari is installed and removed:
+#	update-binfmts --import hatari
+#	update-binfmts --remove hatari /usr/bin/hatari
 
 # name given for binftm_misc
 name=TOS
