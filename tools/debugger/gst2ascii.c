@@ -782,10 +782,14 @@ static symbol_list_t* symbols_load_binary(FILE *fp)
 	if (!symbols_print_prg_info(tabletype, prgflags, relocflag)) {
 		return NULL;
 	}
+	fprintf(stderr, "Program section sizes:\n- text: %d\n- data: %d\n- bss:  %d\n",
+		textlen, datalen, bsslen);
+
 	if (!tablesize) {
 		fprintf(stderr, "ERROR: symbol table missing from the program!\n");
 		return NULL;
 	}
+	fprintf(stderr, "- syms: %d\n", tablesize);
 
 	/* symbols already have suitable offsets, so only acceptable end position needs to be calculated */
 	sections[0].offset = 0;
