@@ -3,7 +3,7 @@
 #
 #  PORTMIDI_INCLUDE_DIR  - where to find portmidi.h, etc.
 #  PORTMIDI_LIBRARY      - List of libraries when using portmidi.
-#  PORTAUDIO_FOUND       - True if portmidi found.
+#  PORTMIDI_FOUND       - True if portmidi found.
 
 include(FindPackageHandleStandardArgs)
 include(CheckFunctionExists)
