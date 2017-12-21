@@ -75,8 +75,9 @@ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
 	# The remaining warnings should be hidden for release builds:
 	if (CMAKE_BUILD_TYPE STREQUAL "Release")
 		set(CPUMAIN_CFLAGS "${CPUMAIN_CFLAGS} -Wno-sign-compare -Wno-bad-function-cast")
+		set(CPUMAIN_CFLAGS "${CPUMAIN_CFLAGS} -Wno-missing-braces")
 		if (CMAKE_COMPILER_IS_GNUCC AND CMAKE_C_COMPILER_VERSION VERSION_GREATER 4.7)
-			set(CPUMAIN_CFLAGS "${CPUMAIN_CFLAGS} -Wno-maybe-uninitialized ")
+			set(CPUMAIN_CFLAGS "${CPUMAIN_CFLAGS} -Wno-maybe-uninitialized")
 		endif()
 	endif()
 	set_source_files_properties(${WINUAE_SRCS}
