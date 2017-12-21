@@ -8,21 +8,59 @@
  ---------------------------
 
 Emulation:
-- Add (dumb) Videl address and vertical frequency counters emulation
-- Emulate ripple carry adder "bug" in DMA address counter on STF
-- More accurate position for reloading video counter on line 310/260
-- Support STF/STE MMU at $FF8001 and address translation
-  (TOS memory routines don't need to be patched anymore)
-- Better results when reading "void" region between end of RAM and 4MB
-  (return latest data seen on the bus on STF/STE)
-- Support for undocumented 68882/68881 FPU constants (from WinUAE)
-- Fix error in 68030 instruction cache when using prefetch/CE mode
-- More accurate memory access timings for Falcon 68030
-- improve bottom border removal on 60 Hz screen
-- Fix STE video counter timings regression
+- Video:
+  - Fix correct number of displayed lines when removing bottom border
+  - Improve bottom border removal on 60 Hz screen
+  - More accurate position for reloading video counter on line 310/260
+  - Fix STE video counter regression at start of VBL (off by 4 cycles)
+  - Fix Timer B counting when screen is in Mono mode and video resolution
+    is set to low/medium
+  - Fix bug preventing screen to be drawn when video address = 0x0
+  - Add (dumb) Videl address and vertical frequency counters emulation
+  - Videl unused bits at $FF820E are read as zero
+- Sound:
+  - New cycle exact emulation of the YM2149, all counters are
+    incremented using a simulated freq of 250 kHz, giving a 250 kHz audio
+    stream which is downsampled to the desired output frequency.
+    Some undocumented cases were also measured on real STF
+    Result should be much more accurate, clearer and emulate complex effects
+    (phase cancelling on 2 voices for example)
+  - Fix bad sound during YM sample playing on Falcon/TT
+- CPU:
+  - Support undocumented behaviour for STOP on 68000 when new SR has bit S=0
+  - Fix some cases where bus/address error stack had a wrong PC
+  - Correctly store the 32 bit address in the stack in case of a bus error
+  - Better memory timings for RAM accesses in 68030 mode (for Falcon)
+  - Accurate DIV overflow undocumented flags
+  - 68030 instr cache was not correctly disabled when writing EI=0 in CACR
+  - Large improvements in FPU emulation and related instructions/exceptions
+  - Support for undocumented 68882/68881 FPU constants
+  - Support for softfloat FPU emulation (slower but more accurate)
+  - Improve caches for 68020/30, add cache support when using MMU
+  - Add 68040/60 data cache emulation, with optional MMU support
+- Memory / MMU / MCU:
+  - Add full support for STF/STE MMU/MCU at $FF8001 and address translation
+    (emulate the RAS/CAS signal depending on the size of the memory banks,
+    TOS memory routines don't need to be patched anymore)
+  - Better results when reading "void" region between end of RAM and 4MB
+    (return latest data seen on the bus on STF/STE)
+  - Add support for more RAM combinations (256 KB and 2.5 MB)
+- Blitter:
+  - Add cycle exact bus handling for the blitter (correct bus count for CPU
+    and blitter, suspend/resume blitter after any memory access, run part
+    of next CPU instruction in parallel when starting the blitter)
+  - When writing busy bit=0, update interrupt line and don't clear hog bit
+- Floppy:
+  - Emulate ripple carry adder "bug" for STF DMA address at $FF8609/0B/0D
+  - For STX images, add support for the verify bit in Type I commands
+  - Fix a rare case when looking for the next sector header of an STX image
+- IKBD:
+  - Support for Audio Sculpture's custom IKBD program
+
 
 Emulator:
 - MIDI support for Windows & OSX (with PortMidi library)
+- Add support for AVI files > 4GB (up to 256 GB)
 - Miscellaneous:
   - Initial patching for ST-Book ROM
   - Add keyboard shortcut for toggling borders
@@ -34,6 +72,9 @@ Emulator:
 - Memory handling:
   - Support memory check skipping also on TOS v3 & v4
   - Allow RAM size values in KiB instead of MiB
+- SDL UI:
+  - Add a 'blitter-meter' to the status bar, depending on the blitter's usage
+  - Add refresh rate in the status bar (50, 60 or 71 Hz)
 - Display handling:
   - Add --resizable option to control whether Hatari SDL2 window
     can be resized (= turn it off to prevent accidental resizes)
@@ -72,6 +113,11 @@ Emulator:
   - Add "-f" option to 'cd' so that setup scripts can specify
     what directory is used after currently invoked script(s)
     have finished
+- Compilation:
+  - Fix compilation when using ARM 64 target
+  - Define CPU_mips to compile for mips architecture
+  - Search for local headers first, then system's one (eg zip.h)
+  - Don't redefine bswap_16/_32 macros if they already exist
 
 Other changes:
 - Add French keyboard mapping that works also with SDL2
@@ -111,12 +157,17 @@ Fixed TT versions of demos:
 Fixed programs for Falcon:
 - Hextracker (Videl video counter, when not auto-started)
 
+Fixed games:
+- Le Necromancien' STX image (verify bit in type I commands)
+
 Fixed ST/STE demos:
 - Sprite32 by Leonard (RESTART_VIDEO_COUNTER on line 310/260)
 - Jam-Cols by ICE (STE video counter timings broken in v2.0)
 
 Fixed ST/STE programs:
 - Protracker 2.1 and Neochrome Master 2.8 (shifter, bottom border at 60 Hz)
+- Audio Sculpture 1.3 and 1.5 beta (timer B in mono mode, bit S=0 in STOP, IKBD)
+- True RAM's size detection under TOS/EmuTOS (memory config at $FF8001)
 
 
  Version 2.0.0 (2016-11-04)

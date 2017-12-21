@@ -134,6 +134,8 @@ random order - and if someone is missing here, please remind us!):
 - Jari Kleimola : PortMidi support which allows MIDI usage on
   Windows & OSX + required SDL & OSX GUI changes
 
+- Mark Fechtner : patch to not use tmpfile() directly under Windows
+
 
  Code from other projects
  ------------------------
