@@ -665,7 +665,7 @@ static PmEvent* Midi_BuildEvent(Uint8 byte)
 	static const Uint8 shifts[] = { 0,8,16,24 };
 	static PmEvent midiEvent = { 0,0 };
 	static Uint32 midimsg;
-	static Uint8 runningStatus = 0;
+//	static Uint8 runningStatus = 0;
 	static Uint8 bytesToWait = 0;
 	static Uint8 bytesCollected = 0;
 	static bool processingSysex = false;
@@ -683,7 +683,7 @@ static PmEvent* Midi_BuildEvent(Uint8 byte)
 			processingSysex = false;
 			if (byte >= 0xF0)
 			{
-				runningStatus = 0;
+//				runningStatus = 0;
 				if (byte == 0xF0)
 				{
 					processingSysex = true;
@@ -700,7 +700,7 @@ static PmEvent* Midi_BuildEvent(Uint8 byte)
 			}
 			else
 			{
-				runningStatus = byte;
+//				runningStatus = byte;
 				bytesCollected = 0;
 			}
 		}
