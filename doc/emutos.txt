@@ -83,8 +83,10 @@ support also wide variety of real hardware.  All the source code is
 open and free, licensed under the GNU General Public License (GPL).
 A copy of the GNU GPL can be found in the gpl.txt file.
 
-EmuTOS has its home at SourceForge:
-       http://sourceforge.net/projects/emutos
+EmuTOS project has home page at SourceForge:
+	http://emutos.sourceforge.net/
+With sources at GitHub:
+	https://github.com/emutos/emutos
 
 
 EmuTOS usage
@@ -93,26 +95,26 @@ EmuTOS usage
 There are various reasons for using EmuTOS instead of the original
 TOS ROM images:
 
-* Users who don't have Atari HW or other legal means to obtain the
-  original Atari TOS ROMs (for all of the Hatari supported Atari
+* Legal.  Users who don't have Atari HW or other legal means to obtain
+  the original Atari TOS ROMs (for all of the Hatari supported Atari
   versions: ST/STE/TT/Falcon), but would like to try out Hatari and
   see what kind of software the Atari machines had.  EmuTOS gives
   them a legal way to test Hatari with free demos, games etc.
 
-* Users who want to continue using Atari compatible operating systems
-  and need an open source replacement of TOS for modifications. Beside
-  EmuTOS they typically also use FreeMiNT, XaAES and fVDI as operating
-  system replacements/improvements.
+* Convenience.  EmuTOS boots faster, doesn't need HD driver to access
+  hard disk images (with DOS MBR), and same image supports wider
+  variety of hardware than real Atari TOS versions.
 
-* This includes users of Atari FPGA clones, such as MiST:
+* Continuity.  Users who want to continue using Atari compatible
+  operating systems and need an open source replacement of TOS for
+  modifications. Beside EmuTOS, they typically also use FreeMiNT,
+  XaAES and fVDI as operating system replacements/improvements.
+
+  This includes users of Atari FPGA clones, such as MiST:
 	http://code.google.com/p/mist-board/
   users of new "Atari" machines, like Atari ColdFire Project:
 	http://acp.atari.org/
   and even Amiga (WinUAE) emulator and real Amiga hardware.
-
-* EmuTOS also allows using ACSI disk images with Hatari TT/Falcon
-  emulation, whereas TOS 3 & 4 support only IDE and SCSI disks.
-  Hard disk images are needed mainly for running MiNT.
 
 
 EmuTOS compatibility notes
@@ -123,13 +125,6 @@ These comments apply to EmuTOS v0.9.x.
 Many commercial games (e.g. Bombjack, Nebulus, Oids, Super Hang-On,
 Turrican, Xenon...) and almost all ST/STe/TT applications work fine
 with EmuTOS.
-
-However, while very close, EmuTOS AES isn't yet 100% compatible with
-normal TOS versions (see EmuTOS bugs.txt) and its VDI & line-A support
-is slowish. Anybody wanting better AES/VDI support should install
-replacement for these, either the free XaAES + fVDI, or commercial
-solutions like NVDI (v2.5 doesn't work with EmuTOS, newer NVDI
-versions do).
 
 Because (even 192k version of) EmuTOS uses a bit more memory than
 normal TOS, badly written (typically floppy-only) games may blindly
@@ -153,6 +148,9 @@ Additionally, older EmuTOS versions (up to v0.9.1) lacked support for
 the (deprecated) line-A graphics functions which are used in many
 free/shareware games (ones done with GFA basic etc).  This isn't an
 issue with new EmuTOS versions.
+
+Lists of known issues and incompatible applications are listed in
+bugs.txt & incompatible.txt files coming with EmuTOS.
 
 
 Debugging issues with EmuTOS
@@ -181,13 +179,6 @@ can load to Hatari debugger with its "symbols" command[2].
 
 [1] http://sourceforge.net/mailarchive/message.php?msg_id=29381777
 [2] http://hg.tuxfamily.org/mercurialroot/hatari/hatari/raw-file/tip/doc/manual.html#Debug_symbols
-
-If you've compiled EmuTOS with AHCC[3] instead of GCC, you can get
-suitable symbols with AHCC "-n" linker flag, or you can use a script
-coming with Hatari (ahcc-symbols-convert.sh) to convert AHCC *.map
-file to a format supported by the Hatari debugger.
-
-[3] AHCC: http://members.chello.nl/h.robbers/
 
 After loading the symbols to the Hatari debugger, disassembling the
 problematic address should provide more clues for the problem.  Or you
