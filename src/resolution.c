@@ -101,7 +101,8 @@ static void Resolution_GetMaxSize(int *width, int *height)
  * - Otherwise select the largest available mode
  * return true for success and false if no matching mode was found.
  */
-static inline bool Resolution_Select(SDL_Rect **modes, int *width, int *height)
+#if !WITH_SDL2
+static bool Resolution_Select(SDL_Rect **modes, int *width, int *height)
 {
 #define TOO_LARGE 0x7fff
 	int i, bestw, besth;
@@ -138,6 +139,7 @@ static inline bool Resolution_Select(SDL_Rect **modes, int *width, int *height)
 	return true;
 #undef TOO_LARGE
 }
+#endif
 
 
 /**
