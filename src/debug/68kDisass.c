@@ -191,9 +191,17 @@ static void			Disass68kLoadStructInfo(const char *filename)
 
 	if(!lineCount) return;
 
-	disStructEntries = realloc(disStructEntries, sizeof(disStructEntry)
-	                           * (disStructCounts + lineCount));
-	if(!disStructEntries) { free(fbuf); return; }
+	se = realloc(disStructEntries, sizeof(disStructEntry) * (disStructCounts + lineCount));
+	if (!se)
+	{
+		perror("Disass68kLoadStructInfo");
+		free(disStructEntries);
+		disStructEntries = NULL;
+		free(fbuf);
+		return;
+	}
+	disStructEntries = se;
+	se = NULL;
 
 	line = fbuf;
 
@@ -265,10 +273,23 @@ static void			Disass68kLoadSymbols(const char *filename)
 	char	*nextLine;
 	char	*line;
 	char	*fbuf = NULL;
-	int		lineCount = Disass68kLoadTextFile(filename, &fbuf);
-	if(!lineCount) return;
-	disSymbolEntries = realloc(disSymbolEntries, sizeof(disSymbolEntry) * (disSymbolCounts + lineCount));
-	if(!disSymbolEntries) { free(fbuf); return; }
+	int	lineCount = Disass68kLoadTextFile(filename, &fbuf);
+	disSymbolEntry *nde;
+
+	if (!lineCount)
+		return;
+
+	nde = realloc(disSymbolEntries, sizeof(disSymbolEntry) * (disSymbolCounts + lineCount));
+	if (!nde)
+	{
+		perror("Disass68kLoadSymbols");
+		free(disSymbolEntries);
+		disSymbolEntries = NULL;
+		free(fbuf);
+		return;
+	}
+	disSymbolEntries = nde;
+
 	line = fbuf;
 
 	for(i=0; i<lineCount; line = nextLine, ++i)
