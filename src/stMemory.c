@@ -60,7 +60,8 @@ static Uint32	STMemory_MMU_Translate_Addr_STE ( Uint32 addr_logical , int RAM_Ba
  */
 void	STMemory_Init ( int RAM_Size_Byte )
 {
-	STMemory_Reset ( true );
+	/* Set default MMU bank size values */
+	STMemory_MMU_ConfToBank(0, &MMU_Bank0_Size, &MMU_Bank1_Size);
 
 	if ( RAM_Size_Byte <= 0x400000 )
 	{
