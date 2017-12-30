@@ -96,7 +96,7 @@ static const struct Config_Tag configs_Screen[] =
 	{ "nMaxHeight", Int_Tag, &ConfigureParams.Screen.nMaxHeight },
 #if WITH_SDL2
 	{ "nRenderScaleQuality", Int_Tag, &ConfigureParams.Screen.nRenderScaleQuality },
-	{ "bUseVsync", Int_Tag, &ConfigureParams.Screen.bUseVsync },
+	{ "bUseVsync", Bool_Tag, &ConfigureParams.Screen.bUseVsync },
 #endif
 	{ NULL , Error_Tag, NULL }
 };
