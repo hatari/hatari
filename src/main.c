@@ -618,6 +618,15 @@ void Main_EventHandler(void)
 				SDL_UpdateRect(sdlscrn, 0, 0, 0, 0);
 				break;
 			}
+			if (event.window.event == SDL_WINDOWEVENT_EXPOSED
+			    && !ConfigureParams.Screen.bUseSdlRenderer)
+			{
+				/* Hack: Redraw screen here when going into
+				 * fullscreen mode without SDL renderer */
+				sdlscrn = SDL_GetWindowSurface(sdlWindow);
+				Screen_SetFullUpdate();
+				Statusbar_Init(sdlscrn);
+			}
 			bContinueProcessing = true;
 			break;
 #endif

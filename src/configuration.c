@@ -95,6 +95,7 @@ static const struct Config_Tag configs_Screen[] =
 	{ "nMaxWidth", Int_Tag, &ConfigureParams.Screen.nMaxWidth },
 	{ "nMaxHeight", Int_Tag, &ConfigureParams.Screen.nMaxHeight },
 #if WITH_SDL2
+	{ "bUseSdlRenderer", Bool_Tag, &ConfigureParams.Screen.bUseSdlRenderer },
 	{ "nRenderScaleQuality", Int_Tag, &ConfigureParams.Screen.nRenderScaleQuality },
 	{ "bUseVsync", Bool_Tag, &ConfigureParams.Screen.bUseVsync },
 #endif
@@ -768,6 +769,7 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Screen.bForceMax = false;
 	ConfigureParams.Screen.DisableVideo = false;
 #if WITH_SDL2
+	ConfigureParams.Screen.bUseSdlRenderer = true;
 	ConfigureParams.Screen.nRenderScaleQuality = 0;
 	ConfigureParams.Screen.bUseVsync = false;
 #endif

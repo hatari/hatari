@@ -110,14 +110,30 @@ static SDL_Texture *sdlTexture;
 
 void SDL_UpdateRects(SDL_Surface *screen, int numrects, SDL_Rect *rects)
 {
-	SDL_UpdateTexture(sdlTexture, NULL, screen->pixels, screen->pitch);
-	SDL_RenderCopy(sdlRenderer, sdlTexture, NULL, NULL);
-	SDL_RenderPresent(sdlRenderer);
+	if (ConfigureParams.Screen.bUseSdlRenderer)
+	{
+		SDL_UpdateTexture(sdlTexture, NULL, screen->pixels, screen->pitch);
+		SDL_RenderCopy(sdlRenderer, sdlTexture, NULL, NULL);
+		SDL_RenderPresent(sdlRenderer);
+	}
+	else
+	{
+		SDL_UpdateWindowSurfaceRects(sdlWindow, rects, numrects);
+	}
 }
 
 void SDL_UpdateRect(SDL_Surface *screen, Sint32 x, Sint32 y, Sint32 w, Sint32 h)
 {
-	SDL_Rect rect = { x, y, w, h };
+	SDL_Rect rect;
+
+	if (w == 0 && h == 0) {
+		x = y = 0;
+		w = screen->w;
+		h = screen->h;
+	}
+
+	rect.x = x; rect.y = y;
+	rect.w = w; rect.h = h;
 	SDL_UpdateRects(screen, 1, &rect);
 }
 
@@ -284,7 +300,8 @@ static void Screen_FreeSDL2Resources(void)
 	}
 	if (sdlscrn)
 	{
-		SDL_FreeSurface(sdlscrn);
+		if (ConfigureParams.Screen.bUseSdlRenderer)
+			SDL_FreeSurface(sdlscrn);
 		sdlscrn = NULL;
 	}
 	if (sdlRenderer)
@@ -311,7 +328,6 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 	if (bitdepth == 0 || bitdepth == 24)
 		bitdepth = 32;
 #endif
-
 	/* Check if we really have to change the video mode: */
 	if (sdlscrn != NULL && sdlscrn->w == width && sdlscrn->h == height
 	    && sdlscrn->format->BitsPerPixel == bitdepth && !bForceChange)
@@ -347,7 +363,8 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 		int deskw, deskh;
 		if (getenv("PARENT_WIN_ID") != NULL)	/* Embedded window? */
 			sdlVideoFlags = SDL_WINDOW_BORDERLESS;
-		else if (ConfigureParams.Screen.bResizable)
+		else if (ConfigureParams.Screen.bResizable
+		         && ConfigureParams.Screen.bUseSdlRenderer)
 			sdlVideoFlags = SDL_WINDOW_RESIZABLE;
 		else
 			sdlVideoFlags = 0;
@@ -400,16 +417,23 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 		                             SDL_WINDOWPOS_UNDEFINED,
 		                             win_width, win_height, sdlVideoFlags);
 	}
-	sdlRenderer = SDL_CreateRenderer(sdlWindow, -1, 0);
-	if (!sdlWindow || !sdlRenderer)
+	if (!sdlWindow)
 	{
-		fprintf(stderr,"Failed to create %dx%d window or renderer!\n",
-		       win_width, win_height);
+		fprintf(stderr, "Failed to create %dx%d window!\n",
+		        win_width, win_height);
 		exit(-1);
 	}
-	else
+	if (ConfigureParams.Screen.bUseSdlRenderer)
 	{
 		int rm, bm, gm, pfmt;
+
+		sdlRenderer = SDL_CreateRenderer(sdlWindow, -1, 0);
+		if (!sdlRenderer)
+		{
+			fprintf(stderr,"Failed to create %dx%d renderer!\n",
+			        win_width, win_height);
+			exit(1);
+		}
 
 		if (bInFullScreen)
 			SDL_RenderSetLogicalSize(sdlRenderer, width, height);
@@ -439,6 +463,10 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 			       width, height, bitdepth);
 			exit(-3);
 		}
+	}
+	else
+	{
+		sdlscrn = SDL_GetWindowSurface(sdlWindow);
 	}
 
 #else	/* WITH_SDL2 */

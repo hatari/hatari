@@ -276,6 +276,7 @@ typedef struct
   int nMaxWidth;
   int nMaxHeight;
 #if WITH_SDL2
+  bool bUseSdlRenderer;
   int nRenderScaleQuality;
   bool bUseVsync;
 #endif
