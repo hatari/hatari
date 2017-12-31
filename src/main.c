@@ -522,6 +522,12 @@ void Main_EventHandler(void)
 			break;
 
 		 case SDL_KEYDOWN:
+#if WITH_SDL2
+			if (event.key.repeat) {
+				bContinueProcessing = true;
+				break;
+			}
+#endif
 			Keymap_KeyDown(&event.key.keysym);
 			break;
 
