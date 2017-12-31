@@ -40,6 +40,20 @@ static SHORTCUTKEYIDX ShortCutKey = SHORTCUT_NONE;  /* current shortcut key */
  */
 static void ShortCut_FullScreen(void)
 {
+	static Uint32 last_ticks = 0;
+	Uint32 cur_ticks;
+
+	/* SDL2 sometimes reports multiple key up and down events when toggling
+	 * fullscreen mode, even though the key has not been released inbetween
+	 * (likely because the SDL window focus is lost when switching mode).
+	 * To avoid that we're going back and forth between fullscreen mode and
+	 * windowed mode in this case, we have to ignore full screen shortcut
+	 * events that happen too often. */
+	cur_ticks = SDL_GetTicks();
+	if (cur_ticks - last_ticks < 200)
+		return;
+	last_ticks = cur_ticks;
+
 	if (!bInFullScreen)
 	{
 		Screen_EnterFullScreen();
