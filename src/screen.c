@@ -402,6 +402,11 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 		bPrevUseVsync = ConfigureParams.Screen.bUseVsync;
 	}
 
+#ifdef SDL_HINT_WINDOWS_NO_CLOSE_ON_ALT_F4		/* requires sdl >= 2.0.4 */
+	/* Disable closing Hatari with alt+F4 under Windows as alt+F4 can be used by some emulated programs */
+	SDL_SetHintWithPriority(SDL_HINT_WINDOWS_NO_CLOSE_ON_ALT_F4, "1", SDL_HINT_OVERRIDE);
+#endif
+
 	/* Set new video mode */
 	DEBUGPRINT(("SDL screen request: %d x %d @ %d (%s)\n", width, height,
 	        bitdepth, bInFullScreen?"fullscreen":"windowed"));
