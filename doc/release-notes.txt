@@ -75,6 +75,8 @@ Emulator:
 - SDL UI:
   - Add a 'blitter-meter' to the status bar, depending on the blitter's usage
   - Add refresh rate in the status bar (50, 60 or 71 Hz)
+  - Disable alt+F4 under Windows so that it doesn't close Hatari
+    (in case alt+F4 is also used in the emulated program)
 - Display handling:
   - Add --resizable option to control whether Hatari SDL2 window
     can be resized (= turn it off to prevent accidental resizes)
