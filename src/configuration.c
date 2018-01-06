@@ -64,6 +64,7 @@ static const struct Config_Tag configs_Debugger[] =
 	{ "nExceptionDebugMask", Int_Tag, &ConfigureParams.Debugger.nExceptionDebugMask },
 	{ "nDisasmOptions", Int_Tag, &ConfigureParams.Debugger.nDisasmOptions },
 	{ "bDisasmUAE", Bool_Tag, &ConfigureParams.Debugger.bDisasmUAE },
+	{ "bSymbolsResident", Bool_Tag, &ConfigureParams.Debugger.bSymbolsResident },
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -603,6 +604,7 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Debugger.nExceptionDebugMask = DEFAULT_EXCEPTIONS;
 	/* external one has nicer output, but isn't as complete as UAE one */
 	ConfigureParams.Debugger.bDisasmUAE = false;
+	ConfigureParams.Debugger.bSymbolsResident = false;
 	ConfigureParams.Debugger.nDisasmOptions = Disasm_GetOptions();
 
 	/* Set defaults for floppy disk images */

@@ -79,8 +79,6 @@ static char *CurrentProgramPath;
 static bool SymbolsAreForProgram;
 /* prevent repeated failing on every debugger invocation */
 static bool AutoLoadFailed;
-/* load symbols on program start, and keep them after its termination */
-static bool KeepProgramSymbols;
 
 
 /* ------------------ load and free functions ------------------ */
@@ -393,7 +391,7 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, symtyp
 	list->namecount = count;
 
 	/* skip verbose output when symbol loading is forced */
-	if (KeepProgramSymbols) {
+	if (ConfigureParams.Debugger.bSymbolsResident) {
 		return list;
 	}
 
@@ -592,7 +590,7 @@ static symbol_list_t* symbols_load_gnu(FILE *fp, prg_section_t *sections, symtyp
 	list->namecount = count;
 
 	/* skip verbose output when symbol loading is forced */
-	if (KeepProgramSymbols) {
+	if (ConfigureParams.Debugger.bSymbolsResident) {
 		return list;
 	}
 
@@ -1053,7 +1051,7 @@ static symbol_list_t* Symbols_Load(const char *filename, Uint32 *offsets, Uint32
 	symbols_trim_addresses(list);
 
 	/* skip verbose output when symbol loading is forced */
-	if (!KeepProgramSymbols) {
+	if (!ConfigureParams.Debugger.bSymbolsResident) {
 		/* check for duplicate names */
 		if (symbols_check_names(list->names, list->namecount)) {
 			fprintf(stderr, "-> Hatari symbol expansion can match only one of the addresses for name duplicates!\n");
@@ -1394,13 +1392,13 @@ static void Symbols_Show(symbol_list_t* list, const char *sortcmd)
 void Symbols_RemoveCurrentProgram(void)
 {
 	if (CurrentProgramPath) {
-		if (KeepProgramSymbols) {
+		if (ConfigureParams.Debugger.bSymbolsResident) {
 			Symbols_LoadCurrentProgram();
 		}
 		free(CurrentProgramPath);
 		CurrentProgramPath = NULL;
 
-		if (CpuSymbolsList && SymbolsAreForProgram && !KeepProgramSymbols) {
+		if (CpuSymbolsList && SymbolsAreForProgram && !ConfigureParams.Debugger.bSymbolsResident) {
 			Symbols_Free(CpuSymbolsList);
 			fprintf(stderr, "Program exit, removing its symbols.\n");
 			CpuSymbolsList = NULL;
@@ -1418,7 +1416,7 @@ void Symbols_RemoveCurrentProgram(void)
 void Symbols_ChangeCurrentProgram(const char *path)
 {
 	if (Opt_IsAtariProgram(path)) {
-		if (KeepProgramSymbols) {
+		if (ConfigureParams.Debugger.bSymbolsResident) {
 			if (CpuSymbolsList && SymbolsAreForProgram) {
 				Symbols_Free(CpuSymbolsList);
 				fprintf(stderr, "Program launch, removing previous program symbols.\n");
@@ -1530,8 +1528,8 @@ int Symbols_Command(int nArgc, char *psArgs[])
 	 * freeing them when program terminates.
 	 */
 	if (strcmp(file, "resident") == 0) {
-		KeepProgramSymbols = !KeepProgramSymbols;
-		if (KeepProgramSymbols) {
+		ConfigureParams.Debugger.bSymbolsResident = !ConfigureParams.Debugger.bSymbolsResident;
+		if (ConfigureParams.Debugger.bSymbolsResident) {
 			Symbols_LoadCurrentProgram();
 			fprintf(stderr, "Program symbols will always be loaded (with reduced warnings)\nand kept resident until next program start.\n");
 		} else {

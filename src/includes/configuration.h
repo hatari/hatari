@@ -34,6 +34,8 @@ typedef struct
   int nExceptionDebugMask;
   int nDisasmOptions;
   bool bDisasmUAE;
+  /* load symbols immediately on program start, and keep them after its termination */
+  bool bSymbolsResident;
 } CNF_DEBUGGER;
 
 

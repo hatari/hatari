@@ -109,7 +109,8 @@ Emulator:
   - Add 'nSymbolLines' configuration option to specify how many
     lines 'symbols' command pages
   - 'symbols resident' toggles whether program symbols are
-    removed when program terminates, or only when next one starts
+    removed when program terminates, or only when next one starts.
+    Controlled by "bSymbolsResident" option in config file
   - 'symbols addr' is split into 'symbols code' & 'symbols data'
   - TEXTEnd value is now TEXT+TextSize, instead of TEXT+TextSize-1
   - Add "-f" option to 'cd' so that setup scripts can specify
