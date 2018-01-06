@@ -108,12 +108,12 @@ Emulator:
     from Hatari config file, or set them to -1, to enable this!
   - Add 'nSymbolLines' configuration option to specify how many
     lines 'symbols' command pages
-  - 'symbols resident' toggles whether program symbols are
-    removed when program terminates, or only when next one starts.
-    Controlled by "bSymbolsResident" option in config file
-    'symbols match" toggles whether TAB completes all symbols or
-    just symbol types relevant for given command.  Controlled by
-    "bMatchAllSymbols" option in config file
+  - 'symbols resident' command and 'bSymbolsResident' config option
+    toggle whether program symbols are removed when program
+    terminates, or only when the next one starts
+  - 'symbols match" command and 'bMatchAllSymbols' config option
+    toggle whether TAB completes all symbols or just symbol types
+    relevant for given command
   - 'symbols addr' is split into 'symbols code' & 'symbols data'
   - TEXTEnd value is now TEXT+TextSize, instead of TEXT+TextSize-1
   - Add "-f" option to 'cd' so that setup scripts can specify
@@ -130,7 +130,7 @@ Emulator:
 Other changes:
 - Add French keyboard mapping that works also with SDL2
 - All symbols output by gst2ascii are now TEXT relative
-  and it support also a.out format symbol tables
+  and it supports also a.out format symbol tables
 - Fix: Python GUI updated for Hatari v2.0
 - Fix: Python GUI explicitly uses Python v2 (Arch Linux)
 - Fix: Python tools made compatible both to Python v2 & v3 (Arch Linux)
