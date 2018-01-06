@@ -849,9 +849,9 @@ FILE *INF_OpenOverride(const char *filename)
 	if (TosOverride.file && strcmp(filename, TosOverride.infname) == 0)
 	{
 		/* whether to "autostart" also exception debugging? */
-		if (ConfigureParams.Log.nExceptionDebugMask & EXCEPT_AUTOSTART)
+		if (ConfigureParams.Debugger.nExceptionDebugMask & EXCEPT_AUTOSTART)
 		{
-			ExceptionDebugMask = ConfigureParams.Log.nExceptionDebugMask & ~EXCEPT_AUTOSTART;
+			ExceptionDebugMask = ConfigureParams.Debugger.nExceptionDebugMask & ~EXCEPT_AUTOSTART;
 			fprintf(stderr, "Exception debugging enabled (0x%x).\n", ExceptionDebugMask);
 		}
 		Log_Printf(LOG_WARN, "Virtual INF file '%s' matched.\n", filename);

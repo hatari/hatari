@@ -398,7 +398,7 @@ const char* Log_SetExceptionDebugMask (const char *FlagsStr)
 
 	Uint64 mask = EXCEPT_NONE;
 	errstr = Log_ParseOptionFlags(FlagsStr, ExceptionFlags, ARRAY_SIZE(ExceptionFlags), &mask);
-	ConfigureParams.Log.nExceptionDebugMask = mask;
+	ConfigureParams.Debugger.nExceptionDebugMask = mask;
 	return errstr;
 }
 

@@ -16,7 +16,6 @@ typedef struct
 {
   char sLogFileName[FILENAME_MAX];
   char sTraceFileName[FILENAME_MAX];
-  int nExceptionDebugMask;
   int nTextLogLevel;
   int nAlertDlgLogLevel;
   bool bConfirmQuit;
@@ -32,6 +31,7 @@ typedef struct
   int nSymbolLines;
   int nMemdumpLines;
   int nDisasmLines;
+  int nExceptionDebugMask;
   int nDisasmOptions;
   bool bDisasmUAE;
 } CNF_DEBUGGER;

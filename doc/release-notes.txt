@@ -115,6 +115,8 @@ Emulator:
   - Add "-f" option to 'cd' so that setup scripts can specify
     what directory is used after currently invoked script(s)
     have finished
+  - Move exception mask setting from config file "Log" section
+    to "Debugger" section where it belongs
 - Compilation:
   - Fix compilation when using ARM 64 target
   - Define CPU_mips to compile for mips architecture

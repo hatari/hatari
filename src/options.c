@@ -1935,14 +1935,14 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			}
 			else
 			{
-				ExceptionDebugMask = ConfigureParams.Log.nExceptionDebugMask;
+				ExceptionDebugMask = ConfigureParams.Debugger.nExceptionDebugMask;
 				fprintf(stderr, "Exception debugging enabled (0x%x).\n", ExceptionDebugMask);
 			}
 			break;
 
 		case OPT_EXCEPTIONS:
 			i += 1;
-			/* sets ConfigureParams.Log.nExceptionDebugMask */
+			/* sets ConfigureParams.Debugger.nExceptionDebugMask */
 			errstr = Log_SetExceptionDebugMask(argv[i]);
 			if (errstr)
 			{
@@ -1956,7 +1956,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			{
 				/* already enabled, change run-time config */
 				int oldmask = ExceptionDebugMask;
-				ExceptionDebugMask = ConfigureParams.Log.nExceptionDebugMask;
+				ExceptionDebugMask = ConfigureParams.Debugger.nExceptionDebugMask;
 				fprintf(stderr, "Exception debugging changed (0x%x -> 0x%x).\n",
 					oldmask, ExceptionDebugMask);
 			}

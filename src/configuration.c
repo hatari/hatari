@@ -46,7 +46,6 @@ static const struct Config_Tag configs_Log[] =
 {
 	{ "sLogFileName", String_Tag, ConfigureParams.Log.sLogFileName },
 	{ "sTraceFileName", String_Tag, ConfigureParams.Log.sTraceFileName },
-	{ "nExceptionDebugMask", Int_Tag, &ConfigureParams.Log.nExceptionDebugMask },
 	{ "nTextLogLevel", Int_Tag, &ConfigureParams.Log.nTextLogLevel },
 	{ "nAlertDlgLogLevel", Int_Tag, &ConfigureParams.Log.nAlertDlgLogLevel },
 	{ "bConfirmQuit", Bool_Tag, &ConfigureParams.Log.bConfirmQuit },
@@ -62,6 +61,7 @@ static const struct Config_Tag configs_Debugger[] =
 	{ "nSymbolLines", Int_Tag, &ConfigureParams.Debugger.nSymbolLines },
 	{ "nMemdumpLines", Int_Tag, &ConfigureParams.Debugger.nMemdumpLines },
 	{ "nDisasmLines", Int_Tag, &ConfigureParams.Debugger.nDisasmLines },
+	{ "nExceptionDebugMask", Int_Tag, &ConfigureParams.Debugger.nExceptionDebugMask },
 	{ "nDisasmOptions", Int_Tag, &ConfigureParams.Debugger.nDisasmOptions },
 	{ "bDisasmUAE", Bool_Tag, &ConfigureParams.Debugger.bDisasmUAE },
 	{ NULL , Error_Tag, NULL }
@@ -589,7 +589,6 @@ void Configuration_SetDefault(void)
 	/* Set defaults for logging and tracing */
 	strcpy(ConfigureParams.Log.sLogFileName, "stderr");
 	strcpy(ConfigureParams.Log.sTraceFileName, "stderr");
-	ConfigureParams.Log.nExceptionDebugMask = DEFAULT_EXCEPTIONS;
 	ConfigureParams.Log.nTextLogLevel = LOG_INFO;
 	ConfigureParams.Log.nAlertDlgLogLevel = LOG_ERROR;
 	ConfigureParams.Log.bConfirmQuit = true;
@@ -601,6 +600,7 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Debugger.nSymbolLines = -1; /* <0: use terminal size */
 	ConfigureParams.Debugger.nMemdumpLines = -1; /* <0: use terminal size */
 	ConfigureParams.Debugger.nDisasmLines = -1; /* <0: use terminal size */
+	ConfigureParams.Debugger.nExceptionDebugMask = DEFAULT_EXCEPTIONS;
 	/* external one has nicer output, but isn't as complete as UAE one */
 	ConfigureParams.Debugger.bDisasmUAE = false;
 	ConfigureParams.Debugger.nDisasmOptions = Disasm_GetOptions();
