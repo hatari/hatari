@@ -87,7 +87,7 @@ Hatari on the WWW:
 
 <h3>General description</h3>
 <p>
-Hatari is an Atari ST, STE, TT and Falcon emulator for Linux, OSX,
+Hatari is an Atari ST, STE, TT and Falcon emulator for Linux, *BSD, macOS,
 Windows and other Systems which are supported by the SDL library.
 The emulator is open source software and is distributed under the terms of the
 <a href="http://www.gnu.org/licenses/old-licenses/gpl-2.0.html">GNU General
@@ -104,13 +104,12 @@ Unlike many other Atari ST emulators which try to give you a good
 environment for running GEM applications, Hatari tries to emulate the hardware
 of a ST as close as possible so that it is able to run most of the old ST games
 and demos. Of course you can run normal GEM applications with Hatari, too.
-Recent versions of Hatari even feature STE, Falcon and basic TT emulation.
 </p>
 
 <h3>Features</h3>
 <ul>
   <li>68000 - 68040 emulation via the UAE CPU core
-      (68060 and MMU emulation only with the WinUAE CPU core)</li>
+      (additional 68060 and MMU emulation only with the WinUAE CPU core)</li>
   <li>ST RAM size variable (from 512kiB up to 14MiB are possible)</li>
   <li>TT RAM size variable (from 0 up to 256MiB are possible)</li>
   <li>optional cartridge images for the ST ROM port</li>
@@ -1511,9 +1510,9 @@ the screenshots and recorded videos.
  as your keyboard layout looks close to the standard English keyboard
  layout. However, you might experience some problems with special keys like
  brackets etc.</p>
-<p>"Scancode" uses the scancode values of your PC keys for keyboard
- mapping. This only works on certain architectures like Linux where the
- scancodes are similar to the ST scancodes (e.g. it does not work on Mac OS X).
+<p>"Scancode" uses the scancode values of your PC keys for keyboard mapping.
+ This only works on certain architectures like Linux where the scancodes are
+ similar to the ST scancodes (e.g. it does not work on macOS with SDL1.2).
  If it works on your system, this often gives better results than the symbolic
  mapping. Note that you also need a TOS version with the right language
  (e.g. use a French TOS if you are using a French keyboard).</p>
@@ -1526,9 +1525,9 @@ the screenshots and recorded videos.
  The "Shortcuts" section can be used to configure the keyboard shortcuts
  that can be activated while the emulation is running. Hatari supports
  two sets of keyboard shortcuts: The first type is activated by pressing a
- modifier key (AltGr / right Alt by default, Cmd key on Mac OS X)
- together with the key, and the second type is directly activated by
- pressing a single key, without additional modifier key.
+ modifier key (AltGr / right Alt by default, Cmd key on macOS) together with
+ the key, and the second type is directly activated by pressing a single key,
+ without additional modifier key.
  Use the arrow buttons to select the shortcut that you want to change,
  then press one of the <span class="button">Define</span> buttons to
  change the key for the shortcut. You'll be prompted to press the key
@@ -1647,7 +1646,7 @@ the selected file. ESC cancels the dialog/selection.</li>
 <p> While the emulator is running, you can activate or toggle various
 features via Hatari keyboard shortcuts. Most of them require the
 <a href="http://en.wikipedia.org/wiki/AltGr_key">AltGr</a> (right Alt)
-modifier key. On Mac OS X, the Cmd key &#8984; is used instead.
+modifier key. On Mac macOS, the Cmd key &#8984; is used instead.
 Below are listed the default shortcut key bindings:</p>
 <table class="keytable">
   <thead>
@@ -2344,7 +2343,7 @@ analyzing code that runs in the emulated system.
 </p>
 
 <p>
-On Unix (Linux / OSX) debugger uses Hatari's parent console window, so
+On Unix (Linux / macOS) debugger uses Hatari's parent console window, so
 make sure you run Hatari from the command line when you want to use
 the debugger.  On Windows you need to use "-W" option to get console
 window.  You can add an icon to your desktop that does it.  On Linux
@@ -4183,10 +4182,10 @@ mode, so try to avoid 24 bits per pixel display modes if possible.
 </p>
 
 <p>
-<em>On OSX, frame skipping, zooming and drive LED options (listed below)
-seem to have a large effect on performance in the windowed mode</em>.
-This is apparently due to issues in the SDL OSX backend and how OSX
-itself composites non-fullscreen window contents. OSX uses always
+<em>On macOS with SDL 1.2, frame skipping, zooming and drive LED options
+(listed below) seem to have a large effect on performance in the windowed
+mode</em>. This is apparently due to issues in the SDL macOS backend and how
+macOS itself composites non-fullscreen window contents. MacOS uses always
 32-bit mode.
 </p>
 
@@ -4308,9 +4307,9 @@ Also, if your monitor refresh frequency is lower than the selected
 Hatari monitor frequency (e.g. LCD monitors usually use 60Hz whereas
 Atari monochrome monitor uses 71Hz), you should use frameskip of one.
 The reason is that if your SDL library uses VSync to synchronize the
-output to screen (like OSX one?), with zero frame skip that forces the
-emulation to run slower than a real Atari.  If SDL doesn't use VSync,
-Hatari does redundant work to convert frames you can't see.
+output to screen, with zero frame skip that forces the emulation to
+run slower than a real Atari. If SDL doesn't use VSync, Hatari does
+redundant work to convert frames you can't see.
 </p>
 
 <h4>Zooming</h4>

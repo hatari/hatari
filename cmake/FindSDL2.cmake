@@ -13,8 +13,8 @@
 # as part of the returned SDL2_LIBRARY variable.
 #
 # Don't forget to include SDLmain.h and SDLmain.m your project for the
-# OS X framework based version. (Other versions link to -lSDL2main which
-# this module will try to find on your behalf.) Also for OS X, this
+# macOS framework based version. (Other versions link to -lSDL2main which
+# this module will try to find on your behalf.) Also for macOS, this
 # module will automatically add the -framework Cocoa on your behalf.
 #
 #
@@ -35,7 +35,7 @@
 # Modified by Eric Wing.
 # Added code to assist with automated building by using environmental variables
 # and providing a more controlled/consistent search behavior.
-# Added new modifications to recognize OS X frameworks and
+# Added new modifications to recognize macOS frameworks and
 # additional Unix paths (FreeBSD, etc).
 # Also corrected the header search path to follow "proper" SDL guidelines.
 # Added a search for SDL2main which is needed by some platforms.
@@ -91,8 +91,8 @@ FIND_LIBRARY(SDL2_LIBRARY_TEMP
 
 IF(NOT SDL2_BUILDING_LIBRARY)
   IF(NOT ${SDL2_INCLUDE_DIR} MATCHES ".framework")
-    # Non-OS X framework versions expect you to also dynamically link to
-    # SDL2main. This is mainly for Windows and OS X. Other (Unix) platforms
+    # Non-macOS framework versions expect you to also dynamically link to
+    # SDL2main. This is mainly for Windows and macOS. Other (Unix) platforms
     # seem to provide SDL2main for compatibility even though they don't
     # necessarily need it.
     FIND_LIBRARY(SDL2MAIN_LIBRARY
@@ -128,7 +128,7 @@ IF(SDL2_LIBRARY_TEMP)
     ENDIF(SDL2MAIN_LIBRARY)
   ENDIF(NOT SDL2_BUILDING_LIBRARY)
 
-  # For OS X, SDL2 uses Cocoa as a backend so it must link to Cocoa.
+  # For macOS, SDL2 uses Cocoa as a backend so it must link to Cocoa.
   # CMake doesn't display the -framework Cocoa string in the UI even
   # though it actually is there if I modify a pre-used variable.
   # I think it has something to do with the CACHE STRING.
@@ -140,7 +140,7 @@ IF(SDL2_LIBRARY_TEMP)
 
   # For threads, as mentioned Apple doesn't need this.
   # In fact, there seems to be a problem if I used the Threads package
-  # and try using this line, so I'm just skipping it entirely for OS X.
+  # and try using this line, so I'm just skipping it entirely for macOS.
   IF(NOT APPLE)
     SET(SDL2_LIBRARY_TEMP ${SDL2_LIBRARY_TEMP} ${CMAKE_THREAD_LIBS_INIT})
   ENDIF(NOT APPLE)

@@ -64,7 +64,7 @@ endif(MUDFLAP_AVAILABLE)
 
 if(APPLE)
 	set(ENABLE_OSX_BUNDLE 1
-	    CACHE BOOL "Built Hatari as Mac OS X application bundle")
+	    CACHE BOOL "Built Hatari as macOS application bundle")
 	# set(CMAKE_OSX_ARCHITECTURES "i386" CACHE STRING "Target architectures" FORCE)
 	# set(CMAKE_OSX_SYSROOT "/Developer/SDKs/MacOSX10.6.sdk" CACHE STRING "10.6 SDK" FORCE)
 	# set(CMAKE_OSX_DEPLOYMENT_TARGET "10.5" CACHE STRING "Target Min 10.5" FORCE)
@@ -72,7 +72,7 @@ if(APPLE)
 	set_source_files_properties(${FRAMEWORKS} PROPERTIES MACOSX_PACKAGE_LOCATION Frameworks)
 else()
 	set(ENABLE_OSX_BUNDLE 0
-	    CACHE BOOL "Built Hatari as Mac OS X application bundle")
+	    CACHE BOOL "Built Hatari as macOS application bundle")
 endif(APPLE)
 
 # ####################

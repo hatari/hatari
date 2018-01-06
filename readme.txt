@@ -58,13 +58,11 @@ for Hatari and the licenses of the other code concerned.
  2) What is Hatari?
  ------------------
 
-Hatari is an Atari ST/STE/TT/Falcon emulator for Linux, FreeBSD, NetBSD,
-BeOS, Mac-OSX and other Systems which are supported by the SDL library.
-Unlike most other open source ST emulators which try to give you a good
-environment for running GEM applications, Hatari tries to emulate the hardware
-as close as possible so that it is able to run most of the old Atari games
-and demos.  Because of this, it may be somewhat slower than less accurate
-emulators.
+Hatari is an Atari ST/STE/TT/Falcon emulator for Linux, FreeBSD, NetBSD, macOS,
+Windows and other Systems which are supported by the SDL library. Unlike most
+other open source ST emulators which try to give you a good environment for
+running GEM applications, Hatari tries to emulate the hardware as close as
+possible so that it is able to run most of the old Atari games and demos.
 
 
  3) Compiling and installing
@@ -82,7 +80,7 @@ Optional:
 - The GNU Readline library for Hatari debugger command line editing
 - The Xlib library to support Hatari Python UI window embedding on
   systems with the X window system (Linux and other unixes) 
-- The PortMidi library required for OSX/Windows MIDI support
+- The PortMidi library required for MIDI support on macOS and Windows
   (http://portmedia.sourceforge.net/)
 - The portaudio library for Falcon microphone handling
 - The udev library for NatFeats SCSI driver media change detection
@@ -96,7 +94,7 @@ For compiling Hatari, you need a C compiler (preferably GNU C), and a working
 CMake (v2.8 or newer) installation, see http://www.cmake.org/ for details.
 
 CMake can generate makefiles for various flavours of "Make" (like GNU-Make)
-and various IDEs like Xcode on Mac OS X. To run CMake, you've got to pass the
+and various IDEs like Xcode on macOS. To run CMake, you've got to pass the
 path to the sources of Hatari as parameter, for example run the following if
 you are in the topmost directory of the Hatari source tree:
 	cmake .

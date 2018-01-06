@@ -289,9 +289,9 @@ bool Main_SetVBLSlowdown(int factor)
  * This function waits on each emulated VBL to synchronize the real time
  * with the emulated ST.
  * Unfortunately SDL_Delay and other sleep functions like usleep or nanosleep
- * are very inaccurate on some systems like Linux 2.4 or Mac OS X (they can only
- * wait for a multiple of 10ms due to the scheduler on these systems), so we have
- * to "busy wait" there to get an accurate timing.
+ * are very inaccurate on some systems like Linux 2.4 or macOS (they can only
+ * wait for a multiple of 10ms due to the scheduler on these systems), so we
+ * have to "busy wait" there to get an accurate timing.
  * All times are expressed as micro seconds, to avoid too much rounding error.
  */
 void Main_WaitOnVbl(void)

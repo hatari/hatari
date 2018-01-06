@@ -59,7 +59,7 @@ Emulation:
 
 
 Emulator:
-- MIDI support for Windows & OSX (with PortMidi library)
+- MIDI support for Windows and macOS (with PortMidi library)
 - Add support for AVI files > 4GB (up to 256 GB)
 - Miscellaneous:
   - Initial patching for ST-Book ROM
@@ -123,7 +123,7 @@ Emulator:
     to "Debugger" section where it belongs
 - Compilation:
   - Fix compilation when using ARM 64 target
-  - Define CPU_mips to compile for mips architecture
+  - Allow compilation on untested host architectures (e.g. MIPS & s390x)
   - Search for local headers first, then system's one (eg zip.h)
   - Don't redefine bswap_16/_32 macros if they already exist
 

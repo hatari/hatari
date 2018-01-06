@@ -14,7 +14,7 @@ set(SOURCES
 # Disk image code is shared with the hmsa tool, so we put it into a library:
 add_library(Floppy createBlankImage.c dim.c msa.c st.c zip.c)
 
-# When building for OSX, define specific sources for gui and ressources
+# When building for macOS, define specific sources for gui and ressources
 if(ENABLE_OSX_BUNDLE)
 	set(GUIOSX_SOURCES
 	    gui-osx/AlertHooks.m gui-osx/PrefsController.m gui-osx/Shared.m
@@ -25,7 +25,7 @@ if(ENABLE_OSX_BUNDLE)
 	set(GUIOSX_DOCS
 	    ${CMAKE_SOURCE_DIR}/doc/manual.html ${CMAKE_SOURCE_DIR}/doc/images
 	    ${CMAKE_SOURCE_DIR}/doc/compatibility.html ${CMAKE_SOURCE_DIR}/doc/toc.js )
-	# these are the OS X Interface Builder Files
+	# these are the macOS Interface Builder Files
 	set (HATARI_XIBS en.lproj/SDLMain fr.lproj/SDLMain)
 endif(ENABLE_OSX_BUNDLE)
 
@@ -70,7 +70,7 @@ add_subdirectory(falcon)
 add_subdirectory(gui-sdl)
 add_subdirectory(${CPUDIR})
 
-# When building for OSX, add specific sources
+# When building for macOS, add specific sources
 if(ENABLE_OSX_BUNDLE)
 	#find_library(SDL_FRAMEWORK SDL ${ADD_FRAMEWOK_PATH})
 	set(ADDITIONAL_INCLUDES ${FRAMEWORKS})
