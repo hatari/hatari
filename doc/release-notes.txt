@@ -111,6 +111,9 @@ Emulator:
   - 'symbols resident' toggles whether program symbols are
     removed when program terminates, or only when next one starts.
     Controlled by "bSymbolsResident" option in config file
+    'symbols match" toggles whether TAB completes all symbols or
+    just symbol types relevant for given command.  Controlled by
+    "bMatchAllSymbols" option in config file
   - 'symbols addr' is split into 'symbols code' & 'symbols data'
   - TEXTEnd value is now TEXT+TextSize, instead of TEXT+TextSize-1
   - Add "-f" option to 'cd' so that setup scripts can specify

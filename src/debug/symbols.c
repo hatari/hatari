@@ -1149,11 +1149,19 @@ char* Symbols_MatchCpuAddress(const char *text, int state)
 }
 char* Symbols_MatchCpuCodeAddress(const char *text, int state)
 {
-	return Symbols_MatchByName(CpuSymbolsList, SYMTYPE_TEXT, text, state);
+	if (ConfigureParams.Debugger.bMatchAllSymbols) {
+		return Symbols_MatchByName(CpuSymbolsList, SYMTYPE_ALL, text, state);
+	} else {
+		return Symbols_MatchByName(CpuSymbolsList, SYMTYPE_TEXT, text, state);
+	}
 }
 char* Symbols_MatchCpuDataAddress(const char *text, int state)
 {
-	return Symbols_MatchByName(CpuSymbolsList, SYMTYPE_DATA|SYMTYPE_BSS, text, state);
+	if (ConfigureParams.Debugger.bMatchAllSymbols) {
+		return Symbols_MatchByName(CpuSymbolsList, SYMTYPE_ALL, text, state);
+	} else {
+		return Symbols_MatchByName(CpuSymbolsList, SYMTYPE_DATA|SYMTYPE_BSS, text, state);
+	}
 }
 
 /**
@@ -1460,13 +1468,13 @@ void Symbols_LoadCurrentProgram(void)
 char *Symbols_MatchCommand(const char *text, int state)
 {
 	static const char* subs[] = {
-		"code", "data", "free", "name", "prg", "resident"
+		"code", "data", "free", "match", "name", "prg", "resident"
 	};
 	return DebugUI_MatchHelper(subs, ARRAY_SIZE(subs), text, state);
 }
 
 const char Symbols_Description[] =
-	"<filename|prg|resident|code|data|name|free> [<T offset> [<D offset> <B offset>]]\n"
+	"<filename|prg|resident|match|code|data|name|free> [<T offset> [<D offset> <B offset>]]\n"
 	"\n"
 	"\tBy default, symbols are loaded from the currently executing program's\n"
 	"\tbinary automatically when entering the debugger, IF program is started\n"
@@ -1479,6 +1487,9 @@ const char Symbols_Description[] =
 	"\t'resident' command toggles debugger to load symbols before program\n"
 	"\tterminates, and to defer their freeing until another program is\n"
 	"\tstarted.\n"
+	"\n"
+	"\t'match' command toggles whether TAB completion matches all symbols\n"
+	"\tor only symbol types that should be relevant for given command.\n"
 	"\n"
 	"\tIf program lacks symbols, or it's not run through the GEMDOS HD\n"
 	"\temulation, user can ask symbols to be loaded from an unstripped\n"
@@ -1539,6 +1550,16 @@ int Symbols_Command(int nArgc, char *psArgs[])
 				Symbols_Free(CpuSymbolsList);
 				CpuSymbolsList = NULL;
 			}
+		}
+		return DEBUGGER_CMDDONE;
+	}
+	/* toggling whether all or only specific symbols types get TAB completed */
+	if (strcmp(file, "match") == 0) {
+		ConfigureParams.Debugger.bMatchAllSymbols = !ConfigureParams.Debugger.bMatchAllSymbols;
+		if (ConfigureParams.Debugger.bMatchAllSymbols) {
+			fprintf(stderr, "Matching all symbols types.\n");
+		} else {
+			fprintf(stderr, "Matching only symbols (most) relevant for given command.\n");
 		}
 		return DEBUGGER_CMDDONE;
 	}

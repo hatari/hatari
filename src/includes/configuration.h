@@ -36,6 +36,8 @@ typedef struct
   bool bDisasmUAE;
   /* load symbols immediately on program start, and keep them after its termination */
   bool bSymbolsResident;
+  /* whether to match all symbols or just types relevant for given command */
+  bool bMatchAllSymbols;
 } CNF_DEBUGGER;
 
 

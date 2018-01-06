@@ -65,6 +65,7 @@ static const struct Config_Tag configs_Debugger[] =
 	{ "nDisasmOptions", Int_Tag, &ConfigureParams.Debugger.nDisasmOptions },
 	{ "bDisasmUAE", Bool_Tag, &ConfigureParams.Debugger.bDisasmUAE },
 	{ "bSymbolsResident", Bool_Tag, &ConfigureParams.Debugger.bSymbolsResident },
+	{ "bMatchAllSymbols", Bool_Tag, &ConfigureParams.Debugger.bMatchAllSymbols },
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -605,6 +606,7 @@ void Configuration_SetDefault(void)
 	/* external one has nicer output, but isn't as complete as UAE one */
 	ConfigureParams.Debugger.bDisasmUAE = false;
 	ConfigureParams.Debugger.bSymbolsResident = false;
+	ConfigureParams.Debugger.bMatchAllSymbols = false;
 	ConfigureParams.Debugger.nDisasmOptions = Disasm_GetOptions();
 
 	/* Set defaults for floppy disk images */
