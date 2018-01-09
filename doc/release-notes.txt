@@ -32,6 +32,7 @@ Emulation:
   - Correctly store the 32 bit address in the stack in case of a bus error
   - Better memory timings for RAM accesses in 68030 mode (for Falcon)
   - Accurate DIV overflow undocumented flags
+  - Correct V flag for BCD instructions for 68020/30
   - 68030 instr cache was not correctly disabled when writing EI=0 in CACR
   - Large improvements in FPU emulation and related instructions/exceptions
   - Support for undocumented 68882/68881 FPU constants
