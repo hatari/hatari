@@ -3467,25 +3467,10 @@ static void gen_opcode (unsigned int opcode)
 		printf ("\tuae_u16 newv_lo = - (src & 0xF) - (GET_XFLG () ? 1 : 0);\n");
 		printf ("\tuae_u16 newv_hi = - (src & 0xF0);\n");
 		printf ("\tuae_u16 newv;\n");
-//#ifndef WINUAE_FOR_HATARI
-#if 1
 		printf ("\tint cflg, tmp_newv;\n");
 		printf ("\ttmp_newv = newv_hi + newv_lo;\n");
 		printf ("\tif (newv_lo > 9) { newv_lo -= 6; }\n");
 		printf ("\tnewv = newv_hi + newv_lo;\n");
-#else
-		/* Hatari : use 2 cases to avoid 'tmp_newv' set but not used */
-		if (cpu_level >= xBCD_KEEPS_NV_FLAGS) {
-			printf ("\tint cflg;\n");
-			printf ("\tif (newv_lo > 9) { newv_lo -= 6; }\n");
-			printf ("\tnewv = newv_hi + newv_lo;\n");
-		}
-		else {
-			printf ("\tint cflg, tmp_newv;\n");
-			printf ("\tif (newv_lo > 9) { newv_lo -= 6; }\n");
-			printf ("\ttmp_newv = newv = newv_hi + newv_lo;\n");
-		}
-#endif
 		printf ("\tcflg = (newv & 0x1F0) > 0x90;\n");
 		printf ("\tif (cflg) newv -= 0x60;\n");
 		printf ("\tSET_CFLG (cflg);\n");
