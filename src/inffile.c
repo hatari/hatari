@@ -300,7 +300,7 @@ int INF_ValidateAutoStart(const char **val, const char **err)
 	 */
 
 	/* GEMDOS HD */
-	else if (ConfigureParams.HardDisk.bUseHardDiskDirectories && ConfigureParams.HardDisk.szHardDiskDirectories[0])
+	else if (ConfigureParams.HardDisk.bUseHardDiskDirectories && ConfigureParams.HardDisk.szHardDiskDirectories[0][0])
 	{
 		return 0;
 	}
