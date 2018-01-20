@@ -726,7 +726,6 @@ static void ScreenConv_BitplaneTo16bppZoomed(Uint16 *fvram, Uint8 *hvram,
 
 			/* Display the Right border */
 			Screen_memset_uint16(hvram_column, palette.native[0], rightBorder * coefx);
-			hvram_column += rightBorder * coefx;
 		}
 
 		hvram_line += pitch;
@@ -799,7 +798,6 @@ static void ScreenConv_BitplaneTo32bppZoomed(Uint16 *fvram, Uint8 *hvram,
 
 			/* Display the Right border */
 			Screen_memset_uint32(hvram_column, palette.native[0], rightBorder * coefx);
-			hvram_column += rightBorder * coefx;
 		}
 
 		hvram_line += pitch;
@@ -868,7 +866,6 @@ static void ScreenConv_HiColorTo16bppZoomed(Uint16 *fvram, Uint8 *hvram,
 
 			/* Display the Right border */
 			Screen_memset_uint16(hvram_column, palette.native[0], rightBorder * coefx);
-			hvram_column += rightBorder * coefx;
 		}
 
 		hvram_line += pitch;
@@ -942,7 +939,6 @@ static void ScreenConv_HiColorTo32bppZoomed(Uint16 *fvram, Uint8 *hvram,
 
 			/* Display the Right border */
 			Screen_memset_uint32(hvram_column, palette.native[0], rightBorder * coefx);
-			hvram_column += rightBorder * coefx;
 		}
 
 		hvram_line += pitch;
