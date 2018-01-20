@@ -82,10 +82,9 @@ static struct {
 } Options;
 
 /*
- * Show program usage, given error message
- * return empty list
+ * Show program usage, given error message, and exit
  */
-static symbol_list_t* usage(const char *msg)
+static void usage(const char *msg)
 {
 	const struct {
 		const char opt;
@@ -126,7 +125,8 @@ static symbol_list_t* usage(const char *msg)
 	if (msg) {
 		fprintf(stderr, "\nERROR: %s!\n", msg);
 	}
-	return NULL;
+
+	exit(msg != NULL);
 }
 
 /* ------------------ load and free functions ------------------ */
@@ -839,25 +839,25 @@ static symbol_list_t* symbols_load(const char *filename)
 
 	fprintf(stderr, "Reading symbols from program '%s' symbol table...\n", filename);
 	if (!(fp = fopen(filename, "rb"))) {
-		return usage("opening program file failed");
+		usage("opening program file failed");
 	}
 	if (fread(&magic, sizeof(magic), 1, fp) != 1) {
-		return usage("reading program file failed");
+		usage("reading program file failed");
 	}
 
 	if (SDL_SwapBE16(magic) != ATARI_PROGRAM_MAGIC) {
-		return usage("file isn't an Atari program file");
+		usage("file isn't an Atari program file");
 	}
 	list = symbols_load_binary(fp);
 	fclose(fp);
 
 	if (!list) {
-		return usage("no symbols, or reading them failed");
+		usage("no symbols, or reading them failed");
 	}
 
 	if (list->count < list->symbols) {
 		if (!list->count) {
-			return usage("no valid symbols in program, symbol table loading failed");
+			usage("no valid symbols in program, symbol table loading failed");
 		}
 		/* parsed less than there were "content" lines */
 		list->names = realloc(list->names, list->count * sizeof(symbol_t));
@@ -949,12 +949,10 @@ int main(int argc, const char *argv[])
 			break;
 		default:
 			usage("unknown option");
-			return 1;
 		}
 	}
 	if (i+1 != argc) {
 		usage("incorrect number of arguments");
-		return 1;
 	}
 	return symbols_show(symbols_load(argv[i]));
 }
