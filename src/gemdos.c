@@ -1823,7 +1823,10 @@ static bool GemDOS_Create(Uint32 Params)
 		if (Mode & GEMDOS_FILE_ATTRIB_READONLY)
 		{
 			/* after closing, file should be read-only */
-			chmod(szActualFileName, S_IRUSR|S_IRGRP|S_IROTH);
+			if (chmod(szActualFileName, S_IRUSR|S_IRGRP|S_IROTH))
+			{
+				perror("Failed to set file to read-only");
+			}
 		}
 		/* Tag handle table entry as used in this process and return handle */
 		FileHandles[Index].bUsed = true;

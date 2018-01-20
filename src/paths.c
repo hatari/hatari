@@ -247,7 +247,10 @@ static void Paths_InitHomeDirs(void)
 	if (!File_DirExists(sHatariHomeDir))
 	{
 		/* ~/.config does not exist yet, create it first */
-		mkdir(sHatariHomeDir, 0700);
+		if (mkdir(sHatariHomeDir, 0700) != 0)
+		{
+			perror("Failed to create ~/.config directory");
+		}
 	}
 #endif
 	snprintf(sHatariHomeDir, FILENAME_MAX, "%s%c%s", sUserHomeDir,
