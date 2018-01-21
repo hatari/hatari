@@ -1040,6 +1040,7 @@ static char		*Disass68kEA(char *disassbuf, char *commentBuffer, long *addr, long
 		switch(size)
 		{
 		case 1: eWord1 &= 0xFF;
+			/* fall through */
 		case 2:
 #if USE_SYMBOLS
 				if(disassFlag)
