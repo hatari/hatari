@@ -2300,7 +2300,7 @@ static bool GemDOS_LSeek(Uint32 Params)
 	nOldPos = ftell(fhndl);
 
 	/* Determine the size of the file */
-	if (fseek(fhndl, 0L, SEEK_END) != 0)
+	if (fseek(fhndl, 0L, SEEK_END) != 0 || nOldPos < 0)
 	{
 		Regs[REG_D0] = GEMDOS_E_SEEK;
 		return true;
