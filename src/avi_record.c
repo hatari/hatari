@@ -459,10 +459,9 @@ static bool	Avi_StopRecording_WithParams ( RECORD_AVI_PARAMS *pAviParams );
 
 
 
-
 static void	Avi_StoreU8 ( Uint8 *p , Uint8 val )
 {
-	*p++ = val;
+	*p = val;
 }
 
 
