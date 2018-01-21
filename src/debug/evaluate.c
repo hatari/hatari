@@ -663,6 +663,7 @@ static long long apply_op (char opcode, long long value1, long long value2)
 		break;
         case '>':
 		value1 >>= value2;
+		break;
         case '<':
 		value1 <<= value2;
 		break;
