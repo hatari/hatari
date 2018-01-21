@@ -236,8 +236,8 @@ void VIDEL_ScreenCounter_WriteByte(void)
  */
 void VIDEL_LineOffset_ReadWord(void)
 {
-	/* Unused bits are read as zero, so I mask them (Laurent) */
-	IoMem[0xff820e] &= 0x1ff;
+	/* Unused bits in the first byte are read as zero, so mask them */
+	IoMem[0xff820e] &= 0x01;
 }
 
 /**
