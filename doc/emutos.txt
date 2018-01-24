@@ -1053,6 +1053,7 @@ Working demos:
     end screen at top & bottom
 - Mouse (animation + music)
 - Old Stuff (by Extream)
+- Prepare (by Extream)
 - RGB Reine (by New Beat)
 - Rock Solid (by Paranoia)
 - Six Sievert (by tSCc)

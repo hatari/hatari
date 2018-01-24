@@ -34,11 +34,12 @@ Emulation:
   - Accurate DIV overflow undocumented flags
   - Correct V flag for BCD instructions for 68020/30
   - 68030 instr cache was not correctly disabled when writing EI=0 in CACR
+  - Improve caches for 68020/30, add cache support when using MMU
+  - Add 68040/60 data cache emulation, with optional MMU support
+- FPU:
   - Large improvements in FPU emulation and related instructions/exceptions
   - Support for undocumented 68882/68881 FPU constants
   - Support for softfloat FPU emulation (slower but more accurate)
-  - Improve caches for 68020/30, add cache support when using MMU
-  - Add 68040/60 data cache emulation, with optional MMU support
 - Memory / MMU / MCU:
   - Add full support for STF/STE MMU/MCU at $FF8001 and address translation
     (emulate the RAS/CAS signal depending on the size of the memory banks,
@@ -95,14 +96,15 @@ Emulator:
     for color monitors, with or without autostart.  Also enables
     blitter for machines & TOS versions supporting it
   - Uses existing INF file as base, if one exists
-  - If not, asks TOS to open window for boot drive
+  - If not, specifies open window for boot drive
   - Fix: Use separate INF files for TOS v1 and v2+ autostarting
   - Fix: Normal users cannot use tmpfile() directly under Windows
 - Debugger improvements:
+  - Fix: '>>' bit-shift parsing
   - Add "CycleCounter" variable
   - Add "info dta [addr]" command
-  - Add support for reading GNU-style a.out (GCC default)
-    symbol table format in addition to DRI/GST symbols
+  - Add support for reading GNU-style a.out symbol table format
+    (which is GCC default) in addition to DRI/GST symbols
   - Add absolute symbols support in addition to BSS/DATA/TEXT ones
   - Use terminal size for paging (disassembly, memdump, symbols)
     commands. NOTE: remove old dDisasmLines & nMemdumpLines options
@@ -111,7 +113,7 @@ Emulator:
     lines 'symbols' command pages
   - 'symbols resident' command and 'bSymbolsResident' config option
     toggle whether program symbols are removed when program
-    terminates, or only when the next one starts
+    terminates, or only when the next program starts
   - 'symbols match" command and 'bMatchAllSymbols' config option
     toggle whether TAB completes all symbols or just symbol types
     relevant for given command
