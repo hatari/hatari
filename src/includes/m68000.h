@@ -113,7 +113,7 @@ enum {
 
 
 # define M68000_GetPC()     m68k_getpc()
-# define M68000_SetPC(val)  m68k_setpc(val)
+//# define M68000_SetPC(val)  m68k_setpc(val)
 
 # define M68000_InstrPC		regs.instruction_pc
 # define M68000_CurrentOpcode	regs.opcode
@@ -372,7 +372,8 @@ extern void M68000_Flush_All_Caches ( uaecptr addr , int size );
 extern void M68000_SetBlitter_CE ( bool ce_mode );
 extern int DMA_MaskAddressHigh ( void );
 extern void M68000_ChangeCpuFreq ( void );
-extern Uint16	M68000_GetSR ( void );
-extern void	M68000_SetSR ( Uint16 v );
+extern Uint16 M68000_GetSR ( void );
+extern void M68000_SetSR ( Uint16 v );
+extern void M68000_SetPC ( uaecptr v );
 
 #endif

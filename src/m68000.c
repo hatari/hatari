@@ -856,7 +856,14 @@ void	M68000_SetSR ( Uint16 v )
 	MakeFromSR();
 }
 
-
-
+void	M68000_SetPC ( uaecptr v )
+{
+	m68k_setpc ( v );
+#ifdef WINUAE_FOR_HATARI
+	fill_prefetch();
+#else
+	refill_prefetch (m68k_getpc(), 0);
+#endif
+}
 
 
