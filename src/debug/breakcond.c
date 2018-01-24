@@ -605,7 +605,8 @@ static bool BreakCond_ParseAddressModifier(parser_state_t *pstate, bc_value_t *b
 		return true;
 	}
 	if (!bc_value->is_indirect) {
-		pstate->error = "space/width modifier makes sense only for an address (register)";
+		pstate->error = "space/width modifier can be used only with an (address) expression\n"
+				"(note that you can use a mask instead of width, for example: 'd0 & 0xff')";
 		EXITFUNC(("arg:%d -> false\n", pstate->arg));
 		return false;
 	}
