@@ -835,3 +835,28 @@ void	M68000_ChangeCpuFreq ( void )
 		Crossbar_Recalculate_Clocks_Cycles();
 	}
 }
+
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Some CPU registers can't be read or modified directly, some additional
+ * actions are required.
+ */
+Uint16	M68000_GetSR ( void )
+{
+	MakeSR();
+	return regs.sr;
+}
+
+void	M68000_SetSR ( Uint16 v )
+{
+	regs.sr = v;
+	MakeFromSR();
+}
+
+
+
+
+
