@@ -101,6 +101,7 @@ Emulator:
   - Fix: Normal users cannot use tmpfile() directly under Windows
 - Debugger improvements:
   - Fix: '>>' bit-shift parsing
+  - Fix: CPU prefetch when changing PC address
   - Add "CycleCounter" variable
   - Add "info dta [addr]" command
   - Add support for reading GNU-style a.out symbol table format
