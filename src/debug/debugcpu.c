@@ -635,6 +635,15 @@ void DebugCpu_Check(void)
 	{
 		DebugCpu_ShowAddressInfo(M68000_GetPC(), TraceFile);
 	}
+	if (LOG_TRACE_LEVEL(TRACE_CPU_REGISTERS))
+	{
+		uaecptr nextpc;
+#ifdef WINUAE_FOR_HATARI
+		m68k_dumpstate_file(TraceFile, &nextpc);
+#else
+		m68k_dumpstate(TraceFile, &nextpc);
+#endif
+	}
 	if (nCpuActiveCBs)
 	{
 		if (BreakCond_MatchCpu())
@@ -674,7 +683,7 @@ void DebugCpu_SetDebugging(void)
 	nCpuActiveCBs = BreakCond_CpuBreakPointCount();
 
 	if (nCpuActiveCBs || nCpuSteps || bCpuProfiling || History_TrackCpu()
-	    || LOG_TRACE_LEVEL((TRACE_CPU_DISASM|TRACE_CPU_SYMBOLS))
+	    || LOG_TRACE_LEVEL((TRACE_CPU_DISASM|TRACE_CPU_SYMBOLS|TRACE_CPU_REGISTERS))
 	    || ConOutDevice != CONOUT_DEVICE_NONE)
 	{
 		M68000_SetSpecial(SPCFLAG_DEBUGGER);

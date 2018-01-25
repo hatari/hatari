@@ -104,6 +104,8 @@ Emulator:
   - Fix: CPU prefetch when changing PC address
   - Add "CycleCounter" variable
   - Add "info dta [addr]" command
+  - Add "cpu_registers" trace option to get register values
+    after each executed instruction
   - Add support for reading GNU-style a.out symbol table format
     (which is GCC default) in addition to DRI/GST symbols
   - Add absolute symbols support in addition to BSS/DATA/TEXT ones
