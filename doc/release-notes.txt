@@ -84,6 +84,7 @@ Emulator:
     can be resized (= turn it off to prevent accidental resizes)
   - Support scaling AVI recording (PNG/BMP) frames
   - Extended VDI mode font selected based on VDI height
+  - Fix: Handle window expose events with SDL 2.0
   - Fix: don't switch bitdepth when recording AVI
   - Fix: X11 window embedding (to Python GUI) with SDL2
   - Fix: TOS v2 & v3 Atari logo display in extended VDI resolutions

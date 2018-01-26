@@ -619,10 +619,10 @@ void Main_EventHandler(void)
 
 		 case SDL_WINDOWEVENT:
 			if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED
-			    || event.window.event == SDL_WINDOWEVENT_RESTORED)
+			    || event.window.event == SDL_WINDOWEVENT_RESTORED
+			    || event.window.event == SDL_WINDOWEVENT_EXPOSED)
 			{
 				SDL_UpdateRect(sdlscrn, 0, 0, 0, 0);
-				break;
 			}
 			if (event.window.event == SDL_WINDOWEVENT_EXPOSED
 			    && !ConfigureParams.Screen.bUseSdlRenderer)
