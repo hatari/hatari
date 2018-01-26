@@ -120,7 +120,7 @@ extern char *Log_MatchTrace(const char *text, int state);
 #define	TRACE_CPU_PAIRING	 (1<<15)
 #define	TRACE_CPU_DISASM	 (1<<16)
 #define	TRACE_CPU_EXCEPTION	 (1<<17)
-#define	TRACE_CPU_REGISTERS	 (1<<18)
+#define	TRACE_CPU_REGS		 (1<<18)
 
 #define	TRACE_INT		 (1<<19)
 

@@ -85,7 +85,7 @@ static flagname_t TraceFlags[] = {
 	{ TRACE_CPU_PAIRING	 , "cpu_pairing" } ,
 	{ TRACE_CPU_DISASM	 , "cpu_disasm" } ,
 	{ TRACE_CPU_EXCEPTION	 , "cpu_exception" } ,
-	{ TRACE_CPU_REGISTERS	 , "cpu_registers" } ,
+	{ TRACE_CPU_REGS	 , "cpu_regs" } ,
 	{ TRACE_CPU_ALL 	 , "cpu_all" } ,
 
 	{ TRACE_INT		 , "int" } ,
