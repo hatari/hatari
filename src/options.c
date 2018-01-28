@@ -472,7 +472,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_RUNVBLS, NULL, "--run-vbls",
 	  "<x>", "Exit after x VBLs" },
 	{ OPT_BENCHMARK, NULL, "--benchmark",
-	  NULL, "Start in benchmark mode (use with --run-vbls" },
+	  NULL, "Start in benchmark mode (use with --run-vbls)" },
 
 	{ OPT_ERROR, NULL, NULL, NULL, NULL }
 };
