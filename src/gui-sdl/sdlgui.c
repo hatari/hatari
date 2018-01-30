@@ -1403,7 +1403,9 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut, bool KeepCurrentObject)
 
 #if WITH_SDL2
 			 case SDL_WINDOWEVENT:
-				if (sdlEvent.window.event == SDL_WINDOWEVENT_SIZE_CHANGED)
+				if (sdlEvent.window.event == SDL_WINDOWEVENT_SIZE_CHANGED
+				    || sdlEvent.window.event == SDL_WINDOWEVENT_RESTORED
+				    || sdlEvent.window.event == SDL_WINDOWEVENT_EXPOSED)
 				{
 					SDL_UpdateRect(pSdlGuiScrn, 0, 0, 0, 0);
 				}

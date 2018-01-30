@@ -618,6 +618,9 @@ void Main_EventHandler(void)
 			break;
 
 		 case SDL_WINDOWEVENT:
+			/* Note: any changes here should most likely be done
+			 * also in sdlgui.c::SDLGui_DoDialog()
+			 */
 			if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED
 			    || event.window.event == SDL_WINDOWEVENT_RESTORED
 			    || event.window.event == SDL_WINDOWEVENT_EXPOSED)
