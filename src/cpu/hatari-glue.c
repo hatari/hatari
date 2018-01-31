@@ -108,6 +108,13 @@ int Init680x0(void)
 	if ( ( ConfigureParams.System.n_FPUType == FPU_CPU ) && ( changed_prefs.cpu_model < 68040 ) )
 		ConfigureParams.System.n_FPUType = FPU_NONE;
 
+	/* 68000/10 can't have an FPU */
+	if ( ( ConfigureParams.System.n_FPUType != FPU_NONE ) && ( changed_prefs.cpu_model < 68020 ) )
+	{
+		Log_Printf(LOG_WARN, "FPU is not supported in 68000/010 configurations, disabling FPU\n");
+		ConfigureParams.System.n_FPUType = FPU_NONE;
+	}
+
 	changed_prefs.int_no_unimplemented = true;
 	changed_prefs.fpu_no_unimplemented = true;
 	changed_prefs.cpu_compatible = ConfigureParams.System.bCompatibleCpu;
