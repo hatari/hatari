@@ -58,7 +58,7 @@ static callinfo_t cpu_callinfo;
 #define MAX_CPU_PROFILE_VALUE 0xFFFFFFFF
 
 typedef struct {
-	Uint32 count;	/* how many times this address instrcution is executed */
+	Uint32 count;	/* how many times this address instruction is executed */
 	Uint32 cycles;	/* how many CPU cycles was taken at this address */
 	Uint32 i_misses;  /* how many CPU instruction cache misses happened at this address */
 	Uint32 d_hits;  /* how many CPU data cache hits happened at this address */
