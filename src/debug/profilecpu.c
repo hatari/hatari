@@ -283,7 +283,7 @@ static void show_histogram(const char *title, int count, Uint32 *items)
 	Uint32 value;
 	int i;
 
-	fprintf(stderr, "\n%s, number of occurrencies:\n", title);
+	fprintf(stderr, "\n%s, number of occurrences:\n", title);
 	maxval = 0;
 	for (i = 0; i < count; i++) {
 		maxval += items[i];
