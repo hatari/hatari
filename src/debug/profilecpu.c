@@ -1043,6 +1043,18 @@ void Profile_CpuUpdate(void)
 	d_hits = CpuInstruction.D_Cache_hit;
 	i_misses = CpuInstruction.I_Cache_miss;
 	d_misses = CpuInstruction.D_Cache_miss;
+#if DEBUG
+	if (i_hits + i_misses == 0) {
+		Uint32 nextpc;
+		fprintf(stderr, "WARNING: zero instruction cache hits & misses:\n");
+		Disasm(stderr, prev_pc, &nextpc, 1);
+	}
+	if (d_hits + d_misses == 0) {
+		Uint32 nextpc;
+		fprintf(stderr, "WARNING: zero data cache hits & misses\n");
+		Disasm(stderr, prev_pc, &nextpc, 1);
+	}
+#endif
 
 	/* reset cache stats after reading them (for the next instruction) */
 	CpuInstruction.I_Cache_hit = 0;
