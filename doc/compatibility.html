@@ -2039,8 +2039,8 @@ does only on STE</td>
 
 <h2>TT software compatibility list</h2>
 
-<p>Most programs that work on TT work also in the Falcon emulation and
-as all 1-8 bit GEM programs work without problems under TT emulation
+<p>Most programs that work on TT work also in the Falcon emulation.
+As all 1-8 bit GEM programs work without problems under TT emulation
 this section lists only TT-specific games and demos.</p>
 
 <h3>TT games</h3>
@@ -2185,10 +2185,10 @@ that's documented.  Many timing critical demos (for example ones using
 NoCrew's DSP MP2-player) that are marked as working in the list below,
 <em>work only with the (default) WinUAE CPU core</em>.</p>
 
-<p>Due to incomplete VIDEL emulation and some remaining emulation
-cycle accuracy issues, some Falcon programs don't work yet.  Most
-games and demos work with RGB monitor, those requiring VGA one are
-indicated separately.</p>
+<p>Due to incomplete VIDEL emulation, missing JagPad support and some
+remaining emulation cycle accuracy issues, some Falcon programs aren't
+usable yet.  Most games and demos work with RGB monitor, those requiring
+VGA one are indicated separately.</p>
 
 
 <h3>Falcon games</h3>
@@ -2432,7 +2432,7 @@ indicated separately.</p>
       <td class="major">2.0</td>
       <td>yes</td>
       <td>-</td>
-      <td>Needs joypad. Sound with DSP. Intro and menu work,
+      <td>Needs jagpad. Sound with DSP. Intro and menu work,
           but graphics are distorted in game itself (writes
 	  twice to the $ff820e register during one VBL!)</td>
     </tr>
@@ -2594,7 +2594,8 @@ indicated separately.</p>
       <td>1.6</td>
       <td>-</td>
       <td>-</td>
-      <td>Requires joypad.  Linked version doesn't have (DSP) music, others have</td>
+      <td>Linked version doesn't have (DSP) music, others have. Playable with
+          STE joypad, but would benefit from extra buttons in jagpad</td>
     </tr> 
     <tr>
       <td>Madtris</td>
