@@ -134,7 +134,7 @@ int m68k_move2c (int regno, uae_u32 *regp)
 		case 3:
 			regs.tcr = *regp & (currprefs.cpu_model == 68060 ? 0xfffe : 0xc000);
 			if (currprefs.mmu_model)
-				mmu_set_tc (regs.tcr);
+				regs.tcr = mmu_set_tc (regs.tcr);
 			break;
 
 			/* no differences between 68040 and 68060 */

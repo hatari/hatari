@@ -1476,10 +1476,14 @@ void REGPARAM2 mmu_reset(void)
 	mmu_set_funcs();
 }
 
-void REGPARAM2 mmu_set_tc(uae_u16 tc)
+uae_u16 REGPARAM2 mmu_set_tc(uae_u16 tc)
 {
-	if (currprefs.mmu_ec)
-		tc &= ~(0x8000 | 0x4000);
+	if (currprefs.mmu_ec) {
+ 		tc &= ~(0x8000 | 0x4000);
+		// at least 68EC040 always returns zero when TC is read.
+		if (currprefs.cpu_model == 68040)
+			tc = 0;
+	}
 
 	regs.mmu_enabled = (tc & 0x8000) != 0;
 	mmu_pagesize_8k = (tc & 0x4000) != 0;
@@ -1506,7 +1510,8 @@ void REGPARAM2 mmu_set_tc(uae_u16 tc)
 
 	mmu_flush_atc_all(true);
 
-	write_log(_T("%d MMU: enabled=%d page8k=%d PC=%08x\n"), currprefs.mmu_model, regs.mmu_enabled, mmu_pagesize_8k, m68k_getpc());
+	write_log(_T("%d MMU: TC=%04x enabled=%d page8k=%d PC=%08x\n"), tc, currprefs.mmu_model, regs.mmu_enabled, mmu_pagesize_8k, m68k_getpc());
+	return tc;
 }
 
 void REGPARAM2 mmu_set_super(bool super)
