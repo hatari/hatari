@@ -181,6 +181,7 @@ static void mmu_dump_table(const char * label, uaecptr root_ptr)
 	ULONG totalpages;
 	ULONG pagemask = (1 << PAGE_SIZE) - 1;
 
+	root_ptr &= 0xfffffe00;
 	console_out_f(_T("MMU dump start. Root = %08x\n"), root_ptr);
 	totalpages = 1 << (32 - PAGE_SIZE);
 	startaddr = 0;

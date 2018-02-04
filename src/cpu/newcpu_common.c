@@ -152,9 +152,9 @@ int m68k_move2c (int regno, uae_u32 *regp)
 		case 0x804: regs.isp = *regp; if (regs.m == 0) m68k_areg (regs, 7) = regs.isp; break;
 			/* 68040 only */
 		case 0x805: regs.mmusr = *regp; break;
-			/* 68040/060 */
-		case 0x806: regs.urp = *regp & 0xfffffe00; break;
-		case 0x807: regs.srp = *regp & 0xfffffe00; break;
+			 /* 68040 stores all bits, 68060 zeroes low 9 bits */
+		case 0x806: regs.urp = *regp & (currprefs.cpu_model == 68060 ? 0xfffffe00 : 0xffffffff); break;
+		case 0x807: regs.srp = *regp & (currprefs.cpu_model == 68060 ? 0xfffffe00 : 0xffffffff); break;
 			/* 68060 only */
 		case 0x808:
 			{
