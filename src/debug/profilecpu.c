@@ -97,6 +97,7 @@ static struct {
 	Uint32 loop_count;    /* how many times it was looped */
 	Uint32 disasm_addr;   /* 'addresses' command start address */
 #if ENABLE_WINUAE_CPU
+	Uint32 i_prefetched;  /* instructions that don't incur prefetch hit/miss */
 	Uint32 i_hit_counts[MAX_I_HITS];    /* I-cache hit counts */
 	Uint32 d_hit_counts[MAX_D_HITS];    /* D-cache hit counts */
 	Uint32 i_miss_counts[MAX_I_MISSES]; /* I-cache miss counts */
@@ -303,15 +304,11 @@ void Profile_CpuShowStats(void)
  */
 static void show_histogram(const char *title, int count, Uint32 *items)
 {
-	Uint64 maxval;
+	const Uint64 maxval = cpu_profile.all.count;
 	Uint32 value;
 	int i;
 
 	fprintf(stderr, "\n%s, number of occurrences:\n", title);
-	maxval = 0;
-	for (i = 0; i < count; i++) {
-		maxval += items[i];
-	}
 	for (i = 0; i < count; i++) {
 		value = items[i];
 		if (value) {
@@ -337,8 +334,11 @@ void Profile_CpuShowCaches(void)
 	fprintf(stderr,
 		"\nNote:\n"
 		"- these statistics include all profiled instructions, but\n"
+		"- instruction cache events happen only on prefetch/branch\n"
 		"- data cache events can happen only for instructions that do memory reads\n"
-	       );
+		"\nAlready prefetched instructions: %.3f%% (no hits/misses)\n",
+		100.0 * cpu_profile.i_prefetched / cpu_profile.all.count);
+
 	show_histogram("Instruction cache hits per instruction",
 		       ARRAY_SIZE(cpu_profile.i_hit_counts), cpu_profile.i_hit_counts);
 	show_histogram("Instruction cache misses per instruction",
@@ -1107,6 +1107,9 @@ void Profile_CpuUpdate(void)
 	}
 
 	/* tracking for histogram, check for array overflows */
+	if (!(i_hits || i_misses)) {
+		cpu_profile.i_prefetched++;
+	}
 	if (unlikely(i_hits >= MAX_I_HITS)) {
 		i_hits = warn_too_large("number of CPU instruction cache hits", i_hits, MAX_I_HITS, prev_pc, pc);
 	}
