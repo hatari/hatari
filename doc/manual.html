@@ -3267,28 +3267,32 @@ When you're back in debugger, you can inspect the collected profile data:
 'profile' - profile CPU code
 Usage:  profile &lt;subcommand&gt; [parameter]
 
-        Subcommands:
-	        - on
+	Subcommands:
+		- on
 		- off
 		- counts [count]
 		- cycles [count]
-		- misses [count]
+		- i-misses [count]
+		- d-hits [count]
 		- symbols [count]
 		- addresses [address]
 		- callers
+		- caches
 		- stack
 		- stats
 		- save &lt;file&gt;
 		- loops &lt;file&gt; [CPU limit] [DSP limit]
 
-        'on' & 'off' enable and disable profiling.  Data is collected
+	'on' &uml; 'off' enable and disable profiling.  Data is collected
 	until debugger is entered again at which point you get profiling
 	statistics ('stats') summary.
 
 	Then you can ask for list of the PC addresses, sorted either by
-	execution 'counts', used 'cycles' or cache 'misses'. First can
-	be limited just to named addresses with 'symbols'.  Optional
-	count will limit how many items will be shown.
+	execution 'counts', used 'cycles', i-cache misses or d-cache hits.
+	First can be limited just to named addresses with 'symbols'.
+	Optional count will limit how many items will be shown.
+
+	'caches' shows histogram of CPU cache usage.
 
 	'addresses' lists the profiled addresses in order, with the
 	instructions (currently) residing at them.  By default this
@@ -3330,15 +3334,16 @@ around top addresses:
 <pre>
 &gt; profile addresses 0xe06f04
 # disassembly with profile data:
-# &lt;instructions percentage&gt;% (&lt;sum of instructions&gt;, &lt;sum of cycles&gt;, &lt;sum of i-cache misses&gt;)
-$e06f04 :             bra.s     $e06f10                    0.00% (48, 576, 0)
-$e06f06 :             move.b    $fffffa01.w,d1            12.11% (555708, 8902068, 0)
-$e06f0a :             btst      #5,d1                     12.11% (555708, 6685268, 0)
-$e06f0e :             beq.s     $e06f1e                   12.11% (555708, 4457312, 0)
-$e06f10 :             move.l    $4ba,d1                   12.11% (555724, 11125668, 0)
-$e06f16 :             cmp.l     d1,d0                     12.11% (555724, 4461708, 0)
-$e06f18 :             bgt.s     $e06f06                   12.11% (555724, 4455040, 0)
-$e06f1a :             moveq     #1,d0                      0.00% (16, 64, 0)
+# &lt;instructions percentage&gt;% (&lt;sum of instructions&gt;, &lt;sum of cycles&gt;, &lt;sum of i-cache misses&gt;, &lt;sum of d-cache hits&gt;)
+
+$e06f04 :             bra.s     $e06f10                    0.00% (48, 576, 0, 0)
+$e06f06 :             move.b    $fffffa01.w,d1            12.11% (555708, 8902068, 0, 0)
+$e06f0a :             btst      #5,d1                     12.11% (555708, 6685268, 0, 0)
+$e06f0e :             beq.s     $e06f1e                   12.11% (555708, 4457312, 0, 0)
+$e06f10 :             move.l    $4ba,d1                   12.11% (555724, 11125668, 0, 0)
+$e06f16 :             cmp.l     d1,d0                     12.11% (555724, 4461708, 0, 0)
+$e06f18 :             bgt.s     $e06f06                   12.11% (555724, 4455040, 0, 0)
+$e06f1a :             moveq     #1,d0                      0.00% (16, 64, 0, 0)
 Disassembled 8 (of active 14240) CPU addresses.
 </pre>
 <p>
@@ -3412,6 +3417,11 @@ Finalizing costs for 12 non-returned functions:
 
 <p>("profile stack" command can be used in breakpoints with :noinit
 option to show backtraces during caller profiling.)</p>
+
+<p>Note: rest of this subsection is about caller information format
+which is mainly of interest for people writing profiling
+post-processing tools.  Come back here if you think there's
+some problem with callgraphs produced by those tools.</p>
 
 <p>Other information collected during profiling is shown with
 following command:</p>
@@ -4094,6 +4104,19 @@ lock  file stack.ini
 </pre>
 Please see also <a href="#Chaining_breakpoints">Chaining breakpoints</a>
 section for more examples on what you can do with the debugger input files.
+</dd>
+
+<dt><em>Adding cycle information to disassembly</em></dt>
+<dd>Profiling collects cycle usage information for all executed instructions:
+<pre>
+profile  on
+c
+[after a while, use AltGr+Pause to get back to debugger]
+d
+[if you want to see just the executed instructions]
+profile addresses
+</pre>
+Please see <a href="#Profiling">Profiling</a> section for more info.
 </dd>
 
 <dt><em>Finding where a program or the OS is stuck</em></dt>
