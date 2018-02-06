@@ -682,9 +682,9 @@ int Profile_Command(int nArgc, char *psArgs[], bool bForDsp)
 			lower = *disasm_addr;
 		}
 		if (bForDsp) {
-			*disasm_addr = Profile_DspShowAddresses(lower, upper, stdout);
+			*disasm_addr = Profile_DspShowAddresses(lower, upper, stdout, PAGING_ENABLED);
 		} else {
-			*disasm_addr = Profile_CpuShowAddresses(lower, upper, stdout);
+			*disasm_addr = Profile_CpuShowAddresses(lower, upper, stdout, PAGING_ENABLED);
 		}
 		return DEBUGGER_CMDCONT;
 

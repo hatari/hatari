@@ -358,7 +358,7 @@ void Profile_CpuShowCaches(void) {
  * Show CPU instructions which execution was profiled, in the address order,
  * starting from the given address.  Return next disassembly address.
  */
-Uint32 Profile_CpuShowAddresses(Uint32 lower, Uint32 upper, FILE *out)
+Uint32 Profile_CpuShowAddresses(Uint32 lower, Uint32 upper, FILE *out, paging_t use_paging)
 {
 	int oldcols[DISASM_COLUMNS], newcols[DISASM_COLUMNS];
 	int show, shown, addrs, active;
@@ -387,6 +387,9 @@ Uint32 Profile_CpuShowAddresses(Uint32 lower, Uint32 upper, FILE *out)
 		if (!show || show > active) {
 			show = active;
 		}
+	}
+	if (use_paging == PAGING_DISABLED) {
+		show = INT_MAX;
 	}
 
 	/* get/change columns */
@@ -753,7 +756,7 @@ void Profile_CpuSave(FILE *out)
 	} else if (end < CART_END) {
 		end = CART_END;
 	}
-	Profile_CpuShowAddresses(0, end-2, out);
+	Profile_CpuShowAddresses(0, end-2, out, PAGING_DISABLED);
 	Profile_CpuShowCallers(out);
 }
 

@@ -85,8 +85,13 @@ extern void Profile_DspGetPointers(bool **enabled, Uint32 **disasm_addr);
 extern void Profile_CpuGetCallinfo(callinfo_t **callinfo, const char* (**get_symbol)(Uint32, symtype_t));
 extern void Profile_DspGetCallinfo(callinfo_t **callinfo, const char* (**get_symbol)(Uint32, symtype_t));
 
+typedef enum {
+	PAGING_DISABLED,
+	PAGING_ENABLED
+} paging_t;
+
 /* internal CPU profile results */
-extern Uint32 Profile_CpuShowAddresses(Uint32 lower, Uint32 upper, FILE *out);
+extern Uint32 Profile_CpuShowAddresses(Uint32 lower, Uint32 upper, FILE *out, paging_t use_paging);
 extern void Profile_CpuShowCounts(int show, bool only_symbols);
 extern void Profile_CpuShowCycles(int show);
 extern void Profile_CpuShowInstrMisses(int show);
@@ -97,7 +102,7 @@ extern void Profile_CpuShowCallers(FILE *fp);
 extern void Profile_CpuSave(FILE *out);
 
 /* internal DSP profile results */
-extern Uint16 Profile_DspShowAddresses(Uint32 lower, Uint32 upper, FILE *out);
+extern Uint16 Profile_DspShowAddresses(Uint32 lower, Uint32 upper, FILE *out, paging_t use_paging);
 extern void Profile_DspShowCounts(int show, bool only_symbols);
 extern void Profile_DspShowCycles(int show);
 extern void Profile_DspShowStats(void);

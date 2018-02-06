@@ -12,6 +12,7 @@ const char Profiledsp_fileid[] = "Hatari profiledsp.c : " __DATE__ " " __TIME__;
 
 #include <stdio.h>
 #include <inttypes.h>
+#include <limits.h>
 #include <assert.h>
 #include "main.h"
 #include "configuration.h"
@@ -117,7 +118,7 @@ void Profile_DspShowStats(void)
  * Show DSP instructions which execution was profiled, in the address order,
  * starting from the given address.  Return next disassembly address.
  */
-Uint16 Profile_DspShowAddresses(Uint32 addr, Uint32 upper, FILE *out)
+Uint16 Profile_DspShowAddresses(Uint32 addr, Uint32 upper, FILE *out, paging_t use_paging)
 {
 	int show, shown, addrs, active;
 	dsp_profile_item_t *data;
@@ -143,6 +144,9 @@ Uint16 Profile_DspShowAddresses(Uint32 addr, Uint32 upper, FILE *out)
 		if (!show || show > active) {
 			show = active;
 		}
+	}
+	if (use_paging == PAGING_DISABLED) {
+		show = INT_MAX;
 	}
 
 	fputs("# disassembly with profile data: <instructions percentage>% (<sum of instructions>, <sum of cycles>, <max cycle difference>)\n", out);
@@ -333,7 +337,7 @@ void Profile_DspSave(FILE *out)
 	 * p:0202  0aa980 000200  (07 cyc)  jclr #0,x:$ffe9,p:$0200  0.00% (6, 42)
 	 */
 	fputs("Field regexp:\t^p:([0-9a-f]+) .*% \\((.*)\\)$\n", out);
-	Profile_DspShowAddresses(0, DSP_PROFILE_ARR_SIZE, out);
+	Profile_DspShowAddresses(0, DSP_PROFILE_ARR_SIZE, out, PAGING_DISABLED);
 	Profile_DspShowCallers(out);
 }
 
