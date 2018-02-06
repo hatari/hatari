@@ -53,6 +53,10 @@ const char Profilecpu_fileid[] = "Hatari profilecpu.c : " __DATE__ " " __TIME__;
 static bool skip_assert;
 #endif
 
+/* whether to track & show all cache stats for all instructions */
+#define DEBUG_CACHE 0
+
+
 static callinfo_t cpu_callinfo;
 
 #define MAX_CPU_PROFILE_VALUE 0xFFFFFFFF
@@ -60,10 +64,16 @@ static callinfo_t cpu_callinfo;
 typedef struct {
 	Uint32 count;	/* how many times this address instruction is executed */
 	Uint32 cycles;	/* how many CPU cycles was taken at this address */
-	Uint32 i_misses;  /* how many CPU instruction cache misses happened at this address */
-	Uint32 d_hits;  /* how many CPU data cache hits happened at this address */
+#if DEBUG_CACHE		  /* track also less relevant cache events */
+	Uint32 i_hits;    /* how many CPU i-cache hits happened at this address */
+	Uint32 d_misses;  /* how many CPU d-cache misses happened at this address */
+#endif
+	Uint32 i_misses;  /* how many CPU i-cache misses happened at this address */
+	Uint32 d_hits;    /* how many CPU d-cache hits happened at this address */
 } cpu_profile_item_t;
 
+
+/* max count of hits/misses single instruction can trigger at once */
 #define MAX_I_HITS   8
 #define MAX_I_MISSES 8
 #define MAX_D_HITS   32
@@ -189,26 +199,40 @@ static Uint32 index2address(Uint32 idx)
 /* ------------------ CPU profile results ----------------- */
 
 /**
- * Get CPU cycles, count and count percentage for given address.
+ * Write string containing CPU cache stats, cycles, count, count percentage
+ * for given address to provided buffer.
+ *
  * Return true if data was available and non-zero, false otherwise.
  */
-bool Profile_CpuAddressData(Uint32 addr, float *percentage, Uint32 *count, Uint32 *cycles, Uint32 *i_misses, Uint32 *d_hits)
+bool Profile_CpuAddressDataStr(char *buffer, size_t maxlen, Uint32 addr)
 {
+	cpu_profile_item_t *item;
+	float percentage;
 	Uint32 idx;
+
+	assert(buffer && maxlen);
 	if (!cpu_profile.data) {
 		return false;
 	}
 	idx = address2index(addr);
-	*i_misses = cpu_profile.data[idx].i_misses;
-	*d_hits = cpu_profile.data[idx].d_hits;
-	*cycles = cpu_profile.data[idx].cycles;
-	*count = cpu_profile.data[idx].count;
+	item = &(cpu_profile.data[idx]);
+
 	if (cpu_profile.all.count) {
-		*percentage = 100.0*(*count)/cpu_profile.all.count;
+		percentage = 100.0 * item->count / cpu_profile.all.count;
 	} else {
-		*percentage = 0.0;
+		percentage = 0.0;
 	}
-	return (*count > 0);
+#if DEBUG_CACHE
+	snprintf(buffer, maxlen, "%5.2f%% (%u, %u, %u, %u, %u, %u)",
+		 percentage, item->count, item->cycles,
+		 item->i_hits, item->i_misses,
+		 item->d_hits, item->d_misses);
+#else
+	snprintf(buffer, maxlen, "%5.2f%% (%u, %u, %u, %u)",
+		 percentage, item->count, item->cycles,
+		 item->i_misses, item->d_hits);
+#endif
+	return (item->count > 0);
 }
 
 /**
@@ -1043,18 +1067,6 @@ void Profile_CpuUpdate(void)
 	d_hits = CpuInstruction.D_Cache_hit;
 	i_misses = CpuInstruction.I_Cache_miss;
 	d_misses = CpuInstruction.D_Cache_miss;
-#if DEBUG
-	if (i_hits + i_misses == 0) {
-		Uint32 nextpc;
-		fprintf(stderr, "WARNING: zero instruction cache hits & misses:\n");
-		Disasm(stderr, prev_pc, &nextpc, 1);
-	}
-	if (d_hits + d_misses == 0) {
-		Uint32 nextpc;
-		fprintf(stderr, "WARNING: zero data cache hits & misses\n");
-		Disasm(stderr, prev_pc, &nextpc, 1);
-	}
-#endif
 
 	/* reset cache stats after reading them (for the next instruction) */
 	CpuInstruction.I_Cache_hit = 0;
@@ -1063,6 +1075,18 @@ void Profile_CpuUpdate(void)
 	CpuInstruction.D_Cache_miss = 0;
 
 	/* tracked for every address */
+# if DEBUG_CACHE
+	if (likely(prev->i_hits < MAX_CPU_PROFILE_VALUE - i_hits)) {
+		prev->i_hits += i_hits;
+	} else {
+		prev->i_hits = MAX_CPU_PROFILE_VALUE;
+	}
+	if (likely(prev->d_misses < MAX_CPU_PROFILE_VALUE - d_misses)) {
+		prev->d_misses += d_misses;
+	} else {
+		prev->d_misses = MAX_CPU_PROFILE_VALUE;
+	}
+# endif
 	if (likely(prev->i_misses < MAX_CPU_PROFILE_VALUE - i_misses)) {
 		prev->i_misses += i_misses;
 	} else {
