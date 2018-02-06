@@ -247,24 +247,24 @@ static void show_cpu_area_stats(profile_area_t *area)
 	fprintf(stderr, "- active address range:\n  0x%06x-0x%06x\n",
 		index2address(area->lowest),
 		index2address(area->highest));
-	fprintf(stderr, "- active instruction addresses:\n  %d (%.2f%% of all)\n",
+	fprintf(stderr, "- active instruction addresses:\n  %d (%.2f%% of all areas)\n",
 		area->active,
 		100.0 * area->active / cpu_profile.active);
-	fprintf(stderr, "- executed instructions:\n  %"PRIu64" (%.2f%% of all)\n",
+	fprintf(stderr, "- executed instructions:\n  %"PRIu64" (%.2f%% of all areas)\n",
 		area->counters.count,
 		100.0 * area->counters.count / cpu_profile.all.count);
 	/* CPU cache in use? */
 	if (cpu_profile.all.i_misses) {
-		fprintf(stderr, "- instruction cache misses:\n  %"PRIu64" (%.2f%% of all)\n",
+		fprintf(stderr, "- instruction cache misses:\n  %"PRIu64" (%.2f%% of all areas)\n",
 			area->counters.i_misses,
 			100.0 * area->counters.i_misses / cpu_profile.all.i_misses);
 	}
 	if (cpu_profile.all.d_hits) {
-		fprintf(stderr, "- data cache hits:\n  %"PRIu64" (%.2f%% of all)\n",
+		fprintf(stderr, "- data cache hits:\n  %"PRIu64" (%.2f%% of all areas)\n",
 			area->counters.d_hits,
 			100.0 * area->counters.d_hits / cpu_profile.all.d_hits);
 	}
-	fprintf(stderr, "- used cycles:\n  %"PRIu64" (%.2f%% of all)\n  = %.5fs\n",
+	fprintf(stderr, "- used cycles:\n  %"PRIu64" (%.2f%% of all areas)\n  = %.5fs\n",
 		area->counters.cycles,
 		100.0 * area->counters.cycles / cpu_profile.all.cycles,
 		(double)area->counters.cycles / MachineClocks.CPU_Freq_Emul);
@@ -334,6 +334,11 @@ void Profile_CpuShowCaches(void)
 		fprintf(stderr, "No instruction/data cache information.\n");
 		return;
 	}
+	fprintf(stderr,
+		"\nNote:\n"
+		"- these statistics include all profiled instructions, but\n"
+		"- data cache events can happen only for instructions that do memory reads\n"
+	       );
 	show_histogram("Instruction cache hits per instruction",
 		       ARRAY_SIZE(cpu_profile.i_hit_counts), cpu_profile.i_hit_counts);
 	show_histogram("Instruction cache misses per instruction",
@@ -1118,12 +1123,12 @@ void Profile_CpuUpdate(void)
 		d_misses = warn_too_large("number of CPU data cache misses", d_misses, MAX_D_MISSES, prev_pc, pc);
 	}
 	cpu_profile.d_miss_counts[d_misses]++;
-#endif
+#endif   /* ENABLE_WINUAE_CPU */
 
 	if (cpu_callinfo.sites) {
 		collect_calls(prev_pc, counters);
 	}
-	/* counters are increased after caller info is processed,
+	/* total counters are increased after caller info is processed,
 	 * otherwise cost for the instruction calling the callee
 	 * doesn't get accounted to caller (but callee).
 	 */
