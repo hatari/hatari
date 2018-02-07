@@ -100,9 +100,9 @@ quite a lot of CPU power at that time. See Appendix B for details on emulation
 in general.
 </p>
 <p>
-Unlike many other Atari ST emulators which try to give you a good
+Unlike many other Atari emulators which try to give you a good
 environment for running GEM applications, Hatari tries to emulate the hardware
-of a ST as close as possible so that it is able to run most of the old ST games
+as close as possible so that it is able to run most of the old games
 and demos. Of course you can run normal GEM applications with Hatari, too.
 </p>
 
@@ -119,7 +119,8 @@ and demos. Of course you can run normal GEM applications with Hatari, too.
   <li>512 color ST palette</li>
   <li>Spec512 mode support for low and medium resolutions</li>
   <li>many raster effects </li>
-  <li>scaling of low resolutions by factor two</li>
+  <li>scaling of low ST resolutions by factor two (with SDL1)
+      or to any size (with SDL2)</li>
   <li>interleaved lines rendering of ST-medium and (scaled) ST-low
     resolutions for the TV "monitor type"</li>
   <li>Blitter chip emulation</li>
@@ -196,6 +197,10 @@ second MFP and the SCC UARTs is not emulated yet.
   <li>Experimental IDE master and slave emulation for hard drive support</li>
   <li>TOS versions 4.00, 4.02, 4.04 and 4.92 (and EmuTOS) can be used in Falcon mode.</li>
 </ul>
+<p>
+Both TT and Falcon emulation support NVRAM for persistent OS configuration
+and RTC (real time clock).
+</p>
 
 <p>See the developers' <span class="file">doc/todo.txt</span> file
 (included with Hatari sources) for the details on the few remaining
@@ -240,7 +245,12 @@ decrease AVI video recording file sizes. You can get it from
 <li>The GNU Readline library for Hatari debugger command line editing.</li>
 <li>The Xlib library to support Hatari Python UI window embedding
 on systems with the X window system (Linux and other unixes).</li>
-<li>The portaudio library for Falcon microphone recording support</li>
+<li>The PortMidi library required for MIDI support on macOS and Windows
+<a href="http://portmedia.sourceforge.net/">http://portmedia.sourceforge.net/</a>.</li>
+<li>The portaudio library for Falcon microphone recording support.</li>
+<li>The udev library for NatFeats SCSI driver media change detection (Linux).</li>
+<li>The IPF support library
+<a href="http://www.softpres.org/download">http://www.softpres.org/download</a>.</li>
 </ul>
 <p>
 The versions available in your Linux distribution will be sufficient
@@ -287,18 +297,18 @@ of the emulated Atari.
 <p>
 Unfortunately it is not possible to ship an original ROM
 image with the Hatari package since these images are still copyrighted.
-But you can easily create an image with a real ST and one of those various
-ROM-image programs for the ST (search for "TOSDUMP" with your
-favourite internet search engine). If your old ST does not work anymore, you
-can also try to search the internet directly for corresponding TOS ROM image,
-but don't ask the Hatari team where to get one. </p>
+But you can easily create an image with a real Atari machine and one of
+those various ROM-image programs for them (search for "TOSDUMP" with your
+favourite internet search engine).</p>
 <p> Another solution is EmuTOS, which is also shipped with the official
 release versions of Hatari. EmuTOS is an open-source TOS clone. You can find
 it at:
 <a href="http://emutos.sourceforge.net/">http://emutos.sourceforge.net/</a>.
-It is not the best solution for playing games or running other old software
-due to compatibility issues (see <span class="file">emutos.txt</span> for
-more details), but it's free and compatible with Hatari.</p>
+It's not the best solution for Falcon emulation, playing old games
+or running other old software due to compatibility issues (see
+<span class="file">emutos.txt</span> for more details),
+but it's free, compatible with Hatari, doesn't require driver to
+support harddisk images, and it boots much faster than original TOS.</p>
 <p>If you do not specify a TOS image on the commandline and Hatari
 cannot find a suitable TOS image in the default dir, you'll get the
 chance to select a TOS image file from the GUI. </p>

@@ -131,9 +131,12 @@ was integrated into the new WinUAE CPU core. Some improvements were
 also added to the new CPU Core, greatly improving cycle accuracy and low
 level 680xx emulation.
 
-As such, the new CPU core is now the default for all emulated machines and
-the old CPU core should be removed soon (it can still be used
-by running "./configure --enable-old-uae-cpu")
+Therefore, the new CPU core is now the default for all emulated machines.
+
+Old CPU core can still be used by running "./configure --enable-old-uae-cpu"
+which may be useful on weakest machines too slow to run the new CPU core
+at acceptable speed.  Support for old CPU core will be removed soon though
+as it's not anymore properly tested.
 
 
  3.2) IPF support using capsimage library
