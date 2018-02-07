@@ -2061,15 +2061,10 @@ GEMDOS HD emulated C: and D: drives.
 </p>
 <p>
 GEMDOS HD emulation is an easy way to share files between the
-host system and the emulated Atari, but there are also some known
-limitations which are due to the way GEMDOS HD emulation is
-implemented:
+host system and the emulated Atari, but there are also several
+<strong>limitations</strong>:
 </p>
 <ul>
-<li>Fforce() file handle redirection works <em>only</em> for standard
-handles used with GEMDOS <em>file</em> functions, like Fwrite() to standard
-output that is redirected to a file.  File redirection is NOT supported
-e.g. for GEMDOS Ccon* console functions.
 <li>Directory entries are returned in a (case-insensitively) sorted
 order, for consistency.  E.g. moving files to a different directory and
 back (without changing their names) like AUTOSORT does, doesn't change
@@ -2094,6 +2089,16 @@ with GEMDOS HD partitions</a>.</li>
 <li><em>The GEMDOS HD emulation does not work (very well) with TOS
 1.00 and 1.02</em>.  Use at least TOS 1.04 if you want the GEMDOS HD
 emulation to work properly.</li>
+<li>Fforce() file handle redirection works <em>only</em> for standard
+handles used with GEMDOS <em>file</em> functions, such as Fwrite() to standard
+output that is redirected to a file.  File redirection is NOT supported
+e.g. for GEMDOS Ccon* console functions.
+<li>Host and emulation have their own clocks, which will drift apart
+after emulation is started, especially when emulation is
+fast-forwarded or paused.  Because of this, anything inside emulation
+that relies on file timestamps (e.g. build utilities) may not work as
+expected if you modify the files on the host after emulation is
+already running.
 </ul>
 <p>
 If your programs complain that they could not find/read/write
