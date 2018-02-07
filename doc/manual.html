@@ -3954,12 +3954,11 @@ a  $12345 :6
 </dd>
 
 <dt><em>Stopping when specific exception happens</em></dt>
-<dd>Hatari's -D option doesn't invoke debugger on all exceptions and
-doesn't allow invoking debugger just for specific exceptions.  To
-stop at specific exception, one can check when it's called.
-At the start of memory is the CPU exception table for exception
-handler addresses, so to stop e.g. at bus error with some extra
-information, one can use following:
+<dd>If one wants a specific breakpoint to trigger on a specific
+exception, one can check when its handler address is called by the
+CPU. At the start of memory is the CPU exception table for exception
+vectors.  So, to stop e.g. at bus error with some extra information,
+one can use following:
 <pre>
 history  on
 b  pc=($8)
@@ -3968,7 +3967,11 @@ After bus error invokes debugger, 'history' command can then be used
 to see (executed memory addresses with their current) instructions
 leading to the error.  The most interesting vector addresses are:
 $8 (Bus error), $C (Address error), $10 (Illegal instruction),
-$14 (Division by zero).  See also --debug-except option.
+$14 (Division by zero).<br>
+NOTE: Normally, to invoke debugger for larger set of exceptions, one
+would use Hatari's "--debug-except" option to specify on which
+exceptions debugger is invoked, and "setopt -D" to enable that on
+run-time.
 </dd>
 
 <dt><em>Stopping when register has a specific value</em></dt>
@@ -3982,6 +3985,14 @@ b  d1 = 5
 <dd>To stop when e.g. D1 register value changes, set a breakpoint on:
 <pre>
 b  d1 ! d1
+</pre>
+</dd>
+
+<dt><em>Stopping when part of register value changes</em></dt>
+<dd>To stop when e.g. D1 register lowest byte changes, set a
+breakpoint on masked lowest 8 bits:
+<pre>
+b  d1 & 0xff ! d1 & 0xff
 </pre>
 </dd>
 
@@ -4015,6 +4026,17 @@ b  ($ff820a).b & 2 ! ($ff820a).b & 2
 the ":trace" breakpoint option:
 <pre>
 b  ($ff820a).b & 2 ! ($ff820a).b & 2  :trace
+</pre>
+</dd>
+
+<dt><em>Viewing OS structure and IO register values</em></dt>
+To see e.g. basepage for currently running program:
+<pre>
+info basepage
+</pre>
+<dd>To see e.g. all Falcon Videl register values, use:
+<pre>
+info videl
 </pre>
 </dd>
 
@@ -4113,7 +4135,7 @@ profile  on
 c
 [after a while, use AltGr+Pause to get back to debugger]
 d
-[if you want to see just the executed instructions]
+[or if you want to see just the executed instructions]
 profile addresses
 </pre>
 Please see <a href="#Profiling">Profiling</a> section for more info.
