@@ -101,9 +101,12 @@ TOS ROM images:
   see what kind of software the Atari machines had.  EmuTOS gives
   them a legal way to test Hatari with free demos, games etc.
 
-* Convenience.  EmuTOS boots faster, doesn't need HD driver to access
-  hard disk images (with DOS MBR), and same image supports wider
-  variety of hardware than real Atari TOS versions.
+* Performance.  Latest EmuTOS version has faster disk access and
+  boots significantly faster than original TOS.
+
+* Convenience.  EmuTOS doesn't need HD driver to access hard disk
+  images (with DOS MBR), and same image supports wider variety of
+  hardware than real Atari TOS versions.
 
 * Continuity.  Users who want to continue using Atari compatible
   operating systems and need an open source replacement of TOS for
@@ -953,12 +956,11 @@ Non-working games and music programs:
 - Art for Kids demo (Bus error at $6, after vro_cpyfm)
   - with 512k image, bus errors already at startup
 - Bombaman (joystick input doesn't work in game itself):
-  http://homepage.ntlworld.com/kevcallahan/bombaman/
+  - http://homepage.ntlworld.com/kevcallahan/bombaman/
 - Cameleon (see EmuTOS incompatible.txt)
 - Hero (STOS, see EmuTOS incompatible.txt)
-- Protracker v2 STE, Equinox version
+- Protracker v2 STE, Equinox version (see EmuTOS incompatible.txt)
   - http://www.pouet.net/prod.php?which=13381
-  - see EmuTOS incompatible.txt
 - Zaptastic (input doesn't work at startup screen)
 
 
@@ -1188,7 +1190,8 @@ Games working in EmuTOS >v0.9.3:
   - crashes sometimes
 
 Chainz, Jewels, Sweety and Poker games need to be started from 640x480
-mode, otherwise EmuTOS constrains mouse movements to too small area.
+mode in EmuTOS v<0.9.9, otherwise EmuTOS constrains mouse movements to
+too small area.
 
 Games working in EmuTOS >v0.9.5:
 - GEM breakout
