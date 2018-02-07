@@ -4,7 +4,7 @@
                                 Release Notes
 
 
- Version 2.x.x (XXXX-XX-XX)
+ Version 2.1.0 (2018-02-07)
  ---------------------------
 
 Emulation:
