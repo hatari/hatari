@@ -138,22 +138,20 @@ Uint16 Profile_DspShowAddresses(Uint32 addr, Uint32 upper, FILE *out, paging_t u
 		if (upper < end) {
 			end = upper;
 		}
-		show = active;
-	} else {
-		show = DebugUI_GetPageLines(ConfigureParams.Debugger.nDisasmLines, 0);
-		if (!show || show > active) {
-			show = active;
-		}
 	}
-	if (use_paging == PAGING_DISABLED) {
-		show = INT_MAX;
+	show = INT_MAX;
+	if (use_paging == PAGING_ENABLED) {
+		show = DebugUI_GetPageLines(ConfigureParams.Debugger.nDisasmLines, 0);
+		if (!show) {
+			show = INT_MAX;
+		}
 	}
 
 	fputs("# disassembly with profile data: <instructions percentage>% (<sum of instructions>, <sum of cycles>, <max cycle difference>)\n", out);
 	shown = 2; /* first and last printf */
 
 	addrs = nextpc = 0;
-	for (; shown < show && addr < end; addr++) {
+	for (; shown < show && addrs < active && addr < end; addr++) {
 		if (!data[addr].count) {
 			continue;
 		}
@@ -170,7 +168,12 @@ Uint16 Profile_DspShowAddresses(Uint32 addr, Uint32 upper, FILE *out, paging_t u
 		addrs++;
 		shown++;
 	}
-	printf("Disassembled %d (of active %d) DSP addresses.\n", addrs, active);
+	if (addr < end) {
+		printf("Disassembled %d (of active %d) DSP addresses.\n", addrs, active);
+	} else {
+		printf("Disassembled last %d (of active %d) DSP addresses, wrapping...\n", addrs, active);
+		nextpc = 0;
+	}
 	return nextpc;
 }
 

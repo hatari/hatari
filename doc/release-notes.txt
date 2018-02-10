@@ -4,6 +4,18 @@
                                 Release Notes
 
 
+ Version 2.2.0 (2018-XX-XX)
+ ---------------------------
+
+Emulation:
+-
+
+Emulator:
+- Debugger improvements:
+  - Fix: DSP/CPU profile "addresses" commands output line count when
+    paging.  Tell also when it wraps to start
+
+
  Version 2.1.0 (2018-02-07)
  ---------------------------
 

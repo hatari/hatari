@@ -377,19 +377,18 @@ Uint32 Profile_CpuShowAddresses(Uint32 lower, Uint32 upper, FILE *out, paging_t 
 	active = cpu_profile.active;
 	if (upper) {
 		end = address2index(upper);
-		show = active;
 		if (end > size) {
 			end = size;
 		}
 	} else {
 		end = size;
-		show = DebugUI_GetPageLines(ConfigureParams.Debugger.nDisasmLines, 0);
-		if (!show || show > active) {
-			show = active;
-		}
 	}
-	if (use_paging == PAGING_DISABLED) {
-		show = INT_MAX;
+	show = INT_MAX;
+	if (use_paging == PAGING_ENABLED) {
+		show = DebugUI_GetPageLines(ConfigureParams.Debugger.nDisasmLines, 0);
+		if (!show) {
+			show = INT_MAX;
+		}
 	}
 
 	/* get/change columns */
@@ -402,7 +401,7 @@ Uint32 Profile_CpuShowAddresses(Uint32 lower, Uint32 upper, FILE *out, paging_t 
 
 	addrs = nextpc = 0;
 	idx = address2index(lower);
-	for (; shown < show && idx < end; idx++) {
+	for (; shown < show && addrs < active && idx < end; idx++) {
 		if (!data[idx].count) {
 			continue;
 		}
@@ -421,8 +420,12 @@ Uint32 Profile_CpuShowAddresses(Uint32 lower, Uint32 upper, FILE *out, paging_t 
 		shown++;
 		addrs++;
 	}
-	printf("Disassembled %d (of active %d) CPU addresses.\n", addrs, active);
-
+	if (idx < end) {
+		printf("Disassembled %d (of active %d) CPU addresses.\n", addrs, active);
+	} else {
+		printf("Disassembled last %d (of active %d) CPU addresses, wrapping...\n", addrs, active);
+		nextpc = 0;
+	}
 	/* restore disassembly columns */
 	Disasm_SetColumns(oldcols);
 	return nextpc;
