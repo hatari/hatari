@@ -20,7 +20,7 @@ if(READLINE_FOUND)
 	set(CMAKE_REQUIRED_LIBRARIES ${READLINE_LIBRARY})
 	set(CMAKE_REQUIRED_INCLUDES ${READLINE_INCLUDE_DIR})
 	check_symbol_exists(rl_filename_completion_function
-			    "readline.h"
+			    "stdio.h;readline.h"
 			    HAVE_RL_COMPLETION_FUNCTION)
 	# If linking did not work, we might have to link
 	# explicitely against libtermcap or libncurses
