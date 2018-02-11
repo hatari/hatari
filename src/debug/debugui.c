@@ -809,8 +809,12 @@ static void DebugUI_FreeCommand(char *input)
  */
 static char *DebugUI_GetCommand(char *input)
 {
+	/* We need this indirection for libedit's rl_readline_name which is
+	 * not declared as "const char *" (i.e. this is necessary for macOS) */
+	static char hatari_readline_name[] = "Hatari";
+
 	/* Allow conditional parsing of the ~/.inputrc file. */
-	rl_readline_name = "Hatari";
+	rl_readline_name = hatari_readline_name;
 	
 	/* Tell the completer that we want a crack first. */
 	rl_attempted_completion_function = DebugUI_Completion;
