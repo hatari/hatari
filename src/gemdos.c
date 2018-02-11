@@ -3435,6 +3435,7 @@ void GemDOS_OpCode(void)
 			  STMemory_ReadLong(Params),
 			  STMemory_ReadLong(Params+SIZE_LONG),
 			  M68000_GetPC());
+		break;
 	case 0x4A:	/* Mshrink */
 		/* Mshrink's two pointers are prefixed by reserved zero word:
 		 * http://toshyp.atari.org/en/00500c.html#Bindings_20for_20Mshrink
