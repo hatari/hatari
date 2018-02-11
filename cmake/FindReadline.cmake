@@ -14,10 +14,14 @@ FIND_PACKAGE_HANDLE_STANDARD_ARGS(READLINE DEFAULT_MSG
 
 MARK_AS_ADVANCED(READLINE_LIBRARY READLINE_INCLUDE_DIR)
 
+INCLUDE(CheckSymbolExists)
+
 if(READLINE_FOUND)
-	set(CMAKE_REQUIRED_LIBRARIES "readline")
-	check_function_exists(rl_filename_completion_function
-	                      HAVE_RL_COMPLETION_FUNCTION)
+	set(CMAKE_REQUIRED_LIBRARIES ${READLINE_LIBRARY})
+	set(CMAKE_REQUIRED_INCLUDES ${READLINE_INCLUDE_DIR})
+	check_symbol_exists(rl_filename_completion_function
+			    "readline.h"
+			    HAVE_RL_COMPLETION_FUNCTION)
 	# If linking did not work, we might have to link
 	# explicitely against libtermcap or libncurses
 	if(NOT HAVE_RL_COMPLETION_FUNCTION)
@@ -25,8 +29,9 @@ if(READLINE_FOUND)
 		find_package(Termcap)
 		if(TERMCAP_FOUND)
 			set(CMAKE_REQUIRED_LIBRARIES "readline" "termcap")
-			check_function_exists(rl_filename_completion_function
-			                      HAVE_RL_COMPLETION_FUNCTION_TERMCAP)
+			check_symbol_exists(rl_filename_completion_function
+					    "termcap.h"
+					    HAVE_RL_COMPLETION_FUNCTION_TERMCAP)
 		endif(TERMCAP_FOUND)
 		if(HAVE_RL_COMPLETION_FUNCTION_TERMCAP)
 			set(READLINE_LIBRARY ${READLINE_LIBRARY} ${TERMCAP_LIBRARY})
@@ -36,11 +41,15 @@ if(READLINE_FOUND)
 			if(CURSES_FOUND)
 				if(CURSES_NCURSES_LIBRARY)
 					set(CMAKE_REQUIRED_LIBRARIES "readline" "ncurses")
+              				check_symbol_exists(rl_filename_completion_function
+							    "ncurses.h"
+ 				                    	    HAVE_RL_COMPLETION_FUNCTION_CURSES)
 				else()
 					set(CMAKE_REQUIRED_LIBRARIES "readline" "curses")
+					check_symbol_exists(rl_filename_completion_function
+							    "curses.h"
+				                    	    HAVE_RL_COMPLETION_FUNCTION_CURSES)
 				endif()
-				check_function_exists(rl_filename_completion_function
-				                      HAVE_RL_COMPLETION_FUNCTION_CURSES)
 				if(HAVE_RL_COMPLETION_FUNCTION_CURSES)
 					set(READLINE_LIBRARY
 					    ${READLINE_LIBRARY} ${CURSES_LIBRARIES})
@@ -50,4 +59,5 @@ if(READLINE_FOUND)
 		endif(HAVE_RL_COMPLETION_FUNCTION_TERMCAP)
 	endif(NOT HAVE_RL_COMPLETION_FUNCTION)
 	set(CMAKE_REQUIRED_LIBRARIES "")
+	set(CMAKE_REQUIRED_INCLUDES "")
 endif(READLINE_FOUND)

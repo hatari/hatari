@@ -6,7 +6,7 @@
 #  PORTAUDIO_FOUND        - True if portaudio found.
 
 include(FindPackageHandleStandardArgs)
-include(CheckFunctionExists)
+include(CheckSymbolExists)
 
 if(PORTAUDIO_INCLUDE_DIR)
   # Already in cache, be silent
@@ -25,10 +25,12 @@ find_package_handle_standard_args(PORTAUDIO DEFAULT_MSG
 # Check if it's really a portaudio2 installation...
 if(PORTAUDIO_FOUND)
 	set(CMAKE_REQUIRED_LIBRARIES ${PORTAUDIO_LIBRARY})
-	check_function_exists(Pa_GetDefaultInputDevice HAVE_PA_GETDEFAULTINPUTDEVICE)
+	set(CMAKE_REQUIRED_INCLUDES ${PORTAUDIO_INCLUDE_DIR})
+	check_symbol_exists(Pa_GetDefaultInputDevice "portaudio.h" HAVE_PA_GETDEFAULTINPUTDEVICE)
 	if (NOT HAVE_PA_GETDEFAULTINPUTDEVICE)
 		unset (PORTAUDIO_FOUND)
 	endif(NOT HAVE_PA_GETDEFAULTINPUTDEVICE)
+	set(CMAKE_REQUIRED_INCLUDES "")
 	set(CMAKE_REQUIRED_LIBRARIES "")
 endif(PORTAUDIO_FOUND)
 

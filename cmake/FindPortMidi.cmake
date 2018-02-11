@@ -6,7 +6,7 @@
 #  PORTMIDI_FOUND       - True if portmidi found.
 
 include(FindPackageHandleStandardArgs)
-include(CheckFunctionExists)
+include(CheckSymbolExists)
 
 if(PORTMIDI_INCLUDE_DIR)
   # Already in cache, be silent
@@ -25,11 +25,13 @@ find_package_handle_standard_args(PORTMIDI DEFAULT_MSG
 # Check if it's really a portmidi installation...
 if(PORTMIDI_FOUND)
 	set(CMAKE_REQUIRED_LIBRARIES ${PORTMIDI_LIBRARY})
-	check_function_exists(Pm_Initialize HAVE_PM_INITIALIZE)
+	set(CMAKE_REQUIRED_INCLUDES ${PORTMIDI_INCLUDE_DIR})
+	check_symbol_exists(Pm_Initialize "portmidi.h" HAVE_PM_INITIALIZE)
 	if (NOT HAVE_PM_INITIALIZE)
 		unset (PORTMIDI_FOUND)
 	endif(NOT HAVE_PM_INITIALIZE)
 	set(CMAKE_REQUIRED_LIBRARIES "")
+	set(CMAKE_REQUIRED_INCLUDES "")
 endif(PORTMIDI_FOUND)
 
 mark_as_advanced(PORTMIDI_LIBRARY PORTMIDI_INCLUDE_DIR)
