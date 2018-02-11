@@ -618,15 +618,6 @@ void Main_EventHandler(void)
 			break;
 
 		 case SDL_WINDOWEVENT:
-			/* Note: any changes here should most likely be done
-			 * also in sdlgui.c::SDLGui_DoDialog()
-			 */
-			if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED
-			    || event.window.event == SDL_WINDOWEVENT_RESTORED
-			    || event.window.event == SDL_WINDOWEVENT_EXPOSED)
-			{
-				SDL_UpdateRect(sdlscrn, 0, 0, 0, 0);
-			}
 			if (event.window.event == SDL_WINDOWEVENT_EXPOSED
 			    && !ConfigureParams.Screen.bUseSdlRenderer)
 			{
@@ -635,6 +626,15 @@ void Main_EventHandler(void)
 				sdlscrn = SDL_GetWindowSurface(sdlWindow);
 				Screen_SetFullUpdate();
 				Statusbar_Init(sdlscrn);
+			}
+			/* Note: any changes here should most likely be done
+			 * also in sdlgui.c::SDLGui_DoDialog()
+			 */
+			if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED
+			    || event.window.event == SDL_WINDOWEVENT_RESTORED
+			    || event.window.event == SDL_WINDOWEVENT_EXPOSED)
+			{
+				SDL_UpdateRect(sdlscrn, 0, 0, 0, 0);
 			}
 			bContinueProcessing = true;
 			break;
