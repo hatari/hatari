@@ -219,7 +219,7 @@ int DebugDsp_MemDump(int nArgc, char *psArgs[])
 				range = psArgs[1] + 2;
 				break;
 			}
-			/* pass-through */
+			/* fall through */
 		default:
 			return DebugUI_PrintCmdHelp(psArgs[0]);
 	}

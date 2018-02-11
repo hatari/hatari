@@ -1997,6 +1997,7 @@ static int FDC_UpdateMotorStop ( void )
 	 case FDCEMU_RUN_MOTOR_STOP:
 		FDC.IndexPulse_Counter = 0;
 		FDC.CommandState = FDCEMU_RUN_MOTOR_STOP_WAIT;
+		/* Continue to next state */
 	 case FDCEMU_RUN_MOTOR_STOP_WAIT:
 		if ( FDC.IndexPulse_Counter < FDC_DELAY_IP_MOTOR_OFF )
 		{
@@ -2067,7 +2068,8 @@ static int FDC_UpdateRestoreCmd ( void )
 		/* can't be interrupted anymore by another command (else TR value will be wrong */
 		/* for other type I commands) */
 		FDC.TR = 0xff;				
-		FDC.CommandState = FDCEMU_RUN_RESTORE_SEEKTOTRACKZERO_LOOP;	/* continue in the _LOOP state */
+		FDC.CommandState = FDCEMU_RUN_RESTORE_SEEKTOTRACKZERO_LOOP;
+		/* Continue in the _LOOP state */
 	 case FDCEMU_RUN_RESTORE_SEEKTOTRACKZERO_LOOP:
 		if ( FDC.TR == 0 )					/* Track 0 not reached after 255 attempts ? */
 		{							/* (this can happen if the drive is disabled) */
@@ -2108,6 +2110,7 @@ static int FDC_UpdateRestoreCmd ( void )
 		break;
 	 case FDCEMU_RUN_RESTORE_VERIFY_HEAD_OK:
 		FDC.IndexPulse_Counter = 0;
+		/* Head OK, continue and look for sector header */
 	 case FDCEMU_RUN_RESTORE_VERIFY_NEXT_SECTOR_HEADER:
 		/* If 'verify' doesn't succeed after 5 revolutions, we abort with RNF */
 		if ( FDC.IndexPulse_Counter >= FDC_DELAY_IP_ADDRESS_ID )
@@ -2259,6 +2262,7 @@ static int FDC_UpdateSeekCmd ( void )
 		break;
 	 case FDCEMU_RUN_SEEK_VERIFY_HEAD_OK:
 		FDC.IndexPulse_Counter = 0;
+		/* Head OK, continue and look for sector header */
 	 case FDCEMU_RUN_SEEK_VERIFY_NEXT_SECTOR_HEADER:
 		/* If 'verify' doesn't succeed after 5 revolutions, we abort with RNF */
 		if ( FDC.IndexPulse_Counter >= FDC_DELAY_IP_ADDRESS_ID )
@@ -2392,6 +2396,7 @@ static int FDC_UpdateStepCmd ( void )
 		break;
 	 case FDCEMU_RUN_STEP_VERIFY_HEAD_OK:
 		FDC.IndexPulse_Counter = 0;
+		/* Head OK, continue and look for sector header */
 	 case FDCEMU_RUN_STEP_VERIFY_NEXT_SECTOR_HEADER:
 		/* If 'verify' doesn't succeed after 5 revolutions, we abort with RNF */
 		if ( FDC.IndexPulse_Counter >= FDC_DELAY_IP_ADDRESS_ID )
@@ -2710,6 +2715,9 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 	 case FDCEMU_RUN_WRITESECTORS_WRITEDATA_MOTOR_ON:
 		FDC.ReplaceCommandPossible = false;
 		FDC.IndexPulse_Counter = 0;
+		FDC.CommandState = FDCEMU_RUN_WRITESECTORS_WRITEDATA_NEXT_SECTOR_HEADER;
+		FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
+		break;
 	 case FDCEMU_RUN_WRITESECTORS_WRITEDATA_NEXT_SECTOR_HEADER:
 		/* If we're looking for sector FDC.SR for more than 5 revolutions, we abort with RNF */
 		if ( FDC.IndexPulse_Counter >= FDC_DELAY_IP_ADDRESS_ID )

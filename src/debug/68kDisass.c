@@ -852,6 +852,7 @@ static char		*Disass68kEA(char *disassbuf, char *commentBuffer, long *addr, long
 			case 3: 
 				bd = Disass68kGetWord(*addr); *addr += 2;
 				bd <<= 16;
+				/* fall through */
 			case 2:
 				bd |= Disass68kGetWord(*addr); *addr += 2;
 				break;
@@ -922,6 +923,7 @@ static char		*Disass68kEA(char *disassbuf, char *commentBuffer, long *addr, long
 			case 3:
 				od = Disass68kGetWord(*addr); *addr += 2;
 				od <<= 16;
+				/* fall through */
 			case 2:
 				od |= Disass68kGetWord(*addr); *addr += 2;
 				if(prefixComma)
