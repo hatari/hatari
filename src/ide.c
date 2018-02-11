@@ -2034,6 +2034,7 @@ static void ide_ioport_write(void *opaque, uint32_t addr, uint32_t val)
 			break;
 		case WIN_VERIFY_EXT:
 			lba48 = 1;
+			/* fall through */
 		case WIN_VERIFY:
 		case WIN_VERIFY_ONCE:
 			/* do sector number check ? */
@@ -2054,6 +2055,7 @@ static void ide_ioport_write(void *opaque, uint32_t addr, uint32_t val)
 			break;
 		case WIN_READ_EXT:
 			lba48 = 1;
+			/* fall through */
 		case WIN_READ:
 		case WIN_READ_ONCE:
 			if (!s->bs)
@@ -2064,6 +2066,7 @@ static void ide_ioport_write(void *opaque, uint32_t addr, uint32_t val)
 			break;
 		case WIN_WRITE_EXT:
 			lba48 = 1;
+			/* fall through */
 		case WIN_WRITE:
 		case WIN_WRITE_ONCE:
 		case CFA_WRITE_SECT_WO_ERASE:
@@ -2077,6 +2080,7 @@ static void ide_ioport_write(void *opaque, uint32_t addr, uint32_t val)
 			break;
 		case WIN_MULTREAD_EXT:
 			lba48 = 1;
+			/* fall through */
 		case WIN_MULTREAD:
 			if (!s->mult_sectors)
 				goto abort_cmd;
@@ -2086,6 +2090,7 @@ static void ide_ioport_write(void *opaque, uint32_t addr, uint32_t val)
 			break;
 		case WIN_MULTWRITE_EXT:
 			lba48 = 1;
+			/* fall through */
 		case WIN_MULTWRITE:
 		case CFA_WRITE_MULTI_WO_ERASE:
 			if (!s->mult_sectors)
@@ -2102,6 +2107,7 @@ static void ide_ioport_write(void *opaque, uint32_t addr, uint32_t val)
 			break;
 		case WIN_READDMA_EXT:
 			lba48 = 1;
+			/* fall through */
 		case WIN_READDMA:
 		case WIN_READDMA_ONCE:
 			if (!s->bs)
@@ -2112,6 +2118,7 @@ static void ide_ioport_write(void *opaque, uint32_t addr, uint32_t val)
 			break;
 		case WIN_WRITEDMA_EXT:
 			lba48 = 1;
+			/* fall through */
 		case WIN_WRITEDMA:
 		case WIN_WRITEDMA_ONCE:
 			if (!s->bs)
@@ -2123,6 +2130,7 @@ static void ide_ioport_write(void *opaque, uint32_t addr, uint32_t val)
 			break;
 		case WIN_READ_NATIVE_MAX_EXT:
 			lba48 = 1;
+			/* fall through */
 		case WIN_READ_NATIVE_MAX:
 			ide_cmd_lba48_transform(s, lba48);
 			ide_set_sector(s, s->nb_sectors - 1);

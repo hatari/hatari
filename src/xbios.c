@@ -614,8 +614,9 @@ bool XBios(void)
 				  STMemory_ReadLong(Params+SIZE_LONG),
 				  STMemory_ReadWord(Params+SIZE_LONG+SIZE_LONG+SIZE_WORD),
 				  M68000_GetPC());
-			return false;			
+			return false;
 		}
+		/* fall through */
 	case 109:	/* Dsp_ExecProg */
 	case 110:	/* Dsp_ExecBoot */
 	case 116:	/* Dsp_LoadSubroutine */
