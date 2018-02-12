@@ -439,7 +439,7 @@ char szPath[FILENAME_MAX] ;											// for general use
 		// Refresh all the controls to match ConfigureParams
 		if (Change_DoNeedReset(&CurrentParams, &ConfigureParams))
 		 	applyChanges = [NSApp myAlerte:NSInformationalAlertStyle Txt:localize(@"Reset the emulator") firstB:localize(@"Don't reset")
-				alternateB:localize(@"Reset") otherB:nil informativeTxt:@"" ] == NSAlertFirstButtonReturn ;
+				alternateB:localize(@"Reset") otherB:nil informativeTxt:@"" ] == NSAlertSecondButtonReturn ;
 		if (applyChanges)
 			Change_CopyChangedParamsToConfiguration(&CurrentParams, &ConfigureParams, true); 	// Ok with Reset
 		else
