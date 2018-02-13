@@ -775,8 +775,8 @@ fine with EmuTOS.
 
 Note: STE emulation needs 256kB variant of EmuTOS.  If you use 60Hz
 EmuTOS version (etos256us.img), you may get screen flicker and music
-playback issues with demos and games.  You should use EmuTOS version
-0.9.4 or newer.
+playback issues with demos and games.  You should use at least EmuTOS
+version 0.9.4, preferably newer.
 
 Demos:
 - 1st Step (by Tobe/MJJ Prod)
@@ -810,7 +810,8 @@ Demos:
 - French Kiss (by DHS)
 - Gobi Toons (by Dune)
 - Grimey (by Reservoir Gods)
-- Hatari 1.9 (by Mr. Styckx)
+- Hatari 1.9 intro (by Mr. Styckx)
+- Hatari 2.1 intro (by Mr. Styckx)
 - High Fidelity Dreams (by Aura)
 - HighResMode (by Paradox)
 - Illusion (by Next)
@@ -839,6 +840,7 @@ Demos:
 - Power Rise (by Light)
 - Reanimation (by Syntax)
 - Realtime (by MJJ Prod)
+- Rise of the blackstorm (by Mystic Bytes)
 - Riverside (by DHS)
 - RGBeast (by Aggression)
 - SaboTagE (by Paradox)
