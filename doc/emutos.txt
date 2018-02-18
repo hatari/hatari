@@ -325,10 +325,12 @@ Demos:
 - Death of the Clock Cycles (by Aggression)
 - Dimensio (by Condemned)
 - Eat my bollocks (by Equinox)
+- Execution (by SMFX)
 - Fantasia (by Dune & Sector One)
 - Flashback (by Carebears)
 - Flipo (by Oxygene)
 - Frenchies (by Frenchies, 96KB intro)
+- Glokzilla (by MMJ Prod)
 - Grafik -und Sounddemo (by Eckhard Kruse), font issues
 - Hallucinations (by Reservoir Gods)
 - If pigs could fly (by Syndicate)
@@ -868,6 +870,7 @@ Demos:
 - Vision (by POV)
 - We Were @ STNICCC 2015 (by Oxygene)
   - Reset screen colors are wrong and scrolltext skewed
+- Wonderful World (by Paradox)
 - XiTEC Presentation (by Omega)
 
 Color games:
@@ -912,6 +915,7 @@ Color games:
 - STrEet Fighter II (incomplete)
 - Stupid balloon game (joysticks swapped?)
 - Substation* (demo)
+- Supa Zazai Da
 - The chronicles of Omega
 - Tomtar
 - Trapped II (DMA audio, line-A functions 1, 2, 3, 5, 7, 9)
