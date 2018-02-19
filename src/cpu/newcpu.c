@@ -6510,6 +6510,7 @@ static void m68k_run_3ce (void)
 {
 	struct regstruct *r = &regs;
 	bool exit = false;
+	int extracycles = 0;
 
 	Log_Printf(LOG_DEBUG, "m68k_run_3ce\n");
 
@@ -6554,6 +6555,17 @@ static void m68k_run_3ce (void)
 				if (r->spcflags) {
 					if (do_specialties (0))
 						exit = true;
+				}
+
+				// workaround for situation when all accesses are cached
+				extracycles++;
+				if (extracycles >= 8) {
+ 					extracycles = 0;
+#ifdef WINUAE_FOR_HATARI
+					x_do_cycles(CYCLE_UNIT);
+#else
+					M68000_AddCycles_CE ( 2 );
+#endif
 				}
 
 #ifdef WINUAE_FOR_HATARI
