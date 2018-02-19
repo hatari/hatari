@@ -56,6 +56,7 @@ extern int debug_peek_memory_8 (uaecptr addr);
 extern int debug_write_memory_16 (uaecptr addr, uae_u16 v);
 extern int debug_write_memory_8 (uaecptr addr, uae_u8 v);
 extern bool debug_enforcer(void);
+extern uae_u8 *get_real_address_debug(uaecptr addr);
 extern int debug_safe_addr(uaecptr addr, int size);
 
 #define BREAKPOINT_TOTAL 20
@@ -219,7 +220,7 @@ extern void debug_draw(uae_u8 *buf, int bpp, int line, int width, int height, ua
 
 STATIC_INLINE void activate_debugger (void) { };
 #ifdef WINUAE_FOR_HATARI
-#define MAX_LINEWIDTH 100
+#define MAX_LINEWIDTH 150
 
 uae_u32 get_byte_debug (uaecptr addr);
 uae_u32 get_word_debug (uaecptr addr);

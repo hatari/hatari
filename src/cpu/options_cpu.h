@@ -18,7 +18,7 @@
 
 #define UAEMAJOR 3
 #define UAEMINOR 6
-#define UAESUBREV 0
+#define UAESUBREV 1
 
 typedef enum { KBD_LANG_US, KBD_LANG_DK, KBD_LANG_DE, KBD_LANG_SE, KBD_LANG_FR, KBD_LANG_IT, KBD_LANG_ES } KbdLang;
 
@@ -193,6 +193,7 @@ struct uaedev_config_info {
 	TCHAR rootdir[MAX_DPATH];
 	bool readonly;
 	bool lock;
+	bool loadidentity;
 	int bootpri;
 	TCHAR filesys[MAX_DPATH];
 	TCHAR geometry[MAX_DPATH];
@@ -203,6 +204,7 @@ struct uaedev_config_info {
 	int sectors;
 	int reserved;
 	int blocksize;
+	bool chs;
 	uae_u64 max_lba;
 	int controller_type;
 	int controller_type_unit;
@@ -320,6 +322,7 @@ struct apmode
 	int gfx_backbuffers;
 	bool gfx_interlaced;
 	int gfx_refreshrate;
+	bool gfx_tearing;
 };
 
 #define MAX_LUA_STATES 16
@@ -509,6 +512,7 @@ struct uae_prefs {
 	bool gfx_blackerthanblack;
 	int gfx_threebitcolors;
 	int gfx_api;
+	int gfx_api_options;
 	int color_mode;
 	int gfx_extrawidth;
 	bool lightboost_strobo;
@@ -705,6 +709,7 @@ struct uae_prefs {
 	bool rtg_hardwareinterrupt;
 	bool rtg_hardwaresprite;
 	bool rtg_more_compatible;
+	bool rtg_multithread;
 	struct rtgboardconfig rtgboards[MAX_RTG_BOARDS];
 	uae_u32 custom_memory_addrs[MAX_CUSTOM_MEMORY_ADDRS];
 	uae_u32 custom_memory_sizes[MAX_CUSTOM_MEMORY_ADDRS];
@@ -795,6 +800,7 @@ struct uae_prefs {
 	TCHAR win32_guipage[32];
 	TCHAR win32_guiactivepage[32];
 	bool win32_filesystem_mangle_reserved_names;
+	bool win32_shutdown_notification;
 	bool right_control_is_right_win_key;
 #ifdef WITH_SLIRP
 	struct slirp_redir slirp_redirs[MAX_SLIRP_REDIRS];
@@ -872,6 +878,7 @@ extern bool is_error_log (void);
 
 extern void default_prefs (struct uae_prefs *, bool, int);
 extern void discard_prefs (struct uae_prefs *, int);
+extern void copy_prefs(struct uae_prefs *src, struct uae_prefs *dst);
 
 int parse_cmdline_option (struct uae_prefs *, TCHAR, const TCHAR*);
 

@@ -313,6 +313,8 @@ extern int cpu_cycles;
 extern int cpucycleunit;
 extern int m68k_pc_indirect;
 
+extern void safe_interrupt_set(int, int, bool);
+
 #ifndef WINUAE_FOR_HATARI
 STATIC_INLINE void set_special_exter(uae_u32 x)
 {
@@ -575,6 +577,8 @@ STATIC_INLINE void m68k_setpc_normal(uaecptr pc)
 		m68k_setpc(pc);
 	}
 }
+
+extern void cpu_invalidate_cache(uaecptr, int);
 
 extern uae_u32(*read_data_030_bget)(uaecptr);
 extern uae_u32(*read_data_030_wget)(uaecptr);

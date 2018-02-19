@@ -97,6 +97,12 @@ int m68k_pc_indirect;
 bool m68k_interrupt_delay;
 static bool m68k_reset_delay;
 
+#ifndef WINUAE_FOR_HATARI
+static volatile uae_atomic uae_interrupt;
+static volatile uae_atomic uae_interrupts2[IRQ_SOURCE_MAX];
+static volatile uae_atomic uae_interrupts6[IRQ_SOURCE_MAX];
+#endif
+
 static int cacheisets04060, cacheisets04060mask, cacheitag04060mask;
 static int cachedsets04060, cachedsets04060mask, cachedtag04060mask;
 
@@ -1683,17 +1689,9 @@ static void dcache040_push_line(int index, int line, bool writethrough, bool inv
 #endif
 }
 
-void flush_cpu_caches_040(uae_u16 opcode)
+static void flush_cpu_caches_040_2(int cache, int scope, uaecptr addr, bool push, bool pushinv)
 {
-	// 0 (1) = data, 1 (2) = instruction
-	int cache = (opcode >> 6) & 3;
-	int scope = (opcode >> 3) & 3;
-	int areg = opcode & 7;
-	uaecptr addr = m68k_areg(regs, areg);
-	bool push = (opcode & 0x20) != 0;
-	bool pushinv = (regs.cacr & 0x01000000) == 0; // 68060 DPI
-	int i;
-	uae_u32 k, j;
+	uae_u32 i, k, j;
 
 #if VALIDATE_68040_DATACACHE
 	write_log(_T("push %d %d %d %08x %d %d\n"), cache, scope, areg, addr, push, pushinv);
@@ -1764,6 +1762,41 @@ void flush_cpu_caches_040(uae_u16 opcode)
 	}
 	mmu_flush_cache();
 }
+
+void flush_cpu_caches_040(uae_u16 opcode)
+{
+	// 0 (1) = data, 1 (2) = instruction
+	int cache = (opcode >> 6) & 3;
+	int scope = (opcode >> 3) & 3;
+	int areg = opcode & 7;
+	uaecptr addr = m68k_areg(regs, areg);
+	bool push = (opcode & 0x20) != 0;
+	bool pushinv = (regs.cacr & 0x01000000) == 0; // 68060 DPI
+
+	flush_cpu_caches_040_2(cache, scope, addr, push, pushinv);
+	mmu_flush_cache();
+}
+
+void cpu_invalidate_cache(uaecptr addr, int size)
+{
+	if (!currprefs.cpu_data_cache)
+		return;
+	if (currprefs.cpu_model == 68030) {
+		uaecptr end = addr + size;
+		addr &= ~3;
+		while (addr < end) {
+			dcaches030[(addr >> 4) & (CACHELINES030 - 1)].valid[(addr >> 2) & 3] = 0;
+			addr += 4;
+		}
+	} else if (currprefs.cpu_model >= 68040) {
+		uaecptr end = addr + size;
+		while (addr < end) {
+			flush_cpu_caches_040_2(0, 1, addr, true, true);
+			addr += 16;
+		}
+	}
+}
+
 
 void set_cpu_caches (bool flush)
 {
@@ -2279,6 +2312,13 @@ static void showea_val(TCHAR *buffer, uae_u16 opcode, uaecptr addr, int size)
 {
 	struct mnemolookup *lookup;
 	struct instr *table = &table68k[opcode];
+
+#ifndef WINUAE_FOR_HATARI
+	if (addr >= 0xe90000 && addr < 0xf00000)
+		return;
+	if (addr >= 0xdff000 && addr < 0xe00000)
+		return;
+#endif
 
 	for (lookup = lookuptab; lookup->mnemo != table->mnemo; lookup++)
 		;
@@ -4105,6 +4145,13 @@ static void m68k_reset2(bool hardreset)
 	regs.spcflags = 0;
 	m68k_reset_delay = 0;
 	regs.ipl = regs.ipl_pin = 0;
+#ifndef WINUAE_FOR_HATARI
+	for (int i = 0; i < IRQ_SOURCE_MAX; i++) {
+		uae_interrupts2[i] = 0;
+		uae_interrupts6[i] = 0;
+		uae_interrupt = 0;
+	}
+#endif
 
 #ifdef SAVESTATE
 	if (isrestore ()) {
@@ -4738,22 +4785,61 @@ static void do_trace (void)
 #ifndef WINUAE_FOR_HATARI
 static void check_uae_int_request(void)
 {
-	if (uae_int_requested) {
-		bool irq = false;
-		if (uae_int_requested & 0x00ff) {
-			INTREQ_f(0x8000 | 0x0008);
-			irq = true;
+	bool irq2 = false;
+	bool irq6 = false;
+	if (atomic_and(&uae_interrupt, 0)) {
+		for (int i = 0; i < IRQ_SOURCE_MAX; i++) {
+			if (!irq2 && uae_interrupts2[i]) {
+				uae_atomic v = atomic_and(&uae_interrupts2[i], 0);
+				if (v) {
+					INTREQ_f(0x8000 | 0x0008);
+					irq2 = true;
+				}
+			}
+			if (!irq6 && uae_interrupts6[i]) {
+				uae_atomic v = atomic_and(&uae_interrupts6[i], 0);
+				if (v) {
+					INTREQ_f(0x8000 | 0x2000);
+					irq6 = true;
+				}
+			}
 		}
-		if (uae_int_requested & 0xff00) {
+	}
+	if (uae_int_requested) {
+		if (!irq2 && (uae_int_requested & 0x00ff)) {
+			INTREQ_f(0x8000 | 0x0008);
+			irq2 = true;
+		}
+		if (!irq6 && (uae_int_requested & 0xff00)) {
 			INTREQ_f(0x8000 | 0x2000);
-			irq = true;
+			irq6 = true;
 		}
 		if (uae_int_requested & 0xff0000) {
-			if (!cpuboard_is_ppcboard_irq())
+			if (!cpuboard_is_ppcboard_irq()) {
 				atomic_and(&uae_int_requested, ~0x010000);
+			}
 		}
-		if (irq)
-			doint();
+	}
+	if (irq2 || irq6) {
+		doint();
+}
+
+void safe_interrupt_set(int num, int id, bool i6)
+{
+	if (!is_mainthread()) {
+		set_special_exter(SPCFLAG_UAEINT);
+		volatile uae_atomic *p;
+		if (i6)
+			p = &uae_interrupts6[num];
+		else
+			p = &uae_interrupts2[num];
+		atomic_or(p, 1 << id);
+		atomic_or(&uae_interrupt, 1);
+	} else {
+		uae_u16 v = i6 ? 0x2000 : 0x0008;
+		if (currprefs.cpu_cycle_exact || (!(intreq & v) && !currprefs.cpu_cycle_exact)) {
+			INTREQ_0(0x8000 | v);
+		}
 	}
 }
 #endif
@@ -7760,6 +7846,14 @@ static int asm_ispc(const TCHAR *s)
 	return 0;
 }
 
+static uae_u32 asmgetval(const TCHAR *s)
+{
+	TCHAR *endptr;
+	if (s[0] == '-')
+		return _tcstol(s, &endptr, 16);
+	return _tcstoul(s, &endptr, 16);
+}
+
 static int asm_parse_mode(TCHAR *s, uae_u8 *reg, uae_u32 *v, uae_u16 *ext)
 {
 	TCHAR *ss = s;
@@ -7797,8 +7891,7 @@ static int asm_parse_mode(TCHAR *s, uae_u8 *reg, uae_u32 *v, uae_u16 *ext)
 		if (s[1] == '!') {
 			*v = _tstol(s + 2);
 		} else {
-			TCHAR *endptr;
-			*v = _tcstol(s + 1, &endptr, 16);
+			*v = asmgetval(s + 1);
 		}
 		return imm;
 	}
@@ -7807,7 +7900,7 @@ static int asm_parse_mode(TCHAR *s, uae_u8 *reg, uae_u32 *v, uae_u16 *ext)
 		*v = _tstol(s + 1);
 	} else {
 		TCHAR *endptr;
-		*v = _tcstol(s, &endptr, 16);
+		*v = asmgetval(s);
 	}
 	int dots = 0;
 	unsigned int i;
@@ -9155,7 +9248,7 @@ uae_u8 *save_cpu_trace (int *len, uae_u8 *dstptr)
 	if (dstptr)
 		dstbak = dst = dstptr;
 	else
-		dstbak = dst = xmalloc (uae_u8, 10000);
+		dstbak = dst = xmalloc (uae_u8, 30000);
 
 	save_u32 (2 | 4 | 16 | 32);
 	save_u16 (cputrace.opcode);
