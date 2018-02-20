@@ -117,7 +117,8 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
 	png_text pngtext;
 	char key[] = "Title";
 	char text[] = "Hatari screenshot";
-	long start;
+	off_t start;;
+
 
 	if (!dw)
 		dw = sw;
@@ -149,7 +150,7 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
 	}
 
 	/* store current pos in fp (could be != 0 for avi recording) */
-	start = ftell ( fp );
+	start = ftello ( fp );
 
 	/* initialize the png structure */
 	png_init_io(png_ptr, fp);
@@ -211,7 +212,7 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
 	/* write the additional chuncks to the PNG file */
 	png_write_end(png_ptr, info_ptr);
 
-	ret = ftell ( fp ) - start;				/* size of the png image */
+	ret = (int)( ftello ( fp ) - start );			/* size of the png image */
 png_cleanup:
 	if (png_ptr)
 		png_destroy_write_struct(&png_ptr, NULL);
