@@ -320,18 +320,12 @@ uae_u32 dummy_get (uaecptr addr, int size, bool inst, uae_u32 defvalue)
 
 static uae_u32 REGPARAM2 dummy_lget (uaecptr addr)
 {
-#ifdef JIT
-	special_mem |= S_READ;
-#endif
 	if (illegal_mem)
 		dummylog (0, addr, 4, 0, 0);
 	return dummy_get (addr, 4, false, NONEXISTINGDATA);
 }
 uae_u32 REGPARAM2 dummy_lgeti (uaecptr addr)
 {
-#ifdef JIT
-	special_mem |= S_READ;
-#endif
 	if (illegal_mem)
 		dummylog (0, addr, 4, 0, 1);
 	return dummy_get (addr, 4, true, NONEXISTINGDATA);
@@ -339,18 +333,12 @@ uae_u32 REGPARAM2 dummy_lgeti (uaecptr addr)
 
 static uae_u32 REGPARAM2 dummy_wget (uaecptr addr)
 {
-#ifdef JIT
-	special_mem |= S_READ;
-#endif
 	if (illegal_mem)
 		dummylog (0, addr, 2, 0, 0);
 	return dummy_get (addr, 2, false, NONEXISTINGDATA);
 }
 uae_u32 REGPARAM2 dummy_wgeti (uaecptr addr)
 {
-#ifdef JIT
-	special_mem |= S_READ;
-#endif
 	if (illegal_mem)
 		dummylog (0, addr, 2, 0, 1);
 	return dummy_get (addr, 2, true, NONEXISTINGDATA);
@@ -358,9 +346,6 @@ uae_u32 REGPARAM2 dummy_wgeti (uaecptr addr)
 
 static uae_u32 REGPARAM2 dummy_bget (uaecptr addr)
 {
-#ifdef JIT
-	special_mem |= S_READ;
-#endif
 	if (illegal_mem)
 		dummylog (0, addr, 1, 0, 0);
 	return dummy_get (addr, 1, false, NONEXISTINGDATA);
@@ -368,27 +353,18 @@ static uae_u32 REGPARAM2 dummy_bget (uaecptr addr)
 
 static void REGPARAM2 dummy_lput (uaecptr addr, uae_u32 l)
 {
-#ifdef JIT
-	special_mem |= S_WRITE;
-#endif
 	if (illegal_mem)
 		dummylog (1, addr, 4, l, 0);
 	dummy_put (addr, 4, l);
 }
 static void REGPARAM2 dummy_wput (uaecptr addr, uae_u32 w)
 {
-#ifdef JIT
-	special_mem |= S_WRITE;
-#endif
 	if (illegal_mem)
 		dummylog (1, addr, 2, w, 0);
 	dummy_put (addr, 2, w);
 }
 static void REGPARAM2 dummy_bput (uaecptr addr, uae_u32 b)
 {
-#ifdef JIT
-	special_mem |= S_WRITE;
-#endif
 	if (illegal_mem)
 		dummylog (1, addr, 1, b, 0);
 	dummy_put (addr, 1, b);
@@ -396,9 +372,6 @@ static void REGPARAM2 dummy_bput (uaecptr addr, uae_u32 b)
 
 static int REGPARAM2 dummy_check (uaecptr addr, uae_u32 size)
 {
-#ifdef JIT
-	special_mem |= S_READ;
-#endif
 	return 0;
 }
 
@@ -414,15 +387,9 @@ static uae_u8 REGPARAM3 *dummy_xlate(uaecptr addr)
 #ifndef WINUAE_FOR_HATARI
 static void REGPARAM2 none_put (uaecptr addr, uae_u32 v)
 {
-#ifdef JIT
-	special_mem |= S_WRITE;
-#endif
 }
 static uae_u32 REGPARAM2 ones_get (uaecptr addr)
 {
-#ifdef JIT
-	special_mem |= S_READ;
-#endif
 	return 0xffffffff;
 }
 
