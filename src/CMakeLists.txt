@@ -18,7 +18,7 @@ add_library(Floppy createBlankImage.c dim.c msa.c st.c zip.c)
 if(ENABLE_OSX_BUNDLE)
 	set(GUIOSX_SOURCES
 	    gui-osx/AlertHooks.m gui-osx/PrefsController.m gui-osx/Shared.m
-	    gui-osx/CreateFloppyController.m gui-osx/SDLMain.m)
+	    gui-osx/CreateFloppyController.m gui-osx/SDLMain.m gui-osx/paths.m)
 	set_source_files_properties(${GUIOSX_SOURCES} PROPERTIES LANGUAGE C)
 	set(GUIOSX_RSRCS
 	    gui-osx/Hatari.icns gui-osx/stdisk.png gui-osx/en.lproj gui-osx/fr.lproj)

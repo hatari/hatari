@@ -38,7 +38,7 @@ static void ScreenSnapShot_GetNum(void)
 {
 	char dummy[5];
 	int i, num;
-	DIR *workingdir = opendir(Paths_GetWorkingDir());
+	DIR *workingdir = opendir(Paths_GetScreenShotDir());
 	struct dirent *file;
 
 	nScreenShots = 0;
@@ -238,7 +238,7 @@ void ScreenSnapShot_SaveScreen(void)
 	nScreenShots++;
 #if HAVE_LIBPNG
 	/* try first PNG */
-	sprintf(szFileName,"%s/grab%4.4d.png", Paths_GetWorkingDir(), nScreenShots);
+	sprintf(szFileName,"%s/grab%4.4d.png", Paths_GetScreenShotDir(), nScreenShots);
 	if (ScreenSnapShot_SavePNG(sdlscrn, szFileName) > 0)
 	{
 		fprintf(stderr, "Screen dump saved to: %s\n", szFileName);
@@ -246,7 +246,7 @@ void ScreenSnapShot_SaveScreen(void)
 		return;
 	}
 #endif
-	sprintf(szFileName,"%s/grab%4.4d.bmp", Paths_GetWorkingDir(), nScreenShots);
+	sprintf(szFileName,"%s/grab%4.4d.bmp", Paths_GetScreenShotDir(), nScreenShots);
 	if (SDL_SaveBMP(sdlscrn, szFileName))
 		fprintf(stderr, "Screen dump failed!\n");
 	else

@@ -33,7 +33,7 @@ static char sWorkingDir[FILENAME_MAX];    /* Working directory */
 static char sDataDir[FILENAME_MAX];       /* Directory where data files of Hatari can be found */
 static char sUserHomeDir[FILENAME_MAX];   /* User's home directory ($HOME) */
 static char sHatariHomeDir[FILENAME_MAX]; /* Hatari's home directory ($HOME/.hatari/) */
-
+static char sScreenShotDir[FILENAME_MAX]; /* Directory to use for screenshots */
 
 /**
  * Return pointer to current working directory string
@@ -65,6 +65,14 @@ const char *Paths_GetUserHome(void)
 const char *Paths_GetHatariHome(void)
 {
 	return sHatariHomeDir;
+}
+
+/**
+ * Return pointer to screenshot directory string
+ */
+const char *Paths_GetScreenShotDir(void)
+{
+	return sScreenShotDir;
 }
 
 
@@ -285,6 +293,21 @@ void Paths_Init(const char *argv0)
 	/* Init the user's home directory string */
 	Paths_InitHomeDirs();
 
+	/* Init screenshot directory string */
+#if !defined(__MACOSX__)
+	strcpy(sScreenShotDir, sWorkingDir);
+#else
+	char *psScreenShotDir = Paths_GetMacScreenShotDir();
+	if (psScreenShotDir && strlen(psScreenShotDir) > 0) {
+		strcpy(sScreenShotDir, psScreenShotDir);
+	} else {
+		/* Failsafe, but should not be able to happen */
+		strcpy(sScreenShotDir, sWorkingDir);
+	}
+	if (psScreenShotDir)
+		free(psScreenShotDir);
+#endif
+
 	/* Get the directory where the executable resides */
 	psExecDir = Paths_InitExecDir(argv0);
 
@@ -306,6 +329,6 @@ void Paths_Init(const char *argv0)
 
 	free(psExecDir);
 
-	/* fprintf(stderr, " WorkingDir = %s\n DataDir = %s\n UserHomeDir = %s\n HatariHomeDir = %s\n",
-	        sWorkingDir, sDataDir, sUserHomeDir, sHatariHomeDir); */
+	/* fprintf(stderr, " WorkingDir = %s\n DataDir = %s\n UserHomeDir = %s\n HatariHomeDir = %s\n ScrenShotDir = %s\n",
+	        sWorkingDir, sDataDir, sUserHomeDir, sHatariHomeDir, sScreenShotDir); */
 }
