@@ -33,7 +33,7 @@ const char Memory_fileid[] = "Hatari memory.c : " __DATE__ " " __TIME__;
 /* Set illegal_mem to 1 for debug output: */
 #define illegal_mem 1
 
-static int illegal_count = 50;
+static int illegal_count;
 
 static uae_u32 STmem_size;
 uae_u32 TTmem_size = 0;
@@ -175,18 +175,15 @@ static int REGPARAM3 dummy_check (uaecptr addr, uae_u32 size) REGPARAM;
 //#define NONEXISTINGDATA 0xffffffff
 
 
-
-
 static void print_illegal_counted(const char *txt, uaecptr addr)
 {
-    if (!illegal_mem || illegal_count <= 0)
-        return;
+	if (!illegal_mem || illegal_count >= MAX_ILG)
+		return;
 
-    write_log("%s at %08lx\n", txt, (long)addr);
-    if (--illegal_count == 0)
-        write_log("Suppressing further messages about illegal memory accesses.\n");
+	write_log("%s at %08lx\n", txt, (long)addr);
+	if (++illegal_count == MAX_ILG)
+		write_log("Suppressing further messages about illegal memory accesses.\n");
 }
-
 
 /* **** A dummy bank that only contains zeros **** */
 /* TODO [NP] : in many cases, we should not return 0 but a value depending on the data */
@@ -194,9 +191,9 @@ static void print_illegal_counted(const char *txt, uaecptr addr)
 
 static void dummylog (int rw, uaecptr addr, int size, uae_u32 val, int ins)
 {
-#ifndef WINUAE_FOR_HATARI
 	if (illegal_count >= MAX_ILG && MAX_ILG > 0)
 		return;
+#ifndef WINUAE_FOR_HATARI
 	/* ignore Zorro3 expansion space */
 	if (addr >= 0xff000000 && addr <= 0xff000200)
 		return;
@@ -210,9 +207,9 @@ static void dummylog (int rw, uaecptr addr, int size, uae_u32 val, int ins)
 		return;
 	if (addr >= 0x07f7fff0 && addr <= 0x07ffffff)
 		return;
+#endif
 	if (MAX_ILG >= 0)
 		illegal_count++;
-#endif
 	if (ins) {
 		write_log (_T("WARNING: Illegal opcode %cget at %08x PC=%x\n"),
 			size == 2 ? 'w' : 'l', addr, M68K_GETPC);
@@ -1763,7 +1760,7 @@ void memory_init(uae_u32 NewSTMemSize, uae_u32 NewTTMemSize, uae_u32 NewRomMemSt
 	}
     }
 
-    illegal_count = 50;
+    illegal_count = 0;
 }
 
 
