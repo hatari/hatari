@@ -810,7 +810,7 @@ void Configuration_SetDefault(void)
 	ConfigureParams.System.VideoTimingMode = VIDEO_TIMING_MODE_WS3;
 	ConfigureParams.System.bCompatibleCpu = true;
 	ConfigureParams.System.bBlitter = false;
-	ConfigureParams.System.bPatchTimerD = true;
+	ConfigureParams.System.bPatchTimerD = false;
 	ConfigureParams.System.bFastBoot = false;
 	ConfigureParams.System.bFastForward = false;
 
