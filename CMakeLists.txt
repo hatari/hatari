@@ -11,6 +11,7 @@ include(CheckFunctionExists)
 include(CheckStructHasMember)
 include(CheckCCompilerFlag)
 include(DistClean)
+include(CheckTypeSize)
 
 # Set build type to "Release" if user did not specify any build type yet
 # Other possible values: Debug, Release, RelWithDebInfo and MinSizeRel
@@ -19,6 +20,27 @@ if(NOT CMAKE_BUILD_TYPE)
 endif(NOT CMAKE_BUILD_TYPE)
 
 # set(CMAKE_VERBOSE_MAKEFILE 1)
+
+
+######################################################################
+# Check if Large File Support is available
+# We test if the size of the type 'off_t' is at least 8 bytes
+######################################################################
+
+function (check_large_file)
+	set (CMAKE_REQUIRED_FLAGS ${HATARI_LFS_FLAGS} )
+	check_type_size("off_t" SIZEOF_OFF_T )
+
+	if ( SIZEOF_OFF_T GREATER 7 )
+		message ( "   -> Size of off_t=${SIZEOF_OFF_T}, Large File Support is available" )
+		set ( HATARI_HAVE_LFS 1 CACHE INTERNAL "Large file Support" )
+	else()
+		message ( "   -> Size of off_t=${SIZEOF_OFF_T}, Large File Support is not available" )
+		set ( HATARI_HAVE_LFS 0 CACHE INTERNAL "Large file Support" )
+	endif()
+endfunction (check_large_file)
+
+
 
 # ##########################
 # Conditional build features
@@ -141,6 +163,11 @@ if(UDEV_FOUND)
 	set(HAVE_UDEV 1)
 endif(UDEV_FOUND)
 
+# Check if Large File Support is available with the standard POSIX flags
+set (HATARI_LFS_FLAGS "-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64")
+check_large_file()
+
+
 # ################
 # CPP Definitions:
 # ################
@@ -236,6 +263,10 @@ endif()
 IF (CMAKE_BUILD_TYPE STREQUAL "Debug")
 	set(CMAKE_C_FLAGS "-O ${CMAKE_C_FLAGS}")
 ENDIF (CMAKE_BUILD_TYPE STREQUAL "Debug")
+
+# Always add the Large File Support flags in case they are supported
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${HATARI_LFS_FLAGS}")
+
 
 # ####################
 # Paths configuration:
@@ -383,5 +414,11 @@ if(NOT HAVE_SYS_TIMES_H)
   message("\n  Note: times() function is missing (sys/times.h is not available)")
   message("        ==> using inaccurate SDL_GetTicks() instead")
 endif()
+
+if ( NOT HATARI_HAVE_LFS )
+  message("\n  Note: Large File Support (64 bit file offset) is not available")
+  message("        ==> AVI recording will be limited to 2 GB")
+endif()
+
 
 message( "" )
