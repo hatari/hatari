@@ -8485,14 +8485,14 @@ void m68k_disasm_2 (TCHAR *buf, int bufsize, uaecptr pc, uaecptr *nextpc, int cn
 			uae_u16 r = imm >> 12;
 			TCHAR regs[16];
 			const TCHAR *cname = _T("?");
-			int i;
-			for (i = 0; m2cregs[i].regname; i++) {
-				if (m2cregs[i].regno == creg)
+			int j;
+			for (j = 0; m2cregs[j].regname; j++) {
+				if (m2cregs[j].regno == creg)
 					break;
 			}
 			_stprintf (regs, _T("%c%d"), r >= 8 ? 'A' : 'D', r >= 8 ? r - 8 : r);
-			if (m2cregs[i].regname)
-				cname = m2cregs[i].regname;
+			if (m2cregs[j].regname)
+				cname = m2cregs[j].regname;
 			if (lookup->mnemo == i_MOVE2C) {
 				_tcscat (instrname, regs);
 				_tcscat (instrname, _T(","));
@@ -9359,12 +9359,12 @@ uae_u8 *restore_cpu_trace (uae_u8 *src)
 			}
 			if (v & 8) {
 				// backwards compatibility
-				uae_u32 v = restore_u32();
-				cputrace.prefetch020[0] = v >> 16;
+				uae_u32 v2 = restore_u32();
+				cputrace.prefetch020[0] = v2 >> 16;
 				cputrace.prefetch020[1] = (uae_u16)v;
-				v = restore_u32();
-				cputrace.prefetch020[2] = v >> 16;
-				cputrace.prefetch020[3] = (uae_u16)v;
+				v2 = restore_u32();
+				cputrace.prefetch020[2] = v2 >> 16;
+				cputrace.prefetch020[3] = (uae_u16)v2;
 				restore_u32();
 				restore_u32();
 				cputrace.prefetch020_valid[0] = true;
@@ -9465,7 +9465,8 @@ uae_u8 *save_cpu_extra (int *len, uae_u8 *dstptr)
 uae_u8 *save_cpu (int *len, uae_u8 *dstptr)
 {
 	uae_u8 *dstbak, *dst;
-	int model, i, j, khz;
+	int model, khz;
+	int i, j;
 
 	if (dstptr)
 		dstbak = dst = dstptr;
