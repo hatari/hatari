@@ -90,7 +90,7 @@ static enum {
 	OVERLAY_NONE,
 	OVERLAY_DRAWN,
 	OVERLAY_RESTORED
-} bOverlayState;
+} nOverlayState;
 
 static SDL_Rect RecLedRect;
 static bool bOldRecording;
@@ -245,7 +245,7 @@ static void Statusbar_OverlayInit(const SDL_Surface *surf)
 		SDL_FreeSurface(OverlayUnderside);
 		OverlayUnderside = NULL;
 	}
-	bOverlayState = OVERLAY_NONE;
+	nOverlayState = OVERLAY_NONE;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -686,11 +686,11 @@ void Statusbar_OverlayRestore(SDL_Surface *surf)
 		/* overlay not used with statusbar */
 		return;
 	}
-	if (bOverlayState == OVERLAY_DRAWN && OverlayUnderside) {
+	if (nOverlayState == OVERLAY_DRAWN && OverlayUnderside) {
 		assert(surf);
 		SDL_BlitSurface(OverlayUnderside, NULL, surf, &OverlayLedRect);
 		/* this will make the draw function to update this the screen */
-		bOverlayState = OVERLAY_RESTORED;
+		nOverlayState = OVERLAY_RESTORED;
 	}
 }
 
@@ -701,11 +701,11 @@ void Statusbar_OverlayRestore(SDL_Surface *surf)
 static void Statusbar_OverlayDrawLed(SDL_Surface *surf, Uint32 color)
 {
 	SDL_Rect rect;
-	if (bOverlayState == OVERLAY_DRAWN) {
+	if (nOverlayState == OVERLAY_DRAWN) {
 		/* some led already drawn */
 		return;
 	}
-	bOverlayState = OVERLAY_DRAWN;
+	nOverlayState = OVERLAY_DRAWN;
 
 	/* enabled led with border */
 	rect = OverlayLedRect;
@@ -745,11 +745,12 @@ static SDL_Rect* Statusbar_OverlayDraw(SDL_Surface *surf)
 	 *   NONE -> DRAWN -> RESTORED -> DRAWN -> RESTORED -> NONE
 	 * Other than NONE state needs to be updated on screen
 	 */
-	switch (bOverlayState) {
+	switch (nOverlayState) {
 	case OVERLAY_RESTORED:
-		bOverlayState = OVERLAY_NONE;
+		nOverlayState = OVERLAY_NONE;
+		/* fall through */
 	case OVERLAY_DRAWN:
-		DEBUGPRINT(("Overlay LED = %s\n", bOverlayState==OVERLAY_DRAWN?"ON":"OFF"));
+		DEBUGPRINT(("Overlay LED = %s\n", nOverlayState==OVERLAY_DRAWN?"ON":"OFF"));
 		return &OverlayLedRect;
 	case OVERLAY_NONE:
 		break;
