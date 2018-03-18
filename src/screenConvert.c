@@ -571,6 +571,7 @@ static void Screen_ConvertWithoutZoom(Uint16 *fvram, int vw, int vh, int vbpp, i
 
 	Uint16 lowBorderSize, rightBorderSize;
 	int scrwidth, scrheight;
+	unsigned int nBytesPerPixel = sdlscrn->format->BytesPerPixel;
 	int vw_clip, vh_clip;
 
 	/* Horizontal scroll register set? */
@@ -623,7 +624,7 @@ static void Screen_ConvertWithoutZoom(Uint16 *fvram, int vw, int vh, int vbpp, i
 
 	/* Center screen */
 	hvram += ((scrheight-vh_clip)>>1) * sdlscrn->pitch;
-	hvram += ((scrwidth-vw_clip)>>1) * sdlscrn->format->BytesPerPixel;
+	hvram += ((scrwidth-vw_clip)>>1) * nBytesPerPixel;
 
 	fvram_line = fvram;
 	scrwidth = leftBorder + vw + rightBorder;
@@ -631,7 +632,7 @@ static void Screen_ConvertWithoutZoom(Uint16 *fvram, int vw, int vh, int vbpp, i
 	/* render the graphic area */
 	if (vbpp < 16) {
 		/* Bitplanes modes */
-		switch (sdlscrn->format->BytesPerPixel)
+		switch (nBytesPerPixel)
 		{
 		 case 2:
 			ScreenConv_BitplaneTo16bppNoZoom(fvram_line, hvram,
@@ -650,7 +651,7 @@ static void Screen_ConvertWithoutZoom(Uint16 *fvram, int vw, int vh, int vbpp, i
 		}
 	} else {
 		/* Falcon TC (High Color) */
-		switch (sdlscrn->format->BytesPerPixel)
+		switch (nBytesPerPixel)
 		{
 		 case 2:
 			ScreenConv_HiColorTo16bppNoZoom(fvram_line, hvram,
@@ -684,6 +685,7 @@ static void ScreenConv_BitplaneTo16bppZoomed(Uint16 *fvram, Uint8 *hvram,
 	Uint16 *hvram_line = (Uint16 *)hvram;
 	Uint16 *hvram_column = p2cline;
 	Uint16 *fvram_line;
+	unsigned int nBytesPerPixel = sdlscrn->format->BytesPerPixel;
 	int pitch = sdlscrn->pitch >> 1;
 	int cursrcline = -1;
 	int scrIdx = 0;
@@ -706,7 +708,7 @@ static void ScreenConv_BitplaneTo16bppZoomed(Uint16 *fvram, Uint8 *hvram,
 		/* Recopy the same line ? */
 		if (screen_zoom.zoomytable[h] == cursrcline)
 		{
-			memcpy(hvram_line, hvram_line - pitch, scrwidth * sdlscrn->format->BytesPerPixel);
+			memcpy(hvram_line, hvram_line - pitch, scrwidth * nBytesPerPixel);
 		}
 		else
 		{
@@ -755,6 +757,7 @@ static void ScreenConv_BitplaneTo32bppZoomed(Uint16 *fvram, Uint8 *hvram,
 	Uint32 *hvram_line = (Uint32 *)hvram;
 	Uint32 *hvram_column = p2cline;
 	Uint16 *fvram_line;
+	unsigned int nBytesPerPixel = sdlscrn->format->BytesPerPixel;
 	int pitch = sdlscrn->pitch >> 2;
 	int cursrcline = -1;
 	int scrIdx = 0;
@@ -777,7 +780,7 @@ static void ScreenConv_BitplaneTo32bppZoomed(Uint16 *fvram, Uint8 *hvram,
 		/* Recopy the same line ? */
 		if (screen_zoom.zoomytable[h] == cursrcline)
 		{
-			memcpy(hvram_line, hvram_line - pitch, scrwidth * sdlscrn->format->BytesPerPixel);
+			memcpy(hvram_line, hvram_line - pitch, scrwidth * nBytesPerPixel);
 		}
 		else
 		{
@@ -825,6 +828,7 @@ static void ScreenConv_HiColorTo16bppZoomed(Uint16 *fvram, Uint8 *hvram,
 	Uint16 *hvram_line = (Uint16 *)hvram;
 	Uint16 *hvram_column = hvram_line;
 	Uint16 *fvram_line;
+	unsigned int nBytesPerPixel = sdlscrn->format->BytesPerPixel;
 	int pitch = sdlscrn->pitch >> 1;
 	int cursrcline = -1;
 	int scrIdx = 0;
@@ -850,7 +854,7 @@ static void ScreenConv_HiColorTo16bppZoomed(Uint16 *fvram, Uint8 *hvram,
 		/* Recopy the same line ? */
 		if (screen_zoom.zoomytable[h] == cursrcline)
 		{
-			memcpy(hvram_line, hvram_line - pitch, scrwidth * sdlscrn->format->BytesPerPixel);
+			memcpy(hvram_line, hvram_line - pitch, scrwidth * nBytesPerPixel);
 		}
 		else
 		{
@@ -891,6 +895,7 @@ static void ScreenConv_HiColorTo32bppZoomed(Uint16 *fvram, Uint8 *hvram,
 	Uint32 *hvram_line = (Uint32 *)hvram;
 	Uint32 *hvram_column = hvram_line;
 	Uint16 *fvram_line;
+	unsigned int nBytesPerPixel = sdlscrn->format->BytesPerPixel;
 	int pitch = sdlscrn->pitch >> 2;
 	int cursrcline = -1;
 	int scrIdx = 0;
@@ -915,7 +920,7 @@ static void ScreenConv_HiColorTo32bppZoomed(Uint16 *fvram, Uint8 *hvram,
 		/* Recopy the same line ? */
 		if (screen_zoom.zoomytable[h] == cursrcline)
 		{
-			memcpy(hvram_line, hvram_line - pitch, scrwidth * sdlscrn->format->BytesPerPixel);
+			memcpy(hvram_line, hvram_line - pitch, scrwidth * nBytesPerPixel);
 		}
 		else
 		{
