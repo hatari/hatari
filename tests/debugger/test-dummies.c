@@ -18,6 +18,7 @@ bool Opt_IsAtariProgram(const char *path) { return false; }
 /* fake cycles stuff */
 #include "cycles.h"
 int CurrentInstrCycles;
+Uint64	CyclesGlobalClockCounter;
 int Cycles_GetCounter(int nId) { return 0; }
 
 /* bring in gemdos defines (EMULATEDDRIVES) */
@@ -83,6 +84,9 @@ Uint32 IoAccessBaseAddress;
 int nWaitStateCycles;
 cpu_instruction_t CpuInstruction;
 void MakeFromSR(void) { }
+Uint16 M68000_GetSR(void) { return 0x2700; }
+void M68000_SetSR(Uint16 v) { }
+void M68000_SetPC(uaecptr v) { }
 
 /* fake UAE core registers */
 #include "newcpu.h"
@@ -106,7 +110,9 @@ Uint32 TosAddress, TosSize;
 FILE *debugOutput;
 void DebugUI(debug_reason_t reason) { }
 int DebugUI_PrintCmdHelp(const char *psCmd) { return DEBUGGER_CMDDONE; }
-char *DebugUI_MatchHelper(const char **strings, int items, const char *text, int state) {
+int DebugUI_GetPageLines(int config, int defvalue) { return 25; }
+char *DebugUI_MatchHelper(const char **strings, int items, const char *text, int state)
+{
 	return NULL;
 }
 

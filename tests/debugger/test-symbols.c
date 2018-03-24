@@ -64,7 +64,7 @@ int main(int argc, const char *argv[])
 	tests += i;
 	for (i = 0; i < ARRAY_SIZE(fail_addr); i++) {
 		addr = fail_addr[i];
-		name = Symbols_GetByCpuAddress(addr);
+		name = Symbols_GetByCpuAddress(addr, SYMTYPE_ALL);
 		if (name) {
 			fprintf(stderr, "*** Unexpected SUCCESS from 0x%08x (%s) ***\n", addr, name);
 			errors++;
@@ -87,7 +87,7 @@ int main(int argc, const char *argv[])
 	tests += i;
 	for (i = 0; i < ARRAY_SIZE(success_addr); i++) {
 		addr = success_addr[i];
-		name = Symbols_GetByCpuAddress(addr);
+		name = Symbols_GetByCpuAddress(addr, SYMTYPE_ALL);
 		if (name) {
 			fprintf(stderr, "- 0x%08x: %s\n", addr, name);
 		} else {
