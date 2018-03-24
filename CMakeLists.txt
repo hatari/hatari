@@ -1,8 +1,9 @@
 cmake_minimum_required(VERSION 2.8.8 FATAL_ERROR)
 
 project(Hatari C)
+enable_testing()
 
-SET(APP_NAME "Hatari")
+set(APP_NAME "Hatari")
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
