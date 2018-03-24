@@ -1,17 +1,22 @@
 # use glob syntax.
 syntax: glob
 
+*.1.gz
+*.a
+*.o
+*.pyc
+
 config.h
 CMakeCache.txt
+cmake_install.cmake
+CTestTestfile.cmake
+CMakeFiles
 install_manifest.txt
+Makefile
+Testing
 
-src/*.o
-src/*.a
 src/hatari
 src/tos.img
-
-src/*/*.o
-src/*/*.a
 
 src/cpu/build68k
 src/cpu/cpudefs.c
@@ -27,30 +32,18 @@ src/uae-cpu/cpustbl.c
 src/uae-cpu/cputbl.h
 src/uae-cpu/gencpu
 
+tests/debugger/test-breakcond
+tests/debugger/test-evaluate
+tests/debugger/test-symbols
+
 tools/hmsa/hmsa
-tools/hmsa/*.o
-tools/hmsa/hmsa.1.gz
 tools/debugger/gst2ascii
 
-python-ui/*.pyc
-python-ui/hatariui.1.gz
 python-ui/conftypes.py
 
-website/screens
-
-*.1.gz
 doc/doxygen/html
 
 # These are for XCode on Mac OS X:
 build/*
 Hatari.build/*
 Release/*
-
-# switch to regexp syntax.
-syntax: regexp
-
-(^|/)\.hg($|/)
-(^|/)\.hgtags($|/)
-CMakeFiles
-cmake_install.cmake
-Makefile
