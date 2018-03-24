@@ -18,8 +18,9 @@ if(UNIX)
 			DEPENDS clean)
 	endforeach(CLEAN_FILE)
 	# Clean up files that can appear at multiple places:
-	foreach(CLEAN_FILE  CMakeFiles CMakeCache.txt '*.a' '*.1.gz'
-			cmake_install.cmake Makefile)
+	foreach(CLEAN_FILE  CMakeFiles CMakeCache.txt cmake_install.cmake
+			CTestTestfile.cmake Makefile Testing
+			'*.a' '*.1.gz' '*.pyc')
 		add_custom_command(TARGET distclean POST_BUILD
 			COMMAND find . -depth -name ${CLEAN_FILE} | xargs rm -rf
 			DEPENDS clean)
