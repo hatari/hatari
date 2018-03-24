@@ -4,15 +4,14 @@
 
 if(UNIX)
 	add_custom_target(distclean  COMMENT "Cleaning up for distribution")
+	if (CMAKE_GENERATOR STREQUAL "Unix Makefiles")
+		add_custom_command(TARGET distclean POST_BUILD
+			COMMAND make clean)
+	endif()
 	# Clean up Hatari specific files:
-	foreach(CLEAN_FILE  config.h install_manifest.txt src/hatari
-			src/cpu/build68k src/cpu/cpudefs.c src/cpu/cpuemu_*.c
-			src/cpu/cpustbl.c src/cpu/cputbl.h src/cpu/gencpu
-			src/uae-cpu/build68k src/uae-cpu/gencpu
-			src/uae-cpu/cpudefs.c src/uae-cpu/cpuemu.c
-			src/uae-cpu/cpustbl.c src/uae-cpu/cputbl.h
-			tools/hmsa/hmsa tools/debugger/gst2ascii
-			python-ui/conftypes.py python-ui/*.pyc)
+	foreach(CLEAN_FILE config.h install_manifest.txt python-ui/conftypes.py
+			src/*cpu/cpudefs.c src/*cpu/cpuemu*.c
+			src/*cpu/cpustbl.c src/*cpu/cputbl.h)
 		add_custom_command(TARGET distclean POST_BUILD
 			COMMAND rm -f ${CLEAN_FILE}
 			DEPENDS clean)
