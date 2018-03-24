@@ -34,20 +34,22 @@ int main(int argc, const char *argv[])
 	char symbols[] = "symbols";
 	char fname[] = "data/os-header.sym";
 	char sname[] = "name";
-	char saddr[] = "addr";
+	char scode[] = "code";
+	char sdata[] = "data";
 	char sfree[] = "free";
 	char *cmd_load[] = { symbols, fname };
 	char *cmd_free[] = { symbols, sfree };
 	char *cmd_show_byname[] = { symbols, sname };
-	char *cmd_show_byaddr[] = { symbols, saddr };
+	char *cmd_show_bycode[] = { symbols, scode };
+	char *cmd_show_bydata[] = { symbols, sdata };
 
 	int i, tests = 0, errors = 0;
 	const char *name;
 	Uint32 addr;
 
 	DO_CMD(cmd_load);
-	DO_CMD(cmd_show_byaddr);
-	fprintf(stderr, "\n");
+	DO_CMD(cmd_show_bycode);
+	DO_CMD(cmd_show_bydata);
 	DO_CMD(cmd_show_byname);
 	DO_CMD(cmd_load);	/* free + reload */
 
