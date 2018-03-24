@@ -22,7 +22,7 @@
 #ifndef DSP_CORE_H
 #define DSP_CORE_H
 
-#include <SDL.h>
+#include <SDL_types.h>
 
 #ifdef __cplusplus
 extern "C" {

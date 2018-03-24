@@ -12,7 +12,6 @@ const char Console_fileid[] = "Hatari console.c : " __DATE__ " " __TIME__;
 
 #include <stdio.h>
 #include <string.h>
-#include <SDL.h>
 
 #include "main.h"
 #include "m68000.h"

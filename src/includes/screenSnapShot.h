@@ -8,8 +8,7 @@
 #ifndef HATARI_SCREENSNAPSHOT_H
 #define HATARI_SCREENSNAPSHOT_H
 
-#include <stdio.h>
-#include <SDL.h>
+#include <SDL_video.h>
 
 extern int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int destw,
 		int desth, FILE *fp, int png_compression_level, int png_filter,
@@ -17,4 +16,3 @@ extern int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int destw,
 extern void ScreenSnapShot_SaveScreen(void);
 
 #endif /* ifndef HATARI_SCREENSNAPSHOT_H */
-

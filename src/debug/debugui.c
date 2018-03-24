@@ -13,6 +13,7 @@ const char DebugUI_fileid[] = "Hatari debugui.c : " __DATE__ " " __TIME__;
 #include <ctype.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <SDL.h>
 
 #include "config.h"
 

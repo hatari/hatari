@@ -12,6 +12,7 @@
 const char Configuration_fileid[] = "Hatari configuration.c : " __DATE__ " " __TIME__;
 
 #include <SDL_keyboard.h>
+#include <SDL_joystick.h>
 
 #include "main.h"
 #include "configuration.h"

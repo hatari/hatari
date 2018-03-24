@@ -83,6 +83,12 @@
 
 #define DSP_COUNT_IPS 0		/* Count instruction per seconds */
 
+#if DSP_COUNT_IPS
+/* For counting instructions per second */
+#include <SDL_timer.h>
+static Uint32 start_time;
+static Uint32 num_inst;
+#endif
 
 /**********************************
  *	Defines
@@ -102,10 +108,6 @@
 /**********************************
  *	Variables
  **********************************/
-
-/* Instructions per second */
-static Uint32 start_time;
-static Uint32 num_inst;
 
 /* Length of current instruction */
 static Uint32 cur_inst_len;	/* =0:jump, >0:increment */
@@ -713,10 +715,12 @@ void dsp56k_init_cpu(void)
 {
 	dsp56k_disasm_init();
 	isDsp_in_disasm_mode = false;
-	start_time = SDL_GetTicks();
 	memset(&dsp_error, 0, sizeof(dsp_error));
 	dsp_error.limit = 1;
+#if DSP_COUNT_IPS
+	start_time = SDL_GetTicks();
 	num_inst = 0;
+#endif
 }
 
 /**

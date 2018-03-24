@@ -7,8 +7,7 @@
 #ifndef HATARI_STATUSBAR_H
 #define HATARI_STATUSBAR_H
 
-#include <SDL.h>
-#include "main.h"
+#include <SDL_video.h>
 
 /* must correspond to max value returned by Statusbar_GetHeightForSize() */
 #define STATUSBAR_MAX_HEIGHT (2*(2*8+2))
