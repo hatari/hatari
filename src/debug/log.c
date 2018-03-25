@@ -30,6 +30,8 @@ const char Log_fileid[] = "Hatari log.c : " __DATE__ " " __TIME__;
 #include "vdi.h"
 #include "options.h"
 
+extern bool bCpuWriteLog;  /* Used to toggle log messages from the CPU core */
+
 int ExceptionDebugMask;
 
 typedef struct {
@@ -182,6 +184,8 @@ int Log_Init(void)
 {
 	TextLogLevel = ConfigureParams.Log.nTextLogLevel;
 	AlertDlgLogLevel = ConfigureParams.Log.nAlertDlgLogLevel;
+
+	bCpuWriteLog = (TextLogLevel == LOG_DEBUG);
 
 	hLogFile = File_Open(ConfigureParams.Log.sLogFileName, "w");
 	TraceFile = File_Open(ConfigureParams.Log.sTraceFileName, "w");

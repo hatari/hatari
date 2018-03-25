@@ -1898,7 +1898,6 @@ static void build_cpufunctbl (void)
 	lvl = (currprefs.cpu_model - 68000) / 10;
 	if (lvl == 6)
 		lvl = 5;
-fprintf ( stderr , "cpu table lvl=%d , mode=%d\n" , lvl , mode );
 	tbl = cputbls[lvl][mode];
 
 	if (tbl == NULL) {
@@ -3243,8 +3242,8 @@ static void Exception_ce000 (int nr)
 			nr, last_op_for_exception_3, last_addr_for_exception_3, currpc, get_long_debug (4 * nr));
 #else
 		if (nr != 2 || last_fault_for_exception_3 != 0xff8a00 || currpc < TosAddress || currpc > TosAddress + TosSize)
-			fprintf(stderr,"%s Error at address $%x, PC=$%x addr_e3=%x op_e3=%x\n", nr==2?"Bus":"Address",
-			        last_fault_for_exception_3, currpc, last_addr_for_exception_3 , last_op_for_exception_3);
+			Log_Printf(LOG_ERROR, "%s Error at address $%x, PC=$%x addr_e3=%x op_e3=%x\n", nr==2?"Bus":"Address",
+			           last_fault_for_exception_3, currpc, last_addr_for_exception_3 , last_op_for_exception_3);
 #endif
 		goto kludge_me_do;
 	}
