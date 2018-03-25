@@ -9,8 +9,8 @@ atari\-hd\-image \- tool for creating a harddisk image for use with Hatari
 .RI [directory]
 .SH DESCRIPTION
 Create an ACSI/IDE harddisk image for Hatari with a single Atari
-compatible DOS partition (using sfdisk, mkdosfs, atari\-convert\-dir,
-mcopy and dd).
+compatible DOS FAT partition (using sfdisk, mkdosfs, atari\-convert\-dir,
+mcopy, dd and python).
 .SH OPTIONS
 .TP 
 .B size
@@ -25,9 +25,10 @@ Name for the harddisk image (default: hd.img)
 Name for the single partition (default: DOS)
 .TP
 .B directory
-directory for initial content copied to the image. HINT: use
-\fIatari\-convert\-dir\fP tool first, to detect long file names
-that aren't anymore unique when clipped!
+directory for initial content copied to the image.
+\fIatari\-convert\-dir\fP tool is used to clip long file names
+to 8+3 size required by FAT and Atari TOS.  If resulting file names
+aren't unique, you get warning(s), but script continues
 .SH EXAMPLES
 .TP
 16MB 'hd.img' HD image:
@@ -47,8 +48,8 @@ that aren't anymore unique when clipped!
 Written by Eero Tamminen <oak at helsinkinet fi>.
 .PP
 This manual page was written by Teemu Hukkanen <tjhukkan@iki.fi>
-for the Debian project and later modified by Eero Tamminen to
-suit the latest version of Hatari.
+for the Debian project and later updated by Eero Tamminen for
+the newer versions of Hatari.
 .SH "LICENSE"
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
