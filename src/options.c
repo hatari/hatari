@@ -479,6 +479,23 @@ static const opt_t HatariOptions[] = {
 
 
 /**
+ * We can not use Log_Printf during option parsing yet, since the
+ * log file has not been opened yet. So we use our own debug print
+ * function here.
+ */
+static void Opt_DbgPrintf(const char *psFormat, ...)
+{
+	va_list argptr;
+
+	if (ConfigureParams.Log.nTextLogLevel != LOG_DEBUG)
+		return;
+
+	va_start(argptr, psFormat);
+	vfprintf(stderr, psFormat, argptr);
+	va_end(argptr);
+}
+
+/**
  * Show version string and license.
  */
 static void Opt_ShowVersion(void)
@@ -1160,7 +1177,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			default:
 				return Opt_ShowError(OPT_FORCEBPP, argv[i], "Invalid bit depth");
 			}
-			fprintf(stderr, "Hatari window BPP = %d.\n", planes);
+			Opt_DbgPrintf("Hatari window BPP = %d.\n", planes);
 			ConfigureParams.Screen.nForceBpp = planes;
 			break;
 
@@ -1189,7 +1206,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				return Opt_ShowError(OPT_SPEC512, argv[i],
 						     "Invalid palette writes per line threshold for Spec512");
 			}
-			fprintf(stderr, "Spec512 threshold = %d palette writes per line.\n", threshold);
+			Opt_DbgPrintf("Spec512 threshold = %d palette writes per line.\n", threshold);
 			ConfigureParams.Screen.nSpec512Threshold = threshold;
 			break;
 
@@ -1223,7 +1240,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				ConfigureParams.System.VideoTimingMode = VIDEO_TIMING_MODE_WS4;
 			else
 				return Opt_ShowError(OPT_VIDEO_TIMING, argv[i], "Unknown video timing mode");
-			fprintf(stderr, "\nvideo-timing : Work in progress, this option has no effect at the moment\n\n");
 			break;
 
 			/* Falcon/TT display options */
@@ -1285,7 +1301,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				return Opt_ShowError(OPT_AVIRECORD_FPS, argv[i],
 							"Invalid frame rate for avi recording");
 			}
-			fprintf(stderr, "AVI recording FPS = %d.\n", val);
+			Opt_DbgPrintf("AVI recording FPS = %d.\n", val);
 			ConfigureParams.Video.AviRecordFps = val;
 			break;
 
@@ -1886,7 +1902,9 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				ConfigureParams.Sound.nPlaybackFreq = freq;
 				ConfigureParams.Sound.bEnableSound = true;
 			}
-			fprintf(stderr, "Sound %s, frequency = %d.\n", ConfigureParams.Sound.bEnableSound ? "ON" : "OFF", ConfigureParams.Sound.nPlaybackFreq);
+			Opt_DbgPrintf("Sound %s, frequency = %d.\n",
+			              ConfigureParams.Sound.bEnableSound ? "ON" : "OFF",
+			              ConfigureParams.Sound.nPlaybackFreq);
 			break;
 
 		case OPT_SOUNDBUFFERSIZE:
@@ -1898,7 +1916,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				{
 					return Opt_ShowError(OPT_SOUNDBUFFERSIZE, argv[i], "Unsupported sound buffer size");
 				}
-			fprintf(stderr, "SDL sound buffer size = %d ms.\n", temp);
+			Opt_DbgPrintf("SDL sound buffer size = %d ms.\n", temp);
 			ConfigureParams.Sound.SdlAudioBufferSize = temp;
 			break;
 
@@ -1930,13 +1948,13 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 		case OPT_DEBUG:
 			if (ExceptionDebugMask)
 			{
-				fprintf(stderr, "Exception debugging disabled.\n");
 				ExceptionDebugMask = EXCEPT_NONE;
+				Opt_DbgPrintf("Exception debugging disabled.\n");
 			}
 			else
 			{
 				ExceptionDebugMask = ConfigureParams.Debugger.nExceptionDebugMask;
-				fprintf(stderr, "Exception debugging enabled (0x%x).\n", ExceptionDebugMask);
+				Opt_DbgPrintf("Exception debugging enabled (0x%x).\n", ExceptionDebugMask);
 			}
 			break;
 
@@ -1957,8 +1975,8 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				/* already enabled, change run-time config */
 				int oldmask = ExceptionDebugMask;
 				ExceptionDebugMask = ConfigureParams.Debugger.nExceptionDebugMask;
-				fprintf(stderr, "Exception debugging changed (0x%x -> 0x%x).\n",
-					oldmask, ExceptionDebugMask);
+				Opt_DbgPrintf("Exception debugging changed (0x%x -> 0x%x).\n",
+				              oldmask, ExceptionDebugMask);
 			}
 			break;
 
@@ -1973,12 +1991,12 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			{
 				return Opt_ShowError(OPT_CONOUT, argv[i], "Invalid console device vector number");
 			}
-			fprintf(stderr, "Xcounout device %d vector redirection enabled.\n", ConOutDevice);
+			Opt_DbgPrintf("Xcounout device %d vector redirection enabled.\n", ConOutDevice);
 			break;
 
 		case OPT_NATFEATS:
 			ok = Opt_Bool(argv[++i], OPT_NATFEATS, &ConfigureParams.Log.bNatFeats);
-			fprintf(stderr, "Native Features %s.\n", ConfigureParams.Log.bNatFeats ? "enabled" : "disabled");
+			Opt_DbgPrintf("Native Features %s.\n", ConfigureParams.Log.bNatFeats ? "enabled" : "disabled");
 			break;
 
 		case OPT_PARACHUTE:
