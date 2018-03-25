@@ -163,14 +163,14 @@ def set_word(idx, value):
 
 def set_CHS(idx, values):
     c, h, s = values
-    print "CHS: %3d,%3d,%3d @ $%x" % (c,h,s,idx)
+    print("CHS: %3d,%3d,%3d @ $%x" % (c,h,s,idx))
     mbr[idx] = h
     mbr[idx+1] = (s & 0x3F) | ((c >> 2) & 0xC0)
     mbr[idx+2] = c & 0xFF
 
 def LBA2CHS(lba):
-    c = lba / ($tracksectors * $diskheads)
-    h = (lba / $tracksectors) % $diskheads
+    c = lba // ($tracksectors * $diskheads)
+    h = (lba // $tracksectors) % $diskheads
     s = (lba % $tracksectors) + 1
     return (c,h,s)
 
