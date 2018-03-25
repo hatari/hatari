@@ -9,6 +9,7 @@
 const char HDC_fileid[] = "Hatari hdc.c : " __DATE__ " " __TIME__;
 
 #include <errno.h>
+#include <SDL_endian.h>
 
 #include "main.h"
 #include "configuration.h"
