@@ -247,14 +247,17 @@ Uint8 *File_Read(const char *pszFileName, long *pFileSize, const char * const pp
 		if (hDiskFile != NULL)
 		{
 			/* Find size of file: */
-			fseek(hDiskFile, 0, SEEK_END);
-			FileSize = ftell(hDiskFile);
-			fseek(hDiskFile, 0, SEEK_SET);
-			/* Read in... */
-			pFile = malloc(FileSize);
-			if (pFile)
-				FileSize = fread(pFile, 1, FileSize, hDiskFile);
-
+			if (fseek(hDiskFile, 0, SEEK_END) == 0)
+			{
+				FileSize = ftell(hDiskFile);
+				if (FileSize > 0 && fseek(hDiskFile, 0, SEEK_SET) == 0)
+				{
+					/* Read in... */
+					pFile = malloc(FileSize);
+					if (pFile)
+						FileSize = fread(pFile, 1, FileSize, hDiskFile);
+				}
+			}
 			fclose(hDiskFile);
 		}
 	}
