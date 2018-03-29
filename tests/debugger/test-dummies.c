@@ -17,7 +17,6 @@ bool Opt_IsAtariProgram(const char *path) { return false; }
 
 /* fake cycles stuff */
 #include "cycles.h"
-int CurrentInstrCycles;
 Uint64	CyclesGlobalClockCounter;
 int Cycles_GetCounter(int nId) { return 0; }
 
@@ -70,29 +69,15 @@ bool STMemory_CheckAreaType(Uint32 addr, int size, int mem_type ) {
 	return true;
 }
 
-/* fake memory banks */
-#include "memory.h"
-addrbank *mem_banks[65536];
-
-/* fake IO memory variables */
-#include "ioMem.h"
-int nIoMemAccessSize;
-Uint32 IoAccessBaseAddress;
-
 /* fake CPU wrapper stuff */
 #include "m68000.h"
-int nWaitStateCycles;
-cpu_instruction_t CpuInstruction;
-void MakeFromSR(void) { }
 Uint16 M68000_GetSR(void) { return 0x2700; }
 void M68000_SetSR(Uint16 v) { }
 void M68000_SetPC(uaecptr v) { }
 
 /* fake UAE core registers */
 #include "newcpu.h"
-cpuop_func *cpufunctbl[65536];
 struct regstruct regs;
-void MakeSR(void) { }
 #if ENABLE_WINUAE_CPU
 void write_log(const char *f, ...) { }
 void m68k_dumpstate(uaecptr *nextpc) { }
@@ -102,14 +87,6 @@ void m68k_disasm(uaecptr addr, uaecptr *nextpc, int cnt) { }
 void m68k_dumpstate (FILE *f, uaecptr *nextpc) { }
 void m68k_disasm (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt) { }
 #endif
-
-/* fake memory snapshot */
-#include "memorySnapShot.h"
-void MemorySnapShot_Store(void *pData, int Size) { }
-
-/* fake TOS variables */
-#include "tos.h"
-Uint32 TosAddress, TosSize;
 
 /* fake debugui.c stuff */
 #include "debug_priv.h"
