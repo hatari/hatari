@@ -894,9 +894,9 @@ static bool Opt_StrCpy(int optid, bool checkexist, char *dst, const char *src, s
  */
 Uint32 Opt_GetNoParachuteFlag(void)
 {
-	if (bNoSDLParachute) {
+	if (bNoSDLParachute)
 		return SDL_INIT_NOPARACHUTE;
-	}
+
 	return 0;
 }
 
@@ -928,10 +928,12 @@ bool Opt_IsAtariProgram(const char *path)
 	Uint8 test[2];
 	FILE *fp;
 
-	if (File_Exists(path) && (fp = fopen(path, "rb"))) {
+	if (File_Exists(path) && (fp = fopen(path, "rb")))
+	{
 		/* file starts with GEMDOS magic? */
 		if (fread(test, 1, 2, fp) == 2 &&
-		    test[0] == 0x60 && test[1] == 0x1A) {
+		    test[0] == 0x60 && test[1] == 0x1A)
+		{
 			ret = true;
 		}
 		fclose(fp);
@@ -949,13 +951,17 @@ static bool Opt_HandleArgument(const char *path)
 	char *dir = NULL;
 
 	/* Atari program? */
-	if (Opt_IsAtariProgram(path)) {
+	if (Opt_IsAtariProgram(path))
+	{
 		const char *prgname = strrchr(path, PATHSEP);
-		if (prgname) {
+		if (prgname)
+		{
 			dir = strdup(path);
 			dir[prgname-path] = '\0';
 			prgname++;
-		} else {
+		}
+		else
+		{
 			dir = strdup(Paths_GetWorkingDir());
 			prgname = path;
 		}
@@ -967,12 +973,14 @@ static bool Opt_HandleArgument(const char *path)
 		 */
 		INF_SetAutoStart(prgname, OPT_AUTOSTART);
 	}
-	if (dir) {
+	if (dir)
+	{
 		path = dir;
 	}
 
 	/* GEMDOS HDD directory (as argument, or for the Atari program)? */
-	if (File_DirExists(path)) {
+	if (File_DirExists(path))
+	{
 		Log_Printf(LOG_INFO, "ARG = GEMDOS HD dir: %s\n", path);
 		if (Opt_StrCpy(OPT_HARDDRIVE, false, ConfigureParams.HardDisk.szHardDiskDirectories[0],
 			       path, sizeof(ConfigureParams.HardDisk.szHardDiskDirectories[0]),
@@ -982,12 +990,16 @@ static bool Opt_HandleArgument(const char *path)
 			ConfigureParams.HardDisk.bBootFromHardDisk = true;
 		}
 		bLoadAutoSave = false;
-		if (dir) {
+		if (dir)
+		{
 			free(dir);
 		}
 		return true;
-	} else {
-		if (dir) {
+	}
+	else
+	{
+		if (dir)
+		{
 			/* if dir is set, it should be valid... */
 			Log_Printf(LOG_ERROR, "Given atari program path '%s' doesn't exist (anymore?)!\n", dir);
 			free(dir);
@@ -1964,7 +1976,8 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			errstr = Log_SetExceptionDebugMask(argv[i]);
 			if (errstr)
 			{
-				if (!errstr[0]) {
+				if (!errstr[0])
+				{
 					/* silent parsing termination */
 					return false;
 				}
@@ -2008,7 +2021,8 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			errstr = Disasm_ParseOption(argv[i]);
 			if (errstr)
 			{
-				if (!errstr[0]) {
+				if (!errstr[0])
+				{
 					/* silent parsing termination */
 					return false;
 				}
@@ -2021,7 +2035,8 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			errstr = Log_SetTraceOptions(argv[i]);
 			if (errstr)
 			{
-				if (!errstr[0]) {
+				if (!errstr[0])
+				{
 					/* silent parsing termination */
 					return false;
 				}
@@ -2116,13 +2131,15 @@ char *Opt_MatchOption(const char *text, int state)
 	static int i, len;
 	const char *name;
 	
-	if (!state) {
+	if (!state)
+	{
 		/* first match */
 		len = strlen(text);
 		i = 0;
 	}
 	/* next match */
-	while (i < ARRAY_SIZE(HatariOptions)) {
+	while (i < ARRAY_SIZE(HatariOptions))
+	{
 		name = HatariOptions[i++].str;
 		if (name && strncasecmp(name, text, len) == 0)
 			return (strdup(name));
