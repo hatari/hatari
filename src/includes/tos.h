@@ -17,6 +17,6 @@ extern unsigned int ConnectedDriveMask;
 extern int nNumDrives;
 
 extern void TOS_MemorySnapShot_Capture(bool bSave);
-extern int TOS_LoadImage(void);
+extern int TOS_InitImage(void);
 
 #endif

@@ -537,23 +537,14 @@ static void TOS_CheckSysConfig(void)
 }
 
 
-/*-----------------------------------------------------------------------*/
 /**
- * Load TOS Rom image file into ST memory space and fix image so it can be
- * emulated correctly.  Pre TOS 1.06 are loaded at 0xFC0000 and later ones
- * at 0xE00000.
- *
- * Return zero if all OK, non-zero value for error.
+ * Load TOS Rom image file and do some basic sanity checks.
+ * Returns pointer to allocated memory with TOS data, or NULL for error.
  */
-int TOS_LoadImage(void)
+static uint8_t *TOS_LoadImage(void)
 {
-	Uint8 *pTosFile = NULL;
+	uint8_t *pTosFile = NULL;
 	long nFileSize;
-
-	bTosImageLoaded = false;
-
-	/* Calculate end of RAM */
-	STRamEnd = ConfigureParams.Memory.STRamSize_KB * 1024;
 
 	/* Load TOS image into memory so that we can check its version */
 	TosVersion = 0;
@@ -563,7 +554,7 @@ int TOS_LoadImage(void)
 	{
 		Log_AlertDlg(LOG_FATAL, "Can not load TOS file:\n'%s'", ConfigureParams.Rom.szTosImageFileName);
 		free(pTosFile);
-		return -1;
+		return NULL;
 	}
 
 	TosSize = nFileSize;
@@ -616,7 +607,7 @@ int TOS_LoadImage(void)
 		Log_AlertDlg(LOG_FATAL, "Your TOS image seems not to be a valid TOS ROM file!\n"
 		             "(TOS version %x, address $%x)", TosVersion, TosAddress);
 		free(pTosFile);
-		return -2;
+		return NULL;
 	}
 
 	/* Assert that machine type matches the TOS version. Note that EmuTOS can
@@ -657,6 +648,30 @@ int TOS_LoadImage(void)
 		}
 	}
 #endif
+
+	return pTosFile;
+}
+
+
+/**
+ * Load TOS Rom image file into ST memory space and fix image so it can be
+ * emulated correctly.  Pre TOS 1.06 are loaded at 0xFC0000 and later ones
+ * at 0xE00000.
+ *
+ * Return zero if all OK, non-zero value for error.
+ */
+int TOS_InitImage(void)
+{
+	uint8_t *pTosFile = NULL;
+
+	bTosImageLoaded = false;
+
+	/* Calculate end of RAM */
+	STRamEnd = ConfigureParams.Memory.STRamSize_KB * 1024;
+
+	pTosFile = TOS_LoadImage();
+	if (!pTosFile)
+		return -1;
 
 	/* (Re-)Initialize the memory banks: */
 	memory_uninit();
@@ -704,4 +719,3 @@ int TOS_LoadImage(void)
 	bTosImageLoaded = true;
 	return 0;
 }
-

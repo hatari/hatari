@@ -51,7 +51,7 @@ static int Reset_ST(bool bCold)
 
 		Floppy_GetBootDrive();      /* Find which device to boot from (A: or C:) */
 
-		ret = TOS_LoadImage();      /* Load TOS, writes into cartridge memory */
+		ret = TOS_InitImage();      /* Load TOS and copy it into ROM memory */
 		if (ret)
 			return ret;               /* If we can not load a TOS image, return now! */
 
