@@ -172,7 +172,7 @@ int main(int argc, const char *argv[])
 	/* set up registers etc */
 
 	/* fail indirect equality checks with zeroed regs */
-	memset(STRam, 0, sizeof(STRam));
+	memset(STRam, 0, STRamEnd);
 	STMemory_WriteByte(0, 1);
 	/* !match: "( $200 ) . b > 200"
 	 *  match: "( $200 ) . b > ( 200 ) . b"

@@ -44,7 +44,7 @@ int main(int argc, const char *argv[])
 	nVBLs = VBL_VALUE;
 	memset(Regs, 0, sizeof(Regs));
 	Regs[REG_D0] = 10;
-	memset(STRam, 0, sizeof(STRam));
+	memset(STRam, 0, STRamEnd);
 	/* expressions use long access, 3*3 -> 9 */
 	STMemory_WriteLong(2+5, 3);
 

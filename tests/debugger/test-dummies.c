@@ -25,7 +25,12 @@ int Cycles_GetCounter(int nId) { return 0; }
 
 /* fake ST RAM, only 24-bit support */
 #include "stMemory.h"
+#if ENABLE_SMALL_MEM
+static Uint8 _STRam[16*1024*1024];
+Uint8 *STRam = _STRam;
+#else
 Uint8 STRam[16*1024*1024];
+#endif
 Uint32 STRamEnd = 4*1024*1024;
 Uint32 STMemory_ReadLong(Uint32 addr) {
 	Uint32 val;
