@@ -107,10 +107,11 @@ static bool Screen_DrawFrame(bool bForceFlip);
 SDL_Window *sdlWindow;
 static SDL_Renderer *sdlRenderer;
 static SDL_Texture *sdlTexture;
+static bool bUseSdlRenderer;            /* true when using SDL2 renderer */
 
 void SDL_UpdateRects(SDL_Surface *screen, int numrects, SDL_Rect *rects)
 {
-	if (ConfigureParams.Screen.bUseSdlRenderer)
+	if (bUseSdlRenderer)
 	{
 		SDL_UpdateTexture(sdlTexture, NULL, screen->pixels, screen->pitch);
 		SDL_RenderCopy(sdlRenderer, sdlTexture, NULL, NULL);
@@ -300,7 +301,7 @@ static void Screen_FreeSDL2Resources(void)
 	}
 	if (sdlscrn)
 	{
-		if (ConfigureParams.Screen.bUseSdlRenderer)
+		if (bUseSdlRenderer)
 			SDL_FreeSurface(sdlscrn);
 		sdlscrn = NULL;
 	}
@@ -324,6 +325,7 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 	static bool bPrevUseVsync = false;
 	static bool bPrevInFullScreen;
 	int win_width, win_height;
+	char *psSdlVideoDriver;
 
 	if (bitdepth == 0 || bitdepth == 24)
 		bitdepth = 32;
@@ -346,6 +348,13 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 	}
 
 #if WITH_SDL2
+	bUseSdlRenderer = ConfigureParams.Screen.bUseSdlRenderer;
+	psSdlVideoDriver = SDL_getenv("SDL_VIDEODRIVER");
+	if (psSdlVideoDriver && strcmp(psSdlVideoDriver, "dummy") == 0)
+	{
+		/* SDL renderer can not be used in dummy mode */
+		bUseSdlRenderer = false;
+	}
 
 	/* SDL Video attributes: */
 	win_width = width;
@@ -363,8 +372,7 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 		int deskw, deskh;
 		if (getenv("PARENT_WIN_ID") != NULL)	/* Embedded window? */
 			sdlVideoFlags = SDL_WINDOW_BORDERLESS;
-		else if (ConfigureParams.Screen.bResizable
-		         && ConfigureParams.Screen.bUseSdlRenderer)
+		else if (ConfigureParams.Screen.bResizable && bUseSdlRenderer)
 			sdlVideoFlags = SDL_WINDOW_RESIZABLE;
 		else
 			sdlVideoFlags = 0;
@@ -428,7 +436,7 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 		        win_width, win_height);
 		exit(-1);
 	}
-	if (ConfigureParams.Screen.bUseSdlRenderer)
+	if (bUseSdlRenderer)
 	{
 		int rm, bm, gm, pfmt;
 
