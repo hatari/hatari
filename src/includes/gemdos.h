@@ -30,5 +30,6 @@ extern void GemDOS_Info(FILE *fp, Uint32 bShowOpcodes);
 extern void GemDOS_InfoDTA(FILE *fp, Uint32 addrDTA);
 extern void GemDOS_OpCode(void);
 extern void GemDOS_Boot(void);
+extern int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr);
 
 #endif /* HATARI_GEMDOS_H */

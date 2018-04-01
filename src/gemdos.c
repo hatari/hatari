@@ -3533,3 +3533,69 @@ void GemDOS_Boot(void)
 	/* Setup new GEMDOS handler, see "cart_asm.s" */
 	STMemory_WriteLong(0x0084, CART_GEMDOS);
 }
+
+
+/**
+ * Load and relocate a PRG file into the memory of the emulated machine.
+ */
+int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr)
+{
+	long nFileSize;
+	uint8_t *prg;
+	uint32_t nTextLen, nDataLen, nBssLen, nSymLen;
+	uint32_t nRelOff, nRelTabIdx, nCurrAddr;
+
+	prg = File_Read(psPrgName, &nFileSize, NULL);
+	if (!prg || nFileSize < 30)
+	{
+		Log_Printf(LOG_ERROR, "Failed to load '%s'.\n", psPrgName);
+		return -1;
+	}
+
+	if (prg[0] != 0x60 || prg[1] != 0x1a)  /* Check PRG magic */
+	{
+		Log_Printf(LOG_ERROR, "The file '%s' is not a valid PRG.\n", psPrgName);
+		return -1;
+	}
+
+	nTextLen = (prg[2] << 24) | (prg[3] << 16) | (prg[4] << 8) | prg[5];
+	nDataLen = (prg[6] << 24) | (prg[7] << 16) | (prg[8] << 8) | prg[9];
+	nBssLen = (prg[10] << 24) | (prg[11] << 16) | (prg[12] << 8) | prg[13];
+	nSymLen = (prg[14] << 24) | (prg[15] << 16) | (prg[16] << 8) | prg[17];
+
+	if (!STMemory_SafeCopy(baseaddr + 0x100, prg + 28, nTextLen + nDataLen, psPrgName))
+		return -1;
+
+	/* Clear BSS */
+	memset(&STRam[baseaddr + 0x100 + nTextLen + nDataLen], 0, nBssLen);
+
+	if (*(uint16_t *)&prg[26] != 0)   /* No reloc information available? */
+		return 0;
+
+	nRelTabIdx = 0x1c + nTextLen + nDataLen + nSymLen;
+	nRelOff = (prg[nRelTabIdx] << 24) | (prg[nRelTabIdx + 1] << 16)
+	          | (prg[nRelTabIdx + 2] << 8) | prg[nRelTabIdx + 3];
+
+	if (nRelOff == 0)
+		return 0;
+
+	nCurrAddr = baseaddr + 0x100 + nRelOff;
+	STMemory_WriteLong(nCurrAddr, STMemory_ReadLong(nCurrAddr) + baseaddr + 0x100);
+	nRelTabIdx += 4;
+
+	while (prg[nRelTabIdx])
+	{
+		if (prg[nRelTabIdx] == 1)
+		{
+			nRelOff += 254;
+			nRelTabIdx += 1;
+			continue;
+		}
+		nRelOff += prg[nRelTabIdx];
+		nCurrAddr = baseaddr + 0x100 + nRelOff;
+		STMemory_WriteLong(nCurrAddr, STMemory_ReadLong(nCurrAddr) + baseaddr + 0x100);
+		nRelTabIdx += 1;
+	}
+
+	return 0;
+}
