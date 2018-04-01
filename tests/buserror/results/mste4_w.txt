@@ -1,5 +1,5 @@
 Bus Error testing results (word access):
-MegaSTE with TOS 2.06PL, 4MB ST-Ram and Crazy Dots VME card
+(MegaSTE with TOS 2.06PL, 4MB ST-Ram and Crazy Dots VME card)
 
 $FF8010 - $FF8200
 $FF8210 - $FF8240
