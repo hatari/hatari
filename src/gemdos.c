@@ -2976,6 +2976,13 @@ static bool GemDOS_Pterm0(Uint32 Params)
 		  M68000_GetPC());
 	GemDOS_TerminateClose();
 	Symbols_RemoveCurrentProgram();
+
+	if (!bUseTos)
+	{
+		Main_SetQuitValue(0);
+		return true;
+	}
+
 	return false;
 }
 
@@ -2998,12 +3005,74 @@ static bool GemDOS_Ptermres(Uint32 Params)
  */
 static bool GemDOS_Pterm(Uint32 Params)
 {
+	uint16_t nExitVal = STMemory_ReadWord(Params);
+
 	LOG_TRACE(TRACE_OS_GEMDOS|TRACE_OS_BASE, "GEMDOS 0x4C Pterm(%hd) at PC 0x%X\n",
-		  (Sint16)STMemory_ReadWord(Params),
-		  M68000_GetPC());
+		  nExitVal, M68000_GetPC());
+
 	GemDOS_TerminateClose();
 	Symbols_RemoveCurrentProgram();
+
+	if (!bUseTos)
+	{
+		Main_SetQuitValue(nExitVal);
+		return true;
+	}
+
 	return false;
+}
+
+/**
+ * GEMDOS Super
+ * Call 0x20
+ */
+static bool GemDOS_Super(Uint32 Params)
+{
+	uint32_t nParam = STMemory_ReadLong(Params);
+	uint32_t nExcFrameSize, nRetAddr;
+	uint16_t nSR, nVec = 0;
+
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x20 Super(0x%X) at PC 0x%X\n",
+		  nParam, M68000_GetPC());
+
+	/* This call is normally fully handled by TOS - we only
+	 * need to emulate it for TOS-less testing mode */
+	if (bUseTos)
+		return false;
+
+	/* Get SR, return address and vector offset from stack frame */
+	nSR = STMemory_ReadWord(Regs[REG_A7]);
+	nRetAddr = STMemory_ReadLong(Regs[REG_A7] + SIZE_WORD);
+	if (currprefs.cpu_level > 0)
+		nVec = STMemory_ReadWord(Regs[REG_A7] + SIZE_WORD + SIZE_LONG);
+
+	if (nParam == 1)                /* Query mode? */
+	{
+		Regs[REG_D0] = (nSR & SR_SUPERMODE) ? -1 : 0;
+		return true;
+	}
+
+	if (nParam == 0)
+	{
+		nParam = regs.usp;
+	}
+
+	if (currprefs.cpu_level > 0)
+		nExcFrameSize = SIZE_WORD + SIZE_LONG + SIZE_WORD;
+	else
+		nExcFrameSize = SIZE_WORD + SIZE_LONG;
+
+
+	Regs[REG_D0] = Regs[REG_A7] + nExcFrameSize;
+	Regs[REG_A7] = nParam - nExcFrameSize;
+
+	nSR ^= SR_SUPERMODE;
+
+	STMemory_WriteWord(Regs[REG_A7], nSR);
+	STMemory_WriteLong(Regs[REG_A7] + SIZE_WORD, nRetAddr);
+	STMemory_WriteWord(Regs[REG_A7] + SIZE_WORD + SIZE_LONG, nVec);
+
+	return true;
 }
 
 
@@ -3308,6 +3377,9 @@ void GemDOS_OpCode(void)
 	 case 0x0e:
 		Finished = GemDOS_SetDrv(Params);
 		break;
+	 case 0x20:
+		Finished = GemDOS_Super(Params);
+		break;
 	 case 0x31:
 		Finished = GemDOS_Ptermres(Params);
 		break;
@@ -3412,7 +3484,6 @@ void GemDOS_OpCode(void)
 	case 0x09:	/* Cconws */
 	case 0x0A:	/* Cconrs */
 	case 0x1A:	/* Fsetdta */
-	case 0x20:	/* Super */
 	case 0x48:	/* Malloc */
 	case 0x49:	/* Mfree */
 		/* commands taking long/pointer */
@@ -3444,6 +3515,8 @@ void GemDOS_OpCode(void)
 			  STMemory_ReadLong(Params+SIZE_WORD),
 			  STMemory_ReadLong(Params+SIZE_WORD+SIZE_LONG),
 			  M68000_GetPC());
+		if (!bUseTos)
+			Finished = true;
 		break;
 
 	default:

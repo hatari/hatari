@@ -257,6 +257,16 @@ void Main_RequestQuit(int exitval)
 	nQuitValue = exitval;
 }
 
+/**
+ * Set exit value and enable quit flag
+ */
+void Main_SetQuitValue(int exitval)
+{
+	bQuitProgram = true;
+	M68000_SetSpecial(SPCFLAG_BRK);
+	nQuitValue = exitval;
+}
+
 /*-----------------------------------------------------------------------*/
 /**
  * Set how many VBLs Hatari should run, from the moment this function
