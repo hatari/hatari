@@ -207,6 +207,11 @@ unsigned long OpCode_SysInit(uae_u32 opcode)
 
 		CpuDoNOP ();
 	}
+	else if (!bUseTos)
+	{
+		GemDOS_Boot();
+		CpuDoNOP();
+	}
 	else
 	{
 		LOG_TRACE(TRACE_OS_GEMDOS | TRACE_OS_BASE | TRACE_OS_VDI | TRACE_OS_AES,

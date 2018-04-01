@@ -205,7 +205,12 @@ uae_u32 REGPARAM3 OpCode_SysInit(uae_u32 opcode)
 		 */
 		VDI_LineA(regs.regs[0], regs.regs[9]);
 
-		CpuDoNOP ();
+		CpuDoNOP();
+	}
+	else if (!bUseTos)
+	{
+		GemDOS_Boot();
+		CpuDoNOP();
 	}
 	else
 	{

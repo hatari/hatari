@@ -38,11 +38,16 @@ const char TOS_fileid[] = "Hatari tos.c : " __DATE__ " " __TIME__;
 #include "screen.h"
 #include "video.h"
 
+#define TEST_PRG_BASEPAGE 0x1000
+#define TEST_PRG_START (TEST_PRG_BASEPAGE + 0x100)
+
 bool bIsEmuTOS;
 Uint16 TosVersion;                      /* eg. 0x0100, 0x0102 */
 Uint32 TosAddress, TosSize;             /* Address in ST memory and size of TOS image */
 bool bTosImageLoaded = false;           /* Successfully loaded a TOS image? */
 bool bRamTosImage;                      /* true if we loaded a RAM TOS image */
+bool bUseTos = true;                    /* false if we run in TOS-less test mode */
+const char *psTestPrg;                  /* Points to the name of the PRG that should be used for testing */
 unsigned int ConnectedDriveMask = 0x00; /* Bit mask of connected drives, eg 0x7 is A,B,C */
 int nNumDrives = 2;                     /* Number of drives, default is 2 for A: and B: - Strictly, this is the highest mapped drive letter, in-between drives may not be allocated */
 
@@ -654,6 +659,69 @@ static uint8_t *TOS_LoadImage(void)
 
 
 /**
+ * Set the name of the program that should be tested (without TOS)
+ */
+void TOS_SetTestPrgName(const char *testprg)
+{
+	psTestPrg = testprg;
+}
+
+
+/**
+ * Create a fake TOS ROM that just jumps to test code in memory
+ */
+static uint8_t *TOS_FakeRomForTesting(void)
+{
+	uint8_t *pFakeTosMem;
+	uint8_t fake_tos[] = {
+		0x60, 0x2e,                         /* Branch to 0xe00030 */
+		0x00, 0x00,                         /* TOS version */
+		0x00, 0xe0, 0x00, 0x30,             /* Reset PC value */
+		0x00, 0xe0, 0x00, 0x00,             /* Pointer to ROM header */
+		0x00, 0x00, 0x10, 0x00,             /* End of OS BSS */
+		0x00, 0xe0, 0x00, 0x30,             /* Reserved */
+		0x00, 0x00, 0x00, 0x00,             /* Unused (GEM's MUPB) */
+		0x03, 0x03, 0x20, 0x18,             /* Fake date */
+		0x00, 0x01,                         /* PAL flag */
+		0x4c, 0x63,                         /* Fake DOS date */
+		0x00, 0x00, 0x08, 0x80,             /* Fake ptr 1 (mem pool) */
+		0x00, 0x00, 0x08, 0x70,             /* Fake ptr 2 (key shift) */
+		0x00, 0x00, 0x08, 0x00,             /* Addr of basepage var */
+		0x00, 0x00, 0x00, 0x00,             /* Reserved */
+
+		0x46, 0xfc, 0x27, 0x00,             /* move #0x2700,sr */
+		0x4e, 0x70,                         /* reset instruction */
+		0x11, 0xfc, 0x00, 0x05, 0x80, 0x01, /* move.b #5,0xffff8001.w */
+		0x4f, 0xf9, 0x00, 0x02, 0x00, 0x00, /* lea 0x20000,sp (SSP) */
+		0x47, 0xf9, 0x00, 0xfa, 0x00, 0x00, /* lea 0xfa0000,a3 */
+		0x0c, 0x93, 0xab, 0xcd, 0xef, 0x42, /* cmp.l #0xabcdef42,(a3) */
+		0x66, 0x02,                         /* bne.s no_sys_init */
+		0x00, SYSINIT_OPCODE,
+		0x46, 0xfc, 0x07, 0x00,             /* move #0x0700,sr */
+		0x4f, 0xf9, 0x00, 0x01, 0x80, 0x00, /* lea 0x18000,sp (USP) */
+		0x48, 0x78, TEST_PRG_BASEPAGE >> 8, TEST_PRG_BASEPAGE & 0xff, /* pea 0x1000  (basepage) */
+		0x48, 0x79, 0x00, 0xe0, 0x00, 0x00, /* pea 0xe00000 */
+		0x4e, 0xf8, TEST_PRG_START >> 8, TEST_PRG_START & 0xff        /* jmp 0x1100 */
+	};
+
+	/* We don't have a proper memory detection code in above init code,
+	 * so we have to disable the MMU emulation in this TOS-less mode */
+	ConfigureParams.System.bFastBoot = true;
+
+	TosVersion = 0;
+	TosAddress = 0xe00000;
+	TosSize = sizeof(fake_tos);
+
+	pFakeTosMem = malloc(TosSize);
+	if (!pFakeTosMem)
+		return NULL;
+
+	memcpy(pFakeTosMem, fake_tos, TosSize);
+
+	return pFakeTosMem;
+}
+
+/**
  * Load TOS Rom image file into ST memory space and fix image so it can be
  * emulated correctly.  Pre TOS 1.06 are loaded at 0xFC0000 and later ones
  * at 0xE00000.
@@ -669,9 +737,18 @@ int TOS_InitImage(void)
 	/* Calculate end of RAM */
 	STRamEnd = ConfigureParams.Memory.STRamSize_KB * 1024;
 
-	pTosFile = TOS_LoadImage();
-	if (!pTosFile)
-		return -1;
+	if (bUseTos)
+	{
+		pTosFile = TOS_LoadImage();
+		if (!pTosFile)
+			return -1;
+	}
+	else
+	{
+		pTosFile = TOS_FakeRomForTesting();
+		if (!pTosFile)
+			return -1;
+	}
 
 	/* (Re-)Initialize the memory banks: */
 	memory_uninit();
@@ -685,6 +762,8 @@ int TOS_InitImage(void)
 		memcpy(&STRam[TosAddress], pTosFile, TosSize);
 	else
 		memcpy(&RomMem[TosAddress], pTosFile, TosSize);
+	free(pTosFile);
+	pTosFile = NULL;
 
 	Log_Printf(LOG_DEBUG, "Loaded TOS version %i.%c%c, starting at $%x, "
 	           "country code = %i, %s\n", TosVersion>>8, '0'+((TosVersion>>4)&0x0f),
@@ -701,7 +780,7 @@ int TOS_InitImage(void)
 	}
 
 	/* Fix TOS image, modify code for emulation */
-	if (ConfigureParams.Rom.bPatchTos && !bIsEmuTOS)
+	if (ConfigureParams.Rom.bPatchTos && !bIsEmuTOS && bUseTos)
 	{
 		TOS_FixRom();
 	}
@@ -713,8 +792,21 @@ int TOS_InitImage(void)
 	/* Set connected devices, memory configuration, etc. */
 	STMemory_SetDefaultConfig();
 
-	/* and free loaded image */
-	free(pTosFile);
+	/* Load test program (has to be done after memory has been cleared */
+	if (!bUseTos)
+	{
+		if (psTestPrg)
+		{
+			Log_Printf(LOG_DEBUG, "Loading '%s' to 0x%x.\n",
+			           psTestPrg, TEST_PRG_START);
+			GemDOS_LoadAndReloc(psTestPrg, TEST_PRG_BASEPAGE);
+		}
+		else
+		{
+			/* Jump to same address again */
+			STMemory_WriteLong(TEST_PRG_START, 0x4ef80000 | TEST_PRG_START);
+		}
+	}
 
 	bTosImageLoaded = true;
 	return 0;

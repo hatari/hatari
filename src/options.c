@@ -43,6 +43,7 @@ const char Options_fileid[] = "Hatari options.c : " __DATE__ " " __TIME__;
 #include "68kDisass.h"
 #include "xbios.h"
 #include "stMemory.h"
+#include "tos.h"
 
 
 bool bLoadAutoSave;        /* Load autosave memory snapshot at startup */
@@ -953,7 +954,15 @@ static bool Opt_HandleArgument(const char *path)
 	/* Atari program? */
 	if (Opt_IsAtariProgram(path))
 	{
-		const char *prgname = strrchr(path, PATHSEP);
+		const char *prgname;
+
+		if (!bUseTos)
+		{
+			TOS_SetTestPrgName(path);
+			return true;
+		}
+
+		prgname = strrchr(path, PATHSEP);
 		if (prgname)
 		{
 			dir = strdup(path);
@@ -1653,8 +1662,8 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			i += 1;
 			ok = Opt_StrCpy(OPT_TOS, true, ConfigureParams.Rom.szTosImageFileName,
 					argv[i], sizeof(ConfigureParams.Rom.szTosImageFileName),
-					NULL);
-			if (ok)
+					&bUseTos);
+			if (ok || !bUseTos)
 			{
 				bLoadAutoSave = false;
 			}

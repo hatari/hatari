@@ -125,7 +125,7 @@ void Cart_ResetImage(void)
 	if ((bUseVDIRes || INF_Overriding(AUTOSTART_INTERCEPT) ||
 	     ConfigureParams.HardDisk.bUseHardDiskDirectories ||
 	    LogTraceFlags & (TRACE_OS_GEMDOS | TRACE_OS_BASE | TRACE_OS_VDI | TRACE_OS_AES))
-	    && TosVersion >= 0x100)
+	    && (TosVersion >= 0x100 || !bUseTos))
 	{
 		/* Copy built-in cartridge data into the cartridge memory of the ST */
 		memcpy(&RomMem[0xfa0000], Cart_data, sizeof(Cart_data));
