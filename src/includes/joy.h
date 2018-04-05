@@ -42,5 +42,7 @@ extern bool Joy_KeyUp(int symkey, int modkey);
 extern void Joy_StePadButtons_ReadByte(void);
 extern void Joy_StePadMulti_ReadWord(void);
 extern void Joy_StePadMulti_WriteWord(void);
+void Joy_SteLightpenX_ReadWord(void);
+void Joy_SteLightpenY_ReadWord(void);
 
 #endif /* ifndef HATARI_JOY_H */

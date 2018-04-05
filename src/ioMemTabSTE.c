@@ -188,8 +188,8 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_STE[] =
 	{ 0xff9213, SIZE_BYTE, IoMem_VoidRead, IoMem_WriteWithoutInterception }, /* Joypad 0 Y position (?) */
 	{ 0xff9215, SIZE_BYTE, IoMem_VoidRead, IoMem_WriteWithoutInterception }, /* Joypad 1 X position (?) */
 	{ 0xff9217, SIZE_BYTE, IoMem_VoidRead, IoMem_WriteWithoutInterception }, /* Joypad 1 Y position (?) */
-	{ 0xff9220, SIZE_WORD, IoMem_VoidRead, IoMem_WriteWithoutInterception }, /* Lightpen X position */
-	{ 0xff9222, SIZE_WORD, IoMem_VoidRead, IoMem_WriteWithoutInterception }, /* Lightpen Y position */
+	{ 0xff9220, SIZE_WORD, Joy_SteLightpenX_ReadWord, IoMem_WriteWithoutInterception },     /* Lightpen X position */
+	{ 0xff9222, SIZE_WORD, Joy_SteLightpenY_ReadWord, IoMem_WriteWithoutInterception },     /* Lightpen Y position */
 
 	{ 0xfffa01, SIZE_BYTE, MFP_GPIP_ReadByte, MFP_GPIP_WriteByte },
 	{ 0xfffa03, SIZE_BYTE, MFP_ActiveEdge_ReadByte, MFP_ActiveEdge_WriteByte },

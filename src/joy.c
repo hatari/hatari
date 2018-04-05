@@ -17,6 +17,7 @@ const char Joy_fileid[] = "Hatari joy.c : " __DATE__ " " __TIME__;
 #include "ioMem.h"
 #include "joy.h"
 #include "log.h"
+#include "m68000.h"
 #include "screen.h"
 #include "video.h"
 #include "statusbar.h"
@@ -653,4 +654,46 @@ void Joy_StePadMulti_WriteWord(void)
 {
 	nSteJoySelect = IoMem_ReadWord(0xff9202);
 	Dprintf(("0xff9202 <- 0x%04x\n", nSteJoySelect));
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Read STE lightpen X register (0xff9220)
+ */
+void Joy_SteLightpenX_ReadWord(void)
+{
+	Uint16 nData = 0;	/* Lightpen is not supported yet */
+
+	Dprintf(("0xff9220 -> 0x%04x\n", nData));
+
+	if (nIoMemAccessSize == SIZE_BYTE)
+	{
+		/* This register does not like to be accessed in byte mode */
+		M68000_BusError(IoAccessFullAddress, BUS_ERROR_READ,
+		                BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
+		return;
+	}
+
+	IoMem_WriteWord(0xff9220, nData);
+}
+
+/**
+ * Read STE lightpen Y register (0xff9222)
+ */
+void Joy_SteLightpenY_ReadWord(void)
+{
+	Uint16 nData = 0;	/* Lightpen is not supported yet */
+
+	Dprintf(("0xff9222 -> 0x%04x\n", nData));
+
+	if (nIoMemAccessSize == SIZE_BYTE)
+	{
+		/* This register does not like to be accessed in byte mode */
+		M68000_BusError(IoAccessFullAddress, BUS_ERROR_READ,
+		                BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
+		return;
+	}
+
+	IoMem_WriteWord(0xff9222, nData);
 }
