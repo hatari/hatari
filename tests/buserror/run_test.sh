@@ -30,8 +30,8 @@ esac
 export SDL_VIDEODRIVER=dummy
 export SDL_AUDIODRIVER=dummy
 
-$hatari --log-level fatal --sound off --tos none --machine $machine \
-	-d $testdir "$basedir/buserr_$width.prg" \
+HOME="$testdir" $hatari --log-level fatal --sound off --machine $machine \
+	--tos none --fast-forward on -d $testdir "$basedir/buserr_$width.prg" \
 	2> $testdir/stderr.txt > $testdir/stdout.txt
 exitstat=$?
 if [ $exitstat -ne 0 ]; then
