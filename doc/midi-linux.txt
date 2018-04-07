@@ -10,6 +10,7 @@ text, see end of the text. Most of the distros should have in their
 repositories packages at least for some of them though.
 
 Contents:
+- Quick start
 - Using a soundcard with built-in MIDI synthesis capability 
 - Making MIDI soft-synthetizer to work with ALSA
 - Using FluidSynth instead of Timidity
@@ -18,6 +19,29 @@ Contents:
 - MIDI and networking
 - Linux & Atari MIDI related software
 - Additional documentation
+
+
+Quick start
+-----------
+
+*If* Hatari is built with PortMidi, getting MIDI output from Hatari is
+simple.
+
+Just start a MIDI software synthetizer (on Debian/Ubuntu):
+$ sudo apt install qsynth
+$ qsynth
+
+(Hatari scans for MIDI devices only at start, so the MIDI output
+device needs to be there before starting Hatari.)
+
+Then start Hatari, and in the "Devices" option screen, select "Enable
+MIDI emulation" and for the "output" option, select "Synth input
+port".
+
+That's all!
+
+Rest of this document is about lower level MIDI access (without
+PortMidi) and MIDI usage on Linux in general.
 
 
 Using a soundcard with built-in MIDI synthesis capability 
@@ -106,9 +130,9 @@ as it has pretty good organ sound, but it needs Jack connection kit
 Making it all to work with Hatari
 ---------------------------------
 
-Hatari requires midi hardware devices to work, it doesn't support
-ALSA directly.  To get the software synth ALSA devices to appear
-as HW midi devices, run following as *root*:
+Hatari requires midi hardware devices to work, it doesn't support ALSA
+directly without PortMidi.  To get the software synth ALSA devices to
+appear as HW midi devices, run following as *root*:
   modprobe snd-virmidi
 
 When you list your ALSA output devices with:
