@@ -3642,6 +3642,22 @@ int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr)
 	/* Clear BSS */
 	memset(&STRam[baseaddr + 0x100 + nTextLen + nDataLen], 0, nBssLen);
 
+	/* Set up basepage - note: some of these values are rather dummies */
+	STMemory_WriteLong(baseaddr, baseaddr);                                    /* p_lowtpa */
+	STMemory_WriteLong(baseaddr + 4, baseaddr + 0x100 + nTextLen + nDataLen
+	                                 + nBssLen + 0x2000);                      /* p_hitpa */
+	STMemory_WriteLong(baseaddr + 8, baseaddr + 0x100);                        /* p_tbase */
+	STMemory_WriteLong(baseaddr + 12, nTextLen);                               /* p_tlen */
+	STMemory_WriteLong(baseaddr + 16, baseaddr + 0x100 + nTextLen);            /* p_dbase */
+	STMemory_WriteLong(baseaddr + 20, nDataLen);                               /* p_dlen */
+	STMemory_WriteLong(baseaddr + 24, baseaddr + 0x100 + nTextLen + nDataLen); /* p_bbase */
+	STMemory_WriteLong(baseaddr + 28, nBssLen);                                /* p_blen */
+	STMemory_WriteLong(baseaddr + 32, baseaddr + 0x80);                        /* p_dta */
+	STMemory_WriteLong(baseaddr + 36, baseaddr);                               /* p_parent */
+	STMemory_WriteLong(baseaddr + 40, 0);                                      /* p_reserved */
+	/* The environment should point to an empty string - use p_reserved for that: */
+	STMemory_WriteLong(baseaddr + 44, baseaddr + 40);                          /* p_env */
+
 	if (*(uint16_t *)&prg[26] != 0)   /* No reloc information available? */
 		return 0;
 
