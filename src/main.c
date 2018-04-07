@@ -274,7 +274,6 @@ void Main_SetQuitValue(int exitval)
  */
 void Main_SetRunVBLs(Uint32 vbls)
 {
-	fprintf(stderr, "Exit after %d VBLs.\n", vbls);
 	nRunVBLs = vbls;
 	nVBLCount = 0;
 }
@@ -289,7 +288,6 @@ bool Main_SetVBLSlowdown(int factor)
 		fprintf(stderr, "ERROR: invalid VBL slowdown factor %d, should be 1-8!\n", factor);
 		return false;
 	}
-	fprintf(stderr, "Slow down host VBL wait by factor of %d.\n", factor);
 	nVBLSlowdown = factor;
 	return true;
 }

@@ -1166,10 +1166,12 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_SLOWDOWN:
-			if (!Main_SetVBLSlowdown(atoi(argv[++i])))
+			val = atoi(argv[++i]);
+			if (!Main_SetVBLSlowdown(val))
 			{
 				return Opt_ShowError(OPT_SLOWDOWN, argv[i], "Invalid VBL wait slowdown multiplier");
 			}
+			Opt_DbgPrintf("Slow down host VBL wait by factor of %d.\n", val);
 			break;
 
 		case OPT_MOUSE_WARP:
@@ -2106,7 +2108,9 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_RUNVBLS:
-			Main_SetRunVBLs(atol(argv[++i]));
+			val = atoi(argv[++i]);
+			Opt_DbgPrintf("Exit after %d VBLs.\n", val);
+			Main_SetRunVBLs(val);
 			break;
 		       
 		case OPT_BENCHMARK:
