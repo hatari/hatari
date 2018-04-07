@@ -71,6 +71,10 @@ Emulation improvements
   http://listengine.tuxfamily.org/lists.tuxfamily.org/hatari-devel/2011/12/msg00123.html
   -> We should emulate the MMU memory bank configuration at $FF8001
 
+- Beam Racing Algorithm for lagless VSYNC ON.  WinUAE implements it
+  with DirectX:
+	https://github.com/tonioni/WinUAE/issues/133
+
 
 Programs known as not fully functional (not an exhaustive list)
 ---------------------------------------------------------------
