@@ -1,7 +1,6 @@
 #!/bin/sh
 
 if [ $# -ne 3 -o "$1" = "-h" -o "$1" = "--help" ]; then
-	echo xxx $# xxx
 	echo "Usage: $0 <hatari> b|w <machine>"
 	exit 1;
 fi
