@@ -41,7 +41,7 @@ void Resolution_Init(void)
 	}
 	else
 	{
-		fprintf(stderr, "SDL_GetDesktopDisplayMode failed: %s", SDL_GetError());
+		Log_Printf(LOG_ERROR, "SDL_GetDesktopDisplayMode failed: %s", SDL_GetError());
 		DesktopWidth = 2*NUM_VISIBLE_LINE_PIXELS;
 		DesktopHeight = 2*NUM_VISIBLE_LINES+STATUSBAR_MAX_HEIGHT;
 	}
@@ -58,8 +58,8 @@ void Resolution_Init(void)
 		/* target 800x600 screen with statusbar out of screen */
 		DesktopWidth = 2*NUM_VISIBLE_LINE_PIXELS;
 		DesktopHeight = 2*NUM_VISIBLE_LINES+STATUSBAR_MAX_HEIGHT;
-		fprintf(stderr, "WARNING: invalid desktop size %dx%d, defaulting to %dx%d!\n",
-			info->current_w, info->current_h, DesktopWidth, DesktopHeight);
+		Log_Printf(LOG_WARN, "WARNING: invalid desktop size %dx%d, defaulting to %dx%d!\n",
+		           info->current_w, info->current_h, DesktopWidth, DesktopHeight);
 	}
 #endif
 	/* if user hasn't set own max zoom size, use desktop size */
@@ -211,7 +211,7 @@ bool Resolution_Search(int *width, int *height, int *bpp, bool keep)
 	}
 
 	if (modes == (SDL_Rect **) 0) {
-		fprintf(stderr, "WARNING: No suitable video modes available!\n");
+		Log_Printf(LOG_WARN, "WARNING: No suitable video modes available!\n");
 	}
 
 	if (modes == (SDL_Rect **) -1) {
