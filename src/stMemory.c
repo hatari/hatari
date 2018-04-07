@@ -726,7 +726,7 @@ int	STMemory_RAM_Validate_Size_KB ( int TotalMem )
 {
 	/* Old format where ST RAM size was in MB between 0 and 14 */
 	if ( TotalMem == 0 )
-		return 512 * 1024;
+		return 512;
 	else if ( TotalMem <= 14 )
 		return TotalMem * 1024;
 
