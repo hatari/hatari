@@ -1,0 +1,3 @@
+Emulator name:
+Hatari v
+Shutting down...
