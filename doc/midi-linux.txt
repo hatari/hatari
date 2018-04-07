@@ -16,7 +16,7 @@ Contents:
 - Using FluidSynth instead of Timidity
 - Other software synthetizers
 - Making it all to work with Hatari
-- MIDI and networking
+- Forwarding MIDI over network
 - Linux & Atari MIDI related software
 - Additional documentation
 
@@ -31,8 +31,8 @@ Just start a MIDI software synthetizer (on Debian/Ubuntu):
 $ sudo apt install qsynth
 $ qsynth
 
-(Hatari scans for MIDI devices only at start, so the MIDI output
-device needs to be there before starting Hatari.)
+(Hatari scans for ALSA MIDI devices only at start, so the MIDI output
+and input devices need to be there before starting Hatari.)
 
 Then start Hatari, and in the "Devices" option screen, select "Enable
 MIDI emulation" and for the "output" option, select "Synth input
@@ -40,8 +40,9 @@ port".
 
 That's all!
 
-Rest of this document is about lower level MIDI access (without
-PortMidi) and MIDI usage on Linux in general.
+Rest of this document is about lower level MIDI (raw device) access
+without PortMidi, Linux MIDI usage in general, and notes of some
+useful Open Source MIDI software available on Linux.
 
 
 Using a soundcard with built-in MIDI synthesis capability 
@@ -161,8 +162,8 @@ MIDI sound working. In recent distros this shouldn't anymore be
 a problem thanks to Pulseaudio.
 
 
-MIDI and networking
--------------------
+Forwarding MIDI over network
+----------------------------
 
 If you direct the MIDI data to stdout, you can use just ssh to
 forward the MIDI output over network:
