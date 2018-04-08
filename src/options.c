@@ -2005,7 +2005,9 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_BIOSINTERCEPT:
-			XBios_ToggleCommands();
+			Opt_DbgPrintf("XBios 11/20/255 Hatari versions enabled: "
+			              "Dbmsg(), Scrdmp(), HatariControl().\n");
+			XBios_EnableCommands(true);
 			break;
 
 		case OPT_CONOUT:

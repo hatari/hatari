@@ -30,18 +30,9 @@ const char XBios_fileid[] = "Hatari xbios.c : " __DATE__ " " __TIME__;
 static bool bXBiosCommands;
 
 
-void XBios_ToggleCommands(void)
+void XBios_EnableCommands(bool enable)
 {
-	if (bXBiosCommands)
-	{
-		fprintf(stderr, "XBios 11/20/255 Hatari versions disabled.\n");
-		bXBiosCommands = false;
-	}
-	else
-	{
-		fprintf(stderr, "XBios 11/20/255 Hatari versions enabled: Dbmsg(), Scrdmp(), HatariControl().\n");
-		bXBiosCommands = true;
-	}
+	bXBiosCommands = enable;
 }
 
 
@@ -90,7 +81,7 @@ static bool XBios_Dbmsg(Uint32 Params)
 	/* not just a message? */
 	if (msgnum != 0xF000)
 	{
-		fprintf(stderr, "-> HALT");
+		fprintf(stderr, "-> HALT\n");
 		DebugUI(REASON_PROGRAM);
 	}
 
