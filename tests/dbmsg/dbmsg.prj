@@ -1,7 +1,0 @@
-; AHCC project file for Dbmsg() tester
-.C [-isinclude]
-dbmsg.tos
-=
-ahcstart.o
-dbmsg.c
-ahccstdi.lib

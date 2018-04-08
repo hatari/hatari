@@ -1,0 +1,20 @@
+> evaluate 23 + 19
+= %101010 (bin), #42 (dec), $2a (hex)
+Dbmsg:0xF032
+-> "This is a Dbmsg test for a string with fixed size."
+-> HALT
+
+----------------------------------------------------------------------
+You have entered debug mode. Type c to continue emulation, h for help.
+
+CPU=...
+$...
+Returning to emulation...
+Dbmsg:0xF000
+-> "This is a Dbmsg test for a NUL-terminated string."
+Dbmsg: 0x1234, 0xdeadc0de
+-> HALT
+
+CPU=...
+$...
+Returning to emulation...
