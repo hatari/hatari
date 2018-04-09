@@ -15,10 +15,15 @@ fi;
 basedir=$(dirname $0)
 testdir=$(mktemp -d)
 
+function remove_temp {
+  rm -rf "$testdir"
+}
+trap remove_temp EXIT
+
 export SDL_VIDEODRIVER=dummy
 export SDL_AUDIODRIVER=dummy
 
-HOME="$testdir" $hatari --log-level fatal --sound off --fast-forward on \
+HOME="$testdir" $hatari --log-level fatal --sound off --cpuclock 32 \
 	--tos none -d "$testdir" --bios-intercept $* "$basedir/xbiostst.prg" \
 	2> "$testdir/out.txt" << EOF
 c
@@ -28,22 +33,36 @@ exitstat=$?
 if [ $exitstat -ne 0 ]; then
 	echo "Running hatari failed. Status=${exitstat}."
 	cat "$testdir/out.txt"
-	rm -rf "$testdir"
 	exit 1
 fi
 
-# Replace strings that might not be constant:
-sed -e 's/^CPU=.*/CPU=.../' -e 's/^\$0.*/\$.../' \
-    -e 's/Dbmsg: 0xF0\(.*\),\(.*\)/Dbmsg:0xF0\1/' \
-    "$testdir/out.txt" > "$testdir/filtered.txt"
+# Now check for expected strings:
 
-if ! diff -q "$basedir/test_out.txt" "$testdir/filtered.txt"; then
-	echo "Test FAILED, output differs:"
-	diff -u "$basedir/test_out.txt" "$testdir/filtered.txt"
-	rm -rf "$testdir"
+if ! grep -q "%101010.*#42.*2a" "$testdir/out.txt"; then
+	echo "Test FAILED, missing '#42':"
+	cat "$testdir/out.txt"
+	exit 1
+fi
+
+if ! grep -q "This is a Dbmsg test for a string with fixed size." \
+   "$testdir/out.txt"; then
+	echo "Test FAILED, missing Dbmsg string with fixed size:"
+	cat "$testdir/out.txt"
+	exit 1
+fi
+
+if ! grep -q "This is a Dbmsg test for a NUL-terminated string." \
+   "$testdir/out.txt"; then
+	echo "Test FAILED, missing NUL-terminated Dbmsg string:"
+	cat "$testdir/out.txt"
+	exit 1
+fi
+
+if ! grep -q "0x1234.*0xdeadc0de" "$testdir/out.txt"; then
+	echo "Test FAILED, missing Dbmsg code 0x1234:"
+	cat "$testdir/out.txt"
 	exit 1
 fi
 
 echo "Test PASSED."
-rm -rf "$testdir"
 exit 0
