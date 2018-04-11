@@ -24,7 +24,7 @@ export SDL_VIDEODRIVER=dummy
 export SDL_AUDIODRIVER=dummy
 
 HOME="$testdir" $hatari --log-level fatal --sound off --cpuclock 32 \
-	--tos none -d "$testdir" --bios-intercept $* "$basedir/xbiostst.prg" \
+	--tos none -d "$testdir" --bios-intercept on $* "$basedir/xbiostst.prg" \
 	2> "$testdir/out.txt" << EOF
 c
 c

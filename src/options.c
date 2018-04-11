@@ -54,7 +54,7 @@ bool BenchmarkMode;	   /* Start in benchmark mode (try to run at maximum emulati
 
 int ConOutDevice = CONOUT_DEVICE_NONE; /* device number for xconout device to track */
 
-static bool bNoSDLParachute;
+static bool bNoSDLParachute, bBiosIntercept;
 
 /*  List of supported options. */
 enum {
@@ -443,7 +443,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_EXCEPTIONS, NULL, "--debug-except",
 	  "<flags>", "Exceptions invoking debugger, see '--debug-except help'" },
 	{ OPT_BIOSINTERCEPT, NULL, "--bios-intercept",
-	  NULL, "Toggle XBios command parsing support" },
+	  "<bool>", "Enable/disable XBIOS command parsing support" },
 	{ OPT_CONOUT,   NULL, "--conout",
 	  "<device>", "Show console output (0-7, 2=VT-52 terminal)" },
 	{ OPT_DISASM,   NULL, "--disasm",
@@ -2005,9 +2005,11 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_BIOSINTERCEPT:
-			Opt_DbgPrintf("XBios 11/20/255 Hatari versions enabled: "
-			              "Dbmsg(), Scrdmp(), HatariControl().\n");
-			XBios_EnableCommands(true);
+			ok = Opt_Bool(argv[++i], OPT_BIOSINTERCEPT, &bBiosIntercept);
+			Opt_DbgPrintf("XBIOS 11/20/255 Hatari versions %sabled: "
+			              "Dbmsg(), Scrdmp(), HatariControl().\n",
+			              bBiosIntercept ? "en" : "dis");
+			XBios_EnableCommands(bBiosIntercept);
 			break;
 
 		case OPT_CONOUT:

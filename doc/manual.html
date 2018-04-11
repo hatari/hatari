@@ -822,12 +822,13 @@ the debugger</p>
 <p class="paramdesc">Specify which exceptions invoke debugger, see
 "--debug-except help" for available (comma separated) exception
 flags.</p>
-<p class="parameter">--bios-intercept</p>
+<p class="parameter">--bios-intercept &lt;bool&gt;</p>
 <p class="paramdesc">
-Toggle XBios command parsing. Allows Atari programs to use all Hatari
+Enable/disable XBios command parsing. Allows Atari programs to use all Hatari
 functionality and change Hatari state through Hatari specific
 XBios(255) calls. XBios(20) printscreen calls produce also Hatari
-screenshots.</p>
+screenshots. XBios(11) Dbmsg call can be used to invoke the debugger.
+</p>
 <p class="parameter">--conout &lt;device&gt;</p>
 <p class="paramdesc">Enable console (xconout vector functions) output
 redirection for given &lt;device&gt; to host terminal.  Device 2 is for
