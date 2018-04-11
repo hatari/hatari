@@ -495,7 +495,7 @@ bool nf_scsidrv(Uint32 stack, Uint32 subid, Uint32 *retval)
 	return true;
 }
 
-void nf_scsidrv_reset()
+void nf_scsidrv_reset(void)
 {
 	int i;
 	for (i = 0; i < SCSI_MAX_HANDLES; i++)
