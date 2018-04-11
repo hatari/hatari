@@ -166,7 +166,9 @@ static int check_device_file(Uint32 id)
 
 static int scsidrv_interface_version(Uint32 stack)
 {
-	return INTERFACE_VERSION;
+	LOG_TRACE(TRACE_SCSIDRV, "scsidrv_interface_version: version=$%04x", INTERFACE_VERSION);
+
+        return INTERFACE_VERSION;
 }
 
 static int scsidrv_interface_features(Uint32 stack)
@@ -178,6 +180,8 @@ static int scsidrv_interface_features(Uint32 stack)
 	strncpy(busName, BUS_NAME, 20);
 	write_word(features, BUS_FEATURES);
 	write_long(transferLen, BUS_TRANSFER_LEN);
+
+	LOG_TRACE(TRACE_SCSIDRV, "scsidrv_interface_features: busName=%s, features=$%04x, transferLen=%d", busName, BUS_FEATURES, BUS_TRANSFER_LEN);
 
 	return 0;
 }
