@@ -97,6 +97,12 @@
   Parallel execution of the CPU is obtained by skipping as many CPU cycles as the blitter ran,
   or by skipping CPU cycles until the next CPU bus access (at which point the CPU would stall).
 
+  When HOG mode is disabled, the CPU can also stop the blitter in case it needs more than 64 bus accesses
+  (for example to handle some timing-sensitive interrupts). When CPU owns the bus, writing '0' to bit 7 of the control
+  register will stop the blitter, writing '1' will resume the blitter from where it was before being stopped.
+  Note that writing '0' will not end the current blitter transfer, reading 'busy' bit 7 will still return '1'.
+  It's only when 'y count' reaches '0' that transfer will be complete and busy bit will be cleared.
+
 */
 
 /*
@@ -227,12 +233,13 @@ static BLITTER_OP_FUNC	Blitter_ComputeLOP;
 
 
 /* To handle CPU/blitter bus sharing in non-hog mode (require cycle exact mode for CPU emulation) */
-#define	BLITTER_PHASE_STOP			0
+#define	BLITTER_PHASE_STOP			0		/* blitter is completely stopped */
 #define	BLITTER_PHASE_PRE_START			1
 #define	BLITTER_PHASE_START			2
-#define	BLITTER_PHASE_RUN_TRANSFER		4
-#define	BLITTER_PHASE_COUNT_CPU_BUS		8
+#define	BLITTER_PHASE_RUN_TRANSFER		4		/* blitter owns the bus and transfer data */
+#define	BLITTER_PHASE_COUNT_CPU_BUS		8		/* cpu owns the bus during 64 accesses */
 #define	BLITTER_PHASE_IGNORE_LAST_CPU_CYCLES	16
+#define	BLITTER_PHASE_PAUSE			32		/* cpu owns the bus (COUNT_CPU_BUS) and stops the blitter */
 
 Uint16		BlitterPhase = BLITTER_PHASE_STOP;		/* Internal state of the blitter */
 
@@ -1280,10 +1287,8 @@ void Blitter_LogOp_WriteByte(void)
  */
 void Blitter_Control_WriteByte(void)
 {
-	Uint8	ctrl_old;
-
 	/* Control register bits:
-	 * 0x80: busy bit
+	 * 0x80: start/stop bit (write) - busy bit (read)
 	 * - Turn on Blitter activity and stay "1" until copy finished
 	 * 0x40: Blit-mode bit
 	 * - 0: Blit mode, CPU and Blitter get 64 bus accesses in turns
@@ -1298,8 +1303,6 @@ void Blitter_Control_WriteByte(void)
 	 * The lowest 4 bits contain the Halftone pattern line number
 	 */
 
-	ctrl_old = BlitterRegs.ctrl;
-
 	if (LOG_TRACE_LEVEL(TRACE_BLITTER))
 	{
 		int FrameCycles, HblCounterVideo, LineCycles;
@@ -1307,7 +1310,7 @@ void Blitter_Control_WriteByte(void)
 		Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
 		LOG_TRACE_PRINT("blitter write ctrl=%02x ctrl_old=%02x video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" ,
-				IoMem_ReadByte(REG_CONTROL) , ctrl_old ,
+				IoMem_ReadByte(REG_CONTROL) , BlitterRegs.ctrl ,
 				FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles );
 	}
 
@@ -1320,7 +1323,7 @@ void Blitter_Control_WriteByte(void)
 	/* Remove old pending update interrupt */
 	CycInt_RemovePendingInterrupt(INTERRUPT_BLITTER);
 
-	/* Busy bit set? */
+	/* Start/Stop bit set ? */
 	if (BlitterRegs.ctrl & 0x80)
 	{
 		if (BlitterRegs.lines == 0)
@@ -1332,12 +1335,13 @@ void Blitter_Control_WriteByte(void)
 		{
 			/* Start blitter after a small delay */
 			/* In non-hog mode, the cpu can "restart" the blitter immediately (without waiting */
-			/* for 64 cpu bus accesses) by setting busy bit. This means we should reset */
-			/* BlitterState.ContinueLater only if the blitter was stopped before ; */
+			/* for 64 cpu bus accesses) by setting "start/stop" bit. The cpu can also "stop" the blitter (PAUSE state) */
+			/* and restart it here (blitter continues from where it was stopped)  */
+			/* This means we should reset BlitterState.ContinueLater only if the blitter was stopped before ; */
 			/* else if the blitter is restarted we must keep the value of BlitterState.ContinueLater */
 			if ( BLITTER_RUN_CE )
 			{
-				if ( ( ctrl_old & 0x80 ) == 0 )			/* Only when blitter is started (not when restarted) */
+				if ( BlitterPhase == BLITTER_PHASE_STOP )	/* Only when blitter is started (not when restarted) */
 				{
 					M68000_SetBlitter_CE ( true );
 					Blitter_FlushWordSrcDest ();
@@ -1351,7 +1355,7 @@ void Blitter_Control_WriteByte(void)
 			}
 			else
 			{
-				if ( ( ctrl_old & 0x80 ) == 0 )			/* Only when blitter is started (not when restarted) */
+				if ( BlitterPhase == BLITTER_PHASE_STOP )	/* Only when blitter is started (not when restarted) */
 				{
 					Blitter_FlushWordSrcDest ();
 					BlitterState.ContinueLater = 0;
@@ -1363,19 +1367,17 @@ void Blitter_Control_WriteByte(void)
 		}
 	}
 
-	else					/* busy bit clear */
+	else					/* Start/Stop bit clear */
 	{
-		/* If busy bit is forced to 0 (to stop the blitter in non-hog mode), we must update */
-		/* the interrupt line too */
-		// TODO : check on real STE, does it clear hog bit too ? It seems not, else 'Relapse' demo will fail in some parts
-//		BlitterRegs.ctrl &= ~(0x80|0x40);
-
-		/* Busy=0, set line to low/0 and request interrupt */
-		MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_GPU_DONE , MFP_GPIP_STATE_LOW );
-
-		BlitterPhase = BLITTER_PHASE_STOP;
-		if ( BLITTER_RUN_CE )
-			M68000_SetBlitter_CE ( false );
+		/* If the blitter was running and "start/stop" bit is forced to 0 (to stop the blitter in non-hog mode) */
+		/* we "pause" the blitter to temporarily stop bus sharing . This does not clear busy bit, it's only */
+		/* when 'y count' reaches 0 that transfer will be complete and busy bit will be cleared */
+		/* If blitter is already stopped, we don't do anything */
+		if ( BlitterPhase == BLITTER_PHASE_COUNT_CPU_BUS )
+		{
+			BlitterPhase = BLITTER_PHASE_PAUSE;
+			BlitterState.ContinueLater = 1;				/* Keep all the blitter's states */
+		}
 	}
 }
 
