@@ -731,11 +731,12 @@ static void Blitter_SetState(Uint8 fxsr, Uint8 nfsr, Uint16 end_mask)
 
 	if ( BlitterState.ContinueLater )
 		BlitterState.ContinueLater = 0;				/* Resuming, keep previous values of have_src / have_dst */
-	else
-	{
-		BlitterState.have_src = false;
-		BlitterState.have_dst = false;
-	}
+}
+
+static void Blitter_FlushWordSrcDest(void)
+{
+	BlitterState.have_src = false;
+	BlitterState.have_dst = false;
 }
 
 static Uint16 Blitter_ComputeMask(Uint16 lop)
@@ -773,6 +774,9 @@ static void Blitter_ProcessWord(void)
 		--BlitterRegs.words;
 		BlitterRegs.dst_addr += BlitterRegs.dst_x_incr;
 	}
+
+	/* ProcessWord is complete, reset internal content of src/dst words */
+	Blitter_FlushWordSrcDest ();
 }
 
 static void Blitter_EndLine(void)
@@ -1336,6 +1340,7 @@ void Blitter_Control_WriteByte(void)
 				if ( ( ctrl_old & 0x80 ) == 0 )			/* Only when blitter is started (not when restarted) */
 				{
 					M68000_SetBlitter_CE ( true );
+					Blitter_FlushWordSrcDest ();
 					BlitterState.ContinueLater = 0;
 				}
 
@@ -1348,6 +1353,7 @@ void Blitter_Control_WriteByte(void)
 			{
 				if ( ( ctrl_old & 0x80 ) == 0 )			/* Only when blitter is started (not when restarted) */
 				{
+					Blitter_FlushWordSrcDest ();
 					BlitterState.ContinueLater = 0;
 				}
 
