@@ -2711,7 +2711,7 @@ const char *Disasm_ParseOption(const char *arg)
 			assert(option[i].flag == (1 << i));
 			fprintf(stderr, "\t%d: %s\n", option[i].flag, option[i].desc);
 		}
-		fprintf(stderr, "Current settings are:\n\t--disasm %s --disasm %d\n",
+		fprintf(stderr, "Current settings are:\n\t--disasm %s --disasm 0x%x\n",
 			ConfigureParams.Debugger.bDisasmUAE ? "uae" : "ext",
 			ConfigureParams.Debugger.nDisasmOptions);
 		return "";
@@ -2731,7 +2731,12 @@ const char *Disasm_ParseOption(const char *arg)
 	}
 	if (isdigit((unsigned char)*arg))
 	{
-		int newopt = atoi(arg);
+		char *end;
+		int newopt = strtol(arg, &end, 0);
+		if (*end)
+		{
+			return "not a number";
+		}
 		if ((newopt|optionsMask) != optionsMask)
 		{
 			return "unknown flags in the bitmask";
