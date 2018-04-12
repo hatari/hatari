@@ -8,12 +8,30 @@
  ---------------------------
 
 Emulation:
--
+- Blitter:
+  - Fix a rare case in cycle exact mode when bus is shared between cpu
+    and blitter : the last word of a transfer could be wrong if bus was
+    owned by cpu just before processing this last word and a read-modify-write
+    is made
+  - State of current blitter operation was sometimes not correctly restored when
+    cpu temporarily stopped the blitter and resumed it later
 
 Emulator:
+- AVI recording with png codec could be wrongly limited to 4GB with some OSes
+  where LFS support was not correctly detected
 - Debugger improvements:
   - Fix: DSP/CPU profile "addresses" commands output line count when
     paging.  Tell also when it wraps to start
+- macOS UI:
+  - Fix inverted buttons "reset" and "don't reset"
+  - Update MIDI pannel for french version
+  - Save screenshots in user defined location or ~/Desktop
+- Compilation:
+  - improve cmake file for better support of recent macOS
+  - check if Large File Support is available (64 bits off_t)
+
+Fixed games:
+- Lethal Xcess in STE mode (stopping/resuming blitter)
 
 
  Version 2.1.0 (2018-02-07)
