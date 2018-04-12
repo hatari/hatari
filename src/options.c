@@ -231,7 +231,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_FRAMESKIPS, NULL, "--frameskips",
 	  "<x>", "Skip <x> frames after each shown frame (0=off, >4=auto/max)" },
 	{ OPT_SLOWDOWN, NULL, "--slowdown",
-	  "<x>", "VBL wait time multiplier (1-8, default 1)" },
+	  "<x>", "VBL wait time multiplier (1-30, default 1)" },
 	{ OPT_MOUSE_WARP, NULL, "--mousewarp",
 	  "<bool>", "Center host mouse on reset & resolution changes" },
 	{ OPT_STATUSBAR, NULL, "--statusbar",

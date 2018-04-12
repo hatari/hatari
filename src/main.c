@@ -284,8 +284,8 @@ void Main_SetRunVBLs(Uint32 vbls)
  */
 bool Main_SetVBLSlowdown(int factor)
 {
-	if (factor < 1 || factor > 8) {
-		fprintf(stderr, "ERROR: invalid VBL slowdown factor %d, should be 1-8!\n", factor);
+	if (factor < 1 || factor > 30) {
+		fprintf(stderr, "ERROR: invalid VBL slowdown factor %d, should be 1-30!\n", factor);
 		return false;
 	}
 	nVBLSlowdown = factor;
