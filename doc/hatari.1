@@ -462,11 +462,11 @@ Specify which exceptions invoke debugger, see
 .B \-\-debug\-except help
 for available (comma separated) exception flags.
 .TP 
-.B \-\-bios\-intercept
-Toggle XBios command parsing. Allows Atari programs to use all Hatari
-functionality and change Hatari state through Hatari specifit
+.B \-\-bios\-intercept <bool>
+Enable/Disable XBios command parsing. Allows Atari programs to use all
+Hatari functionality and change Hatari state through Hatari specific
 XBios(255) calls. XBios(20) printscreen calls produce also Hatari
-screenshots.
+screenshots. XBios(11) Dbmsg call can be used to invoke the debugger.
 .TP
 .B \-\-conout <device>
 Enable console (xconout vector functions) output redirection for given

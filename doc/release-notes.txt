@@ -30,6 +30,9 @@ Emulator:
 - Compilation:
   - Improve CMake library finding for recent macOS
   - Fix: Large File Support detection (64 bits off_t)
+- Options:
+  - The "--bios-intercept" option now takes a boolean parameter which is
+    used to determine whether the option should be enabled or disabled.
 
 Fixed games:
 - Lethal Xcess in STE mode (stopping/resuming blitter)
