@@ -894,7 +894,7 @@ int main(int argc, char *argv[])
 	Main_LoadInitialConfig();
 
 	/* Check for any passed parameters */
-	if (!Opt_ParseParameters(argc, (const char * const *)argv))
+	if (!Opt_ParseParameters(argc, (const char * const *)argv, false))
 	{
 		return 1;
 	}

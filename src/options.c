@@ -54,6 +54,7 @@ bool BenchmarkMode;	   /* Start in benchmark mode (try to run at maximum emulati
 
 int ConOutDevice = CONOUT_DEVICE_NONE; /* device number for xconout device to track */
 
+static bool bForceLog;     /* Always print option parsing log messages? */
 static bool bNoSDLParachute, bBiosIntercept;
 
 /*  List of supported options. */
@@ -484,11 +485,11 @@ static const opt_t HatariOptions[] = {
  * log file has not been opened yet. So we use our own debug print
  * function here.
  */
-static void Opt_DbgPrintf(const char *psFormat, ...)
+static void Opt_Log(const char *psFormat, ...)
 {
 	va_list argptr;
 
-	if (ConfigureParams.Log.nTextLogLevel != LOG_DEBUG)
+	if (ConfigureParams.Log.nTextLogLevel != LOG_DEBUG && !bForceLog)
 		return;
 
 	va_start(argptr, psFormat);
@@ -1032,7 +1033,7 @@ static bool Opt_HandleArgument(const char *path)
  * parse all Hatari command line options and set Hatari state accordingly.
  * Returns true if everything was OK, false otherwise.
  */
-bool Opt_ParseParameters(int argc, const char * const argv[])
+bool Opt_ParseParameters(int argc, const char * const argv[], bool verbose)
 {
 	int ncpu, skips, zoom, planes, cpuclock, threshold, memsize, port, freq, temp, drive;
 	const char *errstr, *str;
@@ -1042,6 +1043,8 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 	/* Defaults for loading initial memory snap-shots */
 	bLoadMemorySave = false;
 	bLoadAutoSave = ConfigureParams.Memory.bAutoSave;
+
+	bForceLog = verbose;
 
 	for(i = 1; i < argc; i++)
 	{
@@ -1171,7 +1174,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			{
 				return Opt_ShowError(OPT_SLOWDOWN, argv[i], "Invalid VBL wait slowdown multiplier");
 			}
-			Opt_DbgPrintf("Slow down host VBL wait by factor of %d.\n", val);
+			Opt_Log("Slow down host VBL wait by factor of %d.\n", val);
 			break;
 
 		case OPT_MOUSE_WARP:
@@ -1200,7 +1203,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			default:
 				return Opt_ShowError(OPT_FORCEBPP, argv[i], "Invalid bit depth");
 			}
-			Opt_DbgPrintf("Hatari window BPP = %d.\n", planes);
+			Opt_Log("Hatari window BPP = %d.\n", planes);
 			ConfigureParams.Screen.nForceBpp = planes;
 			break;
 
@@ -1229,7 +1232,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				return Opt_ShowError(OPT_SPEC512, argv[i],
 						     "Invalid palette writes per line threshold for Spec512");
 			}
-			Opt_DbgPrintf("Spec512 threshold = %d palette writes per line.\n", threshold);
+			Opt_Log("Spec512 threshold = %d palette writes per line.\n", threshold);
 			ConfigureParams.Screen.nSpec512Threshold = threshold;
 			break;
 
@@ -1324,7 +1327,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				return Opt_ShowError(OPT_AVIRECORD_FPS, argv[i],
 							"Invalid frame rate for avi recording");
 			}
-			Opt_DbgPrintf("AVI recording FPS = %d.\n", val);
+			Opt_Log("AVI recording FPS = %d.\n", val);
 			ConfigureParams.Video.AviRecordFps = val;
 			break;
 
@@ -1925,9 +1928,9 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				ConfigureParams.Sound.nPlaybackFreq = freq;
 				ConfigureParams.Sound.bEnableSound = true;
 			}
-			Opt_DbgPrintf("Sound %s, frequency = %d.\n",
-			              ConfigureParams.Sound.bEnableSound ? "ON" : "OFF",
-			              ConfigureParams.Sound.nPlaybackFreq);
+			Opt_Log("Sound %s, frequency = %d.\n",
+			        ConfigureParams.Sound.bEnableSound ? "ON" : "OFF",
+			        ConfigureParams.Sound.nPlaybackFreq);
 			break;
 
 		case OPT_SOUNDBUFFERSIZE:
@@ -1939,7 +1942,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				{
 					return Opt_ShowError(OPT_SOUNDBUFFERSIZE, argv[i], "Unsupported sound buffer size");
 				}
-			Opt_DbgPrintf("SDL sound buffer size = %d ms.\n", temp);
+			Opt_Log("SDL sound buffer size = %d ms.\n", temp);
 			ConfigureParams.Sound.SdlAudioBufferSize = temp;
 			break;
 
@@ -1972,12 +1975,12 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			if (ExceptionDebugMask)
 			{
 				ExceptionDebugMask = EXCEPT_NONE;
-				Opt_DbgPrintf("Exception debugging disabled.\n");
+				Opt_Log("Exception debugging disabled.\n");
 			}
 			else
 			{
 				ExceptionDebugMask = ConfigureParams.Debugger.nExceptionDebugMask;
-				Opt_DbgPrintf("Exception debugging enabled (0x%x).\n", ExceptionDebugMask);
+				Opt_Log("Exception debugging enabled (0x%x).\n", ExceptionDebugMask);
 			}
 			break;
 
@@ -1999,16 +2002,16 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				/* already enabled, change run-time config */
 				int oldmask = ExceptionDebugMask;
 				ExceptionDebugMask = ConfigureParams.Debugger.nExceptionDebugMask;
-				Opt_DbgPrintf("Exception debugging changed (0x%x -> 0x%x).\n",
-				              oldmask, ExceptionDebugMask);
+				Opt_Log("Exception debugging changed (0x%x -> 0x%x).\n",
+				        oldmask, ExceptionDebugMask);
 			}
 			break;
 
 		case OPT_BIOSINTERCEPT:
 			ok = Opt_Bool(argv[++i], OPT_BIOSINTERCEPT, &bBiosIntercept);
-			Opt_DbgPrintf("XBIOS 11/20/255 Hatari versions %sabled: "
-			              "Dbmsg(), Scrdmp(), HatariControl().\n",
-			              bBiosIntercept ? "en" : "dis");
+			Opt_Log("XBIOS 11/20/255 Hatari versions %sabled: "
+			        "Dbmsg(), Scrdmp(), HatariControl().\n",
+			        bBiosIntercept ? "en" : "dis");
 			XBios_EnableCommands(bBiosIntercept);
 			break;
 
@@ -2019,12 +2022,12 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			{
 				return Opt_ShowError(OPT_CONOUT, argv[i], "Invalid console device vector number");
 			}
-			Opt_DbgPrintf("Xcounout device %d vector redirection enabled.\n", ConOutDevice);
+			Opt_Log("Xcounout device %d vector redirection enabled.\n", ConOutDevice);
 			break;
 
 		case OPT_NATFEATS:
 			ok = Opt_Bool(argv[++i], OPT_NATFEATS, &ConfigureParams.Log.bNatFeats);
-			Opt_DbgPrintf("Native Features %s.\n", ConfigureParams.Log.bNatFeats ? "enabled" : "disabled");
+			Opt_Log("Native Features %s.\n", ConfigureParams.Log.bNatFeats ? "enabled" : "disabled");
 			break;
 
 		case OPT_PARACHUTE:
@@ -2113,7 +2116,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 		case OPT_RUNVBLS:
 			val = atoi(argv[++i]);
-			Opt_DbgPrintf("Exit after %d VBLs.\n", val);
+			Opt_Log("Exit after %d VBLs.\n", val);
 			Main_SetRunVBLs(val);
 			break;
 		       

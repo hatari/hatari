@@ -364,7 +364,7 @@ static int DebugUI_SetOptions(int argc, char *argv[])
 	current = ConfigureParams;
 
 	/* Parse and apply options */
-	if (Opt_ParseParameters(argc, (const char * const *)argv))
+	if (Opt_ParseParameters(argc, (const char * const *)argv, true))
 	{
 		ConfigureParams.Screen.bFullScreen = false;
 		Change_CopyChangedParamsToConfiguration(&current, &ConfigureParams, false);
