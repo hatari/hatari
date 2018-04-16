@@ -274,9 +274,9 @@ static const opt_t HatariOptions[] = {
 	{ OPT_VDI_PLANES,NULL, "--vdi-planes",
 	  "<x>", "VDI mode bit-depth (x = 1/2/4)" },
 	{ OPT_VDI_WIDTH,     NULL, "--vdi-width",
-	  "<w>", "VDI mode width (320 < w <= 1280)" },
+	  "<w>", "VDI mode width (320 < w <= 2048)" },
 	{ OPT_VDI_HEIGHT,     NULL, "--vdi-height",
-	  "<h>", "VDI mode height (200 < h <= 960)" },
+	  "<h>", "VDI mode height (200 < h <= 1280)" },
 
 	{ OPT_HEADER, NULL, NULL, NULL, "Screen capture" },
 	{ OPT_SCREEN_CROP, NULL, "--crop",
