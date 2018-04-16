@@ -20,6 +20,8 @@ Emulator:
 - Media handling:
   - Fix: AVI recording with PNG codec could be wrongly limited to 4GB
     with some OSes
+- Screen handling:
+  - Fix: add VDI mode width restrictions for TOS <= 2.x and >= 4MB of RAM
 - Debugger:
   - Fix: DSP/CPU profile "addresses" commands output line count when
     paging.  Tell also when it wraps to start
