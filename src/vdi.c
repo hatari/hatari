@@ -22,6 +22,7 @@ const char VDI_fileid[] = "Hatari vdi.c : " __DATE__ " " __TIME__;
 #include "options.h"
 #include "screen.h"
 #include "stMemory.h"
+#include "tos.h"
 #include "vdi.h"
 #include "video.h"
 
@@ -123,14 +124,27 @@ void VDI_SetResolution(int GEMColor, int WidthRequest, int HeightRequest)
 	/* screen size in bytes needs to be below limit */
 	VDI_ByteLimit(&w, &h, VDIPlanes);
 
-	/* width needs to be aligned to 16 bytes */
-	VDIWidth = Opt_ValueAlignMinMax(w, 128/VDIPlanes, MIN_VDI_WIDTH, MAX_VDI_WIDTH);
+	if (bIsEmuTOS || TosVersion >= 0300 || ConfigureParams.Memory.STRamSize_KB < 4*1024)
+	{
+		/* width needs to be aligned to 16 bytes */
+		VDIWidth = Opt_ValueAlignMinMax(w, 128/VDIPlanes, MIN_VDI_WIDTH, MAX_VDI_WIDTH);
+	}
+	else /* Atari TOS <=v2.x with >=4MB of RAM */
+	{
+		/* First align to 128 pixels */
+		VDIWidth = Opt_ValueAlignMinMax(w, 128, MIN_VDI_WIDTH, MAX_VDI_WIDTH);
+		/* then make sure width is 128 + 256*x */
+		if (VDIWidth > 3*128 && (VDIWidth-128) % 256)
+			VDIWidth -= 128;
+	}
 	/* height needs to be multiple of cell height (either 8 or 16) */
 	VDIHeight = Opt_ValueAlignMinMax(h, 16, MIN_VDI_HEIGHT, MAX_VDI_HEIGHT);
 
-	printf("VDI screen: request = %dx%d@%d, result = %dx%d@%d\n",
-	       WidthRequest, HeightRequest, VDIPlanes, VDIWidth, VDIHeight, VDIPlanes);
-
+	if (w != VDIWidth || h != VDIHeight)
+	{
+		printf("VDI screen: request = %dx%d@%d, result = %dx%d@%d\n",
+		       WidthRequest, HeightRequest, VDIPlanes, VDIWidth, VDIHeight, VDIPlanes);
+	}
 	/* INF file overriding so that (re-)boot uses correct bit-depth */
 	INF_SetVdiMode(VDIRes);
 }
