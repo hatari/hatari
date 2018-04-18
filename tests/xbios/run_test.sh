@@ -15,7 +15,7 @@ fi;
 basedir=$(dirname $0)
 testdir=$(mktemp -d)
 
-function remove_temp {
+remove_temp() {
   rm -rf "$testdir"
 }
 trap remove_temp EXIT
