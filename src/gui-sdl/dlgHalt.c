@@ -23,10 +23,12 @@ const char DlgHalt_fileid[] = "Hatari dlgHalt.c : " __DATE__ " " __TIME__;
 #define DLGHALT_DEBUG	4
 #define DLGHALT_QUIT	5
 
+#define DLGHALT_MSG "Detected double bus/address error => CPU halted!"
+
 /* The "Halt"-dialog: */
 static SGOBJ haltdlg[] = {
 	{ SGBOX,  0, 0, 0,0, 52,7, NULL },
-	{ SGTEXT, 0, 0, 2,1, 48,1, "Detected double bus/address error => CPU halted!" },
+	{ SGTEXT, 0, 0, 2,1, 48,1, DLGHALT_MSG },
 	{ SGBUTTON, SG_DEFAULT, 0,  6,3, 12,1, "_Warm reset" },
 	{ SGBUTTON, 0,          0,  6,5, 12,1, "_Cold reset" },
 	{ SGBUTTON, 0,          0, 28,3, 18,1, "Console _debugger" },
@@ -34,6 +36,22 @@ static SGOBJ haltdlg[] = {
 	{ SGSTOP, 0, 0, 0,0, 0,0, NULL }
 };
 
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Make Hatari quit
+ */
+static void do_quit(void)
+{
+	if (bQuitProgram) {
+		/* got here again, cold reset emulation to make sure we actually can exit */
+		fputs("Halt dialog invoked during Hatari shutdown, doing emulation cold reset...\n", stderr);
+		Reset_Cold();
+	} else {
+		bQuitProgram = true;
+	}
+	M68000_SetSpecial(SPCFLAG_BRK);
+}
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -47,6 +65,14 @@ void Dialog_HaltDlg(void)
 	SDL_SetRelativeMouseMode(SDL_FALSE);
 #endif
 	SDL_ShowCursor(SDL_ENABLE);
+
+	/* if we get halt with --run-vbls, just quit right away */
+	if (Main_SetRunVBLs(0))
+	{
+		Log_Printf(LOG_ERROR, DLGHALT_MSG);
+		do_quit();
+		return;
+	}
 
 	SDLGui_CenterDlg(haltdlg);
 	switch (SDLGui_DoDialog(haltdlg, NULL, false)) {
@@ -66,14 +92,7 @@ void Dialog_HaltDlg(void)
 		break;
 	default:
 		/* DLGHALTQUIT, SDLGUI_QUIT and GUI errors */
-		if (bQuitProgram) {
-			/* got here again, cold reset emulation to make sure we actually can exit */
-			fputs("Halt dialog invoked during Hatari shutdown, doing emulation cold reset...\n", stderr);
-			Reset_Cold();
-		} else {
-			bQuitProgram = true;
-		}
-		M68000_SetSpecial(SPCFLAG_BRK);
+		do_quit();
 	}
 	SDL_ShowCursor(show);
 #if WITH_SDL2

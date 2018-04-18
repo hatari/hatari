@@ -270,12 +270,18 @@ void Main_SetQuitValue(int exitval)
 /*-----------------------------------------------------------------------*/
 /**
  * Set how many VBLs Hatari should run, from the moment this function
- * is called.
+ * is called and return zero.
+ *
+ * If zero value given instead, returns earlier set VBL count.
  */
-void Main_SetRunVBLs(Uint32 vbls)
+Uint32 Main_SetRunVBLs(Uint32 vbls)
 {
+	if (!vbls)
+		return nRunVBLs;
+
 	nRunVBLs = vbls;
 	nVBLCount = 0;
+	return 0;
 }
 
 /*-----------------------------------------------------------------------*/

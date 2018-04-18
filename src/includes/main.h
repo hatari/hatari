@@ -64,7 +64,7 @@ extern bool Main_PauseEmulation(bool visualize);
 extern bool Main_UnPauseEmulation(void);
 extern void Main_RequestQuit(int exitval);
 extern void Main_SetQuitValue(int exitval);
-extern void Main_SetRunVBLs(Uint32 vbls);
+extern Uint32 Main_SetRunVBLs(Uint32 vbls);
 extern bool Main_SetVBLSlowdown(int factor);
 extern void Main_WaitOnVbl(void);
 extern void Main_WarpMouse(int x, int y, bool restore);
