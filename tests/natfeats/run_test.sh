@@ -19,7 +19,7 @@ export SDL_VIDEODRIVER=dummy
 export SDL_AUDIODRIVER=dummy
 
 HOME="$testdir" $hatari --log-level fatal --sound off --fast-forward on --tos none \
-	--natfeats on -d "$basedir" --run-vbls 500 $* "$basedir/nf_vbcc.tos" \
+	--natfeats on --run-vbls 500 $* "$basedir/nf_vbcc.tos" \
 	2>&1 | sed "s/^Hatari v.*/Hatari v/" > "$testdir/out.txt"
 exitstat=$?
 if [ $exitstat -ne 0 ]; then

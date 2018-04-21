@@ -955,15 +955,7 @@ static bool Opt_HandleArgument(const char *path)
 	/* Atari program? */
 	if (Opt_IsAtariProgram(path))
 	{
-		const char *prgname;
-
-		if (!bUseTos)
-		{
-			TOS_SetTestPrgName(path);
-			return true;
-		}
-
-		prgname = strrchr(path, PATHSEP);
+		const char *prgname = strrchr(path, PATHSEP);
 		if (prgname)
 		{
 			dir = strdup(path);
@@ -975,13 +967,20 @@ static bool Opt_HandleArgument(const char *path)
 			dir = strdup(Paths_GetWorkingDir());
 			prgname = path;
 		}
-		Log_Printf(LOG_INFO, "ARG = autostart program: %s\n", prgname);
+		Log_Printf(LOG_DEBUG, "ARG = autostart program: %s\n", prgname);
 
 		/* after above, dir should point to valid dir,
 		 * then make sure that given program from that
 		 * dir will be started.
 		 */
-		INF_SetAutoStart(prgname, OPT_AUTOSTART);
+		if (bUseTos)
+		{
+			INF_SetAutoStart(prgname, OPT_AUTOSTART);
+		}
+		else
+		{
+			TOS_SetTestPrgName(path);
+		}
 	}
 	if (dir)
 	{
@@ -991,7 +990,7 @@ static bool Opt_HandleArgument(const char *path)
 	/* GEMDOS HDD directory (as argument, or for the Atari program)? */
 	if (File_DirExists(path))
 	{
-		Log_Printf(LOG_INFO, "ARG = GEMDOS HD dir: %s\n", path);
+		Log_Printf(LOG_DEBUG, "ARG = GEMDOS HD dir: %s\n", path);
 		if (Opt_StrCpy(OPT_HARDDRIVE, false, ConfigureParams.HardDisk.szHardDiskDirectories[0],
 			       path, sizeof(ConfigureParams.HardDisk.szHardDiskDirectories[0]),
 			       &ConfigureParams.HardDisk.bUseHardDiskDirectories)

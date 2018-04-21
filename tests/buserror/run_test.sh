@@ -29,8 +29,9 @@ esac
 export SDL_VIDEODRIVER=dummy
 export SDL_AUDIODRIVER=dummy
 
-HOME="$testdir" $hatari --log-level fatal --sound off --machine $machine \
-	--tos none --fast-forward on -d $testdir "$basedir/buserr_$width.prg" \
+cp "$basedir/buserr_$width.prg" "$testdir"
+HOME="$testdir" $hatari --log-level fatal --fast-forward on --machine $machine \
+	--sound off --run-vbls 500 --tos none  "$testdir/buserr_$width.prg" \
 	2> $testdir/stderr.txt > $testdir/stdout.txt
 exitstat=$?
 if [ $exitstat -ne 0 ]; then
