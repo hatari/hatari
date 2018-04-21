@@ -2,7 +2,6 @@
 .C [-iinclude -DTEST=1]
 nf_ahcc.tos
 =
-ahcstart.o
+../startup.s
 natfeats.c (natfeats.h)
 nf_asma.s
-ahccstdi.lib

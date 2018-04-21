@@ -18,9 +18,10 @@ testdir=$(mktemp -d)
 export SDL_VIDEODRIVER=dummy
 export SDL_AUDIODRIVER=dummy
 
-HOME="$testdir" $hatari --log-level fatal --sound off --fast-forward on --tos none \
-	--natfeats on --run-vbls 500 $* "$basedir/nf_vbcc.tos" \
-	2>&1 | sed "s/^Hatari v.*/Hatari v/" > "$testdir/out.txt"
+echo c | HOME="$testdir" $hatari --log-level fatal --sound off --natfeats on \
+	--tos none --fast-forward on  --run-vbls 500 $* "$basedir/nf_ahcc.tos" \
+	2>&1 | sed -e "s/^Hatari v.*/Hatari v/" -e "s/^CPU=.*$/CPU=.../" \
+		   -e "s/^\$00.*/\$00.../" > "$testdir/out.txt"
 exitstat=$?
 if [ $exitstat -ne 0 ]; then
 	echo "Running hatari failed. Status=${exitstat}."
