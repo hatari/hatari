@@ -93,7 +93,7 @@ done
 
 # calculate command line length and append zero just in case
 cmdlen=$(wc -c $args | awk '{print $1}')
-echo -n "\0" >> $args
+printf "\0" >> $args
 if [ $cmdlen -gt 126 ]; then
 	usage "command line is too long, $cmdlen chars (basepage limit is 126)"
 fi
