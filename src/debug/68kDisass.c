@@ -2488,10 +2488,10 @@ static void Disass68k_loop (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
 
 		char	addressBuffer[32];
 		char	hexdumpBuffer[256];
-		char	labelBuffer[256];
+		char	labelBuffer[258];
 		char	opcodeBuffer[64];
 		char	operandBuffer[256];
-		char	commentBuffer[256];
+		char	commentBuffer[258];
 		int	plen, len, j;
 
 		len = Disass68k(addr, labelBuffer, opcodeBuffer, operandBuffer, commentBuffer);
