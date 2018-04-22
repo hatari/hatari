@@ -3929,6 +3929,7 @@ int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr)
 	uint8_t *prg;
 	uint32_t nTextLen, nDataLen, nBssLen, nSymLen;
 	uint32_t nRelOff, nRelTabIdx, nCurrAddr;
+	uint32_t memtop;
 
 	prg = File_Read(psPrgName, &nFileSize, NULL);
 	if (!prg || nFileSize < 30)
@@ -3948,6 +3949,13 @@ int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr)
 	nBssLen = (prg[10] << 24) | (prg[11] << 16) | (prg[12] << 8) | prg[13];
 	nSymLen = (prg[14] << 24) | (prg[15] << 16) | (prg[16] << 8) | prg[17];
 
+	memtop = STMemory_ReadLong(0x436);
+	if (baseaddr + 0x100 + nTextLen + nDataLen + nBssLen > memtop)
+	{
+		Log_Printf(LOG_ERROR, "Program too large: '%s'.\n", psPrgName);
+		return -1;
+	}
+
 	if (!STMemory_SafeCopy(baseaddr + 0x100, prg + 28, nTextLen + nDataLen, psPrgName))
 		return -1;
 
@@ -3956,8 +3964,7 @@ int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr)
 
 	/* Set up basepage - note: some of these values are rather dummies */
 	STMemory_WriteLong(baseaddr, baseaddr);                                    /* p_lowtpa */
-	STMemory_WriteLong(baseaddr + 4, baseaddr + 0x100 + nTextLen + nDataLen
-	                                 + nBssLen + 0x2000);                      /* p_hitpa */
+	STMemory_WriteLong(baseaddr + 4, memtop);                                  /* p_hitpa */
 	STMemory_WriteLong(baseaddr + 8, baseaddr + 0x100);                        /* p_tbase */
 	STMemory_WriteLong(baseaddr + 12, nTextLen);                               /* p_tlen */
 	STMemory_WriteLong(baseaddr + 16, baseaddr + 0x100 + nTextLen);            /* p_dbase */
