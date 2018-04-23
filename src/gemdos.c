@@ -3480,7 +3480,7 @@ static const char* GemDOS_Opcode2Name(Uint16 opcode)
 
 	if (opcode < ARRAY_SIZE(names))
 		return names[opcode];
-	return "MiNT?";
+	return "-";
 }
 
 /**
@@ -3494,6 +3494,11 @@ void GemDOS_Info(FILE *fp, Uint32 bShowOpcodes)
 	if (bShowOpcodes)
 	{
 		Uint16 opcode;
+		/* list just normal TOS GEMDOS calls
+		 *
+		 * MiNT ones would need separate table as their names
+		 * are much longer and 0x60 - 0xFE range is unused.
+		 */
 		for (opcode = 0; opcode < 0x5A; )
 		{
 			fprintf(fp, "%02x %-9s",
