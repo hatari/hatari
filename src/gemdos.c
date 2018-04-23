@@ -3871,7 +3871,7 @@ void GemDOS_OpCode(void)
 			Log_Printf(LOG_FATAL, "GEMDOS 0x%02hX %s at PC 0x%X unsupported in test mode\n",
 				  GemDOSCall, GemDOS_Opcode2Name(GemDOSCall),
 				  CallingPC);
-			Main_RequestQuit(1);
+			Main_SetQuitValue(1);
 		}
 		break;
 	}
