@@ -41,16 +41,14 @@ static SGOBJ haltdlg[] = {
 /**
  * Make Hatari quit
  */
-static void do_quit(void)
+static void do_quit(int exitval)
 {
 	if (bQuitProgram) {
 		/* got here again, cold reset emulation to make sure we actually can exit */
 		fputs("Halt dialog invoked during Hatari shutdown, doing emulation cold reset...\n", stderr);
 		Reset_Cold();
-	} else {
-		bQuitProgram = true;
 	}
-	M68000_SetSpecial(SPCFLAG_BRK);
+	Main_SetQuitValue(exitval);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -70,7 +68,7 @@ void Dialog_HaltDlg(void)
 	if (Main_SetRunVBLs(0))
 	{
 		Log_Printf(LOG_ERROR, DLGHALT_MSG);
-		do_quit();
+		do_quit(1);
 		return;
 	}
 
@@ -90,9 +88,12 @@ void Dialog_HaltDlg(void)
 		SDL_UpdateRect(sdlscrn, 0,0, 0,0);
 		DebugUI(REASON_CPU_EXCEPTION);
 		break;
+	case DLGHALT_QUIT:
+	case SDLGUI_QUIT:
+		do_quit(0);
 	default:
-		/* DLGHALTQUIT, SDLGUI_QUIT and GUI errors */
-		do_quit();
+		/* GUI errors */
+		do_quit(1);
 	}
 	SDL_ShowCursor(show);
 #if WITH_SDL2
