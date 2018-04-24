@@ -1041,6 +1041,8 @@ void Configuration_Load(const char *psFileName)
 #endif
 
 	Configuration_LoadSection(psFileName, configs_Log, "[Log]");
+	Log_SetLevels();
+
 	Configuration_LoadSection(psFileName, configs_Debugger, "[Debugger]");
 	Configuration_LoadSection(psFileName, configs_Screen, "[Screen]");
 	Configuration_LoadSection(psFileName, configs_Joystick0, "[Joystick0]");

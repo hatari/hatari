@@ -160,6 +160,8 @@ Uint64	LogTraceFlags = TRACE_NONE;
 FILE *TraceFile = NULL;
 
 static FILE *hLogFile = NULL;
+
+/* local settings, to be able change them temporarily */
 static LOGTYPE TextLogLevel;
 static LOGTYPE AlertDlgLogLevel;
 
@@ -174,6 +176,17 @@ void Log_Default(void)
 	TextLogLevel = LOG_INFO;
 }
 
+/**
+ * Set local log levels from configuration values
+ */
+void Log_SetLevels(void)
+{
+	TextLogLevel = ConfigureParams.Log.nTextLogLevel;
+	AlertDlgLogLevel = ConfigureParams.Log.nAlertDlgLogLevel;
+
+	bCpuWriteLog = (TextLogLevel == LOG_DEBUG);
+}
+
 /*-----------------------------------------------------------------------*/
 /**
  * Initialize the logging and tracing functionality (open the log files etc.).
@@ -182,10 +195,7 @@ void Log_Default(void)
  */
 int Log_Init(void)
 {
-	TextLogLevel = ConfigureParams.Log.nTextLogLevel;
-	AlertDlgLogLevel = ConfigureParams.Log.nAlertDlgLogLevel;
-
-	bCpuWriteLog = (TextLogLevel == LOG_DEBUG);
+	Log_SetLevels();
 
 	hLogFile = File_Open(ConfigureParams.Log.sLogFileName, "w");
 	TraceFile = File_Open(ConfigureParams.Log.sTraceFileName, "w");

@@ -2102,6 +2102,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[], bool verbose)
 			{
 				return Opt_ShowError(OPT_LOGLEVEL, argv[i], "Unknown log level!");
 			}
+			Log_SetLevels();
 			break;
 
 		case OPT_ALERTLEVEL:
@@ -2111,6 +2112,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[], bool verbose)
 			{
 				return Opt_ShowError(OPT_ALERTLEVEL, argv[i], "Unknown alert level!");
 			}
+			Log_SetLevels();
 			break;
 
 		case OPT_RUNVBLS:
