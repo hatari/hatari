@@ -480,7 +480,7 @@ static bool Change_Options(int argc, const char *argv[])
 	/* get configuration changes */
 	current = ConfigureParams;
 	ConfigureParams.Screen.bFullScreen = bInFullScreen;
-	bOK = Opt_ParseParameters(argc, argv, false);
+	bOK = Opt_ParseParameters(argc, argv);
 
 	/* Check if reset is required and ask user if he really wants to continue */
 	if (bOK && Change_DoNeedReset(&current, &ConfigureParams)
