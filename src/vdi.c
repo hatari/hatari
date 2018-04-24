@@ -90,8 +90,10 @@ static bool VDI_ByteLimit(int *width, int *height, int planes)
 	{
 		*width = MIN_VDI_WIDTH;
 		*height = MIN_VDI_HEIGHT;
-		fputs("Bad VDI screen ratio / too small size -> use smallest valid size.\n", stderr);
+		Log_Printf(LOG_WARN, "Bad VDI screen ratio / too small size -> use smallest valid size.\n");
 	}
+	else
+		Log_Printf(LOG_WARN, "VDI screen size limited to <= %dKB\n", MAX_VDI_BYTES/1024);
 	return true;
 }
 
@@ -142,7 +144,7 @@ void VDI_SetResolution(int GEMColor, int WidthRequest, int HeightRequest)
 
 	if (w != VDIWidth || h != VDIHeight)
 	{
-		printf("VDI screen: request = %dx%d@%d, result = %dx%d@%d\n",
+		Log_Printf(LOG_WARN, "VDI screen: request = %dx%d@%d, result = %dx%d@%d\n",
 		       WidthRequest, HeightRequest, VDIPlanes, VDIWidth, VDIHeight, VDIPlanes);
 	}
 	/* INF file overriding so that (re-)boot uses correct bit-depth */
