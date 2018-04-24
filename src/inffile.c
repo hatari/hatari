@@ -456,7 +456,7 @@ static int INF_ValidateResolution(int *set_res, const char **val, const char **e
 		/* map values 0-6: N/A, ST low, med, high, TT med, high, low */
 		unsigned char map[] = { 0, 0, 1, 2, 4, 6, 7 };
 		res = map[res];
-		Log_Printf(LOG_INFO, "Remapped TOS resolution for EmuTOS.\n");
+		Log_Printf(LOG_DEBUG, "Remapped TOS resolution for EmuTOS.\n");
 	}
 	else if (TosVersion >= 0x0160)
 	{
@@ -473,7 +473,7 @@ static int INF_ValidateResolution(int *set_res, const char **val, const char **e
 		}
 	}
 
-	Log_Printf(LOG_INFO, "Resulting INF file TOS resolution: 0x%02x -> 0x%02x.\n", TosOverride.reso, res);
+	Log_Printf(LOG_DEBUG, "Resulting INF file TOS resolution: 0x%02x -> 0x%02x.\n", TosOverride.reso, res);
 	*set_res = res;
 	return 0;
 }
@@ -589,9 +589,7 @@ static char *get_inf_file(const char **set_infname, int *set_size, int *res_col)
 	 */
 	if (!(ConfigureParams.HardDisk.bBootFromHardDisk && GemDOS_IsDriveEmulated(2)))
 	{
-#if INF_DEBUG
-	fprintf(stderr, "No GEMDOS HD boot drive, using builtin INF autostart file.\n");
-#endif
+		Log_Printf(LOG_DEBUG, "No GEMDOS HD boot drive, using builtin INF autostart file.\n");
 		return get_builtin_inf(contents);
 	}
 
@@ -608,12 +606,12 @@ static char *get_inf_file(const char **set_infname, int *set_size, int *res_col)
 
 	if (host_content)
 	{
-		Log_Printf(LOG_INFO, "Going to modify '%s'.\n", hostname);
+		Log_Printf(LOG_DEBUG, "Going to modify '%s'.\n", hostname);
 		free(hostname);
 		*set_size = host_size;
 		return (char *)host_content;
 	}
-	Log_Printf(LOG_INFO, "Using builtin '%s'.\n", infname);
+	Log_Printf(LOG_DEBUG, "Using builtin '%s'.\n", infname);
 	free(hostname);
 	return get_builtin_inf(contents);
 }
@@ -776,9 +774,9 @@ static FILE* write_inf_file(const char *contents, int size, int res, int res_col
 		return NULL;
 	}
 	if (prgname)
-		Log_Printf(LOG_WARN, "Virtual '%s' autostart file created for '%s'.\n", infname, prgname);
+		Log_Printf(LOG_DEBUG, "Virtual '%s' autostart file created for '%s'.\n", infname, prgname);
 	else
-		Log_Printf(LOG_WARN, "Virtual '%s' TOS resolution override file created.\n", infname);
+		Log_Printf(LOG_DEBUG, "Virtual '%s' TOS resolution override file created.\n", infname);
 	return fp;
 }
 
@@ -852,9 +850,9 @@ FILE *INF_OpenOverride(const char *filename)
 		if (ConfigureParams.Debugger.nExceptionDebugMask & EXCEPT_AUTOSTART)
 		{
 			ExceptionDebugMask = ConfigureParams.Debugger.nExceptionDebugMask & ~EXCEPT_AUTOSTART;
-			fprintf(stderr, "Exception debugging enabled (0x%x).\n", ExceptionDebugMask);
+			Log_Printf(LOG_INFO, "Exception debugging enabled (0x%x).\n", ExceptionDebugMask);
 		}
-		Log_Printf(LOG_WARN, "Virtual INF file '%s' matched.\n", filename);
+		Log_Printf(LOG_DEBUG, "Virtual INF file '%s' matched.\n", filename);
 		return TosOverride.file;
 	}
 	return NULL;
@@ -876,7 +874,7 @@ bool INF_CloseOverride(FILE *fp)
 		 */
 		fclose(TosOverride.file);
 		TosOverride.file = NULL;
-		Log_Printf(LOG_WARN, "Virtual INF file removed.\n");
+		Log_Printf(LOG_DEBUG, "Virtual INF file removed.\n");
 		return true;
 	}
 	return false;
