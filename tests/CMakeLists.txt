@@ -8,17 +8,10 @@ if(UNIX)
 endif(UNIX)
 
 find_program(CHECKBASHISMS checkbashisms)
-if(CHECKBASHISMS)
-	execute_process(COMMAND find -name "*.sh" OUTPUT_VARIABLE shellscripts
-	                 WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
-	string(REGEX REPLACE "\n" ";" shellscripts ${shellscripts})
-	foreach(script ${shellscripts})
-		string(REGEX REPLACE "\\./tests/" "" scriptname ${script})
-		string(REGEX REPLACE "\\./tools/" "" scriptname ${scriptname})
-		string(REGEX REPLACE "\\./" "" scriptname ${scriptname})
-		string(REGEX REPLACE "/" "-" scriptname ${scriptname})
-		string(REGEX REPLACE "\\.sh" "" scriptname ${scriptname})
-		add_test(NAME "chksh-${scriptname}"
-		         COMMAND ${CHECKBASHISMS} ${CMAKE_SOURCE_DIR}/${script})
-	endforeach(script)
-endif(CHECKBASHISMS)
+find_program(MERCURIAL hg)
+execute_process(COMMAND find -name .hg OUTPUT_VARIABLE DOT_HG_DIR
+	        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+if(CHECKBASHISMS AND MERCURIAL AND DOT_HG_DIR)
+	 add_test(NAME check-bashisms
+	          COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/check-bashisms.sh)
+endif()
