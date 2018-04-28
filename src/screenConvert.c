@@ -1090,7 +1090,7 @@ bool Screen_GenDraw(uint32_t vaddr, int vw, int vh, int vbpp, int nextline,
 {
 	int hscrolloffset;
 
-	if (!Screen_Lock())
+	if (ConfigureParams.Screen.DisableVideo || !Screen_Lock())
 		return false;
 
 	if (Config_IsMachineST())
