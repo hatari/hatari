@@ -798,7 +798,7 @@ SDL_Rect* Statusbar_Update(SDL_Surface *surf, bool do_update)
 	/* Statusbar_Init() not called before this? */
 #if DEBUG
 	if (surf->h != ScreenHeight + StatusbarHeight) {
-		printf("%d != %d + %d\n", surf->h, ScreenHeight, StatusbarHeight);
+		printf("DEBUG: %d != %d + %d\n", surf->h, ScreenHeight, StatusbarHeight);
 	}
 #endif
 	assert(surf->h == ScreenHeight + StatusbarHeight);

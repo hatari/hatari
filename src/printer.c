@@ -105,7 +105,7 @@ bool Printer_TransferByteTo(Uint8 Byte)
 	}
 	if (fputc(Byte, pPrinterHandle) != Byte)
 	{
-		fprintf(stderr, "ERROR: Printer_TransferByteTo() writing failed!\n");
+		Log_Printf(LOG_ERROR, "Printer_TransferByteTo() writing failed!\n");
 		return false;
 	}
 	bUnflushed = true;

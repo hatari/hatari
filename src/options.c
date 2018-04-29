@@ -1149,9 +1149,10 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 		case OPT_SLOWDOWN:
 			val = atoi(argv[++i]);
-			if (!Main_SetVBLSlowdown(val))
+			errstr = Main_SetVBLSlowdown(val);
+			if (errstr)
 			{
-				return Opt_ShowError(OPT_SLOWDOWN, argv[i], "Invalid VBL wait slowdown multiplier");
+				return Opt_ShowError(OPT_SLOWDOWN, argv[i], errstr);
 			}
 			Log_Printf(LOG_DEBUG, "Slow down host VBL wait by factor of %d.\n", val);
 			break;

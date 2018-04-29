@@ -4436,11 +4436,13 @@ is completely busy, it will increase to the maximum specified
 </p>
 <p>
 Hatari has also a facility to measure FPS i.e. Frames Per Second.
-Just enable the <span class="commandline">--fast-forward</span> option
-on command line (or use the corresponding keyboard shortcut), and
-after a while, press the "Pause" key.  Whenever Hatari emulation is
-paused, Hatari will output on console how many VBLs it could show per
-second along with some other numbers.
+Enable frame skipping with
+<span class="commandline">--fast-forward yes</span> option
+(or use the corresponding keyboard shortcut) and set
+<span class="commandline">--log-level info</span>.
+Then after a while, press the "Pause" key.  Whenever Hatari emulation
+is paused, Hatari will output on console info on how many VBLs it
+could show per second, along with some other numbers.
 </p>
 <p>
 It depends on what you want to measure, but usually it's best to

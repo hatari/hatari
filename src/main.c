@@ -97,7 +97,7 @@ static Uint32 Main_GetTicks(void)
 	if (!ticks_to_msec)
 	{
 		ticks_to_msec = sysconf(_SC_CLK_TCK);
-		printf("OS clock ticks / second: %d\n", ticks_to_msec);
+		Log_Printf(LOG_INFO, "OS clock ticks / second: %d\n", ticks_to_msec);
 		/* Linux has 100Hz virtual clock so no accuracy loss there */
 		ticks_to_msec = 1000UL / ticks_to_msec;
 	}
@@ -186,7 +186,7 @@ bool Main_PauseEmulation(bool visualize)
 			float current;
 
 			current = (1000.0 * nVBLCount) / interval;
-			printf("SPEED: %.1f VBL/s (%d/%.1fs), diff=%.1f%%\n",
+			Log_Printf(LOG_INFO, "SPEED: %.1f VBL/s (%d/%.1fs), diff=%.1f%%\n",
 			       current, nVBLCount, interval/1000.0,
 			       previous>0.0 ? 100*(current-previous)/previous : 0.0);
 			nVBLCount = nFirstMilliTick = 0;
@@ -287,15 +287,16 @@ Uint32 Main_SetRunVBLs(Uint32 vbls)
 /*-----------------------------------------------------------------------*/
 /**
  * Set VBL wait slowdown factor/multiplayer
+ *
+ * Return NULL on success, error string on error
  */
-bool Main_SetVBLSlowdown(int factor)
+const char* Main_SetVBLSlowdown(int factor)
 {
 	if (factor < 1 || factor > 30) {
-		fprintf(stderr, "ERROR: invalid VBL slowdown factor %d, should be 1-30!\n", factor);
-		return false;
+		return "invalid VBL slowdown factor, should be 1-30";
 	}
 	nVBLSlowdown = factor;
-	return true;
+	return NULL;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -706,7 +707,7 @@ static void Main_Init(void)
 	/* Open debug log file */
 	if (!Log_Init())
 	{
-		fprintf(stderr, "Logging/tracing initialization failed\n");
+		fprintf(stderr, "ERROR: logging/tracing initialization failed\n");
 		exit(-1);
 	}
 	Log_Printf(LOG_INFO, PROG_NAME ", compiled on:  " __DATE__ ", " __TIME__ "\n");
@@ -715,13 +716,13 @@ static void Main_Init(void)
 	   will be initialized later (failure not fatal). */
 	if (SDL_Init(SDL_INIT_VIDEO | Opt_GetNoParachuteFlag()) < 0)
 	{
-		fprintf(stderr, "Could not initialize the SDL library:\n %s\n", SDL_GetError() );
+		fprintf(stderr, "ERROR: could not initialize the SDL library:\n %s\n", SDL_GetError() );
 		exit(-1);
 	}
 
 	if ( IPF_Init() != true )
 	{
-		fprintf(stderr, "Could not initialize the IPF support\n" );
+		fprintf(stderr, "ERROR: could not initialize the IPF support\n" );
 		exit(-1);
 	}
 
@@ -768,7 +769,7 @@ static void Main_Init(void)
 	if (!bTosImageLoaded || bQuitProgram)
 	{
 		if (!bTosImageLoaded)
-			fprintf(stderr, "Failed to load TOS image!\n");
+			fprintf(stderr, "ERROR: failed to load TOS image!\n");
 		SDL_Quit();
 		exit(-2);
 	}

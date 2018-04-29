@@ -67,7 +67,7 @@ void	STMemory_Init ( int RAM_Size_Byte )
 	{
 		if ( STMemory_RAM_SetBankSize ( RAM_Size_Byte , &RAM_Bank0_Size , &RAM_Bank1_Size , &MMU_Conf_Expected ) == false )
 		{
-			fprintf ( stderr , "Error invalid RAM size %d KB for MMU banks\n", RAM_Size_Byte );
+			Log_Printf(LOG_ERROR, "invalid RAM size %d KB for MMU banks\n", RAM_Size_Byte );
 		}
 	}
 }

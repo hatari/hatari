@@ -984,7 +984,7 @@ static int Configuration_LoadSection(const char *pFilename, const struct Config_
 	ret = input_config(pFilename, configs, pSection);
 
 	if (ret < 0)
-		fprintf(stderr, "Can not load configuration file %s (section %s).\n",
+		Log_Printf(LOG_ERROR, "cannot load configuration file %s (section %s).\n",
 		        pFilename, pSection);
 
 	return ret;
@@ -1080,7 +1080,8 @@ static int Configuration_SaveSection(const char *pFilename, const struct Config_
 	ret = update_config(pFilename, configs, pSection);
 
 	if (ret < 0)
-		fprintf(stderr, "Error while updating section %s in %s\n", pSection, pFilename);
+		Log_Printf(LOG_ERROR, "cannot save configuration file %s (section %s)\n",
+			   pFilename, pSection);
 
 	return ret;
 }
