@@ -320,12 +320,13 @@ static void Screen_FreeSDL2Resources(void)
 bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChange)
 {
 	Uint32 sdlVideoFlags;
+	char *psSdlVideoDriver;
+	bool bUseDummyMode;
 #if WITH_SDL2
 	static int nPrevRenderScaleQuality = 0;
 	static bool bPrevUseVsync = false;
 	static bool bPrevInFullScreen;
 	int win_width, win_height;
-	char *psSdlVideoDriver;
 
 	if (bitdepth == 0 || bitdepth == 24)
 		bitdepth = 32;
@@ -334,6 +335,13 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 	if (sdlscrn != NULL && sdlscrn->w == width && sdlscrn->h == height
 	    && sdlscrn->format->BitsPerPixel == bitdepth && !bForceChange)
 		return false;
+
+	psSdlVideoDriver = SDL_getenv("SDL_VIDEODRIVER");
+	bUseDummyMode = psSdlVideoDriver && !strcmp(psSdlVideoDriver, "dummy");
+	if (bUseDummyMode)
+	{
+		ConfigureParams.Screen.DisableVideo = true;
+	}
 
 #ifdef _MUDFLAP
 	if (sdlscrn)
@@ -348,13 +356,7 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 	}
 
 #if WITH_SDL2
-	bUseSdlRenderer = ConfigureParams.Screen.bUseSdlRenderer;
-	psSdlVideoDriver = SDL_getenv("SDL_VIDEODRIVER");
-	if (psSdlVideoDriver && strcmp(psSdlVideoDriver, "dummy") == 0)
-	{
-		/* SDL renderer can not be used in dummy mode */
-		bUseSdlRenderer = false;
-	}
+	bUseSdlRenderer = ConfigureParams.Screen.bUseSdlRenderer && !bUseDummyMode;
 
 	/* SDL Video attributes: */
 	win_width = width;
@@ -1222,10 +1224,6 @@ static void Screen_Blit(SDL_Rect *sbar_rect)
 {
 	unsigned char *pTmpScreen;
 
-	/* Don't update anything on screen if video output is disabled */
-	if ( ConfigureParams.Screen.DisableVideo )
-		return;
-
 #if 0	/* double buffering cannot be used with partial screen updates */
 # if NUM_FRAMEBUFFERS > 1
 	if (bInFullScreen && (sdlscrn->flags & SDL_DOUBLEBUF))
@@ -1288,70 +1286,70 @@ static bool Screen_DrawFrame(bool bForceFlip)
 	Statusbar_OverlayRestore(sdlscrn);
 
 	/* Lock screen for direct screen surface format writes */
-	if (Screen_Lock())
+	if (ConfigureParams.Screen.DisableVideo || !Screen_Lock())
 	{
-		bScreenContentsChanged = false;      /* Did change (ie needs blit?) */
-
-		/* Set details */
-		Screen_SetConvertDetails();
-
-		/* Clear screen on full update to clear out borders and also interleaved lines */
-		if (pFrameBuffer->bFullUpdate)
-			Screen_ClearScreen();
-		
-		/* Call drawing for full-screen */
-		pDrawFunction = ScreenDrawFunctionsNormal[STRes];
-		/* Check if is Spec512 image */
-		if (Spec512_IsImage())
-		{
-			bPrevFrameWasSpec512 = true;
-			/* What mode were we in? Keep to 320xH or 640xH */
-			if (pDrawFunction==ConvertLowRes_320x16Bit)
-				pDrawFunction = ConvertLowRes_320x16Bit_Spec;
-			else if (pDrawFunction==ConvertLowRes_640x16Bit)
-				pDrawFunction = ConvertLowRes_640x16Bit_Spec;
-			else if (pDrawFunction==ConvertLowRes_320x32Bit)
-				pDrawFunction = ConvertLowRes_320x32Bit_Spec;
-			else if (pDrawFunction==ConvertLowRes_640x32Bit)
-				pDrawFunction = ConvertLowRes_640x32Bit_Spec;
-			else if (pDrawFunction==ConvertMediumRes_640x32Bit)
-				pDrawFunction = ConvertMediumRes_640x32Bit_Spec;
-			else if (pDrawFunction==ConvertMediumRes_640x16Bit)
-				pDrawFunction = ConvertMediumRes_640x16Bit_Spec;
-		}
-		else if (bPrevFrameWasSpec512)
-		{
-			/* If we switch back from Spec512 mode to normal
-			 * screen rendering, we have to make sure to do
-			 * a full update of the screen. */
-			Screen_SetFullUpdateMask();
-			bPrevFrameWasSpec512 = false;
-		}
-
-		if (pDrawFunction)
-			CALL_VAR(pDrawFunction);
-
-		/* Unlock screen */
-		Screen_UnLock();
-
-		/* draw overlay led(s) or statusbar after unlock */
-		Statusbar_OverlayBackup(sdlscrn);
-		sbar_rect = Statusbar_Update(sdlscrn, false);
-		
-		/* Clear flags, remember type of overscan as if change need screen full update */
-		pFrameBuffer->bFullUpdate = false;
-		pFrameBuffer->VerticalOverscanCopy = VerticalOverscan;
-
-		/* And show to user */
-		if (bScreenContentsChanged || bForceFlip || sbar_rect)
-		{
-			Screen_Blit(sbar_rect);
-		}
-
-		return bScreenContentsChanged;
+		return false;
 	}
 
-	return false;
+	bScreenContentsChanged = false;      /* Did change (ie needs blit?) */
+
+	/* Set details */
+	Screen_SetConvertDetails();
+
+	/* Clear screen on full update to clear out borders and also interleaved lines */
+	if (pFrameBuffer->bFullUpdate)
+		Screen_ClearScreen();
+
+	/* Call drawing for full-screen */
+	pDrawFunction = ScreenDrawFunctionsNormal[STRes];
+	/* Check if is Spec512 image */
+	if (Spec512_IsImage())
+	{
+		bPrevFrameWasSpec512 = true;
+		/* What mode were we in? Keep to 320xH or 640xH */
+		if (pDrawFunction==ConvertLowRes_320x16Bit)
+			pDrawFunction = ConvertLowRes_320x16Bit_Spec;
+		else if (pDrawFunction==ConvertLowRes_640x16Bit)
+			pDrawFunction = ConvertLowRes_640x16Bit_Spec;
+		else if (pDrawFunction==ConvertLowRes_320x32Bit)
+			pDrawFunction = ConvertLowRes_320x32Bit_Spec;
+		else if (pDrawFunction==ConvertLowRes_640x32Bit)
+			pDrawFunction = ConvertLowRes_640x32Bit_Spec;
+		else if (pDrawFunction==ConvertMediumRes_640x32Bit)
+			pDrawFunction = ConvertMediumRes_640x32Bit_Spec;
+		else if (pDrawFunction==ConvertMediumRes_640x16Bit)
+			pDrawFunction = ConvertMediumRes_640x16Bit_Spec;
+	}
+	else if (bPrevFrameWasSpec512)
+	{
+		/* If we switch back from Spec512 mode to normal
+		 * screen rendering, we have to make sure to do
+		 * a full update of the screen. */
+		Screen_SetFullUpdateMask();
+		bPrevFrameWasSpec512 = false;
+	}
+
+	if (pDrawFunction)
+		CALL_VAR(pDrawFunction);
+
+	/* Unlock screen */
+	Screen_UnLock();
+
+	/* draw overlay led(s) or statusbar after unlock */
+	Statusbar_OverlayBackup(sdlscrn);
+	sbar_rect = Statusbar_Update(sdlscrn, false);
+
+	/* Clear flags, remember type of overscan as if change need screen full update */
+	pFrameBuffer->bFullUpdate = false;
+	pFrameBuffer->VerticalOverscanCopy = VerticalOverscan;
+
+	/* And show to user */
+	if (bScreenContentsChanged || bForceFlip || sbar_rect)
+	{
+		Screen_Blit(sbar_rect);
+	}
+
+	return bScreenContentsChanged;
 }
 
 

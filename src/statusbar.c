@@ -105,7 +105,7 @@ static Uint32 RecColorOn, RecColorOff;
 static Uint32 GrayBg, LedColorBg;
 
 /* needs to be enough for all messages, but <= MessageRect width / font width */
-#define MAX_MESSAGE_LEN 60
+#define MAX_MESSAGE_LEN 63
 typedef struct msg_item {
 	struct msg_item *next;
 	char msg[MAX_MESSAGE_LEN+1];
@@ -540,7 +540,7 @@ void Statusbar_UpdateInfo(void)
 	if (bIsEmuTOS) {
 		end = Statusbar_AddString(end, "EmuTOS");
 	} else {
-		end = Statusbar_AddString(end, "TOS v");
+		end = Statusbar_AddString(end, "TOS ");
 		*end++ = '0' + ((TosVersion & 0xf00) >> 8);
 		*end++ = '.';
 		*end++ = '0' + ((TosVersion & 0xf0) >> 4);
