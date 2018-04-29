@@ -130,7 +130,7 @@ void Audio_Init(void)
 	{
 		if (SDL_InitSubSystem(SDL_INIT_AUDIO) < 0)
 		{
-			fprintf(stderr, "Could not init audio: %s\n", SDL_GetError() );
+			Log_Printf(LOG_WARN, "Could not init audio: %s\n", SDL_GetError() );
 			bSoundWorking = false;
 			return;
 		}
@@ -164,7 +164,7 @@ void Audio_Init(void)
 
 	if (SDL_OpenAudio(&desiredAudioSpec, NULL))	/* Open audio device */
 	{
-		fprintf(stderr, "Can't use audio: %s\n", SDL_GetError());
+		Log_Printf(LOG_WARN, "Can't use audio: %s\n", SDL_GetError());
 		bSoundWorking = false;
 		ConfigureParams.Sound.bEnableSound = false;
 		SDL_QuitSubSystem(SDL_INIT_AUDIO);
@@ -179,7 +179,8 @@ void Audio_Init(void)
 #endif
 	if (SoundBufferSize > MIXBUFFER_SIZE/2)
 	{
-		fprintf(stderr, "Warning: Soundbuffer size is too big!\n");
+		Log_Printf(LOG_WARN, "Warning: Soundbuffer size is too big (%d > %d)!\n",
+			   SoundBufferSize, MIXBUFFER_SIZE/2);
 	}
 
 	/* All OK */

@@ -18,6 +18,7 @@ const char DlgFileSelect_fileid[] = "Hatari dlgFileSelect.c : " __DATE__ " " __T
 #include "file.h"
 #include "paths.h"
 #include "zip.h"
+#include "log.h"
 
 
 #define SGFS_NUMENTRIES   16            /* How many entries are displayed at once */
@@ -659,7 +660,7 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 				files = ZIP_GetFilesDir(zipfiles, zipdir, &entries);
 				if(!files)
 				{
-					fprintf(stderr, "SDLGui_FileSelect: ZIP_GetFilesDir error!\n");
+					Log_Printf(LOG_WARN, "SDLGui_FileSelect: ZIP_GetFilesDir() error!\n");
 					goto clean_exit;
 				}
 			}
@@ -679,7 +680,7 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 
 			if (entries < 0)
 			{
-				fprintf(stderr, "SDLGui_FileSelect: Path not found.\n");
+				Log_Printf(LOG_WARN, "SDLGui_FileSelect: Path not found.\n");
 				goto clean_exit;
 			}
 
@@ -744,7 +745,7 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 				if (!strcat_maxlen(tempstr, FILENAME_MAX,
 						   zipdir, files[retbut-SGFSDLG_ENTRYFIRST+ypos]->d_name))
 				{
-					fprintf(stderr, "SDLGui_FileSelect: Path name too long!\n");
+					Log_Printf(LOG_WARN, "SDLGui_FileSelect: Path name too long!\n");
 					free(tempstr);
 					goto clean_exit;
 				}
@@ -799,7 +800,7 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 				if (!strcat_maxlen(tempstr, FILENAME_MAX,
 						   path, files[retbut-SGFSDLG_ENTRYFIRST+ypos]->d_name))
 				{
-					fprintf(stderr, "SDLGui_FileSelect: Path name too long!\n");
+					Log_Printf(LOG_WARN, "SDLGui_FileSelect: Path name too long!\n");
 					free(tempstr);
 					goto clean_exit;
 				}

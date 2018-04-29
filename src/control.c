@@ -576,7 +576,7 @@ void Control_ReparentWindow(int width, int height, bool noembed)
 		/* whether to send new window size */
 		if (bSendEmbedInfo && ControlSocket)
 		{
-			fprintf(stderr, "New %dx%d SDL window with ID: %lx\n",
+			Log_Printf(LOG_INFO, "New %dx%d SDL window with ID: %lx\n",
 				width, height, sdl_win);
 			sprintf(buffer, "%dx%d", width, height);
 			if (write(ControlSocket, buffer, strlen(buffer)) < 0)

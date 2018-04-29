@@ -38,6 +38,7 @@ const char IoMem_fileid[] = "Hatari ioMem.c : " __DATE__ " " __TIME__;
 #include "m68000.h"
 #include "sysdeps.h"
 #include "newcpu.h"
+#include "log.h"
 
 
 static void (*pInterceptReadTable[0x8000])(void);	/* Table with read access handlers */
@@ -279,9 +280,9 @@ void IoMem_Init(void)
 			{
 				/* Security checks... */
 				if (pInterceptReadTable[addr-0xff8000] != IoMem_BusErrorEvenReadAccess && pInterceptReadTable[addr-0xff8000] != IoMem_BusErrorOddReadAccess)
-					fprintf(stderr, "IoMem_Init: Warning: $%x (R) already defined\n", addr);
+					Log_Printf(LOG_WARN, "IoMem_Init: Warning: $%x (R) already defined\n", addr);
 				if (pInterceptWriteTable[addr-0xff8000] != IoMem_BusErrorEvenWriteAccess && pInterceptWriteTable[addr-0xff8000] != IoMem_BusErrorOddWriteAccess)
-					fprintf(stderr, "IoMem_Init: Warning: $%x (W) already defined\n", addr);
+					Log_Printf(LOG_WARN, "IoMem_Init: Warning: $%x (W) already defined\n", addr);
 
 				/* This location needs to be intercepted, so add entry to list */
 				pInterceptReadTable[addr-0xff8000] = pInterceptAccessFuncs[i].ReadFunc;
@@ -455,7 +456,7 @@ uae_u32 REGPARAM3 IoMem_wget(uaecptr addr)
 	}
 	if (addr > 0xfffffe)
 	{
-		fprintf(stderr, "Illegal IO memory access: IoMem_wget($%x)\n", addr);
+		Log_Printf(LOG_WARN, "Illegal IO memory access: IoMem_wget($%x)\n", addr);
 		return -1;
 	}
 
@@ -522,7 +523,7 @@ uae_u32 REGPARAM3 IoMem_lget(uaecptr addr)
 	}
 	if (addr > 0xfffffc)
 	{
-		fprintf(stderr, "Illegal IO memory access: IoMem_lget($%x)\n", addr);
+		Log_Printf(LOG_WARN, "Illegal IO memory access: IoMem_lget($%x)\n", addr);
 		return -1;
 	}
 
@@ -641,7 +642,7 @@ void REGPARAM3 IoMem_wput(uaecptr addr, uae_u32 val)
 	}
 	if (addr > 0xfffffe)
 	{
-		fprintf(stderr, "Illegal IO memory access: IoMem_wput($%x)\n", addr);
+		Log_Printf(LOG_WARN, "Illegal IO memory access: IoMem_wput($%x)\n", addr);
 		return;
 	}
 
@@ -704,7 +705,7 @@ void REGPARAM3 IoMem_lput(uaecptr addr, uae_u32 val)
 	}
 	if (addr > 0xfffffc)
 	{
-		fprintf(stderr, "Illegal IO memory access: IoMem_lput($%x)\n", addr);
+		Log_Printf(LOG_WARN, "Illegal IO memory access: IoMem_lput($%x)\n", addr);
 		return;
 	}
 

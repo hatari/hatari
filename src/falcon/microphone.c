@@ -140,10 +140,8 @@ bool Microphone_Start(int sampleRate)
  */
 static bool Microphone_Error(void)
 {
-	fprintf (stderr, "An error occurred while using the portaudio stream\n");
-	fprintf (stderr, "Error number: %d\n", micro_err);
-	fprintf (stderr, "Error message: %s\n", Pa_GetErrorText (micro_err));
-
+	Log_Printf(LOG_WARN, "An error %d occurred while using the portaudio stream:\n\t%s\n",
+		  micro_err, Pa_GetErrorText (micro_err));
 	Microphone_Terminate();
 	return false;
 }
@@ -158,7 +156,7 @@ static bool Microphone_Terminate(void)
 
 	micro_err = Pa_Terminate();
 	if (micro_err != paNoError) {
-		fprintf (stderr, "PortAudio error: %s\n", Pa_GetErrorText(micro_err));
+		Log_Printf(LOG_WARN, "PortAudio error: %s\n", Pa_GetErrorText(micro_err));
 		return false;
 	}
 

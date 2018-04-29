@@ -434,7 +434,7 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 	}
 	if (!sdlWindow)
 	{
-		fprintf(stderr, "Failed to create %dx%d window!\n",
+		fprintf(stderr, "ERROR: Failed to create %dx%d window!\n",
 		        win_width, win_height);
 		exit(-1);
 	}
@@ -445,7 +445,7 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 		sdlRenderer = SDL_CreateRenderer(sdlWindow, -1, 0);
 		if (!sdlRenderer)
 		{
-			fprintf(stderr,"Failed to create %dx%d renderer!\n",
+			fprintf(stderr, "ERROR: Failed to create %dx%d renderer!\n",
 			        win_width, win_height);
 			exit(1);
 		}
@@ -474,7 +474,7 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 		                               width, height);
 		if (!sdlTexture)
 		{
-			fprintf(stderr,"Failed to create %dx%d@%d texture!\n",
+			fprintf(stderr, "ERROR: Failed to create %dx%d@%d texture!\n",
 			       width, height, bitdepth);
 			exit(-3);
 		}
@@ -511,7 +511,7 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 	 */
 	if (sdlscrn && sdlscrn->format->BitsPerPixel == 24)
 	{
-		fprintf(stderr, "Unsupported color depth 24, trying 32 bpp instead...\n");
+		Log_Printf(LOG_WARN, "Unsupported color depth 24, trying 32 bpp instead...\n");
 		sdlscrn = SDL_SetVideoMode(width, height, 32, sdlVideoFlags);
 	}
 
@@ -520,7 +520,7 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 	/* Exit if we can not open a screen */
 	if (!sdlscrn)
 	{
-		fprintf(stderr, "Could not set video mode:\n %s\n", SDL_GetError() );
+		fprintf(stderr, "ERROR: Could not set video mode:\n %s\n", SDL_GetError() );
 		SDL_Quit();
 		exit(-2);
 	}
@@ -736,7 +736,7 @@ void Screen_Init(void)
 		FrameBuffers[i].pSTScreenCopy = malloc(MAX_VDI_BYTES);
 		if (!FrameBuffers[i].pSTScreen || !FrameBuffers[i].pSTScreenCopy)
 		{
-			fprintf(stderr, "Failed to allocate frame buffer memory.\n");
+			fprintf(stderr, "ERROR: Failed to allocate frame buffer memory.\n");
 			exit(-1);
 		}
 	}
@@ -1392,7 +1392,7 @@ void Screen_SetGenConvSize(int width, int height, int bpp, bool bForceChange)
 		scaley *= 2;
 	}
 	if (scalex * scaley > 1) {
-		fprintf(stderr, "WARNING: too large screen size %dx%d -> divided by %dx%d!\n",
+		Log_Printf(LOG_WARN, "Too large screen size %dx%d -> divided by %dx%d!\n",
 			width, height, scalex, scaley);
 		width /= scalex;
 		height /= scaley;
@@ -1416,7 +1416,7 @@ void Screen_SetGenConvSize(int width, int height, int bpp, bool bForceChange)
 			nScreenZoomY *= 2;
 		}
 		if (nScreenZoomX*nScreenZoomY > 2) {
-			fprintf(stderr, "WARNING: strange screen size %dx%d -> aspect corrected by %dx%d!\n",
+			Log_Printf(LOG_WARN, "Strange screen size %dx%d -> aspect corrected by %dx%d!\n",
 				width, height, nScreenZoomX, nScreenZoomY);
 		}
 	}

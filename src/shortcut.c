@@ -407,7 +407,7 @@ bool Shortcut_Invoke(const char *shortcut)
 
 	if (ShortCutKey != SHORTCUT_NONE)
 	{
-		fprintf(stderr, "Shortcut invocation failed, shortcut already active\n");
+		fprintf(stderr, "WARNING: Shortcut invocation failed, shortcut already active\n");
 		return false;
 	}
 	for (i = 0; shortcuts[i].name; i++)

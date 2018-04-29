@@ -341,7 +341,7 @@ static char Keymap_PcToStScanCode(SDL_keysym* pKeySym)
 	 case SDL_SCANCODE_RCTRL: return 0x1d;
 	 case SDL_SCANCODE_RSHIFT: return 0x36;
 	 default:
-		fprintf(stderr, "Warning: Unhandled scancode 0x%x!\n", pKeySym->scancode);
+		Log_Printf(LOG_WARN, "Unhandled scancode 0x%x!\n", pKeySym->scancode);
 		return -1;
 	}
 }
@@ -423,7 +423,7 @@ static int Keymap_FindScanCodeOffset(SDL_keysym* keysym)
 
 	if (offset != -1)
 	{
-		fprintf(stderr, "Detected scancode offset = %d (key: '%s' with scancode $%02x)\n",
+		Log_Printf(LOG_WARN, "Detected scancode offset = %d (key: '%s' with scancode $%02x)\n",
 		        offset, SDL_GetKeyName(keysym->sym), scanPC);
 	}
 
@@ -450,7 +450,7 @@ static char Keymap_PcToStScanCode(SDL_keysym* keysym)
 	{
 		keysym->scancode = SdlSymToSdlScan[keysym->sym];
 		if (keysym->scancode == 0)
-			fprintf(stderr, "Warning: Key scancode is 0!\n");
+			Log_Printf(LOG_WARN, "Key scancode is 0!\n");
 	}
 
 	switch (keysym->sym)
@@ -503,7 +503,7 @@ static char Keymap_PcToStScanCode(SDL_keysym* keysym)
 		else
 		{
 			/* Failed to detect offset, so use default value 8 */
-			fprintf(stderr, "Offset detection failed with "
+			Log_Printf(LOG_WARN, "Offset detection failed with "
 			        "key '%s', scancode = 0x%02x, symcode =  0x%02x\n",
 			        SDL_GetKeyName(keysym->sym), keysym->scancode, keysym->sym);
 			return (keysym->scancode - 8);

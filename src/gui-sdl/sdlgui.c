@@ -18,6 +18,7 @@ const char SDLGui_fileid[] = "Hatari sdlgui.c : " __DATE__ " " __TIME__;
 #include "screen.h"
 #include "sdlgui.h"
 #include "str.h"
+#include "log.h"
 
 #include "font5x8.h"
 #include "font10x16.h"
@@ -70,7 +71,7 @@ static SDL_Surface *SDLGui_LoadXBM(int w, int h, const Uint8 *pXbmBits)
 	bitmap = SDL_CreateRGBSurface(SDL_SWSURFACE, w, h, 8, 0, 0, 0, 0);
 	if (bitmap == NULL)
 	{
-		fprintf(stderr, "Failed to allocate bitmap: %s", SDL_GetError());
+		Log_Printf(LOG_ERROR, "SDLGui: failed to allocate bitmap: %s", SDL_GetError());
 		return NULL;
 	}
 
@@ -115,7 +116,7 @@ int SDLGui_Init(void)
 	pBigFontGfx = SDLGui_LoadXBM(font10x16_width, font10x16_height, font10x16_bits);
 	if (pSmallFontGfx == NULL || pBigFontGfx == NULL)
 	{
-		fprintf(stderr, "Error: Can not init font graphics!\n");
+		Log_Printf(LOG_ERROR, "SDLGui: cannot init font graphics!\n");
 		return -1;
 	}
 
@@ -174,7 +175,7 @@ int SDLGui_SetScreen(SDL_Surface *pScrn)
 
 	if (pFontGfx == NULL)
 	{
-		fprintf(stderr, "Error: A problem with the font occurred!\n");
+		Log_Printf(LOG_ERROR, "SDLGui: a problem with the font occurred!\n");
 		return -1;
 	}
 
@@ -281,7 +282,7 @@ static void SDLGui_TextInt(int x, int y, const char *txt, bool underline)
 		}
 		else if (c >= 0x80)
 		{
-			printf("Unsupported character '%c' (0x%x)\n", c, c);
+			Log_Printf(LOG_WARN, "Unsupported character '%c' (0x%x)\n", c, c);
 		}
 #endif
 		x += sdlgui_fontwidth;
@@ -1139,7 +1140,7 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut, bool KeepCurrentObject)
 
 	if (pSdlGuiScrn->h / sdlgui_fontheight < dlg[0].h)
 	{
-		fprintf(stderr, "Screen size too small for dialog!\n");
+		Log_Printf(LOG_ERROR, "Screen size too small for dialog!\n");
 		return SDLGUI_ERROR;
 	}
 
@@ -1166,7 +1167,7 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut, bool KeepCurrentObject)
 	}
 	else
 	{
-		fprintf(stderr, "SDLGUI_DoDialog: CreateRGBSurface failed: %s\n", SDL_GetError());
+		Log_Printf(LOG_ERROR, "SDLGUI_DoDialog: CreateRGBSurface failed: %s\n", SDL_GetError());
 	}
 	SDLGui_DebugPrintDialog(dlg);
 

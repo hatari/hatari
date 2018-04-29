@@ -299,7 +299,7 @@ static int PopulateDTA(char *path, struct dirent *file, DTA *pDTA, Uint32 DTA_Ge
 	if (snprintf(tempstr, sizeof(tempstr), "%s%c%s",
 	             path, PATHSEP, file->d_name) >= (int)sizeof(tempstr))
 	{
-		fprintf(stderr, "PopulateDTA: path is too long.\n");
+		Log_Printf(LOG_ERROR, "PopulateDTA: path is too long.\n");
 		return -1;
 	}
 
@@ -326,7 +326,7 @@ static int PopulateDTA(char *path, struct dirent *file, DTA *pDTA, Uint32 DTA_Ge
 	/* convert to atari-style uppercase */
 	Str_Filename2TOSname(file->d_name, pDTA->dta_name);
 #if DEBUG_PATTERN_MATCH
-	fprintf(stderr, "GEMDOS: host: %s -> GEMDOS: %s\n",
+	fprintf(stderr, "DEBUG: GEMDOS: host: %s -> GEMDOS: %s\n",
 		file->d_name, pDTA->dta_name);
 #endif
 	do_put_mem_long(pDTA->dta_size, filestat.st_size);
@@ -1029,7 +1029,7 @@ static char* match_host_dir_entry(const char *path, const char *name, bool patte
 		return NULL;
 
 #if DEBUG_PATTERN_MATCH
-	fprintf(stderr, "GEMDOS match '%s'%s in '%s'", name, pattern?" (pattern)":"", path);
+	fprintf(stderr, "DEBUG: GEMDOS match '%s'%s in '%s'", name, pattern?" (pattern)":"", path);
 #endif
 	if (pattern)
 	{
@@ -2371,7 +2371,7 @@ static bool GemDOS_Fattrib(Uint32 Params)
 
 	if (nAttrib == GEMDOS_FILE_ATTRIB_VOLUME_LABEL)
 	{
-		Log_Printf(LOG_WARN, "Warning: Hatari doesn't support GEMDOS volume label setting\n(for '%s')\n", sActualFileName);
+		Log_Printf(LOG_WARN, "Hatari doesn't support GEMDOS volume label setting\n(for '%s')\n", sActualFileName);
 		Regs[REG_D0] = GEMDOS_EFILNF;         /* File not found */
 		return true;
 	}
@@ -2474,7 +2474,7 @@ static bool GemDOS_Force(Uint32 Params)
 	}
 	if (std < 0 || std >= ARRAY_SIZE(ForcedHandles))
 	{
-		Log_Printf(LOG_WARN, "Warning: forcing of non-standard %d (> %d) handle ignored.\n", std, ARRAY_SIZE(ForcedHandles));
+		Log_Printf(LOG_WARN, "forcing of non-standard %d (> %d) handle ignored.\n", std, ARRAY_SIZE(ForcedHandles));
 		return false;
 	}
 	/* mark given standard handle redirected by this process */
