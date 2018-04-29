@@ -178,7 +178,7 @@ static void GemDOS_DateTime2Tos(time_t t, DATETIME *DateTime, const char *fname)
 
 	if (x == NULL)
 	{
-		Log_Printf(LOG_WARN, "WARNING: '%s' timestamp is invalid for (Windows?) localtime(), defaulting to TOS epoch!",  fname);
+		Log_Printf(LOG_WARN, "'%s' timestamp is invalid for (Windows?) localtime(), defaulting to TOS epoch!",  fname);
 		DateTime->dateword = 1|(1<<5);	/* 1980-01-01 */
 		DateTime->timeword = 0;
 		return;
@@ -751,7 +751,7 @@ void GemDOS_InitDrives(void)
 			 *  table(s) match each other).
 			 */
 			if (i < ImagePartitions)
-				Log_Printf(LOG_WARN, "WARNING: GEMDOS HD drive %c: (may) override ACSI/IDE image partitions!\n", 'A'+DriveNumber);
+				Log_Printf(LOG_WARN, "GEMDOS HD drive %c: (may) override ACSI/IDE image partitions!\n", 'A'+DriveNumber);
 		}
 		else
 		{
@@ -1082,13 +1082,13 @@ static int clip_to_83(char *name)
 		diff = strlen(dot) - 4;
 		if (diff > 0)
 		{
-			Log_Printf(LOG_WARN, "WARNING: have to clip %d chars from '%s' extension!\n", diff, name);
+			Log_Printf(LOG_WARN, "have to clip %d chars from '%s' extension!\n", diff, name);
 			dot[4] = '\0';
 		}
 		diff = dot - name - 8;
 		if (diff > 0)
 		{
-			Log_Printf(LOG_WARN, "WARNING: have to clip %d chars from '%s' base!\n", diff, name);
+			Log_Printf(LOG_WARN, "have to clip %d chars from '%s' base!\n", diff, name);
 			memmove(name + 8, dot, strlen(dot) + 1);
 		}
 		return strlen(name);
@@ -1096,7 +1096,7 @@ static int clip_to_83(char *name)
 	len = strlen(name);
 	if (len > 8)
 	{
-		Log_Printf(LOG_WARN, "WARNING: have to clip %d chars from '%s'!\n", len - 8, name);
+		Log_Printf(LOG_WARN, "have to clip %d chars from '%s'!\n", len - 8, name);
 		name[8] = '\0';
 		len = 8;
 	}

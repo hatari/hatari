@@ -58,7 +58,7 @@ void Resolution_Init(void)
 		/* target 800x600 screen with statusbar out of screen */
 		DesktopWidth = 2*NUM_VISIBLE_LINE_PIXELS;
 		DesktopHeight = 2*NUM_VISIBLE_LINES+STATUSBAR_MAX_HEIGHT;
-		Log_Printf(LOG_WARN, "WARNING: invalid desktop size %dx%d, defaulting to %dx%d!\n",
+		Log_Printf(LOG_WARN, "invalid desktop size %dx%d, defaulting to %dx%d!\n",
 		           info->current_w, info->current_h, DesktopWidth, DesktopHeight);
 	}
 #endif
@@ -211,7 +211,7 @@ bool Resolution_Search(int *width, int *height, int *bpp, bool keep)
 	}
 
 	if (modes == (SDL_Rect **) 0) {
-		Log_Printf(LOG_WARN, "WARNING: No suitable video modes available!\n");
+		Log_Printf(LOG_WARN, "no suitable video modes available!\n");
 	}
 
 	if (modes == (SDL_Rect **) -1) {

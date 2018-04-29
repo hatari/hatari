@@ -264,7 +264,7 @@ void STMemory_SetDefaultConfig(void)
 		if (screensize > limit)
 		{
 			phystop = memtop + limit;
-			Log_Printf(LOG_WARN, "WARNING: too large VDI mode for TOS v3 memory detection to work correctly!\n");
+			Log_Printf(LOG_WARN, "too large VDI mode for TOS v3 memory detection to work correctly!\n");
 		}
 		else
 			phystop = STRamEnd;
