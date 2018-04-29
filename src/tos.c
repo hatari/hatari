@@ -790,6 +790,13 @@ int TOS_InitImage(void)
 		Log_Printf(LOG_DEBUG, "Skipped TOS patches.\n");
 	}
 
+	/* needs to be called after TosVersion is set, but
+	 * before STMemory_SetDefaultConfig() is called
+	 */
+	VDI_SetResolution(ConfigureParams.Screen.nVdiColors,
+			  ConfigureParams.Screen.nVdiWidth,
+			  ConfigureParams.Screen.nVdiHeight);
+
 	/* Set connected devices, memory configuration, etc. */
 	STMemory_SetDefaultConfig();
 

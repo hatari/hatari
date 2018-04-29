@@ -26,6 +26,7 @@ const char VDI_fileid[] = "Hatari vdi.c : " __DATE__ " " __TIME__;
 #include "vdi.h"
 #include "video.h"
 
+#define DEBUG 0
 
 Uint32 VDI_OldPC;                  /* When call Trap#2, store off PC */
 
@@ -126,7 +127,10 @@ void VDI_SetResolution(int GEMColor, int WidthRequest, int HeightRequest)
 	/* screen size in bytes needs to be below limit */
 	VDI_ByteLimit(&w, &h, VDIPlanes);
 
-	if (bIsEmuTOS || TosVersion >= 0300 || ConfigureParams.Memory.STRamSize_KB < 4*1024)
+#if DEBUG
+	printf("%s v0x%04x, RAM=%dkB\n", bIsEmuTOS ? "EmuTOS" : "TOS", TosVersion,  ConfigureParams.Memory.STRamSize_KB);
+#endif
+	if (bIsEmuTOS || TosVersion >= 0x0300 || ConfigureParams.Memory.STRamSize_KB < 4*1024)
 	{
 		/* width needs to be aligned to 16 bytes */
 		VDIWidth = Opt_ValueAlignMinMax(w, 128/VDIPlanes, MIN_VDI_WIDTH, MAX_VDI_WIDTH);

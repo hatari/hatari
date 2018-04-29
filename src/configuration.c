@@ -859,9 +859,7 @@ void Configuration_Apply(bool bReset)
 		}
 		if (bUseVDIRes)
 		{
-			VDI_SetResolution(ConfigureParams.Screen.nVdiColors,
-			                  ConfigureParams.Screen.nVdiWidth,
-			                  ConfigureParams.Screen.nVdiHeight);
+			/* rest of VDI setup done in TOS init */
 			bVdiAesIntercept = true;
 		}
 	}
