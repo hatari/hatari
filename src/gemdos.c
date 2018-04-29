@@ -2160,7 +2160,7 @@ static bool GemDOS_Write(Uint32 Params)
 	long nBytesWritten;
 	Uint32 Addr;
 	Sint32 Size;
-	int Handle;
+	int Handle, fh_idx;
 	FILE *fp;
 
 	/* Read details from stack */
@@ -2173,18 +2173,26 @@ static bool GemDOS_Write(Uint32 Params)
 		  CallingPC);
 
 	/* Get internal handle */
-	if ((Handle = GemDOS_GetValidFileHandle(Handle)) < 0)
+	fh_idx = GemDOS_GetValidFileHandle(Handle);
+	if (fh_idx >= 0)
 	{
-		/* assume it was TOS one -> redirect */
-		return false;
+		/* write protected device? */
+		if (ConfigureParams.HardDisk.nWriteProtection == WRITEPROT_ON)
+		{
+			Log_Printf(LOG_WARN, "PREVENTED: GEMDOS Fwrite(%d,...)\n", Handle);
+			Regs[REG_D0] = GEMDOS_EWRPRO;
+			return true;
+		}
+		fp = FileHandles[fh_idx].FileHandle;
 	}
-
-	/* write protected device? */
-	if (ConfigureParams.HardDisk.nWriteProtection == WRITEPROT_ON)
+	else
 	{
-		Log_Printf(LOG_WARN, "PREVENTED: GEMDOS Fwrite(%d,...)\n", Handle);
-		Regs[REG_D0] = GEMDOS_EWRPRO;
-		return true;
+		if (!bUseTos && Handle == 1)
+			fp = stdout;
+		else if (!bUseTos && (Handle == 2 || Handle == -1))
+			fp = stderr;
+		else
+			return false;	/* assume it was TOS one -> redirect */
 	}
 
 	/* Check that write is from valid memory area */
@@ -2196,12 +2204,11 @@ static bool GemDOS_Write(Uint32 Params)
 	}
 
 	pBuffer = (char *)STMemory_STAddrToPointer(Addr);
-	fp = FileHandles[Handle].FileHandle;
 	nBytesWritten = fwrite(pBuffer, 1, Size, fp);
-	if (ferror(fp))
+	if (fh_idx >= 0 && ferror(fp))
 	{
 		Log_Printf(LOG_WARN, "GEMDOS failed to write to '%s'\n",
-			   FileHandles[Handle].szActualName );
+			   FileHandles[fh_idx].szActualName);
 		Regs[REG_D0] = errno2gemdos(errno, ERROR_FILE);
 	}
 	else
