@@ -63,6 +63,9 @@ typedef enum
 	LOG_NONE	/* invalid LOG level */
 } LOGTYPE;
 
+#define LOG_NAMES {"FATAL", "ERROR", "WARNING", "INFO", "TODO", "DEBUG"}
+
+
 #ifndef __GNUC__
 /* assuming attributes work only for GCC */
 #define __attribute__(foo)

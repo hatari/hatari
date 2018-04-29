@@ -20,6 +20,7 @@ const char Log_fileid[] = "Hatari log.c : " __DATE__ " " __TIME__;
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <assert.h>
 
 #include "main.h"
 #include "configuration.h"
@@ -229,6 +230,20 @@ void Log_UnInit(void)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Print log prefix when needed
+ */
+static void Log_PrintPrefix(FILE *fp, LOGTYPE idx)
+{
+	static const char* prefix[] = LOG_NAMES;
+
+	assert(idx >= 0 && idx < ARRAY_SIZE(prefix));
+	if (prefix[idx])
+		fprintf(fp, "%s: ", prefix[idx]);
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Output string to log file
  */
 void Log_Printf(LOGTYPE nType, const char *psFormat, ...)
@@ -237,6 +252,7 @@ void Log_Printf(LOGTYPE nType, const char *psFormat, ...)
 
 	if (hLogFile && nType <= TextLogLevel)
 	{
+		Log_PrintPrefix(hLogFile, nType);
 		va_start(argptr, psFormat);
 		vfprintf(hLogFile, psFormat, argptr);
 		va_end(argptr);
@@ -258,6 +274,7 @@ void Log_AlertDlg(LOGTYPE nType, const char *psFormat, ...)
 	/* Output to log file: */
 	if (hLogFile && nType <= TextLogLevel)
 	{
+		Log_PrintPrefix(hLogFile, nType);
 		va_start(argptr, psFormat);
 		vfprintf(hLogFile, psFormat, argptr);
 		va_end(argptr);
