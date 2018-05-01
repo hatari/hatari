@@ -903,6 +903,7 @@ int main(int argc, char *argv[])
 	/* Check for any passed parameters */
 	if (!Opt_ParseParameters(argc, (const char * const *)argv))
 	{
+		Control_RemoveFifo();
 		return 1;
 	}
 	/* monitor type option might require "reset" -> true */
@@ -942,6 +943,7 @@ int main(int argc, char *argv[])
 	Main_UnPauseEmulation();
 	M68000_Start();                 /* Start emulation */
 
+	Control_RemoveFifo();
 	if (bRecordingAvi)
 	{
 		/* cleanly close the avi file */

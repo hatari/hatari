@@ -32,6 +32,8 @@ Emulator:
 - Options:
   - The "--bios-intercept" option now takes a boolean parameter which is
     used to determine whether the option should be enabled or disabled
+  - Add "--cmd-fifo" option to control Hatari at run-time just by
+    echoing commands to FIFO file created by Hatari
 - macOS UI:
   - Fix: "reset" and "don't reset" buttons inverted
   - Update MIDI panel for French version

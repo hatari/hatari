@@ -12,7 +12,9 @@ const char Control_fileid[] = "Hatari control.c : " __DATE__ " " __TIME__;
 
 #if HAVE_UNIX_DOMAIN_SOCKETS
 # include <sys/socket.h>
+# include <sys/stat.h>	/* mkfifo() */
 # include <sys/un.h>
+# include <fcntl.h>
 #endif
 
 #include <sys/types.h>
@@ -366,7 +368,13 @@ void Control_ProcessBuffer(const char *orig)
 
 #if HAVE_UNIX_DOMAIN_SOCKETS
 
-/* socket from which control command line options are read */
+/* one-way fifo which Hatari creates and reads commands from */
+static const char *FifoPath;
+static int ControlFifo;
+
+/* two-way socket to which Hatari connects, reads control commands
+ * from, and where the command responses (if any) are written to
+ */
 static int ControlSocket;
 
 /* pre-declared local functions */
@@ -388,6 +396,22 @@ bool Control_CheckUpdates(void)
 	fd_set readfds;
 	ssize_t bytes;
 	int status, sock;
+
+	if (ControlFifo) {
+		/* assume whole command can be read in one go */
+		bytes = read(ControlFifo, buffer, sizeof(buffer)-1);
+		if (bytes < 0) {
+			perror("command FIFO read error");
+			return false;
+		}
+		if (bytes == 0) {
+			/* non-blocking read, nothing to read */
+			return false;
+		}
+		buffer[bytes] = '\0';
+		Control_ProcessBuffer(buffer);
+		return false;
+	}
 
 	/* socket of file? */
 	if (ControlSocket) {
@@ -431,13 +455,13 @@ bool Control_CheckUpdates(void)
 		
 		/* assume whole command can be read in one go */
 		bytes = read(sock, buffer, sizeof(buffer)-1);
-		if (bytes < 0)
-		{
-			perror("Control socket read");
+		if (bytes < 0) {
+			perror("Control socket read error");
 			return false;
 		}
 		if (bytes == 0) {
 			/* closed */
+			fprintf(stderr, "ready control socket with 0 bytes available -> close socket\n");
 			close(ControlSocket);
 			ControlSocket = 0;
 			return false;
@@ -453,6 +477,55 @@ bool Control_CheckUpdates(void)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Close and remove FIFO file
+ */
+void Control_RemoveFifo(void)
+{
+	if (ControlFifo) {
+		close(ControlFifo);
+		ControlFifo = 0;
+	}
+	if (FifoPath) {
+		Log_Printf(LOG_DEBUG, "removing command FIFO: %s\n", FifoPath);
+		remove(FifoPath);
+		FifoPath = NULL;
+	}
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Open given command FIFO
+ * Return NULL for success, otherwise an error string
+ */
+const char *Control_SetFifo(const char *path)
+{
+	int fifo;
+
+	if (ControlSocket) {
+		return "Can't use a FIFO at the same time with a control socket";
+	}
+
+	Control_RemoveFifo();
+	Log_Printf(LOG_DEBUG, "creating command FIFO: %s\n", path);
+
+	if (mkfifo(path, S_IRUSR | S_IWUSR)) {
+		perror("FIFO creation error");
+		return "Can't create FIFO file";
+	}
+	FifoPath = path;
+
+	fifo = open(path, O_RDONLY | O_NONBLOCK);
+	if (fifo < 0) {
+		perror("FIFO open error");
+		return "opening non-blocking read-only FIFO failed";
+	}
+	ControlFifo = fifo;
+	return NULL;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Open given control socket.
  * Return NULL for success, otherwise an error string
  */
@@ -460,11 +533,14 @@ const char *Control_SetSocket(const char *socketpath)
 {
 	struct sockaddr_un address;
 	int newsock;
+
+	if (ControlFifo) {
+		return "Can't use a FIFO at the same time with a control socket";
+	}
 	
 	newsock = socket(AF_UNIX, SOCK_STREAM, 0);
-	if (newsock < 0)
-	{
-		perror("socket creation");
+	if (newsock < 0) {
+		perror("socket creation error");
 		return "Can't create AF_UNIX socket";
 	}
 
@@ -472,9 +548,8 @@ const char *Control_SetSocket(const char *socketpath)
 	strncpy(address.sun_path, socketpath, sizeof(address.sun_path));
 	address.sun_path[sizeof(address.sun_path)-1] = '\0';
 	Log_Printf(LOG_INFO, "Connecting to control socket '%s'...\n", address.sun_path);
-	if (connect(newsock, (struct sockaddr *)&address, sizeof(address)) < 0)
-	{
-		perror("socket connect");
+	if (connect(newsock, (struct sockaddr *)&address, sizeof(address)) < 0) {
+		perror("socket connect error");
 		close(newsock);
 		return "connection to control socket failed";
 	}
@@ -580,7 +655,7 @@ void Control_ReparentWindow(int width, int height, bool noembed)
 				width, height, sdl_win);
 			sprintf(buffer, "%dx%d", width, height);
 			if (write(ControlSocket, buffer, strlen(buffer)) < 0)
-				perror("Control_ReparentWindow write");
+				perror("Control_ReparentWindow write error");
 		}
 	}
 #if WITH_SDL2

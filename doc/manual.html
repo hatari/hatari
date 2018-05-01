@@ -348,8 +348,9 @@ overriding the earlier given ones:
 <li>User specific <span class="commandline">~/.hatari/hatari.cfg</span>
     configuration file</li>
 <li>Command line arguments
-<li>Option changes done at run-time in Hatari options GUI, with debugger "setopt"
-    command or through the (optionally enabled) Hatari control socket.
+<li>Option changes done at run-time in Hatari options GUI, with debugger
+    "setopt" command, or through the (optionally enabled) Hatari command
+    FIFO or control socket
 </ul>
 
 <p>Some of the run-time changes require emulation to be reset for them
@@ -882,10 +883,18 @@ used to create it automatically.</p>
 core dumps. SDL parachute is enabled by default to restore video
 mode in case Hatari terminates abnormally while using non-standard
 screen resolution.</p>
-<p class="parameter">--control-socket
-&lt;file&gt;</p>
-<p class="paramdesc">Hatari reads options from given socket
-at run-time</p>
+<p class="parameter">--control-socket &lt;path&gt;</p>
+<p class="paramdesc">
+Hatari connects to given local socket file and reads commands from it.
+Use when the control process life-time is longer than Hatari's, or
+control process needs response from Hatari
+</p>
+<p class="parameter">--cmd-fifo &lt;path&gt;</p>
+<p class="paramdesc">
+Hatari creates the indicated FIFO file and reads commands from it.
+Commands can be echoed to FIFO file, and are same as with the control
+socket. Hatari outputs help for unrecognized commands and subcommands
+</p>
 <p class="parameter">--log-file
 &lt;file&gt;</p>
 <p class="paramdesc">Save log output to &lt;file&gt;

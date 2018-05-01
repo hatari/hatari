@@ -177,6 +177,7 @@ enum {
 	OPT_SAVECONFIG,
 	OPT_PARACHUTE,
 	OPT_CONTROLSOCKET,
+	OPT_CMDFIFO,
 	OPT_LOGFILE,
 	OPT_LOGLEVEL,
 	OPT_ALERTLEVEL,
@@ -462,7 +463,9 @@ static const opt_t HatariOptions[] = {
 	  NULL, "Disable SDL parachute to get Hatari core dumps" },
 #if HAVE_UNIX_DOMAIN_SOCKETS
 	{ OPT_CONTROLSOCKET, NULL, "--control-socket",
-	  "<file>", "Hatari reads options from given socket at run-time" },
+	  "<file>", "Hatari connects to given socket for commands" },
+	{ OPT_CMDFIFO, NULL, "--cmd-fifo",
+	  "<file>", "Hatari creates & reads commands from given fifo" },
 #endif
 	{ OPT_LOGFILE, NULL, "--log-file",
 	  "<file>", "Save log output to <file> (default=stderr)" },
@@ -2055,6 +2058,15 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			if (errstr)
 			{
 				return Opt_ShowError(OPT_CONTROLSOCKET, argv[i], errstr);
+			}
+			break;
+
+		case OPT_CMDFIFO:
+			i += 1;
+			errstr = Control_SetFifo(argv[i]);
+			if (errstr)
+			{
+				return Opt_ShowError(OPT_CMDFIFO, argv[i], errstr);
 			}
 			break;
 

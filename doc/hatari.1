@@ -519,8 +519,15 @@ Disable SDL parachute to get Hatari core dumps. SDL parachute is enabled
 by default to restore video mode in case Hatari terminates abnormally
 while using non-standard screen resolution.
 .TP
-.B \-\-control\-socket <file>
-Hatari reads options from given socket at run-time
+.B \-\-control\-socket <path>
+Hatari connects to given local socket file and reads commands from it.
+Use when the control process life-time is longer than Hatari's, or
+control process needs response from Hatari
+.TP
+.B \-\-cmd\-fifo <path>
+Hatari creates the indicated FIFO file and reads commands from it.
+Commands can be echoed to FIFO file, and are same as with the control
+socket. Hatari outputs help for unrecognized commands and subcommands
 .TP
 .B \-\-log\-file <file>
 Save log output to <file> (default=stderr)
