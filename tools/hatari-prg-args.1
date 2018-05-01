@@ -3,10 +3,9 @@
 hatari\-prg\-args \- autorun Atari programs with arguments
 .SH SYNOPSIS
 .B hatari\-prg\-args
-.I [Hatari args]
-.B --
-.I <Atari program>
-.I <program args>
+[\fI\-q\fP] [\fIHatari args\fP]
+\fB--\fP
+<\fIAtari program\fP> <\fIprogram args\fP>
 .SH DESCRIPTION
 Utility for running Hatari so that it autostarts given Atari program
 and inserts given arguments to program (to its basepage, with builtin
@@ -16,7 +15,14 @@ If Atari program arguments have same (host) path prefix as given Atari
 program, those prefixes are replaced with "C:\\". Unix path separators
 (/) are replaced with Atari ones (\\) and whole filename is upper-cased.
 .PP
-Other program arguments are passed unmodified.
+Other program arguments are passed unmodified.  Note that maximum
+Atari program command line length that can be given (in basepage) is
+126 characters.
+.SH OPTIONS
+.TP
+.B \-q
+Make Hatari quit when the started Atari program terminates.
+If given, this needs to be the first argument.
 .SH EXAMPLES
 .TP
 Start SID player in mono and tell it to play given SID song

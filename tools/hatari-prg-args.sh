@@ -14,11 +14,14 @@ hatari=hatari
 usage ()
 {
 	name=${0##*/}
-	echo "usage: $name [Hatari args] -- <Atari program> <program args>"
+	echo "usage: $name [-q] [Hatari args] -- <Atari program> <program args>"
 	echo
 	echo "Script for running Hatari so that it autostarts given Atari program"
 	echo "and inserts given arguments to program (to its basepage, with builtin"
 	echo "Hatari debugger facilities)."
+	echo
+	echo "Options:"
+	echo "    -q  Quit Hatari after Atari program exits"
 	echo
 	echo "If arguments have same (host) path prefix as given Atari program,"
 	echo "those prefixes are replaced with 'C:\', Unix path separators ('/')"
@@ -34,6 +37,12 @@ usage ()
 }
 
 # --------- argument parsing --------
+
+quit=0
+if [ $1 = "-q" ]; then
+	quit=1
+	shift
+fi
 
 # generic argument checking
 if [ $# -lt 3 ]; then
@@ -57,7 +66,7 @@ done
 prg=$1
 shift
 if [ \! -f $prg ]; then
-	usage "given Atari program doesn't exist"
+	usage "given Atari program '$prg' doesn't exist"
 fi
 
 # builtin shell echo can be broken, so that it interprets backlashes by default,
@@ -118,8 +127,18 @@ cat > $dir/basepage.ini << EOF
 setopt dec
 w "basepage+0x80" $cmdlen
 l $args "basepage+0x81"
-info basepage
+# info basepage
 EOF
+
+# quit Hatari after program exits
+if [ $quit ]; then
+	# catch Pterm0() & Pterm()
+	cat >> $dir/basepage.ini << EOF
+b GemdosOpcode = 0x00 :quiet :trace :file $dir/quit.ini
+b GemdosOpcode = 0x4C :quiet :trace :file $dir/quit.ini
+EOF
+	echo "quit" > $dir/quit.ini
+fi
 
 # --------- ready, run ----------
 
