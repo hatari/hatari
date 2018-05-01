@@ -19,6 +19,12 @@ if(NOT WIN32)
 		DEPENDS atari-convert-dir.1)
 	INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/atari-convert-dir.1.gz DESTINATION ${MANDIR})
 
+	add_custom_target(hatari_prg_args_man ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/hatari-prg-args.1.gz)
+	add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hatari-prg-args.1.gz
+		COMMAND gzip -c -9 ${CMAKE_CURRENT_SOURCE_DIR}/hatari-prg-args.1 > ${CMAKE_CURRENT_BINARY_DIR}/hatari-prg-args.1.gz
+		DEPENDS hatari-prg-args.1)
+	INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/hatari-prg-args.1.gz DESTINATION ${MANDIR})
+
 	add_custom_target(atari_hd_image_man ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/atari-hd-image.1.gz)
 	add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/atari-hd-image.1.gz
 		COMMAND gzip -c -9 ${CMAKE_CURRENT_SOURCE_DIR}/atari-hd-image.1 > ${CMAKE_CURRENT_BINARY_DIR}/atari-hd-image.1.gz
