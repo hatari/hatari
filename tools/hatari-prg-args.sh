@@ -2,13 +2,13 @@
 #
 # script to set Atari program args after TOS starts it.
 #
-# this is achieved by chaining breakpoints from Hatari
-# startup to program startup.
+# this is achieved by chaining breakpoints from Hatari startup
+# to program startup, and finally writing the arguments to
+# the program basepage.
 
 set -e
 
-# name or path to recent hatari version
-# (v1.9 or newer provides required debugger "basepage" variable)
+# name or path to hatari Mercurial version
 hatari=hatari
 
 usage ()
@@ -100,10 +100,11 @@ fi
 
 # --------- debugger scripts --------
 
-# until desktop is up and TOS opens (autostart) INF file,
-# it's not possible to set program breakpoints (0x3D = Fopen())
-cat > $dir/fopen.ini << EOF
-b GemdosOpcode = 0x3D :once :quiet :trace :file $dir/start.ini
+# until TOS has started, it's not possible to set breakpoint
+# to program startup, there's no valid basepage and therefore
+# no valid TEXT variable.  So set breakpoint on Pexec(0,...)
+cat > $dir/pexec.ini << EOF
+b GemdosOpcode = 0x4B && GemdosParam = 0x0 :once :quiet :trace :file $dir/start.ini
 EOF
 
 # real work can be done when program starts,
@@ -126,8 +127,8 @@ EOF
 head $dir/*
 
 # run Hatari
-echo $hatari --parse $dir/fopen.ini $prg
-$hatari --parse $dir/fopen.ini $prg
+echo $hatari --parse $dir/pexec.ini $prg
+$hatari --parse $dir/pexec.ini $prg
 
 # cleanup
 rm -r $dir
