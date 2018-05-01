@@ -342,7 +342,7 @@ static res_value_t vdi2inf(res_value_t mode)
 	if (res != newres)
 	{
 		if (res)
-			Log_Printf(LOG_WARN, "Overriding TOS resolution %d with VDI resolution %d.\n",
+			Log_Printf(LOG_WARN, "Overriding TOS INF resolution %d with VDI resolution %d\n",
 				   res, newres);
 		res = newres;
 	}
@@ -376,6 +376,7 @@ extern void INF_SetVdiMode(int vdi_res)
  */
 static int INF_ValidateResolution(int *set_res, const char **val, const char **err)
 {
+#define MONO_WARN_STR "Correcting virtual INF file resolution to mono on mono monitor\n"
 	res_value_t res = TosOverride.reso;
 	*set_res = 0;
 
@@ -403,7 +404,7 @@ static int INF_ValidateResolution(int *set_res, const char **val, const char **e
 			if (monitor == MONITOR_TYPE_MONO && res != RES_ST_HIGH)
 			{
 				res = RES_ST_HIGH;
-				Log_Printf(LOG_WARN, "With mono monitor, TOS can use only mono resolution, correcting.\n");
+				Log_Printf(LOG_WARN, MONO_WARN_STR);
 			}
 			else if (res >= RES_ST_HIGH)
 			{
@@ -416,7 +417,7 @@ static int INF_ValidateResolution(int *set_res, const char **val, const char **e
 			if (monitor == MONITOR_TYPE_MONO && res != RES_TT_HIGH)
 			{
 				res = RES_TT_HIGH;
-				Log_Printf(LOG_WARN, "With mono monitor, TOS can use only mono resolution, correcting.\n");
+				Log_Printf(LOG_WARN, MONO_WARN_STR);
 			}
 			else if (res == RES_TT_HIGH)
 			{
@@ -429,7 +430,7 @@ static int INF_ValidateResolution(int *set_res, const char **val, const char **e
 			if (monitor == MONITOR_TYPE_MONO && res != RES_ST_HIGH)
 			{
 				res = RES_ST_HIGH;
-				Log_Printf(LOG_WARN, "With mono monitor, TOS can use only mono resolution, correcting.\n");
+				Log_Printf(LOG_WARN, MONO_WARN_STR);
 			}
 			else if (res == RES_TT_HIGH)
 			{
@@ -456,7 +457,7 @@ static int INF_ValidateResolution(int *set_res, const char **val, const char **e
 		/* map values 0-6: N/A, ST low, med, high, TT med, high, low */
 		unsigned char map[] = { 0, 0, 1, 2, 4, 6, 7 };
 		res = map[res];
-		Log_Printf(LOG_DEBUG, "Remapped TOS resolution for EmuTOS.\n");
+		Log_Printf(LOG_DEBUG, "Remapped INF file TOS resolution for EmuTOS\n");
 	}
 	else if (TosVersion >= 0x0160)
 	{
@@ -770,13 +771,13 @@ static FILE* write_inf_file(const char *contents, int size, int res, int res_col
 	if (!(fwrite(contents+offset, size-offset-1, 1, fp) && fseek(fp, 0, SEEK_SET) == 0))
 	{
 		fclose(fp);
-		Log_Printf(LOG_ERROR, "Virtual '%s' file writing failed!\n", infname);
+		Log_Printf(LOG_ERROR, "Virtual '%s' INF file writing failed!\n", infname);
 		return NULL;
 	}
 	if (prgname)
-		Log_Printf(LOG_DEBUG, "Virtual '%s' autostart file created for '%s'.\n", infname, prgname);
+		Log_Printf(LOG_DEBUG, "Virtual '%s' autostart INF file created for '%s'\n", infname, prgname);
 	else
-		Log_Printf(LOG_DEBUG, "Virtual '%s' TOS resolution override file created.\n", infname);
+		Log_Printf(LOG_DEBUG, "Virtual '%s' TOS resolution override INF file created\n", infname);
 	return fp;
 }
 
