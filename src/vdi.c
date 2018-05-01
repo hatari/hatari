@@ -151,6 +151,11 @@ void VDI_SetResolution(int GEMColor, int WidthRequest, int HeightRequest)
 		Log_Printf(LOG_WARN, "VDI screen: request = %dx%d@%d, result = %dx%d@%d\n",
 		       WidthRequest, HeightRequest, VDIPlanes, VDIWidth, VDIHeight, VDIPlanes);
 	}
+	else
+	{
+		Log_Printf(LOG_DEBUG, "VDI screen: %dx%d@%d\n",
+			   VDIWidth, VDIHeight, VDIPlanes);
+	}
 	/* INF file overriding so that (re-)boot uses correct bit-depth */
 	INF_SetVdiMode(VDIRes);
 }
