@@ -3875,6 +3875,12 @@ void GemDOS_OpCode(void)
 	 case false:
 		if (!bUseTos)
 		{
+			if (GemDOSCall >= 0x58)   /* Ignore optional calls */
+			{
+				SR |= SR_ZERO;
+				Regs[REG_D0] = GEMDOS_EINVFN;
+				break;
+			}
 			Log_Printf(LOG_FATAL, "GEMDOS 0x%02hX %s at PC 0x%X unsupported in test mode\n",
 				  GemDOSCall, GemDOS_Opcode2Name(GemDOSCall),
 				  CallingPC);
