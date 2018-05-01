@@ -17,8 +17,9 @@ const char Vars_fileid[] = "Hatari vars.c : " __DATE__ " " __TIME__;
 #include "configuration.h"
 #include "stMemory.h"
 #include "m68000.h"
-#include "screen.h"	/* for defines needed by video.h */
-#include "video.h"	/* for Hatari video variable addresses */
+#include "screen.h"	 /* for defines needed by video.h */
+#include "video.h"	 /* for Hatari video variable addresses */
+#include "hatari-glue.h" /* for currprefs */
 
 #include "debugInfo.h"
 #include "debugcpu.h"
@@ -139,6 +140,12 @@ static Uint32 GetVdiOpcode(void)
 	return INVALID_OPCODE;
 }
 
+static Uint32 GetGemdosParam(void)
+{
+	/* skip GEMDOS opcode */
+	return STMemory_ReadWord(Regs[REG_A7]+SIZE_WORD);
+}
+
 static Uint32 GetNextPC(void)
 {
 	return Disasm_GetNextPC(M68000_GetPC());
@@ -160,6 +167,7 @@ static const var_addr_t hatari_vars[] = {
 #endif
 	{ "FrameCycles", (Uint32*)GetFrameCycles, VALUE_TYPE_FUNCTION32, 0, NULL },
 	{ "GemdosOpcode", (Uint32*)GetGemdosOpcode, VALUE_TYPE_FUNCTION32, 16, "$FFFF when not on GEMDOS trap" },
+	{ "GemdosParam", (Uint32*)GetGemdosParam, VALUE_TYPE_FUNCTION32, 16, "word value, valid only on GemDOS trap entry" },
 	{ "HBL", (Uint32*)&nHBL, VALUE_TYPE_VAR32, sizeof(nHBL)*8, NULL },
 	{ "LineAOpcode", (Uint32*)GetLineAOpcode, VALUE_TYPE_FUNCTION32, 16, "$FFFF when not on Line-A opcode" },
 	{ "LineCycles", (Uint32*)GetLineCycles, VALUE_TYPE_FUNCTION32, 0, "is always divisable by 4" },

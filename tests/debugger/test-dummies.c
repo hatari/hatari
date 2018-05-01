@@ -11,6 +11,10 @@ FILE *TraceFile;
 #include "configuration.h"
 CNF_PARAMS ConfigureParams;
 
+/* fake hatari-glue.c */
+#include "hatari-glue.h"
+struct uae_prefs currprefs;
+
 /* fake options.c */
 #include "options.h"
 bool Opt_IsAtariProgram(const char *path) { return false; }
