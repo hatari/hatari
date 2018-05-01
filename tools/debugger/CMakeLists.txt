@@ -5,7 +5,7 @@ add_executable(gst2ascii gst2ascii.c)
 
 install(TARGETS gst2ascii RUNTIME DESTINATION ${BINDIR})
 
-install(PROGRAMS hatari_profile.py DESTINATION ${BINDIR})
+install(PROGRAMS hatari_profile.py DESTINATION ${BINDIR} RENAME hatari_profile)
 
 # if(UNIX)
 	add_custom_target(gst2ascii_man ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/gst2ascii.1.gz)
