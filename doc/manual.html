@@ -3078,25 +3078,30 @@ another one is set.
 
 <p>For example if you have these input files:</p>
 <ul>
-<li>"break.ini":
+<li>"pexec.ini":
 <pre>
-b GemdosOpcode = 0x3D :trace :once :file program.ini
+# continue to "program.ini" on Pexec(0, ....)
+b GemdosOpcode = 0x4B && GemdosParam = 0x0 :trace :once :file program.ini
 </pre>
 </li>
 <li>"program.ini":
 <pre>
+# continue to "trace.ini" when program execution starts
 b pc = TEXT :trace :once :file trace.ini
 </pre>
 </li>
 <li>"trace.ini":
 <pre>
+# load symbols, trace gemdos & program function calls
 symbols prg
 trace gemdos,cpu_symbols
+# continue to "disable.ini" after 4 VBLs
 b VBL = "VBL+4" :trace :once :file disable.ini
 </pre>
 </li>
 <li>"disable.ini":
 <pre>
+# stop tracing and remove breakpoints
 trace none
 b all
 </pre>
@@ -3104,20 +3109,19 @@ b all
 </ul>
 
 <p>
-And then start Hatari with the first debugger input file and a GEMDOS
-HD directory containing "desktop.inf" file:
+And then start Hatari with the first debugger input file:
 </p>
 <pre>
-hatari --parse break.ini /path/to/your/program.tos
+hatari --parse pexec.ini /path/to/your/program.tos
 </pre>
 
 <ol>
-<li>"break.ini" input file will break when TOS opens
-    the "desktop.inf" file (it's the first Fopen() i.e. GEMDOS call
-    0x3D done by TOS at boot) and the breakpoint will run
-    the debugger commands from the "symbols.ini" file
-<li>"program.ini" will setup breakpoint to program startup
-    (because TEXT variable cannot be used before TOS has booted)
+<li>"pexec.ini" sets a breakpoint to parse debugger commands from
+    "program.ini" when TOS starts loading the given program
+    (it's first Pexec(0) after boot)
+<li>"program.ini" sets a breakpoint to parse debugger commands from
+    "trace.ini" when program code begins executing.  These two steps
+    are needed because TEXT variable isn't valid until TOS has booted
 <li>"trace.ini" input file loads symbols for the run program, sets Hatari
     to trace several things (see <a href="#Tracing">Tracing</a> section
     below) in the emulated system for few VBLs until breakpoint runs
