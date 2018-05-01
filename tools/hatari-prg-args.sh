@@ -1,11 +1,12 @@
 #!/bin/sh
 #
-# script to set first Atari program args when it starts
+# script to set Atari program args after TOS starts it.
 #
 # this is achieved by chaining breakpoints from Hatari
 # startup to program startup.
 
-# path to (2015) hatari version which debugger provides "basepage" variable
+# name or path to recent hatari version
+# (v1.9 or newer provides required debugger "basepage" variable)
 hatari=hatari
 
 # where temporary debugger scripts will be stored

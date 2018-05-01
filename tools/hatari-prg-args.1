@@ -1,0 +1,38 @@
+.TH "hatari-prg-args" "1" "2018-05-01" "Hatari" "Hatari utilities"
+.SH NAME
+hatari\-prg\-args \- autorun Atari programs with arguments
+.SH SYNOPSIS
+.B hatari\-prg\-args
+.I [Hatari args]
+.B --
+.I <Atari program>
+.I <program args>
+.SH DESCRIPTION
+Utility for running Hatari so that it autostarts given Atari program
+and inserts given arguments to program (to its basepage, with builtin
+Hatari debugger facilities).
+.PP
+If Atari program arguments have same (host) path prefix as given Atari
+program, those prefixes are replaced with "C:\\". Unix path separators
+(/) are replaced with Atari ones (\\) and whole filename is upper-cased.
+.PP
+Other program arguments are passed unmodified.
+.SH EXAMPLES
+.TP
+Start SID player in mono and tell it to play given SID song
+.B hatari\-prg\-args -m -- atari/sidplay.ttp atari/sids/test.sid
+.SH SEE ALSO
+.IR hatari (1),
+.IR hconsole (1)
+.SH "AUTHOR"
+Written by Eero Tamminen <oak at helsinkinet fi>.
+.SH "LICENSE"
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or (at
+your option) any later version.
+.SH "NO WARRANTY"
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
