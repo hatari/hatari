@@ -8,6 +8,7 @@ if(PYTHONINTERP_FOUND)
 endif(PYTHONINTERP_FOUND)
 
 install(PROGRAMS atari-convert-dir.py DESTINATION ${BINDIR} RENAME atari-convert-dir)
+install(PROGRAMS hatari-prg-args.sh DESTINATION ${BINDIR} RENAME hatari-prg-args)
 install(PROGRAMS atari-hd-image.sh DESTINATION ${BINDIR} RENAME atari-hd-image)
 install(PROGRAMS zip2st.sh DESTINATION ${BINDIR} RENAME zip2st)
 
