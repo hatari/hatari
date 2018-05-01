@@ -85,7 +85,7 @@ typedef struct
 } TOS_PATCH;
 
 static const char pszDmaBoot[] = "boot from DMA bus";
-static const char pszMouse[] = "big resolutions mouse driver";
+static const char pszMouse[] = "big VDI resolutions mouse driver";
 static const char pszRomCheck[] = "ROM checksum";
 static const char pszNoSteHw[] = "disable STE hardware access";
 static const char pszNoPmmu[] = "disable PMMU access";
