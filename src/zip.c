@@ -241,7 +241,7 @@ struct dirent **ZIP_GetFilesDir(const zip_dir *zip, const char *dir, int *entrie
 	}
 
 	/* add ".." directory */
-	files->nfiles = 1;
+	files->nfiles = 0;
 	temp = (char *)malloc(4);
 	if (!temp)
 	{
@@ -252,6 +252,7 @@ struct dirent **ZIP_GetFilesDir(const zip_dir *zip, const char *dir, int *entrie
 	temp[2] = '/';
 	temp[3] = '\0';
 	files->names[0] = temp;
+	files->nfiles++;
 
 	for (i = 0; i < zip->nfiles; i++)
 	{
@@ -274,29 +275,29 @@ struct dirent **ZIP_GetFilesDir(const zip_dir *zip, const char *dir, int *entrie
 						}
 						if (flag == false)
 						{
-							files->names[files->nfiles] = (char *)malloc(slash+2);
-							if (!files->names[files->nfiles])
+							char *subdir = malloc(slash+2);
+							if (!subdir)
 							{
 								perror("ZIP_GetFilesDir");
 								ZIP_FreeZipDir(files);
 								return NULL;
 							}
-							strncpy(files->names[files->nfiles], temp, slash+1);
-							((char *)files->names[files->nfiles])[slash+1] = '\0';
+							strncpy(subdir, temp, slash+1);
+							subdir[slash+1] = '\0';
+							files->names[files->nfiles] = subdir;
 							files->nfiles++;
 						}
 					}
 					else
 					{
 						/* add a filename */
-						files->names[files->nfiles] = (char *)malloc(strlen(temp)+1);
+						files->names[files->nfiles] = strdup(temp);
 						if (!files->names[files->nfiles])
 						{
 							perror("ZIP_GetFilesDir");
 							ZIP_FreeZipDir(files);
 							return NULL;
 						}
-						strcpy(files->names[files->nfiles], temp);
 						files->nfiles++;
 					}
 				}
