@@ -788,10 +788,11 @@ BOOL flag1, flag2;
 	IMPORT_SWITCH(FastBootPatch,ConfigureParams.System.bFastBoot);
 	IMPORT_RADIO(YMVoicesMixing,ConfigureParams.Sound.YmVolumeMixing);
 
-	//1.9.0 SDL2
+#if WITH_SDL2
 	IMPORT_SWITCH(SDL2UseLinearScaling, ConfigureParams.Screen.nRenderScaleQuality);
-	IMPORT_SWITCH(SDL2Resizable, ConfigureParams.Screen.bResizable) ;				// MS 06-2017
+	IMPORT_SWITCH(SDL2Resizable, ConfigureParams.Screen.bResizable);
 	IMPORT_SWITCH(SDL2UseVSync, ConfigureParams.Screen.bUseVsync);
+#endif
 
 	//deal with the Max Zoomed Stepper
 	IMPORT_NTEXTFIELD(maxZoomedWidth, ConfigureParams.Screen.nMaxWidth);
@@ -1058,10 +1059,12 @@ BOOL flag1, flag2;
 	//v1.6.1
 	EXPORT_SWITCH(FastBootPatch,ConfigureParams.System.bFastBoot);
 	EXPORT_RADIO(YMVoicesMixing,ConfigureParams.Sound.YmVolumeMixing);
-	//1.9.0 SDL2
+
+#if WITH_SDL2
 	EXPORT_SWITCH(SDL2UseLinearScaling, ConfigureParams.Screen.nRenderScaleQuality);
-	EXPORT_SWITCH(SDL2Resizable, ConfigureParams.Screen.bResizable) ;					// MS 06-2017
+	EXPORT_SWITCH(SDL2Resizable, ConfigureParams.Screen.bResizable);
 	EXPORT_SWITCH(SDL2UseVSync, ConfigureParams.Screen.bUseVsync);
+#endif
 
 	EXPORT_NTEXTFIELD(maxZoomedWidth, ConfigureParams.Screen.nMaxWidth);
 	EXPORT_NTEXTFIELD(maxZoomedHeight, ConfigureParams.Screen.nMaxHeight);
