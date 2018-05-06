@@ -4003,6 +4003,11 @@ int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr)
 		return 0;
 
 	nRelTabIdx = 0x1c + nTextLen + nDataLen + nSymLen;
+	if (nRelTabIdx > nFileSize - 3)
+	{
+		Log_Printf(LOG_ERROR, "Can not parse relocation table of '%s'.\n", psPrgName);
+		return -1;
+	}
 	nRelOff = (prg[nRelTabIdx] << 24) | (prg[nRelTabIdx + 1] << 16)
 	          | (prg[nRelTabIdx + 2] << 8) | prg[nRelTabIdx + 3];
 
@@ -4013,7 +4018,7 @@ int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr)
 	STMemory_WriteLong(nCurrAddr, STMemory_ReadLong(nCurrAddr) + baseaddr + 0x100);
 	nRelTabIdx += 4;
 
-	while (prg[nRelTabIdx])
+	while (nRelTabIdx < nFileSize && prg[nRelTabIdx])
 	{
 		if (prg[nRelTabIdx] == 1)
 		{
@@ -4025,6 +4030,12 @@ int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr)
 		nCurrAddr = baseaddr + 0x100 + nRelOff;
 		STMemory_WriteLong(nCurrAddr, STMemory_ReadLong(nCurrAddr) + baseaddr + 0x100);
 		nRelTabIdx += 1;
+	}
+
+	if (nRelTabIdx >= nFileSize)
+	{
+		Log_Printf(LOG_ERROR, "Failed to parse relocation table of '%s'.\n", psPrgName);
+		return -1;
 	}
 
 	return 0;
