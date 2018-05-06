@@ -312,13 +312,14 @@ void TOS_MemorySnapShot_Capture(bool bSave)
  * So, how do we find these addresses when we have no commented source code?
  * - For the "Boot from DMA bus" patch:
  *   Scan at start of rom for tst.w $482, boot call will be just above it.
+ *
+ * Set logpatch_addr if patch for that is needed.
  */
-static void TOS_FixRom(void)
+static void TOS_FixRom(Uint32 *logopatch_addr)
 {
 	int nGoodPatches, nBadPatches;
 	short TosCountry;
 	const TOS_PATCH *pPatch;
-	Uint32 logopatch_addr = 0;
 
 	/* We can't patch RAM TOS images (yet) */
 	if (bRamTosImage && TosVersion != 0x0492)
@@ -363,7 +364,7 @@ static void TOS_FixRom(void)
 					memcpy(&RomMem[pPatch->Address], pPatch->pNewData, pPatch->Size);
 					nGoodPatches += 1;
 					if (strcmp(pPatch->pszName, pszAtariLogo) == 0)
-						logopatch_addr = pPatch->Address;
+						*logopatch_addr = pPatch->Address;
 				}
 				else
 				{
@@ -378,13 +379,6 @@ static void TOS_FixRom(void)
 			}
 		}
 		pPatch += 1;
-	}
-
-	/* patch some values into the "Draw logo" patch */
-	if (logopatch_addr != 0)
-	{
-		STMemory_WriteWord(logopatch_addr + 2, VDIPlanes);
-		STMemory_WriteLong(logopatch_addr + 6, VDIWidth * VDIPlanes / 8);
 	}
 
 	Log_Printf(LOG_DEBUG, "Applied %i TOS patches, %i patches failed.\n",
@@ -732,6 +726,7 @@ static uint8_t *TOS_FakeRomForTesting(void)
 int TOS_InitImage(void)
 {
 	uint8_t *pTosFile = NULL;
+	Uint32 logopatch_addr = 0;
 
 	bTosImageLoaded = false;
 
@@ -783,7 +778,7 @@ int TOS_InitImage(void)
 	/* Fix TOS image, modify code for emulation */
 	if (ConfigureParams.Rom.bPatchTos && !bIsEmuTOS && bUseTos)
 	{
-		TOS_FixRom();
+		TOS_FixRom(&logopatch_addr);
 	}
 	else
 	{
@@ -796,6 +791,16 @@ int TOS_InitImage(void)
 	VDI_SetResolution(ConfigureParams.Screen.nVdiColors,
 			  ConfigureParams.Screen.nVdiWidth,
 			  ConfigureParams.Screen.nVdiHeight);
+
+	/*
+	 * patch some values into the "Draw logo" patch.
+	 * Needs to be called after final VDI resolution has been determined.
+	 */
+	if (logopatch_addr != 0)
+	{
+		STMemory_WriteWord(logopatch_addr + 2, VDIPlanes);
+		STMemory_WriteLong(logopatch_addr + 6, VDIWidth * VDIPlanes / 8);
+	}
 
 	/* Set connected devices, memory configuration, etc. */
 	STMemory_SetDefaultConfig();
