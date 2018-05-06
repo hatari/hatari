@@ -88,6 +88,49 @@ char *Str_ToLower(char *pString)
 	return pString;
 }
 
+/**
+ * Allocate memory for a string and check for out-of memory (and exit the
+ * program in that case, since there is likely nothing we can do if we even
+ * can not allocate small strings anymore).
+ *
+ * @len  Length of the string (without the trailing NUL character)
+ */
+char *Str_Alloc(int len)
+{
+	char *newstr = malloc(len + 1);
+
+	if (!newstr)
+	{
+		perror("string allocation failed");
+		exit(1);
+	}
+
+	newstr[0] = newstr[len] = 0;
+
+	return newstr;
+}
+
+/**
+ * This function is like strdup, but also checks for out-of memory and exits
+ * the program in that case (there is likely nothing we can do if we even can
+ * not allocate small strings anymore).
+ */
+char *Str_Dup(const char *str)
+{
+	char *newstr;
+
+	if (!str)
+		return NULL;
+
+	newstr = strdup(str);
+	if (!newstr)
+	{
+		perror("string duplication failed");
+		exit(1);
+	}
+
+	return newstr;
+}
 
 /**
  * truncate string at first unprintable char (e.g. newline).

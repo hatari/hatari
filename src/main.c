@@ -815,6 +815,8 @@ static void Main_UnInit(void)
 
 	/* Close debug log file */
 	Log_UnInit();
+
+	Paths_UnInit();
 }
 
 

@@ -38,9 +38,13 @@
  */
 #define INVALID_CHAR '+'
 
+#define Str_Free(s) { free(s); s = NULL; }
+
 extern char *Str_Trim(char *buffer);
 extern char *Str_ToUpper(char *pString);
 extern char *Str_ToLower(char *pString);
+extern char *Str_Alloc(int len);
+extern char *Str_Dup(const char *str);
 extern char *Str_Trunc(char *str);
 extern bool Str_IsHex(const char *str);
 extern void Str_Filename2TOSname(const char *src, char *dst);
