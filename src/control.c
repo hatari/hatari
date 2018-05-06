@@ -369,7 +369,7 @@ void Control_ProcessBuffer(const char *orig)
 #if HAVE_UNIX_DOMAIN_SOCKETS
 
 /* one-way fifo which Hatari creates and reads commands from */
-static const char *FifoPath;
+static char *FifoPath;
 static int ControlFifo;
 
 /* two-way socket to which Hatari connects, reads control commands
@@ -488,6 +488,7 @@ void Control_RemoveFifo(void)
 	if (FifoPath) {
 		Log_Printf(LOG_DEBUG, "removing command FIFO: %s\n", FifoPath);
 		remove(FifoPath);
+		free(FifoPath);
 		FifoPath = NULL;
 	}
 }
@@ -512,11 +513,12 @@ const char *Control_SetFifo(const char *path)
 		perror("FIFO creation error");
 		return "Can't create FIFO file";
 	}
-	FifoPath = path;
+	FifoPath = strdup(path);
 
 	fifo = open(path, O_RDONLY | O_NONBLOCK);
 	if (fifo < 0) {
 		perror("FIFO open error");
+		Control_RemoveFifo();
 		return "opening non-blocking read-only FIFO failed";
 	}
 	ControlFifo = fifo;
