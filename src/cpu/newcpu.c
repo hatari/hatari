@@ -3243,7 +3243,7 @@ static void Exception_ce000 (int nr)
 #else
 		if (nr != 2 || (last_fault_for_exception_3 & 0xffffff) != 0xff8a00 ||
 		    currpc < TosAddress || currpc > TosAddress + TosSize)
-			Log_Printf(LOG_ERROR, "%s Error at address $%x, PC=$%x addr_e3=%x op_e3=%x\n",
+			Log_Printf(LOG_WARN, "%s Error at address $%x, PC=$%x addr_e3=%x op_e3=%x\n",
 			           nr == 2 ? "Bus" : "Address", last_fault_for_exception_3, currpc,
 			           last_addr_for_exception_3 , last_op_for_exception_3);
 #endif
