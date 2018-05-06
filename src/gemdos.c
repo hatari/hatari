@@ -3978,7 +3978,11 @@ int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr)
 		return -1;
 
 	/* Clear BSS */
-	memset(&STRam[baseaddr + 0x100 + nTextLen + nDataLen], 0, nBssLen);
+	if (!STMemory_SafeClear(baseaddr + 0x100 + nTextLen + nDataLen, nBssLen))
+	{
+		Log_Printf(LOG_ERROR, "Failed to clear BSS for '%s'.\n", psPrgName);
+		return -1;
+	}
 
 	/* Set up basepage - note: some of these values are rather dummies */
 	STMemory_WriteLong(baseaddr, baseaddr);                                    /* p_lowtpa */

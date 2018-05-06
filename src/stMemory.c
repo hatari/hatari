@@ -89,10 +89,28 @@ void	STMemory_Reset ( bool bCold )
 
 /**
  * Clear section of ST's memory space.
+ * @addr  Destination Atari RAM address
+ * @len   Number of bytes to clear
+ *
+ * Return true if whole clear was safe / valid.
  */
-static void STMemory_Clear(Uint32 StartAddress, Uint32 EndAddress)
+bool STMemory_SafeClear(Uint32 addr, unsigned int len)
 {
-	memset(&STRam[StartAddress], 0, EndAddress-StartAddress);
+	Uint32 end;
+
+	if (STMemory_CheckAreaType(addr, len, ABFLAG_RAM))
+	{
+		memset(&STRam[addr], 0, len);
+		return true;
+	}
+	Log_Printf(LOG_WARN, "Invalid RAM clear range 0x%x+%i!\n", addr, len);
+
+	for (end = addr + len; addr < end; addr++)
+	{
+		if (STMemory_CheckAreaType(addr, 1, ABFLAG_RAM))
+			STRam[addr] = 0;
+	}
+	return false;
 }
 
 /**
@@ -171,13 +189,13 @@ void STMemory_SetDefaultConfig(void)
 	if (bRamTosImage)
 	{
 		/* Clear ST-RAM, excluding the RAM TOS image */
-		STMemory_Clear(0x00000000, TosAddress);
-		STMemory_Clear(TosAddress+TosSize, STRamEnd);
+		STMemory_SafeClear(0x00000000, TosAddress);
+		STMemory_SafeClear(TosAddress + TosSize, STRamEnd - TosAddress - TosSize);
 	}
 	else
 	{
 		/* Clear whole ST-RAM */
-		STMemory_Clear(0x00000000, STRamEnd);
+		STMemory_SafeClear(0x00000000, STRamEnd);
 	}
 
 	/* Mirror ROM boot vectors */

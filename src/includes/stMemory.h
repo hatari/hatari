@@ -41,10 +41,10 @@ extern Uint32	MMU_Bank0_Size;
 extern Uint32	MMU_Bank1_Size;
 
 
-
 extern void STMemory_Init ( int RAM_Size_Byte );
 extern void STMemory_Reset ( bool bCold );
 
+extern bool STMemory_SafeClear(Uint32 addr, unsigned int len);
 extern bool STMemory_SafeCopy(Uint32 addr, Uint8 *src, unsigned int len, const char *name);
 extern void STMemory_MemorySnapShot_Capture(bool bSave);
 extern void STMemory_SetDefaultConfig(void);
