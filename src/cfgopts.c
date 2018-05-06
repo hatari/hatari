@@ -163,7 +163,7 @@ int input_config(const char *filename, const struct Config_Tag configs[], const 
 			if (fptr == NULL)
 				break;
 		}
-		while (memcmp(fptr,header,strlen(header)));
+		while (strncmp(fptr, header, strlen(header)));
 	}
 
 	if ( !feof(file) )
@@ -339,7 +339,7 @@ int update_config(const char *filename, const struct Config_Tag configs[], const
 				break;
 			fprintf(tempfile, "%s\n", fptr);
 		}
-		while(memcmp(fptr, header, headerlen));
+		while (strncmp(fptr, header, headerlen));
 	}
 
 	if (feof(cfgfile))
