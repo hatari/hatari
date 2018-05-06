@@ -450,9 +450,9 @@ static SHORTCUTKEYIDX ShortCut_CheckKey(int symkey, int *keys)
 /**
  * Check which Shortcut key is pressed/released.
  * If press is set, store the key array index.
- * Return zero if key didn't match to a shortcut
+ * Return true if key combo matched to a shortcut
  */
-int ShortCut_CheckKeys(int modkey, int symkey, bool press)
+bool ShortCut_CheckKeys(int modkey, int symkey, bool press)
 {
 	SHORTCUTKEYIDX key;
 
@@ -462,8 +462,8 @@ int ShortCut_CheckKeys(int modkey, int symkey, bool press)
 		key = ShortCut_CheckKey(symkey, ConfigureParams.Shortcut.withoutModifier);
 
 	if (key == SHORTCUT_NONE)
-		return 0;
+		return false;
 	if (press)
 		ShortCutKey = key;
-	return 1;
+	return true;
 }

@@ -765,7 +765,7 @@ void Keymap_KeyDown(SDL_keysym *sdlkey)
 	LOG_TRACE(TRACE_KEYMAP, "key down: sym=%i scan=%i mod=0x%x name='%s'\n",
 	          symkey, sdlkey->scancode, modkey, Keymap_GetKeyName(symkey));
 
-	if (ShortCut_CheckKeys(modkey, symkey, 1))
+	if (ShortCut_CheckKeys(modkey, symkey, true))
 		return;
 
 	/* If using joystick emulation via keyboard, DON'T send keys to keyboard processor!!!
@@ -809,7 +809,7 @@ void Keymap_KeyUp(SDL_keysym *sdlkey)
 	          symkey, sdlkey->scancode, modkey, Keymap_GetKeyName(symkey));
 
 	/* Ignore short-cut keys here */
-	if (ShortCut_CheckKeys(modkey, symkey, 0))
+	if (ShortCut_CheckKeys(modkey, symkey, false))
 		return;
 
 	/* If using keyboard emulation, DON'T send keys to keyboard processor!!!
