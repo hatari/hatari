@@ -1522,6 +1522,7 @@ void memory_map_Standard_RAM ( Uint32 MMU_Bank0_Size , Uint32 MMU_Bank1_Size )
 	  && !ConfigureParams.Screen.bUseExtVdiResolutions
 	  && STmem_size <= 0x400000
 	  && ( ( MMU_Bank0_Size != RAM_Bank0_Size ) || ( ( RAM_Bank1_Size > 0 ) && ( MMU_Bank1_Size != RAM_Bank1_Size ) ) )
+	  && !bRamTosImage
 	  )
 	{
 		/* We map memory according to the logical MMU configuration and we will translate addresses on each memory access. */
