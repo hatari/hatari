@@ -27,8 +27,8 @@ Emulator:
     emulation, option parsing and startup in general
   - Fix: DSP/CPU profile "addresses" commands output line count when
     paging.  Tell also when it wraps to start
-  - Add "GemdosParam" variable which gives first (word sized) parameter
-    for GEMDOS calls, for use with "GemdosOpcode" breakpoints
+  - Add "OsCallParam" variable which gives first (word sized) parameter
+    for OS calls, for use with OS call "*Opcode" breakpoints
 - Options:
   - The "--bios-intercept" option now takes a boolean parameter which is
     used to determine whether the option should be enabled or disabled

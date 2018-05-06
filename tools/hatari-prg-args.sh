@@ -113,7 +113,7 @@ fi
 # to program startup, there's no valid basepage and therefore
 # no valid TEXT variable.  So set breakpoint on Pexec(0,...)
 cat > $dir/pexec.ini << EOF
-b GemdosOpcode = 0x4B && GemdosParam = 0x0 :once :quiet :trace :file $dir/start.ini
+b GemdosOpcode = 0x4B && OsCallParam = 0x0 :once :quiet :trace :file $dir/start.ini
 EOF
 
 # real work can be done when program starts,
