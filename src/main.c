@@ -653,7 +653,7 @@ void Main_EventHandler(void)
 			}
 			bContinueProcessing = true;
 			break;
-#endif
+#endif /* WITH_SDL2 */
 
 		 default:
 			/* don't let unknown events delay event processing */

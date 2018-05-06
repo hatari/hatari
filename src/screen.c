@@ -138,7 +138,7 @@ void SDL_UpdateRect(SDL_Surface *screen, Sint32 x, Sint32 y, Sint32 w, Sint32 h)
 	SDL_UpdateRects(screen, 1, &rect);
 }
 
-#endif
+#endif /* WITH_SDL2 */
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -484,7 +484,7 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 		sdlscrn = SDL_GetWindowSurface(sdlWindow);
 	}
 
-#else	/* WITH_SDL2 */
+#else	/* !WITH_SDL2 */
 
 	/* SDL Video attributes: */
 	if (bInFullScreen)
@@ -515,7 +515,7 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 		sdlscrn = SDL_SetVideoMode(width, height, 32, sdlVideoFlags);
 	}
 
-#endif	/* WITH_SDL2 */
+#endif	/* !WITH_SDL2 */
 
 	/* Exit if we can not open a screen */
 	if (!sdlscrn)

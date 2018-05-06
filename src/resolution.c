@@ -45,7 +45,7 @@ void Resolution_Init(void)
 		DesktopWidth = 2*NUM_VISIBLE_LINE_PIXELS;
 		DesktopHeight = 2*NUM_VISIBLE_LINES+STATUSBAR_MAX_HEIGHT;
 	}
-#else
+#else /* !WITH_SDL2 */
 	/* Needs to be called after SDL video and configuration
 	 * initialization, but before Hatari Screen init is called
 	 * for the first time!
@@ -61,7 +61,7 @@ void Resolution_Init(void)
 		Log_Printf(LOG_WARN, "invalid desktop size %dx%d, defaulting to %dx%d!\n",
 		           info->current_w, info->current_h, DesktopWidth, DesktopHeight);
 	}
-#endif
+#endif /* !WITH_SDL2 */
 	/* if user hasn't set own max zoom size, use desktop size */
 	if (!(ConfigureParams.Screen.nMaxWidth &&
 	      ConfigureParams.Screen.nMaxHeight)) {
@@ -139,7 +139,7 @@ static bool Resolution_Select(SDL_Rect **modes, int *width, int *height)
 	return true;
 #undef TOO_LARGE
 }
-#endif
+#endif /* !WITH_SDL2 */
 
 
 /**
@@ -218,7 +218,7 @@ bool Resolution_Search(int *width, int *height, int *bpp, bool keep)
 		/* Any mode available */
 		DEBUGPRINT(("resolution: All resolutions available.\n"));
 	}
-#endif
+#endif /* !WITH_SDL2 */
 
 	DEBUGPRINT(("resolution: video mode selected: %dx%dx%d\n",
 		 *width, *height, *bpp));

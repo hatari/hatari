@@ -140,7 +140,7 @@ static char Keymap_SymbolicToStScanCode(SDL_keysym* pKeySym)
 	 case 228: code = 0x28; break;
 	 case 246: code = 0x27; break;
 	 case 252: code = 0x1A; break;
-#else
+#else /* !WITH_SDL2 */
 	 case SDLK_WORLD_0: code = 0x0d; break;
 	 case SDLK_WORLD_1: code = 0x0c; break;
 	 case SDLK_WORLD_2: code = 0x1a; break;
@@ -151,7 +151,7 @@ static char Keymap_SymbolicToStScanCode(SDL_keysym* pKeySym)
 	 case SDLK_WORLD_68: code = 0x28; break;
 	 case SDLK_WORLD_86: code = 0x27; break;
 	 case SDLK_WORLD_92: code = 0x1A; break;
-#endif
+#endif /* !WITH_SDL2 */
 	 /* Numeric keypad: */
 	 case SDLK_KP0: code = 0x70; break;
 	 case SDLK_KP1: code = 0x6D; break;
@@ -346,7 +346,7 @@ static char Keymap_PcToStScanCode(SDL_keysym* pKeySym)
 	}
 }
 
-#else
+#else /* !WITH_SDL2 */
 
 /**
  * Heuristic analysis to find out the obscure scancode offset.
@@ -512,7 +512,7 @@ static char Keymap_PcToStScanCode(SDL_keysym* keysym)
 	}
 }
 
-#endif	/* WITH_SDL2 */
+#endif	/* !WITH_SDL2 */
 
 
 /**
@@ -884,7 +884,7 @@ const char *Keymap_GetKeyName(int keycode)
 	return SDL_GetKeyName(keycode);
 }
 
-#else	/* WITH_SDL2 */
+#else	/* !WITH_SDL2 */
 
 static struct {
 	int code;
@@ -1152,4 +1152,4 @@ const char *Keymap_GetKeyName(int keycode)
 	return "";
 }
 
-#endif
+#endif /* !WITH_SDL2 */
