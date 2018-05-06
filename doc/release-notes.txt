@@ -9,12 +9,14 @@
 
 Emulation:
 - Blitter:
-  - Fix a rare case in cycle exact mode when bus is shared between cpu
+  - Fix: a rare case in cycle exact mode when bus is shared between CPU
     and blitter : the last word of a transfer could be wrong if bus was
-    owned by cpu just before processing this last word and a read-modify-write
+    owned by CPU just before processing this last word and a read-modify-write
     is made
   - State of current blitter operation was sometimes not correctly restored
-    when cpu temporarily stopped the blitter and resumed it later
+    when CPU temporarily stopped the blitter and resumed it later
+- Input:
+  - Correctly emulate bus error handling for STE lightpen registers
 
 Emulator:
 - Media handling:
@@ -23,24 +25,51 @@ Emulator:
 - Screen handling:
   - Fix: add VDI mode width restrictions for TOS <= 2.x and >= 4MB of RAM
 - Debugging:
-  - Output at default log level is reduced significantly, from CPU
-    emulation, option parsing and startup in general
   - Fix: DSP/CPU profile "addresses" commands output line count when
     paging.  Tell also when it wraps to start
+  - Each log message has a log level prefix
+  - (Almost) all Hatari output goes now through logging framework so
+    that Hatari verbosity can be controlled. Output at default log
+    level is reduced significantly
   - Add "OsCallParam" variable which gives first (word sized) parameter
     for OS calls, for use with OS call "*Opcode" breakpoints
 - Options:
-  - The "--bios-intercept" option now takes a boolean parameter which is
-    used to determine whether the option should be enabled or disabled
+  - Fix: "--memsize 0" legacy option
+  - Disable "--timer-d" option by default.  Increases CPU usage
+    (noticeably for ST/e emulation), but some rare (badly written)
+    programs need it for correct color raster & sample handling
+  - The "--bios-intercept" option requires now a boolean parameter
+    to determine whether the option should be enabled or disabled
   - Add "--cmd-fifo" option to control Hatari at run-time just by
-    echoing commands to FIFO file created by Hatari
+    echoing commands to a FIFO file (created by Hatari)
+  - Add "--tos none" option to run test programs without any TOS.
+    Real Atari programs cannot be run with this, as it doesn't
+    implement the necessary Atari OS calls
+  - Halt dialog is skipped if --run-vbls is used (for automation)
+  - Support hex values for --disasm, increase --slowdown max value to 30
+- SDL GUI:
+  - Fix: broken CPU dialog with old UAE CPU core
 - macOS UI:
   - Fix: "reset" and "don't reset" buttons inverted
   - Update MIDI panel for French version
   - Save screenshots in user defined location or ~/Desktop
 - Compilation:
-  - Improve CMake library finding for recent macOS
   - Fix: Large File Support detection (64 bits off_t)
+  - Fix: new compile warnings with GCC v8 (+ code cleanup)
+  - Improve CMake library finding for recent macOS
+
+Tools:
+- Support both Python v2 & v3 also in atari-hd-image
+  (Arch/Clear Linux)
+- Install hatari-prg-args tool by default and fix its
+  program argument setting for recent EmuTOS versions
+- Few additional tests for validating Hatari functionality.
+  All tests are now integrated with CTest framework.  Use
+  e.g. "ctest -j4" command to run them
+
+Documentation:
+- Add notes about (new default) PortMidi support to MIDI usage
+- More details on GEMDOS HD and VDI mode emulation limits
 
 Fixed games:
 - Lethal Xcess in STE mode (stopping/resuming blitter)
