@@ -63,7 +63,7 @@ typedef enum
 	LOG_NONE	/* invalid LOG level */
 } LOGTYPE;
 
-#define LOG_NAMES {"FATAL", "ERROR", "WARNING", "INFO", "TODO", "DEBUG"}
+#define LOG_NAMES {"FATAL", "ERROR", "WARN ", "INFO ", "TODO ", "DEBUG"}
 
 
 #ifndef __GNUC__
