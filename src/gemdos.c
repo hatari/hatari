@@ -3943,10 +3943,10 @@ void GemDOS_Boot(void)
  */
 int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr)
 {
-	long nFileSize;
+	long nFileSize, nRelTabIdx;
 	uint8_t *prg;
 	uint32_t nTextLen, nDataLen, nBssLen, nSymLen;
-	uint32_t nRelOff, nRelTabIdx, nCurrAddr;
+	uint32_t nRelOff, nCurrAddr;
 	uint32_t memtop;
 
 	prg = File_Read(psPrgName, &nFileSize, NULL);
