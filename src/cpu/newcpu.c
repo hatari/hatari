@@ -3241,10 +3241,11 @@ static void Exception_ce000 (int nr)
 		write_log (_T("Exception %d (%04x %x) at %x -> %x!\n"),
 			nr, last_op_for_exception_3, last_addr_for_exception_3, currpc, get_long_debug (4 * nr));
 #else
-		if (nr != 2 || (last_fault_for_exception_3 & 0xffffff) != 0xff8a00 ||
-		    currpc < TosAddress || currpc > TosAddress + TosSize)
-			Log_Printf(LOG_WARN, "%s Error at address $%x, PC=$%x addr_e3=%x op_e3=%x\n",
-			           nr == 2 ? "Bus" : "Address", last_fault_for_exception_3, currpc,
+		if (nr != 2 || M68000_IsVerboseBusError(currpc, last_fault_for_exception_3))
+			Log_Printf(LOG_WARN, "%s Error %s at address $%x, PC=$%x addr_e3=%x op_e3=%x\n",
+			           nr == 2 ? "Bus" : "Address",
+			           last_writeaccess_for_exception_3 ? "writing" : "reading",
+			           last_fault_for_exception_3, currpc,
 			           last_addr_for_exception_3 , last_op_for_exception_3);
 #endif
 		goto kludge_me_do;
@@ -3939,9 +3940,12 @@ static void Exception_normal (int nr)
 #ifndef WINUAE_FOR_HATARI
 			write_log (_T("Exception %d (%x) at %x -> %x!\n"), nr, last_fault_for_exception_3, currpc, get_long_debug (regs.vbr + 4 * vector_nr));
 #else
-			if (nr != 2 || last_fault_for_exception_3 != 0xff8a00 || currpc < TosAddress || currpc > TosAddress + TosSize)
-				fprintf(stderr,"%s Error at address $%x, PC=$%x addr_e3=%x op_e3=%x\n", nr==2?"Bus":"Address",
-				        last_fault_for_exception_3, currpc, last_addr_for_exception_3 , last_op_for_exception_3);
+			if (nr != 2 || M68000_IsVerboseBusError(currpc, last_fault_for_exception_3))
+				Log_Printf(LOG_WARN, "%s Error %s at address $%x, PC=$%x addr_e3=%x op_e3=%x\n",
+				           nr == 2 ? "Bus" : "Address",
+				           last_writeaccess_for_exception_3 ? "writing" : "reading",
+				           last_fault_for_exception_3, currpc,
+				           last_addr_for_exception_3, last_op_for_exception_3);
 #endif
 			goto kludge_me_do;
 		}

@@ -491,23 +491,67 @@ void M68000_MemorySnapShot_Capture(bool bSave)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Check whether bus error reporting should be reported or not.
+ * We do not want to print messages when TOS is testing for available HW
+ * or when a program just checks for the floating point co-processor.
+ */
+bool M68000_IsVerboseBusError(uint32_t pc, uint32_t addr)
+{
+	const uint32_t nTosProbeAddrs[] =
+	{
+		0xf00039, 0xff8900, 0xff8a00, 0xff8c83,
+		0xff8e0d, 0xff8e09, 0xfffa40
+	};
+	const uint32_t nEmuTosProbeAddrs[] =
+	{
+		0xf0001d, 0xf0005d, 0xf0009d, 0xf000dd, 0xff8006, 0xff8282,
+		0xff8400, 0xff8701, 0xff8901, 0xff8943, 0xff8961, 0xff8c80,
+		0xff8a3c, 0xff9201, 0xfffa81, 0xfffe00
+	};
+	int idx;
+
+	if (ConfigureParams.Log.nTextLogLevel == LOG_DEBUG)
+		return true;
+
+	if (ConfigureParams.System.bAddressSpace24
+	    || (addr & 0xff000000) == 0xff000000)
+	{
+		addr &= 0xffffff;
+	}
+
+	/* Program just probing for FPU? A lot of C startup code is always
+	 * doing this, so reporting bus errors here would be annoying */
+	if (addr == 0xfffa42)
+		return false;
+
+	/* Always report other bus errors from normal programs */
+	if (pc < TosAddress || pc > TosAddress + TosSize)
+		return true;
+
+	for (idx = 0; idx < ARRAY_SIZE(nTosProbeAddrs); idx++)
+	{
+		if (nTosProbeAddrs[idx] == addr)
+			return false;
+	}
+
+	if (bIsEmuTOS)
+	{
+		for (idx = 0; idx < ARRAY_SIZE(nEmuTosProbeAddrs); idx++)
+		{
+			if (nEmuTosProbeAddrs[idx] == addr)
+				return false;
+		}
+	}
+
+	return true;
+}
+
+/**
  * BUSERROR - Access outside valid memory range.
  * Use bRead = 0 for write errors and bRead = 1 for read errors!
  */
 void M68000_BusError ( Uint32 addr , int ReadWrite , int Size , int AccessType )
 {
-	Uint32 InstrPC = M68000_InstrPC;
-
-	/* Do not print message when TOS is testing for available HW or
-	 * when a program just checks for the floating point co-processor. */
-	if ((InstrPC < TosAddress || InstrPC > TosAddress + TosSize)
-	    && addr != 0xfffa42)
-	{
-		/* Print bus error message */
-		fprintf(stderr, "M68000 Bus Error %s at address $%x PC=$%x.\n",
-			ReadWrite ? "reading" : "writing", addr, InstrPC);
-	}
-
 #ifndef ENABLE_WINUAE_CPU
 	if ((regs.spcflags & SPCFLAG_BUSERROR) == 0)		/* [NP] Check that the opcode has not already generated a read bus error */
 	{
@@ -515,7 +559,6 @@ void M68000_BusError ( Uint32 addr , int ReadWrite , int Size , int AccessType )
 		bBusErrorReadWrite = ReadWrite;
 		M68000_SetSpecial(SPCFLAG_BUSERROR);		/* The exception will be done in newcpu.c */
 	}
-
 #else
 	/* With WinUAE's cpu, on a bus error instruction will be correctly aborted before completing, */
 	/* so we don't need to check if the opcode already generated a bus error or not */

@@ -358,6 +358,7 @@ extern void M68000_Reset(bool bCold);
 extern void M68000_Start(void);
 extern void M68000_CheckCpuSettings(void);
 extern void M68000_MemorySnapShot_Capture(bool bSave);
+extern bool M68000_IsVerboseBusError(uint32_t pc, uint32_t addr);
 extern void M68000_BusError ( Uint32 addr , int ReadWrite , int Size , int AccessType );
 extern void M68000_Exception(Uint32 ExceptionNr , int ExceptionSource);
 extern void M68000_Update_intlev ( void );
