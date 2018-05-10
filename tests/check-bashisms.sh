@@ -4,7 +4,7 @@ cd $(dirname $0)/..
 
 errors=0
 
-for i in $(hg files -I 're:.*\.sh$'); do
+for i in $(hg locate '*\.sh'); do
 	echo "Checking $i ..."
 	checkbashisms $i
 	errors=$(($errors + $?))
