@@ -276,7 +276,7 @@ extern void to_upper (TCHAR *s, int len);
 /* While we're here, make abort more useful.  */
 #define abort() \
   do { \
-    write_log ("Internal error; file %s, line %d\n", __FILE__, __LINE__); \
+    fprintf (stderr, "FATAL: Internal error; file %s, line %d\n", __FILE__, __LINE__); \
     (abort) (); \
 } while (0)
 #else
@@ -468,7 +468,9 @@ extern void mallocemu_free (void *ptr);
 #define write_log write_log_standard
 #endif
 
-#if __GNUC__ - 1 > 1 || __GNUC_MINOR__ - 1 > 6
+#ifdef WINUAE_FOR_HATARI
+#define write_log(...) Log_Printf(LOG_DEBUG, __VA_ARGS__)
+#elif __GNUC__ - 1 > 1 || __GNUC_MINOR__ - 1 > 6
 extern void write_log(const TCHAR *, ...);
 extern void write_logx(const TCHAR *, ...);
 extern void write_log(const char *, ...) __attribute__ ((format (printf, 1, 2)));

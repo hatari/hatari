@@ -21,6 +21,7 @@
 
 #include "sysconfig.h"
 #include "sysdeps.h"
+#include "log.h"
 
 #include "options_cpu.h"
 #include "memory.h"

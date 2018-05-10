@@ -36,6 +36,7 @@
 #include "newcpu.h"
 #include "cpummu.h"
 #include "debug.h"
+#include "log.h"
 
 #define MMUDUMP 1
 

@@ -8,6 +8,7 @@
 #include "sysconfig.h"
 #include "sysdeps.h"
 
+#ifndef WINUAE_FOR_HATARI
 bool bCpuWriteLog = true;
 
 void write_log (const char *fmt, ...)
@@ -21,6 +22,8 @@ void write_log (const char *fmt, ...)
 	vfprintf (stderr, fmt, ap);
 	va_end (ap);
 }
+
+#endif
 
 void f_out (void *f, const TCHAR *format, ...)
 {

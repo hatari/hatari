@@ -88,7 +88,6 @@ void M68000_SetPC(uaecptr v) { }
 #include "newcpu.h"
 struct regstruct regs;
 #if ENABLE_WINUAE_CPU
-void write_log(const char *f, ...) { }
 void m68k_dumpstate(uaecptr *nextpc) { }
 void m68k_dumpstate_file (FILE *f, uaecptr *n) { }
 void m68k_disasm(uaecptr addr, uaecptr *nextpc, int cnt) { }

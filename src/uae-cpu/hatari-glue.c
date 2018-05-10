@@ -40,20 +40,6 @@ struct uae_prefs currprefs, changed_prefs;
 
 int pendingInterrupts = 0;
 
-bool bCpuWriteLog = true;
-
-void write_log(const char *fmt, ...)
-{
-	va_list ap;
-
-	if (!bCpuWriteLog)
-		return;
-
-	va_start (ap, fmt);
-	vfprintf (stderr, fmt, ap);
-	va_end (ap);
-}
-
 
 /**
  * Reset custom chips

@@ -39,6 +39,7 @@
 #include "memory.h"
 #include "newcpu.h"
 #include "debug.h"
+#include "log.h"
 #include "cpummu030.h"
 
 #define MMU030_OP_DBG_MSG 0

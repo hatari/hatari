@@ -6220,6 +6220,8 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
+#ifndef WINUAE_FOR_HATARI
 void write_log (const TCHAR *format,...)
 {
 }
+#endif

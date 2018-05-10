@@ -25,6 +25,6 @@ extern unsigned long OpCode_VDI(uae_u32 opcode);
 extern unsigned long OpCode_NatFeat_ID(uae_u32 opcode);
 extern unsigned long OpCode_NatFeat_Call(uae_u32 opcode);
 
-extern void write_log(const char *fmt, ...);
+#define write_log(...) Log_Printf(LOG_DEBUG, __VA_ARGS__)
 
 #endif /* HATARI_GLUE_H */

@@ -7,6 +7,7 @@
 
 #include "main.h"
 #include "hatari-glue.h"
+#include "log.h"
 
 #include "options_cpu.h"
 #include "memory.h"
