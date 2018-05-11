@@ -34,6 +34,8 @@ Emulator:
     level is reduced significantly
   - Add "OsCallParam" variable which gives first (word sized) parameter
     for OS calls, for use with OS call "*Opcode" breakpoints
+  - "memwrite" command can now (optionally) write word or long sized
+    values to memory, instead of bytes
 - Options:
   - Fix: "--memsize 0" legacy option
   - Disable "--timer-d" option by default.  Increases CPU usage

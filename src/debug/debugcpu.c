@@ -421,45 +421,98 @@ int DebugCpu_MemDump(int nArgc, char *psArgs[])
 
 
 /**
- * Command: Write to memory, arg = starting address, followed by bytes.
+ * Command: Write to memory, optional arg for value lenghts,
+ * followed by starting address and the values.
  */
 static int DebugCpu_MemWrite(int nArgc, char *psArgs[])
 {
-	int i, numBytes;
+	int i, arg, values;
 	Uint32 write_addr, d;
-	unsigned char bytes[256]; /* store bytes */
+	union {
+		Uint8  bytes[256];
+		Uint16 words[128];
+		Uint32 longs[64];
+	} store;
+	char mode;
 
 	if (nArgc < 3)
 	{
 		return DebugUI_PrintCmdHelp(psArgs[0]);
 	}
 
+	arg = 1;
+	mode = tolower(psArgs[arg][0]);
+
+	if (!mode || psArgs[arg][1])
+		/* not single mode char */
+		mode = 'b';
+	else if (mode == 'b')
+		arg += 1;
+	else if (mode == 'w')
+		arg += 1;
+	else if (mode == 'l')
+		arg += 1;
+	else
+		/* not mode char */
+		mode = 'b';
+
 	/* Read address */
-	if (!Eval_Number(psArgs[1], &write_addr))
+	if (!Eval_Number(psArgs[arg++], &write_addr))
 	{
 		fprintf(stderr, "Bad address!\n");
 		return DEBUGGER_CMDDONE;
 	}
 
-	numBytes = 0;
-
-	/* get bytes data */
-	for (i = 2; i < nArgc; i++)
+	/* get the data */
+	values = 0;
+	for (i = arg; i < nArgc; i++)
 	{
-		if (!Eval_Number(psArgs[i], &d) || d > 255)
+		if (!Eval_Number(psArgs[i], &d))
 		{
-			fprintf(stderr, "Bad byte argument: '%s'!\n", psArgs[i]);
+			fprintf(stderr, "Bad value '%s'!\n", psArgs[i]);
 			return DEBUGGER_CMDDONE;
 		}
-
-		bytes[numBytes] = d & 0x0FF;
-		numBytes++;
+		switch(mode)
+		{
+		case 'b':
+			if (d > 0xff)
+			{
+				fprintf(stderr, "Illegal byte argument: 0x%x!\n", d);
+				return DEBUGGER_CMDDONE;
+			}
+			store.bytes[values] = (Uint8)d;
+			break;
+		case 'w':
+			if (d > 0xffff)
+			{
+				fprintf(stderr, "Illegal word argument: 0x%x!\n", d);
+				return DEBUGGER_CMDDONE;
+			}
+			store.words[values] = (Uint16)d;
+			break;
+		case 'l':
+			store.longs[values] = d;
+			break;
+		}
+		values++;
 	}
 
 	/* write the data */
-	for (i = 0; i < numBytes; i++)
-		STMemory_WriteByte(write_addr + i, bytes[i]);
-
+	for (i = 0; i < values; i++)
+	{
+		switch(mode)
+		{
+		case 'b':
+			STMemory_WriteByte(write_addr + i, store.bytes[i]);
+			break;
+		case 'w':
+			STMemory_WriteWord(write_addr + i*2, store.words[i]);
+			break;
+		case 'l':
+			STMemory_WriteLong(write_addr + i*4, store.longs[i]);
+			break;
+		}
+	}
 	return DEBUGGER_CMDDONE;
 }
 
@@ -735,10 +788,11 @@ static const dbgcommand_t cpucommands[] =
 	  false },
 	{ DebugCpu_MemWrite, Symbols_MatchCpuAddress,
 	  "memwrite", "w",
-	  "write bytes to memory",
-	  "address byte1 [byte2 ...]\n"
-	  "\tWrite bytes to a memory address, bytes are space separated\n"
-	  "\tvalues in current number base.",
+	  "write bytes/words/longs to memory",
+	  "[b|w|l] address value1 [value2 ...]\n"
+	  "\tWrite space separate values (in current number base) to given\n"
+	  "\tmemory address. By default writes are done as bytes, with\n"
+	  "\t'w' or 'l' option they will be done as words/longs instead",
 	  false },
 	{ DebugCpu_LoadBin, NULL,
 	  "loadbin", "l",
