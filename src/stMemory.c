@@ -242,13 +242,19 @@ void STMemory_SetDefaultConfig(void)
 			STMemory_WriteLong(0x4ba, 80 * 200);
 	}
 
-	/* Set memory size, adjust for extra VDI screens if needed. */
-	screensize = VDIWidth * VDIHeight / 8 * VDIPlanes;
-	/* Use 32 kiB in normal screen mode or when the screen size is smaller than 32 kiB */
+	/* VDI screen size. Needs to leave extra space for 16x16 area
+	 * between end of screen & RAM end, or <= v2.x TOS versions
+	 * crash when mouse moves to bottom right corner of screen.
+	 */
+	screensize = VDIWidth * VDIHeight / 8 * VDIPlanes + 16*16*VDIPlanes/8;
+	/* Use 32 kiB in normal screen mode or when the screen size
+	 * is smaller than 32 kiB
+	 */
 	if (!bUseVDIRes || screensize < 0x8000)
 		screensize = 0x8000;
 	/* mem top - upper end of user memory (right before the screen memory)
-	 * memtop / phystop must be dividable by 512 or TOS crashes */
+	 * memtop / phystop must be divisible by 512 or TOS crashes
+	 */
 	memtop = (STRamEnd - screensize) & 0xfffffe00;
 	/* phys top - 32k gap causes least issues with apps & TOS
 	 * as that's the largest _common_ screen size. EmuTOS behavior

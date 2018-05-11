@@ -23,7 +23,8 @@ Emulator:
   - Fix: AVI recording with PNG codec could be wrongly limited to 4GB
     with some OSes
 - Screen handling:
-  - Fix: add VDI mode width restrictions for TOS <= 2.x and >= 4MB of RAM
+  - Fix: TOS <= v2.x crashes when mouse is moved in 16x16 area at
+    the bottom right corner in VDI mode (regression in Hatari v1.0)
 - Debugging:
   - Fix: DSP/CPU profile "addresses" commands output line count when
     paging.  Tell also when it wraps to start

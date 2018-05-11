@@ -130,19 +130,9 @@ void VDI_SetResolution(int GEMColor, int WidthRequest, int HeightRequest)
 #if DEBUG
 	printf("%s v0x%04x, RAM=%dkB\n", bIsEmuTOS ? "EmuTOS" : "TOS", TosVersion,  ConfigureParams.Memory.STRamSize_KB);
 #endif
-	if (bIsEmuTOS || TosVersion >= 0x0300 || ConfigureParams.Memory.STRamSize_KB < 4*1024)
-	{
-		/* width needs to be aligned to 16 bytes */
-		VDIWidth = Opt_ValueAlignMinMax(w, 128/VDIPlanes, MIN_VDI_WIDTH, MAX_VDI_WIDTH);
-	}
-	else /* Atari TOS <=v2.x with >=4MB of RAM */
-	{
-		/* First align to 128 pixels */
-		VDIWidth = Opt_ValueAlignMinMax(w, 128, MIN_VDI_WIDTH, MAX_VDI_WIDTH);
-		/* then make sure width is 128 + 256*x */
-		if (VDIWidth > 3*128 && (VDIWidth-128) % 256)
-			VDIWidth -= 128;
-	}
+	/* width needs to be aligned to 16 bytes */
+	VDIWidth = Opt_ValueAlignMinMax(w, 128/VDIPlanes, MIN_VDI_WIDTH, MAX_VDI_WIDTH);
+
 	/* height needs to be multiple of cell height (either 8 or 16) */
 	VDIHeight = Opt_ValueAlignMinMax(h, 16, MIN_VDI_HEIGHT, MAX_VDI_HEIGHT);
 
