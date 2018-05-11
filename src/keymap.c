@@ -136,6 +136,7 @@ static char Keymap_SymbolicToStScanCode(SDL_keysym* pKeySym)
 	 case SDLK_DELETE: code = 0x53; break;
 	 /* End of ASCII mapped keysyms */
 #if WITH_SDL2
+	 case 180: code = 0x0D; break;
 	 case 223: code = 0x0C; break;
 	 case 228: code = 0x28; break;
 	 case 246: code = 0x27; break;
@@ -266,7 +267,7 @@ static char Keymap_PcToStScanCode(SDL_keysym* pKeySym)
 	 case SDL_SCANCODE_EQUALS: return 0x0d;
 	 case SDL_SCANCODE_LEFTBRACKET: return 0x1a;
 	 case SDL_SCANCODE_RIGHTBRACKET: return 0x1b;
-	 case SDL_SCANCODE_BACKSLASH: return 0x60;
+	 case SDL_SCANCODE_BACKSLASH: return 0x29;  /* for 0x60 see NONUSBACKSLASH */
 	 case SDL_SCANCODE_NONUSHASH: return 0x2b;
 	 case SDL_SCANCODE_SEMICOLON: return 0x27;
 	 case SDL_SCANCODE_APOSTROPHE: return 0x28;
