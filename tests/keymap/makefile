@@ -7,10 +7,10 @@ LIBS   := $$(pkg-config --libs $(SDL))
 
 all: listkeys checkkeys
 
-checkkeys: checkkeys.c Makefile
+checkkeys: checkkeys.c makefile
 	$(CC) -o $@ $(CFLAGS) $< $(LIBS)
 
-listkeys: listkeys.c Makefile
+listkeys: listkeys.c makefile
 	$(CC) -o $@ $(CFLAGS) $< $(LIBS)
 
 clean:
