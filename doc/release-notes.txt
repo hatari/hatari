@@ -1683,6 +1683,8 @@ Emulator:
 - Blitter emulation has been added.
 - There is now the possibility to save YM or WAV sounds.
 - Big VDI resolutions (e.g. 800x600) are now supported, too.
+- Mouse grap shortcut (AltGr+M).
+- Fixed TOS v1.00 patching.
 
 
  Version 0.20 (2002-02-18):
@@ -1699,6 +1701,7 @@ Emulator:
 
 - High level (GEMDOS) harddisk emulation.
 - ST-Med/ST-Low mixed mode now works.
+- Add --compatible CPU mode option.
 
 
  Version 0.10 (2001-08-16):
