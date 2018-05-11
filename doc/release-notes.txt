@@ -34,7 +34,8 @@ Emulator:
     level is reduced significantly
   - Add "OsCallParam" variable which gives first (word sized) parameter
     for OS calls, for use with OS call "*Opcode" breakpoints
-  - "memwrite" command can now (optionally) write word or long sized
+  - Add virtual V0..V7 registers to "register" command for calculations
+  - "memwrite" command can now (optionally) write also word or long sized
     values to memory, instead of bytes
 - Options:
   - Fix: "--memsize 0" legacy option

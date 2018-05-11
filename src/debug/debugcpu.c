@@ -42,6 +42,8 @@ const char DebugCpu_fileid[] = "Hatari debugcpu.c : " __DATE__ " " __TIME__;
 
 static Uint32 disasm_addr;     /* disasm address */
 static Uint32 memdump_addr;    /* memdump address */
+static Uint32 fake_regs[8];    /* virtual debugger "registers" */
+static bool bFakeRegsUsed;     /* whether to show virtual regs */
 
 static bool bCpuProfiling;     /* Whether CPU profiling is activated */
 static int nCpuActiveCBs = 0;  /* Amount of active conditional breakpoints */
@@ -220,7 +222,8 @@ static char *DebugCpu_MatchRegister(const char *text, int state)
 	static const char* regs[] = {
 		"a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7",
 		"d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7",
-		"pc", "sr"
+		"pc", "sr",
+		"v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7"		
 	};
 	return DebugUI_MatchHelper(regs, ARRAY_SIZE(regs), text, state);
 }
@@ -228,24 +231,28 @@ static char *DebugCpu_MatchRegister(const char *text, int state)
 
 /**
  * Set address of the named 32-bit register to given argument.
- * Return register size in bits or zero for uknown register name.
- * Handles D0-7 data and A0-7 address registers, but not PC & SR
- * registers as they need to be accessed using UAE accessors.
+ * Handles V0-7 fake registers, D0-7 data and A0-7 address registers,
+ * but not PC & SR registers as they need to be accessed using UAE
+ * accessors.
+ *
+ * Return register size in bits or zero for unknown register name.
  */
 int DebugCpu_GetRegisterAddress(const char *reg, Uint32 **addr)
 {
-	char r0, r1;
+	char r0;
+	int r1;
+
 	if (!reg[0] || !reg[1] || reg[2])
 		return 0;
-	
+
 	r0 = toupper((unsigned char)reg[0]);
-	r1 = toupper((unsigned char)reg[1]);
+	r1 = toupper((unsigned char)reg[1]) - '0';
 
 	if (r0 == 'D')  /* Data regs? */
 	{
-		if (r1 >= '0' && r1 <= '7')
+		if (r1 >= 0 && r1 <= 7)
 		{
-			*addr = &(Regs[REG_D0 + r1 - '0']);
+			*addr = &(Regs[REG_D0 + r1]);
 			return 32;
 		}
 		fprintf(stderr,"\tBad data register, valid values are 0-7\n");
@@ -253,12 +260,23 @@ int DebugCpu_GetRegisterAddress(const char *reg, Uint32 **addr)
 	}
 	if(r0 == 'A')  /* Address regs? */
 	{
-		if (r1 >= '0' && r1 <= '7')
+		if (r1 >= 0 && r1 <= 7)
 		{
-			*addr = &(Regs[REG_A0 + r1 - '0']);
+			*addr = &(Regs[REG_A0 + r1]);
 			return 32;
 		}
 		fprintf(stderr,"\tBad address register, valid values are 0-7\n");
+		return 0;
+	}
+	if(r0 == 'V')  /* Virtual regs? */
+	{
+		if (r1 >= 0 && r1 < ARRAY_SIZE(fake_regs))
+		{
+			*addr = &fake_regs[r1];
+			bFakeRegsUsed = true;
+			return 32;
+		}
+		fprintf(stderr,"\tBad virtual register, valid values are 0-7\n");
 		return 0;
 	}
 	return 0;
@@ -278,12 +296,27 @@ int DebugCpu_Register(int nArgc, char *psArgs[])
 	if (nArgc == 1)
 	{
 		uaecptr nextpc;
+		int idx;
+
 		/* use the UAE function instead */
 #ifdef WINUAE_FOR_HATARI
 		m68k_dumpstate_file(debugOutput, &nextpc);
 #else
 		m68k_dumpstate(debugOutput, &nextpc);
 #endif
+		fflush(debugOutput);
+		if (!bFakeRegsUsed)
+			return DEBUGGER_CMDDONE;
+
+		fputs("Virtual registers:\n", debugOutput);
+		for (idx = 0; idx < ARRAY_SIZE(fake_regs); idx++)
+		{
+			if (idx && idx % 4 == 0)
+				fputs("\n", debugOutput);
+			fprintf(debugOutput, "  V%c %08x",
+				'0' + idx, fake_regs[idx]);
+		}
+		fputs("\n", debugOutput);
 		fflush(debugOutput);
 		return DEBUGGER_CMDDONE;
 	}
@@ -336,7 +369,8 @@ int DebugCpu_Register(int nArgc, char *psArgs[])
 	return DEBUGGER_CMDDONE;
 
 error_msg:
-	fprintf(stderr,"\tError, usage: r or r xx=yyyy\n\tWhere: xx=A0-A7, D0-D7, PC or SR.\n");
+	fprintf(stderr,"\tError, usage: r or r xx=yyyy\n"
+		"\tWhere: xx=A0-A7, D0-D7, PC, SR, or V0-V7.\n");
 	return DEBUGGER_CMDDONE;
 }
 

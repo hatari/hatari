@@ -2552,6 +2552,28 @@ and it will be "evaluated" before being given to the command.
 </p>
 
 <p>
+Virtual V0-V7 "registers" can be used to store intermediate results
+for calculations. For example, to get a sum of "_counter" symbol
+address contents one could use following in suitable breakpoint:
+<pre>
+# store counter sum to V0 virtual register
+r v0=(_counter)
+# store count of how many values are added
+r v1="v1+1"
+</pre>
+And then later on, calculate the average:
+<pre>
+# round the counter sum (add half count to sum)
+r v2="v0 + v1/2"
+# and calculate the rounded average (rounded sum / count)
+e v2/v1
+</pre>
+(Another virtual register was used for rounding here, in case one
+wants to continue summing the _counter values with the original
+value.)
+</p>
+
+<p>
 With command argument completion (see <a href="#Build_notes">build
 notes</a>), result from the last "evaluate" command can be inserted
 by typing '$' and pressing TAB.
