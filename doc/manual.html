@@ -2527,14 +2527,14 @@ conditional breakpoints can be unexpected.
 <p>
 Instead of a number, you can also use an arithmetic expression, by
 surrounding it with quotes ("").  An expression can contain
-calculations with CPU and DSP register, symbol and Hatari variable
-values in addition to numbers. For example to give a sum of A0 and
-D0 register values to a command, use "a0+d0".
+calculations with CPU and DSP registers, symbols and Hatari variables
+in addition to numbers. For example to give a sum of A0 and D0
+register values to a command, use "a0+d0".
 </p>
 
 <p>
-Within arithmetic expressions parenthesis are used both to change
-the order of precedence <em>and</em> to indicate indirect addressing.
+Also within arithmetic expressions, parenthesis are used to indicate
+indirect addressing, <em>not</em> to change the order of precedence.
 Unlike with conditional breakpoint expressions (explained below), you
 cannot give size for the indirect addressing, a long value is always
 read from the RAM address given within parenthesis.  For example to
