@@ -460,7 +460,7 @@ int DebugCpu_MemDump(int nArgc, char *psArgs[])
  */
 static int DebugCpu_MemWrite(int nArgc, char *psArgs[])
 {
-	int i, arg, values;
+	int i, arg, values, max_values;
 	Uint32 write_addr, d;
 	union {
 		Uint8  bytes[256];
@@ -476,24 +476,43 @@ static int DebugCpu_MemWrite(int nArgc, char *psArgs[])
 
 	arg = 1;
 	mode = tolower(psArgs[arg][0]);
+	max_values = ARRAY_SIZE(store.bytes);
 
 	if (!mode || psArgs[arg][1])
-		/* not single mode char */
+	{
+		/* not single char -> address instead of mode */
 		mode = 'b';
+	}
 	else if (mode == 'b')
+	{
 		arg += 1;
+	}
 	else if (mode == 'w')
+	{
+		max_values = ARRAY_SIZE(store.words);
 		arg += 1;
+	}
 	else if (mode == 'l')
+	{
+		max_values = ARRAY_SIZE(store.longs);
 		arg += 1;
+	}
 	else
-		/* not mode char */
-		mode = 'b';
-
+	{
+		fprintf(stderr, "Invalid width mode (not b|w|l)!\n");
+		return DEBUGGER_CMDDONE;
+	}
 	/* Read address */
 	if (!Eval_Number(psArgs[arg++], &write_addr))
 	{
 		fprintf(stderr, "Bad address!\n");
+		return DEBUGGER_CMDDONE;
+	}
+
+	if (nArgc - arg > max_values)
+	{
+		fprintf(stderr, "Too many values (%d) given for mode '%c' (max %d)!\n",
+		       nArgc - arg, mode, max_values);
 		return DEBUGGER_CMDDONE;
 	}
 
@@ -546,6 +565,11 @@ static int DebugCpu_MemWrite(int nArgc, char *psArgs[])
 			STMemory_WriteLong(write_addr + i*4, store.longs[i]);
 			break;
 		}
+	}
+	if (values > 1)
+	{
+		fprintf(stderr, "Wrote %d '%c' values starting from 0x%x.\n",
+			values, mode, write_addr);
 	}
 	return DEBUGGER_CMDDONE;
 }
