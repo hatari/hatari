@@ -1,0 +1,13 @@
+; AHCC project file for CPU integer tester
+int_test.tos
+.C
+=
+../startup.s
+int_test.c
+int_abcd.s
+int_add.s
+int_addi.s
+int_addq.s
+int_addx.s
+int_shft.s
+ahccstdi.lib

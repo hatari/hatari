@@ -25,3 +25,8 @@
 	move.w	D0,-(SP)
 	move.w	#$4C,-(SP)
 	trap	#1		; Pterm
+
+.bss
+
+.global errno
+errno:	ds.l	1
