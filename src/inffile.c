@@ -812,7 +812,7 @@ void INF_CreateOverride(void)
 		return;
 
 	/* GEMDOS HD / INF overriding not supported? */
-	if (TosVersion < 0x0104)
+	if (bUseTos && TosVersion < 0x0104)
 	{
 		Log_Printf(LOG_WARN, "Only TOS versions >= 1.04 support autostarting & resolution overriding!\n");
 		return;
