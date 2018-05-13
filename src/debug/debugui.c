@@ -632,9 +632,17 @@ static int DebugUI_ParseCommand(const char *input_orig)
 		if (psArgs[nArgc] == NULL)
 			break;
 	}
-
-	/* ... and execute the function */
-	retval = debugCommand[i].pFunction(nArgc, psArgs);
+	if (psArgs[nArgc])
+	{
+		fprintf(stderr, "Error: too many arguments (currently up to %d supported)\n",
+			ARRAY_SIZE(psArgs));
+		retval = DEBUGGER_CMDCONT;
+	}
+	else
+	{
+		/* ... and execute the function */
+		retval = debugCommand[i].pFunction(nArgc, psArgs);
+	}
 	/* Save commando string if it can be repeated */
 	if (retval == DEBUGGER_CMDCONT)
 	{
