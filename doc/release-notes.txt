@@ -1687,7 +1687,7 @@ Emulator:
 - Blitter emulation has been added.
 - There is now the possibility to save YM or WAV sounds.
 - Big VDI resolutions (e.g. 800x600) are now supported, too.
-- Mouse grap shortcut (AltGr+M).
+- Mouse grab shortcut (AltGr+M).
 - Fixed TOS v1.00 patching.
 
 
