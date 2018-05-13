@@ -1422,6 +1422,41 @@ void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName,
 }
 
 
+/**
+ * GEMDOS Cconws
+ * Call 0x9
+ */
+static bool GemDOS_Cconws(Uint32 Params)
+{
+	Uint32 Addr;
+	char *pBuffer;
+
+	Addr = STMemory_ReadLong(Params);
+
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x9 Cconws(0x%X) at PC 0x%X\n",
+		  Addr, CallingPC);
+
+	/* We only intercept this call in non-TOS mode */
+	if (bUseTos)
+		return false;
+
+	/* Check that write is from valid memory area */
+	if (!STMemory_CheckAreaType(Addr, 80 * 25, ABFLAG_RAM))
+	{
+		Log_Printf(LOG_WARN, "GEMDOS Cconws() failed due to invalid RAM range at 0x%x\n", Addr);
+		Regs[REG_D0] = GEMDOS_ERANGE;
+		return true;
+	}
+
+	pBuffer = (char *)STMemory_STAddrToPointer(Addr);
+	if (fwrite(pBuffer, strnlen(pBuffer, 80 * 25), 1, stdout) < 1)
+		Regs[REG_D0] = GEMDOS_ERROR;
+	else
+		Regs[REG_D0] = GEMDOS_EOK;
+
+	return true;
+}
+
 /*-----------------------------------------------------------------------*/
 /**
  * GEMDOS Set drive (0=A,1=B,2=C etc...)
@@ -3689,6 +3724,9 @@ void GemDOS_OpCode(void)
 	 case 0x00:
 		Finished = GemDOS_Pterm0(Params);
 		break;
+	 case 0x09:
+		Finished = GemDOS_Cconws(Params);
+		break;
 	 case 0x0e:
 		Finished = GemDOS_SetDrv(Params);
 		break;
@@ -3796,7 +3834,6 @@ void GemDOS_OpCode(void)
 			  CallingPC);
 		break;
 
-	case 0x09:	/* Cconws */
 	case 0x0A:	/* Cconrs */
 	case 0x1A:	/* Fsetdta */
 	case 0x48:	/* Malloc */
