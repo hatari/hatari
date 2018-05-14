@@ -407,13 +407,44 @@ static int DebugCpu_Profile(int nArgc, char *psArgs[])
  */
 int DebugCpu_MemDump(int nArgc, char *psArgs[])
 {
-	int i;
-	char c;
-	Uint32 memdump_upper = 0;
+	char c, mode;
+	int i, arg, size;
+	Uint32 value, memdump_upper = 0;
 
+	arg = 1;
+	mode = 0;
+	size = 1;
 	if (nArgc > 1)
+		mode = tolower(psArgs[arg][0]);
+
+	if (!mode || psArgs[arg][1])
 	{
-		switch (Eval_Range(psArgs[1], &memdump_addr, &memdump_upper, false))
+		/* not single char -> default mode */
+		mode = 'b';
+	}
+	else if (mode == 'b')
+	{
+		arg += 1;
+	}
+	else if (mode == 'w')
+	{
+		arg += 1;
+		size = 2;
+	}
+	else if (mode == 'l')
+	{
+		arg += 1;
+		size = 4;
+	}
+	else
+	{
+		fprintf(stderr, "Invalid width mode (not b|w|l)!\n");
+		return DEBUGGER_CMDDONE;
+	}
+
+	if (nArgc > arg)
+	{
+		switch (Eval_Range(psArgs[arg], &memdump_addr, &memdump_upper, false))
 		{
 		case -1:
 			/* invalid value(s) */
@@ -425,7 +456,19 @@ int DebugCpu_MemDump(int nArgc, char *psArgs[])
 			/* range */
 			break;
 		}
-	} /* continue */
+		arg++;
+
+		if (nArgc > arg)
+		{
+			int count = atoi(psArgs[arg]);
+			if (!count)
+			{
+				fprintf(stderr, "Invalid count %d!\n", count);
+				return DEBUGGER_CMDDONE;
+			}
+			memdump_upper = memdump_addr + count * size;
+		}
+	}
 
 	if (!memdump_upper)
 	{
@@ -435,10 +478,30 @@ int DebugCpu_MemDump(int nArgc, char *psArgs[])
 
 	while (memdump_addr < memdump_upper)
 	{
-		fprintf(debugOutput, "%8.8X: ", memdump_addr);	/* print address */
-		for (i = 0; i < MEMDUMP_COLS; i++)               /* print hex data */
-			fprintf(debugOutput, "%2.2x ", STMemory_ReadByte(memdump_addr++));
-		fprintf(debugOutput, "  ");                     /* print ASCII data */
+		fprintf(debugOutput, "%08X: ", memdump_addr);
+		
+		/* print HEX data */
+		for (i = 0; i < MEMDUMP_COLS/size; i++)
+		{
+			switch (mode)
+			{
+			case 'l':
+				value = STMemory_ReadLong(memdump_addr);
+				break;
+			case 'w':
+				value = STMemory_ReadWord(memdump_addr);
+				break;
+			case 'b':
+			default:
+				value = STMemory_ReadByte(memdump_addr);
+				break;
+			}
+			fprintf(debugOutput, "%0*x ", 2*size, value);
+			memdump_addr += size;
+		}
+
+		/* print ASCII data */
+		fprintf(debugOutput, "  ");
 		for (i = 0; i < MEMDUMP_COLS; i++)
 		{
 			c = STMemory_ReadByte(memdump_addr-MEMDUMP_COLS+i);
@@ -446,8 +509,8 @@ int DebugCpu_MemDump(int nArgc, char *psArgs[])
 				c = NON_PRINT_CHAR;             /* non-printable as dots */
 			fprintf(debugOutput,"%c", c);
 		}
-		fprintf(debugOutput, "\n");            /* newline */
-	} /* while */
+		fprintf(debugOutput, "\n");
+	}
 	fflush(debugOutput);
 
 	return DEBUGGER_CMDCONT;
@@ -841,8 +904,11 @@ static const dbgcommand_t cpucommands[] =
 	{ DebugCpu_MemDump, Symbols_MatchCpuDataAddress,
 	  "memdump", "m",
 	  "dump memory",
-	  "[<start address>[-<end address>]]\n"
-	  "\tdump memory at address or continue dump from previous address.",
+	  "[b|w|l] [<start address>[-<end address>| <count>]]\n"
+	  "\tdump memory at address or continue dump from previous address.\n"
+	  "\tBy default memory output is done as bytes, with 'w' or 'l'\n"
+	  "\toption, it will be done as words/longs instead.  Output amount\n"
+	  "\tcan be given either as a count or an address range.",
 	  false },
 	{ DebugCpu_MemWrite, Symbols_MatchCpuAddress,
 	  "memwrite", "w",

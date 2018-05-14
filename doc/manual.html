@@ -2590,8 +2590,11 @@ commands to do the same for the DSP.
 <pre>
 &gt; help memdump
 'memdump' or 'm' - dump memory
-Usage:  m [start address-[end address]]
-        dump memory at address or continue dump from previous address.
+Usage:  m [b|w|l] [start address-[end address| count]]
+	dump memory at address or continue dump from previous address.
+	By default memory output is done as bytes, with 'w' or 'l'
+	option, it will be done as words/longs instead.  Output amount
+	can be given either as a count or an address range.
 </pre>
 <pre>
 &gt; help disasm

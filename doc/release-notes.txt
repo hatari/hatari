@@ -35,8 +35,8 @@ Emulator:
   - Add "OsCallParam" variable which gives first (word sized) parameter
     for OS calls, for use with OS call "*Opcode" breakpoints
   - Add virtual V0..V7 registers to "register" command for calculations
-  - "memwrite" command can now (optionally) write also word or long sized
-    values to memory, instead of bytes
+  - "memdump" and "memwrite" commands output & input can now be also
+    word or long sized instead of bytes
 - Options:
   - Fix: "--memsize 0" legacy option
   - Disable "--timer-d" option by default.  Increases CPU usage
