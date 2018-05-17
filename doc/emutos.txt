@@ -5,7 +5,8 @@ Contents:
 - EmuTOS usage
 - EmuTOS compatibility notes
 - Debugging issues with EmuTOS
-  - EmuTOS debug output and debug symbols
+  - EmuTOS debug symbols
+  - EmuTOS debug output
   - Debugging OS calls, Line-A usage and panics
   - Debugging freezes
 - EmuTOS free/shareware compatibility lists
@@ -133,10 +134,12 @@ Because (even 192k version of) EmuTOS uses a bit more memory than
 normal TOS, badly written (typically floppy-only) games may blindly
 overwrite EmuTOS memory. They also often rely on (undocumented) TOS
 internal variables & functions being at specific memory location. They
-will crash when they they call these bogus addresses, use bogus
-values, or call OS functions which internal state they had overwritten
-with garbage.  Whereas ST/STE games that work from HD and/or with
-newer TOS versions, should be fine.
+will crash when they call these bogus addresses, use bogus values, or
+call OS functions which internal state they had overwritten with
+garbage.
+
+However, ST/STE games that work from HD and/or with newer TOS
+versions, should be fine.
 
 Input (e.g. joystick) doesn't work in original (STOS) games that
 access it through other means than XBIOS function Kbdvbase() or by
@@ -159,22 +162,12 @@ bugs.txt & incompatible.txt files coming with EmuTOS.
 Debugging issues with EmuTOS
 ============================
 
-EmuTOS debug output and debug symbols
--------------------------------------
-
-To get extra debug output from EmuTOS, or to add your own debug
-statements, you need to recompile it from the source, after enabling
-the MIDI debug output in its config.h header file. Then start Hatari
-with the "--midi-out /dev/stderr" option and you will see EmuTOS debug
-output on Hatari's standard error (such as calls to missing Falcon
-XBios functions).
-
-Some debug output can be gotten also from the pre-built 512k
-EmuTOS images by using Hatari "--natfeats on" option.
+EmuTOS debug symbols
+--------------------
 
 By loading the etos512k.sym EmuTOS debug symbols file coming with the
-512k EmuTOS image, you can also ask debugger to "trace cpu_symbols",
-to get trace of all the function calls EmuTOS does.
+512k EmuTOS image, you can ask debugger to "trace cpu_symbols", to get
+trace of all the function calls EmuTOS does.
 
 For smaller EmuTOS versions, there's a script[1] you can use to convert
 the emutos2.map file (produced during EmuTOS build) to a format you
@@ -187,6 +180,24 @@ After loading the symbols to the Hatari debugger, disassembling the
 problematic address should provide more clues for the problem.  Or you
 can just look up the program counter value given in the EmuTOS panic
 message from the map file.
+
+
+EmuTOS debug output
+-------------------
+
+Some debug output can be gotten from the pre-built 512k EmuTOS images
+by using Hatari "--natfeats on" option.
+
+To get extra debug output from EmuTOS, or to add your own debug
+statements, you need to recompile it from the source, after enabling
+the MIDI debug output in its config.h header file. Then start Hatari
+with the "--midi-out /dev/stderr" option and you will see EmuTOS debug
+output on Hatari's standard error (such as calls to missing Falcon
+XBios functions).
+
+Note: To see/get raw MIDI device output from EmuTOS. you need to
+disable use of PortMidi in Hatari configuration before building
+Hatari.
 
 
 Debugging OS calls, Line-A usage and panics
@@ -397,21 +408,21 @@ Color toys:
 - Schnapfl
 
 Commercial game demos/previews (many of these are pretty good):
-- Baby Jo demo (floppy only)
+- Baby Jo demo          (floppy only)
 - Babel demo
 - Beast II demo
-- Bloodwych demo (floppy only)
-- Bolo demo (floppy only)
+- Bloodwych demo        (floppy only)
+- Bolo demo             (floppy only)
 - Bug-Bash demo
 - Cadaver demos 1 & 2
 - Captive demo
 - Celica GT4 Rally demo (needs EmuTOS >v0.9.3)
-- Challenge golf demo (floppy only)
+- Challenge golf demo   (floppy only)
 - Chips Challenge demo
 - Civilization demo
 - Cloud Kingdoms demo
 - Conqueror demo
-- Defender II demo (needs EmuTOS >v0.9.3)
+- Defender II demo      (needs EmuTOS >v0.9.3)
 - Creatures demo
 - Fire & Ice demo
 - Flimbo's Quest demo
@@ -420,17 +431,17 @@ Commercial game demos/previews (many of these are pretty good):
 - Helter Skelter demo
 - Hudson Hawk demo
 - Hunter demo
-- Interphase demo (floppy only)
+- Interphase demo       (floppy only)
 - James Pond demo
 - Jupiter's Masterdrive demo
 - Killing Game Show demo
-- Knightmare demo (needs <4MB RAM)
+- Knightmare demo       (needs <4MB RAM)
 - Leander demo
 - LLamasoft games
   http://minotaurproject.co.uk/lc-16bit.php
 - Mad Professor demo
-- Magicboy demo (floppy only)
-- Manix preview (needs EmuTOS >v0.9.3)
+- Magicboy demo         (floppy only)
+- Manix preview         (needs EmuTOS >v0.9.3)
 - Magic Pockets demo
 - Megalomania demo
 - Mig29 Super Fulcrum demo
@@ -441,38 +452,38 @@ Commercial game demos/previews (many of these are pretty good):
 - Photon Storm demo
 - Pipemania demo
 - Populous II demo
-- Pushover demo (3 playable levels, needs EmuTOS >v0.9.3)
-- Puzznic demo (needs floppy in drive A:)
+- Pushover demo         (3 playable levels, needs EmuTOS >v0.9.3)
+- Puzznic demo          (needs floppy in drive A:)
 - Rampage demo
 - Robin Hood demo
 - Robokid demo
 - Rolling Ronny demo
 - Rotoplex demo
 - Space Crusade demo
-- Space Harrier (line-A copy raster & line, in Atari PowerPack)
+- Space Harrier         (line-A copy raster & line, in Atari PowerPack)
 - Stormball demo
 - Super Stario Land demo
 - Thunderstrike demo
-- Turrican II demo (bus errors during game)
+- Turrican II demo      (bus errors during game)
 - Up an' Away / Flip & Magnose demo
-- Videokid demo (floppy only)
+- Videokid demo         (floppy only)
 
 Free/shareware/PD games:
-- 2048 (by Paradize)
+- 2048            (by Paradize)
 - Alterra
 - Archon 4KB
 - Alien Blockade* (quixx)
-- Atax (minor gfx issues)
+- Atax            (minor gfx issues)
 - Bellum*
 - Blaster
 - Blind labyrinth (line-A bitblits, mouse issues, needs EmuTOS >v0.9.3)
-- Bodyshop (line-A bitblits)
-- Bold (floppy only)
+- Bodyshop        (line-A bitblits)
+- Bold            (floppy only)
 - Bombs Away
 - Bombzai
 - Boom
-- Bugs* (line-A bitblits)
-- Candyman (line-A bitblits)
+- Bugs*          (line-A bitblits)
+- Candyman       (line-A bitblits)
 - Catch Me If You Can* (+ STE support)
 - ChuChu Rocket* (Lite version for STFM)
 - Clogged Up
@@ -481,35 +492,36 @@ Free/shareware/PD games:
 - Cybernetix
 - Dave Munsie games* (shareware released later as freeware)
   http://www.atarimania.com/list_games_atari-st-munsie-dave_team_950_S_G.html
-- Donkey Island (adventure)
-- Dot 2 Dots (for kids)
-- Droid (floppy only, bootsector has 0 for reserved sectors)
-- Droid 2 (floppy only)*
-- Entombed (doesn't show title, copyright, hiscore nor help after v0.8.6)
+- Donkey Island  (adventure)
+- Dot 2 Dots     (for kids)
+- Droid          (floppy only, bootsector has 0 for reserved sectors)
+- Droid 2        (floppy only)*
+- Entombed
+  - doesn't show title, copyright, hiscore nor help after EmuTOS v0.8.6
   - TOS v2 shows title but not others and sound is wrong
-- Flip'em* (4KB puzzle)
+- Flip'em*       (4KB puzzle)
 - French adaptations of classic games:
   Boulderdash, Demineur, Jewel, Qbert, Sokoban
 - Fuzzball*
-- GodPey (floppy only, by Reservoir Gods)
-- Golgafrincham (mod compile with 2-player minigame)
+- GodPey         (floppy only, by Reservoir Gods)
+- Golgafrincham  (mod compile with 2-player minigame)
 - Grav*
 - Grav2*
 - Hackman II*
-- Hang About (4KB mountain climbing, use joystick 0)
+- Hang About     (4KB mountain climbing, use joystick 0)
 - Happy Worm
 - Hardcore preview
-- Haywire (use joystick 0)
+- Haywire        (use joystick 0)
 - Hector*
-- Hero (RPG)
+- Hero           (RPG)
 - Hexmines*
 - Jetpac
-- Killing Spree (2014 preview by TLB at Atarimania)
+- Killing Spree  (2014 preview by TLB at Atarimania)
 - Laserball 2014
-- LeMans (line-A get pixel, draw line, bitblit, show mouse)
+- LeMans         (line-A get pixel, draw line, bitblit, show mouse)
 - Master Breakout
 - Maze*
-- Mem* (line-A bitblits)
+- Mem*           (line-A bitblits)
 - Missile Alert
 - Monkeys and Balloons
 - Monopoly
@@ -519,7 +531,7 @@ Free/shareware/PD games:
 - Panic
 - Paradize games (line-A bitblits):
   http://paradize.final-memory.org/games.shtml
-- Picross ST* (floppy only)
+- Picross ST*    (floppy only)
 - Punt II
 - Rayoid*
 - Recoil
@@ -532,9 +544,9 @@ Free/shareware/PD games:
 - Sinister development games (shareware)
 - Snowball Fight
 - Spacewar
-- Starball* (shareware)
+- Starball*      (shareware)
 - Super Pac-Man* (use joystick 0)
-- Superfly (floppy only)
+- Superfly       (floppy only)
 - Sweeper
 - Tanx*
 - Terraboink
@@ -544,31 +556,35 @@ Free/shareware/PD games:
 - The lost world (line-A bitblits)
 - Trace
 - Unheart
-- Video poker (shareware)
-- WalZ (breakout)
+- Video poker    (shareware)
+- WalZ           (breakout)
 - Warzone
 - Whip Snapper's race
-- Wolf3d (floppy version, Fread()s files opened as write-only)*
-- Yak (4KB gridrunner)
-- Xenon (4KB shooter)
+- Wolf3d*        (floppy version, Fread()s files opened as write-only)
+- Yak            (4KB gridrunner)
+- Xenon          (4KB shooter)
 - Zap
 
 Med-rez games:
 - Poker solitaire
 
 GEM games:
-- 2048 (by Rajah Lone)
-- 4 Gewinnt* (Connect four)
-- Awele (use v1.02, it fixes bugs in v1.01)
+- 2048          (by Rajah Lone)
+- 4 Gewinnt*    (Connect four)
+- Abalone       (needs EmuTOS >v0.9.5)
+- Awele         (use v1.02, it fixes bugs in v1.01)
+- Ballerburg*   (needs EmuTOS >v0.9.5)
+- Bombs         (minesweeper, needs EmuTOS >v0.9.8)
 - Centi
-- Chess* (works only from floppy)
-- Clicks* (needs wdialog)
+- Checkers      (needs EmuTOS >v0.9.8)
+- Chess*        (works only from floppy)
+- Clicks*       (needs wdialog)
 - Corewar
 - Daleks*
 - Dame
 - DBWH
 - Drachen
-- Flipside (fs, othello)
+- Flipside      (fs, othello)
 - Frix
 - Gem_mind
 - GEMcell
@@ -580,9 +596,10 @@ GEM games:
 - Isola
 - Kensington
 - Magic Stones* (m_stones: tetris, 2x tetris, columns)
-- Mars (corewars)
+- Mars          (corewars)
 - Mathmaze
 - Megaroid*
+- Minds*        (minesweeper, needs EmuTOS >v0.9.5)
 - Mines*
 - Mosaik
 - Nanjing
@@ -590,36 +607,29 @@ GEM games:
 - Never Mind
 - Orb
 - Pacman
+- Patience*     (card solitaire, use latest v2.25, needs EmuTOS >v0.9.5)
+- Risky*        (Risk board game, needs EmuTOS >v0.9.5)
 - Shanghai
-- Ship Combat (battleships, line-A calls)
-- Sixteen (puzzle)
+- Ship Combat   (battleships, line-A calls)
+- Sixteen       (puzzle)
 - Sliders
 - Snake
-- Sokoban* (http://peterlane.info/sokoban.html)
+- Sokoban*      (http://peterlane.info/sokoban.html)
 - Solitair*
-- Spiegel ("mirrormagic")
+- Spiegel       ("mirrormagic")
 - Stello*
 - ST Concentration*
 - Sudoku*
-- Tartan* (chess)
-- Thor (Othello, unstable)
+- Tartan*       (chess)
+- Thor          (Othello, unstable)
 - Thrust
 - Tricky yahoo
-- Verrueck (labyrinth)
-- WindowBall (breakout)
+- Verrueck      (labyrinth)
+- WindowBall    (breakout)
 - Wormania
+- Yams          (minesweeper, needs EmuTOS >v0.9.5)
+- Yukon*        (card solitaire, needs EmuTOS >v0.9.5)
 - zSudoku
-
-GEM games needing EmuTOS >v0.9.5 (for mouse clicks to work):
-- Abalone
-- Ballerburg*
-- Bombs     (minesweeper, needs EmuTOS >v0.9.8)
-- Minds*    (minesweeper)
-- Patience* (card solitaire, use latest v2.25)
-- Risky*    (Risk board game)
-- Checkers  (needs EmuTOS >v0.9.8)
-- Yams      (minesweeper)
-- Yukon*    (card solitaire)
 
 Monochrome games:
 - Backgammon    (line-A bitblits under GEM menu)
@@ -661,7 +671,7 @@ Monochrome games:
 - Wallball
 
 Text games:
-- Advent (Colossal Cave)
+- Advent        (Colossal Cave)
 - Eliza
 - Hack
 - Larn
@@ -670,13 +680,13 @@ Text games:
 
 Mono/GEM toys:
 - Biglife*
-- Fishes (line-A line and filled rectangle, works also in color)
+- Fishes        (line-A line and filled rectangle, works also in color)
 - Mandala
-- Planet (celectial body calculations)
+- Planet        (celectial body calculations)
 - Pyro
-- Robugs* (GEM UI, line-A fillrect + sprite draw)
+- Robugs*       (GEM UI, line-A fillrect + sprite draw)
 - ST life
-- Wator (slow)
+- Wator         (slow)
 - Worm farm
 
 
@@ -824,6 +834,7 @@ Demos:
 - Kick my ass'embler (cpp_edit by Paradize & Cerebral Vortex)
 - Lavalamp (by Tobe)
 - Little Blitter Benchmark Demo (by Frank B)
+- LovelYM (by KÜA & SMFX)
 - Lovetro (by Paradize & Sector One)
 - Madness (by Cream)
 - Massacre (by DHS)
