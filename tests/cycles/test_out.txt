@@ -1,0 +1,16 @@
+one nop :	00004 cycles
+two nops :	00008 cycles
+lsl #0 :	00012 cycles
+lsl #6 :	00024 cycles
+nop+exg+dbra :	00028 cycles
+exg+nop+dbra :	00032 cycles
+nop+exg+move :	00020 cycles
+exg+nop+move :	00024 cycles
+nop+asr+add :	00028 cycles
+asr+nop+add :	00032 cycles
+nop+cmp+beq :	00020 cycles
+cmp+nop+beq :	00024 cycles
+clr+sub+move :	00032 cycles
+sub+clr+move :	00036 cycles
+move ff820a :	00012 cycles
+move ff8800 :	00016 cycles
