@@ -17,7 +17,8 @@
 
 /* Can the actual CPU access unaligned memory? */
 #ifndef CPU_CAN_ACCESS_UNALIGNED
-# if defined(__i386__) || defined(powerpc) || defined(__mc68020__)
+# if defined(__i386__) || defined(__x86_64__) || defined(__mc68020__) || \
+     defined(powerpc) || defined(__ppc__) || defined(__ppc64__)
 #  define CPU_CAN_ACCESS_UNALIGNED 1
 # else
 #  define CPU_CAN_ACCESS_UNALIGNED 0
