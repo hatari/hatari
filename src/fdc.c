@@ -1495,8 +1495,10 @@ static Uint32	FDC_GetCyclesPerRev_FdcCycles ( int Drive )
 {
 	Uint32	FdcCyclesPerRev;
 
+	assert(Drive == 0 || Drive == 1);
+
 	/* If the inserted disk is an STX, we use the supplied track length to compute cycles per rev */
-	if ( EmulationDrives[ FDC.DriveSelSignal ].ImageType == FLOPPY_IMAGE_TYPE_STX )
+	if ( EmulationDrives[Drive].ImageType == FLOPPY_IMAGE_TYPE_STX )
 		return FDC_GetCyclesPerRev_FdcCycles_STX ( Drive , FDC_DRIVES[ Drive ].HeadTrack , FDC.SideSignal );
 
 	/* Assume a standard length for all tracks for ST/MSA images */
