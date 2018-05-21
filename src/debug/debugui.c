@@ -152,7 +152,7 @@ static void DebugUI_PrintValue(Uint32 value)
 	ones = false;
 	for (bit = 31; bit >= 0; bit--)
 	{
-		one = value & (1<<bit);
+		one = value & (1U << bit);
 		if (one || ones)
 		{
 			fputc(one ? '1':'0', stderr);
