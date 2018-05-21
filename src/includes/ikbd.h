@@ -58,7 +58,7 @@ typedef struct {
   int bLButtonDown,bRButtonDown;                /* Mouse states in emulation system, BUTTON_xxxx */
   int bOldLButtonDown,bOldRButtonDown;
   int LButtonDblClk,RButtonDblClk;
-  int LButtonHistory,RButtonHistory;
+  unsigned int LButtonHistory, RButtonHistory;
 
   int AutoSendCycles;				/* Number of cpu cycles to call INTERRUPT_IKBD_AUTOSEND */
 } KEYBOARD;
