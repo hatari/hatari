@@ -291,7 +291,7 @@ void STX_MemorySnapShot_Capture(bool bSave)
 				STX_SaveStruct[ Drive ].pSaveTracksStruct = NULL;
 		}
 
-		fprintf ( stderr , "stx load ok\n" );
+		Log_Printf ( LOG_DEBUG , "stx load ok\n" );
 	}
 }
 
@@ -348,7 +348,7 @@ Uint8 *STX_ReadDisk(int Drive, const char *pszFileName, long *pImageSize, int *p
 	if ( ( *pImageSize <= STX_HEADER_ID_LEN )
 	  || ( memcmp ( STX_HEADER_ID , pSTXFile , STX_HEADER_ID_LEN ) ) )
 	{
-		fprintf ( stderr , "Error : %s is not a valid STX image\n" , pszFileName );
+		Log_Printf ( LOG_ERROR , "%s is not a valid STX image\n" , pszFileName );
 		free ( pSTXFile );
 		*pImageSize = 0;
 		return NULL;
@@ -382,7 +382,7 @@ bool STX_WriteDisk ( int Drive , const char *pszFileName , Uint8 *pBuffer , int 
 	STX_SAVE_TRACK_STRUCT	*pStxSaveTrack;
 	Uint32		i;
 
-fprintf ( stderr , "stx write <%s>\n" , pszFileName );
+	Log_Printf ( LOG_DEBUG , "stx write <%s>\n" , pszFileName );
 
 
 	/* We can only save if the filename ends with ".stx" (or ".stx.gz"), not if it's a ".zip" file */
@@ -407,16 +407,16 @@ fprintf ( stderr , "stx write <%s>\n" , pszFileName );
 
 	if ( STX_FileNameToSave ( pszFileName , FilenameSave ) == false )
 	{
-		fprintf ( stderr , "STX_WriteDisk drive=%d file=%s, error STX_FileNameToSave\n" , Drive , pszFileName );
+		Log_Printf ( LOG_ERROR , "STX_WriteDisk drive=%d file=%s, error STX_FileNameToSave\n" , Drive , pszFileName );
 		return false;
 	}
-fprintf ( stderr , "stx write <%s>\n" , FilenameSave );
+	Log_Printf ( LOG_DEBUG , "stx write <%s>\n" , FilenameSave );
 
 	
 	FileOut = fopen ( FilenameSave , "wb+" );
 	if ( !FileOut )
 	{
-		fprintf ( stderr , "STX_WriteDisk drive=%d file=%s, error fopen\n" , Drive , pszFileName );
+		Log_Printf ( LOG_ERROR , "STX_WriteDisk drive=%d file=%s, error fopen\n" , Drive , pszFileName );
 		return false;
 	}
 
@@ -435,7 +435,7 @@ fprintf ( stderr , "stx write <%s>\n" , FilenameSave );
 	
 	if ( fwrite ( buf , p-buf , 1 , FileOut ) != 1 )
 	{
-		fprintf ( stderr , "STX_WriteDisk drive=%d file=%s, error fwrite header\n" , Drive , pszFileName );
+		Log_Printf ( LOG_ERROR , "STX_WriteDisk drive=%d file=%s, error fwrite header\n" , Drive , pszFileName );
 		fclose(FileOut);
 		return false;
 	}
@@ -480,7 +480,7 @@ fprintf ( stderr , "stx write <%s>\n" , FilenameSave );
 //Str_Dump_Hex_Ascii ( (char *) buf , p-buf, 16, "" , stderr );
 		if ( fwrite ( buf , p-buf , 1 , FileOut ) != 1 )
 		{
-			fprintf ( stderr , "STX_WriteDisk drive=%d file=%s, error fwrite sector header\n" , Drive , pszFileName );
+			Log_Printf ( LOG_ERROR , "STX_WriteDisk drive=%d file=%s, error fwrite sector header\n" , Drive , pszFileName );
 			fclose(FileOut);
 			return false;
 		}
@@ -489,7 +489,7 @@ fprintf ( stderr , "stx write <%s>\n" , FilenameSave );
 //Str_Dump_Hex_Ascii ( (char *) pStxSaveSector->pData , pStxSaveSector->SectorSize, 16, "" , stderr );
 		if ( fwrite ( pStxSaveSector->pData , pStxSaveSector->SectorSize , 1 , FileOut ) != 1 )
 		{
-			fprintf ( stderr , "STX_WriteDisk drive=%d file=%s, error fwrite sector data\n" , Drive , pszFileName );
+			Log_Printf ( LOG_ERROR , "STX_WriteDisk drive=%d file=%s, error fwrite sector data\n" , Drive , pszFileName );
 			fclose(FileOut);
 			return false;
 		}
@@ -523,7 +523,7 @@ fprintf ( stderr , "stx write <%s>\n" , FilenameSave );
 //Str_Dump_Hex_Ascii ( (char *) buf , p-buf, 16, "" , stderr );
 		if ( fwrite ( buf , p-buf , 1 , FileOut ) != 1 )
 		{
-			fprintf ( stderr , "STX_WriteDisk drive=%d file=%s, error fwrite track header\n" , Drive , pszFileName );
+			Log_Printf ( LOG_ERROR , "STX_WriteDisk drive=%d file=%s, error fwrite track header\n" , Drive , pszFileName );
 			fclose(FileOut);
 			return false;
 		}
@@ -532,7 +532,7 @@ fprintf ( stderr , "stx write <%s>\n" , FilenameSave );
 //Str_Dump_Hex_Ascii ( (char *) pStxSaveTrack->pDataWrite , pStxSaveTrack->TrackSizeWrite, 16, "" , stderr );
 		if ( fwrite ( pStxSaveTrack->pDataWrite , pStxSaveTrack->TrackSizeWrite , 1 , FileOut ) != 1 )
 		{
-			fprintf ( stderr , "STX_WriteDisk drive=%d file=%s, error fwrite track data\n" , Drive , pszFileName );
+			Log_Printf ( LOG_ERROR , "STX_WriteDisk drive=%d file=%s, error fwrite track data\n" , Drive , pszFileName );
 			fclose(FileOut);
 			return false;
 		}
@@ -568,7 +568,7 @@ static bool	STX_LoadSaveFile ( int Drive , const char *FilenameSave )
 	SaveFileBuffer = File_Read ( FilenameSave, &SaveFileSize, NULL );
 	if (!SaveFileBuffer)
 	{
-		fprintf ( stderr , "STX_LoadSaveFile drive=%d file=%s error\n" , Drive , FilenameSave );
+		Log_Printf ( LOG_ERROR , "STX_LoadSaveFile drive=%d file=%s error\n" , Drive , FilenameSave );
 		return false;
 	}
 
@@ -576,7 +576,7 @@ static bool	STX_LoadSaveFile ( int Drive , const char *FilenameSave )
 
 	if ( strncmp ( (char *) p , WD1772_SAVE_FILE_ID , strlen ( WD1772_SAVE_FILE_ID ) ) )	/* +0 ... +5 */
 	{
-		fprintf ( stderr , "STX_LoadSaveFile drive=%d file=%s bad header\n" , Drive , FilenameSave );
+		Log_Printf ( LOG_ERROR , "STX_LoadSaveFile drive=%d file=%s bad header\n" , Drive , FilenameSave );
 		free ( SaveFileBuffer );
 		return false;
 	}
@@ -586,7 +586,7 @@ static bool	STX_LoadSaveFile ( int Drive , const char *FilenameSave )
 	revision = *p++;							/* +7 */
 	if ( ( version != WD1772_SAVE_VERSION ) || ( revision != WD1772_SAVE_REVISION ) )
 	{
-		fprintf ( stderr , "STX_LoadSaveFile drive=%d file=%s bad version 0x%x revision 0x%x\n" , Drive , FilenameSave , version , revision );
+		Log_Printf ( LOG_ERROR , "STX_LoadSaveFile drive=%d file=%s bad version 0x%x revision 0x%x\n" , Drive , FilenameSave , version , revision );
 		free ( SaveFileBuffer );
 		return false;
 	}
@@ -698,7 +698,7 @@ static bool	STX_LoadSaveFile ( int Drive , const char *FilenameSave )
 
 		else
 		{
-			fprintf ( stderr , "STX_LoadSaveFile drive=%d file=%s, unknown block %4.4s, skipping\n" , Drive , FilenameSave , p );
+			Log_Printf ( LOG_WARN , "STX_LoadSaveFile drive=%d file=%s, unknown block %4.4s, skipping\n" , Drive , FilenameSave , p );
 		}
 
 		/* Next block */
@@ -823,7 +823,7 @@ bool	STX_Insert ( int Drive , const char *FilenameSTX , Uint8 *pImageBuffer , lo
 	if ( ( STX_FileNameToSave ( FilenameSTX , FilenameSave ) )
 	  && ( File_Exists ( FilenameSave ) ) )
 	{
-fprintf ( stderr , "STX : STX_Insert drive=%d file=%s buf=%p size=%ld load wd1172 %s\n" , Drive , FilenameSTX , pImageBuffer , ImageSize , FilenameSave );
+		Log_Printf ( LOG_INFO , "STX : STX_Insert drive=%d file=%s buf=%p size=%ld load wd1172 %s\n" , Drive , FilenameSTX , pImageBuffer , ImageSize , FilenameSave );
 		if ( STX_LoadSaveFile ( Drive , FilenameSave ) == false )
 		{
 			Log_AlertDlg ( LOG_ERROR , "Can't read the STX save file '%s'. Ignore it" , FilenameSave );
@@ -843,12 +843,12 @@ fprintf ( stderr , "STX : STX_Insert drive=%d file=%s buf=%p size=%ld load wd117
  */
 static bool	STX_Insert_internal ( int Drive , const char *FilenameSTX , Uint8 *pImageBuffer , long ImageSize )
 {
-	fprintf ( stderr , "STX : STX_Insert_internal drive=%d file=%s buf=%p size=%ld\n" , Drive , FilenameSTX , pImageBuffer , ImageSize );
+	Log_Printf ( LOG_DEBUG , "STX : STX_Insert_internal drive=%d file=%s buf=%p size=%ld\n" , Drive , FilenameSTX , pImageBuffer , ImageSize );
 
 	STX_State.ImageBuffer[ Drive ] = STX_BuildStruct ( pImageBuffer , STX_DEBUG_FLAG );
 	if ( STX_State.ImageBuffer[ Drive ] == NULL )
 	{
-		fprintf ( stderr , "STX : STX_Insert_internal drive=%d file=%s buf=%p size=%ld, error in STX_BuildStruct\n" , Drive , FilenameSTX , pImageBuffer , ImageSize );
+		Log_Printf ( LOG_ERROR , "STX : STX_Insert_internal drive=%d file=%s buf=%p size=%ld, error in STX_BuildStruct\n" , Drive , FilenameSTX , pImageBuffer , ImageSize );
 		return false;
 	}
 
@@ -862,7 +862,7 @@ static bool	STX_Insert_internal ( int Drive , const char *FilenameSTX , Uint8 *p
  */
 bool	STX_Eject ( int Drive )
 {
-	fprintf ( stderr , "STX : STX_Eject drive=%d\n" , Drive );
+	Log_Printf ( LOG_DEBUG , "STX : STX_Eject drive=%d\n" , Drive );
 
 	if ( STX_State.ImageBuffer[ Drive ] )
 	{
@@ -1649,7 +1649,7 @@ Uint8	FDC_ReadSector_STX ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side
 	pStxSector = STX_FindSector ( Drive , Track , Side , STX_State.NextSectorStruct_Nbr );
 	if ( pStxSector == NULL )
 	{
-		fprintf ( stderr , "FDC_ReadSector_STX drive=%d track=%d side=%d sector=%d returns null !\n" ,
+		Log_Printf ( LOG_WARN , "FDC_ReadSector_STX drive=%d track=%d side=%d sector=%d returns null !\n" ,
 				Drive , Track , Side , STX_State.NextSectorStruct_Nbr );
 		return STX_SECTOR_FLAG_RNF;				/* Should not happen if FDC_NextSectorID_FdcCycles_STX succeeded before */
 	}
@@ -1754,7 +1754,7 @@ Uint8	FDC_WriteSector_STX ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Sid
 	pStxSector = STX_FindSector ( Drive , Track , Side , STX_State.NextSectorStruct_Nbr );
 	if ( pStxSector == NULL )
 	{
-		fprintf ( stderr , "FDC_WriteSector_STX drive=%d track=%d side=%d sector=%d returns null !\n" ,
+		Log_Printf ( LOG_WARN , "FDC_WriteSector_STX drive=%d track=%d side=%d sector=%d returns null !\n" ,
 				Drive , Track , Side , STX_State.NextSectorStruct_Nbr );
 		return STX_SECTOR_FLAG_RNF;				/* Should not happen if FDC_NextSectorID_FdcCycles_STX succeeded before */
 	}
@@ -1778,7 +1778,7 @@ Uint8	FDC_WriteSector_STX ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Sid
 				    ( STX_SaveStruct[ Drive ].SaveSectorsCount + 1 ) * sizeof ( STX_SAVE_SECTOR_STRUCT ) );
 		if ( pNewBuf == NULL )
 		{
-			fprintf ( stderr , "FDC_WriteSector_STX drive=%d track=%d side=%d sector=%d realloc error !\n" ,
+			Log_Printf ( LOG_ERROR , "FDC_WriteSector_STX drive=%d track=%d side=%d sector=%d realloc error !\n" ,
 					Drive , Track , Side , STX_State.NextSectorStruct_Nbr );
 			return STX_SECTOR_FLAG_RNF;
 		}
@@ -1791,7 +1791,7 @@ Uint8	FDC_WriteSector_STX ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Sid
 		pNewBuf = malloc ( SectorSize );
 		if ( pNewBuf == NULL )
 		{
-			fprintf ( stderr , "FDC_WriteSector_STX drive=%d track=%d side=%d sector=%d malloc error !\n" ,
+			Log_Printf ( LOG_ERROR , "FDC_WriteSector_STX drive=%d track=%d side=%d sector=%d malloc error !\n" ,
 					Drive , Track , Side , STX_State.NextSectorStruct_Nbr );
 			return STX_SECTOR_FLAG_RNF;
 		}
@@ -1859,7 +1859,7 @@ Uint8	FDC_ReadAddress_STX ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Sid
 	pStxSector = STX_FindSector ( Drive , Track , Side , STX_State.NextSectorStruct_Nbr );
 	if ( pStxSector == NULL )
 	{
-		fprintf ( stderr , "FDC_ReadAddress_STX drive=%d track=%d side=%d sector=%d returns null !\n" ,
+		Log_Printf ( LOG_ERROR , "FDC_ReadAddress_STX drive=%d track=%d side=%d sector=%d returns null !\n" ,
 				Drive , Track , Side , STX_State.NextSectorStruct_Nbr );
 		return STX_SECTOR_FLAG_RNF;				/* Should not happen if FDC_NextSectorID_FdcCycles_STX succeeded before */
 	}
@@ -1910,14 +1910,14 @@ Uint8	FDC_ReadTrack_STX ( Uint8 Drive , Uint8 Track , Uint8 Side )
 	
 	if ( STX_State.ImageBuffer[ Drive ] == NULL )
 	{
-		fprintf ( stderr , "FDC_ReadTrack_STX drive=%d track=%d side=%d, no image buffer !\n" , Drive , Track , Side );
+		Log_Printf ( LOG_ERROR , "FDC_ReadTrack_STX drive=%d track=%d side=%d, no image buffer !\n" , Drive , Track , Side );
 		return STX_SECTOR_FLAG_RNF;				/* Should not happen, just in case of a bug */
 	}
 
 	pStxTrack = STX_FindTrack ( Drive , Track , Side );
 	if ( pStxTrack == NULL )					/* Track/Side don't exist in this STX image */
 	{
-		fprintf ( stderr , "fdc stx : track info not found for read track drive=%d track=%d side=%d, returning random bytes\n" , Drive , Track , Side );
+		Log_Printf ( LOG_WARN , "fdc stx : track info not found for read track drive=%d track=%d side=%d, returning random bytes\n" , Drive , Track , Side );
  		for ( i=0 ; i<FDC_GetBytesPerTrack ( Drive ) ; i++ )
 			FDC_Buffer_Add ( rand() & 0xff );		/* Fill the track buffer with random bytes */
 		return 0;
@@ -1955,14 +1955,14 @@ Uint8	FDC_ReadTrack_STX ( Uint8 Drive , Uint8 Track , Uint8 Side )
 		/* If there's no image for this track, and no sector as well, then track is empty / not formatted */
 		if ( pStxTrack->SectorsCount == 0 )
 		{
-			fprintf ( stderr , "fdc stx : no track image and no sector for read track drive=%d track=%d side=%d, building an unformatted track\n" , Drive , Track , Side );
+			Log_Printf ( LOG_WARN , "fdc stx : no track image and no sector for read track drive=%d track=%d side=%d, building an unformatted track\n" , Drive , Track , Side );
 			for ( i=0 ; i<TrackSize ; i++ )
 				FDC_Buffer_Add ( rand() & 0xff );	/* Fill the track buffer with random bytes */
 			return 0;
 		}
 
 		/* Use the available sectors and add some default GAPs to build the track */
-		fprintf ( stderr , "fdc stx : no track image for read track drive=%d track=%d side=%d, building a standard track\n" , Drive , Track , Side );
+		Log_Printf ( LOG_WARN , "fdc stx : no track image for read track drive=%d track=%d side=%d, building a standard track\n" , Drive , Track , Side );
 
 		for ( i=0 ; i<FDC_TRACK_LAYOUT_STANDARD_GAP1 ; i++ )	/* GAP1 */
 			FDC_Buffer_Add ( 0x4e );
@@ -1977,7 +1977,7 @@ Uint8	FDC_ReadTrack_STX ( Uint8 Drive , Uint8 Track , Uint8 Side )
 			if ( FDC_Buffer_Get_Size () + SectorSize + FDC_TRACK_LAYOUT_STANDARD_GAP2 + 10 + FDC_TRACK_LAYOUT_STANDARD_GAP3a
 				+ FDC_TRACK_LAYOUT_STANDARD_GAP3b + 4 + 2 + FDC_TRACK_LAYOUT_STANDARD_GAP4 >= TrackSize )
 			{
-				fprintf ( stderr , "fdc stx : no track image for read track drive=%d track=%d side=%d, too many data sector=%d\n" , Drive , Track , Side , Sector );
+				Log_Printf ( LOG_WARN , "fdc stx : no track image for read track drive=%d track=%d side=%d, too many data sector=%d\n" , Drive , Track , Side , Sector );
 				break;					/* Exit the loop and fill the rest of the track */
 			}
 
@@ -2068,7 +2068,7 @@ Uint8	FDC_WriteTrack_STX ( Uint8 Drive , Uint8 Track , Uint8 Side , int TrackSiz
 	pStxTrack = STX_FindTrack ( Drive , Track , Side );
 	if ( pStxTrack == NULL )
 	{
-		fprintf ( stderr , "FDC_WriteTrack_STX drive=%d track=%d side=%d returns null !\n" ,
+		Log_Printf ( LOG_WARN , "FDC_WriteTrack_STX drive=%d track=%d side=%d returns null !\n" ,
 				Drive , Track , Side );
 		return STX_SECTOR_FLAG_LOST_DATA;
 	}
@@ -2083,7 +2083,7 @@ Uint8	FDC_WriteTrack_STX ( Uint8 Drive , Uint8 Track , Uint8 Side , int TrackSiz
 				    ( STX_SaveStruct[ Drive ].SaveTracksCount + 1 ) * sizeof ( STX_SAVE_TRACK_STRUCT ) );
 		if ( pNewBuf == NULL )
 		{
-			fprintf ( stderr , "FDC_WriteTrack_STX drive=%d track=%d side=%d realloc error !\n" ,
+			Log_Printf ( LOG_WARN , "FDC_WriteTrack_STX drive=%d track=%d side=%d realloc error !\n" ,
 					Drive , Track , Side );
 			return STX_SECTOR_FLAG_LOST_DATA;
 		}
@@ -2107,7 +2107,7 @@ Uint8	FDC_WriteTrack_STX ( Uint8 Drive , Uint8 Track , Uint8 Side , int TrackSiz
 	pNewBuf = malloc ( TrackSize );
 	if ( pNewBuf == NULL )
 	{
-		fprintf ( stderr , "FDC_WriteTrack_STX drive=%d track=%d side=%d malloc error !\n" ,
+		Log_Printf ( LOG_WARN , "FDC_WriteTrack_STX drive=%d track=%d side=%d malloc error !\n" ,
 				Drive , Track , Side );
 		return STX_SECTOR_FLAG_LOST_DATA;
 	}

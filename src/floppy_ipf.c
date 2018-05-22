@@ -210,7 +210,7 @@ void IPF_MemorySnapShot_Capture(bool bSave)
 						}
 					}
 			}
-		fprintf ( stderr , "ipf load ok\n" );
+			Log_Printf ( LOG_DEBUG , "ipf load ok\n" );
 		}
 	}
 }
@@ -327,20 +327,20 @@ bool	IPF_Init ( void )
 	int	i;
 	struct CapsVersionInfo	caps_vi;
 
-	fprintf ( stderr , "IPF : IPF_Init\n" );
+	Log_Printf ( LOG_DEBUG , "IPF : IPF_Init\n" );
 
 	if ( CAPSInit() != imgeOk )
         {
-		fprintf ( stderr , "IPF : Could not initialize the capsimage library\n" );
+		Log_Printf ( LOG_ERROR , "IPF : Could not initialize the capsimage library\n" );
 		return false;
         }
 
 	if ( CAPSGetVersionInfo ( &caps_vi , 0 ) != imgeOk )
         {
-		fprintf ( stderr , "IPF : CAPSVersionInfo failed\n" );
+		Log_Printf ( LOG_ERROR , "IPF : CAPSVersionInfo failed\n" );
 		return false;
         }
-	fprintf ( stderr , "IPF : capsimage library version release=%d revision=%d\n" , (int)caps_vi.release , (int)caps_vi.revision );
+	Log_Printf ( LOG_INFO , "IPF : capsimage library version release=%d revision=%d\n" , (int)caps_vi.release , (int)caps_vi.revision );
 	IPF_State.CapsLibRelease = caps_vi.release;
 	IPF_State.CapsLibRevision = caps_vi.revision;
 
@@ -370,7 +370,7 @@ bool	IPF_Init ( void )
 
 	if ( CAPSFdcInit ( &IPF_State.Fdc ) != imgeOk)
 	{
-		fprintf ( stderr , "IPF : CAPSFdcInit failed\n" );
+		Log_Printf ( LOG_ERROR , "IPF : CAPSFdcInit failed\n" );
 		return false;
 	}
 
@@ -421,11 +421,14 @@ bool	IPF_Insert ( int Drive , Uint8 *pImageBuffer , long ImageSize )
 #else
 	CapsLong	ImageId;
 	CapsLong	ImageType;
+	const char	*ImageTypeStr;
+	bool		Type_OK;
+
 
 	ImageId = CAPSAddImage();
 	if ( ImageId < 0 )
 	{
-		fprintf ( stderr , "IPF : error CAPSAddImage\n" );
+		Log_Printf ( LOG_ERROR , "IPF : error CAPSAddImage\n" );
 		return false;
 	}
 
@@ -433,34 +436,41 @@ bool	IPF_Insert ( int Drive , Uint8 *pImageBuffer , long ImageSize )
 	ImageType = CAPSGetImageTypeMemory ( pImageBuffer , ImageSize );
 	if ( ImageType == citError )
 	{
-		fprintf ( stderr , "IPF : error CAPSGetImageTypeMemory\n" );
+		Log_Printf ( LOG_ERROR , "IPF : error CAPSGetImageTypeMemory\n" );
 		CAPSRemImage ( ImageId ) ;
 		return false;
 	}
 	else if ( ImageType == citUnknown )
 	{
-		fprintf ( stderr , "IPF : unknown image type\n" );
+		Log_Printf ( LOG_ERROR , "IPF : unknown image type\n" );
 		CAPSRemImage ( ImageId ) ;
 		return false;
 	}
 
-	fprintf ( stderr , "IPF : IPF_Insert drive=%d buf=%p size=%ld imageid=%d type=" , Drive , pImageBuffer , ImageSize , ImageId );
+	Type_OK = true;
 	switch ( ImageType ) {
-		case citIPF:		fprintf ( stderr , "IPF\n" ); break;
-		case citCTRaw:		fprintf ( stderr , "CT RAW\n" ); break;
-		case citKFStream:	fprintf ( stderr , "KF STREAM\n" ) ; break;
-		case citDraft:		fprintf ( stderr , "DRAFT\n" ) ; break;
-		default :		fprintf ( stderr , "NOT SUPPORTED\n" );
-					CAPSRemImage ( ImageId ) ;
-					return false;
+		case citIPF:		ImageTypeStr = "IPF"; break;
+		case citCTRaw:		ImageTypeStr = "CT RAW"; break;
+		case citKFStream:	ImageTypeStr = "KF STREAM" ; break;
+		case citDraft:		ImageTypeStr = "DRAFT" ; break;
+		default :		ImageTypeStr = "NOT SUPPORTED\n";
+					Type_OK = false;
 	}
+	Log_Printf ( LOG_INFO , "IPF : IPF_Insert drive=%d buf=%p size=%ld imageid=%d type=%s\n" , Drive , pImageBuffer , ImageSize , ImageId , ImageTypeStr );
+
+	if ( !Type_OK )
+	{
+		CAPSRemImage ( ImageId ) ;
+		return false;
+	}
+
 
 	/* Special case for RAW stream image, we load all the tracks now */
 	if ( ImageType == citKFStream )
 	{
 		if ( IPF_Insert_RawStreamImage ( Drive ) == false )
 		{
-			fprintf ( stderr , "IPF : can't load raw stream files\n" );
+			Log_Printf ( LOG_ERROR , "IPF : can't load raw stream files\n" );
 			CAPSRemImage ( ImageId ) ;
 			return false;
 		}
@@ -507,7 +517,7 @@ bool	IPF_Insert ( int Drive , Uint8 *pImageBuffer , long ImageSize )
 
 	if ( CAPSLoadImage ( ImageId , DI_LOCK_DENALT | DI_LOCK_DENVAR | DI_LOCK_UPDATEFD ) != imgeOk )
 	{
-		fprintf ( stderr , "IPF : error CAPSLoadImage\n" );
+		Log_Printf ( LOG_ERROR , "IPF : error CAPSLoadImage\n" );
 		CAPSUnlockImage ( ImageId );
 		CAPSRemImage ( ImageId ) ;
 		return false;
@@ -559,7 +569,7 @@ return true;						/* This function is not used for now, always return true */
 	TrackSide_pointer = IPF_FilenameFindTrackSide ( TrackFileName );
 	if ( TrackSide_pointer == NULL )
 	{
-		fprintf ( stderr , "IPF : error parsing track/side in raw filename\n" );
+		Log_Printf ( LOG_ERROR , "IPF : error parsing track/side in raw filename\n" );
 		return false;
 	}
 
@@ -574,7 +584,7 @@ return true;						/* This function is not used for now, always return true */
 		{
 			sprintf ( TrackSide_buf , "%02d.%d" , Track , Side );
 			memcpy ( TrackSide_pointer , TrackSide_buf , 4 );
-			fprintf ( stderr , "IPF : insert raw stream drive=%d track=%d side=%d %s\n" , Drive , Track , Side , TrackFileName );
+			Log_Printf ( LOG_INFO , "IPF : insert raw stream drive=%d track=%d side=%d %s\n" , Drive , Track , Side , TrackFileName );
 
 			p = File_Read ( TrackFileName , &Size , NULL);
 			if ( p )
@@ -587,7 +597,7 @@ return true;						/* This function is not used for now, always return true */
 			}
 			else
 			{
-				fprintf ( stderr , "IPF : insert raw stream drive=%d track=%d side=%d %s -> not found\n" , Drive , Track , Side , TrackFileName );
+				Log_Printf ( LOG_INFO , "IPF : insert raw stream drive=%d track=%d side=%d %s -> not found\n" , Drive , Track , Side , TrackFileName );
 				/* File not loaded : either this track really doesn't exist or there was a system error */
 				IPF_RawStreamImage[ Drive ][ Track ][Side].TrackData = NULL;
 				IPF_RawStreamImage[ Drive ][ Track ][Side].TrackSize = 0;
@@ -599,13 +609,13 @@ return true;						/* This function is not used for now, always return true */
 	/* If we didn't load any track, there's a problem, we stop here */
 	if ( TrackCount == 0 )
 	{
-		fprintf ( stderr , "IPF : error, no raw track file could be loaded for %s\n" , ConfigureParams.DiskImage.szDiskFileName[Drive] );
+		Log_Printf ( LOG_WARN , "IPF : error, no raw track file could be loaded for %s\n" , ConfigureParams.DiskImage.szDiskFileName[Drive] );
 		/* Free all the tracks that were loaded so far */
 		IPF_Eject_RawStreamImage ( Drive );
 		return false;
 	}
 
-	fprintf ( stderr , "IPF : insert raw stream drive=%d, loaded %d tracks for side 0 and %d tracks for side 1\n", Drive, TrackCount_0, TrackCount_1 );
+	Log_Printf ( LOG_INFO , "IPF : insert raw stream drive=%d, loaded %d tracks for side 0 and %d tracks for side 1\n", Drive, TrackCount_0, TrackCount_1 );
 
 	return true;
 }
@@ -622,19 +632,19 @@ bool	IPF_Eject ( int Drive )
 	return false;
 
 #else
-	fprintf ( stderr , "IPF : IPF_Eject drive=%d imageid=%d\n" , Drive , IPF_State.CapsImage[ Drive ] );
+	Log_Printf ( LOG_DEBUG , "IPF : IPF_Eject drive=%d imageid=%d\n" , Drive , IPF_State.CapsImage[ Drive ] );
 
 	CAPSFdcInvalidateTrack ( &IPF_State.Fdc , Drive );				/* Invalidate previous buffered track data for drive, if any */
 
 	if ( CAPSUnlockImage ( IPF_State.CapsImage[ Drive ] ) < 0 )
 	{
-		fprintf ( stderr , "IPF : error CAPSUnlockImage\n" );
+		Log_Printf ( LOG_ERROR , "IPF : error CAPSUnlockImage\n" );
 		return false;
 	}
 
 	if ( CAPSRemImage ( IPF_State.CapsImage[ Drive ] ) < 0 )
 	{
-		fprintf ( stderr , "IPF : error CAPSRemImage\n" );
+		Log_Printf ( LOG_ERROR , "IPF : error CAPSRemImage\n" );
 		return false;
 	}
 
@@ -669,7 +679,7 @@ return true;						/* This function is not used for now, always return true */
 		{
 			if ( IPF_RawStreamImage[ Drive ][ Track ][Side].TrackData != NULL )
 			{
-				fprintf ( stderr , "IPF : eject raw stream drive=%d track=%d side=%d\n" , Drive , Track , Side );
+				Log_Printf ( LOG_DEBUG , "IPF : eject raw stream drive=%d track=%d side=%d\n" , Drive , Track , Side );
 				free ( IPF_RawStreamImage[ Drive ][ Track ][Side].TrackData );
 				IPF_RawStreamImage[ Drive ][ Track ][Side].TrackData = NULL;
 				IPF_RawStreamImage[ Drive ][ Track ][Side].TrackSize = 0;
