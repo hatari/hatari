@@ -2580,7 +2580,7 @@ void Disasm (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
 {
 	if (ConfigureParams.Debugger.bDisasmUAE)
 #ifdef WINUAE_FOR_HATARI
-		m68k_disasm_file (f, addr, nextpc, cnt);
+		m68k_disasm_file (f, addr, nextpc, addr, cnt);
 #else
 		m68k_disasm (f, addr, nextpc, cnt);
 #endif

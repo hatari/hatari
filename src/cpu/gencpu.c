@@ -824,10 +824,12 @@ static void setpc (const char *format, ...)
 	_vsnprintf (buffer, 1000 - 1, format, parms);
 	va_end (parms);
 
-	if (using_mmu || using_prefetch || using_prefetch_020)
-		printf ("\tm68k_setpci (%s);\n", buffer);
+	if (using_mmu)
+		printf("\tm68k_setpci(%s);\n", buffer);
+	else if (using_prefetch || using_prefetch_020)
+		printf ("\tm68k_setpci_j(%s);\n", buffer);
 	else
-		printf ("\tm68k_setpc (%s);\n", buffer);
+		printf ("\tm68k_setpc_j(%s);\n", buffer);
 }
 
 static void incpc (const char *format, ...)
@@ -3940,15 +3942,18 @@ static void gen_opcode (unsigned int opcode)
 		if (cpu_level == 0) {
 			genamode (NULL, Aipi, "7", sz_word, "sr", 1, 0, GF_NOREFILL);
 			genamode (NULL, Aipi, "7", sz_long, "pc", 1, 0, GF_NOREFILL);
+			printf("\tuaecptr oldpc = %s;\n", getpc);
 			printf ("\tregs.sr = sr;\n");
 			printf ("\tif (pc & 1) {\n");
 			printf ("\t\texception3i (0x%04X, pc);\n", opcode);
 			printf ("\t\tgoto %s;\n", endlabelstr);
 			printf ("\t}\n");
 			setpc ("pc");
+			printf("\tbranch_stack_pop_rte(oldpc);\n");
 			makefromsr();
 		} else if (cpu_level == 1 && using_prefetch) {
 		    int old_brace_level = n_braces;
+			printf("\tuaecptr oldpc = %s;\n", getpc);
 			printf ("\tuae_u16 newsr; uae_u32 newpc;\n");
 			printf ("\tfor (;;) {\n");
 			printf ("\t\tuaecptr a = m68k_areg (regs, 7);\n");
@@ -3973,11 +3978,13 @@ static void gen_opcode (unsigned int opcode)
 			printf ("\t\tgoto %s;\n", endlabelstr);
 			printf ("\t}\n");
 		    setpc ("newpc");
+			printf("\tbranch_stack_pop_rte(oldpc);\n");
 			check_ipl ();
 		    need_endlabel = 1;
 		} else {
 		    int old_brace_level = n_braces;
-		    printf ("\tuae_u16 newsr; uae_u32 newpc;\n");
+			printf("\tuaecptr oldpc = %s;\n", getpc);
+			printf ("\tuae_u16 newsr; uae_u32 newpc;\n");
 			printf ("\tfor (;;) {\n");
 			printf ("\t\tuaecptr a = m68k_areg (regs, 7);\n");
 			printf ("\t\tuae_u16 sr = %s (a);\n", srcw);
@@ -4036,6 +4043,7 @@ static void gen_opcode (unsigned int opcode)
 			printf ("\t\tgoto %s;\n", endlabelstr);
 			printf ("\t}\n");
 		    setpc ("newpc");
+			printf("\tbranch_stack_pop_rte(oldpc);\n");
 			check_ipl ();
 		    need_endlabel = 1;
 		}
@@ -4125,6 +4133,8 @@ static void gen_opcode (unsigned int opcode)
 		} else {
 			printf ("\tm68k_do_rts ();\n");
 		}
+		printf("\tif (debugmem_trace)\n");
+		printf("\t\tbranch_stack_pop_rts(pc);\n");
 	    printf ("\tif (%s & 1) {\n", getpc);
 		printf ("\t\tuaecptr faultpc = %s;\n", getpc);
 		setpc ("pc");
@@ -4172,7 +4182,8 @@ static void gen_opcode (unsigned int opcode)
 		no_prefetch_ce020 = true;
 		genamode (curi, curi->smode, "srcreg", curi->size, "src", 0, 0, GF_AA|GF_NOREFILL);
 		start_brace ();
-		printf ("\tuaecptr oldpc = %s + %d;\n", getpc, m68k_pc_offset);
+		printf("\tuaecptr oldpc = %s;\n", getpc);
+		printf("\tuaecptr nextpc = oldpc + %d;\n", m68k_pc_offset);
 		if (using_exception_3) {
 			printf ("\tif (srca & 1) {\n");
 			printf ("\t\texception3i (opcode, srca);\n");
@@ -4181,7 +4192,7 @@ static void gen_opcode (unsigned int opcode)
 			need_endlabel = 1;
 		}
 		if (using_mmu) {
-			printf ("\t%s (m68k_areg (regs, 7) - 4, oldpc);\n", dstl);
+			printf ("\t%s (m68k_areg (regs, 7) - 4, nextpc);\n", dstl);
 			printf ("\tm68k_areg (regs, 7) -= 4;\n");
 			setpc ("srca");
 			clear_m68k_offset();
@@ -4198,18 +4209,20 @@ static void gen_opcode (unsigned int opcode)
 					addcycles000 (2);
 #endif
 				if (cpu_level <= 1 && using_prefetch)
-					printf ("\toldpc += 2;\n");
+					printf ("\tnextpc += 2;\n");
 			}
 			setpc ("srca");
 			clear_m68k_offset();
 			fill_prefetch_1 (0);
 			printf ("\tm68k_areg (regs, 7) -= 4;\n");
 			if (using_ce || using_prefetch) {
-				printf ("\t%s (m68k_areg (regs, 7), oldpc >> 16);\n", dstw);
-				printf ("\t%s (m68k_areg (regs, 7) + 2, oldpc);\n", dstw);
+				printf ("\t%s (m68k_areg (regs, 7), nextpc >> 16);\n", dstw);
+				printf ("\t%s (m68k_areg (regs, 7) + 2, nextpc);\n", dstw);
 			} else {
-				printf ("\t%s (m68k_areg (regs, 7), oldpc);\n", dstl);
+				printf ("\t%s (m68k_areg (regs, 7), nextpc);\n", dstl);
 			}
+			printf("\tif (debugmem_trace)\n");
+			printf("\t\tbranch_stack_push(oldpc, nextpc);\n");
 		}
 		count_write += 2;
 		fill_prefetch_full_020 ();
@@ -4266,21 +4279,25 @@ static void gen_opcode (unsigned int opcode)
 			need_endlabel = 1;
 		}
 		addcycles000 (2);
+		printf("\tuaecptr oldpc = %s;\n", getpc);
+		printf("\tuaecptr nextpc = oldpc + %d;\n", m68k_pc_offset);
 		if (using_indirect > 0 && !using_ce020 && !using_prefetch_020 && !using_ce) {
-			printf("\tm68k_do_bsri_jit (%s + %d, s);\n", getpc, m68k_pc_offset);
+			printf("\tm68k_do_bsri_jit (nextpc, s);\n");
 		} else if (using_mmu) {
-			printf ("\tm68k_do_bsr_mmu%s (%s + %d, s);\n", mmu_postfix, getpc, m68k_pc_offset);
+			printf ("\tm68k_do_bsr_mmu%s (nextpc, s);\n", mmu_postfix);
 		} else if (using_ce020 == 1) {
-			printf ("\tm68k_do_bsr_ce020 (%s + %d, s);\n", getpc, m68k_pc_offset);
+			printf ("\tm68k_do_bsr_ce020 (nextpc, s);\n");
 		} else if (using_ce020 == 2) {
-			printf ("\tm68k_do_bsr_ce030 (%s + %d, s);\n", getpc, m68k_pc_offset);
+			printf ("\tm68k_do_bsr_ce030 (nextpc, s);\n");
 		} else if (using_ce) {
-			printf ("\tm68k_do_bsr_ce (%s + %d, s);\n", getpc, m68k_pc_offset);
+			printf ("\tm68k_do_bsr_ce (nextpc, s);\n");
 		} else if (using_prefetch || using_prefetch_020) {
-			printf ("\tm68k_do_bsri (%s + %d, s);\n", getpc, m68k_pc_offset);
+			printf ("\tm68k_do_bsri (nextpc, s);\n");
 		} else {
-			printf ("\tm68k_do_bsr (%s + %d, s);\n", getpc, m68k_pc_offset);
+			printf ("\tm68k_do_bsr (nextpc, s);\n");
 		}
+		printf("\tif (debugmem_trace)\n");
+		printf("\t\tbranch_stack_push(oldpc, nextpc);\n");
 		count_write += 2;
 		clear_m68k_offset();
 		fill_prefetch_full ();
@@ -5628,6 +5645,7 @@ static void generate_includes (FILE * f, int id)
 	fprintf (f, "#include \"newcpu.h\"\n");
 	fprintf (f, "#include \"cpu_prefetch.h\"\n");
 	fprintf (f, "#include \"cputbl.h\"\n");
+	fprintf (f, "#include \"debugmem.h\"\n");
 	if (id == 31 || id == 33)
 		fprintf (f, "#include \"cpummu.h\"\n");
 	else if (id == 32 || id == 34 || id == 35)

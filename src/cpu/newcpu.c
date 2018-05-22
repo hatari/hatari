@@ -35,6 +35,7 @@
 #include "cpummu.h"
 #include "cpummu030.h"
 #include "cpu_prefetch.h"
+#include "debugmem.h"
 #include "savestate.h"
 #include "fpp.h"
 #ifdef WINUAE_FOR_HATARI
@@ -2042,6 +2043,9 @@ static void build_cpufunctbl (void)
 	write_log(_T("\n"));
 
 	set_cpu_caches (true);
+#ifndef WINUAE_FOR_HATARI
+	target_cpu_speed();
+#endif
 }
 
 #define CYCLES_DIV 8192
@@ -2312,18 +2316,19 @@ static void showea_val(TCHAR *buffer, uae_u16 opcode, uaecptr addr, int size)
 {
 	struct mnemolookup *lookup;
 	struct instr *table = &table68k[opcode];
+	
 
 #ifndef WINUAE_FOR_HATARI
 	if (addr >= 0xe90000 && addr < 0xf00000)
-		return;
+		goto skip;
 	if (addr >= 0xdff000 && addr < 0xe00000)
-		return;
+		goto skip;
 #endif
 
 	for (lookup = lookuptab; lookup->mnemo != table->mnemo; lookup++)
 		;
 	if (!(lookup->flags & 1))
-		return;
+		goto skip;
 	buffer += _tcslen(buffer);
 	if (debug_safe_addr(addr, datasizes[size])) {
 		bool cached = false;
@@ -2394,6 +2399,17 @@ static void showea_val(TCHAR *buffer, uae_u16 opcode, uaecptr addr, int size)
 				break;
 		}
 	}
+skip:
+#ifndef WINUAE_FOR_HATARI
+	for (int i = 0; i < size; i++) {
+		TCHAR name[256];
+		if (debugmem_get_symbol(addr + i, name, sizeof(name) / sizeof(TCHAR))) {
+			_stprintf(buffer + _tcslen(buffer), _T(" %s"), name);
+		}
+	}
+#else
+	return;
+#endif
 }
 
 static uaecptr ShowEA (void *f, uaecptr pc, uae_u16 opcode, int reg, amodes mode, wordsizes size, TCHAR *buf, uae_u32 *eaddr, int safemode)
@@ -2588,6 +2604,9 @@ static uaecptr ShowEA (void *f, uaecptr pc, uae_u16 opcode, int reg, amodes mode
 		offset = (uae_s32)(uae_s8)get_iword_debug (pc);
 		_stprintf (buffer, _T("#$%02x"), (uae_u32)(offset & 0xff));
 		addr = pc + 2 + offset;
+		if ((opcode & 0xf000) == 0x6000) {
+			showea_val(buffer, opcode, addr, 1);
+		}
 		pc += 2;
 		break;
 	case imm1:
@@ -2595,12 +2614,18 @@ static uaecptr ShowEA (void *f, uaecptr pc, uae_u16 opcode, int reg, amodes mode
 		buffer[0] = 0;
 		_stprintf (buffer, _T("#$%04x"), (uae_u32)(offset & 0xffff));
 		addr = pc + offset;
+		if ((opcode & 0xf000) == 0x6000) {
+			showea_val(buffer, opcode, addr, 2);
+		}
 		pc += 2;
 		break;
 	case imm2:
 		offset = (uae_s32)get_ilong_debug (pc);
 		_stprintf (buffer, _T("#$%08x"), (uae_u32)offset);
 		addr = pc + offset;
+		if ((opcode & 0xf000) == 0x6000) {
+			showea_val(buffer, opcode, addr, 4);
+		}
 		pc += 4;
 		break;
 	case immi:
@@ -2611,7 +2636,7 @@ static uaecptr ShowEA (void *f, uaecptr pc, uae_u16 opcode, int reg, amodes mode
 	default:
 		break;
 	}
-	if (buf == 0)
+	if (buf == NULL)
 		f_out (f, _T("%s"), buffer);
 	else
 		_tcscat (buf, buffer);
@@ -2953,7 +2978,7 @@ static void exception_debug (int nr)
 {
 #ifdef WINUAE_FOR_HATARI
 	if (unlikely(ExceptionDebugMask & EXCEPT_NOHANDLER) && STMemory_ReadLong(regs.vbr + 4*nr) == 0) {
-        	fprintf(stderr,"Uninitialized exception handler #%i!\n", nr);
+		fprintf(stderr,"Uninitialized exception handler #%i!\n", nr);
 		DebugUI(REASON_CPU_EXCEPTION);
 	} else {
 		DebugUI_Exceptions(nr, M68K_GETPC);
@@ -3292,6 +3317,9 @@ kludge_me_do:
 		return;
 	}
 	m68k_setpc (newpc);
+	if (interrupt)
+		regs.intmask = nr - 24;
+	branch_stack_push(currpc, currpc);
 	regs.ir = x_get_word (m68k_getpc ()); // prefetch 1
 	x_do_cycles (2 * cpucycleunit);
 #ifdef WINUAE_FOR_HATARI
@@ -3591,6 +3619,8 @@ static void Exception_mmu030 (int nr, uaecptr oldpc)
 			exception3_read(regs.ir, newpc);
 		return;
 	}
+	if (interrupt)
+		regs.intmask = nr - 24;
 	m68k_setpci (newpc);
 	fill_prefetch ();
 	exception_check_trace (nr);
@@ -3668,6 +3698,8 @@ static void Exception_mmu (int nr, uaecptr oldpc)
 	cache_default_data &= ~CACHE_DISABLE_ALLOCATE;
 
 	m68k_setpci (newpc);
+	if (interrupt)
+		regs.intmask = nr - 24;
 	fill_prefetch ();
 	exception_check_trace (nr);
 }
@@ -3970,6 +4002,8 @@ kludge_me_do:
 			exception3_notinstruction(regs.ir, newpc);
 		return;
 	}
+	if (interrupt)
+		regs.intmask = nr - 24;
 	m68k_setpc (newpc);
 	cache_default_data &= ~CACHE_DISABLE_ALLOCATE;
 #ifdef WINUAE_FOR_HATARI
@@ -3980,6 +4014,7 @@ kludge_me_do:
 #ifdef JIT
 	set_special (SPCFLAG_END_COMPILE);
 #endif
+	branch_stack_push(currpc, nextpc);
 	fill_prefetch ();
 	exception_check_trace (nr);
 }
@@ -4100,7 +4135,6 @@ static void do_interrupt (int nr)
 
 	for (;;) {
 		Exception (nr + 24);
-		regs.intmask = nr;
 		if (!currprefs.cpu_compatible || currprefs.cpu_model == 68060)
 			break;
 		if (m68k_interrupt_delay)
@@ -4371,6 +4405,11 @@ uae_u32 REGPARAM2 op_illg (uae_u32 opcode)
 		return 4;
 	}
 
+	if (debugmem_illg(opcode)) {
+		m68k_incpc_normal(2);
+		return 4;
+	}
+
 	if (cloanto_rom && (opcode & 0xF100) == 0x7100) {
 		m68k_dreg (regs, (opcode >> 9) & 7) = (uae_s8)(opcode & 0xFF);
 		m68k_incpc_normal (2);
@@ -4412,7 +4451,7 @@ uae_u32 REGPARAM2 op_illg (uae_u32 opcode)
 		}
 #endif
 		Exception (0xB);
-		//activate_debugger ();
+		//activate_debugger_new();
 		return 4;
 	}
 	if ((opcode & 0xF000) == 0xA000) {
@@ -4423,13 +4462,13 @@ uae_u32 REGPARAM2 op_illg (uae_u32 opcode)
 		}
 #endif
 		Exception (0xA);
-		//activate_debugger();
+		//activate_debugger_new();
 		return 4;
 	}
 	if (warned < 20) {
 		write_log (_T("Illegal instruction: %04x at %08X -> %08X\n"), opcode, pc, get_long_debug(regs.vbr + 0x10));
 		warned++;
-		//activate_debugger();
+		//activate_debugger_new();
 	}
 
 	Exception (4);
@@ -5514,7 +5553,7 @@ static void m68k_run_1 (void)
 				count_instr (r->opcode);
 
 #ifdef WINUAE_FOR_HATARI
-				//m68k_dumpstate_file(stderr, NULL);
+				//m68k_dumpstate_file(stderr, NULL, 0xffffffff);
 				if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
 				{
 					int FrameCycles, HblCounterVideo, LineCycles;
@@ -5522,7 +5561,7 @@ static void m68k_run_1 (void)
 					Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
 					LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
-					m68k_disasm_file(stderr, m68k_getpc (), NULL, 1);
+					m68k_disasm_file(stderr, m68k_getpc (), NULL, m68k_getpc (), 1);
 				}
 #endif
 
@@ -5640,7 +5679,7 @@ static void m68k_run_1_ce (void)
 				r->opcode = r->ir;
 
 #ifdef WINUAE_FOR_HATARI
-				//m68k_dumpstate_file(stderr, NULL);
+				//m68k_dumpstate_file(stderr, NULL, 0xffffffff);
 				if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
 				{
 					int FrameCycles, HblCounterVideo, LineCycles;
@@ -5649,7 +5688,7 @@ static void m68k_run_1_ce (void)
 
 //fprintf ( stderr , "clock %ld\n" , CyclesGlobalClockCounter );
 					LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
-					m68k_disasm_file(stderr, m68k_getpc (), NULL, 1);
+					m68k_disasm_file(stderr, m68k_getpc (), NULL, m68k_getpc (), 1);
 				}
 #endif
 
@@ -6105,13 +6144,13 @@ static void m68k_run_jit(void)
 
 	for (;;) {
 #ifdef WINUAE_FOR_HATARI
-		//m68k_dumpstate_file(stderr, NULL);
+		//m68k_dumpstate_file(stderr, NULL, 0xffffffff);
 		if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
 		{
 			int FrameCycles, HblCounterVideo, LineCycles;
 			Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 			LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
-			m68k_disasm_file(stderr, m68k_getpc (), NULL, 1);
+			m68k_disasm_file(stderr, m68k_getpc (), NULL, m68k_getpc (), 1);
 		}
 #endif
 
@@ -6159,10 +6198,10 @@ static void opcodedebug (uae_u32 pc, uae_u16 opcode, bool full)
 		TCHAR buf[100];
 		if (full)
 			write_log (_T("mmufixup=%d %04x %04x\n"), mmufixup[0].reg, regs.wb3_status, regs.mmu_ssw);
-		m68k_disasm_2 (buf, sizeof buf / sizeof (TCHAR), addr, NULL, 1, NULL, NULL, 0);
+		m68k_disasm_2 (buf, sizeof buf / sizeof (TCHAR), addr, NULL, 1, NULL, NULL, 0xffffffff, 0);
 		write_log (_T("%s\n"), buf);
 		if (full)
-			m68k_dumpstate (NULL);
+			m68k_dumpstate(NULL, 0xffffffff);
 	}
 }
 
@@ -6211,13 +6250,13 @@ static void m68k_run_mmu060 (void)
 		TRY (prb) {
 			for (;;) {
 #ifdef WINUAE_FOR_HATARI
-				//m68k_dumpstate_file(stderr, NULL);
+				//m68k_dumpstate_file(stderr, NULL, 0xffffffff);
 				if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
 				{
 					int FrameCycles, HblCounterVideo, LineCycles;
 					Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 					LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
-					m68k_disasm_file(stderr, m68k_getpc (), NULL, 1);
+					m68k_disasm_file(stderr, m68k_getpc (), NULL, m68k_getpc (), 1);
 				}
 #endif
 				f.cznv = regflags.cznv;
@@ -6305,13 +6344,13 @@ static void m68k_run_mmu040 (void)
 		TRY (prb) {
 			for (;;) {
 #ifdef WINUAE_FOR_HATARI
-				//m68k_dumpstate_file(stderr, NULL);
+				//m68k_dumpstate_file(stderr, NULL, 0xffffffff);
 				if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
 				{
 					int FrameCycles, HblCounterVideo, LineCycles;
 					Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 					LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
-					m68k_disasm_file(stderr, m68k_getpc (), NULL, 1);
+					m68k_disasm_file(stderr, m68k_getpc (), NULL, m68k_getpc (), 1);
 				}
 #endif
 				f.cznv = regflags.cznv;
@@ -6407,13 +6446,13 @@ static void m68k_run_mmu030 (void)
 				int cnt;
 insretry:
 #ifdef WINUAE_FOR_HATARI
-				//m68k_dumpstate_file(stderr, NULL);
+				//m68k_dumpstate_file(stderr, NULL, 0xffffffff);
 				if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
 				{
 					int FrameCycles, HblCounterVideo, LineCycles;
 					Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 					LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
-					m68k_disasm_file(stderr, m68k_getpc (), NULL, 1);
+					m68k_disasm_file(stderr, m68k_getpc (), NULL, m68k_getpc (), 1);
 				}
 #endif
 				regs.instruction_pc = m68k_getpc ();
@@ -6610,13 +6649,13 @@ static void m68k_run_3ce (void)
 		TRY(prb) {
 			while (!exit) {
 #ifdef WINUAE_FOR_HATARI
-				//m68k_dumpstate_file(stderr, NULL);
+				//m68k_dumpstate_file(stderr, NULL, 0xffffffff);
 				if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
 				{
 					int FrameCycles, HblCounterVideo, LineCycles;
 					Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 					LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
-					m68k_disasm_file(stderr, m68k_getpc (), NULL, 1);
+					m68k_disasm_file(stderr, m68k_getpc (), NULL, m68k_getpc (), 1);
 				}
 				currcycle = CYCLE_UNIT / 2;	/* Assume at least 1 cycle per instruction */
 #endif
@@ -6692,13 +6731,13 @@ static void m68k_run_3p(void)
 		TRY(prb) {
 			while (!exit) {
 #ifdef WINUAE_FOR_HATARI
-				//m68k_dumpstate_file(stderr, NULL);
+				//m68k_dumpstate_file(stderr, NULL, 0xffffffff);
 				if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
 				{
 					int FrameCycles, HblCounterVideo, LineCycles;
 					Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 					LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
-					m68k_disasm_file(stderr, m68k_getpc (), NULL, 1);
+					m68k_disasm_file(stderr, m68k_getpc (), NULL, m68k_getpc (), 1);
 				}
 #endif
 				r->instruction_pc = m68k_getpc();
@@ -6813,13 +6852,13 @@ static void m68k_run_2ce (void)
 				static int prevopcode;
 #endif
 #ifdef WINUAE_FOR_HATARI
-				//m68k_dumpstate_file(stderr, NULL);
+				//m68k_dumpstate_file(stderr, NULL, 0xffffffff);
 				if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
 				{
 					int FrameCycles, HblCounterVideo, LineCycles;
 					Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 					LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
-					m68k_disasm_file(stderr, m68k_getpc (), NULL, 1);
+					m68k_disasm_file(stderr, m68k_getpc (), NULL, m68k_getpc (), 1);
 #if 0
 // logs to debug data cache issues
 struct cache030 *c1 ,*c2;
@@ -7004,13 +7043,13 @@ static void m68k_run_2p (void)
 
 			while (!exit) {
 #ifdef WINUAE_FOR_HATARI
-				//m68k_dumpstate_file(stderr, NULL);
+				//m68k_dumpstate_file(stderr, NULL, 0xffffffff);
 				if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
 				{
 					int FrameCycles, HblCounterVideo, LineCycles;
 					Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 					LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
-					m68k_disasm_file(stderr, m68k_getpc (), NULL, 1);
+					m68k_disasm_file(stderr, m68k_getpc (), NULL, m68k_getpc (), 1);
 				}
 #endif
 				r->instruction_pc = m68k_getpc ();
@@ -7191,13 +7230,13 @@ static void m68k_run_2 (void)
 		TRY(prb) {
 			while (!exit) {
 #ifdef WINUAE_FOR_HATARI
-				//m68k_dumpstate_file(stderr, NULL);
+				//m68k_dumpstate_file(stderr, NULL, 0xffffffff);
 				if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
 				{
 					int FrameCycles, HblCounterVideo, LineCycles;
 					Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 					LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
-					m68k_disasm_file(stderr, m68k_getpc (), NULL, 1);
+					m68k_disasm_file(stderr, m68k_getpc (), NULL, m68k_getpc (), 1);
 				}
 #endif
 				r->instruction_pc = m68k_getpc ();
@@ -7259,13 +7298,13 @@ static void m68k_run_mmu (void)
 {
 	for (;;) {
 #ifdef WINUAE_FOR_HATARI
-		//m68k_dumpstate_file(stderr, NULL);
+		//m68k_dumpstate_file(stderr, NULL, 0xffffffff);
 		if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
 		{
 			int FrameCycles, HblCounterVideo, LineCycles;
 			Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 			LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
-			m68k_disasm_file(stderr, m68k_getpc (), NULL, 1);
+			m68k_disasm_file(stderr, m68k_getpc (), NULL, m68k_getpc (), 1);
 		}
 #endif
 		regs.opcode = get_iiword (0);
@@ -7451,6 +7490,7 @@ void m68k_go (int may_quit)
 				uaecptr pc = m68k_getpc();
 				prefs_changed_cpu();
 				fpu_modechange();
+				custom_cpuchange();
 				build_cpufunctbl();
 				m68k_setpc_normal(pc);
 				fill_prefetch();
@@ -7460,6 +7500,9 @@ void m68k_go (int may_quit)
 				currprefs.m68k_speed = changed_prefs.m68k_speed;
 				currprefs.m68k_speed_throttle = changed_prefs.m68k_speed_throttle;
 				update_68k_cycles();
+#ifndef WINUAE_FOR_HATARI
+				target_cpu_speed();
+#endif
 			}
 			cpu_prefs_changed_flag = 0;
 		}
@@ -8430,17 +8473,37 @@ int m68k_asm(TCHAR *sline, uae_u16 *out, uaecptr pc)
 	return 0;
 }
 
-void m68k_disasm_2 (TCHAR *buf, int bufsize, uaecptr pc, uaecptr *nextpc, int cnt, uae_u32 *seaddr, uae_u32 *deaddr, int safemode)
+static void resolve_if_jmp(TCHAR *s, uae_u32 addr)
+{
+	uae_u16 opcode = get_word_debug(addr);
+	if (opcode == 0x4ef9) { // JMP x.l
+		TCHAR *p = s + _tcslen(s);
+		uae_u32 addr2 = get_long_debug(addr + 2);
+		_stprintf(p, _T(" == $%08x "), addr2);
+		showea_val(p + _tcslen(p), opcode, addr2, 4);
+		TCHAR txt[256];
+		bool ext;
+		if (debugmem_get_segment(addr2, NULL, &ext, NULL, txt)) {
+			if (ext) {
+				_tcscat(p, _T(" "));
+				_tcscat(p, txt);
+			}
+		}
+	}
+}
+
+
+void m68k_disasm_2 (TCHAR *buf, int bufsize, uaecptr pc, uaecptr *nextpc, int cnt, uae_u32 *seaddr, uae_u32 *deaddr, uaecptr lastpc, int safemode)
 {
 	uae_u32 seaddr2;
 	uae_u32 deaddr2;
+	uaecptr segpc;
 
-	if (buf)
-		memset (buf, 0, bufsize * sizeof (TCHAR));
 	if (!table68k)
 		return;
 	while (cnt-- > 0) {
-		TCHAR instrname[100], *ccpt;
+		TCHAR instrname[256], *ccpt;
+		TCHAR segout[256], segname[256];
 		int i;
 		uae_u32 opcode;
 		uae_u16 extra;
@@ -8449,6 +8512,8 @@ void m68k_disasm_2 (TCHAR *buf, int bufsize, uaecptr pc, uaecptr *nextpc, int cn
 		uaecptr oldpc;
 		uaecptr m68kpc_illg = 0;
 		bool illegal = false;
+		int segid, lastsegid;
+		TCHAR *symbolpos;
 
 		seaddr2 = deaddr2 = 0;
 		oldpc = pc;
@@ -8468,7 +8533,22 @@ void m68k_disasm_2 (TCHAR *buf, int bufsize, uaecptr pc, uaecptr *nextpc, int cn
 		for (lookup = lookuptab;lookup->mnemo != dp->mnemo; lookup++)
 			;
 
+		lastsegid = -1;
+		bool exact = false;
+		if (lastpc != 0xffffffff) {
+			lastsegid = debugmem_get_segment(lastpc, NULL, NULL, NULL, NULL);
+		}
+		segid = debugmem_get_segment(pc, &exact, NULL, segout, segname);
+		if (segid && (lastsegid != -1 || exact) && (segid != lastsegid || pc == lastpc || exact)) {
+			buf = buf_out(buf, &bufsize, _T("%s\n"), segname);
+		}
+		symbolpos = buf;
+
 		buf = buf_out (buf, &bufsize, _T("%08X "), pc);
+
+		if (segid) {
+			buf = buf_out(buf, &bufsize, _T("%s "), segout);
+		}
 
 		pc += 2;
 		
@@ -8587,6 +8667,31 @@ void m68k_disasm_2 (TCHAR *buf, int bufsize, uaecptr pc, uaecptr *nextpc, int cn
 				TCHAR *p = instrname + _tcslen(instrname);
 				_stprintf(p, _T(",(A%d)"), opcode & 7);
 			}
+		} else if (lookup->mnemo == i_MOVE16) {
+			TCHAR *p = instrname + _tcslen(instrname);
+			if (opcode & 0x20) {
+				_stprintf(p, _T("(A%d)+,(A%d)+"), opcode & 7, (extra >> 12) & 7);
+				pc += 2;
+			} else {
+				uae_u32 addr = get_long_debug(pc + 2);
+				int ay = opcode & 7;
+				pc += 4;
+				switch ((opcode >> 3) & 3)
+				{
+				case 0:
+					_stprintf(p, _T("(A%d)+,$%08x"), ay, addr);
+					break;
+				case 1:
+					_stprintf(p, _T("$%08x,(A%d)+"), addr, ay);
+					break;
+				case 2:
+					_stprintf(p, _T("(A%d),$%08x"), ay, addr);
+					break;
+				case 3:
+					_stprintf(p, _T("$%08x,(A%d)"), addr, ay);
+					break;
+				}
+			}
 		} else if (lookup->mnemo == i_FPP) {
 			TCHAR *p;
 			int ins = extra & 0x3f;
@@ -8679,6 +8784,20 @@ void m68k_disasm_2 (TCHAR *buf, int bufsize, uaecptr pc, uaecptr *nextpc, int cn
 		} else {
 			if (dp->suse) {
 				pc = ShowEA (0, pc, opcode, dp->sreg, dp->smode, dp->size, instrname, &seaddr2, safemode);
+
+				// JSR x(a6) / JMP x(a6)
+				if (opcode == 0x4ea8 + 6 || opcode == 0x4ee8 + 6) {
+					TCHAR sname[256];
+					if (debugger_get_library_symbol(m68k_areg(regs, 6), 0xffff0000 | extra, sname)) {
+						TCHAR *p = instrname + _tcslen(instrname);
+						_stprintf(p, _T(" %s"), sname);
+						resolve_if_jmp(instrname, m68k_areg(regs, 6) + (uae_s16)extra);
+					}
+				}
+				// show target address if JSR x(pc) + JMP xxxx combination
+				if (opcode == 0x4eba && seaddr2 && instrname[0]) { // JSR x(pc)
+					resolve_if_jmp(instrname, seaddr2);
+				}
 			}
 			if (dp->suse && dp->duse)
 				_tcscat (instrname, _T(","));
@@ -8723,6 +8842,37 @@ void m68k_disasm_2 (TCHAR *buf, int bufsize, uaecptr pc, uaecptr *nextpc, int cn
 		}
 		buf = buf_out (buf, &bufsize, _T("\n"));
 
+		for (segpc = oldpc; segpc < pc; segpc++) {
+			TCHAR segout[256];
+			if (debugmem_get_symbol(segpc, segout, sizeof(segout) / sizeof(TCHAR))) {
+				_tcscat(segout, _T(":\n"));
+				if (bufsize > _tcslen(segout)) {
+					memmove(symbolpos + _tcslen(segout), symbolpos, (_tcslen(symbolpos) + 1) * sizeof(TCHAR));
+					memcpy(symbolpos, segout, _tcslen(segout) * sizeof(TCHAR));
+					bufsize -= _tcslen(segout);
+					buf += _tcslen(segout);
+					symbolpos += _tcslen(segout);
+				}
+			}
+		}
+
+		int srcline = -1;
+		for (segpc = oldpc; segpc < pc; segpc++) {
+			TCHAR sourceout[256];
+			int line = debugmem_get_sourceline(segpc, sourceout, sizeof(sourceout) / sizeof(TCHAR));
+			if (line < 0)
+				break;
+			if (srcline != line) {
+				if (srcline < 0)
+					buf = buf_out(buf, &bufsize, _T("\n"));
+				buf = buf_out(buf, &bufsize, sourceout);
+				srcline = line;
+			}
+		}
+		if (srcline >= 0) {
+			buf = buf_out(buf, &bufsize, _T("\n"));
+		}
+
 		if (illegal)
 			pc =  m68kpc_illg;
 	}
@@ -8734,28 +8884,28 @@ void m68k_disasm_2 (TCHAR *buf, int bufsize, uaecptr pc, uaecptr *nextpc, int cn
 		*deaddr = deaddr2;
 }
 
-void m68k_disasm_ea (uaecptr addr, uaecptr *nextpc, int cnt, uae_u32 *seaddr, uae_u32 *deaddr)
+void m68k_disasm_ea (uaecptr addr, uaecptr *nextpc, int cnt, uae_u32 *seaddr, uae_u32 *deaddr, uaecptr lastpc)
 {
 	TCHAR *buf;
 
-	buf = xmalloc (TCHAR, (MAX_LINEWIDTH + 1) * cnt);
+	buf = xcalloc (TCHAR, (MAX_LINEWIDTH + 1) * cnt);
 	if (!buf)
 		return;
-	m68k_disasm_2 (buf, (MAX_LINEWIDTH + 1) * cnt, addr, nextpc, cnt, seaddr, deaddr, 1);
+	m68k_disasm_2 (buf, MAX_LINEWIDTH * cnt, addr, nextpc, cnt, seaddr, deaddr, lastpc, 1);
 	xfree (buf);
 }
-void m68k_disasm (uaecptr addr, uaecptr *nextpc, int cnt)
+void m68k_disasm (uaecptr addr, uaecptr *nextpc, uaecptr lastpc, int cnt)
 {
 	TCHAR *buf;
 
-	buf = xmalloc (TCHAR, (MAX_LINEWIDTH + 1) * cnt);
+	buf = xcalloc (TCHAR, (MAX_LINEWIDTH + 1) * cnt);
 	if (!buf)
 		return;
-	m68k_disasm_2 (buf, (MAX_LINEWIDTH + 1) * cnt, addr, nextpc, cnt, NULL, NULL, 0);
+	m68k_disasm_2 (buf, MAX_LINEWIDTH * cnt, addr, nextpc, cnt, NULL, NULL, lastpc, 0);
 	console_out_f (_T("%s"), buf);
 	xfree (buf);
 }
-void m68k_disasm_file (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
+void m68k_disasm_file (FILE *f, uaecptr addr, uaecptr *nextpc, uaecptr lastpc, int cnt)
 {
 	TCHAR *buf;
 
@@ -8763,7 +8913,7 @@ void m68k_disasm_file (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
 	if (!buf)
 		return;
 	console_out_FILE = f;
-	m68k_disasm_2 (buf, (MAX_LINEWIDTH + 1) * cnt, addr, nextpc, cnt, NULL, NULL, 0);
+	m68k_disasm_2 (buf, MAX_LINEWIDTH * cnt, addr, nextpc, cnt, NULL, NULL, lastpc, 0);
 	f_out (f, _T("%s"), buf);
 	xfree (buf);
 	console_out_FILE = NULL;
@@ -8773,7 +8923,7 @@ void m68k_disasm_file (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
 Disasm the m68kcode at the given address into instrname
 and instrcode
 *************************************************************/
-void sm68k_disasm (TCHAR *instrname, TCHAR *instrcode, uaecptr addr, uaecptr *nextpc)
+void sm68k_disasm (TCHAR *instrname, TCHAR *instrcode, uaecptr addr, uaecptr *nextpc, uaecptr lastpc)
 {
 	TCHAR *ccpt;
 	uae_u32 opcode;
@@ -8846,9 +8996,10 @@ struct cpum2c m2cregs[] = {
     { -1, NULL }
 };
 
-void m68k_dumpstate_2 (uaecptr pc, uaecptr *nextpc)
+void m68k_dumpstate(uaecptr *nextpc, uaecptr prevpc)
 {
 	int i, j;
+	uaecptr pc = M68K_GETPC;
 
 	for (i = 0; i < 8; i++){
 		console_out_f (_T("  D%d %08X "), i, m68k_dreg (regs, i));
@@ -8930,22 +9081,20 @@ void m68k_dumpstate_2 (uaecptr pc, uaecptr *nextpc)
 				regs.prefetch020[2], regs.prefetch020_valid[2]);
 		}
 	}
-
-	if (pc != 0xffffffff) {
-		m68k_disasm (pc, nextpc, 1);
-		if (nextpc)
-			console_out_f (_T("Next PC: %08x\n"), *nextpc);
+	if (prevpc != 0xffffffff && pc - prevpc < 100) {
+		while (prevpc < pc) {
+			m68k_disasm(prevpc, &prevpc, 0xffffffff, 1);
+		}
 	}
-}
-void m68k_dumpstate (uaecptr *nextpc)
-{
-	m68k_dumpstate_2 (m68k_getpc (), nextpc);
+	m68k_disasm (pc, nextpc, pc, 1);
+	if (nextpc)
+		console_out_f (_T("Next PC: %08x\n"), *nextpc);
 }
 #ifdef WINUAE_FOR_HATARI
-void m68k_dumpstate_file (FILE *f, uaecptr *nextpc)
+void m68k_dumpstate_file (FILE *f, uaecptr *nextpc, uaecptr prevpc)
 {
 	console_out_FILE = f;
-	m68k_dumpstate_2 (m68k_getpc (), nextpc);
+	m68k_dumpstate(nextpc, prevpc);
 	console_out_FILE = NULL;
 }
 #endif
@@ -9229,6 +9378,8 @@ static void fill_prefetch_quick (void)
 
 void restore_cpu_finish (void)
 {
+	if (!currprefs.fpu_model)
+		fpu_reset();
 	init_m68k ();
 	m68k_setpc_normal (regs.pc);
 	doint ();

@@ -300,7 +300,7 @@ int DebugCpu_Register(int nArgc, char *psArgs[])
 
 		/* use the UAE function instead */
 #ifdef WINUAE_FOR_HATARI
-		m68k_dumpstate_file(debugOutput, &nextpc);
+		m68k_dumpstate_file(debugOutput, &nextpc, 0xffffffff);
 #else
 		m68k_dumpstate(debugOutput, &nextpc);
 #endif
@@ -813,7 +813,7 @@ void DebugCpu_Check(void)
 	{
 		uaecptr nextpc;
 #ifdef WINUAE_FOR_HATARI
-		m68k_dumpstate_file(TraceFile, &nextpc);
+		m68k_dumpstate_file(TraceFile, &nextpc, 0xffffffff);
 #else
 		m68k_dumpstate(TraceFile, &nextpc);
 #endif
