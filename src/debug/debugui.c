@@ -632,7 +632,7 @@ static int DebugUI_ParseCommand(const char *input_orig)
 		if (psArgs[nArgc] == NULL)
 			break;
 	}
-	if (psArgs[nArgc])
+	if (nArgc >= ARRAY_SIZE(psArgs))
 	{
 		fprintf(stderr, "Error: too many arguments (currently up to %d supported)\n",
 			ARRAY_SIZE(psArgs));
