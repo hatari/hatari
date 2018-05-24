@@ -131,7 +131,7 @@ l $args "basepage+0x81"
 EOF
 
 # quit Hatari after program exits
-if [ $quit ]; then
+if [ $quit -eq 1 ]; then
 	# catch Pterm0() & Pterm()
 	cat >> $dir/basepage.ini << EOF
 b GemdosOpcode = 0x00 :quiet :trace :file $dir/quit.ini
