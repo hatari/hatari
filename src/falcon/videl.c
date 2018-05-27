@@ -75,6 +75,7 @@ const char VIDEL_fileid[] = "Hatari videl.c : " __DATE__ " " __TIME__;
 #include "avi_record.h"
 #include "statusbar.h"
 #include "stMemory.h"
+#include "tos.h"
 #include "videl.h"
 #include "video.h"				/* for bUseHighRes variable */
 #include "vdi.h"				/* for bUseVDIRes variable */
@@ -342,6 +343,32 @@ void VIDEL_ST_ShiftModeWriteByte(void)
 
 	/* Set video mode ($FFFF82C2) */
 	IoMem_WriteWord(0xff82c2, video_mode);
+
+	/* Hack for Sparrow-TOS (which does not know about Videl registers): */
+	if (TosVersion == 0x207)
+	{
+		if (st_shiftMode == 2)  /* Mono? */
+		{
+			IoMem_WriteWord(0xff82a4, 0);
+			IoMem_WriteWord(0xff82a6, 0);
+			IoMem_WriteWord(0xff82a8, 0x43);
+			IoMem_WriteWord(0xff82aa, 0x363);
+		}
+		else if (ConfigureParams.Screen.nMonitorType == MONITOR_TYPE_VGA)
+		{
+			IoMem_WriteWord(0xff82a4, 0x3af);
+			IoMem_WriteWord(0xff82a6, 0x8f);
+			IoMem_WriteWord(0xff82a8, 0x8f);
+			IoMem_WriteWord(0xff82aa, 0x3af);
+		}
+		else
+		{
+			IoMem_WriteWord(0xff82a4, 0x20e);
+			IoMem_WriteWord(0xff82a6, 0x7e);
+			IoMem_WriteWord(0xff82a8, 0x7e);
+			IoMem_WriteWord(0xff82aa, 0x20e);
+		}
+	}
 }
 
 /**
