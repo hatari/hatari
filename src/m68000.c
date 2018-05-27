@@ -552,6 +552,9 @@ bool M68000_IsVerboseBusError(uint32_t pc, uint32_t addr)
  */
 void M68000_BusError ( Uint32 addr , int ReadWrite , int Size , int AccessType )
 {
+	LOG_TRACE(TRACE_CPU_EXCEPTION, "Bus error %s at address $%x PC=$%x.\n",
+	          ReadWrite ? "reading" : "writing", addr, M68000_InstrPC);
+
 #ifndef ENABLE_WINUAE_CPU
 	if ((regs.spcflags & SPCFLAG_BUSERROR) == 0)		/* [NP] Check that the opcode has not already generated a read bus error */
 	{
