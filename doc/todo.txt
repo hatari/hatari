@@ -40,23 +40,18 @@ Emulation improvements
 
 - Improve TT and/or Falcon emulation, especially VIDEL, e.g:
   - Palette switching during screen drawing
+  - Real Videl render offset and vertical frequency counters emulation
+    (currently they're incremented so that programs checking them
+    don't get stuck, but values aren't quite correct yet)
   - Video timings for the Falcon Videl chip (60Hz support):
     https://listengine.tuxfamily.org/lists.tuxfamily.org/hatari-devel/2016/07/msg00013.html
   - ST screen modes centering when Videl borders are enabled
-  - Videl video register access (e.g. VIDEL_ScreenCounter_ReadByte()
-    never changes the register value unless it had first specifically
-    been written into):
-    http://listengine.tuxfamily.org/lists.tuxfamily.org/hatari-devel/2013/02/msg00155.html
-  - Emulate border color:
-    http://atari-forum.com/viewtopic.php?f=51&t=29098
 
 - Add SCSI hard disk emulation for Falcon/TT mode.
 
-- ACSI emulation doesn't work with TOS v3 (but works for TT/EmuTOS).
-
 - Add SCC serial port emulation for Falcon/TT mode.
 
-- DSP emulation / Falcon sound matrix:
+- Last DSP emulation / Falcon sound matrix items:
 	- Dsp SSI internal clock (is it used on falcon ?)
 	- Verify DSP instructions cycle count, especially with external RAM
 
@@ -64,12 +59,6 @@ Emulation improvements
   extra instructions on 040), if there are programs depending on it.
   UAE core implements only support for 64-bit precision.  See "m68k
   FPU precision issue" thread on debian-68k mailing list for details.
-
-- The "memvalid" system variables currently have to be patched in most cases.
-  For improved compatibility (e.g. the game "Yolanda") it would be better to
-  skip this step, but we then run into multiple other problems, see:
-  http://listengine.tuxfamily.org/lists.tuxfamily.org/hatari-devel/2011/12/msg00123.html
-  -> We should emulate the MMU memory bank configuration at $FF8001
 
 - Beam Racing Algorithm for lagless VSYNC ON.  WinUAE implements it
   with DirectX:
@@ -120,9 +109,6 @@ Other potential Hatari functionality improvements
 
   These ones should be straightforward to implement:
 	- Breakpoints on interrupts
-	- Breaking on exceptions 2-8 vs. bombs vs. don't break.
-          Hatari has only an option to break on address & bus errors
-	  & uninitialized exception handler.
 	- Showing values both in different lengths and numeric bases.
 	  (In Hatari one gets latter with "evaluate" command, e.g. "e a0",
 	  and showing the value as long/word/byte requires ANDing it)
@@ -148,8 +134,9 @@ Other potential Hatari functionality improvements
 	  reading values or writing the same value.  Slow
 	- Showing breakpoints in instruction dumps.  Hatari breakpoints
 	  are more advanced than the trivial address breakpoints, so
-	  this would require adding efficient support for plain PC
-	  based breakpoints
+	  this would require adding support also for plain PC based
+	  breakpoints (currently 'address' command is translated to
+	  a conditional breakpoint)
 	- Adding new symbol names for arbitrary addresses one at the time.
 	  Hatari debugger currently requires new symbols to be added to
 	  a file containing all the symbols + reloading that file
@@ -194,6 +181,7 @@ on BerliOS hatari-devel mail thread for more info.)
 		- blit only changed lines
 		- simpler / faster (LED) overlay handling
 	- x3 and x4 zooming routines for ST-Low resolution
+	  (SDL2 scales to monitor size, so it can be blurry)
 	- Include some fancy zooming routines like 2xSaI or Super-Eagle
 
 - Check/clean RS232 code:
