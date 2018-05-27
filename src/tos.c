@@ -101,6 +101,7 @@ static const Uint8 pNopOpcodes[] = { 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0
         0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71 };  /* 0x4E71 = NOP */
 static const Uint8 pMouseOpcode[] = { 0xD3, 0xC1 };  /* "ADDA.L D1,A1" (instead of "ADDA.W D1,A1") */
 static const Uint8 pRomCheckOpcode206[] = { 0x60, 0x00, 0x00, 0x98 };  /* BRA $e00894 */
+static const Uint8 pRomCheckOpcode207[] = { 0x60, 0x00, 0x00, 0x98 };  /* BRA $e00892 */
 static const Uint8 pRomCheckOpcode306[] = { 0x60, 0x00, 0x00, 0xB0 };  /* BRA $e00886 */
 static const Uint8 pRomCheckOpcode404[] = { 0x60, 0x00, 0x00, 0x94 };  /* BRA $e00746 */
 static const Uint8 pBraOpcode[] = { 0x60 };  /* 0x60XX = BRA */
@@ -236,6 +237,9 @@ static const TOS_PATCH TosPatches[] =
   { 0x206, -1, pszAtariLogo, TP_VDIRES, 0xE0076C, 0x1038044c, sizeof( pAtariLogo ), pAtariLogo },
 
   { 0x207, -1, pszNoSparrowHw, TP_ALWAYS, 0xE02D90, 0x08F80005, 6, pNopOpcodes },  /* BSET #5,$ffff8e0d.w */
+  { 0x207, -1, pszRomCheck, TP_ALWAYS, 0xE007F8, 0x2E3C0001, 4, pRomCheckOpcode207 },
+  { 0x207, -1, pszDmaBoot, TP_HDIMAGE_OFF, 0xE008DC, 0x610000E0, 4, pNopOpcodes }, /* BSR.W $E009BE */
+  { 0x207, -1, pszAtariLogo, TP_VDIRES, 0xE0076A, 0x1038044c, sizeof(pAtariLogo), pAtariLogo },
 
   { 0x208, -1, pszDmaBoot, TP_HDIMAGE_OFF, 0xE00806, 0x610000E8, 4, pNopOpcodes }, /* BSR.W $E008F0 */
   { 0x208, -1, pszAtariLogo, TP_VDIRES, 0xE006B4, 0x1038044c, sizeof( pAtariLogo ), pAtariLogo },
