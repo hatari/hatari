@@ -15,8 +15,9 @@ Emulation:
     is made
   - State of current blitter operation was sometimes not correctly restored
     when CPU temporarily stopped the blitter and resumed it later
-- Input:
+- Misc:
   - Correctly emulate bus error handling for STE lightpen registers
+  - Experimental support for TOS 2.07 (the "Sparrow" TOS)
 
 Emulator:
 - Media handling:
