@@ -24,14 +24,45 @@ start:
 	reset
 	move.b	#5,$ffff8001.w		; Fake memory config
 	lea	$20000,sp		; Set up SSP
-	lea	$fa0000,a3
-	cmp.l	#$abcdef42,(a3)		; Cartridge enabled?
+	lea	$fa0000,a0
+	cmp.l	#$abcdef42,(a0)		; Cartridge enabled?
 	bne.s	no_sys_init
-	dc.w	$a			; Yes, so we can call SYSINIT_OPCODE
+	lea	unhandled_error(pc),a1
+	movea.w	#8,a0			; Start with bus error handler
+set_exc_loop:
+	move.l	a1,(a0)+		; Set all exception handlers
+	cmp.w	#$1c0,a0
+	ble.s	set_exc_loop
+	dc.w	$a			; Call SYSINIT_OPCODE to init trap #1
+
 no_sys_init:
+	lea	rte_only(pc),a1
+	move.l	a1,$68			; Ignore HBLs
+	move.l	a1,$72			; Ignore VBLs
+
+	moveq	#0,d0
+	movea.l	d0,a0
+	movea.l	d0,a1
 	move	#$0700,sr		; Go to user mode
 	lea	$18000,sp		; Set up USP
-	suba.l	a0,a0
-	pea	TEST_PRG_BASEPAGE
-	pea	rom_header
-	jmp	TEST_PRG_BASEPAGE+$100
+	pea	TEST_PRG_BASEPAGE.w
+	pea	rom_header(pc)
+	jmp	TEST_PRG_BASEPAGE+$100.w
+
+
+unhandled_err_txt:
+	dc.b	"ERROR: Unhandled exception!",13,10,0
+	even
+
+unhandled_error:
+	pea	unhandled_err_txt(pc)
+	move.w  #9,-(sp)
+	trap    #1		; Cconws
+	addq.l  #6,sp
+
+	move.w	#1,-(sp)
+	move.w	#76,-(sp)
+	trap	#1		; Pterm
+
+rte_only:
+	rte

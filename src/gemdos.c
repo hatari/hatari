@@ -1441,7 +1441,8 @@ static bool GemDOS_Cconws(Uint32 Params)
 		return false;
 
 	/* Check that write is from valid memory area */
-	if (!STMemory_CheckAreaType(Addr, 80 * 25, ABFLAG_RAM))
+	if ((CallingPC < TosAddress || CallingPC >= TosAddress + TosSize)
+	    && !STMemory_CheckAreaType(Addr, 80 * 25, ABFLAG_RAM))
 	{
 		Log_Printf(LOG_WARN, "GEMDOS Cconws() failed due to invalid RAM range at 0x%x\n", Addr);
 		Regs[REG_D0] = GEMDOS_ERANGE;
