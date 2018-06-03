@@ -1,5 +1,5 @@
 Bus Error testing results (word access):
-(1040 STf)
+(1040 STf, with Ricoh chipset)
 
 $FF8002 - $FF8200
 $FF8210 - $FF8240

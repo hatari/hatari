@@ -1,5 +1,5 @@
 Bus Error testing results (word access):
-(Mega ST4)
+(Mega ST4, likely with IMP chipset)
 
 $FF800E - $FF8200
 $FF820E - $FF8240

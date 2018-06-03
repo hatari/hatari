@@ -133,8 +133,9 @@ static void IoMem_SetVoidRegion(Uint32 startaddr, Uint32 endaddr)
 
 
 /**
- * Normal ST has two address which don't generate a bus error when
- * compared to the Mega-ST. Mark them as void handlers here.
+ * Normal ST (with Ricoh chipset) has two address which don't generate a bus
+ * error when compared to the Mega-ST (with IMP chipset). Mark them as void
+ * handlers here.
  */
 static void IoMem_FixVoidAccessForST(void)
 {
@@ -143,8 +144,14 @@ static void IoMem_FixVoidAccessForST(void)
 }
 
 /**
- * Mega-ST has slightly different behavior with bus errors compared to
- * the normal ST. Here we fix up the table accordingly.
+ * We emulate the Mega-ST with IMP chipset, and this has slightly different
+ * behavior with regards to bus errors compared to the normal ST, which we
+ * emulate with Ricoh chipset. Here we fix up the table accordingly.
+ * Note that there are also normal STs with the IMP chipset, and Mega-STs
+ * with the Ricoh chipset available, so in real life this can also be the
+ * other way round. But since the Ricoh chipset is likely the older one
+ * and the Mega-STs are the later machines, we've chosen to use IMP for the
+ * Mega and Ricoh for normal STs in Hatari.
  */
 static void IoMem_FixVoidAccessForMegaST(void)
 {
