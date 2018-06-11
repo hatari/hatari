@@ -3120,8 +3120,6 @@ static bool GemDOS_Super(Uint32 Params)
 }
 
 
-#if ENABLE_TRACING
-/*-----------------------------------------------------------------------*/
 /**
  * Map GEMDOS call opcodes to their names
  * 
@@ -3526,6 +3524,7 @@ static const char* GemDOS_Opcode2Name(Uint16 opcode)
 	return "-";
 }
 
+
 /**
  * If bShowOpcodes is true, show GEMDOS call opcode/function name table,
  * otherwise GEMDOS HDD emulation information.
@@ -3667,17 +3666,6 @@ void GemDOS_InfoDTA(FILE *fp, Uint32 dta_addr)
 	fprintf(fp, "- size: %d\n", do_get_mem_long(dta->dta_size));
 	fprintf(fp, "- name: '%s'\n", name);
 }
-
-#else /* !ENABLE_TRACING */
-void GemDOS_Info(FILE *fp, Uint32 bShowOpcodes)
-{
-	fputs("Hatari isn't configured with ENABLE_TRACING\n", fp);
-}
-void GemDOS_InfoDTA(FILE *fp, Uint32 addrDTA)
-{
-	fputs("Hatari isn't configured with ENABLE_TRACING\n", fp);
-}
-#endif /* !ENABLE_TRACING */
 
 
 /**
