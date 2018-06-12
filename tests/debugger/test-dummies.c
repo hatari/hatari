@@ -118,10 +118,12 @@ Uint32 DebugInfo_GetDATA(void)     { return 0x12f4; }
 Uint32 DebugInfo_GetBSS(void)      { return 0x1f34; }
 
 /* fake debugdsp.c stuff */
+#ifdef ENABLE_DSP_EMU
 #include "debugdsp.h"
 void DebugDsp_InitSession(void) { }
 Uint32 DebugDsp_InstrCount(void) { return 0; }
 Uint32 DebugDsp_OpcodeType(void) { return 0; }
+#endif
 
 /* use fake dsp.c stuff in case config.h is configured with DSP emu */
 #include "dsp.h"
