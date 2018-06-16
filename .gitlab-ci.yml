@@ -1,0 +1,12 @@
+before_script:
+ - apt-get update -qq &&
+   apt-get install -y -qq cmake libsdl1.2-dev libsdl2-dev libpng-dev
+           portaudio19-dev python zlib1g-dev
+
+build-normal:
+ script: ./configure && make && make test
+
+build-alt:
+ script: ./configure --enable-old-uae-cpu --enable-small-mem --disable-dsp
+                     --disable-sdl2 --enable-debug --disable-tracing &&
+         make && make test
