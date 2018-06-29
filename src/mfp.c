@@ -987,10 +987,10 @@ static int MFP_StartTimer_AB(Uint8 TimerControl, Uint16 TimerData, interrupt_id 
 					CycInt_AddRelativeInterruptWithOffset(TimerClockCycles, INT_MFP_CYCLE, Handler, AddCurCycles);
 				else
 				{
-					int	TimerClockCyclesInternal = INT_CONVERT_TO_INTERNAL ( TimerClockCycles , INT_MFP_CYCLE );
+					Sint64	TimerClockCyclesInternal = INT_CONVERT_TO_INTERNAL ( (Sint64)TimerClockCycles , INT_MFP_CYCLE );
 
 					/* In case we miss more than one int, we must correct the delay for the next one */
-					if ( PendingCyclesOver > TimerClockCyclesInternal )
+					if ( (Sint64)PendingCyclesOver > TimerClockCyclesInternal )
 						PendingCyclesOver = PendingCyclesOver % TimerClockCyclesInternal;
 
 					CycInt_AddRelativeInterruptWithOffset(TimerClockCycles, INT_MFP_CYCLE, Handler, -PendingCyclesOver);
@@ -1089,10 +1089,10 @@ static int MFP_StartTimer_CD(Uint8 TimerControl, Uint16 TimerData, interrupt_id 
 					CycInt_AddRelativeInterruptWithOffset(TimerClockCycles, INT_MFP_CYCLE, Handler, AddCurCycles);
 				else
 				{
-					int	TimerClockCyclesInternal = INT_CONVERT_TO_INTERNAL ( TimerClockCycles , INT_MFP_CYCLE );
+					Sint64	TimerClockCyclesInternal = INT_CONVERT_TO_INTERNAL ( (Sint64)TimerClockCycles , INT_MFP_CYCLE );
 
 					/* In case we miss more than one int, we must correct the delay for the next one */
-					if ( PendingCyclesOver > TimerClockCyclesInternal )
+					if ( (Sint64)PendingCyclesOver > TimerClockCyclesInternal )
 						PendingCyclesOver = PendingCyclesOver % TimerClockCyclesInternal;
 
 					CycInt_AddRelativeInterruptWithOffset(TimerClockCycles, INT_MFP_CYCLE, Handler, -PendingCyclesOver);
