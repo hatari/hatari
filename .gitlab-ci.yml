@@ -1,18 +1,37 @@
 before_script:
  - apt-get update -qq
- - apt-get install -y -qq cmake
 
 build-normal:
  script:
- - apt-get install -y -qq libsdl2-dev libpng-dev python zlib1g-dev libudev-dev
- - ./configure
+ - apt-get install -y -qq cmake libsdl2-dev libpng-dev zlib1g-dev libudev-dev
+ - CFLAGS="-Os -Werror" ./configure
  - make
  - make test
 
 build-alt:
  script:
- - apt-get install -y -qq libsdl1.2-dev portaudio19-dev
+ - apt-get install -y -qq cmake libsdl1.2-dev portaudio19-dev libportmidi-dev
+ - rm -rf /usr/include/zlib.h /usr/include/png.h /usr/include/readline*
  - ./configure --enable-old-uae-cpu --enable-small-mem --disable-dsp
                --disable-sdl2 --enable-debug --disable-tracing
+ - make
+ - make test
+
+build-32bit:
+ script:
+ - dpkg --add-architecture i386
+ - apt-get update -qq
+ - apt-get install -y cmake gcc-multilib libgcc1:i386 libsdl2-dev:i386
+                      zlib1g-dev:i386 libpng-dev:i386 libglib2.0-dev:i386
+ - CFLAGS="-m32 -O2 -Werror" ./configure
+ - make
+ - file src/hatari | grep 32.bit
+ - make test
+
+build-clang:
+ script:
+ - apt-get install -y -qq cmake clang libsdl2-dev libpng-dev zlib1g-dev
+                      libudev-dev portaudio19-dev libportmidi-dev
+ - CC="clang" CFLAGS="-O3 -Werror" ./configure
  - make
  - make test
