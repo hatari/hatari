@@ -89,13 +89,15 @@ static PmEvent* Midi_BuildEvent(Uint8 byte);
  */
 void Midi_Init(void)
 {
-	if (!Midi_Host_Open())
+	if (ConfigureParams.Midi.bEnableMidi)
 	{
-		Log_AlertDlg(LOG_ERROR, "MIDI i/o open failed. MIDI support disabled.");
-		ConfigureParams.Midi.bEnableMidi = false;
+		if (!Midi_Host_Open())
+		{
+			Log_AlertDlg(LOG_ERROR, "MIDI i/o open failed. MIDI support disabled.");
+			ConfigureParams.Midi.bEnableMidi = false;
+		}
 	}
 }
-
 
 /**
  * Close MIDI device.
@@ -349,9 +351,6 @@ void Midi_InterruptHandler_Update(void)
 static bool Midi_Host_Open(void)
 {
 #ifndef HAVE_PORTMIDI
-	if (!ConfigureParams.Midi.bEnableMidi)
-		return true;
-
 	if (ConfigureParams.Midi.sMidiOutFileName[0])
 	{
 		/* Open MIDI output file */
@@ -372,7 +371,6 @@ static bool Midi_Host_Open(void)
 		LOG_TRACE(TRACE_MIDI, "MIDI: Opened file '%s' for input\n",
 			 ConfigureParams.Midi.sMidiInFileName);
 	}
-
 #else
 	/* Need to always get MIDI device info, for MIDI setup dialog */
 	int i;
