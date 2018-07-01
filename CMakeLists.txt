@@ -364,6 +364,7 @@ else()
   else()
     message("  - sdl :\tusing SDL1")
   endif(SDL_VERSION_STRING)
+  message("         \tNOTE: The SDL1 support is deprecated and will be removed soon")
 endif(SDL2_FOUND)
 
 if(READLINE_FOUND)

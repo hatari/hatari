@@ -7,6 +7,10 @@
  Version 2.2.0 (2018-XX-XX)
  ---------------------------
 
+Note:
+- Compiling with SDL 1.2 is considered as deprecated now. The support for
+  SDL 1.2 will be dropped in a future release.
+
 Emulation:
 - Blitter:
   - Fix: a rare case in cycle exact mode when bus is shared between CPU
