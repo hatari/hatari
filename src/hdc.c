@@ -21,6 +21,7 @@ const char HDC_fileid[] = "Hatari hdc.c : " __DATE__ " " __TIME__;
 #include "log.h"
 #include "memorySnapShot.h"
 #include "mfp.h"
+#include "ncr5380.h"
 #include "stMemory.h"
 #include "tos.h"
 #include "statusbar.h"
@@ -47,49 +48,15 @@ const char HDC_fileid[] = "Hatari hdc.c : " __DATE__ " " __TIME__;
 
 // #define DISALLOW_HDC_WRITE
 // #define HDC_VERBOSE           /* display operations */
-#define WITH_NCR5380 0
 
 #define HDC_ReadInt16(a, i) (((unsigned) a[i] << 8) | a[i + 1])
 #define HDC_ReadInt24(a, i) (((unsigned) a[i] << 16) | ((unsigned) a[i + 1] << 8) | a[i + 2])
 #define HDC_ReadInt32(a, i) (((unsigned) a[i] << 24) | ((unsigned) a[i + 1] << 16) | ((unsigned) a[i + 2] << 8) | a[i + 3])
 
-/**
- * Information about a ACSI/SCSI drive
- */
-typedef struct {
-	bool enabled;
-	FILE *image_file;
-	Uint32 nLastBlockAddr;      /* The specified sector number */
-	bool bSetLastBlockAddr;
-	Uint8 nLastError;
-	unsigned long hdSize;       /* Size of the hard disk in sectors */
-} SCSI_DEV;
-
-/**
- * Status of the ACSI/SCSI bus/controller including the current command block.
- */
-typedef struct {
-	int target;
-	int byteCount;              /* number of command bytes received */
-	Uint8 command[16];
-	Uint8 opcode;
-	bool bDmaError;
-	short int returnCode;       /* return code from the HDC operation */
-	Uint8 *resp;                /* Response buffer */
-	int respbufsize;
-	int respcnt;
-	int respidx;
-	SCSI_DEV devs[8];
-} SCSI_CTRLR;
-
 /* HDC globals */
 static SCSI_CTRLR AcsiBus;
 int nAcsiPartitions = 0;
 bool bAcsiEmuOn = false;
-
-#if WITH_NCR5380
-static SCSI_CTRLR ScsiBus;
-#endif
 
 /* Our dummy INQUIRY response data */
 static unsigned char inquiry_bytes[] =
@@ -758,7 +725,7 @@ off_t HDC_CheckAndGetSize(const char *filename)
 /**
  * Open a disk image file
  */
-static int HDC_InitDevice(SCSI_DEV *dev, char *filename)
+int HDC_InitDevice(SCSI_DEV *dev, char *filename)
 {
 	off_t filesize;
 	FILE *fp;
@@ -821,22 +788,7 @@ bool HDC_Init(void)
 	}
 
 	/* SCSI */
-#if WITH_NCR5380
-	memset(&ScsiBus, 0, sizeof(ScsiBus));
-	ScsiBus.respbufsize = 512;
-	ScsiBus.resp = malloc(ScsiBus.respbufsize);
-	if (!ScsiBus.resp)
-	{
-		perror("HDC_Init");
-		return bAcsiEmuOn;
-	}
-	for (i = 0; i < MAX_SCSI_DEVS; i++)
-	{
-		if (!ConfigureParams.Scsi[i].bUseDevice)
-			continue;
-		HDC_InitDevice(&ScsiBus.devs[i], ConfigureParams.Scsi[i].sDeviceFile);
-	}
-#endif
+	Ncr5380_Init();
 
 	/* set number of partitions */
 	nNumDrives += nAcsiPartitions;
@@ -866,19 +818,7 @@ void HDC_UnInit(void)
 	free(AcsiBus.resp);
 	AcsiBus.resp = NULL;
 
-#if WITH_NCR5380
-	for (i = 0; i < MAX_SCSI_DEVS; i++)
-	{
-		if (!ScsiBus.devs[i].enabled)
-			continue;
-		File_UnLock(ScsiBus.devs[i].image_file);
-		fclose(ScsiBus.devs[i].image_file);
-		ScsiBus.devs[i].image_file = NULL;
-		ScsiBus.devs[i].enabled = false;
-	}
-	free(ScsiBus.resp);
-	ScsiBus.resp = NULL;
-#endif
+	Ncr5380_UnInit();
 
 	if (bAcsiEmuOn)
 		nNumDrives -= nAcsiPartitions;
@@ -902,7 +842,7 @@ void HDC_ResetCommandStatus(void)
  * Process HDC command packets (SCSI/ACSI) bytes.
  * @return true if command has been executed.
  */
-static bool HDC_WriteCommandPacket(SCSI_CTRLR *ctr, Uint8 b)
+bool HDC_WriteCommandPacket(SCSI_CTRLR *ctr, Uint8 b)
 {
 	bool bDidCmd = false;
 	SCSI_DEV *dev = &ctr->devs[ctr->target];
@@ -977,100 +917,6 @@ static bool HDC_WriteCommandPacket(SCSI_CTRLR *ctr, Uint8 b)
 }
 
 /*---------------------------------------------------------------------*/
-
-static struct ncr5380_regs
-{
-	Uint8 initiator_cmd;
-	Uint8 current_bus_status;
-	Uint8 bus_and_status;
-} ncr_regs;
-
-/**
- * Emulate external reset "pin": Clear registers etc.
- */
-void Ncr5380_Reset(void)
-{
-	ncr_regs.initiator_cmd &= 0x7f;
-}
-
-/**
- * Write a command byte to the NCR 5380 SCSI controller
- */
-static void Ncr5380_WriteByte(int addr, Uint8 byte)
-{
-#if WITH_NCR5380
-	switch (addr)
-	{
-	case 0:			/* Output Data register */
-		ncr_regs.current_bus_status |= 0x40;
-		break;
-	case 1:			/* Initiator Command register */
-		ncr_regs.initiator_cmd = byte;
-		break;
-	case 2:			/* Mode register */
-		break;
-	case 3:			/* Target Command register */
-		break;
-	case 4:			/* Select Enable register */
-		break;
-	case 5:			/* Start DMA Send register */
-		break;
-	case 6:			/* Start DMA Target Receive register */
-		break;
-	case 7:			/* Start DMA Initiator Receive register */
-		break;
-	default:
-		fprintf(stderr, "Unexpected NCR5380 address\n");
-	}
-#endif
-}
-
-/**
- * Read a command byte from the NCR 5380 SCSI controller
- */
-static Uint8 Ncr5380_ReadByte(int addr)
-{
-#if WITH_NCR5380
-	switch (addr)
-	{
-	case 0:			/* Current SCSI Data register */
-		break;
-	case 1:			/* Initiator Command register */
-		return ncr_regs.initiator_cmd & 0x9f;
-	case 2:			/* Mode register */
-		break;
-	case 3:			/* Target Command register */
-		break;
-	case 4:			/* Current SCSI Bus Status register */
-		if (ncr_regs.current_bus_status & 0x40)	/* BUSY? */
-			ncr_regs.current_bus_status |= 0x20;
-		else
-			ncr_regs.current_bus_status &= ~0x20;
-		if (ncr_regs.initiator_cmd & 0x80)	/* ASSERT RST? */
-			ncr_regs.current_bus_status |= 0x80;
-		else
-			ncr_regs.current_bus_status &= ~0x80;
-		if (ncr_regs.initiator_cmd & 0x04)	/* ASSERT BUSY? */
-			ncr_regs.current_bus_status |= 0x40;
-		else
-			ncr_regs.current_bus_status &= ~0x40;
-		return ncr_regs.current_bus_status;
-	case 5:			/* Bus and Status register */
-		return ncr_regs.bus_and_status;
-	case 6:			/* Input Data register */
-		break;
-	case 7:			/* Reset Parity/Interrupts register */
-		/* Reset PARITY ERROR, IRQ REQUEST and BUSY ERROR bits */
-		ncr_regs.bus_and_status &= 0xcb;
-		return 0;  /* TODO: Is this return value ok? */
-	default:
-		fprintf(stderr, "Unexpected NCR5380 address\n");
-	}
-#endif
-
-	return 0;
-}
-
 
 static void Acsi_WriteCommandByte(int addr, Uint8 byte)
 {

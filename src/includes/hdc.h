@@ -47,6 +47,35 @@
 #define HD_REQSENS_INVARG   0x24              /* Invalid argument */
 #define HD_REQSENS_INVLUN   0x25              /* Invalid LUN */
 
+/**
+ * Information about a ACSI/SCSI drive
+ */
+typedef struct {
+	bool enabled;
+	FILE *image_file;
+	Uint32 nLastBlockAddr;      /* The specified sector number */
+	bool bSetLastBlockAddr;
+	Uint8 nLastError;
+	unsigned long hdSize;       /* Size of the hard disk in sectors */
+} SCSI_DEV;
+
+/**
+ * Status of the ACSI/SCSI bus/controller including the current command block.
+ */
+typedef struct {
+	int target;
+	int byteCount;              /* number of command bytes received */
+	Uint8 command[16];
+	Uint8 opcode;
+	bool bDmaError;
+	short int returnCode;       /* return code from the HDC operation */
+	Uint8 *resp;                /* Response buffer */
+	int respbufsize;
+	int respcnt;
+	int respidx;
+	SCSI_DEV devs[8];
+} SCSI_CTRLR;
+
 #define ACSI_EMU_ON        bAcsiEmuOn         /* Do we have HDC emulation? */
 
 extern int nAcsiPartitions;
@@ -57,12 +86,12 @@ extern bool bAcsiEmuOn;
  */
 extern bool HDC_Init(void);
 extern void HDC_UnInit(void);
+extern int HDC_InitDevice(SCSI_DEV *dev, char *filename);
 extern void HDC_ResetCommandStatus(void);
 extern short int HDC_ReadCommandByte(int addr);
 extern void HDC_WriteCommandByte(int addr, Uint8 byte);
 extern int HDC_PartitionCount(FILE *fp, const Uint64 tracelevel);
 extern off_t HDC_CheckAndGetSize(const char *filename);
-
-void Ncr5380_Reset(void);
+extern bool HDC_WriteCommandPacket(SCSI_CTRLR *ctr, Uint8 b);
 
 #endif /* HATARI_HDC_H */

@@ -23,6 +23,7 @@ const char Reset_fileid[] = "Hatari reset.c : " __DATE__ " " __TIME__;
 #include "m68000.h"
 #include "mfp.h"
 #include "midi.h"
+#include "ncr5380.h"
 #include "psg.h"
 #include "reset.h"
 #include "screen.h"
