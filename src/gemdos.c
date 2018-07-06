@@ -2232,7 +2232,7 @@ static bool GemDOS_Write(Uint32 Params)
 	}
 
 	/* Check that write is from valid memory area */
-	if ( !STMemory_CheckAreaType ( Addr, Size, ABFLAG_RAM ) )
+	if (!STMemory_CheckAreaType(Addr, Size, ABFLAG_RAM | ABFLAG_ROM))
 	{
 		Log_Printf(LOG_WARN, "GEMDOS Fwrite() failed due to invalid RAM range 0x%x+%i\n", Addr, Size);
 		Regs[REG_D0] = GEMDOS_ERANGE;
