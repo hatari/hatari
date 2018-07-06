@@ -125,16 +125,16 @@ static inline Uint8 HDC_GetControl(SCSI_CTRLR *ctr)
  */
 static Uint8 *HDC_PrepRespBuf(SCSI_CTRLR *ctr, int size)
 {
-	ctr->respcnt = size;
-	ctr->respidx = 0;
+	ctr->data_len = size;
+	ctr->offset = 0;
 
-	if (size > ctr->respbufsize)
+	if (size > ctr->buffer_size)
 	{
-		ctr->respbufsize = size;
-		ctr->resp = realloc(ctr->resp, size);
+		ctr->buffer_size = size;
+		ctr->buffer = realloc(ctr->buffer, size);
 	}
 
-	return ctr->resp;
+	return ctr->buffer;
 }
 
 /**
@@ -168,13 +168,13 @@ static void HDC_Cmd_Seek(SCSI_CTRLR *ctr)
 	    fseeko(dev->image_file, (off_t)dev->nLastBlockAddr * 512L, SEEK_SET) == 0)
 	{
 		LOG_TRACE(TRACE_SCSI_CMD, " -> OK\n");
-		ctr->returnCode = HD_STATUS_OK;
+		ctr->status = HD_STATUS_OK;
 		dev->nLastError = HD_REQSENS_OK;
 	}
 	else
 	{
 		LOG_TRACE(TRACE_SCSI_CMD, " -> ERROR\n");
-		ctr->returnCode = HD_STATUS_ERROR;
+		ctr->status = HD_STATUS_ERROR;
 		dev->nLastError = HD_REQSENS_INVADDR;
 	}
 
@@ -207,7 +207,7 @@ static void HDC_Cmd_Inquiry(SCSI_CTRLR *ctr)
 
 	buf[4] = count - 5;
 
-	ctr->returnCode = HD_STATUS_OK;
+	ctr->status = HD_STATUS_OK;
 
 	dev->nLastError = HD_REQSENS_OK;
 	dev->bSetLastBlockAddr = false;
@@ -289,7 +289,7 @@ static void HDC_Cmd_RequestSense(SCSI_CTRLR *ctr)
 	fprintf(stderr,"\n");
 	*/
 
-	ctr->returnCode = HD_STATUS_OK;
+	ctr->status = HD_STATUS_OK;
 }
 
 
@@ -309,7 +309,7 @@ static void HDC_Cmd_ModeSense(SCSI_CTRLR *ctr)
 	if (ctr->command[2] != 0 || HDC_GetCount(ctr) != 0x10)
 	{
 		Log_Printf(LOG_TODO, "HDC: Unsupported MODE SENSE command\n");
-		ctr->returnCode = HD_STATUS_ERROR;
+		ctr->status = HD_STATUS_ERROR;
 		dev->nLastError = HD_REQSENS_INVARG;
 		return;
 	}
@@ -337,7 +337,7 @@ static void HDC_Cmd_ModeSense(SCSI_CTRLR *ctr)
 	buf[14] = 0;
 	buf[15] = 0;
 
-	ctr->returnCode = HD_STATUS_OK;
+	ctr->status = HD_STATUS_OK;
 	dev->nLastError = HD_REQSENS_OK;
 }
 
@@ -353,7 +353,7 @@ static void HDC_Cmd_FormatDrive(SCSI_CTRLR *ctr)
 
 	/* Should erase the whole image file here... */
 
-	ctr->returnCode = HD_STATUS_OK;
+	ctr->status = HD_STATUS_OK;
 	dev->nLastError = HD_REQSENS_OK;
 	dev->bSetLastBlockAddr = false;
 }
@@ -381,7 +381,7 @@ static void HDC_Cmd_ReadCapacity(SCSI_CTRLR *ctr)
 	buf[6] = 0x02;
 	buf[7] = 0x00;
 
-	ctr->returnCode = HD_STATUS_OK;
+	ctr->status = HD_STATUS_OK;
 	dev->nLastError = HD_REQSENS_OK;
 	dev->bSetLastBlockAddr = false;
 }
@@ -405,7 +405,7 @@ static void HDC_Cmd_WriteSector(SCSI_CTRLR *ctr)
 	if (dev->nLastBlockAddr >= dev->hdSize ||
 	    fseeko(dev->image_file, (off_t)dev->nLastBlockAddr * 512L, SEEK_SET) != 0)
 	{
-		ctr->returnCode = HD_STATUS_ERROR;
+		ctr->status = HD_STATUS_ERROR;
 		dev->nLastError = HD_REQSENS_INVADDR;
 	}
 	else
@@ -426,12 +426,12 @@ static void HDC_Cmd_WriteSector(SCSI_CTRLR *ctr)
 #endif
 		if (n == HDC_GetCount(ctr))
 		{
-			ctr->returnCode = HD_STATUS_OK;
+			ctr->status = HD_STATUS_OK;
 			dev->nLastError = HD_REQSENS_OK;
 		}
 		else
 		{
-			ctr->returnCode = HD_STATUS_ERROR;
+			ctr->status = HD_STATUS_ERROR;
 			dev->nLastError = HD_REQSENS_WRITEERR;
 		}
 
@@ -439,7 +439,7 @@ static void HDC_Cmd_WriteSector(SCSI_CTRLR *ctr)
 		FDC_WriteDMAAddress(nDmaAddr + 512*n);
 	}
 	LOG_TRACE(TRACE_SCSI_CMD, " -> %s (%d)\n",
-		  ctr->returnCode == HD_STATUS_OK ? "OK" : "ERROR",
+		  ctr->status == HD_STATUS_OK ? "OK" : "ERROR",
 		  dev->nLastError);
 
 	dev->bSetLastBlockAddr = true;
@@ -464,7 +464,7 @@ static void HDC_Cmd_ReadSector(SCSI_CTRLR *ctr)
 	if (dev->nLastBlockAddr >= dev->hdSize ||
 	    fseeko(dev->image_file, (off_t)dev->nLastBlockAddr * 512L, SEEK_SET) != 0)
 	{
-		ctr->returnCode = HD_STATUS_ERROR;
+		ctr->status = HD_STATUS_ERROR;
 		dev->nLastError = HD_REQSENS_INVADDR;
 	}
 	else
@@ -473,17 +473,17 @@ static void HDC_Cmd_ReadSector(SCSI_CTRLR *ctr)
 		n = fread(buf, 512, HDC_GetCount(ctr), dev->image_file);
 		if (n == HDC_GetCount(ctr))
 		{
-			ctr->returnCode = HD_STATUS_OK;
+			ctr->status = HD_STATUS_OK;
 			dev->nLastError = HD_REQSENS_OK;
 		}
 		else
 		{
-			ctr->returnCode = HD_STATUS_ERROR;
+			ctr->status = HD_STATUS_ERROR;
 			dev->nLastError = HD_REQSENS_NOSECTOR;
 		}
 	}
 	LOG_TRACE(TRACE_SCSI_CMD, " -> %s (%d)\n",
-		  ctr->returnCode == HD_STATUS_OK ? "OK" : "ERROR",
+		  ctr->status == HD_STATUS_OK ? "OK" : "ERROR",
 		  dev->nLastError);
 
 	dev->bSetLastBlockAddr = true;
@@ -496,7 +496,7 @@ static void HDC_Cmd_ReadSector(SCSI_CTRLR *ctr)
 static void HDC_Cmd_TestUnitReady(SCSI_CTRLR *ctr)
 {
 	LOG_TRACE(TRACE_SCSI_CMD, "HDC: TEST UNIT READY (%s).\n", HDC_CmdInfoStr(ctr));
-	ctr->returnCode = HD_STATUS_OK;
+	ctr->status = HD_STATUS_OK;
 }
 
 
@@ -507,7 +507,7 @@ static void HDC_EmulateCommandPacket(SCSI_CTRLR *ctr)
 {
 	SCSI_DEV *dev = &ctr->devs[ctr->target];
 
-	ctr->respcnt = 0;
+	ctr->data_len = 0;
 
 	switch (ctr->opcode)
 	{
@@ -539,7 +539,7 @@ static void HDC_EmulateCommandPacket(SCSI_CTRLR *ctr)
 
 	 case HD_SHIP:
 		LOG_TRACE(TRACE_SCSI_CMD, "HDC: SHIP (%s).\n", HDC_CmdInfoStr(ctr));
-		ctr->returnCode = 0xFF;
+		ctr->status = 0xFF;
 		break;
 
 	 case HD_REQ_SENSE:
@@ -548,7 +548,7 @@ static void HDC_EmulateCommandPacket(SCSI_CTRLR *ctr)
 
 	 case HD_MODESELECT:
 		LOG_TRACE(TRACE_SCSI_CMD, "HDC: MODE SELECT (%s) TODO!\n", HDC_CmdInfoStr(ctr));
-		ctr->returnCode = HD_STATUS_OK;
+		ctr->status = HD_STATUS_OK;
 		dev->nLastError = HD_REQSENS_OK;
 		dev->bSetLastBlockAddr = false;
 		break;
@@ -568,7 +568,7 @@ static void HDC_EmulateCommandPacket(SCSI_CTRLR *ctr)
 
 	 default:
 		LOG_TRACE(TRACE_SCSI_CMD, "HDC: Unsupported command (%s)!\n", HDC_CmdInfoStr(ctr));
-		ctr->returnCode = HD_STATUS_ERROR;
+		ctr->status = HD_STATUS_ERROR;
 		dev->nLastError = HD_REQSENS_OPCODE;
 		dev->bSetLastBlockAddr = false;
 		break;
@@ -769,9 +769,9 @@ bool HDC_Init(void)
 	nAcsiPartitions = 0;
 	bAcsiEmuOn = false;
 	memset(&AcsiBus, 0, sizeof(AcsiBus));
-	AcsiBus.respbufsize = 512;
-	AcsiBus.resp = malloc(AcsiBus.respbufsize);
-	if (!AcsiBus.resp)
+	AcsiBus.buffer_size = 512;
+	AcsiBus.buffer = malloc(AcsiBus.buffer_size);
+	if (!AcsiBus.buffer)
 	{
 		perror("HDC_Init");
 		return false;
@@ -815,8 +815,8 @@ void HDC_UnInit(void)
 		AcsiBus.devs[i].image_file = NULL;
 		AcsiBus.devs[i].enabled = false;
 	}
-	free(AcsiBus.resp);
-	AcsiBus.resp = NULL;
+	free(AcsiBus.buffer);
+	AcsiBus.buffer = NULL;
 
 	Ncr5380_UnInit();
 
@@ -834,7 +834,7 @@ void HDC_UnInit(void)
 void HDC_ResetCommandStatus(void)
 {
 	if (!Config_IsMachineFalcon())
-		AcsiBus.returnCode = 0;
+		AcsiBus.status = 0;
 }
 
 
@@ -850,7 +850,7 @@ bool HDC_WriteCommandPacket(SCSI_CTRLR *ctr, Uint8 b)
 	/* Abort if the target device is not enabled */
 	if (!dev->enabled)
 	{
-		ctr->returnCode = HD_STATUS_ERROR;
+		ctr->status = HD_STATUS_ERROR;
 		return false;
 	}
 
@@ -890,7 +890,7 @@ bool HDC_WriteCommandPacket(SCSI_CTRLR *ctr, Uint8 b)
 			}
 			else
 			{
-				ctr->returnCode = HD_STATUS_ERROR;
+				ctr->status = HD_STATUS_ERROR;
 			}
 		}
 
@@ -899,7 +899,7 @@ bool HDC_WriteCommandPacket(SCSI_CTRLR *ctr, Uint8 b)
 	else if (ctr->opcode >= 0x60)
 	{
 		/* Commands >= 0x60 are not supported right now */
-		ctr->returnCode = HD_STATUS_ERROR;
+		ctr->status = HD_STATUS_ERROR;
 		dev->nLastError = HD_REQSENS_OPCODE;
 		dev->bSetLastBlockAddr = false;
 		if (ctr->byteCount == 10)
@@ -910,7 +910,7 @@ bool HDC_WriteCommandPacket(SCSI_CTRLR *ctr, Uint8 b)
 	}
 	else
 	{
-		ctr->returnCode = HD_STATUS_OK;
+		ctr->status = HD_STATUS_OK;
 	}
 
 	return bDidCmd;
@@ -939,7 +939,7 @@ static void Acsi_WriteCommandByte(int addr, Uint8 byte)
 		}
 		else
 		{
-			AcsiBus.returnCode = HD_STATUS_OK;
+			AcsiBus.status = HD_STATUS_OK;
 			AcsiBus.bDmaError = false;
 		}
 	}
@@ -947,17 +947,17 @@ static void Acsi_WriteCommandByte(int addr, Uint8 byte)
 	{
 		/* Process normal command byte */
 		bool bDidCmd = HDC_WriteCommandPacket(&AcsiBus, byte);
-		if (bDidCmd && AcsiBus.returnCode == HD_STATUS_OK && AcsiBus.respcnt)
+		if (bDidCmd && AcsiBus.status == HD_STATUS_OK && AcsiBus.data_len)
 		{
 			/* DMA transfer necessary */
 			Uint32 nDmaAddr = FDC_GetDMAAddress();
-			if (!STMemory_SafeCopy(nDmaAddr, AcsiBus.resp, AcsiBus.respcnt, "ACSI DMA"))
+			if (!STMemory_SafeCopy(nDmaAddr, AcsiBus.buffer, AcsiBus.data_len, "ACSI DMA"))
 			{
 				AcsiBus.bDmaError = true;
-				AcsiBus.returnCode = HD_STATUS_ERROR;
+				AcsiBus.status = HD_STATUS_ERROR;
 			}
-			FDC_WriteDMAAddress(nDmaAddr + AcsiBus.respcnt);
-			AcsiBus.respcnt = 0;
+			FDC_WriteDMAAddress(nDmaAddr + AcsiBus.data_len);
+			AcsiBus.data_len = 0;
 		}
 	}
 
@@ -991,6 +991,6 @@ short int HDC_ReadCommandByte(int addr)
 	if (Config_IsMachineFalcon())
 		ret = Ncr5380_ReadByte(addr);
 	else
-		ret = AcsiBus.returnCode;	/* ACSI status */
+		ret = AcsiBus.status;		/* ACSI status */
 	return ret;
 }

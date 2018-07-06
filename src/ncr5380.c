@@ -24,9 +24,9 @@ void Ncr5380_Init(void)
 	int i;
 
 	memset(&ScsiBus, 0, sizeof(ScsiBus));
-	ScsiBus.respbufsize = 512;
-	ScsiBus.resp = malloc(ScsiBus.respbufsize);
-	if (!ScsiBus.resp)
+	ScsiBus.buffer_size = 512;
+	ScsiBus.buffer = malloc(ScsiBus.buffer_size);
+	if (!ScsiBus.buffer)
 	{
 		perror("HDC_Init");
 		return;
@@ -55,8 +55,8 @@ void Ncr5380_UnInit(void)
 		ScsiBus.devs[i].image_file = NULL;
 		ScsiBus.devs[i].enabled = false;
 	}
-	free(ScsiBus.resp);
-	ScsiBus.resp = NULL;
+	free(ScsiBus.buffer);
+	ScsiBus.buffer = NULL;
 #endif
 }
 

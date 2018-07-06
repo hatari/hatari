@@ -68,11 +68,11 @@ typedef struct {
 	Uint8 command[16];
 	Uint8 opcode;
 	bool bDmaError;
-	short int returnCode;       /* return code from the HDC operation */
-	Uint8 *resp;                /* Response buffer */
-	int respbufsize;
-	int respcnt;
-	int respidx;
+	short int status;           /* return code from the HDC operation */
+	Uint8 *buffer;              /* Response buffer */
+	int buffer_size;
+	int data_len;
+	int offset;                 /* Current offset into data buffer */
 	SCSI_DEV devs[8];
 } SCSI_CTRLR;
 
