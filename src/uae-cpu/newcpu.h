@@ -164,6 +164,8 @@ STATIC_INLINE uaecptr m68k_getpc_p (uae_u8 *p)
     return regs.pc + ((char *)p - (char *)regs.pc_oldp);
 }
 
+#define M68K_GETPC m68k_getpc()
+
 #define get_ibyte(o) do_get_mem_byte(regs.pc_p + (o) + 1)
 #define get_iword(o) do_get_mem_word(regs.pc_p + (o))
 #define get_ilong(o) do_get_mem_long(regs.pc_p + (o))

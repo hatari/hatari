@@ -50,13 +50,18 @@
 /**
  * Information about a ACSI/SCSI drive
  */
-typedef struct {
+typedef struct scsi_data {
 	bool enabled;
 	FILE *image_file;
 	Uint32 nLastBlockAddr;      /* The specified sector number */
 	bool bSetLastBlockAddr;
 	Uint8 nLastError;
 	unsigned long hdSize;       /* Size of the hard disk in sectors */
+	/* For NCR5380 emulation: */
+	int direction;
+	Uint8 msgout[4];
+	Uint8 cmd[16];
+	int cmd_len;
 } SCSI_DEV;
 
 /**

@@ -25,6 +25,7 @@ Emulation:
 - Misc:
   - Correctly emulate bus error handling for STE lightpen registers
   - Experimental support for TOS 2.07 (the "Sparrow" TOS)
+  - Experimental support for the NCR5380 SCSI chip in Falcon mode
 
 Emulator:
 - Media handling:
@@ -76,7 +77,7 @@ Tools:
 - Install hatari-prg-args tool by default and fix its
   program argument setting for recent EmuTOS versions
 - Few additional tests for validating Hatari functionality.
-  All tests are now integrated with CTest framework.  Use
+  Almost all tests are now integrated with CTest framework.  Use
   e.g. "ctest -j4" command to run them
 
 Documentation:
