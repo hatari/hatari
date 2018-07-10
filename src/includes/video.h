@@ -14,14 +14,16 @@
 
   Clock cycles per line (50Hz)      : 512
   NOPs per scan line (50Hz)         : 128
-  Scan lines per VBL (50Hz)         : 313 (64 at top,200 screen,49 bottom)
+  Scan lines per VBL (50Hz)         : 313 (63 at top,200 screen,47 bottom)
 
   Clock cycles per line (60Hz)      : 508
   NOPs per scan line (60Hz)         : 127
-  Scan lines per VBL (60Hz)         : 263
+  Scan lines per VBL (60Hz)         : 263 (34 at top,200 screen,26 bottom)
 
   Clock cycles per VBL (50Hz)       : 160256
   NOPs per VBL (50Hz)               : 40064
+  Clock cycles per VBL (60Hz)       : 133604
+  NOPs per VBL (50Hz)               : 33401
 
   Pixels per clock cycle (low res)  : 1
   Pixels per clock cycle (med res)  : 2
@@ -58,9 +60,12 @@
 #define VIDEO_HEIGHT_HBL_COLOR  200	/* This is usually the height of the screen */
 #define VIDEO_HEIGHT_HBL_MONO   400
 
-#define VIDEO_HEIGHT_BOTTOM_50HZ 45	/* number of extra pixel lines in a 50 Hz screen when removing bottom border */
-					/* (2 extra lines can be displayed by doing a 2nd 60/50 Hz switch at the end of the removed bottom border) */
+#define VIDEO_HEIGHT_BOTTOM_50HZ 47	/* number of extra pixel lines in a 50 Hz screen when removing bottom border */
+					/* (the 2 last lines are masked by the vblank signal and can be displayed */
+					/* by doing a 2nd 60/50 Hz switch at the end of line 308) */
 #define VIDEO_HEIGHT_BOTTOM_60HZ 26	/* number of extra pixel lines in a 60 Hz screen when removing bottom border */
+					/* (the 2 last lines are masked by the vblank signal and can be displayed */
+					/* by doing a 2nd 50/60 Hz switch at the end of line 258) */
 
 #define VIDEO_END_HBL_50HZ	( VIDEO_START_HBL_50HZ + VIDEO_HEIGHT_HBL_COLOR )	/* 263 */
 #define VIDEO_END_HBL_60HZ	( VIDEO_START_HBL_60HZ + VIDEO_HEIGHT_HBL_COLOR )	/* 234 */
@@ -123,6 +128,15 @@
 #define RESTART_VIDEO_COUNTER_LINE_60HZ		( SCANLINES_PER_FRAME_60HZ-3 )
 #define RESTART_VIDEO_COUNTER_CYCLE_STF		( 56 )
 #define RESTART_VIDEO_COUNTER_CYCLE_STE		( 56 + 4 )	/* 4 cycles later than STF */
+
+
+/* Values for some HW video signals, should be 0 or 1 */
+#define	VSYNC_SIGNAL_OFF		0
+#define	VSYNC_SIGNAL_ON			1
+#define	VBLANK_SIGNAL_OFF		0
+#define	VBLANK_SIGNAL_ON		1
+
+
 
 /* anything above 4 uses automatic frameskip */
 #define AUTO_FRAMESKIP_LIMIT	5

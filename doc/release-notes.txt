@@ -19,6 +19,9 @@ Emulation:
     is made
   - State of current blitter operation was sometimes not correctly restored
     when CPU temporarily stopped the blitter and resumed it later
+- Video:
+  - Handle VBlank signal and mask the 2 last lines when bottom border
+    is removed
 - Misc:
   - Correctly emulate bus error handling for STE lightpen registers
   - Experimental support for TOS 2.07 (the "Sparrow" TOS)
@@ -79,6 +82,9 @@ Tools:
 Documentation:
 - Add notes about (new default) PortMidi support to MIDI usage
 - More details on GEMDOS HD and VDI mode emulation limits
+
+Fixed demos:
+- B.I.G. Demo screen 2 (regression in Hatari 2.1, vblank in bottom border)
 
 Fixed games:
 - Lethal Xcess in STE mode (stopping/resuming blitter)

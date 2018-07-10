@@ -414,7 +414,10 @@
 /* 2017/10/30	[NP]	In Video_ResetShifterTimings, use VIDEO_HEIGHT_HBL_MONO only if screen	*/
 /*			is in Mono mode and video resolution=high (fix 'Audio Sculpture' when	*/
 /*			running in Mono mode)							*/
-
+/* 2018/07/10	[NP]	Handle vblank/vsync signals to mask the 2 last displayed lines when	*/
+/*			removing bottom border (fix regression in B.I.G. Demo screen 2)		*/
+/*			When removed, 50 Hz bottom border has 47 extra lines but the last 2 are	*/
+/*			masked by vblank (and can displayed by disabling vblank at hbl 308)	*/
 
 const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
 
@@ -587,6 +590,9 @@ typedef struct
 	SHIFTER_POS	Scroll8264Pos;		/* position of latest write to $ff8264 */
 	SHIFTER_POS	Scroll8265Pos;		/* position of latest write to $ff8265 */
 
+	Uint8		VBlank_signal;		/* 0=vblank off  1=vblank on */
+	Uint8		VSync_signal;		/* 0=vsync off   1=vsync on */
+
 	SHIFTER_LINE	ShifterLines[ MAX_SCANLINES_PER_FRAME ];
 } SHIFTER_FRAME;
 
@@ -637,6 +643,16 @@ typedef struct
 	int	V_End_Line_Hi;			/* 434 */
 	int	V_End_Line_NoBottom_50;		/* 310 */
 	int	V_End_Line_NoBottom_60;		/* 263 */
+
+	int	VBlank_On_Line_50;		/* 308 */
+	int	VBlank_On_Line_60;		/* 258 */
+	int	VBlank_On_Line_Hi;		/* 501 (no blank in mono mode ?) */
+	int	VBlank_Off_Line_50;		/*  25 */
+	int	VBlank_Off_Line_60;		/*  16 */
+	int	VBlank_Off_Line_Hi;		/*   0 (no blank in mono mode ?) */
+	int	VSync_On_Line_50;		/* 310 */
+	int	VSync_On_Line_60;		/* 260 */
+	int	VSync_On_Line_Hi;		/* 501 (not tested on real HW) */
 
 	int	RestartVideoCounter_Line_60;	/* 260 */
 	int	RestartVideoCounter_Line_50;	/* 310 */
@@ -768,6 +784,8 @@ void Video_Reset(void)
 	ShifterFrame.ResPosHi.VBL = -1;
 	ShifterFrame.Scroll8264Pos.VBL = -1;
 	ShifterFrame.Scroll8265Pos.VBL = -1;
+	ShifterFrame.VBlank_signal = VBLANK_SIGNAL_OFF;
+	ShifterFrame.VSync_signal = VSYNC_SIGNAL_OFF;
 
 	Video_InitShifterLines ();
 
@@ -858,6 +876,17 @@ void	Video_InitTimings(void)
 	pVideoTiming1->V_End_Line_Hi 		= VIDEO_END_HBL_71HZ;				/* 434 */
 	pVideoTiming1->V_End_Line_NoBottom_50	= pVideoTiming1->V_End_Line_50 + VIDEO_HEIGHT_BOTTOM_50HZ;	/* 310 (TODO:check on real HW) */
 	pVideoTiming1->V_End_Line_NoBottom_60	= pVideoTiming1->V_End_Line_60 + VIDEO_HEIGHT_BOTTOM_60HZ;	/* 263 (TODO:check on real HW) */
+
+	pVideoTiming1->VBlank_On_Line_50	= 308;
+	pVideoTiming1->VBlank_On_Line_60	= 258;
+	pVideoTiming1->VBlank_On_Line_Hi	= 501;
+	pVideoTiming1->VBlank_Off_Line_50	=  25;
+	pVideoTiming1->VBlank_Off_Line_60	=  16;
+	pVideoTiming1->VBlank_Off_Line_Hi	=   0;
+	pVideoTiming1->VSync_On_Line_50		= 310;
+	pVideoTiming1->VSync_On_Line_60		= 260;
+	pVideoTiming1->VSync_On_Line_Hi		= 501;
+	
 	pVideoTiming1->RestartVideoCounter_Line_60 	= RESTART_VIDEO_COUNTER_LINE_60HZ;	/* 260 */
 	pVideoTiming1->RestartVideoCounter_Line_50 	= RESTART_VIDEO_COUNTER_LINE_50HZ;	/* 310 */
 	pVideoTiming1->RestartVideoCounter_Pos 	= RESTART_VIDEO_COUNTER_CYCLE_STF;		/*  56 */
@@ -924,6 +953,15 @@ void	Video_InitTimings(void)
 	pVideoTiming1->V_End_Line_Hi 		= VIDEO_END_HBL_71HZ;				/* 434 */
 	pVideoTiming1->V_End_Line_NoBottom_50	= pVideoTiming1->V_End_Line_50 + VIDEO_HEIGHT_BOTTOM_50HZ;	/* 310 */
 	pVideoTiming1->V_End_Line_NoBottom_60	= pVideoTiming1->V_End_Line_60 + VIDEO_HEIGHT_BOTTOM_60HZ;	/* 263 */
+	pVideoTiming1->VBlank_On_Line_50	= 308;
+	pVideoTiming1->VBlank_On_Line_60	= 258;
+	pVideoTiming1->VBlank_On_Line_Hi	= 501;
+	pVideoTiming1->VBlank_Off_Line_50	=  25;
+	pVideoTiming1->VBlank_Off_Line_60	=  16;
+	pVideoTiming1->VBlank_Off_Line_Hi	=   0;
+	pVideoTiming1->VSync_On_Line_50		= 310;
+	pVideoTiming1->VSync_On_Line_60		= 260;
+	pVideoTiming1->VSync_On_Line_Hi		= 501;
 	pVideoTiming1->RestartVideoCounter_Line_60 	= RESTART_VIDEO_COUNTER_LINE_60HZ;	/* 260 */
 	pVideoTiming1->RestartVideoCounter_Line_50 	= RESTART_VIDEO_COUNTER_LINE_50HZ;	/* 310 */
 	pVideoTiming1->RestartVideoCounter_Pos 	= RESTART_VIDEO_COUNTER_CYCLE_STE;		/*  60 */
@@ -977,6 +1015,16 @@ static void	Video_InitTimings_Copy ( VIDEO_TIMING *pSrc , VIDEO_TIMING *pDest , 
 	pDest->V_End_Line_Hi		= pSrc->V_End_Line_Hi;
 	pDest->V_End_Line_NoBottom_50	= pSrc->V_End_Line_NoBottom_50;
 	pDest->V_End_Line_NoBottom_60	= pSrc->V_End_Line_NoBottom_60;
+
+	pDest->VBlank_On_Line_50	= pSrc->VBlank_On_Line_50;
+	pDest->VBlank_On_Line_60	= pSrc->VBlank_On_Line_60;
+	pDest->VBlank_On_Line_Hi	= pSrc->VBlank_On_Line_Hi;
+	pDest->VBlank_Off_Line_50	= pSrc->VBlank_Off_Line_50;
+	pDest->VBlank_Off_Line_60	= pSrc->VBlank_Off_Line_60;
+	pDest->VBlank_Off_Line_Hi	= pSrc->VBlank_Off_Line_Hi;
+	pDest->VSync_On_Line_50		= pSrc->VSync_On_Line_50;
+	pDest->VSync_On_Line_60		= pSrc->VSync_On_Line_60;
+	pDest->VSync_On_Line_Hi		= pSrc->VSync_On_Line_Hi;
 
 	pDest->RestartVideoCounter_Line_60	= pSrc->RestartVideoCounter_Line_60;
 	pDest->RestartVideoCounter_Line_50	= pSrc->RestartVideoCounter_Line_50;
@@ -3037,6 +3085,24 @@ static void Video_StartHBL(void)
 			if ( ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle == -1 )	/* start not set yet */
 				ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle = pVideoTiming->H_Start_Low_50;
 			ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle = pVideoTiming->H_Stop_Low_50;
+
+			/* Update VBlank/VSync signals */
+			if ( nHBL == pVideoTiming->VBlank_On_Line_50 )
+			{
+				ShifterFrame.VBlank_signal = VBLANK_SIGNAL_ON;
+				LOG_TRACE ( TRACE_VIDEO_BORDER_V , "detect vblank=on 50Hz\n" );
+			}
+			else if ( nHBL == pVideoTiming->VBlank_Off_Line_50 )
+			{
+				ShifterFrame.VBlank_signal = VBLANK_SIGNAL_OFF;
+				LOG_TRACE ( TRACE_VIDEO_BORDER_V , "detect vblank=off 50Hz\n" );
+			}
+			if ( nHBL == pVideoTiming->VSync_On_Line_50 )
+			{
+				ShifterFrame.VSync_signal = VSYNC_SIGNAL_ON;
+				ShifterFrame.VBlank_signal = VBLANK_SIGNAL_ON;	/* It seems vsync also sets vblank, need to check on real HW */
+				LOG_TRACE ( TRACE_VIDEO_BORDER_V , "detect vsync=on 50Hz\n" );
+			}
 		}
 		else						/* 60 Hz */
 		{
@@ -3051,6 +3117,24 @@ static void Video_StartHBL(void)
 				ShifterFrame.ShifterLines[ nHBL ].BorderMask |= ( BORDERMASK_LEFT_PLUS_2 | BORDERMASK_RIGHT_MINUS_2 ) ;
 				LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect left+2 / right-2 60Hz %d<->%d\n" ,
 					ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle  , ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle );
+			}
+
+			/* Update VBlank/VSync signals */
+			if ( nHBL == pVideoTiming->VBlank_On_Line_60 )
+			{
+				ShifterFrame.VBlank_signal = VBLANK_SIGNAL_ON;
+				LOG_TRACE ( TRACE_VIDEO_BORDER_V , "detect vblank=on 60Hz\n" );
+			}
+			else if ( nHBL == pVideoTiming->VBlank_Off_Line_60 )
+			{
+				ShifterFrame.VBlank_signal = VBLANK_SIGNAL_OFF;
+				LOG_TRACE ( TRACE_VIDEO_BORDER_V , "detect vblank=off 60Hz\n" );
+			}
+			if ( nHBL == pVideoTiming->VSync_On_Line_60 )
+			{
+				ShifterFrame.VSync_signal = VSYNC_SIGNAL_ON;
+				ShifterFrame.VBlank_signal = VBLANK_SIGNAL_ON;	/* It seems vsync also sets vblank, need to check on real HW */
+				LOG_TRACE ( TRACE_VIDEO_BORDER_V , "detect vsync=on 60Hz\n" );
 			}
 		}
 
@@ -3399,8 +3483,11 @@ static void Video_CopyScreenLineColor(void)
 
 
 	/* Is total blank line? I.e. top/bottom border? */
+	/* TODO [NP] in that case we fill the line with byte 0x00, which will give a line with color 0, */
+	/* but this should be improved to really display a black line (requires changes in screen.c convert functions) */
 	if ((nHBL < nStartHBL) || (nHBL >= nEndHBL + BlankLines)
-	    || (LineBorderMask & ( BORDERMASK_EMPTY_LINE|BORDERMASK_NO_DE ) ))
+	    || (LineBorderMask & ( BORDERMASK_EMPTY_LINE|BORDERMASK_NO_DE ) )
+	    || ShifterFrame.VBlank_signal )
 	{
 		/* Clear line to color '0' */
 		memset(pSTScreen, 0, SCREENBYTES_LINE);
@@ -3978,6 +4065,9 @@ static void Video_ClearOnVBL(void)
 	/* New screen, so first HBL */
 	nHBL = 0;
 	VerticalOverscan = V_OVERSCAN_NONE;
+
+	/* Disable VSync when new VBL starts */
+	ShifterFrame.VSync_signal = VSYNC_SIGNAL_OFF;
 
 	Video_ResetShifterTimings();
 
