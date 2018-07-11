@@ -174,7 +174,7 @@ compared to a normal STE (like a built-in real time clock chip).
   <li>TT low/med/high resolution support</li>
   <li>ST/TT palette switching and video shifter</li>
   <li>RAM up to 14MiB (ST-RAM) and up to 256 MiB (TT-RAM)</li>
-  <li>Only TOS version 3.06 (and EmuTOS) can be used in TT mode.</li>
+  <li>Only TOS version 3.05 and 3.06 (and EmuTOS) can be used in TT mode.</li>
 </ul>
 <p>
 Note that TT emulation is incomplete &ndash; additional hardware like the
@@ -196,7 +196,9 @@ second MFP and the SCC UARTs is not emulated yet.
       sample rates</li>
   <li>Experimental IDE master and slave emulation for hard drive support</li>
   <li>Experimental NCR5380 SCSI emulation for hard drive support (incomplete)</li>
-  <li>TOS versions 4.00, 4.02, 4.04 and 4.92 (and EmuTOS) can be used in Falcon mode.</li>
+  <li>TOS versions 4.00, 4.02, 4.04 and 4.92 (and EmuTOS) can be used in Falcon
+      mode. There is also experimental support for TOS 2.07 (the "Sparrow"-TOS),
+      but it is not recommended to use it</li>
 </ul>
 <p>
 Both TT and Falcon emulation support NVRAM for persistent OS configuration
@@ -1342,9 +1344,11 @@ You can also select an optional cartridge image to use. Click on <span
  class="button">Eject</span> to disconnect the custom cartridge image.
 </p>
 <p>
+Depending on the machine type that you want to emulate, you can either use
+EmuTOS, or you must use a TOS version that supports the machine type.
 For ST mode, use TOS 1.00, 1.02, 1.04 or 2.06.
 For STE mode, use TOS 1.06, 1.62, 2.05 or 2.06.
-If you want to use the TT mode, you must specify a TOS 3.06 image here.
+If you want to use the TT mode, you must specify a TOS 3.05 or 3.06 image here.
 And in Falcon mode, you have to use either TOS 4.00, 4.02, 4.04 or 4.92.
 However, you should always use TOS 4.04 for Falcon mode, it's the most common one.
 Also note that TOS 4.92 cannot be booted from a boot disk (like it's done on a
