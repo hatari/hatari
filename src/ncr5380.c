@@ -202,16 +202,20 @@ static void bus_free(struct raw_scsi *rs)
 
 static int getbit(uae_u8 v)
 {
-	for (int i = 7; i >= 0; i--) {
+	int i;
+
+	for (i = 7; i >= 0; i--) {
 		if ((1 << i) & v)
 			return i;
 	}
 	return -1;
 }
+
 static int countbits(uae_u8 v)
 {
-	int cnt = 0;
-	for (int i = 7; i >= 0; i--) {
+	int i, cnt = 0;
+
+	for (i = 7; i >= 0; i--) {
 		if ((1 << i) & v)
 			cnt++;
 	}
@@ -284,7 +288,8 @@ static void raw_scsi_set_signal_phase(struct raw_scsi *rs, bool busy, bool selec
 		rs->target_id = -1;
 		// fprintf(stderr,"SIGNAL PHASE SELECT 1 (%i)\n", busy);
 		if (!busy) {
-			for (int i = 0; i < 8; i++) {
+			int i;
+			for (i = 0; i < 8; i++) {
 				if (i == rs->initiator_id)
 					continue;
 				if ((rs->data_write & (1 << i)) && rs->device[i]) {
