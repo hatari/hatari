@@ -616,33 +616,33 @@ typedef struct
 	const char *VideoTimingName;
 
 	int	Preload_Start_Hi;		/*   0 (STE) */
-	int	H_Start_Hi;			/*   4 */
-	int	Blank_Stop_Low_60;		/*  24 */
-	int	Blank_Stop_Low_50;		/*  28 */
+	int	HDE_On_Hi;			/*   4 */
+	int	HBlank_Off_Low_60;		/*  24 */
+	int	HBlank_Off_Low_50;		/*  28 */
 	int	Preload_Start_Low_60;		/*  36 (STE) */
-	int	H_Start_Low_60;			/*  52 */
+	int	HDE_On_Low_60;			/*  52 */
 	int	Line_Set_Pal;			/*  54 */
 	int	Preload_Start_Low_50;		/*  40 (STE) */
-	int	H_Start_Low_50;			/*  56 */
-	int	H_Stop_Hi;			/* 164 */
-	int	Blank_Start_Hi;			/* 184 */
-	int	H_Stop_Low_60;			/* 372 */
-	int	H_Stop_Low_50;			/* 376 */
-	int	Blank_Start_Low;		/* 450 */
-	int	HSync_Start_Offset_Low;		/* 462 or 458 */
-	int	HSync_Stop_Offset_Low;		/* 502 or 498 */
+	int	HDE_On_Low_50;			/*  56 */
+	int	HDE_Off_Hi;			/* 164 */
+	int	HBlank_On_Hi;			/* 184 */
+	int	HDE_Off_Low_60;			/* 372 */
+	int	HDE_Off_Low_50;			/* 376 */
+	int	HBlank_On_Low;			/* 450 */
+	int	HSync_On_Offset_Low;		/* 462 or 458 */
+	int	HSync_Off_Offset_Low;		/* 502 or 498 */
 
 	int	RemoveTopBorder_Pos;		/* 502 */
 	int	RemoveBottomBorder_Pos;		/* 502 */
 
-	int	V_Start_Line_50; 		/*  63 or 63-16 */
-	int	V_Start_Line_60;		/*  34 */
-	int	V_Start_Line_Hi;		/*  34 */
-	int	V_End_Line_50;			/* 263 or 263-16 */
-	int	V_End_Line_60;			/* 234 */
-	int	V_End_Line_Hi;			/* 434 */
-	int	V_End_Line_NoBottom_50;		/* 310 */
-	int	V_End_Line_NoBottom_60;		/* 263 */
+	int	VDE_On_Line_50; 		/*  63 or 63-16 */
+	int	VDE_On_Line_60;			/*  34 */
+	int	VDE_On_Line_Hi;			/*  34 */
+	int	VDE_Off_Line_50;		/* 263 or 263-16 */
+	int	VDE_Off_Line_60;		/* 234 */
+	int	VDE_Off_Line_Hi;		/* 434 */
+	int	VDE_Off_Line_NoBottom_50;	/* 310 */
+	int	VDE_Off_Line_NoBottom_60;	/* 263 */
 
 	int	VBlank_On_Line_50;		/* 308 */
 	int	VBlank_On_Line_60;		/* 258 */
@@ -853,29 +853,29 @@ void	Video_InitTimings(void)
 
 	/* Init all timings for WS1 mode */
 	pVideoTiming1->VideoTimingName		= "WS1";
-	pVideoTiming1->H_Start_Hi 		=   4;
-	pVideoTiming1->Blank_Stop_Low_60	=  24;
-	pVideoTiming1->Blank_Stop_Low_50	=  28;
-	pVideoTiming1->H_Start_Low_60 		=  52;
+	pVideoTiming1->HDE_On_Hi 		=   4;
+	pVideoTiming1->HBlank_Off_Low_60	=  24;
+	pVideoTiming1->HBlank_Off_Low_50	=  28;
+	pVideoTiming1->HDE_On_Low_60 		=  52;
 	pVideoTiming1->Line_Set_Pal 		=  54;
-	pVideoTiming1->H_Start_Low_50 		=  56;
-	pVideoTiming1->H_Stop_Hi 		= 164;
-	pVideoTiming1->Blank_Start_Hi 		= 184;
-	pVideoTiming1->H_Stop_Low_60 		= 372;
-	pVideoTiming1->H_Stop_Low_50 		= 376;
-	pVideoTiming1->Blank_Start_Low		= 450;
-	pVideoTiming1->HSync_Start_Offset_Low	= -50;						/* 458/462 (line cycles-50) */
-	pVideoTiming1->HSync_Stop_Offset_Low	= -10;						/* 498/502 (line cycles-10) */
+	pVideoTiming1->HDE_On_Low_50 		=  56;
+	pVideoTiming1->HDE_Off_Hi 		= 164;
+	pVideoTiming1->HBlank_On_Hi 		= 184;
+	pVideoTiming1->HDE_Off_Low_60 		= 372;
+	pVideoTiming1->HDE_Off_Low_50 		= 376;
+	pVideoTiming1->HBlank_On_Low		= 450;
+	pVideoTiming1->HSync_On_Offset_Low	= -50;						/* 458/462 (line cycles-50) */
+	pVideoTiming1->HSync_Off_Offset_Low	= -10;						/* 498/502 (line cycles-10) */
 	pVideoTiming1->RemoveTopBorder_Pos 	= 502;
 	pVideoTiming1->RemoveBottomBorder_Pos 	= 502;
-	pVideoTiming1->V_Start_Line_50 		= VIDEO_START_HBL_50HZ;				/*  63 or 63-16 */
-	pVideoTiming1->V_Start_Line_60 		= VIDEO_START_HBL_60HZ;				/*  34 */
-	pVideoTiming1->V_Start_Line_Hi 		= VIDEO_START_HBL_71HZ;				/*  34 */
-	pVideoTiming1->V_End_Line_50 		= VIDEO_END_HBL_50HZ;				/* 263 or 263-16 */
-	pVideoTiming1->V_End_Line_60 		= VIDEO_END_HBL_60HZ;				/* 234 */
-	pVideoTiming1->V_End_Line_Hi 		= VIDEO_END_HBL_71HZ;				/* 434 */
-	pVideoTiming1->V_End_Line_NoBottom_50	= pVideoTiming1->V_End_Line_50 + VIDEO_HEIGHT_BOTTOM_50HZ;	/* 310 (TODO:check on real HW) */
-	pVideoTiming1->V_End_Line_NoBottom_60	= pVideoTiming1->V_End_Line_60 + VIDEO_HEIGHT_BOTTOM_60HZ;	/* 263 (TODO:check on real HW) */
+	pVideoTiming1->VDE_On_Line_50 		= VIDEO_START_HBL_50HZ;				/*  63 or 63-16 */
+	pVideoTiming1->VDE_On_Line_60 		= VIDEO_START_HBL_60HZ;				/*  34 */
+	pVideoTiming1->VDE_On_Line_Hi 		= VIDEO_START_HBL_71HZ;				/*  34 */
+	pVideoTiming1->VDE_Off_Line_50 		= VIDEO_END_HBL_50HZ;				/* 263 or 263-16 */
+	pVideoTiming1->VDE_Off_Line_60 		= VIDEO_END_HBL_60HZ;				/* 234 */
+	pVideoTiming1->VDE_Off_Line_Hi 		= VIDEO_END_HBL_71HZ;				/* 434 */
+	pVideoTiming1->VDE_Off_Line_NoBottom_50	= pVideoTiming1->VDE_Off_Line_50 + VIDEO_HEIGHT_BOTTOM_50HZ;	/* 310 (TODO:check on real HW) */
+	pVideoTiming1->VDE_Off_Line_NoBottom_60	= pVideoTiming1->VDE_Off_Line_60 + VIDEO_HEIGHT_BOTTOM_60HZ;	/* 263 (TODO:check on real HW) */
 
 	pVideoTiming1->VBlank_On_Line_50	= 308;
 	pVideoTiming1->VBlank_On_Line_60	= 258;
@@ -895,8 +895,8 @@ void	Video_InitTimings(void)
 	pVideoTiming1->Hbl_Int_Pos_Low_50	= CYCLES_PER_LINE_50HZ - 4;
 	pVideoTiming1->Hbl_Int_Pos_Hi		= CYCLES_PER_LINE_71HZ - 4;
 #ifdef STF_SHORT_TOP
-	pVideoTiming1->V_Start_Line_50 -= 16;
-	pVideoTiming1->V_End_Line_50 -= 16;
+	pVideoTiming1->VDE_On_Line_50 -= 16;
+	pVideoTiming1->VDE_Off_Line_50 -= 16;
 #endif
 	/* WS2/WS3/WS4 timings are derived from WS1 with an increment */	
 	pVideoTiming2 = &VideoTimings[ VIDEO_TIMING_STF_WS2 ];
@@ -928,31 +928,31 @@ void	Video_InitTimings(void)
 	pVideoTiming1 = &VideoTimings[ VIDEO_TIMING_STE ];
 	pVideoTiming1->VideoTimingName		= "STE";
 	pVideoTiming1->Preload_Start_Hi		=   0;
-	pVideoTiming1->H_Start_Hi 		=   4;
-	pVideoTiming1->Blank_Stop_Low_60	=  24;
-	pVideoTiming1->Blank_Stop_Low_50	=  28;
+	pVideoTiming1->HDE_On_Hi 		=   4;
+	pVideoTiming1->HBlank_Off_Low_60	=  24;
+	pVideoTiming1->HBlank_Off_Low_50	=  28;
 	pVideoTiming1->Preload_Start_Low_60 	=  36;
-	pVideoTiming1->H_Start_Low_60 		=  52;
+	pVideoTiming1->HDE_On_Low_60 		=  52;
 	pVideoTiming1->Line_Set_Pal 		=  56;
 	pVideoTiming1->Preload_Start_Low_50 	=  40;
-	pVideoTiming1->H_Start_Low_50 		=  56;
-	pVideoTiming1->H_Stop_Hi 		= 164;
-	pVideoTiming1->Blank_Start_Hi 		= 184;
-	pVideoTiming1->H_Stop_Low_60 		= 372;
-	pVideoTiming1->H_Stop_Low_50 		= 376;
-	pVideoTiming1->Blank_Start_Low		= 448;
-	pVideoTiming1->HSync_Start_Offset_Low	= -52;						/* 456/460 (line cycles-52) */
-	pVideoTiming1->HSync_Stop_Offset_Low	= -12;						/* 496/500 (line cycles-12) */
+	pVideoTiming1->HDE_On_Low_50 		=  56;
+	pVideoTiming1->HDE_Off_Hi 		= 164;
+	pVideoTiming1->HBlank_On_Hi 		= 184;
+	pVideoTiming1->HDE_Off_Low_60 		= 372;
+	pVideoTiming1->HDE_Off_Low_50 		= 376;
+	pVideoTiming1->HBlank_On_Low		= 448;
+	pVideoTiming1->HSync_On_Offset_Low	= -52;						/* 456/460 (line cycles-52) */
+	pVideoTiming1->HSync_Off_Offset_Low	= -12;						/* 496/500 (line cycles-12) */
 	pVideoTiming1->RemoveTopBorder_Pos 	= 500;
 	pVideoTiming1->RemoveBottomBorder_Pos 	= 500;
-	pVideoTiming1->V_Start_Line_50 		= VIDEO_START_HBL_50HZ;				/*  63 */
-	pVideoTiming1->V_Start_Line_60 		= VIDEO_START_HBL_60HZ;				/*  34 */
-	pVideoTiming1->V_Start_Line_Hi 		= VIDEO_START_HBL_71HZ;				/*  34 */
-	pVideoTiming1->V_End_Line_50 		= VIDEO_END_HBL_50HZ;				/* 263 */
-	pVideoTiming1->V_End_Line_60 		= VIDEO_END_HBL_60HZ;				/* 234 */
-	pVideoTiming1->V_End_Line_Hi 		= VIDEO_END_HBL_71HZ;				/* 434 */
-	pVideoTiming1->V_End_Line_NoBottom_50	= pVideoTiming1->V_End_Line_50 + VIDEO_HEIGHT_BOTTOM_50HZ;	/* 310 */
-	pVideoTiming1->V_End_Line_NoBottom_60	= pVideoTiming1->V_End_Line_60 + VIDEO_HEIGHT_BOTTOM_60HZ;	/* 263 */
+	pVideoTiming1->VDE_On_Line_50 		= VIDEO_START_HBL_50HZ;				/*  63 */
+	pVideoTiming1->VDE_On_Line_60 		= VIDEO_START_HBL_60HZ;				/*  34 */
+	pVideoTiming1->VDE_On_Line_Hi 		= VIDEO_START_HBL_71HZ;				/*  34 */
+	pVideoTiming1->VDE_Off_Line_50 		= VIDEO_END_HBL_50HZ;				/* 263 */
+	pVideoTiming1->VDE_Off_Line_60 		= VIDEO_END_HBL_60HZ;				/* 234 */
+	pVideoTiming1->VDE_Off_Line_Hi 		= VIDEO_END_HBL_71HZ;				/* 434 */
+	pVideoTiming1->VDE_Off_Line_NoBottom_50	= pVideoTiming1->VDE_Off_Line_50 + VIDEO_HEIGHT_BOTTOM_50HZ;	/* 310 */
+	pVideoTiming1->VDE_Off_Line_NoBottom_60	= pVideoTiming1->VDE_Off_Line_60 + VIDEO_HEIGHT_BOTTOM_60HZ;	/* 263 */
 	pVideoTiming1->VBlank_On_Line_50	= 308;
 	pVideoTiming1->VBlank_On_Line_60	= 258;
 	pVideoTiming1->VBlank_On_Line_Hi	= 501;
@@ -989,32 +989,32 @@ void	Video_InitTimings(void)
 static void	Video_InitTimings_Copy ( VIDEO_TIMING *pSrc , VIDEO_TIMING *pDest , int inc )
 {
 	pDest->Preload_Start_Hi		= pSrc->Preload_Start_Hi + inc;
-	pDest->H_Start_Hi 		= pSrc->H_Start_Hi + inc;
-	pDest->Blank_Stop_Low_60	= pSrc->Blank_Stop_Low_60 + inc;
-	pDest->Blank_Stop_Low_50	= pSrc->Blank_Stop_Low_50 + inc;
+	pDest->HDE_On_Hi 		= pSrc->HDE_On_Hi + inc;
+	pDest->HBlank_Off_Low_60	= pSrc->HBlank_Off_Low_60 + inc;
+	pDest->HBlank_Off_Low_50	= pSrc->HBlank_Off_Low_50 + inc;
 	pDest->Preload_Start_Low_60	= pSrc->Preload_Start_Low_60 + inc;
-	pDest->H_Start_Low_60 		= pSrc->H_Start_Low_60 + inc;
+	pDest->HDE_On_Low_60 		= pSrc->HDE_On_Low_60 + inc;
 	pDest->Line_Set_Pal 		= pSrc->Line_Set_Pal + inc;
 	pDest->Preload_Start_Low_50	= pSrc->Preload_Start_Low_50 + inc;
-	pDest->H_Start_Low_50 		= pSrc->H_Start_Low_50 + inc;
-	pDest->H_Stop_Hi 		= pSrc->H_Stop_Hi + inc;
-	pDest->Blank_Start_Hi 		= pSrc->Blank_Start_Hi + inc;
-	pDest->H_Stop_Low_60 		= pSrc->H_Stop_Low_60 + inc;
-	pDest->H_Stop_Low_50 		= pSrc->H_Stop_Low_50 + inc;
-	pDest->Blank_Start_Low		= pSrc->Blank_Start_Low + inc;
-	pDest->HSync_Start_Offset_Low	= pSrc->HSync_Start_Offset_Low + inc;
-	pDest->HSync_Stop_Offset_Low	= pSrc->HSync_Stop_Offset_Low + inc;
+	pDest->HDE_On_Low_50 		= pSrc->HDE_On_Low_50 + inc;
+	pDest->HDE_Off_Hi 		= pSrc->HDE_Off_Hi + inc;
+	pDest->HBlank_On_Hi 		= pSrc->HBlank_On_Hi + inc;
+	pDest->HDE_Off_Low_60 		= pSrc->HDE_Off_Low_60 + inc;
+	pDest->HDE_Off_Low_50 		= pSrc->HDE_Off_Low_50 + inc;
+	pDest->HBlank_On_Low		= pSrc->HBlank_On_Low + inc;
+	pDest->HSync_On_Offset_Low	= pSrc->HSync_On_Offset_Low + inc;
+	pDest->HSync_Off_Offset_Low	= pSrc->HSync_Off_Offset_Low + inc;
 	pDest->RemoveTopBorder_Pos	= pSrc->RemoveTopBorder_Pos + inc;
 	pDest->RemoveBottomBorder_Pos	= pSrc->RemoveBottomBorder_Pos + inc;
 
-	pDest->V_Start_Line_50		= pSrc->V_Start_Line_50;
-	pDest->V_Start_Line_60		= pSrc->V_Start_Line_60;
-	pDest->V_Start_Line_Hi		= pSrc->V_Start_Line_Hi;
-	pDest->V_End_Line_50		= pSrc->V_End_Line_50;
-	pDest->V_End_Line_60		= pSrc->V_End_Line_60;
-	pDest->V_End_Line_Hi		= pSrc->V_End_Line_Hi;
-	pDest->V_End_Line_NoBottom_50	= pSrc->V_End_Line_NoBottom_50;
-	pDest->V_End_Line_NoBottom_60	= pSrc->V_End_Line_NoBottom_60;
+	pDest->VDE_On_Line_50		= pSrc->VDE_On_Line_50;
+	pDest->VDE_On_Line_60		= pSrc->VDE_On_Line_60;
+	pDest->VDE_On_Line_Hi		= pSrc->VDE_On_Line_Hi;
+	pDest->VDE_Off_Line_50		= pSrc->VDE_Off_Line_50;
+	pDest->VDE_Off_Line_60		= pSrc->VDE_Off_Line_60;
+	pDest->VDE_Off_Line_Hi		= pSrc->VDE_Off_Line_Hi;
+	pDest->VDE_Off_Line_NoBottom_50	= pSrc->VDE_Off_Line_NoBottom_50;
+	pDest->VDE_Off_Line_NoBottom_60	= pSrc->VDE_Off_Line_NoBottom_60;
 
 	pDest->VBlank_On_Line_50	= pSrc->VBlank_On_Line_50;
 	pDest->VBlank_On_Line_60	= pSrc->VBlank_On_Line_60;
@@ -1417,7 +1417,7 @@ static void Video_WriteToGlueShifterRes ( Uint8 Res )
 		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_LEFT_OFF_MED;	/* a later switch to low res might gives right scrolling */
 		/* By default, this line will be in med res, except if we detect hardware scrolling later */
 		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_OVERSCAN_MED_RES | ( 2 << 20 );
-		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = pVideoTiming->H_Start_Hi;
+		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = pVideoTiming->HDE_On_Hi;
 		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect remove left med %d<->%d\n" ,
 			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
 	}
@@ -1877,15 +1877,15 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	/*************** STF ***************/
 	if ( Config_IsMachineST() )
 	{
-	  if ( ( FreqHz == VIDEO_71HZ ) && ( LineCycles <= pVideoTiming->H_Start_Hi ) )
+	  if ( ( FreqHz == VIDEO_71HZ ) && ( LineCycles <= pVideoTiming->HDE_On_Hi ) )
 	  {
 	    Freq_match_found = 1;
 	    HBL_Pos = pVideoTiming->Hbl_Int_Pos_Hi;		/* 220/224 */
 	    nCyclesPerLine_new = CYCLES_PER_LINE_71HZ;
 	    if ( !( BorderMask & BORDERMASK_NO_DE ) )
 	    {
-	      DE_start = pVideoTiming->H_Start_Hi;		/* 4 */
-	      DE_end = pVideoTiming->H_Stop_Hi;			/* 164 */
+	      DE_start = pVideoTiming->HDE_On_Hi;		/* 4 */
+	      DE_end = pVideoTiming->HDE_Off_Hi;		/* 164 */
 
 	      BorderMask |= BORDERMASK_LEFT_OFF;
 	      ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = -4;		/* screen is shifted 4 pixels to the left */
@@ -1899,14 +1899,14 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	    }
 	  }
 
-	  else if ( ( FreqHz == VIDEO_71HZ ) && ( LineCycles <= pVideoTiming->Blank_Stop_Low_50 ) )
+	  else if ( ( FreqHz == VIDEO_71HZ ) && ( LineCycles <= pVideoTiming->HBlank_Off_Low_50 ) )
 	  {
 	    Freq_match_found = 1;
 	    HBL_Pos = pVideoTiming->Hbl_Int_Pos_Hi;		/* 220/224 */
 	    nCyclesPerLine_new = CYCLES_PER_LINE_71HZ;
 	    if ( !( BorderMask & BORDERMASK_NO_DE ) )
 	    {
-	      DE_end = pVideoTiming->H_Stop_Hi;			/* 164 */
+	      DE_end = pVideoTiming->HDE_Off_Hi;		/* 164 */
 
 	      BorderMask |= ( BORDERMASK_BLANK | BORDERMASK_NO_DE );
 	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect blank line no DE res stf %d<->%d\n" , DE_start , DE_end );
@@ -1919,14 +1919,14 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	    }
 	  }
 
-	  else if ( ( FreqHz == VIDEO_71HZ ) && ( LineCycles <= pVideoTiming->H_Start_Low_50 ) )
+	  else if ( ( FreqHz == VIDEO_71HZ ) && ( LineCycles <= pVideoTiming->HDE_On_Low_50 ) )
 	  {
 	    Freq_match_found = 1;
 	    HBL_Pos = pVideoTiming->Hbl_Int_Pos_Hi;		/* 220/224 */
 	    nCyclesPerLine_new = CYCLES_PER_LINE_71HZ;
 	    if ( !( BorderMask & BORDERMASK_NO_DE ) )
 	    {
-	      DE_end = pVideoTiming->H_Stop_Hi;			/* 164 */
+	      DE_end = pVideoTiming->HDE_Off_Hi;		/* 164 */
 
 	      BorderMask |= BORDERMASK_NO_DE;
 	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect line no DE res stf %d<->%d\n" , DE_start , DE_end );
@@ -1941,13 +1941,13 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 
 	  else if ( FreqHz != VIDEO_71HZ )
 	  {
-	    if ( ( LineCycles <= pVideoTiming->H_Start_Hi ) && ( BorderMask & BORDERMASK_LEFT_OFF ) )
+	    if ( ( LineCycles <= pVideoTiming->HDE_On_Hi ) && ( BorderMask & BORDERMASK_LEFT_OFF ) )
 	    {
 	      if ( FreqHz == VIDEO_50HZ )
-		DE_start = pVideoTiming->H_Start_Low_50;	/* 56 */
+		DE_start = pVideoTiming->HDE_On_Low_50;	/* 56 */
 	      else
 	      {
-		DE_start = pVideoTiming->H_Start_Low_60;	/* 52 */
+		DE_start = pVideoTiming->HDE_On_Low_60;		/* 52 */
 		BorderMask |= BORDERMASK_LEFT_PLUS_2;
 		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect left+2 60Hz %d<->%d\n" , DE_start , DE_end );
 	      }
@@ -1957,13 +1957,13 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "cancel remove left %d<->%d\n" , DE_start , DE_end );
 	    }
 
-	    if ( ( LineCycles <= pVideoTiming->Blank_Stop_Low_50 ) && ( BorderMask & ( BORDERMASK_BLANK | BORDERMASK_NO_DE ) )
+	    if ( ( LineCycles <= pVideoTiming->HBlank_Off_Low_50 ) && ( BorderMask & ( BORDERMASK_BLANK | BORDERMASK_NO_DE ) )
 		&& !( BorderMask & BORDERMASK_NO_COUNT ) )
 	    {
 	      BorderMask &= ~( BORDERMASK_BLANK | BORDERMASK_NO_DE );
 	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "cancel blank line no DE %d<->%d\n" , DE_start , DE_end );
 	    }
-	    else if ( ( LineCycles <= pVideoTiming->H_Start_Low_50 ) && ( BorderMask & BORDERMASK_NO_DE ) && !( BorderMask & BORDERMASK_BLANK )
+	    else if ( ( LineCycles <= pVideoTiming->HDE_On_Low_50 ) && ( BorderMask & BORDERMASK_NO_DE ) && !( BorderMask & BORDERMASK_BLANK )
 		&& !( BorderMask & BORDERMASK_NO_COUNT ) )
 	    {
 	      /* we can cancel a "line no de", but not a "blank line no de" */
@@ -1983,21 +1983,21 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	    {
 	      if ( DE_start > 0 )				/* ie only if StartHBL was called */
 		{
-		  DE_end = pVideoTiming->H_Stop_Low_60;		/* 372 */
+		  DE_end = pVideoTiming->HDE_Off_Low_60;	/* 372 */
 
 		  BorderMask |= BORDERMASK_RIGHT_MINUS_2;
 		  LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect right-2 %d<->%d\n" , DE_start , DE_end );
 		}
 
-	      if ( ( LineCycles > pVideoTiming->Blank_Stop_Low_60 ) && ( LineCycles <= pVideoTiming->Blank_Stop_Low_50 ) )
+	      if ( ( LineCycles > pVideoTiming->HBlank_Off_Low_60 ) && ( LineCycles <= pVideoTiming->HBlank_Off_Low_50 ) )
 	      {
 		BorderMask |= BORDERMASK_BLANK;
 		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect blank line freq stf %d<->%d\n" , DE_start , DE_end );
 	      }
 	
-	      if ( DE_start == pVideoTiming->H_Start_Low_50 )	/*  56 */
+	      if ( DE_start == pVideoTiming->HDE_On_Low_50 )	/*  56 */
 	      {
-		DE_start = pVideoTiming->H_Start_Low_60;	/*  52 */
+		DE_start = pVideoTiming->HDE_On_Low_60;		/*  52 */
 	
 		BorderMask |= BORDERMASK_LEFT_PLUS_2;
 		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect left+2 60Hz %d<->%d\n" , DE_start , DE_end );
@@ -2005,7 +2005,7 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	    }
 	  }
 
-	  else if ( ( FreqHz == VIDEO_50HZ ) && ( LineCycles <= pVideoTiming->H_Start_Low_60 ) )
+	  else if ( ( FreqHz == VIDEO_50HZ ) && ( LineCycles <= pVideoTiming->HDE_On_Low_60 ) )
 	  {
 //fprintf ( stderr , "pom1a\n" );
 	    Freq_match_found = 1;
@@ -2013,7 +2013,7 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	    nCyclesPerLine_new = CYCLES_PER_LINE_50HZ;
 	    if ( !( BorderMask & BORDERMASK_NO_DE ) )
 	    {
-	      DE_end = pVideoTiming->H_Stop_Low_50;		/* 376 */
+	      DE_end = pVideoTiming->HDE_Off_Low_50;		/* 376 */
 
 	      if ( BorderMask & BORDERMASK_RIGHT_MINUS_2 )
 	      {
@@ -2021,9 +2021,9 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "cancel right-2 %d<->%d\n" , DE_start , DE_end );
 	      }
 
-	      if ( DE_start == pVideoTiming->H_Start_Low_60 )	/*  52 */
+	      if ( DE_start == pVideoTiming->HDE_On_Low_60 )	/*  52 */
 	      {
-		DE_start = pVideoTiming->H_Start_Low_50;	/*  56 */
+		DE_start = pVideoTiming->HDE_On_Low_50;		/*  56 */
 
 		if ( BorderMask & BORDERMASK_LEFT_PLUS_2 )
 		{
@@ -2042,7 +2042,7 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	    nCyclesPerLine_new = CYCLES_PER_LINE_50HZ;
 	    if ( !( BorderMask & BORDERMASK_NO_DE ) )
 	    {
-	      DE_end = pVideoTiming->H_Stop_Low_50;		/* 376 */
+	      DE_end = pVideoTiming->HDE_Off_Low_50;		/* 376 */
 
 	      if ( BorderMask & BORDERMASK_RIGHT_MINUS_2 )
 	      {
@@ -2055,13 +2055,13 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	  }
 
 	  if ( ( FreqHz == VIDEO_60HZ )
-	    && ( LineCycles > pVideoTiming->H_Start_Low_60 ) && ( LineCycles <= pVideoTiming->H_Start_Low_50 )
+	    && ( LineCycles > pVideoTiming->HDE_On_Low_60 ) && ( LineCycles <= pVideoTiming->HDE_On_Low_50 )
 	    && !( BorderMask & BORDERMASK_NO_DE ) )
 	  {
 	    Freq_match_found = 1;
 //fprintf ( stderr , "pom3a\n" );
 
-	    if ( DE_start == pVideoTiming->H_Start_Low_50 )	/*  56 */
+	    if ( DE_start == pVideoTiming->HDE_On_Low_50 )	/*  56 */
 	    {
 	      DE_start = 0 ;
 	      DE_end = 0;
@@ -2075,15 +2075,15 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	/*************** STE ***************/
 	else if ( Config_IsMachineSTE() )
 	{
-	  if ( ( FreqHz == VIDEO_71HZ ) && ( LineCycles <= pVideoTiming->H_Start_Hi ) )
+	  if ( ( FreqHz == VIDEO_71HZ ) && ( LineCycles <= pVideoTiming->HDE_On_Hi ) )
 	  {
 	    Freq_match_found = 1;
 	    HBL_Pos = pVideoTiming->Hbl_Int_Pos_Hi;		/* 220/224 */
 	    nCyclesPerLine_new = CYCLES_PER_LINE_71HZ;
 	    if ( !( BorderMask & BORDERMASK_NO_DE ) )
 	    {
-	      DE_start = pVideoTiming->H_Start_Hi;		/* 4 */
-	      DE_end = pVideoTiming->H_Stop_Hi;			/* 164 */
+	      DE_start = pVideoTiming->HDE_On_Hi;		/* 4 */
+	      DE_end = pVideoTiming->HDE_Off_Hi;		/* 164 */
 
 	      BorderMask |= BORDERMASK_LEFT_OFF;
 	      ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = -4;		/* screen is shifted 4 pixels to the left */
@@ -2097,14 +2097,14 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	    }
 	  }
 
-	  else if ( ( FreqHz == VIDEO_71HZ ) && ( LineCycles <= pVideoTiming->Blank_Stop_Low_50 ) )
+	  else if ( ( FreqHz == VIDEO_71HZ ) && ( LineCycles <= pVideoTiming->HBlank_Off_Low_50 ) )
 	  {
 	    Freq_match_found = 1;
 	    HBL_Pos = pVideoTiming->Hbl_Int_Pos_Hi;		/* 220/224 */
 	    nCyclesPerLine_new = CYCLES_PER_LINE_71HZ;
 	    if ( !( BorderMask & BORDERMASK_NO_DE ) )
 	    {
-	      DE_end = pVideoTiming->H_Stop_Hi;			/* 164 */
+	      DE_end = pVideoTiming->HDE_Off_Hi;		/* 164 */
 
 	      BorderMask |= ( BORDERMASK_BLANK | BORDERMASK_NO_DE );
 	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect blank line no DE res ste %d<->%d\n" , DE_start , DE_end );
@@ -2124,7 +2124,7 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	    nCyclesPerLine_new = CYCLES_PER_LINE_71HZ;
 	    if ( !( BorderMask & BORDERMASK_NO_DE ) )
 	    {
-	      DE_end = pVideoTiming->H_Stop_Hi;			/* 164 */
+	      DE_end = pVideoTiming->HDE_Off_Hi;		/* 164 */
 
 	      BorderMask |= BORDERMASK_NO_DE;
 	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect line no DE res ste %d<->%d\n" , DE_start , DE_end );
@@ -2139,13 +2139,13 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 
 	  else if ( FreqHz != VIDEO_71HZ )
 	  {
-	    if ( ( LineCycles < pVideoTiming->H_Start_Hi ) && ( BorderMask & BORDERMASK_LEFT_OFF ) )
+	    if ( ( LineCycles < pVideoTiming->HDE_On_Hi ) && ( BorderMask & BORDERMASK_LEFT_OFF ) )
 	    {
 	      if ( FreqHz == VIDEO_50HZ )
-		DE_start = pVideoTiming->H_Start_Low_50;	/* 56 */
+		DE_start = pVideoTiming->HDE_On_Low_50;		/* 56 */
 	      else
 	      {
-		DE_start = pVideoTiming->H_Start_Low_60;	/* 52 */
+		DE_start = pVideoTiming->HDE_On_Low_60;		/* 52 */
 		BorderMask |= BORDERMASK_LEFT_PLUS_2;
 		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect left+2 60Hz %d<->%d\n" , DE_start , DE_end );
 	      }
@@ -2154,7 +2154,7 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	      ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = 0;
 	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "cancel remove left %d<->%d\n" , DE_start , DE_end );
 	    }
-	    else if ( ( LineCycles == pVideoTiming->H_Start_Hi ) && ( BorderMask & BORDERMASK_LEFT_OFF ) )
+	    else if ( ( LineCycles == pVideoTiming->HDE_On_Hi ) && ( BorderMask & BORDERMASK_LEFT_OFF ) )
 	    {
 	      DE_start = pVideoTiming->Preload_Start_Hi + 16;
 	      BorderMask &= ~BORDERMASK_LEFT_OFF;
@@ -2163,7 +2163,7 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	      LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect remove left 2 ste %d<->%d\n" , DE_start , DE_end );
 	    }
 
-	    if ( ( LineCycles <= pVideoTiming->Blank_Stop_Low_50 ) && ( BorderMask & ( BORDERMASK_BLANK | BORDERMASK_NO_DE ) )
+	    if ( ( LineCycles <= pVideoTiming->HBlank_Off_Low_50 ) && ( BorderMask & ( BORDERMASK_BLANK | BORDERMASK_NO_DE ) )
 		&& !( BorderMask & BORDERMASK_NO_COUNT ) )
 	    {
 	      BorderMask &= ~( BORDERMASK_BLANK | BORDERMASK_NO_DE );
@@ -2189,13 +2189,13 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	    {
 	      if ( DE_start > 0 )				/* ie only if StartHBL was called */
 		{
-		  DE_end = pVideoTiming->H_Stop_Low_60;		/* 372 */
+		  DE_end = pVideoTiming->HDE_Off_Low_60;	/* 372 */
 
 		  BorderMask |= BORDERMASK_RIGHT_MINUS_2;
 		  LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect right-2 %d<->%d\n" , DE_start , DE_end );
 		}
 
-	      if ( ( LineCycles > pVideoTiming->Blank_Stop_Low_60 ) && ( LineCycles <= pVideoTiming->Blank_Stop_Low_50 ) )
+	      if ( ( LineCycles > pVideoTiming->HBlank_Off_Low_60 ) && ( LineCycles <= pVideoTiming->HBlank_Off_Low_50 ) )
 	      {
 		BorderMask |= BORDERMASK_BLANK;
 		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect blank line freq ste %d<->%d\n" , DE_start , DE_end );
@@ -2203,9 +2203,9 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	
 	      if ( LineCycles <= pVideoTiming->Preload_Start_Low_60 )
 	      {
-		if ( DE_start == pVideoTiming->H_Start_Low_50 )	/*  56 */
+		if ( DE_start == pVideoTiming->HDE_On_Low_50 )	/*  56 */
 		{
-		  DE_start = pVideoTiming->H_Start_Low_60;	/*  52 */
+		  DE_start = pVideoTiming->HDE_On_Low_60;	/*  52 */
 	
 		  BorderMask |= BORDERMASK_LEFT_PLUS_2;
 		  LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect left+2 60Hz ste %d<->%d\n" , DE_start , DE_end );
@@ -2226,7 +2226,7 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	    nCyclesPerLine_new = CYCLES_PER_LINE_50HZ;
 	    if ( !( BorderMask & BORDERMASK_NO_DE ) )
 	    {
-	      DE_end = pVideoTiming->H_Stop_Low_50;		/* 376 */
+	      DE_end = pVideoTiming->HDE_Off_Low_50;		/* 376 */
 
 	      if ( BorderMask & BORDERMASK_RIGHT_MINUS_2 )
 	      {
@@ -2234,9 +2234,9 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "cancel right-2 %d<->%d\n" , DE_start , DE_end );
 	      }
 
-	      if ( DE_start == pVideoTiming->H_Start_Low_60 )	/*  52 */
+	      if ( DE_start == pVideoTiming->HDE_On_Low_60 )	/*  52 */
 	      {
-		DE_start = pVideoTiming->H_Start_Low_50;	/*  56 */
+		DE_start = pVideoTiming->HDE_On_Low_50;		/*  56 */
 
 		if ( BorderMask & BORDERMASK_LEFT_PLUS_2 )
 		{
@@ -2255,7 +2255,7 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	    nCyclesPerLine_new = CYCLES_PER_LINE_50HZ;
 	    if ( !( BorderMask & BORDERMASK_NO_DE ) )
 	    {
-	      DE_end = pVideoTiming->H_Stop_Low_50;		/* 376 */
+	      DE_end = pVideoTiming->HDE_Off_Low_50;		/* 376 */
 
 	      if ( BorderMask & BORDERMASK_RIGHT_MINUS_2 )
 	      {
@@ -2274,7 +2274,7 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	    Freq_match_found = 1;
 //fprintf ( stderr , "pom3a\n" );
 
-	    if ( DE_start == pVideoTiming->H_Start_Low_50 )	/*  56 */
+	    if ( DE_start == pVideoTiming->HDE_On_Low_50 )	/*  56 */
 	    {
 	      DE_start = 0 ;
 	      DE_end = 0;
@@ -2298,11 +2298,11 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	 * Check Freq's value between DE_start and DE_end
 	 */
 
-	if ( ( FreqHz == VIDEO_71HZ ) && ( LineCycles <= DE_end ) && ( LineCycles <= pVideoTiming->H_Stop_Hi )	/* 160 */
+	if ( ( FreqHz == VIDEO_71HZ ) && ( LineCycles <= DE_end ) && ( LineCycles <= pVideoTiming->HDE_Off_Hi )	/* 160 */
 	  && !( BorderMask & BORDERMASK_NO_DE ) )
 	{
 //fprintf ( stderr , "pom3\n" );
-	  DE_end = pVideoTiming->H_Stop_Hi;			/* 164 */
+	  DE_end = pVideoTiming->HDE_Off_Hi;			/* 164 */
 
 	  BorderMask |= BORDERMASK_STOP_MIDDLE;
 	  LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect stop middle %d<->%d\n" , DE_start , DE_end );
@@ -2321,14 +2321,14 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 
 	  BorderMask |= ( BORDERMASK_RIGHT_OFF | BORDERMASK_RIGHT_OFF_FULL );
 	  ShifterFrame.ShifterLines[ HblCounterVideo+1 ].BorderMask |= BORDERMASK_LEFT_OFF;	/* no left border on next line */
-	  ShifterFrame.ShifterLines[ HblCounterVideo+1 ].DisplayStartCycle = pVideoTiming->H_Start_Hi;
+	  ShifterFrame.ShifterLines[ HblCounterVideo+1 ].DisplayStartCycle = pVideoTiming->HDE_On_Hi;
 
 	  LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect remove right/right full %d<->%d\n" , DE_start , DE_end );
 
 	}
 
 	else if ( ( FreqHz == VIDEO_71HZ )
-		&& ( LineCycles <= nCyclesPerLine + pVideoTiming->HSync_Start_Offset_Low ) )	/* 458/462 depends on 50/60 freq (line cycles-50) */
+		&& ( LineCycles <= nCyclesPerLine + pVideoTiming->HSync_On_Offset_Low ) )	/* 458/462 depends on 50/60 freq (line cycles-50) */
 	{
 	  BorderMask |= BORDERMASK_NO_SYNC;
 	  ShifterFrame.ShifterLines[ HblCounterVideo+1 ].BorderMask |= ( BORDERMASK_BLANK | BORDERMASK_NO_DE | BORDERMASK_NO_COUNT );
@@ -2340,7 +2340,7 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	}
 
 	else if ( ( FreqHz == VIDEO_71HZ )
-		&& ( LineCycles <= nCyclesPerLine + pVideoTiming->HSync_Stop_Offset_Low ) )	/* 498/502 depends on 50/60 freq (line cycles-10) */
+		&& ( LineCycles <= nCyclesPerLine + pVideoTiming->HSync_Off_Offset_Low ) )	/* 498/502 depends on 50/60 freq (line cycles-10) */
 	{
 	  BorderMask |= BORDERMASK_SYNC_HIGH;
 	  ShifterFrame.ShifterLines[ HblCounterVideo+1 ].BorderMask |= ( BORDERMASK_BLANK | BORDERMASK_NO_DE | BORDERMASK_NO_COUNT );
@@ -2351,28 +2351,28 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	  LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect empty line res 2 sync high %d<->%d\n" , DE_start , DE_end );
 	}
 
-	else if ( FreqHz == VIDEO_71HZ )			/* rest of the line after HSync_Stop_Offset_Low */
+	else if ( FreqHz == VIDEO_71HZ )			/* rest of the line after HSync_Off_Offset_Low */
 	{
 	  /* Next line will start as "remove left" by default (eg E605 by Light or DHS demos on STE) */
 	  ShifterFrame.ShifterLines[ HblCounterVideo+1 ].BorderMask |= BORDERMASK_LEFT_OFF;
-	  ShifterFrame.ShifterLines[ HblCounterVideo+1 ].DisplayStartCycle = pVideoTiming->H_Start_Hi;
-	  ShifterFrame.ShifterLines[ HblCounterVideo+1 ].DisplayEndCycle = pVideoTiming->H_Stop_Hi;
+	  ShifterFrame.ShifterLines[ HblCounterVideo+1 ].DisplayStartCycle = pVideoTiming->HDE_On_Hi;
+	  ShifterFrame.ShifterLines[ HblCounterVideo+1 ].DisplayEndCycle = pVideoTiming->HDE_Off_Hi;
 	  ShifterFrame.ShifterLines[ HblCounterVideo+1 ].DisplayPixelShift = -4;		/* screen is shifted 4 pixels to the left */
 
 	  LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect remove left on next hbl %d<->%d\n" , DE_start , DE_end );
 	}
 
-	if ( ( FreqHz == VIDEO_60HZ ) && ( LineCycles <= DE_end ) && ( LineCycles <= pVideoTiming->H_Stop_Low_60 )	/* 372 */
+	if ( ( FreqHz == VIDEO_60HZ ) && ( LineCycles <= DE_end ) && ( LineCycles <= pVideoTiming->HDE_Off_Low_60 )	/* 372 */
 	  && !( BorderMask & BORDERMASK_NO_DE ) )
 	{
 //fprintf ( stderr , "pom2\n" );
-	  if ( DE_end == pVideoTiming->H_Stop_Low_50 )		/* 376 */
+	  if ( DE_end == pVideoTiming->HDE_Off_Low_50 )		/* 376 */
 	  {
 	    BorderMask |= BORDERMASK_RIGHT_MINUS_2;
 	    LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect right-2 %d<->%d\n" , DE_start , DE_end );
 	  }
 
-	  DE_end = pVideoTiming->H_Stop_Low_60;			/* 372 */
+	  DE_end = pVideoTiming->HDE_Off_Low_60;		/* 372 */
 
 	  if ( BorderMask & BORDERMASK_STOP_MIDDLE )
 	  {
@@ -2388,11 +2388,11 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	  }
 	}
 
-	else if ( ( FreqHz == VIDEO_50HZ ) && ( LineCycles <= DE_end ) && ( LineCycles <= pVideoTiming->H_Stop_Low_50 )	/* 376 */
+	else if ( ( FreqHz == VIDEO_50HZ ) && ( LineCycles <= DE_end ) && ( LineCycles <= pVideoTiming->HDE_Off_Low_50 )	/* 376 */
 	  && !( BorderMask & BORDERMASK_NO_DE ) )
 	{
 //fprintf ( stderr , "pom3\n" );
-	  DE_end = pVideoTiming->H_Stop_Low_50;			/* 376 */
+	  DE_end = pVideoTiming->HDE_Off_Low_50;		/* 376 */
 
 	  if ( BorderMask & BORDERMASK_RIGHT_MINUS_2 )
 	  {
@@ -2414,13 +2414,13 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	}
 
 	else if ( ( FreqHz == VIDEO_60HZ ) && ( LineCycles <= DE_end )
-	  && ( LineCycles > pVideoTiming->H_Stop_Low_60 ) && ( LineCycles <= pVideoTiming->H_Stop_Low_50 )
+	  && ( LineCycles > pVideoTiming->HDE_Off_Low_60 ) && ( LineCycles <= pVideoTiming->HDE_Off_Low_50 )
 	  && !( BorderMask & BORDERMASK_NO_DE ) )
 	{
 //fprintf ( stderr , "pom4\n" );
-	  if ( DE_end == pVideoTiming->H_Stop_Low_50 )		/* 376 */
+	  if ( DE_end == pVideoTiming->HDE_Off_Low_50 )		/* 376 */
 	  {
-	    DE_end = nCyclesPerLine + pVideoTiming->HSync_Start_Offset_Low;	/* 458/462 depends on 50/60 freq (line cycles-50) */
+	    DE_end = nCyclesPerLine + pVideoTiming->HSync_On_Offset_Low;	/* 458/462 depends on 50/60 freq (line cycles-50) */
 
 	    BorderMask |= BORDERMASK_RIGHT_OFF;
 	    LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect remove right %d<->%d\n" , DE_start , DE_end );
@@ -2434,12 +2434,12 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	}
 
 	else if ( ( FreqHz != VIDEO_71HZ )
-		&& ( LineCycles <= nCyclesPerLine + pVideoTiming->HSync_Start_Offset_Low ) )	/* 458/462 depends on 50/60 freq (line cycles-50) */
+		&& ( LineCycles <= nCyclesPerLine + pVideoTiming->HSync_On_Offset_Low ) )	/* 458/462 depends on 50/60 freq (line cycles-50) */
 	{
 //fprintf ( stderr , "pom5\n" );
 	  if ( LineCycles <= DE_end )
 	  {
-	    DE_end = nCyclesPerLine + pVideoTiming->HSync_Start_Offset_Low;	/* 458/462 depends on 50/60 freq (line cycles-50) */
+	    DE_end = nCyclesPerLine + pVideoTiming->HSync_On_Offset_Low;	/* 458/462 depends on 50/60 freq (line cycles-50) */
 
 	    if ( BorderMask & BORDERMASK_RIGHT_OFF_FULL )
 	    {
@@ -2461,7 +2461,7 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	}
 
 	else if ( ( FreqHz != VIDEO_71HZ )
-		&& ( LineCycles <= nCyclesPerLine + pVideoTiming->HSync_Stop_Offset_Low ) )	/* 498/502 depends on 50/60 freq (line cycles-10) */
+		&& ( LineCycles <= nCyclesPerLine + pVideoTiming->HSync_Off_Offset_Low ) )	/* 498/502 depends on 50/60 freq (line cycles-10) */
 	{
 //fprintf ( stderr , "pom6\n" );
 	  if ( BorderMask & BORDERMASK_SYNC_HIGH )
@@ -2531,9 +2531,9 @@ Freq_Test_Done:
 	if ( ( HblCounterVideo < nStartHBL-1 )
 	  || ( ( HblCounterVideo == nStartHBL-1 ) && ( LineCycles <= pVideoTiming->RemoveTopBorder_Pos ) ) )
 	{
-		if ( FreqHz == VIDEO_71HZ )		Top_Pos = pVideoTiming->V_Start_Line_Hi;
-		else if ( FreqHz == VIDEO_60HZ )	Top_Pos = pVideoTiming->V_Start_Line_60;
-		else					Top_Pos = pVideoTiming->V_Start_Line_50;
+		if ( FreqHz == VIDEO_71HZ )		Top_Pos = pVideoTiming->VDE_On_Line_Hi;
+		else if ( FreqHz == VIDEO_60HZ )	Top_Pos = pVideoTiming->VDE_On_Line_60;
+		else					Top_Pos = pVideoTiming->VDE_On_Line_50;
 
 		/* Change position if new position is not reached yet */
 		if ( ( Top_Pos != nStartHBL )
@@ -2542,7 +2542,7 @@ Freq_Test_Done:
 		{
 			nStartHBL = Top_Pos;
 			/* If 50 Hz screen and first line is before 50 Hz position -> top border removed */
-			if ( ( nScreenRefreshRate == VIDEO_50HZ ) && ( nStartHBL < pVideoTiming->V_Start_Line_50 ) )
+			if ( ( nScreenRefreshRate == VIDEO_50HZ ) && ( nStartHBL < pVideoTiming->VDE_On_Line_50 ) )
 				VerticalOverscan |= V_OVERSCAN_NO_TOP;
 			else
 				VerticalOverscan &= ~V_OVERSCAN_NO_TOP;
@@ -2561,23 +2561,23 @@ Freq_Test_Done:
 	if ( ( HblCounterVideo < nEndHBL-1 )
 	  || ( ( HblCounterVideo == nEndHBL-1 ) && ( LineCycles <= pVideoTiming->RemoveBottomBorder_Pos ) ) )
 	{
-		if ( FreqHz == VIDEO_71HZ )		Bottom_Pos = pVideoTiming->V_End_Line_Hi;
-		else if ( FreqHz == VIDEO_60HZ )	Bottom_Pos = pVideoTiming->V_End_Line_60;
-		else					Bottom_Pos = pVideoTiming->V_End_Line_50;
+		if ( FreqHz == VIDEO_71HZ )		Bottom_Pos = pVideoTiming->VDE_Off_Line_Hi;
+		else if ( FreqHz == VIDEO_60HZ )	Bottom_Pos = pVideoTiming->VDE_Off_Line_60;
+		else					Bottom_Pos = pVideoTiming->VDE_Off_Line_50;
 
-		if ( ( HblCounterVideo < pVideoTiming->V_End_Line_60-1 )		/* 234 */
-		  || ( ( HblCounterVideo == pVideoTiming->V_End_Line_60-1 ) && ( LineCycles <= pVideoTiming->RemoveBottomBorder_Pos ) ) )
+		if ( ( HblCounterVideo < pVideoTiming->VDE_Off_Line_60-1 )		/* 234 */
+		  || ( ( HblCounterVideo == pVideoTiming->VDE_Off_Line_60-1 ) && ( LineCycles <= pVideoTiming->RemoveBottomBorder_Pos ) ) )
 		{
 			if ( ( nScreenRefreshRate == VIDEO_60HZ ) && ( FreqHz != VIDEO_60HZ ) )
 			{
 				/* 60 Hz screen where freq != 60 Hz on last line -> bottom border removed */
-				nEndHBL = pVideoTiming->V_End_Line_NoBottom_60;
+				nEndHBL = pVideoTiming->VDE_Off_Line_NoBottom_60;
 				VerticalOverscan |= V_OVERSCAN_NO_BOTTOM_60;
 			}
 			else if ( ( nScreenRefreshRate == VIDEO_50HZ ) && ( FreqHz == VIDEO_60HZ ) )
 			{
 				/* 50 Hz screen ending at 60 Hz screen's position -> short bottom border (-29 lines) */
-				nEndHBL = pVideoTiming->V_End_Line_60;
+				nEndHBL = pVideoTiming->VDE_Off_Line_60;
 				VerticalOverscan |= V_OVERSCAN_BOTTOM_SHORT_50;
 			}
 			else
@@ -2587,8 +2587,8 @@ Freq_Test_Done:
 			}
 		}
 
-		else if ( ( HblCounterVideo < pVideoTiming->V_End_Line_50-1 )		/* 263 */
-		  || ( ( HblCounterVideo == pVideoTiming->V_End_Line_50-1 ) && ( LineCycles <= pVideoTiming->RemoveBottomBorder_Pos ) ) )
+		else if ( ( HblCounterVideo < pVideoTiming->VDE_Off_Line_50-1 )		/* 263 */
+		  || ( ( HblCounterVideo == pVideoTiming->VDE_Off_Line_50-1 ) && ( LineCycles <= pVideoTiming->RemoveBottomBorder_Pos ) ) )
 		{
 			if ( VerticalOverscan & V_OVERSCAN_NO_BOTTOM_60 )
 			{
@@ -2597,7 +2597,7 @@ Freq_Test_Done:
 			else if ( ( nScreenRefreshRate == VIDEO_50HZ ) && ( FreqHz != VIDEO_50HZ ) )
 			{
 				/* 50 Hz screen where freq != 50 Hz on last line -> bottom border removed */
-				nEndHBL = pVideoTiming->V_End_Line_NoBottom_50;
+				nEndHBL = pVideoTiming->VDE_Off_Line_NoBottom_50;
 				VerticalOverscan |= V_OVERSCAN_NO_BOTTOM_50;
 			}
 			else
@@ -2607,8 +2607,8 @@ Freq_Test_Done:
 			}
 		}
 
-		else if ( ( HblCounterVideo < pVideoTiming->V_End_Line_Hi-1 )		/* 434 */
-		  || ( ( HblCounterVideo == pVideoTiming->V_End_Line_Hi-1 ) && ( LineCycles <= pVideoTiming->RemoveBottomBorder_Pos ) ) )
+		else if ( ( HblCounterVideo < pVideoTiming->VDE_Off_Line_Hi-1 )		/* 434 */
+		  || ( ( HblCounterVideo == pVideoTiming->VDE_Off_Line_Hi-1 ) && ( LineCycles <= pVideoTiming->RemoveBottomBorder_Pos ) ) )
 		{
 			if ( VerticalOverscan & V_OVERSCAN_NO_BOTTOM_50 )
 			{
@@ -2682,8 +2682,8 @@ void Video_Sync_WriteByte ( void )
 		/* cancel a wrong left+2 */
 		LOG_TRACE(TRACE_VIDEO_BORDER_H , "cancel wrong left+2 gen4/ziggy\n" );
 		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask &= ~BORDERMASK_LEFT_PLUS_2;
-		ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle = pVideoTiming->H_Start_Low_50;
-		ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle = pVideoTiming->H_Stop_Low_50;
+		ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle = pVideoTiming->HDE_On_Low_50;
+		ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle = pVideoTiming->HDE_Off_Low_50;
 		nCyclesPerLine = 512;
 	}
 	/* TEMP for 'Gen4 Demo' by Ziggy / OVR in WS2,WS3,WS4 : */
@@ -2691,14 +2691,14 @@ void Video_Sync_WriteByte ( void )
 
 	/* Store cycle position of freq 50/60 to check for top/bottom border removal in Video_EndHBL. */
 	ShifterFrame.Freq = Freq;
-	if ( Freq == 0x02 )							/* 50 Hz */
+	if ( Freq == 0x02 )					/* 50 Hz */
 	{
 		ShifterFrame.FreqPos50.VBL = nVBLs;
 		ShifterFrame.FreqPos50.FrameCycles = FrameCycles;
 		ShifterFrame.FreqPos50.HBL = HblCounterVideo;
 		ShifterFrame.FreqPos50.LineCycles = LineCycles;
 	}
-	else									/* 60 Hz */
+	else							/* 60 Hz */
 	{
 		ShifterFrame.FreqPos60.VBL = nVBLs;
 		ShifterFrame.FreqPos60.FrameCycles = FrameCycles;
@@ -3002,21 +3002,21 @@ static void Video_EndHBL(void)
 		pHBLPalettes -= OVERSCAN_TOP;		// FIXME useless ?
 	}
 
-	else if ( ( nHBL == pVideoTiming->V_End_Line_50 + BlankLines - 1 )
+	else if ( ( nHBL == pVideoTiming->VDE_Off_Line_50 + BlankLines - 1 )
 	  && ( VerticalOverscan & V_OVERSCAN_NO_BOTTOM_50 ) )
 	{
 		/* 50 Hz screen where freq != 50 Hz on last line -> bottom border removed */
 		LOG_TRACE ( TRACE_VIDEO_BORDER_V , "detect remove bottom\n" );
 	}
 
-	else if ( ( nHBL == pVideoTiming->V_End_Line_60 + BlankLines - 1 )
+	else if ( ( nHBL == pVideoTiming->VDE_Off_Line_60 + BlankLines - 1 )
 	  && ( VerticalOverscan & V_OVERSCAN_NO_BOTTOM_60 ) )
 	{
 		/* 60 Hz screen where freq != 60 Hz on last line -> bottom border removed */
 		LOG_TRACE ( TRACE_VIDEO_BORDER_V , "detect remove bottom 60Hz\n" );
 	}
 
-	else if ( ( nHBL == pVideoTiming->V_End_Line_60 + BlankLines - 1 )
+	else if ( ( nHBL == pVideoTiming->VDE_Off_Line_60 + BlankLines - 1 )
 	  && ( VerticalOverscan & V_OVERSCAN_BOTTOM_SHORT_50 ) )
 	{
 		/* 50 Hz screen ending at 60 Hz screen's position -> short bottom border (-29 lines) */
@@ -3065,8 +3065,8 @@ static void Video_StartHBL(void)
 	{
 		nCyclesPerLine = CYCLES_PER_LINE_71HZ;
 		if ( ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle == -1 )		/* start not set yet */
-			ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle = pVideoTiming->H_Start_Hi;
-		ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle = pVideoTiming->H_Stop_Hi;
+			ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle = pVideoTiming->HDE_On_Hi;
+		ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle = pVideoTiming->HDE_Off_Hi;
 
 		/* If the whole screen is not in 71 Hz, then this HBL will default to "left off" */
 		if ( nScreenRefreshRate != VIDEO_71HZ )
@@ -3083,8 +3083,8 @@ static void Video_StartHBL(void)
 		{
 			nCyclesPerLine = CYCLES_PER_LINE_50HZ;
 			if ( ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle == -1 )	/* start not set yet */
-				ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle = pVideoTiming->H_Start_Low_50;
-			ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle = pVideoTiming->H_Stop_Low_50;
+				ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle = pVideoTiming->HDE_On_Low_50;
+			ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle = pVideoTiming->HDE_Off_Low_50;
 
 			/* Update VBlank/VSync signals */
 			if ( nHBL == pVideoTiming->VBlank_On_Line_50 )
@@ -3108,8 +3108,8 @@ static void Video_StartHBL(void)
 		{
 			nCyclesPerLine = CYCLES_PER_LINE_60HZ;
 			if ( ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle == -1 )	/* start not set yet */
-				ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle = pVideoTiming->H_Start_Low_60;
-			ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle = pVideoTiming->H_Stop_Low_60;
+				ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle = pVideoTiming->HDE_On_Low_60;
+			ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle = pVideoTiming->HDE_Off_Low_60;
 
 			/* If the whole screen is in 50 Hz, then this HBL will default to "left+2" + "right-2" (ie 60 Hz line) */
 			if ( nScreenRefreshRate == VIDEO_50HZ )
@@ -5234,7 +5234,7 @@ void Video_HorScroll_Write(void)
 	/* we can still change the value now. Else, the new values will be used */
 	/* for line n+1. */
 	/* We must also check the write does not overlap the end of the line */
-	if ( ( ( LineCycles <= pVideoTiming->H_Start_Low_50 ) && ( nHBL == HblCounterVideo ) )
+	if ( ( ( LineCycles <= pVideoTiming->HDE_On_Low_50 ) && ( nHBL == HblCounterVideo ) )
 		|| ( nHBL < nStartHBL ) || ( nHBL >= nEndHBL + BlankLines ) )
 	{
 		HWScrollCount = ScrollCount;		/* display has not started, we can still change */
