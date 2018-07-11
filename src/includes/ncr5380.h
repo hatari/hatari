@@ -6,7 +6,7 @@
  */
 
 #ifndef NCR5380_H
-#define NCR5380_h
+#define NCR5380_H
 
 void Ncr5380_Init(void);
 void Ncr5380_UnInit(void);
