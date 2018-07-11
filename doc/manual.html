@@ -195,6 +195,7 @@ second MFP and the SCC UARTs is not emulated yet.
       interconnect emulation + support for the additional DMA sound
       sample rates</li>
   <li>Experimental IDE master and slave emulation for hard drive support</li>
+  <li>Experimental NCR5380 SCSI emulation for hard drive support (incomplete)</li>
   <li>TOS versions 4.00, 4.02, 4.04 and 4.92 (and EmuTOS) can be used in Falcon mode.</li>
 </ul>
 <p>
@@ -701,10 +702,14 @@ drive letter (C-Z) instead of default C:, or use "skip" to specify
 that Hatari should add GEMDOS HD after IDE and ACSI drives (assumes
 Hatari and native HD driver parse same number of partitions from
 HD images partition tables)</p>
-<p class="parameter">--acsi
-&lt;file&gt;</p>
-<p class="paramdesc">Emulate an ACSI hard drive with an image
-&lt;file&gt;</p>
+<p class="parameter">--acsi &lt;id&gt;=&lt;file&gt;</p>
+<p class="paramdesc">Emulate an ACSI hard drive with given bus ID (0-7)
+using image &lt;file&gt;. If just a filename is given, it is assigned to
+bus ID 0</p>
+<p class="parameter">--scsi &lt;id&gt;=&lt;file&gt;</p>
+<p class="paramdesc">Emulate a SCSI hard drive with given bus ID (0-7)
+using image &lt;file&gt;. If just a filename is given, it is assigned to
+bus ID 0</p>
 <p class="parameter">--ide-master
 &lt;file&gt;</p>
 <p class="paramdesc">Emulate an IDE master hard drive with an

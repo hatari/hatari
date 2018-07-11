@@ -131,6 +131,7 @@ enum {
 	OPT_GEMDOS_CONVERT,
 	OPT_GEMDOS_DRIVE,
 	OPT_ACSIHDIMAGE,
+	OPT_SCSIHDIMAGE,
 	OPT_IDEMASTERHDIMAGE,
 	OPT_IDESLAVEHDIMAGE,
 	OPT_MEMSIZE,		/* memory options */
@@ -361,6 +362,8 @@ static const opt_t HatariOptions[] = {
 	  "<drive>", "Assign GEMDOS HD <dir> to drive letter <drive> (C-Z, skip)" },
 	{ OPT_ACSIHDIMAGE,   NULL, "--acsi",
 	  "<id>=<file>", "Emulate an ACSI harddrive (0-7) with an image <file>" },
+	{ OPT_SCSIHDIMAGE,   NULL, "--scsi",
+	  "<id>=<file>", "Emulate a SCSI harddrive (0-7) with an image <file>" },
 	{ OPT_IDEMASTERHDIMAGE,   NULL, "--ide-master",
 	  "<file>", "Emulate an IDE master harddrive with an image <file>" },
 	{ OPT_IDESLAVEHDIMAGE,   NULL, "--ide-slave",
@@ -1598,6 +1601,29 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			ok = Opt_StrCpy(OPT_ACSIHDIMAGE, true, ConfigureParams.Acsi[drive].sDeviceFile,
 					str, sizeof(ConfigureParams.Acsi[drive].sDeviceFile),
 					&ConfigureParams.Acsi[drive].bUseDevice);
+			if (ok)
+			{
+				bLoadAutoSave = false;
+			}
+			break;
+
+		case OPT_SCSIHDIMAGE:
+			i += 1;
+			str = argv[i];
+			if (strlen(str) > 2 && isdigit(str[0]) && str[1] == '=')
+			{
+				drive = str[0] - '0';
+				if (drive < 0 || drive >= MAX_SCSI_DEVS)
+					return Opt_ShowError(OPT_SCSIHDIMAGE, str, "Invalid SCSI drive <id>, must be 0-7");
+				str += 2;
+			}
+			else
+			{
+				drive = 0;
+			}
+			ok = Opt_StrCpy(OPT_SCSIHDIMAGE, true, ConfigureParams.Scsi[drive].sDeviceFile,
+					str, sizeof(ConfigureParams.Scsi[drive].sDeviceFile),
+					&ConfigureParams.Scsi[drive].bUseDevice);
 			if (ok)
 			{
 				bLoadAutoSave = false;

@@ -345,8 +345,12 @@ tables)
 .TP
 .B \-\-acsi <id>=<file>
 Emulate an ACSI hard disk with given BUS ID (0-7) using image <file>.
-If just filename is given, it's assigned to BUS ID 0
-.TP 
+If just a filename is given, it is assigned to BUS ID 0
+.TP
+.B \-\-scsi <id>=<file>
+Emulate a SCSI hard disk with given BUS ID (0-7) using image <file>.
+If just a filename is given, it is assigned to BUS ID 0
+.TP
 .B \-\-ide\-master <file>
 Emulate an IDE master hard disk with an image <file>
 .TP 
