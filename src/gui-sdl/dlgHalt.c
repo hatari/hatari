@@ -91,6 +91,7 @@ void Dialog_HaltDlg(void)
 	case DLGHALT_QUIT:
 	case SDLGUI_QUIT:
 		do_quit(0);
+		break;
 	default:
 		/* GUI errors */
 		do_quit(1);
