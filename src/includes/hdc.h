@@ -78,6 +78,7 @@ typedef struct {
 	int buffer_size;
 	int data_len;
 	int offset;                 /* Current offset into data buffer */
+	FILE *dmawrite_to_fh;
 	SCSI_DEV devs[8];
 } SCSI_CTRLR;
 

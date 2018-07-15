@@ -393,13 +393,11 @@ static void HDC_Cmd_ReadCapacity(SCSI_CTRLR *ctr)
 static void HDC_Cmd_WriteSector(SCSI_CTRLR *ctr)
 {
 	SCSI_DEV *dev = &ctr->devs[ctr->target];
-	Uint32 nDmaAddr = FDC_GetDMAAddress();
-	int n = 0;
 
 	dev->nLastBlockAddr = HDC_GetLBA(ctr);
 
-	LOG_TRACE(TRACE_SCSI_CMD, "HDC: WRITE SECTOR (%s) with LBA 0x%x from 0x%x",
-	          HDC_CmdInfoStr(ctr), dev->nLastBlockAddr, nDmaAddr);
+	LOG_TRACE(TRACE_SCSI_CMD, "HDC: WRITE SECTOR (%s) with LBA 0x%x",
+	          HDC_CmdInfoStr(ctr), dev->nLastBlockAddr);
 
 	/* seek to the position */
 	if (dev->nLastBlockAddr >= dev->hdSize ||
@@ -410,22 +408,10 @@ static void HDC_Cmd_WriteSector(SCSI_CTRLR *ctr)
 	}
 	else
 	{
-		/* write - if allowed */
-#ifndef DISALLOW_HDC_WRITE
-		if ( STMemory_CheckAreaType ( nDmaAddr , 512 * HDC_GetCount(ctr) , ABFLAG_RAM ) )
+		ctr->data_len = HDC_GetCount(ctr) * 512;
+		if (ctr->data_len)
 		{
-			n = fwrite(&STRam[nDmaAddr], 512,
-				   HDC_GetCount(ctr), dev->image_file);
-		}
-		else
-		{
-			Log_Printf(LOG_WARN, "HDC sector write uses invalid RAM range 0x%x+%i\n",
-				   nDmaAddr, 512 * HDC_GetCount(ctr));
-			ctr->bDmaError = true;
-		}
-#endif
-		if (n == HDC_GetCount(ctr))
-		{
+			ctr->dmawrite_to_fh = dev->image_file;
 			ctr->status = HD_STATUS_OK;
 			dev->nLastError = HD_REQSENS_OK;
 		}
@@ -434,9 +420,6 @@ static void HDC_Cmd_WriteSector(SCSI_CTRLR *ctr)
 			ctr->status = HD_STATUS_ERROR;
 			dev->nLastError = HD_REQSENS_WRITEERR;
 		}
-
-		/* Update DMA counter */
-		FDC_WriteDMAAddress(nDmaAddr + 512*n);
 	}
 	LOG_TRACE(TRACE_SCSI_CMD, " -> %s (%d)\n",
 		  ctr->status == HD_STATUS_OK ? "OK" : "ERROR",
@@ -918,6 +901,42 @@ bool HDC_WriteCommandPacket(SCSI_CTRLR *ctr, Uint8 b)
 
 /*---------------------------------------------------------------------*/
 
+static void Acsi_DmaTransfer(void)
+{
+	Uint32 nDmaAddr = FDC_GetDMAAddress();
+
+	if (AcsiBus.dmawrite_to_fh)
+	{
+		/* write - if allowed */
+		if (STMemory_CheckAreaType(nDmaAddr, AcsiBus.data_len, ABFLAG_RAM | ABFLAG_ROM))
+		{
+#ifndef DISALLOW_HDC_WRITE
+			int wlen = fwrite(&STRam[nDmaAddr], 1, AcsiBus.data_len, AcsiBus.dmawrite_to_fh);
+			if (wlen != AcsiBus.data_len)
+			{
+				Log_Printf(LOG_ERROR, "Could not write all bytes to hard disk image.\n");
+				AcsiBus.status = HD_STATUS_ERROR;
+			}
+#endif
+		}
+		else
+		{
+			Log_Printf(LOG_WARN, "HDC DMA write uses invalid RAM range 0x%x+%i\n",
+				   nDmaAddr, AcsiBus.data_len);
+			AcsiBus.bDmaError = true;
+		}
+		AcsiBus.dmawrite_to_fh = NULL;
+	}
+	else if (!STMemory_SafeCopy(nDmaAddr, AcsiBus.buffer, AcsiBus.data_len, "ACSI DMA"))
+	{
+		AcsiBus.bDmaError = true;
+		AcsiBus.status = HD_STATUS_ERROR;
+	}
+
+	FDC_WriteDMAAddress(nDmaAddr + AcsiBus.data_len);
+	AcsiBus.data_len = 0;
+}
+
 static void Acsi_WriteCommandByte(int addr, Uint8 byte)
 {
 	/* Clear IRQ initially (will be set again if byte has been accepted) */
@@ -949,15 +968,7 @@ static void Acsi_WriteCommandByte(int addr, Uint8 byte)
 		bool bDidCmd = HDC_WriteCommandPacket(&AcsiBus, byte);
 		if (bDidCmd && AcsiBus.status == HD_STATUS_OK && AcsiBus.data_len)
 		{
-			/* DMA transfer necessary */
-			Uint32 nDmaAddr = FDC_GetDMAAddress();
-			if (!STMemory_SafeCopy(nDmaAddr, AcsiBus.buffer, AcsiBus.data_len, "ACSI DMA"))
-			{
-				AcsiBus.bDmaError = true;
-				AcsiBus.status = HD_STATUS_ERROR;
-			}
-			FDC_WriteDMAAddress(nDmaAddr + AcsiBus.data_len);
-			AcsiBus.data_len = 0;
+			Acsi_DmaTransfer();
 		}
 	}
 
