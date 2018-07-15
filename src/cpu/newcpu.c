@@ -3929,7 +3929,16 @@ static void Exception_normal (int nr)
 				m68k_areg (regs, 7) -= 2;
 				x_put_word (m68k_areg (regs, 7), 0xb000 + vector_nr * 4);
 			}
+#ifndef WINUAE_FOR_HATARI
 			write_log (_T("Exception %d (%x) at %x -> %x!\n"), nr, regs.instruction_pc, currpc, get_long_debug (regs.vbr + 4 * vector_nr));
+#else
+			if (nr != 2 || M68000_IsVerboseBusError(currpc, last_fault_for_exception_3))
+				Log_Printf(LOG_WARN, "%s Error %s at address $%x, PC=$%x addr_e3=%x op_e3=%x\n",
+				           nr == 2 ? "Bus" : "Address",
+				           last_writeaccess_for_exception_3 ? "writing" : "reading",
+				           last_fault_for_exception_3, currpc,
+				           last_addr_for_exception_3, last_op_for_exception_3);
+#endif
 		} else if (regs.m && interrupt) { /* M + Interrupt */
 			m68k_areg (regs, 7) -= 2;
 			x_put_word (m68k_areg (regs, 7), vector_nr * 4);
