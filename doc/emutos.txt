@@ -389,7 +389,8 @@ Demos:
 - Syntax Terror (by Delta Force)
 - Temptation aka Project "A" (by NoExtra)
 - The Stupendous Demo (by Pixel Twins, has couple of STE screen)
-- The Union demo
+- The Union demo (by The Union)
+- The twist (by Team "The twist")
 - The World According to Nordlicht (needs EmuTOS 2016-04-17)
 - Transbeauce II (by BushWacKers)
 - Tut! (by Wildfire)
@@ -1071,6 +1072,7 @@ Working demos:
 - Illusion 64 (by Paranoia)
   - plasma screen has garbage on right side,
     end screen at top & bottom
+- More (by New Beat)
 - Mouse (animation + music)
 - Old Stuff (by Extream)
 - Prepare (by Extream)
