@@ -20,8 +20,8 @@
 #define DRIVESOUND
 #define GFXFILTER
 #define X86_MSVC_ASSEMBLY
-#define X86_MSVC_ASSEMBLY_MEMACCESS
 #define OPTIMIZED_FLAGS
+#define MSVC_LONG_DOUBLE
 #ifndef __i386__
 #define __i386__
 #endif

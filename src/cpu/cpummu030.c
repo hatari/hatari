@@ -524,7 +524,8 @@ bool mmu_op30_pflush (uaecptr pc, uae_u32 opcode, uae_u16 next, uaecptr extra)
 #endif
     
     switch (mode) {
-		case 0x00:
+		case 0x00: // PLOAD W
+		case 0x02: // PLOAD R
 			return mmu_op30_pload(pc, opcode, next, extra);
         case 0x04:
 			if (fc_bits)
@@ -540,7 +541,7 @@ bool mmu_op30_pflush (uaecptr pc, uae_u32 opcode, uae_u16 next, uaecptr extra)
             mmu030_flush_atc_page_fc(extra, fc_base, fc_mask);
             break;
         default:
-            write_log(_T("PFLUSH ERROR: bad mode! (%i)\n"),mode);
+            write_log(_T("PFLUSH %04x-%04x ERROR: bad mode! (%i)\n"), opcode, next, mode);
 			return true;
     }
 	return false;
@@ -560,7 +561,7 @@ uae_u32 mmu_op30_helper_get_fc(uae_u16 next) {
                 return (regs.sfc);
             }
         default:
-            write_log(_T("MMU_OP30 ERROR: bad fc source! (%04X)\n"),next&0x0018);
+            write_log(_T("MMU_OP30 ERROR: bad fc source! (%04X)\n"), next&0x0018);
             return 0;
     }
 }

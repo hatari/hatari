@@ -298,7 +298,10 @@ void M68000_Start(void)
  *	address_space_24 : 1 (68000/10 and 68030 LC for Falcon), 0 (68020/30/40/60)
  *	fpu_model : 0, 68881 (external), 68882 (external), 68040 (cpu) , 68060 (cpu)
  *	fpu_strict : true/false (more accurate rounding)
- *	fpu_softfloat : 0/false (faster but less accurate, use host's cpu/fpu)   1/true (most accurate but slower)
+ *	fpu_mode :  0  faster but less accurate, use host's cpu/fpu with 64 bit precision)
+ *		    1  most accurate but slower, use softfloat library)
+ *		   -1  similar to 0 but with extended 80 bit precision, only for x86 CPU)
+ *		       (TODO [NP] not in Hatari for now, require fpp_native_msvc_80bit.cpp / fpux64_80.asm / fpux86_80.asm)
  *	mmu_model : 0, 68030, 68040, 68060
  *
  *	m68k_speed : -1=don't adjust cycle  >=0 use m68k_speed_throttle to precisely adjust cycles
@@ -312,7 +315,6 @@ void M68000_Start(void)
 void M68000_CheckCpuSettings(void)
 {
 	changed_prefs.cpu_level = ConfigureParams.System.nCpuLevel;
-	changed_prefs.cpu_compatible = ConfigureParams.System.bCompatibleCpu;
 
 #if ENABLE_WINUAE_CPU
 	/* WinUAE core uses cpu_model instead of cpu_level, so we've got to
@@ -324,7 +326,7 @@ void M68000_CheckCpuSettings(void)
 		case 3 : changed_prefs.cpu_model = 68030; break;
 		case 4 : changed_prefs.cpu_model = 68040; break;
 		case 5 : changed_prefs.cpu_model = 68060; break;
-		default: fprintf (stderr, "Init680x0() : Error, cpu_level unknown\n");
+		default: fprintf (stderr, "M68000_CheckCpuSettings() : Error, cpu_level unknown\n");
 	}
 	currprefs.cpu_level = changed_prefs.cpu_level;
 
@@ -339,12 +341,15 @@ void M68000_CheckCpuSettings(void)
 		ConfigureParams.System.n_FPUType = FPU_NONE;
 	}
 
+	changed_prefs.int_no_unimplemented = true;
+	changed_prefs.fpu_no_unimplemented = true;
+	changed_prefs.cpu_compatible = ConfigureParams.System.bCompatibleCpu;
 	changed_prefs.address_space_24 = ConfigureParams.System.bAddressSpace24;
 	changed_prefs.cpu_cycle_exact = ConfigureParams.System.bCycleExactCpu;
 	changed_prefs.cpu_memory_cycle_exact = ConfigureParams.System.bCycleExactCpu;
 	changed_prefs.fpu_model = ConfigureParams.System.n_FPUType;
 	changed_prefs.fpu_strict = ConfigureParams.System.bCompatibleFPU;
-	changed_prefs.fpu_softfloat = ConfigureParams.System.bSoftFloatFPU;
+	changed_prefs.fpu_mode = ( ConfigureParams.System.bSoftFloatFPU ? 1 : 0 );
 
 	/* Update the MMU model by taking the same value as CPU model */
 	/* MMU is only supported for CPU >=68030, this is later checked in custom.c fixup_cpu() */
@@ -366,6 +371,7 @@ void M68000_CheckCpuSettings(void)
 	if (ConfigureParams.System.nCpuLevel > 4)
 		ConfigureParams.System.nCpuLevel = 4;
 
+	changed_prefs.cpu_compatible = ConfigureParams.System.bCompatibleCpu;
 	changed_prefs.cpu_cycle_exact = 0;				/* With old UAE CPU, cycle_exact is always false */
 #endif
 

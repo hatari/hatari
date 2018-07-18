@@ -123,7 +123,7 @@ int Init680x0(void)
 	changed_prefs.cpu_memory_cycle_exact = ConfigureParams.System.bCycleExactCpu;
 	changed_prefs.fpu_model = ConfigureParams.System.n_FPUType;
 	changed_prefs.fpu_strict = ConfigureParams.System.bCompatibleFPU;
-	changed_prefs.fpu_softfloat = ConfigureParams.System.bSoftFloatFPU;
+	changed_prefs.fpu_mode = ( ConfigureParams.System.bSoftFloatFPU ? 1 : 0 );
 
         /* Always emulate instr/data caches for cpu >= 68020 */
         changed_prefs.cpu_data_cache = true;

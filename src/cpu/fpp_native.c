@@ -14,16 +14,18 @@
 #include <float.h>
 #include <fenv.h>
 
-#include "main.h"
-#include "hatari-glue.h"
-
 #include "sysconfig.h"
 #include "sysdeps.h"
+
+#ifdef WINUAE_FOR_HATARI
+#include "main.h"
+#include "hatari-glue.h"
+#endif
 
 #define USE_HOST_ROUNDING 1
 #define SOFTFLOAT_CONVERSIONS 1
 
-#include "options.h"
+#include "options_cpu.h"
 #include "memory.h"
 #include "newcpu.h"
 #include "fpp.h"
@@ -175,14 +177,14 @@ static void fp_set_mode(uae_u32 mode_control)
 		return;
     switch(mode_control & FPCR_ROUNDING_PRECISION) {
         case FPCR_PRECISION_EXTENDED: // X
-			fpu_prec = 80;
+			fpu_prec = PREC_EXTENDED;
             break;
         case FPCR_PRECISION_SINGLE:   // S
-			fpu_prec = 32;
+			fpu_prec = PREC_FLOAT;
             break;
         case FPCR_PRECISION_DOUBLE:   // D
         default:                      // undefined
-			fpu_prec = 64;
+			fpu_prec = PREC_DOUBLE;
             break;
     }
 #if USE_HOST_ROUNDING
@@ -229,6 +231,11 @@ static void fp_get_status(uae_u32 *status)
 #endif
 }
 
+static uae_u32 fp_get_support_flags(void)
+{
+	return 0;
+}
+
 static void fp_clear_status(void)
 {
 #if 0
@@ -237,6 +244,10 @@ static void fp_clear_status(void)
 }
 
 /* Functions for detecting float type */
+static bool fp_is_init(fpdata *fpd)
+{
+	return false;
+}
 static bool fp_is_snan(fpdata *fpd)
 {
     return 0; /* FIXME: how to detect SNAN */
@@ -246,11 +257,11 @@ static bool fp_unset_snan(fpdata *fpd)
     /* FIXME: how to unset SNAN */
 	return 0;
 }
-static bool fp_is_nan (fpdata *fpd)
+static bool fp_is_nan(fpdata *fpd)
 {
     return isnan(fpd->fp) != 0;
 }
-static bool fp_is_infinity (fpdata *fpd)
+static bool fp_is_infinity(fpdata *fpd)
 {
     return isinf(fpd->fp) != 0;
 }
@@ -382,7 +393,11 @@ static void fp_to_exten(fpdata *fpd, uae_u32 wrd1, uae_u32 wrd2, uae_u32 wrd3)
 	floatx80 fx80;
 	fx80.high = wrd1 >> 16;
 	fx80.low = (((uae_u64)wrd2) << 32) | wrd3;
+	fs.float_exception_flags = 0;
 	float64 f = floatx80_to_float64(fx80, &fs);
+	// overflow -> infinity
+	if (fs.float_exception_flags & float_flag_overflow)
+		f = 0x7ff0000000000000 | (f & 0x8000000000000000);
 	fp_to_double(fpd, f >> 32, (uae_u32)f);
 #else
     double frac;
@@ -465,6 +480,7 @@ static uae_s64 fp_to_int(fpdata *src, int size)
     };
 
 	fptype fp = src->fp;
+	fp_is_init(src);
 	if (fp_is_nan(src)) {
 		uae_u32 w1, w2, w3;
 		fp_from_exten(src, &w1, &w2, &w3);
@@ -587,9 +603,9 @@ static const TCHAR *fp_print(fpdata *fpd, int mode)
 
 static void fp_round_prec(fpdata *fpd, int prec)
 {
-	if (prec == 64) {
+	if (prec == PREC_DOUBLE) {
 		fp_round_double(fpd);
-	} else if (prec == 32) {
+	} else if (prec == PREC_FLOAT) {
 		fp_round_single(fpd);
 	}
 }
@@ -610,14 +626,14 @@ static void fp_set_prec(int prec)
 		fpu_mode_control &= ~FPCR_ROUNDING_PRECISION;
 		switch (prec)
 		{
-			case 80:
+			case PREC_EXTENDED:
 			fpu_mode_control |= FPCR_PRECISION_EXTENDED;
 			break;
-			case 64:
+			case PREC_DOUBLE:
 			default:
 			fpu_mode_control |= FPCR_PRECISION_DOUBLE;
 			break;
-			case 32:
+			case PREC_FLOAT:
 			fpu_mode_control |= FPCR_PRECISION_SINGLE;
 			break;
 		}
@@ -632,7 +648,7 @@ static void fp_reset_prec(fpdata *fpd)
 	fp_set_mode(temp_fpu_mode_control);
 #else
 	int prec = temp_prec;
-	if (temp_prec == 0)
+	if (temp_prec == PREC_NORMAL)
 		prec = fpu_prec;
 	fp_round_prec(fpd, prec);
 #endif
@@ -959,14 +975,16 @@ static void fp_cmp(fpdata *a, fpdata *b)
 {
 	fptype v = 1.0;
 	if (currprefs.fpu_strict) {
-		bool a_neg = fpp_is_neg(a);
-		bool b_neg = fpp_is_neg(b);
-		bool a_inf = fpp_is_infinity(a);
-		bool b_inf = fpp_is_infinity(b);
-		bool a_zero = fpp_is_zero(a);
-		bool b_zero = fpp_is_zero(b);
-		bool a_nan = fpp_is_nan(a);
-		bool b_nan = fpp_is_nan(b);
+		fp_is_init(a);
+		bool a_neg = fp_is_neg(a);
+		bool a_inf = fp_is_infinity(a);
+		bool a_zero = fp_is_zero(a);
+		bool a_nan = fp_is_nan(a);
+		fp_is_init(b);
+		bool b_neg = fp_is_neg(b);
+		bool b_inf = fp_is_infinity(b);
+		bool b_zero = fp_is_zero(b);
+		bool b_nan = fp_is_nan(b);
 
 		if (a_nan || b_nan) {
 			// FCMP never returns N + NaN
@@ -1058,23 +1076,24 @@ static void fp_from_pack (fpdata *src, uae_u32 *wrd, int kfactor)
 	char str[100];
 	fptype fp;
 
-   if (fpp_is_nan (src)) {
-        // copy bit by bit, handle signaling nan
-        fpp_from_exten(src, &wrd[0], &wrd[1], &wrd[2]);
-        return;
-    }
-    if (fpp_is_infinity (src)) {
-        // extended exponent and all 0 packed fraction
-        fpp_from_exten(src, &wrd[0], &wrd[1], &wrd[2]);
-        wrd[1] = wrd[2] = 0;
-        return;
-    }
+	fp_is_init(src);
+	if (fp_is_nan(src)) {
+		// copy bit by bit, handle signaling nan
+		fpp_from_exten(src, &wrd[0], &wrd[1], &wrd[2]);
+		return;
+	}
+	if (fp_is_infinity(src)) {
+		// extended exponent and all 0 packed fraction
+		fpp_from_exten(src, &wrd[0], &wrd[1], &wrd[2]);
+		wrd[1] = wrd[2] = 0;
+		return;
+	}
 
 	wrd[0] = wrd[1] = wrd[2] = 0;
 
-	fpp_to_native(&fp, src);
+	fp_to_native(&fp, src);
 
-#if USE_LONG_DOUBLE
+#ifdef USE_LONG_DOUBLE
 	sprintf (str, "%#.17Le", fp);
 #else
 	sprintf (str, "%#.17e", fp);
@@ -1248,12 +1267,12 @@ static void fp_to_pack (fpdata *fpd, uae_u32 *wrd, int dummy)
 	*cp++ = ((wrd[0] >> 20) & 0xf) + '0';
 	*cp++ = ((wrd[0] >> 16) & 0xf) + '0';
 	*cp = 0;
-#if USE_LONG_DOUBLE
+#ifdef USE_LONG_DOUBLE
 	sscanf (str, "%Le", &d);
 #else
 	sscanf (str, "%le", &d);
 #endif
-	fpp_from_native(d, fpd);
+	fp_from_native(d, fpd);
 }
 
 
@@ -1263,21 +1282,22 @@ void fp_init_native(void)
 	set_float_rounding_mode(float_round_to_zero, &fs);
 
 	fpp_print = fp_print;
-	fpp_is_snan = fp_is_snan;
 	fpp_unset_snan = fp_unset_snan;
+
+	fpp_is_init = fp_is_init;
+	fpp_is_snan = fp_is_snan;
 	fpp_is_nan = fp_is_nan;
 	fpp_is_infinity = fp_is_infinity;
 	fpp_is_zero = fp_is_zero;
 	fpp_is_neg = fp_is_neg;
 	fpp_is_denormal = fp_is_denormal;
 	fpp_is_unnormal = fp_is_unnormal;
+	fpp_fix_infinity = NULL;
 
 	fpp_get_status = fp_get_status;
 	fpp_clear_status = fp_clear_status;
 	fpp_set_mode = fp_set_mode;
-
-	fpp_from_native = fp_from_native;
-	fpp_to_native = fp_to_native;
+	fpp_get_support_flags = fp_get_support_flags;
 
 	fpp_to_int = fp_to_int;
 	fpp_from_int = fp_from_int;

@@ -11,7 +11,7 @@ set(CPUEMU_SRCS cpustbl.c cpuemu_0.c cpuemu_11.c cpuemu_13.c
 set(WINUAE_SRCS cpudefs.c cpummu.c cpummu030.c debug.c newcpu_common.c newcpu.c
 		readcpu.c writelog.c fpp.c fpp_native.c fpp_softfloat.c
 		softfloat/softfloat.c softfloat/softfloat_decimal.c
-		softfloat/softfloat_fpsp.c)
+		softfloat/softfloat_fpsp.c machdep/m68k.c)
 
 # Unfortunately we've got to specify the rules for the generated files twice,
 # once for cross compiling (with calling the host cc directly) and once

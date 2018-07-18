@@ -87,6 +87,12 @@ static int debug_mmu_mode;
 static bool break_if_enforcer;
 static uaecptr debug_pc;
 
+static int trace_cycles;
+static int last_hpos1, last_hpos2;
+static int last_vpos1, last_vpos2;
+static int last_frame = -1;
+static uae_u32 last_cycles1, last_cycles2;
+
 static uaecptr processptr;
 static uae_char *processname;
 
@@ -94,6 +100,14 @@ static uaecptr debug_copper_pc;
 
 extern int audio_channel_mask;
 extern int inputdevice_logging;
+
+static void debug_cycles(void)
+{
+	trace_cycles = 1;
+	last_cycles2 = get_cycles();
+	last_vpos2 = vpos;
+	last_hpos2 = current_hpos();
+}
 
 void deactivate_debugger (void)
 {
@@ -118,6 +132,7 @@ void activate_debugger (void)
 	trace_mode = 0;
 	if (debugger_active)
 		return;
+	debug_cycles();
 	debugger_active = 1;
 	set_special (SPCFLAG_BRK);
 	debugging = 1;
@@ -131,6 +146,14 @@ void activate_debugger_new(void)
 	debug_pc = M68K_GETPC;
 }
 
+void activate_debugger_new_pc(uaecptr pc, int len)
+{
+	activate_debugger();
+	trace_mode = TRACE_RANGE_PC;
+	trace_param1 = pc;
+	trace_param2 = pc + len;
+}
+
 bool debug_enforcer(void)
 {
 	if (!break_if_enforcer)
@@ -138,6 +161,7 @@ bool debug_enforcer(void)
 	activate_debugger();
 	return true;
 }
+
 
 int firsthist = 0;
 int lasthist = 0;
@@ -174,7 +198,7 @@ static const TCHAR help[] = {
 	_T("  fo <num> <reg> <oper> <val> [<mask> <val2>] Conditional register breakpoint.\n")
 	_T("   reg=Dx,Ax,PC,USP,ISP,VBR,SR. oper:!=,==,<,>,>=,<=,-,!- (-=val to val2 range).\n")
 	_T("  f <addr1> <addr2>     Step forward until <addr1> <= PC <= <addr2>.\n")
-	_T("  e                     Dump contents of all custom registers, ea = AGA colors.\n")
+	_T("  e[x]                  Dump contents of all custom registers, ea = AGA colors.\n")
 	_T("  i [<addr>]            Dump contents of interrupt and trap vectors.\n")
 	_T("  il [<mask>]           Exception breakpoint.\n")
 	_T("  o <0-2|addr> [<lines>]View memory as Copper instructions.\n")
@@ -1221,11 +1245,14 @@ static void dumpmem (uaecptr addr, uaecptr *nxmem, int lines)
 	*nxmem = addr;
 }
 
-static void dump_custom_regs (int aga)
+static void dump_custom_regs(bool aga, bool ext)
 {
-	int len, i, j, end;
+	int len, end;
 	uae_u8 *p1, *p2, *p3, *p4;
+	TCHAR extra1[256], extra2[256];
 
+	extra1[0] = 0;
+	extra2[0] = 0;
 	if (aga) {
 		dump_aga_custom();
 		return;
@@ -1233,7 +1260,7 @@ static void dump_custom_regs (int aga)
 
 	p1 = p2 = save_custom (&len, 0, 1);
 	p1 += 4; // skip chipset type
-	for (i = 0; i < 4; i++) {
+	for (int i = 0; i < 4; i++) {
 		p4 = p1 + 0xa0 + i * 16;
 		p3 = save_audio (i, &len, 0);
 		p4[0] = p3[12];
@@ -1255,19 +1282,26 @@ static void dump_custom_regs (int aga)
 		end++;
 	end++;
 	end /= 2;
-	for (i = 0; i < end; i++) {
+	for (int i = 0; i < end; i++) {
 		uae_u16 v1, v2;
 		int addr1, addr2;
-		j = end + i;
+		int j = end + i;
 		addr1 = custd[i].adr & 0x1ff;
 		addr2 = custd[j].adr & 0x1ff;
 		v1 = (p1[addr1 + 0] << 8) | p1[addr1 + 1];
 		v2 = (p1[addr2 + 0] << 8) | p1[addr2 + 1];
-		console_out_f (_T("%03X %s\t%04X\t%03X %s\t%04X\n"),
-			addr1, custd[i].name, v1,
-			addr2, custd[j].name, v2);
+		if (ext) {
+			struct custom_store *cs;
+			cs = &custom_storage[addr1 >> 1];
+			_stprintf(extra1, _T("\t%04X %08X %s"), cs->value, cs->pc & ~1, (cs->pc & 1) ? _T("COP") : _T("CPU"));
+			cs = &custom_storage[addr2 >> 1];
+			_stprintf(extra2, _T("\t%04X %08X %s"), cs->value, cs->pc & ~1, (cs->pc & 1) ? _T("COP") : _T("CPU"));
+		}
+		console_out_f (_T("%03X %s\t%04X%s\t%03X %s\t%04X%s\n"),
+			addr1, custd[i].name, v1, extra1,
+			addr2, custd[j].name, v2, extra2);
 	}
-	free (p2);
+	xfree(p2);
 }
 
 static void dump_vectors (uaecptr addr)
@@ -3028,6 +3062,7 @@ static int memwatch_func (uaecptr addr, int rwi, int size, uae_u32 *valp, uae_u3
 		memwatch_triggered = i + 1;
 		debugging = 1;
 		debug_pc = mwhit.pc;
+		debug_cycles();
 		set_special (SPCFLAG_BRK);
 		return 1;
 	}
@@ -4567,6 +4602,7 @@ int instruction_breakpoint (TCHAR **c)
 		trace_param1 = readhex (c);
 		if (more_params (c)) {
 			trace_param2 = readhex (c);
+			return 1;
 		} else {
 			for (i = 0; i < BREAKPOINT_TOTAL; i++) {
 				bpn = &bpnodes[i];
@@ -5296,7 +5332,15 @@ static bool debug_line (TCHAR *input)
 			}
 			break;
 		}
-		case 'e': dump_custom_regs (tolower(*inptr) == 'a'); break;
+		case 'e':
+		{
+			bool aga = tolower(*inptr) == 'a';
+			if (aga)
+				next_char(&inptr);
+			bool ext = tolower(*inptr) == 'x';
+			dump_custom_regs(aga, ext);
+		}
+		break;
 		case 'r':
 		{
 			if (*inptr == 'c') {
@@ -5334,7 +5378,7 @@ static bool debug_line (TCHAR *input)
 					debugmem_list_segment(0, addr);
 				}
 			} else if (*inptr == 'c') {
-				screenshot(0, 1, 1);
+				screenshot(-1, 1, 1);
 			} else if (*inptr == 'p') {
 				inptr++;
 				debug_sprite (&inptr);
@@ -5430,6 +5474,7 @@ static bool debug_line (TCHAR *input)
 			break;
 		case 't':
 			no_trace_exceptions = 0;
+			debug_cycles();
 			if (*inptr == 't') {
 				no_trace_exceptions = 1;
 				inptr++;
@@ -5478,6 +5523,7 @@ static bool debug_line (TCHAR *input)
 			trace_mode = TRACE_MATCH_PC;
 			trace_param1 = nextpc;
 			exception_debugging = 1;
+			debug_cycles();
 			return true;
 
 		case 'f':
@@ -5495,8 +5541,10 @@ static bool debug_line (TCHAR *input)
 				break_if_enforcer = break_if_enforcer ? false : true;
 				console_out_f(_T("Break when enforcer hit: %s\n"), break_if_enforcer ? _T("enabled") : _T("disabled"));
 			} else {
-				if (instruction_breakpoint (&inptr))
+				if (instruction_breakpoint(&inptr)) {
+					debug_cycles();
 					return true;
+				}
 			}
 			break;
 
@@ -6037,6 +6085,7 @@ void debug (void)
 			}
 			if (bp > 0)
 				console_out_f(_T("Breakpoint %d triggered.\n"), bp - 1);
+			debug_cycles();
 		}
 	} else {
 		console_out_f (_T("Memwatch %d: break at %08X.%c %c%c%c %08X PC=%08X "), memwatch_triggered - 1, mwhit.addr,
@@ -6072,6 +6121,18 @@ void debug (void)
 	}
 #endif
 	debugmem_disable();
+
+	if (trace_cycles && last_frame >= 0) {
+		if (last_frame + 2 >= timeframes) {
+			console_out_f(_T("Cycles: %d Chip, %d CPU. (V=%d H=%d -> V=%d H=%d)\n"),
+				(last_cycles2 - last_cycles1) / CYCLE_UNIT,
+				(last_cycles2 - last_cycles1) / cpucycleunit,
+				last_vpos1, last_hpos1,
+				last_vpos2, last_hpos2);
+		}
+	}
+	trace_cycles = 0;
+
 	debug_1 ();
 	debugmem_enable();
 	if (!debug_rewind && !currprefs.cachesize
@@ -6097,6 +6158,11 @@ void debug (void)
 	uae_ppc_pause(0);
 #endif
 	setmouseactive(0, wasactive ? 2 : 0);
+
+	last_cycles1 = get_cycles();
+	last_vpos1 = vpos;
+	last_hpos1 = current_hpos();
+	last_frame = timeframes;
 }
 
 const TCHAR *debuginfo (int mode)

@@ -18,7 +18,7 @@
 
 #define UAEMAJOR 4
 #define UAEMINOR 0
-#define UAESUBREV 0
+#define UAESUBREV 1
 
 #define MAX_AMIGADISPLAYS 4
 
@@ -31,6 +31,18 @@ extern long int version;
 struct multipath {
 	TCHAR path[MAX_PATHS][PATH_MAX];
 };
+
+#define PATH_NONE -1
+#define PATH_FLOPPY 0
+#define PATH_CD 1
+#define PATH_DIR 2
+#define PATH_HDF 3
+#define PATH_FS 4
+#define PATH_TAPE 5
+#define PATH_GENLOCK_IMAGE 6
+#define PATH_GENLOCK_VIDEO 7
+#define PATH_GEO 8
+#define PATH_ROM 9
 
 struct strlist {
 	struct strlist *next;
@@ -79,13 +91,14 @@ struct uae_input_device {
 #define MAX_JPORTS_CUSTOM 6
 #define MAX_JPORTS 4
 #define NORMAL_JPORTS 2
-#define MAX_JPORTNAME 128
+#define MAX_JPORT_NAME 128
+#define MAX_JPORT_CONFIG 256
 struct jport_custom {
 	TCHAR custom[MAX_DPATH];
 };
 struct inputdevconfig {
-	TCHAR name[MAX_JPORTNAME];
-	TCHAR configname[MAX_JPORTNAME];
+	TCHAR name[MAX_JPORT_NAME];
+	TCHAR configname[MAX_JPORT_CONFIG];
 	TCHAR shortid[16];
 };
 struct jport {
@@ -242,8 +255,9 @@ struct uaedev_config_data
 	int unitnum; // scsi unit number (if tape currently)
 };
 
-enum { CP_GENERIC = 1, CP_CDTV, CP_CDTVCR, CP_CD32, CP_A500, CP_A500P, CP_A600, CP_A1000,
-	CP_A1200, CP_A2000, CP_A3000, CP_A3000T, CP_A4000, CP_A4000T, CP_VELVET, CP_CASABLANCA };
+enum { CP_GENERIC = 1, CP_CDTV, CP_CDTVCR, CP_CD32, CP_A500, CP_A500P, CP_A600,
+	CP_A1000, CP_A1200, CP_A2000, CP_A3000, CP_A3000T, CP_A4000, CP_A4000T,
+	CP_VELVET, CP_CASABLANCA, CP_DRACO };
 
 #define IDE_A600A1200 1
 #define IDE_A4000 2
@@ -460,6 +474,7 @@ struct uae_prefs {
 
 	bool start_debugger;
 	int debugging_features;
+	TCHAR debugging_options[MAX_DPATH];
 	bool start_gui;
 
 	KbdLang keyboard_lang;
@@ -499,7 +514,7 @@ struct uae_prefs {
 	bool comp_constjump;
 	int cachesize;
 	bool fpu_strict;
-	bool fpu_softfloat;
+	int fpu_mode;
 
 #ifndef WINUAE_FOR_HATARI
 	struct monconfig gfx_monitor[MAX_AMIGADISPLAYS];
@@ -532,6 +547,7 @@ struct uae_prefs {
 	int lightpen_offset[2];
 	int gfx_display_sections;
 	int gfx_variable_sync;
+	bool gfx_windowed_resize;
 
 	struct gfx_filterdata gf[2];
 
@@ -562,6 +578,7 @@ struct uae_prefs {
 	int collision_level;
 	int leds_on_screen;
 	int leds_on_screen_mask[2];
+	int power_led_dim;
 	struct wh osd_pos;
 	int keyboard_leds[3];
 	bool keyboard_leds_in_use;
@@ -900,6 +917,8 @@ extern int cfgfile_yesno (const TCHAR *option, const TCHAR *value, const TCHAR *
 extern int cfgfile_intval (const TCHAR *option, const TCHAR *value, const TCHAR *name, int *location, int scale);
 extern int cfgfile_strval (const TCHAR *option, const TCHAR *value, const TCHAR *name, int *location, const TCHAR *table[], int more);
 extern int cfgfile_string (const TCHAR *option, const TCHAR *value, const TCHAR *name, TCHAR *location, int maxsz);
+extern bool cfgfile_option_find(const TCHAR *s, const TCHAR *option);
+extern TCHAR *cfgfile_option_get(const TCHAR *s, const TCHAR *option);
 extern TCHAR *cfgfile_subst_path (const TCHAR *path, const TCHAR *subst, const TCHAR *file);
 
 extern TCHAR *target_expand_environment (const TCHAR *path, TCHAR *out, int maxlen);
@@ -911,6 +930,11 @@ extern int target_cfgfile_load (struct uae_prefs *, const TCHAR *filename, int t
 extern void cfgfile_save_options (struct zfile *f, struct uae_prefs *p, int type);
 extern int target_get_display (const TCHAR*);
 extern const TCHAR *target_get_display_name (int, bool);
+extern void target_multipath_modified(struct uae_prefs *);
+extern void cfgfile_resolve_path_out_load(const TCHAR *path, TCHAR *out, int size, int type);
+extern void cfgfile_resolve_path_load(TCHAR *path, int size, int type);
+extern void cfgfile_resolve_path_out_save(const TCHAR *path, TCHAR *out, int size, int type);
+extern void cfgfile_resolve_path_save(TCHAR *path, int size, int type);
 
 extern struct uae_prefs *cfgfile_open(const TCHAR *filename, int *type);
 extern void cfgfile_close(struct uae_prefs *p);
@@ -930,13 +954,14 @@ extern int built_in_prefs (struct uae_prefs *p, int model, int config, int compa
 extern int built_in_chipset_prefs (struct uae_prefs *p);
 extern int built_in_cpuboard_prefs(struct uae_prefs *p);
 extern int cmdlineparser (const TCHAR *s, TCHAR *outp[], int max);
-extern int cfgfile_configuration_change (int);
 extern void fixup_prefs_dimensions (struct uae_prefs *prefs);
 extern void fixup_prefs (struct uae_prefs *prefs, bool userconfig);
 extern void fixup_cpu (struct uae_prefs *prefs);
 extern void cfgfile_compatibility_romtype(struct uae_prefs *p);
 extern void cfgfile_compatibility_rtg(struct uae_prefs *p);
 extern bool cfgfile_detect_art(struct uae_prefs *p, TCHAR *path);
+extern const TCHAR *cfgfile_getconfigdata(int *len);
+extern bool cfgfile_createconfigstore(struct uae_prefs *p);
 
 extern void check_prefs_changed_custom (void);
 extern void check_prefs_changed_cpu (void);

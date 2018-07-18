@@ -3291,8 +3291,10 @@ floatx80 floatx80_abs(floatx80 a, float_status *status)
     aSig = extractFloatx80Frac(a);
     aExp = extractFloatx80Exp(a);
     
-    if ( aExp == 0x7FFF && (uint64_t) ( aSig<<1 ) ) {
-        return propagateFloatx80NaNOneArg( a, status );
+    if ( aExp == 0x7FFF ) {
+        if ( (uint64_t) ( aSig<<1 ) )
+            return propagateFloatx80NaNOneArg( a, status );
+        return packFloatx80( 0, 0x7FFF, floatx80_default_infinity_low );
     }
     
     if ( aExp == 0 ) {
@@ -3321,13 +3323,15 @@ floatx80 floatx80_neg(floatx80 a, float_status *status)
     aExp = extractFloatx80Exp(a);
     aSign = extractFloatx80Sign(a);
     
-    if ( aExp == 0x7FFF && (uint64_t) ( aSig<<1 ) ) {
-        return propagateFloatx80NaNOneArg( a, status );
+    if ( aExp == 0x7FFF ) {
+        if ( (uint64_t) ( aSig<<1 ) )
+            return propagateFloatx80NaNOneArg( a, status );
+        return packFloatx80 ( !aSign, 0x7FFF, floatx80_default_infinity_low );
     }
     
-    aSign = !aSign;
-    
-    if ( aExp == 0 ) {
+	aSign = !aSign;
+
+	if ( aExp == 0 ) {
         if ( aSig == 0 ) return packFloatx80( aSign, 0, 0 );
         normalizeFloatx80Subnormal( aSig, &aExp, &aSig );
     }
@@ -3358,8 +3362,12 @@ floatx80 floatx80_cmp( floatx80 a, floatx80 b, float_status *status )
     
     if ( ( aExp == 0x7FFF && (uint64_t) ( aSig<<1 ) ) ||
          ( bExp == 0x7FFF && (uint64_t) ( bSig<<1 ) ) ) {
-        return propagateFloatx80NaN( packFloatx80( 0, aExp, aSig ),
-                                     packFloatx80( 0, bExp, bSig ), status );
+		// 68040 FCMP -NaN return N flag set
+		if (status->fpu_model == 68040)
+	        return propagateFloatx80NaN( packFloatx80( aSign, aExp, aSig ),
+                                     packFloatx80( bSign, bExp, bSig ), status );
+		return propagateFloatx80NaN(packFloatx80(0, aExp, aSig),
+			packFloatx80(0, bExp, bSig), status);
 	}
     
     if ( bExp < aExp ) return packFloatx80( aSign, 0x3FFF, LIT64( 0x8000000000000000 ) );
@@ -3410,7 +3418,7 @@ floatx80 floatx80_move( floatx80 a, float_status *status )
     }
     if ( aExp == 0 ) {
         if ( aSig == 0 ) return a;
-        normalizeRoundAndPackFloatx80( status->floatx80_rounding_precision, aSign, aExp, aSig, 0, status );
+        return normalizeRoundAndPackFloatx80( status->floatx80_rounding_precision, aSign, aExp, aSig, 0, status );
     }
     return roundAndPackFloatx80( status->floatx80_rounding_precision, aSign, aExp, aSig, 0, status );
 }

@@ -12,9 +12,12 @@
 #include "uae/types.h"
 #include "readcpu.h"
 #include "machdep/m68k.h"
+#include "events.h"
+#include <softfloat/softfloat.h>
+
+#ifdef WINUAE_FOR_HATARI
 #include "compat.h"
 #include "maccess.h"
-#include "events.h"
 #include "memory.h"
 #include "custom.h"
 
@@ -40,8 +43,7 @@
 #define SPCFLAG_EXEC 0x400
 #define SPCFLAG_MODE_CHANGE 0x800
 #define SPCFLAG_DSP 0x1000
-
-#include <softfloat/softfloat.h>
+#endif
 
 #ifndef SET_CFLG
 
@@ -94,6 +96,7 @@ struct cputbl {
 };
 
 #ifdef JIT
+#define MIN_JIT_CACHE 128
 #define MAX_JIT_CACHE 16384
 typedef uae_u32 REGPARAM3 compop_func (uae_u32) REGPARAM;
 
@@ -120,10 +123,8 @@ typedef uae_u8 flagtype;
 
 #ifdef USE_LONG_DOUBLE
 typedef long double fptype;
-#define LDPTR tbyte ptr
 #else
 typedef double fptype;
-#define LDPTR qword ptr
 #endif
 #endif
 
@@ -171,10 +172,25 @@ struct mmufixup
 };
 extern struct mmufixup mmufixup[2];
 
+#ifdef MSVC_LONG_DOUBLE
+typedef struct {
+	uae_u64 m;
+	uae_u16 e;
+	uae_u16 dummy;
+} fprawtype;
+#endif
+
 typedef struct
 {
 	floatx80 fpx;
+#ifdef MSVC_LONG_DOUBLE
+	union {
+		fptype fp;
+		fprawtype rfp;
+	};
+#else
 	fptype fp;
+#endif
 } fpdata;
 
 struct regstruct
@@ -186,6 +202,7 @@ struct regstruct
 	uae_u8 *pc_oldp;
 	uae_u16 opcode;
 	uae_u32 instruction_pc;
+	uae_u32 instruction_pc_user_exception;
 
 	uae_u16 irc, ir, db;
 	volatile uae_atomic spcflags;
@@ -669,12 +686,12 @@ extern void REGPARAM3 put_bitfield (uae_u32 dst, uae_u32 bdata[2], uae_u32 val, 
 extern void m68k_disasm_ea (uaecptr addr, uaecptr *nextpc, int cnt, uae_u32 *seaddr, uae_u32 *deaddr, uaecptr lastpc);
 extern void m68k_disasm (uaecptr addr, uaecptr *nextpc, uaecptr lastpc, int cnt);
 extern void m68k_disasm_2 (TCHAR *buf, int bufsize, uaecptr addr, uaecptr *nextpc, int cnt, uae_u32 *seaddr, uae_u32 *deaddr, uaecptr lastpc, int safemode);
-extern void sm68k_disasm (TCHAR*, TCHAR*, uaecptr addr, uaecptr *nextpc, uaecptr lastpc);
-extern int m68k_asm(TCHAR *buf, uae_u16 *out, uaecptr pc);
-extern int get_cpu_model (void);
 #ifdef WINUAE_FOR_HATARI
 extern void m68k_disasm_file (FILE *f, uaecptr addr, uaecptr *nextpc, uaecptr lastpc, int cnt);
 #endif
+extern void sm68k_disasm (TCHAR*, TCHAR*, uaecptr addr, uaecptr *nextpc, uaecptr lastpc);
+extern int m68k_asm(TCHAR *buf, uae_u16 *out, uaecptr pc);
+extern int get_cpu_model (void);
 
 extern void set_cpu_caches (bool flush);
 #ifdef WINUAE_FOR_HATARI
@@ -700,7 +717,9 @@ extern bool m68k_mull (uae_u32, uae_u32, uae_u16);
 extern void init_m68k (void);
 extern void m68k_go (int);
 extern void m68k_dumpstate(uaecptr *, uaecptr);
+#ifdef WINUAE_FOR_HATARI
 extern void m68k_dumpstate_file (FILE *f, uaecptr *nextpc, uaecptr prevpc);
+#endif
 extern void m68k_dumpcache (bool);
 extern int getDivu68kCycles (uae_u32 dividend, uae_u16 divisor);
 extern int getDivs68kCycles (uae_s32 dividend, uae_s16 divisor);

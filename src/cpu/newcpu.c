@@ -38,10 +38,9 @@
 #include "debugmem.h"
 #include "savestate.h"
 #include "fpp.h"
+
 #ifdef WINUAE_FOR_HATARI
 #include "debug.h"
-#endif
-
 #include "m68000.h"
 #include "reset.h"
 #include "cycInt.h"
@@ -61,6 +60,7 @@
 #include "debugcpu.h"
 #include "stMemory.h"
 #include "blitter.h"
+#endif
 
 
 #ifdef JIT
@@ -1993,7 +1993,7 @@ static void build_cpufunctbl (void)
 
 	write_log(_T("CPU=%d, FPU=%d%s, MMU=%d, JIT%s=%d."),
 		currprefs.cpu_model,
-		currprefs.fpu_model, currprefs.fpu_model ? (currprefs.fpu_softfloat ? _T(" (softfloat)") : _T(" (host)")) : _T(""),
+		currprefs.fpu_model, currprefs.fpu_model ? (currprefs.fpu_mode > 0 ? _T(" (softfloat)") : (currprefs.fpu_mode < 0 ? _T(" (host 80b)") : _T(" (host 64b)"))) : _T(""),
 		currprefs.mmu_model,
 		currprefs.cachesize ? (currprefs.compfpu ? _T("=CPU/FPU") : _T("=CPU")) : _T(""),
 		currprefs.cachesize);
@@ -2166,7 +2166,6 @@ static void prefs_changed_cpu (void)
 	currprefs.cpu_memory_cycle_exact = changed_prefs.cpu_memory_cycle_exact;
 	currprefs.int_no_unimplemented = changed_prefs.int_no_unimplemented;
 	currprefs.fpu_no_unimplemented = changed_prefs.fpu_no_unimplemented;
-	currprefs.fpu_softfloat = changed_prefs.fpu_softfloat;
 	currprefs.blitter_cycle_exact = changed_prefs.blitter_cycle_exact;
 }
 
@@ -2189,7 +2188,7 @@ static int check_prefs_changed_cpu2(void)
 		|| currprefs.cpu_compatible != changed_prefs.cpu_compatible
 		|| currprefs.cpu_cycle_exact != changed_prefs.cpu_cycle_exact
 		|| currprefs.cpu_memory_cycle_exact != changed_prefs.cpu_memory_cycle_exact
-		|| currprefs.fpu_softfloat != changed_prefs.fpu_softfloat) {
+		|| currprefs.fpu_mode != changed_prefs.fpu_mode) {
 			cpu_prefs_changed_flag |= 1;
 #ifdef WINUAE_FOR_HATARI
 			/* When changing CPU prefs in Hatari we reset the emulation, */
@@ -2851,6 +2850,14 @@ static void activate_trace(void)
 	set_special (SPCFLAG_DOTRACE);
 }
 
+// make sure interrupt is checked immediately after current instruction
+static void doint_imm(void)
+{
+	doint();
+	if (!currprefs.cachesize && !(regs.spcflags & SPCFLAG_INT) && (regs.spcflags & SPCFLAG_DOINT))
+		set_special(SPCFLAG_INT);
+}
+
 void REGPARAM2 MakeSR (void)
 {
 	regs.sr = ((regs.t1 << 15) | (regs.t0 << 14)
@@ -2936,7 +2943,7 @@ static void MakeFromSR_x(int t0trace)
 	if (currprefs.mmu_model)
 		mmu_set_super (regs.s != 0);
 
-	doint ();
+	doint_imm();
 	if (regs.t1 || regs.t0) {
 		set_special (SPCFLAG_TRACE);
 	} else {
@@ -4035,6 +4042,9 @@ static void ExceptionX (int nr, uaecptr address)
 	if (cpu_tracer) {
 		cputrace.state = nr;
 	}
+	if (!regs.s) {
+		regs.instruction_pc_user_exception = m68k_getpc();
+	}
 
 #ifdef WINUAE_FOR_HATARI
 	/* Handle Hatari GEM and BIOS traps */
@@ -4288,8 +4298,10 @@ static void m68k_reset2(bool hardreset)
 		regs.pcr = currprefs.fpu_model == 68060 ? MC68060_PCR : MC68EC060_PCR;
 		regs.pcr |= (currprefs.cpu060_revision & 0xff) << 8;
 #ifndef WINUAE_FOR_HATARI
-		if (currprefs.fpu_model == 0 || kickstart_rom)
-			regs.pcr |= 2; /* disable FPU */
+		if (currprefs.fpu_model == 0 || (currprefs.cpuboard_type == 0 && rtarea_base != 0xf00000)) {
+			/* disable FPU if no accelerator board and no $f0 ROM */
+			regs.pcr |= 2;
+		}
 #endif
 	}
 //	regs.ce020memcycles = 0;
@@ -4664,6 +4676,7 @@ static bool mmu_op30fake_pflush (uaecptr pc, uae_u32 opcode, uae_u16 next, uaecp
 	switch (flushmode)
 	{
 	case 0x00:
+	case 0x02:
 		return mmu_op30fake_pload(pc, opcode, next, extra);
 	case 0x18:
 		if (mmu_op30_invea(opcode))
@@ -7895,6 +7908,8 @@ static int asm_isareg(const TCHAR *s)
 {
 	if (s[0] == 'A' && s[1] >= '0' && s[1] <= '7')
 		return s[1] - '0';
+	if (s[0] == 'S' && s[1] == 'P')
+		return 7;
 	return -1;
 }
 static int asm_ispc(const TCHAR *s)
@@ -9893,6 +9908,12 @@ void cpureset (void)
 #endif
 	addrbank *ab;
 
+#ifndef WINUAE_FOR_HATARI
+	if (currprefs.cpu_model == 68060 && currprefs.cpuboard_type == 0 && rtarea_base != 0xf00000) {
+		// disable FPU at reset if no accelerator board and no $f0 ROM.
+		regs.pcr |= 2;
+	}
+#endif
 	m68k_reset_delay = currprefs.reset_delay;
 	set_special(SPCFLAG_CHECK);
 #ifndef WINUAE_FOR_HATARI
