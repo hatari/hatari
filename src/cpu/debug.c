@@ -64,6 +64,7 @@ static uae_u32 trace_param2;
 
 #ifdef WINUAE_FOR_HATARI
 #include "stMemory.h"
+int debugger_active;
 static int debug_mmu_mode;
 int debugging;
 int exception_debugging;
