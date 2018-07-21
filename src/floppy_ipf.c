@@ -135,18 +135,18 @@ void IPF_MemorySnapShot_Capture(bool bSave)
 		MemorySnapShot_Store(&StructSize, sizeof(StructSize));
 		if ( ( StructSize == 0 ) && ( sizeof ( IPF_State ) > 0 ) )
 		{
-			Log_AlertDlg(LOG_ERROR, "This memory snapshot doesn't include IPF data but this version of Hatari was built with IPF support");
+			Log_AlertDlg(LOG_ERROR, "Hatari built with IPF floppy support, but no IPF data in memory snapshot -> skip");
 			return;				/* Continue restoring the rest of the memory snapshot */
 		}
 		else if ( ( StructSize > 0 ) && ( sizeof ( IPF_State ) == 0 ) )
 		{
-			Log_AlertDlg(LOG_ERROR, "This memory snapshot includes IPF data but this version of Hatari was not built with IPF support");
+			Log_AlertDlg(LOG_ERROR, "Memory snapshot with IPF floppy data, but Hatari built without IPF support -> skip");
 			MemorySnapShot_Skip( StructSize );	/* Ignore the IPF data */
 			return;				/* Continue restoring the rest of the memory snapshot */
 		}
 		else if ( ( StructSize > 0 ) && ( StructSize != sizeof ( IPF_State ) ) )
 		{
-			Log_AlertDlg(LOG_ERROR, "This memory snapshot includes IPF data different from the ones handled in this version of Hatari");
+			Log_AlertDlg(LOG_ERROR, "Memory snapshot IPF floppy data incompatible with this Hatari version -> skip");
 			MemorySnapShot_Skip( StructSize );	/* Ignore the IPF data */
 			return;				/* Continue restoring the rest of the memory snapshot */
 		}
@@ -280,7 +280,7 @@ static char *IPF_FilenameFindTrackSide (char *FileName)
 Uint8 *IPF_ReadDisk(int Drive, const char *pszFileName, long *pImageSize, int *pImageType)
 {
 #ifndef HAVE_CAPSIMAGE
-	Log_AlertDlg(LOG_ERROR, "This version of Hatari was not built with IPF support, this disk image can't be handled.");
+	Log_AlertDlg(LOG_ERROR, "Hatari built without IPF support -> can't handle floppy image");
 	return NULL;
 
 #else
