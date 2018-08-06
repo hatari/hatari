@@ -57,11 +57,25 @@ static Uint32	STMemory_MMU_Translate_Addr_STE ( Uint32 addr_logical , int RAM_Ba
 
 /**
  * Set default value for MMU bank size and RAM bank size
+ * NOTE : when using SMALL_MEM, IoMem will not be allocated yet on the first call
+ * so we default to 0x0.
+ * TODO [NP] : don't call STMemory_MMU_ConfToBank from here ? Better ensure STMemory_Reset()
+ * is called early enough.
  */
 void	STMemory_Init ( int RAM_Size_Byte )
 {
+	Uint8 val;
+
 	/* Set default MMU bank size values */
-	STMemory_MMU_ConfToBank(0, &MMU_Bank0_Size, &MMU_Bank1_Size);
+#if ENABLE_SMALL_MEM
+	if ( IOmemory == NULL )
+		val = 0x0;	
+	else
+		val = IoMem[ 0xff8001 ];
+#else
+	val = IoMem[ 0xff8001 ];
+#endif
+	STMemory_MMU_ConfToBank ( val, &MMU_Bank0_Size, &MMU_Bank1_Size );
 
 	if ( RAM_Size_Byte <= 0x400000 )
 	{
