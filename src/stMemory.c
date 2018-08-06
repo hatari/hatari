@@ -165,6 +165,8 @@ bool STMemory_SafeCopy(Uint32 addr, Uint8 *src, unsigned int len, const char *na
  */
 void STMemory_MemorySnapShot_Capture(bool bSave)
 {
+	Uint8 val;
+
 	MemorySnapShot_Store(&STRamEnd, sizeof(STRamEnd));
 
 	/* After restoring RAM/MMU bank sizes we must call memory_map_Standard_RAM() */
@@ -173,7 +175,17 @@ void STMemory_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&MMU_Bank0_Size, sizeof(MMU_Bank0_Size));
 	MemorySnapShot_Store(&MMU_Bank1_Size, sizeof(MMU_Bank1_Size));
 	MemorySnapShot_Store(&MMU_Conf_Expected, sizeof(MMU_Conf_Expected));
-	
+	if ( bSave )
+	{
+		val = IoMem[ 0xff8001 ];
+		MemorySnapShot_Store(&val, sizeof(val));
+	}
+	else
+	{
+		MemorySnapShot_Store(&val, sizeof(val));
+		IoMem[ 0xff8001 ] = val;
+	}
+
 	/* Only save/restore area of memory machine is set to, eg 1Mb */
 	MemorySnapShot_Store(STRam, STRamEnd);
 
