@@ -360,6 +360,8 @@ void MemorySnapShot_Restore(const char *pszFileName, bool bConfirm)
 {
 	Uint32 magic;
 
+fprintf ( stderr , "MemorySnapShot_Restore in\n" );
+
 	/* Set to 'restore' */
 	if (MemorySnapShot_OpenFile(pszFileName, false, bConfirm))
 	{
@@ -371,6 +373,7 @@ void MemorySnapShot_Restore(const char *pszFileName, bool bConfirm)
 		Reset_Cold();
 
 		/* Capture each files details */
+fprintf ( stderr , "MemorySnapShot_Restore stmemory\n" );
 		STMemory_MemorySnapShot_Capture(false);
 		Cycles_MemorySnapShot_Capture(false);			/* Before fdc (for CyclesGlobalClockCounter) */
 		FDC_MemorySnapShot_Capture(false);
@@ -382,6 +385,7 @@ void MemorySnapShot_Restore(const char *pszFileName, bool bConfirm)
 		IKBD_MemorySnapShot_Capture(false);			/* After ACIA */
 		MIDI_MemorySnapShot_Capture(false);
 		CycInt_MemorySnapShot_Capture(false);
+fprintf ( stderr , "MemorySnapShot_Restore m68000\n" );
 		M68000_MemorySnapShot_Capture(false);
 		MFP_MemorySnapShot_Capture(false);
 		PSG_MemorySnapShot_Capture(false);
@@ -407,10 +411,6 @@ void MemorySnapShot_Restore(const char *pszFileName, bool bConfirm)
 		/* And close */
 		MemorySnapShot_CloseFile();
 
-		/* Apply patches for gemdos HD if needed */
-		/* (we need to do it after cpu tables for all opcodes were rebuilt) */
-		Cart_Patch();
-
 		/* changes may affect also info shown in statusbar */
 		Statusbar_UpdateInfo();
 
@@ -420,6 +420,8 @@ void MemorySnapShot_Restore(const char *pszFileName, bool bConfirm)
 			return;
 		}
 	}
+
+fprintf ( stderr , "MemorySnapShot_Restore out\n" );
 
 	/* Did error? */
 	if (bCaptureError)

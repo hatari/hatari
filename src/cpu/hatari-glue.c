@@ -35,6 +35,7 @@ const char HatariGlue_fileid[] = "Hatari hatari-glue.c : " __DATE__ " " __TIME__
 #include "m68000.h"
 #include "newcpu.h"
 #include "cpu_prefetch.h"
+#include "savestate.h"
 #include "hatari-glue.h"
 
 
@@ -86,11 +87,66 @@ int intlev(void)
 	return -1;
 }
 
+
+void UAE_Set_Quit_Reset ( bool hard )
+{
+	if ( hard )
+		quit_program = UAE_RESET_HARD;
+	else
+		quit_program = UAE_RESET;
+}
+
+
+void UAE_Set_State_Restore ( void )
+{
+	savestate_state = STATE_RESTORE;
+}
+
+
+void restore_state (const TCHAR *filename)
+{
+	uae_u8 chunk[ 1000 ];
+
+fprintf ( stderr , "restore_state\n" );
+	//m68k_dumpstate_file(stderr, NULL);
+	restore_cpu (chunk);
+	//printf ( "restore cpu done\n" );
+	restore_cpu_extra (chunk);
+	//printf ( "restore cpux done\n" );
+	restore_fpu (chunk);
+	//printf ( "restore fpu done\n"  );
+	restore_mmu (chunk);
+	//printf ( "restore mmu done\n"  );
+}
+
+
+void savestate_restore_finish (void)
+{
+fprintf ( stderr , "savestate_restore_finish 1\n" );
+	if (!isrestore ())
+		return;
+	restore_cpu_finish ();
+fprintf ( stderr , "savestate_restore_finish 2\n" );
+	savestate_state = 0;
+}
+
+
+
 /**
  * Initialize 680x0 emulation
  */
 int Init680x0(void)
 {
+fprintf ( stderr , "Init680x0 in\n" );
+
+ init_m68k();
+
+fprintf ( stderr , "Init680x0 out\n" );
+
+ return true;
+
+
+
 	currprefs.cpu_level = changed_prefs.cpu_level = ConfigureParams.System.nCpuLevel;
 
 	switch (currprefs.cpu_level)
@@ -123,7 +179,8 @@ int Init680x0(void)
 	changed_prefs.cpu_memory_cycle_exact = ConfigureParams.System.bCycleExactCpu;
 	changed_prefs.fpu_model = ConfigureParams.System.n_FPUType;
 	changed_prefs.fpu_strict = ConfigureParams.System.bCompatibleFPU;
-	changed_prefs.fpu_mode = ( ConfigureParams.System.bSoftFloatFPU ? 1 : 0 );
+        changed_prefs.fpu_mode = ( ConfigureParams.System.bSoftFloatFPU ? 1 : 0 );
+fprintf ( stderr , "Init680x0 %d %d\n" , ConfigureParams.System.bSoftFloatFPU , changed_prefs.fpu_mode );
 
         /* Always emulate instr/data caches for cpu >= 68020 */
         changed_prefs.cpu_data_cache = true;
@@ -186,7 +243,7 @@ static bool is_cart_pc(void)
  * This function will be called at system init by the cartridge routine
  * (after gemdos init, before booting floppies).
  * The GEMDOS vector (#$84) is setup and we also initialize the connected
- * drive mask and Line-A  variables (for an extended VDI resolution) from here.
+ * drive mask and Line-A variables (for an extended VDI resolution) from here.
  */
 uae_u32 REGPARAM3 OpCode_SysInit(uae_u32 opcode)
 {

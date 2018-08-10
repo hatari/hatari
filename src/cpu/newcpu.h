@@ -864,7 +864,7 @@ void execute_other_cpu_single(void);
 #define UAE_RESET_KEYBOARD 3
 #define UAE_RESET_HARD 4
 
-extern int uae_quit_program;
+extern int quit_program;
 /* From uae.h */
 
 

@@ -1870,3 +1870,22 @@ void map_banks_ce (addrbank *bank, int start, int size, int realsize , int bankt
 void memory_hardreset (void)
 {
 }
+
+
+/*
+ * Called from newcpu.c / m68k_go() when cpu_hardreset==true
+ * Clear RAM at STmemory and TTmemory
+ */
+void memory_clear (void)
+{
+// [NP] Don't clear memory for now, because it would erase memory after restoring a memory snapshot
+// TODO : handle memstate save/restore from m68_go as in winuae ?
+#if 0
+	if ( STmemory )
+		memset ( STmemory , 0 , STmem_size );
+	if ( TTmemory )
+		memset ( TTmemory , 0 , TTmem_size );
+#endif
+}
+
+

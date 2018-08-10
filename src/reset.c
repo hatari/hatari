@@ -57,8 +57,7 @@ static int Reset_ST(bool bCold)
 			return ret;               /* If we can not load a TOS image, return now! */
 
 		Cart_ResetImage();          /* Load cartridge program into ROM memory. */
-		Cart_Patch();
-	
+
 		/* Video timings can change only on cold boot (wakeup states) */
 		Video_SetTimings ( ConfigureParams.System.nMachineType , ConfigureParams.System.VideoTimingMode );
 	}
@@ -97,8 +96,9 @@ static int Reset_ST(bool bCold)
 	if (Config_IsMachineFalcon() && !bUseVDIRes)
 		VIDEL_reset();
 	else
-		Screen_Reset();               /* Reset screen */
-	M68000_Reset(bCold);          /* Reset CPU */
+		Screen_Reset();		/* Reset screen */
+
+	M68000_Reset(bCold);		/* Reset CPU */
 
 	DebugCpu_SetDebugging();      /* Re-set debugging flag if needed */
 	DebugDsp_SetDebugging();

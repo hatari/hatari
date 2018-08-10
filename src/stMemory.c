@@ -75,6 +75,7 @@ void	STMemory_Init ( int RAM_Size_Byte )
 #else
 	val = IoMem[ 0xff8001 ];
 #endif
+fprintf ( stderr , "STMemory_Init %d %x\n" , RAM_Size_Byte , val );
 	STMemory_MMU_ConfToBank ( val, &MMU_Bank0_Size, &MMU_Bank1_Size );
 
 	if ( RAM_Size_Byte <= 0x400000 )
@@ -95,6 +96,7 @@ void	STMemory_Reset ( bool bCold )
 {
 	if ( bCold )
 	{
+fprintf ( stderr , "STMemory_Reset\n" );
 		IoMem[ 0xff8001 ] = 0x0;
 		STMemory_MMU_ConfToBank ( IoMem[ 0xff8001 ] , &MMU_Bank0_Size , &MMU_Bank1_Size );
 	}
@@ -186,6 +188,7 @@ void STMemory_MemorySnapShot_Capture(bool bSave)
 		IoMem[ 0xff8001 ] = val;
 	}
 
+fprintf ( stderr , "STMemory_MemorySnapShot_Capture %d %d %d %d %d 8001=%x\n",RAM_Bank0_Size,RAM_Bank1_Size,MMU_Bank0_Size,MMU_Bank1_Size,MMU_Conf_Expected , IoMem[ 0xff8001 ] );
 	/* Only save/restore area of memory machine is set to, eg 1Mb */
 	MemorySnapShot_Store(STRam, STRamEnd);
 

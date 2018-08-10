@@ -11,5 +11,5 @@
 #define CART_GEMDOS           (0xfa002a)
 
 extern void Cart_ResetImage(void);
-extern void Cart_Patch(void);
+extern void Cart_PatchCpuTables(void);
 

@@ -159,7 +159,7 @@ int BusCyclePenalty = 0;
 
 FILE *console_out_FILE = NULL;
 
-int uae_quit_program = 0;			/* from main.cpp */
+int quit_program = 0;			/* from main.cpp */
 #endif
 
 
@@ -2190,7 +2190,7 @@ static int check_prefs_changed_cpu2(void)
 		|| currprefs.cpu_memory_cycle_exact != changed_prefs.cpu_memory_cycle_exact
 		|| currprefs.fpu_mode != changed_prefs.fpu_mode) {
 			cpu_prefs_changed_flag |= 1;
-#ifdef WINUAE_FOR_HATARI
+#ifdef REMOVE_WINUAE_FOR_HATARI
 			/* When changing CPU prefs in Hatari we reset the emulation, */
 			/* so new cpu table should be built now, not in m68k_go() */
 //			uaecptr pc = m68k_getpc();
@@ -2269,11 +2269,14 @@ void init_m68k (void)
 
 	write_log (_T("%d CPU functions\n"), nr_cpuop_funcs);
 
-#ifdef WINUAE_FOR_HATARI
+#ifdef REMOVE_WINUAE_FOR_HATARI
 	/* Hatari : TODO remove these 2 lines as in winuae 3.4.0 */
 	/* and do it only in m68k_go by setting uae_quit_program=UAE_RESET */
+fprintf ( stderr , "init_m68k 1\n" );
 	build_cpufunctbl ();
+fprintf ( stderr , "init_m68k 2\n" );
 	set_x_funcs ();
+fprintf ( stderr , "init_m68k 3\n" );
 #endif
 }
 
@@ -4195,6 +4198,7 @@ static void m68k_reset2(bool hardreset)
 {
 	uae_u32 v;
 
+fprintf ( stderr,"m68k_reset2 hard=%d in pc=%x\n" , hardreset , regs.pc );
 	regs.halted = 0;
 #ifndef WINUAE_FOR_HATARI
 	gui_data.cpu_halted = 0;
@@ -4307,6 +4311,7 @@ static void m68k_reset2(bool hardreset)
 //	regs.ce020memcycles = 0;
 	regs.ce020startcycle = regs.ce020endcycle = 0;
 	fill_prefetch ();
+fprintf ( stderr,"m68k_reset2 out pc=%x\n" , regs.pc );
 }
 
 void m68k_reset(void)
@@ -4389,17 +4394,19 @@ static void cpu_do_fallback(void)
 		memory_map_dump();
 	}
 }
+#endif
 
 static void m68k_reset_restore(void)
 {
+#ifndef WINUAE_FOR_HATARI
 	// hardreset and 68000/68020 fallback mode? Restore original mode.
 	if (fallback_cpu_model) {
 		fallback_new_cpu_model = fallback_cpu_model;
 		fallback_regs.pc = 0;
 		cpu_do_fallback();
 	}
-}
 #endif
+}
  
 void REGPARAM2 op_unimpl (uae_u16 opcode)
 {
@@ -7384,10 +7391,8 @@ bool is_keyboardreset(void)
 
 void m68k_go (int may_quit)
 {
-#ifndef WINUAE_FOR_HATARI
 	int hardboot = 1;
 	int startup = 1;
-#endif
 
 #ifdef WITH_THREADED_CPU
 	init_cpu_thread();
@@ -7431,6 +7436,7 @@ void m68k_go (int may_quit)
 		}
 		if (input_play || input_record)
 			inprec_startup ();
+#endif
 
 		if (quit_program > 0) {
 			int restored = 0;
@@ -7445,6 +7451,7 @@ void m68k_go (int may_quit)
 			quit_program = 0;
 			hardboot = 0;
 
+#ifndef WINUAE_FOR_HATARI
 #ifdef SAVESTATE
 			if (savestate_state == STATE_DORESTORE)
 				savestate_state = STATE_RESTORE;
@@ -7453,15 +7460,15 @@ void m68k_go (int may_quit)
 			else if (savestate_state == STATE_REWIND)
 				savestate_rewind ();
 #endif
+#endif
 			if (cpu_hardreset)
 				m68k_reset_restore();
 			prefs_changed_cpu();
-#ifdef WINUAE_FOR_HATARI
-			fpu_modechange();		// NP TODO : use SPCFLAG_MODE_CHANGE below instead
-#endif
 			build_cpufunctbl();
 			set_x_funcs();
+#ifndef WINUAE_FOR_HATARI
 			set_cycles (start_cycles);
+#endif
 			custom_reset (cpu_hardreset != 0, cpu_keyboardreset);
 			m68k_reset2 (cpu_hardreset != 0);
 			if (cpu_hardreset) {
@@ -7472,12 +7479,16 @@ void m68k_go (int may_quit)
 #ifdef SAVESTATE
 			/* We may have been restoring state, but we're done now.  */
 			if (isrestore ()) {
+#ifndef WINUAE_FOR_HATARI
 				if (debug_dma) {
 					record_dma_reset ();
 					record_dma_reset ();
 				}
+#endif
 				savestate_restore_finish ();
+#ifndef WINUAE_FOR_HATARI
 				memory_map_dump ();
+#endif
 				if (currprefs.mmu_model == 68030) {
 					mmu030_decode_tc (tc_030, true);
 				} else if (currprefs.mmu_model >= 68040) {
@@ -7487,6 +7498,7 @@ void m68k_go (int may_quit)
 				restored = 1;
 			}
 #endif
+#ifndef WINUAE_FOR_HATARI
 			if (currprefs.produce_sound == 0)
 				eventtab[ev_audio].active = 0;
 			m68k_setpc_normal (regs.pc);
@@ -7497,7 +7509,11 @@ void m68k_go (int may_quit)
 			if (input_record == INPREC_RECORD_START)
 				input_record = INPREC_RECORD_NORMAL;
 			statusline_clear();
+#else
+			m68k_setpc_normal (regs.pc);
+#endif
 		} else {
+#ifndef WINUAE_FOR_HATARI
 			if (input_record == INPREC_RECORD_START) {
 				input_record = INPREC_RECORD_NORMAL;
 				savestate_init ();
@@ -7505,8 +7521,10 @@ void m68k_go (int may_quit)
 				vsync_counter = 0;
 				savestate_check ();
 			}
+#endif
 		}
 
+#ifndef WINUAE_FOR_HATARI
 		if (changed_prefs.inprecfile[0] && input_record)
 			inprec_prepare_record (savestate_fname[0] ? savestate_fname : NULL);
 #endif
@@ -7518,13 +7536,16 @@ void m68k_go (int may_quit)
 			debug ();
 #endif
 /* [NP] TODO : allow changing cpu on the fly ? */
-#ifndef WINUAE_FOR_HATARI
+#ifndef REMOVE_WINUAE_FOR_HATARI
 		if (regs.spcflags & SPCFLAG_MODE_CHANGE) {
 			if (cpu_prefs_changed_flag & 1) {
 				uaecptr pc = m68k_getpc();
 				prefs_changed_cpu();
+fprintf ( stderr,"cpu change %d\n" , cpu_prefs_changed_flag );
 				fpu_modechange();
+#ifndef WINUAE_FOR_HATARI
 				custom_cpuchange();
+#endif
 				build_cpufunctbl();
 				m68k_setpc_normal(pc);
 				fill_prefetch();
@@ -7545,7 +7566,7 @@ void m68k_go (int may_quit)
 		/* so we just need to set PC here */
 		if (regs.spcflags & SPCFLAG_MODE_CHANGE) {
 			if (cpu_prefs_changed_flag & 1) {
-printf ( "cpu change %d\n" , cpu_prefs_changed_flag );
+fprintf ( stderr,"cpu change %d\n" , cpu_prefs_changed_flag );
 				uaecptr pc = m68k_getpc();
 				m68k_setpc_normal(pc);
 				fill_prefetch();
@@ -7584,6 +7605,12 @@ printf ( "cpu change %d\n" , cpu_prefs_changed_flag );
 				continue;
 			}
 		}
+
+#ifdef WINUAE_FOR_HATARI
+		/* Apply patches for gemdos HD if needed (we need to do it after */
+		/* cpu tables for all opcodes were rebuilt in build_cpufunctbl() ) */
+		Cart_PatchCpuTables();
+#endif
 
 #if 0
 		if (mmu_enabled && !currprefs.cachesize) {
@@ -9223,7 +9250,6 @@ uae_u8 *restore_cpu (uae_u8 *src)
 	regs.usp = restore_u32 ();
 	regs.isp = restore_u32 ();
 	regs.sr = restore_u16 ();
-printf ( "restore %x %x %x\n" , regs.usp , regs.isp , regs.sr );
 	l = restore_u32 ();
 	if (l & CPUMODE_HALT) {
 		regs.stopped = 1;
@@ -9420,7 +9446,6 @@ void restore_cpu_finish (void)
 	m68k_setpc_normal (regs.pc);
 	doint ();
 	fill_prefetch_quick ();
-printf ( "SR %x %x %x %x\n" , regs.sr , regs.isp , regs.usp , regs.regs[15] );
 #ifndef WINUAE_FOR_HATARI
 	set_cycles (start_cycles);
 	events_schedule ();

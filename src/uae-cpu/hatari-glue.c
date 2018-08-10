@@ -111,6 +111,7 @@ int Init680x0(void)
 	currprefs.address_space_24 = changed_prefs.address_space_24 = true;
 
 	init_m68k();
+	Cart_PatchCpuTables();
 
 	return true;
 }
@@ -152,6 +153,7 @@ void check_prefs_changed_cpu(void)
 		currprefs.cpu_compatible = changed_prefs.cpu_compatible;
 		set_special(SPCFLAG_MODE_CHANGE);
 		build_cpufunctbl ();
+		Cart_PatchCpuTables();
 	}
 }
 

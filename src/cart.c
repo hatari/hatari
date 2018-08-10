@@ -146,8 +146,9 @@ void Cart_ResetImage(void)
  * We need to split this from Cart_ResetImage(), as the patches should
  * be applied after building the cpu opcodes tables.
  */
-void Cart_Patch(void)
+void Cart_PatchCpuTables(void)
 {
+printf ( "Cart_PatchCpuTables\n" );
 	if (PatchIllegal == true)
 	{
 		//fprintf ( stderr ," Cart_ResetImage patch\n" );
