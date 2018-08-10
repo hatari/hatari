@@ -490,6 +490,9 @@ void Statusbar_UpdateInfo(void)
 	default:
 		*end++ = '-';
 	}
+	if ( ConfigureParams.System.bSoftFloatFPU && ( ConfigureParams.System.n_FPUType != FPU_NONE ) ) {
+		end = Statusbar_AddString(end, "(SF)");
+	}
 	if (ConfigureParams.System.bMMU) {
 		end = Statusbar_AddString(end, "/MMU");
 	}
