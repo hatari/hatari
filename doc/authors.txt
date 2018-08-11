@@ -139,6 +139,9 @@ random order - and if someone is missing here, please remind us!):
 - Miro Kropáček : patch for correct V flag when using BCD instructions
   on 68020/68030 CPU
 
+- Steven Noonan : patch to prevent a crash if Halt dialog was called
+  before SDLGui_SetScreen()
+
 
  Code from other projects
  ------------------------

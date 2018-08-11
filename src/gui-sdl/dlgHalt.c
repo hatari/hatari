@@ -72,6 +72,8 @@ void Dialog_HaltDlg(void)
 		return;
 	}
 
+	if (SDLGui_SetScreen(sdlscrn))
+		return;
 	SDLGui_CenterDlg(haltdlg);
 	switch (SDLGui_DoDialog(haltdlg, NULL, false)) {
 
