@@ -438,10 +438,12 @@ static void TOS_CheckSysConfig(void)
 		Configuration_ChangeCpuFreq ( 32 );
 		ConfigureParams.System.nCpuLevel = 3;
 	}
-	else if ((TosVersion & 0x0f00) == 0x0400 && !Config_IsMachineFalcon())
+	else if (((TosVersion & 0x0f00) == 0x0400 || TosVersion == 0x0207)
+	         && !Config_IsMachineFalcon())
 	{
-		Log_AlertDlg(LOG_ERROR, "TOS versions 4.x are for Atari Falcon only.\n"
-		             " ==> Switching to Falcon mode now.\n");
+		Log_AlertDlg(LOG_ERROR, "TOS version %x.%02x is for Atari Falcon only.\n"
+		             " ==> Switching to Falcon mode now.\n",
+		             TosVersion >> 8, TosVersion & 0xff);
 		IoMem_UnInit();
 		ConfigureParams.System.nMachineType = MACHINE_FALCON;
 		ClocksTimings_InitMachine ( ConfigureParams.System.nMachineType );
@@ -468,8 +470,7 @@ static void TOS_CheckSysConfig(void)
 		Configuration_ChangeCpuFreq ( 8 );
 		ConfigureParams.System.nCpuLevel = 0;
 	}
-	else if (TosVersion < 0x0300 && TosVersion != 0x0207 &&
-	         (Config_IsMachineTT() || Config_IsMachineFalcon()))
+	else if (TosVersion < 0x0300 && (Config_IsMachineTT() || Config_IsMachineFalcon()))
 	{
 		Log_AlertDlg(LOG_ERROR, "This TOS version does not work in TT/Falcon mode.\n"
 		             " ==> Switching to STE mode now.\n");
