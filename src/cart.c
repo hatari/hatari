@@ -148,7 +148,7 @@ void Cart_ResetImage(void)
  */
 void Cart_PatchCpuTables(void)
 {
-printf ( "Cart_PatchCpuTables\n" );
+//printf ( "Cart_PatchCpuTables\n" );
 	if (PatchIllegal == true)
 	{
 		//fprintf ( stderr ," Cart_ResetImage patch\n" );

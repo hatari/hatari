@@ -523,9 +523,9 @@ static void TOS_CheckSysConfig(void)
 			ConfigureParams.System.bMMU = false;
 		}
 #endif
-fprintf (stderr,"M68000_CheckCpuSettings tos1\n" );
+//fprintf (stderr,"M68000_CheckCpuSettings tos1\n" );
 		M68000_CheckCpuSettings();
-fprintf (stderr,"M68000_CheckCpuSettings tos2\n" );
+//fprintf (stderr,"M68000_CheckCpuSettings tos2\n" );
 	}
 	else if (ConfigureParams.System.nCpuLevel != oldCpuLevel
 #if ENABLE_WINUAE_CPU
@@ -533,9 +533,9 @@ fprintf (stderr,"M68000_CheckCpuSettings tos2\n" );
 #endif
 		)
 	{
-fprintf (stderr,"M68000_CheckCpuSettings tos3\n" );
+//fprintf (stderr,"M68000_CheckCpuSettings tos3\n" );
 		M68000_CheckCpuSettings();
-fprintf (stderr,"M68000_CheckCpuSettings tos4\n" );
+//fprintf (stderr,"M68000_CheckCpuSettings tos4\n" );
 	}
 	if (TosVersion < 0x0104 && ConfigureParams.HardDisk.bUseHardDiskDirectories)
 	{
@@ -633,9 +633,9 @@ static uint8_t *TOS_LoadImage(void)
 	if (ConfigureParams.System.nCpuLevel < 2 || (TosVersion < 0x0300 && !bIsEmuTOS))
 	{
 		ConfigureParams.System.bAddressSpace24 = true;
-fprintf (stderr,"M68000_CheckCpuSettings tos5\n" );
+//fprintf (stderr,"M68000_CheckCpuSettings tos5\n" );
 		M68000_CheckCpuSettings();
-fprintf (stderr,"M68000_CheckCpuSettings tos6\n" );
+//fprintf (stderr,"M68000_CheckCpuSettings tos6\n" );
 	}
 	else if (ConfigureParams.Memory.TTRamSize_KB)
 	{
@@ -647,9 +647,9 @@ fprintf (stderr,"M68000_CheckCpuSettings tos6\n" );
 				/* Print a message and force 32 bit addressing (keeping 24 bit with TT RAM would crash TOS) */
 				Log_AlertDlg(LOG_ERROR, "Enabling 32-bit addressing for TT-RAM access.\nThis can cause issues in some programs!\n");
 				ConfigureParams.System.bAddressSpace24 = false;
-fprintf (stderr,"M68000_CheckCpuSettings tos7\n" );
+//fprintf (stderr,"M68000_CheckCpuSettings tos7\n" );
 				M68000_CheckCpuSettings();
-fprintf (stderr,"M68000_CheckCpuSettings tos8\n" );
+//fprintf (stderr,"M68000_CheckCpuSettings tos8\n" );
 			}
 			break;
 		case MACHINE_FALCON:

@@ -2272,11 +2272,11 @@ void init_m68k (void)
 #ifdef REMOVE_WINUAE_FOR_HATARI
 	/* Hatari : TODO remove these 2 lines as in winuae 3.4.0 */
 	/* and do it only in m68k_go by setting uae_quit_program=UAE_RESET */
-fprintf ( stderr , "init_m68k 1\n" );
+//fprintf ( stderr , "init_m68k 1\n" );
 	build_cpufunctbl ();
-fprintf ( stderr , "init_m68k 2\n" );
+//fprintf ( stderr , "init_m68k 2\n" );
 	set_x_funcs ();
-fprintf ( stderr , "init_m68k 3\n" );
+//fprintf ( stderr , "init_m68k 3\n" );
 #endif
 }
 
@@ -4198,7 +4198,7 @@ static void m68k_reset2(bool hardreset)
 {
 	uae_u32 v;
 
-fprintf ( stderr,"m68k_reset2 hard=%d in pc=%x\n" , hardreset , regs.pc );
+//fprintf ( stderr,"m68k_reset2 hard=%d in pc=%x\n" , hardreset , regs.pc );
 	regs.halted = 0;
 #ifndef WINUAE_FOR_HATARI
 	gui_data.cpu_halted = 0;
@@ -4311,7 +4311,7 @@ fprintf ( stderr,"m68k_reset2 hard=%d in pc=%x\n" , hardreset , regs.pc );
 //	regs.ce020memcycles = 0;
 	regs.ce020startcycle = regs.ce020endcycle = 0;
 	fill_prefetch ();
-fprintf ( stderr,"m68k_reset2 out pc=%x\n" , regs.pc );
+//fprintf ( stderr,"m68k_reset2 out pc=%x\n" , regs.pc );
 }
 
 void m68k_reset(void)

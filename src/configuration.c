@@ -917,9 +917,9 @@ void Configuration_Apply(bool bReset)
 	/* Check/constrain CPU settings and change corresponding
 	 * UAE cpu_level & cpu_compatible variables
 	 */
-printf ("M68000_CheckCpuSettings conf 1\n" );
+//fprintf (stderr,"M68000_CheckCpuSettings conf 1\n" );
 	M68000_CheckCpuSettings();
-printf ("M68000_CheckCpuSettings conf 2\n" );
+//fprintf (stderr,"M68000_CheckCpuSettings conf 2\n" );
 
 	/* Clean file and directory names */
 	File_MakeAbsoluteName(ConfigureParams.Rom.szTosImageFileName);

@@ -237,7 +237,7 @@ void M68000_Init(void)
  */
 void M68000_Reset(bool bCold)
 {
-fprintf ( stderr,"M68000_Reset in\n" );
+//fprintf ( stderr,"M68000_Reset in\n" );
 #if ENABLE_WINUAE_CPU
 #ifdef REMOVE_OLD
 	int spcFlags = regs.spcflags & (SPCFLAG_MODE_CHANGE | SPCFLAG_BRK);
@@ -271,7 +271,7 @@ fprintf ( stderr,"M68000_Reset in\n" );
 #endif
 	BusMode = BUS_MODE_CPU;
 	CPU_IACK = false;
-fprintf ( stderr,"M68000_Reset out\n" );
+//fprintf ( stderr,"M68000_Reset out\n" );
 }
 
 
@@ -281,7 +281,7 @@ fprintf ( stderr,"M68000_Reset out\n" );
  */
 void M68000_Start(void)
 {
-fprintf (stderr, "M68000_Start\n" );
+//fprintf (stderr, "M68000_Start\n" );
 
 	/* Load initial memory snapshot */
 	if (bLoadMemorySave)
@@ -331,7 +331,7 @@ fprintf (stderr, "M68000_Start\n" );
  */
 void M68000_CheckCpuSettings(void)
 {
-fprintf ( stderr,"M68000_CheckCpuSettings in\n" );
+//fprintf ( stderr,"M68000_CheckCpuSettings in\n" );
 	changed_prefs.cpu_level = ConfigureParams.System.nCpuLevel;
 
 #if ENABLE_WINUAE_CPU
@@ -399,7 +399,7 @@ fprintf ( stderr,"M68000_CheckCpuSettings in\n" );
 	if (table68k)
 		check_prefs_changed_cpu();
 #endif
-fprintf ( stderr, "M68000_CheckCpuSettings out\n" );
+//fprintf ( stderr, "M68000_CheckCpuSettings out\n" );
 }
 
 

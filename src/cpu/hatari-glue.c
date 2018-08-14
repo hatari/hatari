@@ -137,11 +137,11 @@ fprintf ( stderr , "savestate_restore_finish 2\n" );
  */
 int Init680x0(void)
 {
-fprintf ( stderr , "Init680x0 in\n" );
+//fprintf ( stderr , "Init680x0 in\n" );
 
  init_m68k();
 
-fprintf ( stderr , "Init680x0 out\n" );
+//fprintf ( stderr , "Init680x0 out\n" );
 
  return true;
 
@@ -180,7 +180,6 @@ fprintf ( stderr , "Init680x0 out\n" );
 	changed_prefs.fpu_model = ConfigureParams.System.n_FPUType;
 	changed_prefs.fpu_strict = ConfigureParams.System.bCompatibleFPU;
         changed_prefs.fpu_mode = ( ConfigureParams.System.bSoftFloatFPU ? 1 : 0 );
-fprintf ( stderr , "Init680x0 %d %d\n" , ConfigureParams.System.bSoftFloatFPU , changed_prefs.fpu_mode );
 
         /* Always emulate instr/data caches for cpu >= 68020 */
         changed_prefs.cpu_data_cache = true;
