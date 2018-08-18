@@ -487,7 +487,10 @@ void Control_RemoveFifo(void)
 	}
 	if (FifoPath) {
 		Log_Printf(LOG_DEBUG, "removing command FIFO: %s\n", FifoPath);
-		remove(FifoPath);
+		if (remove(FifoPath) < 0)
+		{
+			perror("Remove FIFO failed");
+		}
 		free(FifoPath);
 		FifoPath = NULL;
 	}
