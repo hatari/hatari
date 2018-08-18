@@ -464,14 +464,16 @@ static bool scsi_emulate_analyze (struct scsi_data *sd)
 		data_len = (sd->cmd[4] == 0 ? 256 : sd->cmd[4]) * 512; //sd->blocksize;
 	break;
 	case 0x2a: // WRITE(10)
-		data_len = ((sd->cmd[7] << 8) | (sd->cmd[8] << 0)) * (uae_s64)512; //sd->blocksize;
+		data_len = ((sd->cmd[7] << 8) | (sd->cmd[8] << 0)) * 512; //sd->blocksize;
 	break;
+	/*
 	case 0xaa: // WRITE(12)
-		data_len = ((sd->cmd[6] << 24) | (sd->cmd[7] << 16) | (sd->cmd[8] << 8) | (sd->cmd[9] << 0)) * (uae_s64)512; //sd->blocksize;
+		data_len = ((sd->cmd[6] << 24) | (sd->cmd[7] << 16) | (sd->cmd[8] << 8) | (sd->cmd[9] << 0)) * 512; //sd->blocksize;
 	break;
+	*/
 	case 0x2f: // VERIFY
 		if (sd->cmd[1] & 2) {
-			ScsiBus.data_len = ((sd->cmd[7] << 8) | (sd->cmd[8] << 0)) * (uae_s64)512; // sd->blocksize;
+			ScsiBus.data_len = ((sd->cmd[7] << 8) | (sd->cmd[8] << 0)) * 512; // sd->blocksize;
 			sd->direction = 1;
 		} else {
 			ScsiBus.data_len = 0;
