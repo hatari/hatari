@@ -413,6 +413,8 @@ void M68000_MemorySnapShot_Capture(bool bSave)
 	int len;
 	uae_u8 chunk[ 1000 ];
 
+	MemorySnapShot_Store(&pendingInterrupts, sizeof(pendingInterrupts));	/* for intlev() */
+
 	if (bSave)
 	{
 		//m68k_dumpstate_file(stderr, NULL);
@@ -454,6 +456,8 @@ void M68000_MemorySnapShot_Capture(bool bSave)
 	Uint32 savepc;
 
 	/* For the UAE CPU core: */
+	MemorySnapShot_Store(&pendingInterrupts, sizeof(pendingInterrupts));	/* for intlev() */
+
 	MemorySnapShot_Store(&currprefs.address_space_24,
 	                     sizeof(currprefs.address_space_24));
 	MemorySnapShot_Store(&regs.regs[0], sizeof(regs.regs));       /* D0-D7 A0-A6 */
