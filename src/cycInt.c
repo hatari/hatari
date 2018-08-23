@@ -197,6 +197,7 @@ void CycInt_MemorySnapShot_Capture(bool bSave)
 		}
 	}
 	MemorySnapShot_Store(&nCyclesOver, sizeof(nCyclesOver));
+	MemorySnapShot_Store(&ActiveInterrupt, sizeof(ActiveInterrupt));
 	MemorySnapShot_Store(&PendingInterruptCount, sizeof(PendingInterruptCount));
 	if (bSave)
 	{
@@ -212,8 +213,10 @@ void CycInt_MemorySnapShot_Capture(bool bSave)
 	}
 
 
+#if 0
 	if (!bSave)
 		CycInt_SetNewInterrupt();	/* when restoring snapshot, compute current state after */
+#endif
 }
 
 
