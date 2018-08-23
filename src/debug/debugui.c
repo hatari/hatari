@@ -311,10 +311,12 @@ static int DebugUI_DoMemorySnap(int argc, char *argv[])
 	else
 		file = ConfigureParams.Memory.szMemoryCaptureFileName;
 
+	/* [NP] TODO : we need to restart emulation to complete restore, */
+	/* it can't be done immediately. Try to call m68k_go() and go back automatically to debugger ? */
 	if (strcmp(argv[0], "stateload") == 0)
 		MemorySnapShot_Restore(file, true);
 	else
-		MemorySnapShot_Capture(file, true);
+		MemorySnapShot_Capture_Immediate(file, true);
 
 	return DEBUGGER_CMDDONE;
 }

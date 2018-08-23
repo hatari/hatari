@@ -17,6 +17,7 @@ extern int pendingInterrupts;
 extern void customreset(void);
 extern int intlev (void);
 extern void UAE_Set_Quit_Reset ( bool hard );
+extern void UAE_Set_State_Save ( void );
 extern void UAE_Set_State_Restore ( void );
 extern int Init680x0(void);
 extern void Exit680x0(void);

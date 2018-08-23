@@ -430,7 +430,6 @@ void M68000_MemorySnapShot_Capture(bool bSave)
 	}
 	else
 	{
-#if 0
 		//m68k_dumpstate_file(stderr, NULL);
 		restore_cpu (chunk);
 		//printf ( "restore cpu done\n" );
@@ -440,16 +439,7 @@ void M68000_MemorySnapShot_Capture(bool bSave)
 		//printf ( "restore fpu done\n"  );
 		restore_mmu (chunk);
 		//printf ( "restore mmu done\n"  );
-
-		restore_cpu_finish ();
-		if ( regs.s )	regs.regs[15] = regs.isp;
-		else		regs.regs[15] = regs.usp;
 		//m68k_dumpstate_file(stderr, NULL);
-#else
-		restore_state ( NULL );
-		UAE_Set_State_Restore ();
-		UAE_Set_Quit_Reset ( false );
-#endif
 	}
 
 #else /* UAE CPU core */

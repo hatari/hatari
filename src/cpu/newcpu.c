@@ -5649,6 +5649,12 @@ static void m68k_run_1 (void)
 						exit = true;
 				}
 				regs.ipl = regs.ipl_pin;
+
+#ifdef WINUAE_FOR_HATARI
+				if ( savestate_state == STATE_SAVE )
+					save_state ( NULL , NULL );
+#endif
+
 				if (!currprefs.cpu_compatible || (currprefs.cpu_cycle_exact && currprefs.cpu_model <= 68010))
 					exit = true;
 			}
@@ -5800,6 +5806,11 @@ cont:
 					if (do_specialties (0))
 						exit = true;
 				}
+
+#ifdef WINUAE_FOR_HATARI
+				if ( savestate_state == STATE_SAVE )
+					save_state ( NULL , NULL );
+#endif
 
 				if (!currprefs.cpu_cycle_exact || currprefs.cpu_model > 68010)
 					exit = true;
@@ -6339,6 +6350,9 @@ static void m68k_run_mmu060 (void)
 					DSP_Run(2 * cpu_cycles * 2 / CYCLE_UNIT);
 //					DSP_Run ( DSP_CPU_FREQ_RATIO * ( CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter ) );
 				}
+
+				if ( savestate_state == STATE_SAVE )
+					save_state ( NULL , NULL );
 #endif
 			}
 		} CATCH (prb) {
@@ -6438,6 +6452,9 @@ static void m68k_run_mmu040 (void)
 					DSP_Run(2 * cpu_cycles * 2 / CYCLE_UNIT);
 //					DSP_Run ( DSP_CPU_FREQ_RATIO * ( CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter ) );
 				}
+
+				if ( savestate_state == STATE_SAVE )
+					save_state ( NULL , NULL );
 #endif
 			}
 		} CATCH (prb) {
@@ -6593,11 +6610,11 @@ insretry:
 							return;
 					}
 #ifdef WINUAE_FOR_HATARI
-				/* Run DSP 56k code if necessary */
-				if (bDspEnabled) {
-					DSP_Run(2 * cpu_cycles * 2 / CYCLE_UNIT);
-//					DSP_Run ( DSP_CPU_FREQ_RATIO * ( CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter ) );
-				}
+					/* Run DSP 56k code if necessary */
+					if (bDspEnabled) {
+						DSP_Run(2 * cpu_cycles * 2 / CYCLE_UNIT);
+//						DSP_Run ( DSP_CPU_FREQ_RATIO * ( CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter ) );
+					}
 #endif
 
 				} else {
@@ -6638,6 +6655,10 @@ insretry:
 
 				}
 
+#ifdef WINUAE_FOR_HATARI
+				if ( savestate_state == STATE_SAVE )
+					save_state ( NULL , NULL );
+#endif
 			}
 
 		} CATCH (prb) {
@@ -6746,6 +6767,9 @@ static void m68k_run_3ce (void)
 					DSP_Run(2 * currcycle * 2 / CYCLE_UNIT);
 //					DSP_Run ( DSP_CPU_FREQ_RATIO * ( CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter ) );
 				}
+
+				if ( savestate_state == STATE_SAVE )
+					save_state ( NULL , NULL );
 #endif
 			}
 		} CATCH(prb) {
@@ -6825,6 +6849,9 @@ static void m68k_run_3p(void)
 					DSP_Run(2 * cycles * 2 / CYCLE_UNIT);
 //					DSP_Run ( DSP_CPU_FREQ_RATIO * ( CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter ) );
 				}
+
+				if ( savestate_state == STATE_SAVE )
+					save_state ( NULL , NULL );
 #endif
 			}
 		} CATCH(prb) {
@@ -7006,6 +7033,7 @@ fprintf ( stderr , "cache valid %d tag1 %x lws1 %x ctag %x data %x mem=%x\n" , c
 						exit = true;
 				}
 
+				regs.ipl = regs.ipl_pin;
 #ifdef WINUAE_FOR_HATARI
 				/* Run DSP 56k code if necessary */
 				if (bDspEnabled) {
@@ -7014,9 +7042,10 @@ fprintf ( stderr , "cache valid %d tag1 %x lws1 %x ctag %x data %x mem=%x\n" , c
 //fprintf ( stderr, "dsp cyc_2ce %d - %d\n" , currcycle * 2 / CYCLE_UNIT , (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) );
 //					DSP_Run ( DSP_CPU_FREQ_RATIO * ( CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter ) );
 				}
-#endif
 
-				regs.ipl = regs.ipl_pin;
+				if ( savestate_state == STATE_SAVE )
+					save_state ( NULL , NULL );
+#endif
 
 			}
 		} CATCH(prb) {
@@ -7190,6 +7219,7 @@ cont:
 					if (do_specialties (cpu_cycles))
 						exit = true;
 				}
+				ipl_fetch ();
 
 #ifdef WINUAE_FOR_HATARI
 				/* Run DSP 56k code if necessary */
@@ -7199,9 +7229,10 @@ cont:
 					DSP_Run(2 * cpu_cycles * 2 / CYCLE_UNIT);
 //					DSP_Run ( DSP_CPU_FREQ_RATIO * ( CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter ) );
 				}
-#endif
 
-				ipl_fetch ();
+				if ( savestate_state == STATE_SAVE )
+					save_state ( NULL , NULL );
+#endif
 			}
 		} CATCH(prb) {
 			bus_error();
@@ -7321,6 +7352,9 @@ static void m68k_run_2 (void)
 					DSP_Run(2 * cpu_cycles * 2 / CYCLE_UNIT);
 //					DSP_Run ( DSP_CPU_FREQ_RATIO * ( CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter ) );
 				}
+
+				if ( savestate_state == STATE_SAVE )
+					save_state ( NULL , NULL );
 #endif
 			}
 		} CATCH(prb) {
@@ -7451,12 +7485,12 @@ void m68k_go (int may_quit)
 			quit_program = 0;
 			hardboot = 0;
 
-#ifndef WINUAE_FOR_HATARI
 #ifdef SAVESTATE
 			if (savestate_state == STATE_DORESTORE)
 				savestate_state = STATE_RESTORE;
 			if (savestate_state == STATE_RESTORE)
 				restore_state (savestate_fname);
+#ifndef WINUAE_FOR_HATARI
 			else if (savestate_state == STATE_REWIND)
 				savestate_rewind ();
 #endif

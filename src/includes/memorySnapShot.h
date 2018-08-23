@@ -9,4 +9,7 @@
 extern void MemorySnapShot_Skip(int Nb);
 extern void MemorySnapShot_Store(void *pData, int Size);
 extern void MemorySnapShot_Capture(const char *pszFileName, bool bConfirm);
+extern void MemorySnapShot_Capture_Immediate(const char *pszFileName, bool bConfirm);
+extern void MemorySnapShot_Capture_Do(void);
 extern void MemorySnapShot_Restore(const char *pszFileName, bool bConfirm);
+extern void MemorySnapShot_Restore_Do(void);

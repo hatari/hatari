@@ -176,7 +176,6 @@ void STMemory_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&MMU_Bank1_Size, sizeof(MMU_Bank1_Size));
 	MemorySnapShot_Store(&MMU_Conf_Expected, sizeof(MMU_Conf_Expected));
 
-fprintf ( stderr , "STMemory_MemorySnapShot_Capture %d %d %d %d %d 8001=%x\n",RAM_Bank0_Size,RAM_Bank1_Size,MMU_Bank0_Size,MMU_Bank1_Size,MMU_Conf_Expected , IoMem[ 0xff8001 ] );
 	/* Only save/restore area of memory machine is set to, eg 1Mb */
 	MemorySnapShot_Store(STRam, STRamEnd);
 

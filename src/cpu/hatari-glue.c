@@ -27,6 +27,7 @@ const char HatariGlue_fileid[] = "Hatari hatari-glue.c : " __DATE__ " " __TIME__
 #include "psg.h"
 #include "mfp.h"
 #include "fdc.h"
+#include "memorySnapShot.h"
 
 #include "sysdeps.h"
 #include "options_cpu.h"
@@ -90,6 +91,7 @@ int intlev(void)
 
 void UAE_Set_Quit_Reset ( bool hard )
 {
+//fprintf ( stderr , "UAE_Set_Quit_Reset %d\n" , hard );
 	if ( hard )
 		quit_program = UAE_RESET_HARD;
 	else
@@ -97,38 +99,50 @@ void UAE_Set_Quit_Reset ( bool hard )
 }
 
 
+void UAE_Set_State_Save ( void )
+{
+//fprintf ( stderr , "UAE_Set_State_Save\n" );
+	savestate_state = STATE_SAVE;
+}
+
+
 void UAE_Set_State_Restore ( void )
 {
+//fprintf ( stderr , "UAE_Set_State_Restore\n" );
 	savestate_state = STATE_RESTORE;
+}
+
+
+
+/**
+ * Replace WinUAE's save_state / restore_state functions with Hatari's specific ones
+ */
+int save_state (const TCHAR *filename, const TCHAR *description)
+{
+//fprintf ( stderr , "save_state in\n" );
+	MemorySnapShot_Capture_Do ();
+//fprintf ( stderr , "save_state out\n" );
+	savestate_state = 0;
+	return 0;					/* return value is not used */
 }
 
 
 void restore_state (const TCHAR *filename)
 {
-	uae_u8 chunk[ 1000 ];
-
-fprintf ( stderr , "restore_state\n" );
-	//m68k_dumpstate_file(stderr, NULL);
-	restore_cpu (chunk);
-	//printf ( "restore cpu done\n" );
-	restore_cpu_extra (chunk);
-	//printf ( "restore cpux done\n" );
-	restore_fpu (chunk);
-	//printf ( "restore fpu done\n"  );
-	restore_mmu (chunk);
-	//printf ( "restore mmu done\n"  );
+	MemorySnapShot_Restore_Do ();
 }
 
 
 void savestate_restore_finish (void)
 {
-fprintf ( stderr , "savestate_restore_finish 1\n" );
+//fprintf ( stderr , "savestate_restore_finish in\n" );
 	if (!isrestore ())
 		return;
 	restore_cpu_finish ();
-fprintf ( stderr , "savestate_restore_finish 2\n" );
 	savestate_state = 0;
+//fprintf ( stderr , "savestate_restore_finish out\n" );
 }
+
 
 
 
@@ -139,7 +153,7 @@ int Init680x0(void)
 {
 //fprintf ( stderr , "Init680x0 in\n" );
 
- init_m68k();
+	init_m68k();
 
 //fprintf ( stderr , "Init680x0 out\n" );
 
