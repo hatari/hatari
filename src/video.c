@@ -4387,17 +4387,6 @@ void Video_InterruptHandler_VBL ( void )
 
 	PendingInterruptCount_save = PendingInterruptCount;
 
-	/* Act on shortcut keys */
-	/* NOTE [NP] : ShortCut_ActKey should be called as soon as possible in the VBL handler, */
-	/* before acknowledging it. This way, we will get a call of the VBL handler when restoring */
-	/* a memory snapshot that was created using shortcut keys. Else, a VBL will be lost when restoring */
-	/* the snapshot if we use '--memstate' option, which can break some programs during several VBL */
-	/* after the restore. */
-	/* TODO : a better way would be to handle shortcut keys inside the main CPU loop in newcpu.c */
-	/* to always get a consistent state (doing it from an interrupt handler is not correct). */
-	/* (eg, fix restoring screen 1 in the B.I.G. Demo, where the raster bar can be wrongly displayed) */
-	ShortCut_ActKey();
-
 	/* In case we press a shortcut for reset, PendingInterruptCount will be changed to >0 and we will get */
 	/* some warnings "bug nHBL=...". To avoid this we restore the value (<= 0) saved at the start of the VBL */
 	if ( PendingInterruptCount > 0 )
@@ -4442,6 +4431,9 @@ void Video_InterruptHandler_VBL ( void )
 	/* Start VBL, HBL and Timer B interrupts (this must be done after resetting
          * video cycle counter setting default freq values in Video_ClearOnVBL) */
 	Video_StartInterrupts(PendingCyclesOver);
+
+	/* Process shortcut keys */
+	ShortCut_ActKey();
 
 	/* Update the IKBD's internal clock */
 	IKBD_UpdateClockOnVBL ();
