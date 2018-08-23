@@ -211,12 +211,6 @@ void CycInt_MemorySnapShot_Capture(bool bSave)
 		MemorySnapShot_Store(&ID, sizeof(int));
 		PendingInterruptFunction = CycInt_IDToHandlerFunction(ID);
 	}
-
-
-#if 0
-	if (!bSave)
-		CycInt_SetNewInterrupt();	/* when restoring snapshot, compute current state after */
-#endif
 }
 
 
