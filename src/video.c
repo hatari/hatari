@@ -726,6 +726,7 @@ void Video_MemorySnapShot_Capture(bool bSave)
 	/* Save/Restore details */
 	MemorySnapShot_Store(&TTRes, sizeof(TTRes));
 	MemorySnapShot_Store(&bUseHighRes, sizeof(bUseHighRes));
+	MemorySnapShot_Store(&nScreenRefreshRate, sizeof(nScreenRefreshRate));
 	MemorySnapShot_Store(&nVBLs, sizeof(nVBLs));
 	MemorySnapShot_Store(&nHBL, sizeof(nHBL));
 	MemorySnapShot_Store(&nStartHBL, sizeof(nStartHBL));
@@ -749,6 +750,7 @@ void Video_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&nScanlinesPerFrame, sizeof(nScanlinesPerFrame));
 	MemorySnapShot_Store(&nCyclesPerLine, sizeof(nCyclesPerLine));
 	MemorySnapShot_Store(&nFirstVisibleHbl, sizeof(nFirstVisibleHbl));
+	MemorySnapShot_Store(&nLastVisibleHbl, sizeof(nLastVisibleHbl));
 	MemorySnapShot_Store(&bSteBorderFlag, sizeof(bSteBorderFlag));
 	MemorySnapShot_Store(&HblJitterIndex, sizeof(HblJitterIndex));
 	MemorySnapShot_Store(&VblJitterIndex, sizeof(VblJitterIndex));
