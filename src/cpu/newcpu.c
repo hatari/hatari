@@ -4918,51 +4918,24 @@ void safe_interrupt_set(int num, int id, bool i6)
 }
 #endif
 
-void execute_other_cpu_single(void)
-{
-#ifdef WITH_X86
-	if (!x86_turbo_on)
-		return;
-	x86_bridge_execute_until(0);
-#endif
-}
-
-bool execute_other_cpu(int until)
-{
-#ifdef WITH_X86
-	if (!x86_turbo_on)
-		return false;
-	if (!until)
-		until++;
-	x86_bridge_execute_until(until);
-#endif
-	return true;
-}
-
 int cpu_sleep_millis(int ms)
 {
 	int ret = 0;
-#ifdef WITH_THREADED_CPU
-	cpu_semaphore_release();
-#endif
 #ifdef WITH_PPC
 	int state = ppc_state;
 	if (state)
 		uae_ppc_spinlock_release();
 #endif
 #ifdef WITH_X86
-	if (x86_turbo_on) {
-		execute_other_cpu(read_processor_time() + vsynctimebase / 20);
-	} else {
+//	if (x86_turbo_on) {
+//		execute_other_cpu(read_processor_time() + vsynctimebase / 20);
+//	} else {
 		ret = sleep_millis_main(ms);
-	}
+//	}
 #endif
 #ifdef WITH_PPC
 	if (state)
 		uae_ppc_spinlock_get();
-#endif
-#ifdef WITH_THREADED_CPU
-	cpu_semaphore_get();
 #endif
 	return ret;
 }
@@ -5459,8 +5432,10 @@ static int do_specialties (int cycles)
 		unset_special(SPCFLAG_BRK);
 #ifdef DEBUGGER
 		if (stopped_debug && !regs.stopped) {
-			debugger_active = 1;
-			stopped_debug = false;
+			if (debugging) {
+				debugger_active = 1;
+				stopped_debug = false;
+			}
 		}
 		if (debugging) {
 			if (!stopped_debug)
@@ -5864,45 +5839,34 @@ static uae_u16 get_word_020_prefetchf (uae_u32 pc)
 
 #ifdef WITH_THREADED_CPU
 static volatile int cpu_thread_active;
+static uae_sem_t cpu_in_sema, cpu_out_sema, cpu_wakeup_sema;
 
-#define SPINLOCK_DEBUG 0
-static volatile int m68k_spinlock_cnt;
-static volatile long m68k_spinlock_waiting;
-#ifdef _WIN32
-#define CRITICAL_SECTION_SPIN_COUNT 5000
-static CRITICAL_SECTION m68k_cs1;
+static volatile int cpu_thread_ilvl;
+static volatile uae_u32 cpu_thread_indirect_mode;
+static volatile uae_u32 cpu_thread_indirect_addr;
+static volatile uae_u32 cpu_thread_indirect_val;
+static volatile uae_u32 cpu_thread_indirect_size;
+static volatile uae_u32 cpu_thread_reset;
+static uae_thread_id cpu_thread_tid;
+
 static bool m68k_cs_initialized;
-static DWORD m68k_cs_owner;
-#else
-#include <glib.h>
-static GMutex mutex;
-#endif
+
+void custom_reset_cpu(bool hardreset, bool keyboardreset)
+{
+	if (cpu_thread_tid != uae_thread_get_id()) {
+		custom_reset(hardreset, keyboardreset);
+		return;
+	}
+	cpu_thread_reset = 1 | (hardreset ? 2 : 0) | (keyboardreset ? 4 : 0);
+	uae_sem_post(&cpu_wakeup_sema);
+	uae_sem_wait(&cpu_in_sema);
+}
 
 static int do_specialties_thread(void)
 {
 	if (regs.spcflags & SPCFLAG_MODE_CHANGE)
 		return 1;
 
-	if (regs.spcflags & SPCFLAG_CHECK) {
-		if (regs.halted) {
-			if (haltloop())
-				return 1;
-		}
-		if (m68k_reset_delay) {
-			int vsynccnt = 60;
-			int vsyncstate = -1;
-			while (vsynccnt > 0) {
-				int vp = vpos;
-				while (vp == vpos) {
-					sleep_millis(1);
-				}
-				vsynccnt--;
-			}
-		}
-		m68k_reset_delay = 0;
-		unset_special(SPCFLAG_CHECK);
-	}
-	
 #ifdef JIT
 	unset_special(SPCFLAG_END_COMPILE);   /* has done its job */
 #endif
@@ -5914,150 +5878,190 @@ static int do_specialties_thread(void)
 		unset_special(SPCFLAG_TRAP);
 		Exception(3);
 	}
-	bool first = true;
-	while ((regs.spcflags & SPCFLAG_STOP) && !(regs.spcflags & SPCFLAG_BRK)) {
-		if (regs.spcflags & (SPCFLAG_INT | SPCFLAG_DOINT)) {
-			int intr = intlev();
-			unset_special(SPCFLAG_INT | SPCFLAG_DOINT);
-			if (intr > 0 && intr > regs.intmask)
-				do_interrupt(intr);
-		}
-
-		if (regs.spcflags & SPCFLAG_MODE_CHANGE) {
-			m68k_resumestopped();
-			return 1;
-		}
-	}
 
 	if (regs.spcflags & SPCFLAG_TRACE)
 		do_trace();
 
-	if (regs.spcflags & SPCFLAG_INT) {
-		int intr = intlev();
-		unset_special(SPCFLAG_INT | SPCFLAG_DOINT);
-		if (intr > 0 && (intr > regs.intmask || intr == 7))
-			do_interrupt(intr);
-	}
+	for (;;) {
 
-	if (regs.spcflags & SPCFLAG_DOINT) {
-		unset_special(SPCFLAG_DOINT);
-		set_special(SPCFLAG_INT);
-	}
+		if (regs.spcflags & (SPCFLAG_BRK | SPCFLAG_MODE_CHANGE)) {
+			return 1;
+		}
 
-	if (regs.spcflags & SPCFLAG_BRK) {
-		return 1;
+		int ilvl = cpu_thread_ilvl;
+		if (ilvl > 0 && (ilvl > regs.intmask || ilvl == 7)) {
+			do_interrupt(ilvl);
+		}
+
+		if (!(regs.spcflags & SPCFLAG_STOP))
+			break;
+
+		uae_sem_wait(&cpu_wakeup_sema);
 	}
 
 	return 0;
-}
-
-void cpu_semaphore_get(void)
-{
-	if (!currprefs.cpu_thread)
-		return;
-	DWORD tid = GetCurrentThreadId();
-
-	if (tid == m68k_cs_owner) {
-		m68k_spinlock_cnt++;
-		return;
-	}
-
-#ifdef _WIN32
-	_InterlockedIncrement(&m68k_spinlock_waiting);
-	EnterCriticalSection(&m68k_cs1);
-	_InterlockedDecrement(&m68k_spinlock_waiting);
-	m68k_cs_owner = tid;
-	m68k_spinlock_cnt++;
-#else
-	g_mutex_lock(&mutex); // FIXME
-#endif
-}
-void cpu_semaphore_release(void)
-{
-	if (!currprefs.cpu_thread)
-		return;
-#ifdef _WIN32
-	m68k_spinlock_cnt--;
-	if (m68k_spinlock_cnt == 0) {
-		m68k_cs_owner = 0;
-		LeaveCriticalSection(&m68k_cs1);
-	}
-#else
-	g_mutex_unlock(&mutex); // FIXME
-#endif
 }
 
 static void init_cpu_thread(void)
 {
 	if (!currprefs.cpu_thread)
 		return;
-#ifdef _WIN32
-	if (m68k_cs_initialized) {
-		DeleteCriticalSection(&m68k_cs1);
+	if (m68k_cs_initialized)
+		return;
+	uae_sem_init(&cpu_in_sema, 0, 0);
+	uae_sem_init(&cpu_out_sema, 0, 0);
+	uae_sem_init(&cpu_wakeup_sema, 0, 0);
+	m68k_cs_initialized = true;
+}
+
+extern addrbank *thread_mem_banks[MEMORY_BANKS];
+
+uae_u32 process_cpu_indirect_memory_read(uae_u32 addr, int size)
+{
+	// Do direct access if call is from filesystem etc thread 
+	if (cpu_thread_tid != uae_thread_get_id()) {
+		uae_u32 data = 0;
+		addrbank *ab = thread_mem_banks[bankindex(addr)];
+		switch (size)
+		{
+		case 0:
+			data = ab->bget(addr) & 0xff;
+			break;
+		case 1:
+			data = ab->wget(addr) & 0xffff;
+			break;
+		case 2:
+			data = ab->lget(addr);
+			break;
+		}
+		return data;
 	}
-	InitializeCriticalSectionAndSpinCount(&m68k_cs1, CRITICAL_SECTION_SPIN_COUNT);
-#endif
+
+	cpu_thread_indirect_mode = 2;
+	cpu_thread_indirect_addr = addr;
+	cpu_thread_indirect_size = size;
+	uae_sem_post(&cpu_out_sema);
+	uae_sem_wait(&cpu_in_sema);
+	cpu_thread_indirect_mode = 0xfe;
+	return cpu_thread_indirect_val;
+}
+
+void process_cpu_indirect_memory_write(uae_u32 addr, uae_u32 data, int size)
+{
+	if (cpu_thread_tid != uae_thread_get_id()) {
+		addrbank *ab = thread_mem_banks[bankindex(addr)];
+		switch (size)
+		{
+		case 0:
+			ab->bput(addr, data & 0xff);
+			break;
+		case 1:
+			ab->wput(addr, data & 0xffff);
+			break;
+		case 2:
+			ab->lput(addr, data);
+			break;
+		}
+		return;
+	}
+	cpu_thread_indirect_mode = 1;
+	cpu_thread_indirect_addr = addr;
+	cpu_thread_indirect_size = size;
+	cpu_thread_indirect_val = data;
+	uae_sem_post(&cpu_out_sema);
+	uae_sem_wait(&cpu_in_sema);
+	cpu_thread_indirect_mode = 0xff;
 }
 
 static void run_cpu_thread(void *(*f)(void *))
 {
+	int framecnt = -1;
+	int vp = 0;
+	int intlev_prev = 0;
+
 	cpu_thread_active = 0;
-#if SPINLOCK_DEBUG
-	m68k_spinlock_cnt = 0;
-#endif
-	m68k_cs_initialized = true;
-	if (uae_start_thread(_T("cpu"), f, NULL, NULL)) {
-		while (!cpu_thread_active) {
-			sleep_millis(1);
-		}
-		while (!(regs.spcflags & SPCFLAG_MODE_CHANGE)) {
+	uae_sem_init(&cpu_in_sema, 0, 0);
+	uae_sem_init(&cpu_out_sema, 0, 0);
+	uae_sem_init(&cpu_wakeup_sema, 0, 0);
 
-			cpu_semaphore_get();
-			frame_time_t c = read_processor_time();
-			while (cpu_thread_active) {
-				int vsynctimeperline = vsynctimebase / (maxvpos_display + 1);
+	if (!uae_start_thread(_T("cpu"), f, NULL, NULL))
+		return;
+	while (!cpu_thread_active) {
+		sleep_millis(1);
+	}
 
-				int vp = vpos;
-				while ((int)read_processor_time() - (int)c > -vsynctimebase / 10) {
-					if (vp != vpos) {
-						vp = vpos;
-						if (vpos + 1 == maxvpos + lof_store) {
-							c = read_processor_time();
-						}
-						c += vsynctimeperline;
+	while (!(regs.spcflags & SPCFLAG_MODE_CHANGE)) {
+		int maxperloop = 10;
+
+		while (!uae_sem_trywait(&cpu_out_sema)) {
+			uae_u32 cmd, addr, data, size, mode;
+
+			addr = cpu_thread_indirect_addr;
+			data = cpu_thread_indirect_val;
+			size = cpu_thread_indirect_size;
+			mode = cpu_thread_indirect_mode;
+
+			switch(mode)
+			{
+				case 1:
+				{
+					addrbank *ab = thread_mem_banks[bankindex(addr)];
+					switch (size)
+					{
+					case 0:
+						ab->bput(addr, data & 0xff);
+						break;
+					case 1:
+						ab->wput(addr, data & 0xffff);
+						break;
+					case 2:
+						ab->lput(addr, data);
+						break;
 					}
-					cycles_do_special();
-					do_cycles(maxhpos / 2 * CYCLE_UNIT);
-					if (regs.spcflags & SPCFLAG_COPPER) {
-						do_copper();
-					}
-#ifndef WINUAE_FOR_HATARI
-					check_uae_int_request();
-#endif
-					int w = m68k_spinlock_waiting;
-					if (w) {
-						cpu_semaphore_release();
-						while (m68k_spinlock_waiting == w);
-						cpu_semaphore_get();
-					}
+					uae_sem_post(&cpu_in_sema);
+					break;
 				}
-				cpu_semaphore_release();
-				sleep_millis(1);
-				cpu_semaphore_get();
-				while ((int)read_processor_time() - (int)c < 0) {
-#ifndef WINUAE_FOR_HATARI
-					check_uae_int_request();
-#endif
-					int w = m68k_spinlock_waiting;
-					if (w) {
-						cpu_semaphore_release();
-						while (m68k_spinlock_waiting == w);
-						cpu_semaphore_get();
+				case 2:
+				{
+					addrbank *ab = thread_mem_banks[bankindex(addr)];
+					switch (size)
+					{
+					case 0:
+						data = ab->bget(addr) & 0xff;
+						break;
+					case 1:
+						data = ab->wget(addr) & 0xffff;
+						break;
+					case 2:
+						data = ab->lget(addr);
+						break;
 					}
+					cpu_thread_indirect_val = data;
+					uae_sem_post(&cpu_in_sema);
+					break;
 				}
+				default:
+					write_log(_T("cpu_thread_indirect_mode=%08x!\n"), mode);
+					break;
 			}
-			cpu_semaphore_release();
 
+			if (maxperloop-- < 0)
+				break;
+		}
+
+		if (framecnt != timeframes) {
+			framecnt = timeframes;
+		}
+
+		if (cpu_thread_reset) {
+			bool hardreset = cpu_thread_reset & 2;
+			bool keyboardreset = cpu_thread_reset & 4;
+			custom_reset(hardreset, keyboardreset);
+			cpu_thread_reset = 0;
+			uae_sem_post(&cpu_in_sema);
+		}
+
+		if (regs.spcflags & SPCFLAG_BRK) {
 			unset_special(SPCFLAG_BRK);
 #ifdef DEBUGGER
 			if (debugging) {
@@ -6065,8 +6069,47 @@ static void run_cpu_thread(void *(*f)(void *))
 			}
 #endif
 		}
+
+		if (vp == vpos) {
+
+			do_cycles((maxhpos / 2) * CYCLE_UNIT);
+
+			if (regs.spcflags & SPCFLAG_COPPER) {
+				do_copper();
+			}
+
+			check_uae_int_request();
+			if (regs.spcflags & (SPCFLAG_INT | SPCFLAG_DOINT)) {
+				int intr = intlev();
+				unset_special(SPCFLAG_INT | SPCFLAG_DOINT);
+				if (intr > 0) {
+					cpu_thread_ilvl = intr;
+					cycles_do_special();
+					uae_sem_post(&cpu_wakeup_sema);
+				} else {
+					cpu_thread_ilvl = 0;
+				}
+			}
+			continue;
+		}
+
+		frame_time_t next = vsyncmintimepre + (vsynctimebase * vpos / (maxvpos + 1));
+		frame_time_t c = read_processor_time();
+		if ((int)next - (int)c > 0 && (int)next - (int)c < vsyncmaxtime * 2)
+			continue;
+
+		vp = vpos;
+
 	}
+
+	while (cpu_thread_active) {
+		uae_sem_post(&cpu_in_sema);
+		uae_sem_post(&cpu_wakeup_sema);
+		sleep_millis(1);
+	}
+
 }
+
 #endif
 
 #ifdef JIT  /* Completely different run_2 replacement */
@@ -6169,16 +6212,32 @@ typedef void compiled_handler (void);
 #ifdef WITH_THREADED_CPU
 static void *cpu_thread_run_jit(void *v)
 {
+	cpu_thread_tid = uae_thread_get_id();
 	cpu_thread_active = 1;
-	for (;;) {
-		((compiled_handler*)(pushall_call_handler))();
-		/* Whenever we return from that, we should check spcflags */
-		if (regs.spcflags) {
-			if (do_specialties_thread()) {
-				break;
+#ifdef USE_STRUCTURED_EXCEPTION_HANDLING
+	__try
+#endif
+	{
+		for (;;) {
+			((compiled_handler*)(pushall_call_handler))();
+			/* Whenever we return from that, we should check spcflags */
+			if (regs.spcflags || cpu_thread_ilvl > 0) {
+				if (do_specialties_thread()) {
+					break;
+				}
 			}
 		}
 	}
+#ifdef USE_STRUCTURED_EXCEPTION_HANDLING
+#ifdef JIT
+	__except (EvalException(GetExceptionInformation()))
+#else
+	__except (DummyException(GetExceptionInformation(), GetExceptionCode()))
+#endif
+	{
+		// EvalException does the good stuff...
+	}
+#endif
 	cpu_thread_active = 0;
 	return 0;
 }
@@ -7182,8 +7241,8 @@ static void m68k_run_2p (void)
 					cpu_cycles = 4 * CYCLE_UNIT * cycles_mult;
 					cpu_cycles /= CYCLES_DIV;
 					cpu_cycles -= CYCLE_UNIT;
-					if (cpu_cycles < 0)
-						cpu_cycles = 0;
+					if (cpu_cycles <= 0)
+						cpu_cycles = cpucycleunit;
 
 				} else {
 
@@ -7253,6 +7312,8 @@ static void *cpu_thread_run_2(void *v)
 	bool exit = false;
 	struct regstruct *r = &regs;
 
+	cpu_thread_tid = uae_thread_get_id();
+
 	cpu_thread_active = 1;
 	while (!exit) {
 		TRY(prb)
@@ -7264,10 +7325,11 @@ static void *cpu_thread_run_2(void *v)
 
 				(*cpufunctbl[r->opcode])(r->opcode);
 
-				if (r->spcflags) {
+				if (regs.spcflags || cpu_thread_ilvl > 0) {
 					if (do_specialties_thread())
 						exit = true;
 				}
+
 			}
 		} CATCH(prb)
 		{
@@ -7873,7 +7935,7 @@ static void addmovemreg (TCHAR *out, int *prevreg, int *lastreg, int *first, int
 	*prevreg = reg;
 }
 
-static void movemout (TCHAR *out, uae_u16 mask, int mode, int fpmode)
+static bool movemout (TCHAR *out, uae_u16 mask, int mode, int fpmode, bool dst)
 {
 	unsigned int dmask, amask;
 	int prevreg = -1, lastreg = -1, first = 1;
@@ -7905,6 +7967,9 @@ static void movemout (TCHAR *out, uae_u16 mask, int mode, int fpmode)
 			}
 		}
 	}
+	bool dataout = dmask != 0 || amask != 0;
+	if (dst && dataout)
+		_tcscat(out, _T(","));
 	if (fpmode) {
 		while (dmask) { addmovemreg(out, &prevreg, &lastreg, &first, movem_index1[dmask] + (fpmode == 2 ? 24 : 16), fpmode); dmask = movem_next[dmask]; }
 	} else {
@@ -7912,6 +7977,7 @@ static void movemout (TCHAR *out, uae_u16 mask, int mode, int fpmode)
 		while (amask) { addmovemreg (out, &prevreg, &lastreg, &first, movem_index1[amask] + 8, fpmode); amask = movem_next[amask]; }
 	}
 	addmovemreg(out, &prevreg, &lastreg, &first, -1, fpmode);
+	return dataout;
 }
 
 static void disasm_size (TCHAR *instrname, struct instr *dp)
@@ -8691,12 +8757,12 @@ void m68k_disasm_2 (TCHAR *buf, int bufsize, uaecptr pc, uaecptr *nextpc, int cn
 			pc += 2;
 			pc = ShowEA (0, pc, opcode, dp->dreg, dp->dmode, dp->size, instrname, deaddr, safemode);
 			_tcscat (instrname, _T(","));
-			movemout (instrname, mask, dp->dmode, 0);
+			movemout (instrname, mask, dp->dmode, 0, true);
 		} else if (lookup->mnemo == i_MVMLE) {
 			uae_u16 mask = extra;
 			pc += 2;
-			movemout(instrname, mask, dp->dmode, 0);
-			_tcscat(instrname, _T(","));
+			if (movemout(instrname, mask, dp->dmode, 0, false))
+				_tcscat(instrname, _T(","));
 			pc = ShowEA(0, pc, opcode, dp->dreg, dp->dmode, dp->size, instrname, deaddr, safemode);
 		} else if (lookup->mnemo == i_DIVL || lookup->mnemo == i_MULL) {
 			TCHAR *p;
@@ -8823,17 +8889,16 @@ void m68k_disasm_2 (TCHAR *buf, int bufsize, uaecptr pc, uaecptr *nextpc, int cn
 					if (mode & 1)
 						_stprintf(instrname, _T("D%d"), dreg);
 					else
-						movemout(instrname, regmask, dp->dmode, fpmode);
+						movemout(instrname, regmask, dp->dmode, fpmode, false);
 					_tcscat(instrname, _T(","));
 					pc = ShowEA(0, pc, opcode, dp->dreg, dp->dmode, dp->size, instrname, deaddr, safemode);
 				} else {
 					pc = ShowEA(0, pc, opcode, dp->dreg, dp->dmode, dp->size, instrname, deaddr, safemode);
-					_tcscat(instrname, _T(","));
 					p = instrname + _tcslen(instrname);
 					if (mode & 1)
-						_stprintf(p, _T("D%d"), dreg);
+						_stprintf(p, _T(",D%d"), dreg);
 					else
-						movemout(p, regmask, dp->dmode, fpmode);
+						movemout(p, regmask, dp->dmode, fpmode, true);
 				}
 			} else {
 				if (fpuopcodes[ins])
@@ -9990,7 +10055,7 @@ void cpureset (void)
 #ifndef WINUAE_FOR_HATARI
 	send_internalevent(INTERNALEVENT_CPURESET);
 	if ((currprefs.cpu_compatible || currprefs.cpu_memory_cycle_exact) && currprefs.cpu_model <= 68020) {
-		custom_reset (false, false);
+		custom_reset_cpu (false, false);
 		return;
 	}
 #endif
@@ -10000,7 +10065,7 @@ void cpureset (void)
 		write_log (_T("CPU reset PC=%x (%s)..\n"), pc - 2, ab->name);
 #ifndef WINUAE_FOR_HATARI
 		ins = get_word (pc);
-		custom_reset (false, false);
+		custom_reset_cpu (false, false);
 		// did memory disappear under us?
 		if (ab == &get_mem_bank (pc))
 			return;
@@ -10023,7 +10088,7 @@ void cpureset (void)
 	// (which is probably what program wanted anyway)
 #ifndef WINUAE_FOR_HATARI
 	write_log (_T("CPU Reset PC=%x (%s), invalid memory -> %x.\n"), pc, ab->name, ksboot + 2);
-	custom_reset (false, false);
+	custom_reset_cpu (false, false);
 	m68k_setpc_normal (ksboot);
 #else
 	write_log (_T("CPU Reset PC=%x (%s), invalid memory\n"), pc, ab->name);

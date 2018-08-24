@@ -25,12 +25,18 @@
 # endif
 #endif
 
+#define ALIGN_POINTER_TO32(p) ((~(unsigned long)(p)) & 3)
 
 /* If the CPU can access unaligned memory, use these accelerated functions: */
 #if CPU_CAN_ACCESS_UNALIGNED
 
 #include <SDL_endian.h>
 
+
+static inline uae_u64 do_get_mem_quad(void *a)
+{
+	return SDL_SwapBE64(*(uae_u64 *)a);
+}
 
 static inline uae_u32 do_get_mem_long(void *a)
 {
@@ -42,6 +48,11 @@ static inline uae_u16 do_get_mem_word(void *a)
 	return SDL_SwapBE16(*(uae_u16 *)a);
 }
 
+
+static inline void do_put_mem_quad(void *a, uae_u64 v)
+{
+	*(uae_u64 *)a = SDL_SwapBE64(v);
+}
 
 static inline void do_put_mem_long(void *a, uae_u32 v)
 {
@@ -56,6 +67,13 @@ static inline void do_put_mem_word(void *a, uae_u16 v)
 
 #else  /* Cpu can not access unaligned memory: */
 
+
+static inline uae_u64 do_get_mem_quad(void *a)
+{
+	uae_u8 *b = (uae_u8 *)a;
+
+	return (b[0] << 56) | (b[1] << 48) | (b[2] << 40) | (b[3] << 32) | (b[4] << 24) | (b[5] << 16) | (b[6] << 8) | b[7];
+}
 
 static inline uae_u32 do_get_mem_long(void *a)
 {
@@ -72,12 +90,26 @@ static inline uae_u16 do_get_mem_word(void *a)
 }
 
 
+static inline void do_put_mem_quad(void *a, uae_u64 v)
+{
+	uae_u8 *b = (uae_u8 *)a;
+
+	b[0] = v >> 56;
+	b[1] = v >> 48;
+	b[2] = v >> 40;
+	b[3] = v >> 32;
+	b[4] = v >> 24;
+	b[5] = v >> 16;
+	b[6] = v >> 8;
+	b[7] = v;
+}
+
 static inline void do_put_mem_long(void *a, uae_u32 v)
 {
 	uae_u8 *b = (uae_u8 *)a;
 
 	b[0] = v >> 24;
-	b[1] = v >> 16;    
+	b[1] = v >> 16;
 	b[2] = v >> 8;
 	b[3] = v;
 }
