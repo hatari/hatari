@@ -2190,17 +2190,6 @@ static int check_prefs_changed_cpu2(void)
 		|| currprefs.cpu_memory_cycle_exact != changed_prefs.cpu_memory_cycle_exact
 		|| currprefs.fpu_mode != changed_prefs.fpu_mode) {
 			cpu_prefs_changed_flag |= 1;
-#ifdef REMOVE_WINUAE_FOR_HATARI
-			/* When changing CPU prefs in Hatari we reset the emulation, */
-			/* so new cpu table should be built now, not in m68k_go() */
-//			uaecptr pc = m68k_getpc();
-			prefs_changed_cpu();
-			build_cpufunctbl();
-			set_x_funcs();		// [NP] TODO : really handle cpu change in m68k_go(), not during cpu instruction, too risky to keep a consistent state !!
-// done in m68k_go :
-//			m68k_setpc_normal(pc);
-//			fill_prefetch();
-#endif
 	}
 	if (changed
 		|| currprefs.m68k_speed != changed_prefs.m68k_speed
@@ -2268,16 +2257,6 @@ void init_m68k (void)
 	do_merges ();
 
 	write_log (_T("%d CPU functions\n"), nr_cpuop_funcs);
-
-#ifdef REMOVE_WINUAE_FOR_HATARI
-	/* Hatari : TODO remove these 2 lines as in winuae 3.4.0 */
-	/* and do it only in m68k_go by setting uae_quit_program=UAE_RESET */
-//fprintf ( stderr , "init_m68k 1\n" );
-	build_cpufunctbl ();
-//fprintf ( stderr , "init_m68k 2\n" );
-	set_x_funcs ();
-//fprintf ( stderr , "init_m68k 3\n" );
-#endif
 }
 
 struct regstruct regs, mmu_backup_regs;
@@ -7631,13 +7610,10 @@ void m68k_go (int may_quit)
 		if (debugging)
 			debug ();
 #endif
-/* [NP] TODO : allow changing cpu on the fly ? */
-#ifndef REMOVE_WINUAE_FOR_HATARI
 		if (regs.spcflags & SPCFLAG_MODE_CHANGE) {
 			if (cpu_prefs_changed_flag & 1) {
 				uaecptr pc = m68k_getpc();
 				prefs_changed_cpu();
-fprintf ( stderr,"cpu change %d\n" , cpu_prefs_changed_flag );
 				fpu_modechange();
 #ifndef WINUAE_FOR_HATARI
 				custom_cpuchange();
@@ -7657,19 +7633,6 @@ fprintf ( stderr,"cpu change %d\n" , cpu_prefs_changed_flag );
 			}
 			cpu_prefs_changed_flag = 0;
 		}
-#else
-		/* [NP] : in Hatari, build_cpufunctbl() is called directly from check_prefs_changed_cpu2() */
-		/* so we just need to set PC here */
-		if (regs.spcflags & SPCFLAG_MODE_CHANGE) {
-			if (cpu_prefs_changed_flag & 1) {
-fprintf ( stderr,"cpu change %d\n" , cpu_prefs_changed_flag );
-				uaecptr pc = m68k_getpc();
-				m68k_setpc_normal(pc);
-				fill_prefetch();
-			}
-			cpu_prefs_changed_flag = 0;
-		}
-#endif
 
 		set_x_funcs();
 #ifndef WINUAE_FOR_HATARI
