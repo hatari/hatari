@@ -152,60 +152,8 @@ void savestate_restore_finish (void)
 int Init680x0(void)
 {
 //fprintf ( stderr , "Init680x0 in\n" );
-
 	init_m68k();
-
 //fprintf ( stderr , "Init680x0 out\n" );
-
- return true;
-
-
-
-	currprefs.cpu_level = changed_prefs.cpu_level = ConfigureParams.System.nCpuLevel;
-
-	switch (currprefs.cpu_level)
-	{
-		case 0 : changed_prefs.cpu_model = 68000; break;
-		case 1 : changed_prefs.cpu_model = 68010; break;
-		case 2 : changed_prefs.cpu_model = 68020; break;
-		case 3 : changed_prefs.cpu_model = 68030; break;
-		case 4 : changed_prefs.cpu_model = 68040; break;
-		case 5 : changed_prefs.cpu_model = 68060; break;
-		default: fprintf (stderr, "Init680x0() : Error, cpu_level unknown\n");
-	}
-
-	/* Only 68040/60 can have 'internal' FPU */
-	if ( ( ConfigureParams.System.n_FPUType == FPU_CPU ) && ( changed_prefs.cpu_model < 68040 ) )
-		ConfigureParams.System.n_FPUType = FPU_NONE;
-
-	/* 68000/10 can't have an FPU */
-	if ( ( ConfigureParams.System.n_FPUType != FPU_NONE ) && ( changed_prefs.cpu_model < 68020 ) )
-	{
-		Log_Printf(LOG_WARN, "FPU is not supported in 68000/010 configurations, disabling FPU\n");
-		ConfigureParams.System.n_FPUType = FPU_NONE;
-	}
-
-	changed_prefs.int_no_unimplemented = true;
-	changed_prefs.fpu_no_unimplemented = true;
-	changed_prefs.cpu_compatible = ConfigureParams.System.bCompatibleCpu;
-	changed_prefs.address_space_24 = ConfigureParams.System.bAddressSpace24;
-	changed_prefs.cpu_cycle_exact = ConfigureParams.System.bCycleExactCpu;
-	changed_prefs.cpu_memory_cycle_exact = ConfigureParams.System.bCycleExactCpu;
-	changed_prefs.fpu_model = ConfigureParams.System.n_FPUType;
-	changed_prefs.fpu_strict = ConfigureParams.System.bCompatibleFPU;
-        changed_prefs.fpu_mode = ( ConfigureParams.System.bSoftFloatFPU ? 1 : 0 );
-
-        /* Always emulate instr/data caches for cpu >= 68020 */
-        changed_prefs.cpu_data_cache = true;
-
-	/* Set the MMU model by taking the same value as CPU model */
-	/* MMU is only supported for CPU >=68030 */
-	changed_prefs.mmu_model = 0;				/* MMU disabled by default */
-	if (ConfigureParams.System.bMMU && changed_prefs.cpu_model >= 68030)
-		changed_prefs.mmu_model = changed_prefs.cpu_model;	/* MMU enabled */
-
-	init_m68k();
-
 	return true;
 }
 

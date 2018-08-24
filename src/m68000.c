@@ -239,25 +239,9 @@ void M68000_Reset(bool bCold)
 {
 //fprintf ( stderr,"M68000_Reset in\n" );
 #if ENABLE_WINUAE_CPU
-#ifdef REMOVE_OLD
-	int spcFlags = regs.spcflags & (SPCFLAG_MODE_CHANGE | SPCFLAG_BRK);
-	if (bCold)
-	{
-		memset(&regs, 0, sizeof(regs));
-	}
-	/* Now reset the WINUAE CPU core */
-	m68k_reset();
-
-        /* On Hatari, when we change cpu settings, we call m68k_reset() during m68k_run_xx(), */
-	/* so we must keep the value of bits SPCFLAG_MODE_CHANGE and SPCFLAG_BRK to exit m68k_run_xx() */
-	/* and choose a new m68k_run_xx() function */
-	/* [NP] TODO : don't force a reset when changing cpu settings and use common code with WinUAE ? */
-        regs.spcflags |= spcFlags;
-#else
 	currprefs.fpu_mode = changed_prefs.fpu_mode;
 	UAE_Set_Quit_Reset ( bCold );
 	set_special(SPCFLAG_MODE_CHANGE);		/* exit m68k_run_xxx() loop and check for cpu changes / reset / quit */
-#endif
 
 #else /* UAE CPU core */
 	if (bCold)
@@ -269,6 +253,7 @@ void M68000_Reset(bool bCold)
 	m68k_reset();
 	Cart_PatchCpuTables();
 #endif
+
 	BusMode = BUS_MODE_CPU;
 	CPU_IACK = false;
 //fprintf ( stderr,"M68000_Reset out\n" );
