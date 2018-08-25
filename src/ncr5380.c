@@ -28,7 +28,7 @@ const char NCR5380_fileid[] = "Hatari ncr5380.c";
 #include "stMemory.h"
 #include "newcpu.h"
 
-#define WITH_NCR5380 0
+#define WITH_NCR5380 1
 
 static SCSI_CTRLR ScsiBus;
 
@@ -121,7 +121,7 @@ static int scsi_data_dir(struct scsi_data *sd)
 	int i;
 	uae_u8 cmd;
 
-	cmd = ScsiBus.opcode;
+	cmd = sd->cmd[0];
 	for (i = 0; outcmd[i] >= 0; i++) {
 		if (cmd == outcmd[i]) {
 			return 1;
@@ -534,6 +534,7 @@ static void raw_scsi_write_data(struct raw_scsi *rs, uae_u8 data)
 #if RAW_SCSI_DEBUG
 				write_log(_T("raw_scsi: data out %d bytes required\n"), ScsiBus.data_len);
 #endif
+				scsi_emulate_cmd(sd);	/* Hatari only */
 				scsi_start_transfer(sd);
 				rs->bus_phase = SCSI_SIGNAL_PHASE_DATA_OUT;
 			} else if (sd->direction <= 0) {
@@ -561,7 +562,7 @@ static void raw_scsi_write_data(struct raw_scsi *rs, uae_u8 data)
 #if RAW_SCSI_DEBUG
 			write_log(_T("raw_scsi: data out finished, %d bytes\n"), ScsiBus.data_len);
 #endif
-			scsi_emulate_cmd(sd);
+			// scsi_emulate_cmd(sd);	/* disabled for Hatari, done in command phase already */
 
 			rs->bus_phase = SCSI_SIGNAL_PHASE_STATUS;
 		}
@@ -620,39 +621,61 @@ static void dma_check(struct soft_scsi *ncr)
 {
 	int i;
 	Uint8 buf[ScsiBus.data_len];
+	Uint32 nDmaAddr = FDC_GetDMAAddress();
 
 	// fprintf(stderr, "dma_check: dma_direction=%i data_len=%i phase=%i %i\n",
 	//         ncr->dma_direction, ScsiBus.data_len, ncr->rscsi.bus_phase, ncr->regs[3] & 7);
 
-	if (ncr->dma_active && ncr->dma_direction) {
-		// m68k_cancel_idle();
+	/* Don't do anything if no DMA to SCSI bus or nothing to transfer */
+	if ((FDC_DMA_GetMode() & 0xc0) != 0x00 || ScsiBus.data_len == 0)
+		return;
 
-		if (ncr_soft_scsi.dma_direction < 0)
+	if (!ncr->dma_active || !ncr->dma_direction)
+		return;
+
+	if (ncr_soft_scsi.dma_direction < 0)
+	{
+		for (i = 0; i < ScsiBus.data_len; i++)
+			buf[i] = ncr5380_bget(ncr, 8);
+
+		if (!STMemory_SafeCopy(nDmaAddr, buf, ScsiBus.data_len, "SCSI DMA")) {
+			ScsiBus.bDmaError = true;
+			ScsiBus.status = HD_STATUS_ERROR;
+		}
+		else
+			ScsiBus.bDmaError = false;
+		FDC_WriteDMAAddress(nDmaAddr + ScsiBus.data_len);
+	}
+
+	if (ncr_soft_scsi.dma_direction > 0 && ScsiBus.dmawrite_to_fh)
+	{
+		/* write - if allowed */
+		if (STMemory_CheckAreaType(nDmaAddr, ScsiBus.data_len, ABFLAG_RAM | ABFLAG_ROM))
 		{
-			Uint32 nDmaAddr = FDC_GetDMAAddress();
-			for (i = 0; i < ScsiBus.data_len; i++)
-				buf[i] = ncr5380_bget(ncr, 8);
-
-			if (!STMemory_SafeCopy(nDmaAddr, buf, ScsiBus.data_len, "SCSI DMA")) {
-				ScsiBus.bDmaError = true;
+			int wlen = fwrite(&STRam[nDmaAddr], 1, ScsiBus.data_len, ScsiBus.dmawrite_to_fh);
+			if (wlen != ScsiBus.data_len)
+			{
+				Log_Printf(LOG_ERROR, "Could not write all bytes to hard disk image.\n");
 				ScsiBus.status = HD_STATUS_ERROR;
 			}
-			else
-				ScsiBus.bDmaError = false;
-			FDC_WriteDMAAddress(nDmaAddr + ScsiBus.data_len);
 		}
-
-		if (ncr_soft_scsi.dma_direction > 0)
+		else
 		{
-			Log_Printf(LOG_TODO, "dma_check: Implement DMA write!\n");
+			Log_Printf(LOG_WARN, "SCSI DMA write uses invalid RAM range 0x%x+%i\n",
+				   nDmaAddr, ScsiBus.data_len);
+			ScsiBus.bDmaError = true;
 		}
-
-		FDC_SetDMAStatus(ScsiBus.bDmaError);	/* Mark DMA error */
-		FDC_SetIRQ(FDC_IRQ_SOURCE_HDC);
-
-		ncr->dmac_active = 0;
-		ncr->dma_active = 0;
+		ScsiBus.dmawrite_to_fh = NULL;
+		FDC_WriteDMAAddress(nDmaAddr + ScsiBus.data_len);
+		for (i = 0; i < ScsiBus.data_len; i++)
+			ncr5380_bput(ncr, 8, STRam[nDmaAddr + i]);
 	}
+
+	FDC_SetDMAStatus(ScsiBus.bDmaError);	/* Mark DMA error */
+	FDC_SetIRQ(FDC_IRQ_SOURCE_HDC);
+
+	ncr->dmac_active = 0;
+	ncr->dma_active = 0;
 }
 
 static void ncr5380_set_irq(struct soft_scsi *scsi)
@@ -972,4 +995,9 @@ Uint8 Ncr5380_ReadByte(int addr)
 #else
 	return 0;
 #endif
+}
+
+void Ncr5380_DmaTransfer_Falcon(void)
+{
+	dma_check(&ncr_soft_scsi);
 }

@@ -13,5 +13,6 @@ void Ncr5380_UnInit(void);
 void Ncr5380_Reset(void);
 void Ncr5380_WriteByte(int addr, Uint8 byte);
 Uint8 Ncr5380_ReadByte(int addr);
+void Ncr5380_DmaTransfer_Falcon(void);
 
 #endif

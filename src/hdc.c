@@ -1027,6 +1027,8 @@ short int HDC_ReadCommandByte(int addr)
  */
 void HDC_DmaTransfer(void)
 {
-	if (bAcsiEmuOn)
+	if (Config_IsMachineFalcon())
+		Ncr5380_DmaTransfer_Falcon();
+	else if (bAcsiEmuOn)
 		Acsi_DmaTransfer();
 }
