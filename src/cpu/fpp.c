@@ -3161,7 +3161,6 @@ void fpu_modechange(void)
 
 	set_cpu_caches(true);
 	for (i = 0; i < 8; i++) {
-//fprintf ( stderr ,  "fpu_modechange 2a %p\n" , fpp_from_exten_fmovem );
 		fpp_from_exten_fmovem(&regs.fp[i], &temp_ext[i][0], &temp_ext[i][1], &temp_ext[i][2]);
 	}
 	if (currprefs.fpu_mode > 0) {
@@ -3203,6 +3202,7 @@ static void fpu_test(void)
 void fpu_reset (void)
 {
 	currprefs.fpu_mode = changed_prefs.fpu_mode;
+//fprintf(stderr, "fpu_reset %d\n" , currprefs.fpu_mode );
 	if (currprefs.fpu_mode > 0) {
 		fp_init_softfloat(currprefs.fpu_model);
 #ifdef MSVC_LONG_DOUBLE

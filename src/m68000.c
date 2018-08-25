@@ -239,7 +239,6 @@ void M68000_Reset(bool bCold)
 {
 //fprintf ( stderr,"M68000_Reset in\n" );
 #if ENABLE_WINUAE_CPU
-	currprefs.fpu_mode = changed_prefs.fpu_mode;
 	UAE_Set_Quit_Reset ( bCold );
 	set_special(SPCFLAG_MODE_CHANGE);		/* exit m68k_run_xxx() loop and check for cpu changes / reset / quit */
 

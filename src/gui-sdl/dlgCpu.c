@@ -30,10 +30,11 @@ const char DlgCpu_fileid[] = "Hatari dlgCpu.c : " __DATE__ " " __TIME__;
 #define DLGCPU_CYC_EXACT  24
 #define DLGCPU_MMU_EMUL   25
 #define DLGCPU_24BITS     26
+#define DLGCPU_SOFTFLOAT  27
 
 static SGOBJ cpudlg[] =
 {
-	{ SGBOX, 0, 0, 0,0, 46,23, NULL },
+	{ SGBOX, 0, 0, 0,0, 46,24, NULL },
 	{ SGTEXT, 0, 0, 17,1, 14,1, "CPU options" },
 
 	{ SGBOX, 0, 0, 2,3, 13,9, NULL },
@@ -71,20 +72,22 @@ static SGOBJ cpudlg[] =
 	{ SGTEXT, 0, 0, 31,8, 10,1, "CPU core" },
 #endif
 
-	{ SGBOX, 0, 0, 2,13, 42,7, NULL },
+	{ SGBOX, 0, 0, 2,13, 42,8, NULL },
 	{ SGTEXT, 0, 0, 3,13, 11,1, "CPU parameters" },
 	{ SGCHECKBOX, 0, 0, 3,15, 23,1, "Prefetc_h mode, slower" },
 #ifdef ENABLE_WINUAE_CPU
 	{ SGCHECKBOX, 0, 0, 3,16, 21,1, "Cycle e_xact, slower" },
 	{ SGCHECKBOX, 0, 0, 3,17, 15,1, "MM_U emulation" },
 	{ SGCHECKBOX, 0, 0, 3,18, 20,1, "24 bits add_ressing" },
+	{ SGCHECKBOX, 0, 0, 3,19, 38,1, "Full software FPU emulation(softfloat)" },
 #else
 	{ SGTEXT, 0, 0, 3,16, 1,1, "" },
 	{ SGTEXT, 0, 0, 3,17, 1,1, "" },
 	{ SGTEXT, 0, 0, 3,18, 1,1, "" },
+	{ SGTEXT, 0, 0, 3,18, 1,1, "" },
 #endif
 
-	{ SGBUTTON, SG_DEFAULT, 0, 13,21, 19,1, "Back to main menu" },
+	{ SGBUTTON, SG_DEFAULT, 0, 13,22, 19,1, "Back to main menu" },
 	{ SGSTOP, 0, 0, 0,0, 0,0, NULL }
 };
 
@@ -151,11 +154,17 @@ void DlgCpu_Main(void)
 	else
 		cpudlg[DLGCPU_FPU_CPU_IN].state |= SG_SELECTED;
 
-	/* MMU Emulation */
+	/* MMU emulation */
 	if (ConfigureParams.System.bMMU)
 		cpudlg[DLGCPU_MMU_EMUL].state |= SG_SELECTED;
 	else
 		cpudlg[DLGCPU_MMU_EMUL].state &= ~SG_SELECTED;
+
+	/* FPU emulation using softfloat */
+	if (ConfigureParams.System.bSoftFloatFPU)
+		cpudlg[DLGCPU_SOFTFLOAT].state |= SG_SELECTED;
+	else
+		cpudlg[DLGCPU_SOFTFLOAT].state &= ~SG_SELECTED;
 #endif
 
 	/* Show the dialog: */
@@ -185,6 +194,7 @@ void DlgCpu_Main(void)
 	ConfigureParams.System.bCycleExactCpu = (cpudlg[DLGCPU_CYC_EXACT].state & SG_SELECTED);
 	ConfigureParams.System.bMMU = (cpudlg[DLGCPU_MMU_EMUL].state & SG_SELECTED);
 	ConfigureParams.System.bAddressSpace24 = (cpudlg[DLGCPU_24BITS].state & SG_SELECTED);
+	ConfigureParams.System.bSoftFloatFPU = (cpudlg[DLGCPU_SOFTFLOAT].state & SG_SELECTED);
 
 	/* FPU emulation */
 	if (cpudlg[DLGCPU_FPU_NONE].state & SG_SELECTED)
