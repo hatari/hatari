@@ -90,6 +90,7 @@ extern void	FDC_DiskControllerStatus_ReadWord ( void );
 extern void	FDC_DmaModeControl_WriteWord ( void );
 extern void	FDC_DmaStatus_ReadWord ( void );
 extern int	FDC_DMA_GetModeControl_R_WR ( void );
+extern int	FDC_DMA_GetMode(void);
 extern void	FDC_DMA_FIFO_Push ( Uint8 Byte );
 extern Uint8	FDC_DMA_FIFO_Pull ( void );
 extern int	FDC_DMA_GetSectorCount ( void );

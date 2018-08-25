@@ -969,6 +969,11 @@ int	FDC_DMA_GetModeControl_R_WR ( void )
 	return FDC_DMA.Mode & 0x100;
 }
 
+int FDC_DMA_GetMode(void)
+{
+	return FDC_DMA.Mode;
+}
+
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -4145,6 +4150,9 @@ void FDC_DmaModeControl_WriteWord ( void )
 	/* When write to 0xff8606, check bit '8' toggle. This causes DMA status reset */
 	if ((Mode_prev ^ FDC_DMA.Mode) & 0x0100)
 		FDC_ResetDMA();
+
+	if ((Mode_prev & 0xc0) != 0 && (FDC_DMA.Mode & 0xc0) == 0)
+		HDC_DmaTransfer();
 }
 
 

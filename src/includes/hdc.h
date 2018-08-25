@@ -99,5 +99,6 @@ extern void HDC_WriteCommandByte(int addr, Uint8 byte);
 extern int HDC_PartitionCount(FILE *fp, const Uint64 tracelevel);
 extern off_t HDC_CheckAndGetSize(const char *filename);
 extern bool HDC_WriteCommandPacket(SCSI_CTRLR *ctr, Uint8 b);
+extern void HDC_DmaTransfer(void);
 
 #endif /* HATARI_HDC_H */

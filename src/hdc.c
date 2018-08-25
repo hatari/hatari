@@ -904,6 +904,18 @@ bool HDC_WriteCommandPacket(SCSI_CTRLR *ctr, Uint8 b)
 static void Acsi_DmaTransfer(void)
 {
 	Uint32 nDmaAddr = FDC_GetDMAAddress();
+	Uint16 nDmaMode = FDC_DMA_GetMode();
+
+	/* Don't do anything if no DMA to ACSI bus or nothing to transfer */
+	if ((nDmaMode & 0xc0) != 0x00 || AcsiBus.data_len == 0)
+		return;
+
+	if ((AcsiBus.dmawrite_to_fh && (nDmaMode & 0x100) == 0)
+	    || (!AcsiBus.dmawrite_to_fh && (nDmaMode & 0x100) != 0))
+	{
+		Log_Printf(LOG_WARN, "DMA direction does not match SCSI command!\n");
+		return;
+	}
 
 	if (AcsiBus.dmawrite_to_fh)
 	{
@@ -935,6 +947,9 @@ static void Acsi_DmaTransfer(void)
 
 	FDC_WriteDMAAddress(nDmaAddr + AcsiBus.data_len);
 	AcsiBus.data_len = 0;
+
+	FDC_SetDMAStatus(AcsiBus.bDmaError);	/* Mark DMA error */
+	FDC_SetIRQ(FDC_IRQ_SOURCE_HDC);
 }
 
 static void Acsi_WriteCommandByte(int addr, Uint8 byte)
@@ -1004,4 +1019,14 @@ short int HDC_ReadCommandByte(int addr)
 	else
 		ret = AcsiBus.status;		/* ACSI status */
 	return ret;
+}
+
+/**
+ * Called when DMA transfer has just been enabled for the hard disk in the
+ * $FFFF8606 (DMA mode) register.
+ */
+void HDC_DmaTransfer(void)
+{
+	if (bAcsiEmuOn)
+		Acsi_DmaTransfer();
 }
