@@ -278,6 +278,7 @@ static void raw_scsi_set_signal_phase(struct raw_scsi *rs, bool busy, bool selec
 		case SCSI_SIGNAL_PHASE_ARBIT:
 		rs->target_id = -1;
 		rs->target = NULL;
+		ScsiBus.target = -1;
 		if (busy && select) {
 			rs->bus_phase = SCSI_SIGNAL_PHASE_SELECT_1;
 		}
@@ -286,7 +287,7 @@ static void raw_scsi_set_signal_phase(struct raw_scsi *rs, bool busy, bool selec
 		rs->atn = atn;
 		rs->msglun = -1;
 		rs->target_id = -1;
-		// fprintf(stderr,"SIGNAL PHASE SELECT 1 (%i)\n", busy);
+		ScsiBus.target = -1;
 		if (!busy) {
 			int i;
 			for (i = 0; i < 8; i++) {
@@ -295,6 +296,7 @@ static void raw_scsi_set_signal_phase(struct raw_scsi *rs, bool busy, bool selec
 				if ((rs->data_write & (1 << i)) && rs->device[i]) {
 					rs->target_id = i;
 					rs->target = rs->device[rs->target_id];
+					ScsiBus.target = i;
 #if RAW_SCSI_DEBUG
 					write_log(_T("raw_scsi: selected id %d\n"), rs->target_id);
 #endif
