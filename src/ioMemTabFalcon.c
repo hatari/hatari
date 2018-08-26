@@ -123,9 +123,9 @@ static void IoMemTabFalcon_BusCtrl_WriteByte(void)
 
 	/* Set Falcon bus or STE compatible bus emulation */
 	if ((busCtrl & 0x20) == 0)
-		IoMem_Init_FalconInSTeBuscompatibilityMode(0);
+		IoMem_SetFalconBusMode(STE_BUS_COMPATIBLE);
 	else
-		IoMem_Init_FalconInSTeBuscompatibilityMode(1);
+		IoMem_SetFalconBusMode(FALCON_ONLY_BUS);
 
 	/* 68030 Frequency changed ? We change freq only in 68030 mode
 	 * for a normal Falcon, not if CPU is 68040 or 68060 is used,
@@ -142,6 +142,24 @@ static void IoMemTabFalcon_BusCtrl_WriteByte(void)
 		}
 	}
 	Statusbar_UpdateInfo();			/* Update clock speed in the status bar */
+}
+
+static void IoMemTabFalcon_BusCtrl_ReadByte(void)
+{
+	Uint8 nBusCtrl = IoMem_ReadByte(0xff8007);
+
+	/* Set the bit manually to get it right after cold boot */
+	if (IoMem_IsFalconBusMode())
+		nBusCtrl |= 0x20;
+	else
+		nBusCtrl &= ~0x20;
+
+	if (ConfigureParams.System.nCpuFreq == 8)
+		nBusCtrl &= ~1;
+	else
+		nBusCtrl |= 1;
+
+	IoMem_WriteByte(0xff8007, nBusCtrl);
 }
 
 
@@ -170,7 +188,7 @@ static void IoMemTabFalc_Switches_ReadByte(void)
  */
 static void IoMemTabFalc_Compatible_ReadByte(void)
 {
-	if (nIoMemAccessSize != SIZE_BYTE || (IoMem_ReadByte(0xff8007) & 0x20) != 0)
+	if (nIoMemAccessSize != SIZE_BYTE || IoMem_IsFalconBusMode())
 	{
 		M68000_BusError(IoAccessFullAddress, BUS_ERROR_READ,
 		                nIoMemAccessSize, BUS_ERROR_ACCESS_DATA);
@@ -179,7 +197,7 @@ static void IoMemTabFalc_Compatible_ReadByte(void)
 
 static void IoMemTabFalc_Compatible_WriteByte(void)
 {
-	if (nIoMemAccessSize != SIZE_BYTE || (IoMem_ReadByte(0xff8007) & 0x20) != 0)
+	if (nIoMemAccessSize != SIZE_BYTE || IoMem_IsFalconBusMode())
 	{
 		M68000_BusError(IoAccessFullAddress, BUS_ERROR_WRITE,
 		                nIoMemAccessSize, BUS_ERROR_ACCESS_DATA);
@@ -192,7 +210,7 @@ static void IoMemTabFalc_Compatible_WriteByte(void)
  */
 static void IoMemTabFalc_Compatible_ReadWord(void)
 {
-	if (nIoMemAccessSize == SIZE_BYTE || (IoMem_ReadByte(0xff8007) & 0x20) != 0)
+	if (nIoMemAccessSize == SIZE_BYTE || IoMem_IsFalconBusMode())
 	{
 		M68000_BusError(IoAccessFullAddress, BUS_ERROR_READ,
 		                nIoMemAccessSize, BUS_ERROR_ACCESS_DATA);
@@ -201,7 +219,7 @@ static void IoMemTabFalc_Compatible_ReadWord(void)
 
 static void IoMemTabFalc_Compatible_WriteWord(void)
 {
-	if (nIoMemAccessSize == SIZE_BYTE || (IoMem_ReadByte(0xff8007) & 0x20) != 0)
+	if (nIoMemAccessSize == SIZE_BYTE || IoMem_IsFalconBusMode())
 	{
 		M68000_BusError(IoAccessFullAddress, BUS_ERROR_WRITE,
 		                nIoMemAccessSize, BUS_ERROR_ACCESS_DATA);
@@ -217,7 +235,7 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 	{ 0xff8000, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xff8001, SIZE_BYTE, STMemory_MMU_Config_ReadByte, STMemory_MMU_Config_WriteByte },	/* Memory configuration */
 	{ 0xff8006, SIZE_BYTE, IoMem_ReadWithoutInterception, VIDEL_Monitor_WriteByte },        /* Falcon monitor and memory configuration */
-	{ 0xff8007, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMemTabFalcon_BusCtrl_WriteByte }, /* Falcon bus configuration */
+	{ 0xff8007, SIZE_BYTE, IoMemTabFalcon_BusCtrl_ReadByte, IoMemTabFalcon_BusCtrl_WriteByte }, /* Falcon bus configuration */
 	{ 0xff800C, SIZE_WORD, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xff8060, SIZE_LONG, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 

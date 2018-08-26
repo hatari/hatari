@@ -29,6 +29,10 @@ extern Uint32 IoAccessCurrentAddress;
 
 extern int	IoAccessInstrCount;
 
+enum FALCON_BUS_MODE {
+	STE_BUS_COMPATIBLE,
+	FALCON_ONLY_BUS
+};
 
 /**
  * Read 32-bit word from IO memory space without interception.
@@ -96,8 +100,9 @@ static inline void IoMem_WriteByte(Uint32 Address, Uint8 Var)
 
 extern void IoMem_Init(void);
 extern void IoMem_UnInit(void);
-extern void IoMem_Init_FalconInSTeBuscompatibilityMode(Uint8 value);
-
+extern void IoMem_Reset(void);
+extern void IoMem_SetFalconBusMode(enum FALCON_BUS_MODE mode);
+extern bool IoMem_IsFalconBusMode(void);
 
 extern uae_u32 REGPARAM3 IoMem_bget(uaecptr addr);
 extern uae_u32 REGPARAM3 IoMem_wget(uaecptr addr);
