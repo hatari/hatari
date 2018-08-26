@@ -105,15 +105,16 @@ void Cart_ResetImage(void)
 	memset(&RomMem[0xfa0000], 0xff, 0x20000);
 
 	/* Print a warning if user tries to use an external cartridge file
-	 * together with GEMDOS HD emulation or extended VDI resolution: */
-	if (strlen(ConfigureParams.Rom.szCartridgeImageFileName) > 0)
+	 * together with something else requiring cartridge code:
+	 * - GEMDOS hard disk emulation
+	 * - extended VDI resolution
+	 * - GEMDOS/AES/VDI tracing
+	 */
+	if (strlen(ConfigureParams.Rom.szCartridgeImageFileName) > 0 &&
+	    (bUseVDIRes || ConfigureParams.HardDisk.bUseHardDiskDirectories ||
+	     (LogTraceFlags & (TRACE_OS_GEMDOS | TRACE_OS_BASE | TRACE_OS_VDI | TRACE_OS_AES))))
 	{
-		if (bUseVDIRes)
-			Log_Printf(LOG_WARN, "Cartridge can't be used together with extended VDI resolution!\n");
-		if (ConfigureParams.HardDisk.bUseHardDiskDirectories)
-			Log_Printf(LOG_WARN, "Cartridge can't be used together with GEMDOS hard disk emulation!\n");
-		if (LogTraceFlags & (TRACE_OS_GEMDOS | TRACE_OS_BASE | TRACE_OS_VDI | TRACE_OS_AES))
-			Log_Printf(LOG_WARN, "Cartridge can't be used together with GEMDOS/VDI/AES tracing!\n");
+		Log_AlertDlg(LOG_ERROR, "Cartridge disabled! It can't be used with VDI mode, GEMDOS HD emulation nor their tracing.");
 	}
 
 	/* Use internal cartridge trampoline code when user wants extended VDI

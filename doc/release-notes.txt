@@ -28,6 +28,9 @@ Emulation:
   - Experimental support for the NCR5380 SCSI chip in Falcon mode
 
 Emulator:
+- Misc:
+  - Show warning dialog when cartridge file is disabled due to conflict
+    with other features
 - Media handling:
   - Fix: AVI recording with PNG codec could be wrongly limited to 4GB
     with some OSes
