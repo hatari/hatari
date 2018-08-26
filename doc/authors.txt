@@ -165,6 +165,8 @@ projects which we would like to acknowledge here:
   improving the accuracy of 68000/20/30 CPU and FPUs.
   (http://www.winuae.net/)
 
+- Parts of the NCR 5380 SCSI emulation are based on code from WinUAE, too.
+
 - Some parts have been taken from the emulator STonX that has been
   written by Marinos Yannikos and Martin Griffiths.
   (http://stonx.sourceforge.net/)
