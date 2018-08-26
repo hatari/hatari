@@ -19,6 +19,7 @@ const char Reset_fileid[] = "Hatari reset.c : " __DATE__ " " __TIME__;
 #include "hdc.h"
 #include "acia.h"
 #include "ikbd.h"
+#include "ioMem.h"
 #include "cycInt.h"
 #include "m68000.h"
 #include "mfp.h"
@@ -50,6 +51,7 @@ static int Reset_ST(bool bCold)
 	{
 		int ret;
 
+		IoMem_Reset();
 		Floppy_GetBootDrive();      /* Find which device to boot from (A: or C:) */
 
 		ret = TOS_InitImage();      /* Load TOS and copy it into ROM memory */

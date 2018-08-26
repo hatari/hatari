@@ -78,10 +78,7 @@ int		IoAccessInstrCount;			/* Number of the accesses made in the current instruc
 
 
 /* Falcon bus mode (Falcon STe compatible bus or Falcon only bus) */
-static enum {
-	STE_BUS_COMPATIBLE,
-	FALCON_ONLY_BUS
-} falconBusMode;
+static enum FALCON_BUS_MODE falconBusMode = FALCON_ONLY_BUS;
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -89,8 +86,12 @@ static enum {
  */
 void IoMem_MemorySnapShot_Capture(bool bSave)
 {
+	enum FALCON_BUS_MODE mode = falconBusMode;
+
 	/* Save/Restore details */
-	MemorySnapShot_Store(&falconBusMode, sizeof(falconBusMode));
+	MemorySnapShot_Store(&mode, sizeof(mode));
+	if (!bSave)
+		IoMem_SetFalconBusMode(mode);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -352,22 +353,7 @@ void IoMem_Init(void)
 	}
 }
 
-/*-----------------------------------------------------------------------*/
-/**
- * This function is called to fix falconBusMode (0 = Falcon STe bus compatibility, other value = Falcon only bus compatibility)
- * This value comes from register $ff8007.b (Bit 5) and is called by ioMemTabFalcon
- */
-void IoMem_Init_FalconInSTeBuscompatibilityMode(Uint8 value)
-{
-	if (value == 0)
-		falconBusMode = STE_BUS_COMPATIBLE;
-	else
-		falconBusMode = FALCON_ONLY_BUS;
 
-	IoMem_Init();
-}
-
-/*-----------------------------------------------------------------------*/
 /**
  * Uninitialize the IoMem code (currently unused).
  */
@@ -375,6 +361,37 @@ void IoMem_UnInit(void)
 {
 }
 
+
+/**
+ * This function is called to fix falconBusMode. This value comes from register
+ * $ff8007.b (Bit 5) and is called from ioMemTabFalcon.c.
+ */
+void IoMem_SetFalconBusMode(enum FALCON_BUS_MODE mode)
+{
+	if (mode != falconBusMode)
+	{
+		falconBusMode = mode;
+		IoMem_UnInit();
+		IoMem_Init();
+	}
+}
+
+bool IoMem_IsFalconBusMode(void)
+{
+	return falconBusMode == FALCON_ONLY_BUS;
+}
+
+
+/**
+ * During (cold) reset, we have to clean up the Falcon bus mode if necessary.
+ */
+void IoMem_Reset(void)
+{
+	if (Config_IsMachineFalcon())
+	{
+		IoMem_SetFalconBusMode(FALCON_ONLY_BUS);
+	}
+}
 
 /*-----------------------------------------------------------------------*/
 /**
