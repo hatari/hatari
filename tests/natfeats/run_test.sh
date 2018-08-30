@@ -17,6 +17,7 @@ testdir=$(mktemp -d)
 
 export SDL_VIDEODRIVER=dummy
 export SDL_AUDIODRIVER=dummy
+unset TERM
 
 echo c | HOME="$testdir" $hatari --log-level fatal --sound off --natfeats on \
 	--tos none --fast-forward on  --run-vbls 500 $* "$basedir/nf_ahcc.tos" \
