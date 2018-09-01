@@ -504,6 +504,7 @@ static void scsi_emulate_cmd(struct scsi_data *sd)
 	int i;
 
 	// fprintf(stderr,"scsi_emulate_cmd cmdlen=%i offset=%i\n", sd->cmd_len, ScsiBus.offset);
+	ScsiBus.byteCount = 0;
 	for (i = 0; i < sd->cmd_len; i++)
 	{
 		HDC_WriteCommandPacket(&ScsiBus, sd->cmd[i]);
