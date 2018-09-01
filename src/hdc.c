@@ -724,12 +724,12 @@ int HDC_InitDevice(SCSI_DEV *dev, char *filename)
 	fp = fopen(filename, "rb+");
 	if (fp == NULL)
 	{
-		Log_Printf(LOG_ERROR, "ERROR: cannot open HD file read/write!\n");
+		Log_Printf(LOG_ERROR, "Cannot open HD file read/write!\n");
 		return -ENOENT;
 	}
 	if (!File_Lock(fp))
 	{
-		Log_Printf(LOG_ERROR, "ERROR: cannot lock HD file for writing!\n");
+		Log_Printf(LOG_ERROR, "Cannot lock HD file for writing!\n");
 		fclose(fp);
 		return -ENOLCK;
 	}

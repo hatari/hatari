@@ -537,7 +537,7 @@ static int bdrv_open(BlockDriverState *bs, const char *filename, int flags)
 	}
 	else if (!File_Lock(bs->fhndl))
 	{
-		Log_Printf(LOG_ERROR, "ERROR: cannot lock HD file for writing!\n");
+		Log_Printf(LOG_ERROR, "Cannot lock HD file for writing!\n");
 		fclose(bs->fhndl);
 		bs->fhndl = NULL;
 	}

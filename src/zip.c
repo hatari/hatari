@@ -343,7 +343,7 @@ static long ZIP_CheckImageFile(unzFile uf, char *filename, int namelen, int *pIm
 
 	if (unzLocateFile(uf,filename, 0) != UNZ_OK)
 	{
-		Log_Printf(LOG_ERROR, "Error: File \"%s\" not found in the archive!\n", filename);
+		Log_Printf(LOG_ERROR, "File \"%s\" not found in the archive!\n", filename);
 		return -1;
 	}
 
@@ -647,7 +647,7 @@ Uint8 *ZIP_ReadFirstFile(const char *pszFileName, long *pImageSize, const char *
 
 	if (unzLocateFile(uf, pszZipPath, 0) != UNZ_OK)
 	{
-		Log_Printf(LOG_ERROR, "Error: Can not locate '%s' in the archive!\n", pszZipPath);
+		Log_Printf(LOG_ERROR, "Can not locate '%s' in the archive!\n", pszZipPath);
 		goto cleanup;
 	}
 

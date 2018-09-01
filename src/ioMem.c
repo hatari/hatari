@@ -288,9 +288,9 @@ void IoMem_Init(void)
 			{
 				/* Security checks... */
 				if (pInterceptReadTable[addr-0xff8000] != IoMem_BusErrorEvenReadAccess && pInterceptReadTable[addr-0xff8000] != IoMem_BusErrorOddReadAccess)
-					Log_Printf(LOG_WARN, "IoMem_Init: Warning: $%x (R) already defined\n", addr);
+					Log_Printf(LOG_WARN, "IoMem_Init: $%x (R) already defined\n", addr);
 				if (pInterceptWriteTable[addr-0xff8000] != IoMem_BusErrorEvenWriteAccess && pInterceptWriteTable[addr-0xff8000] != IoMem_BusErrorOddWriteAccess)
-					Log_Printf(LOG_WARN, "IoMem_Init: Warning: $%x (W) already defined\n", addr);
+					Log_Printf(LOG_WARN, "IoMem_Init: $%x (W) already defined\n", addr);
 
 				/* This location needs to be intercepted, so add entry to list */
 				pInterceptReadTable[addr-0xff8000] = pInterceptAccessFuncs[i].ReadFunc;

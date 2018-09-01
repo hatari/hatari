@@ -179,7 +179,7 @@ void Audio_Init(void)
 #endif
 	if (SoundBufferSize > MIXBUFFER_SIZE/2)
 	{
-		Log_Printf(LOG_WARN, "Warning: Soundbuffer size is too big (%d > %d)!\n",
+		Log_Printf(LOG_WARN, "Soundbuffer size is too big (%d > %d)!\n",
 			   SoundBufferSize, MIXBUFFER_SIZE/2);
 	}
 

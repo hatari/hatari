@@ -75,7 +75,7 @@ static bool NvRam_Load(void)
 		}
 		else
 		{
-			Log_Printf(LOG_WARN, "ERROR: NVRAM loading from '%s' failed\n", nvram_filename);
+			Log_Printf(LOG_WARN, "NVRAM loading from '%s' failed\n", nvram_filename);
 		}
 		fclose(f);
 	}
@@ -105,13 +105,13 @@ static bool NvRam_Save(void)
 		}
 		else
 		{
-			Log_Printf(LOG_WARN, "ERROR: storing NVRAM to '%s' failed\n", nvram_filename);
+			Log_Printf(LOG_WARN, "Writing NVRAM to '%s' failed\n", nvram_filename);
 		}
 		fclose(f);
 	}
 	else
 	{
-		Log_Printf(LOG_WARN, "ERROR: storing NVRAM to '%s' failed\n", nvram_filename);
+		Log_Printf(LOG_WARN, "Storing NVRAM to '%s' failed\n", nvram_filename);
 	}
 
 	return ret;

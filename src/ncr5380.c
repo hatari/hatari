@@ -34,8 +34,8 @@ static SCSI_CTRLR ScsiBus;
 
 #define MAX_TOTAL_SCSI_DEVICES 8
 
-#define RAW_SCSI_DEBUG 0
-#define NCR5380_DEBUG 0
+#define RAW_SCSI_DEBUG 2
+#define NCR5380_DEBUG 1
 #define NCR5380_DEBUG_IRQ 0
 
 #ifndef _T

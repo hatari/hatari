@@ -617,7 +617,7 @@ static bool GemDOS_DetermineMaxPartitions(int *pnMaxDrives)
 	count = scandir(ConfigureParams.HardDisk.szHardDiskDirectories[0], &files, 0, alphasort);
 	if (count < 0)
 	{
-		Log_Printf(LOG_ERROR, "Error: GEMDOS hard disk emulation failed:\n "
+		Log_Printf(LOG_ERROR, "GEMDOS hard disk emulation failed:\n "
 			   "Can not access '%s'.\n", ConfigureParams.HardDisk.szHardDiskDirectories[0]);
 		return false;
 	}

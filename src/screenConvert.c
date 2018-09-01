@@ -1029,7 +1029,9 @@ static void Screen_ConvertWithZoom(Uint16 *fvram, int vw, int vh, int vbpp, int 
 	scrheight = vh * coefy;
 
 	if (vw < 16) {
-		Log_Printf(LOG_WARN, "ERROR: Videl <16 screen width (%dx%d without borders)\nIf this happens at TOS boot, remove hatari.nvram,\nNVRAM video settings in it are corrupted.\n", vw, vh);
+		Log_Printf(LOG_WARN, "Videl <16 screen width (%dx%d without borders)\n"
+		           "If this happens at TOS boot, remove hatari.nvram,\n"
+		           "NVRAM video settings in it are corrupted.\n", vw, vh);
 		/* prevent memory corruption */
 		return;
 	}
