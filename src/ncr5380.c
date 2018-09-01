@@ -694,6 +694,8 @@ static void ncr5380_set_irq(struct soft_scsi *scsi)
 #if NCR5380_DEBUG_IRQ
 	write_log(_T("IRQ\n"));
 #endif
+
+	FDC_SetIRQ(FDC_IRQ_SOURCE_HDC);
 }
 
 static void ncr5380_databusoutput(struct soft_scsi *scsi)
@@ -796,6 +798,7 @@ static uae_u8 ncr5380_bget(struct soft_scsi *scsi, int reg)
 		break;
 		case 7:
 		scsi->irq = false;
+		FDC_ClearIRQ();
 		break;
 		case 8: // fake dma port
 		v = raw_scsi_get_data(r, true);
