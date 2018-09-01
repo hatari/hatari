@@ -193,7 +193,7 @@ static void HDC_Cmd_Inquiry(SCSI_CTRLR *ctr)
 
 	count = HDC_GetCount(ctr);
 
-	LOG_TRACE(TRACE_SCSI_CMD, "HDC: INQUIRY (%s)", HDC_CmdInfoStr(ctr));
+	LOG_TRACE(TRACE_SCSI_CMD, "HDC: INQUIRY (%s)\n", HDC_CmdInfoStr(ctr));
 
 	buf = HDC_PrepRespBuf(ctr, count);
 	memcpy(buf, inquiry_bytes, count);
