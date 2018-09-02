@@ -27,6 +27,7 @@ const char Reset_fileid[] = "Hatari reset.c : " __DATE__ " " __TIME__;
 #include "ncr5380.h"
 #include "psg.h"
 #include "reset.h"
+#include "scc.h"
 #include "screen.h"
 #include "sound.h"
 #include "stMemory.h"
@@ -95,6 +96,7 @@ static int Reset_ST(bool bCold)
 	Sound_Reset();                /* Reset Sound */
 	ACIA_Reset( ACIA_Array );     /* ACIA */
 	IKBD_Reset(bCold);            /* Keyboard (after ACIA) */
+	SCC_Reset();
 	if (Config_IsMachineFalcon() && !bUseVDIRes)
 		VIDEL_reset();
 	else

@@ -21,6 +21,7 @@ const char IoMemTabFalc_fileid[] = "Hatari ioMemTabFalcon.c : " __DATE__ " " __T
 #include "psg.h"
 #include "rs232.h"
 #include "rtc.h"
+#include "scc.h"
 #include "screen.h"
 #include "blitter.h"
 #include "crossbar.h"
@@ -396,9 +397,9 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 	{ 0xff8a3b, SIZE_BYTE, Blitter_LogOp_ReadByte, Blitter_LogOp_WriteByte },
 	{ 0xff8a3c, SIZE_BYTE, Blitter_Control_ReadByte, Blitter_Control_WriteByte },
 	{ 0xff8a3d, SIZE_BYTE, Blitter_Skew_ReadByte, Blitter_Skew_WriteByte },
-	{ 0xff8a3e, SIZE_WORD, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
+	{ 0xff8a3e, SIZE_WORD, IoMem_VoidRead, IoMem_VoidWrite },                         /* No bus error here */
 
-	{ 0xff8c80, 8, IoMem_VoidRead, IoMem_WriteWithoutInterception },                        /* TODO: SCC */
+	{ 0xff8c80, 8, SCC_IoMem_ReadByte, SCC_IoMem_WriteByte },                         /* TODO: SCC */
 
 	{ 0xff9200, SIZE_BYTE, IoMemTabFalc_Switches_ReadByte, IoMem_WriteWithoutInterception }, /* Falcon switches */
 	{ 0xff9201, SIZE_BYTE, Joy_StePadButtons_ReadByte, IoMem_WriteWithoutInterception }, /* Joypad fire buttons */

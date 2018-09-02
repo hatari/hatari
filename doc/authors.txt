@@ -171,8 +171,8 @@ projects which we would like to acknowledge here:
   written by Marinos Yannikos and Martin Griffiths.
   (http://stonx.sourceforge.net/)
 
-- A lot of code (e.g. the scancode keyboard mapping, Videl, NVRAM and
-  DSP emulation) has been adapted from the sources of the emulator
+- A lot of code (e.g. the scancode keyboard mapping, Videl, NVRAM, SCC
+  and DSP emulation) has been adapted from the sources of the emulator
   Aranym. (http://aranym.atari.org/)
 
 - The code for decompressing ZIP files (unzip.c) has been taken from

@@ -32,6 +32,7 @@ const char IoMemTabTT_fileid[] = "Hatari ioMemTabTT.c : " __DATE__ " " __TIME__;
 #include "psg.h"
 #include "rs232.h"
 #include "rtc.h"
+#include "scc.h"
 #include "screen.h"
 #include "video.h"
 #include "blitter.h"
@@ -157,7 +158,29 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_TT[] =
 
 	/* Note: The TT does not have a blitter (0xff8a00 - 0xff8a3e) */
 
-	//{ 0xff8c80, 8, IoMem_VoidRead, IoMem_WriteWithoutInterception },         /* SCC */
+	{ 0xff8c00, SIZE_BYTE, IoMem_VoidRead_00, IoMem_VoidWrite },                            /* No bus error here */
+	{ 0xff8c01, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* SCC DMA Address Pointer (Highest byte) */
+	{ 0xff8c02, SIZE_BYTE, IoMem_VoidRead_00, IoMem_VoidWrite },                            /* No bus error here */
+	{ 0xff8c03, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* SCC DMA Address Pointer (High byte)    */
+	{ 0xff8c04, SIZE_BYTE, IoMem_VoidRead_00, IoMem_VoidWrite },                            /* No bus error here */
+	{ 0xff8c05, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* SCC DMA Address Pointer (Low byte)     */
+	{ 0xff8c06, SIZE_BYTE, IoMem_VoidRead_00, IoMem_VoidWrite },                            /* No bus error here */
+	{ 0xff8c07, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* SCC DMA Address Pointer (Lowest byte)  */
+	{ 0xff8c08, SIZE_BYTE, IoMem_VoidRead_00, IoMem_VoidWrite },                            /* No bus error here */
+	{ 0xff8c09, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* SCC DMA Byte Count (Highest byte)      */
+	{ 0xff8c0a, SIZE_BYTE, IoMem_VoidRead_00, IoMem_VoidWrite },                            /* No bus error here */
+	{ 0xff8c0b, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* SCC DMA Byte Count (High byte)         */
+	{ 0xff8c0c, SIZE_BYTE, IoMem_VoidRead_00, IoMem_VoidWrite },                            /* No bus error here */
+	{ 0xff8c0d, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* SCC DMA Byte Count (Low byte)          */
+	{ 0xff8c0e, SIZE_BYTE, IoMem_VoidRead_00, IoMem_VoidWrite },                            /* No bus error here */
+	{ 0xff8c0f, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* SCC DMA Byte Count (Lowest byte)       */
+	{ 0xff8c10, SIZE_WORD, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* SCC Residue Data Register (High Word)  */
+	{ 0xff8c12, SIZE_WORD, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* SCC Residue Data Register (Low Word)   */
+	{ 0xff8c14, SIZE_WORD, IoMem_VoidRead_00, IoMem_WriteWithoutInterception },             /* SCC Control register                   */
+	{ 0xff8c16, 10, IoMem_VoidRead_00, IoMem_VoidWrite },                                   /* No bus error here */
+
+	{ 0xff8c80, 8, SCC_IoMem_ReadByte, SCC_IoMem_WriteByte },                               /* SCC */
+	{ 0xff8c88, 8, IoMem_VoidRead_00, IoMem_VoidWrite },                                    /* No bus error here */
 
 	{ 0xff8e01, 1, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception },         /* SCU system interrupt mask */
 	{ 0xff8e03, 1, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception },         /* SCU system interrupt state */

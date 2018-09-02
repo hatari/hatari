@@ -41,6 +41,7 @@ const char Main_fileid[] = "Hatari main.c : " __DATE__ " " __TIME__;
 #include "reset.h"
 #include "resolution.h"
 #include "rs232.h"
+#include "scc.h"
 #include "screen.h"
 #include "sdlgui.h"
 #include "shortcut.h"
@@ -733,6 +734,7 @@ static void Main_Init(void)
 	SDLGui_Init();
 	Printer_Init();
 	RS232_Init();
+	SCC_Init();
 	Midi_Init();
 	Control_CheckUpdates();       /* enable window embedding? */
 	Videl_Init();
@@ -793,6 +795,7 @@ static void Main_UnInit(void)
 	Floppy_UnInit();
 	HDC_UnInit();
 	Midi_UnInit();
+	SCC_UnInit();
 	RS232_UnInit();
 	Printer_UnInit();
 	IoMem_UnInit();
