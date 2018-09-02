@@ -27,6 +27,7 @@ const char IoMemTabTT_fileid[] = "Hatari ioMemTabTT.c : " __DATE__ " " __TIME__;
 #include "joy.h"
 #include "mfp.h"
 #include "midi.h"
+#include "ncr5380.h"
 #include "nvram.h"
 #include "psg.h"
 #include "rs232.h"
@@ -100,7 +101,28 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_TT[] =
 	{ 0xff860e, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xff860f, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 
-	{ 0xff8780, 16, IoMem_VoidRead_00, IoMem_WriteWithoutInterception },                    /* TT SCSI controller */
+	{ 0xff8700, SIZE_BYTE, IoMem_VoidRead_00, IoMem_VoidWrite },                            /* No bus error here */
+	{ 0xff8701, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* SCSI DMA Address Pointer (Highest byte) */
+	{ 0xff8702, SIZE_BYTE, IoMem_VoidRead_00, IoMem_VoidWrite },                            /* No bus error here */
+	{ 0xff8703, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* SCSI DMA Address Pointer (High byte)    */
+	{ 0xff8704, SIZE_BYTE, IoMem_VoidRead_00, IoMem_VoidWrite },                            /* No bus error here */
+	{ 0xff8705, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* SCSI DMA Address Pointer (Low byte)     */
+	{ 0xff8706, SIZE_BYTE, IoMem_VoidRead_00, IoMem_VoidWrite },                            /* No bus error here */
+	{ 0xff8707, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* SCSI DMA Address Pointer (Lowest byte)  */
+	{ 0xff8708, SIZE_BYTE, IoMem_VoidRead_00, IoMem_VoidWrite },                            /* No bus error here */
+	{ 0xff8709, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* SCSI DMA Byte Count (Highest byte)      */
+	{ 0xff870a, SIZE_BYTE, IoMem_VoidRead_00, IoMem_VoidWrite },                            /* No bus error here */
+	{ 0xff870b, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* SCSI DMA Byte Count (High byte)         */
+	{ 0xff870c, SIZE_BYTE, IoMem_VoidRead_00, IoMem_VoidWrite },                            /* No bus error here */
+	{ 0xff870d, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* SCSI DMA Byte Count (Low byte)          */
+	{ 0xff870e, SIZE_BYTE, IoMem_VoidRead_00, IoMem_VoidWrite },                            /* No bus error here */
+	{ 0xff870f, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* SCSI DMA Byte Count (Lowest byte)       */
+	{ 0xff8710, SIZE_WORD, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* SCSI Residue Data Register (High Word)  */
+	{ 0xff8712, SIZE_WORD, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* SCSI Residue Data Register (Low Word)   */
+	{ 0xff8714, SIZE_WORD, IoMem_ReadWithoutInterception, Ncr5380_TT_DMA_Ctrl_WriteWord },  /* SCSI Control register                   */
+	{ 0xff8716, 10, IoMem_VoidRead_00, IoMem_VoidWrite },                                   /* No bus error here */
+
+	{ 0xff8780, 16, Ncr5380_IoMemTT_ReadByte, Ncr5380_IoMemTT_WriteByte },                  /* TT SCSI controller */
 
 	{ 0xff8800, SIZE_BYTE, PSG_ff8800_ReadByte, PSG_ff8800_WriteByte },
 	{ 0xff8802, SIZE_BYTE, PSG_ff880x_ReadByte, PSG_ff8802_WriteByte },
@@ -184,7 +206,40 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_TT[] =
 	{ 0xfffa3d, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* No bus error here */
 	{ 0xfffa3f, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* No bus error here */
 
-	{ 0xfffa80, 48, IoMem_VoidRead, IoMem_WriteWithoutInterception },  /* 2nd TT MFP */
+	/* TODO: Second MFP of the TT ... */
+	{ 0xfffa81, SIZE_BYTE, Ncr5380_TT_GPIP_ReadByte, IoMem_VoidWrite }, /* TT MFP GPIP */
+	{ 0xfffa83, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* TT MFP AER */
+	{ 0xfffa85, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* TT MFP DDR */
+	{ 0xfffa87, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* TT MFP IERA */
+	{ 0xfffa89, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* TT MFP IERB */
+	{ 0xfffa8b, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* TT MFP IPRA */
+	{ 0xfffa8d, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* TT MFP IPRB */
+	{ 0xfffa8f, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* TT MFP ISRA */
+	{ 0xfffa91, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* TT MFP ISRB */
+	{ 0xfffa93, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* TT MFP IMRA */
+	{ 0xfffa95, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* TT MFP IMRB */
+	{ 0xfffa97, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* TT MFP VR */
+	{ 0xfffa99, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* TT MFP TACR */
+	{ 0xfffa9b, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* TT MFP TBCR */
+	{ 0xfffa9d, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* TT MFP TCDCR */
+	{ 0xfffa9f, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* TT MFP TADR */
+	{ 0xfffaa1, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* TT MFP TBDR */
+	{ 0xfffaa3, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* TT MFP TCDR */
+	{ 0xfffaa5, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* TT MFP TDDR */
+	{ 0xfffaa7, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* TT MFP SCR */
+	{ 0xfffaa9, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* TT MFP UCR */
+	{ 0xfffaab, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* TT MFP RSR */
+	{ 0xfffaad, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* TT MFP TSR */
+	{ 0xfffaaf, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* TT MFP UDR */
+
+	{ 0xfffab1, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* No bus error here */
+	{ 0xfffab3, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* No bus error here */
+	{ 0xfffab5, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* No bus error here */
+	{ 0xfffab7, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* No bus error here */
+	{ 0xfffab9, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* No bus error here */
+	{ 0xfffabb, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* No bus error here */
+	{ 0xfffabd, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* No bus error here */
+	{ 0xfffabf, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* No bus error here */
 
 	{ 0xfffc00, SIZE_BYTE, ACIA_IKBD_Read_SR, ACIA_IKBD_Write_CR },
 	{ 0xfffc02, SIZE_BYTE, ACIA_IKBD_Read_RDR, ACIA_IKBD_Write_TDR },

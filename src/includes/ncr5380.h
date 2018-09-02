@@ -14,5 +14,9 @@ void Ncr5380_Reset(void);
 void Ncr5380_WriteByte(int addr, Uint8 byte);
 Uint8 Ncr5380_ReadByte(int addr);
 void Ncr5380_DmaTransfer_Falcon(void);
+void Ncr5380_IoMemTT_WriteByte(void);
+void Ncr5380_IoMemTT_ReadByte(void);
+void Ncr5380_TT_DMA_Ctrl_WriteWord(void);
+void Ncr5380_TT_GPIP_ReadByte(void);
 
 #endif

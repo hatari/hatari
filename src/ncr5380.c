@@ -21,6 +21,7 @@ const char NCR5380_fileid[] = "Hatari ncr5380.c";
 #include "fdc.h"
 #include "hdc.h"
 #include "hatari-glue.h"
+#include "ioMem.h"
 #include "log.h"
 #include "memorySnapShot.h"
 #include "mfp.h"
@@ -620,43 +621,89 @@ static void raw_scsi_set_ack(struct raw_scsi *rs, bool ack)
 	}
 }
 
+static void Ncr5380_UpdateDmaAddrAndLen(uint32_t nDmaAddr, uint32_t nDataLen)
+{
+	uint32_t nNewAddr = nDmaAddr + nDataLen;
+	uint32_t nNewLen;
+
+	if (Config_IsMachineFalcon())
+	{
+		FDC_WriteDMAAddress(nNewAddr);
+	}
+	else
+	{
+		IoMem[0xff8701] = nNewAddr >> 24;
+		IoMem[0xff8703] = nNewAddr >> 16;
+		IoMem[0xff8705] = nNewAddr >> 8;
+		IoMem[0xff8707] = nNewAddr;
+
+		nNewLen = (Uint32)IoMem[0xff8709] << 24 | IoMem[0xff870b] << 16
+		          | IoMem[0xff870d] << 8 | IoMem[0xff870f];
+		assert(nDataLen <= nNewLen);
+		nNewLen -= nDataLen;
+		IoMem[0xff8709] = nNewLen >> 24;
+		IoMem[0xff870b] = nNewLen >> 16;
+		IoMem[0xff870d] = nNewLen >> 8;
+		IoMem[0xff870f] = nNewLen;
+	}
+}
+
 static void dma_check(struct soft_scsi *ncr)
 {
-	int i;
+	int i, nDataLen;
 	Uint8 buf[ScsiBus.data_len];
-	Uint32 nDmaAddr = FDC_GetDMAAddress();
+	uint32_t nDmaAddr;
 
 	// fprintf(stderr, "dma_check: dma_direction=%i data_len=%i phase=%i %i\n",
 	//         ncr->dma_direction, ScsiBus.data_len, ncr->rscsi.bus_phase, ncr->regs[3] & 7);
 
-	/* Don't do anything if no DMA to SCSI bus or nothing to transfer */
-	if ((FDC_DMA_GetMode() & 0xc0) != 0x00 || ScsiBus.data_len == 0)
+	/* Don't do anything if nothing to transfer */
+	if (ScsiBus.data_len == 0)
 		return;
+
+	if (Config_IsMachineFalcon())
+	{
+		/* Is DMA really active? */
+		if ((FDC_DMA_GetMode() & 0xc0) != 0x00)
+			return;
+		nDmaAddr = FDC_GetDMAAddress();
+		/* TODO: Do we need to check DMA SectorCount register? */
+		nDataLen = ScsiBus.data_len;
+	}
+	else
+	{
+		if ((IoMem[0xff8715] & 2) == 0)
+			return;
+		nDmaAddr = (Uint32)IoMem[0xff8701] << 24 | IoMem[0xff8703] << 16
+		           | IoMem[0xff8705] << 8 | IoMem[0xff8707];
+		nDataLen = (Uint32)IoMem[0xff8709] << 24 | IoMem[0xff870b] << 16
+		           | IoMem[0xff870d] << 8 | IoMem[0xff870f];
+		if (nDataLen > ScsiBus.data_len)
+			nDataLen = ScsiBus.data_len;
+	}
 
 	if (!ncr->dma_active || !ncr->dma_direction)
 		return;
 
 	if (ncr_soft_scsi.dma_direction < 0)
 	{
-		for (i = 0; i < ScsiBus.data_len; i++)
+		for (i = 0; i < nDataLen; i++)
 			buf[i] = ncr5380_bget(ncr, 8);
-
-		if (!STMemory_SafeCopy(nDmaAddr, buf, ScsiBus.data_len, "SCSI DMA")) {
+		if (!STMemory_SafeCopy(nDmaAddr, buf, nDataLen, "SCSI DMA")) {
 			ScsiBus.bDmaError = true;
 			ScsiBus.status = HD_STATUS_ERROR;
 		}
 		else
 			ScsiBus.bDmaError = false;
-		FDC_WriteDMAAddress(nDmaAddr + ScsiBus.data_len);
+		Ncr5380_UpdateDmaAddrAndLen(nDmaAddr, nDataLen);
 	}
-
-	if (ncr_soft_scsi.dma_direction > 0 && ScsiBus.dmawrite_to_fh)
+	else if (ncr_soft_scsi.dma_direction > 0 && ScsiBus.dmawrite_to_fh)
 	{
 		/* write - if allowed */
-		if (STMemory_CheckAreaType(nDmaAddr, ScsiBus.data_len, ABFLAG_RAM | ABFLAG_ROM))
+		if (STMemory_CheckAreaType(nDmaAddr, nDataLen, ABFLAG_RAM | ABFLAG_ROM))
 		{
-			int wlen = fwrite(&STRam[nDmaAddr], 1, ScsiBus.data_len, ScsiBus.dmawrite_to_fh);
-			if (wlen != ScsiBus.data_len)
+			int wlen = fwrite(&STRam[nDmaAddr], 1, nDataLen, ScsiBus.dmawrite_to_fh);
+			if (wlen != nDataLen)
 			{
 				Log_Printf(LOG_ERROR, "Could not write all bytes to hard disk image.\n");
 				ScsiBus.status = HD_STATUS_ERROR;
@@ -669,13 +716,20 @@ static void dma_check(struct soft_scsi *ncr)
 			ScsiBus.bDmaError = true;
 		}
 		ScsiBus.dmawrite_to_fh = NULL;
-		FDC_WriteDMAAddress(nDmaAddr + ScsiBus.data_len);
-		for (i = 0; i < ScsiBus.data_len; i++)
+		Ncr5380_UpdateDmaAddrAndLen(nDmaAddr, nDataLen);
+		for (i = 0; i < nDataLen; i++)
 			ncr5380_bput(ncr, 8, STRam[nDmaAddr + i]);
 	}
 
-	FDC_SetDMAStatus(ScsiBus.bDmaError);	/* Mark DMA error */
-	FDC_SetIRQ(FDC_IRQ_SOURCE_HDC);
+	if (Config_IsMachineFalcon())
+	{
+		FDC_SetDMAStatus(ScsiBus.bDmaError);	/* Mark DMA error */
+		FDC_SetIRQ(FDC_IRQ_SOURCE_HDC);
+	}
+	else
+	{
+		ncr->irq = true;
+	}
 
 	ncr->dmac_active = 0;
 	ncr->dma_active = 0;
@@ -695,7 +749,8 @@ static void ncr5380_set_irq(struct soft_scsi *scsi)
 	write_log(_T("IRQ\n"));
 #endif
 
-	FDC_SetIRQ(FDC_IRQ_SOURCE_HDC);
+	if (Config_IsMachineFalcon())
+		FDC_SetIRQ(FDC_IRQ_SOURCE_HDC);
 }
 
 static void ncr5380_databusoutput(struct soft_scsi *scsi)
@@ -798,7 +853,8 @@ static uae_u8 ncr5380_bget(struct soft_scsi *scsi, int reg)
 		break;
 		case 7:
 		scsi->irq = false;
-		FDC_ClearIRQ();
+		if (Config_IsMachineFalcon())
+			FDC_ClearIRQ();
 		break;
 		case 8: // fake dma port
 		v = raw_scsi_get_data(r, true);
@@ -1003,7 +1059,60 @@ Uint8 Ncr5380_ReadByte(int addr)
 #endif
 }
 
+
 void Ncr5380_DmaTransfer_Falcon(void)
 {
 	dma_check(&ncr_soft_scsi);
+}
+
+
+void Ncr5380_IoMemTT_WriteByte(void)
+{
+	while (nIoMemAccessSize > 0)
+	{
+		if (IoAccessBaseAddress & 1)
+		{
+			int addr = IoAccessBaseAddress / 2 & 0x7;
+			Ncr5380_WriteByte(addr, IoMem[IoAccessBaseAddress]);
+		}
+		IoAccessBaseAddress++;
+		nIoMemAccessSize--;
+	}
+}
+
+
+void Ncr5380_IoMemTT_ReadByte(void)
+{
+	while (nIoMemAccessSize > 0)
+	{
+		if (IoAccessBaseAddress & 1)
+		{
+			int addr = IoAccessBaseAddress / 2 & 0x7;
+			IoMem[IoAccessBaseAddress] = Ncr5380_ReadByte(addr);
+		}
+		IoAccessBaseAddress++;
+		nIoMemAccessSize--;
+	}
+}
+
+
+void Ncr5380_TT_DMA_Ctrl_WriteWord(void)
+{
+	if (IoMem[0xff8715] & 2)
+		dma_check(&ncr_soft_scsi);
+}
+
+
+/**
+ * This is a temporary hack until we've got proper emulation of the
+ * 2nd MFP in the TT
+ */
+void Ncr5380_TT_GPIP_ReadByte(void)
+{
+	Uint8 val = 0x7f;
+
+	if (ncr_soft_scsi.irq)
+		val |= 0x80;
+
+	IoMem[0xfffa81] = val;
 }
