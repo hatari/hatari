@@ -953,7 +953,7 @@ static int MFP_StartTimer_AB(Uint8 TimerControl, Uint16 TimerData, interrupt_id 
 		/* [NP] FIXME : Temporary fix for Lethal Xcess calibration routine to remove top border : */
 		/* the routine expects that the delay is not always stable, there must be a small */
 		/* jitter due to the clock difference between CPU and MFP */
-		if ( ( M68000_GetPC() == 0x14d78 ) && ( STMemory_ReadLong ( 0x14d6c ) == 0x11faff75 ) )
+		if ( ( M68000_GetPC() == 0x14d72 ) && ( STMemory_ReadLong ( 0x14d6c ) == 0x11faff75 ) )
 		{
 //			fprintf ( stderr , "mfp add jitter %d\n" , TimerClockCycles );
 			TimerClockCycles += rand()%5-2;		/* add jitter for wod2 */
