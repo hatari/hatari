@@ -5830,17 +5830,6 @@ static uae_thread_id cpu_thread_tid;
 
 static bool m68k_cs_initialized;
 
-void custom_reset_cpu(bool hardreset, bool keyboardreset)
-{
-	if (cpu_thread_tid != uae_thread_get_id()) {
-		custom_reset(hardreset, keyboardreset);
-		return;
-	}
-	cpu_thread_reset = 1 | (hardreset ? 2 : 0) | (keyboardreset ? 4 : 0);
-	uae_sem_post(&cpu_wakeup_sema);
-	uae_sem_wait(&cpu_in_sema);
-}
-
 static int do_specialties_thread(void)
 {
 	if (regs.spcflags & SPCFLAG_MODE_CHANGE)
@@ -6089,6 +6078,23 @@ static void run_cpu_thread(void *(*f)(void *))
 
 }
 
+#endif
+
+#ifndef WINUAE_FOR_HATARI
+void custom_reset_cpu(bool hardreset, bool keyboardreset)
+{
+#ifdef WITH_THREADED_CPU
+	if (cpu_thread_tid != uae_thread_get_id()) {
+		custom_reset(hardreset, keyboardreset);
+		return;
+	}
+	cpu_thread_reset = 1 | (hardreset ? 2 : 0) | (keyboardreset ? 4 : 0);
+	uae_sem_post(&cpu_wakeup_sema);
+	uae_sem_wait(&cpu_in_sema);
+#else
+	custom_reset(hardreset, keyboardreset);
+#endif
+}
 #endif
 
 #ifdef JIT  /* Completely different run_2 replacement */
