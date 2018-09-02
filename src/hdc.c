@@ -144,9 +144,10 @@ static inline char *HDC_CmdInfoStr(SCSI_CTRLR *ctr)
 {
 	static char str[80];
 
-	snprintf(str, sizeof(str), "t=%i, lun=%i, opc=%i, cnt=0x%x, ctrl=0x%x",
-	         ctr->target, HDC_GetLUN(ctr), ctr->opcode, HDC_GetCount(ctr),
-	         HDC_GetControl(ctr));
+	snprintf(str, sizeof(str),
+	         "%s, t=%i, lun=%i, opc=0x%x, cnt=0x%x, ctrl=0x%x",
+	         ctr->typestr, ctr->target, HDC_GetLUN(ctr), ctr->opcode,
+	         HDC_GetCount(ctr), HDC_GetControl(ctr));
 
 	return str;
 }
@@ -752,6 +753,7 @@ bool HDC_Init(void)
 	nAcsiPartitions = 0;
 	bAcsiEmuOn = false;
 	memset(&AcsiBus, 0, sizeof(AcsiBus));
+	AcsiBus.typestr = "ACSI";
 	AcsiBus.buffer_size = 512;
 	AcsiBus.buffer = malloc(AcsiBus.buffer_size);
 	if (!AcsiBus.buffer)

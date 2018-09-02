@@ -68,6 +68,7 @@ typedef struct scsi_data {
  * Status of the ACSI/SCSI bus/controller including the current command block.
  */
 typedef struct {
+	const char *typestr;        /* "ACSI" or "SCSI" */
 	int target;
 	int byteCount;              /* number of command bytes received */
 	Uint8 command[16];

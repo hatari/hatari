@@ -978,6 +978,7 @@ void Ncr5380_Init(void)
 	int i;
 
 	memset(&ScsiBus, 0, sizeof(ScsiBus));
+	ScsiBus.typestr = "SCSI";
 	ScsiBus.buffer_size = 512;
 	ScsiBus.buffer = malloc(ScsiBus.buffer_size);
 	if (!ScsiBus.buffer)
