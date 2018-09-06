@@ -1240,13 +1240,12 @@ static int get_fpu_version (int model)
 
 static void fpu_null (void)
 {
-	int i;
 	regs.fpu_state = 0;
 	regs.fpu_exp_state = 0;
 	regs.fpcr = 0;
 	regs.fpsr = 0;
 	regs.fpiar = 0;
-	for (i = 0; i < 8; i++)
+	for (int i = 0; i < 8; i++)
 		fpnan (&regs.fp[i]);
 }
 
@@ -2475,11 +2474,9 @@ static uaecptr fmovem2mem (uaecptr ad, uae_u32 list, int incr, int regdir)
 	// 68030 MMU state saving is annoying!
 	if (currprefs.mmu_model == 68030) {
 		int idx = 0;
-		int r;
-		int i;
 		uae_u32 wrd[3];
 		mmu030_state[1] |= MMU030_STATEFLAG1_MOVEM1;
-		for (r = 0; r < 8; r++) {
+		for (int r = 0; r < 8; r++) {
 			if (regdir < 0)
 				reg = 7 - r;
 			else
@@ -2488,7 +2485,7 @@ static uaecptr fmovem2mem (uaecptr ad, uae_u32 list, int incr, int regdir)
 				fpp_from_exten_fmovem(&regs.fp[reg], &wrd[0], &wrd[1], &wrd[2]);
 				if (incr < 0)
 					ad -= 3 * 4;
-				for (i = 0; i < 3; i++) {
+				for (int i = 0; i < 3; i++) {
 					if (mmu030_state[0] == idx * 3 + i) {
 						if (mmu030_state[1] & MMU030_STATEFLAG1_MOVEM2) {
 							mmu030_state[1] &= ~MMU030_STATEFLAG1_MOVEM2;
@@ -2507,8 +2504,7 @@ static uaecptr fmovem2mem (uaecptr ad, uae_u32 list, int incr, int regdir)
 			list <<= 1;
 		}
 	} else {
-		int r;
-		for (r = 0; r < 8; r++) {
+		for (int r = 0; r < 8; r++) {
 			uae_u32 wrd1, wrd2, wrd3;
 			if (regdir < 0)
 				reg = 7 - r;
@@ -2537,14 +2533,12 @@ static uaecptr fmovem2fpp (uaecptr ad, uae_u32 list, int incr, int regdir)
 	if (currprefs.mmu_model == 68030) {
 		uae_u32 wrd[3];
 		int idx = 0;
-		int r;
-		int i;
 		mmu030_state[1] |= MMU030_STATEFLAG1_MOVEM1 | MMU030_STATEFLAG1_FMOVEM;
 		if (mmu030_state[1] & MMU030_STATEFLAG1_MOVEM2)
 			ad = mmu030_ad[mmu030_idx].val;
 		else
 			mmu030_ad[mmu030_idx].val = ad;
-		for (r = 0; r < 8; r++) {
+		for (int r = 0; r < 8; r++) {
 			if (regdir < 0)
 				reg = 7 - r;
 			else
@@ -2552,7 +2546,7 @@ static uaecptr fmovem2fpp (uaecptr ad, uae_u32 list, int incr, int regdir)
 			if (list & 0x80) {
 				if (incr < 0)
 					ad -= 3 * 4;
-				for (i = 0; i < 3; i++) {
+				for (int i = 0; i < 3; i++) {
 					if (mmu030_state[0] == idx * 3 + i) {
 						if (mmu030_state[1] & MMU030_STATEFLAG1_MOVEM2) {
 							mmu030_state[1] &= ~MMU030_STATEFLAG1_MOVEM2;
@@ -2575,8 +2569,7 @@ static uaecptr fmovem2fpp (uaecptr ad, uae_u32 list, int incr, int regdir)
 			list <<= 1;
 		}
 	} else {
-		int r;
-		for (r = 0; r < 8; r++) {
+		for (int r = 0; r < 8; r++) {
 			uae_u32 wrd1, wrd2, wrd3;
 			if (regdir < 0)
 				reg = 7 - r;
@@ -3152,7 +3145,6 @@ void fpu_clearstatus(void)
 void fpu_modechange(void)
 {
 	uae_u32 temp_ext[8][3];
-	int i;
 //fprintf ( stderr , "fpu_modechange old %d new %d\n" , currprefs.fpu_mode , changed_prefs.fpu_mode );
 
 	if (currprefs.fpu_mode == changed_prefs.fpu_mode)
@@ -3160,7 +3152,7 @@ void fpu_modechange(void)
 	currprefs.fpu_mode = changed_prefs.fpu_mode;
 
 	set_cpu_caches(true);
-	for (i = 0; i < 8; i++) {
+	for (int i = 0; i < 8; i++) {
 		fpp_from_exten_fmovem(&regs.fp[i], &temp_ext[i][0], &temp_ext[i][1], &temp_ext[i][2]);
 	}
 	if (currprefs.fpu_mode > 0) {
@@ -3178,7 +3170,7 @@ void fpu_modechange(void)
 		fp_init_native();
 	}
 	get_features();
-	for (i = 0; i < 8; i++) {
+	for (int i = 0; i < 8; i++) {
 		fpp_to_exten_fmovem(&regs.fp[i], temp_ext[i][0], temp_ext[i][1], temp_ext[i][2]);
 	}
 }

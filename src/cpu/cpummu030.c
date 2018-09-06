@@ -219,8 +219,7 @@ static void mmu030_flush_cache(uaecptr addr)
 		memset(&atc_data_cache_write, 0xff, sizeof atc_data_cache_write);
 	} else {
 		uae_u32 idx = ((addr & mmu030.translation.page.imask) >> mmu030.translation.page.size3m) | 7;
-		int i;
-		for (i = 0; i < MMUFASTCACHE_ENTRIES030; i++) {
+		for (int i = 0; i < MMUFASTCACHE_ENTRIES030; i++) {
 			if ((atc_data_cache_read[i].log | 7) == idx)
 				atc_data_cache_read[i].log = 0xffffffff;
 			if ((atc_data_cache_write[i].log | 7) == idx)
@@ -2580,8 +2579,7 @@ void m68k_do_rte_mmu030 (uaecptr a7)
 
 	if (frame == 0xb) {
 		uae_u16 idxsize = get_word_mmu030 (a7 + 0x36);
-		int i;
-		for (i = 0; i < idxsize + 1; i++) {
+		for (int i = 0; i < idxsize + 1; i++) {
 			mmu030_ad[i].done = i < idxsize;
 			mmu030_ad[i].val = get_long_mmu030 (a7 + 0x5c - (i + 1) * 4);
 		}
@@ -2842,8 +2840,7 @@ void m68k_do_rte_mmu030c (uaecptr a7)
 
 	if (frame == 0xb) {
 		uae_u16 idxsize = get_word_mmu030c(a7 + 0x36);
-		int i;
-		for (i = 0; i < idxsize + 1; i++) {
+		for (int i = 0; i < idxsize + 1; i++) {
 			mmu030_ad[i].done = i < idxsize;
 			mmu030_ad[i].val = get_long_mmu030c(a7 + 0x5c - (i + 1) * 4);
 		}

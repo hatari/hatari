@@ -2075,7 +2075,7 @@ static void movem_mmu060 (const char *code, int size, bool put, bool aipi, bool 
 {
 	const char *index;
 	int dphase;
-	int i;
+
 	if (apdi) {
 		dphase = 1;
 		index = "movem_index2";
@@ -2088,7 +2088,7 @@ static void movem_mmu060 (const char *code, int size, bool put, bool aipi, bool 
 		printf("\tuae_u32 tmp[16];\n");
 		printf("\tint tmpreg[16];\n");
 		printf("\tint idx = 0;\n");
-		for (i = 0; i < 2; i++) {
+		for (int i = 0; i < 2; i++) {
 			char reg;
 			if (i == dphase)
 				reg = 'd';
@@ -2110,7 +2110,7 @@ static void movem_mmu060 (const char *code, int size, bool put, bool aipi, bool 
 		printf ("\t\tregs.regs[tmpreg[idx]] = tmp[idx];\n");
 		printf ("\t}\n");
 	} else {
-		for (i = 0; i < 2; i++) {
+		for (int i = 0; i < 2; i++) {
 			char reg;
 			if (i == dphase)
 				reg = 'd';
@@ -2146,7 +2146,6 @@ static void movem_mmu040 (const char *code, int size, bool put, bool aipi, bool 
 {
 	const char *index;
 	int dphase;
-	int i;
 
 	if (apdi) {
 		dphase = 1;
@@ -2159,7 +2158,7 @@ static void movem_mmu040 (const char *code, int size, bool put, bool aipi, bool 
 	printf ("\tmmu040_movem = 1;\n");
 	printf ("\tmmu040_movem_ea = srca;\n");
 
-	for (i = 0; i < 2; i++) {
+	for (int i = 0; i < 2; i++) {
 		char reg;
 		if (i == dphase)
 			reg = 'd';
@@ -2190,7 +2189,7 @@ static void movem_mmu030 (const char *code, int size, bool put, bool aipi, bool 
 {
 	const char *index;
 	int dphase;
-	int i;
+
 	if (apdi) {
 		dphase = 1;
 		index = "movem_index2";
@@ -2207,7 +2206,7 @@ static void movem_mmu030 (const char *code, int size, bool put, bool aipi, bool 
 		printf ("\telse\n");
 		printf ("\t\tmmu030_ad[mmu030_idx].val = srca;\n");
 	}
-	for (i = 0; i < 2; i++) {
+	for (int i = 0; i < 2; i++) {
 		char reg;
 		if (i == dphase)
 			reg = 'd';

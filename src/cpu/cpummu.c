@@ -207,7 +207,7 @@ static void mmu_dump_table(const char * label, uaecptr root_ptr)
 		}
 	}
 	console_out_f(_T("MMU dump end\n"));
-}
+}			
 
 #else
 /* {{{ mmu_dump_table */
@@ -364,8 +364,7 @@ static void flush_shortcut_cache(uaecptr addr, bool super)
 		memset(&atc_data_cache_read, 0xff, sizeof atc_data_cache_read);
 		memset(&atc_data_cache_write, 0xff, sizeof atc_data_cache_write);
 	} else {
-		int i;
-		for (i = 0; i < MMUFASTCACHE_ENTRIES; i++) {
+		for (int i = 0; i < MMUFASTCACHE_ENTRIES; i++) {
 			uae_u32 idx = ((addr & mmu_pagemaski) >> mmu_pageshift1m) | (super ? 1 : 0);
 			if (atc_data_cache_read[i].log == idx)
 				atc_data_cache_read[i].log = 0xffffffff;
@@ -1265,7 +1264,6 @@ void REGPARAM2 dfc_put_byte(uaecptr addr, uae_u8 val)
 void mmu_get_move16(uaecptr addr, uae_u32 *v, bool data, int size)
 {
 	bool super = regs.s != 0;
-	int i;
 
 	addr &= ~15;
 	if ((!mmu_ttr_enabled || mmu_match_ttr(addr,super,data) == TTR_NO_MATCH) && regs.mmu_enabled) {
@@ -1273,7 +1271,7 @@ void mmu_get_move16(uaecptr addr, uae_u32 *v, bool data, int size)
 	}
 	// MOVE16 read and cache miss: do not allocate new cache line
 	mmu_cache_state |= CACHE_DISABLE_ALLOCATE;
-	for (i = 0; i < 4; i++) {
+	for (int i = 0; i < 4; i++) {
 		v[i] = x_phys_get_long(addr + i * 4);
 	}
 }
@@ -1281,7 +1279,6 @@ void mmu_get_move16(uaecptr addr, uae_u32 *v, bool data, int size)
 void mmu_put_move16(uaecptr addr, uae_u32 *val, bool data, int size)
 {
 	bool super = regs.s != 0;
-	int i;
 
 	addr &= ~15;
 	if ((!mmu_ttr_enabled || mmu_match_ttr_write(addr,super,data,val[0],size) == TTR_NO_MATCH) && regs.mmu_enabled) {
@@ -1289,7 +1286,7 @@ void mmu_put_move16(uaecptr addr, uae_u32 *val, bool data, int size)
 	}
 	// MOVE16 write invalidates existing line and also does not allocate new cache lines.
 	mmu_cache_state = CACHE_DISABLE_MMU;
-	for (i = 0; i < 4; i++) {
+	for (int i = 0; i < 4; i++) {
 		x_phys_put_long(addr + i * 4, val[i]);
 	}
 }
@@ -1484,7 +1481,7 @@ void REGPARAM2 mmu_reset(void)
 uae_u16 REGPARAM2 mmu_set_tc(uae_u16 tc)
 {
 	if (currprefs.mmu_ec) {
- 		tc &= ~(0x8000 | 0x4000);
+		tc &= ~(0x8000 | 0x4000);
 		// at least 68EC040 always returns zero when TC is read.
 		if (currprefs.cpu_model == 68040)
 			tc = 0;
