@@ -44,6 +44,7 @@ Emulator:
   - (Almost) all Hatari output goes now through logging framework so
     that Hatari verbosity can be controlled. Output at default log
     level is reduced significantly
+  - Add support for ISP & USP and 020+ special registers like VBR
   - Add "OsCallParam" variable which gives first (word sized) parameter
     for OS calls, for use with OS call "*Opcode" breakpoints
   - Add virtual V0..V7 registers to "register" command for calculations

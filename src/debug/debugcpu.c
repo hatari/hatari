@@ -219,21 +219,32 @@ int DebugCpu_DisAsm(int nArgc, char *psArgs[])
  */
 static char *DebugCpu_MatchRegister(const char *text, int state)
 {
-	static const char* regs[] = {
+	static const char* regs_000[] = {
 		"a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7",
 		"d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7",
-		"pc", "sr",
-		"v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7"		
+		"isp", "usp",
+		"v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7"
 	};
-	return DebugUI_MatchHelper(regs, ARRAY_SIZE(regs), text, state);
+	static const char* regs_020[] = {
+		"a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7",
+		"caar", "cacr",
+		"d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7",
+		"dfc", "isp", "msp", "pc", "sfc", "sr", "usp",
+		"v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
+		"vbr"
+	};
+	if (ConfigureParams.System.nCpuLevel < 2)
+		return DebugUI_MatchHelper(regs_000, ARRAY_SIZE(regs_000), text, state);
+	else
+		return DebugUI_MatchHelper(regs_020, ARRAY_SIZE(regs_020), text, state);
 }
 
 
 /**
  * Set address of the named 32-bit register to given argument.
- * Handles V0-7 fake registers, D0-7 data and A0-7 address registers,
- * but not PC & SR registers as they need to be accessed using UAE
- * accessors.
+ * Handles V0-7 fake registers, D0-7 data, A0-7 address and several
+ * special registers except for PC & SR registers because they need
+ * to be accessed using UAE accessors.
  *
  * Return register size in bits or zero for unknown register name.
  */
@@ -242,9 +253,48 @@ int DebugCpu_GetRegisterAddress(const char *reg, Uint32 **addr)
 	char r0;
 	int r1;
 
-	if (!reg[0] || !reg[1] || reg[2])
+	if (!reg[0] || !reg[1])
 		return 0;
 
+	/* 3-4 letter reg? */
+	if (reg[2])
+	{
+		if (strcasecmp(reg, "ISP") == 0)
+		{
+			*addr = &regs.isp;
+			return 32;
+		}
+		if (strcasecmp(reg, "USP") == 0)
+		{
+			*addr = &regs.usp;
+			return 32;
+		}
+		if (ConfigureParams.System.nCpuLevel >= 2)
+		{
+			static const struct {
+				const char name[5];
+				Uint32 *addr;
+			} reg_020[] = {
+				{ "CAAR", &regs.caar },
+				{ "CACR", &regs.cacr },
+				{ "DFC", &regs.dfc },
+				{ "MSP", &regs.msp },
+				{ "SFC", &regs.sfc },
+				{ "VBR", &regs.vbr }
+			};
+			for (int i = 0; i < ARRAY_SIZE(reg_020); i++)
+			{
+				if (strcasecmp(reg, reg_020[i].name) == 0)
+				{
+					*addr = reg_020[i].addr;
+					return 32;
+				}
+			}
+		}
+		return 0;
+	}
+
+	/* 2-letter reg */
 	r0 = toupper((unsigned char)reg[0]);
 	r1 = toupper((unsigned char)reg[1]) - '0';
 
@@ -252,7 +302,7 @@ int DebugCpu_GetRegisterAddress(const char *reg, Uint32 **addr)
 	{
 		if (r1 >= 0 && r1 <= 7)
 		{
-			*addr = &(Regs[REG_D0 + r1]);
+			*addr = &(regs.regs[REG_D0 + r1]);
 			return 32;
 		}
 		fprintf(stderr,"\tBad data register, valid values are 0-7\n");
@@ -262,7 +312,7 @@ int DebugCpu_GetRegisterAddress(const char *reg, Uint32 **addr)
 	{
 		if (r1 >= 0 && r1 <= 7)
 		{
-			*addr = &(Regs[REG_A0 + r1]);
+			*addr = &(regs.regs[REG_A0 + r1]);
 			return 32;
 		}
 		fprintf(stderr,"\tBad address register, valid values are 0-7\n");
@@ -288,9 +338,8 @@ int DebugCpu_GetRegisterAddress(const char *reg, Uint32 **addr)
  */
 int DebugCpu_Register(int nArgc, char *psArgs[])
 {
-	char reg[3], *assign;
+	char *arg, *assign;
 	Uint32 value;
-	char *arg;
 
 	/* If no parameter has been given, simply dump all registers */
 	if (nArgc == 1)
@@ -336,20 +385,17 @@ int DebugCpu_Register(int nArgc, char *psArgs[])
 	}
 
 	arg = Str_Trim(arg);
-	if (strlen(arg) != 2)
+	if (strlen(arg) < 2)
 	{
 		goto error_msg;
 	}
-	reg[0] = toupper((unsigned char)arg[0]);
-	reg[1] = toupper((unsigned char)arg[1]);
-	reg[2] = '\0';
 	
 	/* set SR and update conditional flags for the UAE CPU core. */
-	if (reg[0] == 'S' && reg[1] == 'R')
+	if (strcasecmp("SR", arg) == 0)
 	{
 		M68000_SetSR(value);
 	}
-	else if (reg[0] == 'P' && reg[1] == 'C')   /* set PC? */
+	else if (strcasecmp("PC", arg) == 0)  /* set PC */
 	{
 		M68000_SetPC(value);
 	}
@@ -357,7 +403,7 @@ int DebugCpu_Register(int nArgc, char *psArgs[])
 	{
 		Uint32 *regaddr;
 		/* check&set data and address registers */
-		if (DebugCpu_GetRegisterAddress(reg, &regaddr))
+		if (DebugCpu_GetRegisterAddress(arg, &regaddr))
 		{
 			*regaddr = value;
 		}
@@ -370,7 +416,9 @@ int DebugCpu_Register(int nArgc, char *psArgs[])
 
 error_msg:
 	fprintf(stderr,"\tError, usage: r or r xx=yyyy\n"
-		"\tWhere: xx=A0-A7, D0-D7, PC, SR, or V0-V7.\n");
+		"\tWhere: xx=A0-A7, D0-D7, PC, SR, ISP, USP\n"
+		"\t020+: CAAR, CACR, DFC, SFC, MSP, VBR\n"
+		"\tor V0-V7 (virtual).\n");
 	return DEBUGGER_CMDDONE;
 }
 
