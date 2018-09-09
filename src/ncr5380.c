@@ -567,7 +567,18 @@ static void raw_scsi_write_data(struct raw_scsi *rs, uae_u8 data)
 #if RAW_SCSI_DEBUG
 			write_log(_T("raw_scsi: data out finished, %d bytes\n"), ScsiBus.data_len);
 #endif
-			// scsi_emulate_cmd(sd);	/* disabled for Hatari, done in command phase already */
+			if (ScsiBus.dmawrite_to_fh)
+			{
+				int r;
+				r = fwrite(ScsiBus.buffer, 1, ScsiBus.data_len, ScsiBus.dmawrite_to_fh);
+				if (r != ScsiBus.data_len)
+				{
+					Log_Printf(LOG_ERROR, "Could not write bytes to HD image (%d/%d).\n",
+					           r, ScsiBus.data_len);
+					ScsiBus.status = HD_STATUS_ERROR;
+				}
+				ScsiBus.dmawrite_to_fh = NULL;
+			}
 
 			rs->bus_phase = SCSI_SIGNAL_PHASE_STATUS;
 		}
@@ -659,7 +670,7 @@ static void dma_check(struct soft_scsi *ncr)
 	//         ncr->dma_direction, ScsiBus.data_len, ncr->rscsi.bus_phase, ncr->regs[3] & 7);
 
 	/* Don't do anything if nothing to transfer */
-	if (ScsiBus.data_len == 0)
+	if (ScsiBus.data_len == 0 || !ncr->dma_active || !ncr->dma_direction)
 		return;
 
 	if (Config_IsMachineFalcon())
@@ -668,8 +679,7 @@ static void dma_check(struct soft_scsi *ncr)
 		if ((FDC_DMA_GetMode() & 0xc0) != 0x00)
 			return;
 		nDmaAddr = FDC_GetDMAAddress();
-		/* TODO: Do we need to check DMA SectorCount register? */
-		nDataLen = ScsiBus.data_len;
+		nDataLen = FDC_DMA_GetSectorCount() * 512;
 	}
 	else
 	{
@@ -679,12 +689,10 @@ static void dma_check(struct soft_scsi *ncr)
 		           | IoMem[0xff8705] << 8 | IoMem[0xff8707];
 		nDataLen = (Uint32)IoMem[0xff8709] << 24 | IoMem[0xff870b] << 16
 		           | IoMem[0xff870d] << 8 | IoMem[0xff870f];
-		if (nDataLen > ScsiBus.data_len)
-			nDataLen = ScsiBus.data_len;
 	}
 
-	if (!ncr->dma_active || !ncr->dma_direction)
-		return;
+	if (nDataLen > ScsiBus.data_len)
+		nDataLen = ScsiBus.data_len;
 
 	if (ncr_soft_scsi.dma_direction < 0)
 	{
@@ -703,12 +711,8 @@ static void dma_check(struct soft_scsi *ncr)
 		/* write - if allowed */
 		if (STMemory_CheckAreaType(nDmaAddr, nDataLen, ABFLAG_RAM | ABFLAG_ROM))
 		{
-			int wlen = fwrite(&STRam[nDmaAddr], 1, nDataLen, ScsiBus.dmawrite_to_fh);
-			if (wlen != nDataLen)
-			{
-				Log_Printf(LOG_ERROR, "Could not write all bytes to hard disk image.\n");
-				ScsiBus.status = HD_STATUS_ERROR;
-			}
+			for (i = 0; i < nDataLen; i++)
+				ncr5380_bput(ncr, 8, STRam[nDmaAddr + i]);
 		}
 		else
 		{
@@ -716,10 +720,7 @@ static void dma_check(struct soft_scsi *ncr)
 				   nDmaAddr, ScsiBus.data_len);
 			ScsiBus.bDmaError = true;
 		}
-		ScsiBus.dmawrite_to_fh = NULL;
 		Ncr5380_UpdateDmaAddrAndLen(nDmaAddr, nDataLen);
-		for (i = 0; i < nDataLen; i++)
-			ncr5380_bput(ncr, 8, STRam[nDmaAddr + i]);
 	}
 
 	if (Config_IsMachineFalcon())
@@ -732,8 +733,11 @@ static void dma_check(struct soft_scsi *ncr)
 		ncr->irq = true;
 	}
 
-	ncr->dmac_active = 0;
-	ncr->dma_active = 0;
+	if (ScsiBus.offset == ScsiBus.data_len)
+	{
+		ncr->dmac_active = 0;
+		ncr->dma_active = 0;
+	}
 }
 
 static void ncr5380_set_irq(struct soft_scsi *scsi)

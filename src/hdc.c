@@ -412,6 +412,7 @@ static void HDC_Cmd_WriteSector(SCSI_CTRLR *ctr)
 		ctr->data_len = HDC_GetCount(ctr) * 512;
 		if (ctr->data_len)
 		{
+			HDC_PrepRespBuf(ctr, ctr->data_len);
 			ctr->dmawrite_to_fh = dev->image_file;
 			ctr->status = HD_STATUS_OK;
 			dev->nLastError = HD_REQSENS_OK;
