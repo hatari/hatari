@@ -663,7 +663,6 @@ static void Ncr5380_UpdateDmaAddrAndLen(uint32_t nDmaAddr, uint32_t nDataLen)
 static void dma_check(struct soft_scsi *ncr)
 {
 	int i, nDataLen;
-	Uint8 buf[ScsiBus.data_len];
 	uint32_t nDmaAddr;
 
 	// fprintf(stderr, "dma_check: dma_direction=%i data_len=%i phase=%i %i\n",
@@ -696,15 +695,33 @@ static void dma_check(struct soft_scsi *ncr)
 
 	if (ncr_soft_scsi.dma_direction < 0)
 	{
-		for (i = 0; i < nDataLen; i++)
-			buf[i] = ncr5380_bget(ncr, 8);
-		if (!STMemory_SafeCopy(nDmaAddr, buf, nDataLen, "SCSI DMA")) {
+		if (STMemory_CheckAreaType(nDmaAddr, nDataLen, ABFLAG_RAM | ABFLAG_ROM))
+		{
+			for (i = 0; i < nDataLen; i++)
+			{
+				uint8_t val = ncr5380_bget(ncr, 8);
+				STMemory_WriteByte(nDmaAddr + i, val);
+			}
+			ScsiBus.bDmaError = false;
+		}
+		else
+		{
 			ScsiBus.bDmaError = true;
 			ScsiBus.status = HD_STATUS_ERROR;
 		}
-		else
-			ScsiBus.bDmaError = false;
+
 		Ncr5380_UpdateDmaAddrAndLen(nDmaAddr, nDataLen);
+		if (Config_IsMachineTT())
+		{
+			int nRemainingBytes = IoMem[0xff8707] & 3;
+			for (i = 0; i < nRemainingBytes; i++)
+			{
+				/* For more precise emulation, we should not
+				 * pre-write the bytes to the STRam ... */
+				const Uint32 addr = nDmaAddr + nDataLen - nRemainingBytes;
+				IoMem[0xff8710 + i] = STMemory_ReadByte(addr + i);
+			}
+		}
 	}
 	else if (ncr_soft_scsi.dma_direction > 0 && ScsiBus.dmawrite_to_fh)
 	{
@@ -712,13 +729,17 @@ static void dma_check(struct soft_scsi *ncr)
 		if (STMemory_CheckAreaType(nDmaAddr, nDataLen, ABFLAG_RAM | ABFLAG_ROM))
 		{
 			for (i = 0; i < nDataLen; i++)
-				ncr5380_bput(ncr, 8, STRam[nDmaAddr + i]);
+			{
+				uint8_t val = STMemory_ReadByte(nDmaAddr + i);
+				ncr5380_bput(ncr, 8, val);
+			}
 		}
 		else
 		{
 			Log_Printf(LOG_WARN, "SCSI DMA write uses invalid RAM range 0x%x+%i\n",
 				   nDmaAddr, ScsiBus.data_len);
 			ScsiBus.bDmaError = true;
+			ScsiBus.status = HD_STATUS_ERROR;
 		}
 		Ncr5380_UpdateDmaAddrAndLen(nDmaAddr, nDataLen);
 	}
