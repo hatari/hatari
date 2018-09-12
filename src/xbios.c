@@ -597,6 +597,47 @@ bool XBios(void)
 			  M68000_GetPC());
 		return false;
 
+	case 108:	/* Dsp_LoadProg */
+		/* ones taking long/pointer, word and long/pointer */
+		LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x%02hX %s(0x%X, 0x%hX, 0x%X) at PC 0x%X\n",
+			  XBiosCall, XBios_Call2Name(XBiosCall),
+			  STMemory_ReadLong(Params),
+			  STMemory_ReadWord(Params+SIZE_LONG),
+			  STMemory_ReadLong(Params+SIZE_LONG+SIZE_WORD),
+			  M68000_GetPC());
+		return false;
+
+	case 96:	/* Dsp_DoBlock */
+	case 97:	/* Dsp_BlkHandShake */
+	case 98:	/* Dsp_BlkUnpacked */
+	case 99:	/* Dsp_InStream */
+	case 100:	/* Dsp_OutStream */
+	case 123:	/* Dsp_BlkWords */
+	case 124:	/* Dsp_BlkBytes */
+	case 127:	/* Dsp_MultBlocks */
+		/* ones taking four longs/pointers */
+		LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x%02hX %s(0x%X, 0x%X, 0x%X, 0x%X) at PC 0x%X\n",
+			  XBiosCall, XBios_Call2Name(XBiosCall),
+			  STMemory_ReadLong(Params),
+			  STMemory_ReadLong(Params+SIZE_LONG),
+			  STMemory_ReadLong(Params+SIZE_LONG+SIZE_LONG),
+			  STMemory_ReadLong(Params+SIZE_LONG+SIZE_LONG+SIZE_LONG),
+			  M68000_GetPC());
+		return false;
+
+	case 101:	/* Dsp_IOStream */
+		/* ones taking six longs/pointers */
+		LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x%02hX %s(0x%X, 0x%X, 0x%X, 0x%X, 0x%X, 0x%X) at PC 0x%X\n",
+			  XBiosCall, XBios_Call2Name(XBiosCall),
+			  STMemory_ReadLong(Params),
+			  STMemory_ReadLong(Params+SIZE_LONG),
+			  STMemory_ReadLong(Params+SIZE_LONG+SIZE_LONG),
+			  STMemory_ReadLong(Params+SIZE_LONG+SIZE_LONG+SIZE_LONG),
+			  STMemory_ReadLong(Params+SIZE_LONG+SIZE_LONG+SIZE_LONG+SIZE_LONG),
+			  STMemory_ReadLong(Params+SIZE_LONG+SIZE_LONG+SIZE_LONG+SIZE_LONG+SIZE_LONG),
+			  M68000_GetPC());
+		return false;
+
 	case 5:		/* Setscreen */
 		if (STMemory_ReadWord(Params+SIZE_LONG+SIZE_LONG) == 3) {
 			/* actually VSetscreen with extra parameter */
