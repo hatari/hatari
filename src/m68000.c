@@ -477,8 +477,8 @@ void M68000_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&regs.dfc, sizeof(regs.dfc));            /* DFC */
 	MemorySnapShot_Store(&regs.sfc, sizeof(regs.sfc));            /* SFC */
 	MemorySnapShot_Store(&regs.vbr, sizeof(regs.vbr));            /* VBR */
-	MemorySnapShot_Store(&caar, sizeof(caar));                    /* CAAR */
-	MemorySnapShot_Store(&cacr, sizeof(cacr));                    /* CACR */
+	MemorySnapShot_Store(&regs.caar, sizeof(regs.caar));          /* CAAR */
+	MemorySnapShot_Store(&regs.cacr, sizeof(regs.cacr));          /* CACR */
 	MemorySnapShot_Store(&regs.msp, sizeof(regs.msp));            /* MSP */
 
 	if (!bSave)

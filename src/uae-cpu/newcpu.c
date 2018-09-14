@@ -1168,7 +1168,6 @@ static void Interrupt(int nr , int Pending)
 }
 
 
-uae_u32 caar, cacr;
 static uae_u32 itt0, itt1, dtt0, dtt1, tc, mmusr, urp, srp;
 
 
@@ -1215,7 +1214,7 @@ int m68k_move2c (int regno, uae_u32 *regp)
 		cacr_mask = 0x00003f1f;
 	    else if (currprefs.cpu_level == 4)	// 68040
 		cacr_mask = 0x80008000;
-	    cacr = *regp & cacr_mask;
+	    regs.cacr = *regp & cacr_mask;
 	}
 	case 3: tc = *regp & 0xc000; break;
 	  /* Mask out fields that should be zero.  */
@@ -1226,7 +1225,7 @@ int m68k_move2c (int regno, uae_u32 *regp)
 
 	case 0x800: regs.usp = *regp; break;
 	case 0x801: regs.vbr = *regp; break;
-	case 0x802: caar = *regp; break;
+	case 0x802: regs.caar = *regp; break;
 	case 0x803: regs.msp = *regp; if (regs.m == 1) m68k_areg(regs, 7) = regs.msp; break;
 	case 0x804: regs.isp = *regp; if (regs.m == 0) m68k_areg(regs, 7) = regs.isp; break;
 	case 0x805: mmusr = *regp; break;
@@ -1249,7 +1248,7 @@ int m68k_movec2 (int regno, uae_u32 *regp)
 	switch (regno) {
 	case 0: *regp = regs.sfc; break;
 	case 1: *regp = regs.dfc; break;
-	case 2: *regp = cacr; break;
+	case 2: *regp = regs.cacr; break;
 	case 3: *regp = tc; break;
 	case 4: *regp = itt0; break;
 	case 5: *regp = itt1; break;
@@ -1257,7 +1256,7 @@ int m68k_movec2 (int regno, uae_u32 *regp)
 	case 7: *regp = dtt1; break;
 	case 0x800: *regp = regs.usp; break;
 	case 0x801: *regp = regs.vbr; break;
-	case 0x802: *regp = caar; break;
+	case 0x802: *regp = regs.caar; break;
 	case 0x803: *regp = regs.m == 1 ? m68k_areg(regs, 7) : regs.msp; break;
 	case 0x804: *regp = regs.m == 0 ? m68k_areg(regs, 7) : regs.isp; break;
 	case 0x805: *regp = mmusr; break;

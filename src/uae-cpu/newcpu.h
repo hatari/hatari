@@ -121,6 +121,7 @@ extern struct regstruct
     uae_u32 instruction_pc;
 
     uae_u32 vbr,sfc,dfc;
+    uae_u32 caar, cacr;
 
     fptype fp[8];
     fptype fp_result;
@@ -389,7 +390,6 @@ extern const struct cputbl op_smalltbl_5_ff[];
 
 extern cpuop_func *cpufunctbl[65536];
 
-extern uae_u32 caar, cacr;
 
 /* Family of the latest instruction executed (to check for pairing) */
 extern int OpcodeFamily;			/* see instrmnem in readcpu.h */
