@@ -1667,7 +1667,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 #if ENABLE_WINUAE_CPU
 		case OPT_TT_RAM:
 			memsize = atoi(argv[++i]);
-			ConfigureParams.Memory.TTRamSize_KB = Opt_ValueAlignMinMax(memsize+3, 4, 0, 256) * 1024;
+			ConfigureParams.Memory.TTRamSize_KB = Opt_ValueAlignMinMax(memsize+3, 4, 0, 512) * 1024;
 			bLoadAutoSave = false;
 			break;
 #endif

@@ -38,7 +38,7 @@ static char sTTRamSize[4];
 
 #define DLG_TTRAM_STEP	4
 #define DLG_TTRAM_MIN	0
-#define DLG_TTRAM_MAX	256
+#define DLG_TTRAM_MAX	512
 
 static char dlgSnapShotName[36+1];
 

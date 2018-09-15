@@ -636,7 +636,7 @@ TT :
       - CA400313-xxx : 2 MB board by Atari
       - CA401059-xxx : 2 or 8 MB board by Atari
     - extension board using the VME BUS ; such RAM can't be used for shifter and it's slower than fast RAM
-    - fast RAM : up to 256 MB of "fast" single purpose RAM could be added. It can't be used for shifter,
+    - fast RAM : up to 512 MB of "fast" single purpose RAM could be added. It can't be used for shifter,
       but it can be used with TT DMA specific chips. As this RAM is not shared with the shifter, it's much faster
       (there's no bus cycle penalty every 250 ns as with dual purpose memory)
 
