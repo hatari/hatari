@@ -50,6 +50,7 @@ const char Statusbar_fileid[] = "Hatari statusbar.c : " __DATE__ " " __TIME__;
 #include "fdc.h"
 #include "stMemory.h"
 #include "blitter.h"
+#include "str.h"
 
 #define DEBUG 0
 #if DEBUG
@@ -453,8 +454,11 @@ static char *Statusbar_AddString(char *buffer, const char *more)
 void Statusbar_UpdateInfo(void)
 {
 	int i;
-	char *end = DefaultMessage.msg;
 	int size;
+	char buffer[200];				/* large enough for any message */
+	char *end;
+
+	end = buffer;
 
 	/* CPU MHz */
 	if (ConfigureParams.System.nCpuFreq > 9) {
@@ -591,7 +595,7 @@ void Statusbar_UpdateInfo(void)
 	}
 	*end = '\0';
 
-	assert(end - DefaultMessage.msg < MAX_MESSAGE_LEN);
+	strlcpy(DefaultMessage.msg, buffer, MAX_MESSAGE_LEN);
 	DEBUGPRINT(("Set default message: '%s'\n", DefaultMessage.msg));
 	/* make sure default message gets (re-)drawn when next checked */
 	DefaultMessage.shown = false;
