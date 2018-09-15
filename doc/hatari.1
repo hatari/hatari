@@ -367,7 +367,7 @@ Set amount of emulated ST RAM, x = 1 to 14 MiB, or 0 for 512 KiB.
 Other values are considered as a size in KiB
 .TP
 .B \-s, \-\-ttram <x>
-Set amount of emulated TT RAM, x = 0 to 256 MiB (in 4MB steps)
+Set amount of emulated TT RAM, x = 0 to 512 MiB (in 4MB steps)
 
 .SH "ROM options"
 .TP 
@@ -405,6 +405,9 @@ Use 24-bit instead of 32-bit addressing mode
 .TP
 .B \-\-fpu <x>
 FPU type (x=none/68881/68882/internal)
+.TP
+.B \-\-fpu-softfloat <bool>
+Use full software FPU emulation (Softfloat library)
 .TP
 .B \-\-mmu <bool>
 Use MMU emulation

@@ -111,7 +111,7 @@ and demos. Of course you can run normal GEM applications with Hatari, too.
   <li>68000 - 68040 emulation via the UAE CPU core
       (additional 68060 and MMU emulation only with the WinUAE CPU core)</li>
   <li>ST RAM size variable (from 512kiB up to 14MiB are possible)</li>
-  <li>TT RAM size variable (from 0 up to 256MiB are possible)</li>
+  <li>TT RAM size variable (from 0 up to 512MiB are possible)</li>
   <li>optional cartridge images for the ST ROM port</li>
   <li>most of the ST specific hardware</li>
   <li>ST Shifter with ST-High, ST-Medium and ST-Low resolutions,
@@ -173,7 +173,7 @@ compared to a normal STE (like a built-in real time clock chip).
 <ul>
   <li>TT low/med/high resolution support</li>
   <li>ST/TT palette switching and video shifter</li>
-  <li>RAM up to 14MiB (ST-RAM) and up to 256 MiB (TT-RAM)</li>
+  <li>RAM up to 14MiB (ST-RAM) and up to 512 MiB (TT-RAM)</li>
   <li>Only TOS version 3.05 and 3.06 (and EmuTOS) can be used in TT mode.</li>
 </ul>
 <p>
@@ -189,7 +189,7 @@ second MFP and the SCC UARTs is not emulated yet.
   <li>STE/Falcon palette switching and shifter</li>
   <li>Mono/RGB/VGA/TV monitor types</li>
   <li>DSP co-processor emulation</li>
-  <li>RAM up to 14MiB (ST-RAM) and up to 256 MiB (TT-RAM)</li>
+  <li>RAM up to 14MiB (ST-RAM) and up to 512 MiB (TT-RAM)</li>
   <li>Experimental microphone (jack) emulation</li>
   <li>Experimental Crossbar sound matrix (ADC (mic &amp; PSG), DAC, DMA, DSP)
       interconnect emulation + support for the additional DMA sound
@@ -733,6 +733,10 @@ incompatibilities)</p>
 &lt;x&gt;</p>
 <p class="paramdesc">Set amount of emulated RAM, x = 1 to 14
 MiB, or 0 for 512 KiB. Other values are considered as a size in KiB</p>
+<p class="parameter">--ttram
+&lt;x&gt;</p>
+<p class="paramdesc">Set amount of emulated TT RAM (for Falcon and TT
+mode), x = 0 to 512 MiB</p>
 
 <h3>ROM options</h3>
 <p class="parameter">-t,
@@ -769,6 +773,8 @@ CPU mode with better prefetch accuracy and cycle counting</p>
 <p class="paramdesc">Use 24-bit instead of 32-bit addressing mode (24-bit is enabled by default)</p>
 <p class="parameter">--fpu &lt;x&gt;</p>
 <p class="paramdesc">FPU type (x=none/68881/68882/internal)</p>
+<p class="parameter">--fpu-softfloat &lt;bool&gt;</p>
+<p class="paramdesc">Use full software FPU emulation (Softfloat library)</p>
 <p class="parameter">--mmu &lt;bool&gt;</p>
 <p class="paramdesc">Use MMU emulation</p>
 
@@ -1121,7 +1127,7 @@ changes that you have made.
 <h4 class="gui">The CPU Dialog</h4>
 
 <div class="floatimage">
-  <img src="images/cpu.png" width="460" height="368"
+  <img src="images/cpu.png" width="460" height="384"
        alt="Hatari's GUI - the CPU dialog" />
 </div>
 
@@ -1186,7 +1192,13 @@ changes that you have made.
  The FPU settings are also only available with the &quot;WinUAE&quot; builds
  of Hatari. They can be used to select the type of floating point unit of CPUs
  &gt;= 68020. In the non-WinUAE builds of Hatari, the FPU is always enabled for
- 68030 and 68040 CPUs.
+ 68030 and 68040 CPUs.<br>
+ When emulating the FPU, you can use your own PC's CPU/FPU to do the math.
+ This is the default and fastest method, but recent CPU might have some slight
+ differences in rounding when compared to a real Motorala FPU.<br>
+ For higher precision, you can select the "Soflfloat" emulation mode : this will
+ emulate all the FPU operations using only the CPU and with the same rules as the
+ Motorala's FPU. In that case, FPU emulation will be a little slower.
 </p>
 
 
@@ -1277,7 +1289,7 @@ ends with a 'b'.
 <h4 class="gui">The Hard Disks Dialog</h4>
 
 <div class="floatimage">
-  <img src="images/harddisks.png" width="640" height="304"
+  <img src="images/harddisks.png" width="640" height="352"
        alt="Hatari's GUI - the hard disks dialog" />
 </div>
 
@@ -1310,15 +1322,18 @@ ends with a 'b'.
 <h4 class="gui">The Memory Dialog</h4>
 
 <div class="floatimage">
-  <img src="images/memory.png" width="398" height="349"
+  <img src="images/memory.png" width="400" height="400"
        alt="Hatari's GUI - the memory dialog" />
 </div>
 
-<p>You can select the amount of RAM for the emulated ST here. Only
+<p>You can select the amount of RAM for the emulated machine here. Only
 amounts that were valid on a real unmodified STFM can be selected.</p>
 <p><em>Note:</em> This option is critical and you are strongly advised
-to reset the emulated ST
+to reset the emulated machine
 when changing this option.</p>
+<p>TT RAM size allows to emulate up to 512 MiB of 32 bit RAM. This is only
+useful in Falcon or TT mode and require to disable "24 bit addressing" mode
+in the CPU options
 <p>Here you will find the options to save memory snapshots as well.</p>
 <p>Click on <span class="button">Save</span> to save a memory snapshot
 to file. You can select a new filename here.</p>
