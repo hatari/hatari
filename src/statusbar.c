@@ -126,6 +126,8 @@ static int bOldFastForward;
 
 static SDL_Rect FDCTextRect;
 
+static SDL_Rect JoysticksTextRect;
+
 /* screen height above statusbar and height of statusbar below screen */
 static int ScreenHeight;
 static int StatusbarHeight;
@@ -226,6 +228,33 @@ static int Statusbar_BlitterGetLinesOn ( int max_h )
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Return a text corresponding to the status of each emulated joystick
+ * - : off   J : real joystick   K : keyboard emulation
+ */
+static void Statusbar_JoysticksGetText ( char *buf )
+{
+	int i;
+
+	for (i = 0; i < JOYSTICK_COUNT; i++) {
+		switch (ConfigureParams.Joysticks.Joy[i].nJoystickMode) {
+		case JOYSTICK_DISABLED:
+			*buf++ = '-';
+			break;
+		case JOYSTICK_REALSTICK:
+			*buf++ = 'J';
+			break;
+		case JOYSTICK_KEYBOARD:
+			*buf++ = 'K';
+			break;
+		}
+	}
+	*buf = '\0';
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Set overlay led size/pos on given screen to internal Rect
  * and free previous resources.
  */
@@ -263,6 +292,7 @@ void Statusbar_Init(SDL_Surface *surf)
 	const char *text[MAX_DRIVE_LEDS] = { "A:", "B:", "HD:" };
 	char FdcText[FDC_MSG_MAX_LEN];
 	int FdcTextLen;
+	char JoysticksText[JOYSTICK_COUNT+1];
 
 	DEBUGPRINT(("Statusbar_Init()\n"));
 	assert(surf);
@@ -362,7 +392,17 @@ void Statusbar_Init(SDL_Surface *surf)
 	SDLGui_Text(FDCTextRect.x, FDCTextRect.y, FdcText);
 	FDCTextRect.w = FdcTextLen * fontw + fontw/2;
 	FDCTextRect.h = fonth;
-	// xoffset += FDCTextRect.w;
+	xoffset += FDCTextRect.w;
+
+	/* print joysticks' info */
+	xoffset += 2*fontw;
+	JoysticksTextRect.x = xoffset;
+	JoysticksTextRect.y = yoffset;
+	Statusbar_JoysticksGetText(JoysticksText);
+	SDLGui_Text(JoysticksTextRect.x, JoysticksTextRect.y, JoysticksText);
+	JoysticksTextRect.w = JOYSTICK_COUNT * fontw + fontw/2;
+	JoysticksTextRect.h = fonth;
+	// xoffset += JoysticksTextRect.w;
 
 	/* draw frameskip on the right */
 	FrameSkipsRect.x = surf->w - 21*fontw;
@@ -453,7 +493,6 @@ static char *Statusbar_AddString(char *buffer, const char *more)
  */
 void Statusbar_UpdateInfo(void)
 {
-	int i;
 	int size;
 	char buffer[200];				/* large enough for any message */
 	char *end;
@@ -578,21 +617,6 @@ void Statusbar_UpdateInfo(void)
 		end += sprintf(end, " %d Hz" , nScreenRefreshRate);
 	}
 
-	/* joystick type */
-	end = Statusbar_AddString(end, ", ");
-	for (i = 0; i < JOYSTICK_COUNT; i++) {
-		switch (ConfigureParams.Joysticks.Joy[i].nJoystickMode) {
-		case JOYSTICK_DISABLED:
-			*end++ = '-';
-			break;
-		case JOYSTICK_REALSTICK:
-			*end++ = 'J';
-			break;
-		case JOYSTICK_KEYBOARD:
-			*end++ = 'K';
-			break;
-		}
-	}
 	*end = '\0';
 
 	strlcpy(DefaultMessage.msg, buffer, MAX_MESSAGE_LEN);
@@ -778,6 +802,8 @@ SDL_Rect* Statusbar_Update(SDL_Surface *surf, bool do_update)
 {
 	static char FdcOld[FDC_MSG_MAX_LEN] = "";
 	char FdcNew[FDC_MSG_MAX_LEN];
+	static char JoysticksOld[JOYSTICK_COUNT+1] = "";
+	char JoysticksNew[JOYSTICK_COUNT+1];
 	Uint32 color, currentticks;
 	static SDL_Rect rect;
 	SDL_Rect *last_rect;
@@ -837,6 +863,16 @@ SDL_Rect* Statusbar_Update(SDL_Surface *surf, bool do_update)
 		SDL_FillRect(surf, &FDCTextRect, GrayBg);
 		SDLGui_Text(FDCTextRect.x, FDCTextRect.y, FdcNew);
 		last_rect = &FDCTextRect;
+		updates++;
+	}
+
+	/* joysticks' type */
+	Statusbar_JoysticksGetText(JoysticksNew);
+	if (strcmp(JoysticksNew, JoysticksOld)) {
+		strcpy(JoysticksOld, JoysticksNew);
+		SDL_FillRect(surf, &JoysticksTextRect, GrayBg);
+		SDLGui_Text(JoysticksTextRect.x, JoysticksTextRect.y, JoysticksNew);
+		last_rect = &JoysticksTextRect;
 		updates++;
 	}
 
