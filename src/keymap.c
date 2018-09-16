@@ -192,6 +192,8 @@ static char Keymap_SymbolicToStScanCode(SDL_keysym* pKeySym)
 	 case SDLK_F8: code = 0x42; break;
 	 case SDLK_F9: code = 0x43; break;
 	 case SDLK_F10: code = 0x44; break;
+	 case SDLK_F11: code = 0x62; break;
+	 case SDLK_F12: code = 0x61; break;
 	 case SDLK_F13: code = 0x62; break;
 	 /* Key state modifier keys */
 	 case SDLK_CAPSLOCK: code = 0x3A; break;
@@ -286,6 +288,8 @@ static char Keymap_PcToStScanCode(SDL_keysym* pKeySym)
 	 case SDL_SCANCODE_F8: return 0x42;
 	 case SDL_SCANCODE_F9: return 0x43;
 	 case SDL_SCANCODE_F10: return 0x44;
+	 case SDL_SCANCODE_F11: return 0x62;
+	 case SDL_SCANCODE_F12: return 0x61;
 	 case SDL_SCANCODE_PRINTSCREEN: return 0x62;
 	 case SDL_SCANCODE_SCROLLLOCK: return 0x61;
 	 case SDL_SCANCODE_PAUSE: return 0x61;
