@@ -665,11 +665,11 @@ static void dma_check(struct soft_scsi *ncr)
 	int i, nDataLen;
 	uint32_t nDmaAddr;
 
-	// fprintf(stderr, "dma_check: dma_direction=%i data_len=%i phase=%i %i\n",
-	//         ncr->dma_direction, ScsiBus.data_len, ncr->rscsi.bus_phase, ncr->regs[3] & 7);
+	// fprintf(stderr, "dma_check: dma_direction=%i data_len=%i/%i phase=%i %i active=%i \n",
+	//         ncr->dma_direction, ScsiBus.offset, ScsiBus.data_len, ncr->rscsi.bus_phase, ncr->regs[3] & 7, ncr->dma_active);
 
 	/* Don't do anything if nothing to transfer */
-	if (ScsiBus.data_len == 0 || !ncr->dma_active || !ncr->dma_direction)
+	if (ScsiBus.data_len - ScsiBus.offset == 0 || !ncr->dma_active || !ncr->dma_direction)
 		return;
 
 	if (Config_IsMachineFalcon())
@@ -690,8 +690,8 @@ static void dma_check(struct soft_scsi *ncr)
 		           | IoMem[0xff870d] << 8 | IoMem[0xff870f];
 	}
 
-	if (nDataLen > ScsiBus.data_len)
-		nDataLen = ScsiBus.data_len;
+	if (nDataLen > ScsiBus.data_len - ScsiBus.offset)
+		nDataLen = ScsiBus.data_len - ScsiBus.offset;
 
 	if (ncr_soft_scsi.dma_direction < 0)
 	{
@@ -737,7 +737,7 @@ static void dma_check(struct soft_scsi *ncr)
 		else
 		{
 			Log_Printf(LOG_WARN, "SCSI DMA write uses invalid RAM range 0x%x+%i\n",
-				   nDmaAddr, ScsiBus.data_len);
+				   nDmaAddr, nDataLen);
 			ScsiBus.bDmaError = true;
 			ScsiBus.status = HD_STATUS_ERROR;
 		}
