@@ -120,7 +120,7 @@ Emulation:
 - CPU:
   - Support undocumented behaviour for STOP on 68000 when new SR has bit S=0
   - Fix some cases where bus/address error stack had a wrong PC
-  - Correctly store the 32 bit address in the stack in case of a bus error
+  - Correctly store the 32-bit address in the stack in case of a bus error
   - Better memory timings for RAM accesses in 68030 mode (for Falcon)
   - Accurate DIV overflow undocumented flags
   - Correct V flag for BCD instructions for 68020/30

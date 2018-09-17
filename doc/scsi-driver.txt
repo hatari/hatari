@@ -31,7 +31,7 @@ implementation consists of these calls (NatFeats sub-ids):
 Returns the driver interface version number. (Note that this is not the same
 as the SCSI Driver version.) Only if the host implementation and the TOS stub
 interface version match, the stub can be installed. The format of the version
-string is MAJOR.MINOR, coded as a 16 bit value. 0x0105, for instance, means
+string is MAJOR.MINOR, coded as a 16-bit value. 0x0105, for instance, means
 version 1.05.
 
 2. SCSI_INTERFACE_FEATURES
