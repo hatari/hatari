@@ -699,11 +699,11 @@ default, in case you've transferred files from Atari machine without
 proper file name conversion (e.g. by zipping them on Atari and
 unzipping on PC)</p>
 <p class="parameter">--gemdos-drive &lt;drive&gt;</p>
-<p class="paramdesc">Assign (seprately specified) GEMDOS HD to given
+<p class="paramdesc">Assign (separately specified) GEMDOS HD to given
 drive letter (C-Z) instead of default C:, or use "skip" to specify
 that Hatari should add GEMDOS HD after IDE and ACSI drives (assumes
 Hatari and native HD driver parse same number of partitions from
-HD images partition tables)</p>
+the partition tables in HD images)</p>
 <p class="parameter">--acsi &lt;id&gt;=&lt;file&gt;</p>
 <p class="paramdesc">Emulate an ACSI hard drive with given bus ID (0-7)
 using image &lt;file&gt;. If just a filename is given, it is assigned to
@@ -1312,6 +1312,23 @@ ends with a 'b'.
  Removing the check from the "Allow GEMDOS drive modification" option
  will prevent Atari programs from modifying the files in GEMDOS HD
  emulation directory or creating new files under it.
+</p>
+<p>
+ GEMDOS HD emulation can override partition(s) from HD images.
+ With "Add GEMDOS HD after ACSI/IDE partitions" option Hatari
+ tries to assign it to a drive after the partitions on HD images,
+ instead of C: (whether that works correctly depends on whether
+ your emulated Atari hard disk interprets the HD images partition
+ tables similarly to Hatari, and whether it starts assigning them
+ from C: onwards). As a last resort, you can use "--gemdos-drive"
+ command line option to explicitly specify which drive should be
+ used for GEMDOS HD.
+</p>
+<p>
+ Modern OSes use different character sets than Atari TOS.
+ File name conversion option is best-effort conversion between
+ the host OS and Atari character set for the non-ASCII file names
+ exposed by the GEMDOS HD emulation.
 </p>
 <p>
  Note that you need TOS version &gt;= 2.05 to boot from IDE hard drive.
