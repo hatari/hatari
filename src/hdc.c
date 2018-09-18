@@ -773,10 +773,12 @@ bool HDC_Init(void)
 		}
 	}
 
-	/* SCSI */
-	Ncr5380_Init();
+	/* add SCSI partition count to ACSI ones
+	 * to support GEMDOS HD emu partition skipping
+	 */
+	nAcsiPartitions += Ncr5380_Init();
 
-	/* set number of partitions */
+	/* set total number of partitions */
 	nNumDrives += nAcsiPartitions;
 
 	return bAcsiEmuOn;

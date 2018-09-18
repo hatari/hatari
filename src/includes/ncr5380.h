@@ -8,7 +8,7 @@
 #ifndef NCR5380_H
 #define NCR5380_H
 
-void Ncr5380_Init(void);
+int Ncr5380_Init(void);
 void Ncr5380_UnInit(void);
 void Ncr5380_Reset(void);
 void Ncr5380_WriteByte(int addr, Uint8 byte);

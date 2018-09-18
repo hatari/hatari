@@ -998,10 +998,13 @@ void ncr5380_bput(struct soft_scsi *scsi, int reg, uae_u8 v)
 
 /* ***** Hatari glue code below ***** */
 
-void Ncr5380_Init(void)
+/**
+ * return number of identified partitions on existing SCSI images
+ */
+int Ncr5380_Init(void)
 {
 #if WITH_NCR5380
-	int i;
+	int i, partitions = 0;
 
 	memset(&ScsiBus, 0, sizeof(ScsiBus));
 	ScsiBus.typestr = "SCSI";
@@ -1010,14 +1013,18 @@ void Ncr5380_Init(void)
 	if (!ScsiBus.buffer)
 	{
 		perror("Ncr5380_Init");
-		return;
+		return 0;
 	}
 	for (i = 0; i < MAX_SCSI_DEVS; i++)
 	{
 		if (!ConfigureParams.Scsi[i].bUseDevice)
 			continue;
-		HDC_InitDevice(&ScsiBus.devs[i], ConfigureParams.Scsi[i].sDeviceFile);
+		if (HDC_InitDevice(&ScsiBus.devs[i], ConfigureParams.Scsi[i].sDeviceFile) == 0)
+			partitions += HDC_PartitionCount(ScsiBus.devs[i].image_file, TRACE_SCSI_CMD);
 	}
+	return partitions;
+#else
+	return 0;
 #endif
 }
 
