@@ -852,6 +852,7 @@ Demos:
 - No Monkey (by Tomchi)
 - Pacemaker (by Paradox), end part works only from floppy image
 - Paracon 6 & 7 remindtros (by Paradox)
+- Parallax Distorter 2 (by Solomon)
 - Power Rise (by Light)
 - Reanimation (by Syntax)
 - Realtime (by MJJ Prod)
@@ -994,6 +995,8 @@ Working applications:
 - Mandelbrot playtime (fracplay, uses FPU)
 - PixArt4 (requires EmuTOS >v0.9.8)
   - http://www.1632systems.co.uk/www/html/Product/pixart.htm
+- Vision v4.1a (works also in ST, but is much nicer in TT low/med)
+  - http://jlusetti.free.fr/visione.htm
 
 Working demos:
 - 256mbrot, Bragg, Glasstro, Orion-B, Yabt (TT/Falcon intros by ray//.tSCc)
@@ -1232,6 +1235,10 @@ Games working with extra hacks:
   - with EmuTOS, enabling DSP freezes the games right at startup
     (with normal TOS4, DSP is used for background music)
 
+Games (mostly) working with EmuTOS >v0.9.9.1:
+- Painium: fire button doesn't work, rest seems to work
+  - DSP emulation needs to be disabled
+
 Games that might be possible to get working (they show something
 and/or don't use DSP XBios calls or DSP sound matrix):
 - Bomb Squad: graphics look wrong (HiColor?)
@@ -1243,8 +1250,7 @@ and/or don't use DSP XBios calls or DSP sound matrix):
 - Men at War: freezes at startup (uses sound matrix)
 - Multibriques: colors are wrong
 - Neurobot: just exits
-- Painium: exception 15 panic when pressing fire in game itself
-- Tetrhex: bus error panic after trying to set 256 color mode
+- Tetrhex: Null pointer access bus error after trying to set 256 color mode
 - Tron 2: illegal instruction panic on startup
 - TsccTron: bus error reading at address $0 at startup
 
