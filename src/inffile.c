@@ -401,27 +401,33 @@ static int INF_ValidateResolution(int *set_res, const char **val, const char **e
 		case MACHINE_MEGA_STE:
 		case MACHINE_ST:
 		case MACHINE_MEGA_ST:
-			if (monitor == MONITOR_TYPE_MONO && res != RES_ST_HIGH)
+			if (monitor == MONITOR_TYPE_MONO)
 			{
-				res = RES_ST_HIGH;
-				Log_Printf(LOG_WARN, MONO_WARN_STR);
+				if (res != RES_ST_HIGH)
+				{
+					res = RES_ST_HIGH;
+					Log_Printf(LOG_WARN, MONO_WARN_STR);
+				}
 			}
 			else if (res >= RES_ST_HIGH)
 			{
-				*err = "invalid ST/STE color TOS resolution";
+				*err = "invalid TOS resolution for ST/STE color monitor";
 				return TosOverride.reso_id;
 			}
 			break;
 
 		case MACHINE_TT:
-			if (monitor == MONITOR_TYPE_MONO && res != RES_TT_HIGH)
+			if (monitor == MONITOR_TYPE_MONO)
 			{
-				res = RES_TT_HIGH;
-				Log_Printf(LOG_WARN, MONO_WARN_STR);
+				if (res != RES_TT_HIGH)
+				{
+					res = RES_TT_HIGH;
+					Log_Printf(LOG_WARN, MONO_WARN_STR);
+				}
 			}
 			else if (res == RES_TT_HIGH)
 			{
-				*err = "invalid TT color TOS resolution";
+				*err = "invalid TOS resolution for TT color monitor";
 				return TosOverride.reso_id;
 			}
 			break;
@@ -434,7 +440,7 @@ static int INF_ValidateResolution(int *set_res, const char **val, const char **e
 			}
 			else if (res == RES_TT_HIGH)
 			{
-				*err = "TT-mono is invalid Falcon TOS resolution";
+				*err = "TT-mono is invalid TOS resolution for Falcon";
 				return TosOverride.reso_id;
 			}
 			else
