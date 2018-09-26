@@ -2721,7 +2721,7 @@ dsp_symbols").
 <h4>For a program under GEMDOS HD emulation</h4>
 
 <p>
-If currently running program contains symbol table in DRI/GST format,
+If currently running program contains debug symbol table,
 and it's started from GEMDOS HD emulated drive, its symbol names /
 addresses are automatically loaded when debugger is entered, and
 removed when program terminates.</p>
@@ -2746,10 +2746,11 @@ depend on which toolchain you use to build it:
 <dt><em>Devpac</em>:</dt>
 <dd>"OPT D+,X+"</dd>
 <dt><em>AHCC</em>:</dt>
-<dd>"-g", and "-l" option for local symbols, both for linking</dd>
+<dd>"-g" and "-l" options for linking</dd>
 <dt><em>GCC</em>:</dt>
-<dd>"-Wl,--traditional-format" option for linking,
-    and "-g" for compilation to get local symbols</dd>
+<dd>"-g" for compilation, and no strip option for linking
+(with older Hatari versions that didn't support a.out format,
+also "-Wl,--traditional-format" option was needed for linking)</dd>
 <dt><em>VBCC</em>:</dt>
 <dd>"-g" (can only be used at linking phase), <em>when VBCC
     configuration file uses "-bataritos" option for
@@ -2780,9 +2781,9 @@ symbols /path/to/the/program.tos
 <h4>ASCII debug symbol files</h4>
 
 <p>
-If Hatari complains that your program doesn't have DRI/GST format
-symbol table, or its symbols are in some other format, and you
-cannot re-compile it to have them, you have two options:
+If Hatari complains that your program doesn't have debug symbol table,
+or its symbols are in some unsupported format, and you cannot re-compile
+it to include a.out or GST/DRI symbols, you have two options:
 </p>
 <ul>
 <li>Convert the symbols to ASCII format understood by the Hatari debugger.
@@ -3680,11 +3681,11 @@ the symbols as TEXT (code) section relative ones (-r):</p>
 $ hatari_profile.py <b>-r</b> program.sym program-profile.txt
 </pre>
 
-<p>If symbols are included to your binary in DRI/GST format, first they
-need to be extracted to <a href="#Debug_symbols">the ASCII format</a>
+<p>If symbols are included to your binary, first they need to be
+extracted to <a href="#Debug_symbols">the ASCII format</a>
 understood by the post-processor:</p>
 <pre>
-$ gst2ascii -l -o program.prg &gt; program.sym
+$ gst2ascii -a -l -o program.prg &gt; program.sym
 </pre>
 
 <p>If there are some extra symbols that you don't want to see
@@ -3693,7 +3694,7 @@ but e.g. loop labels, you can either remove them manually
 from the ASCII *.sym file, or filter them out with grep:
 </p>
 <pre>
-$ gst2ascii -l -o program.prg | grep -v -e useless1 -e useless2 &gt; program.sym
+$ gst2ascii -a -l -o program.prg | grep -v -e useless1 -e useless2 &gt; program.sym
 </pre>
 
 
