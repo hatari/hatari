@@ -69,6 +69,7 @@ enum
 	TP_HDIMAGE_OFF,       /* Apply patch only if HD emulation is off */
 	TP_ANTI_STE,          /* Apply patch only if running on plain ST */
 	TP_ANTI_PMMU,         /* Apply patch only if no PMMU is available */
+	TP_FIX_040,           /* Apply patch only if CPU is 68040 */
 	TP_FIX_060,           /* Apply patch only if CPU is 68060 */
 	TP_VDIRES,            /* Apply patch only if VDI is used */
 };
@@ -92,6 +93,7 @@ static const char pszRomCheck[] = "ROM checksum";
 static const char pszNoSteHw[] = "disable STE hardware access";
 static const char pszNoPmmu[] = "disable PMMU access";
 static const char pszFix060[] = "replace code for 68060";
+static const char pszFix040[] = "replace code for 68040";
 static const char pszFalconExtraRAM[] = "enable extra TT RAM on Falcon";
 static const char pszAtariLogo[] = "draw Atari Logo";
 static const char pszSTbook[] = "disable MCU access on ST-Book";
@@ -193,6 +195,217 @@ static const Uint8 pFalconExtraRAM_2[] = {	/* call maddalt() to declare the extr
 	0x4e, 0xf9, 0x00, 0xe0, 0x0b, 0xd2	/* jmp       $e00bd2 */
 };
 
+/* patch for cpu type detection  */
+static unsigned char const pCputype040[58] = {
+	0x20, 0xfc, 0x00, 0x00, 0x00, 0x28,	/* move.l #40,(a0)+ */
+	0x4e, 0x71,				/* nop */
+	0xf5, 0x18,                             /* pflusha */
+	0x4e, 0x71,                             /* nop */
+	0x4e, 0x71, 0x4e, 0x71,
+	0x4e, 0x71, 0x4e, 0x71,
+	0x4e, 0x71, 0x4e, 0x71,
+	0x4e, 0x71, 0x4e, 0x71,
+	0x4e, 0x71, 0x4e, 0x71,
+	0x4e, 0x71, 0x4e, 0x71,
+	0x4e, 0x71, 0x4e, 0x71,
+	0x4e, 0x71, 0x4e, 0x71,
+	0x4e, 0x71, 0x4e, 0x71,
+	0x4e, 0x71, 0x4e, 0x71,
+	0x4e, 0x71, 0x4e, 0x71,
+	0x4e, 0x71
+};
+static unsigned char const pCputype060[58] = {
+	0x20, 0xfc, 0x00, 0x00, 0x00, 0x3c,	/* move.l #60,(a0)+ */
+	0x4e, 0x71,				/* nop */
+	0xf5, 0x18,                             /* pflusha */
+	0x4e, 0x71,                             /* nop */
+	0x4e, 0x71, 0x4e, 0x71,
+	0x4e, 0x71, 0x4e, 0x71,
+	0x4e, 0x71, 0x4e, 0x71,
+	0x4e, 0x71, 0x4e, 0x71,
+	0x4e, 0x71, 0x4e, 0x71,
+	0x4e, 0x71, 0x4e, 0x71,
+	0x4e, 0x71, 0x4e, 0x71,
+	0x4e, 0x71, 0x4e, 0x71,
+	0x4e, 0x71, 0x4e, 0x71,
+	0x4e, 0x71, 0x4e, 0x71,
+	0x4e, 0x71, 0x4e, 0x71,
+	0x4e, 0x71
+};
+
+static unsigned char const pCacheflush[10] = {
+	0x4e, 0x71, 0x4e, 0x71, 0x4e, 0x71,	/* nops */
+	0xf4, 0xf8,				/* cpusha bc */
+	0x4e, 0x71				/* nop */
+};
+static unsigned char const pCacheflush2[14] = {
+	0x4e, 0x71,				/* nop */
+	0xf4, 0xf8, 				/* cpusha bc */
+	0x4e, 0x71, 0x4e, 0x71, 0x4e, 0x71,	/* nops */
+	0x4e, 0x71, 0x4e, 0x71			/* nops */
+};
+static unsigned char const pCacheflush3[12] = {
+	0x4e, 0x71,				/* nop */
+	0xf4, 0xf8,				/* cpusha bc */
+	0x4e, 0x71, 0x4e, 0x71,			/* nops */
+	0x4e, 0x71, 0x4e, 0x71			/* nops */
+};
+static unsigned char const pCacheflush4[12] = {
+	0x4e, 0x71,				/* nop */
+	0xf4, 0x98,				/* cinva ic */
+	0x4e, 0x71, 0x4e, 0x71,			/* nops */
+	0x4e, 0x71, 0x4e, 0x71			/* nops */
+};
+static unsigned char const pColdboot1[10] = {
+	0x4d, 0xfa, 0x00, 0x08,			/* lea.l $00E00064(pc),a6 */
+	0x4e, 0xf9, 0x00, 0xe7, 0xb0, 0x00	/* jmp $00E7B000 */
+};
+static unsigned char const pColdboot2[6] = {
+	0x4e, 0xf9, 0x00, 0xe7, 0xb0, 0xf4	/* jmp $00E7B0F4 */
+};
+static unsigned char const pColdboot3[] = {
+	0x40, 0xc7,				/* move.w    sr,d7 */
+	0x00, 0x7c, 0x07, 0x00,			/* ori.w     #$0700,sr */
+	0x4e, 0x7a, 0x10, 0x06,			/* movec     dtt0,d1 */
+	0x70, 0x00,				/* moveq.l   #0,d0 */
+	0x4e, 0x7b, 0x00, 0x02,			/* movec     d0,cacr */
+	0x4e, 0x71,				/* nop */
+	0xf4, 0xd8,				/* cinva     bc */
+	0x4e, 0x71,				/* nop */
+	0x20, 0x3c, 0x00, 0xff, 0xe0, 0x40,	/* move.l    #$00FFE040,d0 */
+	0x4e, 0x7b, 0x00, 0x06,			/* movec     d0,dtt0 */
+	0x4e, 0x71,				/* nop */
+	0xf5, 0x18,				/* pflusha */
+	0x4e, 0x71,				/* nop */
+	0x7c, 0x00,				/* moveq.l   #0,d6 */
+	0x4e, 0x7a, 0x08, 0x07,			/* movec     srp,d0 */
+	0x4a, 0x80,				/* tst.l     d0 */
+	0x67, 0x32,				/* beq.s     $00E7B062 */
+	0xb0, 0xbc, 0x05, 0x00, 0x00, 0x00,	/* cmp.l     #$05000000,d0 */
+	0x64, 0x2a,				/* bcc.s     $00E7B062 */
+	0xb0, 0xbc, 0x00, 0xe0, 0x00, 0x00,	/* cmp.l     #$00E00000,d0 */
+	0x65, 0x08,				/* bcs.s     $00E7B048 */
+	0xb0, 0xbc, 0x01, 0x00, 0x00, 0x00,	/* cmp.l     #$01000000,d0 */
+	0x65, 0x1a,				/* bcs.s     $00E7B062 */
+	                                      /* e7b048 : */
+	0x20, 0x40,				/* movea.l   d0,a0 */
+	0x0c, 0xa8, 0x54, 0x52, 0x45, 0x45, 0xff, 0xe8,	/* cmpi.l    #$54524545,-24(a0) */
+	0x66, 0x00, 0x00, 0x0e,			/* bne.w     $00E7B062 */
+	0x0c, 0xa8, 0x4b, 0x45, 0x45, 0x50, 0xff, 0xec,	/* cmpi.l    #$4B454550,-20(a0) */
+	0x66, 0x02,				/* bne.s     $00E7B062 */
+	0x7c, 0x01,				/* moveq.l   #1,d6 */
+	                                      /* e7b062 : */
+	0x4e, 0x71,				/* nop */
+	0x4e, 0x7b, 0x10, 0x06,			/* movec     d1,dtt0 */
+	0x4e, 0x71,				/* nop */
+	0xf5, 0x18,				/* pflusha */
+	0x4e, 0x71,				/* nop */
+	0x4a, 0x86,				/* tst.l     d6 */
+	0x67, 0x2e,				/* beq.s     $00E7B0A0 */
+	0x20, 0x08,				/* move.l    a0,d0 */
+	0x4e, 0x7b, 0x08, 0x07,			/* movec     d0,srp */
+	0x4e, 0x7b, 0x08, 0x06,			/* movec     d0,urp */
+	0x20, 0x3c, 0x00, 0x00, 0xc0, 0x00,	/* move.l    #$0000C000,d0 */
+	0x4e, 0x7b, 0x00, 0x03,			/* movec     d0,tc */
+	0x70, 0x00,				/* moveq.l   #0,d0 */
+	0x4e, 0x7b, 0x00, 0x04,			/* movec     d0,itt0 */
+	0x4e, 0x7b, 0x00, 0x05,			/* movec     d0,itt1 */
+	0x4e, 0x7b, 0x00, 0x06,			/* movec     d0,dtt0 */
+	0x4e, 0x7b, 0x00, 0x07,			/* movec     d0,dtt1 */
+	0x4e, 0x71,				/* nop */
+	0xf5, 0x18,				/* pflusha */
+	0x4e, 0x71,				/* nop */
+	0x60, 0x32,				/* bra.s     $00E7B0D2 */
+	                                      /* e7b0a0 : */
+	0x20, 0x3c, 0x00, 0xff, 0xe0, 0x00,	/* move.l    #$00FFE000,d0 */
+	0x4e, 0x7b, 0x00, 0x04,			/* movec     d0,itt0 */
+	0x20, 0x3c,	0x00, 0xff, 0xe0, 0x40,	/* move.l    #$00FFE040,d0 */
+	0x4e, 0x7b, 0x00, 0x06,			/* movec     d0,dtt0 */
+	0x70, 0x00,				/* moveq.l   #0,d0 */
+	0x4e, 0x7b, 0x00, 0x05,			/* movec     d0,itt1 */
+	0x4e, 0x7b, 0x00, 0x07,			/* movec     d0,dtt1 */
+	0x70, 0x00,				/* moveq.l   #0,d0 */
+	0x4e, 0x7b, 0x00, 0x03,			/* movec     d0,tc */
+	0x4e, 0x7b, 0x08, 0x07,			/* movec     d0,srp */
+	0x4e, 0x7b, 0x08, 0x06,			/* movec     d0,urp */
+	0x4e, 0x71,				/* nop */
+	0xf5, 0x18,				/* pflusha */
+	0x4e, 0x71,				/* nop */
+	                                      /* e7b0d2 : */
+	0x20, 0x3c, 0x00, 0x00, 0x80, 0x00,	/* move.l    #$00008000,d0 */
+	0x4e, 0x7b, 0x00, 0x02,			/* movec     d0,cacr */
+	0x46, 0xc7,				/* move.w    d7,sr */
+	0x4e, 0xd6,				/* jmp       (a6) */
+	                                      /* e7b0e0 : */
+	0x08, 0xb8, 0x00, 0x05, 0x82, 0x66,	/* bclr      #5,($FFFF8266).w */
+	0x08, 0xb8, 0x00, 0x06, 0x82, 0x66,	/* bclr      #6,($FFFF8266).w */
+	0x08, 0xb8, 0x00, 0x00, 0x82, 0x0a,	/* bclr      #0,($FFFF820A).w */
+	0x4e, 0xd0,				/* jmp       (a0) */
+	                                      /* e7b0f4 : */
+	0x00, 0x7c, 0x07, 0x00,			/* ori.w     #$0700,sr */
+	0x72, 0x00,				/* moveq.l   #0,d1 */
+	0x41, 0xf8, 0x98, 0x00,			/* lea.l     ($FFFF9800).w,a0 */
+	0x30, 0x3c, 0x00, 0xff,			/* move.w    #$00FF,d0 */
+	0x20, 0xc1,				/* move.l    d1,(a0)+ */
+	0x51, 0xc8, 0xff, 0xfc,			/* dbf       d0,$00E7B102 */
+	0x41, 0xf8, 0x82, 0x40,			/* lea.l     ($FFFF8240).w,a0 */
+	0x70, 0x07,				/* moveq.l   #7,d0 */
+	0x20, 0xc1,				/* move.l    d1,(a0)+ */
+	0x51, 0xc8, 0xff, 0xfc,			/* dbf       d0,$00E7B10E */
+	0x70, 0x00,				/* moveq.l   #0,d0 */
+	0x4e, 0x7b, 0x00, 0x02,			/* movec     d0,cacr */
+	0x4e, 0x71,				/* nop */
+	0x4e, 0x71,				/* nop */
+	0xf4, 0xd8,				/* cinva     bc */
+	0x4e, 0x71,				/* nop */
+	0x41, 0xf8, 0x00, 0x08,			/* lea.l     ($00000008).w,a0 */
+	0x20, 0x3c, 0x00, 0x00, 0x06, 0x00,	/* move.l    #$00000600,d0 */
+	0x90, 0x88,				/* sub.l     a0,d0 */
+	0xe4, 0x88,				/* lsr.l     #2,d0 */
+	0x42, 0x81,				/* clr.l     d1 */
+	                                      /* e7b132 : */
+	0x20, 0xc1,				/* move.l    d1,(a0)+ */
+	0x53, 0x80,				/* subq.l    #1,d0 */
+	0x66, 0xfa,				/* bne.s     $00E7B132 */
+	0x4e, 0x71,				/* nop */
+	0xf5, 0x18,				/* pflusha */
+	0x4e, 0x71,				/* nop */
+	0x20, 0x3c, 0x00, 0xff, 0xe0, 0x00,	/* move.l    #$00FFE000,d0 */
+	0x4e, 0x7b, 0x00, 0x04,			/* movec     d0,itt0 */
+	0x20, 0x3c, 0x00, 0xff, 0xe0, 0x40,	/* move.l    #$00FFE040,d0 */
+	0x4e, 0x7b, 0x00, 0x06,			/* movec     d0,dtt0 */
+	0x70, 0x00,				/* moveq.l   #0,d0 */
+	0x4e, 0x7b, 0x00, 0x05,			/* movec     d0,itt1 */
+	0x4e, 0x7b, 0x00, 0x07,			/* movec     d0,dtt1 */
+	0x4e, 0x71,				/* nop */
+	0x70, 0x00,				/* moveq.l   #0,d0 */
+	0x4e, 0x7b, 0x00, 0x03,			/* movec     d0,tc */
+	0x4e, 0x71,				/* nop */
+	0x4e, 0x7b, 0x08, 0x07,			/* movec     d0,srp */
+	0x4e, 0x7b, 0x08, 0x06,			/* movec     d0,urp */
+	0x4e, 0x71,				/* nop */
+	0x4e, 0xf9, 0x00, 0xe0, 0x00, 0x30,	/* jmp       $00E00030 */
+	                                      /* e7b176 : */
+	0x4e, 0x7a, 0x00, 0x02,			/* movec     cacr,d0 */
+	0x08, 0x80, 0x00, 0x0f,			/* bclr      #15,d0 */
+	0x67, 0x0a,				/* beq.s     $00E7B18A */
+	0x4e, 0x7b, 0x00, 0x02,			/* movec     d0,cacr */
+	0x4e, 0x71,				/* nop */
+	0xf4, 0x98,				/* cinva     ic */
+	0x4e, 0x71,				/* nop */
+	0x4e, 0xf9, 0xde, 0xad, 0xfa, 0xce, 	/* jmp       $DEADFACE */
+	                                      /* e7b190 : */
+	0x20, 0x02, 0x10, 0x21,			/* dc.l 0x20021021 */
+	0x00, 0xe7, 0xb1, 0x9c,			/* dc.l 0x00e7b19c */
+	0x00, 0xe7, 0xb1, 0xa0,			/* dc.l 0x00e7b1a0 */
+	                                      /* e7b19c : */
+	0x73, 0x00,				/* dc.w 0x7300 (nf_id) */
+	0x4e, 0x75,				/* rts */
+	                                      /* e7b1a0 : */
+	0x73, 0x01,				/* dc.w 0x7301 (nf_call) */
+	0x4e, 0x75				/* rts */
+};
+
 /* The patches for the TOS: */
 static const TOS_PATCH TosPatches[] =
 {
@@ -260,6 +473,30 @@ static const TOS_PATCH TosPatches[] =
   { 0x400, -1, pszNoPmmu, TP_ANTI_PMMU, 0xE0148A, 0xF0394C00, 32, pNopOpcodes },
   { 0x400, -1, pszNoPmmu, TP_ANTI_PMMU, 0xE03948, 0xF0394000, 24, pNopOpcodes }, /* pmove : TC=0 TT0=0 TT1=0 -> disable MMU */
   { 0x400, -1, pszRomCheck, TP_ALWAYS, 0xE00686, 0x2E3C0007, 4, pRomCheckOpcode404 },
+  { 0x400, -1, pszFix040, TP_FIX_040, 0xE003BE, 0x7200347C, sizeof(pCputype040), pCputype040 },
+  { 0x400, -1, pszFix040, TP_FIX_040, 0xE00614, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x400, -1, pszFix040, TP_FIX_040, 0xE0072C, 0x203C0000, sizeof(pCacheflush), pCacheflush },
+  { 0x400, -1, pszFix040, TP_FIX_040, 0xE00836, 0x4E7A0002, sizeof(pCacheflush2), pCacheflush2 },
+  { 0x400, -1, pszFix040, TP_FIX_040, 0xE01894, 0x4E7A1002, sizeof(pCacheflush3), pCacheflush3 },
+  { 0x400, -1, pszFix040, TP_FIX_040, 0xE01916, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x400, -1, pszFix040, TP_FIX_040, 0xE00054, 0x203c0000, sizeof(pColdboot1), pColdboot1 },
+  { 0x400, -1, pszFix040, TP_FIX_040, 0xE03934, 0x46FC2700, sizeof(pColdboot2), pColdboot2 },
+  { 0x400, -1, pszFix040, TP_FIX_040, 0xE7B000, 0xFFFFFFFF, sizeof(pColdboot3), pColdboot3 },
+  { 0x400, -1, pszFix040, TP_FIX_040, 0xE098AC, 0x4E7A2002, sizeof(pCacheflush4), pCacheflush4 },
+  { 0x400, -1, pszFix040, TP_FIX_040, 0xE23636, 0x4E7B7002, 4, pNopOpcodes },
+  { 0x400, -1, pszFix040, TP_FIX_040, 0xE41634, 0x4E7B7002, 4, pNopOpcodes },
+  { 0x400, -1, pszFix060, TP_FIX_060, 0xE003BE, 0x7200347C, sizeof(pCputype060), pCputype060 },
+  { 0x400, -1, pszFix060, TP_FIX_060, 0xE00614, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x400, -1, pszFix060, TP_FIX_060, 0xE0072C, 0x203C0000, sizeof(pCacheflush), pCacheflush },
+  { 0x400, -1, pszFix060, TP_FIX_060, 0xE00836, 0x4E7A0002, sizeof(pCacheflush2), pCacheflush2 },
+  { 0x400, -1, pszFix060, TP_FIX_060, 0xE01894, 0x4E7A1002, sizeof(pCacheflush3), pCacheflush3 },
+  { 0x400, -1, pszFix060, TP_FIX_060, 0xE01916, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x400, -1, pszFix060, TP_FIX_060, 0xE00054, 0x203c0000, sizeof(pColdboot1), pColdboot1 },
+  { 0x400, -1, pszFix060, TP_FIX_060, 0xE03934, 0x46FC2700, sizeof(pColdboot2), pColdboot2 },
+  { 0x400, -1, pszFix060, TP_FIX_060, 0xE7B000, 0xFFFFFFFF, sizeof(pColdboot3), pColdboot3 },
+  { 0x400, -1, pszFix060, TP_FIX_060, 0xE098AC, 0x4E7A2002, sizeof(pCacheflush4), pCacheflush4 },
+  { 0x400, -1, pszFix060, TP_FIX_060, 0xE23636, 0x4E7B7002, 4, pNopOpcodes },
+  { 0x400, -1, pszFix060, TP_FIX_060, 0xE41634, 0x4E7B7002, 4, pNopOpcodes },
   { 0x400, -1, pszFix060, TP_FIX_060, 0xE0258A, 0x01C80000, 12, p060movep1 },
   { 0x400, -1, pszFix060, TP_FIX_060, 0xE025DA, 0x41F8FA01, 20, p060movep2 },
 
@@ -267,6 +504,60 @@ static const TOS_PATCH TosPatches[] =
   { 0x401, -1, pszNoPmmu, TP_ANTI_PMMU, 0xE014A8, 0xF0394C00, 32, pNopOpcodes },
   { 0x401, -1, pszNoPmmu, TP_ANTI_PMMU, 0xE03946, 0xF0394000, 24, pNopOpcodes }, /* pmove : TC=0 TT0=0 TT1=0 -> disable MMU */
   { 0x401, -1, pszRomCheck, TP_ALWAYS, 0xE006A6, 0x2E3C0007, 4, pRomCheckOpcode404 },
+  { 0x401, -1, pszFix040, TP_FIX_040, 0xE003C4, 0x7200347C, sizeof(pCputype040), pCputype040 },
+  { 0x401, -1, pszFix040, TP_FIX_040, 0xE00634, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x401, -1, pszFix040, TP_FIX_040, 0xE0074C, 0x203C0000, sizeof(pCacheflush), pCacheflush },
+  { 0x401, -1, pszFix040, TP_FIX_040, 0xE00856, 0x4E7A0002, sizeof(pCacheflush2), pCacheflush2 },
+  { 0x401, -1, pszFix040, TP_FIX_040, 0xE01892, 0x4E7A1002, sizeof(pCacheflush3), pCacheflush3 },
+  { 0x401, -1, pszFix040, TP_FIX_040, 0xE01914, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x401, -1, pszFix040, TP_FIX_040, 0xE0005A, 0x203c0000, sizeof(pColdboot1), pColdboot1 },
+  { 0x401, -1, pszFix040, TP_FIX_040, 0xE03932, 0x46FC2700, sizeof(pColdboot2), pColdboot2 },
+  { 0x401, -1, pszFix040, TP_FIX_040, 0xE7B000, 0xFFFFFFFF, sizeof(pColdboot3), pColdboot3 },
+  { 0x401, -1, pszFix040, TP_FIX_040, 0xE098A2, 0x4E7A2002, sizeof(pCacheflush4), pCacheflush4 },
+  { 0x401, -1, pszFix040, TP_FIX_040, 0xE11B28, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x401, -1, pszFix040, TP_FIX_040, 0xE11BB0, 0x4E7B7002, 4, pNopOpcodes },
+  { 0x401, -1, pszFix040, TP_FIX_040, 0xE11CAC, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x401, -1, pszFix040, TP_FIX_040, 0xE12512, 0x4E7B5002, 4, pNopOpcodes },
+  { 0x401, -1, pszFix040, TP_FIX_040, 0xE12888, 0x4E7B6002, 4, pNopOpcodes },
+  { 0x401, -1, pszFix040, TP_FIX_040, 0xE128D4, 0x4E7B6002, 4, pNopOpcodes },
+  { 0x401, -1, pszFix040, TP_FIX_040, 0xE12938, 0x4E7B6002, 4, pNopOpcodes },
+  { 0x401, -1, pszFix040, TP_FIX_040, 0xE12B50, 0x4E7B5002, 4, pNopOpcodes },
+  { 0x401, -1, pszFix040, TP_FIX_040, 0xE12BD0, 0x4E7B5002, 4, pNopOpcodes },
+  { 0x401, -1, pszFix040, TP_FIX_040, 0xE12C48, 0x4E7B2002, 4, pNopOpcodes },
+  { 0x401, -1, pszFix040, TP_FIX_040, 0xE12CC6, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x401, -1, pszFix040, TP_FIX_040, 0xE12D2E, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x401, -1, pszFix040, TP_FIX_040, 0xE12DF0, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x401, -1, pszFix040, TP_FIX_040, 0xE17AA6, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x401, -1, pszFix040, TP_FIX_040, 0xE17B3E, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x401, -1, pszFix040, TP_FIX_040, 0xE23840, 0x4E7B7002, 4, pNopOpcodes },
+  { 0x401, -1, pszFix040, TP_FIX_040, 0xE42670, 0x4E7B7002, 4, pNopOpcodes },
+  { 0x401, -1, pszFix060, TP_FIX_060, 0xE003C4, 0x7200347C, sizeof(pCputype060), pCputype060 },
+  { 0x401, -1, pszFix060, TP_FIX_060, 0xE00634, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x401, -1, pszFix060, TP_FIX_060, 0xE0074C, 0x203C0000, sizeof(pCacheflush), pCacheflush },
+  { 0x401, -1, pszFix060, TP_FIX_060, 0xE00856, 0x4E7A0002, sizeof(pCacheflush2), pCacheflush2 },
+  { 0x401, -1, pszFix060, TP_FIX_060, 0xE01892, 0x4E7A1002, sizeof(pCacheflush3), pCacheflush3 },
+  { 0x401, -1, pszFix060, TP_FIX_060, 0xE01914, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x401, -1, pszFix060, TP_FIX_060, 0xE0005A, 0x203c0000, sizeof(pColdboot1), pColdboot1 },
+  { 0x401, -1, pszFix060, TP_FIX_060, 0xE03932, 0x46FC2700, sizeof(pColdboot2), pColdboot2 },
+  { 0x401, -1, pszFix060, TP_FIX_060, 0xE7B000, 0xFFFFFFFF, sizeof(pColdboot3), pColdboot3 },
+  { 0x401, -1, pszFix060, TP_FIX_060, 0xE098A2, 0x4E7A2002, sizeof(pCacheflush4), pCacheflush4 },
+  { 0x401, -1, pszFix060, TP_FIX_060, 0xE11B28, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x401, -1, pszFix060, TP_FIX_060, 0xE11BB0, 0x4E7B7002, 4, pNopOpcodes },
+  { 0x401, -1, pszFix060, TP_FIX_060, 0xE11CAC, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x401, -1, pszFix060, TP_FIX_060, 0xE12512, 0x4E7B5002, 4, pNopOpcodes },
+  { 0x401, -1, pszFix060, TP_FIX_060, 0xE12888, 0x4E7B6002, 4, pNopOpcodes },
+  { 0x401, -1, pszFix060, TP_FIX_060, 0xE128D4, 0x4E7B6002, 4, pNopOpcodes },
+  { 0x401, -1, pszFix060, TP_FIX_060, 0xE12938, 0x4E7B6002, 4, pNopOpcodes },
+  { 0x401, -1, pszFix060, TP_FIX_060, 0xE12B50, 0x4E7B5002, 4, pNopOpcodes },
+  { 0x401, -1, pszFix060, TP_FIX_060, 0xE12BD0, 0x4E7B5002, 4, pNopOpcodes },
+  { 0x401, -1, pszFix060, TP_FIX_060, 0xE12C48, 0x4E7B2002, 4, pNopOpcodes },
+  { 0x401, -1, pszFix060, TP_FIX_060, 0xE12CC6, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x401, -1, pszFix060, TP_FIX_060, 0xE12D2E, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x401, -1, pszFix060, TP_FIX_060, 0xE12DF0, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x401, -1, pszFix060, TP_FIX_060, 0xE17AA6, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x401, -1, pszFix060, TP_FIX_060, 0xE17B3E, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x401, -1, pszFix060, TP_FIX_060, 0xE23840, 0x4E7B7002, 4, pNopOpcodes },
+  { 0x401, -1, pszFix060, TP_FIX_060, 0xE42670, 0x4E7B7002, 4, pNopOpcodes },
   { 0x401, -1, pszFix060, TP_FIX_060, 0xE02588, 0x01C80000, 12, p060movep1 },
   { 0x401, -1, pszFix060, TP_FIX_060, 0xE025D8, 0x41F8FA01, 20, p060movep2 },
 
@@ -274,6 +565,60 @@ static const TOS_PATCH TosPatches[] =
   { 0x402, -1, pszNoPmmu, TP_ANTI_PMMU, 0xE014A8, 0xF0394C00, 32, pNopOpcodes },
   { 0x402, -1, pszNoPmmu, TP_ANTI_PMMU, 0xE03946, 0xF0394000, 24, pNopOpcodes }, /* pmove : TC=0 TT0=0 TT1=0 -> disable MMU */
   { 0x402, -1, pszRomCheck, TP_ALWAYS, 0xE006A6, 0x2E3C0007, 4, pRomCheckOpcode404 },
+  { 0x402, -1, pszFix040, TP_FIX_040, 0xE003C4, 0x7200347C, sizeof(pCputype040), pCputype040 },
+  { 0x402, -1, pszFix040, TP_FIX_040, 0xE00634, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x402, -1, pszFix040, TP_FIX_040, 0xE0074C, 0x203C0000, sizeof(pCacheflush), pCacheflush },
+  { 0x402, -1, pszFix040, TP_FIX_040, 0xE00856, 0x4E7A0002, sizeof(pCacheflush2), pCacheflush2 },
+  { 0x402, -1, pszFix040, TP_FIX_040, 0xE01892, 0x4E7A1002, sizeof(pCacheflush3), pCacheflush3 },
+  { 0x402, -1, pszFix040, TP_FIX_040, 0xE01914, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x402, -1, pszFix040, TP_FIX_040, 0xE0005A, 0x203c0000, sizeof(pColdboot1), pColdboot1 },
+  { 0x402, -1, pszFix040, TP_FIX_040, 0xE03932, 0x46FC2700, sizeof(pColdboot2), pColdboot2 },
+  { 0x402, -1, pszFix040, TP_FIX_040, 0xE7B000, 0xFFFFFFFF, sizeof(pColdboot3), pColdboot3 },
+  { 0x402, -1, pszFix040, TP_FIX_040, 0xE098AC, 0x4E7A2002, sizeof(pCacheflush4), pCacheflush4 },
+  { 0x402, -1, pszFix040, TP_FIX_040, 0xE11B76, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x402, -1, pszFix040, TP_FIX_040, 0xE11BFE, 0x4E7B7002, 4, pNopOpcodes },
+  { 0x402, -1, pszFix040, TP_FIX_040, 0xE11CFA, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x402, -1, pszFix040, TP_FIX_040, 0xE12560, 0x4E7B5002, 4, pNopOpcodes },
+  { 0x402, -1, pszFix040, TP_FIX_040, 0xE128D6, 0x4E7B6002, 4, pNopOpcodes },
+  { 0x402, -1, pszFix040, TP_FIX_040, 0xE12922, 0x4E7B6002, 4, pNopOpcodes },
+  { 0x402, -1, pszFix040, TP_FIX_040, 0xE12986, 0x4E7B6002, 4, pNopOpcodes },
+  { 0x402, -1, pszFix040, TP_FIX_040, 0xE12B9E, 0x4E7B5002, 4, pNopOpcodes },
+  { 0x402, -1, pszFix040, TP_FIX_040, 0xE12C1E, 0x4E7B5002, 4, pNopOpcodes },
+  { 0x402, -1, pszFix040, TP_FIX_040, 0xE12C96, 0x4E7B2002, 4, pNopOpcodes },
+  { 0x402, -1, pszFix040, TP_FIX_040, 0xE12D14, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x402, -1, pszFix040, TP_FIX_040, 0xE12D7C, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x402, -1, pszFix040, TP_FIX_040, 0xE12E3E, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x402, -1, pszFix040, TP_FIX_040, 0xE17AF4, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x402, -1, pszFix040, TP_FIX_040, 0xE17B8C, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x402, -1, pszFix040, TP_FIX_040, 0xE25078, 0x4E7B7002, 4, pNopOpcodes },
+  { 0x402, -1, pszFix040, TP_FIX_040, 0xE444B0, 0x4E7B7002, 4, pNopOpcodes },
+  { 0x402, -1, pszFix060, TP_FIX_060, 0xE003C4, 0x7200347C, sizeof(pCputype060), pCputype060 },
+  { 0x402, -1, pszFix060, TP_FIX_060, 0xE00634, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x402, -1, pszFix060, TP_FIX_060, 0xE0074C, 0x203C0000, sizeof(pCacheflush), pCacheflush },
+  { 0x402, -1, pszFix060, TP_FIX_060, 0xE00856, 0x4E7A0002, sizeof(pCacheflush2), pCacheflush2 },
+  { 0x402, -1, pszFix060, TP_FIX_060, 0xE01892, 0x4E7A1002, sizeof(pCacheflush3), pCacheflush3 },
+  { 0x402, -1, pszFix060, TP_FIX_060, 0xE01914, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x402, -1, pszFix060, TP_FIX_060, 0xE0005A, 0x203c0000, sizeof(pColdboot1), pColdboot1 },
+  { 0x402, -1, pszFix060, TP_FIX_060, 0xE03932, 0x46FC2700, sizeof(pColdboot2), pColdboot2 },
+  { 0x402, -1, pszFix060, TP_FIX_060, 0xE7B000, 0xFFFFFFFF, sizeof(pColdboot3), pColdboot3 },
+  { 0x402, -1, pszFix060, TP_FIX_060, 0xE098AC, 0x4E7A2002, sizeof(pCacheflush4), pCacheflush4 },
+  { 0x402, -1, pszFix060, TP_FIX_060, 0xE11B76, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x402, -1, pszFix060, TP_FIX_060, 0xE11BFE, 0x4E7B7002, 4, pNopOpcodes },
+  { 0x402, -1, pszFix060, TP_FIX_060, 0xE11CFA, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x402, -1, pszFix060, TP_FIX_060, 0xE12560, 0x4E7B5002, 4, pNopOpcodes },
+  { 0x402, -1, pszFix060, TP_FIX_060, 0xE128D6, 0x4E7B6002, 4, pNopOpcodes },
+  { 0x402, -1, pszFix060, TP_FIX_060, 0xE12986, 0x4E7B6002, 4, pNopOpcodes },
+  { 0x402, -1, pszFix060, TP_FIX_060, 0xE12922, 0x4E7B6002, 4, pNopOpcodes },
+  { 0x402, -1, pszFix060, TP_FIX_060, 0xE12B9E, 0x4E7B5002, 4, pNopOpcodes },
+  { 0x402, -1, pszFix060, TP_FIX_060, 0xE12C1E, 0x4E7B5002, 4, pNopOpcodes },
+  { 0x402, -1, pszFix060, TP_FIX_060, 0xE12C96, 0x4E7B2002, 4, pNopOpcodes },
+  { 0x402, -1, pszFix060, TP_FIX_060, 0xE12D14, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x402, -1, pszFix060, TP_FIX_060, 0xE12D7C, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x402, -1, pszFix060, TP_FIX_060, 0xE12E3E, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x402, -1, pszFix060, TP_FIX_060, 0xE17AF4, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x402, -1, pszFix060, TP_FIX_060, 0xE17B8C, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x402, -1, pszFix060, TP_FIX_060, 0xE25078, 0x4E7B7002, 4, pNopOpcodes },
+  { 0x402, -1, pszFix060, TP_FIX_060, 0xE444B0, 0x4E7B7002, 4, pNopOpcodes },
   { 0x402, -1, pszFix060, TP_FIX_060, 0xE02588, 0x01C80000, 12, p060movep1 },
   { 0x402, -1, pszFix060, TP_FIX_060, 0xE025D8, 0x41F8FA01, 20, p060movep2 },
 
@@ -283,6 +628,60 @@ static const TOS_PATCH TosPatches[] =
   { 0x404, -1, pszRomCheck, TP_ALWAYS, 0xE006B0, 0x2E3C0007, 4, pRomCheckOpcode404 },
   { 0x404, -1, pszDmaBoot, TP_ALWAYS, 0xE01C9E, 0x62FC31FC, 2, pNopOpcodes },  /* Just a delay */
   { 0x404, -1, pszDmaBoot, TP_ALWAYS, 0xE01CB2, 0x62FC31FC, 2, pNopOpcodes },  /* Just a delay */
+  { 0x404, -1, pszFix040, TP_FIX_040, 0xE003C4, 0x7200347C, sizeof(pCputype040), pCputype040 },
+  { 0x404, -1, pszFix040, TP_FIX_040, 0xE0063E, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x404, -1, pszFix040, TP_FIX_040, 0xE00756, 0x203C0000, sizeof(pCacheflush), pCacheflush },
+  { 0x404, -1, pszFix040, TP_FIX_040, 0xE00860, 0x4E7A0002, sizeof(pCacheflush2), pCacheflush2 },
+  { 0x404, -1, pszFix040, TP_FIX_040, 0xE018D0, 0x4E7A1002, sizeof(pCacheflush3), pCacheflush3 },
+  { 0x404, -1, pszFix040, TP_FIX_040, 0xE01952, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x404, -1, pszFix040, TP_FIX_040, 0xE0005A, 0x203c0000, sizeof(pColdboot1), pColdboot1 },
+  { 0x404, -1, pszFix040, TP_FIX_040, 0xE0398C, 0x46FC2700, sizeof(pColdboot2), pColdboot2 },
+  { 0x404, -1, pszFix040, TP_FIX_040, 0xE7B000, 0xFFFFFFFF, sizeof(pColdboot3), pColdboot3 },
+  { 0x404, -1, pszFix040, TP_FIX_040, 0xE0990C, 0x4E7A2002, sizeof(pCacheflush4), pCacheflush4 },
+  { 0x404, -1, pszFix040, TP_FIX_040, 0xE11BD6, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x404, -1, pszFix040, TP_FIX_040, 0xE11C5E, 0x4E7B7002, 4, pNopOpcodes },
+  { 0x404, -1, pszFix040, TP_FIX_040, 0xE11D5A, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x404, -1, pszFix040, TP_FIX_040, 0xE125C0, 0x4E7B5002, 4, pNopOpcodes },
+  { 0x404, -1, pszFix040, TP_FIX_040, 0xE12936, 0x4E7B6002, 4, pNopOpcodes },
+  { 0x404, -1, pszFix040, TP_FIX_040, 0xE12982, 0x4E7B6002, 4, pNopOpcodes },
+  { 0x404, -1, pszFix040, TP_FIX_040, 0xE129E6, 0x4E7B6002, 4, pNopOpcodes },
+  { 0x404, -1, pszFix040, TP_FIX_040, 0xE12BFE, 0x4E7B5002, 4, pNopOpcodes },
+  { 0x404, -1, pszFix040, TP_FIX_040, 0xE12C7E, 0x4E7B5002, 4, pNopOpcodes },
+  { 0x404, -1, pszFix040, TP_FIX_040, 0xE12CF6, 0x4E7B2002, 4, pNopOpcodes },
+  { 0x404, -1, pszFix040, TP_FIX_040, 0xE12D74, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x404, -1, pszFix040, TP_FIX_040, 0xE12DDC, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x404, -1, pszFix040, TP_FIX_040, 0xE12E9E, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x404, -1, pszFix040, TP_FIX_040, 0xE17B54, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x404, -1, pszFix040, TP_FIX_040, 0xE17BEC, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x404, -1, pszFix040, TP_FIX_040, 0xE250D8, 0x4E7B7002, 4, pNopOpcodes },
+  { 0x404, -1, pszFix040, TP_FIX_040, 0xE44510, 0x4E7B7002, 4, pNopOpcodes },
+  { 0x404, -1, pszFix060, TP_FIX_060, 0xE003C4, 0x7200347C, sizeof(pCputype060), pCputype060 },
+  { 0x404, -1, pszFix060, TP_FIX_060, 0xE0063E, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x404, -1, pszFix060, TP_FIX_060, 0xE00756, 0x203C0000, sizeof(pCacheflush), pCacheflush },
+  { 0x404, -1, pszFix060, TP_FIX_060, 0xE00860, 0x4E7A0002, sizeof(pCacheflush2), pCacheflush2 },
+  { 0x404, -1, pszFix060, TP_FIX_060, 0xE018D0, 0x4E7A1002, sizeof(pCacheflush3), pCacheflush3 },
+  { 0x404, -1, pszFix060, TP_FIX_060, 0xE01952, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x404, -1, pszFix060, TP_FIX_060, 0xE0005A, 0x203c0000, sizeof(pColdboot1), pColdboot1 },
+  { 0x404, -1, pszFix060, TP_FIX_060, 0xE0398C, 0x46FC2700, sizeof(pColdboot2), pColdboot2 },
+  { 0x404, -1, pszFix060, TP_FIX_060, 0xE7B000, 0xFFFFFFFF, sizeof(pColdboot3), pColdboot3 },
+  { 0x404, -1, pszFix060, TP_FIX_060, 0xE0990C, 0x4E7A2002, sizeof(pCacheflush4), pCacheflush4 },
+  { 0x404, -1, pszFix060, TP_FIX_060, 0xE11BD6, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x404, -1, pszFix060, TP_FIX_060, 0xE11C5E, 0x4E7B7002, 4, pNopOpcodes },
+  { 0x404, -1, pszFix060, TP_FIX_060, 0xE11D5A, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x404, -1, pszFix060, TP_FIX_060, 0xE125C0, 0x4E7B5002, 4, pNopOpcodes },
+  { 0x404, -1, pszFix060, TP_FIX_060, 0xE12936, 0x4E7B6002, 4, pNopOpcodes },
+  { 0x404, -1, pszFix060, TP_FIX_060, 0xE12982, 0x4E7B6002, 4, pNopOpcodes },
+  { 0x404, -1, pszFix060, TP_FIX_060, 0xE129E6, 0x4E7B6002, 4, pNopOpcodes },
+  { 0x404, -1, pszFix060, TP_FIX_060, 0xE12BFE, 0x4E7B5002, 4, pNopOpcodes },
+  { 0x404, -1, pszFix060, TP_FIX_060, 0xE12C7E, 0x4E7B5002, 4, pNopOpcodes },
+  { 0x404, -1, pszFix060, TP_FIX_060, 0xE12CF6, 0x4E7B2002, 4, pNopOpcodes },
+  { 0x404, -1, pszFix060, TP_FIX_060, 0xE12D74, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x404, -1, pszFix060, TP_FIX_060, 0xE12DDC, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x404, -1, pszFix060, TP_FIX_060, 0xE12E9E, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x404, -1, pszFix060, TP_FIX_060, 0xE17B54, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x404, -1, pszFix060, TP_FIX_060, 0xE17BEC, 0x4E7B0002, 4, pNopOpcodes },
+  { 0x404, -1, pszFix060, TP_FIX_060, 0xE250D8, 0x4E7B7002, 4, pNopOpcodes },
+  { 0x404, -1, pszFix060, TP_FIX_060, 0xE44510, 0x4E7B7002, 4, pNopOpcodes },
   { 0x404, -1, pszFix060, TP_FIX_060, 0xE025E2, 0x01C80000, 12, p060movep1 },
   { 0x404, -1, pszFix060, TP_FIX_060, 0xE02632, 0x41F8FA01, 20, p060movep2 },
   { 0x404, -1, pszFix060, TP_FIX_060, 0xE02B1E, 0x007c0700, 8, p060movep3_1 },
@@ -354,19 +753,20 @@ static void TOS_FixRom(Uint32 *logopatch_addr)
 #else
 			bool use_mmu = false;
 #endif
-			/* Make sure that we really patch the right place by comparing data: */
-			if(STMemory_ReadLong(pPatch->Address) == pPatch->OldData)
+			/* Only apply the patch if it is really needed: */
+			if (pPatch->Flags == TP_ALWAYS
+			    || (pPatch->Flags == TP_HDIMAGE_OFF && !ACSI_EMU_ON
+			        && !ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage
+			        && ConfigureParams.System.bFastBoot)
+			    || (pPatch->Flags == TP_ANTI_STE && Config_IsMachineST())
+			    || (pPatch->Flags == TP_ANTI_PMMU && !use_mmu)
+			    || (pPatch->Flags == TP_VDIRES && bUseVDIRes)
+			    || (pPatch->Flags == TP_FIX_060 && ConfigureParams.System.nCpuLevel > 4)
+			    || (pPatch->Flags == TP_FIX_040 && ConfigureParams.System.nCpuLevel == 4)
+			   )
 			{
-				/* Only apply the patch if it is really needed: */
-				if (pPatch->Flags == TP_ALWAYS
-				    || (pPatch->Flags == TP_HDIMAGE_OFF && !ACSI_EMU_ON
-				        && !ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage
-				        && ConfigureParams.System.bFastBoot)
-				    || (pPatch->Flags == TP_ANTI_STE && Config_IsMachineST())
-				    || (pPatch->Flags == TP_ANTI_PMMU && !use_mmu)
-				    || (pPatch->Flags == TP_VDIRES && bUseVDIRes)
-				    || (pPatch->Flags == TP_FIX_060 && ConfigureParams.System.nCpuLevel > 4)
-				   )
+				/* Make sure that we really patch the right place by comparing data: */
+				if(STMemory_ReadLong(pPatch->Address) == pPatch->OldData)
 				{
 					/* Now we can really apply the patch! */
 					Log_Printf(LOG_DEBUG, "Applying TOS patch '%s'.\n", pPatch->pszName);
@@ -377,14 +777,14 @@ static void TOS_FixRom(Uint32 *logopatch_addr)
 				}
 				else
 				{
-					Log_Printf(LOG_DEBUG, "Skipped patch '%s'.\n", pPatch->pszName);
+					Log_Printf(LOG_DEBUG, "Failed to apply TOS patch '%s' at %x (expected %x, found %x).\n",
+					           pPatch->pszName, pPatch->Address, pPatch->OldData, STMemory_ReadLong(pPatch->Address));
+					nBadPatches += 1;
 				}
 			}
 			else
 			{
-				Log_Printf(LOG_DEBUG, "Failed to apply TOS patch '%s' at %x (expected %x, found %x).\n",
-				           pPatch->pszName, pPatch->Address, pPatch->OldData, STMemory_ReadLong(pPatch->Address));
-				nBadPatches += 1;
+				Log_Printf(LOG_DEBUG, "Skipped patch '%s'.\n", pPatch->pszName);
 			}
 		}
 		pPatch += 1;
