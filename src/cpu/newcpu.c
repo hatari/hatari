@@ -7665,6 +7665,9 @@ void m68k_go (int may_quit)
 		/* Apply patches for gemdos HD if needed (we need to do it after */
 		/* cpu tables for all opcodes were rebuilt in build_cpufunctbl() ) */
 		Cart_PatchCpuTables();
+
+		/* Restore debugger state (breakpoints) after a reset */
+		M68000_RestoreDebugger();
 #endif
 
 #if 0

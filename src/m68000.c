@@ -106,6 +106,7 @@ int nCpuFreqShift;		/* Used to emulate higher CPU frequencies: 0=8MHz, 1=16MHz, 
 int WaitStateCycles = 0;	/* Used to emulate the wait state cycles of certain IO registers */
 int BusMode = BUS_MODE_CPU;	/* Used to tell which part is owning the bus (cpu, blitter, ...) */
 bool CPU_IACK = false;		/* Set to true during an exception when getting the interrupt's vector number */
+static bool M68000_DebuggerFlag;/* Is debugger enabled or not ? */
 
 int LastOpcodeFamily = i_NOP;	/* see the enum in readcpu.h i_XXX */
 int LastInstrCycles = 0;	/* number of cycles for previous instr. (not rounded to 4) */
@@ -257,6 +258,36 @@ void M68000_Reset(bool bCold)
 	CPU_IACK = false;
 //fprintf ( stderr,"M68000_Reset out\n" );
 }
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Enable/disable breakpoints in the debugger
+ */
+void M68000_SetDebugger(bool debug)
+{
+	M68000_DebuggerFlag = debug;
+
+	if ( debug )
+		M68000_SetSpecial(SPCFLAG_DEBUGGER);
+	else
+		M68000_UnsetSpecial(SPCFLAG_DEBUGGER);
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Restore debugger state (breakpoints)
+ * This is called from CPU core after a reset, because CPU core clears regs.spcflags
+ */
+void M68000_RestoreDebugger(void)
+{
+	if ( M68000_DebuggerFlag )
+		M68000_SetSpecial(SPCFLAG_DEBUGGER);
+	else
+		M68000_UnsetSpecial(SPCFLAG_DEBUGGER);
+}
+
 
 
 /*-----------------------------------------------------------------------*/

@@ -355,6 +355,8 @@ static inline void M68000_AddCycles_CE(int cycles)
 
 extern void M68000_Init(void);
 extern void M68000_Reset(bool bCold);
+extern void M68000_SetDebugger(bool debug);
+extern void M68000_RestoreDebugger(void);
 extern void M68000_Start(void);
 extern void M68000_CheckCpuSettings(void);
 extern void M68000_MemorySnapShot_Capture(bool bSave);

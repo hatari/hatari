@@ -908,11 +908,11 @@ void DebugCpu_SetDebugging(void)
 	    || LOG_TRACE_LEVEL((TRACE_CPU_DISASM|TRACE_CPU_SYMBOLS|TRACE_CPU_REGS))
 	    || ConOutDevice != CONOUT_DEVICE_NONE)
 	{
-		M68000_SetSpecial(SPCFLAG_DEBUGGER);
+		M68000_SetDebugger(true);
 		nCpuInstructions = 0;
 	}	
 	else
-		M68000_UnsetSpecial(SPCFLAG_DEBUGGER);
+		M68000_SetDebugger(false);
 }
 
 
