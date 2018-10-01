@@ -38,12 +38,6 @@ usage ()
 
 # --------- argument parsing --------
 
-quit=0
-if [ $1 = "-q" ]; then
-	quit=1
-	shift
-fi
-
 # generic argument checking
 if [ $# -lt 3 ]; then
 	usage "not enough arguments"
@@ -51,6 +45,13 @@ fi
 echo " $* " | grep -q ' -- '
 if [ $? -ne 0 ]; then
 	usage "Separator missing for Hatari -- Atari options"
+fi
+
+# quiet option comes first
+quit=0
+if [ $1 = "-q" ]; then
+	quit=1
+	shift
 fi
 
 # collect/remove hatari arguments
