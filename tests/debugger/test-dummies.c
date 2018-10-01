@@ -83,6 +83,7 @@ bool STMemory_CheckAreaType(Uint32 addr, int size, int mem_type ) {
 Uint16 M68000_GetSR(void) { return 0x2700; }
 void M68000_SetSR(Uint16 v) { }
 void M68000_SetPC(uaecptr v) { }
+void M68000_SetDebugger(bool debug) { }
 
 /* fake UAE core registers */
 #include "newcpu.h"
