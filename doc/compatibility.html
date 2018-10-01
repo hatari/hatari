@@ -1009,6 +1009,16 @@ configuration or data files are not writable.</p>
 	  tools run by Devpac could get incomplete file contents</td>
     </tr>
     <tr>
+      <td>asm56000.ttp</td>
+      <td>2.1</td>
+      <td>
+        Works correctly only when Fopen() returns very small file
+	handle numbers.  Doesn't work with GEMDOS HD emulation as that
+	returns high file handle numbers to avoid conflicting with TOS
+	file handles. Use disk images for compiling
+      </td>
+    </tr>
+    <tr>
       <td>Turbo Assembler</td>
       <td>before 1.0</td>
       <td>
