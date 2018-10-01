@@ -29,8 +29,15 @@ usage ()
 	echo
 	echo "Other arguments are passed unmodified."
 	echo
-	echo "Example:"
+	echo "Examples:"
+	echo
+	echo "* program in host folder and input files in same folder:"
 	echo "	$name -m -- atari/sidplay.ttp atari/sids/test.sid"
+	echo
+	echo "* program on a disk image:"
+	echo "	$name -m -- 'A:\\SIDPLAY.TTP' 'SIDS\\TEST.SID'"
+	echo
+	echo "Note: argument quoting is needed with '\\' chars."
 	echo
 	echo "ERROR: $1!"
 	exit 1
@@ -55,19 +62,27 @@ if [ $1 = "-q" ]; then
 fi
 
 # collect/remove hatari arguments
+hargs=""
 for arg in $*; do
 	shift
 	if [ $arg = '--' ]; then
 		break
 	fi
-	hatari="$hatari $arg"
+	hargs="$hargs $arg"
 done
 
 # check atari program
 prg=$1
 shift
 if [ \! -f $prg ]; then
-	usage "given Atari program '$prg' doesn't exist"
+	if [ "${prg#[A-Z]:}" != "$prg" ]; then
+		# program path inside disk image
+		hargs="--auto $prg $hargs"
+		prg=""
+	else
+		# non-existing *non-Atari* path given
+		usage "given Atari program '$prg' doesn't exist"
+	fi
 fi
 
 # builtin shell echo can be broken, so that it interprets backlashes by default,
@@ -147,8 +162,8 @@ fi
 head $dir/*
 
 # run Hatari
-echo $hatari --parse $dir/pexec.ini $prg
-$hatari --parse $dir/pexec.ini $prg
+echo $hatari --parse $dir/pexec.ini $hargs $prg
+$hatari --parse $dir/pexec.ini $hargs $prg
 
 # cleanup
 rm -r $dir

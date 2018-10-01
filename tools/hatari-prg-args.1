@@ -15,9 +15,15 @@ If Atari program arguments have same (host) path prefix as given Atari
 program, those prefixes are replaced with "C:\\". Unix path separators
 (/) are replaced with Atari ones (\\) and whole filename is upper-cased.
 .PP
-Other program arguments are passed unmodified.  Note that maximum
-Atari program command line length that can be given (in basepage) is
-126 characters.
+If program and its input files are on a disk image, all paths need to
+be given as on with TOS, and won't be translated.
+.PP
+Other program arguments are passed unmodified.
+.SH NOTES
+Maximum Atari program command line length that can be given (in basepage)
+is 126 characters.
+.PP
+On Unix, Atari/DOS path separators (\\) need to be quoted.
 .SH OPTIONS
 .TP
 .B \-q
@@ -25,8 +31,11 @@ Make Hatari quit when the started Atari program terminates.
 If given, this needs to be the first argument.
 .SH EXAMPLES
 .TP
-Start SID player in mono and tell it to play given SID song
+Start SID player in mono and tell it to play given SID song:
 .B hatari\-prg\-args -m -- atari/sidplay.ttp atari/sids/test.sid
+.TP
+Run it from disk image instead of host directory:
+.B hatari\-prg\-args -m -- 'A:\\\\SIDPLAY.TTP' 'SIDS\\\\TEST.SID'
 .SH SEE ALSO
 .IR hatari (1),
 .IR hconsole (1)
