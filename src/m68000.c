@@ -377,9 +377,9 @@ void M68000_CheckCpuSettings(void)
 	changed_prefs.int_no_unimplemented = true;
 	changed_prefs.fpu_no_unimplemented = true;
 	changed_prefs.cpu_compatible = ConfigureParams.System.bCompatibleCpu;
-	changed_prefs.address_space_24 = ConfigureParams.System.bAddressSpace24;
 	changed_prefs.cpu_cycle_exact = ConfigureParams.System.bCycleExactCpu;
 	changed_prefs.cpu_memory_cycle_exact = ConfigureParams.System.bCycleExactCpu;
+	changed_prefs.address_space_24 = ConfigureParams.System.bAddressSpace24;
 	changed_prefs.fpu_model = ConfigureParams.System.n_FPUType;
 	changed_prefs.fpu_strict = ConfigureParams.System.bCompatibleFPU;
 	changed_prefs.fpu_mode = ( ConfigureParams.System.bSoftFloatFPU ? 1 : 0 );
@@ -399,7 +399,12 @@ void M68000_CheckCpuSettings(void)
 	changed_prefs.cachesize = 0;
 
 	/* Always emulate instr/data caches for cpu >= 68020 */
-	changed_prefs.cpu_data_cache = true;
+	/* Cache emulation requires cpu_compatible or cpu_cycle_exact mode */
+	if ( ( changed_prefs.cpu_model < 68020 ) ||
+	     ( ( changed_prefs.cpu_compatible == false ) && ( changed_prefs.cpu_cycle_exact == false ) ) )
+		changed_prefs.cpu_data_cache = false;
+	else
+		changed_prefs.cpu_data_cache = true;
 
 	/* Update SPCFLAG_MODE_CHANGE flag if needed */
 	check_prefs_changed_cpu();
