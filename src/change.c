@@ -90,15 +90,24 @@ bool Change_DoNeedReset(CNF_PARAMS *current, CNF_PARAMS *changed)
 			return true;
 	}
 
-	/* Did change IDE master hard disk image? */
-	if (changed->HardDisk.bUseIdeMasterHardDiskImage != current->HardDisk.bUseIdeMasterHardDiskImage
-	    || strcmp(changed->HardDisk.szIdeMasterHardDiskImage, current->HardDisk.szIdeMasterHardDiskImage))
-		return true;
+	/* Did change SCSI hard disk image? */
+	for (i = 0; i < MAX_SCSI_DEVS; i++)
+	{
+		if (changed->Scsi[i].bUseDevice != current->Scsi[i].bUseDevice
+		    || (strcmp(changed->Scsi[i].sDeviceFile, current->Scsi[i].sDeviceFile)
+		        && changed->Scsi[i].bUseDevice))
+			return true;
+	}
 
-	/* Did change IDE slave hard disk image? */
-	if (changed->HardDisk.bUseIdeSlaveHardDiskImage != current->HardDisk.bUseIdeSlaveHardDiskImage
-	    || strcmp(changed->HardDisk.szIdeSlaveHardDiskImage, current->HardDisk.szIdeSlaveHardDiskImage))
-		return true;
+	/* Did change IDE hard disk image? */
+	for (i = 0; i < MAX_IDE_DEVS; i++)
+	{
+		if (changed->Ide[i].bUseDevice != current->Ide[i].bUseDevice
+		    || changed->Ide[i].bByteSwap != current->Ide[i].bByteSwap
+		    || (strcmp(changed->Ide[i].sDeviceFile, current->Ide[i].sDeviceFile)
+		        && changed->Ide[i].bUseDevice))
+			return true;
+	}
 
 	/* Did change GEMDOS drive Atari/host location or enabling? */
 	if (changed->HardDisk.nGemdosDrive != current->HardDisk.nGemdosDrive
@@ -172,7 +181,7 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 {
 	bool NeedReset;
 	bool bReInitGemdosDrive = false;
-	bool bReInitAcsiEmu = false;
+	bool bReInitHdcEmu = false;
 	bool bReInitIDEEmu = false;
 	bool bReInitIoMem = false;
 	bool bScreenModeChange = false;
@@ -282,31 +291,36 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 		        && changed->Acsi[i].bUseDevice))
 		{
 			Dprintf("- ACSI image %i>\n", i);
-			bReInitAcsiEmu = true;
+			bReInitHdcEmu = true;
 		}
 	}
-	if (bReInitAcsiEmu)
+	/* Did change SCSI image? */
+	for (i = 0; i < MAX_SCSI_DEVS; i++)
+	{
+		if (changed->Scsi[i].bUseDevice != current->Scsi[i].bUseDevice
+		    || (strcmp(changed->Scsi[i].sDeviceFile, current->Scsi[i].sDeviceFile)
+		        && changed->Scsi[i].bUseDevice))
+		{
+			Dprintf("- SCSI image %i>\n", i);
+			bReInitHdcEmu = true;
+		}
+	}
+	if (bReInitHdcEmu)
 		HDC_UnInit();
 
-	/* Did change IDE HD master image? */
-	if (changed->HardDisk.bUseIdeMasterHardDiskImage != current->HardDisk.bUseIdeMasterHardDiskImage
-	    || (strcmp(changed->HardDisk.szIdeMasterHardDiskImage, current->HardDisk.szIdeMasterHardDiskImage)
-	        && changed->HardDisk.bUseIdeMasterHardDiskImage))
+	/* Did change IDE HD image? */
+	for (i = 0; i < MAX_IDE_DEVS; i++)
 	{
-		Dprintf("- IDE master>\n");
-		Ide_UnInit();
-		bReInitIDEEmu = true;
+		if (changed->Ide[i].bUseDevice != current->Ide[i].bUseDevice
+		    || (strcmp(changed->Ide[i].sDeviceFile, current->Ide[i].sDeviceFile)
+		        && changed->Ide[i].bUseDevice))
+		{
+			Dprintf("- IDE image %i>\n", i);
+			bReInitIDEEmu = true;
+		}
 	}
-
-	/* Did change IDE HD slave image? */
-	if (changed->HardDisk.bUseIdeSlaveHardDiskImage != current->HardDisk.bUseIdeSlaveHardDiskImage
-	    || (strcmp(changed->HardDisk.szIdeSlaveHardDiskImage, current->HardDisk.szIdeSlaveHardDiskImage)
-	        && changed->HardDisk.bUseIdeSlaveHardDiskImage))
-	{
-		Dprintf("- IDE slave>\n");
+	if (bReInitIDEEmu)
 		Ide_UnInit();
-		bReInitIDEEmu = true;
-	}
 
 	/* Did change blitter, DSP or system type? */
 	if (changed->System.bBlitter != current->System.bBlitter
@@ -373,15 +387,15 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 		Keymap_LoadRemapFile(ConfigureParams.Keyboard.szMappingFileName);
 	}
 
-	/* Mount a new HD image: */
-	if (bReInitAcsiEmu)
+	/* Mount a new ACSI/SCSI HD images: */
+	if (bReInitHdcEmu)
 	{
 		Dprintf("- HD<\n");
 		HDC_Init();
 	}
 
-	/* Mount a new IDE HD master or slave image: */
-	if (bReInitIDEEmu && (ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage || ConfigureParams.HardDisk.bUseIdeSlaveHardDiskImage))
+	/* Mount a new IDE HD images: */
+	if (bReInitIDEEmu && (ConfigureParams.Ide[0].bUseDevice || ConfigureParams.Ide[1].bUseDevice))
 	{
 		Dprintf("- IDE<\n");
 		Ide_Init();

@@ -286,8 +286,8 @@ int INF_ValidateAutoStart(const char **val, const char **err)
 	/* exact drive checking for hard drives would require:
 	 *
 	 * For images:
-	 * - finding out what partitions each of the IDE master &
-	 *   Slave, 8 ACSI, and 8 SCSI images do have, *and*
+	 * - finding out what partitions each of the 2 IDE, 8 ACSI, and
+	 *   8 SCSI images do have, *and*
 	 * - finding out which of those partitions the native Atari
 	 *   harddisk driver happens to support...
 	 * -> not feasible
@@ -305,11 +305,11 @@ int INF_ValidateAutoStart(const char **val, const char **err)
 		return 0;
 	}
 	/* IDE */
-	else if (ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage && ConfigureParams.HardDisk.szIdeMasterHardDiskImage[0])
+	else if (ConfigureParams.Ide[0].bUseDevice && ConfigureParams.Ide[0].sDeviceFile[0])
 	{
 		return 0;
 	}
-	else if (ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage && ConfigureParams.HardDisk.szIdeMasterHardDiskImage[0])
+	else if (ConfigureParams.Ide[1].bUseDevice && ConfigureParams.Ide[1].sDeviceFile[0])
 	{
 		return 0;
 	}

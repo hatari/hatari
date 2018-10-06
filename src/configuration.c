@@ -441,10 +441,6 @@ static const struct Config_Tag configs_HardDisk[] =
 	{ "nWriteProtection", Int_Tag, &ConfigureParams.HardDisk.nWriteProtection },
 	{ "bFilenameConversion", Bool_Tag, &ConfigureParams.HardDisk.bFilenameConversion },
 	{ "bGemdosHostTime", Bool_Tag, &ConfigureParams.HardDisk.bGemdosHostTime },
-	{ "bUseIdeMasterHardDiskImage", Bool_Tag, &ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage },
-	{ "bUseIdeSlaveHardDiskImage", Bool_Tag, &ConfigureParams.HardDisk.bUseIdeSlaveHardDiskImage },
-	{ "szIdeMasterHardDiskImage", String_Tag, ConfigureParams.HardDisk.szIdeMasterHardDiskImage },
-	{ "szIdeSlaveHardDiskImage", String_Tag, ConfigureParams.HardDisk.szIdeSlaveHardDiskImage },
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -452,6 +448,10 @@ static const struct Config_Tag configs_HardDisk_Old[] =
 {	/* only used for loading */
 	{ "bUseHardDiskImage", Bool_Tag, &ConfigureParams.Acsi[0].bUseDevice },
 	{ "szHardDiskImage", String_Tag, ConfigureParams.Acsi[0].sDeviceFile },
+	{ "bUseIdeMasterHardDiskImage", Bool_Tag, &ConfigureParams.Ide[0].bUseDevice },
+	{ "szIdeMasterHardDiskImage", String_Tag, ConfigureParams.Ide[0].sDeviceFile },
+	{ "bUseIdeSlaveHardDiskImage", Bool_Tag, &ConfigureParams.Ide[1].bUseDevice },
+	{ "szIdeSlaveHardDiskImage", String_Tag, ConfigureParams.Ide[1].sDeviceFile },
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -495,6 +495,17 @@ static const struct Config_Tag configs_Scsi[] =
 	{ "bUseDevice6", Bool_Tag, &ConfigureParams.Scsi[6].bUseDevice },
 	{ "sDeviceFile6", String_Tag, ConfigureParams.Scsi[6].sDeviceFile },
 	{ NULL , Error_Tag, NULL }
+};
+
+/* Used to load/save IDE options */
+static const struct Config_Tag configs_Ide[] =
+{
+	{ "bUseDevice0", Bool_Tag, &ConfigureParams.Ide[0].bUseDevice },
+	{ "bByteSwap0", Bool_Tag, &ConfigureParams.Ide[0].bByteSwap },
+	{ "sDeviceFile0", String_Tag, ConfigureParams.Ide[0].sDeviceFile },
+	{ "bUseDevice1", Bool_Tag, &ConfigureParams.Ide[1].bUseDevice },
+	{ "bByteSwap1", Bool_Tag, &ConfigureParams.Ide[1].bByteSwap },
+	{ "sDeviceFile1", String_Tag, ConfigureParams.Ide[1].sDeviceFile },
 };
 
 /* Used to load/save ROM options */
@@ -651,10 +662,6 @@ void Configuration_SetDefault(void)
 		strcpy(ConfigureParams.HardDisk.szHardDiskDirectories[i], psWorkingDir);
 		File_CleanFileName(ConfigureParams.HardDisk.szHardDiskDirectories[i]);
 	}
-	ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage = false;
-	strcpy(ConfigureParams.HardDisk.szIdeMasterHardDiskImage, psWorkingDir);
-	ConfigureParams.HardDisk.bUseIdeSlaveHardDiskImage = false;
-	strcpy(ConfigureParams.HardDisk.szIdeSlaveHardDiskImage, psWorkingDir);
 
 	/* ACSI */
 	for (i = 0; i < MAX_ACSI_DEVS; i++)
@@ -662,12 +669,18 @@ void Configuration_SetDefault(void)
 		ConfigureParams.Acsi[i].bUseDevice = false;
 		strcpy(ConfigureParams.Acsi[i].sDeviceFile, psWorkingDir);
 	}
-
 	/* SCSI */
 	for (i = 0; i < MAX_SCSI_DEVS; i++)
 	{
 		ConfigureParams.Scsi[i].bUseDevice = false;
 		strcpy(ConfigureParams.Scsi[i].sDeviceFile, psWorkingDir);
+	}
+	/* IDE */
+	for (i = 0; i < MAX_IDE_DEVS; i++)
+	{
+		ConfigureParams.Ide[i].bUseDevice = false;
+		ConfigureParams.Ide[i].bByteSwap = true;
+		strcpy(ConfigureParams.Ide[i].sDeviceFile, psWorkingDir);
 	}
 
 	/* Set defaults for Joysticks */
@@ -945,6 +958,10 @@ void Configuration_Apply(bool bReset)
 	{
 		File_MakeAbsoluteName(ConfigureParams.Scsi[i].sDeviceFile);
 	}
+	for (i = 0; i < MAX_IDE_DEVS; i++)
+	{
+		File_MakeAbsoluteName(ConfigureParams.Ide[i].sDeviceFile);
+	}
 
 	/* make path names absolute, but handle special file names */
 	File_MakeAbsoluteSpecialName(ConfigureParams.Log.sLogFileName);
@@ -1068,6 +1085,7 @@ void Configuration_Load(const char *psFileName)
 	Configuration_LoadSection(psFileName, configs_HardDisk, "[HardDisk]");
 	Configuration_LoadSection(psFileName, configs_Acsi, "[ACSI]");
 	Configuration_LoadSection(psFileName, configs_Scsi, "[SCSI]");
+	Configuration_LoadSection(psFileName, configs_Ide, "[IDE]");
 	Configuration_LoadSection(psFileName, configs_Rom, "[ROM]");
 	Configuration_LoadSection(psFileName, configs_Rs232, "[RS232]");
 	Configuration_LoadSection(psFileName, configs_Printer, "[Printer]");
@@ -1123,6 +1141,7 @@ void Configuration_Save(void)
 	Configuration_SaveSection(sConfigFileName, configs_HardDisk, "[HardDisk]");
 	Configuration_SaveSection(sConfigFileName, configs_Acsi, "[ACSI]");
 	Configuration_SaveSection(sConfigFileName, configs_Scsi, "[SCSI]");
+	Configuration_SaveSection(sConfigFileName, configs_Ide, "[IDE]");
 	Configuration_SaveSection(sConfigFileName, configs_Rom, "[ROM]");
 	Configuration_SaveSection(sConfigFileName, configs_Rs232, "[RS232]");
 	Configuration_SaveSection(sConfigFileName, configs_Printer, "[Printer]");
@@ -1163,11 +1182,17 @@ void Configuration_MemorySnapShot_Capture(bool bSave)
 		MemorySnapShot_Store(&ConfigureParams.Acsi[i].bUseDevice, sizeof(ConfigureParams.Acsi[i].bUseDevice));
 		MemorySnapShot_Store(ConfigureParams.Acsi[i].sDeviceFile, sizeof(ConfigureParams.Acsi[i].sDeviceFile));
 	}
-	/* for (i = 0; i < MAX_SCSI_DEVS; i++)
+	for (i = 0; i < MAX_SCSI_DEVS; i++)
 	{
 		MemorySnapShot_Store(&ConfigureParams.Scsi[i].bUseDevice, sizeof(ConfigureParams.Scsi[i].bUseDevice));
 		MemorySnapShot_Store(ConfigureParams.Scsi[i].sDeviceFile, sizeof(ConfigureParams.Scsi[i].sDeviceFile));
-	}*/
+	}
+	for (i = 0; i < MAX_IDE_DEVS; i++)
+	{
+		MemorySnapShot_Store(&ConfigureParams.Ide[i].bUseDevice, sizeof(ConfigureParams.Ide[i].bUseDevice));
+		MemorySnapShot_Store(&ConfigureParams.Ide[i].bByteSwap, sizeof(ConfigureParams.Ide[i].bByteSwap));
+		MemorySnapShot_Store(ConfigureParams.Ide[i].sDeviceFile, sizeof(ConfigureParams.Ide[i].sDeviceFile));
+	}
 
 	MemorySnapShot_Store(&ConfigureParams.Screen.nMonitorType, sizeof(ConfigureParams.Screen.nMonitorType));
 	MemorySnapShot_Store(&ConfigureParams.Screen.bUseExtVdiResolutions, sizeof(ConfigureParams.Screen.bUseExtVdiResolutions));
@@ -1240,5 +1265,3 @@ void Configuration_ChangeCpuFreq ( int CpuFreq_new )
 		M68000_ChangeCpuFreq();
 	}
 }
-
-

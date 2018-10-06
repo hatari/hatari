@@ -44,6 +44,10 @@ static uint32_t ide_data_readw(void *opaque, uint32_t addr);
 static void ide_data_writel(void *opaque, uint32_t addr, uint32_t val);
 static uint32_t ide_data_readl(void *opaque, uint32_t addr);
 
+static bool Ide_MmioIsAvailable(void)
+{
+	return ConfigureParams.Ide[0].bUseDevice;
+}
 
 /**
  * Convert Falcon IDE registers to "normal" IDE register numbers.
@@ -88,7 +92,7 @@ uae_u32 REGPARAM3 Ide_Mem_bget(uaecptr addr)
 
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
-	if (addr >= 0xf00040 || !ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
+	if (addr >= 0xf00040 || !Ide_MmioIsAvailable())
 	{
 		/* invalid memory addressing --> bus error */
 		M68000_BusError(addr_in, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
@@ -125,7 +129,7 @@ uae_u32 REGPARAM3 Ide_Mem_wget(uaecptr addr)
 
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
-	if (addr >= 0xf00040 || !ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
+	if (addr >= 0xf00040 || !Ide_MmioIsAvailable())
 	{
 		/* invalid memory addressing --> bus error */
 		M68000_BusError(addr_in, BUS_ERROR_READ, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
@@ -156,7 +160,7 @@ uae_u32 REGPARAM3 Ide_Mem_lget(uaecptr addr)
 
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
-	if (addr >= 0xf00040 || !ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
+	if (addr >= 0xf00040 || !Ide_MmioIsAvailable())
 	{
 		/* invalid memory addressing --> bus error */
 		M68000_BusError(addr_in, BUS_ERROR_READ, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
@@ -193,7 +197,7 @@ void REGPARAM3 Ide_Mem_bput(uaecptr addr, uae_u32 val)
 
 	LOG_TRACE(TRACE_IDE, "IDE: bput($%x, $%x)\n", addr, val);
 
-	if (addr >= 0xf00040 || !ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
+	if (addr >= 0xf00040 || !Ide_MmioIsAvailable())
 	{
 		/* invalid memory addressing --> bus error */
 		M68000_BusError(addr_in, BUS_ERROR_WRITE, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
@@ -225,7 +229,7 @@ void REGPARAM3 Ide_Mem_wput(uaecptr addr, uae_u32 val)
 
 	LOG_TRACE(TRACE_IDE, "IDE: wput($%x, $%x)\n", addr, val);
 
-	if (addr >= 0xf00040 || !ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
+	if (addr >= 0xf00040 || !Ide_MmioIsAvailable())
 	{
 		/* invalid memory addressing --> bus error */
 		M68000_BusError(addr_in, BUS_ERROR_WRITE, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
@@ -250,7 +254,7 @@ void REGPARAM3 Ide_Mem_lput(uaecptr addr, uae_u32 val)
 
 	LOG_TRACE(TRACE_IDE, "IDE: lput($%x, $%x)\n", addr, val);
 
-	if (addr >= 0xf00040 || !ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
+	if (addr >= 0xf00040 || !Ide_MmioIsAvailable())
 	{
 		/* invalid memory addressing --> bus error */
 		M68000_BusError(addr_in, BUS_ERROR_WRITE, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
@@ -952,11 +956,11 @@ static void ide_identify(IDEState *s)
 	padstr((char *)(p + 23), FW_VERSION, 8); /* firmware version */
 	if(s == opaque_ide_if) /* model */
 	{
-		padstr((char *)(p + 27), "Hatari IDE master disk", 40);
+		padstr((char *)(p + 27), "Hatari IDE0 disk", 40);
 	}
 	else
 	{
-		padstr((char *)(p + 27), "Hatari IDE slave disk", 40);
+		padstr((char *)(p + 27), "Hatari IDE1 disk", 40);
 	}
 #if MAX_MULT_SECTORS > 1
 	put_le16(p + 47, 0x8000 | MAX_MULT_SECTORS);
@@ -1986,10 +1990,10 @@ static void ide_ioport_write(void *opaque, uint32_t addr, uint32_t val)
 		LOG_TRACE(TRACE_IDE, "IDE: CMD=%02x\n", val);
 
 		s = ide_if->cur_drive;
-		/* ignore commands to non existent slave */
+		/* ignore commands to non existent IDE device 1 */
 		if (s != ide_if && !s->bs)
 		{
-			fprintf(stderr,"IDE: CMD to non-existant slave!\n");
+			fprintf(stderr,"IDE: CMD to non-existant IDE device #1!\n");
 			break;
 		}
 
@@ -2652,32 +2656,28 @@ static BlockDriverState *hd_table[2];
  */
 void Ide_Init(void)
 {
-	if (!ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
+	int i;
+
+	if (!ConfigureParams.Ide[0].bUseDevice)
 		return;
 
 	opaque_ide_if = calloc(2, sizeof(IDEState));
-	hd_table[0] = malloc(sizeof(BlockDriverState));
-	hd_table[1] = malloc(sizeof(BlockDriverState));
+	assert(opaque_ide_if);
 
-	assert(opaque_ide_if && hd_table[0] && hd_table[1]);
-
-	memset(hd_table[0], 0, sizeof(BlockDriverState));
-	memset(hd_table[1], 0, sizeof(BlockDriverState));
-
-	bdrv_open(hd_table[0], ConfigureParams.HardDisk.szIdeMasterHardDiskImage, 0);
-	nIDEPartitions += HDC_PartitionCount(hd_table[0]->fhndl, TRACE_IDE);
-
-	if (ConfigureParams.HardDisk.bUseIdeSlaveHardDiskImage)
+	for (i = 0; i < 2; i++)
 	{
-		bdrv_open(hd_table[1], ConfigureParams.HardDisk.szIdeSlaveHardDiskImage, 0);
-		nIDEPartitions += HDC_PartitionCount(hd_table[1]->fhndl, TRACE_IDE);
+		hd_table[i] = malloc(sizeof(BlockDriverState));
+		assert(hd_table[i]);
+		memset(hd_table[i], 0, sizeof(BlockDriverState));
+		if (ConfigureParams.Ide[i].bUseDevice)
+		{
+			bdrv_open(hd_table[i], ConfigureParams.Ide[i].sDeviceFile, 0);
+			nIDEPartitions += HDC_PartitionCount(hd_table[i]->fhndl, TRACE_IDE);
+		}
+	}
 
-		ide_init2(&opaque_ide_if[0], hd_table[0], hd_table[1]);
-	}
-	else
-	{
-		ide_init2(&opaque_ide_if[0], hd_table[0], NULL);
-	}
+	ide_init2(&opaque_ide_if[0], hd_table[0],
+	          ConfigureParams.Ide[1].bUseDevice ? hd_table[1] : NULL);
 }
 
 

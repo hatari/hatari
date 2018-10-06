@@ -211,27 +211,31 @@ typedef struct
 {
   int nGemdosDrive;
   bool bUseHardDiskDirectories;
-  bool bUseIdeMasterHardDiskImage;
-  bool bUseIdeSlaveHardDiskImage;
   WRITEPROTECTION nWriteProtection;
   GEMDOS_CHR_CONV nGemdosCase;
   bool bFilenameConversion;
   bool bGemdosHostTime;
   bool bBootFromHardDisk;
   char szHardDiskDirectories[MAX_HARDDRIVES][FILENAME_MAX];
-  char szIdeMasterHardDiskImage[FILENAME_MAX];
-  char szIdeSlaveHardDiskImage[FILENAME_MAX];
 } CNF_HARDDISK;
 
-/* SCSI/ACSI configuration */
+/* SCSI/ACSI/IDE configuration */
 #define MAX_ACSI_DEVS 8
 #define MAX_SCSI_DEVS 8
+#define MAX_IDE_DEVS 2
 
 typedef struct
 {
   bool bUseDevice;
   char sDeviceFile[FILENAME_MAX];
 } CNF_SCSIDEV;
+
+typedef struct
+{
+  bool bUseDevice;
+  bool bByteSwap;
+  char sDeviceFile[FILENAME_MAX];
+} CNF_IDEDEV;
 
 /* Falcon register $FFFF8006 bits 6 & 7 (mirrored in $FFFF82C0 bits 0 & 1):
  * 00 Monochrome
@@ -391,6 +395,7 @@ typedef struct
   CNF_HARDDISK HardDisk;
   CNF_SCSIDEV Acsi[MAX_ACSI_DEVS];
   CNF_SCSIDEV Scsi[MAX_SCSI_DEVS];
+  CNF_IDEDEV Ide[MAX_IDE_DEVS];
   CNF_ROM Rom;
   CNF_RS232 RS232;
   CNF_PRINTER Printer;

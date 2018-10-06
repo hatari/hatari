@@ -1632,9 +1632,9 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 		case OPT_IDEMASTERHDIMAGE:
 			i += 1;
-			ok = Opt_StrCpy(OPT_IDEMASTERHDIMAGE, true, ConfigureParams.HardDisk.szIdeMasterHardDiskImage,
-					argv[i], sizeof(ConfigureParams.HardDisk.szIdeMasterHardDiskImage),
-					&ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage);
+			ok = Opt_StrCpy(OPT_IDEMASTERHDIMAGE, true, ConfigureParams.Ide[0].sDeviceFile,
+					argv[i], sizeof(ConfigureParams.Ide[0].sDeviceFile),
+					&ConfigureParams.Ide[0].bUseDevice);
 			if (ok)
 			{
 				bLoadAutoSave = false;
@@ -1643,9 +1643,9 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 		case OPT_IDESLAVEHDIMAGE:
 			i += 1;
-			ok = Opt_StrCpy(OPT_IDESLAVEHDIMAGE, true, ConfigureParams.HardDisk.szIdeSlaveHardDiskImage,
-					argv[i], sizeof(ConfigureParams.HardDisk.szIdeSlaveHardDiskImage),
-					&ConfigureParams.HardDisk.bUseIdeSlaveHardDiskImage);
+			ok = Opt_StrCpy(OPT_IDESLAVEHDIMAGE, true, ConfigureParams.Ide[1].sDeviceFile,
+					argv[i], sizeof(ConfigureParams.Ide[1].sDeviceFile),
+					&ConfigureParams.Ide[1].bUseDevice);
 			if (ok)
 			{
 				bLoadAutoSave = false;

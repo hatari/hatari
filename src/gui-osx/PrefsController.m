@@ -863,18 +863,18 @@ BOOL flag1, flag2;
 	
 	// If the IDE HD flag is set, load the IDE HD path, otherwise make it blank
 	//Master
-	if (ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
+	if (ConfigureParams.Ide[0].bUseDevice)
 	{
-		IMPORT_TEXTFIELD(ideMasterHdImage, masterIDE, ConfigureParams.HardDisk.szIdeMasterHardDiskImage);
+		IMPORT_TEXTFIELD(ideMasterHdImage, masterIDE, ConfigureParams.Ide[0].sDeviceFile);
 	}
 	else
 	{
 		ideMasterHdImage.stringValue = @"" ; [masterIDE setString:@""] ;
 	}
 	//Slave
-	if (ConfigureParams.HardDisk.bUseIdeSlaveHardDiskImage)
+	if (ConfigureParams.Ide[1].bUseDevice)
 	{
-		IMPORT_TEXTFIELD(ideSlaveHdImage, slaveIDE, ConfigureParams.HardDisk.szIdeSlaveHardDiskImage);
+		IMPORT_TEXTFIELD(ideSlaveHdImage, slaveIDE, ConfigureParams.Ide[1].sDeviceFile);
 	}
 	else
 	{
@@ -1131,23 +1131,23 @@ BOOL flag1, flag2;
 	// Define the IDE HD flag, and export the IDE HD path if one is selected
 	if (masterIDE.length > 0)
 	{
-		EXPORT_TEXTFIELD(masterIDE, ConfigureParams.HardDisk.szIdeMasterHardDiskImage);
-		ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage = YES;
+		EXPORT_TEXTFIELD(masterIDE, ConfigureParams.Ide[0].sDeviceFile);
+		ConfigureParams.Ide[0].bUseDevice = YES;
 	}
 	else
 	{
-		ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage = NO;
+		ConfigureParams.Ide[0].bUseDevice = NO;
 	}
 	
 	// IDE Slave
 	if (slaveIDE.length > 0)
 	{
-		EXPORT_TEXTFIELD(slaveIDE, ConfigureParams.HardDisk.szIdeSlaveHardDiskImage);
-		ConfigureParams.HardDisk.bUseIdeSlaveHardDiskImage = YES;
+		EXPORT_TEXTFIELD(slaveIDE, ConfigureParams.Ide[1].sDeviceFile);
+		ConfigureParams.Ide[1].bUseDevice = YES;
 	}
 	else
 	{
-		ConfigureParams.HardDisk.bUseIdeSlaveHardDiskImage = NO;
+		ConfigureParams.Ide[1].bUseDevice = NO;
 	}
 	
 	// Define the Gemdos flag, and export the Gemdos path if one is selected

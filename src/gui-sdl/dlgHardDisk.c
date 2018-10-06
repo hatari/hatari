@@ -164,21 +164,14 @@ static void DlgHardDisk_PrepScsi(int id)
 
 static void DlgHardDisk_PrepIde(int id)
 {
-	if (id == 0)
+	if (ConfigureParams.Ide[id].bUseDevice)
 	{
-		if (ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
-			File_ShrinkName(dlgname_ide, ConfigureParams.HardDisk.szIdeMasterHardDiskImage,
-			                diskdlg[DISKDLG_IDENAME].w);
-		else
-			dlgname_ide[0] = '\0';
+		File_ShrinkName(dlgname_ide, ConfigureParams.Ide[id].sDeviceFile,
+		                diskdlg[DISKDLG_IDENAME].w);
 	}
 	else
 	{
-		if (ConfigureParams.HardDisk.bUseIdeSlaveHardDiskImage)
-			File_ShrinkName(dlgname_ide, ConfigureParams.HardDisk.szIdeSlaveHardDiskImage,
-			                diskdlg[DISKDLG_IDENAME].w);
-		else
-			dlgname_ide[0] = '\0';
+		dlgname_ide[0] = '\0';
 	}
 
 	ide_id_txt[0] = '0' + id;
@@ -302,27 +295,14 @@ void DlgHardDisk_Main(void)
 			}
 			break;
 		 case DISKDLG_IDEEJECT:
-			if (i_id == 0)
-				ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage = false;
-			else
-				ConfigureParams.HardDisk.bUseIdeSlaveHardDiskImage = false;
+			ConfigureParams.Ide[i_id].bUseDevice = false;
 			dlgname_ide[0] = '\0';
 			break;
 		 case DISKDLG_IDEBROWSE:
-			if (i_id == 0)
-			{
-				if (SDLGui_FileConfSelect("IDE HD 0 image:", dlgname_ide,
-				                          ConfigureParams.HardDisk.szIdeMasterHardDiskImage,
-				                          diskdlg[DISKDLG_IDENAME].w, false))
-					ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage = true;
-			}
-			else
-			{
-				if (SDLGui_FileConfSelect("IDE HD 1 image:", dlgname_ide,
-				                          ConfigureParams.HardDisk.szIdeSlaveHardDiskImage,
-				                          diskdlg[DISKDLG_IDENAME].w, false))
-					ConfigureParams.HardDisk.bUseIdeSlaveHardDiskImage = true;
-			}
+			if (SDLGui_FileConfSelect("IDE HD 0 image:", dlgname_ide,
+			                          ConfigureParams.Ide[i_id].sDeviceFile,
+			                          diskdlg[DISKDLG_IDENAME].w, false))
+				ConfigureParams.Ide[i_id].bUseDevice = true;
 			break;
 
 		 case DISKDLG_GEMDOSEJECT:
