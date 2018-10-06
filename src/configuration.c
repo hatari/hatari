@@ -441,8 +441,6 @@ static const struct Config_Tag configs_HardDisk[] =
 	{ "nWriteProtection", Int_Tag, &ConfigureParams.HardDisk.nWriteProtection },
 	{ "bFilenameConversion", Bool_Tag, &ConfigureParams.HardDisk.bFilenameConversion },
 	{ "bGemdosHostTime", Bool_Tag, &ConfigureParams.HardDisk.bGemdosHostTime },
-	{ "bUseHardDiskImage", Bool_Tag, &ConfigureParams.Acsi[0].bUseDevice },
-	{ "szHardDiskImage", String_Tag, ConfigureParams.Acsi[0].sDeviceFile },
 	{ "bUseIdeMasterHardDiskImage", Bool_Tag, &ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage },
 	{ "bUseIdeSlaveHardDiskImage", Bool_Tag, &ConfigureParams.HardDisk.bUseIdeSlaveHardDiskImage },
 	{ "szIdeMasterHardDiskImage", String_Tag, ConfigureParams.HardDisk.szIdeMasterHardDiskImage },
@@ -450,11 +448,18 @@ static const struct Config_Tag configs_HardDisk[] =
 	{ NULL , Error_Tag, NULL }
 };
 
+static const struct Config_Tag configs_HardDisk_Old[] =
+{	/* only used for loading */
+	{ "bUseHardDiskImage", Bool_Tag, &ConfigureParams.Acsi[0].bUseDevice },
+	{ "szHardDiskImage", String_Tag, ConfigureParams.Acsi[0].sDeviceFile },
+	{ NULL , Error_Tag, NULL }
+};
+
 /* Used to load/save ACSI options */
 static const struct Config_Tag configs_Acsi[] =
 {
-	// { "bUseDevice0", Bool_Tag, &ConfigureParams.Acsi[0].bUseDevice },
-	// { "sDeviceFile0", String_Tag, ConfigureParams.Acsi[0].sDeviceFile },
+	{ "bUseDevice0", Bool_Tag, &ConfigureParams.Acsi[0].bUseDevice },
+	{ "sDeviceFile0", String_Tag, ConfigureParams.Acsi[0].sDeviceFile },
 	{ "bUseDevice1", Bool_Tag, &ConfigureParams.Acsi[1].bUseDevice },
 	{ "sDeviceFile1", String_Tag, ConfigureParams.Acsi[1].sDeviceFile },
 	{ "bUseDevice2", Bool_Tag, &ConfigureParams.Acsi[2].bUseDevice },
@@ -475,6 +480,8 @@ static const struct Config_Tag configs_Acsi[] =
 /* Used to load/save SCSI options */
 static const struct Config_Tag configs_Scsi[] =
 {
+	{ "bUseDevice0", Bool_Tag, &ConfigureParams.Scsi[0].bUseDevice },
+	{ "sDeviceFile0", String_Tag, ConfigureParams.Scsi[0].sDeviceFile },
 	{ "bUseDevice1", Bool_Tag, &ConfigureParams.Scsi[1].bUseDevice },
 	{ "sDeviceFile1", String_Tag, ConfigureParams.Scsi[1].sDeviceFile },
 	{ "bUseDevice2", Bool_Tag, &ConfigureParams.Scsi[2].bUseDevice },
@@ -487,8 +494,6 @@ static const struct Config_Tag configs_Scsi[] =
 	{ "sDeviceFile5", String_Tag, ConfigureParams.Scsi[5].sDeviceFile },
 	{ "bUseDevice6", Bool_Tag, &ConfigureParams.Scsi[6].bUseDevice },
 	{ "sDeviceFile6", String_Tag, ConfigureParams.Scsi[6].sDeviceFile },
-	{ "bUseDevice7", Bool_Tag, &ConfigureParams.Scsi[7].bUseDevice },
-	{ "sDeviceFile7", String_Tag, ConfigureParams.Scsi[7].sDeviceFile },
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -1028,6 +1033,7 @@ void Configuration_Load(const char *psFileName)
 		ConfigureParams.System.nMachineType = MACHINE_FALCON;
 		break;
 	}
+	Configuration_LoadSection(psFileName, configs_HardDisk_Old, "[HardDisk]");
 
 #if !WITH_SDL2	/* for old SDL1 keycode compatibility */
 	Configuration_LoadSection(psFileName, configs_ShortCutWithMod_Sdl1, "[ShortcutsWithModifiers]");
@@ -1040,6 +1046,8 @@ void Configuration_Load(const char *psFileName)
 	Configuration_LoadSection(psFileName, configs_Joystick5_Sdl1, "[Joystick5]");
 #endif
 
+	/* Now the regular loading of the sections:
+	 * Start with Log so that logging works as early as possible */
 	Configuration_LoadSection(psFileName, configs_Log, "[Log]");
 	Log_SetLevels();
 
@@ -1113,8 +1121,8 @@ void Configuration_Save(void)
 	Configuration_SaveSection(sConfigFileName, configs_Memory, "[Memory]");
 	Configuration_SaveSection(sConfigFileName, configs_Floppy, "[Floppy]");
 	Configuration_SaveSection(sConfigFileName, configs_HardDisk, "[HardDisk]");
-	/*Configuration_SaveSection(sConfigFileName, configs_Acsi, "[ACSI]");*/
-	/*Configuration_SaveSection(sConfigFileName, configs_Scsi, "[SCSI]");*/
+	Configuration_SaveSection(sConfigFileName, configs_Acsi, "[ACSI]");
+	Configuration_SaveSection(sConfigFileName, configs_Scsi, "[SCSI]");
 	Configuration_SaveSection(sConfigFileName, configs_Rom, "[ROM]");
 	Configuration_SaveSection(sConfigFileName, configs_Rs232, "[RS232]");
 	Configuration_SaveSection(sConfigFileName, configs_Printer, "[Printer]");
