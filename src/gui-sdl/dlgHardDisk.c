@@ -29,19 +29,22 @@ const char DlgHardDisk_fileid[] = "Hatari dlgHardDisk.c : " __DATE__ " " __TIME_
 #define DISKDLG_IDEPREVID         22
 #define DISKDLG_IDEID             24
 #define DISKDLG_IDENEXTID         25
-#define DISKDLG_IDEEJECT          26
-#define DISKDLG_IDEBROWSE         27
-#define DISKDLG_IDENAME           28
-#define DISKDLG_GEMDOSEJECT       31
-#define DISKDLG_GEMDOSBROWSE      32
-#define DISKDLG_GEMDOSNAME        33
-#define DISKDLG_GEMDOSCONV        34
-#define DISKDLG_DRIVESKIP         35
-#define DISKDLG_PROTOFF           37
-#define DISKDLG_PROTON            38
-#define DISKDLG_PROTAUTO          39
-#define DISKDLG_BOOTHD            40
-#define DISKDLG_EXIT              41
+#define DISKDLG_IDESWAPOFF        27
+#define DISKDLG_IDESWAPON         28
+#define DISKDLG_IDESWAPAUTO       29
+#define DISKDLG_IDEEJECT          30
+#define DISKDLG_IDEBROWSE         31
+#define DISKDLG_IDENAME           32
+#define DISKDLG_GEMDOSEJECT       35
+#define DISKDLG_GEMDOSBROWSE      36
+#define DISKDLG_GEMDOSNAME        37
+#define DISKDLG_GEMDOSCONV        38
+#define DISKDLG_DRIVESKIP         39
+#define DISKDLG_PROTOFF           41
+#define DISKDLG_PROTON            42
+#define DISKDLG_PROTAUTO          43
+#define DISKDLG_BOOTHD            44
+#define DISKDLG_EXIT              45
 
 static char acsi_id_txt[2];
 static char scsi_id_txt[2];
@@ -81,6 +84,10 @@ static SGOBJ diskdlg[] =
 	{ SGTEXT, 0, 0, 5,9, 19,1, "IDE HD" },
 	{ SGTEXT, 0, 0, 12,9, 1,1, ide_id_txt },
 	{ SGBUTTON, 0, 0, 15,9, 3,1, "\x03" },
+	{ SGTEXT, 0, 0, 19,9, 9,1, "Byteswap:" },
+	{ SGRADIOBUT, 0, 0, 29,9, 5,1, "Off" },
+	{ SGRADIOBUT, 0, 0, 35,9, 4,1, "On" },
+	{ SGRADIOBUT, 0, 0, 40,9, 6,1, "Auto" },
 	{ SGBUTTON, 0, 0, 47,9, 7,1, "E_ject" },
 	{ SGBUTTON, 0, 0, 55,9, 8,1, "Br_owse" },
 	{ SGTEXT, 0, 0, 2,10, 60,1, dlgname_ide },
@@ -91,8 +98,8 @@ static SGOBJ diskdlg[] =
 	{ SGBUTTON, 0, 0, 55,12, 8,1, "B_rowse" },
 	{ SGTEXT, 0, 0, 3,13, 58,1, dlgname_gdos },
 
-	{ SGCHECKBOX, 0, 0, 8,15, 42,1, "Atari <-> _host 8-bit file name conversion" },
-	{ SGCHECKBOX, 0, 0, 8,16, 42,1, "Add GEMDOS HD after ACSI/IDE _partitions" },
+	{ SGCHECKBOX, 0, 0, 8,15, 43,1, "Atari <-> _host 8-bit file name conversion" },
+	{ SGCHECKBOX, 0, 0, 8,16, 41,1, "Add GEMDOS HD after ACSI/IDE _partitions" },
 
 	{ SGTEXT, 0, 0, 8,18, 31,1, "Write protection:" },
 	{ SGRADIOBUT, 0, 0, 26,18, 5,1, "O_ff" },
@@ -164,6 +171,8 @@ static void DlgHardDisk_PrepScsi(int id)
 
 static void DlgHardDisk_PrepIde(int id)
 {
+	int idx;
+
 	if (ConfigureParams.Ide[id].bUseDevice)
 	{
 		File_ShrinkName(dlgname_ide, ConfigureParams.Ide[id].sDeviceFile,
@@ -174,8 +183,26 @@ static void DlgHardDisk_PrepIde(int id)
 		dlgname_ide[0] = '\0';
 	}
 
+	for (idx = DISKDLG_IDESWAPOFF; idx <= DISKDLG_IDESWAPAUTO; idx++)
+		diskdlg[idx].state &= ~SG_SELECTED;
+	diskdlg[DISKDLG_IDESWAPOFF + ConfigureParams.Ide[id].nByteSwap].state |= SG_SELECTED;
+
 	ide_id_txt[0] = '0' + id;
 	ide_id_txt[1] = '\0';
+}
+
+static void DlgHardDisk_ReadBackIdeByteSwapSetting(int id)
+{
+	int idx;
+
+	for (idx = DISKDLG_IDESWAPOFF; idx <= DISKDLG_IDESWAPAUTO; idx++)
+	{
+		if (diskdlg[idx].state & SG_SELECTED)
+		{
+			ConfigureParams.Ide[id].nByteSwap = idx - DISKDLG_IDESWAPOFF;
+			break;
+		}
+	}
 }
 
 /**
@@ -197,9 +224,9 @@ void DlgHardDisk_Main(void)
 		diskdlg[DISKDLG_BOOTHD].state &= ~SG_SELECTED;
 
 	/* Hard disk images: */
-	DlgHardDisk_PrepAcsi(0);
-	DlgHardDisk_PrepScsi(0);
-	DlgHardDisk_PrepIde(0);
+	DlgHardDisk_PrepAcsi(a_id);
+	DlgHardDisk_PrepScsi(s_id);
+	DlgHardDisk_PrepIde(i_id);
 
 	/* GEMDOS hard disk directory: */
 	if (ConfigureParams.HardDisk.bUseHardDiskDirectories)
@@ -263,7 +290,7 @@ void DlgHardDisk_Main(void)
 			}
 			break;
 		 case DISKDLG_SCSINEXTID:
-			if (s_id < 6)
+			if (s_id < 7)
 			{
 				++s_id;
 				DlgHardDisk_PrepScsi(s_id);
@@ -281,6 +308,7 @@ void DlgHardDisk_Main(void)
 			break;
 
 		 case DISKDLG_IDEPREVID:
+			DlgHardDisk_ReadBackIdeByteSwapSetting(i_id);
 			if (i_id > 0)
 			{
 				--i_id;
@@ -288,6 +316,7 @@ void DlgHardDisk_Main(void)
 			}
 			break;
 		 case DISKDLG_IDENEXTID:
+			DlgHardDisk_ReadBackIdeByteSwapSetting(i_id);
 			if (i_id < 1)
 			{
 				++i_id;
@@ -321,6 +350,7 @@ void DlgHardDisk_Main(void)
 	        && but != SDLGUI_ERROR && !bQuitProgram);
 
 	/* Read values from dialog: */
+	DlgHardDisk_ReadBackIdeByteSwapSetting(i_id);
 	for (i = DISKDLG_PROTOFF; i <= DISKDLG_PROTAUTO; i++)
 	{
 		if (diskdlg[i].state & SG_SELECTED)
