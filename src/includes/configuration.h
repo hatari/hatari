@@ -230,10 +230,17 @@ typedef struct
   char sDeviceFile[FILENAME_MAX];
 } CNF_SCSIDEV;
 
+typedef enum
+{
+  BYTESWAP_OFF,
+  BYTESWAP_ON,
+  BYTESWAP_AUTO
+} BYTESWAPPING;
+
 typedef struct
 {
   bool bUseDevice;
-  bool bByteSwap;
+  BYTESWAPPING nByteSwap;
   char sDeviceFile[FILENAME_MAX];
 } CNF_IDEDEV;
 

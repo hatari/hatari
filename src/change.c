@@ -103,7 +103,7 @@ bool Change_DoNeedReset(CNF_PARAMS *current, CNF_PARAMS *changed)
 	for (i = 0; i < MAX_IDE_DEVS; i++)
 	{
 		if (changed->Ide[i].bUseDevice != current->Ide[i].bUseDevice
-		    || changed->Ide[i].bByteSwap != current->Ide[i].bByteSwap
+		    || changed->Ide[i].nByteSwap != current->Ide[i].nByteSwap
 		    || (strcmp(changed->Ide[i].sDeviceFile, current->Ide[i].sDeviceFile)
 		        && changed->Ide[i].bUseDevice))
 			return true;

@@ -501,10 +501,10 @@ static const struct Config_Tag configs_Scsi[] =
 static const struct Config_Tag configs_Ide[] =
 {
 	{ "bUseDevice0", Bool_Tag, &ConfigureParams.Ide[0].bUseDevice },
-	{ "bByteSwap0", Bool_Tag, &ConfigureParams.Ide[0].bByteSwap },
+	{ "nByteSwap0", Int_Tag, &ConfigureParams.Ide[0].nByteSwap },
 	{ "sDeviceFile0", String_Tag, ConfigureParams.Ide[0].sDeviceFile },
 	{ "bUseDevice1", Bool_Tag, &ConfigureParams.Ide[1].bUseDevice },
-	{ "bByteSwap1", Bool_Tag, &ConfigureParams.Ide[1].bByteSwap },
+	{ "nByteSwap1", Int_Tag, &ConfigureParams.Ide[1].nByteSwap },
 	{ "sDeviceFile1", String_Tag, ConfigureParams.Ide[1].sDeviceFile },
 };
 
@@ -679,7 +679,7 @@ void Configuration_SetDefault(void)
 	for (i = 0; i < MAX_IDE_DEVS; i++)
 	{
 		ConfigureParams.Ide[i].bUseDevice = false;
-		ConfigureParams.Ide[i].bByteSwap = true;
+		ConfigureParams.Ide[i].nByteSwap = BYTESWAP_AUTO;
 		strcpy(ConfigureParams.Ide[i].sDeviceFile, psWorkingDir);
 	}
 
@@ -1190,7 +1190,7 @@ void Configuration_MemorySnapShot_Capture(bool bSave)
 	for (i = 0; i < MAX_IDE_DEVS; i++)
 	{
 		MemorySnapShot_Store(&ConfigureParams.Ide[i].bUseDevice, sizeof(ConfigureParams.Ide[i].bUseDevice));
-		MemorySnapShot_Store(&ConfigureParams.Ide[i].bByteSwap, sizeof(ConfigureParams.Ide[i].bByteSwap));
+		MemorySnapShot_Store(&ConfigureParams.Ide[i].nByteSwap, sizeof(ConfigureParams.Ide[i].nByteSwap));
 		MemorySnapShot_Store(ConfigureParams.Ide[i].sDeviceFile, sizeof(ConfigureParams.Ide[i].sDeviceFile));
 	}
 

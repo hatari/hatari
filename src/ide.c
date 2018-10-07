@@ -333,6 +333,7 @@ struct BlockDriverState {
     void *opaque;
     off_t file_size;
     int media_changed;
+    int byteswap;
 
     /* I/O stats (display with "info blockstats"). */
     uint64_t rd_bytes;
@@ -445,7 +446,6 @@ static void bdrv_set_locked(BlockDriverState *bs, int locked)
 	bs->locked = locked;
 }
 
-
 /* return < 0 if error. See bdrv_write() for the return codes */
 static int bdrv_read(BlockDriverState *bs, int64_t sector_num,
                      uint8_t *buf, int nb_sectors)
@@ -468,12 +468,21 @@ static int bdrv_read(BlockDriverState *bs, int64_t sector_num,
 		fprintf(stderr,"IDE: bdrv_read error (%d != %d length) at sector %lu!\n", ret, len, (unsigned long)sector_num);
 		return -EINVAL;
 	}
-	else
+
+	bs->rd_bytes += (unsigned) len;
+	bs->rd_ops ++;
+
+	if (bs->byteswap)
 	{
-		bs->rd_bytes += (unsigned) len;
-		bs->rd_ops ++;
-		return 0;
+		uint16_t *buf16 = (uint16_t *)buf;
+		while (len > 0) {
+			*buf16 = SDL_Swap16(*buf16);
+			buf16++;
+			len -= 2;
+		}
 	}
+
+	return 0;
 }
 
 
@@ -486,7 +495,8 @@ static int bdrv_read(BlockDriverState *bs, int64_t sector_num,
 static int bdrv_write(BlockDriverState *bs, int64_t sector_num,
                       const uint8_t *buf, int nb_sectors)
 {
-	int ret, len;
+	int ret, len, idx;
+	uint16_t *buf16;
 
 	if (!bs->fhndl)
 		return -ENOMEDIUM;
@@ -500,18 +510,34 @@ static int bdrv_write(BlockDriverState *bs, int64_t sector_num,
 		perror("bdrv_write");
 		return -errno;
 	}
-	ret = fwrite(buf, 1, len, bs->fhndl);
-	if (ret != len)
+
+	if (!bs->byteswap)
 	{
-		fprintf(stderr,"IDE: bdrv_write error (%d != %d length) at sector %lu!\n", ret, len,  (unsigned long)sector_num);
-		return -EIO;
+		ret = fwrite(buf, 1, len, bs->fhndl);
 	}
 	else
 	{
-		bs->wr_bytes += (unsigned) len;
-		bs->wr_ops ++;
-		return 0;
+		buf16 = malloc(len);
+		if (!buf16)
+			return -ENOMEM;
+		for (idx = 0; idx < len; idx += 2)
+		{
+			buf16[idx / 2] = SDL_Swap16(*(const uint16_t *)&buf[idx]);
+		}
+		ret = fwrite(buf16, 1, len, bs->fhndl);
+		free(buf16);
 	}
+	if (ret != len)
+	{
+		fprintf(stderr,"IDE: bdrv_write error (%d != %d length) at sector %lu!\n",
+		        ret, len,  (unsigned long)sector_num);
+		return -EIO;
+	}
+
+	bs->wr_bytes += (unsigned) len;
+	bs->wr_ops ++;
+
+	return 0;
 }
 
 
@@ -2671,8 +2697,15 @@ void Ide_Init(void)
 		memset(hd_table[i], 0, sizeof(BlockDriverState));
 		if (ConfigureParams.Ide[i].bUseDevice)
 		{
+			int is_byteswap;
 			bdrv_open(hd_table[i], ConfigureParams.Ide[i].sDeviceFile, 0);
-			nIDEPartitions += HDC_PartitionCount(hd_table[i]->fhndl, TRACE_IDE);
+			nIDEPartitions += HDC_PartitionCount(hd_table[i]->fhndl, TRACE_IDE, &is_byteswap);
+			/* Our IDE implementation is little endian by default,
+			 * so we need to byteswap if the image is not swapped! */
+			if (ConfigureParams.Ide[i].nByteSwap == BYTESWAP_AUTO)
+				hd_table[i]->byteswap = !is_byteswap;
+			else
+				hd_table[i]->byteswap = !ConfigureParams.Ide[i].nByteSwap;
 		}
 	}
 

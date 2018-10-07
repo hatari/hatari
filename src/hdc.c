@@ -578,9 +578,8 @@ static void HDC_EmulateCommandPacket(SCSI_CTRLR *ctr)
  *   http://lxr.free-electrons.com/source/block/partitions/atari.c
  *   Normal and extended partition tables are described in:
  *   http://dev-docs.atariforge.org/files/AHDI_3_RN_4-18-1990.pdf
- * - Support partition tables with other endianness
  */
-int HDC_PartitionCount(FILE *fp, const Uint64 tracelevel)
+int HDC_PartitionCount(FILE *fp, const Uint64 tracelevel, int *pIsByteSwapped)
 {
 	unsigned char *pinfo, bootsector[512];
 	Uint32 start, sectors, total = 0;
@@ -596,6 +595,28 @@ int HDC_PartitionCount(FILE *fp, const Uint64 tracelevel)
 	{
 		perror("HDC_PartitionCount");
 		return 0;
+	}
+
+	/* Try to guess whether we've got to swap the image? */
+	if (pIsByteSwapped)
+	{
+		*pIsByteSwapped = (bootsector[0x1fe] == 0xaa && bootsector[0x1ff] == 0x55)
+		    || (bootsector[0x1c6] == 'G' && bootsector[0x1c8] == 'M' && bootsector[0x1c9] == 'E')
+		    || (bootsector[0x1c6] == 'B' && bootsector[0x1c8] == 'M' && bootsector[0x1c9] == 'G')
+		    || (bootsector[0x1c6] == 'X' && bootsector[0x1c8] == 'M' && bootsector[0x1c9] == 'G')
+		    || (bootsector[0x1c6] == 'L' && bootsector[0x1c8] == 'X' && bootsector[0x1c9] == 'N')
+		    || (bootsector[0x1c6] == 'R' && bootsector[0x1c8] == 'W' && bootsector[0x1c9] == 'A')
+		    || (bootsector[0x1c6] == 'S' && bootsector[0x1c8] == 'P' && bootsector[0x1c9] == 'W');
+
+		if (*pIsByteSwapped)
+		{
+			for (i = 0; i < (int)sizeof(bootsector); i += 2)
+			{
+				uint8_t b = bootsector[i];
+				bootsector[i] = bootsector[i + 1];
+				bootsector[i + 1] = b;
+			}
+		}
 	}
 
 	if (bootsector[0x1FE] == 0x55 && bootsector[0x1FF] == 0xAA)
@@ -769,7 +790,7 @@ bool HDC_Init(void)
 		if (HDC_InitDevice(&AcsiBus.devs[i], ConfigureParams.Acsi[i].sDeviceFile) == 0)
 		{
 			bAcsiEmuOn = true;
-			nAcsiPartitions += HDC_PartitionCount(AcsiBus.devs[i].image_file, TRACE_SCSI_CMD);
+			nAcsiPartitions += HDC_PartitionCount(AcsiBus.devs[i].image_file, TRACE_SCSI_CMD, NULL);
 		}
 	}
 
