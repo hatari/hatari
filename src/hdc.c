@@ -197,10 +197,12 @@ static void HDC_Cmd_Inquiry(SCSI_CTRLR *ctr)
 	LOG_TRACE(TRACE_SCSI_CMD, "HDC: INQUIRY (%s)\n", HDC_CmdInfoStr(ctr));
 
 	buf = HDC_PrepRespBuf(ctr, count);
-	memcpy(buf, inquiry_bytes, count);
-
 	if (count > (int)sizeof(inquiry_bytes))
+	{
+		memset(&buf[sizeof(inquiry_bytes)], 0, count - sizeof(inquiry_bytes));
 		count = sizeof(inquiry_bytes);
+	}
+	memcpy(buf, inquiry_bytes, count);
 
 	/* For unsupported LUNs set the Peripheral Qualifier and the
 	 * Peripheral Device Type according to the SCSI standard */
