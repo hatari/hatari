@@ -4009,12 +4009,13 @@ kludge_me_do:
 // address = format $2 stack frame address field
 static void ExceptionX (int nr, uaecptr address)
 {
+	uaecptr pc = m68k_getpc();
 	regs.exception = nr;
 	if (cpu_tracer) {
 		cputrace.state = nr;
 	}
 	if (!regs.s) {
-		regs.instruction_pc_user_exception = m68k_getpc();
+		regs.instruction_pc_user_exception = pc;
 	}
 
 #ifdef WINUAE_FOR_HATARI
@@ -4049,8 +4050,18 @@ static void ExceptionX (int nr, uaecptr address)
 
 #ifdef JIT
 	if (currprefs.cachesize)
-		regs.instruction_pc = address == -1 ? m68k_getpc () : address;
+		regs.instruction_pc = address == -1 ? pc : address;
 #endif
+
+#ifndef WINUAE_FOR_HATARI
+	if (debug_illegal && !in_rom(pc)) {
+		if (nr <= 63 && (debug_illegal_mask & ((uae_u64)1 << nr))) {
+			write_log(_T("Exception %d breakpoint\n"), nr);
+			activate_debugger();
+		}
+	}
+#endif
+
 #ifdef CPUEMU_13
 	if (currprefs.cpu_cycle_exact && currprefs.cpu_model <= 68010)
 		Exception_ce000 (nr);
@@ -4065,14 +4076,6 @@ static void ExceptionX (int nr, uaecptr address)
 			Exception_normal (nr);
 		}
 
-#ifndef WINUAE_FOR_HATARI
-	if (debug_illegal && !in_rom (M68K_GETPC)) {
-		if (nr <= 63 && (debug_illegal_mask & ((uae_u64)1 << nr))) {
-			write_log (_T("Exception %d breakpoint\n"), nr);
-			activate_debugger ();
-		}
-	}
-#endif
 	regs.exception = 0;
 	if (cpu_tracer) {
 		cputrace.state = 0;
@@ -6229,28 +6232,46 @@ static void m68k_run_jit(void)
 #endif
 
 	for (;;) {
+#ifdef USE_STRUCTURED_EXCEPTION_HANDLING
+		__try {
+#endif
+			for (;;) {
 #ifdef WINUAE_FOR_HATARI
-		//m68k_dumpstate_file(stderr, NULL, 0xffffffff);
-		if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
-		{
-			int FrameCycles, HblCounterVideo, LineCycles;
-			Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
-			LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
-			m68k_disasm_file(stderr, m68k_getpc (), NULL, m68k_getpc (), 1);
-		}
+				//m68k_dumpstate_file(stderr, NULL, 0xffffffff);
+				if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
+				{
+					int FrameCycles, HblCounterVideo, LineCycles;
+					Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+					LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
+					m68k_disasm_file(stderr, m68k_getpc (), NULL, m68k_getpc (), 1);
+				}
 #endif
 
-		((compiled_handler*)(pushall_call_handler))();
-		/* Whenever we return from that, we should check spcflags */
-#ifndef WINUAE_FOR_HATARI
-		check_uae_int_request();
-#endif
-		if (regs.spcflags) {
-			if (do_specialties (0)) {
-				return;
+				((compiled_handler*)(pushall_call_handler))();
+				/* Whenever we return from that, we should check spcflags */
+				check_uae_int_request();
+				if (regs.spcflags) {
+					if (do_specialties(0)) {
+						return;
+					}
+				}
 			}
+
+#ifdef USE_STRUCTURED_EXCEPTION_HANDLING
+		} __except (EvalException(GetExceptionInformation())) {
+			// Something very bad happened, generate fake bus error exception
+			// Either emulation continues normally or crashes.
+			// Without this it would have crashed in any case..
+			uaecptr pc = M68K_GETPC;
+			write_log(_T("Unhandled JIT exception! PC=%08x\n"), pc);
+			if (pc & 1)
+				Exception(3);
+			else
+				Exception(2);
 		}
+#endif
 	}
+
 }
 #endif /* JIT */
 
@@ -9960,6 +9981,16 @@ void exception3b (uae_u32 opcode, uaecptr addr, bool w, bool i, uaecptr pc)
 	exception3f (opcode, addr, w, i, false, pc, true);
 }
 
+void exception2_setup(uaecptr addr, bool read, int size, uae_u32 fc)
+{
+	last_addr_for_exception_3 = m68k_getpc() + bus_error_offset;
+	last_fault_for_exception_3 = addr;
+	last_writeaccess_for_exception_3 = read == 0;
+	last_instructionaccess_for_exception_3 = (fc & 1) == 0;
+	last_op_for_exception_3 = regs.opcode;
+	last_notinstruction_for_exception_3 = exception_in_exception != 0;
+}
+
 void exception2 (uaecptr addr, bool read, int size, uae_u32 fc)
 {
 	if (currprefs.mmu_model) {
@@ -9970,12 +10001,7 @@ void exception2 (uaecptr addr, bool read, int size, uae_u32 fc)
 			mmu_bus_error (addr, 0, fc, read == false, size, 0, true);
 		}
 	} else {
-		last_addr_for_exception_3 = m68k_getpc() + bus_error_offset;
-		last_fault_for_exception_3 = addr;
-		last_writeaccess_for_exception_3 = read == 0;
-		last_instructionaccess_for_exception_3 = (fc & 1) == 0;
-		last_op_for_exception_3 = regs.opcode;
-		last_notinstruction_for_exception_3 = exception_in_exception != 0;
+		exception2_setup(addr, read, size, fc);
 		THROW(2);
 	}
 }

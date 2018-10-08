@@ -56,6 +56,7 @@
 #define TRACE_MATCH_INS 3
 #define TRACE_RANGE_PC 4
 #define TRACE_SKIP_LINE 5
+#define TRACE_RAM_PC 6
 #define TRACE_CHECKONLY 10
 
 static int trace_mode;
@@ -217,7 +218,7 @@ static const TCHAR help[] = {
 	_T("  W <addr> 'string'     Write into Amiga memory.\n")
 	_T("  Wf <addr> <endaddr> <bytes or string like above>, fill memory.\n")
 	_T("  Wc <addr> <endaddr> <destaddr>, copy memory.\n")
-	_T("  w <num> <address> <length> <R/W/I/F/C> [<value>[.x]] (read/write/opcode/freeze/mustchange).\n")
+	_T("  w <num> <address> <length> <R/W/I> <F/C> [<value>[.x]] (read/write/opcode) (freeze/mustchange).\n")
 	_T("                        Add/remove memory watchpoints.\n")
 	_T("  wd [<0-1>]            Enable illegal access logger. 1 = enable break.\n")
 	_T("  L <file> <addr> [<n>] Load a block of Amiga memory.\n")
@@ -1170,10 +1171,9 @@ static uaecptr nextaddr (uaecptr addr, uaecptr last, uaecptr *end)
 {
 	static uaecptr old;
 	int next = last;
-	if (last && 0) {
-		if (addr >= last)
-			return 0xffffffff;
-		return addr + 1;
+	if (last && addr >= last) {
+		old = 0xffffffff;
+		return 0xffffffff;
 	}
 	if (addr == 0xffffffff) {
 		if (end)
@@ -3073,8 +3073,8 @@ static int memwatch_func (uaecptr addr, int rwi, int size, uae_u32 *valp, uae_u3
 }
 
 #endif	/* WINUAE_FOR_HATARI */
-#if 0
 
+#ifndef WINUAE_FOR_HATARI
 static int mmu_hit (uaecptr addr, int size, int rwi, uae_u32 *v);
 
 static uae_u32 REGPARAM2 mmu_lget (uaecptr addr)
@@ -4631,7 +4631,7 @@ int instruction_breakpoint (TCHAR **c)
 			return 0;
 		}
 	}
-	trace_mode = TRACE_CHECKONLY;
+	trace_mode = TRACE_RAM_PC;
 	return 1;
 }
 
@@ -5130,7 +5130,7 @@ end:
 static void find_ea (TCHAR **inptr)
 {
 	uae_u32 ea, sea, dea;
-	uaecptr addr, end;
+	uaecptr addr, end, end2;
 	int hits = 0;
 
 	addr = 0;
@@ -5142,8 +5142,9 @@ static void find_ea (TCHAR **inptr)
 			end = readhex (inptr);
 	}
 	console_out_f (_T("Searching from %08X to %08X\n"), addr, end);
-	while((addr = nextaddr (addr, end, &end)) != 0xffffffff) {
-		if ((addr & 1) == 0 && addr + 6 <= end) {
+	end2 = 0;
+	while((addr = nextaddr (addr, end, &end2)) != 0xffffffff) {
+		if ((addr & 1) == 0 && addr + 6 <= end2) {
 			sea = 0xffffffff;
 			dea = 0xffffffff;
 			m68k_disasm_ea (addr, NULL, 1, &sea, &dea, 0xffffffff);
@@ -6023,6 +6024,16 @@ void debug (void)
 			if (trace_mode) {
 				if (trace_mode == TRACE_MATCH_PC && trace_param1 == pc)
 					bp = -1;
+				if (trace_mode == TRACE_RAM_PC) {
+					addrbank *ab = &get_mem_bank(pc);
+					if (ab->flags & ABFLAG_RAM) {
+						uae_u16 ins = get_word_debug(pc);
+						// skip JMP xxxxxx (LVOs)
+						if (ins != 0x4ef9) {
+							bp = -1;
+						}
+					}
+				}
 				if ((processptr || processname) && notinrom()) {
 					uaecptr execbase = get_long_debug (4);
 					uaecptr activetask = get_long_debug (execbase + 276);
