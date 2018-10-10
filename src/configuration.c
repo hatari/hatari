@@ -506,6 +506,7 @@ static const struct Config_Tag configs_Ide[] =
 	{ "bUseDevice1", Bool_Tag, &ConfigureParams.Ide[1].bUseDevice },
 	{ "nByteSwap1", Int_Tag, &ConfigureParams.Ide[1].nByteSwap },
 	{ "sDeviceFile1", String_Tag, ConfigureParams.Ide[1].sDeviceFile },
+	{ NULL , Error_Tag, NULL }
 };
 
 /* Used to load/save ROM options */
