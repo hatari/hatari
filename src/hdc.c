@@ -297,30 +297,15 @@ static void HDC_Cmd_RequestSense(SCSI_CTRLR *ctr)
 
 
 /**
- * Mode sense - Get parameters from disk.
+ * Mode sense - Vendor specific page 00h.
  * (Just enough to make the HDX tool from AHDI 5.0 happy)
  */
-static void HDC_Cmd_ModeSense(SCSI_CTRLR *ctr)
+static void HDC_CmdModeSense0x00(SCSI_DEV *dev, SCSI_CTRLR *ctr)
 {
-	SCSI_DEV *dev = &ctr->devs[ctr->target];
-	Uint8 *buf;
-
-	LOG_TRACE(TRACE_SCSI_CMD, "HDC: MODE SENSE (%s).\n", HDC_CmdInfoStr(ctr));
-
-	dev->bSetLastBlockAddr = false;
-
-	if (ctr->command[2] != 0 || HDC_GetCount(ctr) != 0x10)
-	{
-		Log_Printf(LOG_TODO, "HDC: Unsupported MODE SENSE command\n");
-		ctr->status = HD_STATUS_ERROR;
-		dev->nLastError = HD_REQSENS_INVARG;
-		return;
-	}
-
-	buf = HDC_PrepRespBuf(ctr, 16);
+	Uint8 *buf = HDC_PrepRespBuf(ctr, 16);
 
 	buf[0] = 0;
-	buf[1] = 0;
+	buf[1] = 14;
 	buf[2] = 0;
 	buf[3] = 8;
 	buf[4] = 0;
@@ -339,6 +324,81 @@ static void HDC_Cmd_ModeSense(SCSI_CTRLR *ctr)
 	buf[13] = 0;
 	buf[14] = 0;
 	buf[15] = 0;
+}
+
+
+/**
+ * Mode sense - Rigid disk geometry page (requested by ASV).
+ */
+static void HDC_CmdModeSense0x04(SCSI_DEV *dev, SCSI_CTRLR *ctr)
+{
+	Uint8 *buf = HDC_PrepRespBuf(ctr, 24);
+
+	buf[0] = 4;
+	buf[1] = 22;
+
+	buf[2] = dev->hdSize >> 23;  // Number of cylinders, high
+	buf[3] = dev->hdSize >> 15;  // Number of cylinders, med
+	buf[4] = dev->hdSize >> 7;   // Number of cylinders, low
+
+	buf[5] = 128;    // Number of heads
+
+	buf[6] = 0;
+	buf[7] = 0;
+	buf[8] = 0;
+
+	buf[9] = 0;
+	buf[10] = 0;
+	buf[11] = 0;
+
+	buf[12] = 0;
+	buf[13] = 0;
+
+	buf[14] = 0;
+	buf[15] = 0;
+	buf[16] = 0;
+
+	buf[17] = 0;
+
+	buf[18] = 0;
+
+	buf[19] = 0;
+
+	buf[20] = 0;
+	buf[21] = 0;
+
+	buf[22] = 0;
+	buf[23] = 0;
+}
+
+
+/**
+ * Mode sense - Get parameters from disk.
+ */
+static void HDC_Cmd_ModeSense(SCSI_CTRLR *ctr)
+{
+	SCSI_DEV *dev = &ctr->devs[ctr->target];
+
+	LOG_TRACE(TRACE_SCSI_CMD, "HDC: MODE SENSE (%s).\n", HDC_CmdInfoStr(ctr));
+
+	dev->bSetLastBlockAddr = false;
+
+        switch(ctr->command[2])
+        {
+        case 0x00:
+            HDC_CmdModeSense0x00(dev, ctr);
+            break;
+
+        case 0x04:
+            HDC_CmdModeSense0x04(dev, ctr);
+            break;
+
+        default:
+            Log_Printf(LOG_TODO, "HDC: Unsupported MODE SENSE command\n");
+            ctr->status = HD_STATUS_ERROR;
+            dev->nLastError = HD_REQSENS_INVARG;
+            return;
+	}
 
 	ctr->status = HD_STATUS_OK;
 	dev->nLastError = HD_REQSENS_OK;
