@@ -593,7 +593,7 @@ typedef struct
 	Uint8		VBlank_signal;		/* 0=vblank off  1=vblank on */
 	Uint8		VSync_signal;		/* 0=vsync off   1=vsync on */
 
-	SHIFTER_LINE	ShifterLines[ MAX_SCANLINES_PER_FRAME ];
+	SHIFTER_LINE	ShifterLines[ MAX_SCANLINES_PER_FRAME+1 ];
 } SHIFTER_FRAME;
 
 
