@@ -1,7 +1,7 @@
 /*
  * Hatari - nf_scsidrv.c
  *
- * Copyright (C) 2015-2016 by Uwe Seimet
+ * Copyright (C) 2015-2016, 2018 by Uwe Seimet
  *
  * This file is distributed under the GNU General Public License, version 2
  * or at your option any later version. Read the file gpl.txt for details.
@@ -28,6 +28,7 @@ const char NfScsiDrv_fileid[] = "Hatari nf_scsidrv.c : " __DATE__ " " __TIME__;
 #include "stMemory.h"
 #include "log.h"
 #include "gemdos_defines.h"
+#include "m68000.h"
 #include "nf_scsidrv.h"
 
 // The driver interface version, 1.02
@@ -173,11 +174,13 @@ static int scsidrv_interface_version(Uint32 stack)
 
 static int scsidrv_interface_features(Uint32 stack)
 {
+        Uint32 st_bus_name = STMemory_ReadLong(stack);
 	char *busName = read_stack_pointer(&stack);
 	Uint32 features = read_stack_long(&stack);
 	Uint32 transferLen = read_stack_long(&stack);
 
 	strncpy(busName, BUS_NAME, 20);
+        M68000_Flush_Data_Cache(st_bus_name, 20);
 	write_word(features, BUS_FEATURES);
 	write_long(transferLen, BUS_TRANSFER_LEN);
 
@@ -288,8 +291,10 @@ static int scsidrv_inout(Uint32 stack)
 	Uint32 dir = read_stack_long(&stack);
 	unsigned char *cmd = read_stack_pointer(&stack);
 	Uint32 cmd_len = read_stack_long(&stack);
+        Uint32 st_buffer = STMemory_ReadLong(stack);
 	unsigned char *buffer = read_stack_pointer(&stack);
 	Uint32 transfer_len = read_stack_long(&stack);
+        Uint32 st_sense_buffer = STMemory_ReadLong(stack);
 	unsigned char *sense_buffer = read_stack_pointer(&stack);
 	Uint32 timeout;
 	int status;
@@ -331,6 +336,7 @@ static int scsidrv_inout(Uint32 stack)
 			// Sense Key and ASC
 			sense_buffer[2] = 0x05;
 			sense_buffer[12] = 0x25;
+                        M68000_Flush_Data_Cache(st_sense_buffer, 18);
 
 			LOG_TRACE(TRACE_SCSIDRV,
 			          "\n               Sense Key=$%02X, ASC=$%02X, ASCQ=$00",
@@ -415,7 +421,13 @@ static int scsidrv_inout(Uint32 stack)
 		}
 	}
 
-	return status;
+        M68000_Flush_Data_Cache(st_sense_buffer, 18);
+        if (!dir)
+        {
+            M68000_Flush_All_Caches(st_buffer, transfer_len);
+        }
+
+        return status;
 }
 
 // SCSI Driver: Error()
