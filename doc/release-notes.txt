@@ -12,6 +12,11 @@ Note:
   SDL 1.2 will be dropped in a future release.
 
 Emulation:
+- CPU:
+  - Fix 68030 MMU PTEST
+  - Fix: only enable cache emulation when relevant
+- DSP:
+  - Fix DSP ROM tables (sin, mulaw & a-law)
 - Blitter:
   - Fix: a rare case in cycle exact mode when bus is shared between CPU
     and blitter : the last word of a transfer could be wrong if bus was
@@ -22,21 +27,42 @@ Emulation:
 - Video:
   - Handle VBlank signal and mask the 2 last lines when bottom border
     is removed
+- Hard disks:
+  - Experimental support for the NCR5380 SCSI chip in Falcon mode
 - Misc:
   - Correctly emulate bus error handling for STE lightpen registers
   - Experimental support for TOS 2.07 (the "Sparrow" TOS)
-  - Experimental support for the NCR5380 SCSI chip in Falcon mode
 
 Emulator:
 - Misc:
+  - "patch TOS timer-D" speedup option is now disabled by default
+  - Allow up to 512MB of TT-RAM (increased from 256 MB)
+  - Additional ROM patches applied to TOS v4.x for 040 & 060
+  - Improve memory snapshot save/restore reliability
+    (e.g. for pending interrupts)
+- SDL GUI:
   - Show warning dialog when cartridge file is disabled due to conflict
     with other features
+  - Fix halt dialog crash on double bus error before SDL init
+  - Add FPU softfloat option
+  - Move joystick info to second statusbar line
+  - Few additional special keys can be remapped
+- On MacOS:
+  - Save screenshots by default to ~/Desktop/
+  - Minor GUI updates for v2.1 changes
+- Disk handling:
+  - IDE byte-swap option added to config file & GUI
+  - Fix: NF SCSI driver didn't invalidate cache for changed memory area
+  - Fix: *.INF file in disk image being overridden even when neither
+    VDI mode or autostart program wasn't specified (v2.1 regression)
+  - Fix: GEMDOS HD Fwrite() can be done from ROM area
 - Media handling:
   - Fix: AVI recording with PNG codec could be wrongly limited to 4GB
     with some OSes
 - Screen handling:
   - Fix: TOS <= v2.x crashes when mouse is moved in 16x16 area at
     the bottom right corner in VDI mode (regression in Hatari v1.0)
+  - Fix: --tos-res high setting
 - Debugging:
   - Fix: DSP/CPU profile "addresses" commands output line count when
     paging.  Tell also when it wraps to start
@@ -50,6 +76,7 @@ Emulator:
   - Add virtual V0..V7 registers to "register" command for calculations
   - "memdump" and "memwrite" commands output & input can now be also
     word or long sized instead of bytes
+  - Show arguments in DSP XBios call traces
 - Options:
   - Fix: "--memsize 0" legacy option
   - Disable "--timer-d" option by default.  Increases CPU usage
@@ -78,11 +105,20 @@ Emulator:
 Tools:
 - Support both Python v2 & v3 also in atari-hd-image
   (Arch/Clear Linux)
-- Install hatari-prg-args tool by default and fix its
-  program argument setting for recent EmuTOS versions
+- hatari-prg-args script:
+  - Installed by default
+  - Fix program argument setting for recent EmuTOS versions
+  - Support argument setting also for programs run
+    from disk images
 - Few additional tests for validating Hatari functionality.
   Almost all tests are now integrated with CTest framework.  Use
   e.g. "ctest -j4" command to run them
+
+Building:
+- Change Hatari compilation C standard to gnu99
+- Fix building when DSP or tracing is disabled
+- Add gitlab continuous integration Yaml file
+- Many -fsanitize
 
 Documentation:
 - Add notes about (new default) PortMidi support to MIDI usage
