@@ -2,7 +2,7 @@
 #
 # A Python Gtk UI for Hatari that can embed the Hatari emulator window.
 #
-# Requires PyGtk (python-gtk2) package and its dependencies to be present.
+# Requires Gtk 3.x and Python GObject Introspection libraries.
 #
 # Copyright (C) 2008-2018 by Eero Tamminen
 #

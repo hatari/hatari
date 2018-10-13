@@ -2,6 +2,12 @@
 User visible changes in Hatari (Python Gtk) UI
 ----------------------------------------------
 
+2018-10:
+- Ported UI code to Gtk v3 by using GObject introspection
+  (instead of PyGtk v2 that supports only Python v2)
+- Support Hatari's new ACSI/IDE harddisk image configuration
+  file settings, along with the old option names
+
 2017-01:
 - Fix for systems where "python" is Python v3
 
