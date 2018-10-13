@@ -495,15 +495,16 @@ class HatariConfigMapping(ConfigStore):
             self._change_option("--sound off")
 
     def get_ymmixer_types(self):
-        return ("linear", "table", "model")
+        return ("Linear", "ST table", "Math model")
 
     def get_ymmixer(self):
         # values for types are start from 1, not 0
         return self.get("[Sound]", "YmVolumeMixing")-1
 
     def set_ymmixer(self, value):
+        ymmixer_types = ("linear", "table", "model")
         self.set("[Sound]", "YmVolumeMixing", value+1)
-        self._change_option("--ym-mixing %s" % self.get_ymmixer_types()[value])
+        self._change_option("--ym-mixing %s" % ymmixer_types[value])
 
     def get_bufsize(self):
         return self.get("[Sound]", "nSdlAudioBufferSize")

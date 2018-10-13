@@ -482,13 +482,13 @@ class DisplayDialog(HatariUIDialog):
         force_max.set_active(config.get_force_max())
         force_max.set_tooltip_text("Whether to force maximum resolution to help recording videos of demos which do resolution changes")
 
-        desktop = gtk.CheckButton("Keep desktop resolution (Falcon/TT)")
+        desktop = gtk.CheckButton("Keep desktop resolution, scales")
         desktop.set_active(config.get_desktop())
-        desktop.set_tooltip_text("Whether to keep screen resolution in fullscreen and (try to) scale Atari screen by an integer factor instead")
+        desktop.set_tooltip_text("Whether to keep screen resolution in fullscreen. With SDL1, only applies to Falcon/TT and scales Atari screen by an integer factor. Avoids potential monitor res switch delay & sound skips")
 
-        desktop_st = gtk.CheckButton("Keep desktop resolution (ST/STE)")
+        desktop_st = gtk.CheckButton("Keep desktop resolution, NO scaling")
         desktop_st.set_active(config.get_desktop_st())
-        desktop_st.set_tooltip_text("Whether to keep screen resolution in fullscreen to avoid potential sound skips + delay (NO SCALING)")
+        desktop_st.set_tooltip_text("SDL1 / ST & STE only. Whether to keep screen resolution in fullscreen. Avoids potential monitor res switch delay & sound skips")
 
         borders = gtk.CheckButton("Atari screen borders")
         borders.set_active(config.get_borders())
@@ -720,7 +720,7 @@ class SoundDialog(HatariUIDialog):
             (gtk.STOCK_APPLY,  gtk.RESPONSE_APPLY,
              gtk.STOCK_CANCEL,  gtk.RESPONSE_CANCEL))
         dialog.vbox.add(self.enabled)
-        dialog.vbox.add(gtk.Label("Sound frequency::"))
+        dialog.vbox.add(gtk.Label("Sound frequency:"))
         dialog.vbox.add(hz)
         dialog.vbox.add(gtk.Label("YM voices mixing method:"))
         dialog.vbox.add(ymmixer)
