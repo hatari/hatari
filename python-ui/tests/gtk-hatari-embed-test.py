@@ -2,12 +2,12 @@
 #
 # Tests embedding hatari with three different methods:
 # "hatari": ask Hatari to reparent to given window
-# "sdl": Give SDL window into which it should reparent
+# "sdl1": Give SDL window into which it should reparent
 #   -> SDL doesn't handle (mouse, key, expose) events
 #      although according to "xev" it's window receives them!
 #      Bug in SDL (not one of the originally needed features?)?
 # "reparent": Find Hatari window and reparent it into pygtk widget in python
-#   - Needs "xwininfo" and "awk"
+#   - Needs "xwininfo" and "awk" i.e. not real alternative
 #
 # Using three alternative widgets:
 #   "drawingarea"
@@ -15,20 +15,24 @@
 #   "socket"
 #
 # Results:
-#   reparent+eventbox
-#     -> PyGtk reparents Hatari under something on rootwindow instead
-#        (reparening eventbox under Hatari window works fine though...)
-#   reparent+socket
-#     -> Hatari seems to be reparented back to where it was
-#   sdl+anything
-#     -> all events are lost
-#   hatari+socket
-#     -> seems to work fine
+#   drawingarea & evenbox / sdl1 & hatari:
+#     -> XCB fails unknown seq num when importing Hatari window
+#   drawingarea & evenbox / reparent:
+#     -> keyboard input doesn't work
+#   socket / sdl1:
+#     -> keyboard input doesn't work
+#   socket / reparent & hatari:
+#     -> works fine
+
 import os
 import sys
 import time
+
+import gi
+gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 from gi.repository import Gdk
+from gi.repository import GdkX11
 from gi.repository import GObject
 
 def usage(error):
@@ -36,17 +40,17 @@ def usage(error):
     print "Opens window with given <widget>, runs Hatari and tries to embed it"
     print "with given <method>\n"
     print "<widget> can be <drawingarea|eventbox|socket>"
-    print "<method> can be <sdl|hatari|reparent>\n"
+    print "<method> can be <sdl1|hatari|reparent>\n"
     print "ERROR: %s\n" % error
     sys.exit(1)
 
 
 class AppUI():
     hatari_wd = 640
-    hatari_ht = 400
+    hatari_ht = 436 # Hatari window enables statusbar by default
 
     def __init__(self, widget, method):
-        if method in ("hatari", "reparent", "sdl"):
+        if method in ("hatari", "reparent", "sdl1"):
             self.method = method
         else:
             usage("unknown <method> '%s'" % method)
@@ -61,7 +65,10 @@ class AppUI():
             usage("unknown <widget> '%s'" % widget)
         self.window = self.create_window()
         self.add_hatari_parent(self.window, widgettype)
-        GObject.timeout_add(1*1000, self.timeout_cb)
+        self.window.show_all()
+        # wait a while before starting Hatari to make
+        # sure parent window has been realized
+        GObject.timeout_add(500, self.timeout_cb)
 
     def create_window(self):
         window = Gtk.Window(Gtk.WindowType.TOPLEVEL)
@@ -81,26 +88,23 @@ class AppUI():
         # receive *any* keyevents.
         self.hatari_pid = 0
         vbox = Gtk.VBox()
-        button = Gtk.Button("Test Button")
-        button.unset_flags(Gtk.CAN_FOCUS)
+        button = Gtk.Button("Test Button", can_focus=False)
         vbox.add(button)
-        widget = widgettype()
+        widget = widgettype(can_focus=True)
         widget.set_size_request(self.hatari_wd, self.hatari_ht)
         widget.set_events(Gdk.EventMask.ALL_EVENTS_MASK)
-        widget.set_flags(Gtk.CAN_FOCUS)
         self.hatariparent = widget
         # TODO: when running 320x200, parent could be centered to here
         vbox.add(widget)
         # test focus
         label = Gtk.Label(label="Test SpinButton:")
         vbox.add(label)
-        spin = Gtk.SpinButton()
+        # disable focus, otherwise Hatari doesn't receive keys!!!
+        spin = Gtk.SpinButton(can_focus=False)
         spin.set_range(0, 10)
         spin.set_digits(0)
         spin.set_numeric(True)
         spin.set_increments(1, 2)
-        # otherwise Hatari doesn't receive keys!!!
-        spin.unset_flags(Gtk.CAN_FOCUS)
         vbox.add(spin)
         parent.add(vbox)
 
@@ -125,7 +129,8 @@ class AppUI():
                     print "killed process with PID %d" % pid
                     self.hatari_pid = 0
             else:
-                # method == "sdl" or "hatari"
+                print "Waiting Hatari process to embed itself..."
+                # method == "sdl1" or "hatari"
                 self.hatari_pid = pid
         else:
             # child runs Hatari
@@ -135,18 +140,20 @@ class AppUI():
     def get_hatari_env(self):
         if self.method == "reparent":
             return os.environ
-        # tell SDL to use (embed itself inside) given widget's window
-        win_id = self.hatariparent.window.xid
+        # tell Hatari / SDL to use (embed itself inside) given widget's window
+        win_id = self.hatariparent.get_window().get_xid()
         env = os.environ
-        if self.method == "sdl":
+        if self.method == "sdl1":
+            # SDL2 doesn't support this anymore
             env["SDL_WINDOWID"] = str(win_id)
         elif self.method == "hatari":
-            env["HATARI_PARENT_WIN"] = str(win_id)
+            env["PARENT_WIN_ID"] = str(win_id)
         return env
 
     def find_hatari_window(self):
         # find hatari window by its WM class string and reparent it
-        cmd = """xwininfo -root -tree|awk '/"hatari" "hatari"/{print $1}'"""
+        # wait 1s to make sure Hatari child gets its window up
+        cmd = """sleep 1; xwininfo -root -tree|awk '/"hatari" "hatari"/{print $1}'"""
         counter = 0
         while counter < 8:
             pipe = os.popen(cmd)
@@ -170,16 +177,19 @@ class AppUI():
         return None
 
     def reparent_hatari_window(self, hatari_win):
-        window = Gdk.window_foreign_new(hatari_win)
+        print "Importing foreign (Hatari) window 0x%x" % hatari_win
+        display = GdkX11.X11Display.get_default()
+        window = GdkX11.X11Window.foreign_new_for_display(display, hatari_win)
         if not window:
-            print "ERROR: Hatari window (ID: 0x%x) reparenting failed!" % hatari_win
+            print "ERROR: X window importing failed!"
             return False
-        if not self.hatariparent.window:
-            print "ERROR: where hatariparent disappeared?"
+        parent = self.hatariparent.get_window()
+        if not window:
+            print "ERROR: where hatariparent window disappeared?"
             return False
         print "Found Hatari window ID: 0x%x, reparenting..." % hatari_win
-        print "...to container window ID: 0x%x" % self.hatariparent.window.xid
-        window.reparent(self.hatariparent.window, 0, 0)
+        print "...to container window ID: 0x%x" % parent.get_xid()
+        window.reparent(parent, 0, 0)
         #window.reparent(self.hatariparent.get_toplevel().window, 0, 0)
         #window.reparent(self.hatariparent.get_root_window(), 0, 0)
         #window.show()
