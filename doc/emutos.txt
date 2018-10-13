@@ -1106,7 +1106,7 @@ Partly working demos:
     Bus error bget at 00400000
 - Built-in Obsolescence (by Digital Chaos)
   - requires WinUAE core
-  - Eventually dies to Dsp Stack Over/underflow  
+  - Eventually dies to Dsp Stack Over/underflow
 - Motion (unfinished demo by Aggression)
   - only writer screens work
 - Gurkensalat (by Lazer)
@@ -1302,7 +1302,7 @@ Broken applications:
 - DSPdit (by .tscc)
   - panic with bus error
 - FalcAMP (GEM)
-  - buttons aren't drawn in window 
+  - buttons aren't drawn in window
   - complains about DSP
 - FlaySID
   - says "cannot connect with DSP matrix" when playing

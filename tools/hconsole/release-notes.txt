@@ -8,7 +8,7 @@ User visible changes in Hatari (Python) console
 - Split hatari-console.py from hatari UI and renamed it hconsole.py
   (no '-') so that it can be included from other Python scripts
 - Added manual page and hconsole example input file & extension program
-- Added "text", "script" & "verbose" commands 
+- Added "text", "script" & "verbose" commands
 - renamed some earlier commands (see 'usage' command)
 
 2010-03:

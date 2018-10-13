@@ -79,7 +79,7 @@ Optional:
   AVI video recording file sizes (http://www.libpng.org/)
 - The GNU Readline library for Hatari debugger command line editing
 - The Xlib library to support Hatari Python UI window embedding on
-  systems with the X window system (Linux and other unixes) 
+  systems with the X window system (Linux and other unixes)
 - The PortMidi library required for MIDI support on macOS and Windows
   (http://portmedia.sourceforge.net/)
 - The portaudio library for Falcon microphone handling

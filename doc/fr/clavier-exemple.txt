@@ -1,5 +1,5 @@
 # This file must be UTF-8 coded
-# Mai 2017, Cocoa Pod. 
+# Mai 2017, Cocoa Pod.
 
 # FRENCH ------------------------------------------------
 # Mappage du clavier AZERTY-fr d'un Macbook Pro
@@ -13,7 +13,7 @@
 #
 # Les commentaires commencent par un # ou un ;
 # Chaque ligne active commence par deux chiffres séparés par une virgule.
-# le premier est la valeur du symbole de la touche de votre clavier et le 
+# le premier est la valeur du symbole de la touche de votre clavier et le
 # deuxième est le scancode de la touche équivalente du clavier Atari.
 # Le premier chiffre peut être remplacé par un symbol.
 
@@ -49,7 +49,7 @@
  F8,66
  F9,67	 # hit cmd-F9
  F10,68	 # hit cmd-F10
-# F11, 	 # cmd-F11  Does not exist in ATARI 
+# F11, 	 # cmd-F11  Does not exist in ATARI
 # F12,	 # cmd-F12  Does not exist in ATARI
 
 # first line: @ é " ' ( § è ! ç à ) -
@@ -69,7 +69,7 @@
  -,13
  Backspace,14
  Delete,83        #  fn + Backspace
- 
+
 
 # second line: a z e r t y u i o p ^ $
 #
@@ -117,8 +117,8 @@
  =,53
 
  Space,57
- CapsLock,58   
-     
+ CapsLock,58
+
  Return,28
  Left,75
  Right,77

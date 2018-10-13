@@ -1023,7 +1023,7 @@ Other changes:
 - Fixed hmsa to handle files with multiple "." characters in their names
 - TOS tester testing covers more GEMDOS functionality, works with
   all Hatari supported TOS versions and HW configurations and it's
-  fully automated 
+  fully automated
 
 Fixed Games :
   Hammerfist (fire button),

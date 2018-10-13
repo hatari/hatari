@@ -11,7 +11,7 @@ repositories packages at least for some of them though.
 
 Contents:
 - Quick start
-- Using a soundcard with built-in MIDI synthesis capability 
+- Using a soundcard with built-in MIDI synthesis capability
 - Making MIDI soft-synthetizer to work with ALSA
 - Using FluidSynth instead of Timidity
 - Other software synthetizers
@@ -45,7 +45,7 @@ without PortMidi, Linux MIDI usage in general, and notes of some
 useful Open Source MIDI software available on Linux.
 
 
-Using a soundcard with built-in MIDI synthesis capability 
+Using a soundcard with built-in MIDI synthesis capability
 ---------------------------------------------------------
 
 If your soundcard is capable of playing MIDI sound (i.e. you can play a .mid
@@ -232,7 +232,7 @@ Virtual MIDI Piano Keyboard (vmpk):
   http://vmpk.sourceforge.net/
 
 Patch (ALSA connecting) utilities:
-  http://alsa.opensrc.org/AlsaMidiPatchbays    
+  http://alsa.opensrc.org/AlsaMidiPatchbays
 
 FluidSynth:
   http://www.iiwu.org/fluidsynth/
