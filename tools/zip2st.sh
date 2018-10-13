@@ -149,7 +149,7 @@ if [ $disksize -gt 0 ]; then
 	echo "$step) Creating $disksize KB disk image..."
 	echo "dd if=/dev/zero of=$STFILE bs=1024 count=$disksize"
 	dd if=/dev/zero of="$STFILE" bs=1024 count=$disksize
-	
+
 	echo
 	step=$(($step+1))
 	echo "$step) Formating disk image..."
@@ -161,7 +161,7 @@ if [ $disksize -gt 0 ]; then
 	esac
 	echo "mformat -a $format -i $STFILE ::"
 	mformat -a $format -i "$STFILE" ::
-	
+
 	echo
 	step=$(($step+1))
 	echo "$step) Copying data to disk image..."

@@ -138,7 +138,7 @@ cat > $dir/start.ini << EOF
 b pc = text :once :trace :quiet :file $dir/basepage.ini
 EOF
 
-# add command line args args to program basepage 
+# add command line args args to program basepage
 cat > $dir/basepage.ini << EOF
 setopt dec
 w "basepage+0x80" $cmdlen

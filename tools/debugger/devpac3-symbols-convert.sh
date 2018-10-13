@@ -45,7 +45,7 @@ awk '
 # - has problem that in Devpac output the offsets in
 #   the code listing part don't take includes into
 #   account i.e. they seem wrong
-#   
+#
 # works by:
 # - removing columns that confuse rest command line
 # - removing macro etc symbols at zero address

@@ -192,7 +192,7 @@ set_word(0x0B, $sectorsize)
 mbr[0x0D] = 2 # sectors / cluster
 set_word(0x18, $tracksectors)
 set_word(0x1A, $diskheads)
-  
+
 # non-removable disk
 mbr[0x15] = 0xF8
 mbr[0x24] = 0x80
