@@ -26,9 +26,9 @@
 #     -> seems to work fine
 import os
 import sys
-import gtk
+from gi.repository import Gtk
 import time
-import gobject
+from gi.repository import GObject
 
 def usage(error):
     print "\nusage: %s <widget> <embed method>\n" % sys.argv[0].split(os.path.sep)[-1]
@@ -50,20 +50,20 @@ class AppUI():
         else:
             usage("unknown <method> '%s'" % method)
         if widget == "drawingarea":
-            widgettype = gtk.DrawingArea
+            widgettype = Gtk.DrawingArea
         elif widget == "eventbox":
-            widgettype = gtk.EventBox
+            widgettype = Gtk.EventBox
         elif widget == "socket":
             # XEMBED socket for Hatari/SDL
-            widgettype = gtk.Socket
+            widgettype = Gtk.Socket
         else:
             usage("unknown <widget> '%s'" % widget)
         self.window = self.create_window()
         self.add_hatari_parent(self.window, widgettype)
-        gobject.timeout_add(1*1000, self.timeout_cb)
+        GObject.timeout_add(1*1000, self.timeout_cb)
 
     def create_window(self):
-        window = gtk.Window(gtk.WINDOW_TOPLEVEL)
+        window = Gtk.Window(Gtk.WindowType.TOPLEVEL)
         window.connect("destroy", self.do_quit)
         return window
 
@@ -72,34 +72,34 @@ class AppUI():
             os.kill(self.hatari_pid, 9)
             print "killed Hatari PID %d" % self.hatari_pid
             self.hatari_pid = 0
-        gtk.main_quit()
+        Gtk.main_quit()
 
     def add_hatari_parent(self, parent, widgettype):
         # Note: CAN_FOCUS has to be set for the widget embedding Hatari
         # and *unset* for everything else, otherwise Hatari doesn't
         # receive *any* keyevents.
         self.hatari_pid = 0
-        vbox = gtk.VBox()
-        button = gtk.Button("Test Button")
-        button.unset_flags(gtk.CAN_FOCUS)
+        vbox = Gtk.VBox()
+        button = Gtk.Button("Test Button")
+        button.unset_flags(Gtk.CAN_FOCUS)
         vbox.add(button)
         widget = widgettype()
         widget.set_size_request(self.hatari_wd, self.hatari_ht)
-        widget.set_events(gtk.gdk.ALL_EVENTS_MASK)
-        widget.set_flags(gtk.CAN_FOCUS)
+        widget.set_events(Gdk.EventMask.ALL_EVENTS_MASK)
+        widget.set_flags(Gtk.CAN_FOCUS)
         self.hatariparent = widget
         # TODO: when running 320x200, parent could be centered to here
         vbox.add(widget)
         # test focus
-        label = gtk.Label("Test SpinButton:")
+        label = Gtk.Label(label="Test SpinButton:")
         vbox.add(label)
-        spin = gtk.SpinButton()
+        spin = Gtk.SpinButton()
         spin.set_range(0, 10)
         spin.set_digits(0)
         spin.set_numeric(True)
         spin.set_increments(1, 2)
         # otherwise Hatari doesn't receive keys!!!
-        spin.unset_flags(gtk.CAN_FOCUS)
+        spin.unset_flags(Gtk.CAN_FOCUS)
         vbox.add(spin)
         parent.add(vbox)
 
@@ -169,7 +169,7 @@ class AppUI():
         return None
 
     def reparent_hatari_window(self, hatari_win):
-        window = gtk.gdk.window_foreign_new(hatari_win)
+        window = Gdk.window_foreign_new(hatari_win)
         if not window:
             print "ERROR: Hatari window (ID: 0x%x) reparenting failed!" % hatari_win
             return False
@@ -191,7 +191,7 @@ class AppUI():
 
     def run(self):
         self.window.show_all()
-        gtk.main()
+        Gtk.main()
 
 
 if len(sys.argv) != 3:

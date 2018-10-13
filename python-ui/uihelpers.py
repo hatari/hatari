@@ -17,10 +17,10 @@
 import os
 import sys
 # use correct version of pygtk/gtk
-import pygtk
-pygtk.require('2.0')
-import gtk
-import gobject
+import gi
+gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk
+from gi.repository import GObject
 
 
 # leak debugging
@@ -161,7 +161,7 @@ class HatariTextInsert:
         self.pressed = False
         self.hatari = hatari
         print("OUTPUT '%s'" % text)
-        gobject.timeout_add(100, _text_insert_cb, self)
+        GObject.timeout_add(100, _text_insert_cb, self)
 
 # callback to insert text object to Hatari character at the time
 # (first key down, on next call up), at given interval
@@ -189,7 +189,7 @@ def _text_insert_cb(textobj):
 
 def create_button(label, cb, data = None):
     "create_button(label,cb[,data]) -> button widget"
-    button = gtk.Button(label)
+    button = Gtk.Button(label)
     if data == None:
         button.connect("clicked", cb)
     else:
@@ -198,7 +198,7 @@ def create_button(label, cb, data = None):
 
 def create_toolbutton(stock_id, cb, data = None):
     "create_toolbutton(stock_id,cb[,data]) -> toolbar button with stock icon+label"
-    button = gtk.ToolButton(stock_id)
+    button = Gtk.ToolButton(stock_id)
     if data == None:
         button.connect("clicked", cb)
     else:
@@ -207,7 +207,7 @@ def create_toolbutton(stock_id, cb, data = None):
 
 def create_toggle(label, cb, data = None):
     "create_toggle(label,cb[,data]) -> toggle button widget"
-    button = gtk.ToggleButton(label)
+    button = Gtk.ToggleButton(label)
     if data == None:
         button.connect("toggled", cb)
     else:
@@ -218,14 +218,14 @@ def create_toggle(label, cb, data = None):
 # -----------------------------
 # Table dialog helper functions
 
-def create_table_dialog(parent, title, rows, cols, oktext = gtk.STOCK_APPLY):
+def create_table_dialog(parent, title, rows, cols, oktext = Gtk.STOCK_APPLY):
     "create_table_dialog(parent,title,rows, cols, oktext) -> (table,dialog)"
-    dialog = gtk.Dialog(title, parent,
-        gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
-        (oktext,  gtk.RESPONSE_APPLY,
-        gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL))
+    dialog = Gtk.Dialog(title, parent,
+        Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
+        (oktext,  Gtk.ResponseType.APPLY,
+        Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL))
 
-    table = gtk.Table(rows, cols)
+    table = Gtk.Table(rows, cols)
     table.set_data("col_offset", 0)
     table.set_col_spacings(8)
     dialog.vbox.add(table)
@@ -239,20 +239,20 @@ def table_add_entry_row(table, row, label, size = None):
     "table_add_entry_row(table,row,label,[entry size]) -> entry"
     # add given label to given row in given table
     # return entry for that line
-    label = gtk.Label(label)
-    align = gtk.Alignment(1) # right aligned
+    label = Gtk.Label(label=label)
+    align = Gtk.Alignment.new(1) # right aligned
     align.add(label)
     col = table.get_data("col_offset")
-    table.attach(align, col, col+1, row, row+1, gtk.FILL)
+    table.attach(align, col, col+1, row, row+1, Gtk.AttachOptions.FILL)
     col += 1
     if size:
-        entry = gtk.Entry(size)
+        entry = Gtk.Entry(size)
         entry.set_width_chars(size)
-        align = gtk.Alignment(0) # left aligned (default is centered)
+        align = Gtk.Alignment.new(0) # left aligned (default is centered)
         align.add(entry)
         table.attach(align, col, col+1, row, row+1)
     else:
-        entry = gtk.Entry()
+        entry = Gtk.Entry()
         table.attach(entry, col, col+1, row, row+1)
     return entry
 
@@ -266,10 +266,10 @@ def table_add_widget_row(table, row, label, widget, fullspan = False):
     else:
         col = table.get_data("col_offset")
     if label:
-        label = gtk.Label(label)
-        align = gtk.Alignment(1)
+        label = Gtk.Label(label=label)
+        align = Gtk.Alignment.new(1)
         align.add(label)
-        table.attach(align, col, col+1, row, row+1, gtk.FILL)
+        table.attach(align, col, col+1, row, row+1, Gtk.AttachOptions.FILL)
     if fullspan:
         col = table.get_data("col_offset")
         table.attach(widget, 1, col+2, row, row+1)
@@ -284,17 +284,17 @@ def table_add_radio_rows(table, row, label, texts, cb = None):
     #   the one given as "active" as active and set 'cb' as their
     #   "toggled" callback handler
     # - return array or radiobuttons
-    label = gtk.Label(label)
-    align = gtk.Alignment(1)
+    label = Gtk.Label(label=label)
+    align = Gtk.Alignment.new(1)
     align.add(label)
     col = table.get_data("col_offset")
-    table.attach(align, col, col+1, row, row+1, gtk.FILL)
+    table.attach(align, col, col+1, row, row+1, Gtk.AttachOptions.FILL)
 
     radios = []
     radio = None
-    box = gtk.VBox()
+    box = Gtk.VBox()
     for text in texts:
-        radio = gtk.RadioButton(radio, text)
+        radio = Gtk.RadioButton(radio, text)
         if cb:
             radio.connect("toggled", cb, text)
         radios.append(radio)
@@ -304,22 +304,22 @@ def table_add_radio_rows(table, row, label, texts, cb = None):
 
 def table_add_separator(table, row):
     "table_add_separator(table,row)"
-    widget = gtk.HSeparator()
+    widget = Gtk.HSeparator()
     endcol = table.get_data("n-columns")
     # separator for whole table width
-    table.attach(widget, 0, endcol, row, row+1, gtk.FILL)
+    table.attach(widget, 0, endcol, row, row+1, Gtk.AttachOptions.FILL)
 
 
 # -----------------------------
 # File selection helpers
 
 def get_open_filename(title, parent, path = None):
-    buttons = (gtk.STOCK_OK, gtk.RESPONSE_OK, gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
-    fsel = gtk.FileChooserDialog(title, parent, gtk.FILE_CHOOSER_ACTION_OPEN, buttons)
+    buttons = (Gtk.STOCK_OK, Gtk.ResponseType.OK, Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL)
+    fsel = Gtk.FileChooserDialog(title, parent, Gtk.FileChooserAction.OPEN, buttons)
     fsel.set_local_only(True)
     if path:
         fsel.set_filename(path)
-    if fsel.run() == gtk.RESPONSE_OK:
+    if fsel.run() == Gtk.ResponseType.OK:
         filename = fsel.get_filename()
     else:
         filename = None
@@ -327,8 +327,8 @@ def get_open_filename(title, parent, path = None):
     return filename
 
 def get_save_filename(title, parent, path = None):
-    buttons = (gtk.STOCK_OK, gtk.RESPONSE_OK, gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
-    fsel = gtk.FileChooserDialog(title, parent, gtk.FILE_CHOOSER_ACTION_SAVE, buttons)
+    buttons = (Gtk.STOCK_OK, Gtk.ResponseType.OK, Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL)
+    fsel = Gtk.FileChooserDialog(title, parent, Gtk.FileChooserAction.SAVE, buttons)
     fsel.set_local_only(True)
     fsel.set_do_overwrite_confirmation(True)
     if path:
@@ -337,7 +337,7 @@ def get_save_filename(title, parent, path = None):
             # above set only folder, this is needed to set
             # the file name when the file doesn't exist
             fsel.set_current_name(os.path.basename(path))
-    if fsel.run() == gtk.RESPONSE_OK:
+    if fsel.run() == Gtk.ResponseType.OK:
         filename = fsel.get_filename()
     else:
         filename = None
@@ -352,7 +352,7 @@ class FselAndEjectFactory:
 
     def get(self, label, path, filename, action):
         "returns file selection button and box having that + eject button"
-        fsel = gtk.FileChooserButton(label)
+        fsel = Gtk.FileChooserButton(label)
         # Hatari cannot access URIs
         fsel.set_local_only(True)
         fsel.set_width_chars(12)
@@ -363,8 +363,8 @@ class FselAndEjectFactory:
             fsel.set_current_folder(path)
         eject = create_button("Eject", self._eject, fsel)
 
-        box = gtk.HBox()
-        box.pack_start(fsel)
+        box = Gtk.HBox()
+        box.pack_start(fsel, True, True, 0)
         box.pack_start(eject, False, False)
         return (fsel, box)
 
@@ -383,10 +383,10 @@ class FselEntry:
         self._parent = parent
         self._validate = validate
         self._validate_data = data
-        entry = gtk.Entry()
+        entry = Gtk.Entry()
         entry.set_width_chars(12)
         entry.set_editable(False)
-        hbox = gtk.HBox()
+        hbox = Gtk.HBox()
         hbox.add(entry)
         button = create_button("Select...", self._select_file_cb)
         hbox.pack_start(button, False, False)

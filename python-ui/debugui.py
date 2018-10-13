@@ -16,10 +16,10 @@
 
 import os
 # use correct version of pygtk/gtk
-import pygtk
-pygtk.require('2.0')
-import gtk
-import pango
+import gi
+gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk
+from gi.repository import Pango
 
 from config import ConfigStore
 from uihelpers import UInfo, create_button, create_toggle, \
@@ -29,7 +29,7 @@ from dialogs import TodoDialog, ErrorDialog, AskDialog, KillDialog
 
 
 def dialog_apply_cb(widget, dialog):
-    dialog.response(gtk.RESPONSE_APPLY)
+    dialog.response(Gtk.ResponseType.APPLY)
 
 
 # -------------
@@ -53,7 +53,7 @@ class SaveDialog:
         filename = length = None
         while 1:
             response = self.dialog.run()
-            if response == gtk.RESPONSE_APPLY:
+            if response == Gtk.ResponseType.APPLY:
                 filename = self.file.get_filename()
                 address_txt = self.address.get_text()
                 length_txt = self.length.get_text()
@@ -83,7 +83,7 @@ class SaveDialog:
 
 class LoadDialog:
     def __init__(self, parent):
-        chooser = gtk.FileChooserButton('Select a File')
+        chooser = Gtk.FileChooserButton('Select a File')
         chooser.set_local_only(True)  # Hatari cannot access URIs
         chooser.set_width_chars(12)
         table, self.dialog = create_table_dialog(parent, "Load to memory", 2, 2)
@@ -99,7 +99,7 @@ class LoadDialog:
         filename = None
         while 1:
             response = self.dialog.run()
-            if response == gtk.RESPONSE_APPLY:
+            if response == Gtk.ResponseType.APPLY:
                 filename = self.file.get_filename()
                 address_txt = self.address.get_text()
                 if filename and address_txt:
@@ -119,19 +119,19 @@ class LoadDialog:
 
 class OptionsDialog:
     def __init__(self, parent):
-        self.dialog = gtk.Dialog("Debugger UI options", parent,
-            gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
-            (gtk.STOCK_APPLY,  gtk.RESPONSE_APPLY,
-             gtk.STOCK_CLOSE, gtk.RESPONSE_CLOSE))
+        self.dialog = Gtk.Dialog("Debugger UI options", parent,
+            Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
+            (Gtk.STOCK_APPLY,  Gtk.ResponseType.APPLY,
+             Gtk.STOCK_CLOSE, Gtk.ResponseType.CLOSE))
 
-        self.lines = gtk.Adjustment(0, 5, 50)
-        scale = gtk.HScale(self.lines)
+        self.lines = Gtk.Adjustment(0, 5, 50)
+        scale = Gtk.HScale(self.lines)
         scale.set_digits(0)
 
-        self.follow_pc = gtk.CheckButton("On stop, set address to PC")
+        self.follow_pc = Gtk.CheckButton("On stop, set address to PC")
 
         vbox = self.dialog.vbox
-        vbox.add(gtk.Label("Memdump/disasm lines:"))
+        vbox.add(Gtk.Label(label="Memdump/disasm lines:"))
         vbox.add(scale)
         vbox.add(self.follow_pc)
         vbox.show_all()
@@ -142,7 +142,7 @@ class OptionsDialog:
         self.lines.set_value(lines)
         self.dialog.show_all()
         response = self.dialog.run()
-        if response == gtk.RESPONSE_APPLY:
+        if response == Gtk.ResponseType.APPLY:
             lines = int(self.lines.get_value())
             follow_pc = self.follow_pc.get_active()
         self.dialog.hide()
@@ -193,11 +193,11 @@ class MemoryAddress:
         self.last  = None
 
     def create_widgets(self):
-        entry = gtk.Entry(6)
+        entry = Gtk.Entry(6)
         entry.set_width_chars(6)
         entry.connect("activate", self._entry_cb)
-        memory = gtk.Label()
-        mono = pango.FontDescription("monospace")
+        memory = Gtk.Label()
+        mono = Pango.FontDescription("monospace")
         memory.modify_font(mono)
         entry.modify_font(mono)
         return (entry, memory)
@@ -372,28 +372,28 @@ class HatariDebugUI:
 
     def create_ui(self, title, do_destroy):
         # buttons at top
-        hbox1 = gtk.HBox()
+        hbox1 = Gtk.HBox()
         self.create_top_buttons(hbox1)
 
         # disasm/memory dump at the middle
-        align = gtk.Alignment()
+        align = Gtk.Alignment.new()
         # top, bottom, left, right padding
         align.set_padding(8, 0, 8, 8)
         align.add(self.address.get_memory_label())
 
         # buttons at bottom
-        hbox2 = gtk.HBox()
+        hbox2 = Gtk.HBox()
         self.create_bottom_buttons(hbox2)
 
         # their container
-        vbox = gtk.VBox()
+        vbox = Gtk.VBox()
         vbox.pack_start(hbox1, False)
         vbox.pack_start(align, True, True)
         vbox.pack_start(hbox2, False)
 
         # and the window for all of this
-        window = gtk.Window(gtk.WINDOW_TOPLEVEL)
-        window.set_events(gtk.gdk.KEY_RELEASE_MASK)
+        window = Gtk.Window(Gtk.WindowType.TOPLEVEL)
+        window.set_events(Gdk.EventMask.KEY_RELEASE_MASK)
         window.connect("key_release_event", self.key_event_cb)
         if do_destroy:
             window.connect("delete_event", self.quit)
@@ -422,7 +422,7 @@ class HatariDebugUI:
         self.keys = {}
         for label, keyname, offset in buttons:
             button = create_button(label, self.set_address_offset, offset)
-            keyval = gtk.gdk.keyval_from_name(keyname)
+            keyval = Gdk.keyval_from_name(keyname)
             self.keys[keyval] =  offset
             box.add(button)
 
@@ -439,11 +439,11 @@ class HatariDebugUI:
         )
         group = None
         for label, mode in radios:
-            button = gtk.RadioButton(group, label)
+            button = Gtk.RadioButton(group, label)
             if not group:
                 group = button
             button.connect("toggled", self.dumpmode_cb, mode)
-            button.unset_flags(gtk.CAN_FOCUS)
+            button.unset_flags(Gtk.CAN_FOCUS)
             box.add(button)
         group.set_active(True)
 
@@ -544,7 +544,7 @@ class HatariDebugUI:
 
     def quit(self, widget, arg):
         KillDialog(self.window).run(self.hatari)
-        gtk.main_quit()
+        Gtk.main_quit()
 
 
 def main():
@@ -563,7 +563,7 @@ def main():
     info = UInfo()
     debugui = HatariDebugUI(hatariobj, True)
     debugui.window.show_all()
-    gtk.main()
+    Gtk.main()
     debugui.save_options()
 
 

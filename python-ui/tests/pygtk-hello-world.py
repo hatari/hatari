@@ -1,18 +1,18 @@
 #!/usr/bin/env python
 
-import gtk
+from gi.repository import Gtk
 
 class AppUI():
     def __init__(self):
-        self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
-        self.window.connect("destroy", gtk.main_quit)
+        self.window = Gtk.Window(Gtk.WindowType.TOPLEVEL)
+        self.window.connect("destroy", Gtk.main_quit)
 
-        label = gtk.Label("Hello World!")
+        label = Gtk.Label(label="Hello World!")
         self.window.add(label)
 
     def run(self):
         self.window.show_all()
-        gtk.main()
+        Gtk.main()
 
 app = AppUI()
 app.run()
