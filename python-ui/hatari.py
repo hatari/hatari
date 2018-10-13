@@ -277,8 +277,9 @@ class HatariConfigMapping(ConfigStore):
         "printout": ("[Printer]", "szPrintToFileName", "Printer output"),
         "soundout": ("[Sound]", "szYMCaptureFileName", "Sound output")
     }
-    has_modeltype = True  # from v2.0 onwards
-    has_keepstres = True  # only with SDL1
+    has_hd_sections = True # from v2.2 onwards separate ACSI/SCSI/IDE sections
+    has_modeltype = True   # from v2.0 onwards
+    has_keepstres = True   # only with SDL1
     "access methods to Hatari configuration file variables and command line options"
     def __init__(self, hatari):
         confdirs = [".config/hatari", ".hatari"]
@@ -295,6 +296,7 @@ class HatariConfigMapping(ConfigStore):
         # initialize has_* attribs for things that may not be anymore
         # valid on Hatari config file and/or command line
         self.get_machine()
+        self.get_acsi_image()
         self.get_desktop_st()
 
     def validate(self):
@@ -656,35 +658,62 @@ class HatariConfigMapping(ConfigStore):
 
     # ------------ ACSI HD (file) ---------------
     def get_acsi_image(self):
-        self.get("[HardDisk]", "bUseHardDiskImage") # for validation
-        return self.get("[HardDisk]", "szHardDiskImage")
+        # v2.2 of config file or older?
+        try:
+            self.get("[ACSI]", "bUseDevice0")
+        except KeyError:
+            self.get("[HardDisk]", "bUseHardDiskImage")
+            self.has_hd_sections = False
+        if self.has_hd_sections:
+            return self.get("[ACSI]", "sDeviceFile0")
+        else:
+            return self.get("[HardDisk]", "szHardDiskImage")
 
     def set_acsi_image(self, filename):
-        if filename and os.path.isfile(filename):
-            self.set("[HardDisk]", "bUseHardDiskImage", True)
-        self.set("[HardDisk]", "szHardDiskImage", filename)
+        if self.has_hd_sections:
+            if filename and os.path.isfile(filename):
+                self.set("[ACSI]", "bUseDevice0", True)
+            self.set("[ACSI]", "sDeviceFile0", filename)
+        else:
+            if filename and os.path.isfile(filename):
+                self.set("[HardDisk]", "bUseHardDiskImage", True)
+            self.set("[HardDisk]", "szHardDiskImage", filename)
         self._change_option("--acsi", str(filename))
 
     # ------------ IDE master (file) ---------------
     def get_idemaster_image(self):
-        self.get("[HardDisk]", "bUseIdeMasterHardDiskImage") # for validation
-        return self.get("[HardDisk]", "szIdeMasterHardDiskImage")
+        if self.has_hd_sections:
+            return self.get("[IDE]", "sDeviceFile0")
+        else:
+            return self.get("[HardDisk]", "szIdeMasterHardDiskImage")
 
     def set_idemaster_image(self, filename):
-        if filename and os.path.isfile(filename):
-            self.set("[HardDisk]", "bUseIdeMasterHardDiskImage", True)
-        self.set("[HardDisk]", "szIdeMasterHardDiskImage", filename)
+        if self.has_hd_sections:
+            if filename and os.path.isfile(filename):
+                self.set("[IDE]", "bUseDevice0", True)
+            self.set("[IDE]", "sDeviceFile0", filename)
+        else:
+            if filename and os.path.isfile(filename):
+                self.set("[HardDisk]", "bUseIdeMasterHardDiskImage", True)
+            self.set("[HardDisk]", "szIdeMasterHardDiskImage", filename)
         self._change_option("--ide-master", str(filename))
 
     # ------------ IDE slave (file) ---------------
     def get_ideslave_image(self):
-        self.get("[HardDisk]", "bUseIdeSlaveHardDiskImage") # for validation
-        return self.get("[HardDisk]", "szIdeSlaveHardDiskImage")
+        if self.has_hd_sections:
+            return self.get("[IDE]", "sDeviceFile1")
+        else:
+            return self.get("[HardDisk]", "szIdeSlaveHardDiskImage")
 
     def set_ideslave_image(self, filename):
-        if filename and os.path.isfile(filename):
-            self.set("[HardDisk]", "bUseIdeSlaveHardDiskImage", True)
-        self.set("[HardDisk]", "szIdeSlaveHardDiskImage", filename)
+        if self.has_hd_sections:
+            if filename and os.path.isfile(filename):
+                self.set("[IDE]", "bUseDevice1", True)
+            self.set("[IDE]", "sDeviceFile1", filename)
+        else:
+            if filename and os.path.isfile(filename):
+                self.set("[HardDisk]", "bUseIdeSlaveHardDiskImage", True)
+            self.set("[HardDisk]", "szIdeSlaveHardDiskImage", filename)
         self._change_option("--ide-slave", str(filename))
 
     # ------------ TOS ROM ---------------
