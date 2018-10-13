@@ -25,8 +25,7 @@ from gi.repository import Pango
 
 from uihelpers import UInfo, HatariTextInsert, create_table_dialog, \
      table_add_entry_row, table_add_widget_row, table_add_separator, \
-     table_add_radio_rows, table_set_col_offset, create_button, FselEntry, \
-     FselAndEjectFactory
+     table_add_radio_rows, create_button, FselEntry, FselAndEjectFactory
 
 
 # -----------------
@@ -288,7 +287,7 @@ class FloppyDialog(HatariUIDialog):
             label = "Disk %c image:" % drive
             fname = config.get_floppy(row)
             fsel, box = factory.get(label, path, fname, Gtk.FileChooserAction.OPEN)
-            table_add_widget_row(table, row, label, box)
+            table_add_widget_row(table, row, 0, label, box)
             self.floppy.append(fsel)
             row += 1
 
@@ -297,25 +296,25 @@ class FloppyDialog(HatariUIDialog):
             protect.append_text(text)
         protect.set_active(config.get_floppy_protection())
         protect.set_tooltip_text("Write protect floppy image contents")
-        table_add_widget_row(table, row, "Write protection:", protect)
+        table_add_widget_row(table, row, 0, "Write protection:", protect)
         row += 1
 
         ds = Gtk.CheckButton("Double sided drives")
         ds.set_active(config.get_doublesided())
         ds.set_tooltip_text("Whether drives are double or single sided. Can affect behavior of some games")
-        table_add_widget_row(table, row, None, ds)
+        table_add_widget_row(table, row, 0, None, ds)
         row += 1
 
         driveb = Gtk.CheckButton("Drive B connected")
         driveb.set_active(config.get_floppy_drives()[1])
         driveb.set_tooltip_text("Wheter drive B is connected. Can affect behavior of some demos & games")
-        table_add_widget_row(table, row, None, driveb)
+        table_add_widget_row(table, row, 0, None, driveb)
         row += 1
 
         fastfdc = Gtk.CheckButton("Fast floppy access")
         fastfdc.set_active(config.get_fastfdc())
         fastfdc.set_tooltip_text("Can cause incompatibilities with some games/demos")
-        table_add_widget_row(table, row, None, fastfdc)
+        table_add_widget_row(table, row, 0, None, fastfdc)
 
         table.show_all()
 
@@ -355,31 +354,31 @@ class HardDiskDialog(HatariUIDialog):
         label = "ASCI HD image:"
         path = config.get_acsi_image()
         fsel, box = factory.get(label, None, path, Gtk.FileChooserAction.OPEN)
-        table_add_widget_row(table, row, label, box, True)
+        table_add_widget_row(table, row, 0, label, box, True)
         self.acsi = fsel
         row += 1
 
         label = "IDE HD master image:"
         path = config.get_idemaster_image()
         fsel, box = factory.get(label, None, path, Gtk.FileChooserAction.OPEN)
-        table_add_widget_row(table, row, label, box, True)
+        table_add_widget_row(table, row, 0, label, box, True)
         self.idemaster = fsel
         row += 1
 
         label = "IDE HD slave image:"
         path = config.get_ideslave_image()
         fsel, box = factory.get(label, None, path, Gtk.FileChooserAction.OPEN)
-        table_add_widget_row(table, row, label, box, True)
+        table_add_widget_row(table, row, 0, label, box, True)
         self.ideslave = fsel
         row += 1
 
-        table_add_widget_row(table, row, " ", Gtk.HSeparator(), True)
+        table_add_widget_row(table, row, 0, " ", Gtk.HSeparator(), True)
         row += 1
 
         label = "GEMDOS drive directory:"
         path = config.get_hd_dir()
         fsel, box = factory.get(label, None, path, Gtk.FileChooserAction.SELECT_FOLDER)
-        table_add_widget_row(table, row, label, box, True)
+        table_add_widget_row(table, row, 0, label, box, True)
         self.hddir = fsel
         row += 1
 
@@ -387,7 +386,7 @@ class HardDiskDialog(HatariUIDialog):
         for text in config.get_hd_drives():
             hddrive.append_text(text)
         hddrive.set_tooltip_text("Whether GEMDOS HD emulation uses fixed drive letter, or first free drive letter after ASCI & IDE drives (detection unreliable)")
-        table_add_widget_row(table, row, "GEMDOS HD drive:", hddrive)
+        table_add_widget_row(table, row, 0, "GEMDOS HD drive:", hddrive)
         self.hddrive = hddrive
         row += 1
 
@@ -395,7 +394,7 @@ class HardDiskDialog(HatariUIDialog):
         for text in config.get_protection_types():
             protect.append_text(text)
         protect.set_tooltip_text("Whether/how to write protect (GEMDOS HD) emulation files, 'auto' means using host files' own properties")
-        table_add_widget_row(table, row, "Write protection:", protect)
+        table_add_widget_row(table, row, 0, "Write protection:", protect)
         self.protect = protect
         row += 1
 
@@ -403,7 +402,7 @@ class HardDiskDialog(HatariUIDialog):
         for text in config.get_hd_cases():
             lower.append_text(text)
         lower.set_tooltip_text("What to do with names of files created by Atari programs through GEMDOS HD emulation")
-        table_add_widget_row(table, row, "File names:", lower)
+        table_add_widget_row(table, row, 0, "File names:", lower)
         self.lower = lower
 
         table.show_all()
@@ -473,8 +472,8 @@ class DisplayDialog(HatariUIDialog):
         topw, toph = config.get_desktop_size()
         maxadjw = Gtk.Adjustment(maxw, 320, topw, 8, 40)
         maxadjh = Gtk.Adjustment(maxh, 200, toph, 8, 40)
-        scalew = Gtk.HScale(maxadjw)
-        scaleh = Gtk.HScale(maxadjh)
+        scalew = Gtk.HScale(adjustment=maxadjw)
+        scaleh = Gtk.HScale(adjustment=maxadjh)
         scalew.set_digits(0)
         scaleh.set_digits(0)
         scalew.set_tooltip_text("Preferred/maximum zoomed width")
@@ -578,7 +577,7 @@ class JoystickDialog(HatariUIDialog):
             for text in joytypes:
                 combo.append_text(text)
             combo.set_active(config.get_joystick(joy))
-            widget = table_add_widget_row(table, joy, "%s:" % label, combo)
+            widget = table_add_widget_row(table, joy, 0, "%s:" % label, combo)
             self.joy.append(widget)
             joy += 1
 
@@ -655,7 +654,7 @@ class PathDialog(HatariUIDialog):
             fsel = FselEntry(self.dialog, self._validate_fname, key)
             fsel.set_filename(path)
             self.paths.append((key, fsel))
-            table_add_widget_row(table, row, label, fsel.get_container())
+            table_add_widget_row(table, row, 0, label, fsel.get_container())
             row += 1
         table.show_all()
 
@@ -705,7 +704,7 @@ class SoundDialog(HatariUIDialog):
         self.ymmixer = ymmixer
 
         adj = Gtk.Adjustment(config.get_bufsize(), 0, 110, 10, 10, 10)
-        bufsize = Gtk.HScale(adj)
+        bufsize = Gtk.HScale(adjustment=adj)
         bufsize.set_digits(0)
         bufsize.set_tooltip_text("0 = use default value. In some situations, SDL default may cause large (~0.5s) sound delay at lower frequency.  If you have this problem, try with e.g. 20 ms, otherwise keep at 0.")
         self.bufsize = bufsize
@@ -831,7 +830,7 @@ class TraceDialog(HatariUIDialog):
             name = trace.replace("_", "-")
             widget = Gtk.CheckButton(name)
             self.tracewidgets[trace] = widget
-            vboxes[count/per_side].pack_start(widget, False, True)
+            vboxes[count/per_side].pack_start(widget, False, True, 0)
             count += 1
 
         dialog = Gtk.Dialog("Trace settings", parent,
@@ -910,21 +909,22 @@ class MachineDialog(HatariUIDialog):
     def _create_dialog(self, config):
         table, self.dialog = create_table_dialog(self.parent, "Machine configuration", 6, 4, "Set and reboot")
 
+        col = 0
         row = 0
-        self.machines = table_add_radio_rows(table, row, "Machine:",
+        self.machines = table_add_radio_rows(table, row, col, "Machine:",
                         config.get_machine_types(), self._machine_cb)
         row += 1
 
-        self.dsps = table_add_radio_rows(table, row, "DSP type:", config.get_dsp_types())
+        self.dsps = table_add_radio_rows(table, row, col, "DSP type:", config.get_dsp_types())
         row += 1
 
         # start next table column
+        col = 2
         row = 0
-        table_set_col_offset(table, 2)
-        self.monitors = table_add_radio_rows(table, row, "Monitor:", config.get_monitor_types())
+        self.monitors = table_add_radio_rows(table, row, col, "Monitor:", config.get_monitor_types())
         row += 1
 
-        self.clocks = table_add_radio_rows(table, row, "CPU clock:", config.get_cpuclock_types())
+        self.clocks = table_add_radio_rows(table, row, col, "CPU clock:", config.get_cpuclock_types())
         row += 1
 
         # fullspan at bottom
@@ -933,25 +933,25 @@ class MachineDialog(HatariUIDialog):
         combo = Gtk.ComboBoxText()
         for text in config.get_cpulevel_types():
             combo.append_text(text)
-        self.cpulevel = table_add_widget_row(table, row, "CPU type:", combo, fullspan)
+        self.cpulevel = table_add_widget_row(table, row, col, "CPU type:", combo, fullspan)
         row += 1
 
         combo = Gtk.ComboBoxText()
         for text in config.get_memory_names():
             combo.append_text(text)
-        self.memory = table_add_widget_row(table, row, "Memory:", combo, fullspan)
+        self.memory = table_add_widget_row(table, row, col, "Memory:", combo, fullspan)
         row += 1
 
         self.ttram = Gtk.Adjustment(config.get_ttram(), 0, 260, 4, 4, 4)
-        ttram = Gtk.HScale(self.ttram)
+        ttram = Gtk.HScale(adjustment=self.ttram)
         ttram.set_digits(0)
         ttram.set_tooltip_text("TT-RAM needs Falcon/TT with WinUAE CPU core and implies 32-bit addressing.  0 = disabled, 24-bit addressing.")
-        table_add_widget_row(table, row, "TT-RAM", ttram, fullspan)
+        table_add_widget_row(table, row, col, "TT-RAM", ttram, fullspan)
         row += 1
 
         label = "TOS image:"
         fsel = self._fsel(label, Gtk.FileChooserAction.OPEN)
-        self.tos = table_add_widget_row(table, row, label, fsel, fullspan)
+        self.tos = table_add_widget_row(table, row, col, label, fsel, fullspan)
         row += 1
 
         vbox = Gtk.VBox()
@@ -961,7 +961,7 @@ class MachineDialog(HatariUIDialog):
         self.timerd.set_tooltip_text("Improves ST/STE emulation performance, but some rare demos/games don't work with this")
         vbox.add(self.compatible)
         vbox.add(self.timerd)
-        table_add_widget_row(table, row, "Misc.:", vbox, fullspan)
+        table_add_widget_row(table, row, col, "Misc.:", vbox, fullspan)
         row += 1
 
         table.show_all()

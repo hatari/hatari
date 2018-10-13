@@ -217,6 +217,8 @@ def create_toggle(label, cb, data = None):
 
 # -----------------------------
 # Table dialog helper functions
+#
+# TODO: rewrite to use Gtk.Grid instead of Gtk.Table
 
 def create_table_dialog(parent, title, rows, cols, oktext = Gtk.STOCK_APPLY):
     "create_table_dialog(parent,title,rows, cols, oktext) -> (table,dialog)"
@@ -226,75 +228,58 @@ def create_table_dialog(parent, title, rows, cols, oktext = Gtk.STOCK_APPLY):
         Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL))
 
     table = Gtk.Table(rows, cols)
-    table.set_data("col_offset", 0)
     table.set_col_spacings(8)
     dialog.vbox.add(table)
     return (table, dialog)
 
-def table_set_col_offset(table, offset):
-    "set column offset for successive table_* ops on given table"
-    table.set_data("col_offset", offset)
-
-def table_add_entry_row(table, row, label, size = None):
-    "table_add_entry_row(table,row,label,[entry size]) -> entry"
+def table_add_entry_row(table, row, col, label, size = None):
+    "table_add_entry_row(table,row,col,label,[entry size]) -> entry"
     # add given label to given row in given table
     # return entry for that line
-    label = Gtk.Label(label=label)
-    align = Gtk.Alignment.new(1) # right aligned
-    align.add(label)
-    col = table.get_data("col_offset")
-    table.attach(align, col, col+1, row, row+1, Gtk.AttachOptions.FILL)
+    label = Gtk.Label(label=label, halign=Gtk.Align.END)
+    table.attach(label, col, col+1, row, row+1, Gtk.AttachOptions.FILL)
     col += 1
     if size:
-        entry = Gtk.Entry(size)
-        entry.set_width_chars(size)
-        align = Gtk.Alignment.new(0) # left aligned (default is centered)
-        align.add(entry)
-        table.attach(align, col, col+1, row, row+1)
+        entry = Gtk.Entry(max_length=size, width_chars=size, halign=Gtk.Align.START)
+        table.attach(entry, col, col+1, row, row+1)
     else:
         entry = Gtk.Entry()
         table.attach(entry, col, col+1, row, row+1)
     return entry
 
-def table_add_widget_row(table, row, label, widget, fullspan = False):
-    "table_add_widget_row(table,row,label,widget) -> widget"
+def table_add_widget_row(table, row, col, label, widget, fullspan = False):
+    "table_add_widget_row(table,row,col,label,widget) -> widget"
     # add given label right aligned to given row in given table
     # add given widget to the right column and returns it
     # return entry for that line
-    if fullspan:
-        col = 0
-    else:
-        col = table.get_data("col_offset")
     if label:
-        label = Gtk.Label(label=label)
-        align = Gtk.Alignment.new(1)
-        align.add(label)
-        table.attach(align, col, col+1, row, row+1, Gtk.AttachOptions.FILL)
+        if fullspan:
+            lcol = 0
+        else:
+            lcol = col
+        label = Gtk.Label(label=label, halign=Gtk.Align.END)
+        table.attach(label, lcol, lcol+1, row, row+1, Gtk.AttachOptions.FILL)
     if fullspan:
-        col = table.get_data("col_offset")
         table.attach(widget, 1, col+2, row, row+1)
     else:
         table.attach(widget, col+1, col+2, row, row+1)
     return widget
 
-def table_add_radio_rows(table, row, label, texts, cb = None):
-    "table_add_radio_rows(table,row,label,texts[,cb]) -> [radios]"
+def table_add_radio_rows(table, row, col, label, texts, cb = None):
+    "table_add_radio_rows(table,row,col,label,texts[,cb]) -> [radios]"
     # - add given label right aligned to given row in given table
     # - create/add radio buttons with given texts to next row, set
     #   the one given as "active" as active and set 'cb' as their
     #   "toggled" callback handler
     # - return array or radiobuttons
-    label = Gtk.Label(label=label)
-    align = Gtk.Alignment.new(1)
-    align.add(label)
-    col = table.get_data("col_offset")
-    table.attach(align, col, col+1, row, row+1, Gtk.AttachOptions.FILL)
+    label = Gtk.Label(label=label, halign=Gtk.Align.END)
+    table.attach(label, col, col+1, row, row+1)
 
     radios = []
     radio = None
     box = Gtk.VBox()
     for text in texts:
-        radio = Gtk.RadioButton(radio, text)
+        radio = Gtk.RadioButton(radio, label=text)
         if cb:
             radio.connect("toggled", cb, text)
         radios.append(radio)
@@ -305,7 +290,7 @@ def table_add_radio_rows(table, row, label, texts, cb = None):
 def table_add_separator(table, row):
     "table_add_separator(table,row)"
     widget = Gtk.HSeparator()
-    endcol = table.get_data("n-columns")
+    endcol = table.get_property("n-columns")
     # separator for whole table width
     table.attach(widget, 0, endcol, row, row+1, Gtk.AttachOptions.FILL)
 
@@ -365,7 +350,7 @@ class FselAndEjectFactory:
 
         box = Gtk.HBox()
         box.pack_start(fsel, True, True, 0)
-        box.pack_start(eject, False, False)
+        box.pack_start(eject, False, False, 0)
         return (fsel, box)
 
     def _eject(self, widget, fsel):
@@ -389,7 +374,7 @@ class FselEntry:
         hbox = Gtk.HBox()
         hbox.add(entry)
         button = create_button("Select...", self._select_file_cb)
-        hbox.pack_start(button, False, False)
+        hbox.pack_start(button, False, False, 0)
         self._entry = entry
         self._hbox = hbox
 

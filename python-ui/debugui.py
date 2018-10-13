@@ -40,10 +40,10 @@ class SaveDialog:
     def __init__(self, parent):
         table, self.dialog = create_table_dialog(parent, "Save from memory", 3, 2)
         self.file = FselEntry(self.dialog)
-        table_add_widget_row(table, 0, "File name:", self.file.get_container())
-        self.address = table_add_entry_row(table, 1, "Save address:", 6)
+        table_add_widget_row(table, 0, 0, "File name:", self.file.get_container())
+        self.address = table_add_entry_row(table, 1, 0, "Save address:", 6)
         self.address.connect("activate", dialog_apply_cb, self.dialog)
-        self.length = table_add_entry_row(table, 2, "Number of bytes:", 6)
+        self.length = table_add_entry_row(table, 2, 0, "Number of bytes:", 6)
         self.length.connect("activate", dialog_apply_cb, self.dialog)
 
     def run(self, address):
@@ -88,8 +88,8 @@ class LoadDialog:
         chooser.set_local_only(True)  # Hatari cannot access URIs
         chooser.set_width_chars(12)
         table, self.dialog = create_table_dialog(parent, "Load to memory", 2, 2)
-        self.file = table_add_widget_row(table, 0, "File name:", chooser)
-        self.address = table_add_entry_row(table, 1, "Load address:", 6)
+        self.file = table_add_widget_row(table, 0, 0, "File name:", chooser)
+        self.address = table_add_entry_row(table, 1, 0, "Load address:", 6)
         self.address.connect("activate", dialog_apply_cb, self.dialog)
 
     def run(self, address):
@@ -126,7 +126,7 @@ class OptionsDialog:
              Gtk.STOCK_CLOSE, Gtk.ResponseType.CLOSE))
 
         self.lines = Gtk.Adjustment(0, 5, 50)
-        scale = Gtk.HScale(self.lines)
+        scale = Gtk.HScale(adjustment=self.lines)
         scale.set_digits(0)
 
         self.follow_pc = Gtk.CheckButton("On stop, set address to PC")
@@ -194,10 +194,9 @@ class MemoryAddress:
         self.last  = None
 
     def create_widgets(self):
-        entry = Gtk.Entry(6)
-        entry.set_width_chars(6)
+        entry = Gtk.Entry(max_length=6, width_chars=6)
         entry.connect("activate", self._entry_cb)
-        memory = Gtk.Label()
+        memory = Gtk.Label(halign=Gtk.Align.START, margin_start=8, margin_end=8, margin_top=8)
         mono = Pango.FontDescription("monospace")
         memory.modify_font(mono)
         entry.modify_font(mono)
@@ -377,10 +376,7 @@ class HatariDebugUI:
         self.create_top_buttons(hbox1)
 
         # disasm/memory dump at the middle
-        align = Gtk.Alignment.new()
-        # top, bottom, left, right padding
-        align.set_padding(8, 0, 8, 8)
-        align.add(self.address.get_memory_label())
+        addr = self.address.get_memory_label()
 
         # buttons at bottom
         hbox2 = Gtk.HBox()
@@ -388,9 +384,9 @@ class HatariDebugUI:
 
         # their container
         vbox = Gtk.VBox()
-        vbox.pack_start(hbox1, False)
-        vbox.pack_start(align, True, True)
-        vbox.pack_start(hbox2, False)
+        vbox.pack_start(hbox1, False, True, 0)
+        vbox.pack_start(addr, True, True, 0)
+        vbox.pack_start(hbox2, False, True, 0)
 
         # and the window for all of this
         window = Gtk.Window(Gtk.WindowType.TOPLEVEL)
@@ -429,7 +425,7 @@ class HatariDebugUI:
 
         # to middle of <<>> buttons
         address_entry = self.address.get_address_entry()
-        box.pack_start(address_entry, False)
+        box.pack_start(address_entry, False, True, 0)
         box.reorder_child(address_entry, 5)
 
     def create_bottom_buttons(self, box):
@@ -440,11 +436,10 @@ class HatariDebugUI:
         )
         group = None
         for label, mode in radios:
-            button = Gtk.RadioButton(group, label)
+            button = Gtk.RadioButton(label=label, group=group, can_focus=False)
             if not group:
                 group = button
             button.connect("toggled", self.dumpmode_cb, mode)
-            button.unset_flags(Gtk.CAN_FOCUS)
             box.add(button)
         group.set_active(True)
 

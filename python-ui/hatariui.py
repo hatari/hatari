@@ -113,20 +113,20 @@ class UICallbacks:
         # add horizontal elements
         hbox = Gtk.HBox()
         if toolbars["left"]:
-            hbox.pack_start(toolbars["left"], False, True)
+            hbox.pack_start(toolbars["left"], False, True, 0)
         if embed:
             self._add_uisocket(hbox)
         if toolbars["right"]:
-            hbox.pack_start(toolbars["right"], False, True)
+            hbox.pack_start(toolbars["right"], False, True, 0)
         # add vertical elements
         vbox = Gtk.VBox()
         if menu:
             vbox.add(menu)
         if toolbars["top"]:
-            vbox.pack_start(toolbars["top"], False, True)
+            vbox.pack_start(toolbars["top"], False, True, 0)
         vbox.add(hbox)
         if toolbars["bottom"]:
-            vbox.pack_start(toolbars["bottom"], False, True)
+            vbox.pack_start(toolbars["bottom"], False, True, 0)
         # put them to main window
         mainwin = Gtk.Window(Gtk.WindowType.TOPLEVEL)
         mainwin.set_title("%s %s" % (UInfo.name, UInfo.version))
@@ -144,19 +144,18 @@ class UICallbacks:
 
     def _add_uisocket(self, box):
         # add Hatari parent container to given box
-        socket = Gtk.Socket()
+        socket = Gtk.Socket(can_focus=True)
         # without this, closing Hatari would remove the socket widget
         socket.connect("plug-removed", lambda obj: True)
         socket.modify_bg(Gtk.StateType.NORMAL, Gdk.color_parse("black"))
         socket.set_events(Gdk.EventMask.ALL_EVENTS_MASK)
-        socket.set_flags(Gtk.CAN_FOCUS)
         # set max Hatari window size = desktop size
         self.config.set_desktop_size(Gdk.Screen.width(), Gdk.Screen.height())
         # set initial embedded hatari size
         width, height = self.config.get_window_size()
         socket.set_size_request(width, height)
         # no resizing for the Hatari window
-        box.pack_start(socket, False, False)
+        box.pack_start(socket, False, False, 0)
         self.hatariwin = socket
 
     # ------- run callback -----------
@@ -191,7 +190,6 @@ class UICallbacks:
         if self.floppy:
             args += self.floppy
         if self.hatariwin:
-            size = self.hatariwin.window.get_size()
             self.hatari.run(args, self.hatariwin.get_id())
             # get notifications of Hatari window size changes
             self.hatari.enable_embed_info()
