@@ -1,10 +1,10 @@
 #!/usr/bin/python2
 #
-# A PyGtk UI for Hatari that can embed the Hatari emulator window.
+# A Python Gtk UI for Hatari that can embed the Hatari emulator window.
 #
 # Requires PyGtk (python-gtk2) package and its dependencies to be present.
 #
-# Copyright (C) 2008-2011 by Eero Tamminen
+# Copyright (C) 2008-2018 by Eero Tamminen
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,10 +20,11 @@ import os
 import sys
 import getopt
 
-# use correct version of pygtk/gtk
 import gi
+# use correct version of gtk
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
+from gi.repository import Gdk
 from gi.repository import GObject
 
 from debugui import HatariDebugUI

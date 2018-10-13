@@ -2,7 +2,7 @@
 #
 # Misc common helper classes and functions for the Hatari UI
 #
-# Copyright (C) 2008-2012 by Eero Tamminen
+# Copyright (C) 2008-2018 by Eero Tamminen
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,8 +16,8 @@
 
 import os
 import sys
-# use correct version of pygtk/gtk
 import gi
+# use correct version of gtk
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 from gi.repository import GObject

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 #
 # Tests embedding hatari with three different methods:
 # "hatari": ask Hatari to reparent to given window
@@ -26,8 +26,9 @@
 #     -> seems to work fine
 import os
 import sys
-from gi.repository import Gtk
 import time
+from gi.repository import Gtk
+from gi.repository import Gdk
 from gi.repository import GObject
 
 def usage(error):
