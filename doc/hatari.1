@@ -46,16 +46,16 @@ program name.
 Hatari options are split into several categories:
 
 .SH "General options"
-.TP 
+.TP
 .B \-h, \-\-help
 Print command line options and terminate
-.TP 
+.TP
 .B \-v, \-\-version
 Print version information and terminate
-.TP 
+.TP
 .B \-\-confirm\-quit <bool>
 Whether Hatari confirms quitting
-.TP 
+.TP
 .B \-c, \-\-configfile <filename>
 Read additional configuration values from <file>, these
 override values read from the global and user configuration
@@ -63,10 +63,10 @@ files
 .TP
 .B \-k, \-\-keymap <file>
 Load keyboard mapping from <file>
-.TP 
+.TP
 .B \-\-fast\-forward <bool>
 On fast machine helps skipping (fast forwarding) Hatari output
-.TP 
+.TP
 .B \-\-auto <program>
 Autostarts given program, if TOS finds it.  Program needs to
 be given with full path it will have under emulation, for
@@ -75,25 +75,25 @@ TOS a virtual INF file, including that path as what TOS should
 start automatically
 
 .SH "Common display options"
-.TP 
+.TP
 .B \-m, \-\-mono
 Start in monochrome mode instead of color
-.TP 
+.TP
 .B \-\-monitor <x>
 Select monitor type (x = mono/rgb/vga/tv)
-.TP 
+.TP
 .B \-\-tos-res <x>
 Select TOS resolution for color monitors (x = low/med/high/ttlow/ttmed)
 .TP
 .B \-f, \-\-fullscreen
 Start the emulator in fullscreen mode
-.TP 
+.TP
 .B \-w, \-\-window
 Start the emulator in windowed mode
-.TP 
+.TP
 .B \-\-grab
 Grab mouse (also) in windowed mode
-.TP 
+.TP
 .B \-\-resizable <bool>
 Allow window resizing
 
@@ -101,7 +101,7 @@ NOTE: this is supported only by Hatari SDL2 build
 .TP
 .B \-\-borders <bool>
 Show ST/STE/Falcon screen borders (for low/med resolution overscan demos)
-.TP 
+.TP
 .B \-\-frameskips <x>
 Skip <x> frames after each displayed frame to accelerate emulation
 (0=disabled, >4 uses automatic frameskip with given value as maximum)
@@ -150,17 +150,17 @@ Therefore this is mainly useful only if you suffer from the described
 effects, but still want to grab mouse and remove other distractions
 from the screen just by toggling fullscreen mode. (disabled by
 default)
-.TP 
+.TP
 .B \-\-spec512 <x>
 Hatari uses this threshold to decide when to render a screen with
 the slower but more accurate Spectrum512 screen conversion functions
 (0 <= x <= 512, 0=disable)
-.TP 
+.TP
 .B \-z, \-\-zoom <x>
 Zoom (double) low resolution (1=no, 2=yes)
 .TP
 .B \-\-video-timing <x>
-Wakeup State for MMU/GLUE (x=ws1/ws2/ws3/ws4/random, 
+Wakeup State for MMU/GLUE (x=ws1/ws2/ws3/ws4/random,
 default ws3). When powering on, the STF will randomly choose one of these
 wake up states. The state will then affect the timings where border removals
 and other video tricks should be made, which can give different results on
@@ -171,7 +171,7 @@ more problems.
 Zooming to sizes specified below is internally done using integer scaling
 factors. This means that different Atari resolutions may show up with
 different sizes, but they are never blurry.
-.TP 
+.TP
 .B \-\-desktop <bool>
 Whether to use desktop resolution on fullscreen to avoid issues
 related to resolution switching. Otherwise fullscreen will use
@@ -246,28 +246,28 @@ Force AVI frame rate (x = 50/60/71/...)
 Use <file> to record AVI
 
 .SH "Devices options"
-.TP 
+.TP
 .B \-j, \-\-joystick <port>
 Emulate joystick with cursor keys in given port (0-5)
-.TP 
+.TP
 .B \-\-joy<port> <type>
 Set joystick type (none/keys/real) for given port
-.TP 
+.TP
 .B \-\-printer <file>
 Enable printer support and write data to <file>
-.TP 
+.TP
 .B \-\-midi <bool>
 Whether to enable MIDI support (PortMidi only)
-.TP 
+.TP
 .B \-\-midi\-in <filename>
 Enable MIDI support and write raw MIDI data to <file> (Linux only)
-.TP 
+.TP
 .B \-\-midi\-out <filename>
 Enable MIDI support and read raw MIDI data from <file> (Linux only)
-.TP 
+.TP
 .B \-\-rs232\-in <filename>
 Enable serial port support and use <file> as the input device
-.TP 
+.TP
 .B \-\-rs232\-out <filename>
 Enable serial port support and use <file> as the output device
 
@@ -290,7 +290,7 @@ Set disk image for floppy drive A
 .TP
 .B \-\-disk\-b <file>
 Set disk image for floppy drive B
-.TP 
+.TP
 .B \-\-fastfdc <bool>
 speed up FDC emulation (can cause incompatibilities)
 .TP
@@ -353,15 +353,15 @@ If just a filename is given, it is assigned to BUS ID 0
 .TP
 .B \-\-ide\-master <file>
 Emulate an IDE master hard disk with an image <file>
-.TP 
+.TP
 .B \-\-ide\-slave <file>
 Emulate an IDE slave hard disk with an image <file>
 
 .SH "Memory options"
-.TP 
+.TP
 .B \-\-memstate <file>
 Load memory snap-shot <file>
-.TP 
+.TP
 .B \-s, \-\-memsize <x>
 Set amount of emulated ST RAM, x = 1 to 14 MiB, or 0 for 512 KiB.
 Other values are considered as a size in KiB
@@ -370,26 +370,26 @@ Other values are considered as a size in KiB
 Set amount of emulated TT RAM, x = 0 to 512 MiB (in 4MB steps)
 
 .SH "ROM options"
-.TP 
+.TP
 .B \-t, \-\-tos <imagefile>
 Specify TOS ROM image to use
-.TP 
+.TP
 .B \-\-patch\-tos <bool>
 Use this option to enable/disable TOS ROM patching. Experts only! Leave
 this enabled unless you know what you are doing!
-.TP 
+.TP
 .B \-\-cartridge <imagefile>
 Use ROM cartridge image <file> (only works if GEMDOS HD emulation and
 extended VDI resolution are disabled)
 
 .SH "Common CPU options"
-.TP 
+.TP
 .B \-\-cpulevel <x>
 Specify CPU (680x0) to use (use x >= 1 with EmuTOS or TOS >= 2.06 only!)
-.TP 
+.TP
 .B \-\-cpuclock <x>
 Set the CPU clock (8, 16 or 32 Mhz)
-.TP 
+.TP
 .B \-\-compatible <bool>
 Use a more compatible, but slower 68000 CPU mode with
 better prefetch accuracy and cycle counting
@@ -413,16 +413,16 @@ Use full software FPU emulation (Softfloat library)
 Use MMU emulation
 
 .SH "Misc system options"
-.TP 
+.TP
 .B \-\-machine <x>
 Select machine type (x = st, megast, ste, megaste, tt or falcon)
-.TP 
+.TP
 .B \-\-blitter <bool>
 Enable blitter emulation (ST only)
-.TP 
+.TP
 .B \-\-dsp <x>
 Falcon DSP emulation (x = none, dummy or emu, Falcon only)
-.TP 
+.TP
 .B \-\-timer\-d <bool>
 Patch redundantly high Timer-D frequency set by TOS.  This about doubles
 Hatari speed (for ST/e emulation) as the original Timer-D frequency causes
@@ -433,10 +433,10 @@ Patch TOS and initialize the so-called "memvalid" system variables to by-pass
 the memory test of TOS, so that the system boots faster.
 
 .SH "Sound options"
-.TP 
+.TP
 .B \-\-mic <bool>
 Enable/disable (Falcon only) microphone
-.TP 
+.TP
 .B \-\-sound <x>
 Sound frequency: 6000-50066. "off" disables the sound and speeds up
 the emulation. To prevent extra sound artifacts, the frequency should be
@@ -444,7 +444,7 @@ selected so that it either matches evenly with the STE/TT/Falcon sound
 DMA (6258, 12517, 250033, 50066 Hz) or your sound card frequencies
 (11025, 22050, 44100 or 6000...48000 Hz).  Check what your sound card
 supports.
-.TP 
+.TP
 .B \-\-sound\-buffer\-size <x>
 SDL's sound buffer size: 10-100, or 0 to use default buffer size.
 By default Hatari uses an SDL buffer size of 1024 samples, which
@@ -454,7 +454,7 @@ default setting can cause a bigger delay at lower frequency (nearly 0.5 sec).
 In that case, you can use this option to force the size of the sound
 buffer to a fixed number of milliseconds of sound (using 20 is often
 a good choice if you have such problems). Most users will not need this option.
-.TP 
+.TP
 .B \-\-sound\-sync <bool>
 The emulation rate is nudged by +100 or 0 or \-100 micro-seconds on occasion.
 This prevents the sound buffer from overflowing (long latency and
@@ -464,7 +464,7 @@ synchronized, while the emulator continuously generates every sound
 sample and the crystal controlled sound system consumes every sample.
 .br
 (on|off, off=default)
-.TP 
+.TP
 .B \-\-ym\-mixing <x>
 Select a method for mixing the three YM2149 voice volumes together.
 "model" uses a mathematical model of the YM voices,
@@ -475,15 +475,15 @@ on STF and "linear" just averages the 3 YM voices.
 .TP
 .B \-W, \-\-wincon
 Open console window (Windows only)
-.TP 
+.TP
 .B \-D, \-\-debug
 Toggle whether CPU exceptions invoke the debugger
-.TP 
+.TP
 .B \-\-debug\-except <flags>
 Specify which exceptions invoke debugger, see
 .B \-\-debug\-except help
 for available (comma separated) exception flags.
-.TP 
+.TP
 .B \-\-bios\-intercept <bool>
 Enable/Disable XBios command parsing. Allows Atari programs to use all
 Hatari functionality and change Hatari state through Hatari specific
@@ -500,7 +500,7 @@ console output, not just normal BIOS console output.
 Set disassembly options.  'uae' and 'ext' select the dissasembly engine
 to use, bitmask sets output options for the external disassembly engine
 and 'help' lists them.
-.TP 
+.TP
 .B \-\-natfeats <bool>
 Enable/disable (basic) Native Features support.
 E.g. EmuTOS uses it for debug output.
@@ -593,10 +593,10 @@ will act as
 as well as long as you do not press it together with a Hatari hotkey
 combination.
 .PP
-The 
+The
 .B right Ctrl
 key is used as the fire button of the emulated joystick when you turn
-on joystick emulation via keyboard. 
+on joystick emulation via keyboard.
 .PP
 The cursor keys will act as the cursor keys on the Atari ST as long as
 joystick emulation via keyboard has been turned off.
