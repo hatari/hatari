@@ -140,7 +140,7 @@ class Hatari:
         if error:
             print("ERROR: %s" % error)
             sys.exit(-1)
-        
+
     def is_running(self):
         if not self.pid:
             return False
@@ -154,7 +154,7 @@ class Hatari:
                 self.control = None
             return False
         return True
-    
+
     def run_hatari(self, args):
         if self.control:
             print("ERROR: Hatari is already running, stop it first")
@@ -191,19 +191,19 @@ class Hatari:
         else:
             print("ERROR: no Hatari (control socket)")
             return False
-        
+
     def change_option(self, option):
         return self.send_message("hatari-option %s" % option)
 
     def trigger_shortcut(self, shortcut):
         return self.send_message("hatari-shortcut %s" % shortcut)
-    
+
     def _shift_up(self):
         if self.shiftdown:
             self.shiftdown = False
             return self.send_message("hatari-event keyup %s" % Scancode.LeftShift, True)
         return True
-    
+
     def _unshifted_keypress(self, key):
         self._shift_up()
         if key == ' ':
@@ -239,10 +239,10 @@ class Hatari:
 
     def debug_command(self, cmd):
         return self.send_message("hatari-debug %s" % cmd)
-    
+
     def change_path(self, path):
         return self.send_message("hatari-path %s" % path)
-    
+
     def toggle_device(self, device):
         return self.send_message("hatari-toggle %s" % device)
 
@@ -271,14 +271,14 @@ class Hatari:
 class CommandInput:
     prompt = "hatari-command: "
     historysize = 99
-    
+
     def __init__(self, commands):
         readline.set_history_length(self.historysize)
         readline.parse_and_bind("tab: complete")
         readline.set_completer_delims(" \t\r\n")
         readline.set_completer(self.complete)
         self.commands = commands
-    
+
     def complete(self, text, state):
         idx = 0
         #print "text: '%s', state '%d'" % (text, state)
@@ -287,7 +287,7 @@ class CommandInput:
                 idx += 1
                 if idx > state:
                     return cmd
-    
+
     def loop(self):
         try:
             rawline = input(self.prompt)
@@ -594,7 +594,7 @@ class Main:
         exit = False
         if "--" not in args:
             return (args[1:], file, exit)
-        
+
         for arg in args:
             if arg == "--":
                 return (args[args.index("--")+1:], file, exit)

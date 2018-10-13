@@ -35,7 +35,7 @@ class HatariUIDialog:
         "<any>Dialog(parent) -> object"
         self.parent = parent
         self.dialog = None
-    
+
     def run(self):
         """run() -> response. Shows dialog and returns response,
 subclasses overriding run() require also an argument."""
@@ -111,7 +111,7 @@ class InputDialog(HatariUIDialog):
         dialog = gtk.Dialog("Key/mouse input", parent,
             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
             ("Close", gtk.RESPONSE_CLOSE))
-        
+
         entry = gtk.Entry()
         entry.connect("activate", self._entry_cb)
         insert = create_button("Insert", self._entry_cb)
@@ -141,7 +141,7 @@ class InputDialog(HatariUIDialog):
         dialog.show_all()
         self.dialog = dialog
         self.entry = entry
-    
+
     def _entry_cb(self, widget):
         text = self.entry.get_text()
         if text:
@@ -188,7 +188,7 @@ class QuitSaveDialog(HatariUIDialog):
         self.scrolledwindow = scrolledwindow
         self.viewport = viewport
         self.dialog = dialog
-        
+
     def run(self, config):
         "run(config) -> False if canceled, True otherwise or if no changes"
         changes = []
@@ -204,7 +204,7 @@ class QuitSaveDialog(HatariUIDialog):
         else:
             self.scrolledwindow.set_size_request(-1, 320)
         self.viewport.show_all()
-        
+
         response = self.dialog.run()
         self.dialog.hide()
         if response == gtk.RESPONSE_CANCEL:
@@ -239,7 +239,7 @@ Terminate Hatari anyway?""")
             return True
         return False
 
-    
+
 # ---------------------------
 # Reset Hatari dialog
 
@@ -303,7 +303,7 @@ class FloppyDialog(HatariUIDialog):
         ds.set_tooltip_text("Whether drives are double or single sided. Can affect behavior of some games")
         table_add_widget_row(table, row, None, ds)
         row += 1
-        
+
         driveb = gtk.CheckButton("Drive B connected")
         driveb.set_active(config.get_floppy_drives()[1])
         driveb.set_tooltip_text("Wheter drive B is connected. Can affect behavior of some demos & games")
@@ -321,14 +321,14 @@ class FloppyDialog(HatariUIDialog):
         self.fastfdc = fastfdc
         self.driveb = driveb
         self.ds = ds
-    
+
     def run(self, config):
         "run(config), show disk image dialog"
         if not self.dialog:
             self._create_dialog(config)
         response = self.dialog.run()
         self.dialog.hide()
-        
+
         if response == gtk.RESPONSE_APPLY:
             config.lock_updates()
             for drive in range(2):
@@ -396,7 +396,7 @@ class HardDiskDialog(HatariUIDialog):
         table_add_widget_row(table, row, "Write protection:", protect)
         self.protect = protect
         row += 1
-        
+
         lower = gtk.combo_box_new_text()
         for text in config.get_hd_cases():
             lower.append_text(text)
@@ -405,7 +405,7 @@ class HardDiskDialog(HatariUIDialog):
         self.lower = lower
 
         table.show_all()
-    
+
     def _get_config(self, config):
         path = config.get_acsi_image()
         if path:
@@ -539,7 +539,7 @@ class DisplayDialog(HatariUIDialog):
         self.statusbar = statusbar
         self.led = led
         self.crop = crop
- 
+
     def run(self, config):
         "run(config), show display dialog"
         if not self.dialog:
@@ -567,7 +567,7 @@ class DisplayDialog(HatariUIDialog):
 class JoystickDialog(HatariUIDialog):
     def _create_dialog(self, config):
         table, self.dialog = create_table_dialog(self.parent, "Joystick settings", 9, 2)
-        
+
         joy = 0
         self.joy = []
         joytypes = config.get_joystick_types()
@@ -581,14 +581,14 @@ class JoystickDialog(HatariUIDialog):
             joy += 1
 
         table.show_all()
-    
+
     def run(self, config):
         "run(config), show joystick dialog"
         if not self.dialog:
             self._create_dialog(config)
         response = self.dialog.run()
         self.dialog.hide()
-        
+
         if response == gtk.RESPONSE_APPLY:
             config.lock_updates()
             for joy in range(6):
@@ -623,14 +623,14 @@ class PeripheralDialog(HatariUIDialog):
         self.printer = printer
         self.rs232 = rs232
         self.midi = midi
-    
+
     def run(self, config):
         "run(config), show peripherals dialog"
         if not self.dialog:
             self._create_dialog(config)
         response = self.dialog.run()
         self.dialog.hide()
-        
+
         if response == gtk.RESPONSE_APPLY:
             config.lock_updates()
             config.set_midi(self.midi.get_active())
@@ -656,7 +656,7 @@ class PathDialog(HatariUIDialog):
             table_add_widget_row(table, row, label, fsel.get_container())
             row += 1
         table.show_all()
-    
+
     def _validate_fname(self, key, fname):
         if key != "soundout":
             return True
@@ -664,7 +664,7 @@ class PathDialog(HatariUIDialog):
             return True
         ErrorDialog(self.dialog).run("Sound output file name:\n\t%s\nneeds to end with '.ym' or '.wav'." % fname)
         return False
-    
+
     def run(self, config):
         "run(config), show paths dialog"
         if not self.dialog:
@@ -747,7 +747,7 @@ class SoundDialog(HatariUIDialog):
             hz = self.hz.get_active()
             config.set_sound(enabled, hz)
             config.flush_updates()
-        
+
 
 # ---------------------------
 # Trace settings dialog
@@ -831,7 +831,7 @@ class TraceDialog(HatariUIDialog):
             self.tracewidgets[trace] = widget
             vboxes[count/per_side].pack_start(widget, False, True)
             count += 1
-        
+
         dialog = gtk.Dialog("Trace settings", parent,
             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
             (gtk.STOCK_APPLY,  gtk.RESPONSE_APPLY,
@@ -870,7 +870,7 @@ class TraceDialog(HatariUIDialog):
         # that run method gets from caller and sets. It's up to caller
         # whether the saving or loading happens actually to disk
         self._set_traces(self.savedpoints)
-    
+
     def _save_traces(self, widget):
         self.savedpoints = self._get_traces()
 
@@ -907,7 +907,7 @@ class MachineDialog(HatariUIDialog):
 
     def _create_dialog(self, config):
         table, self.dialog = create_table_dialog(self.parent, "Machine configuration", 6, 4, "Set and reboot")
-        
+
         row = 0
         self.machines = table_add_radio_rows(table, row, "Machine:",
                         config.get_machine_types(), self._machine_cb)
@@ -946,7 +946,7 @@ class MachineDialog(HatariUIDialog):
         ttram.set_tooltip_text("TT-RAM needs Falcon/TT with WinUAE CPU core and implies 32-bit addressing.  0 = disabled, 24-bit addressing.")
         table_add_widget_row(table, row, "TT-RAM", ttram, fullspan)
         row += 1
-        
+
         label = "TOS image:"
         fsel = self._fsel(label, gtk.FILE_CHOOSER_ACTION_OPEN)
         self.tos = table_add_widget_row(table, row, label, fsel, fullspan)
@@ -971,7 +971,7 @@ class MachineDialog(HatariUIDialog):
         fsel.set_width_chars(12)
         fsel.set_action(action)
         return fsel
-    
+
     def _get_config(self, config):
         self.machines[config.get_machine()].set_active(True)
         self.monitors[config.get_monitor()].set_active(True)
@@ -992,7 +992,7 @@ class MachineDialog(HatariUIDialog):
             if radio.get_active():
                 return idx
             idx += 1
-        
+
     def _set_config(self, config):
         config.lock_updates()
         config.set_machine(self._get_active_radio(self.machines))

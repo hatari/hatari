@@ -97,7 +97,7 @@ def main(args):
     if dstdir[-1] == os.path.sep:
         dstdir = dstdir[:-1]
     if dstdir.startswith(srcdir+os.path.sep):
-        error_exit("target directory '%s' is inside source directory '%s'" % (srcdir, dstdir))        
+        error_exit("target directory '%s' is inside source directory '%s'" % (srcdir, dstdir))
     convert_dir(srcdir, dstdir)
     check_conflicts(srcdir, dstdir)
 

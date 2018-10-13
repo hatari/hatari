@@ -43,7 +43,7 @@ class UInfo:
 
     # path to the directory where the called script resides
     path = os.path.dirname(sys.argv[0])
-    
+
     def __init__(self, path = None):
         "UIinfo([path]), set suitable paths for resources from CWD and path"
         if path:
@@ -78,7 +78,7 @@ class UIHelp:
         if path:
             return path
         return None
-        
+
     def get_binary_path(self, name):
         """return true if given binary is in path"""
         # could also try running the binary with "--version" arg
@@ -392,7 +392,7 @@ class FselEntry:
         hbox.pack_start(button, False, False)
         self._entry = entry
         self._hbox = hbox
-    
+
     def _select_file_cb(self, widget):
         fname = self._entry.get_text()
         while True:
@@ -406,10 +406,10 @@ class FselEntry:
                     continue
             self._entry.set_text(fname)
             return
-    
+
     def set_filename(self, fname):
         self._entry.set_text(fname)
-        
+
     def get_filename(self):
         return self._entry.get_text()
 

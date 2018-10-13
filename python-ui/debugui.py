@@ -44,7 +44,7 @@ class SaveDialog:
         self.address.connect("activate", dialog_apply_cb, self.dialog)
         self.length = table_add_entry_row(table, 2, "Number of bytes:", 6)
         self.length.connect("activate", dialog_apply_cb, self.dialog)
-    
+
     def run(self, address):
         "run(address) -> (filename,address,length), all as strings"
         if address:
@@ -127,7 +127,7 @@ class OptionsDialog:
         self.lines = gtk.Adjustment(0, 5, 50)
         scale = gtk.HScale(self.lines)
         scale.set_digits(0)
-        
+
         self.follow_pc = gtk.CheckButton("On stop, set address to PC")
 
         vbox = self.dialog.vbox
@@ -184,7 +184,7 @@ class MemoryAddress:
         self.first = None
         self.second = None
         self.last = None
-        
+
     def clear(self):
         if self.follow_pc:
             # get first address from PC when next stopped
@@ -212,32 +212,32 @@ class MemoryAddress:
 
     def reset_entry(self):
         self.entry.set_text("%06X" % self.first)
-        
+
     def get(self):
         return self.first
 
     def get_memory_label(self):
         return self.memory
-    
+
     def get_address_entry(self):
         return self.entry
 
     def get_follow_pc(self):
         return self.follow_pc
-    
+
     def set_follow_pc(self, follow_pc):
         self.follow_pc = follow_pc
 
     def get_lines(self):
         return self.lines
-    
+
     def set_lines(self, lines):
         self.lines = lines
-    
+
     def set_dumpmode(self, mode):
         self.dumpmode = mode
         self.dump()
-        
+
     def dump(self, address = None, move_idx = 0):
         if self.dumpmode == Constants.REGISTERS:
             output = self._get_registers()
@@ -252,7 +252,7 @@ class MemoryAddress:
         if not address:
             print("ERROR: address needed")
             return
-        
+
         if self.dumpmode == Constants.MEMDUMP:
             output = self._get_memdump(address, move_idx)
         elif self.dumpmode == Constants.DISASM:
@@ -263,7 +263,7 @@ class MemoryAddress:
         self.memory.set_label("".join(output))
         if move_idx:
             self.reset_entry()
-    
+
     def _get_registers(self):
         self.hatari.debug_command("r")
         output = self.hatari.get_lines(self.debug_output)
@@ -298,7 +298,7 @@ class MemoryAddress:
         output = self.hatari.get_lines(self.debug_output)
         self.second = address + linewidth
         return output
-        
+
     def _get_disasm(self, address, move_idx):
         # TODO: uses brute force i.e. ask for more lines that user has
         # requested to be sure that the window is filled, assuming
@@ -353,7 +353,7 @@ class MemoryAddress:
 
 # the Hatari debugger UI class and methods
 class HatariDebugUI:
-    
+
     def __init__(self, hatariobj, do_destroy = False):
         self.address = MemoryAddress(hatariobj)
         self.hatari = hatariobj
@@ -369,7 +369,7 @@ class HatariDebugUI:
         self.load_options()
         # UI initialization/creation
         self.window = self.create_ui("Hatari Debug UI", do_destroy)
-        
+
     def create_ui(self, title, do_destroy):
         # buttons at top
         hbox1 = gtk.HBox()
@@ -390,7 +390,7 @@ class HatariDebugUI:
         vbox.pack_start(hbox1, False)
         vbox.pack_start(align, True, True)
         vbox.pack_start(hbox2, False)
-        
+
         # and the window for all of this
         window = gtk.Window(gtk.WINDOW_TOPLEVEL)
         window.set_events(gtk.gdk.KEY_RELEASE_MASK)
@@ -403,14 +403,14 @@ class HatariDebugUI:
         window.set_title(title)
         window.add(vbox)
         return window
-    
+
     def create_top_buttons(self, box):
         self.stop_button = create_toggle("Stop", self.stop_cb)
         box.add(self.stop_button)
 
         monitor = create_button("Monitor...", self.monitor_cb)
         box.add(monitor)
-        
+
         buttons = (
             ("<<<", "Page_Up",  -Constants.MOVE_MAX),
             ("<<",  "Up",       -Constants.MOVE_MED),
@@ -474,7 +474,7 @@ class HatariDebugUI:
 
     def set_address_offset(self, widget, move_idx):
         self.address.dump(None, move_idx)
-    
+
     def monitor_cb(self, widget):
         TodoDialog(self.window).run("add register / memory address range monitor window.")
 
@@ -491,7 +491,7 @@ class HatariDebugUI:
         (filename, address, length) = self.dialog_save.run(self.address.get())
         if filename and address and length:
             self.hatari.debug_command("s %s $%06x $%06x" % (filename, address, length))
-        
+
     def options_cb(self, widget):
         if not self.dialog_options:
             self.dialog_options = OptionsDialog(self.window)
@@ -527,10 +527,10 @@ class HatariDebugUI:
         except (KeyError, AttributeError):
             ErrorDialog(None).run("Debug UI configuration mismatch!\nTry again after removing: '%s'." % configpath)
         self.config = config
-    
+
     def save_options(self):
         self.config.save()
-    
+
     def show(self):
         self.stop_button.set_active(True)
         self.window.show_all()
@@ -566,6 +566,6 @@ def main():
     gtk.main()
     debugui.save_options()
 
-    
+
 if __name__ == "__main__":
     main()

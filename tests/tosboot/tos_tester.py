@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# 
+#
 # Copyright (C) 2012-2017 by Eero Tamminen <oak at helsinkinet fi>
 #
 # This program is free software; you can redistribute it and/or modify
@@ -76,23 +76,23 @@ class TOS:
         self.path, self.size, self.name = self._add_file(path)
         self.version, self.etos = self._add_version()
         self.memwait, self.fullwait, self.machines = self._add_info()
-    
-    
+
+
     def _add_file(self, img):
         "get TOS file size and basename for 'img'"
         if not os.path.isfile(img):
             raise AssertionError("'%s' given as TOS image isn't a file" % img)
-        
+
         size = os.stat(img).st_size
         tossizes = (196608, 262144, 524288)
         if size not in tossizes:
             raise AssertionError("image '%s' size not one of TOS sizes %s" % (img, repr(tossizes)))
-        
+
         name = os.path.basename(img)
         name = name[:name.rfind('.')]
         return (img, size/1024, name)
-    
-    
+
+
     def _add_version(self):
         "get TOS version and whether it's EmuTOS & supports GEMDOS HD"
         f = open(self.path, 'rb')
@@ -103,12 +103,12 @@ class TOS:
         f.seek(0x2C, 0)
         etos = (f.read(4) == "ETOS")
         return (version, etos)
-        
-    
+
+
     def _add_info(self):
         "add TOS version specific info of supported machines etc"
         name, size, version = self.name, self.size, self.version
-        
+
         if self.etos:
             # EmuTOS 512k, 256k and 192k versions have different machine support
             if size == 512:
@@ -138,7 +138,7 @@ class TOS:
             info = (3, 8, ("falcon",))
         else:
             raise AssertionError("'%s' TOS version 0x%x isn't valid" % (name, version))
-        
+
         if self.etos:
             print("%s is EmuTOS v%x %dkB" % (name, version, size))
         else:
@@ -147,7 +147,7 @@ class TOS:
         # 1: how long to wait until concluding test failed
         # 2: list of machines supported by this TOS version
         return info
-    
+
     def supports_gemdos_hd(self):
         "whether TOS version supports Hatari's GEMDOS HD emulation"
         return (self.version >= 0x0104)
@@ -226,7 +226,7 @@ class Config:
         configs = (self.disks, self.graphics, self.machines, self.memsizes, self.ttrams, self.bools)
         print("Test configuration:\n\t%s %s %s RAM=%s TTRAM=%s bool=%s\n" % configs)
 
-    
+
     def check_images(self, paths):
         "validate given TOS images"
         images = []
@@ -238,8 +238,8 @@ class Config:
         if len(images) < 1:
             self.usage("no TOS image files given")
         return images
-    
-    
+
+
     def handle_options(self, opts):
         "parse command line options"
         unknown = None
@@ -274,8 +274,8 @@ class Config:
                 self.ttrams = args
             if unknown:
                 self.usage("%s are invalid values for %s" % (list(unknown), opt))
-    
-    
+
+
     def usage(self, msg=None):
         "output program usage information"
         name = os.path.basename(sys.argv[0])
@@ -309,8 +309,8 @@ For example:
         if msg:
             print("ERROR: %s\n" % msg)
         sys.exit(1)
-    
-    
+
+
     def valid_disktype(self, machine, tos, disktype):
         "return whether given disk type is valid for given machine / TOS version"
         if disktype == "floppy":
@@ -332,7 +332,7 @@ For example:
         if disktype in hdinterface:
             return tos.supports_hdinterface(hdinterface)
         return False
-    
+
     def valid_monitortype(self, machine, tos, monitortype):
         "return whether given monitor type is valid for given machine / TOS version"
         if machine in ("st", "ste"):
@@ -419,7 +419,7 @@ class Tester:
     ideimage  = "hd.img"	 # for now use the same image as for ACSI
     hdprg     = "C:\MINIMAL.PRG"
     results   = None
-    
+
     def __init__(self):
         "test setup initialization"
         self.cleanup_all_files()
@@ -429,7 +429,7 @@ class Tester:
         hatari = hconsole.Hatari(["--confirm-quit", "no"])
         self.winuae = hatari.winuae
         hatari.kill_hatari()
-    
+
     def alarm_handler(self, signum, dummy):
         "output error if (timer) signal came before passing current test stage"
         if signum == signal.SIGALRM:
@@ -437,7 +437,7 @@ class Tester:
         else:
             print("ERROR: unknown signal %d received" % signum)
             raise AssertionError
-    
+
     def create_config(self):
         "create Hatari configuration file for testing"
         # write specific configuration to:
@@ -468,14 +468,14 @@ class Tester:
             if os.path.exists(path):
                 os.remove(path)
         self.cleanup_test_files()
-    
+
     def create_files(self):
         "create files needed during testing"
         if not os.path.exists(self.output):
             os.mkdir(self.output)
         if not os.path.exists(self.fifofile):
             os.mkfifo(self.fifofile)
-    
+
     def get_screenshot(self, instance, identity):
         "save screenshot of test end result"
         instance.run("screenshot")
@@ -543,8 +543,8 @@ class Tester:
                 pass
         print("ERROR: TIMEOUT without fifo input, BOOT FAILED")
         return (False, False)
-    
-    
+
+
     def open_fifo(self, timeout):
         "open fifo for test program output"
         try:
@@ -576,7 +576,7 @@ class Tester:
             # pass memory test
             time.sleep(tos.memwait)
             instance.run("keypress %s" % hconsole.Scancode.Space)
-        
+
         # wait until test program has been run and output something to fifo
         prog_ok, tests_ok = self.wait_fifo(fifo, tos.fullwait)
         if tests_ok:
@@ -584,7 +584,7 @@ class Tester:
         else:
             print("TODO: collect info on failure, regs etc")
             output_ok = False
-        
+
         # get screenshot after a small wait (to guarantee all
         # test program output got to screen even with frameskip)
         time.sleep(0.2)
@@ -593,7 +593,7 @@ class Tester:
         instance.run("kill")
         return (init_ok, prog_ok, tests_ok, output_ok)
 
-    
+
     def prepare_test(self, config, tos, machine, monitor, disk, memory, ttram, extra):
         "compose test ID and Hatari command line args, then call .test()"
         identity = "%s-%s-%s-%s-%dM-%dM" % (tos.name, machine, monitor, disk, memory, ttram)
@@ -603,7 +603,7 @@ class Tester:
                 testargs += ["--addr24", "off", "--ttram", str(ttram)]
             else:
                 testargs += ["--addr24", "on"]
-        
+
         if extra:
             identity += "-%s%s" % (extra[0].replace("-", ""), extra[1])
             testargs += extra
@@ -619,11 +619,11 @@ class Tester:
                 testargs += ["--vdi-width", "640", "--vdi-height", "400"]
         else:
             testargs += ["--monitor", monitor]
-        
+
         if config.fast:
             testargs += ["--fast-forward", "yes", "--fast-boot", "yes",
                          "--fastfdc", "yes", "--timer-d", "yes"]
-        
+
         if disk == "gemdos":
             # use Hatari autostart, must be last thing added to testargs!
             testargs += [self.testprg]
@@ -684,14 +684,14 @@ class Tester:
             if not count:
                 warning("no matching configuration for TOS '%s'" % tos.name)
         self.cleanup_all_files()
-    
+
     def summary(self):
         "summarize test results"
         cases = [0, 0, 0, 0]
         passed = [0, 0, 0, 0]
         tosnames = list(self.results.keys())
         tosnames.sort()
-        
+
         report = open(self.report, "w")
         report.write("\nTest report:\n------------\n")
         for tos in tosnames:
@@ -708,7 +708,7 @@ class Tester:
                 for idx in range(len(results)):
                     cases[idx] += 1
                     passed[idx] += results[idx]
-        
+
         report.write("\nSummary of FAIL/pass values:\n")
         idx = 0
         for line in ("Hatari init", "Test program running", "Test program test-cases", "Test program output"):
@@ -723,7 +723,7 @@ class Tester:
             report.write("- %s: %s\n" % (line, result))
             idx += 1
         report.write("\n")
-        
+
         # print report out too
         print("--- %s ---" % self.report)
         report = open(self.report, "r")

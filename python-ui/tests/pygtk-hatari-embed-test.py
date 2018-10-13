@@ -43,7 +43,7 @@ def usage(error):
 class AppUI():
     hatari_wd = 640
     hatari_ht = 400
-    
+
     def __init__(self, widget, method):
         if method in ("hatari", "reparent", "sdl"):
             self.method = method
@@ -61,19 +61,19 @@ class AppUI():
         self.window = self.create_window()
         self.add_hatari_parent(self.window, widgettype)
         gobject.timeout_add(1*1000, self.timeout_cb)
-        
+
     def create_window(self):
         window = gtk.Window(gtk.WINDOW_TOPLEVEL)
         window.connect("destroy", self.do_quit)
         return window
-    
+
     def do_quit(self, widget):
         if self.hatari_pid:
             os.kill(self.hatari_pid, 9)
             print "killed Hatari PID %d" % self.hatari_pid
             self.hatari_pid = 0
         gtk.main_quit()
-    
+
     def add_hatari_parent(self, parent, widgettype):
         # Note: CAN_FOCUS has to be set for the widget embedding Hatari
         # and *unset* for everything else, otherwise Hatari doesn't
@@ -102,11 +102,11 @@ class AppUI():
         spin.unset_flags(gtk.CAN_FOCUS)
         vbox.add(spin)
         parent.add(vbox)
-    
+
     def timeout_cb(self):
         self.do_hatari_method()
         return False # only once
-    
+
     def do_hatari_method(self):
         pid = os.fork()
         if pid < 0:
@@ -142,7 +142,7 @@ class AppUI():
         elif self.method == "hatari":
             env["HATARI_PARENT_WIN"] = str(win_id)
         return env
-    
+
     def find_hatari_window(self):
         # find hatari window by its WM class string and reparent it
         cmd = """xwininfo -root -tree|awk '/"hatari" "hatari"/{print $1}'"""
@@ -167,7 +167,7 @@ class AppUI():
             return windows[0]
         print "ERROR: no windows with the 'hatari' WM class found"
         return None
-    
+
     def reparent_hatari_window(self, hatari_win):
         window = gtk.gdk.window_foreign_new(hatari_win)
         if not window:

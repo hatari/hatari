@@ -55,7 +55,7 @@ class UICallbacks:
         if error:
             ErrorDialog(None).run(error)
             sys.exit(-1)
-            
+
         self.config = HatariConfigMapping(self.hatari)
         try:
             self.config.validate()
@@ -64,7 +64,7 @@ class UICallbacks:
             self.hatari.save_config()
             self.config = HatariConfigMapping(self.hatari)
             self.config.validate()
-        
+
         # windows are created when needed
         self.mainwin = None
         self.hatariwin = None
@@ -87,7 +87,7 @@ class UICallbacks:
         self.peripheraldialog = None
         self.sounddialog = None
         self.pathdialog = None
-        
+
         # used by run()
         self.memstate = None
         self.floppy = None
@@ -105,7 +105,7 @@ class UICallbacks:
         self.peripheraldialog = None
         self.sounddialog = None
         self.pathdialog = None
-        
+
     # ---------- create UI ----------------
     def create_ui(self, accelgroup, menu, toolbars, fullscreen, embed):
         "create_ui(menu, toolbars, fullscreen, embed)"
@@ -140,7 +140,7 @@ class UICallbacks:
         self.killdialog = KillDialog(mainwin)
         mainwin.connect("delete_event", self.quit)
         self.mainwin = mainwin
-    
+
     def _add_uisocket(self, box):
         # add Hatari parent container to given box
         socket = gtk.Socket()
@@ -172,7 +172,7 @@ class UICallbacks:
             # force also mainwin smaller (it automatically grows)
             self.mainwin.resize(width, height)
         return True
-    
+
     def run(self, widget = None):
         if not self.killdialog.run(self.hatari):
             return
@@ -398,9 +398,9 @@ class UIActions:
         cb = self.callbacks = UICallbacks()
 
         self.help = UIHelp()
-        
+
         self.actions = gtk.ActionGroup("All")
-        
+
         # name, icon ID, label, accel, tooltip, callback
         self.actions.add_toggle_actions((
         # TODO: how to know when these are changed from inside Hatari?
@@ -409,19 +409,19 @@ class UIActions:
         ("pause", gtk.STOCK_MEDIA_PAUSE, "Pause", "<Ctrl>P", "Pause Hatari to save battery", cb.pause),
         ("forward", gtk.STOCK_MEDIA_FORWARD, "Forward", "<Ctrl>F", "Whether to fast forward Hatari (needs fast machine)", cb.set_fastforward, cb.get_fastforward())
         ))
-        
+
         # name, icon ID, label, accel, tooltip, callback
         self.actions.add_actions((
         ("load", gtk.STOCK_OPEN, "Load snapshot...", "<Ctrl>L", "Load emulation snapshot", cb.load),
         ("save", gtk.STOCK_SAVE, "Save snapshot", "<Ctrl>S", "Save emulation snapshot", cb.save),
         ("shot", gtk.STOCK_MEDIA_RECORD, "Grab screenshot", "<Ctrl>G", "Grab a screenshot", cb.screenshot),
         ("quit", gtk.STOCK_QUIT, "Quit", "<Ctrl>Q", "Quit Hatari UI", cb.quit),
-        
+
         ("run", gtk.STOCK_MEDIA_PLAY, "Run", "<Ctrl>R", "(Re-)run Hatari", cb.run),
         ("full", gtk.STOCK_FULLSCREEN, "Fullscreen", "<Ctrl>U", "Toggle whether Hatari is fullscreen", cb.set_fullscreen),
         ("input", gtk.STOCK_SPELL_CHECK, "Inputs...", "<Ctrl>N", "Simulate text input and mouse clicks", cb.inputs),
         ("reset", gtk.STOCK_REFRESH, "Reset...", "<Ctrl>E", "Warm or cold reset Hatari", cb.reset),
-        
+
         ("display", gtk.STOCK_PREFERENCES, "Display...", "<Ctrl>Y", "Display settings", cb.display),
         ("floppy", gtk.STOCK_FLOPPY, "Floppies...", "<Ctrl>D", "Floppy images", cb.floppydisk),
         ("harddisk", gtk.STOCK_HARDDISK, "Hard disks...", "<Ctrl>H", "Hard disk images and directories", cb.harddisk),
@@ -433,10 +433,10 @@ class UIActions:
         ("path", gtk.STOCK_DIRECTORY, "Paths...", None, "Device & save file paths", cb.path),
         ("lconfig", gtk.STOCK_OPEN, "Load config...", "<Ctrl>C", "Load configuration", self.config_load),
         ("sconfig", gtk.STOCK_SAVE_AS, "Save config as...", None, "Save configuration", cb.config_save),
-        
+
         ("debug", gtk.STOCK_FIND, "Debugger...", "<Ctrl>B", "Activate Hatari debugger", cb.debugger),
         ("trace", gtk.STOCK_EXECUTE, "Trace settings...", "<Ctrl>T", "Hatari tracing setup", cb.trace),
-        
+
         ("manual", None, "Hatari manual", None, None, self.help.view_hatari_manual),
         ("compatibility", None, "Hatari compatibility list", None, None, self.help.view_hatari_compatibility),
         ("release", None, "Hatari release notes", None, None, self.help.view_hatari_releasenotes),
@@ -509,7 +509,7 @@ class UIActions:
                 box.add(self._get_container(controls.split(",")))
         else:
             box = self._get_container(panelcontrols.split(","))
-            
+
         self.panels.append(name)
         self.actions.add_actions(
             ((name, gtk.STOCK_ADD, name, None, name, self.callbacks.panel),),
@@ -569,7 +569,7 @@ class UIActions:
             bar.set_show_arrow(False)
         else:
             bar = None
-        
+
         for action in actions:
             #print(action)
             offset = action.find("=")
