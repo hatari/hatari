@@ -1,5 +1,5 @@
 
-include_directories(. ../.. ../includes ${SDL_INCLUDE_DIR}) 
+include_directories(. ../.. ../includes ${SDL_INCLUDE_DIR})
 
 # Unfortunately we've got to specify the rules for the generated files twice,
 # once for cross compiling (with calling the host cc directly) and once

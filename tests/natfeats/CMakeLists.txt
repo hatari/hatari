@@ -28,5 +28,5 @@ else(ENABLE_WINUAE_CPU)
   add_test(NAME natfeats-680${lvl}0-compatible
            COMMAND ${testrunner} $<TARGET_FILE:hatari> --cpulevel ${lvl} --compatible true)
  endforeach(lvl)
- 
+
 endif(ENABLE_WINUAE_CPU)
