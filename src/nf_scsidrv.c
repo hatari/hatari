@@ -179,12 +179,18 @@ static int scsidrv_interface_features(Uint32 stack)
 	Uint32 features = read_stack_long(&stack);
 	Uint32 transferLen = read_stack_long(&stack);
 
+	LOG_TRACE(TRACE_SCSIDRV, "scsidrv_interface_features: busName=%s, features=$%04x, transferLen=%d", BUS_NAME, BUS_FEATURES, BUS_TRANSFER_LEN);
+
+        if ( !STMemory_CheckAreaType ( st_bus_name, 20, ABFLAG_RAM ) )
+        {
+            Log_Printf(LOG_WARN, "scsidrv_interface_features: Invalid RAM range 0x%x+%i\n", st_bus_name, 20);
+            return -1;
+        }
+
 	strncpy(busName, BUS_NAME, 20);
         M68000_Flush_Data_Cache(st_bus_name, 20);
 	write_word(features, BUS_FEATURES);
 	write_long(transferLen, BUS_TRANSFER_LEN);
-
-	LOG_TRACE(TRACE_SCSIDRV, "scsidrv_interface_features: busName=%s, features=$%04x, transferLen=%d", busName, BUS_FEATURES, BUS_TRANSFER_LEN);
 
 	return 0;
 }
@@ -296,14 +302,8 @@ static int scsidrv_inout(Uint32 stack)
 	Uint32 transfer_len = read_stack_long(&stack);
         Uint32 st_sense_buffer = STMemory_ReadLong(stack);
 	unsigned char *sense_buffer = read_stack_pointer(&stack);
-	Uint32 timeout;
+	Uint32 timeout = read_stack_long(&stack);
 	int status;
-
-	if (sense_buffer)
-	{
-		memset(sense_buffer, 0, 18);
-	}
-	timeout = read_stack_long(&stack);
 
 	if (LOG_TRACE_LEVEL(TRACE_SCSIDRV))
 	{
@@ -323,9 +323,22 @@ static int scsidrv_inout(Uint32 stack)
 		}
 	}
 
+        // Writing is allowed with a RAM or ROM address,
+        // reading requires a RAM address
+        if ( !STMemory_CheckAreaType ( st_buffer, transfer_len, dir ? ABFLAG_RAM | ABFLAG_ROM : ABFLAG_RAM ) )
+        {
+            Log_Printf(LOG_WARN, "scsidrv_inout: Invalid RAM range 0x%x+%i\n", st_buffer, transfer_len);
+            return -1;
+        }
+
 	if (handle >= SCSI_MAX_HANDLES || !handle_meta_data[handle].fd)
 	{
 		return GEMDOS_ENHNDL;
+	}
+
+	if (sense_buffer)
+	{
+		memset(sense_buffer, 0, 18);
 	}
 
 	// No explicit LUN support, the SG driver maps LUNs to device files
