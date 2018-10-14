@@ -169,26 +169,26 @@ static int scsidrv_interface_version(Uint32 stack)
 {
 	LOG_TRACE(TRACE_SCSIDRV, "scsidrv_interface_version: version=$%04x", INTERFACE_VERSION);
 
-        return INTERFACE_VERSION;
+	return INTERFACE_VERSION;
 }
 
 static int scsidrv_interface_features(Uint32 stack)
 {
-        Uint32 st_bus_name = STMemory_ReadLong(stack);
+	Uint32 st_bus_name = STMemory_ReadLong(stack);
 	char *busName = read_stack_pointer(&stack);
 	Uint32 features = read_stack_long(&stack);
 	Uint32 transferLen = read_stack_long(&stack);
 
 	LOG_TRACE(TRACE_SCSIDRV, "scsidrv_interface_features: busName=%s, features=$%04x, transferLen=%d", BUS_NAME, BUS_FEATURES, BUS_TRANSFER_LEN);
 
-        if ( !STMemory_CheckAreaType ( st_bus_name, 20, ABFLAG_RAM ) )
-        {
-            Log_Printf(LOG_WARN, "scsidrv_interface_features: Invalid RAM range 0x%x+%i\n", st_bus_name, 20);
-            return -1;
-        }
+	if ( !STMemory_CheckAreaType ( st_bus_name, 20, ABFLAG_RAM ) )
+	{
+		Log_Printf(LOG_WARN, "scsidrv_interface_features: Invalid RAM range 0x%x+%i\n", st_bus_name, 20);
+		return -1;
+	}
 
 	strncpy(busName, BUS_NAME, 20);
-        M68000_Flush_Data_Cache(st_bus_name, 20);
+	M68000_Flush_Data_Cache(st_bus_name, 20);
 	write_word(features, BUS_FEATURES);
 	write_long(transferLen, BUS_TRANSFER_LEN);
 
@@ -297,10 +297,10 @@ static int scsidrv_inout(Uint32 stack)
 	Uint32 dir = read_stack_long(&stack);
 	unsigned char *cmd = read_stack_pointer(&stack);
 	Uint32 cmd_len = read_stack_long(&stack);
-        Uint32 st_buffer = STMemory_ReadLong(stack);
+	Uint32 st_buffer = STMemory_ReadLong(stack);
 	unsigned char *buffer = read_stack_pointer(&stack);
 	Uint32 transfer_len = read_stack_long(&stack);
-        Uint32 st_sense_buffer = STMemory_ReadLong(stack);
+	Uint32 st_sense_buffer = STMemory_ReadLong(stack);
 	unsigned char *sense_buffer = read_stack_pointer(&stack);
 	Uint32 timeout = read_stack_long(&stack);
 	int status;
@@ -323,13 +323,13 @@ static int scsidrv_inout(Uint32 stack)
 		}
 	}
 
-        // Writing is allowed with a RAM or ROM address,
-        // reading requires a RAM address
-        if ( !STMemory_CheckAreaType ( st_buffer, transfer_len, dir ? ABFLAG_RAM | ABFLAG_ROM : ABFLAG_RAM ) )
-        {
-            Log_Printf(LOG_WARN, "scsidrv_inout: Invalid RAM range 0x%x+%i\n", st_buffer, transfer_len);
-            return -1;
-        }
+	// Writing is allowed with a RAM or ROM address,
+	// reading requires a RAM address
+	if ( !STMemory_CheckAreaType ( st_buffer, transfer_len, dir ? ABFLAG_RAM | ABFLAG_ROM : ABFLAG_RAM ) )
+	{
+		Log_Printf(LOG_WARN, "scsidrv_inout: Invalid RAM range 0x%x+%i\n", st_buffer, transfer_len);
+		return -1;
+	}
 
 	if (handle >= SCSI_MAX_HANDLES || !handle_meta_data[handle].fd)
 	{
@@ -349,7 +349,7 @@ static int scsidrv_inout(Uint32 stack)
 			// Sense Key and ASC
 			sense_buffer[2] = 0x05;
 			sense_buffer[12] = 0x25;
-                        M68000_Flush_Data_Cache(st_sense_buffer, 18);
+			M68000_Flush_Data_Cache(st_sense_buffer, 18);
 
 			LOG_TRACE(TRACE_SCSIDRV,
 			          "\n               Sense Key=$%02X, ASC=$%02X, ASCQ=$00",
@@ -434,13 +434,13 @@ static int scsidrv_inout(Uint32 stack)
 		}
 	}
 
-        M68000_Flush_Data_Cache(st_sense_buffer, 18);
-        if (!dir)
-        {
-            M68000_Flush_All_Caches(st_buffer, transfer_len);
-        }
+	M68000_Flush_Data_Cache(st_sense_buffer, 18);
+	if (!dir)
+	{
+		M68000_Flush_All_Caches(st_buffer, transfer_len);
+	}
 
-        return status;
+	return status;
 }
 
 // SCSI Driver: Error()
