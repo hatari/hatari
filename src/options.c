@@ -134,6 +134,7 @@ enum {
 	OPT_SCSIHDIMAGE,
 	OPT_IDEMASTERHDIMAGE,
 	OPT_IDESLAVEHDIMAGE,
+	OPT_IDEBYTESWAP,
 	OPT_MEMSIZE,		/* memory options */
 #if ENABLE_WINUAE_CPU
 	OPT_TT_RAM,
@@ -365,10 +366,12 @@ static const opt_t HatariOptions[] = {
 	{ OPT_SCSIHDIMAGE,   NULL, "--scsi",
 	  "<id>=<file>", "Emulate a SCSI harddrive (0-7) with an image <file>" },
 	{ OPT_IDEMASTERHDIMAGE,   NULL, "--ide-master",
-	  "<file>", "Emulate an IDE master harddrive with an image <file>" },
+	  "<file>", "Emulate an IDE 0 (master) harddrive with an image <file>" },
 	{ OPT_IDESLAVEHDIMAGE,   NULL, "--ide-slave",
-	  "<file>", "Emulate an IDE slave harddrive with an image <file>" },
-	
+	  "<file>", "Emulate an IDE 1 (slave) harddrive with an image <file>" },
+	{ OPT_IDEBYTESWAP,   NULL, "--ide-swap",
+	  "<id>=<x>", "Set IDE (0/1) byte-swap option (off/on/auto)" },
+
 	{ OPT_HEADER, NULL, NULL, NULL, "Memory" },
 	{ OPT_MEMSIZE,   "-s", "--memsize",
 	  "<x>", "ST RAM size (x = size in MiB from 0 to 14, 0 = 512KiB ; else size in KiB)" },
@@ -1650,6 +1653,30 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			{
 				bLoadAutoSave = false;
 			}
+			break;
+
+		case OPT_IDEBYTESWAP:
+			i += 1;
+			str = argv[i];
+			if (strlen(str) > 2 && isdigit(str[0]) && str[1] == '=')
+			{
+				drive = str[0] - '0';
+				if (drive < 0 || drive > 1)
+					return Opt_ShowError(OPT_IDEBYTESWAP, str, "Invalid IDE drive <id>, must be 0/1");
+				str += 2;
+			}
+			else
+			{
+				drive = 0;
+			}
+			if (strcasecmp(str, "off") == 0)
+				ConfigureParams.Ide[drive].nByteSwap = BYTESWAP_OFF;
+			else if (strcasecmp(str, "on") == 0)
+				ConfigureParams.Ide[drive].nByteSwap = BYTESWAP_ON;
+			else if (strcasecmp(str, "auto") == 0)
+				ConfigureParams.Ide[drive].nByteSwap = BYTESWAP_AUTO;
+			else
+				return Opt_ShowError(OPT_IDEBYTESWAP, argv[i], "Invalid byte-swap setting");
 			break;
 
 			/* Memory options */

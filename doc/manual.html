@@ -655,6 +655,10 @@ from &lt;file&gt; (Linux only)</p>
 <p class="parameter">--disk-b
 &lt;file&gt;</p>
 <p class="paramdesc">Set disk image for floppy drive B</p>
+<p class="parameter">--fastfdc
+&lt;bool&gt;</p>
+<p class="paramdesc">Speed up FDC emulation (can cause
+incompatibilities)</p>
 <p class="parameter">--protect-floppy
 &lt;x&gt;</p>
 <p class="paramdesc">Write protect floppy image contents
@@ -714,16 +718,16 @@ using image &lt;file&gt;. If just a filename is given, it is assigned to
 bus ID 0</p>
 <p class="parameter">--ide-master
 &lt;file&gt;</p>
-<p class="paramdesc">Emulate an IDE master hard drive with an
+<p class="paramdesc">Emulate an IDE 0 (master) hard drive with an
 image &lt;file&gt;</p>
 <p class="parameter">--ide-slave
 &lt;file&gt;</p>
-<p class="paramdesc">Emulate an IDE slave hard drive with an
+<p class="paramdesc">Emulate an IDE 1 (slave) hard drive with an
 image &lt;file&gt;</p>
-<p class="parameter">--fastfdc
-&lt;bool&gt;</p>
-<p class="paramdesc">Speed up FDC emulation (can cause
-incompatibilities)</p>
+<p class="parameter">--ide-swap &lt;id&gt;=&lt;x&gt;</p>
+<p class="paramdesc">Set byte-swap option &lt;x&gt; (off/on/auto) for
+given IDE &lt;id&gt; (0/1). If just option is given, it is applied to
+IDE 0</p>
 
 <h3>Memory options</h3>
 <p class="parameter">

@@ -352,10 +352,14 @@ Emulate a SCSI hard disk with given BUS ID (0-7) using image <file>.
 If just a filename is given, it is assigned to BUS ID 0
 .TP
 .B \-\-ide\-master <file>
-Emulate an IDE master hard disk with an image <file>
+Emulate an IDE 0 (master) hard disk with an image <file>
 .TP
 .B \-\-ide\-slave <file>
-Emulate an IDE slave hard disk with an image <file>
+Emulate an IDE 1 (slave) hard disk with an image <file>
+.TP
+.B \-\-ide\-swap <id>=<x>
+Set byte-swap option <x> (off/on/auto) for given IDE <id> (0/1).
+If just option is given, it is applied to IDE 0
 
 .SH "Memory options"
 .TP
