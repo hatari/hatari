@@ -541,12 +541,12 @@ static int bdrv_write(BlockDriverState *bs, int64_t sector_num,
 }
 
 
-static int bdrv_open(BlockDriverState *bs, const char *filename, int flags)
+static int bdrv_open(BlockDriverState *bs, const char *filename, unsigned long blockSize, int flags)
 {
 	Log_Printf(LOG_INFO, "Mounting IDE hard drive image %s\n", filename);
 
 	bs->read_only = 0;
-	bs->file_size = HDC_CheckAndGetSize(filename);
+	bs->file_size = HDC_CheckAndGetSize(filename, blockSize);
 	if (bs->file_size <= 0)
 		return -1;
 	if (bs->file_size < 2 * 16 * 63 * SECTOR_SIZE)
@@ -1023,10 +1023,16 @@ static void ide_identify(IDEState *s)
 	put_le16(p + 87, (1 << 14));
 	put_le16(p + 88, 0x3f | (1 << 13)); /* udma5 set and supported */
 	put_le16(p + 93, 1 | (1 << 14) | 0x2000);
+	/* LBA-48 sector count */
 	put_le16(p + 100, s->nb_sectors);
 	put_le16(p + 101, s->nb_sectors >> 16);
 	put_le16(p + 102, s->nb_sectors >> 32);
 	put_le16(p + 103, s->nb_sectors >> 48);
+	/* ratio logical/physical: 0, logicalSectorSizeSupported */
+	put_le16(p + 106, 1 << 12);
+	/* words per logical sector */
+	put_le16(p + 117, 512 >> 1);
+	put_le16(p + 118, 512 >> 17);
 
 	memcpy(s->identify_data, p, sizeof(s->identify_data));
 	s->identify_set = 1;
@@ -2698,7 +2704,7 @@ void Ide_Init(void)
 		if (ConfigureParams.Ide[i].bUseDevice)
 		{
 			int is_byteswap;
-			bdrv_open(hd_table[i], ConfigureParams.Ide[i].sDeviceFile, 0);
+			bdrv_open(hd_table[i], ConfigureParams.Ide[i].sDeviceFile, 512, 0);
 			nIDEPartitions += HDC_PartitionCount(hd_table[i]->fhndl, TRACE_IDE, &is_byteswap);
 			/* Our IDE implementation is little endian by default,
 			 * so we need to byteswap if the image is not swapped! */

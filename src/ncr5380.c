@@ -1019,7 +1019,7 @@ int Ncr5380_Init(void)
 	{
 		if (!ConfigureParams.Scsi[i].bUseDevice)
 			continue;
-		if (HDC_InitDevice(&ScsiBus.devs[i], ConfigureParams.Scsi[i].sDeviceFile) == 0)
+		if (HDC_InitDevice(&ScsiBus.devs[i], ConfigureParams.Scsi[i].sDeviceFile, ConfigureParams.Scsi[i].nBlockSize) == 0)
 			partitions += HDC_PartitionCount(ScsiBus.devs[i].image_file, TRACE_SCSI_CMD, NULL);
 	}
 	return partitions;

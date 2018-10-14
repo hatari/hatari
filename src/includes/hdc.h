@@ -57,6 +57,7 @@ typedef struct scsi_data {
 	bool bSetLastBlockAddr;
 	Uint8 nLastError;
 	unsigned long hdSize;       /* Size of the hard disk in sectors */
+	unsigned long blockSize;    /* Size of a sector in bytes */
 	/* For NCR5380 emulation: */
 	int direction;
 	Uint8 msgout[4];
@@ -93,12 +94,12 @@ extern bool bAcsiEmuOn;
  */
 extern bool HDC_Init(void);
 extern void HDC_UnInit(void);
-extern int HDC_InitDevice(SCSI_DEV *dev, char *filename);
+extern int HDC_InitDevice(SCSI_DEV *dev, char *filename, unsigned long blockSize);
 extern void HDC_ResetCommandStatus(void);
 extern short int HDC_ReadCommandByte(int addr);
 extern void HDC_WriteCommandByte(int addr, Uint8 byte);
 extern int HDC_PartitionCount(FILE *fp, const Uint64 tracelevel, int *pIsByteSwapped);
-extern off_t HDC_CheckAndGetSize(const char *filename);
+extern off_t HDC_CheckAndGetSize(const char *filename, unsigned long blockSize);
 extern bool HDC_WriteCommandPacket(SCSI_CTRLR *ctr, Uint8 b);
 extern void HDC_DmaTransfer(void);
 

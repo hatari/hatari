@@ -460,20 +460,28 @@ static const struct Config_Tag configs_Acsi[] =
 {
 	{ "bUseDevice0", Bool_Tag, &ConfigureParams.Acsi[0].bUseDevice },
 	{ "sDeviceFile0", String_Tag, ConfigureParams.Acsi[0].sDeviceFile },
+	{ "nBlockSize0", Int_Tag, &ConfigureParams.Acsi[0].nBlockSize },
 	{ "bUseDevice1", Bool_Tag, &ConfigureParams.Acsi[1].bUseDevice },
 	{ "sDeviceFile1", String_Tag, ConfigureParams.Acsi[1].sDeviceFile },
+	{ "nBlockSize1", Int_Tag, &ConfigureParams.Acsi[1].nBlockSize },
 	{ "bUseDevice2", Bool_Tag, &ConfigureParams.Acsi[2].bUseDevice },
 	{ "sDeviceFile2", String_Tag, ConfigureParams.Acsi[2].sDeviceFile },
+	{ "nBlockSize2", Int_Tag, &ConfigureParams.Acsi[2].nBlockSize },
 	{ "bUseDevice3", Bool_Tag, &ConfigureParams.Acsi[3].bUseDevice },
 	{ "sDeviceFile3", String_Tag, ConfigureParams.Acsi[3].sDeviceFile },
+	{ "nBlockSize3", Int_Tag, &ConfigureParams.Acsi[3].nBlockSize },
 	{ "bUseDevice4", Bool_Tag, &ConfigureParams.Acsi[4].bUseDevice },
 	{ "sDeviceFile4", String_Tag, ConfigureParams.Acsi[4].sDeviceFile },
+	{ "nBlockSize4", Int_Tag, &ConfigureParams.Acsi[4].nBlockSize },
 	{ "bUseDevice5", Bool_Tag, &ConfigureParams.Acsi[5].bUseDevice },
 	{ "sDeviceFile5", String_Tag, ConfigureParams.Acsi[5].sDeviceFile },
+	{ "nBlockSize5", Int_Tag, &ConfigureParams.Acsi[5].nBlockSize },
 	{ "bUseDevice6", Bool_Tag, &ConfigureParams.Acsi[6].bUseDevice },
 	{ "sDeviceFile6", String_Tag, ConfigureParams.Acsi[6].sDeviceFile },
+	{ "nBlockSize6", Int_Tag, &ConfigureParams.Acsi[6].nBlockSize },
 	{ "bUseDevice7", Bool_Tag, &ConfigureParams.Acsi[7].bUseDevice },
 	{ "sDeviceFile7", String_Tag, ConfigureParams.Acsi[7].sDeviceFile },
+	{ "nBlockSize7", Int_Tag, &ConfigureParams.Acsi[7].nBlockSize },
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -482,18 +490,28 @@ static const struct Config_Tag configs_Scsi[] =
 {
 	{ "bUseDevice0", Bool_Tag, &ConfigureParams.Scsi[0].bUseDevice },
 	{ "sDeviceFile0", String_Tag, ConfigureParams.Scsi[0].sDeviceFile },
+	{ "nBlockSize0", Int_Tag, &ConfigureParams.Scsi[0].nBlockSize },
 	{ "bUseDevice1", Bool_Tag, &ConfigureParams.Scsi[1].bUseDevice },
 	{ "sDeviceFile1", String_Tag, ConfigureParams.Scsi[1].sDeviceFile },
+	{ "nBlockSize1", Int_Tag, &ConfigureParams.Scsi[1].nBlockSize },
 	{ "bUseDevice2", Bool_Tag, &ConfigureParams.Scsi[2].bUseDevice },
 	{ "sDeviceFile2", String_Tag, ConfigureParams.Scsi[2].sDeviceFile },
+	{ "nBlockSize2", Int_Tag, &ConfigureParams.Scsi[2].nBlockSize },
 	{ "bUseDevice3", Bool_Tag, &ConfigureParams.Scsi[3].bUseDevice },
 	{ "sDeviceFile3", String_Tag, ConfigureParams.Scsi[3].sDeviceFile },
+	{ "nBlockSize3", Int_Tag, &ConfigureParams.Scsi[3].nBlockSize },
 	{ "bUseDevice4", Bool_Tag, &ConfigureParams.Scsi[4].bUseDevice },
 	{ "sDeviceFile4", String_Tag, ConfigureParams.Scsi[4].sDeviceFile },
+	{ "nBlockSize4", Int_Tag, &ConfigureParams.Scsi[4].nBlockSize },
 	{ "bUseDevice5", Bool_Tag, &ConfigureParams.Scsi[5].bUseDevice },
 	{ "sDeviceFile5", String_Tag, ConfigureParams.Scsi[5].sDeviceFile },
+	{ "nBlockSize5", Int_Tag, &ConfigureParams.Scsi[5].nBlockSize },
 	{ "bUseDevice6", Bool_Tag, &ConfigureParams.Scsi[6].bUseDevice },
 	{ "sDeviceFile6", String_Tag, ConfigureParams.Scsi[6].sDeviceFile },
+	{ "nBlockSize6", Int_Tag, &ConfigureParams.Scsi[6].nBlockSize },
+	{ "bUseDevice7", Bool_Tag, &ConfigureParams.Scsi[7].bUseDevice },
+	{ "sDeviceFile7", String_Tag, ConfigureParams.Scsi[7].sDeviceFile },
+	{ "nBlockSize7", Int_Tag, &ConfigureParams.Scsi[7].nBlockSize },
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -669,12 +687,14 @@ void Configuration_SetDefault(void)
 	{
 		ConfigureParams.Acsi[i].bUseDevice = false;
 		strcpy(ConfigureParams.Acsi[i].sDeviceFile, psWorkingDir);
+		ConfigureParams.Acsi[i].nBlockSize = 512;
 	}
 	/* SCSI */
 	for (i = 0; i < MAX_SCSI_DEVS; i++)
 	{
 		ConfigureParams.Scsi[i].bUseDevice = false;
 		strcpy(ConfigureParams.Scsi[i].sDeviceFile, psWorkingDir);
+		ConfigureParams.Scsi[i].nBlockSize = 512;
 	}
 	/* IDE */
 	for (i = 0; i < MAX_IDE_DEVS; i++)

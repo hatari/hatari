@@ -90,7 +90,7 @@ static unsigned char HDC_GetLUN(SCSI_CTRLR *ctr)
  */
 static unsigned long HDC_GetLBA(SCSI_CTRLR *ctr)
 {
-	/* offset = logical block address * 512 */
+	/* offset = logical block address * physical sector size */
 	if (ctr->opcode < 0x20)				/* Class 0? */
 		return HDC_ReadInt24(ctr->command, 1) & 0x1FFFFF;
 	else
@@ -166,7 +166,7 @@ static void HDC_Cmd_Seek(SCSI_CTRLR *ctr)
 	          HDC_CmdInfoStr(ctr), dev->nLastBlockAddr);
 
 	if (dev->nLastBlockAddr < dev->hdSize &&
-	    fseeko(dev->image_file, (off_t)dev->nLastBlockAddr * 512L, SEEK_SET) == 0)
+	    fseeko(dev->image_file, (off_t)dev->nLastBlockAddr * dev->blockSize, SEEK_SET) == 0)
 	{
 		LOG_TRACE(TRACE_SCSI_CMD, " -> OK\n");
 		ctr->status = HD_STATUS_OK;
@@ -438,11 +438,11 @@ static void HDC_Cmd_ReadCapacity(SCSI_CTRLR *ctr)
 	buf[0] = (nSectors >> 24) & 0xFF;
 	buf[1] = (nSectors >> 16) & 0xFF;
 	buf[2] = (nSectors >> 8) & 0xFF;
-	buf[3] = (nSectors) & 0xFF;
-	buf[4] = 0x00;
-	buf[5] = 0x00;
-	buf[6] = 0x02;
-	buf[7] = 0x00;
+	buf[3] = nSectors & 0xFF;
+	buf[4] = (dev->blockSize >> 24) & 0xFF;
+	buf[5] = (dev->blockSize >> 16) & 0xFF;
+	buf[6] = (dev->blockSize >> 8) & 0xFF;
+	buf[7] = dev->blockSize & 0xFF;
 
 	ctr->status = HD_STATUS_OK;
 	dev->nLastError = HD_REQSENS_OK;
@@ -464,14 +464,14 @@ static void HDC_Cmd_WriteSector(SCSI_CTRLR *ctr)
 
 	/* seek to the position */
 	if (dev->nLastBlockAddr >= dev->hdSize ||
-	    fseeko(dev->image_file, (off_t)dev->nLastBlockAddr * 512L, SEEK_SET) != 0)
+	    fseeko(dev->image_file, (off_t)dev->nLastBlockAddr * dev->blockSize, SEEK_SET) != 0)
 	{
 		ctr->status = HD_STATUS_ERROR;
 		dev->nLastError = HD_REQSENS_INVADDR;
 	}
 	else
 	{
-		ctr->data_len = HDC_GetCount(ctr) * 512;
+		ctr->data_len = HDC_GetCount(ctr) * dev->blockSize;
 		if (ctr->data_len)
 		{
 			HDC_PrepRespBuf(ctr, ctr->data_len);
@@ -509,15 +509,15 @@ static void HDC_Cmd_ReadSector(SCSI_CTRLR *ctr)
 
 	/* seek to the position */
 	if (dev->nLastBlockAddr >= dev->hdSize ||
-	    fseeko(dev->image_file, (off_t)dev->nLastBlockAddr * 512L, SEEK_SET) != 0)
+	    fseeko(dev->image_file, (off_t)dev->nLastBlockAddr * dev->blockSize, SEEK_SET) != 0)
 	{
 		ctr->status = HD_STATUS_ERROR;
 		dev->nLastError = HD_REQSENS_INVADDR;
 	}
 	else
 	{
-		buf = HDC_PrepRespBuf(ctr, 512 * HDC_GetCount(ctr));
-		n = fread(buf, 512, HDC_GetCount(ctr), dev->image_file);
+		buf = HDC_PrepRespBuf(ctr, dev->blockSize * HDC_GetCount(ctr));
+		n = fread(buf, dev->blockSize, HDC_GetCount(ctr), dev->image_file);
 		if (n == HDC_GetCount(ctr))
 		{
 			ctr->status = HD_STATUS_OK;
@@ -751,7 +751,7 @@ int HDC_PartitionCount(FILE *fp, const Uint64 tracelevel, int *pIsByteSwapped)
  * Check file size for sane values (non-zero, multiple of 512),
  * and return the size
  */
-off_t HDC_CheckAndGetSize(const char *filename)
+off_t HDC_CheckAndGetSize(const char *filename, unsigned long blockSize)
 {
 	off_t filesize;
 	char shortname[48];
@@ -778,12 +778,12 @@ off_t HDC_CheckAndGetSize(const char *filename)
 		             shortname);
 		return -EINVAL;
 	}
-	if ((filesize & 0x1ff) != 0)
+	if ((filesize & (blockSize - 1)) != 0)
 	{
 		Log_AlertDlg(LOG_ERROR, "Can not use the hard disk image file\n"
 		                        "'%s'\nsince its size is not a multiple"
-		                        " of 512.",
-		            shortname);
+		                        " of %ld.",
+                            shortname, blockSize);
 		return -EINVAL;
 	}
 
@@ -793,7 +793,7 @@ off_t HDC_CheckAndGetSize(const char *filename)
 /**
  * Open a disk image file
  */
-int HDC_InitDevice(SCSI_DEV *dev, char *filename)
+int HDC_InitDevice(SCSI_DEV *dev, char *filename, unsigned long blockSize)
 {
 	off_t filesize;
 	FILE *fp;
@@ -802,7 +802,7 @@ int HDC_InitDevice(SCSI_DEV *dev, char *filename)
 	Log_Printf(LOG_INFO, "Mounting hard drive image '%s'\n", filename);
 
 	/* Check size for sanity */
-	filesize = HDC_CheckAndGetSize(filename);
+	filesize = HDC_CheckAndGetSize(filename, blockSize);
 	if (filesize < 0)
 		return filesize;
 
@@ -819,7 +819,8 @@ int HDC_InitDevice(SCSI_DEV *dev, char *filename)
 		return -ENOLCK;
 	}
 
-	dev->hdSize = filesize / 512;
+	dev->blockSize = blockSize;
+	dev->hdSize = filesize / dev->blockSize;
 	dev->image_file = fp;
 	dev->enabled = true;
 
@@ -849,7 +850,7 @@ bool HDC_Init(void)
 	{
 		if (!ConfigureParams.Acsi[i].bUseDevice)
 			continue;
-		if (HDC_InitDevice(&AcsiBus.devs[i], ConfigureParams.Acsi[i].sDeviceFile) == 0)
+		if (HDC_InitDevice(&AcsiBus.devs[i], ConfigureParams.Acsi[i].sDeviceFile, ConfigureParams.Acsi[i].nBlockSize) == 0)
 		{
 			bAcsiEmuOn = true;
 			nAcsiPartitions += HDC_PartitionCount(AcsiBus.devs[i].image_file, TRACE_SCSI_CMD, NULL);
