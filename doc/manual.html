@@ -1293,7 +1293,7 @@ ends with a 'b'.
 <h4 class="gui">The Hard Disks Dialog</h4>
 
 <div class="floatimage">
-  <img src="images/harddisks.png" width="640" height="352"
+  <img src="images/harddisks.png" width="640" height="400"
        alt="Hatari's GUI - the hard disks dialog" />
 </div>
 
@@ -1301,9 +1301,50 @@ ends with a 'b'.
  This dialog can be used to change the hard disk settings.
 </p>
 <p>
- Here you can select a hard disk image file for ACSI, IDE master or
- slave hard drive emulation, or you can select a host directory to be
- emulated as the Atari hard drive.
+ Here you can select a hard disk image file for ACSI, SCSI or IDE hard drive
+ emulation, or you can select a host directory to be emulated as the Atari
+ hard drive. Use the arrow buttons to select the ID of the drive that you
+ want to set, then click on <span class="button">Browse</span> to choose
+ a file which should be used for providing the contents of the hard disk,
+ or click on <span class="button">Eject</span> to disable the current ID.
+</p>
+<p>
+ IDE controllers are using a 16-bit interface, so depending on where the
+ contents of a real hard disk have initially been created (on an Atari
+ machine or on a PC), and depending on where the contents have been read
+ out from the disk, 16-bit values in the image might be byte-swapped.
+ Hatari can either try to detect this situation automatically (when
+ &quot;Auto&quot; is selected), or you can tell Hatari whether it should
+ always byte-swap the disk image contents or not.
+</p>
+<p>
+ GEMDOS HD emulation can be used to provide a folder on your host
+ computer file system as hard drive(s) to the emulated Atari. Select
+ <span class="button">Browse</span> to choose a folder, or
+ <span class="button">Eject</span> to disable the drive(s) again.
+ <br/>
+ The &quot;Atari &lt;-&gt; host 8-bit filename conversion&quot; setting
+ can be used to tell Hatari whether it should try to convert the character
+ set of the file names on the host to the Atari character set, since
+ modern operating systems use different character sets than Atari TOS.
+ File name conversion option is best-effort conversion between
+ the host OS and Atari character set for the non-ASCII file names
+ exposed by the GEMDOS HD emulation.
+ <br/>
+ GEMDOS HD emulation can override partition(s) from HD images.
+ With "Add GEMDOS HD after ACSI/SCSI/IDE partitions" option Hatari
+ tries to assign it to a drive after the partitions on HD images,
+ instead of C: (whether that works correctly depends on whether
+ your emulated Atari hard disk interprets the HD images partition
+ tables similarly to Hatari, and whether it starts assigning them
+ from C: onwards). As a last resort, you can use "--gemdos-drive"
+ command line option to explicitly specify which drive should be
+ used for GEMDOS HD.
+ <br/>
+ Finally, you can also choose whether you want to provide the files on
+ GEMDOS HD only as write-protected to the Atari environment or not,
+ or whether you want Hatari to select this status automatically depending
+ on the file attributes of the file in the host file system.
 </p>
 <p>
  Check "Boot from HD" to set given hard disk image / directory as TOS
@@ -1313,30 +1354,11 @@ ends with a 'b'.
  later on the command line (later one takes precedence).
 </p>
 <p>
- Removing the check from the "Allow GEMDOS drive modification" option
- will prevent Atari programs from modifying the files in GEMDOS HD
- emulation directory or creating new files under it.
-</p>
-<p>
- GEMDOS HD emulation can override partition(s) from HD images.
- With "Add GEMDOS HD after ACSI/IDE partitions" option Hatari
- tries to assign it to a drive after the partitions on HD images,
- instead of C: (whether that works correctly depends on whether
- your emulated Atari hard disk interprets the HD images partition
- tables similarly to Hatari, and whether it starts assigning them
- from C: onwards). As a last resort, you can use "--gemdos-drive"
- command line option to explicitly specify which drive should be
- used for GEMDOS HD.
-</p>
-<p>
- Modern OSes use different character sets than Atari TOS.
- File name conversion option is best-effort conversion between
- the host OS and Atari character set for the non-ASCII file names
- exposed by the GEMDOS HD emulation.
-</p>
-<p>
  Note that you need TOS version &gt;= 2.05 to boot from IDE hard drive.
- And ACSI hard drive emulation does not work with TOS 4.0x in Falcon mode.
+ ACSI hard drive emulation does not work with TOS 4.0x in Falcon mode.
+ For SCSI emulation, you either need to run with TT or Falcon emulation.
+ Please also refer to the <a href="#Hard_disk_support">Hard disk support</a>
+ chapter for more details about hard disk emulation.
 </p>
 
 
