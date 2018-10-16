@@ -99,14 +99,14 @@ static SGOBJ diskdlg[] =
 	{ SGTEXT, 0, 0, 3,13, 58,1, dlgname_gdos },
 
 	{ SGCHECKBOX, 0, 0, 8,15, 43,1, "Atari <-> _host 8-bit file name conversion" },
-	{ SGCHECKBOX, 0, 0, 8,16, 41,1, "Add GEMDOS HD after ACSI/IDE _partitions" },
+	{ SGCHECKBOX, 0, 0, 8,16, 46,1, "Add GEMDOS HD after ACSI/SCSI/IDE _partitions" },
 
 	{ SGTEXT, 0, 0, 8,18, 31,1, "Write protection:" },
 	{ SGRADIOBUT, 0, 0, 26,18, 5,1, "O_ff" },
 	{ SGRADIOBUT, 0, 0, 32,18, 4,1, "O_n" },
 	{ SGRADIOBUT, 0, 0, 37,18, 6,1, "_Auto" },
 
-	{ SGCHECKBOX, 0, 0, 2,21, 16,1, "_Boot from HD" },
+	{ SGCHECKBOX, 0, 0, 2,21, 21,1, "_Boot from hard disk" },
 
 	{ SGBUTTON, SG_DEFAULT, 0, 22,23, 20,1, "Back to main menu" },
 	{ SGSTOP, 0, 0, 0,0, 0,0, NULL }
