@@ -8,7 +8,7 @@
   <meta name="keywords" content="hatari, documentation, manual, linux" />
   <meta name="viewport" content="width=device-width; initial-scale=1.0;" />
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-  <style type="text/css">
+  <style>
   <!--
 	body {  background:#FFFFFF;
 		color:#000000;
@@ -56,7 +56,7 @@
 	p.paramdesc { margin: 1px 1em 1px 22%; }
   -->
   </style>
-  <script type="text/javascript" src="toc.js"></script>
+  <script src="toc.js"></script>
 </head>
 
 <body>
@@ -2625,20 +2625,21 @@ and it will be "evaluated" before being given to the command.
 Virtual V0-V7 "registers" can be used to store intermediate results
 for calculations. For example, to get a sum of "_counter" symbol
 address contents one could use following in suitable breakpoint:
+</p>
 <pre>
 # store counter sum to V0 virtual register
 r v0=(_counter)
 # store count of how many values are added
 r v1="v1+1"
 </pre>
-And then later on, calculate the average:
+<p>And then later on, calculate the average:</p>
 <pre>
 # round the counter sum (add half count to sum)
 r v2="v0 + v1/2"
 # and calculate the rounded average (rounded sum / count)
 e v2/v1
 </pre>
-(Another virtual register was used for rounding here, in case one
+<p>(Another virtual register was used for rounding here, in case one
 wants to continue summing the _counter values with the original
 value.)
 </p>
@@ -3121,7 +3122,6 @@ conditional breakpoints on values of some "virtual" variables listed
 by "variables" (v) command. For example:
 </p>
 <ul>
-</li>
 <li>Aes/Bios/Gemdos/LineA/LineF/Vdi/XbiosOpcode variables can be used
     to catch AES, BIOS, GEMDOS, Line-A, Line-F, VDI and XBIOS OS-calls.
     By default they contain the 0xffff value, so to trace e.g. all AES
@@ -4181,11 +4181,11 @@ b  ($ff820a).b & 2 ! ($ff820a).b & 2  :trace
 </dd>
 
 <dt><em>Viewing OS structure and IO register values</em></dt>
-To see e.g. basepage for currently running program:
+<dd>To see e.g. basepage for currently running program:
 <pre>
 info basepage
 </pre>
-<dd>To see e.g. all Falcon Videl register values, use:
+To see e.g. all Falcon Videl register values, use:
 <pre>
 info videl
 </pre>
