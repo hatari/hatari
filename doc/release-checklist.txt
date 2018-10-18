@@ -1,0 +1,44 @@
+Things for Hatari dev team to check before new release:
+
+When first thinking about new release:
+* Ask about compatibility / bug fixes & features that people would
+  like to see in next release
+* Ask people on hatari-devel to build latest Hatari and do some
+  preliminary testing with their favorite use-cases
+* Get list of things we want to push in before the release
+  - Make sure that any other larger changes are post-poned
+    after release
+* Run automated tests:
+  - Do "make test"
+  - Run TOS boot tester for all supported TOS versions
+
+Few weeks before release, after issues from above have been fixed:
+* Validate HTML documentation with https://validator.w3.org/
+* Check that (Python) hatariui still works with latest changes
+* Check that all programs/demos listed in compatibility.html as
+  fixed during development still work, change their Hatari version
+  to new release and make sure they're listed also in release-notes.txt
+* Make sure that different Hatari build configurations work
+  (all and none of optional dependencies being present, all optional
+  featured enabled and disabled,  WinUAE & oldUAE CPU cores, SDL1 & SDL2)
+* Re-run automated tests
+* Go through commit log / ask others to make sure relevant changes
+  are listed in release-notes.txt, and updated in todo.txt
+* Ask Linux distro maintainers to try packaging Hatari and report
+  issues that need to be fixed before release
+* Build binary packages for OSes that aren't covered by the daily builds
+* Announce release candidate on mailing lists & Atari forum and
+  ask people to test it on all platforms.  Remember to tell which
+  platforms should work, and which are still completely untested
+
+Actual release:
+* Update release version & date in:
+  - version.h
+  - manual.html
+  - readme.txt
+  - release-notes.txt
+* Get latest etos512.img version for binary packages and document
+  that in emutos.txt
+* Build binary packages
+* Announce new release "everywhere"
+* Party!
