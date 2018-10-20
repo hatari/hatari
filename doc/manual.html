@@ -2273,7 +2273,6 @@ been partitioned elsewhere.
 
 <h3>IDE hard drive emulation</h3>
 <p>
-<p>
 As the IDE disk format (little endian) differs from the ACSI disk format
 (big endian), you need separate disk images for them.  Hatari doesn't
 currently support partitioning IDE disks with AHDI, but you can do it with
@@ -2762,7 +2761,6 @@ startup</a>):
 <pre>
 symbols prg
 </pre>
-<p>
 
 <p>
 The options you need to add suitable symbol table to your programs,
@@ -3791,7 +3789,7 @@ Instruction cache misses:
 </pre>
 
 <p>If you want to see also symbol addresses and what is per call
-cost, add -i option:<p>
+cost, add -i option:</p>
 <pre>
 $ hatari_profile.py -st <b>-i</b> -r program.sym program-profile.txt
 [...]
@@ -3821,7 +3819,7 @@ a cost count.)</p>
 <p>If your profile file contains caller information, you should
 add -p option to see it, as that will also help in detecting symbol
 issues (see <a href="#Interpreting_the_numbers">Interpreting
-the numbers</a>):<p>
+the numbers</a>):</p>
 <pre>
 $ hatari_profile.py -st <b>-p</b> -r program.sym program-profile.txt
 [...]
