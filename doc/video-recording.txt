@@ -30,7 +30,7 @@ use PNG compression to produce smaller AVI recordings.
 Additionally, by default Hatari will use the highest PNG compression
 level (same as with screenshots), but this is *really* CPU intensive.
 
-Because of the PNG compression CPU usage, it's better to use
+Because of the PNG compression CPU usage, it is better to use
 uncompressed BMP format.  If you don't have enough disk space for
 this, next best option is to ask Hatari to use lower compression
 level, e.g. with:
@@ -42,7 +42,7 @@ Valid compression levels are 0-9, with 9 being default/highest/slowest.
 Preparing videos for uploading
 ------------------------------
 
-If the end goal is Youtube, it's recommended to run Hatari's AVI
+If the end goal is Youtube, it is recommended to run Hatari's AVI
 output through ffmpeg to do nearest neighbor upscale to 1080p. Then
 Youtube will keep the 50 FPS and you have non-fuzzy pixels in the
 recording.
@@ -59,7 +59,7 @@ And for a 416x276 stream (so you get the overscan area as well, 4x scale):
 
 Above adds padding to 1920*1080 size, that can be removed if you trust
 the re-encoder/player to scale properly (which has been known to
-fail). It also saves the stream as PNG so it's manageable to upload
+fail). It also saves the stream as PNG so it is manageable to upload
 and store for future.
 
 (Upload information is based on atari-forum post by "evil":

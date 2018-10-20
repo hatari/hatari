@@ -263,7 +263,7 @@ package.
 </p>
 
 <p>
-After you've verified that you have the required libraries and their
+After you have verified that you have the required libraries and their
 development files, change to the <span class="file">hatari/</span>
 directory.  Create a <span class="file">build/</span> directory under
 it and configure the build system for your environment:
@@ -307,10 +307,10 @@ favourite internet search engine).</p>
 release versions of Hatari. EmuTOS is an open-source TOS clone. You can find
 it at:
 <a href="http://emutos.sourceforge.net/">http://emutos.sourceforge.net/</a>.
-It's not the best solution for Falcon emulation, playing old games
+It is not the best solution for Falcon emulation, playing old games
 or running other old software due to compatibility issues (see
 <span class="file">emutos.txt</span> for more details),
-but it's free, compatible with Hatari, doesn't require driver to
+but it is free, compatible with Hatari, doesn't require driver to
 support harddisk images, and it boots much faster than original TOS.</p>
 <p>If you do not specify a TOS image on the commandline and Hatari
 cannot find a suitable TOS image in the default dir, you'll get the
@@ -699,7 +699,7 @@ running, you may want to use "host" option</p>
 <p class="paramdesc">Whether GEMDOS file names with 8-bit (non-ASCII) characters
 are converted between Atari and host character sets. On Linux, host file
 name character set is assumed to be UTF-8. This option is disabled by
-default, in case you've transferred files from Atari machine without
+default, in case you have transferred files from Atari machine without
 proper file name conversion (e.g. by zipping them on Atari and
 unzipping on PC)</p>
 <p class="parameter">--gemdos-drive &lt;drive&gt;</p>
@@ -938,7 +938,7 @@ the command line options supported by a given version of Hatari.</p>
 
 <h2>Using the emulated system</h2>
 
-<p> Once you've started Hatari successfully, you can use the emulator as
+<p> Once you have started Hatari successfully, you can use the emulator as
 an almost complete Atari ST computer system. </p>
 
 <h3>The GUI</h3>
@@ -1047,7 +1047,7 @@ changes that you have made.
   advanced hardware features, like the blitter chip, hardware scrolling and
   DMA sample sound (but no Real Time Clock). There are not that many demos or
   games that really require an STE but since most normal ST games/demos also
-  work with an STE, it's normally safe to always work in STE mode.
+  work with an STE, it is normally safe to always work in STE mode.
   Also make sure to use TOS version 1.06, 1.62 or 2.0x with this machine type.
  </li>
  <li>
@@ -1151,7 +1151,7 @@ changes that you have made.
   If you are going to use TOS 1.0x, you also have to select the 68000 CPU,
   since these TOS versions are not aware of the higher CPU levels yet.
   If you want to use a higher CPU level with the ST or STE machine type,
-  you've got to use TOS 2.0x instead.
+  you have to use TOS 2.0x instead.
  </li>
  <li>
   Atari TT and Falcon computers were using the 68030 CPU, so you should select
@@ -1162,7 +1162,7 @@ changes that you have made.
  </li>
  <li>
   68010 and 68040, 68060 have never been used in official Atari computers,
-  so don't use these CPU types unless you've got some good reasons.
+  so don't use these CPU types unless you have got some good reasons.
  </li>
  <li>
   The 68060 option is only available in the &quot;WinUAE&quot; builds of
@@ -1348,7 +1348,7 @@ ends with a 'b'.
 </p>
 <p>
  Check "Boot from HD" to set given hard disk image / directory as TOS
- boot device (if ACSI or IDE is enabled, it's C:, otherwise it's the
+ boot device (if ACSI or IDE is enabled, it is C:, otherwise it is the
  first specified GEMDOS HD drive).  With command line options, the value
  of this setting depends on whether you specify floppy image or harddisk
  later on the command line (later one takes precedence).
@@ -1407,9 +1407,9 @@ EmuTOS, or you must use a TOS version that supports the machine type.
 For ST mode, use TOS 1.00, 1.02, 1.04 or 2.06.
 For STE mode, use TOS 1.06, 1.62, 2.05 or 2.06.
 If you want to use the TT mode, you must specify a TOS 3.05 or 3.06 image here.
-And in Falcon mode, you have to use either TOS 4.00, 4.02, 4.04 or 4.92.
-However, you should always use TOS 4.04 for Falcon mode, it's the most common one.
-Also note that TOS 4.92 cannot be booted from a boot disk (like it's done on a
+And in Falcon mode, you have to use either TOS 4.00, 4.02, 4.04 or 4.92. However,
+you should always use TOS 4.04 for Falcon mode, it is the most common one.
+Also note that TOS 4.92 cannot be booted from a boot disk (like it is done on a
 real Falcon), you have to specify it directly in the TOS ROM setup dialog here.
 </p>
 <p>
@@ -1585,7 +1585,7 @@ has different implementations for different video modes:
 </ul>
 <p>
 You should set these values to a size that suits best your monitor
-resolution. It's intended to help in getting Hatari to best use your
+resolution. It is intended to help in getting Hatari to best use your
 monitor space on a windowed mode and in fullscreen avoiding "fuzzy"
 scaling done by your LCD monitor.
 </p>
@@ -2085,7 +2085,7 @@ the DIM images into ST images by stripping the header from the files.
 For example try something like:
 <span class="commandline">dd if=input.dim of=output.st bs=32 skip=1</span>
 </p>
-<p> If you've got a disk image that has been created with the old ST
+<p> If you have got a disk image that has been created with the old ST
 emulator PaCifiST (for DOS) or with early versions of the program
 Makedisk, and the disk image does not work with Hatari, then the disk
 probably suffers from the "PaCifiST bootsector bug" (Hatari will
@@ -2258,7 +2258,7 @@ disk image with it.
 </p>
 <p>
 Formatting and partitioning works currently only with AHDI 5, but you
-can install the AHDI 6 driver to the hard disk after it's formatted.
+can install the AHDI 6 driver to the hard disk after it is formatted.
 Restart the emulated system, run AHDI.PRG from the floppy disk to access
 the hard disk image from the emulated Atari and then run HINSTALL.PRG.
 After installing the hard disk driver to the fresh HD image with
@@ -2319,7 +2319,7 @@ either through GEMDOS HD partitions (host directories mounted inside
 Hatari emulation) or accessing the images directly on the host
 (outside the emulation).  Both have their own limitations.</p>
 
-<p>If it's fine for the IDE/ACSI partitions to be first, you can
+<p>If it is fine for the IDE/ACSI partitions to be first, you can
 either use ACSI/IDE partition skip option, or a multipartition GEMDOS
 HD setup as described in above sections.
 </p>
@@ -2417,9 +2417,8 @@ MTOOLS_NO_VFAT=1 mcopy -spmv -i hd.img files/* ::
 
 <h4>Using a loopback device</h4>
 <p>
-This is recommended even by Mtools documentation, but it's less
-convenient as it requires root rights. First you need to "loop"
-mount the image:
+This is recommended even by Mtools documentation, but it is less convenient
+as it requires root rights. First you need to "loop" mount the image:
 </p>
 <pre>
 $ su
@@ -2439,7 +2438,7 @@ the <span class="commandline">hd.img</span> image.
 from the loop device on top of the "hd" directory.
 </p>
 <p>
-After you've copied the relevant files to the "hd" directory, you need
+After you have copied the relevant files to the "hd" directory, you need
 to unmount the file system and remove the loop device binding before
 using the disk image from Hatari:
 </p>
@@ -2500,7 +2499,7 @@ this, can be controlled with the "--debug-except" option.
 
 <p>
 Giving "-D" option at Hatari startup is not advised because TOS HW
-checks generate some exceptions at every TOS boot.  It's better to
+checks generate some exceptions at every TOS boot.  It is better to
 toggle exception catching later from the debugger with the "setopt -D"
 command.
 </p>
@@ -2578,7 +2577,7 @@ pressing TAB will (for most commands) show all the available subcommands.
 If you want to give numbers in other number bases
 than the default/selected one, they need to be prefixed with a
 character indicating this.  For decimals this prefix is "#" (#15),
-for hexadecimals "$" ($F), and for binary values it's "%" (%1111).
+for hexadecimals "$" ($F), and for binary values it is "%" (%1111).
 </p>
 
 <p>
@@ -2749,7 +2748,7 @@ dsp_symbols").
 
 <p>
 If currently running program contains debug symbol table,
-and it's started from GEMDOS HD emulated drive, its symbol names /
+and it is started from GEMDOS HD emulated drive, its symbol names /
 addresses are automatically loaded when debugger is entered, and
 removed when program terminates.</p>
 
@@ -2934,7 +2933,7 @@ a $1234 :2
 
 <dt><em>once</em></dt>
 <dd>
-Delete the breakpoint when it's hit i.e. trigger it only once. It may
+Delete the breakpoint when it is hit, i.e. trigger it only once. It may
 be useful if you just want to get a specific address. Or if you're on
 an instruction that jumps back to a start of the loop and you want to
 finish the loop, you could use:
@@ -3053,7 +3052,7 @@ b d0 &gt; $20  &amp;&amp;  d0 &lt; $40  &amp;&amp;  d0 ! $30
 
 <p>
 As a convenience, if the both sides of the comparison are exactly the
-same (i.e. condition is redundant as it's always either true or
+same (i.e. condition is redundant as it is always either true or
 false), the <em>right side</em> of the comparison is replaced with
 its current value.  This way you can give something like this:
 </p>
@@ -3143,7 +3142,7 @@ b GemdosOpcode = 0x4B && OsCallParam = 0x0
 <pre>
 b  pc = TEXT :once
 </pre>
-Note1: It's better to trigger it only once, because if you'd leave it
+Note1: It is better to trigger it only once, because if you would leave it
 on, during (re)boot you would get a warning for every instruction
 (until TOS sets a valid basepage).
 <br />
@@ -3229,7 +3228,7 @@ hatari --parse pexec.ini /path/to/your/program.tos
 <ol>
 <li>"pexec.ini" sets a breakpoint to parse debugger commands from
     "program.ini" when TOS starts loading the given program
-    (it's first Pexec(0) after boot)
+    (it is first Pexec(0) after boot)
 <li>"program.ini" sets a breakpoint to parse debugger commands from
     "trace.ini" when program code begins executing.  These two steps
     are needed because TEXT variable isn't valid until TOS has booted
@@ -3248,12 +3247,12 @@ emulation, ":trace" option needs to be used for the breakpoint(s)
 if you want emulation to continue after the breakpoint action(s).</li>
 <li>In simpler breakpoint chain (like above), where new breakpoint
 just replaces the previous one, ":once" option tells debugger that
-breakpoint isn't needed after it's hit.
+breakpoint isn't needed after it is hit.
 </li>
 </ul>
 
 <p>
-Hint: It's better to test each input file separately before testing
+Hint: It is better to test each input file separately before testing
 the whole chain.  Besides the ":file" breakpoint option, you can test
 these debugger input files also with the debugger "file" command,
 "file" option for the "lock" command, and with the Hatari "--parse"
@@ -3327,7 +3326,7 @@ Notes:
 <ul>
 <li>
 If GEMDOS HD emulation isn't enabled, GEMDOS call tracing needs to be
-enabled at Hatari command line, it's not possible to enable it after
+enabled at Hatari command line, it is not possible to enable it after
 TOS has initialized GEMDOS.
 </li>
 <li>
@@ -3346,7 +3345,7 @@ it cannot be changed from within the debugger (or emulation).
 </li>
 </ul>
 <p>
-If there isn't a trace option for something you'd like to track,
+If there isn't a trace option for something you would like to track,
 you may be able to use tracing breakpoints, explained above.
 For example, following tracks Line-A calls:
 </p>
@@ -3411,7 +3410,7 @@ Cartridge ROM (0xFA0000-0xFC0000):
 <h4>Investigating the profile data</h4>
 
 <p>
-When you're back in debugger, you can inspect the collected profile data:
+When you are back in debugger, you can inspect the collected profile data:
 </p>
 <pre>
 &gt; h profile
@@ -3595,7 +3594,7 @@ following command:</p>
 <p>
 For example, if you don't know all the places from which a certain
 function is called, or in what context a certain interrupt handler can
-be called during the period you're profiling, profile caller
+be called during the period you are profiling, profile caller
 information will tell you:
 </p>
 <pre>
@@ -3654,7 +3653,7 @@ profiler cannot determine when exceptions are being handled:</p>
 
 <h4>Saving profile data to a file</h4>
 
-<p>It's useful to save the profile data to a file:
+<p>It is useful to save the profile data to a file:</p>
 <pre>
 &gt; profile save program-profile.txt
 </pre>
@@ -3662,7 +3661,7 @@ profiler cannot determine when exceptions are being handled:</p>
 <p>With the saved profile disassembly (and optional caller information)
 you can more easily investigate what your program did during
 profiling, search symbols &amp; addresses in it, and compare the
-results to profiles you've saved from earlier versions of your code.</p>
+results to profiles you have saved from earlier versions of your code.</p>
 
 <p>You may even create your own post-processing tools for
 investigating the profiling data more closely, e.g. to
@@ -3918,7 +3917,7 @@ is same as count for how many times first instruction is executed
 <p>While subroutine costs should be more accurate and relevant, due to
 code optimizations many of the functions are not called as subroutines
 (on m68k, using JSR/BSR), but just jumped or branched to.  Because of
-this, it's useful to compare both subroutine and between-symbols
+this, it is useful to compare both subroutine and between-symbols
 costs.  One should be able to see from the profile disassembly which
 of the above cases is cause for the discrepancy in the values.</p>
 
@@ -3983,7 +3982,7 @@ $ dot -Tsvg program-profile-1.dot &gt; program-profile-1.svg
 <li>Ellipse shaped nodes are for other symbols (functions
     called using jumps/branches, loop labels etc).  Values
     listed in them are between-symbols costs, i.e. normally
-    they're included to inclusive (total) costs shown in
+    they are included to inclusive (total) costs shown in
     subroutine call node somewhere higher in call hierarchy.</li>
 <li>Nodes which exclusive (own) or between-symbols costs
     exceed default or explicitly given threshold value,
@@ -4004,9 +4003,10 @@ $ dot -Tsvg program-profile-1.dot &gt; program-profile-1.svg
 
 <h4>Making large callgraphs readable</h4>
 
-<p>If profile is for larger and more varied amount of code
-(e.g. program startup), the resulting callgraph can be so
-huge it's unreadable.</p>
+<p>
+If profile is for larger and more varied amount of code (e.g. program startup),
+the resulting callgraph can be so huge that it not really readable anymore.
+</p>
 
 <p>If your code has interrupt handlers, they can get called
 at any point, which can show in callgraph as "explicit" calls
@@ -4031,7 +4031,7 @@ threshold with --emph-limit (-e) option:</p>
 $ hatari_profile.py -p -g <b>-l 0.5 -e 2.0</b> -r program.sym program-profile.txt
 </pre>
 
-<p>If you're not interested in from how many different addresses
+<p>If you are not interested in from how many different addresses
 a given function calls another function, use --compact option.  If you
 still see multiple calls between two nodes with it, the reason is that
 they happened through different call paths which were removed from
@@ -4046,7 +4046,7 @@ often doesn't leave much of a call hierarchy.  Instead you may
 consider removing all nodes except for subroutine call ones, with the
 --only-subroutines option.</p>
 
-<p>If you have trouble locating nodes you're specially interested
+<p>If you have trouble locating nodes you are specially interested
 about, you can either color them differently with the --mark option,
 or exclude everything else from the callgraph except those nodes and
 their immediate callers &amp; callees, with the --only option:</p>
@@ -4310,7 +4310,7 @@ callstack information (with some limitations).
 
 <dt><em>Seeing call backtraces whenever given function is called</em></dt>
 <dd>Enable profiling, load symbols for the program and set breakpoint
-for the function you're interested about, in the following way:
+for the function you are interested about, in the following way:
 <pre>
 profile on
 symbols prg
@@ -4347,7 +4347,7 @@ history, editing and especially the completion support for the
 command, command argument and symbol names.
 </p>
 <p>
-If you're building Hatari yourself, please make sure that you have the
+If you are building Hatari yourself, please make sure that you have the
 GNU readline development files installed (on Debian / Ubuntu these
 come from the libreadline5-dev package). Otherwise the name completion
 and other features don't get enabled when you configure Hatari.
@@ -4386,7 +4386,7 @@ macOS itself composites non-fullscreen window contents. MacOS uses always
 </p>
 
 <p>
-Unless you've disabled compiler optimizations (like GCC's -O2 or -O3
+Unless you have disabled compiler optimizations (like GCC's -O2 or -O3
 options) in the Hatari build, the extra optimization flags (like GCC's
 "-mtune=i686") don't seem to have very large effect on Hatari
 performance.  Using GCC -O3 option instead of -O2 can give minor
@@ -4413,7 +4413,7 @@ can be slower despite optimizations.
 Emulation options have the largest impact on performance.
 These options can be changed from the Hatari GUI System dialog and
 the emulation needs to be rebooted for any of these changes to take
-an effect!  They're enabled by default.
+an effect!  They are enabled by default.
 </p>
 
 <h4>DSP</h4>
@@ -4560,7 +4560,7 @@ is paused, Hatari will output on console info on how many VBLs it
 could show per second, along with some other numbers.
 </p>
 <p>
-It depends on what you want to measure, but usually it's best to
+It depends on what you want to measure, but usually it is best to
 disable sound and set high frame skip like
 <span class="commandline">--sound off --frameskips 60</span> so that
 the associated external overheads are minimized.  E.g. video output
@@ -4573,7 +4573,7 @@ call, only the time spent by the Hatari process itself is measured.
 On other systems, much less accurate SDL "wall clock" timings are
 used.  To make latter more accurate you could use also
 <span class="commandline">--run-vbls</span> option to specify how many
-VBLs Hatari should run before it exits.  In this case it's best to
+VBLs Hatari should run before it exits.  In this case it is best to
 either have the test-case run automatically from the AUTO-folder or
 given as memory snapshot to Hatari with the frame skip set equal to
 the VBL count.
@@ -4583,7 +4583,7 @@ Note that these numbers can fluctuate quite a bit, <em>especially</em>
 when the SDL timings are used, so for (statistically) reliable numbers
 you may need to repeat the measurement several times.  You should of
 course make also sure that the system doesn't have any other activity
-at the same time you're making the measurements.
+at the same time you are making the measurements.
 </p>
 
 
