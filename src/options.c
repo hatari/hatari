@@ -400,7 +400,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_CPUCLOCK,  NULL, "--cpuclock",
 	  "<x>", "Set the CPU clock (x = 8/16/32)" },
 	{ OPT_COMPATIBLE, NULL, "--compatible",
-	  "<bool>", "Use a more compatible (but slower) 68000 CPU mode" },
+	  "<bool>", "Use a more compatible (but slower) prefetch mode for CPU" },
 #if ENABLE_WINUAE_CPU
 	{ OPT_CPU_CYCLE_EXACT, NULL, "--cpu-exact",
 	  "<bool>", "Use cycle exact CPU emulation" },
