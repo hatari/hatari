@@ -517,6 +517,17 @@ void Statusbar_UpdateInfo(void)
 		*end++ = '0';
 	}
 
+	/* Prefetch mode or cycle exact mode ? */
+#if ENABLE_WINUAE_CPU
+	if ( ConfigureParams.System.bCycleExactCpu )
+		end = Statusbar_AddString(end, "(CE)");
+	else if ( ConfigureParams.System.bCompatibleCpu )
+		end = Statusbar_AddString(end, "(PF)");
+#else
+	if ( ConfigureParams.System.bCompatibleCpu )
+		end = Statusbar_AddString(end, "(PF)");
+#endif
+
 	/* additional WinUAE CPU/FPU info */
 #if ENABLE_WINUAE_CPU
 	*end++ = '/';
