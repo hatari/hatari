@@ -6558,16 +6558,6 @@ static void m68k_run_mmu030 (void)
 			for (;;) {
 				int cnt;
 insretry:
-#ifdef WINUAE_FOR_HATARI
-				//m68k_dumpstate_file(stderr, NULL, 0xffffffff);
-				if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
-				{
-					int FrameCycles, HblCounterVideo, LineCycles;
-					Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
-					LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
-					m68k_disasm_file(stderr, m68k_getpc (), NULL, m68k_getpc (), 1);
-				}
-#endif
 				regs.instruction_pc = m68k_getpc ();
 				f.cznv = regflags.cznv;
 				f.x = regflags.x;
@@ -6604,6 +6594,16 @@ insretry:
 
 				cnt = 50;
 				for (;;) {
+#ifdef WINUAE_FOR_HATARI
+					//m68k_dumpstate_file(stderr, NULL, 0xffffffff);
+					if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
+					{
+						int FrameCycles, HblCounterVideo, LineCycles;
+						Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+						LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
+						m68k_disasm_file(stderr, m68k_getpc (), NULL, m68k_getpc (), 1);
+					}
+#endif
 					regs.opcode = regs.irc = mmu030_opcode;
 					mmu030_idx = 0;
 
