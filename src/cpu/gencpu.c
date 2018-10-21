@@ -49,7 +49,7 @@ static int cpu_level, cpu_generic;
 static int count_read, count_write, count_cycles, count_ncycles;
 static int count_cycles_ce020;
 static int count_read_ea, count_write_ea, count_cycles_ea;
-static const char *mmu_postfix;
+static const char *mmu_postfix, *xfc_postfix;
 static int memory_cycle_cnt;
 static int did_prefetch;
 static int ipl_fetched;
@@ -1694,9 +1694,9 @@ static void genamode2x (amodes mode, const char *reg, wordsizes size, const char
 		if (using_mmu) {
 			if (flags & GF_FC) {
 				switch (size) {
-				case sz_byte: insn_n_cycles += 4; printf ("\tuae_s8 %s = sfc%s_get_byte (%sa);\n", name, mmu_postfix, name); break;
-				case sz_word: insn_n_cycles += 4; printf ("\tuae_s16 %s = sfc%s_get_word (%sa);\n", name, mmu_postfix, name); break;
-				case sz_long: insn_n_cycles += 8; printf ("\tuae_s32 %s = sfc%s_get_long (%sa);\n", name, mmu_postfix, name); break;
+				case sz_byte: insn_n_cycles += 4; printf ("\tuae_s8 %s = sfc%s_get_byte%s (%sa);\n", name, mmu_postfix, xfc_postfix, name); break;
+				case sz_word: insn_n_cycles += 4; printf ("\tuae_s16 %s = sfc%s_get_word%s (%sa);\n", name, mmu_postfix, xfc_postfix, name); break;
+				case sz_long: insn_n_cycles += 8; printf ("\tuae_s32 %s = sfc%s_get_long%s (%sa);\n", name, mmu_postfix, xfc_postfix, name); break;
 				default: term ();
 				}
 			} else {
@@ -1915,7 +1915,7 @@ static void genastore_2 (const char *from, amodes mode, const char *reg, wordsiz
 			case sz_byte:
 				insn_n_cycles += 4;
 				if (flags & GF_FC)
-					printf ("\tdfc%s_put_byte (%sa, %s);\n", mmu_postfix, to, from);
+					printf ("\tdfc%s_put_byte%s (%sa, %s);\n", mmu_postfix, xfc_postfix, to, from);
 				else
 					printf ("\t%s (%sa, %s);\n", (flags & GF_LRMW) ? dstblrmw : (candormw ? dstbrmw : dstb), to, from);
 				break;
@@ -1924,7 +1924,7 @@ static void genastore_2 (const char *from, amodes mode, const char *reg, wordsiz
 				if (cpu_level < 2 && (mode == PC16 || mode == PC8r))
 					term ();
 				if (flags & GF_FC)
-					printf ("\tdfc%s_put_word (%sa, %s);\n", mmu_postfix, to, from);
+					printf ("\tdfc%s_put_word%s (%sa, %s);\n", mmu_postfix, xfc_postfix, to, from);
 				else
 					printf ("\t%s (%sa, %s);\n", (flags & GF_LRMW) ? dstwlrmw : (candormw ? dstwrmw : dstw), to, from);
 				break;
@@ -1933,7 +1933,7 @@ static void genastore_2 (const char *from, amodes mode, const char *reg, wordsiz
 				if (cpu_level < 2 && (mode == PC16 || mode == PC8r))
 					term ();
 				if (flags & GF_FC)
-					printf ("\tdfc%s_put_long (%sa, %s);\n", mmu_postfix, to, from);
+					printf ("\tdfc%s_put_long%s (%sa, %s);\n", mmu_postfix, xfc_postfix, to, from);
 				else
 					printf ("\t%s (%sa, %s);\n", (flags & GF_LRMW) ? dstllrmw : (candormw ? dstlrmw : dstl), to, from);
 				break;
@@ -2428,17 +2428,15 @@ static void genmovemle_ce (uae_u16 opcode)
 			printf ("\tuae_u16 dmask = mask & 0xff, amask = (mask >> 8) & 0xff;\n");
 			printf ("\twhile (dmask) {\n");
 			printf ("\t\t%s (srca, m68k_dreg (regs, movem_index1[dmask]) >> 16);\n", dstw);
-			printf ("\t\tsrca += %d;\n", size / 2);
-			printf ("\t\t%s (srca, m68k_dreg (regs, movem_index1[dmask]));\n", dstw);
-			printf ("\t\tsrca += %d;\n", size / 2);
+			printf ("\t\t%s (srca + 2, m68k_dreg (regs, movem_index1[dmask]));\n", dstw);
+			printf ("\t\tsrca += %d;\n", size);
 			printf ("\t\tdmask = movem_next[dmask];\n");
 			addcycles000_nonce("\t\t", 8);
 			printf ("\t}\n");
 			printf ("\twhile (amask) {\n");
 			printf ("\t\t%s (srca, m68k_areg (regs, movem_index1[amask]) >> 16);\n", dstw);
-			printf ("\t\tsrca += %d;\n", size / 2);
-			printf ("\t\t%s (srca , m68k_areg (regs, movem_index1[amask]));\n", dstw);
-			printf ("\t\tsrca += %d;\n", size / 2);
+			printf ("\t\t%s (srca + 2, m68k_areg (regs, movem_index1[amask]));\n", dstw);
+			printf ("\t\tsrca += %d;\n", size);
 			printf ("\t\tamask = movem_next[amask];\n");
 			addcycles000_nonce("\t\t", 8);
 			printf ("\t}\n");
@@ -4030,7 +4028,7 @@ static void gen_opcode (unsigned int opcode)
 					    printf ("\t\telse if (frame == 0xb) { m68k_do_rte_mmu030c (a); goto %s; }\n", endlabelstr);
 					} else {
 						printf ("\t\telse if (frame == 0xa) { m68k_do_rte_mmu030 (a); break; }\n");
-					    printf ("\t\telse if (frame == 0xb) { m68k_do_rte_mmu030 (a); break; }\n");
+					    printf ("\t\telse if (frame == 0xb) { m68k_do_rte_mmu030 (a); goto %s; }\n", endlabelstr);
 					}
 				} else {
 					printf ("\t\telse if (frame == 0xa) { m68k_areg (regs, 7) += offset + 24; break; }\n");
@@ -6063,6 +6061,7 @@ static void generate_cpu (int id, int mode)
 	using_waitstates = 0;
 	memory_cycle_cnt = 4;
 	mmu_postfix = "";
+	xfc_postfix = "";
 	using_simple_cycles = 0;
 	using_indirect = 0;
 	cpu_generic = false;
@@ -6142,6 +6141,7 @@ static void generate_cpu (int id, int mode)
 			opcode_next_clev[rp] = cpu_level;
 	} else if (id == 32) { // 32 = 68030 MMU
 		mmu_postfix = "030";
+		xfc_postfix = "_state";
 		cpu_level = 3;
 		using_mmu = 68030;
 		read_counts ();
@@ -6156,6 +6156,7 @@ static void generate_cpu (int id, int mode)
 			opcode_next_clev[rp] = cpu_level;
 	} else if (id == 34) { // 34 = 68030 MMU + caches
 		mmu_postfix = "030c";
+		xfc_postfix = "_state";
 		cpu_level = 3;
 		using_prefetch_020 = 2;
 		using_mmu = 68030;
