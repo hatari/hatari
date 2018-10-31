@@ -182,6 +182,10 @@ void STMemory_MemorySnapShot_Capture(bool bSave)
 	/* And Cart/TOS/Hardware area */
 	MemorySnapShot_Store(&RomMem[0xE00000], 0x200000);
 
+	/* Save/restore content of TT RAM if TTRamSize_KB != 0 */
+	if ( ConfigureParams.Memory.TTRamSize_KB > 0 )
+		MemorySnapShot_Store ( TTmemory , ConfigureParams.Memory.TTRamSize_KB*1024 );
+
 	if ( !bSave )
 		memory_map_Standard_RAM ( MMU_Bank0_Size , MMU_Bank1_Size );
 }
