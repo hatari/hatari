@@ -1474,7 +1474,7 @@ char *Symbols_MatchCommand(const char *text, int state)
 }
 
 const char Symbols_Description[] =
-	"<|code|data|name> -- list symbols\n"
+	"<code|data|name> -- list symbols\n"
 	"\tsymbols <prg|free> -- load/free symbols\n"
 	"\tsymbols <filename> [<T offset> [<D offset> <B offset>]]\n"
 	"\tsymbols <resident|match> -- toggle symbol options\n"
