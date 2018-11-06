@@ -16,3 +16,11 @@ if(NOT WIN32)
 		DEPENDS hatari.1)
 	INSTALL(FILES  ${CMAKE_CURRENT_BINARY_DIR}/hatari.1.gz DESTINATION ${MANDIR})
 endif()
+
+find_program(TIDY tidy)
+if(TIDY)
+	add_test(NAME tidy-manual
+	         COMMAND tidy -q -e ${CMAKE_CURRENT_SOURCE_DIR}/manual.html)
+	add_test(NAME tidy-compatibility
+	         COMMAND tidy -q -e ${CMAKE_CURRENT_SOURCE_DIR}/compatibility.html)
+endif()
