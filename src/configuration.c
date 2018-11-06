@@ -521,9 +521,13 @@ static const struct Config_Tag configs_Ide[] =
 	{ "bUseDevice0", Bool_Tag, &ConfigureParams.Ide[0].bUseDevice },
 	{ "nByteSwap0", Int_Tag, &ConfigureParams.Ide[0].nByteSwap },
 	{ "sDeviceFile0", String_Tag, ConfigureParams.Ide[0].sDeviceFile },
+	{ "nBlockSize0", Int_Tag, &ConfigureParams.Ide[0].nBlockSize },
+	{ "nDeviceType0", Int_Tag, &ConfigureParams.Ide[0].nDeviceType },
 	{ "bUseDevice1", Bool_Tag, &ConfigureParams.Ide[1].bUseDevice },
 	{ "nByteSwap1", Int_Tag, &ConfigureParams.Ide[1].nByteSwap },
 	{ "sDeviceFile1", String_Tag, ConfigureParams.Ide[1].sDeviceFile },
+	{ "nBlockSize1", Int_Tag, &ConfigureParams.Ide[1].nBlockSize },
+	{ "nDeviceType1", Int_Tag, &ConfigureParams.Ide[1].nDeviceType },
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -702,6 +706,7 @@ void Configuration_SetDefault(void)
 		ConfigureParams.Ide[i].bUseDevice = false;
 		ConfigureParams.Ide[i].nByteSwap = BYTESWAP_AUTO;
 		strcpy(ConfigureParams.Ide[i].sDeviceFile, psWorkingDir);
+		ConfigureParams.Ide[i].nBlockSize = 512;
 	}
 
 	/* Set defaults for Joysticks */

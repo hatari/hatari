@@ -243,6 +243,8 @@ typedef struct
   bool bUseDevice;
   BYTESWAPPING nByteSwap;
   char sDeviceFile[FILENAME_MAX];
+  int nBlockSize;
+  int nDeviceType;
 } CNF_IDEDEV;
 
 /* Falcon register $FFFF8006 bits 6 & 7 (mirrored in $FFFF82C0 bits 0 & 1):

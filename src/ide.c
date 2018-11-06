@@ -334,6 +334,7 @@ struct BlockDriverState {
     off_t file_size;
     int media_changed;
     int byteswap;
+    int sector_size;
 
     /* I/O stats (display with "info blockstats"). */
     uint64_t rd_bytes;
@@ -365,9 +366,6 @@ static inline void cpu_to_be16wu(uint16_t *p, uint16_t v)
 
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 
-#define SECTOR_BITS 9
-#define SECTOR_SIZE (1 << SECTOR_BITS)
-
 
 /**
  * return 0 as number of sectors if no device present or error
@@ -379,7 +377,7 @@ static void bdrv_get_geometry(BlockDriverState *bs, uint64_t *nb_sectors_ptr)
 	if (length < 0)
 		length = 0;
 	else
-		length = length >> SECTOR_BITS;
+		length = length / bs->sector_size;
 	*nb_sectors_ptr = length;
 }
 
@@ -455,9 +453,9 @@ static int bdrv_read(BlockDriverState *bs, int64_t sector_num,
 	if (!bs->fhndl)
 		return -ENOMEDIUM;
 
-	len = nb_sectors * SECTOR_SIZE;
+	len = nb_sectors * bs->sector_size;
 
-	if (fseeko(bs->fhndl, sector_num * SECTOR_SIZE, SEEK_SET) != 0)
+	if (fseeko(bs->fhndl, sector_num * bs->sector_size, SEEK_SET) != 0)
 	{
 		perror("bdrv_read");
 		return -errno;
@@ -503,9 +501,9 @@ static int bdrv_write(BlockDriverState *bs, int64_t sector_num,
 	if (bs->read_only)
 		return -EACCES;
 
-	len = nb_sectors * SECTOR_SIZE;
+	len = nb_sectors * bs->sector_size;
 
-	if (fseeko(bs->fhndl, sector_num * SECTOR_SIZE, SEEK_SET) != 0)
+	if (fseeko(bs->fhndl, sector_num * bs->sector_size, SEEK_SET) != 0)
 	{
 		perror("bdrv_write");
 		return -errno;
@@ -549,7 +547,7 @@ static int bdrv_open(BlockDriverState *bs, const char *filename, unsigned long b
 	bs->file_size = HDC_CheckAndGetSize(filename, blockSize);
 	if (bs->file_size <= 0)
 		return -1;
-	if (bs->file_size < 2 * 16 * 63 * SECTOR_SIZE)
+	if (bs->file_size < 2 * 16 * 63 * bs->sector_size)
 	{
 		Log_AlertDlg(LOG_ERROR, "IDE disk image size (%"PRId64" bytes) is "
 		                        "too small for an IDE disk image "
@@ -767,6 +765,9 @@ static void bdrv_eject(BlockDriverState *bs, int eject_flag)
 
 /* set to 1 set disable mult support */
 #define MAX_MULT_SECTORS 16
+
+/* maximum physical IDE hard disk drive sector size */
+#define MAX_SECTOR_SIZE 4096
 
 /* ATAPI defines */
 
@@ -1031,8 +1032,8 @@ static void ide_identify(IDEState *s)
 	/* ratio logical/physical: 0, logicalSectorSizeSupported */
 	put_le16(p + 106, 1 << 12);
 	/* words per logical sector */
-	put_le16(p + 117, 512 >> 1);
-	put_le16(p + 118, 512 >> 17);
+	put_le16(p + 117, s->bs->sector_size >> 1);
+	put_le16(p + 118, s->bs->sector_size >> 17);
 
 	memcpy(s->identify_data, p, sizeof(s->identify_data));
 	s->identify_set = 1;
@@ -1234,7 +1235,7 @@ static void ide_sector_read(IDEState *s)
 			ide_set_irq(s);
 			return;
 		}
-		ide_transfer_start(s, s->io_buffer, 512 * n, ide_sector_read);
+		ide_transfer_start(s, s->io_buffer, s->bs->sector_size * n, ide_sector_read);
 		ide_set_irq(s);
 		ide_set_sector(s, sector_num + n);
 		s->nsector -= n;
@@ -1272,7 +1273,7 @@ static void ide_sector_write(IDEState *s)
 		n1 = s->nsector;
 		if (n1 > s->req_nb_sectors)
 			n1 = s->req_nb_sectors;
-		ide_transfer_start(s, s->io_buffer, 512 * n1, ide_sector_write);
+		ide_transfer_start(s, s->io_buffer, s->bs->sector_size * n1, ide_sector_write);
 	}
 	ide_set_sector(s, sector_num + n);
 
@@ -2086,7 +2087,7 @@ static void ide_ioport_write(void *opaque, uint32_t addr, uint32_t val)
 			n = s->nsector;
 			if (n > s->req_nb_sectors)
 				n = s->req_nb_sectors;
-			ide_transfer_start(s, s->io_buffer, 512 * n, ide_sector_write);
+			ide_transfer_start(s, s->io_buffer, s->bs->sector_size * n, ide_sector_write);
 			s->media_changed = 1;
 			break;
 		case WIN_READ_EXT:
@@ -2111,7 +2112,7 @@ static void ide_ioport_write(void *opaque, uint32_t addr, uint32_t val)
 			s->error = 0;
 			s->status = SEEK_STAT | READY_STAT;
 			s->req_nb_sectors = 1;
-			ide_transfer_start(s, s->io_buffer, 512, ide_sector_write);
+			ide_transfer_start(s, s->io_buffer, s->bs->sector_size, ide_sector_write);
 			s->media_changed = 1;
 			break;
 		case WIN_MULTREAD_EXT:
@@ -2138,7 +2139,7 @@ static void ide_ioport_write(void *opaque, uint32_t addr, uint32_t val)
 			n = s->nsector;
 			if (n > s->req_nb_sectors)
 				n = s->req_nb_sectors;
-			ide_transfer_start(s, s->io_buffer, 512 * n, ide_sector_write);
+			ide_transfer_start(s, s->io_buffer, s->bs->sector_size * n, ide_sector_write);
 			s->media_changed = 1;
 			break;
 		case WIN_READDMA_EXT:
@@ -2537,7 +2538,7 @@ static int guess_disk_lchs(IDEState *s,
 	struct partition *p;
 	uint32_t nr_sects;
 
-	buf = malloc(SECTOR_SIZE);
+	buf = malloc(MAX_SECTOR_SIZE);
 	if (buf == NULL)
 		return -1;
 	ret = bdrv_read(s->bs, 0, buf, 1);
@@ -2591,7 +2592,7 @@ static void ide_init2(IDEState *ide_state, BlockDriverState *hd0,
 	for (i = 0; i < 2; i++)
 	{
 		s = ide_state + i;
-		s->io_buffer = malloc(MAX_MULT_SECTORS * 512 + 4);
+		s->io_buffer = malloc(MAX_MULT_SECTORS * MAX_SECTOR_SIZE + 4);
 		assert(s->io_buffer);
 		if (i == 0)
 			s->bs = hd0;
@@ -2704,7 +2705,7 @@ void Ide_Init(void)
 		if (ConfigureParams.Ide[i].bUseDevice)
 		{
 			int is_byteswap;
-			bdrv_open(hd_table[i], ConfigureParams.Ide[i].sDeviceFile, 512, 0);
+			bdrv_open(hd_table[i], ConfigureParams.Ide[i].sDeviceFile, ConfigureParams.Ide[i].nBlockSize, 0);
 			nIDEPartitions += HDC_PartitionCount(hd_table[i]->fhndl, TRACE_IDE, &is_byteswap);
 			/* Our IDE implementation is little endian by default,
 			 * so we need to byteswap if the image is not swapped! */
@@ -2712,6 +2713,9 @@ void Ide_Init(void)
 				hd_table[i]->byteswap = !is_byteswap;
 			else
 				hd_table[i]->byteswap = !ConfigureParams.Ide[i].nByteSwap;
+
+			hd_table[i]->sector_size = ConfigureParams.Ide[i].nBlockSize;
+			hd_table[i]->type = ConfigureParams.Ide[i].nDeviceType;
 		}
 	}
 
