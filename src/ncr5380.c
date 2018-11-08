@@ -712,11 +712,14 @@ static void dma_check(struct soft_scsi *ncr)
 
 		if (Config_IsMachineFalcon())
 		{
-			/* Note: We need to add 16 here: The final DMA address
-			 * seems to point to 16 bytes after the expected address
-			 * on the Falcon, and HDDriver takes this into account
-			 * in some calculations */
-			Ncr5380_UpdateDmaAddrAndLen(nDmaAddr, nDataLen + 16);
+			/* Note that the Falcon's DMA chip seems to report an
+			 * end address that is 16 bytes too high if the DATA IN
+			 * phase was interrupted by a different phase, but the
+			 * address is correct if there was no interruption. */
+			if (ScsiBus.offset < ScsiBus.data_len)
+				Ncr5380_UpdateDmaAddrAndLen(nDmaAddr, nDataLen + 16);
+			else
+				Ncr5380_UpdateDmaAddrAndLen(nDmaAddr, nDataLen);
 		}
 		else
 		{
