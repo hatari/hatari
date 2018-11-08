@@ -710,10 +710,18 @@ static void dma_check(struct soft_scsi *ncr)
 			ScsiBus.status = HD_STATUS_ERROR;
 		}
 
-		Ncr5380_UpdateDmaAddrAndLen(nDmaAddr, nDataLen);
-		if (Config_IsMachineTT())
+		if (Config_IsMachineFalcon())
+		{
+			/* Note: We need to add 16 here: The final DMA address
+			 * seems to point to 16 bytes after the expected address
+			 * on the Falcon, and HDDriver takes this into account
+			 * in some calculations */
+			Ncr5380_UpdateDmaAddrAndLen(nDmaAddr, nDataLen + 16);
+		}
+		else
 		{
 			int nRemainingBytes = IoMem[0xff8707] & 3;
+			Ncr5380_UpdateDmaAddrAndLen(nDmaAddr, nDataLen);
 			for (i = 0; i < nRemainingBytes; i++)
 			{
 				/* For more precise emulation, we should not
