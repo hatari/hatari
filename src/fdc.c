@@ -3743,10 +3743,13 @@ static void FDC_WriteSectorCountRegister ( void )
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	LOG_TRACE(TRACE_FDC, "fdc write 8604 dma sector count=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
-		  IoMem_ReadByte(0xff8605), nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+	FDC_DMA.SectorCount = IoMem_ReadWord(0xff8604);
+	if (!Config_IsMachineFalcon())
+		FDC_DMA.SectorCount &= 0xff;
 
-	FDC_DMA.SectorCount = IoMem_ReadByte(0xff8605);
+	LOG_TRACE(TRACE_FDC, "fdc write 8604 dma sector count=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
+	          FDC_DMA.SectorCount, nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+
 }
 
 
