@@ -959,7 +959,7 @@ static void ide_identify(IDEState *s)
 {
 	uint16_t *p;
 	unsigned int oldsize;
-	char buf[20];
+	char buf[40];
 
 	if (s->identify_set)
 	{
@@ -981,14 +981,10 @@ static void ide_identify(IDEState *s)
 	put_le16(p + 21, 512); /* cache size in sectors */
 	put_le16(p + 22, 4); /* ecc bytes */
 	padstr((char *)(p + 23), FW_VERSION, 8); /* firmware version */
-	if(s == opaque_ide_if) /* model */
-	{
-		padstr((char *)(p + 27), "Hatari IDE0 disk", 40);
-	}
-	else
-	{
-		padstr((char *)(p + 27), "Hatari IDE1 disk", 40);
-	}
+	/* Use the same convention for the name as SCSI disks are using: The
+	 * first 8 characters should be the vendor, i.e. use 2 spaces here */
+	snprintf(buf, sizeof(buf), "Hatari  IDE disk %liM", s->nb_sectors / 2048);
+	padstr((char *)(p + 27), buf, 40);
 #if MAX_MULT_SECTORS > 1
 	put_le16(p + 47, 0x8000 | MAX_MULT_SECTORS);
 #endif
@@ -1876,8 +1872,8 @@ error_cmd:
 		buf[5] = 0; /* reserved */
 		buf[6] = 0; /* reserved */
 		buf[7] = 0; /* reserved */
-		padstr8(buf + 8, 8, "QEMU");
-		padstr8(buf + 16, 16, "QEMU CD-ROM");
+		padstr8(buf + 8, 8, "Hatari");
+		padstr8(buf + 16, 16, "CD/DVD-ROM");
 		padstr8(buf + 32, 4, FW_VERSION);
 		ide_atapi_cmd_reply(s, 36, max_len);
 		break;
