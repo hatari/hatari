@@ -188,7 +188,7 @@ struct autoconfig_info
 //#define CE_MEMBANK_FAST16_EXTRA_ACCURACY 5
 
 #ifdef WINUAE_FOR_HATARI
-#define CE_MEMBANK_NOT_CACHABLE		0
+#define CE_MEMBANK_NOT_CACHABLE		CACHE_DISABLE_ALLOCATE
 #endif
 
 #define MEMORY_LGETI(name) \
