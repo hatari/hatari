@@ -135,12 +135,13 @@ void restore_state (const TCHAR *filename)
 
 void savestate_restore_finish (void)
 {
-//fprintf ( stderr , "savestate_restore_finish in\n" );
+//fprintf ( stderr , "savestate_restore_finish in %d\n" , quit_program );
 	if (!isrestore ())
 		return;
 	restore_cpu_finish ();
 	savestate_state = 0;
-//fprintf ( stderr , "savestate_restore_finish out\n" );
+	quit_program = 0;				/* at this point, quit_program was already processed, we must reset it */
+//fprintf ( stderr , "savestate_restore_finish out %d\n" , quit_program );
 }
 
 

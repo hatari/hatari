@@ -238,7 +238,7 @@ void M68000_Init(void)
  */
 void M68000_Reset(bool bCold)
 {
-//fprintf ( stderr,"M68000_Reset in\n" );
+//fprintf ( stderr,"M68000_Reset in cold=%d" , bCold );
 #if ENABLE_WINUAE_CPU
 	UAE_Set_Quit_Reset ( bCold );
 	set_special(SPCFLAG_MODE_CHANGE);		/* exit m68k_run_xxx() loop and check for cpu changes / reset / quit */
@@ -256,7 +256,7 @@ void M68000_Reset(bool bCold)
 
 	BusMode = BUS_MODE_CPU;
 	CPU_IACK = false;
-//fprintf ( stderr,"M68000_Reset out\n" );
+//fprintf ( stderr,"M68000_Reset out cold=%d\n" , bCold );
 }
 
 
