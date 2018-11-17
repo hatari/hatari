@@ -3473,7 +3473,7 @@ static void Exception_build_stack_frame (uae_u32 oldpc, uae_u32 currpc, uae_u32 
 			x_put_long (m68k_areg (regs, 7), mmu030_disp_store[0]);
 			m68k_areg (regs, 7) -= 4;
 			 // Data output buffer = value that was going to be written
-			x_put_long (m68k_areg (regs, 7), (mmu030_state[1] & MMU030_STATEFLAG1_MOVEM1) ? mmu030_data_buffer : mmu030_ad[mmu030_idx].val);
+			x_put_long (m68k_areg (regs, 7), mmu030_data_buffer);
 			m68k_areg (regs, 7) -= 4;
 			x_put_long (m68k_areg (regs, 7), (mmu030_opcode & 0xffff) | (regs.prefetch020[0] << 16));  // Internal register (opcode storage)
 			m68k_areg (regs, 7) -= 4;
@@ -9663,6 +9663,12 @@ uae_u8 *restore_cpu_trace (uae_u8 *src)
 				cputrace.prefetch020_valid[3] = false;
 			}
 			if (v & 16) {
+				if ((v & 32) && !(v & 8)) {
+					restore_u32();
+					restore_u32();
+					restore_u32();
+					restore_u32();
+				}
 				for (int i = 0; i < CPU_PIPELINE_MAX; i++) {
 					cputrace.prefetch020_valid[i] = restore_u8() != 0;
 				}
@@ -9682,7 +9688,7 @@ uae_u8 *restore_cpu_trace (uae_u8 *src)
 			if (v & 4)
 				cpu_tracer = -1;
 			// old format?
-			if ((v & (4 | 8)) != (4 | 8))
+			if ((v & (4 | 8)) != (4 | 8) && (v & (32 | 16 | 8 | 4)) != (32 | 16 | 4))
 				cpu_tracer = 0;
 		} else {
 			cpu_tracer = -1;
@@ -11122,6 +11128,7 @@ uae_u32 read_dcache030_0 (uaecptr addr, uae_u32 size, uae_u32 fc)
 static uae_u32 read_dcache030 (uaecptr addr, uae_u32 size, uae_u32 fc)
 #endif
 {
+if ( addr==0xffffa204 ) fprintf ( stderr , "read_dcache030 %x\n" ,addr);
 	uae_u32 addr_o = addr;
 	regs.fc030 = fc;
 	if (regs.cacr & 0x100) { // data cache enabled?
@@ -11141,6 +11148,7 @@ static uae_u32 read_dcache030 (uaecptr addr, uae_u32 size, uae_u32 fc)
 			// MMU validate address, returns zero if valid but uncacheable
 			// throws bus error if invalid
 			uae_u8 cs = dcache_check(addr_o, false, size);
+if ( addr==0xffffa204 ) fprintf ( stderr , "read_dcache030 miss %x %x\n" ,addr , cs);
 			if (!(cs & CACHE_ENABLE_DATA))
 				goto end;
 			v1 = dcache_lget(addr);
@@ -11155,6 +11163,7 @@ static uae_u32 read_dcache030 (uaecptr addr, uae_u32 size, uae_u32 fc)
 		CpuInstruction.D_Cache_miss++;
 #endif
 		} else {
+if ( addr==0xffffa204 ) fprintf ( stderr , "read_dcache030 hit %x\n" ,addr);
 			// Cache hit, inhibited caching do not prevent read hits.
 			v1 = c1->data[lws1];
 #ifdef WINUAE_FOR_HATARI
