@@ -38,7 +38,7 @@ export HOME="$testdir"
 unset TERM
 
 $hatari --log-level fatal --sound off --tos none --confirm-quit false \
-	--machine tt --cpulevel 4 --cpuclock 16 --fpu 68881 --mmu on \
+	--machine tt --cpulevel 4 --cpuclock 16 --vdi 1 --drive-led 0 \
 	--monitor tv --frameskips 3 --mousewarp off --statusbar FALSE \
 	--disasm uae --joy0 keys --keymap "$keymap" --crop 1 --fast-boot 1 \
 	--protect-floppy auto --gemdos-case upper --acsi 3="$acsifile" \
@@ -64,8 +64,8 @@ grep "bConfirmQuit = FALSE" $cfgfile || exit 1
 grep "nModelType = 4" $cfgfile || exit 1
 grep "nCpuLevel = 4" $cfgfile || exit 1
 grep "nCpuFreq = 16" $cfgfile || exit 1
-grep "n_FPUType = 68881" $cfgfile || exit 1
-grep "bMMU = TRUE" $cfgfile || exit 1
+grep "bUseExtVdiResolutions = TRUE" $cfgfile || exit 1
+grep "bShowDriveLed = FALSE" $cfgfile || exit 1
 grep "nMonitorType = 3" $cfgfile || exit 1
 grep "nFrameSkips = 3" $cfgfile || exit 1
 grep "bMouseWarp = FALSE" $cfgfile || exit 1
