@@ -11128,7 +11128,6 @@ uae_u32 read_dcache030_0 (uaecptr addr, uae_u32 size, uae_u32 fc)
 static uae_u32 read_dcache030 (uaecptr addr, uae_u32 size, uae_u32 fc)
 #endif
 {
-if ( addr==0xffffa204 ) fprintf ( stderr , "read_dcache030 %x\n" ,addr);
 	uae_u32 addr_o = addr;
 	regs.fc030 = fc;
 	if (regs.cacr & 0x100) { // data cache enabled?
@@ -11148,7 +11147,6 @@ if ( addr==0xffffa204 ) fprintf ( stderr , "read_dcache030 %x\n" ,addr);
 			// MMU validate address, returns zero if valid but uncacheable
 			// throws bus error if invalid
 			uae_u8 cs = dcache_check(addr_o, false, size);
-if ( addr==0xffffa204 ) fprintf ( stderr , "read_dcache030 miss %x %x\n" ,addr , cs);
 			if (!(cs & CACHE_ENABLE_DATA))
 				goto end;
 			v1 = dcache_lget(addr);
@@ -11163,7 +11161,6 @@ if ( addr==0xffffa204 ) fprintf ( stderr , "read_dcache030 miss %x %x\n" ,addr ,
 		CpuInstruction.D_Cache_miss++;
 #endif
 		} else {
-if ( addr==0xffffa204 ) fprintf ( stderr , "read_dcache030 hit %x\n" ,addr);
 			// Cache hit, inhibited caching do not prevent read hits.
 			v1 = c1->data[lws1];
 #ifdef WINUAE_FOR_HATARI
