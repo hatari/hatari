@@ -134,6 +134,7 @@ const char Blitter_fileid[] = "Hatari blitter.c : " __DATE__ " " __TIME__;
 #include "screen.h"
 #include "video.h"
 #include "hatari-glue.h"
+#include "falcon/dsp.h"
 
 
 /* BLiTTER registers, incs are signed, others unsigned */
@@ -321,9 +322,6 @@ static void Blitter_FlushCycles(void)
 
 //fprintf ( stderr , "blitter flush_cyc cyc=%d pass=%d %d cur_cyc=%lu\n" , BlitterVars.op_cycles , BlitterVars.pass_cycles , nCyclesMainCounter , currcycle/cpucycleunit );
 
-	BlitterVars.pass_cycles += BlitterVars.op_cycles;
-	BlitterVars.op_cycles = 0;
-
 #if ENABLE_WINUAE_CPU
 	if ( BLITTER_RUN_CE )					/* In CE mode, flush cycles already counted in the current cpu instruction */
 	{
@@ -335,6 +333,14 @@ static void Blitter_FlushCycles(void)
 	PendingInterruptCount -= op_cycles;
 	while (PendingInterruptCount <= 0 && PendingInterruptFunction)
 		CALL_VAR(PendingInterruptFunction);
+
+	/* Run DSP while blitter owns the bus */
+	if (bDspEnabled) {
+		DSP_Run(2 * BlitterVars.op_cycles * 2 / CYCLE_UNIT);
+	}
+
+	BlitterVars.pass_cycles += BlitterVars.op_cycles;
+	BlitterVars.op_cycles = 0;
 }
 
 
