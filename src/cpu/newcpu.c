@@ -11122,12 +11122,12 @@ static uae_u32 read_dcache030_debug(uaecptr addr, uae_u32 size, uae_u32 fc, bool
 // [HATARI] Define next line to check for 68030 data cache mismatch after every write
 //#define WINUAE_FOR_HATARI_DEBUG_CACHE
 #ifdef WINUAE_FOR_HATARI_DEBUG_CACHE
-uae_u32 read_dache030_2_next (uaecptr addr, uae_u32 size, uae_u32 fc);
-static uae_u32 read_dache030_2 (uaecptr addr, uae_u32 size, uae_u32 fc)
+uae_u32 read_dcache030_2_next (uaecptr addr, uae_u32 size, uae_u32 fc);
+static uae_u32 read_dcache030_2 (uaecptr addr, uae_u32 size, uae_u32 fc)
 {
   uae_u32 v;
 
-  read_dache030_2_next ( addr , size , &v );
+  read_dcache030_2_next ( addr , size , &v );
   if (!(regs.cacr & 0x100))
     return v;
   if ( ( ( size==2 ) && ( v != get_long ( addr ) ) )
@@ -11136,9 +11136,9 @@ static uae_u32 read_dache030_2 (uaecptr addr, uae_u32 size, uae_u32 fc)
     fprintf ( stderr , "d-cache mismatch pc=%x addr=%x size=%d cache=%x != mem=%x, d-cache error ?\n" , m68k_getpc(), addr, size, v , get_long(addr) );
   return v;
 }
-uae_u32 read_dache030_2_next (uaecptr addr, uae_u32 size, uae_u32 fc)
+uae_u32 read_dcache030_2_next (uaecptr addr, uae_u32 size, uae_u32 fc)
 #else
-static bool read_dache030_2(uaecptr addr, uae_u32 size, uae_u32 *valp)
+static bool read_dcache030_2(uaecptr addr, uae_u32 size, uae_u32 *valp)
 #endif
 {
 	// data cache enabled?
@@ -11231,12 +11231,12 @@ static bool read_dache030_2(uaecptr addr, uae_u32 size, uae_u32 *valp)
 	return true;
 }
 
-uae_u32 read_dcache030 (uaecptr addr, uae_u32 size, uae_u32 fc)
+static uae_u32 read_dcache030 (uaecptr addr, uae_u32 size, uae_u32 fc)
 {
 	uae_u32 val;
 	regs.fc030 = fc;
 
-	if (!read_dache030_2(addr, size, &val)) {
+	if (!read_dcache030_2(addr, size, &val)) {
 		// read from memory, data cache is disabled or inhibited.
 		if (size == 2)
 			return dcache_lget(addr);
@@ -11254,7 +11254,7 @@ uae_u32 read_dcache030_retry(uaecptr addr, uae_u32 fc, int size, int flags)
 	uae_u32 val;
 	regs.fc030 = fc;
 
-	if (!read_dache030_2(addr, size, &val)) {
+	if (!read_dcache030_2(addr, size, &val)) {
 		return mmu030_get_generic(addr, fc, size, flags);
 	}
 	return val;

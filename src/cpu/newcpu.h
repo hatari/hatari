@@ -634,7 +634,6 @@ extern void write_dcache030_retry(uaecptr addr, uae_u32 v, uae_u32 fc, int size,
 extern uae_u32 read_dcache030_bget(uaecptr, uae_u32);
 extern uae_u32 read_dcache030_wget(uaecptr, uae_u32);
 extern uae_u32 read_dcache030_lget(uaecptr, uae_u32);
-extern uae_u32 read_dcache030 (uaecptr addr, uae_u32 size, uae_u32 fc);
 extern uae_u32 read_dcache030_retry(uaecptr addr, uae_u32 fc, int size, int flags);
 
 extern void write_dcache030_mmu_bput(uaecptr, uae_u32);
