@@ -8734,7 +8734,6 @@ void m68k_disasm_2 (TCHAR *buf, int bufsize, uaecptr pc, uaecptr *nextpc, int cn
 			uae_u16 mask = extra;
 			pc += 2;
 			pc = ShowEA (0, pc, opcode, dp->dreg, dp->dmode, dp->size, instrname, deaddr, safemode);
-			_tcscat (instrname, _T(","));
 			movemout (instrname, mask, dp->dmode, 0, true);
 		} else if (lookup->mnemo == i_MVMLE) {
 			uae_u16 mask = extra;
@@ -9103,7 +9102,8 @@ void sm68k_disasm (TCHAR *instrname, TCHAR *instrcode, uaecptr addr, uaecptr *ne
 	}
 	if (instrcode)
 	{
-		for (int i = 0; i < (int)(pc - oldpc) / 2; i++)
+		int i;
+		for (i = 0; i < (pc - oldpc) / 2; i++)
 		{
 			_stprintf (instrcode, _T("%04x "), get_iword_debug (oldpc + i * 2));
 			instrcode += _tcslen (instrcode);
@@ -9650,7 +9650,7 @@ uae_u8 *restore_cpu_trace (uae_u8 *src)
 				// backwards compatibility
 				uae_u32 v2 = restore_u32();
 				cputrace.prefetch020[0] = v2 >> 16;
-				cputrace.prefetch020[1] = (uae_u16)v;
+				cputrace.prefetch020[1] = (uae_u16)v2;
 				v2 = restore_u32();
 				cputrace.prefetch020[2] = v2 >> 16;
 				cputrace.prefetch020[3] = (uae_u16)v2;
@@ -10047,7 +10047,7 @@ void cpureset (void)
 		write_log (_T("CPU reset PC=%x (%s)..\n"), pc - 2, ab->name);
 #ifndef WINUAE_FOR_HATARI
 		ins = get_word (pc);
-		custom_reset_cpu (false, false);
+		custom_reset_cpu(false, false);
 		// did memory disappear under us?
 		if (ab == &get_mem_bank (pc))
 			return;
@@ -10743,6 +10743,7 @@ void mem_access_delay_long_write_ce020 (uaecptr addr, uae_u32 v)
 
 
 // 68030 caches aren't so simple as 68020 cache..
+
 STATIC_INLINE struct cache030 *geticache030 (struct cache030 *cp, uaecptr addr, uae_u32 *tagp, int *lwsp)
 {
 	int index, lws;
@@ -11013,6 +11014,14 @@ void write_dcache030_lput(uaecptr addr, uae_u32 v,uae_u32 fc)
 	write_dcache030x(addr, v, 2, fc);
 }
 
+// 68030 MMU bus fault retry case, direct write, store to cache if enabled
+void write_dcache030_retry(uaecptr addr, uae_u32 v, uae_u32 fc, int size, int flags)
+{
+	regs.fc030 = fc;
+	mmu030_put_generic(addr, v, fc, size, flags);
+	write_dcache030x(addr, v, size, fc);
+}
+
 static void dcache030_maybe_burst(uaecptr addr, struct cache030 *c, int lws)
 {
 	if ((c->valid[0] + c->valid[1] + c->valid[2] + c->valid[3] == 1) && ce_banktype[addr >> 16] == CE_MEMBANK_FAST32) {
@@ -11113,12 +11122,12 @@ static uae_u32 read_dcache030_debug(uaecptr addr, uae_u32 size, uae_u32 fc, bool
 // [HATARI] Define next line to check for 68030 data cache mismatch after every write
 //#define WINUAE_FOR_HATARI_DEBUG_CACHE
 #ifdef WINUAE_FOR_HATARI_DEBUG_CACHE
-uae_u32 read_dcache030_0 (uaecptr addr, uae_u32 size, uae_u32 fc);
-static uae_u32 read_dcache030 (uaecptr addr, uae_u32 size, uae_u32 fc)
+uae_u32 read_dache030_2_next (uaecptr addr, uae_u32 size, uae_u32 fc);
+static uae_u32 read_dache030_2 (uaecptr addr, uae_u32 size, uae_u32 fc)
 {
   uae_u32 v;
 
-  v = read_dcache030_0 ( addr , size , fc );
+  read_dache030_2_next ( addr , size , &v );
   if (!(regs.cacr & 0x100))
     return v;
   if ( ( ( size==2 ) && ( v != get_long ( addr ) ) )
@@ -11127,105 +11136,130 @@ static uae_u32 read_dcache030 (uaecptr addr, uae_u32 size, uae_u32 fc)
     fprintf ( stderr , "d-cache mismatch pc=%x addr=%x size=%d cache=%x != mem=%x, d-cache error ?\n" , m68k_getpc(), addr, size, v , get_long(addr) );
   return v;
 }
-uae_u32 read_dcache030_0 (uaecptr addr, uae_u32 size, uae_u32 fc)
+uae_u32 read_dache030_2_next (uaecptr addr, uae_u32 size, uae_u32 fc)
 #else
-static uae_u32 read_dcache030 (uaecptr addr, uae_u32 size, uae_u32 fc)
+static bool read_dache030_2(uaecptr addr, uae_u32 size, uae_u32 *valp)
 #endif
 {
-	uae_u32 addr_o = addr;
-	regs.fc030 = fc;
-	if (regs.cacr & 0x100) { // data cache enabled?
-		static const uae_u32 mask[3] = { 0x000000ff, 0x0000ffff, 0xffffffff };
-		struct cache030 *c1, *c2;
-		int lws1, lws2;
-		uae_u32 tag1, tag2;
-		int aligned = addr & 3;
-		uae_u32 v1, v2;
-		int width = 8 << size;
-		int offset = 8 * aligned;
-		uae_u32 out;
+	// data cache enabled?
+	if (!(regs.cacr & 0x100))
+		return false;
 
-		c1 = getdcache030 (dcaches030, addr, &tag1, &lws1);
- 		addr &= ~3;
-		if (!c1->valid[lws1] || c1->tag != tag1 || c1->fc != fc) {
-			// MMU validate address, returns zero if valid but uncacheable
-			// throws bus error if invalid
-			uae_u8 cs = dcache_check(addr_o, false, size);
-			if (!(cs & CACHE_ENABLE_DATA))
-				goto end;
-			v1 = dcache_lget(addr);
-			update_dcache030 (c1, v1, tag1, fc, lws1);
-			if ((cs & CACHE_ENABLE_DATA_BURST) && (regs.cacr & 0x1100) == 0x1100)
-				dcache030_maybe_burst(addr, c1, lws1);
+	uae_u32 addr_o = addr;
+	uae_u32 fc = regs.fc030;
+	static const uae_u32 mask[3] = { 0x000000ff, 0x0000ffff, 0xffffffff };
+	struct cache030 *c1, *c2;
+	int lws1, lws2;
+	uae_u32 tag1, tag2;
+	int aligned = addr & 3;
+	uae_u32 v1, v2;
+	int width = 8 << size;
+	int offset = 8 * aligned;
+	uae_u32 out;
+
+	c1 = getdcache030(dcaches030, addr, &tag1, &lws1);
+	addr &= ~3;
+	if (!c1->valid[lws1] || c1->tag != tag1 || c1->fc != fc) {
+		// MMU validate address, returns zero if valid but uncacheable
+		// throws bus error if invalid
+		uae_u8 cs = dcache_check(addr_o, false, size);
+		if (!(cs & CACHE_ENABLE_DATA))
+			return false;
+		v1 = dcache_lget(addr);
+		update_dcache030(c1, v1, tag1, fc, lws1);
+		if ((cs & CACHE_ENABLE_DATA_BURST) && (regs.cacr & 0x1100) == 0x1100)
+			dcache030_maybe_burst(addr, c1, lws1);
 #if VALIDATE_68030_DATACACHE
-			validate_dcache030();
+		validate_dcache030();
 #endif
 //fprintf ( stderr , "read cache %x %x %d tag1 %x lws1 %x tag2 %x lws2 %x ref %x\n", addr, v1, size, tag1, lws1, tag2, lws2 , get_long (0x1f81ec) );
 #ifdef WINUAE_FOR_HATARI
 		CpuInstruction.D_Cache_miss++;
 #endif
-		} else {
-			// Cache hit, inhibited caching do not prevent read hits.
-			v1 = c1->data[lws1];
+	} else {
+		// Cache hit, inhibited caching do not prevent read hits.
+		v1 = c1->data[lws1];
 #ifdef WINUAE_FOR_HATARI
 		CpuInstruction.D_Cache_hit++;
 #endif
-		}
+	}
 
-		// only one long fetch needed?
-		if (width + offset <= 32) {
-			out = v1 >> (32 - (offset + width));
-			out &= mask[size];
+	// only one long fetch needed?
+	if (width + offset <= 32) {
+		out = v1 >> (32 - (offset + width));
+		out &= mask[size];
 #if VALIDATE_68030_DATACACHE
-			validate_dcache030_read(addr_o, out, size);
+		validate_dcache030_read(addr_o, out, size);
 #endif
-			return out;
-		}
+		*valp = out;
+		return true;
+	}
 
-		// no, need another one
-		addr += 4;
-		c2 = getdcache030 (dcaches030, addr, &tag2, &lws2);
-		if (!c2->valid[lws2] || c2->tag != tag2 || c2->fc != fc) {
-			uae_u8 cs = dcache_check(addr, false, 2);
-			if (!(cs & CACHE_ENABLE_DATA))
-				goto end;
-			v2 = dcache_lget(addr);
-			update_dcache030 (c2, v2, tag2, fc, lws2);
-			if ((cs & CACHE_ENABLE_DATA_BURST) && (regs.cacr & 0x1100) == 0x1100)
-				dcache030_maybe_burst(addr, c2, lws2);
+	// no, need another one
+	addr += 4;
+	c2 = getdcache030(dcaches030, addr, &tag2, &lws2);
+	if (!c2->valid[lws2] || c2->tag != tag2 || c2->fc != fc) {
+		uae_u8 cs = dcache_check(addr, false, 2);
+		if (!(cs & CACHE_ENABLE_DATA))
+			return false;
+		v2 = dcache_lget(addr);
+		update_dcache030(c2, v2, tag2, fc, lws2);
+		if ((cs & CACHE_ENABLE_DATA_BURST) && (regs.cacr & 0x1100) == 0x1100)
+			dcache030_maybe_burst(addr, c2, lws2);
 #if VALIDATE_68030_DATACACHE
-			validate_dcache030();
+		validate_dcache030();
 #endif
 //fprintf ( stderr , "read cache %x %x %d tag1 %x lws1 %x tag2 %x lws2 %x\n", addr, v1, size, tag1, lws1, tag2, lws2 );
 #ifdef WINUAE_FOR_HATARI
 		CpuInstruction.D_Cache_miss++;
 #endif
-		} else {
-			v2 = c2->data[lws2];
+	} else {
+		v2 = c2->data[lws2];
 #ifdef WINUAE_FOR_HATARI
 		CpuInstruction.D_Cache_hit++;
 #endif
-		}
+	}
 
-		uae_u64 v64 = ((uae_u64)v1 << 32) | v2;
-		out = (uae_u32)(v64 >> (64 - (offset + width)));
-		out &= mask[size];
+	uae_u64 v64 = ((uae_u64)v1 << 32) | v2;
+	out = (uae_u32)(v64 >> (64 - (offset + width)));
+	out &= mask[size];
 
 #if VALIDATE_68030_DATACACHE
-		validate_dcache030_read(addr_o, out, size);
+	validate_dcache030_read(addr_o, out, size);
 #endif
-		return out;
-
-	}
-end:
-	// read from memory, data cache is disabled or inhibited.
-	if (size == 2)
-		return dcache_lget (addr_o);
-	else if (size == 1)
-		return dcache_wget (addr_o);
-	else
-		return dcache_bget (addr_o);
+	*valp = out;
+	return true;
 }
+
+uae_u32 read_dcache030 (uaecptr addr, uae_u32 size, uae_u32 fc)
+{
+	uae_u32 val;
+	regs.fc030 = fc;
+
+	if (!read_dache030_2(addr, size, &val)) {
+		// read from memory, data cache is disabled or inhibited.
+		if (size == 2)
+			return dcache_lget(addr);
+		else if (size == 1)
+			return dcache_wget(addr);
+		else
+			return dcache_bget(addr);
+	}
+	return val;
+}
+
+// 68030 MMU bus fault retry case, either read from cache or use direct reads
+uae_u32 read_dcache030_retry(uaecptr addr, uae_u32 fc, int size, int flags)
+{
+	uae_u32 val;
+	regs.fc030 = fc;
+
+	if (!read_dache030_2(addr, size, &val)) {
+		return mmu030_get_generic(addr, fc, size, flags);
+	}
+	return val;
+}
+
 uae_u32 read_dcache030_bget(uaecptr addr, uae_u32 fc)
 {
 	return read_dcache030(addr, 0, fc);
