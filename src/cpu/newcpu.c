@@ -11200,21 +11200,22 @@ static uae_u32 read_dcache030_debug(uaecptr addr, uae_u32 size, uae_u32 fc, bool
 // [HATARI] Define next line to check for 68030 data cache mismatch after every write
 //#define WINUAE_FOR_HATARI_DEBUG_CACHE
 #ifdef WINUAE_FOR_HATARI_DEBUG_CACHE
-uae_u32 read_dcache030_2_real (uaecptr addr, uae_u32 size, uae_u32 fc);
-static uae_u32 read_dcache030_2 (uaecptr addr, uae_u32 size, uae_u32 fc)
+bool read_dcache030_2_real (uaecptr addr, uae_u32 size, uae_u32 *valp);
+static bool read_dcache030_2 (uaecptr addr, uae_u32 size, uae_u32 *valp)
 {
-  uae_u32 v;
+  bool b;
 
-  read_dcache030_2_real ( addr , size , &v );
-  if (!(regs.cacr & 0x100))
-    return v;
-  if ( ( ( size==2 ) && ( v != get_long ( addr ) ) )
-    || ( ( size==1 ) && ( (v&0xffff) != (get_word ( addr ) & 0xffff) ) )
-    || ( ( size==0 ) && ( (v&0xff) != (get_byte ( addr ) & 0xff ) ) ) )
-    fprintf ( stderr , "d-cache mismatch pc=%x addr=%x size=%d cache=%x != mem=%x, d-cache error ?\n" , m68k_getpc(), addr, size, v , get_long(addr) );
-  return v;
+  b = read_dcache030_2_real ( addr , size , valp );
+  if ( b==false)
+    return false;
+
+  if ( ( ( size==2 ) && ( *valp != get_long ( addr ) ) )
+    || ( ( size==1 ) && ( (*valp&0xffff) != (get_word ( addr ) & 0xffff) ) )
+    || ( ( size==0 ) && ( (*valp&0xff) != (get_byte ( addr ) & 0xff ) ) ) )
+    fprintf ( stderr , "d-cache mismatch pc=%x addr=%x size=%d cache=%x != mem=%x, d-cache error ?\n" , m68k_getpc(), addr, size, *valp , get_long(addr) );
+  return true;
 }
-uae_u32 read_dcache030_2_real (uaecptr addr, uae_u32 size, uae_u32 fc)
+bool read_dcache030_2_real(uaecptr addr, uae_u32 size, uae_u32 *valp)
 #else
 static bool read_dcache030_2(uaecptr addr, uae_u32 size, uae_u32 *valp)
 #endif
