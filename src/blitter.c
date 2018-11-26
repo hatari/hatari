@@ -334,10 +334,12 @@ static void Blitter_FlushCycles(void)
 	while (PendingInterruptCount <= 0 && PendingInterruptFunction)
 		CALL_VAR(PendingInterruptFunction);
 
+#if ENABLE_WINUAE_CPU
 	/* Run DSP while blitter owns the bus */
 	if (bDspEnabled) {
 		DSP_Run(2 * BlitterVars.op_cycles * 2 / CYCLE_UNIT);
 	}
+#endif
 
 	BlitterVars.pass_cycles += BlitterVars.op_cycles;
 	BlitterVars.op_cycles = 0;
