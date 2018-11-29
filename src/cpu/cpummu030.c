@@ -31,15 +31,16 @@
 #include "sysconfig.h"
 #include "sysdeps.h"
 
+#ifdef WINUAE_FOR_HATARI
 #include "main.h"
 #include "hatari-glue.h"
-
+#include "log.h"
+#endif
 
 #include "options_cpu.h"
 #include "memory.h"
 #include "newcpu.h"
 #include "debug.h"
-#include "log.h"
 #include "cpummu030.h"
 
 #define MMU030_OP_DBG_MSG 0
