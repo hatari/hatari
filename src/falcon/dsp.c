@@ -838,7 +838,7 @@ void DSP_HandleReadAccess(void)
 		value = 0xff;
 #endif
 		if (multi_access == true)
-			M68000_AddCycles(4);
+			M68000_WaitState(4);
 		multi_access = true;
 
 		Dprintf(("HWget_b(0x%08x)=0x%02x at 0x%08x\n", addr, value, m68k_getpc()));
@@ -864,7 +864,7 @@ void DSP_HandleWriteAccess(void)
 		dsp_core_write_host(addr-DSP_HW_OFFSET, value);
 #endif
 		if (multi_access == true)
-			M68000_AddCycles(4);
+			M68000_WaitState(4);
 		multi_access = true;
 	}
 }
