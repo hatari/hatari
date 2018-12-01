@@ -200,6 +200,20 @@ But registering handlers for mime-types seems desktop specific.
 
  3.3.1) Known distro problems
 
+If Hatari is built with portaudio support, ALSA aborts Hatari at
+Falcon emulation startup, unless Pulseaudio server is running.
+
+This is because:
+- Falcon microphone emulation initializes Portaudio
+- Portaudio doesn't have pulseaudio support, only ALSA libasound
+- Many distributions enable (by default) pulseaudio module for ALSA
+- ALSA's pulseaudio module aborts when it cannot connect to pulseaudio
+  server
+
+Hatari audio output goes through SDL, which uses pulseaudio
+library.  That doesn't have this issue.
+
+
 Old RHEL 5 and the derived CentOS v5.x Linux distributions ship
 with a broken readline library:
 	https://bugzilla.redhat.com/show_bug.cgi?id=499837
