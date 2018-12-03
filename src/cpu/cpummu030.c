@@ -1783,8 +1783,9 @@ void mmu030_page_fault(uaecptr addr, bool read, int flags, uae_u32 fc)
 	regs.mmu_ssw |= read ? MMU030_SSW_RW : 0;
 	regs.mmu_ssw |= flags;
 	regs.mmu_ssw |= fc;
-	// store in wb3_data because stack frame creation may modify data buffer.
+	// temporary store in 68040+ variables because stack frame creation may modify them.
 	regs.wb3_data = mmu030_data_buffer_out;
+	regs.wb2_address = mmu030_state[1];
     bBusErrorReadWrite = read; 
 	mm030_stageb_address = addr;
 
@@ -2404,28 +2405,37 @@ uae_u32 REGPARAM2 mmu030_get_ilong_unaligned(uaecptr addr, uae_u32 fc, int flags
 	return res;
 }
 
-static void unalign_init(bool l, bool l2)
+static void unalign_init(uaecptr addr, bool l, bool l2)
 {
 	if (l2)
 		mmu030_state[1] |= MMU030_STATEFLAG1_SUBACCESSX;
 	if (l)
 		mmu030_state[1] |= MMU030_STATEFLAG1_SUBACCESSL;
 	mmu030_state[1] |= MMU030_STATEFLAG1_SUBACCESS0;
+#if MMU030_DEBUG > 1
+	write_log(_T("unalign_init %08x %08x %d %d\n"), addr, mmu030_state[1], l, l2);
+#endif
 }
 static void unalign_set(int state)
 {
 	mmu030_state[1] |= (1 << state) << (MMU030_STATEFLAG1_SUBACCESS_SHIFT + 1);
+#if MMU030_DEBUG > 1
+	write_log(_T("unalign_set %d %08x\n"), state, mmu030_state[1]);
+#endif
 }
 static void unalign_clear(void)
 {
+#if MMU030_DEBUG > 1
+	write_log(_T("unalign_clear %08x %08x\n"), mmu030_state[1], mmu030_data_buffer_out);
+#endif
 	mmu030_state[1] &= ~(MMU030_STATEFLAG1_SUBACCESSL | MMU030_STATEFLAG1_SUBACCESSX |
 		MMU030_STATEFLAG1_SUBACCESS0 | MMU030_STATEFLAG1_SUBACCESS1 | MMU030_STATEFLAG1_SUBACCESS2 | MMU030_STATEFLAG1_SUBACCESS3);
 }
 
 uae_u16 REGPARAM2 mmu030_get_word_unaligned(uaecptr addr, uae_u32 fc, int flags)
 {
-	unalign_init(false, false);
-	mmu030_data_buffer_out = (uae_u16)mmu030_get_generic(addr, fc, sz_byte, flags | MMU030_SSW_SIZE_W) << 8;
+	unalign_init(addr, false, false);
+	mmu030_data_buffer_out = mmu030_get_generic(addr, fc, sz_byte, flags | MMU030_SSW_SIZE_W) << 8;
 	unalign_set(0);
 	mmu030_data_buffer_out |= mmu030_get_generic(addr + 1, fc, sz_byte, flags | MMU030_SSW_SIZE_B);
 	unalign_clear();
@@ -2435,13 +2445,13 @@ uae_u16 REGPARAM2 mmu030_get_word_unaligned(uaecptr addr, uae_u32 fc, int flags)
 uae_u32 REGPARAM2 mmu030_get_long_unaligned(uaecptr addr, uae_u32 fc, int flags)
 {
 	if (likely(!(addr & 1))) {
-		unalign_init(true, false);
-		mmu030_data_buffer_out = (uae_u32)mmu030_get_generic(addr, fc, sz_word, flags | MMU030_SSW_SIZE_L) << 16;
+		unalign_init(addr, true, false);
+		mmu030_data_buffer_out = mmu030_get_generic(addr, fc, sz_word, flags | MMU030_SSW_SIZE_L) << 16;
 		unalign_set(0);
 		mmu030_data_buffer_out |= mmu030_get_generic(addr + 2, fc, sz_word, flags | MMU030_SSW_SIZE_W);
 	} else {
-		unalign_init(true, true);
-		mmu030_data_buffer_out = (uae_u32)mmu030_get_generic(addr, fc, sz_byte, flags | MMU030_SSW_SIZE_L) << 24;
+		unalign_init(addr, true, true);
+		mmu030_data_buffer_out = mmu030_get_generic(addr, fc, sz_byte, flags | MMU030_SSW_SIZE_L) << 24;
 		unalign_set(0);
 		mmu030_data_buffer_out |= mmu030_get_generic(addr + 1, fc, sz_word, flags | MMU030_SSW_SIZE_W) << 8;
 		unalign_set(1);
@@ -2454,12 +2464,12 @@ uae_u32 REGPARAM2 mmu030_get_long_unaligned(uaecptr addr, uae_u32 fc, int flags)
 void REGPARAM2 mmu030_put_long_unaligned(uaecptr addr, uae_u32 val, uae_u32 fc, int flags)
 {
 	if (likely(!(addr & 1))) {
-		unalign_init(true, false);
+		unalign_init(addr, true, false);
 		mmu030_put_generic(addr, val >> 16, fc, sz_word, flags | MMU030_SSW_SIZE_L);
 		unalign_set(0);
 		mmu030_put_generic(addr + 2, val, fc, sz_word, flags | MMU030_SSW_SIZE_W);
 	} else {
-		unalign_init(true, true);
+		unalign_init(addr, true, true);
 		mmu030_put_generic(addr, val >> 24, fc, sz_byte, flags | MMU030_SSW_SIZE_L);
 		unalign_set(0);
 		mmu030_put_generic(addr + 1, val >> 8, fc, sz_word, flags | MMU030_SSW_SIZE_W);
@@ -2471,7 +2481,7 @@ void REGPARAM2 mmu030_put_long_unaligned(uaecptr addr, uae_u32 val, uae_u32 fc, 
 
 void REGPARAM2 mmu030_put_word_unaligned(uaecptr addr, uae_u16 val, uae_u32 fc, int flags)
 {
-	unalign_init(false, false);
+	unalign_init(addr, false, false);
 	mmu030_put_generic(addr, val >> 8, fc, sz_byte, flags | MMU030_SSW_SIZE_W);
 	unalign_set(0);
 	mmu030_put_generic(addr + 1, val, fc, sz_byte, flags | MMU030_SSW_SIZE_B);
@@ -2639,6 +2649,7 @@ static void mmu030_unaligned_read_continue(uaecptr addr, int fc, unaligned_read_
 #if MMUDEBUG
 	write_log(_T("unaligned_read_continue_e: %08x %d %08x %08x\n"), addr, fc, mmu030_data_buffer_out, st);
 #endif
+	unalign_clear();
 }
 
 typedef void (*unaligned_write_func)(uaecptr addr, uae_u32 val, uae_u32 fc, int size, int flags);
@@ -2714,6 +2725,7 @@ static void mmu030_unaligned_write_continue(uaecptr addr, int fc, unaligned_writ
 #if MMUDEBUG
 	write_log(_T("unaligned_write_continue_e: %08x %d %08x %08x\n"), addr, fc, mmu030_data_buffer_out, st);
 #endif
+	unalign_clear();
 }
 
 void m68k_do_rte_mmu030 (uaecptr a7)
@@ -2791,6 +2803,7 @@ void m68k_do_rte_mmu030 (uaecptr a7)
 					mmu030_ad_v[idxsize].val = mmu030_data_buffer_in_v;
 				}
 			}
+			unalign_clear();
 		}
 		// did we have ins fault and RB bit cleared?
 		if ((ssw & MMU030_SSW_FB) && !(ssw & MMU030_SSW_RB)) {
@@ -2857,9 +2870,9 @@ void m68k_do_rte_mmu030 (uaecptr a7)
 #endif
 
 #if MMU030_DEBUG
-			write_log(_T("%08x %08x %08x %08x %08x %d %d %d %08x %08x\n"),
+			write_log(_T("%08x %08x %08x %08x %08x %d %d %d %08x %08x %04x\n"),
 				mmu030_state[1], mmu030_state[2], mmu030_disp_store[0], mmu030_disp_store[1],
-				addr, read, size, fc, mmu030_data_buffer_out, mmu030_ad[idxsize].val);
+				addr, read, size, fc, mmu030_data_buffer_out, mmu030_ad[idxsize].val, ssw);
 #endif
 
 			if (read) {
@@ -3178,6 +3191,7 @@ void m68k_do_rte_mmu030c (uaecptr a7)
 					mmu030_ad_v[idxsize].val = mmu030_data_buffer_in_v;
 				}
 			}
+			unalign_clear();
 		}
 
 		// Retried data access is the only memory access that can be done after this.
