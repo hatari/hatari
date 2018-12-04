@@ -556,6 +556,7 @@ bool Floppy_InsertDiskIntoDrive(int Drive)
 
 	if ( (EmulationDrives[Drive].pBuffer == NULL) || ( ImageType == FLOPPY_IMAGE_TYPE_NONE ) )
 	{
+		Log_AlertDlg(LOG_INFO, "Image '%s' filename extension, or content unrecognized", filename);
 		return false;
 	}
 
@@ -566,6 +567,7 @@ bool Floppy_InsertDiskIntoDrive(int Drive)
 		{
 			free ( EmulationDrives[Drive].pBuffer );
 			EmulationDrives[Drive].pBuffer = NULL;
+			Log_AlertDlg(LOG_INFO, "IPF image '%s' loading failed", filename);
 			return false;
 		}
 	}
@@ -577,6 +579,7 @@ bool Floppy_InsertDiskIntoDrive(int Drive)
 		{
 			free ( EmulationDrives[Drive].pBuffer );
 			EmulationDrives[Drive].pBuffer = NULL;
+			Log_AlertDlg(LOG_INFO, "STX image '%s' loading failed", filename);
 			return false;
 		}
 	}
