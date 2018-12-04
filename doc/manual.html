@@ -4366,55 +4366,92 @@ overhead.</p>
 <p>The operating system and libraries below Hatari can also sometimes
 have a noticeable effect on performance.</p>
 
+<p>
+Hatari can be sped up considerably by giving up some emulation or
+emulator accuracy.  With ST/STe emulation, these options should be
+needed only on slow devices, typically ARM and/or mobile ones (e.g.
+Rasberry Pi).
+</p>
 
-<h3>Improving Hatari performance</h3>
+
+<h3>Operating system components performance</h3>
+
+<p>
+Finding out whether there's a performance problem with the system
+components (like SDL) in your setup, requires profiling Hatari and
+rest of the system. How to do that is OS specific. On Linux that would
+involve running "perf record -a" command (as root) on the background
+for few minutes while Hatari is running, and then investigating
+the results with "perf report" command.
+</p>
+
+<p>
+Some other process eating CPU cycles from Hatari one can see just with
+the (Linux/Unix) "top" command.
+</p>
+
+
+<h3>Build options impact on performance</h3>
+
+<p>
+<em>Linux</em>: Some HW platforms don't have properly HW accelerated
+3D driver and SDL implementation. On these platforms it's better to
+build Hatari with SDL v1.x than SDL 2.x, as latter can cause CPU
+based 3D driver to be used for scaling Hatari graphics.
+</p>
+
+<p>
+<em>MacOS</em>: With SDL v1.x, frame skipping, zooming and drive LED
+options (listed below) seem to have a large effect on performance in
+the windowed mode. This is apparently due to issues in the SDL macOS
+backend and how macOS itself composites non-fullscreen window
+contents. These shouldn't be an issue with the SDL2 build of Hatari.
+</p>
+
+<p>
+<em>Compiler</em>: Unless you have disabled compiler optimizations
+(like GCC's -O2 or -O3 options) in the Hatari build, the extra
+optimization flags (like GCC's "-mtune=i686") don't seem to have very
+large effect on Hatari performance.  Using GCC -O3 option instead of
+-O2 can give minor (5-10%) performance improvements for things (mainly
+demos) that use very heavily interrupts.
+</p>
+
+<p>
+<em>CPU emulation</em>: Hatari can be built with two different CPU
+core implementations. The newer WinUAE CPU core has more accurate CPU
+emulation and supports all of the higher end 680x0 CPU features. This
+accuracy causes it to be clearly slower, than the OldAUE CPU core
+implementation. If run-time options (acceptable to you) don't give
+enough performance, give the OldUAE CPU core also a try.
+</p>
+
+<p>
+<em>Older versions</em>: If nothing else helps, try (building) much
+earlier Hatari version.  More accurate emulation in newer Hatari
+versions means that they can be slower despite optimizations.
+</p>
+
+<h3>Run-time options not affecting emulation accuracy</h3>
 
 <p>
 Hatari currently runs best in 16 or 32 bits per pixel color depth
 mode, so try to avoid 24 bits per pixel display modes if possible.
-16-bit mode is fastest.
+16-bit mode is faster with SDL1.  MacOS uses always 32-bit mode.
 </p>
+
+
+<h3>Run-time emulation options</h3>
 
 <p>
-<em>On macOS with SDL 1.2, frame skipping, zooming and drive LED options
-(listed below) seem to have a large effect on performance in the windowed
-mode</em>. This is apparently due to issues in the SDL macOS backend and how
-macOS itself composites non-fullscreen window contents. MacOS uses always
-32-bit mode.
+Emulation options have the largest impact on Hatari performance. These
+options can be changed from the Hatari GUI System and CPU dialogs and
+the emulation needs to be rebooted for any of these changes to take an
+effect!  They are enabled by default.
 </p>
 
-<p>
-Unless you have disabled compiler optimizations (like GCC's -O2 or -O3
-options) in the Hatari build, the extra optimization flags (like GCC's
-"-mtune=i686") don't seem to have very large effect on Hatari
-performance.  Using GCC -O3 option instead of -O2 can give minor
-(5-10%) performance improvements for things (demos) that use very
-heavily interrupts.
-</p>
+<h4>DSP (Falcon)</h4>
 
-<p>
-However, Hatari can be sped up considerably by giving up some
-emulation or emulator accuracy.  Except for DSP, these options
-should be needed only on very slow devices like handhelds. See below.
-</p>
-
-<p>
-If nothing else helps, try an earlier Hatari version.  More accurate
-emulation or emulator output in newer Hatari versions means that they
-can be slower despite optimizations.
-</p>
-
-
-<h3>Emulation options</h3>
-
-<p>
-Emulation options have the largest impact on performance.
-These options can be changed from the Hatari GUI System dialog and
-the emulation needs to be rebooted for any of these changes to take
-an effect!  They are enabled by default.
-</p>
-
-<h4>DSP</h4>
 <p>
 Emulating the Falcon DSP is performance-wise several times more demanding
 than emulating the m68k; DSP runs at higher frequency, executes many
@@ -4425,47 +4462,56 @@ that do use DSP, many use it only for background music and work
 fine without the real DSP emulation.
 </p>
 
+<h4>CPU: cycle exact (030/TT/Falcon)</h4>
+
+<p>
+WinUAE CPU core supports 030 cache emulation for cycle accuracy. This
+is very heavy.  Unless program needs cycle accuracy to work correctly,
+you can disable it.  Many Falcon demos need it, application and games
+normally don't.
+</p>
+
 <h4>Timer-D</h4>
 <p>
-The single largest factor contributing to general Hatari emulation
-performance is the handling of interrupts.  Enabling Timer-D patching
-option (about) doubles Hatari ST/STE emulation performance as it
-significantly reduces the number of interrupts generated by the emulated
-Atari machine. Using this has adverse effect only for very rare programs.
+With ST/STe, the single largest factor contributing to general Hatari
+emulation performance is the handling of interrupts.  Enabling Timer-D
+patching option (about) doubles Hatari ST/STE emulation performance
+with OldUAE CPU core as it significantly reduces the number of
+interrupts generated by the emulated Atari machine. Using this has
+adverse effect only for very rare programs.
 </p>
 
 <h4>FDC</h4>
 <p>
 While accurate FDC emulation doesn't take that much CPU, it slows down
 floppy image accesses (and Hatari startup) a lot.  Only <em>very</em>
-few demos and games require accurate FDC emulation for their copy protection,
-so enabling fast floppy access is fairly safe.
+few demos and games require accurate FDC emulation for their copy
+protection, so enabling fast floppy access is fairly safe.
 </p>
 
-<h4>Compatible CPU</h4>
+<h4>CPU: prefetch</h4>
 <p>
-After the DSP and  interrupts, m68k emulation takes most time.
-Disabling the "Slower but more compatible CPU" option will speed up
-the emulation a lot, but it won't anymore be cycle accurate.  This can
-be fine for many games and other programs, but won't work e.g. for demos
-using overscan or rasters.
+After the DSP, cycle accuracy and interrupts, m68k emulation takes
+most time. Disabling the "Prefetch" / "Compatible" option can speed up
+the emulation noticeably, but it will be less accurate.  This can be
+fine for many games and other programs, but won't work e.g. for demos
+using overscan or rasters. This is recommended only as a last resort.
 </p>
 
 <p>
-Roughly speaking, for DSP emulation, one needs at least 2Ghz machine.
-For normal (unpatched) Timer-D frequency on some specific cases (like
-demos with overscan 512 color animations) one may need over 1GHz
-machine, but some rare ST/STE demos may require over 1GHz machine even
-with Timer-D patching.  For "Compatible CPU" one needs at least 1/2Ghz
-machine.
+Roughly speaking, for Falcon DSP emulation with cycle exact 030 cache
+emulation, one needs <em>at least</em> 3Ghz machine. For normal (unpatched)
+Timer-D frequency on some specific cases (like demos with overscan 512
+color animations) one may need over 1GHz machine for ST/STE emulation,
+but some rare demos may require over 1GHz machine even with Timer-D
+patching.
 </p>
 
 <p>
 <strong>NOTE</strong>: Above options may cause some programs to work in correctly.
 The <a href="compatibility.html">Hatari Software Compatibility List</a>
 lists programs known to need real Falcon DSP emulation, Timer-D
-frequency or accurate FDC timings.  Disabling "Compatible CPU" option
-is recommended only as a last resort.
+frequency or accurate FDC timings.
 </p>
 
 
@@ -4479,6 +4525,7 @@ be toggled at run-time without rebooting the emulation.
 </p>
 
 <h4>Sound</h4>
+
 <p>
 Internal Hatari sound handling and the SDL_mixer sound thread
 libALSA sound processing can account up to 1/3 of the Hatari CPU usage
@@ -4489,13 +4536,26 @@ in Hatari as this can significantly reduce the number of generated
 interrupts.
 </p>
 
+<p>
+If program supports both ST and STE, use STE. Emulating DMA sound, is
+more lightweight than interrupt heavy ST sound.
+</p>
+
+<p>
+If problem is occasional performance related audio glitches, increasing
+the sound buffer size (with "--sound-buffer-size" option) may help, but
+it increases sound latency.
+</p>
+
 <h4>Frame skipping</h4>
+
 <p>
 Screen rendering can take noticeable amount of CPU time. The default
 Hatari "auto" frame skipping should be used unless there's a good
 reason not to.  It will skip converting and showing some of the frames
 if there's not enough time for them.
 </p>
+
 <p>
 Also, if your monitor refresh frequency is lower than the selected
 Hatari monitor frequency (e.g. LCD monitors usually use 60Hz whereas
