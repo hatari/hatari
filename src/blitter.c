@@ -337,7 +337,7 @@ static void Blitter_FlushCycles(void)
 #if ENABLE_WINUAE_CPU
 	/* Run DSP while blitter owns the bus */
 	if (bDspEnabled) {
-		DSP_Run(2 * BlitterVars.op_cycles * 2 / CYCLE_UNIT);
+		DSP_Run(2 * BlitterVars.op_cycles);
 	}
 #endif
 
