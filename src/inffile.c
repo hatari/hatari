@@ -151,6 +151,10 @@ static const char newdesk_inf[] =
 "#M 01 00 00 FF B FLOPPY DISK@ @ \r\n"
 "#T 00 03 02 FF   TRASH@ @ \r\n";
 
+/* TODO: when support for Falcon resolutions is added,
+ * builtin TOS v4 NEWDESK.INF file contents are needed too
+ */
+
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -450,9 +454,11 @@ static int INF_ValidateResolution(int *set_res, const char **val, const char **e
 			/* TODO:
 			 * Falcon resolution setting doesn't have effect,
 			 * seems that #E Falcon settings in columns 6 & 7
-			 * are also needed:
+			 * (5th & 6th hex values) are also needed:
 			 * - line doubling / interlace
 			 * - ST compat, RGB/VGA, columns & #colors
+			 * These should be same as for VsetMode:
+			 *   http://toshyp.atari.org/en/Screen_functions.html#Vsetmode
 			 */
 			break;
 		}
@@ -491,7 +497,7 @@ static int INF_ValidateResolution(int *set_res, const char **val, const char **e
  * Get builtin INF file contents which open window for the boot drive,
  * if any.
  *
- * NOTE: this won't work for EmuTOS because it opens INF file second
+ * TODO: this won't work for EmuTOS because it opens INF file second
  * time to read window info, at which point the temporary virtual INF
  * file has already disappeared.  Real TOS versions read INF file
  * only once and work fine.
