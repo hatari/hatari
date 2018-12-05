@@ -668,6 +668,9 @@ int HDC_PartitionCount(FILE *fp, const Uint64 tracelevel, int *pIsByteSwapped)
 		    || (bootsector[0x1c6] == 'X' && bootsector[0x1c8] == 'M' && bootsector[0x1c9] == 'G')
 		    || (bootsector[0x1c6] == 'L' && bootsector[0x1c8] == 'X' && bootsector[0x1c9] == 'N')
 		    || (bootsector[0x1c6] == 'R' && bootsector[0x1c8] == 'W' && bootsector[0x1c9] == 'A')
+		    || (bootsector[0x1c6] == 'F' && bootsector[0x1c8] == '2' && bootsector[0x1c9] == '3')
+		    || (bootsector[0x1c6] == 'U' && bootsector[0x1c8] == 'X' && bootsector[0x1c9] == 'N')
+		    || (bootsector[0x1c6] == 'M' && bootsector[0x1c8] == 'X' && bootsector[0x1c9] == 'I')
 		    || (bootsector[0x1c6] == 'S' && bootsector[0x1c8] == 'P' && bootsector[0x1c9] == 'W');
 
 		if (*pIsByteSwapped)
