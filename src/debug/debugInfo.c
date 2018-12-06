@@ -83,14 +83,13 @@ static Uint32 DebugInfo_GetSysbase(Uint32 *rombase, bool warnings)
 		if (warnings) {
 			fprintf(stderr, "Invalid TOS sysbase ROM address (0x%x)!\n", *rombase);
 		}
-		return 0;
+		*rombase = 0;
 	}
 	if (*rombase != TosAddress) {
 		if (warnings) {
 			fprintf(stderr, "os_beg (0x%x) != TOS address (0x%x), header in RAM not set up yet?\n",
 				*rombase, TosAddress);
 		}
-		return 0;
 	}
 	return sysbase;
 }
@@ -364,13 +363,13 @@ static void DebugInfo_OSHeader(FILE *fp, Uint32 dummy)
 {
 	Uint32 sysbase, rombase;
 
-	sysbase = DebugInfo_GetSysbase(&rombase, false);
+	sysbase = DebugInfo_GetSysbase(&rombase, true);
 	if (!sysbase) {
 		return;
 	}
 	fprintf(fp, "OS header information:\n");
 	DebugInfo_PrintOSHeader(fp, sysbase);
-	if (sysbase != rombase) {
+	if (sysbase != rombase && rombase) {
 		fprintf(fp, "\nROM TOS OS header information:\n");
 		DebugInfo_PrintOSHeader(fp, rombase);
 		return;
