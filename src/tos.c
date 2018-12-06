@@ -940,8 +940,8 @@ static void TOS_CheckSysConfig(void)
 	}
 	if (Config_IsMachineFalcon() && bUseVDIRes && !bIsEmuTOS)
 	{
-		Log_AlertDlg(LOG_ERROR, "Please use EmuTOS for proper VDI results in Falcon mode "
-			     "(TOS 4 doesn't fully support VDI).");
+		Log_AlertDlg(LOG_ERROR, "Please use EmuTOS instead of TOS v4 "
+			     "for proper extended VDI resolutions support on Falcon.");
 	}
 }
 
@@ -1146,12 +1146,24 @@ int TOS_InitImage(void)
 	           (STMemory_ReadWord(TosAddress+28)&1)?"PAL":"NTSC");
 
 	/* Are we allowed VDI under this TOS? */
-	if (TosVersion == 0x0100 && bUseVDIRes)
+	if (bUseVDIRes)
 	{
-		/* Warn user */
-		Log_AlertDlg(LOG_ERROR, "To use extended VDI resolutions, you must select a TOS >= 1.02.");
-		/* And select non VDI */
-		bUseVDIRes = ConfigureParams.Screen.bUseExtVdiResolutions = false;
+		if (TosVersion == 0x0100)
+		{
+			/* Warn user */
+			Log_AlertDlg(LOG_ERROR, "To use extended VDI resolutions, you must select a TOS >= 1.02.");
+			/* And select non VDI */
+			bUseVDIRes = ConfigureParams.Screen.bUseExtVdiResolutions = false;
+		}
+		else
+		{
+			/* needs to be called after TosVersion is set, but
+			 * before STMemory_SetDefaultConfig() is called
+			 */
+			VDI_SetResolution(ConfigureParams.Screen.nVdiColors,
+					  ConfigureParams.Screen.nVdiWidth,
+					  ConfigureParams.Screen.nVdiHeight);
+		}
 	}
 
 	/* Fix TOS image, modify code for emulation */
@@ -1163,13 +1175,6 @@ int TOS_InitImage(void)
 	{
 		Log_Printf(LOG_DEBUG, "Skipped TOS patches.\n");
 	}
-
-	/* needs to be called after TosVersion is set, but
-	 * before STMemory_SetDefaultConfig() is called
-	 */
-	VDI_SetResolution(ConfigureParams.Screen.nVdiColors,
-			  ConfigureParams.Screen.nVdiWidth,
-			  ConfigureParams.Screen.nVdiHeight);
 
 	/*
 	 * patch some values into the "Draw logo" patch.
