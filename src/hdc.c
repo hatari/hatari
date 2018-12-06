@@ -628,18 +628,38 @@ static void HDC_EmulateCommandPacket(SCSI_CTRLR *ctr)
 
 /*---------------------------------------------------------------------*/
 /**
- * Return given image file (primary) partition count and with tracing
- * print also partition table.
+ * Return given image file (primary) partition count.
+ * With tracing enabled, print also partition table.
  *
- * Supports both DOS and Atari master boot record partition tables
- * (with 4 entries).
+ * Supports both DOS and Atari master boot record partition
+ * tables (with 4 entries).
+ *
+ * Atari partition type names used for checking
+ * whether drive is / needs to be byte-swapped:
+ *   GEM     GEMDOS partition < 16MB
+ *   BGM     GEMDOS partition > 16MB
+ *   RAW     No file system
+ *   F32     TOS compatible FAT32 partition
+ *   LNX     Linux Ext2 partition, not supported by TOS
+ *   MIX     Minix partition, not supported by TOS
+ *   SWP     Swap partition, not supported by TOS
+ *   UNX     ASV (Atari System V) partition, not supported by TOS
+ *   XGM     Extended partion
+ *
+ * Other partition types (listed in XHDI spec):
+ *   MAC     MAC HFS partition, not supported by TOS
+ *   QWA     Sinclair QL QDOS partition, not supported by TOS
+ * (These haven't been found in the wild.)
  *
  * TODO:
- * - Support also Atari ICD (12 entries, at offset 0x156) and
- *   extended partition schemes.  Linux kernel has code for those:
- *   http://lxr.free-electrons.com/source/block/partitions/atari.c
- *   Normal and extended partition tables are described in:
- *   http://dev-docs.atariforge.org/files/AHDI_3_RN_4-18-1990.pdf
+ * - Support also Atari ICD (12 entries, at offset 0x156)
+ *   and extended partition schemes
+ *
+ * Linux kernel has code for both:
+ *	https://elixir.bootlin.com/linux/v4.0/source/block/partitions/atari.c
+ *
+ * Extended partition tables are described in AHDI release notes:
+ *	https://www.dev-docs.org/docs/htm/search.php?find=AHDI
  */
 int HDC_PartitionCount(FILE *fp, const Uint64 tracelevel, int *pIsByteSwapped)
 {
