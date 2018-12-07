@@ -503,6 +503,8 @@ Free/shareware/PD games:
 - Flip'em*       (4KB puzzle)
 - French adaptations of classic games:
   Boulderdash, Demineur, Jewel, Qbert, Sokoban
+- Frogger*
+- Frogs          (MIDI multiplayer, optional STE audio/blitter suport)
 - Fuzzball*
 - GodPey         (floppy only, by Reservoir Gods)
 - Golgafrincham  (mod compile with 2-player minigame)
@@ -521,9 +523,11 @@ Free/shareware/PD games:
 - Killing Spree  (2014 preview by TLB at Atarimania)
 - Laserball 2014
 - LeMans         (line-A get pixel, draw line, bitblit, show mouse)
+- Manic Miner
 - Master Breakout
 - Maze*
 - Mem*           (line-A bitblits)
+- Merchant       (works also in mono)
 - Missile Alert
 - Monkeys and Balloons
 - Monopoly
@@ -566,6 +570,7 @@ Free/shareware/PD games:
 - Yak            (4KB gridrunner)
 - Xenon          (4KB shooter)
 - Zap
+- Zatacka        (multiplayer)
 
 Med-rez games:
 - Poker solitaire
@@ -920,6 +925,8 @@ Color games:
   http://atari-forum.com/viewtopic.php?f=3&t=26068
 - Power Up
 - R0x (line-A bitblit)
+- R0x Zero (line-A bitblit)
+  - Credits screen overscan scroller is broken with EmuTOS
 - Roger (line-A bitblit)
 - R-Type Deluxe (arcade conversion)
   http://atari-forum.com/viewtopic.php?f=28&t=29047
