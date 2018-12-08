@@ -1048,6 +1048,7 @@ look broken, their sound or music doesn't work, or why they freeze at
 startup.
 
 Following Falcon only demos, games and apps work (mostly) fine though.
+If they use DSP for music, that will be missing.
 
 
 Falcon demos
@@ -1060,6 +1061,7 @@ Working demos:
   - Has way too low volume
 - A Rh Positive 4k (by tSCc), needs DSP
 - Ascii (by Reservoir Gods), disable DSP
+- Ath/0 (by Dekadence)
 - ATS (by DHS)
 - Autowachen Verboten (by Lazer)
 - Binliner (preview by Avena)

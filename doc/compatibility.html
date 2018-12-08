@@ -3288,6 +3288,14 @@ if demo is stated to require that.</p>
     </tr>
     <tr>
       <td>Dekadence:
+      <a href="http://www.pouet.net/prod.php?which=64683">Ath/0</a></td>
+      <td>2.2-dev</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>Music with DSP</td>
+    </tr>
+    <tr>
+      <td>Dekadence:
       <a href="http://www.pouet.net/prod.php?which=64683">Payback 2015</a></td>
       <td class="minor">2.1</td>
       <td>yes</td>
@@ -3446,6 +3454,14 @@ if demo is stated to require that.</p>
       <td>With WinUAE CPU core max frameskip isn't enough on most
           screens on 3GHz i3-540, although with oldAUE CPU core
 	  it works without frameskip (except for credits at end)</td>
+    </tr>
+    <tr>
+      <td>Dune / Sector One
+      <a href="https://demozoo.org/productions/195441/">4musiK</a></td>
+      <td>2.2-dev</td>
+      <td>yes</td>
+      <td>emu</td>
+      <td>Silly Venture 2018 Falcon 4K softsynth intro</td>
     </tr>
     <tr>
       <td>Dune / Sector One
@@ -3672,17 +3688,6 @@ if demo is stated to require that.</p>
     </tr>
     <tr>
       <td>Lamers:
-      <a href="http://www.pouet.net/prod.php?which=78717">F22.0</a></td>
-      <td class="major">2.1</td>
-      <td>yes</td>
-      <td>-</td>
-      <td>Stops while loading assets.  060 + 64MB TT-RAM + FPU:
-	  --machine falcon --dsp none --cpulevel 6
-	  --fpu internal --sound off --fast-forward yes
-	  --add24 off --ttram 64 -s 4</td>
-    </tr>
-    <tr>
-      <td>Lamers:
       <a href="http://www.pouet.net/prod.php?which=68503">Polygon discount</a></td>
       <td>2.1</td>
       <td>yes</td>
@@ -3787,20 +3792,6 @@ if demo is stated to require that.</p>
       <td>yes</td>
       <td>emu</td>
       <td></td>
-    </tr>
-    <tr>
-      <td>MadWizards:
-      <a href="http://pouet.net/prod.php?which=59135">Kioea</a></td>
-      <td>2.0</td>
-      <td>"yes"</td>
-      <td>-</td>
-      <td>060 + 14MB + 64MB TT-RAM + FPU.  Startup takes over
-          <strong>10 minutes</strong> and demo is also otherwise
-	  so slow that it is better to disable sound and DSP
-	  to speed up fast forwarding:
-	  --machine falcon --dsp none --cpulevel 6 --cpuclock 32
-	  --fpu internal --sound off --fast-forward yes
-	  --add24 off --ttram 64 -s 14</td>
     </tr>
     <tr>
       <td>Mind Design:
@@ -3952,16 +3943,6 @@ if demo is stated to require that.</p>
           Colors in 3D screens not bright enough, or washed out</td>
     </tr>
     <tr>
-      <td>Orion_:
-      <a href="http://www.pouet.net/prod.php?which=58045">We Reached Stars</a></td>
-      <td class="major">2.0</td>
-      <td>yes</td>
-      <td>-</td>
-      <td>needs 060 + 8 MB TT ram. Music with DSP. Polygon mountains
-          part at start is missing all details (issue with palette /
-	  texture mapping?) and demo freezes in middle of that</td>
-    </tr>
-    <tr>
       <td>Paradox:
       <a href="http://pouet.net/prod.php?which=60896">2x1287</a></td>
       <td>2.1</td>
@@ -4034,15 +4015,6 @@ if demo is stated to require that.</p>
       <td>-</td>
       <td>emu</td>
       <td>Doesn't work with 020 CPU</td>
-    </tr>
-    <tr>
-      <td>TBL:
-      <a href="http://www.pouet.net/groups.php?which=1">Ocean Machine, Rift, Silkcut, Startstruck</a></td>
-      <td>1.9</td>
-      <td>yes</td>
-      <td>-</td>
-      <td>Require 060 + FPU + 4MB / 64MB TT-RAM.  Music with DSP
-         (DSP + sound can be disabled to speed up emulation a lot)</td>
     </tr>
     <tr>
       <td>The Pixel Twins:
@@ -4207,6 +4179,78 @@ if demo is stated to require that.</p>
 <a href="http://falcdemos.atari.org/archive/">Falcon demos</a> archive
 and demo tools from the dhs.nu <a href="http://dhs.nu/">demoscene</a>
 site.</p>
+
+
+<h3>060 Falcon demos</h3>
+
+<p>Falcon demos that are for 060 CPU.</p>
+
+<table>
+  <caption>Falcon demos</caption>
+  <thead>
+    <tr class="backdropped">
+      <th>Title</th>
+      <th>Hatari version</th>
+      <th>Sound</th>
+      <th>DSP</th>
+      <th>Comment</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Lamers:
+      <a href="https://demozoo.org/productions/195301/">Lamer than Lamers</a></td>
+      <td class="major">2.2-dev</td>
+      <td>yes</td>
+      <td>emu</td>
+      <td>Stops at start when showing demo name.  060 + 64MB TT-RAM + FPU</td>
+    </tr>
+    <tr>
+      <td>Lamers:
+      <a href="http://www.pouet.net/prod.php?which=78717">F22.0</a></td>
+      <td class="major">2.1</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>Stops while loading assets.  060 + 64MB TT-RAM + FPU:
+	  --machine falcon --dsp none --cpulevel 6
+	  --fpu internal --sound off --fast-forward yes
+	  --add24 off --ttram 64 -s 4</td>
+    </tr>
+    <tr>
+      <td>MadWizards:
+      <a href="http://pouet.net/prod.php?which=59135">Kioea</a></td>
+      <td>2.0</td>
+      <td>"yes"</td>
+      <td>-</td>
+      <td>060 + 14MB + 64MB TT-RAM + FPU.  Startup takes over
+          <strong>10 minutes</strong> and demo is also otherwise
+	  so slow that it is better to disable sound and DSP
+	  to speed up fast forwarding:
+	  --machine falcon --dsp none --cpulevel 6 --cpuclock 32
+	  --fpu internal --sound off --fast-forward yes
+	  --add24 off --ttram 64 -s 14</td>
+    </tr>
+    <tr>
+      <td>Orion_:
+      <a href="http://www.pouet.net/prod.php?which=58045">We Reached Stars</a></td>
+      <td class="major">2.0</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>needs 060 + 8 MB TT ram. Music with DSP. Polygon mountains
+          part at start is missing all details (issue with palette /
+	  texture mapping?) and demo freezes in middle of that</td>
+    </tr>
+    <tr>
+      <td>TBL:
+      <a href="http://www.pouet.net/groups.php?which=1">Ocean Machine, Rift, Silkcut, Startstruck</a></td>
+      <td>1.9</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>Require 060 + FPU + 4MB / 64MB TT-RAM.  Music with DSP
+         (DSP + sound can be disabled to speed up emulation a lot)</td>
+    </tr>
+  </tbody>
+</table>
 
 
 <h3>Falcon applications</h3>
