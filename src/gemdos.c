@@ -2698,12 +2698,23 @@ static bool GemDOS_SNext(void)
 		Regs[REG_D0] = GEMDOS_ENMFIL;
 		return true;
 	}
+	if (!InternalDTAs[Index].bUsed)
+	{
+		/* Invalid handle, TOS returns ENMFIL
+		 * (if Fsetdta() has been used by any process)
+		 */
+		Log_Printf(LOG_WARN, "GEMDOS Fsnext(): Invalid DTA\n");
+		Regs[REG_D0] = GEMDOS_ENMFIL;
+	}
 
 	temp = InternalDTAs[Index].found;
 	do
 	{
 		if (InternalDTAs[Index].centry >= InternalDTAs[Index].nentries)
 		{
+			/* older TOS versions zero file name if there are no (further) matches */
+			if (TosVersion < 0x0400)
+				pDTA->dta_name[0] = 0;
 			Regs[REG_D0] = GEMDOS_ENMFIL;    /* No more files */
 			return true;
 		}
@@ -2715,7 +2726,7 @@ static bool GemDOS_SNext(void)
 
 	if (ret < 0)
 	{
-		Log_Printf(LOG_WARN, "GEMDOS Fsnext(): Error setting DTA.\n");
+		Log_Printf(LOG_WARN, "GEMDOS Fsnext(): Error setting DTA\n");
 		Regs[REG_D0] = GEMDOS_EINTRN;
 		return true;
 	}
