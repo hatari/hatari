@@ -925,8 +925,7 @@ Color games:
   http://atari-forum.com/viewtopic.php?f=3&t=26068
 - Power Up
 - R0x (line-A bitblit)
-- R0x Zero (line-A bitblit)
-  - Credits screen overscan scroller is broken with EmuTOS
+- R0x Zero (line-A bitblit, overscan screen needs 50Hz version of Emutos)
 - Roger (line-A bitblit)
 - R-Type Deluxe (arcade conversion)
   http://atari-forum.com/viewtopic.php?f=28&t=29047
