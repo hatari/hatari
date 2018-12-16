@@ -8,8 +8,8 @@
  ---------------------------
 
 Note:
-- Compiling with SDL 1.2 is considered as deprecated now. The support for
-  SDL 1.2 will be dropped in a future release.
+- Compiling with SDL 1.2 is considered as deprecated now.
+  The support for SDL 1.2 will be dropped in a future release.
 
 Emulation:
 - CPU:
@@ -47,15 +47,18 @@ Emulator:
   - Add FPU softfloat option
   - Move joystick info to second statusbar line
   - Few additional special keys can be remapped
-- On MacOS:
-  - Save screenshots by default to ~/Desktop/
+  - Fix: broken CPU dialog with old UAE CPU core
+- MacOS / GUI:
   - Minor GUI updates for v2.1 changes
+  - Fix: "reset" and "don't reset" UI buttons inverted
+  - Update MIDI panel for French version
+  - Save screenshots in user defined location or ~/Desktop
 - Disk handling:
   - IDE byte-swap option added to config file & GUI
   - Fix: NF SCSI driver didn't invalidate cache for changed memory area
   - Fix: *.INF file in disk image being overridden even when neither
     VDI mode or autostart program wasn't specified (v2.1 regression)
-  - Fix: GEMDOS HD Fwrite() can be done from ROM area
+  - Fix: GEMDOS HD Fwrite() can be done from ROM area (for ROM saving)
 - Media handling:
   - Fix: AVI recording with PNG codec could be wrongly limited to 4GB
     with some OSes
@@ -91,16 +94,15 @@ Emulator:
     implement the necessary Atari OS calls
   - Halt dialog is skipped if --run-vbls is used (for automation)
   - Support hex values for --disasm, increase --slowdown max value to 30
-- SDL GUI:
-  - Fix: broken CPU dialog with old UAE CPU core
-- macOS UI:
-  - Fix: "reset" and "don't reset" buttons inverted
-  - Update MIDI panel for French version
-  - Save screenshots in user defined location or ~/Desktop
-- Compilation:
-  - Fix: Large File Support detection (64 bits off_t)
-  - Fix: new compile warnings with GCC v8 (+ code cleanup)
-  - Improve CMake library finding for recent macOS
+
+Building:
+- Fix: Large File Support detection (64 bits off_t)
+- Fix: new compile warnings with GCC v8 (+ code cleanup)
+- Fix: building when DSP or tracing is disabled
+- Improve CMake library finding for recent macOS
+- Change Hatari compilation C standard to gnu99
+- Add gitlab continuous integration Yaml file
+- Many -fsanitize fixes
 
 Tools:
 - Hatari Python UI migrated from PyGtk v2 to Gtk v3
@@ -112,14 +114,8 @@ Tools:
   - Support argument setting also for programs run
     from disk images
 - Few additional tests for validating Hatari functionality.
-  Almost all tests are now integrated with CTest framework.  Use
-  e.g. "ctest -j4" command to run them
-
-Building:
-- Change Hatari compilation C standard to gnu99
-- Fix building when DSP or tracing is disabled
-- Add gitlab continuous integration Yaml file
-- Many -fsanitize
+  Almost all tests are now integrated with CTest framework.
+  Use e.g. "ctest -j4" command to run them
 
 Documentation:
 - Add notes about (new default) PortMidi support to MIDI usage
