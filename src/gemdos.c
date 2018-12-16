@@ -125,6 +125,7 @@ static struct {
 typedef struct
 {
 	bool bUsed;
+	char szMode[4];     /* enough for all used fopen() modes: rb/rb+/wb+ */
 	Uint32 Basepage;
 	FILE *FileHandle;
 	/* TODO: host path might not fit into this */
@@ -340,7 +341,7 @@ static int PopulateDTA(char *path, struct dirent *file, DTA *pDTA, Uint32 DTA_Ge
 
 /*-----------------------------------------------------------------------*/
 /**
- * Clear given DTA structure.
+ * Clear given DTA cache structure.
  */
 static void ClearInternalDTA(int idx)
 {
@@ -356,6 +357,20 @@ static void ClearInternalDTA(int idx)
 	}
 	InternalDTAs[idx].nentries = 0;
 	InternalDTAs[idx].bUsed = false;
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Clear all DTA cache structures.
+ */
+static void GemDOS_ClearAllInternalDTAs(void)
+{
+	int i;
+	for(i = 0; i < ARRAY_SIZE(InternalDTAs); i++)
+	{
+		ClearInternalDTA(i);
+	}
+	DTAIndex = 0;
 }
 
 
@@ -509,17 +524,11 @@ static void GemDOS_UpdateCurrentProgram(int Handle)
  */
 void GemDOS_Init(void)
 {
-	int i;
 	bInitGemDOS = false;
 
 	GemDOS_ClearAllFileHandles();
+	GemDOS_ClearAllInternalDTAs();
 
-	/* Clear DTAs */
-	for(i = 0; i < ARRAY_SIZE(InternalDTAs); i++)
-	{
-		ClearInternalDTA(i);
-	}
-	DTAIndex = 0;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -799,11 +808,97 @@ void GemDOS_UnInitDrives(void)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Save file handle info.  If handle is used, save valid file modification
+ * timestamp and file position, otherwise dummies.
+ */
+static void save_file_handle_info(FILE_HANDLE *handle)
+{
+	struct stat fstat;
+	time_t mtime;
+	off_t offset;
+
+	MemorySnapShot_Store(&handle->bUsed, sizeof(handle->bUsed));
+	MemorySnapShot_Store(&handle->szMode, sizeof(handle->szMode));
+	MemorySnapShot_Store(&handle->Basepage, sizeof(handle->Basepage));
+	MemorySnapShot_Store(&handle->szActualName, sizeof(handle->szActualName));
+	if (handle->bUsed)
+	{
+		offset = ftello(handle->FileHandle);
+		stat(handle->szActualName, &fstat);
+		mtime = fstat.st_mtime; /* modification time */
+	}
+	else
+	{
+		/* avoid warnings about access to undefined data */
+		offset = 0;
+		stat("/", &fstat);
+		mtime = fstat.st_mtime;
+	}
+	MemorySnapShot_Store(&mtime, sizeof(mtime));
+	MemorySnapShot_Store(&offset, sizeof(offset));
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Restore saved file handle info.  If handle is used, open file, validate
+ * that file modification timestamp matches, then seek to saved position.
+ * Restoring order must match one used in save_file_handle_info().
+ */
+static void restore_file_handle_info(int i, FILE_HANDLE *handle)
+{
+	struct stat fstat;
+	time_t mtime;
+	off_t offset;
+	FILE *fp;
+
+	if (handle->bUsed)
+		fclose(handle->FileHandle);
+
+	/* read all to proceed correctly in snapshot */
+	MemorySnapShot_Store(&handle->bUsed, sizeof(handle->bUsed));
+	MemorySnapShot_Store(&handle->szMode, sizeof(handle->szMode));
+	MemorySnapShot_Store(&handle->Basepage, sizeof(handle->Basepage));
+	MemorySnapShot_Store(&handle->szActualName, sizeof(handle->szActualName));
+	MemorySnapShot_Store(&mtime, sizeof(mtime));
+	MemorySnapShot_Store(&offset, sizeof(offset));
+	handle->FileHandle = NULL;
+
+	if (!handle->bUsed)
+		return;
+
+	if (stat(handle->szActualName, &fstat) != 0)
+	{
+		handle->bUsed = false;
+		Log_Printf(LOG_WARN, "GEMDOS handle %d cannot be restored, file missing: %s\n",
+			   i, handle->szActualName);
+		return;
+	}
+	/* assumes time_t is primitive type (unsigned long on Linux) */
+	if (fstat.st_mtime != mtime)
+	{
+		Log_Printf(LOG_WARN, "restored GEMDOS handle %d points to a file that has been modified in meanwhile: %s\n",
+			   i, handle->szActualName);
+	}
+	fp = fopen(handle->szActualName, handle->szMode);
+	if (fp == NULL || fseeko(fp, offset, SEEK_SET) != 0)
+	{
+		handle->bUsed = false;
+		Log_Printf(LOG_WARN, "GEMDOS '%s' handle %d cannot be restored, seek to saved offset %"PRId64" failed for: %s\n",
+			   handle->szMode, i, offset, handle->szActualName);
+		fclose(fp);
+		return;
+	}
+	handle->FileHandle = fp;
+}
+
+/*-----------------------------------------------------------------------*/
+/**
  * Save/Restore snapshot of local variables('MemorySnapShot_Store' handles type)
  */
 void GemDOS_MemorySnapShot_Capture(bool bSave)
 {
-	int i, dummy;
+	FILE_HANDLE *finfo;
+	int i, handles = ARRAY_SIZE(FileHandles);
 	bool bEmudrivesAvailable;
 
 	/* Save/Restore the emudrives structure */
@@ -849,18 +944,31 @@ void GemDOS_MemorySnapShot_Capture(bool bSave)
 		}
 	}
 
-	/* Save/Restore details */
-	MemorySnapShot_Store(&DTAIndex,sizeof(DTAIndex));
+	/* misc information */
 	MemorySnapShot_Store(&bInitGemDOS,sizeof(bInitGemDOS));
 	MemorySnapShot_Store(&act_pd, sizeof(act_pd));
-	MemorySnapShot_Store(&dummy, sizeof(dummy)); /* redundant DTA_Gemdos */
-	MemorySnapShot_Store(&CurrentDrive,sizeof(CurrentDrive));
-	/* Don't save file handles as files may have changed which makes
-	 * it impossible to get a valid handle back
-	 */
-	if (!bSave)
+	MemorySnapShot_Store(&CurrentDrive, sizeof(CurrentDrive));
+
+	/* File handle related information */
+	MemorySnapShot_Store(&ForcedHandles, sizeof(ForcedHandles));
+	if (bSave)
 	{
-		GemDOS_ClearAllFileHandles();
+		MemorySnapShot_Store(&handles, sizeof(handles));
+
+		for (finfo = FileHandles, i = 0; i < handles; i++, finfo++)
+			save_file_handle_info(finfo);
+	}
+	else
+	{
+		int saved_handles;
+		MemorySnapShot_Store(&saved_handles, sizeof(saved_handles));
+		assert(saved_handles == handles);
+
+		for (finfo = FileHandles, i = 0; i < handles; i++, finfo++)
+			restore_file_handle_info(i, finfo);
+
+		/* DTA file name cache isn't valid anymore */
+		GemDOS_ClearAllInternalDTAs();
 	}
 }
 
@@ -1867,6 +1975,7 @@ static bool GemDOS_Create(Uint32 Params)
 		}
 		/* Tag handle table entry as used in this process and return handle */
 		FileHandles[Index].bUsed = true;
+		strcpy(FileHandles[Index].szMode, "wb+");
 		FileHandles[Index].Basepage = STMemory_ReadLong(act_pd);
 		snprintf(FileHandles[Index].szActualName,
 			 sizeof(FileHandles[Index].szActualName),
@@ -1964,6 +2073,7 @@ static bool GemDOS_Open(Uint32 Params)
 		strcpy(szActualFileName, pszFileName);
 		FileHandles[Index].FileHandle = OverrideHandle;
 		RealMode = "read-only";
+		ModeStr = "rb";
 	}
 	else
 	{
@@ -2014,6 +2124,7 @@ static bool GemDOS_Open(Uint32 Params)
 	{
 		/* Tag handle table entry as used in this process and return handle */
 		FileHandles[Index].bUsed = true;
+		strcpy(FileHandles[Index].szMode, ModeStr);
 		FileHandles[Index].Basepage = STMemory_ReadLong(act_pd);
 		snprintf(FileHandles[Index].szActualName,
 			 sizeof(FileHandles[Index].szActualName),

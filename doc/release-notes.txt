@@ -38,6 +38,8 @@ Emulator:
   - "patch TOS timer-D" speedup option is now disabled by default
   - Allow up to 512MB of TT-RAM (increased from 256 MB)
   - Additional ROM patches applied to TOS v4.x for 040 & 060
+Memory snapshot save/restore:
+  - Fix: Include GEMDOS HD file handles so apps with open files work
   - Improve memory snapshot save/restore reliability
     (e.g. for pending interrupts)
 - SDL GUI:
