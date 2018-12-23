@@ -483,9 +483,10 @@ const char* Eval_Expression(const char *in, Uint32 *out, int *erroff, bool bForD
 			operation (value, LOWEST_PREDECENCE);
 			if (par.idx)			/* mismatched	*/
 				id.error = CLAC_PAR_ERR;
+			else if (val.idx < 0)
+				id.error = CLAC_PRG_ERR;
 			else				/* result out	*/
 				*out = val.buf[val.idx];
-
 		} else {
 			if ((val.idx < 0) && (op.idx < 0)) {
 				id.error = CLAC_EXP_ERR;
