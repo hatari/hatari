@@ -26,6 +26,16 @@
  */
 
 #include "main.h"
+
+#if HAVE_TERMIOS_H
+# include <termios.h>
+# include <unistd.h>
+#endif
+#if HAVE_SYS_IOCTL_H
+# include <sys/ioctl.h>
+#endif
+
+#include "configuration.h"
 #include "sysdeps.h"
 #include "ioMem.h"
 #include "log.h"
@@ -44,15 +54,52 @@ static int scc_regs[32];
 static uint8_t RR3, RR3M;    // common to channel A & B
 
 static int charcount;
-
+static int handle = -1;
+static uint16_t oldTBE;
+static uint16_t oldStatus;
+static bool bFileHandleIsATTY;
 
 void SCC_Init(void)
 {
 	SCC_Reset();
+
+	oldTBE = 0;
+	oldStatus = 0;
+
+	D(bug("SCC: interface initialized\n"));
+
+	if (!ConfigureParams.RS232.bEnableSccB || !ConfigureParams.RS232.sSccBFileName[0])
+	{
+		handle = -1;
+		return;
+	}
+
+	handle = open(ConfigureParams.RS232.sSccBFileName,
+	              O_RDWR | O_NDELAY | O_NONBLOCK);      /* Raw mode */
+	if (handle >= 0)
+	{
+#if HAVE_TERMIOS_H
+		bFileHandleIsATTY = isatty(handle);
+#else
+		bFileHandleIsATTY = false;
+#endif
+	}
+	else
+	{
+		Log_Printf(LOG_ERROR, "SCC_Init: Can not open device '%s'\n",
+		           ConfigureParams.RS232.sSccBFileName);
+	}
 }
 
 void SCC_UnInit(void)
 {
+	D(bug("SCC: interface destroyed\n"));
+	if (handle >= 0)
+	{
+		fcntl(handle, F_SETFL, 0);  // back to (almost...) normal
+		close(handle);
+		handle = -1;
+	}
 }
 
 static void SCC_channelAreset(void)
@@ -86,44 +133,205 @@ void SCC_Reset()
 	RR3 = 0;
 	RR3M = 0;
 	charcount = 0;
-	// serial->reset(); TODO
 }
 
 static void TriggerSCC(bool enable)
 {
-	Log_Printf(LOG_TODO, "TriggerSCC enable=%i\n", enable);
+	if (enable)
+	{
+		Log_Printf(LOG_TODO, "TriggerSCC\n");
+	}
 }
 
 static uint8_t SCC_serial_getData(void)
 {
-	Log_Printf(LOG_TODO, "SCC_serial_getData\n");
-	return 0;
+	uint8_t value = 0;
+	int nb;
+
+	D(bug("SCC: getData\n"));
+	if (handle >= 0)
+	{
+		nb = read(handle, &value, 1);
+		if (nb < 0)
+		{
+			D(bug("SCC: impossible to get data\n"));
+		}
+	}
+	return value;
 }
 
 static void SCC_serial_setData(uint8_t value)
 {
-	Log_Printf(LOG_TODO, "SCC_serial_setData 0x%x\n", value);
+	int nb;
+
+	D(bug("SCC: setData\n"));
+	if (handle >= 0)
+	{
+		do
+		{
+			nb = write(handle, &value, 1);
+		} while (nb < 0 && (errno == EAGAIN || errno == EINTR));
+	}
 }
 
 static void SCC_serial_setBaud(int value)
 {
-	Log_Printf(LOG_TODO, "SCC_serial_setBaud %i\n", value);
+#if HAVE_TERMIOS_H
+	struct termios options;
+	speed_t new_speed = B0;
+
+	D(bug("SCC: setBaud %i\n", value));
+
+	if (handle < 0)
+		return;
+
+	switch (value)
+	{
+	 case 230400:	new_speed = B230400;	break;
+	 case 115200:	new_speed = B115200;	break;
+	 case 57600:	new_speed = B57600;	break;
+	 case 38400:	new_speed = B38400;	break;
+	 case 19200:	new_speed = B19200;	break;
+	 case 9600:	new_speed = B9600;	break;
+	 case 4800:	new_speed = B4800;	break;
+	 case 2400:	new_speed = B2400;	break;
+	 case 1800:	new_speed = B1800;	break;
+	 case 1200:	new_speed = B1200;	break;
+	 case 600:	new_speed = B600;	break;
+	 case 300:	new_speed = B300;	break;
+	 case 200:	new_speed = B200;	break;
+	 case 150:	new_speed = B150;	break;
+	 case 134:	new_speed = B134;	break;
+	 case 110:	new_speed = B110;	break;
+	 case 75:	new_speed = B75;	break;
+	 case 50:	new_speed = B50;	break;
+	 default:	D(bug("SCC: unsupported baud rate %i\n", value)); break;
+	}
+
+	if (new_speed == B0)
+		return;
+
+	tcgetattr(handle, &options);
+
+	cfsetispeed(&options, new_speed);
+	cfsetospeed(&options, new_speed);
+
+	options.c_cflag |= (CLOCAL | CREAD);
+	options.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG); // raw input
+	options.c_iflag &= ~(ICRNL); // CR is not CR+LF
+
+	tcsetattr(handle,TCSANOW,&options);
+#endif
+}
+
+static uint16_t SCC_getTBE(void) // not suited to serial USB
+{
+	uint16_t value = 0;
+
+#if defined(HAVE_SYS_IOCTL_H) && defined(TIOCSERGETLSR) && defined(TIOCSER_TEMT)
+	int status = 0;
+	if (ioctl(handle, TIOCSERGETLSR, &status) < 0)  // OK with ttyS0, not OK with ttyUSB0
+	{
+		// D(bug("SCC: Can't get LSR"));
+		value |= (1<<TBE);   // only for serial USB
+	}
+	else if (status & TIOCSER_TEMT)
+	{
+		value = (1 << TBE);  // this is a real TBE for ttyS0
+		if ((oldTBE & (1 << TBE)) == 0)
+		{
+			value |= 0x200;
+		} // TBE rise=>TxIP (based on real TBE)
+	}
+#endif
+
+	oldTBE = value;
+	return value;
 }
 
 static uint16_t SCC_serial_getStatus(void)
 {
-	Log_Printf(LOG_TODO, "SCC_serial_getStatus\n");
-	return 0;
+	uint16_t value = 0;
+	int status = 0;
+	uint16_t diff;
+	int nbchar = 0;
+
+#if defined(HAVE_SYS_IOCTL_H) && defined(TIOCMGET)
+	if (handle >= 0 && bFileHandleIsATTY)
+	{
+		if (ioctl(handle, FIONREAD, &nbchar) < 0)
+		{
+			D(bug("SCC: Can't get input fifo count\n"));
+		}
+		charcount = nbchar; // to optimize input (see UGLY in handleWrite)
+		if (nbchar > 0)
+			value = 0x0401;  // RxIC+RBF
+		value |= SCC_getTBE();   // TxIC
+		value |= (1 << TBE);  // fake TBE to optimize output (for ttyS0)
+		if (ioctl(handle, TIOCMGET, &status) < 0)
+		{
+			D(bug("SCC: Can't get status\n"));
+		}
+		if (status & TIOCM_CTS)
+			value |= (1 << CTS);
+	}
+#endif
+
+	if (handle >= 0 && !bFileHandleIsATTY)
+	{
+		/* Output is a normal file, thus always set Clear-To-Send
+		 * and Transmit-Buffer-Empty: */
+		value |= (1 << CTS) | (1 << TBE);
+	}
+
+	diff = oldStatus ^ value;
+	if (diff & (1 << CTS))
+		value |= 0x100;  // ext status IC on CTS change
+
+	D(bug("SCC: getStatus 0x%04x\n", value));
+
+	oldStatus = value;
+	return value;
 }
 
 static void SCC_serial_setRTS(bool value)
 {
-	Log_Printf(LOG_TODO, "SCC_serial_setRTS %i\n", value);
+#if defined(HAVE_SYS_IOCTL_H) && defined(TIOCMGET)
+	int status = 0;
+
+	if (handle >= 0 && bFileHandleIsATTY)
+	{
+		if (ioctl(handle, TIOCMGET, &status) < 0)
+		{
+			D(bug("SCC: Can't get status for RTS\n"));
+		}
+		if (value)
+			status |= TIOCM_RTS;
+		else
+			status &= ~TIOCM_RTS;
+		ioctl(handle, TIOCMSET, &status);
+	}
+#endif
 }
 
 static void SCC_serial_setDTR(bool value)
 {
-	Log_Printf(LOG_TODO, "SCC_serial_setDTR %i\n", value);
+#if defined(HAVE_SYS_IOCTL_H) && defined(TIOCMGET)
+	int status = 0;
+
+	if (handle >= 0 && bFileHandleIsATTY)
+	{
+		if (ioctl(handle, TIOCMGET, &status) < 0)
+		{
+			D(bug("SCC: Can't get status for DTR\n"));
+		}
+		if (value)
+			status |= TIOCM_DTR;
+		else
+			status &= ~TIOCM_DTR;
+		ioctl(handle, TIOCMSET, &status);
+	}
+#endif
 }
 
 static uint8_t SCC_handleRead(uint32_t addr)
@@ -357,7 +565,7 @@ static void SCC_handleWrite(uint32_t addr, uint8_t value)
 									BaudRate=50;
 								break;
 								default:
-									D(bug("unexpected LSB constant for baud rate"));
+									D(bug("SCC: unexpected LSB constant for baud rate\n"));
 								break;
 							}
 						break;
@@ -401,7 +609,7 @@ static void SCC_handleWrite(uint32_t addr, uint8_t value)
 						case 0xff://HSMODEM dummy value->silently ignored
 						break;
 						default:
-							D(bug("unexpected MSB constant for baud rate"));
+							D(bug("SCC: unexpected MSB constant for baud rate\n"));
 						break;
 					}
 					if (BaudRate)

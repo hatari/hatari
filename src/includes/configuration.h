@@ -68,8 +68,10 @@ typedef struct
 typedef struct
 {
   bool bEnableRS232;
+  bool bEnableSccB;
   char szOutFileName[FILENAME_MAX];
   char szInFileName[FILENAME_MAX];
+  char sSccBFileName[FILENAME_MAX];
 } CNF_RS232;
 
 

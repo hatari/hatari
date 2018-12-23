@@ -28,6 +28,9 @@
 /* Define to 1 if you have the <termios.h> header file. */
 #cmakedefine HAVE_TERMIOS_H 1
 
+/* Define to 1 if you have the <sys/ioctl.h> header file. */
+#cmakedefine HAVE_SYS_IOCTL_H 1
+
 /* Define to 1 if you have the <glob.h> header file. */
 #cmakedefine HAVE_GLOB_H 1
 

@@ -212,6 +212,7 @@ endif(ENABLE_OSX_BUNDLE)
 # ###########################
 
 check_include_files(termios.h HAVE_TERMIOS_H)
+check_include_files(sys/ioctl.h HAVE_SYS_IOCTL_H)
 check_include_files(strings.h HAVE_STRINGS_H)
 check_include_files(malloc.h HAVE_MALLOC_H)
 check_include_files(${SDL_INCLUDE_DIR}/SDL_config.h HAVE_SDL_CONFIG_H)

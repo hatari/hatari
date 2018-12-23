@@ -177,8 +177,8 @@ compared to a normal STE (like a built-in real time clock chip).
   <li>Only TOS version 3.05 and 3.06 (and EmuTOS) can be used in TT mode.</li>
 </ul>
 <p>
-Note that TT emulation is incomplete &ndash; additional hardware like the
-second MFP and the SCC UARTs is not emulated yet.
+Note that TT emulation is incomplete &ndash; e.g. the second MFP is not
+emulated yet.
 </p>
 
 <h4>Falcon hardware emulation</h4>
@@ -629,12 +629,16 @@ to &lt;file&gt; (Linux only)</p>
 from &lt;file&gt; (Linux only)</p>
 <p class="parameter">--rs232-in
 &lt;filename&gt;</p>
-<p class="paramdesc">Enable serial port support and use
+<p class="paramdesc">Enable MFP serial port support and use
 &lt;file&gt; as the input device</p>
 <p class="parameter">--rs232-out
 &lt;filename&gt;</p>
-<p class="paramdesc">Enable serial port support and use
+<p class="paramdesc">Enable MFP serial port support and use
 &lt;file&gt; as the output device</p>
+<p class="parameter">--scc-b
+&lt;filename&gt;</p>
+<p class="paramdesc">Enable SCC channel B serial port support and use
+&lt;file&gt; as the device file</p>
 
 <h3>Floppy drive options</h3>
 <p class="parameter">--drive-a
@@ -1707,9 +1711,9 @@ details.</p>
 enter a new filename as well.</p>
 <p>Check the second checkmark to enable RS232 support.
 The RS232 device is configured according to the settings of
-the emulated RS232 of the Atari ST. This means Hatari will
+the emulated MFP RS232 of the Atari ST/STE/TT. This means Hatari will
 automatically use baudrate and handshaking as configured for the
-emulated ST.</p>
+emulated machine.</p>
 <p>Click on <span class="button">Browse</span> to select suitable
 device files for serial input and output.  On Linux a good choice is
 /dev/ttyS0 or /dev/ttyS1.
@@ -2006,10 +2010,14 @@ this can cause your printer to print out hundreds of pages of garbage.</p>
 <p>Serial communications in Hatari is designed to directly use a serial
 port on your PC.</p>
 <p>Communications parameters are set automatically upon the settings of
-the emulated ST. This means all you do is to set
-the communication parameters like baudrate from your ST communications
-software. Hatari will do the rest and handle
-the serial input and output for you.</p>
+the emulated machine. This means all you do is to set the communication
+parameters like baudrate from the emulated communications software.
+Hatari will do the rest and handle the serial input and output for you.</p>
+<p>Note that the &ldquo;normal&rdquo; RS232 port of Hatari is the one that
+is connected to the MFP chip of the selected system. This port is only
+wired on the ST, STE and TT machines, but not on the Falcon. To use serial
+port emulation in Falcon mode, you have to use the &ldquo;SCC channel B&rdquo;
+emulation instead.</p>
 
 <h2 id="Floppy_disk_images">Floppy disk images</h2>
 
