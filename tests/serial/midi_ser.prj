@@ -1,0 +1,5 @@
+; AHCC project file for MIDI serial tester
+midi_ser.tos
+=
+../startup.s
+midi_ser.c

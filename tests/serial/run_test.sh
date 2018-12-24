@@ -2,16 +2,17 @@
 
 if [ $# -lt 1 -o "$1" = "-h" -o "$1" = "--help" ]; then
 	echo "Usage: $0 <hatari> <machine>"
-	exit 1;
+	exit 1
 fi
 
 hatari=$1
 if [ ! -x "$hatari" ]; then
 	echo "First parameter must point to valid hatari executable."
-	exit 1;
+	exit 1
 fi
 
-machine=$2
+sertype=$2
+machine=$3
 
 basedir=$(dirname $0)
 testdir=$(mktemp -d)
@@ -22,13 +23,27 @@ export SDL_VIDEODRIVER=dummy
 export SDL_AUDIODRIVER=dummy
 unset TERM
 
+if [ "$sertype" = "mfp" ]; then
+	serparams="--rs232-in $testdir/empty.txt --rs232-out $testdir/serial-out.txt"
+	testprog=mfp_ser.tos
+elif [ "$sertype" = "midi" ]; then
+	serparams="--midi-in $testdir/empty.txt --midi-out $testdir/serial-out.txt"
+	testprog=midi_ser.tos
+elif [ "$sertype" = "scc" ]; then
+	touch "$testdir/serial-out.txt"
+	serparams="--scc-b $testdir/serial-out.txt"
+	testprog=scc_ser.tos
+else
+	echo "Unsupported serial type: $sertype"
+	exit 1
+fi
+
 HOME="$testdir" $hatari --log-level fatal --sound off --tos none \
-	--fast-forward on  --run-vbls 500 --rs232-in "$testdir"/empty.txt \
-	--rs232-out "$testdir"/serial-out.txt --machine "$machine" \
-	"$basedir"/mfp_ser.tos > "$testdir/out.txt"
+	--fast-forward on  --run-vbls 500 $serparams --machine "$machine" \
+	"$basedir"/"$testprog" > "$testdir/out.txt"
 exitstat=$?
 if [ $exitstat -ne 0 ]; then
-	echo "Running hatari failed. Status=${exitstat}."
+	echo "Test FAILED. Hatari exited with status ${exitstat}."
 	cat "$testdir/out.txt"
 	rm -rf "$testdir"
 	exit 1
@@ -36,7 +51,7 @@ fi
 
 if ! diff -q "$basedir/expected.txt" "$testdir/serial-out.txt"; then
 	echo "Test FAILED, output differs:"
-	diff -u "$basedir/test_out.txt" "$testdir/serial-out.txt"
+	diff -u "$basedir/expected.txt" "$testdir/serial-out.txt"
 	rm -rf "$testdir"
 	exit 1
 fi
