@@ -6,7 +6,7 @@ foreach(machine st ste tt)
              COMMAND ${testrunner} $<TARGET_FILE:hatari> mfp ${machine})
 endforeach(machine)
 
-foreach(machine tt falcon)
+foreach(machine megaste tt falcon)
     add_test(NAME serial-scc-${machine}
              COMMAND ${testrunner} $<TARGET_FILE:hatari> scc ${machine})
 endforeach(machine)

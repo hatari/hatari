@@ -30,7 +30,7 @@ Emulation:
 - Hard disks:
   - Experimental support for the NCR5380 SCSI chip in Falcon mode
 - Serial ports:
-  - Very experimental support for the SCC chip of the TT and Falcon
+  - Very experimental support for the SCC chip of the Mega-STE, TT and Falcon
     (only channel B for now, use the "--scc-b" command line switch)
 - Misc:
   - Correctly emulate bus error handling for STE lightpen registers

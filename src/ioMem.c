@@ -39,6 +39,7 @@ const char IoMem_fileid[] = "Hatari ioMem.c : " __DATE__ " " __TIME__;
 #include "sysdeps.h"
 #include "newcpu.h"
 #include "log.h"
+#include "scc.h"
 
 
 static void (*pInterceptReadTable[0x8000])(void);	/* Table with read access handlers */
@@ -197,6 +198,13 @@ static void IoMem_FixAccessForMegaSTE(void)
 	{
 		pInterceptReadTable[addr - 0xff8000] = IoMem_ReadWithoutInterception;
 		pInterceptWriteTable[addr - 0xff8000] = IoMem_WriteWithoutInterception;
+	}
+
+	/* The Mega-STE has a Z85C30 SCC serial port, too: */
+	for (addr = 0xff8c80; addr <= 0xff8c87; addr++)
+	{
+		pInterceptReadTable[addr - 0xff8000] = SCC_IoMem_ReadByte;
+		pInterceptWriteTable[addr - 0xff8000] = SCC_IoMem_WriteByte;
 	}
 }
 
