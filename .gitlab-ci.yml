@@ -31,7 +31,7 @@ build-32bit:
 build-clang:
  script:
  - apt-get install -y -qq cmake clang libsdl2-dev libpng-dev zlib1g-dev
-                      libudev-dev portaudio19-dev libportmidi-dev
+                      libudev-dev portaudio19-dev libportmidi-dev tidy
  - CC="clang" CFLAGS="-O3 -Werror" ./configure
  - make
  - make test
