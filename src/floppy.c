@@ -42,6 +42,7 @@ const char Floppy_fileid[] = "Hatari floppy.c : " __DATE__ " " __TIME__;
 #include "floppy_stx.h"
 #include "zip.h"
 #include "screen.h"
+#include "str.h"
 #include "video.h"
 #include "fdc.h"
 
@@ -410,7 +411,8 @@ const char* Floppy_SetDiskFileName(int Drive, const char *pszFileName, const cha
 		strcpy(ConfigureParams.DiskImage.szDiskZipPath[Drive], pszZipPath);
 	else
 		ConfigureParams.DiskImage.szDiskZipPath[Drive][0] = '\0';
-	strcpy(ConfigureParams.DiskImage.szDiskFileName[Drive], filename);
+	strlcpy(ConfigureParams.DiskImage.szDiskFileName[Drive], filename,
+	        sizeof(ConfigureParams.DiskImage.szDiskFileName[Drive]));
 	free(filename);
 	//File_MakeAbsoluteName(ConfigureParams.DiskImage.szDiskFileName[Drive]);
 	return ConfigureParams.DiskImage.szDiskFileName[Drive];
