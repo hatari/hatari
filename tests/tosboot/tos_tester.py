@@ -411,23 +411,21 @@ For example:
 
 # -----------------------------------------------
 def verify_file_match(srcfile, dstfile):
-    "return error string if given files are not identical"
+    "return error string if sizes of given files don't match"
     if not os.path.exists(dstfile):
         return "file '%s' missing" % dstfile
-    i = 0
-    f2 = open(srcfile)
-    for line in open(dstfile).readlines():
-        i += 1
-        if line != f2.readline():
-            return "file '%s' line %d doesn't match file '%s'" % (dstfile, i, srcfile)
+    dstsize = os.stat(dstfile).st_size
+    srcsize = os.stat(srcfile).st_size
+    if dstsize != srcsize:
+        return "file '%s' size %d doesn't match file '%s' size %d" % (srcfile, srcsize, dstfile, dstsize)
 
-def verify_file_empty(srcfile):
+def verify_file_empty(filename):
     "return error string if given file isn't empty"
-    if not os.path.exists(srcfile):
-        return "file '%s' missing" % srcfile
-    lines = len(open(srcfile).readlines())
-    if lines > 0:
-        return "file '%s' isn't empty (%d lines)" % (srcfile, lines)
+    if not os.path.exists(filename):
+        return "file '%s' missing" % filename
+    size = os.stat(filename).st_size
+    if size != 0:
+        return "file '%s' isn't empty (%d bytes)" % (filename, size)
 
 class Tester:
     "test driver class"
@@ -558,25 +556,25 @@ class Tester:
 
     def wait_fifo(self, fifo, timeout):
         "wait_fifo(fifo) -> wait until fifo has input until given timeout"
-        print("Waiting %ss for fifo '%s' input..." % (timeout, self.fifofile))
+        print("Waiting %ss for FIFO '%s' input..." % (timeout, self.fifofile))
         sets = select.select([fifo], [], [], timeout)
         if sets[0]:
-            print("...test program is READY, read what's in its fifo...")
+            print("...test program is READY, read its FIFO for test-case results:")
             try:
                 # read can block, make sure it's eventually interrupted
                 signal.alarm(timeout)
                 line = fifo.readline().strip()
                 signal.alarm(0)
-                print(line)
+                print("=> %s" % line)
                 return (True, (line == "success"))
             except IOError:
                 pass
-        print("ERROR: TIMEOUT without fifo input, BOOT FAILED")
+        print("ERROR: TIMEOUT without FIFO input, BOOT FAILED")
         return (False, False)
 
 
     def open_fifo(self, timeout):
-        "open fifo for test program output"
+        "open FIFO for test program output"
         try:
             signal.alarm(timeout)
             # open returns after Hatari has opened the other
@@ -586,7 +584,7 @@ class Tester:
             signal.alarm(0)
             return fifo
         except IOError:
-            print("ERROR: fifo open IOError!")
+            print("ERROR: FIFO open IOError!")
             return None
 
     def test(self, identity, testargs, tos, memory):
@@ -595,7 +593,7 @@ class Tester:
         instance = hconsole.Main(self.defaults + testargs, False)
         fifo = self.open_fifo(tos.fullwait)
         if not fifo:
-            print("ERROR: failed to get fifo to Hatari!")
+            print("ERROR: failed to get FIFO to Hatari!")
             self.get_screenshot(instance, identity)
             instance.run("kill")
             return (False, False, False, False)
@@ -612,7 +610,6 @@ class Tester:
         if tests_ok:
             output_ok = self.verify_output(identity, tos, memory)
         else:
-            print("TODO: collect info on failure, regs etc")
             output_ok = False
 
         # get screenshot after a small wait (to guarantee all
