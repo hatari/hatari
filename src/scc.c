@@ -40,9 +40,9 @@
 #include <errno.h>
 
 #include "configuration.h"
-#include "sysdeps.h"
 #include "ioMem.h"
 #include "log.h"
+#include "memorySnapShot.h"
 #include "scc.h"
 
 #if 0
@@ -52,6 +52,10 @@
 #define bug(...)
 #define D(x)
 #endif
+
+#define RCA 0
+#define TBE 2
+#define CTS 5
 
 static int active_reg;
 static int scc_regs[32];
@@ -104,6 +108,17 @@ void SCC_UnInit(void)
 		close(handle);
 		handle = -1;
 	}
+}
+
+void SCC_MemorySnapShot_Capture(bool bSave)
+{
+	MemorySnapShot_Store(&active_reg, sizeof(active_reg));
+	MemorySnapShot_Store(scc_regs, sizeof(scc_regs));
+	MemorySnapShot_Store(&RR3, sizeof(RR3));
+	MemorySnapShot_Store(&RR3M, sizeof(RR3M));
+	MemorySnapShot_Store(&charcount, sizeof(charcount));
+	MemorySnapShot_Store(&oldTBE, sizeof(oldTBE));
+	MemorySnapShot_Store(&oldStatus, sizeof(oldStatus));
 }
 
 static void SCC_channelAreset(void)

@@ -10,12 +10,9 @@
 #ifndef SCC_H
 #define SCC_H
 
-#define RCA 0
-#define TBE 2
-#define CTS 5
-
 void SCC_Init(void);
 void SCC_UnInit(void);
+void SCC_MemorySnapShot_Capture(bool bSave);
 void SCC_Reset(void);
 void SCC_IRQ(void);
 int SCC_doInterrupt(void);

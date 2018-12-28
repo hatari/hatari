@@ -44,6 +44,7 @@ const char MemorySnapShot_fileid[] = "Hatari memorySnapShot.c : " __DATE__ " " _
 #include "midi.h"
 #include "psg.h"
 #include "reset.h"
+#include "scc.h"
 #include "sound.h"
 #include "str.h"
 #include "stMemory.h"
@@ -372,6 +373,7 @@ void MemorySnapShot_Capture_Do(void)
 		DebugUI_MemorySnapShot_Capture(Temp_FileName, true);
 		IoMem_MemorySnapShot_Capture(true);
 		ScreenConv_MemorySnapShot_Capture(true);
+		SCC_MemorySnapShot_Capture(true);
 
 		/* end marker */
 		MemorySnapShot_Store(&magic, sizeof(magic));
@@ -469,6 +471,7 @@ void MemorySnapShot_Restore_Do(void)
 		DebugUI_MemorySnapShot_Capture(Temp_FileName, false);
 		IoMem_MemorySnapShot_Capture(false);
 		ScreenConv_MemorySnapShot_Capture(false);
+		SCC_MemorySnapShot_Capture(false);
 
 		/* version string check catches release-to-release
 		 * state changes, bCaptureError catches too short

@@ -32,6 +32,7 @@ const char Change_fileid[] = "Hatari change.c : " __DATE__ " " __TIME__;
 #include "printer.h"
 #include "reset.h"
 #include "rs232.h"
+#include "scc.h"
 #include "screen.h"
 #include "sound.h"
 #include "statusbar.h"
@@ -236,6 +237,14 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 		RS232_UnInit();
 	}
 
+	/* Did set new SCC parameters? */
+	if (changed->RS232.bEnableSccB != current->RS232.bEnableSccB
+	    || strcmp(changed->RS232.sSccBFileName, current->RS232.sSccBFileName))
+	{
+		Dprintf("- SCC>\n");
+		SCC_UnInit();
+	}
+
 	/* Did stop sound? Or change playback Hz. If so, also stop sound recording */
 	if (!changed->Sound.bEnableSound || changed->Sound.nPlaybackFreq != current->Sound.nPlaybackFreq)
 	{
@@ -430,6 +439,13 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	{
 		Dprintf("- RS-232<\n");
 		RS232_Init();
+	}
+
+	/* Re-initialize the SCC emulation: */
+	if (ConfigureParams.RS232.bEnableSccB)
+	{
+		Dprintf("- SCC<\n");
+		SCC_Init();
 	}
 
 	/* Re-init IO memory map? */
