@@ -58,6 +58,11 @@ def warning(msg):
     "output warning message"
     sys.stderr.write("WARNING: %s\n" % msg)
 
+def error_exit(msg):
+    "output error and exit"
+    sys.stderr.write("ERROR: %s\n" % msg)
+    sys.exit(1)
+
 
 # -----------------------------------------------
 class TOS:
@@ -304,7 +309,7 @@ For example:
 \t--memsizes 0,4,14 \\
 \t--ttrams 0,32 \\
 \t--graphics mono,rgb \\
-\t-bool --compatible,--rtc
+\t--bool --compatible,--mmu
 """ % (name, self.all_disks, self.all_graphics, self.all_machines, self.all_memsizes, self.ttrams, name))
         if msg:
             print("ERROR: %s\n" % msg)
@@ -378,6 +383,32 @@ For example:
             raise AssertionError("unknown machine %s" % machine)
         return False
 
+    def validate_bools(self, winuae):
+        "exit with error if given bool option is invalid"
+        # Several bool options are left out of these lists, either because
+        # they can be problematic for running of the tests themselves, or
+        # they should have no impact on emulation, only emulator.
+        #
+        # Below ones should be potentially relevant ones to test
+        # (EmuTOS supports NatFeats so it can have impact too)
+        generic_opts = ("--compatible", "--timer-d", "--fastfdc", "--fast-boot", "--natfeats")
+        winuae_opts = ("--cpu-exact", "--mmu", "--addr24", "--fpu-softfloat")
+        for option in self.bools:
+            if option not in generic_opts:
+                if option not in winuae_opts:
+                    if winuae:
+                        error_exit("bool option '%s' not in relevant options sets:\n\t%s\n\t%s" % (option, generic_opts, winuae_opts))
+                    else:
+                        error_exit("bool option '%s' not in relevant options set:\n\t%s" % (option, generic_opts))
+                elif not winuae:
+                    error_exit("bool option '%s' is supported only by WinUAE CPU core" % option)
+
+    def valid_bool(self, machine, option):
+        "return True if given bool option is relevant to test"
+        if option in ("--mmu", "--addr24") and machine not in ("tt", "falcon"):
+            # MMU & 32-bit addressing are relevant only for 030
+            return False
+        return True
 
 # -----------------------------------------------
 def verify_file_match(srcfile, dstfile):
@@ -653,6 +684,8 @@ class Tester:
 
     def run(self, config):
         "run all TOS boot test combinations"
+        config.validate_bools(self.winuae)
+
         self.results = {}
         for tos in config.images:
             self.results[tos.name] = []
@@ -675,6 +708,8 @@ class Tester:
                                     continue
                                 if config.bools:
                                     for opt in config.bools:
+                                        if not config.valid_bool(machine, opt):
+                                            continue
                                         for val in ('on', 'off'):
                                             self.prepare_test(config, tos, machine, monitor, disk, memory, ttram, [opt, val])
                                             count += 1
@@ -702,7 +737,7 @@ class Tester:
             report.write("\n+ %s:\n" % tos)
             for config, results in configs:
                 # convert True/False bools to FAIL/pass strings
-                values = [("FAIL","pass")[int(r)] for r in results]
+                values = [("FAIL", "pass")[int(r)] for r in results]
                 report.write("  - %s: %s\n" % (config, values))
                 # update statistics
                 for idx in range(len(results)):
