@@ -383,21 +383,21 @@ static void HDC_Cmd_ModeSense(SCSI_CTRLR *ctr)
 
 	dev->bSetLastBlockAddr = false;
 
-        switch(ctr->command[2])
-        {
-        case 0x00:
-            HDC_CmdModeSense0x00(dev, ctr);
-            break;
+	switch(ctr->command[2])
+	{
+	 case 0x00:
+		HDC_CmdModeSense0x00(dev, ctr);
+		break;
 
-        case 0x04:
-            HDC_CmdModeSense0x04(dev, ctr);
-            break;
+	 case 0x04:
+		HDC_CmdModeSense0x04(dev, ctr);
+		break;
 
-        default:
-            Log_Printf(LOG_TODO, "HDC: Unsupported MODE SENSE command\n");
-            ctr->status = HD_STATUS_ERROR;
-            dev->nLastError = HD_REQSENS_INVARG;
-            return;
+	 default:
+		Log_Printf(LOG_TODO, "HDC: Unsupported MODE SENSE command\n");
+		ctr->status = HD_STATUS_ERROR;
+		dev->nLastError = HD_REQSENS_INVARG;
+		return;
 	}
 
 	ctr->status = HD_STATUS_OK;
@@ -805,8 +805,7 @@ off_t HDC_CheckAndGetSize(const char *filename, unsigned long blockSize)
 	{
 		Log_AlertDlg(LOG_ERROR, "Can not use the hard disk image file\n"
 		                        "'%s'\nsince its size is not a multiple"
-		                        " of %ld.",
-                            shortname, blockSize);
+		                        " of %ld.", shortname, blockSize);
 		return -EINVAL;
 	}
 
