@@ -4,7 +4,7 @@
                                 Release Notes
 
 
- Version 2.2.0 (2018-XX-XX)
+ Version 2.2.0 (2019-XX-XX)
  ---------------------------
 
 Note:
@@ -118,6 +118,7 @@ Tools:
   - Fix program argument setting for recent EmuTOS versions
   - Support argument setting also for programs run
     from disk images
+- Fix TOS bootup tester test output verification
 - Few additional tests for validating Hatari functionality.
   Almost all tests are now integrated with CTest framework.
   Use e.g. "ctest -j4" command to run them
