@@ -82,8 +82,7 @@ void SCC_Init(void)
 		return;
 	}
 
-	handle = open(ConfigureParams.RS232.sSccBFileName,
-	              O_RDWR | O_NDELAY | O_NONBLOCK);      /* Raw mode */
+	handle = open(ConfigureParams.RS232.sSccBFileName, O_RDWR | O_NDELAY);
 	if (handle >= 0)
 	{
 #if HAVE_TERMIOS_H
@@ -104,7 +103,6 @@ void SCC_UnInit(void)
 	D(bug("SCC: interface destroyed\n"));
 	if (handle >= 0)
 	{
-		fcntl(handle, F_SETFL, 0);  // back to (almost...) normal
 		close(handle);
 		handle = -1;
 	}
@@ -243,7 +241,7 @@ static void SCC_serial_setBaud(int value)
 #endif
 }
 
-static uint16_t SCC_getTBE(void) // not suited to serial USB
+static inline uint16_t SCC_getTBE(void) // not suited to serial USB
 {
 	uint16_t value = 0;
 
@@ -271,11 +269,12 @@ static uint16_t SCC_getTBE(void) // not suited to serial USB
 static uint16_t SCC_serial_getStatus(void)
 {
 	uint16_t value = 0;
-	int status = 0;
 	uint16_t diff;
-	int nbchar = 0;
 
 #if defined(HAVE_SYS_IOCTL_H) && defined(TIOCMGET)
+	int status = 0;
+	int nbchar = 0;
+
 	if (handle >= 0 && bFileHandleIsATTY)
 	{
 		if (ioctl(handle, FIONREAD, &nbchar) < 0)
