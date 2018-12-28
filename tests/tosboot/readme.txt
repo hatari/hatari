@@ -67,17 +67,17 @@ What TOS tester tests
 These are the HW configuration combinations that TOS tester currently
 supports:
 
-* ST, STE, TT and Falcon machine types
+* ST, MegaST, STE, MegaSTE, TT and Falcon machine types
 
-  EmuTOS 512k is tested for all the machine types.  EmuTOS 192k, 256k
-  and TOS v2.x are tested with all machine types except Falcon. Rest
-  of TOSes are tested only with a single machine type.
+  EmuTOS 512k is tested for all the machine types.  EmuTOS 256k and
+  TOS v2.x are tested with all machine types except TT / Falcon.
+  Rest of TOSes are tested only with a single machine type.
 
 * TV, VGA, RGB and monochrome monitors and 1, 2 & 4 plane VDI modes
 
 * Different amounts of ST-RAM from 0 (0.5MB) to 14MB
 
-* Different amounts of TT-RAM from 0 to 256MB
+* Different amounts of TT-RAM from 0 to 512MB
 
 * With and without GEMDOS harddisk directory emulation
 
@@ -88,7 +88,7 @@ supports:
   test program which doesn't change the floppy content (to avoid its
   repository file update).
 
-* ACSI and IDE interface testing with EmuTOS
+* ACSI, IDE and SCSI interface testing with EmuTOS
 
 * Arbitrary boolean Hatari command line options specified
   with the "--bool" option
@@ -121,13 +121,14 @@ Memory configurations:
   TT:     2 & 10 MB ST-RAM, 0 & 32 MB TT-RAM
   Falcon: 4 & 14 MB ST-RAM, 0 & 32 MB TT-RAM
 
-And both with GEMDOS HD and just floppy.  For EmuTOS, also IDE & ACSI.
+And both with GEMDOS HD and just floppy.  For EmuTOS, also ACSI (with
+ST/STe/TT), IDE (with Falcon) and SCSI (with Falcon/TT).
 
 Testing should be done both for old UAE CPU core and the new WinUAE
 one.  This should give good enough coverage of all the possible bootup
 issues.
 
-Note that it's enought to give the whole set of HW configurations to
+Note that it's enough to give the whole set of HW configurations to
 TOS tester, it will automatically select a suitable subset of HW
 combinations to test, for each given TOS versions.
 
@@ -146,8 +147,8 @@ But only if all TOS versions support that properly.
 
 -
 
-Add testing of ASCI and IDE drives with normal TOS in addition to the
-GEMDOS HD and floppy tests.
+Add testing of ASCI, IDE and SCSI drives with normal TOS in addition
+to the GEMDOS HD and floppy tests.
 
 This isn't very straightforward because both need different drivers
 and therefore different disk images and the drivers either have issues
@@ -155,9 +156,9 @@ with e.g. EmuTOS, or don't support all machines.  Formatting and
 installing the drivers requires using interactive Atari programs,
 so these images cannot be automatically (re-)generated.
 
-(EmuTOS supports IDE and ACSI directly, without any need for drivers.
-Both HDs with DOS (not Atari) partition table, and ones without
-partition table at all.  That's why it can be already tested.)
+(EmuTOS supports ACSI, IDE and SCSI directly, without any need for
+drivers. Both HDs with DOS (not Atari) partition table, and ones
+without partition table at all.  That's why it can be already tested.)
 
 -
 

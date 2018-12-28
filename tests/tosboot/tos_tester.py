@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2012-2017 by Eero Tamminen <oak at helsinkinet fi>
+# Copyright (C) 2012-2018 by Eero Tamminen <oak at helsinkinet fi>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -118,23 +118,24 @@ class TOS:
             # EmuTOS 512k, 256k and 192k versions have different machine support
             if size == 512:
                 # startup screen on falcon 14MB is really slow
-                info = (5, 10, ("st", "ste", "tt", "falcon"))
+                info = (5, 10, ("st", "megast", "ste", "megaste", "tt", "falcon"))
             elif size == 256:
-                info = (2, 8, ("st", "ste", "tt"))
+                info = (2, 8, ("st", "megast", "ste", "megaste"))
             elif size == 192:
-                info = (0, 6, ("st",))
+                info = (0, 6, ("st", "megast"))
             else:
                 raise AssertionError("'%s' image size %dkB isn't valid for EmuTOS" % (name, size))
+        # https://en.wikipedia.org/wiki/Atari_TOS
         elif version <= 0x100:
             # boots up really slow with 4MB
             info = (0, 16, ("st",))
         elif version <= 0x104:
-            info = (0, 6, ("st",))
+            info = (0, 6, ("st", "megast"))
         elif version < 0x200:
             info = (0, 6, ("ste",))
         elif version < 0x300:
-            # are slower with VDI mode than others
-            info = (2, 8, ("st", "ste", "tt"))
+            # TOS v2.x are slower with VDI mode than others
+            info = (2, 8, ("st", "megast", "ste", "megaste"))
         elif version < 0x400:
             # memcheck comes up fast, but boot takes time
             info = (2, 8, ("tt",))
@@ -155,14 +156,14 @@ class TOS:
 
     def supports_gemdos_hd(self):
         "whether TOS version supports Hatari's GEMDOS HD emulation"
-        return (self.version >= 0x0104)
+        return self.version >= 0x0104
 
     def supports_hdinterface(self, hdinterface):
         "whether TOS version supports monitor that is valid for given machine"
         # EmuTOS doesn't require drivers to access DOS formatted disks
         if self.etos:
-            # NOTE: IDE support is in EmuTOS since 0.9.0
-            if hdinterface == "ide" and self.size == 192:
+            # IDE support is in EmuTOS since 0.9.0, SCSI since 0.9.10
+            if hdinterface != "acsi" and self.size < 512:
                 return False
             return True
         # As ACSI (big endian) and IDE (little endian) images would require
@@ -206,17 +207,17 @@ def validate(args, full):
 class Config:
     "Test configuration and validator class"
     # full set of possible options
-    all_disks = ("floppy", "gemdos", "acsi", "ide")
+    all_disks = ("floppy", "gemdos", "acsi", "ide", "scsi")
     all_graphics = ("mono", "rgb", "vga", "tv", "vdi1", "vdi2", "vdi4")
-    all_machines = ("st", "ste", "tt", "falcon")
+    all_machines = ("st", "megast", "ste", "megaste", "tt", "falcon")
     all_memsizes = (0, 1, 2, 4, 6, 8, 10, 12, 14)
 
     # defaults
     fast = False
     bools = []
-    disks = ("floppy", "gemdos")
+    disks = ("floppy", "gemdos", "scsi")
     graphics = ("mono", "rgb", "vga", "vdi1", "vdi4")
-    machines = ("st", "ste", "tt", "falcon")
+    machines = ("st", "ste", "megaste", "tt", "falcon")
     memsizes = (0, 4, 14)
     ttrams = (0, 32)
 
@@ -274,8 +275,8 @@ class Config:
                 except ValueError:
                     self.usage("non-numeric TT-RAM sizes: %s" % arg)
                 for ram in args:
-                    if ram < 0 or ram > 256:
-                        self.usage("invalid TT-RAM (0-256) size: %d" % ram)
+                    if ram < 0 or ram > 512:
+                        self.usage("invalid TT-RAM (0-512) size: %d" % ram)
                 self.ttrams = args
             if unknown:
                 self.usage("%s are invalid values for %s" % (list(unknown), opt))
@@ -323,24 +324,22 @@ For example:
         if disktype == "gemdos":
             return tos.supports_gemdos_hd()
 
-        if machine in ("st", "ste"):
-            hdinterface = "acsi"
-        elif machine == "tt":
-            # TODO: according to todo.txt, Hatari ACSI emulation
-            # doesn't currently work for TT
-            hdinterface = "acsi"
+        if machine in ("st", "megast", "ste"):
+            hdinterface = ("acsi",)
+        elif machine in ("megaste", "tt"):
+            hdinterface = ("acsi", "scsi")
         elif machine == "falcon":
-            hdinterface = "ide"
+            hdinterface = ("ide", "scsi")
         else:
             raise AssertionError("unknown machine %s" % machine)
 
         if disktype in hdinterface:
-            return tos.supports_hdinterface(hdinterface)
+            return tos.supports_hdinterface(disktype)
         return False
 
     def valid_monitortype(self, machine, tos, monitortype):
         "return whether given monitor type is valid for given machine / TOS version"
-        if machine in ("st", "ste"):
+        if machine in ("st", "megast", "ste", "megaste"):
             monitors = ("mono", "rgb", "tv", "vdi1", "vdi2", "vdi4")
         elif machine == "tt":
             monitors = ("mono", "vga", "vdi1", "vdi2", "vdi4")
@@ -354,7 +353,7 @@ For example:
 
     def valid_memsize(self, machine, memsize):
         "return whether given memory size is valid for given machine"
-        if machine in ("st", "ste"):
+        if machine in ("st", "megast", "ste", "megaste"):
             sizes = (0, 1, 2, 4)
         elif machine in ("tt", "falcon"):
             # 0 (512kB) isn't valid memory size for Falcon/TT
@@ -367,7 +366,7 @@ For example:
 
     def valid_ttram(self, machine, tos, ttram, winuae):
         "return whether given TT-RAM size is valid for given machine"
-        if machine in ("st", "ste"):
+        if machine in ("st", "megast", "ste", "megaste"):
             if ttram == 0:
                 return True
         elif machine in ("tt", "falcon"):
@@ -376,7 +375,7 @@ For example:
             if not winuae:
                 warning("TT-RAM / 32-bit addressing is supported only by Hatari WinUAE CPU core version")
                 return False
-            if ttram < 0 or ttram > 256:
+            if ttram < 0 or ttram > 512:
                 return False
             return tos.supports_32bit_addressing()
         else:
@@ -673,7 +672,9 @@ class Tester:
             else:
                 testargs += ["--disk-a", self.bootauto]
         elif disk == "acsi":
-            testargs += ["--acsi", self.hdimage, "--auto", self.hdprg]
+            testargs += ["--acsi", "0=%s" % self.hdimage, "--auto", self.hdprg]
+        elif disk == "scsi":
+            testargs += ["--scsi", "0=%s" % self.hdimage, "--auto", self.hdprg]
         elif disk == "ide":
             testargs += ["--ide-master", self.ideimage, "--auto", self.hdprg]
         else:
