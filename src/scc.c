@@ -53,6 +53,14 @@
 #define D(x)
 #endif
 
+#ifndef O_NONBLOCK
+# ifdef O_NDELAY
+#  define O_NONBLOCK O_NDELAY
+# else
+#  define O_NONBLOCK 0
+# endif
+#endif
+
 #define RCA 0
 #define TBE 2
 #define CTS 5
@@ -92,7 +100,7 @@ void SCC_Init(void)
 	    || !SCC_IsAvailable(&ConfigureParams))
 		return;
 
-	scc[1].handle = open(ConfigureParams.RS232.sSccBFileName, O_RDWR | O_NDELAY);
+	scc[1].handle = open(ConfigureParams.RS232.sSccBFileName, O_RDWR | O_NONBLOCK);
 	if (scc[1].handle >= 0)
 	{
 #if HAVE_TERMIOS_H
