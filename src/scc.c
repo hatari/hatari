@@ -309,6 +309,12 @@ static uint16_t SCC_serial_getStatus(void)
 		 * and Transmit-Buffer-Empty: */
 		value |= (1 << CTS) | (1 << TBE);
 	}
+	else if (handle < 0)
+	{
+		/* If not connected, signal transmit-buffer-empty anyway to
+		 * avoid that the program blocks while polling this bit */
+		value |= (1 << TBE);
+	}
 
 	diff = oldStatus ^ value;
 	if (diff & (1 << CTS))
