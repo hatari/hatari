@@ -57,15 +57,19 @@
 #define TBE 2
 #define CTS 5
 
-static int active_reg;
-static int scc_regs[32];
-static uint8_t RR3, RR3M;    // common to channel A & B
+struct SCC {
+	uint8_t regs[16];
+	int charcount;
+	int handle;
+	uint16_t oldTBE;
+	uint16_t oldStatus;
+	bool bFileHandleIsATTY;
+};
 
-static int charcount;
-static int handle = -1;
-static uint16_t oldTBE;
-static uint16_t oldStatus;
-static bool bFileHandleIsATTY;
+static struct SCC scc[2];
+
+static int active_reg;
+static uint8_t RR3, RR3M;    // common to channel A & B
 
 bool SCC_IsAvailable(CNF_PARAMS *cnf)
 {
@@ -78,25 +82,23 @@ void SCC_Init(void)
 {
 	SCC_Reset();
 
-	oldTBE = 0;
-	oldStatus = 0;
+	scc[0].oldTBE = scc[1].oldTBE = 0;
+	scc[0].oldStatus = scc[1].oldStatus = 0;
+	scc[0].handle = scc[1].handle = -1;
 
 	D(bug("SCC: interface initialized\n"));
 
 	if (!ConfigureParams.RS232.bEnableSccB || !ConfigureParams.RS232.sSccBFileName[0]
 	    || !SCC_IsAvailable(&ConfigureParams))
-	{
-		handle = -1;
 		return;
-	}
 
-	handle = open(ConfigureParams.RS232.sSccBFileName, O_RDWR | O_NDELAY);
-	if (handle >= 0)
+	scc[1].handle = open(ConfigureParams.RS232.sSccBFileName, O_RDWR | O_NDELAY);
+	if (scc[1].handle >= 0)
 	{
 #if HAVE_TERMIOS_H
-		bFileHandleIsATTY = isatty(handle);
+		scc[1].bFileHandleIsATTY = isatty(scc[1].handle);
 #else
-		bFileHandleIsATTY = false;
+		scc[1].bFileHandleIsATTY = false;
 #endif
 	}
 	else
@@ -109,55 +111,59 @@ void SCC_Init(void)
 void SCC_UnInit(void)
 {
 	D(bug("SCC: interface destroyed\n"));
-	if (handle >= 0)
+	if (scc[1].handle >= 0)
 	{
-		close(handle);
-		handle = -1;
+		close(scc[1].handle);
+		scc[1].handle = -1;
 	}
 }
 
 void SCC_MemorySnapShot_Capture(bool bSave)
 {
 	MemorySnapShot_Store(&active_reg, sizeof(active_reg));
-	MemorySnapShot_Store(scc_regs, sizeof(scc_regs));
 	MemorySnapShot_Store(&RR3, sizeof(RR3));
 	MemorySnapShot_Store(&RR3M, sizeof(RR3M));
-	MemorySnapShot_Store(&charcount, sizeof(charcount));
-	MemorySnapShot_Store(&oldTBE, sizeof(oldTBE));
-	MemorySnapShot_Store(&oldStatus, sizeof(oldStatus));
+	for (int c = 0; c < 2; c++)
+	{
+		MemorySnapShot_Store(scc[c].regs, sizeof(scc[c].regs));
+		MemorySnapShot_Store(&scc[c].charcount, sizeof(scc[c].charcount));
+		MemorySnapShot_Store(&scc[c].oldTBE, sizeof(scc[c].oldTBE));
+		MemorySnapShot_Store(&scc[c].oldStatus, sizeof(scc[c].oldStatus));
+	}
 }
 
 static void SCC_channelAreset(void)
 {
-	scc_regs[15] = 0xF8;
-	scc_regs[14] = 0xA0;
-	scc_regs[11] = 0x08;
-	scc_regs[9] = 0;
+	scc[0].regs[15] = 0xF8;
+	scc[0].regs[14] = 0xA0;
+	scc[0].regs[11] = 0x08;
+	scc[0].regs[9] = 0;
 	RR3 &= ~0x38;
 	RR3M &= ~0x38;
-	scc_regs[0] = 1<<TBE; //RR0A
+	scc[0].regs[0] = 1 << TBE;  // RR0A
 }
 
 static void SCC_channelBreset(void)
 {
-	scc_regs[15+16] = 0xF8;
-	scc_regs[14+16] = 0xA0;
-	scc_regs[11+16] = 0x08;
-	scc_regs[9] = 0; //single WR9
+	scc[1].regs[15] = 0xF8;
+	scc[1].regs[14] = 0xA0;
+	scc[1].regs[11] = 0x08;
+	scc[0].regs[9] = 0;         // single WR9
 	RR3 &= ~7;
 	RR3M &= ~7;
-	scc_regs[16] = 1<<TBE; //RR0B
+	scc[1].regs[0] = 1 << TBE;  // RR0B
 }
 
 void SCC_Reset()
 {
 	active_reg = 0;
-	memset(scc_regs, 0, sizeof(scc_regs));
+	memset(scc[0].regs, 0, sizeof(scc[0].regs));
+	memset(scc[1].regs, 0, sizeof(scc[1].regs));
 	SCC_channelAreset();
 	SCC_channelBreset();
 	RR3 = 0;
 	RR3M = 0;
-	charcount = 0;
+	scc[0].charcount = scc[1].charcount = 0;
 }
 
 static void TriggerSCC(bool enable)
@@ -168,15 +174,15 @@ static void TriggerSCC(bool enable)
 	}
 }
 
-static uint8_t SCC_serial_getData(void)
+static uint8_t SCC_serial_getData(int channel)
 {
 	uint8_t value = 0;
 	int nb;
 
 	D(bug("SCC: getData\n"));
-	if (handle >= 0)
+	if (scc[channel].handle >= 0)
 	{
-		nb = read(handle, &value, 1);
+		nb = read(scc[channel].handle, &value, 1);
 		if (nb < 0)
 		{
 			D(bug("SCC: impossible to get data\n"));
@@ -185,21 +191,21 @@ static uint8_t SCC_serial_getData(void)
 	return value;
 }
 
-static void SCC_serial_setData(uint8_t value)
+static void SCC_serial_setData(int channel, uint8_t value)
 {
 	int nb;
 
 	D(bug("SCC: setData\n"));
-	if (handle >= 0)
+	if (scc[channel].handle >= 0)
 	{
 		do
 		{
-			nb = write(handle, &value, 1);
+			nb = write(scc[channel].handle, &value, 1);
 		} while (nb < 0 && (errno == EAGAIN || errno == EINTR));
 	}
 }
 
-static void SCC_serial_setBaud(int value)
+static void SCC_serial_setBaud(int channel, int value)
 {
 #if HAVE_TERMIOS_H
 	struct termios options;
@@ -207,7 +213,7 @@ static void SCC_serial_setBaud(int value)
 
 	D(bug("SCC: setBaud %i\n", value));
 
-	if (handle < 0)
+	if (scc[channel].handle < 0)
 		return;
 
 	switch (value)
@@ -236,7 +242,7 @@ static void SCC_serial_setBaud(int value)
 	if (new_speed == B0)
 		return;
 
-	tcgetattr(handle, &options);
+	tcgetattr(scc[channel].handle, &options);
 
 	cfsetispeed(&options, new_speed);
 	cfsetospeed(&options, new_speed);
@@ -245,17 +251,17 @@ static void SCC_serial_setBaud(int value)
 	options.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG); // raw input
 	options.c_iflag &= ~(ICRNL); // CR is not CR+LF
 
-	tcsetattr(handle, TCSANOW, &options);
+	tcsetattr(scc[channel].handle, TCSANOW, &options);
 #endif
 }
 
-static inline uint16_t SCC_getTBE(void) // not suited to serial USB
+static inline uint16_t SCC_getTBE(int chn)
 {
 	uint16_t value = 0;
 
 #if defined(HAVE_SYS_IOCTL_H) && defined(TIOCSERGETLSR) && defined(TIOCSER_TEMT)
 	int status = 0;
-	if (ioctl(handle, TIOCSERGETLSR, &status) < 0)  // OK with ttyS0, not OK with ttyUSB0
+	if (ioctl(scc[chn].handle, TIOCSERGETLSR, &status) < 0)  // OK with ttyS0, not OK with ttyUSB0
 	{
 		// D(bug("SCC: Can't get LSR"));
 		value |= (1<<TBE);   // only for serial USB
@@ -263,18 +269,18 @@ static inline uint16_t SCC_getTBE(void) // not suited to serial USB
 	else if (status & TIOCSER_TEMT)
 	{
 		value = (1 << TBE);  // this is a real TBE for ttyS0
-		if ((oldTBE & (1 << TBE)) == 0)
+		if ((scc[chn].oldTBE & (1 << TBE)) == 0)
 		{
 			value |= 0x200;
 		} // TBE rise=>TxIP (based on real TBE)
 	}
 #endif
 
-	oldTBE = value;
+	scc[chn].oldTBE = value;
 	return value;
 }
 
-static uint16_t SCC_serial_getStatus(void)
+static uint16_t SCC_serial_getStatus(int chn)
 {
 	uint16_t value = 0;
 	uint16_t diff;
@@ -283,18 +289,18 @@ static uint16_t SCC_serial_getStatus(void)
 	int status = 0;
 	int nbchar = 0;
 
-	if (handle >= 0 && bFileHandleIsATTY)
+	if (scc[chn].handle >= 0 && scc[chn].bFileHandleIsATTY)
 	{
-		if (ioctl(handle, FIONREAD, &nbchar) < 0)
+		if (ioctl(scc[chn].handle, FIONREAD, &nbchar) < 0)
 		{
 			D(bug("SCC: Can't get input fifo count\n"));
 		}
-		charcount = nbchar; // to optimize input (see UGLY in handleWrite)
+		scc[chn].charcount = nbchar; // to optimize input (see UGLY in handleWrite)
 		if (nbchar > 0)
 			value = 0x0401;  // RxIC+RBF
-		value |= SCC_getTBE();   // TxIC
+		value |= SCC_getTBE(chn); // TxIC
 		value |= (1 << TBE);  // fake TBE to optimize output (for ttyS0)
-		if (ioctl(handle, TIOCMGET, &status) < 0)
+		if (ioctl(scc[chn].handle, TIOCMGET, &status) < 0)
 		{
 			D(bug("SCC: Can't get status\n"));
 		}
@@ -303,37 +309,37 @@ static uint16_t SCC_serial_getStatus(void)
 	}
 #endif
 
-	if (handle >= 0 && !bFileHandleIsATTY)
+	if (scc[chn].handle >= 0 && !scc[chn].bFileHandleIsATTY)
 	{
 		/* Output is a normal file, thus always set Clear-To-Send
 		 * and Transmit-Buffer-Empty: */
 		value |= (1 << CTS) | (1 << TBE);
 	}
-	else if (handle < 0)
+	else if (scc[chn].handle < 0)
 	{
 		/* If not connected, signal transmit-buffer-empty anyway to
 		 * avoid that the program blocks while polling this bit */
 		value |= (1 << TBE);
 	}
 
-	diff = oldStatus ^ value;
+	diff = scc[chn].oldStatus ^ value;
 	if (diff & (1 << CTS))
 		value |= 0x100;  // ext status IC on CTS change
 
 	D(bug("SCC: getStatus 0x%04x\n", value));
 
-	oldStatus = value;
+	scc[chn].oldStatus = value;
 	return value;
 }
 
-static void SCC_serial_setRTS(bool value)
+static void SCC_serial_setRTS(int chn, bool value)
 {
 #if defined(HAVE_SYS_IOCTL_H) && defined(TIOCMGET)
 	int status = 0;
 
-	if (handle >= 0 && bFileHandleIsATTY)
+	if (scc[chn].handle >= 0 && scc[chn].bFileHandleIsATTY)
 	{
-		if (ioctl(handle, TIOCMGET, &status) < 0)
+		if (ioctl(scc[chn].handle, TIOCMGET, &status) < 0)
 		{
 			D(bug("SCC: Can't get status for RTS\n"));
 		}
@@ -341,19 +347,19 @@ static void SCC_serial_setRTS(bool value)
 			status |= TIOCM_RTS;
 		else
 			status &= ~TIOCM_RTS;
-		ioctl(handle, TIOCMSET, &status);
+		ioctl(scc[chn].handle, TIOCMSET, &status);
 	}
 #endif
 }
 
-static void SCC_serial_setDTR(bool value)
+static void SCC_serial_setDTR(int chn, bool value)
 {
 #if defined(HAVE_SYS_IOCTL_H) && defined(TIOCMGET)
 	int status = 0;
 
-	if (handle >= 0 && bFileHandleIsATTY)
+	if (scc[chn].handle >= 0 && scc[chn].bFileHandleIsATTY)
 	{
-		if (ioctl(handle, TIOCMGET, &status) < 0)
+		if (ioctl(scc[chn].handle, TIOCMGET, &status) < 0)
 		{
 			D(bug("SCC: Can't get status for DTR\n"));
 		}
@@ -361,41 +367,35 @@ static void SCC_serial_setDTR(bool value)
 			status |= TIOCM_DTR;
 		else
 			status &= ~TIOCM_DTR;
-		ioctl(handle, TIOCMSET, &status);
+		ioctl(scc[chn].handle, TIOCMSET, &status);
 	}
 #endif
 }
 
-static uint8_t SCC_ReadControl(int set2)
+static uint8_t SCC_ReadControl(int chn)
 {
 	uint8_t value = 0;
 	uint16_t temp;
 
 	switch (active_reg)
 	{
-	 case 0:
-		if (set2)	// RR0B
-		{
-			temp = SCC_serial_getStatus();	// only for channel B
-			scc_regs[16] = temp & 0xFF;	// define CTS(5), TBE(2) and RBF=RCA(0)
+	 case 0:	// RR0
+		temp = SCC_serial_getStatus(chn);
+		scc[chn].regs[0] = temp & 0xFF;		// define CTS(5), TBE(2) and RBF=RCA(0)
+		if (chn)
 			RR3 = RR3M & (temp >> 8);	// define RxIP(2), TxIP(1) and ExtIP(0)
-		}
-		else
-		{
-			scc_regs[0] = 4;
-			if (scc_regs[9] == 0x20)RR3 |= 0x8;
-		}
-
-		value = scc_regs[set2]; // not yet defined for channel A
+		else if (scc[0].regs[9] == 0x20)
+			RR3 |= 0x8;
+		value = scc[chn].regs[0];
 		break;
 	 case 2:	// not really useful (RR2 seems unaccessed...)
-		value = scc_regs[2];
-		if (set2 == 0)	// vector base only for RR2A
+		value = scc[0].regs[2];
+		if (chn == 0)	// vector base only for RR2A
 			break;
-		if ((scc_regs[9] & 1) == 0)	// no status bit added
+		if ((scc[0].regs[9] & 1) == 0)	// no status bit added
 			break;
 		// status bit added to vector
-		if (scc_regs[9] & 0x10) // modify high bits
+		if (scc[0].regs[9] & 0x10) // modify high bits
 		{
 			if (RR3 == 0)
 			{
@@ -461,28 +461,25 @@ static uint8_t SCC_ReadControl(int set2)
 		}
 		break;
 	 case 3:
-		value = (set2) ? 0 : RR3;     // access on A channel only
+		value = chn ? 0 : RR3;     // access on A channel only
 		break;
 	 case 4: // RR0
-		value = scc_regs[set2];
+		value = scc[chn].regs[0];
 		break;
 	 case 8: // DATA reg
-		if (set2)  // only channel B processed
-		{
-			scc_regs[8 + set2] = SCC_serial_getData();
-		}
-		value = scc_regs[8 + set2];
+		scc[chn].regs[8] = SCC_serial_getData(chn);
+		value = scc[chn].regs[8];
 		break;
-	 case 9: //WR13
-		value = scc_regs[13 + set2];
+	 case 9: // WR13
+		value = scc[chn].regs[13];
 		break;
 	 case 11: // WR15
 	 case 15: // EXT/STATUS IT Ctrl
-		value = scc_regs[15 + set2] &= 0xFA; // mask out D2 and D0
+		value = scc[chn].regs[15] &= 0xFA; // mask out D2 and D0
 		break;
 	 case 12: // BRG LSB
 	 case 13: // BRG MSB
-		value = scc_regs[active_reg + set2];
+		value = scc[chn].regs[active_reg];
 		break;
 
 	 default: // RR5,RR6,RR7,RR10,RR14 not processed
@@ -497,22 +494,20 @@ static uint8_t SCC_ReadControl(int set2)
 static uint8_t SCC_handleRead(uint32_t addr)
 {
 	uint8_t value = 0;
-	int set2;
+	int channel;
 
 	addr &= 0x6;
-	set2 = (addr >= 4) ? 16 : 0; //16=channel B
+	channel = (addr >= 4) ? 1 : 0;  // 0 = channel A, 1 = channel B
 	switch (addr)
 	{
 	 case 0: // channel A
 	 case 4: // channel B
-		value = SCC_ReadControl(set2);
+		value = SCC_ReadControl(channel);
 		break;
 	 case 2: // channel A
-		value = scc_regs[8]; // TBD (LAN)
-		break;
 	 case 6: // channel B
-		scc_regs[8 + 16] = SCC_serial_getData();
-		value = scc_regs[8 + 16];
+		scc[channel].regs[8] = SCC_serial_getData(channel);
+		value = scc[channel].regs[8];
 		break;
 	 default:
 		D(bug("scc : illegal read address=$%x\n", addr));
@@ -524,7 +519,7 @@ static uint8_t SCC_handleRead(uint32_t addr)
 	return value;
 }
 
-static void SCC_WriteControl(int set2, uint8_t value)
+static void SCC_WriteControl(int chn, uint8_t value)
 {
 	uint32_t BaudRate;
 	int i;
@@ -550,8 +545,8 @@ static void SCC_WriteControl(int set2, uint8_t value)
 				// tricky & ugly speed improvement for input
 				if (i == 4) // RxIP
 				{
-					charcount--;
-					if (charcount <= 0)
+					scc[chn].charcount--;
+					if (scc[chn].charcount <= 0)
 						RR3 &= ~4; // optimize input; don't reset RxIP when chars are buffered
 				}
 				else
@@ -564,14 +559,14 @@ static void SCC_WriteControl(int set2, uint8_t value)
 			}
 			else if ((value & 0x38) == 0x28) // Reset Tx int pending
 			{
-				if (set2)
+				if (chn)
 					RR3 &= ~2;       // channel B
 				else
 					RR3 &= ~0x10;    // channel A
 			}
 			else if ((value & 0x38) == 0x10) // Reset Ext/Status ints
 			{
-				if (set2)
+				if (chn)
 					RR3 &= ~1;       // channel B
 				else
 					RR3 &= ~8;       // channel A
@@ -579,26 +574,24 @@ static void SCC_WriteControl(int set2, uint8_t value)
 			// Clear SCC flag if no pending IT or no properly
 			// configured WR9. Must be done here to avoid
 			// scc_do_Interrupt call without pending IT
-			TriggerSCC((RR3 & RR3M) && ((0xB & scc_regs[9]) == 9));
+			TriggerSCC((RR3 & RR3M) && ((0xB & scc[0].regs[9]) == 9));
 		}
 		return;
 	}
 
 	// active_reg > 0:
-	scc_regs[active_reg + set2] = value;
+	scc[chn].regs[active_reg] = value;
 	if (active_reg == 2)
 	{
-		scc_regs[active_reg] = value; // single WR2 on SCC
+		scc[0].regs[active_reg] = value; // single WR2 on SCC
 	}
 	else if (active_reg == 8)
 	{
-		if (set2)
-			SCC_serial_setData(value); // channel B only
-		// channel A to be done if necessary
+		SCC_serial_setData(chn, value);
 	}
 	else if (active_reg == 1) // Tx/Rx interrupt enable
 	{
-		if (set2 == 0)
+		if (chn == 0)
 		{
 			// channel A
 			if (value & 1)
@@ -634,13 +627,13 @@ static void SCC_WriteControl(int set2, uint8_t value)
 	}
 	else if (active_reg == 5) // Transmit parameter and control
 	{
-		SCC_serial_setRTS(value & 2);
-		SCC_serial_setDTR(value & 128);
+		SCC_serial_setRTS(chn, value & 2);
+		SCC_serial_setDTR(chn, value & 128);
 		// Tx character format & Tx CRC would be selected also here (8 bits/char and no CRC assumed)
 	}
 	else if (active_reg == 9) // Master interrupt control (common for both channels)
 	{
-		scc_regs[9] = value;// single WR9 (accessible by both channels)
+		scc[0].regs[9] = value; // single WR9 (accessible by both channels)
 		if (value & 0x40)
 		{
 			SCC_channelBreset();
@@ -664,7 +657,7 @@ static void SCC_WriteControl(int set2, uint8_t value)
 		switch (value)
 		{
 		 case 0:
-			switch (scc_regs[12 + set2])
+			switch (scc[chn].regs[12])
 			{
 			 case 0: // HSMODEM for 200 mapped to 230400
 				BaudRate = 230400;
@@ -717,7 +710,7 @@ static void SCC_WriteControl(int set2, uint8_t value)
 			}
 			break;
 		 case 1:
-			switch (scc_regs[12 + set2])
+			switch (scc[chn].regs[12])
 			{
 			 case 0xa1: // normal for 600
 				BaudRate = 600;
@@ -728,39 +721,39 @@ static void SCC_WriteControl(int set2, uint8_t value)
 			}
 			break;
 		 case 2:
-			if (scc_regs[12 + set2] == 0xfe)
+			if (scc[chn].regs[12] == 0xfe)
 				BaudRate = 600; //HSMODEM
 			break;
 		 case 3:
-			if (scc_regs[12 + set2] == 0x45)
+			if (scc[chn].regs[12] == 0x45)
 				BaudRate = 300; //normal
 			break;
 		 case 4:
-			if (scc_regs[12 + set2] == 0xe8)
+			if (scc[chn].regs[12] == 0xe8)
 				BaudRate = 200; //normal
 			break;
 		 case 5:
-			if (scc_regs[12 + set2] == 0xfe)
+			if (scc[chn].regs[12] == 0xfe)
 				BaudRate = 300; //HSMODEM
 			break;
 		 case 6:
-			if (scc_regs[12 + set2] == 0x8c)
+			if (scc[chn].regs[12] == 0x8c)
 				BaudRate = 150; //normal
 			break;
 		 case 7:
-			if (scc_regs[12 + set2] == 0x4d)
+			if (scc[chn].regs[12] == 0x4d)
 				BaudRate = 134; //normal
 			break;
 		 case 8:
-			if (scc_regs[12 + set2] == 0xee)
+			if (scc[chn].regs[12] == 0xee)
 				BaudRate = 110; //normal
 			break;
 		 case 0xd:
-			if (scc_regs[12 + set2] == 0x1a)
+			if (scc[chn].regs[12] == 0x1a)
 				BaudRate = 75; //normal
 			break;
 		 case 0x13:
-			if (scc_regs[12 + set2] == 0xa8)
+			if (scc[chn].regs[12] == 0xa8)
 				BaudRate = 50; //normal
 			break;
 		 case 0xff: // HSMODEM dummy value->silently ignored
@@ -769,8 +762,8 @@ static void SCC_WriteControl(int set2, uint8_t value)
 			D(bug("SCC: unexpected MSB constant for baud rate\n"));
 			break;
 		}
-		if (BaudRate)
-			SCC_serial_setBaud(BaudRate); // set only if defined
+		if (BaudRate)  // set only if defined
+			SCC_serial_setBaud(chn, BaudRate);
 
 		/* summary of baud rates:
 		   Rsconf   Falcon     Falcon(+HSMODEM)   Hatari    Hatari(+HSMODEM)
@@ -802,27 +795,26 @@ static void SCC_WriteControl(int set2, uint8_t value)
 
 	// set or clear SCC flag accordingly. Yes it's ugly but avoids unnecessary useless calls
 	if (active_reg == 1 || active_reg == 2 || active_reg == 9)
-		TriggerSCC((RR3 & RR3M) && ((0xB & scc_regs[9]) == 9));
+		TriggerSCC((RR3 & RR3M) && ((0xB & scc[0].regs[9]) == 9));
 
 	active_reg = 0; // next access for RR0 or WR0
 }
 
 static void SCC_handleWrite(uint32_t addr, uint8_t value)
 {
-	int set2;
+	int channel;
 
 	addr &= 0x6;
-	set2 = (addr >= 4) ? 16 : 0; // channel B
+	channel = (addr >= 4) ? 1 : 0;  // 0 = channel A, 1 = channel B
 	switch (addr)
 	{
 	 case 0:
 	 case 4:
-		SCC_WriteControl(set2, value);
+		SCC_WriteControl(channel, value);
 		break;
-	 case 2: // channel A to be done if necessary
-		break;
+	 case 2: // channel A
 	 case 6: // channel B
-		SCC_serial_setData(value);
+		SCC_serial_setData(channel, value);
 		break;
 	 default:
 		D(bug( "scc : illegal write address =$%x\n", addr));
@@ -833,12 +825,12 @@ static void SCC_handleWrite(uint32_t addr, uint8_t value)
 void SCC_IRQ(void)
 {
 	uint16_t temp;
-	temp = SCC_serial_getStatus();
-	if (scc_regs[9] == 0x20)
+	temp = SCC_serial_getStatus(0);
+	if (scc[0].regs[9] == 0x20)
 		temp |= 0x800; // fake ExtStatusChange for HSMODEM install
-	scc_regs[16] = temp & 0xFF; // RR0B
+	scc[1].regs[0] = temp & 0xFF; // RR0B
 	RR3 = RR3M & (temp >> 8);
-	if (RR3 && (scc_regs[9] & 0xB) == 9)
+	if (RR3 && (scc[0].regs[9] & 0xB) == 9)
 		TriggerSCC(true);
 }
 
@@ -853,10 +845,10 @@ int SCC_doInterrupt()
 		if (RR3 & i & RR3M)
 			break ;
 	}
-	vector = scc_regs[2]; //WR2 = base of vectored interrupts for SCC
-	if ((scc_regs[9] & 3) == 0)
+	vector = scc[0].regs[2]; // WR2 = base of vectored interrupts for SCC
+	if ((scc[0].regs[9] & 3) == 0)
 		return vector; // no status included in vector
-	if ((scc_regs[9] & 0x32) != 0) //shouldn't happen with TOS, (to be completed if needed)
+	if ((scc[0].regs[9] & 0x32) != 0)  // shouldn't happen with TOS, (to be completed if needed)
 	{
 		D(bug( "unexpected WR9 contents \n"));
 		// no Soft IACK, Status Low control bit expected, no NV
