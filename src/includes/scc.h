@@ -10,6 +10,7 @@
 #ifndef SCC_H
 #define SCC_H
 
+bool SCC_IsAvailable(CNF_PARAMS *cnf);
 void SCC_Init(void);
 void SCC_UnInit(void);
 void SCC_MemorySnapShot_Capture(bool bSave);

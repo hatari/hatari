@@ -67,6 +67,13 @@ static uint16_t oldTBE;
 static uint16_t oldStatus;
 static bool bFileHandleIsATTY;
 
+bool SCC_IsAvailable(CNF_PARAMS *cnf)
+{
+	return ConfigureParams.System.nMachineType == MACHINE_MEGA_STE
+	       || ConfigureParams.System.nMachineType == MACHINE_TT
+	       || ConfigureParams.System.nMachineType == MACHINE_FALCON;
+}
+
 void SCC_Init(void)
 {
 	SCC_Reset();
@@ -76,7 +83,8 @@ void SCC_Init(void)
 
 	D(bug("SCC: interface initialized\n"));
 
-	if (!ConfigureParams.RS232.bEnableSccB || !ConfigureParams.RS232.sSccBFileName[0])
+	if (!ConfigureParams.RS232.bEnableSccB || !ConfigureParams.RS232.sSccBFileName[0]
+	    || !SCC_IsAvailable(&ConfigureParams))
 	{
 		handle = -1;
 		return;

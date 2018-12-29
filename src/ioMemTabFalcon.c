@@ -9,6 +9,7 @@
 const char IoMemTabFalc_fileid[] = "Hatari ioMemTabFalcon.c : " __DATE__ " " __TIME__;
 
 #include "main.h"
+#include "configuration.h"
 #include "fdc.h"
 #include "acia.h"
 #include "ioMem.h"
