@@ -1899,6 +1899,13 @@ static bool GemDOS_FilePathMissing(char *szActualFileName)
 
 
 /*-----------------------------------------------------------------------*/
+static inline bool redirect_to_TOS(void)
+{
+	LOG_TRACE(TRACE_OS_GEMDOS|TRACE_OS_BASE, "-> to TOS\n");
+	return false;
+}
+
+/*-----------------------------------------------------------------------*/
 /**
  * GEMDOS Create file
  * Call 0x3C
@@ -1914,7 +1921,8 @@ static bool GemDOS_Create(Uint32 Params)
 	pszFileName = (char *)STMemory_STAddrToPointer(STMemory_ReadLong(Params));
 	Mode = STMemory_ReadWord(Params+SIZE_LONG);
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x3C Fcreate(\"%s\", 0x%x) at PC 0x%X\n", pszFileName, Mode,
+	LOG_TRACE(TRACE_OS_GEMDOS|TRACE_OS_BASE,
+		  "GEMDOS 0x3C Fcreate(\"%s\", 0x%x) at PC 0x%X\n", pszFileName, Mode,
 		  CallingPC);
 
 	Drive = GemDOS_FileName2HardDriveID(pszFileName);
@@ -1922,7 +1930,7 @@ static bool GemDOS_Create(Uint32 Params)
 	if (!ISHARDDRIVE(Drive))
 	{
 		/* redirect to TOS */
-		return false;
+		return redirect_to_TOS();
 	}
 
 	if (Mode == GEMDOS_FILE_ATTRIB_VOLUME_LABEL)
@@ -1984,11 +1992,11 @@ static bool GemDOS_Create(Uint32 Params)
 
 		/* Return valid ST file handle from our range (from BASE_FILEHANDLE upwards) */
 		Regs[REG_D0] = Index+BASE_FILEHANDLE;
-		LOG_TRACE(TRACE_OS_GEMDOS, "-> FD %d (%s)\n", Regs[REG_D0],
+		LOG_TRACE(TRACE_OS_GEMDOS|TRACE_OS_BASE, "-> FD %d (%s)\n", Regs[REG_D0],
 			  Mode & GEMDOS_FILE_ATTRIB_READONLY ? "read-only":"read/write");
 		return true;
 	}
-	LOG_TRACE(TRACE_OS_GEMDOS, "-> ERROR (errno = %d)\n", errno);
+	LOG_TRACE(TRACE_OS_GEMDOS|TRACE_OS_BASE, "-> ERROR (errno = %d)\n", errno);
 
 	/* We failed to create the file, did we have required access rights? */
 	if (errno == EACCES || errno == EROFS ||
@@ -2013,13 +2021,6 @@ static bool GemDOS_Create(Uint32 Params)
 	return true;
 }
 
-
-/*-----------------------------------------------------------------------*/
-static inline bool redirect_to_TOS(void)
-{
-	LOG_TRACE(TRACE_OS_GEMDOS|TRACE_OS_BASE, "-> to TOS\n");
-	return false;
-}
 
 /**
  * GEMDOS Open file
