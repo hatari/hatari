@@ -71,7 +71,8 @@ typedef struct
   bool bEnableSccB;
   char szOutFileName[FILENAME_MAX];
   char szInFileName[FILENAME_MAX];
-  char sSccBFileName[FILENAME_MAX];
+  char sSccBInFileName[FILENAME_MAX];
+  char sSccBOutFileName[FILENAME_MAX];
 } CNF_RS232;
 
 

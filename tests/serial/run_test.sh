@@ -30,8 +30,7 @@ elif [ "$sertype" = "midi" ]; then
 	serparams="--midi-in $testdir/empty.txt --midi-out $testdir/serial-out.txt"
 	testprog=midi_ser.tos
 elif [ "$sertype" = "scc" ]; then
-	touch "$testdir/serial-out.txt"
-	serparams="--scc-b $testdir/serial-out.txt"
+	serparams="--scc-b-out $testdir/serial-out.txt"
 	testprog=scc_ser.tos
 else
 	echo "Unsupported serial type: $sertype"

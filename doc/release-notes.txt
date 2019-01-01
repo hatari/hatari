@@ -31,7 +31,8 @@ Emulation:
   - Experimental support for the NCR5380 SCSI chip in Falcon mode
 - Serial ports:
   - Very experimental support for the SCC chip of the Mega-STE, TT and Falcon
-    (only channel B for now, use the "--scc-b" command line switch)
+    (only channel B for now, and output only, use the "--scc-b-out" command
+    line switch)
 - Misc:
   - Correctly emulate bus error handling for STE lightpen registers
   - Experimental support for TOS 2.07 (the "Sparrow" TOS)

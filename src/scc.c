@@ -7,7 +7,7 @@
  *
  * Original code taken from Aranym:
  *
- * Copyright (c) 2001-2004 Petr Stehlik of ARAnyM dev team (see AUTHORS)
+ * Copyright (c) 2001-2004 Petr Stehlik of ARAnyM dev team
  *               2010 Jean Conter
  *
  * This code is free software; you can redistribute it and/or modify
@@ -68,7 +68,7 @@
 struct SCC {
 	uint8_t regs[16];
 	int charcount;
-	int handle;
+	int rd_handle, wr_handle;
 	uint16_t oldTBE;
 	uint16_t oldStatus;
 	bool bFileHandleIsATTY;
@@ -92,37 +92,79 @@ void SCC_Init(void)
 
 	scc[0].oldTBE = scc[1].oldTBE = 0;
 	scc[0].oldStatus = scc[1].oldStatus = 0;
-	scc[0].handle = scc[1].handle = -1;
+
+	scc[0].rd_handle = scc[0].wr_handle = -1;
+	scc[1].rd_handle = scc[1].wr_handle = -1;
 
 	D(bug("SCC: interface initialized\n"));
 
-	if (!ConfigureParams.RS232.bEnableSccB || !ConfigureParams.RS232.sSccBFileName[0]
-	    || !SCC_IsAvailable(&ConfigureParams))
+	if (!ConfigureParams.RS232.bEnableSccB || !SCC_IsAvailable(&ConfigureParams))
 		return;
 
-	scc[1].handle = open(ConfigureParams.RS232.sSccBFileName, O_RDWR | O_NONBLOCK);
-	if (scc[1].handle >= 0)
+	if (strcmp(ConfigureParams.RS232.sSccBInFileName, ConfigureParams.RS232.sSccBOutFileName) == 0)
 	{
 #if HAVE_TERMIOS_H
-		scc[1].bFileHandleIsATTY = isatty(scc[1].handle);
+		scc[1].rd_handle = open(ConfigureParams.RS232.sSccBInFileName, O_RDWR | O_NONBLOCK);
+		if (scc[1].rd_handle >= 0)
+		{
+			if (isatty(scc[1].rd_handle))
+			{
+				scc[1].wr_handle = scc[1].rd_handle;
+			}
+			else
+			{
+				Log_Printf(LOG_ERROR, "SCC_Init: Setting SCC-B input and output "
+				           "to the same file only works with tty devices.\n");
+				close(scc[1].rd_handle);
+				scc[1].rd_handle = -1;
+			}
+		}
+		else
+		{
+			Log_Printf(LOG_ERROR, "SCC_Init: Can not open device '%s'\n",
+			           ConfigureParams.RS232.sSccBInFileName);
+		}
 #else
-		scc[1].bFileHandleIsATTY = false;
+		Log_Printf(LOG_ERROR, "SCC_Init: Setting SCC-B input and output "
+		           "to the same file is not supported on this system.\n");
 #endif
 	}
 	else
 	{
-		Log_Printf(LOG_ERROR, "SCC_Init: Can not open device '%s'\n",
-		           ConfigureParams.RS232.sSccBFileName);
+		scc[1].rd_handle = open(ConfigureParams.RS232.sSccBInFileName, O_RDONLY | O_NONBLOCK);
+		if (scc[1].rd_handle < 0)
+		{
+			Log_Printf(LOG_ERROR, "SCC_Init: Can not open file '%s'\n",
+			           ConfigureParams.RS232.sSccBInFileName);
+		}
+		scc[1].wr_handle = open(ConfigureParams.RS232.sSccBOutFileName,
+		                        O_CREAT | O_WRONLY | O_NONBLOCK, S_IRUSR | S_IWUSR);
+		if (scc[1].wr_handle < 0)
+		{
+			Log_Printf(LOG_ERROR, "SCC_Init: Can not open file '%s'\n",
+			           ConfigureParams.RS232.sSccBOutFileName);
+		}
+	}
+	if (scc[1].rd_handle == -1 && scc[1].wr_handle == -1)
+	{
+		ConfigureParams.RS232.bEnableSccB = false;
 	}
 }
 
 void SCC_UnInit(void)
 {
 	D(bug("SCC: interface destroyed\n"));
-	if (scc[1].handle >= 0)
+	if (scc[1].rd_handle >= 0)
 	{
-		close(scc[1].handle);
-		scc[1].handle = -1;
+		if (scc[1].wr_handle == scc[1].rd_handle)
+			scc[1].wr_handle = -1;
+		close(scc[1].rd_handle);
+		scc[1].rd_handle = -1;
+	}
+	if (scc[1].wr_handle >= 0)
+	{
+		close(scc[1].wr_handle);
+		scc[1].wr_handle = -1;
 	}
 }
 
@@ -188,9 +230,9 @@ static uint8_t SCC_serial_getData(int channel)
 	int nb;
 
 	D(bug("SCC: getData\n"));
-	if (scc[channel].handle >= 0)
+	if (scc[channel].rd_handle >= 0)
 	{
-		nb = read(scc[channel].handle, &value, 1);
+		nb = read(scc[channel].rd_handle, &value, 1);
 		if (nb < 0)
 		{
 			D(bug("SCC: impossible to get data\n"));
@@ -204,25 +246,42 @@ static void SCC_serial_setData(int channel, uint8_t value)
 	int nb;
 
 	D(bug("SCC: setData\n"));
-	if (scc[channel].handle >= 0)
+	if (scc[channel].wr_handle >= 0)
 	{
 		do
 		{
-			nb = write(scc[channel].handle, &value, 1);
+			nb = write(scc[channel].wr_handle, &value, 1);
 		} while (nb < 0 && (errno == EAGAIN || errno == EINTR));
 	}
 }
 
+#if HAVE_TERMIOS_H
+static void SCC_serial_setBaudAttr(int handle, speed_t new_speed)
+{
+	struct termios options;
+
+	if (handle < 0)
+		return;
+
+	tcgetattr(handle, &options);
+
+	cfsetispeed(&options, new_speed);
+	cfsetospeed(&options, new_speed);
+
+	options.c_cflag |= (CLOCAL | CREAD);
+	options.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG); // raw input
+	options.c_iflag &= ~(ICRNL); // CR is not CR+LF
+
+	tcsetattr(handle, TCSANOW, &options);
+}
+#endif
+
 static void SCC_serial_setBaud(int channel, int value)
 {
 #if HAVE_TERMIOS_H
-	struct termios options;
 	speed_t new_speed = B0;
 
 	D(bug("SCC: setBaud %i\n", value));
-
-	if (scc[channel].handle < 0)
-		return;
 
 	switch (value)
 	{
@@ -250,16 +309,9 @@ static void SCC_serial_setBaud(int channel, int value)
 	if (new_speed == B0)
 		return;
 
-	tcgetattr(scc[channel].handle, &options);
-
-	cfsetispeed(&options, new_speed);
-	cfsetospeed(&options, new_speed);
-
-	options.c_cflag |= (CLOCAL | CREAD);
-	options.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG); // raw input
-	options.c_iflag &= ~(ICRNL); // CR is not CR+LF
-
-	tcsetattr(scc[channel].handle, TCSANOW, &options);
+	SCC_serial_setBaudAttr(scc[channel].rd_handle, new_speed);
+	if (scc[channel].rd_handle != scc[channel].wr_handle)
+		SCC_serial_setBaudAttr(scc[channel].wr_handle, new_speed);
 #endif
 }
 
@@ -269,7 +321,7 @@ static inline uint16_t SCC_getTBE(int chn)
 
 #if defined(HAVE_SYS_IOCTL_H) && defined(TIOCSERGETLSR) && defined(TIOCSER_TEMT)
 	int status = 0;
-	if (ioctl(scc[chn].handle, TIOCSERGETLSR, &status) < 0)  // OK with ttyS0, not OK with ttyUSB0
+	if (ioctl(scc[chn].wr_handle, TIOCSERGETLSR, &status) < 0)  // OK with ttyS0, not OK with ttyUSB0
 	{
 		// D(bug("SCC: Can't get LSR"));
 		value |= (1<<TBE);   // only for serial USB
@@ -293,22 +345,28 @@ static uint16_t SCC_serial_getStatus(int chn)
 	uint16_t value = 0;
 	uint16_t diff;
 
-#if defined(HAVE_SYS_IOCTL_H) && defined(TIOCMGET)
-	int status = 0;
-	int nbchar = 0;
-
-	if (scc[chn].handle >= 0 && scc[chn].bFileHandleIsATTY)
+#if defined(HAVE_SYS_IOCTL_H) && defined(FIONREAD)
+	if (scc[chn].rd_handle >= 0)
 	{
-		if (ioctl(scc[chn].handle, FIONREAD, &nbchar) < 0)
+		int nbchar = 0;
+
+		if (ioctl(scc[chn].rd_handle, FIONREAD, &nbchar) < 0)
 		{
 			D(bug("SCC: Can't get input fifo count\n"));
 		}
 		scc[chn].charcount = nbchar; // to optimize input (see UGLY in handleWrite)
 		if (nbchar > 0)
 			value = 0x0401;  // RxIC+RBF
+	}
+#endif
+#if defined(HAVE_SYS_IOCTL_H) && defined(TIOCMGET)
+	if (scc[chn].wr_handle >= 0 && scc[chn].bFileHandleIsATTY)
+	{
+		int status = 0;
+
 		value |= SCC_getTBE(chn); // TxIC
 		value |= (1 << TBE);  // fake TBE to optimize output (for ttyS0)
-		if (ioctl(scc[chn].handle, TIOCMGET, &status) < 0)
+		if (ioctl(scc[chn].wr_handle, TIOCMGET, &status) < 0)
 		{
 			D(bug("SCC: Can't get status\n"));
 		}
@@ -317,13 +375,13 @@ static uint16_t SCC_serial_getStatus(int chn)
 	}
 #endif
 
-	if (scc[chn].handle >= 0 && !scc[chn].bFileHandleIsATTY)
+	if (scc[chn].wr_handle >= 0 && !scc[chn].bFileHandleIsATTY)
 	{
 		/* Output is a normal file, thus always set Clear-To-Send
 		 * and Transmit-Buffer-Empty: */
 		value |= (1 << CTS) | (1 << TBE);
 	}
-	else if (scc[chn].handle < 0)
+	else if (scc[chn].wr_handle < 0)
 	{
 		/* If not connected, signal transmit-buffer-empty anyway to
 		 * avoid that the program blocks while polling this bit */
@@ -345,9 +403,9 @@ static void SCC_serial_setRTS(int chn, bool value)
 #if defined(HAVE_SYS_IOCTL_H) && defined(TIOCMGET)
 	int status = 0;
 
-	if (scc[chn].handle >= 0 && scc[chn].bFileHandleIsATTY)
+	if (scc[chn].wr_handle >= 0 && scc[chn].bFileHandleIsATTY)
 	{
-		if (ioctl(scc[chn].handle, TIOCMGET, &status) < 0)
+		if (ioctl(scc[chn].wr_handle, TIOCMGET, &status) < 0)
 		{
 			D(bug("SCC: Can't get status for RTS\n"));
 		}
@@ -355,7 +413,7 @@ static void SCC_serial_setRTS(int chn, bool value)
 			status |= TIOCM_RTS;
 		else
 			status &= ~TIOCM_RTS;
-		ioctl(scc[chn].handle, TIOCMSET, &status);
+		ioctl(scc[chn].wr_handle, TIOCMSET, &status);
 	}
 #endif
 }
@@ -365,9 +423,9 @@ static void SCC_serial_setDTR(int chn, bool value)
 #if defined(HAVE_SYS_IOCTL_H) && defined(TIOCMGET)
 	int status = 0;
 
-	if (scc[chn].handle >= 0 && scc[chn].bFileHandleIsATTY)
+	if (scc[chn].wr_handle >= 0 && scc[chn].bFileHandleIsATTY)
 	{
-		if (ioctl(scc[chn].handle, TIOCMGET, &status) < 0)
+		if (ioctl(scc[chn].wr_handle, TIOCMGET, &status) < 0)
 		{
 			D(bug("SCC: Can't get status for DTR\n"));
 		}
@@ -375,7 +433,7 @@ static void SCC_serial_setDTR(int chn, bool value)
 			status |= TIOCM_DTR;
 		else
 			status &= ~TIOCM_DTR;
-		ioctl(scc[chn].handle, TIOCMSET, &status);
+		ioctl(scc[chn].wr_handle, TIOCMSET, &status);
 	}
 #endif
 }

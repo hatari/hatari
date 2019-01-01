@@ -116,7 +116,9 @@ enum {
 #endif
 	OPT_RS232_IN,
 	OPT_RS232_OUT,
-	OPT_SCCB,
+	// OPT_SCCB,
+	// OPT_SCCBIN,
+	OPT_SCCBOUT,
 	OPT_DRIVEA,		/* disk options */
 	OPT_DRIVEB,
 	OPT_DRIVEA_HEADS,
@@ -330,8 +332,12 @@ static const opt_t HatariOptions[] = {
 	  "<file>", "Enable serial port and use <file> as the input device" },
 	{ OPT_RS232_OUT, NULL, "--rs232-out",
 	  "<file>", "Enable serial port and use <file> as the output device" },
-	{ OPT_SCCB, NULL, "--scc-b",
-	  "<file>", "Enable SCC channel B and use <file> as the device" },
+	//{ OPT_SCCB, NULL, "--scc-b",
+	//  "<file>", "Enable SCC channel B and use <file> as the device" },
+	//{ OPT_SCCBIN, NULL, "--scc-b-in",
+	//  "<file>", "Enable SCC channel B and use <file> as the input" },
+	{ OPT_SCCBOUT, NULL, "--scc-b-out",
+	  "<file>", "Enable SCC channel B and use <file> as the output" },
 
 	{ OPT_HEADER, NULL, NULL, NULL, "Floppy drive" },
 	{ OPT_DRIVEA, NULL, "--drive-a",
@@ -1453,10 +1459,25 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 					&ConfigureParams.RS232.bEnableRS232);
 			break;
 
+		/*
 		case OPT_SCCB:
 			i += 1;
-			ok = Opt_StrCpy(OPT_SCCB, true, ConfigureParams.RS232.sSccBFileName,
-					argv[i], sizeof(ConfigureParams.RS232.sSccBFileName),
+			ok = Opt_StrCpy(OPT_SCCB, true, ConfigureParams.RS232.sSccBInFileName,
+					argv[i], sizeof(ConfigureParams.RS232.sSccBInFileName),
+					&ConfigureParams.RS232.bEnableSccB);
+			strcpy(ConfigureParams.RS232.sSccBOutFileName, ConfigureParams.RS232.sSccBInFileName);
+			break;
+		case OPT_SCCBIN:
+			i += 1;
+			ok = Opt_StrCpy(OPT_SCCBIN, true, ConfigureParams.RS232.sSccBInFileName,
+					argv[i], sizeof(ConfigureParams.RS232.sSccBInFileName),
+					&ConfigureParams.RS232.bEnableSccB);
+			break;
+		*/
+		case OPT_SCCBOUT:
+			i += 1;
+			ok = Opt_StrCpy(OPT_SCCBOUT, false, ConfigureParams.RS232.sSccBOutFileName,
+					argv[i], sizeof(ConfigureParams.RS232.sSccBOutFileName),
 					&ConfigureParams.RS232.bEnableSccB);
 			break;
 

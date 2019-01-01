@@ -239,7 +239,8 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 
 	/* Did set new SCC parameters? */
 	if (changed->RS232.bEnableSccB != current->RS232.bEnableSccB
-	    || strcmp(changed->RS232.sSccBFileName, current->RS232.sSccBFileName)
+	    || strcmp(changed->RS232.sSccBInFileName, current->RS232.sSccBInFileName)
+	    || strcmp(changed->RS232.sSccBOutFileName, current->RS232.sSccBOutFileName)
 	    || (SCC_IsAvailable(current) && !SCC_IsAvailable(changed)))
 	{
 		Dprintf("- SCC>\n");
