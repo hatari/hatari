@@ -608,8 +608,11 @@ class PeripheralDialog(HatariUIDialog):
         printer = Gtk.CheckButton("Enable printer output")
         printer.set_active(config.get_printer())
 
-        rs232 = Gtk.CheckButton("Enable RS232")
+        rs232 = Gtk.CheckButton("Enable MFP RS232 (ST/MegaST/STE/MegaSTE/TT)")
         rs232.set_active(config.get_rs232())
+
+        sccb = Gtk.CheckButton("Enable SCC-B RS232 output (MegaSTE/TT/Falcon")
+        sccb.set_active(config.get_sccb())
 
         dialog = Gtk.Dialog("Peripherals", self.parent,
             Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
@@ -618,11 +621,13 @@ class PeripheralDialog(HatariUIDialog):
         dialog.vbox.add(midi)
         dialog.vbox.add(printer)
         dialog.vbox.add(rs232)
+        dialog.vbox.add(sccb)
         dialog.vbox.show_all()
 
         self.dialog = dialog
         self.printer = printer
         self.rs232 = rs232
+        self.sccb = sccb
         self.midi = midi
 
     def run(self, config):
@@ -637,6 +642,7 @@ class PeripheralDialog(HatariUIDialog):
             config.set_midi(self.midi.get_active())
             config.set_printer(self.printer.get_active())
             config.set_rs232(self.rs232.get_active())
+            config.set_sccb(self.sccb.get_active())
             config.flush_updates()
 
 

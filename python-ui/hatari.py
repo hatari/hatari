@@ -272,10 +272,12 @@ class HatariConfigMapping(ConfigStore):
         "memsave": ("[Memory]", "szMemoryCaptureFileName", "Manual memory snapshot"),
         "midiin":  ("[Midi]", "sMidiInFileName", "Midi input"),
         "midiout": ("[Midi]", "sMidiOutFileName", "Midi output"),
-        "rs232in": ("[RS232]", "szInFileName", "RS232 I/O input"),
-        "rs232out": ("[RS232]", "szOutFileName", "RS232 I/O output"),
-        "printout": ("[Printer]", "szPrintToFileName", "Printer output"),
-        "soundout": ("[Sound]", "szYMCaptureFileName", "Sound output")
+        "rs232in": ("[RS232]", "szInFileName", "RS232 (MFP) I/O input"),
+        "rs232out":("[RS232]", "szOutFileName", "RS232 (MFP) I/O output"),
+#        "sccbin":  ("[RS232]", "sSccBInFileName", "RS232 (SCC-B) I/O input"),
+        "sccbout": ("[RS232]", "sSccBOutFileName", "RS232 (SCC-B) I/O output"),
+        "printout":("[Printer]", "szPrintToFileName", "Printer output"),
+        "soundout":("[Sound]", "szYMCaptureFileName", "Sound output")
     }
     has_hd_sections = True # from v2.2 onwards separate ACSI/SCSI/IDE sections
     has_modeltype = True   # from v2.0 onwards
@@ -374,6 +376,13 @@ class HatariConfigMapping(ConfigStore):
     def set_rs232(self, value):
         self.set("[RS232]", "bEnableRS232", value)
         self._hatari.set_device("rs232", value)
+
+    def get_sccb(self):
+        return self.get("[RS232]", "bEnableSccB")
+
+    def set_sccb(self, value):
+        self.set("[RS232]", "bEnableSccB", value)
+        self._hatari.set_device("sccb", value)
 
     # ------------ machine ---------------
     def get_machine_types(self):
