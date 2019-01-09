@@ -742,9 +742,13 @@ class HatariConfigMapping(ConfigStore):
         "return index to what get_memory_names() returns"
         sizemap = (0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 5)
         memsize = self.get("[Memory]", "nMemorySize")
-        if memsize >= 0 and memsize < len(sizemap):
-            return sizemap[memsize]
-        return 1 # default = 1BM
+        if memsize >= 1024 and memsize <= 14*1024:
+            memsize //= 1024
+        elif memsize >= 512:
+            memsize = 0
+        elif memsize < 0 or memsize >= len(sizemap):
+            memsize = 1
+        return sizemap[memsize]
 
     def set_memory(self, idx):
         # map memory item index to memory size
@@ -753,6 +757,10 @@ class HatariConfigMapping(ConfigStore):
             memsize = sizemap[idx]
         else:
             memsize = 1
+        if memsize:
+            memsize *= 1024
+        else:
+            memsize = 512
         self.set("[Memory]", "nMemorySize", memsize)
         self._change_option("--memsize %d" % memsize)
 
