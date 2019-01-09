@@ -112,7 +112,7 @@ Building:
 
 Tools:
 - Hatari Python UI migrated from PyGtk v2 to Gtk v3
-- Support both Python v2 & v3 also in atari-hd-image
+- Support both Python v2 & v3 in rest of the scripts
   (Arch/Clear Linux)
 - hatari-prg-args script:
   - Installed by default

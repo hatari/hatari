@@ -2,6 +2,12 @@
 User visible changes in Hatari (Python Gtk) UI
 ----------------------------------------------
 
+2019-01:
+- UI version 1.4 (due to Gtk & Python version updates)
+- Support both Python v2 & v3
+- Fixes to machine setup dialog
+- SCC-B output support
+
 2018-10:
 - Ported UI code to Gtk v3 by using GObject introspection
   (instead of PyGtk v2 that supports only Python v2)
