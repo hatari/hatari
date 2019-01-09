@@ -1,10 +1,10 @@
-#!/usr/bin/python2
+#!/usr/bin/env python
 #
 # A Python Gtk UI for Hatari that can embed the Hatari emulator window.
 #
 # Requires Gtk 3.x and Python GObject Introspection libraries.
 #
-# Copyright (C) 2008-2018 by Eero Tamminen
+# Copyright (C) 2008-2019 by Eero Tamminen
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

@@ -1,8 +1,8 @@
-#!/usr/bin/python2
+#!/usr/bin/env python
 #
 # Classes for the Hatari UI dialogs
 #
-# Copyright (C) 2008-2018 by Eero Tamminen
+# Copyright (C) 2008-2019 by Eero Tamminen
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -830,13 +830,13 @@ class TraceDialog(HatariUIDialog):
             hbox2.add(vboxes[idx])
 
         count = 0
-        per_side = (len(self.tracepoints)+3)/4
+        per_side = (len(self.tracepoints)+3)//4
         self.tracewidgets = {}
         for trace in self.tracepoints:
             name = trace.replace("_", "-")
             widget = Gtk.CheckButton(name)
             self.tracewidgets[trace] = widget
-            vboxes[count/per_side].pack_start(widget, False, True, 0)
+            vboxes[count//per_side].pack_start(widget, False, True, 0)
             count += 1
 
         dialog = Gtk.Dialog("Trace settings", parent,

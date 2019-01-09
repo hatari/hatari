@@ -3,7 +3,7 @@
 # Classes for Hatari emulator instance and mapping its congfiguration
 # variables with its command line option.
 #
-# Copyright (C) 2008-2018 by Eero Tamminen
+# Copyright (C) 2008-2019 by Eero Tamminen
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,6 +22,12 @@ import signal
 import socket
 import select
 from config import ConfigStore
+
+# Python v2:
+# - lacks Python v3 encoding arg for bytes()
+if str is bytes:
+    def bytes(s, encoding):
+        return s
 
 
 # Running Hatari instance
@@ -88,7 +94,7 @@ class Hatari:
 
     def _send_message(self, msg):
         if self.control:
-            self.control.send(msg)
+            self.control.send(bytes(msg, "ASCII"))
             return True
         else:
             print("ERROR: no Hatari (control socket)")
@@ -179,7 +185,7 @@ class Hatari:
 
     def get_embed_info(self):
         "get_embed_info() -> (width, height), get embedded Hatari window size"
-        width, height = self.control.recv(12).split("x")
+        width, height = self.control.recv(12).split(b"x")
         return (int(width), int(height))
 
     def get_control_socket(self):
@@ -976,9 +982,9 @@ class HatariConfigMapping(ConfigStore):
         # overscan borders?
         if self.get_borders() and not videl:
             # properly aligned borders on top of zooming
-            leftx = (maxw-width)/zoom
-            borderx = 2*(min(48,leftx/2)/16)*16
-            lefty = (maxh-height)/zoom
+            leftx = (maxw-width)//zoom
+            borderx = 2*(min(48,leftx//2)//16)*16
+            lefty = (maxh-height)//zoom
             bordery = min(29+47, lefty)
             width += zoom*borderx
             height += zoom*bordery
