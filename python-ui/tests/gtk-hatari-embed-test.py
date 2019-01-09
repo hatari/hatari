@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+#!/usr/bin/env python
 #
 # Tests embedding hatari with three different methods:
 # "hatari": ask Hatari to reparent to given window
@@ -36,12 +36,12 @@ from gi.repository import GdkX11
 from gi.repository import GObject
 
 def usage(error):
-    print "\nusage: %s <widget> <embed method>\n" % sys.argv[0].split(os.path.sep)[-1]
-    print "Opens window with given <widget>, runs Hatari and tries to embed it"
-    print "with given <method>\n"
-    print "<widget> can be <drawingarea|eventbox|socket>"
-    print "<method> can be <sdl1|hatari|reparent>\n"
-    print "ERROR: %s\n" % error
+    print("\nusage: %s <widget> <embed method>\n" % sys.argv[0].split(os.path.sep)[-1])
+    print("Opens window with given <widget>, runs Hatari and tries to embed it")
+    print("with given <method>\n")
+    print("<widget> can be <drawingarea|eventbox|socket>")
+    print("<method> can be <sdl1|hatari|reparent>\n")
+    print("ERROR: %s\n" % error)
     sys.exit(1)
 
 
@@ -78,7 +78,7 @@ class AppUI():
     def do_quit(self, widget):
         if self.hatari_pid:
             os.kill(self.hatari_pid, 9)
-            print "killed Hatari PID %d" % self.hatari_pid
+            print("killed Hatari PID %d" % self.hatari_pid)
             self.hatari_pid = 0
         Gtk.main_quit()
 
@@ -115,7 +115,7 @@ class AppUI():
     def do_hatari_method(self):
         pid = os.fork()
         if pid < 0:
-            print "ERROR: fork()ing Hatari failed!"
+            print("ERROR: fork()ing Hatari failed!")
             return
         if pid:
             # in parent
@@ -126,10 +126,10 @@ class AppUI():
                     self.hatari_pid = pid
                 else:
                     os.kill(pid, signal.SIGKILL)
-                    print "killed process with PID %d" % pid
+                    print("killed process with PID %d" % pid)
                     self.hatari_pid = 0
             else:
-                print "Waiting Hatari process to embed itself..."
+                print("Waiting Hatari process to embed itself...")
                 # method == "sdl1" or "hatari"
                 self.hatari_pid = pid
         else:
@@ -167,28 +167,28 @@ class AppUI():
                 pass
             if not windows:
                 counter += 1
-                print "WARNING: no Hatari window found yet, retrying..."
+                print("WARNING: no Hatari window found yet, retrying...")
                 time.sleep(1)
                 continue
             if len(windows) > 1:
-                print "WARNING: multiple Hatari windows, picking first one..."
+                print("WARNING: multiple Hatari windows, picking first one...")
             return windows[0]
-        print "ERROR: no windows with the 'hatari' WM class found"
+        print("ERROR: no windows with the 'hatari' WM class found")
         return None
 
     def reparent_hatari_window(self, hatari_win):
-        print "Importing foreign (Hatari) window 0x%x" % hatari_win
+        print("Importing foreign (Hatari) window 0x%x" % hatari_win)
         display = GdkX11.X11Display.get_default()
         window = GdkX11.X11Window.foreign_new_for_display(display, hatari_win)
         if not window:
-            print "ERROR: X window importing failed!"
+            print("ERROR: X window importing failed!")
             return False
         parent = self.hatariparent.get_window()
         if not window:
-            print "ERROR: where hatariparent window disappeared?"
+            print("ERROR: where hatariparent window disappeared?")
             return False
-        print "Found Hatari window ID: 0x%x, reparenting..." % hatari_win
-        print "...to container window ID: 0x%x" % parent.get_xid()
+        print("Found Hatari window ID: 0x%x, reparenting..." % hatari_win)
+        print("...to container window ID: 0x%x" % parent.get_xid())
         window.reparent(parent, 0, 0)
         #window.reparent(self.hatariparent.get_toplevel().window, 0, 0)
         #window.reparent(self.hatariparent.get_root_window(), 0, 0)
