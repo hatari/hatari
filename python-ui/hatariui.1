@@ -2,7 +2,7 @@
 .\" First parameter, NAME, should be all caps
 .\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
 .\" other parameters are allowed: see man(7), man(1)
-.TH "hatariui" "1" "2010-05-30" "Hatari" "Hatari UI"
+.TH "hatariui" "1" "2019-01-09" "Hatari" "Hatari UI"
 .SH "NAME"
 hatariui \- Python/Gtk UI for Hatari
 .SH "SYNOPSIS"
@@ -32,13 +32,13 @@ dialog and one can configure (from command line) buttons for often used
 strings.
 .SH "HATARIUI / HATARIUI.PY"
 .I hatariui
-is actually a shell script wrapper for the hatariui.py Python script.
+is a shell script wrapper for the hatariui.py Python script.
 It's used to run the Python script with suitable options for default
-usage and to set up the correct installation directory for the rest
+usage, and to set up the correct installation directory for rest
 of the Hatari UI Python scripts and data files.
 .PP
-Options below are actually for hatariui.py script.  If you want to
-change options given for it, modify the hatariui shell script or
+Options below are actually for the hatariui.py script.  If you want
+to change options given for it, modify the hatariui shell script or
 make your own based on the installed one.
 .\" following command line helps in updating the options:
 .\" hatariui.py --help|sed -e 's/^\t\+/.TP\n.B /' -e 's/\t\+/\n/g' -e 's/-/\\-/g' >> hatariui.1
@@ -72,14 +72,14 @@ Add a toolbar at bottom
 Add a separate window with given name and controls
 .PP
 You can have only one toolbar on each side of the Hatari window.
-Panels are separate windows and you can has as many of them as you wish.
-For each panel you need to add a control with the name of the panel
-(see "MyPanel" in examples).
+Panels are separate windows and you can have as many of them as you wish.
+For each of the panels, you need to add a button with the name of
+the panel (see "MyPanel" in the Examples section).
 .PP
-Following controls can are available for toolbars and panels:
+Following buttons can be added to toolbars and panels:
 .TP
 .B |
-Separator between controls
+Separator between action buttons
 .TP
 .B >
 Start next toolbar row in panel windows
@@ -88,7 +88,7 @@ Start next toolbar row in panel windows
 Hatari compatibility list
 .TP
 .B harddisk
-Hard disk images and directories
+Hard disk config dialog
 .TP
 .B reset
 Warm or cold reset Hatari
@@ -100,13 +100,13 @@ Save configuration
 Report a bug
 .TP
 .B display
-Display settings
+Display settings dialog
 .TP
 .B authors
 Hatari authors
 .TP
 .B forward
-Whether to fast forward Hatari (needs fast machine)
+Toggle Hatari fast-forward
 .TP
 .B debug
 Activate Hatari debugger
@@ -127,10 +127,10 @@ Record YM/Wav
 Hatari mailing lists
 .TP
 .B floppy
-Floppy images
+Floppy image dialog
 .TP
 .B device
-Toggle Midi, Printer, RS232 peripherals
+Midi / Printer / RS232 enabling dialog
 .TP
 .B load
 Load emulation snapshot
@@ -139,10 +139,10 @@ Load emulation snapshot
 Load configuration
 .TP
 .B path
-Device & save file paths
+Path config dialog
 .TP
 .B machine
-Hatari st/e/tt/falcon configuration
+Hatari machine config dialog
 .TP
 .B todo
 Hatari TODO
@@ -154,10 +154,10 @@ Hatari UI home page
 Save emulation snapshot
 .TP
 .B joystick
-Joystick settings
+Joystick settings dialog
 .TP
 .B trace
-Hatari tracing setup
+Hatari tracing dialog
 .TP
 .B pause
 Pause Hatari to save battery
@@ -175,10 +175,10 @@ Toggle whether Hatari is fullscreen
 Hatari manual
 .TP
 .B input
-Simulate text input and mouse clicks
+Text / mouse click injection dialog
 .TP
 .B sound
-Sound settings
+Sound settings dialog
 .TP
 .B changes
 Latest Hatari changes
@@ -193,7 +193,8 @@ Grab a screenshot
 Button for the specified panel window
 .TP
 .B <name>=<string/code>
-Synthetize string or single key <code>
+Synthetize string or single key <code>. NOTE: disable fast-forward
+before injection or key-repeat will repeat each injected key!
 .PP
 If no options are given, the UI uses basic controls.
 .SH "EXAMPLES"
@@ -203,8 +204,8 @@ Example on how to add top, right and bottom toolbars and a separate
 	hatariui.py \-\-embed \\
 	\-t "about,run,pause,quit" \\
 	\-p "MyPanel,Macro=Test,Undo=97,Help=98,>,F1=59,F2=60,>,close" \\
-	\-r "paste,debug,trace,machine,MyPanel" \\
-	\-b "sound,|,forward,|,fullscreen"
+	\-r "pause,debug,trace,machine,MyPanel" \\
+	\-b "sound,|,forward,|,full"
 .fi
 .PP
 For more examples on Hatari UI options usage, see the hatariui shell
