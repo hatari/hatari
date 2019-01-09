@@ -279,7 +279,7 @@ def table_add_radio_rows(table, row, col, label, texts, cb = None):
     radio = None
     box = Gtk.VBox()
     for text in texts:
-        radio = Gtk.RadioButton(radio, label=text)
+        radio = Gtk.RadioButton(group=radio, label=text)
         if cb:
             radio.connect("toggled", cb, text)
         radios.append(radio)
