@@ -342,6 +342,7 @@ Demos:
 - Hallucinations (by Reservoir Gods)
 - If pigs could fly (by Syndicate)
 - Illusion (by Dune)
+- Just Jack (by Joker)
 - Lots of Dots (by Acid Maker & Friends)
 - Music Disc 1 (by G. Gaubatz)
 - No Cooper (by 1984)
@@ -394,6 +395,7 @@ Demos:
 - Virtual (by Equinox)
 - Visualize (by Checkpoint)
 - Vodka demo (by Equinox)
+- We Accidentally Your Oculus (by Sector One)
 - We do not rip or recycle anything (by Spice Boys)
 - Yanartas (by Checkpoint)
 - YmRockerz musicdisks from "Wave upon Wave" to "Seven"
@@ -518,6 +520,7 @@ Free/shareware/PD games:
 - Hector*
 - Hero           (RPG)
 - Hexmines*
+- Iceblox Plus*   (works on all Atari machines)
 - In nihilum reverteris (interactive color novel)
 - Jetpac
 - Killing Spree  (2014 preview by TLB at Atarimania)
@@ -1084,6 +1087,8 @@ Working demos:
 - Illusion 64 (by Paranoia)
   - plasma screen has garbage on right side,
     end screen at top & bottom
+- Laser Days E.P. (by .tSCc)
+  - With MP2 DSP music
 - More (by New Beat)
 - Mouse (animation + music)
 - Old Stuff (by Extream)
@@ -1102,6 +1107,7 @@ Working demos:
   - freezes at exit
 - Warum (by Lazer)
 - Weltchmerz (by Avena)
+- Why (by Extream)
 - ZZ 9 Plural Z Alpha (by tSCc)
 
 Demos regressed in EmuTOS v0.8.7, working again in EmuTOS >0.9.3:
