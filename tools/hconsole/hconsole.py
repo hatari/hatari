@@ -344,6 +344,8 @@ class Tokens:
     "--midi-out",
     "--rs232-in",
     "--rs232-out",
+#    "--scc-b-in",
+    "--scc-b-out",
     "--disk-a",
     "--disk-b",
     "--fastfdc",
@@ -415,7 +417,9 @@ class Tokens:
     "printout",
     "soundout",
     "rs232in",
-    "rs232out"
+    "rs232out",
+#    "sccbin",
+    "sccbout"
     ]
     # use the long variants of the commands for clarity
     debugger_tokens = [

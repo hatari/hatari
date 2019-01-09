@@ -546,6 +546,9 @@ static const struct Config_Tag configs_Rs232[] =
 	{ "bEnableRS232", Bool_Tag, &ConfigureParams.RS232.bEnableRS232 },
 	{ "szOutFileName", String_Tag, ConfigureParams.RS232.szOutFileName },
 	{ "szInFileName", String_Tag, ConfigureParams.RS232.szInFileName },
+	{ "bEnableSccB", Bool_Tag, &ConfigureParams.RS232.bEnableSccB },
+	{ "sSccBOutFileName", String_Tag, ConfigureParams.RS232.sSccBOutFileName },
+//	{ "sSccBInFileName", String_Tag, ConfigureParams.RS232.sSccBInFileName },
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -778,10 +781,14 @@ void Configuration_SetDefault(void)
 	sprintf(ConfigureParams.Printer.szPrintToFileName, "%s%chatari.prn",
 	        psHomeDir, PATHSEP);
 
-	/* Set defaults for RS232 */
+	/* Set defaults for MFP RS232 (ST/MegaST/STE/MegaSTE/TT) */
 	ConfigureParams.RS232.bEnableRS232 = false;
 	strcpy(ConfigureParams.RS232.szOutFileName, "/dev/modem");
 	strcpy(ConfigureParams.RS232.szInFileName, "/dev/modem");
+	/* Set defaults for SCC RS232 ( MegaSTE/TT/Falcon) */
+	ConfigureParams.RS232.bEnableSccB = false;
+	strcpy(ConfigureParams.RS232.sSccBOutFileName, "/dev/modem");
+//	strcpy(ConfigureParams.RS232.sSccBInFileName, "/dev/modem");
 
 	/* Set defaults for MIDI */
 	ConfigureParams.Midi.bEnableMidi = false;
@@ -994,6 +1001,8 @@ void Configuration_Apply(bool bReset)
 	File_MakeAbsoluteSpecialName(ConfigureParams.Log.sTraceFileName);
 	File_MakeAbsoluteSpecialName(ConfigureParams.RS232.szInFileName);
 	File_MakeAbsoluteSpecialName(ConfigureParams.RS232.szOutFileName);
+//	File_MakeAbsoluteSpecialName(ConfigureParams.RS232.sSccBInFileName);
+	File_MakeAbsoluteSpecialName(ConfigureParams.RS232.sSccBOutFileName);
 	File_MakeAbsoluteSpecialName(ConfigureParams.Midi.sMidiInFileName);
 	File_MakeAbsoluteSpecialName(ConfigureParams.Midi.sMidiOutFileName);
 	File_MakeAbsoluteSpecialName(ConfigureParams.Printer.szPrintToFileName);

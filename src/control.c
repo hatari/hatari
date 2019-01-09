@@ -37,6 +37,7 @@ const char Control_fileid[] = "Hatari control.c : " __DATE__ " " __TIME__;
 #include "midi.h"
 #include "printer.h"
 #include "rs232.h"
+#include "scc.h"
 #include "shortcut.h"
 #include "str.h"
 #include "screen.h"
@@ -178,6 +179,7 @@ static bool Control_DeviceAction(const char *name, action_t action)
 	} item[] = {
 		{ "printer", &ConfigureParams.Printer.bEnablePrinting, Printer_Init, Printer_UnInit },
 		{ "rs232",   &ConfigureParams.RS232.bEnableRS232, RS232_Init, RS232_UnInit },
+		{ "sccb",    &ConfigureParams.RS232.bEnableSccB, SCC_Init, SCC_UnInit },
 		{ "midi",    &ConfigureParams.Midi.bEnableMidi, Midi_Init, Midi_UnInit },
 		{ NULL, NULL, NULL, NULL }
 	};
@@ -237,6 +239,8 @@ static bool Control_SetPath(char *name)
 		{ "soundout", ConfigureParams.Sound.szYMCaptureFileName },
 		{ "rs232in",  ConfigureParams.RS232.szInFileName },
 		{ "rs232out", ConfigureParams.RS232.szOutFileName },
+//		{ "sccbin",   ConfigureParams.RS232.sSccBInFileName },
+		{ "sccbout",  ConfigureParams.RS232.sSccBOutFileName },
 		{ NULL, NULL }
 	};
 	int i;

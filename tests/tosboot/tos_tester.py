@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2012-2018 by Eero Tamminen <oak at helsinkinet fi>
+# Copyright (C) 2012-2019 by Eero Tamminen <oak at helsinkinet fi>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -486,7 +486,8 @@ class Tester:
         dummy.write("[HardDisk]\nbUseHardDiskDirectory = FALSE\n\n")
         dummy.write("[Floppy]\nszDiskAFileName = blank-a.st.gz\n\n")
         dummy.write("[Printer]\nbEnablePrinting = TRUE\nszPrintToFileName = %s\n\n" % self.printout)
-        dummy.write("[RS232]\nbEnableRS232 = TRUE\nszInFileName = \nszOutFileName = %s\n\n" % self.serialout)
+        dummy.write("[RS232]\nbEnableRS232 = TRUE\nszInFileName = \nszOutFileName = %s\n" % self.serialout)
+        dummy.write("bEnableSccB = TRUE\nsSccBOutFileName = %s\n\n" % self.serialout)
         dummy.write("[Midi]\nbEnableMidi = TRUE\nsMidiInFileName = \nsMidiOutFileName = %s\n\n" % self.fifofile)
         dummy.close()
 
