@@ -16,6 +16,15 @@
 # second number - the ST scan code of the key.  "--trace keymap" output
 # shows the already mapped scan code.
 #
+# All numbers should be given as decimals (not hexadecimals).
+#
+# Note that using keyboard mapping file causes Hatari to use symbolic
+# key mapping.  Symbolic key mapping does not work with so called "dead"
+# keys.
+#
+# Scan codes for Atari keyboard key positions can be seen here:
+#   http://eerott.mbnet.fi/hatari/img/st-keymap.png
+#
 # tests/keymap/ directory contains programs to discover/test the PC SDL
 # and Atari scan code values.  Hatari's default PC key code -> ST scan
 # code mappings are in src/keymap.c source file.
