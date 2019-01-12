@@ -2667,7 +2667,7 @@ void Disasm_SetCPUType ( int CPU , int FPU )
 {
 	optionCPUTypeMask = 0;
 
-	if ( ( FPU == 68881 ) || ( FPU == 68882 ) )
+	if (FPU != 0)
 		optionCPUTypeMask |= MC_FPU;
 
 	switch ( CPU )
