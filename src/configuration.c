@@ -1013,11 +1013,12 @@ void Configuration_Apply(bool bReset)
 	FDC_Drive_Set_NumberOfHeads ( 0 , ConfigureParams.DiskImage.DriveA_NumberOfHeads );
 	FDC_Drive_Set_NumberOfHeads ( 1 , ConfigureParams.DiskImage.DriveB_NumberOfHeads );
 
-        /* Update disassembler */
+	/* Update disassembler */
 #if ENABLE_WINUAE_CPU
-        Disasm_SetCPUType ( ConfigureParams.System.nCpuLevel , ConfigureParams.System.n_FPUType );
+	Disasm_SetCPUType(ConfigureParams.System.nCpuLevel, ConfigureParams.System.n_FPUType,
+	                  ConfigureParams.System.bMMU);
 #else
-        Disasm_SetCPUType ( ConfigureParams.System.nCpuLevel , 0 );
+	Disasm_SetCPUType(ConfigureParams.System.nCpuLevel, 0, false);
 #endif
 
 #if ENABLE_DSP_EMU
