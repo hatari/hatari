@@ -2,7 +2,7 @@
 #
 # Hatari profile data processor
 #
-# 2013-2017 (C) Eero Tamminen, licensed under GPL v2+
+# 2013-2019 (C) Eero Tamminen, licensed under GPL v2+
 #
 """
 A tool for post-processing Hatari emulator HW profiling data.
@@ -1025,7 +1025,7 @@ class EmulatorProfile(Output):
         "parse profile disassembly"
         prev_addr = 0
         discontinued = False
-        function = FunctionStats(None, 0, 0, self.stats.items)
+        function = FunctionStats(None, -1, 0, self.stats.items)
         while True:
             if not line:
                 break
@@ -1707,7 +1707,7 @@ class Main(Output):
             elif opt == "--ignore-to":
                 prof.set_ignore_to(arg.split(','))
             # options for profile Callgraph info generation
-            elif opt in ("-k", "--calgrind"):
+            elif opt in ("-k", "--callgrind"):
                 prof.enable_callgrind()
             # options for both graphs & statistics
             elif opt in ("-f", "--first"):
