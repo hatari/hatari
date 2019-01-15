@@ -391,6 +391,8 @@ class ProfileSymbols(Output):
         self.symbols = None	# (addr:symbol) dict for resolving
         self.absolute = {}	# (addr:symbol) dict of absolute symbols
         self.relative = {}	# (addr:symbol) dict of relative symbols
+        self.aliases = {}       # (name:addr) dict of replaced absolute symbols
+        self.rel_aliases = {}   # (name:addr) dict of replaced relative symbols
         self.symbols_need_sort = False
         self.symbols_sorted = None	# sorted list of symbol addresses
         # Non-overlapping memory areas that may be specified in profile file
@@ -405,7 +407,7 @@ class ProfileSymbols(Output):
         self.r_symbol = re.compile("^(0x)?([a-fA-F0-9]+) ([bBdDtT]) ([$]?[-_.a-zA-Z0-9]+)$")
 
     def parse_areas(self, fobj, parsed):
-        "parse memory area lines from data"
+        "parse memory area lines from data and post-process earlier read symbols data"
         while True:
             parsed += 1
             line = fobj.readline()
@@ -424,7 +426,8 @@ class ProfileSymbols(Output):
                 self.error_exit("invalid memory area '%s': 0x%x-0x%x on line %d" % (name, start, end, parsed))
             elif self.verbose:
                 self.message("memory area '%s': 0x%x-0x%x" % (name, start, end))
-        self._relocate_symbols()
+        self._combine_symbols()
+        self._clean_aliases()
         return line, parsed-1
 
     def get_area(self, addr):
@@ -434,14 +437,16 @@ class ProfileSymbols(Output):
                 return (key, addr - value[0])
         return (self.default_area, addr)
 
-    def _check_symbol(self, addr, name, symbols):
+    def _check_symbol(self, addr, name, symbols, aliases):
         "return True if symbol is OK for addition"
+        # same address has already a symbol?
         if addr in symbols:
-            # symbol exists already for that address
+            # with same name?
             if name == symbols[addr]:
                 return False
             # prefer function names over object names
             if name.endswith('.o'):
+                aliases[name] = addr
                 return False
             oldname = symbols[addr]
             lendiff = abs(len(name) - len(oldname))
@@ -453,15 +458,33 @@ class ProfileSymbols(Output):
                      (name.endswith(oldname) or oldname.endswith(name) or
                      name.startswith(oldname) or oldname.startswith(name)))):
                 self.warning("replacing '%s' at 0x%x with '%s'" % (oldname, addr, name))
+            # add previous name as alias for new name
+            aliases[symbols[addr]] = name
         return True
+
+    def _clean_aliases(self):
+        "remove address aliases for names that already have symbols"
+        to_remove = {}
+        for name, addr in self.aliases.items():
+            if name in self.names:
+                if addr == self.names[name]:
+                    to_remove[name] = True
+                    continue
+                self.warning("multiple addresses (0x%x & 0x%x) for symbol '%s'" % (addr, self.names[name], name))
+                if addr in self.symbols:
+                    self.warning("0x%x is also address for symbol '%s'" % (addr, self.symbols[addr]))
+        for name in to_remove.keys():
+            del(self.aliases[name])
 
     def parse_symbols(self, fobj, is_relative):
         "parse symbol file contents"
         unknown = lines = 0
         if is_relative:
             symbols = self.relative
+            aliases = self.rel_aliases
         else:
             symbols = self.absolute
+            aliases = self.aliases
         for line in fobj.readlines():
             lines += 1
             line = line.strip()
@@ -472,7 +495,7 @@ class ProfileSymbols(Output):
                 dummy, addr, kind, name = match.groups()
                 if kind in ('t', 'T'):
                     addr = int(addr, 16)
-                    if self._check_symbol(addr, name, symbols):
+                    if self._check_symbol(addr, name, symbols, aliases):
                         symbols[addr] = name
             else:
                 self.warning("unrecognized symbol line %d:\n\t'%s'" % (lines, line))
@@ -497,7 +520,7 @@ class ProfileSymbols(Output):
         self.names[name] = addr
         return name
 
-    def _relocate_symbols(self):
+    def _combine_symbols(self):
         "combine absolute and relative symbols to single lookup"
         # renaming is done only at this point (after parsing memory areas)
         # to avoid addresses in names dict to be messed by relative symbols
@@ -513,21 +536,32 @@ class ProfileSymbols(Output):
             return
         if self.text_area not in self.areas:
             self.error_exit("'%s' area range missing from profile, needed for relative symbols" % self.text_area)
+
         area = self.areas[self.text_area]
+        # relocate symbols used for resolving
         for addr, name in self.relative.items():
             addr += area[0]
             # -1 used because compiler can add TEXT symbol right after end of TEXT section
             if addr < area[0] or addr-1 > area[1]:
                 self.error_exit("relative symbol '%s' address 0x%x is outside of TEXT area: 0x%x-0x%x!\nDo symbols match the profiled binary?" % (name, addr, area[0], area[1]))
-            if self._check_symbol(addr, name, self.symbols):
+            if self._check_symbol(addr, name, self.symbols, self.rel_aliases):
                 name = self._rename_symbol(addr, name)
                 self.symbols[addr] = name
                 if self.verbose:
                     self.message("0x%x: %s (relative)" % (addr, name))
+        # relocate relative address aliases
+        for addr, name in self.rel_aliases.items():
+            addr += area[0]
+            # -1 used because compiler can add TEXT symbol right after end of TEXT section
+            if addr < area[0] or addr-1 > area[1]:
+                self.error_exit("relative symbol '%s' address 0x%x is outside of TEXT area: 0x%x-0x%x!\nDo symbols match the profiled binary?" % (name, addr, area[0], area[1]))
+            if name in self.aliases and self.aliases[name] != addr:
+                self.warning("conflicting addresses 0x%x & 0x%x for symbol '%s'" % (addr, self.aliases[name], name))
+            self.aliases[name] = addr
 
     def add_profile_symbol(self, addr, name):
         "add absolute symbol and return its name in case it got renamed"
-        if self._check_symbol(addr, name, self.symbols):
+        if self._check_symbol(addr, name, self.symbols, self.aliases):
             name = self._rename_symbol(addr, name)
             self.symbols[addr] = name
             self.symbols_need_sort = True
@@ -545,6 +579,12 @@ class ProfileSymbols(Output):
             return self.names[name]
         if name in self.areas:
             return self.areas[name][0]
+        return None
+
+    def get_alias_addr(self, name):
+        "return symbol address for given address alias, or None (for Callgrind)"
+        if name in self.aliases:
+            return self.aliases[name]
         return None
 
     def get_preceeding_symbol(self, addr):
@@ -855,6 +895,9 @@ class ProfileCallgrind(Output):
                 continue
             name = line.strip().split('=')[1]
             paddr = symbols.get_addr(name)
+            if not paddr:
+                self.warning("no resolved address for symbol '%s', trying address aliases instead" % name)
+                paddr = symbols.get_alias_addr(name)
             if profile[paddr].child:
                 self._output_calls(profile, paddr)
             items += 1
