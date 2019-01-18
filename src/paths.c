@@ -312,16 +312,16 @@ void Paths_Init(const char *argv0)
 	psExecDir = Paths_InitExecDir(argv0);
 
 	/* Now create the datadir path name from the bindir path name: */
+	sDataDir = Str_Alloc(FILENAME_MAX);
 	if (psExecDir && strlen(psExecDir) > 0)
 	{
-		sDataDir = Str_Alloc(strlen(psExecDir) + 1 + strlen(BIN2DATADIR));
 		sprintf(sDataDir, "%s%c%s", psExecDir, PATHSEP, BIN2DATADIR);
 	}
 	else
 	{
 		/* bindir could not be determined, let's assume datadir is relative
 		 * to current working directory... */
-		sDataDir = Str_Dup(BIN2DATADIR);
+		strcpy(sDataDir, BIN2DATADIR);
 	}
 
 	/* And finally make a proper absolute path out of datadir: */
