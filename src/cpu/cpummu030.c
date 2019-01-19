@@ -2924,6 +2924,10 @@ void m68k_do_rte_mmu030 (uaecptr a7)
 
 		}
 
+		if (mmu030_state[1] & MMU030_STATEFLAG1_LASTWRITE) {
+			mmu030_retry = false;
+		}
+
 #if MMU030_DEBUG
 		if (mmu030_idx >= MAX_MMU030_ACCESS) {
 			write_log(_T("mmu030_idx (RTE) out of bounds! %d >= %d\n"), mmu030_idx, MAX_MMU030_ACCESS);
@@ -3325,6 +3329,11 @@ void m68k_do_rte_mmu030c (uaecptr a7)
 					mmu030_ad[idxsize].done = true;
 				}
 			}
+		}
+
+		if (mmu030_state[1] & MMU030_STATEFLAG1_LASTWRITE) {
+			mmu030_retry = false;
+			fill_prefetch_030_ntx();
 		}
 
 	} else {
