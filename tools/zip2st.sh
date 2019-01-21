@@ -44,16 +44,17 @@ fi
 
 if [ -z "$STFILE" ]; then
 	# if no STFILE path given, target name based on ZIPFILE name
-	# (with extension removed)
+	# with extension removed and spaces converted to underscores
 	BASENAME=${ZIPFILE%.zip}
 	BASENAME=${BASENAME%.ZIP}
 	if [ -z $(which basename) ]; then
 		# goes to same place as source directory
-		STFILE="$BASENAME".st
+		STFILE=${BASENAME}.st
 	else
 		# basename can reliably give last path component
-		STFILE="$(basename $BASENAME)".st
+		STFILE=$(basename "$BASENAME").st
 	fi
+	STFILE=$(echo $STFILE | tr ' ' '_')
 fi
 if [ -f "$STFILE" ]; then
 	echo "ERROR: ST file '$STFILE' already exists, remove it first. Aborting..."
@@ -88,7 +89,7 @@ else
 		echo "ERROR: 'unzip' tool missing."
 		exit 2
 	fi
-	TEMPDIR=`mktemp -d` || exit 2
+	TEMPDIR=$(mktemp -d) || exit 2
 	echo "Converting '$ZIPFILE' -> '$TEMPDIR/' -> '$STFILE'"
 
 	trap exit_cleanup EXIT
@@ -109,7 +110,7 @@ echo
 step=$(($step+1))
 echo "$step) Checking/skipping intermediate directories..."
 while true; do
-	count=$(ls $ZIPDIR|wc -l)
+	count=$(ls "$ZIPDIR"|wc -l)
 	if [ $count -ne 1 ]; then
 		if [ $count -eq 0 ]; then
 			echo "ERROR: zip content is empty!"
@@ -118,7 +119,7 @@ while true; do
 		# more than one dir/file
 		break
 	fi
-	dir=$(ls $ZIPDIR)
+	dir=$(ls "$ZIPDIR")
 	if [ \! -d "$ZIPDIR/$dir" ]; then
 		# not dir
 		break
@@ -128,11 +129,11 @@ while true; do
 		break
 	fi
 	echo "- $dir"
-	ZIPDIR=$ZIPDIR/$dir
+	ZIPDIR="$ZIPDIR/$dir"
 done
 
 # size of reserved sectors, FATs & root dir + zip content size
-size=$((24 + $(du -ks $ZIPDIR|awk '{print $1}')))
+size=$((24 + $(du -ks "$ZIPDIR"|awk '{print $1}')))
 
 # find a suitable disk size supported by mformat and Atari ST
 disksize=0
@@ -166,7 +167,7 @@ if [ $disksize -gt 0 ]; then
 	step=$(($step+1))
 	echo "$step) Copying data to disk image..."
 	echo "MTOOLS_NO_VFAT=1 mcopy -i $STFILE -spmv $ZIPDIR/* ::"
-	MTOOLS_NO_VFAT=1 mcopy -i "$STFILE" -spmv $ZIPDIR/* ::
+	MTOOLS_NO_VFAT=1 mcopy -i "$STFILE" -spmv "$ZIPDIR"/* ::
 else
 	echo "ERROR: zip contents don't fit to a floppy image ($size > 2880 KB)."
 fi
