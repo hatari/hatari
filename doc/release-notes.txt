@@ -10,13 +10,22 @@
 Note:
 - Compiling with SDL 1.2 is considered as deprecated now.
   The support for SDL 1.2 will be dropped in a future release.
+- Hatari now requires a C compiler compatible with c99/gnu99
 
 Emulation:
 - CPU:
-  - Fix 68030 MMU PTEST
+  - CPU core updated to WinUAE 4.1.0
+  - Fix 68030 MMU PTEST/FSAVE/FRESTORE
+  - Improve 68030 bus error handling and retrying faulty instruction
   - Fix: only enable cache emulation when relevant
+  - Improve softfloat FPU emulation
+  - FPU emulation mode (softfloat or not) can be changed on the fly
+  - Ensure HW registers region is not cachable for 68030 without MMU
+    when write allocate mode is enabled
 - DSP:
   - Fix DSP ROM tables (sin, mulaw & a-law)
+  - Some  waitstate cycles were not correctly counted when accessing
+    DSP IO regs in CE mode
 - Blitter:
   - Fix: a rare case in cycle exact mode when bus is shared between CPU
     and blitter : the last word of a transfer could be wrong if bus was
@@ -24,6 +33,7 @@ Emulation:
     is made
   - State of current blitter operation was sometimes not correctly restored
     when CPU temporarily stopped the blitter and resumed it later
+  - DSP emulation was not updated in parallel when blitter was running
 - Video:
   - Handle VBlank signal and mask the 2 last lines when bottom border
     is removed
@@ -46,6 +56,7 @@ Emulator:
   - Fix: Include GEMDOS HD file handles so apps with open files work
   - Improve memory snapshot save/restore reliability
     (e.g. for pending interrupts)
+  - Save/restore TT RAM content into memory snapshots
 - SDL GUI:
   - Show warning dialog when cartridge file is disabled due to conflict
     with other features
@@ -54,6 +65,8 @@ Emulator:
   - Move joystick info to second statusbar line
   - Few additional special keys can be remapped
   - Fix: broken CPU dialog with old UAE CPU core
+  - Display 'SF' in status bar if FPU emulation is using softfloat library
+  - Display 'CE' or 'PF' in status if using 'cycle exact' or 'prefetch' modes
 - MacOS / GUI:
   - Minor GUI updates for v2.1 changes
   - Fix: "reset" and "don't reset" UI buttons inverted
@@ -131,9 +144,18 @@ Documentation:
 Fixed demos:
 - B.I.G. Demo screen 2 (regression in Hatari 2.1, vblank in bottom border)
 
+Fixed falcon demos:
+- 4musiK by Dune & Sector One (don't cache HW register regions in write
+  allocate mode)
+
 Fixed games:
 - Lethal Xcess in STE mode (stopping/resuming blitter and saving/restoring
   memory snapshots)
+- Lethal Xcess in STF mode (add jitter to MFP, temporary fix)
+
+Fixed programs:
+- Many TT/Falcon programs relying on 68030 MMU / bus error retrying are now
+  working correctly (eg 'memwatch' by Uwe Seimet)
 
 
  Version 2.1.0 (2018-02-07)
