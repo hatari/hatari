@@ -42,7 +42,7 @@ Emulator:
   - "patch TOS timer-D" speedup option is now disabled by default
   - Allow up to 512MB of TT-RAM (increased from 256 MB)
   - Additional ROM patches applied to TOS v4.x for 040 & 060
-Memory snapshot save/restore:
+- Memory snapshot save/restore:
   - Fix: Include GEMDOS HD file handles so apps with open files work
   - Improve memory snapshot save/restore reliability
     (e.g. for pending interrupts)
@@ -132,7 +132,8 @@ Fixed demos:
 - B.I.G. Demo screen 2 (regression in Hatari 2.1, vblank in bottom border)
 
 Fixed games:
-- Lethal Xcess in STE mode (stopping/resuming blitter)
+- Lethal Xcess in STE mode (stopping/resuming blitter and saving/restoring
+  memory snapshots)
 
 
  Version 2.1.0 (2018-02-07)
