@@ -38,7 +38,7 @@ Emulation:
   - Handle VBlank signal and mask the 2 last lines when bottom border
     is removed
 - Hard disks:
-  - Experimental support for the NCR5380 SCSI chip in Falcon mode
+  - Experimental support for the NCR5380 SCSI chip in Falcon and TT mode
 - Serial ports:
   - Very experimental support for the SCC chip of the Mega-STE, TT and Falcon
     (only channel B for now, and output only, use the "--scc-b-out" command
@@ -67,6 +67,7 @@ Emulator:
   - Fix: broken CPU dialog with old UAE CPU core
   - Display 'SF' in status bar if FPU emulation is using softfloat library
   - Display 'CE' or 'PF' in status if using 'cycle exact' or 'prefetch' modes
+  - It is now possible to configure more than one ACSI hard disk images
 - MacOS / GUI:
   - Minor GUI updates for v2.1 changes
   - Fix: "reset" and "don't reset" UI buttons inverted
@@ -99,6 +100,7 @@ Emulator:
   - "memdump" and "memwrite" commands output & input can now be also
     word or long sized instead of bytes
   - Show arguments in DSP XBios call traces
+  - FPU and PMMU opcodes are now also disassembled in 68040/060 mode
 - Options:
   - Fix: "--memsize 0" legacy option
   - Disable "--timer-d" option by default.  Increases CPU usage
