@@ -84,15 +84,15 @@ Emulator:
     with some OSes
 - Screen handling:
   - Fix: TOS <= v2.x crashes when mouse is moved in 16x16 area at
-    the bottom right corner in VDI mode (regression in Hatari v1.0)
-  - Fix: --tos-res high setting
+    the bottom right corner in VDI mode (Hatari v1.0 regression)
+  - Fix: "--tos-res high" setting
 - Debugging:
   - Fix: DSP/CPU profile "addresses" commands output line count when
     paging.  Tell also when it wraps to start
   - Each log message has a log level prefix
   - (Almost) all Hatari output goes now through logging framework so
-    that Hatari verbosity can be controlled. Output at default log
-    level is reduced significantly
+    that Hatari verbosity can be controlled
+  - Output at default log level is reduced significantly
   - Add support for ISP & USP and 020+ special registers like VBR
   - Add "OsCallParam" variable which gives first (word sized) parameter
     for OS calls, for use with OS call "*Opcode" breakpoints
@@ -127,12 +127,12 @@ Building:
 
 Tools:
 - Hatari Python UI migrated from PyGtk v2 to Gtk v3
-- Support both Python v2 & v3 in rest of the scripts
-  (Arch/Clear Linux)
+- Add Python v3 support to rest of the scripts
+  (required by Arch Linux & Clear Linux)
 - hatari-prg-args script:
   - Installed by default
   - Fix program argument setting for recent EmuTOS versions
-  - Support argument setting also for programs run
+  - Support argument setting also for programs that are run
     from disk images
 - zip2st: handle also directories with spaces in their names
 - Fix TOS bootup tester test output verification
