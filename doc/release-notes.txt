@@ -52,6 +52,7 @@ Emulator:
   - "patch TOS timer-D" speedup option is now disabled by default
   - Allow up to 512MB of TT-RAM (increased from 256 MB)
   - Additional ROM patches applied to TOS v4.x for 040 & 060
+  - Improved info and warning output for Hatari constraints and issues
 - Memory snapshot save/restore:
   - Fix: Include GEMDOS HD file handles so apps with open files work
   - Improve memory snapshot save/restore reliability
@@ -73,6 +74,8 @@ Emulator:
   - Fix: "reset" and "don't reset" UI buttons inverted
   - Update MIDI panel for French version
   - Save screenshots in user defined location or ~/Desktop
+- Windows:
+  - Fix: buffer overflow in relative Hatari datapath handling
 - Disk handling:
   - IDE byte-swap option added to config file & GUI
   - Fix: NF SCSI driver didn't invalidate cache for changed memory area
@@ -135,14 +138,19 @@ Tools:
   - Support argument setting also for programs that are run
     from disk images
 - zip2st: handle also directories with spaces in their names
+- Fixes to hatari_profiler Callgrind output symbol handling
 - Fix TOS bootup tester test output verification
 - Few additional tests for validating Hatari functionality.
   Almost all tests are now integrated with CTest framework.
   Use e.g. "ctest -j4" command to run them
 
 Documentation:
+- Tag commits for Hatari releases before v1 in Mercurial repo
 - Add notes about (new default) PortMidi support to MIDI usage
 - More details on GEMDOS HD and VDI mode emulation limits
+- Large updates to compatibility documents and to performance
+  section in the manual
+- Add release checklist document
 
 Fixed demos:
 - B.I.G. Demo screen 2 (regression in Hatari 2.1, vblank in bottom border)
