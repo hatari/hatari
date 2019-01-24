@@ -47,7 +47,7 @@ is missing here, please remind me!):
 
 - Christian Zietz: recovered many original ASIC schemas for Atari's chips
   and helped in reverse-engineering the behaviour of those chips (MMU address
-  decoding)
+  decoding). Blitter test program.
 
 - Matthias Alles : He initiated the port of Hatari to MiNT and helped
   with a lot of technical questions about the ST.
@@ -58,3 +58,8 @@ is missing here, please remind me!):
   handling crashes.
 
 - Michael Tautschnig : Debian bug on ConfigureParams handling issue.
+
+- Markus Fröschle : blitter test results from real Falcon.
+
+- Andrea Musuruane (Hatari Fedora package maintainer) :
+  Hatari bug reports

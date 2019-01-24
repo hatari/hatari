@@ -52,7 +52,7 @@ random order - and if someone is missing here, please remind us!):
   RTC emulation.
 
 - Tuduri Benoît <skweek at users.sourceforge.net> : French man-page,
-  support for Doxygen.
+  support for Doxygen, MacOS bug reports.
 
 - Markus Oberhumer : fixed a problem with ZIPed disk images, routine for
   loading the configuration file from the $HOME directory.
@@ -83,8 +83,8 @@ random order - and if someone is missing here, please remind us!):
 
 - Cyprian Konador: Found some bugs in the blitter cycles emulation, provided
   patches for duochrome and samplehold modes for TT video emulation, reported
-  some infos about alt-ram and dma ranges. Also provided some test programs
-  to show cpu/blitter bus sharing and parallel execution.
+  some infos about alt-RAM & DMA ranges and DIP switch register. Also provided
+  some test programs to show cpu/blitter bus sharing and parallel execution.
 
 - Jerome Vernet: Some updates to the macOS Xcode project file and macOS
   GUI, supplied a french keymapping file for macOS.
@@ -92,7 +92,7 @@ random order - and if someone is missing here, please remind us!):
 - Kenneth Kaufman: MS VC6 & C++ compiler and multiple GEMDOS HD
   partition support patches.
 
-- Uwe Seimet: IDE emulation improvements, GEMDOS HD emulation
+- Uwe Seimet: IDE and ACSI/SCSI emulation improvements, GEMDOS HD emulation
   improvement suggestions and NatFeats SCSI Driver code for Linux.
 
 - Markus Fritze: New m68k disassembler with more Motorola like syntax
@@ -115,15 +115,17 @@ random order - and if someone is missing here, please remind us!):
 - Max Böhm: host <-> Atari filename encoding conversion routines and
   related changes needed to gemdos.c.
 
-- Troed Sangberg (Troed of Sync): accurate description of the GLUE state
+- Troed Sångberg (Troed of Sync): accurate description of the GLUE state
   machine for STF/STE in all wakestates (display signal, sync signal, ...)
   and the resulting lines' length used in overscan / hardscroll. Coder
   of the '{Closure}' demo which makes huge use of these techniques.
-  He also provided a patch for Audio Sculpture's custom IKBD program.
+  He also provided patches for Audio Sculpture's custom IKBD program
+  and MacOS screenshot dir handling.
 
-- Thorsten Otto: Some improvements to the code that patches the TOS ROMs,
-  a.out symbol table & absolute symbols support and few debugger
-  usability improvements
+- Thorsten Otto: improvements to the code that patches the TOS ROMs,
+  a.out symbol table & absolute symbols support, few debugger & tracing
+  usability improvements, fixed (sin, mulaw & a-law) DSP ROM tables,
+  fmovem test program, key mapping improvement.
 
 - Andreas Grabher : FPU improvements using the SoftFloat library,
   most of the 030 MMU implementation and few bug reports & patches
@@ -137,7 +139,7 @@ random order - and if someone is missing here, please remind us!):
 - Mark Fechtner : patch to not use tmpfile() directly under Windows
 
 - Miro Kropáček : patch for correct V flag when using BCD instructions
-  on 68020/68030 CPU
+  on 68020/68030 CPU, running tests on real Falcon
 
 - Steven Noonan : patch to prevent a crash if Halt dialog was called
   before SDLGui_SetScreen()
