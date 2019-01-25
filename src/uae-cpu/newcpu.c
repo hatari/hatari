@@ -1270,6 +1270,7 @@ int m68k_movec2 (int regno, uae_u32 *regp)
     return 1;
 }
 
+#if !defined(uae_s64)
 STATIC_INLINE int
 div_unsigned(uae_u32 src_hi, uae_u32 src_lo, uae_u32 ndiv, uae_u32 *quot, uae_u32 *rem)
 {
@@ -1294,6 +1295,7 @@ div_unsigned(uae_u32 src_hi, uae_u32 src_lo, uae_u32 ndiv, uae_u32 *quot, uae_u3
 	*rem = src_hi;
 	return 0;
 }
+#endif
 
 void m68k_divl (uae_u32 opcode, uae_u32 src, uae_u16 extra, uaecptr oldpc)
 {
@@ -1416,6 +1418,7 @@ void m68k_divl (uae_u32 opcode, uae_u32 src, uae_u16 extra, uaecptr oldpc)
 #endif
 }
 
+#if !defined(uae_s64)
 STATIC_INLINE void
 mul_unsigned(uae_u32 src1, uae_u32 src2, uae_u32 *dst_hi, uae_u32 *dst_lo)
 {
@@ -1434,6 +1437,7 @@ mul_unsigned(uae_u32 src1, uae_u32 src2, uae_u32 *dst_hi, uae_u32 *dst_lo)
 	*dst_lo = lo;
 	*dst_hi = r3;
 }
+#endif
 
 void m68k_mull (uae_u32 opcode, uae_u32 src, uae_u16 extra)
 {
