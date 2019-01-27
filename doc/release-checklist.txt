@@ -13,6 +13,7 @@ When first thinking about new release:
   - Run TOS boot tester for all supported TOS versions
 
 Few weeks before release, after issues from above have been fixed:
+* Check that Hatari documentation and WWW-site repository are up to date
 * Validate HTML documentation with https://validator.w3.org/
 * Check that (Python) hatariui still works with latest changes
 * Check that all programs/demos listed in compatibility.html as
