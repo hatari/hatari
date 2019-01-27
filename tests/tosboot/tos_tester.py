@@ -179,6 +179,9 @@ class TOS:
         # other monitor types valid for the machine are
         # valid also for TOS that works on it
         if monitortype.startswith("vdi"):
+            # VDI mode doesn't work properly until TOS v1.02
+            if self.version < 0x102:
+                return False
             # sensible sized VDI modes don't work with TOS4
             # (nor make sense with its Videl expander support)
             if self.version >= 0x400:
