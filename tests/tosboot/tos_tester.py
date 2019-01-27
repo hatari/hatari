@@ -591,7 +591,7 @@ class Tester:
             print("ERROR: FIFO open IOError!")
             return None
 
-    def test(self, identity, testargs, tos, memory):
+    def test(self, identity, testargs, tos, memory, extrawait):
         "run single boot test with given args and waits"
         # Hatari command line options, don't exit if Hatari exits
         instance = hconsole.Main(self.defaults + testargs, False)
@@ -610,7 +610,7 @@ class Tester:
             instance.run("keypress %s" % hconsole.Scancode.Space)
 
         # wait until test program has been run and output something to fifo
-        prog_ok, tests_ok = self.wait_fifo(fifo, tos.fullwait)
+        prog_ok, tests_ok = self.wait_fifo(fifo, tos.fullwait + extrawait)
         if tests_ok:
             output_ok = self.verify_output(identity, tos, memory)
         else:
@@ -655,6 +655,7 @@ class Tester:
             testargs += ["--fast-forward", "yes", "--fast-boot", "yes",
                          "--fastfdc", "yes", "--timer-d", "yes"]
 
+        extrawait = 0
         if disk == "gemdos":
             # use Hatari autostart, must be last thing added to testargs!
             testargs += [self.testprg]
@@ -672,6 +673,8 @@ class Tester:
                 testargs += ["--disk-a", self.bootdesk, "--auto", self.floppyprg]
             else:
                 testargs += ["--disk-a", self.bootauto]
+            # floppies are slower
+            extrawait = 3
         elif disk == "acsi":
             testargs += ["--acsi", "0=%s" % self.hdimage, "--auto", self.hdprg]
         elif disk == "scsi":
@@ -681,7 +684,7 @@ class Tester:
         else:
             raise AssertionError("unknown disk type '%s'" % disk)
 
-        results = self.test(identity, testargs, tos, memory)
+        results = self.test(identity, testargs, tos, memory, extrawait)
         self.results[tos.name].append((identity, results))
 
     def run(self, config):
