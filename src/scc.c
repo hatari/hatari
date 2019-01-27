@@ -101,7 +101,8 @@ void SCC_Init(void)
 	if (!ConfigureParams.RS232.bEnableSccB || !SCC_IsAvailable(&ConfigureParams))
 		return;
 
-	if (strcmp(ConfigureParams.RS232.sSccBInFileName, ConfigureParams.RS232.sSccBOutFileName) == 0)
+	if (ConfigureParams.RS232.sSccBInFileName[0] &&
+	    strcmp(ConfigureParams.RS232.sSccBInFileName, ConfigureParams.RS232.sSccBOutFileName) == 0)
 	{
 #if HAVE_TERMIOS_H
 		scc[1].rd_handle = open(ConfigureParams.RS232.sSccBInFileName, O_RDWR | O_NONBLOCK);
@@ -131,18 +132,24 @@ void SCC_Init(void)
 	}
 	else
 	{
-		scc[1].rd_handle = open(ConfigureParams.RS232.sSccBInFileName, O_RDONLY | O_NONBLOCK);
-		if (scc[1].rd_handle < 0)
+		if (ConfigureParams.RS232.sSccBInFileName[0])
 		{
-			Log_Printf(LOG_ERROR, "SCC_Init: Can not open file '%s'\n",
-			           ConfigureParams.RS232.sSccBInFileName);
+			scc[1].rd_handle = open(ConfigureParams.RS232.sSccBInFileName, O_RDONLY | O_NONBLOCK);
+			if (scc[1].rd_handle < 0)
+			{
+				Log_Printf(LOG_ERROR, "SCC_Init: Can not open input file '%s'\n",
+					   ConfigureParams.RS232.sSccBInFileName);
+			}
 		}
-		scc[1].wr_handle = open(ConfigureParams.RS232.sSccBOutFileName,
-		                        O_CREAT | O_WRONLY | O_NONBLOCK, S_IRUSR | S_IWUSR);
-		if (scc[1].wr_handle < 0)
+		if (ConfigureParams.RS232.sSccBOutFileName[0])
 		{
-			Log_Printf(LOG_ERROR, "SCC_Init: Can not open file '%s'\n",
-			           ConfigureParams.RS232.sSccBOutFileName);
+			scc[1].wr_handle = open(ConfigureParams.RS232.sSccBOutFileName,
+						O_CREAT | O_WRONLY | O_NONBLOCK, S_IRUSR | S_IWUSR);
+			if (scc[1].wr_handle < 0)
+			{
+				Log_Printf(LOG_ERROR, "SCC_Init: Can not open output file '%s'\n",
+					   ConfigureParams.RS232.sSccBOutFileName);
+			}
 		}
 	}
 	if (scc[1].rd_handle == -1 && scc[1].wr_handle == -1)
