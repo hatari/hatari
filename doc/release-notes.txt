@@ -4,7 +4,7 @@
                                 Release Notes
 
 
- Version 2.2.0 (2019-XX-XX)
+ Version 2.2.0 (2019-01-31)
  ---------------------------
 
 Note:
