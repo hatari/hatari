@@ -2,7 +2,7 @@
 
                                     Hatari
 
-                             Version 2.2, January 2019
+                             Version 2.2.1, February 2019
 
                             http://hatari.tuxfamily.org/
 

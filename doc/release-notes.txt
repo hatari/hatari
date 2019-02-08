@@ -4,6 +4,14 @@
                                 Release Notes
 
 
+ Version 2.2.1 (2019-02-08)
+ ---------------------------
+
+Emulation:
+- CPU:
+  - Fix a bug/regression from Hatari 2.1.0 in the UNPK instruction
+
+
  Version 2.2.0 (2019-01-31)
  ---------------------------
 
