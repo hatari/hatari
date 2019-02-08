@@ -1322,7 +1322,7 @@ next_track:
 /*-----------------------------------------------------------------------*/
 /**
  * When a track only consists of the content of each 512 bytes sector and
- * no timings information, we must compute some default values for each
+ * no timings informations, we must compute some default values for each
  * sector, as well as the position of the corresponding 512 bytes of data.
  * This is only used when storing unprotected tracks.
  */
