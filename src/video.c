@@ -173,7 +173,7 @@
 /* 2008/06/26	[NP]	Improve STE scrolling : handle $ff8264 (no prefetch) and $ff8265	*/
 /*			(prefetch). See Video_HorScroll_Write for details on both registers.	*/
 /*			More generic support for starting display 16 pixels earlier on STE	*/
-/*			by writing to $ff8265 and settting $ff8264=0 just after.		*/
+/*			by writing to $ff8265 and setting $ff8264=0 just after.			*/
 /*			(fix Digiworld 2 by ICE, which uses $ff8264 for horizontal scroll).	*/
 /* 2008/07/07	[NP]	Ignore other 50/60 Hz switches once the right border was removed, keep	*/
 /*			the timer B to occur at pos 460+28 (fix Oxygene screen in Transbeauce 2)*/
@@ -490,7 +490,7 @@ int nFrameSkips;                                /* speed up by skipping video fr
 
 bool bUseHighRes;                               /* Use hi-res (ie Mono monitor) */
 int VerticalOverscan;				/* V_OVERSCAN_xxxx for current display frame */
-Uint16 HBLPalettes[HBL_PALETTE_LINES];          /* 1x16 colour palette per screen line, +1 line just incase write after line 200 */
+Uint16 HBLPalettes[HBL_PALETTE_LINES];          /* 1x16 colour palette per screen line, +1 line just in case write after line 200 */
 Uint16 *pHBLPalettes;                           /* Pointer to current palette lists, one per HBL */
 Uint32 HBLPaletteMasks[HBL_PALETTE_MASKS];      /* Bit mask of palette colours changes, top bit set is resolution change */
 Uint32 *pHBLPaletteMasks;
@@ -977,7 +977,7 @@ void	Video_InitTimings(void)
 	pVideoTiming2->VideoTimingName = "TT";
 	Video_InitTimings_Copy ( pVideoTiming1 , pVideoTiming2 , 0 );
 
-	/* Set timings to a default mode (this will be overriden later when choosing the emulated machine) */
+	/* Set timings to a default mode (this will be overridden later when choosing the emulated machine) */
 	pVideoTiming = &VideoTimings[ VIDEO_TIMING_DEFAULT ];
 }
 
@@ -1373,7 +1373,7 @@ static Uint32 Video_CalculateAddress ( void )
  * On STE, if hscroll is used, prefetch will cause this position to
  * happen 16 cycles earlier.
  * This function should use the same logic as in Video_CalculateAddress.
- * NOTE : this function is not completly accurate, as even when there's
+ * NOTE : this function is not completely accurate, as even when there's
  * no hscroll (on STF) the mmu starts reading 16 cycles before display starts.
  * But it's good enough to emulate writing to ff8205/07/09 on STE.
  */
@@ -2665,7 +2665,7 @@ void Video_Sync_WriteByte ( void )
 
 	/* Ignore freq changes if we are in high res */
 	/* 2009/04/26 : don't ignore for now (see ST Cnx in Punish Your Machine) */
-// TODO in res part, update freq when swith to !high
+// TODO in res part, update freq when switch to !high
 //	if ( ShifterFrame.Res == 0x02 )
 //		return;						/* do nothing */
 
@@ -3828,7 +3828,7 @@ static void Video_CopyScreenLineColor(void)
 				if (LineBorderMask & BORDERMASK_LEFT_OFF_2_STE)
 				{
 					/* This is one can be complicated, because we can have STE scroll to the left + the global */
-					/* 8 pixel left scroll addded when using a 224 bytes overscan line. We use extra_word to fetch */
+					/* 8 pixel left scroll added when using a 224 bytes overscan line. We use extra_word to fetch */
 					/* those missing pixels */
 					for ( i=0 ; i<4 ; i++ )
 					{
@@ -4201,7 +4201,7 @@ bool Video_RenderTTScreen(void)
 			bTTColorsSync = false;
 	}
 
-	/* colors need synching? */
+	/* colors need syncing? */
 	if (!bTTColorsSync || TTSpecialVideoMode != nPrevTTSpecialVideoMode)
 	{
 		Video_UpdateTTPalette(bpp);

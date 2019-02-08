@@ -1013,7 +1013,7 @@ static ymu32	Ym2149_EnvStepCompute(ymu8 rHigh , ymu8 rLow)
  * Filter tone period to get audible results
  *  - in the YM2149, per=0 is the same as per=1
  *  - if per is too low compared to the current replay freq, we output
- *    a constant signal (on a real ST, period <= 9 is not audible in mose cases)
+ *    a constant signal (on a real ST, period <= 9 is not audible in most cases)
  * TODO : remove this function as we emulate YM2149 at 250 kHz
  */
 

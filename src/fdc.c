@@ -63,7 +63,7 @@ Programmable Sound Generator (YM-2149)
     1001    Channel B Amplitude
     1010    Channel C Amplitude
     1011    Envelope Period Fine Tune
-    1100    Envelope Peroid Coarse Tune
+    1100    Envelope Period Coarse Tune
     1101    Envelope Shape
     1110    I/O Port A Select (Write only)
     1111    I/O Port B Select
@@ -184,7 +184,7 @@ ACSI DMA and Floppy Disk Controller(FDC)
   Detecting disk changes :
   ------------------------
   3'1/2 floppy drives include a 'DSKCHG' signal on pin 34 to detect when a disk was changed.
-  Unfortunatelly on ST, this signal is not connected. Nevertheless, it's possible to detect
+  Unfortunately on ST, this signal is not connected. Nevertheless, it's possible to detect
   a disk was inserted or ejected by looking at the 'WPT' signal which tells if a disk is write
   protected or not (but this method has some limitations and doesn't work in all cases).
 
@@ -385,7 +385,7 @@ enum
 
 
 /* Delays are in micro sec */
-#define	FDC_DELAY_US_HEAD_LOAD			( 15 * 1000 )	/* Additionnal 15 ms delay to load the head in type II/III */
+#define	FDC_DELAY_US_HEAD_LOAD			( 15 * 1000 )	/* Additional 15 ms delay to load the head in type II/III */
 
 /* Index pulse signal remains high during 3.71 ms on each rotation ([NP] tested on my STF, can vary between 1.5 and 4 ms depending on the drive) */
 #define	FDC_DELAY_US_INDEX_PULSE_LENGTH		( 3.71 * 1000 )

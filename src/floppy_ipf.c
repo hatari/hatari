@@ -411,7 +411,7 @@ void	IPF_Exit ( void )
 
 
 /*
- * Init the ressources to handle the IPF image inserted into a drive (0=A: 1=B:)
+ * Init the resources to handle the IPF image inserted into a drive (0=A: 1=B:)
  */
 bool	IPF_Insert ( int Drive , Uint8 *pImageBuffer , long ImageSize )
 {
@@ -624,7 +624,7 @@ return true;						/* This function is not used for now, always return true */
 
 
 /*
- * When ejecting a disk, free the ressources associated with an IPF image
+ * When ejecting a disk, free the resources associated with an IPF image
  */
 bool	IPF_Eject ( int Drive )
 {

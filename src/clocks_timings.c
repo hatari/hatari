@@ -15,7 +15,7 @@
   when both components use different clocks (eg in STE where audio DMA clock
   is not the same as the cpu clock).
 
-  To get the best results, it's recommanded to set RoundVBLPerSec=false.
+  To get the best results, it's recommended to set RoundVBLPerSec=false.
 
   Note that if you do so, the number of VBL won't be exactly 50 or 60 per sec
   but 50.05 or 60.04 ; if this does not work with your display, set RoundVBLPerSec=true
@@ -173,7 +173,7 @@ bool	RoundVBLPerSec = false;						/* if false, don't round number of VBL to 50/6
 
 /*--------------------------------------------------------------------------*/
 /**
- * Initialize all the clocks informations related to a specific machine type.
+ * Initialize all the clocks information related to a specific machine type.
  * We consider the machine is running with PAL clocks.
  */
 

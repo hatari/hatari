@@ -8,8 +8,8 @@
 */
 
 /* 2007/04/29	[NP]	Functions PSG_Void_WriteByte and PSG_Void_ReadByte to handle	*/
-/*			accesses to $ff8801/03. These adresses have no effect, but they	*/
-/*			give some wait states (e.g. move.l d0,ff8800). 			*/
+/*			accesses to $ff8801/03. These addresses have no effect, but	*/
+/*			they give some wait states (e.g. move.l d0,ff8800). 		*/
 /* 2007/12/16	[NP]	0xff820d/0xff820f are only available on STE, not on ST. We call	*/
 /*			IoMem_VoidRead and IoMem_VoidWrite for these addresses.		*/
 /* 2008/12/21	[NP]	Change functions used to access 0xff88xx (see psg.c)		*/

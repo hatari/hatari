@@ -16,10 +16,9 @@
 /  Process       : Interpret information by parameter and read or      /
 /                  write back to the configuration file.               /
 /                                                                      /
-/  Ouput         : updated configuration file or updated structure.    /
+/  Output        : updated configuration file or updated structure.    /
 /                                                                      /
 /  Programmer    : Jeffry J. Brickley                                  /
-/                                                                      /
 /                                                                      /
 /---------------------------------------------------------------------*/
 
@@ -44,7 +43,7 @@
 /    };
 /  Note that the structure must always be terminated by a NULL row as
 /     was the same with GETOPTS.  This however is slightly more
-/     complicated than scaning the command line (but not by much) for
+/     complicated than scanning the command line (but not by much) for
 /     data as there can be more variety in words than letters and an
 /     number of data items limited only by memory.
 /

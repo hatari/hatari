@@ -749,7 +749,7 @@ static bool Opt_Bool(const char *arg, int optid, bool *conf)
 
 
 /**
- * checks str argument agaist options of type "--option<digit>".
+ * checks str argument against options of type "--option<digit>".
  * If match is found, returns ID for that, otherwise OPT_CONTINUE
  * and OPT_ERROR for errors.
  */

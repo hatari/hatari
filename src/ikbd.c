@@ -1356,7 +1356,7 @@ static void IKBD_DuplicateMouseFireButtons(void)
 		if (KeyboardProcessor.Joy.JoyData[1]&0x80)
 		{
 			KeyboardProcessor.Joy.JoyData[1] &= 0x7f;  /* Clear fire button bit */
-			Keyboard.bRButtonDown |= BUTTON_JOYSTICK;  /* Mimick on mouse right button */
+			Keyboard.bRButtonDown |= BUTTON_JOYSTICK;  /* Mimic right mouse button */
 		}
 		else
 			Keyboard.bRButtonDown &= ~BUTTON_JOYSTICK;
@@ -1833,7 +1833,7 @@ static void IKBD_CheckResetDisableBug(void)
 /*-----------------------------------------------------------------------*/
 /**
  * When a byte is received by the IKBD, it is added to a small 8 byte buffer.
- * - If the first byte is a valid command, we wait for additionnal bytes if needed
+ * - If the first byte is a valid command, we wait for additional bytes if needed
  *   and then we execute the command's handler.
  * - If the first byte is not a valid command or after a successful command, we
  *   empty the input buffer (extra bytes, if any, are lost)
@@ -2019,8 +2019,8 @@ static void IKBD_Cmd_SetMouseThreshold(void)
  * SET MOUSE SCALE
  *
  * 0x0C
- * X      ; horizontal mouse ticks per internel X
- * Y      ; vertical mouse ticks per internel Y
+ * X      ; horizontal mouse ticks per internal X
+ * Y      ; vertical mouse ticks per internal Y
  */
 static void IKBD_Cmd_SetMouseScale(void)
 {
@@ -2270,7 +2270,7 @@ static void IKBD_Cmd_ReturnJoystick(void)
  * SET JOYSTICK MONITORING
  *
  * 0x17
- * rate      ; time between samples in hundreths of a second
+ * rate      ; time between samples in hundredths of a second
  *   Returns: (in packets of two as long as in mode)
  *     %000000xy  where y is JOYSTICK1 Fire button
  *         and x is JOYSTICK0 Fire button
@@ -2333,10 +2333,10 @@ static void IKBD_Cmd_SetJoystickFireDuration(void)
  *         ; until vertical cursor key is generated before RY
  *         ; has elapsed
  * VX        ; length (in tenths of seconds) of joystick closure
- *         ; until horizontal cursor keystokes are generated after RX
+ *         ; until horizontal cursor keystrokes are generated after RX
  *         ; has elapsed
  * VY        ; length (in tenths of seconds) of joystick closure
- *         ; until vertical cursor keystokes are generated after RY
+ *         ; until vertical cursor keystrokes are generated after RY
  *         ; has elapsed
  */
 static void IKBD_Cmd_SetCursorForJoystick(void)

@@ -209,7 +209,7 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
 		png_write_row(png_ptr, rowbuf);
 	}
 
-	/* write the additional chuncks to the PNG file */
+	/* write the additional chunks to the PNG file */
 	png_write_end(png_ptr, info_ptr);
 
 	ret = (int)( ftello ( fp ) - start );			/* size of the png image */

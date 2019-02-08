@@ -44,7 +44,7 @@ static void ShortCut_FullScreen(void)
 	Uint32 cur_ticks;
 
 	/* SDL2 sometimes reports multiple key up and down events when toggling
-	 * fullscreen mode, even though the key has not been released inbetween
+	 * fullscreen mode, even though the key has not been released in between
 	 * (likely because the SDL window focus is lost when switching mode).
 	 * To avoid that we're going back and forth between fullscreen mode and
 	 * windowed mode in this case, we have to ignore full screen shortcut

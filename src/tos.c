@@ -65,7 +65,7 @@ static const char * const pszTosNameExts[] =
 /* Flags that define if a TOS patch should be applied */
 enum
 {
-	TP_ALWAYS,            /* Patch should alway be applied */
+	TP_ALWAYS,            /* Patch should always be applied */
 	TP_HDIMAGE_OFF,       /* Apply patch only if HD emulation is off */
 	TP_ANTI_STE,          /* Apply patch only if running on plain ST */
 	TP_ANTI_PMMU,         /* Apply patch only if no PMMU is available */

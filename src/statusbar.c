@@ -346,7 +346,7 @@ void Statusbar_Init(SDL_Surface *surf)
 	FullRect.h = StatusbarHeight;
 	SDL_FillRect(surf, &FullRect, GrayBg);
 
-	/* intialize messages (first row) */
+	/* initialize messages (first row) */
 	MessageRect.x = fontw;
 	MessageRect.y = ScreenHeight + lineh/2 - fonth/2;
 	MessageRect.w = surf->w - fontw;

@@ -27,7 +27,7 @@ const char Resolution_fileid[] = "Hatari resolution.c : " __DATE__ " " __TIME__;
 static int DesktopWidth, DesktopHeight;
 
 /**
- * Initilizes resolution settings (gets current desktop
+ * Initializes resolution settings (gets current desktop
  * resolution, sets max Falcon/TT Videl zooming resolution).
  */
 void Resolution_Init(void)

@@ -3478,7 +3478,7 @@ static void hd6301_sts_ind(void)
 }
 
 /**
- * SUBA_EXT : subtract extented memory address value from accumulator A : A=A-M
+ * SUBA_EXT : subtract extended memory address value from accumulator A : A=A-M
  *
  * HINZVC
  * ..****
@@ -3499,7 +3499,7 @@ static void hd6301_suba_ext(void)
 }
 
 /**
- * CMPA_EXT : compare extented memory address value to accumulator A : A-M
+ * CMPA_EXT : compare extended memory address value to accumulator A : A-M
  *
  * HINZVC
  * ..****
@@ -3518,7 +3518,7 @@ static void hd6301_cmpa_ext(void)
 }
 
 /**
- * SBCA_EXT : subtract with carry extented memory address value from accumulator A : A=A-M-C
+ * SBCA_EXT : subtract with carry extended memory address value from accumulator A : A=A-M-C
  *
  * HINZVC
  * ..****
@@ -3540,7 +3540,7 @@ static void hd6301_sbca_ext(void)
 }
 
 /**
- * SUBD_EXT : subtract extented memory address value from accumulator D : D=D-MM
+ * SUBD_EXT : subtract extended memory address value from accumulator D : D=D-MM
  *
  * HINZVC
  * ..****
@@ -3564,7 +3564,7 @@ static void hd6301_subd_ext(void)
 }
 
 /**
- * ANDA_EXT : and extented memory address value with accumulator A : A=A&M
+ * ANDA_EXT : and extended memory address value with accumulator A : A=A&M
  *
  * HINZVC
  * ..**0.
@@ -3581,7 +3581,7 @@ static void hd6301_anda_ext(void)
 }
 
 /**
- * BITA_EXT : bit test extented memory address value with accumulator A : A&M
+ * BITA_EXT : bit test extended memory address value with accumulator A : A&M
  *
  * HINZVC
  * ..**0.
@@ -3599,7 +3599,7 @@ static void hd6301_bita_ext(void)
 }
 
 /**
- * LDAA_EXT : load accumulator A with extented memory address value : A=M
+ * LDAA_EXT : load accumulator A with extended memory address value : A=M
  *
  * HINZVC
  * ..**0.
@@ -3616,7 +3616,7 @@ static void hd6301_ldaa_ext(void)
 }
 
 /**
- * STAA_EXT : store accumulator A into extented memory address value : M=A
+ * STAA_EXT : store accumulator A into extended memory address value : M=A
  *
  * HINZVC
  * ..**0.
@@ -3633,7 +3633,7 @@ static void hd6301_staa_ext(void)
 }
 
 /**
- * EORA_EXT : exclusive or extented memory address value with accumulator A : A=A^M
+ * EORA_EXT : exclusive or extended memory address value with accumulator A : A=A^M
  *
  * HINZVC
  * ..**0.
@@ -3650,7 +3650,7 @@ static void hd6301_eora_ext(void)
 }
 
 /**
- * ADCA_EXT : add with carry extented memory address value to accumulator A : A=A+M+C
+ * ADCA_EXT : add with carry extended memory address value to accumulator A : A=A+M+C
  *
  * HINZVC
  * *.****
@@ -3673,7 +3673,7 @@ static void hd6301_adca_ext(void)
 }
 
 /**
- * ORAA_EXT : inclusive or accumulator A with extented memory address value : A=A|M
+ * ORAA_EXT : inclusive or accumulator A with extended memory address value : A=A|M
  *
  * HINZVC
  * ..**0.
@@ -3690,7 +3690,7 @@ static void hd6301_oraa_ext(void)
 }
 
 /**
- * ADDA_EXT : add extented memory address value with accumulator A : A=A+M
+ * ADDA_EXT : add extended memory address value with accumulator A : A=A+M
  *
  * HINZVC
  * *.****
@@ -3712,7 +3712,7 @@ static void hd6301_adda_ext(void)
 }
 
 /**
- * CPX_EXT : compare index register with extented memory address value : X-MM
+ * CPX_EXT : compare index register with extended memory address value : X-MM
  *
  * HINZVC
  * ..****
@@ -3732,7 +3732,7 @@ static void hd6301_cpx_ext(void)
 }
 
 /**
- * JSR_EXT : jump to subroutine at extented address
+ * JSR_EXT : jump to subroutine at extended address
  *
  * HINZVC
  * ......
@@ -3749,7 +3749,7 @@ static void hd6301_jsr_ext(void)
 }
 
 /**
- * LDS_EXT : load stack pointer with extented memory address value : SP=MM
+ * LDS_EXT : load stack pointer with extended memory address value : SP=MM
  *
  * HINZVC
  * ..**0.
@@ -3767,7 +3767,7 @@ static void hd6301_lds_ext(void)
 }
 
 /**
- * STS_EXT : store stack pointer into extented memory address value : MM=SP
+ * STS_EXT : store stack pointer into extended memory address value : MM=SP
  *
  * HINZVC
  * ..**0.

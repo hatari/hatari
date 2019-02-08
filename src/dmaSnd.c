@@ -1317,7 +1317,7 @@ static struct first_order_s *DmaSnd_Bass_Shelf(float g, float fc, float Fs)
 	static struct first_order_s bass;
 	float  a1;
 
-	/* g, fc, Fs must be positve real numbers > 0.0 */
+	/* g, fc, Fs must be positive real numbers > 0.0 */
 	if (g < 1.0)
 		bass.a1 = a1 = (tanf(M_PI*fc/Fs) - g  ) / (tanf(M_PI*fc/Fs) + g  );
 	else
@@ -1338,7 +1338,7 @@ static struct first_order_s *DmaSnd_Treble_Shelf(float g, float fc, float Fs)
 	static struct first_order_s treb;
 	float  a1;
 
-	/* g, fc, Fs must be positve real numbers > 0.0 */
+	/* g, fc, Fs must be positive real numbers > 0.0 */
 	if (g < 1.0)
 		treb.a1 = a1 = (g*tanf(M_PI*fc/Fs) - 1.0) / (g*tanf(M_PI*fc/Fs) + 1.0);
 	else

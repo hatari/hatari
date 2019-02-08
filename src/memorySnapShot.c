@@ -439,7 +439,7 @@ void MemorySnapShot_Restore_Do(void)
 		/* requires currprefs.address_space_24 which is not restored yet */
 		/* (it's from M68000_MemorySnapShot_Capture). To resolve this */
 		/* circular dependancy, we init currprefs.address_space_24 here */
-		/* This should be splitted in different functions / order to avoid this loop */
+		/* This should be split in different functions / order to avoid this loop */
 		currprefs.address_space_24 = ConfigureParams.System.bAddressSpace24;
 
 		/* Reset emulator to get things running */

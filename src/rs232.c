@@ -8,7 +8,7 @@
 
   This is similar to the printing functions, we open a direct file
   (e.g. /dev/ttyS0) and send bytes over it.
-  Using such method mimicks the ST exactly, and even allows us to connect
+  Using such method mimics the ST exactly, and even allows us to connect
   to an actual ST! To wait for incoming data, we create a thread which copies
   the bytes into an input buffer. This method fits in with the internet code
   which also reads data into a buffer.
@@ -521,7 +521,7 @@ static bool RS232_SetBaudRate(int nBaud)
 		return false;
 	}
 
-	/* Set ouput speed: */
+	/* Set output speed: */
 	if (hComOut != NULL)
 	{
 		memset (&termmode, 0, sizeof(termmode));    /* Init with zeroes */
@@ -682,7 +682,7 @@ static bool RS232_GetStatus(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Read from the Syncronous Character Register.
+ * Read from the Synchronous Character Register.
  */
 void RS232_SCR_ReadByte(void)
 {
@@ -693,7 +693,7 @@ void RS232_SCR_ReadByte(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Write to the Syncronous Character Register.
+ * Write to the Synchronous Character Register.
  */
 void RS232_SCR_WriteByte(void)
 {
@@ -761,7 +761,7 @@ void RS232_RSR_WriteByte(void)
  * Read from the Transmitter Status Register.
  * When RS232 emulation is not enabled, we still return 0x80 to allow
  * some games to work when they don't require send/receive on the RS232 port
- * (eg : 'Treasure Trap', 'The Deep' write some debug informations to RS232)
+ * (eg : 'Treasure Trap', 'The Deep' write some debug information to RS232)
  */
 void RS232_TSR_ReadByte(void)
 {

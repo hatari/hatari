@@ -696,7 +696,7 @@ void GemDOS_InitDrives(void)
 
 	bMultiPartitions = GemDOS_DetermineMaxPartitions(&nMaxDrives);
 
-	/* intialize data for harddrive emulation: */
+	/* initialize data for harddrive emulation: */
 	if (nMaxDrives > 0 && !emudrives)
 	{
 		emudrives = calloc(MAX_HARDDRIVES, sizeof(EMULATEDDRIVE *));
@@ -736,7 +736,7 @@ void GemDOS_InitDrives(void)
 		/* remove trailing slash, if any in the directory name */
 		File_CleanFileName(emudrives[i]->hd_emulation_dir);
 
-		/* Add Requisit Folder ID */
+		/* Add requisite folder ID */
 		if (bMultiPartitions)
 		{
 			char sDriveLetter[] = { PATHSEP, (char)('C' + i), '\0' };
@@ -3818,7 +3818,7 @@ void GemDOS_OpCode(void)
 	{
 		Params = Regs[REG_A7]+SIZE_WORD+SIZE_LONG;  /* skip SR & PC pushed to super stack */
 		if (currprefs.cpu_level > 0)
-			Params += SIZE_WORD;   /* Skip extra word whe CPU is >=68010 */
+			Params += SIZE_WORD;   /* Skip extra word if CPU is >=68010 */
 	}
 
 	/* Default to run TOS GemDos (SR_NEG run Gemdos, SR_ZERO already done, SR_OVERFLOW run own 'Pexec' */

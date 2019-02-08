@@ -117,7 +117,7 @@
 /*			same CPU instruction but at different sub-cycles. We must take	*/
 /*			into account only the oldest interrupts to choose the highest	*/
 /*			one (fix Fuzion CD Menus 77, 78, 84).				*/
-/* 2015/02/27	[NP]	Better support for GPIP/AER/DDR and trigerring an interrupt	*/
+/* 2015/02/27	[NP]	Better support for GPIP/AER/DDR and triggering an interrupt	*/
 /*			when AER is changed (fix the MIDI programs  Realtime and M	*/
 /*			by Eric Ameres, which toggle bit 0 in AER).			*/
 /* 2015/04/08	[NP]	When an interrupt happens on timers A/B/C/D, take into account	*/
@@ -1739,7 +1739,7 @@ void MFP_TimerDData_ReadByte(void)
 /**
  * Handle write to GPIP register (0xfffa01).
  *
- * Only line configured as ouput in DDR can be changed (0=input 1=output)
+ * Only line configured as output in DDR can be changed (0=input 1=output)
  * When reading GPIP, output lines should return the last value that was written,
  * only input lines should be updated.
  */

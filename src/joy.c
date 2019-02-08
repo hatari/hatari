@@ -281,7 +281,7 @@ Uint8 Joy_GetStickData(int nStJoyId)
 		if (JoyReading.Buttons & JOYREADING_BUTTON1)
 			nData |= ATARIJOY_BITMASK_FIRE;
 
-		/* Enable PC Joystick button 2 to mimick space bar (For XenonII, Flying Shark etc...) */
+		/* Enable PC Joystick button 2 to mimic space bar (For XenonII, Flying Shark etc...) */
 		if (nStJoyId == JOYID_JOYSTICK1 && (JoyReading.Buttons & JOYREADING_BUTTON2))
 		{
 			if (ConfigureParams.Joysticks.Joy[nStJoyId].bEnableJumpOnFire2)

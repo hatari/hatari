@@ -14,8 +14,8 @@
 /*			by cumulating wait state of 1 cycle and rounding the final	*/
 /*			result to 4.							*/
 /* 2007/04/29	[NP]	Functions PSG_Void_WriteByte and PSG_Void_ReadByte to handle	*/
-/*			accesses to $ff8801/03. These adresses have no effect, but they	*/
-/*			must give a 1 cycle wait state (e.g. move.l d0,ff8800).		*/
+/*			accesses to $ff8801/03. These addresses have no effect, but	*/
+/*			they must give a 1 cycle wait state (e.g. move.l d0,ff8800).	*/
 /* 2007/09/29	[NP]	Replace printf by calls to HATARI_TRACE.			*/
 /* 2007/10/23	[NP]	In PSG_Void_WriteByte, add a wait state only if no wait state	*/
 /*			were added so far (hack, but gives good result).		*/

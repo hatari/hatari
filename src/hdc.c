@@ -644,7 +644,7 @@ static void HDC_EmulateCommandPacket(SCSI_CTRLR *ctr)
  *   MIX     Minix partition, not supported by TOS
  *   SWP     Swap partition, not supported by TOS
  *   UNX     ASV (Atari System V) partition, not supported by TOS
- *   XGM     Extended partion
+ *   XGM     Extended partition
  *
  * Other partition types (listed in XHDI spec):
  *   MAC     MAC HFS partition, not supported by TOS

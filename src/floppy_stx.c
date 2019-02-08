@@ -807,7 +807,7 @@ bool	STX_Init ( void )
 
 /*-----------------------------------------------------------------------*/
 /*
- * Init the ressources to handle the STX image inserted into a drive (0=A: 1=B:)
+ * Init the resources to handle the STX image inserted into a drive (0=A: 1=B:)
  * We also look for an optional save file with the ".wd1772" extension.
  * If this file exists, then we load it too.
  */
@@ -836,7 +836,7 @@ bool	STX_Insert ( int Drive , const char *FilenameSTX , Uint8 *pImageBuffer , lo
 
 /*-----------------------------------------------------------------------*/
 /*
- * Init the ressources to handle the STX image inserted into a drive (0=A: 1=B:)
+ * Init the resources to handle the STX image inserted into a drive (0=A: 1=B:)
  * This function is used when restoring a memory snapshot and does not load
  * an optional ".wd1772" save file (the saved data are already in the memory
  * snapshot)
@@ -858,7 +858,7 @@ static bool	STX_Insert_internal ( int Drive , const char *FilenameSTX , Uint8 *p
 
 /*-----------------------------------------------------------------------*/
 /*
- * When ejecting a disk, free the ressources associated with an STX image
+ * When ejecting a disk, free the resources associated with an STX image
  */
 bool	STX_Eject ( int Drive )
 {
@@ -1322,7 +1322,7 @@ next_track:
 /*-----------------------------------------------------------------------*/
 /**
  * When a track only consists of the content of each 512 bytes sector and
- * no timings informations, we must compute some default values for each
+ * no timings information, we must compute some default values for each
  * sector, as well as the position of the corresponding 512 bytes of data.
  * This is only used when storing unprotected tracks.
  */

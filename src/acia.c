@@ -71,13 +71,13 @@ const char ACIA_fileid[] = "Hatari acia.c : " __DATE__ " " __TIME__;
     Bits 5,6 - These Transmitter Control bits set the RTS output pin, and allow or prevent
       an interrupt through the ACIA when the send register is emptied. Also, BREAK signals
       can be sent over the serial output by this line. A BREAK signal is nothing more than
-      a long seqence of null bits
+      a long sequence of null bits
         0 0    RTS low, transmitter IRQ disabled
         0 1    RTS low, transmitter IRQ enabled
         1 0    RTS high, transmitter IRQ disabled
         1 1    RTS low, transmitter IRQ disabled, BREAK sent
     Bit 7 - The Receiver Interrupt Enable bit determines whether the receiver interrupt
-      will be on. An interrupt can be caused by the DCD line chaning from low to high, or
+      will be on. An interrupt can be caused by the DCD line changing from low to high, or
       by the receiver data buffer filling. Besides that, an interrupt can occur from an
       OVERRUN (a received character isn't properly read from the processor).
         0 Interrupt disabled
@@ -92,7 +92,7 @@ const char ACIA_fileid[] = "Hatari acia.c : " __DATE__ " " __TIME__;
       is cancelled. The bit is cleared when the status register and the receiver register are
       read. This also cancels the IRQ. Bit 2 register remains highis the signal on the DCD pin
       is still high; Bit 2 register low if DCD becomes low.
-    Bit 3 - This line shows the status of CTS. This signal cannot be altered by a mater reset,
+    Bit 3 - This line shows the status of CTS. This signal cannot be altered by a master reset,
       or by ACIA programming.
     Bit 4 - Shows 'Frame Errors'. Frame errors are when no stop-bit is recognized in receiver
       switching. It can be set with every new character.

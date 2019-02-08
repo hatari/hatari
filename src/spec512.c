@@ -24,7 +24,7 @@
 /*			as it doesn't support movem for example. Use Cycles_GetCounter with	*/
 /*			an average  correction of 8 cycles (this should be fixed).		*/
 /*			In Spec512_StartScanLine, better handling of SCREENBYTES_LEFT when	*/
-/*			border are present. Better alignement of pixel and color when left	*/
+/*			border are present. Better alignment of pixel and color when left	*/
 /*			border is removed (Rotofull in Nostalgia Demo, When Colors Are Going	*/
 /*			Bang Bang by DF in Punish Your Machine).				*/
 /* 2008/01/13	[NP]	In Spec512_StoreCyclePalette, if a movem was used to access several	*/

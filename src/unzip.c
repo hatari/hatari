@@ -218,7 +218,7 @@ local int unzlocal_getLong (FILE* fin, uLong *pX)
  *  If iCaseSenisivity = 1, comparison is case sensitivity (like strcmp)
  *  If iCaseSenisivity = 2, comparison is not case sensitivity (like strcmpi
  *                                                               or strcasecmp)
- *  If iCaseSenisivity = 0, case sensitivity is defaut of your operating system
+ *  If iCaseSenisivity = 0, case sensitivity is default of your operating system
  *       (like 1 on Unix, 2 on Windows)
  *
  */
@@ -920,7 +920,7 @@ int ZEXPORT unzOpenCurrentFile (unzFile file)
  * buf contain buffer where data must be copied
  * len the size of buf.
  *
- * return the number of byte copied if somes bytes are copied
+ * return the number of byte copied if some bytes are copied
  * return 0 if the end of file was reached
  * return <0 with error code if there is an error
  *   (UNZ_ERRNO for IO error, or zLib error for uncompress error)
