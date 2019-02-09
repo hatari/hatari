@@ -173,7 +173,7 @@ bool	RoundVBLPerSec = false;						/* if false, don't round number of VBL to 50/6
 
 /*--------------------------------------------------------------------------*/
 /**
- * Initialize all the clocks informations related to a specific machine type.
+ * Initialize all the clocks information related to a specific machine type.
  * We consider the machine is running with PAL clocks.
  */
 

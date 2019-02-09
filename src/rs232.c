@@ -761,7 +761,7 @@ void RS232_RSR_WriteByte(void)
  * Read from the Transmitter Status Register.
  * When RS232 emulation is not enabled, we still return 0x80 to allow
  * some games to work when they don't require send/receive on the RS232 port
- * (eg : 'Treasure Trap', 'The Deep' write some debug informations to RS232)
+ * (eg : 'Treasure Trap', 'The Deep' write some debug information to RS232)
  */
 void RS232_TSR_ReadByte(void)
 {

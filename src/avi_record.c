@@ -775,7 +775,7 @@ static	bool	Avi_CloseMoviChunk ( RECORD_AVI_PARAMS *pAviParams , AVI_FILE_HEADER
 	Avi_StoreU32 ( pAviFileHeader->Odml.Header.total_frames , pAviParams->TotalVideoFrames );	/* number of video frames */
 
 	/* If an AVI file has more than 1 'movi' chunk (to support >4 GB file), then AVI header */
-	/* should be updated with only the informations of the 1st chunk (to keep a standard non-odml AVI header) */
+	/* should be updated with only the information of the 1st chunk (to keep a standard non-odml AVI header) */
 	if ( pAviParams->MoviChunkCount == 0 )
 	{
 		Avi_StoreU32 ( pAviFileHeader->RiffHeader.filesize , Pos_End - 8 );	/* 32 bits, limited to 4GB */
