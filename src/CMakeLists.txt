@@ -59,6 +59,9 @@ if(X11_FOUND)
 	include_directories(${X11_INCLUDE_DIR})
 endif(X11_FOUND)
 
+if(CAPSIMAGE_FOUND)
+	include_directories(${CAPSIMAGE_INCLUDE_DIR})
+endif(CAPSIMAGE_FOUND)
 
 link_directories(${CMAKE_CURRENT_BINARY_DIR}/debug
 		 ${CMAKE_CURRENT_BINARY_DIR}/falcon

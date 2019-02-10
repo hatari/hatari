@@ -30,7 +30,12 @@ const char floppy_ipf_fileid[] = "Hatari floppy_ipf.c : " __DATE__ " " __TIME__;
 
 #ifdef HAVE_CAPSIMAGE
 #if CAPSIMAGE_VERSION == 5
+#ifndef __cdecl
+#define __cdecl  /* CAPS headers need this, but do not define it on their own */
+#endif
 #include <caps5/CapsLibAll.h>
+#define CapsLong SDWORD
+#define CapsULong UDWORD
 #else
 #include <caps/fdc.h>
 #define CAPS_LIB_RELEASE	4
