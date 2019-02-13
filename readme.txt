@@ -18,7 +18,8 @@ Contents:
        3.3.1 Known distro problems
 4. Running Hatari
 5. Hatari tools and their run-time dependencies
-6. Contact
+6. Hatari source subdirectory contents
+7. Contact
 
 
  1) License
@@ -141,7 +142,7 @@ as it's not anymore properly tested.
 
  3.2) IPF support using capsimage library
 
-Hatari can use the optionnal capsimage library to access IPF and CTR
+Hatari can use the optional capsimage library to access IPF and CTR
 files. Those files are created using the Kryoflux board and allow to
 record MFM exact copies of original games, including the protection.
 
@@ -181,8 +182,8 @@ for example in /usr/local/lib/caps/ or /usr/local/lib/caps5/
 TOS tester in tests/tosboot/ directory can be used to verify that
 Hatari was built fine enough that it's able to boot all tested TOS
 versions in various different HW configurations and run some GEMDOS
-based tests.  For EmuTOS, use version v0.8.7 or newer, older versions
-are buggy and fail the GEMDOS tests.
+based tests.  For EmuTOS, use the latest released 512k version to
+get best test coverage.
 
 If Hatari package will have two application menu entries for Hatari,
 one for the Python UI embedding Hatari, and another one for the plain
@@ -239,9 +240,9 @@ doc/manual.html. Here are just some hints for the impatient people:
   directory, Hatari will ask you to select one.
 
   - Hatari binary packages ship unmodified EmuTOS ROM image with them
-    (renamed as tos.img), but you need an original Atari TOS ROM image
-    for best compatibility.  For more information on EmuTOS, see
-    doc/emutos.txt.
+    (renamed as tos.img), but you may need an original Atari TOS ROM
+    image for better compatibility.  For more information on EmuTOS,
+    see doc/emutos.txt.
 
 * While the emulator is running, you can open the configuration menu
   by pressing F12, the F11 key will toggle fullscreen/windowed mode.
@@ -255,16 +256,41 @@ While Hatari installs few binary tools binaries:
 - hmsa (converts between MSA & ST disk images)
 - gst2ascii (outputs a.out and DRI/GST debug symbol table contents)
 
-Most of its tools are python and shell scripts. Their run-time
-dependencies are:
+Most of its tools are Python and shell scripts.
+Their main run-time dependencies are:
 - python (hatariui, hconsole, hatari_profile, atari-convert-dir)
-- python-gtk2 (hatariui)
+- python & gtk3 (hatariui)
 - mkdosfs (atari-hd-image)
 - mtools (atari-hd-image / zip2st)
 - unzip (zip2st)
 
 
- 6) Contact
+ 6) Hatari source subdirectory contents
+ --------------------------------------
+
+* cmake/ -- extra CMake files for configuring Hatari to build environment
+* doc/ -- Hatari documentation
+* etc/ -- old Hatari versions config files for obsolete HW
+* python-ui/ -- external Python / Gtk UI for Hatari
+* share/ -- Hatari desktop integration; icons, mimetypes
+* src/ -- C-sources for Hatari emulator program
+  - convert/ -- screen format conversion functions
+  - cpu/ -- cycle-exact WinUAE CPU core (+FPU/MMU)
+  - uae-cpu/ -- old UAE CPU core (+FPU)
+  - debug/ -- builtin debugger/profiler
+  - falcon/ -- Falcon emulation specific code (Videl used also for TT)
+  - includes/ -- common include files
+  - gui-osx/ -- builtin MacOS GUI
+  - gui-sdl/ -- builtin SDL v1 / v2 GUI for Hatari
+  - gui-win/ -- MS Windows console code + icon
+* tests/ -- shell/python scripts & programs for testing emulator functionality
+* tools/ -- shell/python scripts & programs useful with Hatari
+  - debugger/ -- debug symbol conversion scripts & profile data post-processing tools
+  - hconsole/ -- out-of-process Hatari control / automation tool
+  - hmsa/ -- floppy image format conversion tool
+
+
+ 7) Contact
  ----------
 
 If you want to contact the authors of Hatari, please have a look at the file
@@ -273,4 +299,3 @@ doc/authors.txt for the e-mail addresses or use the Hatari mailing list.
 Visit the website of Hatari on Tuxfamily.org for more details:
 
  http://hatari.tuxfamily.org/contact.html
-
