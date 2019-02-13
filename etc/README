@@ -2,10 +2,10 @@
 Hatari on constrained devices
 -----------------------------
 
-In this directory are Hatari configurations files for mobile etc
-devices on which the builtin Hatari defaults aren't appropriate.
-Just copy suitable config file to the device /etc/ directory as
-'hatari.cfg'.
+In this directory are older Hatari version configurations files for
+mobile etc devices, on which the builtin Hatari defaults aren't
+appropriate. Just copy suitable config file to the device /etc/
+directory as 'hatari.cfg'.
 
 Below are some comments about the configuration files. Some comments
 about suitable compiler options for these platforms can be found from
