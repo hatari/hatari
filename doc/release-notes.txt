@@ -1200,7 +1200,7 @@ Emulation:
     the default UAE CPU core isn't fully cycle accurate.  The experimental
     WinUAE core is needed to run them
   - Undocumented 2 bit shift special case for DSP SSI <-> crossbar exchanges
-    in hanshake mode with 32 Mhz clock (fixes DSP MP2 player used in many
+    in handshake mode with 32 Mhz clock (fixes DSP MP2 player used in many
     demos & programs, but that requires also using WinUAE core)
 - Sound improvements:
   - Major rewrite and accuracy improvements in STE DMA sound, including

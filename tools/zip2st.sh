@@ -153,7 +153,7 @@ if [ $disksize -gt 0 ]; then
 
 	echo
 	step=$(($step+1))
-	echo "$step) Formating disk image..."
+	echo "$step) Formatting disk image..."
 	case $disksize in
 		360) format="-t 80 -h 1 -n 9" ;;
 		400) format="-t 80 -h 1 -n 10" ;;
