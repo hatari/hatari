@@ -2,6 +2,9 @@
 User visible changes in Hatari (Python Gtk) UI
 ----------------------------------------------
 
+2019-02:
+- Documentation updates
+
 2019-01:
 - UI version 1.4 (due to Gtk & Python version updates)
 - Support both Python v2 & v3

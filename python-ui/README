@@ -21,12 +21,12 @@ replaced or going anywhere!
 Requirements
 ------------
 
-- Python >= 2.7
+- Python2 >= 2.7, or python3 >= 3.5
 - python-gi (Python GObject Introspection)
 - Gtk v3 and its gir bindings (gir1.2-gtk-3.0)
 
 Hatari UI is included with the Hatari sources:
-	http://hg.tuxfamily.org/mercurialroot/hatari/hatari/file/tip/python-ui
+	https://git.tuxfamily.org/hatari/hatari.git/tree/python-ui
 
 Hatari UI has been tested on several Linux versions.  I would assume
 it to work also on other unix systems such as Apple OSX. It may work
@@ -41,7 +41,9 @@ own embedding disables all keyboard events in SDL program).
 
 Here are instructions on installing the dependencies for non-Linux
 platforms (neither tested nor supported as I don't use/have them):
-	http://pygtk.org/downloads.html
+	https://www.python.org/downloads/
+	https://pypi.org/project/PyGObject/
+	https://www.gtk.org/download/
 
 
 Running

@@ -105,7 +105,7 @@ class UIHelp:
             return path
         # if not, point to latest Hatari HG version docs
         print("WARNING: Hatari manual not found at:", path + "manual.html")
-        return "http://hg.tuxfamily.org/mercurialroot/hatari/hatari/raw-file/tip/doc/"
+        return "https://git.tuxfamily.org/hatari/hatari.git/plain/doc/"
 
     def set_mainwin(self, widget):
         self.mainwin = widget
@@ -142,7 +142,7 @@ class UIHelp:
         self.view_url("http://hatari.tuxfamily.org/contact.html", "Hatari mailing lists")
 
     def view_hatari_repository(self, dummy=None):
-        self.view_url("http://hg.tuxfamily.org/mercurialroot/hatari/hatari", "latest Hatari changes")
+        self.view_url("https://git.tuxfamily.org/hatari/hatari.git/", "latest Hatari changes")
 
     def view_hatari_page(self, dummy=None):
         self.view_url("http://hatari.tuxfamily.org/", "Hatari home page")

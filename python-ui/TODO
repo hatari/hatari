@@ -1,8 +1,8 @@
 TODO
 ====
 
-This lists potential TODO items that aren't listed in the Hatari/UI
-sources.
+Potential TODO items for Hatari UI (in addition to the ones listed in
+its sources).
 
 * WinUAE CPU core specific configuration options:
   - MMU
@@ -59,6 +59,7 @@ sources.
   - vdi planes and size, SDL bpp forcing, spec512 threshold, ST blitter
   - cartridge image (where? it has many limitations)
   - log file and levels, console output, bios intercept, run-VBLs
+
 (Many of these aren't supported by the internal Hatari UI either, or
 are missing corresponding command line options so they will require
 additional support on the Hatari control.c side too or they can
