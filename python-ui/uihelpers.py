@@ -67,7 +67,7 @@ class UIHelp:
     def __init__(self):
         """determine HTML viewer and where docs are"""
         self._view = self.get_html_viewer()
-        self._path = self.get_doc_path()
+        self._path, self._uipath = self.get_doc_path()
 
     def get_html_viewer(self):
         """return name of html viewer or None"""
@@ -100,12 +100,18 @@ class UIHelp:
         sep = os.sep
         path = self.get_binary_path("hatari")
         path = sep.join(path.split(sep)[:-2]) # remove "bin/hatari"
-        path = path + sep + "share" + sep + "doc" + sep + "hatari" + sep
-        if os.path.exists(path + "manual.html"):
-            return path
-        # if not, point to latest Hatari HG version docs
-        print("WARNING: Hatari manual not found at:", path + "manual.html")
-        return "https://git.tuxfamily.org/hatari/hatari.git/plain/doc/"
+
+        docpath = path + "/share/doc/hatari/"
+        if not os.path.exists(docpath + "manual.html"):
+            print("WARNING: using Git URLs, Hatari 'manual.html' not found from: %s" % docpath)
+            docpath = "https://git.tuxfamily.org/hatari/hatari.git/plain/doc/"
+
+        uipath = path + "/share/hatari/hatariui/"
+        if not os.path.exists(uipath + "release-notes.txt"):
+            print("WARNING: Using Git URLs, Hatari UI 'release-notes.txt' not found from: %s" % uipath)
+            uipath = "https://git.tuxfamily.org/hatari/hatari.git/plain/python-ui/"
+
+        return docpath, uipath
 
     def set_mainwin(self, widget):
         self.mainwin = widget
@@ -131,6 +137,9 @@ class UIHelp:
 
     def view_hatari_releasenotes(self, dummy=None):
         self.view_url(self._path + "release-notes.txt", "Hatari release notes")
+
+    def view_hatariui_releasenotes(self, dummy=None):
+        self.view_url(self._uipath + "release-notes.txt", "Hatari UI release notes")
 
     def view_hatari_todo(self, dummy=None):
         self.view_url(self._path + "todo.txt", "Hatari TODO items")
