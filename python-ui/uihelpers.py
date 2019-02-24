@@ -135,14 +135,14 @@ class UIHelp:
     def view_hatari_todo(self, dummy=None):
         self.view_url(self._path + "todo.txt", "Hatari TODO items")
 
+    def view_hatari_authors(self, dummy=None):
+        self.view_url(self._path + "authors.txt", "Hatari authors")
+
     def view_hatari_mails(self, dummy=None):
         self.view_url("http://hatari.tuxfamily.org/contact.html", "Hatari mailing lists")
 
     def view_hatari_repository(self, dummy=None):
         self.view_url("http://hg.tuxfamily.org/mercurialroot/hatari/hatari", "latest Hatari changes")
-
-    def view_hatari_authors(self, dummy=None):
-        self.view_url(self._path + "authors.txt", "Hatari authors")
 
     def view_hatari_page(self, dummy=None):
         self.view_url("http://hatari.tuxfamily.org/", "Hatari home page")

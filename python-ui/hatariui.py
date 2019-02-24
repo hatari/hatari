@@ -440,11 +440,13 @@ class UIActions:
         ("compatibility", None, "Hatari compatibility list", None, None, self.help.view_hatari_compatibility),
         ("release", None, "Hatari release notes", None, None, self.help.view_hatari_releasenotes),
         ("todo", None, "Hatari TODO", None, None, self.help.view_hatari_todo),
-        ("mails", None, "Hatari mailing lists", None, None, self.help.view_hatari_mails),
-        ("changes", None, "Latest Hatari changes", None, None, self.help.view_hatari_repository),
-        ("authors", None, "Hatari authors", None, None, self.help.view_hatari_authors),
+
         ("hatari", None, "Hatari home page", None, None, self.help.view_hatari_page),
         ("hatariui", None, "Hatari UI home page", None, None, self.help.view_hatariui_page),
+        ("mails", None, "Hatari mailing lists", None, None, self.help.view_hatari_mails),
+        ("changes", None, "Latest Hatari changes", None, None, self.help.view_hatari_repository),
+
+        ("authors", None, "Hatari authors", None, None, self.help.view_hatari_authors),
         ("about", Gtk.STOCK_INFO, "Hatari UI info", "<Ctrl>I", "Hatari UI information", cb.about)
         ))
         self.action_names = [x.get_name() for x in self.actions.list_actions()]
@@ -617,7 +619,7 @@ class UIActions:
         ("Devices", ("display", "floppy", "harddisk", "joystick", "machine", "device", "sound")),
         ("Configuration", ("path", None, "lconfig", "sconfig")),
         ("Debug", ("debug", "trace")),
-        ("Help", ("manual", "compatibility", "release", "todo", None, "mails", "changes", None, "authors", "hatari", "hatariui", "about",))
+        ("Help", ("manual", "compatibility", "release", "todo", None, "hatari", "hatariui", "mails", "changes", None, "authors", "about",))
         )
         bar = Gtk.MenuBar()
 
