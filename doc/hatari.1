@@ -65,7 +65,10 @@ files
 Load keyboard mapping from <file>
 .TP
 .B \-\-fast\-forward <bool>
-On fast machine helps skipping (fast forwarding) Hatari output
+Fast-forward through the boring parts by running emulator at maximum
+speed.  Done by skipping frame update VBL waits. Upper limit for frame
+skipping is given with the --frameskips option and shown in statusbar
+"FS" field
 .TP
 .B \-\-auto <program>
 Autostarts given program, if TOS finds it.  Program needs to
@@ -553,13 +556,15 @@ Log output level (x=debug/todo/info/warn/error/fatal)
 Show dialog for log messages above given level
 .TP
 .B \-\-run\-vbls <x>
-Exit after X VBLs
+Exit after X VBLs.  Often used with --benchmark option
 .TP
 .B \-\-benchmark
-Start in benchmark mode (use with --run-vbls).
-This allows to measure the speed of the emulation in frames per second
-by running at maximum speed (don't wait for VBL). Disable audio/video
-output to have as little OS overhead as possible
+Start in benchmark mode.  Currently same as --fast-forward mode,
+except it can't be disabled at run-time. Allows better measuring for
+the speed of the emulation in frames per second.  Unless you're
+specifically measuring emulator audio and screen processing speed,
+disable them (--sound off/--disable-video on) to have as little OS
+overhead as possible
 
 .SH "INPUT HANDLING"
 Hatari provides special input handling for different purposes.
