@@ -7,12 +7,12 @@
 
 Name:         hatari
 URL:          http://hatari.tuxfamily.org/
-License:      GPL
+License:      GPLv2+
 Group:        System/Emulators/Other
 Autoreqprov:  on
 Version:      2.2.1
 Release:      1
-Summary:      an Atari ST emulator suitable for playing games
+Summary:      An Atari ST/STE/TT/Falcon emulator
 Source:       %{name}-%{version}.tar.bz2
 #Patch:        %{name}-%{version}.dif
 BuildRoot:    %{_tmppath}/%{name}-%{version}-build
@@ -30,12 +30,16 @@ Requires: dosfstools
 
 %description
 Hatari is an emulator for the Atari ST, STE, TT and Falcon computers.
+
 The Atari ST was a 16/32 bit computer system which was first released by Atari
 in 1985. Using the Motorola 68000 CPU, it was a very popular computer having
 quite a lot of CPU power at that time.
-Unlike many other Atari ST emulators which try to give you a good environment
-for running GEM applications, Hatari tries to emulate the hardware of a ST as
-close as possible so that it is able to run most of the old ST games and demos.
+
+Unlike most other open source ST emulators which try to give you a good
+environment for running GEM applications, Hatari tries to emulate the hardware
+as close as possible so that it is able to run most of the old Atari games
+and demos.  Because of this, it may be somewhat slower than less accurate
+emulators.
 
 %prep
 %setup
