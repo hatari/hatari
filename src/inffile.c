@@ -58,10 +58,15 @@ static struct {
  * '@' character in the INF files #Z line
  * (first value is 00: TOS, 01: GEM).
  *
- * Resolution is specified in the 2nd hex value in #E line
- * in normal TOS and EmuTOS <= 0.9.6, and in 4th hex value
- * in EmuTOS >= 0.9.7.  Hatari supports only latter EmuTOS
- * versions.
+ * #E line content differs between TOS versions:
+ * + Atari TOS:
+ *   - Resolution is specified in the 2nd hex value
+ *   - Blitter enabling is 0x10 bit for that
+ * + EmuTOS v0.9.7 or newer:
+ *   - Resolution is specified in the 4th hex value
+ *   - Blitter enabling is 0x80 bit in the 2nd hex value
+ * + Older EmuTOS versions (not supported!):
+ *   - Resolution is in the 2nd hex value
  *
  * TOS versions expect both of these to be within certain
  * number of bytes from the beginning of the file, and there
@@ -69,12 +74,15 @@ static struct {
  *
  * More documentation on the DESKTOP.INF file content:
  * http://st-news.com/issues/st-news-volume-2-issue-6/education/the-desktopinf-file/
+ *
+ * EmuTOS INF file content is documented only in the sources:
+ * https://github.com/emutos/emutos/blob/master/desk/deskapp.c
  */
 
 /* EmuDesk INF file format and values differ from normal TOS */
 static const char emudesk_inf[] =
 "#R 01\r\n"
-"#E 1A 61 FF 00 00\r\n"
+"#E 1A E1 FF 00 00\r\n"
 "#W 00 00 02 08 26 0C 00 @\r\n"
 "#W 00 00 02 0A 26 0C 00 @\r\n"
 "#W 00 00 02 0D 26 0C 00 @\r\n"
