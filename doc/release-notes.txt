@@ -3,6 +3,20 @@
                                    --------
                                 Release Notes
 
+ Development version
+ -------------------
+
+Emulator:
+- Fix: when autostarting programs without pre-existing INF file,
+  enable blitter also with EmuTOS
+
+Building:
+- Fix: issue with multilib capable cross-compilers
+- Fix: workaround problems with Capslib 5.1 headers
+
+Misc:
+- Documentation improvements
+
 
  Version 2.2.1 (2019-02-08)
  ---------------------------
