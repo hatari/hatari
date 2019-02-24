@@ -36,7 +36,7 @@ the EmuTOS website.
 
 The tos.img file included with the latest Hatari releases is
 the etos512k.img[1] from a preceding EmuTOS release:
-- Hatari v2.2.0:
+- Hatari v2.2.0, v2.2.1:
   https://sourceforge.net/projects/emutos/files/emutos/0.9.10/
 - Hatari v2.1.0:
   https://sourceforge.net/projects/emutos/files/emutos/0.9.9.1/
@@ -69,7 +69,12 @@ EmuTOS image files.
     for ST and STE programs, only the 512k image contains
     support for all the hardware and languages.
 
-Note for Hatari <= v2.0 with EmuTOS <= v0.8.5:
+Notes for older EmuTOS versions:
+* EmuTOS <= v0.9.6:
+  EmuTOS changed its INF file format in v0.9.7.  Hatari's Atari
+  program autostarting and TOS resolution setting functionality
+  supports only EmuTOS >= v0.9.7 INF file format
+* EmuTOS <= v0.8.5 with Hatari <= v2.0:
   In order to work with Hatari, EmuTOS v0.8.5 and earlier require
   the FastBoot option to be enabled. This is used to skip some memory
   tests (that Hatari v2.0 and earlier do not support) when EmuTOS
@@ -104,20 +109,21 @@ TOS ROM images:
   see what kind of software the Atari machines had.  EmuTOS gives
   them a legal way to test Hatari with free demos, games etc.
 
-* Performance.  Latest EmuTOS version has faster disk access and
-  boots significantly faster than original TOS.
+* Performance.  Latest EmuTOS versions boot significantly faster
+  than Atari TOS versions.
 
 * Convenience.  EmuTOS doesn't need HD driver to access hard disk
-  images (with DOS MBR), and same image supports wider variety of
-  hardware than real Atari TOS versions.
+  images (with DOS MBR), and same 512K image supports all the hardware
+  that different Atari TOS versions support.
 
 * Continuity.  Users who want to continue using Atari compatible
   operating systems and need an open source replacement of TOS for
   modifications. Beside EmuTOS, they typically also use FreeMiNT,
   XaAES and fVDI as operating system replacements/improvements.
 
-  This includes users of Atari FPGA clones, such as MiST:
-	http://code.google.com/p/mist-board/
+  This includes users of Atari FPGA clones, such as MiST & MiSTer:
+	https://github.com/mist-devel/mist-board/wiki
+	https://github.com/MiSTer-devel/Main_MiSTer/wiki
   users of new "Atari" machines, like Atari ColdFire Project:
 	http://acp.atari.org/
   and even Amiga (WinUAE) emulator and real Amiga hardware.
@@ -133,21 +139,21 @@ Turrican, Xenon...) and almost all ST/STe/TT applications work fine
 with EmuTOS.
 
 Because (even 192k version of) EmuTOS uses a bit more memory than
-normal TOS, badly written (typically floppy-only) games may blindly
-overwrite EmuTOS memory. They also often rely on (undocumented) TOS
-internal variables & functions being at specific memory location. They
-will crash when they call these bogus addresses, use bogus values, or
-call OS functions which internal state they had overwritten with
+normal TOS, badly written (typically floppy-only) games & demos may
+blindly overwrite EmuTOS memory. They also often rely on (undocumented)
+TOS internal variables & functions being at specific memory location.
+They will crash when they call these bogus addresses, use bogus values,
+or call OS functions which internal state they had overwritten with
 garbage.
 
-However, ST/STE games that work from HD and/or with newer TOS
-versions, should be fine.
+As a special case of these, input (e.g. joystick) doesn't work in
+unpatched STOS games as they access it through other means than XBIOS
+function Kbdvbase() or by hooking into the IKBD interrupt vector. They
+use unofficial system variables which location depends on the TOS
+version.
 
-Input (e.g. joystick) doesn't work in original (STOS) games that
-access it through other means than XBIOS function Kbdvbase() or by
-hooking into the IKBD interrupt vector.  They use unofficial system
-variables which location depends on the TOS version.  Try fixed
-version of STOS games.
+However, ST/STE games that work from HD and/or have been fixed to work
+with newer TOS versions, should usually be fine.
 
 Support for some TT HW features and for DSP XBios functions &
 Falcon 16-bit resolution are also missing.
@@ -159,6 +165,8 @@ issue with new EmuTOS versions.
 
 Lists of known issues and incompatible applications are listed in
 bugs.txt & incompatible.txt files coming with EmuTOS.
+Many of these buggy programs are STOS games:
+https://raw.githubusercontent.com/emutos/emutos/master/doc/incompatible.txt
 
 
 Debugging issues with EmuTOS
@@ -353,7 +361,7 @@ Demos:
 - Lots of Dots (by Acid Maker & Friends)
 - Music Disc 1 (by G. Gaubatz)
 - No Cooper (by 1984)
-- No more froggies (by Sector1), needs EmuTOS 2016-04-17
+- No more froggies (by Sector1, EmuTOS >= 0.9.7)
 - O-demo (by Oxygene)
 - Odd Stuff (by Dune & Sector One)
 - Oh no!! more froggies (by Sector One, needs <4MB RAM)
@@ -395,7 +403,7 @@ Demos:
 - The Stupendous Demo (by Pixel Twins, has couple of STE screen)
 - The Union demo (by The Union)
 - The twist (by Team "The twist")
-- The World According to Nordlicht (needs EmuTOS 2016-04-17)
+- The World According to Nordlicht (EmuTOS >= 0.9.7)
 - Transbeauce II (by BushWacKers)
 - Tut! (by Wildfire)
 - Twelve (by Paulo Simoes)
@@ -422,19 +430,19 @@ Commercial game demos/previews (many of these are pretty good):
 - Bug-Bash demo
 - Cadaver demos 1 & 2
 - Captive demo
-- Celica GT4 Rally demo (needs EmuTOS >v0.9.3)
+- Celica GT4 Rally demo (EmuTOS >v0.9.3)
 - Challenge golf demo   (floppy only)
 - Chips Challenge demo
 - Civilization demo
 - Cloud Kingdoms demo
 - Conqueror demo
-- Defender II demo      (needs EmuTOS >v0.9.3)
+- Defender II demo      (EmuTOS >v0.9.3)
 - Deflektor             (floppy only, Zero magazine disk, EmuTOS >0.9.7)
 - Creatures demo
 - Fire & Ice demo
 - Flimbo's Quest demo
 - Flood demo
-- Gods demo             (needs EmuTOS >0.9.7, floppy only)
+- Gods demo             (floppy only, ST format disk, EmuTOS >0.9.7)
 - Golden Ax demo
 - GuyFawke demo         (use joy in port 0, floppy only)
 - Helter Skelter demo
@@ -451,7 +459,7 @@ Commercial game demos/previews (many of these are pretty good):
 - Lotus III demo        (floppy only, non-interactive, EmuTOS >0.9.7)
 - Mad Professor demo
 - Magicboy demo         (floppy only)
-- Manix preview         (needs EmuTOS >v0.9.3)
+- Manix preview         (EmuTOS >v0.9.3)
 - Magic Pockets demo
 - Megalomania demo
 - Mig29 Super Fulcrum demo
@@ -462,7 +470,7 @@ Commercial game demos/previews (many of these are pretty good):
 - Photon Storm demo
 - Pipemania demo
 - Populous II demo
-- Pushover demo         (3 playable levels, needs EmuTOS >v0.9.3)
+- Pushover demo         (3 playable levels, EmuTOS >v0.9.3)
 - Puzznic demo          (needs floppy in drive A:)
 - Rampage demo
 - Robin Hood demo
@@ -487,7 +495,7 @@ Free/shareware/PD games:
 - Atax            (minor gfx issues)
 - Bellum*
 - Blaster
-- Blind labyrinth (line-A bitblits, mouse issues, needs EmuTOS >v0.9.3)
+- Blind labyrinth (line-A bitblits, mouse issues, EmuTOS >v0.9.3)
 - Bodyshop        (line-A bitblits)
 - Bold            (floppy only)
 - Bombs Away
@@ -496,7 +504,7 @@ Free/shareware/PD games:
 - Bugs*          (line-A bitblits)
 - Candyman       (line-A bitblits)
 - Catch Me If You Can* (+ STE support)
-- ChuChu Rocket* (RG's STFM Lite version, needs EmuTOS >v0.9.7)
+- ChuChu Rocket* (RG's STFM Lite version, EmuTOS >v0.9.7)
 - Clogged Up
 - Cops and Robbers Too! (line-A bitblits)
 - Crapman*
@@ -589,12 +597,12 @@ Med-rez games:
 GEM games:
 - 2048          (by Rajah Lone)
 - 4 Gewinnt*    (Connect four)
-- Abalone       (needs EmuTOS >v0.9.5)
+- Abalone       (EmuTOS >v0.9.5)
 - Awele         (use v1.02, it fixes bugs in v1.01)
-- Ballerburg*   (needs EmuTOS >v0.9.5)
-- Bombs         (minesweeper, needs EmuTOS >v0.9.8)
+- Ballerburg*   (EmuTOS >v0.9.5)
+- Bombs         (minesweeper, EmuTOS >v0.9.8)
 - Centi
-- Checkers      (needs EmuTOS >v0.9.8)
+- Checkers      (EmuTOS >v0.9.8)
 - Chess*        (works only from floppy)
 - Clicks*       (needs wdialog)
 - Corewar
@@ -617,7 +625,7 @@ GEM games:
 - Mars          (corewars)
 - Mathmaze
 - Megaroid*
-- Minds*        (minesweeper, needs EmuTOS >v0.9.5)
+- Minds*        (minesweeper, EmuTOS >v0.9.5)
 - Mines*
 - Mosaik
 - Nanjing
@@ -625,8 +633,8 @@ GEM games:
 - Never Mind
 - Orb
 - Pacman
-- Patience*     (card solitaire, use latest v2.25, needs EmuTOS >v0.9.5)
-- Risky*        (Risk board game, needs EmuTOS >v0.9.5)
+- Patience*     (card solitaire, use latest v2.25, EmuTOS >v0.9.5)
+- Risky*        (Risk board game, EmuTOS >v0.9.5)
 - Shanghai
 - Ship Combat   (battleships, line-A calls)
 - Sixteen       (puzzle)
@@ -645,8 +653,8 @@ GEM games:
 - Verrueck      (labyrinth)
 - WindowBall    (breakout)
 - Wormania
-- Yams          (minesweeper, needs EmuTOS >v0.9.5)
-- Yukon*        (card solitaire, needs EmuTOS >v0.9.5)
+- Yams          (minesweeper, EmuTOS >v0.9.5)
+- Yukon*        (card solitaire, EmuTOS >v0.9.5)
 - zSudoku
 
 Monochrome games:
@@ -669,10 +677,10 @@ Monochrome games:
 - Lokomotive	(line-A bitblit)
 - MacPan*	(line-A draw/clear sprite)
 - MineFeld	(line-A draw/clear sprite)
-- Minigolf*     (line-A draw/clear sprite, needs EmuTOS >=v0.9.6)
+- Minigolf*     (line-A draw/clear sprite, EmuTOS >=v0.9.6)
 - Monkey Business
 - Mr Dash
-- Pacballs      (line-A bitblit, needs EmuTOS >v0.9.5)
+- Pacballs      (line-A bitblit, EmuTOS >v0.9.5)
 - Pipeline*	(line-A line and filled rectangle, works also in color)
 - Pling II	(line-A bitblit, draw/clear sprite and filled rectangle)
 - Poolmono*
@@ -734,10 +742,6 @@ Non-working color STOS games (as expected):
 Commercial color game demos:
 - Brain Blaster / The Teller demo (input doesn't work)
 - Cauldron demo     (input doesn't work, fire doesn't start game)
-- Gods demo
-  - works properly only from floppy
-  - requires "high-RAM" EmuTOS build, otherwise overwrites itself:
-    make 512 UNIQUE=uk DEF="-DSTATIC_ALT_RAM_ADDRESS=0x00080000 -DCONF_WITH_FRB=0"
 - Striker demo      (input doesn't work)
 
 Free/shareware color games:
@@ -918,13 +922,13 @@ Color games:
 - BeGEMeD* (line-A bitblits)
 - Blat (line-A bitblit)
 - Boom (screen flashes during scrolling messages)
-- Breakdance (scene game, STOS, needs EmuTOS >v0.9.3)
-- ChuChu Rocket* (RG's full version, needs EmuTOS >0.9.7)
+- Breakdance (scene game, STOS, EmuTOS >v0.9.3)
+- ChuChu Rocket* (RG's full version, EmuTOS >0.9.7)
 - Crash Time Plumber
 - Droid STE rewrite (WIP)
 - Dynabusters+*
 - Frantick
-- Giana Sisters STE rewrite: (needs EmuTOS >v0.9.3)
+- Giana Sisters STE rewrite: (EmuTOS >v0.9.3)
   http://atari-forum.com/viewtopic.php?f=3&t=26360
 - H Mec 2 (line-A bitblit)
 - Micromachines preview (by .tscc)
@@ -933,7 +937,7 @@ Color games:
 - Obsession* (demo of commercial pinball)
 - Operation Garfield
 - Pacman on E
-- Pacmania* STE/overscan rewrite: (needs EmuTOS >v0.9.3)
+- Pacmania* STE/overscan rewrite: (EmuTOS >v0.9.3)
   http://atari-forum.com/viewtopic.php?f=3&t=24635
 - Pole Position (arcade conversion)
   http://atari-forum.com/viewtopic.php?f=3&t=26068
