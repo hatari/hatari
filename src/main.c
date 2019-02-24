@@ -355,7 +355,7 @@ void Main_WaitOnVbl(void)
 		if (nFrameSkips < ConfigureParams.Screen.nFrameSkips)
 		{
 			nFrameSkips += 1;
-			// Log_Printf(LOG_DEBUG, "Increased frameskip to %d\n", nFrameSkips);
+			Log_Printf(LOG_DEBUG, "Increased frameskip to %d\n", nFrameSkips);
 		}
 		/* Only update DestTicks for next VBL */
 		DestTicks = CurrentTicks + FrameDuration_micro;
@@ -370,7 +370,7 @@ void Main_WaitOnVbl(void)
 	    && 2*nDelay > FrameDuration_micro/nFrameSkips)
 	{
 		nFrameSkips -= 1;
-		// Log_Printf(LOG_DEBUG, "Decreased frameskip to %d\n", nFrameSkips);
+		Log_Printf(LOG_DEBUG, "Decreased frameskip to %d\n", nFrameSkips);
 	}
 
 	if (bAccurateDelays)
