@@ -183,12 +183,14 @@ void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr)
 	/* Do we have a previous entry at the same cycles? If so, 68000 have used a 'move.l' instruction so stagger writes */
 	if (nCyclePalettes[ScanLine] > 0)
 	{
+		int CycleEnd = nCyclesPerLine >> nCpuFreqShift;
+
 		/* In case the ST uses a move.l or a movem.l to update colors, we need
 		 * to add at least 4 cycles between each color: */
 		if ((pTmpCyclePalette-1)->LineCycles >= nHorPos)
 			nHorPos = (pTmpCyclePalette-1)->LineCycles + 4;
 
-		if ( nHorPos >= nCyclesPerLine )	/* end of line reached, continue on the next line */
+		if ( nHorPos >= CycleEnd )	/* end of line reached, continue on the next line */
 		{
 			ScanLine++;
 			pTmpCyclePalette = &CyclePalettes[ (ScanLine*MAX_CYCLEPALETTES_PERLINE) + nCyclePalettes[ScanLine] ];
