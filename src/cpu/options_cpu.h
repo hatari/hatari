@@ -17,7 +17,7 @@
 
 
 #define UAEMAJOR 4
-#define UAEMINOR 1
+#define UAEMINOR 2
 #define UAESUBREV 0
 
 #define MAX_AMIGADISPLAYS 4
@@ -361,7 +361,7 @@ struct gfx_filterdata
 	float gfx_filter_horiz_offset, gfx_filter_vert_offset;
 	int gfx_filter_left_border, gfx_filter_right_border;
 	int gfx_filter_top_border, gfx_filter_bottom_border;
-	int gfx_filter_filtermode;
+	int gfx_filter_filtermodeh, gfx_filter_filtermodev;
 	int gfx_filter_bilinear;
 	int gfx_filter_noise, gfx_filter_blur;
 	int gfx_filter_saturation, gfx_filter_luminance, gfx_filter_contrast;
@@ -409,6 +409,20 @@ struct rtgboardconfig
 	int device_order;
 	int monitor_id;
 };
+struct boardloadfile
+{
+	uae_u32 loadoffset;
+	uae_u32 fileoffset, filesize;
+	TCHAR loadfile[MAX_DPATH];
+};
+#define MAX_ROM_BOARDS 4
+struct romboard
+{
+	uae_u32 size;
+	uae_u32 start_address;
+	uae_u32 end_address;
+	struct boardloadfile lf;
+};
 #define MAX_RAM_BOARDS 4
 struct ramboard
 {
@@ -424,9 +438,7 @@ struct ramboard
 	uae_u32 end_address;
 	uae_u32 write_address;
 	bool readonly;
-	uae_u32 loadoffset;
-	uae_u32 fileoffset, filesize;
-	TCHAR loadfile[MAX_DPATH];
+	struct boardloadfile lf;
 };
 struct expansion_params
 {
@@ -506,6 +518,7 @@ struct uae_prefs {
 	bool sound_stereo_swap_ahi;
 	bool sound_auto;
 	bool sound_cdaudio;
+	bool sound_volcnt;
 
 	int sampler_freq;
 	int sampler_buffer;
@@ -671,6 +684,7 @@ struct uae_prefs {
 	int cs_unmapped_space;
 	int cs_hacks;
 	int cs_ciatype[2];
+	int cs_kbhandshake;
 
 	struct boardromconfig expansionboard[MAX_EXPANSION_BOARDS];
 
@@ -696,6 +710,7 @@ struct uae_prefs {
 	TCHAR quitstatefile[MAX_DPATH];
 	TCHAR statefile[MAX_DPATH];
 	TCHAR inprecfile[MAX_DPATH];
+	TCHAR trainerfile[MAX_DPATH];
 	bool inprec_autoplay;
 	bool refresh_indicator;
 
@@ -731,6 +746,7 @@ struct uae_prefs {
 	uae_u32 z3autoconfig_start;
 	struct ramboard z3fastmem[MAX_RAM_BOARDS];
 	struct ramboard fastmem[MAX_RAM_BOARDS];
+	struct romboard romboards[MAX_ROM_BOARDS];
 	uae_u32 z3chipmem_size;
 	uae_u32 z3chipmem_start;
 	uae_u32 chipmem_size;

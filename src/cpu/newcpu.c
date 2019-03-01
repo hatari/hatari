@@ -2414,7 +2414,7 @@ static uaecptr ShowEA_disp(uaecptr *pcp, uaecptr base, TCHAR *buffer, const TCHA
 			name = NULL;
 		}
 		_stprintf(dr, _T("%c%d.%c"), dp & 0x8000 ? 'A' : 'D', (int)r, dp & 0x800 ? 'L' : 'W');
-		if (dp & 0x40) {
+		if (dp & 0x40) { // IS (index suppress)
 			dispreg = 0;
 			dr[0] = 0;
 		}
@@ -2441,14 +2441,18 @@ static uaecptr ShowEA_disp(uaecptr *pcp, uaecptr base, TCHAR *buffer, const TCHA
 			base += disp;
 		}
 
-		if ((dp & 0x04) == 0x00 && name) {
-			_stprintf(p, _T("%s,"), name);
-			p += _tcslen(p);
+		if (dp & 3) {
+			if (name) {
+				_stprintf(p, _T("%s,"), name);
+				p += _tcslen(p);
+			}
 		}
 
-		if (dr[0] && (dp & 0x04) == 0) {
-			_stprintf(p, _T("%s%s,"), dr, mult);
-			p += _tcslen(p);
+		if (!(dp & 0x04)) {
+			if (dr[0]) {
+				_stprintf(p, _T("%s%s,"), dr, mult);
+				p += _tcslen(p);
+			}
 		}
 
 		if (dp & 3) {
@@ -2458,9 +2462,11 @@ static uaecptr ShowEA_disp(uaecptr *pcp, uaecptr base, TCHAR *buffer, const TCHA
 			p += _tcslen(p);
 		}
 
-		if (dr[0] && (dp & 0x04) != 0) {
-			_stprintf(p, _T("%s%s,"), dr, mult);
-			p += _tcslen(p);
+		if ((dp & 0x04)) {
+			if (dr[0]) {
+				_stprintf(p, _T("%s%s,"), dr, mult);
+				p += _tcslen(p);
+			}
 		}
 
 		if ((dp & 0x03) == 0x02) {
@@ -2510,7 +2516,7 @@ static uaecptr ShowEA_disp(uaecptr *pcp, uaecptr base, TCHAR *buffer, const TCHA
 	return addr;
 }
 
-static uaecptr ShowEA (void *f, uaecptr pc, uae_u16 opcode, int reg, amodes mode, wordsizes size, TCHAR *buf, uae_u32 *eaddr, int safemode)
+uaecptr ShowEA (void *f, uaecptr pc, uae_u16 opcode, int reg, amodes mode, wordsizes size, TCHAR *buf, uae_u32 *eaddr, int safemode)
 {
 	uaecptr addr = pc;
 	uae_s16 disp16;
@@ -3475,9 +3481,6 @@ static void Exception_build_stack_frame (uae_u32 oldpc, uae_u32 currpc, uae_u32 
 			x_put_long (m68k_areg (regs, 7), oldpc);
 			break;
 		case 0xB: // long bus cycle fault stack frame (68020, 68030)
-			// We always use B frame because it is easier to emulate,
-			// our PC always points at start of instruction but A frame assumes
-			// it is + 2 and handling this properly is not easy.
 			// Store state information to internal register space
 #if MMU030_DEBUG
 			if (mmu030_idx >= MAX_MMU030_ACCESS) {
@@ -3541,14 +3544,29 @@ static void Exception_build_stack_frame (uae_u32 oldpc, uae_u32 currpc, uae_u32 
 			m68k_areg (regs, 7) -= 4;
 			x_put_long (m68k_areg (regs, 7), mmu030_disp_store[1]);
 		/* fall through */
-		case 0xA: // short bus cycle fault stack frame (68020, 68030)
+		case 0xA:
+			// short bus cycle fault stack frame (68020, 68030)
+			// used when instruction's last write causes bus fault
 			m68k_areg (regs, 7) -= 4;
-			x_put_long (m68k_areg (regs, 7), mmu030_disp_store[0]);
+			if (format == 0xb) {
+				x_put_long(m68k_areg(regs, 7), mmu030_disp_store[0]);
+			} else {
+				uae_u32 ps = (regs.prefetch020_valid[0] ? 1 : 0) | (regs.prefetch020_valid[1] ? 2 : 0) | (regs.prefetch020_valid[2] ? 4 : 0);
+				ps |= ((regs.pipeline_r8[0] & 7) << 8);
+				ps |= ((regs.pipeline_r8[1] & 7) << 11);
+				ps |= ((regs.pipeline_pos & 15) << 16);
+				ps |= ((regs.pipeline_stop & 15) << 20);
+				x_put_long(m68k_areg(regs, 7), ps);
+			}
 			m68k_areg (regs, 7) -= 4;
 			// Data output buffer = value that was going to be written
 			x_put_long (m68k_areg (regs, 7), regs.wb3_data);
 			m68k_areg (regs, 7) -= 4;
-			x_put_long (m68k_areg (regs, 7), (mmu030_opcode & 0xffff) | (regs.prefetch020[0] << 16));  // Internal register (opcode storage)
+			if (format == 0xb) {
+				x_put_long(m68k_areg(regs, 7), (mmu030_opcode & 0xffff) | (regs.prefetch020[0] << 16));  // Internal register (opcode storage)
+			} else {
+				x_put_long(m68k_areg(regs, 7), regs.irc | (regs.prefetch020[0] << 16));  // Internal register (opcode storage)
+			}
 			m68k_areg (regs, 7) -= 4;
 			x_put_long (m68k_areg (regs, 7), regs.mmu_fault_addr); // data cycle fault address
 			m68k_areg (regs, 7) -= 2;
@@ -3558,7 +3576,7 @@ static void Exception_build_stack_frame (uae_u32 oldpc, uae_u32 currpc, uae_u32 
 			m68k_areg (regs, 7) -= 2;
 			x_put_word (m68k_areg (regs, 7), ssw);
 			m68k_areg (regs, 7) -= 2;
-			x_put_word (m68k_areg (regs, 7), 0);  // Internal register
+			x_put_word (m68k_areg (regs, 7), regs.wb2_address); // = mmu030_state[1]);
 			break;
 		default:
             write_log(_T("Unknown exception stack frame format: %X\n"), format);
@@ -3653,7 +3671,11 @@ static void Exception_mmu030 (int nr, uaecptr oldpc)
 		m68k_areg (regs, 7) = regs.isp;
         Exception_build_stack_frame (oldpc, currpc, regs.mmu_ssw, nr, 0x1);
     } else if (nr == 2) {
-        Exception_build_stack_frame (oldpc, currpc, regs.mmu_ssw, nr,  0xB);
+		if (1 && (mmu030_state[1] & MMU030_STATEFLAG1_LASTWRITE)) {
+			Exception_build_stack_frame(oldpc, currpc, regs.mmu_ssw, nr, 0xA);
+		} else {
+			Exception_build_stack_frame(oldpc, currpc, regs.mmu_ssw, nr, 0xB);
+		}
     } else if (nr == 3) {
 		regs.mmu_fault_addr = last_fault_for_exception_3;
 		mmu030_state[0] = mmu030_state[1] = 0;
@@ -4354,6 +4376,7 @@ static void m68k_reset2(bool hardreset)
 	}
 //	regs.ce020memcycles = 0;
 	regs.ce020startcycle = regs.ce020endcycle = 0;
+
 	fill_prefetch ();
 //fprintf ( stderr,"m68k_reset2 out pc=%x\n" , regs.pc );
 }
@@ -4423,6 +4446,7 @@ static void cpu_do_fallback(void)
 		fallback_cpu_model = 0;
 	}
 	init_m68k();
+	build_cpufunctbl();
 	m68k_reset2(false);
 	if (!fallbackmode) {
 		// restore original 68020+
@@ -5642,6 +5666,12 @@ static void m68k_run_1 (void)
 					//write_log (_T("%08X-%04X "), pc, r->opcode);
 				}
 #endif
+#ifndef WINUAE_FOR_HATARI
+				if (debug_opcode_watch) {
+					debug_trainer_match();
+				}
+#endif
+
 				do_cycles (cpu_cycles);
 				r->instruction_pc = m68k_getpc ();
 				cpu_cycles = (*cpufunctbl[r->opcode])(r->opcode);
@@ -5793,6 +5823,12 @@ static void m68k_run_1_ce (void)
 
 #ifdef WINUAE_FOR_HATARI
 				currcycle = 0;
+#endif
+
+#ifndef WINUAE_FOR_HATARI
+				if (debug_opcode_watch) {
+					debug_trainer_match();
+				}
 #endif
 
 				r->instruction_pc = m68k_getpc ();
@@ -6791,12 +6827,14 @@ insretry:
 
 		} CATCH (prb) {
 
-			if (mmu030_opcode == -1 && currprefs.cpu_compatible) {
+			if (mmu030_opcode == -1) {
 				// full prefetch fill access fault
-				// TODO: this should create shorter A-frame
 				mmufixup[0].reg = -1;
 				mmufixup[1].reg = -1;
-			} else if (!(mmu030_state[1] & MMU030_STATEFLAG1_LASTWRITE)) {
+			} else if (mmu030_state[1] & MMU030_STATEFLAG1_LASTWRITE) {
+				mmufixup[0].reg = -1;
+				mmufixup[1].reg = -1;
+			} else {
 				regflags.cznv = f.cznv;
 				regflags.x = f.x;
 
@@ -6854,6 +6892,12 @@ static void m68k_run_3ce (void)
 				// "prefetch"
 				if (regs.cacr & 0x8000)
 					fill_icache040(r->instruction_pc + 16);
+
+#ifndef WINUAE_FOR_HATARI
+				if (debug_opcode_watch) {
+					debug_trainer_match();
+				}
+#endif
 
 				(*cpufunctbl[r->opcode])(r->opcode);
 
@@ -6938,6 +6982,12 @@ static void m68k_run_3p(void)
 				// "prefetch"
 				if (regs.cacr & 0x8000)
 					fill_icache040(r->instruction_pc + 16);
+
+#ifndef WINUAE_FOR_HATARI
+				if (debug_opcode_watch) {
+					debug_trainer_match();
+				}
+#endif
 
 				(*cpufunctbl[r->opcode])(r->opcode);
 
@@ -7132,6 +7182,10 @@ fprintf ( stderr , "cache valid %d tag1 %x lws1 %x ctag %x data %x mem=%x\n" , c
 					else if (input_play > 0)
 						inprec_playdebug_cpu (1);
 				}
+
+				if (debug_opcode_watch) {
+					debug_trainer_match();
+				}
 #endif
 
 				(*cpufunctbl[r->opcode])(r->opcode);
@@ -7299,7 +7353,12 @@ static void m68k_run_2p (void)
 					else if (input_play > 0)
 						inprec_playdebug_cpu (1);
 				}
+
+				if (debug_opcode_watch) {
+					debug_trainer_match();
+				}
 #endif
+
 				if (cpu_cycles > 0)
 					x_do_cycles(cpu_cycles);
 
@@ -7447,6 +7506,11 @@ static void m68k_run_2 (void)
 				r->opcode = x_get_iword(0);
 				count_instr (r->opcode);
 
+#ifndef WINUAE_FOR_HATARI
+				if (debug_opcode_watch) {
+					debug_trainer_match();
+				}
+#endif
 				do_cycles (cpu_cycles);
 
 				cpu_cycles = (*cpufunctbl[r->opcode])(r->opcode);
@@ -7692,6 +7756,9 @@ void m68k_go (int may_quit)
 #ifndef WINUAE_FOR_HATARI
 		if (changed_prefs.inprecfile[0] && input_record)
 			inprec_prepare_record (savestate_fname[0] ? savestate_fname : NULL);
+
+		if (changed_prefs.trainerfile[0])
+			debug_init_trainer(changed_prefs.trainerfile);
 #endif
 
 		set_cpu_tracer (false);
@@ -8805,17 +8872,17 @@ void m68k_disasm_2 (TCHAR *buf, int bufsize, uaecptr pc, uaecptr *nextpc, int cn
 		} else if (lookup->mnemo == i_MVMEL) {
 			uae_u16 mask = extra;
 			pc += 2;
-			pc = ShowEA (0, pc, opcode, dp->dreg, dp->dmode, dp->size, instrname, deaddr, safemode);
+			pc = ShowEA (NULL, pc, opcode, dp->dreg, dp->dmode, dp->size, instrname, deaddr, safemode);
 			movemout (instrname, mask, dp->dmode, 0, true);
 		} else if (lookup->mnemo == i_MVMLE) {
 			uae_u16 mask = extra;
 			pc += 2;
 			if (movemout(instrname, mask, dp->dmode, 0, false))
 				_tcscat(instrname, _T(","));
-			pc = ShowEA(0, pc, opcode, dp->dreg, dp->dmode, dp->size, instrname, deaddr, safemode);
+			pc = ShowEA(NULL, pc, opcode, dp->dreg, dp->dmode, dp->size, instrname, deaddr, safemode);
 		} else if (lookup->mnemo == i_DIVL || lookup->mnemo == i_MULL) {
 			TCHAR *p;
-			pc = ShowEA(0, pc, opcode, dp->dreg, dp->dmode, dp->size, instrname, &seaddr2, safemode);
+			pc = ShowEA(NULL, pc, opcode, dp->dreg, dp->dmode, dp->size, instrname, &seaddr2, safemode);
 			extra = get_word_debug(pc);
 			pc += 2;
 			p = instrname + _tcslen(instrname);
@@ -8827,13 +8894,13 @@ void m68k_disasm_2 (TCHAR *buf, int bufsize, uaecptr pc, uaecptr *nextpc, int cn
 			TCHAR *p;
 			pc += 2;
 			if (!(extra & 0x0800)) {
-				pc = ShowEA(0, pc, opcode, dp->dreg, dp->dmode, dp->size, instrname, &seaddr2, safemode);
+				pc = ShowEA(NULL, pc, opcode, dp->dreg, dp->dmode, dp->size, instrname, &seaddr2, safemode);
 				p = instrname + _tcslen(instrname);
 				_stprintf(p, _T(",%c%d"), (extra & 0x8000) ? 'A' : 'D', (extra >> 12) & 7);
 			} else {
 				p = instrname + _tcslen(instrname);
 				_stprintf(p, _T("%c%d,"), (extra & 0x8000) ? 'A' : 'D', (extra >> 12) & 7);
-				pc = ShowEA(0, pc, opcode, dp->dreg, dp->dmode, dp->size, instrname, &seaddr2, safemode);
+				pc = ShowEA(NULL, pc, opcode, dp->dreg, dp->dmode, dp->size, instrname, &seaddr2, safemode);
 			}
 		} else if (lookup->mnemo == i_BFEXTS || lookup->mnemo == i_BFEXTU ||
 				   lookup->mnemo == i_BFCHG || lookup->mnemo == i_BFCLR ||
@@ -8848,7 +8915,7 @@ void m68k_disasm_2 (TCHAR *buf, int bufsize, uaecptr pc, uaecptr *nextpc, int cn
 				reg = (extra >> 12) & 7;
 			if (lookup->mnemo == i_BFINS)
 				_stprintf(p, _T("D%d,"), reg);
-			pc = ShowEA(0, pc, opcode, dp->dreg, dp->dmode, dp->size, instrname, &seaddr2, safemode);
+			pc = ShowEA(NULL, pc, opcode, dp->dreg, dp->dmode, dp->size, instrname, &seaddr2, safemode);
 			_tcscat(instrname, _T(" {"));
 			p = instrname + _tcslen(instrname);
 			if (extra & 0x0800)
@@ -8940,9 +9007,9 @@ void m68k_disasm_2 (TCHAR *buf, int bufsize, uaecptr pc, uaecptr *nextpc, int cn
 					else
 						movemout(instrname, regmask, dp->dmode, fpmode, false);
 					_tcscat(instrname, _T(","));
-					pc = ShowEA(0, pc, opcode, dp->dreg, dp->dmode, dp->size, instrname, deaddr, safemode);
+					pc = ShowEA(NULL, pc, opcode, dp->dreg, dp->dmode, dp->size, instrname, deaddr, safemode);
 				} else {
-					pc = ShowEA(0, pc, opcode, dp->dreg, dp->dmode, dp->size, instrname, deaddr, safemode);
+					pc = ShowEA(NULL, pc, opcode, dp->dreg, dp->dmode, dp->size, instrname, deaddr, safemode);
 					p = instrname + _tcslen(instrname);
 					if (mode & 1)
 						_stprintf(p, _T(",D%d"), dreg);
@@ -8962,7 +9029,7 @@ void m68k_disasm_2 (TCHAR *buf, int bufsize, uaecptr pc, uaecptr *nextpc, int cn
 					_tcscat(instrname, _T(" "));
 					p = instrname + _tcslen(instrname);
 					_stprintf(p, _T("FP%d,"), (extra >> 7) & 7);
-					pc = ShowEA(0, pc, opcode, dp->dreg, dp->dmode, fpsizeconv[size], instrname, &deaddr2, safemode);
+					pc = ShowEA(NULL, pc, opcode, dp->dreg, dp->dmode, fpsizeconv[size], instrname, &deaddr2, safemode);
 					p = instrname + _tcslen(instrname);
 					if (size == 7) {
 						_stprintf(p, _T(" {D%d}"), (kfactor >> 4));
@@ -8976,7 +9043,7 @@ void m68k_disasm_2 (TCHAR *buf, int bufsize, uaecptr pc, uaecptr *nextpc, int cn
 						_tcscat(instrname, _T("."));
 						_tcscat(instrname, fpsizes[size]);
 						_tcscat(instrname, _T(" "));
-						pc = ShowEA(0, pc, opcode, dp->dreg, dp->dmode, fpsizeconv[size], instrname, &seaddr2, safemode);
+						pc = ShowEA(NULL, pc, opcode, dp->dreg, dp->dmode, fpsizeconv[size], instrname, &seaddr2, safemode);
 					} else { // source is FPx
 						p = instrname + _tcslen(instrname);
 						_stprintf(p, _T(".X FP%d"), (extra >> 10) & 7);
@@ -8994,7 +9061,7 @@ void m68k_disasm_2 (TCHAR *buf, int bufsize, uaecptr pc, uaecptr *nextpc, int cn
 			_tcscpy(instrname, _T("A-LINE"));
 		} else {
 			if (dp->suse) {
-				pc = ShowEA (0, pc, opcode, dp->sreg, dp->smode, dp->size, instrname, &seaddr2, safemode);
+				pc = ShowEA (NULL, pc, opcode, dp->sreg, dp->smode, dp->size, instrname, &seaddr2, safemode);
 
 				// JSR x(a6) / JMP x(a6)
 				if (opcode == 0x4ea8 + 6 || opcode == 0x4ee8 + 6) {
@@ -9013,7 +9080,7 @@ void m68k_disasm_2 (TCHAR *buf, int bufsize, uaecptr pc, uaecptr *nextpc, int cn
 			if (dp->suse && dp->duse)
 				_tcscat (instrname, _T(","));
 			if (dp->duse) {
-				pc = ShowEA (0, pc, opcode, dp->dreg, dp->dmode, dp->size, instrname, &deaddr2, safemode);
+				pc = ShowEA (NULL, pc, opcode, dp->dreg, dp->dmode, dp->size, instrname, &deaddr2, safemode);
 			}
 		}
 
@@ -10419,6 +10486,7 @@ static uae_u16 pipeline_opcode;
 static void pipeline_020(uaecptr pc)
 {
 	uae_u16 w = regs.prefetch020[1];
+
 	if (regs.prefetch020_valid[1] == 0) {
 		regs.pipeline_stop = -1;
 		return;
@@ -11203,7 +11271,7 @@ static uae_u32 read_dcache030_debug(uaecptr addr, uae_u32 size, uae_u32 fc, bool
 //#define WINUAE_FOR_HATARI_DEBUG_CACHE
 #ifdef WINUAE_FOR_HATARI_DEBUG_CACHE
 bool read_dcache030_2_real (uaecptr addr, uae_u32 size, uae_u32 *valp);
-static bool read_dcache030_2 (uaecptr addr, uae_u32 size, uae_u32 *valp)
+static bool read_dcache030_2(uaecptr addr, uae_u32 size, uae_u32 *valp)
 {
   bool b;
 

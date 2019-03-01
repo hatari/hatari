@@ -1322,6 +1322,15 @@ static void add_shmmaps (uae_u32 start, addrbank *what)
 
 #define MAPPED_MALLOC_DEBUG 0
 
+static void set_direct_memory(addrbank *ab)
+{
+	if (!(ab->flags & ABFLAG_DIRECTACCESS))
+		return;
+	ab->baseaddr_direct_r = ab->baseaddr;
+	if (!(ab->flags & ABFLAG_ROM))
+		ab->baseaddr_direct_w = ab->baseaddr;
+}
+
 bool mapped_malloc (addrbank *ab)
 {
 	int id;
@@ -1889,3 +1898,131 @@ void memory_clear (void)
 }
 
 
+uae_u32 memory_get_longi(uaecptr addr)
+{
+	addrbank *ab = &get_mem_bank(addr);
+	if (!ab->baseaddr_direct_r) {
+		return call_mem_get_func(ab->lgeti, addr);
+	} else {
+		uae_u8 *m;
+		addr -= ab->startaccessmask;
+		addr &= ab->mask;
+		m = ab->baseaddr_direct_r + addr;
+		return do_get_mem_long((uae_u32 *)m);
+	}
+}
+uae_u32 memory_get_wordi(uaecptr addr)
+{
+	addrbank *ab = &get_mem_bank(addr);
+	if (!ab->baseaddr_direct_r) {
+		return call_mem_get_func(ab->wgeti, addr);
+	} else {
+		uae_u8 *m;
+		addr -= ab->startaccessmask;
+		addr &= ab->mask;
+		m = ab->baseaddr_direct_r + addr;
+		return do_get_mem_word((uae_u16*)m);
+	}
+}
+uae_u32 memory_get_long(uaecptr addr)
+{
+	addrbank *ab = &get_mem_bank(addr);
+	if (!ab->baseaddr_direct_r) {
+		return call_mem_get_func(ab->lget, addr);
+	} else {
+		uae_u8 *m;
+		addr -= ab->startaccessmask;
+		addr &= ab->mask;
+		m = ab->baseaddr_direct_r + addr;
+		return do_get_mem_long((uae_u32*)m);
+	}
+}
+uae_u32 memory_get_word(uaecptr addr)
+{
+	addrbank *ab = &get_mem_bank(addr);
+	if (!ab->baseaddr_direct_r) {
+		return call_mem_get_func(ab->wget, addr);
+	} else {
+		uae_u8 *m;
+		addr -= ab->startaccessmask;
+		addr &= ab->mask;
+		m = ab->baseaddr_direct_r + addr;
+		return do_get_mem_word((uae_u16*)m);
+	}
+}
+uae_u32 memory_get_byte(uaecptr addr)
+{
+	addrbank *ab = &get_mem_bank(addr);
+	if (!ab->baseaddr_direct_r) {
+		return call_mem_get_func(ab->bget, addr);
+	} else {
+		uae_u8 *m;
+		addr -= ab->startaccessmask;
+		addr &= ab->mask;
+		m = ab->baseaddr_direct_r + addr;
+		return *m;
+	}
+}
+
+void memory_put_long(uaecptr addr, uae_u32 v)
+{
+	addrbank *ab = &get_mem_bank(addr);
+	if (!ab->baseaddr_direct_w) {
+		call_mem_put_func(ab->lput, addr, v);
+	} else {
+		uae_u8 *m;
+		addr -= ab->startaccessmask;
+		addr &= ab->mask;
+		m = ab->baseaddr_direct_w + addr;
+		do_put_mem_long((uae_u32*)m, v);
+	}
+}
+void memory_put_word(uaecptr addr, uae_u32 v)
+{
+	addrbank *ab = &get_mem_bank(addr);
+	if (!ab->baseaddr_direct_w) {
+		call_mem_put_func(ab->wput, addr, v);
+	} else {
+		uae_u8 *m;
+		addr -= ab->startaccessmask;
+		addr &= ab->mask;
+		m = ab->baseaddr_direct_w + addr;
+		do_put_mem_word((uae_u16*)m, v);
+	}
+}
+void memory_put_byte(uaecptr addr, uae_u32 v)
+{
+	addrbank *ab = &get_mem_bank(addr);
+	if (!ab->baseaddr_direct_w) {
+		call_mem_put_func(ab->bput, addr, v);
+	} else {
+		uae_u8 *m;
+		addr -= ab->startaccessmask;
+		addr &= ab->mask;
+		m = ab->baseaddr_direct_w + addr;
+		*m = (uae_u8)v;
+	}
+}
+
+uae_u8 *memory_get_real_address(uaecptr addr)
+{
+	addrbank *ab = &get_mem_bank(addr);
+	if (!ab->baseaddr_direct_r) {
+		return get_mem_bank(addr).xlateaddr(addr);
+	} else {
+		addr -= ab->startaccessmask;
+		addr &= ab->mask;
+		return ab->baseaddr_direct_r + addr;
+	}
+}
+
+int memory_valid_address(uaecptr addr, uae_u32 size)
+{
+	addrbank *ab = &get_mem_bank(addr);
+	if (!ab->baseaddr_direct_r) {
+		return get_mem_bank(addr).check(addr, size);
+	}
+	addr -= ab->startaccessmask;
+	addr &= ab->mask;
+	return addr + size <= ab->allocated_size;
+}

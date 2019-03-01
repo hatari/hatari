@@ -702,6 +702,7 @@ extern void m68k_disasm_file (FILE *f, uaecptr addr, uaecptr *nextpc, uaecptr la
 #endif
 extern void sm68k_disasm (TCHAR*, TCHAR*, uaecptr addr, uaecptr *nextpc, uaecptr lastpc);
 extern int m68k_asm(TCHAR *buf, uae_u16 *out, uaecptr pc);
+extern uaecptr ShowEA(void *f, uaecptr pc, uae_u16 opcode, int reg, amodes mode, wordsizes size, TCHAR *buf, uae_u32 *eaddr, int safemode);
 extern int get_cpu_model (void);
 
 extern void set_cpu_caches (bool flush);
