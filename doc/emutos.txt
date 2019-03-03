@@ -184,7 +184,7 @@ the emutos2.map file (produced during EmuTOS build) to a format you
 can load to Hatari debugger with its "symbols" command[2].
 
 [1] http://sourceforge.net/mailarchive/message.php?msg_id=29381777
-[2] http://hg.tuxfamily.org/mercurialroot/hatari/hatari/raw-file/tip/doc/manual.html#Debug_symbols
+[2] https://hatari.tuxfamily.org/doc/manual.html#Debug_symbols
 
 After loading the symbols to the Hatari debugger, disassembling the
 problematic address should provide more clues for the problem.  Or you
@@ -261,7 +261,7 @@ be inspected with the "m" command.
 
 For more info on Hatari debugger usage, see the Hatari manual section
 on it:
-http://hg.tuxfamily.org/mercurialroot/hatari/hatari/raw-file/tip/doc/manual.html#The_debugger
+https://hatari.tuxfamily.org/doc/manual.html#The_debugger
 
 
 Debugging freezes
