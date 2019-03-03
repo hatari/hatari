@@ -570,7 +570,7 @@ standard resolutions for the VDI mode:
 </p>
 <p class="parameter">monochrome</p>
 <p class="paramdesc">
-FullHD (1920×1080), WUXGA (1920x1200) and QWXGA (2048x1152)
+FullHD (1920x1080), WUXGA (1920x1200) and QWXGA (2048x1152)
 </p>
 <p class="parameter">2 plane mode (4 colors)</p>
 <p class="paramdesc">
@@ -2197,7 +2197,7 @@ with GEMDOS HD emulation.  Such things need to be run from a real
 hard disk image.</li>
 <li>GEMDOS HD C: drive conflicts with the ACSI and IDE hard drives.
 If you want to use GEMDOS HD directory and ACSI/IDE disk images together,
-either use the GEMDOS HD option for skipping ACSI & IDE partitions, or
+either use the GEMDOS HD option for skipping ACSI &amp; IDE partitions, or
 use a multiple partition GEMDOS HD emulation setup and select the partition
 subdirectories (see above) so that they don't conflict with the ACSI/IDE
 partitions (drive letters).  With HD Driver you have also another option,
@@ -2530,7 +2530,7 @@ Generic commands:
            cd (  ) : change directory
      evaluate ( e) : evaluate an expression
          help ( h) : print help
-      history (hi) : show last CPU/DSP PC values & executed instructions
+      history (hi) : show last CPU/DSP PC values &amp; executed instructions
          info ( i) : show machine/OS information
          lock (  ) : specify information to show on entering the debugger
       logfile ( f) : open or close log file
@@ -2554,7 +2554,7 @@ CPU commands:
      memwrite ( w) : write bytes to memory
       loadbin ( l) : load a file into memory
       savebin (  ) : save memory to a file
-      symbols (  ) : load CPU symbols & their addresses
+      symbols (  ) : load CPU symbols &amp; their addresses
          step ( s) : single-step CPU
          next ( n) : step CPU through subroutine calls / to given instruction type
          cont ( c) : continue emulation / CPU single-stepping
@@ -2564,7 +2564,7 @@ DSP commands:
      dspbreak (db) : set/remove/list conditional DSP breakpoints
     dspdisasm (dd) : disassemble DSP code
    dspmemdump (dm) : dump DSP memory
-   dspsymbols (  ) : load DSP symbols & their addresses
+   dspsymbols (  ) : load DSP symbols &amp; their addresses
    dspprofile (dp) : profile DSP code
        dspreg (dr) : read/write DSP registers
       dspstep (ds) : single-step DSP
@@ -3138,7 +3138,7 @@ b  AesOpcode ! AesOpcode  &amp;&amp;  AesOpcode &lt; 0xffff  :trace
 <li>To stop when TOS starts next program, set a breakpoint for
     Pexec(0,...) OS call:
 <pre>
-b GemdosOpcode = 0x4B && OsCallParam = 0x0
+b GemdosOpcode = 0x4B &amp;&amp; OsCallParam = 0x0
 </pre>
 </li>
 <li>Then, to stop emulation on the first instruction of that
@@ -3197,7 +3197,7 @@ another one is set.
 <li>"pexec.ini":
 <pre>
 # continue to "program.ini" on Pexec(0, ....)
-b GemdosOpcode = 0x4B && OsCallParam = 0x0 :trace :once :file program.ini
+b GemdosOpcode = 0x4B &amp;&amp; OsCallParam = 0x0 :trace :once :file program.ini
 </pre>
 </li>
 <li>"program.ini":
@@ -3208,7 +3208,7 @@ b pc = TEXT :trace :once :file trace.ini
 </li>
 <li>"trace.ini":
 <pre>
-# load symbols, trace gemdos & program function calls
+# load symbols, trace gemdos &amp; program function calls
 symbols prg
 trace gemdos,cpu_symbols
 # continue to "disable.ini" after 4 VBLs
@@ -4149,7 +4149,7 @@ b  d1 ! d1
 <dd>To stop when e.g. D1 register lowest byte changes, set a
 breakpoint on masked lowest 8 bits:
 <pre>
-b  d1 & 0xff ! d1 & 0xff
+b  d1 &amp; 0xff ! d1 &amp; 0xff
 </pre>
 </dd>
 
@@ -4166,7 +4166,7 @@ b  d1 &gt; 9  &amp;&amp;  d1 &lt; 31
 I/O address $ff820a is set i.e. video frequency is 60Hz, set
 a breakpoint on:
 <pre>
-b  ($ff820a).b & 2 = 2
+b  ($ff820a).b &amp; 2 = 2
 </pre>
 </dd>
 
@@ -4174,7 +4174,7 @@ b  ($ff820a).b & 2 = 2
 <dd>To stop when above bit changes, set a breakpoint on its value
 being different from the current value ('!' compares for inequality):
 <pre>
-b  ($ff820a).b & 2 ! ($ff820a).b & 2
+b  ($ff820a).b &amp; 2 ! ($ff820a).b &amp; 2
 </pre>
 </dd>
 
@@ -4182,7 +4182,7 @@ b  ($ff820a).b & 2 ! ($ff820a).b & 2
 <dd>To see the new values and continue without stopping, add
 the ":trace" breakpoint option:
 <pre>
-b  ($ff820a).b & 2 ! ($ff820a).b & 2  :trace
+b  ($ff820a).b &amp; 2 ! ($ff820a).b &amp; 2  :trace
 </pre>
 </dd>
 
