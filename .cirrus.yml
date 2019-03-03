@@ -1,0 +1,37 @@
+ubuntu_task:
+  container:
+    image: ubuntu:16.04
+    cpu: 4
+    memory: 2Gb
+  install_script:
+    - apt-get update -qq
+    - apt-get install -y -qq cmake libsdl2-dev libpng-dev zlib1g-dev libudev-dev
+  script:
+    - ./configure --enable-old-uae-cpu --enable-small-mem --disable-dsp
+                  --enable-debug || { cat config.log; exit 1; }
+    - make -j4
+    - ctest -j4 || { cat Testing/Temporary/LastTest.log; exit1; }
+
+freebsd_task:
+  freebsd_instance:
+    image: freebsd-12-0-release-amd64
+    cpu: 4
+    memory: 4G
+  install_script:
+    - pkg update
+    - pkg install -y pkgconf cmake gmake png devel/sdl20 devel/libedit
+  script:
+    - ./configure || { cat config.log; exit 1; }
+    - gmake -j4
+    - gmake test || { cat Testing/Temporary/LastTest.log; exit1; }
+
+macos_task:
+  osx_instance:
+    image: high-sierra-base
+  install_script:
+    - brew install cmake sdl2 libpng make tidy-html5
+  script:
+    - export PATH=/usr/local/bin:$PATH
+    - ./configure --disable-osx-bundle || { cat config.log; exit 1; }
+    - gmake -j2
+    - gmake test || { cat Testing/Temporary/LastTest.log; exit1; }
