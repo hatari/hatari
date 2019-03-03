@@ -15,7 +15,12 @@ if [ ! -x "$hatari" ]; then
 fi;
 
 testdir=$(mktemp -d)
-cfgfile="$testdir"/.config/hatari/hatari.cfg
+if [ $(uname -s) = "Darwin" ]; then
+	mkdir -p "${testdir}/Library/Application Support"
+	cfgfile="${testdir}/Library/Application Support/Hatari/hatari.cfg"
+else
+	cfgfile="$testdir"/.config/hatari/hatari.cfg
+fi
 
 remove_temp() {
   rm -rf "$testdir"
@@ -54,40 +59,40 @@ if [ $exitstat -ne 0 ]; then
 fi
 
 echo "############################## Log file: ##############################"
-cat $cfgfile
+cat "$cfgfile"
 
 # Check whether the command line options have been included in the config file:
 echo "#################### Looking for expected settings: ###################"
-grep "nTextLogLevel = 0" $cfgfile || exit 1
-grep "bEnableSound = FALSE" $cfgfile || exit 1
-grep "bConfirmQuit = FALSE" $cfgfile || exit 1
-grep "nModelType = 4" $cfgfile || exit 1
-grep "nCpuLevel = 4" $cfgfile || exit 1
-grep "nCpuFreq = 16" $cfgfile || exit 1
-grep "bUseExtVdiResolutions = TRUE" $cfgfile || exit 1
-grep "bShowDriveLed = FALSE" $cfgfile || exit 1
-grep "nMonitorType = 3" $cfgfile || exit 1
-grep "nFrameSkips = 3" $cfgfile || exit 1
-grep "bMouseWarp = FALSE" $cfgfile || exit 1
-grep "bShowStatusbar = FALSE" $cfgfile || exit 1
-grep "bDisasmUAE = TRUE" $cfgfile || exit 1
-grep "nJoystickMode = 2" $cfgfile || exit 1
-grep "szMappingFileName = $keymap" $cfgfile || exit 1
-grep "nMemorySize = 512" $cfgfile || exit 1
-grep "nWriteProtection = 2" $cfgfile || exit 1
-grep "nGemdosCase = 1" $cfgfile || exit 1
-grep "sDeviceFile3 = $acsifile" $cfgfile || exit 1
-grep "sDeviceFile5 = $scsifile" $cfgfile || exit 1
-grep "sDeviceFile0 = $idefile" $cfgfile || exit 1
-grep "bPatchTos = FALSE" $cfgfile || exit 1
-grep "bEnableRS232 = TRUE" $cfgfile || exit 1
-grep "szOutFileName = $testdir/serial-out.txt" $cfgfile || exit 1
-grep "szInFileName = /dev/null" $cfgfile || exit 1
-grep "bEnablePrinting = TRUE" $cfgfile || exit 1
-grep "szPrintToFileName = /dev/zero" $cfgfile || exit 1
-grep "bCrop = TRUE" $cfgfile || exit 1
-grep "AviRecordFps = 60" $cfgfile || exit 1
-grep "nAlertDlgLogLevel = 0" $cfgfile || exit 1
+grep "nTextLogLevel = 0" "$cfgfile" || exit 1
+grep "bEnableSound = FALSE" "$cfgfile" || exit 1
+grep "bConfirmQuit = FALSE" "$cfgfile" || exit 1
+grep "nModelType = 4" "$cfgfile" || exit 1
+grep "nCpuLevel = 4" "$cfgfile" || exit 1
+grep "nCpuFreq = 16" "$cfgfile" || exit 1
+grep "bUseExtVdiResolutions = TRUE" "$cfgfile" || exit 1
+grep "bShowDriveLed = FALSE" "$cfgfile" || exit 1
+grep "nMonitorType = 3" "$cfgfile" || exit 1
+grep "nFrameSkips = 3" "$cfgfile" || exit 1
+grep "bMouseWarp = FALSE" "$cfgfile" || exit 1
+grep "bShowStatusbar = FALSE" "$cfgfile" || exit 1
+grep "bDisasmUAE = TRUE" "$cfgfile" || exit 1
+grep "nJoystickMode = 2" "$cfgfile" || exit 1
+grep "szMappingFileName = $keymap" "$cfgfile" || exit 1
+grep "nMemorySize = 512" "$cfgfile" || exit 1
+grep "nWriteProtection = 2" "$cfgfile" || exit 1
+grep "nGemdosCase = 1" "$cfgfile" || exit 1
+grep "sDeviceFile3 = $acsifile" "$cfgfile" || exit 1
+grep "sDeviceFile5 = $scsifile" "$cfgfile" || exit 1
+grep "sDeviceFile0 = $idefile" "$cfgfile" || exit 1
+grep "bPatchTos = FALSE" "$cfgfile" || exit 1
+grep "bEnableRS232 = TRUE" "$cfgfile" || exit 1
+grep "szOutFileName = $testdir/serial-out.txt" "$cfgfile" || exit 1
+grep "szInFileName = /dev/null" "$cfgfile" || exit 1
+grep "bEnablePrinting = TRUE" "$cfgfile" || exit 1
+grep "szPrintToFileName = /dev/zero" "$cfgfile" || exit 1
+grep "bCrop = TRUE" "$cfgfile" || exit 1
+grep "AviRecordFps = 60" "$cfgfile" || exit 1
+grep "nAlertDlgLogLevel = 0" "$cfgfile" || exit 1
 
 echo "######################################################################"
 
