@@ -154,6 +154,7 @@ void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr)
 {
 	CYCLEPALETTE *pTmpCyclePalette;
 	int FrameCycles, ScanLine, nHorPos;
+	int	CycleEnd;
 
 	if (!ConfigureParams.Screen.nSpec512Threshold)
 		return;
@@ -167,11 +168,13 @@ void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr)
 	/* Find scan line we are currently on and get index into cycle-palette table */
 	Video_ConvertPosition ( FrameCycles , &ScanLine , &nHorPos );	
 
+	CycleEnd = nCyclesPerLine;
 	if ( nCpuFreqShift )				/* if cpu freq is 16 or 32 MHz */
 	{
 		/* Convert cycle position to 8 MHz equivalent and round to 4 cycles */
 		nHorPos >>= nCpuFreqShift;
 		nHorPos &= ~3;
+		CycleEnd >>= nCpuFreqShift;
 	}
 
 	if (ScanLine > MAX_SCANLINES_PER_FRAME)
@@ -188,7 +191,7 @@ void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr)
 		if ((pTmpCyclePalette-1)->LineCycles >= nHorPos)
 			nHorPos = (pTmpCyclePalette-1)->LineCycles + 4;
 
-		if ( nHorPos >= nCyclesPerLine )	/* end of line reached, continue on the next line */
+		if ( nHorPos >= CycleEnd )		/* end of line reached, continue on the next line */
 		{
 			ScanLine++;
 			pTmpCyclePalette = &CyclePalettes[ (ScanLine*MAX_CYCLEPALETTES_PERLINE) + nCyclePalettes[ScanLine] ];
