@@ -104,7 +104,7 @@ class UIHelp:
         docpath = path + "/share/doc/hatari/"
         if not os.path.exists(docpath + "manual.html"):
             print("WARNING: using Git URLs, Hatari 'manual.html' not found from: %s" % docpath)
-            docpath = "https://git.tuxfamily.org/hatari/hatari.git/plain/doc/"
+            docpath = "https://hatari.tuxfamily.org/doc/"
 
         uipath = path + "/share/hatari/hatariui/"
         if not os.path.exists(uipath + "release-notes.txt"):
