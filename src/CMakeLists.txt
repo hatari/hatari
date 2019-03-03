@@ -27,7 +27,9 @@ if(ENABLE_OSX_BUNDLE)
 	    ${CMAKE_SOURCE_DIR}/doc/compatibility.html ${CMAKE_SOURCE_DIR}/doc/toc.js )
 	# these are the macOS Interface Builder Files
 	set (HATARI_XIBS en.lproj/SDLMain fr.lproj/SDLMain)
-endif(ENABLE_OSX_BUNDLE)
+elseif(APPLE)
+	set(SOURCES ${SOURCES} gui-osx/paths.m)
+endif()
 
 # When building for Windows, define specific sources for gui and resources
 # and set the subsystem of the resulting .exe to "windows GUI" instead of "console"
