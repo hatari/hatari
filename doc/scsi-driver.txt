@@ -2,7 +2,8 @@ Hatari provides a host component implementation of the SCSI Driver for Hatari
 (Linux only).
 The SCSI Driver standard is an open software interface for the Atari and was
 initiated by Steffen Engel. Please refer to src/nf_scsidrv.c and
-http://hddriver.seimet.de/en/downloads.html for further information.
+https://www.hddriver.net/en/downloads.html or
+https://github.com/uweseimet/atari_public for further information.
 
 The SCSI Driver for Hatari implements a SCSI Driver on top of the Linux SG 3
 driver interface. With the SCSI Driver software running within Hatari can
