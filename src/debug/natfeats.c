@@ -7,9 +7,7 @@
  * or at your option any later version. Read the file gpl.txt for details.
  *
  * natfeats.c - Hatari Native features identification and call forwarding,
- * modeled after similar code in Aranym (written by Petr Stehlik),
- * specified here:
- * 	http://wiki.aranym.org/natfeats/proposal
+ * modeled after similar code in Aranym.  See tests/natfeats/ for more info.
  */
 const char Natfeats_fileid[] = "Hatari natfeats.c : " __DATE__ " " __TIME__;
 
