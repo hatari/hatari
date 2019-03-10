@@ -496,10 +496,13 @@ Specify which exceptions invoke debugger, see
 for available (comma separated) exception flags.
 .TP
 .B \-\-bios\-intercept <bool>
-Enable/Disable XBios command parsing. Allows Atari programs to use all
-Hatari functionality and change Hatari state through Hatari specific
-XBios(255) calls. XBios(20) printscreen calls produce also Hatari
-screenshots. XBios(11) Dbmsg call can be used to invoke the debugger.
+Enable/Disable XBios command parsing. XBios(11) Dbmsg call can be used
+to invoke Hatari debugger. XBios(20) printscreen calls produce also
+Hatari screenshots. XBios(255) allows Atari programs to use Hatari
+debugger functionality, which allows e.g. invoking shortcuts and
+Hatari command line options. Last one is deprecated as it gives too
+much control to emulated program, please use NatFeats API (--natfeats)
+instead of XBios 11 and 255.
 .TP
 .B \-\-conout <device>
 Enable console (xconout vector functions) output redirection for given
@@ -513,8 +516,10 @@ to use, bitmask sets output options for the external disassembly engine
 and 'help' lists them.
 .TP
 .B \-\-natfeats <bool>
-Enable/disable (basic) Native Features support.
-E.g. EmuTOS uses it for debug output.
+Enable/disable (basic) Native Features support. EmuTOS uses it
+for debug output, and it's supported also by the Aranym emulator.
+For more info, see example code and readme.txt in tests/natfeats/
+coming with Hatari sources.
 .TP
 .B \-\-trace <flags>
 Activate debug traces, see
