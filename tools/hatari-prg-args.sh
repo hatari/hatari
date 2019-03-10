@@ -8,7 +8,7 @@
 
 set -e
 
-# name or path to hatari Mercurial version
+# name (including path if necessary) of the hatari executable
 hatari=hatari
 
 usage ()

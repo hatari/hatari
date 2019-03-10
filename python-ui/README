@@ -51,7 +51,7 @@ Running
 
 Being a Python program, Hatari UI doesn't need to be built.
 You can just run it from where you extracted it (or checked
-it out of TuxFamily HG repo) by calling its wrapper script:
+it out of TuxFamily git repo) by calling its wrapper script:
 	/path/to/script/hatariui
 
 Or you can run just the debugger:
