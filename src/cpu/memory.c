@@ -1099,7 +1099,6 @@ addrbank dummy_bank =
     dummy_lput, dummy_wput, dummy_bput,
     dummy_xlate, dummy_check, NULL, NULL, NULL,
     dummy_lget, dummy_wget, ABFLAG_NONE
-//	dummy_lgeti, dummy_wgeti, ABFLAG_NONE
 };
 
 static addrbank BusErrMem_bank =
@@ -1115,7 +1114,7 @@ static addrbank STmem_bank =
     STmem_lget, STmem_wget, STmem_bget,
     STmem_lput, STmem_wput, STmem_bput,
     STmem_xlate, STmem_check, NULL, "st_mem" , "ST memory",
-    STmem_lget, STmem_wget, ABFLAG_RAM
+    STmem_lget, STmem_wget, ABFLAG_RAM | ABFLAG_DIRECTACCESS
 };
 
 static addrbank SysMem_bank =
@@ -1155,7 +1154,7 @@ static addrbank TTmem_bank =
     TTmem_lget, TTmem_wget, TTmem_bget,
     TTmem_lput, TTmem_wput, TTmem_bput,
     TTmem_xlate, TTmem_check, NULL, "tt_mem" , "TT memory",
-    TTmem_lget, TTmem_wget, ABFLAG_RAM			/* NP TODO : use ABFLAG_RAM_TT for non DMA RAM */
+    TTmem_lget, TTmem_wget, ABFLAG_RAM | ABFLAG_DIRECTACCESS	/* NP TODO : use ABFLAG_RAM_TT for non DMA RAM */
 };
 
 static addrbank ROMmem_bank =
@@ -1163,7 +1162,7 @@ static addrbank ROMmem_bank =
     ROMmem_lget, ROMmem_wget, ROMmem_bget,
     ROMmem_lput, ROMmem_wput, ROMmem_bput,
     ROMmem_xlate, ROMmem_check, NULL, "rom_mem" , "ROM memory",
-    ROMmem_lget, ROMmem_wget, ABFLAG_ROM
+    ROMmem_lget, ROMmem_wget, ABFLAG_ROM | ABFLAG_DIRECTACCESS
 };
 
 static addrbank IdeMem_bank =
@@ -1187,20 +1186,35 @@ static addrbank IOmem_bank =
 #undef NATMEM_OFFSET			/* Don't use shm in Hatari */
 #endif
 
+static void set_direct_memory(addrbank *ab)
+{
+	if (!(ab->flags & ABFLAG_DIRECTACCESS))
+		return;
+	ab->baseaddr_direct_r = ab->baseaddr;
+	if (!(ab->flags & ABFLAG_ROM))
+		ab->baseaddr_direct_w = ab->baseaddr;
+}
+
 #ifndef NATMEM_OFFSET
 //extern uae_u8 *natmem_offset, *natmem_offset_end;
 
 bool mapped_malloc (addrbank *ab)
 {
 	ab->startmask = ab->start;
+	ab->startaccessmask = ab->start & ab->mask;
 	ab->baseaddr = xcalloc (uae_u8, ab->reserved_size + 4);
 	ab->allocated_size =  ab->baseaddr != NULL ? ab->reserved_size : 0;
+	ab->baseaddr_direct_r = NULL;
+	ab->baseaddr_direct_w = NULL;
+	ab->flags &= ~ABFLAG_MAPPED;
+	set_direct_memory(ab);
 	return ab->baseaddr != NULL; 
 }
 
 void mapped_free (addrbank *ab)
 {
 	xfree(ab->baseaddr);
+	ab->flags &= ~ABFLAG_MAPPED;
 	ab->allocated_size = 0;
 	ab->baseaddr = NULL; 
 }
@@ -1322,15 +1336,6 @@ static void add_shmmaps (uae_u32 start, addrbank *what)
 
 #define MAPPED_MALLOC_DEBUG 0
 
-static void set_direct_memory(addrbank *ab)
-{
-	if (!(ab->flags & ABFLAG_DIRECTACCESS))
-		return;
-	ab->baseaddr_direct_r = ab->baseaddr;
-	if (!(ab->flags & ABFLAG_ROM))
-		ab->baseaddr_direct_w = ab->baseaddr;
-}
-
 bool mapped_malloc (addrbank *ab)
 {
 	int id;
@@ -1343,6 +1348,9 @@ bool mapped_malloc (addrbank *ab)
 		write_log(_T("mapped_malloc with memory bank '%s' already allocated!?\n"), ab->name);
 	}
 	ab->allocated_size = 0;
+	ab->baseaddr_direct_r = NULL;
+	ab->baseaddr_direct_w = NULL;
+	ab->flags &= ~ABFLAG_MAPPED;
 
 	if (ab->label && ab->label[0] == '*') {
 		if (ab->start == 0 || ab->start == 0xffffffff) {
@@ -1357,6 +1365,7 @@ bool mapped_malloc (addrbank *ab)
 		start = md.start;
 	}
 	ab->startmask = start;
+	ab->startaccessmask = start & ab->mask;
         if (!md.directsupport || (ab->flags & ABFLAG_ALLOCINDIRECT)) {
                 if (!(ab->flags & ABFLAG_ALLOCINDIRECT)) {
                         if (canbang) {
@@ -1373,8 +1382,12 @@ bool mapped_malloc (addrbank *ab)
 			return true;
 		}
 		ab->baseaddr = xcalloc (uae_u8, ab->reserved_size + 4);
-		if (ab->baseaddr)
+		if (ab->baseaddr) {
+			// fill end of ram with ILLEGAL to catch direct PC falling out of RAM.
+			put_long_host(ab->baseaddr + ab->reserved_size, 0x4afc4afc);
 			ab->allocated_size = ab->reserved_size;
+		}
+		set_direct_memory(ab);
 #if MAPPED_MALLOC_DEBUG
 		write_log(_T("mapped_malloc nodirect %s %p\n"), ab->name, ab->baseaddr);
 #endif
@@ -1392,7 +1405,7 @@ bool mapped_malloc (addrbank *ab)
 		return ab->baseaddr != NULL;
 	}
 	if (!(ab->flags & ABFLAG_NOALLOC)) {
-		answer = uae_shmat (iab, id, NULL, 0, &md));
+		answer = uae_shmat (iab, id, NULL, 0, &md);
 		uae_shmctl (id, UAE_IPC_RMID, NULL);
 	} else {
 		write_log(_T("MMAN: mapped_malloc using existing baseaddr %p\n"), ab->baseaddr);
@@ -1410,9 +1423,15 @@ bool mapped_malloc (addrbank *ab)
 			x->next->prev = x;
 		shm_start = x;
 		ab->baseaddr = x->native_address;
-		if (ab->baseaddr)
+		if (ab->baseaddr) {
+			if (md.hasbarrier) {
+				// fill end of ram with ILLEGAL to catch direct PC falling out of RAM.
+				put_long_host(ab->baseaddr + ab->reserved_size, 0x4afc4afc);
+			}
 			ab->allocated_size = ab->reserved_size;
+		}
 		ab->flags |= ABFLAG_DIRECTMAP;
+		set_direct_memory(ab);
 #if MAPPED_MALLOC_DEBUG
 		write_log(_T("mapped_malloc direct %s %p\n"), ab->name, ab->baseaddr);
 #endif
@@ -1424,6 +1443,7 @@ bool mapped_malloc (addrbank *ab)
 	recurse++;
 	mapped_malloc (ab);
 	recurse--;
+	set_direct_memory(ab);
 #if MAPPED_MALLOC_DEBUG
 	write_log(_T("mapped_malloc indirect %s %p\n"), ab->name, ab->baseaddr);
 #endif
@@ -1434,15 +1454,23 @@ bool mapped_malloc (addrbank *ab)
 
 static void init_mem_banks (void)
 {
-	unsigned int i;
         // unsigned so i << 16 won't overflow to negative when i >= 32768
-        for (i = 0; i < MEMORY_BANKS; i++)
+        for (unsigned int i = 0; i < MEMORY_BANKS; i++)
 		put_mem_bank (i << 16, &dummy_bank, 0);
 #ifdef NATMEM_OFFSET
 	delete_shmmaps (0, 0xFFFF0000);
 #endif
 }
 
+
+static void init_bank (addrbank *ab)
+{
+	ab->startmask = ab->start;
+	ab->startaccessmask = ab->start & ab->mask;
+	ab->baseaddr_direct_r = NULL;
+	ab->baseaddr_direct_w = NULL;
+	set_direct_memory ( ab );
+}
 
 
 #ifdef WINUAE_FOR_HATARI
@@ -1628,22 +1656,29 @@ void memory_init(uae_u32 NewSTMemSize, uae_u32 NewTTMemSize, uae_u32 NewRomMemSt
     STmem_bank.baseaddr = STmemory;
     STmem_bank.mask = STmem_mask;
     STmem_bank.start = STmem_start;
+    init_bank ( &STmem_bank );
 
     SysMem_bank.baseaddr = STmemory;
     SysMem_bank.mask = STmem_mask;
     SysMem_bank.start = STmem_start;
+    init_bank ( &SysMem_bank );
 
     STmem_bank_MMU.baseaddr = STmemory;
     STmem_bank_MMU.mask = STmem_mask;
     STmem_bank_MMU.start = STmem_start;
+    init_bank ( &STmem_bank_MMU );
 
     SysMem_bank_MMU.baseaddr = STmemory;
     SysMem_bank_MMU.mask = STmem_mask;
     SysMem_bank_MMU.start = STmem_start;
+    init_bank ( &SysMem_bank_MMU );
 
     dummy_bank.baseaddr = NULL;				/* No real memory allocated for this region */
+    init_bank ( &dummy_bank );
     VoidMem_bank.baseaddr = NULL;			/* No real memory allocated for this region */
+    init_bank ( &VoidMem_bank );
     BusErrMem_bank.baseaddr = NULL;			/* No real memory allocated for this region */
+    init_bank ( &BusErrMem_bank );
 
 
     /* Map the standard RAM (Max is 4 MB on unmodified STF/STE) */
@@ -1670,6 +1705,7 @@ void memory_init(uae_u32 NewSTMemSize, uae_u32 NewTTMemSize, uae_u32 NewRomMemSt
 		TTmem_bank.baseaddr = TTmemory;
 		TTmem_bank.mask = TTmem_mask;
 		TTmem_bank.start = TTmem_start;
+		init_bank ( &TTmem_bank );
 	    }
 	    else
 	    {
@@ -1702,18 +1738,21 @@ void memory_init(uae_u32 NewSTMemSize, uae_u32 NewTTMemSize, uae_u32 NewRomMemSt
     ROMmem_bank.baseaddr = ROMmemory;
     ROMmem_bank.mask = ROMmem_mask;
     ROMmem_bank.start = ROMmem_start;
+    init_bank ( &ROMmem_bank );
 
     /* IO memory: */
     map_banks_ce(&IOmem_bank, IOmem_start>>16, 0x1, 0, CE_MEMBANK_FAST16, CE_MEMBANK_NOT_CACHABLE);	/* [NP] tested on real STF, no bus wait for IO memory */
     IOmem_bank.baseaddr = IOmemory;									/* except for some shifter registers */
     IOmem_bank.mask = IOmem_mask;
     IOmem_bank.start = IOmem_start;
+    init_bank ( &IOmem_bank );
 
     /* IDE controller memory region: */
     map_banks_ce(&IdeMem_bank, IdeMem_start >> 16, 0x1, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);	/* IDE controller on the Falcon */
     IdeMem_bank.baseaddr = IdeMemory;
     IdeMem_bank.mask = IdeMem_mask;
     IdeMem_bank.start = IdeMem_start ;
+    init_bank ( &IdeMem_bank );
 
     /* Illegal memory regions cause a bus error on the ST: */
     map_banks_ce(&BusErrMem_bank, 0xF10000 >> 16, 0x9, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
