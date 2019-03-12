@@ -1463,8 +1463,9 @@ static void init_mem_banks (void)
 }
 
 
-static void init_bank (addrbank *ab)
+static void init_bank (addrbank *ab , uae_u32 size)
 {
+	ab->allocated_size = size;
 	ab->startmask = ab->start;
 	ab->startaccessmask = ab->start & ab->mask;
 	ab->baseaddr_direct_r = NULL;
@@ -1656,29 +1657,29 @@ void memory_init(uae_u32 NewSTMemSize, uae_u32 NewTTMemSize, uae_u32 NewRomMemSt
     STmem_bank.baseaddr = STmemory;
     STmem_bank.mask = STmem_mask;
     STmem_bank.start = STmem_start;
-    init_bank ( &STmem_bank );
+    init_bank ( &STmem_bank , STmem_size );
 
     SysMem_bank.baseaddr = STmemory;
     SysMem_bank.mask = STmem_mask;
     SysMem_bank.start = STmem_start;
-    init_bank ( &SysMem_bank );
+    init_bank ( &SysMem_bank , STmem_size );
 
     STmem_bank_MMU.baseaddr = STmemory;
     STmem_bank_MMU.mask = STmem_mask;
     STmem_bank_MMU.start = STmem_start;
-    init_bank ( &STmem_bank_MMU );
+    init_bank ( &STmem_bank_MMU , STmem_size );
 
     SysMem_bank_MMU.baseaddr = STmemory;
     SysMem_bank_MMU.mask = STmem_mask;
     SysMem_bank_MMU.start = STmem_start;
-    init_bank ( &SysMem_bank_MMU );
+    init_bank ( &SysMem_bank_MMU , STmem_size );
 
     dummy_bank.baseaddr = NULL;				/* No real memory allocated for this region */
-    init_bank ( &dummy_bank );
+    init_bank ( &dummy_bank , 0 );
     VoidMem_bank.baseaddr = NULL;			/* No real memory allocated for this region */
-    init_bank ( &VoidMem_bank );
+    init_bank ( &VoidMem_bank , 0 );
     BusErrMem_bank.baseaddr = NULL;			/* No real memory allocated for this region */
-    init_bank ( &BusErrMem_bank );
+    init_bank ( &BusErrMem_bank , 0 );
 
 
     /* Map the standard RAM (Max is 4 MB on unmodified STF/STE) */
@@ -1705,7 +1706,7 @@ void memory_init(uae_u32 NewSTMemSize, uae_u32 NewTTMemSize, uae_u32 NewRomMemSt
 		TTmem_bank.baseaddr = TTmemory;
 		TTmem_bank.mask = TTmem_mask;
 		TTmem_bank.start = TTmem_start;
-		init_bank ( &TTmem_bank );
+		init_bank ( &TTmem_bank , TTmem_size );
 	    }
 	    else
 	    {
@@ -1738,21 +1739,21 @@ void memory_init(uae_u32 NewSTMemSize, uae_u32 NewTTMemSize, uae_u32 NewRomMemSt
     ROMmem_bank.baseaddr = ROMmemory;
     ROMmem_bank.mask = ROMmem_mask;
     ROMmem_bank.start = ROMmem_start;
-    init_bank ( &ROMmem_bank );
+    init_bank ( &ROMmem_bank , ROMmem_size );
 
     /* IO memory: */
     map_banks_ce(&IOmem_bank, IOmem_start>>16, 0x1, 0, CE_MEMBANK_FAST16, CE_MEMBANK_NOT_CACHABLE);	/* [NP] tested on real STF, no bus wait for IO memory */
     IOmem_bank.baseaddr = IOmemory;									/* except for some shifter registers */
     IOmem_bank.mask = IOmem_mask;
     IOmem_bank.start = IOmem_start;
-    init_bank ( &IOmem_bank );
+    init_bank ( &IOmem_bank , IOmem_size );
 
     /* IDE controller memory region: */
     map_banks_ce(&IdeMem_bank, IdeMem_start >> 16, 0x1, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);	/* IDE controller on the Falcon */
     IdeMem_bank.baseaddr = IdeMemory;
     IdeMem_bank.mask = IdeMem_mask;
     IdeMem_bank.start = IdeMem_start ;
-    init_bank ( &IdeMem_bank );
+    init_bank ( &IdeMem_bank , IdeMem_size );
 
     /* Illegal memory regions cause a bus error on the ST: */
     map_banks_ce(&BusErrMem_bank, 0xF10000 >> 16, 0x9, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
