@@ -1093,6 +1093,14 @@ static uae_u8 REGPARAM3 *IOmem_xlate(uaecptr addr)
 
 /* **** Address banks **** */
 
+/*
+ * NOTE : if ABFLAG_DIRECTACCESS is set for a bank we don't use
+ * the functions get/put/xlate/check defined for this bank but
+ * we use the more generic memory_get/memory_put/mgemory_get_real/memory_valid_address
+ * functions which bypass the common memory handlers and are slightly faster.
+ * This flag can only be set for memory region where content is "fixed" (ie RAM or ROM)
+ */
+
 addrbank dummy_bank =
 {
     dummy_lget, dummy_wget, dummy_bget,
