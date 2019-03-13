@@ -210,12 +210,13 @@ set_long(offset + 0x0C, partsectors)
 set_CHS(offset + 1, LBA2CHS(1))
 set_CHS(offset + 5, LBA2CHS(partsectors))
 # 3 last partitions are empty
+nextpart = partsectors + 1
 for i in (1,2,3):
     offset += 0x10
-    set_long(offset + 0x08, partsectors+1)
+    set_long(offset + 0x08, nextpart)
     set_long(offset + 0x0C, 0)
-    set_CHS(offset + 1, LBA2CHS(partsectors+1))
-    set_CHS(offset + 5, LBA2CHS(partsectors))
+    set_CHS(offset + 1, LBA2CHS(nextpart))
+    set_CHS(offset + 5, LBA2CHS(nextpart))
 
 # MBR signature
 mbr[0x1FE] = 0x55
