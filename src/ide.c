@@ -2567,8 +2567,6 @@ static int guess_disk_lchs(IDEState *s,
 			*pheads = heads;
 			*psectors = sectors;
 			*pcylinders = cylinders;
-			LOG_TRACE(TRACE_IDE, "IDE: guessed geometry LCHS=%d %d %d\n",
-			       cylinders, heads, sectors);
 			free(buf);
 			return 0;
 		}
@@ -2661,6 +2659,8 @@ default_geometry:
 				}
 				bdrv_set_geometry_hint(s->bs, s->cylinders, s->heads, s->sectors);
 			}
+			LOG_TRACE(TRACE_IDE, "IDE: using geometry LCHS=%d %d %d for drive %d\n",
+			       s->cylinders, s->heads, s->sectors, i);
 			if (bdrv_get_type_hint(s->bs) == BDRV_TYPE_CDROM)
 			{
 				s->is_cdrom = 1;
@@ -2709,7 +2709,8 @@ void Ide_Init(void)
 				hd_table[i]->byteswap = !is_byteswap;
 			else
 				hd_table[i]->byteswap = !ConfigureParams.Ide[i].nByteSwap;
-
+			LOG_TRACE(TRACE_IDE, "IDE: little->big endian byte-swapping %s for drive %d\n",
+				  hd_table[i]->byteswap ? "enabled" : "disabled", i);
 			hd_table[i]->sector_size = ConfigureParams.Ide[i].nBlockSize;
 			hd_table[i]->type = ConfigureParams.Ide[i].nDeviceType;
 		}
