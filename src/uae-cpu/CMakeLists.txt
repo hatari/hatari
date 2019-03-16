@@ -47,7 +47,7 @@ endif(CMAKE_CROSSCOMPILING)
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-sign-compare -Wno-shadow")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-variable -Wno-unused-label")
-endif(CMAKE_COMPILER_IS_GNUCC)
+endif()
 
 add_library(UaeCpu
 	cpudefs.c cpuemu.c cpustbl.c
