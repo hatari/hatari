@@ -71,7 +71,7 @@ static int parse_input_config_entry(const struct Config_Tag *ptr)
 	int type = ptr->type;
 
 	/* get actual config value */
-	next = Str_Trim(strtok(NULL, "="));
+	next = Str_Trim(strtok(NULL, ""));
 	if (next == NULL)
 	{
 		if (type == String_Tag || type == Key_Tag)
