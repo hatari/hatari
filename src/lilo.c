@@ -1,43 +1,39 @@
 /*
-	ROM / OS loader, Linux/m68k
+ Linux/m68k OS loader
 
-	ARAnyM (C) 2005-2008 Patrice Mandin
+ Copyright 1992 by Greg Harp (bootinfo definitions)
+ ARAnyM (C) 2005-2008 Patrice Mandin
+ ARAnyM (C) 2014 Andreas Schwab
+ Adaption from ARAnyM (bootos_linux.cpp) to Hatari (C) 2019 Eero Tamminen
 
-	This program is free software; you can redistribute it and/or modify
-	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation; either version 2 of the License, or
-	(at your option) any later version.
-
-	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY; without even the implied warranty of
-	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-	GNU General Public License for more details.
-
-	You should have received a copy of the GNU General Public License
-	along with this program; if not, write to the Free Software
-	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ This file is distributed under the GNU General Public License, version 2
+ or at your option any later version. Read the file gpl.txt for details.
 */
 
-#include "sysdeps.h"
-#include "cpu_emulation.h"
-#include "bootos_linux.h"
-#include "aranym_exception.h"
-#include "emul_op.h"
-
-#define DEBUG 1
-#include "debug.h"
-
-#include "SDL_compat.h"
-
-#ifdef ENABLE_LILO
-
+#include "main.h"
+#include "configuration.h"
+#include "lilo.h"
+#include "log.h"
+#include "tos.h"	/* TosAddress */
+#include "stMemory.h"	/* STRam etc */
+#include <stdint.h>
 #ifdef HAVE_LIBZ
-#include <zlib.h>
+# include <zlib.h>
 #endif
 
-/* linux specific include files */
-//#include <elf.h>
-#include <stdint.h>
+bool bUseLilo;
+
+/* needs WinUAE CPU for MMU etc support */
+#if ENABLE_WINUAE_CPU
+
+#define LILO_DEBUG 1
+#if LILO_DEBUG
+#define Dprintf(a) printf a
+#else
+#define Dprintf(a)
+#endif
+
+/*--- Rip from elf.h ---*/
 
 /* Type for a 16-bit quantity.  */
 typedef uint16_t Elf32_Half;
@@ -106,21 +102,20 @@ typedef struct
 #define EM_68K		 4		/* Motorola m68k family */
 #define EV_CURRENT	1		/* Current version */
 
-/* end of rip from elf.h */
+/*
+ * Tag Definitions
+ *
+ * https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/arch/m68k/include/uapi/asm/bootinfo.h
+ *
+ * Machine independent tags start counting from 0x0000
+ * Machine dependent tags start counting from 0x8000
+ */
 
-/* #include <asm-m68k/bootinfo.h> */
 struct bi_record {
-    uint16 tag;			/* tag ID */
-    uint16 size;		/* size of record (in bytes) */
-    uint32 data[0];		/* data */
+    uint16_t tag;			/* tag ID */
+    uint16_t size;			/* size of record (in bytes) */
+    uint32_t data[0];			/* data */
 };
-
-    /*
-     *  Tag Definitions
-     *
-     *  Machine independent tags start counting from 0x0000
-     *  Machine dependent tags start counting from 0x8000
-     */
 
 #define BI_LAST			0x0000	/* last record (sentinel) */
 #define BI_MACHTYPE		0x0001	/* machine type (u_long) */
@@ -133,48 +128,94 @@ struct bi_record {
 					/* (struct mem_info) */
 #define BI_COMMAND_LINE		0x0007	/* kernel command line parameters */
 					/* (string) */
-
-    /*
-     *  Atari-specific tags
-     */
-
-#define BI_ATARI_MCH_COOKIE	0x8000	/* _MCH cookie from TOS (u_long) */
-#define BI_ATARI_MCH_TYPE	0x8001	/* special machine type (u_long) */
-
-/* mch_type values */
-#define ATARI_MACH_AB40		3	/* Afterburner040 on Falcon */
-
-/* #include <asm-m68k/setup.h> */
-    /*
-     *  Linux/m68k Architectures
-     */
+/*
+ * Linux/m68k Architectures (BI_MACHTYPE)
+ */
 
 #define MACH_ATARI    2
 
-    /*
-     *  CPU, FPU and MMU types
-     *
-     *  Note: we may rely on the following equalities:
-     *
-     *      CPU_68020 == MMU_68851
-     *      CPU_68030 == MMU_68030
-     *      CPU_68040 == FPU_68040 == MMU_68040
-     *      CPU_68060 == FPU_68060 == MMU_68060
-     */
+/*
+ *  CPU, FPU and MMU types (BI_CPUTYPE, BI_FPUTYPE, BI_MMUTYPE)
+ *
+ *  Note: we may rely on the following equalities:
+ *
+ *      CPU_68020 == MMU_68851
+ *      CPU_68030 == MMU_68030
+ *      CPU_68040 == FPU_68040 == MMU_68040
+ *      CPU_68060 == FPU_68060 == MMU_68060
+ */
 
-#define CPUB_68040     2
-#define CPU_68040      (1<<CPUB_68040)
-#define FPUB_68040     2                       /* Internal FPU */
-#define FPU_68040      (1<<FPUB_68040)
-#define MMUB_68040     2                       /* Internal MMU */
-#define MMU_68040      (1<<MMUB_68040)
+#define CPUB_68020	0
+#define CPUB_68030	1
+#define CPUB_68040	2
+#define CPUB_68060	3
 
-#ifdef PAGE_SIZE
-	/*	Might have been defined by vm_param.h. already, indirectly included by sysdeps.h */ 
-	#undef PAGE_SIZE
-#endif
+#define BI_CPU_68020	(1 << CPUB_68020)
+#define BI_CPU_68030	(1 << CPUB_68030)
+#define BI_CPU_68040	(1 << CPUB_68040)
+#define BI_CPU_68060	(1 << CPUB_68060)
+
+#define FPUB_68881	0
+#define FPUB_68882	1
+#define FPUB_68040	2	/* Internal FPU */
+#define FPUB_68060	3	/* Internal FPU */
+
+#define BI_FPU_68881	(1 << FPUB_68881)
+#define BI_FPU_68882	(1 << FPUB_68882)
+#define BI_FPU_68040	(1 << FPUB_68040)
+#define BI_FPU_68060	(1 << FPUB_68060)
+
+#define MMUB_68851	0
+#define MMUB_68030	1	/* Internal MMU */
+#define MMUB_68040	2	/* Internal MMU */
+#define MMUB_68060	3	/* Internal MMU */
+
+#define BI_MMU_68851	(1 << MMUB_68851)
+#define BI_MMU_68030	(1 << MMUB_68030)
+#define BI_MMU_68040	(1 << MMUB_68040)
+#define BI_MMU_68060	(1 << MMUB_68060)
+
+/*
+ * Stuff for bootinfo interface versioning
+ *
+ * At the start of kernel code, a 'struct bootversion' is located.
+ */
+#define BOOTINFOV_MAGIC			0x4249561A	/* 'BIV^Z' */
+#define MK_BI_VERSION(major,minor)	(((major)<<16)+(minor))
+#define BI_VERSION_MAJOR(v)		(((v) >> 16) & 0xffff)
+#define BI_VERSION_MINOR(v)		((v) & 0xffff)
+
+/*
+ * Atari-specific tags
+ *
+ * https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/arch/m68k/include/uapi/asm/bootinfo-atari.h
+ */
+
+#define ATARI_BOOTI_VERSION		MK_BI_VERSION(2, 1)
+
+/* (values are ATARI_MACH_* defines) */
+#define BI_ATARI_MCH_COOKIE	0x8000	/* _MCH cookie from TOS (u_long) */
+#define BI_ATARI_MCH_TYPE	0x8001	/* special machine type (u_long) */
+
+/* mch_cookie values (upper word) */
+#define ATARI_MCH_ST		0
+#define ATARI_MCH_STE		1
+#define ATARI_MCH_TT		2
+#define ATARI_MCH_FALCON	3
+
+/* mch_type values */
+#define ATARI_MACH_NORMAL	0	/* no special machine type */
+#define ATARI_MACH_MEDUSA	1	/* Medusa 040 */
+#define ATARI_MACH_HADES	2	/* Hades 040 or 060 */
+#define ATARI_MACH_AB40		3	/* Afterburner040 on Falcon */
+
+/*--- Other defines ---*/
+
+#define NUM_MEMINFO  4
+#define CL_SIZE      (256)
 #define PAGE_SIZE 4096
-/*--- Defines ---*/
+
+#define M68K_EMUL_RESET 0x7102
 
 #define MAXREAD_BLOCK_SIZE	(1<<20)	/* 1 MB */
 #define KERNEL_START		PAGE_SIZE	/* Start address of kernel in Atari RAM */
@@ -183,10 +224,10 @@ struct bi_record {
 #define MAX_BI_SIZE     (4096)
 
 #define GRANULARITY (256*1024) /* min unit for memory */
-#define ADD_CHUNK(start,siz)	\
+#define ADD_CHUNK(start, siz)	\
     {	\
-		unsigned long _start = (start);	\
-		unsigned long _size  = (siz) & ~(GRANULARITY-1);	\
+		uint32_t _start = (start);	\
+		uint32_t _size  = (siz) & ~(GRANULARITY-1);	\
 		\
 		if (_size > 0) {	\
 			bi.memory[bi.num_memory].addr = SDL_SwapBE32(_start);	\
@@ -202,19 +243,63 @@ static union {
 	unsigned char fake[MAX_BI_SIZE];
 } bi_union;
 
-#endif
+struct mem_info {
+	uint32_t addr;		/* physical address of memory chunk */
+	uint32_t size;		/* length of memory chunk (in bytes) */
+};
 
-/*	Linux/m68k loader class */
+struct atari_bootinfo {
+	uint32_t machtype;		/* machine type */
+	uint32_t cputype;		/* system CPU */
+	uint32_t fputype;		/* system FPU */
+	uint32_t mmutype;		/* system MMU */
+	int32_t num_memory;		/* # of memory blocks found */
+	 /* memory description */
+	struct mem_info memory[NUM_MEMINFO];
+	/* ramdisk description */
+	struct mem_info ramdisk;
+	/* kernel command line parameters */
+	char command_line[CL_SIZE];
+	uint32_t mch_cookie;		/* _MCH cookie from TOS */
+	uint32_t mch_type;		/* special machine types */
+};
 
-LinuxBootOs::LinuxBootOs(void) ARANYM_THROWS(AranymException)
+static void *kernel;
+static uint32_t kernel_length;
+static void *ramdisk;
+static uint32_t ramdisk_length;
+static struct atari_bootinfo bi;
+static uint32_t bi_size;
+
+static void lilo_cleanup(void);
+static bool lilo_load(void);
+static void *load_file(const char *filename, uint32_t *length);
+static bool check_kernel(void);
+static bool create_bootinfo(void);
+static bool set_machine_type(void);
+static bool add_bi_record(uint16_t tag, uint16_t size, const void *data);
+static bool add_bi_string(uint16_t tag, const char *s);
+
+
+/*	Linux/m68k loader */
+
+bool lilo_init(void)
 {
+	uint8_t *ROMBaseHost = STRam + TosAddress;
+	bool use_nf = (ConfigureParams.Log.bNatFeats && ConfigureParams.Lilo.bHaltOnReboot);
+
+	if (!ConfigureParams.System.bMMU || ConfigureParams.Memory.STRamSize_KB < 14*1024) {
+		Log_AlertDlg(LOG_FATAL, "Linux requires MMU and at least 14MB of RAM!");
+		return false;
+	}
 	/* RESET + Linux/m68k boot */
 	ROMBaseHost[0x0000] = 0x4e;		/* reset */
 	ROMBaseHost[0x0001] = 0x70;
 	ROMBaseHost[0x0002] = 0x4e;		/* jmp <abs.addr> */
 	ROMBaseHost[0x0003] = 0xf9;
 
-	if (!halt_on_reboot) {
+	/* TODO: 0x30 is AB40 reset address, not Falcon/TT one */
+	if (!use_nf) {
 		/* set up a minimal OS for successful Linux/m68k reboot */
 		ROMBaseHost[0x0030] = 0x46;		/* move.w #$2700,sr */
 		ROMBaseHost[0x0031] = 0xfc;
@@ -224,9 +309,8 @@ LinuxBootOs::LinuxBootOs(void) ARANYM_THROWS(AranymException)
 		ROMBaseHost[0x0035] = 0x70;
 		ROMBaseHost[0x0036] = M68K_EMUL_RESET >> 8;
 		ROMBaseHost[0x0037] = M68K_EMUL_RESET & 0xff;
-	}
-	else {
-		/* code that shuts ARAnyM down when Linux/m68k tries to reboot */
+	} else {
+		/* quit Hatari with NatFeats when Linux/m68k tries to reboot */
 		ROMBaseHost[0x0030] = 0x48;		/* pea.l NF_SHUTDOWN(pc) */
 		ROMBaseHost[0x0031] = 0x7a;
 		ROMBaseHost[0x0032] = 0x00;
@@ -254,89 +338,72 @@ LinuxBootOs::LinuxBootOs(void) ARANYM_THROWS(AranymException)
 		ROMBaseHost[0x0048] = 'N';
 		ROMBaseHost[0x0049] = 0;
 	}
-	init(true);
-}
-
-LinuxBootOs::~LinuxBootOs(void)
-{
-	cleanup();
-}
-
-void LinuxBootOs::reset(bool cold) ARANYM_THROWS(AranymException)
-{
-	init(cold);
+	return lilo_load();
 }
 
 /*--- Private functions ---*/
 
-void LinuxBootOs::cleanup(void)
+static void lilo_cleanup(void)
 {
-	if (kernel!=NULL) {
+	if (kernel != NULL) {
 		free(kernel);
-		kernel=NULL;
+		kernel = NULL;
 	}
 
-	if (ramdisk!=NULL) {
+	if (ramdisk != NULL) {
 		free(ramdisk);
-		ramdisk=NULL;
+		ramdisk = NULL;
 	}
 }
 
-void LinuxBootOs::init(bool cold)
+static bool lilo_load(void)
 {
-	kernel=ramdisk=NULL;
-	kernel_length=ramdisk_length=0;
+	const char *kernel_s  = ConfigureParams.Lilo.szKernelFileName;
+	const char *ramdisk_s = ConfigureParams.Lilo.szRamdiskFileName;
+
+	kernel = ramdisk = NULL;
+	kernel_length = ramdisk_length = 0;
 	bi_size = 0;
 	bi.ramdisk.addr = 0;
 	bi.ramdisk.size = 0;
 
-	UNUSED(cold);
-#ifdef ENABLE_LILO
 	/* Load the kernel */
-	kernel=loadFile(bx_options.lilo.kernel, &kernel_length);
-	if (kernel==NULL) {
-		throw AranymException("ARAnyM LILO: Error loading kernel '%s'", bx_options.lilo.kernel);
+	kernel = load_file(kernel_s, &kernel_length);
+	if (!kernel) {
+		Log_AlertDlg(LOG_FATAL, "LILO: error loading Linux kernel:\n'%s'", kernel_s);
+		return false;
 	}
 
 	/* Load the ramdisk */
-	if (strlen(bx_options.lilo.ramdisk) > 0) {
-		ramdisk=loadFile(bx_options.lilo.ramdisk, &ramdisk_length);
-		if (ramdisk==NULL) {
-			infoprint("ARAnyM LILO: Error loading ramdisk '%s'", bx_options.lilo.ramdisk);
+	if (strlen(ramdisk_s) > 0) {
+		ramdisk = load_file(ramdisk_s, &ramdisk_length);
+		if (!ramdisk) {
+			Log_AlertDlg(LOG_ERROR, "LILO: error loading ramdisk:\n'%s'", ramdisk_s);
 		}
 	}
 
-	memset(RAMBaseHost, 0, RAMSize);
-	memset(FastRAMBaseHost, 0, FastRAMSize);
-
 	/* Check the kernel */
-	if (checkKernel()<0) {
-		cleanup();
-		throw AranymException("ARAnyM LILO: Error setting up kernel");
+	if (!check_kernel()) {
+		Log_AlertDlg(LOG_FATAL, "LILO: error setting up kernel!");
 	}
-
 	/* Kernel and ramdisk copied in Atari RAM, we can free it */
-	cleanup();
-#else
-	throw AranymException("ARAnyM LILO: not compiled in");
-#endif /* ENABLE_LILO */
+	lilo_cleanup();
+	return true;
 }
 
-void *LinuxBootOs::loadFile(const char *filename, unsigned long *length)
+static void *load_file(const char *filename, uint32_t *length)
 {
 	void *buffer = NULL;
 
-#ifdef ENABLE_LILO
-
 #ifdef HAVE_LIBZ
-	unsigned long unc_len;
+	int unc_len;
 	gzFile handle;
 #else
 	int handle;
 #endif
 
-	if (strlen(filename)==0) {
-		D(bug("lilo: empty finename"));
+	if (strlen(filename) == 0) {
+		Dprintf(("LILO: empty filename\n"));
 		return NULL;
 	}
 
@@ -346,44 +413,44 @@ void *LinuxBootOs::loadFile(const char *filename, unsigned long *length)
 	if (handle == NULL)
 #else
 	handle = open(filename, O_RDONLY);
-	if (handle<0)
+	if (handle < 0)
 #endif
 	{
-		D(bug("lilo: unable to open %s", filename));	
+		Dprintf(("LILO: unable to open %s\n", filename));
 		return NULL;
 	}
-
 #ifdef HAVE_LIBZ
 	/* Search the length of the uncompressed stream */
 	buffer = (char *)malloc(MAXREAD_BLOCK_SIZE);
-	if (buffer==NULL) {
-		D(bug("lilo: unable to allocate %d bytes", MAXREAD_BLOCK_SIZE));
+	if (buffer == NULL) {
+		Dprintf(("LILO: unable to allocate %d bytes\n", MAXREAD_BLOCK_SIZE));
 		gzclose(handle);
 		return NULL;
 	}
 
 	*length = 0;
 	unc_len = gzread(handle, buffer, MAXREAD_BLOCK_SIZE);
-	while (unc_len>0) {
+	while (unc_len > 0) {
 		*length += unc_len;
 		unc_len = gzread(handle, buffer, MAXREAD_BLOCK_SIZE);
 	}
-	// Avoid gzseek, it is often broken with LFS which we enable by
-	// default
+	/* Avoid gzseek, it is often broken with LFS
+	 * which we enable by default
+	 */
 	gzrewind(handle);
-	D(bug("lilo: uncompressing '%s'", filename));
-	D(bug("lilo:  uncompressed length: %lu bytes", *length));
+	Dprintf(("LILO: uncompressing '%s'\n", filename));
+	Dprintf(("LILO:  uncompressed length: %d bytes\n", *length));
 
 	free(buffer);
-	buffer=NULL;
+	buffer = NULL;
 #else
 	*length = lseek(handle, 0, SEEK_END);
 	lseek(handle, 0, SEEK_SET); 	
 #endif
 
 	buffer = (char *)malloc(*length);
-	if (buffer==NULL) {
-		D(bug("lilo: unable to allocate %ld bytes", *length));
+	if (buffer == NULL) {
+		Dprintf(("LILO: unable to allocate %d bytes\n", *length));
 #ifdef HAVE_LIBZ
 		gzclose(handle);
 #else
@@ -400,32 +467,48 @@ void *LinuxBootOs::loadFile(const char *filename, unsigned long *length)
 	close(handle);
 #endif
 
-#else
-	UNUSED(filename);
-	UNUSED(length);
-#endif /* ENABLE_LILO */
 	return buffer;
 }
 
-int LinuxBootOs::checkKernel(void)
+/**
+ * Load given kernel code and ramdisk to suitable memory area,
+ * and update bootinfo accordingly.
+ * Return true for success
+ */
+static bool check_kernel(void)
 {
-#ifdef ENABLE_LILO
-    Elf32_Ehdr *kexec_elf;	/* header of kernel executable */
-    Elf32_Phdr *kernel_phdrs;
-	Elf32_Addr min_addr=0xffffffff, max_addr=0;
+	/* map Hatari variables to Aranym code */
+	const uint32_t RAMSize = 1024 * ConfigureParams.Memory.STRamSize_KB;
+	uint8_t *RAMBaseHost = STRam;
+
+	const uint32_t FastRAMBase = 0x01000000;
+	uint8_t *FastRAMBaseHost = TTmemory;
+
+	/* TODO: separate FastRAM setting for kernel & ramdisk? */
+	const uint32_t FastRAMSize = TTmemory ? 1024 * ConfigureParams.Memory.TTRamSize_KB : 0;
+	bool load_to_fastram = (ConfigureParams.Lilo.bLoadFastRam && FastRAMSize > 0);
+	const char *to_ram_s = load_to_fastram ? "FastRAM" : "ST-RAM";
+
+	Elf32_Ehdr *kexec_elf;	/* header of kernel executable */
+	Elf32_Phdr *kernel_phdrs;
+	Elf32_Addr min_addr = 0xffffffff, max_addr = 0;
 	Elf32_Addr kernel_size;
 	Elf32_Addr mem_ptr;
 	Elf32_Addr kernel_offset;
+	const char *kname, *kernel_name = "vmlinux";
 	int i;
-	const char *kname, *kernel_name="vmlinux";
-	bool load_to_fastram = bx_options.lilo.load_to_fastram && FastRAMSize > 0;
+
+	if (!set_machine_type()) {
+		return false;
+	}
 
 	kexec_elf = (Elf32_Ehdr *) kernel;
-	if (memcmp( &kexec_elf->e_ident[EI_MAG0], ELFMAG, SELFMAG ) == 0) {
-		if ((SDL_SwapBE16(kexec_elf->e_type) != ET_EXEC) || (SDL_SwapBE16(kexec_elf->e_machine) != EM_68K) ||
-			(SDL_SwapBE32(kexec_elf->e_version) != EV_CURRENT)) {
-			bug("lilo: Invalid ELF header contents in kernel");
-			return -1;
+	if (memcmp(&kexec_elf->e_ident[EI_MAG0], ELFMAG, SELFMAG) == 0) {
+		if ((SDL_SwapBE16(kexec_elf->e_type) != ET_EXEC) ||
+		    (SDL_SwapBE16(kexec_elf->e_machine) != EM_68K) ||
+		    (SDL_SwapBE32(kexec_elf->e_version) != EV_CURRENT)) {
+			fprintf(stderr, "LILO: Invalid ELF header contents in kernel\n");
+			return false;
 		}
 	}
 
@@ -434,14 +517,14 @@ int LinuxBootOs::checkKernel(void)
 	/* Load the program headers */
 	kernel_phdrs = (Elf32_Phdr *) (((char *) kexec_elf) + SDL_SwapBE32(kexec_elf->e_phoff));
 
-    /* calculate the total required amount of memory */
-	D(bug("lilo: kexec_elf->e_phnum=0x%08x",SDL_SwapBE16(kexec_elf->e_phnum)));
+	/* calculate the total required amount of memory */
+	Dprintf(("LILO: kexec_elf->e_phnum = 0x%08x\n", SDL_SwapBE16(kexec_elf->e_phnum)));
 
-	for (i=0; i<SDL_SwapBE16(kexec_elf->e_phnum); i++) {
-		D(bug("lilo: kernel_phdrs[%d].p_vaddr=0x%08x",i,SDL_SwapBE32(kernel_phdrs[i].p_vaddr)));
-		D(bug("lilo: kernel_phdrs[%d].p_offset=0x%08x",i,SDL_SwapBE32(kernel_phdrs[i].p_offset)));
-		D(bug("lilo: kernel_phdrs[%d].p_filesz=0x%08x",i,SDL_SwapBE32(kernel_phdrs[i].p_filesz)));
-		D(bug("lilo: kernel_phdrs[%d].p_memsz=0x%08x",i,SDL_SwapBE32(kernel_phdrs[i].p_memsz)));
+	for (i = 0; i < SDL_SwapBE16(kexec_elf->e_phnum); i++) {
+		Dprintf(("LILO: kernel_phdrs[%d].p_vaddr  = 0x%08x\n", i, SDL_SwapBE32(kernel_phdrs[i].p_vaddr)));
+		Dprintf(("LILO: kernel_phdrs[%d].p_offset = 0x%08x\n", i, SDL_SwapBE32(kernel_phdrs[i].p_offset)));
+		Dprintf(("LILO: kernel_phdrs[%d].p_filesz = 0x%08x\n", i, SDL_SwapBE32(kernel_phdrs[i].p_filesz)));
+		Dprintf(("LILO: kernel_phdrs[%d].p_memsz  = 0x%08x\n", i, SDL_SwapBE32(kernel_phdrs[i].p_memsz)));
 
 		if (min_addr > SDL_SwapBE32(kernel_phdrs[i].p_vaddr)) {
 			min_addr = SDL_SwapBE32(kernel_phdrs[i].p_vaddr);
@@ -451,17 +534,18 @@ int LinuxBootOs::checkKernel(void)
 		}
 	}
 
-	/* This is needed for newer linkers that include the header in
-		the first segment.  */
-	D(bug("lilo: min_addr=0x%08x",min_addr));
-	D(bug("lilo: max_addr=0x%08x",max_addr));
+	/* This is needed for newer linkers that include the header
+	 * in the first segment.
+	 */
+	Dprintf(("LILO: min_addr = 0x%08x\n", min_addr));
+	Dprintf(("LILO: max_addr = 0x%08x\n", max_addr));
 
 	if (min_addr == 0) {
-		D(bug("lilo: new linker"));
-		D(bug("lilo:  kernel_phdrs[0].p_vaddr=0x%08x",SDL_SwapBE32(kernel_phdrs[0].p_vaddr)));
-		D(bug("lilo:  kernel_phdrs[0].p_offset=0x%08x",SDL_SwapBE32(kernel_phdrs[0].p_offset)));
-		D(bug("lilo:  kernel_phdrs[0].p_filesz=0x%08x",SDL_SwapBE32(kernel_phdrs[0].p_filesz)));
-		D(bug("lilo:  kernel_phdrs[0].p_memsz=0x%08x",SDL_SwapBE32(kernel_phdrs[0].p_memsz)));
+		Dprintf(("LILO: new linker:\n"));
+		Dprintf(("LILO:  kernel_phdrs[0].p_vaddr  = 0x%08x\n", SDL_SwapBE32(kernel_phdrs[0].p_vaddr)));
+		Dprintf(("LILO:  kernel_phdrs[0].p_offset = 0x%08x\n", SDL_SwapBE32(kernel_phdrs[0].p_offset)));
+		Dprintf(("LILO:  kernel_phdrs[0].p_filesz = 0x%08x\n", SDL_SwapBE32(kernel_phdrs[0].p_filesz)));
+		Dprintf(("LILO:  kernel_phdrs[0].p_memsz  = 0x%08x\n", SDL_SwapBE32(kernel_phdrs[0].p_memsz)));
 
 		min_addr = PAGE_SIZE;
 		/*kernel_phdrs[0].p_vaddr += PAGE_SIZE;*/
@@ -473,38 +557,41 @@ int LinuxBootOs::checkKernel(void)
 		/*kernel_phdrs[0].p_memsz -= PAGE_SIZE;*/
 		kernel_phdrs[0].p_memsz = SDL_SwapBE32(SDL_SwapBE32(kernel_phdrs[0].p_memsz) - PAGE_SIZE);
 
-		D(bug("lilo: modified to:"));
-		D(bug("lilo:  kernel_phdrs[0].p_vaddr=0x%08x",SDL_SwapBE32(kernel_phdrs[0].p_vaddr)));
-		D(bug("lilo:  kernel_phdrs[0].p_offset=0x%08x",SDL_SwapBE32(kernel_phdrs[0].p_offset)));
-		D(bug("lilo:  kernel_phdrs[0].p_filesz=0x%08x",SDL_SwapBE32(kernel_phdrs[0].p_filesz)));
-		D(bug("lilo:  kernel_phdrs[0].p_memsz=0x%08x",SDL_SwapBE32(kernel_phdrs[0].p_memsz)));
+		Dprintf(("LILO: modified to:\n"));
+		Dprintf(("LILO:  kernel_phdrs[0].p_vaddr  = 0x%08x\n", SDL_SwapBE32(kernel_phdrs[0].p_vaddr)));
+		Dprintf(("LILO:  kernel_phdrs[0].p_offset = 0x%08x\n", SDL_SwapBE32(kernel_phdrs[0].p_offset)));
+		Dprintf(("LILO:  kernel_phdrs[0].p_filesz = 0x%08x\n", SDL_SwapBE32(kernel_phdrs[0].p_filesz)));
+		Dprintf(("LILO:  kernel_phdrs[0].p_memsz  = 0x%08x\n", SDL_SwapBE32(kernel_phdrs[0].p_memsz)));
 	}
 	kernel_size = max_addr - min_addr;
-	D(bug("lilo: kernel_size=%u",kernel_size));
+	Dprintf(("LILO: kernel_size = %u\n", kernel_size));
+	Dprintf(("LILO: %d kB ST-RAM, %d kB TT-RAM, loading to %s\n",
+		 ConfigureParams.Memory.STRamSize_KB,
+		 ConfigureParams.Memory.TTRamSize_KB, to_ram_s));
 
-	if (load_to_fastram)
-	{
-		if (KERNEL_START + kernel_size > FastRAMSize)
-		{
-			bug("lilo: kernel of size %x does not fit in TT-RAM of size %x", kernel_size, FastRAMSize);
+	if (load_to_fastram) {
+		if (KERNEL_START + kernel_size > FastRAMSize) {
+			fprintf(stderr, "LILO: kernel of size %x does not fit in TT-RAM of size %x\n", kernel_size, FastRAMSize);
 			load_to_fastram = false;
 		}
 	}
-	if (!load_to_fastram)
-	{
-		if (KERNEL_START + kernel_size > RAMSize)
-		{
-			bug("lilo: kernel of size %x does not fit in RAM of size %x", kernel_size, RAMSize);
-			return -1;
+	if (!load_to_fastram) {
+		if (KERNEL_START + kernel_size > RAMSize) {
+			fprintf(stderr, "LILO: kernel of size %x does not fit in RAM of size %x\n", kernel_size, RAMSize);
+			return false;
 		}
 	}
 
-	if (load_to_fastram)
+	if (load_to_fastram) {
 		kernel_offset = FastRAMBase;
-	else
+	} else {
 		kernel_offset = 0;
+	}
+
 	mem_ptr = KERNEL_START;
-	for (i=0; i<SDL_SwapBE16(kexec_elf->e_phnum); i++) {
+	int segments = SDL_SwapBE16(kexec_elf->e_phnum);
+	Dprintf(("LILO: copying %d segments to %s...\n", segments, to_ram_s));
+	for (i = 0; i < segments; i++) {
 		Elf32_Word segment_length;
 		Elf32_Addr segment_ptr;
 		Elf32_Off segment_offset;
@@ -512,18 +599,21 @@ int LinuxBootOs::checkKernel(void)
 		segment_offset = SDL_SwapBE32(kernel_phdrs[i].p_offset);
 		segment_length = SDL_SwapBE32(kernel_phdrs[i].p_filesz);
 
-		if (segment_offset == 0xffffffffUL) {
-		    bug("lilo: Failed to seek to segment %d",i);
-			return -1;
+		if (segment_offset == 0xffffffffu) {
+			fprintf(stderr, "LILO: Failed to seek to segment %d\n", i);
+			return false;
 		}
 		segment_ptr = SDL_SwapBE32(kernel_phdrs[i].p_vaddr) - PAGE_SIZE;
 
-		if (load_to_fastram)
-			memcpy(FastRAMBaseHost + mem_ptr + segment_ptr, (char *) kexec_elf + segment_offset, segment_length);
-		else
-			memcpy(RAMBaseHost + mem_ptr + segment_ptr, (char *) kexec_elf + segment_offset, segment_length);
-
-	    D(bug("lilo: Copied segment %d: 0x%08x,0x%08x at 0x%08x",i,segment_offset,segment_length,kernel_offset+mem_ptr+segment_ptr));
+		if (load_to_fastram) {
+			memcpy(FastRAMBaseHost + mem_ptr + segment_ptr,
+			       (char *) kexec_elf + segment_offset, segment_length);
+		} else {
+			memcpy(RAMBaseHost + mem_ptr + segment_ptr,
+			       (char *) kexec_elf + segment_offset, segment_length);
+		}
+		Dprintf(("LILO: Copied segment %d: 0x%08x + 0x%08x to 0x%08x\n",
+			 i, segment_offset, segment_length, kernel_offset + mem_ptr + segment_ptr));
 	}
 
 	/*--- Copy the ramdisk after kernel (and reserved bootinfo) ---*/
@@ -532,10 +622,11 @@ int LinuxBootOs::checkKernel(void)
 		Elf32_Word rd_len;
 		Elf32_Off rd_offset;
 
-		if (load_to_fastram)
+		if (load_to_fastram) {
 			rd_offset = KERNEL_START + kernel_size + MAX_BI_SIZE;
-		else
+		} else {
 			rd_offset = 0;
+		}
 		rd_len = ramdisk_length - RAMDISK_FS_START;
 		if (FastRAMSize > rd_offset + rd_len) {
 			/* Load in FastRAM */
@@ -543,120 +634,189 @@ int LinuxBootOs::checkKernel(void)
 			memcpy(FastRAMBaseHost + rd_start - FastRAMBase, (unsigned char *)ramdisk + RAMDISK_FS_START, rd_len);
 		} else {
 			/* Load in ST-RAM */
-			if (load_to_fastram)
+			if (load_to_fastram) {
 				rd_offset = PAGE_SIZE;
-			else
+			} else {
 				rd_offset = KERNEL_START + kernel_size + MAX_BI_SIZE;
+			}
 			if (RAMSize < rd_offset + rd_len) {
-				bug("lilo: not enough memory to load ramdisk of size %u", rd_len);
-				return -1;
+				Log_AlertDlg(LOG_FATAL, "LILO: not enough memory to load ramdisk of size %u\n", rd_len);
+				return false;
 			}
 			rd_start = RAMSize - rd_len;
-			memcpy(RAMBaseHost+rd_start, ((unsigned char *)ramdisk) + RAMDISK_FS_START, rd_len);
+			memcpy(RAMBaseHost + rd_start, ((unsigned char *)ramdisk) + RAMDISK_FS_START, rd_len);
 		}
-
 		bi.ramdisk.addr = SDL_SwapBE32(rd_start);
 		bi.ramdisk.size = SDL_SwapBE32(rd_len);
-	    D(bug("lilo: Ramdisk at 0x%08x in RAM, length=0x%08x", rd_start, rd_len));
+		Dprintf(("lilo: Ramdisk at 0x%08x in RAM, length=0x%08x", rd_start, rd_len));
 	} else {
 		bi.ramdisk.addr = 0;
 		bi.ramdisk.size = 0;
-	    D(bug("lilo: No ramdisk"));
+		Dprintf(("LILO: No ramdisk\n"));
 	}
 
 	/*--- Create the bootinfo structure ---*/
 
 	/* Command line */
 	kname = kernel_name;
-    if (strncmp( kernel_name, "local:", 6 ) == 0) {
+	if (strncmp(kernel_name, "local:", 6) == 0) {
 		kname += 6;
 	}
-    if (strlen(bx_options.lilo.args) > CL_SIZE-1) {
-		bug("lilo: kernel command line too long");
-		return -1;
-    }
-	strcpy(bi.command_line, bx_options.lilo.args);
-    if (strlen(bi.command_line)+1+strlen(kname)+12 < CL_SIZE-1) {
+	if (strlen(ConfigureParams.Lilo.szCommandLine) > CL_SIZE-1) {
+		Log_AlertDlg(LOG_FATAL, "LILO: kernel command line too long\n(max %d chars)\n", CL_SIZE-1);
+		return false;
+	}
+	strcpy(bi.command_line, ConfigureParams.Lilo.szCommandLine);
+	if (strlen(bi.command_line) + 1 + strlen(kname) + 12 < CL_SIZE-1) {
 		if (*bi.command_line) {
-			strcat( bi.command_line, " " );
+			strcat(bi.command_line, " ");
 		}
-		strcat( bi.command_line, "BOOT_IMAGE=" );
-		strcat( bi.command_line, kname );
-    } else
-    {
-		bug("lilo: kernel command line too long to include kernel name");
-    }
+		strcat(bi.command_line, "BOOT_IMAGE=");
+		strcat(bi.command_line, kname);
+	} else {
+		fprintf(stderr, "LILO: kernel command line too long to include kernel name\n");
+	}
 
-    D(bug("lilo: config_file command line: %s", bx_options.lilo.args ));
-    D(bug("lilo: kernel command line: %s", bi.command_line ));
+	Dprintf(("LILO: config_file command line: %s\n", ConfigureParams.Lilo.szCommandLine));
+	Dprintf(("LILO: kernel command line: %s\n", bi.command_line));
 
-	/* Machine type, memory banks */
-	bi.machtype = SDL_SwapBE32(MACH_ATARI);
-	bi.cputype = SDL_SwapBE32(CPU_68040);
-	bi.fputype = SDL_SwapBE32(FPU_68040);
-	bi.mmutype = SDL_SwapBE32(MMU_68040);
-	bi.mch_cookie = SDL_SwapBE32(0x00030000);
-	bi.mch_type = SDL_SwapBE32(ATARI_MACH_AB40);
-
-	bi.num_memory=0;
+	/* Memory banks */
+	bi.num_memory = 0;
 	/* If loading to FastRAM switch the order of ST and Fast RAM */
 	if (!load_to_fastram)
 		ADD_CHUNK(0, RAMSize);
-	if (FastRAMSize>0) {
+	if (FastRAMSize > 0) {
 		ADD_CHUNK(FastRAMBase, FastRAMSize);
 	}
-	if (load_to_fastram)
+	if (load_to_fastram) {
 		ADD_CHUNK(0, RAMSize);
-	bi.num_memory=SDL_SwapBE32(bi.num_memory);
+	}
+	bi.num_memory = SDL_SwapBE32(bi.num_memory);
 
 	if (!create_bootinfo()) {
-	    bug("lilo: Can not create bootinfo structure");
-		return -1;
+	    fprintf(stderr, "LILO: Can not create bootinfo structure\n");
+		return false;
 	}
 
 	/*--- Copy boot info in RAM ---*/
-	if (load_to_fastram)
+	if (load_to_fastram) {
 		memcpy(FastRAMBaseHost + KERNEL_START + kernel_size, &bi_union.record, bi_size);
-	else
+	} else {
 		memcpy(RAMBaseHost + KERNEL_START + kernel_size, &bi_union.record, bi_size);
-	D(bug("lilo: bootinfo at 0x%08x", kernel_offset + KERNEL_START + kernel_size));
+	}
+	Dprintf(("LILO: bootinfo at 0x%08x\n", kernel_offset + KERNEL_START + kernel_size));
 
-#if DEBUG
-	for (i=0; i<16; i++) {
-		uint32 *tmp;
+#if LILO_DEBUG
+	for (i = 0; i < 16; i++) {
+		uint32_t *tmp;
 
-		if (load_to_fastram)
-			tmp = (uint32 *)((unsigned char *)FastRAMBaseHost + KERNEL_START + kernel_size);
-		else
-			tmp = (uint32 *)((unsigned char *)RAMBaseHost + KERNEL_START + kernel_size);
-		D(bug("lilo: bi_union.record[%d]=0x%08x",i, SDL_SwapBE32(tmp[i])));
+		if (load_to_fastram) {
+			tmp = (uint32_t *)((unsigned char *)FastRAMBaseHost + KERNEL_START + kernel_size);
+		} else {
+			tmp = (uint32_t *)((unsigned char *)RAMBaseHost + KERNEL_START + kernel_size);
+		}
+		Dprintf(("LILO: bi_union.record[%2d] = 0x%08x\n", i, SDL_SwapBE32(tmp[i])));
 	}
 #endif
 
 	/*--- Init SP & PC ---*/
-	uint32 *tmp = (uint32 *)RAMBaseHost;
+	uint32_t *tmp = (uint32_t *)RAMBaseHost;
 	tmp[0] = SDL_SwapBE32(kernel_offset + KERNEL_START);	/* SP */
-	tmp[1] = SDL_SwapBE32(0x00e00000);		/* PC = ROMBase */
+	tmp[1] = SDL_SwapBE32(TosAddress);		/* PC = ROMBase */
+	uint8_t *ROMBaseHost = STRam + TosAddress;
 	ROMBaseHost[4] = (kernel_offset + KERNEL_START) >> 24;
 	ROMBaseHost[5] = (kernel_offset + KERNEL_START) >> 16;
 	ROMBaseHost[6] = (kernel_offset + KERNEL_START) >>  8;
 	ROMBaseHost[7] = (kernel_offset + KERNEL_START) & 0xff;
-	
-	D(bug("lilo: ok"));
 
-	return 0;
-#else
-	return -1;
-#endif /* ENABLE_LILO */
+	Dprintf(("LILO: OK\n"));
+
+	return true;
 }
 
-    /*
-     *  Create the Bootinfo Structure
-     */
-
-int LinuxBootOs::create_bootinfo(void)
+/**
+ * Set machine type settings to bootinfo based on Hatari configuration
+ * Return true for success
+ */
+static bool set_machine_type(void)
 {
-#ifdef ENABLE_LILO
+	bi.machtype = SDL_SwapBE32(MACH_ATARI);
+	bi.mch_type = SDL_SwapBE32(ATARI_MACH_NORMAL);
+
+	switch (ConfigureParams.System.nMachineType) {
+	case MACHINE_FALCON:
+		bi.mch_cookie = SDL_SwapBE32(ATARI_MCH_FALCON);
+		break;
+	case MACHINE_TT:
+		bi.mch_cookie = SDL_SwapBE32(ATARI_MCH_TT);
+		break;
+	case MACHINE_STE:
+	case MACHINE_MEGA_STE:
+		bi.mch_cookie = SDL_SwapBE32(ATARI_MCH_STE);
+		break;
+	case MACHINE_ST:
+	case MACHINE_MEGA_ST:
+		bi.mch_cookie = SDL_SwapBE32(ATARI_MCH_ST);
+		break;
+	}
+
+	switch(ConfigureParams.System.nCpuLevel) {
+	case 3:
+		bi.cputype = SDL_SwapBE32(BI_CPU_68030);
+		bi.mmutype = SDL_SwapBE32(BI_MMU_68030);
+		break;
+	case 4:
+		bi.cputype = SDL_SwapBE32(BI_CPU_68040);
+		bi.mmutype = SDL_SwapBE32(BI_MMU_68040);
+#if 0
+		/*
+		 * AB40 has different reset address handling:
+		 * https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/arch/m68k/atari/config.c#n494
+		 */
+		if (ConfigureParams.System.nMachineType == MACHINE_FALCON) {
+			/* let's try claiming it's Falcon AfterBurner like Aranym does */
+			bi.mch_cookie = SDL_SwapBE32(ATARI_MCH_AB40);
+		}
+#endif
+		break;
+	case 5: /* special case: 060 */
+		bi.cputype = SDL_SwapBE32(BI_CPU_68060);
+		bi.mmutype = SDL_SwapBE32(BI_MMU_68060);
+		break;
+	default:
+		Log_AlertDlg(LOG_FATAL, "LILO: Linux requires at least 030 CPU (for MMU), not 0%d0!",
+			     ConfigureParams.System.nCpuLevel);
+		return false;
+	}
+
+	switch(ConfigureParams.System.n_FPUType) {
+	case FPU_68881:
+		bi.fputype = SDL_SwapBE32(BI_FPU_68881);
+		break;
+	case FPU_68882:
+		bi.fputype = SDL_SwapBE32(BI_FPU_68882);
+		break;
+	case FPU_CPU:
+		if (ConfigureParams.System.nCpuLevel == 4) {
+			bi.fputype = SDL_SwapBE32(BI_FPU_68040);
+		} else if (ConfigureParams.System.nCpuLevel == 5) { /* special case: 060 */
+			bi.fputype = SDL_SwapBE32(BI_FPU_68060);
+		}
+		/* TODO: else -> fail? */
+		break;
+	case FPU_NONE:
+		bi.fputype = 0; /* TODO */
+		break;
+	}
+	return true;
+}
+
+/**
+ * Create the Bootinfo Structure
+ * Return true for success
+ */
+static bool create_bootinfo(void)
+{
 	unsigned int i;
 	struct bi_record *record;
 
@@ -664,82 +824,82 @@ int LinuxBootOs::create_bootinfo(void)
 	bi_size = 0;
 
 	/* Generic tags */
-	if (!add_bi_record(BI_MACHTYPE, sizeof(bi.machtype), &bi.machtype))
-		return(0);
-	if (!add_bi_record(BI_CPUTYPE, sizeof(bi.cputype), &bi.cputype))
-		return(0);
-	if (!add_bi_record(BI_FPUTYPE, sizeof(bi.fputype), &bi.fputype))
-		return(0);
-	if (!add_bi_record(BI_MMUTYPE, sizeof(bi.mmutype), &bi.mmutype))
-		return(0);
+	if (!add_bi_record(BI_MACHTYPE, sizeof(bi.machtype), &bi.machtype)) {
+		return false;
+	}
+	if (!add_bi_record(BI_CPUTYPE, sizeof(bi.cputype), &bi.cputype)) {
+		return false;
+	}
+	if (!add_bi_record(BI_FPUTYPE, sizeof(bi.fputype), &bi.fputype)) {
+		return false;
+	}
+	if (!add_bi_record(BI_MMUTYPE, sizeof(bi.mmutype), &bi.mmutype)) {
+		return false;
+	}
 	for (i = 0; i < SDL_SwapBE32(bi.num_memory); i++) {
 		if (!add_bi_record(BI_MEMCHUNK, sizeof(bi.memory[i]), &bi.memory[i]))
-			return(0);
+			return false;
 	}
 	if (SDL_SwapBE32(bi.ramdisk.size)) {
 		if (!add_bi_record(BI_RAMDISK, sizeof(bi.ramdisk), &bi.ramdisk))
-			return(0);
+			return false;
 	}
-	if (!add_bi_string(BI_COMMAND_LINE, bi.command_line))
-		return(0);
-
+	if (!add_bi_string(BI_COMMAND_LINE, bi.command_line)) {
+		return false;
+	}
 	/* Atari tags */
-	if (!add_bi_record(BI_ATARI_MCH_COOKIE, sizeof(bi.mch_cookie), &bi.mch_cookie))
-		return(0);
-	if (!add_bi_record(BI_ATARI_MCH_TYPE, sizeof(bi.mch_type), &bi.mch_type))
-		return(0);
+	if (!add_bi_record(BI_ATARI_MCH_COOKIE, sizeof(bi.mch_cookie), &bi.mch_cookie)) {
+		return false;
+	}
+	if (!add_bi_record(BI_ATARI_MCH_TYPE, sizeof(bi.mch_type), &bi.mch_type)) {
+		return false;
+	}
+	/* Trailer */
+	record = (struct bi_record *)((char *)&bi_union.record + bi_size);
+	record->tag = SDL_SwapBE16(BI_LAST);
+	bi_size += sizeof(bi_union.record.tag);
 
-    /* Trailer */
-    record = (struct bi_record *)((char *)&bi_union.record+bi_size);
-    record->tag = SDL_SwapBE16(BI_LAST);
-    bi_size += sizeof(bi_union.record.tag);
-
-    return(1);
-#else
-	return(0);
-#endif /* ENABLE_LILO */
+	return true;
 }
 
-    /*
-     *  Add a Record to the Bootinfo Structure
-     */
-
-int LinuxBootOs::add_bi_record( unsigned short tag, unsigned short size, const void *data)
+/**
+ * Add a Record to the Bootinfo Structure
+ * Return true for success
+ */
+static bool add_bi_record(uint16_t tag, uint16_t size, const void *data)
 {
-#ifdef ENABLE_LILO
-    struct bi_record *record;
-    u_short size2;
+	struct bi_record *record;
+	u_short size2;
 
-    size2 = (sizeof(struct bi_record)+size+3)&-4;
-    if (bi_size+size2+sizeof(bi_union.record.tag) > MAX_BI_SIZE) {
-	bug("Can't add bootinfo record. Ask a wizard to enlarge me.");
-	return(0);
-    }
-    record = (struct bi_record *)((char *)&bi_union.record+bi_size);
-    record->tag = SDL_SwapBE16(tag);
-    record->size = SDL_SwapBE16(size2);
-    memcpy((char *)record + sizeof(struct bi_record), data, size);
-    bi_size += size2;
+	size2 = (sizeof(struct bi_record) + size + 3) & -4;
+	if (bi_size + size2 + sizeof(bi_union.record.tag) > MAX_BI_SIZE) {
+		fprintf (stderr, "LILO: can't add bootinfo record. Ask a wizard to enlarge me.\n");
+		return false;
+	}
+	record = (struct bi_record *)((char *)&bi_union.record + bi_size);
+	record->tag = SDL_SwapBE16(tag);
+	record->size = SDL_SwapBE16(size2);
+	memcpy((char *)record + sizeof(struct bi_record), data, size);
+	bi_size += size2;
 
-#else
-	UNUSED(tag);
-	UNUSED(size);
-	UNUSED(data);
-#endif /* ENABLE_LILO */
-    return(1);
+	return true;
 }
 
-    /*
-     *  Add a String Record to the Bootinfo Structure
-     */
-
-int LinuxBootOs::add_bi_string(unsigned short tag, const char *s)
+/**
+ * Add a String Record to the Bootinfo Structure
+ * return true for success
+ */
+static bool add_bi_string(uint16_t tag, const char *s)
 {
-#ifdef ENABLE_LILO
-    return add_bi_record(tag, strlen(s)+1, (void *)s);
-#else
-	UNUSED(tag);
-	UNUSED(s);
-	return 0;
-#endif /* ENABLE_LILO */
+	return add_bi_record(tag, strlen(s) + 1, s);
 }
+
+#else
+
+bool lilo_init(void)
+{
+	/* never called as nothing sets bUseLilo true */
+	return false;
+}
+
+#endif /* ENABLE_WINUAE_CPU */
