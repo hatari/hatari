@@ -44,6 +44,7 @@ const char Options_fileid[] = "Hatari options.c : " __DATE__ " " __TIME__;
 #include "xbios.h"
 #include "stMemory.h"
 #include "tos.h"
+#include "lilo.h"
 
 
 bool bLoadAutoSave;        /* Load autosave memory snapshot at startup */
@@ -172,6 +173,9 @@ enum {
 #endif
 	OPT_DEBUG,
 	OPT_EXCEPTIONS,
+#if ENABLE_WINUAE_CPU
+	OPT_LILO,
+#endif
 	OPT_BIOSINTERCEPT,
 	OPT_CONOUT,
 	OPT_DISASM,
@@ -458,6 +462,9 @@ static const opt_t HatariOptions[] = {
 	  NULL, "Toggle whether CPU exceptions invoke debugger" },
 	{ OPT_EXCEPTIONS, NULL, "--debug-except",
 	  "<flags>", "Exceptions invoking debugger, see '--debug-except help'" },
+#if ENABLE_WINUAE_CPU
+	{ OPT_LILO, NULL, "--lilo", "<x>", "Boot Linux (see manual page)" },
+#endif
 	{ OPT_BIOSINTERCEPT, NULL, "--bios-intercept",
 	  "<bool>", "Enable/disable XBIOS command parsing support" },
 	{ OPT_CONOUT,   NULL, "--conout",
@@ -1037,6 +1044,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 	int ncpu, skips, zoom, planes, cpuclock, threshold, memsize, port, freq, temp, drive;
 	const char *errstr, *str;
 	int i, ok = true;
+	size_t len;
 	int val;
 
 	/* Defaults for loading initial memory snap-shots */
@@ -2073,7 +2081,24 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				        oldmask, ExceptionDebugMask);
 			}
 			break;
-
+#if ENABLE_WINUAE_CPU
+		case OPT_LILO:
+			len = strlen(argv[++i]);
+			len += strlen(ConfigureParams.Lilo.szCommandLine);
+			if (argv[i][0] && len+2 < sizeof(ConfigureParams.Lilo.szCommandLine))
+			{
+				strcat(ConfigureParams.Lilo.szCommandLine, " ");
+				strcat(ConfigureParams.Lilo.szCommandLine, argv[i]);
+				bLoadAutoSave = false;
+				bUseLilo = true;
+				bUseTos = false;
+			}
+			else
+			{
+				return Opt_ShowError(OPT_LILO, argv[i], "kernel command line too long");
+			}
+			break;
+#endif
 		case OPT_BIOSINTERCEPT:
 			ok = Opt_Bool(argv[++i], OPT_BIOSINTERCEPT, &bBiosIntercept);
 			Log_Printf(LOG_DEBUG, "XBIOS 11/20/255 Hatari versions %sabled: "

@@ -50,6 +50,17 @@ typedef struct
 } CNF_ROM;
 
 
+/* LILO (Linux loader) configuration */
+typedef struct
+{
+  char szCommandLine[256];	/* bootinfo CL_SIZE */
+  char szKernelFileName[FILENAME_MAX];
+  char szRamdiskFileName[FILENAME_MAX];
+  bool bHaltOnReboot;
+  bool bLoadFastRam;
+} CNF_LILO;
+
+
 /* Sound configuration */
 typedef struct
 {
@@ -410,6 +421,7 @@ typedef struct
   CNF_SCSIDEV Scsi[MAX_SCSI_DEVS];
   CNF_IDEDEV Ide[MAX_IDE_DEVS];
   CNF_ROM Rom;
+  CNF_LILO Lilo;
   CNF_RS232 RS232;
   CNF_PRINTER Printer;
   CNF_MIDI Midi;

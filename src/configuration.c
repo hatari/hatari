@@ -540,6 +540,17 @@ static const struct Config_Tag configs_Rom[] =
 	{ NULL , Error_Tag, NULL }
 };
 
+/* Used to load/save LILO options, names are same as with Aranym */
+static const struct Config_Tag configs_Lilo[] =
+{
+	{ "Args", String_Tag, ConfigureParams.Lilo.szCommandLine },
+	{ "Kernel", String_Tag, ConfigureParams.Lilo.szKernelFileName },
+	{ "Ramdisk", String_Tag, ConfigureParams.Lilo.szRamdiskFileName },
+	{ "HaltOnReboot", Bool_Tag, &ConfigureParams.Lilo.bHaltOnReboot },
+	{ "LoadToFastRam", Bool_Tag, &ConfigureParams.Lilo.bLoadFastRam },
+	{ NULL , Error_Tag, NULL }
+};
+
 /* Used to load/save RS232 options */
 static const struct Config_Tag configs_Rs232[] =
 {
@@ -846,6 +857,16 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Rom.bPatchTos = true;
 	strcpy(ConfigureParams.Rom.szCartridgeImageFileName, "");
 
+	/* Set defaults for Lilo */
+	strcpy(ConfigureParams.Lilo.szCommandLine,
+	       "root=/dev/ram video=atafb:vga16 load_ramdisk=1");
+	sprintf(ConfigureParams.Lilo.szKernelFileName,
+		"%s%cvmlinuz", Paths_GetDataDir(), PATHSEP);
+	sprintf(ConfigureParams.Lilo.szRamdiskFileName,
+		"%s%cinitrd", Paths_GetDataDir(), PATHSEP);
+	ConfigureParams.Lilo.bHaltOnReboot = true;
+	ConfigureParams.Lilo.bLoadFastRam = true;
+
 	/* Set defaults for System */
 	ConfigureParams.System.nMachineType = MACHINE_ST;
 	ConfigureParams.System.nCpuLevel = 0;
@@ -976,6 +997,10 @@ void Configuration_Apply(bool bReset)
 	File_MakeAbsoluteName(ConfigureParams.Rom.szTosImageFileName);
 	if (strlen(ConfigureParams.Rom.szCartridgeImageFileName) > 0)
 		File_MakeAbsoluteName(ConfigureParams.Rom.szCartridgeImageFileName);
+	if (strlen(ConfigureParams.Lilo.szKernelFileName) > 0)
+		File_MakeAbsoluteName(ConfigureParams.Lilo.szKernelFileName);
+	if (strlen(ConfigureParams.Lilo.szRamdiskFileName) > 0)
+		File_MakeAbsoluteName(ConfigureParams.Lilo.szRamdiskFileName);
 	File_CleanFileName(ConfigureParams.HardDisk.szHardDiskDirectories[0]);
 	File_MakeAbsoluteName(ConfigureParams.HardDisk.szHardDiskDirectories[0]);
 	File_MakeAbsoluteName(ConfigureParams.Memory.szMemoryCaptureFileName);
@@ -1123,6 +1148,7 @@ void Configuration_Load(const char *psFileName)
 	Configuration_LoadSection(psFileName, configs_Scsi, "[SCSI]");
 	Configuration_LoadSection(psFileName, configs_Ide, "[IDE]");
 	Configuration_LoadSection(psFileName, configs_Rom, "[ROM]");
+	Configuration_LoadSection(psFileName, configs_Lilo, "[LILO]");
 	Configuration_LoadSection(psFileName, configs_Rs232, "[RS232]");
 	Configuration_LoadSection(psFileName, configs_Printer, "[Printer]");
 	Configuration_LoadSection(psFileName, configs_Midi, "[Midi]");
@@ -1179,6 +1205,7 @@ void Configuration_Save(void)
 	Configuration_SaveSection(sConfigFileName, configs_Scsi, "[SCSI]");
 	Configuration_SaveSection(sConfigFileName, configs_Ide, "[IDE]");
 	Configuration_SaveSection(sConfigFileName, configs_Rom, "[ROM]");
+	Configuration_SaveSection(sConfigFileName, configs_Lilo, "[LILO]");
 	Configuration_SaveSection(sConfigFileName, configs_Rs232, "[RS232]");
 	Configuration_SaveSection(sConfigFileName, configs_Printer, "[Printer]");
 	Configuration_SaveSection(sConfigFileName, configs_Midi, "[Midi]");
@@ -1198,6 +1225,9 @@ void Configuration_MemorySnapShot_Capture(bool bSave)
 
 	MemorySnapShot_Store(ConfigureParams.Rom.szTosImageFileName, sizeof(ConfigureParams.Rom.szTosImageFileName));
 	MemorySnapShot_Store(ConfigureParams.Rom.szCartridgeImageFileName, sizeof(ConfigureParams.Rom.szCartridgeImageFileName));
+
+	MemorySnapShot_Store(ConfigureParams.Lilo.szKernelFileName, sizeof(ConfigureParams.Lilo.szKernelFileName));
+	MemorySnapShot_Store(ConfigureParams.Lilo.szRamdiskFileName, sizeof(ConfigureParams.Lilo.szRamdiskFileName));
 
 	MemorySnapShot_Store(&ConfigureParams.Memory.STRamSize_KB, sizeof(ConfigureParams.Memory.STRamSize_KB));
 	MemorySnapShot_Store(&ConfigureParams.Memory.TTRamSize_KB, sizeof(ConfigureParams.Memory.TTRamSize_KB));

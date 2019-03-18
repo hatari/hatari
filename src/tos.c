@@ -32,6 +32,7 @@ const char TOS_fileid[] = "Hatari tos.c : " __DATE__ " " __TIME__;
 #include "stMemory.h"
 #include "str.h"
 #include "tos.h"
+#include "lilo.h"
 #include "vdi.h"
 #include "falcon/dsp.h"
 #include "clocks_timings.h"
@@ -1189,9 +1190,15 @@ int TOS_InitImage(void)
 	/* Set connected devices, memory configuration, etc. */
 	STMemory_SetDefaultConfig();
 
-	/* Load test program (has to be done after memory has been cleared */
-	if (!bUseTos)
+	if (bUseLilo)
 	{
+		/* load linux */
+		if (!lilo_init())
+			return -1;
+	}
+	else if (!bUseTos)
+	{
+		/* Load test program (has to be done after memory has been cleared) */
 		if (psTestPrg)
 		{
 			Log_Printf(LOG_DEBUG, "Loading '%s' to 0x%x.\n",
