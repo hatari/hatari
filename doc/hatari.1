@@ -495,6 +495,17 @@ Specify which exceptions invoke debugger, see
 .B \-\-debug\-except help
 for available (comma separated) exception flags.
 .TP
+.B \-\-lilo <string>
+Boot m68k Linux using kernel, ramdisk, and kernel arguments specified
+in the Hatari configuration file [LILO] section. Hatari documentation
+folder contains an example "lilo.cfg" config file for this. String
+given to the \-\-lilo option is appended to the kernel command line.
+.br
+NOTE: This is Hatari (and Linux kernel) developer option to test Linux
+booting.  Unless you know how your kernel is configured, and the state
+of specific kernel and Hatari features, don't expect m68k Linux to
+boot up succesfully.
+.TP
 .B \-\-bios\-intercept <bool>
 Enable/Disable XBios command parsing. XBios(11) Dbmsg call can be used
 to invoke Hatari debugger. XBios(20) printscreen calls produce also
