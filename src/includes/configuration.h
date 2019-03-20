@@ -56,8 +56,9 @@ typedef struct
   char szCommandLine[256];	/* bootinfo CL_SIZE */
   char szKernelFileName[FILENAME_MAX];
   char szRamdiskFileName[FILENAME_MAX];
+  bool bRamdiskToFastRam;
+  bool bKernelToFastRam;
   bool bHaltOnReboot;
-  bool bLoadFastRam;
 } CNF_LILO;
 
 

@@ -218,8 +218,11 @@ struct bi_record {
 #define M68K_EMUL_RESET 0x7102
 
 #define MAXREAD_BLOCK_SIZE	(1<<20)	/* 1 MB */
-#define KERNEL_START		PAGE_SIZE	/* Start address of kernel in Atari RAM */
-#define RAMDISK_FS_START	0		/* Offset to start of fs in ramdisk file */
+
+/* Start address of kernel in Atari RAM */
+#define KERNEL_START		PAGE_SIZE
+/* Offset to start of fs in ramdisk file (no microcode on Atari) */
+#define RAMDISK_FS_START	0
 
 #define MAX_BI_SIZE     (4096)
 
@@ -465,15 +468,15 @@ static bool check_kernel(void *kernel, void *ramdisk, uint32_t ramdisk_len)
 {
 	/* map Hatari variables to Aranym code */
 	const uint32_t RAMSize = 1024 * ConfigureParams.Memory.STRamSize_KB;
-	uint8_t *RAMBaseHost = STRam;
+	uint8_t *hostkbase, *RAMBaseHost = STRam;
 
 	const uint32_t FastRAMBase = 0x01000000;
 	uint8_t *FastRAMBaseHost = TTmemory;
 
 	/* TODO: separate FastRAM setting for kernel & ramdisk? */
 	const uint32_t FastRAMSize = TTmemory ? 1024 * ConfigureParams.Memory.TTRamSize_KB : 0;
-	bool load_to_fastram = (ConfigureParams.Lilo.bLoadFastRam && FastRAMSize > 0);
-	const char *to_ram_s = load_to_fastram ? "FastRAM" : "ST-RAM";
+	bool kernel_to_fastram = (ConfigureParams.Lilo.bKernelToFastRam && FastRAMSize > 0);
+	bool ramdisk_to_fastram = (ConfigureParams.Lilo.bRamdiskToFastRam && FastRAMSize > 0);
 
 	Elf32_Ehdr *kexec_elf;	/* header of kernel executable */
 	Elf32_Phdr *kernel_phdrs;
@@ -482,6 +485,7 @@ static bool check_kernel(void *kernel, void *ramdisk, uint32_t ramdisk_len)
 	Elf32_Addr mem_ptr;
 	Elf32_Addr kernel_offset;
 	const char *kname, *kernel_name = "vmlinux";
+	uint32_t *tmp;
 	int i;
 
 	bi_size = 0;
@@ -555,32 +559,34 @@ static bool check_kernel(void *kernel, void *ramdisk, uint32_t ramdisk_len)
 	}
 	kernel_size = max_addr - min_addr;
 	Dprintf(("LILO: kernel_size = %u\n", kernel_size));
-	Dprintf(("LILO: %d kB ST-RAM, %d kB TT-RAM, loading to %s\n",
+	Dprintf(("LILO: %d kB ST-RAM, %d kB TT-RAM\n",
 		 ConfigureParams.Memory.STRamSize_KB,
-		 ConfigureParams.Memory.TTRamSize_KB, to_ram_s));
+		 ConfigureParams.Memory.TTRamSize_KB));
 
-	if (load_to_fastram) {
+	if (kernel_to_fastram) {
 		if (KERNEL_START + kernel_size > FastRAMSize) {
 			fprintf(stderr, "LILO: kernel of size %x does not fit in TT-RAM of size %x\n", kernel_size, FastRAMSize);
-			load_to_fastram = false;
+			kernel_to_fastram = false;
 		}
 	}
-	if (!load_to_fastram) {
+	if (!kernel_to_fastram) {
 		if (KERNEL_START + kernel_size > RAMSize) {
 			fprintf(stderr, "LILO: kernel of size %x does not fit in RAM of size %x\n", kernel_size, RAMSize);
 			return false;
 		}
 	}
-
-	if (load_to_fastram) {
+	if (kernel_to_fastram) {
 		kernel_offset = FastRAMBase;
+		hostkbase = FastRAMBaseHost;
 	} else {
 		kernel_offset = 0;
+		hostkbase = RAMBaseHost;
 	}
 
 	mem_ptr = KERNEL_START;
 	int segments = SDL_SwapBE16(kexec_elf->e_phnum);
-	Dprintf(("LILO: copying %d segments to %s...\n", segments, to_ram_s));
+	Dprintf(("LILO: copying %d segments to %s...\n", segments,
+		 kernel_to_fastram ? "FastRAM" : "ST-RAM"));
 	for (i = 0; i < segments; i++) {
 		Elf32_Word segment_length;
 		Elf32_Addr segment_ptr;
@@ -595,13 +601,9 @@ static bool check_kernel(void *kernel, void *ramdisk, uint32_t ramdisk_len)
 		}
 		segment_ptr = SDL_SwapBE32(kernel_phdrs[i].p_vaddr) - PAGE_SIZE;
 
-		if (load_to_fastram) {
-			memcpy(FastRAMBaseHost + mem_ptr + segment_ptr,
-			       (char *) kexec_elf + segment_offset, segment_length);
-		} else {
-			memcpy(RAMBaseHost + mem_ptr + segment_ptr,
-			       (char *) kexec_elf + segment_offset, segment_length);
-		}
+		memcpy(hostkbase + mem_ptr + segment_ptr,
+		       (char *) kexec_elf + segment_offset, segment_length);
+
 		Dprintf(("LILO: Copied segment %d: 0x%08x + 0x%08x to 0x%08x\n",
 			 i, segment_offset, segment_length, kernel_offset + mem_ptr + segment_ptr));
 	}
@@ -611,20 +613,22 @@ static bool check_kernel(void *kernel, void *ramdisk, uint32_t ramdisk_len)
 		Elf32_Addr rd_start;
 		Elf32_Word rd_len;
 		Elf32_Off rd_offset;
+		const char *to_ram_s;
 
-		if (load_to_fastram) {
+		if (kernel_to_fastram && ramdisk_to_fastram) {
 			rd_offset = KERNEL_START + kernel_size + MAX_BI_SIZE;
 		} else {
 			rd_offset = 0;
 		}
 		rd_len = ramdisk_len - RAMDISK_FS_START;
-		if (FastRAMSize > rd_offset + rd_len) {
-			/* Load in FastRAM */
+		if (ramdisk_to_fastram && FastRAMSize > rd_offset + rd_len) {
+			/* Load at end of FastRAM */
 			rd_start = FastRAMBase + FastRAMSize - rd_len;
 			memcpy(FastRAMBaseHost + rd_start - FastRAMBase, (unsigned char *)ramdisk + RAMDISK_FS_START, rd_len);
+			to_ram_s = "FastRAM";
 		} else {
-			/* Load in ST-RAM */
-			if (load_to_fastram) {
+			/* Load at end of ST-RAM */
+			if (kernel_to_fastram) {
 				rd_offset = PAGE_SIZE;
 			} else {
 				rd_offset = KERNEL_START + kernel_size + MAX_BI_SIZE;
@@ -635,10 +639,12 @@ static bool check_kernel(void *kernel, void *ramdisk, uint32_t ramdisk_len)
 			}
 			rd_start = RAMSize - rd_len;
 			memcpy(RAMBaseHost + rd_start, ((unsigned char *)ramdisk) + RAMDISK_FS_START, rd_len);
+			to_ram_s = "ST-RAM";
 		}
 		bi.ramdisk.addr = SDL_SwapBE32(rd_start);
 		bi.ramdisk.size = SDL_SwapBE32(rd_len);
-		Dprintf(("lilo: Ramdisk at 0x%08x in RAM, length=0x%08x", rd_start, rd_len));
+		Dprintf(("lilo: Ramdisk at 0x%08x in %s, length=0x%08x\n",
+			 rd_start, to_ram_s, rd_len));
 	} else {
 		bi.ramdisk.addr = 0;
 		bi.ramdisk.size = 0;
@@ -672,13 +678,19 @@ static bool check_kernel(void *kernel, void *ramdisk, uint32_t ramdisk_len)
 
 	/* Memory banks */
 	bi.num_memory = 0;
-	/* If loading to FastRAM switch the order of ST and Fast RAM */
-	if (!load_to_fastram)
+	/* If kernel is loaded to FastRAM, switch the order of ST-RAM
+	 * and FastRAM, otherwise kernel panics.
+	 *
+	 * However, when ST-RAM comes after FastRAM, kernel tells that
+	 * it ignores the area and tells to fix the bootloader...
+	 */
+	if (!kernel_to_fastram) {
 		add_chunk(0, RAMSize);
+	}
 	if (FastRAMSize > 0) {
 		add_chunk(FastRAMBase, FastRAMSize);
 	}
-	if (load_to_fastram) {
+	if (kernel_to_fastram) {
 		add_chunk(0, RAMSize);
 	}
 	bi.num_memory = SDL_SwapBE32(bi.num_memory);
@@ -688,29 +700,20 @@ static bool check_kernel(void *kernel, void *ramdisk, uint32_t ramdisk_len)
 		return false;
 	}
 
-	/*--- Copy boot info in RAM ---*/
-	if (load_to_fastram) {
-		memcpy(FastRAMBaseHost + KERNEL_START + kernel_size, &bi_union.record, bi_size);
-	} else {
-		memcpy(RAMBaseHost + KERNEL_START + kernel_size, &bi_union.record, bi_size);
-	}
+	/*--- Copy boot info to RAM after kernel ---*/
+	memcpy(hostkbase + KERNEL_START + kernel_size, &bi_union.record, bi_size);
 	Dprintf(("LILO: bootinfo at 0x%08x\n", kernel_offset + KERNEL_START + kernel_size));
 
 #if LILO_DEBUG
+	tmp = (uint32_t *)(hostkbase + KERNEL_START + kernel_size);
 	for (i = 0; i < 16; i++) {
-		uint32_t *tmp;
-
-		if (load_to_fastram) {
-			tmp = (uint32_t *)((unsigned char *)FastRAMBaseHost + KERNEL_START + kernel_size);
-		} else {
-			tmp = (uint32_t *)((unsigned char *)RAMBaseHost + KERNEL_START + kernel_size);
-		}
-		Dprintf(("LILO: bi_union.record[%2d] = 0x%08x\n", i, SDL_SwapBE32(tmp[i])));
+		Dprintf(("LILO: bi_union.record[%2d] = 0x%08x\n",
+			 i, SDL_SwapBE32(tmp[i])));
 	}
 #endif
 
 	/*--- Init SP & PC ---*/
-	uint32_t *tmp = (uint32_t *)RAMBaseHost;
+	tmp = (uint32_t *)RAMBaseHost;
 	tmp[0] = SDL_SwapBE32(kernel_offset + KERNEL_START);	/* SP */
 	tmp[1] = SDL_SwapBE32(TosAddress);		/* PC = ROMBase */
 	uint8_t *ROMBaseHost = STRam + TosAddress;

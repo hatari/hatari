@@ -547,7 +547,8 @@ static const struct Config_Tag configs_Lilo[] =
 	{ "Kernel", String_Tag, ConfigureParams.Lilo.szKernelFileName },
 	{ "Ramdisk", String_Tag, ConfigureParams.Lilo.szRamdiskFileName },
 	{ "HaltOnReboot", Bool_Tag, &ConfigureParams.Lilo.bHaltOnReboot },
-	{ "LoadToFastRam", Bool_Tag, &ConfigureParams.Lilo.bLoadFastRam },
+	{ "KernelToFastRam", Bool_Tag, &ConfigureParams.Lilo.bKernelToFastRam },
+	{ "RamdiskToFastRam", Bool_Tag, &ConfigureParams.Lilo.bRamdiskToFastRam },
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -864,8 +865,9 @@ void Configuration_SetDefault(void)
 		"%s%cvmlinuz", Paths_GetDataDir(), PATHSEP);
 	sprintf(ConfigureParams.Lilo.szRamdiskFileName,
 		"%s%cinitrd", Paths_GetDataDir(), PATHSEP);
+	ConfigureParams.Lilo.bRamdiskToFastRam = true;
+	ConfigureParams.Lilo.bKernelToFastRam = true;
 	ConfigureParams.Lilo.bHaltOnReboot = true;
-	ConfigureParams.Lilo.bLoadFastRam = true;
 
 	/* Set defaults for System */
 	ConfigureParams.System.nMachineType = MACHINE_ST;
