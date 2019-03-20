@@ -224,17 +224,6 @@ struct bi_record {
 #define MAX_BI_SIZE     (4096)
 
 #define GRANULARITY (256*1024) /* min unit for memory */
-#define ADD_CHUNK(start, siz)	\
-    {	\
-		uint32_t _start = (start);	\
-		uint32_t _size  = (siz) & ~(GRANULARITY-1);	\
-		\
-		if (_size > 0) {	\
-			bi.memory[bi.num_memory].addr = SDL_SwapBE32(_start);	\
-			bi.memory[bi.num_memory].size = SDL_SwapBE32(_size);	\
-			bi.num_memory++;	\
-		}	\
-	}
 
 /*--- Structures ---*/
 
@@ -264,17 +253,12 @@ struct atari_bootinfo {
 	uint32_t mch_type;		/* special machine types */
 };
 
-static void *kernel;
-static uint32_t kernel_length;
-static void *ramdisk;
-static uint32_t ramdisk_length;
 static struct atari_bootinfo bi;
 static uint32_t bi_size;
 
-static void lilo_cleanup(void);
 static bool lilo_load(void);
 static void *load_file(const char *filename, uint32_t *length);
-static bool check_kernel(void);
+static bool check_kernel(void *kernel, void *ramdisk, uint32_t ramdisk_len);
 static bool create_bootinfo(void);
 static bool set_machine_type(void);
 static bool add_bi_record(uint16_t tag, uint16_t size, const void *data);
@@ -343,29 +327,14 @@ bool lilo_init(void)
 
 /*--- Private functions ---*/
 
-static void lilo_cleanup(void)
-{
-	if (kernel != NULL) {
-		free(kernel);
-		kernel = NULL;
-	}
-
-	if (ramdisk != NULL) {
-		free(ramdisk);
-		ramdisk = NULL;
-	}
-}
-
 static bool lilo_load(void)
 {
 	const char *kernel_s  = ConfigureParams.Lilo.szKernelFileName;
 	const char *ramdisk_s = ConfigureParams.Lilo.szRamdiskFileName;
 
-	kernel = ramdisk = NULL;
-	kernel_length = ramdisk_length = 0;
-	bi_size = 0;
-	bi.ramdisk.addr = 0;
-	bi.ramdisk.size = 0;
+	void *kernel, *ramdisk = NULL;
+	uint32_t kernel_length = 0;
+	uint32_t ramdisk_length = 0;
 
 	/* Load the kernel */
 	kernel = load_file(kernel_s, &kernel_length);
@@ -383,11 +352,15 @@ static bool lilo_load(void)
 	}
 
 	/* Check the kernel */
-	if (!check_kernel()) {
+	if (!check_kernel(kernel, ramdisk, ramdisk_length)) {
 		Log_AlertDlg(LOG_FATAL, "LILO: error setting up kernel!");
 	}
-	/* Kernel and ramdisk copied in Atari RAM, we can free it */
-	lilo_cleanup();
+
+	/* Kernel and ramdisk copied in Atari RAM, we can free them */
+	if (ramdisk != NULL) {
+		free(ramdisk);
+	}
+	free(kernel);
 	return true;
 }
 
@@ -471,11 +444,24 @@ static void *load_file(const char *filename, uint32_t *length)
 }
 
 /**
+ * Add bootinfo chunk
+ */
+static void add_chunk(uint32_t start, uint32_t size)
+{
+	size = (size) & ~(GRANULARITY-1);
+	if (size > 0) {
+		bi.memory[bi.num_memory].addr = SDL_SwapBE32(start);
+		bi.memory[bi.num_memory].size = SDL_SwapBE32(size);
+		bi.num_memory++;
+	}
+}
+
+/**
  * Load given kernel code and ramdisk to suitable memory area,
  * and update bootinfo accordingly.
  * Return true for success
  */
-static bool check_kernel(void)
+static bool check_kernel(void *kernel, void *ramdisk, uint32_t ramdisk_len)
 {
 	/* map Hatari variables to Aranym code */
 	const uint32_t RAMSize = 1024 * ConfigureParams.Memory.STRamSize_KB;
@@ -497,6 +483,10 @@ static bool check_kernel(void)
 	Elf32_Addr kernel_offset;
 	const char *kname, *kernel_name = "vmlinux";
 	int i;
+
+	bi_size = 0;
+	bi.ramdisk.addr = 0;
+	bi.ramdisk.size = 0;
 
 	if (!set_machine_type()) {
 		return false;
@@ -617,7 +607,7 @@ static bool check_kernel(void)
 	}
 
 	/*--- Copy the ramdisk after kernel (and reserved bootinfo) ---*/
-	if (ramdisk && ramdisk_length) {
+	if (ramdisk && ramdisk_len) {
 		Elf32_Addr rd_start;
 		Elf32_Word rd_len;
 		Elf32_Off rd_offset;
@@ -627,7 +617,7 @@ static bool check_kernel(void)
 		} else {
 			rd_offset = 0;
 		}
-		rd_len = ramdisk_length - RAMDISK_FS_START;
+		rd_len = ramdisk_len - RAMDISK_FS_START;
 		if (FastRAMSize > rd_offset + rd_len) {
 			/* Load in FastRAM */
 			rd_start = FastRAMBase + FastRAMSize - rd_len;
@@ -684,12 +674,12 @@ static bool check_kernel(void)
 	bi.num_memory = 0;
 	/* If loading to FastRAM switch the order of ST and Fast RAM */
 	if (!load_to_fastram)
-		ADD_CHUNK(0, RAMSize);
+		add_chunk(0, RAMSize);
 	if (FastRAMSize > 0) {
-		ADD_CHUNK(FastRAMBase, FastRAMSize);
+		add_chunk(FastRAMBase, FastRAMSize);
 	}
 	if (load_to_fastram) {
-		ADD_CHUNK(0, RAMSize);
+		add_chunk(0, RAMSize);
 	}
 	bi.num_memory = SDL_SwapBE32(bi.num_memory);
 
