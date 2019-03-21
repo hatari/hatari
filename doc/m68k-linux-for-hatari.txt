@@ -1,0 +1,307 @@
+Contents:
+
+1. Introduction
+1.1 Bugs / TODOs
+2. Building m68k kernel
+3. Building root file system
+3.1 As EXT2 HD image, from BusyBox
+3.2 As EXT2 HD image, from klibc utils
+4. Building initrd
+5. Running Hatari
+6. Native bootstrap
+
+
+1. Introduction
+---------------
+
+Here are instructions on building m68k:
+- kernel
+- ramdisk
+- root file system
+
+And using them with Hatari.
+
+Build instructions are for Debian as that's the only Linux distribution
+still building latest SW package versions for m68k, in ports:
+	http://ftp.ports.debian.org/debian-ports/pool-m68k/main/
+
+But m68k gcc is available also on other distributions, along with
+tools for building the images (from packages in Debian ports).
+
+NOTE: "wget" examples don't give exact package names because their
+versions change frequently. Replace "*" in those file names with
+the version available in the given remote directory!
+
+
+1.1 Bugs / TODOs
+----------------
+
+Hatari issues:
+- Debugger disassembly and memdumps show all memory content to be
+  zeroes when --lilo option is used => if you need to debug something,
+  use "Native bootstrap" method instead
+- Hatari NVRAM code doesn't handle all registers used by Linux
+  (see: --trace nvram --log-level debug)
+- Hatari debug output shows lot of IDE and DSP reset messages from
+  Falcon PSG port-A handling (see: --log-level debug).  Is this issue
+  in Hatari or Linux register handling?
+
+Linux kernel issues:
+- Kernel freezes during booting with TT (also on real HW).  With kernel
+  interrupt debugging, there are just constant warnings about
+  "unexpected interupt from <104|112>".  Booting Falcon and even
+  ST or STE (with suitable CPU) works just fine though
+- Kernel freezes right at start if Falcon is used with something else
+  than 030 whereas ST/STE work fine with 030/040/060 + MMU + FPU
+- Kernel barfs at ST-RAM memory range given after TT-RAM.  However,
+  if kernel is loaded to TT-RAM and ST-RAM range is given before
+  TT-RAM range, kernel crashes
+- Kernel oopses at startup to NULL pointer access with some configs
+- Even with the supplied kernel.config, there are also sometimes Oopses
+  on boot:
+----------------------
+Data read fault at 0x4878ffff in Super Data (pc=0x294c)
+BAD KERNEL BUSERR
+Oops: 00000000
+PC: [<0000294c>] user_inthandler+0x0/0x20
+----------------------
+
+Debian issues:
+- Debian provided kernels and initrd files don't boot succesfully in
+  Hatari
+
+
+2. Building m68k kernel
+-----------------------
+
+1. Install compiler:
+   $ apt install gcc-m68k-linux-gnu
+
+2. Get v5.0 m68k kernel sources (without history):
+   $ git clone --depth 1 --branch m68k-v5.0 \
+     git://git.kernel.org/pub/scm/linux/kernel/git/geert/linux-m68k.git
+
+3. Get Hatari compatible configuration:
+   $ cd linux-m68k
+   $ cp /path/to/hatari/tools/linux/kernel.config .config
+
+4. Fine-tune kernel config for your requirements (optional):
+   $ ARCH=m68k CROSS_COMPILE=m68k-linux-gnu- make -j4 menuconfig
+
+4. Compile configured kernel:
+   $ ARCH=m68k CROSS_COMPILE=m68k-linux-gnu- make -j4 vmlinux
+
+Notes:
+
+- Normal Linux builds require 030 (or better) with MMU and FPU
+  (only uCLinux would work on 68000 without MMU)
+
+- Using included kernel.config file as-is builds non-modular kernel
+  that includes all relevant features for mounting root fs directly.
+  It saves bootup time compared to using initramfs for loading the
+  needed external modules
+
+- Bootup works faster when kernel is uncompressed, as uncompression
+  would happen in emulated code => don't compress kernel
+
+
+3. Building root file system
+----------------------------
+
+This is common part for both examples below (if you already have
+a directory named disk/, rename it, or use another name).
+
+1. Create root file system directories:
+   $ mkdir disk
+   $ cd disk
+   $ mkdir dev etc mnt proc run sys tmp
+
+2. Add minimal init script for mounting virtual file systems
+   before starting shell:
+   $ cp -a /path/to/hatari/tools/linux/init.sh init
+
+
+3.1 As EXT2 HD image, from BusyBox
+----------------------------------
+
+This builds a minimal hard disk root file system with BusyBox.
+
+BusyBox is a multi-call binary, which performs the same job as many
+separate programs, based on the (symlink) name with which it is
+invoked. For more info, see "man busybox" (after installing BusyBox to
+host).
+
+3. Fetch statically linked m68k BusyBox and extract it:
+   $ wget http://ftp.ports.debian.org/debian-ports/pool-m68k/main/b/busybox/busybox-static_*_m68k.deb
+   $ ar x busybox-static_*_m68k.deb
+   $ tar xvf data.tar.xz ./bin/busybox
+
+4. Install host BusyBox and add symlinks for the m68k one to bin/
+   directory, based on what tools host one lists to be included:
+   $ sudo apt install busybox
+   $ /path/to/hatari/tools/linux/symlink-busybox.sh
+
+5. Cleanup directory content:
+   $ rm *.* debian-binary
+   $ cd ..
+
+6. Make 4MB EXT2 HD image out of it:
+   $ /sbin/mkfs.ext2 -t ext2 -L BUSYBOX -d disk/ rootfs.img 4M
+
+Notes:
+- After qemu-m68k user-space emulation is good enough, installation of
+  host BusyBox can be skipped and m68k BusyBox can itself be queried
+  for list of tools to symlink
+
+
+3.2 As EXT2 HD image, from klibc utils
+--------------------------------------
+
+This builds a minimal hard disk root file system with kernel "libc"
+utilities intended for initramfs.  These utilities are separate
+binaries (not symlinks like with BusyBox) and they're much more
+limited than BusyBox; they lack many of the standard options and shell
+doesn't e.g. have file name completion. In total they take only few
+hundred KB of space though.
+
+3. Fetch klibc library and utility packages:
+   $ wget http://ftp.ports.debian.org/debian-ports/pool-m68k/main/k/klibc/libklibc_*_m68k.deb
+   $ wget http://ftp.ports.debian.org/debian-ports/pool-m68k/main/k/klibc/klibc-utils_*_m68k.deb
+
+4. Extract them:
+   $ ar x libklibc_*_m68k.deb
+   $ tar xvf data.tar.xz
+   $ ar x klibc-utils_*_m68k.deb
+   $ tar xvf data.tar.xz
+
+5. Move utilities to bin/ and clean directory:
+   $ mv usr/lib/klibc/bin/ .
+   $ rm -r *.* debian-binary usr/
+   $ cd ..
+
+6. Make 4MB EXT2 HD image out of it:
+   $ /sbin/mkfs.ext2 -t ext2 -L KLIBC -d disk/ rootfs.img 4M
+
+Notes:
+- these utilities would fit even to a floppy image:
+	$ zip2st disk/ klibc.st
+  But FAT file system cannot be used for Linux root fs because it's
+  lacking security features required from one
+
+
+3. Building initrd
+------------------
+
+After creating either of above root file systems, you use same
+content also to create an example initrd / initramfs.
+
+7. Package directory content with cpio and compress it with LZO:
+   $ cd disk/
+   $ find | cpio -R 0:0 -H newc --create | lzop -9 > ../initrd.img
+
+Notes:
+
+- *Initrd is unnecessary* when kernel has everything needed for
+  mounting the real root file system built-in, like is the case *with
+  the provided kernel.config*.  Initrd is required only if you e.g.
+  need to enter password to decrypt the disk or load additional kernel
+  module(s) before mounting the file system.
+
+- Initrd resides in / uses RAM, so you're better of mounting the real
+  root fs directly.  if you're tight on memory, but still need initrd,
+  minimize its size and make sure kernel can free it after pivoting
+  to real root fs.
+
+- Kernel will need to extract initrd contents from CPIO archive loaded
+  to RAM.  Archive is freed after extraction, but before that a
+  significant amount of extra RAM is needed for it.
+
+- Kernel can handle both compressed and uncompressed initrd.
+  Compressed initrd takes less RAM during CIO archive extraction, but
+  its decompression slows boot significantly.
+
+- Above used LZO compression provides faster decompression speed,
+  gzip/deflate better compression ratio.  Both are enabled in included
+  kernel.config. One can enable from kernel config extra compression
+  algoritms with better compression ratios, but they are significantly
+  slower.
+
+
+5. Running Hatari
+-----------------
+
+1. <Set suitable options in lilo.cfg>
+
+2. Start Hatari:
+    $ hatari --trace nvram --log-level debug \
+      --fast-forward on --fastfdc on --timer-d on \
+      --machine falcon --dsp dummy --fpu 68882 \
+      --mmu on -s 14 --ttram 64 --addr24 off \
+      -c lilo.cfg --natfeats on \
+
+2a) with root fs on disk:
+      --ide-master rootfs.img \
+      --lilo "debug=nfcon root=/dev/hda ro init=/init"
+
+2b) with root fs being initrd specified in lilo.cfg:
+      --lilo "debug=nfcon root=/dev/ram ro init=/init"
+
+
+Options explanation (these can be also in lilo.cfg):
+- video=atafb:sthigh -- frame buffer starts in ST-high
+- console=tty -- console output goes to frame buffer
+- debug=nfcon -- kernel debug messages go to Hatari console
+- root=<device> -- what device is used for mounting root file system
+- ro -- mount it read-only
+- init=<path> -- run given executable as first process
+
+Other notes:
+- Current (v4/v5) Linux kernels don't work with TT,
+  only with 030 Falcon (and 030/040/060 ST/STE)
+- Put "init=" last on kernel command line, otherwise kernel
+  may give arguments after it also to init
+
+
+6. Native bootstrap
+-------------------
+
+Real HW doesn't have LILO, so a separate bootstrap program is needed
+for loading kernel into RAM and executing it from there. Following
+shows easiest method to simulate that with Hatari.
+
+1. Get bootstrap program:
+   $ mkdir gemdos-hd
+   $ cd gemdos-hd
+   $ wget https://people.debian.org/~wouter/d-i/images/20130502-06:51/tools/atari/bootstra.tos
+
+2. Tell bootstrap program to load kernel to ST-RAM and whole command line to give to kernel:
+   $ echo "-s -d -k vmlinux root=/dev/hda ro debug=nfcon video=atafb:sthigh console=tty init=/init" > bootargs
+   $ cd ..
+
+3. Get kernel to bootstrap:
+   $ cp /path/to/m68k-kernel/vmlinux gemdos-hd/
+
+4. If you don't have a TOS ROM image, get latest EmuTOS release:
+     https://sourceforge.net/projects/emutos/files/emutos/0.9.10/emutos-512k-0.9.10.zip/download
+   and extract it:
+   $ unzip emutos-512k-0.9.10.zip
+
+5. Run Hatari with them:
+   $ hatari --trace os_base --log-level debug \
+      --tos emutos-512k-0.9.10/etos512.img \
+      --fast-forward on --fastfdc on --timer-d on \
+      --machine falcon --dsp dummy --fpu 68882 \
+      --mmu on -s 14 --ttram 64 --addr24 off \
+      --natfeats on --ide-master bb-rootfs.img \
+      gemdos-hd/bootstra.tos
+
+Hatari notes:
+- Because GEMDOS HD is specific to TOS, it's not accessible from Linux
+- Because TOS doesn't have driver for the Linux disk, and GEMDOS HD
+  is assigned to C:, IDE content isn't accessible from TOS
+
+On real HW:
+- Linux rootfs would be put to a partition (e.g. "hda2"),
+  it wouldn't start from IDE drive first sector ("hda")
+- NatFeats is not available, so debug option can be removed,
+  or debug device set to more suitable one (e.g. serial)
