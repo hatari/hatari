@@ -200,6 +200,7 @@ bool INF_SetAutoStart(const char *name, int opt_id)
 			/* NOT OK: A:DIR\NAME.PRG */
 			if (ptr)
 			{
+				Log_Printf(LOG_WARN, "rejecting auto-start path that doesn't have '\\' after drive ID:\n\t%s\n", name);
 				free(prgname);
 				return false;
 			}
@@ -215,6 +216,7 @@ bool INF_SetAutoStart(const char *name, int opt_id)
 	else if (strchr(name, '\\'))
 	{
 		/* partial path not accepted */
+		Log_Printf(LOG_WARN, "rejecting auto-start path starting with '\\', but without drive ID:\n\t%s\n", name);
 		return false;
 	}
 	else
@@ -706,6 +708,7 @@ static FILE* write_inf_file(const char *contents, int size, int res, int res_col
 #else
 # if INF_DEBUG
 	{
+		/* insecure file path + leaving it behind for debugging */
 		const char *debugfile = "/tmp/hatari-desktop-inf.txt";
 		fprintf(stderr, "Virtual INF file: '%s'\n", debugfile);
 		fp = fopen(debugfile, "w+b");
