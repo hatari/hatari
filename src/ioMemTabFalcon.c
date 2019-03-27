@@ -178,9 +178,9 @@ static void IoMemTabFalcon_BusCtrl_ReadByte(void)
  * Logic is inverted, i.e. connected means the corresponding bit is 0.
  * Switch 8 is represented by the highest bit in the register.
  */
-static void IoMemTabFalc_Switches_ReadByte(void)
+Uint8 IoMemTabFalcon_DIPSwitches_Read(void)
 {
-	IoMem_WriteByte(0xff9200, 0xbf);
+	return 0xbf;
 }
 
 
@@ -402,8 +402,7 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 
 	{ 0xff8c80, 8, SCC_IoMem_ReadByte, SCC_IoMem_WriteByte },                         /* SCC */
 
-	{ 0xff9200, SIZE_BYTE, IoMemTabFalc_Switches_ReadByte, IoMem_WriteWithoutInterception }, /* Falcon switches */
-	{ 0xff9201, SIZE_BYTE, Joy_StePadButtons_ReadByte, IoMem_WriteWithoutInterception }, /* Joypad fire buttons */
+	{ 0xff9200, SIZE_WORD, Joy_StePadButtons_DIPSwitches_ReadWord, Joy_StePadButtons_DIPSwitches_WriteWord },    /* Joypad fire buttons + Falcon DIP Switches */
 	{ 0xff9202, SIZE_WORD, Joy_StePadMulti_ReadWord, Joy_StePadMulti_WriteWord },     /* Joypad directions/buttons/selection */
 	{ 0xff9210, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                         /* No bus error here */
 	{ 0xff9211, SIZE_BYTE, IoMem_VoidRead, IoMem_WriteWithoutInterception },          /* Joypad 0 X position (?) */

@@ -58,6 +58,26 @@ void IoMemTabMegaSTE_CacheCpuCtrl_WriteByte(void)
 }
 
 
+/**
+ * The register at $FF9200.b represents the DIP switches from the
+ * MegaSTE motherboard. The meaning of the switches is as follows:
+ *
+ *   1 - 6  off
+ *   7      on = 1.4mb HD floppy drive fitted
+ *   8      off (on = disable the DMA sound hardware)
+ *
+ * Switch 1 is represented by the lowest bit in the $FF9200 register,
+ * and switch 8 is represented by the highest bit. Logic is inverted,
+ * i.e. when the switch is "on", the bit is 0.
+ * We set the value to 0xBF to enable an HD floppy drive bedefault (earliest MegaSTE produced had
+ * a DD floppy drive, but later it was replaced by an HD drive)
+ */
+Uint8 IoMemTabMegaSTE_DIPSwitches_Read(void)
+{
+	return 0xbf;
+}
+
+
 /*-----------------------------------------------------------------------*/
 /*
   List of functions to handle read/write hardware interceptions for a STE.
@@ -182,7 +202,7 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_STE[] =
 	{ 0xff8a3e, SIZE_WORD, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 
 	{ 0xff9000, SIZE_WORD, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
-	{ 0xff9201, SIZE_BYTE, Joy_StePadButtons_ReadByte, IoMem_WriteWithoutInterception },    /* Joypad fire buttons */
+	{ 0xff9200, SIZE_WORD, Joy_StePadButtons_DIPSwitches_ReadWord, Joy_StePadButtons_DIPSwitches_WriteWord },    /* Joypad fire buttons + MegaSTE DIP Switches */
 	{ 0xff9202, SIZE_WORD, Joy_StePadMulti_ReadWord, Joy_StePadMulti_WriteWord },           /* Joypad directions/buttons/selection */
 	{ 0xff9211, SIZE_BYTE, IoMem_VoidRead, IoMem_WriteWithoutInterception }, /* Joypad 0 X position (?) */
 	{ 0xff9213, SIZE_BYTE, IoMem_VoidRead, IoMem_WriteWithoutInterception }, /* Joypad 0 Y position (?) */

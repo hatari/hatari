@@ -433,6 +433,11 @@ static inline bool Config_IsMachineSTE(void)
 	       ConfigureParams.System.nMachineType == MACHINE_MEGA_STE;
 }
 
+static inline bool Config_IsMachineMegaSTE(void)
+{
+	return ConfigureParams.System.nMachineType == MACHINE_MEGA_STE;
+}
+
 static inline bool Config_IsMachineTT(void)
 {
 	return ConfigureParams.System.nMachineType == MACHINE_TT;

@@ -519,11 +519,24 @@ bool Joy_KeyUp(int symkey, int modkey)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Read from STE joypad buttons register (0xff9201)
+ * Read from STE / Falcon joypad buttons register (0xff9200)
+ * - On MegaSTE and Falcon, the byte at $ff9200 also contains the state of the 8 DIP switches
+ *   available on the motherboard
+ * - Note that on STE/MegaSTE $ff9200 can only be accessed as word, not byte. $ff9201 can be
+ *   accessed as byte
  */
-void Joy_StePadButtons_ReadByte(void)
+void Joy_StePadButtons_DIPSwitches_ReadWord(void)
 {
-	Uint8 nData = 0xff;
+	Uint16 nData = 0xff;
+	Uint8 DIP;
+
+	if ( !Config_IsMachineFalcon()
+	  && ( nIoMemAccessSize == SIZE_BYTE ) && ( IoAccessCurrentAddress == 0xff9200 ) )
+	{
+		/* This register does not like to be accessed in byte mode at $ff9200 */
+		M68000_BusError(IoAccessFullAddress, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
+		return;
+	}
 
 	if (ConfigureParams.Joysticks.Joy[JOYID_STEPADA].nJoystickMode != JOYSTICK_DISABLED
 	    && (nSteJoySelect & 0x0f) != 0x0f)
@@ -581,8 +594,35 @@ void Joy_StePadButtons_ReadByte(void)
 		}
 	}
 
-	Dprintf(("0xff9201 -> 0x%04x\n", nData));
-	IoMem_WriteByte(0xff9201, nData);
+	/* On MegaSTE and Falcon, add the state of the 8 DIP Switches in upper byte */
+	if ( Config_IsMachineMegaSTE() )
+		DIP = IoMemTabMegaSTE_DIPSwitches_Read();
+	else if ( Config_IsMachineFalcon() )
+		DIP = IoMemTabFalcon_DIPSwitches_Read();
+	else
+		DIP = 0xff;				/* STE, No DIP switches */
+	nData |= ( DIP << 8 );
+
+	Dprintf(("0xff9200 -> 0x%04x\n", nData));
+	IoMem_WriteWord(0xff9200, nData);
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Write to STE / Falcon joypad buttons register (0xff9200)
+ * This does nothing, but we still check that $ff9200 is not accessed as byte
+ * on STE/MegaSTE, else we trigger a bus error
+ */
+void Joy_StePadButtons_DIPSwitches_WriteWord(void)
+{
+	if ( !Config_IsMachineFalcon()
+	  && ( nIoMemAccessSize == SIZE_BYTE ) && ( IoAccessCurrentAddress == 0xff9200 ) )
+	{
+		/* This register does not like to be accessed in byte mode at $ff9200 */
+		M68000_BusError(IoAccessFullAddress, BUS_ERROR_WRITE, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
+		return;
+	}
 }
 
 

@@ -46,7 +46,7 @@ const char IoMemTabTT_fileid[] = "Hatari ioMemTabTT.c : " __DATE__ " " __TIME__;
  *   1      off (on = CaTTamaran installed, not an official setting)
  *   2 - 6  off
  *   7      on = 1.4mb HD floppy drive fitted
- *   8      off (on = Disables the DMA sound hardware)
+ *   8      off (on = disable the DMA sound hardware)
  *
  * Switch 1 is represented by the lowest bit in the $FF9200 register,
  * and switch 8 is represented by the highest bit. Logic is inverted,

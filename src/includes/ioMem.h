@@ -101,6 +101,10 @@ static inline void IoMem_WriteByte(Uint32 Address, Uint8 Var)
 extern void IoMem_Init(void);
 extern void IoMem_UnInit(void);
 extern void IoMem_Reset(void);
+
+extern Uint8 IoMemTabMegaSTE_DIPSwitches_Read(void);
+
+extern Uint8 IoMemTabFalcon_DIPSwitches_Read(void);
 extern void IoMem_SetFalconBusMode(enum FALCON_BUS_MODE mode);
 extern bool IoMem_IsFalconBusMode(void);
 
