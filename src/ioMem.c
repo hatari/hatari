@@ -267,26 +267,21 @@ void IoMem_Init(void)
 	switch (ConfigureParams.System.nMachineType)
 	{
 	 case MACHINE_ST:
-		IoMem_FixVoidAccessForST();
 		pInterceptAccessFuncs = IoMemTable_ST;
 		break;
 	 case MACHINE_MEGA_ST:
-		IoMem_FixVoidAccessForMegaST();
 		pInterceptAccessFuncs = IoMemTable_ST;
 		break;
 	 case MACHINE_STE:
 		pInterceptAccessFuncs = IoMemTable_STE;
 		break;
 	 case MACHINE_MEGA_STE:
-		IoMem_FixAccessForMegaSTE();
 		pInterceptAccessFuncs = IoMemTable_STE;
 		break;
 	 case MACHINE_TT:
 		pInterceptAccessFuncs = IoMemTable_TT;
 		break;
 	 case MACHINE_FALCON:
-		if (falconBusMode == STE_BUS_COMPATIBLE)
-			IoMem_FixVoidAccessForCompatibleFalcon();
 		pInterceptAccessFuncs = IoMemTable_Falcon;
 		break;
 	 default:
@@ -315,9 +310,23 @@ void IoMem_Init(void)
 		}
 	}
 
-	/* Set registers for Falcon DSP emulation */
+	/* After the IO access handlers were set, some machines with common IoMemTable_xxx */
+	/* will require some extra changes (eg: ST vs MegaST, STE ve MegaSTE) */
+	if ( ConfigureParams.System.nMachineType == MACHINE_ST )
+		IoMem_FixVoidAccessForST();
+	else if ( ConfigureParams.System.nMachineType == MACHINE_MEGA_ST )
+		IoMem_FixVoidAccessForMegaST();
+	else if ( ConfigureParams.System.nMachineType == MACHINE_MEGA_STE )
+		IoMem_FixAccessForMegaSTE();
+
+
+	/* Set registers for Falcon */
 	if (Config_IsMachineFalcon())
 	{
+		if (falconBusMode == STE_BUS_COMPATIBLE)
+			IoMem_FixVoidAccessForCompatibleFalcon();
+
+		/* Set registers for Falcon DSP emulation */
 		switch (ConfigureParams.System.nDSPType)
 		{
 #if ENABLE_DSP_EMU
