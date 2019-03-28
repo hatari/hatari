@@ -76,7 +76,9 @@ extern void	FDC_Drive_Set_NumberOfHeads ( int Drive , int NbrHeads );
 extern void	FDC_InsertFloppy ( int Drive );
 extern void	FDC_EjectFloppy ( int Drive );
 extern void	FDC_SetDriveSide ( Uint8 io_porta_old , Uint8 io_porta_new );
-extern int	FDC_GetBytesPerTrack ( int Drive );
+extern int	FDC_GetBytesPerTrack ( Uint8 Drive , Uint8 Track , Uint8 Side );
+extern int	FDC_GetFloppyDensity ( Uint8 Drive );
+extern int	FDC_MachineHandleDensity ( Uint8 Drive );
 
 extern int	FDC_IndexPulse_GetCurrentPos_FdcCycles ( Uint32 *pFdcCyclesPerRev );
 extern int	FDC_IndexPulse_GetCurrentPos_NbBytes ( void );
@@ -108,7 +110,7 @@ extern void	FDC_DmaAddress_WriteByte ( void );
 extern Uint32	FDC_GetDMAAddress ( void );
 extern void	FDC_WriteDMAAddress ( Uint32 Address );
 
-extern void	FDC_FloppyMode_ReadByte ( void );
-extern void	FDC_FloppyMode_WriteByte ( void );
+extern void	FDC_DensityMode_WriteWord ( void );
+extern void	FDC_DensityMode_ReadWord ( void );
 
 #endif /* ifndef HATARI_FDC_H */

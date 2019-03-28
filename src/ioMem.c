@@ -40,6 +40,7 @@ const char IoMem_fileid[] = "Hatari ioMem.c : " __DATE__ " " __TIME__;
 #include "newcpu.h"
 #include "log.h"
 #include "scc.h"
+#include "fdc.h"
 
 
 static void (*pInterceptReadTable[0x8000])(void);	/* Table with read access handlers */
@@ -213,6 +214,14 @@ static void IoMem_FixAccessForMegaSTE(void)
 	{
 		pInterceptReadTable[addr - 0xff8000] = SCC_IoMem_ReadByte;
 		pInterceptWriteTable[addr - 0xff8000] = SCC_IoMem_WriteByte;
+	}
+
+	/* The Mega-STE can choose between DD and HD mode when reading floppy */
+	/* This uses word register at 0xff860e */
+	for (addr = 0xff860e; addr <= 0xff860f; addr++)
+	{
+		pInterceptReadTable[addr - 0xff8000] = FDC_DensityMode_ReadWord;
+		pInterceptWriteTable[addr - 0xff8000] = FDC_DensityMode_WriteWord;
 	}
 }
 

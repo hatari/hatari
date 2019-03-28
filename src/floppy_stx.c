@@ -1459,11 +1459,15 @@ static STX_SECTOR_STRUCT	*STX_FindSector_By_Position ( Uint8 Drive , Uint8 Track
 
 /*-----------------------------------------------------------------------*/
 /**
- * Return the number of FDC cycles to go from one index pulse to the next
- * one on a given drive/track/side.
- * We take the TrackSize into account to return this delay.
+ * Return the number of bytes in a raw track
+ * For a DD floppy, tracks will usually have a size of more or less
+ * FDC_TRACK_BYTES_STANDARD bytes (depending on the mastering process used
+ * for different protections)
+ * NOTE : Although STX format was supposed to handle only DD floppies, some tools like HxC
+ * allow to convert a HD floppy image to an STX equivalent. In that case
+ * TrackSize will be approximatively 2 x FDC_TRACK_BYTES_STANDARD
  */
-Uint32	FDC_GetCyclesPerRev_FdcCycles_STX ( Uint8 Drive , Uint8 Track , Uint8 Side )
+int	FDC_GetBytesPerTrack_STX ( Uint8 Drive , Uint8 Track , Uint8 Side )
 {
 	STX_TRACK_STRUCT	*pStxTrack;
 	int			TrackSize;
@@ -1480,7 +1484,26 @@ Uint32	FDC_GetCyclesPerRev_FdcCycles_STX ( Uint8 Drive , Uint8 Track , Uint8 Sid
 		TrackSize = pStxTrack->MFMSize;
 
 //fprintf ( stderr , "fdc stx drive=%d track=0x%x side=%d size=%d\n" , Drive , Track, Side , TrackSize );
-	return TrackSize * FDC_DELAY_CYCLE_MFM_BYTE;
+	return TrackSize;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Return the number of FDC cycles to go from one index pulse to the next
+ * one on a given drive/track/side.
+ * We take the TrackSize into account to return this delay.
+ * NOTE : in the case of HD/ED floppies (instead of DD), we must take the density
+ * factor into account (it should take the same time to read a DD track and a HD track
+ * as the drive spins at 300 RPM in both cases)
+ */
+Uint32	FDC_GetCyclesPerRev_FdcCycles_STX ( Uint8 Drive , Uint8 Track , Uint8 Side )
+{
+	int			TrackSize;
+
+	TrackSize = FDC_GetBytesPerTrack_STX ( Drive , Track , Side );
+
+	return TrackSize * FDC_DELAY_CYCLE_MFM_BYTE / FDC_GetFloppyDensity ( Drive );	/* Take density into account for HD/ED floppies */;
 }
 
 
@@ -1519,6 +1542,9 @@ int	FDC_NextSectorID_FdcCycles_STX ( Uint8 Drive , Uint8 NumberOfHeads , Uint8 T
 		return -1;
 
 	if ( pStxTrack->SectorsCount == 0 )				/* No sector (track image only, or empty / non formatted track) */
+		return -1;
+
+	if ( FDC_MachineHandleDensity ( Drive ) == false )		/* Can't handle the floppy's density */
 		return -1;
 
 	/* Compare CurrentPos_FdcCycles with each sector's position in ascending order */
@@ -1918,7 +1944,7 @@ Uint8	FDC_ReadTrack_STX ( Uint8 Drive , Uint8 Track , Uint8 Side )
 	if ( pStxTrack == NULL )					/* Track/Side don't exist in this STX image */
 	{
 		Log_Printf ( LOG_WARN , "fdc stx : track info not found for read track drive=%d track=%d side=%d, returning random bytes\n" , Drive , Track , Side );
- 		for ( i=0 ; i<FDC_GetBytesPerTrack ( Drive ) ; i++ )
+		for ( i=0 ; i<FDC_GetBytesPerTrack_STX ( Drive , Track , Side ) ; i++ )
 			FDC_Buffer_Add ( rand() & 0xff );		/* Fill the track buffer with random bytes */
 		return 0;
 	}
