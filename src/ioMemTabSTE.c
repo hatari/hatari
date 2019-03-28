@@ -69,8 +69,10 @@ void IoMemTabMegaSTE_CacheCpuCtrl_WriteByte(void)
  * Switch 1 is represented by the lowest bit in the $FF9200 register,
  * and switch 8 is represented by the highest bit. Logic is inverted,
  * i.e. when the switch is "on", the bit is 0.
- * We set the value to 0xBF to enable an HD floppy drive bedefault (earliest MegaSTE produced had
- * a DD floppy drive, but later it was replaced by an HD drive)
+ *
+ * We set the value to 0xBF to enable an HD floppy drive by default
+ * (earliest MegaSTE produced had a DD floppy drive, but later
+ * it was replaced by an HD drive)
  */
 Uint8 IoMemTabMegaSTE_DIPSwitches_Read(void)
 {
