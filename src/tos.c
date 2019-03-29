@@ -1192,6 +1192,7 @@ int TOS_InitImage(void)
 
 	if (bUseLilo)
 	{
+		TosSize = 0;
 		/* load linux */
 		if (!lilo_init())
 			return -1;

@@ -1,7 +1,7 @@
 /*
  * Hatari - profilecpu.c
  * 
- * Copyright (C) 2010-2015 by Eero Tamminen
+ * Copyright (C) 2010-2019 by Eero Tamminen
  *
  * This file is distributed under the GNU General Public License, version 2
  * or at your option any later version. Read the file gpl.txt for details.
@@ -1209,7 +1209,7 @@ static Uint32 update_area(profile_area_t *area, Uint32 start, Uint32 end)
 	Uint32 addr;
 
 	memset(area, 0, sizeof(profile_area_t));
-	area->lowest = cpu_profile.size;
+	area->lowest = end;
 
 	item = &(cpu_profile.data[start]);
 	for (addr = start; addr < end; addr++, item++) {
