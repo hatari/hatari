@@ -55,6 +55,7 @@ typedef struct
 {
   char szCommandLine[256];	/* bootinfo CL_SIZE */
   char szKernelFileName[FILENAME_MAX];
+  char szKernelSymbols[FILENAME_MAX];
   char szRamdiskFileName[FILENAME_MAX];
   bool bRamdiskToFastRam;
   bool bKernelToFastRam;

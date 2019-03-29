@@ -16,6 +16,7 @@
 #include "log.h"
 #include "tos.h"	/* TosAddress */
 #include "stMemory.h"	/* STRam etc */
+#include "symbols.h"
 #include <stdint.h>
 #ifdef HAVE_LIBZ
 # include <zlib.h>
@@ -261,7 +262,8 @@ static uint32_t bi_size;
 
 static bool lilo_load(void);
 static void *load_file(const char *filename, uint32_t *length);
-static bool check_kernel(void *kernel, void *ramdisk, uint32_t ramdisk_len);
+static bool check_kernel(void *kernel, Elf32_Addr *offset,
+			 void *ramdisk, uint32_t ramdisk_len);
 static bool create_bootinfo(void);
 static bool set_machine_type(void);
 static bool add_bi_record(uint16_t tag, uint16_t size, const void *data);
@@ -335,6 +337,10 @@ static bool lilo_load(void)
 	const char *kernel_s  = ConfigureParams.Lilo.szKernelFileName;
 	const char *ramdisk_s = ConfigureParams.Lilo.szRamdiskFileName;
 
+	char *symbols_s = ConfigureParams.Lilo.szKernelSymbols;
+	Elf32_Addr kernel_offset;
+	bool loaded;
+
 	void *kernel, *ramdisk = NULL;
 	uint32_t kernel_length = 0;
 	uint32_t ramdisk_length = 0;
@@ -355,15 +361,24 @@ static bool lilo_load(void)
 	}
 
 	/* Check the kernel */
-	if (!check_kernel(kernel, ramdisk, ramdisk_length)) {
-		Log_AlertDlg(LOG_FATAL, "LILO: error setting up kernel!");
-	}
+	loaded = check_kernel(kernel, &kernel_offset, ramdisk, ramdisk_length);
 
 	/* Kernel and ramdisk copied in Atari RAM, we can free them */
 	if (ramdisk != NULL) {
 		free(ramdisk);
 	}
 	free(kernel);
+
+	if (loaded) {
+		if (strlen(symbols_s) > 0) {
+			char offstr[12];
+			char *cmd[] = { "symbols", symbols_s, offstr, NULL };
+			sprintf(offstr, "0x%x", kernel_offset);
+			Symbols_Command(3, cmd);
+		}
+	} else {
+		Log_AlertDlg(LOG_FATAL, "LILO: error setting up kernel!");
+	}
 	return true;
 }
 
@@ -464,7 +479,8 @@ static void add_chunk(uint32_t start, uint32_t size)
  * and update bootinfo accordingly.
  * Return true for success
  */
-static bool check_kernel(void *kernel, void *ramdisk, uint32_t ramdisk_len)
+static bool check_kernel(void *kernel, Elf32_Addr *kernel_offset,
+			 void *ramdisk, uint32_t ramdisk_len)
 {
 	/* map Hatari variables to Aranym code */
 	const uint32_t RAMSize = 1024 * ConfigureParams.Memory.STRamSize_KB;
@@ -483,7 +499,6 @@ static bool check_kernel(void *kernel, void *ramdisk, uint32_t ramdisk_len)
 	Elf32_Addr min_addr = 0xffffffff, max_addr = 0;
 	Elf32_Addr kernel_size;
 	Elf32_Addr mem_ptr;
-	Elf32_Addr kernel_offset;
 	const char *kname, *kernel_name = "vmlinux";
 	uint32_t *tmp;
 	int i;
@@ -576,10 +591,10 @@ static bool check_kernel(void *kernel, void *ramdisk, uint32_t ramdisk_len)
 		}
 	}
 	if (kernel_to_fastram) {
-		kernel_offset = FastRAMBase;
+		*kernel_offset = FastRAMBase;
 		hostkbase = FastRAMBaseHost;
 	} else {
-		kernel_offset = 0;
+		*kernel_offset = 0;
 		hostkbase = RAMBaseHost;
 	}
 
@@ -605,7 +620,7 @@ static bool check_kernel(void *kernel, void *ramdisk, uint32_t ramdisk_len)
 		       (char *) kexec_elf + segment_offset, segment_length);
 
 		Dprintf(("LILO: Copied segment %d: 0x%08x + 0x%08x to 0x%08x\n",
-			 i, segment_offset, segment_length, kernel_offset + mem_ptr + segment_ptr));
+			 i, segment_offset, segment_length, *kernel_offset + mem_ptr + segment_ptr));
 	}
 
 	/*--- Copy the ramdisk after kernel (and reserved bootinfo) ---*/
@@ -702,7 +717,7 @@ static bool check_kernel(void *kernel, void *ramdisk, uint32_t ramdisk_len)
 
 	/*--- Copy boot info to RAM after kernel ---*/
 	memcpy(hostkbase + KERNEL_START + kernel_size, &bi_union.record, bi_size);
-	Dprintf(("LILO: bootinfo at 0x%08x\n", kernel_offset + KERNEL_START + kernel_size));
+	Dprintf(("LILO: bootinfo at 0x%08x\n", *kernel_offset + KERNEL_START + kernel_size));
 
 #if LILO_DEBUG
 	tmp = (uint32_t *)(hostkbase + KERNEL_START + kernel_size);
@@ -714,13 +729,13 @@ static bool check_kernel(void *kernel, void *ramdisk, uint32_t ramdisk_len)
 
 	/*--- Init SP & PC ---*/
 	tmp = (uint32_t *)RAMBaseHost;
-	tmp[0] = SDL_SwapBE32(kernel_offset + KERNEL_START);	/* SP */
+	tmp[0] = SDL_SwapBE32(*kernel_offset + KERNEL_START);	/* SP */
 	tmp[1] = SDL_SwapBE32(TosAddress);		/* PC = ROMBase */
 	uint8_t *ROMBaseHost = STRam + TosAddress;
-	ROMBaseHost[4] = (kernel_offset + KERNEL_START) >> 24;
-	ROMBaseHost[5] = (kernel_offset + KERNEL_START) >> 16;
-	ROMBaseHost[6] = (kernel_offset + KERNEL_START) >>  8;
-	ROMBaseHost[7] = (kernel_offset + KERNEL_START) & 0xff;
+	ROMBaseHost[4] = (*kernel_offset + KERNEL_START) >> 24;
+	ROMBaseHost[5] = (*kernel_offset + KERNEL_START) >> 16;
+	ROMBaseHost[6] = (*kernel_offset + KERNEL_START) >>  8;
+	ROMBaseHost[7] = (*kernel_offset + KERNEL_START) & 0xff;
 
 	Dprintf(("LILO: OK\n"));
 

@@ -545,6 +545,7 @@ static const struct Config_Tag configs_Lilo[] =
 {
 	{ "Args", String_Tag, ConfigureParams.Lilo.szCommandLine },
 	{ "Kernel", String_Tag, ConfigureParams.Lilo.szKernelFileName },
+	{ "Symbols", String_Tag, ConfigureParams.Lilo.szKernelSymbols },
 	{ "Ramdisk", String_Tag, ConfigureParams.Lilo.szRamdiskFileName },
 	{ "HaltOnReboot", Bool_Tag, &ConfigureParams.Lilo.bHaltOnReboot },
 	{ "KernelToFastRam", Bool_Tag, &ConfigureParams.Lilo.bKernelToFastRam },
@@ -865,6 +866,7 @@ void Configuration_SetDefault(void)
 		"%s%cvmlinuz", Paths_GetDataDir(), PATHSEP);
 	sprintf(ConfigureParams.Lilo.szRamdiskFileName,
 		"%s%cinitrd", Paths_GetDataDir(), PATHSEP);
+	ConfigureParams.Lilo.szKernelSymbols[0] = '\0';
 	ConfigureParams.Lilo.bRamdiskToFastRam = true;
 	ConfigureParams.Lilo.bKernelToFastRam = true;
 	ConfigureParams.Lilo.bHaltOnReboot = true;
@@ -1001,6 +1003,8 @@ void Configuration_Apply(bool bReset)
 		File_MakeAbsoluteName(ConfigureParams.Rom.szCartridgeImageFileName);
 	if (strlen(ConfigureParams.Lilo.szKernelFileName) > 0)
 		File_MakeAbsoluteName(ConfigureParams.Lilo.szKernelFileName);
+	if (strlen(ConfigureParams.Lilo.szKernelSymbols) > 0)
+		File_MakeAbsoluteName(ConfigureParams.Lilo.szKernelSymbols);
 	if (strlen(ConfigureParams.Lilo.szRamdiskFileName) > 0)
 		File_MakeAbsoluteName(ConfigureParams.Lilo.szRamdiskFileName);
 	File_CleanFileName(ConfigureParams.HardDisk.szHardDiskDirectories[0]);
