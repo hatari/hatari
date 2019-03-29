@@ -2672,6 +2672,7 @@ void Disasm_SetCPUType(int CPU, int FPU, bool bMMU)
 	 case 2:  optionCPUTypeMask = MC68020; break;
 	 case 3:  optionCPUTypeMask = MC68030; break;
 	 case 4:  optionCPUTypeMask = MC68040; break;
+	 case 5:  optionCPUTypeMask = MC68060; break; /* special case: 5 => 060 */
 	 default: optionCPUTypeMask = MC68000; break;
 	}
 
