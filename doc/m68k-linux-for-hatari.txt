@@ -9,6 +9,7 @@ Contents:
 4. Building initrd
 5. Running Hatari
 6. Native bootstrap
+7. Debian m68k install
 
 
 1. Introduction
@@ -305,3 +306,48 @@ On real HW:
   it wouldn't start from IDE drive first sector ("hda")
 - NatFeats is not available, so debug option can be removed,
   or debug device set to more suitable one (e.g. serial)
+
+
+7. Debian m68k install
+----------------------
+
+These instructions are for debugging why Linux Debian installer
+freezes in Hatari.
+
+1. Get Debian Stretch install kernel, kernel symbols and initrd:
+   $ wget https://people.debian.org/~glaubitz/debian-installer-m68k/cdrom/vmlinuz-4.9.0-3-m68k
+   $ wget https://people.debian.org/~glaubitz/debian-installer-m68k/cdrom/System.map-4.9.0-3-m68k
+   $ wget https://people.debian.org/~glaubitz/debian-installer-m68k/cdrom/initrd.gz
+
+2. Set these up in lilo.cfg:
+   $ cat > lilo.cfg
+[LILO]
+Kernel = vmlinuz-4.9.0-3-m68k
+Symbols = System.map-4.9.0-3-m68k
+Ramdisk = initrd.gz
+RamdiskToFastRam = TRUE
+KernelToFastRam = FALSE
+Args = video=atafb:sthigh
+^D
+
+3. Get latest ISO image release (checksum files are in same directory):
+    $ wget https://cdimage.debian.org/cdimage/ports/10.0/m68k/iso-cd/debian-10.0-m68k-NETINST-1.iso
+
+4. Try running Hatari with them:
+    $ hatari --trace nvram --log-level debug \
+      --fast-forward on --fastfdc on --timer-d on \
+      --machine falcon --dsp dummy --fpu 68882 \
+      --mmu on -s 14 --ttram 64 --addr24 off \
+      -c lilo.cfg --natfeats on \
+      --ide-master debian-10.0-m68k-NETINST-1.iso \
+      --lilo "debug=nfcon root=/dev/ram init=/init"
+
+2. Convert initrd to a normal EXT2 disk partition, and use fakeroot
+   session to retain file accesses that would require root rights:
+   $ mkdir initrd
+   $ fakeroot /bin/bash
+   # cd initrd
+   # zcat ../initrd.gz | cpio -i
+   # cd ..
+   # /sbin/mkfs.ext2 -t ext2 -L INITRD -d initrd rootfs.img 24M
+   # exit
