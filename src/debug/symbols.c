@@ -850,7 +850,7 @@ static symbol_list_t* symbols_load_ascii(FILE *fp, Uint32 *offsets, Uint32 maxad
 {
 	symbol_list_t *list;
 	char symchar, buffer[128], name[MAX_SYM_SIZE+1], *buf;
-	int count, line, symbols;
+	int count, line, symbols, weak, unknown, invalid;
 	Uint32 address, offset;
 	symtype_t symtype;
 
@@ -887,7 +887,7 @@ static symbol_list_t* symbols_load_ascii(FILE *fp, Uint32 *offsets, Uint32 maxad
 	}
 
 	/* read symbols */
-	count = 0;
+	invalid = unknown = weak = count = 0;
 	for (line = 1; fgets(buffer, sizeof(buffer), fp); line++) {
 		/* skip comments (AHCC SYM file comments start with '*') */
 		if (*buffer == '#' || *buffer == '*') {
@@ -909,6 +909,7 @@ static symbol_list_t* symbols_load_ascii(FILE *fp, Uint32 *offsets, Uint32 maxad
 			offset = offsets[0];
 			break;
 		case 'O':	/* AHCC type for _StkSize etc */
+		case 'R':	/* ELF 'nm' symbol type, read only */
 		case 'D':
 			symtype = SYMTYPE_DATA;
 			offset = offsets[1];
@@ -921,8 +922,12 @@ static symbol_list_t* symbols_load_ascii(FILE *fp, Uint32 *offsets, Uint32 maxad
 			symtype = SYMTYPE_ABS;
 			offset = 0;
 			break;
+		case 'W':	/* ELF 'nm' symbol type, weak */
+			weak++;
+			continue;
 		default:
 			fprintf(stderr, "WARNING: unrecognized symbol type '%c' on line %d, skipping.\n", symchar, line);
+			unknown++;
 			continue;
 		}
 		if (!(gettype & symtype)) {
@@ -931,6 +936,7 @@ static symbol_list_t* symbols_load_ascii(FILE *fp, Uint32 *offsets, Uint32 maxad
 		address += offset;
 		if (address > maxaddr) {
 			fprintf(stderr, "WARNING: invalid address 0x%x on line %d, skipping.\n", address, line);
+			invalid++;
 			continue;
 		}
 		list->names[count].address = address;
@@ -938,6 +944,16 @@ static symbol_list_t* symbols_load_ascii(FILE *fp, Uint32 *offsets, Uint32 maxad
 		list->names[count].name = strdup(name);
 		assert(list->names[count].name);
 		count++;
+	}
+	if (invalid) {
+		fprintf(stderr, "NOTE: ignored %d symbols with invalid addresses.\n", invalid);
+	}
+	if (unknown) {
+		fprintf(stderr, "NOTE: ignored %d symbols with unknown types.\n", unknown);
+	}
+	if (weak) {
+		/* TODO: accept & mark them as weak and silently override them on address conflicts? */
+		fprintf(stderr, "NOTE: ignored %d weak symbols.\n", weak);
 	}
 	list->symbols = symbols;
 	list->namecount = count;
