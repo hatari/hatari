@@ -691,7 +691,7 @@ void Profile_CpuShowCounts(int show, bool only_symbols)
 
 	leave_instruction_column(oldcols);
 
-	printf("addr:\t\tcount:\t\tsymbol:\n");
+	printf("addr:        %%:   count:  symbol:                    disassembly:\n");
 	for (end = sort_arr + active; sort_arr < end; sort_arr++) {
 
 		addr = index2address(*sort_arr);
@@ -701,9 +701,9 @@ void Profile_CpuShowCounts(int show, bool only_symbols)
 		}
 		count = data[*sort_arr].count;
 		percentage = 100.0*count/cpu_profile.all.count;
-		printf("0x%06x\t%5.2f%%\t%d\t%s%s\t",
+		printf("0x%06x %6.2f %8d  %-26s %s",
 		       addr, percentage, count, name,
-		       count == MAX_CPU_PROFILE_VALUE ? " (OVERFLOW)" : "");
+		       count == MAX_CPU_PROFILE_VALUE ? "(OVERFLOW) " : "");
 		Disasm(stdout, addr, &nextpc, 1);
 
 		matched++;
