@@ -923,6 +923,7 @@ static symbol_list_t* symbols_load_ascii(FILE *fp, Uint32 *offsets, Uint32 maxad
 			offset = 0;
 			break;
 		case 'W':	/* ELF 'nm' symbol type, weak */
+		case 'V':
 			weak++;
 			continue;
 		default:
