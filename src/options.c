@@ -2089,14 +2089,14 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			{
 				strcat(ConfigureParams.Lilo.szCommandLine, " ");
 				strcat(ConfigureParams.Lilo.szCommandLine, argv[i]);
-				bLoadAutoSave = false;
-				bUseLilo = true;
-				bUseTos = false;
 			}
-			else
+			else if (argv[i][0])
 			{
 				return Opt_ShowError(OPT_LILO, argv[i], "kernel command line too long");
 			}
+			bLoadAutoSave = false;
+			bUseLilo = true;
+			bUseTos = false;
 			break;
 #endif
 		case OPT_BIOSINTERCEPT:
