@@ -38,11 +38,11 @@ the version available in the given remote directory!
 ----------------
 
 Hatari issues:
-- Debugger disassembly and memdumps show all memory content to be
-  zeroes when --lilo option is used => if you need to debug something,
-  use "Native bootstrap" method instead
-- Hatari NVRAM code doesn't handle all registers used by Linux
-  (see: --trace nvram --log-level debug)
+- LILO reset setup hasn't yet been updated from Aranym's Falcon
+  AfterBurner to normal Falcon (they use different reset addresses)
+- PC address points to ST-RAM in debugger even for emulated Linux
+  code running in TT-RAM, because it's not MMU-translated
+  => ask Linux to be loadded to ST-RAM when debugging/profiling
 - Hatari debug output shows lot of IDE and DSP reset messages from
   Falcon PSG port-A handling (see: --log-level debug).  Is this issue
   in Hatari or Linux register handling?
@@ -248,7 +248,7 @@ Notes:
       --lilo "debug=nfcon root=/dev/ram ro init=/init"
 
 
-Options explanation (these can be also in lilo.cfg):
+Options explanation (these can also be set in lilo.cfg):
 - video=atafb:sthigh -- frame buffer starts in ST-high
 - console=tty -- console output goes to frame buffer
 - debug=nfcon -- kernel debug messages go to Hatari console
