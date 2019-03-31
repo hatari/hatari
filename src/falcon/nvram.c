@@ -7,6 +7,8 @@
   This file is partly based on GPL code taken from the Aranym project.
   - Copyright (c) 2001-2004 Petr Stehlik of ARAnyM dev team
   - Adaption to Hatari (c) 2006 by Thomas Huth
+  - Copyright (c) 2015 Thorsten Otto of ARAnyM dev team
+  - Adaption to Hatari (c) 2019 by Eero Tamminen
 
   Atari TT and Falcon NVRAM/RTC emulation code.
   This is a MC146818A or compatible chip with a non-volatile RAM area.
@@ -15,6 +17,20 @@
 
   Byte:    Description:
 
+    0      Seconds
+    1      Seconds Alarm
+    2      Minutes
+    3      Minutes Alarm
+    4      Hours
+    5      Hours Alarm
+    6      Day of Week
+    7      Date of Month
+    8      Month
+    9      Year
+   10      Control register A
+   11      Control register B
+   12      Status register C
+   13      Status register D
   14-15    Preferred operating system (TOS, Unix)
    20      Language
    21      Keyboard layout
@@ -25,7 +41,7 @@
    30      SCSI-ID in bits 0-2, bus arbitration flag in bit 7 (1=off, 0=on)
   62-63    Checksum
 
-  All other cells are reserved / unused.
+  See: https://www.nxp.com/docs/en/data-sheet/MC146818.pdf
 */
 const char NvRam_fileid[] = "Hatari nvram.c : " __DATE__ " " __TIME__;
 
@@ -37,6 +53,15 @@ const char NvRam_fileid[] = "Hatari nvram.c : " __DATE__ " " __TIME__;
 #include "paths.h"
 #include "vdi.h"
 
+// Defs for NVRAM control register 11 bits
+#define REG_BIT_24H  0x02	/* 24/12h clock, 1=24h */
+#define REG_BIT_DM   0x04	/* data mode: 1=BIN, 0=BCD */
+#define REG_BIT_SQWE 0x08	/* square wave enable, signal to SQW pin */
+#define REG_BIT_SET  0x80	/* suspend RTC updates to set clock values */
+
+// Defs for status register bits
+#define REG_BIT_UIP  0x80	/* update-in-progress */
+#define REG_BIT_VRM  0x80	/* valid RAM and time */
 
 // Defs for checksum
 #define CKS_RANGE_START	14
@@ -47,9 +72,12 @@ const char NvRam_fileid[] = "Hatari nvram.c : " __DATE__ " " __TIME__;
 #define NVRAM_START  14
 #define NVRAM_LEN    50
 
-static Uint8 nvram[64] = { 48,255,21,255,23,255,1,25,3,33,42,14,112,128,
+static Uint8 nvram[64] = {
+	48, 255, 21, 255, 23, 255, 1, 25, 3, 33, /* clock/alarm registers */
+	42, REG_BIT_SQWE|REG_BIT_DM|REG_BIT_24H, 112, REG_BIT_VRM, /* regs A-D */
 	0,0,0,0,0,0,0,0,17,46,32,1,255,0,1,10,135,0,0,0,0,0,0,0,
-	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+};
 
 
 static Uint8 nvram_index;
@@ -265,6 +293,47 @@ void NvRam_Select_WriteByte(void)
 
 
 /*-----------------------------------------------------------------------*/
+
+static struct tm* refreshFrozenTime(bool refresh)
+{
+	static struct tm frozen_time;
+
+	if (refresh)
+	{
+		/* update frozen time */
+		time_t tim = time(NULL);
+		frozen_time = *localtime(&tim);
+	}
+	return &frozen_time;
+}
+
+/**
+ * Returns pointer to "frozen time".  Unless NVRAM SET time bit is set,
+ * that's first refreshed from host clock (= doing "RTC update cycle").
+ * Correct applications have SET bit enabled while they write clock registers.
+ */
+static struct tm* getFrozenTime(void)
+{
+	if (nvram[11] & REG_BIT_SET)
+		return refreshFrozenTime(false);
+	else
+		return refreshFrozenTime(true);
+}
+
+
+/**
+ * If NVRAM data mode bit is set, returns given value,
+ * otherwise returns it as BCD.
+ */
+static Uint8 bin2BCD(Uint8 value)
+{
+	if ((nvram[11] & REG_BIT_DM))
+		return value;
+	return ((value / 10) << 4) | (value % 10);
+}
+
+
+/*-----------------------------------------------------------------------*/
 /**
  * Read from RTC/NVRAM data register ($ff8963)
  */
@@ -272,40 +341,71 @@ void NvRam_Data_ReadByte(void)
 {
 	Uint8 value = 0;
 
-	if (nvram_index == NVRAM_SECONDS || nvram_index == NVRAM_MINUTES || nvram_index == NVRAM_HOURS
-	    || (nvram_index >=NVRAM_DAY && nvram_index <=NVRAM_YEAR) )
+	switch(nvram_index)
 	{
-		/* access to RTC?  - then read host clock and return its values */
-		time_t tim = time(NULL);
-		struct tm *curtim = localtime(&tim);	/* current time */
-		switch(nvram_index)
+	case 1: /* alarm seconds */
+	case 3:	/* alarm minutes */
+	case 5: /* alarm hour */
+		value = bin2BCD(nvram[nvram_index]);
+		break;
+	case 0:
+		value = bin2BCD(getFrozenTime()->tm_sec);
+		break;
+	case 2:
+		value = bin2BCD(getFrozenTime()->tm_min);
+		break;
+	case 4:
+		value = getFrozenTime()->tm_hour;
+		if (!(nvram[11] & REG_BIT_24H))
 		{
-			case NVRAM_SECONDS: value = curtim->tm_sec; break;
-			case NVRAM_MINUTES: value = curtim->tm_min; break;
-			case NVRAM_HOURS: value = curtim->tm_hour; break;
-			case NVRAM_DAY: value = curtim->tm_mday; break;
-			case NVRAM_MONTH: value = curtim->tm_mon+1; break;
-			case NVRAM_YEAR: value = curtim->tm_year - 68; break;
+			Uint8 pmflag = (value == 0 || value >= 13) ? 0x80 : 0;
+			value = value % 12;
+			if (value == 0)
+				value = 12;
+			value = bin2BCD(value) | pmflag;
 		}
-	}
-	else if (nvram_index == 10)
-	{
-		static bool rtc_uip = true;
-		value = rtc_uip ? 0x80 : 0;
-		rtc_uip = !rtc_uip;
-	}
-	else if (nvram_index == 13)
-	{
-		value = 0x80;   // Valid RAM and Time bit
-	}
-	else if (nvram_index < 14)
-	{
-		Log_Printf(LOG_DEBUG, "Read from unsupported RTC/NVRAM register 0x%x.\n", nvram_index);
+		else
+			value = bin2BCD(value);
+		break;
+	case 6:
+		value = bin2BCD(getFrozenTime()->tm_wday + 1);
+		break;
+	case 7:
+		value = bin2BCD(getFrozenTime()->tm_mday);
+		break;
+	case 8:
+		value = bin2BCD(getFrozenTime()->tm_mon + 1);
+		break;
+	case 9:
+		value = bin2BCD(getFrozenTime()->tm_year - 68);
+		break;
+	case 10:
+		/* control reg A (dividers & rate selectors)
+		 * read-only UIP (toggling it is enough to fool programs)
+		 */
+		nvram[nvram_index] ^= REG_BIT_UIP;
 		value = nvram[nvram_index];
-	}
-	else
-	{
+		break;
+	case 11:
+		/* control reg B
+		 * set, interrupt enable, clock mode, daylight savings bits
+		 * writing SET bit aborts/suspends UIP and clears UIP bit
+		 */
+		/* fall-through */
+	case 12:
+		/* status reg C, read-only
+		 * 0xf0 interrupt status bits, 0x0f unused/zero
+		 * register goes to zero after read
+		 */
+		/* fall-through */
+	case 13:
+		/* status reg D, read-only
+		 * Valid RAM and Time bit, rest of bits are zero/unused
+		 */
+		/* fall-through */
+	default:
 		value = nvram[nvram_index];
+		break;
 	}
 
 	LOG_TRACE(TRACE_NVRAM, "NVRAM: read data at %d = %d ($%02x)\n", nvram_index, value, value);
@@ -320,7 +420,30 @@ void NvRam_Data_ReadByte(void)
 
 void NvRam_Data_WriteByte(void)
 {
+	const Uint8 mask11 = (Uint8)~(REG_BIT_SET|REG_BIT_SQWE|REG_BIT_DM|REG_BIT_24H);
 	Uint8 value = IoMem_ReadByte(0xff8963);
+	switch (nvram_index)
+	{
+	case 0:
+		/* high-order bit read-only: don't care as we always read from host */
+		break;
+	case 10:
+		/* MASK_BIT_UIP read-only: don't care as we just do dummy toggle on read */
+		break;
+	case 11:
+		if (value & mask11)
+			Log_Printf(LOG_WARN, "Write to unimplemented RTC/NVRAM control register 11 bits 0x%x\n", value & mask11);
+		if (value & REG_BIT_SET)
+			/* refresh clock as its updating is suspended while SET is enabled */
+			refreshFrozenTime(true);
+		break;
+	case 12:
+	case 13:
+		IoMem_WriteByte(0xff8963, nvram[nvram_index]);
+		Log_Printf(LOG_WARN, "Attempt to write %d ($%02x) to read-only RTC/NVRAM register %d!\n",
+			   value, value, nvram_index);
+		return;
+	}
 	LOG_TRACE(TRACE_NVRAM, "NVRAM: write data at %d = %d ($%02x)\n", nvram_index, value, value);
 	nvram[nvram_index] = value;
 }

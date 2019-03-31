@@ -14,7 +14,8 @@
 #define NVRAM_SECONDS	0
 #define NVRAM_MINUTES	2
 #define NVRAM_HOURS	4
-#define NVRAM_DAY	7
+#define NVRAM_WDAY	6
+#define NVRAM_MDAY	7
 #define NVRAM_MONTH	8
 #define NVRAM_YEAR	9
 
