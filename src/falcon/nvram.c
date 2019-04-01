@@ -42,6 +42,13 @@
   62-63    Checksum
 
   See: https://www.nxp.com/docs/en/data-sheet/MC146818.pdf
+
+  Not implemented (as no known use-case):
+  - all alarm handling
+  - doing clock updates at 1Hz
+    (instead of when regs are read)
+  - periodic divisor & rate-control bits
+  - alarm, update-end and periodic interrupt generation
 */
 const char NvRam_fileid[] = "Hatari nvram.c : " __DATE__ " " __TIME__;
 
@@ -53,14 +60,27 @@ const char NvRam_fileid[] = "Hatari nvram.c : " __DATE__ " " __TIME__;
 #include "paths.h"
 #include "vdi.h"
 
-// Defs for NVRAM control register 11 bits
+// Defs for NVRAM control register A (10) bits
+#define REG_BIT_UIP  0x80	/* update-in-progress */
+// and 3 clock divider & 3 rate-control bits
+
+// Defs for NVRAM control register B (11) bits
+#define REG_BIT_DSE  0x01	/* daylight saving enable (ignored) */
 #define REG_BIT_24H  0x02	/* 24/12h clock, 1=24h */
 #define REG_BIT_DM   0x04	/* data mode: 1=BIN, 0=BCD */
 #define REG_BIT_SQWE 0x08	/* square wave enable, signal to SQW pin */
+#define REG_BIT_UIE  0x10	/* update-ended interrupt enable */
+#define REG_BIT_AIE  0x20	/* alarm interrupt enable */
+#define REG_BIT_PIE  0x40	/* periodic interrupt enable */
 #define REG_BIT_SET  0x80	/* suspend RTC updates to set clock values */
 
-// Defs for status register bits
-#define REG_BIT_UIP  0x80	/* update-in-progress */
+// Defs for NVRAM status register C (12) bits
+#define REG_BIT_UF   0x10	/* update-ended interrupt flag */
+#define REG_BIT_AF   0x20	/* alarm interrupt flag */
+#define REG_BIT_PF   0x40	/* periodic interrupt flag */
+#define REG_BIT_IRQF 0x80	/* interrupt request flag */
+
+// Defs for NVRAM status register D (13) bits
 #define REG_BIT_VRM  0x80	/* valid RAM and time */
 
 // Defs for checksum
@@ -74,7 +94,7 @@ const char NvRam_fileid[] = "Hatari nvram.c : " __DATE__ " " __TIME__;
 
 static Uint8 nvram[64] = {
 	48, 255, 21, 255, 23, 255, 1, 25, 3, 33, /* clock/alarm registers */
-	42, REG_BIT_SQWE|REG_BIT_DM|REG_BIT_24H, 112, REG_BIT_VRM, /* regs A-D */
+	42, REG_BIT_DM|REG_BIT_24H, 0, REG_BIT_VRM, /* regs A-D */
 	0,0,0,0,0,0,0,0,17,46,32,1,255,0,1,10,135,0,0,0,0,0,0,0,
 	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 };
@@ -162,6 +182,35 @@ static void NvRam_SetChecksum(void)
 	nvram[NVRAM_CHKSUM2] = sum;
 }
 
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Register C interrupt status flags clearing.
+ *
+ * Flags are cleared both on resets and register C reads.
+ * Because rest of bits are always zero, whole register goes to zero.
+ *
+ * However, because interrupt handling isn't emulated yet
+ * (there isn't even a known Atari use-case for them),
+ * and most of them would occur quickly:
+ * - update-ended interrupt flag is set at 1Hz clock update cycle
+ * - periodic interrupt is set based on divider & rate-control clock rate
+ * - alarm interrupt flag is set when time matches alarm time
+ *   i.e. only once a day
+ */
+static void clear_reg_c(void)
+{
+	/* => set flags for fastest 2 interrupts right away */
+	nvram[12] = REG_BIT_UF|REG_BIT_PF;
+	/* are these interrupts also enable in reg B? */
+	if (nvram[11] & nvram[12])
+	{
+		/* -> set also interrupt request flag */
+		nvram[12] |= REG_BIT_IRQF;
+		/* TODO: generate interrupt */
+	}
+}
+
 /*-----------------------------------------------------------------------*/
 /**
  * NvRam_Reset: Called during init and reset, used for resetting the
@@ -213,6 +262,11 @@ void NvRam_Reset(void)
 		}
 		NvRam_SetChecksum();
 	}
+	/* reset clears SWQE + interrupt enable bits */
+	nvram[11] &= ~(REG_BIT_SQWE|REG_BIT_UIE|REG_BIT_AIE|REG_BIT_PIE);
+	/* and interrupt flag bits */
+	clear_reg_c();
+
 	nvram_index = 0;
 }
 
@@ -380,22 +434,30 @@ void NvRam_Data_ReadByte(void)
 		value = bin2BCD(getFrozenTime()->tm_year - 68);
 		break;
 	case 10:
-		/* control reg A (dividers & rate selectors)
-		 * read-only UIP (toggling it is enough to fool programs)
+		/* control reg A
+		 * read-only UIP bit + clock dividers & rate selectors
+		 *
+		 * UIP is suspended during SET, otherwise
+		 * dummy toggling it is enough to fool programs
 		 */
-		nvram[nvram_index] ^= REG_BIT_UIP;
+		if (nvram[11] & REG_BIT_SET)
+			nvram[nvram_index] &= ~REG_BIT_UIP;
+		else
+			nvram[nvram_index] ^= REG_BIT_UIP;
 		value = nvram[nvram_index];
 		break;
-	case 11:
-		/* control reg B
-		 * set, interrupt enable, clock mode, daylight savings bits
-		 * writing SET bit aborts/suspends UIP and clears UIP bit
-		 */
-		/* fall-through */
 	case 12:
 		/* status reg C, read-only
 		 * 0xf0 interrupt status bits, 0x0f unused/zero
-		 * register goes to zero after read
+		 * register is cleared after read
+		 */
+		value = nvram[nvram_index];
+		clear_reg_c();
+		break;
+	case 11:
+		/* control reg B
+		 * set, interrupt enable, sqw enable, clock mode, daylight savings bits
+		 * writing SET bit aborts/suspends UIP and clears UIP bit
 		 */
 		/* fall-through */
 	case 13:
@@ -420,7 +482,9 @@ void NvRam_Data_ReadByte(void)
 
 void NvRam_Data_WriteByte(void)
 {
-	const Uint8 mask11 = (Uint8)~(REG_BIT_SET|REG_BIT_SQWE|REG_BIT_DM|REG_BIT_24H);
+	/* enable & flag bits in B & C regs match each other -> use same mask for both */
+	const Uint8 int_mask = REG_BIT_UF|REG_BIT_AF|REG_BIT_PF;
+
 	Uint8 value = IoMem_ReadByte(0xff8963);
 	switch (nvram_index)
 	{
@@ -428,19 +492,31 @@ void NvRam_Data_WriteByte(void)
 		/* high-order bit read-only: don't care as we always read from host */
 		break;
 	case 10:
-		/* MASK_BIT_UIP read-only: don't care as we just do dummy toggle on read */
+		/* UIP bit is read-only */
+		value = (value & ~REG_BIT_UIP) | (nvram[10] & REG_BIT_UIP);
 		break;
 	case 11:
-		if (value & mask11)
-			Log_Printf(LOG_WARN, "Write to unimplemented RTC/NVRAM control register 11 bits 0x%x\n", value & mask11);
+		if (value & int_mask)
+		{
+			Log_Printf(LOG_WARN, "Write to unimplemented RTC/NVRAM interrupt enable bits 0x%x\n", value & int_mask);
+			if (nvram[12] & int_mask)
+			{
+				/* reg B enabling bits matched reg C flag bits */
+				nvram[12] |= REG_BIT_IRQF;
+				/* TODO: generate interrupt */
+			}
+			/* TODO: start updating reg C flag bits & generate interrupts when appropriate */
+		}
 		if (value & REG_BIT_SET)
+		{
 			/* refresh clock as its updating is suspended while SET is enabled */
 			refreshFrozenTime(true);
+		}
 		break;
 	case 12:
 	case 13:
 		IoMem_WriteByte(0xff8963, nvram[nvram_index]);
-		Log_Printf(LOG_WARN, "Attempt to write %d ($%02x) to read-only RTC/NVRAM register %d!\n",
+		Log_Printf(LOG_WARN, "Ignored write %d ($%02x) to read-only RTC/NVRAM status register %d!\n",
 			   value, value, nvram_index);
 		return;
 	}
