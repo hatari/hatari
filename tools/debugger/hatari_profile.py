@@ -403,8 +403,8 @@ class ProfileSymbols(Output):
         # TOS:	0xe00000-0xe80000
         self.r_area = re.compile("^([^:]+):[^0]*0x([0-9a-f]+)-0x([0-9a-f]+)$")
         # symbol file format:
-        # [0x]<hex> [tTbBdD] <symbol/objectfile name>
-        self.r_symbol = re.compile("^(0x)?([a-fA-F0-9]+) ([bBdDtT]) ([$]?[-_.a-zA-Z0-9]+)$")
+        # [0x]<hex> [<type>] <symbol/objectfile name>
+        self.r_symbol = re.compile("^(0x)?([a-fA-F0-9]+) ([aAbBdDrRtTvVwW]) ([$]?[-_.a-zA-Z0-9]+)$")
 
     def parse_areas(self, fobj, parsed):
         "parse memory area lines from data and post-process earlier read symbols data"
@@ -458,8 +458,8 @@ class ProfileSymbols(Output):
                      (name.endswith(oldname) or oldname.endswith(name) or
                      name.startswith(oldname) or oldname.startswith(name)))):
                 self.warning("replacing '%s' at 0x%x with '%s'" % (oldname, addr, name))
-            # add previous name as alias for new name
-            aliases[symbols[addr]] = name
+            # add also previous name as alias for new name
+            aliases[symbols[addr]] = addr
         return True
 
     def _clean_aliases(self):
@@ -472,7 +472,7 @@ class ProfileSymbols(Output):
                     continue
                 self.warning("multiple addresses (0x%x & 0x%x) for symbol '%s'" % (addr, self.names[name], name))
                 if addr in self.symbols:
-                    self.warning("0x%x is also address for symbol '%s'" % (addr, self.symbols[addr]))
+                    self.warning("- 0x%x is also address for symbol '%s'" % (addr, self.symbols[addr]))
         for name in to_remove.keys():
             del(self.aliases[name])
 
