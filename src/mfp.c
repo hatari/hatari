@@ -862,8 +862,11 @@ void	MFP_GPIP_Set_Line_Input ( Uint8 LineNr , Uint8 Bit )
 /**
  * Generate Timer A Interrupt when in Event Count mode
  */
-void MFP_TimerA_EventCount_Interrupt(void)
+void MFP_TimerA_EventCount(void)
 {
+	if ( MFP_TACR != 0x08 )				/* Not in event count mode */
+		return;					/* Do nothing */
+
 	if (MFP_TA_MAINCOUNTER == 1)			/* Timer expired? If so, generate interrupt */
 	{
 		MFP_TA_MAINCOUNTER = MFP_TADR;		/* Reload timer from data register */
@@ -888,8 +891,11 @@ void MFP_TimerA_EventCount_Interrupt(void)
 /**
  * Generate Timer B Interrupt when in Event Count mode
  */
-void MFP_TimerB_EventCount_Interrupt ( int Delayed_Cycles )
+void MFP_TimerB_EventCount ( int Delayed_Cycles )
 {
+	if ( MFP_TBCR != 0x08 )				/* Not in event count mode */
+		return;					/* Do nothing */
+
 	LOG_TRACE(TRACE_VIDEO_HBL , "mfp/video timer B new event count %d, delay=%d\n" , MFP_TB_MAINCOUNTER-1 , Delayed_Cycles );
 
 	if (MFP_TB_MAINCOUNTER == 1)			/* Timer expired? If so, generate interrupt */

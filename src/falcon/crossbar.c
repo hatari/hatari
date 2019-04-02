@@ -1540,10 +1540,8 @@ static void Crossbar_Process_DMAPlay_Transfer(void)
 
 		/* Send a TimerA_Int at end of replay buffer if enabled */
 		if (dmaPlay.timerA_int) {
-			if (MFP_TACR == 0x08) {       /* Is timer A in Event Count mode? */
-				MFP_TimerA_EventCount_Interrupt();
-				LOG_TRACE(TRACE_CROSSBAR, "Crossbar : MFP Timer A interrupt from DMA play\n");
-			}
+			MFP_TimerA_EventCount();		/* Update events count / interrupt for timer A if needed */
+			LOG_TRACE(TRACE_CROSSBAR, "Crossbar : MFP Timer A interrupt from DMA play\n");
 		}
 
 		if (dmaPlay.loopMode) {
@@ -1636,8 +1634,7 @@ void Crossbar_SendDataToDmaRecord(Sint16 value)
 
 		/* Send a TimerA_Int at end of record buffer if enabled */
 		if (dmaRecord.timerA_int) {
-			if (MFP_TACR == 0x08)       /* Is timer A in Event Count mode? */
-				MFP_TimerA_EventCount_Interrupt();
+			MFP_TimerA_EventCount();		/* Update events count / interrupt for timer A if needed */
 			LOG_TRACE(TRACE_CROSSBAR, "Crossbar : MFP Timer A interrupt from DMA record\n");
 		}
 

@@ -69,12 +69,7 @@
 
 
 /* MFP Registers */
-extern Uint8 MFP_GPIP;
-extern Uint8 MFP_IERA,MFP_IERB;
-extern Uint8 MFP_IPRA,MFP_IPRB;
-extern Uint8 MFP_TACR,MFP_TBCR;
-extern Uint8 MFP_VR;
-extern bool  MFP_UpdateNeeded;
+extern bool MFP_UpdateNeeded;
 
 extern void MFP_Reset(void);
 extern void MFP_MemorySnapShot_Capture(bool bSave);
@@ -87,8 +82,8 @@ extern void MFP_UpdateIRQ ( Uint64 Event_Time );
 extern void MFP_InputOnChannel ( int Interrupt , int Interrupt_Delayed_Cycles );
 extern void MFP_GPIP_Set_Line_Input ( Uint8 LineNr , Uint8 Bit );
 
-extern void MFP_TimerA_EventCount_Interrupt(void);
-extern void MFP_TimerB_EventCount_Interrupt( int Delayed_Cycles );
+extern void MFP_TimerA_EventCount(void);
+extern void MFP_TimerB_EventCount( int Delayed_Cycles );
 extern void MFP_InterruptHandler_TimerA(void);
 extern void MFP_InterruptHandler_TimerB(void);
 extern void MFP_InterruptHandler_TimerC(void);

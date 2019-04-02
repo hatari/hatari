@@ -3221,10 +3221,9 @@ void Video_InterruptHandler_EndLine(void)
 		/* completed before the point where the end of line signal was generated */
 		/* (in the case of a move.b #8,$fffa1b that would happen 4 cycles */
 		/* before end of line, the interrupt should not be generated) */
-		if ( (MFP_TBCR == 0x08)						/* Is timer in Event Count mode ? */
-			&& ( ( TimerBEventCountCycleStart == -1 )		/* timer B was started during a previous VBL */
-			  || ( TimerBEventCountCycleStart < FrameCycles-PendingCycles ) ) )	/* timer B was started before this possible interrupt */
-			MFP_TimerB_EventCount_Interrupt ( PendingCycles );	/* we have a valid timer B interrupt */
+		if ( ( TimerBEventCountCycleStart == -1 )		/* timer B was started during a previous VBL */
+			  || ( TimerBEventCountCycleStart < FrameCycles-PendingCycles ) )	/* timer B was started before this possible interrupt */
+			MFP_TimerB_EventCount ( PendingCycles );	/* Update events count / interrupt for timer B if needed */
 	}
 }
 
