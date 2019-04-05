@@ -1,15 +1,18 @@
 Contents:
 
 1. Introduction
-1.1 Bugs / TODOs
-2. Building m68k kernel
-3. Building root file system
-3.1 As EXT2 HD image, from BusyBox
-3.2 As EXT2 HD image, from klibc utils
-4. Building initrd
-5. Running Hatari
-6. Native bootstrap
-7. Debian m68k install
+1.1 Notation
+2. Hatari issues
+3. Building m68k kernel
+4. Building root file system
+4.1 As EXT2 HD image, from BusyBox
+4.2 As EXT2 HD image, from klibc utils
+5. Building initrd
+6. Running Hatari
+7. Debugging and profiling
+8. Native bootstrap
+9. Debian m68k install
+10. Debian and Linux issues
 
 
 1. Introduction
@@ -29,50 +32,38 @@ still building latest SW package versions for m68k, in ports:
 But m68k gcc is available also on other distributions, along with
 tools for building the images (from packages in Debian ports).
 
-NOTE: "wget" examples don't give exact package names because their
-versions change frequently. Replace "*" in those file names with
-the version available in the given remote directory!
+
+1.1 Notation
+------------
+
+In examples, different execution environments are indicated by prompts:
+	$ -- shell prompt
+	# -- root shell prompt
+	> -- Hatari debugger prompt
+
+"wget" examples don't give exact package names because versions in
+them change frequently. Replace "*" in those file names with the
+version available in the given remote directory!
 
 
-1.1 Bugs / TODOs
+2. Hatari issues
 ----------------
 
 Hatari issues:
+
 - LILO reset setup hasn't yet been updated from Aranym's Falcon
   AfterBurner to normal Falcon (they use different reset addresses)
+
 - PC address points to ST-RAM in debugger even for emulated Linux
   code running in TT-RAM, because it's not MMU-translated
   => ask Linux to be loadded to ST-RAM when debugging/profiling
+
 - Hatari debug output shows lot of IDE and DSP reset messages from
-  Falcon PSG port-A handling (see: --log-level debug).  Is this issue
-  in Hatari or Linux register handling?
-
-Linux kernel issues:
-- Kernel freezes during booting with TT (also on real HW).  With kernel
-  interrupt debugging, there are just constant warnings about
-  "unexpected interupt from <104|112>".  Booting Falcon and even
-  ST or STE (with suitable CPU) works just fine though
-- Kernel freezes right at start if Falcon is used with something else
-  than 030 whereas ST/STE work fine with 030/040/060 + MMU + FPU
-- Kernel barfs at ST-RAM memory range given after TT-RAM.  However,
-  if kernel is loaded to TT-RAM and ST-RAM range is given before
-  TT-RAM range, kernel crashes
-- Kernel oopses at startup to NULL pointer access with some configs
-- Even with the supplied kernel.config, there are also sometimes Oopses
-  on boot:
-----------------------
-Data read fault at 0x4878ffff in Super Data (pc=0x294c)
-BAD KERNEL BUSERR
-Oops: 00000000
-PC: [<0000294c>] user_inthandler+0x0/0x20
-----------------------
-
-Debian issues:
-- Debian provided kernels and initrd files don't boot succesfully in
-  Hatari
+  Falcon PSG port-A handling (see: --log-level debug).
+  TODO: Is this issue in Hatari or Linux register handling?
 
 
-2. Building m68k kernel
+3. Building m68k kernel
 -----------------------
 
 1. Install compiler:
@@ -94,6 +85,9 @@ Debian issues:
 
 Notes:
 
+- Using "optimize for size" instead of "optimize for performance"
+  is a difference between 3.3MB vs 3.8MB (stripped) kernel image
+
 - Normal Linux builds require 030 (or better) with MMU and FPU
   (only uCLinux would work on 68000 without MMU)
 
@@ -106,7 +100,7 @@ Notes:
   would happen in emulated code => don't compress kernel
 
 
-3. Building root file system
+4. Building root file system
 ----------------------------
 
 This is common part for both examples below (if you already have
@@ -122,7 +116,7 @@ a directory named disk/, rename it, or use another name).
    $ cp -a /path/to/hatari/tools/linux/init.sh init
 
 
-3.1 As EXT2 HD image, from BusyBox
+4.1 As EXT2 HD image, from BusyBox
 ----------------------------------
 
 This builds a minimal hard disk root file system with BusyBox.
@@ -155,7 +149,7 @@ Notes:
   for list of tools to symlink
 
 
-3.2 As EXT2 HD image, from klibc utils
+4.2 As EXT2 HD image, from klibc utils
 --------------------------------------
 
 This builds a minimal hard disk root file system with kernel "libc"
@@ -190,10 +184,10 @@ Notes:
   lacking security features required from one
 
 
-3. Building initrd
+5. Building initrd
 ------------------
 
-After creating either of above root file systems, you use same
+After creating either of above root file systems, you can use the same
 content also to create an example initrd / initramfs.
 
 7. Package directory content with cpio and compress it with LZO:
@@ -202,11 +196,11 @@ content also to create an example initrd / initramfs.
 
 Notes:
 
-- *Initrd is unnecessary* when kernel has everything needed for
-  mounting the real root file system built-in, like is the case *with
-  the provided kernel.config*.  Initrd is required only if you e.g.
-  need to enter password to decrypt the disk or load additional kernel
-  module(s) before mounting the file system.
+- *Initrd is unnecessary* when kernel includes everything needed for
+  mounting the real root file system, like is the case *with the
+  provided kernel.config*.  Initrd is required only if you e.g. need
+  to enter password to decrypt the disk or load additional kernel
+  module(s) before mounting the root file system.
 
 - Initrd resides in / uses RAM, so you're better of mounting the real
   root fs directly.  if you're tight on memory, but still need initrd,
@@ -228,7 +222,7 @@ Notes:
   slower.
 
 
-5. Running Hatari
+6. Running Hatari
 -----------------
 
 1. <Set suitable options in lilo.cfg>
@@ -254,20 +248,22 @@ Options explanation (these can also be set in lilo.cfg):
 - debug=nfcon -- kernel debug messages go to Hatari console
 - root=<device> -- what device is used for mounting root file system
 - ro -- mount it read-only
-- init=<path> -- run given executable as first process
+- init=<path> -- run given executable / script as first process
 
 Other notes:
+- Kernel doesn't need DSP, and avoiding it's emulation with
+  "--dsp dummy" at least doubles "--fast-forward on" speed
 - Current (v4/v5) Linux kernels don't work with TT,
   only with 030 Falcon (and 030/040/060 ST/STE)
 - Put "init=" last on kernel command line, otherwise kernel
   may give arguments after it also to init
 
 
-6. Native bootstrap
+7. Native bootstrap
 -------------------
 
 Real HW doesn't have LILO, so a separate bootstrap program is needed
-for loading kernel into RAM and executing it from there. Following
+for loading the kernel into RAM and executing it from there. Following
 shows easiest method to simulate that with Hatari.
 
 1. Get bootstrap program:
@@ -275,7 +271,8 @@ shows easiest method to simulate that with Hatari.
    $ cd gemdos-hd
    $ wget https://people.debian.org/~wouter/d-i/images/20130502-06:51/tools/atari/bootstra.tos
 
-2. Tell bootstrap program to load kernel to ST-RAM and whole command line to give to kernel:
+2. Tell bootstrap program to load kernel to ST-RAM and whole command
+   line to give to the kernel:
    $ echo "-s -d -k vmlinux root=/dev/hda ro debug=nfcon video=atafb:sthigh console=tty init=/init" > bootargs
    $ cd ..
 
@@ -305,14 +302,91 @@ On real HW:
 - Linux rootfs would be put to a partition (e.g. "hda2"),
   it wouldn't start from IDE drive first sector ("hda")
 - NatFeats is not available, so debug option can be removed,
-  or debug device set to more suitable one (e.g. serial)
+  or debug device set to a more suitable one (e.g. serial)
 
 
-7. Debian m68k install
+8. Debugging and profiling
+--------------------------
+
+There are few ways to investigate what happens at boot:
+- Asking kernel to give debug output for device initializations
+  with "initcall_debug" kernel command line option
+- Tracing kernel function calls with the "trace cpu_symbols"
+  debugger command and the "--trace cpu_symbols" Hatari option
+- Profiling what the kernel does
+
+First two options will give a lot of output so save it also
+to a file:
+	$ hatari ... 2>&1 | tee output.txt
+
+Last two options require symbols file produced during kernel build. If
+that file is listed in lilo.cfg, symbols will be automatically loaded
+before Linux boots.
+
+For now, all debugging and profiling should be done with kernel loaded
+to ST-RAM (see Hatari issues section).  For that, it needs to be <8MB
+uncompressed, otherwise it won't work from ST-RAM.
+
+Related lilo.cfg options are:
+	KernelToFastRam = FALSE
+	Symbols = Symbols.map
+
+To verify that symbols loaded correctly, one can check in debugger
+whether nf_call (NatFeats entry point) looks as expected:
+----------------
+> d nf_call
+$00008230 : 7301      DC.W      $7301
+$00008232 : 4e75      rts
+----------------
+
+
+To profile whole bootup, profiling needs to be enabled right
+from the start, and stopped (e.g. by breakpoint) at appropriate
+point.
+
+This debugger command file does profiling until first brk() syscall
+(i.e. shortly after kernel starts init and that does its first alloc):
+--- profile-boot.ini ---
+profile on
+b pc = sys_brk
+------------------------
+
+Adding that to Hatari options with "--parse profile-boot.ini",
+will start profiling from the very first executed instruction.
+
+After debugger gets invoked on first brk() syscall function call /
+breakpoint, one can save profile with:
+	> profile save profile.txt
+
+Resulting file can be post-processed with:
+	$ hatari_profile -st -a System.map profile.txt
+
+To see how much emulated time the profiled part took and to get lists
+of functions taking most cycles / time, using most instructions and
+being called most.
+
+
+What symbols are in the symbol file dictates what one sees
+with many of the debugger commands.  If one does just tracing
+and profiling, one can reduce symbol warnings from Hatari by
+removing unnecessary symbols from the used symbols file:
+	$ grep ' [tT] ' Symbols.map > code-symbols.map
+
+If one is interested only of e.g. tracing kernel syscalls,
+one should load just those to debugger:
+	$ grep ' [tT] sys_' Symbols.map > syscall-symbols.map
+	...
+	> symbols syscall-symbols.map
+	> trace cpu_symbols
+(System call info is naturally interesting only after user-space
+processes are running & calling them.)
+
+
+9. Debian m68k install
 ----------------------
 
-These instructions are for debugging why Linux Debian installer
-freezes in Hatari.
+These are setup instructions for debugging Debian installer freezes in
+Hatari.
 
 1. Get Debian Stretch install kernel, kernel symbols and initrd:
    $ wget https://people.debian.org/~glaubitz/debian-installer-m68k/cdrom/vmlinuz-4.9.0-3-m68k
@@ -342,8 +416,8 @@ Args = video=atafb:sthigh
       --ide-master debian-10.0-m68k-NETINST-1.iso \
       --lilo "debug=nfcon root=/dev/ram init=/init"
 
-2. Convert initrd to a normal EXT2 disk partition, and use fakeroot
-   session to retain file accesses that would require root rights:
+2. Convert initrd to a normal EXT2 disk partition, and use a fakeroot
+   session to retain file properties requiring root rights:
    $ mkdir initrd
    $ fakeroot /bin/bash
    # cd initrd
@@ -351,3 +425,84 @@ Args = video=atafb:sthigh
    # cd ..
    # /sbin/mkfs.ext2 -t ext2 -L INITRD -d initrd rootfs.img 24M
    # exit
+
+TODO: to be continued
+
+
+10. Debian and Linux issues
+---------------------------
+
+Debian issues:
+
+- Debian provided kernels and initrd files don't boot succesfully in
+  Hatari
+
+Linux kernel issues:
+
+- Kernel freezes during booting with TT (also on real HW).  With kernel
+  interrupt debugging, there are just constant warnings about
+  "unexpected interupt from <104|112>".  Booting Falcon and even
+  ST or STE (with suitable CPU) works just fine though
+
+- Kernel freezes right at start if Falcon is used with something else
+  than 030 whereas ST/STE work fine with 030/040/060 + MMU + FPU
+
+- Kernel barfs at ST-RAM memory range given after TT-RAM.  However,
+  if kernel is loaded to TT-RAM and ST-RAM range is given before
+  TT-RAM range, kernel crashes
+
+- Kernel oopses at startup to NULL pointer access with some configs
+
+- Even with the supplied kernel.config, there are also sometimes Oopses
+  on boot:
+------------------------------------------------------------
+Data read fault at 0x801740c4 in Super Data (pc=0x2918)
+BAD KERNEL BUSERR
+Oops: 00000000
+PC: [<00002918>] auto_inthandler+0x0/0x28
+SR: 2400  SP: (ptrval)  a2: 8017a478
+d0: 00000018    d1: 0000001a    d2: 00000000    d3: 8017a480
+d4: 00000018    d5: 00000054    a0: 8017a480    a1: 8016f84c
+Process exe (pid: 26, task=(ptrval))
+Frame format=B ssw=0345 isc=2f00 isb=48e7 daddr=801740c4 dobuf=80176e58
+baddr=801740c4 dibuf=801740c4 ver=0
+Stack from 00aefff8:
+        02088001 ebf40070
+	Call Trace:
+	Code: 0005 61ff 0002 c912 508f 588f 60a2 0000 <42a7> 4878 ffff
+2f00 48e7 7ce0 200f 0280 ffff e000 2440 2452 e9ef 010a 0032 0440
+------------------------------------------------------------
+
+- If 030 caches are enabled (--cpu-exact on), busybox 'setsid'
+  fails to:
+------------------------------------------------------------
+Run /init as init process
+*** ILLEGAL INSTRUCTION ***   FORMAT=0
+Current process id is 30
+BAD KERNEL TRAP: 00000000
+PC: [<0012fca4>] strncpy_from_user+0x5c/0xe4
+SR: 2200  SP: (ptrval)  a2: 00877700
+d0: 00000000    d1: 2f737973    d2: 00000ff0    d3: 00000ff0
+d4: 00000000    d5: 00000000    a0: 00000ff0    a1: 80155c8c
+Process cttyhack (pid: 30, task=(ptrval))
+Frame format=0
+Stack from 009c1f1c:
+  80155c04 80155c8c 00000000 8017b201 ffffff49 00850000 009c1f60 0009aa56
+  00850010 80155c8c 00000ff0 80155c04 00020000 00000000 efe12d4d 80170f52
+  801712bc 009c1f74 0009ab5a 80155c8c 00000000 00000000 009c1fac 00091098
+  80155c8c 80155c8c 00020000 00000000 8017b201 efe12d4d 80170f52 efe10002
+  00000000 00000004 00000100 00000001 009c1fc4 000911ce ffffff9c 80155c8c
+  00020000 00000000 efe12d68 00002874 ffffff9c 80155c8c 00020000 00000000
+Call Trace: [<0009aa56>] getname_flags+0x42/0x134
+ [<00020000>] _I_CALL_TOP+0xd80/0x1900
+ [<0009ab5a>] getname+0x12/0x18
+ [<00091098>] do_sys_open+0xc2/0x1b0
+ [<00020000>] _I_CALL_TOP+0xd80/0x1900
+ [<000911ce>] sys_openat+0x22/0x26
+ [<00020000>] _I_CALL_TOP+0xd80/0x1900
+ [<00002874>] syscall+0x8/0xc
+ [<00020000>] _I_CALL_TOP+0xd80/0x1900
+Code: 9480 7203 b282 645a 2805 0eb1 1000 0800 <4a84> 664e 2781
+0800 2801 0084 7f7f 7f7f 2c04 4686 2401 0682 fefe feff c486 6748
+Disabling lock debugging due to kernel taint
+------------------------------------------------------------
