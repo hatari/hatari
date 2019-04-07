@@ -372,7 +372,8 @@ static bool lilo_load(void)
 	if (loaded) {
 		if (strlen(symbols_s) > 0) {
 			char offstr[12];
-			char *cmd[] = { "symbols", symbols_s, offstr, NULL };
+			static char symstr[] = "symbols";
+			char *cmd[] = { symstr, symbols_s, offstr, NULL };
 			sprintf(offstr, "0x%x", kernel_offset);
 			Symbols_Command(3, cmd);
 		}
