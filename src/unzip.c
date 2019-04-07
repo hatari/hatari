@@ -20,19 +20,13 @@ const char Unzip_fileid[] = "Hatari unzip.c : " __DATE__ " " __TIME__;
 #include <stddef.h>
 #include <string.h>
 #include <zlib.h>
+#include <errno.h>
 
 #if HAVE_STRINGS_H
 #include <strings.h>
 #endif
 
 #include "unzip.h"
-
-#ifdef NO_ERRNO_H
-    extern int errno;
-#else
-#   include <errno.h>
-#endif
-
 
 #ifndef local
 #  define local static
