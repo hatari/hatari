@@ -49,18 +49,92 @@ version available in the given remote directory!
 2. Hatari issues
 ----------------
 
-Hatari issues:
+- LILO reset code hasn't yet been updated from Aranym's Falcon
+  AfterBurner behavior to normal Falcon (they use different reset
+  addresses), so resets fail with LILO
 
-- LILO reset setup hasn't yet been updated from Aranym's Falcon
-  AfterBurner to normal Falcon (they use different reset addresses)
+- Linux kernel boot under TT emulation hangs early because Hatari does
+  not implement SCU interrupt handling (nor related VME functionality)
+  => workaround: change 0xff8e01 (SCU system interrupt mask) reads in
+     ioMemTabTT.c to give bus errors, so that Linux doesn't use it
 
 - PC address points to ST-RAM in debugger even for emulated Linux
   code running in TT-RAM, because it's not MMU-translated
-  => ask Linux to be loadded to ST-RAM when debugging/profiling
+  => workaround: load Linux to ST-RAM when debugging/profiling
+
+- There are lot of ("--log-level debug" and profiler) warnings about
+  memory accesses to >2GB range when programs do syscalls. An issue
+  with Hatari high address memory setup?
+DEBUG: Your Atari program just did something terribly stupid: dummy_xlate($c00123ee)
 
 - Hatari debug output shows lot of IDE and DSP reset messages from
   Falcon PSG port-A handling (see: --log-level debug).
   TODO: Is this issue in Hatari or Linux register handling?
+
+- TT / SCSI rootfs mount fails after following debug output:
+------------------------------------------------------------
+DEBUG: raw_scsi: selected id 0
+DEBUG: raw_scsi_put_data got message c0 (1/1)
+DEBUG: raw_scsi_put_data got message c0 (1 bytes)
+DEBUG: raw_scsi: got command byte 1a (1/6)
+DEBUG: raw_scsi: got command byte 00 (2/6)
+DEBUG: raw_scsi: got command byte 3f (3/6)
+DEBUG: raw_scsi: got command byte 00 (4/6)
+DEBUG: raw_scsi: got command byte 04 (5/6)
+DEBUG: raw_scsi: got command byte 00 (6/6)
+TODO : HDC: Unsupported MODE SENSE command
+DEBUG: raw_scsi: no data, status = 2
+DEBUG: raw_scsi: status byte read 02. Next=1
+DEBUG: raw_scsi: message byte read 00. Next=1
+DEBUG: raw_scsi: arbitration initiator id 7 (80)
+DEBUG: raw_scsi: arbitration
+DEBUG: raw_scsi: selected id 0
+DEBUG: raw_scsi_put_data got message 80 (1/1)
+DEBUG: raw_scsi_put_data got message 80 (1 bytes)
+DEBUG: raw_scsi: got command byte 03 (1/6)
+DEBUG: raw_scsi: got command byte 00 (2/6)
+DEBUG: raw_scsi: got command byte 00 (3/6)
+DEBUG: raw_scsi: got command byte 00 (4/6)
+DEBUG: raw_scsi: got command byte 60 (5/6)
+DEBUG: raw_scsi: got command byte 00 (6/6)
+WARN : HDC: *** Strange REQUEST SENSE ***!
+DEBUG: raw_scsi: data in 22 bytes waiting
+DEBUG: raw_scsi: data in finished, 22 bytes: status phase
+DEBUG: DMA initiator recv PC=001839da
+DEBUG: SCSI BUS reset
+sd 0:0:0:0: Device offlined - not ready after error recovery
+sd 0:0:0:0: rejecting I/O to offline device
+sd 0:0:0:0: [sda] Write Protect is off
+sd 0:0:0:0: [sda] Mode Sense: 00 00 1f ff
+sd 0:0:0:0: rejecting I/O to offline device
+sd 0:0:0:0: [sda] Asking for cache data failed
+sd 0:0:0:0: [sda] Assuming drive cache: write through
+sd 0:0:0:0: rejecting I/O to offline device
+sd 0:0:0:0: rejecting I/O to offline device
+sd 0:0:0:0: [sda] Attached SCSI disk
+VFS: Cannot open root device "sda" or unknown-block(8,0): error -6
+------------------------------------------------------------
+
+- Even with the supplied kernel.config, there are random Oopses
+  on boot.  According to kernel developer, they don't happen on
+  real HW, so they seem to be Hatari issue:
+------------------------------------------------------------
+Data read fault at 0x801740c4 in Super Data (pc=0x2918)
+BAD KERNEL BUSERR
+Oops: 00000000
+PC: [<00002918>] auto_inthandler+0x0/0x28
+SR: 2400  SP: (ptrval)  a2: 8017a478
+d0: 00000018    d1: 0000001a    d2: 00000000    d3: 8017a480
+d4: 00000018    d5: 00000054    a0: 8017a480    a1: 8016f84c
+Process exe (pid: 26, task=(ptrval))
+Frame format=B ssw=0345 isc=2f00 isb=48e7 daddr=801740c4 dobuf=80176e58
+baddr=801740c4 dibuf=801740c4 ver=0
+Stack from 00aefff8:
+        02088001 ebf40070
+	Call Trace:
+	Code: 0005 61ff 0002 c912 508f 588f 60a2 0000 <42a7> 4878 ffff
+2f00 48e7 7ce0 200f 0280 ffff e000 2440 2452 e9ef 010a 0032 0440
+------------------------------------------------------------
 
 
 3. Building m68k kernel
@@ -286,7 +360,7 @@ shows easiest method to simulate that with Hatari.
 
 5. Run Hatari with them:
    $ hatari --trace os_base --log-level debug \
-      --tos emutos-512k-0.9.10/etos512.img \
+      --tos emutos-512k-0.9.10/etos512k.img \
       --fast-forward on --fastfdc on --timer-d on \
       --machine falcon --dsp dummy --fpu 68882 \
       --mmu on -s 14 --ttram 64 --addr24 off \
@@ -432,46 +506,28 @@ TODO: to be continued
 10. Debian and Linux issues
 ---------------------------
 
-Debian issues:
+Known issues:
+
+- Kernel barfs at ST-RAM memory range given after TT-RAM.  However,
+  if kernel is loaded to TT-RAM and ST-RAM range is given before
+  TT-RAM range, kernel crashes.  Based on mails from 2013, this
+  seems to be a known Linux/Atari issue
+
+
+TODO / investigate more:
+
+- No support for ACSI, only SCSI and IDE?
+
+- Kernel oopses at startup always to NULL pointer access with some
+  configs
 
 - Debian provided kernels and initrd files don't boot succesfully in
   Hatari
 
-Linux kernel issues:
-
-- Kernel freezes during booting with TT (also on real HW).  With kernel
-  interrupt debugging, there are just constant warnings about
-  "unexpected interupt from <104|112>".  Booting Falcon and even
-  ST or STE (with suitable CPU) works just fine though
-
 - Kernel freezes right at start if Falcon is used with something else
-  than 030 whereas ST/STE work fine with 030/040/060 + MMU + FPU
-
-- Kernel barfs at ST-RAM memory range given after TT-RAM.  However,
-  if kernel is loaded to TT-RAM and ST-RAM range is given before
-  TT-RAM range, kernel crashes
-
-- Kernel oopses at startup to NULL pointer access with some configs
-
-- Even with the supplied kernel.config, there are also sometimes Oopses
-  on boot:
-------------------------------------------------------------
-Data read fault at 0x801740c4 in Super Data (pc=0x2918)
-BAD KERNEL BUSERR
-Oops: 00000000
-PC: [<00002918>] auto_inthandler+0x0/0x28
-SR: 2400  SP: (ptrval)  a2: 8017a478
-d0: 00000018    d1: 0000001a    d2: 00000000    d3: 8017a480
-d4: 00000018    d5: 00000054    a0: 8017a480    a1: 8016f84c
-Process exe (pid: 26, task=(ptrval))
-Frame format=B ssw=0345 isc=2f00 isb=48e7 daddr=801740c4 dobuf=80176e58
-baddr=801740c4 dibuf=801740c4 ver=0
-Stack from 00aefff8:
-        02088001 ebf40070
-	Call Trace:
-	Code: 0005 61ff 0002 c912 508f 588f 60a2 0000 <42a7> 4878 ffff
-2f00 48e7 7ce0 200f 0280 ffff e000 2440 2452 e9ef 010a 0032 0440
-------------------------------------------------------------
+  than 030 whereas ST/STE work fine with 030/040/060 + MMU + FPU.
+  Kernel boots fine with real 060 Falcon though:
+	https://www.youtube.com/watch?v=8Sriz45Z4oM
 
 - If 030 caches are enabled (--cpu-exact on), busybox 'setsid'
   fails to:
@@ -506,3 +562,28 @@ Code: 9480 7203 b282 645a 2805 0eb1 1000 0800 <4a84> 664e 2781
 0800 2801 0084 7f7f 7f7f 2c04 4686 2401 0682 fefe feff c486 6748
 Disabling lock debugging due to kernel taint
 ------------------------------------------------------------
+
+- NULL pointer Oops even with caches disabled (--cpu-exact off),
+  when doing:
+------------------------------
+# echo t > /proc/sysrq-trigger
+sysrq: SysRq : Show State
+  task                PC stack   pid father
+  sh              S    0     1      0 0x00000000
+  Stack from 00829fcc:
+          ffffffff efb699b6 00000000 ffffffff efb699b6 80181480
+8017bb3e 8000247c
+        00000007 00000007 00000000 02008002 92140080
+	Call Trace:
+	kthreadd        S    0     2      0 0x00000000
+	Stack from 00837fcc:
+	        00000000 00000000 00000000 00000000 00000000 00000000
+00000000 00000000
+        00000000 00000000 00000000 20000000 00000000
+	Call Trace:
+	kworker/0:0     I    0     3      2 0x00000000
+	Data read fault at 0x00000004 in Super Data (pc=0x249f5a)
+	BAD KERNEL BUSERR
+	Oops: 00000000
+	PC: [<00249f5a>] __generic_copy_from_user+0x1e/0x46
+------------------------------
