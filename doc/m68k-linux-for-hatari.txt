@@ -71,7 +71,9 @@ DEBUG: Your Atari program just did something terribly stupid: dummy_xlate($c0012
   Falcon PSG port-A handling (see: --log-level debug).
   TODO: Is this issue in Hatari or Linux register handling?
 
-- TT / SCSI rootfs mount fails after following debug output:
+- Incomplete TT / SCSI emulation:
+  => workaround: have root file system on IDE master or slave
+  Rootfs mount from SCSI device fails after following debug output:
 ------------------------------------------------------------
 DEBUG: raw_scsi: selected id 0
 DEBUG: raw_scsi_put_data got message c0 (1/1)
@@ -302,7 +304,7 @@ Notes:
 1. <Set suitable options in lilo.cfg>
 
 2. Start Hatari:
-    $ hatari --trace nvram --log-level debug \
+    $ hatari --log-level debug \
       --fast-forward on --fastfdc on --timer-d on \
       --machine falcon --dsp dummy --fpu 68882 \
       --mmu on -s 14 --ttram 64 --addr24 off \
@@ -383,18 +385,20 @@ On real HW:
 --------------------------
 
 There are few ways to investigate what happens at boot:
-- Asking kernel to give debug output for device initializations
+- Asking kernel to give debug output for module initializations
   with "initcall_debug" kernel command line option
+- Disabling individual init calls with "initcall_blacklist=<name>"
+  to see whether boot proceeds (better) without them
 - Tracing kernel function calls with the "trace cpu_symbols"
   debugger command and the "--trace cpu_symbols" Hatari option
 - Profiling what the kernel does
 
-First two options will give a lot of output so save it also
-to a file:
+Tracing and "initcall_debug" will give a lot of output so save it
+also to a file:
 	$ hatari ... 2>&1 | tee output.txt
 
-Last two options require symbols file produced during kernel build. If
-that file is listed in lilo.cfg, symbols will be automatically loaded
+Tracing and profiling require symbols file produced during kernel build.
+If that file is listed in lilo.cfg, symbols will be automatically loaded
 before Linux boots.
 
 For now, all debugging and profiling should be done with kernel loaded
@@ -462,30 +466,35 @@ processes are running & calling them.)
 These are setup instructions for debugging Debian installer freezes in
 Hatari.
 
-1. Get Debian Stretch install kernel, kernel symbols and initrd:
-   $ wget https://people.debian.org/~glaubitz/debian-installer-m68k/cdrom/vmlinuz-4.9.0-3-m68k
-   $ wget https://people.debian.org/~glaubitz/debian-installer-m68k/cdrom/System.map-4.9.0-3-m68k
-   $ wget https://people.debian.org/~glaubitz/debian-installer-m68k/cdrom/initrd.gz
+Note: Debian 4.9 kernels work much worse, so this uses latest
+available, which can at least boot until it tries to run init.
 
-2. Set these up in lilo.cfg:
+1. Get Debian Stretch install kernel, kernel symbols and initrd:
+   $ wget https://cdimage.debian.org/cdimage/ports/debian-installer/m68k/debian-installer-images_20190410_m68k.tar.gz
+   $ tar xvf debian-installer-images*.gz
+   $ cp installer-m68k/20190410/images/nativehd/initrd.gz .
+   $ cp installer-m68k/20190410/images/kernels/vmlinux-4.19.0-4-m68k .
+   $ cp installer-m68k/20190410/images/kernels/System.map-4.19.0-4-m68k .  # missing
+
+2. Set up lilo.cfg, which skips (very slow) crypto init:
    $ cat > lilo.cfg
 [LILO]
-Kernel = vmlinuz-4.9.0-3-m68k
-Symbols = System.map-4.9.0-3-m68k
+Kernel = vmlinuz-4.19.0-4-m68k
+Symbols = System.map-4.19.0-4-m68k
+Args = video=atafb:sthigh console=tty initcall_blacklist=dh_init
 Ramdisk = initrd.gz
-RamdiskToFastRam = TRUE
 KernelToFastRam = FALSE
-Args = video=atafb:sthigh
+RamdiskToFastRam = TRUE
 ^D
 
 3. Get latest ISO image release (checksum files are in same directory):
-    $ wget https://cdimage.debian.org/cdimage/ports/10.0/m68k/iso-cd/debian-10.0-m68k-NETINST-1.iso
+    $ wget https://cdimage.debian.org/cdimage/ports/2019-04-12/debian-10.0-m68k-NETINST-1.iso
 
 4. Try running Hatari with them:
-    $ hatari --trace nvram --log-level debug \
+    $ hatari --log-level debug \
       --fast-forward on --fastfdc on --timer-d on \
       --machine falcon --dsp dummy --fpu 68882 \
-      --mmu on -s 14 --ttram 64 --addr24 off \
+      --mmu on -s 14 --ttram 128 --addr24 off \
       -c lilo.cfg --natfeats on \
       --ide-master debian-10.0-m68k-NETINST-1.iso \
       --lilo "debug=nfcon root=/dev/ram init=/init"
@@ -497,7 +506,7 @@ Args = video=atafb:sthigh
    # cd initrd
    # zcat ../initrd.gz | cpio -i
    # cd ..
-   # /sbin/mkfs.ext2 -t ext2 -L INITRD -d initrd rootfs.img 24M
+   # /sbin/mkfs.ext2 -t ext2 -L INITRD -d initrd rootfs.img 32M
    # exit
 
 TODO: to be continued
@@ -513,16 +522,17 @@ Known issues:
   TT-RAM range, kernel crashes.  Based on mails from 2013, this
   seems to be a known Linux/Atari issue
 
+- Kernel NULL pointer oops with following, due to its bus_error030()
+  not respecting page faults being disabled in kernel_probe_read():
+	# echo t > /proc/sysrq-trigger
+
 
 TODO / investigate more:
 
 - No support for ACSI, only SCSI and IDE?
 
-- Kernel oopses at startup always to NULL pointer access with some
-  configs
-
-- Debian provided kernels and initrd files don't boot succesfully in
-  Hatari
+- Kernel oopses at startup always to NULL pointer access with Debian
+  kernels and some other kernel builds
 
 - Kernel freezes right at start if Falcon is used with something else
   than 030 whereas ST/STE work fine with 030/040/060 + MMU + FPU.
@@ -562,28 +572,3 @@ Code: 9480 7203 b282 645a 2805 0eb1 1000 0800 <4a84> 664e 2781
 0800 2801 0084 7f7f 7f7f 2c04 4686 2401 0682 fefe feff c486 6748
 Disabling lock debugging due to kernel taint
 ------------------------------------------------------------
-
-- NULL pointer Oops even with caches disabled (--cpu-exact off),
-  when doing:
-------------------------------
-# echo t > /proc/sysrq-trigger
-sysrq: SysRq : Show State
-  task                PC stack   pid father
-  sh              S    0     1      0 0x00000000
-  Stack from 00829fcc:
-          ffffffff efb699b6 00000000 ffffffff efb699b6 80181480
-8017bb3e 8000247c
-        00000007 00000007 00000000 02008002 92140080
-	Call Trace:
-	kthreadd        S    0     2      0 0x00000000
-	Stack from 00837fcc:
-	        00000000 00000000 00000000 00000000 00000000 00000000
-00000000 00000000
-        00000000 00000000 00000000 20000000 00000000
-	Call Trace:
-	kworker/0:0     I    0     3      2 0x00000000
-	Data read fault at 0x00000004 in Super Data (pc=0x249f5a)
-	BAD KERNEL BUSERR
-	Oops: 00000000
-	PC: [<00249f5a>] __generic_copy_from_user+0x1e/0x46
-------------------------------
