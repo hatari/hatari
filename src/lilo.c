@@ -21,6 +21,7 @@
 #ifdef HAVE_LIBZ
 # include <zlib.h>
 #endif
+#include <SDL_endian.h>
 
 bool bUseLilo;
 
