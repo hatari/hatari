@@ -26,6 +26,7 @@ const char Profilecpu_fileid[] = "Hatari profilecpu.c : " __DATE__ " " __TIME__;
 #include "debug_priv.h"
 #include "stMemory.h"
 #include "tos.h"
+#include "lilo.h"
 #include "screen.h"
 #include "video.h"
 
@@ -107,8 +108,8 @@ static struct {
 	bool enabled;         /* true when profiling enabled */
 } cpu_profile;
 
-/* special hack for EmuTOS */
-static Uint32 etos_switcher;
+/* special hacks for EmuTOS and Linux OS schedulers */
+static Uint32 task_switcher;
 
 
 /* ------------------ CPU profile address mapping ----------------- */
@@ -805,11 +806,25 @@ bool Profile_CpuStart(void)
 
 	Profile_AllocCallinfo(&(cpu_callinfo), Symbols_CpuCodeCount(), "CPU");
 
-	/* special hack for EmuTOS */
-	etos_switcher = PC_UNDEFINED;
-	if (cpu_callinfo.sites && bIsEmuTOS &&
-	    (!Symbols_GetCpuAddress(SYMTYPE_TEXT, "_switchto", &etos_switcher) || etos_switcher < TosAddress)) {
-		etos_switcher = PC_UNDEFINED;
+	/* special hack of OS schedulers that modify stack return values */
+	task_switcher = PC_UNDEFINED;
+	if (cpu_callinfo.sites) {
+		if (bIsEmuTOS) {
+			/* EmuTOS AES task switcher address known? */
+			if (Symbols_GetCpuAddress(SYMTYPE_TEXT, "_switchto", &task_switcher)
+			    && task_switcher >= TosAddress) {
+				printf("Enabling EmuTOS _switchto() task switch handling.\n");
+			} else {
+				task_switcher = PC_UNDEFINED;
+			}
+		} else if (bUseLilo) {
+			/* Linux task resume switcher address known? */
+			if (Symbols_GetCpuAddress(SYMTYPE_TEXT, "resume", &task_switcher)) {
+				printf("Enabling Linux resume() task switch handling.\n");
+			} else {
+				task_switcher = PC_UNDEFINED;
+			}
+		}
 	}
 
 	/* reset cache stats (CPU emulation doesn't do that) */
@@ -940,16 +955,17 @@ static void collect_calls(Uint32 pc, counters_t *counters)
 
 		flag = cpu_opcode_type(family, prev_pc, pc);
 		if (flag == CALL_SUBROUTINE || flag == CALL_EXCEPTION) {
-			/* special HACK for for EmuTOS AES switcher which
-			 * changes stack content to remove itself from call
-			 * stack and uses RTS for subroutine *calls*, not
-			 * for returning from them.
+			/* special HACK for OS task switchers which
+			 * change stack content to remove themselves
+			 * from call stack and uses RTS for
+			 * subroutine *calls*, not for returning from
+			 * them.
 			 *
-			 * It wouldn't be reliable to detect calls from it,
+			 * It wouldn't be reliable to detect calls from them,
 			 * so I'm making call *to* it show up as branch, to
 			 * keep callstack depth correct.
 			 */
-			if (unlikely(pc == etos_switcher)) {
+			if (unlikely(pc == task_switcher)) {
 				flag = CALL_BRANCH;
 			} else if (unlikely(prev_pc == PC_UNDEFINED)) {
 				/* if first profiled instruction
