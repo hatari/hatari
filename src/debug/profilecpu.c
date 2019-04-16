@@ -108,6 +108,20 @@ static struct {
 	bool enabled;         /* true when profiling enabled */
 } cpu_profile;
 
+/* full counts for warnings that are printed without rate-limiting */
+typedef struct {
+	int odd;
+	int address;
+	int returns;
+	int prevpc;
+	int largevalue;
+	int opfamily;
+	int zerocycles;
+} cpu_warnings_t;
+static cpu_warnings_t cpu_warnings;
+
+#define MAX_SHOW_COUNT	8
+
 /* special hacks for EmuTOS and Linux OS schedulers */
 static Uint32 task_switcher;
 
@@ -120,7 +134,12 @@ static Uint32 task_switcher;
 static inline Uint32 address2index(Uint32 pc)
 {
 	if (unlikely(pc & 1)) {
-		fprintf(stderr, "WARNING: odd CPU profile instruction address 0x%x!\n", pc);
+		if (++cpu_warnings.odd <= MAX_SHOW_COUNT) {
+			fprintf(stderr, "WARNING: odd CPU profile instruction address 0x%x!\n", pc);
+			if (cpu_warnings.odd == MAX_SHOW_COUNT) {
+				fprintf(stderr, "Further warnings won't be shown.\n");
+			}
+		}
 #if DEBUG
 		skip_assert = true;
 		DebugUI(REASON_CPU_EXCEPTION);
@@ -148,7 +167,12 @@ static inline Uint32 address2index(Uint32 pc)
 		pc += STRamEnd + TosSize + CART_SIZE - TTRAM_START;
 #endif
 	} else {
-		fprintf(stderr, "WARNING: 'invalid' CPU PC profile instruction address 0x%x!\n", pc);
+		if (++cpu_warnings.address <= MAX_SHOW_COUNT) {
+			fprintf(stderr, "WARNING: 'invalid' CPU PC profile instruction address 0x%x!\n", pc);
+			if (cpu_warnings.address == MAX_SHOW_COUNT) {
+				fprintf(stderr, "Further warnings won't be shown.\n");
+			}
+		}
 		/* extra entry at end is reserved for invalid PC values */
 		pc = STRamEnd + TosSize + CART_SIZE;
 #if DEBUG
@@ -238,6 +262,40 @@ bool Profile_CpuAddressDataStr(char *buffer, size_t maxlen, Uint32 addr)
 }
 
 /**
+ * Show CPU profiling warning counts
+ */
+static void show_cpu_warnings(void)
+{
+	cpu_warnings_t warnings;
+	memset(&warnings, 0, sizeof(warnings));
+	if (memcmp(&cpu_warnings, &warnings, sizeof(warnings)) == 0) {
+		return;
+	}
+	fprintf(stderr, "\nCPU profiling warning counts:\n");
+	if (cpu_warnings.odd) {
+		fprintf(stderr, "- Odd PC addresses: %d\n", cpu_warnings.odd);
+	}
+	if (cpu_warnings.address) {
+		fprintf(stderr, "- Unmapped PC addresses: %d\n", cpu_warnings.address);
+	}
+	if (cpu_warnings.opfamily) {
+		fprintf(stderr, "- Unrecognized (zero) opcode families: %d\n", cpu_warnings.opfamily);
+	}
+	if (cpu_warnings.returns) {
+		fprintf(stderr, "- Subroutine calls didn't return through RTS: %d\n", cpu_warnings.returns);
+	}
+	if (cpu_warnings.prevpc) {
+		fprintf(stderr, "- Undefined PC value for tracked address callers: %d\n", cpu_warnings.prevpc);
+	}
+	if (cpu_warnings.largevalue) {
+		fprintf(stderr, "- Unexpectedly large cycles count or cache hit/miss values: %d\n", cpu_warnings.largevalue);
+	}
+	if (cpu_warnings.zerocycles) {
+		fprintf(stderr, "- Successive instructions with zero cycles: %d\n", cpu_warnings.zerocycles);
+	}
+}
+
+/**
  * Helper to show statistics for specified CPU profile area.
  */
 static void show_cpu_area_stats(profile_area_t *area)
@@ -277,7 +335,7 @@ static void show_cpu_area_stats(profile_area_t *area)
 
 
 /**
- * show CPU area (RAM, ROM, TOS) specific statistics.
+ * show CPU area (RAM, ROM, TOS) specific statistics and error counts.
  */
 void Profile_CpuShowStats(void)
 {
@@ -294,9 +352,10 @@ void Profile_CpuShowStats(void)
 		fprintf(stderr, "TT-RAM (0x%X-%X):\n", TTRAM_START, TTRAM_START + 1024*ConfigureParams.Memory.TTRamSize_KB);
 		show_cpu_area_stats(&cpu_profile.ttram);
 	}
-
 	fprintf(stderr, "\n= %.5fs\n",
 		(double)cpu_profile.all.cycles / MachineClocks.CPU_Freq_Emul);
+
+	show_cpu_warnings();
 }
 
 #if ENABLE_WINUAE_CPU
@@ -787,6 +846,7 @@ bool Profile_CpuStart(void)
 	}
 	/* zero everything */
 	memset(&cpu_profile, 0, sizeof(cpu_profile));
+	memset(&cpu_warnings, 0, sizeof(cpu_warnings));
 
 	/* Shouldn't change within same debug session */
 	size = (STRamEnd + CART_SIZE + TosSize) / 2;
@@ -936,16 +996,20 @@ static void collect_calls(Uint32 pc, counters_t *counters)
 		 */
 		if (likely(flag == CALL_SUBRETURN || flag == CALL_EXCRETURN)) {
 			caller_pc = Profile_CallEnd(&cpu_callinfo, counters);
-		} else {
+		}
 #if DEBUG
+		else if (++cpu_warnings.returns <= MAX_SHOW_COUNT) {
 			/* although at return address, it didn't return yet,
 			 * e.g. because there was a jsr or jump to return address
 			 */
 			Uint32 nextpc;
 			fprintf(stderr, "WARNING: subroutine call returned 0x%x -> 0x%x, not through RTS!\n", prev_pc, pc);
 			Disasm(stderr, prev_pc, &nextpc, 1);
-#endif
+			if (cpu_warnings.returns == MAX_SHOW_COUNT) {
+				fprintf(stderr, "Further warnings won't be shown.\n");
+			}
 		}
+#endif
 		/* next address might be another symbol, so need to fall through */
 	}
 
@@ -973,7 +1037,12 @@ static void collect_calls(Uint32 pc, counters_t *counters)
 				 * valid prev_pc value stored
 				 */
 				cpu_callinfo.return_pc = PC_UNDEFINED;
-				fprintf(stderr, "WARNING: previous PC for tracked address 0x%d is undefined!\n", pc);
+				if (++cpu_warnings.prevpc <= MAX_SHOW_COUNT) {
+					fprintf(stderr, "WARNING: previous PC for tracked address 0x%d is undefined!\n", pc);
+					if (cpu_warnings.prevpc == MAX_SHOW_COUNT) {
+						fprintf(stderr, "Further warnings won't be shown.\n");
+					}
+				}
 #if DEBUG
 				skip_assert = true;
 				DebugUI(REASON_CPU_EXCEPTION);
@@ -1016,10 +1085,15 @@ static void log_last_loop(void)
  */
 static Uint32 warn_too_large(const char *name, const int value, const int limit, const Uint32 prev_pc, const Uint32 pc)
 {
-	Uint32 nextpc;
-	fprintf(stderr, "WARNING: unexpected (%d > %d) %s at 0x%x:\n", value, limit - 1, name, pc);
-	Disasm(stderr, prev_pc, &nextpc, 1);
-	Disasm(stderr, pc, &nextpc, 1);
+	if (++cpu_warnings.largevalue <= MAX_SHOW_COUNT) {
+		Uint32 nextpc;
+		fprintf(stderr, "WARNING: unexpected (%d > %d) %s at 0x%x:\n", value, limit - 1, name, pc);
+		Disasm(stderr, prev_pc, &nextpc, 1);
+		Disasm(stderr, pc, &nextpc, 1);
+		if (cpu_warnings.largevalue == MAX_SHOW_COUNT) {
+			fprintf(stderr, "Further warnings won't be shown.\n");
+		}
+	}
 #if DEBUG
 	skip_assert = true;
 	DebugUI(REASON_CPU_EXCEPTION);
@@ -1164,9 +1238,14 @@ void Profile_CpuUpdate(void)
 
 #if DEBUG
 	if (unlikely(OpcodeFamily == 0)) {
-		Uint32 nextpc;
-		fputs("WARNING: instruction opcode family is zero (=i_ILLG) for instruction:\n", stderr);
-		Disasm(stderr, prev_pc, &nextpc, 1);
+		if (++cpu_warnings.opfamily <= MAX_SHOW_COUNT) {
+			Uint32 nextpc;
+			fputs("WARNING: instruction opcode family is zero (=i_ILLG) for instruction:\n", stderr);
+			Disasm(stderr, prev_pc, &nextpc, 1);
+			if (cpu_warnings.opfamily == MAX_SHOW_COUNT) {
+				fprintf(stderr, "Further warnings won't be shown.\n");
+			}
+		}
 	}
 	/* catch too large (and negative) cycles for other than STOP instruction */
 	if (unlikely(cycles > 512 && OpcodeFamily != i_STOP)) {
@@ -1176,10 +1255,15 @@ void Profile_CpuUpdate(void)
 	{
 		static Uint32 prev_cycles = 0, prev_pc2 = 0;
 		if (unlikely(cycles == 0 && prev_cycles == 0)) {
-			Uint32 nextpc;
-			fputs("WARNING: Zero cycles for successive opcodes:\n", stderr);
-			Disasm(stderr, prev_pc2, &nextpc, 1);
-			Disasm(stderr, prev_pc, &nextpc, 1);
+			if (++cpu_warnings.zerocycles <= MAX_SHOW_COUNT) {
+				Uint32 nextpc;
+				fputs("WARNING: Zero cycles for successive opcodes:\n", stderr);
+				Disasm(stderr, prev_pc2, &nextpc, 1);
+				Disasm(stderr, prev_pc, &nextpc, 1);
+				if (cpu_warnings.zerocycles == MAX_SHOW_COUNT) {
+					fprintf(stderr, "Further warnings won't be shown.\n");
+				}
+			}
 		}
 		prev_cycles = cycles;
 		prev_pc2 = prev_pc;
