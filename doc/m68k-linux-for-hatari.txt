@@ -55,8 +55,9 @@ version available in the given remote directory!
 
 - Linux kernel boot under TT emulation hangs early because Hatari does
   not implement SCU interrupt handling (nor related VME functionality)
-  => workaround: change 0xff8e01 (SCU system interrupt mask) reads in
-     ioMemTabTT.c to give bus errors, so that Linux doesn't use it
+  => workaround: use Falcon emulation, or change 0xff8e01 (SCU system
+     interrupt mask) reads in ioMemTabTT.c to give bus errors, so that
+     Linux skips SCU & VME usage
 
 - PC address points to ST-RAM in debugger even for emulated Linux
   code running in TT-RAM, because it's not MMU-translated
@@ -64,14 +65,20 @@ version available in the given remote directory!
 
 - There are lot of ("--log-level debug" and profiler) warnings about
   memory accesses to >2GB range when programs do syscalls. An issue
-  with Hatari high address memory setup?
-DEBUG: Your Atari program just did something terribly stupid: dummy_xlate($c00123ee)
+  with Hatari high address memory setup, or another symptom of
+  missing MMU-translation within Hatari?
+  DEBUG: Your Atari program just did something terribly stupid: dummy_xlate($c00123ee)
 
 - Hatari debug output shows lot of IDE and DSP reset messages from
   Falcon PSG port-A handling (see: --log-level debug).
   TODO: Is this issue in Hatari or Linux register handling?
 
-- Incomplete TT / SCSI emulation:
+- Hatari / WinUAE 030 CPU core doesn't handle MMU faulting increment /
+  decrement instructions (e.g. "moves.l (a0)+,d2", or "clr.l -(sp)")
+  correctly -> faults on such instructions show up with slightly
+  different address register value
+
+- Incomplete TT / SCSI / 2nd MFP emulation:
   => workaround: have root file system on IDE master or slave
   Rootfs mount from SCSI device fails after following debug output:
 ------------------------------------------------------------
@@ -460,23 +467,37 @@ one should load just those to debugger:
 processes are running & calling them.)
 
 
+If you see errors like these on Linux console:
+	hda: possibly failed opcode: 0x39
+	hda: possibly failed opcode: 0x30
+Those are IDE write command opcodes.  Make sure your IDE image
+actually *is* writable and try again.
+
+
 9. Debian m68k install
 ----------------------
 
 These are setup instructions for debugging Debian installer freezes in
 Hatari.
 
-Note: Debian 4.9 kernels work much worse, so this uses latest
-available, which can at least boot until it tries to run init.
+Note: old Debian 4.9 kernels work much worse, so this uses 4.19, which
+can at least boot until it tries to run init.
 
-1. Get Debian Stretch install kernel, kernel symbols and initrd:
+1. Get Debian Stretch installer initrd:
    $ wget https://cdimage.debian.org/cdimage/ports/debian-installer/m68k/debian-installer-images_20190410_m68k.tar.gz
    $ tar xvf debian-installer-images*.gz
    $ cp installer-m68k/20190410/images/nativehd/initrd.gz .
-   $ cp installer-m68k/20190410/images/kernels/vmlinux-4.19.0-4-m68k .
-   $ cp installer-m68k/20190410/images/kernels/System.map-4.19.0-4-m68k .  # missing
 
-2. Set up lilo.cfg, which skips (very slow) crypto init:
+2. get kernel files (including symbols) matching the installer:
+   $ mkdir kernel
+   $ cd kernel
+   $ wget http://ftp.ports.debian.org/debian-ports/pool-m68k/main/l/linux/linux-image-4.19.0-4-m68k_4.19.28-2_m68k.deb
+   $ ar x linux-image-4.19.0-4-m68k_4.19.28-2_m68k.deb
+   $ tar xvf data.tar.xz
+   $ cp -av boot/* ..
+   $ cd ..
+
+3. Set up lilo.cfg, which skips (very slow) crypto init:
    $ cat > lilo.cfg
 [LILO]
 Kernel = vmlinuz-4.19.0-4-m68k
@@ -487,10 +508,10 @@ KernelToFastRam = FALSE
 RamdiskToFastRam = TRUE
 ^D
 
-3. Get latest ISO image release (checksum files are in same directory):
+4. Get latest ISO image release (checksum files are in same directory):
     $ wget https://cdimage.debian.org/cdimage/ports/2019-04-12/debian-10.0-m68k-NETINST-1.iso
 
-4. Try running Hatari with them:
+5. Try running Hatari with them:
     $ hatari --log-level debug \
       --fast-forward on --fastfdc on --timer-d on \
       --machine falcon --dsp dummy --fpu 68882 \
@@ -499,8 +520,12 @@ RamdiskToFastRam = TRUE
       --ide-master debian-10.0-m68k-NETINST-1.iso \
       --lilo "debug=nfcon root=/dev/ram init=/init"
 
-2. Convert initrd to a normal EXT2 disk partition, and use a fakeroot
-   session to retain file properties requiring root rights:
+NOTE: Hatari doesn't support networking so network install obviously
+won't work.  There aren't any ready made images of (up to date) m68k
+Debian installs either.
+
+Converting initrd to a normal EXT2 disk partition, and using
+fakeroot session to retain file properties requiring root rights:
    $ mkdir initrd
    $ fakeroot /bin/bash
    # cd initrd
@@ -509,7 +534,32 @@ RamdiskToFastRam = TRUE
    # /sbin/mkfs.ext2 -t ext2 -L INITRD -d initrd rootfs.img 32M
    # exit
 
-TODO: to be continued
+NOTE: Booting such image requires either use of initrd for getting
+file system support to modular kernel, or using the earlier built
+monolithic kernel that has everything required built-in.
+
+
+Doing first stage of setting up minimal m68k Debian system image
+(without package PGP signing checks), as root:
+   # apt install debootstrap
+   # debootstrap --foreign --arch=m68k --no-check-gpg sid debian-chroot http://ftp.ports.debian.org/debian-ports/
+   # cp -a /path/to/hatari/tools/linux/init.sh debian-chroot/init
+   # /sbin/mkfs.ext2 -t ext2 -L DEBIAN -d debian-chroot debian.img 512M
+   # chown $USER.$USER debian.img
+
+NOTE: debootstrap needs to be done on a partition that isn't mounted
+with "noexec" or "nodev" option, otherwise it fails!
+
+To finish bootstrapping, one would need to boot it on m68k system and
+run "debootstrap --second-stage".  Current status:
+- Hatari:
+  debootstrap fails to kernel oops
+- m68k system-qemu:
+  doesn't support required HW
+- m68k user-qemu (from Debian Stretch):
+  fails completely on any m68k Debian binary
+- Aranym:
+  couldn't get above image to boot succesfully with IDE
 
 
 10. Debian and Linux issues
