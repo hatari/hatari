@@ -6,17 +6,45 @@
  Development version
  -------------------
 
+Emulation:
+- Support for MegaSTE DIP switch register $FF9200
+  (set floppy drive to HD by default on MegaSTE/TT/Falcon)
+- support for DD/HD mode on MegaSTE at $FF860E
+  (when FDC is set to HD mode, reading DD floppies will fail)
+- Emulate additional RTC/NVRAM registers
+- Update CPU core to latest WinUAE 4.2.0 beta
+
 Emulator:
-- Add --lilo linux loading debug option
+- Memory snapshot version increase due to FDC changes
+- Use floppy track's size in bytes to detect DD/HD/ED
+  (instead of counting sectors)
+- Add --lilo debug option for more convenient m68k Linux loading
+  - Support config file values with '=' in them
 - Fix: when autostarting programs without pre-existing INF file,
   enable blitter also with EmuTOS
+- Profiler:
+  - Profiler backtrace shows now real caller addresses
+    and their offsets from the function entry points
+  - All profiler outputs have now reasonable limits
+    (so that they don't flood console)
+  - Fix: profile post-processor exception (with symbol address aliases)
+- Debugger:
+  - Improvements to UAE and external disassembler disassembly
+  - Improved symbols info output
 
 Building:
+- Source repository moved from Mercurial to Git
 - Fix: issue with multilib capable cross-compilers
 - Fix: workaround problems with Capslib 5.1 headers
 
-Misc:
-- Documentation improvements
+Documentation:
+- Up to date documentation provided at: https://hatari.tuxfamily.org/doc/
+- "--bios-intecept" deprecated in favor of "--natfeats"
+- m68k-linux-for-hatari.txt document on how to run Linux under Hatari
+- Minor improvements
+
+Fixed programs:
+- Akaisex program reading AKAI S1000 HD floppies converted to STX
 
 
  Version 2.2.1 (2019-02-08)
