@@ -1361,7 +1361,8 @@ void Profile_CpuStop(void)
 	}
 	assert(cpu_profile.size == size);
 
-	Profile_FinalizeCalls(&(cpu_callinfo), &(cpu_profile.all), Symbols_GetByCpuAddress);
+	Profile_FinalizeCalls(M68000_GetPC(), &(cpu_callinfo),
+			      &(cpu_profile.all), Symbols_GetByCpuAddress);
 
 	/* find lowest and highest addresses executed etc */
 	next = update_area(&cpu_profile.ram, 0, STRamEnd/2);

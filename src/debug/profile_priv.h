@@ -26,8 +26,8 @@ typedef struct {
 typedef struct {
 	int callee_idx;		/* index of called function */
 	Uint32 ret_addr;	/* address after returning from call */
-	Uint32 caller_addr;	/* remove informational caller address */
-	Uint32 callee_addr;	/* remove informational callee address */
+	Uint32 caller_addr;	/* caller address for callstack printing */
+	Uint32 callee_addr;	/* callee address for callstack printing */
 	counters_t all;		/* totals including everything called code does */
 	counters_t out;		/* totals for subcalls done from callee */
 } callstack_t;
@@ -73,7 +73,7 @@ typedef struct {
 /* generic profile caller/callee info functions */
 extern void Profile_ShowCallers(FILE *fp, int sites, callee_t *callsite, const char * (*addr2name)(Uint32, Uint64 *));
 extern void Profile_CallStart(int idx, callinfo_t *callinfo, Uint32 prev_pc, calltype_t flag, Uint32 pc, counters_t *totalcost);
-extern void Profile_FinalizeCalls(callinfo_t *callinfo, counters_t *totalcost, const char* (get_symbol)(Uint32, symtype_t));
+extern void Profile_FinalizeCalls(Uint32 pc, callinfo_t *callinfo, counters_t *totalcost, const char* (get_symbol)(Uint32, symtype_t));
 extern Uint32 Profile_CallEnd(callinfo_t *callinfo, counters_t *totalcost);
 extern int  Profile_AllocCallinfo(callinfo_t *callinfo, int count, const char *info);
 extern void Profile_FreeCallinfo(callinfo_t *callinfo);

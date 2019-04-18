@@ -1,7 +1,7 @@
 /*
  * Hatari - profiledsp.c
  * 
- * Copyright (C) 2010-2015 by Eero Tamminen
+ * Copyright (C) 2010-2019 by Eero Tamminen
  *
  * This file is distributed under the GNU General Public License, version 2
  * or at your option any later version. Read the file gpl.txt for details.
@@ -678,7 +678,9 @@ void Profile_DspStop(void)
 		fflush(profile_loop.fp);
 	}
 
-	Profile_FinalizeCalls(&(dsp_callinfo), &(dsp_profile.ram.counters), Symbols_GetByDspAddress);
+	Profile_FinalizeCalls(DSP_GetPC(), &(dsp_callinfo),
+			      &(dsp_profile.ram.counters),
+			      Symbols_GetByDspAddress);
 
 	/* find lowest and highest  addresses executed */
 	area = &dsp_profile.ram;

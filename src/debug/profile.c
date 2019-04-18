@@ -1,7 +1,7 @@
 /*
  * Hatari - profile.c
  * 
- * Copyright (C) 2010-2015 by Eero Tamminen
+ * Copyright (C) 2010-2019 by Eero Tamminen
  *
  * This file is distributed under the GNU General Public License, version 2
  * or at your option any later version. Read the file gpl.txt for details.
@@ -404,20 +404,53 @@ Uint32 Profile_CallEnd(callinfo_t *callinfo, counters_t *totalcost)
 
 /**
  * Add costs to all functions still in call stack
+ * and print their names
  */
-void Profile_FinalizeCalls(callinfo_t *callinfo, counters_t *totalcost, const char* (*get_symbol)(Uint32, symtype_t))
+void Profile_FinalizeCalls(Uint32 pc, callinfo_t *callinfo, counters_t *totalcost,
+			   const char* (*get_symbol)(Uint32, symtype_t))
 {
-	Uint32 addr;
+	Uint32 sym_addr, ret_addr, caller_addr;
+	int i, offset;
+	bool dots;
+
 	if (!callinfo->depth) {
 		return;
 	}
 	fprintf(stderr, "Finalizing costs for %d non-returned functions:\n", callinfo->depth);
+
+	i = 0;
+	dots = false;
+	caller_addr = pc;
 	while (callinfo->depth > 0) {
+
 		Profile_CallEnd(callinfo, totalcost);
-		addr = callinfo->stack[callinfo->depth].callee_addr;
-		fprintf(stderr, "- 0x%x: %s (return = 0x%x)\n",
-			addr, get_symbol(addr, SYMTYPE_TEXT),
-			callinfo->stack[callinfo->depth].ret_addr);
+
+		ret_addr = callinfo->stack[callinfo->depth].ret_addr;
+		sym_addr = callinfo->stack[callinfo->depth].callee_addr;
+		offset = caller_addr - sym_addr;
+
+		/* Skip middle part of a long callstack as messed
+		 * callstacks could be thousands of frames deep...
+		 *
+		 * (see "task_switcher" variable in profilecpu.c)
+		 */
+		if (++i >= 32 && callinfo->depth > 32) {
+			if (!dots) {
+				fprintf(stderr, "- ...\n");
+				dots = true;
+			}
+		} else {
+			const char *sym = get_symbol(sym_addr, SYMTYPE_TEXT);
+			if (sym) {
+				char sign = offset > 0 ? '+' : '-';
+				fprintf(stderr, "- %d. 0x%06x: %s %c0x%x (return = 0x%x)\n",
+					i, caller_addr, sym, sign, abs(offset), ret_addr);
+			} else {
+				fprintf(stderr, "- %d. 0x%06x (return = 0x%x)\n",
+					i, caller_addr, ret_addr);
+			}
+		}
+		caller_addr = callinfo->stack[callinfo->depth].caller_addr;
 	}
 }
 
