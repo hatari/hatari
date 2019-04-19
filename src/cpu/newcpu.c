@@ -2196,6 +2196,9 @@ void check_prefs_changed_cpu(void)
 	currprefs.cpu_idle = changed_prefs.cpu_idle;
 	currprefs.ppc_cpu_idle = changed_prefs.ppc_cpu_idle;
 	currprefs.reset_delay = changed_prefs.reset_delay;
+#ifndef WINUAE_FOR_HATARI
+	currprefs.cpuboard_settings = changed_prefs.cpuboard_settings;
+#endif
 
 	if (check_prefs_changed_cpu2()) {
 		set_special(SPCFLAG_MODE_CHANGE);
@@ -9075,6 +9078,26 @@ void m68k_disasm_2 (TCHAR *buf, int bufsize, uaecptr pc, uaecptr *nextpc, int cn
 			pc += 2;
 			p = instrname + _tcslen(instrname);
 			_stprintf(p, (extra & 0x8000) ? _T(",A%d") : _T(",D%d"), (extra >> 12) & 7);
+		} else if (lookup->mnemo == i_ORSR || lookup->mnemo == i_ANDSR || lookup->mnemo == i_EORSR) {
+			pc = ShowEA(NULL, pc, opcode, dp->sreg, dp->smode, dp->size, instrname, &seaddr2, safemode);
+			_tcscat(instrname, dp->size == sz_byte ? _T(",CCR") : _T(",SR"));
+		} else if (lookup->mnemo == i_MVR2USP) {
+			pc = ShowEA(NULL, pc, opcode, dp->sreg, dp->smode, dp->size, instrname, &seaddr2, safemode);
+			_tcscat(instrname, _T(",USP"));
+		} else if (lookup->mnemo == i_MVUSP2R) {
+			_tcscat(instrname, _T("USP,"));
+			pc = ShowEA(NULL, pc, opcode, dp->sreg, dp->smode, dp->size, instrname, &seaddr2, safemode);
+		} else if (lookup->mnemo == i_MV2SR) {
+			pc = ShowEA(NULL, pc, opcode, dp->sreg, dp->smode, dp->size, instrname, &seaddr2, safemode);
+			_tcscat(instrname, dp->size == sz_byte ? _T(",CCR") : _T(",SR"));
+		} else if (lookup->mnemo == i_MVSR2) {		
+			_tcscat(instrname, dp->size == sz_byte ? _T("CCR,") : _T("SR,"));
+			pc = ShowEA(NULL, pc, opcode, dp->sreg, dp->smode, dp->size, instrname, &seaddr2, safemode);
+		} else if (lookup->mnemo == i_MVMEL) {
+			uae_u16 mask = extra;
+			pc += 2;
+			pc = ShowEA (NULL, pc, opcode, dp->dreg, dp->dmode, dp->size, instrname, deaddr, safemode);
+			movemout (instrname, mask, dp->dmode, 0, true);
 		} else if (lookup->mnemo == i_MVMEL) {
 			uae_u16 mask = extra;
 			pc += 2;
