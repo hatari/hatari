@@ -6,6 +6,13 @@
  Development version
  -------------------
 
+Note:
+The following features are deprecated and will be removed in a future release:
+- Support for the SDL 1.2 library (i.e. SDL 2.0 should be used instead)
+- The old UAE CPU core (i.e. the new WinUAE CPU core should be used instead)
+- Python 2 support (Python 2 is end of life in 2020, use Python 3 instead)
+- The "external" disassembler (i.e. use "--disasm uae" instead)
+
 Emulation:
 - Support for MegaSTE DIP switch register $FF9200
   (set floppy drive to HD by default on MegaSTE/TT/Falcon)
@@ -57,11 +64,6 @@ Emulation:
 
  Version 2.2.0 (2019-01-31)
  ---------------------------
-
-Note:
-- Compiling with SDL 1.2 is considered as deprecated now.
-  The support for SDL 1.2 will be dropped in a future release.
-- Hatari now requires a C compiler compatible with c99/gnu99
 
 Emulation:
 - CPU:
