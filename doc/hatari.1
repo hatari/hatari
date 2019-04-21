@@ -512,8 +512,9 @@ to invoke Hatari debugger. XBios(20) printscreen calls produce also
 Hatari screenshots. XBios(255) allows Atari programs to use Hatari
 debugger functionality, which allows e.g. invoking shortcuts and
 Hatari command line options. Last one is deprecated as it gives too
-much control to emulated program, please use NatFeats API (--natfeats)
-instead of XBios 11 and 255.
+much control to emulated program, please use NatFeats and remote
+control APIs (--natfeats, --cmd-fifo, hconsole) instead of XBios
+11 and 255.
 .TP
 .B \-\-conout <device>
 Enable console (xconout vector functions) output redirection for given
