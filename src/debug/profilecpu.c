@@ -113,6 +113,7 @@ typedef struct {
 	int odd;
 	int address;
 	int returns;
+	int multireturn;
 	int prevpc;
 	int largevalue;
 	int opfamily;
@@ -121,9 +122,7 @@ typedef struct {
 static cpu_warnings_t cpu_warnings;
 
 #define MAX_SHOW_COUNT	8
-
-/* special hacks for EmuTOS and Linux OS schedulers */
-static Uint32 task_switcher;
+#define MAX_MULTI_RETURN 1
 
 
 /* ------------------ CPU profile address mapping ----------------- */
@@ -283,6 +282,9 @@ static void show_cpu_warnings(void)
 	}
 	if (cpu_warnings.returns) {
 		fprintf(stderr, "- Subroutine calls didn't return through RTS: %d\n", cpu_warnings.returns);
+	}
+	if (cpu_warnings.multireturn > MAX_MULTI_RETURN) {
+		fprintf(stderr, "- Subroutine calls returned (at max) through %d stack frames\n", cpu_warnings.multireturn);
 	}
 	if (cpu_warnings.prevpc) {
 		fprintf(stderr, "- Undefined PC value for tracked address callers: %d\n", cpu_warnings.prevpc);
@@ -847,6 +849,7 @@ bool Profile_CpuStart(void)
 	/* zero everything */
 	memset(&cpu_profile, 0, sizeof(cpu_profile));
 	memset(&cpu_warnings, 0, sizeof(cpu_warnings));
+	cpu_warnings.multireturn = MAX_MULTI_RETURN;
 
 	/* Shouldn't change within same debug session */
 	size = (STRamEnd + CART_SIZE + TosSize) / 2;
@@ -865,27 +868,6 @@ bool Profile_CpuStart(void)
 	cpu_profile.size = size;
 
 	Profile_AllocCallinfo(&(cpu_callinfo), Symbols_CpuCodeCount(), "CPU");
-
-	/* special hack of OS schedulers that modify stack return values */
-	task_switcher = PC_UNDEFINED;
-	if (cpu_callinfo.sites) {
-		if (bIsEmuTOS) {
-			/* EmuTOS AES task switcher address known? */
-			if (Symbols_GetCpuAddress(SYMTYPE_TEXT, "_switchto", &task_switcher)
-			    && task_switcher >= TosAddress) {
-				printf("Enabling EmuTOS _switchto() task switch handling.\n");
-			} else {
-				task_switcher = PC_UNDEFINED;
-			}
-		} else if (bUseLilo) {
-			/* Linux task resume switcher address known? */
-			if (Symbols_GetCpuAddress(SYMTYPE_TEXT, "resume", &task_switcher)) {
-				printf("Enabling Linux resume() task switch handling.\n");
-			} else {
-				task_switcher = PC_UNDEFINED;
-			}
-		}
-	}
 
 	/* reset cache stats (CPU emulation doesn't do that) */
 	CpuInstruction.D_Cache_hit = 0;
@@ -967,6 +949,31 @@ static calltype_t cpu_opcode_type(int family, Uint32 prev_pc, Uint32 pc)
 }
 
 /**
+ * Check callstack to see if return was for an earlier subroutine
+ * call higher in the stack.
+ *
+ * This can happen when e.g. OS task switchers manipulate stack to
+ * convert subroutine return (RTS) into a jump to another function.
+ * I.e. one of the returns in callstack will be skipped.
+ *
+ * Returns number of frames to finish/end.
+ */
+static int returned_frames(callinfo_t *callinfo, Uint32 pc)
+{
+	int frames, depth;
+	Uint32 return_pc;
+
+	depth = callinfo->depth;
+	for (frames = 1; --depth >= 0; frames++) {
+		return_pc = callinfo->stack[depth].ret_addr;
+		if (unlikely(pc == return_pc)) {
+			return frames;
+		}
+	}
+	return 0;
+}
+
+/**
  * If call tracking is enabled (there are symbols), collect
  * information about subroutine and other calls, and their costs.
  * 
@@ -977,7 +984,7 @@ static calltype_t cpu_opcode_type(int family, Uint32 prev_pc, Uint32 pc)
 static void collect_calls(Uint32 pc, counters_t *counters)
 {
 	calltype_t flag;
-	int idx, family;
+	int frames, idx, family;
 	Uint32 prev_pc, caller_pc;
 
 	family = cpu_profile.prev_family;
@@ -987,17 +994,24 @@ static void collect_calls(Uint32 pc, counters_t *counters)
 	cpu_callinfo.prev_pc = pc;
 	caller_pc = PC_UNDEFINED;
 
-	/* address is return address for last subroutine call? */
-	if (unlikely(pc == cpu_callinfo.return_pc) && likely(cpu_callinfo.depth)) {
-
+	/* is address a return address for any of the previous subroutine calls? */
+	frames = returned_frames(&cpu_callinfo, pc);
+	if (unlikely(frames)) {
 		flag = cpu_opcode_type(family, prev_pc, pc);
 		/* previous address can be exception return (e.g. RTE) instead of RTS,
 		 * if exception occurred right after returning from subroutine call.
 		 */
 		if (likely(flag == CALL_SUBRETURN || flag == CALL_EXCRETURN)) {
-			caller_pc = Profile_CallEnd(&cpu_callinfo, counters);
+			if (unlikely(frames > cpu_warnings.multireturn)) {
+				fprintf(stderr, "WARNING: subroutine call returned through %d stack frames: 0x%x -> 0x%x!\n",
+					frames, prev_pc, pc);
+				cpu_warnings.multireturn = frames;
+			}
+			/* unwind callstack & update costs */
+			while (frames-- > 0) {
+				caller_pc = Profile_CallEnd(&cpu_callinfo, counters);
+			}
 		}
-#if DEBUG
 		else if (++cpu_warnings.returns <= MAX_SHOW_COUNT) {
 			/* although at return address, it didn't return yet,
 			 * e.g. because there was a jsr or jump to return address
@@ -1009,7 +1023,6 @@ static void collect_calls(Uint32 pc, counters_t *counters)
 				fprintf(stderr, "Further warnings won't be shown.\n");
 			}
 		}
-#endif
 		/* next address might be another symbol, so need to fall through */
 	}
 
@@ -1018,20 +1031,9 @@ static void collect_calls(Uint32 pc, counters_t *counters)
 	if (unlikely(idx >= 0)) {
 
 		flag = cpu_opcode_type(family, prev_pc, pc);
-		if (flag == CALL_SUBROUTINE || flag == CALL_EXCEPTION) {
-			/* special HACK for OS task switchers which
-			 * change stack content to remove themselves
-			 * from call stack and uses RTS for
-			 * subroutine *calls*, not for returning from
-			 * them.
-			 *
-			 * It wouldn't be reliable to detect calls from them,
-			 * so I'm making call *to* it show up as branch, to
-			 * keep callstack depth correct.
-			 */
-			if (unlikely(pc == task_switcher)) {
-				flag = CALL_BRANCH;
-			} else if (unlikely(prev_pc == PC_UNDEFINED)) {
+		/* normal subroutine / exception call? */
+		if (likely(flag == CALL_SUBROUTINE || flag == CALL_EXCEPTION)) {
+			if (unlikely(prev_pc == PC_UNDEFINED)) {
 				/* if first profiled instruction
 				 * is subroutine call, it doesn't have
 				 * valid prev_pc value stored
@@ -1048,7 +1050,7 @@ static void collect_calls(Uint32 pc, counters_t *counters)
 				DebugUI(REASON_CPU_EXCEPTION);
 #endif
 			} else {
-				/* slow! */
+				/* return is to next instruction (slow!) */
 				cpu_callinfo.return_pc = Disasm_GetNextPC(prev_pc);
 			}
 		} else if (caller_pc != PC_UNDEFINED) {
