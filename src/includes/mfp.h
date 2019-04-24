@@ -103,11 +103,11 @@ typedef struct {
 	Uint8 TC_MAINCOUNTER;
 	Uint8 TD_MAINCOUNTER;
 
-	// TODO use  Uint32 instead
-	int TimerAClockCycles;
-	int TimerBClockCycles;
-	int TimerCClockCycles;
-	int TimerDClockCycles;
+	// TODO drop those 4 variables, as they are not really used in MFP_ReadTimer_xx
+	Uint32 TimerAClockCycles;
+	Uint32 TimerBClockCycles;
+	Uint32 TimerCClockCycles;
+	Uint32 TimerDClockCycles;
 
 	/* If a timer is stopped then restarted later without writing to the data register, */
 	/* we must resume the timer from where we left in the interrupts table, instead of */
@@ -118,7 +118,7 @@ typedef struct {
 	bool TimerDCanResume;
 
 	// TODO use  Sint16 instead
-	int	Current_Interrupt;
+	Sint16	Current_Interrupt;
 	Uint64	IRQ_Time;				/* Time when IRQ was set to 1 */
 	Uint8	IRQ_CPU;				/* Value of IRQ as seen by the CPU. There's a 4 cycle delay */
 							/* between a change of IRQ and its visibility at the CPU side */

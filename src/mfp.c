@@ -254,8 +254,8 @@ static const int MFP_GPIP_LineToIntNumber[] = { MFP_INT_GPIP0 , MFP_INT_GPIP1 , 
 static void	MFP_Init_Pointers ( MFP_STRUCT *pAllMFP );
 static void	MFP_Reset ( MFP_STRUCT *pMFP );
 
-static Uint8	MFP_ConvertIntNumber ( MFP_STRUCT *pMFP , int Interrupt , Uint8 **pMFP_IER , Uint8 **pMFP_IPR , Uint8 **pMFP_ISR , Uint8 **pMFP_IMR );
-static void	MFP_Exception ( MFP_STRUCT *pMFP , int Interrupt );
+static Uint8	MFP_ConvertIntNumber ( MFP_STRUCT *pMFP , Sint16 Interrupt , Uint8 **pMFP_IER , Uint8 **pMFP_IPR , Uint8 **pMFP_ISR , Uint8 **pMFP_IMR );
+static void	MFP_Exception ( MFP_STRUCT *pMFP , Sint16 Interrupt );
 static void	MFP_UpdateIRQ ( MFP_STRUCT *pMFP , Uint64 Event_Time );
 static bool	MFP_InterruptRequest ( MFP_STRUCT *pMFP , int Int , Uint8 Bit , Uint8 IPRx , Uint8 IMRx , Uint8 PriorityMaskA , Uint8 PriorityMaskB );
 static int	MFP_CheckPendingInterrupts ( MFP_STRUCT *pMFP );
@@ -462,7 +462,7 @@ void	MFP_MemorySnapShot_Capture ( bool bSave )
  * to set/clear these registers.
  * If an input pointer is NULL, we don't return the corresponding register.
  */
-static Uint8	MFP_ConvertIntNumber ( MFP_STRUCT *pMFP , int Interrupt , Uint8 **pMFP_IER , Uint8 **pMFP_IPR , Uint8 **pMFP_ISR , Uint8 **pMFP_IMR )
+static Uint8	MFP_ConvertIntNumber ( MFP_STRUCT *pMFP , Sint16 Interrupt , Uint8 **pMFP_IER , Uint8 **pMFP_IPR , Uint8 **pMFP_ISR , Uint8 **pMFP_IMR )
 {
 	Uint8	Bit;
 
@@ -496,7 +496,7 @@ static Uint8	MFP_ConvertIntNumber ( MFP_STRUCT *pMFP , int Interrupt , Uint8 **p
  * The upper 4 bits of the vector number are stored in the VR register 0xfffa17
  * (default value is 0x40, which gives exceptions' handlers located at 0x100 in RAM)
  */
-static void	MFP_Exception ( MFP_STRUCT *pMFP , int Interrupt )
+static void	MFP_Exception ( MFP_STRUCT *pMFP , Sint16 Interrupt )
 {
 	unsigned int VecNr;
 
@@ -1053,10 +1053,10 @@ void	MFP_TimerB_EventCount ( MFP_STRUCT *pMFP , int Delayed_Cycles )
  * Start Timer A or B - EventCount mode is done in HBL handler to time correctly
  */
 // TODO new mfp
-static int MFP_StartTimer_AB ( MFP_STRUCT *pMFP , Uint8 TimerControl, Uint16 TimerData, interrupt_id Handler,
+static Uint32 MFP_StartTimer_AB ( MFP_STRUCT *pMFP , Uint8 TimerControl, Uint16 TimerData, interrupt_id Handler,
                              bool bFirstTimer, bool *pTimerCanResume)
 {
-	int TimerClockCycles = 0;
+	Uint32 TimerClockCycles = 0;
 
 
 	/* When in pulse width mode, handle as in delay mode */
@@ -1184,10 +1184,10 @@ static int MFP_StartTimer_AB ( MFP_STRUCT *pMFP , Uint8 TimerControl, Uint16 Tim
  * Start Timer C or D
  */
 // TODO new mfp
-static int MFP_StartTimer_CD (  MFP_STRUCT *pMFP , Uint8 TimerControl, Uint16 TimerData, interrupt_id Handler,
+static Uint32 MFP_StartTimer_CD (  MFP_STRUCT *pMFP , Uint8 TimerControl, Uint16 TimerData, interrupt_id Handler,
                              bool bFirstTimer, bool *pTimerCanResume)
 {
-	int TimerClockCycles = 0;
+	Uint32 TimerClockCycles = 0;
 
 	/* Is timer in delay mode ? */
 	if ((TimerControl&0x7) != 0)
@@ -1266,7 +1266,7 @@ static int MFP_StartTimer_CD (  MFP_STRUCT *pMFP , Uint8 TimerControl, Uint16 Ti
  * Read Timer A or B - If in EventCount MainCounter already has correct value
  */
 // TODO : add 4 more handlers in cycint for MFP_TT
-static Uint8	MFP_ReadTimer_AB ( MFP_STRUCT *pMFP , Uint8 TimerControl, Uint8 MainCounter, int TimerCycles, interrupt_id Handler, bool TimerIsStopping)
+static Uint8	MFP_ReadTimer_AB ( MFP_STRUCT *pMFP , Uint8 TimerControl, Uint8 MainCounter, Uint32 TimerCycles, interrupt_id Handler, bool TimerIsStopping)
 {
 //	int TimerCyclesPassed;
 
@@ -1311,7 +1311,7 @@ static Uint8	MFP_ReadTimer_AB ( MFP_STRUCT *pMFP , Uint8 TimerControl, Uint8 Mai
  * Read Timer C or D
  */
 // TODO : add 4 more handlers in cycint for MFP_TT
-static Uint8	MFP_ReadTimer_CD ( MFP_STRUCT *pMFP , Uint8 TimerControl, Uint8 TimerData, Uint8 MainCounter, int TimerCycles, interrupt_id Handler, bool TimerIsStopping)
+static Uint8	MFP_ReadTimer_CD ( MFP_STRUCT *pMFP , Uint8 TimerControl, Uint8 TimerData, Uint8 MainCounter, Uint32 TimerCycles, interrupt_id Handler, bool TimerIsStopping)
 {
 //	int TimerCyclesPassed;
 
