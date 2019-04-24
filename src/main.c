@@ -24,6 +24,7 @@ const char Main_fileid[] = "Hatari main.c : " __DATE__ " " __TIME__;
 #include "floppy_ipf.h"
 #include "floppy_stx.h"
 #include "gemdos.h"
+#include "mfp.h"
 #include "fdc.h"
 #include "hdc.h"
 #include "ide.h"
@@ -746,6 +747,7 @@ static void Main_Init(void)
 	ACIA_Init( ACIA_Array , MachineClocks.ACIA_Freq , MachineClocks.ACIA_Freq );
 	IKBD_Init();			/* After ACIA_Init */
 
+	MFP_Init ( MFP_Array );
 	DSP_Init();
 	Floppy_Init();
 	M68000_Init();                /* Init CPU emulation */

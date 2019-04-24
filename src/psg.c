@@ -340,10 +340,10 @@ void PSG_Set_DataRegister(Uint8 val)
 				/* Seems like we want to print something... */
 				Printer_TransferByteTo(PSGRegisters[PSG_REG_IO_PORTB]);
 				/* Initiate a possible GPIP0 Printer BUSY interrupt */
-				MFP_InputOnChannel ( MFP_INT_GPIP0 , 0 );
+				MFP_InputOnChannel ( pMFP_Main , MFP_INT_GPIP0 , 0 );
 				/* Initiate a possible GPIP1 Falcon ACK interrupt */
 				if (Config_IsMachineFalcon())
-					MFP_InputOnChannel ( MFP_INT_GPIP1 , 0 );
+					MFP_InputOnChannel ( pMFP_Main , MFP_INT_GPIP1 , 0 );
 			}
 		}
 		LastStrobe = PSGRegisters[PSG_REG_IO_PORTA]&(1<<5);

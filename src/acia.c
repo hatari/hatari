@@ -363,11 +363,11 @@ static void	ACIA_Set_Line_IRQ_MFP ( int bit )
 		* the irq bit is set and the MFP interrupt is triggered - for example
 		* the "V8 music system" demo depends on this behaviour.
 		* This 4 cycle delay is handled in mfp.c */
-		MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_ACIA , MFP_GPIP_STATE_LOW );
+		MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE_ACIA , MFP_GPIP_STATE_LOW );
 	}
 	else
 	{
-		MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_ACIA , MFP_GPIP_STATE_HIGH );
+		MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE_ACIA , MFP_GPIP_STATE_HIGH );
 	}
 }
 

@@ -446,8 +446,8 @@ static inline int DmaSnd_EndOfFrameReached(void)
 	LOG_TRACE(TRACE_DMASND, "DMA snd end of frame\n");
 
 	/* Raise end-of-frame interrupts (MFP-i7 and Time-A) */
-	MFP_InputOnChannel ( MFP_INT_GPIP7 , 0 );
-	MFP_TimerA_EventCount();		/* Update events count / interrupt for timer A if needed */
+	MFP_InputOnChannel ( pMFP_Main , MFP_INT_GPIP7 , 0 );
+	MFP_TimerA_EventCount ( pMFP_Main );	/* Update events count / interrupt for timer A if needed */
 
 	if (nDmaSoundControl & DMASNDCTRL_PLAYLOOP)
 	{

@@ -895,7 +895,7 @@ Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 	BlitterPhase = BLITTER_PHASE_RUN_TRANSFER;
 
 	/* Busy=1, set line to high/1 and clear interrupt */
-	MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_GPU_DONE , MFP_GPIP_STATE_HIGH );
+	MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE_GPU_DONE , MFP_GPIP_STATE_HIGH );
 
 	/* Now we enter the main blitting loop */
 	do
@@ -916,7 +916,7 @@ Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 		BlitterRegs.ctrl &= ~(0x80|0x40);
 
 		/* Busy=0, set line to low/0 and request interrupt */
-		MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_GPU_DONE , MFP_GPIP_STATE_LOW );
+		MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE_GPU_DONE , MFP_GPIP_STATE_LOW );
 
 		BlitterPhase = BLITTER_PHASE_STOP;
 

@@ -60,7 +60,7 @@ void customreset(void)
 	PSG_Reset ();
 
 	/* Reset the MFP */
-	MFP_Reset ();
+	MFP_Reset_All ();
 
 	/* Reset the FDC */
 	FDC_Reset ( false );

@@ -67,7 +67,7 @@ static int Reset_ST(bool bCold)
 
 	STMemory_Reset (bCold);
 	CycInt_Reset();               /* Reset interrupts */
-	MFP_Reset();                  /* Setup MFP chip */
+	MFP_Reset_All();              /* Setup MFPs */
 	Video_Reset();                /* Reset video */
 	VDI_Reset();                  /* Reset internal VDI variables */
 	NvRam_Reset();                /* reset NvRAM (video) settings */

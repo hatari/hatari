@@ -166,13 +166,13 @@ static void	MIDI_UpdateIRQ ( void )
 		if ( irq_bit_new )
 		{
 			/* Request interrupt by setting GPIP to low/0 */
-			MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_ACIA , MFP_GPIP_STATE_LOW );
+			MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE_ACIA , MFP_GPIP_STATE_LOW );
 			MidiStatusRegister |= ACIA_SR_INTERRUPT_REQUEST;
 		}
 		else
 		{
 			/* Clear interrupt request by setting GPIP to high/1 */
-			MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_ACIA , MFP_GPIP_STATE_HIGH );
+			MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE_ACIA , MFP_GPIP_STATE_HIGH );
 			MidiStatusRegister &= ~ACIA_SR_INTERRUPT_REQUEST;
 		}
 	}

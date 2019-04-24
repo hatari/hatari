@@ -906,7 +906,7 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
         while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) )
             CALL_VAR(PendingInterruptFunction);
         if ( MFP_UpdateNeeded == true )
-            MFP_UpdateIRQ ( 0 );					/* update MFP's state if some internal timers related to MFP expired */
+            MFP_UpdateIRQ_All ( 0 );					/* update MFP's state if some internal timers related to MFP expired */
         pendingInterrupts &= ~( 1 << ( nr - 24 ) );			/* clear HBL or VBL pending bit */
 	CPU_IACK = false;
     }
@@ -1705,7 +1705,7 @@ static int do_specialties (void)
 	    while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) )
 		CALL_VAR(PendingInterruptFunction);
 	    if ( MFP_UpdateNeeded == true )
-	        MFP_UpdateIRQ ( 0 );
+	        MFP_UpdateIRQ_All ( 0 );
 
 	    /* Check is there's an interrupt to process (could be a delayed MFP interrupt) */
 	    if ( do_specialties_interrupt(false) ) {	/* test if there's an interrupt and add non pending jitter */
@@ -1840,7 +1840,7 @@ static void m68k_run_1 (void)
 	    while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
 		CALL_VAR ( PendingInterruptFunction );		/* call the interrupt's handler */
 	    if ( MFP_UpdateNeeded == true )
-		MFP_UpdateIRQ ( 0 );				/* update MFP's state if some internal timers related to MFP expired */
+		MFP_UpdateIRQ_All ( 0 );			/* update MFP's state if some internal timers related to MFP expired */
 	}
 
 	if (regs.spcflags) {
@@ -1906,7 +1906,7 @@ static void m68k_run_2 (void)
 	    while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) )
 		CALL_VAR(PendingInterruptFunction);
 	    if ( MFP_UpdateNeeded == true )
-		MFP_UpdateIRQ ( 0 );
+		MFP_UpdateIRQ_All ( 0 );
 	}
 
 	if (regs.spcflags) {

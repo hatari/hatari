@@ -3247,7 +3247,7 @@ static int iack_cycle(int nr)
 		while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) )
 			CALL_VAR(PendingInterruptFunction);
 		if ( MFP_UpdateNeeded == true )
-			MFP_UpdateIRQ ( 0 );					/* update MFP's state if some internal timers related to MFP expired */
+			MFP_UpdateIRQ_All ( 0 );				/* update MFP's state if some internal timers related to MFP expired */
 		pendingInterrupts &= ~( 1 << ( nr - 24 ) );			/* clear HBL or VBL pending bit (even if an MFP timer occurred during IACK) */
 		CPU_IACK = false;
 	}
@@ -5415,7 +5415,7 @@ static int do_specialties (int cycles)
 		while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) )
 			CALL_VAR(PendingInterruptFunction);
 		if ( MFP_UpdateNeeded == true )
-			MFP_UpdateIRQ ( 0 );
+			MFP_UpdateIRQ_All ( 0 );
 
 		/* Check is there's an interrupt to process (could be a delayed MFP interrupt) */
 		if (regs.spcflags & SPCFLAG_MFP) {
@@ -5704,7 +5704,7 @@ static void m68k_run_1 (void)
 				while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
 					CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
 				if ( MFP_UpdateNeeded == true )
-					MFP_UpdateIRQ ( 0 );
+					MFP_UpdateIRQ_All ( 0 );
 #endif
 
 				if (r->spcflags) {
@@ -5856,7 +5856,7 @@ static void m68k_run_1_ce (void)
 				while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
 					CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
 				if ( MFP_UpdateNeeded == true )
-					MFP_UpdateIRQ ( 0 );
+					MFP_UpdateIRQ_All ( 0 );
 #endif
 
 				if (cpu_tracer) {
@@ -6517,7 +6517,7 @@ static void m68k_run_mmu060 (void)
 				while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
 					CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
 				if ( MFP_UpdateNeeded == true )
-					MFP_UpdateIRQ ( 0 );
+					MFP_UpdateIRQ_All ( 0 );
 #endif
 				if (regs.spcflags) {
 					if (do_specialties (cpu_cycles))
@@ -6617,7 +6617,7 @@ static void m68k_run_mmu040 (void)
 				while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
 					CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
 				if ( MFP_UpdateNeeded == true )
-					MFP_UpdateIRQ ( 0 );
+					MFP_UpdateIRQ_All ( 0 );
 #endif
 
 				if (regs.spcflags) {
@@ -6782,7 +6782,7 @@ insretry:
 					while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
 						CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
 					if ( MFP_UpdateNeeded == true )
-						MFP_UpdateIRQ ( 0 );
+						MFP_UpdateIRQ_All ( 0 );
 #endif
 					if (regs.spcflags) {
 						if (do_specialties (cpu_cycles))
@@ -6812,7 +6812,7 @@ insretry:
 					while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
 						CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
 					if ( MFP_UpdateNeeded == true )
-						MFP_UpdateIRQ ( 0 );
+						MFP_UpdateIRQ_All ( 0 );
 #endif
 
 					if (regs.spcflags || time_for_interrupt ()) {
@@ -6930,7 +6930,7 @@ static void m68k_run_3ce (void)
 				while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
 					CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
 				if ( MFP_UpdateNeeded == true )
-					MFP_UpdateIRQ ( 0 );
+					MFP_UpdateIRQ_All ( 0 );
 #endif
 				if (r->spcflags) {
 					if (do_specialties (0))
@@ -7028,7 +7028,7 @@ static void m68k_run_3p(void)
 				while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
 					CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
 				if ( MFP_UpdateNeeded == true )
-					MFP_UpdateIRQ ( 0 );
+					MFP_UpdateIRQ_All ( 0 );
 #endif
 
 				if (r->spcflags) {
@@ -7221,7 +7221,7 @@ fprintf ( stderr , "cache valid %d tag1 %x lws1 %x ctag %x data %x mem=%x\n" , c
 				while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
 					CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
 				if ( MFP_UpdateNeeded == true )
-					MFP_UpdateIRQ ( 0 );
+					MFP_UpdateIRQ_All ( 0 );
 #endif
 
 		cont:
@@ -7414,7 +7414,7 @@ cont:
 				while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
 					CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
 				if ( MFP_UpdateNeeded == true )
-					MFP_UpdateIRQ ( 0 );
+					MFP_UpdateIRQ_All ( 0 );
 #endif
 
 				if (r->spcflags) {
@@ -7548,7 +7548,7 @@ static void m68k_run_2 (void)
 				while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
 					CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
 				if ( MFP_UpdateNeeded == true )
-					MFP_UpdateIRQ ( 0 );
+					MFP_UpdateIRQ_All ( 0 );
 #endif
 
 				if (r->spcflags) {

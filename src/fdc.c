@@ -1829,7 +1829,7 @@ void FDC_SetIRQ ( Uint8 IRQ_Source )
 	else
 	{
 		/* Acknowledge in MFP circuit, pass bit, enable, pending */
-		MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_FDC_HDC , MFP_GPIP_STATE_LOW );
+		MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE_FDC_HDC , MFP_GPIP_STATE_LOW );
 		LOG_TRACE(TRACE_FDC, "fdc set irq 0x%x source 0x%x VBL=%d HBL=%d\n" , FDC.IRQ_Signal , IRQ_Source , nVBLs , nHBL );
 	}
 
@@ -1865,7 +1865,7 @@ void FDC_ClearIRQ ( void )
 	if ( ( FDC.IRQ_Signal & FDC_IRQ_SOURCE_FORCED ) == 0 )
 	{
 		FDC.IRQ_Signal = 0;
-		MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_FDC_HDC , MFP_GPIP_STATE_HIGH );
+		MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE_FDC_HDC , MFP_GPIP_STATE_HIGH );
 		LOG_TRACE(TRACE_FDC, "fdc clear irq VBL=%d HBL=%d\n" , nVBLs , nHBL );
 	}
 
@@ -1881,7 +1881,7 @@ void FDC_ClearHdcIRQ(void)
 	FDC.IRQ_Signal &= ~FDC_IRQ_SOURCE_HDC;
 	if (FDC.IRQ_Signal == 0)
 	{
-		MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_FDC_HDC , MFP_GPIP_STATE_HIGH );
+		MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE_FDC_HDC , MFP_GPIP_STATE_HIGH );
 	}
 }
 
