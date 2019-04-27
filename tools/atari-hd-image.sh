@@ -129,8 +129,8 @@ exit_cleanup ()
 		rm -f $tmppart
 	fi
 	if [ \! -z $convertdir ] && [ -d $convertdir ]; then
-		echo "rm -f $convertdir"
-		rm -f $convertdir
+		echo "rm -rf $convertdir"
+		rm -rf "$convertdir"
 	fi
 	echo "Done."
 }
