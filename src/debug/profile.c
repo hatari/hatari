@@ -165,7 +165,7 @@ void Profile_ShowCallers(FILE *fp, int sites, callee_t *callsite, const char * (
 			countissues++;
 		}
 		if (typeaddr) {
-			fprintf(stderr, "WARNING: different types of calls (at least) from 0x%x (to 0x%x),\n\t has its codechanged during profiling?\n",
+			fprintf(stderr, "WARNING: different types of calls (at least) from 0x%x (to 0x%x),\n\t has its code changed during profiling?\n",
 				typeaddr, callsite->addr);
 		}
 	}
