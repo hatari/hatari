@@ -1,6 +1,6 @@
 Contents:
 - What is NatFeats
-- Test / example fles
+- Test / example files
 
 
 WHAT IS NATFEATS
@@ -11,16 +11,19 @@ here:
   https://github.com/aranym/aranym/wiki/natfeats-proposal
 
 These features range from simple things like:
-- Toggling fast-forward mode on/off
+- Toggling Hatari fast-forward mode on/off
 - Outputting strings (NF_STDERR) and invoking debugger (NF_DEBUGGER)
   (which together can be used to implement asserts)
 - Exiting emulator with return value (NF_EXIT)
 
 To complex device drivers.
 
+Individual feature APIs are (partially) documented here:
+	https://github.com/aranym/aranym/wiki/natfeats-nfapi
+
 What features are implemented by emulators can differ, so application
 needs to check for availability of each of the features before using
-them.
+them.  Ready-to-use example code for accessing them is listed below.
 
 
 TEST / EXAMPLE FILES
