@@ -450,6 +450,21 @@ To see how much emulated time the profiled part took and to get lists
 of functions taking most cycles / time, using most instructions and
 being called most.
 
+To get back traces for every call of, say "auto_inthandler"
+assembly interrupt handler, one can use following files:
+---- stack-show.ini ----
+profile stack
+---- stack-init.ini ----
+profile on
+b pc=auto_inthandler :noinit :trace :file stack-show.ini
+------------------------
+
+And start hatari with "--parse stack-init.ini" option.
+
+Breakpoint options:
+* :noinit -- no reset for profile/caller info when breakpoint is hit
+* :trace -- continue running without dropping to debugger
+* :file -- execute debugger commands from given file when breakpoint is hit
 
 What symbols are in the symbol file dictates what one sees
 with many of the debugger commands.  If one does just tracing
