@@ -239,8 +239,8 @@ static void add_callee_cost(callee_t *callsite, callstack_t *stack)
  */
 static void add_caller(callee_t *callsite, Uint32 pc, Uint32 prev_pc, calltype_t flag)
 {
+	int i, count, oldcount;
 	caller_t *info;
-	int i, count;
 
 	/* need to store real call addresses as symbols can change
 	 * after profiling has been stopped
@@ -259,21 +259,24 @@ static void add_caller(callee_t *callsite, Uint32 pc, Uint32 prev_pc, calltype_t
 	}
 	/* how many caller slots are currently allocated? */
 	count = callsite->count;
+	oldcount = 0;
 	for (;;) {
-		for (i = 0; i < count; i++, info++) {
+		for (i = oldcount; i < count; i++, info++) {
 			if (info->addr == prev_pc) {
+				/* increment caller */
 				info->flags |= flag;
 				info->calls++;
 				return;
 			}
 			if (!info->addr) {
-				/* empty slot */
+				/* add caller to empty slot */
 				info->addr = prev_pc;
 				info->flags |= flag;
 				info->calls = 1;
 				return;
 			}
 		}
+		oldcount = count;
 		/* not enough, double caller slots */
 		count *= 2;
 		info = realloc(callsite->callers, count * sizeof(*info));
@@ -281,9 +284,10 @@ static void add_caller(callee_t *callsite, Uint32 pc, Uint32 prev_pc, calltype_t
 			fprintf(stderr, "ERROR: caller info alloc failed!\n");
 			return;
 		}
-		memset(info + callsite->count, 0, callsite->count * sizeof(*info));
 		callsite->callers = info;
 		callsite->count = count;
+		info = info + oldcount;
+		memset(info, 0, oldcount * sizeof(*info));
 	}
 }
 
