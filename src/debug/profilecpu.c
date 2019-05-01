@@ -965,7 +965,7 @@ static int returned_frames(callinfo_t *callinfo, Uint32 pc)
 	depth = callinfo->depth;
 	for (frames = 1; --depth >= 0; frames++) {
 		return_pc = callinfo->stack[depth].ret_addr;
-		if (unlikely(pc == return_pc)) {
+		if (pc == return_pc) {
 			return frames;
 		}
 	}
@@ -993,14 +993,12 @@ static void collect_calls(Uint32 pc, counters_t *counters)
 	cpu_callinfo.prev_pc = pc;
 	caller_pc = PC_UNDEFINED;
 
-	/* is address a return address for any of the previous subroutine calls? */
-	frames = returned_frames(&cpu_callinfo, pc);
-	if (unlikely(frames)) {
-		flag = cpu_opcode_type(family, prev_pc, pc);
-		/* previous address can be exception return (e.g. RTE) instead of RTS,
-		 * if exception occurred right after returning from subroutine call.
-		 */
-		if (likely(flag == CALL_SUBRETURN || flag == CALL_EXCRETURN)) {
+	/* check opcode first as return frame check can be slow with deep call stacks */
+	flag = cpu_opcode_type(family, prev_pc, pc);
+	if (unlikely(flag == CALL_SUBRETURN || flag == CALL_EXCRETURN)) {
+		/* is address a return address for *any* of the previous subroutine calls? */
+		frames = returned_frames(&cpu_callinfo, pc);
+		if (frames) {
 			if (unlikely(frames > cpu_warnings.multireturn)) {
 				fprintf(stderr, "WARNING: subroutine call returned through %d stack frames: 0x%x -> 0x%x!\n",
 					frames, prev_pc, pc);
@@ -1011,10 +1009,12 @@ static void collect_calls(Uint32 pc, counters_t *counters)
 				caller_pc = Profile_CallEnd(&cpu_callinfo, counters);
 			}
 		}
-		else if (++cpu_warnings.returns <= MAX_SHOW_COUNT) {
-			/* although at return address, it didn't return yet,
-			 * e.g. because there was a jsr or jump to return address
-			 */
+	} else if (unlikely(pc == cpu_callinfo.return_pc)) {
+		/* return address, but not due to return, e.g. because
+		 * there was a jsr or jump to return address.  Checked
+		 * only for last return
+		 */
+		if (++cpu_warnings.returns <= MAX_SHOW_COUNT) {
 			Uint32 nextpc;
 			fprintf(stderr, "WARNING: subroutine call returned 0x%x -> 0x%x, not through RTS etc!\n", prev_pc, pc);
 			Disasm(stderr, prev_pc, &nextpc, 1);
@@ -1022,14 +1022,11 @@ static void collect_calls(Uint32 pc, counters_t *counters)
 				fprintf(stderr, "Further warnings won't be shown.\n");
 			}
 		}
-		/* next address might be another symbol, so need to fall through */
 	}
 
 	/* address is one which we're tracking? */
 	idx = Symbols_GetCpuCodeIndex(pc);
 	if (unlikely(idx >= 0)) {
-
-		flag = cpu_opcode_type(family, prev_pc, pc);
 		/* normal subroutine / exception call? */
 		if (likely(flag == CALL_SUBROUTINE || flag == CALL_EXCEPTION)) {
 			if (unlikely(prev_pc == PC_UNDEFINED)) {
