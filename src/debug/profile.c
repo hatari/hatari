@@ -23,6 +23,8 @@ const char Profile_fileid[] = "Hatari profile.c : " __DATE__ " " __TIME__;
 #include "symbols.h"
 #include "profile.h"
 #include "profile_priv.h"
+#include "m68000.h"
+#include "dsp.h"
 
 profile_loop_t profile_loop;
 
@@ -111,11 +113,8 @@ static void output_caller_info(FILE *fp, caller_t *info, Uint32 *typeaddr)
 	fputs(", ", fp);
 }
 
-/*
- * Show collected CPU/DSP callee/caller information.
- *
- * Hint: As caller info list is based on number of loaded symbols,
- * load only text symbols to save memory & make things faster...
+/**
+ * Show collected CPU/DSP callee/caller information
  */
 void Profile_ShowCallers(FILE *fp, int sites, callee_t *callsite, const char * (*addr2name)(Uint32, Uint64 *))
 {
@@ -235,7 +234,9 @@ static void add_callee_cost(callee_t *callsite, callstack_t *stack)
 	assert(0);
 }
 
-
+/**
+ * Add new caller or updated earlier caller stats for call site
+ */
 static void add_caller(callee_t *callsite, Uint32 pc, Uint32 prev_pc, calltype_t flag)
 {
 	caller_t *info;
@@ -287,7 +288,7 @@ static void add_caller(callee_t *callsite, Uint32 pc, Uint32 prev_pc, calltype_t
 }
 
 /**
- * Add information about called symbol, and if it was subroutine
+ * Add information about the called symbol, and if it was a subroutine
  * call, add it to stack of functions which total costs are tracked.
  * callinfo.return_pc needs to be set before invoking this if the call
  * is of type CALL_SUBROUTINE.
@@ -403,14 +404,27 @@ Uint32 Profile_CallEnd(callinfo_t *callinfo, counters_t *totalcost)
 }
 
 /**
- * Add costs to all functions still in call stack
- * and print their names
+ * Add costs to all functions still in call stack and print their names
+ *
+ * Diagram of variables involved in 2 functions deep call stack:
+ *
+ *   (caller_addr 1)  bsr symbol1  -1->  symbol1     (callee_addr 1)
+ *      (ret_addr 1)  <instr>     <-.    ...
+ *                                  ¦    bsr symbol2 (caller_addr 2)  -2->  symbol2 (callee_addr 2)
+ *                                  1    <instr>     (ret_addr 2)    <-.    ...
+ *                                  |    ...                           2    ... (PC)
+ *                                  '-   rts                           '-   rts
+ *
+ * When one wants to match callee_addr (= symbol) to caller_addr (= which
+ * place in that function called further functions), it's best to traverse
+ * stack from last item to top, as these items are in following call stack
+ * items, not in same one.
  */
 void Profile_FinalizeCalls(Uint32 pc, callinfo_t *callinfo, counters_t *totalcost,
 			   const char* (*get_symbol)(Uint32, symtype_t))
 {
 	Uint32 sym_addr, ret_addr, caller_addr;
-	int i, offset;
+	int i, lines, offset;
 	bool dots;
 
 	if (!callinfo->depth) {
@@ -421,20 +435,22 @@ void Profile_FinalizeCalls(Uint32 pc, callinfo_t *callinfo, counters_t *totalcos
 	i = 0;
 	dots = false;
 	caller_addr = pc;
+	lines = ConfigureParams.Debugger.nBacktraceLines;
 	while (callinfo->depth > 0) {
 
+		/* finalize & decrease callinfo->depth */
 		Profile_CallEnd(callinfo, totalcost);
-
+		if (++i > lines && lines > 0) {
+			continue;
+		}
 		ret_addr = callinfo->stack[callinfo->depth].ret_addr;
 		sym_addr = callinfo->stack[callinfo->depth].callee_addr;
 		offset = caller_addr - sym_addr;
 
 		/* Skip middle part of a long callstack as messed
 		 * callstacks could be thousands of frames deep...
-		 *
-		 * (see "task_switcher" variable in profilecpu.c)
 		 */
-		if (++i >= 32 && callinfo->depth > 32) {
+		if (i >= 32 && callinfo->depth > 32) {
 			if (!dots) {
 				fprintf(stderr, "- ...\n");
 				dots = true;
@@ -455,30 +471,51 @@ void Profile_FinalizeCalls(Uint32 pc, callinfo_t *callinfo, counters_t *totalcos
 }
 
 /**
- * Show current profile stack
+ * Show current profile call stack, up to configured max backtrace depth
  */
 static void Profile_ShowStack(bool forDsp)
 {
-	int i;
-	Uint32 addr;
+	const char *(*get_symbol)(Uint32, symtype_t), *sym;
+	Uint32 sym_addr, ret_addr, caller_addr;
+	int i, offset, depth, top;
 	callinfo_t *callinfo;
-	const char* (*get_symbol)(Uint32, symtype_t);
 
 	if (forDsp) {
 		Profile_DspGetCallinfo(&callinfo, &get_symbol);
+		caller_addr = DSP_GetPC();
 	} else {
 		Profile_CpuGetCallinfo(&callinfo, &get_symbol);
+		caller_addr = M68000_GetPC();
 	}
 	if (!callinfo->depth) {
 		fprintf(stderr, "Empty stack.\n");
 		return;
 	}
 
-	for (i = 0; i < callinfo->depth; i++) {
-		addr = callinfo->stack[i].callee_addr;
-		fprintf(stderr, "- 0x%x: %s (return = 0x%x)\n",
-			addr, get_symbol(addr, SYMTYPE_TEXT),
-			callinfo->stack[i].ret_addr);
+	depth = callinfo->depth;
+	top = ConfigureParams.Debugger.nBacktraceLines;
+	if (top > 0 && top < depth) {
+		top = depth - top;
+	} else {
+		top = 0;
+	}
+	i = 0;
+	while (depth-- > top) {
+		i++;
+		ret_addr = callinfo->stack[depth].ret_addr;
+		sym_addr = callinfo->stack[depth].callee_addr;
+		offset = caller_addr - sym_addr;
+
+		sym = get_symbol(sym_addr, SYMTYPE_TEXT);
+		if (sym) {
+			char sign = offset > 0 ? '+' : '-';
+			fprintf(stderr, "- %d. 0x%06x: %s %c0x%x (return = 0x%x)\n",
+				i, caller_addr, sym, sign, abs(offset), ret_addr);
+		} else {
+			fprintf(stderr, "- %d. 0x%06x (return = 0x%x)\n",
+				i, caller_addr, ret_addr);
+		}
+		caller_addr = callinfo->stack[depth].caller_addr;
 	}
 }
 

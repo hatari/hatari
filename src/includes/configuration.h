@@ -31,6 +31,7 @@ typedef struct
   int nSymbolLines;
   int nMemdumpLines;
   int nDisasmLines;
+  int nBacktraceLines;
   int nExceptionDebugMask;
   int nDisasmOptions;
   bool bDisasmUAE;
