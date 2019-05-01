@@ -26,7 +26,6 @@ const char Profilecpu_fileid[] = "Hatari profilecpu.c : " __DATE__ " " __TIME__;
 #include "debug_priv.h"
 #include "stMemory.h"
 #include "tos.h"
-#include "lilo.h"
 #include "screen.h"
 #include "video.h"
 
@@ -281,7 +280,7 @@ static void show_cpu_warnings(void)
 		fprintf(stderr, "- Unrecognized (zero) opcode families: %d\n", cpu_warnings.opfamily);
 	}
 	if (cpu_warnings.returns) {
-		fprintf(stderr, "- Subroutine calls didn't return through RTS: %d\n", cpu_warnings.returns);
+		fprintf(stderr, "- Subroutine calls didn't return through RTS etc: %d\n", cpu_warnings.returns);
 	}
 	if (cpu_warnings.multireturn > MAX_MULTI_RETURN) {
 		fprintf(stderr, "- Subroutine calls returned (at max) through %d stack frames\n", cpu_warnings.multireturn);
@@ -1017,7 +1016,7 @@ static void collect_calls(Uint32 pc, counters_t *counters)
 			 * e.g. because there was a jsr or jump to return address
 			 */
 			Uint32 nextpc;
-			fprintf(stderr, "WARNING: subroutine call returned 0x%x -> 0x%x, not through RTS!\n", prev_pc, pc);
+			fprintf(stderr, "WARNING: subroutine call returned 0x%x -> 0x%x, not through RTS etc!\n", prev_pc, pc);
 			Disasm(stderr, prev_pc, &nextpc, 1);
 			if (cpu_warnings.returns == MAX_SHOW_COUNT) {
 				fprintf(stderr, "Further warnings won't be shown.\n");
