@@ -309,8 +309,8 @@ void Profile_CallStart(int idx, callinfo_t *callinfo, Uint32 prev_pc, calltype_t
 
 	add_caller(callinfo->site + idx, pc, prev_pc, flag);
 
-	/* subroutine call which will return? */
-	if (flag != CALL_SUBROUTINE) {
+	/* subroutine/exception call i.e. one which will return? */
+	if (flag != CALL_SUBROUTINE && flag != CALL_EXCEPTION) {
 		/* no, some other call type */
 		return;
 	}
