@@ -1650,6 +1650,8 @@ label="%s";
     def do_output(self, profobj, fname):
         "output graphs for given profile data"
         if not (self.output_enabled and profobj.callers.present):
+            if not profobj.callers.present:
+                self.warning("callgraph output enabled, but caller info is missing!")
             return
         stats = profobj.stats
         for field in range(profobj.stats.items):
@@ -1838,8 +1840,7 @@ class Main(Output):
     def usage(self, msg):
         "show program usage + error message"
         self.message(__doc__)
-        self.message("ERROR: %s!" % msg)
-        sys.exit(1)
+        self.error_exit(msg)
 
 
 # ---------------------------------------------------------------------
