@@ -5,7 +5,8 @@
 # 2013-2019 (C) Eero Tamminen, licensed under GPL v2+
 #
 """
-A tool for post-processing Hatari emulator HW profiling data.
+A tool for post-processing Hatari emulator HW profiling data with
+symbol information.
 
 In Hatari debugger you get (CPU) profiling data with the following
 commands (for Falcon DSP data, prefix commands with 'dsp'):
@@ -16,9 +17,10 @@ commands (for Falcon DSP data, prefix commands with 'dsp'):
 
 Profiling information for code addresses is summed together and
 assigned to (function) symbols to which those addresses belong to.
-All addresses between two symbol names (in profile file) or symbol
-addresses (read from symbols files) are assumed to belong to the
-preceding function/symbol.
+
+All costs for addresses between two symbol names (in profile file) or
+symbol addresses (read from symbols files) are assumed to belong to
+the function/symbol which address preceeds them.
 
 Tool output will contain at least:
 - (deduced) call counts,
@@ -68,15 +70,12 @@ Long options for above are:
 (Timing --info is shown only for cycles list.)
 
 For example:
-	hatari-profile -a etos512k.sym -st -g -f 10 prof1.txt prof2.txt
+	hatari-profile -a etos512k.sym -st -f 10 prof1.txt prof2.txt
 
 For each given profile file, output is:
 - profile statistics
 - a sorted list of functions, for each of the profile data items
   (calls, instructions, cycles...)
-- callgraph in DOT format for each of the profile data items, for
-  each of the profile files, saved to <filename>-<itemindex>.dot file
-  (prof1-0.dot, prof1-2.dot etc)
 
 
 When both -l and -f options are specified, they're combined.  Produced
@@ -86,12 +85,19 @@ value is larger than the one given for the -l option.  In callgraphs
 these options mainly affect which nodes are highlighted.
 
 
-If profile includes "caller" information, -p option can be used to see:
-- costs also for everything else that a subroutine calls,
-- subroutine's "own" cost, which excludes costs for any further
-  subroutine calls that it did
+If profiling was done after loading symbol information for the profile code,
+profile ddata includes "caller" information.  Then -p option can be used
+to see:
+- costs also for everything else that a subroutine calls, in addition to
+- subroutine's "own" cost, which excludes costs for any further subroutine
+  calls that it did
+
 (For more information on how these differ from normally shown costs,
 see Profiling section in Hatari manual.)
+
+With the -g option, callgraph are generated in DOT format for each of
+the profile data items, for each of the profile files, saved to
+<filename>-<itemindex>.dot file (prof1-0.dot, prof1-2.dot etc).
 
 Nodes with subroutine costs are shown as diamonds in the callgraphs.
 
@@ -176,11 +182,11 @@ from bisect import bisect_right
 import getopt, os, re, sys
 
 # PC address that was undefined during profiling,
-# signifies first called symbol in data
+# signifies normally first called symbol in data
 PC_UNDEFINED = 0xffffff
 
 # call type identifiers and their information
-CALL_STARTUP = '0'	# first called symbol, special calse
+CALL_STARTUP = '0'	# first called symbol, special case
 CALL_SUBROUTINE = 's'
 CALL_SUBRETURN = 'r'
 CALL_EXCEPTION = 'e'
@@ -189,7 +195,7 @@ CALL_BRANCH = 'b'
 CALL_NEXT = 'n'
 CALL_UNKNOWN = 'u'
 CALLTYPES = {
-    CALL_SUBROUTINE: "subroutine call",		# is calls
+    CALL_SUBROUTINE: "subroutine call",		# is call
     CALL_SUBRETURN:  "subroutine return",	# shouldn't be call
     CALL_EXCEPTION:  "exception",		# is call
     CALL_EXCRETURN:  "exception return",	# shouldn't be call
