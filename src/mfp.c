@@ -211,7 +211,8 @@ MFP_STRUCT		*pMFP_TT;
 
 
 static bool bAppliedTimerDPatch;    /* true if the Timer-D patch has been applied */
-static int nTimerDFakeValue;        /* Faked Timer-D data register for the Timer-D patch */
+
+#define	PATCH_TIMERD_TDDR_FAKE		0x64		/* TDDR value to slow down timer D */
 
 
 static int PendingCyclesOver = 0;   /* >= 0 value, used to "loop" a timer when data counter reaches 0 */
@@ -376,6 +377,8 @@ static void	MFP_Reset ( MFP_STRUCT *pMFP )
 	pMFP->TimerCClockCycles = 0;
 	pMFP->TimerDClockCycles = 0;
 
+	pMFP->PatchTimerD_Done = 0;
+
 	/* Clear IRQ */
 	pMFP->Current_Interrupt = -1;
 	pMFP->IRQ = 0;
@@ -399,8 +402,6 @@ void	MFP_MemorySnapShot_Capture ( bool bSave )
 	int		n;
 
 	MemorySnapShot_Store(&MFP_UpdateNeeded, sizeof(MFP_UpdateNeeded));
-	MemorySnapShot_Store(&bAppliedTimerDPatch, sizeof(bAppliedTimerDPatch));
-	MemorySnapShot_Store(&nTimerDFakeValue, sizeof(nTimerDFakeValue));
 
 	/* Save/Restore each MFP */
 	for ( n=0 ; n<MFP_MAX_NB ; n++ )
@@ -441,6 +442,9 @@ void	MFP_MemorySnapShot_Capture ( bool bSave )
 		MemorySnapShot_Store(&(pMFP->TimerBClockCycles), sizeof(pMFP->TimerBClockCycles));
 		MemorySnapShot_Store(&(pMFP->TimerCClockCycles), sizeof(pMFP->TimerCClockCycles));
 		MemorySnapShot_Store(&(pMFP->TimerDClockCycles), sizeof(pMFP->TimerDClockCycles));
+
+		MemorySnapShot_Store(&(pMFP->PatchTimerD_Done), sizeof(pMFP->PatchTimerD_Done));
+		MemorySnapShot_Store(&(pMFP->PatchTimerD_TDDR_old), sizeof(pMFP->PatchTimerD_TDDR_old));
 
 		MemorySnapShot_Store(&(pMFP->Current_Interrupt), sizeof(pMFP->Current_Interrupt));
 		MemorySnapShot_Store(&(pMFP->IRQ), sizeof(pMFP->IRQ));
@@ -2267,11 +2271,12 @@ void	MFP_TimerDData_ReadByte ( void )
 		pMFP = pMFP_TT;
 
 	/* Special case for the main MFP when bPatchTimerD is used */
-	if ( ( IoAccessCurrentAddress == 0xfffa25 )
-	    && ( ConfigureParams.System.bPatchTimerD && pc >= TosAddress && pc <= TosAddress + TosSize ) )
+	/* NOTE : in TT mode TOS also starts useless timer D on the TT MFP, so we should restore */
+	/* 0xfffa25/0xfffaa5 for Main MFP and TT MFP when bPatchTimerD is enabled */
+	if ( ConfigureParams.System.bPatchTimerD && pc >= TosAddress && pc <= TosAddress + TosSize )
 	{
-		/* Trick the tos to believe it was changed: */
-		IoMem[IoAccessCurrentAddress] = nTimerDFakeValue;
+		/* Trick the tos to believe TDDR was not changed */
+		IoMem[IoAccessCurrentAddress] = pMFP->PatchTimerD_TDDR_old;
 	}
 
 	else
@@ -2838,33 +2843,34 @@ void	MFP_TimerCDCtrl_WriteByte(void)
 	{
 		Uint32 pc = M68000_GetPC();
 
-		/* Special case for the main MFP when RS232 or bPatchTimerD are used */
+		/* Special case for main MFP and TT MFP when bPatchTimerD is used */
+		if (ConfigureParams.System.bPatchTimerD && !pMFP->PatchTimerD_Done
+			&& pc >= TosAddress && pc <= TosAddress + TosSize)
+		{
+			/* Slow down Timer-D if set from TOS for the first time to gain
+			* more desktop performance.
+			* Obviously, we need to emulate all timers correctly but TOS sets
+			* up Timer-D at a very high rate (every couple of instructions).
+			* The interrupt isn't enabled but the emulator still needs to
+			* process the interrupt table and this HALVES our frame rate!!!
+			* Some games actually reference this timer but don't set it up
+			* (eg Paradroid, Speedball I) so we simply intercept the Timer-D
+			* setup code in TOS and fix the numbers with more 'laid-back'
+			* values. This still keeps 100% compatibility */
+			if ( new_tcdcr & 0x07 )			/* apply patch only if timer D is being started */
+			{
+				new_tcdcr = IoMem[IoAccessCurrentAddress] = (IoMem[IoAccessCurrentAddress] & 0xf0) | 7;
+				pMFP->PatchTimerD_Done = 1;
+			}
+		}
+
+		/* Special case for the main MFP when RS232 is enabled */
 		if ( IoAccessCurrentAddress == 0xfffa1d )
 		{
 			/* Need to change baud rate of RS232 emulation? */
 			if (ConfigureParams.RS232.bEnableRS232)
 			{
 				RS232_SetBaudRateFromTimerD();
-			}
-
-			if (ConfigureParams.System.bPatchTimerD && !bAppliedTimerDPatch
-				&& pc >= TosAddress && pc <= TosAddress + TosSize)
-			{
-				/* Slow down Timer-D if set from TOS for the first time to gain
-				* more desktop performance.
-				* Obviously, we need to emulate all timers correctly but TOS sets
-				* up Timer-D at a very high rate (every couple of instructions).
-				* The interrupt isn't enabled but the emulator still needs to
-				* process the interrupt table and this HALVES our frame rate!!!
-				* Some games actually reference this timer but don't set it up
-				* (eg Paradroid, Speedball I) so we simply intercept the Timer-D
-				* setup code in TOS and fix the numbers with more 'laid-back'
-				* values. This still keeps 100% compatibility */
-				if ( new_tcdcr & 0x07 )			/* apply patch only if timer D is being started */
-				{
-					new_tcdcr = IoMem[0xfffa1d] = (IoMem[0xfffa1d] & 0xf0) | 7;
-					bAppliedTimerDPatch = true;
-				}
 			}
 		}
 
@@ -3004,19 +3010,21 @@ void	MFP_TimerDData_WriteByte ( void )
 			FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles );
 	}
 
+	/* Patch Timer D for better performance ? */
+	/* NOTE : in TT mode TOS also starts useless timer D on the TT MFP, so we should patch */
+	/* Main MFP and TT MFP when bPatchTimerD is enabled */
+	if ( ConfigureParams.System.bPatchTimerD && pc >= TosAddress && pc <= TosAddress + TosSize )
+	{
+		pMFP->PatchTimerD_TDDR_old = IoMem[IoAccessCurrentAddress];
+		IoMem[IoAccessCurrentAddress] = PATCH_TIMERD_TDDR_FAKE;	/* Slow down the useless Timer D setup from the bios */
+	}
+
 	if ( IoAccessCurrentAddress == 0xfffa25 )
 	{
 		/* Need to change baud rate of RS232 emulation ? */
 		if ( ConfigureParams.RS232.bEnableRS232 && ( IoMem[0xfffa1d] & 0x07 ) )
 		{
 			RS232_SetBaudRateFromTimerD();
-		}
-
-		/* Patch Timer D for better performance ? */
-		if (ConfigureParams.System.bPatchTimerD && pc >= TosAddress && pc <= TosAddress + TosSize)
-		{
-			nTimerDFakeValue = IoMem[0xfffa25];
-			IoMem[0xfffa25] = 0x64;		/* Slow down the useless Timer D setup from the bios */
 		}
 	}
 

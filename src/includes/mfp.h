@@ -117,7 +117,9 @@ typedef struct {
 	bool TimerCCanResume;
 	bool TimerDCanResume;
 
-	// TODO use  Sint16 instead
+	Uint8	PatchTimerD_Done;			/* 0=false 1=true */
+	Uint8	PatchTimerD_TDDR_old;			/* Value of TDDR before forcing it to PATCH_TIMER_TDDR_FAKE */
+
 	Sint16	Current_Interrupt;
 	Uint64	IRQ_Time;				/* Time when IRQ was set to 1 */
 	Uint8	IRQ_CPU;				/* Value of IRQ as seen by the CPU. There's a 4 cycle delay */
