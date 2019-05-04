@@ -1149,15 +1149,9 @@ void Ncr5380_TT_DMA_Ctrl_WriteWord(void)
 
 
 /**
- * This is a temporary hack until we've got proper emulation of the
- * 2nd MFP in the TT
+ * Return true if IRQ is set ; used in MFP_GPIP_ReadByte_TT
  */
-void Ncr5380_TT_GPIP_ReadByte(void)
+bool Ncr5380_TT_GetIRQ(void)
 {
-	Uint8 val = 0x7f;
-
-	if (ncr_soft_scsi.irq)
-		val |= 0x80;
-
-	IoMem[0xfffa81] = val;
+	return ncr_soft_scsi.irq;
 }

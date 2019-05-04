@@ -5222,7 +5222,7 @@ static bool do_specialties_interrupt (int Pending)
 
     /* Check for MFP ints (level 6) */
     if (regs.spcflags & SPCFLAG_MFP) {
-       if (MFP_ProcessIRQ() == true)
+       if (MFP_ProcessIRQ_All() == true)
          return true;					/* MFP exception was generated, no higher interrupt can happen */
     }
 
@@ -5417,7 +5417,7 @@ static int do_specialties (int cycles)
 		if ( MFP_UpdateNeeded == true )
 			MFP_UpdateIRQ_All ( 0 );
 
-		/* Check is there's an interrupt to process (could be a delayed MFP interrupt) */
+		/* Check if there's an interrupt to process (could be a delayed MFP interrupt) */
 		if (regs.spcflags & SPCFLAG_MFP) {
 			MFP_DelayIRQ ();			/* Handle IRQ propagation */
 			M68000_Update_intlev ();		/* Refresh the list of pending interrupts */

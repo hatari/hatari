@@ -228,31 +228,30 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_TT[] =
 	{ 0xfffa3d, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* No bus error here */
 	{ 0xfffa3f, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* No bus error here */
 
-	/* TODO: Second MFP of the TT ... */
-	{ 0xfffa81, SIZE_BYTE, Ncr5380_TT_GPIP_ReadByte, IoMem_VoidWrite }, /* TT MFP GPIP */
-	{ 0xfffa83, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* TT MFP AER */
-	{ 0xfffa85, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* TT MFP DDR */
-	{ 0xfffa87, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* TT MFP IERA */
-	{ 0xfffa89, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* TT MFP IERB */
-	{ 0xfffa8b, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* TT MFP IPRA */
-	{ 0xfffa8d, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* TT MFP IPRB */
-	{ 0xfffa8f, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* TT MFP ISRA */
-	{ 0xfffa91, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* TT MFP ISRB */
-	{ 0xfffa93, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* TT MFP IMRA */
-	{ 0xfffa95, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* TT MFP IMRB */
-	{ 0xfffa97, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* TT MFP VR */
-	{ 0xfffa99, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* TT MFP TACR */
-	{ 0xfffa9b, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* TT MFP TBCR */
-	{ 0xfffa9d, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* TT MFP TCDCR */
-	{ 0xfffa9f, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* TT MFP TADR */
-	{ 0xfffaa1, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* TT MFP TBDR */
-	{ 0xfffaa3, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* TT MFP TCDR */
-	{ 0xfffaa5, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* TT MFP TDDR */
-	{ 0xfffaa7, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* TT MFP SCR */
-	{ 0xfffaa9, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* TT MFP UCR */
-	{ 0xfffaab, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* TT MFP RSR */
-	{ 0xfffaad, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* TT MFP TSR */
-	{ 0xfffaaf, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* TT MFP UDR */
+	{ 0xfffa81, SIZE_BYTE, MFP_GPIP_ReadByte, MFP_GPIP_WriteByte },			/* TT MFP GPIP */
+	{ 0xfffa83, SIZE_BYTE, MFP_ActiveEdge_ReadByte, MFP_ActiveEdge_WriteByte },	/* TT MFP AER */
+	{ 0xfffa85, SIZE_BYTE, MFP_DataDirection_ReadByte, MFP_DataDirection_WriteByte	/* TT MFP DDR */},
+	{ 0xfffa87, SIZE_BYTE, MFP_EnableA_ReadByte, MFP_EnableA_WriteByte },		/* TT MFP IERA */
+	{ 0xfffa89, SIZE_BYTE, MFP_EnableB_ReadByte, MFP_EnableB_WriteByte },		/* TT MFP IERB */
+	{ 0xfffa8b, SIZE_BYTE, MFP_PendingA_ReadByte, MFP_PendingA_WriteByte },		/* TT MFP IPRA */
+	{ 0xfffa8d, SIZE_BYTE, MFP_PendingB_ReadByte, MFP_PendingB_WriteByte },		/* TT MFP IPRB */
+	{ 0xfffa8f, SIZE_BYTE, MFP_InServiceA_ReadByte, MFP_InServiceA_WriteByte },	/* TT MFP ISRA */
+	{ 0xfffa91, SIZE_BYTE, MFP_InServiceB_ReadByte, MFP_InServiceB_WriteByte },	/* TT MFP ISRB */
+	{ 0xfffa93, SIZE_BYTE, MFP_MaskA_ReadByte, MFP_MaskA_WriteByte },               /* TT MFP IMRA */
+	{ 0xfffa95, SIZE_BYTE, MFP_MaskB_ReadByte, MFP_MaskB_WriteByte },		/* TT MFP IMRB */
+	{ 0xfffa97, SIZE_BYTE, MFP_VectorReg_ReadByte, MFP_VectorReg_WriteByte },	/* TT MFP VR */
+	{ 0xfffa99, SIZE_BYTE, MFP_TimerACtrl_ReadByte, MFP_TimerACtrl_WriteByte },	/* TT MFP TACR */
+	{ 0xfffa9b, SIZE_BYTE, MFP_TimerBCtrl_ReadByte, MFP_TimerBCtrl_WriteByte },	/* TT MFP TBCR */
+	{ 0xfffa9d, SIZE_BYTE, MFP_TimerCDCtrl_ReadByte, MFP_TimerCDCtrl_WriteByte },	/* TT MFP TCDCR */
+	{ 0xfffa9f, SIZE_BYTE, MFP_TimerAData_ReadByte, MFP_TimerAData_WriteByte },	/* TT MFP TADR */
+	{ 0xfffaa1, SIZE_BYTE, MFP_TimerBData_ReadByte, MFP_TimerBData_WriteByte },	/* TT MFP TBDR */
+	{ 0xfffaa3, SIZE_BYTE, MFP_TimerCData_ReadByte, MFP_TimerCData_WriteByte },	/* TT MFP TCDR */
+	{ 0xfffaa5, SIZE_BYTE, MFP_TimerDData_ReadByte, MFP_TimerDData_WriteByte },	/* TT MFP TDDR */
+	{ 0xfffaa7, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },			/* TT MFP SCR */
+	{ 0xfffaa9, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },			/* TT MFP UCR */
+	{ 0xfffaab, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },			/* TT MFP RSR */
+	{ 0xfffaad, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },			/* TT MFP TSR */
+	{ 0xfffaaf, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },			/* TT MFP UDR */
 
 	{ 0xfffab1, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* No bus error here */
 	{ 0xfffab3, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },           /* No bus error here */

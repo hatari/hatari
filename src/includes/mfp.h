@@ -147,7 +147,7 @@ extern void	MFP_MemorySnapShot_Capture ( bool bSave );
 extern Uint8	MFP_GetIRQ_CPU ( void );
 extern void	MFP_DelayIRQ ( void );
 extern int	MFP_ProcessIACK ( int OldVecNr );
-extern bool	MFP_ProcessIRQ ( void );
+extern bool	MFP_ProcessIRQ_All ( void );
 extern void	MFP_UpdateIRQ_All ( Uint64 Event_Time );
 extern void	MFP_InputOnChannel ( MFP_STRUCT *pMFP , int Interrupt , int Interrupt_Delayed_Cycles );
 extern void	MFP_GPIP_Set_Line_Input ( MFP_STRUCT *pMFP , Uint8 LineNr , Uint8 Bit );
@@ -155,10 +155,14 @@ extern void	MFP_GPIP_Set_Line_Input ( MFP_STRUCT *pMFP , Uint8 LineNr , Uint8 Bi
 extern void	MFP_TimerA_EventCount( MFP_STRUCT *pMFP );
 extern void	MFP_TimerB_EventCount( MFP_STRUCT *pMFP , int Delayed_Cycles );
 
-extern void	MFP_InterruptHandler_TimerA(void);
-extern void	MFP_InterruptHandler_TimerB(void);
-extern void	MFP_InterruptHandler_TimerC(void);
-extern void	MFP_InterruptHandler_TimerD(void);
+extern void	MFP_Main_InterruptHandler_TimerA(void);
+extern void	MFP_Main_InterruptHandler_TimerB(void);
+extern void	MFP_Main_InterruptHandler_TimerC(void);
+extern void	MFP_Main_InterruptHandler_TimerD(void);
+extern void	MFP_TT_InterruptHandler_TimerA(void);
+extern void	MFP_TT_InterruptHandler_TimerB(void);
+extern void	MFP_TT_InterruptHandler_TimerC(void);
+extern void	MFP_TT_InterruptHandler_TimerD(void);
 
 extern void	MFP_GPIP_ReadByte ( void );
 extern void	MFP_ActiveEdge_ReadByte ( void );

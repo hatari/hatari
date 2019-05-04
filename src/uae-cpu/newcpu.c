@@ -1639,7 +1639,7 @@ static bool do_specialties_interrupt (int Pending)
 
     /* Check for MFP ints (level 6) */
     if (regs.spcflags & SPCFLAG_MFP) {
-       if (MFP_ProcessIRQ() == true)
+       if (MFP_ProcessIRQ_All() == true)
          return true;					/* MFP exception was generated, no higher interrupt can happen */
     }
 
@@ -1707,7 +1707,7 @@ static int do_specialties (void)
 	    if ( MFP_UpdateNeeded == true )
 	        MFP_UpdateIRQ_All ( 0 );
 
-	    /* Check is there's an interrupt to process (could be a delayed MFP interrupt) */
+	    /* Check if there's an interrupt to process (could be a delayed MFP interrupt) */
 	    if ( do_specialties_interrupt(false) ) {	/* test if there's an interrupt and add non pending jitter */
 		regs.stopped = 0;
 		unset_special (SPCFLAG_STOP);
