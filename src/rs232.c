@@ -258,16 +258,21 @@ static bool RS232_OpenCOMPort(void)
  */
 static void RS232_CloseCOMPort(void)
 {
-	if (hComIn)
-	{
-		/* Close */
-		fclose(hComIn);
-		hComIn = NULL;
-	}
+	/* Write side needs to be closed first.  Otherwise Hatari
+	 * instances at both ends of a "RS-232" FIFO file would freeze
+	 * when Hatari exists or RS-232 configuration is changed
+	 * (with this, only one of them freezes until other
+	 * end of a FIFO also closes the "device" file(s)).
+	 */
 	if (hComOut)
 	{
 		fclose(hComOut);
 		hComOut = NULL;
+	}
+	if (hComIn)
+	{
+		fclose(hComIn);
+		hComIn = NULL;
 	}
 	Dprintf(("Closed RS232 files.\n"));
 }
