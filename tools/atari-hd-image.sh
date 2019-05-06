@@ -7,7 +7,7 @@ diskfile=hd.img   # HD image filename
 partname=DOS      # partition name
 
 # no args or first arg has non-digit characters?
-if [ $# -lt 1 ] || [ \! -z "$(echo $1|tr -d 0-9)" ]; then
+if [ $# -lt 1 ] || [ -n "$(echo $1|tr -d 0-9)" ]; then
 	name=${0##*/}
 	echo
 	echo "usage: $name <size> [filename] [partition name] [directory]"
@@ -33,61 +33,61 @@ PATH=/sbin:$PATH
 export PATH
 
 # check tools
-if [ -z $(which mkdosfs) ] || [ -z $(which python) ]; then
+if [ -z "$(which mkdosfs)" ] || [ -z "$(which python)" ]; then
 	echo "ERROR: either mkdosfs or python tool missing!"
 	exit 1
 fi
 
 # check disk size
 disksize=$1
-if [ $disksize -lt 5 ]; then
+if [ "$disksize" -lt 5 ]; then
 	echo "ERROR: disk size needs to be at least 5 (MB) to work properly."
 	exit 1
 fi
-if [ $disksize -gt 512 ]; then
+if [ "$disksize" -gt 512 ]; then
 	echo "ERROR: mkdosfs supports Atari compatible partitions only up to 512 MB."
 	exit 1
 fi
 
 # check optional arguments
-if [ \! -z $2 ]; then
+if [ -n "$2" ]; then
 	diskfile=$2
 fi
-if [ \! -z $3 ]; then
+if [ -n "$3" ]; then
 	partname=$3
 fi
 
 # check content
 convertdir=""
-if [ \! -z $4 ]; then
+if [ -n "$4" ]; then
 	contentdir=${4%/}
-	if [ \! -d $contentdir ]; then
+	if [ ! -d "$contentdir" ]; then
 		echo "ERROR: given content directory doesn't exist!"
 		exit 1
 	fi
-	contentsize=$(du -ks $contentdir | awk '{printf("%d", $1/1024)}')
-	if [ $contentsize -ge $disksize ]; then
+	contentsize=$(du -ks "$contentdir" | awk '{printf("%d", $1/1024)}')
+	if [ "$contentsize" -ge "$disksize" ]; then
 		echo "ERROR: '$contentdir' directory contents ($contentsize MB) don't fit to given image size ($disksize MB)!"
 		exit 1
 	fi
 	# name conversion script should be in same dir as this script, or in PATH
 	convert=${0%/*}/atari-convert-dir.py
-	if [ \! -x $convert ]; then
-		if [ -z $(which atari-convert-dir) ]; then
+	if [ ! -x "$convert" ]; then
+		if [ -z "$(which atari-convert-dir)" ]; then
 			echo "ERROR: $convert script for file name conversion missing!"
 			exit 1
 		fi
 		convert=atari-convert-dir
 	fi
 	convertdir=$contentdir.converted
-	if [ -z $(which mcopy) ]; then
+	if [ -z "$(which mcopy)" ]; then
 		echo "ERROR: mcopy (from Mtools) missing!"
 		exit 1
 	fi
 fi
 
 # don't overwrite files by accident
-if [ -f $diskfile ]; then
+if [ -f "$diskfile" ]; then
 	echo "ERROR: given harddisk image already exits. Give another name or remove it:"
 	echo "  rm $diskfile"
 	exit 1
@@ -119,18 +119,18 @@ exit_cleanup ()
 		echo "ERROR: $error"
 		echo
 		echo "cleaning up..."
-		if [ -f $diskfile ]; then
+		if [ -f "$diskfile" ]; then
 			echo "rm -f $diskfile"
-			rm -f $diskfile
+			rm -f "$diskfile"
 		fi
 	fi
-	if [ -f $tmppart ]; then
+	if [ -f "$tmppart" ]; then
 		echo "rm -f $tmppart"
-		rm -f $tmppart
+		rm -f "$tmppart"
 	fi
-	if [ \! -z $convertdir ] && [ -d $convertdir ]; then
-		echo "rm -f $convertdir"
-		rm -f $convertdir
+	if [ -n "$convertdir" ] && [ -d "$convertdir" ]; then
+		echo "rm -rf $convertdir"
+		rm -rf "$convertdir"
 	fi
 	echo "Done."
 }
@@ -225,7 +225,7 @@ mbr[0x1FF] = 0xAA
 open("$diskfile", "wb").write(bytes(mbr))
 EOF
 # -----------
-od -t x1 $diskfile
+od -t x1 "$diskfile"
 
 # ------------------------------------------------------------------
 
@@ -253,16 +253,16 @@ if [ $sectors -ne $partsectors ]; then
 	echo "Align sector count with clusters/sectors/track: $partsectors -> $sectors ($kilobytes kB)"
 fi
 echo "mkdosfs -A -F 16 -n $partname -C $tmppart $kilobytes"
-mkdosfs -A -F 16 -n $partname -C $tmppart $kilobytes
+mkdosfs -A -F 16 -n "$partname" -C "$tmppart" $kilobytes
 
 # ------------------------------------------------------------------
 
-if [ \! -z $contentdir ]; then
+if [ -n "$contentdir" ]; then
 	echo
 	step=$(($step+1))
 	echo "$step) Clip/convert long file names to Atari compatible 8+3 format..."
 	echo "$convert $contentdir $convertdir"
-	$convert $contentdir $convertdir
+	$convert "$contentdir" "$convertdir"
 	if [ $? -ne 0 ]; then
 		error="conversion failed."
 		exit 2
@@ -273,13 +273,13 @@ if [ \! -z $contentdir ]; then
 	# copy contents of given directory to the new partition
 	echo "$step) Copy the initial content to the partition..."
 	echo "MTOOLS_NO_VFAT=1 mcopy -i $tmppart -spmv $convertdir/* ::"
-	MTOOLS_NO_VFAT=1 mcopy -i $tmppart -spmv $convertdir/* ::
+	MTOOLS_NO_VFAT=1 mcopy -i "$tmppart" -spmv "$convertdir"/* ::
 	if [ $? -ne 0 ]; then
 		error="mcopy failed."
 		exit 2
 	fi
 	echo "rm -rf $convertdir"
-	rm -rf $convertdir
+	rm -rf "$convertdir"
 fi
 
 # ------------------------------------------------------------------
@@ -289,7 +289,7 @@ step=$(($step+1))
 # copy the partition into disk
 echo "$step) Copy the partition to disk image..."
 echo "dd if=$tmppart of=$diskfile bs=512 seek=$((1+$skip)) count=$sectors"
-dd if=$tmppart of=$diskfile bs=512 seek=$((1+$skip)) count=$sectors
+dd if="$tmppart" of="$diskfile" bs=512 seek=$((1+$skip)) count=$sectors
 
 step=$(($step+1))
 # cleanup is done by exit_cleanup() trap

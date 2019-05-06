@@ -31,6 +31,9 @@ Emulator:
   - Support config file values with '=' in them
 - Fix: when autostarting programs without pre-existing INF file,
   enable blitter also with EmuTOS
+- Fix: keypad emulation with SDL2
+- Fix: freeze at Hatari exit and RS-232 device file changes,
+  when device file(s) are FIFO(s)
 - Profiler:
   - Profiler backtrace shows now real caller addresses
     and their offsets from the function entry points
@@ -40,6 +43,9 @@ Emulator:
 - Debugger:
   - Improvements to UAE and external disassembler disassembly
   - Improved symbols info output
+- Native features:
+  - Support for missing NF_SHUTDOWN (reset) sub commands
+  - Test code for rest of features (except for NF_SCSIDRV)
 
 Building:
 - Source repository moved from Mercurial to Git

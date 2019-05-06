@@ -531,7 +531,6 @@ static char Keymap_GetKeyPadScanCode(SDL_keysym* pKeySym)
 	{
 		switch (pKeySym->sym)
 		{
-		 case SDLK_KP0:  return 0x70;  /* NumPad 0 */
 		 case SDLK_KP1:  return 0x6d;  /* NumPad 1 */
 		 case SDLK_KP2:  return 0x6e;  /* NumPad 2 */
 		 case SDLK_KP3:  return 0x6f;  /* NumPad 3 */
@@ -548,7 +547,6 @@ static char Keymap_GetKeyPadScanCode(SDL_keysym* pKeySym)
 	{
 		switch (pKeySym->sym)
 		{
-		 case SDLK_KP0:  return 0x70;  /* NumPad 0 */
 		 case SDLK_KP1:  return 0x6d;  /* NumPad 1 */
 		 case SDLK_KP2:  return 0x50;  /* Cursor down */
 		 case SDLK_KP3:  return 0x6f;  /* NumPad 3 */
@@ -574,7 +572,7 @@ static char Keymap_RemapKeyToSTScanCode(SDL_keysym* pKeySym)
 	/* Check for keypad first so we can handle numlock */
 	if (ConfigureParams.Keyboard.nKeymapType != KEYMAP_LOADED)
 	{
-		if (pKeySym->sym >= SDLK_KP0 && pKeySym->sym <= SDLK_KP9)
+		if (pKeySym->sym >= SDLK_KP1 && pKeySym->sym <= SDLK_KP9)
 		{
 			return Keymap_GetKeyPadScanCode(pKeySym);
 		}

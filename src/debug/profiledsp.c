@@ -531,7 +531,7 @@ static void collect_calls(Uint16 pc, counters_t *counters)
 	if (unlikely(idx >= 0)) {
 
 		flag = dsp_opcode_type(prev_pc, pc);
-		if (flag == CALL_SUBROUTINE) {
+		if (likely(flag == CALL_SUBROUTINE || flag == CALL_EXCEPTION)) {
 			dsp_callinfo.return_pc = DSP_GetNextPC(prev_pc);  /* slow! */
 		} else if (caller_pc != PC_UNDEFINED) {
 			/* returned from function, change return

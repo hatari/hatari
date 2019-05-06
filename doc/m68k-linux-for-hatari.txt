@@ -417,7 +417,7 @@ Related lilo.cfg options are:
 	Symbols = Symbols.map
 
 To verify that symbols loaded correctly, one can check in debugger
-whether nf_call (NatFeats entry point) looks as expected:
+e.g. whether nf_call (NatFeats entry point) looks as expected:
 ----------------
 > d nf_call
 $00008230 : 7301      DC.W      $7301
@@ -446,10 +446,28 @@ breakpoint, one can save profile with:
 Resulting file can be post-processed with:
 	$ hatari_profile -st -a System.map profile.txt
 
-To see how much emulated time the profiled part took and to get lists
-of functions taking most cycles / time, using most instructions and
+To see how much emulated time the profiled part took, and to get lists
+of functions taking most cycles / time, using most instructions, and
 being called most.
 
+To debug and get back traces to where "die_if_kernel" bug handler gets
+called, one can use following files:
+---- bt-show.ini ----
+profile stack
+---- bt-init.ini ----
+profile on
+b pc=die_if_kernel :noinit :trace :file bt-show.ini
+------------------------
+
+And start hatari with "--parse bt-init.ini" option.  Backtraces to any
+other functions listed in kernel symbol file can caught the same way.
+
+Breakpoint options:
+* :file -- execute debugger commands from given file when breakpoint is hit
+* :trace -- continue running without dropping to debugger
+* :noinit -- no reset for profile/caller info when breakpoint is hit
+
+(Last option is needed only for the "profile stack" command.)
 
 What symbols are in the symbol file dictates what one sees
 with many of the debugger commands.  If one does just tracing
@@ -463,6 +481,7 @@ one should load just those to debugger:
 	...
 	> symbols syscall-symbols.map
 	> trace cpu_symbols
+
 (System call info is naturally interesting only after user-space
 processes are running & calling them.)
 

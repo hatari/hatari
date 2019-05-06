@@ -10,7 +10,7 @@ ubuntu_task:
     - ./configure --enable-old-uae-cpu --enable-small-mem --disable-dsp
                   --enable-debug || { cat config.log; exit 1; }
     - make -j4
-    - ctest -j4 || { cat Testing/Temporary/LastTest.log; exit1; }
+    - ctest -j4 || { cat Testing/Temporary/LastTest.log; exit 1; }
 
 freebsd_task:
   freebsd_instance:
@@ -23,7 +23,7 @@ freebsd_task:
   script:
     - ./configure || { cat config.log; exit 1; }
     - gmake -j4
-    - gmake test || { cat Testing/Temporary/LastTest.log; exit1; }
+    - gmake test || { cat Testing/Temporary/LastTest.log; exit 1; }
 
 macos_task:
   osx_instance:
@@ -33,5 +33,5 @@ macos_task:
   script:
     - export PATH=/usr/local/bin:$PATH
     - ./configure --disable-osx-bundle || { cat config.log; exit 1; }
-    - gmake -j2
-    - gmake test || { cat Testing/Temporary/LastTest.log; exit1; }
+    - gmake -j$(sysctl -n hw.ncpu)
+    - gmake test || { cat Testing/Temporary/LastTest.log; exit 1; }
