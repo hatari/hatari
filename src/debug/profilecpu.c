@@ -1359,8 +1359,11 @@ void Profile_CpuStop(void)
 	}
 	assert(cpu_profile.size == size);
 
-	Profile_FinalizeCalls(M68000_GetPC(), &(cpu_callinfo),
-			      &(cpu_profile.all), Symbols_GetByCpuAddress);
+	Profile_FinalizeCalls(M68000_GetPC(),
+			      &(cpu_callinfo),
+			      &(cpu_profile.all),
+			      Symbols_GetByCpuAddress,
+			      Symbols_GetBeforeCpuAddress);
 
 	/* find lowest and highest addresses executed etc */
 	next = update_area(&cpu_profile.ram, 0, STRamEnd/2);
@@ -1434,8 +1437,10 @@ void Profile_CpuGetPointers(bool **enabled, Uint32 **disasm_addr)
 /**
  * Get callinfo & symbol search pointers for stack walking.
  */
-void Profile_CpuGetCallinfo(callinfo_t **callinfo, const char* (**get_symbol)(Uint32, symtype_t))
+void Profile_CpuGetCallinfo(callinfo_t **callinfo, const char* (**get_caller)(Uint32*),
+			    const char* (**get_symbol)(Uint32, symtype_t))
 {
 	*callinfo = &(cpu_callinfo);
+	*get_caller = Symbols_GetBeforeCpuAddress;
 	*get_symbol = Symbols_GetByCpuAddress;
 }

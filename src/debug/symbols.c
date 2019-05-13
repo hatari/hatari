@@ -1,7 +1,7 @@
 /*
  * Hatari - symbols.c
  * 
- * Copyright (C) 2010-2017 by Eero Tamminen
+ * Copyright (C) 2010-2019 by Eero Tamminen
  * 
  * This file is distributed under the GNU General Public License, version 2
  * or at your option any later version. Read the file gpl.txt for details.
@@ -421,7 +421,7 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, symtyp
 
 /**
  * Load symbols of given type and the symbol address addresses from
- * a.out format symbol table, and add given offsets to the addresses:
+ * a.out format symbol table, and add given offsets to the addresses.
  * Return symbols list or NULL for failure.
  */
 static symbol_list_t* symbols_load_gnu(FILE *fp, prg_section_t *sections, symtype_t gettype, Uint32 tablesize, Uint32 stroff, Uint32 strsize)
@@ -1259,8 +1259,61 @@ bool Symbols_GetDspAddress(symtype_t symtype, const char *name, Uint32 *addr)
 /* ---------------- symbol address -> name search ------------------ */
 
 /**
+ * Binary search TEXT symbol by address in given sorted list.
+ * Return index for symbol which address matches or preceeds
+ * the given one.
+ */
+static int Symbols_SearchBeforeAddress(symbol_t* entries, int count, Uint32 addr)
+{
+	/* left, right, middle */
+        int l, r, m;
+	Uint32 curr;
+
+	/* bisect */
+	l = 0;
+	r = count - 1;
+	do {
+		m = (l+r) >> 1;
+		curr = entries[m].address;
+		if (curr == addr) {
+			return m;
+		}
+		if (curr > addr) {
+			r = m-1;
+		} else {
+			l = m+1;
+		}
+	} while (l <= r);
+	return r;
+}
+
+static const char* Symbols_GetBeforeAddress(symbol_list_t *list, Uint32 *addr)
+{
+	if (!(list && list->addresses)) {
+		return NULL;
+	}
+	int i = Symbols_SearchBeforeAddress(list->addresses, list->codecount, *addr);
+	if (i >= 0) {
+		*addr = list->addresses[i].address;
+		return list->addresses[i].name;
+	}
+	return NULL;
+}
+const char* Symbols_GetBeforeCpuAddress(Uint32 *addr)
+{
+	return Symbols_GetBeforeAddress(CpuSymbolsList, addr);
+}
+const char* Symbols_GetBeforeDspAddress(Uint32 *addr)
+{
+	return Symbols_GetBeforeAddress(DspSymbolsList, addr);
+}
+
+/**
  * Binary search symbol by address in given sorted list.
  * Return symbol index if address matches, -1 otherwise.
+ *
+ * Performance critical, called on every instruction
+ * when profiling is enabled.
  */
 static int Symbols_SearchByAddress(symbol_t* entries, int count, Uint32 addr)
 {

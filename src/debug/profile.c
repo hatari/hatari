@@ -407,6 +407,7 @@ Uint32 Profile_CallEnd(callinfo_t *callinfo, counters_t *totalcost)
 	return stack->caller_addr;
 }
 
+
 /**
  * Add costs to all functions still in call stack and print their names
  *
@@ -425,11 +426,14 @@ Uint32 Profile_CallEnd(callinfo_t *callinfo, counters_t *totalcost)
  * items, not in same one.
  */
 void Profile_FinalizeCalls(Uint32 pc, callinfo_t *callinfo, counters_t *totalcost,
-			   const char* (*get_symbol)(Uint32, symtype_t))
+			   const char* (*get_symbol)(Uint32, symtype_t),
+			   const char* (*get_caller)(Uint32*))
 {
-	Uint32 sym_addr, ret_addr, caller_addr;
+	const char *sym, *caller;
+	Uint32 sym_addr, caller_addr;
 	int i, lines, offset;
 	bool dots;
+	char sign;
 
 	if (!callinfo->depth) {
 		return;
@@ -447,11 +451,8 @@ void Profile_FinalizeCalls(Uint32 pc, callinfo_t *callinfo, counters_t *totalcos
 		if (++i > lines && lines > 0) {
 			continue;
 		}
-		ret_addr = callinfo->stack[callinfo->depth].ret_addr;
-		sym_addr = callinfo->stack[callinfo->depth].callee_addr;
-		offset = caller_addr - sym_addr;
 
-		/* Skip middle part of a long callstack as messed
+		/* Skip showing middle part of a long callstack as messed
 		 * callstacks could be thousands of frames deep...
 		 */
 		if (i >= 32 && callinfo->depth > 32) {
@@ -460,14 +461,26 @@ void Profile_FinalizeCalls(Uint32 pc, callinfo_t *callinfo, counters_t *totalcos
 				dots = true;
 			}
 		} else {
-			const char *sym = get_symbol(sym_addr, SYMTYPE_TEXT);
+			sym_addr = callinfo->stack[callinfo->depth].callee_addr;
+			sym = get_symbol(sym_addr, SYMTYPE_TEXT);
+
 			if (sym) {
-				char sign = offset > 0 ? '+' : '-';
-				fprintf(stderr, "- %d. 0x%06x: %s %c0x%x (return = 0x%x)\n",
-					i, caller_addr, sym, sign, abs(offset), ret_addr);
+				offset = caller_addr - sym_addr;
+				sign = offset >= 0 ? '+' : '-';
+				fprintf(stderr, "- %d. 0x%06x: %s %c0x%x",
+					i, caller_addr, sym, sign, abs(offset));
 			} else {
-				fprintf(stderr, "- %d. 0x%06x (return = 0x%x)\n",
-					i, caller_addr, ret_addr);
+				fprintf(stderr, "- %d. 0x%06x", i, caller_addr);
+			}
+
+			sym_addr = caller_addr;
+			caller = get_caller(&sym_addr);
+			if (caller && caller != sym) {
+				offset = caller_addr - sym_addr;
+				fprintf(stderr, " (%s +0x%x)\n",
+					caller, abs(offset));
+			} else {
+				fprintf(stderr, "\n");
 			}
 		}
 		caller_addr = callinfo->stack[callinfo->depth].caller_addr;
@@ -479,16 +492,18 @@ void Profile_FinalizeCalls(Uint32 pc, callinfo_t *callinfo, counters_t *totalcos
  */
 static void Profile_ShowStack(bool forDsp)
 {
-	const char *(*get_symbol)(Uint32, symtype_t), *sym;
-	Uint32 sym_addr, ret_addr, caller_addr;
+	const char *sym, *caller;
+	const char *(*get_caller)(Uint32*);
+	const char *(*get_symbol)(Uint32, symtype_t);
+	Uint32 sym_addr, caller_addr;
 	int i, offset, depth, top;
 	callinfo_t *callinfo;
 
 	if (forDsp) {
-		Profile_DspGetCallinfo(&callinfo, &get_symbol);
+		Profile_DspGetCallinfo(&callinfo, &get_caller, &get_symbol);
 		caller_addr = DSP_GetPC();
 	} else {
-		Profile_CpuGetCallinfo(&callinfo, &get_symbol);
+		Profile_CpuGetCallinfo(&callinfo, &get_caller, &get_symbol);
 		caller_addr = M68000_GetPC();
 	}
 	if (!callinfo->depth) {
@@ -506,18 +521,26 @@ static void Profile_ShowStack(bool forDsp)
 	i = 0;
 	while (depth-- > top) {
 		i++;
-		ret_addr = callinfo->stack[depth].ret_addr;
 		sym_addr = callinfo->stack[depth].callee_addr;
 		offset = caller_addr - sym_addr;
 
 		sym = get_symbol(sym_addr, SYMTYPE_TEXT);
 		if (sym) {
-			char sign = offset > 0 ? '+' : '-';
-			fprintf(stderr, "- %d. 0x%06x: %s %c0x%x (return = 0x%x)\n",
-				i, caller_addr, sym, sign, abs(offset), ret_addr);
+			char sign = offset >= 0 ? '+' : '-';
+			fprintf(stderr, "- %d. 0x%06x: %s %c0x%x",
+				i, caller_addr, sym, sign, abs(offset));
 		} else {
-			fprintf(stderr, "- %d. 0x%06x (return = 0x%x)\n",
-				i, caller_addr, ret_addr);
+			fprintf(stderr, "- %d. 0x%06x", i, caller_addr);
+		}
+
+		sym_addr = caller_addr;
+		caller = get_caller(&sym_addr);
+		if (caller && caller != sym) {
+			offset = caller_addr - sym_addr;
+			fprintf(stderr, " (%s +0x%x)\n",
+				caller, abs(offset));
+		} else {
+			fprintf(stderr, "\n");
 		}
 		caller_addr = callinfo->stack[depth].caller_addr;
 	}

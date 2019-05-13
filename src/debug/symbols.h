@@ -32,6 +32,8 @@ extern bool Symbols_GetDspAddress(symtype_t symtype, const char *name, Uint32 *a
 /* symbol address -> name search */
 extern const char* Symbols_GetByCpuAddress(Uint32 addr, symtype_t symtype);
 extern const char* Symbols_GetByDspAddress(Uint32 addr, symtype_t symtype);
+extern const char* Symbols_GetBeforeCpuAddress(Uint32 *addr);
+extern const char* Symbols_GetBeforeDspAddress(Uint32 *addr);
 /* TEXT symbol address -> index */
 extern int Symbols_GetCpuCodeIndex(Uint32 addr);
 extern int Symbols_GetDspCodeIndex(Uint32 addr);

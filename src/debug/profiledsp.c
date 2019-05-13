@@ -678,9 +678,11 @@ void Profile_DspStop(void)
 		fflush(profile_loop.fp);
 	}
 
-	Profile_FinalizeCalls(DSP_GetPC(), &(dsp_callinfo),
+	Profile_FinalizeCalls(DSP_GetPC(),
+			      &(dsp_callinfo),
 			      &(dsp_profile.ram.counters),
-			      Symbols_GetByDspAddress);
+			      Symbols_GetByDspAddress,
+			      Symbols_GetBeforeDspAddress);
 
 	/* find lowest and highest  addresses executed */
 	area = &dsp_profile.ram;
@@ -732,8 +734,10 @@ void Profile_DspGetPointers(bool **enabled, Uint32 **disasm_addr)
 /**
  * Get callinfo & symbol search pointers for stack walking.
  */
-void Profile_DspGetCallinfo(callinfo_t **callinfo, const char* (**get_symbol)(Uint32, symtype_t))
+void Profile_DspGetCallinfo(callinfo_t **callinfo, const char* (**get_caller)(Uint32*),
+			    const char* (**get_symbol)(Uint32, symtype_t))
 {
 	*callinfo = &(dsp_callinfo);
+	*get_caller = Symbols_GetBeforeDspAddress;
 	*get_symbol = Symbols_GetByDspAddress;
 }
