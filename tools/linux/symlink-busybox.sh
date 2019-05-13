@@ -17,17 +17,7 @@ if [ \! -x bin/busybox ]; then
 	exit 1
 fi
 
-# tools included in Busybox
-tools=$($bb_host | tr ',' '\n' | awk '
-/functions:/ {
-	ok=1;
-	next;
-}
-{ if(ok) {
-	print $1;
-}}')
-
-# symlink them under bin/ directory in current dir
-for i in $tools; do
-	ln -sfv busybox bin/$i
+# symlink Busybox tools
+for tool in $($bb_host --list-full); do
+	ln -sfv /bin/busybox $tool
 done

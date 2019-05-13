@@ -73,10 +73,10 @@ version available in the given remote directory!
   Falcon PSG port-A handling (see: --log-level debug).
   TODO: Is this issue in Hatari or Linux register handling?
 
-- Hatari / WinUAE 030 CPU core doesn't handle MMU faulting increment /
+- Hatari / WinUAE 030 CPU core doesn't handle MMU faults on increment /
   decrement instructions (e.g. "moves.l (a0)+,d2", or "clr.l -(sp)")
-  correctly -> faults on such instructions show up with slightly
-  different address register value
+  correctly -> fault messages on such instructions show up with slightly
+  different address register value than on real HW
 
 - Incomplete TT / SCSI / 2nd MFP emulation:
   => workaround: have root file system on IDE master or slave
@@ -192,7 +192,7 @@ a directory named disk/, rename it, or use another name).
 1. Create root file system directories:
    $ mkdir disk
    $ cd disk
-   $ mkdir dev etc mnt proc run sys tmp
+   $ mkdir -p dev etc mnt proc run sys tmp sbin usr/bin usr/sbin
 
 2. Add minimal init script for mounting virtual file systems
    before starting shell:
@@ -311,7 +311,7 @@ Notes:
 1. <Set suitable options in lilo.cfg>
 
 2. Start Hatari:
-    $ hatari --log-level debug \
+    $ hatari --log-level info \
       --fast-forward on --fastfdc on --timer-d on \
       --machine falcon --dsp dummy --fpu 68882 \
       --mmu on -s 14 --ttram 64 --addr24 off \
@@ -368,7 +368,7 @@ shows easiest method to simulate that with Hatari.
    $ unzip emutos-512k-0.9.10.zip
 
 5. Run Hatari with them:
-   $ hatari --trace os_base --log-level debug \
+   $ hatari --trace os_base --log-level info \
       --tos emutos-512k-0.9.10/etos512k.img \
       --fast-forward on --fastfdc on --timer-d on \
       --machine falcon --dsp dummy --fpu 68882 \
