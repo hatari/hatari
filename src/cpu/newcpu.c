@@ -6447,6 +6447,13 @@ void cpu_halt (int id)
 	// id > 0: emulation halted.
 	if (!regs.halted) {
 		write_log (_T("CPU halted: reason = %d PC=%08x\n"), id, M68K_GETPC);
+		if (currprefs.crash_auto_reset) {
+			write_log(_T("Forcing hard reset\n"));
+			uae_reset(true, false);
+			quit_program = -quit_program;
+			set_special(SPCFLAG_BRK | SPCFLAG_MODE_CHANGE);
+			return;
+		}
 		regs.halted = id;
 		gui_data.cpu_halted = id;
 		gui_led(LED_CPU, 0, -1);
@@ -10822,8 +10829,8 @@ static uae_u32 get_word_ce020_prefetch_2 (int o, bool opcode)
 	} else {
 		regs.prefetch020[2] = (uae_u16)regs.cacheholdingdata020;
 	}
-	do_cycles_ce020_internal (2);
 	regs.db = regs.prefetch020[0];
+	do_cycles_ce020_internal(2);
 	return v;
 }
 
@@ -11764,7 +11771,7 @@ static uae_u32 get_word_ce030_prefetch_2 (int o)
 		regs.prefetch020[2] = (uae_u16)regs.cacheholdingdata020;
 	}
 	regs.db = regs.prefetch020[0];
-	do_cycles_ce020_internal (2);
+	do_cycles_ce020_internal(2);
 	return v;
 }
 
@@ -12546,8 +12553,6 @@ void fill_prefetch_030_ntx(void)
 	regs.prefetch020_valid[0] = regs.prefetch020_valid[1] = regs.prefetch020_valid[2] = 0;
 
 	fill_icache030(pc);
-	if (currprefs.cpu_cycle_exact)
-		do_cycles_ce020_internal(2);
 	if (pc2 & 2) {
 		idx = add_prefetch_030(idx, regs.cacheholdingdata020, pc2);
 	} else {
@@ -12556,8 +12561,6 @@ void fill_prefetch_030_ntx(void)
 	}
 
 	fill_icache030(pc + 4);
-	if (currprefs.cpu_cycle_exact)
-		do_cycles_ce020_internal(2);
 	if (pc2 & 2) {
 		idx = add_prefetch_030(idx, regs.cacheholdingdata020 >>	16, pc2);
 		idx = add_prefetch_030(idx, regs.cacheholdingdata020, pc2);
@@ -12599,8 +12602,6 @@ void fill_prefetch_030_ntx_continue (void)
 		pc &= ~3;
 
 		fill_icache030(pc);
-		if (currprefs.cpu_cycle_exact)
-			do_cycles_ce020_internal(2);
 		if (pc2 & 2) {
 			idx = add_prefetch_030(idx, regs.cacheholdingdata020, pc_orig);
 		} else {
@@ -12611,8 +12612,6 @@ void fill_prefetch_030_ntx_continue (void)
 
 		if (idx < 3) {
 			fill_icache030(pc + 4);
-			if (currprefs.cpu_cycle_exact)
-				do_cycles_ce020_internal(2);
 			if (pc2 & 2) {
 				idx = add_prefetch_030(idx, regs.cacheholdingdata020 >>	16, pc_orig);
 				if (idx < 3)
@@ -12640,8 +12639,6 @@ void fill_prefetch_020_ntx(void)
 	reset_pipeline_state();
 
 	fill_icache020 (pc, true);
-	if (currprefs.cpu_cycle_exact)
-		do_cycles_ce020_internal(2);
 	if (pc2 & 2) {
 		idx = add_prefetch_030(idx, regs.cacheholdingdata020, pc);
 	} else {
@@ -12650,8 +12647,6 @@ void fill_prefetch_020_ntx(void)
 	}
 
 	fill_icache020 (pc + 4, true);
-	if (currprefs.cpu_cycle_exact)
-		do_cycles_ce020_internal(2);
 	if (pc2 & 2) {
 		idx = add_prefetch_030(idx, regs.cacheholdingdata020 >>	16, pc);
 		idx = add_prefetch_030(idx, regs.cacheholdingdata020, pc);

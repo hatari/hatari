@@ -641,6 +641,7 @@ struct uae_prefs {
 	int uaescsidevmode;
 #endif
 	bool reset_delay;
+	bool crash_auto_reset;
 
 #ifndef WINUAE_FOR_HATARI
 	int cs_compatible;
