@@ -828,15 +828,18 @@ int HDC_InitDevice(SCSI_DEV *dev, char *filename, unsigned long blockSize)
 	if (filesize < 0)
 		return filesize;
 
-	fp = fopen(filename, "rb+");
-	if (fp == NULL)
+	if (!(fp = fopen(filename, "rb+")))
 	{
-		Log_Printf(LOG_ERROR, "Cannot open HD file read/write!\n");
-		return -ENOENT;
+		if (!(fp = fopen(filename, "rb")))
+		{
+			Log_AlertDlg(LOG_ERROR, "Cannot open HD file for reading\n'%s'!\n", filename);
+			return -ENOENT;
+		}
+		Log_AlertDlg(LOG_WARN, "HD file is read-only, no writes will go through\n'%s'.\n", filename);
 	}
-	if (!File_Lock(fp))
+	else if (!File_Lock(fp))
 	{
-		Log_Printf(LOG_ERROR, "Cannot lock HD file for writing!\n");
+		Log_AlertDlg(LOG_ERROR, "Locking HD file for writing failed\n'%s'!\n", filename);
 		fclose(fp);
 		return -ENOLCK;
 	}
