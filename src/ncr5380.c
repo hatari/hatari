@@ -788,6 +788,8 @@ static void ncr5380_set_irq(struct soft_scsi *scsi)
 
 	if (Config_IsMachineFalcon())
 		FDC_SetIRQ(FDC_IRQ_SOURCE_HDC);
+	else if (Config_IsMachineTT())
+		MFP_GPIP_Set_Line_Input ( pMFP_TT , MFP_TT_GPIP_LINE_SCSI_NCR , MFP_GPIP_STATE_HIGH );
 }
 
 static void ncr5380_databusoutput(struct soft_scsi *scsi)
@@ -1148,10 +1150,3 @@ void Ncr5380_TT_DMA_Ctrl_WriteWord(void)
 }
 
 
-/**
- * Return true if IRQ is set ; used in MFP_GPIP_ReadByte_TT
- */
-bool Ncr5380_TT_GetIRQ(void)
-{
-	return ncr_soft_scsi.irq;
-}

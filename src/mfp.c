@@ -192,7 +192,7 @@ Input -----/             |         ------------------------              |      
     vector number that was initially computed at the start of the exception with the new one.
     This is also after the IACK sequence that in service / pending bits must be handled for this MFP's interrupt.
 
-  - The TT uses 2 MFP which are daisy chained using IEI and IEO signals (as described in the 68901's documentation)
+  - The TT uses 2 MFPs which are daisy chained using IEI and IEO signals (as described in the 68901's documentation)
     In that case, the TT's specific MFP (accessible between $FFFA81 and $FFFAAF) has the highest priority
     and the "normal" MFP (accessible between $FFFA01 and $FFFA2F) has the lowest priority
 
@@ -1705,11 +1705,9 @@ void	MFP_GPIP_ReadByte_TT ( MFP_STRUCT *pMFP )
 
 	M68000_WaitState(4);
 
-	/* TODO : handle all bits, default to 1 for now */
-	gpip_new = 0x7f;
-
-        if ( Ncr5380_TT_GetIRQ() )
-                gpip_new |= 0x80;
+	/* TODO : handle all bits, bit 7 is scsi, bits 0-6 default to 1 for now */
+	gpip_new = pMFP->GPIP;
+	gpip_new |= 0x7f;					/* force bits 0-6 to 1 */
 
 	gpip_new &= ~pMFP->DDR;					/* New input bits */
 	pMFP->GPIP = ( pMFP->GPIP & pMFP->DDR ) | gpip_new; 	/* Keep output bits unchanged and update input bits */

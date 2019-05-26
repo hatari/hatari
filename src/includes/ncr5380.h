@@ -17,6 +17,5 @@ void Ncr5380_DmaTransfer_Falcon(void);
 void Ncr5380_IoMemTT_WriteByte(void);
 void Ncr5380_IoMemTT_ReadByte(void);
 void Ncr5380_TT_DMA_Ctrl_WriteWord(void);
-bool Ncr5380_TT_GetIRQ(void);
 
 #endif
