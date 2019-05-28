@@ -77,6 +77,8 @@ Uint64	DSP_CyclesGlobalClockCounter = 0;			/* Value of CyclesGlobalClockCounter 
 static void DSP_TriggerHostInterrupt(int hreq)
 {
 //fprintf ( stderr, "DSP_TriggerHostInterrupt %d %x %x\n" , hreq , regs.sr , regs.intmask );
+
+// TODO [NP] : we should change GPIP bit 3 in MFP instead of using additional SPCFLAG_DSP and DSP_GetHREQ
 	if ( hreq )
 	{
 		M68000_SetSpecial(SPCFLAG_DSP);			// TODO for old cpu core, remove, use level 6 instead and M68000_Update_intlev()

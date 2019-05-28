@@ -60,7 +60,7 @@
 #define	MFP_GPIP_LINE1			1
 #define	MFP_GPIP_LINE0			0
 
-/* Aliases for some lines */
+/* Aliases for some GPIP lines */
 #define	MFP_GPIP_LINE_FDC_HDC		MFP_GPIP_LINE5
 #define	MFP_GPIP_LINE_ACIA		MFP_GPIP_LINE4
 #define	MFP_GPIP_LINE_GPU_DONE		MFP_GPIP_LINE3

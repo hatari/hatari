@@ -445,8 +445,9 @@ static inline int DmaSnd_EndOfFrameReached(void)
 {
 	LOG_TRACE(TRACE_DMASND, "DMA snd end of frame\n");
 
-	/* Raise end-of-frame interrupts (MFP-i7 and Time-A) */
-	MFP_InputOnChannel ( pMFP_Main , MFP_INT_GPIP7 , 0 );
+	/* Raise end-of-frame interrupts (MFP GPIP7 and Timer A) */
+	/* TODO [NP] : when repeat is ON and play resumes we should set GPIP7 to 1 (in DmaSnd_StartNewFrame) */
+	MFP_InputOnChannel ( pMFP_Main , MFP_INT_GPIP7 , 0 );		/* 0=dma sound idle */
 	MFP_TimerA_EventCount ( pMFP_Main );	/* Update events count / interrupt for timer A if needed */
 
 	if (nDmaSoundControl & DMASNDCTRL_PLAYLOOP)
@@ -756,10 +757,12 @@ void DmaSnd_SoundControl_WriteWord(void)
 		DmaInitSample = true;
 		frameCounter_float = 0;
 		DmaSnd_StartNewFrame();			/* this can clear DMASNDCTRL_PLAY */
+	/* TODO [NP] : when state=play we should set GPIP7 to 1 */
 	}
 	else if ((DMASndCtrl_old & DMASNDCTRL_PLAY) && !(nDmaSoundControl & DMASNDCTRL_PLAY))
 	{
 		LOG_TRACE(TRACE_DMASND, "DMA snd control write: stopping dma sound output\n");
+	/* TODO [NP] : when state=stop we should set GPIP7 to 0 */
 	}
 }
 
