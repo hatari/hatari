@@ -46,13 +46,13 @@ extern long nf_version(void);
 
 /**
  * get emulator name
- * returns name lenght
+ * returns name length
  */
 extern long nf_name(char *buf, long len);
 
 /**
  * get full emulator name
- * returns name lenght
+ * returns name length
  */
 extern long nf_fullname(char *buf, long len);
 

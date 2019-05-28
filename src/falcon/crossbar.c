@@ -283,7 +283,7 @@ struct codec_s {
 
 struct dsp_s {
 	Uint32 isTristated;		/* 0 = DSP is not tristated; 1 = DSP is tristated */
-	Uint32 isInHandshakeMode;	/* 0 = not in hanshake mode; 1 = in hanshake mode */
+	Uint32 isInHandshakeMode;	/* 0 = not in handshake mode; 1 = in handshake mode */
 	Uint32 isConnectedToCodec;
 	Uint32 isConnectedToDsp;
 	Uint32 isConnectedToDma;
@@ -1403,7 +1403,7 @@ static void Crossbar_SendDataToDspReceive(Uint32 value, Uint16 frame)
 	DSP_SsiWriteRxValue(value);
 
 	/* Send the frame status to the DSP SSI receive */
-	/* only in non hanshake mode */
+	/* only in non handshake mode */
 	if (dmaPlay.handshakeMode_Frame == 0) {
 		DSP_SsiReceive_SC1(frame);
 	}

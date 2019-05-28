@@ -46,7 +46,7 @@ const char Natfeats_fileid[] = "Hatari natfeats.c : " __DATE__ " " __TIME__;
  * Check whether given string address is valid
  * and whether strings is of "reasonable" length.
  *
- * Returns string lenght or zero for error.
+ * Returns string length or zero for error.
  */
 static int mem_string_ok(Uint32 addr)
 {
@@ -60,7 +60,7 @@ static int mem_string_ok(Uint32 addr)
 	}
 	buf = (const char *)STMemory_STAddrToPointer(addr);
 	if (STMemory_CheckAreaType(addr, NF_MAX_STRING, ABFLAG_RAM | ABFLAG_ROM)) {
-		/* valid area -> return lenght */
+		/* valid area -> return length */
 		for (i = 0; i < NF_MAX_STRING; i++) {
 			if (!buf[i]) {
 				return i;
@@ -87,7 +87,7 @@ static int mem_string_ok(Uint32 addr)
  * - pointer to buffer for emulator name, and
  * - uint32_t for its size
  * subid == 1 -> emulator name includes also version information.
- * Returns lenght of the name
+ * Returns length of the name
  */
 static bool nf_name(Uint32 stack, Uint32 subid, Uint32 *retval)
 {
@@ -128,7 +128,7 @@ static bool nf_version(Uint32 stack, Uint32 subid, Uint32 *retval)
  * NF_STDERR - print string to stderr
  * Stack arguments are:
  * - pointer to buffer containing the string
- * Returns printed string lenght
+ * Returns printed string length
  */
 static bool nf_stderr(Uint32 stack, Uint32 subid, Uint32 *retval)
 {

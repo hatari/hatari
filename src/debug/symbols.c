@@ -1260,7 +1260,7 @@ bool Symbols_GetDspAddress(symtype_t symtype, const char *name, Uint32 *addr)
 
 /**
  * Binary search TEXT symbol by address in given sorted list.
- * Return index for symbol which address matches or preceeds
+ * Return index for symbol which address matches or precedes
  * the given one.
  */
 static int Symbols_SearchBeforeAddress(symbol_t* entries, int count, Uint32 addr)

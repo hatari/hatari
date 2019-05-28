@@ -1053,7 +1053,7 @@ void DebugUI_Init(void)
 	const dbgcommand_t *cpucmd, *dspcmd;
 	int cpucmds, dspcmds;
 
-	/* already intialized? */
+	/* already initialized? */
 	if (debugCommands)
 		return;
 

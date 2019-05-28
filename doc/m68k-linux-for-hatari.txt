@@ -301,7 +301,7 @@ Notes:
 - Above used LZO compression provides faster decompression speed,
   gzip/deflate better compression ratio.  Both are enabled in included
   kernel.config. One can enable from kernel config extra compression
-  algoritms with better compression ratios, but they are significantly
+  algorithms with better compression ratios, but they are significantly
   slower.
 
 
@@ -578,7 +578,7 @@ run "debootstrap --second-stage".  Current status:
 - m68k user-qemu (from Debian Stretch):
   fails completely on any m68k Debian binary
 - Aranym:
-  couldn't get above image to boot succesfully with IDE
+  couldn't get above image to boot successfully with IDE
 
 
 10. Debian and Linux issues

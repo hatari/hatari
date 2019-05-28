@@ -137,7 +137,7 @@ ACSI DMA and Floppy Disk Controller(FDC)
       the state of the 8 DIP switches (or soldering) on the motherboard
     TT and Falcon were produced with HD drives. But MegaSTE were first produced with
       DD drives then later with HD drives
-    Bit 8-13 - Not used or machine dependant
+    Bit 8-13 - Not used or machine dependent
     Bit 14   - Floppy Drive model    0=HD drive  1=DD drive
     Bit 15   - Disable DMA sound     0=disable   1=don't disable
 

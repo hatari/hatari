@@ -20,7 +20,7 @@ assigned to (function) symbols to which those addresses belong to.
 
 All costs for addresses between two symbol names (in profile file) or
 symbol addresses (read from symbols files) are assumed to belong to
-the function/symbol which address preceeds them.
+the function/symbol which address precedes them.
 
 Tool output will contain at least:
 - (deduced) call counts,

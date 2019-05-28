@@ -438,7 +438,7 @@ void MemorySnapShot_Restore_Do(void)
 		/* memory_init. memory_init allocs STRam and TTRam, but TTRam */
 		/* requires currprefs.address_space_24 which is not restored yet */
 		/* (it's from M68000_MemorySnapShot_Capture). To resolve this */
-		/* circular dependancy, we init currprefs.address_space_24 here */
+		/* circular dependency, we init currprefs.address_space_24 here */
 		/* This should be split in different functions / order to avoid this loop */
 		currprefs.address_space_24 = ConfigureParams.System.bAddressSpace24;
 
