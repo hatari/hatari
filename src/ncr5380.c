@@ -116,6 +116,7 @@ static const uae_s16 scsicmdsizes[] = { 6, 10, 10, 12, 16, 12, 10, 6 };
 
 static uae_u8 ncr5380_bget(struct soft_scsi *scsi, int reg);
 void ncr5380_bput(struct soft_scsi *scsi, int reg, uae_u8 v);
+static void ncr5380_set_irq(struct soft_scsi *scsi);
 
 static int scsi_data_dir(struct scsi_data *sd)
 {
@@ -756,14 +757,9 @@ static void dma_check(struct soft_scsi *ncr)
 	}
 
 	if (Config_IsMachineFalcon())
-	{
-		FDC_SetDMAStatus(ScsiBus.bDmaError);	/* Mark DMA error */
-		FDC_SetIRQ(FDC_IRQ_SOURCE_HDC);
-	}
-	else
-	{
-		ncr->irq = true;
-	}
+		FDC_SetDMAStatus(ScsiBus.bDmaError);	/* Set/Unset DMA error */
+
+	ncr5380_set_irq ( ncr );
 
 	if (ScsiBus.offset == ScsiBus.data_len)
 	{
