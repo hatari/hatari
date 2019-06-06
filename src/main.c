@@ -734,6 +734,7 @@ static void Main_Init(void)
 	Resolution_Init();
 	SDLGui_Init();
 	Printer_Init();
+	MFP_Init(MFP_Array);
 	RS232_Init();
 	SCC_Init();
 	Midi_Init();
@@ -747,7 +748,6 @@ static void Main_Init(void)
 	ACIA_Init( ACIA_Array , MachineClocks.ACIA_Freq , MachineClocks.ACIA_Freq );
 	IKBD_Init();			/* After ACIA_Init */
 
-	MFP_Init ( MFP_Array );
 	DSP_Init();
 	Floppy_Init();
 	M68000_Init();                /* Init CPU emulation */
