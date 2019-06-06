@@ -369,7 +369,7 @@ void RS232_Init(void)
 	{
 		/* Create semaphore */
 		if (pSemFreeBuf == NULL)
-			pSemFreeBuf = SDL_CreateSemaphore(MAX_RS232INPUT_BUFFER);
+			pSemFreeBuf = SDL_CreateSemaphore(MAX_RS232INPUT_BUFFER - 1);
 		if (pSemFreeBuf == NULL)
 		{
 			RS232_CloseCOMPort();
