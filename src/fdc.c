@@ -224,6 +224,13 @@ ACSI DMA and Floppy Disk Controller(FDC)
     - Ejecting : WPT will be X, then 1
     - Inserting : WPT will be 1, then X
 
+  NOTE : the TT machines have support for "real" disk change by the mean of the Disk Change (DC)
+  signal as output on the pin 34 of the internal floppy drive. The DC signal is then inverted
+  and connected to GPIP4 on the TT MFP. See FDC_Drive_Get_DC_signal for more details.
+  The DC signal is only available for the internal floppy drive, not the external one.
+  Note also that TOS 3 (for TT) doesn't use this signal, it only uses the above method
+  monitoring the write protect signal.
+
 */
 
 /*-----------------------------------------------------------------------*/
@@ -516,6 +523,9 @@ typedef struct {
 	Uint8		HeadTrack;				/* Current position of the head */
 //	Uint8		Motor;					/* State of the drive's motor : 0=OFF 1=ON */
 	Uint8		NumberOfHeads;				/* 1 for single sided drive, 2 for double sided */
+	Uint8		DiskChange_signal;			/* 0=disk ejected 1=disk inserted and step pulse received */
+								/* This signal is available on pin 34 of compatible drives */
+								/* and connected to the 2nd MFP of the TT */
 
 	Uint64		IndexPulse_Time;			/* CyclesGlobalClockCounter value last time we had an index pulse with motor ON */
 } FDC_DRIVE_STRUCT;
@@ -563,6 +573,7 @@ static void	FDC_CRC16 ( Uint8 *buf , int nb , Uint16 *pCRC );
 static void	FDC_ResetDMA ( void );
 
 static int	FDC_GetEmulationMode ( void );
+static void	FDC_Drive_Set_DC_signal ( int Drive , Uint8 val );
 static int	FDC_GetSectorsPerTrack ( int Drive , int Track , int Side );
 static int	FDC_GetSidesPerDisk ( int Drive , int Track );
 static int	FDC_GetTracksPerDisk ( int Drive );
@@ -861,6 +872,7 @@ void FDC_Init ( void )
 		FDC_DRIVES[ i ].HeadTrack = 0;			/* Set all drives to track 0 */
 		FDC_DRIVES[ i ].NumberOfHeads = 2;		/* Double sided drive */
 		FDC_DRIVES[ i ].IndexPulse_Time = 0;
+		FDC_DRIVES[ i ].DiskChange_signal = 0;
 	}
 
 	FDC_Buffer_Reset();
@@ -914,6 +926,7 @@ void FDC_Reset ( bool bCold )
 	for ( i=0 ; i<MAX_FLOPPYDRIVES ; i++ )
 	{
 		FDC_DRIVES[ i ].IndexPulse_Time = 0;	/* Current IP's locations are lost after a reset (motor is now OFF) */
+		FDC_DRIVES[ i ].DiskChange_signal = 0;
 	}
 
 	FDC_DMA.Status = 1;				/* no DMA error and SectorCount=0 */
@@ -1303,6 +1316,41 @@ void	FDC_Drive_Set_NumberOfHeads ( int Drive , int NbrHeads )
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Return the value of the Disk Change (DC) signal available on pin 34 of some
+ * floppy drives (used in TT emulation)
+ *
+ * This signal is active low unless a disk is inserted and a STEP pulse is received
+ * and the drive is selected :
+ *  0 = drive is selected and a disk was ejected (ie drive is empty)
+ *  1 = drive is not selected or a disk was inserted and a step pulse received
+ *
+ * DC signal was only available on the TT machines and in that case it's connected
+ * to the TT MFP on GPIP4 (the signal is inverted before going to GPIP4)
+ */
+Uint8	FDC_Drive_Get_DC_signal ( int Drive )
+{
+	if ( FDC.DriveSelSignal != Drive )
+		return 1;						/* drive is not selected */
+	else
+		return FDC_DRIVES[ Drive ].DiskChange_signal;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Update the DC signal
+ *  - set DC=0 when disk is ejected
+ *  - set DC=1 when a step pulse (Type I command) is received and a floppy
+ *    is inserted and the drive is selected
+ */
+static void	FDC_Drive_Set_DC_signal ( int Drive , Uint8 val )
+{
+	FDC_DRIVES[ Drive ].DiskChange_signal = val;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * This function is called when a floppy is inserted in a drive
  * using the UI or command line parameters
  */
@@ -1337,6 +1385,9 @@ void	FDC_EjectFloppy ( int Drive )
 	{
 		FDC_DRIVES[ Drive ].DiskInserted = false;
 		FDC_DRIVES[ Drive ].IndexPulse_Time = 0;		/* Stop counting index pulses on an empty drive */
+
+		/* Set the Disk Change signal to "ejected" */
+		FDC_Drive_Set_DC_signal ( Drive , FDC_DC_SIGNAL_EJECTED );
 	}
 }
 
@@ -3730,6 +3781,13 @@ static int FDC_ExecuteTypeICommands ( void )
 		FdcCycles = FDC_TypeI_StepOut();
 		break;
 	}
+
+
+	/* After a "STEP" command we set the Disk Change signal to "inserted" */
+	/* if the drive is selected and a floppy is inserted */
+	if ( ( FDC.DriveSelSignal >= 0 ) && ( FDC_DRIVES[ FDC.DriveSelSignal ].DiskInserted == true ) )
+		FDC_Drive_Set_DC_signal ( FDC.DriveSelSignal , FDC_DC_SIGNAL_INSERTED );
+
 
 	return FdcCycles;
 }

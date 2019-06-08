@@ -56,6 +56,11 @@
 #define	FDC_INTERRUPT_COND_IP			(1<<2)		/* Force interrupt on Index Pulse */
 #define	FDC_INTERRUPT_COND_IMMEDIATE		(1<<3)		/* Force interrupt immediate */
 
+
+#define	FDC_DC_SIGNAL_EJECTED			0
+#define	FDC_DC_SIGNAL_INSERTED			1
+
+
 extern int	FDC_StepRate_ms[];
 
 
@@ -73,6 +78,7 @@ extern void	FDC_Drive_Set_BusyLed ( Uint8 SR );
 extern int	FDC_Get_Statusbar_Text ( char *text, size_t maxlen );
 extern void	FDC_Drive_Set_Enable ( int Drive , bool value );
 extern void	FDC_Drive_Set_NumberOfHeads ( int Drive , int NbrHeads );
+extern Uint8	FDC_Drive_Get_DC_signal ( int Drive );
 extern void	FDC_InsertFloppy ( int Drive );
 extern void	FDC_EjectFloppy ( int Drive );
 extern void	FDC_SetDriveSide ( Uint8 io_porta_old , Uint8 io_porta_new );

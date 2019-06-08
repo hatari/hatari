@@ -218,7 +218,7 @@ Input -----/             |         ------------------------              |      
       1 : connected to external I/O pin
       2 : SCC DMA controller, active low (0=IRQ set, 1=IRQ not set)
       3 : SCC serial port B, ring indicator (RI) signal
-      4 : Internal floppy drive pin 34, NOT disk change (DC) signal (0=..., 1=...) TODO
+      4 : Internal floppy drive pin 34, NOT disk change (DC) signal (0=inserted 1=ejected)
       5 : SCSI DMA controller, active low (0=IRQ set, 1=IRQ not set)
       6 : RTC MC146818A, active low (0=IRQ set, 1=IRQ not set)
       7 : SCSI NCR5380, active *high* (1=IRQ set, 0=IRQ not set)
@@ -1732,9 +1732,15 @@ void	MFP_GPIP_ReadByte_TT ( MFP_STRUCT *pMFP )
 
 	M68000_WaitState(4);
 
-	/* TODO : handle all bits, bit 7 is scsi, bits 0-6 default to 1 for now */
+	/* TODO : handle all bits, bit 7 is scsi, bit 4 is DC signal, other bits default to 1 for now */
 	gpip_new = pMFP->GPIP;
-	gpip_new |= 0x7f;					/* force bits 0-6 to 1 */
+	gpip_new |= 0x6f;					/* force bits 0-3 and 5-6 to 1 */
+
+	/* Bit 4 is the inverted value of the DC signal from the internal floppy drive A */
+	if ( FDC_Drive_Get_DC_signal ( 0 ) == 1 )
+		gpip_new &= ~0x10;
+	else
+		gpip_new |= 0x10;
 
 	gpip_new &= ~pMFP->DDR;					/* New input bits */
 	pMFP->GPIP = ( pMFP->GPIP & pMFP->DDR ) | gpip_new; 	/* Keep output bits unchanged and update input bits */
