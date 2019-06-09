@@ -440,6 +440,15 @@ static void DmaSnd_StartNewFrame(void)
  * End-of-frame has been reached. Raise interrupts if needed.
  * Returns true if DMA sound processing should be stopped now and false
  * if it continues (DMA PLAYLOOP mode).
+ *
+ * NOTE : on early STE models the XSINT signal was directly connected
+ * to MFP GPIP7 and to Timer A input (for event count mode).
+ * On later revisions, as well as on TT, the signal to Timer A input
+ * is now delayed by 8 shifts using a 74LS164 running at 2 MHz, which
+ * is equivalent to 32 CPU cycles when the CPU runs at 8 MHz.
+ * At the emulation level, we don't take into account this delay of
+ * 32 CPU cycles, as it would add complexity and no program are known
+ * so far to require this delay.
  */
 static inline int DmaSnd_EndOfFrameReached(void)
 {
@@ -447,7 +456,7 @@ static inline int DmaSnd_EndOfFrameReached(void)
 
 	/* Raise end-of-frame interrupts (MFP GPIP7 and Timer A) */
 	/* TODO [NP] : when repeat is ON and play resumes we should set GPIP7 to 1 (in DmaSnd_StartNewFrame) */
-	MFP_InputOnChannel ( pMFP_Main , MFP_INT_GPIP7 , 0 );		/* 0=dma sound idle */
+	MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE7 , MFP_GPIP_STATE_LOW );	/* O/LOW=dma sound idle */
 	MFP_TimerA_EventCount ( pMFP_Main );	/* Update events count / interrupt for timer A if needed */
 
 	if (nDmaSoundControl & DMASNDCTRL_PLAYLOOP)
