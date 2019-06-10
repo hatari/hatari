@@ -312,7 +312,15 @@ no254:
 	bra.s	relloop0
 
 relocdone:
+	move.l	40(a5),d0	; p_flags
+	btst	#0,d0
+	bne.s	fastload
+	move.l	4(a5),d0	; p_hitpa
+	sub.l	24(a5),d0	; - p_bbase
+	bra.s	pflags_done
+fastload:
 	move.l	28(a5),d0
+pflags_done:
 	beq.s	cleardone
 	move.l	24(a5),a0
 clear:
@@ -360,11 +368,6 @@ sys_init:
 ; This code is run when the user starts the HATARI.PRG
 ; in the cartridge. It simply displays some information text.
 infoprgstart:
-	pea 	hatarix32(pc)
-	move.w	#32,-(sp)
-	trap	#14				; Dosound - play some music :-)
-	addq.l	#6,sp
-
 	pea 	infotext(pc)
 	move.w	#9,-(sp)
 	trap	#1				; Cconws - display the information text
@@ -403,11 +406,6 @@ infotext:
 	dc.b	' x : toggle normal/max speed',13,10
 	dc.b	' y : enable/disable sound recording',13,10
 	dc.b	0
-
-
-hatarix32:
-	incbin	'cart_mus.x32'
-
 
 infoprgend:
 
