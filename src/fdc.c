@@ -573,6 +573,7 @@ static void	FDC_CRC16 ( Uint8 *buf , int nb , Uint16 *pCRC );
 static void	FDC_ResetDMA ( void );
 
 static int	FDC_GetEmulationMode ( void );
+static void	FDC_Drive_Connect_DC_signal_GPIP ( int Drive );
 static void	FDC_Drive_Set_DC_signal ( int Drive , Uint8 val );
 static int	FDC_GetSectorsPerTrack ( int Drive , int Track , int Side );
 static int	FDC_GetSidesPerDisk ( int Drive , int Track );
@@ -872,7 +873,7 @@ void FDC_Init ( void )
 		FDC_DRIVES[ i ].HeadTrack = 0;			/* Set all drives to track 0 */
 		FDC_DRIVES[ i ].NumberOfHeads = 2;		/* Double sided drive */
 		FDC_DRIVES[ i ].IndexPulse_Time = 0;
-		FDC_DRIVES[ i ].DiskChange_signal = 0;
+		FDC_Drive_Set_DC_signal ( i , 0 );
 	}
 
 	FDC_Buffer_Reset();
@@ -926,7 +927,7 @@ void FDC_Reset ( bool bCold )
 	for ( i=0 ; i<MAX_FLOPPYDRIVES ; i++ )
 	{
 		FDC_DRIVES[ i ].IndexPulse_Time = 0;	/* Current IP's locations are lost after a reset (motor is now OFF) */
-		FDC_DRIVES[ i ].DiskChange_signal = 0;
+		FDC_Drive_Set_DC_signal ( i , 0 );
 	}
 
 	FDC_DMA.Status = 1;				/* no DMA error and SectorCount=0 */
@@ -1316,8 +1317,8 @@ void	FDC_Drive_Set_NumberOfHeads ( int Drive , int NbrHeads )
 
 /*-----------------------------------------------------------------------*/
 /**
- * Return the value of the Disk Change (DC) signal available on pin 34 of some
- * floppy drives (used in TT emulation)
+ * Get the value of the Disk Change (DC) signal available on pin 34 of some
+ * floppy drives (used in TT emulation) and update the TT GPIP register.
  *
  * This signal is active low unless a disk is inserted and a STEP pulse is received
  * and the drive is selected :
@@ -1327,18 +1328,28 @@ void	FDC_Drive_Set_NumberOfHeads ( int Drive , int NbrHeads )
  * DC signal was only available on the TT machines and in that case it's connected
  * to the TT MFP on GPIP4 (the signal is inverted before going to GPIP4)
  */
-Uint8	FDC_Drive_Get_DC_signal ( int Drive )
+static void	FDC_Drive_Connect_DC_signal_GPIP ( int Drive )
 {
+	Uint8	state;
+
 	if ( FDC.DriveSelSignal != Drive )
-		return 1;						/* drive is not selected */
+		state = 1;						/* drive is not selected */
 	else
-		return FDC_DRIVES[ Drive ].DiskChange_signal;
+		state = FDC_DRIVES[ Drive ].DiskChange_signal;
+
+	/* DC signal is inverted before going into GPIP4 */
+	if ( state == 1 )
+		state = MFP_GPIP_STATE_LOW;
+	else
+		state = MFP_GPIP_STATE_HIGH;
+
+	MFP_GPIP_Set_Line_Input ( pMFP_TT , MFP_TT_GPIP_LINE_DC , state );
 }
 
 
 /*-----------------------------------------------------------------------*/
 /**
- * Update the DC signal
+ * Update the DC signal for a drive and update GPIP for TT machines
  *  - set DC=0 when disk is ejected
  *  - set DC=1 when a step pulse (Type I command) is received and a floppy
  *    is inserted and the drive is selected
@@ -1346,6 +1357,9 @@ Uint8	FDC_Drive_Get_DC_signal ( int Drive )
 static void	FDC_Drive_Set_DC_signal ( int Drive , Uint8 val )
 {
 	FDC_DRIVES[ Drive ].DiskChange_signal = val;
+
+	if ( Config_IsMachineTT() && ( Drive == 0 ) )
+		FDC_Drive_Connect_DC_signal_GPIP ( Drive );
 }
 
 

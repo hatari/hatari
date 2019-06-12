@@ -1736,12 +1736,6 @@ void	MFP_GPIP_ReadByte_TT ( MFP_STRUCT *pMFP )
 	gpip_new = pMFP->GPIP;
 	gpip_new |= 0x6f;					/* force bits 0-3 and 5-6 to 1 */
 
-	/* Bit 4 is the inverted value of the DC signal from the internal floppy drive A */
-	if ( FDC_Drive_Get_DC_signal ( 0 ) == 1 )
-		gpip_new &= ~0x10;
-	else
-		gpip_new |= 0x10;
-
 	gpip_new &= ~pMFP->DDR;					/* New input bits */
 	pMFP->GPIP = ( pMFP->GPIP & pMFP->DDR ) | gpip_new; 	/* Keep output bits unchanged and update input bits */
 
