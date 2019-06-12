@@ -280,17 +280,13 @@ pexec_ok:
 	; Get first offset of the relocation table. Since A4 seems sometimes not
 	; to be word aligned (if symbol table length is uneven), we have to read
 	; byte by byte...
-	move.b	(a4),d1
-	clr.b	(a4)+
+	move.b	(a4)+,d1
 	lsl.w	#8,d1
-	move.b	(a4),d1
-	clr.b	(a4)+
+	move.b	(a4)+,d1
 	swap	d1
-	move.b	(a4),d1
-	clr.b	(a4)+
+	move.b	(a4)+,d1
 	lsl.w	#8,d1
-	move.b	(a4),d1
-	clr.b	(a4)+
+	move.b	(a4)+,d1
 
 	tst.l	d1
 	beq.s	relocdone
@@ -299,8 +295,7 @@ pexec_ok:
 relloop0:
 	add.l	d0,(a3)
 relloop:
-	move.b	(a4),d1
-	clr.b	(a4)+	; Some programs like GFA-Basic expect a clear memory
+	move.b	(a4)+,d1
 	tst.b	d1
 	beq.s	relocdone
 	cmp.b	#1,d1
@@ -322,11 +317,32 @@ fastload:
 	move.l	28(a5),d0
 pflags_done:
 	beq.s	cleardone
-	move.l	24(a5),a0
-clear:
-	clr.b	(a0)+
+
+	move.l	24(a5),d1
+	add.l	d0,d1
+	move.l	d1,a0
+	btst	#0,d1
+	beq.s	clear_even
+	clr.b	-(a0)
 	subq.l	#1,d0
-	bne.s	clear
+clear_even:
+	move.l	d0,d1
+	lsr.l	#4,d1
+	tst.l	d1
+	beq.s	clearbytes
+	moveq.l	#0,d6
+	move.l	d6,a1
+	move.l	d6,a3
+	move.l	d6,a4
+clearmulti:
+	movem.l	d6/a1/a3/a4,-(a0)
+	subq.l	#1,d1
+	bne.s	clearmulti
+	andi.l	#$0f,d0
+clearbytes:
+	clr.b	-(a0)
+	subq.l	#1,d0
+	bne.s	clearbytes
 cleardone:
 	move.l	a5,d0
 	movem.l	(sp)+,a3-a5/d6
