@@ -29,6 +29,11 @@ Emulator:
   (instead of counting sectors)
 - Add --lilo debug option for more convenient m68k Linux loading
   - Support config file values with '=' in them
+- Support FASTLOAD program flag with GEMDOS HD
+- Support read-only HD image files, and show error dialogs
+  for image file open/lock issues
+- Fix: 24-bit address mode change while emulation is running
+  (triggeredf e.g. if TT-RAM is enabled for TT)
 - Fix: when autostarting programs without pre-existing INF file,
   enable blitter also with EmuTOS
 - Fix: keypad emulation with SDL2
@@ -59,6 +64,7 @@ Documentation:
 
 Fixed programs:
 - Akaisex program reading AKAI S1000 HD floppies converted to STX
+- Pacemaker STE demo (end part), when it's run from GEMDOS HD
 
 
  Version 2.2.1 (2019-02-08)
