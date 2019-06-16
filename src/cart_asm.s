@@ -327,8 +327,7 @@ pflags_done:
 	subq.l	#1,d0
 clear_even:
 	move.l	d0,d1
-	lsr.l	#4,d1
-	tst.l	d1
+	lsr.l	#5,d1
 	beq.s	clearbytes
 	moveq.l	#0,d6
 	move.l	d6,a1
@@ -336,9 +335,11 @@ clear_even:
 	move.l	d6,a4
 clearmulti:
 	movem.l	d6/a1/a3/a4,-(a0)
+	movem.l	d6/a1/a3/a4,-(a0)
 	subq.l	#1,d1
 	bne.s	clearmulti
-	andi.l	#$0f,d0
+	andi.l	#$1f,d0
+	beq.s	cleardone
 clearbytes:
 	clr.b	-(a0)
 	subq.l	#1,d0
