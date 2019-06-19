@@ -34,8 +34,23 @@ const char ACIA_fileid[] = "Hatari acia.c : " __DATE__ " " __TIME__;
    - MAME's 6850acia.c for RTS, CTS and DCD behaviour
 
 
+                                       -----------
+                                  VSS -| 1    24 |- CTS(INV) : connected to GND
+     RX DATA : connected to MIDI/IKBD -| 2    23 |- DCD(INV) : connected to GND
+        RX CLK : connected to 500 kHz -| 3    22 |- D0
+        TX CLK : connected to 500 kHz -| 4    21 |- D1
+             RTS(INV) : not connected -| 5    20 |- D2
+     TX DATA : connected to MIDI/IKBD -| 6    19 |- D3
+    IRQ(INV) : connected to MFP GPIP4 -| 7    18 |- D4
+                                  CS0 -| 8    17 |- D5
+                             CS2(INV) -| 9    16 |- D6
+                                  CS1 -| 10   15 |- D7
+                                   RS -| 11   14 |- E
+                                  VCC -| 12   13 |- R/W(INV)
+                                       -----------
+
   Pins :
-    Vss
+    VSS
     RX DATA Receive Data
     RX CLK Receive Clock
     TX CLK Transmitter Clock
@@ -52,10 +67,10 @@ const char ACIA_fileid[] = "Hatari acia.c : " __DATE__ " " __TIME__;
     CTS Clear To Send
 
   Registers :
-    0xfffc00 Keyboard ACIA Control (write)/Status(read)
-    0xfffc02 Keyboard ACIA Data
-    0xfffc04 MIDI ACIA Control (write)/Status(read)
-    0xfffc06 MIDI ACIA Data
+    0xfffc00.b	Keyboard ACIA Control (write) / Status(read)
+    0xfffc02.b	Keyboard ACIA Data
+    0xfffc04.b	MIDI ACIA Control (write) / Status(read)
+    0xfffc06.b	MIDI ACIA Data
 
   Control Register (0xfffc00 write) :
     Bits 0,1 - These bits determine by which factor the transmitter and receiver

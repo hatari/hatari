@@ -69,6 +69,50 @@
 /*			would not work in cycle exact mode where cycles are not rounded.*/
 
 
+/*
+  YM2149 Software-Controlled Sound Generator / Programmable Sound Generator
+
+  References :
+   - YM2149 datasheet by Yamaha (1987)
+
+
+                                               -----------
+                                      VSS/GND -| 1    40 |- VCC
+                                           NC -| 2    39 |- TEST1 : not connected
+                             ANALOG CHANNEL B -| 3    38 |- ANALOG CHANNEL C
+                             ANALOG CHANNEL A -| 4    37 |- DA0
+                                           NC -| 5    36 |- DA1
+         IOB7 : connected to parallel port D7 -| 6    35 |- DA2
+         IOB6 : connected to parallel port D6 -| 7    34 |- DA3
+         IOB5 : connected to parallel port D5 -| 8    33 |- DA4
+         IOB4 : connected to parallel port D4 -| 9    32 |- DA5
+         IOB3 : connected to parallel port D3 -| 10   31 |- DA6
+         IOB2 : connected to parallel port D2 -| 11   30 |- DA7
+         IOB1 : connected to parallel port D1 -| 12   29 |- BC1
+         IOB0 : connected to parallel port D0 -| 13   28 |- BC2 : connected to VCC
+                         IOA7 : not connected -| 14   27 |- BDIR
+                      IOA6 : connected to GPO -| 15   26 |- SEL(INV) : not connected
+     IOA5 : connected to parallel port STROBE -| 16   25 |- A8 : connected to VCC
+          IOA4 : connected to RS232C port DTR -| 17   24 |- A9(INV) : connected to VSS/GND
+          IOA3 : connected to RS232C port RTS -| 18   23 |- RESET(INV)
+  IOA2 : connected to floppy drive 1 'select' -| 19   22 |- CLOCK : connected to 2 MHz
+  IOA1 : connected to floppy drive 0 'select' -| 20   21 |- IOA0 : connected to floppy drives 'side select'
+                                               -----------
+
+  Registers :
+    0xff8800.b	Set address register (write) / Read content of selected data register (read)
+    0xff8802.b	Write into selected data register (write) / No action, return 0xFF (read)
+
+    Note that under certain conditions 0xff8801 can be accessed as a shadow version of 0xff8800.
+    Similarly, 0xff8803 can be used instead of 0xff8802.
+    Also, only bits 0 and 1 of addresses 0xff88xx are used to access the YM2149, which means
+    the region 0xff8804 - 0xff88ff can be used to access 0xff8800 - 0xff8803 (with a special
+    case for Falcon when not in ST compatible mode)
+
+*/
+
+
+
 /* Emulating wait states when accessing $ff8800/01/02/03 with different 'move' variants	*/
 /* is a complex task. So far, adding 1 cycle wait state to each access and rounding the	*/
 /* final number to 4 gave some good results, but this is certainly not the way it's	*/
