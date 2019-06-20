@@ -195,7 +195,7 @@ static char *Paths_InitExecDir(const char *argv0)
 
 /**
  * Initialize the users home directory string
- * and Hatari's home directory (~/.hatari)
+ * and Hatari's home directory (~/.config/hatari)
  */
 static void Paths_InitHomeDirs(void)
 {

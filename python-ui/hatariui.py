@@ -311,7 +311,7 @@ class UICallbacks:
 
     # ------ snapshot load/save callbacks ---------
     def load(self, widget):
-        path = os.path.expanduser("~/.hatari/hatari.sav")
+        path = os.path.expanduser("~/.config/hatari/hatari.sav")
         filename = get_open_filename("Select snapshot", self.mainwin, path)
         if filename:
             self.memstate = ["--memstate", filename]

@@ -14,6 +14,7 @@ The following features are deprecated and will be removed in a future release:
 - The "external" disassembler (i.e. use "--disasm uae" instead)
 - Hatari XBios(255) API enabled with the "--bios-intecept" option
   (i.e. use "--natfeats" & "--cmd-fifo" options and "hconsole" instead)
+- The old ~/.hatari configuration file location (use ~/.config/hatari instead)
 
 Emulation:
 - Support for MegaSTE DIP switch register $FF9200
