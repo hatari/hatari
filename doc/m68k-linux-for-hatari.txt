@@ -79,7 +79,7 @@ version available in the given remote directory!
   different address register value than on real HW
 
 - Incomplete TT / SCSI / 2nd MFP emulation:
-  => workaround: have root file system on IDE master or slave
+  => workaround: have TT root file system on IDE master or slave
   Rootfs mount from SCSI device fails after following debug output:
 ------------------------------------------------------------
 DEBUG: raw_scsi: selected id 0
@@ -362,18 +362,19 @@ shows easiest method to simulate that with Hatari.
 3. Get kernel to bootstrap:
    $ cp /path/to/m68k-kernel/vmlinux gemdos-hd/
 
-4. If you don't have a TOS ROM image, get latest EmuTOS release:
-     https://sourceforge.net/projects/emutos/files/emutos/0.9.10/emutos-512k-0.9.10.zip/download
+4. If you don't have a TOS ROM image, download latest EmuTOS release
+   from:
+     https://sourceforge.net/projects/emutos/files/emutos/0.9.11/emutos-512k-0.9.11.zip/download
    and extract it:
-   $ unzip emutos-512k-0.9.10.zip
+   $ unzip emutos-512k-0.9.11.zip
 
-5. Run Hatari with them:
+5. Then run Hatari with them:
    $ hatari --trace os_base --log-level info \
-      --tos emutos-512k-0.9.10/etos512k.img \
+      --tos emutos-512k-0.9.11/etos512k.img \
       --fast-forward on --fastfdc on --timer-d on \
       --machine falcon --dsp dummy --fpu 68882 \
       --mmu on -s 14 --ttram 64 --addr24 off \
-      --natfeats on --ide-master bb-rootfs.img \
+      --natfeats on --ide-master rootfs.img \
       gemdos-hd/bootstra.tos
 
 Hatari notes:
@@ -396,21 +397,21 @@ There are few ways to investigate what happens at boot:
   with "initcall_debug" kernel command line option
 - Disabling individual init calls with "initcall_blacklist=<name>"
   to see whether boot proceeds (better) without them
-- Tracing kernel function calls with the "trace cpu_symbols"
-  debugger command and the "--trace cpu_symbols" Hatari option
+- Tracing kernel function calls with Hatari "trace cpu_symbols"
+  debugger command and the "--trace cpu_symbols" option
 - Profiling what the kernel does
 
 Tracing and "initcall_debug" will give a lot of output so save it
 also to a file:
 	$ hatari ... 2>&1 | tee output.txt
 
-Tracing and profiling require symbols file produced during kernel build.
-If that file is listed in lilo.cfg, symbols will be automatically loaded
-before Linux boots.
+Tracing and profiling both require symbols file produced during kernel
+build.  If that file is listed in lilo.cfg, symbols will be automatically
+loaded before Linux boots.
 
 For now, all debugging and profiling should be done with kernel loaded
-to ST-RAM (see Hatari issues section).  For that, it needs to be <8MB
-uncompressed, otherwise it won't work from ST-RAM.
+to ST-RAM (see Hatari issues section).  For that, its size needs to be
+<8MB uncompressed, otherwise it won't work from ST-RAM.
 
 Related lilo.cfg options are:
 	KernelToFastRam = FALSE
@@ -469,14 +470,14 @@ Breakpoint options:
 
 (Last option is needed only for the "profile stack" command.)
 
-What symbols are in the symbol file dictates what one sees
-with many of the debugger commands.  If one does just tracing
-and profiling, one can reduce symbol warnings from Hatari by
-removing unnecessary symbols from the used symbols file:
+What symbols are in the symbol file dictates what one sees with many
+of the debugger commands.  If one does just tracing and profiling, one
+can reduce symbol warnings from Hatari by removing unnecessary symbols
+from the used symbols file:
 	$ grep ' [tT] ' Symbols.map > code-symbols.map
 
-If one is interested only of e.g. tracing kernel syscalls,
-one should load just those to debugger:
+If one is interested only of e.g. tracing kernel syscalls, one should
+load just those to debugger:
 	$ grep ' [tT] sys_' Symbols.map > syscall-symbols.map
 	...
 	> symbols syscall-symbols.map
@@ -489,6 +490,7 @@ processes are running & calling them.)
 If you see errors like these on Linux console:
 	hda: possibly failed opcode: 0x39
 	hda: possibly failed opcode: 0x30
+
 Those are IDE write command opcodes.  Make sure your IDE image
 actually *is* writable and try again.
 
@@ -540,8 +542,8 @@ RamdiskToFastRam = TRUE
       --lilo "debug=nfcon root=/dev/ram init=/init"
 
 NOTE: Hatari doesn't support networking so network install obviously
-won't work.  There aren't any ready made images of (up to date) m68k
-Debian installs either.
+won't work.  There aren't any ready made images of pre-installed and
+up to date m68k Debian installs either.
 
 Converting initrd to a normal EXT2 disk partition, and using
 fakeroot session to retain file properties requiring root rights:
