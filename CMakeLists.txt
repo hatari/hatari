@@ -58,32 +58,27 @@ set(ENABLE_SMALL_MEM 0
 set(ENABLE_WINUAE_CPU 1
     CACHE BOOL "Enable WinUAE CPU core")
 
-# Run-time checks with GCC "mudflap" etc features:
+# Run-time checks with GCC / LLVM (Clang) AddressSanitizer:
 # - stack protection
 # - checking of pointer accesses
 #
-# Before running CMake, install "mudflap" library development package
-# (libmudflap0-4.4-dev in Debian Squeeze and libmudflap-devel in Fedora).
-#
-# After this you can configure Hatari with Mudflap:
-#   cd build; make clean; cmake -D ENABLE_MUDFLAP:BOOL=1 -D ..
+# Configure Hatari with AddressSanitizer:
+#   cd build; make clean; cmake -D ENABLE_ASAN:BOOL=1 -D ..
 # If everything's fine, CMake output should include:
-#   Performing Test MUDFLAP_AVAILABLE - Success"
+#   Performing Test ASAN_AVAILABLE - Success"
 #
-# After (re-)building Hatari, run it with something like this:
-#   MUDFLAP_OPTIONS="-viol-gdb" src/hatari --sound off --mic off
-# (sound&mic are disabled because threading doesn't work well with Mudflap)
+# After (re-)building Hatari, run it as following to see
+# available AddressSanitizer options (and that it works):
+#   ASAN_OPTIONS=help=true src/hatari
 #
 # For more info:
-#   http://gcc.gnu.org/wiki/Mudflap_Pointer_Debugging
+#   https://github.com/google/sanitizers/wiki/AddressSanitizer
 #
-set(CMAKE_REQUIRED_LIBRARIES "mudflap")
-CHECK_C_COMPILER_FLAG("-fmudflapth" MUDFLAP_AVAILABLE)
-set(CMAKE_REQUIRED_LIBRARIES "")
-if(MUDFLAP_AVAILABLE)
-	set(ENABLE_MUDFLAP 0
-	    CACHE BOOL "Enable GCC run-time stack/pointer debugging - with huge slowdown")
-endif(MUDFLAP_AVAILABLE)
+CHECK_C_COMPILER_FLAG("-fsanitize=address" ASAN_AVAILABLE)
+if(ASAN_AVAILABLE)
+	set(ENABLE_ASAN 0
+	    CACHE BOOL "Enable GCC/LLVM run-time stack/pointer debugging (~2x slowdown)")
+endif(ASAN_AVAILABLE)
 
 if(APPLE)
 	set(ENABLE_OSX_BUNDLE 1
@@ -244,12 +239,15 @@ check_struct_has_member("struct dirent" d_type dirent.h HAVE_DIRENT_D_TYPE)
 # Other CFLAGS:
 # #############
 
-# GCC pointer debugging, huge run-time slowdown
-if(ENABLE_MUDFLAP)
-	# SDL mixer threads so have to use threaded mudflap version
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -fstack-protector-all -fmudflapth")
-	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fmudflapth -lmudflap")
-endif(ENABLE_MUDFLAP)
+# GCC/Clang stack/pointer debugging (~2x slowdown)
+if(ENABLE_ASAN)
+	# better backtraces
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -fno-omit-frame-pointer")
+	# enable stack protection
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fstack-protector-all")
+	# enable AddressSanitizer with global variable tracking
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address -fno-common")
+endif(ENABLE_ASAN)
 
 # GCC/Clang specific flags:
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")

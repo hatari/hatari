@@ -343,12 +343,6 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 		ConfigureParams.Screen.DisableVideo = true;
 	}
 
-#ifdef _MUDFLAP
-	if (sdlscrn)
-	{
-		__mf_unregister(sdlscrn->pixels, sdlscrn->pitch*sdlscrn->h, __MF_TYPE_GUESS);
-	}
-#endif
 	if (bInFullScreen)
 	{
 		/* unhide the Hatari WM window for fullscreen */
@@ -527,10 +521,6 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 
 	DEBUGPRINT(("SDL screen granted: %d x %d @ %d\n", sdlscrn->w, sdlscrn->h,
 	            sdlscrn->format->BitsPerPixel));
-
-#ifdef _MUDFLAP
-	__mf_register(sdlscrn->pixels, sdlscrn->pitch*sdlscrn->h, __MF_TYPE_GUESS, "SDL pixels");
-#endif
 
 	if (!bInFullScreen)
 	{

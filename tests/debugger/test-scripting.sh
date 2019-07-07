@@ -31,9 +31,9 @@ if [ \! -x $console ]; then
 	exit 1
 fi
 
-# Enable extra GCC mudflap options in case Hatari's compiled with it:
-#   http://gcc.gnu.org/wiki/Mudflap_Pointer_Debugging
-export MUDFLAP_OPTIONS="-viol-gdb -internal-checking -wipe-stack -wipe-heap"
+# Enable extra GCC/LLVM AddressSanitizer options in case Hatari's compiled with it:
+#   https://github.com/google/sanitizers/wiki/AddressSanitizerFlags
+export ASAN_OPTIONS="detect_stack_use_after_return=1,abort_on_error=1,debug=1"
 
 echo "TESTING: debugger input file"
 echo "============================"

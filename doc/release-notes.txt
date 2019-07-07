@@ -57,6 +57,7 @@ Building:
 - Source repository moved from Mercurial to Git
 - Fix: issue with multilib capable cross-compilers
 - Fix: workaround problems with Capslib 5.1 headers
+- Obsolete Mudflap option replaced with AddressSanitizer support
 
 Documentation:
 - Up to date documentation provided at: https://hatari.tuxfamily.org/doc/

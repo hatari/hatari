@@ -868,9 +868,6 @@ static void Main_StatusbarSetup(void)
 	if (name)
 	{
 		char message[24], *keyname;
-#ifdef _MUDFLAP
-		__mf_register((void*)name, 32, __MF_TYPE_GUESS, "SDL keyname");
-#endif
 		keyname = Str_ToUpper(strdup(name));
 		snprintf(message, sizeof(message), "Press %s for Options", keyname);
 		free(keyname);
