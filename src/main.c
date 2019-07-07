@@ -857,21 +857,47 @@ static void Main_LoadInitialConfig(void)
  */
 static void Main_StatusbarSetup(void)
 {
-	const char *name = NULL;
+	struct {
+		const int id;
+		bool mod;
+		char *name;
+	} keys[] = {
+		{ SHORTCUT_OPTIONS, false, NULL },
+		{ SHORTCUT_MOUSEGRAB, false, NULL }
+	};
+	const char *name;
+	bool named;
 	SDLKey key;
+	int i;
 
-	key = ConfigureParams.Shortcut.withoutModifier[SHORTCUT_OPTIONS];
-	if (!key)
-		key = ConfigureParams.Shortcut.withModifier[SHORTCUT_OPTIONS];
-	if (key)
-		name = SDL_GetKeyName(key);
-	if (name)
+	named = false;
+	for (i = 0; i < ARRAY_SIZE(keys); i++)
 	{
-		char message[24], *keyname;
-		keyname = Str_ToUpper(strdup(name));
-		snprintf(message, sizeof(message), "Press %s for Options", keyname);
-		free(keyname);
-
+		key = ConfigureParams.Shortcut.withoutModifier[keys[i].id];
+		if (!key)
+		{
+			key = ConfigureParams.Shortcut.withModifier[keys[i].id];
+			if (!key)
+				continue;
+			keys[i].mod = true;
+		}
+		name = SDL_GetKeyName(key);
+		if (!name)
+			continue;
+		keys[i].name = Str_ToUpper(strdup(name));
+		named = true;
+	}
+	if (named)
+	{
+		char message[60];
+		snprintf(message, sizeof(message), "Press %s%s for Options, %s%s for mouse grab toggle",
+			 keys[0].mod ? "AltGr+": "", keys[0].name,
+			 keys[1].mod ? "AltGr+": "", keys[1].name);
+		for (i = 0; i < ARRAY_SIZE(keys); i++)
+		{
+			if (keys[i].name)
+				free(keys[i].name);
+		}
 		Statusbar_AddMessage(message, 5000);
 	}
 	/* update information loaded by Main_Init() */

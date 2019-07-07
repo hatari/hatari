@@ -33,6 +33,7 @@ Emulator:
 - Support FASTLOAD program flag with GEMDOS HD
 - Support read-only HD image files, and show error dialogs
   for image file open/lock issues
+- Show mouse grab toggle shortcut key in startup statusbar message
 - Fix: 24-bit address mode change while emulation is running
   (triggered e.g. when TT-RAM is enabled for TT)
 - Fix: when autostarting programs without pre-existing INF file,
