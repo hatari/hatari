@@ -200,9 +200,20 @@ void Joy_UnInit(void)
  */
 static bool Joy_ReadJoystick(int nSdlJoyID, JOYREADING *pJoyReading)
 {
+	unsigned hat = SDL_JoystickGetHat(sdlJoystick[nSdlJoyID], 0);
+
 	/* Joystick is OK, read position from the configured joystick axis */
 	pJoyReading->XPos = SDL_JoystickGetAxis(sdlJoystick[nSdlJoyID], pJoyReading->XAxisID);
 	pJoyReading->YPos = SDL_JoystickGetAxis(sdlJoystick[nSdlJoyID], pJoyReading->YAxisID);
+	/* Similarly to other emulators that support hats, override axis readings with hats */
+	if (hat & SDL_HAT_LEFT)
+		pJoyReading->XPos = -32768;
+	if (hat & SDL_HAT_RIGHT)
+		pJoyReading->XPos = 32767;
+	if (hat & SDL_HAT_UP)
+		pJoyReading->YPos = -32768;
+	if (hat & SDL_HAT_DOWN)
+		pJoyReading->YPos = 32767;
 	/* Sets bit #0 if button #1 is pressed: */
 	pJoyReading->Buttons = SDL_JoystickGetButton(sdlJoystick[nSdlJoyID], 0);
 	/* Sets bit #1 if button #2 is pressed: */

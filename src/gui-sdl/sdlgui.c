@@ -1330,12 +1330,28 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut, bool KeepCurrentObject)
 				}
 				break;
 
+			 case SDL_JOYHATMOTION:
+				if (sdlEvent.jhat.value & SDL_HAT_LEFT)
+					retbutton = SDLGui_HandleShortcut(dlg, SG_SHORTCUT_LEFT);
+				else if (sdlEvent.jhat.value & SDL_HAT_RIGHT)
+					retbutton = SDLGui_HandleShortcut(dlg, SG_SHORTCUT_RIGHT);
+				if (sdlEvent.jhat.value & SDL_HAT_UP)
+				{
+					SDLGui_RemoveFocus(dlg, focused);
+					focused = SDLGui_FocusNext(dlg, focused, -1);
+				}
+				else if (sdlEvent.jhat.value & SDL_HAT_DOWN)
+				{
+					SDLGui_RemoveFocus(dlg, focused);
+					focused = SDLGui_FocusNext(dlg, focused, +1);
+				}
+				break;
+
 			 case SDL_JOYBUTTONDOWN:
 				retbutton = SDLGui_HandleSelection(dlg, focused, focused);
 				break;
 
 			 case SDL_JOYBALLMOTION:
-			 case SDL_JOYHATMOTION:
 			 case SDL_MOUSEMOTION:
 				break;
 
