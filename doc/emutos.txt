@@ -326,12 +326,14 @@ Demos:
 - April Fools (by DNT Crew)
 - Arsenite (by Dekadence)
 - Audiopacdemo (by X-Troll)
+- Bad Remix (by Dekadence)
 - Beast Scroll (by Joefish)
 - Beefect (by Effect)
 - Beyond Imagination (by NLC), in GFA basic
 - Breath (by Mystic Bytes)
 - Calimer-o-demo (by Oxygene)
 - Charts Compilation (by Next)
+- City Frames (by DHS)
 - Coast II Coast (by Sector One, 4kB intro)
 - Coolism (music disk, by Effect)
 - Crisis (by Joska)
@@ -355,11 +357,13 @@ Demos:
 - Hiatus (by SMFX)
 - If pigs could fly (by Syndicate)
 - Illusion (by Dune)
+- Infinity/Madstars (by Holocaust)
 - Just Jack (by Joker)
 - Let Go (by Dekadence)
 - Lichthaus (by Newline)
 - Lots of Dots (by Acid Maker & Friends)
 - Music Disc 1 (by G. Gaubatz)
+- Motus (by SMFX)
 - No Cooper (by 1984)
 - No more froggies (by Sector1, EmuTOS >= 0.9.7)
 - O-demo (by Oxygene)
@@ -378,9 +382,11 @@ Demos:
 - Phaleon Gigademo (by Next), select "fast loader"
 - Posh (by Checkpoint)
 - POV disk 165 (except for EiL 99 invite)
+- Prix (by Ephidrena)
 - Punish your machine (by Delta Force)
 - Recycles (by SMFX)
 - Remote Entry #2 - 11110 Edition (by Spice Boys)
+- Remote Entry #2 - Delta Quadrant Edition (by Spice Boys)
 - RGB plasma (by Omega, panic at return to desktop)
 - Santa Claus Barbie Was Drunk As A Cochon (by MJJ Prod)
 - Save The Earth (by Defence Force)
@@ -393,6 +399,7 @@ Demos:
 - ST NICCC 2000 (by Oxygene)
 - ST NICCC 2015 (by Checkpoint)
 - ST soccer (intro by Exceptions)
+- Starfield Humppa (by Dekadence)
 - Stone tower (by FUN)
 - Superstar! (intro by Positivity/Dma-Sc/Ukko)
 - Suretrip (by Checkpoint, works until overscan screen)
@@ -408,6 +415,7 @@ Demos:
 - Tut! (by Wildfire)
 - Twelve (by Paulo Simoes)
 - Two in One (by DHS)
+- Unreachable (by MoEC & Sector One)
 - Virtual (by Equinox)
 - Visualize (by Checkpoint)
 - Vodka demo (by Equinox)
@@ -820,6 +828,7 @@ Demos:
 - 3D full (by Oxygene)
 - Again (by Paradox)
 - AltParty 2008 intro (by Paradox)
+- Ambermoon Music demo (by Psycho Hacking Force)
 - Amiga Demo 2 (by Oxygene), music disk
 - Antiques (by Dune & Sector Oen)
 - An Cool on STE
@@ -996,6 +1005,8 @@ Partially working STE demos (old info, maybe 0.8.x?):
   - issues in some screens that are for STE
 - 20 years Atari STE megademo (by Paradox)
   - some screen don't work
+- Original Beat Maker
+  - STE recognization fails -> bus error / panic
 
 Non-working games and music programs:
 - Art for Kids demo (Bus error at $6, after vro_cpyfm)
