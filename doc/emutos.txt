@@ -1113,12 +1113,17 @@ Working demos:
 - Illusion 64 (by Paranoia)
   - plasma screen has garbage on right side,
     end screen at top & bottom
+- ImPerfect (by XI / Satantronic)
+- Joy (by New Beat)
+  - With YM and MP2 DSP music
 - Laser Days E.P. (by .tSCc)
   - With MP2 DSP music
 - More (by New Beat)
 - Mouse (animation + music)
 - Old Stuff (by Extream)
 - Prepare (by Extream)
+- Revertant 1.2 (by Cobra / Mystic Bytes)
+  - With MP2 DSP music (not working)
 - RGB Reine (by New Beat)
 - Rock Solid (by Paranoia)
 - Six Sievert (by tSCc)
