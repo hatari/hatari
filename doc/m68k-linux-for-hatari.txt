@@ -153,7 +153,7 @@ Stack from 00aefff8:
    $ apt install gcc-m68k-linux-gnu
 
 2. Get v5.0 m68k kernel sources (without history):
-   $ git clone --depth 1 --branch m68k-v5.0 \
+   $ git clone --depth 1 --branch m68k-v5.2 \
      git://git.kernel.org/pub/scm/linux/kernel/git/geert/linux-m68k.git
 
 3. Get Hatari compatible configuration:
