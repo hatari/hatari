@@ -276,7 +276,6 @@ static bool add_bi_string(uint16_t tag, const char *s);
 bool lilo_init(void)
 {
 	uint8_t *ROMBaseHost = STRam + TosAddress;
-	bool use_nf = (ConfigureParams.Log.bNatFeats && ConfigureParams.Lilo.bHaltOnReboot);
 
 	if (!ConfigureParams.System.bMMU || ConfigureParams.Memory.STRamSize_KB < 14*1024) {
 		Log_AlertDlg(LOG_FATAL, "Linux requires MMU and at least 14MB of RAM!");
@@ -289,7 +288,8 @@ bool lilo_init(void)
 	ROMBaseHost[0x0003] = 0xf9;
 
 	/* TODO: 0x30 is AB40 reset address, not Falcon/TT one */
-	if (!use_nf) {
+#if 0
+	if (!(ConfigureParams.Log.bNatFeats && ConfigureParams.Lilo.bHaltOnReboot)) {
 		/* set up a minimal OS for successful Linux/m68k reboot */
 		ROMBaseHost[0x0030] = 0x46;		/* move.w #$2700,sr */
 		ROMBaseHost[0x0031] = 0xfc;
@@ -328,6 +328,7 @@ bool lilo_init(void)
 		ROMBaseHost[0x0048] = 'N';
 		ROMBaseHost[0x0049] = 0;
 	}
+#endif
 	return lilo_load();
 }
 
