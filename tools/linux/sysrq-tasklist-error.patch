@@ -1,0 +1,27 @@
+Useful feature for listing all running tasks on minimal system:
+	# echo t > /proc/sysrq-trigger
+
+Causes NULL pointer access Oops on 030.
+
+Upstream kernel relies on disabling access errors during sysrq
+handling, but on m68k kernel, that part is missing for 030. Work
+around the issue, by avoiding the NULL pointer access.
+
+diff --git a/kernel/workqueue.c b/kernel/workqueue.c
+index ddee541ea97a..ec4127c0f3da 100644
+--- a/kernel/workqueue.c
++++ b/kernel/workqueue.c
+@@ -4582,8 +4582,11 @@ void print_worker_info(const char *log_lvl, struct task_struct *task)
+ 	 */
+ 	probe_kernel_read(&fn, &worker->current_func, sizeof(fn));
+ 	probe_kernel_read(&pwq, &worker->current_pwq, sizeof(pwq));
+-	probe_kernel_read(&wq, &pwq->wq, sizeof(wq));
+-	probe_kernel_read(name, wq->name, sizeof(name) - 1);
++	/* current_pwq is NULL for 030 'I' tasks, and this would fault 2x */
++	if (pwq) {
++		probe_kernel_read(&wq, &pwq->wq, sizeof(wq));
++		probe_kernel_read(name, wq->name, sizeof(name) - 1);
++	}
+ 	probe_kernel_read(desc, worker->desc, sizeof(desc) - 1);
+ 
+ 	if (fn || name[0] || desc[0]) {
