@@ -1575,10 +1575,17 @@ void flush_cpu_caches(bool force)
 			for (int i = 0; i < CACHELINES020; i++)
 				caches020[i].valid = 0;
 			regs.cacr &= ~0x08;
+#ifndef WINUAE_FOR_HATARI
+			debugmem_flushcache(0, -1);
+
+#endif
 		}
 		if (regs.cacr & 0x04) { // clear entry in instr cache
 			caches020[(regs.caar >> 2) & (CACHELINES020 - 1)].valid = 0;
 			regs.cacr &= ~0x04;
+#ifndef WINUAE_FOR_HATARI
+			debugmem_flushcache(regs.caar, CACHELINES020);
+#endif
 		}
 	} else if (currprefs.cpu_model == 68030) {
 		if ((regs.cacr & 0x08) || force) { // clear instr cache
@@ -1591,10 +1598,16 @@ void flush_cpu_caches(bool force)
 				}
 			}
 			regs.cacr &= ~0x08;
+#ifndef WINUAE_FOR_HATARI
+			debugmem_flushcache(0, -1);
+#endif
 		}
 		if (regs.cacr & 0x04) { // clear entry in instr cache
 			icaches030[(regs.caar >> 4) & (CACHELINES030 - 1)].valid[(regs.caar >> 2) & 3] = 0;
 			regs.cacr &= ~0x04;
+#ifndef WINUAE_FOR_HATARI
+			debugmem_flushcache(regs.caar, CACHELINES030);
+#endif
 		}
 		if ((regs.cacr & 0x800) || force) { // clear data cache
 			if (doflush) {
@@ -1621,6 +1634,9 @@ void flush_cpu_caches(bool force)
 					icaches040[i].valid[j] = false;
 				}
 			}
+#ifndef WINUAE_FOR_HATARI
+			debugmem_flushcache(0, -1);
+#endif
 		}
 	}
 }
@@ -1728,6 +1744,9 @@ static void flush_cpu_caches_040_2(int cache, int scope, uaecptr addr, bool push
 						tagmask = cacheitag04060mask;
 						index = (addr >> 4) & cacheisets04060mask;
 						c = &icaches040[index];
+#ifndef WINUAE_FOR_HATARI
+						debugmem_flushcache(addr, 16);
+#endif
 					} else {
 						tagmask = cachedtag04060mask;
 						index = (addr >> 4) & cachedsets04060mask;
@@ -3271,6 +3290,7 @@ static void Exception_ce000 (int nr)
 	int sv = regs.s;
 	int start, interrupt;
 	int vector_nr = nr;
+	int frame_id = 0;
 
 //fprintf ( stderr , "ex in %d %ld %ld\n" , nr , currcycle , CyclesGlobalClockCounter );
 	start = 6;
@@ -3305,21 +3325,6 @@ static void Exception_ce000 (int nr)
 			cpu_halt (CPU_HALT_DOUBLE_FAULT);
 			return;
 		}
-		uae_u16 mode = (sv ? 4 : 0) | (last_instructionaccess_for_exception_3 ? 2 : 1);
-		mode |= last_writeaccess_for_exception_3 ? 0 : 16;
-		mode |= last_notinstruction_for_exception_3 ? 8 : 0;
-		// undocumented bits seem to contain opcode
-		mode |= last_op_for_exception_3 & ~31;
-		m68k_areg (regs, 7) -= 14;
-		exception_in_exception = -1;
-		x_put_word (m68k_areg (regs, 7) + 12, last_addr_for_exception_3);
-		x_put_word (m68k_areg (regs, 7) + 8, regs.sr);
-		x_put_word (m68k_areg (regs, 7) + 10, last_addr_for_exception_3 >> 16);
-		x_put_word (m68k_areg (regs, 7) + 6, last_op_for_exception_3);
-		x_put_word (m68k_areg (regs, 7) + 4, last_fault_for_exception_3);
-		x_put_word (m68k_areg (regs, 7) + 0, mode);
-		x_put_word (m68k_areg (regs, 7) + 2, last_fault_for_exception_3 >> 16);
-		x_do_cycles (2 * cpucycleunit);
 #ifndef WINUAE_FOR_HATARI
 		write_log (_T("Exception %d (%04x %x) at %x -> %x!\n"),
 			nr, last_op_for_exception_3, last_addr_for_exception_3, currpc, get_long_debug (4 * nr));
@@ -3331,7 +3336,44 @@ static void Exception_ce000 (int nr)
 			           last_fault_for_exception_3, currpc,
 			           last_addr_for_exception_3 , last_op_for_exception_3);
 #endif
-		goto kludge_me_do;
+		if (currprefs.cpu_model == 68000) {
+			uae_u16 mode = (sv ? 4 : 0) | (last_instructionaccess_for_exception_3 ? 2 : 1);
+			mode |= last_writeaccess_for_exception_3 ? 0 : 16;
+			mode |= last_notinstruction_for_exception_3 ? 8 : 0;
+			// undocumented bits seem to contain opcode
+			mode |= last_op_for_exception_3 & ~31;
+			m68k_areg(regs, 7) -= 14;
+			exception_in_exception = -1;
+			x_put_word(m68k_areg(regs, 7) + 12, last_addr_for_exception_3);
+			x_put_word(m68k_areg(regs, 7) + 8, regs.sr);
+			x_put_word(m68k_areg(regs, 7) + 10, last_addr_for_exception_3 >> 16);
+			x_put_word(m68k_areg(regs, 7) + 6, last_op_for_exception_3);
+			x_put_word(m68k_areg(regs, 7) + 4, last_fault_for_exception_3);
+			x_put_word(m68k_areg(regs, 7) + 0, mode);
+			x_put_word(m68k_areg(regs, 7) + 2, last_fault_for_exception_3 >> 16);
+			x_do_cycles(2 * cpucycleunit);
+			goto kludge_me_do;
+		} else {
+			// 68010 address error (partially implemented only)
+			uae_u16 ssw = (sv ? 4 : 0) | (last_instructionaccess_for_exception_3 ? 2 : 1);
+			ssw |= last_writeaccess_for_exception_3 ? 0 : 0x100;
+			ssw |= last_instructionaccess_for_exception_3 ? 0 : 0x2000;
+			m68k_areg(regs, 7) -= 50;
+			exception_in_exception = -1;
+			frame_id = 8;
+			x_put_word(m68k_areg(regs, 7) + 0, ssw); // ssw
+			x_put_long(m68k_areg(regs, 7) + 2, last_addr_for_exception_3); // fault addr
+			x_put_word(m68k_areg(regs, 7) + 6, 0); // unused
+			x_put_word(m68k_areg(regs, 7) + 8, 0); // data output buffer
+			x_put_word(m68k_areg(regs, 7) + 10, 0); // unused
+			x_put_word(m68k_areg(regs, 7) + 12, 0); // data input buffer
+			x_put_word(m68k_areg(regs, 7) + 14, 0); // unused
+			x_put_word(m68k_areg(regs, 7) + 16, last_op_for_exception_3); // instruction input buffer
+			x_put_word(m68k_areg(regs, 7) + 18, 0); // version
+			for (int i = 0; i < 15; i++) {
+				x_put_word(m68k_areg(regs, 7) + 20 + i * 2, 0);
+			}
+		}
 	}
 	if (currprefs.cpu_model == 68010) {
 		// 68010 creates only format 0 and 8 stack frames
@@ -3346,7 +3388,7 @@ static void Exception_ce000 (int nr)
 			vector_nr = iack_cycle(nr);
 		x_put_word (m68k_areg (regs, 7) + 0, regs.sr); // write SR
 		x_put_word (m68k_areg (regs, 7) + 2, currpc >> 16); // write high address
-		x_put_word (m68k_areg (regs, 7) + 6, vector_nr * 4);
+		x_put_word (m68k_areg (regs, 7) + 6, (frame_id << 12) | (vector_nr * 4));
 	} else {
 		m68k_areg (regs, 7) -= 6;
 		if (m68k_areg(regs, 7) & 1) {
@@ -3606,7 +3648,10 @@ static void Exception_build_stack_frame (uae_u32 oldpc, uae_u32 currpc, uae_u32 
 static void Exception_build_stack_frame_common (uae_u32 oldpc, uae_u32 currpc, uae_u32 ssw, int nr)
 {
 	if (nr == 5 || nr == 6 || nr == 7 || nr == 9) {
-		Exception_build_stack_frame(oldpc, currpc, regs.mmu_ssw, nr, 0x2);
+		if (currprefs.cpu_model <= 68010)
+			Exception_build_stack_frame(oldpc, currpc, regs.mmu_ssw, nr, 0x0);
+		else
+			Exception_build_stack_frame(oldpc, currpc, regs.mmu_ssw, nr, 0x2);
 	} else if (nr == 60 || nr == 61) {
 		Exception_build_stack_frame(oldpc, regs.instruction_pc, regs.mmu_ssw, nr, 0x0);
 	} else if (nr >= 48 && nr <= 55) {
@@ -3993,8 +4038,8 @@ static void Exception_normal (int nr)
 					m68k_areg (regs, 7) -= 2;
 					x_put_word (m68k_areg (regs, 7), 0x2000 + vector_nr * 4);
 				}
-			} else {
-				// 68020 address error
+			} else if (currprefs.cpu_model >= 68020) {
+				// 68020/030 address error
 				uae_u16 ssw = (sv ? 4 : 0) | (last_instructionaccess_for_exception_3 ? 2 : 1);
 				ssw |= last_writeaccess_for_exception_3 ? 0 : 0x40;
 				ssw |= 0x20;
@@ -4014,6 +4059,35 @@ static void Exception_normal (int nr)
 				x_put_word (m68k_areg (regs, 7), ssw);
 				m68k_areg (regs, 7) -= 2;
 				x_put_word (m68k_areg (regs, 7), 0xb000 + vector_nr * 4);
+			} else {
+				// 68010 address error (partially implemented only)
+				uae_u16 ssw = (sv ? 4 : 0) | (last_instructionaccess_for_exception_3 ? 2 : 1);
+				ssw |= last_writeaccess_for_exception_3 ? 0 : 0x100;
+				ssw |= last_instructionaccess_for_exception_3 ? 0 : 0x2000;
+				for (i = 0; i < 15; i++) {
+					m68k_areg(regs, 7) -= 2;
+					x_put_word(m68k_areg(regs, 7), 0);
+				}
+				m68k_areg(regs, 7) -= 2;
+				x_put_word(m68k_areg(regs, 7), 0); // version
+				m68k_areg(regs, 7) -= 2;
+				x_put_word(m68k_areg(regs, 7), last_op_for_exception_3); // instruction input buffer
+				m68k_areg(regs, 7) -= 2;
+				x_put_word(m68k_areg(regs, 7), 0); // unused
+				m68k_areg(regs, 7) -= 2;
+				x_put_word(m68k_areg(regs, 7), 0); // data input buffer
+				m68k_areg(regs, 7) -= 2;
+				x_put_word(m68k_areg(regs, 7), 0); // unused
+				m68k_areg(regs, 7) -= 2;
+				x_put_word(m68k_areg(regs, 7), 0); // data output buffer
+				m68k_areg(regs, 7) -= 2;
+				x_put_word(m68k_areg(regs, 7), 0); // unused
+				m68k_areg(regs, 7) -= 4;
+				x_put_long(m68k_areg(regs, 7), last_addr_for_exception_3); // fault addr
+				m68k_areg(regs, 7) -= 2;
+				x_put_word(m68k_areg(regs, 7), ssw); // ssw
+				m68k_areg(regs, 7) -= 2;
+				x_put_word(m68k_areg(regs, 7), 0x8000 + vector_nr * 4);
 			}
 #ifndef WINUAE_FOR_HATARI
 			write_log (_T("Exception %d (%x) at %x -> %x!\n"), nr, regs.instruction_pc, currpc, get_long_debug (regs.vbr + 4 * vector_nr));

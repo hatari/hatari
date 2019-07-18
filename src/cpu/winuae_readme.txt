@@ -1,9 +1,9 @@
 		The CPU core in this directory is based on
-			WinUAE 4.2.1 (2019/05/17)
+			WinUAE 4.2.x (2019/07/16)
 
 
 To update to a newer WinUAE's version, a diff should be made between
-WinUAE 4.2.1 sources and the newer sources, then the resulting patch
+WinUAE 4.2.x sources and the newer sources, then the resulting patch
 should be applied to the files in this directory.
 
 Most files are similar to WinUAE's ones, so patches should apply in
