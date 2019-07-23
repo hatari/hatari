@@ -3223,7 +3223,11 @@ void Video_InterruptHandler_EndLine(void)
 		/* before end of line, the interrupt should not be generated) */
 		if ( ( TimerBEventCountCycleStart == -1 )		/* timer B was started during a previous VBL */
 			  || ( TimerBEventCountCycleStart < FrameCycles-PendingCycles ) )	/* timer B was started before this possible interrupt */
-			MFP_TimerB_EventCount ( pMFP_Main , PendingCycles );	/* Update events count / interrupt for timer B if needed */
+		{
+			MFP_TimerB_EventCount ( pMFP_Main , PendingCycles );		/* Update events count / interrupt for timer B if needed */
+			if ( Config_IsMachineTT() )
+				MFP_TimerB_EventCount ( pMFP_TT , PendingCycles );	/* DE signal is also connected to timer B on the TT MFP */
+		}
 	}
 }
 

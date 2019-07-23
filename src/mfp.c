@@ -1085,9 +1085,8 @@ void	MFP_TimerB_EventCount ( MFP_STRUCT *pMFP , int Delayed_Cycles )
 	if ( pMFP->TBCR != 0x08 )			/* Not in event count mode */
 		return;					/* Do nothing */
 
-	/* Video DE signal is connected to Timer B on the main MFP */
-	if ( pMFP == pMFP_Main )
-		LOG_TRACE(TRACE_VIDEO_HBL , "mfp/video timer B new event count %d, delay=%d\n" , pMFP->TB_MAINCOUNTER-1 , Delayed_Cycles );
+	/* Video DE signal is connected to Timer B on the main MFP and also on the TT MFP */
+	LOG_TRACE(TRACE_VIDEO_HBL , "mfp%s/video timer B new event count %d, delay=%d\n" , pMFP->NameSuffix , pMFP->TB_MAINCOUNTER-1 , Delayed_Cycles );
 
 	if ( pMFP->TB_MAINCOUNTER == 1 )		/* Timer expired? If so, generate interrupt */
 	{
@@ -1218,7 +1217,8 @@ static Uint32 MFP_StartTimer_AB ( MFP_STRUCT *pMFP , Uint8 TimerControl, Uint16 
 		/* Make sure no outstanding interrupts in list if channel is disabled */
 		CycInt_RemovePendingInterrupt(Handler);
 
-		if ( Handler == INTERRUPT_MFP_MAIN_TIMERB )		/* we're starting timer B event count mode */
+		if ( ( Handler == INTERRUPT_MFP_MAIN_TIMERB )		/* we're starting timer B event count mode */
+		  || ( Handler == INTERRUPT_MFP_TT_TIMERB ) )
 		{
 			/* Store start cycle for handling interrupt in video.c */
 			TimerBEventCountCycleStart = Cycles_GetCounterOnWriteAccess(CYCLES_COUNTER_VIDEO);
