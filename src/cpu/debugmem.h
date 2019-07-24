@@ -19,6 +19,7 @@ static inline int debugmem_get_sourceline(uaecptr addr, TCHAR *out, int maxsize)
 static inline bool debugger_get_library_symbol(uaecptr base, uaecptr addr, TCHAR *out)
 	{ return false; }
 
+static inline void debugmem_flushcache(uaecptr addr, int size)		{}
 
 static inline void branch_stack_pop_rte(uaecptr oldpc)			{}
 static inline void branch_stack_pop_rts(uaecptr oldpc)			{}
