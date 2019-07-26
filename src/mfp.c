@@ -154,7 +154,112 @@ const char MFP_fileid[] = "Hatari mfp.c : " __DATE__ " " __TIME__;
 
 
 /*
-  MFP interrupt channel circuit:-
+  MC68901 MultiFuncion Peripheral (MFP)
+
+  References :
+   - MC68901 datasheet by Motorola
+   - Boards schematics for ST/STE/MegaST/MegaSTE/TT/Falcon
+
+
+  Main MFP : 48 Pin version for STF/megaSTF/STe/megaSTE
+  -----------------------------------------------------
+
+                                                 -----------
+                                            R/W -| 1    48 |- CS(INV)
+                                         RS1/A1 -| 2    47 |- DS(INV)
+                                         RS2/A2 -| 3    46 |- DTACK(INV)
+                                         RS3/A3 -| 4    45 |- IACK(INV)
+                                         RS4/A4 -| 5    44 |- D7
+                                         RS5/A5 -| 6    43 |- D6
+                          TC : connected to TDO -| 7    42 |- D5
+              SO : connected to Send on RS-232C -| 8    41 |- D4
+           SI : connected to Receive on RS-232C -| 9    40 |- D3
+                          RC : connected to TDO -| 10   39 |- D2
+                                            VCC -| 11   38 |- D1
+                                  not connected -| 12   37 |- D0
+                            TAO : not connected -| 13   36 |- GND
+                            TBO : not connected -| 14   35 |- CLK : connected to 4 MHz
+                            TCO : not connected -| 15   34 |- IEI(INV) : on TT connected to IEO on TT MFP, else connected to GND
+                   TDO : connected to TC and RC -| 16   33 |- IEO(INV) : not connected
+                          XTAL2 : not connected -| 17   32 |- IRQ(INV)
+                XTAL1 : connected to 2.4576 MHz -| 18   31 |- RR(INV) : not connected
+  TAI : ST connected to IO0, else DMA SOUND INT -| 19   30 |- TR(INV) : not connected
+                    TBI : connected to video DE -| 20   29 |- I7 : GPIP 7, see note below
+                                     RESET(INV) -| 21   28 |- I6 : GPIP 6, see note below
+                    I0 : GPIP 0, see note below -| 22   27 |- I5 : GPIP 5, see note below
+                    I1 : GPIP 1, see note below -| 23   26 |- I4 : GPIP 4, see note below
+                    I2 : GPIP 2, see note below -| 24   25 |- I3 : GPIP 3, see note below
+                                                 -----------
+
+
+  Main MFP : 52 Pin version for TT/Falcon
+  ---------------------------------------
+
+                                                 -----------
+                                  not connected -| 1    52 |- CS(INV)
+                                            R/W -| 2    51 |- DS(INV)
+                                         RS1/A1 -| 3    50 |- DTACK(INV
+                                         RS2/A2 -| 4    49 |- IACK(INV
+                                         RS3/A3 -| 5    48 |- D7
+                                         RS4/A4 -| 6    47 |- D6
+                                         RS5/A5 -| 7    46 |- D5
+                          TC : connected to TDO -| 8    45 |- D4
+           SO : connected to Trasmit on RS-232C -| 9    44 |- D3
+           SI : connected to Receive on RS-232C -| 10   43 |- D2
+                          RC : connected to TDO -| 11   42 |- D1
+                                            VCC -| 12   41 |- D0
+                                  not connected -| 13   40 |- GND
+                                  not connected -| 14   39 |- CLK : connected to 4 MHz
+                            TAO : not connected -| 15   38 |- IEI(INV) : on TT connected to IEO on TT MFP, else connected to GND
+                            TBO : not connected -| 16   37 |- IEO(INV) : not connected
+                            TCO : not connected -| 17   36 |- IRQ(INV)
+                   TDO : connected to TC and RC -| 18   35 |- RR(INV) : not connected
+                          XTAL2 : not connected -| 19   34 |- TR(INV) : not connected
+                XTAL1 : connected to 2.4576 MHz -| 20   33 |- not connected
+                                  not connected -| 21   32 |- I7 : GPIP 7, see note below
+  TAI : ST connected to IO0, else DMA SOUND INT -| 22   31 |- I6 : GPIP 6, see note below
+                    TBI : connected to video DE -| 23   30 |- I5 : GPIP 5, see note below
+                                     RESET(INV) -| 24   29 |- I4 : GPIP 4, see note below
+                    I0 : GPIP 0, see note below -| 25   28 |- I3 : GPIP 3, see note below
+                    I1 : GPIP 1, see note below -| 26   27 |- I2 : GPIP 2, see note below
+                                                 -----------
+
+
+  TT 2nd MFP : 52 Pin version
+  ---------------------------
+
+                                                 -----------
+                                  not connected -| 1    52 |- CS(INV)
+                                            R/W -| 2    51 |- DS(INV)
+                                         RS1/A1 -| 3    50 |- DTACK(INV
+                                         RS2/A2 -| 4    49 |- IACK(INV
+                                         RS3/A3 -| 5    48 |- D7
+                                         RS4/A4 -| 6    47 |- D6
+                                         RS5/A5 -| 7    46 |- D5
+                          TC : connected to TDO -| 8    45 |- D4
+        SO : connected to Send on Serial Port D -| 9    44 |- D3
+     SI : connected to Receive on Serial Port D -| 10   43 |- D2
+                          RC : connected to TDO -| 11   42 |- D1
+                                            VCC -| 12   41 |- D0
+                                  not connected -| 13   40 |- GND
+                                  not connected -| 14   39 |- CLK : connected to 4 MHz
+                            TAO : not connected -| 15   38 |- IEI(INV) : connected to GND
+                            TBO : not connected -| 16   37 |- IEO(INV) : connected to IEI on Main MFP
+                      TCO : connected to TCCLKX -| 17   36 |- IRQ(INV) : connected to IRQ on Main MFP
+                   TDO : connected to TC and RC -| 18   35 |- RR(INV) : not connected
+                          XTAL2 : not connected -| 19   34 |- TR(INV) : not connected
+                XTAL1 : connected to 2.4576 MHz -| 20   33 |- not connected
+                                  not connected -| 21   32 |- I7 : GPIP 7, see note below
+                      TAI :  connected to GND ? -| 22   31 |- I6 : GPIP 6, see note below
+                    TBI : connected to video DE -| 23   30 |- I5 : GPIP 5, see note below
+                                     RESET(INV) -| 24   29 |- I4 : GPIP 4, see note below
+                    I0 : GPIP 0, see note below -| 25   28 |- I3 : GPIP 3, see note below
+                    I1 : GPIP 1, see note below -| 26   27 |- I2 : GPIP 2, see note below
+                                                 -----------
+
+
+
+  MFP interrupt channel circuit:
 
   EdgeRegister   EnableRegister                         MaskRegister             SBit
         |                |                                     |                     |
