@@ -97,7 +97,7 @@ class AboutDialog(HatariUIDialog):
         dialog.set_translator_credits("translator-credits")
         dialog.set_copyright(UInfo.copyright)
         dialog.set_license("""
-This software is licenced under GPL v2 or later.
+This software is licensed under GPL v2 or later.
 
 You can see the whole license at:
     http://www.gnu.org/licenses/info/GPLv2.html""")

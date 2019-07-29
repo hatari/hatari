@@ -2,7 +2,7 @@
 #
 # script to convert Devpac v3 symbol table for Hatari debugger.
 #
-# 2013 (C) Eero Tamminen, licenced under GPL v2+
+# 2013 (C) Eero Tamminen, licensed under GPL v2+
 
 usage ()
 {
