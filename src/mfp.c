@@ -204,7 +204,7 @@ const char MFP_fileid[] = "Hatari mfp.c : " __DATE__ " " __TIME__;
                                          RS4/A4 -| 6    47 |- D6
                                          RS5/A5 -| 7    46 |- D5
                           TC : connected to TDO -| 8    45 |- D4
-           SO : connected to Trasmit on RS-232C -| 9    44 |- D3
+          SO : connected to Transmit on RS-232C -| 9    44 |- D3
            SI : connected to Receive on RS-232C -| 10   43 |- D2
                           RC : connected to TDO -| 11   42 |- D1
                                             VCC -| 12   41 |- D0
@@ -237,7 +237,7 @@ const char MFP_fileid[] = "Hatari mfp.c : " __DATE__ " " __TIME__;
                                          RS4/A4 -| 6    47 |- D6
                                          RS5/A5 -| 7    46 |- D5
                           TC : connected to TDO -| 8    45 |- D4
-        SO : connected to Send on Serial Port D -| 9    44 |- D3
+    SO : connected to Transmit on Serial Port D -| 9    44 |- D3
      SI : connected to Receive on Serial Port D -| 10   43 |- D2
                           RC : connected to TDO -| 11   42 |- D1
                                             VCC -| 12   41 |- D0
@@ -250,7 +250,7 @@ const char MFP_fileid[] = "Hatari mfp.c : " __DATE__ " " __TIME__;
                           XTAL2 : not connected -| 19   34 |- TR(INV) : not connected
                 XTAL1 : connected to 2.4576 MHz -| 20   33 |- not connected
                                   not connected -| 21   32 |- I7 : GPIP 7, see note below
-                      TAI :  connected to GND ? -| 22   31 |- I6 : GPIP 6, see note below
+                       TAI : connected to GND ? -| 22   31 |- I6 : GPIP 6, see note below
                     TBI : connected to video DE -| 23   30 |- I5 : GPIP 5, see note below
                                      RESET(INV) -| 24   29 |- I4 : GPIP 4, see note below
                     I0 : GPIP 0, see note below -| 25   28 |- I3 : GPIP 3, see note below
