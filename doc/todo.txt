@@ -6,11 +6,28 @@ If you think that you can help with one of the TO-DO list items, please get
 in touch with us.
 
 
+Emulator bugs
+-------------
+
+- RS232 support:
+	- Threaded RS232 code is completely broken for BSD derived
+	  systems like Mac, because they don't implement fine-grained
+	  FILE operation locking like Linux/Glibc (and Windows?) does.
+	  As a result, re-configuring, or closing RS232 files, will
+	  cause deadlock with the reading thread
+	- With SDL1, close deadlock could be handled by killing the read
+	  thread before closing file handles, but SDL2 removed that
+	  functionality. As a result, enabling RS232 will freeze SDL2
+	  Hatari version on exit on BSD / Mac, even if RS232 was unused
+	- Solving this requires rewriting the code with OS specific
+	  primitives (instead of using SDL), either for threading, or
+	  using select().  I'd prefer latter, for clarify and to avoid
+	  polling in the main thead, but it would mean that RS232 won't
+	  work on Windows until somebody contributes code for that too
+
+
 Emulation improvements
 ----------------------
-
-- Add fastload program header flag support to GEMDOS HD emulation
-  (If PF_FASTLOAD flag is set, clear just BSS, not heap)
 
 - Investigate what TOS version/functionality doesn't work for
   programs started from the DESKTOP/NEWDESK.INF and why, e.g:
@@ -47,9 +64,9 @@ Emulation improvements
     https://listengine.tuxfamily.org/lists.tuxfamily.org/hatari-devel/2016/07/msg00013.html
   - ST screen modes centering when Videl borders are enabled
 
-- Add SCSI hard disk emulation for Falcon/TT mode.
+- Improve experimental SCSI hard disk emulation for Falcon/TT mode.
 
-- Add SCC serial port emulation for Falcon/TT mode.
+- Improve experimental SCC serial port emulation for Falcon/TT mode.
 
 - Last DSP emulation / Falcon sound matrix items:
 	- Dsp SSI internal clock (is it used on falcon ?)
@@ -132,6 +149,7 @@ Other potential Hatari functionality improvements
 	- Monitoring reads & writes to specific address.  Hatari supports
 	  only tracing changes to values, not having breakpoints on
 	  reading values or writing the same value.  Slow
+	  (this is most requested debugger feature)
 	- Showing breakpoints in instruction dumps.  Hatari breakpoints
 	  are more advanced than the trivial address breakpoints, so
 	  this would require adding support also for plain PC based
@@ -166,7 +184,8 @@ on BerliOS hatari-devel mail thread for more info.)
 	  (temporary) conditional breakpoint is hit
 	- Running until code returns from ROM (exiting from super mode?)
 	- Single stepping that skips Traps, Line-A, Line-F. And one that
-	  skips also BSRs and JSRs.  Run until RTS/RTE command
+	  skips also BSRs and JSRs
+	  ('next' command runs until instruction of given type)
 	- Saving full machine status (like registers) to history buffer
 	  each time debugger is entered (exception or breakpoint is hit)
 	  and viewing of that history
@@ -183,12 +202,6 @@ on BerliOS hatari-devel mail thread for more info.)
 	- x3 and x4 zooming routines for ST-Low resolution
 	  (SDL2 scales to monitor size, so it can be blurry)
 	- Include some fancy zooming routines like 2xSaI or Super-Eagle
-
-- Check/clean RS232 code:
-	- polls at 2/20ms intervals and reads data byte at the time.
-	  SDL_Delay()s & fgetc() could be replaced (at least on unix)
-	  with select() and fread().  Or just remove the rs232 thread
-	  and use an interrupt for it...
 
 - Improve directory handling:
 	- Currently screenshots & anim go always to current dir,

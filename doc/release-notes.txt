@@ -12,7 +12,7 @@ The following features are deprecated and will be removed in a future release:
 - The old UAE CPU core (i.e. the new WinUAE CPU core should be used instead)
 - Python 2 support (Python 2 is end of life in 2020, use Python 3 instead)
 - The "external" disassembler (i.e. use "--disasm uae" instead)
-- Hatari XBios(255) API enabled with the "--bios-intecept" option
+- Hatari XBios(255) API enabled with the "--bios-intercept" option
   (i.e. use "--natfeats" & "--cmd-fifo" options and "hconsole" instead)
 - The old ~/.hatari configuration file location (use ~/.config/hatari instead)
 
@@ -26,6 +26,7 @@ Emulation:
 
 Emulator:
 - Memory snapshot version increase due to FDC changes
+  (i.e. old snapshots won't work with new version)
 - Use floppy track's size in bytes to detect DD/HD/ED
   (instead of counting sectors)
 - Add --lilo debug option for more convenient m68k Linux loading
@@ -44,6 +45,7 @@ Emulator:
 - Profiler:
   - Profiler backtrace shows now real caller addresses
     and their offsets from the function entry points
+    (slows profiling of addresses with symbols)
   - All profiler outputs have now reasonable limits
     (so that they don't flood console)
   - Fix: profile post-processor exception (with symbol address aliases)
