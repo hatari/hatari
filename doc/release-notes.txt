@@ -50,6 +50,9 @@ Emulator:
     (so that they don't flood console)
   - Fix: profile post-processor exception (with symbol address aliases)
 - Debugger:
+  - Trace flags can be added and removed instead of needing
+    to always specify all the relevant ones:
+    --trace os_base,aes, trace +xbios,bios, trace -bios,-aes
   - Improvements to UAE and external disassembler disassembly
   - Improved symbols info output
 - Native features:

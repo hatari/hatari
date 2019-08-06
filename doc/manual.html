@@ -3352,6 +3352,18 @@ Disable tracing with "trace none" when you enter the debugger again.
 traceable things, from HW events to OS functions.
 </p>
 <p>
+At run-time you can enable and disable trace flags individually by
+starting the trace flags with -/+, like this:
+</p>
+<pre>
+trace gemdos,aes,vdi   # trace just these
+trace +xbios,bios      # trace additionally these
+trace -aes,-vdi        # remove tracing of these
+</pre>
+<p>
+('+' is optional for addition exept at start of the trace flags list.)
+</p>
+<p>
 Notes:
 </p>
 <ul>
@@ -3367,8 +3379,8 @@ would be too complicated).
 </li>
 <li>
 Tracing options can be set even from a program within the emulation,
-if you enable the Hatari "--bios-intercept" option and call XBios 255
-from the program with a suitable trace options string.
+if you enable the (deprecated) "--bios-intercept" option and call
+XBios 255 from the program with a suitable trace options string.
 </li>
 <li>
 Note that the trace output file can be set only when Hatari starts,

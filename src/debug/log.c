@@ -332,11 +332,10 @@ LOGTYPE Log_ParseOptions(const char *arg)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Parse a list of comma separated strings.
- * If the string is prefixed with an optional '+',
- * corresponding mask flag is turned on.
- * If the string is prefixed with a '-',
- * corresponding mask flag is turned off.
+ * Parse a list of comma separated strings:
+ * - Unless whole string is prefixed with '+'/'-', mask is initially zeroed
+ * - Optionally prefixing flag name with '+' turns given mask flag on
+ * - Prefixing flag name with '-' turns given mask flag off
  * Return error string (""=silent 'error') or NULL for success.
  */
 static const char*
@@ -346,6 +345,10 @@ Log_ParseOptionFlags (const char *FlagsStr, flagname_t *Flags, int MaxFlags, Uin
 	char *cur, *sep;
 	int i;
 	int Mode;				/* 0=add, 1=del */
+	enum {
+		FLAG_ADD,
+		FLAG_DEL
+	};
 	
 	/* special case for "help" : display the list of possible settings */
 	if (strcmp (FlagsStr, "help") == 0)
@@ -355,14 +358,20 @@ Log_ParseOptionFlags (const char *FlagsStr, flagname_t *Flags, int MaxFlags, Uin
 		for (i = 0; i < MaxFlags; i++)
 			fprintf(stderr, "  %s\n", Flags[i].name);
 		
-		fprintf(stderr, "Multiple flags can be separated by ','.\n");
-		fprintf(stderr, "They can be prefixed by '+' or '-' to be mixed.\n");
-		fprintf(stderr, "Giving just 'none' flag disables all of them.\n\n");
+		fprintf(stderr,
+			"Multiple flags can be separated by ','.\n"
+			"Giving just 'none' flag disables all of them.\n\n"
+			"Unless first flag starts with -/+ character, flags from\n"
+			"previous trace command are zeroed.  Prefixing flag with\n"
+			"'-' removes it from set, (optional) '+' adds it to set\n"
+			"(which is useful at run-time in debugger).\n\n"
+		       );
 		return "";
 	}
 	
 	if (strcmp (FlagsStr, "none") == 0)
 	{
+		*Mask = 0;
 		return NULL;
 	}
 	
@@ -373,18 +382,24 @@ Log_ParseOptionFlags (const char *FlagsStr, flagname_t *Flags, int MaxFlags, Uin
 	}
 	
 	cur = FlagsCopy;
+	/* starting anew, not modifiying old set? */
+	if (*cur != '+' && *cur != '-')
+		*Mask = 0;
+
 	while (cur)
 	{
 		sep = strchr(cur, ',');
 		if (sep)			/* end of next options */
 			*sep++ = '\0';
 		
-		Mode = 0;				/* default is 'add' */
+		Mode = FLAG_ADD;
 		if (*cur == '+')
-		{ Mode = 0; cur++; }
+			cur++;
 		else if (*cur == '-')
-		{ Mode = 1; cur++; }
-		
+		{
+			Mode = FLAG_DEL;
+			cur++;
+		}
 		for (i = 0; i < MaxFlags; i++)
 		{
 			if (strcmp(cur, Flags[i].name) == 0)
@@ -393,7 +408,7 @@ Log_ParseOptionFlags (const char *FlagsStr, flagname_t *Flags, int MaxFlags, Uin
 		
 		if (i < MaxFlags)		/* option found */
 		{
-			if (Mode == 0)
+			if (Mode == FLAG_ADD)
 				*Mask |= Flags[i].flag;
 			else
 				*Mask &= (~Flags[i].flag);
@@ -424,7 +439,7 @@ const char* Log_SetExceptionDebugMask (const char *FlagsStr)
 {
 	const char *errstr;
 
-	Uint64 mask = EXCEPT_NONE;
+	Uint64 mask = ConfigureParams.Debugger.nExceptionDebugMask;
 	errstr = Log_ParseOptionFlags(FlagsStr, ExceptionFlags, ARRAY_SIZE(ExceptionFlags), &mask);
 	ConfigureParams.Debugger.nExceptionDebugMask = mask;
 	return errstr;
@@ -443,7 +458,6 @@ const char* Log_SetTraceOptions (const char *FlagsStr)
 {
 	const char *errstr;
 
-	LogTraceFlags = TRACE_NONE;
 	errstr = Log_ParseOptionFlags(FlagsStr, TraceFlags, ARRAY_SIZE(TraceFlags), &LogTraceFlags);
 
 	/* Enable Hatari flags needed for tracing selected items */
