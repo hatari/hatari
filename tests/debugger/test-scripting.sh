@@ -13,7 +13,7 @@ if [ \! -f $etos ]; then
 	exit 1
 fi
 
-hpath=../build/src
+hpath=../../build/src
 if [ \! -d $hpath ]; then
 	echo "ERROR: Hatari source directory '$path' missing!"
 	exit 1
@@ -25,7 +25,7 @@ if [ \! -x $hatari ]; then
 	exit 1
 fi
 
-console=../tools/hconsole/hconsole.py
+console=../../tools/hconsole/hconsole.py
 if [ \! -x $console ]; then
 	echo "ERROR: Hatari console script '$console' missing!"
 	exit 1
@@ -37,11 +37,11 @@ export ASAN_OPTIONS="detect_stack_use_after_return=1,abort_on_error=1,debug=1"
 
 echo "TESTING: debugger input file"
 echo "============================"
-cmd="$hatari --sound off --machine falcon --tos $etos --dsp emu --parse debugui/debugger.ini"
+cmd="$hatari --sound off --machine falcon --tos $etos --dsp emu --parse data/debugger.ini"
 echo $cmd
 $cmd
 
 echo
 echo "TESTING: console input file"
 echo "==========================="
-PATH=$hpath:$PATH $console debugui/console.ini --exit --
+PATH=$hpath:$PATH $console data/console.ini --exit --
