@@ -8,7 +8,7 @@ set(CPUEMU_SRCS cpustbl.c cpuemu_0.c cpuemu_11.c cpuemu_13.c
 		cpuemu_40.c cpuemu_50.c)
 
 # Sources that are synchronized with WinUAE:
-set(WINUAE_SRCS cpudefs.c cpummu.c cpummu030.c debug.c newcpu_common.c newcpu.c
+set(WINUAE_SRCS cpudefs.c cpummu.c cpummu030.c debug.c disasm.c newcpu_common.c newcpu.c
 		readcpu.c writelog.c fpp.c fpp_native.c fpp_softfloat.c
 		softfloat/softfloat.c softfloat/softfloat_decimal.c
 		softfloat/softfloat_fpsp.c machdep/m68k.c)

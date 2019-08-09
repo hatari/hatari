@@ -18,6 +18,8 @@
 * Copyright 1995, 1996, 1997, 1998, 1999, 2000 Bernd Schmidt
 */
 
+#define CPU_TESTER 0
+
 #include "sysconfig.h"
 #include "sysdeps.h"
 #include <ctype.h>
@@ -49,6 +51,8 @@ static int using_ce;
 static int using_tracer;
 static int using_waitstates;
 static int using_simple_cycles;
+static int using_debugmem;
+static int using_test;
 static int cpu_level, cpu_generic;
 static int count_read, count_write, count_cycles, count_ncycles;
 static int count_cycles_ce020;
@@ -831,7 +835,7 @@ static void setpc (const char *format, ...)
 
 	if (using_mmu)
 		printf("\tm68k_setpci(%s);\n", buffer);
-	else if (using_prefetch || using_prefetch_020)
+	else if (using_prefetch || using_prefetch_020 || using_test)
 		printf ("\tm68k_setpci_j(%s);\n", buffer);
 	else
 		printf ("\tm68k_setpc_j(%s);\n", buffer);
@@ -846,7 +850,7 @@ static void incpc (const char *format, ...)
 	_vsnprintf (buffer, 1000 - 1, format, parms);
 	va_end (parms);
 
-	if (using_mmu || using_prefetch || using_prefetch_020)
+	if (using_mmu || using_prefetch || using_prefetch_020 || using_test)
 		printf ("\tm68k_incpci (%s);\n", buffer);
 	else
 		printf ("\tm68k_incpc (%s);\n", buffer);
@@ -2368,14 +2372,13 @@ static void genmovemel_ce (uae_u16 opcode)
 	int size = table68k[opcode].size == sz_long ? 4 : 2;
 	printf ("\tuae_u16 mask = %s;\n", gen_nextiword (0));
 	printf ("\tuae_u32 dmask = mask & 0xff, amask = (mask >> 8) & 0xff;\n");
-	printf ("\tuae_u32 v;\n");
 	if (table68k[opcode].dmode == Ad8r || table68k[opcode].dmode == PC8r)
 		addcycles000 (2);
 	genamode (NULL, table68k[opcode].dmode, "dstreg", table68k[opcode].size, "src", 2, 1, GF_AA | GF_MOVE);
 	start_brace ();
 	if (table68k[opcode].size == sz_long) {
 		printf ("\twhile (dmask) {\n");
-		printf ("\t\tv = %s (srca) << 16;\n", srcw);
+		printf ("\t\tuae_u32 v = %s (srca) << 16;\n", srcw);
 		printf ("\t\tv |= %s (srca + 2);\n", srcw);
 		printf ("\t\tm68k_dreg (regs, movem_index1[dmask]) = v;\n");
 		printf ("\t\tsrca += %d;\n", size);
@@ -2383,7 +2386,7 @@ static void genmovemel_ce (uae_u16 opcode)
 		addcycles000_nonce("\t\t", 8);
 		printf ("\t}\n");
 		printf ("\twhile (amask) {\n");
-		printf ("\t\tv = %s (srca) << 16;\n", srcw);
+		printf ("\t\tuae_u32 v = %s (srca) << 16;\n", srcw);
 		printf ("\t\tv |= %s (srca + 2);\n", srcw);
 		printf ("\t\tm68k_areg (regs, movem_index1[amask]) = v;\n");
 		printf ("\t\tsrca += %d;\n", size);
@@ -3218,6 +3221,21 @@ static void resetvars (void)
 			dstb = "put_byte";
 		}
 	}
+
+	if (using_test) {
+		prefetch_word = "get_word_test_prefetch";
+		srcwi = "get_wordi_test";
+		srcl = "get_long_test";
+		dstl = "put_long_test";
+		srcw = "get_word_test";
+		dstw = "put_word_test";
+		srcb = "get_byte_test";
+		dstb = "put_byte_test";
+		do_cycles = "do_cycles_test";
+		getpc = "m68k_getpci()";
+		disp000 = "get_disp_ea_test";
+	}
+
 	if (!dstld)
 		dstld = dstl;
 	if (!dstwd)
@@ -3814,6 +3832,7 @@ static void gen_opcode (unsigned int opcode)
 				int dualprefetch = curi->dmode == absl && (curi->smode != Dreg && curi->smode != Areg && curi->smode != imm);
 
 				genamode (curi, curi->smode, "srcreg", curi->size, "src", 1, 0, 0);
+
 				flags = GF_MOVE | GF_APDI;
 				//if (curi->size == sz_long && (curi->smode == Dreg || curi->smode == Areg))
 				//	flags &= ~GF_APDI;
@@ -3827,8 +3846,9 @@ static void gen_opcode (unsigned int opcode)
 					fill_prefetch_next ();
 					prefetch_done = 1;
 				}
+
 				if (curi->mnemo == i_MOVE)
-					genflags (flag_logical, curi->size, "src", "", "");
+					genflags(flag_logical, curi->size, "src", "", "");
 
 				if (curi->size == sz_long) {
 					if ((curi->dmode == Ad16 || curi->dmode == PC16) && curi->smode == imm) {
@@ -3983,9 +4003,9 @@ static void gen_opcode (unsigned int opcode)
 			printf("\tuae_u16 sr = src;\n");
 		}
 		// STOP undocumented features:
-		// if SR is not set:
+		// if new SR S-bit is not set:
 		// 68000 (68010?): Update SR, increase PC and then cause privilege violation exception (handled in newcpu)
-		// 68000 (68010?): Traced STOP also runs 4 cycles faster.
+		// 68000 (68010?): Traced STOP runs 4 cycles faster.
 		// 68020 68030: STOP works normally
 		// 68040 68060: Immediate privilege violation exception
 		if ((cpu_level == 0 || cpu_level == 1) && using_ce) {
@@ -4032,7 +4052,9 @@ static void gen_opcode (unsigned int opcode)
 			printf ("\t\tgoto %s;\n", endlabelstr);
 			printf ("\t}\n");
 			setpc ("pc");
-			printf("\tbranch_stack_pop_rte(oldpc);\n");
+			if (using_debugmem) {
+				printf("\tbranch_stack_pop_rte(oldpc);\n");
+			}
 			makefromsr();
 		} else if (cpu_level == 1 && using_prefetch) {
 			// 68010
@@ -4062,7 +4084,9 @@ static void gen_opcode (unsigned int opcode)
 			printf ("\t\tgoto %s;\n", endlabelstr);
 			printf ("\t}\n");
 		    setpc ("newpc");
-			printf("\tbranch_stack_pop_rte(oldpc);\n");
+			if (using_debugmem) {
+				printf("\tbranch_stack_pop_rte(oldpc);\n");
+			}
 			check_ipl ();
 		    need_endlabel = 1;
 		} else {
@@ -4136,7 +4160,9 @@ static void gen_opcode (unsigned int opcode)
 			printf ("\t\tgoto %s;\n", endlabelstr);
 			printf ("\t}\n");
 		    setpc ("newpc");
-			printf("\tbranch_stack_pop_rte(oldpc);\n");
+			if (using_debugmem) {
+				printf("\tbranch_stack_pop_rte(oldpc);\n");
+			}
 			check_ipl ();
 		    need_endlabel = 1;
 		}
@@ -4216,7 +4242,7 @@ static void gen_opcode (unsigned int opcode)
 			printf("\t\tgoto %s;\n", endlabelstr);
 			printf("\t}\n");
 		}
-		if (using_indirect > 0 && !using_ce020 && !using_prefetch_020 && !using_ce) {
+		if (using_indirect > 0 && !using_ce020 && !using_prefetch_020 && !using_ce && !using_test) {
 			printf("\tm68k_do_rtsi_jit ();\n");
 		} else if (using_mmu) {
 			printf ("\tm68k_do_rts_mmu%s ();\n", mmu_postfix);
@@ -4233,8 +4259,10 @@ static void gen_opcode (unsigned int opcode)
 		} else {
 			printf ("\tm68k_do_rts ();\n");
 		}
-		printf("\tif (debugmem_trace)\n");
-		printf("\t\tbranch_stack_pop_rts(pc);\n");
+		if (using_debugmem) {
+			printf("\tif (debugmem_trace)\n");
+			printf("\t\tbranch_stack_pop_rts(pc);\n");
+		}
 	    printf ("\tif (%s & 1) {\n", getpc);
 		printf ("\t\tuaecptr faultpc = %s;\n", getpc);
 		setpc ("pc");
@@ -4327,8 +4355,10 @@ static void gen_opcode (unsigned int opcode)
 			} else {
 				printf ("\t%s (m68k_areg (regs, 7), nextpc);\n", dstl);
 			}
-			printf("\tif (debugmem_trace)\n");
-			printf("\t\tbranch_stack_push(oldpc, nextpc);\n");
+			if (using_debugmem) {
+				printf("\tif (debugmem_trace)\n");
+				printf("\t\tbranch_stack_push(oldpc, nextpc);\n");
+			}
 		}
 		count_write += 2;
 		fill_prefetch_full_020 ();
@@ -4394,7 +4424,7 @@ static void gen_opcode (unsigned int opcode)
 		addcycles000 (2);
 		printf("\tuaecptr oldpc = %s;\n", getpc);
 		printf("\tuaecptr nextpc = oldpc + %d;\n", m68k_pc_offset);
-		if (using_indirect > 0 && !using_ce020 && !using_prefetch_020 && !using_ce) {
+		if (using_indirect > 0 && !using_ce020 && !using_prefetch_020 && !using_ce && !using_test) {
 			printf("\tm68k_do_bsri_jit (nextpc, s);\n");
 		} else if (using_mmu) {
 			printf ("\tm68k_do_bsr_mmu%s (nextpc, s);\n", mmu_postfix);
@@ -4409,8 +4439,10 @@ static void gen_opcode (unsigned int opcode)
 		} else {
 			printf ("\tm68k_do_bsr (nextpc, s);\n");
 		}
-		printf("\tif (debugmem_trace)\n");
-		printf("\t\tbranch_stack_push(oldpc, nextpc);\n");
+		if (using_debugmem) {
+			printf("\tif (debugmem_trace)\n");
+			printf("\t\tbranch_stack_push(oldpc, nextpc);\n");
+		}
 		count_write += 2;
 		clear_m68k_offset();
 		fill_prefetch_full ();
@@ -4782,7 +4814,7 @@ bccl_not68020:
 		printf ("\tcnt &= 63;\n");
 		printf ("\tCLEAR_CZNV ();\n");
 		printf ("\tif (cnt >= %d) {\n", bit_size (curi->size));
-		printf ("\t\tval = %s & (uae_u32)-sign;\n", bit_mask (curi->size));
+		printf ("\t\tval = %s & (uae_u32)(0 - sign);\n", bit_mask (curi->size));
 		printf ("\t\tSET_CFLG (sign);\n");
 		duplicate_carry (1);
 		if (source_is_imm1_8 (curi))
@@ -4793,7 +4825,7 @@ bccl_not68020:
 		printf ("\t\tSET_CFLG (val & 1);\n");
 		duplicate_carry (1);
 		printf ("\t\tval >>= 1;\n");
-		printf ("\t\tval |= (%s << (%d - cnt)) & (uae_u32)-sign;\n",
+		printf ("\t\tval |= (%s << (%d - cnt)) & (uae_u32)(0 - sign);\n",
 			bit_mask (curi->size),
 			bit_size (curi->size));
 		printf ("\t\tval &= %s;\n", bit_mask (curi->size));
@@ -5644,14 +5676,15 @@ bccl_not68020:
 		{
 			if ((opcode & 0xfff8) == 0xf620) {
 				/* MOVE16 (Ax)+,(Ay)+ */
-				printf ("\tuae_u32 v[4];\n");
 				printf ("\tuaecptr mems = m68k_areg (regs, srcreg) & ~15, memd;\n");
 				printf ("\tdstreg = (%s >> 12) & 7;\n", gen_nextiword (0));
 				printf ("\tmemd = m68k_areg (regs, dstreg) & ~15;\n");
 				if (using_mmu >= 68040) {
+					printf("\tuae_u32 v[4];\n");
 					printf ("\tget_move16_mmu (mems, v);\n");
 					printf ("\tput_move16_mmu (memd, v);\n");
 				} else {
+					printf("\tuae_u32 v[4];\n");
 					printf ("\tv[0] = %s (mems);\n", srcl);
 					printf ("\tv[1] = %s (mems + 4);\n", srcl);
 					printf ("\tv[2] = %s (mems + 8);\n", srcl);
@@ -5666,18 +5699,19 @@ bccl_not68020:
 				printf ("\tm68k_areg (regs, dstreg) += 16;\n");
 			} else {
 				/* Other variants */
-				printf ("\tuae_u32 v[4];\n");
 				genamode (curi, curi->smode, "srcreg", curi->size, "mems", 0, 2, 0);
 				genamode (curi, curi->dmode, "dstreg", curi->size, "memd", 0, 2, 0);
 				if (using_mmu == 68040) {
 					printf ("\tget_move16_mmu (memsa, mmu040_move16);\n");
 					printf ("\tput_move16_mmu (memda, mmu040_move16);\n");
 				} else if (using_mmu == 68060) {
+					printf("\tuae_u32 v[4];\n");
 					printf ("\tget_move16_mmu (memsa, v);\n");
 					printf ("\tput_move16_mmu (memda, v);\n");
 				} else {
 					printf ("\tmemsa &= ~15;\n");
 					printf ("\tmemda &= ~15;\n");
+					printf("\tuae_u32 v[4];\n");
 					printf ("\tv[0] = %s (memsa);\n", srcl);
 					printf ("\tv[1] = %s (memsa + 4);\n", srcl);
 					printf ("\tv[2] = %s (memsa + 8);\n", srcl);
@@ -6139,6 +6173,70 @@ static void generate_func (const char *extra)
 		fprintf (stblfile, "{ 0, 0 }};\n");
 }
 
+#if CPU_TESTER
+
+static void generate_cpu_test(int mode)
+{
+	char fname[100];
+	const char *extra = "_test", *extraup;
+	int rp;
+	int id = 90 + mode;
+
+	using_tracer = 0;
+	extraup = "";
+	postfix = id;
+
+	fprintf(stblfile, "#ifdef CPUEMU_%d%s\n", postfix, extraup);
+	sprintf(fname, "cpuemu_%d%s.cpp", postfix, extra);
+	if (freopen(fname, "wb", stdout) == NULL) {
+		abort();
+	}
+
+	using_exception_3 = 1;
+	using_prefetch = 0;
+	using_prefetch_020 = 0;
+	using_ce = 0;
+	using_ce020 = 0;
+	using_mmu = 0;
+	using_waitstates = 0;
+	memory_cycle_cnt = 4;
+	mmu_postfix = "";
+	xfc_postfix = "";
+	using_simple_cycles = 0;
+	using_indirect = 1;
+	cpu_generic = false;
+
+	cpu_level = 0;
+	using_prefetch = 1;
+	using_exception_3 = 1;
+	using_simple_cycles = 1;
+
+	if (mode == 1) {
+		cpu_level = 1;
+	} else if (mode == 2) {
+		cpu_level = 2;
+		using_prefetch = 0;
+		using_simple_cycles = 0;
+	}
+
+
+	read_counts();
+	for (rp = 0; rp < nr_cpuop_funcs; rp++)
+		opcode_next_clev[rp] = cpu_level;
+
+	printf("#include \"cputest.h\"\n");
+	if (!mode) {
+		fprintf(stblfile, "#include \"cputest.h\"\n");
+	}
+
+	fprintf(stblfile, "const struct cputbl CPUFUNC(op_smalltbl_%d%s)[] = {\n", postfix, extra);
+	endlabelno = id;
+	generate_func(extra);
+	fprintf(stblfile, "#endif /* CPUEMU_%d%s */\n", postfix, extraup);
+}
+
+#endif
+
 static void generate_cpu (int id, int mode)
 {
 	char fname[100];
@@ -6332,8 +6430,6 @@ static void generate_cpu (int id, int mode)
 
 int main(int argc, char *argv[])
 {
-	int i;
-
 	read_table68k ();
 	do_merges ();
 
@@ -6347,17 +6443,33 @@ int main(int argc, char *argv[])
 	* cputbl.h that way), but cpuopti can't cope.  That could be fixed, but
 	* I don't dare to touch the 68k version.  */
 
-	headerfile = fopen ("cputbl.h", "wb");
+#if CPU_TESTER
 
-	stblfile = fopen ("cpustbl.c", "wb");
-	generate_includes (stblfile, 0);
+	using_test = 1;
+	headerfile = fopen("cputbl_test.h", "wb");
+	stblfile = fopen("cpustbl_test.cpp", "wb");
+	generate_stbl = 1;
+	generate_cpu_test(0);
+	generate_cpu_test(1);
+	generate_cpu_test(2);
 
-	for (i = 0; i <= 55; i++) {
+#else
+
+	using_debugmem = 1;
+
+	headerfile = fopen("cputbl.h", "wb");
+
+	stblfile = fopen("cpustbl.c", "wb");
+	generate_includes(stblfile, 0);
+
+	for (int i = 0; i <= 55; i++) {
 		if ((i >= 6 && i < 11) || (i > 14 && i < 20) || (i > 25 && i < 31) || (i > 35 && i < 40))
 			continue;
 		generate_stbl = 1;
 		generate_cpu (i, 0);
 	}
+
+#endif
 
 	free (table68k);
 	return 0;
