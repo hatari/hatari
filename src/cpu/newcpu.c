@@ -75,7 +75,7 @@ bool check_prefs_changed_comp (bool checkonly) { return false; }
 #endif
 
 /* Opcode of faulting instruction */
-static uae_u16 last_op_for_exception_3;
+static uae_u32 last_op_for_exception_3;
 /* PC at fault time */
 static uaecptr last_addr_for_exception_3;
 /* Address that generated the exception */
@@ -2735,7 +2735,7 @@ static void Exception_ce000 (int nr)
 			return;
 		}
 #ifndef WINUAE_FOR_HATARI
-		write_log (_T("Exception %d (%04x %x) at %x -> %x!\n"),
+		write_log (_T("Exception %d (%08x %x) at %x -> %x!\n"),
 			nr, last_op_for_exception_3, last_addr_for_exception_3, currpc, get_long_debug (4 * nr));
 #else
 		if (nr != 2 || M68000_IsVerboseBusError(currpc, last_fault_for_exception_3))
@@ -2751,6 +2751,10 @@ static void Exception_ce000 (int nr)
 			mode |= last_notinstruction_for_exception_3 ? 8 : 0;
 			// undocumented bits seem to contain opcode
 			mode |= last_op_for_exception_3 & ~31;
+			uae_u16 statusormask = (last_op_for_exception_3 >> 16) & 0xff;
+			uae_u16 statusandmask = (last_op_for_exception_3 >> 24) & 0xff;
+			mode |= statusormask;
+			mode &= ~statusandmask;
 			m68k_areg(regs, 7) -= 14;
 			exception_in_exception = -1;
 			x_put_word(m68k_areg(regs, 7) + 12, last_addr_for_exception_3);
@@ -3274,6 +3278,10 @@ static void Exception_normal (int nr)
 			uae_u16 mode = (sv ? 4 : 0) | (last_instructionaccess_for_exception_3 ? 2 : 1);
 			mode |= last_writeaccess_for_exception_3 ? 0 : 16;
 			mode |= last_notinstruction_for_exception_3 ? 8 : 0;
+			uae_u16 statusormask = (last_op_for_exception_3 >> 16) & 0xff;
+			uae_u16 statusandmask = (last_op_for_exception_3 >> 24) & 0xff;
+			mode |= statusormask;
+			mode &= ~statusandmask;
 			exception_in_exception = -1;
 			Exception_build_68000_address_error_stack_frame(mode, last_op_for_exception_3, last_fault_for_exception_3, last_addr_for_exception_3);
 #ifndef WINUAE_FOR_HATARI
