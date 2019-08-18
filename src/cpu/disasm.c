@@ -2,6 +2,7 @@
 #include "sysconfig.h"
 #include "sysdeps.h"
 
+#include "main.h"
 #include "options_cpu.h"
 #include "debug.h"
 #include "memory.h"
