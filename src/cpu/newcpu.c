@@ -2449,7 +2449,7 @@ void REGPARAM2 MakeFromSR(void)
 static void exception_check_trace (int nr)
 {
 	unset_special (SPCFLAG_TRACE | SPCFLAG_DOTRACE);
-	if (regs.t1 && !regs.t0) {
+	if (regs.t1) {
 		/* trace stays pending if exception is div by zero, chk,
 		* trapv or trap #x
 		*/
@@ -3405,7 +3405,7 @@ static void ExceptionX (int nr, uaecptr address)
 
 void REGPARAM2 Exception_cpu(int nr)
 {
-	bool t0 = currprefs.cpu_model >= 68020 && regs.t0;
+	bool t0 = currprefs.cpu_model >= 68020 && regs.t0 && !regs.t1;
 	ExceptionX (nr, -1);
 	// check T0 trace
 	if (t0) {
@@ -4146,7 +4146,9 @@ void mmu_op (uae_u32 opcode, uae_u32 extra)
 
 static void do_trace (void)
 {
-	if (regs.t0 && currprefs.cpu_model >= 68020) {
+	// need to store PC because of branch instructions
+	regs.trace_pc = regs.pc;
+	if (regs.t0 && !regs.t1 && currprefs.cpu_model >= 68020) {
 		// this is obsolete
 		return;
 	}
@@ -10121,7 +10123,7 @@ uae_u32 get_long_cache_debug(uaecptr addr, bool *cached)
 
 void check_t0_trace(void)
 {
-	if (regs.t0 && currprefs.cpu_model >= 68020) {
+	if (regs.t0 && !regs.t1 && currprefs.cpu_model >= 68020) {
 		unset_special (SPCFLAG_TRACE);
 		set_special (SPCFLAG_DOTRACE);
 	}
