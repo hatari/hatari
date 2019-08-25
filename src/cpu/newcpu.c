@@ -50,6 +50,7 @@
 #include "vdi.h"
 #include "cart.h"
 #include "dialog.h"
+#include "gemdos.h"
 #include "bios.h"
 #include "xbios.h"
 #include "screen.h"
@@ -3340,8 +3341,17 @@ static void ExceptionX (int nr, uaecptr address)
 	}
 
 #ifdef WINUAE_FOR_HATARI
-	/* Handle Hatari GEM and BIOS traps */
-	if (nr == 0x22) {
+	/* Handle Hatari GEMDOS, GEM and BIOS traps */
+	if (nr == 0x21) {
+		if (GemDOS_Trap()) {
+			fill_prefetch ();
+			regs.exception = 0;
+			return;
+		}
+		/* The PC might have been modified by GemDOS_Pexec */
+		pc = m68k_getpc();
+	}
+	else if (nr == 0x22) {
 		/* Intercept VDI & AES exceptions (Trap #2) */
 		if (bVdiAesIntercept && VDI_AES_Entry()) {
 			/* Set 'PC' to address of 'VDI_OPCODE' illegal instruction.

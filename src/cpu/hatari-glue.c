@@ -179,7 +179,7 @@ void Exit680x0(void)
 /**
  * Execute a 'NOP' opcode (increment PC by 2 bytes and take care
  * of prefetch at the CPU level depending on the current CPU mode)
- * This is used to return from Gemdos / Natfeats interception, by ignoring
+ * This is used to return from SysInit / Natfeats interception, by ignoring
  * the intercepted opcode and executing a NOP instead once the work has been done.
  */
 static void	CpuDoNOP ( void )
@@ -250,15 +250,16 @@ uae_u32 REGPARAM3 OpCode_SysInit(uae_u32 opcode)
 
 
 /**
- * Intercept GEMDOS calls.
- * Used for GEMDOS HD emulation (see gemdos.c).
+ * Handle illegal opcode #8 (GEMDOS_OPCODE).
+ * When GEMDOS HD emulation is enabled, we use it to intercept the end of
+ * the Pexec call (see gemdos.c).
  */
 uae_u32 REGPARAM3 OpCode_GemDos(uae_u32 opcode)
 {
 	if (is_cart_pc())
 	{
-		GemDOS_OpCode();    /* handler code in gemdos.c */
-		CpuDoNOP();
+		GemDOS_PexecBpCreated();
+		fill_prefetch();
 	}
 	else
 	{

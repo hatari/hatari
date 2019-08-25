@@ -155,6 +155,7 @@ const char NewCpu_fileid[] = "Hatari newcpu.c : " __DATE__ " " __TIME__;
 #include "dialog.h"
 #include "bios.h"
 #include "xbios.h"
+#include "gemdos.h"
 #include "screen.h"
 #include "video.h"
 #include "options.h"
@@ -914,7 +915,15 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
 
     if (ExceptionSource == M68000_EXC_SRC_CPU)
       {
-        if (nr == 0x22)
+        if (nr == 0x21)
+        {
+            if (GemDOS_Trap()) {
+                return;
+            }
+            /* The PC might have been modified by GemDOS_Pexec */
+            currpc = m68k_getpc();
+        }
+        else if (nr == 0x22)
         {
           /* Intercept VDI & AES exceptions (Trap #2) */
           if(bVdiAesIntercept && VDI_AES_Entry())

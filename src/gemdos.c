@@ -102,7 +102,6 @@ typedef struct {
 #define DTA_MAGIC_NUMBER  0x12983476
 #define MAX_DTAS_FILES    256      /* Must be ^2 */
 #define MAX_DTAS_MASK     (MAX_DTAS_FILES-1)
-#define CALL_PEXEC_ROUTINE 3       /* Call our cartridge pexec routine */
 
 #define  BASE_FILEHANDLE     64    /* Our emulation handles - MUST not be valid TOS ones, but MUST be <256 */
 #define  MAX_FILE_HANDLES    32    /* We can allow 32 files open at once */
@@ -148,6 +147,9 @@ static Uint16 CurrentDrive; /* Current drive (0=A,1=B,2=C etc...) */
 static Uint32 act_pd;       /* Used to get a pointer to the current basepage */
 static Uint16 nAttrSFirst;  /* File attribute for SFirst/Snext */
 static Uint32 CallingPC;    /* Program counter from caller */
+
+static uint32_t nPexecReturnPC, nPexecPrgName;
+static uint16_t nPexecMode;
 
 /* last program opened by GEMDOS emulation */
 static bool PexecCalled;
@@ -948,6 +950,10 @@ void GemDOS_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&bInitGemDOS,sizeof(bInitGemDOS));
 	MemorySnapShot_Store(&act_pd, sizeof(act_pd));
 	MemorySnapShot_Store(&CurrentDrive, sizeof(CurrentDrive));
+
+	MemorySnapShot_Store(&nPexecMode, sizeof(nPexecMode));
+	MemorySnapShot_Store(&nPexecPrgName, sizeof(nPexecPrgName));
+	MemorySnapShot_Store(&nPexecReturnPC, sizeof(nPexecReturnPC));
 
 	/* File handle related information */
 	MemorySnapShot_Store(&ForcedHandles, sizeof(ForcedHandles));
@@ -2697,7 +2703,6 @@ static bool GemDOS_GetDir(Uint32 Params)
 	return false;
 }
 
-
 /*-----------------------------------------------------------------------*/
 /**
  * GEMDOS PExec handler
@@ -2706,11 +2711,10 @@ static bool GemDOS_GetDir(Uint32 Params)
 static int GemDOS_Pexec(Uint32 Params)
 {
 	int Drive;
-	Uint16 Mode;
 	char *pszFileName;
 
 	/* Find PExec mode */
-	Mode = STMemory_ReadWord(Params);
+	nPexecMode = STMemory_ReadWord(Params);
 
 	if (LOG_TRACE_LEVEL(TRACE_OS_GEMDOS|TRACE_OS_BASE))
 	{
@@ -2718,7 +2722,7 @@ static int GemDOS_Pexec(Uint32 Params)
 		fname = STMemory_ReadLong(Params+SIZE_WORD);
 		cmdline = STMemory_ReadLong(Params+SIZE_WORD+SIZE_LONG);
 		env_string = STMemory_ReadLong(Params+SIZE_WORD+SIZE_LONG+SIZE_LONG);
-		if (Mode == 0 || Mode == 3)
+		if (nPexecMode == 0 || nPexecMode == 3)
 		{
 			int cmdlen;
 			char *str;
@@ -2729,42 +2733,49 @@ static int GemDOS_Pexec(Uint32 Params)
 			str = malloc(cmdlen+1);
 			memcpy(str, cmd, cmdlen);
 			str[cmdlen] = '\0';
-			LOG_TRACE_PRINT ( "GEMDOS 0x4B Pexec(%i, \"%s\", [%d]\"%s\", 0x%x) at PC 0x%X\n", Mode, name, cmdlen, str, env_string,
-				CallingPC);
+			LOG_TRACE_PRINT("GEMDOS 0x4B Pexec(%i, \"%s\", [%d]\"%s\", 0x%x) at PC 0x%X\n",
+			                nPexecMode, name, cmdlen, str, env_string, CallingPC);
 			free(str);
 		}
 		else
 		{
-			LOG_TRACE_PRINT ( "GEMDOS 0x4B Pexec(%i, 0x%x, 0x%x, 0x%x) at PC 0x%X\n", Mode, fname, cmdline, env_string,
-				CallingPC);
+			LOG_TRACE_PRINT("GEMDOS 0x4B Pexec(%i, 0x%x, 0x%x, 0x%x) at PC 0x%X\n",
+			                nPexecMode, fname, cmdline, env_string, CallingPC);
 		}
 	}
 
-	/* Re-direct as needed */
-	switch(Mode)
+	/* We only have to intercept the "load" modes */
+	if (nPexecMode != 0 && nPexecMode != 3)
+		return false;
+
+	nPexecPrgName = STMemory_ReadLong(Params + SIZE_WORD);
+	pszFileName = (char *)STMemory_STAddrToPointer(nPexecPrgName);
+	Drive = GemDOS_FileName2HardDriveID(pszFileName);
+
+	/* Skip if it is not using our emulated drive */
+	if (!ISHARDDRIVE(Drive))
+		return false;
+
+	/* Run "create basepage" instead of original Pexec call */
+	if (TosVersion >= 0x200)
 	{
-	 case 0:      /* Load and go */
-	 case 3:      /* Load, don't go */
-		pszFileName = (char *)STMemory_STAddrToPointer(STMemory_ReadLong(Params+SIZE_WORD));
-		Drive = GemDOS_FileName2HardDriveID(pszFileName);
-		
-		/* If not using A: or B:, use my own routines to load */
-		if (ISHARDDRIVE(Drive))
-		{
-			/* Redirect to cart' routine at address 0xFA1000 */
-			PexecCalled = true;
-			return CALL_PEXEC_ROUTINE;
-		}
-		return false;
-	 case 4:      /* Just go */
-		return false;
-	 case 5:      /* Create basepage */
-		return false;
-	 case 6:
-		return false;
+		STMemory_WriteWord(Params, 5);  /* TODO: Use mode 7 instead */
+	}
+	else
+	{
+		STMemory_WriteWord(Params, 5);
 	}
 
-	/* Default: Still re-direct to TOS */
+	/* Patch return address - we need a way to intercept again before
+	 * returning the the calling program. Use an illegal opcode in the
+	 * cartridge space to do this: */
+	nPexecReturnPC = CallingPC;
+	M68000_SetPC(0xfafff0);
+	STMemory_WriteWord(0xfafff0, GEMDOS_OPCODE);
+
+	PexecCalled = true;
+
+	/* Still return "false" to run the "create basepage" instead */
 	return false;
 }
 
@@ -3197,8 +3208,7 @@ static bool GemDOS_Pterm(Uint32 Params)
 static bool GemDOS_Super(Uint32 Params)
 {
 	uint32_t nParam = STMemory_ReadLong(Params);
-	uint32_t nExcFrameSize, nRetAddr;
-	uint16_t nSR, nVec = 0;
+	uint16_t nSR;
 
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x20 Super(0x%X) at PC 0x%X\n",
 		  nParam, CallingPC);
@@ -3209,10 +3219,7 @@ static bool GemDOS_Super(Uint32 Params)
 		return false;
 
 	/* Get SR, return address and vector offset from stack frame */
-	nSR = STMemory_ReadWord(Regs[REG_A7]);
-	nRetAddr = STMemory_ReadLong(Regs[REG_A7] + SIZE_WORD);
-	if (currprefs.cpu_level > 0)
-		nVec = STMemory_ReadWord(Regs[REG_A7] + SIZE_WORD + SIZE_LONG);
+	nSR = M68000_GetSR();
 
 	if (nParam == 1)                /* Query mode? */
 	{
@@ -3220,25 +3227,12 @@ static bool GemDOS_Super(Uint32 Params)
 		return true;
 	}
 
-	if (nParam == 0)
-	{
-		nParam = regs.usp;
-	}
-
-	if (currprefs.cpu_level > 0)
-		nExcFrameSize = SIZE_WORD + SIZE_LONG + SIZE_WORD;
-	else
-		nExcFrameSize = SIZE_WORD + SIZE_LONG;
-
-
-	Regs[REG_D0] = Regs[REG_A7] + nExcFrameSize;
-	Regs[REG_A7] = nParam - nExcFrameSize;
+	Regs[REG_D0] = regs.isp;
+	if (nParam)
+		Regs[REG_A7] = nParam;
 
 	nSR ^= SR_SUPERMODE;
-
-	STMemory_WriteWord(Regs[REG_A7], nSR);
-	STMemory_WriteLong(Regs[REG_A7] + SIZE_WORD, nRetAddr);
-	STMemory_WriteWord(Regs[REG_A7] + SIZE_WORD + SIZE_LONG, nVec);
+	M68000_SetSR(nSR);
 
 	return true;
 }
@@ -3800,32 +3794,22 @@ void GemDOS_InfoDTA(FILE *fp, Uint32 dta_addr)
  * This method keeps the stack and other states consistent with the original ST
  * which is very important for the PExec call and maximum compatibility through-out
  */
-void GemDOS_OpCode(void)
+int GemDOS_Trap(void)
 {
-	Uint16 GemDOSCall, CallingSReg;
+	Uint16 GemDOSCall;
 	Uint32 Params;
-	int Finished;
-	Uint16 SR;
+	int Finished = false;
 
-	SR = M68000_GetSR();
-
-	/* Read SReg from stack to see if parameters are on User or Super stack  */
-	CallingSReg = STMemory_ReadWord(Regs[REG_A7]);
-	CallingPC = STMemory_ReadLong(Regs[REG_A7]+SIZE_WORD);
-	if ((CallingSReg&SR_SUPERMODE)==0)      /* Calling from user mode */
-		Params = regs.usp;
-	else
+	if(!bInitGemDOS)
 	{
-		Params = Regs[REG_A7]+SIZE_WORD+SIZE_LONG;  /* skip SR & PC pushed to super stack */
-		if (currprefs.cpu_level > 0)
-			Params += SIZE_WORD;   /* Skip extra word if CPU is >=68010 */
+		if (GEMDOS_EMU_ON)
+			GemDOS_Boot();
+		else
+			return false;
 	}
 
-	/* Default to run TOS GemDos (SR_NEG run Gemdos, SR_ZERO already done, SR_OVERFLOW run own 'Pexec' */
-	Finished = false;
-	SR &= SR_CLEAR_OVERFLOW;
-	SR &= SR_CLEAR_ZERO;
-	SR |= SR_NEG;
+	CallingPC = M68000_GetPC();
+	Params = Regs[REG_A7];
 
 	/* Find pointer to call parameters */
 	GemDOSCall = STMemory_ReadWord(Params);
@@ -3892,7 +3876,6 @@ void GemDOS_OpCode(void)
 		Finished = GemDOS_GetDir(Params);
 		break;
 	 case 0x4b:
-		/* Either false or CALL_PEXEC_ROUTINE */
 		Finished = GemDOS_Pexec(Params);
 		break;
 	 case 0x4c:
@@ -3991,11 +3974,8 @@ void GemDOS_OpCode(void)
 			  CallingPC);
 	}
 
-	switch(Finished)
+	if (Finished)
 	{
-	 case true:
-		/* skip over branch to pexec to RTE */
-		SR |= SR_ZERO;
 		/* visualize GemDOS emu HD access? */
 		switch (GemDOSCall)
 		{
@@ -4017,37 +3997,30 @@ void GemDOS_OpCode(void)
 		 case 0x56:
 			Statusbar_EnableHDLed( LED_STATE_ON );
 		}
-		break;
-	 case CALL_PEXEC_ROUTINE:
-		/* branch to pexec, then redirect to old gemdos. */
-		SR |= SR_OVERFLOW;
-		break;
-	 case false:
+	}
+	else
+	{
 		if (!bUseTos)
 		{
 			if (GemDOSCall >= 0x58)   /* Ignore optional calls */
 			{
-				SR |= SR_ZERO;
 				Regs[REG_D0] = GEMDOS_EINVFN;
-				break;
+				return true;
 			}
 			Log_Printf(LOG_FATAL, "GEMDOS 0x%02hX %s at PC 0x%X unsupported in test mode\n",
 				  GemDOSCall, GemDOS_Opcode2Name(GemDOSCall),
 				  CallingPC);
 			Main_SetQuitValue(1);
 		}
-		break;
 	}
 
-	M68000_SetSR(SR);   /* update the flags in the SR register */
+	return Finished;
 }
 
 
-/*-----------------------------------------------------------------------*/
 /**
- * GemDOS_Boot - routine called on the first occurrence of the gemdos opcode.
- * (this should be in the cartridge bootrom)
- * Sets up our gemdos handler (or, if we don't need one, just turn off keyclicks)
+ * GemDOS_Boot
+ * Sets up stuff for our gemdos handler
  */
 void GemDOS_Boot(void)
 {
@@ -4081,17 +4054,17 @@ void GemDOS_Boot(void)
 		act_pd = STMemory_ReadLong(osAddress + 0x28);
 	}
 
-	/* Save old GEMDOS handler address */
-	STMemory_WriteLong(CART_OLDGEMDOS, STMemory_ReadLong(0x0084));
-	/* Setup new GEMDOS handler, see "cart_asm.s" */
-	STMemory_WriteLong(0x0084, CART_GEMDOS);
+	/* Add any drives mapped by TOS in the interim */
+	ConnectedDriveMask |= STMemory_ReadLong(0x4c2);
+	/* Initialize the connected drive mask */
+	STMemory_WriteLong(0x4c2, ConnectedDriveMask);
 }
 
 
 /**
  * Load and relocate a PRG file into the memory of the emulated machine.
  */
-int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr)
+int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr, bool bFullBpSetup)
 {
 	long nFileSize, nRelTabIdx;
 	uint8_t *prg;
@@ -4134,20 +4107,24 @@ int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr)
 		return -1;
 	}
 
-	/* Set up basepage - note: some of these values are rather dummies */
-	STMemory_WriteLong(baseaddr, baseaddr);                                    /* p_lowtpa */
-	STMemory_WriteLong(baseaddr + 4, memtop);                                  /* p_hitpa */
+	/* Set up basepage */
 	STMemory_WriteLong(baseaddr + 8, baseaddr + 0x100);                        /* p_tbase */
 	STMemory_WriteLong(baseaddr + 12, nTextLen);                               /* p_tlen */
 	STMemory_WriteLong(baseaddr + 16, baseaddr + 0x100 + nTextLen);            /* p_dbase */
 	STMemory_WriteLong(baseaddr + 20, nDataLen);                               /* p_dlen */
 	STMemory_WriteLong(baseaddr + 24, baseaddr + 0x100 + nTextLen + nDataLen); /* p_bbase */
 	STMemory_WriteLong(baseaddr + 28, nBssLen);                                /* p_blen */
-	STMemory_WriteLong(baseaddr + 32, baseaddr + 0x80);                        /* p_dta */
-	STMemory_WriteLong(baseaddr + 36, baseaddr);                               /* p_parent */
-	STMemory_WriteLong(baseaddr + 40, 0);                                      /* p_reserved */
-	/* The environment should point to an empty string - use p_reserved for that: */
-	STMemory_WriteLong(baseaddr + 44, baseaddr + 40);                          /* p_env */
+	/* In case we run without TOS, set some of the other values as good as possible, too */
+	if (bFullBpSetup)
+	{
+		STMemory_WriteLong(baseaddr, baseaddr);                            /* p_lowtpa */
+		STMemory_WriteLong(baseaddr + 4, memtop);                          /* p_hitpa */
+		STMemory_WriteLong(baseaddr + 32, baseaddr + 0x80);                /* p_dta */
+		STMemory_WriteLong(baseaddr + 36, baseaddr);                       /* p_parent */
+		STMemory_WriteLong(baseaddr + 40, 0);                              /* p_reserved */
+		/* The environment should point to an empty string - use p_reserved for that: */
+		STMemory_WriteLong(baseaddr + 44, baseaddr + 40);                  /* p_env */
+	}
 
 	if (*(uint16_t *)&prg[26] != 0)   /* No reloc information available? */
 		return 0;
@@ -4189,4 +4166,50 @@ int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr)
 	}
 
 	return 0;
+}
+
+/**
+ * This function is run after we've told TOS to create a basepage. We
+ * can now load and relocate a program from our emulated HD into the
+ * new TPA.
+ */
+void GemDOS_PexecBpCreated(void)
+{
+	char sFileName[FILENAME_MAX];
+	char *sStFileName;
+
+	if ((int32_t)Regs[REG_D0] < 0)
+	{
+		M68000_SetPC(nPexecReturnPC);
+		return;
+	}
+
+	sStFileName = STMemory_STAddrToPointer(nPexecPrgName);
+	LOG_TRACE(TRACE_OS_GEMDOS, "Basepage has been created - now loading '%s'\n",
+	          sStFileName);
+
+	GemDOS_CreateHardDriveFileName(GemDOS_FileName2HardDriveID(sStFileName),
+	                               sStFileName, sFileName, sizeof(sFileName));
+	if (GemDOS_LoadAndReloc(sFileName, Regs[REG_D0], false) < 0)
+	{
+		Regs[REG_D0] = GEMDOS_EFILNF;
+		M68000_SetPC(nPexecReturnPC);
+		return;
+	}
+
+	if (nPexecMode == 0)
+	{
+		/* Fake another "just-go" Pexec call to start the program */
+		STMemory_WriteWord(Regs[REG_A7], 0x4b);
+		if (TosVersion >= 0x104)
+			STMemory_WriteWord(Regs[REG_A7] + 2, 6);  /* Just go, then free */
+		else
+			STMemory_WriteWord(Regs[REG_A7] + 2, 4);  /* Just go */
+		STMemory_WriteLong(Regs[REG_A7] + 8, Regs[REG_D0]);
+		M68000_SetPC(nPexecReturnPC - 2);
+	}
+	else
+	{
+		M68000_SetPC(nPexecReturnPC);
+	}
 }

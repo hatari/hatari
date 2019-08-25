@@ -1204,7 +1204,7 @@ int TOS_InitImage(void)
 		{
 			Log_Printf(LOG_DEBUG, "Loading '%s' to 0x%x.\n",
 			           psTestPrg, TEST_PRG_START);
-			GemDOS_LoadAndReloc(psTestPrg, TEST_PRG_BASEPAGE);
+			GemDOS_LoadAndReloc(psTestPrg, TEST_PRG_BASEPAGE, true);
 		}
 		else
 		{
