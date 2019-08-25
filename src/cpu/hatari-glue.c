@@ -133,21 +133,22 @@ void restore_state (const TCHAR *filename)
 }
 
 
-int savestate_restore_finish (void)
+void savestate_restore_final (void)
+{
+  /* Not used for now in Hatari */
+}
+
+
+bool savestate_restore_finish (void)
 {
 //fprintf ( stderr , "savestate_restore_finish in %d\n" , quit_program );
 	if (!isrestore ())
-		return 0;
+		return false;
 	restore_cpu_finish ();
 	savestate_state = 0;
 	quit_program = 0;				/* at this point, quit_program was already processed, we must reset it */
 //fprintf ( stderr , "savestate_restore_finish out %d\n" , quit_program );
-	return 1;
-}
-
-
-void savestate_restore_final (void)
-{
+	return true;
 }
 
 
