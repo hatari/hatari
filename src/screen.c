@@ -444,6 +444,9 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 			exit(1);
 		}
 
+		SDL_SetRenderDrawColor(sdlRenderer, 0, 0, 0, 255);
+		SDL_RenderClear(sdlRenderer);
+
 		if (bInFullScreen)
 			SDL_RenderSetLogicalSize(sdlRenderer, width, height);
 
