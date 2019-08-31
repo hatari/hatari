@@ -4512,7 +4512,7 @@ fine without the real DSP emulation.
 <p>
 WinUAE CPU core supports 030 cache emulation for cycle accuracy. This
 is very heavy.  Unless program needs cycle accuracy to work correctly,
-you can disable it.  Many Falcon demos need it, application and games
+you can disable it.  Many Falcon demos need it, applications and games
 normally don't.
 </p>
 
@@ -4553,7 +4553,7 @@ patching.
 </p>
 
 <p>
-<strong>NOTE</strong>: Above options may cause some programs to work in correctly.
+<strong>NOTE</strong>: Above options may cause some programs to work incorrectly.
 The <a href="compatibility.html">Hatari Software Compatibility List</a>
 lists programs known to need real Falcon DSP emulation, Timer-D
 frequency or accurate FDC timings.
@@ -4616,10 +4616,11 @@ redundant work to convert frames you can't see.
 If you are not using frame skip, disabling zooming can have
 noticeable improvement on performance.  You can do this by specifying
 suitably low "Max zoomed" resolution (<span class="commandline">--zoom
-1</span> command line option sets it to 320x200).  If you still want to
-have a nice fullscreen mode, you should rather add the right resolution
-mode-lines (e.g. "320x200") to your xorg.conf file.  If you still want
-to use zooming, disabling borders may help a bit.
+1</span> command line option sets it to 320x200 for ST-low resolution).
+If you still want to have a nice fullscreen mode, you should rather
+add the right resolution mode-lines (e.g. "320x200") to your xorg.conf
+file.  If you still want to use zooming, disabling borders may help a
+bit.
 </p>
 
 <h4>Spec512 color handling</h4>
