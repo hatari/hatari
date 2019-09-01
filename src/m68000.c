@@ -251,7 +251,7 @@ void M68000_Reset(bool bCold)
 	}
 	/* Now reset the UAE CPU core */
 	m68k_reset();
-	Cart_PatchCpuTables();
+	M68000_PatchCpuTables();
 #endif
 
 	BusMode = BUS_MODE_CPU;
@@ -423,7 +423,47 @@ void M68000_CheckCpuSettings(void)
 }
 
 
-/*-----------------------------------------------------------------------*/
+/**
+ * Patch the cpu tables to intercept some opcodes used for Gemdos HD
+ * emulation, extended VDI more or for NatFeats.
+ */
+void M68000_PatchCpuTables(void)
+{
+	if (Cart_UseBuiltinCartridge())
+	{
+		/* Hatari's specific illegal opcodes */
+		cpufunctbl[SYSINIT_OPCODE] = OpCode_SysInit;	/* 0x000a */
+		cpufunctbl[VDI_OPCODE] = OpCode_VDI;		/* 0x000c */
+	}
+	else
+	{
+		/* No built-in cartridge loaded : set same handler as 0x4afc (illegal) */
+		cpufunctbl[SYSINIT_OPCODE] = cpufunctbl[ 0x4afc ];	/* 0x000a */
+		cpufunctbl[VDI_OPCODE] = cpufunctbl[ 0x4afc ];		/* 0x000c */
+	}
+
+	/* Install opcodes for Native Features? */
+	if (ConfigureParams.Log.bNatFeats)
+	{
+		/* illegal opcodes for emulators Native Features */
+		cpufunctbl[NATFEAT_ID_OPCODE] = OpCode_NatFeat_ID;	/* 0x7300 */
+		cpufunctbl[NATFEAT_CALL_OPCODE] = OpCode_NatFeat_Call;	/* 0x7301 */
+	}
+	else
+	{
+		/* No Native Features : set same handler as 0x4afc (illegal) */
+		cpufunctbl[NATFEAT_ID_OPCODE] = cpufunctbl[ 0x4afc ];	/* 0x7300 */
+		cpufunctbl[NATFEAT_CALL_OPCODE] = cpufunctbl[ 0x4afc ];	/* 0x7300 */
+	}
+
+	/* GEMDOS HD emulation? */
+	if (ConfigureParams.HardDisk.bUseHardDiskDirectories)	/* 0x0008 */
+		cpufunctbl[GEMDOS_OPCODE] = OpCode_GemDos;
+	else
+		cpufunctbl[GEMDOS_OPCODE] = cpufunctbl[0x4afc];	/* illegal opcode */
+}
+
+
 /**
  * Save/Restore snapshot of CPU variables ('MemorySnapShot_Store' handles type)
  */
@@ -519,7 +559,7 @@ void M68000_MemorySnapShot_Capture(bool bSave)
 
 	if (!bSave)
 	{
-		Cart_PatchCpuTables();
+		M68000_PatchCpuTables();
 
 		M68000_SetPC(regs.pc);
 		/* MakeFromSR() must not swap stack pointer */

@@ -46,10 +46,7 @@ static const char * const psCartNameExts[] =
 	NULL
 };
 
-static int PatchIllegal = false;
 
-
-/*-----------------------------------------------------------------------*/
 /**
  * Load an external cartridge image file.
  */
@@ -91,7 +88,20 @@ static void Cart_LoadImage(void)
 }
 
 
-/*-----------------------------------------------------------------------*/
+/**
+ * Check whether we want to use internal cartridge code, i.e. when user wants
+ * extended VDI resolution, use Autostarting, or to trace GEMDOS, VDI or AES
+ * (OS_BASE does subset of GEMDOS tracing).
+ * But don't use it on TOS 0.00, it does not work there.
+ */
+bool Cart_UseBuiltinCartridge(void)
+{
+	return (bUseVDIRes || INF_Overriding(AUTOSTART_INTERCEPT) ||
+	        LogTraceFlags & (TRACE_OS_GEMDOS | TRACE_OS_BASE | TRACE_OS_VDI | TRACE_OS_AES))
+	       && (TosVersion >= 0x100 || !bUseTos);
+}
+
+
 /**
  * Copy ST GEMDOS intercept program image into cartridge memory space
  * or load an external cartridge file.
@@ -117,69 +127,14 @@ void Cart_ResetImage(void)
 		Log_AlertDlg(LOG_ERROR, "Cartridge disabled! It can't be used with VDI mode, GEMDOS HD emulation nor their tracing.");
 	}
 
-	/* Use internal cartridge trampoline code when user wants extended VDI
-	 * resolution, use GEMDOS HD emulation / Autostarting, or to trace GEMDOS,
-	 * VDI or AES (OS_BASE does subset of GEMDOS tracing).
-	 * But don't use it on TOS 0.00, it does not work there.
-	 */
-	PatchIllegal = false;				/* By default, don't patch opcodes */
-	if ((bUseVDIRes || INF_Overriding(AUTOSTART_INTERCEPT) ||
-	     ConfigureParams.HardDisk.bUseHardDiskDirectories ||
-	    LogTraceFlags & (TRACE_OS_GEMDOS | TRACE_OS_BASE | TRACE_OS_VDI | TRACE_OS_AES))
-	    && (TosVersion >= 0x100 || !bUseTos))
+	if (Cart_UseBuiltinCartridge())
 	{
 		/* Copy built-in cartridge data into the cartridge memory of the ST */
 		memcpy(&RomMem[0xfa0000], Cart_data, sizeof(Cart_data));
-		PatchIllegal = true;
 	}
 	else if (strlen(ConfigureParams.Rom.szCartridgeImageFileName) > 0)
 	{
 		/* Load external image file: */
 		Cart_LoadImage();
-	}
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Patch the cpu tables to intercept some opcodes used for Gemdos HD
- * emulation or for NatFeats.
- * We need to split this from Cart_ResetImage(), as the patches should
- * be applied after building the cpu opcodes tables.
- */
-void Cart_PatchCpuTables(void)
-{
-//printf ( "Cart_PatchCpuTables\n" );
-	if (PatchIllegal == true)
-	{
-		//fprintf ( stderr ," Cart_ResetImage patch\n" );
-		/* Hatari's specific illegal opcodes for HD emulation */
-		cpufunctbl[GEMDOS_OPCODE] = OpCode_GemDos;	/* 0x0008 */
-		cpufunctbl[SYSINIT_OPCODE] = OpCode_SysInit;	/* 0x000a */
-		cpufunctbl[VDI_OPCODE] = OpCode_VDI;		/* 0x000c */
-	}
-	else
-	{
-		//fprintf ( stderr ," Cart_ResetImage no patch\n" );
-		/* No built-in cartridge loaded : set same handler as 0x4afc (illegal) */
-		cpufunctbl[GEMDOS_OPCODE] = cpufunctbl[ 0x4afc ];	/* 0x0008 */
-		cpufunctbl[SYSINIT_OPCODE] = cpufunctbl[ 0x4afc ];	/* 0x000a */
-		cpufunctbl[VDI_OPCODE] = cpufunctbl[ 0x4afc ];		/* 0x000c */
-	}
-
-	/* although these don't need cartridge code, it's better
-	 * to configure all illegal opcodes in same place...
-	 */
-	if (ConfigureParams.Log.bNatFeats)
-	{
-		/* illegal opcodes for emulators Native Features */
-		cpufunctbl[NATFEAT_ID_OPCODE] = OpCode_NatFeat_ID;	/* 0x7300 */
-		cpufunctbl[NATFEAT_CALL_OPCODE] = OpCode_NatFeat_Call;	/* 0x7301 */
-	}
-	else
-	{
-		/* No Native Features : set same handler as 0x4afc (illegal) */
-		cpufunctbl[NATFEAT_ID_OPCODE] = cpufunctbl[ 0x4afc ];	/* 0x7300 */
-		cpufunctbl[NATFEAT_CALL_OPCODE] = cpufunctbl[ 0x4afc ];	/* 0x7300 */
 	}
 }

@@ -359,6 +359,7 @@ extern void M68000_SetDebugger(bool debug);
 extern void M68000_RestoreDebugger(void);
 extern void M68000_Start(void);
 extern void M68000_CheckCpuSettings(void);
+extern void M68000_PatchCpuTables(void);
 extern void M68000_MemorySnapShot_Capture(bool bSave);
 extern bool M68000_IsVerboseBusError(uint32_t pc, uint32_t addr);
 extern void M68000_BusError ( Uint32 addr , int ReadWrite , int Size , int AccessType );
