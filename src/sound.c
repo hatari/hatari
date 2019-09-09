@@ -121,6 +121,8 @@
 /* 2017/06/xx	[NP]	New cycle exact emulation method, all counters are incremented	*/
 /*			using a simulated freq of 250 kHz. Some undocumented cases	*/
 /*			where also measured on real STF to improve accuracy.		*/
+/* 2019/09/09	[NP]	Add YM2149_Next_Resample_Weighted_Average_N for better		*/
+/*			downsampling of the internal 250 kHz sound buffer.		*/
 
 
 
@@ -300,7 +302,8 @@ int		YM2149_HPF_Filter = YM2149_HPF_FILTER_IIR;
 // int		YM2149_HPF_Filter = YM2149_HPF_FILTER_NONE;	/* For debug */
 
 //int		YM2149_Resample_Method = YM2149_RESAMPLE_METHOD_NEAREST;
-int		YM2149_Resample_Method = YM2149_RESAMPLE_METHOD_WEIGHTED_AVERAGE_2;
+//int		YM2149_Resample_Method = YM2149_RESAMPLE_METHOD_WEIGHTED_AVERAGE_2;
+int		YM2149_Resample_Method = YM2149_RESAMPLE_METHOD_WEIGHTED_AVERAGE_N;
 
 
 bool		bEnvelopeFreqFlag;			/* Cleared each frame for YM saving */
@@ -1535,17 +1538,54 @@ static ymsample	YM2149_Next_Resample_Weighted_Average_2 ( void )
  * Downsample the YM2149 samples data from 250 KHz to YM_REPLAY_FREQ and
  * return the next sample to output.
  *
- * TODO : this method will do a weighted average of all the sample from the input
+ * This method will do a weighted average of all the sample from the input
  * buffer that surround an output sample (for example 250 KHz / 44.1 KHz would
  * do a weighted average on ~5.66 input samples)
+ * It is based on the resample function used in MAME which computes
+ * the average energy on an interval by summing samples (see src/emu/sound.c in MAME)
  *
- * Would be slower than 'Weighted_Average_2' and take more time. Need to be tested
- * as musics don't use very high freq so often, so it's not sure the quality would
- * be worth the extra time.
+ * It's slower than 'Weighted_Average_2' but it's more accurate as it uses all the
+ * samples from the input buffer and works better when the input signal has some very
+ * high frequencies (eg when YM voice uses period 0 to 6)
+ *
+ * For better accuracy without using floating point, fractional values are multiplied
+ * by 0x10000 and stored using 32 or 64 bits : upper bits are the integer part and
+ * lower 16 bits are the decimal part.
  */
  static ymsample	YM2149_Next_Resample_Weighted_Average_N ( void )
 {
-	return 0;
+	static Uint32	pos_fract = 0;
+	Uint32		interval_fract;
+	Sint64		total;
+	ymsample	sample;
+
+
+	interval_fract = ( YM_ATARI_CLOCK_COUNTER * 0x10000L ) / YM_REPLAY_FREQ;
+	total = 0;
+
+	if ( pos_fract )				/* start position : 0xffff <= pos_fract <= 0 */
+	{
+		total += ((Sint64)YM_Buffer_250[ YM_Buffer_250_pos_read ]) * ( 0x10000 - pos_fract );
+		YM_Buffer_250_pos_read = ( YM_Buffer_250_pos_read + 1 ) % YM_BUFFER_250_SIZE;
+		pos_fract -= 0x10000;			/* next sample */
+	}
+
+	pos_fract += interval_fract;			/* end position */
+
+	while ( pos_fract & 0xffff0000 )		/* check integer part */
+	{
+		total += ((Sint64)YM_Buffer_250[ YM_Buffer_250_pos_read ]) * 0x10000;
+		YM_Buffer_250_pos_read = ( YM_Buffer_250_pos_read + 1 ) % YM_BUFFER_250_SIZE;
+		pos_fract -= 0x10000;			/* next sample */
+	}
+
+	if ( pos_fract )				/* partial end sample if 0xff <= pos_fract < 0 */
+	{
+		total += ((Sint64)YM_Buffer_250[ YM_Buffer_250_pos_read ]) * pos_fract;
+	}
+
+	sample = total / interval_fract;
+	return sample;
 }
 
 
