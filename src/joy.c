@@ -31,6 +31,7 @@ const char Joy_fileid[] = "Hatari joy.c : " __DATE__ " " __TIME__;
 
 #define JOYREADING_BUTTON1  1		/* bit 0 */
 #define JOYREADING_BUTTON2  2		/* bit 1 */
+#define JOYREADING_BUTTON3  4		/* bit 2 */
 
 typedef struct
 {
@@ -219,6 +220,9 @@ static bool Joy_ReadJoystick(int nSdlJoyID, JOYREADING *pJoyReading)
 	/* Sets bit #1 if button #2 is pressed: */
 	if (SDL_JoystickGetButton(sdlJoystick[nSdlJoyID], 1))
 		pJoyReading->Buttons |= JOYREADING_BUTTON2;
+	/* Sets bit #2 if button #3 is pressed: */
+	if (SDL_JoystickGetButton(sdlJoystick[nSdlJoyID], 2))
+		pJoyReading->Buttons |= JOYREADING_BUTTON3;
 
 	return true;
 }
@@ -308,6 +312,14 @@ Uint8 Joy_GetStickData(int nStJoyId)
 					JoystickSpaceBar = JOYSTICK_SPACE_DOWN;
 				}
 			}
+		}
+
+		/* PC Joystick button 3 is autofire button for ST joystick button */
+		if (JoyReading.Buttons & JOYREADING_BUTTON3)
+		{
+			nData |= ATARIJOY_BITMASK_FIRE;
+			if ((nVBLs&0x7)<4)
+				nData &= ~ATARIJOY_BITMASK_FIRE;          /* Remove top bit! */
 		}
 	}
 
