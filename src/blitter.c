@@ -170,8 +170,8 @@ typedef struct
 {
 	Uint32	src_addr;
 	Uint32	dst_addr;
-	Uint32	words;
-	Uint32	lines;
+	Uint32	x_count;
+	Uint32	y_count;
 	short	src_x_incr;
 	short	src_y_incr;
 	short	dst_x_incr;
@@ -193,11 +193,11 @@ typedef struct
 	Uint32	total_cycles;
 	Uint32	buffer;
 	Uint32	src_words_reset;
-	Uint32	dst_words_reset;
+	Uint32	x_count_reset;
 	Uint32	src_words;
 	Uint8	hog;
 	Uint8	smudge;
-	Uint8	line;
+	Uint8	halftone_line;
 	Uint8	fxsr;
 	Uint8	nfsr;
 	Uint8	skew;
@@ -309,7 +309,7 @@ static void Blitter_AddCycles(int cycles)
 	BlitterVars.op_cycles += all_cycles;
 	BlitterVars.total_cycles += all_cycles;
 //fprintf ( stderr , "blitter add_cyc cyc=%d total=%d cur_cyc=%lu\n" , all_cycles , BlitterVars.op_cycles , currcycle/cpucycleunit );
-//fprintf ( stderr , "blitter src %x dst %x ycount %d\n" , BlitterRegs.src_addr , BlitterRegs.dst_addr , BlitterRegs.lines );
+//fprintf ( stderr , "blitter src %x dst %x ycount %d\n" , BlitterRegs.src_addr , BlitterRegs.dst_addr , BlitterRegs.y_count );
 
 	nCyclesMainCounter += all_cycles;
 	CyclesGlobalClockCounter += all_cycles;
@@ -528,7 +528,7 @@ static Uint16 Blitter_GetHalftoneWord(void)
 	if (BlitterVars.smudge)
 		return BlitterHalftone[Blitter_SourceRead() & 15];
 	else
-		return BlitterHalftone[BlitterVars.line];
+		return BlitterHalftone[BlitterVars.halftone_line];
 }
 
 /* HOP */
@@ -780,13 +780,13 @@ static void Blitter_ProcessWord(void)
 
 	Blitter_WriteWord(BlitterRegs.dst_addr, dst_data);
 
-	if (BlitterRegs.words == 1)
+	if (BlitterRegs.x_count == 1)
 	{
 		BlitterRegs.dst_addr += BlitterRegs.dst_y_incr;
 	}
 	else
 	{
-		--BlitterRegs.words;
+		--BlitterRegs.x_count;
 		BlitterRegs.dst_addr += BlitterRegs.dst_x_incr;
 	}
 
@@ -799,13 +799,13 @@ static void Blitter_EndLine(void)
 	if ( BlitterState.ContinueLater )			/* We will continue later, don't end this line for now */
 		return;
 
-	--BlitterRegs.lines;
-	BlitterRegs.words = BlitterVars.dst_words_reset;
+	--BlitterRegs.y_count;
+	BlitterRegs.x_count = BlitterVars.x_count_reset;
 
 	if (BlitterRegs.dst_y_incr >= 0)
-		BlitterVars.line = (BlitterVars.line+1) & 15;
+		BlitterVars.halftone_line = (BlitterVars.halftone_line+1) & 15;
 	else
-		BlitterVars.line = (BlitterVars.line-1) & 15;
+		BlitterVars.halftone_line = (BlitterVars.halftone_line-1) & 15;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -843,15 +843,15 @@ static void Blitter_LastWord(void)
 
 static void Blitter_Step(void)
 {
-	if (BlitterVars.dst_words_reset == 1)
+	if (BlitterVars.x_count_reset == 1)
 	{
 		Blitter_SingleWord();
 	}
-	else if (BlitterRegs.words == BlitterVars.dst_words_reset)
+	else if (BlitterRegs.x_count == BlitterVars.x_count_reset)
 	{
 		Blitter_FirstWord();
 	}
-	else if (BlitterRegs.words == 1)
+	else if (BlitterRegs.x_count == 1)
 	{
 		Blitter_LastWord();
 	}
@@ -885,7 +885,8 @@ Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 	/* Setup vars */
 	BlitterVars.pass_cycles = 0;
 	BlitterVars.op_cycles = 0;
-	BlitterVars.src_words_reset = BlitterVars.dst_words_reset + BlitterVars.fxsr - BlitterVars.nfsr;
+	// FIXME handle the case where x_count=1 (one extra read)
+	BlitterVars.src_words_reset = BlitterVars.x_count_reset + BlitterVars.fxsr - BlitterVars.nfsr;
 	BlitterState.CountBusBlitter = 0;
 	if ( Blitter_HOG_CPU_BusCountError )
 		BlitterState.CountBusBlitter++;				/* Bug in the blitter : count 1 CPU access as a blitter access */
@@ -902,15 +903,15 @@ Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 	{
 		Blitter_Step();
 	}
-	while ( BlitterRegs.lines > 0
+	while ( BlitterRegs.y_count > 0
 	       && ( BlitterVars.hog || Blitter_ContinueNonHog() ) );
 
 	/* Bus arbitration */
 	Blitter_BusArbitration ( BUS_MODE_CPU );
 
-	BlitterRegs.ctrl = (BlitterRegs.ctrl & 0xF0) | BlitterVars.line;
+	BlitterRegs.ctrl = (BlitterRegs.ctrl & 0xF0) | BlitterVars.halftone_line;
 
-	if (BlitterRegs.lines == 0)
+	if (BlitterRegs.y_count == 0)
 	{
 		/* Blit complete, clear busy and hog bits */
 		BlitterRegs.ctrl &= ~(0x80|0x40);
@@ -1073,20 +1074,20 @@ void Blitter_DestAddr_ReadLong(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Read blitter words-per-line register.
+ * Read blitter words-per-line register X count.
  */
 void Blitter_WordsPerLine_ReadWord(void)
 {
-	IoMem_WriteWord(REG_X_COUNT, (Uint16)(BlitterRegs.words & 0xFFFF));
+	IoMem_WriteWord(REG_X_COUNT, (Uint16)(BlitterRegs.x_count & 0xFFFF));
 }
 
 /*-----------------------------------------------------------------------*/
 /**
- * Read blitter lines-per-bitblock register.
+ * Read blitter lines-per-bitblock register Y count.
  */
 void Blitter_LinesPerBitblock_ReadWord(void)
 {
-	IoMem_WriteWord(REG_Y_COUNT, (Uint16)(BlitterRegs.lines & 0xFFFF));
+	IoMem_WriteWord(REG_Y_COUNT, (Uint16)(BlitterRegs.y_count & 0xFFFF));
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1113,7 +1114,7 @@ void Blitter_LogOp_ReadByte(void)
  */
 void Blitter_Control_ReadByte(void)
 {
-	/* busy, hog/blit, smudge, n/a, 4bits for line number */
+	/* busy, hog/blit, smudge, n/a, 4 bits for halftone line number */
 	IoMem_WriteByte(REG_CONTROL, BlitterRegs.ctrl);
 }
 
@@ -1242,31 +1243,31 @@ void Blitter_DestAddr_WriteLong(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Write to blitter words-per-line register.
+ * Write to blitter words-per-line register X count.
  */
 void Blitter_WordsPerLine_WriteWord(void)
 {
-	Uint32 words = (Uint32)IoMem_ReadWord(REG_X_COUNT);
+	Uint32 x_count = (Uint32)IoMem_ReadWord(REG_X_COUNT);
 
-	if (words == 0)
-		words = 65536;
+	if (x_count == 0)
+		x_count = 65536;
 
-	BlitterRegs.words = words;
-	BlitterVars.dst_words_reset = words;
+	BlitterRegs.x_count = x_count;
+	BlitterVars.x_count_reset = x_count;
 }
 
 /*-----------------------------------------------------------------------*/
 /**
- * Write to blitter lines-per-bitblock register.
+ * Write to blitter lines-per-bitblock register Y count.
  */
 void Blitter_LinesPerBitblock_WriteWord(void)
 {
-	Uint32 lines = (Uint32)IoMem_ReadWord(REG_Y_COUNT);
+	Uint32 y_count = (Uint32)IoMem_ReadWord(REG_Y_COUNT);
 
-	if (lines == 0)
-		lines = 65536;
+	if (y_count == 0)
+		y_count = 65536;
 
-	BlitterRegs.lines = lines;
+	BlitterRegs.y_count = y_count;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1306,9 +1307,8 @@ void Blitter_Control_WriteByte(void)
 	 * - Which line of the halftone pattern to start with is
 	 *   read from the first source word when the copy starts
 	 * 0x10: not used
-	 * 0x0f
-	 *
-	 * The lowest 4 bits contain the Halftone pattern line number
+	 * 0x0f:
+	 *   The lowest 4 bits contain the halftone pattern line number
 	 */
 
 	if (LOG_TRACE_LEVEL(TRACE_BLITTER))
@@ -1326,7 +1326,7 @@ void Blitter_Control_WriteByte(void)
 
 	BlitterVars.hog = BlitterRegs.ctrl & 0x40;
 	BlitterVars.smudge = BlitterRegs.ctrl & 0x20;
-	BlitterVars.line = BlitterRegs.ctrl & 0xF;
+	BlitterVars.halftone_line = BlitterRegs.ctrl & 0xF;
 
 	/* Remove old pending update interrupt */
 	CycInt_RemovePendingInterrupt(INTERRUPT_BLITTER);
@@ -1334,7 +1334,7 @@ void Blitter_Control_WriteByte(void)
 	/* Start/Stop bit set ? */
 	if (BlitterRegs.ctrl & 0x80)
 	{
-		if (BlitterRegs.lines == 0)
+		if (BlitterRegs.y_count == 0)
 		{
 			/* Blitter transfer is already complete, clear busy and hog bits */
 			BlitterRegs.ctrl &= ~(0x80|0x40);			// TODO : check on real STE, does it clear hog bit too ?
@@ -1449,8 +1449,8 @@ void Blitter_Info(FILE *fp, Uint32 dummy)
 
 	fprintf(fp, "src addr  (0x%x): 0x%06x\n", REG_SRC_ADDR, regs->src_addr);
 	fprintf(fp, "dst addr  (0x%x): 0x%06x\n", REG_DST_ADDR, regs->dst_addr);
-	fprintf(fp, "words     (0x%x): %u\n",     REG_X_COUNT, regs->words);
-	fprintf(fp, "lines     (0x%x): %u\n",     REG_Y_COUNT, regs->lines);
+	fprintf(fp, "x count   (0x%x): %u\n",     REG_X_COUNT, regs->x_count);
+	fprintf(fp, "y count   (0x%x): %u\n",     REG_Y_COUNT, regs->y_count);
 	fprintf(fp, "src X-inc (0x%x): %hd\n",    REG_SRC_X_INC, regs->src_x_incr);
 	fprintf(fp, "src Y-inc (0x%x): %hd\n",    REG_SRC_Y_INC, regs->src_y_incr);
 	fprintf(fp, "dst X-inc (0x%x): %hd\n",    REG_DST_X_INC, regs->dst_x_incr);
@@ -1460,7 +1460,7 @@ void Blitter_Info(FILE *fp, Uint32 dummy)
 	fprintf(fp, "end mask3 (0x%x): 0x%04x\n", REG_END_MASK3, regs->end_mask_3);
 	fprintf(fp, "HOP       (0x%x): 0x%02x\n", REG_BLIT_HOP, regs->hop);
 	fprintf(fp, "LOP       (0x%x): 0x%02x\n", REG_BLIT_LOP, regs->lop);
-	/* List control bits: busy, hog/blit, smudge, n/a, 4bits for line number ? */
+	/* List control bits: busy, hog/blit, smudge, n/a, 4 bits for halftone line number ? */
 	fprintf(fp, "control   (0x%x): 0x%02x\n", REG_CONTROL, regs->ctrl);
 	fprintf(fp, "skew      (0x%x): 0x%02x\n", REG_SKEW, regs->skew);
 	fprintf(fp, "Note: internally changed register values aren't visible to breakpoints\nor in memdump output until emulated code reads or writes them!\n");
