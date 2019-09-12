@@ -1579,7 +1579,7 @@ static ymsample	YM2149_Next_Resample_Weighted_Average_2 ( void )
 		pos_fract -= 0x10000;			/* next sample */
 	}
 
-	if ( pos_fract )				/* partial end sample if 0xff <= pos_fract < 0 */
+	if ( pos_fract )				/* partial end sample if 0xffff <= pos_fract < 0 */
 	{
 		total += ((Sint64)YM_Buffer_250[ YM_Buffer_250_pos_read ]) * pos_fract;
 	}

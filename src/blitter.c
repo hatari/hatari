@@ -192,9 +192,7 @@ typedef struct
 	Uint32	op_cycles;
 	Uint32	total_cycles;
 	Uint32	buffer;
-	Uint32	src_words_reset;
 	Uint32	x_count_reset;
-	Uint32	src_words;
 	Uint8	hog;
 	Uint8	smudge;
 	Uint8	halftone_line;
@@ -477,13 +475,10 @@ static void Blitter_SourceFetch(void)
 	else
 		BlitterVars.buffer |= src_word;
 
-	if (BlitterVars.src_words == 1)
+	/* src_x_incr should be added only when this is not the last read for a line */
+	/* (taking into account that if nfsr is set we read 1 word less) */
+	if (BlitterRegs.x_count > 1U + BlitterVars.nfsr )
 	{
-		BlitterRegs.src_addr += BlitterRegs.src_y_incr;
-	}
-	else
-	{
-		--BlitterVars.src_words;
 		BlitterRegs.src_addr += BlitterRegs.src_x_incr;
 	}
 }
@@ -507,6 +502,12 @@ static Uint16 Blitter_SourceRead(void)
 
 		BlitterState.src_word = (Uint16)(BlitterVars.buffer >> BlitterVars.skew);
 		BlitterState.have_src = true;
+
+		/* src_y_incr is added after reading the last word of a line */
+		if (BlitterRegs.x_count == 1)
+		{
+			BlitterRegs.src_addr += BlitterRegs.src_y_incr;
+		}
 	}
 
 	return BlitterState.src_word;
@@ -734,8 +735,6 @@ static void Blitter_BeginLine(void)
 {
 	if ( BlitterState.ContinueLater )				/* Resuming, don't start a new line */
 		return;
-
-	BlitterVars.src_words = BlitterVars.src_words_reset;
 }
 
 static void Blitter_SetState(Uint8 fxsr, Uint8 nfsr, Uint16 end_mask)
@@ -885,8 +884,6 @@ Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 	/* Setup vars */
 	BlitterVars.pass_cycles = 0;
 	BlitterVars.op_cycles = 0;
-	// FIXME handle the case where x_count=1 (one extra read)
-	BlitterVars.src_words_reset = BlitterVars.x_count_reset + BlitterVars.fxsr - BlitterVars.nfsr;
 	BlitterState.CountBusBlitter = 0;
 	if ( Blitter_HOG_CPU_BusCountError )
 		BlitterState.CountBusBlitter++;				/* Bug in the blitter : count 1 CPU access as a blitter access */
