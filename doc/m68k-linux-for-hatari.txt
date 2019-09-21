@@ -12,6 +12,9 @@ Contents:
 7. Debugging and profiling
 8. Native bootstrap
 9. Debian m68k install
+9.1 Debian installer
+9.2 Running initrd as normal disk
+9.3 Bootstrapping Debian installation on PC
 10. Debian and Linux issues
 
 
@@ -124,25 +127,27 @@ sd 0:0:0:0: [sda] Attached SCSI disk
 VFS: Cannot open root device "sda" or unknown-block(8,0): error -6
 ------------------------------------------------------------
 
-- Even with the supplied kernel.config, there are random Oopses
-  on boot.  According to kernel developer, they don't happen on
-  real HW, so they seem to be Hatari issue:
+- Even with the supplied kernel.config, there are randomly Oopses on
+  boot, which sometimes result in kernel panic.  According to kernel
+  developer, they don't happen on real HW, so they seem to be Hatari
+  issue:
 ------------------------------------------------------------
-Data read fault at 0x801740c4 in Super Data (pc=0x2918)
+Run /init as init process
+Data read fault at 0x801740c4 in Super Data (pc=0x299c)
 BAD KERNEL BUSERR
 Oops: 00000000
-PC: [<00002918>] auto_inthandler+0x0/0x28
-SR: 2400  SP: (ptrval)  a2: 8017a478
+PC: [<0000299c>] user_inthandler+0x0/0x20
+SR: 2d00  SP: (ptrval)  a2: 8017a478
 d0: 00000018    d1: 0000001a    d2: 00000000    d3: 8017a480
 d4: 00000018    d5: 00000054    a0: 8017a480    a1: 8016f84c
-Process exe (pid: 26, task=(ptrval))
+Process exe (pid: 25, task=(ptrval))
 Frame format=B ssw=0345 isc=2f00 isb=48e7 daddr=801740c4 dobuf=80176e58
 baddr=801740c4 dibuf=801740c4 ver=0
-Stack from 00aefff8:
-        02088001 ebf40070
-	Call Trace:
-	Code: 0005 61ff 0002 c912 508f 588f 60a2 0000 <42a7> 4878 ffff
-2f00 48e7 7ce0 200f 0280 ffff e000 2440 2452 e9ef 010a 0032 0440
+Stack from 009d9ff8:
+        02088001 ebf40114
+Call Trace:
+Code: 2f00 4eb9 0000 2a98 508f 60ff ffff ff64 <42a7> 4878 ffff 2f00
+      48e7 7ce0 200f 0280 ffff e000 2440 2452 e9ef   010a 0032 0440
 ------------------------------------------------------------
 
 
@@ -152,8 +157,8 @@ Stack from 00aefff8:
 1. Install compiler:
    $ apt install gcc-m68k-linux-gnu
 
-2. Get v5.0 m68k kernel sources (without history):
-   $ git clone --depth 1 --branch m68k-v5.2 \
+2. Get latest m68k kernel sources (without history):
+   $ git clone --depth 1 --branch m68k-v5.3 \
      git://git.kernel.org/pub/scm/linux/kernel/git/geert/linux-m68k.git
 
 3. Get Hatari compatible configuration:
@@ -192,11 +197,17 @@ a directory named disk/, rename it, or use another name).
 1. Create root file system directories:
    $ mkdir disk
    $ cd disk
-   $ mkdir -p dev etc mnt proc run sys tmp sbin usr/bin usr/sbin
+   $ mkdir -p dev etc mnt proc run sys tmp sbin usr/bin usr/sbin root
 
 2. Add minimal init script for mounting virtual file systems
    before starting shell:
    $ cp -a /path/to/hatari/tools/linux/init.sh init
+
+3. Add a user:
+   $ echo "root:x:0:0:root:/root:/bin/sh" > etc/passwd
+
+4. And basic terminal descriptions:
+   $ cp -ar /lib/terminfo/ lib/
 
 
 4.1 As EXT2 HD image, from BusyBox
@@ -209,21 +220,21 @@ separate programs, based on the (symlink) name with which it is
 invoked. For more info, see "man busybox" (after installing BusyBox to
 host).
 
-3. Fetch statically linked m68k BusyBox and extract it:
+5. Fetch statically linked m68k BusyBox and extract it:
    $ wget http://ftp.ports.debian.org/debian-ports/pool-m68k/main/b/busybox/busybox-static_*_m68k.deb
    $ ar x busybox-static_*_m68k.deb
    $ tar xvf data.tar.xz ./bin/busybox
 
-4. Install host BusyBox and add symlinks for the m68k one to bin/
+6. Install host BusyBox and add symlinks for the m68k one to bin/
    directory, based on what tools host one lists to be included:
    $ sudo apt install busybox
    $ /path/to/hatari/tools/linux/symlink-busybox.sh
 
-5. Cleanup directory content:
+7. Cleanup directory content:
    $ rm *.* debian-binary
    $ cd ..
 
-6. Make 4MB EXT2 HD image out of it:
+8. Make 4MB EXT2 HD image out of it:
    $ /sbin/mkfs.ext2 -t ext2 -L BUSYBOX -d disk/ rootfs.img 4M
 
 Notes:
@@ -242,22 +253,22 @@ limited than BusyBox; they lack many of the standard options and shell
 doesn't e.g. have file name completion. In total they take only few
 hundred KB of space though.
 
-3. Fetch klibc library and utility packages:
+5. Fetch klibc library and utility packages:
    $ wget http://ftp.ports.debian.org/debian-ports/pool-m68k/main/k/klibc/libklibc_*_m68k.deb
    $ wget http://ftp.ports.debian.org/debian-ports/pool-m68k/main/k/klibc/klibc-utils_*_m68k.deb
 
-4. Extract them:
+6. Extract them:
    $ ar x libklibc_*_m68k.deb
    $ tar xvf data.tar.xz
    $ ar x klibc-utils_*_m68k.deb
    $ tar xvf data.tar.xz
 
-5. Move utilities to bin/ and clean directory:
+7. Move utilities to bin/ and clean directory:
    $ mv usr/lib/klibc/bin/ .
    $ rm -r *.* debian-binary usr/
    $ cd ..
 
-6. Make 4MB EXT2 HD image out of it:
+8. Make 4MB EXT2 HD image out of it:
    $ /sbin/mkfs.ext2 -t ext2 -L KLIBC -d disk/ rootfs.img 4M
 
 Notes:
@@ -273,7 +284,7 @@ Notes:
 After creating either of above root file systems, you can use the same
 content also to create an example initrd / initramfs.
 
-7. Package directory content with cpio and compress it with LZO:
+9. Package directory content with cpio and compress it with LZO:
    $ cd disk/
    $ find | cpio -R 0:0 -H newc --create | lzop -9 > ../initrd.img
 
@@ -498,27 +509,33 @@ actually *is* writable and try again.
 9. Debian m68k install
 ----------------------
 
+9.1 Debian installer
+--------------------
+
 These are setup instructions for debugging Debian installer freezes in
-Hatari.
+Hatari.  You need matching kernel, initrd and installation ISO image
+files for this.
 
 Note: old Debian 4.9 kernels work much worse, so this uses 4.19, which
 can at least boot until it tries to run init.
 
-1. Get Debian Stretch installer initrd:
+0. Work directory:
+   $ mkdir -p debian/installer
+   $ cd debian/installer
+
+1. Get latest Debian installer initrd:
    $ wget https://cdimage.debian.org/cdimage/ports/debian-installer/m68k/debian-installer-images_20190410_m68k.tar.gz
    $ tar xvf debian-installer-images*.gz
-   $ cp installer-m68k/20190410/images/nativehd/initrd.gz .
+   $ cp installer-m68k/*/images/nativehd/initrd.gz ..
 
-2. get kernel files (including symbols) matching the installer:
-   $ mkdir kernel
-   $ cd kernel
+2. get kernel files (including symbols) for version matching above tar output:
    $ wget http://ftp.ports.debian.org/debian-ports/pool-m68k/main/l/linux/linux-image-4.19.0-4-m68k_4.19.28-2_m68k.deb
-   $ ar x linux-image-4.19.0-4-m68k_4.19.28-2_m68k.deb
+   $ ar x linux-image-*_m68k.deb
    $ tar xvf data.tar.xz
    $ cp -av boot/* ..
-   $ cd ..
 
 3. Set up lilo.cfg, which skips (very slow) crypto init:
+   $ cd ..
    $ cat > lilo.cfg
 [LILO]
 Kernel = vmlinuz-4.19.0-4-m68k
@@ -529,7 +546,7 @@ KernelToFastRam = FALSE
 RamdiskToFastRam = TRUE
 ^D
 
-4. Get latest ISO image release (checksum files are in same directory):
+4. Get ISO image release matching installer & kernel (checksum files are in same directory):
     $ wget https://cdimage.debian.org/cdimage/ports/2019-04-12/debian-10.0-m68k-NETINST-1.iso
 
 5. Try running Hatari with them:
@@ -545,6 +562,14 @@ NOTE: Hatari doesn't support networking so network install obviously
 won't work.  There aren't any ready made images of pre-installed and
 up to date m68k Debian installs either.
 
+
+9.2 Running initrd as normal disk
+---------------------------------
+
+If Debian boot has issues already in its initrd, you could try running
+it as normal disk with monolithic kernel, or using modular kernel with
+a working initrd.
+
 Converting initrd to a normal EXT2 disk partition, and using
 fakeroot session to retain file properties requiring root rights:
    $ mkdir initrd
@@ -555,10 +580,9 @@ fakeroot session to retain file properties requiring root rights:
    # /sbin/mkfs.ext2 -t ext2 -L INITRD -d initrd rootfs.img 32M
    # exit
 
-NOTE: Booting such image requires either use of initrd for getting
-file system support to modular kernel, or using the earlier built
-monolithic kernel that has everything required built-in.
 
+9.3 Bootstrapping Debian installation on PC
+-------------------------------------------
 
 Doing first stage of setting up minimal m68k Debian system image
 (without package PGP signing checks), as root:
@@ -610,36 +634,195 @@ TODO / investigate more:
   Kernel boots fine with real 060 Falcon though:
 	https://www.youtube.com/watch?v=8Sriz45Z4oM
 
-- If 030 caches are enabled (--cpu-exact on), busybox 'setsid'
-  fails to:
+- When 030 caches are enabled (--cpu-exact on), busybox
+  'setsid cttyhack' fails to:
 ------------------------------------------------------------
-Run /init as init process
 *** ILLEGAL INSTRUCTION ***   FORMAT=0
-Current process id is 30
+Current process id is 34
 BAD KERNEL TRAP: 00000000
-PC: [<0012fca4>] strncpy_from_user+0x5c/0xe4
-SR: 2200  SP: (ptrval)  a2: 00877700
-d0: 00000000    d1: 2f737973    d2: 00000ff0    d3: 00000ff0
+PC: [<00146c6a>] strncpy_from_user+0x62/0xec
+SR: 2200  SP: 0a4161ff  a2: 009e4a00
+d0: 00000000    d1: 00000ff0    d2: 2f737973    d3: 00000ff0
 d4: 00000000    d5: 00000000    a0: 00000ff0    a1: 80155c8c
-Process cttyhack (pid: 30, task=(ptrval))
+Process cttyhack (pid: 34, task=3c322bc4)
 Frame format=0
-Stack from 009c1f1c:
-  80155c04 80155c8c 00000000 8017b201 ffffff49 00850000 009c1f60 0009aa56
-  00850010 80155c8c 00000ff0 80155c04 00020000 00000000 efe12d4d 80170f52
-  801712bc 009c1f74 0009ab5a 80155c8c 00000000 00000000 009c1fac 00091098
-  80155c8c 80155c8c 00020000 00000000 8017b201 efe12d4d 80170f52 efe10002
-  00000000 00000004 00000100 00000001 009c1fc4 000911ce ffffff9c 80155c8c
-  00020000 00000000 efe12d68 00002874 ffffff9c 80155c8c 00020000 00000000
-Call Trace: [<0009aa56>] getname_flags+0x42/0x134
- [<00020000>] _I_CALL_TOP+0xd80/0x1900
- [<0009ab5a>] getname+0x12/0x18
- [<00091098>] do_sys_open+0xc2/0x1b0
- [<00020000>] _I_CALL_TOP+0xd80/0x1900
- [<000911ce>] sys_openat+0x22/0x26
- [<00020000>] _I_CALL_TOP+0xd80/0x1900
- [<00002874>] syscall+0x8/0xc
- [<00020000>] _I_CALL_TOP+0xd80/0x1900
-Code: 9480 7203 b282 645a 2805 0eb1 1000 0800 <4a84> 664e 2781
-0800 2801 0084 7f7f 7f7f 2c04 4686 2401 0682 fefe feff c486 6748
+Stack from 009f3f1c:
+...
+Call Trace: [<000a8504>] getname_flags+0x40/0x130
+ [<00020000>] _I_CALL_TOP+0x828/0x1900
+ [<000a8606>] getname+0x12/0x18
+ [<0009e674>] do_sys_open+0xc2/0x1b0
+ [<00020000>] _I_CALL_TOP+0x828/0x1900
+ [<00260002>] format_decode+0x314/0x324
+ [<0009e7aa>] sys_openat+0x22/0x26
+ [<00020000>] _I_CALL_TOP+0x828/0x1900
+ [<000028c4>] syscall+0x8/0xc
+ [<00020000>] _I_CALL_TOP+0x828/0x1900
+------------------------------------------------------------
+
+- Busybox 'fdisk' command dies to similar issue:
+------------------------------------------------------------
+*** LINE 1111 ***   FORMAT=0
+Current process id is 32
+BAD KERNEL TRAP: 00000000
+PC: [<00146ce0>] strncpy_from_user+0xd8/0xec
+SR: 2208  SP: (ptrval)  a2: 009e4000
+d0: 00000000    d1: 00000ff0    d2: 00000000    d3: 00000ff0
+d4: 0000002f    d5: 8017b168    a0: 00000000    a1: 8015095a
+Process fdisk (pid: 32, task=(ptrval))
+Frame format=0
+Stack from 009e9f1c:
+...
+Call Trace: [<000a8504>] getname_flags+0x40/0x130
+ [<00020000>] _I_CALL_TOP+0x828/0x1900
+ [<000a8606>] getname+0x12/0x18
+ [<0009e674>] do_sys_open+0xc2/0x1b0
+ [<00020000>] _I_CALL_TOP+0x828/0x1900
+ [<0009e7aa>] sys_openat+0x22/0x26
+ [<00020000>] _I_CALL_TOP+0x828/0x1900
+ [<000028c4>] syscall+0x8/0xc
+ [<00020000>] _I_CALL_TOP+0x828/0x1900
+Code: 6086 2408 0e31 4000 0800 4a82 6600 ff58 <1784> 0800 6700 ff52 5280 60ce 4280 6000 ff48 4e75 4e56 0000 48e7 3c10 242e 0008
 Disabling lock debugging due to kernel taint
+Segmentation fault
+------------------------------------------------------------
+
+- 'hostid' dies also to somewhat similar issue:
+------------------------------------------------------------
+*** LINE 1111 ***   FORMAT=0
+Current process id is 70
+BAD KERNEL TRAP: 00000000
+PC: [<00146ce0>] strncpy_from_user+0xd8/0xec
+SR: 2208  SP: eacbcb5e  a2: 009e4a00
+d0: 00000000    d1: 00000ff0    d2: 00000000    d3: 00000ff0
+d4: 0000002f    d5: efce1d1b    a0: 00000000    a1: 801514ba
+Process hostid (pid: 70, task=229939e1)
+Frame format=0
+Stack from 00603e8c:
+...
+Call Trace: [<000a8504>] getname_flags+0x40/0x130
+ [<000aa568>] user_path_at_empty+0x0/0x36
+ [<000a4670>] vfs_getattr_nosec+0x0/0xaa
+ [<000a88c4>] path_put+0x0/0x26
+ [<000aa582>] user_path_at_empty+0x1a/0x36
+ [<000a4800>] vfs_statx+0x5a/0x9e
+ [<000a4a3c>] sys_stat64+0x28/0x46
+ [<00266400>] schedule+0x5e/0x86
+ [<00002908>] resume_userspace+0x0/0x16
+ [<00005042>] bad_super_trap+0x6e/0x14a
+ [<000028c4>] syscall+0x8/0xc
+...
+Segmentation fault
+------------------------------------------------------------
+
+- Busybox 'arping' command randomly dies to something else:
+------------------------------------------------------------
+Data read fault at 0x80185a18 in Super Data (pc=0x2f61a)
+BAD KERNEL BUSERR
+Oops: 00000000
+PC: [<0002f61a>] __lock_task_sighand+0xe/0x32
+SR: 2d00  SP: 245d79b7  a2: 80185740
+d0: 00000005    d1: 00000040    d2: 80185740    d3: 00000004
+d4: 0000022b    d5: 00000001    a0: c0026004    a1: 00955fb4
+Process arping (pid: 40, task=af4d80ca)
+Frame format=B ssw=0345 isc=6714 isb=40c0 daddr=80185a18 dobuf=efeadfe2
+baddr=80185a18 dibuf=80185a18 ver=0
+Stack from 00955f9c:
+...
+Call Trace: [<00030c66>] do_send_sig_info+0x16/0x44
+ [<000097fe>] busy_fr+0x48/0x58
+ [<00030eea>] send_sig_info+0x20/0x2c
+ [<00030f14>] send_sig+0x1e/0x22
+ [<00002948>] do_delayed_trace+0x16/0x1e
+Code: ...
+Segmentation fault
+------------------------------------------------------------
+
+- Several times I've gotten this, once followed with
+  consecutively worse errors:
+------------------------------------------------------------
+BAD KERNEL BUSERR
+Oops: 00000000
+PC: [<0002f8d8>] __lock_task_sighand+0xe/0x32
+SR: 2d00  SP: fff52c96  a2: 80184aec
+d0: 00000005    d1: 00000040    d2: 80184aec    d3: 00000008
+d4: 00000244    d5: 00000009    a0: c0028004    a1: 009ebfb4
+Process egrep (pid: 38, task=fe82a760)
+Frame format=B ssw=0345 isc=6714 isb=40c0 daddr=80184dc0 dobuf=efca243e
+baddr=80184dc0 dibuf=80184dc0 ver=0
+Stack from 009ebf9c:
+...
+Call Trace: [<0002f912>] do_send_sig_info+0x16/0x44
+  [<00009ffe>] mtry_zero+0x1e/0x38
+  [<0002fbfe>] send_sig_info+0x20/0x2c
+  [<0002fc28>] send_sig+0x1e/0x22
+  [<00002960>] do_delayed_trace+0x16/0x1e
+------------------------------------------------------------
+
+- Some Busybox commands (e.g. 'setsid') randomly hang
+  kernel v5.2, with Hatari showing following:
+------------------------------------------------------------
+- 1. 0x048fe8: vprintk_func +0x4c
+- 2. 0x048cda: printk +0xc
+- 3. 0x004d08: show_registers +0x6c
+- 4. 0x004fae: die_if_kernel +0x38
+- 5. 0x0052e4: buserr_c +0x102
+- 6. 0x0027c2: show_registers -0x24da (buserr +0x1a)
+- 7. 0x004fae: die_if_kernel +0x38
+...
+- 38200. 0x004fae: die_if_kernel +0x38
+- 38201. 0x0052e4: buserr_c +0x102
+- 38202. 0x0027c2: show_registers -0x24da (buserr +0x1a)
+- 38203. 0x004fae: die_if_kernel +0x38
+------------------------------------------------------------
+
+- Tracing (just "strace -f -e execve") WWS window server
+  seems to fail every time:
+------------------------------------------------------------
+*** LINE 1111 ***   FORMAT=0
+Current process id is 37
+BAD KERNEL TRAP: 00000000
+PC: [<000029a0>] user_inthandler+0x4/0x20
+SR: 2c08  SP: 660bea93  a2: 00020370
+d0: c003dbec    d1: 00004b6c    d2: 00000649    d3: c003d2d8
+d4: c0035000    d5: c001ed3c    a0: c0035000    a1: c003c978
+Process wserver (pid: 37, task=8ce40330)
+Frame format=0
+Stack from 0098dff8:
+...
+Disabling lock debugging due to kernel taint
+Data read fault at 0xc09ca958 in Super Data (pc=0x2ecc)
+BAD KERNEL BUSERR
+Oops: 00000000
+PC: [<00002ecc>] user_disable_single_step+0x16/0x2a
+SR: 2200  SP: a4351113  a2: 00925590
+d0: 00000018    d1: 00000018    d2: 00000007    d3: 00000000
+d4: 00010000    d5: 00000018    a0: c09ca958    a1: 0098faa0
+Process strace (pid: 34, task=be6fd4ba)
+Frame format=B ssw=0365 isc=0004 isb=5c88 daddr=c09ca958 dobuf=0098faa0
+baddr=c09ca958 dibuf=c09ca958 ver=0
+Stack from 00977ee8:
+...
+Call Trace: [<0002cef2>] ptrace_resume+0x34/0xb6
+ [<0002d830>] ptrace_request+0x76/0x4ce
+ [<0025534c>] radix_tree_lookup+0x16/0x1c
+ [<00002f9c>] arch_ptrace+0xa8/0x30a
+ [<0002d638>] sys_ptrace+0x228/0x334
+ [<000028c4>] syscall+0x8/0xc
+------------------------------------------------------------
+
+Whereas tracing a simpler program like "echo" fails only
+randomly:
+------------------------------------------------------------
+*** LINE 1111 ***   FORMAT=0
+Current process id is 50
+BAD KERNEL TRAP: 00000000
+PC: [<00002988>] user_inthandler+0x4/0x20
+SR: 2d08  SP: 2612bd53  a2: 000bc004
+d0: d0097d7a    d1: 00029db4    d2: 000037cf    d3: d002cac0
+d4: d0000000    d5: c001ed3c    a0: d0000000    a1: d001c104
+Process strace (pid: 50, task=80e4cce9)
+Frame format=0
+Stack from 00955ff8:
+...
 ------------------------------------------------------------
