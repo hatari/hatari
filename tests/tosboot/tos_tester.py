@@ -544,16 +544,20 @@ class Tester:
         # check printer output
         error = verify_file_match(self.textinput, self.printout)
         if error:
+            prname = "%s.%s" % (self.printout, identity)
             if tos.etos or tos.version > 0x206 or (tos.version == 0x100 and memory > 1):
                 print("ERROR: printer output doesn't match input (EmuTOS, TOS v1.00 or >v2.06)\n\t%s" % error)
-                os.rename(self.printout, "%s.%s" % (self.printout, identity))
+                if os.path.exists(self.printout):
+                    os.rename(self.printout, prname)
+                else:
+                    open(prname, 'w')
                 ok = False
             else:
                 if os.path.exists(self.printout):
                     error = verify_file_empty(self.printout)
                     if error:
                         print("WARNING: unexpected printer output (TOS v1.02 - TOS v2.06):\n\t%s" % error)
-                        os.rename(self.printout, "%s.%s" % (self.printout, identity))
+                        os.rename(self.printout, prname)
         self.cleanup_test_files()
         return ok
 
