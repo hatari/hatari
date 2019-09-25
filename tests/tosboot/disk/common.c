@@ -50,9 +50,6 @@ static void close_device(long handle)
 
 static void print_ioerror(const char *op, int handle, int bufsize, char *buffer, long count)
 {
-	if (!count) {
-		return;
-	}
 	printf("ERROR: %s(%d, %d, %p) -> %ld\r\n", op, handle, bufsize, buffer, count);
 	msg = failure;
 }
@@ -75,12 +72,15 @@ static void write_gemdos_device(const char *from, const char *to)
 	while (1) {
 		/* copy file contents */
 		count1 = Fread(handle1, sizeof(buffer), buffer);
-		if (count1 <= 0 || count1 > (long)sizeof(buffer)) {
+		if (!count1) {
+			break;
+		}
+		if (count1 < 0 || count1 > (long)sizeof(buffer)) {
 			print_ioerror("Fread", handle1, sizeof(buffer), buffer, count1);
 			break;
 		}
 		count2 = Fwrite(handle2, count1, buffer);
-		if (count2 <= 0) {
+		if (count2 != count1) {
 			print_ioerror("Fwrite", handle2, count1, buffer, count2);
 			break;
 		}
