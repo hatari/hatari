@@ -10,11 +10,11 @@
 # - EmuTOS 512k is needed for EmuCON console
 # - AHCC requires 030 machine (alternatively you can use AHCCST)
 
-# boot faster (1s instead of >10s) and show EmuCON output on console
-setopt --statusbar off --fast-forward yes --fastfdc on --conout 2
+# boot faster (few secs instead of >10s) and show EmuCON output on console
+setopt --statusbar off --fast-boot on --fast-forward on --fastfdc on --conout 2
 
 # wait for EmuTOS to boot
-sleep 4
+sleep 5
 
 # Invoke EmuCON with ^Z: Control down, press Z, Control up
 keydown 29
