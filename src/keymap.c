@@ -346,6 +346,15 @@ static char Keymap_PcToStScanCode(SDL_keysym* pKeySym)
 	 case SDL_SCANCODE_RCTRL: return 0x1d;
 	 case SDL_SCANCODE_RSHIFT: return 0x36;
 	 default:
+		if (!pKeySym->scancode && pKeySym->sym)
+		{
+			/* assume SimulateKey
+			 * -> KeyUp/Down
+			 *    -> Remap (with scancode mode configured)
+			 *       -> PcToStScanCode
+			 */
+			return Keymap_SymbolicToStScanCode(pKeySym);
+		}
 		Log_Printf(LOG_WARN, "Unhandled scancode 0x%x!\n", pKeySym->scancode);
 		return -1;
 	}
