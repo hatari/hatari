@@ -56,10 +56,11 @@ toolcheck:
 
 GEMDOS_TEST   = $(DIR)/GEMDOS.PRG
 GEMDOS_SCRIPT = $(DIR)/ahcc-gemdos
-GEMDOS_DEP    = $(DIR)/gemdos.c $(DIR)/common.c $(DIR)/gemdos.prj toolcheck
+GEMDOS_DEP    = $(DIR)/gemdos.c $(DIR)/common.c $(DIR)/gemdos.prj
 
 # build the full GEMDOS tester
 $(GEMDOS_TEST): $(GEMDOS_DEP)
+	$(MAKE) toolcheck
 	$(RM) $(DIR)/*.O $(DIR)/*.MAP $(DIR)/*.tmp
 	../../tools/hconsole/hconsole.py $(GEMDOS_SCRIPT) -- $(BUILD_CONFIG) $(DIR)
 	[ -f $(DIR)/GEMDOS.O ] && [ \! -f $(DIR)/ldfile.tmp ] # verify compiling & linking succeeded
@@ -67,10 +68,11 @@ $(GEMDOS_TEST): $(GEMDOS_DEP)
 
 MINIMAL_TEST   = $(DIR)/MINIMAL.PRG
 MINIMAL_SCRIPT = $(DIR)/ahcc-minimal
-MINIMAL_DEP    = $(DIR)/minimal.c $(DIR)/common.c $(DIR)/minimal.prj toolcheck
+MINIMAL_DEP    = $(DIR)/minimal.c $(DIR)/common.c $(DIR)/minimal.prj
 
 # build the minimal GEMDOS tester
 $(MINIMAL_TEST): $(MINIMAL_DEP)
+	$(MAKE) toolcheck
 	$(RM) $(DIR)/*.O $(DIR)/*.MAP $(DIR)/*.tmp
 	../../tools/hconsole/hconsole.py $(MINIMAL_SCRIPT) -- $(BUILD_CONFIG) $(DIR)
 	[ -f $(DIR)/MINIMAL.O ] && [ \! -f $(DIR)/ldfile.tmp ] # verify compiling & linking succeeded
