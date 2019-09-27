@@ -413,21 +413,29 @@ For example:
         return True
 
 # -----------------------------------------------
-def verify_file_match(srcfile, dstfile):
-    "return error string if sizes of given files don't match"
+def verify_file_match(srcfile, dstfile, match_expected, identity):
+    "return error string if sizes of given files don't match, and rename dstfile to identity"
     if not os.path.exists(dstfile):
-        return "file '%s' missing" % dstfile
+        if match_expected:
+            return "file '%s' missing" % dstfile
+        return None
     dstsize = os.stat(dstfile).st_size
     srcsize = os.stat(srcfile).st_size
     if dstsize != srcsize:
-        return "file '%s' size %d doesn't match file '%s' size %d" % (srcfile, srcsize, dstfile, dstsize)
+        if match_expected:
+            os.rename(dstfile, "%s.%s" % (dstfile, identity))
+            return "file '%s' size %d doesn't match file '%s' size %d" % (srcfile, srcsize, dstfile, dstsize)
+    elif not match_expected:
+        return "file '%s' size %d unexpectedly matches file '%s' size %d" % (srcfile, srcsize, dstfile, dstsize)
+    return None
 
-def verify_file_empty(filename):
-    "return error string if given file isn't empty"
+def verify_file_empty(filename, identity):
+    "return error string if given file isn't empty, and rename file to identity"
     if not os.path.exists(filename):
         return "file '%s' missing" % filename
     size = os.stat(filename).st_size
     if size != 0:
+        os.rename(filename, "%s.%s" % (filename, identity))
         return "file '%s' isn't empty (%d bytes)" % (filename, size)
 
 def exit_if_missing(names):
@@ -541,34 +549,24 @@ class Tester:
         # GEMDOS operations work properly...
         ok = True
         # check file truncate
-        error = verify_file_empty(self.textoutput)
-        if error:
-            print("ERROR: file wasn't truncated:\n\t%s" % error)
-            os.rename(self.textoutput, "%s.%s" % (self.textoutput, identity))
-            ok = False
+        if "gemdos" in identity:
+            # file contents can be checked directly only with GEMDOS HD
+            error = verify_file_empty(self.textoutput, identity)
+            if error:
+                print("ERROR: file wasn't truncated:\n\t%s" % error)
+                ok = False
         # check serial output
-        error = verify_file_match(self.textinput, self.serialout)
+        error = verify_file_match(self.textinput, self.serialout, True, identity)
         if error:
             print("ERROR: serial output doesn't match input:\n\t%s" % error)
-            os.rename(self.serialout, "%s.%s" % (self.serialout, identity))
             ok = False
         # check printer output
-        error = verify_file_match(self.textinput, self.printout)
+        success_expected = (tos.etos or tos.version > 0x206 or (tos.version == 0x100 and memory > 1))
+        error = verify_file_match(self.textinput, self.printout, success_expected, identity)
         if error:
-            prname = "%s.%s" % (self.printout, identity)
-            if tos.etos or tos.version > 0x206 or (tos.version == 0x100 and memory > 1):
-                print("ERROR: printer output doesn't match input (EmuTOS, TOS v1.00 or >v2.06)\n\t%s" % error)
-                if os.path.exists(self.printout):
-                    os.rename(self.printout, prname)
-                else:
-                    open(prname, 'w')
-                ok = False
-            else:
-                if os.path.exists(self.printout):
-                    error = verify_file_empty(self.printout)
-                    if error:
-                        print("WARNING: unexpected printer output (TOS v1.02 - TOS v2.06):\n\t%s" % error)
-                        os.rename(self.printout, prname)
+            print("ERROR: unexpected printer output:\n\t%s" % error)
+            print("(expected to fail with autostarting on TOS v1.02 - TOS v2.06, and some TOS v1.0 configs)")
+            ok = False
         self.cleanup_test_files()
         return ok
 
