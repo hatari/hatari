@@ -430,6 +430,13 @@ def verify_file_empty(filename):
     if size != 0:
         return "file '%s' isn't empty (%d bytes)" % (filename, size)
 
+def exit_if_missing(names):
+    "exit if given (test input) file is missing"
+    for name in names:
+        if not os.path.exists(name):
+            print("ERROR: test file '%s' missing")
+            sys.exit(1)
+
 class Tester:
     "test driver class"
     output = "output" + os.path.sep
@@ -443,11 +450,15 @@ class Tester:
     printout  = output + "printer-out"
     serialout = output + "serial-out"
     fifofile  = output + "midi-out"
-    bootauto  = "bootauto.st.gz" # TOS old not to support GEMDOS HD either
+    # oldest TOS versions don't support GEMDOS HD or auto-starting,
+    # they need to use floppy and boot test program from AUTO/
+    bootauto  = "bootauto.st.gz"
     bootdesk  = "bootdesk.st.gz"
     floppyprg = "A:\MINIMAL.PRG"
+    # with EmuTOS, same image works for ACSI, SCSI and IDE testing,
+    # whereas with real TOS, different images with different drivers
+    # would be needed, potentially also for different machine types...
     hdimage   = "hd.img"
-    ideimage  = "hd.img"	 # for now use the same image as for ACSI
     hdprg     = "C:\MINIMAL.PRG"
     results   = None
 
@@ -661,6 +672,7 @@ class Tester:
 
         extrawait = 0
         if disk == "gemdos":
+            exit_if_missing([self.testprg, self.textinput])
             # use Hatari autostart, must be last thing added to testargs!
             testargs += [self.testprg]
         # HD supporting TOSes support also INF file autostart, so
@@ -674,17 +686,22 @@ class Tester:
         #    with --auto
         elif disk == "floppy":
             if tos.supports_gemdos_hd():
+                exit_if_missing([self.bootdesk])
                 testargs += ["--disk-a", self.bootdesk, "--auto", self.floppyprg]
             else:
+                exit_if_missing([self.bootauto])
                 testargs += ["--disk-a", self.bootauto]
             # floppies are slower
             extrawait = 3
         elif disk == "acsi":
+            exit_if_missing([self.hdimage])
             testargs += ["--acsi", "0=%s" % self.hdimage, "--auto", self.hdprg]
         elif disk == "scsi":
+            exit_if_missing([self.hdimage])
             testargs += ["--scsi", "0=%s" % self.hdimage, "--auto", self.hdprg]
         elif disk == "ide":
-            testargs += ["--ide-master", self.ideimage, "--auto", self.hdprg]
+            exit_if_missing([self.hdimage])
+            testargs += ["--ide-master", self.hdimage, "--auto", self.hdprg]
         else:
             raise AssertionError("unknown disk type '%s'" % disk)
 
