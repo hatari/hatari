@@ -327,9 +327,9 @@ For example:
         if disktype == "gemdos":
             return tos.supports_gemdos_hd()
 
-        if machine in ("st", "megast", "ste"):
+        if machine in ("st", "megast", "ste", "megaste"):
             hdinterface = ("acsi",)
-        elif machine in ("megaste", "tt"):
+        elif machine == "tt":
             hdinterface = ("acsi", "scsi")
         elif machine == "falcon":
             hdinterface = ("ide", "scsi")
