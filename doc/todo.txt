@@ -2,28 +2,16 @@
 Hatari TO-DO list
 =================
 
-If you think that you can help with one of the TO-DO list items, please get
-in touch with us.
+Items below are mostly missing features.  Failures and known issues
+are listed in the "bugs.txt".
 
+Contents:
+- Emulation improvements
+- Programs known as not fully functional
+- Other potential Hatari functionality improvements
 
-Emulator bugs
--------------
-
-- RS232 support:
-	- Threaded RS232 code is completely broken for BSD derived
-	  systems like Mac, because they don't implement fine-grained
-	  FILE operation locking like Linux/Glibc (and Windows?) does.
-	  As a result, re-configuring, or closing RS232 files, will
-	  cause deadlock with the reading thread
-	- With SDL1, close deadlock could be handled by killing the read
-	  thread before closing file handles, but SDL2 removed that
-	  functionality. As a result, enabling RS232 will freeze SDL2
-	  Hatari version on exit on BSD / Mac, even if RS232 was unused
-	- Solving this requires rewriting the code with OS specific
-	  primitives (instead of using SDL), either for threading, or
-	  using select().  I'd prefer latter, for clarify and to avoid
-	  polling in the main thead, but it would mean that RS232 won't
-	  work on Windows until somebody contributes code for that too
+If you think that you can help with one of the TO-DO list items,
+please get in touch with us.
 
 
 Emulation improvements
@@ -31,7 +19,6 @@ Emulation improvements
 
 - Investigate what TOS version/functionality doesn't work for
   programs started from the DESKTOP/NEWDESK.INF and why, e.g:
-	- Printing doesn't work with TOS versions v1.02 - v2.06
 	- Key & mouse button input gives blitter register access
 	  bus errors after exiting autostarted program with
 	  TOS v2.x on ST machine (no problem on STE)
@@ -42,10 +29,6 @@ Emulation improvements
 	- Hextracker v0.849 freezes waiting Falcon
 	  VideoAddressCounter change
   Document that in manual (page) for the Hatari "autorun" feature.
-
-- Keyboard detection sometimes fails when --fast-forward is enabled
-  while TOS boots / game is loaded (e.g. Falcon Snake game packed
-  with Sentry).
 
 - Improve disk image formats support:
 	- Support .DIM images created with the "Get sectors: used" option
@@ -96,6 +79,8 @@ Demos :
 
 Games :
   - ikbd : Superior 109 - Special Forces
+
+For more information, see "compatibility.txt".
 
 
 Other potential Hatari functionality improvements
@@ -213,34 +198,3 @@ on BerliOS hatari-devel mail thread for more info.)
 	- By default the directory config values should be empty in
 	  which case the code will at run-time decide to use current
 	  directory, but not modify the path config setting.
-
-
-Bug reports
------------
-
-- Problem: On real Falcon there is a minor feature in videl. You can simply
-  fade whole screen to black, if you just clear the Horizontal Border End
-  ($ffff8286) and start fading colors from 0 to 255 to $ffff9800 or vice versa.
-	test <put picture to screen>
-	move.w #255-1,d7
-	moveq #0,d6
-	.loop <vsync, stop#$2300>
-	clr.w $ffff8286.w
-	move.l d6,$ffff9800.w
-	addq.l #1,d6
-	dbf d7,.loop
-  Now it does this exactly opposite direction, it fades bgcolor from 0 to 255.
-  http://developer.berlios.de/bugs/?func=detailbug&bug_id=18002&group_id=10436
-
-- To compare my real Falcon with Hatari on my Windows 7 PC, I make some short
-  benchmarks with Kronos. The disk benchmark in Kronos runs in 1-2 minutes on
-  my real Falcon. The same disk benchmark in Kronos under Hatari 1.5 runs
-  longer than 20 minutes with GEMDOS emulation.  Only when I use the AltGr + X
-  option, before the benchmark runs, then the disk benchmark in kronos is
-  comparable fast as my 16MHz Falcon.
-  http://developer.berlios.de/bugs/?func=detailbug&bug_id=18298&group_id=10436
-
-  -> Hatari GEMDOS emulation needs to do a lot of extra kernel file & directory
-     accesses which with current code seem unavoidable.  They're a problem only
-     with test programs like Kronos, for those one should consider using
-     harddisk image files instead.
