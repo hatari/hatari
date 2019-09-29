@@ -4149,6 +4149,18 @@ int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr, bool bFullBpSe
 		STMemory_WriteLong(baseaddr + 44, baseaddr + 40);                  /* p_env */
 	}
 
+	/* If FASTLOAD flag is not set, then also clear the heap */
+	if (!(prg[25] & 1))
+	{
+		nCurrAddr = baseaddr + 0x100 + nTextLen + nDataLen + nBssLen;
+		if (!STMemory_SafeClear(nCurrAddr, STMemory_ReadLong(baseaddr + 4) - nCurrAddr))
+		{
+			Log_Printf(LOG_ERROR, "Failed to clear heap for '%s'.\n",
+			           psPrgName);
+			return -1;
+		}
+	}
+
 	if (*(uint16_t *)&prg[26] != 0)   /* No reloc information available? */
 		return 0;
 
