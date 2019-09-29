@@ -4093,16 +4093,17 @@ int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr, bool bFullBpSe
 	uint32_t memtop;
 
 	prg = File_Read(psPrgName, &nFileSize, NULL);
-	if (!prg || nFileSize < 30)
+	if (!prg)
 	{
 		Log_Printf(LOG_ERROR, "Failed to load '%s'.\n", psPrgName);
-		return -1;
+		return GEMDOS_EFILNF;
 	}
 
-	if (prg[0] != 0x60 || prg[1] != 0x1a)  /* Check PRG magic */
+	/* Check program header size and magic */
+	if (nFileSize < 30 || prg[0] != 0x60 || prg[1] != 0x1a)
 	{
 		Log_Printf(LOG_ERROR, "The file '%s' is not a valid PRG.\n", psPrgName);
-		return -1;
+		return GEMDOS_EPLFMT;
 	}
 
 	nTextLen = (prg[2] << 24) | (prg[3] << 16) | (prg[4] << 8) | prg[5];
@@ -4117,17 +4118,17 @@ int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr, bool bFullBpSe
 	if (baseaddr + 0x100 + nTextLen + nDataLen + nBssLen > memtop)
 	{
 		Log_Printf(LOG_ERROR, "Program too large: '%s'.\n", psPrgName);
-		return -1;
+		return GEMDOS_ENSMEM;
 	}
 
 	if (!STMemory_SafeCopy(baseaddr + 0x100, prg + 28, nTextLen + nDataLen, psPrgName))
-		return -1;
+		return GEMDOS_EIMBA;
 
 	/* Clear BSS */
 	if (!STMemory_SafeClear(baseaddr + 0x100 + nTextLen + nDataLen, nBssLen))
 	{
 		Log_Printf(LOG_ERROR, "Failed to clear BSS for '%s'.\n", psPrgName);
-		return -1;
+		return GEMDOS_EIMBA;
 	}
 
 	/* Set up basepage */
@@ -4157,7 +4158,7 @@ int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr, bool bFullBpSe
 		{
 			Log_Printf(LOG_ERROR, "Failed to clear heap for '%s'.\n",
 			           psPrgName);
-			return -1;
+			return GEMDOS_EIMBA;
 		}
 	}
 
@@ -4168,7 +4169,7 @@ int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr, bool bFullBpSe
 	if (nRelTabIdx > nFileSize - 3)
 	{
 		Log_Printf(LOG_ERROR, "Can not parse relocation table of '%s'.\n", psPrgName);
-		return -1;
+		return GEMDOS_EPLFMT;
 	}
 	nRelOff = (prg[nRelTabIdx] << 24) | (prg[nRelTabIdx + 1] << 16)
 	          | (prg[nRelTabIdx + 2] << 8) | prg[nRelTabIdx + 3];
@@ -4197,7 +4198,7 @@ int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr, bool bFullBpSe
 	if (nRelTabIdx >= nFileSize)
 	{
 		Log_Printf(LOG_ERROR, "Failed to parse relocation table of '%s'.\n", psPrgName);
-		return -1;
+		return GEMDOS_EPLFMT;
 	}
 
 	return 0;
@@ -4212,6 +4213,7 @@ void GemDOS_PexecBpCreated(void)
 {
 	char sFileName[FILENAME_MAX];
 	char *sStFileName;
+	uint32_t errcode;
 
 	if ((int32_t)Regs[REG_D0] < 0)
 	{
@@ -4225,9 +4227,10 @@ void GemDOS_PexecBpCreated(void)
 
 	GemDOS_CreateHardDriveFileName(GemDOS_FileName2HardDriveID(sStFileName),
 	                               sStFileName, sFileName, sizeof(sFileName));
-	if (GemDOS_LoadAndReloc(sFileName, Regs[REG_D0], false) < 0)
+	errcode = GemDOS_LoadAndReloc(sFileName, Regs[REG_D0], false);
+	if (errcode)
 	{
-		Regs[REG_D0] = GEMDOS_EFILNF;
+		Regs[REG_D0] = errcode;
 		M68000_SetPC(nPexecReturnPC);
 		return;
 	}
