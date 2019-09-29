@@ -2710,8 +2710,11 @@ static bool GemDOS_GetDir(Uint32 Params)
  */
 static int GemDOS_Pexec(Uint32 Params)
 {
-	int Drive;
+	int Drive, len;
 	char *pszFileName;
+	FILE *fh;
+	char sFileName[FILENAME_MAX];
+	uint8_t prgh[28];		/* Buffer for program header */
 
 	/* Find PExec mode */
 	nPexecMode = STMemory_ReadWord(Params);
@@ -2756,10 +2759,28 @@ static int GemDOS_Pexec(Uint32 Params)
 	if (!ISHARDDRIVE(Drive))
 		return false;
 
+	GemDOS_CreateHardDriveFileName(Drive, pszFileName, sFileName, sizeof(sFileName));
+	fh = fopen(sFileName, "rb");
+	if (!fh)
+	{
+		Regs[REG_D0] = GEMDOS_EFILNF;
+		return true;
+	}
+	len = fread(prgh, 1, sizeof(prgh), fh);
+	fclose(fh);
+	if (len != sizeof(prgh) || prgh[0] != 0x60 || prgh[1] != 0x1a
+	    || prgh[2] & 0x80 || prgh[6] & 0x80 || prgh[10] & 0x80)
+	{
+		Regs[REG_D0] = GEMDOS_EPLFMT;
+		return true;
+	}
+
 	/* Run "create basepage" instead of original Pexec call */
 	if (TosVersion >= 0x200)
 	{
-		STMemory_WriteWord(Params, 5);  /* TODO: Use mode 7 instead */
+		STMemory_WriteWord(Params, 7);
+		STMemory_WriteLong(Params + SIZE_WORD, prgh[22] << 24 |
+		                   prgh[23] << 16 | prgh[24] << 8 | prgh[25]);
 	}
 	else
 	{
@@ -4089,7 +4110,10 @@ int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr, bool bFullBpSe
 	nBssLen = (prg[10] << 24) | (prg[11] << 16) | (prg[12] << 8) | prg[13];
 	nSymLen = (prg[14] << 24) | (prg[15] << 16) | (prg[16] << 8) | prg[17];
 
-	memtop = STMemory_ReadLong(0x436);
+	if (baseaddr < 0x1000000)
+		memtop = STMemory_ReadLong(0x436);
+	else
+		memtop = STMemory_ReadLong(0x5a4);
 	if (baseaddr + 0x100 + nTextLen + nDataLen + nBssLen > memtop)
 	{
 		Log_Printf(LOG_ERROR, "Program too large: '%s'.\n", psPrgName);
