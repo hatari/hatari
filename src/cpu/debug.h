@@ -159,6 +159,7 @@ struct memwatch_node {
 	uaecptr pc;
 	bool nobreak;
 	bool reportonly;
+	bool bus_error;
 };
 extern struct memwatch_node mwnodes[MEMWATCH_TOTAL];
 

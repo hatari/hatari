@@ -1070,141 +1070,60 @@ int notinrom (void)
 
 static uae_u32 lastaddr (void)
 {
-	for (int i = MAX_RAM_BOARDS - 1; i >= 0; i--) {
-		if (currprefs.z3fastmem[i].size)
-			return z3fastmem_bank[i].start + currprefs.z3fastmem[i].size;
+	int lastbank = currprefs.address_space_24 ? 255 : 65535;
+
+	for (int i = lastbank; i >= 0; i--) {
+		addrbank *ab = get_mem_bank_real(i << 16);
+		if (ab->baseaddr && (ab->flags & ABFLAG_RAM)) {
+			return (i + 1) << 16;
+		}
 	}
-	if (currprefs.z3chipmem_size)
-		return z3chipmem_bank.start + currprefs.z3chipmem_size;
-	if (currprefs.mbresmem_high_size)
-		return a3000hmem_bank.start + currprefs.mbresmem_high_size;
-	if (currprefs.mbresmem_low_size)
-		return a3000lmem_bank.start + currprefs.mbresmem_low_size;
-	if (currprefs.bogomem_size)
-		return bogomem_bank.start + currprefs.bogomem_size;
-	for (int i = MAX_RAM_BOARDS - 1; i >= 0; i--) {
-		if (currprefs.fastmem[i].size)
-			return fastmem_bank[i].start + currprefs.fastmem[i].size;
-	}
-	return currprefs.chipmem_size;
+	return 0;
 }
 
-static uaecptr nextaddr2 (uaecptr addr, int *next)
+static uaecptr nextaddr (uaecptr addr, uaecptr last, uaecptr *endp, bool verbose)
 {
-	uaecptr prev, prevx;
-	int size, sizex;
+	addrbank *ab;
+	int lastbank = currprefs.address_space_24 ? 255 : 65535;
 
-	if (addr >= lastaddr ()) {
-		*next = -1;
+	if (addr != 0xffffffff) {
+		addr++;
+		ab = get_mem_bank_real(addr);
+		if (ab->baseaddr && (ab->flags & ABFLAG_RAM))
+			return addr;
+	} else {
+		addr = 0;
+	}
+
+	while (addr < (lastbank << 16)) {
+		ab = get_mem_bank_real(addr);
+		if (ab->baseaddr && (ab->flags & ABFLAG_RAM))
+			break;
+		addr += 65536;
+	}
+	if (addr >= (lastbank << 16)) {
+		if (endp)
+			*endp = 0xffffffff;
 		return 0xffffffff;
 	}
-	prev = currprefs.z3autoconfig_start + currprefs.z3fastmem[0].size;
-	size = currprefs.z3fastmem[1].size;
 
-	if (currprefs.z3fastmem[0].size) {
-		prevx = prev;
-		sizex = size;
-		size = currprefs.z3fastmem[0].size;
-		prev = z3fastmem_bank[0].start;
-		if (addr == prev + size) {
-			*next = prevx + sizex;
-			return prevx;
-		}
-	}
-	if (currprefs.z3chipmem_size) {
-		prevx = prev;
-		sizex = size;
-		size = currprefs.z3chipmem_size;
-		prev = z3chipmem_bank.start;
-		if (addr == prev + size) {
-			*next = prevx + sizex;
-			return prevx;
-		}
-	}
-	if (currprefs.mbresmem_high_size) {
-		sizex = size;
-		prevx = prev;
-		size = currprefs.mbresmem_high_size;
-		prev = a3000hmem_bank.start;
-		if (addr == prev + size) {
-			*next = prevx + sizex;
-			return prevx;
-		}
-	}
-	if (currprefs.mbresmem_low_size) {
-		prevx = prev;
-		sizex = size;
-		size = currprefs.mbresmem_low_size;
-		prev = a3000lmem_bank.start;
-		if (addr == prev + size) {
-			*next = prevx + sizex;
-			return prevx;
-		}
-	}
-	if (currprefs.bogomem_size) {
-		sizex = size;
-		prevx = prev;
-		size = currprefs.bogomem_size;
-		prev = bogomem_bank.start;
-		if (addr == prev + size) {
-			*next = prevx + sizex;
-			return prevx;
-		}
-	}
-	if (currprefs.fastmem[0].size) {
-		sizex = size;
-		prevx = prev;
-		size = currprefs.fastmem[0].size;
-		prev = fastmem_bank[0].start;
-		if (addr == prev + size) {
-			*next = prevx + sizex;
-			return prevx;
-		}
-	}
-	sizex = size;
-	prevx = prev;
-	size = currprefs.chipmem_size;
-	if (addr == size) {
-		*next = prevx + sizex;
-		return prevx;
-	}
-	if (addr == 1)
-		*next = size;
-	return addr;
-}
+	uaecptr start = addr;
 
-static uaecptr nextaddr (uaecptr addr, uaecptr last, uaecptr *end)
-{
-	static uaecptr old;
-	int next = last;
-	if (last && addr >= last) {
-		old = 0xffffffff;
-		return 0xffffffff;
+	while (addr <= (lastbank << 16)) {
+		ab = get_mem_bank_real(addr);
+		if ((last && last != 0xffffffff && addr >= last) || !ab->baseaddr || !(ab->flags & ABFLAG_RAM)) {
+			if (endp)
+				*endp = addr;
+			break;
+		}
+		addr += 65536;
 	}
-	if (addr == 0xffffffff) {
-		if (end)
-			*end = currprefs.chipmem_size;
-		return 0;
+
+	if (verbose) {
+		console_out_f(_T("Scanning.. %08x - %08x (%s)\n"), start, addr, get_mem_bank(start).name);
 	}
-	if (end)
-		next = *end;
-	addr = nextaddr2 (addr + 1, &next);
-	if (end)
-		*end = next;
-	if (old != next) {
-		if (addr != 0xffffffff)
-			console_out_f (_T("Scanning.. %08x - %08x (%s)\n"), addr & 0xffffff00, next, get_mem_bank (addr).name);
-		old = next;
-	}
-#if 0
-	if (next && addr != 0xffffffff) {
-		uaecptr xa = addr;
-		if (xa == 1)
-			xa = 0;
-		console_out_f ("%08X -> %08X (%08X)...\n", xa, xa + next - 1, next);
-	}
-#endif
-	return addr;
+
+	return start;
 }
 
 uaecptr dumpmem2 (uaecptr addr, TCHAR *out, int osize)
@@ -2408,7 +2327,7 @@ static void deepcheatsearch (TCHAR **c)
 		xfree (memtmp);
 		memsize = 0;
 		addr = 0xffffffff;
-		while ((addr = nextaddr (addr, 0, &end)) != 0xffffffff)  {
+		while ((addr = nextaddr (addr, 0, &end, false)) != 0xffffffff)  {
 			memsize += end - addr;
 			addr = end - 1;
 		}
@@ -2419,7 +2338,7 @@ static void deepcheatsearch (TCHAR **c)
 		memset (memtmp + memsize, 0xff, memsize2);
 		p1 = memtmp;
 		addr = 0xffffffff;
-		while ((addr = nextaddr (addr, 0, &end)) != 0xffffffff) {
+		while ((addr = nextaddr (addr, 0, &end, true)) != 0xffffffff) {
 			for (i = addr; i < end; i++)
 				*p1++ = get_byte_debug (i);
 			addr = end - 1;
@@ -2439,7 +2358,7 @@ static void deepcheatsearch (TCHAR **c)
 	addrcnt = 0;
 	cnt = 0;
 	addr = 0xffffffff;
-	while ((addr = nextaddr (addr, 0, NULL)) != 0xffffffff) {
+	while ((addr = nextaddr (addr, 0, NULL, true)) != 0xffffffff) {
 		uae_s32 b, b2;
 		int doremove = 0;
 		int addroff = addrcnt >> 3;
@@ -2482,7 +2401,7 @@ static void deepcheatsearch (TCHAR **c)
 		} else {
 			p1[addrcnt] = b >> 8;
 			p1[addrcnt + 1] = b >> 0;
-			addr = nextaddr (addr, 0, NULL);
+			addr = nextaddr (addr, 0, NULL, true);
 			if (addr == 0xffffffff)
 				break;
 			addrcnt += 2;
@@ -2499,7 +2418,7 @@ static void deepcheatsearch (TCHAR **c)
 		cnt = 0;
 		addrcnt = 0;
 		addr = 0xffffffff;
-		while ((addr = nextaddr(addr, 0, NULL)) != 0xffffffff) {
+		while ((addr = nextaddr(addr, 0, NULL, true)) != 0xffffffff) {
 			int addroff = addrcnt >> 3;
 			int addrmask = (size == 1 ? 1 : 3) << (addrcnt & 7);
 			if (p2[addroff] & addrmask)
@@ -2528,7 +2447,7 @@ static void cheatsearch (TCHAR **c)
 
 	memsize = 0;
 	addr = 0xffffffff;
-	while ((addr = nextaddr (addr, 0, &end)) != 0xffffffff)  {
+	while ((addr = nextaddr (addr, 0, &end, false)) != 0xffffffff)  {
 		memsize += end - addr;
 		addr = end - 1;
 	}
@@ -2562,7 +2481,7 @@ static void cheatsearch (TCHAR **c)
 	clearcheater ();
 	addr = 0xffffffff;
 	prevmemcnt = memcnt = 0;
-	while ((addr = nextaddr (addr, 0, &end)) != 0xffffffff) {
+	while ((addr = nextaddr (addr, 0, &end, true)) != 0xffffffff) {
 		if (addr + size < end) {
 			for (i = 0; i < size; i++) {
 				int shift = (size - i - 1) * 8;
@@ -2648,7 +2567,7 @@ static void illg_init (void)
 		return;
 	}
 	addr = 0xffffffff;
-	while ((addr = nextaddr (addr, 0, &end)) != 0xffffffff)  {
+	while ((addr = nextaddr (addr, 0, &end, false)) != 0xffffffff)  {
 		if (end < 0x01000000) {
 			memset (illgdebug + addr, c, end - addr);
 		} else {
@@ -3118,6 +3037,12 @@ static int memwatch_func (uaecptr addr, int rwi, int size, uae_u32 *valp, uae_u3
 
 		if (!brk)
 			continue;
+
+		if (m->bus_error) {
+			exception2(addr, (rwi & 2) == 0, size, ((rwi & 4) ? 2 : 1) | (regs.s ? 4 : 0));
+			continue;
+		}
+
 		if (mem_banks[addr >> 16]->check (addr, size)) {
 			uae_u8 *p = mem_banks[addr >> 16]->xlateaddr (addr);
 			if (size == 1)
@@ -3516,6 +3441,8 @@ static void memwatch_remap (uaecptr addr)
 		newbank->name = my_strdup (tmp);
 		if (!newbank->mask)
 			newbank->mask = -1;
+		newbank->baseaddr_direct_r = 0;
+		newbank->baseaddr_direct_w = 0;
 	}
 	debug_mem_banks[banknr] = bank;
 	map_banks_quick (newbank, banknr, 1, 1);
@@ -3693,6 +3620,8 @@ void memwatch_dump2 (TCHAR *buf, int bufsize, int num)
 				buf = buf_out(buf, &bufsize, _T(" L"));
 			if (mwn->nobreak)
 				buf = buf_out(buf, &bufsize, _T(" N"));
+			if (mwn->bus_error)
+				buf = buf_out(buf, &bufsize, _T(" BER"));
 			for (int j = 0; memwatch_access_masks[j].mask; j++) {
 				uae_u32 mask = memwatch_access_masks[j].mask;
 				if ((mwn->access_mask & mask) == mask && (usedmask & mask) == 0) {
@@ -3837,6 +3766,11 @@ static void memwatch (TCHAR **c)
 						mwn->rwi |= 4;
 					if (nc == 'R')
 						mwn->rwi |= 1;
+					if (nc == 'B') {
+						mwn->bus_error = true;
+						if (!mwn->rwi)
+							mwn->rwi = 7;
+					}
 					if (ncc == ' ')
 						break;
 					if (nc == 'P' && ncc == 'C') {
@@ -4971,7 +4905,7 @@ static void searchmem (TCHAR **cc)
 	if (sslen == 0)
 		return;
 	ignore_ws (cc);
-	addr = 0;
+	addr = 0xffffffff;
 	endaddr = lastaddr ();
 	if (more_params (cc)) {
 		addr = readhex (cc);
@@ -4979,7 +4913,7 @@ static void searchmem (TCHAR **cc)
 			endaddr = readhex (cc);
 	}
 	console_out_f (_T("Searching from %08X to %08X..\n"), addr, endaddr);
-	while ((addr = nextaddr (addr, endaddr, NULL)) != 0xffffffff) {
+	while ((addr = nextaddr (addr, endaddr, NULL, true)) != 0xffffffff) {
 		if (addr == endaddr)
 			break;
 		for (i = 0; i < sslen; i++) {
@@ -5337,7 +5271,7 @@ static void find_ea (TCHAR **inptr)
 	}
 	console_out_f (_T("Searching from %08X to %08X\n"), addr, end);
 	end2 = 0;
-	while((addr = nextaddr (addr, end, &end2)) != 0xffffffff) {
+	while((addr = nextaddr (addr, end, &end2, true)) != 0xffffffff) {
 		if ((addr & 1) == 0 && addr + 6 <= end2) {
 			sea = 0xffffffff;
 			dea = 0xffffffff;
@@ -6867,13 +6801,13 @@ static int debug_trainer_get_ea(struct trainerpatch *tp, uaecptr pc, uae_u16 opc
 	uaecptr pc2 = pc + 2;
 	if (dp->suse) {
 		spc = pc2;
-		pc2 = ShowEA(NULL, pc2, opcode, dp->sreg, dp->smode, dp->size, NULL, &sea, 1);
+		pc2 = ShowEA(NULL, pc2, opcode, dp->sreg, dp->smode, dp->size, NULL, &sea, NULL, 1);
 		if (sea == spc)
 			spc = 0xffffffff;
 	}
 	if (dp->duse) {
 		dpc = pc2;
-		pc2 = ShowEA(NULL, pc2, opcode, dp->dreg, dp->dmode, dp->size, NULL, &dea, 1);
+		pc2 = ShowEA(NULL, pc2, opcode, dp->dreg, dp->dmode, dp->size, NULL, &dea, NULL, 1);
 		if (dea == dpc)
 			dpc = 0xffffffff;
 	}
