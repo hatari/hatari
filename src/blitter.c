@@ -474,13 +474,6 @@ static void Blitter_SourceFetch(void)
 		BlitterVars.buffer |= src_word << 16;
 	else
 		BlitterVars.buffer |= src_word;
-
-	/* src_x_incr should be added only when this is not the last read for a line */
-	/* (taking into account that if nfsr is set we read 1 word less) */
-	if (BlitterRegs.x_count > 1U + BlitterVars.nfsr )
-	{
-		BlitterRegs.src_addr += BlitterRegs.src_x_incr;
-	}
 }
 
 static Uint16 Blitter_SourceRead(void)
@@ -491,6 +484,8 @@ static Uint16 Blitter_SourceRead(void)
 		{
 			Blitter_SourceShift();
 			Blitter_SourceFetch();
+			/* always increment src_addr after doing the fxsr */
+			BlitterRegs.src_addr += BlitterRegs.src_x_incr;
 		}
 
 		Blitter_SourceShift();
@@ -498,6 +493,12 @@ static Uint16 Blitter_SourceRead(void)
 		if (!BlitterState.nfsr)
 		{
 			Blitter_SourceFetch();
+			/* src_x_incr should be added only when this is not the last read for a line */
+			/* (taking into account that if nfsr is set we read 1 word less) */
+			if (BlitterRegs.x_count > 1U + BlitterVars.nfsr )
+			{
+				BlitterRegs.src_addr += BlitterRegs.src_x_incr;
+			}
 		}
 
 		BlitterState.src_word = (Uint16)(BlitterVars.buffer >> BlitterVars.skew);
@@ -876,6 +877,7 @@ int FrameCycles, HblCounterVideo, LineCycles;
 Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
 //fprintf ( stderr , "blitter start %d video_cyc=%d %d@%d\n" , nCyclesMainCounter , FrameCycles , LineCycles, HblCounterVideo );
+//fprintf ( stderr , "blitter start addr=%x dst=%x ycount=%d xcount=%d fxsr=%d nfsr=%d skew=%d\n" , BlitterRegs.src_addr ,BlitterRegs.dst_addr, BlitterRegs.x_count , BlitterRegs.y_count , BlitterVars.fxsr , BlitterVars.nfsr , BlitterVars.skew );
 
 	/* Select HOP & LOP funcs */
 	Blitter_Select_HOP();
