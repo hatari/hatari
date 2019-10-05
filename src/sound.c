@@ -1560,7 +1560,7 @@ static ymsample	YM2149_Next_Resample_Weighted_Average_2 ( void )
 	ymsample	sample;
 
 
-	interval_fract = ( YM_ATARI_CLOCK_COUNTER * 0x10000L ) / YM_REPLAY_FREQ;
+	interval_fract = ( YM_ATARI_CLOCK_COUNTER * 0x10000LL ) / YM_REPLAY_FREQ;	/* 'LL' ensure the div is made on 64 bits */
 	total = 0;
 
 	if ( pos_fract )				/* start position : 0xffff <= pos_fract <= 0 */
