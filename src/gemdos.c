@@ -4230,8 +4230,21 @@ void GemDOS_PexecBpCreated(void)
 	errcode = GemDOS_LoadAndReloc(sFileName, Regs[REG_D0], false);
 	if (errcode)
 	{
-		Regs[REG_D0] = errcode;
-		M68000_SetPC(nPexecReturnPC);
+		/* Now it's gettting ugly, we've got to free the allocated
+		 * memory before returning to the calling program ... */
+		static uint8_t code[] = {
+			0x2f, 0x00,			// move.l d0,-(sp)
+			0x3f, 0x3c, 0x00, 0x49,		// move.w #73,-(sp)
+			0x4e, 0x41,			// trap #1
+			0x5c, 0x8f,			// addq.l #6,sp
+			0x20, 0x3c, 0, 0, 0, 0,		// move.l #errcode,%d0
+			0x4e, 0xf9, 0, 0, 0, 0,		// jmp nPexecReturnPC
+		};
+		do_put_mem_long(&code[12], errcode);
+		do_put_mem_long(&code[18], nPexecReturnPC);
+		for (unsigned int i = 0; i < sizeof(code); i++)
+			RomMem[0xfaffc0 + i] = code[i];
+		M68000_SetPC(0xfaffc0);
 		return;
 	}
 
