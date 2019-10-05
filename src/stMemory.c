@@ -116,7 +116,15 @@ bool STMemory_SafeClear(Uint32 addr, unsigned int len)
 
 	if (STMemory_CheckAreaType(addr, len, ABFLAG_RAM))
 	{
-		memset(&STRam[addr], 0, len);
+		if (addr + len < 0x1000000)
+		{
+			memset(&STRam[addr], 0, len);
+		}
+		else
+		{
+			assert(TTmemory && addr + len <= TTmem_size + 0x1000000);
+			memset(&TTmemory[addr - 0x1000000], 0, len);
+		}
 		return true;
 	}
 	Log_Printf(LOG_WARN, "Invalid RAM clear range 0x%x+%i!\n", addr, len);
@@ -124,7 +132,7 @@ bool STMemory_SafeClear(Uint32 addr, unsigned int len)
 	for (end = addr + len; addr < end; addr++)
 	{
 		if (STMemory_CheckAreaType(addr, 1, ABFLAG_RAM))
-			STRam[addr] = 0;
+			put_byte(addr, 0);
 	}
 	return false;
 }
@@ -147,15 +155,23 @@ bool STMemory_SafeCopy(Uint32 addr, Uint8 *src, unsigned int len, const char *na
 
 	if ( STMemory_CheckAreaType ( addr, len, ABFLAG_RAM ) )
 	{
-		memcpy(&STRam[addr], src, len);
+		if (addr + len < 0x1000000)
+		{
+			memcpy(&STRam[addr], src, len);
+		}
+		else
+		{
+			assert(TTmemory && addr + len <= TTmem_size + 0x1000000);
+			memcpy(&TTmemory[addr - 0x1000000], src, len);
+		}
 		return true;
 	}
 	Log_Printf(LOG_WARN, "Invalid '%s' RAM range 0x%x+%i!\n", name, addr, len);
 
-	for (end = addr + len; addr < end; addr++, src++)
+	for (end = addr + len; addr < end; addr++)
 	{
 		if ( STMemory_CheckAreaType ( addr, 1, ABFLAG_RAM ) )
-			STRam[addr] = *src;
+			put_byte(addr, *src++);
 	}
 	return false;
 }
