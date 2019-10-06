@@ -111,7 +111,7 @@ class TOS:
 
 
     def _add_info(self):
-        "add TOS version specific info of supported machines etc"
+        "add TOS version specific info of supported machines etc, return timeouts & supported machines"
         name, size, version = self.name, self.size, self.version
 
         if self.etos:
@@ -131,19 +131,27 @@ class TOS:
             info = (0, 16, ("st",))
         elif version <= 0x104:
             info = (0, 6, ("st", "megast"))
-        elif version < 0x200:
+        elif version <= 0x162:
             info = (0, 6, ("ste",))
-        elif version < 0x300:
+        elif version < 0x206:
             # TOS v2.x are slower with VDI mode than others
+            info = (2, 8, ("ste", "megaste"))
+        elif version == 0x206:
+            # ST support added to TOS 2.x only after 2.05
             info = (2, 8, ("st", "megast", "ste", "megaste"))
-        elif version < 0x400:
-            # memcheck comes up fast, but boot takes time
+        elif version < 0x306:
+            # memcheck comes up fast, but boot takes time,
+            # especially with GEMDOS HD and MMU, and
+            # even more on TOS 3.00
+            info = (0, 16, ("tt",))
+        elif version == 0x306:
             info = (2, 8, ("tt",))
-        elif version < 0x500:
-            # memcheck takes long to come up with 14MB
-            info = (3, 8, ("falcon",))
+        elif version <= 0x404:
+            # memcheck takes long to come up with lots of RAM,
+            # especially with MMU enabled
+            info = (3, 10, ("falcon",))
         else:
-            raise AssertionError("'%s' TOS version 0x%x isn't valid" % (name, version))
+            raise AssertionError("Unknown '%s' TOS version 0x%x" % (name, version))
 
         if self.etos:
             print("%s is EmuTOS v%x %dkB" % (name, version, size))
@@ -195,9 +203,13 @@ class TOS:
                 return False
         return True
 
-    def supports_32bit_addressing(self):
+    def supports_32bit_addressing(self, disk):
         "whether TOS version supports 32-bit addressing"
-        if self.etos or self.version >= 0x300:
+        if self.etos or (self.version >= 0x300 and self.version < 0x400):
+            return True
+        # Hatari patches TOS v4 for 32-bit support, but TOS v4 floppy access doesn't
+        # work with TT-RAM as there's no _FRB cookie pointing to 64K ST-RAM DMA buffer
+        if self.version >= 0x400 and disk != 'floppy':
             return True
         return False
 
@@ -367,7 +379,7 @@ For example:
             return True
         return False
 
-    def valid_ttram(self, machine, tos, ttram, winuae):
+    def valid_ttram(self, machine, tos, ttram, disk, winuae):
         "return whether given TT-RAM size is valid for given machine"
         if machine in ("st", "megast", "ste", "megaste"):
             if ttram == 0:
@@ -380,7 +392,7 @@ For example:
                 return False
             if ttram < 0 or ttram > 512:
                 return False
-            return tos.supports_32bit_addressing()
+            return tos.supports_32bit_addressing(disk)
         else:
             raise AssertionError("unknown machine %s" % machine)
         return False
@@ -439,6 +451,10 @@ def exit_if_missing(names):
         if not os.path.exists(name):
             print("ERROR: test file '%s' missing")
             sys.exit(1)
+
+
+# how long to wait for invoked Hatari to open FIFO (= MIDI output file)
+FIFO_WAIT = 5
 
 class Tester:
     "test driver class"
@@ -538,10 +554,8 @@ class Tester:
             if os.path.exists(path):
                 os.remove(path)
 
-    def verify_output(self, identity, tos, memory):
+    def verify_output(self, identity):
         "do verification on all test output"
-        # both tos version and amount of memory affect what
-        # GEMDOS operations work properly...
         ok = True
         # check file truncate
         if "gemdos" in identity:
@@ -583,10 +597,10 @@ class Tester:
         return (False, False)
 
 
-    def open_fifo(self, timeout):
+    def open_fifo(self):
         "open FIFO for test program output"
         try:
-            signal.alarm(timeout)
+            signal.alarm(FIFO_WAIT)
             # open returns after Hatari has opened the other
             # end of fifo, or when SIGALARM interrupts it
             fifo = open(self.fifofile, "r")
@@ -597,11 +611,11 @@ class Tester:
             print("ERROR: FIFO open IOError!")
             return None
 
-    def test(self, identity, testargs, tos, memory, extrawait):
+    def test(self, identity, testargs, memwait, testwait):
         "run single boot test with given args and waits"
         # Hatari command line options, don't exit if Hatari exits
         instance = hconsole.Main(self.defaults + testargs, False)
-        fifo = self.open_fifo(tos.fullwait)
+        fifo = self.open_fifo()
         if not fifo:
             print("ERROR: failed to get FIFO to Hatari!")
             self.get_screenshot(instance, identity)
@@ -610,15 +624,15 @@ class Tester:
         else:
             init_ok = True
 
-        if tos.memwait:
+        if memwait:
             # pass memory test
-            time.sleep(tos.memwait)
+            time.sleep(memwait)
             instance.run("keypress %s" % hconsole.Scancode.Space)
 
         # wait until test program has been run and output something to fifo
-        prog_ok, tests_ok = self.wait_fifo(fifo, tos.fullwait + extrawait)
+        prog_ok, tests_ok = self.wait_fifo(fifo, testwait)
         if tests_ok:
-            output_ok = self.verify_output(identity, tos, memory)
+            output_ok = self.verify_output(identity)
         else:
             output_ok = False
 
@@ -631,7 +645,7 @@ class Tester:
         return (init_ok, prog_ok, tests_ok, output_ok)
 
 
-    def prepare_test(self, config, tos, machine, monitor, disk, memory, ttram, extra):
+    def prepare_test(self, config, tos, machine, monitor, disk, memory, ttram, bool_opt):
         "compose test ID and Hatari command line args, then call .test()"
         identity = "%s-%s-%s-%s-%dM-%dM" % (tos.name, machine, monitor, disk, memory, ttram)
         testargs = ["--tos", tos.path, "--machine", machine, "--memsize", str(memory)]
@@ -641,9 +655,14 @@ class Tester:
             else:
                 testargs += ["--addr24", "on"]
 
-        if extra:
-            identity += "-%s%s" % (extra[0].replace("-", ""), extra[1])
-            testargs += extra
+        memwait = tos.memwait
+        testwait = tos.fullwait
+        if bool_opt:
+            if bool_opt[0] == '--mmu' and bool_opt[1] == 'on':
+                # MMU doubles memory wait
+                memwait *= 2
+            identity += "-%s%s" % (bool_opt[0].replace("-", ""), bool_opt[1])
+            testargs += bool_opt
 
         if monitor.startswith("vdi"):
             planes = monitor[-1]
@@ -661,7 +680,6 @@ class Tester:
             testargs += ["--fast-forward", "yes", "--fast-boot", "yes",
                          "--fastfdc", "yes", "--timer-d", "yes"]
 
-        extrawait = 0
         if disk == "gemdos":
             exit_if_missing([self.testprg, self.textinput])
             # use Hatari autostart, must be last thing added to testargs!
@@ -683,7 +701,7 @@ class Tester:
                 exit_if_missing([self.bootauto])
                 testargs += ["--disk-a", self.bootauto]
             # floppies are slower
-            extrawait = 3
+            testwait += 3
         elif disk == "acsi":
             exit_if_missing([self.hdimage])
             testargs += ["--acsi", "0=%s" % self.hdimage, "--auto", self.hdprg]
@@ -695,8 +713,7 @@ class Tester:
             testargs += ["--ide-master", self.hdimage, "--auto", self.hdprg]
         else:
             raise AssertionError("unknown disk type '%s'" % disk)
-
-        results = self.test(identity, testargs, tos, memory, extrawait)
+        results = self.test(identity, testargs, memwait, testwait)
         self.results[tos.name].append((identity, results))
 
     def run(self, config):
@@ -717,20 +734,21 @@ class Tester:
                     for memory in config.memsizes:
                         if not config.valid_memsize(machine, memory):
                             continue
-                        for ttram in config.ttrams:
-                            if not config.valid_ttram(machine, tos, ttram, self.winuae):
+                        for disk in config.disks:
+                            if not config.valid_disktype(machine, tos, disk):
                                 continue
-                            for disk in config.disks:
-                                if not config.valid_disktype(machine, tos, disk):
+                            for ttram in config.ttrams:
+                                if not config.valid_ttram(machine, tos, ttram, disk, self.winuae):
                                     continue
-                                if config.bools:
-                                    for opt in config.bools:
-                                        if not config.valid_bool(machine, opt):
-                                            continue
-                                        for val in ('on', 'off'):
-                                            self.prepare_test(config, tos, machine, monitor, disk, memory, ttram, [opt, val])
-                                            count += 1
-                                else:
+                                no_bools = True
+                                for opt in config.bools:
+                                    if not config.valid_bool(machine, opt):
+                                        continue
+                                    no_bools = False
+                                    for val in ('on', 'off'):
+                                        self.prepare_test(config, tos, machine, monitor, disk, memory, ttram, [opt, val])
+                                        count += 1
+                                if no_bools:
                                     self.prepare_test(config, tos, machine, monitor, disk, memory, ttram, None)
                                     count += 1
             if not count:
