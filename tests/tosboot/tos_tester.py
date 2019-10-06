@@ -413,20 +413,15 @@ For example:
         return True
 
 # -----------------------------------------------
-def verify_file_match(srcfile, dstfile, match_expected, identity):
+def verify_file_match(srcfile, dstfile, identity):
     "return error string if sizes of given files don't match, and rename dstfile to identity"
     if not os.path.exists(dstfile):
-        if match_expected:
-            return "file '%s' missing" % dstfile
-        return None
+        return "file '%s' missing" % dstfile
     dstsize = os.stat(dstfile).st_size
     srcsize = os.stat(srcfile).st_size
     if dstsize != srcsize:
-        if match_expected:
-            os.rename(dstfile, "%s.%s" % (dstfile, identity))
-            return "file '%s' size %d doesn't match file '%s' size %d" % (srcfile, srcsize, dstfile, dstsize)
-    elif not match_expected:
-        return "file '%s' size %d unexpectedly matches file '%s' size %d" % (srcfile, srcsize, dstfile, dstsize)
+        os.rename(dstfile, "%s.%s" % (dstfile, identity))
+        return "file '%s' size %d doesn't match file '%s' size %d" % (srcfile, srcsize, dstfile, dstsize)
     return None
 
 def verify_file_empty(filename, identity):
@@ -556,16 +551,14 @@ class Tester:
                 print("ERROR: file wasn't truncated:\n\t%s" % error)
                 ok = False
         # check serial output
-        error = verify_file_match(self.textinput, self.serialout, True, identity)
+        error = verify_file_match(self.textinput, self.serialout, identity)
         if error:
             print("ERROR: serial output doesn't match input:\n\t%s" % error)
             ok = False
         # check printer output
-        success_expected = (tos.etos or tos.version > 0x206 or (tos.version == 0x100 and memory > 1))
-        error = verify_file_match(self.textinput, self.printout, success_expected, identity)
+        error = verify_file_match(self.textinput, self.printout, identity)
         if error:
             print("ERROR: unexpected printer output:\n\t%s" % error)
-            print("(expected to fail with autostarting on TOS v1.02 - TOS v2.06, and some TOS v1.0 configs)")
             ok = False
         self.cleanup_test_files()
         return ok

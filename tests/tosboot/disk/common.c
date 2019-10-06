@@ -10,9 +10,11 @@
  */
 #ifdef __PUREC__	/* or AHCC */
 # include <tos.h>
+# include <mint/sysvars.h>
 #else
 # include <osbind.h>
 #endif
+#include <unistd.h>
 #include <stdio.h>
 #include "common.h"
 
@@ -24,6 +26,64 @@
 static const char success[] = SUCCESS;
 static const char failure[] = FAILURE;
 static const char *msg = success;
+
+
+/* ------- sleeper functions ------ */
+
+#define ETOS_STR 0x45544F53  /* "ETOS" */
+
+/* how long sleep is needed to make sure all TOS
+ * versions have started timer/counter after boot
+ * so that printing will work?
+ *
+ * 2s is enough with floppies as they're slower,
+ * but GEMDOS HD needs 4s with TOS v1.x
+ */
+static int sleep_secs = 4;
+
+/* return NULL if OS version needs a sleep, otherwise a version info string */
+static long can_skip_sleep(void)
+{
+	char *msg;
+	long sysbase;
+	OSHEADER* osheader;
+
+	sysbase = *_sysbase;
+	osheader = (OSHEADER*)sysbase;
+
+	/* no extra boot sleeps needed with EmuTOS... */
+	if ((long)(osheader->p_rsv2) == ETOS_STR) {
+		msg = "EmuTOS";
+		return (long)msg;
+	}
+	/* ...or newer (= slower to boot?) Atari TOS versions */
+	if (osheader->os_version >= 0x0300) {
+		msg = "TOS >= v3";
+		return (long)msg;
+	}
+	return NULL;
+}
+
+/* do the sleeping */
+static void sleep_if_needed(void)
+{
+	char *info;
+
+	/* already slept? */
+	if (!sleep_secs) {
+		return;
+	}
+
+	info = (char *)Supexec(can_skip_sleep);
+	if (info) {
+		printf("\r\n%s -> no extra sleeps needed\r\n", info);
+	} else {
+		printf("\r\nSleeping %d secs...\r\n(for TOS printing to work after boot)\r\n",
+		       sleep_secs);
+		sleep(sleep_secs);
+	}
+	sleep_secs = 0;
+}
 
 /* ------- helper functions ------ */
 
@@ -117,6 +177,7 @@ void write2console(const char *input)
 
 void write2printer(const char *input)
 {
+	sleep_if_needed();
 	printf("\r\n%s -> PRN: (printer)\r\n", input);
         if (Cprnos()) {
 		write_gemdos_device(input, "PRN:");
