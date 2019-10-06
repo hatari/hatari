@@ -1,0 +1,12 @@
+; AHCC project file
+;
+; Note: program name is prefixed by seconds number, so that Hatari's
+; alphabetical ordering of directory entries returns it before programs
+; in AUTO/ that might require the sleep to work correctly
+
+.C [-iinclude -DSLEEP=4 -DSECS="4"]
+4_secs.prg
+=
+ahcstart.o
+sleep.c
+ahccstdi.lib
