@@ -592,7 +592,7 @@ static char *get_inf_file(const char **set_infname, int *set_size, int *res_col)
 		*res_col = 12;
 	}
 	/* need to match file TOS searches first */
-	else if (TosVersion >= 0x0200)
+	else if (TosVersion >= 0x0200 && TosVersion != 0x300)
 	{
 		infname = "NEWDESK.INF";
 		size = sizeof(newdesk_inf);
