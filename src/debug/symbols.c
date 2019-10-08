@@ -1510,6 +1510,18 @@ void Symbols_ChangeCurrentProgram(const char *path)
 	}
 }
 
+/*
+ * Show currently set program path
+ */
+void Symbols_ShowCurrentProgramPath(FILE *fp)
+{
+	if (CurrentProgramPath) {
+		fprintf(fp, "Current program path: %s\n", CurrentProgramPath);
+	} else {
+		fputs("No program has been loaded.\n", fp);
+	}
+}
+
 /**
  * Load symbols for last opened program.
  * Called when debugger is invoked.

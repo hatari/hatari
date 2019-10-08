@@ -2774,6 +2774,7 @@ static int GemDOS_Pexec(Uint32 Params)
 		Regs[REG_D0] = GEMDOS_EPLFMT;
 		return true;
 	}
+	Symbols_ChangeCurrentProgram(sFileName);
 
 	/* Run "create basepage" instead of original Pexec call */
 	if (TosVersion >= 0x200)
@@ -3758,6 +3759,9 @@ void GemDOS_Info(FILE *fp, Uint32 bShowOpcodes)
 	}
 	if (!used)
 		fputs("- None.\n", fp);
+
+	fputs("\n", fp);
+	Symbols_ShowCurrentProgramPath(fp);
 }
 
 /**
@@ -4049,7 +4053,8 @@ void GemDOS_Boot(void)
 
 	bInitGemDOS = true;
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "Gemdos_Boot() at PC 0x%X\n", M68000_GetPC() );
+	LOG_TRACE(TRACE_OS_GEMDOS, "Gemdos_Boot(GEMDOS-HD=%d) at PC 0x%X\n",
+		  GEMDOS_EMU_ON, M68000_GetPC() );
 
 	/* install our gemdos handler, if user has enabled either
 	 * GEMDOS HD, autostarting or GEMDOS tracing
