@@ -51,23 +51,16 @@ Emulator bugs
     until somebody contributes code for that too
 
 
-Known issues with workarounds
------------------------------
+Known issues / workarounds
+--------------------------
 
-* Auto-started programs start too fast, causing different failures
-
-  - Printing doesn't work with TOS versions v1.02 - v2.06
+* Printing doesn't work in auto-started programs with TOS v1.02 - v2.06:
 
     Why: program startup is so fast that TOS hasn't had time to start
     200hz tick used for printing.
 
     WA: put tests/autostart/4_secs.prg to AUTO/-folder to slow down
     program startup enough for printing to work
-
-  - Keyboard detection sometimes fails when TOS boots / game is loaded
-    (e.g. Falcon Snake game packed with Sentry)
-
-    WA: don't use --fast-forward
 
 
 External bug reports

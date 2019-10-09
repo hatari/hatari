@@ -17,19 +17,6 @@ please get in touch with us.
 Emulation improvements
 ----------------------
 
-- Investigate what TOS version/functionality doesn't work for
-  programs started from the DESKTOP/NEWDESK.INF and why, e.g:
-	- Key & mouse button input gives blitter register access
-	  bus errors after exiting autostarted program with
-	  TOS v2.x on ST machine (no problem on STE)
-	- Colors in 2-plane VDI resolution are not set correctly
-	- Fun's "Men at War" Falcon game background color is wrong
-	- RG: "Falcon Sworm" & "Sky Fall" games and "Snowtro" intro
-	  want to access A: & B: when autostarted
-	- Hextracker v0.849 freezes waiting Falcon
-	  VideoAddressCounter change
-  Document that in manual (page) for the Hatari "autorun" feature.
-
 - Improve disk image formats support:
 	- Support .DIM images created with the "Get sectors: used" option
 
@@ -80,7 +67,7 @@ Demos :
 Games :
   - ikbd : Superior 109 - Special Forces
 
-For more information, see "compatibility.txt".
+For more information, see "compatibility.html".
 
 
 Other potential Hatari functionality improvements
