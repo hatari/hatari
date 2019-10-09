@@ -808,8 +808,17 @@ void Video_Reset(void)
 
 	TTSpecialVideoMode = nPrevTTSpecialVideoMode = 0;
 
-	/* Clear framecycles counter */
-	Cycles_SetCounter(CYCLES_COUNTER_VIDEO, 0);
+	/* Clear framecycles counter at the time of the reset */
+	/* We must take into account if CyclesGlobalClockCounter is 4*n or 4*n+2 */
+	/* If not, further accesses to video registers will be made 2 cycles too late */
+	/* and spec512 like images or overscan will be broken */
+	if ( ( CyclesGlobalClockCounter & 3 ) == 2 )
+	{
+//fprintf ( stderr , "video reset desync %x %lx\n" , nCyclesMainCounter , CyclesGlobalClockCounter );
+		Cycles_SetCounter(CYCLES_COUNTER_VIDEO, 2);
+	}
+	else
+		Cycles_SetCounter(CYCLES_COUNTER_VIDEO, 0);
 
 	/* Clear ready for new VBL */
 	Video_ClearOnVBL();
