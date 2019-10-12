@@ -33,6 +33,7 @@ set_exc_loop:
 	move.l	a1,(a0)+		; Set all exception handlers
 	cmp.w	#$1c0,a0
 	ble.s	set_exc_loop
+	dc.w	$a			; Call SYSINIT_OPCODE to init trap #1
 
 no_sys_init:
 	lea	rte_only(pc),a1
