@@ -251,19 +251,42 @@ uae_u32 REGPARAM3 OpCode_SysInit(uae_u32 opcode)
 
 /**
  * Handle illegal opcode #8 (GEMDOS_OPCODE).
- * When GEMDOS HD emulation is enabled, we use it to intercept the end of
- * the Pexec call (see gemdos.c).
+ * When GEMDOS HD emulation is enabled, we use it to intercept GEMDOS
+ * calls (see gemdos.c).
  */
 uae_u32 REGPARAM3 OpCode_GemDos(uae_u32 opcode)
 {
 	if (is_cart_pc())
 	{
-		GemDOS_PexecBpCreated();
-		fill_prefetch();
+		GemDOS_Trap();
+		CpuDoNOP();
 	}
 	else
 	{
 		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS opcode invoked outside of cartridge space\n");
+		/* illegal instruction */
+		op_illg(opcode);
+		fill_prefetch();
+	}
+
+	return 4 * CYCLE_UNIT / 2;
+}
+
+/**
+ * Handle illegal opcode #9 (PEXEC_OPCODE).
+ * When GEMDOS HD emulation is enabled, we use it to intercept the end of
+ * the Pexec call (see gemdos.c).
+ */
+uae_u32 REGPARAM3 OpCode_Pexec(uae_u32 opcode)
+{
+	if (is_cart_pc())
+	{
+		GemDOS_PexecBpCreated();
+		CpuDoNOP();
+	}
+	else
+	{
+		LOG_TRACE(TRACE_OS_GEMDOS, "PEXEC opcode invoked outside of cartridge space\n");
 		/* illegal instruction */
 		op_illg(opcode);
 		fill_prefetch();

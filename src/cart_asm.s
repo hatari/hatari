@@ -9,8 +9,10 @@
 
 
 ; Hatari's "illegal" (free) opcodes:
+GEMDOS_OPCODE		equ 8
+PEXEC_OPCODE		equ 9
 SYSINIT_OPCODE		equ 10
-VDI_OPCODE			equ	12
+VDI_OPCODE		equ 12
 
 ; System variables:
 _longframe		equ $059E
@@ -31,8 +33,40 @@ _longframe		equ $059E
 
 	even
 
+old_gemdos:		ds.l	1		; has to match the CART_OLDGEMDOS define!
 vdi_opcode:		dc.w	VDI_OPCODE	; Address to call after Trap #2 (VDI), causes illegal instruction
 
+; New GEMDOS vector (0x84)
+new_gemdos:
+	dc.w	GEMDOS_OPCODE	; Returns NEG as run old vector, ZERO to return or OVERFLOW to run pexec
+	bvs.s	pexec
+	bne.s	go_oldgemdos
+do_rte:
+	rte
+
+; Branch to old GEMDOS
+go_oldgemdos:
+	move.l	old_gemdos(pc),-(sp)	; Set PC to 'old_gemdos' and continue execution, WITHOUT corrupting registers!
+	rts
+
+pexec:
+	; GemDOS_Pexec() pushed the parameters onto the stack already
+	trap	#1
+	lea	16(sp),sp
+	tst.l	d0
+	bmi.s	do_rte
+	dc.w	PEXEC_OPCODE
+	bvs.s	go_oldgemdos
+	beq.s	do_rte
+
+	; If we end up here, we've got to clean up
+	move.l	d0,-(sp)
+	move.l	a0,-(sp)
+	move.w	#73,-(sp)	; Mfree
+	trap	#1
+	addq.l	#6,sp
+	move.l	(sp)+,d0
+	rte
 
 ; This code is called during TOS' boot sequence.
 ; It gets a pointer to the Line-A variables and uses an illegal opcode

@@ -97,6 +97,7 @@ static void Cart_LoadImage(void)
 bool Cart_UseBuiltinCartridge(void)
 {
 	return (bUseVDIRes || INF_Overriding(AUTOSTART_INTERCEPT) ||
+	        ConfigureParams.HardDisk.bUseHardDiskDirectories ||
 	        LogTraceFlags & (TRACE_OS_GEMDOS | TRACE_OS_BASE | TRACE_OS_VDI | TRACE_OS_AES))
 	       && (TosVersion >= 0x100 || !bUseTos);
 }

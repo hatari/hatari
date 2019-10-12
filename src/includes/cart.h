@@ -6,7 +6,9 @@
 */
 
 /* Workspace in our 'cart_asm.s' internal program */
-#define CART_VDI_OPCODE_ADDR  0xfa0024
+#define CART_OLDGEMDOS        0xfa0024
+#define CART_VDI_OPCODE_ADDR  0xfa0028
+#define CART_GEMDOS           0xfa002a
 
 void Cart_ResetImage(void);
 bool Cart_UseBuiltinCartridge(void);

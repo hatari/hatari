@@ -54,12 +54,6 @@ enum {
 #define SR_OVERFLOW         0x0002
 #define SR_CARRY            0x0001
 
-#define SR_CLEAR_AUX        0xffef
-#define SR_CLEAR_NEG        0xfff7
-#define SR_CLEAR_ZERO       0xfffb
-#define SR_CLEAR_OVERFLOW   0xfffd
-#define SR_CLEAR_CARRY      0xfffe
-
 #define SR_CCODE_MASK       (SR_AUX|SR_NEG|SR_ZERO|SR_OVERFLOW|SR_CARRY)
 #define SR_MASK             0xFFE0
 
@@ -97,6 +91,7 @@ enum {
 
 /* Illegal Opcode used to help emulation. eg. free entries are 8 to 15 inc' */
 #define  GEMDOS_OPCODE        8  /* Free op-code to intercept GemDOS trap */
+#define  PEXEC_OPCODE         9  /* Free op-code to intercept Pexec calls */
 #define  SYSINIT_OPCODE      10  /* Free op-code to initialize system (connected drives etc.) */
 #define  VDI_OPCODE          12  /* Free op-code to call VDI handlers AFTER Trap#2 */
 

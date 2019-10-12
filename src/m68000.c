@@ -457,10 +457,16 @@ void M68000_PatchCpuTables(void)
 	}
 
 	/* GEMDOS HD emulation? */
-	if (ConfigureParams.HardDisk.bUseHardDiskDirectories)	/* 0x0008 */
-		cpufunctbl[GEMDOS_OPCODE] = OpCode_GemDos;
+	if (ConfigureParams.HardDisk.bUseHardDiskDirectories)
+	{
+		cpufunctbl[GEMDOS_OPCODE] = OpCode_GemDos;	/* 0x0008 */
+		cpufunctbl[PEXEC_OPCODE] = OpCode_Pexec;	/* 0x0009 */
+	}
 	else
+	{
 		cpufunctbl[GEMDOS_OPCODE] = cpufunctbl[0x4afc];	/* illegal opcode */
+		cpufunctbl[PEXEC_OPCODE] = cpufunctbl[0x4afc];
+	}
 }
 
 
