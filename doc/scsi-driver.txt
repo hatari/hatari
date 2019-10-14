@@ -19,10 +19,10 @@ It consists of two software components:
    Hatari. It maps SCSI Driver calls to Linux SG driver calls. In order to run
    the SCSI Driver stub for TOS on other platforms than Linux, this is the
    code that has to be ported.
-2. SCSI Driver stub for TOS, HAT_SCSI.PRG. This component runs on TOS and
+2. SCSI Driver stub for TOS, NF_SCSI.PRG. This component runs on TOS and
    uses Hatari's NatFeats interface to call the host driver. The stub is
-   independent of the host platform Hatari is running on. HAT_SCSI can be
-   downloaded from http://hddriver.seimet.de/en/downloads.html.
+   independent of the host platform Hatari is running on. NF_SCSI can be
+   downloaded from https://www.hddriver.net/en/downloads.html.
 
 The NatFeats-based interface between the TOS stub and the host driver
 implementation consists of these calls (NatFeats sub-ids):

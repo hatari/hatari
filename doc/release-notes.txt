@@ -542,7 +542,7 @@ Fixed demos:
 
 Notes:
   TOS NF_SCSI driver is available from:
-  http://hddriver.seimet.de/en/downloads.html
+  https://www.hddriver.net/en/downloads.html
 
 
  Version 1.9.0 (2015-09-10):
