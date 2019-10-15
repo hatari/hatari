@@ -432,14 +432,18 @@ void M68000_PatchCpuTables(void)
 	if (Cart_UseBuiltinCartridge())
 	{
 		/* Hatari's specific illegal opcodes */
+		cpufunctbl[GEMDOS_OPCODE] = OpCode_GemDos;	/* 0x0008 */
+		cpufunctbl[PEXEC_OPCODE] = OpCode_Pexec;	/* 0x0009 */
 		cpufunctbl[SYSINIT_OPCODE] = OpCode_SysInit;	/* 0x000a */
 		cpufunctbl[VDI_OPCODE] = OpCode_VDI;		/* 0x000c */
 	}
 	else
 	{
 		/* No built-in cartridge loaded : set same handler as 0x4afc (illegal) */
-		cpufunctbl[SYSINIT_OPCODE] = cpufunctbl[ 0x4afc ];	/* 0x000a */
-		cpufunctbl[VDI_OPCODE] = cpufunctbl[ 0x4afc ];		/* 0x000c */
+		cpufunctbl[GEMDOS_OPCODE] = cpufunctbl[0x4afc];   /* 0x0008 */
+		cpufunctbl[PEXEC_OPCODE] = cpufunctbl[0x4afc];    /* 0x0009*/
+		cpufunctbl[SYSINIT_OPCODE] = cpufunctbl[0x4afc];  /* 0x000a */
+		cpufunctbl[VDI_OPCODE] = cpufunctbl[0x4afc];      /* 0x000c */
 	}
 
 	/* Install opcodes for Native Features? */
@@ -454,18 +458,6 @@ void M68000_PatchCpuTables(void)
 		/* No Native Features : set same handler as 0x4afc (illegal) */
 		cpufunctbl[NATFEAT_ID_OPCODE] = cpufunctbl[ 0x4afc ];	/* 0x7300 */
 		cpufunctbl[NATFEAT_CALL_OPCODE] = cpufunctbl[ 0x4afc ];	/* 0x7300 */
-	}
-
-	/* GEMDOS HD emulation? */
-	if (ConfigureParams.HardDisk.bUseHardDiskDirectories)
-	{
-		cpufunctbl[GEMDOS_OPCODE] = OpCode_GemDos;	/* 0x0008 */
-		cpufunctbl[PEXEC_OPCODE] = OpCode_Pexec;	/* 0x0009 */
-	}
-	else
-	{
-		cpufunctbl[GEMDOS_OPCODE] = cpufunctbl[0x4afc];	/* illegal opcode */
-		cpufunctbl[PEXEC_OPCODE] = cpufunctbl[0x4afc];
 	}
 }
 
