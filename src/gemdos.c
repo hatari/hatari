@@ -150,9 +150,6 @@ static Uint32 CallingPC;    /* Program counter from caller */
 
 static uint32_t nSavedPexecParams;
 
-/* last program opened by GEMDOS emulation */
-static bool PexecCalled;
-
 #if defined(WIN32) && !defined(mkdir)
 #define mkdir(name,mode) mkdir(name)
 #endif  /* WIN32 */
@@ -500,23 +497,6 @@ static void GemDOS_ClearAllFileHandles(void)
 	{
 		GemDOS_UnforceFileHandle(i);
 	}
-}
-
-/*-----------------------------------------------------------------------*/
-
-/**
- * If program was executed, store path to it
- * (should be called only by Fopen)
- */
-static void GemDOS_UpdateCurrentProgram(int Handle)
-{
-	/* only first Fopen after Pexec needs to be handled */
-	if (!PexecCalled)
-		return;
-	PexecCalled = false;
-
-	/* store program path */
-	Symbols_ChangeCurrentProgram(FileHandles[Handle].szActualName);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -2135,8 +2115,6 @@ static bool GemDOS_Open(Uint32 Params)
 			 sizeof(FileHandles[Index].szActualName),
 			 "%s", szActualFileName);
 
-		GemDOS_UpdateCurrentProgram(Index);
-
 		/* Return valid ST file handle from our range (BASE_FILEHANDLE upwards) */
 		Regs[REG_D0] = Index+BASE_FILEHANDLE;
 		LOG_TRACE(TRACE_OS_GEMDOS|TRACE_OS_BASE, "-> FD %d (%s -> %s)\n",
@@ -2784,7 +2762,6 @@ static int GemDOS_Pexec(Uint32 Params)
 
 	nSavedPexecParams = Params;
 
-	PexecCalled = true;
 	return -1;
 }
 
