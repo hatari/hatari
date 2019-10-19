@@ -1692,7 +1692,6 @@ static void ide_atapi_cmd(IDEState *s)
 		uint64_t total_sectors;
 
 		bdrv_get_geometry(s->bs, &total_sectors);
-		total_sectors >>= 2;
 		if (total_sectors == 0)
 		{
 			ide_atapi_cmd_error(s, SENSE_NOT_READY,
@@ -1748,7 +1747,6 @@ static void ide_atapi_cmd(IDEState *s)
 		uint64_t total_sectors;
 
 		bdrv_get_geometry(s->bs, &total_sectors);
-		total_sectors >>= 2;
 		if (total_sectors == 0)
 		{
 			ide_atapi_cmd_error(s, SENSE_NOT_READY,
@@ -1798,7 +1796,6 @@ error_cmd:
 		uint64_t total_sectors;
 
 		bdrv_get_geometry(s->bs, &total_sectors);
-		total_sectors >>= 2;
 		if (total_sectors == 0)
 		{
 			ide_atapi_cmd_error(s, SENSE_NOT_READY,
@@ -1828,7 +1825,6 @@ error_cmd:
 		{
 		case 0:
 			bdrv_get_geometry(s->bs, &total_sectors);
-			total_sectors >>= 2;
 			if (total_sectors == 0)
 			{
 				ide_atapi_cmd_error(s, SENSE_NOT_READY,
