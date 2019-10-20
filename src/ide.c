@@ -983,7 +983,8 @@ static void ide_identify(IDEState *s)
 	padstr((char *)(p + 23), FW_VERSION, 8); /* firmware version */
 	/* Use the same convention for the name as SCSI disks are using: The
 	 * first 8 characters should be the vendor, i.e. use 2 spaces here */
-	snprintf(buf, sizeof(buf), "Hatari  IDE disk %liM", (long)(s->nb_sectors / 2048));
+	snprintf(buf, sizeof(buf), "Hatari  IDE disk %liM",
+	         (long)(s->nb_sectors / (1024 * 1024 / s->bs->sector_size)));
 	padstr((char *)(p + 27), buf, 40);
 #if MAX_MULT_SECTORS > 1
 	put_le16(p + 47, 0x8000 | MAX_MULT_SECTORS);
