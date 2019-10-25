@@ -3496,6 +3496,9 @@ static void maybe_disable_fpu(void)
 		regs.pcr |= 2;
 	}
 #endif
+	if (!currprefs.fpu_model) {
+		regs.pcr |= 2;
+	}
 }
 
 static void m68k_reset_sr(void)
