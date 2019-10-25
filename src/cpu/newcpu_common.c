@@ -820,7 +820,8 @@ void divbyzero_special (bool issigned, uae_s32 dst)
 
 /* DIVU overflow
  *
- * 68000: V=1, C=0, Z=0, N=1
+ * 68000: V=1, N=1, C=0, Z=0
+ * 68010: V=1, N=divisor<0x8000, C=0, Z=divided upper word == 0xffff and divisor == 0xffff
  * 68020: V=1, C=0, Z=0, N=X
  * 68040: V=1, C=0, NZ not modified.
  * 68060: V=1, C=0, NZ not modified.
@@ -841,9 +842,18 @@ void setdivuflags(uae_u32 dividend, uae_u16 divisor)
 		SET_VFLG(1);
 		if ((uae_s32)dividend < 0)
 			SET_NFLG(1);
+	} else if (currprefs.cpu_model == 68010) {
+		SET_VFLG(1);
+		SET_NFLG(divisor < 0x8000);
+		// can anyone explain this?
+		SET_ZFLG((dividend >> 16) == 0xffff && divisor == 0xffff);
+		SET_CFLG(0);
 	} else {
+		// 68000
 		SET_VFLG(1);
 		SET_NFLG(1);
+		SET_ZFLG(0);
+		SET_CFLG(0);
 	}
 }
 
@@ -879,7 +889,12 @@ void setdivsflags(uae_s32 dividend, uae_s16 divisor)
 			SET_ZFLG(1);
 		if ((uae_s8)aquot < 0)
 			SET_NFLG(1);
+	} else if (currprefs.cpu_model == 68010) {
+		CLEAR_CZNV();
+		SET_VFLG(1);
+		SET_NFLG(1);
 	} else {
+		// 68000
 		CLEAR_CZNV();
 		SET_VFLG(1);
 		SET_NFLG(1);
@@ -1353,22 +1368,25 @@ void Exception_build_stack_frame(uae_u32 oldpc, uae_u32 currpc, uae_u32 ssw, int
 		x_put_long(m68k_areg(regs, 7), regs.mmu_effective_addr);
 		break;
 	case 0x8: // address error (68010)
+	{
+		uae_u16 in = regs.read_buffer;
+		uae_u16 out = regs.write_buffer;
 		for (i = 0; i < 15; i++) {
 			m68k_areg(regs, 7) -= 2;
 			x_put_word(m68k_areg(regs, 7), 0);
 		}
 		m68k_areg(regs, 7) -= 2;
-		x_put_word(m68k_areg(regs, 7), 0); // version
+		x_put_word(m68k_areg(regs, 7), 0x0000); // version (probably bits 12 to 15 only because other bits change)
 		m68k_areg(regs, 7) -= 2;
-		x_put_word(m68k_areg(regs, 7), regs.opcode); // instruction input buffer
-		m68k_areg(regs, 7) -= 2;
-		x_put_word(m68k_areg(regs, 7), 0); // unused
-		m68k_areg(regs, 7) -= 2;
-		x_put_word(m68k_areg(regs, 7), 0); // data input buffer
+		x_put_word(m68k_areg(regs, 7), regs.irc); // instruction input buffer
 		m68k_areg(regs, 7) -= 2;
 		x_put_word(m68k_areg(regs, 7), 0); // unused
 		m68k_areg(regs, 7) -= 2;
-		x_put_word(m68k_areg(regs, 7), 0); // data output buffer
+		x_put_word(m68k_areg(regs, 7), in); // data input buffer
+		m68k_areg(regs, 7) -= 2;
+		x_put_word(m68k_areg(regs, 7), 0); // unused
+		m68k_areg(regs, 7) -= 2;
+		x_put_word(m68k_areg(regs, 7), out); // data output buffer
 		m68k_areg(regs, 7) -= 2;
 		x_put_word(m68k_areg(regs, 7), 0); // unused
 		m68k_areg(regs, 7) -= 4;
@@ -1376,6 +1394,7 @@ void Exception_build_stack_frame(uae_u32 oldpc, uae_u32 currpc, uae_u32 ssw, int
 		m68k_areg(regs, 7) -= 2;
 		x_put_word(m68k_areg(regs, 7), ssw); // ssw
 		break;
+	}
 	case 0x9: // coprocessor mid-instruction stack frame (68020, 68030)
 		m68k_areg(regs, 7) -= 4;
 		x_put_long(m68k_areg(regs, 7), regs.fp_ea);
@@ -1556,7 +1575,7 @@ void cpu_restore_fixup(void)
 	}
 }
 
-// Low word: Z and N
+// Low word: Clear + Z and N
 void ccr_68000_long_move_ae_LZN(uae_s32 src)
 {
 	CLEAR_CZNV();
@@ -1565,7 +1584,7 @@ void ccr_68000_long_move_ae_LZN(uae_s32 src)
 	SET_NFLG(vsrc < 0);
 }
 
-// Low word: N only
+// Low word: Clear + N only
 void ccr_68000_long_move_ae_LN(uae_s32 src)
 {
 	CLEAR_CZNV();

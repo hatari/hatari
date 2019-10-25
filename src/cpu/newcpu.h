@@ -83,6 +83,7 @@ extern int fpp_movem_next[256];
 #endif
 
 extern int bus_error_offset;
+extern int cpu_bus_error;
 
 typedef uae_u32 REGPARAM3 cpuop_func (uae_u32) REGPARAM;
 typedef void REGPARAM3 cpuop_func_ce (uae_u32) REGPARAM;
@@ -211,6 +212,7 @@ struct regstruct
 	uae_u32 chipset_latch_rw;
 	uae_u32 chipset_latch_read;
 	uae_u32 chipset_latch_write;
+	uae_u16 write_buffer, read_buffer;
 
 	uaecptr usp, isp, msp;
 	uae_u16 sr;
@@ -774,13 +776,16 @@ extern void fpux_restore (int*);
 extern bool fpu_get_constant(fpdata *fp, int cr);
 extern int fpp_cond(int condition);
 
-extern void exception3_read(uae_u32 opcode, uaecptr addr, int fc);
-extern void exception3_write(uae_u32 opcode, uaecptr addr, int fc);
+extern void exception3_read(uae_u32 opcode, uaecptr addr, int size, int fc);
+extern void exception3_write(uae_u32 opcode, uaecptr addr, int size, uae_u32 val, int fc);
 extern void exception3_notinstruction(uae_u32 opcode, uaecptr addr);
 extern void exception3i (uae_u32 opcode, uaecptr addr);
 extern void exception3b (uae_u32 opcode, uaecptr addr, bool w, bool i, uaecptr pc);
 extern void exception2 (uaecptr addr, bool read, int size, uae_u32 fc);
 extern void exception2_setup(uaecptr addr, bool read, int size, uae_u32 fc);
+extern void exception2_read(uae_u32 opcode, uaecptr addr, int size, int fc);
+extern void exception2_write(uae_u32 opcode, uaecptr addr, int size, uae_u32 val, int fc);
+extern void exception2_fetch(uae_u32 opcode, uaecptr addr);
 extern void m68k_reset (void);
 extern void cpureset (void);
 extern void cpu_halt (int id);
