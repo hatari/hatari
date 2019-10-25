@@ -3795,13 +3795,19 @@ uae_u32 REGPARAM2 op_illg (uae_u32 opcode)
 #endif
 
 	if ((opcode & 0xF000) == 0xF000) {
+		// 68020 MMU or 020/030 FPU cpSAVE/cpRESTORE privilege check
+		if (privileged_copro_instruction(opcode)) {
+			Exception(8);
+		} else {
 #ifndef WINUAE_FOR_HATARI
-		if (warned < 20) {
-			write_log(_T("B-Trap %04X at %08X -> %08X\n"), opcode, pc, get_long_debug(regs.vbr + 0x2c));
-			warned++;
-		}
+			if (warned < 20) {
+				write_log(_T("B-Trap %04X at %08X -> %08X\n"), opcode, pc, get_long_debug(regs.vbr + 0x2c));
+				warned++;
+			}
 #endif
-		Exception (0xB);
+			Exception(0xB);
+		}
+
 		//activate_debugger_new();
 		return 4;
 	}
