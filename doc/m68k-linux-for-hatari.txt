@@ -155,7 +155,7 @@ Code: 2f00 4eb9 0000 2a98 508f 60ff ffff ff64 <42a7> 4878 ffff 2f00
 -----------------------
 
 1. Install compiler:
-   $ apt install gcc-m68k-linux-gnu
+   $ sudo apt install gcc-m68k-linux-gnu
 
 2. Get latest m68k kernel sources (without history):
    $ git clone --depth 1 --branch m68k-v5.3 \
@@ -319,7 +319,16 @@ Notes:
 6. Running Hatari
 -----------------
 
-1. <Set suitable options in lilo.cfg>
+1. Set suitable options in lilo.cfg, for example:
+-------------------------------------
+[LILO]
+Kernel = vmlinux-v5.3
+Symbols = System.map-v5.3
+Ramdisk =
+Args = video=atafb:sthigh console=tty
+KernelToFastRam = FALSE
+-------------------------------------
+(See lilo.cfg in doc/ directory for more info.)
 
 2. Start Hatari:
     $ hatari --log-level info \
