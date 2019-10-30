@@ -25,8 +25,7 @@ static void ConvertLowRes_640x32Bit_Spec(void)
 
 		Line_ConvertLowRes_640x32Bit_Spec(edi, ebp, esi, eax);
 
-		/* Offset to next line (double on Y) */
-		pPCScreenDest = (((Uint8 *)pPCScreenDest) + PCScreenBytesPerLine * 2);
+		pPCScreenDest = Double_ScreenLine(pPCScreenDest, PCScreenBytesPerLine);
 	}
 
         bScreenContentsChanged = true;
@@ -35,8 +34,8 @@ static void ConvertLowRes_640x32Bit_Spec(void)
 
 static void Line_ConvertLowRes_640x32Bit_Spec(Uint32 *edi, Uint32 *ebp, Uint32 *esi, Uint32 eax)
 {
+	int x;
 	Uint32 ebx, ecx, edx;
-	int x, Screen4BytesPerLine;
 	Uint32 pixelspace[5]; /* Workspace to store pixels to so can print in right order for Spec512 */
 
 	/* on x86, unaligned access macro touches also
@@ -47,7 +46,6 @@ static void Line_ConvertLowRes_640x32Bit_Spec(Uint32 *edi, Uint32 *ebp, Uint32 *
 	Spec512_StartScanLine();        /* Build up palettes for every 4 pixels, store in 'ScanLinePalettes' */
 
 	x = STScreenWidthBytes >> 3;   /* Amount to draw across in 16-pixels (8 bytes) */
-	Screen4BytesPerLine = PCScreenBytesPerLine/4;
 
 	do  /* x-loop */
 	{
@@ -77,48 +75,24 @@ static void Line_ConvertLowRes_640x32Bit_Spec(Uint32 *edi, Uint32 *ebp, Uint32 *
 		/* And plot, the Spec512 is offset by 1 pixel and works on 'chunks' of 4 pixels */
 		/* So, we plot 1_4_4_4_3 to give 16 pixels, changing palette between */
 		/* (last one is used for first of next 16-pixels) */
-		if (!bScrDoubleY)           /* Double on Y? */
-		{
-			ecx = pixelspace[0];
-			PLOT_SPEC512_LEFT_LOW_640_32BIT(0);
-			Spec512_UpdatePaletteSpan();
+		ecx = pixelspace[0];
+		PLOT_SPEC512_LEFT_LOW_640_32BIT(0);
+		Spec512_UpdatePaletteSpan();
 
-			ecx = GET_SPEC512_OFFSET_PIXELS(pixelspace, 1);
-			PLOT_SPEC512_MID_640_32BIT(2);
-			Spec512_UpdatePaletteSpan();
+		ecx = GET_SPEC512_OFFSET_PIXELS(pixelspace, 1);
+		PLOT_SPEC512_MID_640_32BIT(2);
+		Spec512_UpdatePaletteSpan();
 
-			ecx = GET_SPEC512_OFFSET_PIXELS(pixelspace, 5);
-			PLOT_SPEC512_MID_640_32BIT(10);
-			Spec512_UpdatePaletteSpan();
+		ecx = GET_SPEC512_OFFSET_PIXELS(pixelspace, 5);
+		PLOT_SPEC512_MID_640_32BIT(10);
+		Spec512_UpdatePaletteSpan();
 
-			ecx = GET_SPEC512_OFFSET_PIXELS(pixelspace, 9);
-			PLOT_SPEC512_MID_640_32BIT(18);
-			Spec512_UpdatePaletteSpan();
+		ecx = GET_SPEC512_OFFSET_PIXELS(pixelspace, 9);
+		PLOT_SPEC512_MID_640_32BIT(18);
+		Spec512_UpdatePaletteSpan();
 
-			ecx = GET_SPEC512_OFFSET_FINAL_PIXELS(pixelspace);
-			PLOT_SPEC512_END_LOW_640_32BIT(26);
-		}
-		else
-		{
-			ecx = pixelspace[0];
-			PLOT_SPEC512_LEFT_LOW_640_32BIT_DOUBLE_Y(0);
-			Spec512_UpdatePaletteSpan();
-
-			ecx = GET_SPEC512_OFFSET_PIXELS(pixelspace, 1);
-			PLOT_SPEC512_MID_640_32BIT_DOUBLE_Y(2);
-			Spec512_UpdatePaletteSpan();
-
-			ecx = GET_SPEC512_OFFSET_PIXELS(pixelspace, 5);
-			PLOT_SPEC512_MID_640_32BIT_DOUBLE_Y(10);
-			Spec512_UpdatePaletteSpan();
-
-			ecx = GET_SPEC512_OFFSET_PIXELS(pixelspace, 9);
-			PLOT_SPEC512_MID_640_32BIT_DOUBLE_Y(18);
-			Spec512_UpdatePaletteSpan();
-
-			ecx = GET_SPEC512_OFFSET_FINAL_PIXELS(pixelspace);
-			PLOT_SPEC512_END_LOW_640_32BIT_DOUBLE_Y(26);
-		}
+		ecx = GET_SPEC512_OFFSET_FINAL_PIXELS(pixelspace);
+		PLOT_SPEC512_END_LOW_640_32BIT(26);
 
 		esi += 32;                  /* Next PC pixels */
 		edi += 2;                   /* Next ST pixels */

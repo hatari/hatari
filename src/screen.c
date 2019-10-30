@@ -1595,6 +1595,23 @@ static void Convert_StartFrame(void)
 		AdjustLinePaletteRemap(y++);     /* Update palette */
 }
 
+/*-----------------------------------------------------------------------*/
+/**
+ * Copy given line (address) of given length, to line below it,
+ * or skip it, depending on bScrDoubleY.
+ *
+ * Return address to next line after the copy
+ */
+static Uint8* Double_ScreenLine(Uint8 *line, int size)
+{
+	if (bScrDoubleY)
+	{
+		Uint8 *next = line + size;
+		memcpy(next, line, size);
+	}
+	return line + 2 * size;
+}
+
 /* lookup tables and conversion macros */
 #include "convert/macros.h"
 
