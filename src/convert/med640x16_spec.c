@@ -9,6 +9,7 @@
 
 static void ConvertMediumRes_640x16Bit_Spec(void)
 {
+	Uint16 *PCScreen = (Uint16 *)pPCScreenDest;
 	Uint32 *edi, *ebp;
 	Uint16 *esi;
 	Uint32 eax;
@@ -21,14 +22,14 @@ static void ConvertMediumRes_640x16Bit_Spec(void)
 		eax = STScreenLineOffset[y] + STScreenLeftSkipBytes;  /* Offset for this line + Amount to skip on left hand side */
 		edi = (Uint32 *)((Uint8 *)pSTScreen + eax);        /* ST format screen 4-plane 16 colors */
 		ebp = (Uint32 *)((Uint8 *)pSTScreenCopy + eax);    /* Previous ST format screen */
-		esi = (Uint16 *)pPCScreenDest;                     /* PC format screen */
+		esi = PCScreen;                                    /* PC format screen */
 
 		if (HBLPaletteMasks[y] & 0x00030000)               /* Test resolution */
 			Line_ConvertMediumRes_640x16Bit_Spec(edi, ebp, esi, eax);	/* med res line */
 		else
 			Line_ConvertLowRes_640x16Bit_Spec(edi, ebp, (Uint32 *)esi, eax);	/* low res line (double on X) */
 
-		pPCScreenDest = Double_ScreenLine(pPCScreenDest, PCScreenBytesPerLine);
+		PCScreen = Double_ScreenLine16(PCScreen, PCScreenBytesPerLine);
 	}
 
         bScreenContentsChanged = true;

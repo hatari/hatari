@@ -9,6 +9,7 @@
 
 static void ConvertMediumRes_640x16Bit(void)
 {
+	Uint16 *PCScreen = (Uint16 *)pPCScreenDest;
 	Uint32 *edi, *ebp;
 	Uint16 *esi;
 	Uint32 eax;
@@ -22,14 +23,14 @@ static void ConvertMediumRes_640x16Bit(void)
 		eax = STScreenLineOffset[y] + STScreenLeftSkipBytes;  /* Offset for this line + Amount to skip on left hand side */
 		edi = (Uint32 *)((Uint8 *)pSTScreen + eax);        /* ST format screen 4-plane 16 colors */
 		ebp = (Uint32 *)((Uint8 *)pSTScreenCopy + eax);    /* Previous ST format screen */
-		esi = (Uint16 *)pPCScreenDest;                     /* PC format screen */
+		esi = PCScreen;                                    /* PC format screen */
 
 		if (AdjustLinePaletteRemap(y) & 0x00030000)        /* Change palette table */
 			Line_ConvertMediumRes_640x16Bit(edi, ebp, esi, eax);
 		else
 			Line_ConvertLowRes_640x16Bit(edi, ebp, (Uint32 *)esi, eax);
 
-		pPCScreenDest = Double_ScreenLine(pPCScreenDest, PCScreenBytesPerLine);
+		PCScreen = Double_ScreenLine16(PCScreen, PCScreenBytesPerLine);
 	}
 }
 

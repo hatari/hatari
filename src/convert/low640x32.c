@@ -60,6 +60,7 @@ static void Line_ConvertLowRes_640x32Bit(Uint32 *edi, Uint32 *ebp, Uint32 *esi, 
 
 static void ConvertLowRes_640x32Bit(void)
 {
+	Uint32 *PCScreen = (Uint32 *)pPCScreenDest;
 	Uint32 *edi, *ebp;
 	Uint32 *esi;
 	Uint32 eax;
@@ -73,13 +74,13 @@ static void ConvertLowRes_640x32Bit(void)
 		eax = STScreenLineOffset[y] + STScreenLeftSkipBytes;  /* Offset for this line + Amount to skip on left hand side */
 		edi = (Uint32 *)((Uint8 *)pSTScreen + eax);        /* ST format screen 4-plane 16 colors */
 		ebp = (Uint32 *)((Uint8 *)pSTScreenCopy + eax);    /* Previous ST format screen */
-		esi = (Uint32 *)pPCScreenDest;                     /* PC format screen */
+		esi = PCScreen;                                    /* PC format screen */
 
 		if (AdjustLinePaletteRemap(y) & 0x00030000)        /* Change palette table */
 			Line_ConvertMediumRes_640x32Bit(edi, ebp, esi, eax);
 		else
 			Line_ConvertLowRes_640x32Bit(edi, ebp, esi, eax);
 
-		pPCScreenDest = Double_ScreenLine(pPCScreenDest, PCScreenBytesPerLine);
+		PCScreen = Double_ScreenLine32(PCScreen, PCScreenBytesPerLine);
 	}
 }

@@ -1597,19 +1597,69 @@ static void Convert_StartFrame(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Copy given line (address) of given length, to line below it,
- * or skip it, depending on bScrDoubleY.
+ * Copy given line (address) of given length, to line below it
+ * as-is, or halve its intensity, depending on bScrDoubleY.
+ *
+ * Source line is already in host format, so we don't need to
+ * care about endianess.
  *
  * Return address to next line after the copy
  */
-static Uint8* Double_ScreenLine(Uint8 *line, int size)
+static Uint32* Double_ScreenLine32(Uint32 *line, int size)
 {
+	SDL_PixelFormat *fmt;
+	int fmt_size = size/4;
+	Uint32 *next;
+	Uint32 mask;
+
+	next = line + fmt_size;
+	/* copy as-is */
 	if (bScrDoubleY)
 	{
-		Uint8 *next = line + size;
 		memcpy(next, line, size);
+		return next + fmt_size;
 	}
-	return line + 2 * size;
+	/* TV-mode -- halve the intensity while copying */
+	fmt = sdlscrn->format;
+	mask = ((fmt->Rmask >> 1) & fmt->Rmask)
+	     | ((fmt->Gmask >> 1) & fmt->Gmask)
+	     | ((fmt->Bmask >> 1) & fmt->Bmask);
+	do {
+		*next++ = (*line++ >> 1) & mask;
+	}
+	while (--fmt_size);
+
+	return next;
+}
+
+/**
+ * 16-bit variant of Double_ScreenLine32()
+ */
+static Uint16* Double_ScreenLine16(Uint16 *line, int size)
+{
+	SDL_PixelFormat *fmt;
+	int fmt_size = size/2;
+	Uint16 *next;
+	Uint16 mask;
+
+	next = line + fmt_size;
+	/* copy as-is */
+	if (bScrDoubleY)
+	{
+		memcpy(next, line, size);
+		return next + fmt_size;
+	}
+	/* TV-mode -- halve the intensity while copying */
+	fmt = sdlscrn->format;
+	mask = ((fmt->Rmask >> 1) & fmt->Rmask)
+	     | ((fmt->Gmask >> 1) & fmt->Gmask)
+	     | ((fmt->Bmask >> 1) & fmt->Bmask);
+	do {
+		*next++ = (*line++ >> 1) & mask;
+	}
+	while (--fmt_size);
+
+	return next;
 }
 
 /* lookup tables and conversion macros */
