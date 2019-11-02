@@ -444,8 +444,10 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 			exit(1);
 		}
 
+		/* Force to black to stop side bar artifacts on 16:9 monitors. */
 		SDL_SetRenderDrawColor(sdlRenderer, 0, 0, 0, 255);
 		SDL_RenderClear(sdlRenderer);
+		SDL_RenderPresent(sdlRenderer);
 
 		if (bInFullScreen)
 			SDL_RenderSetLogicalSize(sdlRenderer, width, height);
