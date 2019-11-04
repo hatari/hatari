@@ -148,10 +148,12 @@ class ConfigStore:
                     seckeys = {}
                 name = line
                 continue
-            if line.find('=') < 0:
+            offset = line.find('=')
+            if offset < 0:
                 print("WARNING: line without key=value pair:\n%s" % line)
                 continue
-            key, text = [string.strip() for string in line.split('=')]
+            key = line[:offset].strip()
+            text = line[offset+1:].strip()
             seckeys[key] = text_to_value(text)
         if seckeys:
             sections[name] = seckeys
