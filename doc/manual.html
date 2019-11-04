@@ -2457,7 +2457,7 @@ $ su
 # image="hd.img"; mountdir="hd"
 # start=$(parted $image unit s print | awk '/ 1 /{print $2}' | tr -d s)
 # losetup -f $image -o $((512*$start))
-# loop=$(losetup -a | tail -1 | cut -d: -f1)
+# loop=$(losetup -a | grep $image | cut -d: -f1)
 # mkdir -p $mountdir
 # mount -t msdos $loop $mountdir
 </pre>
