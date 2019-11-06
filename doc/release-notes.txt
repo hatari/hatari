@@ -23,6 +23,7 @@ Emulation:
   (when FDC is set to HD mode, reading DD floppies will fail)
 - Emulate additional RTC/NVRAM registers
 - Update CPU core to latest WinUAE 4.2.0 beta
+- Fix: IDE disks with sector size > 512 bytes
 
 Emulator:
 - Memory snapshot version increase due to FDC changes
@@ -31,9 +32,16 @@ Emulator:
   (instead of counting sectors)
 - Add --lilo debug option for more convenient m68k Linux loading
   - Support config file values with '=' in them
-- Support FASTLOAD program flag with GEMDOS HD
+- GEMDOS HD:
+  - Support FASTLOAD program flag with GEMDOS HD
+  - GEMDOS HD emulation cartridge assembly functionality is
+    moved (almost completely) to emulator side. Fixes Atari
+    side error handling when program file isn't readable,
+    and TOS stack overflows in some rare cases
 - Support read-only HD image files, and show error dialogs
   for image file open/lock issues
+- Low/med-rez line doubling uses less CPU and doubled lines in
+  "TV" display mode are now drawn at half intensity, not as black
 - Show mouse grab toggle shortcut key in startup statusbar message
 - Fix: 24-bit address mode change while emulation is running
   (triggered e.g. when TT-RAM is enabled for TT)
