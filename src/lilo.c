@@ -273,8 +273,8 @@ bool lilo_init(void)
 {
 	uint8_t *ROMBaseHost = STRam + TosAddress;
 
-	if (!ConfigureParams.System.bMMU || ConfigureParams.Memory.STRamSize_KB < 14*1024) {
-		Log_AlertDlg(LOG_FATAL, "Linux requires MMU and at least 14MB of RAM!");
+	if (!ConfigureParams.System.bMMU || ConfigureParams.Memory.STRamSize_KB < 8*1024) {
+		Log_AlertDlg(LOG_FATAL, "Linux requires MMU and at least 8MB of RAM!");
 		return false;
 	}
 	/* RESET + Linux/m68k boot */
