@@ -2287,9 +2287,7 @@ void MFP_TimerBData_ReadByte(void)
 		 * and store result in 'TB_MAINCOUNTER' */
 		MFP_ReadTimerB ( pMFP , false );
 	}
-
-	/* Video DE signal is connected to Timer B on the main MFP */
-	if ( IoAccessCurrentAddress == 0xfffa21 )
+	else	/* Video DE signal is connected to Timer B on both MFPs */
 	{
 		if (bUseVDIRes)
 		{
