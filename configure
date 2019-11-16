@@ -3,7 +3,7 @@
 # NOTE: this is a simple script wrapper around the cmake command line tools,
 # for those used to the autotools configure script conventions
 
-if ! which cmake > /dev/null; then
+if ! command -v cmake > /dev/null 2>&1; then
   echo "ERROR: You need the 'cmake' program to configure the Hatari build process."
   echo "Please install 'cmake' first, then try again."
   exit 1
