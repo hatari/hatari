@@ -847,7 +847,7 @@ static bool create_bootinfo(void)
 	if (!add_bi_record(BI_MMUTYPE, sizeof(bi.mmutype), &bi.mmutype)) {
 		return false;
 	}
-	for (i = 0; i < SDL_SwapBE32(bi.num_memory); i++) {
+	for (i = 0; i < SDL_SwapBE32((Uint32)bi.num_memory); i++) {
 		if (!add_bi_record(BI_MEMCHUNK, sizeof(bi.memory[i]), &bi.memory[i]))
 			return false;
 	}
