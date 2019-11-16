@@ -92,7 +92,7 @@ open and free, licensed under the GNU General Public License (GPL).
 A copy of the GNU GPL can be found in the gpl.txt file.
 
 EmuTOS project has home page at SourceForge:
-	http://emutos.sourceforge.net/
+	https://emutos.sourceforge.io/
 With sources at GitHub:
 	https://github.com/emutos/emutos
 
