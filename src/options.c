@@ -1044,7 +1044,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 	int ncpu, skips, zoom, planes, cpuclock, threshold, memsize, port, freq, temp, drive;
 	const char *errstr, *str;
 	int i, ok = true;
-	size_t len;
 	int val;
 
 	/* Defaults for loading initial memory snap-shots */
@@ -2082,7 +2081,8 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			}
 			break;
 #if ENABLE_WINUAE_CPU
-		case OPT_LILO:
+		case OPT_LILO: {
+			size_t len;
 			len = strlen(argv[++i]);
 			len += strlen(ConfigureParams.Lilo.szCommandLine);
 			if (argv[i][0] && len+2 < sizeof(ConfigureParams.Lilo.szCommandLine))
@@ -2098,6 +2098,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			bUseLilo = true;
 			bUseTos = false;
 			break;
+		}
 #endif
 		case OPT_BIOSINTERCEPT:
 			ok = Opt_Bool(argv[++i], OPT_BIOSINTERCEPT, &bBiosIntercept);
