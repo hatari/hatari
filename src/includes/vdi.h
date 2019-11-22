@@ -15,13 +15,13 @@
  *
  * Below MAX_VDI_* values are reasonable limits for monochrome resolutions.
  * 300kB limits screen size to max. resolution of 2048x1200 or 1920x1280,
- * which allows FHD (1920×1080), WUXGA (1920x1200) and QWXGA (2048x1152)
+ * which allows FHD (1920x1080), WUXGA (1920x1200) and QWXGA (2048x1152)
  * standard resolutions.
- * 
+ *
  * On 4-color mode, 300kB limits screen size to 1280x960 or 1200x1024
  * which allows HD (1280x720), WXGA (1280x768) and XGA+ (1152x864)
  * standard resolutions.
- * 
+ *
  * On 16-color mode, 300kB limits screen size to 1024x576 or 800x768,
  * which fills nicely qHD (960x540), DVGA (960x640) and WSVGA (1024x600)
  * standard resolution displays.

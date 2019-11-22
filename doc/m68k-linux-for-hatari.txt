@@ -158,18 +158,18 @@ Code: 2f00 4eb9 0000 2a98 508f 60ff ffff ff64 <42a7> 4878 ffff 2f00
    $ sudo apt install gcc-m68k-linux-gnu
 
 2. Get latest m68k kernel sources (without history):
-   $ git clone --depth 1 --branch m68k-v5.3 \
+   $ git clone --depth 1 --branch m68k-v5.3 \
      git://git.kernel.org/pub/scm/linux/kernel/git/geert/linux-m68k.git
 
 3. Get Hatari compatible configuration:
-   $ cd linux-m68k
-   $ cp /path/to/hatari/tools/linux/kernel.config .config
+   $ cd linux-m68k
+   $ cp /path/to/hatari/tools/linux/kernel.config .config
 
 4. Fine-tune kernel config for your requirements (optional):
-   $ ARCH=m68k CROSS_COMPILE=m68k-linux-gnu- make -j4 menuconfig
+   $ ARCH=m68k CROSS_COMPILE=m68k-linux-gnu- make -j4 menuconfig
 
 4. Compile configured kernel:
-   $ ARCH=m68k CROSS_COMPILE=m68k-linux-gnu- make -j4 vmlinux
+   $ ARCH=m68k CROSS_COMPILE=m68k-linux-gnu- make -j4 vmlinux
 
 Notes:
 
@@ -196,15 +196,15 @@ a directory named disk/, rename it, or use another name).
 
 1. Create root file system directories:
    $ mkdir disk
-   $ cd disk
-   $ mkdir -p dev etc mnt proc run sys tmp sbin usr/bin usr/sbin root
+   $ cd disk
+   $ mkdir -p dev etc mnt proc run sys tmp sbin usr/bin usr/sbin root
 
 2. Add minimal init script for mounting virtual file systems
    before starting shell:
    $ cp -a /path/to/hatari/tools/linux/init.sh init
 
 3. Add a user:
-   $ echo "root:x:0:0:root:/root:/bin/sh" > etc/passwd
+   $ echo "root:x:0:0:root:/root:/bin/sh" > etc/passwd
 
 4. And basic terminal descriptions:
    $ cp -ar /lib/terminfo/ lib/
@@ -221,18 +221,18 @@ invoked. For more info, see "man busybox" (after installing BusyBox to
 host).
 
 5. Fetch statically linked m68k BusyBox and extract it:
-   $ wget http://ftp.ports.debian.org/debian-ports/pool-m68k/main/b/busybox/busybox-static_*_m68k.deb
-   $ ar x busybox-static_*_m68k.deb
-   $ tar xvf data.tar.xz ./bin/busybox
+   $ wget http://ftp.ports.debian.org/debian-ports/pool-m68k/main/b/busybox/busybox-static_*_m68k.deb
+   $ ar x busybox-static_*_m68k.deb
+   $ tar xvf data.tar.xz ./bin/busybox
 
 6. Install host BusyBox and add symlinks for the m68k one to bin/
    directory, based on what tools host one lists to be included:
-   $ sudo apt install busybox
+   $ sudo apt install busybox
    $ /path/to/hatari/tools/linux/symlink-busybox.sh
 
 7. Cleanup directory content:
-   $ rm *.* debian-binary
-   $ cd ..
+   $ rm *.* debian-binary
+   $ cd ..
 
 8. Make 4MB EXT2 HD image out of it:
    $ /sbin/mkfs.ext2 -t ext2 -L BUSYBOX -d disk/ rootfs.img 4M
@@ -254,18 +254,18 @@ doesn't e.g. have file name completion. In total they take only few
 hundred KB of space though.
 
 5. Fetch klibc library and utility packages:
-   $ wget http://ftp.ports.debian.org/debian-ports/pool-m68k/main/k/klibc/libklibc_*_m68k.deb
-   $ wget http://ftp.ports.debian.org/debian-ports/pool-m68k/main/k/klibc/klibc-utils_*_m68k.deb
+   $ wget http://ftp.ports.debian.org/debian-ports/pool-m68k/main/k/klibc/libklibc_*_m68k.deb
+   $ wget http://ftp.ports.debian.org/debian-ports/pool-m68k/main/k/klibc/klibc-utils_*_m68k.deb
 
 6. Extract them:
    $ ar x libklibc_*_m68k.deb
-   $ tar xvf data.tar.xz
+   $ tar xvf data.tar.xz
    $ ar x klibc-utils_*_m68k.deb
-   $ tar xvf data.tar.xz
+   $ tar xvf data.tar.xz
 
 7. Move utilities to bin/ and clean directory:
    $ mv usr/lib/klibc/bin/ .
-   $ rm -r *.* debian-binary usr/
+   $ rm -r *.* debian-binary usr/
    $ cd ..
 
 8. Make 4MB EXT2 HD image out of it:
@@ -273,7 +273,7 @@ hundred KB of space though.
 
 Notes:
 - these utilities would fit even to a floppy image:
-	$ zip2st disk/ klibc.st
+	$ zip2st disk/ klibc.st
   But FAT file system cannot be used for Linux root fs because it's
   lacking security features required from one
 
@@ -285,8 +285,8 @@ After creating either of above root file systems, you can use the same
 content also to create an example initrd / initramfs.
 
 9. Package directory content with cpio and compress it with LZO:
-   $ cd disk/
-   $ find | cpio -R 0:0 -H newc --create | lzop -9 > ../initrd.img
+   $ cd disk/
+   $ find | cpio -R 0:0 -H newc --create | lzop -9 > ../initrd.img
 
 Notes:
 
@@ -370,14 +370,14 @@ for loading the kernel into RAM and executing it from there. Following
 shows easiest method to simulate that with Hatari.
 
 1. Get bootstrap program:
-   $ mkdir gemdos-hd
-   $ cd gemdos-hd
+   $ mkdir gemdos-hd
+   $ cd gemdos-hd
    $ wget https://people.debian.org/~wouter/d-i/images/20130502-06:51/tools/atari/bootstra.tos
 
 2. Tell bootstrap program to load kernel to ST-RAM and whole command
    line to give to the kernel:
    $ echo "-s -d -k vmlinux root=/dev/hda ro debug=nfcon video=atafb:sthigh console=tty init=/init" > bootargs
-   $ cd ..
+   $ cd ..
 
 3. Get kernel to bootstrap:
    $ cp /path/to/m68k-kernel/vmlinux gemdos-hd/
@@ -423,7 +423,7 @@ There are few ways to investigate what happens at boot:
 
 Tracing and "initcall_debug" will give a lot of output so save it
 also to a file:
-	$ hatari ... 2>&1 | tee output.txt
+	$ hatari ... 2>&1 | tee output.txt
 
 Tracing and profiling both require symbols file produced during kernel
 build.  If that file is listed in lilo.cfg, symbols will be automatically
@@ -494,11 +494,11 @@ What symbols are in the symbol file dictates what one sees with many
 of the debugger commands.  If one does just tracing and profiling, one
 can reduce symbol warnings from Hatari by removing unnecessary symbols
 from the used symbols file:
-	$ grep ' [tT] ' Symbols.map > code-symbols.map
+	$ grep ' [tT] ' Symbols.map > code-symbols.map
 
 If one is interested only of e.g. tracing kernel syscalls, one should
 load just those to debugger:
-	$ grep ' [tT] sys_' Symbols.map > syscall-symbols.map
+	$ grep ' [tT] sys_' Symbols.map > syscall-symbols.map
 	...
 	> symbols syscall-symbols.map
 	> trace cpu_symbols
@@ -529,23 +529,23 @@ Note: old Debian 4.9 kernels work much worse, so this uses 4.19, which
 can at least boot until it tries to run init.
 
 0. Work directory:
-   $ mkdir -p debian/installer
-   $ cd debian/installer
+   $ mkdir -p debian/installer
+   $ cd debian/installer
 
 1. Get latest Debian installer initrd:
-   $ wget https://cdimage.debian.org/cdimage/ports/debian-installer/m68k/debian-installer-images_20190410_m68k.tar.gz
-   $ tar xvf debian-installer-images*.gz
-   $ cp installer-m68k/*/images/nativehd/initrd.gz ..
+   $ wget https://cdimage.debian.org/cdimage/ports/debian-installer/m68k/debian-installer-images_20190410_m68k.tar.gz
+   $ tar xvf debian-installer-images*.gz
+   $ cp installer-m68k/*/images/nativehd/initrd.gz ..
 
 2. get kernel files (including symbols) for version matching above tar output:
-   $ wget http://ftp.ports.debian.org/debian-ports/pool-m68k/main/l/linux/linux-image-4.19.0-4-m68k_4.19.28-2_m68k.deb
-   $ ar x linux-image-*_m68k.deb
-   $ tar xvf data.tar.xz
-   $ cp -av boot/* ..
+   $ wget http://ftp.ports.debian.org/debian-ports/pool-m68k/main/l/linux/linux-image-4.19.0-4-m68k_4.19.28-2_m68k.deb
+   $ ar x linux-image-*_m68k.deb
+   $ tar xvf data.tar.xz
+   $ cp -av boot/* ..
 
 3. Set up lilo.cfg, which skips (very slow) crypto init:
-   $ cd ..
-   $ cat > lilo.cfg
+   $ cd ..
+   $ cat > lilo.cfg
 [LILO]
 Kernel = vmlinuz-4.19.0-4-m68k
 Symbols = System.map-4.19.0-4-m68k
@@ -556,7 +556,7 @@ RamdiskToFastRam = TRUE
 ^D
 
 4. Get ISO image release matching installer & kernel (checksum files are in same directory):
-    $ wget https://cdimage.debian.org/cdimage/ports/2019-04-12/debian-10.0-m68k-NETINST-1.iso
+    $ wget https://cdimage.debian.org/cdimage/ports/2019-04-12/debian-10.0-m68k-NETINST-1.iso
 
 5. Try running Hatari with them:
     $ hatari --log-level debug \
@@ -581,9 +581,9 @@ a working initrd.
 
 Converting initrd to a normal EXT2 disk partition, and using
 fakeroot session to retain file properties requiring root rights:
-   $ mkdir initrd
-   $ fakeroot /bin/bash
-   # cd initrd
+   $ mkdir initrd
+   $ fakeroot /bin/bash
+   # cd initrd
    # zcat ../initrd.gz | cpio -i
    # cd ..
    # /sbin/mkfs.ext2 -t ext2 -L INITRD -d initrd rootfs.img 32M
@@ -595,11 +595,11 @@ fakeroot session to retain file properties requiring root rights:
 
 Doing first stage of setting up minimal m68k Debian system image
 (without package PGP signing checks), as root:
-   # apt install debootstrap
-   # debootstrap --foreign --arch=m68k --no-check-gpg sid debian-chroot http://ftp.ports.debian.org/debian-ports/
+   # apt install debootstrap
+   # debootstrap --foreign --arch=m68k --no-check-gpg sid debian-chroot http://ftp.ports.debian.org/debian-ports/
    # cp -a /path/to/hatari/tools/linux/init.sh debian-chroot/init
-   # /sbin/mkfs.ext2 -t ext2 -L DEBIAN -d debian-chroot debian.img 512M
-   # chown $USER.$USER debian.img
+   # /sbin/mkfs.ext2 -t ext2 -L DEBIAN -d debian-chroot debian.img 512M
+   # chown $USER.$USER debian.img
 
 NOTE: debootstrap needs to be done on a partition that isn't mounted
 with "noexec" or "nodev" option, otherwise it fails!

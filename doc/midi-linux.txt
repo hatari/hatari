@@ -28,8 +28,8 @@ Quick start
 simple.
 
 Just start a MIDI software synthetizer (on Debian/Ubuntu):
-$ sudo apt install qsynth
-$ qsynth
+$ sudo apt install qsynth
+$ qsynth
 
 (Hatari scans for ALSA MIDI devices only at start, so the MIDI output
 and input devices need to be there before starting Hatari.)
