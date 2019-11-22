@@ -1,6 +1,6 @@
 /*
  * Hatari - profile.c
- * 
+ *
  * Copyright (C) 2010-2019 by Eero Tamminen
  *
  * This file is distributed under the GNU General Public License, version 2
@@ -415,7 +415,7 @@ Uint32 Profile_CallEnd(callinfo_t *callinfo, counters_t *totalcost)
  *
  *   (caller_addr 1)  bsr symbol1  -1->  symbol1     (callee_addr 1)
  *      (ret_addr 1)  <instr>     <-.    ...
- *                                  ¦    bsr symbol2 (caller_addr 2)  -2->  symbol2 (callee_addr 2)
+ *                                  |    bsr symbol2 (caller_addr 2)  -2->  symbol2 (callee_addr 2)
  *                                  1    <instr>     (ret_addr 2)    <-.    ...
  *                                  |    ...                           2    ... (PC)
  *                                  '-   rts                           '-   rts
@@ -792,7 +792,7 @@ int Profile_Command(int nArgc, char *psArgs[], bool bForDsp)
 	} else if (strcmp(psArgs[1], "off") == 0) {
 		*enabled = false;
 		fprintf(stderr, "Profiling disabled.\n");
-	
+
 	} else if (strcmp(psArgs[1], "stats") == 0) {
 		if (bForDsp) {
 			Profile_DspShowStats();
