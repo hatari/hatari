@@ -12,15 +12,13 @@
 
 #include "main.h"
 #include "configuration.h"
+#include "file.h"
 #include "lilo.h"
 #include "log.h"
 #include "tos.h"	/* TosAddress */
 #include "stMemory.h"	/* STRam etc */
 #include "symbols.h"
 #include <stdint.h>
-#ifdef HAVE_LIBZ
-# include <zlib.h>
-#endif
 #include <SDL_endian.h>
 
 bool bUseLilo;
@@ -388,78 +386,24 @@ static bool lilo_load(void)
 static void *load_file(const char *filename, uint32_t *length)
 {
 	void *buffer = NULL;
-
-#ifdef HAVE_LIBZ
-	int unc_len;
-	gzFile handle;
-#else
-	int handle;
-#endif
+	long nFileLength = 0;
 
 	if (strlen(filename) == 0) {
 		Dprintf(("LILO: empty filename\n"));
 		return NULL;
 	}
 
-	/* Try to open the file, libz takes care of non-gzipped files */
 #ifdef HAVE_LIBZ
-	handle = gzopen(filename, "rb");
-	if (handle == NULL)
+	buffer = File_ZlibRead(filename, &nFileLength);
 #else
-	handle = open(filename, O_RDONLY);
-	if (handle < 0)
+	buffer = File_Read(filename, &nFileLength, NULL);
 #endif
-	{
-		Dprintf(("LILO: unable to open %s\n", filename));
-		return NULL;
-	}
-#ifdef HAVE_LIBZ
-	/* Search the length of the uncompressed stream */
-	buffer = (char *)malloc(MAXREAD_BLOCK_SIZE);
+
+	*length = nFileLength;
+
 	if (buffer == NULL) {
-		Dprintf(("LILO: unable to allocate %d bytes\n", MAXREAD_BLOCK_SIZE));
-		gzclose(handle);
-		return NULL;
+		Dprintf(("LILO: Failed to read '%s'\n", filename));
 	}
-
-	*length = 0;
-	unc_len = gzread(handle, buffer, MAXREAD_BLOCK_SIZE);
-	while (unc_len > 0) {
-		*length += unc_len;
-		unc_len = gzread(handle, buffer, MAXREAD_BLOCK_SIZE);
-	}
-	/* Avoid gzseek, it is often broken with LFS
-	 * which we enable by default
-	 */
-	gzrewind(handle);
-	Dprintf(("LILO: uncompressing '%s'\n", filename));
-	Dprintf(("LILO:  uncompressed length: %d bytes\n", *length));
-
-	free(buffer);
-	buffer = NULL;
-#else
-	*length = lseek(handle, 0, SEEK_END);
-	lseek(handle, 0, SEEK_SET); 	
-#endif
-
-	buffer = (char *)malloc(*length);
-	if (buffer == NULL) {
-		Dprintf(("LILO: unable to allocate %d bytes\n", *length));
-#ifdef HAVE_LIBZ
-		gzclose(handle);
-#else
-		close(handle);
-#endif
-		return NULL;
-	}
-
-#ifdef HAVE_LIBZ
-	gzread(handle, buffer, *length);
-	gzclose(handle);
-#else
-	read(handle, buffer, *length);
-	close(handle);
-#endif
 
 	return buffer;
 }
