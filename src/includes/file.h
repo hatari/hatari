@@ -24,6 +24,7 @@ extern bool File_DoesFileExtensionMatch(const char *pszFileName, const char *psz
 extern bool File_ChangeFileExtension(const char *Filename_old, const char *Extension_old , char *Filename_new , const char *Extension_new);
 extern const char *File_RemoveFileNameDrive(const char *pszFileName);
 extern bool File_DoesFileNameEndWithSlash(char *pszFileName);
+extern Uint8 *File_ZlibRead(const char *pszFileName, long *pFileSize);
 extern Uint8 *File_Read(const char *pszFileName, long *pFileSize, const char * const ppszExts[]);
 extern bool File_Save(const char *pszFileName, const Uint8 *pAddress, size_t Size, bool bQueryOverwrite);
 extern off_t File_Length(const char *pszFileName);
