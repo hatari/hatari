@@ -515,13 +515,12 @@ static bool check_kernel(void *kernel, Elf32_Addr *kernel_offset,
 	}
 
 	kexec_elf = (Elf32_Ehdr *) kernel;
-	if (memcmp(&kexec_elf->e_ident[EI_MAG0], ELFMAG, SELFMAG) == 0) {
-		if ((SDL_SwapBE16(kexec_elf->e_type) != ET_EXEC) ||
-		    (SDL_SwapBE16(kexec_elf->e_machine) != EM_68K) ||
-		    (SDL_SwapBE32(kexec_elf->e_version) != EV_CURRENT)) {
-			fprintf(stderr, "LILO: Invalid ELF header contents in kernel\n");
-			return false;
-		}
+	if (memcmp(&kexec_elf->e_ident[EI_MAG0], ELFMAG, SELFMAG) != 0 ||
+	    SDL_SwapBE16(kexec_elf->e_type) != ET_EXEC ||
+	    SDL_SwapBE16(kexec_elf->e_machine) != EM_68K ||
+	    SDL_SwapBE32(kexec_elf->e_version) != EV_CURRENT) {
+		fprintf(stderr, "LILO: Invalid ELF header contents in kernel\n");
+		return false;
 	}
 
 	/*--- Copy the kernel at start of RAM ---*/
