@@ -217,8 +217,6 @@ struct bi_record {
 
 #define M68K_EMUL_RESET 0x7102
 
-#define MAXREAD_BLOCK_SIZE	(1<<20)	/* 1 MB */
-
 /* Start address of kernel in Atari RAM */
 #define KERNEL_START		PAGE_SIZE
 /* Offset to start of fs in ramdisk file (no microcode on Atari) */
@@ -398,13 +396,12 @@ static void *load_file(const char *filename, uint32_t *length)
 #else
 	buffer = File_Read(filename, &nFileLength, NULL);
 #endif
-
 	*length = nFileLength;
 
-	if (buffer == NULL) {
-		Dprintf(("LILO: Failed to read '%s'\n", filename));
+	if (buffer) {
+		Dprintf(("LILO: (uncompressed) '%s' size: %d bytes\n",
+			 filename, *length));
 	}
-
 	return buffer;
 }
 
