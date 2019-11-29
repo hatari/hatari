@@ -158,7 +158,7 @@ Code: 2f00 4eb9 0000 2a98 508f 60ff ffff ff64 <42a7> 4878 ffff 2f00
    $ sudo apt install gcc-m68k-linux-gnu
 
 2. Get latest m68k kernel sources (without history):
-   $ git clone --depth 1 --branch m68k-v5.3 \
+   $ git clone --depth 1 --branch m68k-v5.4 \
      git://git.kernel.org/pub/scm/linux/kernel/git/geert/linux-m68k.git
 
 3. Get Hatari compatible configuration:
@@ -322,8 +322,8 @@ Notes:
 1. Set suitable options in lilo.cfg, for example:
 -------------------------------------
 [LILO]
-Kernel = vmlinux-v5.3
-Symbols = System.map-v5.3
+Kernel = vmlinux-v5.4
+Symbols = System.map-v5.4
 Ramdisk =
 Args = video=atafb:sthigh console=tty
 KernelToFastRam = FALSE
@@ -339,7 +339,7 @@ KernelToFastRam = FALSE
 
 2a) with root fs on disk:
       --ide-master rootfs.img \
-      --lilo "debug=nfcon root=/dev/hda ro init=/init"
+      --lilo "debug=nfcon root=/dev/sda ro init=/init"
 
 2b) with root fs being initrd specified in lilo.cfg:
       --lilo "debug=nfcon root=/dev/ram ro init=/init"
@@ -376,7 +376,7 @@ shows easiest method to simulate that with Hatari.
 
 2. Tell bootstrap program to load kernel to ST-RAM and whole command
    line to give to the kernel:
-   $ echo "-s -d -k vmlinux root=/dev/hda ro debug=nfcon video=atafb:sthigh console=tty init=/init" > bootargs
+   $ echo "-s -d -k vmlinux root=/dev/sda ro debug=nfcon video=atafb:sthigh console=tty init=/init" > bootargs
    $ cd ..
 
 3. Get kernel to bootstrap:
@@ -403,8 +403,8 @@ Hatari notes:
   is assigned to C:, IDE content isn't accessible from TOS
 
 On real HW:
-- Linux rootfs would be put to a partition (e.g. "hda2"),
-  it wouldn't start from IDE drive first sector ("hda")
+- Linux rootfs would be put to a partition (e.g. "sda2"),
+  it wouldn't start from IDE drive first sector ("sda")
 - NatFeats is not available, so debug option can be removed,
   or debug device set to a more suitable one (e.g. serial)
 
