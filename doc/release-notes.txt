@@ -43,6 +43,8 @@ Emulator:
 - Low/med-rez line doubling uses less CPU and doubled lines in
   "TV" display mode are now drawn at half intensity, not as black
 - Show mouse grab toggle shortcut key in startup statusbar message
+- Center host mouse to Hatari window on Atari resets and resolution
+  changes only when window is focused and mouse pointer is within it
 - Fix: 24-bit address mode change while emulation is running
   (triggered e.g. when TT-RAM is enabled for TT)
 - Fix: when autostarting programs without pre-existing INF file,
