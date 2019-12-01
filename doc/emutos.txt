@@ -521,12 +521,14 @@ Free/shareware/PD games:
   http://www.atarimania.com/list_games_atari-st-munsie-dave_team_950_S_G.html
 - Donkey Island  (adventure)
 - Dot 2 Dots     (for kids)
+- Downfall       (2-player, EmuTOS >v0.9.12)
 - Droid          (floppy only, bootsector has 0 for reserved sectors)
 - Droid 2        (floppy only)*
 - Entombed
   - doesn't show title, copyright, hiscore nor help after EmuTOS v0.8.6
   - TOS v2 shows title but not others and sound is wrong
 - Flip'em*       (4KB puzzle)
+- Fokker         (2-player biplanes, use joystick 0, EmuTOS >v0.9.12)
 - French adaptations of classic games:
   Boulderdash, Demineur, Jewel, Qbert, Sokoban
 - Frogger*
@@ -575,7 +577,7 @@ Free/shareware/PD games:
 - Santafly
 - Sideways
 - Sinister development games (shareware)
-- Snowball Fight
+- Snowball Fight (2-player)
 - Spacewar
 - Starball*      (shareware)
 - Super Pac-Man* (use joystick 0)
@@ -734,15 +736,15 @@ is them overwriting TOS (or their own) memory.
 
 Non-working color STOS games (as expected):
 - Balls Up          (mouse input doesn't work)
-- Color Clash*      (fire doesn't work)
+- Color Clash*      (fire at start doesn't work)
 - Dice II           (mouse doesn't work)
 - Mr Dice*          (gets spurious joy input)
 - Nostram           (input doesn't work)
 - Orbit             (mouse input doesn't work)
-- Pipetris          (gets spurious joy input)
-- Prehistorik3 demo (input doesn't work)
-- Reflection*       (key input doesn't work)
-- Skatetribe        (input doesn't work)
+- Pipetris          (spurious joystick left input)
+- Prehistorik3 demo (spurious joystick left input)
+- Reflection*       (keys work, mouse doesn't)
+- Skatetribe        (fire at start doesn't work)
 - Smash hit         (input doesn't work)
 - Sudoku Universe*  (mouse input doesn't work)
 - Trackball         (mouse doesn't work)
@@ -754,13 +756,11 @@ Commercial color game demos:
 
 Free/shareware color games:
 - Douglas Rockmoor  (joystick input doesn't work)
-- Downfall          (fire doesn't work)
-- Fokker            (input doesn't work)
 - Japlish           (line-A polygon lines, joystick input doesn't work)
 - Space invaders    (up works as fire, no other input works)
 
 Mono games:
-- Crystal Caves*    (line-A bitblit and draw/clear sprite, input doesn't work)
+- Crystal Caves*    (line-A bitblit and draw/clear sprite, joystick doesn't work)
 - Macrowar          (line-A bitblit, joystick doesn't work)
 - Midimaze*         (joystick doesn't work)
 - Ramses*           (panic, see EmuTOS incompatible.txt)
@@ -930,6 +930,7 @@ Color games:
 - Battletris+
 - BeGEMeD* (line-A bitblits)
 - Blat (line-A bitblit)
+- Bombaman (EmuTOS >v0.9.12)
 - Boom (screen flashes during scrolling messages)
 - Breakdance (scene game, STOS, EmuTOS >v0.9.3)
 - ChuChu Rocket* (RG's full version, EmuTOS >0.9.7)
@@ -970,6 +971,7 @@ Color games:
 - Ultimate Arena v1.3 light (slow with EmuTOS)
 - Utopos* (demo)
 - Wolfenstein3D v0.8a* (a bit unstable)
+- Zaptastic (EmuTOS >v0.9.12)
 - Zero-5 (demo)
 - Zool (demo)
 
@@ -1011,13 +1013,10 @@ Partially working STE demos (old info, maybe 0.8.x?):
 Non-working games and music programs:
 - Art for Kids demo (Bus error at $6, after vro_cpyfm)
   - with 512k image, bus errors already at startup
-- Bombaman (joystick input doesn't work in game itself):
-  - http://homepage.ntlworld.com/kevcallahan/bombaman/
 - Cameleon (see EmuTOS incompatible.txt)
 - Hero (STOS, see EmuTOS incompatible.txt)
 - Protracker v2 STE, Equinox version (see EmuTOS incompatible.txt)
   - http://www.pouet.net/prod.php?which=13381
-- Zaptastic (input doesn't work at startup screen)
 
 
 Atari TT programs
@@ -1120,12 +1119,15 @@ Working demos:
   - With MP2 DSP music
 - More (by New Beat)
 - Mouse (animation + music)
+- Oergs (by Lazer, pic + music)
 - Old Stuff (by Extream)
 - Prepare (by Extream)
 - Revertant 1.2 (by Cobra / Mystic Bytes)
   - With MP2 DSP music (not working)
 - RGB Reine (by New Beat)
 - Rock Solid (by Paranoia)
+- Schlumpf invtro (by Lazer)
+  - horizontal scrolling is bad with some EmuTOS versions
 - Six Sievert (by tSCc)
 - Snowstorm (by Reservoir Gods), disable DSP
 - Sonolumineszenz (by Avena)
@@ -1164,12 +1166,6 @@ Partly working demos:
   - No music as it needs DSP
 - Jesterday (by POV)
   - Music demo, but no music as it needs DSP
-- Oergs (by Lazer)
-  - Music is bad
-- Schlumpf invtro (by Lazer)
-  - Music is bad
-  - Colors are wrong
-  - Input doesn't work to advance next screen
 - Yepyha (by Toons)
   - Music is missing (needs DSP?)
 
@@ -1183,7 +1179,7 @@ but don't work with EmuTOS at all:
 - Tere Ra'I (by Cerebral Vortex / Dune / Sector One)
 - Silly Venture 2k16 invitro (by Dune / Mystic Bytes)
 - Unexpected Fun (by Orion_)
-  - these exit as Dsp_Lock() fails
+  - these stop as Dsp_Lock() fails
 
 
 Falcon games
@@ -1196,7 +1192,7 @@ Games regressed in EmuTOS v0.8.x (not working anymore):
 - Rave*
   - colors/graphics are wrong
     (in v0.8.6, only at actual game lower half)
-- SBM v0.8 (Bomberman clone)*
+- SBM v0.8 & v1.03 (Bomberman clone)*
   - Bus error wget at 00400000
 
 Games working in EmuTOS >=v0.9.0:
@@ -1282,8 +1278,8 @@ Games working with extra hacks:
     (with normal TOS4, DSP is used for background music)
 
 Games (mostly) working with EmuTOS >v0.9.9.1:
-- Painium: fire button doesn't work, rest seems to work
-  - DSP emulation needs to be disabled
+- Painium: fire button works only until game itself starts
+  - Needs at least 8MB RAM
 
 Games that might be possible to get working (they show something
 and/or don't use DSP XBios calls or DSP sound matrix):
