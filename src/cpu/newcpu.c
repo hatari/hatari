@@ -8012,7 +8012,7 @@ void exception3_read(uae_u32 opcode, uaecptr addr, int size, int fc)
 			ni = true;
 			fc = -1;
 		}
-		if (opcode & 0x100000)
+		if (opcode & 0x10000)
 			ni = true;
 		opcode = regs.ir;
 	}
@@ -8026,7 +8026,7 @@ void exception3_write(uae_u32 opcode, uaecptr addr, int size, uae_u32 val, int f
 			ni = true;
 			fc = -1;
 		}
-		if (opcode & 0x100000)
+		if (opcode & 0x10000)
 			ni = true;
 		opcode = regs.ir;
 	}
@@ -8082,6 +8082,8 @@ void exception2_read(uae_u32 opcode, uaecptr addr, int size, int fc)
 {
 	exception2_setup(addr, true, size, fc);
 	last_op_for_exception_3 = opcode;
+	if (opcode & 0x10000)
+		last_notinstruction_for_exception_3 = true;
 	Exception(2);
 }
 
@@ -8089,6 +8091,8 @@ void exception2_write(uae_u32 opcode, uaecptr addr, int size, uae_u32 val, int f
 {
 	exception2_setup(addr, false, size, fc);
 	last_op_for_exception_3 = opcode;
+	if (opcode & 0x10000)
+		last_notinstruction_for_exception_3 = true;
 	regs.write_buffer = val;
 	Exception(2);
 }
@@ -8098,6 +8102,8 @@ void exception2_fetch(uae_u32 opcode, uaecptr addr)
 	exception2_setup(addr, true, 1, 2);
 	last_op_for_exception_3 = opcode;
 	last_di_for_exception_3 = 0;
+	if (opcode & 0x10000)
+		last_notinstruction_for_exception_3 = true;
 	Exception(2);
 }
 

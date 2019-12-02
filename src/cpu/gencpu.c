@@ -3302,7 +3302,7 @@ static void genmovemel_ce (uae_u16 opcode)
 		check_bus_error("src", 0, 0, 1, NULL, 1);
 		printf("\t\tm68k_dreg(regs, movem_index1[dmask]) = v;\n");
 		printf("\t\tv &= 0xffff0000;\n");
-		printf("\t\tv |= %s(srca + 2); \n", srcw);
+		printf("\t\tv |= % s(srca + 2); \n", srcw);
 		check_bus_error("src", 2, 0, 1, NULL, 1);
 		printf("\t\tm68k_dreg(regs, movem_index1[dmask]) = v;\n");
 		printf("\t\tsrca += %d;\n", size);
@@ -5235,6 +5235,8 @@ static void gen_opcode (unsigned int opcode)
 				int sp = (curi->smode == Ad16 || curi->smode == absw || curi->smode == absl || curi->smode == PC16 || curi->smode == Ad8r || curi->smode == PC8r) ? -1 : 0;
 				irc2ir();
 				printf("\topcode = regs.ir;\n");
+				if (sp < 0)
+					printf("\tif(regs.t1) opcode |= 0x10000;\n");
 				printf("\t%s (%d);\n", prefetch_word, 2);
 				check_prefetch_bus_error(-2, sp);
 				did_prefetch = 1;
@@ -5279,6 +5281,8 @@ static void gen_opcode (unsigned int opcode)
 			printf("\t%s (%d);\n", prefetch_word, 2);
 			int sp = (curi->smode == Ad16 || curi->smode == absw || curi->smode == absl || curi->smode == PC16 || curi->smode == Ad8r || curi->smode == PC8r) ? -1 : 0;
 			printf("\topcode = regs.ir;\n");
+			if (sp < 0)
+				printf("\tif(regs.t1) opcode |= 0x10000;\n");
 			check_prefetch_bus_error(-2, sp);
 			did_prefetch = 1;
 			ir2irc = 0;
