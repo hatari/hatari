@@ -875,6 +875,25 @@ static void fill_prefetch_full (void)
 	}
 }
 
+static void fill_prefetch_full_000_special(void)
+{
+	if (!using_prefetch)
+		return;
+	printf("\t%s (%d);\n", prefetch_word, 0);
+	check_prefetch_bus_error(-1, -1);
+	irc2ir();
+	if (using_bus_error) {
+		printf("\topcode = regs.ir;\n");
+		printf("\tif(regs.t1) opcode |= 0x10000;\n");
+	}
+	printf("\t%s (%d);\n", prefetch_word, 2);
+	check_prefetch_bus_error(-2, -1);
+	did_prefetch = 1;
+	ir2irc = 0;
+	count_read += 2 * 1;
+	insn_n_cycles += 2 * 4;
+}
+
 // 68000 and 68010 only
 static void fill_prefetch_full_000 (void)
 {
@@ -3302,7 +3321,7 @@ static void genmovemel_ce (uae_u16 opcode)
 		check_bus_error("src", 0, 0, 1, NULL, 1);
 		printf("\t\tm68k_dreg(regs, movem_index1[dmask]) = v;\n");
 		printf("\t\tv &= 0xffff0000;\n");
-		printf("\t\tv |= % s(srca + 2); \n", srcw);
+		printf("\t\tv |= %s(srca + 2); \n", srcw);
 		check_bus_error("src", 2, 0, 1, NULL, 1);
 		printf("\t\tm68k_dreg(regs, movem_index1[dmask]) = v;\n");
 		printf("\t\tsrca += %d;\n", size);
@@ -4344,7 +4363,7 @@ static void gen_opcode (unsigned int opcode)
 			genamode(curi, curi->smode, "srcreg", curi->size, "src", 3, 0, 0);
 			if (isreg(curi->smode) && curi->size == sz_long)
 				addcycles000(2);
-			if (!isreg(curi->smode) && using_exception_3 && (using_prefetch || using_ce)) {
+			if (!isreg(curi->smode) && using_exception_3 && curi->size != sz_byte && (using_prefetch || using_ce)) {
 				printf("\tif(srca & 1) {\n");
 				printf("\t\texception3_write(opcode, srca, 1, 0, 1);\n");
 				printf("\t\tgoto %s;\n", endlabelstr);
@@ -5006,8 +5025,12 @@ static void gen_opcode (unsigned int opcode)
 		/* PC is set and prefetch filled. */
 		clear_m68k_offset();
 		tail_ce020_done = true;
-		fill_prefetch_full ();
-	    need_endlabel = 1;
+		if (using_prefetch || using_ce) {
+			fill_prefetch_full_000_special();
+		} else {
+			fill_prefetch_full();
+		}
+		need_endlabel = 1;
 		branch_inst = 1;
 		next_level_040_to_030();
 		break;
@@ -5111,7 +5134,11 @@ static void gen_opcode (unsigned int opcode)
 		printf ("\t}\n");
 		count_read += 2;
 		clear_m68k_offset();
-		fill_prefetch_full ();
+		if (using_prefetch || using_ce) {
+			fill_prefetch_full_000_special();
+		} else {
+			fill_prefetch_full();
+		}
 	    need_endlabel = 1;
 		branch_inst = 1;
 		next_level_040_to_030();
@@ -5150,8 +5177,12 @@ static void gen_opcode (unsigned int opcode)
 			printf("\t}\n");
 		}
 		clear_m68k_offset();
-		fill_prefetch_full ();
-	    need_endlabel = 1;
+		if (using_prefetch || using_ce) {
+			fill_prefetch_full_000_special();
+		} else {
+			fill_prefetch_full();
+		}
+		need_endlabel = 1;
 		branch_inst = 1;
 		tail_ce020_done = true;
 		next_level_040_to_030();
@@ -5286,8 +5317,8 @@ static void gen_opcode (unsigned int opcode)
 			check_prefetch_bus_error(-2, sp);
 			did_prefetch = 1;
 			ir2irc = 0;
-			count_read++;
-			insn_n_cycles += 4;
+			count_read += 2 * 1;
+			insn_n_cycles += 2 * 4;
 		} else {
 			fill_prefetch_full();
 		}
@@ -5371,7 +5402,11 @@ static void gen_opcode (unsigned int opcode)
 		}
 		count_write += 2;
 		clear_m68k_offset();
-		fill_prefetch_full ();
+		if (using_prefetch || using_ce) {
+			fill_prefetch_full_000_special();
+		} else {
+			fill_prefetch_full();
+		}
 		branch_inst = 1;
 		break;
 	case i_Bcc:
@@ -5414,7 +5449,7 @@ static void gen_opcode (unsigned int opcode)
 		push_ins_cnt();
 		if (using_prefetch) {
 			incpc ("(uae_s32)src + 2");
-			fill_prefetch_full_000 ();
+			fill_prefetch_full_000_special();
 			if (using_ce)
 				printf ("\treturn;\n");
 			else
@@ -5437,10 +5472,10 @@ static void gen_opcode (unsigned int opcode)
 			fill_prefetch_2 ();
 		} else if (curi->size == sz_word) {
 			add_head_cycs (6);
-			fill_prefetch_full_000 ();
+			fill_prefetch_full_000_special();
 		} else {
 			add_head_cycs (6);
-			fill_prefetch_full_000 ();
+			fill_prefetch_full_000_special();
 		}
 		insn_n_cycles = curi->size == sz_byte ? 8 : 12;
 		branch_inst = 1;
@@ -5527,7 +5562,18 @@ bccl_not68020:
 		printf ("\t\tif (src) {\n");
 		irc2ir ();
 		add_head_cycs (6);
-		fill_prefetch_1 (2);
+
+		if (using_prefetch || using_ce) {
+			printf("\topcode = regs.ir;\n");
+			printf("\tif(regs.t1) opcode |= 0x10000;\n");
+			printf("\t%s (%d);\n", prefetch_word, 2);
+			check_prefetch_bus_error(-2, -1);
+			did_prefetch = 1;
+			ir2irc = 0;
+			count_read++;
+			insn_n_cycles += 4;
+		}
+
 		fill_prefetch_full_020 ();
 		returncycles ("\t\t\t", 10);
 		printf ("\t\t}\n");
@@ -5541,7 +5587,7 @@ bccl_not68020:
 		setpc ("oldpc + %d", m68k_pc_offset);
 		clear_m68k_offset();
 		get_prefetch_020_continue ();
-		fill_prefetch_full_000 ();
+		fill_prefetch_full_000_special();
 		insn_n_cycles = 12;
 		need_endlabel = 1;
 		branch_inst = 1;
