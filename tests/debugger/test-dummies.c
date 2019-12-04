@@ -3,6 +3,7 @@
  */
 
 /* fake tracing flags */
+#include <stdio.h>
 #include "log.h"
 Uint64 LogTraceFlags = 0;
 FILE *TraceFile;

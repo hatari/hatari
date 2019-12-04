@@ -213,6 +213,7 @@ struct bi_record {
 
 #define NUM_MEMINFO  4
 #define CL_SIZE      (256)
+#undef PAGE_SIZE
 #define PAGE_SIZE 4096
 
 #define M68K_EMUL_RESET 0x7102
