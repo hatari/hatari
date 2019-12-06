@@ -5229,6 +5229,8 @@ static void gen_opcode (unsigned int opcode)
 				}
 				setpc("srca");
 				clear_m68k_offset();
+				if (cpu_level >= 2 && cpu_level < 4)
+					printf("\tm68k_areg (regs, 7) -= 4;\n");
 				if (using_exception_3 && cpu_level >= 2) {
 					printf("\tif (%s & 1) {\n", getpc);
 					printf("\t\texception3i (opcode, %s);\n", getpc);
@@ -5237,7 +5239,7 @@ static void gen_opcode (unsigned int opcode)
 					need_endlabel = 1;
 				}
 				fill_prefetch_1(0);
-				if (cpu_level < 4)
+				if (cpu_level < 2)
 					printf("\tm68k_areg (regs, 7) -= 4;\n");
 				if (using_exception_3 && cpu_level <= 1) {
 					printf("\tif (m68k_areg(regs, 7) & 1) {\n");
@@ -5537,8 +5539,6 @@ bccl_not68020:
 		genamodedual (curi,
 			curi->smode, "srcreg", curi->size, "src", 1, GF_AA | (cpu_level < 2 ? GF_NOREFILL : 0),
 			curi->dmode, "dstreg", curi->size, "offs", 1, GF_AA | (cpu_level < 2 ? GF_NOREFILL : 0));
-		//genamode (curi, curi->smode, "srcreg", curi->size, "src", 1, 0, GF_AA | GF_NOREFILL);
-		//genamode (curi, curi->dmode, "dstreg", curi->size, "offs", 1, 0, GF_AA | GF_NOREFILL);
 		printf ("\tuaecptr oldpc = %s;\n", getpc);
 		addcycles000 (2);
 		if (using_exception_3 && cpu_level >= 4) {
@@ -5552,6 +5552,8 @@ bccl_not68020:
 		printf ("\tif (!cctrue (%d)) {\n", curi->cc);
 		printf("\t");
 		incpc ("(uae_s32)offs + 2");
+		if (cpu_level >= 2 && cpu_level < 4)
+			genastore("(src - 1)", curi->smode, "srcreg", curi->size, "src");
 		printf ("\t");
 		if (using_exception_3 && cpu_level < 4) {
 			printf("\tif (offs & 1) {\n");
@@ -5563,7 +5565,8 @@ bccl_not68020:
 		printf("\t");
 		fill_prefetch_1(0);
 		printf("\t");
-		genastore ("(src - 1)", curi->smode, "srcreg", curi->size, "src");
+		if (cpu_level < 2 || cpu_level >= 4)
+			genastore ("(src - 1)", curi->smode, "srcreg", curi->size, "src");
 		printf ("\t\tif (src) {\n");
 		irc2ir ();
 		add_head_cycs (6);
