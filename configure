@@ -118,8 +118,12 @@ do
 done
 
 # remove previous cmake's cache
-rm -f `dirname $0`/CMakeCache.txt
-rm -rf `dirname $0`/CMakeFiles/
+rm -rf CMakeCache.txt CMakeFiles/
+
+if [ -e `dirname $0`/CMakeCache.txt ]; then
+    echo "Source directory is not clean, please run 'make distclean' there first."
+    exit 1
+fi
 
 cmake `dirname $0` $cmake_args || exit 1
 
