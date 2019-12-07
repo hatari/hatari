@@ -44,3 +44,4 @@ doc/doxygen/html
 build/*
 Hatari.build/*
 Release/*
+Debug/*
