@@ -45,7 +45,8 @@ void Printer_Init(void)
 	Dprintf((stderr, "Printer_Init()\n"));
 
 	/* disabled from config/command line? */
-	if (!ConfigureParams.Printer.szPrintToFileName[0])
+	if (!ConfigureParams.Printer.bEnablePrinting ||
+	    !ConfigureParams.Printer.szPrintToFileName[0])
 		return;
 
 	/* printer name without path? */
