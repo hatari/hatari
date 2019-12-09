@@ -8008,7 +8008,7 @@ void exception3_read(uae_u32 opcode, uaecptr addr, int size, int fc)
 {
 	bool ni = false;
 	if (currprefs.cpu_model == 68000 && currprefs.cpu_compatible) {
-		if (generates_group1_exception(regs.ir)) {
+		if (generates_group1_exception(regs.ir) && !(opcode & 0x20000)) {
 			ni = true;
 			fc = -1;
 		}
@@ -8022,7 +8022,7 @@ void exception3_write(uae_u32 opcode, uaecptr addr, int size, uae_u32 val, int f
 {
 	bool ni = false;
 	if (currprefs.cpu_model == 68000 && currprefs.cpu_compatible) {
-		if (generates_group1_exception(regs.ir)) {
+		if (generates_group1_exception(regs.ir) && !(opcode & 0x20000)) {
 			ni = true;
 			fc = -1;
 		}
