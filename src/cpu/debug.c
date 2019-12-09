@@ -5942,11 +5942,11 @@ static bool debug_line (TCHAR *input)
 						}
 					}
 				} else {
+					int nextcmd = peekchar(&inptr);
 					if (more_params(&inptr) && *inptr == '?') {
 						mw_help();
 					} else {
 						free_heatmap();
-						int nextcmd = peekchar(&inptr);
 						if (nextcmd != ' ') {
 							next_char(&inptr);
 						}
