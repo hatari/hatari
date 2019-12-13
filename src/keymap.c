@@ -522,7 +522,7 @@ static char Keymap_PcToStScanCode(SDL_keysym* keysym)
 			        SDL_GetKeyName(keysym->sym), keysym->scancode, keysym->sym);
 			return (keysym->scancode - 8);
 		}
-	 	break;
+		break;
 	}
 }
 
@@ -625,7 +625,7 @@ void Keymap_LoadRemapFile(char *pszFileName)
 
 	if (!*pszFileName)
 		return;
-	
+
 	/* Attempt to load file */
 	if (!File_Exists(pszFileName))
 	{
@@ -639,7 +639,7 @@ void Keymap_LoadRemapFile(char *pszFileName)
 			   " open keymap file '%s'\n", pszFileName);
 		return;
 	}
-	
+
 	while (!feof(in) && idx < KBD_MAX_SCANCODE)
 	{
 		/* Read line from file */
