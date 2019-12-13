@@ -205,7 +205,7 @@ with the "--midi-out /dev/stderr" option and you will see EmuTOS debug
 output on Hatari's standard error (such as calls to missing Falcon
 XBios functions).
 
-Note: To see/get raw MIDI device output from EmuTOS. you need to
+Note: To see/get raw MIDI device output from EmuTOS, you need to
 disable use of PortMidi in Hatari configuration before building
 Hatari.
 
@@ -546,8 +546,9 @@ Free/shareware/PD games:
 - Hector*
 - Hero           (RPG)
 - Hexmines*
-- Iceblox Plus*   (works on all Atari machines)
+- Iceblox Plus*  (works on all Atari machines)
 - In nihilum reverteris (interactive color novel)
+- Japlish        (line-A polygon lines, EmuTOS >v0.9.12)
 - Jetpac
 - Killing Spree  (2014 preview by TLB at Atarimania)
 - Laserball 2014
@@ -557,6 +558,9 @@ Free/shareware/PD games:
 - Maze*
 - Mem*           (line-A bitblits)
 - Merchant       (works also in mono)
+- Midi Maze*     (MIDI multiplayer, works also in mono, EmuTOS >v0.9.12)
+- Midi Maze II   (MIDI multiplayer, EmuTOS >v0.9.12)
+- Midi Maze 3    (MIDI multiplayer, EmuTOS >v0.9.12)
 - Missile Alert
 - Monkeys and Balloons
 - Monopoly
@@ -734,7 +738,8 @@ emulated drive, i.e. aren't hardcoded to run from a floppy.  Floppy
 only games aren't listed as main reason why some of them don't work
 is them overwriting TOS (or their own) memory.
 
-Non-working color STOS games (as expected):
+As expected, color STOS games don't work, as STOS input handling
+is TOS version specific (see EmuTOS incompatible.txt):
 - Balls Up          (mouse input doesn't work)
 - Color Clash*      (fire at start doesn't work)
 - Dice II           (mouse doesn't work)
@@ -749,25 +754,24 @@ Non-working color STOS games (as expected):
 - Sudoku Universe*  (mouse input doesn't work)
 - Trackball         (mouse doesn't work)
 
-Commercial color game demos:
-- Brain Blaster / The Teller demo (input doesn't work)
-- Cauldron demo     (input doesn't work, fire doesn't start game)
-- Striker demo      (input doesn't work)
+Even some commercial games use TOS version specific input handling
+(see EmuTOS incompatible.txt):
+- Brain Blasters / The Teller demo  (input doesn't work)
+- Super Cauldron demo  (fire doesn't start game)
+- Striker soccer demo  (fire doesn't start game)
 
-Free/shareware color games:
-- Douglas Rockmoor  (joystick input doesn't work)
-- Japlish           (line-A polygon lines, joystick input doesn't work)
-- Space invaders    (up works as fire, no other input works)
+Free/shareware color games (more input issues):
+- Douglas Rockmoor  (see EmuTOS incompatible.txt)
+- Space invaders    (see EmuTOS incompatible.txt)
 
-Mono games:
-- Crystal Caves*    (line-A bitblit and draw/clear sprite, joystick doesn't work)
-- Macrowar          (line-A bitblit, joystick doesn't work)
-- Midimaze*         (joystick doesn't work)
+Mono games (more input issues):
+- Crystal Cave*     (line-A bitblit & draw/clear sprite, see EmuTOS incompatible.txt)
+- Macro War         (line-A bitblit, see EmuTOS incompatible.txt)
 - Ramses*           (panic, see EmuTOS incompatible.txt)
 
-GEM games (input issues):
-- Anduril   (see EmuTOS incompatible.txt)
-- Invaders* (see EmuTOS incompatible.txt)
+GEM games (more input issues):
+- Anduril           (see EmuTOS incompatible.txt)
+- Invaders*         (see EmuTOS incompatible.txt)
 
 
 Atari ST applications (including commercial)
@@ -783,7 +787,7 @@ Working drawing / image viewing programs:
 - Spslide, Spec512 viewer
 
 Not working:
-- Spectrum512 (address error on XBios Kbdvbase() return value handling)
+- Spectrum512 (see EmuTOS incompatible.txt)
 
 Not working video / HD access programs:
 - STVidPlay (see EmuTOS incompatible.txt)
@@ -823,9 +827,13 @@ version 0.9.4, preferably newer.
 
 Demos:
 - 1st Step (by Tobe/MJJ Prod)
-- 21 bobs (by Anima) - needs 50Hz
+- 20 years megademo (by Atari scene collective)
+- 20 years Atari STE megademo (by Paradox)
+  - "NoExtra" screen exits immediately
+- 21 bobs (by Anima, needs 50Hz)
 - 32768 colors showdown (by Tronic of Effect)
 - 3D full (by Oxygene)
+- 96 Shades of Gray (by Paradox, >1MB, panics at end/exit)
 - Again (by Paradox)
 - AltParty 2008 intro (by Paradox)
 - Ambermoon Music demo (by Psycho Hacking Force)
@@ -860,6 +868,8 @@ Demos:
 - High Fidelity Dreams (by Aura)
 - HighResMode (by Paradox)
 - Illusion (by Next)
+- It's A Girl (by Paradox)
+- It's A Girl 2 (by Paradox)
 - Jam-Cols (by ICE)
 - Just Musix 2 (by DHS)
 - Just another Blitter demo (by Anima)
@@ -891,6 +901,7 @@ Demos:
 - Rise of the blackstorm (by Mystic Bytes)
 - Riverside (by DHS)
 - RGBeast (by Aggression)
+- RGB Splitter (by Paradox)
 - SaboTagE (by Paradox)
 - Save the Earth (by Defence Force)
 - Sinfull Sinuses (by Chronicle)
@@ -919,6 +930,7 @@ Demos:
   - Reset screen colors are wrong and scrolltext skewed
 - Wonderful World (by Paradox)
 - XiTEC Presentation (by Omega)
+- Xmas 2004 (by Paradox)
 
 Color games:
 - 4K Pacman
@@ -982,6 +994,9 @@ line-A bitblits:
 	http://paradize.final-memory.org/games.shtml
 
 
+STE drawing programs:
+- Art for Kids / demo (EmuTOS >v0.9.12)
+
 STE (enhanced) music applications:
 - Blipp Blopper
 - E.P.S.S (both v0.54b demo & v1.0.1 full version)
@@ -1002,17 +1017,11 @@ EmuTOS version.
 Non-working Atari STE programs
 ------------------------------
 
-Partially working STE demos (old info, maybe 0.8.x?):
-- 20 years megademo (by Atari scene collective)
-  - issues in some screens that are for STE
-- 20 years Atari STE megademo (by Paradox)
-  - some screen don't work
-- Original Beat Maker
+Some non-working demos:
+- Original Beat Maker (OG.PRG, SV2019, by CrazyQ)
   - STE recognization fails -> bus error / panic
 
 Non-working games and music programs:
-- Art for Kids demo (Bus error at $6, after vro_cpyfm)
-  - with 512k image, bus errors already at startup
 - Cameleon (see EmuTOS incompatible.txt)
 - Hero (STOS, see EmuTOS incompatible.txt)
 - Protracker v2 STE, Equinox version (see EmuTOS incompatible.txt)
@@ -1109,6 +1118,7 @@ Working demos:
 - Game of Life 4k (by Aggression)
 - Gourand triangles demos (by ray//.tSCc)
   - these have asm sources!
+- Gurkensalat (by Lazer)
 - Illusion 64 (by Paranoia)
   - plasma screen has garbage on right side,
     end screen at top & bottom
@@ -1157,8 +1167,6 @@ Partly working demos:
   - Eventually dies to Dsp Stack Over/underflow
 - Motion (unfinished demo by Aggression)
   - only writer screens work
-- Gurkensalat (by Lazer)
-  - freezes after a while
 - Illness (by Escape)
   - freezes after a while to
     Bus error lget at 4e700cb9
