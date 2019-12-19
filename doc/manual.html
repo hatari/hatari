@@ -81,7 +81,6 @@ and demos. Of course you can run normal GEM applications with Hatari, too.
   <li>Printer port emulation on hardware level (print to file)</li>
   <li>RS232 emulation</li>
   <li>MIDI input/output/through emulation</li>
-  <li>Mega ST(E) real time clock (for Mega-ST and Mega-STE mode)</li>
   <li>IKBD emulation (keyboard, mouse and joystick) with custom
     keyboard mapping</li>
   <li>joystick emulation via cursor keys and joystick emulation via a
@@ -118,10 +117,16 @@ and demos. Of course you can run normal GEM applications with Hatari, too.
   <li>STE joypads</li>
   <li>TOS versions 1.06, 1.62, 2.05 and 2.06 (and EmuTOS) can be used in STE mode.</li>
 </ul>
-<p>
-Hatari can also emulate a Mega-STE, which had slightly different hardware
-compared to a normal STE (like a built-in real time clock chip).
-</p>
+
+<h4>Mega ST/STE hardware emulation</h4>
+<p>There is support for following additional features in Mega ST/STE
+and later HW:</p>
+<ul>
+  <li>Builtin real time clock</li>
+  <li>Experimental Mega STE/TT/Falcon SCC channel B serial port support (incomplete)</li>
+  <li>TOS versions 1.02, 1.04 and 2.06 (and EmuTOS) can be used in Mega ST mode, and
+      TOS versions 2.05 and 2.06 (and EmuTOS) in Mega STE mode.</li>
+</ul>
 
 <h4>TT hardware emulation</h4>
 <p>There is support for following additional TT features:</p>
@@ -137,7 +142,8 @@ compared to a normal STE (like a built-in real time clock chip).
 <p>There is support for following additional Falcon features:</p>
 <ul>
   <li>Partial Videl and Videl borders emulation for all Falcon screen modes</li>
-  <li>Aspect correction and scaling of small resolutions by an integer factor</li>
+  <li>Aspect correction and scaling of small resolutions by an integer factor
+      (SDL1), or to any size (SDL2)</li>
   <li>STE/Falcon palette switching and shifter</li>
   <li>Mono/RGB/VGA/TV monitor types</li>
   <li>DSP co-processor emulation</li>
@@ -150,7 +156,8 @@ compared to a normal STE (like a built-in real time clock chip).
   <li>Experimental NCR5380 SCSI emulation for hard drive support (incomplete)</li>
   <li>TOS versions 4.00, 4.02, 4.04 and 4.92 (and EmuTOS) can be used in Falcon
       mode. There is also experimental support for TOS 2.07 (the "Sparrow"-TOS),
-      but it is not recommended to use it</li>
+      and for <a href="m68k-linux-for-hatari.txt">Linux</a></li>, but they are
+      not recommended for use yet
 </ul>
 <p>
 Both TT and Falcon emulation support NVRAM for persistent OS configuration
@@ -1436,10 +1443,9 @@ certain games. In some other games, it gets worse if you enable this option.</p>
  the machine type which you have selected in the "System options"
  dialog. In ST and STE mode, you can choose between monochrome mode
  (select "Mono") and color mode (select one of the other monitor types).
- Note that when you select "TV" and use zoomed low resolution or
- switch to ST medium resolution, you will get a TV-like screen rendering
- which is a little bit faster but darker compared to the normal "RGB"
- monitor mode. Switching between mono and a color monitor acts like a monitor
+ When you select "TV" and use zoomed low resolution or switch to ST
+ medium, you get TV-like screen with half the intensity on every other
+ line. Switching between mono and a color monitor acts like a monitor
  switch on a real ST - so beware, this will reboot your emulated system!<br />
  In TT mode, you can only choose between TT-high resolution ("Mono")
  and normal modes (select one of the other monitor types).
