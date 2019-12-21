@@ -333,7 +333,6 @@ Demos:
 - Breath (by Mystic Bytes)
 - Calimer-o-demo (by Oxygene)
 - Charts Compilation (by Next)
-- City Frames (by DHS)
 - Coast II Coast (by Sector One, 4kB intro)
 - Coolism (music disk, by Effect)
 - Crisis (by Joska)
@@ -853,6 +852,7 @@ Demos:
 - CD-player (by Light)
 - Cernit Trandafir (by DHS)
 - Circus BackSTage (by BlaBLa)
+- City Frames (by DHS)
 - Core Flakes (by New Core)
 - Devotion (by Excellence in Art)
 - Dynamite (by Unit 17)
@@ -926,8 +926,9 @@ Demos:
 - Unbeatable (by Masters of Electric City)
 - Vision (by POV)
 - Vulgar Display of Power (by Extream)
+- We Accidentally Released (by SMFX & KÜA)
 - We Were @ STNICCC 2015 (by Oxygene)
-  - Reset screen colors are wrong and scrolltext skewed
+  - Reset screen scroll text colors are wrong
 - Wonderful World (by Paradox)
 - XiTEC Presentation (by Omega)
 - Xmas 2004 (by Paradox)
