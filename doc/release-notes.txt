@@ -59,9 +59,13 @@ Emulator:
     (slows profiling of addresses with symbols)
   - All profiler outputs have now reasonable limits
     (so that they don't flood console)
-  - Fix: profile post-processor exception (with symbol address aliases)
+  - Fix: exception in profile post-processor script
+    (with symbol address aliases)
 - Debugger:
   - Fix: CPU disassembly trace output doesn't go to specified trace file
+  - "symbols resident" option replaced with "symbols autoload"
+    option which be used to completely disable automatic symbol
+    loading and unloading for programs run through the GEMDOS HD
   - Trace flags can be added and removed instead of needing
     to always specify all the relevant ones:
     --trace os_base,aes, trace +xbios,bios, trace -bios,-aes
@@ -79,7 +83,9 @@ Building:
 
 Documentation:
 - Up to date documentation provided at: https://hatari.tuxfamily.org/doc/
-- m68k-linux-for-hatari.txt document on how to run Linux under Hatari
+- New m68k-linux-for-hatari.txt document on how to run Linux under Hatari
+- Debugging and profiling information is split from manual.html to
+  a separate debugger.html file
 - Minor improvements
 
 Fixed programs:
