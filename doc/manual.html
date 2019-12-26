@@ -59,6 +59,123 @@ as close as possible so that it is able to run most of the old games
 and demos. Of course you can run normal GEM applications with Hatari, too.
 </p>
 
+
+<h3>Atari HW differences matrix</h3>
+
+<p>Table of HW features belonging to each Atari machine, except for the HW
+common to all (FDC, IKBD, MFP, MIDI, PSG, RS-232...).</p>
+
+<table class="keytable">
+  <thead>
+    <tr class="backdropped" align=center>
+      <td align=right>Feature:</td>
+      <td width=6%>ST</td>
+      <td width=6%>MegaST</td>
+      <td width=6%>STE</td>
+      <td width=6%>MegaSTE</td>
+      <td width=6%>TT</td>
+      <td width=6%>Falcon</td>
+      <td align=left>Notes:</td>
+    </tr>
+  </thead>
+  </tbody>
+    <tr>
+      <td colspan=7><em>Audio HW:</em></td><td></td>
+    </tr><tr>
+      <td align=right>Microphone</td>
+      <td></td><td></td><td></td><td></td><td></td><td>X</td>
+      <td align=left>X = stock machine configuration</td>
+    </tr><tr>
+      <td align=right>Microwire/LMC1992</td><td></td><td>X</td><td></td><td>X</td><td>X</td><td>X</td>
+      <td align=left></td>
+    </tr><tr>
+      <td align=right>Stereo DMA</td>
+      <td></td><td></td><td>X</td><td>X</td><td>X</td><td>X</td>
+      <td align=left></td>
+    </tr><tr>
+      <td colspan=7><em>Graphics HW:</em></td><td></td>
+    </tr><tr>
+      <td align=right>Blitter</td>
+      <td>[x]</td><td>X</td><td>X</td><td>X</td><td></td><td>X</td>
+      <td align=left>[x] = add-on, supported since TOS 1.02</td>
+    </tr><tr>
+      <td align=right>ST, STE or TT Shifter</td>
+      <td>X</td><td>X</td><td>X</td><td>X</td><td>X</td><td></td>
+      <td align=left>Shifters for different machine types are similar, but different</td>
+    </tr><tr>
+      <td align=right>Videl</td>
+      <td></td><td></td><td></td><td></td><td></td><td>X</td>
+      <td align=left>Hatari Videl emulation is not complete</td>
+    </tr><tr>
+      <td colspan=7><em>Hard disk interfaces:</em></td><td></td>
+    </tr><tr>
+      <td align=right>ACSI</td>
+      <td>X</td><td>X</td><td>X</td><td>X</td><td>X</td><td></td>
+      <td align=left></td>
+    </tr><tr>
+      <td align=right>IDE</td>
+      <td>[1]</td><td>[1]</td><td>[1]</td><td>[1]</td><td>[2]</td><td>X</td>
+      <td align=left>
+      [1] = add-on, requires EmuTOS or TOS 2.06<br>
+      [2] = add-on, requires EmuTOS (or BSD/Linux)</td>
+    </tr><tr>
+      <td align=right>SCSI</td>
+      <td></td><td></td><td></td><td></td><td>X</td><td>X</td>
+      <td align=left></td>
+    </tr><tr>
+      <td colspan=7><em>Other HW features:</em></td><td></td>
+    </tr><tr>
+      <td align=right>56001 DSP</td>
+      <td></td><td></td><td></td><td></td><td></td><td>X</td>
+      <td align=left></td>
+    </tr><tr>
+      <td align=right>MFP 2 (TTMFP)</td>
+      <td></td><td></td><td></td><td></td><td>X</td><td></td>
+      <td align=left></td>
+    </tr><tr>
+      <td align=right>MMU</td>
+      <td>[x]</td><td>[x]</td><td>[x]</td><td>[x]</td><td>X</td><td>X</td>
+      <td align=left>[x] = 68030+ CPU replacement, requires EmuTOS or TOS 2.06</td>
+    </tr><tr>
+      <td align=right>NVRAM</td>
+      <td></td><td></td><td></td><td></td><td>X</td><td>X</td>
+      <td align=left></td>
+    </tr><tr>
+      <td align=right>Real Time Clock</td>
+      <td></td><td></td><td>X</td><td>X</td><td>X</td><td>X</td>
+      <td align=left></td>
+    </tr><tr>
+      <td align=right>SCC A/B</td>
+      <td></td><td></td><td></td><td>X</td><td>X</td><td>X</td>
+      <td align=left>Only partial support in Hatari</td>
+    </tr><tr>
+      <td align=right>TT-RAM +<br>32-bit addressing</td>
+      <td></td><td></td><td></td><td></td><td>X</td><td>[x]</td>
+      <td align=left>Hatari patches TT-RAM support to TOS v4.04</td>
+    </tr><tr>
+      <td align=right>VME bus</td>
+      <td></td><td></td><td></td><td>X</td><td>X</td><td></td>
+      <td align=left>expansion bus is not supported by Hatari</td>
+    </tr>
+  </tbody>
+  <thead>
+    <tr class="backdropped" align=center>
+      <td align=right>Feature</td>
+      <td width=6%>ST</td>
+      <td width=6%>MegaST</td>
+      <td width=6%>STE</td>
+      <td width=6%>MegaSTE</td>
+      <td width=6%>TT</td>
+      <td width=6%>Falcon</td>
+      <td align=left>Notes</td>
+    </tr>
+  </thead>
+</table>
+
+<p>(512k version of EmuTOS included with Hatari binary packages
+supports all Atari HW except for Falcon DSP & 16-bit Videl TrueColor mode.)</p>
+
+
 <h3>Features</h3>
 <ul>
   <li>68000 - 68040 emulation via the UAE CPU core
