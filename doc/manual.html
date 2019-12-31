@@ -142,7 +142,7 @@ common to all (FDC, IKBD, MFP, MIDI, PSG, RS-232...).</p>
     </tr><tr>
       <td class="hwfeat">MMU</td>
       <td>[x]</td><td>[x]</td><td>[x]</td><td>[x]</td><td>X</td><td>X</td>
-      <td class="hwnote">[x] = 68030+ CPU replacement, requires EmuTOS or TOS 2.06</td>
+      <td class="hwnote">[x] = 68030+ CPU replacement, requires 512k EmuTOS or TOS 2.06</td>
     </tr><tr>
       <td class="hwfeat">NVRAM</td>
       <td></td><td></td><td></td><td></td><td>X</td><td>X</td>
@@ -184,54 +184,83 @@ supports all Atari HW except for Falcon DSP & 16-bit Videl TrueColor mode.)</p>
 
 
 <h3>Features</h3>
+
+<h4>Emulator features</h4>
 <ul>
-  <li>68000 - 68040 emulation via the UAE CPU core
-      (additional 68060 and MMU emulation only with the WinUAE CPU core)</li>
-  <li>ST RAM size variable (from 512kiB up to 14MiB are possible)</li>
-  <li>TT RAM size variable (from 0 up to 512MiB are possible)</li>
+  <li>with SDL1: 2x scaling for ST-low resolutions,
+      aspect correction and integer factor scaling
+      for small Falcon resolutions</li>
+  <li>with SDL2: scaling any resolution to any size</li>
+  <li>interleaved lines rendering with TV "monitor type"
+      for ST-medium and (scaled) ST-low resolutions</li>
+  <li>joystick and joypad emulation via cursor keys and
+      connected PC joysticks</li>
+  <li>GEMDOS interface driver to mount host directories
+      as hard drives (with optional write-protection)</li>
+  <li>support for auto-starting Atari programs, and installing
+      Hatari as handler for them + floppy disk images</li>
+  <li>support for (MSA, GZip and Zip) compressed floppy disk images
+      (with optional write-protection)</li>
+  <li>support for whole system state snapshot save/restore</li>
+  <li>driver for extended VDI resolutions</li>
+  <li>sound recording as .WAV or .YM files</li>
+  <li>screenshots in PNG or BMP format</li>
+  <li>AVI video capture with sound</li>
+  <li>emulation speedup, slowdown and pause support</li>
+  <li>Built-in <a href="debugger.html">debugger and profiler</a>
+      with readline command completion, and tracing for
+      all system calls and many HW events</li>
+  <li>emulator control from Atari programs through NatFeats API,
+      and from the host through a command FIFO or a socket</li>
+</ul>
+
+<h4>CPU / FPU emulation</h4>
+<ul>
+  <li>with the (default) WinUAE CPU core: 68000 - 68060 and MMU emulation</li>
+  <li>with the (deprecated) UAE CPU core: 68000 - 68040 emulation (less accurate, but faster)</li>
+  <li>cycle-accurate 68000 emulation (only) with the WinUAE CPU core, and
+      several options for disabling CPU accuracy for performance</li>
+  <li>68881, 68882 and CPU internal FPU emulation, either using
+      host FPU (default, faster), or emulating them completely
+      in SW (more accurate in some corner-cases)</li>
+</ul>
+
+<h4>ST hardware emulation</h4>
+<ul>
+  <li>ST RAM from 512kiB up to 14MiB</li>
   <li>optional cartridge images for the ST ROM port</li>
-  <li>most of the ST specific hardware</li>
   <li>ST Shifter with ST-High, ST-Medium and ST-Low resolutions,
-    overscan effects for all borders in color resolutions</li>
+      overscan effects for all borders in color resolutions</li>
   <li>512 color ST palette</li>
   <li>Spec512 mode support for low and medium resolutions</li>
-  <li>many raster effects </li>
-  <li>scaling of low ST resolutions by factor two (with SDL1)
-      or to any size (with SDL2)</li>
-  <li>interleaved lines rendering of ST-medium and (scaled) ST-low
-    resolutions for the TV "monitor type"</li>
-  <li>Blitter chip emulation</li>
+  <li>many raster effects</li>
+  <li>Ricoh chipset and add-on Blitter chip emulation</li>
   <li>PSG YM2149 emulation (soundchip) including STFM samples</li>
   <li>Printer port emulation on hardware level (print to file)</li>
   <li>RS232 emulation</li>
   <li>MIDI input/output/through emulation</li>
   <li>IKBD emulation (keyboard, mouse and joystick) with custom
-    keyboard mapping</li>
-  <li>joystick emulation via cursor keys and joystick emulation via a
-    connected PC joystick</li>
+      keyboard mapping</li>
   <li>FDC (floppy disk controller) emulation using floppy disk images
-    in standard formats (*.ST, *.MSA, *.DIM and *.STX)</li>
+      in standard formats (*.ST, *.MSA, *.DIM and *.STX)</li>
   <li>FDC emulation via the IPF support library for using
-    *.IPF, *.RAW and *.CTR images</li>
-  <li>support for packed disk images (PkZip and Gzip)</li>
-  <li>optional write-protection for floppy disk images</li>
+      *.IPF, *.RAW and *.CTR images</li>
   <li>ACSI emulation for hard drive support (with basic support for extended
-    host adapter protocol to access disks &gt; 1 GB)</li>
-  <li>GEMDOS interface driver to mount directories as hard drives
-    with optional write-protection</li>
-  <li>support for memory snapshots (save whole system state)</li>
-  <li>driver for extended VDI resolutions</li>
-  <li>recording of sound as .WAV and .YM files</li>
-  <li>screenshots in PNG or BMP format</li>
-  <li>AVI animation capturing with sound</li>
-  <li>TOS versions 1.00, 1.02, 1.04 and 2.06 (and EmuTOS) can be used in ST mode</li>
-  <li>Built-in <a href="debugger.html">debugger and profiler</a>
-    with readline command completion</li>
+      host adapter protocol to access disks &gt; 1 GB)</li>
+  <li>TOS versions 1.00, 1.02, 1.04 and 2.06 (and EmuTOS) can be used in ST mode.</li>
+</ul>
+
+<h4>Mega ST hardware emulation</h4>
+<ul>
+  <li>Builtin real time clock (RTC)</li>
+  <li>IMP chipset instead of Ricoh one</li>
+  <li>TOS versions 1.02, 1.04 and 2.06 (and EmuTOS) can be used in Mega ST mode.</li>
 </ul>
 
 <h4>STE hardware emulation</h4>
 <p>There is support for following additional STE features:</p>
 <ul>
+  <li>Blitter chip emulation</li>
   <li>horizontal and vertical hardware fine scrolling</li>
   <li>split screen techniques / in-screen video address manipulations</li>
   <li>(STE specific) left border opening</li>
@@ -242,32 +271,30 @@ supports all Atari HW except for Falcon DSP & 16-bit Videl TrueColor mode.)</p>
   <li>TOS versions 1.06, 1.62, 2.05 and 2.06 (and EmuTOS) can be used in STE mode.</li>
 </ul>
 
-<h4>Mega ST/STE hardware emulation</h4>
-<p>There is support for following additional features in Mega ST/STE
+<h4>Mega STE hardware emulation</h4>
+<p>There is support for following additional features in Mega STE
 and later HW:</p>
 <ul>
-  <li>Builtin real time clock</li>
+  <li>Builtin real time clock (RTC)</li>
+  <li>DD/HD mode and DIP switch registers</li>
   <li>Experimental Mega STE/TT/Falcon SCC channel B serial port support (incomplete)</li>
-  <li>TOS versions 1.02, 1.04 and 2.06 (and EmuTOS) can be used in Mega ST mode, and
-      TOS versions 2.05 and 2.06 (and EmuTOS) in Mega STE mode.</li>
+  <li>TOS versions 2.05 and 2.06 (and EmuTOS) can be used in Mega STE mode.</li>
 </ul>
 
 <h4>TT hardware emulation</h4>
 <p>There is support for following additional TT features:</p>
 <ul>
   <li>TT low/med/high resolution support</li>
-  <li>The second MFP chip of the TT</li>
+  <li>Second (TT) MFP chip</li>
   <li>ST/TT palette switching and video shifter</li>
-  <li>RAM up to 14MiB (ST-RAM) and up to 512 MiB (TT-RAM)</li>
-  <li>Only TOS version 3.05 and 3.06 (and EmuTOS) can be used in TT mode.</li>
+  <li>Up to 512 MiB of TT-RAM and 32-bit memory addressing</li>
+  <li>Only TOS version 3.05 and 3.06 (and 512k EmuTOS) can be used in TT mode.</li>
 </ul>
 
 <h4>Falcon hardware emulation</h4>
 <p>There is support for following additional Falcon features:</p>
 <ul>
   <li>Partial Videl and Videl borders emulation for all Falcon screen modes</li>
-  <li>Aspect correction and scaling of small resolutions by an integer factor
-      (SDL1), or to any size (SDL2)</li>
   <li>STE/Falcon palette switching and shifter</li>
   <li>Mono/RGB/VGA/TV monitor types</li>
   <li>DSP co-processor emulation</li>
@@ -278,7 +305,7 @@ and later HW:</p>
       sample rates</li>
   <li>Experimental IDE master and slave emulation for hard drive support</li>
   <li>Experimental NCR5380 SCSI emulation for hard drive support (incomplete)</li>
-  <li>TOS versions 4.00, 4.02, 4.04 and 4.92 (and EmuTOS) can be used in Falcon
+  <li>TOS versions 4.00, 4.02, 4.04 and 4.92 (and 512k EmuTOS) can be used in Falcon
       mode. There is also experimental support for TOS 2.07 (the "Sparrow"-TOS),
       and for <a href="m68k-linux-for-hatari.txt">Linux</a>, but they are
       not recommended for use yet</li>
