@@ -576,6 +576,8 @@ Free/shareware/PD games:
 - Revenge of the mutant camels (shareware)
 - Robert in the Fire Factory
 - Robotz
+- Roc'hell*      (by Dune)
+  https://github.com/dune-demogroup/roc-hell/
 - Rockfall*
 - Santafly
 - Sideways
@@ -970,6 +972,8 @@ Color games:
 - Roger (line-A bitblit)
 - R-Type Deluxe (arcade conversion)
   http://atari-forum.com/viewtopic.php?f=28&t=29047
+- Sardonic
+  http://atari-forum.com/viewtopic.php?f=3&t=38121
 - Skulls (shareware "minesweeper")
 - Spy 4k
 - Stardust* (tunnel sequence demo)
@@ -1023,6 +1027,8 @@ Some non-working demos:
   - STE recognization fails -> bus error / panic
 
 Non-working games and music programs:
+- Newer Audio Sculpture versions (v1.5beta doesn't handle
+  disk access properly, v1.4 has broken crack, v1.1 works)
 - Cameleon (see EmuTOS incompatible.txt)
 - Hero (STOS, see EmuTOS incompatible.txt)
 - Protracker v2 STE, Equinox version (see EmuTOS incompatible.txt)
