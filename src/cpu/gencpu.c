@@ -1072,7 +1072,6 @@ static void loopmode_begin(void)
 {
 	if (loopmode) {
 		printf("\tif(!regs.loop_mode) {\n");
-		printf("\t\tregs.ird = opcode;\n");
 	}
 }
 static void loopmode_end(void)
@@ -4339,7 +4338,7 @@ static void gen_opcode (unsigned int opcode)
 
 	loopmode = 0;
 	// 68010 loop mode available if
-	if (cpu_level == 1) {
+	if (cpu_level == 1 && (using_ce || using_prefetch)) {
 		loopmode = opcode_loop_mode(opcode);
 		if (curi->mnemo == i_DBcc || loopmode) {
 			next_level_000();
