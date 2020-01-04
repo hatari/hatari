@@ -5984,7 +5984,7 @@ insretry:
 				}
 
 				mmu030_opcode = regs.opcode;
-				mmu030_ad[0].done = false;
+				mmu030_idx_done = 0;
 
 				cnt = 50;
 				for (;;) {
@@ -10289,7 +10289,7 @@ void fill_prefetch_030_ntx(void)
 	int idx = 0;
 
 	pc &= ~3;
-	mmu030_idx = 0;
+	mmu030_idx = mmu030_idx_done = 0;
 	reset_pipeline_state();
 	regs.cacheholdingdata_valid = 1;
 	regs.cacheholdingaddr020 = 0xffffffff;
@@ -10323,7 +10323,7 @@ void fill_prefetch_030_ntx_continue (void)
 	uaecptr pc_orig = pc;
 	int idx = 0;
 
-	mmu030_idx = 0;
+	mmu030_idx = mmu030_idx_done = 0;
 	reset_pipeline_state();
 	regs.cacheholdingdata_valid = 1;
 	regs.cacheholdingaddr020 = 0xffffffff;

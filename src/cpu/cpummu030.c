@@ -61,7 +61,7 @@ static int bBusErrorReadWrite;
 static int atcindextable[32];
 static int tt_enabled;
 
-int mmu030_idx;
+int mmu030_idx, mmu030_idx_done;
 
 uae_u32 mm030_stageb_address;
 bool mmu030_retry;
@@ -1810,8 +1810,10 @@ void mmu030_page_fault(uaecptr addr, bool read, int flags, uae_u32 fc)
 #endif
 
 #if 0
-	if (addr == 0xBFE201)
+	if (addr == 0x00016060)
 		write_log("!");
+#endif
+#if 0
 	if (mmu030_state[1] & MMU030_STATEFLAG1_SUBACCESS0)
 		write_log("!");
 	if (mmu030_state[1] & MMU030_STATEFLAG1_MOVEM1)
@@ -2756,7 +2758,7 @@ void m68k_do_rte_mmu030 (uaecptr a7)
 	uae_u32 mmu030_data_buffer_out_v = get_long_mmu030(a7 + 0x18);
 	// Internal register, our opcode storage area
 	uae_u32 oc = get_long_mmu030(a7 + 0x14);
-	int idxsize = -1;
+	int idxsize = -1, idxsize_done = -1;
 
 	// Fetch last word, real CPU does it to allow OS bus handler to map
 	// the page if frame crosses pages and following page is not resident.
@@ -2796,7 +2798,7 @@ void m68k_do_rte_mmu030 (uaecptr a7)
 		mmu030_state[1] = mmu030_state_1;
 		mmu030_state[2] = 0;
 		mmu030_opcode = oc;
-		mmu030_idx = 0;
+		mmu030_idx = mmu030_idx_done = 0;
 
 		m68k_areg(regs, 7) += 32;
 
@@ -2823,12 +2825,12 @@ void m68k_do_rte_mmu030 (uaecptr a7)
 			mmu030_fmovem_store_1 = get_long_mmu030(a7 + 0x5c - (8 + 1) * 4);
 		}
 
-		idxsize = get_word_mmu030(a7 + 0x36);
-		for (int i = 0; i < idxsize + 1; i++) {
-			mmu030_ad_v[i].done = i < idxsize;
+		uae_u16 v = get_word_mmu030(a7 + 0x36);
+		idxsize = v & 0xff;
+		idxsize_done = (v >> 8) & 0xff;
+		for (int i = 0; i < idxsize_done; i++) {
 			mmu030_ad_v[i].val = get_long_mmu030(a7 + 0x5c - (i + 1) * 4);
 		}
-		mmu030_ad_v[idxsize + 1].done = false;
 
 		// did we have data fault but DF bit cleared?
 		if (ssw & (MMU030_SSW_DF << 1) && !(ssw & MMU030_SSW_DF)) {
@@ -2842,10 +2844,9 @@ void m68k_do_rte_mmu030 (uaecptr a7)
 				// if movem, skip next move
 				mmu030_state_1 |= MMU030_STATEFLAG1_MOVEM2;
 			} else {
-				mmu030_ad_v[idxsize].done = true;
 				if (ssw & MMU030_SSW_RW) {
 					// Read and no DF: use value in data input buffer
-					mmu030_ad_v[idxsize].val = mmu030_data_buffer_in_v;
+					mmu030_ad_v[idxsize_done++].val = mmu030_data_buffer_in_v;
 				}
 			}
 			unalign_clear();
@@ -2857,8 +2858,8 @@ void m68k_do_rte_mmu030 (uaecptr a7)
 				mmu030_opcode_stageb = stageb;
 				write_log(_T("Software fixed stage B! opcode = %04x\n"), stageb);
 			} else {
-				mmu030_ad_v[idxsize].done = true;
 				mmu030_ad_v[idxsize].val = stageb;
+				idxsize_done = idxsize;
 				write_log(_T("Software fixed stage B! opcode = %04X, opword = %04x\n"), mmu030_opcode_v, stageb);
 			}
 		}
@@ -2881,8 +2882,8 @@ void m68k_do_rte_mmu030 (uaecptr a7)
 		mmu030_fmovem_store[1] = mmu030_fmovem_store_1;
 		mmu030_data_buffer_out = mmu030_data_buffer_out_v;
 		mmu030_idx = idxsize;
-		for (int i = 0; i <= mmu030_idx + 1; i++) {
-			mmu030_ad[i].done = mmu030_ad_v[i].done;
+		mmu030_idx_done = idxsize_done;
+		for (int i = 0; i < idxsize_done; i++) {
 			mmu030_ad[i].val = mmu030_ad_v[i].val;
 		}
 
@@ -2901,7 +2902,7 @@ void m68k_do_rte_mmu030 (uaecptr a7)
 	if ((ssw & MMU030_SSW_DF) && (ssw & MMU030_SSW_RM)) {
 
 		// Locked-Read-Modify-Write restarts whole instruction.
-		mmu030_ad[0].done = false;
+		idxsize_done = 0;
 
 	} else if (ssw & MMU030_SSW_DF) {
 
@@ -2948,8 +2949,8 @@ void m68k_do_rte_mmu030 (uaecptr a7)
 			if (mmu030_state[1] & MMU030_STATEFLAG1_MOVEM1) {
 				mmu030_state[1] |= MMU030_STATEFLAG1_MOVEM2;
 			} else if (idxsize >= 0) {
-				mmu030_ad[idxsize].val = mmu030_data_buffer_out;
-				mmu030_ad[idxsize].done = true;
+				mmu030_ad[mmu030_idx_done].val = mmu030_data_buffer_out;
+				mmu030_idx_done++;
 			}
 		} else {
 			if (mmu030_state[1] & MMU030_STATEFLAG1_SUBACCESS0) {
@@ -2971,7 +2972,7 @@ void m68k_do_rte_mmu030 (uaecptr a7)
 			if (mmu030_state[1] & MMU030_STATEFLAG1_MOVEM1) {
 				mmu030_state[1] |= MMU030_STATEFLAG1_MOVEM2;
 			} else if (idxsize >= 0) {
-				mmu030_ad[idxsize].done = true;
+				mmu030_idx_done++;
 			}
 		}
 
@@ -3009,7 +3010,7 @@ uae_u32 REGPARAM2 get_disp_ea_020_mmu030 (uae_u32 base, int idx)
 	uae_u16 dp;
 	int reg;
 	uae_u32 v;
-	int oldidx;
+	int oldidx, oldidx2;
 	int pcadd = 0;
 
 	// we need to do this hack here because in worst case we don't have enough
@@ -3022,6 +3023,7 @@ uae_u32 REGPARAM2 get_disp_ea_020_mmu030 (uae_u32 base, int idx)
 	}
 
 	oldidx = mmu030_idx;
+	oldidx2 = mmu030_idx_done;
 	dp = next_iword_mmu030_state ();
 	pcadd += 1;
 	
@@ -3073,7 +3075,7 @@ uae_u32 REGPARAM2 get_disp_ea_020_mmu030 (uae_u32 base, int idx)
 	mmu030_state[2] |= pcadd << (idx * 4);
 	mmu030_disp_store[idx] = v;
 	mmu030_idx = oldidx;
-	mmu030_ad[mmu030_idx].done = false;
+	mmu030_idx_done = oldidx2;
 
 	return v;
 }
@@ -3099,7 +3101,7 @@ uae_u32 REGPARAM2 get_disp_ea_020_mmu030c (uae_u32 base, int idx)
 	uae_u16 dp;
 	int reg;
 	uae_u32 v;
-	int oldidx;
+	int oldidx, oldidx2;
 	int pcadd = 0;
 
 	// we need to do this hack here because in worst case we don't have enough
@@ -3112,6 +3114,7 @@ uae_u32 REGPARAM2 get_disp_ea_020_mmu030c (uae_u32 base, int idx)
 	}
 
 	oldidx = mmu030_idx;
+	oldidx2 = mmu030_idx_done;
 	dp = next_iword_mmu030c_state ();
 	pcadd += 1;
 	
@@ -3163,7 +3166,7 @@ uae_u32 REGPARAM2 get_disp_ea_020_mmu030c (uae_u32 base, int idx)
 	mmu030_state[2] |= pcadd << (idx * 4);
 	mmu030_disp_store[idx] = v;
 	mmu030_idx = oldidx;
-	mmu030_ad[mmu030_idx].done = false;
+	mmu030_idx_done = oldidx2;
 
 	return v;
 }
@@ -3186,7 +3189,7 @@ void m68k_do_rte_mmu030c (uaecptr a7)
 	uae_u32 oc = get_long_mmu030c(a7 + 0x14);
 	uae_u32 stagesbc = get_long_mmu030c(a7 + 12);
 
-	int idxsize = -1;
+	int idxsize = -1, idxsize_done = -1;
 	bool doprefetch = true;
 
 	// Fetch last word, real CPU does it to allow OS bus handler to map
@@ -3240,7 +3243,7 @@ void m68k_do_rte_mmu030c (uaecptr a7)
 		mmu030_state[0] = 0;
 		mmu030_state[1] = mmu030_state_1;
 		mmu030_state[2] = 0;
-		mmu030_idx = 0;
+		mmu030_idx = mmu030_idx_done = 0;
 
 		doprefetch = false;
 
@@ -3269,12 +3272,12 @@ void m68k_do_rte_mmu030c (uaecptr a7)
 			mmu030_fmovem_store_1 = get_long_mmu030c(a7 + 0x5c - (8 + 1) * 4);
 		}
 
-		idxsize = get_word_mmu030c(a7 + 0x36);
-		for (int i = 0; i < idxsize + 1; i++) {
-			mmu030_ad_v[i].done = i < idxsize;
+		uae_u16 v = get_word_mmu030c(a7 + 0x36);
+		idxsize = v & 0xff;
+		idxsize_done = (v >> 8) & 0xff;
+		for (int i = 0; i < idxsize_done; i++) {
 			mmu030_ad_v[i].val = get_long_mmu030c(a7 + 0x5c - (i + 1) * 4);
 		}
-		mmu030_ad_v[idxsize + 1].done = false;
 
 		// did we have data fault but DF bit cleared?
 		if (ssw & (MMU030_SSW_DF << 1) && !(ssw & MMU030_SSW_DF)) {
@@ -3288,10 +3291,9 @@ void m68k_do_rte_mmu030c (uaecptr a7)
 				// if movem, skip next move
 				mmu030_state_1 |= MMU030_STATEFLAG1_MOVEM2;
 			} else {
-				mmu030_ad_v[idxsize].done = true;
 				if (ssw & MMU030_SSW_RW) {
 					// Read and no DF: use value in data input buffer
-					mmu030_ad_v[idxsize].val = mmu030_data_buffer_in_v;
+					mmu030_ad_v[idxsize_done++].val = mmu030_data_buffer_in_v;
 				}
 			}
 			unalign_clear();
@@ -3336,8 +3338,8 @@ void m68k_do_rte_mmu030c (uaecptr a7)
 		mmu030_fmovem_store[1] = mmu030_fmovem_store_1;
 		mmu030_data_buffer_out = mmu030_data_buffer_out_v;
 		mmu030_idx = idxsize;
-		for (int i = 0; i <= mmu030_idx + 1; i++) {
-			mmu030_ad[i].done = mmu030_ad_v[i].done;
+		mmu030_idx_done = idxsize_done;
+		for (int i = 0; i < idxsize_done; i++) {
 			mmu030_ad[i].val = mmu030_ad_v[i].val;
 		}
 
@@ -3370,7 +3372,7 @@ void m68k_do_rte_mmu030c (uaecptr a7)
 	if ((ssw & MMU030_SSW_DF) && (ssw & MMU030_SSW_RM)) {
 
 		// Locked-Read-Modify-Write restarts whole instruction.
-		mmu030_ad[0].done = false;
+		mmu030_idx_done = 0;
 
 	} else if (ssw & MMU030_SSW_DF) {
 		// retry faulted access
@@ -3410,8 +3412,8 @@ void m68k_do_rte_mmu030c (uaecptr a7)
 			if (mmu030_state[1] & MMU030_STATEFLAG1_MOVEM1) {
 				mmu030_state[1] |= MMU030_STATEFLAG1_MOVEM2;
 			} else if (idxsize >= 0) {
-				mmu030_ad[idxsize].val = mmu030_data_buffer_out;
-				mmu030_ad[idxsize].done = true;
+				mmu030_ad[mmu030_idx_done].val = mmu030_data_buffer_out;
+				mmu030_idx_done++;
 			}
 		} else {
 			if (mmu030_state[1] & MMU030_STATEFLAG1_SUBACCESS0) {
@@ -3433,7 +3435,7 @@ void m68k_do_rte_mmu030c (uaecptr a7)
 			if (mmu030_state[1] & MMU030_STATEFLAG1_MOVEM1) {
 				mmu030_state[1] |= MMU030_STATEFLAG1_MOVEM2;
 			} else if (idxsize >= 0) {
-				mmu030_ad[idxsize].done = true;
+				mmu030_idx_done++;
 			}
 		}
 	}
