@@ -10,6 +10,13 @@
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <link href="manual.css" rel="stylesheet" type="text/css" />
   <script src="toc.js"></script>
+  <style>
+  <!--
+    td.hwfeat { text-align:right; }
+    td.hwnote { text-align:left; }
+    td.hwsubdiv { text-align:center; font-style:italic; }
+  -->
+  </style>
 </head>
 
 <body>
@@ -60,114 +67,114 @@ and demos. Of course you can run normal GEM applications with Hatari, too.
 </p>
 
 
-<h3>Atari HW differences matrix</h3>
+<h3>Atari hardware differences matrix</h3>
 
-<p>Table of HW features belonging to each Atari machine, except for the HW
+<p>Table of hardware features belonging to each Atari machine, except for the HW
 common to all (FDC, IKBD, MFP, MIDI, PSG, RS-232...).</p>
 
 <table class="keytable" style="border-collapse:collapse;" >
   <thead>
-    <tr class="backdropped" align="center">
-      <td align="right">Feature:</td>
-      <td width="6%">ST</td>
-      <td width="6%">MegaST</td>
-      <td width="6%">STE</td>
-      <td width="6%">MegaSTE</td>
-      <td width="6%">TT</td>
-      <td width="6%">Falcon</td>
-      <td align="left">Notes:</td>
+    <tr class="backdropped" style="text-align:center;">
+      <td class="hwfeat">Feature:</td>
+      <td style="width:6%;">ST</td>
+      <td style="width:6%;">MegaST</td>
+      <td style="width:6%;">STE</td>
+      <td style="width:6%;">MegaSTE</td>
+      <td style="width:6%;">TT</td>
+      <td style="width:6%;">Falcon</td>
+      <td class="hwnote">Notes:</td>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <td colspan="7"><em>Audio HW:</em></td><td></td>
+      <td colspan="7" class="hwsubdiv">Audio HW:</td><td></td>
     </tr><tr>
-      <td align="right">Microphone</td>
+      <td class="hwfeat">Microphone</td>
       <td></td><td></td><td></td><td></td><td></td><td>X</td>
-      <td align="left">X = stock machine configuration</td>
+      <td class="hwnote">X = stock machine configuration</td>
     </tr><tr>
-      <td align="right">Microwire/LMC1992</td><td></td><td></td><td>X</td><td>X</td><td>X</td><td></td>
-      <td align="left"></td>
+      <td class="hwfeat">Microwire/LMC1992</td><td></td><td></td><td>X</td><td>X</td><td>X</td><td></td>
+      <td class="hwnote"></td>
     </tr><tr>
-      <td align="right">Stereo DMA</td>
+      <td class="hwfeat">Stereo DMA</td>
       <td></td><td></td><td>X</td><td>X</td><td>X</td><td>X</td>
-      <td align="left"></td>
+      <td class="hwnote"></td>
     </tr><tr>
-      <td colspan="7"><em>Graphics HW:</em></td><td></td>
+      <td colspan="7" class="hwsubdiv">Graphics HW:</td><td></td>
     </tr><tr>
-      <td align="right">Blitter</td>
+      <td class="hwfeat">Blitter</td>
       <td>[x]</td><td>X</td><td>X</td><td>X</td><td></td><td>X</td>
-      <td align="left">[x] = add-on, supported since TOS 1.02</td>
+      <td class="hwnote">[x] = add-on, supported since TOS 1.02</td>
     </tr><tr>
-      <td align="right">ST, STE or TT Shifter</td>
+      <td class="hwfeat">ST, STE or TT Shifter</td>
       <td>X</td><td>X</td><td>X</td><td>X</td><td>X</td><td></td>
-      <td align="left">Shifters for different machine types are similar, but different</td>
+      <td class="hwnote">Shifters for different machine types are similar, but different</td>
     </tr><tr>
-      <td align="right">Videl</td>
+      <td class="hwfeat">Videl</td>
       <td></td><td></td><td></td><td></td><td></td><td>X</td>
-      <td align="left">Hatari Videl emulation is not complete</td>
+      <td class="hwnote">Hatari Videl emulation is not complete</td>
     </tr><tr>
-      <td colspan="7"><em>Hard disk interfaces:</em></td><td></td>
+      <td colspan="7" class="hwsubdiv">Hard disk interfaces:</td><td></td>
     </tr><tr>
-      <td align="right">ACSI</td>
+      <td class="hwfeat">ACSI</td>
       <td>X</td><td>X</td><td>X</td><td>X</td><td>X</td><td></td>
-      <td align="left"></td>
+      <td class="hwnote"></td>
     </tr><tr>
-      <td align="right">IDE</td>
+      <td class="hwfeat">IDE</td>
       <td>[1]</td><td>[1]</td><td>[1]</td><td>[1]</td><td>[2]</td><td>X</td>
-      <td align="left">
-      [1] = add-on, requires EmuTOS or TOS 2.06<br>
+      <td class="hwnote">
+      [1] = add-on, requires EmuTOS or TOS 2.06<br/>
       [2] = add-on, requires EmuTOS (or BSD/Linux)</td>
     </tr><tr>
-      <td align="right">SCSI</td>
+      <td class="hwfeat">SCSI</td>
       <td></td><td></td><td></td><td></td><td>X</td><td>X</td>
-      <td align="left"></td>
+      <td class="hwnote"></td>
     </tr><tr>
-      <td colspan="7"><em>Other HW features:</em></td><td></td>
+      <td colspan="7" class="hwsubdiv">Other HW features:</td><td></td>
     </tr><tr>
-      <td align="right">56001 DSP</td>
+      <td class="hwfeat">56001 DSP</td>
       <td></td><td></td><td></td><td></td><td></td><td>X</td>
-      <td align="left"></td>
+      <td class="hwnote"></td>
     </tr><tr>
-      <td align="right">MFP 2 (TTMFP)</td>
+      <td class="hwfeat">MFP 2 (TTMFP)</td>
       <td></td><td></td><td></td><td></td><td>X</td><td></td>
-      <td align="left"></td>
+      <td class="hwnote"></td>
     </tr><tr>
-      <td align="right">MMU</td>
+      <td class="hwfeat">MMU</td>
       <td>[x]</td><td>[x]</td><td>[x]</td><td>[x]</td><td>X</td><td>X</td>
-      <td align="left">[x] = 68030+ CPU replacement, requires EmuTOS or TOS 2.06</td>
+      <td class="hwnote">[x] = 68030+ CPU replacement, requires EmuTOS or TOS 2.06</td>
     </tr><tr>
-      <td align="right">NVRAM</td>
+      <td class="hwfeat">NVRAM</td>
       <td></td><td></td><td></td><td></td><td>X</td><td>X</td>
-      <td align="left"></td>
+      <td class="hwnote"></td>
     </tr><tr>
-      <td align="right">Real Time Clock</td>
+      <td class="hwfeat">Real Time Clock</td>
       <td></td><td>X</td><td></td><td>X</td><td>X</td><td>X</td>
-      <td align="left"></td>
+      <td class="hwnote"></td>
     </tr><tr>
-      <td align="right">SCC A/B</td>
+      <td class="hwfeat">SCC A/B serial</td>
       <td></td><td></td><td></td><td>X</td><td>X</td><td>X</td>
-      <td align="left">Only partial support in Hatari</td>
+      <td class="hwnote">Only partial support in Hatari</td>
     </tr><tr>
-      <td align="right">TT-RAM +<br>32-bit addressing</td>
+      <td class="hwfeat">TT-RAM +<br/>32-bit addressing</td>
       <td></td><td></td><td></td><td></td><td>X</td><td>[x]</td>
-      <td align="left">Hatari patches TT-RAM support to TOS v4.04</td>
+      <td class="hwnote">Hatari patches TT-RAM support to TOS v4.04</td>
     </tr><tr>
-      <td align="right">VME bus</td>
+      <td class="hwfeat">VME bus</td>
       <td></td><td></td><td></td><td>X</td><td>X</td><td></td>
-      <td align="left">expansion bus is not supported by Hatari</td>
+      <td class="hwnote">expansion bus is not supported by Hatari</td>
     </tr>
   </tbody>
   <tfoot>
-    <tr class="backdropped" align="center">
-      <td align="right">Feature</td>
-      <td width="6%">ST</td>
-      <td width="6%">MegaST</td>
-      <td width="6%">STE</td>
-      <td width="6%">MegaSTE</td>
-      <td width="6%">TT</td>
-      <td width="6%">Falcon</td>
-      <td align="left">Notes</td>
+    <tr class="backdropped" style="text-align:center;">
+      <td class="hwfeat">Feature</td>
+      <td>ST</td>
+      <td>MegaST</td>
+      <td>STE</td>
+      <td>MegaSTE</td>
+      <td>TT</td>
+      <td>Falcon</td>
+      <td class="hwnote">Notes</td>
     </tr>
   </tfoot>
 </table>
@@ -1283,10 +1290,10 @@ changes that you have made.
  The FPU settings are also only available with the &quot;WinUAE&quot; builds
  of Hatari. They can be used to select the type of floating point unit of CPUs
  &gt;= 68020. In the non-WinUAE builds of Hatari, the FPU is always enabled for
- 68030 and 68040 CPUs.<br>
+ 68030 and 68040 CPUs.<br/>
  When emulating the FPU, you can use your own PC's CPU/FPU to do the math.
  This is the default and fastest method, but recent CPU might have some slight
- differences in rounding when compared to a real Motorala FPU.<br>
+ differences in rounding when compared to a real Motorala FPU.<br/>
  For higher precision, you can select the "Softfloat" emulation mode : this will
  emulate all the FPU operations using only the CPU and with the same rules as the
  Motorala's FPU. In that case, FPU emulation will be a little slower.
@@ -2159,7 +2166,7 @@ normal floppy disk image.
 <p>
 For protected disk, the most widely used method is to run pasti.prg on
 a real Atari ST and get a .STX image.
-<br>
+<br/>
 For more complex protections or altered disk, one can use *.IPF or *.CTR
 which include tools to check MFM data and possible problems when dumping a disk.
 </p>
@@ -2908,7 +2915,7 @@ emulation of the various custom chips and hardware parts of the
 emulated system, and their proper synchronization, is much trickier.
 </p>
 
-<hr>
+<hr/>
 
 </body>
 </html>
