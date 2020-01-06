@@ -613,7 +613,7 @@ static char bus_error_code[1000], bus_error_code2[1000];
 
 static void do_instruction_buserror(void)
 {
-	if (!using_bus_error)
+	if (!using_bus_error || using_mmu)
 		return;
 
 	if (bus_error_text[0]) {
@@ -641,7 +641,7 @@ static void check_bus_error_ins(int offset)
 
 static void check_prefetch_bus_error(int offset, int secondprefetchmode)
 {
-	if (!using_bus_error)
+	if (!using_bus_error || using_mmu)
 		return;
 
 	if (offset < 0) {
@@ -1775,7 +1775,7 @@ static void check_bus_error(const char *name, int offset, int write, int size, c
 {
 	int mnemo = g_instr->mnemo;
 
-	if (!using_bus_error)
+	if (!using_bus_error || using_mmu)
 		return;
 
 	// basic support
