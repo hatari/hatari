@@ -406,8 +406,8 @@ it to include a.out or GST/DRI symbols, you have two options:
 <li>Convert the symbols to ASCII format understood by the Hatari debugger.
     Writing converters for other ASCII formats is easy, and Hatari already
     contains converters for DSP LOD files, <span class="commandline">nm</span>
-    output for MiNT/a.out binaries and AHCC map files.
-<li>Create the ASCII symbols file by hand while you're debugging a program.
+    output for MiNT/a.out binaries and AHCC map files.</li>
+<li>Create the ASCII symbols file by hand while you're debugging a program.</li>
 </ul>
 
 <p><b>NOTE:</b> <span class="commandline">nm</span> output for GCC generated
@@ -819,16 +819,16 @@ hatari --parse pexec.ini /path/to/your/program.tos
 <ol>
 <li>"pexec.ini" sets a breakpoint to parse debugger commands from
     "program.ini" when TOS starts loading the given program
-    (it is first Pexec(0) after boot)
+    (it is first Pexec(0) after boot)</li>
 <li>"program.ini" sets a breakpoint to parse debugger commands from
     "trace.ini" when program code begins executing.  These two steps
-    are needed because TEXT variable isn't valid until TOS has booted
+    are needed because TEXT variable isn't valid until TOS has booted</li>
 <li>"trace.ini" input file loads symbols for the run program, sets Hatari
     to trace several things (see <a href="#Tracing">Tracing</a> section
     below) in the emulated system for few VBLs until breakpoint runs
-    commands from the "disable.ini" file
+    commands from the "disable.ini" file</li>
 <li>"disable.ini" input file will disable tracing and remove
-    all (remaining) breakpoints
+    all (remaining) breakpoints</li>
 </ol>
 
 <p><em>Note:</em></p>
@@ -1592,7 +1592,7 @@ $ dot -Tsvg program-profile-1.dot &gt; program-profile-1.svg
     have gray background.</li>
 <li>Both nodes, which inclusive or between-symbols cost exceeds
     the threshold value, and the arrows to &amp; from them,
-    are marked red.
+    are marked red.</li>
 <li>Arrow types indicate call types; normal arrows subroutine
     calls, circles branches/jumps, backarrows returns.
     Exception calls and returns are indicated with dashed lines,
