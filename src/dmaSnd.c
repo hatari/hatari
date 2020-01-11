@@ -432,6 +432,8 @@ static void DmaSnd_StartNewFrame(void)
 		nDmaSoundControl &= ~DMASNDCTRL_PLAY;
 		LOG_TRACE(TRACE_DMASND, "DMA snd stopped because new frame start=end=%x and repeat=off\n", dma.frameStartAddr);
 	}
+	else
+		MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE7 , MFP_GPIP_STATE_HIGH );	/* 1/HIGH=dma sound play */
 }
 
 
