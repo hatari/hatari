@@ -511,6 +511,10 @@ static void	MFP_Reset ( MFP_STRUCT *pMFP )
 
 	pMFP->PatchTimerD_Done = 0;
 
+	/* Clear input on timers A and B */
+	pMFP->TAI = 0;
+	pMFP->TBI = 0;
+
 	/* Clear IRQ */
 	pMFP->Current_Interrupt = -1;
 	pMFP->IRQ = 0;
@@ -1154,7 +1158,49 @@ void	MFP_GPIP_Set_Line_Input ( MFP_STRUCT *pMFP , Uint8 LineNr , Uint8 Bit )
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Change input line for Timer A (TAI) and generate an interrupt when in event count mode
+ * and counter reaches 1.
+ * TAI is associated to AER GPIP4
+ */
+void	MFP_TimerA_Set_Line_Input ( MFP_STRUCT *pMFP , Uint8 Bit )
+{
+	Uint8	AER_bit;
+
+	if ( pMFP->TAI == Bit )
+		return;					/* No change */
+	pMFP->TAI = Bit;				/* Update TAI value */
+
+	if ( pMFP->TACR != 0x08 )			/* Not in event count mode */
+		return;					/* Do nothing */
+
+	AER_bit = ( pMFP->AER >> 4 ) & 1;		/* TAI is associated to AER GPIP4 */
+	if ( Bit != AER_bit )				/* See MFP_GPIP_Update_Interrupt : we detect a transition */
+		return;					/* when AER=Bit */
+
+	if ( pMFP->TA_MAINCOUNTER == 1)			/* Timer expired? If so, generate interrupt */
+	{
+		pMFP->TA_MAINCOUNTER = pMFP->TADR;	/* Reload timer from data register */
+
+		/* Acknowledge in MFP circuit, pass bit,enable,pending */
+		MFP_InputOnChannel ( pMFP , MFP_INT_TIMER_A , 0 );
+	}
+	else
+	{
+		pMFP->TA_MAINCOUNTER--;			/* Decrement timer main counter */
+		/* As TA_MAINCOUNTER is Uint8, when we decrement TA_MAINCOUNTER=0 */
+		/* we go to TA_MAINCOUNTER=255, which is the wanted behaviour because */
+		/* data reg = 0 means 256 in fact. So, the next 2 lines are redundant. */
+/*		if ( TA_MAINCOUNTER < 0 )
+			TA_MAINCOUNTER = 255;
+*/
+	}
+}
+
+/*-----------------------------------------------------------------------*/
+/**
  * Generate Timer A Interrupt when in Event Count mode
+ * TODO : this should be replaced by using MFP_TimerA_Set_Line_Input
+ * to take AER into account
  */
 void	MFP_TimerA_EventCount( MFP_STRUCT *pMFP )
 {
@@ -1179,7 +1225,6 @@ void	MFP_TimerA_EventCount( MFP_STRUCT *pMFP )
 */
 	}
 }
-
 
 /*-----------------------------------------------------------------------*/
 /**

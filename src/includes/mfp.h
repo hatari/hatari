@@ -105,6 +105,8 @@ typedef struct {
 	Uint8	UDR;					/* USART Data Register 0x2F */
 
 	Uint8	IRQ;					/* IRQ signal (output) 1=IRQ requested*/
+	Uint8	TAI;					/* Input signal on Timer A (for event count mode) */
+	Uint8	TBI;					/* Input signal on Timer B (for event count mode) */
 
 	/* Emulation variables */
 	Uint8 TA_MAINCOUNTER;
@@ -163,6 +165,7 @@ extern void	MFP_UpdateIRQ_All ( Uint64 Event_Time );
 extern void	MFP_InputOnChannel ( MFP_STRUCT *pMFP , int Interrupt , int Interrupt_Delayed_Cycles );
 extern void	MFP_GPIP_Set_Line_Input ( MFP_STRUCT *pMFP , Uint8 LineNr , Uint8 Bit );
 
+extern void	MFP_TimerA_Set_Line_Input ( MFP_STRUCT *pMFP , Uint8 Bit );
 extern void	MFP_TimerA_EventCount( MFP_STRUCT *pMFP );
 extern void	MFP_TimerB_EventCount( MFP_STRUCT *pMFP , int Delayed_Cycles );
 
