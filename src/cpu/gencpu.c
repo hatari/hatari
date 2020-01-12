@@ -4730,10 +4730,11 @@ static void gen_opcode (unsigned int opcode)
 	case i_ORSR:
 	case i_ANDSR:
 	case i_EORSR:
+		next_level_000();
 		printf("\tMakeSR();\n");
 		if (cpu_level == 0)
 			printf("\tint t1 = regs.t1;\n");
-		genamode (curi, curi->smode, "srcreg", curi->size, "src", 1, 0, 0);
+		genamode (curi, curi->smode, "srcreg", curi->size, "src", 1, 0, cpu_level == 1 ? GF_NOREFILL : 0);
 		if (curi->size == sz_byte) {
 			printf("\tsrc &= 0xFF;\n");
 			if (curi->mnemo == i_ANDSR)
@@ -4827,6 +4828,7 @@ static void gen_opcode (unsigned int opcode)
 		break;
 	}
 	case i_SUBX:
+		next_level_000();
 		if (!isreg(curi->smode))
 			addcycles000 (2);
 		genamode(curi, curi->smode, "srcreg", curi->size, "src", 1, 0, GF_AA | GF_REVERSE);
@@ -4871,7 +4873,10 @@ static void gen_opcode (unsigned int opcode)
 				fill_prefetch_next_after(1, NULL);
 			}
 			if (curi->size == sz_long && isreg(curi->smode)) {
-				addcycles000(4);
+				if (cpu_level == 0)
+					addcycles000(4);
+				else
+					addcycles000(2);
 			}
 			if (curi->size == sz_long || !isreg(curi->smode)) {
 				genastore_rev("newv", curi->dmode, "dstreg", curi->size, "dst");
@@ -4994,6 +4999,7 @@ static void gen_opcode (unsigned int opcode)
 		break;
 	}
 	case i_ADDX:
+		next_level_000();
 		if (!isreg(curi->smode)) {
 			addcycles000(2);
 		}
@@ -5039,7 +5045,10 @@ static void gen_opcode (unsigned int opcode)
 				fill_prefetch_next_after(1, NULL);
 			}
 			if (curi->size == sz_long && isreg(curi->smode)) {
-				addcycles000(4);
+				if (cpu_level == 0)
+					addcycles000(4);
+				else
+					addcycles000(2);
 			}
 			if (curi->size == sz_long || !isreg(curi->smode)) {
 				genastore_rev("newv", curi->dmode, "dstreg", curi->size, "dst");
@@ -5327,6 +5336,7 @@ static void gen_opcode (unsigned int opcode)
 			bsetcycles(curi);
 			if (curi->dmode == imm) {
 				// btst dn,#x
+				addcycles000(2);
 				fill_prefetch_next_after(1, NULL);
 				printf("\tSET_ZFLG(1 ^ ((dst >> src) & 1));\n");
 			} else {
@@ -6570,7 +6580,10 @@ static void gen_opcode (unsigned int opcode)
 		pop_ins_cnt();
 		printf("\t}\n");
 		sync_m68k_pc ();
-		if (cpu_level != 1 && curi->size != sz_byte) {
+		if (cpu_level == 1) {
+			if (curi->size != sz_byte)
+				addcycles000(2);
+		} else if (cpu_level == 0) {
 			addcycles000(2);
 		}
 		get_prefetch_020_continue ();
@@ -6726,6 +6739,12 @@ bccl_not68020:
 		fill_prefetch_full_020 ();
 		returncycles ("\t\t\t", 10);
 		printf("\t\t}\n");
+		if (cpu_level == 1) {
+			printf("\t\tif (!src) {\n");
+			addcycles000_onlyce(2);
+			addcycles000_nonce("\t\t\t", 2);
+			printf("\t\t}\n");
+		}
 		add_head_cycs (10);
 		addcycles000_nonce("\t\t", 2 + 2);
 		if (cpu_level == 0) {
@@ -6778,6 +6797,7 @@ bccl_not68020:
 		printf("\tif (src == 0) {\n");
 		printf("\t\tdivbyzero_special(0, dst);\n");
 		incpc("%d", m68k_pc_offset);
+		addcycles000(4);
 		printf("\t\tException_cpu(5);\n");
 		write_return_cycles("\t\t", 0);
 		printf("\t}\n");
@@ -6812,6 +6832,7 @@ bccl_not68020:
 		printf("\tif (src == 0) {\n");
 		printf("\t\tdivbyzero_special (1, dst);\n");
 		incpc("%d", m68k_pc_offset);
+		addcycles000(4);
 		printf("\t\tException_cpu(5);\n");
 		write_return_cycles("\t\t", 0);
 		printf("\t}\n");
@@ -6884,15 +6905,15 @@ bccl_not68020:
 	case i_CHK:
 		genamode (curi, curi->smode, "srcreg", curi->size, "src", 1, 0, 0);
 		genamode (curi, curi->dmode, "dstreg", curi->size, "dst", 1, 0, 0);
-		sync_m68k_pc ();
-		addcycles000 (4);
-		printf("\tif ((uae_s32)dst < 0) {\n");
+		sync_m68k_pc();
+		addcycles000(4);
+		printf("\tif (dst > src) {\n");
 		printf("\t\tsetchkundefinedflags(src, dst, %d);\n", curi->size);
 		printf("\t\tException_cpu(6);\n");
 		write_return_cycles("\t\t", 0);
 		printf("\t}\n");
-		addcycles000 (2);
-		printf("\tif (dst > src) {\n");
+		addcycles000(2);
+		printf("\tif ((uae_s32)dst < 0) {\n");
 		printf("\t\tsetchkundefinedflags(src, dst, %d);\n", curi->size);
 		printf("\t\tException_cpu(6);\n");
 		write_return_cycles("\t\t", 0);
@@ -7377,6 +7398,7 @@ bccl_not68020:
 		printf("\tif (!m68k_movec2(src & 0xFFF, regp)) {\n");
 		write_return_cycles("\t\t", 0);
 		printf("\t}\n");
+		addcycles000(2);
 		trace_t0_68040_only();
 		break;
 	case i_MOVE2C:
@@ -7388,6 +7410,7 @@ bccl_not68020:
 		printf("\tif (!m68k_move2c(src & 0xFFF, regp)) {\n");
 		write_return_cycles("\t\t", 0);
 		printf("\t}\n");
+		addcycles000(4);
 		trace_t0_68040_only();
 		break;
 	case i_CAS:
