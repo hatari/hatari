@@ -1626,7 +1626,7 @@ uae_u32 m68k_disasm_2 (TCHAR *buf, int bufsize, uaecptr pc, uaecptr *nextpc, int
 		struct instr *dp;
 		uaecptr oldpc;
 		uaecptr m68kpc_illg = 0;
-		bool illegal = false;
+		int illegal = 0;
 		int segid, lastsegid;
 		TCHAR *symbolpos;
 
@@ -1636,12 +1636,12 @@ uae_u32 m68k_disasm_2 (TCHAR *buf, int bufsize, uaecptr pc, uaecptr *nextpc, int
 		extra = get_word_debug (pc + 2);
 		if (cpufunctbl[opcode] == op_illg_1 || cpufunctbl[opcode] == op_unimpl_1) {
 			m68kpc_illg = pc + 2;
-			illegal = TRUE;
+			illegal = 1;
 		}
 
 		dp = table68k + opcode;
 		if (dp->mnemo == i_ILLG) {
-			illegal = FALSE;
+			illegal = 0;
 			opcode = 0x4AFC;
 			dp = table68k + opcode;
 		}
@@ -1706,9 +1706,9 @@ uae_u32 m68k_disasm_2 (TCHAR *buf, int bufsize, uaecptr pc, uaecptr *nextpc, int
 			int lvl = (currprefs.cpu_model - 68000) / 10;
 			if (lvl == 6)
 				lvl = 5;
-			if (lvl < 1 || !(m2cregs[j].flags & (1 << (lvl - 1))))
-				illegal = true;
 			pc += 2;
+			if (lvl < 1 || !(m2cregs[j].flags & (1 << (lvl - 1))))
+				illegal = -1;
 		} else if (lookup->mnemo == i_CHK2) {
 			TCHAR *p;
 			if (!(extra & 0x0800)) {
@@ -2088,8 +2088,8 @@ uae_u32 m68k_disasm_2 (TCHAR *buf, int bufsize, uaecptr pc, uaecptr *nextpc, int
 			buf = buf_out(buf, &bufsize, _T("\n"));
 		}
 
-		if (illegal)
-			pc =  m68kpc_illg;
+		if (illegal > 0)
+			pc = m68kpc_illg;
 	}
 	if (nextpc)
 		*nextpc = pc;
