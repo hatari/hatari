@@ -104,6 +104,68 @@ Hatari command line is <em>autostarted</em>.
 </p>
 
 
+<h3>Debugger configuration options</h3>
+
+<p>When you save Hatari configuration, your current debugger
+settings are also saved to the Hatari configuration file.
+These are their defaults:</p>
+<pre>
+[Debugger]
+nNumberBase = 10
+nSymbolLines = -1
+nMemdumpLines = -1
+nDisasmLines = -1
+nBacktraceLines = 0
+nExceptionDebugMask = 515
+nDisasmOptions = 15
+bDisasmUAE = FALSE
+bSymbolsAutoLoad = TRUE
+bMatchAllSymbols = FALSE
+</pre>
+
+<p>Settings are following:</p>
+<dl>
+<dt>nNumberBase</dt>
+<dd>Debugger number base.
+    Set with the debugger "setopt [bin|dec|hex]" command</dd>
+<dt>nSymbolLines</dt>
+<dd>Number of lines to show when listing debug symbols</dd>
+<dt>nMemdumpLines</dt>
+<dd>Number of memory dump lines to show</dd>
+<dt>nDisasmLines</dt>
+<dd>Number of disassembly lines to show</dd>
+<dt>nBacktraceLines</dt>
+<dd>Number of items to show in stack/bactraces</dd>
+<dt>nExceptionDebugMask</dt>
+<dd>Mask of exceptions which invoke debugger when exceptions catching
+    is enabled (-D).  Set with the "--debug-except" option</dd>
+<dt>nDisasmOptions</dt>
+<dd>External disassembler output options, set with the "--disasm" option</dd>
+<dt>bDisasmUAE</dt>
+<dd>Whether disassembly uses CPU core internal disassembler ("uae"),
+    or the external disassembler ("ext" one with output options).
+    Set with the "--disasm" option</dd>
+<dt>bSymbolsAutoLoad</dt>
+<dd>Whether debug symbols are automatically loaded when debugger is invoked,
+    and freed when program exits, for Atari programs run though GEMDOS HD.
+    Set with the "symbols autoload [on|off]" command
+    </dd>
+<dt>bMatchAllSymbols</dt>
+<dd>Whether symbol name TAB-completion matches just symbols from
+    a relevant code section, or all of them.  Toggled with the
+    "symbols match" command</dd>
+</dl>
+
+<p>Settings on how many lines are shown can be changed only from the
+configuration file. You should need to change/set them only if you've
+built debugger without readline support, as it can't then determine
+terminal size ("-1" = use terminal height).</p>
+
+<p>Note that "--debug-except" and "--disasm" options can be given either
+on Hatari command line or, like all other Hatari command line options,
+with the debugger "setopt" command.</p>
+
+
 <h3>General debugger use</h3>
 
 <p>
@@ -421,7 +483,6 @@ cause huge overhead if that match is for something happening every few
 instructions).
 </p>
 
-
 <p>ASCII symbols file format is following:</p>
 <pre>
 e01034 T random
@@ -450,6 +511,24 @@ BSS offsets out (the values of the above virtual debugger variables
 like TEXT come from the currently loaded program's basepage, they're
 set after the program is loaded by TOS, see "info basepage" output).
 </p>
+
+
+<h4>Debugging resident programs</h4>
+
+<p>When debugging resident (TSR) programs (terminated with a Ptermres()
+GEMDOS call), you'll probably have a 'trigger' program that invokes
+some functionality in the TSR you want to debug. Loading your 'trigger'
+program from a Hatari GEMDOS emulated drive will autoload its symbols,
+thus replacing the symbols of your TSR (which you are really interested
+in) you loaded previously.</p>
+
+<p>Symbol replacement can be avoided in two ways:</p>
+<ul>
+<li>Using "symbols autoload off" debugger command, or</li>
+<li>Loading TSR symbols from an ASCII file (see above). This is the way
+to go if your TSR is not a normal Atari program, or you want to filter or
+add some symbols (e.g. for profiling)</li>
+</ul>
 
 
 <h3>Breakpoints</h3>
