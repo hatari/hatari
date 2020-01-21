@@ -431,39 +431,61 @@ static void returncycles(const char *s, int cycles)
 
 static void write_return_cycles(const char *s, int end)
 {
-	if (!end) {
+	if (end <= 0) {
 		clearmmufixup(0, 1);
 		clearmmufixup(1, 1);
 	}
 	if (using_ce || using_prefetch) {
-		if (count_read + count_write + count_cycles == 0)
-			count_cycles = 4;
-		returncycles(s, (count_read + count_write) * 4 + count_cycles);
-		if (end) {
-			printf("}\n");
-			printf("/* %d%s (%d/%d)",
-				(count_read + count_write) * 4 + count_cycles, count_ncycles ? "+" : "", count_read, count_write);
-			printf(" */\n");
-		}
+		if (end < 0) {
+			if (using_ce) {
+				printf("%sreturn;\n", s);
+			} else {
+				printf("%sreturn 0;\n", s);
+			}
+		} else {
+			int cc = count_cycles;
+			if (count_read + count_write + cc == 0)
+				cc = 4;
+			returncycles(s, (count_read + count_write) * 4 + cc);
+			if (end) {
+				printf("}\n");
+				printf("/* %d%s (%d/%d)",
+					(count_read + count_write) * 4 + cc, count_ncycles ? "+" : "", count_read, count_write);
+				printf(" */\n");
+			}
 #ifdef WINUAE_FOR_HATARI
-		insn_n_cycles = (count_read + count_write) * 4 + count_cycles;
+			insn_n_cycles = (count_read + count_write) * 4 + count_cycles;
 #endif
-//printf ( "pom_%d %s %x %d\n" , postfix , lookuptab[idx].name , opcode , (count_read + count_write) * 4 + count_cycles );
+		}
 	} else if (count_read + count_write) {
-		returncycles(s, (count_read + count_write) * 4 + count_cycles);
-		if (end) {
-			printf("}\n");
-		}
+		if (end < 0) {
+			if (using_ce020) {
+				printf("%sreturn;\n", s);
+			} else {
+				printf("%sreturn 0;\n", s);
+			}
+		} else {
+			returncycles(s, (count_read + count_write) * 4 + count_cycles);
+			if (end) {
+				printf("}\n");
+			}
 #ifdef WINUAE_FOR_HATARI
-		insn_n_cycles = (count_read + count_write) * 4 + count_cycles;
+			insn_n_cycles = (count_read + count_write) * 4 + count_cycles;
 #endif
-//printf ( "pom_%d %s %x %d\n" , postfix , lookuptab[idx].name , opcode , (count_read + count_write) * 4 + count_cycles );
-	} else {
-		returncycles(s, insn_n_cycles);
-		if (end) {
-			printf("}\n");
 		}
-//printf ( "pom_%d %s %x %d\n" , postfix , lookuptab[idx].name , opcode , insn_n_cycles );
+	} else {
+		if (end < 0) {
+			if (using_ce020) {
+				printf("%sreturn;\n", s);
+			} else {
+				printf("%sreturn 0;\n", s);
+			}
+		} else {
+			returncycles(s, insn_n_cycles);
+			if (end) {
+				printf("}\n");
+			}
+		}
 	}
 }
 
@@ -3496,6 +3518,7 @@ static void genastore_2 (const char *from, amodes mode, const char *reg, wordsiz
 					term ();
 				if (store_dir) {
 					printf("\t%s(%sa + 2, %s);\n", dstwx, to, from);
+					count_write++;
 					check_bus_error(to, 0, 1, 1, from, 1);
 					check_bus_error(to, 2, 1, 1, from, 1);
 					if (opcode_nextcopy)
@@ -3505,11 +3528,13 @@ static void genastore_2 (const char *from, amodes mode, const char *reg, wordsiz
 						genflags(flag_logical, g_instr->size, "src", "", "");
 					}
 					printf("\t%s(%sa, %s >> 16); \n", dstwx, to, from);
+					count_write++;
 					sprintf(tmp, "%s >> 16", from);
 					check_bus_error(to, 0, 1, 1, from, 1);
 					check_bus_error(to, 0, 1, 1, tmp, 1);
 				} else {
 					printf("\t%s(%sa, %s >> 16);\n", dstwx, to, from);
+					count_write++;
 					sprintf(tmp, "%s >> 16", from);
 					check_bus_error(to, 0, 1, 1, from, 1);
 					check_bus_error(to, 0, 1, 1, tmp, 1);
@@ -3519,6 +3544,7 @@ static void genastore_2 (const char *from, amodes mode, const char *reg, wordsiz
 					if (flags & GF_SECONDWORDSETFLAGS) {
 						genflags(flag_logical, g_instr->size, "src", "", "");
 					}
+					count_write++;
 					printf("\t%s(%sa + 2, %s); \n", dstwx, to, from);
 					check_bus_error(to, 0, 1, 1, from, 1);
 					check_bus_error(to, 2, 1, 1, from, 1);
@@ -4666,8 +4692,8 @@ static void gen_opcode (unsigned int opcode)
 	case 2: /* priviledged */
 		printf(
 			"\tif (!regs.s) {\n"
-			"\t\tException (8);\n");
-		write_return_cycles("\t\t", 0);
+			"\t\tException(8);\n");
+		write_return_cycles("\t\t", -1);
 		printf("\t}\n");
 		break;
 	case 3: /* privileged if size == word */
@@ -4675,8 +4701,8 @@ static void gen_opcode (unsigned int opcode)
 			break;
 		printf(
 			"\tif (!regs.s) {\n"
-			"\t\tException (8);\n");
-		write_return_cycles("\t\t", 0);
+			"\t\tException(8);\n");
+		write_return_cycles("\t\t", -1);
 		printf("\t}\n");
 		break;
 	}
@@ -4732,8 +4758,9 @@ static void gen_opcode (unsigned int opcode)
 	case i_EORSR:
 		next_level_000();
 		printf("\tMakeSR();\n");
-		if (cpu_level == 0)
+		if (cpu_level == 0) {
 			printf("\tint t1 = regs.t1;\n");
+		}
 		genamode (curi, curi->smode, "srcreg", curi->size, "src", 1, 0, cpu_level == 1 ? GF_NOREFILL : 0);
 		if (curi->size == sz_byte) {
 			printf("\tsrc &= 0xFF;\n");
@@ -6302,6 +6329,7 @@ static void gen_opcode (unsigned int opcode)
 			printf("\tuaecptr oldpc = %s;\n", getpc);
 			printf("\tuaecptr nextpc = oldpc + %d;\n", m68k_pc_offset);
 			if (using_exception_3 && cpu_level <= 1) {
+				push_ins_cnt();
 				printf("\tif (srca & 1) {\n");
 				if (curi->smode >= Ad16 && cpu_level == 1 && using_prefetch) {
 					dummy_prefetch("srca", NULL);
@@ -6313,6 +6341,7 @@ static void gen_opcode (unsigned int opcode)
 				printf("\t\texception3i(opcode, srca);\n");
 				write_return_cycles("\t\t", 0);
 				printf("\t}\n");
+				pop_ins_cnt();
 			}
 			if (using_mmu) {
 				printf("\t%s(m68k_areg(regs, 7) - 4, nextpc);\n", dstl);
@@ -6397,6 +6426,7 @@ static void gen_opcode (unsigned int opcode)
 		no_prefetch_ce020 = true;
 		genamode (curi, curi->smode, "srcreg", curi->size, "src", 0, 0, GF_AA|GF_NOREFILL);
 		if (using_exception_3) {
+			push_ins_cnt();
 			printf("\tif (srca & 1) {\n");
 			if (curi->smode >= Ad16 && cpu_level == 1 && using_prefetch) {
 				dummy_prefetch("srca", NULL);
@@ -6408,6 +6438,7 @@ static void gen_opcode (unsigned int opcode)
 			printf("\t\texception3i(opcode, srca);\n");
 			write_return_cycles("\t\t", 0);
 			printf("\t}\n");
+			pop_ins_cnt();
 		}
 		if (curi->smode == Ad16 || curi->smode == absw || curi->smode == PC16)
 			addcycles000 (2);
@@ -6802,6 +6833,7 @@ bccl_not68020:
 		genamodedual (curi,
 			curi->smode, "srcreg", sz_word, "src", 1, 0,
 			curi->dmode, "dstreg", sz_long, "dst", 1, 0);
+		push_ins_cnt();
 		printf("\tif (src == 0) {\n");
 		printf("\t\tdivbyzero_special(0, dst);\n");
 		incpc("%d", m68k_pc_offset);
@@ -6809,6 +6841,7 @@ bccl_not68020:
 		printf("\t\tException_cpu(5);\n");
 		write_return_cycles("\t\t", 0);
 		printf("\t}\n");
+		pop_ins_cnt();
 		printf("\tuae_u32 newv = (uae_u32)dst / (uae_u32)(uae_u16)src;\n");
 		printf("\tuae_u32 rem = (uae_u32)dst %% (uae_u32)(uae_u16)src;\n");
 		if (using_ce) {
@@ -6837,6 +6870,7 @@ bccl_not68020:
 		genamodedual(curi,
 			curi->smode, "srcreg", sz_word, "src", 1, 0,
 			curi->dmode, "dstreg", sz_long, "dst", 1, 0);
+		push_ins_cnt();
 		printf("\tif (src == 0) {\n");
 		printf("\t\tdivbyzero_special (1, dst);\n");
 		incpc("%d", m68k_pc_offset);
@@ -6844,6 +6878,7 @@ bccl_not68020:
 		printf("\t\tException_cpu(5);\n");
 		write_return_cycles("\t\t", 0);
 		printf("\t}\n");
+		pop_ins_cnt();
 		if (using_ce) {
 			printf("\tint cycles = getDivs68kCycles((uae_s32)dst, (uae_s16)src);\n");
 			addcycles000_3("\t");
