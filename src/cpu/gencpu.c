@@ -449,7 +449,7 @@ static void write_return_cycles_none(const char *s)
 	}
 }
 
-static void write_return_cycles(const char *s, int end)
+static void write_return_cycles2(const char *s, int end, int no4)
 {
 	if (end <= 0) {
 		clearmmufixup(0, 1);
@@ -464,7 +464,7 @@ static void write_return_cycles(const char *s, int end)
 			}
 		} else {
 			int cc = count_cycles;
-			if (count_read + count_write + cc == 0)
+			if (count_read + count_write + cc == 0 && !no4)
 				cc = 4;
 			returncycles(s, (count_read + count_write) * 4 + cc);
 			if (end) {
@@ -507,6 +507,15 @@ static void write_return_cycles(const char *s, int end)
 			}
 		}
 	}
+}
+
+static void write_return_cycles(const char *s, int end)
+{
+	write_return_cycles2(s, end, 0);
+}
+static void write_return_cycles_noadd(const char *s, int end)
+{
+	write_return_cycles2(s, end, 1);
 }
 
 static void addcycles_ce020_4 (const char *name, int head, int tail, int cycles)
@@ -3238,7 +3247,7 @@ static void genamode2x (amodes mode, const char *reg, wordsizes size, const char
 				(getv == 1 && (g_instr->smode == PC16 || g_instr->smode == PC8r) ? 2 : 1) | fcmodeflags);
 		}
 
-		write_return_cycles("\t\t", 0);
+		write_return_cycles_noadd("\t\t", 0);
 		printf("\t}\n");
 	}
 
@@ -6573,7 +6582,7 @@ static void gen_opcode (unsigned int opcode)
 					addcycles000_nonce("\t\t", 6);
 				}
 				printf("\t\texception3i(opcode, srca);\n");
-				write_return_cycles("\t\t", 0);
+				write_return_cycles_noadd("\t\t", 0);
 				printf("\t}\n");
 				pop_ins_cnt();
 			}
@@ -6677,7 +6686,7 @@ static void gen_opcode (unsigned int opcode)
 				addcycles000_nonce("\t\t", 6);
 			}
 			printf("\t\texception3i(opcode, srca);\n");
-			write_return_cycles("\t\t", 0);
+			write_return_cycles_noadd("\t\t", 0);
 			printf("\t}\n");
 			pop_ins_cnt();
 		}
