@@ -431,7 +431,7 @@ void do_cycles_ce020_long (unsigned long cycles)
 		do_cycles (c);
 }
 
-int is_cycle_ce (void)
+bool is_cycle_ce(uaecptr addr)
 {
 #ifndef WINUAE_FOR_HATARI
 	int hpos = current_hpos ();

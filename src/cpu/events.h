@@ -44,7 +44,7 @@ extern void do_cycles_ce020_long (unsigned long cycles);
 extern void events_schedule (void);
 extern void do_cycles_slow (unsigned long cycles_to_add);
 
-extern int is_cycle_ce (void);
+extern bool is_cycle_ce (uaecptr);
 
 extern unsigned long currcycle, nextevent;
 extern int is_syncline, is_syncline_end;
