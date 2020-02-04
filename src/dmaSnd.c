@@ -252,6 +252,8 @@ void DmaSnd_Reset(bool bCold)
 	dma.FrameLeft = 0;
 	dma.FrameRight = 0;
 
+	DmaSnd_Update_XSINT_Line ( MFP_GPIP_STATE_LOW );	/* O/LOW=dma sound idle */
+
 	if ( bCold )
 	{
 		/* Microwire has no reset signal, it will keep its values on warm reset */
