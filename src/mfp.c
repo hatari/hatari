@@ -314,9 +314,10 @@ Input -----/             |         ------------------------              |      
           STF/STE/megaSTE/TT : FDC/ACSI (0=IRQ set for FDC and/or ACSI, 1=IRQ not set for FDC nor ACSI)
           Falcon : FDC/IDE/SCSI (0=IRQ set for FDC and/or IDE and/or SCSI, 1=IRQ not set for FDC nor IDE nor SCSI)
       6 : rs232 port, ring indicator (RI) signal
-      7 : monochrome monitor detect (0=monochrome, 1=color) / dma sound (0=idle, 1=play)
+      7 : monochrome monitor detect (0=monochrome, 1=color) and/or dma sound (0=idle, 1=play)
           STF : monochrome monitor detect (0=monochrome, 1=color)
-          STE/TT/Falcon : monochrome monitor detect XOR dma sound play
+          STE/TT : monochrome monitor detect XOR dma sound play
+          Falcon : dma sound play/record (0=idle, 1=play/record)
 
     TT MFP :
       0 : connected to external I/O pin
@@ -1093,6 +1094,7 @@ static void	MFP_GPIP_Update_Interrupt ( MFP_STRUCT *pMFP , Uint8 GPIP_old , Uint
 	int	Bit;
 	Uint8	BitMask;
 
+//fprintf ( stderr , "gpip upd gpip_old=%x gpip_new=%x aer_old=%x aer_new=%x ddr_old=%x ddr_new=%x\n" , GPIP_old, GPIP_new, AER_old, AER_new, DDR_old, DDR_new );
 	State_old = GPIP_old ^ AER_old;
 	State_new = GPIP_new ^ AER_new;
 
@@ -1130,6 +1132,8 @@ void	MFP_GPIP_Set_Line_Input ( MFP_STRUCT *pMFP , Uint8 LineNr , Uint8 Bit )
 
 	Mask = 1 << LineNr;
 
+//fprintf ( stderr , "gpip set0 mask=%x bit=%d ddr=%x gpip=%x\n", Mask, Bit, pMFP->DDR, pMFP->GPIP );
+
 	/* Check that corresponding line is defined as input in DDR (0=input 1=output) */
 	/* and that the bit is changing */
 	if ( ( ( pMFP->DDR & Mask ) == 0 )
@@ -1151,7 +1155,7 @@ void	MFP_GPIP_Set_Line_Input ( MFP_STRUCT *pMFP , Uint8 LineNr , Uint8 Bit )
 		/* Update possible interrupts after changing GPIP */
 		MFP_GPIP_Update_Interrupt ( pMFP , GPIP_old , pMFP->GPIP , pMFP->AER , pMFP->AER , pMFP->DDR , pMFP->DDR );
 	}
-//fprintf ( stderr , "gpip set %x %x\n" , GPIP_old , pMFP->GPIP );
+//fprintf ( stderr , "gpip set gpip_old=%x gpip_new=%x\n" , GPIP_old , pMFP->GPIP );
 }
 
 
@@ -1811,8 +1815,8 @@ void	MFP_GPIP_ReadByte ( void )
  * - Bit 4 is used by the ACIAs (keyboard and midi)
  * - Bit 5 is used by the FDC / HDC
  * - Bit 6 is used for RS232: RI
- * - Bit 7 is monochrome monitor detection signal. On STE it is also XORed with
- *   the DMA sound play bit.
+ * - Bit 7 is monochrome monitor detection signal and/or dma sound. On STE and TT it is
+ *   also XORed with the DMA sound play bit. On Falcon it is only the DMA sound play bit
  *
  * When reading GPIP, output lines (DDR=1) should return the last value that was written,
  * only input lines (DDR=0) should be updated.
@@ -1825,15 +1829,24 @@ void	MFP_GPIP_ReadByte_Main ( MFP_STRUCT *pMFP )
 
 	gpip_new = pMFP->GPIP;
 
-	if (!bUseHighRes)
-		gpip_new |= 0x80;	/* Color monitor -> set top bit */
+	/* Bit 7 */
+	if (Config_IsMachineFalcon())
+	{
+		if (nCbar_DmaSoundControl & CROSSBAR_SNDCTRL_PLAY || nCbar_DmaSoundControl & CROSSBAR_SNDCTRL_RECORD)
+			gpip_new |= 0x80;
+		else
+			gpip_new &= ~0x80;
+	}
 	else
-		gpip_new &= ~0x80;
-	
-	if (nDmaSoundControl & DMASNDCTRL_PLAY)
-		gpip_new ^= 0x80;	/* Top bit is XORed with DMA sound control play bit (Ste/TT emulation mode)*/
-	if (nCbar_DmaSoundControl & CROSSBAR_SNDCTRL_PLAY || nCbar_DmaSoundControl & CROSSBAR_SNDCTRL_RECORD)
-		gpip_new ^= 0x80;	/* Top bit is XORed with Falcon crossbar DMA sound control play bit (Falcon emulation mode) */
+	{
+		if (!bUseHighRes)
+			gpip_new |= 0x80;	/* Color monitor -> set top bit */
+		else
+			gpip_new &= ~0x80;
+
+		if (nDmaSoundControl & DMASNDCTRL_PLAY)
+			gpip_new ^= 0x80;	/* Top bit is XORed with DMA sound control play bit (Ste/TT emulation mode)*/
+	}
 
 	if (ConfigureParams.Printer.bEnablePrinting)
 	{
