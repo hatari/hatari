@@ -267,6 +267,8 @@ struct crossbar_s {
 	Sint64 adc2dac_readBufferPosition_float; /* float value of read position for direct adc->dac transfer index */
 
 	Uint32 save_special_transfer;		/* Used in a special undocumented transfer mode (dsp sent is not in handshake mode and dsp receive is in handshake mode) */
+
+	Uint8  SNDINT_Signal;		/* Value of the SNDINT/SOUNDINT signal (connected to MFP) */
 };
 
 struct codec_s {
@@ -319,6 +321,7 @@ void Crossbar_Reset(bool bCold)
 	dmaRecord.handshakeMode_Frame = 0;
 
 	/* DMA stopped, force SNDINT to 0/LOW */
+	crossbar.SNDINT_Signal = MFP_GPIP_STATE_LOW;
 	MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE7 , MFP_GPIP_STATE_LOW );
 	MFP_TimerA_Set_Line_Input ( pMFP_Main , MFP_GPIP_STATE_LOW );
 
@@ -434,12 +437,14 @@ static void Crossbar_Update_SNDINT_Line ( bool RecordMode , Uint8 Bit )
 	{
 		/* Send a MFP15_Int (I7) at end of replay buffer if enabled */
 		if (dmaPlay.mfp15_int) {
+			crossbar.SNDINT_Signal = Bit;
 			MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE7 , Bit );
 			LOG_TRACE(TRACE_CROSSBAR, "Crossbar : MFP15 (IT7) interrupt from DMA play\n");
 		}
 
 		/* Send a TimerA_Int at end of replay buffer if enabled */
 		if (dmaPlay.timerA_int) {
+			crossbar.SNDINT_Signal = Bit;
 			MFP_TimerA_Set_Line_Input ( pMFP_Main , Bit );			/* Update events count / interrupt for timer A if needed */
 			LOG_TRACE(TRACE_CROSSBAR, "Crossbar : MFP Timer A interrupt from DMA play\n");
 		}
@@ -449,12 +454,14 @@ static void Crossbar_Update_SNDINT_Line ( bool RecordMode , Uint8 Bit )
 	{
 		/* Send a MFP15_Int (I7) at end of record buffer if enabled */
 		if (dmaRecord.mfp15_int) {
+			crossbar.SNDINT_Signal = Bit;
 			MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE7 , Bit );
 			LOG_TRACE(TRACE_CROSSBAR, "Crossbar : MFP15 (IT7) interrupt from DMA record\n");
 		}
 
 		/* Send a TimerA_Int at end of record buffer if enabled */
 		if (dmaRecord.timerA_int) {
+			crossbar.SNDINT_Signal = Bit;
 			MFP_TimerA_Set_Line_Input ( pMFP_Main , Bit );			/* Update events count / interrupt for timer A if needed */
 			LOG_TRACE(TRACE_CROSSBAR, "Crossbar : MFP Timer A interrupt from DMA record\n");
 		}

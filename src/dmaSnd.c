@@ -148,6 +148,8 @@ struct dma_s {
 
 	Sint16 FrameLeft;		/* latest values read from the FIFO */
 	Sint16 FrameRight;
+
+	Uint8  XSINT_Signal		/* Value of the XSINT signal (connected to MFP) */
 };
 
 static Sint64	frameCounter_float = 0;
@@ -295,6 +297,7 @@ void DmaSnd_MemorySnapShot_Capture(bool bSave)
  */
 static void DmaSnd_Update_XSINT_Line ( Uint8 Bit )
 {
+	dma.XSINT_Signal = Bit;
 	MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE7 , Bit );
 	MFP_TimerA_Set_Line_Input ( pMFP_Main , Bit );			/* Update events count / interrupt for timer A if needed */
 }
