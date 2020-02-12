@@ -149,7 +149,7 @@ struct dma_s {
 	Sint16 FrameLeft;		/* latest values read from the FIFO */
 	Sint16 FrameRight;
 
-	Uint8  XSINT_Signal		/* Value of the XSINT signal (connected to MFP) */
+	Uint8  XSINT_Signal;		/* Value of the XSINT signal (connected to MFP) */
 };
 
 static Sint64	frameCounter_float = 0;
