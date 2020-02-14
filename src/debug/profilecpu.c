@@ -223,23 +223,47 @@ static Uint32 index2address(Uint32 idx)
 /* ------------------ CPU profile results ----------------- */
 
 /**
- * Write string containing CPU cache stats, cycles, count, count percentage
- * for given address to provided buffer.
- *
- * Return true if data was available and non-zero, false otherwise.
+ * Return true if there's profile data for given address, false otherwise
  */
-bool Profile_CpuAddressDataStr(char *buffer, size_t maxlen, Uint32 addr)
+bool Profile_CpuAddr_HasData(Uint32 addr)
 {
 	cpu_profile_item_t *item;
-	float percentage;
 	Uint32 idx;
 
-	assert(buffer && maxlen);
 	if (!cpu_profile.data) {
 		return false;
 	}
 	idx = address2index(addr);
 	item = &(cpu_profile.data[idx]);
+	if (!item->count) {
+		return false;
+	}
+	return true;
+}
+
+/**
+ * Write string containing CPU cache stats, cycles, count, count percentage
+ * for given address to provided buffer.
+ *
+ * Return zero if there's no profiling data for given address,
+ * otherwise return the number of bytes consumed from the given buffer.
+ */
+int Profile_CpuAddr_DataStr(char *buffer, int maxlen, Uint32 addr)
+{
+	cpu_profile_item_t *item;
+	float percentage;
+	Uint32 idx;
+	int count;
+
+	assert(buffer && maxlen > 0);
+	if (!cpu_profile.data) {
+		return 0;
+	}
+	idx = address2index(addr);
+	item = &(cpu_profile.data[idx]);
+	if (!item->count) {
+		return 0;
+	}
 
 	if (cpu_profile.all.count) {
 		percentage = 100.0 * item->count / cpu_profile.all.count;
@@ -247,16 +271,20 @@ bool Profile_CpuAddressDataStr(char *buffer, size_t maxlen, Uint32 addr)
 		percentage = 0.0;
 	}
 #if DEBUG_CACHE
-	snprintf(buffer, maxlen, "%5.2f%% (%u, %u, %u, %u, %u, %u)",
-		 percentage, item->count, item->cycles,
-		 item->i_hits, item->i_misses,
-		 item->d_hits, item->d_misses);
+	count = snprintf(buffer, maxlen, "%5.2f%% (%u, %u, %u, %u, %u, %u)",
+			 percentage, item->count, item->cycles,
+			 item->i_hits, item->i_misses,
+			 item->d_hits, item->d_misses);
 #else
-	snprintf(buffer, maxlen, "%5.2f%% (%u, %u, %u, %u)",
-		 percentage, item->count, item->cycles,
-		 item->i_misses, item->d_hits);
+	count = snprintf(buffer, maxlen, "%5.2f%% (%u, %u, %u, %u)",
+			 percentage, item->count, item->cycles,
+			 item->i_misses, item->d_hits);
 #endif
-	return (item->count > 0);
+	if (count >= maxlen) {
+		/* truncated by (count - maxlen) amount */
+		return maxlen;
+	}
+	return count;
 }
 
 /**

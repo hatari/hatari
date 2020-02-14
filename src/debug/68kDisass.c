@@ -2537,7 +2537,7 @@ static void Disass68k_loop (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
 		}
 		if (optionPosComment >= 0)
 		{
-			if (Profile_CpuAddressDataStr(commentBuffer, sizeof(commentBuffer), addr))
+			if (Profile_CpuAddr_DataStr(commentBuffer, sizeof(commentBuffer), addr))
 			{
 				Disass68kComposeStr(lineBuffer, commentBuffer, optionPosComment+1, 0);
 			}
@@ -2612,7 +2612,6 @@ void Disasm_GetColumns(int *pos)
  */
 void Disasm_SetColumns(int *pos)
 {
-	Disasm_CheckOptionEngine();
 	optionPosAddress = pos[DISASM_COLUMN_ADDRESS];
 	optionPosHexdump = pos[DISASM_COLUMN_HEXDUMP];
 	optionPosLabel   = pos[DISASM_COLUMN_LABEL];

@@ -10,6 +10,7 @@
 #include "fpp.h"
 #include "debugmem.h"
 #include "disasm.h"
+#include "profile.h"
 
 
 struct cpum2c m2cregs[] = {
@@ -1599,6 +1600,9 @@ uae_u32 m68k_disasm_2 (TCHAR *buf, int bufsize, uaecptr pc, uaecptr *nextpc, int
 	uae_u32 deaddr2;
 	int actualea_src = 0;
 	int actualea_dst = 0;
+#ifdef WINUAE_FOR_HATARI
+	const int orig_size = bufsize;
+#endif
 
 	if (!table68k)
 		return 0;
@@ -2031,6 +2035,24 @@ uae_u32 m68k_disasm_2 (TCHAR *buf, int bufsize, uaecptr pc, uaecptr *nextpc, int
 				*deaddr = pc;
 			buf = buf_out (buf, &bufsize, _T(" == $%08x"), seaddr2);
 		}
+#ifdef WINUAE_FOR_HATARI
+		/* outputting only single disassembly line, and there's profile info? */
+		if (Profile_CpuAddr_HasData(oldpc)) {
+# define PROFILE_OUTPUT_COLUMN 68
+# define SPACE_FOR_NEWLINE 3
+			int count = bufsize - (orig_size - PROFILE_OUTPUT_COLUMN);
+			if (count > 0) {
+				snprintf(buf, bufsize, "%*c", count, ' ');
+				count = _tcslen(buf);
+				bufsize -= count;
+				buf += count;
+			}
+			Profile_CpuAddr_DataStr(buf, bufsize - SPACE_FOR_NEWLINE, oldpc);
+			count = _tcslen(buf);
+			bufsize -= count;
+			buf += count;
+		}
+#endif
 		buf = buf_out (buf, &bufsize, _T("\n"));
 
 		for (uaecptr segpc = oldpc; segpc < pc; segpc++) {
