@@ -35,7 +35,7 @@ Emulator bugs
 
   - Threaded RS232 code is completely broken for BSD derived systems
     like Mac, because they don't implement fine-grained FILE operation
-    locking like Linux/Glibc (and Windows?) does. As a result,
+    locking like Linux/Glibc does (and Windows?). As a result,
     re-configuring, or closing RS232 files, will cause deadlock with
     the reading thread
 
@@ -49,6 +49,14 @@ Emulator bugs
     select().  I'd prefer latter, for clarify and to avoid polling in
     the main thead, but it would mean that RS232 won't work on Windows
     until somebody contributes code for that too
+
+* MIDI support on Mac / Windows:
+
+  - MIDI support on these platforms requires Hatari to be built with
+    PortMidi library, and PortMidi requires additional Hatari code to
+    translate MIDI port data from/to PortMidi MIDI events. However,
+    that translation doesn't work 100% correctly yet (partly due to
+    missing PortMidi documentation)
 
 
 Known issues / workarounds
