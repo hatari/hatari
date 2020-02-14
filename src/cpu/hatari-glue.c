@@ -357,6 +357,7 @@ uae_u32 REGPARAM3 OpCode_NatFeat_Call(uae_u32 opcode)
 TCHAR* buf_out (TCHAR *buffer, int *bufsize, const TCHAR *format, ...)
 {
 	va_list parms;
+	int count;
 
 	if (buffer == NULL)
 	{
@@ -366,9 +367,11 @@ TCHAR* buf_out (TCHAR *buffer, int *bufsize, const TCHAR *format, ...)
 	va_start (parms, format);
 	vsnprintf (buffer, (*bufsize) - 1, format, parms);
 	va_end (parms);
-	*bufsize -= _tcslen (buffer);
 
-	return buffer + _tcslen (buffer);
+	count = _tcslen (buffer);
+	*bufsize -= count;
+
+	return buffer + count;
 }
 
 void error_log(const TCHAR *format, ...)
