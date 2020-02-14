@@ -35,7 +35,6 @@ const char IoMemTabTT_fileid[] = "Hatari ioMemTabTT.c : " __DATE__ " " __TIME__;
 #include "scc.h"
 #include "screen.h"
 #include "video.h"
-#include "blitter.h"
 #include "stMemory.h"
 
 
