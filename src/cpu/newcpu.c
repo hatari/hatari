@@ -2750,6 +2750,7 @@ static void Exception_ce000 (int nr)
 	exception_debug (nr);
 	MakeSR ();
 
+	bool g1 = generates_group1_exception(regs.ir);
 	if (!regs.s) {
 		regs.usp = m68k_areg (regs, 7);
 		m68k_areg (regs, 7) = regs.isp;
@@ -2873,7 +2874,7 @@ kludge_me_do:
 				regs.ir = nr;
 				exception3_read(regs.ir | 0x20000 | 0x10000, newpc, sz_word, 2);
 			} else {
-				exception3_read(regs.ir | 0x40000, newpc, sz_word, 2);
+				exception3_read(regs.ir | 0x40000 | 0x20000 | (g1 ? 0x10000 : 0), newpc, sz_word, 2);
 			}
 		} else if (currprefs.cpu_model == 68010) {
 			// offset, not vbr + offset
@@ -3183,17 +3184,23 @@ static void Exception_normal (int nr)
 	int sv = regs.s;
 	int interrupt;
 	int vector_nr = nr;
+	bool g1 = false;
 
 	cache_default_data |= CACHE_DISABLE_ALLOCATE;
 
 	interrupt = nr >= 24 && nr < 24 + 8;
 
 #ifndef WINUAE_FOR_HATARI
-	if (interrupt && currprefs.cpu_model <= 68010)
+	if (currprefs.cpu_model <= 68010) {
+		g1 = generates_group1_exception(regs.ir);
+		if (interrupt)
+			vector_nr = iack_cycle(nr);
+	}
 #else
+	g1 = generates_group1_exception(regs.ir);
 	if (interrupt)
-#endif
 		vector_nr = iack_cycle(nr);
+#endif
 
 	exception_debug (nr);
 	MakeSR ();
@@ -3437,7 +3444,7 @@ kludge_me_do:
 				regs.ir = nr;
 				exception3_read(regs.ir | 0x20000 | 0x10000, newpc, sz_word, 2);
 			} else {
-				exception3_read(regs.ir | 0x40000, newpc, sz_word, 2);
+				exception3_read(regs.ir | 0x40000 | 0x20000 | (g1 ? 0x10000 : 0), newpc, sz_word, 2);
 			}
 		} else if (currprefs.cpu_model == 68010) {
 			regs.t1 = 0;
