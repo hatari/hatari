@@ -87,82 +87,113 @@ common to all (FDC, IKBD, MFP, MIDI, PSG, RS-232...).</p>
   </thead>
   <tbody>
     <tr>
-      <td colspan="7" class="hwsubdiv">Audio HW:</td><td></td>
-    </tr><tr>
-      <td class="hwfeat">Microphone</td>
-      <td></td><td></td><td></td><td></td><td></td><td>X</td>
+      <td colspan="7" class="hwsubdiv">Audio HW:</td>
       <td class="hwnote">X = stock machine configuration</td>
-    </tr><tr>
-      <td class="hwfeat">Microwire/LMC1992</td><td></td><td></td><td>X</td><td>X</td><td>X</td><td></td>
-      <td class="hwnote"></td>
-    </tr><tr>
-      <td class="hwfeat">Stereo DMA</td>
-      <td></td><td></td><td>X</td><td>X</td><td>X</td><td>X</td>
-      <td class="hwnote"></td>
-    </tr><tr>
-      <td colspan="7" class="hwsubdiv">Graphics HW:</td><td></td>
-    </tr><tr>
-      <td class="hwfeat">Blitter</td>
-      <td>[x]</td><td>X</td><td>X</td><td>X</td><td></td><td>X</td>
-      <td class="hwnote">[x] = add-on, supported since TOS 1.02</td>
-    </tr><tr>
-      <td class="hwfeat">ST, STE or TT Shifter</td>
-      <td>X</td><td>X</td><td>X</td><td>X</td><td>X</td><td></td>
-      <td class="hwnote">Shifters for different machine types are similar, but different</td>
-    </tr><tr>
-      <td class="hwfeat">Videl</td>
-      <td></td><td></td><td></td><td></td><td></td><td>X</td>
-      <td class="hwnote">Hatari Videl emulation is not complete</td>
-    </tr><tr>
-      <td colspan="7" class="hwsubdiv">Hard disk interfaces:</td><td></td>
-    </tr><tr>
-      <td class="hwfeat">ACSI</td>
-      <td>X</td><td>X</td><td>X</td><td>X</td><td>X</td><td></td>
-      <td class="hwnote"></td>
-    </tr><tr>
-      <td class="hwfeat">IDE</td>
-      <td>[1]</td><td>[1]</td><td>[1]</td><td>[1]</td><td>[2]</td><td>X</td>
-      <td class="hwnote">
-      [1] = add-on, requires EmuTOS or TOS 2.06<br/>
-      [2] = add-on, requires EmuTOS (or BSD/Linux)</td>
-    </tr><tr>
-      <td class="hwfeat">SCSI</td>
-      <td></td><td></td><td></td><td></td><td>X</td><td>X</td>
-      <td class="hwnote"></td>
-    </tr><tr>
-      <td colspan="7" class="hwsubdiv">Other HW features:</td><td></td>
-    </tr><tr>
+    </tr>
+    <tr>
       <td class="hwfeat">56001 DSP</td>
       <td></td><td></td><td></td><td></td><td></td><td>X</td>
       <td class="hwnote"></td>
-    </tr><tr>
-      <td class="hwfeat">MFP 2 (TTMFP)</td>
-      <td></td><td></td><td></td><td></td><td>X</td><td></td>
+    </tr>
+    <tr>
+      <td class="hwfeat">Microphone</td>
+      <td></td><td></td><td></td><td></td><td></td><td>X</td>
       <td class="hwnote"></td>
-    </tr><tr>
+    </tr>
+    <tr>
+      <td class="hwfeat">Microwire/LMC1992</td><td></td><td></td><td>X</td><td>X</td><td>X</td><td></td>
+      <td class="hwnote"></td>
+    </tr>
+    <tr>
+      <td class="hwfeat">Stereo DMA</td>
+      <td></td><td></td><td>X</td><td>X</td><td>X</td><td>X</td>
+      <td class="hwnote"></td>
+    </tr>
+    <tr>
+      <td colspan="7" class="hwsubdiv">Graphics HW:</td><td></td>
+    </tr>
+    <tr>
+      <td class="hwfeat">Blitter</td>
+      <td>[x]</td><td>X</td><td>X</td><td>X</td><td></td><td>X</td>
+      <td class="hwnote">[x] = add-on, supported since TOS 1.02</td>
+    </tr>
+    <tr>
+      <td class="hwfeat">Color grades</td>
+      <td>512</td><td>512</td><td>4096</td><td>4096</td><td>4096</td><td>262144</td>
+      <td class="hwnote"></td>
+    </tr>
+    <tr>
+      <td class="hwfeat">Max. palette size</td>
+      <td>16</td><td>16</td><td>16</td><td>16</td><td>256</td><td>256</td>
+      <td class="hwnote">Falcon also has a 16-bit high-color non-indexed mode</td>
+    </tr>
+    <tr>
+      <td class="hwfeat">Horizontal scrolling</td>
+      <td></td><td></td><td>X</td><td>X</td><td>X</td><td>X</td>
+      <td class="hwnote">Only possible with tricks on the normal ST</td>
+    </tr>
+    <tr>
+      <td class="hwfeat">Videl</td>
+      <td></td><td></td><td></td><td></td><td></td><td>X</td>
+      <td class="hwnote">Hatari Videl emulation is not complete</td>
+    </tr>
+    <tr>
+      <td colspan="7" class="hwsubdiv">Hard disk interfaces:</td><td></td>
+    </tr>
+    <tr>
+      <td class="hwfeat">ACSI</td>
+      <td>X</td><td>X</td><td>X</td><td>X</td><td>X</td><td></td>
+      <td class="hwnote"></td>
+    </tr>
+    <tr>
+      <td class="hwfeat">IDE</td>
+      <td>[1]</td><td>[1]</td><td>[1]</td><td>[1]</td><td>[2]</td><td>X</td>
+      <td class="hwnote">
+      [1] = add-on, requires EmuTOS or TOS 2.06 for booting<br/>
+      [2] = add-on, requires EmuTOS (or BSD/Linux)</td>
+    </tr>
+    <tr>
+      <td class="hwfeat">SCSI</td>
+      <td></td><td></td><td></td><td></td><td>X</td><td>X</td>
+      <td class="hwnote"></td>
+    </tr>
+    <tr>
+      <td colspan="7" class="hwsubdiv">Other HW features:</td><td></td>
+    </tr>
+    <tr>
+      <td class="hwfeat">Second MFP</td>
+      <td></td><td></td><td></td><td></td><td>X</td><td></td>
+      <td class="hwnote">A.k.a. TT-MFP</td>
+    </tr>
+    <tr>
       <td class="hwfeat">MMU</td>
       <td>[x]</td><td>[x]</td><td>[x]</td><td>[x]</td><td>X</td><td>X</td>
-      <td class="hwnote">[x] = 68030+ CPU replacement, requires 512k EmuTOS or TOS 2.06</td>
-    </tr><tr>
+      <td class="hwnote">[x] = Needs 68030+ CPU, requires 512k EmuTOS or TOS 2.06</td>
+    </tr>
+    <tr>
       <td class="hwfeat">NVRAM</td>
       <td></td><td></td><td></td><td></td><td>X</td><td>X</td>
       <td class="hwnote"></td>
-    </tr><tr>
+    </tr>
+    <tr>
       <td class="hwfeat">Real Time Clock</td>
       <td></td><td>X</td><td></td><td>X</td><td>X</td><td>X</td>
-      <td class="hwnote"></td>
-    </tr><tr>
+      <td class="hwnote">The Mega RTC is different from the Falcon/TT RTC</td>
+    </tr>
+    <tr>
       <td class="hwfeat">SCC A/B serial</td>
       <td></td><td></td><td></td><td>X</td><td>X</td><td>X</td>
       <td class="hwnote">Only partial support in Hatari</td>
-    </tr><tr>
+    </tr>
+    <tr>
       <td class="hwfeat">TT-RAM +<br/>32-bit addressing</td>
       <td></td><td></td><td></td><td></td><td>X</td><td>[x]</td>
-      <td class="hwnote">Hatari patches TT-RAM support to TOS v4.04</td>
-    </tr><tr>
+      <td class="hwnote">[x] = Hatari patches TT-RAM support to TOS v4.04</td>
+    </tr>
+    <tr>
       <td class="hwfeat">VME bus</td>
       <td></td><td></td><td></td><td>X</td><td>X</td><td></td>
-      <td class="hwnote">expansion bus is not supported by Hatari</td>
+      <td class="hwnote">This expansion bus is not supported by Hatari</td>
     </tr>
   </tbody>
   <tfoot>
