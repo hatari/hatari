@@ -41,10 +41,14 @@ char *ua (const char *s) {
 static FILE *headerfile;
 static FILE *stblfile;
 
+// optional settings
+static int using_always_dynamic_cycles = 1;
+static int using_bus_error = 1;
+
+
 static int using_prefetch, using_indirect, using_mmu;
 static int using_prefetch_020, using_ce020;
 static int using_exception_3;
-static int using_bus_error;
 static int using_ce;
 static int using_tracer;
 static int using_waitstates;
@@ -53,7 +57,10 @@ static int using_debugmem;
 static int using_test;
 static int need_special_fixup;
 static int cpu_level, cpu_generic;
-static int count_read, count_write, count_cycles, count_ncycles;
+static int count_readp;
+static int count_readw, count_readl;
+static int count_writew, count_writel;
+static int count_cycles, count_ncycles;
 static int count_cycles_ce020;
 static int count_read_ea, count_write_ea, count_cycles_ea;
 static const char *mmu_postfix, *xfc_postfix;
@@ -61,6 +68,7 @@ static int memory_cycle_cnt;
 static int did_prefetch;
 static int ipl_fetched;
 static int opcode_nextcopy;
+static int do_always_dynamic_cycles;
 
 static int optimized_flags;
 
@@ -193,7 +201,7 @@ static void out(const char *format, ...)
 			for (int i = 0; i < brace_level; i++) {
 				printf("\t");
 			}
-			printf(outbuf2);
+			printf("%s", outbuf2);
 
 			ps = outbuf2;
 			while (*ps) {
@@ -271,8 +279,8 @@ static int m68k_pc_offset, m68k_pc_offset_old;
 static int m68k_pc_total;
 static int exception_pc_offset;
 static int branch_inst;
-static int insn_n_cycles, insn_n_cycles020;
 static int ir2irc;
+static int insn_n_cycles;
 
 static int tail_ce020, total_ce020, head_in_ea_ce020;
 static bool head_ce020_cycs_done, tail_ce020_done;
@@ -282,26 +290,45 @@ static bool no_prefetch_ce020;
 static bool got_ea_ce020;
 
 // 68010-40 needs different implementation than 68060
-static void next_level_060_to_040(void)
+static bool next_level_060_to_040(void)
 {
 	if (cpu_level >= 5) {
-		if (next_cpu_level < 5)
+		if (next_cpu_level < 5) {
 			next_cpu_level = 5 - 1;
+			return true;
+		}
 	}
+	return false;
 }
 // 68010-30 needs different implementation than 68040/060
-static void next_level_040_to_030(void)
+static bool next_level_040_to_030(void)
 {
 	if (cpu_level >= 4) {
-		if (next_cpu_level < 4)
+		if (next_cpu_level < 4) {
 			next_cpu_level = 4 - 1;
+			return true;
+		}
 	}
+	return false;
+}
+// 68000-010 needs different implementation than 68020+
+static bool next_level_020_to_010(void)
+{
+	if (cpu_level >= 2) {
+		if (next_cpu_level < 2) {
+			next_cpu_level = 2 - 1;
+			return true;
+		}
+	}
+	return false;
 }
 // 68000 <> 68010
-static void next_level_000(void)
+static bool next_level_000(void)
 {
-	if (next_cpu_level < 0)
+	if (next_cpu_level < 0) {
 		next_cpu_level = 0;
+	}
+	return false;
 }
 
 static void fpulimit (void)
@@ -310,21 +337,29 @@ static void fpulimit (void)
 	set_fpulimit = 1;
 }
 
-static int s_count_read, s_count_write, s_count_cycles, s_count_ncycles;
+static int s_count_readw, s_count_readl;
+static int s_count_writew, s_count_writel;
+static int s_count_cycles, s_count_ncycles, s_insn_cycles;
 
 static void push_ins_cnt(void)
 {
-	s_count_read = count_read;
-	s_count_write = count_write;
+	s_count_readw = count_readw;
+	s_count_readl = count_readl;
+	s_count_writew = count_writew;
+	s_count_writel = count_writel;
 	s_count_cycles = count_cycles;
 	s_count_ncycles = count_ncycles;
+	s_insn_cycles = insn_n_cycles;
 }
 static void pop_ins_cnt(void)
 {
-	count_read = s_count_read;
-	count_write = s_count_write;
+	count_readw = s_count_readw;
+	count_readl = s_count_readl;
+	count_writew = s_count_writew;
+	count_writel = s_count_writel;
 	count_cycles = s_count_cycles;
 	count_ncycles = s_count_ncycles;
+	insn_n_cycles = s_insn_cycles;
 }
 
 static bool needmmufixup(void)
@@ -505,10 +540,17 @@ static void returncycles(int cycles)
 		out("return;\n");
 		return;
 	}
-	if (using_simple_cycles)
+	if (do_always_dynamic_cycles) {
+		int total = count_readl + count_readw + count_writel + count_writew - count_readp;
+		if (!total)
+			total++;
+		out("return (%d * CYCLE_UNIT / 2 + count_cycles) | (((%d * 4 * CYCLE_UNIT / 2 + count_cycles) * 3) << 16);\n", cycles,
+			total);
+	} else if (using_simple_cycles) {
 		out("return %d * CYCLE_UNIT / 2 + count_cycles;\n", cycles);
-	else
+	} else {
 		out("return %d * CYCLE_UNIT / 2;\n", cycles);
+	}
 }
 
 static void write_return_cycles_none(void)
@@ -535,33 +577,18 @@ static void write_return_cycles2(int end, int no4)
 			}
 		} else {
 			int cc = count_cycles;
-			if (count_read + count_write + cc == 0 && !no4)
+			if (count_readw + count_writew + count_readl + count_writel + cc == 0 && !no4)
 				cc = 4;
-			returncycles((count_read + count_write) * 4 + cc);
+			returncycles((count_readw + count_writew) * 4 + (count_readl + count_writel) * 8 + cc);
 			if (end) {
 				out("}\n");
 				out("/* %d%s (%d/%d)",
-					(count_read + count_write) * 4 + cc, count_ncycles ? "+" : "", count_read, count_write);
+					(count_readw + count_writew) * 4 + (count_readl + count_writel) * 8 + cc, count_ncycles ? "+" : "",
+					count_readw + count_readl * 2, count_writew + count_writel * 2);
 				out(" */\n");
 			}
 #ifdef WINUAE_FOR_HATARI
-			insn_n_cycles = (count_read + count_write) * 4 + count_cycles;
-#endif
-		}
-	} else if (count_read + count_write) {
-		if (end < 0) {
-			if (using_ce020) {
-				out("return;\n");
-			} else {
-				out("return 0;\n");
-			}
-		} else {
-			returncycles((count_read + count_write) * 4 + count_cycles);
-			if (end) {
-				out("}\n");
-			}
-#ifdef WINUAE_FOR_HATARI
-			insn_n_cycles = (count_read + count_write) * 4 + count_cycles;
+			insn_n_cycles = (count_readw + count_writew) * 4 + (count_readl + count_writel) * 8 + cc;
 #endif
 		}
 	} else {
@@ -572,7 +599,17 @@ static void write_return_cycles2(int end, int no4)
 				out("return 0;\n");
 			}
 		} else {
-			returncycles(insn_n_cycles);
+			if (!using_prefetch && !using_prefetch_020) {
+				returncycles((count_readw + count_writew) * 4 + (count_readl + count_writel) * 8 + insn_n_cycles);
+#ifdef WINUAE_FOR_HATARI
+				insn_n_cycles = (count_readw + count_writew) * 4 + (count_readl + count_writel) * 8 + insn_n_cycles;
+#endif
+			} else {
+				returncycles((count_readw + count_writew) * 4 + (count_readl + count_writel) * 8 + count_cycles);
+#ifdef WINUAE_FOR_HATARI
+				insn_n_cycles = (count_readw + count_writew) * 4 + (count_readl + count_writel) * 8 + count_cycles; 
+#endif
+			}
 			if (end) {
 				out("}\n");
 			}
@@ -617,14 +654,14 @@ static void addcycles_ce020_5 (const char *name, int head, int tail, int cycles,
 
 static void addcycles000_nonces(const char *sc)
 {
-	if (using_simple_cycles) {
+	if (using_simple_cycles || do_always_dynamic_cycles) {
 		out("count_cycles += (%s) * CYCLE_UNIT / 2;\n", sc);
 		count_ncycles++;
 	}
 }
 static void addcycles000_nonce(int c)
 {
-	if (using_simple_cycles) {
+	if (using_simple_cycles || do_always_dynamic_cycles) {
 		out("count_cycles += %d * CYCLE_UNIT / 2;\n", c);
 		count_ncycles++;
 	}
@@ -643,6 +680,7 @@ static void addcycles000(int cycles)
 		out("%s(%d);\n", do_cycles, cycles);
 	}
 	count_cycles += cycles;
+	insn_n_cycles += cycles;
 }
 
 #ifndef WINUAE_FOR_HATARI
@@ -652,6 +690,7 @@ static void addcycles000_2(int cycles)
 		out("%s(%d);\n", do_cycles, cycles);
 	}
 	count_cycles += cycles;
+	insn_n_cycles += cycles;
 }
 #endif
 
@@ -774,12 +813,12 @@ static void gen_nextilong2 (const char *type, const char *name, int flags, int m
 			out("%s = %s(%d);\n", name, prefetch_long, r);
 		else
 			out("%s = %s(%d);\n", name, prefetch_long, r);
-		count_read += 2;
+		count_readl++;
 	} else if (using_ce) {
 		/* we must do this because execution order of (something | something2) is not defined */
 		if (flags & GF_NOREFILL) {
 			out("%s = %s(%d) << 16;\n", name, prefetch_word, r + 2);
-			count_read++;
+			count_readw++;
 			out("%s |= regs.irc;\n", name);
 			check_bus_error_ins(r + 2);
 			do_instruction_buserror();
@@ -788,43 +827,45 @@ static void gen_nextilong2 (const char *type, const char *name, int flags, int m
 			bus_error_text[0] = 0;
 		} else {
 			out("%s = %s(%d) << 16;\n", name, prefetch_word, r + 2);
-			count_read++;
+			count_readw++;
 			check_bus_error_ins(r + 2);
 			do_instruction_buserror();
 			strcpy(bus_error_code, bus_error_code2);
 			bus_error_code2[0] = 0;
 			out("%s |= %s(%d);\n", name, prefetch_word, r + 4);
-			count_read++;
+			count_readw++;
+			check_bus_error_ins(r + 4);
+		}
+	} else if (using_prefetch) {
+		if (flags & GF_NOREFILL) {
+			out("%s = %s(%d) << 16;\n", name, prefetch_word, r + 2);
+			count_readw++;
+			out("%s |= regs.irc;\n", name);
+			check_bus_error_ins(r + 2);
+			do_instruction_buserror();
+			strcpy(bus_error_code, bus_error_code2);
+			bus_error_code2[0] = 0;
+			bus_error_text[0] = 0;
+		} else {
+			out("%s = %s(%d) << 16;\n", name, prefetch_word, r + 2);
+			count_readw++;
+			check_bus_error_ins(r + 2);
+			do_instruction_buserror();
+			strcpy(bus_error_code, bus_error_code2);
+			bus_error_code2[0] = 0;
+			out("%s |= %s(%d);\n", name, prefetch_word, r + 4);
+			count_readw++;
 			check_bus_error_ins(r + 4);
 		}
 	} else {
-		if (using_prefetch) {
-			if (flags & GF_NOREFILL) {
-				out("%s = %s(%d) << 16;\n", name, prefetch_word, r + 2);
-				count_read++;
-				insn_n_cycles += 4;
-				out("%s |= regs.irc;\n", name);
-				check_bus_error_ins(r + 2);
-				do_instruction_buserror();
-				strcpy(bus_error_code, bus_error_code2);
-				bus_error_code2[0] = 0;
-				bus_error_text[0] = 0;
-			} else {
-				out("%s = %s(%d) << 16;\n", name, prefetch_word, r + 2);
-				count_read++;
-				insn_n_cycles += 4;
-				check_bus_error_ins(r + 2);
-				do_instruction_buserror();
-				strcpy(bus_error_code, bus_error_code2);
-				bus_error_code2[0] = 0;
-				out("%s |= %s(%d);\n", name, prefetch_word, r + 4);
-				count_read++;
-				check_bus_error_ins(r + 4);
-			}
+		if (flags & GF_NOREFILL) {
+			count_readw++;
+			count_readp++;
 		} else {
-			insn_n_cycles += 8;
-			out("%s = %s(%d);\n", name, prefetch_long, r);
+			count_readl++;
+			count_readp++;
 		}
+		out("%s = %s(%d);\n", name, prefetch_long, r);
 	}
 }
 static void gen_nextilong (const char *type, const char *name, int flags)
@@ -847,28 +888,28 @@ static const char *gen_nextiword (int flags)
 			sprintf(buffer, "%s(%d)", prefetch_word, r);
 		else
 			sprintf(buffer, "%s(%d)", prefetch_word, r);
-		count_read++;
+		count_readw++;
 	} else if (using_ce) {
 		if (flags & GF_NOREFILL) {
 			strcpy(buffer, "regs.irc");
 		} else {
 			sprintf(buffer, "%s(%d)", prefetch_word, r + 2);
-			count_read++;
+			count_readw++;
+			check_bus_error_ins(r + 2);
+		}
+	} else if (using_prefetch) {
+		if (flags & GF_NOREFILL) {
+			strcpy(buffer, "regs.irc");
+		} else {
+			sprintf(buffer, "%s(%d)", prefetch_word, r + 2);
+			count_readw++;
 			check_bus_error_ins(r + 2);
 		}
 	} else {
-		if (using_prefetch) {
-			if (flags & GF_NOREFILL) {
-				strcpy(buffer, "regs.irc");
-			} else {
-				sprintf(buffer, "%s(%d)", prefetch_word, r + 2);
-				count_read++;
-				insn_n_cycles += 4;
-				check_bus_error_ins(r + 2);
-			}
-		} else {
-			sprintf(buffer, "%s(%d)", prefetch_word, r);
-			insn_n_cycles += 4;
+		sprintf(buffer, "%s(%d)", prefetch_word, r);
+		if (!(flags & GF_NOREFILL)) {
+			count_readw++;
+			count_readp++;
 			check_bus_error_ins(r);
 		}
 	}
@@ -888,29 +929,28 @@ static const char *gen_nextibyte (int flags)
 			sprintf(buffer, "(uae_u8)%s(%d)", prefetch_word, r);
 		else
 			sprintf(buffer, "(uae_u8)%s(%d)", prefetch_word, r);
-		count_read++;
+		count_readw++;
 	} else if (using_ce) {
 		if (flags & GF_NOREFILL) {
 			strcpy(buffer, "(uae_u8)regs.irc");
 		} else {
 			sprintf(buffer, "(uae_u8)%s(%d)", prefetch_word, r + 2);
-			count_read++;
+			count_readw++;
+			check_bus_error_ins(r + 2);
+		}
+	} else if (using_prefetch) {
+		if (flags & GF_NOREFILL) {
+			strcpy(buffer, "(uae_u8)regs.irc");
+		} else {
+			sprintf(buffer, "(uae_u8)%s(%d)", prefetch_word, r + 2);
+			count_readw++;
 			check_bus_error_ins(r + 2);
 		}
 	} else {
-		insn_n_cycles += 4;
-		if (using_prefetch) {
-			if (flags & GF_NOREFILL) {
-				strcpy(buffer, "(uae_u8)regs.irc");
-			} else {
-				sprintf(buffer, "(uae_u8)%s(%d)", prefetch_word, r + 2);
-				count_read++;
-				insn_n_cycles += 4;
-				check_bus_error_ins(r + 2);
-			}
-		} else {
-			sprintf(buffer, "%s(%d)", srcbi, r);
-			insn_n_cycles += 4;
+		sprintf(buffer, "%s(%d)", srcbi, r);
+		if (!(flags & GF_NOREFILL)) {
+			count_readw++;
+			count_readp++;
 			check_bus_error_ins(r);
 		}
 	}
@@ -1002,26 +1042,26 @@ static void fill_prefetch_bcc(void)
 	}
 
 	out("%s(%d);\n", prefetch_word, m68k_pc_offset + 2);
-	count_read++;
-	insn_n_cycles += 4;
+	count_readw++;
 	check_prefetch_bus_error(m68k_pc_offset + 2, 0);
 	did_prefetch = 1;
 	ir2irc = 0;
 }
 
-static void fill_prefetch_1 (int o)
+static void fill_prefetch_1(int o)
 {
 	if (using_prefetch) {
 		out("%s(%d);\n", prefetch_word, o);
 		if (!loopmode || using_ce) {
-			count_read++;
-			insn_n_cycles += 4;
+			count_readw++;
 		} else {
 			addcycles000_nonce(4);
 		}
 		check_prefetch_bus_error(o, 0);
 		did_prefetch = 1;
 		ir2irc = 0;
+	} else {
+		insn_n_cycles += 4;
 	}
 }
 
@@ -1030,11 +1070,12 @@ static void fill_prefetch_1_empty(int o)
 {
 	if (using_prefetch) {
 		out("%s(%d);\n", prefetch_word, o);
-		count_read++;
-		insn_n_cycles += 4;
+		count_readw++;
 		check_prefetch_bus_error(o ? -2 : -1, 0);
 		did_prefetch = 1;
 		ir2irc = 0;
+	} else {
+		insn_n_cycles += 4;
 	}
 }
 
@@ -1053,6 +1094,8 @@ static void fill_prefetch_full_2 (void)
 			out("fill_prefetch_030();\n");
 		else if (cpu_level == 2)
 			out("fill_prefetch_020();\n");
+	} else {
+		insn_n_cycles += 4;
 	}
 }
 #endif
@@ -1084,11 +1127,13 @@ static void fill_prefetch_full_ntx(int beopcode)
 			out("fill_prefetch_030_ntx();\n");
 		else if (cpu_level == 2)
 			out("fill_prefetch_020_ntx();\n");
+	} else {
+		insn_n_cycles += 2 * 4;
 	}
 }
 static void check_trace(void)
 {
-	if (!using_prefetch && !using_ce)
+	if (!using_prefetch && !using_ce && cpu_level >= 2)
 		out("if(regs.t0) check_t0_trace();\n");
 }
 
@@ -1130,18 +1175,29 @@ static void fill_prefetch_full(int beopcode)
 		else if (cpu_level == 2)
 			out("fill_prefetch_020();\n");
 	} else if (!using_prefetch_020 && cpu_level >= 2) {
+		insn_n_cycles += 2 * 4;
 		check_trace();
+	} else {
+		insn_n_cycles += 2 * 4;
 	}
 }
 
 static void fill_prefetch_full_000_special(const char *format, ...)
 {
-	if (!using_prefetch)
+	if (!using_prefetch) {
+		if (format && cpu_level <= 1) {
+			char outbuf[256];
+			va_list parms;
+			va_start(parms, format);
+			_vsnprintf(outbuf, sizeof(outbuf) - 1, format, parms);
+			va_end(parms);
+			out(outbuf);
+		}
 		return;
+	}
 
 	out("%s(%d);\n", prefetch_word, 0);
-	count_read++;
-	insn_n_cycles += 2;
+	count_readw++;
 	check_prefetch_bus_error(-1, -1);
 	irc2ir();
 	if (using_bus_error) {
@@ -1164,8 +1220,7 @@ static void fill_prefetch_full_000_special(const char *format, ...)
 		out(outbuf);
 	}
 	out("%s(%d);\n", prefetch_word, 2);
-	count_read++;
-	insn_n_cycles += 2;
+	count_readw++;
 	check_prefetch_bus_error(-2, -1);
 	did_prefetch = 1;
 	ir2irc = 0;
@@ -1174,16 +1229,18 @@ static void fill_prefetch_full_000_special(const char *format, ...)
 // 68000 and 68010 only
 static void fill_prefetch_full_000(int beopcode)
 {
-	if (!using_prefetch)
-		return;
-	fill_prefetch_full(beopcode);
+	if (using_prefetch) {
+		fill_prefetch_full(beopcode);
+	} else {
+		insn_n_cycles += 2 * 4;
+	}
 }
 
 // 68020+
 static void fill_prefetch_full_020 (void)
 {
 	if (!using_prefetch_020) {
-		if (!using_prefetch && !using_ce)
+		if (!using_prefetch && !using_ce && cpu_level >= 2)
 			out("if(regs.t0) check_t0_trace();\n");
 		return;
 	}
@@ -1192,14 +1249,15 @@ static void fill_prefetch_full_020 (void)
 
 static void fill_prefetch_0 (void)
 {
-	if (!using_prefetch)
-		return;
-	out("%s(0);\n", prefetch_word);
-	count_read++;
-	insn_n_cycles += 4;
-	check_prefetch_bus_error(0, 0);
-	did_prefetch = 1;
-	ir2irc = 0;
+	if (using_prefetch) {
+		out("%s(0);\n", prefetch_word);
+		count_readw++;
+		check_prefetch_bus_error(0, 0);
+		did_prefetch = 1;
+		ir2irc = 0;
+	} else {
+		insn_n_cycles += 4;
+	}
 }
 
 static void loopmode_start(void)
@@ -1335,6 +1393,8 @@ static void fill_prefetch_next_noopcodecopy(const char *format, ...)
 			copy_opcode();
 		}
 		loopmode_end();
+	} else {
+		insn_n_cycles += 4;
 	}
 }
 
@@ -1348,6 +1408,8 @@ static void fill_prefetch_next(void)
 		}
 		fill_prefetch_1(m68k_pc_offset + 2);
 		loopmode_end();
+	} else {
+		insn_n_cycles += 4;
 	}
 }
 
@@ -1365,6 +1427,8 @@ static void fill_prefetch_next_t(void)
 		}
 		fill_prefetch_1(m68k_pc_offset + 2);
 		loopmode_end();
+	} else {
+		insn_n_cycles += 4;
 	}
 }
 
@@ -1388,6 +1452,8 @@ static void fill_prefetch_next_extra(const char *cond, const char *format, ...)
 		}
 		fill_prefetch_1(m68k_pc_offset + 2);
 		loopmode_end();
+	} else {
+		insn_n_cycles += 4;
 	}
 }
 
@@ -1417,6 +1483,8 @@ static void fill_prefetch_next_after(int copy, const char *format, ...)
 			}
 		}
 		loopmode_end();
+	} else {
+		insn_n_cycles += 4;
 	}
 }
 
@@ -1430,11 +1498,9 @@ static void fill_prefetch_next_skipopcode(void)
 			}
 		}
 		fill_prefetch_1(m68k_pc_offset + 2);
+	} else {
+		insn_n_cycles += 4;
 	}
-	//	if (using_prefetch_020) {
-	//		out("%s(%d);\n", prefetch_word, m68k_pc_offset);
-	//		did_prefetch = 1;
-	//	}
 }
 
 
@@ -1443,6 +1509,8 @@ static void fill_prefetch_next_empty(void)
 	if (using_prefetch) {
 		irc2ir();
 		fill_prefetch_1_empty(m68k_pc_offset + 2);
+	} else {
+		insn_n_cycles += 4;
 	}
 }
 
@@ -2948,14 +3016,10 @@ static void genamode2x (amodes mode, const char *reg, wordsizes size, const char
 			term();
 		}
 		if (flags & GF_NOFETCH) {
-			if (using_prefetch) {
-				addcycles000(4);
-			}
-			insn_n_cycles += 2;
+			addcycles000(4);
 			count_cycles_ea += 2;
 		} else if (!(flags & GF_APDI)) {
 			addcycles000(2);
-			insn_n_cycles += 2;
 			count_cycles_ea += 2;
 			pc_68000_offset_fetch += 2;
 			if (size == sz_long)
@@ -2998,7 +3062,6 @@ static void genamode2x (amodes mode, const char *reg, wordsizes size, const char
 		} else {
 			if (!(flags & GF_AD8R) && !(flags & GF_NOFETCH) && !(flags & GF_CLR68010)) {
 				addcycles000(2);
-				insn_n_cycles += 2;
 				count_cycles_ea += 2;
 #ifdef WINUAE_FOR_HATARI
 				/* Hatari : on 68000 ST, Ad8r causes an unaligned memory prefetch and take 2 cycles more */
@@ -3017,12 +3080,10 @@ static void genamode2x (amodes mode, const char *reg, wordsizes size, const char
 		}
 		if ((flags & GF_NOFETCH) && using_prefetch) {
 			addcycles000(4);
-			insn_n_cycles += 4;
 			count_cycles_ea += 4;
 		}
 		if ((flags & GF_CLR68010) && using_prefetch) {
 			addcycles000(4);
-			insn_n_cycles += 4;
 			count_cycles_ea += 4;
 		}
 		addr = true;
@@ -3048,12 +3109,10 @@ static void genamode2x (amodes mode, const char *reg, wordsizes size, const char
 			insn_n_cycles += 4;
 			out("tmppc = %s;\n", getpc);
 			out("%sa = %s(tmppc, %d);\n", name, disp020, disp020cnt++);
-
 		} else {
 			out("tmppc = %s + %d;\n", getpc, m68k_pc_offset);
 			if (!(flags & GF_PC8R)) {
 				addcycles000(2);
-				insn_n_cycles += 2;
 				count_cycles_ea += 2;
 #ifdef WINUAE_FOR_HATARI
 				/* Hatari : on 68000 ST, Ad8r causes an unaligned memory prefetch and take 2 cycles more */
@@ -3092,7 +3151,6 @@ static void genamode2x (amodes mode, const char *reg, wordsizes size, const char
 		// fetch immediate address
 		if (getv != 1)
 			term();
-		insn_n_cycles020++;
 		switch (size) {
 		case sz_byte:
 			out("uae_s8 %s = %s;\n", name, gen_nextibyte (flags));
@@ -3330,37 +3388,34 @@ static void genamode2x (amodes mode, const char *reg, wordsizes size, const char
 		if (using_mmu) {
 			if (flags & GF_FC) {
 				switch (size) {
-				case sz_byte: insn_n_cycles += 4; out("uae_s8 %s = sfc%s_get_byte%s(%sa);\n", name, mmu_postfix, xfc_postfix, name); break;
-				case sz_word: insn_n_cycles += 4; out("uae_s16 %s = sfc%s_get_word%s(%sa);\n", name, mmu_postfix, xfc_postfix, name); break;
-				case sz_long: insn_n_cycles += 8; out("uae_s32 %s = sfc%s_get_long%s(%sa);\n", name, mmu_postfix, xfc_postfix, name); break;
+				case sz_byte: count_readw++; out("uae_s8 %s = sfc%s_get_byte%s(%sa);\n", name, mmu_postfix, xfc_postfix, name); break;
+				case sz_word: count_readw++; out("uae_s16 %s = sfc%s_get_word%s(%sa);\n", name, mmu_postfix, xfc_postfix, name); break;
+				case sz_long: count_readl++; out("uae_s32 %s = sfc%s_get_long%s(%sa);\n", name, mmu_postfix, xfc_postfix, name); break;
 				default: term();
 				}
 			} else {
 				switch (size) {
-				case sz_byte: insn_n_cycles += 4; out("uae_s8 %s = %s(%sa);\n", name, (flags & GF_LRMW) ? srcblrmw : (rmw ? srcbrmw : srcb), name); break;
-				case sz_word: insn_n_cycles += 4; out("uae_s16 %s = %s(%sa);\n", name, (flags & GF_LRMW) ? srcwlrmw : (rmw ? srcwrmw : srcw), name); break;
-				case sz_long: insn_n_cycles += 8; out("uae_s32 %s = %s(%sa);\n", name, (flags & GF_LRMW) ? srcllrmw : (rmw ? srclrmw : srcl), name); break;
+				case sz_byte: count_readw++; out("uae_s8 %s = %s(%sa);\n", name, (flags & GF_LRMW) ? srcblrmw : (rmw ? srcbrmw : srcb), name); break;
+				case sz_word: count_readw++; out("uae_s16 %s = %s(%sa);\n", name, (flags & GF_LRMW) ? srcwlrmw : (rmw ? srcwrmw : srcw), name); break;
+				case sz_long: count_readl++; out("uae_s32 %s = %s(%sa);\n", name, (flags & GF_LRMW) ? srcllrmw : (rmw ? srclrmw : srcl), name); break;
 				default: term();
 				}
 			}
 		} else if (using_ce020 || using_prefetch_020) {
 			switch (size) {
 			case sz_byte:
-				insn_n_cycles += 4;
 				out("uae_s8 %s = %s(%sa);\n", name, srcbx, name);
-				count_read++;
+				count_readw++;
 				check_bus_error(name, 0, 0, 0, NULL, 1);
 				break;
 			case sz_word:
-				insn_n_cycles += 4;
 				out("uae_s16 %s = %s(%sa);\n", name, srcwx, name);
-				count_read++;
+				count_readw++;
 				check_bus_error(name, 0, 0, 1, NULL, 1);
 				break;
 			case sz_long:
-				insn_n_cycles += 8;
 				out("uae_s32 %s = %s(%sa);\n", name, srclx, name);
-				count_read += 2;
+				count_readl++;
 				check_bus_error(name, 0, 0, 2, NULL, 1);
 				break;
 			default: term();
@@ -3369,36 +3424,33 @@ static void genamode2x (amodes mode, const char *reg, wordsizes size, const char
 			switch (size) {
 			case sz_byte:
 			{
-				insn_n_cycles += 4;
 				out("uae_s8 %s = %s(%sa);\n", name, srcbx, name);
-				count_read++;
+				count_readw++;
 				check_bus_error(name, 0, 0, 0, NULL, 1);
 				break;
 			}
 			case sz_word:
 			{
-				insn_n_cycles += 4;
 				out("uae_s16 %s = %s(%sa);\n", name, srcwx, name);
-				count_read++;
+				count_readw++;
 				check_bus_error(name, 0, 0, 1, NULL, 1);
 				break;
 			}
 			case sz_long:
 			{
-				insn_n_cycles += 8;
 				if ((flags & GF_REVERSE) && mode == Apdi) {
 					out("uae_s32 %s = %s(%sa + 2);\n", name, srcwx, name);
-					count_read++;
+					count_readw++;
 					check_bus_error(name, 0, 0, 1, NULL, 1);
 					out("%s |= %s(%sa) << 16; \n", name, srcwx, name);
-					count_read++;
+					count_readw++;
 					check_bus_error(name, -2, 0, 1, NULL, 1);
 				} else {
 					out("uae_s32 %s = %s(%sa) << 16;\n", name, srcwx, name);
-					count_read++;
+					count_readw++;
 					check_bus_error(name, 0, 0, 1, NULL, 1);
 					out("%s |= %s(%sa + 2); \n", name, srcwx, name);
-					count_read++;
+					count_readw++;
 					check_bus_error(name, 2, 0, 1, NULL, 1);
 				}
 				break;
@@ -3408,21 +3460,18 @@ static void genamode2x (amodes mode, const char *reg, wordsizes size, const char
 		} else {
 			switch (size) {
 			case sz_byte:
-				insn_n_cycles += 4;
 				out("uae_s8 %s = %s(%sa);\n", name, srcbx, name);
-				count_read++;
+				count_readw++;
 				check_bus_error(name, 0, 0, 0, NULL, 1);
 				break;
 			case sz_word:
-				insn_n_cycles += 4;
 				out("uae_s16 %s = %s(%sa);\n", name, srcwx, name);
-				count_read++;
+				count_readw++;
 				check_bus_error(name, 0, 0, 1, NULL, 1);
 				break;
 			case sz_long:
-				insn_n_cycles += 8;
 				out("uae_s32 %s = %s(%sa);\n", name, srclx, name);
-				count_read += 2;
+				count_readl++;
 				check_bus_error(name, 0, 0, 2, NULL, 1);
 				break;
 			default: term();
@@ -3608,14 +3657,14 @@ static void genastore_2 (const char *from, amodes mode, const char *reg, wordsiz
 		if (using_mmu) {
 			switch (size) {
 			case sz_byte:
-				insn_n_cycles += 4;
+				count_writew++;
 				if (flags & GF_FC)
 					out("dfc%s_put_byte%s(%sa, %s);\n", mmu_postfix, xfc_postfix, to, from);
 				else
 					out("%s(%sa, %s);\n", (flags & GF_LRMW) ? dstblrmw : (candormw ? dstbrmw : dstb), to, from);
 				break;
 			case sz_word:
-				insn_n_cycles += 4;
+				count_writew++;
 				if (cpu_level < 2 && (mode == PC16 || mode == PC8r))
 					term();
 				if (flags & GF_FC)
@@ -3624,7 +3673,7 @@ static void genastore_2 (const char *from, amodes mode, const char *reg, wordsiz
 					out("%s(%sa, %s);\n", (flags & GF_LRMW) ? dstwlrmw : (candormw ? dstwrmw : dstw), to, from);
 				break;
 			case sz_long:
-				insn_n_cycles += 8;
+				count_writel++;
 				if (cpu_level < 2 && (mode == PC16 || mode == PC8r))
 					term();
 				if (flags & GF_FC)
@@ -3639,21 +3688,21 @@ static void genastore_2 (const char *from, amodes mode, const char *reg, wordsiz
 			switch (size) {
 			case sz_byte:
 				out("%s(%sa, %s);\n", dstbx, to, from);
-				count_write++;
+				count_writew++;
 				check_bus_error(to, 0, 1, 0, from, 1);
 				break;
 			case sz_word:
 				if (cpu_level < 2 && (mode == PC16 || mode == PC8r))
 					term();
 				out("%s(%sa, %s);\n", dstwx, to, from);
-				count_write++;
+				count_writew++;
 				check_bus_error(to, 0, 1, 1, from, 1);
 				break;
 			case sz_long:
 				if (cpu_level < 2 && (mode == PC16 || mode == PC8r))
 					term();
 				out("%s(%sa, %s);\n", dstlx, to, from);
-				count_write += 2;
+				count_writel++;
 				check_bus_error(to, 0, 1, 2, from, 1);
 				break;
 			default:
@@ -3664,7 +3713,7 @@ static void genastore_2 (const char *from, amodes mode, const char *reg, wordsiz
 			case sz_byte:
 				check_ipl_again();
 				out("x_put_byte(%sa, %s);\n", to, from);
-				count_write++;
+				count_writew++;
 				check_bus_error(to, 0, 1, 0, from, 1);
 				break;
 			case sz_word:
@@ -3672,7 +3721,7 @@ static void genastore_2 (const char *from, amodes mode, const char *reg, wordsiz
 					term();
 				check_ipl_again();
 				out("x_put_word(%sa, %s);\n", to, from);
-				count_write++;
+				count_writew++;
 				check_bus_error(to, 0, 1, 1, from, 1);
 				break;
 			case sz_long:
@@ -3680,7 +3729,7 @@ static void genastore_2 (const char *from, amodes mode, const char *reg, wordsiz
 					term();
 				if (store_dir) {
 					out("%s(%sa + 2, %s);\n", dstwx, to, from);
-					count_write++;
+					count_writew++;
 					check_bus_error(to, 2, 1, 1, from, 1);
 					check_ipl_again();
 					if (flags & GF_SECONDWORDSETFLAGS) {
@@ -3689,22 +3738,23 @@ static void genastore_2 (const char *from, amodes mode, const char *reg, wordsiz
 					// ADDX.L/SUBX.L -(an),-(an) only
 					if (store_dir > 1) {
 						fill_prefetch_next_after(0, NULL);
+						insn_n_cycles += 4;
 					}
 					out("%s(%sa, %s >> 16);\n", dstwx, to, from);
 					sprintf(tmp, "%s >> 16", from);
-					count_write++;
+					count_writew++;
 					check_bus_error(to, 0, 1, 1, tmp, 1);
 				} else {
 					out("%s(%sa, %s >> 16);\n", dstwx, to, from);
 					sprintf(tmp, "%s >> 16", from);
-					count_write++;
+					count_writew++;
 					check_bus_error(to, 0, 1, 1, tmp, 1);
 					check_ipl_again();
 					if (flags & GF_SECONDWORDSETFLAGS) {
 						genflags(flag_logical, g_instr->size, "src", "", "");
 					}
 					out("%s(%sa + 2, %s);\n", dstwx, to, from);
-					count_write++;
+					count_writew++;
 					check_bus_error(to, 2, 1, 1, from, 1);
 				}
 				break;
@@ -3714,26 +3764,23 @@ static void genastore_2 (const char *from, amodes mode, const char *reg, wordsiz
 		} else if (using_prefetch) {
 			switch (size) {
 			case sz_byte:
-				insn_n_cycles += 4;
 				out("%s(%sa, %s);\n", dstbx, to, from);
-				count_write++;
+				count_writew++;
 				check_bus_error(to, 0, 1, 0, from, 1);
 				break;
 			case sz_word:
-				insn_n_cycles += 4;
 				if (cpu_level < 2 && (mode == PC16 || mode == PC8r))
 					term();
 				out("%s(%sa, %s);\n", dstwx, to, from);
-				count_write++;
+				count_writew++;
 				check_bus_error(to, 0, 1, 1, from, 1);
 				break;
 			case sz_long:
-				insn_n_cycles += 8;
 				if (cpu_level < 2 && (mode == PC16 || mode == PC8r))
 					term();
 				if (store_dir) {
 					out("%s(%sa + 2, %s);\n", dstwx, to, from);
-					count_write++;
+					count_writew++;
 					check_bus_error(to, 2, 1, 1, from, 1);
 					if (flags & GF_SECONDWORDSETFLAGS) {
 						genflags(flag_logical, g_instr->size, "src", "", "");
@@ -3744,18 +3791,18 @@ static void genastore_2 (const char *from, amodes mode, const char *reg, wordsiz
 					}
 					out("%s(%sa, %s >> 16); \n", dstwx, to, from);
 					sprintf(tmp, "%s >> 16", from);
-					count_write++;
+					count_writew++;
 					check_bus_error(to, 0, 1, 1, tmp, 1);
 				} else {
 					out("%s(%sa, %s >> 16);\n", dstwx, to, from);
 					sprintf(tmp, "%s >> 16", from);
-					count_write++;
+					count_writew++;
 					check_bus_error(to, 0, 1, 1, tmp, 1);
 					if (flags & GF_SECONDWORDSETFLAGS) {
 						genflags(flag_logical, g_instr->size, "src", "", "");
 					}
 					out("%s(%sa + 2, %s); \n", dstwx, to, from);
-					count_write++;
+					count_writew++;
 					check_bus_error(to, 2, 1, 1, from, 1);
 				}
 				break;
@@ -3765,25 +3812,26 @@ static void genastore_2 (const char *from, amodes mode, const char *reg, wordsiz
 		} else {
 			switch (size) {
 			case sz_byte:
-				insn_n_cycles += 4;
 				out("%s(%sa, %s);\n", dstbx, to, from);
-				count_write++;
+				count_writew++;
 				check_bus_error(to, 0, 1, 0, from, 1);
 				break;
 			case sz_word:
-				insn_n_cycles += 4;
 				if (cpu_level < 2 && (mode == PC16 || mode == PC8r))
 					term();
 				out("%s(%sa, %s);\n", dstwx, to, from);
-				count_write++;
+				count_writew++;
 				check_bus_error(to, 0, 1, 1, from, 1);
 				break;
 			case sz_long:
-				insn_n_cycles += 8;
 				if (cpu_level < 2 && (mode == PC16 || mode == PC8r))
 					term();
+				// ADDX.L/SUBX.L -(an),-(an) only
+				if (store_dir > 1) {
+					insn_n_cycles += 4;
+				}
 				out("%s(%sa, %s);\n", dstlx, to, from);
-				count_write += 2;
+				count_writel++;
 				check_bus_error(to, 0, 1, 2, from, 1);
 				break;
 			default:
@@ -4098,7 +4146,7 @@ static void movem_ex3(int write)
 }
 
 
-static void genmovemel (uae_u16 opcode)
+static void genmovemel(uae_u16 opcode)
 {
 	char getcode[100];
 	int size = table68k[opcode].size == sz_long ? 4 : 2;
@@ -4108,7 +4156,13 @@ static void genmovemel (uae_u16 opcode)
 	} else {
 		sprintf(getcode, "(uae_s32)(uae_s16)%s(srca)", srcwd);
 	}
-	count_read += table68k[opcode].size == sz_long ? 2 : 1;
+	if (!using_simple_cycles && !do_always_dynamic_cycles) {
+		if (size == 4) {
+			count_readl++;
+		} else {
+			count_readw++;
+		}
+	}
 	out("uae_u16 mask = %s;\n", gen_nextiword (0));
 	out("uae_u32 dmask = mask & 0xff, amask = (mask >> 8) & 0xff;\n");
 	genamode(NULL, table68k[opcode].dmode, "dstreg", table68k[opcode].size, "src", 2, mmu040_special_movem (opcode) ? -3 : -1, GF_MOVE);
@@ -4123,27 +4177,39 @@ static void genmovemel (uae_u16 opcode)
 	} else {
 		out("while (dmask) {\n");
 		out("m68k_dreg(regs, movem_index1[dmask]) = %s;\n", getcode);
+		if (cpu_level <= 3) {
+			addcycles000_nonce(cpu_level <= 1 ? size * 2 : 4);
+		}
 		check_bus_error("src", 0, 0, table68k[opcode].size, NULL, 1);
 		out("srca += %d;\n", size);
 		out("dmask = movem_next[dmask];\n");
 		out("}\n");
 		out("while (amask) {\n");
 		out("m68k_areg(regs, movem_index1[amask]) = %s;\n", getcode);
+		if (cpu_level <= 3) {
+			addcycles000_nonce(cpu_level <= 1 ? size * 2 : 4);
+		}
 		check_bus_error("src", 0, 0, table68k[opcode].size, NULL, 1);
 		out("srca += %d;\n", size);
 		out("amask = movem_next[amask];\n");
 		out("}\n");
 		if (table68k[opcode].dmode == Aipi) {
 			out("m68k_areg(regs, dstreg) = srca;\n");
-			count_read++;
 		}
+		if (cpu_level <= 3) {
+			out("%s(srca);\n", srcw); // and final extra word fetch that goes nowhere..
+			count_readw++;
+			check_bus_error("src", 0, 0, 1, NULL, 1);
+		}
+		if (!next_level_040_to_030())
+			next_level_020_to_010();
 	}
 	count_ncycles++;
 	fill_prefetch_next_t();
 	get_prefetch_020();
 }
 
-static void genmovemel_ce (uae_u16 opcode)
+static void genmovemel_ce(uae_u16 opcode)
 {
 	int size = table68k[opcode].size == sz_long ? 4 : 2;
 	out("uae_u16 mask = %s;\n", gen_nextiword (0));
@@ -4199,7 +4265,7 @@ static void genmovemel_ce (uae_u16 opcode)
 		out("}\n");
 	}
 	out("%s(srca);\n", srcw); // and final extra word fetch that goes nowhere..
-	count_read++;
+	count_readw++;
 	check_bus_error("src", 0, 0, 1, NULL, 1);
 	if (table68k[opcode].dmode == Aipi)
 		out("m68k_areg(regs, dstreg) = srca;\n");
@@ -4207,20 +4273,24 @@ static void genmovemel_ce (uae_u16 opcode)
 	fill_prefetch_next_t();
 }
 
-static void genmovemle (uae_u16 opcode)
+static void genmovemle(uae_u16 opcode)
 {
 	char putcode[100];
 	int size = table68k[opcode].size == sz_long ? 4 : 2;
 
-	if (table68k[opcode].size == sz_long) {
+	if (size == 4) {
 		sprintf(putcode, "%s(srca", dstld);
 	} else {
 		sprintf(putcode, "%s(srca", dstwd);
 	}
-	count_write += table68k[opcode].size == sz_long ? 2 : 1;
-
+	if (!using_simple_cycles && !do_always_dynamic_cycles) {
+		if (size == 4)
+			count_writel++;
+		else
+			count_writew++;
+	}
 	out("uae_u16 mask = %s;\n", gen_nextiword (0));
-	genamode(NULL, table68k[opcode].dmode, "dstreg", table68k[opcode].size, "src", 2, mmu040_special_movem (opcode) ? 3 : 1, GF_MOVE);
+	genamode(NULL, table68k[opcode].dmode, "dstreg", table68k[opcode].size, "src", 2, mmu040_special_movem (opcode) ? 3 : 1, GF_MOVE | GF_APDI);
 	addcycles_ce020 (4 - 2);
 	if (using_mmu >= 68030) {
 		if (table68k[opcode].dmode == Apdi)
@@ -4240,16 +4310,23 @@ static void genmovemle (uae_u16 opcode)
 		if (table68k[opcode].dmode == Apdi) {
 			out("uae_u16 amask = mask & 0xff, dmask = (mask >> 8) & 0xff;\n");
 			movem_ex3(1);
-			if (!using_mmu)
-				out("int type = get_cpu_model() >= 68020;\n");
+			if (!using_mmu) {
+				out("int type = %d;\n", cpu_level > 1);
+			}
 			out("while (amask) {\n");
 			out("srca -= %d;\n", size);
 
 			out("if (!type || movem_index2[amask] != dstreg) {\n");
 			out("%s, m68k_areg(regs, movem_index2[amask]));\n", putcode);
+			if (cpu_level <= 3) {
+				addcycles000_nonce(cpu_level <= 1 ? size * 2 : 4);
+			}
 			check_bus_error("src", 0, 1, table68k[opcode].size, "m68k_areg(regs, movem_index2[amask])", 1);
 			out("} else {\n");
 			out("%s, m68k_areg(regs, movem_index2[amask]) - %d);\n", putcode, size);
+			if (cpu_level <= 3) {
+				addcycles000_nonce(cpu_level <= 1 ? size * 2 : 4);
+			}
 			if (size == 4) {
 				check_bus_error("src", 0, 1, table68k[opcode].size, "m68k_areg(regs, movem_index2[amask]) - 4", 1);
 			} else {
@@ -4261,6 +4338,9 @@ static void genmovemle (uae_u16 opcode)
 			out("while (dmask) {\n");
 			out("srca -= %d;\n", size);
 			out("%s, m68k_dreg(regs, movem_index2[dmask]));\n", putcode);
+			if (cpu_level <= 3) {
+				addcycles000_nonce(cpu_level <= 1 ? size * 2 : 4);
+			}
 			check_bus_error("src", 0, 1, table68k[opcode].size, "m68k_dreg(regs, movem_index2[dmask])", 1);
 			out("dmask = movem_next[dmask];\n");
 			out("}\n");
@@ -4269,17 +4349,25 @@ static void genmovemle (uae_u16 opcode)
 			out("uae_u16 dmask = mask & 0xff, amask = (mask >> 8) & 0xff;\n");
 			out("while (dmask) {\n");
 			out("%s, m68k_dreg(regs, movem_index1[dmask]));\n", putcode);
+			if (cpu_level <= 3) {
+				addcycles000_nonce(cpu_level <= 1 ? size * 2 : 4);
+			}
 			check_bus_error("src", 0, 1, table68k[opcode].size, "m68k_dreg(regs, movem_index1[dmask])", 1);
 			out("srca += %d;\n", size);
 			out("dmask = movem_next[dmask];\n");
 			out("}\n");
 			out("while (amask) {\n");
 			out("%s, m68k_areg(regs, movem_index1[amask]));\n", putcode);
+			if (cpu_level <= 3) {
+				addcycles000_nonce(cpu_level <= 1 ? size * 2 : 4);
+			}
 			check_bus_error("src", 0, 1, table68k[opcode].size, "m68k_areg(regs, movem_index1[amask])", 1);
 			out("srca += %d;\n", size);
 			out("amask = movem_next[amask];\n");
 			out("}\n");
 		}
+		if (!next_level_040_to_030())
+			next_level_020_to_010();
 	}
 	count_ncycles++;
 	fill_prefetch_next_t();
@@ -4431,8 +4519,12 @@ static void shift_ce (amodes dmode, int size)
 			addcycles000_3();
 			out("}\n");
 		}
-		addcycles000_nonces("2 * ccnt");
+		next_level_020_to_010();
+		if ((using_simple_cycles || do_always_dynamic_cycles) && cpu_level <= 1) {
+			addcycles000_nonces("2 * ccnt");
+		}
 		count_cycles += c;
+		insn_n_cycles += c;
 		count_ncycles++;
 	}
 }
@@ -4450,7 +4542,8 @@ static void bsetcycles (struct instr *curi)
 				if (using_ce) {
 					out("if (src > 15) %s(2);\n", do_cycles);
 				}
-				if (using_simple_cycles) {
+				next_level_020_to_010();
+				if ((using_simple_cycles || do_always_dynamic_cycles) && cpu_level <= 1) {
 					out("if (src > 15) {\n");
 					out("count_cycles += % d * CYCLE_UNIT / 2;\n", 2);
 					out("}\n");
@@ -4469,8 +4562,7 @@ static int islongimm (struct instr *curi)
 
 static void resetvars (void)
 {
-	insn_n_cycles = using_prefetch ? 0 : 4;
-	insn_n_cycles020 = 0;
+	insn_n_cycles = 0;
 	genamode_cnt = 0;
 	genamode8r_offset[0] = genamode8r_offset[1] = 0;
 	m68k_pc_total = 0;
@@ -5705,23 +5797,23 @@ static void gen_opcode (unsigned int opcode)
 		check_prefetch_buserror(m68k_pc_offset);
 		if (curi->size == sz_word) {
 			out("%s(mempa, src >> 8);\n", dstb);
-			count_write++;
+			count_writew++;
 			check_bus_error("memp", 0, 1, 0, "src >> 8", 1 | 0x10000);
 			out("%s(mempa + 2, src); \n", dstb);
-			count_write++;
+			count_writew++;
 			check_bus_error("memp", 2, 1, 0, "src", 1);
 		} else {
 			out("%s(mempa, src >> 24);\n", dstb);
-			count_write++;
+			count_writew++;
 			check_bus_error("memp", 0, 1, 0, "src >> 24", 1 | 0x10000);
 			out("%s(mempa + 2, src >> 16);\n", dstb);
-			count_write++;
+			count_writew++;
 			check_bus_error("memp", 2, 1, 0, "src >> 16", 1);
 			out("%s(mempa + 4, src >> 8);\n", dstb);
-			count_write++;
+			count_writew++;
 			check_bus_error("memp", 4, 1, 0, "src >> 8", 1 | 0x10000);
 			out("%s(mempa + 6, src); \n", dstb);
-			count_write++;
+			count_writew++;
 			check_bus_error("memp", 6, 1, 0, "src", 1);
 		}
 		fill_prefetch_next_t();
@@ -5733,17 +5825,17 @@ static void gen_opcode (unsigned int opcode)
 		genamode(curi, curi->dmode, "dstreg", curi->size, "dst", 2, 0, cpu_level == 1 ? GF_NOFETCH : 0);
 		if (curi->size == sz_word) {
 			out("uae_u16 val  = (%s(mempa) & 0xff) << 8;\n", srcb);
-			count_read++;
+			count_readw++;
 			check_bus_error("memp", 0, 0, 0, NULL, 1 | 0x10000);
 			out("val |= (%s(mempa + 2) & 0xff);\n", srcb);
-			count_read++;
+			count_readw++;
 			check_bus_error("memp", 2, 0, 0, NULL, 1);
 		} else {
 			out("uae_u32 val  = (%s(mempa) & 0xff) << 24;\n", srcb);
-			count_read++;
+			count_readw++;
 			check_bus_error("memp", 0, 0, 0, NULL, 1 | 0x10000);
 			out("val |= (%s(mempa + 2) & 0xff) << 16;\n", srcb);
-			count_read++;
+			count_readw++;
 			check_bus_error("memp", 2, 0, 0, NULL, 1);
 
 			// upper word gets updated after two bytes (makes only difference if bus error is possible)
@@ -5752,10 +5844,10 @@ static void gen_opcode (unsigned int opcode)
 			}
 
 			out("val |= (%s(mempa + 4) & 0xff) << 8;\n", srcb);
-			count_read++;
+			count_readw++;
 			check_bus_error("memp", 4, 0, 0, NULL, 1 | 0x10000);
 			out("val |= (%s(mempa + 6) & 0xff);\n", srcb);
-			count_read++;
+			count_readw++;
 			check_bus_error("memp", 6, 0, 0, NULL, 1);
 		}
 		genastore("val", curi->dmode, "dstreg", curi->size, "dst");
@@ -6008,7 +6100,7 @@ static void gen_opcode (unsigned int opcode)
 			// 68000: read first and ignore result
 			if (cpu_level == 0 && curi->size == sz_word) {
 				out("%s(srca);\n", srcw);
-				count_write++;
+				count_writew++;
 				check_bus_error("src", 0, 0, 1, NULL, 1);
 			}
 			fill_prefetch_next_after(1, NULL);
@@ -6088,17 +6180,17 @@ static void gen_opcode (unsigned int opcode)
 	case i_MVMEL:
 		// confirmed
 		if (using_ce || using_prefetch)
-			genmovemel_ce (opcode);
+			genmovemel_ce(opcode);
 		else
-			genmovemel (opcode);
+			genmovemel(opcode);
 		tail_ce020_done = true;
 		break;
 	case i_MVMLE:
 		// confirmed
 		if (using_ce || using_prefetch)
-			genmovemle_ce (opcode);
+			genmovemle_ce(opcode);
 		else
-			genmovemle (opcode);
+			genmovemle(opcode);
 		tail_ce020_done = true;
 		break;
 	case i_TRAP:
@@ -6215,16 +6307,16 @@ static void gen_opcode (unsigned int opcode)
 			out("uaecptr oldpc = %s;\n", getpc);
 			out("uaecptr a = m68k_areg(regs, 7);\n");
 			out("uae_u16 sr = %s(a);\n", srcw);
-			count_read++;
+			count_readw++;
 			check_bus_error("", 0, 0, 1, NULL, 1);
 
 			out("m68k_areg(regs, 7) += 6;\n");
 
 			out("uae_u32 pc = %s(a + 2) << 16;\n", srcw);
-			count_read++;
+			count_readw++;
 			check_bus_error("", 2, 0, 1, NULL, 1);
 			out("pc |= %s(a + 2 + 2); \n", srcw);
-			count_read++;
+			count_readw++;
 			check_bus_error("", 4, 0, 1, NULL, 1);
 
 			out("uae_u16 oldt1 = regs.t1;\n");
@@ -6235,7 +6327,9 @@ static void gen_opcode (unsigned int opcode)
 			write_return_cycles(0);
 			out("}\n");
 			setpc ("pc");
-			out("opcode |= 0x20000;\n");
+			if (using_prefetch) {
+				out("opcode |= 0x20000;\n");
+			}
 			if (using_debugmem) {
 				out("branch_stack_pop_rte(oldpc);\n");
 			}
@@ -6247,15 +6341,15 @@ static void gen_opcode (unsigned int opcode)
 			out("uae_u32 newpc;\n");
 			out("uaecptr a = m68k_areg(regs, 7);\n");
 			out("uae_u16 sr = %s(a);\n", srcw);
-			count_read++;
+			count_readw++;
 			check_bus_error("", 0, 0, 1, NULL, 1);
 
 			out("uae_u16 format = %s(a + 2 + 4);\n", srcw);
-			count_read++;
+			count_readw++;
 			check_bus_error("", 6, 0, 1, NULL, 1);
 
 			out("uae_u32 pc = %s(a + 2) << 16;\n", srcw);
-			count_read++;
+			count_readw++;
 			check_bus_error("", 2, 0, 1, NULL, 1);
 
 			out("int frame = format >> 12;\n");
@@ -6273,7 +6367,7 @@ static void gen_opcode (unsigned int opcode)
 			out("}\n");
 
 			out("pc |= %s(a + 2 + 2); \n", srcw);
-			count_read++;
+			count_readw++;
 			check_bus_error("", 4, 0, 1, NULL, 1);
 			out("regs.sr = sr;\n");
 			makefromsr();
@@ -6294,11 +6388,11 @@ static void gen_opcode (unsigned int opcode)
 			out("for (;;) {\n");
 			out("uaecptr a = m68k_areg(regs, 7);\n");
 			out("uae_u16 sr = %s(a);\n", srcw);
-			count_read++;
+			count_readw++;
 			out("uae_u32 pc = %s(a + 2);\n", srcl);
-			count_read += 2;
+			count_readl++;
 			out("uae_u16 format = %s(a + 2 + 4);\n", srcw);
-			count_read++;
+			count_readw++;
 			out("int frame = format >> 12;\n");
 			out("int offset = 8;\n");
 			out("newsr = sr; newpc = pc;\n");
@@ -6467,10 +6561,8 @@ static void gen_opcode (unsigned int opcode)
 			genastore("m68k_areg(regs, 7)", curi->smode, "srcreg", sz_long, "src");
 			out("m68k_areg(regs, 7) += offs;\n");
 			fill_prefetch_next_t();
-			if (cpu_level >= 5) {
-				if (next_cpu_level < 5)
-					next_cpu_level = 5 - 1;
-			}
+			if (!next_level_060_to_040())
+				next_level_020_to_010();
 		}
 		break;
 	case i_UNLK:
@@ -6499,34 +6591,34 @@ static void gen_opcode (unsigned int opcode)
 		}
 		if (using_indirect > 0 && !using_ce020 && !using_prefetch_020 && !using_ce && !using_test) {
 			out("m68k_do_rtsi_jit();\n");
-			count_read += 2;
+			count_readl++;
 		} else if (using_mmu) {
 			out("m68k_do_rts_mmu%s();\n", mmu_postfix);
-			count_read += 2;
+			count_readl++;
 		} else if (using_ce020 == 1) {
 			add_head_cycs (1);
 			out("m68k_do_rts_ce020();\n");
-			count_read += 2;
+			count_readl++;
 		} else if (using_ce020 == 2) {
 			add_head_cycs (1);
 			out("m68k_do_rts_ce030();\n");
-			count_read += 2;
+			count_readl++;
 		} else if (using_ce || using_prefetch || (using_test && cpu_level <= 1)) {
 			out("uaecptr newpc, dsta = m68k_areg(regs, 7);\n");
 			out("newpc = %s(dsta) << 16;\n", srcw);
-			count_read++;
+			count_readw++;
 			check_bus_error("dst", 0, 0, 1, NULL, 1);
 			out("newpc |= %s(dsta + 2);\n", srcw);
-			count_read++;
+			count_readw++;
 			check_bus_error("dst", 2, 0, 1, NULL, 1);
 			out("m68k_areg(regs, 7) += 4;\n");
 			setpc("newpc");
 		} else if (using_prefetch_020 || (using_test && cpu_level >= 2)) {
 			out("m68k_do_rtsi();\n");
-			count_read += 2;
+			count_readl++;
 		} else {
 			out("m68k_do_rts();\n");
-			count_read += 2;
+			count_readl++;
 		}
 		if (using_debugmem) {
 			out("if (debugmem_trace) {\n");
@@ -6708,17 +6800,17 @@ static void gen_opcode (unsigned int opcode)
 				if (using_ce || using_prefetch) {
 					out("uaecptr dsta = m68k_areg(regs, 7);\n");
 					out("%s(dsta, nextpc >> 16);\n", dstw);
-					count_write++;
+					count_writew++;
 					check_bus_error("dst", 0, 1, 1, "nextpc >> 16", 1);
 					out("%s(dsta + 2, nextpc);\n", dstw);
-					count_write++;
+					count_writew++;
 					check_bus_error("dst", 2, 1, 1, "nextpc", 1);
 				} else {
 					if (cpu_level < 4)
 						out("%s(m68k_areg(regs, 7), nextpc);\n", dstl);
 					else
 						out("%s(m68k_areg(regs, 7) - 4, nextpc);\n", dstl);
-					count_write += 2;
+					count_writel++;
 				}
 				if (cpu_level >= 4)
 					out("m68k_areg(regs, 7) -= 4;\n");
@@ -6736,11 +6828,10 @@ static void gen_opcode (unsigned int opcode)
 				if (sp < 0 && cpu_level == 0)
 					out("if(regs.t1) opcode |= 0x10000;\n");
 				out("%s(%d);\n", prefetch_word, 2);
-				count_read++;
+				count_readw++;
 				check_prefetch_bus_error(-2, sp);
 				did_prefetch = 1;
 				ir2irc = 0;
-				insn_n_cycles += 4;
 			} else {
 				fill_prefetch_next_empty();
 			}
@@ -6787,7 +6878,7 @@ static void gen_opcode (unsigned int opcode)
 		clear_m68k_offset();
 		if (using_prefetch || using_ce) {
 			out("%s(%d);\n", prefetch_word, 0);
-			count_read++;
+			count_readw++;
 			check_prefetch_bus_error(-1, 0);
 			irc2ir();
 			out("%s(%d);\n", prefetch_word, 2);
@@ -6795,11 +6886,10 @@ static void gen_opcode (unsigned int opcode)
 			copy_opcode();
 			if (sp < 0 && cpu_level == 0)
 				out("if(regs.t1) opcode |= 0x10000;\n");
-			count_read++;
+			count_readw++;
 			check_prefetch_bus_error(-2, sp);
 			did_prefetch = 1;
 			ir2irc = 0;
-			insn_n_cycles += 2 * 4;
 		} else {
 			fill_prefetch_full(0);
 		}
@@ -6855,27 +6945,34 @@ static void gen_opcode (unsigned int opcode)
 			out("}\n");
 		}
 		if (using_indirect > 0 && !using_ce020 && !using_prefetch_020 && !using_ce && !using_test) {
-			out("m68k_do_bsri_jit (nextpc, s);\n");
+			out("m68k_do_bsri_jit(nextpc, s);\n");
+			count_writel++;
 		} else if (using_mmu) {
 			out("m68k_do_bsr_mmu%s(nextpc, s);\n", mmu_postfix);
+			count_writel++;
 		} else if (using_ce020 == 1) {
 			out("m68k_do_bsr_ce020(nextpc, s);\n");
+			count_writel++;
 		} else if (using_ce020 == 2) {
 			out("m68k_do_bsr_ce030(nextpc, s);\n");
+			count_writel++;
 		} else if (using_ce || using_prefetch || (using_test && cpu_level <= 1)) {
 			out("m68k_areg(regs, 7) -= 4;\n");
 			out("uaecptr dsta = m68k_areg(regs, 7);\n");
 			out("%s(dsta, nextpc >> 16);\n", dstw);
 			check_bus_error("dst", 0, 1, 1, "nextpc >> 16", 1);
+			count_writew++;
 			out("%s(dsta + 2, nextpc);\n", dstw);
 			check_bus_error("dst", 2, 1, 1, "nextpc", 1);
+			count_writew++;
 			incpc("s");
 		} else if (using_prefetch_020 || (using_test && cpu_level >= 2)) {
 			out("m68k_do_bsri(nextpc, s);\n");
+			count_writel++;
 		} else {
 			out("m68k_do_bsr(nextpc, s);\n");
+			count_writel++;
 		}
-		count_write += 2;
 		if (using_exception_3 && cpu_level == 0) {
 			out("if (%s & 1) {\n", getpc);
 			out("exception3_read_prefetch(opcode, %s);\n", getpc);
@@ -6973,8 +7070,8 @@ static void gen_opcode (unsigned int opcode)
 		insn_n_cycles = curi->size == sz_byte ? 8 : 12;
 		branch_inst = 1;
 bccl_not68020:
-		next_level_040_to_030();
-		next_level_000();
+		if (!next_level_040_to_030())
+			next_level_020_to_010();
 		break;
 	case i_LEA:
 		if (curi->smode == Ad8r || curi->smode == PC8r)
@@ -7040,7 +7137,7 @@ bccl_not68020:
 		genamodedual(curi,
 			curi->smode, "srcreg", curi->size, "src", 1, GF_AA | (cpu_level < 2 ? GF_NOREFILL : 0),
 			curi->dmode, "dstreg", curi->size, "offs", 1, GF_AA | (cpu_level < 2 ? GF_NOREFILL : 0));
-		if (cpu_level == 1) {
+		if (cpu_level == 1 && using_prefetch) {
 			out("int was_loop_mode = regs.loop_mode;\n");
 			out("regs.loop_mode = 0;\n");
 		}
@@ -7061,7 +7158,7 @@ bccl_not68020:
 		}
 		if (using_exception_3 && cpu_level < 4) {
 			out("if (offs & 1) {\n");
-			if (cpu_level == 1) {
+			if (cpu_level == 1 && using_prefetch) {
 				out("%s(%d);\n", prefetch_word, -1);
 			}
 			out("exception3_read_prefetch(opcode, %s);\n", getpc);
@@ -7070,7 +7167,7 @@ bccl_not68020:
 			
 		}
 		// 68010 loop mode handling
-		if (cpu_level == 1) {
+		if (cpu_level == 1 && using_prefetch) {
 			out("if(offs == -4 && !regs.t1 && loop_mode_table[regs.ird]) {\n");
 			// first loop takes as many cycles as normal DBcc branch
 			// perhaps it also does actual prefetches??
@@ -7153,14 +7250,13 @@ bccl_not68020:
 			check_prefetch_bus_error(-2, -1);
 			did_prefetch = 1;
 			ir2irc = 0;
-			count_read++;
-			insn_n_cycles += 4;
+			count_readw++;
 		}
 
 		fill_prefetch_full_020();
 		returncycles (10);
 		out("}\n");
-		if (cpu_level == 1) {
+		if (cpu_level == 1 && using_prefetch) {
 			out("if (!src) {\n");
 			addcycles000_onlyce(2);
 			addcycles000_nonce(2);
@@ -7168,7 +7264,7 @@ bccl_not68020:
 		}
 		add_head_cycs (10);
 		addcycles000_nonce(2 + 2);
-		if (cpu_level == 0) {
+		if (cpu_level == 0 || (cpu_level == 1 && !using_prefetch)) {
 			out("} else {\n");
 			addcycles000_onlyce(2);
 			addcycles000_nonce(2);
@@ -7179,9 +7275,10 @@ bccl_not68020:
 		clear_m68k_offset();
 		get_prefetch_020_continue();
 		fill_prefetch_full_000_special("if (!cctrue(%d)) {\nm68k_dreg(regs, srcreg) = (m68k_dreg(regs, srcreg) & ~0xffff) | (((src - 1)) & 0xffff);\n}\n", curi->cc);
-		insn_n_cycles = 12;
+		insn_n_cycles = 8;
 		branch_inst = 1;
-		next_level_040_to_030();
+		if (!next_level_040_to_030())
+			next_level_020_to_010();
 		break;
 	case i_Scc:
 		genamode(curi, curi->smode, "srcreg", curi->size, "src", cpu_level == 0 ? 1 : 2, 0, cpu_level == 1 ? GF_NOFETCH : 0);
@@ -7224,12 +7321,14 @@ bccl_not68020:
 		out("}\n");
 		pop_ins_cnt();
 		out("uae_u32 newv = (uae_u32)dst / (uae_u32)(uae_u16)src;\n");
-		out("uae_u32 rem = (uae_u32)dst %%%% (uae_u32)(uae_u16)src;\n");
+		out("uae_u32 rem = (uae_u32)dst %% (uae_u32)(uae_u16)src;\n");
 		if (using_ce) {
 			out("int cycles = getDivu68kCycles((uae_u32)dst, (uae_u16)src);\n");
 			addcycles000_3();
 		}
-		addcycles000_nonces("getDivu68kCycles((uae_u32)dst, (uae_u16)src)");
+		if (cpu_level <= 1) {
+			addcycles000_nonces("getDivu68kCycles((uae_u32)dst, (uae_u16)src)");
+		}
 		out("if (newv > 0xffff) {\n");
 		out("setdivuflags((uae_u32)dst, (uae_u16)src);\n");
 		out("} else {\n");
@@ -7240,9 +7339,12 @@ bccl_not68020:
 		fill_prefetch_next_t();
 		sync_m68k_pc();
 		count_ncycles++;
-		insn_n_cycles += 136 - (136 - 76) / 2; /* average */
+		if (!do_always_dynamic_cycles) {
+			insn_n_cycles += 136 - (136 - 76) / 3; /* average */
+		}
 		tail_ce020_done	= false;
 		returntail(false);
+		next_level_020_to_010();
 		break;
 	case i_DIVS:
 		tail_ce020_done	= true;
@@ -7262,12 +7364,14 @@ bccl_not68020:
 			out("int cycles = getDivs68kCycles((uae_s32)dst, (uae_s16)src);\n");
 			addcycles000_3();
 		}
-		addcycles000_nonces("getDivs68kCycles((uae_s32)dst, (uae_s16)src)");
+		if (cpu_level <= 1) {
+			addcycles000_nonces("getDivs68kCycles((uae_s32)dst, (uae_s16)src)");
+		}
 		out("if (dst == 0x80000000 && src == -1) {\n");
 		out("setdivsflags((uae_s32)dst, (uae_s16)src);\n");
 		out("} else {\n");
 		out("uae_s32 newv = (uae_s32)dst / (uae_s32)(uae_s16)src;\n");
-		out("uae_u16 rem = (uae_s32)dst %%%% (uae_s32)(uae_s16)src;\n");
+		out("uae_u16 rem = (uae_s32)dst %% (uae_s32)(uae_s16)src;\n");
 		out("if ((newv & 0xffff8000) != 0 && (newv & 0xffff8000) != 0xffff8000) {\n");
 		out("setdivsflags((uae_s32)dst, (uae_s16)src);\n");
 		out("} else {\n");
@@ -7280,9 +7384,12 @@ bccl_not68020:
 		fill_prefetch_next_t();
 		sync_m68k_pc();
 		count_ncycles++;
-		insn_n_cycles += 156 - (156 - 120) / 2; /* average */
+		if (!do_always_dynamic_cycles) {
+			insn_n_cycles += 156 - (156 - 120) / 3; /* average */
+		}
 		tail_ce020_done	= false;
 		returntail(false);
+		next_level_020_to_010();
 		break;
 	case i_MULU:
 		genamodedual(curi,
@@ -7298,11 +7405,16 @@ bccl_not68020:
 			out("int cycles = getMulu68kCycles(src);\n");
 			addcycles000_3();
 		}
-		addcycles000_nonces("getMulu68kCycles(src)");
+		if (cpu_level <= 1) {
+			addcycles000_nonces("getMulu68kCycles(src)");
+		}
 		genastore("newv", curi->dmode, "dstreg", sz_long, "dst");
 		sync_m68k_pc();
 		count_ncycles++;
-		insn_n_cycles += (70 - 38) / 2 + 38; /* average */
+		if (!do_always_dynamic_cycles) {
+			insn_n_cycles += (70 - 38) / 3 + 38; /* average */
+		}
+		next_level_020_to_010();
 		break;
 	case i_MULS:
 		genamodedual(curi,
@@ -7318,10 +7430,15 @@ bccl_not68020:
 			out("int cycles = getMuls68kCycles(src);\n");
 			addcycles000_3();
 		}
-		addcycles000_nonces("getMuls68kCycles(src)");
+		if (cpu_level <= 1) {
+			addcycles000_nonces("getMuls68kCycles(src)");
+		}
 		genastore("newv", curi->dmode, "dstreg", sz_long, "dst");
 		count_ncycles++;
-		insn_n_cycles += (70 - 38) / 2 + 38; /* average */
+		if (!do_always_dynamic_cycles) {
+			insn_n_cycles += (70 - 38) / 3 + 38; /* average */
+		}
+		next_level_020_to_010();
 		break;
 	case i_CHK:
 		genamode(curi, curi->smode, "srcreg", curi->size, "src", 1, 0, 0);
@@ -7550,7 +7667,7 @@ bccl_not68020:
 		out("int ccnt = cnt & 63;\n");
 		out("cnt &= 63;\n");
 		if (source_is_imm1_8 (curi))
-			out("{");
+			out("{\n");
 		else
 			out("if (cnt > 0) {\n");
 		out("uae_u32 loval;\n");
@@ -7584,9 +7701,9 @@ bccl_not68020:
 		out("int ccnt = cnt & 63;\n");
 		out("cnt &= 63;\n");
 		if (source_is_imm1_8 (curi))
-			out("{");
+			out("{\n");
 		else
-			out("if (cnt > 0) {");
+			out("if (cnt > 0) {\n");
 		out("uae_u32 hival;\n");
 		out("cnt &= %d;\n", bit_size (curi->size) - 1);
 		out("hival = val << (%d - cnt);\n", bit_size (curi->size));
@@ -7618,7 +7735,7 @@ bccl_not68020:
 		out("int ccnt = cnt & 63;\n");
 		out("cnt &= 63;\n");
 		if (source_is_imm1_8 (curi))
-			out("{");
+			out("{\n");
 		else {
 			force_range_for_rox ("cnt", curi->size);
 			out("if (cnt > 0) {\n");
@@ -7630,7 +7747,8 @@ bccl_not68020:
 		out("val = (((val << 1) | GET_XFLG()) << cnt) | (loval >> 1);\n");
 		out("SET_XFLG(carry);\n");
 		out("val &= %s;\n", bit_mask (curi->size));
-		out("} }\n");
+		out("}\n");
+		out("}\n");
 		out("SET_CFLG(GET_XFLG());\n");
 		genflags (flag_logical_noclobber, curi->size, "val", "", "");
 		shift_ce (curi->dmode, curi->size);
@@ -7655,7 +7773,7 @@ bccl_not68020:
 		out("int ccnt = cnt & 63;\n");
 		out("cnt &= 63;\n");
 		if (source_is_imm1_8 (curi))
-			out("{");
+			out("{\n");
 		else {
 			force_range_for_rox ("cnt", curi->size);
 			out("if (cnt > 0) {\n");
@@ -7670,7 +7788,8 @@ bccl_not68020:
 		out("val |= hival;\n");
 		out("SET_XFLG(carry);\n");
 		out("val &= %s;\n", bit_mask (curi->size));
-		out("} }\n");
+		out("}\n");
+		out("}\n");
 		out("SET_CFLG(GET_XFLG());\n");
 		genflags (flag_logical_noclobber, curi->size, "val", "", "");
 		shift_ce (curi->dmode, curi->size);
@@ -8449,7 +8568,7 @@ end:
 		int v = curi->clocks;
 		if (v < 4)
 			v = 4;
-		count_cycles = insn_n_cycles = v;
+		count_cycles = v;
 	}
 }
 
@@ -8664,7 +8783,7 @@ static void generate_one_opcode (int rp, const char *extra)
 	if (i68000)
 		out("#ifndef CPUEMU_68000_ONLY\n");
 	out("%s REGPARAM2 CPUFUNC(op_%04x_%d%s)(uae_u32 opcode)\n{\n", (using_ce || using_ce020) ? "void" : "uae_u32", opcode, postfix, extra);
-	if (using_simple_cycles)
+	if (using_simple_cycles || do_always_dynamic_cycles)
 		out("int count_cycles = 0;\n");
 
 	switch (table68k[opcode].stype) {
@@ -8728,7 +8847,8 @@ static void generate_one_opcode (int rp, const char *extra)
 				out("uae_u32 dstreg = opcode & %d;\n", dmsk);
 		}
 	}
-	count_read = count_write = count_ncycles = count_cycles = 0;
+	count_readw = count_readl = count_writew = count_writel = count_ncycles = count_cycles = 0;
+	count_readp = 0;
 	count_cycles_ce020 = 0;
 	count_read_ea = count_write_ea = count_cycles_ea = 0;
 	gen_opcode (opcode);
@@ -9064,8 +9184,10 @@ static void generate_cpu (int id, int mode)
 			for (rp = 0; rp < nr_cpuop_funcs; rp++)
 				opcode_next_clev[rp] = cpu_level;
 		}
-	 }
+	}
  
+	do_always_dynamic_cycles = !using_simple_cycles && !using_prefetch && !using_prefetch_020 && using_always_dynamic_cycles;
+
 	if (!using_indirect)
 		using_indirect = using_ce || using_ce020 || using_prefetch_020 || id >= 50;
 
@@ -9115,9 +9237,6 @@ int main(int argc, char *argv[])
 #else
 
 	using_debugmem = 1;
-#ifdef WINUAE_FOR_HATARI
-	using_bus_error = 1;				/* Enable code to handle bus error */
-#endif
 
 	headerfile = fopen("cputbl.h", "wb");
 

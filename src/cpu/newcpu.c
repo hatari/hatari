@@ -3120,8 +3120,8 @@ static void add_approximate_exception_cycles(int nr)
 				cycles = 44;			/* Other interrupts (not used in Atari machines) */
 #endif
 		} else if (nr >= 32 && nr <= 47) {
-			/* Trap (total is 34, but cpuemux.c already adds 4) */
-			cycles = 34 - 4;
+			/* Trap */
+			cycles = 34;
 		} else {
 			switch (nr)
 			{
@@ -3146,7 +3146,7 @@ static void add_approximate_exception_cycles(int nr)
 			cycles = 48;
 		} else if (nr >= 32 && nr <= 47) {
 			/* Trap */
-			cycles = 38 - 4;
+			cycles = 38;
 		} else {
 			switch (nr)
 			{
@@ -5072,10 +5072,11 @@ static void m68k_run_1 (void)
 
 				do_cycles (cpu_cycles);
 				r->instruction_pc = m68k_getpc ();
-				cpu_cycles = (*cpufunctbl[r->opcode])(r->opcode);
+				cpu_cycles = (*cpufunctbl[r->opcode])(r->opcode) & 0xffff;
 				if (!regs.loop_mode)
 					regs.ird = regs.opcode;
 				cpu_cycles = adjust_cycles (cpu_cycles);
+				regs.instruction_cnt++;
 
 #ifdef WINUAE_FOR_HATARI
 				/* Also add some extra cycles to simulate some wait state */
@@ -5241,6 +5242,7 @@ static void m68k_run_1_ce (void)
 				(*cpufunctbl[r->opcode])(r->opcode);
 				if (!regs.loop_mode)
 					regs.ird = regs.opcode;
+				regs.instruction_cnt++;
 				wait_memory_cycles();			// TODO NP : ici, ou plus bas ?
 #ifdef WINUAE_FOR_HATARI
 //fprintf ( stderr, "cyc_1ce %d\n" , currcycle );
@@ -5629,7 +5631,7 @@ void exec_nostats (void)
 		} else {
 			r->opcode = x_get_iword(0);
 		}
-		cpu_cycles = (*cpufunctbl[r->opcode])(r->opcode);
+		cpu_cycles = (*cpufunctbl[r->opcode])(r->opcode) >> 16;
 		cpu_cycles = adjust_cycles (cpu_cycles);
 
 		if (!currprefs.cpu_thread) {
@@ -5676,7 +5678,7 @@ void execute_normal (void)
 		special_mem = DISTRUST_CONSISTENT_MEM;
 		pc_hist[blocklen].location = (uae_u16*)r->pc_p;
 
-		cpu_cycles = (*cpufunctbl[r->opcode])(r->opcode);
+		cpu_cycles = (*cpufunctbl[r->opcode])(r->opcode) >> 16;
 		cpu_cycles = adjust_cycles(cpu_cycles);
 		if (!currprefs.cpu_thread) {
 			do_cycles (cpu_cycles);
@@ -5904,9 +5906,10 @@ static void m68k_run_mmu060 (void)
 				mmu060_state = 1;
 
 				count_instr (regs.opcode);
-				cpu_cycles = (*cpufunctbl[regs.opcode])(regs.opcode);
+				cpu_cycles = (*cpufunctbl[regs.opcode])(regs.opcode) >> 16;
 
 				cpu_cycles = adjust_cycles (cpu_cycles);
+				regs.instruction_cnt++;
 #ifdef WINUAE_FOR_HATARI
 				M68000_AddCycles(cpu_cycles * 2 / CYCLE_UNIT);
 
@@ -5990,8 +5993,9 @@ static void m68k_run_mmu040 (void)
 				mmu_opcode = -1;
 				mmu_opcode = regs.opcode = x_prefetch (0);
 				count_instr (regs.opcode);
-				cpu_cycles = (*cpufunctbl[regs.opcode])(regs.opcode);
+				cpu_cycles = (*cpufunctbl[regs.opcode])(regs.opcode) >> 16;
 				cpu_cycles = adjust_cycles (cpu_cycles);
+				regs.instruction_cnt++;
 
 #ifdef WINUAE_FOR_HATARI
 				M68000_AddCycles(cpu_cycles * 2 / CYCLE_UNIT);
@@ -6126,7 +6130,7 @@ insretry:
 						count_instr (regs.opcode);
 						do_cycles (cpu_cycles);
 
-						cpu_cycles = (*cpufunctbl[regs.opcode])(regs.opcode);
+						cpu_cycles = (*cpufunctbl[regs.opcode])(regs.opcode) >> 16;
 
 					} else {
 #ifdef WINUAE_FOR_HATARI
@@ -6153,6 +6157,7 @@ insretry:
 				if (!currprefs.cpu_cycle_exact) {
 
 					cpu_cycles = adjust_cycles (cpu_cycles);
+					regs.instruction_cnt++;
 #ifdef WINUAE_FOR_HATARI
 					M68000_AddCycles(cpu_cycles * 2 / CYCLE_UNIT);
 
@@ -6203,6 +6208,7 @@ insretry:
 						MFP_UpdateIRQ_All ( 0 );
 #endif
 
+					regs.instruction_cnt++;
 					if (regs.spcflags || time_for_interrupt ()) {
 						if (do_specialties (0))
 							return;
@@ -6317,6 +6323,7 @@ static void m68k_run_3ce (void)
 						exit = true;
 				}
 
+				regs.instruction_cnt++;
 				// workaround for situation when all accesses are cached
 				extracycles++;
 				if (extracycles >= 8) {
@@ -6389,6 +6396,7 @@ static void m68k_run_3p(void)
 #ifndef WINUAE_FOR_HATARI
 				cpu_cycles = 1 * CYCLE_UNIT;
 				cycles = adjust_cycles(cpu_cycles);
+				regs.instruction_cnt++;
 				do_cycles(cycles);
 #else
 				cycles = cpu_cycles = CYCLE_UNIT / 2;
@@ -6586,6 +6594,7 @@ fprintf ( stderr , "cache valid %d tag1 %x lws1 %x ctag %x data %x mem=%x\n" , c
 				(*cpufunctbl[r->opcode])(r->opcode);
 		
 				wait_memory_cycles();
+				regs.instruction_cnt++;
 
 #ifdef WINUAE_FOR_HATARI
 //fprintf ( stderr, "cyc_2ce %d\n" , currcycle );
@@ -6754,9 +6763,6 @@ static void m68k_run_2p (void)
 				}
 #endif
 
-				if (cpu_cycles > 0)
-					x_do_cycles(cpu_cycles);
-
 				if (currprefs.cpu_memory_cycle_exact) {
 
 					(*cpufunctbl[r->opcode])(r->opcode);
@@ -6766,13 +6772,19 @@ static void m68k_run_2p (void)
 					cpu_cycles -= CYCLE_UNIT;
 					if (cpu_cycles <= 0)
 						cpu_cycles = cpucycleunit;
+					regs.instruction_cnt++;
 
 				} else {
 
-					cpu_cycles = (*cpufunctbl[r->opcode])(r->opcode);
+					cpu_cycles = (*cpufunctbl[r->opcode])(r->opcode) >> 16;
 					cpu_cycles = adjust_cycles (cpu_cycles);
+					regs.instruction_cnt++;
 
 				}
+
+				if (cpu_cycles > 0)
+					x_do_cycles(cpu_cycles);
+
 cont:
 #ifdef WINUAE_FOR_HATARI
 //fprintf ( stderr , "waits %d %d %ld\n" , cpu_cycles*2/CYCLE_UNIT , WaitStateCycles , CyclesGlobalClockCounter );
@@ -6869,19 +6881,12 @@ static void *cpu_thread_run_2(void *v)
 #endif
 
 /* Same thing, but don't use prefetch to get opcode.  */
-static void m68k_run_2 (void)
+static void m68k_run_2_000(void)
 {
-#ifdef WITH_THREADED_CPU
-	if (currprefs.cpu_thread) {
-		run_cpu_thread(cpu_thread_run_2);
-		return;
-	}
-#endif
-
 	struct regstruct *r = &regs;
 	bool exit = false;
 
-	Log_Printf(LOG_DEBUG, "m68k_run_2\n");
+	Log_Printf(LOG_DEBUG, "m68k_run_2_000\n");
 
 	while (!exit) {
 		TRY(prb) {
@@ -6906,10 +6911,10 @@ static void m68k_run_2 (void)
 					debug_trainer_match();
 				}
 #endif
-				do_cycles (cpu_cycles);
 
-				cpu_cycles = (*cpufunctbl[r->opcode])(r->opcode);
+				cpu_cycles = (*cpufunctbl[r->opcode])(r->opcode) & 0xffff;
 				cpu_cycles = adjust_cycles (cpu_cycles);
+				do_cycles(cpu_cycles);
 #ifdef WINUAE_FOR_HATARI
 //fprintf ( stderr , "cyc_2 %d\n" , cpu_cycles );
 				M68000_AddCyclesWithPairing(cpu_cycles * 2 / CYCLE_UNIT);
@@ -6956,6 +6961,94 @@ static void m68k_run_2 (void)
 		} ENDTRY
 	}
 }
+
+static void m68k_run_2_020(void)
+{
+#ifdef WITH_THREADED_CPU
+	if (currprefs.cpu_thread) {
+		run_cpu_thread(cpu_thread_run_2);
+		return;
+	}
+#endif
+
+	struct regstruct *r = &regs;
+	bool exit = false;
+
+	Log_Printf(LOG_DEBUG, "m68k_run_2_020\n");
+
+	while (!exit) {
+		TRY(prb) {
+			while (!exit) {
+#ifdef WINUAE_FOR_HATARI
+				//m68k_dumpstate_file(stderr, NULL, 0xffffffff);
+				if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
+				{
+					int FrameCycles, HblCounterVideo, LineCycles;
+					Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+					LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
+					m68k_disasm_file(stderr, m68k_getpc (), NULL, m68k_getpc (), 1);
+				}
+#endif
+				r->instruction_pc = m68k_getpc();
+
+				r->opcode = x_get_iword(0);
+				count_instr(r->opcode);
+
+#ifndef WINUAE_FOR_HATARI
+				if (debug_opcode_watch) {
+					debug_trainer_match();
+				}
+#endif
+				cpu_cycles = (*cpufunctbl[r->opcode])(r->opcode) >> 16;
+				cpu_cycles = adjust_cycles(cpu_cycles);
+				do_cycles(cpu_cycles);
+#ifdef WINUAE_FOR_HATARI
+//fprintf ( stderr , "cyc_2 %d\n" , cpu_cycles );
+				M68000_AddCyclesWithPairing(cpu_cycles * 2 / CYCLE_UNIT);
+
+				if ( WaitStateCycles ) {
+					/* Add some extra cycles to simulate a wait state */
+					M68000_AddCycles(WaitStateCycles);
+					WaitStateCycles = 0;
+				}
+
+				/* We can have several interrupts at the same time before the next CPU instruction */
+				/* We must check for pending interrupt and call do_specialties_interrupt() only */
+				/* if the cpu is not in the STOP state. Else, the int could be acknowledged now */
+				/* and prevent exiting the STOP state when calling do_specialties() after. */
+				/* For performance, we first test PendingInterruptCount, then regs.spcflags */
+				while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
+					CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
+				if ( MFP_UpdateNeeded == true )
+					MFP_UpdateIRQ_All ( 0 );
+#endif
+
+				if (r->spcflags) {
+					if (do_specialties(cpu_cycles))
+						exit = true;
+				}
+
+#ifdef WINUAE_FOR_HATARI
+				/* Run DSP 56k code if necessary */
+				if (bDspEnabled) {
+					DSP_Run(2 * cpu_cycles * 2 / CYCLE_UNIT);
+//					DSP_Run ( DSP_CPU_FREQ_RATIO * ( CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter ) );
+				}
+
+				if ( savestate_state == STATE_SAVE )
+					save_state ( NULL , NULL );
+#endif
+			}
+		} CATCH(prb) {
+			bus_error();
+			if (r->spcflags) {
+				if (do_specialties(cpu_cycles))
+					exit = true;
+			}
+		} ENDTRY
+	}
+}
+
 
 /* fake MMU 68k  */
 #if 0
@@ -7253,7 +7346,7 @@ void m68k_go (int may_quit)
 				currprefs.cpu_model == 68030 && currprefs.cpu_compatible ? m68k_run_2p :
 				currprefs.cpu_model >= 68040 && currprefs.cpu_compatible ? m68k_run_3p :
 
-				m68k_run_2;
+				currprefs.cpu_model < 68020 ? m68k_run_2_000 : m68k_run_2_020;
 #if 0
 		}
 #endif
