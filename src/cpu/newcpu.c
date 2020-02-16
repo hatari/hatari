@@ -2609,7 +2609,7 @@ Interrupt:
 
 */
 
-static void exception3f(uae_u32 opcode, uaecptr addr, bool writeaccess, bool instructionaccess, bool notinstruction, uaecptr pc, int size, bool plus2, int fc);
+static void exception3f(uae_u32 opcode, uaecptr addr, bool writeaccess, bool instructionaccess, bool notinstruction, uaecptr pc, int size, int fc);
 
 static int iack_cycle(int nr)
 {
@@ -8232,7 +8232,7 @@ uae_u8 *restore_mmu (uae_u8 *src)
 
 #endif /* SAVESTATE */
 
-static void exception3f (uae_u32 opcode, uaecptr addr, bool writeaccess, bool instructionaccess, bool notinstruction, uaecptr pc, int size, bool plus2, int fc)
+static void exception3f (uae_u32 opcode, uaecptr addr, bool writeaccess, bool instructionaccess, bool notinstruction, uaecptr pc, int size, int fc)
 {
 	if (currprefs.cpu_model >= 68040)
 		addr &= ~1;
@@ -8243,8 +8243,6 @@ static void exception3f (uae_u32 opcode, uaecptr addr, bool writeaccess, bool in
 			last_addr_for_exception_3 = pc;
 	} else if (pc == 0xffffffff) {
 		last_addr_for_exception_3 = m68k_getpc ();
-		if (plus2)
-			last_addr_for_exception_3 += 2;
 	} else {
 		last_addr_for_exception_3 = pc;
 	}
@@ -8263,11 +8261,11 @@ static void exception3f (uae_u32 opcode, uaecptr addr, bool writeaccess, bool in
 void exception3_notinstruction(uae_u32 opcode, uaecptr addr)
 {
 	last_di_for_exception_3 = 1;
-	exception3f (opcode, addr, true, false, true, 0xffffffff, 1, false, -1);
+	exception3f (opcode, addr, true, false, true, 0xffffffff, 1, -1);
 }
 static void exception3_read_special(uae_u32 opcode, uaecptr addr, int size, int fc)
 {
-	exception3f(opcode, addr, false, 0, false, 0xffffffff, size, false, fc);
+	exception3f(opcode, addr, false, 0, false, 0xffffffff, size, fc);
 }
 
 // Some hardware accepts address error aborted reads or writes as normal reads/writes.
@@ -8275,7 +8273,7 @@ void exception3_read_prefetch(uae_u32 opcode, uaecptr addr)
 {
 	x_do_cycles(4 * cpucycleunit);
 	last_di_for_exception_3 = 0;
-	exception3f(opcode, addr, false, true, false, m68k_getpc(), sz_word, false, -1);
+	exception3f(opcode, addr, false, true, false, m68k_getpc(), sz_word, -1);
 }
 void exception3_read_opcode(uae_u32 opcode, uaecptr addr, int size, int fc)
 {
@@ -8304,7 +8302,7 @@ void exception3_read(uae_u32 opcode, uaecptr addr, int size, int fc)
 		opcode = regs.ir;
 	}
 	last_di_for_exception_3 = 1;
-	exception3f(opcode, addr, false, ia, ni, 0xffffffff, size, false, fc);
+	exception3f(opcode, addr, false, ia, ni, 0xffffffff, size, fc);
 }
 void exception3_write(uae_u32 opcode, uaecptr addr, int size, uae_u32 val, int fc)
 {
@@ -8322,7 +8320,7 @@ void exception3_write(uae_u32 opcode, uaecptr addr, int size, uae_u32 val, int f
 		opcode = regs.ir;
 	}
 	last_di_for_exception_3 = 1;
-	exception3f(opcode, addr, true, ia, ni, 0xffffffff, size, false, fc);
+	exception3f(opcode, addr, true, ia, ni, 0xffffffff, size, fc);
 	regs.write_buffer = val;
 }
 
