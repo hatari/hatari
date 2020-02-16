@@ -1202,6 +1202,7 @@ static void fill_prefetch_full_000_special(const char *format, ...)
 			va_end(parms);
 			out(outbuf);
 		}
+		insn_n_cycles += 2 * 4;
 		return;
 	}
 
@@ -3732,7 +3733,7 @@ static void genastore_2 (const char *from, amodes mode, const char *reg, wordsiz
 			switch (size) {
 			case sz_byte:
 				set_last_access();
-				out("x_put_byte(%sa, %s);\n", to, from);
+				out("%s(%sa, %s);\n", dstbx, to, from);
 				count_writew++;
 				check_bus_error(to, 0, 1, 0, from, 1);
 				break;
@@ -3740,7 +3741,7 @@ static void genastore_2 (const char *from, amodes mode, const char *reg, wordsiz
 				if (cpu_level < 2 && (mode == PC16 || mode == PC8r))
 					term();
 				set_last_access();
-				out("x_put_word(%sa, %s);\n", to, from);
+				out("%s(%sa, %s);\n", dstwx, to, from);
 				count_writew++;
 				check_bus_error(to, 0, 1, 1, from, 1);
 				break;
@@ -7163,7 +7164,6 @@ bccl_not68020:
 		}
 		out("uaecptr oldpc = %s;\n", getpc);
 		addcycles000(2);
-		addcycles000_nonce(2);
 		if (using_exception_3 && cpu_level >= 4) {
 			out("if (offs & 1) {\n");
 			out("exception3_read_prefetch(opcode, oldpc + (uae_s32)offs + 2);\n");
@@ -7274,7 +7274,7 @@ bccl_not68020:
 		}
 
 		fill_prefetch_full_020();
-		returncycles (10);
+		returncycles(10);
 		out("}\n");
 		if (cpu_level == 1 && using_prefetch) {
 			out("if (!src) {\n");
@@ -7283,7 +7283,6 @@ bccl_not68020:
 			out("}\n");
 		}
 		add_head_cycs (10);
-		addcycles000_nonce(2 + 2);
 		if (cpu_level == 0 || (cpu_level == 1 && !using_prefetch)) {
 			out("} else {\n");
 			addcycles000_onlyce(2);
@@ -7291,11 +7290,12 @@ bccl_not68020:
 		}
 		out("}\n");
 		pop_ins_cnt();
+		insn_n_cycles += 2;
+		count_cycles += 2;
 		setpc ("oldpc + %d", m68k_pc_offset);
 		clear_m68k_offset();
 		get_prefetch_020_continue();
 		fill_prefetch_full_000_special("if (!cctrue(%d)) {\nm68k_dreg(regs, srcreg) = (m68k_dreg(regs, srcreg) & ~0xffff) | (((src - 1)) & 0xffff);\n}\n", curi->cc);
-		insn_n_cycles = 8;
 		branch_inst = 1;
 		if (!next_level_040_to_030())
 			next_level_020_to_010();
@@ -8087,7 +8087,6 @@ bccl_not68020:
 			addcycles000(4);
 			out("if (extra & 0x800) {\n");
 			{
-				int srcdone = 0;
 				int old_m68k_pc_offset = m68k_pc_offset;
 				int old_m68k_pc_total = m68k_pc_total;
 				push_ins_cnt();
