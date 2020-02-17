@@ -73,7 +73,8 @@ static int do_always_dynamic_cycles;
 static int optimized_flags;
 
 #ifdef WINUAE_FOR_HATARI
-static long nCurInstrCycPos;	/* Hatari only : Stores where we have to patch in the current cycles value */
+static int CurrentInstrCycles;		/* Hatari only : Number of cycles for the current instruction in cpuemu_xx */
+static int CurrentInstrCycles_pos;	/* Hatari only : Stores where we have to patch in the current cycles value */
 #endif
 
 #define GF_APDI		0x00001
@@ -550,6 +551,10 @@ static void returntail (bool iswrite)
 
 static void returncycles(int cycles)
 {
+#ifdef WINUAE_FOR_HATARI
+	CurrentInstrCycles = cycles;
+#endif
+
 	if (using_ce || using_ce020) {
 #if 0
 		if (tail_ce020 == 0)
@@ -609,9 +614,6 @@ static void write_return_cycles2(int end, int no4)
 					count_readw + count_readl * 2, count_writew + count_writel * 2);
 				out(" */\n");
 			}
-#ifdef WINUAE_FOR_HATARI
-			insn_n_cycles = (count_readw + count_writew) * 4 + (count_readl + count_writel) * 8 + cc;
-#endif
 		}
 	} else {
 		if (end < 0) {
@@ -623,14 +625,8 @@ static void write_return_cycles2(int end, int no4)
 		} else {
 			if (!using_prefetch && !using_prefetch_020) {
 				returncycles((count_readw + count_writew) * 4 + (count_readl + count_writel) * 8 + insn_n_cycles);
-#ifdef WINUAE_FOR_HATARI
-				insn_n_cycles = (count_readw + count_writew) * 4 + (count_readl + count_writel) * 8 + insn_n_cycles;
-#endif
 			} else {
 				returncycles((count_readw + count_writew) * 4 + (count_readl + count_writel) * 8 + count_cycles);
-#ifdef WINUAE_FOR_HATARI
-				insn_n_cycles = (count_readw + count_writew) * 4 + (count_readl + count_writel) * 8 + count_cycles; 
-#endif
 			}
 			if (end) {
 				out("}\n");
@@ -4987,8 +4983,8 @@ static void gen_opcode (unsigned int opcode)
         out("OpcodeFamily = %d;\n", curi->mnemo);
         /* leave some space for patching in the current cycles later */
         if (!using_ce020) {
-                out("CurrentInstrCycles = 0;  \n");
-                nCurInstrCycPos = ftell(stdout) - 5;
+                out("CurrentInstrCycles =     \n");
+                CurrentInstrCycles_pos = strlen(outbuffer) - 5;
         }
 #endif
 
@@ -8908,11 +8904,10 @@ static void generate_one_opcode (int rp, const char *extra)
 
 #ifdef WINUAE_FOR_HATARI
         /* Hatari only : Now patch in the instruction cycles at the beginning of the function: */
-	/*TODO fix for latest cpu core */
-	if (0 && !using_ce020) {
-		fseek(stdout, nCurInstrCycPos, SEEK_SET);
-		printf("%d;", insn_n_cycles);
-		fseek(stdout, 0, SEEK_END);
+	if (!using_ce020) {
+		char buf_cyc[10];
+		sprintf ( buf_cyc , "%d;", CurrentInstrCycles );
+		memcpy ( outbuffer+CurrentInstrCycles_pos , buf_cyc , strlen(buf_cyc) );
 	}
 #endif
 
