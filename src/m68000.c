@@ -652,9 +652,14 @@ void M68000_BusError ( Uint32 addr , int ReadWrite , int Size , int AccessType )
 		M68000_SetSpecial(SPCFLAG_BUSERROR);		/* The exception will be done in newcpu.c */
 	}
 #else
+#define WINUAE_HANDLE_BUS_ERROR
+#ifdef WINUAE_HANDLE_BUS_ERROR
+	hardware_bus_error = 1;
+#else
 	/* With WinUAE's cpu, on a bus error instruction will be correctly aborted before completing, */
 	/* so we don't need to check if the opcode already generated a bus error or not */
 	exception2 ( addr , ReadWrite , Size , AccessType );
+#endif
 #endif
 }
 
