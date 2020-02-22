@@ -123,7 +123,7 @@ static void Paths_GetExecDirFromPATH(const char *argv0, char *pExecDir, int nMax
 			break;
 		}
 		pAct = strtok (NULL, pToken);
-  	}
+	}
 
 	free(pPathEnv);
 	free(pTmpName);

@@ -9,6 +9,7 @@
 
 static void ConvertMediumRes_640x32Bit_Spec(void)
 {
+	Uint32 *PCScreen = (Uint32 *)pPCScreenDest;
 	Uint32 *edi, *ebp;
 	Uint32 *esi;
 	Uint32 eax;
@@ -21,15 +22,14 @@ static void ConvertMediumRes_640x32Bit_Spec(void)
 		eax = STScreenLineOffset[y] + STScreenLeftSkipBytes;  /* Offset for this line + Amount to skip on left hand side */
 		edi = (Uint32 *)((Uint8 *)pSTScreen + eax);        /* ST format screen 4-plane 16 colors */
 		ebp = (Uint32 *)((Uint8 *)pSTScreenCopy + eax);    /* Previous ST format screen */
-		esi = (Uint32 *)pPCScreenDest;                     /* PC format screen */
+		esi = PCScreen;                                    /* PC format screen */
 
 		if (HBLPaletteMasks[y] & 0x00030000)               /* Test resolution */
 			Line_ConvertMediumRes_640x32Bit_Spec(edi, ebp, esi, eax);	/* med res line */
 		else
 			Line_ConvertLowRes_640x32Bit_Spec(edi, ebp, esi, eax);		/* low res line (double on X) */
 
-		/* Offset to next line (double on Y) */
-		pPCScreenDest = (((Uint8 *)pPCScreenDest) + PCScreenBytesPerLine * 2);
+		PCScreen = Double_ScreenLine32(PCScreen, PCScreenBytesPerLine);
 	}
 
         bScreenContentsChanged = true;
@@ -38,8 +38,8 @@ static void ConvertMediumRes_640x32Bit_Spec(void)
 
 static void Line_ConvertMediumRes_640x32Bit_Spec(Uint32 *edi, Uint32 *ebp, Uint32 *esi, Uint32 eax)
 {
+	int x;
 	Uint32 ebx, ecx;
-	int x, Screen4BytesPerLine;
 	Uint32 pixelspace[5]; /* Workspace to store pixels to so can print in right order for Spec512 */
 
 	/* on x86, unaligned access macro touches also
@@ -50,13 +50,11 @@ static void Line_ConvertMediumRes_640x32Bit_Spec(Uint32 *edi, Uint32 *ebp, Uint3
 	Spec512_StartScanLine();        /* Build up palettes for every 4 pixels, store in 'ScanLinePalettes' */
 
 	x = STScreenWidthBytes >> 2;   /* Amount to draw across in 16-pixels (4 bytes) */
-	Screen4BytesPerLine = PCScreenBytesPerLine/4;
 
 	do  /* x-loop */
 	{
 		/* Do 16 pixels at one time */
 		ebx = *edi;
-
 
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
 		/* Plot in 'right-order' on big endian systems */
@@ -85,28 +83,23 @@ static void Line_ConvertMediumRes_640x32Bit_Spec(Uint32 *edi, Uint32 *ebp, Uint3
 		/* NOTE : In med res, we display 16 pixels in 8 cycles, so palette should be */
 		/* updated every 8 pixels, not every 4 pixels (as in low res) */
 		ecx = pixelspace[0];
-		if (!bScrDoubleY)	{ PLOT_SPEC512_LEFT_MED_640_32BIT(0); }
-		else			{ PLOT_SPEC512_LEFT_MED_640_32BIT_DOUBLE_Y(0); }
+		PLOT_SPEC512_LEFT_MED_640_32BIT(0);
 //		Spec512_UpdatePaletteSpan();
 
 		ecx = GET_SPEC512_OFFSET_PIXELS(pixelspace, 1);
-		if (!bScrDoubleY)	{ PLOT_SPEC512_MID_MED_640_32BIT(1); }
-		else			{ PLOT_SPEC512_MID_MED_640_32BIT_DOUBLE_Y(1); }
+		PLOT_SPEC512_MID_MED_640_32BIT(1);
 		Spec512_UpdatePaletteSpan();
 
 		ecx = GET_SPEC512_OFFSET_PIXELS(pixelspace, 5);
-		if (!bScrDoubleY)	{ PLOT_SPEC512_MID_MED_640_32BIT(5); }
-		else			{ PLOT_SPEC512_MID_MED_640_32BIT_DOUBLE_Y(5); }
+		PLOT_SPEC512_MID_MED_640_32BIT(5);
 //		Spec512_UpdatePaletteSpan();
 
 		ecx = GET_SPEC512_OFFSET_PIXELS(pixelspace, 9);
-		if (!bScrDoubleY)	{ PLOT_SPEC512_MID_MED_640_32BIT(9); }
-		else			{ PLOT_SPEC512_MID_MED_640_32BIT_DOUBLE_Y(9); }
+		PLOT_SPEC512_MID_MED_640_32BIT(9);
 		Spec512_UpdatePaletteSpan();
 
 		ecx = GET_SPEC512_OFFSET_FINAL_PIXELS(pixelspace);
-		if (!bScrDoubleY)	{ PLOT_SPEC512_END_MED_640_32BIT(13); }
-		else			{ PLOT_SPEC512_END_MED_640_32BIT_DOUBLE_Y(13); }
+		PLOT_SPEC512_END_MED_640_32BIT(13);
 
 		esi += 16;                      /* Next PC pixels */
 		edi += 1;                       /* Next ST pixels */

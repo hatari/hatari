@@ -965,11 +965,6 @@ static bool	Avi_RecordVideoStream_PNG ( RECORD_AVI_PARAMS *pAviParams )
 		pAviParams->CropLeft , pAviParams->CropRight , pAviParams->CropTop , pAviParams->CropBottom );
 	if ( SizeImage <= 0 )
 		goto png_error;
-	if ( SizeImage & 1 )
-	{
-		SizeImage++;							/* add an extra '\0' byte to get an even size */
-		fputc ( '\0' , pAviParams->FileOut );				/* next chunk must be aligned on 16 bits boundary */
-	}
 
 	/* Update the size of the video chunk */
 	Avi_StoreU32 ( TempSize , SizeImage );

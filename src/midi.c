@@ -614,10 +614,13 @@ static bool Midi_Host_WriteByte(Uint8 byte)
 		PmEvent* midiEvent = Midi_BuildEvent(byte);
 		if (midiEvent)
 		{
+			const char *msg;
 			PmError error = Pm_Write(midiOut, midiEvent, 1);
-			if (error == pmNoError)
+			if (error == pmNoError || error == pmGotData)
 				return true;
-			LOG_TRACE(TRACE_MIDI, "MIDI: PortMidi write error %d\n", error);
+			msg = Pm_GetErrorText(error);
+			LOG_TRACE(TRACE_MIDI, "MIDI: PortMidi write error %d: '%s'\n",
+				  error, msg);
 			return false;
 		}
 		return true;

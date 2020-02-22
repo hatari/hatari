@@ -3,7 +3,7 @@
 # NOTE: this is a simple script wrapper around the cmake command line tools,
 # for those used to the autotools configure script conventions
 
-if ! which cmake > /dev/null; then
+if ! command -v cmake > /dev/null 2>&1; then
   echo "ERROR: You need the 'cmake' program to configure the Hatari build process."
   echo "Please install 'cmake' first, then try again."
   exit 1
@@ -15,15 +15,16 @@ print_help()
   echo "Parameters are:"
   echo "  --prefix=<path>            Set the install prefix to path"
   echo "  --enable-debug             Enable debug (non-optimized) build"
-  echo "  --enable-small-mem         Use less memory - at the expense of emulation speed"
+  echo "  --enable-small-mem         Use less memory at the expense of emulation speed"
   echo "  --disable-dsp              Disable DSP emulation for Falcon mode."
   echo "  --disable-tracing          Disable tracing messages for debugging"
   echo "  --enable-winuae-cpu        Use WinUAE CPU core (default)"
   echo "  --enable-old-uae-cpu       Use old UAE CPU core (deprecated)"
   echo "  --disable-osx-bundle       Disable application bundling on macOS"
   echo "  --disable-sdl2             Do not compile with libsdl 2.0, use 1.2 instead"
-  echo "  --cross-compile-win64_32   Build the 32 bit Windows version under linux using mingw-w64"
-  echo "  --cross-compile-win64_64   Build the 64 bit Windows version under linux using mingw-w64"
+  echo "  --enable-werror            Use -Werror flag to stop on compiler warnings"
+  echo "  --cross-compile-win64_32   Build the 32 bit Windows version using mingw-w64"
+  echo "  --cross-compile-win64_64   Build the 64 bit Windows version using mingw-w64"
   echo
   echo "Please run cmake directly for full control over the build."
   echo
@@ -95,6 +96,12 @@ do
     --disable-sdl2)
       cmake_args="$cmake_args -DENABLE_SDL2:BOOL=0"
     ;;
+    --enable-werror)
+      cmake_args="$cmake_args -DENABLE_WERROR:BOOL=1"
+    ;;
+    --disable-werror)
+      cmake_args="$cmake_args -DENABLE_WERROR:BOOL=0"
+    ;;
     --cross-compile-win64_32)
       cmake_args="$cmake_args -DCMAKE_TOOLCHAIN_FILE=cmake/Toolchain-mingw32-win64_32.cmake"
     ;;
@@ -111,8 +118,12 @@ do
 done
 
 # remove previous cmake's cache
-rm -f `dirname $0`/CMakeCache.txt
-rm -rf `dirname $0`/CMakeFiles/
+rm -rf CMakeCache.txt CMakeFiles/
+
+if [ -e `dirname $0`/CMakeCache.txt ]; then
+    echo "Source directory is not clean, please run 'make distclean' there first."
+    exit 1
+fi
 
 cmake `dirname $0` $cmake_args || exit 1
 

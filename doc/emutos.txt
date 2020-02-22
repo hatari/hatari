@@ -92,7 +92,7 @@ open and free, licensed under the GNU General Public License (GPL).
 A copy of the GNU GPL can be found in the gpl.txt file.
 
 EmuTOS project has home page at SourceForge:
-	http://emutos.sourceforge.net/
+	https://emutos.sourceforge.io/
 With sources at GitHub:
 	https://github.com/emutos/emutos
 
@@ -205,7 +205,7 @@ with the "--midi-out /dev/stderr" option and you will see EmuTOS debug
 output on Hatari's standard error (such as calls to missing Falcon
 XBios functions).
 
-Note: To see/get raw MIDI device output from EmuTOS. you need to
+Note: To see/get raw MIDI device output from EmuTOS, you need to
 disable use of PortMidi in Hatari configuration before building
 Hatari.
 
@@ -333,7 +333,6 @@ Demos:
 - Breath (by Mystic Bytes)
 - Calimer-o-demo (by Oxygene)
 - Charts Compilation (by Next)
-- City Frames (by DHS)
 - Coast II Coast (by Sector One, 4kB intro)
 - Coolism (music disk, by Effect)
 - Crisis (by Joska)
@@ -521,12 +520,14 @@ Free/shareware/PD games:
   http://www.atarimania.com/list_games_atari-st-munsie-dave_team_950_S_G.html
 - Donkey Island  (adventure)
 - Dot 2 Dots     (for kids)
+- Downfall       (2-player, EmuTOS >v0.9.12)
 - Droid          (floppy only, bootsector has 0 for reserved sectors)
 - Droid 2        (floppy only)*
 - Entombed
   - doesn't show title, copyright, hiscore nor help after EmuTOS v0.8.6
   - TOS v2 shows title but not others and sound is wrong
 - Flip'em*       (4KB puzzle)
+- Fokker         (2-player biplanes, use joystick 0, EmuTOS >v0.9.12)
 - French adaptations of classic games:
   Boulderdash, Demineur, Jewel, Qbert, Sokoban
 - Frogger*
@@ -544,8 +545,9 @@ Free/shareware/PD games:
 - Hector*
 - Hero           (RPG)
 - Hexmines*
-- Iceblox Plus*   (works on all Atari machines)
+- Iceblox Plus*  (works on all Atari machines)
 - In nihilum reverteris (interactive color novel)
+- Japlish        (line-A polygon lines, EmuTOS >v0.9.12)
 - Jetpac
 - Killing Spree  (2014 preview by TLB at Atarimania)
 - Laserball 2014
@@ -555,6 +557,9 @@ Free/shareware/PD games:
 - Maze*
 - Mem*           (line-A bitblits)
 - Merchant       (works also in mono)
+- Midi Maze*     (MIDI multiplayer, works also in mono, EmuTOS >v0.9.12)
+- Midi Maze II   (MIDI multiplayer, EmuTOS >v0.9.12)
+- Midi Maze 3    (MIDI multiplayer, EmuTOS >v0.9.12)
 - Missile Alert
 - Monkeys and Balloons
 - Monopoly
@@ -571,11 +576,13 @@ Free/shareware/PD games:
 - Revenge of the mutant camels (shareware)
 - Robert in the Fire Factory
 - Robotz
+- Roc'hell*      (by Dune)
+  https://github.com/dune-demogroup/roc-hell/
 - Rockfall*
 - Santafly
 - Sideways
 - Sinister development games (shareware)
-- Snowball Fight
+- Snowball Fight (2-player)
 - Spacewar
 - Starball*      (shareware)
 - Super Pac-Man* (use joystick 0)
@@ -732,42 +739,40 @@ emulated drive, i.e. aren't hardcoded to run from a floppy.  Floppy
 only games aren't listed as main reason why some of them don't work
 is them overwriting TOS (or their own) memory.
 
-Non-working color STOS games (as expected):
+As expected, color STOS games don't work, as STOS input handling
+is TOS version specific (see EmuTOS incompatible.txt):
 - Balls Up          (mouse input doesn't work)
-- Color Clash*      (fire doesn't work)
+- Color Clash*      (fire at start doesn't work)
 - Dice II           (mouse doesn't work)
 - Mr Dice*          (gets spurious joy input)
 - Nostram           (input doesn't work)
 - Orbit             (mouse input doesn't work)
-- Pipetris          (gets spurious joy input)
-- Prehistorik3 demo (input doesn't work)
-- Reflection*       (key input doesn't work)
-- Skatetribe        (input doesn't work)
+- Pipetris          (spurious joystick left input)
+- Prehistorik3 demo (spurious joystick left input)
+- Reflection*       (keys work, mouse doesn't)
+- Skatetribe        (fire at start doesn't work)
 - Smash hit         (input doesn't work)
 - Sudoku Universe*  (mouse input doesn't work)
 - Trackball         (mouse doesn't work)
 
-Commercial color game demos:
-- Brain Blaster / The Teller demo (input doesn't work)
-- Cauldron demo     (input doesn't work, fire doesn't start game)
-- Striker demo      (input doesn't work)
+Even some commercial games use TOS version specific input handling
+(see EmuTOS incompatible.txt):
+- Brain Blasters / The Teller demo  (input doesn't work)
+- Super Cauldron demo  (fire doesn't start game)
+- Striker soccer demo  (fire doesn't start game)
 
-Free/shareware color games:
-- Douglas Rockmoor  (joystick input doesn't work)
-- Downfall          (fire doesn't work)
-- Fokker            (input doesn't work)
-- Japlish           (line-A polygon lines, joystick input doesn't work)
-- Space invaders    (up works as fire, no other input works)
+Free/shareware color games (more input issues):
+- Douglas Rockmoor  (see EmuTOS incompatible.txt)
+- Space invaders    (see EmuTOS incompatible.txt)
 
-Mono games:
-- Crystal Caves*    (line-A bitblit and draw/clear sprite, input doesn't work)
-- Macrowar          (line-A bitblit, joystick doesn't work)
-- Midimaze*         (joystick doesn't work)
+Mono games (more input issues):
+- Crystal Cave*     (line-A bitblit & draw/clear sprite, see EmuTOS incompatible.txt)
+- Macro War         (line-A bitblit, see EmuTOS incompatible.txt)
 - Ramses*           (panic, see EmuTOS incompatible.txt)
 
-GEM games (input issues):
-- Anduril   (see EmuTOS incompatible.txt)
-- Invaders* (see EmuTOS incompatible.txt)
+GEM games (more input issues):
+- Anduril           (see EmuTOS incompatible.txt)
+- Invaders*         (see EmuTOS incompatible.txt)
 
 
 Atari ST applications (including commercial)
@@ -783,7 +788,7 @@ Working drawing / image viewing programs:
 - Spslide, Spec512 viewer
 
 Not working:
-- Spectrum512 (address error on XBios Kbdvbase() return value handling)
+- Spectrum512 (see EmuTOS incompatible.txt)
 
 Not working video / HD access programs:
 - STVidPlay (see EmuTOS incompatible.txt)
@@ -823,9 +828,13 @@ version 0.9.4, preferably newer.
 
 Demos:
 - 1st Step (by Tobe/MJJ Prod)
-- 21 bobs (by Anima) - needs 50Hz
+- 20 years megademo (by Atari scene collective)
+- 20 years Atari STE megademo (by Paradox)
+  - "NoExtra" screen exits immediately
+- 21 bobs (by Anima, needs 50Hz)
 - 32768 colors showdown (by Tronic of Effect)
 - 3D full (by Oxygene)
+- 96 Shades of Gray (by Paradox, >1MB, panics at end/exit)
 - Again (by Paradox)
 - AltParty 2008 intro (by Paradox)
 - Ambermoon Music demo (by Psycho Hacking Force)
@@ -845,6 +854,7 @@ Demos:
 - CD-player (by Light)
 - Cernit Trandafir (by DHS)
 - Circus BackSTage (by BlaBLa)
+- City Frames (by DHS)
 - Core Flakes (by New Core)
 - Devotion (by Excellence in Art)
 - Dynamite (by Unit 17)
@@ -860,6 +870,8 @@ Demos:
 - High Fidelity Dreams (by Aura)
 - HighResMode (by Paradox)
 - Illusion (by Next)
+- It's A Girl (by Paradox)
+- It's A Girl 2 (by Paradox)
 - Jam-Cols (by ICE)
 - Just Musix 2 (by DHS)
 - Just another Blitter demo (by Anima)
@@ -891,6 +903,7 @@ Demos:
 - Rise of the blackstorm (by Mystic Bytes)
 - Riverside (by DHS)
 - RGBeast (by Aggression)
+- RGB Splitter (by Paradox)
 - SaboTagE (by Paradox)
 - Save the Earth (by Defence Force)
 - Sinfull Sinuses (by Chronicle)
@@ -915,10 +928,12 @@ Demos:
 - Unbeatable (by Masters of Electric City)
 - Vision (by POV)
 - Vulgar Display of Power (by Extream)
+- We Accidentally Released (by SMFX & KÜA)
 - We Were @ STNICCC 2015 (by Oxygene)
-  - Reset screen colors are wrong and scrolltext skewed
+  - Reset screen scroll text colors are wrong
 - Wonderful World (by Paradox)
 - XiTEC Presentation (by Omega)
+- Xmas 2004 (by Paradox)
 
 Color games:
 - 4K Pacman
@@ -930,6 +945,7 @@ Color games:
 - Battletris+
 - BeGEMeD* (line-A bitblits)
 - Blat (line-A bitblit)
+- Bombaman (EmuTOS >v0.9.12)
 - Boom (screen flashes during scrolling messages)
 - Breakdance (scene game, STOS, EmuTOS >v0.9.3)
 - ChuChu Rocket* (RG's full version, EmuTOS >0.9.7)
@@ -956,6 +972,8 @@ Color games:
 - Roger (line-A bitblit)
 - R-Type Deluxe (arcade conversion)
   http://atari-forum.com/viewtopic.php?f=28&t=29047
+- Sardonic
+  http://atari-forum.com/viewtopic.php?f=3&t=38121
 - Skulls (shareware "minesweeper")
 - Spy 4k
 - Stardust* (tunnel sequence demo)
@@ -970,6 +988,7 @@ Color games:
 - Ultimate Arena v1.3 light (slow with EmuTOS)
 - Utopos* (demo)
 - Wolfenstein3D v0.8a* (a bit unstable)
+- Zaptastic (EmuTOS >v0.9.12)
 - Zero-5 (demo)
 - Zool (demo)
 
@@ -979,6 +998,9 @@ PokerSquare, Pooz, Znax, SpaceBattle), and they all use
 line-A bitblits:
 	http://paradize.final-memory.org/games.shtml
 
+
+STE drawing programs:
+- Art for Kids / demo (EmuTOS >v0.9.12)
 
 STE (enhanced) music applications:
 - Blipp Blopper
@@ -1000,24 +1022,17 @@ EmuTOS version.
 Non-working Atari STE programs
 ------------------------------
 
-Partially working STE demos (old info, maybe 0.8.x?):
-- 20 years megademo (by Atari scene collective)
-  - issues in some screens that are for STE
-- 20 years Atari STE megademo (by Paradox)
-  - some screen don't work
-- Original Beat Maker
+Some non-working demos:
+- Original Beat Maker (OG.PRG, SV2019, by CrazyQ)
   - STE recognization fails -> bus error / panic
 
 Non-working games and music programs:
-- Art for Kids demo (Bus error at $6, after vro_cpyfm)
-  - with 512k image, bus errors already at startup
-- Bombaman (joystick input doesn't work in game itself):
-  - http://homepage.ntlworld.com/kevcallahan/bombaman/
+- Newer Audio Sculpture versions (v1.5beta doesn't handle
+  disk access properly, v1.4 has broken crack, v1.1 works)
 - Cameleon (see EmuTOS incompatible.txt)
 - Hero (STOS, see EmuTOS incompatible.txt)
 - Protracker v2 STE, Equinox version (see EmuTOS incompatible.txt)
   - http://www.pouet.net/prod.php?which=13381
-- Zaptastic (input doesn't work at startup screen)
 
 
 Atari TT programs
@@ -1110,6 +1125,7 @@ Working demos:
 - Game of Life 4k (by Aggression)
 - Gourand triangles demos (by ray//.tSCc)
   - these have asm sources!
+- Gurkensalat (by Lazer)
 - Illusion 64 (by Paranoia)
   - plasma screen has garbage on right side,
     end screen at top & bottom
@@ -1120,12 +1136,15 @@ Working demos:
   - With MP2 DSP music
 - More (by New Beat)
 - Mouse (animation + music)
+- Oergs (by Lazer, pic + music)
 - Old Stuff (by Extream)
 - Prepare (by Extream)
 - Revertant 1.2 (by Cobra / Mystic Bytes)
   - With MP2 DSP music (not working)
 - RGB Reine (by New Beat)
 - Rock Solid (by Paranoia)
+- Schlumpf invtro (by Lazer)
+  - horizontal scrolling is bad with some EmuTOS versions
 - Six Sievert (by tSCc)
 - Snowstorm (by Reservoir Gods), disable DSP
 - Sonolumineszenz (by Avena)
@@ -1155,8 +1174,6 @@ Partly working demos:
   - Eventually dies to Dsp Stack Over/underflow
 - Motion (unfinished demo by Aggression)
   - only writer screens work
-- Gurkensalat (by Lazer)
-  - freezes after a while
 - Illness (by Escape)
   - freezes after a while to
     Bus error lget at 4e700cb9
@@ -1164,12 +1181,6 @@ Partly working demos:
   - No music as it needs DSP
 - Jesterday (by POV)
   - Music demo, but no music as it needs DSP
-- Oergs (by Lazer)
-  - Music is bad
-- Schlumpf invtro (by Lazer)
-  - Music is bad
-  - Colors are wrong
-  - Input doesn't work to advance next screen
 - Yepyha (by Toons)
   - Music is missing (needs DSP?)
 
@@ -1183,7 +1194,7 @@ but don't work with EmuTOS at all:
 - Tere Ra'I (by Cerebral Vortex / Dune / Sector One)
 - Silly Venture 2k16 invitro (by Dune / Mystic Bytes)
 - Unexpected Fun (by Orion_)
-  - these exit as Dsp_Lock() fails
+  - these stop as Dsp_Lock() fails
 
 
 Falcon games
@@ -1196,7 +1207,7 @@ Games regressed in EmuTOS v0.8.x (not working anymore):
 - Rave*
   - colors/graphics are wrong
     (in v0.8.6, only at actual game lower half)
-- SBM v0.8 (Bomberman clone)*
+- SBM v0.8 & v1.03 (Bomberman clone)*
   - Bus error wget at 00400000
 
 Games working in EmuTOS >=v0.9.0:
@@ -1282,8 +1293,8 @@ Games working with extra hacks:
     (with normal TOS4, DSP is used for background music)
 
 Games (mostly) working with EmuTOS >v0.9.9.1:
-- Painium: fire button doesn't work, rest seems to work
-  - DSP emulation needs to be disabled
+- Painium: fire button works only until game itself starts
+  - Needs at least 8MB RAM
 
 Games that might be possible to get working (they show something
 and/or don't use DSP XBios calls or DSP sound matrix):

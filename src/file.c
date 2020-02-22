@@ -182,6 +182,51 @@ bool File_DoesFileNameEndWithSlash(char *pszFileName)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Read file via zlib into a newly allocated buffer and return the buffer
+ * or NULL for error. If pFileSize is non-NULL, read file size is set to that.
+ */
+#if HAVE_LIBZ
+Uint8 *File_ZlibRead(const char *pszFileName, long *pFileSize)
+{
+	Uint8 *pFile = NULL;
+	gzFile hGzFile;
+	long nFileSize = 0;
+
+	hGzFile = gzopen(pszFileName, "rb");
+	if (hGzFile != NULL)
+	{
+		/* Find size of file: */
+		do
+		{
+			/* Seek through the file until we hit the end... */
+			char tmp[1024];
+			if (gzread(hGzFile, tmp, sizeof(tmp)) < 0)
+			{
+				gzclose(hGzFile);
+				fprintf(stderr, "Failed to read gzip file!\n");
+					return NULL;
+			}
+		}
+		while (!gzeof(hGzFile));
+		nFileSize = gztell(hGzFile);
+		gzrewind(hGzFile);
+
+		/* Read in... */
+		pFile = malloc(nFileSize);
+		if (pFile)
+			nFileSize = gzread(hGzFile, pFile, nFileSize);
+
+		gzclose(hGzFile);
+	}
+
+	if (pFileSize)
+		*pFileSize = nFileSize;
+
+	return pFile;
+}
+#endif
+
+/**
  * Read file from disk into allocated buffer and return the buffer
  * or NULL for error.  If pFileSize is non-NULL, read file size
  * is set to that.
@@ -205,33 +250,7 @@ Uint8 *File_Read(const char *pszFileName, long *pFileSize, const char * const pp
 	/* Is it a gzipped file? */
 	if (File_DoesFileExtensionMatch(filepath, ".gz"))
 	{
-		gzFile hGzFile;
-		/* Open and read gzipped file */
-		hGzFile = gzopen(filepath, "rb");
-		if (hGzFile != NULL)
-		{
-			/* Find size of file: */
-			do
-			{
-				/* Seek through the file until we hit the end... */
-				char tmp[1024];
-				if (gzread(hGzFile, tmp, sizeof(tmp)) < 0)
-				{
-					fprintf(stderr, "Failed to read gzip file!\n");
-					free(filepath);
-					return NULL;
-				}
-			}
-			while (!gzeof(hGzFile));
-			FileSize = gztell(hGzFile);
-			gzrewind(hGzFile);
-			/* Read in... */
-			pFile = malloc(FileSize);
-			if (pFile)
-				FileSize = gzread(hGzFile, pFile, FileSize);
-
-			gzclose(hGzFile);
-		}
+		pFile = File_ZlibRead(filepath, &FileSize);
 	}
 	else if (File_DoesFileExtensionMatch(filepath, ".zip"))
 	{

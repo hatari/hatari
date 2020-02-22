@@ -699,10 +699,10 @@ a control with the name of the panel (see "MyPanel" below).
 
 For example:
 \t%s --embed \\
-\t-t "about,run,pause,quit" \\
-\t-p "MyPanel,Macro=Test,Undo=97,Help=98,>,F1=59,F2=60,F3=61,F4=62,>,close" \\
-\t-r "paste,debug,trace,machine,MyPanel" \\
-\t-b "sound,|,fastforward,|,fullscreen"
+\t--top "about,run,pause,quit" \\
+\t--panel "MyPanel,Macro=Test,Undo=97,Help=98,>,F1=59,F2=60,F3=61,F4=62,>,close" \\
+\t--right "MyPanel,debug,trace,machine" \\
+\t--bottom "sound,|,forward,|,full,|,quit"
 
 if no options are given, the UI uses basic controls.
 """ % name)

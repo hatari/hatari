@@ -39,6 +39,7 @@ const char Gemdos_fileid[] = "Hatari gemdos.c : " __DATE__ " " __TIME__;
 #include <ctype.h>
 #include <unistd.h>
 #include <errno.h>
+#include <inttypes.h>
 
 #include "main.h"
 #include "cart.h"

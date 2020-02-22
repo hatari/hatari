@@ -1,0 +1,53 @@
+dist: bionic
+language: c
+compiler:
+  - gcc
+addons:
+  apt:
+    packages:
+      - libpng-dev
+      - libsdl2-dev
+      - portaudio19-dev
+  homebrew:
+    packages:
+      - sdl2
+      - libpng
+      - tidy-html5
+    update: true
+
+before_script:
+  - ./configure ${CONFIG}
+script:
+  - make -j$(nproc)
+  - make test
+
+matrix:
+  include:
+
+    - env:
+        - CONFIG="--disable-winuae-cpu --enable-small-mem --enable-werror"
+      compiler: clang
+
+    - env:
+        - CONFIG="--disable-winuae-cpu --enable-werror"
+      arch: arm64
+
+    - env:
+        - CONFIG="--enable-winuae-cpu --enable-werror"
+      arch: ppc64le
+
+    - env:
+        - CONFIG="--enable-winuae-cpu --enable-werror"
+      arch: s390x
+
+    - env:
+        - CONFIG="--enable-osx-bundle --disable-winuae-cpu"
+      os: osx
+      osx_image: xcode9.3
+      compiler: clang
+
+    - env:
+        - CONFIG="--enable-osx-bundle --disable-winuae-cpu"
+      os: osx
+      osx_image: xcode11.2
+      compiler: clang

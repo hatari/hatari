@@ -11,6 +11,7 @@ const char INFFILE_fileid[] = "Hatari inffile.c : " __DATE__ " " __TIME__;
 #include <SDL_endian.h>
 #include <assert.h>
 #include <errno.h>
+#include <ctype.h>
 
 #include "main.h"
 #include "configuration.h"

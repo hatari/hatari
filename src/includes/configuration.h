@@ -35,8 +35,8 @@ typedef struct
   int nExceptionDebugMask;
   int nDisasmOptions;
   bool bDisasmUAE;
-  /* load symbols immediately on program start, and keep them after its termination */
-  bool bSymbolsResident;
+  /* load and free symbols for GEMDOS HD loaded programs automatically */
+  bool bSymbolsAutoLoad;
   /* whether to match all symbols or just types relevant for given command */
   bool bMatchAllSymbols;
 } CNF_DEBUGGER;

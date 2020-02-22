@@ -1,14 +1,15 @@
-ubuntu_task:
+fedora_task:
   container:
-    image: ubuntu:16.04
+    image: fedora:latest
     cpu: 4
     memory: 2Gb
   install_script:
-    - apt-get update -qq
-    - apt-get install -y -qq cmake libsdl2-dev libpng-dev zlib1g-dev libudev-dev
+    - dnf update -y
+    - dnf install -y cmake make gcc diffutils SDL2-devel libpng-devel
+                     zlib-devel portaudio-devel
   script:
     - ./configure --enable-old-uae-cpu --enable-small-mem --disable-dsp
-                  --enable-debug || { cat config.log; exit 1; }
+                  --enable-werror || { cat config.log; exit 1; }
     - make -j4
     - ctest -j4 || { cat Testing/Temporary/LastTest.log; exit 1; }
 

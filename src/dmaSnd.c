@@ -148,6 +148,8 @@ struct dma_s {
 
 	Sint16 FrameLeft;		/* latest values read from the FIFO */
 	Sint16 FrameRight;
+
+	Uint8  XSINT_Signal;		/* Value of the XSINT signal (connected to MFP) */
 };
 
 static Sint64	frameCounter_float = 0;
@@ -220,6 +222,8 @@ static const int DmaSndSampleRates[4] =
 /* Local functions prototypes					*/
 /*--------------------------------------------------------------*/
 
+static void	DmaSnd_Update_XSINT_Line ( Uint8 Bit );
+
 static void	DmaSnd_FIFO_Refill(void);
 static Sint8	DmaSnd_FIFO_PullByte(void);
 static void	DmaSnd_FIFO_SetStereo(void);
@@ -250,6 +254,8 @@ void DmaSnd_Reset(bool bCold)
 	dma.FrameLeft = 0;
 	dma.FrameRight = 0;
 
+	DmaSnd_Update_XSINT_Line ( MFP_GPIP_STATE_LOW );	/* O/LOW=dma sound idle */
+
 	if ( bCold )
 	{
 		/* Microwire has no reset signal, it will keep its values on warm reset */
@@ -279,6 +285,21 @@ void DmaSnd_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&dma, sizeof(dma));
 	MemorySnapShot_Store(&microwire, sizeof(microwire));
 	MemorySnapShot_Store(&lmc1992, sizeof(lmc1992));
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Update the value of the XSINT line ; this line is connected to TAI and to GPIP7
+ * Depending on the transition, this can trigger MFP interrupt for Timer A or for GPIP7
+ *  - Bit is set to 0/LOW when dma sound is idle
+ *  - Bit is set to 1/HIGH when dma sound is playing
+ */
+static void DmaSnd_Update_XSINT_Line ( Uint8 Bit )
+{
+	dma.XSINT_Signal = Bit;
+	MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE7 , Bit );
+	MFP_TimerA_Set_Line_Input ( pMFP_Main , Bit );			/* Update events count / interrupt for timer A if needed */
 }
 
 
@@ -431,7 +452,11 @@ static void DmaSnd_StartNewFrame(void)
 	{
 		nDmaSoundControl &= ~DMASNDCTRL_PLAY;
 		LOG_TRACE(TRACE_DMASND, "DMA snd stopped because new frame start=end=%x and repeat=off\n", dma.frameStartAddr);
+		return;
 	}
+
+	/* DMA sound play : update XSINT */
+	DmaSnd_Update_XSINT_Line ( MFP_GPIP_STATE_HIGH );	/* 1/HIGH=dma sound play */
 }
 
 
@@ -454,14 +479,12 @@ static inline int DmaSnd_EndOfFrameReached(void)
 {
 	LOG_TRACE(TRACE_DMASND, "DMA snd end of frame\n");
 
-	/* Raise end-of-frame interrupts (MFP GPIP7 and Timer A) */
-	/* TODO [NP] : when repeat is ON and play resumes we should set GPIP7 to 1 (in DmaSnd_StartNewFrame) */
-	MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE7 , MFP_GPIP_STATE_LOW );	/* O/LOW=dma sound idle */
-	MFP_TimerA_EventCount ( pMFP_Main );	/* Update events count / interrupt for timer A if needed */
+	/* DMA sound idle : update XSINT */
+	DmaSnd_Update_XSINT_Line ( MFP_GPIP_STATE_LOW );		/* O/LOW=dma sound idle */
 
 	if (nDmaSoundControl & DMASNDCTRL_PLAYLOOP)
 	{
-		DmaSnd_StartNewFrame();
+		DmaSnd_StartNewFrame();					/* update XSINT */
 	}
 	else
 	{
@@ -765,13 +788,12 @@ void DmaSnd_SoundControl_WriteWord(void)
 		LOG_TRACE(TRACE_DMASND, "DMA snd control write: starting dma sound output\n");
 		DmaInitSample = true;
 		frameCounter_float = 0;
-		DmaSnd_StartNewFrame();			/* this can clear DMASNDCTRL_PLAY */
-	/* TODO [NP] : when state=play we should set GPIP7 to 1 */
+		DmaSnd_StartNewFrame();				/* update XSINT + this can clear DMASNDCTRL_PLAY */
 	}
 	else if ((DMASndCtrl_old & DMASNDCTRL_PLAY) && !(nDmaSoundControl & DMASNDCTRL_PLAY))
 	{
 		LOG_TRACE(TRACE_DMASND, "DMA snd control write: stopping dma sound output\n");
-	/* TODO [NP] : when state=stop we should set GPIP7 to 0 */
+		DmaSnd_Update_XSINT_Line ( MFP_GPIP_STATE_LOW );		/* O/LOW=dma sound idle */
 	}
 }
 

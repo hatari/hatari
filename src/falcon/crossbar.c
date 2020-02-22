@@ -267,6 +267,8 @@ struct crossbar_s {
 	Sint64 adc2dac_readBufferPosition_float; /* float value of read position for direct adc->dac transfer index */
 
 	Uint32 save_special_transfer;		/* Used in a special undocumented transfer mode (dsp sent is not in handshake mode and dsp receive is in handshake mode) */
+
+	Uint8  SNDINT_Signal;		/* Value of the SNDINT/SOUNDINT signal (connected to MFP) */
 };
 
 struct codec_s {
@@ -317,6 +319,12 @@ void Crossbar_Reset(bool bCold)
 	dmaRecord.currentFrame = 0;
 	dmaRecord.isConnectedToDspInHandShakeMode = 0;
 	dmaRecord.handshakeMode_Frame = 0;
+
+	/* DMA stopped, force SNDINT to 0/LOW */
+	crossbar.SNDINT_Signal = MFP_GPIP_STATE_LOW;
+	MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE7 , MFP_GPIP_STATE_LOW );
+	MFP_TimerA_Set_Line_Input ( pMFP_Main , MFP_GPIP_STATE_LOW );
+
 
 	/* DAC inits */
 	memset(dac.buffer_left, 0, sizeof(dac.buffer_left));
@@ -416,6 +424,54 @@ void Crossbar_MemorySnapShot_Capture(bool bSave)
 /*	Hardware I/O functions						*/
 /*----------------------------------------------------------------------*/
 
+/*-----------------------------------------------------------------------*/
+/**
+ * Update the value of the SNDINT/SOUNDINT line ; this line is connected to TAI and to GPIP7
+ * Depending on the transition, this can trigger MFP interrupt for Timer A or for GPIP7
+ *  - Bit is set to 0/LOW when dma sound is idle
+ *  - Bit is set to 1/HIGH when dma sound is playing / recording
+ */
+static void Crossbar_Update_SNDINT_Line ( bool RecordMode , Uint8 Bit )
+{
+	if ( !RecordMode )
+	{
+		/* Send a MFP15_Int (I7) at end of replay buffer if enabled */
+		if (dmaPlay.mfp15_int) {
+			crossbar.SNDINT_Signal = Bit;
+			MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE7 , Bit );
+			LOG_TRACE(TRACE_CROSSBAR, "Crossbar : MFP15 (IT7) interrupt from DMA play\n");
+		}
+
+		/* Send a TimerA_Int at end of replay buffer if enabled */
+		if (dmaPlay.timerA_int) {
+			crossbar.SNDINT_Signal = Bit;
+			MFP_TimerA_Set_Line_Input ( pMFP_Main , Bit );			/* Update events count / interrupt for timer A if needed */
+			LOG_TRACE(TRACE_CROSSBAR, "Crossbar : MFP Timer A interrupt from DMA play\n");
+		}
+	}
+
+	else
+	{
+		/* Send a MFP15_Int (I7) at end of record buffer if enabled */
+		if (dmaRecord.mfp15_int) {
+			crossbar.SNDINT_Signal = Bit;
+			MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE7 , Bit );
+			LOG_TRACE(TRACE_CROSSBAR, "Crossbar : MFP15 (IT7) interrupt from DMA record\n");
+		}
+
+		/* Send a TimerA_Int at end of record buffer if enabled */
+		if (dmaRecord.timerA_int) {
+			crossbar.SNDINT_Signal = Bit;
+			MFP_TimerA_Set_Line_Input ( pMFP_Main , Bit );			/* Update events count / interrupt for timer A if needed */
+			LOG_TRACE(TRACE_CROSSBAR, "Crossbar : MFP Timer A interrupt from DMA record\n");
+		}
+	}
+
+// 	MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE7 , Bit );
+// 	MFP_TimerA_Set_Line_Input ( pMFP_Main , Bit );			/* Update events count / interrupt for timer A if needed */
+}
+
+
 /**
  * Write byte to Microwire Mask register(0xff8924).
  * Note: On Falcon, the Microwire is not present.
@@ -485,8 +541,8 @@ void Crossbar_DmaCtrlReg_WriteByte(void)
 	{
 		/* Turning on DMA Play sound emulation */
 		dmaPlay.isRunning = 1;
-		nCbar_DmaSoundControl = sndCtrl;
 		dmaPlay.loopMode = (sndCtrl & 0x2) >> 1;
+		nCbar_DmaSoundControl = sndCtrl;
 		Crossbar_setDmaPlay_Settings();
 	}
 	else if (dmaPlay.isRunning && ((sndCtrl & CROSSBAR_SNDCTRL_PLAY) == 0))
@@ -498,6 +554,7 @@ void Crossbar_DmaCtrlReg_WriteByte(void)
 		dmaPlay.isRunning = 0;
 		dmaPlay.loopMode = 0;
 		nCbar_DmaSoundControl = sndCtrl;
+		Crossbar_Update_SNDINT_Line ( false , MFP_GPIP_STATE_LOW );	/* O/LOW=dma sound idle */
 	}
 
 	/* DMA Record mode */
@@ -505,8 +562,8 @@ void Crossbar_DmaCtrlReg_WriteByte(void)
 	{
 		/* Turning on DMA record sound emulation */
 		dmaRecord.isRunning = 1;
-		nCbar_DmaSoundControl = sndCtrl;
 		dmaRecord.loopMode = (sndCtrl & 0x20) >> 5;
+		nCbar_DmaSoundControl = sndCtrl;
 		Crossbar_setDmaRecord_Settings();
 	}
 	else if (dmaRecord.isRunning && ((sndCtrl & CROSSBAR_SNDCTRL_RECORD) == 0))
@@ -515,6 +572,7 @@ void Crossbar_DmaCtrlReg_WriteByte(void)
 		dmaRecord.isRunning = 0;
 		dmaRecord.loopMode = 0;
 		nCbar_DmaSoundControl = sndCtrl;
+		Crossbar_Update_SNDINT_Line ( true , MFP_GPIP_STATE_LOW );	/* O/LOW=dma sound idle */
 	}
 }
 
@@ -1435,6 +1493,9 @@ static void Crossbar_setDmaPlay_Settings(void)
 		Log_Printf(LOG_WARN, "crossbar DMA Play: Illegal buffer size (from 0x%06x to 0x%06x)\n",
 		          dmaPlay.frameStartAddr, dmaPlay.frameEndAddr);
 	}
+
+	/* DMA sound play : update SNDINT */
+	Crossbar_Update_SNDINT_Line ( false , MFP_GPIP_STATE_HIGH );	/* 1/HIGH=dma sound play */
 }
 
 /**
@@ -1532,17 +1593,8 @@ static void Crossbar_Process_DMAPlay_Transfer(void)
 	/* Check if end-of-frame has been reached and raise interrupts if needed. */
 	if (dmaPlay.frameCounter >= dmaPlay.frameLen)
 	{
-		/* Send a MFP15_Int (I7) at end of replay buffer if enabled */
-		if (dmaPlay.mfp15_int) {
-			MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE7 , MFP_GPIP_STATE_LOW );
-			LOG_TRACE(TRACE_CROSSBAR, "Crossbar : MFP15 (IT7) interrupt from DMA play\n");
-		}
-
-		/* Send a TimerA_Int at end of replay buffer if enabled */
-		if (dmaPlay.timerA_int) {
-			MFP_TimerA_EventCount ( pMFP_Main );	/* Update events count / interrupt for timer A if needed */
-			LOG_TRACE(TRACE_CROSSBAR, "Crossbar : MFP Timer A interrupt from DMA play\n");
-		}
+		/* DMA sound idle : update SNDINT */
+		Crossbar_Update_SNDINT_Line ( false , MFP_GPIP_STATE_LOW );	/* O/LOW=dma sound idle */
 
 		if (dmaPlay.loopMode) {
 			Crossbar_setDmaPlay_Settings();
@@ -1589,6 +1641,9 @@ static void Crossbar_setDmaRecord_Settings(void)
 		Log_Printf(LOG_WARN, "crossbar DMA Record: Illegal buffer size (from 0x%06x to 0x%06x)\n",
 		          dmaRecord.frameStartAddr, dmaRecord.frameEndAddr);
 	}
+
+	/* DMA sound record : update SNDINT */
+	Crossbar_Update_SNDINT_Line ( true , MFP_GPIP_STATE_HIGH );	/* 1/HIGH=dma sound record */
 }
 
 /**
@@ -1626,17 +1681,8 @@ void Crossbar_SendDataToDmaRecord(Sint16 value)
 	/* Check if end-of-frame has been reached and raise interrupts if needed. */
 	if (dmaRecord.frameCounter >= dmaRecord.frameLen)
 	{
-		/* Send a MFP15_Int (I7) at end of record buffer if enabled */
-		if (dmaRecord.mfp15_int) {
-			MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE7 , MFP_GPIP_STATE_LOW );
-			LOG_TRACE(TRACE_CROSSBAR, "Crossbar : MFP15 (IT7) interrupt from DMA record\n");
-		}
-
-		/* Send a TimerA_Int at end of record buffer if enabled */
-		if (dmaRecord.timerA_int) {
-			MFP_TimerA_EventCount ( pMFP_Main );	/* Update events count / interrupt for timer A if needed */
-			LOG_TRACE(TRACE_CROSSBAR, "Crossbar : MFP Timer A interrupt from DMA record\n");
-		}
+		/* DMA sound idle : update SNDINT */
+		Crossbar_Update_SNDINT_Line ( true , MFP_GPIP_STATE_LOW );	/* O/LOW=dma sound idle */
 
 		if (dmaRecord.loopMode) {
 			Crossbar_setDmaRecord_Settings();

@@ -66,7 +66,7 @@ static const struct Config_Tag configs_Debugger[] =
 	{ "nExceptionDebugMask", Int_Tag, &ConfigureParams.Debugger.nExceptionDebugMask },
 	{ "nDisasmOptions", Int_Tag, &ConfigureParams.Debugger.nDisasmOptions },
 	{ "bDisasmUAE", Bool_Tag, &ConfigureParams.Debugger.bDisasmUAE },
-	{ "bSymbolsResident", Bool_Tag, &ConfigureParams.Debugger.bSymbolsResident },
+	{ "bSymbolsAutoLoad", Bool_Tag, &ConfigureParams.Debugger.bSymbolsAutoLoad },
 	{ "bMatchAllSymbols", Bool_Tag, &ConfigureParams.Debugger.bMatchAllSymbols },
 	{ NULL , Error_Tag, NULL }
 };
@@ -662,8 +662,8 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Debugger.nBacktraceLines = 0; /* <=0: show all */
 	ConfigureParams.Debugger.nExceptionDebugMask = DEFAULT_EXCEPTIONS;
 	/* external one has nicer output, but isn't as complete as UAE one */
-	ConfigureParams.Debugger.bDisasmUAE = false;
-	ConfigureParams.Debugger.bSymbolsResident = false;
+	ConfigureParams.Debugger.bDisasmUAE = true;
+	ConfigureParams.Debugger.bSymbolsAutoLoad = true;
 	ConfigureParams.Debugger.bMatchAllSymbols = false;
 	ConfigureParams.Debugger.nDisasmOptions = Disasm_GetOptions();
 

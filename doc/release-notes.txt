@@ -23,6 +23,7 @@ Emulation:
   (when FDC is set to HD mode, reading DD floppies will fail)
 - Emulate additional RTC/NVRAM registers
 - Update CPU core to latest WinUAE 4.2.0 beta
+- Fix: IDE disks with sector size > 512 bytes
 
 Emulator:
 - Memory snapshot version increase due to FDC changes
@@ -31,10 +32,19 @@ Emulator:
   (instead of counting sectors)
 - Add --lilo debug option for more convenient m68k Linux loading
   - Support config file values with '=' in them
-- Support FASTLOAD program flag with GEMDOS HD
+- GEMDOS HD:
+  - Support FASTLOAD program flag with GEMDOS HD
+  - GEMDOS HD emulation cartridge assembly functionality is
+    moved (almost completely) to emulator side. Fixes Atari
+    side error handling when program file isn't readable,
+    and TOS stack overflows in some rare cases
 - Support read-only HD image files, and show error dialogs
   for image file open/lock issues
+- Low/med-rez line doubling uses less CPU and doubled lines in
+  "TV" display mode are now drawn at half intensity, not as black
 - Show mouse grab toggle shortcut key in startup statusbar message
+- Center host mouse to Hatari window on Atari resets and resolution
+  changes only when window is focused and mouse pointer is within it
 - Fix: 24-bit address mode change while emulation is running
   (triggered e.g. when TT-RAM is enabled for TT)
 - Fix: when autostarting programs without pre-existing INF file,
@@ -49,12 +59,20 @@ Emulator:
     (slows profiling of addresses with symbols)
   - All profiler outputs have now reasonable limits
     (so that they don't flood console)
-  - Fix: profile post-processor exception (with symbol address aliases)
+  - Fix: exception in profile post-processor script
+    (with symbol address aliases)
 - Debugger:
+  - Fix: CPU disassembly trace output doesn't go to specified trace file
+  - "symbols resident" option replaced with "symbols autoload"
+    option which be used to completely disable automatic symbol
+    loading and unloading for programs run through the GEMDOS HD
   - Trace flags can be added and removed instead of needing
     to always specify all the relevant ones:
     --trace os_base,aes, trace +xbios,bios, trace -bios,-aes
   - Improvements to UAE and external disassembler disassembly
+  - UAE disassembler is now default insted of external one
+    (latter doesn't decode all instructions correctly)
+  - Also UAE disassembler shows now the profile info
   - Improved symbols info output
 - Native features:
   - Support for missing NF_SHUTDOWN (reset) sub commands
@@ -68,7 +86,9 @@ Building:
 
 Documentation:
 - Up to date documentation provided at: https://hatari.tuxfamily.org/doc/
-- m68k-linux-for-hatari.txt document on how to run Linux under Hatari
+- New m68k-linux-for-hatari.txt document on how to run Linux under Hatari
+- Debugging and profiling information is split from manual.html to
+  a separate debugger.html file
 - Minor improvements
 
 Fixed programs:

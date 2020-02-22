@@ -314,9 +314,10 @@ Input -----/             |         ------------------------              |      
           STF/STE/megaSTE/TT : FDC/ACSI (0=IRQ set for FDC and/or ACSI, 1=IRQ not set for FDC nor ACSI)
           Falcon : FDC/IDE/SCSI (0=IRQ set for FDC and/or IDE and/or SCSI, 1=IRQ not set for FDC nor IDE nor SCSI)
       6 : rs232 port, ring indicator (RI) signal
-      7 : monochrome monitor detect (0=monochrome, 1=color) / dma sound (0=idle, 1=play)
+      7 : monochrome monitor detect (0=monochrome, 1=color) and/or dma sound (0=idle, 1=play)
           STF : monochrome monitor detect (0=monochrome, 1=color)
-          STE/TT/Falcon : monochrome monitor detect XOR dma sound play
+          STE/TT : monochrome monitor detect XOR dma sound play
+          Falcon : dma sound play/record (0=idle, 1=play/record)
 
     TT MFP :
       0 : connected to external I/O pin
@@ -510,6 +511,10 @@ static void	MFP_Reset ( MFP_STRUCT *pMFP )
 	pMFP->TimerDClockCycles = 0;
 
 	pMFP->PatchTimerD_Done = 0;
+
+	/* Clear input on timers A and B */
+	pMFP->TAI = 0;
+	pMFP->TBI = 0;
 
 	/* Clear IRQ */
 	pMFP->Current_Interrupt = -1;
@@ -1089,6 +1094,7 @@ static void	MFP_GPIP_Update_Interrupt ( MFP_STRUCT *pMFP , Uint8 GPIP_old , Uint
 	int	Bit;
 	Uint8	BitMask;
 
+//fprintf ( stderr , "gpip upd gpip_old=%x gpip_new=%x aer_old=%x aer_new=%x ddr_old=%x ddr_new=%x\n" , GPIP_old, GPIP_new, AER_old, AER_new, DDR_old, DDR_new );
 	State_old = GPIP_old ^ AER_old;
 	State_new = GPIP_new ^ AER_new;
 
@@ -1126,6 +1132,8 @@ void	MFP_GPIP_Set_Line_Input ( MFP_STRUCT *pMFP , Uint8 LineNr , Uint8 Bit )
 
 	Mask = 1 << LineNr;
 
+//fprintf ( stderr , "gpip set0 mask=%x bit=%d ddr=%x gpip=%x\n", Mask, Bit, pMFP->DDR, pMFP->GPIP );
+
 	/* Check that corresponding line is defined as input in DDR (0=input 1=output) */
 	/* and that the bit is changing */
 	if ( ( ( pMFP->DDR & Mask ) == 0 )
@@ -1147,14 +1155,56 @@ void	MFP_GPIP_Set_Line_Input ( MFP_STRUCT *pMFP , Uint8 LineNr , Uint8 Bit )
 		/* Update possible interrupts after changing GPIP */
 		MFP_GPIP_Update_Interrupt ( pMFP , GPIP_old , pMFP->GPIP , pMFP->AER , pMFP->AER , pMFP->DDR , pMFP->DDR );
 	}
-//fprintf ( stderr , "gpip set %x %x\n" , GPIP_old , pMFP->GPIP );
+//fprintf ( stderr , "gpip set gpip_old=%x gpip_new=%x\n" , GPIP_old , pMFP->GPIP );
 }
 
 
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Change input line for Timer A (TAI) and generate an interrupt when in event count mode
+ * and counter reaches 1.
+ * TAI is associated to AER GPIP4
+ */
+void	MFP_TimerA_Set_Line_Input ( MFP_STRUCT *pMFP , Uint8 Bit )
+{
+	Uint8	AER_bit;
+
+	if ( pMFP->TAI == Bit )
+		return;					/* No change */
+	pMFP->TAI = Bit;				/* Update TAI value */
+
+	if ( pMFP->TACR != 0x08 )			/* Not in event count mode */
+		return;					/* Do nothing */
+
+	AER_bit = ( pMFP->AER >> 4 ) & 1;		/* TAI is associated to AER GPIP4 */
+	if ( Bit != AER_bit )				/* See MFP_GPIP_Update_Interrupt : we detect a transition */
+		return;					/* when AER=Bit */
+
+	if ( pMFP->TA_MAINCOUNTER == 1)			/* Timer expired? If so, generate interrupt */
+	{
+		pMFP->TA_MAINCOUNTER = pMFP->TADR;	/* Reload timer from data register */
+
+		/* Acknowledge in MFP circuit, pass bit,enable,pending */
+		MFP_InputOnChannel ( pMFP , MFP_INT_TIMER_A , 0 );
+	}
+	else
+	{
+		pMFP->TA_MAINCOUNTER--;			/* Decrement timer main counter */
+		/* As TA_MAINCOUNTER is Uint8, when we decrement TA_MAINCOUNTER=0 */
+		/* we go to TA_MAINCOUNTER=255, which is the wanted behaviour because */
+		/* data reg = 0 means 256 in fact. So, the next 2 lines are redundant. */
+/*		if ( TA_MAINCOUNTER < 0 )
+			TA_MAINCOUNTER = 255;
+*/
+	}
+}
+
+/*-----------------------------------------------------------------------*/
+/**
  * Generate Timer A Interrupt when in Event Count mode
+ * TODO : this should be replaced by using MFP_TimerA_Set_Line_Input
+ * to take AER into account
  */
 void	MFP_TimerA_EventCount( MFP_STRUCT *pMFP )
 {
@@ -1179,7 +1229,6 @@ void	MFP_TimerA_EventCount( MFP_STRUCT *pMFP )
 */
 	}
 }
-
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -1766,8 +1815,8 @@ void	MFP_GPIP_ReadByte ( void )
  * - Bit 4 is used by the ACIAs (keyboard and midi)
  * - Bit 5 is used by the FDC / HDC
  * - Bit 6 is used for RS232: RI
- * - Bit 7 is monochrome monitor detection signal. On STE it is also XORed with
- *   the DMA sound play bit.
+ * - Bit 7 is monochrome monitor detection signal and/or dma sound. On STE and TT it is
+ *   also XORed with the DMA sound play bit. On Falcon it is only the DMA sound play bit
  *
  * When reading GPIP, output lines (DDR=1) should return the last value that was written,
  * only input lines (DDR=0) should be updated.
@@ -1780,15 +1829,24 @@ void	MFP_GPIP_ReadByte_Main ( MFP_STRUCT *pMFP )
 
 	gpip_new = pMFP->GPIP;
 
-	if (!bUseHighRes)
-		gpip_new |= 0x80;	/* Color monitor -> set top bit */
+	/* Bit 7 */
+	if (Config_IsMachineFalcon())
+	{
+		if (nCbar_DmaSoundControl & CROSSBAR_SNDCTRL_PLAY || nCbar_DmaSoundControl & CROSSBAR_SNDCTRL_RECORD)
+			gpip_new |= 0x80;
+		else
+			gpip_new &= ~0x80;
+	}
 	else
-		gpip_new &= ~0x80;
-	
-	if (nDmaSoundControl & DMASNDCTRL_PLAY)
-		gpip_new ^= 0x80;	/* Top bit is XORed with DMA sound control play bit (Ste/TT emulation mode)*/
-	if (nCbar_DmaSoundControl & CROSSBAR_SNDCTRL_PLAY || nCbar_DmaSoundControl & CROSSBAR_SNDCTRL_RECORD)
-		gpip_new ^= 0x80;	/* Top bit is XORed with Falcon crossbar DMA sound control play bit (Falcon emulation mode) */
+	{
+		if (!bUseHighRes)
+			gpip_new |= 0x80;	/* Color monitor -> set top bit */
+		else
+			gpip_new &= ~0x80;
+
+		if (nDmaSoundControl & DMASNDCTRL_PLAY)
+			gpip_new ^= 0x80;	/* Top bit is XORed with DMA sound control play bit (Ste/TT emulation mode)*/
+	}
 
 	if (ConfigureParams.Printer.bEnablePrinting)
 	{
@@ -2287,9 +2345,7 @@ void MFP_TimerBData_ReadByte(void)
 		 * and store result in 'TB_MAINCOUNTER' */
 		MFP_ReadTimerB ( pMFP , false );
 	}
-
-	/* Video DE signal is connected to Timer B on the main MFP */
-	if ( IoAccessCurrentAddress == 0xfffa21 )
+	else	/* Video DE signal is connected to Timer B on both MFPs */
 	{
 		if (bUseVDIRes)
 		{

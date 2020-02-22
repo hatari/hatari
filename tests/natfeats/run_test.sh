@@ -22,7 +22,7 @@ unset TERM
 echo c | HOME="$testdir" $hatari --log-level fatal --sound off --natfeats on \
 	--tos none --fast-forward on  --run-vbls 500 $* "$basedir/nf_ahcc.tos" \
 	2>&1 | sed -e 's/^Hatari v.*/Hatari v/' -e 's/^CPU=.*$/CPU=.../' \
-		   -e 's/^\$00.*/\$00.../' -e '/^> c$/d' -e 's/^> //' \
+		   -e 's/^00.*/00.../' -e '/^> c$/d' -e 's/^> //' \
 	> "$testdir/out.txt"
 exitstat=$?
 if [ $exitstat -ne 0 ]; then

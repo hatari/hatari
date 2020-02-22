@@ -941,7 +941,7 @@ static void TOS_CheckSysConfig(void)
 	}
 	if (Config_IsMachineFalcon() && bUseVDIRes && !bIsEmuTOS)
 	{
-		Log_AlertDlg(LOG_ERROR, "Please use EmuTOS instead of TOS v4 "
+		Log_AlertDlg(LOG_ERROR, "Please use 512k EmuTOS instead of TOS v4 "
 			     "for proper extended VDI resolutions support on Falcon.");
 	}
 }
@@ -1020,9 +1020,11 @@ static uint8_t *TOS_LoadImage(void)
 		return NULL;
 	}
 
-	/* Assert that machine type matches the TOS version. Note that EmuTOS can
-	 * handle all machine types, so we don't do the system check there: */
-	if (!bIsEmuTOS)
+	/* Assert that machine type matches the TOS version.
+	 * 512k EmuTOS declares itself as TOS 2.x, but it can handle
+	 * all machine types, so it can & needs to be skipped here
+	 */
+	if (!(bIsEmuTOS && TosSize == 512*1024))
 		TOS_CheckSysConfig();
 
 #if ENABLE_WINUAE_CPU

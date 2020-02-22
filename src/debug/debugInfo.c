@@ -491,7 +491,7 @@ static void DebugInfo_RegAddr(FILE *fp, Uint32 arg)
 	Uint32 *reg32, regvalue, mask;
 	char cmdbuf[12], addrbuf[6];
 	char *argv[] = { cmdbuf, addrbuf };
-	
+
 	regname[0] = (arg>>24)&0xff;
 	regname[1] = (arg>>16)&0xff;
 	regname[2] = '\0';
@@ -570,7 +570,7 @@ static Uint32 DebugInfo_RegAddrArgs(int argc, char *argv[])
 		fprintf(stderr, "ERROR: invalid address/data register '%s'!\n", argv[1]);
 		return 0;
 	}
-	
+
 	value |= argv[1][0] << 24;
 	value |= argv[1][1] << 16;
 	value &= 0xffff00ff;
@@ -667,7 +667,7 @@ static const struct {
 	{ true, "dspmemdump",DebugInfo_DspMemDump, DebugInfo_DspMemArgs, "Dump DSP memory from given <space> <address>" },
 	{ true, "dspregs",   DebugInfo_DspRegister,NULL, "Show DSP register contents" },
 #endif
-	{ false, "dta",      DebugInfo_DTA,       NULL, "Show current [or given] DTA information" },
+	{ false, "dta",      DebugInfo_DTA,       NULL, "Show current [or given] DTA information" },
 	{ true, "file",      DebugInfo_FileParse, DebugInfo_FileArgs, "Parse commands from given debugger input <file>" },
 	{ false,"gemdos",    GemDOS_Info,          NULL, "Show GEMDOS HDD emu information (with <value>, show opcodes)" },
 	{ true, "history",   History_Show,         NULL, "Show history of last <count> instructions" },
@@ -704,7 +704,7 @@ static char *DebugInfo_Match(const char *text, int state, bool lock)
 {
 	static int i, len;
 	const char *name;
-	
+
 	if (!state) {
 		/* first match */
 		len = strlen(text);
@@ -743,7 +743,7 @@ int DebugInfo_Command(int nArgc, char *psArgs[])
 
 	sub = -1;
 	if (nArgc > 1) {
-		cmd = psArgs[1];		
+		cmd = psArgs[1];
 		/* which subcommand? */
 		for (i = 0; i < ARRAY_SIZE(infotable); i++) {
 			if (strcmp(cmd, infotable[i].name) == 0) {
@@ -768,7 +768,7 @@ int DebugInfo_Command(int nArgc, char *psArgs[])
 	}
 
 	lock = (strcmp(psArgs[0], "lock") == 0);
-	
+
 	if (sub < 0 || !ok) {
 		/* no subcommand or something wrong with value, show info */
 		fprintf(stderr, "%s subcommands are:\n", psArgs[0]);

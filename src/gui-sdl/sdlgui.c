@@ -197,7 +197,7 @@ int SDLGui_SetScreen(SDL_Surface *pScrn)
 	if (sdlgui_fontheight < 16)
 		colors.underline = SDL_MapRGB(pSdlGuiScrn->format,255,0,255);
 	else
-		colors.underline = SDL_MapRGB(pSdlGuiScrn->format,0,0,0);		
+		colors.underline = SDL_MapRGB(pSdlGuiScrn->format,0,0,0);
 	colors.editfield = SDL_MapRGB(pSdlGuiScrn->format,160,160,160);
 
 	return 0;
@@ -540,7 +540,7 @@ static void SDLGui_DrawScrollbar(const SGOBJ *bdlg, int objnum)
 
 	x += bdlg[0].x*sdlgui_fontwidth;   /* add mainbox absolute coordinates */
 	y += bdlg[0].y*sdlgui_fontheight;  /* add mainbox absolute coordinates */
-	
+
 	w = 1 * sdlgui_fontwidth;
 	h = bdlg[objnum].w;
 
@@ -871,9 +871,9 @@ static void SDLGui_DebugPrintDialog(const SGOBJ *dlg)
 {
 #if DEBUG_INFO
 	int i;
-	printf("obj: flags | state\n");
+	printf("obj: flags | state\n");
 	for (i = 0; dlg[i].type != SGSTOP; i++)
-		printf("%3d:  0x%02x | 0x%02x\n", i, dlg[i].flags, dlg[i].state);
+		printf("%3d:  0x%02x | 0x%02x\n", i, dlg[i].flags, dlg[i].state);
 #endif
 }
 
@@ -1235,7 +1235,7 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut, bool KeepCurrentObject)
 	while (retbutton == SDLGUI_NOTFOUND && !bQuitProgram)
 	{
 		if (SDL_WaitEvent(&sdlEvent) == 1)  /* Wait for events */
-		
+		{
 			switch (sdlEvent.type)
 			{
 			 case SDL_QUIT:
@@ -1434,6 +1434,7 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut, bool KeepCurrentObject)
 					retbutton = SDLGUI_UNKNOWNEVENT;
 				break;
 			}
+		}
 	}
 
 	/* Restore background */

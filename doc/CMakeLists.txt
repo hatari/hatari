@@ -3,7 +3,7 @@ INSTALL(FILES authors.txt emutos.txt keymap-sample.txt memory-usage.txt
 	midi-linux.txt release-notes.txt todo.txt
 	DESTINATION ${DOCDIR})
 
-INSTALL(FILES compatibility.html  manual.html
+INSTALL(FILES compatibility.html manual.html debugger.html manual.css toc.js
 	DESTINATION ${DOCDIR})
 
 INSTALL(DIRECTORY images
@@ -23,4 +23,6 @@ if(TIDY)
 	         COMMAND tidy -q -e ${CMAKE_CURRENT_SOURCE_DIR}/manual.html)
 	add_test(NAME tidy-compatibility
 	         COMMAND tidy -q -e ${CMAKE_CURRENT_SOURCE_DIR}/compatibility.html)
+	add_test(NAME tidy-debugger
+	         COMMAND tidy -q -e ${CMAKE_CURRENT_SOURCE_DIR}/debugger.html)
 endif()

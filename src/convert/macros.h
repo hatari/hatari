@@ -162,7 +162,7 @@ static const Uint32 Remap_2_Planes_Upper[256] = {
 /* Plot Low Resolution (320xH) 32-Bit pixels */
 #define PLOT_LOW_320_32BIT(offset)  \
 { \
-	esi[offset]   = (Uint32)STRGBPalette[ecx & 0x00ff]; \
+	esi[offset+0] = (Uint32)STRGBPalette[ecx & 0x00ff]; \
 	esi[offset+1] = (Uint32)STRGBPalette[(ecx >> 8) & 0x00ff]; \
 	esi[offset+2] = (Uint32)STRGBPalette[(ecx >> 16) & 0x00ff]; \
 	esi[offset+3] = (Uint32)STRGBPalette[(ecx >> 24) & 0x00ff]; \
@@ -177,42 +177,12 @@ static const Uint32 Remap_2_Planes_Upper[256] = {
 	esi[offset+6] = esi[offset+7] = STRGBPalette[(ecx >> 24) & 0x000000ff]; \
 } 
 
-/* Plot Low Resolution (640xH) 16-Bit pixels (Double on Y) */
-#define PLOT_LOW_640_32BIT_DOUBLE_Y(offset) \
-{ \
-	ebx = STRGBPalette[ecx & 0x000000ff]; \
-	esi[offset+0] = esi[offset+1] = esi[offset+Screen4BytesPerLine+0] \
-	   = esi[offset+Screen4BytesPerLine+1] = ebx; \
-	ebx = STRGBPalette[(ecx >> 8) & 0x000000ff]; \
-	esi[offset+2] = esi[offset+3] = esi[offset+Screen4BytesPerLine+2] \
-	   = esi[offset+Screen4BytesPerLine+3] = ebx; \
-	ebx = STRGBPalette[(ecx >> 16) & 0x000000ff]; \
-	esi[offset+4] = esi[offset+5] = esi[offset+Screen4BytesPerLine+4] \
-	   = esi[offset+Screen4BytesPerLine+5] = ebx; \
-	ebx = STRGBPalette[(ecx >> 24) & 0x000000ff]; \
-	esi[offset+6] = esi[offset+7] = esi[offset+Screen4BytesPerLine+6] \
-	   = esi[offset+Screen4BytesPerLine+7] = ebx; \
-}
-
 /* Plot Medium Resolution(640xH) 32-Bit pixels */
 #define PLOT_MED_640_32BIT(offset) \
 { \
 	esi[offset+0] = STRGBPalette[ecx & 0x000000ff]; \
 	esi[offset+1] = STRGBPalette[(ecx >> 8) & 0x000000ff]; \
 	esi[offset+2] = STRGBPalette[(ecx >> 16) & 0x000000ff]; \
-	esi[offset+3] = STRGBPalette[(ecx >> 24) & 0x000000ff]; \
-}
-
-/* Plot Medium Resolution(640xH) 32-Bit pixels (Double on Y) */
-#define PLOT_MED_640_32BIT_DOUBLE_Y(offset) \
-{ \
-	esi[offset+0+Screen4BytesPerLine]   = \
-	esi[offset+0] = STRGBPalette[ecx & 0x000000ff]; \
-	esi[offset+1+Screen4BytesPerLine] = \
-	esi[offset+1] = STRGBPalette[(ecx >> 8) & 0x000000ff]; \
-	esi[offset+2+Screen4BytesPerLine] = \
-	esi[offset+2] = STRGBPalette[(ecx >> 16) & 0x000000ff]; \
-	esi[offset+3+Screen4BytesPerLine] = \
 	esi[offset+3] = STRGBPalette[(ecx >> 24) & 0x000000ff]; \
 }
 
@@ -229,7 +199,7 @@ static const Uint32 Remap_2_Planes_Upper[256] = {
 /* Plot Spectrum512 Resolution(320xH) 32-Bit pixels */
 #define PLOT_SPEC512_END_LOW_320_32BIT(offset) \
 { \
-	esi[offset]   = STRGBPalette[ecx & 0x000000ff]; \
+	esi[offset+0] = STRGBPalette[ecx & 0x000000ff]; \
 	esi[offset+1] = STRGBPalette[(ecx >> 8) & 0x000000ff]; \
 	esi[offset+2] = STRGBPalette[(ecx >> 16) & 0x000000ff]; \
 }
@@ -252,30 +222,6 @@ static const Uint32 Remap_2_Planes_Upper[256] = {
 	esi[offset+4] = esi[offset+5] = STRGBPalette[(ecx >> 16) & 0x000000ff]; \
 }
 
-/* Plot Spectrum512 Resolution (640xH) 32-Bit pixels (Double on Y) */
-#define PLOT_SPEC512_LEFT_LOW_640_32BIT_DOUBLE_Y(offset)	\
-{ \
-	esi[offset+Screen4BytesPerLine] = esi[offset+Screen4BytesPerLine+1] = \
-	esi[offset] = esi[offset+1] = STRGBPalette[ecx & 0x000000ff]; \
-}
-
-/* Plot Spectrum512 Resolution (640xH) 32-Bit pixels (Double on Y) */
-#define PLOT_SPEC512_MID_640_32BIT_DOUBLE_Y PLOT_LOW_640_32BIT_DOUBLE_Y
-
-/* Plot Spectrum512 Resolution (640xH) 32-Bit pixels (Double on Y) */
-#define PLOT_SPEC512_END_LOW_640_32BIT_DOUBLE_Y(offset)	\
-{ \
-	ebx = STRGBPalette[ecx & 0x000000ff]; \
-	esi[offset+Screen4BytesPerLine] = esi[offset+Screen4BytesPerLine+1] \
-	    = esi[offset] = esi[offset+1] = ebx; \
-	ebx = STRGBPalette[(ecx >> 8) & 0x000000ff]; \
-	esi[offset+2+Screen4BytesPerLine] = esi[offset+3+Screen4BytesPerLine] \
-	    = esi[offset+2] = esi[offset+3] = ebx; \
-	ebx = STRGBPalette[(ecx >> 16) & 0x000000ff]; \
-	esi[offset+4+Screen4BytesPerLine] = esi[offset+5+Screen4BytesPerLine] \
-	    = esi[offset+4] = esi[offset+5] = ebx; \
-}
-
 
 /* Plot Spectrum512 Medium Resolution (640xH) 32-Bit pixels */
 #define PLOT_SPEC512_LEFT_MED_640_32BIT	PLOT_SPEC512_LEFT_LOW_320_32BIT
@@ -283,29 +229,6 @@ static const Uint32 Remap_2_Planes_Upper[256] = {
 #define PLOT_SPEC512_MID_MED_640_32BIT PLOT_SPEC512_MID_320_32BIT
 
 #define PLOT_SPEC512_END_MED_640_32BIT PLOT_SPEC512_END_LOW_320_32BIT
-
-
-/* Plot Spectrum512 Medium Resolution (640xH) 32-Bit pixels (Double on Y) */
-#define PLOT_SPEC512_LEFT_MED_640_32BIT_DOUBLE_Y(offset) \
-{ \
-	esi[offset+Screen4BytesPerLine] = esi[offset] = STRGBPalette[ecx & 0x000000ff]; \
-}
-
-#define PLOT_SPEC512_MID_MED_640_32BIT_DOUBLE_Y(offset) \
-{ \
-	esi[offset+0+Screen4BytesPerLine] = esi[offset+0] = STRGBPalette[ecx & 0x000000ff]; \
-	esi[offset+1+Screen4BytesPerLine] = esi[offset+1] = STRGBPalette[(ecx >> 8) & 0x000000ff]; \
-	esi[offset+2+Screen4BytesPerLine] = esi[offset+2] = STRGBPalette[(ecx >> 16) & 0x000000ff]; \
-	esi[offset+3+Screen4BytesPerLine] = esi[offset+3] = STRGBPalette[(ecx >> 24) & 0x000000ff]; \
-}
-
-#define PLOT_SPEC512_END_MED_640_32BIT_DOUBLE_Y(offset) \
-{ \
-	esi[offset+0+Screen4BytesPerLine] = esi[offset+0] = STRGBPalette[ecx & 0x000000ff]; \
-	esi[offset+1+Screen4BytesPerLine] = esi[offset+1] = STRGBPalette[(ecx >> 8) & 0x000000ff]; \
-	esi[offset+2+Screen4BytesPerLine] = esi[offset+2] = STRGBPalette[(ecx >> 16) & 0x000000ff]; \
-}
-
 
 
 /*
@@ -330,19 +253,6 @@ static const Uint32 Remap_2_Planes_Upper[256] = {
  esi[offset+3] = STRGBPalette[(ecx >> 24) & 0x000000ff]; \
 } 
 
-/* Plot Low Resolution (640xH) 16-Bit pixels (Double on Y) */
-#define PLOT_LOW_640_16BIT_DOUBLE_Y(offset) \
-{ \
- ebx = STRGBPalette[ecx & 0x000000ff]; \
- esi[offset]   = esi[offset+Screen4BytesPerLine]   = ebx; \
- ebx = STRGBPalette[(ecx >> 8) & 0x000000ff]; \
- esi[offset+1] = esi[offset+1+Screen4BytesPerLine] = ebx; \
- ebx = STRGBPalette[(ecx >> 16) & 0x000000ff]; \
- esi[offset+2] = esi[offset+2+Screen4BytesPerLine] = ebx; \
- ebx = STRGBPalette[(ecx >> 24) & 0x000000ff]; \
- esi[offset+3] = esi[offset+3+Screen4BytesPerLine] = ebx; \
-}
-
 
 /* Plot Medium Resolution(640xH) 16-Bit pixels */
 #define PLOT_MED_640_16BIT(offset) \
@@ -350,19 +260,6 @@ static const Uint32 Remap_2_Planes_Upper[256] = {
  esi[offset]   = (Uint16)STRGBPalette[ecx & 0x000000ff]; \
  esi[offset+1] = (Uint16)STRGBPalette[(ecx >> 8) & 0x000000ff]; \
  esi[offset+2] = (Uint16)STRGBPalette[(ecx >> 16) & 0x000000ff]; \
- esi[offset+3] = (Uint16)STRGBPalette[(ecx >> 24) & 0x000000ff]; \
-}
-
-/* Plot Medium Resolution(640xH) 16-Bit pixels (Double on Y) */
-#define PLOT_MED_640_16BIT_DOUBLE_Y(offset) \
-{ \
- esi[offset+Screen2BytesPerLine]   =\
- esi[offset]   = (Uint16)STRGBPalette[ecx & 0x000000ff]; \
- esi[offset+1+Screen2BytesPerLine] =\
- esi[offset+1] = (Uint16)STRGBPalette[(ecx >> 8) & 0x000000ff]; \
- esi[offset+2+Screen2BytesPerLine] =\
- esi[offset+2] = (Uint16)STRGBPalette[(ecx >> 16) & 0x000000ff]; \
- esi[offset+3+Screen2BytesPerLine] =\
  esi[offset+3] = (Uint16)STRGBPalette[(ecx >> 24) & 0x000000ff]; \
 }
 
@@ -402,27 +299,6 @@ static const Uint32 Remap_2_Planes_Upper[256] = {
   esi[offset+2] = STRGBPalette[(ecx >> 16) & 0x000000ff]; \
 }
 
-/* Plot Spectrum512 Resolution (640xH) 16-Bit pixels (Double on Y) */
-#define PLOT_SPEC512_LEFT_LOW_640_16BIT_DOUBLE_Y(offset)	\
-{ \
-  esi[offset+Screen4BytesPerLine] = \
-  esi[offset] = STRGBPalette[ecx & 0x000000ff]; \
-}
-
-/* Plot Spectrum512 Resolution (640xH) 16-Bit pixels (Double on Y) */
-#define PLOT_SPEC512_MID_640_16BIT_DOUBLE_Y PLOT_LOW_640_16BIT_DOUBLE_Y
-
-/* Plot Spectrum512 Resolution (640xH) 16-Bit pixels (Double on Y) */
-#define PLOT_SPEC512_END_LOW_640_16BIT_DOUBLE_Y(offset)	\
-{ \
-  ebx = STRGBPalette[ecx & 0x000000ff]; \
-  esi[offset]   = esi[offset+Screen4BytesPerLine]   = ebx; \
-  ebx = STRGBPalette[(ecx >> 8) & 0x000000ff]; \
-  esi[offset+1] = esi[offset+1+Screen4BytesPerLine] = ebx; \
-  ebx = STRGBPalette[(ecx >> 16) & 0x000000ff]; \
-  esi[offset+2] = esi[offset+2+Screen4BytesPerLine] = ebx; \
-}
-
 
 /* Plot Spectrum512 Medium Resolution (640xH) 16-Bit pixels */
 #define PLOT_SPEC512_LEFT_MED_640_16BIT	PLOT_SPEC512_LEFT_LOW_320_16BIT
@@ -430,15 +306,6 @@ static const Uint32 Remap_2_Planes_Upper[256] = {
 #define PLOT_SPEC512_MID_MED_640_16BIT PLOT_SPEC512_MID_320_16BIT
 
 #define PLOT_SPEC512_END_MED_640_16BIT PLOT_SPEC512_END_LOW_320_16BIT
-
-
-/* Plot Spectrum512 Medium Resolution (640xH) 16-Bit pixels (Double on Y) */
-#define PLOT_SPEC512_LEFT_MED_640_16BIT_DOUBLE_Y PLOT_SPEC512_LEFT_MED_640_32BIT_DOUBLE_Y
-
-#define PLOT_SPEC512_MID_MED_640_16BIT_DOUBLE_Y PLOT_SPEC512_MID_MED_640_32BIT_DOUBLE_Y
-
-#define PLOT_SPEC512_END_MED_640_16BIT_DOUBLE_Y PLOT_SPEC512_END_MED_640_32BIT_DOUBLE_Y
-
 
 
 /* Get Spec512 pixels which are offset by 1 pixel */

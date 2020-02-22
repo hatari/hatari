@@ -12,15 +12,13 @@
 
 #include "main.h"
 #include "configuration.h"
+#include "file.h"
 #include "lilo.h"
 #include "log.h"
 #include "tos.h"	/* TosAddress */
 #include "stMemory.h"	/* STRam etc */
 #include "symbols.h"
 #include <stdint.h>
-#ifdef HAVE_LIBZ
-# include <zlib.h>
-#endif
 #include <SDL_endian.h>
 
 bool bUseLilo;
@@ -215,11 +213,10 @@ struct bi_record {
 
 #define NUM_MEMINFO  4
 #define CL_SIZE      (256)
+#undef PAGE_SIZE
 #define PAGE_SIZE 4096
 
 #define M68K_EMUL_RESET 0x7102
-
-#define MAXREAD_BLOCK_SIZE	(1<<20)	/* 1 MB */
 
 /* Start address of kernel in Atari RAM */
 #define KERNEL_START		PAGE_SIZE
@@ -277,8 +274,8 @@ bool lilo_init(void)
 {
 	uint8_t *ROMBaseHost = STRam + TosAddress;
 
-	if (!ConfigureParams.System.bMMU || ConfigureParams.Memory.STRamSize_KB < 14*1024) {
-		Log_AlertDlg(LOG_FATAL, "Linux requires MMU and at least 14MB of RAM!");
+	if (!ConfigureParams.System.bMMU || ConfigureParams.Memory.STRamSize_KB < 8*1024) {
+		Log_AlertDlg(LOG_FATAL, "Linux requires MMU and at least 8MB of RAM!");
 		return false;
 	}
 	/* RESET + Linux/m68k boot */
@@ -388,79 +385,24 @@ static bool lilo_load(void)
 static void *load_file(const char *filename, uint32_t *length)
 {
 	void *buffer = NULL;
-
-#ifdef HAVE_LIBZ
-	int unc_len;
-	gzFile handle;
-#else
-	int handle;
-#endif
+	long nFileLength = 0;
 
 	if (strlen(filename) == 0) {
 		Dprintf(("LILO: empty filename\n"));
 		return NULL;
 	}
 
-	/* Try to open the file, libz takes care of non-gzipped files */
 #ifdef HAVE_LIBZ
-	handle = gzopen(filename, "rb");
-	if (handle == NULL)
+	buffer = File_ZlibRead(filename, &nFileLength);
 #else
-	handle = open(filename, O_RDONLY);
-	if (handle < 0)
+	buffer = File_Read(filename, &nFileLength, NULL);
 #endif
-	{
-		Dprintf(("LILO: unable to open %s\n", filename));
-		return NULL;
+	*length = nFileLength;
+
+	if (buffer) {
+		Dprintf(("LILO: (uncompressed) '%s' size: %d bytes\n",
+			 filename, *length));
 	}
-#ifdef HAVE_LIBZ
-	/* Search the length of the uncompressed stream */
-	buffer = (char *)malloc(MAXREAD_BLOCK_SIZE);
-	if (buffer == NULL) {
-		Dprintf(("LILO: unable to allocate %d bytes\n", MAXREAD_BLOCK_SIZE));
-		gzclose(handle);
-		return NULL;
-	}
-
-	*length = 0;
-	unc_len = gzread(handle, buffer, MAXREAD_BLOCK_SIZE);
-	while (unc_len > 0) {
-		*length += unc_len;
-		unc_len = gzread(handle, buffer, MAXREAD_BLOCK_SIZE);
-	}
-	/* Avoid gzseek, it is often broken with LFS
-	 * which we enable by default
-	 */
-	gzrewind(handle);
-	Dprintf(("LILO: uncompressing '%s'\n", filename));
-	Dprintf(("LILO:  uncompressed length: %d bytes\n", *length));
-
-	free(buffer);
-	buffer = NULL;
-#else
-	*length = lseek(handle, 0, SEEK_END);
-	lseek(handle, 0, SEEK_SET); 	
-#endif
-
-	buffer = (char *)malloc(*length);
-	if (buffer == NULL) {
-		Dprintf(("LILO: unable to allocate %d bytes\n", *length));
-#ifdef HAVE_LIBZ
-		gzclose(handle);
-#else
-		close(handle);
-#endif
-		return NULL;
-	}
-
-#ifdef HAVE_LIBZ
-	gzread(handle, buffer, *length);
-	gzclose(handle);
-#else
-	read(handle, buffer, *length);
-	close(handle);
-#endif
-
 	return buffer;
 }
 
@@ -515,13 +457,12 @@ static bool check_kernel(void *kernel, Elf32_Addr *kernel_offset,
 	}
 
 	kexec_elf = (Elf32_Ehdr *) kernel;
-	if (memcmp(&kexec_elf->e_ident[EI_MAG0], ELFMAG, SELFMAG) == 0) {
-		if ((SDL_SwapBE16(kexec_elf->e_type) != ET_EXEC) ||
-		    (SDL_SwapBE16(kexec_elf->e_machine) != EM_68K) ||
-		    (SDL_SwapBE32(kexec_elf->e_version) != EV_CURRENT)) {
-			fprintf(stderr, "LILO: Invalid ELF header contents in kernel\n");
-			return false;
-		}
+	if (memcmp(&kexec_elf->e_ident[EI_MAG0], ELFMAG, SELFMAG) != 0 ||
+	    SDL_SwapBE16(kexec_elf->e_type) != ET_EXEC ||
+	    SDL_SwapBE16(kexec_elf->e_machine) != EM_68K ||
+	    SDL_SwapBE32(kexec_elf->e_version) != EV_CURRENT) {
+		fprintf(stderr, "LILO: Invalid ELF header contents in kernel\n");
+		return false;
 	}
 
 	/*--- Copy the kernel at start of RAM ---*/
@@ -847,7 +788,7 @@ static bool create_bootinfo(void)
 	if (!add_bi_record(BI_MMUTYPE, sizeof(bi.mmutype), &bi.mmutype)) {
 		return false;
 	}
-	for (i = 0; i < SDL_SwapBE32(bi.num_memory); i++) {
+	for (i = 0; i < SDL_SwapBE32((Uint32)bi.num_memory); i++) {
 		if (!add_bi_record(BI_MEMCHUNK, sizeof(bi.memory[i]), &bi.memory[i]))
 			return false;
 	}
