@@ -2,7 +2,7 @@ Hatari provides a host component implementation of the SCSI Driver for Hatari
 (Linux only).
 The SCSI Driver standard is an open software interface for the Atari and was
 initiated by Steffen Engel. Please refer to src/nf_scsidrv.c and
-https://www.hddriver.net/en/downloads.html or
+https://www.hddriver.net/en/scsidriver.html or
 https://github.com/uweseimet/atari_public for further information.
 
 The SCSI Driver for Hatari implements a SCSI Driver on top of the Linux SG 3
@@ -22,7 +22,7 @@ It consists of two software components:
 2. SCSI Driver stub for TOS, NF_SCSI.PRG. This component runs on TOS and
    uses Hatari's NatFeats interface to call the host driver. The stub is
    independent of the host platform Hatari is running on. NF_SCSI can be
-   downloaded from https://www.hddriver.net/en/downloads.html.
+   downloaded from https://www.hddriver.net/en/scsidriver.html.
 
 The NatFeats-based interface between the TOS stub and the host driver
 implementation consists of these calls (NatFeats sub-ids):
