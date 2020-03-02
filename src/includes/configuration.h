@@ -287,35 +287,33 @@ typedef enum
 typedef struct
 {
   MONITORTYPE nMonitorType;
-  int nFrameSkips;
+  bool DisableVideo;
   bool bFullScreen;
-  bool bKeepResolution;
-#if WITH_SDL2
-  bool bResizable;
-#else
-  bool bKeepResolutionST;
-#endif
   bool bAllowOverscan;
   bool bAspectCorrect;
+  bool bShowStatusbar;
+  bool bShowDriveLed;
+  bool bMouseWarp;
+  bool bCrop;
+  bool bForceMax;
   bool bUseExtVdiResolutions;
+  bool bKeepResolution;
+#if !WITH_SDL2
+  bool bKeepResolutionST;
+#else
+  bool bResizable;
+  bool bUseVsync;
+  bool bUseSdlRenderer;
+  int nRenderScaleQuality;
+#endif
   int nSpec512Threshold;
   int nForceBpp;
   int nVdiColors;
   int nVdiWidth;
   int nVdiHeight;
-  bool bMouseWarp;
-  bool bShowStatusbar;
-  bool bShowDriveLed;
-  bool bCrop;
-  bool bForceMax;
   int nMaxWidth;
   int nMaxHeight;
-#if WITH_SDL2
-  bool bUseSdlRenderer;
-  int nRenderScaleQuality;
-  bool bUseVsync;
-#endif
-  bool DisableVideo;
+  int nFrameSkips;
 } CNF_SCREEN;
 
 
