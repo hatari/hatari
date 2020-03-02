@@ -99,6 +99,7 @@ static const struct Config_Tag configs_Screen[] =
 	{ "nMaxWidth", Int_Tag, &ConfigureParams.Screen.nMaxWidth },
 	{ "nMaxHeight", Int_Tag, &ConfigureParams.Screen.nMaxHeight },
 #if WITH_SDL2
+	{ "nZoomFactor", Float_Tag, &ConfigureParams.Screen.nZoomFactor },
 	{ "bUseSdlRenderer", Bool_Tag, &ConfigureParams.Screen.bUseSdlRenderer },
 	{ "nRenderScaleQuality", Int_Tag, &ConfigureParams.Screen.nRenderScaleQuality },
 	{ "bUseVsync", Bool_Tag, &ConfigureParams.Screen.bUseVsync },
@@ -834,12 +835,16 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Screen.bShowStatusbar = true;
 	ConfigureParams.Screen.bShowDriveLed = true;
 	ConfigureParams.Screen.bCrop = false;
-	/* gives zoomed Falcon/TT windows about same size as ST/STE windows */
+	/* use approximately similar Hatari framebuffer/window size
+	 * on all resolutions (like real Atari monitor would do) by
+	 * allowing ST low resolution to be doubled (see screen.c)
+	 */
 	ConfigureParams.Screen.nMaxWidth = 2*NUM_VISIBLE_LINE_PIXELS;
 	ConfigureParams.Screen.nMaxHeight = 2*NUM_VISIBLE_LINES+STATUSBAR_MAX_HEIGHT;
 	ConfigureParams.Screen.bForceMax = false;
 	ConfigureParams.Screen.DisableVideo = false;
 #if WITH_SDL2
+	ConfigureParams.Screen.nZoomFactor = 1.0;
 	ConfigureParams.Screen.bUseSdlRenderer = true;
 	ConfigureParams.Screen.nRenderScaleQuality = 0;
 	ConfigureParams.Screen.bUseVsync = false;

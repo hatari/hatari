@@ -20,6 +20,7 @@ static inline int SDL_SetColors(SDL_Surface *surface, SDL_Color *colors,
 }
 void SDL_UpdateRects(SDL_Surface *screen, int numrects, SDL_Rect *rects);
 void SDL_UpdateRect(SDL_Surface *screen, Sint32 x, Sint32 y, Sint32 w, Sint32 h);
+void Screen_SetTextureScale(int width, int height, int win_width, int win_height, bool bForceCreation);
 #define SDL_GRAB_OFF false
 #define SDL_GRAB_ON true
 #define SDL_WM_GrabInput SDL_SetRelativeMouseMode

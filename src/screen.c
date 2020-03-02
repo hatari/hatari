@@ -311,6 +311,80 @@ static void Screen_FreeSDL2Resources(void)
 		sdlRenderer = NULL;
 	}
 }
+
+/*
+ * Create window backing texture when needed, with suitable scaling
+ * quality.
+ *
+ * Window size is affected by ZoomFactor setting and window resizes
+ * done by the user, and constrained by maximum window size setting
+ * and desktop size.
+ *
+ * Calculate scale factor for the given resulting window size, compared
+ * to the size of the SDL frame buffer rendered by Hatari, and based on
+ * that, set the render scaling quality hint to:
+ * - (sharp) nearest pixel sampling for integer zoom factors
+ * - (smoothing/blurring) linear filtering otherwise
+ *
+ * If hint value changes from earlier one (or force flag is used),
+ * window texture needs to be re-created to apply the scaling quality
+ * change.
+ */
+void Screen_SetTextureScale(int width, int height, int win_width, int win_height, bool bForce)
+{
+	static char prev_quality = '0';
+	float scale_w, scale_h, scale;
+	char quality;
+	int pfmt;
+
+	if (!(bUseSdlRenderer && sdlRenderer))
+		return;
+
+	scale_w = (float)win_width / width;
+	scale_h = (float)win_height / height;
+	scale = (scale_w + scale_h) / 2.0;
+
+	if (scale == floorf(scale))
+		quality = '0';	// nearest pixel
+	else
+		quality = '1';	// linear filtering
+
+	DEBUGPRINT(("%dx%d / %dx%d -> scale = %.1f / Render Scale Quality = %c\n",
+		    win_width, win_height, width, height, scale, quality));
+
+	if (bForce || quality != prev_quality)
+	{
+		char hint[2] = { quality, 0 };
+		prev_quality = quality;
+
+		/* show new value in options */
+		ConfigureParams.Screen.nRenderScaleQuality = quality - '0';
+
+		/* hint needs to be there before texture */
+		SDL_SetHintWithPriority(SDL_HINT_RENDER_SCALE_QUALITY, hint, SDL_HINT_OVERRIDE);
+
+		if (sdlTexture)
+		{
+			SDL_DestroyTexture(sdlTexture);
+			sdlTexture = NULL;
+		}
+
+		if (sdlscrn->format->BitsPerPixel == 16)
+			pfmt = SDL_PIXELFORMAT_RGB565;
+		else
+			pfmt = SDL_PIXELFORMAT_RGB888;
+
+		sdlTexture = SDL_CreateTexture(sdlRenderer, pfmt,
+					       SDL_TEXTUREACCESS_STREAMING,
+					       width, height);
+		if (!sdlTexture)
+		{
+			fprintf(stderr, "ERROR: Failed to create %dx%d@%d texture!\n",
+			       width, height, sdlscrn->format->BitsPerPixel);
+			exit(-3);
+		}
+	}
+}
 #endif
 
 /**
@@ -323,10 +397,10 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 	char *psSdlVideoDriver;
 	bool bUseDummyMode;
 #if WITH_SDL2
-	static int nPrevRenderScaleQuality = 0;
 	static bool bPrevUseVsync = false;
 	static bool bPrevInFullScreen;
 	int win_width, win_height;
+	float scale = 1.0;
 
 	if (bitdepth == 0 || bitdepth == 24)
 		bitdepth = 32;
@@ -355,6 +429,12 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 	/* SDL Video attributes: */
 	win_width = width;
 	win_height = height;
+	if (bUseSdlRenderer)
+	{
+		scale = ConfigureParams.Screen.nZoomFactor;
+		win_width *= scale;
+		win_height *= scale;
+	}
 	if (bInFullScreen)
 	{
 		sdlVideoFlags = SDL_WINDOW_BORDERLESS | SDL_WINDOW_INPUT_GRABBED;
@@ -392,13 +472,6 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 	}
 	bPrevInFullScreen = bInFullScreen;
 
-	/* Set SDL2 video hints */
-	if (nPrevRenderScaleQuality != ConfigureParams.Screen.nRenderScaleQuality)
-	{
-		char hint[2] = { '0' + ConfigureParams.Screen.nRenderScaleQuality, 0 };
-		SDL_SetHintWithPriority(SDL_HINT_RENDER_SCALE_QUALITY, hint, SDL_HINT_OVERRIDE);
-		nPrevRenderScaleQuality = ConfigureParams.Screen.nRenderScaleQuality;
-	}
 	if (bPrevUseVsync != ConfigureParams.Screen.bUseVsync)
 	{
 		char hint[2] = { '0' + ConfigureParams.Screen.bUseVsync, 0 };
@@ -412,8 +485,8 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 #endif
 
 	/* Set new video mode */
-	DEBUGPRINT(("SDL screen request: %d x %d @ %d (%s)\n", width, height,
-	        bitdepth, bInFullScreen?"fullscreen":"windowed"));
+	DEBUGPRINT(("SDL screen request: %d x %d @ %d (%s) -> window: %d x %d\n", width, height,
+	        bitdepth, (bInFullScreen ? "fullscreen" : "windowed"), win_width, win_height));
 
 	if (sdlWindow)
 	{
@@ -434,7 +507,7 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 	}
 	if (bUseSdlRenderer)
 	{
-		int rm, bm, gm, pfmt;
+		int rm, bm, gm;
 
 		sdlRenderer = SDL_CreateRenderer(sdlWindow, -1, 0);
 		if (!sdlRenderer)
@@ -451,32 +524,25 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 
 		if (bInFullScreen)
 			SDL_RenderSetLogicalSize(sdlRenderer, width, height);
+		else
+			SDL_RenderSetScale(sdlRenderer, scale, scale);
 
 		if (bitdepth == 16)
 		{
 			rm = 0xF800;
 			gm = 0x07E0;
 			bm = 0x001F;
-			pfmt = SDL_PIXELFORMAT_RGB565;
 		}
 		else
 		{
 			rm = 0x00FF0000;
 			gm = 0x0000FF00;
 			bm = 0x000000FF;
-			pfmt = SDL_PIXELFORMAT_RGB888;
 		}
 		sdlscrn = SDL_CreateRGBSurface(0, width, height, bitdepth,
 		                               rm, gm, bm, 0);
-		sdlTexture = SDL_CreateTexture(sdlRenderer, pfmt,
-		                               SDL_TEXTUREACCESS_STREAMING,
-		                               width, height);
-		if (!sdlTexture)
-		{
-			fprintf(stderr, "ERROR: Failed to create %dx%d@%d texture!\n",
-			       width, height, bitdepth);
-			exit(-3);
-		}
+
+		Screen_SetTextureScale(width, height, win_width, win_height, true);
 	}
 	else
 	{

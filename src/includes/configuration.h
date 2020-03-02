@@ -304,6 +304,7 @@ typedef struct
   bool bResizable;
   bool bUseVsync;
   bool bUseSdlRenderer;
+  float nZoomFactor;
   int nRenderScaleQuality;
 #endif
   int nSpec512Threshold;

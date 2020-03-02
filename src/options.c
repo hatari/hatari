@@ -81,12 +81,12 @@ enum {
 	OPT_DRIVE_LED,
 	OPT_MAXWIDTH,
 	OPT_MAXHEIGHT,
+	OPT_ZOOM,
 	OPT_FORCEBPP,
 	OPT_DISABLE_VIDEO,
 	OPT_BORDERS,		/* ST/STE display options */
 	OPT_RESOLUTION_ST,
 	OPT_SPEC512,
-	OPT_ZOOM,
 	OPT_VIDEO_TIMING,
 	OPT_RESOLUTION,		/* TT/Falcon display options */
 	OPT_FORCE_MAX,
@@ -248,10 +248,21 @@ static const opt_t HatariOptions[] = {
 	  "<bool>", "Show statusbar (floppy leds etc)" },
 	{ OPT_DRIVE_LED,   NULL, "--drive-led",
 	  "<bool>", "Show overlay drive led when statusbar isn't shown" },
+#if WITH_SDL2
+	{ OPT_MAXWIDTH, NULL, "--max-width",
+	  "<x>", "Maximum Hatari screen width before scaling" },
+	{ OPT_MAXHEIGHT, NULL, "--max-height",
+	  "<x>", "Maximum Hatari screen height before scaling" },
+	{ OPT_ZOOM, "-z", "--zoom",
+	  "<x>", "Hatari screen/window scaling factor (1.0 - 8.0)" },
+#else
 	{ OPT_MAXWIDTH, NULL, "--max-width",
 	  "<x>", "Maximum window width for borders & zooming" },
 	{ OPT_MAXHEIGHT, NULL, "--max-height",
 	  "<x>", "Maximum window height for borders & zooming" },
+	{ OPT_ZOOM, "-z", "--zoom",
+	  "<x>", "Double small ST/STe resolutions (1=no, 2=yes)" },
+#endif
 	{ OPT_FORCEBPP, NULL, "--bpp",
 	  "<x>", "Force internal bitdepth (x = 15/16/32, 0=disable)" },
 	{ OPT_DISABLE_VIDEO,   NULL, "--disable-video",
@@ -264,8 +275,6 @@ static const opt_t HatariOptions[] = {
 	  "<bool>", "Keep desktop resolution on fullscreen" },
 	{ OPT_SPEC512, NULL, "--spec512",
 	  "<x>", "Spec512 palette threshold (0 <= x <= 512, 0=disable)" },
-	{ OPT_ZOOM, "-z", "--zoom",
-	  "<x>", "Double small resolutions (1=no, 2=yes)" },
 	{ OPT_VIDEO_TIMING,   NULL, "--video-timing",
 	  "<x>", "Wakeup State for MMU/GLUE (x=ws1/ws2/ws3/ws4/random, default ws3)" },
 
@@ -1041,9 +1050,14 @@ static bool Opt_HandleArgument(const char *path)
  */
 bool Opt_ParseParameters(int argc, const char * const argv[])
 {
-	int ncpu, skips, zoom, planes, cpuclock, threshold, memsize, port, freq, temp, drive;
+	int ncpu, skips, planes, cpuclock, threshold, memsize, port, freq, temp, drive;
 	const char *errstr, *str;
 	int i, ok = true;
+#if WITH_SDL2
+	float zoom;
+#else
+	int zoom;
+#endif
 	int val;
 
 	/* Defaults for loading initial memory snap-shots */
@@ -1242,18 +1256,34 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_ZOOM:
+#if WITH_SDL2
+			zoom = atof(argv[++i]);
+			if (zoom < 1.0 || zoom > 8.0)
+#else
 			zoom = atoi(argv[++i]);
-			if (zoom < 1)
+			if (zoom < 1 || zoom > 2)
+#endif
 			{
 				return Opt_ShowError(OPT_ZOOM, argv[i], "Invalid zoom value");
 			}
 			ConfigureParams.Screen.nMaxWidth = NUM_VISIBLE_LINE_PIXELS;
 			ConfigureParams.Screen.nMaxHeight = NUM_VISIBLE_LINES;
+#if WITH_SDL2
+			/* double ST-low always so that resulting screen size
+			 * is approximately same size with same zoom factor
+			 * regardless of the machine or monitor type
+			 */
+			ConfigureParams.Screen.nMaxWidth *= 2;
+			ConfigureParams.Screen.nMaxHeight *= 2;
+			ConfigureParams.Screen.nZoomFactor = zoom;
+#else
+			/* zoom factor only for ST-low mode */
 			if (zoom > 1)
 			{
 				ConfigureParams.Screen.nMaxWidth *= 2;
 				ConfigureParams.Screen.nMaxHeight *= 2;
 			}
+#endif
 			ConfigureParams.Screen.nMaxHeight += STATUSBAR_MAX_HEIGHT;
 			break;
 
