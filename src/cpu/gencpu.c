@@ -1031,6 +1031,13 @@ static void check_ipl (void)
 	ipl_fetched = 1;
 }
 
+static void check_ipl_always(void)
+{
+	if (using_ce || isce020())
+		out("ipl_fetch();\n");
+}
+
+
 static void irc2ir_2 (bool dozero)
 {
 	if (!using_prefetch)
@@ -7169,6 +7176,7 @@ static void gen_opcode (unsigned int opcode)
 		if (using_prefetch) {
 			incpc ("(uae_s32)src + 2");
 			fill_prefetch_full_000_special(NULL);
+			check_ipl_always();
 			if (using_ce)
 				out("return;\n");
 			else
@@ -7177,6 +7185,7 @@ static void gen_opcode (unsigned int opcode)
 			incpc ("(uae_s32)src + 2");
 			add_head_cycs (6);
 			fill_prefetch_full_020();
+			check_ipl_always();
 			returncycles (10);
 		}
 		pop_ins_cnt();
@@ -7367,7 +7376,7 @@ bccl_not68020:
 			out("}\n");
 
 			setpc("oldpc");
-			check_ipl();
+			check_ipl_always();
 			returncycles(0);
 			out("}\n");
 			out("regs.loop_mode = 0;\n");
@@ -7388,6 +7397,7 @@ bccl_not68020:
 		}
 		irc2ir();
 		add_head_cycs (6);
+		check_ipl_always();
 
 		if (using_prefetch || using_ce) {
 			copy_opcode();
