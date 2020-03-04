@@ -4628,7 +4628,7 @@ STATIC_INLINE bool time_for_interrupt (void)
 	return regs.ipl > regs.intmask || regs.ipl == 7;
 }
 
-void doint (void)
+void doint(void)
 {
 #ifdef WITH_PPC
 	if (ppc_state) {
@@ -4639,7 +4639,7 @@ void doint (void)
 //fprintf ( stderr , "doint1 %d ipl=%x ipl_pin=%x intmask=%x spcflags=%x\n" , m68k_interrupt_delay,regs.ipl, regs.ipl_pin , regs.intmask, regs.spcflags );
 	if (m68k_interrupt_delay) {
 		regs.ipl_pin = intlev ();
-		unset_special (SPCFLAG_INT);
+		set_special (SPCFLAG_INT);
 //fprintf ( stderr , "doint2 %d ipl=%x ipl_pin=%x intmask=%x spcflags=%x\n" , m68k_interrupt_delay,regs.ipl, regs.ipl_pin , regs.intmask, regs.spcflags );
 		return;
 	}
@@ -4875,6 +4875,7 @@ static int do_specialties (int cycles)
 #endif
 
 		if (m68k_interrupt_delay) {
+			unset_special(SPCFLAG_INT);
 			ipl_fetch ();
 			if (time_for_interrupt ()) {
 				do_interrupt (regs.ipl);
@@ -4931,6 +4932,7 @@ static int do_specialties (int cycles)
 
 //fprintf ( stderr , "dospec1 %d %d spcflags=%x ipl=%x ipl_pin=%x intmask=%x\n" , m68k_interrupt_delay,time_for_interrupt() , regs.spcflags , regs.ipl , regs.ipl_pin, regs.intmask );
 	if (m68k_interrupt_delay) {
+		unset_special(SPCFLAG_INT);
 		if (time_for_interrupt ()) {
 			do_interrupt (regs.ipl);
 		}
