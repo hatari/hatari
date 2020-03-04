@@ -86,7 +86,8 @@ Building:
 
 Documentation:
 - Up to date documentation provided at: https://hatari.tuxfamily.org/doc/
-- New m68k-linux-for-hatari.txt document on how to run Linux under Hatari
+- New m68k-linux.txt and m68k-netbsd.txt documents on how to
+  test m68k Linux and NetBSD under Hatari
 - Debugging and profiling information is split from manual.html to
   a separate debugger.html file
 - Minor improvements
