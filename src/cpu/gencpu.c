@@ -1022,6 +1022,7 @@ static void makefromsr_t0(void)
 		out("regs.ipl_pin = intlev();\n");
 }
 
+#ifndef WINUAE_FOR_HATARI
 static void check_ipl (void)
 {
 	if (ipl_fetched)
@@ -1030,6 +1031,7 @@ static void check_ipl (void)
 		out("ipl_fetch();\n");
 	ipl_fetched = 1;
 }
+#endif
 
 static void check_ipl_always(void)
 {
@@ -1523,6 +1525,7 @@ static void fill_prefetch_next_after(int copy, const char *format, ...)
 	}
 }
 
+#ifndef WINUAE_FOR_HATARI
 static void fill_prefetch_next_skipopcode(void)
 {
 	if (using_prefetch) {
@@ -1537,7 +1540,7 @@ static void fill_prefetch_next_skipopcode(void)
 		insn_n_cycles += 4;
 	}
 }
-
+#endif
 
 static void fill_prefetch_next_empty(void)
 {
