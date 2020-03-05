@@ -5,8 +5,8 @@ fedora_task:
     memory: 2Gb
   install_script:
     - dnf update -y
-    - dnf install -y cmake make gcc diffutils python2 SDL2-devel libpng-devel
-                     zlib-devel portaudio-devel
+    - dnf install -y cmake make gcc diffutils python-unversioned-command
+                     SDL2-devel libpng-devel zlib-devel portaudio-devel
   script:
     - mkdir build
     - cd build
