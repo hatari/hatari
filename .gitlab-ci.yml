@@ -4,7 +4,9 @@ before_script:
 build-normal:
  script:
  - apt-get install -y -qq cmake libsdl2-dev libpng-dev zlib1g-dev libudev-dev
- - CFLAGS="-Os -Werror" ./configure
+ - mkdir build
+ - cd build
+ - CFLAGS="-Os -Werror" ../configure
  - make
  - make test
 

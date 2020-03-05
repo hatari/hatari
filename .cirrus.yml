@@ -5,10 +5,12 @@ fedora_task:
     memory: 2Gb
   install_script:
     - dnf update -y
-    - dnf install -y cmake make gcc diffutils SDL2-devel libpng-devel
+    - dnf install -y cmake make gcc diffutils python2 SDL2-devel libpng-devel
                      zlib-devel portaudio-devel
   script:
-    - ./configure --enable-old-uae-cpu --enable-small-mem --disable-dsp
+    - mkdir build
+    - cd build
+    - ../configure --enable-old-uae-cpu --enable-small-mem --disable-dsp
                   --enable-werror || { cat config.log; exit 1; }
     - make -j4
     - ctest -j4 || { cat Testing/Temporary/LastTest.log; exit 1; }
