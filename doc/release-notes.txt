@@ -3,12 +3,14 @@
                                    --------
                                 Release Notes
 
+
  Development version
  -------------------
 
-Note:
-The following features are deprecated and will be removed in a future release:
-- Support for the SDL 1.2 library (i.e. SDL 2.0 should be used instead)
+Following features are deprecated and will be removed in a future release:
+- Support for the SDL 1.2 library (i.e. SDL 2.x should be used instead)
+- SDL 2.x "bUseSdlRenderer" config and "GPU scaling" GUI options
+  (after HW support for SDL2 is available widely enough)
 - The old UAE CPU core (i.e. the new WinUAE CPU core should be used instead)
 - Python 2 support (Python 2 is end of life in 2020, use Python 3 instead)
 - The "external" disassembler (i.e. use "--disasm uae" instead)
@@ -44,8 +46,21 @@ Emulator:
   - Invalid DTA in Fsnext() return -ENMFIL, like TOS does
 - Support read-only HD image files, and show error dialogs
   for image file open/lock issues
-- Low/med-rez line doubling uses less CPU and doubled lines in
-  "TV" display mode are now drawn at half intensity, not as black
+- Hatari graphics support:
+  - Low/med-rez line doubling uses less CPU and doubled lines in
+    "TV" display mode are now drawn at half intensity, not as black
+    (fixes TV mode being too dark)
+  - SDL2: "--zoom" option accepts any values between 1.0 - 8.0
+  - SDL2: "--zoom" option is changed to always enable low resolution
+    doubling before SDL framebuffer is scaled up (or down) by the zoom
+    factor. This way Hatari output wiindow is approximately same sized
+    regardless of emulated Atari resolution, like on a real CRT monitor
+  - SDL2: scale quality is autoselected; nearest pixel for sharp
+    output with integer scaling factors, and linear scaling to
+    smooth out issues with non-integer scaling & window resizes.
+  - SDL2: Now redundant "nRenderScaleQuality" config option is
+    removed and "Linear scaling" option in GUI is replaced with
+    the "GPU scaling" option (=bUseSdlRenderer config option)
 - Show mouse grab toggle shortcut key in startup statusbar message
 - Center host mouse to Hatari window on Atari resets and resolution
   changes only when window is focused and mouse pointer is within it

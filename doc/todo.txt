@@ -178,8 +178,6 @@ on BerliOS hatari-devel mail thread for more info.)
 	- Line based screen change detection/checks:
 		- blit only changed lines
 		- simpler / faster (LED) overlay handling
-	- x3 and x4 zooming routines for ST-Low resolution
-	  (SDL2 scales to monitor size, so it can be blurry)
 	- Include some fancy zooming routines like 2xSaI or Super-Eagle
 
 - Improve directory handling:

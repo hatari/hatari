@@ -618,14 +618,54 @@ etc)</p>
 &lt;bool&gt;</p>
 <p class="paramdesc">Show overlay drive led when statusbar
 isn&rsquo;t shown</p>
-<p class="parameter">--max-width
-&lt;x&gt;</p>
-<p class="paramdesc">Preferred / maximum window width
-for borders / zooming</p>
-<p class="parameter">--max-height
-&lt;x&gt;</p>
-<p class="paramdesc">Preferred / maximum window height
-for borders / zooming</p>
+<p class="parameter">--max-width &lt;x&gt;</p>
+<p class="paramdesc">Preferred / maximum Hatari screen width</p>
+<p class="parameter">--max-height &lt;x&gt;</p>
+<p class="paramdesc">Preferred / maximum Hatari screen height.
+</p><p class="paramdesc">
+Maximum width and height options are part of Hatari's Atari monitor
+emulation. They limit the size Hatari should aim for its internal SDL
+framebuffer, and how much of the Atari screen borders are visible.
+</p><p class="paramdesc">
+On an SDL2 build, framebuffer is then scaled to the Hatari output
+window based on the specified Hatari zoom factor (see below).
+</p><p class="paramdesc">
+Aim of this is to have all resolutions show up in approximately same
+size, like on a real Atari monitor. Hatari's internal integer scaling
+support sets some limits on this, so it's an expert option.
+</p><p class="paramdesc">
+Note: Only reason to change the defaults, should be limiting this to a
+smaller resolution for performance reasons, e.g. for video recording,
+or on really underpowered systems, to make monitor do all of the
+ST-low resolution scaling by forcing Hatari to ask SDL for CGA / QVGA
+resolution.
+</p>
+<p class="parameter">-z, --zoom &lt;x&gt;</p>
+<p class="paramdesc">
+With the Hatari SDL1 build, this is just a shortcut for overriding
+maximum screen size settings with values that result in ST/STe low
+resolution being doubled or not (1=no, 2=yes).
+</p><p class="paramdesc">
+With the Hatari SDL2 build, this option overrides max width/height
+options so that e.g. ST-low resolution gets always doubled, and all
+resolutions (except TT-high) have approximately the same size, like on
+a real CRT monitor.
+</p><p class="paramdesc">
+Zoom factor is then used to scale that up (or down) to the Hatari
+output window.  This way scaling results always in approximately
+same sized Hatari window.
+</p><p class="paramdesc">
+With non-integer zoom factors, linear scaling is used to smooth out
+the output, with integer zoom factors, scaling is done using nearest
+neighboring pixels for sharper output.  This applies also to window
+resizes.
+</p><p class="paramdesc">
+To get SDL1 "-z 1" behavior with SDL2, use "--zoom 1 --max-width 416
+--max-height 276" (if you don't need borders, 320x200 size is enough).
+Disabling low resolution doubling like this is not recommended for
+Falcon emulation because TOS v4 bootup and some demos switch
+resolutions frequently.
+</p>
 <p class="parameter">--bpp
 &lt;bool&gt;</p>
 <p class="paramdesc">Force internal bitdepth (x =
@@ -658,10 +698,6 @@ mode. (disabled by default)</p>
 when to render a screen with the slower but more accurate
 Spectrum512 screen conversion functions (0 &lt;= x &lt;= 512,
 0=disable)</p>
-<p class="parameter">-z, --zoom
-&lt;x&gt;</p>
-<p class="paramdesc">Zoom (double) low resolution (1=no,
-2=yes)</p>
 <p class="parameter">--video-timing
 &lt;x&gt;</p>
 <p class="paramdesc">Wakeup State for MMU/GLUE (x=ws1/ws2/ws3/ws4/random,

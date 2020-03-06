@@ -2,7 +2,7 @@
 .\" First parameter, NAME, should be all caps
 .\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
 .\" other parameters are allowed: see man(7), man(1)
-.TH "HATARI" "1" "2014-05-08" "Hatari" ""
+.TH "HATARI" "1" "2020-03-29" "Hatari" ""
 .\" Please adjust this date whenever revising the manpage.
 
 .SH "NAME"
@@ -14,8 +14,9 @@ hatari \- Atari ST/STE/TT/Falcon emulator
 .RI  [directory|diskimage|program]
 
 .SH "DESCRIPTION"
-Hatari is an Atari ST/STE/TT/Falcon emulator for Linux, FreeBSD, BeOS and
-other Systems which are supported by the SDL library.
+Hatari is an Atari ST/STE/TT/Falcon emulator for Linux and other
+Systems which are supported by the SDL (cross-platform graphics, input
+and sound) library.
 .PP
 With Hatari one can run games, demos or applications written for Atari
 ST, STE or Falcon.  Atari TT support is experimental.  Hatari supports
@@ -123,10 +124,52 @@ Show statusbar (with floppy leds etc etc)
 Show overlay drive led when statusbar isn't shown
 .TP
 .B \-\-max\-width <x>
-Preferred / maximum window width for borders / zooming
+Preferred / maximum Hatari screen width
 .TP
 .B \-\-max\-height <x>
-Preferred / maximum window height for borders / zooming
+Preferred / maximum Hatari screen height.
+
+Maximum width and height options are part of Hatari's Atari monitor
+emulation. They limit the size Hatari should aim for its internal SDL
+framebuffer, and how much of the Atari screen borders are visible.
+
+On an SDL2 build, framebuffer is then scaled to the Hatari output
+window based on the specified Hatari zoom factor (see below).
+
+Aim of this is to have all resolutions show up in approximately same
+size, like on a real Atari monitor. Hatari's internal integer scaling
+support sets some limits on this, so it's an expert option.
+
+Note: Only reason to change the defaults, should be limiting this to a
+smaller resolution for performance reasons, e.g. for video recording,
+or on really underpowered systems, to make monitor do all of the
+ST-low resolution scaling by forcing Hatari to ask SDL for CGA / QVGA
+resolution.
+.TP
+.B \-z, \-\-zoom <x>
+With the Hatari SDL1 build, this is just a shortcut for overriding
+maximum screen size settings with values that result in ST/STe low
+resolution being doubled or not (1=no, 2=yes).
+
+With the Hatari SDL2 build, this option overrides max width/height
+options so that e.g. ST-low resolution gets always doubled, and all
+resolutions (except TT-high) have approximately the same size, like on
+a real CRT monitor.
+
+Zoom factor is then used to scale that up (or down) to the Hatari
+output window.  This way scaling results always in approximately
+same sized Hatari window.
+
+With non-integer zoom factors, linear scaling is used to smooth out
+the output, with integer zoom factors, scaling is done using nearest
+neighboring pixels for sharper output.  This applies also to window
+resizes.
+
+To get SDL1 "-z 1" behavior with SDL2, use "--zoom 1 --max-width 416
+--max-height 276" (if you don't need borders, 320x200 size is enough).
+Disabling low resolution doubling like this is not recommended for
+Falcon emulation because TOS v4 bootup and some demos switch
+resolutions frequently.
 .TP
 .B \-\-bpp <bool>
 Force internal bitdepth (x = 8/15/16/32, 0=disable)
@@ -147,8 +190,8 @@ the resulting sound break). Otherwise fullscreen will use a resolution
 that is closest to the Hatari window size.
 
 As Hatari ST/STe display code doesn't support zooming (except low-rez
-doubling), it doesn't get scaled (by Hatari or monitor) when this is
-enabled, and you may get large black borders around ST/STe screen.
+doubling) with SDL1, it doesn't get scaled (by Hatari or monitor) when
+this is enabled, and you may get large black borders around ST/STe screen.
 Therefore this is mainly useful only if you suffer from the described
 effects, but still want to grab mouse and remove other distractions
 from the screen just by toggling fullscreen mode. (disabled by
@@ -158,9 +201,6 @@ default)
 Hatari uses this threshold to decide when to render a screen with
 the slower but more accurate Spectrum512 screen conversion functions
 (0 <= x <= 512, 0=disable)
-.TP
-.B \-z, \-\-zoom <x>
-Zoom (double) low resolution (1=no, 2=yes)
 .TP
 .B \-\-video-timing <x>
 Wakeup State for MMU/GLUE (x=ws1/ws2/ws3/ws4/random,
