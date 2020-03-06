@@ -60,7 +60,7 @@
 	IBOutlet NSTextField *maxZoomedWidth;				// N
 	IBOutlet NSTextField *maxZoomedHeight;				// N
 	IBOutlet NSButton *keepDesktopResolution;
-	IBOutlet NSButton *SDL2UseLinearScaling;
+	IBOutlet NSButton *SDL2UseGpuScaling;
 	IBOutlet NSButton *SDL2Resizable ;
 	IBOutlet NSButton *SDL2UseVSync ;
 

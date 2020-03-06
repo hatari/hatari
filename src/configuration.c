@@ -101,7 +101,6 @@ static const struct Config_Tag configs_Screen[] =
 #if WITH_SDL2
 	{ "nZoomFactor", Float_Tag, &ConfigureParams.Screen.nZoomFactor },
 	{ "bUseSdlRenderer", Bool_Tag, &ConfigureParams.Screen.bUseSdlRenderer },
-	{ "nRenderScaleQuality", Int_Tag, &ConfigureParams.Screen.nRenderScaleQuality },
 	{ "bUseVsync", Bool_Tag, &ConfigureParams.Screen.bUseVsync },
 #endif
 	{ NULL , Error_Tag, NULL }
@@ -846,7 +845,6 @@ void Configuration_SetDefault(void)
 #if WITH_SDL2
 	ConfigureParams.Screen.nZoomFactor = 1.0;
 	ConfigureParams.Screen.bUseSdlRenderer = true;
-	ConfigureParams.Screen.nRenderScaleQuality = 0;
 	ConfigureParams.Screen.bUseVsync = false;
 #endif
 

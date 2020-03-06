@@ -305,7 +305,6 @@ typedef struct
   bool bUseVsync;
   bool bUseSdlRenderer;
   float nZoomFactor;
-  int nRenderScaleQuality;
 #endif
   int nSpec512Threshold;
   int nForceBpp;

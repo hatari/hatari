@@ -357,9 +357,6 @@ void Screen_SetTextureScale(int width, int height, int win_width, int win_height
 		char hint[2] = { quality, 0 };
 		prev_quality = quality;
 
-		/* show new value in options */
-		ConfigureParams.Screen.nRenderScaleQuality = quality - '0';
-
 		/* hint needs to be there before texture */
 		SDL_SetHintWithPriority(SDL_HINT_RENDER_SCALE_QUALITY, hint, SDL_HINT_OVERRIDE);
 

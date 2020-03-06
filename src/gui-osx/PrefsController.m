@@ -789,7 +789,7 @@ BOOL flag1, flag2;
 	IMPORT_RADIO(YMVoicesMixing,ConfigureParams.Sound.YmVolumeMixing);
 
 #if WITH_SDL2
-	IMPORT_SWITCH(SDL2UseLinearScaling, ConfigureParams.Screen.nRenderScaleQuality);
+	IMPORT_SWITCH(SDL2UseGpuScaling, ConfigureParams.Screen.bUseSdlRenderer);
 	IMPORT_SWITCH(SDL2Resizable, ConfigureParams.Screen.bResizable);
 	IMPORT_SWITCH(SDL2UseVSync, ConfigureParams.Screen.bUseVsync);
 #endif
@@ -1061,7 +1061,7 @@ BOOL flag1, flag2;
 	EXPORT_RADIO(YMVoicesMixing,ConfigureParams.Sound.YmVolumeMixing);
 
 #if WITH_SDL2
-	EXPORT_SWITCH(SDL2UseLinearScaling, ConfigureParams.Screen.nRenderScaleQuality);
+	EXPORT_SWITCH(SDL2UseGpuScaling, ConfigureParams.Screen.bUseSdlRenderer);
 	EXPORT_SWITCH(SDL2Resizable, ConfigureParams.Screen.bResizable);
 	EXPORT_SWITCH(SDL2UseVSync, ConfigureParams.Screen.bUseVsync);
 #endif

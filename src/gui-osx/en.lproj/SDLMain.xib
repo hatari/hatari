@@ -1203,7 +1203,7 @@ DQ
                                                     <button misplaced="YES" id="uX5-95-dj6">
                                                         <rect key="frame" x="18" y="51" width="145" height="18"/>
                                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                                        <buttonCell key="cell" type="check" title="Use Linear Scaling" bezelStyle="regularSquare" imagePosition="left" inset="2" id="f9y-RU-qCj">
+                                                        <buttonCell key="cell" type="check" title="Use GPU Scaling" bezelStyle="regularSquare" imagePosition="left" inset="2" id="f9y-RU-qCj">
                                                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                                             <font key="font" metaFont="system"/>
                                                         </buttonCell>
@@ -2443,7 +2443,7 @@ DQ
                 <outlet property="HDWriteProtection" destination="4668" id="4681"/>
                 <outlet property="MMU_Emulation" destination="aWS-WS-f9G" id="eop-C7-jO5"/>
                 <outlet property="SDL2Resizable" destination="I7I-1M-5Nu" id="AVS-08-eZu"/>
-                <outlet property="SDL2UseLinearScaling" destination="uX5-95-dj6" id="5wO-9c-XNe"/>
+                <outlet property="SDL2UseGpuScaling" destination="uX5-95-dj6" id="5wO-9c-XNe"/>
                 <outlet property="SDL2UseVSync" destination="8G1-GF-0DS" id="qsx-Ol-6G0"/>
                 <outlet property="TTRAMSizeStepper" destination="5kN-DE-Lud" id="5bu-Xe-D9P"/>
                 <outlet property="TTRAMSizeValue" destination="fWm-1J-m56" id="H7t-i0-APJ"/>
