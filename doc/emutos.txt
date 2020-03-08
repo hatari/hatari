@@ -437,6 +437,7 @@ Commercial game demos/previews (many of these are pretty good):
 - Bug-Bash demo
 - Cadaver demos 1 & 2
 - Captive demo
+- Cartoon Capers        (STOS)
 - Celica GT4 Rally demo (EmuTOS >v0.9.3)
 - Challenge golf demo   (floppy only)
 - Chips Challenge demo
@@ -744,15 +745,19 @@ is TOS version specific (see EmuTOS incompatible.txt):
 - Balls Up          (mouse input doesn't work)
 - Color Clash*      (fire at start doesn't work)
 - Dice II           (mouse doesn't work)
+- Heartland         (fire at start doesn't work)
 - Mr Dice*          (gets spurious joy input)
 - Nostram           (input doesn't work)
 - Orbit             (mouse input doesn't work)
+- Phantom           (joystick input doens't work)
 - Pipetris          (spurious joystick left input)
 - Prehistorik3 demo (spurious joystick left input)
 - Reflection*       (keys work, mouse doesn't)
+- Roadkill 2        (joystick input doens't work)
 - Skatetribe        (fire at start doesn't work)
 - Smash hit         (input doesn't work)
 - Sudoku Universe*  (mouse input doesn't work)
+- The Rollercoaster Experience (fire at start doesn't work)
 - Trackball         (mouse doesn't work)
 
 Even some commercial games use TOS version specific input handling
@@ -977,7 +982,7 @@ Color games:
 - Skulls (shareware "minesweeper")
 - Spy 4k
 - Stardust* (tunnel sequence demo)
-- STEtris
+- STEtris (STOS)
 - STrEet Fighter II (incomplete)
 - Stupid balloon game (joysticks swapped?)
 - Substation* (demo)
