@@ -11,7 +11,7 @@ Contents:
   - Debugging freezes
 - EmuTOS free/shareware compatibility lists
   - Working Atari ST demos and games
-  - Non-working Atari ST games
+  - Atari ST games with broken input handling
   - Atari ST applications (including commercial)
   - Working Atari STE programs
   - Non-working Atari STE programs
@@ -732,16 +732,23 @@ Mono/GEM toys:
 - Worm farm
 
 
-Non-working color/mono/GEM Atari ST games
+Atari ST games with broken input handling
 -----------------------------------------
 
-These are all games that work with normal TOS from Hatari GEMDOS HD
-emulated drive, i.e. aren't hardcoded to run from a floppy.  Floppy
-only games aren't listed as main reason why some of them don't work
-is them overwriting TOS (or their own) memory.
+As expected, STOS games which use STOS routines for input don't work
+as STOS does that in TOS binary version specific manner (see EmuTOS
+incompatible.txt).
 
-As expected, color STOS games don't work, as STOS input handling
-is TOS version specific (see EmuTOS incompatible.txt):
+Floppy-only (color) STOS games:
+- Diamond Ice       (joystick input doesn't work)
+- Islandstrike      (mouse input doesn't work)
+- Ozone             (fire at start doesn't work)
+- Vidigrid v2       (mouse input doesn't work)
+
+Note that their AUTO-folder starter programs need to be moved to
+floppy root and started from there, see EmuTOS incompatible.txt.
+
+GEMDOS HD supporting (color) STOS games:
 - Balls Up          (mouse input doesn't work)
 - Color Clash*      (fire at start doesn't work)
 - Dice II           (mouse doesn't work)
@@ -811,7 +818,7 @@ Working MIDI programs:
 - Sequencer One
 
 Not working:
-- Cubase lite (see EmuTOS incompatible.txt)
+- Cubase 2.x / lite (see EmuTOS incompatible.txt)
 
 MIDI programs are available from Tim's MIDI world:
 	http://tamw.atari-users.net/
