@@ -19,5 +19,6 @@ void SCC_IRQ(void);
 int SCC_doInterrupt(void);
 void SCC_IoMem_ReadByte(void);
 void SCC_IoMem_WriteByte(void);
+void SCC_Info(FILE *fp, Uint32 dummy);
 
 #endif /* SCC_H */

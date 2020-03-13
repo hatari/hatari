@@ -33,6 +33,7 @@ const char DebugInfo_fileid[] = "Hatari debuginfo.c : " __DATE__ " " __TIME__;
 #include "psg.h"
 #include "stMemory.h"
 #include "tos.h"
+#include "scc.h"
 #include "screen.h"
 #include "vdi.h"
 #include "video.h"
@@ -675,6 +676,7 @@ static const struct {
 	{ false,"osheader",  DebugInfo_OSHeader,   NULL, "Show TOS OS header contents" },
 	{ true, "regaddr",   DebugInfo_RegAddr, DebugInfo_RegAddrArgs, "Show <disasm|memdump> from CPU/DSP address pointed by <register>" },
 	{ true, "registers", DebugInfo_CpuRegister,NULL, "Show CPU register contents" },
+	{ false,"scc",       SCC_Info,             NULL, "Show SCC register contents" },
 	{ false,"vdi",       VDI_Info,             NULL, "Show VDI vector contents (with <value>, show opcodes)" },
 	{ false,"videl",     Videl_Info,           NULL, "Show Falcon Videl register contents" },
 	{ false,"video",     Video_Info,           NULL, "Show Video information" },

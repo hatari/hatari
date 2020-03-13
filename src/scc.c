@@ -211,7 +211,7 @@ static void SCC_channelBreset(void)
 	scc[1].regs[0] = 1 << TBE;  // RR0B
 }
 
-void SCC_Reset()
+void SCC_Reset(void)
 {
 	active_reg = 0;
 	memset(scc[0].regs, 0, sizeof(scc[0].regs));
@@ -909,7 +909,7 @@ void SCC_IRQ(void)
 
 
 // return : vector number, or zero if no interrupt
-int SCC_doInterrupt()
+int SCC_doInterrupt(void)
 {
 	int vector;
 	uint8_t i;
@@ -982,5 +982,33 @@ void SCC_IoMem_WriteByte(void)
 		uint32_t addr = IoAccessBaseAddress + i;
 		if (addr & 1)
 			SCC_handleWrite(addr, IoMem[addr]);
+	}
+}
+
+void SCC_Info(FILE *fp, Uint32 dummy)
+{
+	unsigned int i, reg;
+	const char *sep;
+
+	fprintf(fp, "SCC common:\n");
+	fprintf(fp, "- RR3:  %d\n", RR3);
+	fprintf(fp, "- RR3M: %d\n", RR3M);
+	fprintf(fp, "- Active register: %d\n", active_reg);
+
+	for (i = 0; i < 2; i++)
+	{
+		fprintf(fp, "\nSCC %c:\n", 'A' + i);
+		fprintf(fp, "- Registers:\n");
+		for (reg = 0; reg < ARRAY_SIZE(scc[0].regs); reg++)
+		{
+			sep = "";
+			if (unlikely(reg % 8 == 7))
+				sep = "\n";
+			fprintf(fp, "  %02x%s", scc[i].regs[reg], sep);
+		}
+		fprintf(fp, "- Char count: %d\n", scc[i].charcount);
+		fprintf(fp, "- Old status: 0x%04x\n", scc[i].oldStatus);
+		fprintf(fp, "- Old TBE:    0x%04x\n", scc[i].oldTBE);
+		fprintf(fp, "- %s TTY\n", scc[i].bFileHandleIsATTY ? "A" : "Not a");
 	}
 }
