@@ -523,3 +523,36 @@ void NvRam_Data_WriteByte(void)
 	LOG_TRACE(TRACE_NVRAM, "NVRAM: write data at %d = %d ($%02x)\n", nvram_index, value, value);
 	nvram[nvram_index] = value;
 }
+
+
+void NvRam_Info(FILE *fp, Uint32 dummy)
+{
+	fprintf(fp, "- File: '%s'\n", nvram_filename);
+	fprintf(fp, "- Time: from host (regs: 0, 2, 4, 6-9)\n");
+	if (nvram[11] & REG_BIT_DM)
+	{
+		fprintf(fp, "- Alarm: %02x:%02x:%02x (1, 3, 5)\n",
+			nvram[5], nvram[3], nvram[1]);
+	}
+	else
+	{
+		fprintf(fp, "- Alarm: %02d:%02d:%02d (1, 3, 5)\n",
+			bin2BCD(nvram[5]),
+			bin2BCD(nvram[3]),
+			bin2BCD(nvram[1]));
+	}
+	fprintf(fp, "- Control reg A: 0x%02x (10)\n", nvram[10]);
+	fprintf(fp, "- Control reg B: 0x%02x (11)\n", nvram[11]);
+	fprintf(fp, "- Status reg A:  0x%02x (12)\n", nvram[12]);
+	fprintf(fp, "- Status reg B:  0x%02x (13)\n", nvram[13]);
+	fprintf(fp, "- Preferred OS:  0x%02x 0x%02x (14, 15)\n",
+		nvram[14], nvram[15]);
+	fprintf(fp, "- Language:      0x%02x (20)\n", nvram[20]);
+	fprintf(fp, "- Keyboard layout:  0x%02x (21)\n", nvram[21]);
+	fprintf(fp, "- Date/time format: 0x%02x (22)\n", nvram[22]);
+	fprintf(fp, "- Date separator:   0x%02x (23)\n", nvram[23]);
+	fprintf(fp, "- Video mode:  0x%02x 0x%02x (28, 19)\n",
+		nvram[28], nvram[29]);
+	fprintf(fp, "- SCSI ID: %d, bus arbitration: %s (30)\n",
+		nvram[30] & 0x7, nvram[30] & 128 ? "off" : "on");
+}
