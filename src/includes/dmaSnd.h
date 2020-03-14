@@ -44,5 +44,6 @@ extern void DmaSnd_MicrowireMask_WriteWord(void);
 
 extern void DmaSnd_Init_Bass_and_Treble_Tables(void);
 
+extern void DmaSnd_Info(FILE *fp, Uint32 dummy);
 
 #endif /* HATARI_DMASND_H */

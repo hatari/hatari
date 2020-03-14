@@ -23,6 +23,7 @@ const char DebugInfo_fileid[] = "Hatari debuginfo.c : " __DATE__ " " __TIME__;
 #include "debugdsp.h"
 #include "debugui.h"
 #include "debug_priv.h"
+#include "dmaSnd.h"
 #include "dsp.h"
 #include "evaluate.h"
 #include "file.h"
@@ -666,6 +667,7 @@ static const struct {
 	{ false,"crossbar",  Crossbar_Info,        NULL, "Show Falcon Crossbar register contents" },
 	{ true, "default",   DebugInfo_Default,    NULL, "Show default debugger entry information" },
 	{ true, "disasm",    DebugInfo_CpuDisAsm,  NULL, "Disasm CPU from PC or given <address>" },
+	{ false,"dmasnd",    DmaSnd_Info,          NULL, "Show Sound DMA / LMC register contents" },
 #if ENABLE_DSP_EMU
 	{ false, "dsp",      DSP_Info,             NULL, "Show misc. DSP core info (stack etc)" },
 	{ true, "dspdisasm", DebugInfo_DspDisAsm,  NULL, "Disasm DSP from given <address>" },

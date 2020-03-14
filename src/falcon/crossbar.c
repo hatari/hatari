@@ -95,6 +95,7 @@ const char crossbar_fileid[] = "Hatari Crossbar.c : " __DATE__ " " __TIME__;
 #include "audio.h"
 #include "configuration.h"
 #include "cycInt.h"
+#include "dmaSnd.h"
 #include "m68000.h"
 #include "ioMem.h"
 #include "log.h"
@@ -1988,25 +1989,12 @@ void Crossbar_Info(FILE *fp, Uint32 dummy)
 		"OOOX"
 	};
 
-	if (ConfigureParams.System.nMachineType != MACHINE_FALCON) {
+	if (!Config_IsMachineFalcon()) {
 		fprintf(fp, "Not Falcon - no Crossbar!\n");
 		return;
 	}
-
-	fprintf(fp, "$FF8900.b : Sound DMA control                     : %02x\n", IoMem_ReadByte(0xff8900));
-	fprintf(fp, "$FF8901.b : Sound DMA control                     : %02x\n", IoMem_ReadByte(0xff8901));
-	fprintf(fp, "$FF8903.b : Frame Start High                      : %02x\n", IoMem_ReadByte(0xff8903));
-	fprintf(fp, "$FF8905.b : Frame Start middle                    : %02x\n", IoMem_ReadByte(0xff8905));
-	fprintf(fp, "$FF8907.b : Frame Start low                       : %02x\n", IoMem_ReadByte(0xff8907));
-	fprintf(fp, "$FF8909.b : Frame Count High                      : %02x\n", IoMem_ReadByte(0xff8909));
-	fprintf(fp, "$FF890B.b : Frame Count middle                    : %02x\n", IoMem_ReadByte(0xff890b));
-	fprintf(fp, "$FF890D.b : Frame Count low                       : %02x\n", IoMem_ReadByte(0xff890d));
-	fprintf(fp, "$FF890F.b : Frame End High                        : %02x\n", IoMem_ReadByte(0xff890f));
-	fprintf(fp, "$FF8911.b : Frame End middle                      : %02x\n", IoMem_ReadByte(0xff8911));
-	fprintf(fp, "$FF8913.b : Frame End low                         : %02x\n", IoMem_ReadByte(0xff8913));
+	DmaSnd_Info(fp, 0);
 	fprintf(fp, "\n");
-	fprintf(fp, "$FF8920.b : Sound Mode Control                    : %02x\n", IoMem_ReadByte(0xff8920));
-	fprintf(fp, "$FF8921.b : Sound Mode Control                    : %02x\n", IoMem_ReadByte(0xff8921));
 	fprintf(fp, "$FF8930.w : DMA Crossbar Input Select Controller  : %04x\n", IoMem_ReadWord(0xff8930));
 	fprintf(fp, "$FF8932.w : DMA Crossbar Output Select Controller : %04x\n", IoMem_ReadWord(0xff8932));
 	fprintf(fp, "\n");
