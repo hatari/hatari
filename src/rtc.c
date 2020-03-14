@@ -337,3 +337,20 @@ void Rtc_ClockMod_WriteByte(void)
 	rtc_bank = IoMem[0xfffc3b] & 1;
 }
 
+/*-----------------------------------------------------------------------*/
+/**
+ * Show RTC register values
+ */
+void Rtc_Info(FILE *fp, Uint32 dummy)
+{
+	fprintf(fp, "Mode: 0x%02x\n", IoMem[0xfffc2d]);
+	fprintf(fp, "Weekday: %d\n", IoMem[0xfffc2d]);
+	fprintf(fp, "Time: XX%d%d-%d%d-%d%d %d%d:%d%d:%d%d\n",
+		IoMem[0xfffc39], IoMem[0xfffc37],
+		IoMem[0xfffc35], IoMem[0xfffc33],
+		IoMem[0xfffc31], IoMem[0xfffc2f],
+		IoMem[0xfffc2b], IoMem[0xfffc29],
+		IoMem[0xfffc27], IoMem[0xfffc25],
+		IoMem[0xfffc23], IoMem[0xfffc21]);
+	fprintf(fp, "NOTE: register values are valid/updated only on Atari side reads!\n");
+}
