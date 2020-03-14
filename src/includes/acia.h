@@ -77,6 +77,7 @@ void	ACIA_IKBD_Read_RDR ( void );
 void	ACIA_IKBD_Write_CR ( void );
 void	ACIA_IKBD_Write_TDR ( void );
 
+void	ACIA_Info(FILE *fp, Uint32 dummy);
 
 
 #endif /* ifndef HATARI_ACIA_H */

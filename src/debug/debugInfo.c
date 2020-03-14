@@ -14,6 +14,7 @@ const char DebugInfo_fileid[] = "Hatari debuginfo.c : " __DATE__ " " __TIME__;
 #include <ctype.h>
 
 #include "main.h"
+#include "acia.h"
 #include "bios.h"
 #include "blitter.h"
 #include "configuration.h"
@@ -659,6 +660,7 @@ static const struct {
 	Uint32 (*args)(int argc, char *argv[]);
 	const char *info;
 } infotable[] = {
+	{ false,"acia",      ACIA_Info,            NULL, "Show ACIA register contents" },
 	{ false,"aes",       AES_Info,             NULL, "Show AES vector contents (with <value>, show opcodes)" },
 	{ false,"basepage",  DebugInfo_Basepage,   NULL, "Show program basepage contents at given <address>" },
 	{ false,"bios",      Bios_Info,            NULL, "Show BIOS opcodes" },
@@ -694,7 +696,7 @@ static const struct {
 	{ false,"ym",        PSG_Info,             NULL, "Show YM-2149 register contents" },
 };
 
-static int LockedFunction = 6; /* index for the "default" function */
+static int LockedFunction = 7; /* index for the "default" function */
 static Uint32 LockedArgument;
 
 /**

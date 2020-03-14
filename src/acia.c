@@ -1132,4 +1132,12 @@ static void	ACIA_Clock_RX ( ACIA_STRUCT *pACIA )
 }
 
 
-
+void ACIA_Info(FILE *fp, Uint32 dummy)
+{
+	fprintf(fp, "Keyboard ACIA:\n");
+	fprintf(fp, "- Control / status: 0x%02x\n", IoMem[0xfffc00]);
+	fprintf(fp, "- Data: 0x%02x\n", IoMem[0xfffc02]);
+	fprintf(fp, "MIDI ACIA:\n");
+	fprintf(fp, "- Control / status: 0x%02x\n", IoMem[0xfffc04]);
+	fprintf(fp, "- Data: 0x%02x\n", IoMem[0xfffc06]);
+}
