@@ -3222,3 +3222,45 @@ void	MFP_TimerDData_WriteByte ( void )
 		pMFP->TimerDCanResume = false;		/* we need to set a new int when timer start */
 	}
 }
+
+
+static void MFP_Show(FILE *fp, MFP_STRUCT *mfp)
+{
+	fprintf(fp, "General Purpose Pins:    0x%02x\n", mfp->GPIP);
+	fprintf(fp, "Active Edge:             0x%02x\n", mfp->AER);
+	fprintf(fp, "Data Direction:          0x%02x\n", mfp->DDR);
+	fprintf(fp, "Interrupt A Enable:      0x%02x\n", mfp->IERA);
+	fprintf(fp, "Interrupt B Enable:      0x%02x\n", mfp->IERB);
+	fprintf(fp, "Interrupt A Pending:     0x%02x\n", mfp->IPRA);
+	fprintf(fp, "Interrupt B Pending:     0x%02x\n", mfp->IPRB);
+	fprintf(fp, "Interrupt A In-Service:  0x%02x\n", mfp->ISRA);
+	fprintf(fp, "Interrupt B In-Service:  0x%02x\n", mfp->ISRB);
+	fprintf(fp, "Interrupt A Mask:        0x%02x\n", mfp->IMRA);
+	fprintf(fp, "Interrupt B Mask:        0x%02x\n", mfp->IMRB);
+	fprintf(fp, "Vector:                  0x%02x\n", mfp->VR);
+	fprintf(fp, "Timer A Control:         0x%02x\n", mfp->TACR);
+	fprintf(fp, "Timer B Control:         0x%02x\n", mfp->TBCR);
+	fprintf(fp, "Timer C/D Control:       0x%02x\n", mfp->TCDCR);
+	fprintf(fp, "Timer A Data:            0x%02x\n", mfp->TADR);
+	fprintf(fp, "Timer B Data:            0x%02x\n", mfp->TBDR);
+	fprintf(fp, "Timer C Data:            0x%02x\n", mfp->TCDR);
+	fprintf(fp, "Timer D Data:            0x%02x\n", mfp->TDDR);
+	fprintf(fp, "Synchronous Data:        0x%02x\n", mfp->SCR);
+	fprintf(fp, "USART Control:           0x%02x\n", mfp->UCR);
+	fprintf(fp, "Receiver Status:         0x%02x\n", mfp->RSR);
+	fprintf(fp, "Transmitter Status:      0x%02x\n", mfp->TSR);
+	fprintf(fp, "USART Data:              0x%02x\n", mfp->UDR);
+	fprintf(fp, "IRQ signal:              0x%02x\n", mfp->IRQ);
+	fprintf(fp, "Input signal on Timer A: 0x%02x\n", mfp->TAI);
+	fprintf(fp, "Input signal on Timer B: 0x%02x\n", mfp->TBI);
+}
+
+void MFP_Info(FILE *fp, Uint32 dummy)
+{
+	MFP_Show(fp, pMFP_Main);
+	if (Config_IsMachineTT())
+	{
+		fprintf(fp, "TT-MFP:\n");
+		MFP_Show(fp, pMFP_TT);
+	}
+}

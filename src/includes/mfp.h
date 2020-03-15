@@ -218,4 +218,6 @@ extern void	MFP_TimerBData_WriteByte ( void );
 extern void	MFP_TimerCData_WriteByte ( void );
 extern void	MFP_TimerDData_WriteByte ( void );
 
+extern void	MFP_Info(FILE *fp, Uint32 dummy);
+
 #endif

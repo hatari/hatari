@@ -30,6 +30,7 @@ const char DebugInfo_fileid[] = "Hatari debuginfo.c : " __DATE__ " " __TIME__;
 #include "history.h"
 #include "ioMem.h"
 #include "m68000.h"
+#include "mfp.h"
 #include "nvram.h"
 #include "psg.h"
 #include "rtc.h"
@@ -675,6 +676,7 @@ static const struct {
 	{ false,"gemdos",    GemDOS_Info,          NULL, "Show GEMDOS HDD emu information (with <value>, show opcodes)" },
 	{ true, "history",   History_Show,         NULL, "Show history of last <count> instructions" },
 	{ true, "memdump",   DebugInfo_CpuMemDump, NULL, "Dump CPU memory from given <address>" },
+	{ false,"mfp",       MFP_Info,             NULL, "Show MFP register contents" },
 	{ false,"nvram",     NvRam_Info,           NULL, "Show (TT/Falcon) NVRAM contents" },
 	{ false,"osheader",  DebugInfo_OSHeader,   NULL, "Show TOS OS header contents" },
 	{ true, "regaddr",   DebugInfo_RegAddr, DebugInfo_RegAddrArgs, "Show <disasm|memdump> from CPU/DSP address pointed by <register>" },
