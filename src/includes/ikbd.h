@@ -94,7 +94,8 @@ extern void IKBD_InterruptHandler_AutoSend(void);
 
 extern void IKBD_UpdateClockOnVBL ( void );
 
-
 extern void IKBD_PressSTKey(Uint8 ScanCode, bool bPress);
+
+extern void IKBD_Info(FILE *fp, Uint32 dummy);
 
 #endif  /* HATARI_IKBD_H */

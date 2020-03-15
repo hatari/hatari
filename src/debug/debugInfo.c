@@ -29,6 +29,7 @@ const char DebugInfo_fileid[] = "Hatari debuginfo.c : " __DATE__ " " __TIME__;
 #include "gemdos.h"
 #include "history.h"
 #include "ioMem.h"
+#include "ikbd.h"
 #include "m68000.h"
 #include "mfp.h"
 #include "nvram.h"
@@ -675,6 +676,7 @@ static const struct {
 	{ true, "file",      DebugInfo_FileParse, DebugInfo_FileArgs, "Parse commands from given debugger input <file>" },
 	{ false,"gemdos",    GemDOS_Info,          NULL, "Show GEMDOS HDD emu information (with <value>, show opcodes)" },
 	{ true, "history",   History_Show,         NULL, "Show history of last <count> instructions" },
+	{ false,"ikbd",      IKBD_Info,            NULL, "Show IKBD (SCI) register contents" },
 	{ true, "memdump",   DebugInfo_CpuMemDump, NULL, "Dump CPU memory from given <address>" },
 	{ false,"mfp",       MFP_Info,             NULL, "Show MFP register contents" },
 	{ false,"nvram",     NvRam_Info,           NULL, "Show (TT/Falcon) NVRAM contents" },

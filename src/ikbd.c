@@ -3146,3 +3146,22 @@ static void IKBD_CustomCodeHandler_AudioSculpture_Write ( Uint8 aciabyte )
 	}
 }
 
+
+void IKBD_Info(FILE *fp, Uint32 dummy)
+{
+	int i;
+	fprintf(fp, "Transmit/Receive Control+Status: 0x%02x\n", pIKBD->TRCSR);
+	fprintf(fp, "Rate + Mode Control:             0x%02x\n", pIKBD->RMCR);
+	fprintf(fp, "Transmit:   Receive:\n");
+	fprintf(fp, "- Data:  0x%02x  0x%02x\n", pIKBD->TDR, pIKBD->RDR);
+	fprintf(fp, "- Shift: 0x%02x  0x%02x\n", pIKBD->TSR, pIKBD->RSR);
+	fprintf(fp, "- State: %4d  %4d\n",
+		pIKBD->SCI_TX_State, pIKBD->SCI_RX_State);
+	fprintf(fp, "- #Bits: %4d  %4d\n",
+		pIKBD->SCI_TX_Size, pIKBD->SCI_RX_Size);
+	fprintf(fp, "- Delay: %4d\n", pIKBD->SCI_TX_Delay);
+	fprintf(fp, "Clock:");
+	for (i = 0; i < ARRAY_SIZE(pIKBD->Clock); i++)
+		fprintf(fp, " %02x", pIKBD->Clock[i]);
+	fprintf(fp, " (+%ld)\n", pIKBD->Clock_micro);
+}
