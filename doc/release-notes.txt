@@ -72,6 +72,8 @@ Emulator:
   - Improvements to UAE and external disassembler disassembly
   - UAE disassembler is now default insted of external one
     (latter doesn't decode all instructions correctly)
+  - New "info" subcommands:
+    "acia", "dmasnd", "ikbd", "mfp", "nvram", "rtc" and "scc"
   - Also UAE disassembler can now show the profile info
   - Improved symbols info output
 - Native features:
