@@ -4091,7 +4091,7 @@ int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr, bool bFullBpSe
 	uint32_t nRelOff, nCurrAddr;
 	uint32_t memtop;
 
-	prg = File_Read(psPrgName, &nFileSize, NULL);
+	prg = File_ReadAsIs(psPrgName, &nFileSize);
 	if (!prg)
 	{
 		Log_Printf(LOG_ERROR, "Failed to load '%s'.\n", psPrgName);

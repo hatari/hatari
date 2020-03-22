@@ -626,7 +626,7 @@ static char *get_inf_file(const char **set_infname, int *set_size, int *res_col)
 	GemDOS_Info(stderr, 0);
 	fprintf(stderr, "\nChecking for existing INF file '%s' -> '%s'...\n", infname, hostname);
 #endif
-	host_content = File_Read(hostname, &host_size, NULL);
+	host_content = File_ReadAsIs(hostname, &host_size);
 
 	if (host_content)
 	{

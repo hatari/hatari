@@ -228,8 +228,48 @@ Uint8 *File_ZlibRead(const char *pszFileName, long *pFileSize)
 
 /**
  * Read file from disk into allocated buffer and return the buffer
- * or NULL for error.  If pFileSize is non-NULL, read file size
- * is set to that.
+ * unmodified, or NULL for error.  If pFileSize is non-NULL, read
+ * file size is set to that.
+ */
+Uint8 *File_ReadAsIs(const char *pszFileName, long *pFileSize)
+{
+	Uint8 *pFile = NULL;
+	long FileSize = 0;
+	FILE *hDiskFile;
+
+	/* Open and read normal file */
+	hDiskFile = fopen(pszFileName, "rb");
+	if (hDiskFile != NULL)
+	{
+		/* Find size of file: */
+		if (fseek(hDiskFile, 0, SEEK_END) == 0)
+		{
+			FileSize = ftell(hDiskFile);
+			if (FileSize > 0 && fseek(hDiskFile, 0, SEEK_SET) == 0)
+			{
+				/* Read in... */
+				pFile = malloc(FileSize);
+				if (pFile)
+					FileSize = fread(pFile, 1, FileSize, hDiskFile);
+			}
+		}
+		fclose(hDiskFile);
+	}
+
+	/* Store size of file we read in (or 0 if failed) */
+	if (pFileSize)
+		*pFileSize = FileSize;
+
+	return pFile;        /* Return to where read in/allocated */
+}
+
+/**
+ * Read file from disk into allocated buffer and return the buffer or
+ * NULL for error.  If file is missing, given additional compression
+ * extension are checked too.  If file has one of the supported
+ * compression extension, its contents are uncompressed (in case of
+ * ZIP, first file in it is read).  If pFileSize is non-NULL, read
+ * file size is set to that.
  */
 Uint8 *File_Read(const char *pszFileName, long *pFileSize, const char * const ppszExts[])
 {
@@ -257,28 +297,11 @@ Uint8 *File_Read(const char *pszFileName, long *pFileSize, const char * const pp
 		/* It is a .ZIP file! -> Try to load the first file in the archive */
 		pFile = ZIP_ReadFirstFile(filepath, &FileSize, ppszExts);
 	}
-	else          /* It is a normal file */
+	else
 #endif  /* HAVE_LIBZ */
 	{
-		FILE *hDiskFile;
-		/* Open and read normal file */
-		hDiskFile = fopen(filepath, "rb");
-		if (hDiskFile != NULL)
-		{
-			/* Find size of file: */
-			if (fseek(hDiskFile, 0, SEEK_END) == 0)
-			{
-				FileSize = ftell(hDiskFile);
-				if (FileSize > 0 && fseek(hDiskFile, 0, SEEK_SET) == 0)
-				{
-					/* Read in... */
-					pFile = malloc(FileSize);
-					if (pFile)
-						FileSize = fread(pFile, 1, FileSize, hDiskFile);
-				}
-			}
-			fclose(hDiskFile);
-		}
+		/* It is a normal file */
+		pFile = File_ReadAsIs(filepath, &FileSize);
 	}
 	free(filepath);
 
@@ -293,6 +316,7 @@ Uint8 *File_Read(const char *pszFileName, long *pFileSize, const char * const pp
 /*-----------------------------------------------------------------------*/
 /**
  * Save file to disk, return FALSE if errors
+ * If built with ZLib support + file name ends with *.gz, compress it first
  */
 bool File_Save(const char *pszFileName, const Uint8 *pAddress, size_t Size, bool bQueryOverwrite)
 {
