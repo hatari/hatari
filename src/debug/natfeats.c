@@ -159,20 +159,25 @@ static bool nf_stderr(Uint32 stack, Uint32 subid, Uint32 *retval)
  */
 static bool nf_shutdown(Uint32 stack, Uint32 subid, Uint32 *retval)
 {
+	const char *msg;
+
 	LOG_TRACE(TRACE_NATFEATS, "NF_SHUTDOWN[%d]()\n", subid);
 	switch (subid) {
 	case 1:	/* warm reset */
+		msg = "warm reset";
 		Reset_Warm();
 		/* Some infos can change after 'reset' */
 		Statusbar_UpdateInfo();
 		break;
 	case 2:	/* cold reset (clear all) */
+		msg = "cold reset";
 		Reset_Cold();
 		/* Some infos can change after 'reset' */
 		Statusbar_UpdateInfo();
 		break;
 	case 0: /* shutdown */
 	case 3: /* poweroff */
+		msg = "poweroff";
 		ConfigureParams.Log.bConfirmQuit = false;
 		Main_RequestQuit(0);
 		break;
@@ -180,6 +185,7 @@ static bool nf_shutdown(Uint32 stack, Uint32 subid, Uint32 *retval)
 		/* unrecogized subid -> no-op */
 		return true;
 	}
+	fprintf(stderr, "NatFeats: %s\n", msg);
 	return true;
 }
 
@@ -200,6 +206,7 @@ static bool nf_exit(Uint32 stack, Uint32 subid, Uint32 *retval)
 	exitval = STMemory_ReadLong(stack);
 	LOG_TRACE(TRACE_NATFEATS, "NF_EXIT(%d)\n", exitval);
 	Main_RequestQuit(exitval);
+	fprintf(stderr, "NatFeats: exit(%d)\n", exitval);
 	return true;
 }
 

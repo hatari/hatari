@@ -79,6 +79,8 @@ Emulator:
 - Native features:
   - Support for missing NF_SHUTDOWN (reset) sub commands
   - Test code for rest of features (except for NF_SCSIDRV)
+  - When Hatari resets or exits due to emulated program
+    NF_SHUTDOWN / NF_EXIT call, output user a note about that
 
 Building:
 - Source repository moved from Mercurial to Git
