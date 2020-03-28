@@ -56,12 +56,6 @@ version available in the given remote directory!
   AfterBurner behavior to normal Falcon (they use different reset
   addresses), so resets fail with LILO
 
-- Linux kernel boot under TT emulation hangs early because Hatari does
-  not implement SCU interrupt handling (nor related VME functionality)
-  => workaround: use Falcon emulation, or change 0xff8e01 (SCU system
-     interrupt mask) reads in ioMemTabTT.c to give bus errors, so that
-     Linux skips SCU & VME usage
-
 - PC address points to ST-RAM in debugger even for emulated Linux
   code running in TT-RAM, because it's not MMU-translated
   => workaround: load Linux to ST-RAM when debugging/profiling
@@ -72,17 +66,17 @@ version available in the given remote directory!
   missing MMU-translation within Hatari?
   DEBUG: Your Atari program just did something terribly stupid: dummy_xlate($c00123ee)
 
-- Hatari debug output shows lot of IDE and DSP reset messages from
-  Falcon PSG port-A handling (see: --log-level debug).
-  TODO: Is this issue in Hatari or Linux register handling?
-
-- Hatari / WinUAE 030 CPU core doesn't handle MMU faults on increment /
-  decrement instructions (e.g. "moves.l (a0)+,d2", or "clr.l -(sp)")
-  correctly -> fault messages on such instructions show up with slightly
-  different address register value than on real HW
+- Linux kernel boot under MegaSTE & TT emulation hangs early because
+  Hatari does not implement SCU interrupt handling, nor related VME
+  functionality, but still allows access to related registers.
+  When Linux tries to enable related interrupts, they don't work
+  => workaround: use e.g. Falcon emulation, or build Hatari with
+     tools/linux/hatari-vme-access.patch that allows disabling
+     SCU/VME register access from CMake
 
 - Incomplete TT / SCSI / 2nd MFP emulation:
   => workaround: have TT root file system on IDE master or slave
+
   Rootfs mount from SCSI device fails after following debug output:
 ------------------------------------------------------------
 DEBUG: raw_scsi: selected id 0
@@ -127,10 +121,10 @@ sd 0:0:0:0: [sda] Attached SCSI disk
 VFS: Cannot open root device "sda" or unknown-block(8,0): error -6
 ------------------------------------------------------------
 
-- Even with the supplied kernel.config, there are randomly Oopses on
-  boot, which sometimes result in kernel panic.  According to kernel
-  developer, they don't happen on real HW, so they seem to be Hatari
-  issue:
+- Random BUSERROR Oopses on kernel boot when CPU cache & prefetch
+  emulation is enabled, which sometimes result in kernel panic.
+  According to kernel developer, they don't happen on real HW,
+  so they seem to be Hatari issue:
 ------------------------------------------------------------
 Run /init as init process
 Data read fault at 0x801740c4 in Super Data (pc=0x299c)
@@ -158,17 +152,20 @@ Code: 2f00 4eb9 0000 2a98 508f 60ff ffff ff64 <42a7> 4878 ffff 2f00
    $ sudo apt install gcc-m68k-linux-gnu
 
 2. Get latest m68k kernel sources (without history):
-   $ git clone --depth 1 --branch m68k-v5.4 \
+   $ git clone --depth 1 --branch m68k-v5.6 \
      git://git.kernel.org/pub/scm/linux/kernel/git/geert/linux-m68k.git
-
-3. Get Hatari compatible configuration:
    $ cd linux-m68k
+
+3. Apply Linux issue workaround patches:
+   $ git am /path/to/hatari/tools/linux/000*.patch
+
+4. Get Hatari compatible configuration:
    $ cp /path/to/hatari/tools/linux/kernel.config .config
 
-4. Fine-tune kernel config for your requirements (optional):
+5. Fine-tune kernel config for your requirements (optional):
    $ ARCH=m68k CROSS_COMPILE=m68k-linux-gnu- make -j4 menuconfig
 
-4. Compile configured kernel:
+6. Compile configured kernel:
    $ ARCH=m68k CROSS_COMPILE=m68k-linux-gnu- make -j4 vmlinux
 
 Notes:
@@ -322,8 +319,8 @@ Notes:
 1. Set suitable options in lilo.cfg, for example:
 -------------------------------------
 [LILO]
-Kernel = vmlinux-v5.4
-Symbols = System.map-v5.4
+Kernel = vmlinux-v5.6
+Symbols = System.map-v5.6
 Ramdisk =
 Args = video=atafb:sthigh console=tty
 KernelToFastRam = FALSE
@@ -333,7 +330,8 @@ KernelToFastRam = FALSE
 2. Start Hatari:
     $ hatari --log-level info \
       --fast-forward on --fastfdc on --timer-d on \
-      --machine falcon --dsp dummy --fpu 68882 \
+      --machine falcon --dsp none --fpu 68882 \
+      --cpuclock 32 --cpu-exact off --compatible off \
       --mmu on -s 14 --ttram 64 --addr24 off \
       -c lilo.cfg --natfeats on \
 
@@ -354,12 +352,16 @@ Options explanation (these can also be set in lilo.cfg):
 - init=<path> -- run given executable / script as first process
 
 Other notes:
+- Hatari CPU cache/prefetch emulation is disabled as otherwise
+  there are random bus errors & failures on Linux system calls
+- Keep "init=" last on "--lilo" option kernel command line,
+  otherwise kernel may give arguments after it also to init!
 - Kernel doesn't need DSP, and avoiding it's emulation with
-  "--dsp dummy" at least doubles "--fast-forward on" speed
-- Current (v4/v5) Linux kernels don't work with TT,
-  only with 030 Falcon (and 030/040/060 ST/STE)
-- Put "init=" last on kernel command line, otherwise kernel
-  may give arguments after it also to init
+  "--dsp none" at least doubles "--fast-forward on" speed
+- Current (v4/v5) Linux kernels don't work with TT emulation
+  (see workarounds in Hatari issues section above)
+- Linux works with 040/060 + MMU emulation better with ST/STE,
+  than with TT/Falcon emulation (see TODO issues later on)
 
 
 7. Native bootstrap
@@ -384,15 +386,16 @@ shows easiest method to simulate that with Hatari.
 
 4. If you don't have a TOS ROM image, download latest EmuTOS release
    from:
-     https://sourceforge.net/projects/emutos/files/emutos/0.9.11/emutos-512k-0.9.11.zip/download
+     https://sourceforge.net/projects/emutos/files/emutos/0.9.12/emutos-512k-0.9.12.zip/download
    and extract it:
-   $ unzip emutos-512k-0.9.11.zip
+   $ unzip emutos-512k-0.9.12.zip
 
 5. Then run Hatari with them:
    $ hatari --trace os_base --log-level info \
-      --tos emutos-512k-0.9.11/etos512k.img \
+      --tos emutos-512k-0.9.12/etos512k.img \
       --fast-forward on --fastfdc on --timer-d on \
-      --machine falcon --dsp dummy --fpu 68882 \
+      --machine falcon --dsp none --fpu 68882 \
+      --cpuclock 32 --cpu-exact off --compatible off \
       --mmu on -s 14 --ttram 64 --addr24 off \
       --natfeats on --ide-master rootfs.img \
       gemdos-hd/bootstra.tos
@@ -510,6 +513,7 @@ processes are running & calling them.)
 If you see errors like these on Linux console:
 	hda: possibly failed opcode: 0x39
 	hda: possibly failed opcode: 0x30
+(On Linux v5.4, IDE is on 'sda' instead of 'hda'.)
 
 Those are IDE write command opcodes.  Make sure your IDE image
 actually *is* writable and try again.
@@ -561,7 +565,8 @@ RamdiskToFastRam = TRUE
 5. Try running Hatari with them:
     $ hatari --log-level debug \
       --fast-forward on --fastfdc on --timer-d on \
-      --machine falcon --dsp dummy --fpu 68882 \
+      --machine falcon --dsp none --fpu 68882 \
+      --cpuclock 32 --cpu-exact off --compatible off \
       --mmu on -s 14 --ttram 128 --addr24 off \
       -c lilo.cfg --natfeats on \
       --ide-master debian-10.0-m68k-NETINST-1.iso \
@@ -604,8 +609,10 @@ Doing first stage of setting up minimal m68k Debian system image
 NOTE: debootstrap needs to be done on a partition that isn't mounted
 with "noexec" or "nodev" option, otherwise it fails!
 
-To finish bootstrapping, one would need to boot it on m68k system and
-run "debootstrap --second-stage".  Current status:
+To finish bootstrapping, one would need to boot it on m68k system
+and run "debootstrap --second-stage".
+
+TODO: test againt whether there are improvements to last status:
 - Hatari:
   debootstrap fails to kernel oops
 - m68k system-qemu:
@@ -613,7 +620,31 @@ run "debootstrap --second-stage".  Current status:
 - m68k user-qemu (from Debian Stretch):
   fails completely on any m68k Debian binary
 - Aranym:
-  couldn't get above image to boot successfully with IDE
+------------------------------------------------------------
+$ cat > linux.config
+# NOTE, run with: aranym-mmu -l <conffile>
+[GLOBAL]
+FastRAM = 64
+
+[LILO]
+Kernel = vmlinux
+Args = video=atafb:vga16 console=tty debug=nfcon root=/dev/sda ro
+init=/init
+
+# 512MB EXT2 image with mkfs.ext2 (Cylinders = 2 * size in MB)
+[IDE0]
+Cylinders = 1024
+Heads = 16
+SectorsPerTrack = 64
+Present = Yes
+IsCDROM = No
+ByteSwap = Yes
+ReadOnly = Yes
+Path = debian.img
+ModelName = Debian-m68k
+^D
+$ aranym-mmu -l linux.config
+------------------------------------------------------------
 
 
 10. Debian and Linux issues
@@ -626,21 +657,38 @@ Known issues:
   TT-RAM range, kernel crashes.  Based on mails from 2013, this
   seems to be a known Linux/Atari issue
 
+  Workaround: Hatari lilo.c gives ST-RAM before TT-RAM in bootinfo
+
 - Kernel NULL pointer oops with following, due to its bus_error030()
   not respecting page faults being disabled in kernel_probe_read():
 	# echo t > /proc/sysrq-trigger
 
+  Workaround: kernel patch (see kernel build section)
+
+- Hatari debug output shows IDE and DSP reset messages on Falcon at
+  2Hz (from floppy media change detection) if Linux is started with
+  --lilo, instead of from TOS.  This is because TOS initializes PSG
+  port-A register bits to sensible values and Linux doesn't.
+
+  Workaround: kernel patch
+
 
 TODO / investigate more:
 
-- No support for ACSI, only SCSI and IDE?
+- Kernel doesn't recognize ACSI drive at all, although kernel reports
+  it to have ACSI support.  Only SCSI & IDE drives are recognized
 
 - Kernel oopses at startup always to NULL pointer access with Debian
-  kernels and some other kernel builds
+  kernels and some other kernel builds (only with cache emulation?)
 
-- Kernel freezes right at start if Falcon is used with something else
-  than 030 whereas ST/STE work fine with 030/040/060 + MMU + FPU.
-  Kernel boots fine with real 060 Falcon though:
+- Debian installer usage
+
+- Kernel freezes right at start if TT or Falcon machine is used with
+  040/060 when CPU cache/prefetch emulation is enabled. With ST/STE
+  + 040/060 + MMU + FPU, cache/prefetch emulation can be enabled
+  (Hatari git regression: now also ST/STE need them disabled)
+
+  Linux boots fine with real 060 Falcon though:
 	https://www.youtube.com/watch?v=8Sriz45Z4oM
 
 - When 030 caches are enabled (--cpu-exact on), busybox

@@ -1,0 +1,48 @@
+From 3bdc621e0cce9d917f45b8974909c3495cb46a4b Mon Sep 17 00:00:00 2001
+From: Eero Tamminen <oak@helsinkinet.fi>
+Date: Tue, 31 Mar 2020 22:41:40 +0300
+Subject: [PATCH 2/3] Set reasonable PSG port-A default value
+
+Fixes continous IDE & DSP reset requests on Atari Falcon from 2Hz
+floppy media change detection when those bits happen to be set before
+Linux starts.
+
+All successive port-A requests preserve unrelated bits.  If bits 4 & 6
+are set, that means every PSG port-A request, such as floppy media
+change detection, being also Falcon DSP & IDE reset request.
+---
+ arch/m68k/atari/config.c | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
+
+diff --git a/arch/m68k/atari/config.c b/arch/m68k/atari/config.c
+index 7ec3161e8..91dcd0e6e 100644
+--- a/arch/m68k/atari/config.c
++++ b/arch/m68k/atari/config.c
+@@ -194,6 +194,7 @@ early_param("switches", atari_switches_setup);
+ void __init config_atari(void)
+ {
+ 	unsigned short tos_version;
++	unsigned char porta_init = 0x07;
+ 
+ 	memset(&atari_hw_present, 0, sizeof(atari_hw_present));
+ 
+@@ -219,11 +220,12 @@ void __init config_atari(void)
+ 	if (atari_switches & ATARI_SWITCH_MIDI)
+ 		acia.mid_ctrl = ACIA_DIV16 | ACIA_D8N1S | ACIA_RHTID;
+ 	if (atari_switches & (ATARI_SWITCH_SND6|ATARI_SWITCH_SND7)) {
+-		sound_ym.rd_data_reg_sel = 14;
+-		sound_ym.wd_data = sound_ym.rd_data_reg_sel |
+-				   ((atari_switches&ATARI_SWITCH_SND6) ? 0x40 : 0) |
+-				   ((atari_switches&ATARI_SWITCH_SND7) ? 0x80 : 0);
++		porta_init |= ((atari_switches&ATARI_SWITCH_SND6) ? 0x40 : 0) |
++			      ((atari_switches&ATARI_SWITCH_SND7) ? 0x80 : 0);
+ 	}
++	/* Set PSG port-A defaults */
++	sound_ym.rd_data_reg_sel = 14;
++	sound_ym.wd_data = porta_init;
+ 
+ 	/* ++bjoern:
+ 	 * Determine hardware present
+-- 
+2.20.1
+
