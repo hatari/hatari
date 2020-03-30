@@ -9,14 +9,14 @@ FIND_PATH(READLINE_INCLUDE_DIR readline.h PATH_SUFFIXES readline)
 FIND_LIBRARY(READLINE_LIBRARY NAMES readline)
 
 INCLUDE(FindPackageHandleStandardArgs)
-FIND_PACKAGE_HANDLE_STANDARD_ARGS(READLINE DEFAULT_MSG
+FIND_PACKAGE_HANDLE_STANDARD_ARGS(Readline DEFAULT_MSG
                                   READLINE_LIBRARY READLINE_INCLUDE_DIR)
 
 MARK_AS_ADVANCED(READLINE_LIBRARY READLINE_INCLUDE_DIR)
 
 INCLUDE(CheckSymbolExists)
 
-if(READLINE_FOUND)
+if(Readline_FOUND)
 	set(CMAKE_REQUIRED_LIBRARIES ${READLINE_LIBRARY})
 	set(CMAKE_REQUIRED_INCLUDES ${READLINE_INCLUDE_DIR})
 	check_symbol_exists(rl_filename_completion_function
@@ -25,17 +25,17 @@ if(READLINE_FOUND)
 	# If linking did not work, we might have to link
 	# explicitely against libtermcap or libncurses
 	if(NOT HAVE_RL_COMPLETION_FUNCTION)
-		unset(READLINE_FOUND)
+		unset(Readline_FOUND)
 		find_package(Termcap)
-		if(TERMCAP_FOUND)
+		if(Termcap_FOUND)
 			set(CMAKE_REQUIRED_LIBRARIES "readline" "termcap")
 			check_symbol_exists(rl_filename_completion_function
 					    "termcap.h"
 					    HAVE_RL_COMPLETION_FUNCTION_TERMCAP)
-		endif(TERMCAP_FOUND)
+		endif(Termcap_FOUND)
 		if(HAVE_RL_COMPLETION_FUNCTION_TERMCAP)
 			set(READLINE_LIBRARY ${READLINE_LIBRARY} ${TERMCAP_LIBRARY})
-			set(READLINE_FOUND TRUE)
+			set(Readline_FOUND TRUE)
 		else(HAVE_RL_COMPLETION_FUNCTION_TERMCAP)
 			find_package(Curses)
 			if(CURSES_FOUND)
@@ -53,11 +53,11 @@ if(READLINE_FOUND)
 				if(HAVE_RL_COMPLETION_FUNCTION_CURSES)
 					set(READLINE_LIBRARY
 					    ${READLINE_LIBRARY} ${CURSES_LIBRARIES})
-					set(READLINE_FOUND TRUE)
+					set(Readline_FOUND TRUE)
 				endif(HAVE_RL_COMPLETION_FUNCTION_CURSES)
 			endif(CURSES_FOUND)
 		endif(HAVE_RL_COMPLETION_FUNCTION_TERMCAP)
 	endif(NOT HAVE_RL_COMPLETION_FUNCTION)
 	set(CMAKE_REQUIRED_LIBRARIES "")
 	set(CMAKE_REQUIRED_INCLUDES "")
-endif(READLINE_FOUND)
+endif(Readline_FOUND)

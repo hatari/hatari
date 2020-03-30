@@ -9,7 +9,7 @@ find_path(UDEV_INCLUDE_DIR libudev.h)
 find_library(UDEV_LIBRARY NAMES udev)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(UDEV DEFAULT_MSG
+find_package_handle_standard_args(Udev DEFAULT_MSG
                                   UDEV_LIBRARY UDEV_INCLUDE_DIR)
 
 mark_as_advanced(UDEV_LIBRARY UDEV_INCLUDE_DIR)
