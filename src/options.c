@@ -687,7 +687,7 @@ bool Opt_ShowError(unsigned int optid, const char *value, const char *error)
 
 /**
  * Return given value after constraining it within "min" and "max" values
- * and making it evenly divisable by "align"
+ * and making it evenly divisible by "align"
  */
 int Opt_ValueAlignMinMax(int value, int align, int min, int max)
 {

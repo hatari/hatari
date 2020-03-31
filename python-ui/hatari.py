@@ -489,7 +489,7 @@ class HatariConfigMapping(ConfigStore):
 
     # ------------ sound ---------------
     def get_sound_values(self):
-        # 48kHz, 44.1kHz and STE/TT/Falcon DMA 50066Hz divisable values
+        # 48kHz, 44.1kHz and STE/TT/Falcon DMA 50066Hz divisible values
         return ("6000", "6258", "8000", "11025", "12000", "12517",
                 "16000", "22050", "24000", "25033", "32000",
                 "44100", "48000", "50066")
