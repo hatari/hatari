@@ -787,11 +787,11 @@ int	STMemory_RAM_Validate_Size_KB ( int TotalMem )
 	/* Old format where ST RAM size was in MB between 0 and 14 */
 	if ( TotalMem == 0 )
 		return 512;
-	else if ( TotalMem <= 14 )
-		return TotalMem * 1024;
+	if ( TotalMem <= 14 )
+		TotalMem *= 1024;
 
 	/* New format where ST RAM size is in KB */
-	else if (  ( TotalMem ==  128 ) || ( TotalMem ==  256 ) || ( TotalMem ==  512 ) || ( TotalMem ==  640 )
+	if (  ( TotalMem ==  128 ) || ( TotalMem ==  256 ) || ( TotalMem ==  512 ) || ( TotalMem ==  640 )
 		|| ( TotalMem == 1024 ) || ( TotalMem == 2048 ) || ( TotalMem == 2176 ) || ( TotalMem == 2560 )
 		|| ( TotalMem == 4096 )	|| ( TotalMem == 8*1024 ) || ( TotalMem == 14*1024 ) )
 		return TotalMem;

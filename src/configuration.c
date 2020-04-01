@@ -953,7 +953,11 @@ void Configuration_Apply(bool bReset)
 	/* Check/convert ST RAM size in KB */
 	size = STMemory_RAM_Validate_Size_KB ( ConfigureParams.Memory.STRamSize_KB );
 	if ( size < 0 )
+	{
 		size = 1024;
+		Log_Printf(LOG_WARN, "Unsupported %d KB ST-RAM amount, defaulting to %d KB\n",
+			   ConfigureParams.Memory.STRamSize_KB, size);
+	}
 	ConfigureParams.Memory.STRamSize_KB = size;
 	STMemory_Init ( ConfigureParams.Memory.STRamSize_KB * 1024 );
 
