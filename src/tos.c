@@ -1112,7 +1112,7 @@ int TOS_InitImage(void)
 
 	bTosImageLoaded = false;
 
-	/* Calculate end of RAM */
+	/* Calculate initial end of RAM */
 	STRamEnd = ConfigureParams.Memory.STRamSize_KB * 1024;
 
 	if (bUseTos)
@@ -1127,6 +1127,12 @@ int TOS_InitImage(void)
 		if (!pTosFile)
 			return -1;
 	}
+
+	/* After TOS is loaded, and machine configuration adapted
+	 * accordingly, memory amount can be corrected to a valid
+	 * machine specific value
+	 */
+	STRamEnd = STMemory_CorrectSTRamSize();
 
 	/* (Re-)Initialize the memory banks: */
 	memory_uninit();
@@ -1189,7 +1195,7 @@ int TOS_InitImage(void)
 		STMemory_WriteLong(logopatch_addr + 6, VDIWidth * VDIPlanes / 8);
 	}
 
-	/* Set connected devices, memory configuration, etc. */
+	/* Set rest of machine memory configuration, connected devices, etc. */
 	STMemory_SetDefaultConfig();
 
 	if (bUseLilo)

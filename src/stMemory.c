@@ -445,6 +445,49 @@ void STMemory_SetDefaultConfig(void)
 	STMemory_WriteLong(0x4c2, ConnectedDriveMask);
 }
 
+/**
+ * Called after machine type is fixed, to correct ST-RAM amount to machine
+ * specific value, when machine doesn't support all values accepted by Hatari.
+ *
+ * Returns resulting STRamEnd value.
+ */
+int STMemory_CorrectSTRamSize(void)
+{
+	int STRamSize_KB = ConfigureParams.Memory.STRamSize_KB;
+
+	if (Config_IsMachineFalcon())
+	{
+		/* These values need to match ones used in STMemory_SetDefaultConfig()
+		 * above.
+		 *
+		 * Check ranges which might have non-supported memory values:
+		 *   10MB, 6MB & 2.5MB
+		 */
+		if (STRamSize_KB > 8*1024 && STRamSize_KB < 14*1024)
+			STRamSize_KB = 14*1024;
+		else if (STRamSize_KB > 4*1024 && STRamSize_KB < 8*1024)
+			STRamSize_KB = 8*1024;
+		else if (STRamSize_KB > 2*1024 && STRamSize_KB < 4*1024)
+			STRamSize_KB = 4*1024;
+
+		if (STRamSize_KB != ConfigureParams.Memory.STRamSize_KB)
+		{
+			Log_Printf(LOG_WARN, "unsupported Falcon ST-RAM amount %d, changing to %d KB\n",
+				   ConfigureParams.Memory.STRamSize_KB, STRamSize_KB);
+			ConfigureParams.Memory.STRamSize_KB = STRamSize_KB;
+		}
+	}
+	else if (Config_IsMachineMegaSTE() || Config_IsMachineTT())
+	{
+		if (STRamSize_KB > 10*1024)
+		{
+			Log_Printf(LOG_INFO, "maximum MegaSTE/TT ST-RAM amount is 10MB, not %dMB\n",
+				   STRamSize_KB/1024);
+		}
+	}
+	return STRamSize_KB * 1024;
+}
+
 
 /**
  * Check that the region of 'size' starting at 'addr' is entirely inside
@@ -793,7 +836,7 @@ int	STMemory_RAM_Validate_Size_KB ( int TotalMem )
 	/* New format where ST RAM size is in KB */
 	if (  ( TotalMem ==  128 ) || ( TotalMem ==  256 ) || ( TotalMem ==  512 ) || ( TotalMem ==  640 )
 		|| ( TotalMem == 1024 ) || ( TotalMem == 2048 ) || ( TotalMem == 2176 ) || ( TotalMem == 2560 )
-		|| ( TotalMem == 4096 )	|| ( TotalMem == 8*1024 ) || ( TotalMem == 14*1024 ) )
+		|| ( TotalMem == 4096 ) || ( TotalMem == 8*1024 ) || ( TotalMem == 10*1024 ) || ( TotalMem == 14*1024 ) )
 		return TotalMem;
 
 	return -1;

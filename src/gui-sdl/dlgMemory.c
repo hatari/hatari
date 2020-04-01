@@ -22,15 +22,16 @@ const char DlgMemory_fileid[] = "Hatari dlgMemory.c : " __DATE__ " " __TIME__;
 #define DLGMEM_2_5MB	8
 #define DLGMEM_4MB	9
 #define DLGMEM_8MB	10
-#define DLGMEM_14MB	11
-#define DLGMEM_TTRAM_LESS	13
-#define DLGMEM_TTRAM_TEXT	14
-#define DLGMEM_TTRAM_MORE	15
-#define DLGMEM_FILENAME	20
-#define DLGMEM_SAVE	21
-#define DLGMEM_RESTORE	22
-#define DLGMEM_AUTOSAVE	23
-#define DLGMEM_EXIT	24
+#define DLGMEM_10MB	11
+#define DLGMEM_14MB	12
+#define DLGMEM_TTRAM_LESS	14
+#define DLGMEM_TTRAM_TEXT	15
+#define DLGMEM_TTRAM_MORE	16
+#define DLGMEM_FILENAME	21
+#define DLGMEM_SAVE	22
+#define DLGMEM_RESTORE	23
+#define DLGMEM_AUTOSAVE	24
+#define DLGMEM_EXIT	25
 
 
 /* String for TT RAM size */
@@ -51,14 +52,15 @@ static SGOBJ memorydlg[] =
 	{ SGBOX, 0, 0, 1,1, 38,10, NULL },
 	{ SGTEXT, 0, 0, 15,2, 12,1, "Memory setup" },
 	{ SGTEXT, 0, 0, 4,4, 12,1, "ST-RAM size:" },
-	{ SGRADIOBUT, 0, 0, 18,4, 9,1, "256 KiB" },
-	{ SGRADIOBUT, 0, 0, 18,5, 9,1, "_512 KiB" },
-	{ SGRADIOBUT, 0, 0, 18,6, 7,1, "_1 MiB" },
-	{ SGRADIOBUT, 0, 0, 18,7, 7,1, "_2 MiB" },
-	{ SGRADIOBUT, 0, 0, 29,4, 7,1, "2.5 MiB" },
-	{ SGRADIOBUT, 0, 0, 29,5, 7,1, "_4 MiB" },
-	{ SGRADIOBUT, 0, 0, 29,6, 7,1, "_8 MiB" },
-	{ SGRADIOBUT, 0, 0, 29,7, 8,1, "14 _MiB" },
+	{ SGRADIOBUT, 0, 0,  7,6, 9,1, "256 _KiB" },
+	{ SGRADIOBUT, 0, 0,  7,7, 9,1, "512 Ki_B" },
+	{ SGRADIOBUT, 0, 0, 18,4, 9,1, "  _1 MiB" },
+	{ SGRADIOBUT, 0, 0, 18,5, 9,1, "  _2 MiB" },
+	{ SGRADIOBUT, 0, 0, 18,6, 9,1, "2._5 MiB" },
+	{ SGRADIOBUT, 0, 0, 18,7, 9,1, "  _4 MiB" },
+	{ SGRADIOBUT, 0, 0, 29,4, 9,1, " _8 MiB" },
+	{ SGRADIOBUT, 0, 0, 29,5, 9,1, "1_0 MiB" },
+	{ SGRADIOBUT, 0, 0, 29,6, 9,1, "14 _MiB" },
 	{ SGTEXT,     0, 0,  4,9,12,1, "TT-RAM size:" },
 	{ SGBUTTON,   0, 0, 18,9, 1,1, "\x04", SG_SHORTCUT_LEFT },
 	{ SGTEXT,     0, 0, 20,9, 3,1, sTTRamSize },
@@ -117,6 +119,9 @@ bool Dialog_MemDlg(void)
 		break;
 	 case 8*1024:
 		memorydlg[DLGMEM_8MB].state |= SG_SELECTED;
+		break;
+	 case 10*1024:
+		memorydlg[DLGMEM_10MB].state |= SG_SELECTED;
 		break;
 	 default:
 		memorydlg[DLGMEM_14MB].state |= SG_SELECTED;
@@ -194,6 +199,8 @@ bool Dialog_MemDlg(void)
 		ConfigureParams.Memory.STRamSize_KB = 4*1024;
 	else if (memorydlg[DLGMEM_8MB].state & SG_SELECTED)
 		ConfigureParams.Memory.STRamSize_KB = 8*1024;
+	else if (memorydlg[DLGMEM_10MB].state & SG_SELECTED)
+		ConfigureParams.Memory.STRamSize_KB = 10*1024;
 	else
 		ConfigureParams.Memory.STRamSize_KB = 14*1024;
 

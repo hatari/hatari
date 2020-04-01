@@ -45,6 +45,8 @@ Emulator:
 - Show mouse grab toggle shortcut key in startup statusbar message
 - Center host mouse to Hatari window on Atari resets and resolution
   changes only when window is focused and mouse pointer is within it
+- Accept 10MB as valid ST-RAM amount (max on real MegaSTE/TT machines)
+  and correct invalid Falcon ST-RAM amounts
 - Fix: 24-bit address mode change while emulation is running
   (triggered e.g. when TT-RAM is enabled for TT)
 - Fix: when autostarting programs without pre-existing INF file,
