@@ -768,7 +768,10 @@ static void Blitter_ProcessWord(void)
 	BLITTER_CONTINUE_LATER_IF_MAX_BUS_REACHED;
 
 	/* When NFSR or mask is not all '1', a read-modify-write is always performed */
-	if ( BlitterState.nfsr || ( BlitterState.end_mask != 0xFFFF ) )
+	/* NOTE : This statement written in FAQ is not correct, NFSR has no impact on destination read */
+	/* Only mask has (cf http://www.atari-forum.com/viewtopic.php?f=16&t=38157) */
+//	if ( BlitterState.nfsr || ( BlitterState.end_mask != 0xFFFF ) )
+	if ( BlitterState.end_mask != 0xFFFF )
 	{
 		dst_data = Blitter_ComputeMask( lop );
 		BLITTER_CONTINUE_LATER_IF_MAX_BUS_REACHED;
@@ -816,7 +819,8 @@ static void Blitter_EndLine(void)
 static void Blitter_SingleWord(void)
 {
 	Blitter_BeginLine();
-	Blitter_SetState(BlitterVars.fxsr, BlitterVars.nfsr, BlitterRegs.end_mask_1);
+//	Blitter_SetState(BlitterVars.fxsr, BlitterVars.nfsr, BlitterRegs.end_mask_1);
+	Blitter_SetState(BlitterVars.fxsr, 0, BlitterRegs.end_mask_1);
 	Blitter_ProcessWord();
 	Blitter_EndLine();
 }
