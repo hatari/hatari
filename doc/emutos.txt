@@ -7,6 +7,7 @@ Contents:
 - Debugging issues with EmuTOS
   - EmuTOS debug symbols
   - EmuTOS debug output
+  - Other EmuTOS debug output options
   - Debugging OS calls, Line-A usage and panics
   - Debugging freezes
 - EmuTOS free/shareware compatibility lists
@@ -70,10 +71,12 @@ EmuTOS image files.
     support for all the hardware and languages.
 
 Notes for older EmuTOS versions:
+
 * EmuTOS <= v0.9.6:
   EmuTOS changed its INF file format in v0.9.7.  Hatari's Atari
   program autostarting and TOS resolution setting functionality
   supports only EmuTOS >= v0.9.7 INF file format
+
 * EmuTOS <= v0.8.5 with Hatari <= v2.0:
   In order to work with Hatari, EmuTOS v0.8.5 and earlier require
   the FastBoot option to be enabled. This is used to skip some memory
@@ -175,16 +178,17 @@ Debugging issues with EmuTOS
 EmuTOS debug symbols
 --------------------
 
-By loading the etos512k.sym EmuTOS debug symbols file coming with the
-512k EmuTOS image, you can ask debugger to "trace cpu_symbols", to get
-trace of all the function calls EmuTOS does.
+After loading EmuTOS debug symbols from the file coming with the 512k
+EmuTOS image, using debugger "symbols etos512k.sym" command, you can
+ask debugger to "trace cpu_symbols", to get trace of all the
+(non-static) function calls EmuTOS does.
 
 For smaller EmuTOS versions, there's a script[1] you can use to convert
 the emutos2.map file (produced during EmuTOS build) to a format you
 can load to Hatari debugger with its "symbols" command[2].
 
 [1] http://sourceforge.net/mailarchive/message.php?msg_id=29381777
-[2] https://hatari.tuxfamily.org/doc/manual.html#Debug_symbols
+[2] https://hatari.tuxfamily.org/doc/debugger.html#Debug_symbols
 
 After loading the symbols to the Hatari debugger, disassembling the
 problematic address should provide more clues for the problem.  Or you
@@ -195,28 +199,54 @@ message from the map file.
 EmuTOS debug output
 -------------------
 
-Some debug output can be gotten from the pre-built 512k EmuTOS images
-by using Hatari "--natfeats on" option.
+Start Hatari with "--natfeats on --trace os_base" options to get
+EmuTOS debug output (with 512k images), and to redirect EmuTOS panic
+output and other console messages to Hatari's console.
 
-To get extra debug output from EmuTOS, or to add your own debug
-statements, you need to recompile it from the source, after enabling
-the MIDI debug output in its config.h header file. Then start Hatari
-with the "--midi-out /dev/stderr" option and you will see EmuTOS debug
-output on Hatari's standard error (such as calls to missing Falcon
-XBios functions).
+For extra debug output and to add your own debug statements, you
+need to uncomment following line from suitable EmuTOS source file(s):
+	#define ENABLE_KDEBUG 1
 
-Note: To see/get raw MIDI device output from EmuTOS, you need to
-disable use of PortMidi in Hatari configuration before building
-Hatari.
+And recompile EmuTOS image. Note that you can't do that for whole
+EmuTOS as resulting image would be too large.
+
+
+Other EmuTOS debug output options
+---------------------------------
+
+There are debug output options for different HW in EmuTOS "config.h"
+header file, but they aren't necessary with NatFeats and console
+output redirection.
+
+If you want to test them anyway, below is listed each of them with
+Hatari command line options to save their output (to "debug.txt"), and
+shortcomings of each option are following:
+
+* MIDI_DEBUG_PRINT: "--midi-in /dev/null --midi-out debug.txt"
+  - Hatari needs to be compiled with PortMidi support disabled,
+    as PortMidi interprets only real MIDI events
+
+* RS232_DEBUG_PRINT: "--rs232-in /dev/null --rs232-out debug.txt"
+  - Mac (BSD libc) is incompatible with Hatari RS232 / SDL2 threading
+
+* SCC_DEBUG_PRINT: "--scc-b-out debug.txt"
+  - SCC port is available only on MegaSTE/TT/Falcon
+
+Notes:
+
+* Don't use Hatari stdout/stder ("/dev/stdout", "/dev/stderr") as
+  debug output files, unless you absolutely need to get ordering right
+  between the extra debug messages and other output, as that results
+  in messed up console and output from Hatari
+
+* Both input & output files need to be specified for RS232 & MIDI,
+  otherwise they don't get enabled
 
 
 Debugging OS calls, Line-A usage and panics
 -------------------------------------------
 
-When debugging EmuTOS panics, the best option is to start Hatari with
-"--natfeats on --trace os_base" (to get extra debug output and redirect
-EmuTOS panic etc messages to console) and then ask Hatari debugger to
-stop when the program is started:
+Ask Hatari debugger to stop when the program is started:
 -----------
 > b pc=TEXT
 CPU condition breakpoint 1 with 1 condition(s) added:
@@ -260,8 +290,7 @@ commands. Memory state and addresses accessed by the instructions can
 be inspected with the "m" command.
 
 For more info on Hatari debugger usage, see the Hatari manual section
-on it:
-https://hatari.tuxfamily.org/doc/manual.html#The_debugger
+on it: https://hatari.tuxfamily.org/doc/debugger.html
 
 
 Debugging freezes
