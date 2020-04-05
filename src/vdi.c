@@ -766,6 +766,7 @@ void VDI_LineA(Uint32 linea, Uint32 fontbase)
 	LineABase = linea;
 	FontBase = fontbase;
 
+	LOG_TRACE(TRACE_OS_VDI, "VDI mode line-A variable init\n");
 	if (bUseVDIRes)
 	{
 		int cel_ht, cel_wd;
@@ -847,4 +848,5 @@ void VDI_Complete(void)
 	STMemory_WriteWord(LineABase-0x159*2, VDIHeight-1);  /* WKYRez */
 
 	VDI_LineA(LineABase, FontBase);  /* And modify Line-A structure accordingly */
+	LOG_TRACE(TRACE_OS_VDI, "VDI mode Workstation Open return values fix\n");
 }
