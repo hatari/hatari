@@ -70,9 +70,9 @@ version available in the given remote directory!
   Hatari does not implement SCU interrupt handling, nor related VME
   functionality, but still allows access to related registers.
   When Linux tries to enable related interrupts, they don't work
-  => workaround: use e.g. Falcon emulation, or build Hatari with
-     tools/linux/hatari-vme-access.patch that allows disabling
-     SCU/VME register access from CMake
+  => workaround: build Hatari with tools/linux/hatari-vme-access.patch
+     that allows disabling SCU/VME register access from CMake or
+     (preferably) use e.g. Falcon emulation
 
 - Incomplete TT / SCSI / 2nd MFP emulation:
   => workaround: have TT root file system on IDE master or slave

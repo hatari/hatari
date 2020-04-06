@@ -4,8 +4,16 @@ Date: Wed, 1 Apr 2020 15:44:48 +0300
 Subject: [PATCH] No SCU & VME support -> add option for their IO-register
  access
 
-Otherwise Linux boot under TT-emulation fails to SCU register mask and
-interrupt handling not working.
+With SCU/VME IO-registers access prevented:
+- Linux boots with MegaSTE & TT emulation
+  (when using IDE and 030 or higher CPU model)
+- TOS v2 / TOS v3 don't work fully on MegaSTE / TT
+
+With SCU/VME IO-register access allowed:
+- Linux boot under MegaSTE & TT emulation fails due to register mask &
+  interrupt handling not working (as Hatari doesn't emulate SCU/VME)
+- TOS v2 / TOS v3 work fully on MegaSTE / TT
+
 ---
  CMakeLists.txt   | 2 ++
  src/ioMem.c      | 9 ++++++++-
