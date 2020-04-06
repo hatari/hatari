@@ -189,7 +189,7 @@ static void print_illegal_counted(const char *txt, uaecptr addr)
 /* TODO [NP] : in many cases, we should not return 0 but a value depending on the data */
 /* last accessed on the bus */
 
-static void dummylog (int rw, uaecptr addr, int size, uae_u32 val, int ins)
+static void dummylog(int rw, uaecptr addr, int size, uae_u32 val, int ins)
 {
 	if (illegal_count >= MAX_ILG && MAX_ILG > 0)
 		return;
@@ -212,13 +212,13 @@ static void dummylog (int rw, uaecptr addr, int size, uae_u32 val, int ins)
 		illegal_count++;
 	if (ins) {
 		write_log (_T("WARNING: Illegal opcode %cget at %08x PC=%x\n"),
-			size == 2 ? 'w' : 'l', addr, M68K_GETPC);
+			size == sz_word ? 'w' : 'l', addr, M68K_GETPC);
 	} else if (rw) {
 		write_log (_T("Illegal %cput at %08x=%08x PC=%x\n"),
-			size == 1 ? 'b' : size == 2 ? 'w' : 'l', addr, val, M68K_GETPC);
+			size == sz_byte ? 'b' : size == sz_word ? 'w' : 'l', addr, val, M68K_GETPC);
 	} else {
 		write_log (_T("Illegal %cget at %08x PC=%x\n"),
-			size == 1 ? 'b' : size == 2 ? 'w' : 'l', addr, M68K_GETPC);
+			size == sz_byte ? 'b' : size == sz_word ? 'w' : 'l', addr, M68K_GETPC);
 	}
 }
 
@@ -230,17 +230,30 @@ void dummy_put (uaecptr addr, int size, uae_u32 val)
 		flash_write(addr, val);
 #endif
 
-	if (gary_nonrange(addr) || (size > 1 && gary_nonrange(addr + size - 1))) {
+	if (gary_nonrange(addr) || (size > sz_byte && gary_nonrange(addr + (1 << size) - 1))) {
 		if (gary_timeout)
-			gary_wait (addr, size, true);
+			gary_wait(addr, size, true);
 		if (gary_toenb && currprefs.mmu_model)
-			exception2 (addr, true, size, regs.s ? 4 : 0);
+			hardware_exception2(addr, val, false, false, size);
 	}
 
 #else
 	/* Hatari : do nothing in case of dummy_put */
 #endif
 }
+
+
+static uae_u32 nonexistingdata(void)
+{
+#ifndef WINUAE_FOR_HATARI
+	if (currprefs.cs_unmapped_space == 1)
+		return 0x00000000;
+	if (currprefs.cs_unmapped_space == 2)
+		return 0xffffffff;
+#endif
+	return NONEXISTINGDATA;
+}
+
 
 uae_u32 dummy_get (uaecptr addr, int size, bool inst, uae_u32 defvalue)
 {
@@ -292,17 +305,17 @@ uae_u32 dummy_get (uaecptr addr, int size, bool inst, uae_u32 defvalue)
 	if (addr >= 0x10000000)
 		return v;
 	if ((currprefs.cpu_model <= 68010) || (currprefs.cpu_model == 68020 && (currprefs.chipset_mask & CSMASK_AGA) && currprefs.address_space_24)) {
-		if (size == 4) {
-			v = regs.db & 0xffff;
+		if (size == sz_long) {
+			v = regs.irc & 0xffff;
 			if (addr & 1)
 				v = (v << 8) | (v >> 8);
 			v = (v << 16) | v;
-		} else if (size == 2) {
-			v = regs.db & 0xffff;
+		} else if (size == sz_word) {
+			v = regs.irc & 0xffff;
 			if (addr & 1)
 				v = (v << 8) | (v >> 8);
 		} else {
-			v = regs.db;
+			v = regs.irc;
 			v = (addr & 1) ? (v & 0xff) : ((v >> 8) & 0xff);
 		}
 	}
@@ -322,52 +335,52 @@ static uae_u32 REGPARAM2 dummy_lget (uaecptr addr)
 {
 	if (illegal_mem)
 		dummylog (0, addr, 4, 0, 0);
-	return dummy_get (addr, 4, false, NONEXISTINGDATA);
+	return dummy_get(addr, sz_long, false, nonexistingdata());
 }
 uae_u32 REGPARAM2 dummy_lgeti (uaecptr addr)
 {
 	if (illegal_mem)
-		dummylog (0, addr, 4, 0, 1);
-	return dummy_get (addr, 4, true, NONEXISTINGDATA);
+		dummylog(0, addr, sz_long, 0, 1);
+	return dummy_get(addr, sz_long, true, nonexistingdata());
 }
 
 static uae_u32 REGPARAM2 dummy_wget (uaecptr addr)
 {
 	if (illegal_mem)
-		dummylog (0, addr, 2, 0, 0);
-	return dummy_get (addr, 2, false, NONEXISTINGDATA);
+		dummylog(0, addr, sz_word, 0, 0);
+	return dummy_get(addr, sz_word, false, nonexistingdata());
 }
 uae_u32 REGPARAM2 dummy_wgeti (uaecptr addr)
 {
 	if (illegal_mem)
-		dummylog (0, addr, 2, 0, 1);
-	return dummy_get (addr, 2, true, NONEXISTINGDATA);
+		dummylog(0, addr, sz_word, 0, 1);
+	return dummy_get(addr, sz_word, true, nonexistingdata());
 }
 
 static uae_u32 REGPARAM2 dummy_bget (uaecptr addr)
 {
 	if (illegal_mem)
-		dummylog (0, addr, 1, 0, 0);
-	return dummy_get (addr, 1, false, NONEXISTINGDATA);
+		dummylog(0, addr, sz_byte, 0, 0);
+	return dummy_get(addr, sz_byte, false, nonexistingdata());
 }
 
 static void REGPARAM2 dummy_lput (uaecptr addr, uae_u32 l)
 {
 	if (illegal_mem)
-		dummylog (1, addr, 4, l, 0);
-	dummy_put (addr, 4, l);
+		dummylog(1, addr, sz_long, l, 0);
+	dummy_put(addr, sz_long, l);
 }
 static void REGPARAM2 dummy_wput (uaecptr addr, uae_u32 w)
 {
 	if (illegal_mem)
-		dummylog (1, addr, 2, w, 0);
-	dummy_put (addr, 2, w);
+		dummylog(1, addr, sz_word, w, 0);
+	dummy_put(addr, sz_word, w);
 }
 static void REGPARAM2 dummy_bput (uaecptr addr, uae_u32 b)
 {
 	if (illegal_mem)
-		dummylog (1, addr, 1, b, 0);
-	dummy_put (addr, 1, b);
+		dummylog(1, addr, sz_byte, b, 0);
+	dummy_put(addr, sz_byte, b);
 }
 
 static int REGPARAM2 dummy_check (uaecptr addr, uae_u32 size)
