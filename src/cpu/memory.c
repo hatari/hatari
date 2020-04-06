@@ -488,7 +488,7 @@ static uae_u32 REGPARAM3 BusErrMem_lget(uaecptr addr)
 {
     print_illegal_counted("Bus error lget", addr);
 
-    M68000_BusError(addr, 1, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
+    M68000_BusError(addr, BUS_ERROR_READ, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA, 0);
     return 0;
 }
 
@@ -496,7 +496,7 @@ static uae_u32 REGPARAM3 BusErrMem_wget(uaecptr addr)
 {
     print_illegal_counted("Bus error wget", addr);
 
-    M68000_BusError(addr, 1, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
+    M68000_BusError(addr, BUS_ERROR_READ, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA, 0);
     return 0;
 }
 
@@ -504,7 +504,7 @@ static uae_u32 REGPARAM3 BusErrMem_bget(uaecptr addr)
 {
     print_illegal_counted("Bus error bget", addr);
 
-    M68000_BusError(addr, 1, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
+    M68000_BusError(addr, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, 0);
     return 0;
 }
 
@@ -512,21 +512,21 @@ static void REGPARAM3 BusErrMem_lput(uaecptr addr, uae_u32 l)
 {
     print_illegal_counted("Bus error lput", addr);
 
-    M68000_BusError(addr, 0, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
+    M68000_BusError(addr, BUS_ERROR_WRITE, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA, l);
 }
 
 static void REGPARAM3 BusErrMem_wput(uaecptr addr, uae_u32 w)
 {
     print_illegal_counted("Bus error wput", addr);
 
-    M68000_BusError(addr, 0, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
+    M68000_BusError(addr, BUS_ERROR_WRITE, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA, w);
 }
 
 static void REGPARAM3 BusErrMem_bput(uaecptr addr, uae_u32 b)
 {
     print_illegal_counted("Bus error bput", addr);
 
-    M68000_BusError(addr, 0, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
+    M68000_BusError(addr, BUS_ERROR_WRITE, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, b);
 }
 
 static int REGPARAM3 BusErrMem_check(uaecptr addr, uae_u32 size)
@@ -675,7 +675,7 @@ static uae_u32 REGPARAM3 SysMem_lget(uaecptr addr)
 
     if(addr < 0x800 && !regs.s)
     {
-      M68000_BusError(addr_in, 1, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
+      M68000_BusError(addr_in, BUS_ERROR_READ, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA, 0);
       return 0;
     }
 
@@ -692,7 +692,7 @@ static uae_u32 REGPARAM3 SysMem_wget(uaecptr addr)
     /* Only CPU will trigger bus error if bit S=0, not the blitter */
     if(addr < 0x800 && !regs.s && BusMode == BUS_MODE_CPU)
     {
-      M68000_BusError(addr_in, 1, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
+      M68000_BusError(addr_in, BUS_ERROR_READ, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA, 0);
       return 0;
     }
 
@@ -708,7 +708,7 @@ static uae_u32 REGPARAM3 SysMem_bget(uaecptr addr)
 
     if(addr < 0x800 && !regs.s)
     {
-      M68000_BusError(addr_in, 1, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
+      M68000_BusError(addr_in, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, 0);
       return 0;
     }
 
@@ -724,7 +724,7 @@ static void REGPARAM3 SysMem_lput(uaecptr addr, uae_u32 l)
 
     if(addr < 0x8 || (addr < 0x800 && !regs.s))
     {
-      M68000_BusError(addr_in, 0, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
+      M68000_BusError(addr_in, BUS_ERROR_WRITE, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA, l);
       return;
     }
 
@@ -743,7 +743,7 @@ static void REGPARAM3 SysMem_wput(uaecptr addr, uae_u32 w)
     {
       if ( BusMode == BUS_MODE_CPU )
       {
-	M68000_BusError(addr_in, 0, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
+	M68000_BusError(addr_in, BUS_ERROR_WRITE, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA, w);
 	return;
       }
       /* If blitter writes < 0x8 then it should be ignored, else the write should be made */
@@ -763,7 +763,7 @@ static void REGPARAM3 SysMem_bput(uaecptr addr, uae_u32 b)
 
     if(addr < 0x8 || (addr < 0x800 && !regs.s))
     {
-      M68000_BusError(addr_in, 0, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
+      M68000_BusError(addr_in, BUS_ERROR_WRITE, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, b);
       return;
     }
 
@@ -781,7 +781,7 @@ static uae_u32 REGPARAM3 SysMem_lget_MMU(uaecptr addr)
 
     if(addr < 0x800 && !regs.s)
     {
-      M68000_BusError(addr_in, 1, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
+      M68000_BusError(addr_in, BUS_ERROR_READ, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA, 0);
       return 0;
     }
 
@@ -799,7 +799,7 @@ static uae_u32 REGPARAM3 SysMem_wget_MMU(uaecptr addr)
     /* Only CPU will trigger bus error if bit S=0, not the blitter */
     if(addr < 0x800 && !regs.s && BusMode == BUS_MODE_CPU)
     {
-      M68000_BusError(addr_in, 1, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
+      M68000_BusError(addr_in, BUS_ERROR_READ, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA, 0);
       return 0;
     }
 
@@ -816,7 +816,7 @@ static uae_u32 REGPARAM3 SysMem_bget_MMU(uaecptr addr)
 
     if(addr < 0x800 && !regs.s)
     {
-      M68000_BusError(addr_in, 1, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
+      M68000_BusError(addr_in, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, 0);
       return 0;
     }
 
@@ -833,7 +833,7 @@ static void REGPARAM3 SysMem_lput_MMU(uaecptr addr, uae_u32 l)
 
     if(addr < 0x8 || (addr < 0x800 && !regs.s))
     {
-      M68000_BusError(addr_in, 0, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
+      M68000_BusError(addr_in, BUS_ERROR_WRITE, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA, l);
       return;
     }
 
@@ -853,7 +853,7 @@ static void REGPARAM3 SysMem_wput_MMU(uaecptr addr, uae_u32 w)
     {
       if ( BusMode == BUS_MODE_CPU )
       {
-	M68000_BusError(addr_in, 0, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
+	M68000_BusError(addr_in, BUS_ERROR_WRITE, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA, w);
 	return;
       }
       /* If blitter writes < 0x8 then it should be ignored, else the write should be made */
@@ -874,7 +874,7 @@ static void REGPARAM3 SysMem_bput_MMU(uaecptr addr, uae_u32 b)
 
     if(addr < 0x8 || (addr < 0x800 && !regs.s))
     {
-      M68000_BusError(addr_in, 0, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
+      M68000_BusError(addr_in, BUS_ERROR_WRITE, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, b);
       return;
     }
 
@@ -1027,25 +1027,25 @@ static uae_u32 REGPARAM3 ROMmem_bget(uaecptr addr)
     return ROMmemory[addr];
 }
 
-static void REGPARAM3 ROMmem_lput(uaecptr addr, uae_u32 b)
+static void REGPARAM3 ROMmem_lput(uaecptr addr, uae_u32 l)
 {
     print_illegal_counted("Illegal ROMmem lput", addr);
 
-    M68000_BusError(addr, 0, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
+    M68000_BusError(addr, BUS_ERROR_WRITE, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA, l);
 }
 
-static void REGPARAM3 ROMmem_wput(uaecptr addr, uae_u32 b)
+static void REGPARAM3 ROMmem_wput(uaecptr addr, uae_u32 w)
 {
     print_illegal_counted("Illegal ROMmem wput", addr);
 
-    M68000_BusError(addr, 0, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
+    M68000_BusError(addr, BUS_ERROR_WRITE, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA, w);
 }
 
 static void REGPARAM3 ROMmem_bput(uaecptr addr, uae_u32 b)
 {
     print_illegal_counted("Illegal ROMmem bput", addr);
 
-    M68000_BusError(addr, 0, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
+    M68000_BusError(addr, BUS_ERROR_WRITE, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, b);
 }
 
 static int REGPARAM3 ROMmem_check(uaecptr addr, uae_u32 size)

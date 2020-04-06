@@ -96,7 +96,7 @@ uae_u32 REGPARAM3 Ide_Mem_bget(uaecptr addr)
 	if (addr >= 0xf00040 || !Ide_MmioIsAvailable())
 	{
 		/* invalid memory addressing --> bus error */
-		M68000_BusError(addr_in, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
+		M68000_BusError(addr_in, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, 0);
 		return -1;
 	}
 
@@ -133,7 +133,7 @@ uae_u32 REGPARAM3 Ide_Mem_wget(uaecptr addr)
 	if (addr >= 0xf00040 || !Ide_MmioIsAvailable())
 	{
 		/* invalid memory addressing --> bus error */
-		M68000_BusError(addr_in, BUS_ERROR_READ, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
+		M68000_BusError(addr_in, BUS_ERROR_READ, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA, 0);
 		return -1;
 	}
 
@@ -164,7 +164,7 @@ uae_u32 REGPARAM3 Ide_Mem_lget(uaecptr addr)
 	if (addr >= 0xf00040 || !Ide_MmioIsAvailable())
 	{
 		/* invalid memory addressing --> bus error */
-		M68000_BusError(addr_in, BUS_ERROR_READ, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
+		M68000_BusError(addr_in, BUS_ERROR_READ, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA, 0);
 		return -1;
 	}
 
@@ -201,7 +201,7 @@ void REGPARAM3 Ide_Mem_bput(uaecptr addr, uae_u32 val)
 	if (addr >= 0xf00040 || !Ide_MmioIsAvailable())
 	{
 		/* invalid memory addressing --> bus error */
-		M68000_BusError(addr_in, BUS_ERROR_WRITE, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
+		M68000_BusError(addr_in, BUS_ERROR_WRITE, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, val);
 		return;
 	}
 
@@ -233,7 +233,7 @@ void REGPARAM3 Ide_Mem_wput(uaecptr addr, uae_u32 val)
 	if (addr >= 0xf00040 || !Ide_MmioIsAvailable())
 	{
 		/* invalid memory addressing --> bus error */
-		M68000_BusError(addr_in, BUS_ERROR_WRITE, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
+		M68000_BusError(addr_in, BUS_ERROR_WRITE, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA, val);
 		return;
 	}
 
@@ -258,7 +258,7 @@ void REGPARAM3 Ide_Mem_lput(uaecptr addr, uae_u32 val)
 	if (addr >= 0xf00040 || !Ide_MmioIsAvailable())
 	{
 		/* invalid memory addressing --> bus error */
-		M68000_BusError(addr_in, BUS_ERROR_WRITE, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
+		M68000_BusError(addr_in, BUS_ERROR_WRITE, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA, val);
 		return;
 	}
 

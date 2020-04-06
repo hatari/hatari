@@ -55,7 +55,7 @@ static int mem_string_ok(Uint32 addr)
 
 	if (!STMemory_CheckAreaType(addr, 1, ABFLAG_RAM | ABFLAG_ROM)) {
 		/* invalid starting address -> error */
-		M68000_BusError(addr, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
+		M68000_BusError(addr, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, 0);
 		return 0;
 	}
 	buf = (const char *)STMemory_STAddrToPointer(addr);
@@ -71,7 +71,7 @@ static int mem_string_ok(Uint32 addr)
 	for (i = 0; i < NF_MAX_STRING; i++) {
 		if (!STMemory_CheckAreaType(addr, 1, ABFLAG_RAM | ABFLAG_ROM)) {
 			/* ends in invalid area -> error */
-			M68000_BusError(addr, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
+			M68000_BusError(addr, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, 0);
 			return 0;
 		}
 		if (!buf[i]) {
@@ -100,7 +100,7 @@ static bool nf_name(Uint32 stack, Uint32 subid, Uint32 *retval)
 	LOG_TRACE(TRACE_NATFEATS, "NF_NAME[%d](0x%x, %d)\n", subid, ptr, len);
 
 	if ( !STMemory_CheckAreaType ( ptr, len, ABFLAG_RAM | ABFLAG_ROM ) ) {
-		M68000_BusError(ptr, BUS_ERROR_WRITE, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
+		M68000_BusError(ptr, BUS_ERROR_WRITE, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, 0);
 		return false;
 	}
 	if (subid == 1) {
@@ -314,7 +314,7 @@ bool NatFeat_ID(Uint32 stack, Uint32 *retval)
 
 	ptr = STMemory_ReadLong(stack);
 	if ( !STMemory_CheckAreaType ( ptr, FEATNAME_MAX, ABFLAG_RAM | ABFLAG_ROM ) ) {
-		M68000_BusError(ptr, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
+		M68000_BusError(ptr, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, 0);
 		return false;
 	}
 

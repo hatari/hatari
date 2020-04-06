@@ -557,7 +557,7 @@ void Joy_StePadButtons_DIPSwitches_ReadWord(void)
 	  && ( nIoMemAccessSize == SIZE_BYTE ) && ( IoAccessCurrentAddress == 0xff9200 ) )
 	{
 		/* This register does not like to be accessed in byte mode at $ff9200 */
-		M68000_BusError(IoAccessFullAddress, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
+		M68000_BusError(IoAccessFullAddress, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, 0);
 		return;
 	}
 
@@ -643,7 +643,7 @@ void Joy_StePadButtons_DIPSwitches_WriteWord(void)
 	  && ( nIoMemAccessSize == SIZE_BYTE ) && ( IoAccessCurrentAddress == 0xff9200 ) )
 	{
 		/* This register does not like to be accessed in byte mode at $ff9200 */
-		M68000_BusError(IoAccessFullAddress, BUS_ERROR_WRITE, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
+		M68000_BusError(IoAccessFullAddress, BUS_ERROR_WRITE, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, 0);
 		return;
 	}
 }
@@ -733,8 +733,7 @@ void Joy_SteLightpenX_ReadWord(void)
 	if (nIoMemAccessSize == SIZE_BYTE)
 	{
 		/* This register does not like to be accessed in byte mode */
-		M68000_BusError(IoAccessFullAddress, BUS_ERROR_READ,
-		                BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
+		M68000_BusError(IoAccessFullAddress, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, 0);
 		return;
 	}
 
@@ -753,8 +752,7 @@ void Joy_SteLightpenY_ReadWord(void)
 	if (nIoMemAccessSize == SIZE_BYTE)
 	{
 		/* This register does not like to be accessed in byte mode */
-		M68000_BusError(IoAccessFullAddress, BUS_ERROR_READ,
-		                BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
+		M68000_BusError(IoAccessFullAddress, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, 0);
 		return;
 	}
 

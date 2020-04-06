@@ -454,7 +454,7 @@ uae_u32 REGPARAM3 IoMem_bget(uaecptr addr)
 	if (addr < 0xff8000 || !regs.s)
 	{
 		/* invalid memory addressing --> bus error */
-		M68000_BusError(IoAccessFullAddress, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
+		M68000_BusError(IoAccessFullAddress, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, 0);
 		return -1;
 	}
 
@@ -468,7 +468,7 @@ uae_u32 REGPARAM3 IoMem_bget(uaecptr addr)
 	/* Check if we read from a bus-error region */
 	if (nBusErrorAccesses == 1)
 	{
-		M68000_BusError(IoAccessFullAddress, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
+		M68000_BusError(IoAccessFullAddress, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, 0);
 		return -1;
 	}
 
@@ -509,7 +509,7 @@ uae_u32 REGPARAM3 IoMem_wget(uaecptr addr)
 	if (addr < 0xff8000 || !regs.s)
 	{
 		/* invalid memory addressing --> bus error */
-		M68000_BusError(IoAccessFullAddress, BUS_ERROR_READ, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
+		M68000_BusError(IoAccessFullAddress, BUS_ERROR_READ, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA, 0);
 		return -1;
 	}
 	if (addr > 0xfffffe)
@@ -535,7 +535,7 @@ uae_u32 REGPARAM3 IoMem_wget(uaecptr addr)
 	/* Check if we completely read from a bus-error region */
 	if (nBusErrorAccesses == 2)
 	{
-		M68000_BusError(IoAccessFullAddress, BUS_ERROR_READ, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
+		M68000_BusError(IoAccessFullAddress, BUS_ERROR_READ, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA, 0);
 		return -1;
 	}
 
@@ -576,7 +576,7 @@ uae_u32 REGPARAM3 IoMem_lget(uaecptr addr)
 	if (addr < 0xff8000 || !regs.s)
 	{
 		/* invalid memory addressing --> bus error */
-		M68000_BusError(IoAccessFullAddress, BUS_ERROR_READ, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
+		M68000_BusError(IoAccessFullAddress, BUS_ERROR_READ, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA, 0);
 		return -1;
 	}
 	if (addr > 0xfffffc)
@@ -605,7 +605,7 @@ uae_u32 REGPARAM3 IoMem_lget(uaecptr addr)
 	/* Check if we completely read from a bus-error region */
 	if (nBusErrorAccesses == 4)
 	{
-		M68000_BusError(IoAccessFullAddress, BUS_ERROR_READ, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
+		M68000_BusError(IoAccessFullAddress, BUS_ERROR_READ, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA, 0);
 		return -1;
 	}
 
@@ -644,7 +644,7 @@ void REGPARAM3 IoMem_bput(uaecptr addr, uae_u32 val)
 	if (addr < 0xff8000 || !regs.s)
 	{
 		/* invalid memory addressing --> bus error */
-		M68000_BusError(IoAccessFullAddress, BUS_ERROR_WRITE, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
+		M68000_BusError(IoAccessFullAddress, BUS_ERROR_WRITE, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, val);
 		return;
 	}
 
@@ -660,7 +660,7 @@ void REGPARAM3 IoMem_bput(uaecptr addr, uae_u32 val)
 	/* Check if we wrote to a bus-error region */
 	if (nBusErrorAccesses == 1)
 	{
-		M68000_BusError(IoAccessFullAddress, BUS_ERROR_WRITE, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
+		M68000_BusError(IoAccessFullAddress, BUS_ERROR_WRITE, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, val);
 	}
 }
 
@@ -695,7 +695,7 @@ void REGPARAM3 IoMem_wput(uaecptr addr, uae_u32 val)
 	if (addr < 0x00ff8000 || !regs.s)
 	{
 		/* invalid memory addressing --> bus error */
-		M68000_BusError(IoAccessFullAddress, BUS_ERROR_WRITE, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
+		M68000_BusError(IoAccessFullAddress, BUS_ERROR_WRITE, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA, val);
 		return;
 	}
 	if (addr > 0xfffffe)
@@ -723,7 +723,7 @@ void REGPARAM3 IoMem_wput(uaecptr addr, uae_u32 val)
 	/* Check if we wrote to a bus-error region */
 	if (nBusErrorAccesses == 2)
 	{
-		M68000_BusError(IoAccessFullAddress, BUS_ERROR_WRITE, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
+		M68000_BusError(IoAccessFullAddress, BUS_ERROR_WRITE, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA, val);
 	}
 }
 
@@ -758,7 +758,7 @@ void REGPARAM3 IoMem_lput(uaecptr addr, uae_u32 val)
 	if (addr < 0xff8000 || !regs.s)
 	{
 		/* invalid memory addressing --> bus error */
-		M68000_BusError(IoAccessFullAddress, BUS_ERROR_WRITE, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
+		M68000_BusError(IoAccessFullAddress, BUS_ERROR_WRITE, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA, val);
 		return;
 	}
 	if (addr > 0xfffffc)
@@ -789,7 +789,7 @@ void REGPARAM3 IoMem_lput(uaecptr addr, uae_u32 val)
 	/* Check if we wrote to a bus-error region */
 	if (nBusErrorAccesses == 4)
 	{
-		M68000_BusError(IoAccessFullAddress, BUS_ERROR_WRITE, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
+		M68000_BusError(IoAccessFullAddress, BUS_ERROR_WRITE, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA, val);
 	}
 }
 
