@@ -398,4 +398,9 @@ extern int OpcodeFamily;			/* see instrmnem in readcpu.h */
 /* (used when addressing mode is d8(an,ix)) */
 extern int BusCyclePenalty;
 
+STATIC_INLINE bool is_super_access(bool read)
+{
+  return regs.s;
+}
+
 #endif	/* UAE_NEWCPU_H */
