@@ -819,8 +819,8 @@ static void Blitter_EndLine(void)
 static void Blitter_SingleWord(void)
 {
 	Blitter_BeginLine();
-//	Blitter_SetState(BlitterVars.fxsr, BlitterVars.nfsr, BlitterRegs.end_mask_1);
-	Blitter_SetState(BlitterVars.fxsr, 0, BlitterRegs.end_mask_1);
+	Blitter_SetState(BlitterVars.fxsr, BlitterVars.nfsr, BlitterRegs.end_mask_1);
+//	Blitter_SetState(BlitterVars.fxsr, 0, BlitterRegs.end_mask_1);		/* wrong fix : this makes 'Oompa' demo crashes after greeting part */
 	Blitter_ProcessWord();
 	Blitter_EndLine();
 }
