@@ -451,7 +451,7 @@ uae_u32 REGPARAM3 IoMem_bget(uaecptr addr)
 
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
-	if (addr < 0xff8000 || !regs.s)
+	if (addr < 0xff8000 || !is_super_access(true))
 	{
 		/* invalid memory addressing --> bus error */
 		M68000_BusError(IoAccessFullAddress, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, 0);
@@ -506,7 +506,7 @@ uae_u32 REGPARAM3 IoMem_wget(uaecptr addr)
 
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
-	if (addr < 0xff8000 || !regs.s)
+	if (addr < 0xff8000 || !is_super_access(true))
 	{
 		/* invalid memory addressing --> bus error */
 		M68000_BusError(IoAccessFullAddress, BUS_ERROR_READ, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA, 0);
@@ -573,7 +573,7 @@ uae_u32 REGPARAM3 IoMem_lget(uaecptr addr)
 
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
-	if (addr < 0xff8000 || !regs.s)
+	if (addr < 0xff8000 || !is_super_access(true))
 	{
 		/* invalid memory addressing --> bus error */
 		M68000_BusError(IoAccessFullAddress, BUS_ERROR_READ, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA, 0);
@@ -641,7 +641,7 @@ void REGPARAM3 IoMem_bput(uaecptr addr, uae_u32 val)
 
 	LOG_TRACE(TRACE_IOMEM_WR, "IO write.b $%08x = $%02x pc=%x\n", IoAccessFullAddress, val&0xff, M68000_GetPC());
 
-	if (addr < 0xff8000 || !regs.s)
+	if (addr < 0xff8000 || !is_super_access(false))
 	{
 		/* invalid memory addressing --> bus error */
 		M68000_BusError(IoAccessFullAddress, BUS_ERROR_WRITE, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, val);
@@ -692,7 +692,7 @@ void REGPARAM3 IoMem_wput(uaecptr addr, uae_u32 val)
 
 	LOG_TRACE(TRACE_IOMEM_WR, "IO write.w $%08x = $%04x pc=%x\n", IoAccessFullAddress, val&0xffff, M68000_GetPC());
 
-	if (addr < 0x00ff8000 || !regs.s)
+	if (addr < 0x00ff8000 || !is_super_access(false))
 	{
 		/* invalid memory addressing --> bus error */
 		M68000_BusError(IoAccessFullAddress, BUS_ERROR_WRITE, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA, val);
@@ -755,7 +755,7 @@ void REGPARAM3 IoMem_lput(uaecptr addr, uae_u32 val)
 
 	LOG_TRACE(TRACE_IOMEM_WR, "IO write.l $%08x = $%08x pc=%x\n", IoAccessFullAddress, val, M68000_GetPC());
 
-	if (addr < 0xff8000 || !regs.s)
+	if (addr < 0xff8000 || !is_super_access(false))
 	{
 		/* invalid memory addressing --> bus error */
 		M68000_BusError(IoAccessFullAddress, BUS_ERROR_WRITE, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA, val);

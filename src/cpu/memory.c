@@ -673,7 +673,7 @@ static uae_u32 REGPARAM3 SysMem_lget(uaecptr addr)
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
 
-    if(addr < 0x800 && !regs.s)
+    if(addr < 0x800 && !is_super_access(true))
     {
       M68000_BusError(addr_in, BUS_ERROR_READ, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA, 0);
       return 0;
@@ -690,7 +690,7 @@ static uae_u32 REGPARAM3 SysMem_wget(uaecptr addr)
     addr &= STmem_mask;
 
     /* Only CPU will trigger bus error if bit S=0, not the blitter */
-    if(addr < 0x800 && !regs.s && BusMode == BUS_MODE_CPU)
+    if(addr < 0x800 && !is_super_access(true) && BusMode == BUS_MODE_CPU)
     {
       M68000_BusError(addr_in, BUS_ERROR_READ, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA, 0);
       return 0;
@@ -706,7 +706,7 @@ static uae_u32 REGPARAM3 SysMem_bget(uaecptr addr)
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
 
-    if(addr < 0x800 && !regs.s)
+    if(addr < 0x800 && !is_super_access(true))
     {
       M68000_BusError(addr_in, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, 0);
       return 0;
@@ -722,7 +722,7 @@ static void REGPARAM3 SysMem_lput(uaecptr addr, uae_u32 l)
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
 
-    if(addr < 0x8 || (addr < 0x800 && !regs.s))
+    if(addr < 0x8 || (addr < 0x800 && !is_super_access(false)))
     {
       M68000_BusError(addr_in, BUS_ERROR_WRITE, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA, l);
       return;
@@ -739,7 +739,7 @@ static void REGPARAM3 SysMem_wput(uaecptr addr, uae_u32 w)
     addr &= STmem_mask;
 
     /* Only CPU will trigger bus error if bit S=0, not the blitter */
-    if(addr < 0x8 || (addr < 0x800 && !regs.s))
+    if(addr < 0x8 || (addr < 0x800 && !is_super_access(false)))
     {
       if ( BusMode == BUS_MODE_CPU )
       {
@@ -761,7 +761,7 @@ static void REGPARAM3 SysMem_bput(uaecptr addr, uae_u32 b)
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
 
-    if(addr < 0x8 || (addr < 0x800 && !regs.s))
+    if(addr < 0x8 || (addr < 0x800 && !is_super_access(false)))
     {
       M68000_BusError(addr_in, BUS_ERROR_WRITE, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, b);
       return;
@@ -779,7 +779,7 @@ static uae_u32 REGPARAM3 SysMem_lget_MMU(uaecptr addr)
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
 
-    if(addr < 0x800 && !regs.s)
+    if(addr < 0x800 && !is_super_access(true))
     {
       M68000_BusError(addr_in, BUS_ERROR_READ, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA, 0);
       return 0;
@@ -797,7 +797,7 @@ static uae_u32 REGPARAM3 SysMem_wget_MMU(uaecptr addr)
     addr &= STmem_mask;
 
     /* Only CPU will trigger bus error if bit S=0, not the blitter */
-    if(addr < 0x800 && !regs.s && BusMode == BUS_MODE_CPU)
+    if(addr < 0x800 && !is_super_access(true) && BusMode == BUS_MODE_CPU)
     {
       M68000_BusError(addr_in, BUS_ERROR_READ, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA, 0);
       return 0;
@@ -814,7 +814,7 @@ static uae_u32 REGPARAM3 SysMem_bget_MMU(uaecptr addr)
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
 
-    if(addr < 0x800 && !regs.s)
+    if(addr < 0x800 && !is_super_access(true))
     {
       M68000_BusError(addr_in, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, 0);
       return 0;
@@ -831,7 +831,7 @@ static void REGPARAM3 SysMem_lput_MMU(uaecptr addr, uae_u32 l)
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
 
-    if(addr < 0x8 || (addr < 0x800 && !regs.s))
+    if(addr < 0x8 || (addr < 0x800 && !is_super_access(false)))
     {
       M68000_BusError(addr_in, BUS_ERROR_WRITE, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA, l);
       return;
@@ -849,7 +849,7 @@ static void REGPARAM3 SysMem_wput_MMU(uaecptr addr, uae_u32 w)
     addr &= STmem_mask;
 
     /* Only CPU will trigger bus error if bit S=0, not the blitter */
-    if(addr < 0x8 || (addr < 0x800 && !regs.s))
+    if(addr < 0x8 || (addr < 0x800 && !is_super_access(false)))
     {
       if ( BusMode == BUS_MODE_CPU )
       {
@@ -872,7 +872,7 @@ static void REGPARAM3 SysMem_bput_MMU(uaecptr addr, uae_u32 b)
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
 
-    if(addr < 0x8 || (addr < 0x800 && !regs.s))
+    if(addr < 0x8 || (addr < 0x800 && !is_super_access(false)))
     {
       M68000_BusError(addr_in, BUS_ERROR_WRITE, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, b);
       return;
