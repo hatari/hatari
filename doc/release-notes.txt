@@ -32,12 +32,15 @@ Emulator:
   (instead of counting sectors)
 - Add --lilo debug option for more convenient m68k Linux loading
   - Support config file values with '=' in them
-- GEMDOS HD:
+- GEMDOS HD emulation:
   - Support FASTLOAD program flag with GEMDOS HD
   - GEMDOS HD emulation cartridge assembly functionality is
     moved (almost completely) to emulator side. Fixes Atari
     side error handling when program file isn't readable,
     and TOS stack overflows in some rare cases
+  - Detect DTA re-use to reduce DTA cache usage, grow cache on
+    demand and give warning if its entries need to be re-cycled
+    (= cache max size is reached)
   - Invalid DTA in Fsnext() return -ENMFIL, like TOS does
 - Support read-only HD image files, and show error dialogs
   for image file open/lock issues

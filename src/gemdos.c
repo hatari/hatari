@@ -101,8 +101,8 @@ typedef struct {
 } DTA;
 
 #define DTA_MAGIC_NUMBER  0x12983476
-#define MAX_DTAS_FILES    256      /* Must be ^2 */
-#define MAX_DTAS_MASK     (MAX_DTAS_FILES-1)
+#define DTA_CACHE_INC     256      /* DTA cache initial and increment size (grows on demand) */
+#define DTA_CACHE_MAX     4096     /* max DTA cache size (multiple of DTA_CACHE_INC) */
 
 #define  BASE_FILEHANDLE     64    /* Our emulation handles - MUST not be valid TOS ones, but MUST be <256 */
 #define  MAX_FILE_HANDLES    32    /* We can allow 32 files open at once */
@@ -135,6 +135,7 @@ typedef struct
 typedef struct
 {
 	bool bUsed;
+	Uint32 addr;                        /* ST-RAM DTA address for matching reused entries */
 	int  nentries;                      /* number of entries in fs directory */
 	int  centry;                        /* current entry # */
 	struct dirent **found;              /* legal files */
@@ -142,8 +143,9 @@ typedef struct
 } INTERNAL_DTA;
 
 static FILE_HANDLE  FileHandles[MAX_FILE_HANDLES];
-static INTERNAL_DTA InternalDTAs[MAX_DTAS_FILES];
-static int DTAIndex;        /* Circular index into above */
+static INTERNAL_DTA *InternalDTAs;
+static int DTACount;        /* Current DTA cache size */
+static Uint16 DTAIndex;     /* Circular index into above */
 static Uint16 CurrentDrive; /* Current drive (0=A,1=B,2=C etc...) */
 static Uint32 act_pd;       /* Used to get a pointer to the current basepage */
 static Uint16 nAttrSFirst;  /* File attribute for SFirst/Snext */
@@ -361,11 +363,19 @@ static void ClearInternalDTA(int idx)
 /*-----------------------------------------------------------------------*/
 /**
  * Clear all DTA cache structures.
+ *
+ * If there are no DTA structures yet, allocate default amount
  */
 static void GemDOS_ClearAllInternalDTAs(void)
 {
 	int i;
-	for(i = 0; i < ARRAY_SIZE(InternalDTAs); i++)
+	if (!InternalDTAs)
+	{
+		DTACount = DTA_CACHE_INC;
+		InternalDTAs = calloc(DTACount, sizeof(*InternalDTAs));
+		assert(InternalDTAs);
+	}
+	for(i = 0; i < DTACount; i++)
 	{
 		ClearInternalDTA(i);
 	}
@@ -2775,10 +2785,10 @@ static int GemDOS_Pexec(Uint32 Params)
 static bool GemDOS_SNext(void)
 {
 	struct dirent **temp;
-	int Index;
 	int ret;
 	DTA *pDTA;
 	Uint32 DTA_Gemdos;
+	Uint16 Index;
 
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x4F Fsnext() at PC 0x%X\n" , CallingPC);
 
@@ -2800,16 +2810,17 @@ static bool GemDOS_SNext(void)
 		return false;
 	}
 
-	/* Find index into our list of structures */
-	Index = do_get_mem_word(pDTA->index) & MAX_DTAS_MASK;
-
 	if (nAttrSFirst == GEMDOS_FILE_ATTRIB_VOLUME_LABEL)
 	{
 		/* Volume label was given already in Sfirst() */
 		Regs[REG_D0] = GEMDOS_ENMFIL;
 		return true;
 	}
-	if (!InternalDTAs[Index].bUsed)
+
+	/* Find index into our list of structures */
+	Index = do_get_mem_word(pDTA->index);
+
+	if (Index >= DTACount || !InternalDTAs[Index].bUsed)
 	{
 		/* Invalid handle, TOS returns ENMFIL
 		 * (if Fsetdta() has been used by any process)
@@ -2862,9 +2873,10 @@ static bool GemDOS_SFirst(Uint32 Params)
 	struct dirent **files;
 	int Drive;
 	DIR *fsdir;
-	int i,j,count;
+	int i, j, count;
 	DTA *pDTA;
 	Uint32 DTA_Gemdos;
+	Uint16 useidx;
 
 	/* Find filename to search for */
 	pszFileName = (char *)STMemory_STAddrToPointer(STMemory_ReadLong(Params));
@@ -2894,19 +2906,36 @@ static bool GemDOS_SFirst(Uint32 Params)
 		return true;
 	}
 
-	/* Atari memory modified directly with do_mem_* + strcpy() -> flush the data cache */
+	/* Atari memory will be modified (below) directly with
+	 * do_mem_* + strcpy() -> flush the data cache
+	 */
 	M68000_Flush_Data_Cache(DTA_Gemdos, sizeof(DTA));
 
 	pDTA = (DTA *)STMemory_STAddrToPointer(DTA_Gemdos);
 
-	/* Populate DTA, set index for our use */
-	do_put_mem_word(pDTA->index, DTAIndex);
-	/* set our dta magic num */
-	do_put_mem_long(pDTA->magic, DTA_MAGIC_NUMBER);
+	/* re-use earlier Hatari DTA? */
+	if (do_get_mem_long(pDTA->magic) == DTA_MAGIC_NUMBER)
+	{
+		useidx = do_get_mem_word(pDTA->index);
+		if (useidx >= DTACount || InternalDTAs[useidx].addr != DTA_Gemdos)
+			useidx = DTAIndex;
+	}
+	else
+	{
+		/* set our magic num on new Hatari DTA */
+		do_put_mem_long(pDTA->magic, DTA_MAGIC_NUMBER);
+		useidx = DTAIndex;
+	}
 
-	if (InternalDTAs[DTAIndex].bUsed == true)
-		ClearInternalDTA(DTAIndex);
-	InternalDTAs[DTAIndex].bUsed = true;
+	/* Populate DTA, set index for our use */
+	do_put_mem_word(pDTA->index, useidx);
+
+	if (InternalDTAs[useidx].bUsed == true)
+	{
+		ClearInternalDTA(useidx);
+	}
+	InternalDTAs[useidx].bUsed = true;
+	InternalDTAs[useidx].addr = DTA_Gemdos;
 
 	/* Were we looking for the volume label? */
 	if (nAttrSFirst == GEMDOS_FILE_ATTRIB_VOLUME_LABEL)
@@ -2921,8 +2950,8 @@ static bool GemDOS_SFirst(Uint32 Params)
 	/* open directory
 	 * TODO: host path may not fit into InternalDTA
 	 */
-	fsfirst_dirname(szActualFileName, InternalDTAs[DTAIndex].path);
-	fsdir = opendir(InternalDTAs[DTAIndex].path);
+	fsfirst_dirname(szActualFileName, InternalDTAs[useidx].path);
+	fsdir = opendir(InternalDTAs[useidx].path);
 
 	if (fsdir == NULL)
 	{
@@ -2932,7 +2961,7 @@ static bool GemDOS_SFirst(Uint32 Params)
 	/* close directory */
 	closedir(fsdir);
 
-	count = scandir(InternalDTAs[DTAIndex].path, &files, 0, alphasort);
+	count = scandir(InternalDTAs[useidx].path, &files, 0, alphasort);
 	/* File (directory actually) not found */
 	if (count < 0)
 	{
@@ -2940,9 +2969,9 @@ static bool GemDOS_SFirst(Uint32 Params)
 		return true;
 	}
 
-	InternalDTAs[DTAIndex].centry = 0;          /* current entry is 0 */
+	InternalDTAs[useidx].centry = 0;          /* current entry is 0 */
 	dirmask = fsfirst_dirmask(szActualFileName);/* directory mask part */
-	InternalDTAs[DTAIndex].found = files;       /* get files */
+	InternalDTAs[useidx].found = files;       /* get files */
 
 	/* count & copy the entries that match our mask and discard the rest */
 	j = 0;
@@ -2951,7 +2980,7 @@ static bool GemDOS_SFirst(Uint32 Params)
 		Str_DecomposedToPrecomposedUtf8(files[i]->d_name, files[i]->d_name);   /* for OSX */
 		if (fsfirst_match(dirmask, files[i]->d_name))
 		{
-			InternalDTAs[DTAIndex].found[j] = files[i];
+			InternalDTAs[useidx].found[j] = files[i];
 			j++;
 		}
 		else
@@ -2960,23 +2989,40 @@ static bool GemDOS_SFirst(Uint32 Params)
 			files[i] = NULL;
 		}
 	}
-	InternalDTAs[DTAIndex].nentries = j; /* set number of legal entries */
+	InternalDTAs[useidx].nentries = j; /* set number of legal entries */
 
 	/* No files of that match, return error code */
 	if (j==0)
 	{
 		free(files);
-		InternalDTAs[DTAIndex].found = NULL;
+		InternalDTAs[useidx].found = NULL;
 		Regs[REG_D0] = GEMDOS_EFILNF;        /* File not found */
 		return true;
 	}
 
 	/* Scan for first file (SNext uses no parameters) */
 	GemDOS_SNext();
-	/* increment DTA index */
-	DTAIndex++;
-	DTAIndex &= MAX_DTAS_MASK;
 
+	/* increment DTA buffer index unless earlier one was reused */
+	if (useidx != DTAIndex)
+		return true;
+
+	if (++DTAIndex >= DTACount)
+	{
+		if (DTACount < DTA_CACHE_MAX)
+		{
+			/* increase DTA cache size */
+			InternalDTAs = realloc(InternalDTAs, (DTACount + DTA_CACHE_INC) * sizeof(*InternalDTAs));
+			assert(InternalDTAs);
+			memset(InternalDTAs + DTACount, 0, DTA_CACHE_INC * sizeof(*InternalDTAs));
+			DTACount += DTA_CACHE_INC;
+		}
+		else
+		{
+			Log_Printf(LOG_WARN, "Too many (%d) active GEMDOS HD DTA entries, wrapping DTA index\n", DTAIndex);
+			DTAIndex = 0;
+		}
+	}
 	return true;
 }
 
@@ -3695,7 +3741,7 @@ void GemDOS_Info(FILE *fp, Uint32 bShowOpcodes)
 	}
 
 	fputs("\nInternal Fsfirst() DTAs:\n", fp);
-	for(used = i = 0; i < ARRAY_SIZE(InternalDTAs); i++)
+	for(used = i = 0; i < DTACount; i++)
 	{
 		int j, centry, entries;
 
