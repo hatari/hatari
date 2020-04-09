@@ -658,26 +658,15 @@ void M68000_BusError ( Uint32 addr , int ReadWrite , int Size , int AccessType ,
 #define WINUAE_HANDLE_BUS_ERROR
 #ifdef WINUAE_HANDLE_BUS_ERROR
 
-	/* 68000/10 require special case using hardware_bus_error=1 */
-	/* For >= 68020, we directly call hardware_exception2() which is slightly faster */
-	if ( currprefs.cpu_model <= 68010 )
-	{
-//fprintf ( stderr , "000 bus err %x\n" , addr );
-		hardware_bus_error = 1;
-	}
-	else
-	{
-		bool	read , ins;
-		int	size;
+	bool	read , ins;
+	int	size;
 
-//fprintf ( stderr , "030 bus err %x\n" , addr );
-		if ( ReadWrite == BUS_ERROR_READ )		read = true; else read = false;
-		if ( AccessType == BUS_ERROR_ACCESS_INSTR )	ins = true; else ins = false;
-		if ( Size == BUS_ERROR_SIZE_BYTE )		size = sz_byte;
-		else if ( Size == BUS_ERROR_SIZE_WORD )		size = sz_word;
-		else						size = sz_long;
-		hardware_exception2 ( addr , val , read , ins , size );
-	}
+	if ( ReadWrite == BUS_ERROR_READ )		read = true; else read = false;
+	if ( AccessType == BUS_ERROR_ACCESS_INSTR )	ins = true; else ins = false;
+	if ( Size == BUS_ERROR_SIZE_BYTE )		size = sz_byte;
+	else if ( Size == BUS_ERROR_SIZE_WORD )		size = sz_word;
+	else						size = sz_long;
+	hardware_exception2 ( addr , val , read , ins , size );
 #else
 	/* With WinUAE's cpu, on a bus error instruction will be correctly aborted before completing, */
 	/* so we don't need to check if the opcode already generated a bus error or not */
