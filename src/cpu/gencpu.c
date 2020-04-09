@@ -247,7 +247,7 @@ static void set_last_access(void)
 NORETURN static void term (void)
 {
 	out("Abort!\n");
-	abort ();
+	abort();
 }
 NORETURN static void term_err (const char *err)
 {
