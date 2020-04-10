@@ -2147,14 +2147,15 @@ static void update_68k_cycles (void)
 	}
 	if (cpucycleunit < 1)
 		cpucycleunit = 1;
-	if (!currprefs.cpu_cycle_exact && currprefs.cpu_compatible) {
+#if 0
+	if (!currprefs.cpu_cycle_exact && !currprefs.cpu_memory_cycle_exact && currprefs.cpu_compatible) {
 		if (cpucycleunit == CYCLE_UNIT / 2) {
 			cycles_mult = 0;
 		} else {
 			cycles_mult = cpucycleunit * (CYCLES_DIV / (CYCLE_UNIT / 2));
 		}
 	}
-
+#endif
 	if (currprefs.cpu_cycle_exact || currprefs.cpu_compatible)
 		write_log (_T("CPU cycleunit: %d (%.3f)\n"), cpucycleunit, (float)cpucycleunit / CYCLE_UNIT);
 write_log (_T("CPU cycleunit: %d (%.3f)\n"), cpucycleunit, (float)cpucycleunit / CYCLE_UNIT);
@@ -7353,6 +7354,7 @@ void m68k_go (int may_quit)
 				build_cpufunctbl();
 				m68k_setpc_normal(pc);
 				fill_prefetch();
+				update_68k_cycles();
 			}
 			if (cpu_prefs_changed_flag & 2) {
 				fixup_cpu(&changed_prefs);
@@ -10690,6 +10692,7 @@ void fill_prefetch_030_ntx(void)
 		idx = add_prefetch_030(idx, regs.cacheholdingdata020 >>	16, pc2);
 	}
 
+	ipl_fetch();
 	if (currprefs.cpu_cycle_exact)
 		regs.irc = get_word_ce030_prefetch_opcode (0);
 	else
@@ -10744,6 +10747,7 @@ void fill_prefetch_030_ntx_continue (void)
 		}
 	}
 
+	ipl_fetch();
 	if (currprefs.cpu_cycle_exact)
 		regs.irc = get_word_ce030_prefetch_opcode (0);
 	else
@@ -10776,6 +10780,7 @@ void fill_prefetch_020_ntx(void)
 		idx = add_prefetch_030(idx, regs.cacheholdingdata020 >>	16, pc);
 	}
 
+	ipl_fetch();
 	if (currprefs.cpu_cycle_exact)
 		regs.irc = get_word_ce020_prefetch_opcode (0);
 	else
