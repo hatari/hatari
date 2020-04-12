@@ -3163,5 +3163,5 @@ void IKBD_Info(FILE *fp, Uint32 dummy)
 	fprintf(fp, "Clock:");
 	for (i = 0; i < ARRAY_SIZE(pIKBD->Clock); i++)
 		fprintf(fp, " %02x", pIKBD->Clock[i]);
-	fprintf(fp, " (+%ld)\n", pIKBD->Clock_micro);
+	fprintf(fp, " (+%" PRId64 ")\n", pIKBD->Clock_micro);
 }
