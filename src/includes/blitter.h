@@ -13,9 +13,10 @@
 
 extern Uint16	BlitterPhase;
 
-void	Blitter_StatsUpdateRate ( int period_cycles );
-int	Blitter_StatsGetRate ( void );
+extern void Blitter_Reset ( void );
 
+extern void	Blitter_StatsUpdateRate ( int period_cycles );
+extern int	Blitter_StatsGetRate ( void );
 
 extern void Blitter_Halftone00_ReadWord(void);
 extern void Blitter_Halftone01_ReadWord(void);

@@ -271,6 +271,43 @@ static int	BlitterStatsRate;
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Reset all blitter variables
+ */
+void Blitter_Reset ( void )
+{
+	BlitterRegs.src_addr = 0;
+	BlitterRegs.dst_addr = 0;
+	BlitterRegs.x_count = 0;
+	BlitterRegs.y_count = 0;
+	BlitterRegs.src_x_incr = 0;
+	BlitterRegs.src_y_incr = 0;
+	BlitterRegs.dst_x_incr = 0;
+	BlitterRegs.dst_y_incr = 0;
+	BlitterRegs.end_mask_1 = 0;
+	BlitterRegs.end_mask_2 = 0;
+	BlitterRegs.end_mask_3 = 0;
+	BlitterRegs.hop = 0;
+	BlitterRegs.lop = 0;
+
+	BlitterRegs.ctrl = 0;
+	BlitterVars.hog = 0;
+	BlitterVars.smudge = 0;
+	BlitterVars.halftone_line = 0;
+
+	BlitterRegs.skew = 0;
+	BlitterVars.fxsr = 0;
+	BlitterVars.nfsr = 0;
+	BlitterVars.skew = 0;
+
+	BlitterState.have_src = false ;
+	BlitterState.have_dst = false ;
+	BlitterState.ContinueLater = 0 ;
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Compute some stats for the blitter's usage during a period (eg one VBL)
  * Used to determine a percent per VBL and show a led in the statusbar
  */
@@ -1300,18 +1337,18 @@ void Blitter_LogOp_WriteByte(void)
 void Blitter_Control_WriteByte(void)
 {
 	/* Control register bits:
-	 * 0x80: start/stop bit (write) - busy bit (read)
-	 * - Turn on Blitter activity and stay "1" until copy finished
-	 * 0x40: Blit-mode bit
-	 * - 0: Blit mode, CPU and Blitter get 64 bus accesses in turns
-	 * - 1: HOG Mode, Blitter reserves and hogs the bus for as long
+	 * bit 7 : start/stop bit (write) - busy bit (read)
+	 *	- Turn on Blitter activity and stay "1" until copy finished
+	 * bit 6 : Blit-mode bit
+	 *	- 0: Blit mode, CPU and Blitter get 64 bus accesses in turns
+	 *	- 1: HOG Mode, Blitter reserves and hogs the bus for as long
 	 *      as the copy takes, CPU and DMA get no Bus access
-	 * 0x20: Smudge mode
-	 * - Which line of the halftone pattern to start with is
-	 *   read from the first source word when the copy starts
-	 * 0x10: not used
-	 * 0x0f:
-	 *   The lowest 4 bits contain the halftone pattern line number
+	 * bit 5 : Smudge mode
+	 * 	Which line of the halftone pattern to start with is read from
+	 *	the first source word when the copy starts
+	 * bit 4 : not used
+	 * bits 0-3 :
+	 *	The lowest 4 bits contain the halftone pattern line number
 	 */
 
 	if (LOG_TRACE_LEVEL(TRACE_BLITTER))

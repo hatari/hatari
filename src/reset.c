@@ -25,6 +25,7 @@ const char Reset_fileid[] = "Hatari reset.c : " __DATE__ " " __TIME__;
 #include "mfp.h"
 #include "midi.h"
 #include "ncr5380.h"
+#include "blitter.h"
 #include "psg.h"
 #include "reset.h"
 #include "scc.h"
@@ -92,6 +93,7 @@ static int Reset_ST(bool bCold)
 	else
 		DmaSnd_Reset(bCold);          /* Reset DMA sound */
 
+	Blitter_Reset();			/* Reset Blitter */
 	PSG_Reset();                  /* Reset PSG */
 	Sound_Reset();                /* Reset Sound */
 	ACIA_Reset( ACIA_Array );     /* ACIA */
