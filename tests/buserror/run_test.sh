@@ -1,18 +1,21 @@
 #!/bin/sh
 
-if [ $# -ne 3 -o "$1" = "-h" -o "$1" = "--help" ]; then
+if [ $# -lt 3 -o "$1" = "-h" -o "$1" = "--help" ]; then
 	echo "Usage: $0 <hatari> b|w <machine>"
 	exit 1;
 fi
 
 hatari=$1
+shift
 if [ ! -x "$hatari" ]; then
 	echo "First parameter must point to valid hatari executable."
 	exit 1;
 fi;
 
-width=$2
-machine=$3
+width=$1
+shift
+machine=$1
+shift
 basedir=$(dirname $0)
 testdir=$(mktemp -d)
 
@@ -31,7 +34,7 @@ export SDL_AUDIODRIVER=dummy
 
 cp "$basedir/buserr_$width.prg" "$testdir"
 HOME="$testdir" $hatari --log-level fatal --fast-forward on --machine $machine \
-	--sound off --run-vbls 500 --tos none  "$testdir/buserr_$width.prg" \
+	--sound off --run-vbls 500 --tos none $* "$testdir/buserr_$width.prg" \
 	2> $testdir/stderr.txt > $testdir/stdout.txt
 exitstat=$?
 if [ $exitstat -ne 0 ]; then
