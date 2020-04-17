@@ -504,7 +504,8 @@ overriding the earlier given ones:
 </ul>
 
 <p>Some of the run-time changes require emulation to be reset for them
-to take effect.</p>
+to take effect.  In most cases, Hatari will do that automatically when
+needed.</p>
 
 
 <h2>Command line options and arguments</h2>
@@ -887,7 +888,9 @@ IDE 0</p>
 <p class="parameter">-s, --memsize
 &lt;x&gt;</p>
 <p class="paramdesc">Set amount of emulated RAM, x = 1 to 14
-MiB, or 0 for 512 KiB. Other values are considered as a size in KiB</p>
+MiB, or 0 for 512 KiB. Other values are considered as a size in KiB.
+While Hatari allows 14MB for all machine types, on real HW, ST/STE can
+have up to 4MB, MegaSTE/TT up to 10MB and Falcon up to 14MB RAM.</p>
 <p class="parameter">--ttram
 &lt;x&gt;</p>
 <p class="paramdesc">Set amount of emulated TT RAM (for Falcon and TT
@@ -1122,6 +1125,9 @@ the <span class="button">Save&nbsp;config</span> button.
 Click <span class="button">OK</span> to go back and continue the emulation.
 All changed options will be applied.
 </p>
+<p><em>NOTE:</em>Any changes to machine ROM or HW configuration
+mean that emulation is reseted to apply the change.  Don't do that
+unless you're OK to lose your current emulation state.</p>
 <p>
 Select the <em>&quot;Reset machine&quot;</em> option if you
 want the emulated machine to perform a cold reset. This is equal to
@@ -1134,6 +1140,9 @@ and return to the host OS.
 <p>
 Click <span class="button">Cancel</span> to abandon any
 changes that you have made.
+</p>
+<p>
+(There are also keyboard shortcuts to do several of these actions.)
 </p>
 
 
@@ -1206,7 +1215,8 @@ changes that you have made.
  </li>
  <li>
   The <strong>Mega-STE</strong> was an improved version of the STE, with
-  16 MHz (instead of 8 MHz) CPU frequency and a built-in Real Time Clock chip.
+  16 MHz (instead of 8 MHz) CPU frequency, a built-in Real Time Clock
+  chip, and a VME bus.
  </li>
  <li>
    The <strong>TT</strong> was the advanced workstation from Atari. It
@@ -1217,7 +1227,8 @@ changes that you have made.
  <li>
   The <strong>Falcon</strong> was Atari's last computer, using a 16 MHz 68030
   CPU and some more interesting new hardware feature, like the Videl graphic
-  chip and DSP 56001 for sound. You need TOS 4.0x for running in Falcon mode.
+  chip and DSP 56001 for audio processing. You need TOS 4.0x for running in
+  Falcon mode.
  </li>
 </ul>
 <p>
@@ -1275,8 +1286,11 @@ changes that you have made.
 </p>
 <p>
  <em>NOTE:</em> The emulated Atari system is very very sensitive to all of
- these options and it is strongly recommended to reset the emulation after
- changing them (for most things that's done automatically).
+ these options so Hatari will automatically reset the emulation when
+ changes to (most of) these settings are applied.  Rest of the settings
+ apply to next boot.
+<p>
+</p>
  Most settings are also selected automatically when one uses the
  <span class="commandline">--machine</span> command line option.
 </p>
@@ -1523,14 +1537,15 @@ ends with a 'b'.
        alt="Hatari's GUI - the memory dialog" />
 </div>
 
-<p>You can select the amount of RAM for the emulated machine here. Only
-amounts that were valid on a real unmodified STFM can be selected.</p>
-<p><em>Note:</em> This option is critical and you are strongly advised
-to reset the emulated machine
-when changing this option.</p>
-<p>TT RAM size allows to emulate up to 512 MiB of 32-bit RAM. This is only
-useful in Falcon or TT mode and require to disable "24 bit addressing" mode
-in the CPU options
+<p>You can select the amount of RAM for the emulated machine here.
+While Hatari allows 14MB for all machine types, on real HW, ST/STE can
+have up to 4MB, MegaSTE/TT up to 10MB and Falcon up to 14MB RAM. Of
+values below 4MB, only ones that were valid on a real unmodified STFM
+are available</p>
+<p>TT RAM size allows to emulate up to 512 MiB of 32-bit RAM. This is
+only useful in Falcon and TT mode, and require to disable "24 bit
+addressing" mode in the CPU options (Hatari needs to patch Falcon TOS
+v4 for this)
 <p>Here you will find the options to save memory snapshots as well.</p>
 <p>Click on <span class="button">Save</span> to save a memory snapshot
 to file. You can select a new filename here.</p>
@@ -1557,7 +1572,8 @@ You can also select an optional cartridge image to use. Click on <span
 </p>
 <p>
 Depending on the machine type that you want to emulate, you can either use
-EmuTOS, or you must use a TOS version that supports the machine type.
+EmuTOS (see emutos.txt for more info), or a TOS version that supports
+the machine type.
 For ST mode, use TOS 1.00, 1.02, 1.04 or 2.06.
 For STE mode, use TOS 1.06, 1.62, 2.05 or 2.06.
 If you want to use the TT mode, you must specify a TOS 3.05 or 3.06 image here.
@@ -1571,11 +1587,6 @@ Keep in mind that any custom cartridge image will not work together with
 GEMDOS HD emulation or the VDI extended resolution emulation
 since some additional driver code will be used in the cartridge memory
 space for these emulations.
-</p>
-<p>
-<em>Note:</em> These options are critical and you are strongly
-advised to reset the emulated ST
-when changing one of these option.
 </p>
 
 
@@ -2408,9 +2419,15 @@ initial data to them.
 </p>
 <p>
 If you have an hard drive (image) with Atari format partition table,
-that should already have hard disk driver on it and work fine.
-Partitioning/formatting them is the problem.  Creating such images
+that should already have hard disk driver on it and work fine. Only
+partitioning/formatting them is the problem.  Creating such images
 from scratch is described in following sections.
+</p>
+<p>
+Note that while EmuTOS supports Atari format partition tables, and
+could access also hard disks with them, it doesn't run hard disk
+driver installed to the drive.  For such drives, it may be better to
+use a suitable Atari TOS version.
 </p>
 
 
@@ -2507,8 +2524,8 @@ HD setup as described in above sections.
 before hard disk image partitions, and still to be able to access all
 the IDE/ACSI partitions, you need to use HD Driver.  Note: this is the
 preferred method with EmuTOS (v0.9.x), because it doesn't run/use
-driver installed to the IDE/ACSI image directly although its own
-partition table/type support is very limited.</p>
+driver installed to the IDE/ACSI image directly and has some limitations
+in its partition table/type support.</p>
 
 <h3 id="Using_HD_Driver_with_GEMDOS_partitions">Using HD Driver with GEMDOS partitions</h3>
 
