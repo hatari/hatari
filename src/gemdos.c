@@ -2816,6 +2816,7 @@ static bool GemDOS_SNext(void)
 		 */
 		Log_Printf(LOG_WARN, "GEMDOS Fsnext(): Invalid DTA\n");
 		Regs[REG_D0] = GEMDOS_ENMFIL;
+		return true;
 	}
 
 	temp = InternalDTAs[Index].found;

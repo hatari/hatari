@@ -38,6 +38,7 @@ Emulator:
     moved (almost completely) to emulator side. Fixes Atari
     side error handling when program file isn't readable,
     and TOS stack overflows in some rare cases
+  - Invalid DTA in Fsnext() return -ENMFIL, like TOS does
 - Support read-only HD image files, and show error dialogs
   for image file open/lock issues
 - Low/med-rez line doubling uses less CPU and doubled lines in
