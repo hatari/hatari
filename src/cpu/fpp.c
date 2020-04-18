@@ -44,6 +44,7 @@
 #define SUPPORT_MMU 1
 #else
 #define SUPPORT_MMU 0
+extern void cputester_fault(void);
 #endif
 
 #include "softfloat/softfloat.h"
@@ -57,6 +58,7 @@ bool use_long_double = false;
 
 static bool support_exceptions;
 static bool support_denormals;
+static uae_u32 fpcr_mask, fpsr_mask;
 
 FPP_PRINT fpp_print;
 
@@ -705,18 +707,18 @@ uae_u32 fpp_get_fpsr (void)
 			regs.fpsr |= FPSR_CC_N;
 	}
 #endif
-	return regs.fpsr & 0x0ffffff8;
+	return regs.fpsr & fpsr_mask;
 }
 
 uae_u32 fpp_get_fpcr(void)
 {
-	return regs.fpcr & (currprefs.fpu_model == 68040 ? 0xffff : 0xfff0);
+	return regs.fpcr & fpcr_mask;
 }
 
 void fpp_set_fpcr (uae_u32 val)
 {
 	fpp_set_mode(val);
-	regs.fpcr = val & 0xffff;
+	regs.fpcr = val & fpcr_mask;
 }
 
 static void fpnan (fpdata *fpd)
@@ -735,7 +737,7 @@ static void fpset (fpdata *fpd, uae_s32 val)
 
 void fpp_set_fpsr (uae_u32 val)
 {
-	regs.fpsr = val;
+	regs.fpsr = val & fpsr_mask;
 
 #ifdef JIT
 	// check comment in fpp_cond
@@ -2189,7 +2191,9 @@ void fpuop_dbcc (uae_u32 opcode, uae_u16 extra)
 		return;
 
 	disp = (uae_s32) (uae_s16)x_cp_next_iword();
-	if (fault_if_no_fpu_u (opcode, extra, pc + disp, true, pc - 4))
+	// 68060 unimplemented stacked EA contains original extra + disp values
+	// not final absolute address.
+	if (fault_if_no_fpu_u (opcode, extra, (extra << 16) | (disp & 0xffff), true, pc - 4))
 		return;
 	regs.fpiar = pc - 4;
 	maybe_idle_state ();
@@ -2240,6 +2244,13 @@ void fpuop_scc (uae_u32 opcode, uae_u16 extra)
 		}
 	}
 
+	// needs to be before 68060 check because
+	// unimplemented stack frame stacked EA is adjusted
+	// Register is not adjusted.
+	if (mode == Apdi) {
+		ad -= reg == 7 ? 2 : 1;
+	}
+
 	if (fault_if_no_fpu_u (opcode, extra, ad, adset, pc))
 		return;
 
@@ -2257,7 +2268,6 @@ void fpuop_scc (uae_u32 opcode, uae_u16 extra)
 			mmufixup[0].reg = reg;
 			mmufixup[0].value = m68k_areg(regs, reg);
 			fpu_mmu_fixup = true;
-			ad -= reg == 7 ? 2 : 1;
 			m68k_areg(regs, reg) = ad;
 		}
 		x_cp_put_byte (ad, cc ? 0xff : 0x00);
@@ -2881,12 +2891,13 @@ static uaecptr fmovem2fpp (uaecptr ad, uae_u32 list, int incr, int regdir)
 			if (list & 0x80) {
 				if (incr < 0)
 					ad -= 3 * 4;
-				wrd1 = x_cp_get_long (ad + 0);
-				wrd2 = x_cp_get_long (ad + 4);
-				wrd3 = x_cp_get_long (ad + 8);
+				wrd1 = x_cp_get_long(ad + 0);
+				wrd2 = x_cp_get_long(ad + 4);
+				wrd3 = x_cp_get_long(ad + 8);
 				if (incr > 0)
 					ad += 3 * 4;
-				fpp_to_exten (&regs.fp[reg], wrd1, wrd2, wrd3);
+				fpp_to_exten(&regs.fp[reg], wrd1, wrd2, wrd3);
+
 			}
 			list <<= 1;
 		}
@@ -3162,9 +3173,9 @@ static void fpuop_arithmetic2 (uae_u32 opcode, uae_u16 extra)
 
 		case 4:
 		case 5:
-			// FMOVE Control Register <> Data or Address register
+			// FMOVE(M) Control Register(s) <> Data or Address register
 			if ((opcode & 0x38) == 0) {
-				// Dn
+				// FMOVE(M) Control Register(s) <> Dn
 				if (fault_if_no_fpu (opcode, extra, 0, false, pc))
 					return;
 				// Only single selected control register is allowed
@@ -3173,11 +3184,18 @@ static void fpuop_arithmetic2 (uae_u32 opcode, uae_u16 extra)
 				if (bits && bits != 0x1000 && bits != 0x0800 && bits != 0x400) {
 					// 68060 does not generate f-line if multiple bits are set
 					// but it also works unexpectedly, just do nothing for now.
-					if (currprefs.fpu_model != 68060)
+					if (currprefs.fpu_model != 68060) {
 						fpu_noinst(opcode, pc);
+					}
+#ifdef CPU_TESTER
+					if (currprefs.fpu_model == 68060) {
+						cputester_fault();
+					}
+#endif
 					return;
 				}
 				if (extra & 0x2000) {
+					// CR -> Dn
 					if (extra & 0x1000)
 						m68k_dreg(regs, opcode & 7) = fpp_get_fpcr();
 					if (extra & 0x0800)
@@ -3185,6 +3203,7 @@ static void fpuop_arithmetic2 (uae_u32 opcode, uae_u16 extra)
 					if ((extra & 0x0400) || !bits)
 						m68k_dreg(regs, opcode & 7) = fpp_get_fpiar();
 				} else {
+					// Dn -> CR
 					if (extra & 0x1000)
 						fpp_set_fpcr(m68k_dreg (regs, opcode & 7));
 					if (extra & 0x0800)
@@ -3193,30 +3212,45 @@ static void fpuop_arithmetic2 (uae_u32 opcode, uae_u16 extra)
 						fpp_set_fpiar(m68k_dreg (regs, opcode & 7));
 				}
 			} else if ((opcode & 0x38) == 0x08) {
-				// An
+				// FMOVE(M) Control Register(s) <> An
 				if (fault_if_no_fpu (opcode, extra, 0, false, pc))
 					return;
 				// Only FPIAR can be moved to/from address register
 				// All bits unset = FPIAR
 				uae_u16 bits = extra & (0x1000 | 0x0800 | 0x0400);
+				if (bits && bits != 0x0400 && currprefs.fpu_model == 68060) {
+					// 68060 does not generate f-line if multiple bits are set
+					// but it also works unexpectedly, just do nothing for now.
+#ifdef CPU_TESTER
+					cputester_fault();
+#endif
+					return;
+				}
 				// 68060, An and all bits unset: f-line
 				if ((bits && bits != 0x0400) || (!bits && currprefs.fpu_model == 68060)) {
 					fpu_noinst(opcode, pc);
 					return;
 				}
 				if (extra & 0x2000) {
+					// An -> FPIAR
 					m68k_areg (regs, opcode & 7) = regs.fpiar;
 				} else {
+					// FPIAR -> An
 					regs.fpiar = m68k_areg (regs, opcode & 7);
 				}
 			} else if ((opcode & 0x3f) == 0x3c) {
 				if ((extra & 0x2000) == 0) {
+					// FMOVE(M) #imm,Control Register(s)
 					uae_u32 ext[3];
 					// 68060 FMOVEM.L #imm,more than 1 control register: unimplemented EA
 					uae_u16 bits = extra & (0x1000 | 0x0800 | 0x0400);
 					if (bits && bits != 0x1000 && bits != 0x0800 && bits != 0x400) {
 						if (fault_if_60())
 							return;
+					}
+					// No control register bits set: FPIAR
+					if (!bits) {
+						extra |= 0x0400;
 					}
 					// fetch first, use only after all data has been fetched
 					ext[0] = ext[1] = ext[2] = 0;
@@ -3240,7 +3274,7 @@ static void fpuop_arithmetic2 (uae_u32 opcode, uae_u16 extra)
 					return;
 				}
 			} else if (extra & 0x2000) {
-				/* FMOVEM Control Register->Memory */
+				/* FMOVE(M) Control Register(s),EA */
 				uae_u32 ad;
 				int incr = 0;
 
@@ -3254,6 +3288,11 @@ static void fpuop_arithmetic2 (uae_u32 opcode, uae_u16 extra)
 					// PC relative modes not supported
 					fpu_noinst(opcode, pc);
 					return;
+				}
+
+				// No control register bits set: FPIAR
+				if (!(extra & (0x1000 | 0x0800 | 0x0400))) {
+					extra |= 0x0400;
 				}
 
 				if ((opcode & 0x38) == 0x20) {
@@ -3278,13 +3317,17 @@ static void fpuop_arithmetic2 (uae_u32 opcode, uae_u16 extra)
 					ad += 4;
 				}
 				ad -= incr;
-				if ((opcode & 0x38) == 0x18)
-					m68k_areg (regs, opcode & 7) = ad;
-				if ((opcode & 0x38) == 0x20)
-					m68k_areg (regs, opcode & 7) = ad;
+				if ((opcode & 0x38) == 0x18) {
+					// (An)+
+					m68k_areg(regs, opcode & 7) = ad;
+				}
+				if ((opcode & 0x38) == 0x20) {
+					// -(An)
+					m68k_areg(regs, opcode & 7) = ad;
+				}
 				trace_t0_68040();
 			} else {
-				/* FMOVEM Memory->Control Register */
+				/* FMOVE(M) EA,Control Register(s) */
 				uae_u32 ad;
 				int incr = 0;
 
@@ -3295,6 +3338,12 @@ static void fpuop_arithmetic2 (uae_u32 opcode, uae_u16 extra)
 				if (fault_if_no_fpu (opcode, extra, ad, adset, pc))
 					return;
 
+				// No control register bits set: FPIAR
+				if (!(extra & (0x1000 | 0x0800 | 0x0400))) {
+					extra |= 0x0400;
+				}
+
+				// -(An)
 				if((opcode & 0x38) == 0x20) {
 					if (extra & 0x1000)
 						incr += 4;
@@ -3316,10 +3365,14 @@ static void fpuop_arithmetic2 (uae_u32 opcode, uae_u16 extra)
 					fpp_set_fpiar(x_cp_get_long (ad));
 					ad += 4;
 				}
-				if ((opcode & 0x38) == 0x18)
-					m68k_areg (regs, opcode & 7) = ad;
-				if ((opcode & 0x38) == 0x20)
-					m68k_areg (regs, opcode & 7) = ad - incr;
+				if ((opcode & 0x38) == 0x18) {
+					// (An)+
+					m68k_areg(regs, opcode & 7) = ad;
+				}
+				if ((opcode & 0x38) == 0x20) {
+					// -(An)
+					m68k_areg(regs, opcode & 7) = ad - incr;
+				}
 			}
 			return;
 
@@ -3331,7 +3384,14 @@ static void fpuop_arithmetic2 (uae_u32 opcode, uae_u16 extra)
 				int incr = 1;
 				int regdir = 1;
 				if (get_fp_ad (opcode, &ad, &adset) == 0) {
-					fpu_noinst (opcode, pc);
+#ifdef CPU_TESTER
+					// 68060 does weird things (no exception) if FMOVEM.X #imm to registers
+					if ((opcode & 0x3f) == 0x3c && !(extra & 0x2000) && currprefs.fpu_model == 68060) {
+						cputester_fault();
+						return;
+					}
+#endif
+					fpu_noinst(opcode, pc);
 					return;
 				}
 				if (fault_if_no_fpu (opcode, extra, ad, adset, pc))
@@ -3358,11 +3418,17 @@ static void fpuop_arithmetic2 (uae_u32 opcode, uae_u16 extra)
 					case 3:	/* dynamic postinc */
 						if (fault_if_60())
 							return;
-						list = m68k_dreg (regs, (extra >> 4) & 3) & 0xff;
+						list = m68k_dreg (regs, (extra >> 4) & 7) & 0xff;
 						break;
 				}
-				if ((opcode & 0x38) == 0x20) { // -(an)
-					incr = -1;
+				if (((opcode & 0x38) == 0x20) || (currprefs.fpu_model == 68881 || currprefs.fpu_model == 68882)) {
+					// -(an)
+					if ((opcode & 0x38) == 0x20) {
+						incr = -1;
+						if (currprefs.fpu_model == 68060) {
+							regdir = -1;
+						}
+					}
 					switch ((extra >> 11) & 3)
 					{
 						case 0:	/* static pred */
@@ -3373,14 +3439,16 @@ static void fpuop_arithmetic2 (uae_u32 opcode, uae_u16 extra)
 				}
 				if (extra & 0x2000) {
 					/* FMOVEM FPP->Memory */
-					ad = fmovem2mem (ad, list, incr, regdir);
+					ad = fmovem2mem(ad, list, incr, regdir);
 					trace_t0_68040();
 				} else {
 					/* FMOVEM Memory->FPP */
-					ad = fmovem2fpp (ad, list, incr, regdir);
+					ad = fmovem2fpp(ad, list, incr, regdir);
 				}
-				if ((opcode & 0x38) == 0x18 || (opcode & 0x38) == 0x20) // (an)+ or -(an)
-					m68k_areg (regs, opcode & 7) = ad;
+				if ((opcode & 0x38) == 0x18 || (opcode & 0x38) == 0x20) {
+					// (an)+ or -(an)
+					m68k_areg(regs, opcode & 7) = ad;
+				}
 			}
 			return;
 
@@ -3478,6 +3546,12 @@ static void get_features(void)
 		condition_table = condition_table_040_060;
 	} else {
 		condition_table = condition_table_6888x;
+	}
+	fpsr_mask = 0x0ffffff8;
+	if (currprefs.fpu_model == 68040) {
+		fpcr_mask = 0xffff;
+	} else {
+		fpcr_mask = 0xfff0;
 	}
 }
 
