@@ -33,7 +33,7 @@ Uint32 VDI_OldPC;                  /* When call Trap#2, store off PC */
 bool bVdiAesIntercept = false;     /* Set to true to trace VDI & AES calls */
 bool bUseVDIRes = false;           /* Set to true (if want VDI), or false (ie for games) */
 /* defaults */
-int VDIRes = 0;                    /* 0,1 or 2 (low, medium, high) */
+int VDIRes = ST_LOW_RES;           /* used in screen.c */
 int VDIWidth = 640;                /* 640x480, 800x600 or 1024x768 */
 int VDIHeight = 480;
 int VDIPlanes = 4;
@@ -112,15 +112,15 @@ void VDI_SetResolution(int GEMColor, int WidthRequest, int HeightRequest)
 	switch (GEMColor)
 	{
 	 case GEMCOLOR_2:
-		VDIRes = 2;
+		VDIRes = ST_HIGH_RES;
 		VDIPlanes = 1;
 		break;
 	 case GEMCOLOR_4:
-		VDIRes = 1;
+		VDIRes = ST_MEDIUM_RES;
 		VDIPlanes = 2;
 		break;
 	 case GEMCOLOR_16:
-		VDIRes = 0;
+		VDIRes = ST_LOW_RES;
 		VDIPlanes = 4;
 		break;
 	}

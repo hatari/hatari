@@ -21,6 +21,7 @@ const char INFFILE_fileid[] = "Hatari inffile.c : " __DATE__ " " __TIME__;
 #include "file.h"
 #include "log.h"
 #include "str.h"
+#include "screen.h"
 #include "tos.h"
 #include "vdi.h"
 
@@ -41,6 +42,9 @@ typedef enum {
 	RES_TT_LOW,	/* 6, also Falcon 40 cols mode */
 	RES_COUNT
 } res_value_t;
+
+/* map values 0-6 to EmuTOS: N/A, ST low, med, high, TT med, high, low */
+static const res_value_t emutos_map[] = { 0, 0, 1, 2, 4, 6, 7 };
 
 
 static struct {
@@ -348,12 +352,35 @@ int INF_ValidateAutoStart(const char **val, const char **err)
 
 
 /**
- * Map / set VDI to INF file resolution
+ * Map VDI / HW resolution to INF file resolution value
  */
 static res_value_t vdi2inf(res_value_t mode)
 {
-	res_value_t res = TosOverride.reso;
-	res_value_t newres = mode + 1;
+	res_value_t newres, res = TosOverride.reso;
+
+	switch (mode)
+	{
+	case ST_LOW_RES:
+		newres = RES_ST_LOW;
+		break;
+	case ST_MEDIUM_RES:
+		newres = RES_ST_MED;
+		break;
+	case ST_HIGH_RES:
+		newres = RES_ST_HIGH;
+		break;
+	case TT_LOW_RES:
+		newres = RES_TT_LOW;
+		break;
+	case TT_MEDIUM_RES:
+		newres = RES_TT_MED;
+		break;
+	case TT_HIGH_RES:
+		newres = RES_TT_HIGH;
+		break;
+	default:
+		newres = res;
+	}
 	if (res != newres)
 	{
 		if (res)
@@ -477,9 +504,7 @@ static int INF_ValidateResolution(int *set_res, const char **val, const char **e
 
 	if (bIsEmuTOS)
 	{
-		/* map values 0-6: N/A, ST low, med, high, TT med, high, low */
-		unsigned char map[] = { 0, 0, 1, 2, 4, 6, 7 };
-		res = map[res];
+		res = emutos_map[res];
 		Log_Printf(LOG_DEBUG, "Remapped INF file TOS resolution for EmuTOS\n");
 	}
 	else if (TosVersion >= 0x0160)

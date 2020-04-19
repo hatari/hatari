@@ -8,7 +8,6 @@
 #ifndef HATARI_VDI_H
 #define HATARI_VDI_H
 
-#define MAX_VDI_PLANES  4
 /* TOS needs screen width to be aligned to 128/planes and height to VDI text
  * height (16, larger of these, is used in calculating the limits in Hatari).
  * Max. screen size supported by EmuTOS (and TOS v3.x?) is 300kB.
