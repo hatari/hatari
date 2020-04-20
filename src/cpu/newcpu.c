@@ -4714,6 +4714,18 @@ static bool do_specialties_interrupt (int Pending)
 }
 #endif
 
+static void check_debugger(void)
+{
+	if (regs.spcflags & SPCFLAG_BRK) {
+		unset_special(SPCFLAG_BRK);
+#ifdef DEBUGGER
+		if (debugging) {
+			debug();
+		}
+#endif
+	}
+}
+
 static int do_specialties (int cycles)
 {
 	bool stopped_debug = false;
@@ -5118,6 +5130,7 @@ static void m68k_run_1 (void)
 	Log_Printf(LOG_DEBUG, "m68k_run_1\n");
 
 	while (!exit) {
+		check_debugger();
 		TRY (prb) {
 			while (!exit) {
 				r->opcode = r->ir;
@@ -5230,6 +5243,7 @@ static void m68k_run_1_ce (void)
 	Log_Printf(LOG_DEBUG, "m68k_run_1_ce\n");
 
 	while (!exit) {
+		check_debugger();
 		TRY (prb) {
 			if (first) {
 				if (cpu_tracer < 0) {
@@ -5971,6 +5985,7 @@ static void m68k_run_mmu060 (void)
 #endif
 
 	while (!halt) {
+		check_debugger();
 		TRY (prb) {
 			for (;;) {
 #ifdef WINUAE_FOR_HATARI
@@ -6060,6 +6075,7 @@ static void m68k_run_mmu040 (void)
 #endif
 
 	while (!halt) {
+		check_debugger();
 		TRY (prb) {
 			for (;;) {
 #ifdef WINUAE_FOR_HATARI
@@ -6159,6 +6175,7 @@ static void m68k_run_mmu030 (void)
 	mmu030_fake_prefetch = -1;
 	check_halt();
 	while(!halt) {
+		check_debugger();
 		TRY (prb) {
 			for (;;) {
 				int cnt;
@@ -6364,6 +6381,7 @@ static void m68k_run_3ce (void)
 	Log_Printf(LOG_DEBUG, "m68k_run_3ce\n");
 
 	while (!exit) {
+		check_debugger();
 		TRY(prb) {
 			while (!exit) {
 #ifdef WINUAE_FOR_HATARI
@@ -6456,6 +6474,7 @@ static void m68k_run_3p(void)
 	Log_Printf(LOG_DEBUG, "m68k_run_3p\n");
 
 	while (!exit)  {
+		check_debugger();
 		TRY(prb) {
 			while (!exit) {
 #ifdef WINUAE_FOR_HATARI
@@ -6546,6 +6565,7 @@ static void m68k_run_2ce (void)
 	Log_Printf(LOG_DEBUG, "m68k_run_2ce\n");
 
 	while (!exit) {
+		check_debugger();
 		TRY(prb) {
 			if (first) {
 				if (cpu_tracer < 0) {
@@ -6746,6 +6766,7 @@ static void m68k_run_2p (void)
 	Log_Printf(LOG_DEBUG, "m68k_run_2p\n");
 
 	while (!exit) {
+		check_debugger();
 		TRY(prb) {
 
 			if (first) {
@@ -6978,6 +6999,7 @@ static void m68k_run_2_000(void)
 	Log_Printf(LOG_DEBUG, "m68k_run_2_000\n");
 
 	while (!exit) {
+		check_debugger();
 		TRY(prb) {
 			while (!exit) {
 #ifdef WINUAE_FOR_HATARI
@@ -7066,6 +7088,7 @@ static void m68k_run_2_020(void)
 	Log_Printf(LOG_DEBUG, "m68k_run_2_020\n");
 
 	while (!exit) {
+		check_debugger();
 		TRY(prb) {
 			while (!exit) {
 #ifdef WINUAE_FOR_HATARI
