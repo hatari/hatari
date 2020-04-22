@@ -17,7 +17,7 @@ fedora_task:
 
 freebsd_task:
   freebsd_instance:
-    image: freebsd-12-0-release-amd64
+    image_family: freebsd-12-1
     cpu: 4
     memory: 4G
   install_script:
