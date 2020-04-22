@@ -18,8 +18,7 @@ addons:
 before_script:
   - ./configure ${CONFIG}
 script:
-  - make -j$(nproc)
-  - make test
+  - make -j$(nproc) && make test
 
 matrix:
   include:
