@@ -529,18 +529,8 @@ void NvRam_Info(FILE *fp, Uint32 dummy)
 {
 	fprintf(fp, "- File: '%s'\n", nvram_filename);
 	fprintf(fp, "- Time: from host (regs: 0, 2, 4, 6-9)\n");
-	if (nvram[11] & REG_BIT_DM)
-	{
-		fprintf(fp, "- Alarm: %02x:%02x:%02x (1, 3, 5)\n",
-			nvram[5], nvram[3], nvram[1]);
-	}
-	else
-	{
-		fprintf(fp, "- Alarm: %02d:%02d:%02d (1, 3, 5)\n",
-			bin2BCD(nvram[5]),
-			bin2BCD(nvram[3]),
-			bin2BCD(nvram[1]));
-	}
+	fprintf(fp, "- Alarm: %02d:%02d:%02d (1, 3, 5)\n",
+		bin2BCD(nvram[5]), bin2BCD(nvram[3]), bin2BCD(nvram[1]));
 	fprintf(fp, "- Control reg A: 0x%02x (10)\n", nvram[10]);
 	fprintf(fp, "- Control reg B: 0x%02x (11)\n", nvram[11]);
 	fprintf(fp, "- Status reg A:  0x%02x (12)\n", nvram[12]);
