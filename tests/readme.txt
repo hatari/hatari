@@ -21,6 +21,11 @@ Test subdirectories
 
 Test subdirectories for Hatari and the emulated Atari machines:
 
+autostart/
+- trivial AUTO/-folder binaries for (manually) slowing down startup.
+  Allows testing whether problems in autostarted programs are due to
+  TOS starting them too fast for all TOS facilities to be present
+
 buserror/
 - "make test" tests for IO memory addresses which cause bus errors
   on real machines
@@ -34,6 +39,9 @@ cycles/
 debugger/
 - "make test" test code & data for Hatari debugger.
   test-scripting.sh script for manual testing of debugger scripting
+
+gemdos/
+- "make test" test code for GEMDOS APIs used by GEMDOS HD emulation
 
 keymap/
 - test programs for finding out Atari and SDL keycodes needed in

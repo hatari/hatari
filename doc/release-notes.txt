@@ -44,6 +44,7 @@ Emulator:
     demand and give warning if its entries need to be re-cycled
     (= cache max size is reached)
   - Invalid DTA in Fsnext() return -ENMFIL, like TOS does
+  - Dsetpath/Dgetpath empty path handling fix
 - Support read-only HD image files, and show error dialogs
   for image file open/lock issues
 - Hatari graphics support:
@@ -108,6 +109,7 @@ Building:
 - Fix: issue with multilib capable cross-compilers
 - Fix: workaround problems with Capslib 5.1 headers
 - Obsolete Mudflap option replaced with AddressSanitizer support
+- Add GEMDOS tests and improve CPU/MMU variant coverage in bus error tests
 
 Documentation:
 - Up to date documentation provided at: https://hatari.tuxfamily.org/doc/
