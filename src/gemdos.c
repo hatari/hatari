@@ -1811,21 +1811,38 @@ static bool GemDOS_RmDir(Uint32 Params)
 static bool GemDOS_ChDir(Uint32 Params)
 {
 	char *pDirName, *psTempDirPath;
+	uint32_t nStrAddr;
 	struct stat buf;
 	int Drive;
 
+	nStrAddr = STMemory_ReadLong(Params);
+	if (!STMemory_CheckAreaType(nStrAddr, MAX_GEMDOS_PATH, ABFLAG_RAM | ABFLAG_ROM))
+	{
+		LOG_TRACE(TRACE_OS_GEMDOS,
+		          "GEMDOS 0x3B Dsetpath with illegal file name (0x%x) at PC 0x%X\n",
+		          nStrAddr, CallingPC);
+		Regs[REG_D0] = GEMDOS_EPTHNF;
+		return true;
+	}
+
 	/* Find new directory */
-	pDirName = (char *)STMemory_STAddrToPointer(STMemory_ReadLong(Params));
+	pDirName = (char *)STMemory_STAddrToPointer(nStrAddr);
 
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x3B Dsetpath(\"%s\") at PC 0x%X\n", pDirName,
 		  CallingPC);
 
 	Drive = GemDOS_FileName2HardDriveID(pDirName);
-
 	if (!ISHARDDRIVE(Drive))
 	{
 		/* redirect to TOS */
 		return false;
+	}
+
+	/* Empty string does nothing */
+	if (*pDirName == '\0')
+	{
+		Regs[REG_D0] = GEMDOS_EOK;
+		return true;
 	}
 
 	/* Allocate temporary memory for path name: */
@@ -2666,6 +2683,11 @@ static bool GemDOS_GetDir(Uint32 Params)
 
 		// convert it to ST path (DOS)
 		File_CleanFileName(path);
+		if (path[0] == PATHSEP && path[1] == '\0')
+		{
+			/* Root directory is represented by empty string */
+			path[0] = '\0';
+		}
 		len = strlen(path);
 		/* Check that write is requested to valid memory area */
 		if ( !STMemory_CheckAreaType ( Address, len, ABFLAG_RAM ) )
