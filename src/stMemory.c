@@ -543,6 +543,29 @@ void	*STMemory_STAddrToPointer ( Uint32 addr )
 }
 
 
+/**
+ * Get the host memory pointer of a NUL-terminated string in the ST memory,
+ * or NULL if the whole string memory is not accessible or if the string
+ * is too big (i.e. rather garbage than a real string).
+ */
+char *STMemory_GetStringPointer(uint32_t addr)
+{
+	int idx = 0;
+
+	do
+	{
+		if (!STMemory_CheckAreaType(addr + idx, 1,  ABFLAG_RAM | ABFLAG_ROM))
+		{
+			return NULL;
+		}
+		if (*(char *)STMemory_STAddrToPointer(addr + idx) == '\0')
+		{
+			return STMemory_STAddrToPointer(addr);
+		}
+	} while (idx++ < 0x10000);
+
+	return NULL;
+}
 
 /**
  * Those functions are directly accessing the memory of the corresponding

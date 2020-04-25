@@ -1707,9 +1707,15 @@ static bool GemDOS_MkDir(Uint32 Params)
 {
 	char *pDirName, *psDirPath;
 	int Drive;
+	uint32_t nStrAddr = STMemory_ReadLong(Params);
 
-	/* Find directory to make */
-	pDirName = (char *)STMemory_STAddrToPointer(STMemory_ReadLong(Params));
+	pDirName = STMemory_GetStringPointer(nStrAddr);
+	if (!pDirName || !pDirName[0])
+	{
+		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x39 bad Dcreate(0x%X) at PC 0x%X\n",
+		          nStrAddr, CallingPC);
+		return false;
+	}
 
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x39 Dcreate(\"%s\") at PC 0x%X\n", pDirName,
 		  CallingPC);
@@ -1759,9 +1765,15 @@ static bool GemDOS_RmDir(Uint32 Params)
 {
 	char *pDirName, *psDirPath;
 	int Drive;
+	uint32_t nStrAddr = STMemory_ReadLong(Params);
 
-	/* Find directory to make */
-	pDirName = (char *)STMemory_STAddrToPointer(STMemory_ReadLong(Params));
+	pDirName = STMemory_GetStringPointer(nStrAddr);
+	if (!pDirName || !pDirName[0])
+	{
+		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x3A bad Ddelete(0x%X) at PC 0x%X\n",
+		          nStrAddr, CallingPC);
+		return false;
+	}
 
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x3A Ddelete(\"%s\") at PC 0x%X\n", pDirName,
 		  CallingPC);
@@ -1811,12 +1823,12 @@ static bool GemDOS_RmDir(Uint32 Params)
 static bool GemDOS_ChDir(Uint32 Params)
 {
 	char *pDirName, *psTempDirPath;
-	uint32_t nStrAddr;
 	struct stat buf;
 	int Drive;
+	uint32_t nStrAddr = STMemory_ReadLong(Params);
 
-	nStrAddr = STMemory_ReadLong(Params);
-	if (!STMemory_CheckAreaType(nStrAddr, MAX_GEMDOS_PATH, ABFLAG_RAM | ABFLAG_ROM))
+	pDirName = STMemory_GetStringPointer(nStrAddr);
+	if (!pDirName)
 	{
 		LOG_TRACE(TRACE_OS_GEMDOS,
 		          "GEMDOS 0x3B Dsetpath with illegal file name (0x%x) at PC 0x%X\n",
@@ -1824,9 +1836,6 @@ static bool GemDOS_ChDir(Uint32 Params)
 		Regs[REG_D0] = GEMDOS_EPTHNF;
 		return true;
 	}
-
-	/* Find new directory */
-	pDirName = (char *)STMemory_STAddrToPointer(nStrAddr);
 
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x3B Dsetpath(\"%s\") at PC 0x%X\n", pDirName,
 		  CallingPC);
@@ -1926,11 +1935,18 @@ static bool GemDOS_Create(Uint32 Params)
 	/* TODO: host filenames might not fit into this */
 	char szActualFileName[MAX_GEMDOS_PATH];
 	char *pszFileName;
-	int Drive,Index, Mode;
+	int Drive, Index;
+	uint32_t nStrAddr = STMemory_ReadLong(Params);
+	int Mode = STMemory_ReadWord(Params + SIZE_LONG);
 
-	/* Find filename */
-	pszFileName = (char *)STMemory_STAddrToPointer(STMemory_ReadLong(Params));
-	Mode = STMemory_ReadWord(Params+SIZE_LONG);
+	pszFileName = STMemory_GetStringPointer(nStrAddr);
+	if (!pszFileName || !pszFileName[0])
+	{
+		LOG_TRACE(TRACE_OS_GEMDOS|TRACE_OS_BASE,
+		          "GEMDOS 0x3C bad Fcreate(0x%X, 0x%x) at PC 0x%X\n",
+		          nStrAddr, Mode, CallingPC);
+		return false;
+	}
 
 	LOG_TRACE(TRACE_OS_GEMDOS|TRACE_OS_BASE,
 		  "GEMDOS 0x3C Fcreate(\"%s\", 0x%x) at PC 0x%X\n", pszFileName, Mode,
@@ -2046,14 +2062,20 @@ static bool GemDOS_Open(Uint32 Params)
 	const char *Modes[] = {
 		"read-only", "write-only", "read/write", "read/write"
 	};
-	int Drive, Index, Mode;
+	int Drive, Index;
 	FILE *OverrideHandle;
 	bool bToTos = false;
+	uint32_t nStrAddr = STMemory_ReadLong(Params);
+	int Mode = STMemory_ReadWord(Params+SIZE_LONG) & 3;
 
-	/* Find filename */
-	pszFileName = (char *)STMemory_STAddrToPointer(STMemory_ReadLong(Params));
-	Mode = STMemory_ReadWord(Params+SIZE_LONG);
-	Mode &= 3;
+	pszFileName = STMemory_GetStringPointer(nStrAddr);
+	if (!pszFileName || !pszFileName[0])
+	{
+		LOG_TRACE(TRACE_OS_GEMDOS|TRACE_OS_BASE,
+		          "GEMDOS 0x3D bad Fopen(0x%X, %s) at PC=0x%X\n",
+		          nStrAddr, Modes[Mode], CallingPC);
+		return false;
+	}
 
 	LOG_TRACE(TRACE_OS_GEMDOS|TRACE_OS_BASE,
 		  "GEMDOS 0x3D Fopen(\"%s\", %s) at PC=0x%X\n",
@@ -2387,9 +2409,15 @@ static bool GemDOS_FDelete(Uint32 Params)
 {
 	char *pszFileName, *psActualFileName;
 	int Drive;
+	uint32_t nStrAddr = STMemory_ReadLong(Params);
 
-	/* Find filename */
-	pszFileName = (char *)STMemory_STAddrToPointer(STMemory_ReadLong(Params));
+	pszFileName = STMemory_GetStringPointer(nStrAddr);
+	if (!pszFileName || !pszFileName[0])
+	{
+		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x41 bad Fdelete(0x%X) at PC 0x%X\n",
+		          nStrAddr, CallingPC);
+		return false;
+	}
 
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x41 Fdelete(\"%s\") at PC 0x%X\n", pszFileName,
 		  CallingPC);
@@ -2510,15 +2538,20 @@ static bool GemDOS_Fattrib(Uint32 Params)
 	char sActualFileName[MAX_GEMDOS_PATH];
 	char *psFileName;
 	int nDrive;
-	int nRwFlag, nAttrib;
 	struct stat FileStat;
+	uint32_t nStrAddr = STMemory_ReadLong(Params);
+	int nRwFlag = STMemory_ReadWord(Params + SIZE_LONG);
+	int nAttrib = STMemory_ReadWord(Params + SIZE_LONG + SIZE_WORD);
 
-	/* Find filename */
-	psFileName = (char *)STMemory_STAddrToPointer(STMemory_ReadLong(Params));
+	psFileName = STMemory_GetStringPointer(nStrAddr);
+	if (!psFileName || !psFileName[0])
+	{
+		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x43 bad Fattrib(0x%X, %d, 0x%x) at PC 0x%X\n",
+		          nStrAddr, nRwFlag, nAttrib, CallingPC);
+		return false;
+	}
+
 	nDrive = GemDOS_FileName2HardDriveID(psFileName);
-
-	nRwFlag = STMemory_ReadWord(Params+SIZE_LONG);
-	nAttrib = STMemory_ReadWord(Params+SIZE_LONG+SIZE_WORD);
 
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x43 Fattrib(\"%s\", %d, 0x%x) at PC 0x%X\n",
 	          psFileName, nRwFlag, nAttrib,
@@ -2739,7 +2772,13 @@ static int GemDOS_Pexec(Uint32 Params)
 			int cmdlen;
 			char *str;
 			const char *name, *cmd;
-			name = (const char *)STMemory_STAddrToPointer(prgname);
+			name = STMemory_GetStringPointer(prgname);
+			if (!name)
+			{
+				LOG_TRACE_PRINT("GEMDOS 0x4B bad Pexec(%i, 0x%X, ...) at PC 0x%X\n",
+				                mode, prgname, CallingPC);
+				return false;
+			}
 			cmd = (const char *)STMemory_STAddrToPointer(cmdline);
 			cmdlen = *cmd++;
 			str = malloc(cmdlen+1);
@@ -2760,7 +2799,9 @@ static int GemDOS_Pexec(Uint32 Params)
 	if (mode != 0 && mode != 3)
 		return false;
 
-	pszFileName = (char *)STMemory_STAddrToPointer(prgname);
+	pszFileName = STMemory_GetStringPointer(prgname);
+	if (!pszFileName)
+		return false;
 	Drive = GemDOS_FileName2HardDriveID(pszFileName);
 
 	/* Skip if it is not using our emulated drive */
@@ -2900,9 +2941,14 @@ static bool GemDOS_SFirst(Uint32 Params)
 	Uint32 DTA_Gemdos;
 	Uint16 useidx;
 
-	/* Find filename to search for */
-	pszFileName = (char *)STMemory_STAddrToPointer(STMemory_ReadLong(Params));
 	nAttrSFirst = STMemory_ReadWord(Params+SIZE_LONG);
+	pszFileName = STMemory_GetStringPointer(STMemory_ReadLong(Params));
+	if (!pszFileName)
+	{
+		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x4E bad Fsfirst(0x%X, 0x%x) at PC 0x%X\n",
+		          STMemory_ReadLong(Params), nAttrSFirst, CallingPC);
+		return false;
+	}
 
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x4E Fsfirst(\"%s\", 0x%x) at PC 0x%X\n", pszFileName, nAttrSFirst,
 		  CallingPC);
@@ -3061,10 +3107,18 @@ static bool GemDOS_Rename(Uint32 Params)
 	char szNewActualFileName[MAX_GEMDOS_PATH];
 	char szOldActualFileName[MAX_GEMDOS_PATH];
 	int NewDrive, OldDrive;
+	uint32_t nOldStrAddr = STMemory_ReadLong(Params + SIZE_WORD);
+	uint32_t nNewStrAddr = STMemory_ReadLong(Params + SIZE_WORD + SIZE_LONG);
 
 	/* Read details from stack, skip first (dummy) arg */
-	pszOldFileName = (char *)STMemory_STAddrToPointer(STMemory_ReadLong(Params+SIZE_WORD));
-	pszNewFileName = (char *)STMemory_STAddrToPointer(STMemory_ReadLong(Params+SIZE_WORD+SIZE_LONG));
+	pszOldFileName = STMemory_GetStringPointer(nOldStrAddr);
+	pszNewFileName = STMemory_GetStringPointer(nNewStrAddr);
+	if (!pszOldFileName || !pszOldFileName[0] || !pszNewFileName || !pszNewFileName[0])
+	{
+		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x56 bad Frename(0x%X, 0x%X) at PC 0x%X\n",
+		          nOldStrAddr, nNewStrAddr, CallingPC);
+		return false;
+	}
 
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x56 Frename(\"%s\", \"%s\") at PC 0x%X\n", pszOldFileName, pszNewFileName,
 		  CallingPC);
