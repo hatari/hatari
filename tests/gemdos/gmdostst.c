@@ -8,6 +8,8 @@
 #include <tos.h>
 #include <string.h>
 
+extern unsigned short get_sr(void);
+
 static char buf1[512];
 static char buf2[512];
 static char buf3[512];
@@ -160,6 +162,7 @@ static int tst_files(void)
 {
 	int fh;
 	long ret;
+	const char testdata[] = "Hello World!\n1234567890";
 
 	fh = Fcreate("TESTFILE.DAT", 0);
 	if (fh < 0)
@@ -168,12 +171,45 @@ static int tst_files(void)
 		return fh;
 	}
 
-	/* TODO: Add more tests here */
+	ret = Fwrite(fh, sizeof(testdata), testdata);
+	if (ret != sizeof(testdata))
+	{
+		Cconws("Fwrite");
+		return -1;
+	}
 
 	ret = Fclose(fh);
 	if (ret)
 	{
-		Cconws("Fclose(fh)");
+		Cconws("Fclose on created file");
+		return ret;
+	}
+
+	fh = Fopen("TESTFILE.DAT", 0);
+	if (fh < 0)
+	{
+		Cconws("Fopen(\"TESTFILE.DAT\")");
+		return fh;
+	}
+
+	ret = Fread(fh, sizeof(testdata), buf1);
+	if (ret != sizeof(testdata) || memcmp(testdata, buf1, sizeof(testdata)))
+	{
+		Cconws("Fread");
+		return -1;
+	}
+
+	ret = Fread(fh, sizeof(testdata), buf2);
+	if (ret)
+	{
+		Cconws("Fread EOF");
+		return -1;
+	}
+
+	ret = Fclose(fh);
+	if (ret)
+	{
+		Cconws("Fclose on read-only file");
 		return ret;
 	}
 
@@ -194,10 +230,49 @@ static int tst_files(void)
 	return 0;
 }
 
+static int tst_sys(void)
+{
+	long old_ssp, ret;
+
+	/* Initially we should be in user mode */
+	ret = Super(1);
+	if (ret)
+	{
+		Cconws("user mode by default");
+		return -1;
+	}
+
+	old_ssp = Super(0);
+	if (old_ssp <= 0)
+	{
+		Cconws("switch to supervisor mode");
+		return -1;
+	}
+
+	ret = Super(1);
+	if (ret != -1 || !(get_sr() & 0x2000))
+	{
+		Cconws("supervisor mode");
+		return -1;
+	}
+
+	Super(old_ssp);    /* Back to user mode - no valid return value here */
+
+	ret = Super(1);
+	if (ret)
+	{
+		Cconws("user mode");
+		return -1;
+	}
+
+	return 0;
+}
+
 struct test tests[] =
 {
 	{ "paths", tst_directories },
 	{ "files", tst_files },
+	{ "sys", tst_sys },
 
 	{ 0L, 0L }
 };

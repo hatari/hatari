@@ -4,4 +4,5 @@ gmdostst.tos
 =
 ../startup.s
 gmdostst.c
+get_sr.s
 ahccstdi.lib
