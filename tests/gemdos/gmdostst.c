@@ -143,7 +143,7 @@ static int tst_directories(void)
 	if (ret || buf3[0] != '\0')
 	{
 		Cconws("empty Dgetpath()");
-		return ret;
+		return -1;
 	}
 
 	ret = Dsetpath(buf1);
@@ -165,7 +165,7 @@ static int tst_files(void)
 	if (fh < 0)
 	{
 		Cconws("Fcreate(\"TESTFILE.DAT\")");
-		return ret;
+		return fh;
 	}
 
 	/* TODO: Add more tests here */
@@ -188,7 +188,7 @@ static int tst_files(void)
 	if (ret == 0)
 	{
 		Cconws("Fdelete(\"TESTFILE.DAT\") again");
-		return ret;
+		return -1;
 	}
 
 	return 0;
