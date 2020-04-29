@@ -15,13 +15,6 @@
 */
 const char RS232_fileid[] = "Hatari rs232.c : " __DATE__ " " __TIME__;
 
-#include <config.h>
-
-#if HAVE_TERMIOS_H
-# include <termios.h>
-# include <unistd.h>
-#endif
-
 #include <SDL.h>
 #include <SDL_thread.h>
 #include <errno.h>
@@ -33,6 +26,15 @@ const char RS232_fileid[] = "Hatari rs232.c : " __DATE__ " " __TIME__;
 #include "mfp.h"
 #include "rs232.h"
 
+/* AmigaOS has termios.h, but no tcsetattr() and friends - d'oh! */
+#if !defined(HAVE_TCSETATTR)
+#undef HAVE_TERMIOS_H
+#endif
+
+#if HAVE_TERMIOS_H
+# include <termios.h>
+# include <unistd.h>
+#endif
 
 #define RS232_DEBUG 0
 
@@ -64,39 +66,6 @@ static inline void cfmakeraw(struct termios *termios_p)
 	termios_p->c_cflag |= CS8;
 }
 #endif
-
-
-#if defined(__AMIGAOS4__)
-
-// dummy functions. REMOVE THEM LATER
-
-int tcgetattr(int file_descriptor,struct termios *tios_p)
-{
-	return -1;
-}
-
-int tcsetattr(int file_descriptor,int action,struct termios *tios_p)
-{
-	return -1;
-}
-
-int cfsetospeed(struct termios *tios, speed_t ospeed)
-{
-
-	tios->c_ospeed = ospeed;
-
-	return 0;
-}
-
-
-int cfsetispeed(struct termios *tios,speed_t ispeed)
-{
-	tios->c_ispeed = ispeed;
-
-	return 0;
-}
-
-#endif  /* __AMIGAOS4__ */
 
 
 /*-----------------------------------------------------------------------*/

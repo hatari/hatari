@@ -222,6 +222,7 @@ check_include_files("sys/socket.h;sys/un.h" HAVE_UNIX_DOMAIN_SOCKETS)
 # #############################
 
 check_symbol_exists(cfmakeraw "termios.h" HAVE_CFMAKERAW)
+check_symbol_exists(tcsetattr "termios.h" HAVE_TCSETATTR)
 check_symbol_exists(setenv "stdlib.h" HAVE_SETENV)
 check_symbol_exists(select "sys/select.h" HAVE_SELECT)
 check_symbol_exists(gettimeofday "sys/time.h" HAVE_GETTIMEOFDAY)

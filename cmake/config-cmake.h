@@ -55,6 +55,9 @@
 /* Define to 1 if you have the `cfmakeraw' function. */
 #cmakedefine HAVE_CFMAKERAW 1
 
+/* Define to 1 if you have the `tcsetattr' function. */
+#cmakedefine HAVE_TCSETATTR 1
+
 /* Define to 1 if you have the 'setenv' function. */
 #cmakedefine HAVE_SETENV 1
 
