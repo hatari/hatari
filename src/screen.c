@@ -33,6 +33,7 @@ const char Screen_fileid[] = "Hatari screen.c : " __DATE__ " " __TIME__;
 #include "main.h"
 #include "configuration.h"
 #include "avi_record.h"
+#include "file.h"
 #include "log.h"
 #include "paths.h"
 #include "options.h"
@@ -808,8 +809,8 @@ void Screen_Init(void)
 	Video_SetScreenRasters();                       /* Set rasters ready for first screen */
 
 	/* Load and set icon */
-	snprintf(sIconFileName, sizeof(sIconFileName), "%s%chatari-icon.bmp",
-	         Paths_GetDataDir(), PATHSEP);
+	File_MakePathBuf(sIconFileName, sizeof(sIconFileName), Paths_GetDataDir(),
+	                 "hatari-icon", "bmp");
 	pIconSurf = SDL_LoadBMP(sIconFileName);
 	if (pIconSurf)
 	{

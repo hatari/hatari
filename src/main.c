@@ -20,6 +20,7 @@ const char Main_fileid[] = "Hatari main.c : " __DATE__ " " __TIME__;
 #include "dialog.h"
 #include "audio.h"
 #include "joy.h"
+#include "file.h"
 #include "floppy.h"
 #include "floppy_ipf.h"
 #include "floppy_stx.h"
@@ -869,11 +870,8 @@ static void Main_LoadInitialConfig(void)
 	psGlobalConfig = malloc(FILENAME_MAX);
 	if (psGlobalConfig)
 	{
-#if defined(__AMIGAOS4__)
-		strncpy(psGlobalConfig, CONFDIR"hatari.cfg", FILENAME_MAX);
-#else
-		snprintf(psGlobalConfig, FILENAME_MAX, CONFDIR"%chatari.cfg", PATHSEP);
-#endif
+		File_MakePathBuf(psGlobalConfig, FILENAME_MAX, CONFDIR,
+		                 "hatari", "cfg");
 		/* Try to load the global configuration file */
 		Configuration_Load(psGlobalConfig);
 

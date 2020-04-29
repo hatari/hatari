@@ -35,6 +35,8 @@ extern bool File_QueryOverwrite(const char *pszFileName);
 extern char* File_FindPossibleExtFileName(const char *pszFileName,const char * const ppszExts[]);
 extern void File_SplitPath(const char *pSrcFileName, char *pDir, char *pName, char *Ext);
 extern char* File_MakePath(const char *pDir, const char *pName, const char *pExt);
+extern int File_MakePathBuf(char *buf, size_t buflen, const char *pDir,
+                            const char *pName, const char *pExt);
 extern void File_ShrinkName(char *pDestFileName, const char *pSrcFileName, int maxlen);
 extern FILE *File_Open(const char *path, const char *mode);
 extern FILE *File_Close(FILE *fp);

@@ -786,15 +786,18 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Memory.STRamSize_KB = 1024;	/* 1 MiB */
 	ConfigureParams.Memory.TTRamSize_KB = 0;	/* disabled */
 	ConfigureParams.Memory.bAutoSave = false;
-	sprintf(ConfigureParams.Memory.szMemoryCaptureFileName, "%s%chatari.sav",
-	        psHomeDir, PATHSEP);
-	sprintf(ConfigureParams.Memory.szAutoSaveFileName, "%s%cauto.sav",
-	        psHomeDir, PATHSEP);
+	File_MakePathBuf(ConfigureParams.Memory.szMemoryCaptureFileName,
+	                 sizeof(ConfigureParams.Memory.szMemoryCaptureFileName),
+	                 psHomeDir, "hatari", "sav");
+	File_MakePathBuf(ConfigureParams.Memory.szAutoSaveFileName,
+	                 sizeof(ConfigureParams.Memory.szAutoSaveFileName),
+	                 psHomeDir, "auto", "sav");
 
 	/* Set defaults for Printer */
 	ConfigureParams.Printer.bEnablePrinting = false;
-	sprintf(ConfigureParams.Printer.szPrintToFileName, "%s%chatari.prn",
-	        psHomeDir, PATHSEP);
+	File_MakePathBuf(ConfigureParams.Printer.szPrintToFileName,
+	                 sizeof(ConfigureParams.Printer.szPrintToFileName),
+	                 psHomeDir, "hatari", "prn");
 
 	/* Set defaults for MFP RS232 (ST/MegaST/STE/MegaSTE/TT) */
 	ConfigureParams.RS232.bEnableRS232 = false;
@@ -853,24 +856,28 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Sound.bEnableSound = true;
 	ConfigureParams.Sound.bEnableSoundSync = false;
 	ConfigureParams.Sound.nPlaybackFreq = 44100;
-	sprintf(ConfigureParams.Sound.szYMCaptureFileName, "%s%chatari.wav",
-	        psWorkingDir, PATHSEP);
+	File_MakePathBuf(ConfigureParams.Sound.szYMCaptureFileName,
+	                 sizeof(ConfigureParams.Sound.szYMCaptureFileName),
+	                 psWorkingDir, "hatari", "wav");
 	ConfigureParams.Sound.SdlAudioBufferSize = 0;
 	ConfigureParams.Sound.YmVolumeMixing = YM_TABLE_MIXING;
 
 	/* Set defaults for Rom */
-	sprintf(ConfigureParams.Rom.szTosImageFileName, "%s%ctos.img",
-	        Paths_GetDataDir(), PATHSEP);
+	File_MakePathBuf(ConfigureParams.Rom.szTosImageFileName,
+	                 sizeof(ConfigureParams.Rom.szTosImageFileName),
+	                 Paths_GetDataDir(), "tos", "img");
 	ConfigureParams.Rom.bPatchTos = true;
 	strcpy(ConfigureParams.Rom.szCartridgeImageFileName, "");
 
 	/* Set defaults for Lilo */
 	strcpy(ConfigureParams.Lilo.szCommandLine,
 	       "root=/dev/ram video=atafb:vga16 load_ramdisk=1");
-	sprintf(ConfigureParams.Lilo.szKernelFileName,
-		"%s%cvmlinuz", Paths_GetDataDir(), PATHSEP);
-	sprintf(ConfigureParams.Lilo.szRamdiskFileName,
-		"%s%cinitrd", Paths_GetDataDir(), PATHSEP);
+	File_MakePathBuf(ConfigureParams.Lilo.szKernelFileName,
+	                 sizeof(ConfigureParams.Lilo.szKernelFileName),
+	                 Paths_GetDataDir(), "vmlinuz", NULL);
+	File_MakePathBuf(ConfigureParams.Lilo.szRamdiskFileName,
+	                 sizeof(ConfigureParams.Lilo.szRamdiskFileName),
+	                 Paths_GetDataDir(), "initrd", NULL);
 	ConfigureParams.Lilo.szKernelSymbols[0] = '\0';
 	ConfigureParams.Lilo.bRamdiskToFastRam = true;
 	ConfigureParams.Lilo.bKernelToFastRam = true;
@@ -903,18 +910,16 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Video.AviRecordVcodec = AVI_RECORD_VIDEO_CODEC_BMP;
 #endif
 	ConfigureParams.Video.AviRecordFps = 0;			/* automatic FPS */
-	sprintf(ConfigureParams.Video.AviRecordFile, "%s%chatari.avi", psWorkingDir, PATHSEP);
+	File_MakePathBuf(ConfigureParams.Video.AviRecordFile,
+	                 sizeof(ConfigureParams.Video.AviRecordFile),
+	                 psWorkingDir, "hatari", "avi");
 
 	/* Initialize the configuration file name */
-	if (strlen(psHomeDir) < sizeof(sConfigFileName)-13)
-		sprintf(sConfigFileName, "%s%chatari.cfg", psHomeDir, PATHSEP);
-	else
+	if (File_MakePathBuf(sConfigFileName, sizeof(sConfigFileName),
+	                     psHomeDir, "hatari", "cfg"))
+	{
 		strcpy(sConfigFileName, "hatari.cfg");
-
-#if defined(__AMIGAOS4__)
-	/* Fix default path names on Amiga OS */
-	sprintf(ConfigureParams.Rom.szTosImageFileName, "%stos.img", Paths_GetDataDir());
-#endif
+	}
 }
 
 

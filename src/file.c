@@ -573,6 +573,35 @@ char * File_MakePath(const char *pDir, const char *pName, const char *pExt)
 	return filepath;
 }
 
+/**
+ * Like File_MakePath(), but puts the string into a pre-allocated buffer
+ * instead of returning a freshly allocated memory buffer.
+ */
+int File_MakePathBuf(char *buf, size_t buflen, const char *pDir,
+                     const char *pName, const char *pExt)
+{
+	char *tmp;
+
+	if (!buflen)
+		return -EINVAL;
+
+	tmp = File_MakePath(pDir, pName, pExt);
+	if (!tmp)
+	{
+		buf[0] = '\0';
+		return -ENOMEM;
+	}
+
+	strncpy(buf, tmp, buflen);
+	free(tmp);
+	if (buf[buflen - 1])
+	{
+		buf[buflen - 1] = '\0';
+		return -E2BIG;
+	}
+
+	return 0;
+}
 
 /*-----------------------------------------------------------------------*/
 /**
