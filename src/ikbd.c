@@ -75,6 +75,8 @@ const char IKBD_fileid[] = "Hatari ikbd.c : " __DATE__ " " __TIME__;
 /* 2017/10/27	[TS]	Add Audio Sculpture 6301 program checksum and emulation				*/
 
 
+#include <inttypes.h>
+
 #include "main.h"
 #include "configuration.h"
 #include "ikbd.h"
