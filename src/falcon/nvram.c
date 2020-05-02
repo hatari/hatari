@@ -52,6 +52,8 @@
 */
 const char NvRam_fileid[] = "Hatari nvram.c : " __DATE__ " " __TIME__;
 
+#include <time.h>
+
 #include "main.h"
 #include "configuration.h"
 #include "ioMem.h"
