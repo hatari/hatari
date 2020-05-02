@@ -143,10 +143,12 @@ int Statusbar_GetHeightForSize(int width, int height)
 	/* Must arrive at same conclusion about font size as SDLGui_SetScreen(),
 	 * and max size returned by this must correspond to STATUSBAR_MAX_HEIGHT
 	 */
-	if (ConfigureParams.Screen.bShowStatusbar) {
+	if (ConfigureParams.Screen.bShowStatusbar)
+	{
 		/* smaller SDL GUI font height = 8, larger = 16 */
 		h = 8;
-		if (width >= 640 && height >= (400-2*h)) {
+		if (width >= 640 && height >= (400-2*h))
+		{
 			h *= 2;
 		}
 		h += 1+1;
@@ -235,8 +237,10 @@ static void Statusbar_JoysticksGetText ( char *buf )
 {
 	int i;
 
-	for (i = 0; i < JOYSTICK_COUNT; i++) {
-		switch (ConfigureParams.Joysticks.Joy[i].nJoystickMode) {
+	for (i = 0; i < JOYSTICK_COUNT; i++)
+	{
+		switch (ConfigureParams.Joysticks.Joy[i].nJoystickMode)
+		{
 		case JOYSTICK_DISABLED:
 			*buf++ = '-';
 			break;
@@ -271,7 +275,8 @@ static void Statusbar_OverlayInit(const SDL_Surface *surf)
 	if (OverlayUnderside &&
 	    OverlayUnderside->w == OverlayLedRect.w &&
 	    OverlayUnderside->h == OverlayLedRect.h &&
-	    OverlayUnderside->format->BitsPerPixel == surf->format->BitsPerPixel) {
+	    OverlayUnderside->format->BitsPerPixel == surf->format->BitsPerPixel)
+	{
 		SDL_FreeSurface(OverlayUnderside);
 		OverlayUnderside = NULL;
 	}
@@ -309,17 +314,20 @@ void Statusbar_Init(SDL_Surface *surf)
 	GrayBg      = SDL_MapRGB(surf->format, 0xc0, 0xc0, 0xc0);
 
 	/* disable leds */
-	for (i = 0; i < MAX_DRIVE_LEDS; i++) {
+	for (i = 0; i < MAX_DRIVE_LEDS; i++)
+	{
 		Led[i].state = Led[i].oldstate = LED_STATE_OFF;
 		Led[i].expire = 0;
 	}
 	Statusbar_OverlayInit(surf);
 	
 	/* disable statusbar if it doesn't fit to video mode */
-	if (surf->h < ScreenHeight + StatusbarHeight) {
+	if (surf->h < ScreenHeight + StatusbarHeight)
+	{
 		StatusbarHeight = 0;
 	}
-	if (!StatusbarHeight) {
+	if (!StatusbarHeight)
+	{
 		DEBUGPRINT(("Doesn't fit <- Statusbar_Init()\n"));
 		return;
 	}
@@ -331,11 +339,14 @@ void Statusbar_Init(SDL_Surface *surf)
 
 	/* video mode didn't match, need to recalculate sizes */
 	lineh = 1+fonth+1;
-	if (surf->h > ScreenHeight + StatusbarHeight) {
+	if (surf->h > ScreenHeight + StatusbarHeight)
+	{
 		StatusbarHeight = STATUSBAR_LINES*lineh;
 		/* actually statusbar vertical offset */
 		ScreenHeight = surf->h - StatusbarHeight;
-	} else {
+	}
+	else
+	{
 		assert(STATUSBAR_LINES*lineh <= StatusbarHeight);
 	}
 
@@ -351,7 +362,8 @@ void Statusbar_Init(SDL_Surface *surf)
 	MessageRect.y = ScreenHeight + lineh/2 - fonth/2;
 	MessageRect.w = surf->w - fontw;
 	MessageRect.h = fonth;
-	for (item = MessageList; item; item = item->next) {
+	for (item = MessageList; item; item = item->next)
+	{
 		item->shown = false;
 	}
 
@@ -370,7 +382,8 @@ void Statusbar_Init(SDL_Surface *surf)
 	yoffset = ScreenHeight + lineh + lineh/2 - fonth/2;
 
 	/* draw led texts and boxes + calculate box offsets */
-	for (i = 0; i < MAX_DRIVE_LEDS; i++) {
+	for (i = 0; i < MAX_DRIVE_LEDS; i++)
+	{
 		SDLGui_Text(xoffset, yoffset, text[i]);
 		xoffset += strlen(text[i]) * fontw;
 		xoffset += fontw/2;
@@ -412,9 +425,12 @@ void Statusbar_Init(SDL_Surface *surf)
 	FrameSkipsRect.w = 4 * fontw;
 	FrameSkipsRect.h = fonth;
 
-	if(ConfigureParams.System.bFastForward) {
+	if(ConfigureParams.System.bFastForward)
+	{
 		SDLGui_Text(FrameSkipsRect.x, FrameSkipsRect.y, "0 >>");
-	} else {
+	}
+	else
+	{
 		SDLGui_Text(FrameSkipsRect.x, FrameSkipsRect.y, "0");
 	}
 
@@ -452,7 +468,8 @@ void Statusbar_AddMessage(const char *msg, Uint32 msecs)
 {
 	msg_item_t *item;
 
-	if (!ConfigureParams.Screen.bShowStatusbar) {
+	if (!ConfigureParams.Screen.bShowStatusbar)
+	{
 		/* no sense in queuing messages that aren't shown */
 		return;
 	}
@@ -466,9 +483,12 @@ void Statusbar_AddMessage(const char *msg, Uint32 msecs)
 	item->msg[MAX_MESSAGE_LEN] = '\0';
 	DEBUGPRINT(("Add message: '%s'\n", item->msg));
 
-	if (msecs) {
+	if (msecs)
+	{
 		item->timeout = msecs;
-	} else {
+	}
+	else
+	{
 		/* show items by default for 2.5 secs */
 		item->timeout = 2500;
 	}
@@ -481,7 +501,8 @@ void Statusbar_AddMessage(const char *msg, Uint32 msecs)
  */
 static char *Statusbar_AddString(char *buffer, const char *more)
 {
-	while(*more) {
+	while (*more)
+	{
 		*buffer++ = *more++;
 	}
 	return buffer;
@@ -500,14 +521,16 @@ void Statusbar_UpdateInfo(void)
 	end = buffer;
 
 	/* CPU MHz */
-	if (ConfigureParams.System.nCpuFreq > 9) {
+	if (ConfigureParams.System.nCpuFreq > 9)
+	{
 		*end++ = '0' + ConfigureParams.System.nCpuFreq / 10;
 	}
 	*end++ = '0' + ConfigureParams.System.nCpuFreq % 10;
 	end = Statusbar_AddString(end, "MHz");
 
 	/* CPU type */
-	if(ConfigureParams.System.nCpuLevel > 0) {
+	if(ConfigureParams.System.nCpuLevel > 0)
+	{
 		*end++ = '/';
 		*end++ = '0';
 		if ( ConfigureParams.System.nCpuLevel == 5 )	/* Special case : 68060 has nCpuLevel=5 */
@@ -531,7 +554,8 @@ void Statusbar_UpdateInfo(void)
 	/* additional WinUAE CPU/FPU info */
 #if ENABLE_WINUAE_CPU
 	*end++ = '/';
-	switch (ConfigureParams.System.n_FPUType) {
+	switch (ConfigureParams.System.n_FPUType)
+	{
 	case FPU_68881:
 		end = Statusbar_AddString(end, "68881");
 		break;
@@ -544,10 +568,12 @@ void Statusbar_UpdateInfo(void)
 	default:
 		*end++ = '-';
 	}
-	if ( ConfigureParams.System.bSoftFloatFPU && ( ConfigureParams.System.n_FPUType != FPU_NONE ) ) {
+	if (ConfigureParams.System.bSoftFloatFPU && ConfigureParams.System.n_FPUType != FPU_NONE)
+	{
 		end = Statusbar_AddString(end, "(SF)");
 	}
-	if (ConfigureParams.System.bMMU) {
+	if (ConfigureParams.System.bMMU)
+	{
 		end = Statusbar_AddString(end, "/MMU");
 	}
 #endif
@@ -561,13 +587,15 @@ void Statusbar_UpdateInfo(void)
 	else if ( size % 1024 == 512 )
 		end += sprintf(end, ".5");
 
-	if (TTmemory && ConfigureParams.Memory.TTRamSize_KB) {
+	if (TTmemory && ConfigureParams.Memory.TTRamSize_KB)
+	{
 		end += sprintf(end, "/%i", ConfigureParams.Memory.TTRamSize_KB/1024);
 	}
 	end = Statusbar_AddString(end, "MB ");
 
 	/* machine type */
-	switch (ConfigureParams.System.nMachineType) {
+	switch (ConfigureParams.System.nMachineType)
+	{
 	case MACHINE_ST:
 		end = Statusbar_AddString(end, "ST(");
 		end = Statusbar_AddString(end, Video_GetTimings_Name());
@@ -594,9 +622,12 @@ void Statusbar_UpdateInfo(void)
 
 	/* TOS type/version */
 	end = Statusbar_AddString(end, ", ");
-	if (bIsEmuTOS) {
+	if (bIsEmuTOS)
+	{
 		end = Statusbar_AddString(end, "EmuTOS");
-	} else {
+	}
+	else
+	{
 		end = Statusbar_AddString(end, "TOS ");
 		*end++ = '0' + ((TosVersion & 0xf00) >> 8);
 		*end++ = '.';
@@ -606,10 +637,14 @@ void Statusbar_UpdateInfo(void)
 
 	/* monitor type */
 	end = Statusbar_AddString(end, ", ");
-	if (bUseVDIRes) {
+	if (bUseVDIRes)
+	{
 		end = Statusbar_AddString(end, "VDI");
-	} else {
-		switch (ConfigureParams.Screen.nMonitorType) {
+	}
+	else
+	{
+		switch (ConfigureParams.Screen.nMonitorType)
+		{
 		case MONITOR_TYPE_MONO:
 			end = Statusbar_AddString(end, "MONO");
 			break;
@@ -644,7 +679,8 @@ static SDL_Rect* Statusbar_DrawMessage(SDL_Surface *surf, const char *msg)
 {
 	int fontw, fonth, offset;
 	SDL_FillRect(surf, &MessageRect, GrayBg);
-	if (*msg) {
+	if (*msg)
+	{
 		SDLGui_GetFontSize(&fontw, &fonth);
 		offset = (MessageRect.w - strlen(msg) * fontw) / 2;
 		SDLGui_Text(MessageRect.x + offset, MessageRect.y, msg);
@@ -664,12 +700,15 @@ static SDL_Rect* Statusbar_ShowMessage(SDL_Surface *surf, Uint32 ticks)
 {
 	msg_item_t *next;
 
-	if (MessageList->shown) {
-		if (!MessageList->expire) {
+	if (MessageList->shown)
+	{
+		if (!MessageList->expire)
+		{
 			/* last/default message newer expires */
 			return NULL;
 		}
-		if (MessageList->expire > ticks) {
+		if (MessageList->expire > ticks)
+		{
 			/* not timed out yet */
 			return NULL;
 		}
@@ -681,7 +720,8 @@ static SDL_Rect* Statusbar_ShowMessage(SDL_Surface *surf, Uint32 ticks)
 	}
 	/* not shown yet, show */
 	MessageList->shown = true;
-	if (MessageList->timeout && !MessageList->expire) {
+	if (MessageList->timeout && !MessageList->expire)
+	{
 		MessageList->expire = ticks + MessageList->timeout;
 	}
 	return Statusbar_DrawMessage(surf, MessageList->msg);
@@ -695,12 +735,14 @@ static SDL_Rect* Statusbar_ShowMessage(SDL_Surface *surf, Uint32 ticks)
 void Statusbar_OverlayBackup(SDL_Surface *surf)
 {
 	if ((StatusbarHeight && ConfigureParams.Screen.bShowStatusbar)
-	    || !ConfigureParams.Screen.bShowDriveLed) {
+	    || !ConfigureParams.Screen.bShowDriveLed)
+	{
 		/* overlay not used with statusbar */
 		return;
 	}
 	assert(surf);
-	if (!OverlayUnderside) {
+	if (!OverlayUnderside)
+	{
 		SDL_Surface *bak;
 		SDL_PixelFormat *fmt = surf->format;
 		bak = SDL_CreateRGBSurface(surf->flags,
@@ -724,11 +766,13 @@ void Statusbar_OverlayBackup(SDL_Surface *surf)
 void Statusbar_OverlayRestore(SDL_Surface *surf)
 {
 	if ((StatusbarHeight && ConfigureParams.Screen.bShowStatusbar)
-	    || !ConfigureParams.Screen.bShowDriveLed) {
+	    || !ConfigureParams.Screen.bShowDriveLed)
+	{
 		/* overlay not used with statusbar */
 		return;
 	}
-	if (nOverlayState == OVERLAY_DRAWN && OverlayUnderside) {
+	if (nOverlayState == OVERLAY_DRAWN && OverlayUnderside)
+	{
 		assert(surf);
 		SDL_BlitSurface(OverlayUnderside, NULL, surf, &OverlayLedRect);
 		/* this will make the draw function to update this the screen */
@@ -743,7 +787,8 @@ void Statusbar_OverlayRestore(SDL_Surface *surf)
 static void Statusbar_OverlayDrawLed(SDL_Surface *surf, Uint32 color)
 {
 	SDL_Rect rect;
-	if (nOverlayState == OVERLAY_DRAWN) {
+	if (nOverlayState == OVERLAY_DRAWN)
+	{
 		/* some led already drawn */
 		return;
 	}
@@ -770,12 +815,16 @@ static SDL_Rect* Statusbar_OverlayDraw(SDL_Surface *surf)
 	Uint32 currentticks = SDL_GetTicks();
 	int i;
 
-	if (bRecordingYM || bRecordingWav || bRecordingAvi) {
+	if (bRecordingYM || bRecordingWav || bRecordingAvi)
+	{
 		Statusbar_OverlayDrawLed(surf, RecColorOn);
 	}
-	for (i = 0; i < MAX_DRIVE_LEDS; i++) {
-		if (Led[i].state) {
-			if (Led[i].expire && Led[i].expire < currentticks) {
+	for (i = 0; i < MAX_DRIVE_LEDS; i++)
+	{
+		if (Led[i].state)
+		{
+			if (Led[i].expire && Led[i].expire < currentticks)
+			{
 				Led[i].state = LED_STATE_OFF;
 				continue;
 			}
@@ -787,7 +836,8 @@ static SDL_Rect* Statusbar_OverlayDraw(SDL_Surface *surf)
 	 *   NONE -> DRAWN -> RESTORED -> DRAWN -> RESTORED -> NONE
 	 * Other than NONE state needs to be updated on screen
 	 */
-	switch (nOverlayState) {
+	switch (nOverlayState)
+	{
 	case OVERLAY_RESTORED:
 		nOverlayState = OVERLAY_NONE;
 		/* fall through */
@@ -826,12 +876,15 @@ SDL_Rect* Statusbar_Update(SDL_Surface *surf, bool do_update)
 		return NULL;
 
 	assert(surf);
-	if (!(StatusbarHeight && ConfigureParams.Screen.bShowStatusbar)) {
+	if (!(StatusbarHeight && ConfigureParams.Screen.bShowStatusbar))
+	{
 		last_rect = NULL;
 		/* not enabled (anymore), show overlay led instead? */
-		if (ConfigureParams.Screen.bShowDriveLed) {
+		if (ConfigureParams.Screen.bShowDriveLed)
+		{
 			last_rect = Statusbar_OverlayDraw(surf);
-			if (do_update && last_rect) {
+			if (do_update && last_rect)
+			{
 				SDL_UpdateRects(surf, 1, last_rect);
 				last_rect = NULL;
 			}
@@ -841,7 +894,8 @@ SDL_Rect* Statusbar_Update(SDL_Surface *surf, bool do_update)
 
 	/* Statusbar_Init() not called before this? */
 #if DEBUG
-	if (surf->h != ScreenHeight + StatusbarHeight) {
+	if (surf->h != ScreenHeight + StatusbarHeight)
+	{
 		printf("DEBUG: %d != %d + %d\n", surf->h, ScreenHeight, StatusbarHeight);
 	}
 #endif
@@ -852,11 +906,14 @@ SDL_Rect* Statusbar_Update(SDL_Surface *surf, bool do_update)
 	updates = last_rect ? 1 : 0;
 
 	rect = LedRect;
-	for (i = 0; i < MAX_DRIVE_LEDS; i++) {
-		if (Led[i].expire && Led[i].expire < currentticks) {
+	for (i = 0; i < MAX_DRIVE_LEDS; i++)
+	{
+		if (Led[i].expire && Led[i].expire < currentticks)
+		{
 			Led[i].state = LED_STATE_OFF;
 		}
-		if (Led[i].state == Led[i].oldstate) {
+		if (Led[i].state == Led[i].oldstate)
+		{
 			continue;
 		}
 		Led[i].oldstate = Led[i].state;
@@ -869,7 +926,8 @@ SDL_Rect* Statusbar_Update(SDL_Surface *surf, bool do_update)
 	}
 
 	FDC_Get_Statusbar_Text(FdcNew, sizeof(FdcNew));
-	if (strcmp(FdcNew, FdcOld)) {
+	if (strcmp(FdcNew, FdcOld))
+	{
 		strcpy(FdcOld, FdcNew);
 		SDL_FillRect(surf, &FDCTextRect, GrayBg);
 		SDLGui_Text(FDCTextRect.x, FDCTextRect.y, FdcNew);
@@ -879,7 +937,8 @@ SDL_Rect* Statusbar_Update(SDL_Surface *surf, bool do_update)
 
 	/* joysticks' type */
 	Statusbar_JoysticksGetText(JoysticksNew);
-	if (strcmp(JoysticksNew, JoysticksOld)) {
+	if (strcmp(JoysticksNew, JoysticksOld))
+	{
 		strcpy(JoysticksOld, JoysticksNew);
 		SDL_FillRect(surf, &JoysticksTextRect, GrayBg);
 		SDLGui_Text(JoysticksTextRect.x, JoysticksTextRect.y, JoysticksNew);
@@ -888,7 +947,8 @@ SDL_Rect* Statusbar_Update(SDL_Surface *surf, bool do_update)
 	}
 
 	if (nOldFrameSkips != nFrameSkips ||
-	    bOldFastForward != ConfigureParams.System.bFastForward) {
+	    bOldFastForward != ConfigureParams.System.bFastForward)
+	{
 		char fscount[5];
 		int end = 2;
 
@@ -900,7 +960,8 @@ SDL_Rect* Statusbar_Update(SDL_Surface *surf, bool do_update)
 		else
 			fscount[0] = 'X';
 		fscount[1] = ' ';
-		if(ConfigureParams.System.bFastForward) {
+		if(ConfigureParams.System.bFastForward)
+		{
 			fscount[2] = '>';
 			fscount[3] = '>';
 			end = 4;
@@ -917,7 +978,8 @@ SDL_Rect* Statusbar_Update(SDL_Surface *surf, bool do_update)
 	/* Blitter : draw 'BltLed_lines_on_new' lines with color BltColorOn */
 	/* and the rest with color BltColorOff. This gives some kind of vu-meter */
 	BltLed_lines_on_new = Statusbar_BlitterGetLinesOn( BltLedRect.h );
-	if ( BltLed_lines_on_new != BltLed_lines_on ) {
+	if (BltLed_lines_on_new != BltLed_lines_on)
+	{
 		BltLed_lines_on = BltLed_lines_on_new;
 		if ( BltLed_lines_on > 0 )
 		{
@@ -938,12 +1000,15 @@ SDL_Rect* Statusbar_Update(SDL_Surface *surf, bool do_update)
 		}
 	}
 
-	if ((bRecordingYM || bRecordingWav || bRecordingAvi)
-	    != bOldRecording) {
+	if ((bRecordingYM || bRecordingWav || bRecordingAvi) != bOldRecording)
+	{
 		bOldRecording = !bOldRecording;
-		if (bOldRecording) {
+		if (bOldRecording)
+		{
 			color = RecColorOn;
-		} else {
+		}
+		else
+		{
 			color = RecColorOff;
 		}
 		SDL_FillRect(surf, &RecLedRect, color);
@@ -952,11 +1017,13 @@ SDL_Rect* Statusbar_Update(SDL_Surface *surf, bool do_update)
 		updates++;
 	}
 
-	if (updates > 1) {
+	if (updates > 1)
+	{
 		/* multiple items updated -> update whole statusbar */
 		last_rect = &FullRect;
 	}
-	if (do_update && last_rect) {
+	if (do_update && last_rect)
+	{
 		SDL_UpdateRects(surf, 1, last_rect);
 		last_rect = NULL;
 	}
