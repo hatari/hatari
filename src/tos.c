@@ -45,6 +45,7 @@ const char TOS_fileid[] = "Hatari tos.c : " __DATE__ " " __TIME__;
 #define TEST_PRG_START (TEST_PRG_BASEPAGE + 0x100)
 
 bool bIsEmuTOS;
+Uint32 EmuTosVersion;
 Uint16 TosVersion;                      /* eg. 0x0100, 0x0102 */
 Uint32 TosAddress, TosSize;             /* Address in ST memory and size of TOS image */
 bool bTosImageLoaded = false;           /* Successfully loaded a TOS image? */
@@ -960,7 +961,7 @@ static uint8_t *TOS_LoadImage(void)
 	TosVersion = 0;
 	pTosFile = File_Read(ConfigureParams.Rom.szTosImageFileName, &nFileSize, pszTosNameExts);
 
-	if (!pTosFile || nFileSize <= 0)
+	if (!pTosFile || nFileSize < 0x40)
 	{
 		Log_AlertDlg(LOG_FATAL, "Can not load TOS file:\n'%s'", ConfigureParams.Rom.szTosImageFileName);
 		free(pTosFile);
@@ -992,6 +993,13 @@ static uint8_t *TOS_LoadImage(void)
 
 	/* Check for EmuTOS ... (0x45544F53 = 'ETOS') */
 	bIsEmuTOS = (SDL_SwapBE32(*(Uint32 *)&pTosFile[0x2c]) == 0x45544F53);
+	if (bIsEmuTOS)
+	{
+		if (SDL_SwapBE32(*(Uint32 *)&pTosFile[0x34]) == 0x4F534558)
+			EmuTosVersion = SDL_SwapBE32(*(Uint32 *)&pTosFile[0x3c]);
+		else
+			EmuTosVersion = 0;	/* Older than 1.0 */
+	}
 
 	/* Now, look at start of image to find Version number and address */
 	TosVersion = SDL_SwapBE16(*(Uint16 *)&pTosFile[2]);

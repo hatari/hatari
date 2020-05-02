@@ -624,7 +624,18 @@ void Statusbar_UpdateInfo(void)
 	end = Statusbar_AddString(end, ", ");
 	if (bIsEmuTOS)
 	{
-		end = Statusbar_AddString(end, "EmuTOS");
+		if (EmuTosVersion > 0)
+		{
+			char str[20];
+			snprintf(str, sizeof(str), "EmuTOS %d.%d.%d",
+			         EmuTosVersion >> 24, (EmuTosVersion >> 16) & 0xff,
+			         (EmuTosVersion >> 8) & 0xff);
+			end = Statusbar_AddString(end, str);
+		}
+		else
+		{
+			end = Statusbar_AddString(end, "EmuTOS");
+		}
 	}
 	else
 	{

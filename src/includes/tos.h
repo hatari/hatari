@@ -9,6 +9,7 @@
 #define HATARI_TOS_H
 
 extern bool bIsEmuTOS;
+extern Uint32 EmuTosVersion;
 extern Uint16 TosVersion;
 extern Uint32 TosAddress, TosSize;
 extern bool bTosImageLoaded;
