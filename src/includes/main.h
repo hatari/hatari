@@ -16,6 +16,7 @@
 
 #include <SDL_types.h>
 #include <stdbool.h>
+#include <math.h>
 
 #if defined(_MSC_VER)
 #include "vs-fix.h"
