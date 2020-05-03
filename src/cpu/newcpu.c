@@ -5032,7 +5032,6 @@ static int do_specialties (int cycles)
 
 //static uae_u32 pcs[1000];
 
-#ifndef WINUAE_FOR_HATARI
 #if DEBUG_CD32CDTVIO
 
 static uae_u32 cd32nextpc, cd32request;
@@ -5114,7 +5113,6 @@ static void out_cd32io (uae_u32 pc)
 }
 
 #endif
-#endif
 
 #ifndef CPUEMU_11
 
@@ -5155,10 +5153,8 @@ static void m68k_run_1 (void)
 				}
 #endif
 
-#ifndef WINUAE_FOR_HATARI
 #if DEBUG_CD32CDTVIO
 				out_cd32io (m68k_getpc ());
-#endif
 #endif
 
 #if 0
@@ -5301,10 +5297,8 @@ static void m68k_run_1_ce (void)
 				}
 #endif
 
-#ifndef WINUAE_FOR_HATARI
 #if DEBUG_CD32CDTVIO
 				out_cd32io (m68k_getpc ());
-#endif
 #endif
 				if (cpu_tracer) {
 					memcpy (&cputrace.regs, &r->regs, 16 * sizeof (uae_u32));
@@ -6653,10 +6647,8 @@ fprintf ( stderr , "cache valid %d tag1 %x lws1 %x ctag %x data %x mem=%x\n" , c
 #endif
 				//write_log (_T("%08x %04x\n"), r->instruction_pc, opcode);
 
-#ifndef WINUAE_FOR_HATARI
 #if DEBUG_CD32CDTVIO
 				out_cd32io (r->instruction_pc);
-#endif
 #endif
 
 				if (cpu_tracer) {
@@ -6826,10 +6818,8 @@ static void m68k_run_2p (void)
 				r->instruction_pc = m68k_getpc ();
 				r->opcode = regs.irc;
 
-#ifndef WINUAE_FOR_HATARI
 #if DEBUG_CD32CDTVIO
 				out_cd32io (m68k_getpc ());
-#endif
 #endif
 
 				if (cpu_tracer) {
