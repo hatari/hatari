@@ -488,8 +488,10 @@ static void check_ipl_always(void)
 
 static void addcycles_020(int cycles)
 {
-	if (using_prefetch_020 || using_ce020) {
+	if (using_ce020) {
 		out("%s(%d);\n", do_cycles, cycles);
+	} else if (using_prefetch_020) {
+		out("count_cycles += %d;\n", cycles);
 	}
 }
 
@@ -612,8 +614,12 @@ static void returncycles(int cycles)
 		int total = count_readl + count_readw + count_writel + count_writew - count_readp;
 		if (!total)
 			total++;
-		out("return (%d * CYCLE_UNIT / 2 + count_cycles) | (((%d * 4 * CYCLE_UNIT / 2 + count_cycles) * 3) << 16);\n",
-			cycles, total);
+		if (using_mmu || using_prefetch_020) {
+			out("return (%d * 4 * CYCLE_UNIT / 2 + count_cycles) * 4;\n", total);
+		} else {
+			out("return (%d * CYCLE_UNIT / 2 + count_cycles) | (((%d * 4 * CYCLE_UNIT / 2 + count_cycles) * 4) << 16);\n",
+				cycles, total);
+		}
 	} else if (using_simple_cycles) {
 		out("return %d * CYCLE_UNIT / 2 + count_cycles;\n", cycles);
 	} else {
@@ -741,8 +747,7 @@ static void addcycles000(int cycles)
 	count_cycles += cycles;
 	insn_n_cycles += cycles;
 }
-
-#ifndef WINUAE_FOR_HATARI
+#if 0
 static void addcycles000_2(int cycles)
 {
 	if (using_ce) {
@@ -752,8 +757,6 @@ static void addcycles000_2(int cycles)
 	insn_n_cycles += cycles;
 }
 #endif
-
-
 static void addcycles000_3(void)
 {
 	if (using_ce) {
@@ -1137,7 +1140,7 @@ static void fill_prefetch_1_empty(int o)
 	}
 }
 
-#ifndef WINUAE_FOR_HATARI
+#if 0
 static void fill_prefetch_full_2 (void)
 {
 	if (using_prefetch) {
@@ -1548,7 +1551,7 @@ static void fill_prefetch_next_after(int copy, const char *format, ...)
 	}
 }
 
-#ifndef WINUAE_FOR_HATARI
+#if 0
 static void fill_prefetch_next_skipopcode(void)
 {
 	if (using_prefetch) {
@@ -9390,7 +9393,7 @@ static void generate_cpu (int id, int mode)
 		}
 	}
  
-	do_always_dynamic_cycles = !using_simple_cycles && !using_prefetch && !using_prefetch_020 && using_always_dynamic_cycles;
+	do_always_dynamic_cycles = !using_simple_cycles && !using_prefetch && using_always_dynamic_cycles;
 
 	if (!using_indirect)
 		using_indirect = using_ce || using_ce020 || using_prefetch_020 || id >= 50;
