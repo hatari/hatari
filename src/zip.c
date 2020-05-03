@@ -410,18 +410,19 @@ static char *ZIP_FirstFile(const char *filename, const char * const ppsExts[])
 		ZIP_FreeZipDir(files);
 		return NULL;
 	}
+	name[0] = '\0';
 
 	/* Do we have to scan for a certain extension? */
 	if (ppsExts)
 	{
-		name[0] = '\0';
 		for(i = files->nfiles-1; i >= 0; i--)
 		{
 			for (j = 0; ppsExts[j] != NULL; j++)
 			{
-				if (File_DoesFileExtensionMatch(files->names[i], ppsExts[j]))
+				if (File_DoesFileExtensionMatch(files->names[i], ppsExts[j])
+				    && strlen(files->names[i]) < ZIP_PATH_MAX - 1)
 				{
-					strncpy(name, files->names[i], ZIP_PATH_MAX);
+					strcpy(name, files->names[i]);
 					break;
 				}
 			}
@@ -430,7 +431,10 @@ static char *ZIP_FirstFile(const char *filename, const char * const ppsExts[])
 	else
 	{
 		/* There was no extension given -> use the very first name */
-		strncpy(name, files->names[0], ZIP_PATH_MAX);
+		if (strlen(files->names[0]) < ZIP_PATH_MAX - 1)
+		{
+			strcpy(name, files->names[0]);
+		}
 	}
 
 	/* free the files */
