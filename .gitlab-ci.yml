@@ -37,3 +37,14 @@ build-clang:
  - CC="clang" CFLAGS="-O3 -Werror" ./configure
  - make
  - make test
+
+build-mingw:
+ image: fedora:latest
+ before_script:
+ - dnf update -y
+ - dnf install -y cmake make gcc python-unversioned-command mingw32-gcc
+                  mingw32-SDL2 mingw32-zlib
+ script:
+ - cmake -DCMAKE_TOOLCHAIN_FILE=cmake/Toolchain-mingw32-win64_32.cmake
+         -DENABLE_WERROR:BOOL=1 .
+ - make
