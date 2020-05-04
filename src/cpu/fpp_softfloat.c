@@ -7,6 +7,11 @@
 * Andreas Grabher and Toni Wilen
 *
 */
+
+#ifdef WIN32 /* WINUAE_FOR_HATARI */
+#define __USE_MINGW_ANSI_STDIO 1        /* Hack for %lld format specifiers */
+#endif
+
 #define __USE_ISOC9X  /* We might be able to pick up a NaN */
 
 #define SOFTFLOAT_FAST_INT64
