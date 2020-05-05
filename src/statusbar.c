@@ -631,6 +631,8 @@ void Statusbar_UpdateInfo(void)
 			         EmuTosVersion >> 24, (EmuTosVersion >> 16) & 0xff,
 			         (EmuTosVersion >> 8) & 0xff);
 			end = Statusbar_AddString(end, str);
+			if (EmuTosVersion & 0xff)
+				end = Statusbar_AddString(end, "+");
 		}
 		else
 		{
