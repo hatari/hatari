@@ -24,8 +24,12 @@ Emulation:
 - support for DD/HD mode on MegaSTE at $FF860E
   (when FDC is set to HD mode, reading DD floppies will fail)
 - Emulate additional RTC/NVRAM registers
-- Update CPU core to latest WinUAE 4.2.0 beta
 - Fix: IDE disks with sector size > 512 bytes
+- CPU:
+  - Update CPU core to latest WinUAE 4.4.0 beta
+- Video:
+  - Improved timing when setting Vsync signal (same place where video counter
+    is reloaded)
 
 Emulator:
 - Memory snapshot version increase due to FDC changes
@@ -119,9 +123,12 @@ Documentation:
   a separate debugger.html file
 - Minor improvements
 
+Fixed demos:
+- Pacemaker STE demo (end part), when it's run from GEMDOS HD
+- Multi scrolls part in Closure by Sync (regression since Hatari 2.2, vsync in bottom border)
+
 Fixed programs:
 - Akaisex program reading AKAI S1000 HD floppies converted to STX
-- Pacemaker STE demo (end part), when it's run from GEMDOS HD
 
 
  Version 2.2.1 (2019-02-08)

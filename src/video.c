@@ -2867,7 +2867,7 @@ void Video_InterruptHandler_HBL ( void )
 	CycInt_AcknowledgeInterrupt();
 
 
-	/* Handle the intermediate HBL interrupt used to restart video counter on HBL 310 or 260 */
+	/* Handle the intermediate HBL interrupt used to set vsync and restart video counter on HBL 310 or 260 */
 	if ( RestartVideoCounter )
 	{
 //		fprintf ( stderr , "restart video counter check nhbl=%d hbl=%d cyc=%d\n" , nHBL , HblCounterVideo , LineCycles);
@@ -2875,6 +2875,9 @@ void Video_InterruptHandler_HBL ( void )
 		  || ( ( ( IoMem_ReadByte ( 0xff820a ) & 2 ) == 0 ) && ( nHBL == pVideoTiming->RestartVideoCounter_Line_60 )
 		    	&& ( nScanlinesPerFrame == SCANLINES_PER_FRAME_60HZ ) ) )
 		{
+			ShifterFrame.VSync_signal = VSYNC_SIGNAL_ON;
+			ShifterFrame.VBlank_signal = VBLANK_SIGNAL_ON;	/* It seems vsync also sets vblank, need to check on real HW */
+			LOG_TRACE ( TRACE_VIDEO_BORDER_V , "HBL %d cyc=%d detect vsync=on\n", nHBL, LineCycles );
 			Video_RestartVideoCounter();
 			LOG_TRACE(TRACE_VIDEO_HBL, "HBL %d cyc=%d restart video counter 0x%x\n", nHBL, LineCycles, VideoBase );
 		}
@@ -3108,12 +3111,6 @@ static void Video_StartHBL(void)
 				ShifterFrame.VBlank_signal = VBLANK_SIGNAL_OFF;
 				LOG_TRACE ( TRACE_VIDEO_BORDER_V , "detect vblank=off 50Hz\n" );
 			}
-			if ( nHBL == pVideoTiming->VSync_On_Line_50 )
-			{
-				ShifterFrame.VSync_signal = VSYNC_SIGNAL_ON;
-				ShifterFrame.VBlank_signal = VBLANK_SIGNAL_ON;	/* It seems vsync also sets vblank, need to check on real HW */
-				LOG_TRACE ( TRACE_VIDEO_BORDER_V , "detect vsync=on 50Hz\n" );
-			}
 		}
 		else						/* 60 Hz */
 		{
@@ -3140,12 +3137,6 @@ static void Video_StartHBL(void)
 			{
 				ShifterFrame.VBlank_signal = VBLANK_SIGNAL_OFF;
 				LOG_TRACE ( TRACE_VIDEO_BORDER_V , "detect vblank=off 60Hz\n" );
-			}
-			if ( nHBL == pVideoTiming->VSync_On_Line_60 )
-			{
-				ShifterFrame.VSync_signal = VSYNC_SIGNAL_ON;
-				ShifterFrame.VBlank_signal = VBLANK_SIGNAL_ON;	/* It seems vsync also sets vblank, need to check on real HW */
-				LOG_TRACE ( TRACE_VIDEO_BORDER_V , "detect vsync=on 60Hz\n" );
 			}
 		}
 
