@@ -2781,7 +2781,7 @@ static int GemDOS_Pexec(Uint32 Params)
 			}
 			cmd = (const char *)STMemory_STAddrToPointer(cmdline);
 			cmdlen = *cmd++;
-			str = malloc(cmdlen+1);
+			str = Str_Alloc(cmdlen);
 			memcpy(str, cmd, cmdlen);
 			str[cmdlen] = '\0';
 			LOG_TRACE_PRINT("GEMDOS 0x4B Pexec(%i, \"%s\", [%d]\"%s\", 0x%x) at PC 0x%X\n",

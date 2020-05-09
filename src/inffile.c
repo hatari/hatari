@@ -189,7 +189,7 @@ bool INF_SetAutoStart(const char *name, int opt_id)
 		/* full path */
 		const char *ptr;
 		int offset;
-		prgname = malloc(len+2);
+		prgname = Str_Alloc(len + 1);  /* +1 for additional backslash */
 		ptr = strrchr(name, '\\');
 		if (ptr)
 			offset = ptr - name + 1;
@@ -227,7 +227,7 @@ bool INF_SetAutoStart(const char *name, int opt_id)
 	else
 	{
 		/* just program -> add path */
-		prgname = malloc(3 + len + 1);
+		prgname = Str_Alloc(3 + len);
 		strcpy(prgname, "C:\\");
 		Str_Filename2TOSname(name, prgname+3);
 	}
@@ -550,8 +550,7 @@ static char *get_builtin_inf(const char *contents)
 
 	inflen = strlen(contents);
 	winlen = strlen(drivewin);
-	inf = malloc(inflen + winlen + 1);
-	assert(inf);
+	inf = Str_Alloc(inflen + winlen);
 
 	/* drive letter offset on drive window line */
 	driveoffset = strchr(drivewin, 'X') - drivewin;
@@ -642,8 +641,7 @@ static char *get_inf_file(const char **set_infname, int *set_size, int *res_col)
 		return get_builtin_inf(contents);
 	}
 
-	hostname = malloc(FILENAME_MAX);
-	assert(hostname);
+	hostname = Str_Alloc(FILENAME_MAX);
 
 	/* convert to host file name, and read that */
 	GemDOS_CreateHardDriveFileName(2, infname, hostname, FILENAME_MAX);

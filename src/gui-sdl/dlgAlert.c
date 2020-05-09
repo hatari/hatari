@@ -24,6 +24,7 @@ const char DlgAlert_fileid[] = "Hatari dlgAlert.c : " __DATE__ " " __TIME__;
 #include "dialog.h"
 #include "screen.h"
 #include "sdlgui.h"
+#include "str.h"
 
 
 #define MAX_LINES 4
@@ -125,7 +126,7 @@ static int DlgAlert_FormatTextToBox(char *text, int max_width, int *text_width)
 static int DlgAlert_ShowDlg(const char *text)
 {
 	static int maxlen = sizeof(dlglines[0])-1;
-	char *t = (char *)malloc(strlen(text)+1);
+	char *t = Str_Alloc(strlen(text));
 	char *orig_t = t;
 	int lines, i, len, offset;
 	bool bOldMouseVisibility;
