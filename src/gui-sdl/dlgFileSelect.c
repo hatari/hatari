@@ -595,6 +595,8 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 
 	/* Allocate memory for the file and path name strings: */
 	pStringMem = malloc(4 * FILENAME_MAX);
+	if ( !pStringMem )
+		return NULL;
 	path = pStringMem;
 	fname = pStringMem + FILENAME_MAX;
 	zipdir = pStringMem + 2 * FILENAME_MAX;

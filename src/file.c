@@ -433,6 +433,8 @@ bool File_QueryOverwrite(const char *pszFileName)
 		fmt = "File '%s' exists, overwrite?";
 		/* File does exist, are we OK to overwrite? */
 		szString = malloc(strlen(pszFileName) + strlen(fmt) + 1);
+		if ( !szString )
+			return false;
 		sprintf(szString, fmt, pszFileName);
 		fprintf(stderr, "%s\n", szString);
 		ret = DlgAlert_Query(szString);
