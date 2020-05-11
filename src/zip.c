@@ -552,7 +552,7 @@ Uint8 *ZIP_ReadDisk(int Drive, const char *pszFileName, const char *pszZipPath, 
 			unzClose(uf);
 			return NULL;
 		}
-		strncpy(path, pszZipPath, ZIP_PATH_MAX);
+		strncpy(path, pszZipPath, ZIP_PATH_MAX - 1);
 		path[ZIP_PATH_MAX-1] = '\0';
 	}
 
