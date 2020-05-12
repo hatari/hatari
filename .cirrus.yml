@@ -11,7 +11,7 @@ fedora_task:
     - mkdir build
     - cd build
     - ../configure --enable-old-uae-cpu --enable-small-mem --disable-dsp
-                  --enable-werror || { cat config.log; exit 1; }
+                  --enable-werror --enable-debug || { cat config.log; exit 1; }
     - make -j4
     - ctest -j4 || { cat Testing/Temporary/LastTest.log; exit 1; }
 
@@ -24,7 +24,7 @@ freebsd_task:
     - pkg update
     - pkg install -y pkgconf cmake gmake png devel/sdl20 devel/libedit
   script:
-    - ./configure || { cat config.log; exit 1; }
+    - ./configure --enable-debug || { cat config.log; exit 1; }
     - gmake -j4
     - gmake test || { cat Testing/Temporary/LastTest.log; exit 1; }
 
@@ -35,6 +35,7 @@ macos_task:
     - brew install cmake sdl2 libpng make tidy-html5
   script:
     - export PATH=/usr/local/bin:$PATH
-    - ./configure --disable-osx-bundle || { cat config.log; exit 1; }
+    - ./configure --disable-osx-bundle --enable-debug
+      || { cat config.log; exit 1; }
     - gmake -j$(sysctl -n hw.ncpu)
     - gmake test || { cat Testing/Temporary/LastTest.log; exit 1; }

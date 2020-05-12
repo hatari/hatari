@@ -28,25 +28,25 @@ matrix:
       compiler: clang
 
     - env:
-        - CONFIG="--disable-winuae-cpu --enable-werror"
+        - CONFIG="--disable-winuae-cpu --enable-werror --enable-debug"
       arch: arm64
 
     - env:
-        - CONFIG="--enable-winuae-cpu --enable-werror"
+        - CONFIG="--enable-winuae-cpu --enable-werror --enable-debug"
       arch: ppc64le
 
     - env:
-        - CONFIG="--enable-winuae-cpu --enable-werror"
+        - CONFIG="--enable-winuae-cpu --enable-werror --enable-debug"
       arch: s390x
 
     - env:
-        - CONFIG="--enable-osx-bundle --disable-winuae-cpu"
+        - CONFIG="--enable-osx-bundle --disable-winuae-cpu --enable-debug"
       os: osx
       osx_image: xcode9.3
       compiler: clang
 
     - env:
-        - CONFIG="--enable-osx-bundle --disable-winuae-cpu"
+        - CONFIG="--enable-osx-bundle --disable-winuae-cpu --enable-debug"
       os: osx
       osx_image: xcode11.2
       compiler: clang

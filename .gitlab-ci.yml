@@ -25,7 +25,7 @@ build-32bit:
  - apt-get update -qq
  - apt-get install -y cmake gcc-multilib libgcc1:i386 libsdl2-dev:i386
                       zlib1g-dev:i386 libpng-dev:i386 libglib2.0-dev:i386
- - CFLAGS="-m32 -O2 -Werror" ./configure
+ - CFLAGS="-m32 -O2 -Werror" ./configure --enable-debug
  - make
  - file src/hatari | grep 32.bit
  - make test
@@ -34,7 +34,7 @@ build-clang:
  script:
  - apt-get install -y -qq cmake clang libsdl2-dev libpng-dev zlib1g-dev
                       libudev-dev portaudio19-dev libportmidi-dev tidy
- - CC="clang" CFLAGS="-O3 -Werror" ./configure
+ - CC="clang" CFLAGS="-O3 -Werror" ./configure --enable-debug
  - make
  - make test
 
