@@ -20,7 +20,7 @@ Emulation option compatibility issues with specific games and demos
 are documented in the "compatibility.html" file.
 
 Additional emulation issues specific to running Linux kernel are
-listed in the "m68k-linux-for-hatari.txt" file.
+listed in the "m68k-linux.txt" file.
 
 Compatibility issues with EmuTOS (TOS version distributed with Hatari
 binaries), are documented in the "emutos.txt" file.  They're related
