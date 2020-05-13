@@ -512,7 +512,7 @@ void File_SplitPath(const char *pSrcFileName, char *pDir, char *pName, char *pEx
 	}
 	else
 	{
- 		strcpy(pName, pSrcFileName);
+		strcpy(pName, pSrcFileName);
 		sprintf(pDir, ".%c", PATHSEP);
 	}
 
@@ -555,7 +555,9 @@ char * File_MakePath(const char *pDir, const char *pName, const char *pExt)
 	{
 		filepath[0] = '.';
 		filepath[1] = '\0';
-	} else {
+	}
+	else
+	{
 		strcpy(filepath, pDir);
 	}
 	len = strlen(filepath);
@@ -957,13 +959,17 @@ void File_PathShorten(char *path, int dirs)
 	/* ignore last char, it may or may not be '/' */
 	i = strlen(path)-1;
 	assert(i >= 0);
-	while(i > 0 && n < dirs) {
+	while(i > 0 && n < dirs)
+	{
 		if (path[--i] == PATHSEP)
 			n++;
 	}
-	if (path[i] == PATHSEP) {
+	if (path[i] == PATHSEP)
+	{
 		path[i+1] = '\0';
-	} else {
+	}
+	else
+	{
 		path[0] = PATHSEP;
 		path[1] = '\0';
 	}
@@ -992,9 +998,12 @@ void File_HandleDotDirs(char *path)
 	    path[len-1] == '.')
 	{
 		/* go one dir up */
-		if (len == 3) {
+		if (len == 3)
+		{
 			path[1] = 0;		/* already root */
-		} else {
+		}
+		else
+		{
 			char *ptr;
 			path[len-3] = 0;
 			ptr = strrchr(path, PATHSEP);
@@ -1020,7 +1029,7 @@ char* WinTmpFile(void)
 
 	/* Gets the temp path env string (no guarantee it's a valid path) */
 	dwRetVal = GetTempPath(MAX_PATH,		/* length of the buffer */
-                           lpTempPathBuffer);		/* buffer for path */
+	                       lpTempPathBuffer);	/* buffer for path */
 	if (dwRetVal > MAX_PATH || (dwRetVal == 0))
 	{
 		Log_Printf(LOG_ERROR, "GetTempPath failed.\n");
@@ -1029,9 +1038,9 @@ char* WinTmpFile(void)
 
 	/* Generates a temporary file name */
 	uRetVal = GetTempFileName(lpTempPathBuffer,	/* directory for tmp files */
-                              TEXT("HATARI"),		/* temp file name prefix */
-                              0,			/* create unique name */
-                              szTempFileName);		/* buffer for name */
+	                          TEXT("HATARI"),	/* temp file name prefix */
+	                          0,			/* create unique name */
+	                          szTempFileName);	/* buffer for name */
 	if (uRetVal == 0)
 	{
 		Log_Printf(LOG_ERROR, "GetTempFileName failed.\n");
@@ -1040,5 +1049,3 @@ char* WinTmpFile(void)
 	return (char*)szTempFileName;
 }
 #endif
-
-
