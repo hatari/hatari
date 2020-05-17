@@ -2221,7 +2221,7 @@ static void check_bus_error(const char *name, int offset, int write, int size, c
 			bus_error_cycles = 0;
 		}
 
-		if (pcoffset < 0) {
+		if (pcoffset == -1) {
 			incpc("%d", m68k_pc_offset + 2);
 		} else if (exception_pc_offset + exception_pc_offset_extra + pcoffset) {
 			incpc("%d", exception_pc_offset + exception_pc_offset_extra + pcoffset);
@@ -3804,6 +3804,13 @@ static void genamodedual(struct instr *curi, amodes smode, const char *sreg, wor
 static void genastore_2 (const char *from, amodes mode, const char *reg, wordsizes size, const char *to, int store_dir, int flags)
 {
 	char tmp[100];
+	int pcoffset = (flags & GF_MOVE) ? 0 : 2;
+
+	if (flags & GF_PCM2) {
+		pcoffset -= 2;
+	} else if (flags & GF_PCP2) {
+		pcoffset += 2;
+	}
 
 	exception_pc_offset = m68k_pc_offset;
 
@@ -3901,21 +3908,21 @@ static void genastore_2 (const char *from, amodes mode, const char *reg, wordsiz
 			case sz_byte:
 				out("%s(%sa, %s);\n", dstbx, to, from);
 				count_writew++;
-				check_bus_error(to, 0, 1, 0, from, 1, 0);
+				check_bus_error(to, 0, 1, 0, from, 1, pcoffset);
 				break;
 			case sz_word:
 				if (cpu_level < 2 && (mode == PC16 || mode == PC8r))
 					term();
 				out("%s(%sa, %s);\n", dstwx, to, from);
 				count_writew++;
-				check_bus_error(to, 0, 1, 1, from, 1, 0);
+				check_bus_error(to, 0, 1, 1, from, 1, pcoffset);
 				break;
 			case sz_long:
 				if (cpu_level < 2 && (mode == PC16 || mode == PC8r))
 					term();
 				out("%s(%sa, %s);\n", dstlx, to, from);
 				count_writel++;
-				check_bus_error(to, 0, 1, 2, from, 1, 0);
+				check_bus_error(to, 0, 1, 2, from, 1, pcoffset);
 				break;
 			default:
 				term();
@@ -3926,7 +3933,7 @@ static void genastore_2 (const char *from, amodes mode, const char *reg, wordsiz
 				set_last_access();
 				out("%s(%sa, %s);\n", dstbx, to, from);
 				count_writew++;
-				check_bus_error(to, 0, 1, 0, from, 1, 0);
+				check_bus_error(to, 0, 1, 0, from, 1, pcoffset);
 				break;
 			case sz_word:
 				if (cpu_level < 2 && (mode == PC16 || mode == PC8r))
@@ -3934,7 +3941,7 @@ static void genastore_2 (const char *from, amodes mode, const char *reg, wordsiz
 				set_last_access();
 				out("%s(%sa, %s);\n", dstwx, to, from);
 				count_writew++;
-				check_bus_error(to, 0, 1, 1, from, 1, 0);
+				check_bus_error(to, 0, 1, 1, from, 1, pcoffset);
 				break;
 			case sz_long:
 				if (cpu_level < 2 && (mode == PC16 || mode == PC8r))
@@ -3942,7 +3949,7 @@ static void genastore_2 (const char *from, amodes mode, const char *reg, wordsiz
 				if (store_dir) {
 					out("%s(%sa + 2, %s);\n", dstwx, to, from);
 					count_writew++;
-					check_bus_error(to, 2, 1, 1, from, 1, 0);
+					check_bus_error(to, 2, 1, 1, from, 1, pcoffset);
 					if (flags & GF_SECONDWORDSETFLAGS) {
 						genflags(flag_logical, g_instr->size, "src", "", "");
 					}
@@ -3955,19 +3962,19 @@ static void genastore_2 (const char *from, amodes mode, const char *reg, wordsiz
 					out("%s(%sa, %s >> 16);\n", dstwx, to, from);
 					sprintf(tmp, "%s >> 16", from);
 					count_writew++;
-					check_bus_error(to, 0, 1, 1, tmp, 1, 0);
+					check_bus_error(to, 0, 1, 1, tmp, 1, pcoffset);
 				} else {
 					out("%s(%sa, %s >> 16);\n", dstwx, to, from);
 					sprintf(tmp, "%s >> 16", from);
 					count_writew++;
-					check_bus_error(to, 0, 1, 1, tmp, 1, 0);
+					check_bus_error(to, 0, 1, 1, tmp, 1, pcoffset);
 					if (flags & GF_SECONDWORDSETFLAGS) {
 						genflags(flag_logical, g_instr->size, "src", "", "");
 					}
 					set_last_access();
 					out("%s(%sa + 2, %s);\n", dstwx, to, from);
 					count_writew++;
-					check_bus_error(to, 2, 1, 1, from, 1, 0);
+					check_bus_error(to, 2, 1, 1, from, 1, pcoffset);
 				}
 				break;
 			default:
@@ -3979,7 +3986,7 @@ static void genastore_2 (const char *from, amodes mode, const char *reg, wordsiz
 				set_last_access();
 				out("%s(%sa, %s);\n", dstbx, to, from);
 				count_writew++;
-				check_bus_error(to, 0, 1, 0, from, 1, 0);
+				check_bus_error(to, 0, 1, 0, from, 1, pcoffset);
 				break;
 			case sz_word:
 				if (cpu_level < 2 && (mode == PC16 || mode == PC8r))
@@ -3987,7 +3994,7 @@ static void genastore_2 (const char *from, amodes mode, const char *reg, wordsiz
 				set_last_access();
 				out("%s(%sa, %s);\n", dstwx, to, from);
 				count_writew++;
-				check_bus_error(to, 0, 1, 1, from, 1, 0);
+				check_bus_error(to, 0, 1, 1, from, 1, pcoffset);
 				break;
 			case sz_long:
 				if (cpu_level < 2 && (mode == PC16 || mode == PC8r))
@@ -3995,7 +4002,7 @@ static void genastore_2 (const char *from, amodes mode, const char *reg, wordsiz
 				if (store_dir) {
 					out("%s(%sa + 2, %s);\n", dstwx, to, from);
 					count_writew++;
-					check_bus_error(to, 2, 1, 1, from, 1, 0);
+					check_bus_error(to, 2, 1, 1, from, 1, pcoffset);
 					if (flags & GF_SECONDWORDSETFLAGS) {
 						genflags(flag_logical, g_instr->size, "src", "", "");
 					}
@@ -4007,19 +4014,19 @@ static void genastore_2 (const char *from, amodes mode, const char *reg, wordsiz
 					out("%s(%sa, %s >> 16); \n", dstwx, to, from);
 					sprintf(tmp, "%s >> 16", from);
 					count_writew++;
-					check_bus_error(to, 0, 1, 1, tmp, 1, 0);
+					check_bus_error(to, 0, 1, 1, tmp, 1, pcoffset);
 				} else {
 					out("%s(%sa, %s >> 16);\n", dstwx, to, from);
 					sprintf(tmp, "%s >> 16", from);
 					count_writew++;
-					check_bus_error(to, 0, 1, 1, tmp, 1, 0);
+					check_bus_error(to, 0, 1, 1, tmp, 1, pcoffset);
 					if (flags & GF_SECONDWORDSETFLAGS) {
 						genflags(flag_logical, g_instr->size, "src", "", "");
 					}
 					set_last_access();
 					out("%s(%sa + 2, %s); \n", dstwx, to, from);
 					count_writew++;
-					check_bus_error(to, 2, 1, 1, from, 1, 0);
+					check_bus_error(to, 2, 1, 1, from, 1, pcoffset);
 				}
 				break;
 			default:
@@ -4030,14 +4037,14 @@ static void genastore_2 (const char *from, amodes mode, const char *reg, wordsiz
 			case sz_byte:
 				out("%s(%sa, %s);\n", dstbx, to, from);
 				count_writew++;
-				check_bus_error(to, 0, 1, 0, from, 1, 0);
+				check_bus_error(to, 0, 1, 0, from, 1, pcoffset);
 				break;
 			case sz_word:
 				if (cpu_level < 2 && (mode == PC16 || mode == PC8r))
 					term();
 				out("%s(%sa, %s);\n", dstwx, to, from);
 				count_writew++;
-				check_bus_error(to, 0, 1, 1, from, 1, 0);
+				check_bus_error(to, 0, 1, 1, from, 1, pcoffset);
 				break;
 			case sz_long:
 				if (cpu_level < 2 && (mode == PC16 || mode == PC8r))
@@ -4048,7 +4055,7 @@ static void genastore_2 (const char *from, amodes mode, const char *reg, wordsiz
 				}
 				out("%s(%sa, %s);\n", dstlx, to, from);
 				count_writel++;
-				check_bus_error(to, 0, 1, 2, from, 1, 0);
+				check_bus_error(to, 0, 1, 2, from, 1, pcoffset);
 				break;
 			default:
 				term();
@@ -4608,6 +4615,7 @@ static void genmovemle_ce (uae_u16 opcode)
 {
 	int size = table68k[opcode].size == sz_long ? 4 : 2;
 	amodes mode = table68k[opcode].dmode;
+	int pcoffset = 0;
 
 	out("uae_u16 mask = %s;\n", gen_nextiword(mode >= Ad8r && mode != absw && mode != absl ? GF_PCM2 : ((mode == Ad16 || mode == PC16 || mode == absw || mode == absl) ? 0 : GF_PCP2)));
 	do_instruction_buserror();
@@ -4616,6 +4624,9 @@ static void genmovemle_ce (uae_u16 opcode)
 	}
 	strcpy(bus_error_code2, "pcoffset += 2;\n");
 	genamode(NULL, mode, "dstreg", table68k[opcode].size, "src", 2, 1, GF_AA | GF_MOVE | GF_REVERSE | GF_REVERSE2 | (mode == absl ? GF_PCM2 : GF_PCP2));
+	if (mode >= Ad16) {
+		pcoffset = 2;
+	}
 	if (table68k[opcode].size == sz_long) {
 		if (mode == Apdi) {
 			out("uae_u16 amask = mask & 0xff, dmask = (mask >> 8) & 0xff;\n");
@@ -4623,20 +4634,20 @@ static void genmovemle_ce (uae_u16 opcode)
 			out("while (amask) {\n");
 			out("%s(srca - 2, m68k_areg(regs, movem_index2[amask]));\n", dstw);
 			addcycles000_nonce(4);
-			check_bus_error("src", -2, 1, 1, "m68k_areg(regs, movem_index2[amask])", 1, 0);
+			check_bus_error("src", -2, 1, 1, "m68k_areg(regs, movem_index2[amask])", 1, pcoffset);
 			out("%s(srca - 4, m68k_areg(regs, movem_index2[amask]) >> 16);\n", dstw);
 			addcycles000_nonce(4);
-			check_bus_error("src", -4, 1, 1, "m68k_areg(regs, movem_index2[amask]) >> 16", 1, 0);
+			check_bus_error("src", -4, 1, 1, "m68k_areg(regs, movem_index2[amask]) >> 16", 1, pcoffset);
 			out("srca -= %d;\n", size);
 			out("amask = movem_next[amask];\n");
 			out("}\n");
 			out("while (dmask) {\n");
 			out("%s(srca - 2, m68k_dreg(regs, movem_index2[dmask]));\n", dstw);
 			addcycles000_nonce(4);
-			check_bus_error("src", -2, 1, 1, "m68k_dreg(regs, movem_index2[dmask])", 1, 0);
+			check_bus_error("src", -2, 1, 1, "m68k_dreg(regs, movem_index2[dmask])", 1, pcoffset);
 			out("%s(srca - 4, m68k_dreg(regs, movem_index2[dmask]) >> 16);\n", dstw);
 			addcycles000_nonce(4);
-			check_bus_error("src", -4, 1, 1, "m68k_dreg(regs, movem_index2[dmask]) >> 16", 1, 0);
+			check_bus_error("src", -4, 1, 1, "m68k_dreg(regs, movem_index2[dmask]) >> 16", 1, pcoffset);
 			out("srca -= %d;\n", size);
 			out("dmask = movem_next[dmask];\n");
 			out("}\n");
@@ -4647,20 +4658,20 @@ static void genmovemle_ce (uae_u16 opcode)
 			out("while (dmask) {\n");
 			out("%s(srca, m68k_dreg(regs, movem_index1[dmask]) >> 16);\n", dstw);
 			addcycles000_nonce(4);
-			check_bus_error("src", 0, 1, 1, "m68k_dreg(regs, movem_index1[dmask]) >> 16", 1, 0);
+			check_bus_error("src", 0, 1, 1, "m68k_dreg(regs, movem_index1[dmask]) >> 16", 1, pcoffset);
 			out("%s(srca + 2, m68k_dreg(regs, movem_index1[dmask]));\n", dstw);
 			addcycles000_nonce(4);
-			check_bus_error("src", 2, 1, 1, "m68k_dreg(regs, movem_index1[dmask])", 1, 0);
+			check_bus_error("src", 2, 1, 1, "m68k_dreg(regs, movem_index1[dmask])", 1, pcoffset);
 			out("srca += %d;\n", size);
 			out("dmask = movem_next[dmask];\n");
 			out("}\n");
 			out("while (amask) {\n");
 			out("%s(srca, m68k_areg(regs, movem_index1[amask]) >> 16);\n", dstw);
 			addcycles000_nonce(4);
-			check_bus_error("src", 0, 1, 1, "m68k_areg(regs, movem_index1[amask]) >> 16", 1, 0);
+			check_bus_error("src", 0, 1, 1, "m68k_areg(regs, movem_index1[amask]) >> 16", 1, pcoffset);
 			out("%s(srca + 2, m68k_areg(regs, movem_index1[amask]));\n", dstw);
 			addcycles000_nonce(4);
-			check_bus_error("src", 2, 1, 1, "m68k_areg(regs, movem_index1[amask])", 1, 0);
+			check_bus_error("src", 2, 1, 1, "m68k_areg(regs, movem_index1[amask])", 1, pcoffset);
 			out("srca += %d;\n", size);
 			out("amask = movem_next[amask];\n");
 			out("}\n");
@@ -4673,14 +4684,14 @@ static void genmovemle_ce (uae_u16 opcode)
 			out("srca -= %d;\n", size);
 			out("%s(srca, m68k_areg(regs, movem_index2[amask]));\n", dstw);
 			addcycles000_nonce(4);
-			check_bus_error("src", 0, 1, 1, "m68k_areg(regs, movem_index2[amask])", 1, 0);
+			check_bus_error("src", 0, 1, 1, "m68k_areg(regs, movem_index2[amask])", 1, pcoffset);
 			out("amask = movem_next[amask];\n");
 			out("}\n");
 			out("while (dmask) {\n");
 			out("srca -= %d;\n", size);
 			out("%s(srca, m68k_dreg(regs, movem_index2[dmask]));\n", dstw);
 			addcycles000_nonce(4);
-			check_bus_error("src", 0, 1, 1, "m68k_dreg(regs, movem_index2[dmask])", 1, 0);
+			check_bus_error("src", 0, 1, 1, "m68k_dreg(regs, movem_index2[dmask])", 1, pcoffset);
 			out("dmask = movem_next[dmask];\n");
 			out("}\n");
 			out("m68k_areg(regs, dstreg) = srca;\n");
@@ -4690,14 +4701,14 @@ static void genmovemle_ce (uae_u16 opcode)
 			out("while (dmask) {\n");
 			out("%s(srca, m68k_dreg(regs, movem_index1[dmask]));\n", dstw);
 			addcycles000_nonce(4);
-			check_bus_error("src", 0, 1, 1, "m68k_dreg(regs, movem_index1[dmask])", 1, 0);
+			check_bus_error("src", 0, 1, 1, "m68k_dreg(regs, movem_index1[dmask])", 1, pcoffset);
 			out("srca += %d;\n", size);
 			out("dmask = movem_next[dmask];\n");
 			out("}\n");
 			out("while (amask) {\n");
 			out("%s(srca, m68k_areg(regs, movem_index1[amask]));\n", dstw);
 			addcycles000_nonce(4);
-			check_bus_error("src", 0, 1, 1, "m68k_areg(regs, movem_index1[amask])", 1, 0);
+			check_bus_error("src", 0, 1, 1, "m68k_areg(regs, movem_index1[amask])", 1, pcoffset);
 			out("srca += %d;\n", size);
 			out("amask = movem_next[amask];\n");
 			out("}\n");
@@ -5488,6 +5499,7 @@ static void gen_opcode (unsigned int opcode)
 					addcycles000(2);
 				next_level_000();
 			}
+			exception_pc_offset_extra = 0;
 			if (curi->size == sz_long && !isreg(curi->dmode)) {
 				// write addr + 2
 				// prefetch
@@ -5533,6 +5545,7 @@ static void gen_opcode (unsigned int opcode)
 		if (isreg (curi->smode)) {
 			addcycles000(2);
 		}
+		exception_pc_offset_extra = 0;
 		genastore("newv", curi->dmode, "dstreg", curi->size, "dst");
 		break;
 	case i_ADD:
@@ -5683,6 +5696,7 @@ static void gen_opcode (unsigned int opcode)
 					addcycles000(2);
 				next_level_000();
 			}
+			exception_pc_offset_extra = 0;
 			if (curi->size == sz_long && !isreg(curi->dmode)) {
 				// write addr + 2
 				// prefetch
@@ -5729,6 +5743,7 @@ static void gen_opcode (unsigned int opcode)
 		if (isreg (curi->smode)) {
 			addcycles000(2);
 		}
+		exception_pc_offset_extra = 0;
 		genastore("newv", curi->dmode, "dstreg", curi->size, "dst");
 		break;
 	case i_NEG:
@@ -6063,16 +6078,16 @@ static void gen_opcode (unsigned int opcode)
 		} else {
 			out("%s(mempa, src >> 24);\n", dstb);
 			count_writew++;
-			check_bus_error("memp", 0, 1, 0, "src >> 24", 1 | 0x10000, 0);
+			check_bus_error("memp", 0, 1, 0, "src >> 24", 1 | 0x10000, 2);
 			out("%s(mempa + 2, src >> 16);\n", dstb);
 			count_writew++;
-			check_bus_error("memp", 2, 1, 0, "src >> 16", 1, 0);
+			check_bus_error("memp", 2, 1, 0, "src >> 16", 1, 2);
 			out("%s(mempa + 4, src >> 8);\n", dstb);
 			count_writew++;
-			check_bus_error("memp", 4, 1, 0, "src >> 8", 1 | 0x10000, 0);
+			check_bus_error("memp", 4, 1, 0, "src >> 8", 1 | 0x10000, 2);
 			out("%s(mempa + 6, src); \n", dstb);
 			count_writew++;
-			check_bus_error("memp", 6, 1, 0, "src", 1, 0);
+			check_bus_error("memp", 6, 1, 0, "src", 1, 2);
 		}
 		fill_prefetch_next_t();
 		next_level_000();
@@ -6334,19 +6349,18 @@ static void gen_opcode (unsigned int opcode)
 				bus_error_code[0] = 0;
 				bus_error_code2[0] = 0;
 
-				int pcoffset = 0;
+				storeflags &= ~(GF_PCM2 | GF_PCP2);
 				if (curi->smode >= Aind && curi->smode < imm && curi->dmode == absl) {
-					// address/bus error stacked PC is 2 less
-					pcoffset -= 2;
+					storeflags |= GF_PCM2;
+				} else if (curi->dmode == Apdi) {
+					storeflags |= GF_PCP2;
 				}
-				exception_pc_offset += pcoffset;
 				// MOVE EA,-(An) long writes are always reversed. Reads are normal.
 				if (curi->dmode == Apdi && curi->size == sz_long) {
-					genastore_2("src", curi->dmode, "dstreg", curi->size, "dst", 1, storeflags | GF_EXC3);
+					genastore_2("src", curi->dmode, "dstreg", curi->size, "dst", 1, storeflags | GF_EXC3 | GF_MOVE);
 				} else {
-					genastore_2("src", curi->dmode, "dstreg", curi->size, "dst", 0, storeflags | GF_EXC3);
+					genastore_2("src", curi->dmode, "dstreg", curi->size, "dst", 0, storeflags | GF_EXC3 | GF_MOVE);
 				}
-				exception_pc_offset -= pcoffset;
 				sync_m68k_pc();
 				if (dualprefetch) {
 					fill_prefetch_full_000(curi->mnemo == i_MOVE ? 2 : 1);
