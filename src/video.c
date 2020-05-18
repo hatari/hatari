@@ -418,6 +418,10 @@
 /*			removing bottom border (fix regression in B.I.G. Demo screen 2)		*/
 /*			When removed, 50 Hz bottom border has 47 extra lines but the last 2 are	*/
 /*			masked by vblank (and can displayed by disabling vblank at hbl 308)	*/
+/* 2020/05/08	[NP]	Handle screen with no vertical DE activated when switching to 60 Hz	*/
+/*			between lines 34 and 62 on a 50 Hz screen (fix fullscreen part in demo	*/
+/*			'Hard As Ice' by ICE)							*/
+
 
 const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
 
@@ -2562,9 +2566,12 @@ Freq_Test_Done:
 		}
 		else
 		{
-			// TODO CHECK ON STF [NP] : if freq is changed after top_pos and before nStartHBL, then we get a screen
-			// where vertical DE is never activated ? (eg 60/50 Hz switch at end of line 62)
-			VerticalOverscan |= V_OVERSCAN_NO_DE;
+			/* If freq is changed after new position top_pos and before nStartHBL on a 50Hz screen, then we get a screen */
+			/* where vertical DE is never activated (eg 60 Hz switch between line 34 and end of line 62) */
+			if ( ( nScreenRefreshRate == VIDEO_50HZ ) && ( FreqHz != VIDEO_50HZ ) )
+				VerticalOverscan |= V_OVERSCAN_NO_DE;
+			else
+				VerticalOverscan &= ~V_OVERSCAN_NO_DE;
 		}
 	}
 
@@ -3016,6 +3023,13 @@ static void Video_EndHBL(void)
 		pHBLPalettes -= OVERSCAN_TOP;		// FIXME useless ?
 	}
 
+	else if ( ( nHBL == pVideoTiming->VDE_On_Line_50 - 1 )
+	  && ( VerticalOverscan & V_OVERSCAN_NO_DE ) )
+	{
+		/* 50 Hz screen where freq != 50 Hz at HBL 62 cycle 502 -> vertical DE stays OFF for this screen */
+		LOG_TRACE ( TRACE_VIDEO_BORDER_V , "detect no V_DE screen\n" );
+	}
+
 	else if ( ( nHBL == pVideoTiming->VDE_Off_Line_50 + BlankLines - 1 )
 	  && ( VerticalOverscan & V_OVERSCAN_NO_BOTTOM_50 ) )
 	{
@@ -3214,7 +3228,7 @@ void Video_InterruptHandler_EndLine(void)
 	}
 
 	/* Timer B occurs at END of first visible screen line in Event Count mode */
-	if ( ( nHBL >= nStartHBL ) && ( nHBL < nEndHBL + BlankLines ) )
+	if ( ( nHBL >= nStartHBL ) && ( nHBL < nEndHBL + BlankLines ) && ( ( VerticalOverscan & V_OVERSCAN_NO_DE ) == 0 ) )
 	{
 		/* Handle Timer B when using Event Count mode */
 		/* We must ensure that the write to fffa1b to activate timer B was */
@@ -3487,12 +3501,13 @@ static void Video_CopyScreenLineColor(void)
 	}
 
 
-	/* Is total blank line? I.e. top/bottom border? */
+	/* Is total blank line? I.e. top/bottom border or V_DE is not activated */
 	/* TODO [NP] in that case we fill the line with byte 0x00, which will give a line with color 0, */
 	/* but this should be improved to really display a black line (requires changes in screen.c convert functions) */
 	if ((nHBL < nStartHBL) || (nHBL >= nEndHBL + BlankLines)
 	    || (LineBorderMask & ( BORDERMASK_EMPTY_LINE|BORDERMASK_NO_DE ) )
-	    || ShifterFrame.VBlank_signal )
+	    || ShifterFrame.VBlank_signal
+	    || ( VerticalOverscan & V_OVERSCAN_NO_DE ) )
 	{
 		/* Clear line to color '0' */
 		memset(pSTScreen, 0, SCREENBYTES_LINE);
@@ -5429,6 +5444,9 @@ void Video_Info(FILE *fp, Uint32 dummy)
 		break;
 	case V_OVERSCAN_NO_TOP|V_OVERSCAN_NO_BOTTOM_50:
 		mode = "top+bottom";
+		break;
+	case V_OVERSCAN_NO_DE:
+		mode = "no V_DE";
 		break;
 	default:
 		mode = "unknown";
