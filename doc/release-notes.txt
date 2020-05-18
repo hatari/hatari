@@ -26,10 +26,14 @@ Emulation:
 - Emulate additional RTC/NVRAM registers
 - Fix: IDE disks with sector size > 512 bytes
 - CPU:
-  - Update CPU core to latest WinUAE 4.4.0 beta
+  - Update CPU core to latest WinUAE 4.4.0 beta : full support for undocument
+    fields in 68000 bus/address error stack frames, as well as CCR flags for
+    most of the 680x0 instructions (using a cpu tester program on the real
+    hardware that checks all possible opcodes' combinations)
 - Video:
   - Improved timing when setting Vsync signal (same place where video counter
     is reloaded)
+  - Handle screen where vertical DE signal is completely disabled
 
 Emulator:
 - Memory snapshot version increase due to FDC changes
@@ -126,6 +130,7 @@ Documentation:
 Fixed demos:
 - Pacemaker STE demo (end part), when it's run from GEMDOS HD
 - Multi scrolls part in Closure by Sync (regression since Hatari 2.2, vsync in bottom border)
+- Fullscreen part in Hard As Ice STE demo by I.C.E. (screeen with no vertical DE signal)
 
 Fixed programs:
 - Akaisex program reading AKAI S1000 HD floppies converted to STX
