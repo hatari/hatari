@@ -100,7 +100,7 @@ Emulator:
     to always specify all the relevant ones:
     --trace os_base,aes, trace +xbios,bios, trace -bios,-aes
   - Improvements to UAE and external disassembler disassembly
-  - UAE disassembler is now default insted of external one
+  - UAE disassembler is now default instead of external one
     (latter doesn't decode all instructions correctly)
   - New "info" subcommands:
     "acia", "dmasnd", "ikbd", "mfp", "nvram", "rtc" and "scc"
