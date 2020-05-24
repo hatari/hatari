@@ -8,17 +8,19 @@ addons:
       - libpng-dev
       - libsdl2-dev
       - portaudio19-dev
+      - imagemagick
   homebrew:
     packages:
       - sdl2
       - libpng
       - tidy-html5
+      - graphicsmagick
     update: true
 
 before_script:
   - ./configure ${CONFIG}
 script:
-  - make -j$(nproc) && make test
+  - make -j$(nproc) && ctest -j$(nproc)
 
 matrix:
   include:

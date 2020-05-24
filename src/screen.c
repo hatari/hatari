@@ -410,10 +410,12 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 
 	psSdlVideoDriver = SDL_getenv("SDL_VIDEODRIVER");
 	bUseDummyMode = psSdlVideoDriver && !strcmp(psSdlVideoDriver, "dummy");
+#if !WITH_SDL2
 	if (bUseDummyMode)
 	{
 		ConfigureParams.Screen.DisableVideo = true;
 	}
+#endif
 
 	if (bInFullScreen)
 	{

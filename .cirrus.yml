@@ -6,7 +6,7 @@ fedora_task:
   install_script:
     - dnf update -y
     - dnf install -y cmake make gcc diffutils python-unversioned-command
-                     SDL2-devel libpng-devel zlib-devel portaudio-devel
+          GraphicsMagick SDL2-devel libpng-devel zlib-devel portaudio-devel
   script:
     - mkdir build
     - cd build
@@ -22,7 +22,8 @@ freebsd_task:
     memory: 4G
   install_script:
     - pkg update
-    - pkg install -y pkgconf cmake gmake png devel/sdl20 devel/libedit
+    - pkg install -y pkgconf cmake gmake GraphicsMagick png
+          devel/sdl20 devel/libedit
   script:
     - ./configure --enable-debug || { cat config.log; exit 1; }
     - gmake -j4
@@ -30,9 +31,9 @@ freebsd_task:
 
 macos_task:
   osx_instance:
-    image: high-sierra-base
+    image: catalina-base
   install_script:
-    - brew install cmake sdl2 libpng make tidy-html5
+    - brew install cmake sdl2 libpng make tidy-html5 imagemagick
   script:
     - export PATH=/usr/local/bin:$PATH
     - ./configure --disable-osx-bundle --enable-debug
