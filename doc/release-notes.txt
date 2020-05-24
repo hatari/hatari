@@ -44,10 +44,9 @@ Emulator:
   - Support config file values with '=' in them
 - GEMDOS HD emulation:
   - Support FASTLOAD program flag with GEMDOS HD
-  - GEMDOS HD emulation cartridge assembly functionality is
-    moved (almost completely) to emulator side. Fixes Atari
-    side error handling when program file isn't readable,
-    and TOS stack overflows in some rare cases
+  - GEMDOS HD emulation cartridge assembly functionality is moved almost
+    completely to emulator side. Fixes Atari side error handling when program
+    file is not readable, and TOS stack overflows in some rare cases
   - Detect DTA re-use to reduce DTA cache usage, grow cache on
     demand and give warning if its entries need to be re-cycled
     (= cache max size is reached)
@@ -62,11 +61,11 @@ Emulator:
   - SDL2: "--zoom" option accepts any values between 1.0 - 8.0
   - SDL2: "--zoom" option is changed to always enable low resolution
     doubling before SDL framebuffer is scaled up (or down) by the zoom
-    factor. This way Hatari output wiindow is approximately same sized
+    factor. This way Hatari output window is approximately same sized
     regardless of emulated Atari resolution, like on a real CRT monitor
-  - SDL2: scale quality is autoselected; nearest pixel for sharp
-    output with integer scaling factors, and linear scaling to
-    smooth out issues with non-integer scaling & window resizes.
+  - SDL2: scale quality is selected automatically; nearest pixel for sharp
+    output with integer scaling factors, and linear scaling to smooth out
+    issues with non-integer scaling and window resizes
   - SDL2: Now redundant "nRenderScaleQuality" config option is
     removed and "Linear scaling" option in GUI is replaced with
     the "GPU scaling" option (=bUseSdlRenderer config option)
@@ -130,8 +129,10 @@ Documentation:
 
 Fixed demos:
 - Pacemaker STE demo (end part), when it's run from GEMDOS HD
-- Multi scrolls part in Closure by Sync (regression since Hatari 2.2, vsync in bottom border)
-- Fullscreen part in Hard As Ice STE demo by I.C.E. (screeen with no vertical DE signal)
+- Multi scrolls part in Closure by Sync (regression since Hatari 2.2, vsync
+  in bottom border)
+- Fullscreen part in Hard As Ice STE demo by I.C.E. (screen with no vertical
+  DE signal)
 
 Fixed programs:
 - Akaisex program reading AKAI S1000 HD floppies converted to STX
@@ -791,8 +792,8 @@ Emulation:
   - Rewrite the DMA functions for better accuracy
   - Add support for IPF/CTR files by using the capsimage library
   - Add open source support for Pasti STX files, including random/fuzzy bits
-    and variable length bits. Also allow to save writes to a .stx file
-    into an additional .wd1772 file (store 'write sector' and 'write track' data)
+    and variable length bits. Also allow to save writes to a .stx file into
+    an additional .wd1772 file (store 'write sector' and 'write track' data)
   - Don't force drives A and B at $4c2, keep the values detected by TOS
   - Many other timing / status register improvements
 - GEMDOS HD emulation:
