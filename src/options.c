@@ -101,6 +101,7 @@ enum {
 	OPT_AVI_PNG_LEVEL,
 	OPT_AVIRECORD_FPS,
 	OPT_AVIRECORD_FILE,
+	OPT_SCRSHOT_DIR,
 	OPT_JOYSTICK,		/* device options */
 	OPT_JOYSTICK0,
 	OPT_JOYSTICK1,
@@ -309,6 +310,8 @@ static const opt_t HatariOptions[] = {
 	  "<x>", "Force AVI frame rate (x = 50/60/71/...)" },
 	{ OPT_AVIRECORD_FILE, NULL, "--avi-file",
 	  "<file>", "Use <file> to record AVI" },
+	{ OPT_SCRSHOT_DIR, NULL, "--screenshot-dir",
+	  "<dir>", "Save screenshots in the directory <dir>" },
 
 	{ OPT_HEADER, NULL, NULL, NULL, "Devices" },
 	{ OPT_JOYSTICK,  "-j", "--joystick",
@@ -1371,6 +1374,11 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			/* false -> file is created if it doesn't exist */
 			ok = Opt_StrCpy(OPT_AVIRECORD_FILE, false, ConfigureParams.Video.AviRecordFile,
 					argv[i], sizeof(ConfigureParams.Video.AviRecordFile), NULL);
+			break;
+
+		case OPT_SCRSHOT_DIR:
+			i += 1;
+			Paths_SetScreenShotDir(argv[i]);
 			break;
 
 			/* VDI options */

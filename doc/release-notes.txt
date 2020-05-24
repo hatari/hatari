@@ -70,6 +70,7 @@ Emulator:
   - SDL2: Now redundant "nRenderScaleQuality" config option is
     removed and "Linear scaling" option in GUI is replaced with
     the "GPU scaling" option (=bUseSdlRenderer config option)
+  - Added new "--screenshot-dir" option to select the folder for screenshots
 - Show mouse grab toggle shortcut key in startup statusbar message
 - Center host mouse to Hatari window on Atari resets and resolution
   changes only when window is focused and mouse pointer is within it

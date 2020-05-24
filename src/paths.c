@@ -75,6 +75,14 @@ const char *Paths_GetScreenShotDir(void)
 	return sScreenShotDir;
 }
 
+/**
+ * Set new screenshot directory location
+ */
+void Paths_SetScreenShotDir(const char *sNewDir)
+{
+	Str_Free(sScreenShotDir);
+	sScreenShotDir = Str_Dup(sNewDir);
+}
 
 /**
  * Explore the PATH environment variable to see where our executable is
