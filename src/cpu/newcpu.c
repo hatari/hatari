@@ -2098,7 +2098,7 @@ static void update_68k_cycles (void)
 	Log_Printf(LOG_DEBUG, "update cyc speed %d throttle %f clock_mult %d\n", currprefs.m68k_speed, currprefs.m68k_speed_throttle, changed_prefs.cpu_clock_multiplier);
 #else	/* Don't adjust cycles_mult in Hatari and ignore m68k_speed (forced to 0) */
 
-	if (currprefs.m68k_speed == 0) { // aproximate
+	if (currprefs.m68k_speed == 0) { // approximate
 		cycles_mult = CYCLES_DIV;
 		if (currprefs.cpu_model >= 68040) {
 			cycles_mult = CYCLES_DIV / 12;
