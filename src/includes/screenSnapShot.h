@@ -14,5 +14,6 @@ extern int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int destw,
 		int desth, FILE *fp, int png_compression_level, int png_filter,
 		int CropLeft , int CropRight , int CropTop , int CropBottom );
 extern void ScreenSnapShot_SaveScreen(void);
+extern void ScreenSnapShot_SaveToFile(const char *filename);
 
 #endif /* ifndef HATARI_SCREENSNAPSHOT_H */

@@ -29,6 +29,7 @@ const char DebugUI_fileid[] = "Hatari debugui.c : " __DATE__ " " __TIME__;
 #include "log.h"
 #include "m68000.h"
 #include "memorySnapShot.h"
+#include "screenSnapShot.h"
 #include "options.h"
 #include "reset.h"
 #include "screen.h"
@@ -381,6 +382,18 @@ static int DebugUI_SetOptions(int argc, char *argv[])
 
 
 /**
+ * Command: Screenshot
+ */
+static int DebugUI_Screenshot(int argc, char *argv[])
+{
+	if (argc == 2)
+		ScreenSnapShot_SaveToFile(argv[1]);
+	else
+		return DebugUI_PrintCmdHelp(argv[0]);
+	return DEBUGGER_CMDDONE;
+}
+
+/**
  * Command: Set tracing
  */
 static int DebugUI_SetTracing(int argc, char *argv[])
@@ -396,7 +409,6 @@ static int DebugUI_SetTracing(int argc, char *argv[])
 
 	return DEBUGGER_CMDDONE;
 }
-
 
 /**
  * Command: Change Hatari work directory
@@ -1000,6 +1012,11 @@ static const dbgcommand_t uicommand[] =
 	  "reset", "",
 	  "reset emulation",
 	  "<soft|hard>\n",
+	  false },
+	{ DebugUI_Screenshot, NULL,
+	  "screenshot", "",
+	  "save screenshot to given file",
+	  "<filename>\n",
 	  false },
 	{ DebugUI_SetOptions, Opt_MatchOption,
 	  "setopt", "o",

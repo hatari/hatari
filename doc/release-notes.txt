@@ -93,6 +93,7 @@ Emulator:
     (with symbol address aliases)
 - Debugger:
   - Fix: CPU disassembly trace output doesn't go to specified trace file
+  - New "screenshot" command for saving screen dump to a PNG/BMP file
   - "symbols resident" option replaced with "symbols autoload"
     option which can be used to completely disable automatic symbol
     loading and unloading for programs run through the GEMDOS HD

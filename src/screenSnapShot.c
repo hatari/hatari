@@ -13,6 +13,7 @@ const char ScreenSnapShot_fileid[] = "Hatari screenSnapShot.c : " __DATE__ " " _
 #include <string.h>
 #include "main.h"
 #include "configuration.h"
+#include "file.h"
 #include "log.h"
 #include "paths.h"
 #include "screen.h"
@@ -255,3 +256,34 @@ void ScreenSnapShot_SaveScreen(void)
 	free(szFileName);
 }
 
+/**
+ * Save screen shot to given file.
+ */
+void ScreenSnapShot_SaveToFile(const char *szFileName)
+{
+	bool success = false;
+
+	if (!szFileName)
+	{
+		fprintf(stderr, "ERROR: no screen dump file name specified\n");
+		return;
+	}
+#if HAVE_LIBPNG
+	if (File_DoesFileExtensionMatch(szFileName, ".png"))
+	{
+		success = ScreenSnapShot_SavePNG(sdlscrn, szFileName) > 0;
+	}
+	else
+#endif
+	if (File_DoesFileExtensionMatch(szFileName, ".bmp"))
+	{
+		success = SDL_SaveBMP(sdlscrn, szFileName) == 0;
+	}
+	else
+	{
+		fprintf(stderr, "ERROR: unknown screen dump file name extension: %s\n", szFileName);
+		return;
+	}
+	fprintf(stderr, "Screen dump to '%s' %s\n", szFileName,
+		success ? "succeeded" : "failed");
+}
