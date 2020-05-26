@@ -42,19 +42,19 @@ HOME="$testdir" $hatari --log-level fatal --sound off --fast-forward on -z 1 \
 
 # Wait until the fifo has been created by Hatari
 while ! test -p "$cmdfifo" ; do
-	sleep 0.2
+	sleep 0.1
 done
 
 # Wait until the program is ready, i.e. it is writing to 0xFFFF820A
 while ! grep -q -i FFFF820A "$testdir/out.txt" ; do
 	echo "hatari-debug r" > "$cmdfifo"
-	sleep 0.2
+	sleep 0.1
 done
 
 echo "hatari-shortcut screenshot" > "$cmdfifo"
 
 while ! grep -q "Screen dump saved" "$testdir/out.txt" ; do
-	sleep 0.2
+	sleep 0.1
 done
 
 echo "hatari-shortcut quit" > "$cmdfifo"
