@@ -3,9 +3,9 @@
 NAME = nf_vbcc.tos
 
 # for m68000
-CC = vc -v
-CFLAGS = -O1 -DTEST
-LDFLAGS = -g # leave symbols to binaries
+CC ?= vc -v
+CFLAGS ?= -O1 -DTEST
+LDFLAGS ?= -g # leave symbols to binaries
 
 OBS = nf_vbcc.o nf_asmv.o
 
