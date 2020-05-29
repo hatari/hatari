@@ -220,7 +220,8 @@ restore_mfp:
 vbl:	st      vblflag              ; VBL-Flag setzen
 	rte
 
-timer_b:        rte
+timer_b:
+	rte
 
 	>PART 'Zeilen ermitteln'
 
@@ -257,16 +258,19 @@ testvbl1:
 	st      vblflag
 	rte
 
-testvbl2:       clr.b   $fffffa1b.w
+testvbl2:
+	clr.b   $fffffa1b.w
 	st      vblflag
 	rte
 
-testb1:         addq.w  #1,scanlines
+testb1:
+	addq.w  #1,scanlines
 	move.b  #2,$ffff820a.w       ; 50 Hz
 	move.l  #testb2,$0120.w
 	rte
 
-testb2:         addq.w  #1,scanlines
+testb2:
+	addq.w  #1,scanlines
 	rte
 
 	ENDPART
