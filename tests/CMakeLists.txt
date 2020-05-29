@@ -2,6 +2,8 @@
 add_subdirectory(debugger)
 
 if(UNIX)
+	add_test(NAME command-fifo COMMAND
+	         ${CMAKE_CURRENT_SOURCE_DIR}/configfile.sh $<TARGET_FILE:hatari>)
 	add_test(NAME config-file COMMAND
 	         ${CMAKE_CURRENT_SOURCE_DIR}/configfile.sh $<TARGET_FILE:hatari>)
 	add_subdirectory(buserror)
