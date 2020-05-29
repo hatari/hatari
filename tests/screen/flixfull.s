@@ -152,7 +152,7 @@ send_ikbd:
 	lea     $fffffc00.w,A0
 waitkeyready:
 	btst    #1,(A0)              ; Tastaturprozessor bereit?
-;	beq.s   waitkeyready
+	beq.s   waitkeyready
 	move.b  D0,2(A0)
 	rts
 
@@ -434,8 +434,27 @@ lines2:	nop
 
 	dbra    D7,lines2            ; [12/16]
 
+	cmp.w   #$0001,2             ; Is it Hatari faketos?
+	beq.s   hataritest
+
 	move.w  #$2300,(SP)          ; SR setzen
 	rte
+
+	ENDPART
+
+
+	>PART 'Hatari-Screenshot'
+
+hataritest:
+	move.l  #vbl,$70.w
+	stop    #$2300               ; Wait for VBL
+
+	move.w  #20,-(sp)
+	trap    #14                  ; Scrdmp
+	addq.l  #2,sp  
+
+	clr.w   -(SP)
+	trap    #1                   ; Pterm0
 
 	ENDPART
 
