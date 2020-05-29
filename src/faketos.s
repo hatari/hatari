@@ -24,21 +24,30 @@ start:
 	reset
 	move.b	#5,$ffff8001.w		; Fake memory config
 	lea	$20000,sp		; Set up SSP
-	lea	$fa0000,a0
-	cmp.l	#$abcdef42,(a0)		; Cartridge enabled?
-	bne.s	no_sys_init
+
 	lea	unhandled_error(pc),a1
 	movea.w	#8,a0			; Start with bus error handler
 set_exc_loop:
 	move.l	a1,(a0)+		; Set all exception handlers
 	cmp.w	#$1c0,a0
 	ble.s	set_exc_loop
-	dc.w	$a			; Call SYSINIT_OPCODE to init trap #1
 
-no_sys_init:
 	lea	rte_only(pc),a1
 	move.l	a1,$68			; Ignore HBLs
 	move.l	a1,$72			; Ignore VBLs
+
+	lea	$fffffa00.w,a0
+	move.b	#$48,17(a0)		; Configure MFP vector base
+
+	lea	$fffffc00.w,a0
+	move.b	#3,(a0)			; Reset ACIA
+	move.b	#$16,(a0)		; Configure ACIA
+
+	lea	$fa0000,a0
+	cmp.l	#$abcdef42,(a0)		; Cartridge enabled?
+	bne.s	no_sys_init
+	dc.w	$a			; Call SYSINIT_OPCODE to init trap #1
+no_sys_init:
 
 	moveq	#0,d0
 	movea.l	d0,a0
