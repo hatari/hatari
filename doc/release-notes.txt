@@ -42,6 +42,7 @@ Emulator:
   (instead of counting sectors)
 - Add --lilo debug option for more convenient m68k Linux loading
   - Support config file values with '=' in them
+- Fix: run-time IDE byte swap change requires IDE re-init
 - GEMDOS HD emulation:
   - Support FASTLOAD program flag with GEMDOS HD
   - GEMDOS HD emulation cartridge assembly functionality is moved almost

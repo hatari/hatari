@@ -319,10 +319,11 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	if (bReInitHdcEmu)
 		HDC_UnInit();
 
-	/* Did change IDE HD image? */
+	/* Did change IDE HD image or its settings? */
 	for (i = 0; i < MAX_IDE_DEVS; i++)
 	{
 		if (changed->Ide[i].bUseDevice != current->Ide[i].bUseDevice
+		    || changed->Ide[i].nByteSwap != current->Ide[i].nByteSwap
 		    || (strcmp(changed->Ide[i].sDeviceFile, current->Ide[i].sDeviceFile)
 		        && changed->Ide[i].bUseDevice))
 		{
