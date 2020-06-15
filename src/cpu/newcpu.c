@@ -2158,18 +2158,8 @@ static void update_68k_cycles (void)
 	}
 	if (cpucycleunit < 1)
 		cpucycleunit = 1;
-#if 0
-	if (!currprefs.cpu_cycle_exact && !currprefs.cpu_memory_cycle_exact && currprefs.cpu_compatible) {
-		if (cpucycleunit == CYCLE_UNIT / 2) {
-			cycles_mult = 0;
-		} else {
-			cycles_mult = cpucycleunit * (CYCLES_DIV / (CYCLE_UNIT / 2));
-		}
-	}
-#endif
-	if (currprefs.cpu_cycle_exact || currprefs.cpu_compatible)
-		write_log (_T("CPU cycleunit: %d (%.3f)\n"), cpucycleunit, (float)cpucycleunit / CYCLE_UNIT);
-write_log (_T("CPU cycleunit: %d (%.3f)\n"), cpucycleunit, (float)cpucycleunit / CYCLE_UNIT);
+
+	write_log (_T("CPU cycleunit: %d (%.3f)\n"), cpucycleunit, (float)cpucycleunit / CYCLE_UNIT);
 #ifndef WINUAE_FOR_HATARI
 	set_config_changed ();
 #endif
