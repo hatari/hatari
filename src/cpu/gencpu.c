@@ -2177,6 +2177,7 @@ static void check_bus_error(const char *name, int offset, int write, int size, c
 
 		fc &= 7;
 		out("if(hardware_bus_error) {\n");
+		out("cpu_bus_rmw=false;\n");
 		if (write) {
 			out("exception2_write(opcode, %sa + %d, %d, %s, %d);\n",
 				name, offset, size, writevar,
@@ -2205,6 +2206,7 @@ static void check_bus_error(const char *name, int offset, int write, int size, c
 	fc &= 0xffff;
 
 	out("if(hardware_bus_error) {\n");
+	out("cpu_bus_rmw=false;\n");
 
 	int setapdiback = 0;
 
@@ -8778,6 +8780,7 @@ bccl_not68020:
 	case i_TAS:
 		if (cpu_level == 0) {
 			bus_error_cycles = 2;
+			out("cpu_bus_rmw=true;\n");
 			genamode(curi, curi->smode, "srcreg", curi->size, "src", 1, 0, GF_LRMW);
 			genflags(flag_logical, curi->size, "src", "", "");
 			if (!isreg(curi->smode)) {
@@ -8795,6 +8798,7 @@ bccl_not68020:
 				addcycles000_nonce(4);
 				out("}\n");
 			}
+			out("cpu_bus_rmw=false;\n");
 			fill_prefetch_next();
 		} else if (cpu_level == 1) {
 			if (isreg(curi->smode)) {

@@ -122,6 +122,7 @@ static int cpu_prefs_changed_flag;
 
 int cpucycleunit;
 int cpu_tracer;
+bool cpu_bus_rmw;
 
 const int areg_byteinc[] = { 1, 1, 1, 1, 1, 1, 1, 2 };
 const int imm8_table[] = { 8, 1, 2, 3, 4, 5, 6, 7 };

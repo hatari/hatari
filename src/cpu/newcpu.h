@@ -337,6 +337,7 @@ extern int mmu_enabled, mmu_triggered;
 extern int cpu_cycles;
 extern int cpucycleunit;
 extern int m68k_pc_indirect;
+extern bool cpu_bus_rmw;
 
 extern void safe_interrupt_set(int, int, bool);
 
