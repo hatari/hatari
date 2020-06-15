@@ -1608,6 +1608,8 @@ int	Blitter_Check_Simultaneous_CPU ( void )
  * the number of cycles since the blitter was (re)started.
  * After Blitter_CyclesBeforeStart cycles, we go to the next phase BLITTER_PHASE_START
  * to handle bus to the blitter and to copy data.
+ * We must ensure the cpu is not doing an atomic RMW bus access ; if so, blitter must be started
+ * later as it can't get the bus at the moment
  */
  void	Blitter_HOG_CPU_do_cycles_after ( int cycles )
 {
@@ -1616,7 +1618,7 @@ int	Blitter_Check_Simultaneous_CPU ( void )
 	if ( BlitterPhase == BLITTER_PHASE_PRE_START )
 	{
 		Blitter_CyclesBeforeStart -= cycles;
-		if ( Blitter_CyclesBeforeStart <= 0 )
+		if ( ( Blitter_CyclesBeforeStart <= 0 ) && ( cpu_bus_rmw == false ) )
 		{
 			/* This is specific to our cpu emulation, to avoid counting the current */
 			/* bus access (during which the blitter starts) as the first cpu bus access in non-hog mode */
