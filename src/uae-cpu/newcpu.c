@@ -202,6 +202,8 @@ cpuop_func *cpufunctbl[65536];
 int OpcodeFamily;
 int BusCyclePenalty = 0;
 
+bool cpu_bus_rmw = false;
+
 #define COUNT_INSTRS 0
 
 #if COUNT_INSTRS

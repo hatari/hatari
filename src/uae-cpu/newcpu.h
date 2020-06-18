@@ -403,4 +403,6 @@ STATIC_INLINE bool is_super_access(bool read)
   return regs.s;
 }
 
+extern bool cpu_bus_rmw;
+
 #endif	/* UAE_NEWCPU_H */
