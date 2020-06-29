@@ -153,6 +153,10 @@ VirMidi was Card 1 and as the port used above was first one, I give
 Hatari the following midi device:
   hatari --midi-out /dev/snd/midiC1D0
 
+And to connect that device to synthetizer, if you use Fluid Synth
+(or its Qsynth GUI), you can for example do:
+  aconnect "Virtual Raw MIDI 1-0" "FLUID Synth"
+
 (For the virtual midi keyboard, give same device with --midi-in option.)
 
 Note: In older (obsolete) Linux distros SDL_mixer may take exclusive
