@@ -362,6 +362,7 @@ Demos:
 - Breath (by Mystic Bytes)
 - Calimer-o-demo (by Oxygene)
 - Charts Compilation (by Next)
+- Closure (by Sync)
 - Coast II Coast (by Sector One, 4kB intro)
 - Coolism (music disk, by Effect)
 - Crisis (by Joska)
@@ -420,6 +421,7 @@ Demos:
 - Save The Earth (by Defence Force)
 - Second Reality 2013 (by Checkpoint, crash at end)
 - SillyVenture 2k10 & 2k11 (invitros by Mystic Bytes & Aggression)
+- SillyVenture 2020 (invitro by Agenda, Hemoroids & Mystic Bytes)
 - Sommarhack 2011 (invite by DHS)
 - Soundtracker (by Equinox)
 - SoWatt (by CareBears)
@@ -909,7 +911,7 @@ Demos:
 - Hatari 2.1 intro (by Mr. Styckx)
 - Heal Old Geek (by Hemoroids, only endpart.prg needs STE)
 - High Fidelity Dreams (by Aura)
-- HighResMode (by Paradox)
+- HighResMode 1 & 2 (by Paradox)
 - Illusion (by Next)
 - It's A Girl (by Paradox)
 - It's A Girl 2 (by Paradox)
@@ -1015,6 +1017,8 @@ Color games:
   http://atari-forum.com/viewtopic.php?f=28&t=29047
 - Sardonic
   http://atari-forum.com/viewtopic.php?f=3&t=38121
+- ScummVM-lite (STE enhanced)
+  http://www.happydaze.se/scummvm-lite-atari/
 - Skulls (shareware "minesweeper")
 - Spy 4k
 - Stardust* (tunnel sequence demo)
