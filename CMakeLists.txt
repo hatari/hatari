@@ -403,9 +403,9 @@ else()
 endif(PortMidi_FOUND)
 
 if(CapsImage_FOUND)
-  message( "  - capsimage :\tv${CAPSIMAGE_VERSION} found, allow to use .IPF, .RAW and .CTR disk images" )
+  message( "  - capsimage :\tv5 found, allow to use .IPF, .RAW and .CTR disk images" )
 else()
-  message( "  - capsimage :\tv${CAPSIMAGE_VERSION} not found, install it to use .IPF, .RAW and .CTR disk images" )
+  message( "  - capsimage :\tv5 not found, install it to use .IPF, .RAW and .CTR disk images" )
 endif(CapsImage_FOUND)
 
 if(Udev_FOUND)

@@ -29,18 +29,12 @@ const char floppy_ipf_fileid[] = "Hatari floppy_ipf.c : " __DATE__ " " __TIME__;
 #include <string.h>
 
 #ifdef HAVE_CAPSIMAGE
-#if CAPSIMAGE_VERSION == 5
 #ifndef __cdecl
 #define __cdecl  /* CAPS headers need this, but do not define it on their own */
 #endif
-#include <caps5/CapsLibAll.h>
+#include <caps/CapsLibAll.h>
 #define CapsLong SDWORD
 #define CapsULong UDWORD
-#else
-#include <caps/fdc.h>
-#define CAPS_LIB_RELEASE	4
-#define CAPS_LIB_REVISION	2
-#endif
 /* Macro to check release and revision */
 #define	CAPS_LIB_REL_REV	( CAPS_LIB_RELEASE * 100 + CAPS_LIB_REVISION )
 #endif
@@ -232,12 +226,10 @@ bool IPF_FileNameIsIPF(const char *pszFileName, bool bAllowGZ)
 {
 	return ( File_DoesFileExtensionMatch(pszFileName,".ipf" )
 		|| ( bAllowGZ && File_DoesFileExtensionMatch(pszFileName,".ipf.gz") )
-#if CAPS_LIB_REL_REV >= 501
 		|| File_DoesFileExtensionMatch(pszFileName,".raw" )
 		|| ( bAllowGZ && File_DoesFileExtensionMatch(pszFileName,".raw.gz") )
 		|| File_DoesFileExtensionMatch(pszFileName,".ctr" )
 		|| ( bAllowGZ && File_DoesFileExtensionMatch(pszFileName,".ctr.gz") )
-#endif
 		);
 }
 
@@ -437,7 +429,6 @@ bool	IPF_Insert ( int Drive , Uint8 *pImageBuffer , long ImageSize )
 		return false;
 	}
 
-#if CAPS_LIB_REL_REV >= 501
 	ImageType = CAPSGetImageTypeMemory ( pImageBuffer , ImageSize );
 	if ( ImageType == citError )
 	{
@@ -481,9 +472,6 @@ bool	IPF_Insert ( int Drive , Uint8 *pImageBuffer , long ImageSize )
 		}
 	}
 
-#else
-	ImageType = -1;
-#endif
 
 	if ( CAPSLockImageMemory ( ImageId , pImageBuffer , (CapsULong)ImageSize , DI_LOCK_MEMREF ) == imgeOk )
 	{
@@ -837,16 +825,13 @@ void	IPF_Drive_Set_DoubleSided ( int Drive , bool value )
 #ifdef HAVE_CAPSIMAGE
 static void	IPF_Drive_Update_Enable_Side ( void )
 {
-#if CAPS_LIB_REL_REV >= 501
 	int	i;
-#endif
 
 	if ( IPF_State.DriveEnabled[ 1 ] )
 	        IPF_State.Fdc.drivemax = MAX_FLOPPYDRIVES;		/* Should be 2 */
 	else
 	        IPF_State.Fdc.drivemax = MAX_FLOPPYDRIVES - 1;		/* Should be 1 */
 
-#if CAPS_LIB_REL_REV >= 501
 	for ( i=0 ; i < MAX_FLOPPYDRIVES ; i++ )
 	{
 		if ( IPF_State.DoubleSided[ i ] )
@@ -854,7 +839,6 @@ static void	IPF_Drive_Update_Enable_Side ( void )
 		else
 			IPF_State.Drive[ i ].diskattr |= CAPSDRIVE_DA_SS;	/* Single sided */
 	}
-#endif
 }
 #endif
 
@@ -915,7 +899,6 @@ void	IPF_FDC_WriteReg ( Uint8 Reg , Uint8 Byte )
 	else
 		LOG_TRACE(TRACE_FDC, "fdc ipf write reg=%d data=0x%x VBL=%d HBL=%d\n" , Reg , Byte , nVBLs , nHBL );
 	
-#if CAPS_LIB_REL_REV >= 501
 	/* In the case of CTR images, we must reset the revolution counter */
 	/* when a command access data on disk and track/side changed since last access */
 	if ( Reg == 0 )
@@ -936,7 +919,6 @@ void	IPF_FDC_WriteReg ( Uint8 Reg , Uint8 Byte )
 			}
 		}
 	}
-#endif
 
 	IPF_Emulate();					/* Update emulation's state up to this point */
 

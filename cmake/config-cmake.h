@@ -14,7 +14,6 @@
 
 /* Define if you have the capsimage library */
 #cmakedefine HAVE_CAPSIMAGE 1
-#cmakedefine CAPSIMAGE_VERSION @CAPSIMAGE_VERSION@
 
 /* Define if you have a X11 environment */
 #cmakedefine HAVE_X11 1

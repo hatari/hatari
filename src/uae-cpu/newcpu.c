@@ -165,12 +165,6 @@ const char NewCpu_fileid[] = "Hatari newcpu.c : " __DATE__ " " __TIME__;
 #include "68kDisass.h"
 #include "stMemory.h"
 
-#ifdef HAVE_CAPSIMAGE
-#if CAPSIMAGE_VERSION == 5
-#include <caps5/CapsLibAll.h>
-#endif
-#endif
-
 //#define DEBUG_PREFETCH
 
 struct flag_struct regflags;
