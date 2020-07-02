@@ -31,8 +31,8 @@ Emulation:
     most of the 680x0 instructions (using a cpu tester program on the real
     hardware that checks all possible opcodes' combinations)
 - Video:
-  - Improved timing when setting Vsync signal (same place where video counter
-    is reloaded)
+  - Improved timing when setting Vsync signal
+    (same place where video counter is reloaded)
   - Handle screen where vertical DE signal is completely disabled
 
 Emulator:
@@ -52,7 +52,7 @@ Emulator:
     demand and give warning if its entries need to be re-cycled
     (= cache max size is reached)
   - Invalid DTA in Fsnext() return -ENMFIL, like TOS does
-  - Dsetpath/Dgetpath empty path handling fix
+  - Fix: Dsetpath/Dgetpath empty path handling
 - Support read-only HD image files, and show error dialogs
   for image file open/lock issues
 - Hatari graphics support:
@@ -98,8 +98,10 @@ Emulator:
   - "symbols resident" option replaced with "symbols autoload"
     option which can be used to completely disable automatic symbol
     loading and unloading for programs run through the GEMDOS HD
-  - Trace flags can be added and removed instead of needing
-    to always specify all the relevant ones:
+    (helps debugging resident programs started from GEMDOS HD)
+  - Trace flags can be added and removed instead of needing to
+    always specify all the relevant ones, both with "--trace"
+    command line option and debugger "trace" command:
     --trace os_base,aes, trace +xbios,bios, trace -bios,-aes
   - Improvements to UAE and external disassembler disassembly
   - UAE disassembler is now default instead of external one
@@ -117,9 +119,10 @@ Emulator:
 Building:
 - Source repository moved from Mercurial to Git
 - Fix: issue with multilib capable cross-compilers
-- Fix: workaround problems with Capslib 5.1 headers
+- Only Caps library v5.1 is supported (support for old v4.2 is dropped)
 - Obsolete Mudflap option replaced with AddressSanitizer support
-- Add GEMDOS tests and improve CPU/MMU variant coverage in bus error tests
+- Add tests for GEMDOS HD, fullscreen/overscan display and Hatari
+  command FIFO + improve CPU/MMU variant coverage in earlier tests
 
 Documentation:
 - Up to date documentation provided at: https://hatari.tuxfamily.org/doc/
