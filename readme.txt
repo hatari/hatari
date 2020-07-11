@@ -147,24 +147,14 @@ Hatari can use the optional capsimage library to access IPF and CTR
 files. Those files are created using the Kryoflux board and allow to
 record MFM exact copies of original games, including the protection.
 
-Version 4.2 of the library allows to access IPF files, while the more recent
-version 5.1 fixes some bugs, as well as adding support for CTR files.
-
-Hatari defaults to version 5.1, but you can also use the older 4.2 version
-if 5.1 is not available for your OS. You can change this by modifying
-"SET(CAPSIMAGE_VERSION 5)" into cmake/FindCapsImage.cmake
+Hatari supports version 5.1 of the library (previous support for older
+version 4.2 was removed as it is not used anymore)
 
 Refer to http://softpres.org/download and get the corresponding file
 from the "User Distribution" section that matches your OS.
 
-For version 4.2, you should have the following files in your include path :
-/usr/local/include/caps/
-	capsimage.h
-	fdc.h
-	form.h
-
 For version 5.1, you should have the following files in your include path :
-/usr/local/include/caps5/
+/usr/local/include/caps/
 	CapsAPI.h
 	CapsFDC.h
 	CapsForm.h
@@ -175,7 +165,7 @@ For version 5.1, you should have the following files in your include path :
 	CommonTypes.h
 
 You should also copy the libcapsimage.so* files in your library path,
-for example in /usr/local/lib/caps/ or /usr/local/lib/caps5/
+for example in /usr/local/lib/caps/
 
 
  3.3) Notes for Linux distribution packagers
