@@ -347,7 +347,7 @@ but it can happen also later on.
 
 Demos:
 - 2011 (by Positivity & Sector One, 4kB intro)
-- 44 (by Avena, 4K intro)
+- 44 (by Avena, 4KB intro)
 - 4getful (by gwEm, 4KB intro)
 - 4kker (by Checkpoint, 4KB intro)
 - Ambience (by Chaos)
@@ -370,6 +370,7 @@ Demos:
 - Cuddly Demos (by CareBears)
 - Darktrip (by Legend), doesn't work with >2MB of RAM
 - Dark Side of the Spoon (by ULM)
+- Darwin's Dilemma (by Cerebral Vortex, DHS and SMFX)
 - DataSTorm Invite (by Genesis Project)
 - Death of the Clock Cycles (by Aggression)
 - Delusion (by MJJ Prod)
@@ -391,8 +392,9 @@ Demos:
 - Let Go (by Dekadence)
 - Lichthaus (by Newline)
 - Lots of Dots (by Acid Maker & Friends)
-- Music Disc 1 (by G. Gaubatz)
+- MonaST (by GGN/tln, 256B intro)
 - Motus (by SMFX)
+- Music Disc 1 (by G. Gaubatz)
 - No Cooper (by 1984)
 - No more froggies (by Sector1, EmuTOS >= 0.9.7)
 - O-demo (by Oxygene)
@@ -420,8 +422,10 @@ Demos:
 - Santa Claus Barbie Was Drunk As A Cochon (by MJJ Prod)
 - Save The Earth (by Defence Force)
 - Second Reality 2013 (by Checkpoint, crash at end)
+- Serial (by Dekadence)
 - SillyVenture 2k10 & 2k11 (invitros by Mystic Bytes & Aggression)
 - SillyVenture 2020 (invitro by Agenda, Hemoroids & Mystic Bytes)
+- Smag-FX 3 (by SMFX)
 - Sommarhack 2011 (invite by DHS)
 - Soundtracker (by Equinox)
 - SoWatt (by CareBears)
@@ -446,6 +450,7 @@ Demos:
 - Twelve (by Paulo Simoes)
 - Two in One (by DHS)
 - Unreachable (by MoEC & Sector One)
+- Unstatic (by Cyprian, Dma-Sc & bob_er)
 - Virtual (by Equinox)
 - Visualize (by Checkpoint)
 - Vodka demo (by Equinox)
@@ -1175,6 +1180,8 @@ Working demos:
   - plasma screen has garbage on right side,
     end screen at top & bottom
 - ImPerfect (by XI / Satantronic)
+- It's that time of the year again (by New Beat)
+  - MP2 music with DSP missing
 - Joy (by New Beat)
   - With YM and MP2 DSP music
 - Laser Days E.P. (by .tSCc)
@@ -1190,6 +1197,8 @@ Working demos:
 - Rock Solid (by Paranoia)
 - Schlumpf invtro (by Lazer)
   - horizontal scrolling is bad with some EmuTOS versions
+- She danced to Tainted Love (musicdisk by tSCc)
+  - MP2 music requires DSP
 - Six Sievert (by tSCc)
 - Snowstorm (by Reservoir Gods), disable DSP
 - Sonolumineszenz (by Avena)
@@ -1328,6 +1337,10 @@ Games working in EmuTOS >0.9.6:
 - Block Blizzard preview (line-A bitblit + hide cursor / show mouse)
 - Masters of Chaos (multiplayer "dungeon master")
 
+Games (mostly) working with EmuTOS >v0.9.9.1:
+- Painium: fire button works only until game itself starts
+  - Needs at least 8MB RAM
+
 Games working with extra hacks:
 - Bugger, Bunion, SkyFall, Sworm games by Resorvoir Gods:
   - use an undocumented TOS4 vector for keyboard input instead of accessing
@@ -1336,10 +1349,6 @@ Games working with extra hacks:
     http://sourceforge.net/mailarchive/message.php?msg_id=26841274
   - with EmuTOS, enabling DSP freezes the games right at startup
     (with normal TOS4, DSP is used for background music)
-
-Games (mostly) working with EmuTOS >v0.9.9.1:
-- Painium: fire button works only until game itself starts
-  - Needs at least 8MB RAM
 
 Games that might be possible to get working (they show something
 and/or don't use DSP XBios calls or DSP sound matrix):
