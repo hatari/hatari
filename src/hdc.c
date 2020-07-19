@@ -964,8 +964,8 @@ bool HDC_WriteCommandPacket(SCSI_CTRLR *ctr, Uint8 b)
 	++ctr->byteCount;
 
 	/* have we received a complete 6-byte class 0 or 10-byte class 1 packet yet? */
-	if ((ctr->opcode < 0x20 && ctr->byteCount >= 6) ||
-	    (ctr->opcode < 0x60 && ctr->byteCount >= 10))
+	if ((ctr->opcode < 0x20 && ctr->byteCount == 6) ||
+	    (ctr->opcode >= 0x20 && ctr->opcode < 0x60 && ctr->byteCount == 10))
 	{
 		/* We currently only support LUN 0, however INQUIRY must
 		 * always be handled, see SCSI standard */
@@ -990,8 +990,6 @@ bool HDC_WriteCommandPacket(SCSI_CTRLR *ctr, Uint8 b)
 				ctr->status = HD_STATUS_ERROR;
 			}
 		}
-
-		ctr->byteCount = 0;
 	}
 	else if (ctr->opcode >= 0x60)
 	{
