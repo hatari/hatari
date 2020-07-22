@@ -995,7 +995,8 @@ static uint8_t *TOS_LoadImage(void)
 	bIsEmuTOS = (SDL_SwapBE32(*(Uint32 *)&pTosFile[0x2c]) == 0x45544F53);
 	if (bIsEmuTOS)
 	{
-		if (SDL_SwapBE32(*(Uint32 *)&pTosFile[0x34]) == 0x4F534558)
+		/* The magic value 'OSXH' indicates an extended header */
+		if (SDL_SwapBE32(*(Uint32 *)&pTosFile[0x34]) == 0x4F535848)
 			EmuTosVersion = SDL_SwapBE32(*(Uint32 *)&pTosFile[0x3c]);
 		else
 			EmuTosVersion = 0;	/* Older than 1.0 */
