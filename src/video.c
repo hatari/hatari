@@ -595,6 +595,13 @@ typedef struct
 	SHIFTER_POS	Scroll8265Pos;		/* position of latest write to $ff8265 */
 
 	Uint8		VBlank_signal;		/* 0=vblank off  1=vblank on */
+	int		VBlank_Off_Line;	/* First line number where VBlank_signal is OFF (next line after checking freq) */
+	int		VBlank_On_Line;		/* First line number where VBlank_signal is ON (next line after checking freq) */
+	int		VBLank_Off_60_CheckFreq;/* Value of FreqHz at VBlank_CheckPos on line VBlank_Off_60_CheckLine */
+	int		VBLank_Off_50_CheckFreq;/* Value of FreqHz at VBlank_CheckPos on line VBlank_Off_50_CheckLine */
+	int		VBLank_On_60_CheckFreq;	/* Value of FreqHz at VBlank_CheckPos on line VBlank_On_60_CheckLine */
+	int		VBLank_On_50_CheckFreq;	/* Value of FreqHz at VBlank_CheckPos on line VBlank_On_50_CheckLine */
+
 	Uint8		VSync_signal;		/* 0=vsync off   1=vsync on */
 
 	SHIFTER_LINE	ShifterLines[ MAX_SCANLINES_PER_FRAME+1 ];
@@ -648,12 +655,14 @@ typedef struct
 	int	VDE_Off_Line_NoBottom_50;	/* 310 */
 	int	VDE_Off_Line_NoBottom_60;	/* 263 */
 
-	int	VBlank_On_Line_50;		/* 308 */
-	int	VBlank_On_Line_60;		/* 258 */
-	int	VBlank_On_Line_Hi;		/* 501 (no blank in mono mode ?) */
-	int	VBlank_Off_Line_50;		/*  25 */
-	int	VBlank_Off_Line_60;		/*  16 */
-	int	VBlank_Off_Line_Hi;		/*   0 (no blank in mono mode ?) */
+	int	VBlank_On_50_CheckLine;		/* 307 */
+	int	VBlank_On_60_CheckLine;		/* 257 */
+	int	VBlank_On_Hi_CheckLine;		/* 501 (no blank in mono mode ?) */
+	int	VBlank_Off_50_CheckLine;	/*  25 */
+	int	VBlank_Off_60_CheckLine;	/*  16 */
+	int	VBlank_Off_Hi_CheckLine;	/*   0 (no blank in mono mode ?) */
+	int	VBlank_CheckPos;		/* 502 same for ON and OFF test */
+
 	int	VSync_On_Line_50;		/* 310 */
 	int	VSync_On_Line_60;		/* 260 */
 	int	VSync_On_Line_Hi;		/* 501 (not tested on real HW) */
@@ -892,12 +901,14 @@ void	Video_InitTimings(void)
 	pVideoTiming1->VDE_Off_Line_NoBottom_50	= pVideoTiming1->VDE_Off_Line_50 + VIDEO_HEIGHT_BOTTOM_50HZ;	/* 310 (TODO:check on real HW) */
 	pVideoTiming1->VDE_Off_Line_NoBottom_60	= pVideoTiming1->VDE_Off_Line_60 + VIDEO_HEIGHT_BOTTOM_60HZ;	/* 263 (TODO:check on real HW) */
 
-	pVideoTiming1->VBlank_On_Line_50	= 308;
-	pVideoTiming1->VBlank_On_Line_60	= 258;
-	pVideoTiming1->VBlank_On_Line_Hi	= 501;
-	pVideoTiming1->VBlank_Off_Line_50	=  25;
-	pVideoTiming1->VBlank_Off_Line_60	=  16;
-	pVideoTiming1->VBlank_Off_Line_Hi	=   0;
+	pVideoTiming1->VBlank_On_50_CheckLine	= 307;
+	pVideoTiming1->VBlank_On_60_CheckLine	= 257;
+	pVideoTiming1->VBlank_On_Hi_CheckLine	= 501;
+	pVideoTiming1->VBlank_Off_50_CheckLine	=  25;
+	pVideoTiming1->VBlank_Off_60_CheckLine	=  14;
+	pVideoTiming1->VBlank_Off_Hi_CheckLine	=   0;
+	pVideoTiming1->VBlank_CheckPos		= 502;
+
 	pVideoTiming1->VSync_On_Line_50		= 310;
 	pVideoTiming1->VSync_On_Line_60		= 260;
 	pVideoTiming1->VSync_On_Line_Hi		= 501;
@@ -968,12 +979,14 @@ void	Video_InitTimings(void)
 	pVideoTiming1->VDE_Off_Line_Hi 		= VIDEO_END_HBL_71HZ;				/* 434 */
 	pVideoTiming1->VDE_Off_Line_NoBottom_50	= pVideoTiming1->VDE_Off_Line_50 + VIDEO_HEIGHT_BOTTOM_50HZ;	/* 310 */
 	pVideoTiming1->VDE_Off_Line_NoBottom_60	= pVideoTiming1->VDE_Off_Line_60 + VIDEO_HEIGHT_BOTTOM_60HZ;	/* 263 */
-	pVideoTiming1->VBlank_On_Line_50	= 308;
-	pVideoTiming1->VBlank_On_Line_60	= 258;
-	pVideoTiming1->VBlank_On_Line_Hi	= 501;
-	pVideoTiming1->VBlank_Off_Line_50	=  25;
-	pVideoTiming1->VBlank_Off_Line_60	=  16;
-	pVideoTiming1->VBlank_Off_Line_Hi	=   0;
+	pVideoTiming1->VBlank_On_50_CheckLine	= 308;
+	pVideoTiming1->VBlank_On_60_CheckLine	= 258;
+	pVideoTiming1->VBlank_On_Hi_CheckLine	= 501;
+	pVideoTiming1->VBlank_Off_50_CheckLine	=  25;
+	pVideoTiming1->VBlank_Off_60_CheckLine	=  14;
+	pVideoTiming1->VBlank_Off_Hi_CheckLine	=   0;
+	pVideoTiming1->VBlank_CheckPos		= 502;
+
 	pVideoTiming1->VSync_On_Line_50		= 310;
 	pVideoTiming1->VSync_On_Line_60		= 260;
 	pVideoTiming1->VSync_On_Line_Hi		= 501;
@@ -1031,12 +1044,14 @@ static void	Video_InitTimings_Copy ( VIDEO_TIMING *pSrc , VIDEO_TIMING *pDest , 
 	pDest->VDE_Off_Line_NoBottom_50	= pSrc->VDE_Off_Line_NoBottom_50;
 	pDest->VDE_Off_Line_NoBottom_60	= pSrc->VDE_Off_Line_NoBottom_60;
 
-	pDest->VBlank_On_Line_50	= pSrc->VBlank_On_Line_50;
-	pDest->VBlank_On_Line_60	= pSrc->VBlank_On_Line_60;
-	pDest->VBlank_On_Line_Hi	= pSrc->VBlank_On_Line_Hi;
-	pDest->VBlank_Off_Line_50	= pSrc->VBlank_Off_Line_50;
-	pDest->VBlank_Off_Line_60	= pSrc->VBlank_Off_Line_60;
-	pDest->VBlank_Off_Line_Hi	= pSrc->VBlank_Off_Line_Hi;
+	pDest->VBlank_On_50_CheckLine	= pSrc->VBlank_On_50_CheckLine;
+	pDest->VBlank_On_60_CheckLine	= pSrc->VBlank_On_60_CheckLine;
+	pDest->VBlank_On_Hi_CheckLine	= pSrc->VBlank_On_Hi_CheckLine;
+	pDest->VBlank_Off_50_CheckLine	= pSrc->VBlank_Off_50_CheckLine;
+	pDest->VBlank_Off_60_CheckLine	= pSrc->VBlank_Off_60_CheckLine;
+	pDest->VBlank_Off_Hi_CheckLine	= pSrc->VBlank_Off_Hi_CheckLine;
+	pDest->VBlank_CheckPos		= pSrc->VBlank_CheckPos;
+
 	pDest->VSync_On_Line_50		= pSrc->VSync_On_Line_50;
 	pDest->VSync_On_Line_60		= pSrc->VSync_On_Line_60;
 	pDest->VSync_On_Line_Hi		= pSrc->VSync_On_Line_Hi;
@@ -2640,8 +2655,34 @@ Freq_Test_Done:
 	}
 
 
-	LOG_TRACE ( TRACE_VIDEO_BORDER_H , "video new V_DE %d<->%d H_DE %d<->%d shift=%d border=%x hbl_pos=%d cycles_line=%d video_hbl_w=%d\n" ,
-		nStartHBL , nEndHBL , DE_start , DE_end ,
+	/*
+	 * Update the frequency's value at the different places where VBlank start/end position is checked
+	 * (check is done in Video_EndHBL)
+	 */
+	if ( ( HblCounterVideo < pVideoTiming->VBlank_Off_60_CheckLine )
+		|| ( ( HblCounterVideo == pVideoTiming->VBlank_Off_60_CheckLine ) && ( LineCycles <= pVideoTiming->VBlank_CheckPos ) ) )
+	{
+		ShifterFrame.VBLank_Off_60_CheckFreq = FreqHz;
+	}
+	if ( ( HblCounterVideo < pVideoTiming->VBlank_Off_50_CheckLine )
+		|| ( ( HblCounterVideo == pVideoTiming->VBlank_Off_50_CheckLine ) && ( LineCycles <= pVideoTiming->VBlank_CheckPos ) ) )
+	{
+		ShifterFrame.VBLank_Off_50_CheckFreq = FreqHz;
+	}
+	if ( ( HblCounterVideo < pVideoTiming->VBlank_On_60_CheckLine )
+		|| ( ( HblCounterVideo == pVideoTiming->VBlank_On_60_CheckLine ) && ( LineCycles <= pVideoTiming->VBlank_CheckPos ) ) )
+	{
+		ShifterFrame.VBLank_On_60_CheckFreq = FreqHz;
+	}
+	if ( ( HblCounterVideo < pVideoTiming->VBlank_On_50_CheckLine )
+		|| ( ( HblCounterVideo == pVideoTiming->VBlank_On_50_CheckLine ) && ( LineCycles <= pVideoTiming->VBlank_CheckPos ) ) )
+	{
+		ShifterFrame.VBLank_On_50_CheckFreq = FreqHz;
+	}
+
+
+	LOG_TRACE ( TRACE_VIDEO_BORDER_H , "video new V_DE %d<->%d VBlank_OFF %d<->%d H_DE %d<->%d shift=%d border=%x hbl_pos=%d cycles_line=%d video_hbl_w=%d\n" ,
+		nStartHBL , nEndHBL , ShifterFrame.VBlank_Off_Line , ShifterFrame.VBlank_On_Line , DE_start , DE_end ,
 		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift , BorderMask , HBL_Pos , nCyclesPerLine_new , HblCounterVideo  );
 
 	/* Save new values */
@@ -2883,8 +2924,12 @@ void Video_InterruptHandler_HBL ( void )
 		    	&& ( nScanlinesPerFrame == SCANLINES_PER_FRAME_60HZ ) ) )
 		{
 			ShifterFrame.VSync_signal = VSYNC_SIGNAL_ON;
-			ShifterFrame.VBlank_signal = VBLANK_SIGNAL_ON;	/* It seems vsync also sets vblank, need to check on real HW */
-			LOG_TRACE ( TRACE_VIDEO_BORDER_V , "HBL %d cyc=%d detect vsync=on\n", nHBL, LineCycles );
+			if ( ShifterFrame.VBlank_signal != VBLANK_SIGNAL_ON )
+			{
+				ShifterFrame.VBlank_signal = VBLANK_SIGNAL_ON;		/* On real HW, vsync also sets vblank */
+				ShifterFrame.VBlank_On_Line = nHBL;
+			}
+			LOG_TRACE ( TRACE_VIDEO_BORDER_V , "HBL %d cyc=%d detect vsync=on (force vblank=on)\n", nHBL, LineCycles );
 			Video_RestartVideoCounter();
 			LOG_TRACE(TRACE_VIDEO_HBL, "HBL %d cyc=%d restart video counter 0x%x\n", nHBL, LineCycles, VideoBase );
 		}
@@ -3052,6 +3097,53 @@ static void Video_EndHBL(void)
 	}
 
 
+	/* Update VBlank signal */
+	if ( nHBL == pVideoTiming->VBlank_Off_60_CheckLine )
+	{
+		if ( ShifterFrame.VBLank_Off_60_CheckFreq == VIDEO_60HZ )
+		{
+			ShifterFrame.VBlank_signal = VBLANK_SIGNAL_OFF;
+			ShifterFrame.VBlank_Off_Line = nHBL+1;
+			LOG_TRACE ( TRACE_VIDEO_BORDER_V , "detect vblank=off 60Hz\n" );
+		}
+		else if ( nScreenRefreshRate == VIDEO_60HZ )
+			LOG_TRACE ( TRACE_VIDEO_BORDER_V , "ignore vblank=off 60Hz\n" );
+	}
+	else if ( nHBL == pVideoTiming->VBlank_Off_50_CheckLine )
+	{
+		if ( ShifterFrame.VBLank_Off_50_CheckFreq == VIDEO_50HZ )
+		{
+			ShifterFrame.VBlank_signal = VBLANK_SIGNAL_OFF;
+			ShifterFrame.VBlank_Off_Line = nHBL+1;
+			LOG_TRACE ( TRACE_VIDEO_BORDER_V , "detect vblank=off 50Hz\n" );
+		}
+		else if ( nScreenRefreshRate == VIDEO_50HZ )
+			LOG_TRACE ( TRACE_VIDEO_BORDER_V , "ignore vblank=off 50Hz\n" );
+	}
+	else if ( nHBL == pVideoTiming->VBlank_On_60_CheckLine )
+	{
+		if ( ShifterFrame.VBLank_On_60_CheckFreq == VIDEO_60HZ )
+		{
+			ShifterFrame.VBlank_signal = VBLANK_SIGNAL_ON;
+			ShifterFrame.VBlank_On_Line = nHBL+1;
+			LOG_TRACE ( TRACE_VIDEO_BORDER_V , "detect vblank=on 60Hz\n" );
+		}
+		else if ( nScreenRefreshRate == VIDEO_60HZ )
+			LOG_TRACE ( TRACE_VIDEO_BORDER_V , "ignore vblank=on 60Hz\n" );
+	}
+	else if ( nHBL == pVideoTiming->VBlank_On_50_CheckLine )
+	{
+		if ( ShifterFrame.VBLank_On_50_CheckFreq == VIDEO_50HZ )
+		{
+			ShifterFrame.VBlank_signal = VBLANK_SIGNAL_ON;
+			ShifterFrame.VBlank_On_Line = nHBL+1;
+			LOG_TRACE ( TRACE_VIDEO_BORDER_V , "detect vblank=on 50Hz\n" );
+		}
+		else if ( nScreenRefreshRate == VIDEO_50HZ )
+			LOG_TRACE ( TRACE_VIDEO_BORDER_V , "ignore vblank=on 50Hz\n" );
+	}
+
+
 	/* Store palette for very first line on screen - HBLPalettes[0] */
 	if (nHBL == nFirstVisibleHbl-1)
 	{
@@ -3113,18 +3205,6 @@ static void Video_StartHBL(void)
 			if ( ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle == -1 )	/* start not set yet */
 				ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle = pVideoTiming->HDE_On_Low_50;
 			ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle = pVideoTiming->HDE_Off_Low_50;
-
-			/* Update VBlank/VSync signals */
-			if ( nHBL == pVideoTiming->VBlank_On_Line_50 )
-			{
-				ShifterFrame.VBlank_signal = VBLANK_SIGNAL_ON;
-				LOG_TRACE ( TRACE_VIDEO_BORDER_V , "detect vblank=on 50Hz\n" );
-			}
-			else if ( nHBL == pVideoTiming->VBlank_Off_Line_50 )
-			{
-				ShifterFrame.VBlank_signal = VBLANK_SIGNAL_OFF;
-				LOG_TRACE ( TRACE_VIDEO_BORDER_V , "detect vblank=off 50Hz\n" );
-			}
 		}
 		else						/* 60 Hz */
 		{
@@ -3140,18 +3220,6 @@ static void Video_StartHBL(void)
 				LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect left+2 / right-2 60Hz %d<->%d\n" ,
 					ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle  , ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle );
 			}
-
-			/* Update VBlank/VSync signals */
-			if ( nHBL == pVideoTiming->VBlank_On_Line_60 )
-			{
-				ShifterFrame.VBlank_signal = VBLANK_SIGNAL_ON;
-				LOG_TRACE ( TRACE_VIDEO_BORDER_V , "detect vblank=on 60Hz\n" );
-			}
-			else if ( nHBL == pVideoTiming->VBlank_Off_Line_60 )
-			{
-				ShifterFrame.VBlank_signal = VBLANK_SIGNAL_OFF;
-				LOG_TRACE ( TRACE_VIDEO_BORDER_V , "detect vblank=off 60Hz\n" );
-			}
 		}
 
 		/* Handle accurate restart of video counter only in low/med res */
@@ -3159,7 +3227,7 @@ static void Video_StartHBL(void)
 			RestartVideoCounter = true;
 	}
 
- 	nCyclesPerLine <<= nCpuFreqShift;
+	nCyclesPerLine <<= nCpuFreqShift;
 
 //fprintf (stderr , "Video_StartHBL %d %d %d\n", nHBL , ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle , ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle );
 
@@ -3985,6 +4053,14 @@ static void Video_ResetShifterTimings(void)
 		nStartHBL = VIDEO_START_HBL_71HZ;
 		nFirstVisibleHbl = FIRST_VISIBLE_HBL_71HZ;
 		nLastVisibleHbl = FIRST_VISIBLE_HBL_71HZ + VIDEO_HEIGHT_HBL_MONO;
+
+		ShifterFrame.VBlank_signal = VBLANK_SIGNAL_OFF;		/* No blank in mono mode ? */
+		ShifterFrame.VBlank_Off_Line = pVideoTiming->VBlank_Off_Hi_CheckLine+1;
+		ShifterFrame.VBlank_On_Line = pVideoTiming->VBlank_On_Hi_CheckLine+1;
+		ShifterFrame.VBLank_Off_60_CheckFreq = VIDEO_71HZ;
+		ShifterFrame.VBLank_Off_50_CheckFreq = VIDEO_71HZ;
+		ShifterFrame.VBLank_On_60_CheckFreq = VIDEO_71HZ;
+		ShifterFrame.VBLank_On_50_CheckFreq = VIDEO_71HZ;
 	}
 	else if (nSyncByte & 2)  /* Check if running in 50 Hz or in 60 Hz */
 	{
@@ -3995,6 +4071,14 @@ static void Video_ResetShifterTimings(void)
 		nStartHBL = VIDEO_START_HBL_50HZ;
 		nFirstVisibleHbl = FIRST_VISIBLE_HBL_50HZ;
 		nLastVisibleHbl = FIRST_VISIBLE_HBL_50HZ + NUM_VISIBLE_LINES;
+
+		ShifterFrame.VBlank_signal = VBLANK_SIGNAL_ON;
+		ShifterFrame.VBlank_Off_Line = pVideoTiming->VBlank_Off_50_CheckLine+1;
+		ShifterFrame.VBlank_On_Line = pVideoTiming->VBlank_On_50_CheckLine+1;
+		ShifterFrame.VBLank_Off_60_CheckFreq = VIDEO_50HZ;
+		ShifterFrame.VBLank_Off_50_CheckFreq = VIDEO_50HZ;
+		ShifterFrame.VBLank_On_60_CheckFreq = VIDEO_50HZ;
+		ShifterFrame.VBLank_On_50_CheckFreq = VIDEO_50HZ;
 	}
 	else
 	{
@@ -4005,6 +4089,14 @@ static void Video_ResetShifterTimings(void)
 		nStartHBL = VIDEO_START_HBL_60HZ;
 		nFirstVisibleHbl = FIRST_VISIBLE_HBL_60HZ;
 		nLastVisibleHbl = FIRST_VISIBLE_HBL_60HZ + NUM_VISIBLE_LINES;
+
+		ShifterFrame.VBlank_signal = VBLANK_SIGNAL_ON;
+		ShifterFrame.VBlank_Off_Line = pVideoTiming->VBlank_Off_60_CheckLine+1;
+		ShifterFrame.VBlank_On_Line = pVideoTiming->VBlank_On_60_CheckLine+1;
+		ShifterFrame.VBLank_Off_60_CheckFreq = VIDEO_60HZ;
+		ShifterFrame.VBLank_Off_50_CheckFreq = VIDEO_60HZ;
+		ShifterFrame.VBLank_On_60_CheckFreq = VIDEO_60HZ;
+		ShifterFrame.VBLank_On_50_CheckFreq = VIDEO_60HZ;
 	}
 
 	nCyclesPerLine <<= nCpuFreqShift;
