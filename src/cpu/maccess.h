@@ -31,6 +31,9 @@
 #if CPU_CAN_ACCESS_UNALIGNED
 
 #include <SDL_endian.h>
+#ifndef _WIN32
+#include <byteswap.h>
+#endif
 
 
 static inline uae_u32 do_get_mem_long(void *a)
@@ -106,6 +109,38 @@ static inline void do_put_mem_byte(uae_u8 *a, uae_u8 v)
 	*a = v;
 }
 
+
+STATIC_INLINE uae_u64 do_byteswap_64(uae_u64 v)
+{
+#ifdef _WIN32
+	return _byteswap_uint64(v);
+#else
+	return bswap_64(v);
+#endif
+}
+
+STATIC_INLINE uae_u32 do_byteswap_32(uae_u32 v)
+{
+#ifdef _WIN32
+	return _byteswap_ulong(v);
+#else
+	return bswap_32(v);
+#endif
+}
+
+STATIC_INLINE uae_u16 do_byteswap_16(uae_u16 v)
+{
+#ifdef _WIN32
+	return _byteswap_ushort(v);
+#else
+	return bswap_16(v);
+#endif
+}
+
+STATIC_INLINE uae_u32 do_get_mem_word_unswapped(uae_u16 *a)
+{
+	return *a;
+}
 
 #define call_mem_get_func(func, addr) ((*func)(addr))
 #define call_mem_put_func(func, addr, v) ((*func)(addr, v))

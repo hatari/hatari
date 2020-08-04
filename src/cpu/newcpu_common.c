@@ -1215,7 +1215,7 @@ static void divul_overflow(uae_u16 extra, uae_s64 a)
 	}
 }
 
-static void divsl_divbyzero(uae_u16 extra, uae_s64 a)
+static void divsl_divbyzero(uae_u16 extra, uae_s64 a, uaecptr oldpc)
 {
 	if (currprefs.cpu_model >= 68040) {
 		SET_CFLG(0);
@@ -1224,10 +1224,10 @@ static void divsl_divbyzero(uae_u16 extra, uae_s64 a)
 		SET_ZFLG(1);
 		SET_CFLG(0);
 	}
-	Exception_cpu(5);
+	Exception_cpu_oldpc(5, oldpc);
 }
 
-static void divul_divbyzero(uae_u16 extra, uae_s64 a)
+static void divul_divbyzero(uae_u16 extra, uae_s64 a, uaecptr oldpc)
 {
 	if (currprefs.cpu_model >= 68040) {
 		SET_CFLG(0);
@@ -1239,10 +1239,10 @@ static void divul_divbyzero(uae_u16 extra, uae_s64 a)
 		SET_VFLG(1);
 		SET_CFLG(0);
 	}
-	Exception_cpu(5);
+	Exception_cpu_oldpc(5, oldpc);
 }
 
-int m68k_divl(uae_u32 opcode, uae_u32 src, uae_u16 extra)
+int m68k_divl(uae_u32 opcode, uae_u32 src, uae_u16 extra, uaecptr oldpc)
 {
 	if ((extra & 0x400) && currprefs.int_no_unimplemented && currprefs.cpu_model == 68060) {
 		op_unimpl (opcode);
@@ -1260,7 +1260,7 @@ int m68k_divl(uae_u32 opcode, uae_u32 src, uae_u16 extra)
 		}
 
 		if (src == 0) {
-			divsl_divbyzero(extra, a);
+			divsl_divbyzero(extra, a, oldpc);
 			return 0;
 		}
 
@@ -1294,7 +1294,7 @@ int m68k_divl(uae_u32 opcode, uae_u32 src, uae_u16 extra)
 		}
 
 		if (src == 0) {
-			divul_divbyzero(extra, a);
+			divul_divbyzero(extra, a, oldpc);
 			return 0;
 		}
 
