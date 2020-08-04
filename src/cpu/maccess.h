@@ -31,7 +31,10 @@
 #if CPU_CAN_ACCESS_UNALIGNED
 
 #include <SDL_endian.h>
-#ifndef _WIN32
+#ifdef _WIN32
+#elif defined(__MACOSX__)
+#include <libkern/OSByteOrder.h>
+#else
 #include <byteswap.h>
 #endif
 
@@ -114,6 +117,8 @@ STATIC_INLINE uae_u64 do_byteswap_64(uae_u64 v)
 {
 #ifdef _WIN32
 	return _byteswap_uint64(v);
+#elif defined(__MACOSX__)
+	return OSSwapInt64(v);
 #else
 	return bswap_64(v);
 #endif
@@ -123,6 +128,8 @@ STATIC_INLINE uae_u32 do_byteswap_32(uae_u32 v)
 {
 #ifdef _WIN32
 	return _byteswap_ulong(v);
+#elif defined(__MACOSX__)
+	return OSSwapInt32(v);
 #else
 	return bswap_32(v);
 #endif
@@ -132,6 +139,8 @@ STATIC_INLINE uae_u16 do_byteswap_16(uae_u16 v)
 {
 #ifdef _WIN32
 	return _byteswap_ushort(v);
+#elif defined(__MACOSX__)
+	return OSSwapInt16(v);
 #else
 	return bswap_16(v);
 #endif
