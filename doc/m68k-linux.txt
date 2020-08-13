@@ -152,7 +152,7 @@ Code: 2f00 4eb9 0000 2a98 508f 60ff ffff ff64 <42a7> 4878 ffff 2f00
    $ sudo apt install gcc-m68k-linux-gnu
 
 2. Get latest m68k kernel sources (without history):
-   $ git clone --depth 1 --branch m68k-v5.6 \
+   $ git clone --depth 1 --branch m68k-v5.8 \
      git://git.kernel.org/pub/scm/linux/kernel/git/geert/linux-m68k.git
    $ cd linux-m68k
 
@@ -319,8 +319,8 @@ Notes:
 1. Set suitable options in lilo.cfg, for example:
 -------------------------------------
 [LILO]
-Kernel = vmlinux-v5.6
-Symbols = System.map-v5.6
+Kernel = vmlinux-v5.8
+Symbols = System.map-v5.8
 Ramdisk =
 Args = video=atafb:sthigh console=tty
 KernelToFastRam = FALSE
@@ -686,7 +686,9 @@ TODO / investigate more:
 - Kernel freezes right at start if TT or Falcon machine is used with
   040/060 when CPU cache/prefetch emulation is enabled. With ST/STE
   + 040/060 + MMU + FPU, cache/prefetch emulation can be enabled
-  (Hatari git regression: now also ST/STE need them disabled)
+
+  (Hatari git regression: regardless of machine type, with 040/060,
+  Kernel dies to NULL pointer in mfp_timer_c_handler().)
 
   Linux boots fine with real 060 Falcon though:
 	https://www.youtube.com/watch?v=8Sriz45Z4oM
