@@ -70,8 +70,7 @@ void DebugUI_MemorySnapShot_Capture(const char *path, bool bSave)
 {
 	char *filename;
 
-	filename = malloc(strlen(path) + strlen(".debug") + 1);
-	assert(filename);
+	filename = Str_Alloc(strlen(path) + strlen(".debug"));
 	strcpy(filename, path);
 	strcat(filename, ".debug");
 	
@@ -891,7 +890,8 @@ static char *DebugUI_GetCommand(char *input)
 	if (!input)
 	{
 		input = malloc(256);
-		assert(input);
+		if (!input)
+			return NULL;
 	}
 	input[0] = '\0';
 	if (fgets(input, 256, stdin) == NULL)
@@ -1210,7 +1210,8 @@ bool DebugUI_ParseFile(const char *path, bool reinit)
 {
 	int recurse;
 	static int recursing;
-	char *olddir, *dir, *cmd, *input, *expanded, *slash;
+	char *olddir, *dir, *cmd, *expanded, *slash;
+	char input[256];
 	FILE *fp;
 
 	fprintf(stderr, "Reading debugger commands from '%s'...\n", path);
@@ -1248,17 +1249,8 @@ bool DebugUI_ParseFile(const char *path, bool reinit)
 	recurse = recursing;
 	recursing = true;
 
-	input = NULL;
-	for (;;)
+	while (fgets(input, sizeof(input), fp) != NULL)
 	{
-		if (!input)
-		{
-			input = malloc(256);
-			assert(input);
-		}
-		if (!fgets(input, 256, fp))
-			break;
-
 		/* ignore empty and comment lines */
 		cmd = Str_Trim(input);
 		if (!*cmd || *cmd == '#')
@@ -1276,7 +1268,6 @@ bool DebugUI_ParseFile(const char *path, bool reinit)
 	}
 	recursing = false;
 
-	free(input);
 	fclose(fp);
 
 	if (olddir)
