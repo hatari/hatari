@@ -979,8 +979,9 @@ void	Video_InitTimings(void)
 	pVideoTiming1->VDE_Off_Line_Hi 		= VIDEO_END_HBL_71HZ;				/* 434 */
 	pVideoTiming1->VDE_Off_Line_NoBottom_50	= pVideoTiming1->VDE_Off_Line_50 + VIDEO_HEIGHT_BOTTOM_50HZ;	/* 310 */
 	pVideoTiming1->VDE_Off_Line_NoBottom_60	= pVideoTiming1->VDE_Off_Line_60 + VIDEO_HEIGHT_BOTTOM_60HZ;	/* 263 */
-	pVideoTiming1->VBlank_On_50_CheckLine	= 308;
-	pVideoTiming1->VBlank_On_60_CheckLine	= 258;
+
+	pVideoTiming1->VBlank_On_50_CheckLine	= 307;
+	pVideoTiming1->VBlank_On_60_CheckLine	= 257;
 	pVideoTiming1->VBlank_On_Hi_CheckLine	= 501;
 	pVideoTiming1->VBlank_Off_50_CheckLine	=  25;
 	pVideoTiming1->VBlank_Off_60_CheckLine	=  14;
