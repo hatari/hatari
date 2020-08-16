@@ -11,12 +11,12 @@ if(ENABLE_SDL2)
   add_test(NAME screen-fullscreen-st
            COMMAND ${testrunner} $<TARGET_FILE:hatari>
                    ${CMAKE_CURRENT_SOURCE_DIR}/flixfull.prg
-                   ${CMAKE_CURRENT_SOURCE_DIR}/flixref.png --machine st)
+                   ${CMAKE_CURRENT_SOURCE_DIR}/flix_st.png --machine st)
 
   add_test(NAME screen-fullscreen-ste
            COMMAND ${testrunner} $<TARGET_FILE:hatari>
                    ${CMAKE_CURRENT_SOURCE_DIR}/flixfull.prg
-                   ${CMAKE_CURRENT_SOURCE_DIR}/flixref.png --machine ste)
+                   ${CMAKE_CURRENT_SOURCE_DIR}/flix_ste.png --machine ste)
 
  endif(GM OR IDENTIFY)
 

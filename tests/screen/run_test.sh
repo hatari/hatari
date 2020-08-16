@@ -36,9 +36,9 @@ export SDL_AUDIODRIVER=dummy
 unset TERM
 
 HOME="$testdir" $hatari --log-level fatal --sound off -z 1 --max-width 416 \
-	--bios-intercept on --statusbar off --run-vbls 500 --frameskips 0 \
-	--fast-forward on  --tos none --screenshot-dir "$testdir" $* "$prg" \
-	> "$testdir/out.txt" 2>&1
+	--bios-intercept on --statusbar off --drive-led off --fast-forward on \
+	--run-vbls 500 --frameskips 0 --tos none --screenshot-dir "$testdir" \
+	$* "$prg" > "$testdir/out.txt" 2>&1
 exitstat=$?
 
 if [ $exitstat -ne 0 ]; then
