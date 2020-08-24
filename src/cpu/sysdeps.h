@@ -21,6 +21,7 @@
 
 #ifdef WINUAE_FOR_HATARI
 #include "compat.h"
+#define HAVE_VAR_ATTRIBUTE_UNUSED 1
 #endif
 
 #ifndef UAE
