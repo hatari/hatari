@@ -14,6 +14,7 @@
 #ifndef UAE_MACCESS_H
 #define UAE_MACCESS_H
 
+#include <SDL_endian.h>
 
 /* Can the actual CPU access unaligned memory? */
 #ifndef CPU_CAN_ACCESS_UNALIGNED
@@ -29,15 +30,6 @@
 
 /* If the CPU can access unaligned memory, use these accelerated functions: */
 #if CPU_CAN_ACCESS_UNALIGNED
-
-#include <SDL_endian.h>
-#ifdef _WIN32
-#elif defined(__MACOSX__)
-#include <libkern/OSByteOrder.h>
-#else
-#include <byteswap.h>
-#endif
-
 
 static inline uae_u32 do_get_mem_long(void *a)
 {
@@ -115,35 +107,17 @@ static inline void do_put_mem_byte(uae_u8 *a, uae_u8 v)
 
 STATIC_INLINE uae_u64 do_byteswap_64(uae_u64 v)
 {
-#ifdef _WIN32
-	return _byteswap_uint64(v);
-#elif defined(__MACOSX__)
-	return OSSwapInt64(v);
-#else
-	return bswap_64(v);
-#endif
+	return SDL_Swap64(v);
 }
 
 STATIC_INLINE uae_u32 do_byteswap_32(uae_u32 v)
 {
-#ifdef _WIN32
-	return _byteswap_ulong(v);
-#elif defined(__MACOSX__)
-	return OSSwapInt32(v);
-#else
-	return bswap_32(v);
-#endif
+	return SDL_Swap32(v);
 }
 
 STATIC_INLINE uae_u16 do_byteswap_16(uae_u16 v)
 {
-#ifdef _WIN32
-	return _byteswap_ushort(v);
-#elif defined(__MACOSX__)
-	return OSSwapInt16(v);
-#else
-	return bswap_16(v);
-#endif
+	return SDL_Swap16(v);
 }
 
 STATIC_INLINE uae_u32 do_get_mem_word_unswapped(uae_u16 *a)
