@@ -84,7 +84,6 @@ typedef struct {
 	SCSI_DEV devs[8];
 } SCSI_CTRLR;
 
-#define ACSI_EMU_ON        bAcsiEmuOn         /* Do we have HDC emulation? */
 
 extern int nAcsiPartitions;
 extern bool bAcsiEmuOn;

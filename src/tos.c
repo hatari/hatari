@@ -757,7 +757,7 @@ static void TOS_FixRom(Uint32 *logopatch_addr)
 #endif
 			/* Only apply the patch if it is really needed: */
 			if (pPatch->Flags == TP_ALWAYS
-			    || (pPatch->Flags == TP_HDIMAGE_OFF && !ACSI_EMU_ON
+			    || (pPatch->Flags == TP_HDIMAGE_OFF && !bAcsiEmuOn
 			        && !ConfigureParams.Ide[0].bUseDevice
 			        && ConfigureParams.System.bFastBoot)
 			    || (pPatch->Flags == TP_ANTI_STE && Config_IsMachineST())
