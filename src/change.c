@@ -28,6 +28,7 @@ const char Change_fileid[] = "Hatari change.c : " __DATE__ " " __TIME__;
 #include "keymap.h"
 #include "m68000.h"
 #include "midi.h"
+#include "ncr5380.h"
 #include "options.h"
 #include "printer.h"
 #include "reset.h"
@@ -182,6 +183,7 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 {
 	bool NeedReset;
 	bool bReInitGemdosDrive = false;
+	bool bReInitScsiEmu = false;
 	bool bReInitHdcEmu = false;
 	bool bReInitIDEEmu = false;
 	bool bReInitIoMem = false;
@@ -294,7 +296,7 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 		bReInitGemdosDrive = true;
 	}
 
-	/* Did change ACSI image? */
+	/* Did change ACSI images? */
 	for (i = 0; i < MAX_ACSI_DEVS; i++)
 	{
 		if (changed->Acsi[i].bUseDevice != current->Acsi[i].bUseDevice
@@ -305,7 +307,10 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 			bReInitHdcEmu = true;
 		}
 	}
-	/* Did change SCSI image? */
+	if (bReInitHdcEmu)
+		HDC_UnInit();
+
+	/* Did change SCSI images? */
 	for (i = 0; i < MAX_SCSI_DEVS; i++)
 	{
 		if (changed->Scsi[i].bUseDevice != current->Scsi[i].bUseDevice
@@ -313,13 +318,13 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 		        && changed->Scsi[i].bUseDevice))
 		{
 			Dprintf("- SCSI image %i>\n", i);
-			bReInitHdcEmu = true;
+			bReInitScsiEmu = true;
 		}
 	}
-	if (bReInitHdcEmu)
-		HDC_UnInit();
+	if (bReInitScsiEmu)
+		Ncr5380_UnInit();
 
-	/* Did change IDE HD image or its settings? */
+	/* Did change IDE HD images or their settings? */
 	for (i = 0; i < MAX_IDE_DEVS; i++)
 	{
 		if (changed->Ide[i].bUseDevice != current->Ide[i].bUseDevice
@@ -399,14 +404,19 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 		Keymap_LoadRemapFile(ConfigureParams.Keyboard.szMappingFileName);
 	}
 
-	/* Mount a new ACSI/SCSI HD images: */
+	/* Mount new ACSI HD images: */
 	if (bReInitHdcEmu)
 	{
-		Dprintf("- HD<\n");
+		Dprintf("- ACSI<\n");
 		HDC_Init();
 	}
-
-	/* Mount a new IDE HD images: */
+	/* Mount new SCSI HD images: */
+	if (bReInitScsiEmu)
+	{
+		Dprintf("- SCSI<\n");
+		Ncr5380_Init();
+	}
+	/* Mount new IDE HD images: */
 	if (bReInitIDEEmu && Ide_IsAvailable())
 	{
 		Dprintf("- IDE<\n");

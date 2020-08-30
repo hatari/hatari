@@ -28,8 +28,12 @@ const char NCR5380_fileid[] = "Hatari ncr5380.c";
 #include "ncr5380.h"
 #include "stMemory.h"
 #include "newcpu.h"
+#include "tos.h"
 
 #define WITH_NCR5380 1
+
+int nScsiPartitions;
+bool bScsiEmuOn;
 
 static SCSI_CTRLR ScsiBus;
 
@@ -1008,12 +1012,16 @@ void ncr5380_bput(struct soft_scsi *scsi, int reg, uae_u8 v)
 /* ***** Hatari glue code below ***** */
 
 /**
- * return number of identified partitions on existing SCSI images
+ * Open the disk image file, set partitions count.
+ * Return true if there are any.
  */
-int Ncr5380_Init(void)
+bool Ncr5380_Init(void)
 {
 #if WITH_NCR5380
-	int i, partitions = 0;
+	int i;
+
+	nScsiPartitions = 0;
+	bScsiEmuOn = false;
 
 	memset(&ScsiBus, 0, sizeof(ScsiBus));
 	ScsiBus.typestr = "SCSI";
@@ -1029,14 +1037,19 @@ int Ncr5380_Init(void)
 		if (!ConfigureParams.Scsi[i].bUseDevice)
 			continue;
 		if (HDC_InitDevice(&ScsiBus.devs[i], ConfigureParams.Scsi[i].sDeviceFile, ConfigureParams.Scsi[i].nBlockSize) == 0)
-			partitions += HDC_PartitionCount(ScsiBus.devs[i].image_file, TRACE_SCSI_CMD, NULL);
+			nScsiPartitions += HDC_PartitionCount(ScsiBus.devs[i].image_file, TRACE_SCSI_CMD, NULL);
 	}
-	return partitions;
-#else
-	return 0;
+	nNumDrives += nScsiPartitions;
+	if (nScsiPartitions)
+		bScsiEmuOn = true;
 #endif
+	return bScsiEmuOn;
 }
 
+/**
+ * Ncr5380_UnInit - close image files and free resources
+ *
+ */
 void Ncr5380_UnInit(void)
 {
 #if WITH_NCR5380
@@ -1053,6 +1066,10 @@ void Ncr5380_UnInit(void)
 	}
 	free(ScsiBus.buffer);
 	ScsiBus.buffer = NULL;
+
+	nNumDrives -= nScsiPartitions;
+	nScsiPartitions = 0;
+	bScsiEmuOn = false;
 #endif
 }
 

@@ -8,7 +8,10 @@
 #ifndef NCR5380_H
 #define NCR5380_H
 
-int Ncr5380_Init(void);
+extern int nScsiPartitions;
+extern bool bScsiEmuOn;
+
+bool Ncr5380_Init(void);
 void Ncr5380_UnInit(void);
 void Ncr5380_Reset(void);
 void Ncr5380_WriteByte(int addr, Uint8 byte);

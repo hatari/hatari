@@ -37,6 +37,7 @@ const char Main_fileid[] = "Hatari main.c : " __DATE__ " " __TIME__;
 #include "m68000.h"
 #include "memorySnapShot.h"
 #include "midi.h"
+#include "ncr5380.h"
 #include "nvram.h"
 #include "paths.h"
 #include "printer.h"
@@ -790,11 +791,12 @@ static void Main_Init(void)
 
 	/* Init HD emulation */
 	HDC_Init();
+	Ncr5380_Init();
 	Ide_Init();
 	GemDOS_Init();
 	if (ConfigureParams.HardDisk.bUseHardDiskDirectories)
 	{
-		/* uses variables set by HDC_Init()! */
+		/* uses variables set by HDC_Init/Ncr5380_Init/Ide_Init */
 		GemDOS_InitDrives();
 	}
 
@@ -830,6 +832,7 @@ static void Main_UnInit(void)
 	Screen_ReturnFromFullScreen();
 	Floppy_UnInit();
 	HDC_UnInit();
+	Ncr5380_UnInit();
 	Midi_UnInit();
 	SCC_UnInit();
 	RS232_UnInit();

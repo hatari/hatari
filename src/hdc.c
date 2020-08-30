@@ -853,7 +853,7 @@ int HDC_InitDevice(SCSI_DEV *dev, char *filename, unsigned long blockSize)
 }
 
 /**
- * Open the disk image file, set partitions.
+ * Open the disk image files, set partitions.
  */
 bool HDC_Init(void)
 {
@@ -876,20 +876,12 @@ bool HDC_Init(void)
 		if (!ConfigureParams.Acsi[i].bUseDevice)
 			continue;
 		if (HDC_InitDevice(&AcsiBus.devs[i], ConfigureParams.Acsi[i].sDeviceFile, ConfigureParams.Acsi[i].nBlockSize) == 0)
-		{
-			bAcsiEmuOn = true;
 			nAcsiPartitions += HDC_PartitionCount(AcsiBus.devs[i].image_file, TRACE_SCSI_CMD, NULL);
-		}
 	}
-
-	/* add SCSI partition count to ACSI ones
-	 * to support GEMDOS HD emu partition skipping
-	 */
-	nAcsiPartitions += Ncr5380_Init();
-
 	/* set total number of partitions */
 	nNumDrives += nAcsiPartitions;
-
+	if (nAcsiPartitions)
+		bAcsiEmuOn = true;
 	return bAcsiEmuOn;
 }
 
@@ -915,10 +907,7 @@ void HDC_UnInit(void)
 	free(AcsiBus.buffer);
 	AcsiBus.buffer = NULL;
 
-	Ncr5380_UnInit();
-
-	if (bAcsiEmuOn)
-		nNumDrives -= nAcsiPartitions;
+	nNumDrives -= nAcsiPartitions;
 	nAcsiPartitions = 0;
 	bAcsiEmuOn = false;
 }

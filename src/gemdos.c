@@ -49,6 +49,7 @@ const char Gemdos_fileid[] = "Hatari gemdos.c : " __DATE__ " " __TIME__;
 #include "ide.h"
 #include "inffile.h"
 #include "hdc.h"
+#include "ncr5380.h"
 #include "gemdos.h"
 #include "gemdos_defines.h"
 #include "log.h"
@@ -699,11 +700,14 @@ void GemDOS_InitDrives(void)
 		}
 	}
 
-	ImagePartitions = nAcsiPartitions + nIDEPartitions;
+	ImagePartitions = nAcsiPartitions + nScsiPartitions + nIDEPartitions;
 	if (ConfigureParams.HardDisk.nGemdosDrive == DRIVE_SKIP)
 		SkipPartitions = ImagePartitions;
 	else
 		SkipPartitions = ConfigureParams.HardDisk.nGemdosDrive;
+
+	Log_Printf(LOG_DEBUG, "ACSI: %d, SCSI: %d, IDE: %d - GEMDOS skipping %d partitions.\n",
+		   nAcsiPartitions, nScsiPartitions, nIDEPartitions, SkipPartitions);
 
 	/* Now initialize all available drives */
 	for(i = 0; i < nMaxDrives; i++)
@@ -752,7 +756,7 @@ void GemDOS_InitDrives(void)
 			 *  table(s) match each other).
 			 */
 			if (i < ImagePartitions)
-				Log_Printf(LOG_WARN, "GEMDOS HD drive %c: (may) override ACSI/IDE image partitions!\n", 'A'+DriveNumber);
+				Log_Printf(LOG_WARN, "GEMDOS HD drive %c: (may) override ACSI/SCSI/IDE image partitions!\n", 'A'+DriveNumber);
 		}
 		else
 		{
