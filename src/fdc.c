@@ -503,6 +503,8 @@ typedef struct {
 	Uint8		FIFO[ FDC_DMA_FIFO_SIZE ];
 	int		FIFO_Size;				/* Between 0 and FDC_DMA_FIFO_SIZE */
 
+	Uint32		FDC_DMA_Address;
+
 	Uint16		ff8604_recent_val;			/* Most recent value read/written at $ff8604 in fdc/hdc mode (bit4=0 in $ff8606) */
 
 	/* Variables to handle our DMA buffer */
@@ -510,8 +512,6 @@ typedef struct {
 	int		PosInBufferTransfer;			/* FIXME REMOVE */
 	int		BytesToTransfer;
 } FDC_DMA_STRUCT;
-
-Uint32	FDC_DMA_Address;					// TODO : move into FDC_DMA_STRUCT (which will change memory snapshot)
 
 
 typedef struct {
@@ -4478,7 +4478,7 @@ void	FDC_DmaAddress_WriteByte ( void )
  */
 Uint32 FDC_GetDMAAddress(void)
 {
-	return FDC_DMA_Address;
+	return FDC_DMA.FDC_DMA_Address;
 }
 
 
@@ -4507,12 +4507,12 @@ void FDC_WriteDMAAddress ( Uint32 Address )
 	/*  - DMA address must be word-aligned, bit 0 at $ff860d is always 0 */
 	/*  - On STF/STE machines limited to 4MB of RAM, DMA address is also limited to $3fffff */
 	dma_mask = 0xff00fffe | ( DMA_MaskAddressHigh() << 16 );		/* Force bit 0 to 0 */
-	FDC_DMA_Address = Address & dma_mask;
+	FDC_DMA.FDC_DMA_Address = Address & dma_mask;
 
 	/* Store as 24-bit address */
-	STMemory_WriteByte(0xff8609, FDC_DMA_Address>>16);
-	STMemory_WriteByte(0xff860b, FDC_DMA_Address>>8);
-	STMemory_WriteByte(0xff860d, FDC_DMA_Address);
+	STMemory_WriteByte(0xff8609, FDC_DMA.FDC_DMA_Address>>16);
+	STMemory_WriteByte(0xff860b, FDC_DMA.FDC_DMA_Address>>8);
+	STMemory_WriteByte(0xff860d, FDC_DMA.FDC_DMA_Address);
 }
 
 
