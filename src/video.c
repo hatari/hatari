@@ -3809,52 +3809,6 @@ static void Video_CopyScreenLineColor(void)
 		/* On STE, the Shifter skips the given amount of words. */
 		pVideoRaster += LineWidth*2;
 
-		/* On STE, handle modifications of the video counter address $ff8205/07/09 */
-		/* that occurred while the display was already ON */
-		if ( VideoCounterDelayedOffset != 0 )
-		{
-//		  fprintf ( stderr , "adjust video counter offset=%d old video=%x\n" , VideoCounterDelayedOffset , pVideoRaster-STRam );
-			pVideoRaster += ( VideoCounterDelayedOffset & ~1 );
-//		  fprintf ( stderr , "adjust video counter offset=%d new video=%x\n" , VideoCounterDelayedOffset , pVideoRaster-STRam );
-			VideoCounterDelayedOffset = 0;
-		}
-
-		if ( pVideoRasterDelayed != NULL )
-		{
-			pVideoRaster = pVideoRasterDelayed;
-//		  fprintf ( stderr , "adjust video counter const new video=%x\n" , pVideoRaster-STRam );
-			pVideoRasterDelayed = NULL;
-		}
-
-		/* On STE, if we wrote to the hwscroll register, we set the */
-		/* new value here, once the current line was processed */
-		if ( NewHWScrollCount >= 0 )
-		{
-			HWScrollCount = NewHWScrollCount;
-			HWScrollPrefetch = NewHWScrollPrefetch;
-			NewHWScrollCount = -1;
-			NewHWScrollPrefetch = -1;
-		}
-
-		/* On STE, if we trigger the left border + 16 pixels trick, we set the */
-		/* new value here, once the current line was processed */
-		if ( NewSteBorderFlag >= 0 )
-		{
-			if ( NewSteBorderFlag == 0 )
-				bSteBorderFlag = false;
-			else
-				bSteBorderFlag = true;
-			NewSteBorderFlag = -1;
-		}
-
-		/* On STE, if we wrote to the linewidth register, we set the */
-		/* new value here, once the current line was processed */
-		if ( NewLineWidth >= 0 )
-		{
-			LineWidth = NewLineWidth;
-			NewLineWidth = -1;
-		}
-
 
 		/* Handle 4 pixels hardware scrolling ('ST Cnx' demo in 'Punish Your Machine') */
 		/* as well as scrolling occurring when removing the left border. */
@@ -3966,6 +3920,56 @@ static void Video_CopyScreenLineColor(void)
 			}
 		}
 	}
+
+
+	/* On STE, handle some changes that needed to be delayed until the end of the visible line */
+
+	/* On STE, handle modifications of the video counter address $ff8205/07/09 */
+	/* that occurred while the display was already ON */
+	if ( VideoCounterDelayedOffset != 0 )
+	{
+//		  fprintf ( stderr , "adjust video counter offset=%d old video=%x\n" , VideoCounterDelayedOffset , pVideoRaster-STRam );
+		pVideoRaster += ( VideoCounterDelayedOffset & ~1 );
+//		  fprintf ( stderr , "adjust video counter offset=%d new video=%x\n" , VideoCounterDelayedOffset , pVideoRaster-STRam );
+		VideoCounterDelayedOffset = 0;
+	}
+
+	if ( pVideoRasterDelayed != NULL )
+	{
+		pVideoRaster = pVideoRasterDelayed;
+//		  fprintf ( stderr , "adjust video counter const new video=%x\n" , pVideoRaster-STRam );
+		pVideoRasterDelayed = NULL;
+	}
+
+	/* On STE, if we wrote to the hwscroll register, we set the */
+	/* new value here, once the current line was processed */
+	if ( NewHWScrollCount >= 0 )
+	{
+		HWScrollCount = NewHWScrollCount;
+		HWScrollPrefetch = NewHWScrollPrefetch;
+		NewHWScrollCount = -1;
+		NewHWScrollPrefetch = -1;
+	}
+
+	/* On STE, if we trigger the left border + 16 pixels trick, we set the */
+	/* new value here, once the current line was processed */
+	if ( NewSteBorderFlag >= 0 )
+	{
+		if ( NewSteBorderFlag == 0 )
+			bSteBorderFlag = false;
+		else
+			bSteBorderFlag = true;
+		NewSteBorderFlag = -1;
+	}
+
+	/* On STE, if we wrote to the linewidth register, we set the */
+	/* new value here, once the current line was processed */
+	if ( NewLineWidth >= 0 )
+	{
+		LineWidth = NewLineWidth;
+		NewLineWidth = -1;
+	}
+
 
 	/* Each screen line copied to buffer is always same length */
 	pSTScreen += SCREENBYTES_LINE;
