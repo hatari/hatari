@@ -171,7 +171,7 @@ static void DebugUI_PrintValue(Uint32 value)
 
 
 /**
- * Commmand: Evaluate an expression with CPU reg and symbol parsing.
+ * Command: Evaluate an expression with CPU reg and symbol parsing.
  */
 static int DebugUI_Evaluate(int nArgc, char *psArgs[])
 {
@@ -873,7 +873,7 @@ static void DebugUI_GetScreenSize(int *rows, int *cols)
 	*cols = 80;
 	if ((p = getenv("LINES")) != NULL)
 		*rows = (int)strtol(p, NULL, 0);
-	if ((p = getenv("COLUMS")) != NULL)
+	if ((p = getenv("COLUMNS")) != NULL)
 		*cols = (int)strtol(p, NULL, 0);
 }
 
