@@ -54,7 +54,7 @@ enum
 #define SGARROWDOWN              2
 #define SGFOLDER                 5
 
-/* Object matching return codes: (negative so they aren't mixed with object indeces) */
+/* Object matching return codes: (negative so they aren't mixed with object indices) */
 #define SDLGUI_ERROR         -1
 #define SDLGUI_QUIT          -2
 #define SDLGUI_UNKNOWNEVENT  -3

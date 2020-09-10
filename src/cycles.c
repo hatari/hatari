@@ -221,7 +221,7 @@ int Cycles_GetInternalCycleOnWriteAccess(void)
 				AddCycles -= 0;				/* NOTE [NP] : this is used by old uae cpu core but does not happen */
 									/* on real HW because IO regs can't be accessesed with a long */
 									/* FIXME : fix old uae cpu to remove long accesses to memory for 68000 ? */
-									/* We keep it this way fo now ... */
+									/* We keep it this way for now ... */
 			}
 			else						/* word access with movem.w or movem.l doing 2 words accesses per long */
 			{

@@ -190,7 +190,7 @@
 /*			(fix Power Rise / Xtrem D demo).					*/
 /* 2008/11/15	[NP]	For STE registers, add in the TRACE call if the write is delayed or	*/
 /*			not (linewidth, hwscroll, video address).				*/
-/*			On STE, allow to change linewdith, hwscroll and video address with no	*/
+/*			On STE, allow to change linewidth, hwscroll and video address with no	*/
 /*			delay as soon as nHBL >= nEndHBL (revert previous changes). Power Rise	*/
 /*			is still working due to NewHWScrollCount=-1 when setting immediate	*/
 /*			hwscroll. Fix regression in Braindamage.				*/

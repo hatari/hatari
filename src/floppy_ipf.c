@@ -96,7 +96,7 @@ static void	IPF_FDC_LogCommand ( Uint8 Command );
 /**
  * Save/Restore snapshot of local variables('MemorySnapShot_Store' handles type)
  * We must take care of whether Hatari was compiled with IPF support of not
- * when saving/restoring snapshots to avoid incompatibilies.
+ * when saving/restoring snapshots to avoid incompatibilities.
  */
 void IPF_MemorySnapShot_Capture(bool bSave)
 {

@@ -696,7 +696,7 @@ static const dsp_interrupt_t dsp_interrupt[12] = {
 	{DSP_INTER_SSI_RCV_DATA_E,	0x0e, 2, "SSI receive with exception"},
 	{DSP_INTER_SSI_RCV_DATA	,	0x0c, 2, "SSI receive"},
 	{DSP_INTER_SSI_TRX_DATA_E,	0x12, 2, "SSI transmit with exception"},
-	{DSP_INTER_SSI_TRX_DATA	,	0x10, 2, "SSI tramsmit"}
+	{DSP_INTER_SSI_TRX_DATA	,	0x10, 2, "SSI transmit"}
 };
 
 static struct {

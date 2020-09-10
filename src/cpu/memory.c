@@ -1509,7 +1509,7 @@ bool memory_region_bus_error ( uaecptr addr )
 
 /*
  * Initialize some extra parameters for the memory banks in CE mode
- * By default, we set all banks to CHIP16 and not cachable
+ * By default, we set all banks to CHIP16 and not cacheable
  *
  * Possible values for ce_banktype :
  *  CE_MEMBANK_CHIP16	shared between CPU and DMA, bus width = 16 bits
@@ -1519,9 +1519,9 @@ bool memory_region_bus_error ( uaecptr addr )
  *  CE_MEMBANK_CIA	Amiga only, for CIA chips
  *
  * Possible values for ce_cachable :
- *  bit 0 : cachable yes/no for data
+ *  bit 0 : cacheable yes/no for data
  *  bit 1 : burst mode allowed when caching data yes/no
- *  bit 7 : cachable yes/no for instructions
+ *  bit 7 : cacheable yes/no for instructions
  *  bit 6 : burst mode allowed when caching instructions yes/no
  */
 static void init_ce_banks (void)
@@ -1529,13 +1529,13 @@ static void init_ce_banks (void)
 	/* Default to CHIP16 */
 	memset (ce_banktype, CE_MEMBANK_CHIP16, sizeof ce_banktype);
 
-	/* Default to not cachable */
+	/* Default to not cacheable */
 	memset (ce_cachable, 0, sizeof ce_cachable);
 }
 
 
 /*
- * For CE mode, set banktype and cachable for a memory region
+ * For CE mode, set banktype and cacheable for a memory region
  */
 static void fill_ce_banks (int start, int size, int banktype, int cachable )
 {

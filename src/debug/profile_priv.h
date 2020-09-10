@@ -47,7 +47,7 @@ typedef struct {
 	caller_t *callers;	/* who called this address */
 } callee_t;
 
-/* impossible PC value, for unitialized PC values */
+/* impossible PC value, for uninitialized PC values */
 #define PC_UNDEFINED 0xFFFFFFFF
 
 typedef struct {

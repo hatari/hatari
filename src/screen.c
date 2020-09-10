@@ -1667,7 +1667,7 @@ static void Convert_StartFrame(void)
  * as-is, or halve its intensity, depending on bScrDoubleY.
  *
  * Source line is already in host format, so we don't need to
- * care about endianess.
+ * care about endianness.
  *
  * Return address to next line after the copy
  */

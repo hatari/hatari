@@ -459,7 +459,7 @@ static calltype_t dsp_opcode_type(Uint16 prev_pc, Uint16 pc)
 	 */
 
 	/* TODO: exception invocation.
-	 * Could be detected by PC going through low interrupt vector adresses,
+	 * Could be detected by PC going through low interrupt vector addresses,
 	 * but fast-calls using JSR/RTS would need separate handling.
 	 */
 	if (0) {	/* TODO */

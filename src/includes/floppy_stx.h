@@ -109,7 +109,7 @@ typedef struct {
 #define	STX_MAIN_BLOCK_SIZE		( 4+2+2+2+1+1+4 )	/* Size of the header block in an STX file = 16 bytes */
 
 
-/* Additionnal structures used to save the data for the 'write sector' and 'write track' commands */
+/* Additional structures used to save the data for the 'write sector' and 'write track' commands */
 /* TODO : data are only saved in memory / snapshot and will be lost when exiting. */
 /* We should have a file format to store them with the .STX file */
 typedef struct {

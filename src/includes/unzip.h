@@ -16,7 +16,7 @@
    Encryption and multi volume ZipFile (span) are not supported.
    Old compressions used by old PKZip 1.x are not supported
 
-   THIS IS AN ALPHA VERSION. AT THIS STAGE OF DEVELOPPEMENT, SOMES API OR STRUCTURE
+   THIS IS AN ALPHA VERSION. AT THIS STAGE OF DEVELOPMENT, SOME API OR STRUCTURE
    CAN CHANGE IN FUTURE VERSION !!
    I WAIT FEEDBACK at mail info@winimage.com
    Visit also http://www.winimage.com/zLibDll/unzip.html for evolution
@@ -127,7 +127,7 @@ extern int ZEXPORT unzStringFileNameCompare (const char* fileName1,
    If iCaseSenisivity = 1, comparison is case sensitivity (like strcmp)
    If iCaseSenisivity = 2, comparison is not case sensitivity (like strcmpi
 								or strcasecmp)
-   If iCaseSenisivity = 0, case sensitivity is defaut of your operating system
+   If iCaseSenisivity = 0, case sensitivity is default of your operating system
 	(like 1 on Unix, 2 on Windows)
 */
 
@@ -197,7 +197,7 @@ extern int ZEXPORT unzGetCurrentFileInfo (unzFile file,
 					  uLong commentBufferSize);
 /*
   Get Info about the current file
-  if pfile_info!=NULL, the *pfile_info structure will contain somes info about
+  if pfile_info!=NULL, the *pfile_info structure will contain some info about
 	    the current file
   if szFileName!=NULL, the filemane string will be copied in szFileName
 			(fileNameBufferSize is the size of the buffer)
@@ -234,7 +234,7 @@ extern int ZEXPORT unzReadCurrentFile (unzFile file,
   buf contain buffer where data must be copied
   len the size of buf.
 
-  return the number of byte copied if somes bytes are copied
+  return the number of byte copied if some bytes are copied
   return 0 if the end of file was reached
   return <0 with error code if there is an error
     (UNZ_ERRNO for IO error, or zLib error for uncompress error)

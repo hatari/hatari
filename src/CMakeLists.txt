@@ -14,7 +14,7 @@ set(SOURCES
 # Disk image code is shared with the hmsa tool, so we put it into a library:
 add_library(Floppy createBlankImage.c dim.c msa.c st.c zip.c)
 
-# When building for macOS, define specific sources for gui and ressources
+# When building for macOS, define specific sources for gui and resources
 if(ENABLE_OSX_BUNDLE)
 	set(GUIOSX_SOURCES
 	    gui-osx/AlertHooks.m gui-osx/PrefsController.m gui-osx/Shared.m

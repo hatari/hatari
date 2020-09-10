@@ -161,7 +161,7 @@ static bool DebugCpu_ShowAddressInfo(Uint32 addr, FILE *fp)
 }
 
 /**
- * Dissassemble - arg = starting address, or PC.
+ * Disassemble - arg = starting address, or PC.
  */
 int DebugCpu_DisAsm(int nArgc, char *psArgs[])
 {
@@ -566,7 +566,7 @@ int DebugCpu_MemDump(int nArgc, char *psArgs[])
 
 
 /**
- * Command: Write to memory, optional arg for value lenghts,
+ * Command: Write to memory, optional arg for value lengths,
  * followed by starting address and the values.
  */
 static int DebugCpu_MemWrite(int nArgc, char *psArgs[])

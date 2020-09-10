@@ -53,7 +53,7 @@ void customreset(void)
 	/* Reset the IKBD */
 	IKBD_Reset ( false );
 
-	/* Reseting the GLUE video chip should also set freq/res register to 0 */
+	/* Resetting the GLUE video chip should also set freq/res register to 0 */
 	Video_Reset_Glue ();
 
 	/* Reset the YM2149 (stop any sound) */

@@ -462,7 +462,7 @@ void Statusbar_Init(SDL_Surface *surf)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Qeueue new statusbar message 'msg' to be shown for 'msecs' milliseconds
+ * Queue new statusbar message 'msg' to be shown for 'msecs' milliseconds
  */
 void Statusbar_AddMessage(const char *msg, Uint32 msecs)
 {

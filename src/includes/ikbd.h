@@ -63,7 +63,7 @@ typedef struct {
   int AutoSendCycles;				/* Number of cpu cycles to call INTERRUPT_IKBD_AUTOSEND */
 } KEYBOARD;
 
-/* Button states, a bit mask so can mimick joystick/right mouse button duplication */
+/* Button states, a bit mask so can mimic joystick/right mouse button duplication */
 #define BUTTON_NULL      0x00     /* Button states, so can OR together mouse/joystick buttons */
 #define BUTTON_MOUSE     0x01
 #define BUTTON_JOYSTICK  0x02

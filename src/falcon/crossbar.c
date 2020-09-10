@@ -141,7 +141,7 @@ static void Crossbar_Process_ADCXmit_Transfer(void);
 /* external data used by the MFP */
 Uint16 nCbar_DmaSoundControl;
 
-/* internal datas */
+/* internal data */
 
 /* dB = 20log(gain)  :  gain = antilog(dB/20)                                  */
 /* Table gain values = (int)(powf(10.0, dB/20.0)*65536.0 + 0.5)  1.5dB steps   */
@@ -149,7 +149,7 @@ Uint16 nCbar_DmaSoundControl;
 /* Values for Codec's ADC volume control (* DECIMAL_PRECISION) */
 /* PSG must be amplified by 2.66.. before mixing with crossbar */
 /* The ADC table values are multiplied by 2'2/3 and divided    */
-/* by 4 (later multplied by 4) eg 43691 = 65536 * 2.66.. / 4.0 */
+/* by 4 (later multiplied by 4) eg 43691 = 65536 * 2.66.. / 4.0 */
 static const Uint16 Crossbar_ADC_volume_table[16] =
 {
 	3276,   3894,   4628,   5500,   6537,   7769,   9234,   10975,
@@ -941,7 +941,7 @@ void Crossbar_SoundModeCtrl_WriteByte(void)
 
 /**
  * Write word to Falcon Crossbar source controller (0xff8930).
-	Source: A/D Convertor                 BIT 15 14 13 12
+	Source: A/D Converter                 BIT 15 14 13 12
 	00 - 25.175Mhz clock -------------------------+--+
 	01 - External clock --------------------------+--+
 	10 - 32Mhz clock (Don't use) -----------------+--'
@@ -985,7 +985,7 @@ void Crossbar_SrcControler_WriteWord(void)
 
 /**
  * Write word to Falcon Crossbar destination controller (0xff8932).
-	Source: D/A Convertor                 BIT 15 14 13 12
+	Source: D/A Converter                 BIT 15 14 13 12
 	00 - DMA output ------------------------------+--+
 	01 - DSP output ------------------------------+--+
 	10 - External input --------------------------+--+
@@ -1099,7 +1099,7 @@ void Crossbar_TrackRecSelect_WriteByte(void)
 /**
  * Write byte to CODEC input source from 16 bit adder (0xff8937).
  *	Bit 1 : source = multiplexer
- *	Bit 0 : source = A/D convertor
+ *	Bit 0 : source = A/D converter
  */
 void Crossbar_CodecInput_WriteByte(void)
 {
@@ -1482,7 +1482,7 @@ static void Crossbar_SendDataToDspReceive(Uint32 value, Uint16 frame)
  */
 static void Crossbar_setDmaPlay_Settings(void)
 {
-	/* DMA setings */
+	/* DMA settings */
 	dmaPlay.frameStartAddr = crossbar.dmaPlay_CurrentFrameStart;
 	dmaPlay.frameEndAddr = crossbar.dmaPlay_CurrentFrameEnd;
 	dmaPlay.frameLen = dmaPlay.frameEndAddr - dmaPlay.frameStartAddr;
@@ -1547,7 +1547,7 @@ static void Crossbar_Process_DMAPlay_Transfer(void)
 
 		/* Special undocumented transfer mode :
 		   When DMA Play --> DSP Receive is in HandShake mode at 32 Mhz,
-		   datas are shifted 2 bits on the left after the transfer.
+		   data are shifted 2 bits on the left after the transfer.
 		   This occurs with all demos using the Mpeg2 player from nocrew (amanita, LostBlubb, Wait, ...)
 		*/
 		if (crossbar.dmaPlay_freq == CROSSBAR_FREQ_32MHZ) {
@@ -1631,7 +1631,7 @@ void Crossbar_DmaPlayInHandShakeMode(void)
  */
 static void Crossbar_setDmaRecord_Settings(void)
 {
-	/* DMA setings */
+	/* DMA settings */
 	dmaRecord.frameStartAddr = crossbar.dmaRecord_CurrentFrameStart;
 	dmaRecord.frameEndAddr = crossbar.dmaRecord_CurrentFrameEnd;
 	dmaRecord.frameLen = dmaRecord.frameEndAddr - dmaRecord.frameStartAddr;
@@ -1743,7 +1743,7 @@ void Crossbar_DmaRecordInHandShakeMode_Frame(Uint32 frame)
 /*----------------------------------------------------------------------*/
 
 /**
- * Get datas recorded by the microphone and convert them into falcon internal frequency
+ * Get data recorded by the microphone and convert them into falcon internal frequency
  *    - micro_bufferL : left track recorded by the microphone
  *    - micro_bufferR : right track recorded by the microphone
  *    - microBuffer_size : buffers size
@@ -2010,42 +2010,42 @@ void Crossbar_Info(FILE *fp, Uint32 dummy)
 	fprintf(fp, "$FF8942.w : GPIO Data                             : %04x\n", IoMem_ReadWord(0xff8942));
 	fprintf(fp, "\n");
 
-	/* DAC connexion */
+	/* DAC connection */
 	switch ((IoMem_ReadWord(0xff8932) >> 13) & 0x3) {
 		case 0 :
-			/* DAC connexion with DMA Playback */
+			/* DAC connection with DMA Playback */
 			if ((IoMem_ReadWord(0xff8930) & 0x1) == 1)
 				matrixDAC = "OOXO";
 			else
 				matrixDAC = "OOHO";
 			break;
 		case 1 :
-			/* DAC connexion with DSP Transmit */
+			/* DAC connection with DSP Transmit */
 			if ((IoMem_ReadWord(0xff8930) & 0x10) == 0x10)
 				matrixDAC = "OXOO";
 			else
 				matrixDAC = "OHOO";
 			break;
 		case 2 :
-			/* DAC connexion with External Input */
+			/* DAC connection with External Input */
 			if ((IoMem_ReadWord(0xff8930) & 0x100) == 0x100)
 				matrixDAC = "XOOO";
 			else
 				matrixDAC = "HOOO";
 			break;
 		default: /* case 3 */
-			/* DAC connexion with ADC */
+			/* DAC connection with ADC */
 			matrixDAC = "OOOX";
 			break;
 	}
 
-	/* DMA connexion */
+	/* DMA connection */
 	matrixDMA = matrix_tab[IoMem_ReadWord(0xff8932) & 0x7];
 
-	/* DSP connexion */
+	/* DSP connection */
 	matrixDSP = matrix_tab[(IoMem_ReadWord(0xff8932) >> 4) & 0x7];
 
-	/* External input connexion */
+	/* External input connection */
 	matrixEXT = matrix_tab[(IoMem_ReadWord(0xff8932) >> 8) & 0x7];
 
 	if ((IoMem_ReadByte(0xff8935) & 0xf) == 0) {
@@ -2106,9 +2106,9 @@ void Crossbar_Info(FILE *fp, Uint32 dummy)
 	/* Display the crossbar Matrix */
 	fprintf(fp, "           INPUT\n");
 	fprintf(fp, "External Imp  ---%c------%c------%c------%c\n", matrixDAC[0], matrixDMA[0], matrixDSP[0], matrixEXT[0]);
-	fprintf(fp, "%s       |      |      |      |    O = no connexion\n", frqEXT);
-	fprintf(fp, "                 |      |      |      |    X = connexion\n");
-	fprintf(fp, "Dsp Transmit  ---%c------%c------%c------%c    H = Handshake connexion\n", matrixDAC[1], matrixDMA[1], matrixDSP[1], matrixEXT[1]);
+	fprintf(fp, "%s       |      |      |      |    O = no connection\n", frqEXT);
+	fprintf(fp, "                 |      |      |      |    X = connection\n");
+	fprintf(fp, "Dsp Transmit  ---%c------%c------%c------%c    H = Handshake connection\n", matrixDAC[1], matrixDMA[1], matrixDSP[1], matrixEXT[1]);
 	fprintf(fp, "%s       |      |      |      |\n", frqDSP);
 	fprintf(fp, "                 |      |      |      |    %s\n", dataSize);
 	fprintf(fp, "DMA PlayBack  ---%c------%c------%c------%c\n", matrixDAC[2], matrixDMA[2], matrixDSP[2], matrixEXT[2]);

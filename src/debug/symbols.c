@@ -803,10 +803,10 @@ static symbol_list_t* symbols_load_binary(FILE *fp, symtype_t gettype)
 	sections[2].end = start + bsslen;
 
 	if (sections[0].end != sections[1].offset) {
-		fprintf(stderr, "WARNIGN: DATA start doesn't match TEXT start + size!\n");
+		fprintf(stderr, "WARNING: DATA start doesn't match TEXT start + size!\n");
 	}
 	if (sections[1].end != sections[2].offset) {
-		fprintf(stderr, "WARNIGN: BSS start doesn't match DATA start + size!\n");
+		fprintf(stderr, "WARNING: BSS start doesn't match DATA start + size!\n");
 	}
 
 	if (tabletype == SYMBOL_FORMAT_GNU) {
@@ -1067,10 +1067,10 @@ static symbol_list_t* Symbols_Load(const char *filename, Uint32 *offsets, Uint32
 		}
 		/* check for duplicate TEXT & other addresses */
 		if (symbols_check_addresses(list->addresses, list->codecount)) {
-			fprintf(stderr, "-> Hatari profile/dissassembly will show only one of the TEXT symbols for given address!\n");
+			fprintf(stderr, "-> Hatari profile/disassembly will show only one of the TEXT symbols for given address!\n");
 		}
 		if (symbols_check_addresses(list->addresses + list->codecount, list->datacount)) {
-			fprintf(stderr, "-> Hatari dissassembly will show only one of the symbols for given address!\n");
+			fprintf(stderr, "-> Hatari disassembly will show only one of the symbols for given address!\n");
 		}
 	}
 

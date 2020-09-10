@@ -306,9 +306,9 @@ unzFile ZEXPORT unzOpen (const char *path)
 	FILE * fin ;
 
 	uLong number_disk;          /* number of the current dist, used for 
-								   spaning ZIP, unsupported, always 0*/
+								   spanning ZIP, unsupported, always 0*/
 	uLong number_disk_with_CD;  /* number the the disk with central dir, used
-								   for spaning ZIP, unsupported, always 0*/
+								   for spanning ZIP, unsupported, always 0*/
 	uLong number_entry_CD;      /* total number of entries in
 	                               the central dir 
 	                               (same than number_entry on nospan) */

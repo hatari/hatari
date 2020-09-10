@@ -9,7 +9,7 @@
   The IKBD has a small ROM which is used to process various commands send
   by the main CPU to the THE IKBD.
   Due to lack of real HD6301 emulation, those commands are handled by
-  functionnaly equivalent code that tries to be as close as possible
+  functionally equivalent code that tries to be as close as possible
   to a real HD6301.
 
   For program using their own HD6301 code, we also use some custom

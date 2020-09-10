@@ -2020,7 +2020,7 @@ static void ide_ioport_write(void *opaque, uint32_t addr, uint32_t val)
 		/* ignore commands to non existent IDE device 1 */
 		if (s != ide_if && !s->bs)
 		{
-			fprintf(stderr,"IDE: CMD to non-existant IDE device #1!\n");
+			fprintf(stderr,"IDE: CMD to non-existent IDE device #1!\n");
 			break;
 		}
 

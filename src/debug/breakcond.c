@@ -1086,7 +1086,7 @@ static char *BreakCond_TokenizeExpression(const char *expression,
 
 
 /**
- * Select corrent breakpoints struct and provide name for it.
+ * Select current breakpoints struct and provide name for it.
  * Make sure there's always space for at least one additional breakpoint.
  * Return pointer to the breakpoints struct
  */

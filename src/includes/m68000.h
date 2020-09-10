@@ -147,7 +147,7 @@ enum {
  * From WinUAE's CE mode, we have 2 non-aligned memory accesses to wait for (ie 2+2 cycles),
  * which leaves a total of 12 cycles to fetch the vector.
  *
- * As seen wth a custom program on STF that measures HBL's jitter, we get the same results with Hatari
+ * As seen with a custom program on STF that measures HBL's jitter, we get the same results with Hatari
  * in CE mode if we use 10 cycles to fetch the vector (step 3), which will also add 2 cycle penalty (step 4b)
  * This means we have at max 12+10=22 cycles after the start of the exception where some
  * changes can happen (maybe it's a little less, depending on when the interrupt
@@ -194,7 +194,7 @@ enum {
 #define CPU_IACK_CYCLES_MFP		12		/* vector sent by the MFP */
 #define CPU_IACK_CYCLES_VIDEO		12		/* auto vectored for HBL/VBL */
 
-/* Informations about current CPU instruction */
+/* Information about current CPU instruction */
 typedef struct {
 	/* These are provided only by WinUAE CPU core */
 	int	I_Cache_miss;				/* Instruction cache for 68020/30/40/60 */

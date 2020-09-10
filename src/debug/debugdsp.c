@@ -120,7 +120,7 @@ static bool DebugDsp_ShowAddressInfo(Uint16 addr, FILE *fp)
 
 
 /**
- * DSP dissassemble - arg = starting address/range, or PC.
+ * DSP disassemble - arg = starting address/range, or PC.
  */
 int DebugDsp_DisAsm(int nArgc, char *psArgs[])
 {

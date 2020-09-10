@@ -946,7 +946,7 @@ static const dbgcommand_t uicommand[] =
 	  "\tEvaluate an expression and show the result.  Expression can\n"
 	  "\tinclude CPU register & symbol and Hatari variable names.\n"
 	  "\tThose are replaced by their values. Supported operators in\n"
-	  "\texpressions are, in the decending order of precedence:\n"
+	  "\texpressions are, in the descending order of precedence:\n"
 	  "\t\t(), +, -, ~, *, /, +, -, >>, <<, ^, &, |\n"
 	  "\tParenthesis will fetch a _long_ value from the address\n"
 	  "\tto what the value inside it evaluates to. Prefixes can be\n"

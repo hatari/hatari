@@ -645,9 +645,9 @@ void VDI_Info(FILE *fp, Uint32 bShowOpcodes)
 	fprintf(fp, "- Device handle: %d\n",
 		STMemory_ReadWord(VDIControl+2*6));
 	fprintf(fp, "- Control: %#8x\n", VDIControl);
-	fprintf(fp, "- Ptsin:   %#8x, %d co-ordinate word pairs\n",
+	fprintf(fp, "- Ptsin:   %#8x, %d coordinate word pairs\n",
 		VDIPtsin, STMemory_ReadWord(VDIControl+2*1));
-	fprintf(fp, "- Ptsout:  %#8x, %d co-ordinate word pairs\n",
+	fprintf(fp, "- Ptsout:  %#8x, %d coordinate word pairs\n",
 		VDIPtsout, STMemory_ReadWord(VDIControl+2*2));
 	fprintf(fp, "- Intin:   %#8x, %d words\n",
 		VDIIntin, STMemory_ReadWord(VDIControl+2*3));
