@@ -7,21 +7,9 @@
  * Blitter emulation. The 'Blitter' chip is found in the Mega-ST, STE/Mega-STE
  * and Falcon. It provides a very fast BitBlit function in hardware.
  *
- * This file has originally been taken from STonX, but it has been completely
- * modified for better maintainability and higher compatibility.
+ * This file has originally been taken from STonX's blitter by Martin Griffiths,
+ * but it has been completely modified for better maintainability and higher compatibility.
  *
- * NOTES:
- * ----------------------------------------------------------------------------
- * Strange end mask condition ((~(0xffff>>skew)) > end_mask_1)
- *
- * """Similarly the  NFSR (aka  post-flush) bit, when set, will prevent the last
- * source read of the  line. This read  may not  be necessary  with certain
- * combinations of end masks and skews."""
- *     - doesn't mean the blitter will skip source read by itself, just a hint
- *       for developers as far as i understand it.
- * ----------------------------------------------------------------------------
- * Does smudge mode change the line register ?
- * ----------------------------------------------------------------------------
  */
 
 
@@ -103,14 +91,12 @@
   Note that writing '0' will not end the current blitter transfer, reading 'busy' bit 7 will still return '1'.
   It's only when 'y count' reaches '0' that transfer will be complete and busy bit will be cleared.
 
-*/
-
-/*
-
-  TODO : as measured on STE (as well as on Falcon), the blitter produces strange results when
-  each line is only 1 word (xcount=1) and when nfsr/fxsr are set at the same time : in some cases
-  an extra word will be read, depending also on whether src X increment is >0 or <0.
+  As measured on STE (as well as on Falcon), the blitter produces "strange" results when
+  each line is only 1 word (xcount=1) and NFSR is set at the same time, depending on whether
+  src X increment is >0 or <0.
   This was discussed in may 2017 in Hatari mailing list and a model still need to be found to cover all cases.
+  UPDATE : as of september 2020, this behaviour should be correctly emulated (based on reverse engineering and
+  Verilog implementation made by Jorge Cwik (Ijor))
 
 */
 
@@ -191,6 +177,7 @@ typedef struct
 	Uint32	pass_cycles;
 	Uint32	op_cycles;
 	Uint32	total_cycles;
+
 	Uint32	buffer;
 	Uint32	x_count_reset;
 	Uint8	hog;
@@ -204,13 +191,20 @@ typedef struct
 /* Blitter state */
 typedef struct
 {
-	Uint16	src_word;
-	Uint16	dst_word;
-	Uint16	end_mask;
-	Uint8	have_src;
-	Uint8	have_dst;
 	Uint8	fxsr;
 	Uint8	nfsr;
+	Uint8	have_fxsr;
+	Uint8	need_src;
+	Uint8	have_src;
+	Uint8	fetch_src;
+	Uint8	need_dst;
+	Uint8	have_dst;
+
+	Uint16	src_word;
+	Uint16	dst_word;
+	Uint16	bus_word;
+
+	Uint16	end_mask;
 
 	Uint16	CountBusBlitter;				/* To count bus accesses made by the blitter */
 	Uint16	CountBusCpu;					/* To count bus accesses made by the CPU */
@@ -299,8 +293,15 @@ void Blitter_Reset ( void )
 	BlitterVars.nfsr = 0;
 	BlitterVars.skew = 0;
 
-	BlitterState.have_src = false ;
-	BlitterState.have_dst = false ;
+	BlitterState.fxsr = false;
+	BlitterState.nfsr = false;
+	BlitterState.have_fxsr = false;
+	BlitterState.need_src = false;
+	BlitterState.have_src = false;
+	BlitterState.fetch_src = false;
+	BlitterState.need_dst = false;
+	BlitterState.have_dst = false;
+	BlitterState.bus_word = 0;
 	BlitterState.ContinueLater = 0 ;
 }
 
@@ -439,17 +440,19 @@ static Uint16 Blitter_ReadWord(Uint32 addr)
 		value = BLITTER_READ_WORD_BUS_ERR;
 	else
 		value = (Uint16)get_word ( addr );
-//fprintf ( stderr , "read %x %x %x\n" , addr , value , STMemory_CheckRegionBusError(addr) );
 
 	BlitterState.CountBusBlitter++;
 	Blitter_AddCycles ( BLITTER_CYCLES_PER_BUS_READ );
 	Blitter_FlushCycles();
 
+	BlitterState.bus_word = value;
 	return value;
 }
 
 static void Blitter_WriteWord(Uint32 addr, Uint16 value)
 {
+	BlitterState.bus_word = value;
+
 	/* Call put_word only if the address doesn't point to a bus error region */
 	/* (also see SysMem_wput for addr < 0x8) */
 	if ( STMemory_CheckRegionBusError ( addr ) == false )
@@ -492,7 +495,7 @@ static bool Blitter_ContinueNonHog ( void )
 
 /*-----------------------------------------------------------------------*/
 /**
- * Blitter emulation - level 1
+ * Blitter emulation - level 1 (lower level)
  */
 
 static void Blitter_SourceShift(void)
@@ -503,9 +506,14 @@ static void Blitter_SourceShift(void)
 		BlitterVars.buffer <<= 16;
 }
 
-static void Blitter_SourceFetch(void)
+static void Blitter_SourceFetch( bool nfsr_on )
 {
-	Uint32 src_word = (Uint32)Blitter_ReadWord(BlitterRegs.src_addr);
+	Uint32 src_word;
+
+	if ( !nfsr_on )
+		src_word = (Uint32)Blitter_ReadWord(BlitterRegs.src_addr);
+	else
+		src_word = (Uint32)BlitterState.bus_word;
 
 	if (BlitterRegs.src_x_incr < 0)
 		BlitterVars.buffer |= src_word << 16;
@@ -515,60 +523,22 @@ static void Blitter_SourceFetch(void)
 
 static Uint16 Blitter_SourceRead(void)
 {
-	if (!BlitterState.have_src)
-	{
-		if (BlitterState.fxsr)
-		{
-			Blitter_SourceShift();
-			Blitter_SourceFetch();
-			/* always increment src_addr after doing the fxsr */
-			BlitterRegs.src_addr += BlitterRegs.src_x_incr;
-		}
-
-		Blitter_SourceShift();
-
-		if (!BlitterState.nfsr)
-		{
-			Blitter_SourceFetch();
-			/* src_x_incr should be added only when this is not the last read for a line */
-			/* (taking into account that if nfsr is set we read 1 word less) */
-			if (BlitterRegs.x_count > 1U + BlitterVars.nfsr )
-			{
-				BlitterRegs.src_addr += BlitterRegs.src_x_incr;
-			}
-		}
-
-		BlitterState.src_word = (Uint16)(BlitterVars.buffer >> BlitterVars.skew);
-		BlitterState.have_src = true;
-
-		/* src_y_incr is added after reading the last word of a line */
-		if (BlitterRegs.x_count == 1)
-		{
-			BlitterRegs.src_addr += BlitterRegs.src_y_incr;
-		}
-	}
-
-	return BlitterState.src_word;
+	return (Uint16)(BlitterVars.buffer >> BlitterVars.skew);
 }
 
 static Uint16 Blitter_DestRead(void)
 {
-	if (!BlitterState.have_dst)
-	{
-		BlitterState.dst_word = Blitter_ReadWord(BlitterRegs.dst_addr);
-		BlitterState.have_dst = true;
-	}
-
 	return BlitterState.dst_word;
 }
 
 static Uint16 Blitter_GetHalftoneWord(void)
 {
-	if (BlitterVars.smudge)
+	if ( BlitterVars.smudge )
 		return BlitterHalftone[Blitter_SourceRead() & 15];
 	else
 		return BlitterHalftone[BlitterVars.halftone_line];
 }
+
 
 /* HOP */
 
@@ -589,11 +559,7 @@ static Uint16 Blitter_HOP_2(void)
 
 static Uint16 Blitter_HOP_3(void)
 {
-	Uint16 src;
-
-	src = Blitter_SourceRead();
-	BLITTER_RETURN_IF_MAX_BUS_REACHED;
-	return src & Blitter_GetHalftoneWord();
+	return Blitter_SourceRead() & Blitter_GetHalftoneWord();
 }
 
 static BLITTER_OP_FUNC Blitter_HOP_Table [4] =
@@ -620,20 +586,12 @@ static Uint16 Blitter_LOP_0(void)
 
 static Uint16 Blitter_LOP_1(void)
 {
-	Uint16	hop;
-
-	hop = Blitter_ComputeHOP();
-	BLITTER_RETURN_IF_MAX_BUS_REACHED;
-	return hop & Blitter_DestRead();
+	return Blitter_ComputeHOP() & Blitter_DestRead();
 }
 
 static Uint16 Blitter_LOP_2(void)
 {
-	Uint16	hop;
-
-	hop = Blitter_ComputeHOP();
-	BLITTER_RETURN_IF_MAX_BUS_REACHED;
-	return hop & ~Blitter_DestRead();
+	return Blitter_ComputeHOP() & ~Blitter_DestRead();
 }
 
 static Uint16 Blitter_LOP_3(void)
@@ -643,11 +601,7 @@ static Uint16 Blitter_LOP_3(void)
 
 static Uint16 Blitter_LOP_4(void)
 {
-	Uint16	hop;
-
-	hop = Blitter_ComputeHOP();
-	BLITTER_RETURN_IF_MAX_BUS_REACHED;
-	return ~hop & Blitter_DestRead();
+	return ~Blitter_ComputeHOP() & Blitter_DestRead();
 }
 
 static Uint16 Blitter_LOP_5(void)
@@ -657,38 +611,22 @@ static Uint16 Blitter_LOP_5(void)
 
 static Uint16 Blitter_LOP_6(void)
 {
-	Uint16	hop;
-
-	hop = Blitter_ComputeHOP();
-	BLITTER_RETURN_IF_MAX_BUS_REACHED;
-	return hop ^ Blitter_DestRead();
+	return Blitter_ComputeHOP() ^ Blitter_DestRead();
 }
 
 static Uint16 Blitter_LOP_7(void)
 {
-	Uint16	hop;
-
-	hop = Blitter_ComputeHOP();
-	BLITTER_RETURN_IF_MAX_BUS_REACHED;
-	return hop | Blitter_DestRead();
+	return Blitter_ComputeHOP() | Blitter_DestRead();
 }
 
 static Uint16 Blitter_LOP_8(void)
 {
-	Uint16	hop;
-
-	hop = Blitter_ComputeHOP();
-	BLITTER_RETURN_IF_MAX_BUS_REACHED;
-	return ~hop & ~Blitter_DestRead();
+	return ~Blitter_ComputeHOP() & ~Blitter_DestRead();
 }
 
 static Uint16 Blitter_LOP_9(void)
 {
-	Uint16	hop;
-
-	hop = Blitter_ComputeHOP();
-	BLITTER_RETURN_IF_MAX_BUS_REACHED;
-	return ~hop ^ Blitter_DestRead();
+	return ~Blitter_ComputeHOP() ^ Blitter_DestRead();
 }
 
 static Uint16 Blitter_LOP_A(void)
@@ -698,11 +636,7 @@ static Uint16 Blitter_LOP_A(void)
 
 static Uint16 Blitter_LOP_B(void)
 {
-	Uint16	hop;
-
-	hop = Blitter_ComputeHOP();
-	BLITTER_RETURN_IF_MAX_BUS_REACHED;
-	return hop | ~Blitter_DestRead();
+	return Blitter_ComputeHOP() | ~Blitter_DestRead();
 }
 
 static Uint16 Blitter_LOP_C(void)
@@ -712,20 +646,12 @@ static Uint16 Blitter_LOP_C(void)
 
 static Uint16 Blitter_LOP_D(void)
 {
-	Uint16	hop;
-
-	hop = Blitter_ComputeHOP();
-	BLITTER_RETURN_IF_MAX_BUS_REACHED;
-	return ~hop | Blitter_DestRead();
+	return ~Blitter_ComputeHOP() | Blitter_DestRead();
 }
 
 static Uint16 Blitter_LOP_E(void)
 {
-	Uint16	hop;
-
-	hop = Blitter_ComputeHOP();
-	BLITTER_RETURN_IF_MAX_BUS_REACHED;
-	return ~hop | ~Blitter_DestRead();
+	return ~Blitter_ComputeHOP() | ~Blitter_DestRead();
 }
 
 static Uint16 Blitter_LOP_F(void)
@@ -733,181 +659,223 @@ static Uint16 Blitter_LOP_F(void)
 	return 0xFFFF;
 }
 
-static BLITTER_OP_FUNC Blitter_LOP_Table [16] =
+static const struct {
+	BLITTER_OP_FUNC	lop_func;
+	Uint8		need_src;
+	Uint8		need_dst;
+} Blitter_LOP_Table [16] =
 {
-	Blitter_LOP_0,
-	Blitter_LOP_1,
-	Blitter_LOP_2,
-	Blitter_LOP_3,
-	Blitter_LOP_4,
-	Blitter_LOP_5,
-	Blitter_LOP_6,
-	Blitter_LOP_7,
-	Blitter_LOP_8,
-	Blitter_LOP_9,
-	Blitter_LOP_A,
-	Blitter_LOP_B,
-	Blitter_LOP_C,
-	Blitter_LOP_D,
-	Blitter_LOP_E,
-	Blitter_LOP_F
+	{ Blitter_LOP_0, false, false } ,
+	{ Blitter_LOP_1, true,	true },
+	{ Blitter_LOP_2, true,	true },
+	{ Blitter_LOP_3, true,	false },
+	{ Blitter_LOP_4, true,	true },
+	{ Blitter_LOP_5, false,	true },
+	{ Blitter_LOP_6, true,	true },
+	{ Blitter_LOP_7, true,	true },
+	{ Blitter_LOP_8, true,	true },
+	{ Blitter_LOP_9, true,	true },
+	{ Blitter_LOP_A, false,	true },
+	{ Blitter_LOP_B, true,	true },
+	{ Blitter_LOP_C, true,	false },
+	{ Blitter_LOP_D, true,	true },
+	{ Blitter_LOP_E, true,	true },
+	{ Blitter_LOP_F, false,	false }
 };
 
 static void Blitter_Select_LOP(void)
 {
-	Blitter_ComputeLOP = Blitter_LOP_Table[BlitterRegs.lop];
+	Blitter_ComputeLOP = Blitter_LOP_Table[BlitterRegs.lop].lop_func;
 }
 
 /* end LOP */
 
-
-/*-----------------------------------------------------------------------*/
-/*
- * If BlitterState.ContinueLater==1, it means we're resuming from a previous
- * Blitter_ProcessWord() call that did not complete because we reached
- * maximum number of bus accesses. In that case, we continue from the latest
- * state, keeping the values we already have for src_word and dst_word.
- */
-
-static void Blitter_BeginLine(void)
-{
-	if ( BlitterState.ContinueLater )				/* Resuming, don't start a new line */
-		return;
-}
-
-static void Blitter_SetState(Uint8 fxsr, Uint8 nfsr, Uint16 end_mask)
-{
-	BlitterState.fxsr = fxsr;
-	BlitterState.nfsr = nfsr;
-	BlitterState.end_mask = end_mask;
-
-	if ( BlitterState.ContinueLater )
-		BlitterState.ContinueLater = 0;				/* Resuming, keep previous values of have_src / have_dst */
-}
-
-static void Blitter_FlushWordSrcDest(void)
-{
-	BlitterState.have_src = false;
-	BlitterState.have_dst = false;
-}
-
-static Uint16 Blitter_ComputeMask(Uint16 lop)
-{
-	return (lop & BlitterState.end_mask) | (Blitter_DestRead() & ~BlitterState.end_mask);
-}
 
 static void Blitter_ProcessWord(void)
 {
 	Uint16	lop;
 	Uint16	dst_data;
 
-	lop = Blitter_ComputeLOP();
-	BLITTER_CONTINUE_LATER_IF_MAX_BUS_REACHED;
 
-	/* When NFSR or mask is not all '1', a read-modify-write is always performed */
-	/* NOTE : This statement written in FAQ is not correct, NFSR has no impact on destination read */
-	/* Only mask has (cf http://www.atari-forum.com/viewtopic.php?f=16&t=38157) */
-//	if ( BlitterState.nfsr || ( BlitterState.end_mask != 0xFFFF ) )
+	/* Do FXSR if needed (only if src is used) */
+	if ( BlitterState.fxsr && !BlitterState.have_fxsr && BlitterState.need_src )
+	{
+		Blitter_SourceShift();
+		Blitter_SourceFetch( false );
+		BlitterRegs.src_addr += BlitterRegs.src_x_incr;		/* always increment src_addr after doing the FXSR */
+		BlitterState.have_fxsr = true;
+		BLITTER_CONTINUE_LATER_IF_MAX_BUS_REACHED
+	}
+
+	/* Read src if needed */
+	if ( BlitterState.need_src && !BlitterState.have_src )
+	{
+		if ( !BlitterState.nfsr )
+		{
+			Blitter_SourceShift();
+			Blitter_SourceFetch( false );
+			BlitterState.have_src = true;
+			BlitterState.fetch_src = true;
+			BLITTER_CONTINUE_LATER_IF_MAX_BUS_REACHED
+		}
+	}
+
+	/* Read dst if needed */
+	if ( BlitterState.need_dst && !BlitterState.have_dst )
+	{
+		BlitterState.dst_word = Blitter_ReadWord(BlitterRegs.dst_addr);
+		BlitterState.have_dst = true;
+		BLITTER_CONTINUE_LATER_IF_MAX_BUS_REACHED
+	}
+
+	/* Special 'weird' case for x_count=1 and NFSR=1 */
+	if ( ( BlitterVars.nfsr ) && ( BlitterRegs.x_count == 1 ) )
+	{
+		Blitter_SourceShift();
+		Blitter_SourceFetch( true );
+	}
+
+	lop = Blitter_ComputeLOP();
+
+	/* When mask is not all '1', a read-modify-write is always performed */
+	/* NOTE : Atari's doc wrongly states that NFSR can also do a RMW, but only mask can */
+	/* (cf http://www.atari-forum.com/viewtopic.php?f=16&t=38157) */
 	if ( BlitterState.end_mask != 0xFFFF )
-	{
-		dst_data = Blitter_ComputeMask( lop );
-		BLITTER_CONTINUE_LATER_IF_MAX_BUS_REACHED;
-	}
+		dst_data = (lop & BlitterState.end_mask) | (Blitter_DestRead() & ~BlitterState.end_mask);
 	else
-	{
 		dst_data = lop;
-	}
 
 	Blitter_WriteWord(BlitterRegs.dst_addr, dst_data);
 
-	if (BlitterRegs.x_count == 1)
+	/* Special 'weird' case for x_count=1 and NFSR=1 */
+	if ( ( BlitterVars.nfsr ) && ( BlitterRegs.x_count == 1 ) )
 	{
-		BlitterRegs.dst_addr += BlitterRegs.dst_y_incr;
+		Blitter_SourceShift();
+		Blitter_SourceFetch( true );
 	}
-	else
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Blitter emulation - level 2 (higher level)
+ *
+ * If BlitterState.ContinueLater==1, it means we're resuming from a previous
+ * Blitter_ProcessWord() call that did not complete because we reached
+ * maximum number of bus accesses. In that case, we continue from the latest
+ * state, keeping the values we already have for src_word and dst_word.
+ */
+
+/*
+ * Reset internal states after fully processing 1 word or when blitter is started
+ */
+static void Blitter_FlushWordState( bool FlushFxsr )
+{
+	if ( FlushFxsr )
+		BlitterState.have_fxsr = false;
+
+	BlitterState.have_src = false;
+	BlitterState.fetch_src = false;
+	BlitterState.have_dst = false;
+}
+
+
+/**
+ * Process 1 word for the current x_count/y_count values.
+ * Update addresses/counters/states when done
+ * If too many bus accesses were made in non-hog mode, we return
+ * and we resume later from the same states.
+ */
+static void Blitter_Step(void)
+{
+	bool	FirstWord;
+
+	if ( BlitterState.ContinueLater )
+		BlitterState.ContinueLater = 0;				/* Resuming, keep previous values of have_src/have_dst/have_fxsr/... */
+
+	/* Check if this is the first word of a line */
+	FirstWord = ( BlitterRegs.x_count == BlitterVars.x_count_reset );
+
+	/* Set mask for this word (order of 'if' matters) */
+	if ( FirstWord || ( BlitterVars.x_count_reset == 1 ) )		/* 1st word or single word line */
+		BlitterState.end_mask = BlitterRegs.end_mask_1;
+	else if ( BlitterRegs.x_count == 1 )				/* last word for non-single word line */
+		BlitterState.end_mask = BlitterRegs.end_mask_3;
+	else								/* middle word for non-single word line */
+		BlitterState.end_mask = BlitterRegs.end_mask_2;
+
+	/* Set internal nfsr=0 by default at the start of a new line (it will be updated if needed when xcount goes from 2 to 1) */
+	if ( FirstWord )
+		BlitterState.nfsr = 0;
+
+	/* Read an extra word at the start of a line if FXSR is set */
+	/* This extra word will only be read if the blitter LOP/HOP needs to read src */
+	if ( FirstWord )
+		BlitterState.fxsr = BlitterVars.fxsr;
+
+	/* Check if this operation requires to read src */
+	BlitterState.need_src = Blitter_LOP_Table[BlitterRegs.lop].need_src;
+	/* Check if HOP uses src : bit1==1 or halftone with smudge bit */
+	BlitterState.need_src = BlitterState.need_src && ( ( BlitterRegs.hop & 2 ) || ( ( BlitterRegs.hop == 1 ) && BlitterVars.smudge ) );
+
+	/* Check if this operation requires to read dst (if mask != 0xFFFF, read dst will be forced to do a read-modify-write */
+	BlitterState.need_dst = Blitter_LOP_Table[BlitterRegs.lop].need_dst || ( BlitterState.end_mask != 0xFFFF );
+
+
+	/* Call main function to process the data */
+	/* Read src/dst/halftone (if needed) + process + write to dst */
+	Blitter_ProcessWord();
+	if ( BlitterState.ContinueLater == 1 )				/* blitter did not complete due to too many bus accesses */
+		return;							/* stop now and resume later */
+
+
+	/* Write was done, update counters/addresses/states for next step */
+	/* Take NFSR value into account (this must be checked when x_count=2, as on real blitter) */
+	if ( ( BlitterRegs.x_count == 2 ) && BlitterVars.nfsr )
+		BlitterState.nfsr = 1;					/* next source read will be ignored in Blitter_SourceRead() */
+
+	/* Update source address if a word was read from src */
+	if ( BlitterState.fetch_src )
 	{
-		--BlitterRegs.x_count;
+		/* If this was the last read of a line or if last read will be ignored, then we go to the next source line */
+		if ( ( BlitterRegs.x_count == 1 ) || ( BlitterState.nfsr == 1 ) )
+			BlitterRegs.src_addr += BlitterRegs.src_y_incr;
+		else
+			BlitterRegs.src_addr += BlitterRegs.src_x_incr;
+	}
+
+	/* Update X/Y count as well as dest address */
+	if ( BlitterRegs.x_count == 1 )					/* end of line reached */
+	{
+		BlitterState.have_fxsr = false;
+		BlitterRegs.y_count--;
+		BlitterRegs.x_count = BlitterVars.x_count_reset;
+
+		BlitterRegs.dst_addr += BlitterRegs.dst_y_incr;
+
+		if ( BlitterRegs.dst_y_incr >= 0 )
+			BlitterVars.halftone_line = ( BlitterVars.halftone_line+1 ) & 15;
+		else
+			BlitterVars.halftone_line = ( BlitterVars.halftone_line-1 ) & 15;
+	}
+	else								/* continue on the same line */
+	{
+		BlitterRegs.x_count--;
 		BlitterRegs.dst_addr += BlitterRegs.dst_x_incr;
 	}
 
 	/* ProcessWord is complete, reset internal content of src/dst words */
-	Blitter_FlushWordSrcDest ();
+	Blitter_FlushWordState ( false );
 }
 
-static void Blitter_EndLine(void)
-{
-	if ( BlitterState.ContinueLater )			/* We will continue later, don't end this line for now */
-		return;
-
-	--BlitterRegs.y_count;
-	BlitterRegs.x_count = BlitterVars.x_count_reset;
-
-	if (BlitterRegs.dst_y_incr >= 0)
-		BlitterVars.halftone_line = (BlitterVars.halftone_line+1) & 15;
-	else
-		BlitterVars.halftone_line = (BlitterVars.halftone_line-1) & 15;
-}
 
 /*-----------------------------------------------------------------------*/
 /**
- * Blitter emulation - level 2
- */
-
-static void Blitter_SingleWord(void)
-{
-	Blitter_BeginLine();
-	Blitter_SetState(BlitterVars.fxsr, BlitterVars.nfsr, BlitterRegs.end_mask_1);
-//	Blitter_SetState(BlitterVars.fxsr, 0, BlitterRegs.end_mask_1);		/* wrong fix : this makes 'Oompa' demo crashes after greeting part */
-	Blitter_ProcessWord();
-	Blitter_EndLine();
-}
-
-static void Blitter_FirstWord(void)
-{
-	Blitter_BeginLine();
-	Blitter_SetState(BlitterVars.fxsr, 0, BlitterRegs.end_mask_1);
-	Blitter_ProcessWord();
-}
-
-static void Blitter_MiddleWord(void)
-{
-	Blitter_SetState(0, 0, BlitterRegs.end_mask_2);
-	Blitter_ProcessWord();
-}
-
-static void Blitter_LastWord(void)
-{
-	Blitter_SetState(0, BlitterVars.nfsr, BlitterRegs.end_mask_3);
-	Blitter_ProcessWord();
-	Blitter_EndLine();
-}
-
-static void Blitter_Step(void)
-{
-	if (BlitterVars.x_count_reset == 1)
-	{
-		Blitter_SingleWord();
-	}
-	else if (BlitterRegs.x_count == BlitterVars.x_count_reset)
-	{
-		Blitter_FirstWord();
-	}
-	else if (BlitterRegs.x_count == 1)
-	{
-		Blitter_LastWord();
-	}
-	else
-	{
-		Blitter_MiddleWord();
-	}
-}
-
-/*-----------------------------------------------------------------------*/
-/**
- * Let's do the blit.
- * Note that in non-HOG mode, the blitter only runs for 64 bus cycles
+ * Start/Resume the blitter
+ *
+ * Note that in non-hog mode, the blitter only runs for 64 bus cycles
  * before giving the bus back to the CPU. Due to this mode, this function must
- * be able to abort and resume the blitting at any time.
+ * be able to abort and resume the blitting at any time, keeping the same internal states.
  * - In cycle exact mode, the blitter will have 64 bus accesses and the cpu 64 bus accesses
  * - In non cycle exact mode, the blitter will have 64 bus accesses and the cpu
  *   will run during 64*4 = 256 cpu cycles
@@ -918,7 +886,7 @@ int FrameCycles, HblCounterVideo, LineCycles;
 Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
 //fprintf ( stderr , "blitter start %d video_cyc=%d %d@%d\n" , nCyclesMainCounter , FrameCycles , LineCycles, HblCounterVideo );
-//fprintf ( stderr , "blitter start addr=%x dst=%x ycount=%d xcount=%d fxsr=%d nfsr=%d skew=%d\n" , BlitterRegs.src_addr ,BlitterRegs.dst_addr, BlitterRegs.x_count , BlitterRegs.y_count , BlitterVars.fxsr , BlitterVars.nfsr , BlitterVars.skew );
+//fprintf ( stderr , "blitter start addr=%x dst=%x xcount=%d ycount=%d fxsr=%d nfsr=%d skew=%d src_x_incr=%d src_y_incr=%d\n" , BlitterRegs.src_addr ,BlitterRegs.dst_addr, BlitterRegs.x_count , BlitterRegs.y_count , BlitterVars.fxsr , BlitterVars.nfsr , BlitterVars.skew , BlitterRegs.src_x_incr , BlitterRegs.src_y_incr );
 
 	/* Select HOP & LOP funcs */
 	Blitter_Select_HOP();
@@ -1385,15 +1353,14 @@ void Blitter_Control_WriteByte(void)
 			/* In non-hog mode, the cpu can "restart" the blitter immediately (without waiting */
 			/* for 64 cpu bus accesses) by setting "start/stop" bit. The cpu can also "stop" the blitter (PAUSE state) */
 			/* and restart it here (blitter continues from where it was stopped)  */
-			/* This means we should reset BlitterState.ContinueLater only if the blitter was stopped before ; */
-			/* else if the blitter is restarted we must keep the value of BlitterState.ContinueLater */
+			/* This means we should reset internal states only if the blitter was stopped before ; */
+			/* else if the blitter is restarted we must keep the value of the previous states */
 			if ( BLITTER_RUN_CE )
 			{
 				if ( BlitterPhase == BLITTER_PHASE_STOP )	/* Only when blitter is started (not when restarted) */
 				{
 					M68000_SetBlitter_CE ( true );
-					Blitter_FlushWordSrcDest ();
-					BlitterState.ContinueLater = 0;
+					Blitter_FlushWordState ( true );
 				}
 
 				/* 68000 CE : 4 cycles to complete current bus write to ctrl reg + 4 cycles before blitter request the bus */
@@ -1405,8 +1372,7 @@ void Blitter_Control_WriteByte(void)
 			{
 				if ( BlitterPhase == BLITTER_PHASE_STOP )	/* Only when blitter is started (not when restarted) */
 				{
-					Blitter_FlushWordSrcDest ();
-					BlitterState.ContinueLater = 0;
+					Blitter_FlushWordState ( true );
 				}
 
 				/* Non 68000 CE mode : start blitting after the end of current instruction */
@@ -1424,7 +1390,6 @@ void Blitter_Control_WriteByte(void)
 		if ( BlitterPhase == BLITTER_PHASE_COUNT_CPU_BUS )
 		{
 			BlitterPhase = BLITTER_PHASE_PAUSE;
-			BlitterState.ContinueLater = 1;				/* Keep all the blitter's states */
 		}
 	}
 }
