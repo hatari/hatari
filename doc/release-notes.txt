@@ -162,7 +162,7 @@ Emulation:
   - Fix: only enable cache emulation when relevant
   - Improve softfloat FPU emulation
   - FPU emulation mode (softfloat or not) can be changed on the fly
-  - Ensure HW registers region is not cachable for 68030 without MMU
+  - Ensure HW registers region is not cacheable for 68030 without MMU
     when write allocate mode is enabled
 - DSP:
   - Fix DSP ROM tables (sin, mulaw & a-law)
@@ -1038,7 +1038,7 @@ Emulator:
   - "step" and "next" commands added for single stepping CPU and DSP code
     -> 's' shortcut is now for "step", not "save"
   - "--disasm" option for selecting between UAE core and external CPU
-    code dissassembler and setting output option flags for latter
+    code disassembler and setting output option flags for latter
   - When -D option is used, also undefined/illegal DSP instructions and
     DSP stack under/overflows invoke debugger, not just CPU issues
   - Fix: when several breakpoints should have triggered
@@ -1091,7 +1091,7 @@ Tool updates:
   and to clean 'nm' output of GCC & VBCC built a.out binaries for it
 
 Other changes:
-- HTML documentation indeces generated dynamically with JS
+- HTML documentation indices generated dynamically with JS
 - Debugger tests building fixed
 
 Fixed Games:
@@ -1196,7 +1196,7 @@ Other changes:
 - Hatari OSX UI updated for Hatari v1.6.1 changes
 - Hatari Python UI supports file paths with spaces in them and spaces in
   Hatari options given through its control socket can be quoted with '\'.
-- Support for alpha-numeric characters in Hconsole "text" command
+- Support for alphanumeric characters in Hconsole "text" command
 - Fixes to Hatari UI and hconsole error handling and examples
 - Fixed hatari-local-midi-ring.sh & hatari-local-rs232.sh arg handling
 - zip2st removes intermediate directories from created floppy
@@ -1727,7 +1727,7 @@ Emulator:
 - Support for hardscroll on STF, including the most recent ones using 4/5 lines.
 - Support for 4 pixels horizontal hardscroll on STF (ST Connexion in Punish
   Your Machine)
-- Small adjustements in cycle precise color handling (spec512.c)
+- Small adjustments in cycle precise color handling (spec512.c)
 
 
  Version 0.95 (2007-05-12):

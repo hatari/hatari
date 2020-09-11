@@ -231,7 +231,7 @@ void NvRam_Reset(void)
 			switch(VDIPlanes)
 			{
 			/* The case 1 is not handled, because that would result in 0x0000
-			 * which is an invalide video mode. This does not matter,
+			 * which is an invalid video mode. This does not matter,
 			 * since any color palette is good for monochrome, anyway. */
 			case 2:	/* set 320x200x4 colors */
 				nvram[NVRAM_VMODE1] = 0x00;

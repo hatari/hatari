@@ -5,7 +5,7 @@
 # Empty lines and lines which first char is '#' are ignored.
 
 # All TOS versions:
-# os_entry: BRA to reset hander (shadowed at $0).
+# os_entry: BRA to reset handler (shadowed at $0).
 # os_version: TOS version number. The high byte is the major revision
 #	number, and the low byte is the minor revision number.
 # reseth: Pointer to the system reset handler.

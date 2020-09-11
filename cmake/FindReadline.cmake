@@ -23,7 +23,7 @@ if(Readline_FOUND)
 			    "stdio.h;readline.h"
 			    HAVE_RL_COMPLETION_FUNCTION)
 	# If linking did not work, we might have to link
-	# explicitely against libtermcap or libncurses
+	# explicitly against libtermcap or libncurses
 	if(NOT HAVE_RL_COMPLETION_FUNCTION)
 		unset(Readline_FOUND)
 		find_package(Termcap)

@@ -24,7 +24,7 @@ const char ACIA_fileid[] = "Hatari acia.c : " __DATE__ " " __TIME__;
 
 
 /*
-  6850 ACIA (Asynchronous Communications Interface Apdater)
+  6850 ACIA (Asynchronous Communications Interface Adapter)
 
   References :
    - MC6850 datasheet by Motorola (DS9493R4, 1985)

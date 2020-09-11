@@ -3,7 +3,7 @@ From: Eero Tamminen <oak@helsinkinet.fi>
 Date: Tue, 31 Mar 2020 22:41:40 +0300
 Subject: [PATCH 2/3] Set reasonable PSG port-A default value
 
-Fixes continous IDE & DSP reset requests on Atari Falcon from 2Hz
+Fixes continuous IDE & DSP reset requests on Atari Falcon from 2Hz
 floppy media change detection when those bits happen to be set before
 Linux starts.
 

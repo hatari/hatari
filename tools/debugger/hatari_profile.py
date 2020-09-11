@@ -150,7 +150,7 @@ own costs fall below limit given with the -l option.  Remember to
 give -l option with them as -l defaults to 0.0 on callgraphs!
 
 Functions which are called from everywhere (like malloc), may be good
-candinates for '--ignore' option when one wants a more readable graph.
+candidates for '--ignore' option when one wants a more readable graph.
 One can then investigate them separately with the '--only <function>'
 option.
 

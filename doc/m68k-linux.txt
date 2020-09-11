@@ -612,7 +612,7 @@ with "noexec" or "nodev" option, otherwise it fails!
 To finish bootstrapping, one would need to boot it on m68k system
 and run "debootstrap --second-stage".
 
-TODO: test againt whether there are improvements to last status:
+TODO: test again whether there are improvements to last status:
 - Hatari:
   debootstrap fails to kernel oops
 - m68k system-qemu:

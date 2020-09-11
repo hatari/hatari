@@ -32,7 +32,7 @@ static int Microphone_Callback (const void *inputBuffer, void *outputBuffer,
                            PaStreamCallbackFlags statusFlags,
                            void *userData);
 
-/* Static datas */
+/* Static data */
 static PaStreamParameters micro_inputParameters;
 static PaStream *micro_stream;
 static PaError  micro_err;
@@ -72,7 +72,7 @@ static int Microphone_Callback (const void *inputBuffer, void *outputBuffer,
 	/* send buffer to crossbar */
 	Crossbar_GetMicrophoneDatas(micro_buffer_L, micro_buffer_R, framesPerBuffer);
 	
-	/* get Next Microphone datas */
+	/* get Next Microphone data */
 	return paContinue;
 }
 

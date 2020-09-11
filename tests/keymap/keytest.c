@@ -58,9 +58,9 @@ int main()
 	prg_init ();
 	graf_mouse(0, ARROW);
 	while (TRUE) {
-		/* mouse button, mouse co-ordinate 1,
-		 * mouse co-ordinate 2, message and timer events.
-		 * mouse co-ordinate, mouse button, special key and normal key states.
+		/* mouse button, mouse coordinate 1,
+		 * mouse coordinate 2, message and timer events.
+		 * mouse coordinate, mouse button, special key and normal key states.
 		 * number of mouse clicks.
 		 */
 		evnt_m = evnt_multi(MY_MU, 259, 3, 0, m1fl, pmx1, pmy1, pm1w, pm1h,

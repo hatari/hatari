@@ -1,6 +1,6 @@
 /** toc.js
 
-    This is a simplified version of the scipt "generated_toc.js" written by:
+    This is a simplified version of the script "generated_toc.js" written by:
             Stuart Langridge, July 2007
 
     The script is licensed under the terms of the MIT license.

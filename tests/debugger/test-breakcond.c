@@ -107,7 +107,7 @@ int main(int argc, const char *argv[])
 		"pc>pc :file data/test.ini :once",
 		NULL
 	};
-	/* address breakpoint + expression evalution with register */
+	/* address breakpoint + expression evaluation with register */
 	char addr_pass[] = "pc + ($200*16/2 & 0xffff)";
 
 	const char *nonmatching_tests[] = {
