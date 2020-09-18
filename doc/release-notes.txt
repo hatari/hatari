@@ -19,21 +19,38 @@ Following features are deprecated and will be removed in a future release:
 - The old ~/.hatari configuration file location (use ~/.config/hatari instead)
 
 Emulation:
-- Support for MegaSTE DIP switch register $FF9200
-  (set floppy drive to HD by default on MegaSTE/TT/Falcon)
-- support for DD/HD mode on MegaSTE at $FF860E
-  (when FDC is set to HD mode, reading DD floppies will fail)
-- Emulate additional RTC/NVRAM registers
-- Fix: IDE disks with sector size > 512 bytes
+- FDC / Disk :
+  - Support for MegaSTE DIP switch register $FF9200
+    (set floppy drive to HD by default on MegaSTE/TT/Falcon)
+  - support for DD/HD mode on MegaSTE at $FF860E
+    (when FDC is set to HD mode, reading DD floppies will fail)
+  - Support for the 'Disk Change' (DC) signal on TT machines on TT's MFP GPIP4
+  - Fix: IDE disks with sector size > 512 bytes
 - CPU:
   - Update CPU core to latest WinUAE 4.4.0 beta : full support for undocument
     fields in 68000 bus/address error stack frames, as well as CCR flags for
     most of the 680x0 instructions (using a cpu tester program on the real
     hardware that checks all possible opcodes' combinations)
+  - 68030 MMU hardware bus error support + various fixes
+  - FPU fixes
 - Video:
   - Improved timing when setting Vsync signal
     (same place where video counter is reloaded)
   - Handle screen where vertical DE signal is completely disabled
+  - Better start/end position for the VBlank signal at 50Hz and 60Hz
+- Sound:
+  - Add a better filter for downsampling the internal 250 kHz signal, should
+    give better results when the YM2149 outputs high frequency sounds
+- MFP :
+  - Rewrite MFP code to handle several MFP objects and add support
+    for the TT's 2nd MFP (not all TT's MFP signals are emulated yet)
+  - Improved Falcon's DMA sound interrupt on GPIP7 and AER
+- Blitter:
+  - Large rewrite of the blitter's core, improving cycle accuracy and
+    handling the complex cases where xcount=1 and nfsr=1. Code is slighlty
+    smaller and closer to the logic of the real hardware
+  - Handle restart in non HOG mode when the CPU uses a RMW instruction (eg TAS)
+- Emulate additional RTC/NVRAM registers
 
 Emulator:
 - Memory snapshot version increase due to FDC changes
@@ -138,9 +155,13 @@ Fixed demos:
   in bottom border)
 - Fullscreen part in Hard As Ice STE demo by I.C.E. (screen with no vertical
   DE signal)
+- Fullast Vinner by Troed/Sync (improved vblank position, partial fix for now)
+- Electric Night Falcon demo by Dune (MFP DMA sound interrupt on timer A using AER)
 
 Fixed programs:
 - Akaisex program reading AKAI S1000 HD floppies converted to STX
+- EmuTos drawing vertical lines with blitter and leaving some trails
+  (blitter in non HOG with TAS)
 
 
  Version 2.2.1 (2019-02-08)

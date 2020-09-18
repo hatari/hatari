@@ -40,6 +40,8 @@ is missing here, please remind me!):
 - Jorge Cwik (Ijor): creator of Pasti STX disk image. Reverse-engineered
   some decapped STF chips (GLUE, MMU, Shifter) and many low level description
   of the STF inner work, very useful to improve emulation accuracy.
+  Also wrote a Verilog Blitter matching the STE's real blitter, which helped
+  fixing the complex cases of xcount=1 and nfsr=1 in Hatari's blitter.
 
 - Paulo Simoes (ljkb): made some of the first descriptions of wakestates,
   as well as documenting all positions where hi/lo and 50/60 switches
