@@ -26,6 +26,10 @@ autostart/
   Allows testing whether problems in autostarted programs are due to
   TOS starting them too fast for all TOS facilities to be present
 
+blitter/
+- "make test" tests for different blitter combinations of xcount
+  and nfsr
+
 buserror/
 - "make test" tests for IO memory addresses which cause bus errors
   on real machines

@@ -1,0 +1,8 @@
+BLITEMU.TTP
+.L	[-G -L -Y -V]
+.C	[-Y -K]
+=
+../startup.s
+BLITEMU.C
+AHCCSTDI.LIB
+

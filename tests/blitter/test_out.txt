@@ -1,0 +1,48 @@
+>>>>> OP = 1 <<<<<
+SRC_INC = DST_INC = +2, FXSR = 0, NFSR = 0
+0 1 2 3 4 5 6 7 8 9 -1 -1 -1 -1 -1 -1 
+
+SRC_INC = DST_INC = +2, FXSR = 0, NFSR = 1
+-1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 
+
+SRC_INC = DST_INC = +2, FXSR = 1, NFSR = 0
+1 3 5 7 9 11 13 15 17 19 -1 -1 -1 -1 -1 -1 
+
+SRC_INC = DST_INC = +2, FXSR = 1, NFSR = 1
+-1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 
+
+SRC_INC = DST_INC = -2, FXSR = 0, NFSR = 0
+-1 -1 -1 -1 -1 -1 55 56 57 58 59 60 61 62 63 -1 
+
+SRC_INC = DST_INC = -2, FXSR = 0, NFSR = 1
+-1 -1 -1 -1 -1 -1 54 55 56 57 58 59 60 61 62 63 
+
+SRC_INC = DST_INC = -2, FXSR = 1, NFSR = 0
+-1 -1 -1 -1 -1 -1 45 47 49 51 53 55 57 59 61 63 
+
+SRC_INC = DST_INC = -2, FXSR = 1, NFSR = 1
+-1 -1 -1 -1 -1 -1 44 46 48 50 52 54 56 58 60 62 
+>>>>> OP = 3 <<<<<
+SRC_INC = DST_INC = +2, FXSR = 0, NFSR = 0
+0 1 2 3 4 5 6 7 8 9 -1 -1 -1 -1 -1 -1 
+
+SRC_INC = DST_INC = +2, FXSR = 0, NFSR = 1
+0 1 2 3 4 5 6 7 8 9 -1 -1 -1 -1 -1 -1 
+
+SRC_INC = DST_INC = +2, FXSR = 1, NFSR = 0
+1 3 5 7 9 11 13 15 17 19 -1 -1 -1 -1 -1 -1 
+
+SRC_INC = DST_INC = +2, FXSR = 1, NFSR = 1
+1 3 5 7 9 11 13 15 17 19 -1 -1 -1 -1 -1 -1 
+
+SRC_INC = DST_INC = -2, FXSR = 0, NFSR = 0
+-1 -1 -1 -1 -1 -1 55 56 57 58 59 60 61 62 63 19 
+
+SRC_INC = DST_INC = -2, FXSR = 0, NFSR = 1
+-1 -1 -1 -1 -1 -1 54 55 56 57 58 59 60 61 62 63 
+
+SRC_INC = DST_INC = -2, FXSR = 1, NFSR = 0
+-1 -1 -1 -1 -1 -1 45 47 49 51 53 55 57 59 61 63 
+
+SRC_INC = DST_INC = -2, FXSR = 1, NFSR = 1
+-1 -1 -1 -1 -1 -1 44 46 48 50 52 54 56 58 60 62 
