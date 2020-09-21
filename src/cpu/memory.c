@@ -1504,6 +1504,15 @@ bool memory_region_bus_error ( uaecptr addr )
 {
 	return mem_banks[bankindex(addr)] == &BusErrMem_bank;
 }
+
+/*
+ * Check if an address points to the IO memory region
+ * Returns true if it's the case
+ */
+bool memory_region_iomem ( uaecptr addr )
+{
+	return mem_banks[bankindex(addr)] == &IOmem_bank;
+}
 #endif
 
 
@@ -1769,12 +1778,17 @@ void memory_init(uae_u32 NewSTMemSize, uae_u32 NewTTMemSize, uae_u32 NewRomMemSt
     IOmem_bank.start = IOmem_start;
     init_bank ( &IOmem_bank , IOmem_size );
 
-    /* IDE controller memory region: */
-    map_banks_ce(&IdeMem_bank, IdeMem_start >> 16, 0x1, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);	/* IDE controller on the Falcon */
-    IdeMem_bank.baseaddr = IdeMemory;
-    IdeMem_bank.mask = IdeMem_mask;
-    IdeMem_bank.start = IdeMem_start ;
-    init_bank ( &IdeMem_bank , IdeMem_size );
+    /* IDE controller memory region at 0xF00000 (only for Falcon, else it's a bus error region) */
+    if ( Config_IsMachineFalcon() )
+    {
+	map_banks_ce(&IdeMem_bank, IdeMem_start >> 16, 0x1, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);	/* IDE controller on the Falcon */
+	IdeMem_bank.baseaddr = IdeMemory;
+	IdeMem_bank.mask = IdeMem_mask;
+	IdeMem_bank.start = IdeMem_start ;
+	init_bank ( &IdeMem_bank , IdeMem_size );
+    }
+    else
+	map_banks_ce(&BusErrMem_bank, IdeMem_start >> 16, 0x1, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
 
     /* Illegal memory regions cause a bus error on the ST: */
     map_banks_ce(&BusErrMem_bank, 0xF10000 >> 16, 0x9, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);

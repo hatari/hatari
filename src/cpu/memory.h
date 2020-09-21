@@ -510,6 +510,7 @@ extern addrbank *get_mem_bank_real(uaecptr);
 
 #ifdef WINUAE_FOR_HATARI
 extern bool memory_region_bus_error ( uaecptr addr );
+extern bool memory_region_iomem ( uaecptr addr );
 extern void memory_map_Standard_RAM ( Uint32 MMU_Bank0_Size , Uint32 MMU_Bank1_Size );
 #endif
 extern void memory_init(uae_u32 NewSTMemSize, uae_u32 NewTTMemSize, uae_u32 NewRomMemStart);
