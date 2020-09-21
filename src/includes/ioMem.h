@@ -116,6 +116,7 @@ extern void REGPARAM3 IoMem_bput(uaecptr addr, uae_u32 val);
 extern void REGPARAM3 IoMem_wput(uaecptr addr, uae_u32 val);
 extern void REGPARAM3 IoMem_lput(uaecptr addr, uae_u32 val);
 
+extern bool IoMem_CheckBusError ( Uint32 addr );
 extern void IoMem_BusErrorEvenReadAccess(void);
 extern void IoMem_BusErrorOddReadAccess(void);
 extern void IoMem_BusErrorEvenWriteAccess(void);

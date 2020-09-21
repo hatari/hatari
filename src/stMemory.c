@@ -511,14 +511,27 @@ bool	STMemory_CheckAreaType ( Uint32 addr , int size , int mem_type )
 
 
 /**
- * Check if an address points to a memory region that causes bus error
+ * Check if an address access would cause a bus error (read or write)
  * This is used for blitter and other DMA chips that should not cause
- * a bus error when accessing such regions (on the contrary of the CPU)
- * Returns true if region gives bus error
+ * a bus error when accessing directly such regions (on the contrary of the CPU)
+ * Bus error can come from :
+ *  - an access to a bus error region
+ *  - an access to a part of the IO region that cause a bus error
+ * Returns true if address would give a bus error
  */
-bool	STMemory_CheckRegionBusError ( Uint32 addr )
+bool	STMemory_CheckAddrBusError ( Uint32 addr )
 {
-	return memory_region_bus_error ( addr );
+	/* Check if it's a whole "bus error" region */
+	if ( memory_region_bus_error ( addr ) )
+		return true;
+
+	/* In case of IO region, bus error can happen at various addresses, depending on the machine type */
+	if ( memory_region_iomem ( addr ) && IoMem_CheckBusError ( addr ) )
+		return true;
+
+	/* TODO : in case of the Falcon, we should also check IDE region 0xF0xxxx for possible bus error */
+
+	return false;
 }
 
 

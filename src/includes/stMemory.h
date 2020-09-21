@@ -50,7 +50,7 @@ extern void STMemory_MemorySnapShot_Capture(bool bSave);
 extern void STMemory_SetDefaultConfig(void);
 extern int  STMemory_CorrectSTRamSize(void);
 extern bool STMemory_CheckAreaType ( Uint32 addr , int size , int mem_type );
-extern bool STMemory_CheckRegionBusError ( Uint32 addr );
+extern bool STMemory_CheckAddrBusError ( Uint32 addr );
 extern void *STMemory_STAddrToPointer ( Uint32 addr );
 extern char *STMemory_GetStringPointer(uint32_t addr);
 

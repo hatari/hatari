@@ -436,10 +436,11 @@ static Uint16 Blitter_ReadWord(Uint32 addr)
 	Uint16 value;
 
 	/* When reading from a bus error region, just return a constant */
-	if ( STMemory_CheckRegionBusError ( addr ) )
+	if ( STMemory_CheckAddrBusError ( addr ) )
 		value = BLITTER_READ_WORD_BUS_ERR;
 	else
 		value = (Uint16)get_word ( addr );
+//fprintf ( stderr , "read %x %x %x\n" , addr , value , STMemory_CheckAddrBusError(addr) );
 
 	BlitterState.CountBusBlitter++;
 	Blitter_AddCycles ( BLITTER_CYCLES_PER_BUS_READ );
@@ -455,9 +456,9 @@ static void Blitter_WriteWord(Uint32 addr, Uint16 value)
 
 	/* Call put_word only if the address doesn't point to a bus error region */
 	/* (also see SysMem_wput for addr < 0x8) */
-	if ( STMemory_CheckRegionBusError ( addr ) == false )
+	if ( STMemory_CheckAddrBusError ( addr ) == false )
 		put_word ( addr , (Uint32)(value) );
-//fprintf ( stderr , "write %x %x %x\n" , addr , value , STMemory_CheckRegionBusError(addr) );
+//fprintf ( stderr , "write %x %x %x\n" , addr , value , STMemory_CheckAddrBusError(addr) );
 
 	BlitterState.CountBusBlitter++;
 	Blitter_AddCycles ( BLITTER_CYCLES_PER_BUS_WRITE );

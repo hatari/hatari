@@ -796,6 +796,27 @@ void REGPARAM3 IoMem_lput(uaecptr addr, uae_u32 val)
 
 /*-------------------------------------------------------------------------*/
 /**
+ * Check if an address inside the IO mem region would return a bus error in case of a read/write access
+ * We only check if it would give a bus error on read access, as in our case it would give
+ * a bus error too in case of a write
+ */
+bool	IoMem_CheckBusError ( Uint32 addr )
+{
+	addr &= 0xffff;
+
+	if ( addr < 0x8000 )
+		return true;
+
+	if ( ( pInterceptReadTable[ addr - 0x8000 ] == IoMem_BusErrorOddReadAccess )
+	  || ( pInterceptReadTable[ addr - 0x8000 ] == IoMem_BusErrorEvenReadAccess ) )
+		return true;
+
+	return false;
+}
+
+
+/*-------------------------------------------------------------------------*/
+/**
  * This handler will be called if a ST program tries to read from an address
  * that causes a bus error on a real ST. However, we can't call M68000_BusError()
  * directly: For example, a "move.b $ff8204,d0" triggers a bus error on a real ST,
