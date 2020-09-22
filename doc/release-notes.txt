@@ -161,6 +161,7 @@ Fixed demos:
 - Oompa by No Extra (after greetings part) (blitter access to bus error regions)
 
 Fixed programs:
+- MS Write (crash), when it's run from GEMDOS HD
 - Akaisex program reading AKAI S1000 HD floppies converted to STX
 - EmuTos drawing vertical lines with blitter and leaving some trails
   (blitter in non HOG mode using TAS intruction to restart)
