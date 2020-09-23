@@ -50,7 +50,7 @@ Emulation:
     handling the complex cases where xcount=1 and nfsr=1. Code is slighlty
     smaller and closer to the logic of the real hardware
   - Handle restart in non HOG mode when the CPU uses a RMW instruction (eg TAS)
-  - Improve access to memory region that would generate a bus error for the CPU
+  - Improve access to memory regions that would generate a bus error for the CPU
 - Emulate additional RTC/NVRAM registers
 
 Emulator:
@@ -163,7 +163,7 @@ Fixed demos:
 Fixed programs:
 - Akaisex program reading AKAI S1000 HD floppies converted to STX
 - EmuTos drawing vertical lines with blitter and leaving some trails
-  (blitter in non HOG mode using TAS intructioni to restart)
+  (blitter in non HOG mode using TAS intruction to restart)
 
 
  Version 2.2.1 (2019-02-08)
