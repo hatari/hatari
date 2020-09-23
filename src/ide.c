@@ -45,9 +45,9 @@ static uint32_t ide_data_readw(void *opaque, uint32_t addr);
 static void ide_data_writel(void *opaque, uint32_t addr, uint32_t val);
 static uint32_t ide_data_readl(void *opaque, uint32_t addr);
 
-static bool Ide_MmioIsAvailable(void)
+bool Ide_MmioIsAvailable(void)
 {
-	return ConfigureParams.Ide[0].bUseDevice;
+	return Config_IsMachineFalcon() || ConfigureParams.Ide[0].bUseDevice;
 }
 
 /**
