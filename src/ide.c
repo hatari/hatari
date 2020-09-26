@@ -45,9 +45,17 @@ static uint32_t ide_data_readw(void *opaque, uint32_t addr);
 static void ide_data_writel(void *opaque, uint32_t addr, uint32_t val);
 static uint32_t ide_data_readl(void *opaque, uint32_t addr);
 
-bool Ide_MmioIsAvailable(void)
+/**
+ * Check whether IDE is available: The Falcon always has an IDE controller,
+ * and for the other machines it is normally only available on expansion
+ * cards - we assume that the users want us to emulate  an IDE controller
+ * on such an expansion card if one of the IDE drives has been enabled.
+ */
+bool Ide_IsAvailable(void)
 {
-	return Config_IsMachineFalcon() || ConfigureParams.Ide[0].bUseDevice;
+	return ConfigureParams.Ide[0].bUseDevice ||
+	       ConfigureParams.Ide[1].bUseDevice ||
+	       Config_IsMachineFalcon();
 }
 
 /**
@@ -93,7 +101,7 @@ uae_u32 REGPARAM3 Ide_Mem_bget(uaecptr addr)
 
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
-	if (addr >= 0xf00040 || !Ide_MmioIsAvailable())
+	if (addr >= 0xf00040 || !Ide_IsAvailable())
 	{
 		/* invalid memory addressing --> bus error */
 		M68000_BusError(addr_in, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, 0);
@@ -130,7 +138,7 @@ uae_u32 REGPARAM3 Ide_Mem_wget(uaecptr addr)
 
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
-	if (addr >= 0xf00040 || !Ide_MmioIsAvailable())
+	if (addr >= 0xf00040 || !Ide_IsAvailable())
 	{
 		/* invalid memory addressing --> bus error */
 		M68000_BusError(addr_in, BUS_ERROR_READ, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA, 0);
@@ -161,7 +169,7 @@ uae_u32 REGPARAM3 Ide_Mem_lget(uaecptr addr)
 
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
-	if (addr >= 0xf00040 || !Ide_MmioIsAvailable())
+	if (addr >= 0xf00040 || !Ide_IsAvailable())
 	{
 		/* invalid memory addressing --> bus error */
 		M68000_BusError(addr_in, BUS_ERROR_READ, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA, 0);
@@ -198,7 +206,7 @@ void REGPARAM3 Ide_Mem_bput(uaecptr addr, uae_u32 val)
 
 	LOG_TRACE(TRACE_IDE, "IDE: bput($%x, $%x)\n", addr, val);
 
-	if (addr >= 0xf00040 || !Ide_MmioIsAvailable())
+	if (addr >= 0xf00040 || !Ide_IsAvailable())
 	{
 		/* invalid memory addressing --> bus error */
 		M68000_BusError(addr_in, BUS_ERROR_WRITE, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, val);
@@ -230,7 +238,7 @@ void REGPARAM3 Ide_Mem_wput(uaecptr addr, uae_u32 val)
 
 	LOG_TRACE(TRACE_IDE, "IDE: wput($%x, $%x)\n", addr, val);
 
-	if (addr >= 0xf00040 || !Ide_MmioIsAvailable())
+	if (addr >= 0xf00040 || !Ide_IsAvailable())
 	{
 		/* invalid memory addressing --> bus error */
 		M68000_BusError(addr_in, BUS_ERROR_WRITE, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA, val);
@@ -255,7 +263,7 @@ void REGPARAM3 Ide_Mem_lput(uaecptr addr, uae_u32 val)
 
 	LOG_TRACE(TRACE_IDE, "IDE: lput($%x, $%x)\n", addr, val);
 
-	if (addr >= 0xf00040 || !Ide_MmioIsAvailable())
+	if (addr >= 0xf00040 || !Ide_IsAvailable())
 	{
 		/* invalid memory addressing --> bus error */
 		M68000_BusError(addr_in, BUS_ERROR_WRITE, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA, val);
@@ -2690,7 +2698,7 @@ void Ide_Init(void)
 {
 	int i;
 
-	if (!Ide_MmioIsAvailable() )
+	if (!Ide_IsAvailable() )
 		return;
 
 	opaque_ide_if = calloc(2, sizeof(IDEState));

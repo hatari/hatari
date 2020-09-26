@@ -1779,7 +1779,7 @@ void memory_init(uae_u32 NewSTMemSize, uae_u32 NewTTMemSize, uae_u32 NewRomMemSt
     init_bank ( &IOmem_bank , IOmem_size );
 
     /* IDE controller memory region at 0xF00000 (for Falcon or can be forced for other machines, else it's a bus error region) */
-    if ( Ide_MmioIsAvailable() )
+    if (Ide_IsAvailable())
     {
 	map_banks_ce(&IdeMem_bank, IdeMem_start >> 16, 0x1, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);	/* IDE controller on the Falcon */
 	IdeMem_bank.baseaddr = IdeMemory;
