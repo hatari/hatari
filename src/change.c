@@ -407,7 +407,7 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	}
 
 	/* Mount a new IDE HD images: */
-	if (bReInitIDEEmu && (ConfigureParams.Ide[0].bUseDevice || ConfigureParams.Ide[1].bUseDevice))
+	if (bReInitIDEEmu && Ide_IsAvailable())
 	{
 		Dprintf("- IDE<\n");
 		Ide_Init();
