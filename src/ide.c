@@ -2583,10 +2583,12 @@ static void ide_init2(IDEState *ide_state, BlockDriverState *hd0,
 
 	for (i = 0; i < 2; i++)
 	{
+		s = ide_state + i;
+		s->cur_drive = s;
+
 		if (!ConfigureParams.Ide[i].bUseDevice)
 			continue;
 
-		s = ide_state + i;
 		s->io_buffer = malloc(MAX_MULT_SECTORS * MAX_SECTOR_SIZE + 4);
 		assert(s->io_buffer);
 		if (i == 0)
