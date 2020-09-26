@@ -472,7 +472,8 @@ static int bdrv_read(BlockDriverState *bs, int64_t sector_num,
 	ret = fread(buf, 1, len, bs->fhndl);
 	if (ret != len)
 	{
-		fprintf(stderr,"IDE: bdrv_read error (%d != %d length) at sector %lu!\n", ret, len, (unsigned long)sector_num);
+		Log_Printf(LOG_ERROR, "IDE: bdrv_read error (%d != %d length) at sector %lu!\n",
+		           ret, len, (unsigned long)sector_num);
 		return -EINVAL;
 	}
 
@@ -536,8 +537,8 @@ static int bdrv_write(BlockDriverState *bs, int64_t sector_num,
 	}
 	if (ret != len)
 	{
-		fprintf(stderr,"IDE: bdrv_write error (%d != %d length) at sector %lu!\n",
-		        ret, len,  (unsigned long)sector_num);
+		Log_Printf(LOG_ERROR, "IDE: bdrv_write error (%d != %d length) at sector %lu!\n",
+		           ret, len,  (unsigned long)sector_num);
 		return -EIO;
 	}
 
@@ -1770,7 +1771,7 @@ static void ide_atapi_cmd(IDEState *s)
 		switch (format)
 		{
 		case 0:
-			fprintf(stderr,"IDE FIXME: cdrom_read_toc");
+			Log_Printf(LOG_ERROR, "IDE FIXME: cdrom_read_toc not implemented");
 			len=-1;
 			//len = cdrom_read_toc(total_sectors, buf, msf, start_track);
 			if (len < 0)
@@ -1786,7 +1787,7 @@ static void ide_atapi_cmd(IDEState *s)
 			ide_atapi_cmd_reply(s, 12, max_len);
 			break;
 		case 2:
-			fprintf(stderr,"IDE FIXME: cdrom_read_toc_raw");
+			Log_Printf(LOG_ERROR, "IDE FIXME: cdrom_read_toc_raw not implemented");
 			len=-1;
 			//len = cdrom_read_toc_raw(total_sectors, buf, msf, start_track);
 			if (len < 0)
@@ -2028,7 +2029,8 @@ static void ide_ioport_write(void *opaque, uint32_t addr, uint32_t val)
 		/* ignore commands to non existent IDE device 1 */
 		if (s != ide_if && !s->bs)
 		{
-			fprintf(stderr,"IDE: CMD to non-existent IDE device #1!\n");
+			Log_Printf(LOG_INFO, "IDE: Tried to send command to "
+			           "non-existent IDE device #1!\n");
 			break;
 		}
 
@@ -2153,7 +2155,7 @@ static void ide_ioport_write(void *opaque, uint32_t addr, uint32_t val)
 				goto abort_cmd;
 			ide_cmd_lba48_transform(s, lba48);
 			// ide_sector_read_dma(s);
-			fprintf(stderr, "IDE: DMA read not supported!\n");
+			Log_Printf(LOG_ERROR, "IDE: DMA read not supported!\n");
 			break;
 		case WIN_WRITEDMA_EXT:
 			lba48 = 1;
@@ -2164,7 +2166,7 @@ static void ide_ioport_write(void *opaque, uint32_t addr, uint32_t val)
 				goto abort_cmd;
 			ide_cmd_lba48_transform(s, lba48);
 			// ide_sector_write_dma(s);
-			fprintf(stderr, "IDE: DMA write not supported!\n");
+			Log_Printf(LOG_ERROR, "IDE: DMA write not supported!\n");
 			s->media_changed = 1;
 			break;
 		case WIN_READ_NATIVE_MAX_EXT:
