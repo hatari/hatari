@@ -2511,12 +2511,12 @@ been partitioned elsewhere.
 As the IDE disk format (little endian) differs from the ACSI disk format
 (big endian), you need separate disk images for them.  Hatari doesn't
 currently support partitioning IDE disks with AHDI, but you can do it with
-<em>Cecile</em>.
+<em>C&eacute;cile</em>.
 </p>
 <p>
 First create an empty image file with the size of your choice with:
 <span class="commandline">dd if=/dev/zero of=hd.img bs=1k count=xxx</span>.
-Then get the Cecile hard disk driver from
+Then get the C&eacute;cile hard disk driver from
 <a href="http://centek.free.fr/atari/softs/s_cecile.htm">http://centek.free.fr/atari/softs/s_cecile.htm</a>
 and put it on a floppy disk image (e.g. to one named "cecile.st" using:
 <span class="commandline">zip2st.sh cecile.zip</span>).
@@ -2525,7 +2525,7 @@ and put it on a floppy disk image (e.g. to one named "cecile.st" using:
 Run Hatari with
 <span class="commandline">hatari --machine falcon --tos tos404.rom
 --ide-master hd.img cecile.st</span>, switch to larger color resolution
-and warm up your French language skills. Then start the Cecile hard
+and warm up your French language skills. Then start the C&eacute;cile hard
 disk driver CECILE.PRG and run CC_TOOLS.APP to partition your hard
 disk image. Click the "Partition" button, select "Hatari IDE disk" and set
 suitable partition size with the arrows (below type field). Then click
@@ -2533,9 +2533,9 @@ suitable partition size with the arrows (below type field). Then click
 </p>
 <p>
 If you only want to use your HD image in Falcon mode, you can install
-the Cecile hard disk driver to the image from the Cecile CC_TOOLS.APP:
-Click the "Installer" button and save the Cecile driver to the
-1st partition on "Hatari IDE disk". If you want to also use your HD
+the C&eacute;cile hard disk driver to the image from the C&eacute;cile
+CC_TOOLS.APP: Click the "Installer" button and save the C&eacute;cile driver
+to the 1st partition on "Hatari IDE disk". If you want to also use your HD
 image in ST/STE mode, you need to get and install either HD Driver or
 AHDI 6 driver on it instead (see <a href="#ACSI_hard_drive_emulation">ASCI
 hard drive emulation</a> section).
@@ -2612,13 +2612,13 @@ with Hatari can be used to create such an image.
 <p>
 Inside the Hatari emulator, EmuTOS can access partition(s) on these
 kind of images directly without any driver software.  Of the Atari HD
-drivers mentioned above, Centek's Cecile and Uwe Seimet's HD Driver
+drivers mentioned above, Centek's C&eacute;cile and Uwe Seimet's HD Driver
 (demo) work fine with these partitions. E.g. AHDI and CBHD don't.
-Cecile works only with TT or Falcon.
+C&eacute;cile works only with TT or Falcon.
 </p>
 <p>
 To summarise; if EmuTOS is enough, use that. Otherwise, if you want to
-use TT or Falcon emulation, use Cecile (or full HD Driver version if
+use TT or Falcon emulation, use C&eacute;cile (or full HD Driver version if
 you have it), otherwise use HD Driver (demo).
 </p>
 <p>
