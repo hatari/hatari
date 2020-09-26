@@ -81,6 +81,7 @@ extern addrbank mem_banks[65536];
 #endif
 
 extern bool memory_region_bus_error ( uaecptr addr );
+extern bool memory_region_iomem ( uaecptr addr );
 extern void memory_map_Standard_RAM ( Uint32 MMU_Bank0_Size , Uint32 MMU_Bank1_Size );
 extern void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMemStart);
 extern void memory_uninit (void);

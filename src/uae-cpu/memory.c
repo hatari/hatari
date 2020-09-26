@@ -687,6 +687,15 @@ bool memory_region_bus_error ( uaecptr addr )
 	return mem_banks[bankindex(addr)] == &BusErrMem_bank;
 }
 
+/*
+ * Check if an address points to the IO memory region
+ * Returns true if it's the case
+ */
+bool memory_region_iomem ( uaecptr addr )
+{
+	return mem_banks[bankindex(addr)] == &IOmem_bank;
+}
+
 
 /*
  * Initialize the standard RAM memory banks
