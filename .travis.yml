@@ -1,4 +1,4 @@
-dist: bionic
+dist: focal
 language: c
 compiler:
   - gcc
@@ -26,7 +26,15 @@ matrix:
   include:
 
     - env:
-        - CONFIG="--disable-winuae-cpu --enable-small-mem --enable-werror"
+        - CONFIG="--enable-osx-bundle --disable-winuae-cpu --enable-debug"
+      os: osx
+      osx_image: xcode10
+      compiler: clang
+
+    - env:
+        - CONFIG="--enable-osx-bundle --enable-winuae-cpu --enable-debug"
+      os: osx
+      osx_image: xcode12
       compiler: clang
 
     - env:
@@ -42,13 +50,5 @@ matrix:
       arch: s390x
 
     - env:
-        - CONFIG="--enable-osx-bundle --disable-winuae-cpu --enable-debug"
-      os: osx
-      osx_image: xcode11.4
-      compiler: clang
-
-    - env:
-        - CONFIG="--enable-osx-bundle --disable-winuae-cpu --enable-debug"
-      os: osx
-      osx_image: xcode11.2
+        - CONFIG="--disable-winuae-cpu --enable-small-mem --enable-werror"
       compiler: clang
