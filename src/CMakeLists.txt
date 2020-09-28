@@ -34,7 +34,7 @@ endif()
 # When building for Windows, define specific sources for gui and resources
 # and set the subsystem of the resulting .exe to "windows GUI" instead of "console"
 # Recent mingw version sets _FORTIFY_SOURCE, which requires to link with lib ssp.
-# We use "--as-needed" to keep compatibilty with older mingw that don't require lib ssp
+# We use "--as-needed" to keep compatibility with older mingw that don't require lib ssp
 if(WIN32)
 	set(GUIWIN_SOURCES gui-win/opencon.c)
 	set(GUIWIN_RES gui-win/hatari-winicon.rc)
