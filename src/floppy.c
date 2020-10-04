@@ -33,6 +33,7 @@ const char Floppy_fileid[] = "Hatari floppy.c : " __DATE__ " " __TIME__;
 #include "floppy.h"
 #include "gemdos.h"
 #include "hdc.h"
+#include "ncr5380.h"
 #include "log.h"
 #include "memorySnapShot.h"
 #include "st.h"
@@ -174,7 +175,7 @@ void Floppy_GetBootDrive(void)
 	if (!ConfigureParams.HardDisk.bBootFromHardDisk)
 		return;
 
-	if (bAcsiEmuOn || ConfigureParams.Ide[0].bUseDevice)
+	if (bAcsiEmuOn || bScsiEmuOn || ConfigureParams.Ide[0].bUseDevice)
 	{
 		nBootDrive = 2;  /* Drive C */
 	}
