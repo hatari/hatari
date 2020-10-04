@@ -465,7 +465,7 @@ int DebugCpu_MemDump(int nArgc, char *psArgs[])
 	if (nArgc > 1)
 		mode = tolower(psArgs[arg][0]);
 
-	if (!mode || isdigit(psArgs[arg][0]) || psArgs[arg][1])
+	if (!mode || isdigit((unsigned char)psArgs[arg][0]) || psArgs[arg][1])
 	{
 		/* no args, single digit or multiple chars -> default mode */
 		mode = 'b';
@@ -589,7 +589,7 @@ static int DebugCpu_MemWrite(int nArgc, char *psArgs[])
 	mode = tolower(psArgs[arg][0]);
 	max_values = ARRAY_SIZE(store.bytes);
 
-	if (!mode || isdigit(psArgs[arg][0]) || psArgs[arg][1])
+	if (!mode || isdigit((unsigned char)psArgs[arg][0]) || psArgs[arg][1])
 	{
 		/* no args, single digit or multiple chars -> default mode */
 		mode = 'b';

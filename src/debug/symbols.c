@@ -858,7 +858,7 @@ static symbol_list_t* symbols_load_ascii(FILE *fp, Uint32 *offsets, Uint32 maxad
 		if (!*buf) {
 			continue;
 		}
-		if (!isxdigit(*buf)) {
+		if (!isxdigit((unsigned char)*buf)) {
 			fprintf(stderr, "ERROR: line %d doesn't start with an address.\n", line);
 			return NULL;
 		}

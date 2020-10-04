@@ -1666,7 +1666,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 		case OPT_ACSIHDIMAGE:
 			i += 1;
 			str = argv[i];
-			if (strlen(str) > 2 && isdigit(str[0]) && str[1] == '=')
+			if (strlen(str) > 2 && isdigit((unsigned char)str[0]) && str[1] == '=')
 			{
 				drive = str[0] - '0';
 				if (drive < 0 || drive >= MAX_ACSI_DEVS)
@@ -1689,7 +1689,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 		case OPT_SCSIHDIMAGE:
 			i += 1;
 			str = argv[i];
-			if (strlen(str) > 2 && isdigit(str[0]) && str[1] == '=')
+			if (strlen(str) > 2 && isdigit((unsigned char)str[0]) && str[1] == '=')
 			{
 				drive = str[0] - '0';
 				if (drive < 0 || drive >= MAX_SCSI_DEVS)
@@ -1734,7 +1734,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 		case OPT_IDEBYTESWAP:
 			i += 1;
 			str = argv[i];
-			if (strlen(str) > 2 && isdigit(str[0]) && str[1] == '=')
+			if (strlen(str) > 2 && isdigit((unsigned char)str[0]) && str[1] == '=')
 			{
 				drive = str[0] - '0';
 				if (drive < 0 || drive > 1)
