@@ -665,7 +665,11 @@ void Statusbar_UpdateInfo(void)
 			end = Statusbar_AddString(end, "RGB");
 			break;
 		case MONITOR_TYPE_VGA:
-			end = Statusbar_AddString(end, "VGA");
+			/* There were no VGA monitors for the ST/STE */
+			if (Config_IsMachineST() || Config_IsMachineSTE())
+				end = Statusbar_AddString(end, "RGB");
+			else
+				end = Statusbar_AddString(end, "VGA");
 			break;
 		case MONITOR_TYPE_TV:
 			end = Statusbar_AddString(end, "TV");
