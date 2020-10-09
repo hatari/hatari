@@ -11,6 +11,7 @@
 #ifndef HATARI_HDC_H
 #define HATARI_HDC_H
 
+#include <sys/types.h>  /* For off_t */
 
 /* Opcodes */
 /* The following are multi-sector transfers with seek implied */
