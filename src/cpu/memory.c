@@ -57,7 +57,7 @@ static uae_u32 TTmem_mask;
 
 /* Some prototypes: */
 static int REGPARAM3 STmem_check (uaecptr addr, uae_u32 size) REGPARAM;
-static uae_u8 REGPARAM3 *STmem_xlate (uaecptr addr) REGPARAM;
+static uae_u8 * REGPARAM3 STmem_xlate (uaecptr addr) REGPARAM;
 
 
 
@@ -388,7 +388,7 @@ static int REGPARAM2 dummy_check (uaecptr addr, uae_u32 size)
 	return 0;
 }
 
-static uae_u8 REGPARAM3 *dummy_xlate(uaecptr addr)
+static uae_u8 * REGPARAM3 dummy_xlate(uaecptr addr)
 {
     write_log("Your Atari program just did something terribly stupid:"
               " dummy_xlate($%x)\n", addr);
@@ -537,7 +537,7 @@ static int REGPARAM3 BusErrMem_check(uaecptr addr, uae_u32 size)
     return 0;
 }
 
-static uae_u8 REGPARAM3 *BusErrMem_xlate (uaecptr addr)
+static uae_u8 * REGPARAM3 BusErrMem_xlate (uaecptr addr)
 {
     write_log("Your Atari program just did something terribly stupid:"
               " BusErrMem_xlate($%x)\n", addr);
@@ -601,7 +601,7 @@ static int REGPARAM3 STmem_check(uaecptr addr, uae_u32 size)
     return (addr + size) <= STmem_size;
 }
 
-static uae_u8 REGPARAM3 *STmem_xlate(uaecptr addr)
+static uae_u8 * REGPARAM3 STmem_xlate(uaecptr addr)
 {
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
@@ -932,7 +932,7 @@ static int REGPARAM3 VoidMem_check(uaecptr addr, uae_u32 size)
     return 0;
 }
 
-static uae_u8 REGPARAM3 *VoidMem_xlate (uaecptr addr)
+static uae_u8 * REGPARAM3 VoidMem_xlate (uaecptr addr)
 {
     write_log("Your Atari program just did something terribly stupid:"
               " VoidMem_xlate($%x)\n", addr);
@@ -994,7 +994,7 @@ static int REGPARAM3 TTmem_check(uaecptr addr, uae_u32 size)
     return (addr + size) <= TTmem_size;
 }
 
-static uae_u8 REGPARAM3 *TTmem_xlate(uaecptr addr)
+static uae_u8 * REGPARAM3 TTmem_xlate(uaecptr addr)
 {
     addr -= TTmem_start & TTmem_mask;
     addr &= TTmem_mask;
@@ -1055,7 +1055,7 @@ static int REGPARAM3 ROMmem_check(uaecptr addr, uae_u32 size)
     return (addr + size) <= ROMmem_size;
 }
 
-static uae_u8 REGPARAM3 *ROMmem_xlate(uaecptr addr)
+static uae_u8 * REGPARAM3 ROMmem_xlate(uaecptr addr)
 {
     addr -= ROMmem_start & ROMmem_mask;
     addr &= ROMmem_mask;
@@ -1075,7 +1075,7 @@ static int REGPARAM3 IdeMem_check(uaecptr addr, uae_u32 size)
     return (addr + size) <= IdeMem_size;
 }
 
-static uae_u8 REGPARAM3 *IdeMem_xlate(uaecptr addr)
+static uae_u8 * REGPARAM3 IdeMem_xlate(uaecptr addr)
 {
     addr -= IdeMem_start;
     addr &= IdeMem_mask;
@@ -1095,7 +1095,7 @@ static int REGPARAM3 IOmem_check(uaecptr addr, uae_u32 size)
     return (addr + size) <= IOmem_size;
 }
 
-static uae_u8 REGPARAM3 *IOmem_xlate(uaecptr addr)
+static uae_u8 * REGPARAM3 IOmem_xlate(uaecptr addr)
 {
     addr -= IOmem_start;
     addr &= IOmem_mask;
