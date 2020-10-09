@@ -1853,7 +1853,7 @@ static void map_banks2 (addrbank *bank, int start, int size, int realsize, int q
 #else
 	int bnr;
 	unsigned long int hioffs = 0, endhioffs = 0x100;
-	uae_u32 realstart __attribute__((unused)) = start;
+	NOWARN_UNUSED(uae_u32 realstart) = start;
 #endif
 
 //printf ( "map %x %x 24=%d\n" , start<<16 , size<<16 , currprefs.address_space_24 );

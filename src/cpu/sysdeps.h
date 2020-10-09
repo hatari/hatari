@@ -21,7 +21,9 @@
 
 #ifdef WINUAE_FOR_HATARI
 #include "compat.h"
+#ifdef __GNUC__
 #define HAVE_VAR_ATTRIBUTE_UNUSED 1
+#endif
 #endif
 
 #ifndef UAE
