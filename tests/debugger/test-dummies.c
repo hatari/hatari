@@ -175,7 +175,6 @@ void Video_GetPosition(int *pFrameCycles, int *pHBL, int *pLineCycles)
 
 /* only function needed from file.c */
 #include <sys/stat.h>
-#include <sys/time.h>
 #include "file.h"
 bool File_Exists(const char *filename)
 {
