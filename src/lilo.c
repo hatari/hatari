@@ -821,7 +821,7 @@ static bool create_bootinfo(void)
 static bool add_bi_record(uint16_t tag, uint16_t size, const void *data)
 {
 	struct bi_record *record;
-	u_short size2;
+	unsigned short size2;
 
 	size2 = (sizeof(struct bi_record) + size + 3) & -4;
 	if (bi_size + size2 + sizeof(bi_union.record.tag) > MAX_BI_SIZE) {
