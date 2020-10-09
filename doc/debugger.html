@@ -299,9 +299,9 @@ value.)
 </p>
 
 <p>
-With command argument completion (see <a href="#Build_notes">build
-notes</a>), result from the last "evaluate" command can be inserted
-by typing '$' and pressing TAB.
+With command argument completion (see <a href="#readline">readline</a>),
+result from the last "evaluate" command can be inserted by typing '$'
+and pressing TAB.
 </p>
 
 
@@ -980,6 +980,11 @@ instructions aren't supported currently.)
 
 
 <h3>Tracing</h3>
+
+<p>
+(Hatari needs to be built with ENABLE_TRACING define set for
+tracing to work. By default it is.)
+</p>
 
 <p>
 If you want e.g. to continue with real-time disassembling, you can
@@ -2022,22 +2027,67 @@ the DSP.
 </p>
 
 
-<h3 id="Build_notes">Build notes</h3>
+<h3 id="readline">Command line editing and libreadline</h3>
 
 <p>
-Lastly, the debugger is much nicer to use with the command line
-history, editing and especially the completion support for the
-command, command argument and symbol names.
+Hatari debugger is much nicer to use with the command line history,
+editing and especially the completion support for the command, command
+argument and symbol names. Like many other programs (Bash etc),
+debugger uses libreadline to handle this.
 </p>
+
+
+<h4>Hatari building</h4>
 <p>
-If you are building Hatari yourself, please make sure that you have the
-GNU readline development files installed (on Debian / Ubuntu these
-come from the libreadline5-dev package). Otherwise the name completion
-and other features don't get enabled when you configure Hatari.
+If you are building Hatari yourself, please make sure that you have
+the GNU readline development files installed (on Debian / Ubuntu these
+come from the "libreadline*-dev" packages). Otherwise the name
+completion and other features don't get enabled when you configure
+Hatari.
 </p>
+
+
+<h4>Keyboard shortcuts</h4>
+
 <p>
-ENABLE_TRACING define needs to be set for tracing to work.
-By default it should be enabled.
+In addition to the normal line editing keys, libreadline supports
+several keyboard shorcuts ('^' indicates Control-key):
+</p>
+<ul>
+ <li>Cursor movement (sometimes preferable over using arrow keys):</li>
+ <ul>
+   <li>^B - backward</li>
+   <li>^F - forward</li>
+   <li>^arrow - move by word</li>
+   <li>^A - start of line</li>
+   <li>^E - end of line</li>
+   <li>^P - previous line</li>
+   <li>^N - next line</li>
+ </ul>
+ <li>Cut / paste (relative to cursor position):</li>
+ <ul>
+   <li>^W - cut previous word (space separated)</li>
+   <li>^K - cut ("kill") to end of line</li>
+   <li>^U - cut to start of line</li>
+   <li>^Y - paste ("yank") deleted content</li>
+ </ul>
+ <li>Other text changes:</li>
+ <ul>
+   <li>^D - delete character</li>
+   <li>^T - transpose (switch) last 2 characters</li>
+   <li>^_ - undo last change</li>
+ </ul>
+ <li>Miscanellous:</li>
+ <ul>
+   <li>^R - history ("reverse") search</li>
+   <li>^L - clear screen and redraw line</li>
+ </ul>
+</ul>
+
+<p>
+(Above shortcuts are inherited from Emacs text editor, and work also
+in all shells using readline.  See "man readline" on how to configure
+them.)
 </p>
 
 </body>
