@@ -113,17 +113,19 @@ Emulator:
     (so that they don't flood console)
   - Fix: exception in profile post-processor script
     (with symbol address aliases)
-- Debugger:
+- Tracing:
   - Fix: CPU disassembly trace output doesn't go to specified trace file
+  - Trace flags can be added and removed instead of needing to
+    always specify all the relevant ones, both with "--trace"
+    command line option and debugger "trace" command:
+    --trace os_base,aes, trace +xbios,bios, trace -bios,-aes
+  - VDI trace shows names also for NVDI/Speedo/GDOS functions
+- Debugger:
   - New "screenshot" command for saving screen dump to a PNG/BMP file
   - "symbols resident" option replaced with "symbols autoload"
     option which can be used to completely disable automatic symbol
     loading and unloading for programs run through the GEMDOS HD
     (helps debugging resident programs started from GEMDOS HD)
-  - Trace flags can be added and removed instead of needing to
-    always specify all the relevant ones, both with "--trace"
-    command line option and debugger "trace" command:
-    --trace os_base,aes, trace +xbios,bios, trace -bios,-aes
   - Improvements to UAE and external disassembler disassembly
   - UAE disassembler is now default instead of external one
     (latter doesn't decode all instructions correctly)
