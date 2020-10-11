@@ -51,7 +51,6 @@ static Uint32 GetFrameCycles(void)
 }
 
 /* helpers for TOS OS call opcode accessor functions */
-#define INVALID_OPCODE 0xFFFFu
 
 static inline Uint16 getLineOpcode(Uint8 line)
 {
@@ -113,7 +112,7 @@ static Uint32 GetXbiosOpcode(void)
 	}
 	return INVALID_OPCODE;
 }
-static Uint32 GetAesOpcode(void)
+Uint32 Vars_GetAesOpcode(void)
 {
 	if (isTrap(2)) {
 		Uint16 d0 = Regs[REG_D0];
@@ -126,7 +125,7 @@ static Uint32 GetAesOpcode(void)
 	}
 	return INVALID_OPCODE;
 }
-static Uint32 GetVdiOpcode(void)
+Uint32 Vars_GetVdiOpcode(void)
 {
 	if (isTrap(2)) {
 		Uint16 d0 = Regs[REG_D0];
@@ -155,7 +154,7 @@ static Uint32 GetNextPC(void)
 
 /* sorted by variable name so that this can be bisected */
 static const var_addr_t hatari_vars[] = {
-	{ "AesOpcode", (Uint32*)GetAesOpcode, VALUE_TYPE_FUNCTION32, 16, "$FFFF when not on AES trap" },
+	{ "AesOpcode", (Uint32*)Vars_GetAesOpcode, VALUE_TYPE_FUNCTION32, 16, "$FFFF when not on AES trap" },
 	{ "Basepage", (Uint32*)DebugInfo_GetBASEPAGE, VALUE_TYPE_FUNCTION32, 0, "invalid before Desktop is up" },
 	{ "BiosOpcode", (Uint32*)GetBiosOpcode, VALUE_TYPE_FUNCTION32, 16, "$FFFF when not on BIOS trap" },
 	{ "BSS", (Uint32*)DebugInfo_GetBSS, VALUE_TYPE_FUNCTION32, 0, "invalid before Desktop is up" },
@@ -178,7 +177,7 @@ static const var_addr_t hatari_vars[] = {
 	{ "TEXT", (Uint32*)DebugInfo_GetTEXT, VALUE_TYPE_FUNCTION32, 0, "invalid before Desktop is up" },
 	{ "TEXTEnd", (Uint32*)DebugInfo_GetTEXTEnd, VALUE_TYPE_FUNCTION32, 0, "invalid before Desktop is up" },
 	{ "VBL", (Uint32*)&nVBLs, VALUE_TYPE_VAR32, sizeof(nVBLs)*8, NULL },
-	{ "VdiOpcode", (Uint32*)GetVdiOpcode, VALUE_TYPE_FUNCTION32, 16, "$FFFF when not on VDI trap" },
+	{ "VdiOpcode", (Uint32*)Vars_GetVdiOpcode, VALUE_TYPE_FUNCTION32, 16, "$FFFF when not on VDI trap" },
 	{ "XbiosOpcode", (Uint32*)GetXbiosOpcode, VALUE_TYPE_FUNCTION32, 16, "$FFFF when not on XBIOS trap" }
 };
 

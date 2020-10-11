@@ -49,4 +49,11 @@ extern Uint32 Vars_GetValue(const var_addr_t *hvar);
 /* list variables & their names */
 extern int Vars_List(int nArgc, char *psArgv[]);
 
+/* opcode functions return for no opcode */
+#define INVALID_OPCODE 0xFFFFu
+
+/* Whether on AES/VDI trap */
+extern Uint32 Vars_GetAesOpcode(void);
+extern Uint32 Vars_GetVdiOpcode(void);
+
 #endif

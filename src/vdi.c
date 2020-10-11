@@ -23,6 +23,7 @@ const char VDI_fileid[] = "Hatari vdi.c : " __DATE__ " " __TIME__;
 #include "screen.h"
 #include "stMemory.h"
 #include "tos.h"
+#include "vars.h"
 #include "vdi.h"
 #include "video.h"
 
@@ -378,6 +379,28 @@ static void AES_OpcodeInfo(FILE *fp, Uint16 opcode)
 }
 
 /**
+ * Verify given VDI table pointer and store variables from
+ * it for later use. Return true for success
+ */
+static bool AES_StoreVars(Uint32 TablePtr)
+{
+	if (!STMemory_CheckAreaType(TablePtr, 24, ABFLAG_RAM))
+	{
+		Log_Printf(LOG_WARN, "AES param store failed due to invalid parameter block address 0x%x+%i\n", TablePtr, 24);
+		return false;
+	}
+	/* store values for debugger "info aes" command */
+	AESControl = STMemory_ReadLong(TablePtr);
+	AESGlobal  = STMemory_ReadLong(TablePtr+4);
+	AESIntin   = STMemory_ReadLong(TablePtr+8);
+	AESIntout  = STMemory_ReadLong(TablePtr+12);
+	AESAddrin  = STMemory_ReadLong(TablePtr+16);
+	AESAddrout = STMemory_ReadLong(TablePtr+20);
+	AESOpCode  = STMemory_ReadWord(AESControl);
+	return true;
+}
+
+/**
  * If opcodes argument is set, show AES opcode/function name table,
  * otherwise AES vectors information.
  */
@@ -394,17 +417,26 @@ void AES_Info(FILE *fp, Uint32 bShowOpcodes)
 		}
 		return;
 	}
-	if (!bVdiAesIntercept)
+	opcode = Vars_GetAesOpcode();
+	if (opcode != INVALID_OPCODE)
 	{
-		fputs("VDI/AES interception isn't enabled!\n", fp);
-		return;
+		if (!AES_StoreVars(Regs[REG_D1]))
+			return;
 	}
-	if (!AESControl)
+	else
 	{
-		fputs("No traced AES calls!\n", fp);
-		return;
+		if (!bVdiAesIntercept)
+		{
+			fputs("VDI/AES interception isn't enabled!\n", fp);
+			return;
+		}
+		if (!AESControl)
+		{
+			fputs("No traced AES calls!\n", fp);
+			return;
+		}
+		opcode = STMemory_ReadWord(AESControl);
 	}
-	opcode = STMemory_ReadWord(AESControl);
 	if (opcode != AESOpCode)
 	{
 		fputs("AES parameter block contents changed since last call!\n", fp);
@@ -733,6 +765,30 @@ static const char* VDI_Opcode2Name(Uint16 opcode, Uint16 subcode, Uint16 nintin,
 	return "???";
 }
 
+
+/**
+ * Verify given VDI table pointer and store variables from
+ * it for later use. Return true for success
+ */
+static bool VDI_StoreVars(Uint32 TablePtr)
+{
+	if (!STMemory_CheckAreaType(TablePtr, 20, ABFLAG_RAM))
+	{
+		Log_Printf(LOG_WARN, "VDI param store failed due to invalid parameter block address 0x%x+%i\n", TablePtr, 20);
+		return false;
+	}
+	/* store values for extended VDI resolution handling
+	 * and debugger "info vdi" command
+	 */
+	VDIControl = STMemory_ReadLong(TablePtr);
+	VDIIntin   = STMemory_ReadLong(TablePtr+4);
+	VDIPtsin   = STMemory_ReadLong(TablePtr+8);
+	VDIIntout  = STMemory_ReadLong(TablePtr+12);
+	VDIPtsout  = STMemory_ReadLong(TablePtr+16);
+	VDIOpCode  = STMemory_ReadWord(VDIControl);
+	return true;
+}
+
 /**
  * If opcodes argument is set, show VDI opcode/function name table,
  * otherwise VDI vectors information.
@@ -759,17 +815,26 @@ void VDI_Info(FILE *fp, Uint32 bShowOpcodes)
 		}
 		return;
 	}
-	if (!bVdiAesIntercept)
+	opcode = Vars_GetVdiOpcode();
+	if (opcode != INVALID_OPCODE)
 	{
-		fputs("VDI/AES interception isn't enabled!\n", fp);
-		return;
+		if (!VDI_StoreVars(Regs[REG_D1]))
+			return;
 	}
-	if (!VDIControl)
+	else
 	{
-		fputs("No traced VDI calls!\n", fp);
-		return;
+		if (!bVdiAesIntercept)
+		{
+			fputs("VDI/AES interception isn't enabled!\n", fp);
+			return;
+		}
+		if (!VDIControl)
+		{
+			fputs("No traced VDI calls!\n", fp);
+			return;
+		}
+		opcode = STMemory_ReadWord(VDIControl);
 	}
-	opcode = STMemory_ReadWord(VDIControl);
 	if (opcode != VDIOpCode)
 	{
 		fputs("VDI parameter block contents changed since last call!\n", fp);
@@ -836,19 +901,8 @@ bool VDI_AES_Entry(void)
 	/* AES call? */
 	if (call == 0xC8)
 	{
-		if ( !STMemory_CheckAreaType ( TablePtr, 24, ABFLAG_RAM ) )
-		{
-			Log_Printf(LOG_WARN, "AES call failed due to invalid parameter block address 0x%x+%i\n", TablePtr, 24);
+		if (!AES_StoreVars(TablePtr))
 			return false;
-		}
-		/* store values for debugger "info aes" command */
-		AESControl = STMemory_ReadLong(TablePtr);
-		AESGlobal  = STMemory_ReadLong(TablePtr+4);
-		AESIntin   = STMemory_ReadLong(TablePtr+8);
-		AESIntout  = STMemory_ReadLong(TablePtr+12);
-		AESAddrin  = STMemory_ReadLong(TablePtr+16);
-		AESAddrout = STMemory_ReadLong(TablePtr+20);
-		AESOpCode  = STMemory_ReadWord(AESControl);
 		if (LOG_TRACE_LEVEL(TRACE_OS_AES))
 		{
 			AES_OpcodeInfo(TraceFile, AESOpCode);
@@ -864,20 +918,8 @@ bool VDI_AES_Entry(void)
 	/* VDI call? */
 	if (call == 0x73)
 	{
-		if ( !STMemory_CheckAreaType ( TablePtr, 20, ABFLAG_RAM ) )
-		{
-			Log_Printf(LOG_WARN, "VDI call failed due to invalid parameter block address 0x%x+%i\n", TablePtr, 20);
+		if (!VDI_StoreVars(TablePtr))
 			return false;
-		}
-		/* store values for extended VDI resolution handling
-		 * and debugger "info vdi" command
-		 */
-		VDIControl = STMemory_ReadLong(TablePtr);
-		VDIIntin   = STMemory_ReadLong(TablePtr+4);
-		VDIPtsin   = STMemory_ReadLong(TablePtr+8);
-		VDIIntout  = STMemory_ReadLong(TablePtr+12);
-		VDIPtsout  = STMemory_ReadLong(TablePtr+16);
-		VDIOpCode  = STMemory_ReadWord(VDIControl);
 #if ENABLE_TRACING
 		{
 		Uint16 subcode = STMemory_ReadWord(VDIControl+2*5);

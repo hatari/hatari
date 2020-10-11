@@ -132,6 +132,8 @@ Emulator:
   - New "info" subcommands:
     "acia", "dmasnd", "ikbd", "mfp", "nvram", "rtc" and "scc"
   - Also UAE disassembler can now show the profile info
+  - "info" command can show AES & VDI information on on their
+    respective traps without VDI mode/tracing being enabled
   - Improved symbols info output
 - Native features:
   - Support for missing NF_SHUTDOWN (reset) sub commands
