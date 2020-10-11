@@ -434,8 +434,10 @@ void AES_Info(FILE *fp, Uint32 bShowOpcodes)
 /**
  * Map VDI call opcode/sub-opcode to a VDI function name
  */
-static const char* VDI_Opcode2Name(Uint16 opcode, Uint16 subcode)
+static const char* VDI_Opcode2Name(Uint16 opcode, Uint16 subcode, Uint16 nintin, const char **extra_info)
 {
+	unsigned int i;
+
 	static const char* names_0[] = {
 		"???",
 		"v_opnwk",
@@ -511,8 +513,8 @@ static const char* VDI_Opcode2Name(Uint16 opcode, Uint16 subcode)
 		"vs_clip",
 		"vqt_name",
 		"vqt_fontinfo"
-		/* 131-233: no known opcodes
-		 * 234-255: (Speedo) GDOS opcodes
+		/* 139-169: no known opcodes
+		 * 170-255: NVDI/Speedo GDOS opcodes
 		 */
 	};
 	static const char* names_opcode5[] = {
@@ -543,13 +545,6 @@ static const char* VDI_Opcode2Name(Uint16 opcode, Uint16 subcode)
 		"vq_scan",
 		"v_alpha_text"
 	};
-	static const char* names_opcode5_98[] = {
-		"v_meta_extents",
-		"v_write_meta",
-		"vm_filename",
-		"???",
-		"v_fontinit"
-	};
 	static const char* names_opcode11[] = {
 		"<no subcode>",
 		"v_bar",
@@ -561,19 +556,144 @@ static const char* VDI_Opcode2Name(Uint16 opcode, Uint16 subcode)
 		"v_ellpie",
 		"v_rbox",
 		"v_rfbox",
-		"v_justified"
+		"v_justified",
+		"???",
+		"v_bez_on/off",
+	};
+	static struct {
+		unsigned short opcode;
+		unsigned short subcode;
+		unsigned short nintin;
+		const char *name;
+		const char *extra_info;
+	} const names_other[] = {
+		{ 5, 98, 0xffff, "v_meta_extents", "GDOS" },
+		{ 5, 99, 0xffff, "v_write_meta", "GDOS" },
+		{ 5, 100, 0xffff, "vm_filename", "GDOS" },
+		{ 5, 101, 0xffff, "v_offset", "GDOS" },
+		{ 5, 102, 0xffff, "v_fontinit", "GDOS" },
+		{ 100, 1, 13, "v_opnbm", "EdDI" },
+		{ 100, 2, 6, "v_resize_bm", "EdDI" },
+		{ 100, 3, 4, "v_open_bm", "EdDI" },
+		{ 100, 0xffff, 0xffff, "v_opnvwk", NULL },
+		{ 132, 0xffff, 0xffff, "vqt_justified", "PC/GEM" },
+		{ 133, 0xffff, 0xffff, "vs_grayoverride", "GEM/3" },
+		{ 134, 0xffff, 1, "v_pat_rotate", "GEM/3" },
+		{ 134, 0xffff, 0xffff, "vex_wheelv", "Milan" },
+		{ 138, 0xffff, 0xffff, "v_setrgb", "NVDI" },
+		{ 170, 0, 0xffff, "vr_transfer_bits" },
+		{ 171, 0, 0xffff, "vr_clip_rects_by_dst", "NVDI" }, /* NVDI 5.02 */
+		{ 171, 1, 0xffff, "vr_clip_rects_by_src", "NVDI" }, /* NVDI 5.02 */
+		{ 171, 2, 0xffff, "vr_clip_rects32_by_dst", "NVDI" }, /* NVDI 5.02 */
+		{ 171, 3, 0xffff, "vr_clip_rects32_by_src", "NVDI" }, /* NVDI 5.02 */
+		{ 180, 0, 0xffff, "v_create_driver_info", "NVDI" }, /* NVDI 5.00 */
+		{ 181, 0, 0xffff, "v_delete_driver_info", "NVDI" }, /* NVDI 5.00 */
+		{ 182, 0, 0xffff, "v_read_default_settings", "NVDI" }, /* NVDI 5.00 */
+		{ 182, 1, 0xffff, "v_write_default_settings", "NVDI" }, /* NVDI 5.00 */
+		{ 190, 0, 0xffff, "vqt_char_index", "GDOS" }, /* NVDI 4.00 */
+		{ 200, 0, 0xffff, "vst_fg_color", "GDOS" }, /* NVDI 5.00 */
+		{ 200, 1, 0xffff, "vsf_fg_color", "GDOS" }, /* NVDI 5.00 */
+		{ 200, 2, 0xffff, "vsl_fg_color", "GDOS" }, /* NVDI 5.00 */
+		{ 200, 3, 0xffff, "vsm_fg_color", "GDOS" }, /* NVDI 5.00 */
+		{ 200, 4, 0xffff, "vsr_fg_color", "GDOS" }, /* NVDI 5.00 */
+		{ 201, 0, 0xffff, "vst_bg_color", "GDOS" }, /* NVDI 5.00 */
+		{ 201, 1, 0xffff, "vsf_bg_color", "GDOS" }, /* NVDI 5.00 */
+		{ 201, 2, 0xffff, "vsl_bg_color", "GDOS" }, /* NVDI 5.00 */
+		{ 201, 3, 0xffff, "vsm_bg_color", "GDOS" }, /* NVDI 5.00 */
+		{ 201, 4, 0xffff, "vsr_bg_color", "GDOS" }, /* NVDI 5.00 */
+		{ 202, 0, 0xffff, "vqt_fg_color", "GDOS" }, /* NVDI 5.00 */
+		{ 202, 1, 0xffff, "vqf_fg_color", "GDOS" }, /* NVDI 5.00 */
+		{ 202, 2, 0xffff, "vql_fg_color", "GDOS" }, /* NVDI 5.00 */
+		{ 202, 3, 0xffff, "vqm_fg_color", "GDOS" }, /* NVDI 5.00 */
+		{ 202, 4, 0xffff, "vqr_fg_color", "GDOS" }, /* NVDI 5.00 */
+		{ 203, 0, 0xffff, "vqt_bg_color", "GDOS" }, /* NVDI 5.00 */
+		{ 203, 1, 0xffff, "vqf_bg_color", "GDOS" }, /* NVDI 5.00 */
+		{ 203, 2, 0xffff, "vql_bg_color", "GDOS" }, /* NVDI 5.00 */
+		{ 203, 3, 0xffff, "vqm_bg_color", "GDOS" }, /* NVDI 5.00 */
+		{ 203, 4, 0xffff, "vqr_bg_color", "GDOS" }, /* NVDI 5.00 */
+		{ 204, 0, 0xffff, "v_color2value", "NVDI" }, /* NVDI 5.00 */
+		{ 204, 1, 0xffff, "v_value2color", "NVDI" }, /* NVDI 5.00 */
+		{ 204, 2, 0xffff, "v_color2nearest", "NVDI" }, /* NVDI 5.00 */
+		{ 204, 3, 0xffff, "vq_px_format", "NVDI" }, /* NVDI 5.00 */
+		{ 205, 0, 0xffff, "vs_ctab", "NVDI" }, /* NVDI 5.00 */
+		{ 205, 1, 0xffff, "vs_ctab_entry", "NVDI" }, /* NVDI 5.00 */
+		{ 205, 2, 0xffff, "vs_dflt_ctab", "NVDI" }, /* NVDI 5.00 */
+		{ 206, 0, 0xffff, "vq_ctab", "NVDI" }, /* NVDI 5.00 */
+		{ 206, 1, 0xffff, "vq_ctab_entry", "NVDI" }, /* NVDI 5.00 */
+		{ 206, 2, 0xffff, "vq_ctab_id", "NVDI" }, /* NVDI 5.00 */
+		{ 206, 3, 0xffff, "v_ctab_idx2vdi", "NVDI" }, /* NVDI 5.00 */
+		{ 206, 4, 0xffff, "v_ctab_vdi2idx", "NVDI" }, /* NVDI 5.00 */
+		{ 206, 5, 0xffff, "v_ctab_idx2value", "NVDI" }, /* NVDI 5.00 */
+		{ 206, 6, 0xffff, "v_get_ctab_id", "NVDI" }, /* NVDI 5.00 */
+		{ 206, 7, 0xffff, "vq_dflt_ctab", "NVDI" }, /* NVDI 5.00 */
+		{ 206, 8, 0xffff, "v_create_ctab", "NVDI" }, /* NVDI 5.00 */
+		{ 206, 9, 0xffff, "v_delete_ctab", "NVDI" }, /* NVDI 5.00 */
+		{ 207, 0, 0xffff, "vs_hilite_color", "NVDI" }, /* NVDI 5.00 */
+		{ 207, 1, 0xffff, "vs_min_color", "NVDI" }, /* NVDI 5.00 */
+		{ 207, 2, 0xffff, "vs_max_color", "NVDI" }, /* NVDI 5.00 */
+		{ 207, 3, 0xffff, "vs_weight_color", "NVDI" }, /* NVDI 5.00 */
+		{ 208, 0, 0xffff, "v_create_itab", "NVDI" }, /* NVDI 5.00 */
+		{ 208, 1, 0xffff, "v_delete_itab", "NVDI" }, /* NVDI 5.00 */
+		{ 209, 0, 0xffff, "vq_hilite_color", "NVDI" }, /* NVDI 5.00 */
+		{ 209, 1, 0xffff, "vq_min_color", "NVDI" }, /* NVDI 5.00 */
+		{ 209, 2, 0xffff, "vq_max_color", "NVDI" }, /* NVDI 5.00 */
+		{ 209, 3, 0xffff, "vq_weight_color", "NVDI" }, /* NVDI 5.00 */
+		{ 224, 100, 0xffff, "vs_backmap", "Speedo" }, /* SpeedoGDOS 5.1 */
+		{ 224, 101, 0xffff, "vs_outmode", "Speedo" }, /* SpeedoGDOS 5.1 */
+		{ 224, 105, 0xffff, "vs_use_fonts", "Speedo" }, /* SpeedoGDOS 5.1 */
+		{ 225, 0, 0xffff, "vqt_drv_avail", "Speedo" }, /* SpeedoGDOS 5.1 */
+		{ 226, 1, 0xffff, "v_set_cachedir", "Speedo" }, /* SpeedoGDOS 5.1 */
+		{ 226, 2, 0xffff, "v_get_cachedir", "Speedo" }, /* SpeedoGDOS 5.1 */
+		{ 226, 3, 0xffff, "v_def_cachedir", "Speedo" }, /* SpeedoGDOS 5.1 */
+		{ 226, 4, 0xffff, "v_clr_cachedir", "Speedo" }, /* SpeedoGDOS 5.1 */
+		{ 226, 5, 0xffff, "v_delete_cache", "Speedo" }, /* SpeedoGDOS 5.1 */
+		{ 226, 6, 0xffff, "v_save_cache", "Speedo" }, /* SpeedoGDOS 5.1 */
+		{ 229, 0, 0xffff, "vqt_xfntinfo", "GDOS" }, /* NVDI 3.02 */
+		{ 230, 0, 0xffff, "vst_name", "GDOS" }, /* NVDI 3.02 */
+		{ 230, 100, 0xffff, "vqt_name_and_id", "GDOS" }, /* NVDI 3.02 */
+		{ 231, 0, 0xffff, "vst_width", "GDOS" }, /* NVDI 3.00 */
+		{ 232, 0, 0xffff, "vqt_fontheader", "GDOS" }, /* NVDI 3.00 */
+		{ 233, 0, 0xffff, "v_mono_ftext", "Speedo" }, /* SpeedoGDOS 5.1 */
+		{ 234, 0, 0xffff, "vqt_trackkern", "GDOS" }, /* NVDI 3.00 */
+		{ 235, 0, 0xffff, "vqt_pairkern", "GDOS" }, /* NVDI 3.00 */
+		{ 236, 0, 0xffff, "vst_charmap", "GDOS" }, /* NVDI 3.00 */
+		{ 236, 0, 0xffff, "vst_map_mode", "GDOS" }, /* NVDI 4.00 */
+		{ 237, 0, 0xffff, "vst_kern", "GDOS" }, /* NVDI 3.00 */
+		{ 237, 0, 0xffff, "vst_track_offset", "GDOS" }, /* NVDI 3.00 */
+		{ 238, 0, 0xffff, "vq_ptsinsz", "GDOS" },
+		{ 239, 0, 0xffff, "v_getbitmap_info", "GDOS" }, /* NVDI 3.00 */
+		{ 240, 0, 0xffff, "vqt_f_extent", "GDOS" }, /* NVDI 3.00 */
+		{ 240, 4200, 0xffff, "vqt_real_extent", "GDOS" }, /* NVDI 3.00 */
+		{ 241, 0, 0xffff, "v_ftext", "GDOS" }, /* NVDI 3.00 */
+		{ 242, 0, 0xffff, "v_killoutline", "GDOS" }, /* FSM */
+		{ 243, 0, 0xffff, "v_getoutline", "GDOS" }, /* NVDI 3.00 */
+		{ 243, 1, 0xffff, "v_get_outline", "GDOS" }, /* NVDI 5.00 */
+		{ 243, 31, 0xffff, "v_fgetoutline", "Speedo" }, /* SpeedoGDOS 5.0d */
+		{ 244, 0, 0xffff, "vst_scratch", "Speedo" },
+		{ 245, 0, 0xffff, "vst_error", "Speedo" }, /* SpeedoGDOS 4.00 */
+		{ 246, 0, 0xffff, "vst_arbpt", "GDOS" }, /* SpeedoGDOS 4.00 */
+		{ 246, 0, 0xffff, "vst_arbpt32", "GDOS" }, /* NVDI 3.00 */
+		{ 247, 0, 0xffff, "vqt_advance", "GDOS" }, /* SpeedoGDOS 4.00 */
+		{ 247, 0, 0xffff, "vqt_advance32", "GDOS" }, /* NVDI 3.00 */
+		{ 248, 0, 0xffff, "vq_devinfo", "GDOS" }, /* NVDI 3.00 */
+		{ 248, 0, 0xffff, "vqt_devinfo", "GDOS" }, /* SpeedoGDOS 4.00 */
+		{ 248, 4242, 0xffff, "vq_ext_devinfo", "GDOS" }, /* NVDI 3.00 */
+		{ 249, 0, 0xffff, "v_savecache", "Speedo" },
+		{ 250, 0, 0xffff, "v_loadcache", "Speedo" },
+		{ 251, 0, 0xffff, "v_flushcache", "GDOS" }, /* NVDI */
+		{ 252, 0, 0xffff, "vst_setsize32", "GDOS" }, /* NVDI 3.00 */
+		{ 252, 0, 0xffff, "vst_setsize", "GDOS" }, /* SpeedoGDOS 4.00 */
+		{ 253, 0, 0xffff, "vst_skew", "GDOS" }, /* NVDI 3.00 */
+		{ 254, 0, 0xffff, "vqt_get_table", "GDOS" }, /* SpeedoGDOS 4.00 */
+		{ 255, 0, 0xffff, "vqt_cachesize", "Speedo" }, /* SpeedoGDOS 4.00 */
+		{ 255, 100, 0xffff, "vqt_cacheinfo", "Speedo" }, /* SpeedoGDOS 4.00 */
 	};
 
+	*extra_info = NULL;
 	if (opcode == 5)
 	{
 		if (subcode < ARRAY_SIZE(names_opcode5)) {
 			return names_opcode5[subcode];
-		}
-		if (subcode >= 98) {
-			subcode -= 98;
-			if (subcode < ARRAY_SIZE(names_opcode5_98)) {
-				return names_opcode5_98[subcode];
-			}
 		}
 	}
 	else if (opcode == 11)
@@ -584,17 +704,33 @@ static const char* VDI_Opcode2Name(Uint16 opcode, Uint16 subcode)
 	}
 	else if (opcode < ARRAY_SIZE(names_0))
 	{
+		if (opcode == 1 && nintin >= 16)
+			return "v_opnprn";
+		if (opcode == 6 && subcode == 13)
+			return "v_bez";
+		if (opcode == 9 && subcode == 13)
+			return "v_bez_fill";
 		return names_0[opcode];
 	}
-	else if (opcode >= 100)
+	else if (opcode > 100)
 	{
-		opcode -= 100;
-		if (opcode < ARRAY_SIZE(names_100))
+		Uint16 idx = opcode - 100;
+		if (idx < ARRAY_SIZE(names_100))
 		{
-			return names_100[opcode];
+			return names_100[idx];
 		}
 	}
-	return "GDOS?";
+	for (i = 0; i < ARRAY_SIZE(names_other); i++)
+		if (names_other[i].opcode == opcode)
+		{
+			if ((names_other[i].subcode == subcode || names_other[i].subcode == 0xffff) &&
+				(nintin >= names_other[i].nintin || names_other[i].nintin == 0xffff))
+			{
+				*extra_info = names_other[i].extra_info;
+				return names_other[i].name;
+			}
+		}
+	return "???";
 }
 
 /**
@@ -603,12 +739,14 @@ static const char* VDI_Opcode2Name(Uint16 opcode, Uint16 subcode)
  */
 void VDI_Info(FILE *fp, Uint32 bShowOpcodes)
 {
-	Uint16 opcode, subcode;
+	Uint16 opcode, subcode, nintin;
+	const char *extra_info;
+	const char *name;
 
 	if (bShowOpcodes)
 	{
 		Uint16 opcode;
-		for (opcode = 0; opcode < 0x84; )
+		for (opcode = 0; opcode <= 0x84; )
 		{
 			if (opcode == 0x28)
 			{
@@ -616,7 +754,7 @@ void VDI_Info(FILE *fp, Uint32 bShowOpcodes)
 				opcode = 0x64;
 			}
 			fprintf(fp, "%02x %-16s",
-				opcode, VDI_Opcode2Name(opcode, 0));
+				opcode, VDI_Opcode2Name(opcode, 0, 0, &extra_info));
 			if (++opcode % 4 == 0) fputs("\n", fp);
 		}
 		return;
@@ -640,8 +778,10 @@ void VDI_Info(FILE *fp, Uint32 bShowOpcodes)
 
 	fputs("Latest VDI Parameter block:\n", fp);
 	subcode = STMemory_ReadWord(VDIControl+2*5);
-	fprintf(fp, "- Opcode/Subcode: %hd/%hd (%s)\n",
-		opcode, subcode, VDI_Opcode2Name(opcode, subcode));
+	nintin = STMemory_ReadWord(VDIControl+2*3);
+	name = VDI_Opcode2Name(opcode, subcode, nintin, &extra_info);
+	fprintf(fp, "- Opcode/Subcode: %hd/%hd (%s%s%s)\n",
+		opcode, subcode, name, extra_info ? ", " : "", extra_info ? extra_info : "");
 	fprintf(fp, "- Device handle: %d\n",
 		STMemory_ReadWord(VDIControl+2*6));
 	fprintf(fp, "- Control: %#8x\n", VDIControl);
@@ -741,9 +881,11 @@ bool VDI_AES_Entry(void)
 #if ENABLE_TRACING
 		{
 		Uint16 subcode = STMemory_ReadWord(VDIControl+2*5);
-		LOG_TRACE(TRACE_OS_VDI, "VDI call %3hd/%3hd (%s)\n",
-			  VDIOpCode, subcode,
-			  VDI_Opcode2Name(VDIOpCode, subcode));
+		Uint16 nintin = STMemory_ReadWord(VDIControl+2*3);
+		const char *extra_info;
+		const char *name = VDI_Opcode2Name(VDIOpCode, subcode, nintin, &extra_info);
+		LOG_TRACE(TRACE_OS_VDI, "VDI call %3hd/%3hd (%s%s%s)\n",
+			  VDIOpCode, subcode, name, extra_info ? ", " : "", extra_info ? extra_info : "");
 		}
 #endif
 		/* Only workstation open needs to be handled at trap return */
