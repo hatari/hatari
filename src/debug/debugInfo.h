@@ -23,4 +23,8 @@ extern char *DebugInfo_MatchInfo(const char *text, int state);
 extern char *DebugInfo_MatchLock(const char *text, int state);
 extern int DebugInfo_Command(int nArgc, char *psArgs[]);
 
+/* for breakpoint ":info" callbacks */
+typedef void (*info_func_t)(FILE *fp, Uint32 arg);
+extern info_func_t DebugInfo_GetInfoFunc(const char *name);
+
 #endif /* HATARI_DEBUGINFO_H */

@@ -68,6 +68,7 @@ typedef struct {
 } bc_condition_t;
 
 typedef struct {
+	info_func_t info;  /* pointer to specified ":info" function */
 	char *filename;	/* file where to read commands to do on hit */
 	int skip;	/* how many times to hit before breaking */
 	bool once;	/* remove after hit&break */
@@ -335,14 +336,16 @@ static bool BreakCond_MatchBreakPoints(bc_breakpoints_t *bps)
 			}
 			History_Mark(bps->reason);
 
-			if (bp->options.lock || bp->options.filename) {
+			if (bp->options.info || bp->options.lock || bp->options.filename) {
 				bool reinit = !bp->options.noinit;
 
 				if (reinit) {
 					DebugCpu_InitSession();
 					DebugDsp_InitSession();
 				}
-
+				if (bp->options.info) {
+					bp->options.info(stderr, 0);
+				}
 				if (bp->options.lock) {
 					DebugInfo_ShowSessionInfo();
 				}
@@ -1212,15 +1215,19 @@ static bool BreakCond_Parse(const char *expression, bc_options_t *options, bool 
 				fprintf(stderr, "-> Break only on every %d hit.\n", options->skip);
 			}
 			if (options->once) {
-				fprintf(stderr, "-> Once, delete after breaking.\n");
+				fprintf(stderr, "-> Break only once, and delete breakpoint afterwards.\n");
 			}
 			if (options->trace) {
-				fprintf(stderr, "-> Trace instead of breaking, but show still hits.\n");
+				fprintf(stderr, "-> Trace (just show breakpoint info, instead of dropping to debugger).\n");
+				/* all of these options enable also trace option */
+				if (options->info) {
+					fprintf(stderr, "-> Call selected info command.\n");
+				}
 				if (options->lock) {
-					fprintf(stderr, "-> Show also info selected with lock command.\n");
+					fprintf(stderr, "-> Call locked info command.\n");
 				}
 				if (options->noinit) {
-					fprintf(stderr, "-> Skip debugger inits on hit.\n");
+					fprintf(stderr, "-> Skip debugger initialization on hit.\n");
 				}
 			}
 			if (options->filename) {
@@ -1233,6 +1240,7 @@ static bool BreakCond_Parse(const char *expression, bc_options_t *options, bool 
 		bp->options.skip = options->skip;
 		bp->options.once = options->once;
 		bp->options.trace = options->trace;
+		bp->options.info = options->info;
 		bp->options.lock = options->lock;
 		bp->options.noinit = options->noinit;
 		if (options->filename) {
@@ -1282,10 +1290,12 @@ static void BreakCond_Print(bc_breakpoint_t *bp)
 		fprintf(stderr, " :quiet");
 	}
 	if (bp->options.trace) {
+		fprintf(stderr, " :trace");
+		if (bp->options.info) {
+			fprintf(stderr, " :info");
+		}
 		if (bp->options.lock) {
 			fprintf(stderr, " :lock");
-		} else {
-			fprintf(stderr, " :trace");
 		}
 		if (bp->options.noinit) {
 			fprintf(stderr, " :noinit");
@@ -1462,7 +1472,8 @@ const char BreakCond_Description[] =
 	"\tMultiple breakpoint action options can be specified after\n"
 	"\tthe breakpoint condition(s):\n"
 	"\t- 'trace', print the breakpoint match without stopping\n"
-	"\t- 'lock', print the debugger entry info without stopping\n"
+	"\t- 'info <name>', call indicated info functionality (enables 'trace')\n"
+	"\t- 'lock', print the locked debugger entry info (enables 'trace')\n"
 	"\t- 'noinit', no debugger inits on hit, useful for stack tracing\n"
 	"\t- 'file <file>', execute debugger commands from given <file>\n"
 	"\t- 'once', delete the breakpoint after it's hit\n"
@@ -1475,7 +1486,7 @@ const char BreakCond_Description[] =
  */
 static bool BreakCond_Options(char *str, bc_options_t *options, char marker)
 {
-	char *option, *next, *filename;
+	char *option, *next, *filename, *info;
 	int skip;
 
 	memset(options, 0, sizeof(*options));
@@ -1507,6 +1518,14 @@ static bool BreakCond_Options(char *str, bc_options_t *options, char marker)
 		} else if (strcmp(option, "noinit") == 0) {
 			options->trace = true;
 			options->noinit = true;
+		} else if (strncmp(option, "info ", 5) == 0) {
+			options->trace = true;
+			info = Str_Trim(option+4);
+			options->info = DebugInfo_GetInfoFunc(info);
+			if (!options->info) {
+				fprintf(stderr, "ERROR: no info for '%s'!\n", info);
+				return false;
+			}
 		} else if (strncmp(option, "file ", 5) == 0) {
 			filename = Str_Trim(option+4);
 			if (!File_Exists(filename)) {

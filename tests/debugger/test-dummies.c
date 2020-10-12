@@ -110,6 +110,10 @@ char *DebugUI_MatchHelper(const char **strings, int items, const char *text, int
 	return NULL;
 }
 
+/* fake vdi.c stuff */
+#include "vdi.h"
+void VDI_Info(FILE *fp, Uint32 arg) { return; }
+
 /* fake debugInfo.c stuff */
 #include "debugInfo.h"
 void DebugInfo_ShowSessionInfo(void) {}
@@ -118,6 +122,12 @@ Uint32 DebugInfo_GetTEXT(void)     { return 0x1234; }
 Uint32 DebugInfo_GetTEXTEnd(void)  { return 0x1234; }
 Uint32 DebugInfo_GetDATA(void)     { return 0x12f4; }
 Uint32 DebugInfo_GetBSS(void)      { return 0x1f34; }
+info_func_t DebugInfo_GetInfoFunc(const char *name) {
+	if (strcmp(name, "vdi") == 0) {
+		return VDI_Info;
+	}
+	return NULL;
+}
 
 /* fake debugdsp.c stuff */
 #ifdef ENABLE_DSP_EMU

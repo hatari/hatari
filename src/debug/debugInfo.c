@@ -655,7 +655,7 @@ static const struct {
 	/* if overlaps with other functionality, list only for lock command */
 	bool lock;
 	const char *name;
-	void (*func)(FILE *fp, Uint32 arg);
+	info_func_t func;
 	/* convert args in argv into single Uint32 for func */
 	Uint32 (*args)(int argc, char *argv[]);
 	const char *info;
@@ -708,6 +708,19 @@ void DebugInfo_ShowSessionInfo(void)
 	infotable[LockedFunction].func(stderr, LockedArgument);
 }
 
+/**
+ * Return info function matching the given name, or NULL for no match
+ */
+info_func_t DebugInfo_GetInfoFunc(const char *name)
+{
+	int i;
+	for (i = 0; i < ARRAY_SIZE(infotable); i++) {
+		if (strcmp(name, infotable[i].name) == 0) {
+			return infotable[i].func;
+		}
+	}
+	return NULL;
+}
 
 /**
  * Readline match callback for info subcommand name completion.
