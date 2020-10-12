@@ -2229,6 +2229,11 @@ that's documented.  Many timing critical demos (for example ones using
 NoCrew's DSP MP2-player) that are marked as working in the list below,
 <em>work only with the (default) WinUAE CPU core</em>.</p>
 
+<p>Only few Falcon programs require MMU emulation to be enabled
+to work. <em>Unless otherwise indicated, programs work with MMU
+emulation <strong>disabled</strong></em> (at least they did in
+Hatari versions before v2.3).</p>
+
 <p>Due to incomplete VIDEL emulation, missing JagPad support and some
 remaining emulation cycle accuracy issues, some Falcon programs aren't
 usable yet.  Most games and demos work with RGB monitor, those requiring
@@ -2280,28 +2285,29 @@ VGA one are indicated separately.</p>
       <td>Use STE joypad. Background music if DSP emu enabled</td>
     </tr>
     <tr>
-      <td><a href="http://devilsdoorbell.com/">Bad Mood (2016 game)</a></td>
-      <td class="minor">2.0</td>
+      <td><a href="http://www.leonik.net/dml/sec_bm.py">Bad Mood (v0.37 from 2017)</a></td>
+      <td class="minor">2.3-dev</td>
       <td>yes</td>
       <td>emu</td>
       <td>Enhanced Doom I/II port and engine rewrite. Game requires WinUAE
       CPU core, DSP and 14 MB RAM. WAD cache creation crashes/freezes,
-      so one needs to get pre-built cache. Statusbar doesn't show due
+      so one needs to get pre-built WAD cache. Statusbar doesn't show due
       to Videl emulation omissions, unless "--natfeats yes" is used to
-      tell game to use Hatari specific/heavier statusbar drawing mode.
-      Some parts have clear speed differences to real Falcon due to
-      CPU, FPU (instruction too fast) and Videl emulation
-      (screen updated only at VBL) inaccuracies</td>
+      tell game to use Hatari specific (more CPU intensive) statusbar
+      drawing mode. Game uses MMU if it's available, but doesn't work yet
+      with Hatari 030 MMU emulation. Some parts have clear speed differences
+      to real Falcon due to CPU, FPU (instruction too fast) and Videl
+      emulation (screen updated only at VBL) inaccuracies</td>
     </tr>
     <tr>
       <td><a href="http://www.klockars.net/bad_mood.html">Bad Mood<br />(90's demo)</a></td>
-      <td>1.3</td>
+      <td>2.3-dev</td>
       <td>-</td>
       <td>emu</td>
       <td>Old Doom level viewer. All tested versions (v2.14a, v307a) work
-          with Doom1 WAD, but look wrong with Heretic WAD (although it is
-	  <a href="http://files.dhs.nu/party/sillyventure2013/mag2013/Magstuff/badmood.htm">claimed</a>
-	  to work also with that)</td>
+          with Doom1 WAD.  Heretic shareware WAD looks fine with older
+	  2.14a version (as long as one isn't inside a wall), and
+	  completely broken with v3.07a. v3.07a doesn't work with MMU</td>
     </tr>
     <tr>
       <td>Blackhole</td>
@@ -2354,10 +2360,11 @@ VGA one are indicated separately.</p>
     </tr>
     <tr>
       <td><a href="http://yescrew.atari.org/eng/products.htm#capy">Capy</a></td>
-      <td>2.0</td>
+      <td class="major">2.3-dev</td>
       <td>yes</td>
       <td>emu</td>
-      <td>VGA/TT-medium (640x480x16) only</td>
+      <td>VGA/TT-medium (640x480x16) only. Requires MMU to work, otherwise
+          crashes to bus error at $ff9c00 on start</td>
     </tr>
     <tr>
       <td><a href="http://pouet.net/prod.php?which=29351">Cavemania (demo)</a></td>
@@ -2384,13 +2391,13 @@ VGA one are indicated separately.</p>
     </tr>
     <tr>
       <td><a href="http://demozoo.org/productions/55648/">Color runner</a></td>
-      <td class="major">2.1</td>
+      <td class="major">2.3-dev</td>
       <td>yes</td>
       <td>-</td>
       <td>Unable to start game (only joypad fire works, not directions).
           Music with DSP. 14MB, joypad only. VGA for correct screen height.
-	  Freezes after startup screen. With earlier Hatari version
-	  proceeded further</td>
+	  Requires MMU to work, otherwise crashes to bus error at $ffff9c00
+	  at the very beginning</td>
     </tr>
     <tr>
       <td>Columns by Deadheart (demo)</td>
@@ -2443,14 +2450,14 @@ VGA one are indicated separately.</p>
     </tr>
     <tr>
       <td><a href="http://reboot.atari.org/new-reboot/downfallfalcon.html">DownFall</a></td>
-      <td>1.5</td>
+      <td>2.3-dev</td>
       <td>yes</td>
       <td>-</td>
-      <td>Music is very noisy</td>
+      <td>Music with DSP</td>
     </tr>
     <tr>
       <td><a href="https://demozoo.org/productions/65504/">Dry Egg</a></td>
-      <td>1.8</td>
+      <td>2.3-dev</td>
       <td>yes</td>
       <td>-</td>
       <td>Music with DSP.  Use joypad for control.
@@ -2474,7 +2481,7 @@ VGA one are indicated separately.</p>
     </tr>
    <tr>
       <td>Evolution Dino Dudes<br />(aka. Humans)</td>
-      <td class="major">2.0</td>
+      <td class="major">2.3-dev</td>
       <td>yes</td>
       <td>-</td>
       <td>Needs jagpad. Sound with DSP. Intro and menu work,
@@ -2487,7 +2494,7 @@ VGA one are indicated separately.</p>
       <td>yes</td>
       <td>-</td>
       <td>ST low version has problems with scrolling (which doesn't
-          happen with with STe emulation). In TC version parts of sprites
+          happen with STe emulation). In TC version parts of sprites
 	  get stuck to top of screen</td>
     </tr>
     <tr>
@@ -2593,11 +2600,12 @@ VGA one are indicated separately.</p>
     </tr>
     <tr>
       <td><a href="http://www.sebastien-pastore.com/killing/">Killing Impact</a></td>
-      <td class="major">2.0</td>
+      <td class="major">2.3-dev</td>
       <td>yes</td>
       <td>-</td>
       <td>Modern version of Joust, up to 4 players.  Sound with DSP.
-          Game screen colors etc are all wrong</td>
+          Game screen colors etc are all wrong.  Doesn't start with
+	  MMU enabled</td>
     </tr>
     <tr>
       <td>King Solitaire</td>
@@ -2622,11 +2630,10 @@ VGA one are indicated separately.</p>
     </tr>
     <tr>
       <td>Lasers and Hommes (DLDH2)</td>
-      <td class="minor">2.1</td>
+      <td class="minor">2.3-dev</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Disable cycle-exact + prefetch, or use old UAE CPU core, otherwise
-          game bus errors when it starts DSP-rendering the rooms</td>
+      <td></td>
     </tr>
     <tr>
       <td>Les Dinosaures (demo)</td>
@@ -2659,7 +2666,7 @@ VGA one are indicated separately.</p>
     </tr>
     <tr>
       <td><a href="http://pouet.net/prod.php?which=28903">Men at War (preview)</a></td>
-      <td class="minor">2.1</td>
+      <td class="minor">2.3-dev</td>
       <td>yes</td>
       <td>emu</td>
       <td>Requires both WinUAE CPU core and DSP to be enabled.
@@ -2676,34 +2683,33 @@ VGA one are indicated separately.</p>
     </tr>
     <tr>
       <td>Mini F1 demo</td>
-      <td class="major">2.0</td>
+      <td class="major">2.3-dev</td>
       <td>-</td>
       <td>-</td>
       <td>Freezes when the game would start (until VideoAddressCounter == $2A?).
-          Constant "crossbar DMA Play: Illegal buffer size 0" messages.
-	  Sound is just noise</td>
+          Hatari takes all CPU with constant "crossbar DMA Play: Illegal buffer size 0"
+	  messages in console and sound is just noise</td>
     </tr>
     <tr>
       <td>Moongame</td>
-      <td class="major">2.0</td>
+      <td class="major">2.3-dev</td>
       <td>-</td>
       <td>emu</td>
-      <td>Pointer cannot be moved in the game menu</td>
+      <td>Pointer cannot be moved in the game menu. Doesn't work with MMU</td>
     </tr>
     <tr>
       <td>Moonspeeder (preview 2)</td>
-      <td class="minor">2.1</td>
+      <td class="minor">2.3-dev</td>
       <td>Yes</td>
       <td>emu</td>
       <td>lst*.* files need to be renamed with GEMDOS HD emulation as
           game searches them with different name (space before dot).
-	  Preview 1 worked already earlier, but is non-interactive.
-	  Disable cycle-exact + prefetch, or use old UAE CPU core,
-	  otherwise exits at start</td>
+	  Doesn't work if MMU is enabled
+      </td>
     </tr>
     <tr>
       <td>Mouse trap</td>
-      <td class="major">2.0</td>
+      <td class="major">2.3-dev</td>
       <td>yes</td>
       <td>-</td>
       <td>Initial game screen looks OK, then suddenly screen mode gets wrong</td>
@@ -2752,10 +2758,10 @@ VGA one are indicated separately.</p>
     </tr>
     <tr>
       <td><a href="http://atari-forum.com/viewtopic.php?f=68&amp;t=24111">Pacmania X68000</a></td>
-      <td>1.9</td>
+      <td>2.3-dev</td>
       <td>-</td>
       <td>-</td>
-      <td>Needs 14MB RAM.  Original resolution version flickers, PM*.TOS versions don't</td>
+      <td>Needs 14MB RAM. Game scrolling is jerky. Requires MMU</td>
     </tr>
     <tr>
       <td>Painium Disaster</td>
@@ -2766,14 +2772,14 @@ VGA one are indicated separately.</p>
     </tr>
     <tr>
       <td><a href="http://www.fatal-design.com/pinball/">Pinball Dreams</a></td>
-      <td class="major">2.0</td>
+      <td class="major">2.3-dev</td>
       <td>yes</td>
       <td>-</td>
       <td>Main menu works only with WinUAE core.  Actual game screen is scrambled / doesn't work</td>
     </tr>
     <tr>
       <td>Pingo98</td>
-      <td class="minor">2.0</td>
+      <td class="minor">2.3-dev</td>
       <td>yes</td>
       <td>-</td>
       <td>Colors wrong in classic version, TC version just exits.
@@ -2910,10 +2916,11 @@ VGA one are indicated separately.</p>
     </tr>
     <tr>
       <td>Sokoban by FUN</td>
-      <td class="major">2.0</td>
+      <td>2.3-dev</td>
       <td>yes</td>
       <td>emu</td>
-      <td>VGA 640x480x16 only, Exception 2 + Pterm(-1) after loading data</td>
+      <td>VGA 640x480x16 only. Requires MMU to work, otherwise crashes
+          to bus error at $ff97fe</td>
     </tr>
     <tr>
       <td>Space Taxi</td>
@@ -3039,14 +3046,14 @@ VGA one are indicated separately.</p>
     </tr>
     <tr>
       <td>Ufo War</td>
-      <td class="major">2.0</td>
+      <td class="major">2.3-dev</td>
       <td>yes</td>
       <td>-</td>
       <td>256-color, 80-column, no interlace video mode only.
           Screen scrambled.  With GEMDOS HD, after a while does
-	  invalid Fread() and terminates with error code.  With disk
-	  image, lot of "pBank flags mismatch" and FDC DMA warnings.
-	  Background music with DSP emu</td>
+	  Fread() to invalid RAM range, and terminates with error
+	  code.  With disk image, lot of "pBank flags mismatch" and
+	  FDC DMA warnings. Background music with DSP emu</td>
     </tr>
     <tr>
       <td>Ultimate Arena (demo)</td>
