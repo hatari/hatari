@@ -360,8 +360,9 @@ registers (e.g. "info videl") and Atari OS structures (e.g. "info gemdos").
 
 <p>
 By using the "lock" command, you can ask Hatari to show specific
-information whenever you enter the debugger / hit a breakpoint. For
-example to see disassembly from current PC address, use "lock disasm".
+information whenever you enter the debugger, e.g. due to a breakpoint.
+For example to see disassembly from current PC address, use "lock
+disasm".
 </p>
 
 <p>
@@ -631,33 +632,49 @@ above).  This enables also trace option as you would anyway see this
 information if debugger would be entered.
 </dd>
 
+<dt><em>info &lt;name&gt;</em></dt>
+<dd>
+Show on breakpoint hits the same information as "info" command would
+show (see <a href="#Inspecting_emulation_state">Inspecting emulation
+state</a> above).  With "lock" option and command there is more control
+over what information is shown, whereas with "info" option, every
+breakpoint can show different information, and one doesn't need to
+change what's shown on entering the debugger.  This option also
+enables trace option.
+</dd>
+
 <dt><em>file &lt;file&gt;</em></dt>
 <dd>
 Execute debugger commands from given &lt;file&gt; when this breakpoint
 is hit.  With this you have complete control over what information is
 show when the debugger is hit, you can even chain breakpoints (as
 explained in
-<a href="#Chaining_breakpoints">Chaining breakpoints</a> later on)
-etc.  Use this if "lock" option isn't enough or you want different
-information show on breakpoints and when entering the debugger.
+<a href="#Chaining_breakpoints">Chaining breakpoints</a> later on).
+Use this when "info" and "lock" options are not enough.
 </dd>
 
 <dt><em>noinit</em></dt>
 <dd>
-Hitting breakpoint doesn't re-initialize debugger which would e.g.
-cause profiling data to be reset.  This implies trace option as
-entering debugger would also re-initialize debugger state. This option
-is mainly intended for breakpoints that use :file option to show
-backtraces with "profile stack" command during
-<a href="#Profiling">profiling</a>.  See
+Avoid debugger initialization (profiling data reset and disassembly
+address being set to current PC) on breakpoint hit. This enables trace
+option as entering debugger would anyway re-initialize debugger state.
+This option is mainly intended for breakpoints that use either
+":file" or ":lock" option to show backtraces with "profile stack"
+command during <a href="#Profiling">profiling</a>.  See
 <a href="#Usage_examples">Usage examples</a> section for an example.
+</dd>
+
+<dt><em>quiet</em></dt>
+<dd>
+Inhibit showing of general breakpoint hit information i.e. show only
+the additional information that breakpoint outputs.
 </dd>
 </dl>
 
 <p>
 Note: you can give multiple options for conditional breakpoints, but
-for address breakpoints you can give only one these options.  And
-"file" option is supported only for conditional breakpoints.
+for address breakpoints you can give only one these options. "file"
+and "info" options are supported only for conditional breakpoints.
 </p>
 
 
@@ -1871,11 +1888,18 @@ b  ($ff820a).b &amp; 2 ! ($ff820a).b &amp; 2  :trace
 <dt><em>Viewing OS structure and IO register values</em></dt>
 <dd>To see e.g. basepage for currently running program:
 <pre>
-info basepage
+info  basepage
 </pre>
 To see e.g. all Falcon Videl register values, use:
 <pre>
-info videl
+info  videl
+</pre>
+</dd>
+
+<dt><em>Showing OS attribute information for specific OS calls</em></dt>
+<dd>To see e.g. VDI attributes for all v_gtext VDI calls:
+<pre>
+b  VdiOpcode = $8  :quiet :info vdi
 </pre>
 </dd>
 
@@ -2000,8 +2024,8 @@ callstack information (with some limitations).
 <dd>Enable profiling, load symbols for the program and set breakpoint
 for the function you are interested about, in the following way:
 <pre>
-profile on
-symbols prg
+profile  on
+symbols  prg
 b  pc = _my_function  :quiet :noinit :file showstack.ini
 </pre>
 I.e. whenever 'my_function' address is called, quietly trigger a
@@ -2009,7 +2033,7 @@ breakpoint without resetting profiling (callstack) information and run
 debugger command(s) from the 'showstack.ini' debugger script file,
 which contains following command:
 <pre>
-profile stack
+profile  stack
 </pre>
 </dd>
 
