@@ -265,7 +265,7 @@ static bool BreakCond_MatchConditions(bc_condition_t *condition, int count)
 	Uint32 lvalue, rvalue;
 	bool hit = false;
 	int i;
-	
+
 	for (i = 0; i < count; condition++, i++) {
 
 		lvalue = BreakCond_GetValue(&(condition->lvalue));
@@ -330,7 +330,7 @@ static bool BreakCond_MatchBreakPoints(bc_breakpoints_t *bps)
 			}
 			if (!bp->options.quiet) {
 				fprintf(stderr, "%d. %s breakpoint condition(s) matched %d times.\n",
-					i+1, bps->name, bp->hits);			
+					i+1, bps->name, bp->hits);
 				BreakCond_Print(bp);
 			}
 			History_Mark(bps->reason);
@@ -455,7 +455,7 @@ static bool BreakCond_ParseSymbol(const char *name, bc_value_t *bc_value)
 		/* direct value can be compared for anything */
 		symtype = SYMTYPE_ALL;
 	}
-	
+
 	if (bc_value->dsp_space) {
 		if (!Symbols_GetDspAddress(symtype, name, &addr)) {
 			EXITFUNC(("-> false (DSP)\n"));
@@ -468,7 +468,7 @@ static bool BreakCond_ParseSymbol(const char *name, bc_value_t *bc_value)
 		EXITFUNC(("-> true (DSP)\n"));
 		return true;
 	}
-	
+
 	if (!Symbols_GetCpuAddress(symtype, name, &addr)) {
 		EXITFUNC(("-> false (CPU)\n"));
 		return false;
@@ -718,7 +718,7 @@ static bool BreakCond_ParseValue(parser_state_t *pstate, bc_value_t *bc_value)
 			skip = 2;
 		}
 	}
-	
+
 	str = pstate->argv[pstate->arg];
 	if (isalpha((unsigned char)*str) || *str == '_') {
 		/* parse direct or indirect variable/register/symbol name */
@@ -783,7 +783,7 @@ static bool BreakCond_ParseValue(parser_state_t *pstate, bc_value_t *bc_value)
 static char BreakCond_ParseComparison(parser_state_t *pstate)
 {
 	const char *comparison;
-	
+
 	ENTERFUNC(("BreakCond_ParseComparison(), arg:%d\n", pstate->arg));
 	if (pstate->arg >= pstate->argc) {
 		pstate->error = "breakpoint comparison missing";
@@ -858,7 +858,7 @@ static bool BreakCond_CrossCheckValues(parser_state_t *pstate,
 
 	/* check first value mask & bit width */
 	mask1 = BITMASK(bc_value1->bits) & bc_value1->mask;
-	
+
 	if (mask1 != bc_value1->mask) {
 		fprintf(stderr, "WARNING: mask 0x%x doesn't fit into %d address/register bits.\n",
 			bc_value1->mask, bc_value1->bits);
@@ -869,7 +869,7 @@ static bool BreakCond_CrossCheckValues(parser_state_t *pstate,
 		fprintf(stderr, "WARNING: odd CPU address 0x%x given without using byte (.b) width.\n",
 			bc_value1->value.number);
 	}
-	
+
 	/* cross-check both values masks */
 	mask2 = BITMASK(bc_value2->bits) & bc_value2->mask;
 
@@ -1143,7 +1143,7 @@ static void BreakCond_CheckTracking(bc_breakpoint_t *bp)
 
 	condition = bp->conditions;
 	for (i = 0; i < bp->ccount; condition++, i++) {
-		
+
 		if (memcmp(&(condition->lvalue), &(condition->rvalue), sizeof(bc_value_t)) == 0) {
 			/* set current value to right side */
 			value = BreakCond_GetValue(&(condition->rvalue));
@@ -1218,10 +1218,10 @@ static bool BreakCond_Parse(const char *expression, bc_options_t *options, bool 
 				fprintf(stderr, "-> Trace instead of breaking, but show still hits.\n");
 				if (options->lock) {
 					fprintf(stderr, "-> Show also info selected with lock command.\n");
-				}				
+				}
 				if (options->noinit) {
 					fprintf(stderr, "-> Skip debugger inits on hit.\n");
-				}				
+				}
 			}
 			if (options->filename) {
 				fprintf(stderr, "-> Execute debugger commands from '%s' file on hit.\n", options->filename);
@@ -1271,33 +1271,33 @@ static bool BreakCond_Parse(const char *expression, bc_options_t *options, bool 
  */
 static void BreakCond_Print(bc_breakpoint_t *bp)
 {
-		fprintf(stderr, "\t%s", bp->expression);
-		if (bp->options.skip) {
-			fprintf(stderr, " :%d", bp->options.skip);
+	fprintf(stderr, "\t%s", bp->expression);
+	if (bp->options.skip) {
+		fprintf(stderr, " :%d", bp->options.skip);
+	}
+	if (bp->options.once) {
+		fprintf(stderr, " :once");
+	}
+	if (bp->options.quiet) {
+		fprintf(stderr, " :quiet");
+	}
+	if (bp->options.trace) {
+		if (bp->options.lock) {
+			fprintf(stderr, " :lock");
+		} else {
+			fprintf(stderr, " :trace");
 		}
-		if (bp->options.once) {
-			fprintf(stderr, " :once");
+		if (bp->options.noinit) {
+			fprintf(stderr, " :noinit");
 		}
-		if (bp->options.quiet) {
-			fprintf(stderr, " :quiet");
-		}
-		if (bp->options.trace) {
-			if (bp->options.lock) {
-				fprintf(stderr, " :lock");
-			} else {
-				fprintf(stderr, " :trace");
-			}
-			if (bp->options.noinit) {
-				fprintf(stderr, " :noinit");
-			}
-		}
-		if (bp->options.filename) {
-			fprintf(stderr, " :file %s", bp->options.filename);
-		}
-		if (bp->options.deleted) {
-			fprintf(stderr, " (deleted)");
-		}
-		fprintf(stderr, "\n");
+	}
+	if (bp->options.filename) {
+		fprintf(stderr, " :file %s", bp->options.filename);
+	}
+	if (bp->options.deleted) {
+		fprintf(stderr, " (deleted)");
+	}
+	fprintf(stderr, "\n");
 }
 
 /**
@@ -1477,7 +1477,7 @@ static bool BreakCond_Options(char *str, bc_options_t *options, char marker)
 {
 	char *option, *next, *filename;
 	int skip;
-	
+
 	memset(options, 0, sizeof(*options));
 
 	option = strchr(str, marker);
@@ -1552,9 +1552,9 @@ bool BreakCond_Command(const char *args, bool bForDsp)
 	}
 	argscopy = strdup(args);
 	assert(argscopy);
-	
+
 	expression = Str_Trim(argscopy);
-	
+
 	/* subcommands? */
 	if (strncmp(expression, "help", 4) == 0) {
 		fputs(BreakCond_Help, stderr);
