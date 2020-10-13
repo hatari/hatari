@@ -48,14 +48,16 @@ static uint32_t ide_data_readl(void *opaque, uint32_t addr);
 /**
  * Check whether IDE is available: The Falcon always has an IDE controller,
  * and for the other machines it is normally only available on expansion
- * cards - we assume that the users want us to emulate  an IDE controller
+ * cards - we assume that the users want us to emulate an IDE controller
  * on such an expansion card if one of the IDE drives has been enabled.
+ * Note that we also disable IDE on Falcon if bFastBoot is enabled - TOS
+ * boots much faster if it does not have to scan for IDE devices.
  */
 bool Ide_IsAvailable(void)
 {
 	return ConfigureParams.Ide[0].bUseDevice ||
 	       ConfigureParams.Ide[1].bUseDevice ||
-	       Config_IsMachineFalcon();
+	       (Config_IsMachineFalcon() && !ConfigureParams.System.bFastBoot);
 }
 
 /**
