@@ -42,23 +42,28 @@ int VDIPlanes = 4;
 static Uint32 LineABase;           /* Line-A structure */
 static Uint32 FontBase;            /* Font base, used for 16-pixel high font */
 
-/* Last VDI opcode & vectors */
-static Uint16 VDIOpCode;
-static Uint32 VDIControl;
-static Uint32 VDIIntin;
-static Uint32 VDIPtsin;
-static Uint32 VDIIntout;
-static Uint32 VDIPtsout;
-#if ENABLE_TRACING
-/* Last AES opcode & vectors */
-static Uint32 AESControl;
-static Uint32 AESGlobal;
-static Uint32 AESIntin;
-static Uint32 AESIntout;
-static Uint32 AESAddrin;
-static Uint32 AESAddrout;
-static Uint16 AESOpCode;
-#endif
+/* Last VDI opcode, vectors & their contents (for "info vdi") */
+static struct {
+	Uint32 Control;
+	Uint32 Intin;
+	Uint32 Ptsin;
+	Uint32 Intout;
+	Uint32 Ptsout;
+	/* TODO: add arrays for storing above vector contents */
+	Uint16 OpCode;
+} VDI;
+
+/* Last AES opcode, vectors & their contents (for "info aes") */
+static struct {
+	Uint32 Control;
+	Uint32 Global;
+	Uint32 Intin;
+	Uint32 Intout;
+	Uint32 Addrin;
+	Uint32 Addrout;
+	/* TODO: add arrays for storing above vector contents */
+	Uint16 OpCode;
+} AES;
 
 
 /*-----------------------------------------------------------------------*/
@@ -337,7 +342,7 @@ static void AES_OpcodeInfo(FILE *fp, Uint16 opcode)
 			}
 		}
 		/* addrin array size in longs enough for items? */
-		if (items > 0 && items <= STMemory_ReadWord(AESControl+SIZE_WORD*3))
+		if (items > 0 && items <= STMemory_ReadWord(AES.Control+SIZE_WORD*3))
 		{
 			const char *str;
 			fputs("addrin: ", fp);
@@ -347,12 +352,12 @@ static void AES_OpcodeInfo(FILE *fp, Uint16 opcode)
 					first = false;
 				else
 					fputs(", ", fp);
-				str = (const char *)STMemory_STAddrToPointer(STMemory_ReadLong(AESAddrin+SIZE_LONG*i));
+				str = (const char *)STMemory_STAddrToPointer(STMemory_ReadLong(AES.Addrin+SIZE_LONG*i));
 				fprintf(fp, "\"%s\"", str);
 			}
 		}
 		/* intin array size in words */
-		items = STMemory_ReadWord(AESControl+SIZE_WORD*1);
+		items = STMemory_ReadWord(AES.Control+SIZE_WORD*1);
 		if (items > 0)
 		{
 			if (!first)
@@ -367,7 +372,7 @@ static void AES_OpcodeInfo(FILE *fp, Uint16 opcode)
 					first = false;
 				else
 					fputs(",", fp);
-				fprintf(fp, "0x%x", STMemory_ReadWord(AESIntin+SIZE_WORD*i));
+				fprintf(fp, "0x%x", STMemory_ReadWord(AES.Intin+SIZE_WORD*i));
 			}
 		}
 		fputs(")\n", fp);
@@ -390,13 +395,14 @@ static bool AES_StoreVars(Uint32 TablePtr)
 		return false;
 	}
 	/* store values for debugger "info aes" command */
-	AESControl = STMemory_ReadLong(TablePtr);
-	AESGlobal  = STMemory_ReadLong(TablePtr+4);
-	AESIntin   = STMemory_ReadLong(TablePtr+8);
-	AESIntout  = STMemory_ReadLong(TablePtr+12);
-	AESAddrin  = STMemory_ReadLong(TablePtr+16);
-	AESAddrout = STMemory_ReadLong(TablePtr+20);
-	AESOpCode  = STMemory_ReadWord(AESControl);
+	AES.Control = STMemory_ReadLong(TablePtr);
+	AES.Global  = STMemory_ReadLong(TablePtr+4);
+	AES.Intin   = STMemory_ReadLong(TablePtr+8);
+	AES.Intout  = STMemory_ReadLong(TablePtr+12);
+	AES.Addrin  = STMemory_ReadLong(TablePtr+16);
+	AES.Addrout = STMemory_ReadLong(TablePtr+20);
+	/* TODO: copy/convert also above array contents to AES struct */
+	AES.OpCode  = STMemory_ReadWord(AES.Control);
 	return true;
 }
 
@@ -420,6 +426,7 @@ void AES_Info(FILE *fp, Uint32 bShowOpcodes)
 	opcode = Vars_GetAesOpcode();
 	if (opcode != INVALID_OPCODE)
 	{
+		/* we're on AES trap -> store new values */
 		if (!AES_StoreVars(Regs[REG_D1]))
 			return;
 	}
@@ -433,14 +440,17 @@ void AES_Info(FILE *fp, Uint32 bShowOpcodes)
 			fputs("VDI/AES interception isn't enabled!\n", fp);
 			return;
 		}
-		if (!AESControl)
+		if (!AES.Control)
 		{
 			fputs("No traced AES calls!\n", fp);
 			return;
 		}
-		opcode = STMemory_ReadWord(AESControl);
+		opcode = STMemory_ReadWord(AES.Control);
 	}
-	if (opcode != AESOpCode)
+	/* TODO: replace use of STMemory calls with getting the data
+	 * from already converted VDI.* array members
+	 */
+	if (opcode != AES.OpCode)
 	{
 		fputs("AES parameter block contents changed since last call!\n", fp);
 		return;
@@ -450,17 +460,17 @@ void AES_Info(FILE *fp, Uint32 bShowOpcodes)
 	fprintf(fp, "- Opcode: %3hd (%s)\n",
 		opcode, AES_Opcode2Name(opcode));
 
-	fprintf(fp, "- Control: %#8x\n", AESControl);
+	fprintf(fp, "- Control: %#8x\n", AES.Control);
 	fprintf(fp, "- Global:  %#8x, %d bytes\n",
-		AESGlobal, 2+2+2+4+4+4+4+4+4);
+		AES.Global, 2+2+2+4+4+4+4+4+4);
 	fprintf(fp, "- Intin:   %#8x, %d words\n",
-		AESIntin, STMemory_ReadWord(AESControl+2*1));
+		AES.Intin, STMemory_ReadWord(AES.Control+2*1));
 	fprintf(fp, "- Intout:  %#8x, %d words\n",
-		AESIntout, STMemory_ReadWord(AESControl+2*2));
+		AES.Intout, STMemory_ReadWord(AES.Control+2*2));
 	fprintf(fp, "- Addrin:  %#8x, %d longs\n",
-		AESAddrin, STMemory_ReadWord(AESControl+2*3));
+		AES.Addrin, STMemory_ReadWord(AES.Control+2*3));
 	fprintf(fp, "- Addrout: %#8x, %d longs\n",
-		AESAddrout, STMemory_ReadWord(AESControl+2*4));
+		AES.Addrout, STMemory_ReadWord(AES.Control+2*4));
 #endif
 }
 
@@ -784,12 +794,13 @@ static bool VDI_StoreVars(Uint32 TablePtr)
 	/* store values for extended VDI resolution handling
 	 * and debugger "info vdi" command
 	 */
-	VDIControl = STMemory_ReadLong(TablePtr);
-	VDIIntin   = STMemory_ReadLong(TablePtr+4);
-	VDIPtsin   = STMemory_ReadLong(TablePtr+8);
-	VDIIntout  = STMemory_ReadLong(TablePtr+12);
-	VDIPtsout  = STMemory_ReadLong(TablePtr+16);
-	VDIOpCode  = STMemory_ReadWord(VDIControl);
+	VDI.Control = STMemory_ReadLong(TablePtr);
+	VDI.Intin   = STMemory_ReadLong(TablePtr+4);
+	VDI.Ptsin   = STMemory_ReadLong(TablePtr+8);
+	VDI.Intout  = STMemory_ReadLong(TablePtr+12);
+	VDI.Ptsout  = STMemory_ReadLong(TablePtr+16);
+	/* TODO: copy/convert also above array contents to AES struct */
+	VDI.OpCode  = STMemory_ReadWord(VDI.Control);
 	return true;
 }
 
@@ -821,6 +832,7 @@ void VDI_Info(FILE *fp, Uint32 bShowOpcodes)
 	opcode = Vars_GetVdiOpcode();
 	if (opcode != INVALID_OPCODE)
 	{
+		/* we're on VDI trap -> store new values */
 		if (!VDI_StoreVars(Regs[REG_D1]))
 			return;
 	}
@@ -834,35 +846,38 @@ void VDI_Info(FILE *fp, Uint32 bShowOpcodes)
 			fputs("VDI/AES interception isn't enabled!\n", fp);
 			return;
 		}
-		if (!VDIControl)
+		if (!VDI.Control)
 		{
 			fputs("No traced VDI calls!\n", fp);
 			return;
 		}
-		opcode = STMemory_ReadWord(VDIControl);
+		opcode = STMemory_ReadWord(VDI.Control);
 	}
-	if (opcode != VDIOpCode)
+	/* TODO: replace use of STMemory calls with getting the data
+	 * from already converted VDI.* array members
+	 */
+	if (opcode != VDI.OpCode)
 	{
 		fputs("VDI parameter block contents changed since last call!\n", fp);
 		return;
 	}
 	fputs("Latest VDI Parameter block:\n", fp);
-	Uint16 subcode = STMemory_ReadWord(VDIControl+2*5);
-	Uint16 nintin = STMemory_ReadWord(VDIControl+2*3);
+	Uint16 subcode = STMemory_ReadWord(VDI.Control+2*5);
+	Uint16 nintin = STMemory_ReadWord(VDI.Control+2*3);
 	const char *name = VDI_Opcode2Name(opcode, subcode, nintin, &extra_info);
 	fprintf(fp, "- Opcode/Subcode: %hd/%hd (%s%s%s)\n",
 		opcode, subcode, name, extra_info ? ", " : "", extra_info ? extra_info : "");
 	fprintf(fp, "- Device handle: %d\n",
-		STMemory_ReadWord(VDIControl+2*6));
-	fprintf(fp, "- Control: %#8x\n", VDIControl);
+		STMemory_ReadWord(VDI.Control+2*6));
+	fprintf(fp, "- Control: %#8x\n", VDI.Control);
 	fprintf(fp, "- Ptsin:   %#8x, %d coordinate word pairs\n",
-		VDIPtsin, STMemory_ReadWord(VDIControl+2*1));
+		VDI.Ptsin, STMemory_ReadWord(VDI.Control+2*1));
 	fprintf(fp, "- Ptsout:  %#8x, %d coordinate word pairs\n",
-		VDIPtsout, STMemory_ReadWord(VDIControl+2*2));
+		VDI.Ptsout, STMemory_ReadWord(VDI.Control+2*2));
 	fprintf(fp, "- Intin:   %#8x, %d words\n",
-		VDIIntin, STMemory_ReadWord(VDIControl+2*3));
+		VDI.Intin, STMemory_ReadWord(VDI.Control+2*3));
 	fprintf(fp, "- Intout:  %#8x, %d words\n",
-		VDIIntout, STMemory_ReadWord(VDIControl+2*4));
+		VDI.Intout, STMemory_ReadWord(VDI.Control+2*4));
 #endif
 }
 
@@ -900,7 +915,7 @@ bool VDI_AES_Entry(void)
 			return false;
 		if (LOG_TRACE_LEVEL(TRACE_OS_AES))
 		{
-			AES_OpcodeInfo(TraceFile, AESOpCode);
+			AES_OpcodeInfo(TraceFile, AES.OpCode);
 		}
 		/* using same special opcode trick doesn't work for
 		 * both VDI & AES as AES functions can be called
@@ -916,17 +931,17 @@ bool VDI_AES_Entry(void)
 
 		if (!VDI_StoreVars(TablePtr))
 			return false;
-		subcode = STMemory_ReadWord(VDIControl+2*5);
-		nintin = STMemory_ReadWord(VDIControl+2*3);
-		name = VDI_Opcode2Name(VDIOpCode, subcode, nintin, &extra_info);
+		subcode = STMemory_ReadWord(VDI.Control+2*5);
+		nintin = STMemory_ReadWord(VDI.Control+2*3);
+		name = VDI_Opcode2Name(VDI.OpCode, subcode, nintin, &extra_info);
 		LOG_TRACE(TRACE_OS_VDI, "VDI call %3hd/%3hd (%s%s%s)\n",
-			  VDIOpCode, subcode, name, extra_info ? ", " : "", extra_info ? extra_info : "");
+			  VDI.OpCode, subcode, name, extra_info ? ", " : "", extra_info ? extra_info : "");
 	}
 #endif
 	if (call == 0x73)
 	{
 		/* Only workstation open needs to be handled at trap return */
-		return bUseVDIRes && VDI_isWorkstationOpen(VDIOpCode);
+		return bUseVDIRes && VDI_isWorkstationOpen(VDI.OpCode);
 	}
 
 	LOG_TRACE((TRACE_OS_VDI|TRACE_OS_AES), "Trap #2 with D0 = 0x%hX\n", call);
@@ -1014,14 +1029,14 @@ void VDI_LineA(Uint32 linea, Uint32 fontbase)
 void VDI_Complete(void)
 {
 	/* right opcode? */
-	assert(VDI_isWorkstationOpen(VDIOpCode));
+	assert(VDI_isWorkstationOpen(VDI.OpCode));
 	/* not changed between entry and completion? */
-	assert(VDIOpCode == STMemory_ReadWord(VDIControl));
+	assert(VDI.OpCode == STMemory_ReadWord(VDI.Control));
 
-	STMemory_WriteWord(VDIIntout, VDIWidth-1);           /* IntOut[0] Width-1 */
-	STMemory_WriteWord(VDIIntout+1*2, VDIHeight-1);      /* IntOut[1] Height-1 */
-	STMemory_WriteWord(VDIIntout+13*2, 1 << VDIPlanes);  /* IntOut[13] #colors */
-	STMemory_WriteWord(VDIIntout+39*2, 512);             /* IntOut[39] #available colors */
+	STMemory_WriteWord(VDI.Intout, VDIWidth-1);           /* IntOut[0] Width-1 */
+	STMemory_WriteWord(VDI.Intout+1*2, VDIHeight-1);      /* IntOut[1] Height-1 */
+	STMemory_WriteWord(VDI.Intout+13*2, 1 << VDIPlanes);  /* IntOut[13] #colors */
+	STMemory_WriteWord(VDI.Intout+39*2, 512);             /* IntOut[39] #available colors */
 
 	STMemory_WriteWord(LineABase-0x15a*2, VDIWidth-1);   /* WKXRez */
 	STMemory_WriteWord(LineABase-0x159*2, VDIHeight-1);  /* WKYRez */
