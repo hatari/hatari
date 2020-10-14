@@ -173,7 +173,7 @@ class Hatari:
         else:
             # child runs Hatari
             allargs = [self.hataribin, "--control-socket", self.controlpath] + args
-            print("RUN:", allargs)
+            print('RUN: "%s"' % ' '.join(allargs))
             os.execvp(self.hataribin, allargs)
 
     def send_message(self, msg, fast = False):
