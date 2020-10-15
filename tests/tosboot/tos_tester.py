@@ -300,6 +300,10 @@ class Config:
     def usage(self, msg=None):
         "output program usage information"
         name = os.path.basename(sys.argv[0])
+        # option value lists in directly CLI copy-pastable format
+        disks, graphics, machines = [','.join(x) for x in
+            (self.all_disks, self.all_graphics, self.all_machines)]
+        memsizes = ','.join([str(x) for x in self.all_memsizes])
         print(__doc__)
         print("""
 Usage: %s [options] <TOS image files>
@@ -308,11 +312,11 @@ Options:
 \t-h, --help\tthis help
 \t-f, --fast\tspeed up boot with less accurate emulation:
 \t\t\t"--fast-forward yes --fast-boot yes --fastfdc yes --timer-d yes"
-\t-d, --disks\t%s
-\t-g, --graphics\t%s
-\t-m, --machines\t%s
-\t-s, --memsizes\t%s
-\t-t, --ttrams\t%s
+\t-d, --disks\t(%s)
+\t-g, --graphics\t(%s)
+\t-m, --machines\t(%s)
+\t-s, --memsizes\t(%s)
+\t-t, --ttrams\t(0-512, in 4MB steps)
 \t-b, --bool\t(extra boolean Hatari options to test)
 
 Multiple values for an option need to be comma separated. If some
@@ -326,7 +330,7 @@ For example:
 \t--ttrams 0,32 \\
 \t--graphics mono,rgb \\
 \t--bool --compatible,--mmu
-""" % (name, self.all_disks, self.all_graphics, self.all_machines, self.all_memsizes, self.ttrams, name))
+""" % (name, disks, graphics, machines, memsizes, name))
         if msg:
             print("ERROR: %s\n" % msg)
         sys.exit(1)
