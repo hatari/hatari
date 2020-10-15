@@ -1,7 +1,11 @@
 [Desktop Entry]
-Encoding=UTF-8
 Version=1.0
 Type=Application
 Name=Hatari UI
+Comment=Run old Atari ST/STE/TT/Falcon software
 Exec=hatariui
 Icon=hatari
+StartupNotify=true
+Categories=Game;Emulator;
+Keywords=Emulator;Atari;Atari ST;Atari Falcon;
+Terminal=false

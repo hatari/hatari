@@ -2,10 +2,10 @@
 Version=1.0
 Type=Application
 Name=Hatari
-GenericName=ST emulator
-Comment=Run old ST/STE/TT/Falcon software
+Comment=Run old Atari ST/STE/TT/Falcon software
 Exec=hatari %f
 Icon=hatari
-MimeType=application/x-st-disk-image;application/vnd.msa-disk-image;application/vnd.fastcopy-disk-image;application/x-stx-disk-image
+MimeType=application/x-st-disk-image;application/vnd.msa-disk-image;application/vnd.fastcopy-disk-image;application/x-stx-disk-image;
 Categories=Game;Emulator;
+Keywords=Emulator;Atari;Atari ST;Atari Falcon;
 Terminal=false
