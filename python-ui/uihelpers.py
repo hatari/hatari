@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #
 # Misc common helper classes and functions for the Hatari UI
 #

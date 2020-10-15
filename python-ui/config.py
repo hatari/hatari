@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #
 # Class and helper functions for handling (Hatari) INI style
 # configuration files: loading, saving, setting/getting variables,

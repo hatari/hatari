@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #
 # Classes for the Hatari UI dialogs
 #

@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #
 # Classes for Hatari emulator instance and mapping its congfiguration
 # variables with its command line option.
