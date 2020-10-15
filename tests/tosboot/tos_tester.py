@@ -128,28 +128,23 @@ class TOS:
         # https://en.wikipedia.org/wiki/Atari_TOS
         elif version <= 0x100:
             # boots up really slow with 4MB
-            info = (0, 16, ("st",))
+            info = (0, 20, ("st",))
         elif version <= 0x104:
-            info = (0, 6, ("st", "megast"))
+            info = (0, 12, ("st", "megast"))
         elif version <= 0x162:
-            info = (0, 6, ("ste",))
+            info = (0, 20, ("ste",))
         elif version < 0x206:
             # TOS v2.x are slower with VDI mode than others
-            info = (2, 8, ("ste", "megaste"))
+            info = (3, 14, ("ste", "megaste"))
         elif version == 0x206:
             # ST support added to TOS 2.x only after 2.05
-            info = (2, 8, ("st", "megast", "ste", "megaste"))
-        elif version < 0x306:
-            # memcheck comes up fast, but boot takes time,
-            # especially with GEMDOS HD and MMU, and
-            # even more on TOS 3.00
-            info = (0, 16, ("tt",))
-        elif version == 0x306:
-            info = (2, 8, ("tt",))
+            info = (3, 14, ("st", "megast", "ste", "megaste"))
+        elif version <= 0x306:
+            # MMU slowdown is taken care of in prepare_test()
+            info = (3, 16, ("tt",))
         elif version <= 0x404:
-            # memcheck takes long to come up with lots of RAM,
-            # especially with MMU enabled
-            info = (3, 10, ("falcon",))
+            # no-IDE scan slowdown is taken care of in prepare_test()
+            info = (3, 28, ("falcon",))
         else:
             raise AssertionError("Unknown '%s' TOS version 0x%x" % (name, version))
 
@@ -689,6 +684,9 @@ class Tester:
         if config.fast:
             testargs += ["--fast-forward", "yes", "--fast-boot", "yes",
                          "--fastfdc", "yes", "--timer-d", "yes"]
+        elif machine == "falcon" and disk != "ide":
+            # Falcon IDE interface scanning when there's no IDE takes long
+            memwait += 8
 
         if disk == "gemdos":
             exit_if_missing([self.testprg, self.textinput])
