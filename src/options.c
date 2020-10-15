@@ -402,7 +402,7 @@ static const opt_t HatariOptions[] = {
 	  "<x>", "ST RAM size (x = size in MiB from 0 to 14, 0 = 512KiB ; else size in KiB)" },
 #if ENABLE_WINUAE_CPU
 	{ OPT_TT_RAM,   NULL, "--ttram",
-	  "<x>", "TT RAM size (x = size in MiB from 0 to 256)" },
+	  "<x>", "TT RAM size (x = size in MiB from 0 to 512)" },
 #endif
 	{ OPT_MEMSTATE,   NULL, "--memstate",
 	  "<file>", "Load memory snap-shot <file>" },
