@@ -4,7 +4,7 @@ When first thinking about new release
 -------------------------------------
 
 * Get list of things we want to push in before the release
-  - Make sure that any other larger changes are post-poned
+  - Make sure that any other larger changes are postponed
     after release
 
 * Ask about compatibility / bug fixes & features that people would
@@ -15,6 +15,7 @@ When first thinking about new release
   - https://sources.debian.org/patches/hatari/
   - https://src.fedoraproject.org/rpms/hatari/tree/master
   - https://packages.gentoo.org/packages/games-emulation/hatari
+  - https://svnweb.mageia.org/packages/cauldron/hatari/current/
   - https://build.opensuse.org/search?search_text=hatari
 
 
@@ -50,7 +51,7 @@ everything that should work, does still work:
 Release candidate
 -----------------
 
-After found issues have been found, prepare for release candidate:
+After found issues have been fixed, prepare for release candidate:
 
 * Check that Hatari documentation and WWW-site repository are up to date
 
