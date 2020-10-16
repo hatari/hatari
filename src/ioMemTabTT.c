@@ -15,7 +15,7 @@
 	move.b $ff8264,d0  -> 82
 	move.b $ff8265,d0  -> 65
 */
-const char IoMemTabTT_fileid[] = "Hatari ioMemTabTT.c : " __DATE__ " " __TIME__;
+const char IoMemTabTT_fileid[] = "Hatari ioMemTabTT.c";
 
 #include "main.h"
 #include "configuration.h"

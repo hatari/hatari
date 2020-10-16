@@ -63,7 +63,7 @@
 	$FFFF98FC (long) : VDL_PAL - Videl palette Register 255
 */
 
-const char VIDEL_fileid[] = "Hatari videl.c : " __DATE__ " " __TIME__;
+const char VIDEL_fileid[] = "Hatari videl.c";
 
 #include "main.h"
 #include "configuration.h"

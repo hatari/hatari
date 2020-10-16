@@ -6,7 +6,7 @@
 
   Table with hardware IO handlers for the Falcon.
 */
-const char IoMemTabFalc_fileid[] = "Hatari ioMemTabFalcon.c : " __DATE__ " " __TIME__;
+const char IoMemTabFalc_fileid[] = "Hatari ioMemTabFalcon.c";
 
 #include "main.h"
 #include "configuration.h"

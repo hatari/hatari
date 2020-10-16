@@ -17,7 +17,7 @@
  *   Empty lines and lines starting with '#' are ignored.  It's AHCC SYM
  *   output compatible.
  */
-const char Symbols_fileid[] = "Hatari symbols.c : " __DATE__ " " __TIME__;
+const char Symbols_fileid[] = "Hatari symbols.c";
 
 #include <ctype.h>
 #include <stdio.h>

@@ -10,7 +10,7 @@
   the changes are done, these are compared to see whether emulator
   needs to be rebooted
 */
-const char Change_fileid[] = "Hatari change.c : " __DATE__ " " __TIME__;
+const char Change_fileid[] = "Hatari change.c";
 
 #include <ctype.h>
 #include "main.h"

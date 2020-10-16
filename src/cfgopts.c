@@ -53,7 +53,7 @@
 /  a friend, but please do not charge him....
 /
 /---------------------------------------------------------------------*/
-const char CfgOpts_fileid[] = "Hatari cfgopts.c : " __DATE__ " " __TIME__;
+const char CfgOpts_fileid[] = "Hatari cfgopts.c";
 
 #include <stdio.h>
 #include <stdlib.h>

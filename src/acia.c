@@ -9,7 +9,7 @@
   MC6850 ACIA emulation.
 */
 
-const char ACIA_fileid[] = "Hatari acia.c : " __DATE__ " " __TIME__;
+const char ACIA_fileid[] = "Hatari acia.c";
 
 
 /* 2012/09/28	[NP]	Start of the full rewrite of the MC6850 ACIA emulation, using the official	*/

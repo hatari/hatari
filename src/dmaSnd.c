@@ -93,7 +93,7 @@
 */
 
 
-const char DmaSnd_fileid[] = "Hatari dmaSnd.c : " __DATE__ " " __TIME__;
+const char DmaSnd_fileid[] = "Hatari dmaSnd.c";
 
 #include "main.h"
 #include "audio.h"

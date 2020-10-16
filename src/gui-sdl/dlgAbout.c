@@ -6,7 +6,7 @@
 
   Show information about the program and its license.
 */
-const char DlgAbout_fileid[] = "Hatari dlgAbout.c : " __DATE__ " " __TIME__;
+const char DlgAbout_fileid[] = "Hatari dlgAbout.c";
 
 #include "main.h"
 #include "version.h"

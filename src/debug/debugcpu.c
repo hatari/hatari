@@ -7,7 +7,7 @@
   debugcpu.c - function needed for the CPU debugging tasks like memory
   and register dumps.
 */
-const char DebugCpu_fileid[] = "Hatari debugcpu.c : " __DATE__ " " __TIME__;
+const char DebugCpu_fileid[] = "Hatari debugcpu.c";
 
 #include <stdio.h>
 #include <ctype.h>

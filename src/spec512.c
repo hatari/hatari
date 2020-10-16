@@ -66,7 +66,7 @@
 /*			instead for all cases.							*/
 
 
-const char Spec512_fileid[] = "Hatari spec512.c : " __DATE__ " " __TIME__;
+const char Spec512_fileid[] = "Hatari spec512.c";
 
 #include <SDL_endian.h>
 

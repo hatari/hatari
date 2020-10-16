@@ -72,7 +72,7 @@
 /*			with some tables/heuristics anymore.						*/
 
 
-const char M68000_fileid[] = "Hatari m68000.c : " __DATE__ " " __TIME__;
+const char M68000_fileid[] = "Hatari m68000.c";
 
 #include "main.h"
 #include "configuration.h"

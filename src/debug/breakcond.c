@@ -11,7 +11,7 @@
   whether the breakpoint should be triggered.  See BreakCond_Help()
   for the syntax.
 */
-const char BreakCond_fileid[] = "Hatari breakcond.c : " __DATE__ " " __TIME__;
+const char BreakCond_fileid[] = "Hatari breakcond.c";
 
 #include <ctype.h>
 #include <stdlib.h>

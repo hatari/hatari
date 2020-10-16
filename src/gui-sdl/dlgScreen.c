@@ -6,7 +6,7 @@
 
  Atari monitor and Hatari window settings.
 */
-const char DlgScreen_fileid[] = "Hatari dlgScreen.c : " __DATE__ " " __TIME__;
+const char DlgScreen_fileid[] = "Hatari dlgScreen.c";
 
 #include "main.h"
 #include "configuration.h"

@@ -8,7 +8,7 @@
  *
  * history.c - functions for debugger entry & breakpoint history
  */
-const char History_fileid[] = "Hatari history.c : " __DATE__ " " __TIME__;
+const char History_fileid[] = "Hatari history.c";
 
 #include <assert.h>
 #include <errno.h>

@@ -6,7 +6,7 @@
 
   Code to handle our options dialog.
 */
-const char Dialog_fileid[] = "Hatari dialog.c : " __DATE__ " " __TIME__;
+const char Dialog_fileid[] = "Hatari dialog.c";
 
 #include "main.h"
 #include "configuration.h"

@@ -13,7 +13,7 @@
   the bytes into an input buffer. This method fits in with the internet code
   which also reads data into a buffer.
 */
-const char RS232_fileid[] = "Hatari rs232.c : " __DATE__ " " __TIME__;
+const char RS232_fileid[] = "Hatari rs232.c";
 
 #include <SDL.h>
 #include <SDL_thread.h>

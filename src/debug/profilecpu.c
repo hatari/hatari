@@ -8,7 +8,7 @@
  *
  * profilecpu.c - functions for profiling CPU and showing the results.
  */
-const char Profilecpu_fileid[] = "Hatari profilecpu.c : " __DATE__ " " __TIME__;
+const char Profilecpu_fileid[] = "Hatari profilecpu.c";
 
 #include <stdio.h>
 #include <inttypes.h>

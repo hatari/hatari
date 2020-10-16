@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-const char Configuration_fileid[] = "Hatari configuration.c : " __DATE__ " " __TIME__;
+const char Configuration_fileid[] = "Hatari configuration.c";
 
 #include <SDL_keyboard.h>
 #include <SDL_joystick.h>

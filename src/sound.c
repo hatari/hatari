@@ -124,7 +124,7 @@
 /* 2019/09/09	[NP]	Add YM2149_Next_Resample_Weighted_Average_N for better		*/
 /*			downsampling of the internal 250 kHz sound buffer.		*/
 
-const char Sound_fileid[] = "Hatari sound.c : " __DATE__ " " __TIME__;
+const char Sound_fileid[] = "Hatari sound.c";
 
 #include "main.h"
 #include "audio.h"

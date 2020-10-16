@@ -30,7 +30,7 @@
 /*			mode (instead of using heuristics for the most common opcodes).	*/
 
 
-const char Cycles_fileid[] = "Hatari cycles.c : " __DATE__ " " __TIME__;
+const char Cycles_fileid[] = "Hatari cycles.c";
 
 #include "main.h"
 #include "m68000.h"

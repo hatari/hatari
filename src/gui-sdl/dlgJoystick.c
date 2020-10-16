@@ -4,7 +4,7 @@
   This file is distributed under the GNU General Public License, version 2
   or at your option any later version. Read the file gpl.txt for details.
 */
-const char DlgJoystick_fileid[] = "Hatari dlgJoystick.c : " __DATE__ " " __TIME__;
+const char DlgJoystick_fileid[] = "Hatari dlgJoystick.c";
 
 #include "main.h"
 #include "configuration.h"

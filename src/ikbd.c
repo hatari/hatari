@@ -16,7 +16,7 @@
   handlers to emulate the expected result.
 */
 
-const char IKBD_fileid[] = "Hatari ikbd.c : " __DATE__ " " __TIME__;
+const char IKBD_fileid[] = "Hatari ikbd.c";
 
 /* 2007/09/29	[NP]	Use the new int.c to add interrupts with INT_CPU_CYCLE / INT_MFP_CYCLE.		*/
 /* 2007/12/09	[NP]	If reset is written to ACIA control register, we must call ACIA_Reset to reset	*/

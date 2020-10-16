@@ -12,7 +12,7 @@
  * http://hddriver.seimet.de/en/downloads.html, where you can also find
  * information on the open SCSI Driver standard.
  */
-const char NfScsiDrv_fileid[] = "Hatari nf_scsidrv.c : " __DATE__ " " __TIME__;
+const char NfScsiDrv_fileid[] = "Hatari nf_scsidrv.c";
 
 #if defined(__linux__)
 

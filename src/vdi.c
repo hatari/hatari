@@ -11,7 +11,7 @@
   We need to intercept the initial Line-A call (which we force into the TOS on
   boot-up) and also the init calls to the VDI.
 */
-const char VDI_fileid[] = "Hatari vdi.c : " __DATE__ " " __TIME__;
+const char VDI_fileid[] = "Hatari vdi.c";
 
 #include "main.h"
 #include "configuration.h"

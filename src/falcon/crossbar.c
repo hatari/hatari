@@ -89,7 +89,7 @@
                                    - monitor speaker
 */
 
-const char crossbar_fileid[] = "Hatari Crossbar.c : " __DATE__ " " __TIME__;
+const char crossbar_fileid[] = "Hatari Crossbar.c";
 
 #include "main.h"
 #include "audio.h"

@@ -172,7 +172,7 @@
 
 
 
-const char PSG_fileid[] = "Hatari psg.c : " __DATE__ " " __TIME__;
+const char PSG_fileid[] = "Hatari psg.c";
 
 #include "main.h"
 #include "configuration.h"

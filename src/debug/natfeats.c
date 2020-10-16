@@ -9,7 +9,7 @@
  * natfeats.c - Hatari Native features identification and call forwarding,
  * modeled after similar code in Aranym.  See tests/natfeats/ for more info.
  */
-const char Natfeats_fileid[] = "Hatari natfeats.c : " __DATE__ " " __TIME__;
+const char Natfeats_fileid[] = "Hatari natfeats.c";
 
 #include <stdio.h>
 #include "main.h"

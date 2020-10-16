@@ -57,7 +57,7 @@
 */
 
 
-const char Rtc_fileid[] = "Hatari rtc.c : " __DATE__ " " __TIME__;
+const char Rtc_fileid[] = "Hatari rtc.c";
 
 #include <time.h>
 

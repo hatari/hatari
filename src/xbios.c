@@ -9,7 +9,7 @@
   Intercept and direct XBios calls to allow saving screenshots in host format
   and to help with tracing/debugging.
 */
-const char XBios_fileid[] = "Hatari xbios.c : " __DATE__ " " __TIME__;
+const char XBios_fileid[] = "Hatari xbios.c";
 
 #include "main.h"
 #include "configuration.h"

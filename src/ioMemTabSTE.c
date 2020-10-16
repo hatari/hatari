@@ -6,7 +6,7 @@
 
   Table with hardware IO handlers for the STE.
 */
-const char IoMemTabSTE_fileid[] = "Hatari ioMemTabSTE.c : " __DATE__ " " __TIME__;
+const char IoMemTabSTE_fileid[] = "Hatari ioMemTabSTE.c";
 
 #include "main.h"
 #include "configuration.h"

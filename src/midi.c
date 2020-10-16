@@ -20,7 +20,7 @@
     after TDR was copied into TSR, which is approximatively when the next bit should
     be transferred (256 cycles) (fix the program 'Notator')
 */
-const char Midi_fileid[] = "Hatari midi.c : " __DATE__ " " __TIME__;
+const char Midi_fileid[] = "Hatari midi.c";
 
 #include <SDL_types.h>
 

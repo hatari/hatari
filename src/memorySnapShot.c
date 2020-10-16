@@ -16,7 +16,7 @@
   reduce redundancy and the function 'MemorySnapShot_Store' decides if it
   should save or restore the data.
 */
-const char MemorySnapShot_fileid[] = "Hatari memorySnapShot.c : " __DATE__ " " __TIME__;
+const char MemorySnapShot_fileid[] = "Hatari memorySnapShot.c";
 
 #include <SDL_types.h>
 #include <errno.h>

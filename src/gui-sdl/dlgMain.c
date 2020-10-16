@@ -6,7 +6,7 @@
 
   The main dialog.
 */
-const char DlgMain_fileid[] = "Hatari dlgMain.c : " __DATE__ " " __TIME__;
+const char DlgMain_fileid[] = "Hatari dlgMain.c";
 
 #include "main.h"
 #include "configuration.h"

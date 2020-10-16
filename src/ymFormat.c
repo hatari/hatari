@@ -6,7 +6,7 @@
 
   YM File output, for use with STSound etc...
 */
-const char YMFormat_fileid[] = "Hatari ymFormat.c : " __DATE__ " " __TIME__;
+const char YMFormat_fileid[] = "Hatari ymFormat.c";
 
 #include "main.h"
 #include "configuration.h"

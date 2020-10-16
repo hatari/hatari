@@ -10,7 +10,7 @@
   * This file is distributed under the GNU General Public License, version 2
   * or at your option any later version. Read the file gpl.txt for details.
   */
-const char Memory_fileid[] = "Hatari memory.c : " __DATE__ " " __TIME__;
+const char Memory_fileid[] = "Hatari memory.c";
 
 #include <SDL.h>
 #include "config.h"

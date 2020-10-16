@@ -8,7 +8,7 @@
  *
  * console.c - catching of emulated console output with minimal VT52 emulation.
  */
-const char Console_fileid[] = "Hatari console.c : " __DATE__ " " __TIME__;
+const char Console_fileid[] = "Hatari console.c";
 
 #include <stdio.h>
 #include <string.h>

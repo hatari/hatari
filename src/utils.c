@@ -9,7 +9,7 @@
  *
  * This file contains various utility functions used by different parts of Hatari.
  */
-const char Utils_fileid[] = "Hatari utils.c : " __DATE__ " " __TIME__;
+const char Utils_fileid[] = "Hatari utils.c";
 
 #include "utils.h"
 

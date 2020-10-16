@@ -16,7 +16,7 @@
   DMA/Microwire addresses on boot-up which (correctly) cause a
   bus-error on Hatari as they would in a real STfm. If a user tries
   to select any of these images we bring up an error. */
-const char TOS_fileid[] = "Hatari tos.c : " __DATE__ " " __TIME__;
+const char TOS_fileid[] = "Hatari tos.c";
 
 #include <SDL_endian.h>
 

@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Main_fileid[] = "Hatari main.c : " __DATE__ " " __TIME__;
+const char Main_fileid[] = "Hatari main.c";
 
 #include <time.h>
 #include <errno.h>

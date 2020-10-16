@@ -15,7 +15,7 @@
   simplified and would need to be changed to handle more complex disk images (Pasti).
 */
 
-const char FDC_fileid[] = "Hatari fdc.c : " __DATE__ " " __TIME__;
+const char FDC_fileid[] = "Hatari fdc.c";
 
 #include <inttypes.h>
 

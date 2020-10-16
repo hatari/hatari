@@ -6,7 +6,7 @@
 
   This is the CPU settings dialog
 */
-const char DlgCpu_fileid[] = "Hatari dlgCpu.c : " __DATE__ " " __TIME__;
+const char DlgCpu_fileid[] = "Hatari dlgCpu.c";
 
 #include "main.h"
 #include "configuration.h"

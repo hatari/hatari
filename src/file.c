@@ -6,7 +6,7 @@
 
   Common file access functions.
 */
-const char File_fileid[] = "Hatari file.c : " __DATE__ " " __TIME__;
+const char File_fileid[] = "Hatari file.c";
 
 #include "main.h"
 #include <sys/types.h>

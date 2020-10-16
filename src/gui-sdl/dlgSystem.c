@@ -6,7 +6,7 @@
 
   Dialog for setting various system options
 */
-const char DlgSystem_fileid[] = "Hatari dlgSystem.c : " __DATE__ " " __TIME__;
+const char DlgSystem_fileid[] = "Hatari dlgSystem.c";
 
 #include "main.h"
 #include "configuration.h"

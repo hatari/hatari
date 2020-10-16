@@ -6,7 +6,7 @@
  
   Create blank .ST/.MSA disk images.
 */
-const char CreateBlankImage_fileid[] = "Hatari createBlankImage.c : " __DATE__ " " __TIME__;
+const char CreateBlankImage_fileid[] = "Hatari createBlankImage.c";
 
 #include "main.h"
 #include "configuration.h"

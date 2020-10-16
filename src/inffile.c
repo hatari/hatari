@@ -6,7 +6,7 @@
 
   TOS *.INF file overloading for autostarting & TOS resolution overriding.
 */
-const char INFFILE_fileid[] = "Hatari inffile.c : " __DATE__ " " __TIME__;
+const char INFFILE_fileid[] = "Hatari inffile.c";
 
 #include <SDL_endian.h>
 #include <assert.h>

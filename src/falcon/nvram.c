@@ -50,7 +50,7 @@
   - periodic divisor & rate-control bits
   - alarm, update-end and periodic interrupt generation
 */
-const char NvRam_fileid[] = "Hatari nvram.c : " __DATE__ " " __TIME__;
+const char NvRam_fileid[] = "Hatari nvram.c";
 
 #include <time.h>
 

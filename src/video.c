@@ -423,7 +423,7 @@
 /*			'Hard As Ice' by ICE)							*/
 
 
-const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
+const char Video_fileid[] = "Hatari video.c";
 
 #include <SDL_endian.h>
 

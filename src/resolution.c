@@ -6,7 +6,7 @@
 
   SDL resolution limitation and selection routines.
 */
-const char Resolution_fileid[] = "Hatari resolution.c : " __DATE__ " " __TIME__;
+const char Resolution_fileid[] = "Hatari resolution.c";
 
 #include <SDL.h>
 #include "main.h"

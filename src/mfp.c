@@ -125,7 +125,7 @@
 /*			added or not (depending on when it happened during the CPU	*/
 /*			instruction).							*/
 
-const char MFP_fileid[] = "Hatari mfp.c : " __DATE__ " " __TIME__;
+const char MFP_fileid[] = "Hatari mfp.c";
 
 #include <stdint.h>		/* Needed for UINT64_MAX */
 #include "main.h"

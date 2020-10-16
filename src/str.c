@@ -6,7 +6,7 @@
 
   String functions.
 */
-const char Str_fileid[] = "Hatari str.c : " __DATE__ " " __TIME__;
+const char Str_fileid[] = "Hatari str.c";
 
 #include <stdio.h>
 #include <ctype.h>

@@ -21,7 +21,7 @@
   (PaCifiST will, however, read/write to these images as it does not perform
   FDC access as on a real ST)
 */
-const char Floppy_fileid[] = "Hatari floppy.c : " __DATE__ " " __TIME__;
+const char Floppy_fileid[] = "Hatari floppy.c";
 
 #include <sys/stat.h>
 #include <assert.h>

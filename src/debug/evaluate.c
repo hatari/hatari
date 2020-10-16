@@ -12,7 +12,7 @@
 
   Originally based on code from my Clac calculator MiNT filter version.
 */
-const char Eval_fileid[] = "Hatari calculate.c : " __DATE__ " " __TIME__;
+const char Eval_fileid[] = "Hatari calculate.c";
 
 #include <ctype.h>
 #include <limits.h>

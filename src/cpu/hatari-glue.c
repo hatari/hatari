@@ -7,7 +7,7 @@
   This file contains some code to glue the UAE CPU core to the rest of the
   emulator and Hatari's "illegal" opcodes.
 */
-const char HatariGlue_fileid[] = "Hatari hatari-glue.c : " __DATE__ " " __TIME__;
+const char HatariGlue_fileid[] = "Hatari hatari-glue.c";
 
 
 #include <stdio.h>

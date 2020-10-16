@@ -7,7 +7,7 @@
   debuginfo.c - functions needed to show info about the atari HW & OS
    components and "lock" that info to be shown on entering the debugger.
 */
-const char DebugInfo_fileid[] = "Hatari debuginfo.c : " __DATE__ " " __TIME__;
+const char DebugInfo_fileid[] = "Hatari debuginfo.c";
 
 #include <stdio.h>
 #include <assert.h>

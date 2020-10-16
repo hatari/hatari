@@ -6,7 +6,7 @@
 
   DIM disk image support.
 */
-const char DIM_fileid[] = "Hatari dim.c : " __DATE__ " " __TIME__;
+const char DIM_fileid[] = "Hatari dim.c";
 
 #include "main.h"
 #if HAVE_ZLIB_H

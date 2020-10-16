@@ -6,7 +6,7 @@
 
   Screen Snapshots.
 */
-const char ScreenSnapShot_fileid[] = "Hatari screenSnapShot.c : " __DATE__ " " __TIME__;
+const char ScreenSnapShot_fileid[] = "Hatari screenSnapShot.c";
 
 #include <SDL.h>
 #include <dirent.h>

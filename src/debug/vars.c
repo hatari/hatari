@@ -9,7 +9,7 @@
   vars.c - Hatari internal variable value and OS call number accessors
   for conditional breakpoint and evaluate commands.
 */
-const char Vars_fileid[] = "Hatari vars.c : " __DATE__ " " __TIME__;
+const char Vars_fileid[] = "Hatari vars.c";
 
 #include <stdio.h>
 #include <stdlib.h>

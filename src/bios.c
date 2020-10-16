@@ -8,7 +8,7 @@
 
   Intercept some Bios calls for tracing/debugging
 */
-const char Bios__fileid[] = "Hatari bios.c : " __DATE__ " " __TIME__;
+const char Bios__fileid[] = "Hatari bios.c";
 
 #include "main.h"
 #include "configuration.h"

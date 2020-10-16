@@ -102,7 +102,7 @@
 
 
 
-const char Blitter_fileid[] = "Hatari blitter.c : " __DATE__ " " __TIME__;
+const char Blitter_fileid[] = "Hatari blitter.c";
 
 #include <SDL_types.h>
 #include <stdio.h>

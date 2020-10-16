@@ -13,7 +13,7 @@
  * of LogTraceFlags. Multiple trace levels can be set at once, by setting
  * the corresponding bits in LogTraceFlags.
  */
-const char Log_fileid[] = "Hatari log.c : " __DATE__ " " __TIME__;
+const char Log_fileid[] = "Hatari log.c";
 
 #include <stdio.h>
 #include <stdarg.h>

@@ -6,7 +6,7 @@
 
   This file contains the routines which pass the audio data to the SDL library.
 */
-const char Audio_fileid[] = "Hatari audio.c : " __DATE__ " " __TIME__;
+const char Audio_fileid[] = "Hatari audio.c";
 
 #include <SDL.h>
 

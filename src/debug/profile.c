@@ -8,7 +8,7 @@
  *
  * profile.c - profile caller info handling and debugger parsing functions
  */
-const char Profile_fileid[] = "Hatari profile.c : " __DATE__ " " __TIME__;
+const char Profile_fileid[] = "Hatari profile.c";
 
 #include <stdio.h>
 #include <assert.h>

@@ -16,7 +16,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License (gpl.txt) for more details.
  */
-const char DlgAlert_fileid[] = "Hatari dlgAlert.c : " __DATE__ " " __TIME__;
+const char DlgAlert_fileid[] = "Hatari dlgAlert.c";
 
 #include <string.h>
 

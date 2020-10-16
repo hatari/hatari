@@ -45,7 +45,7 @@
   So, the ratio 8021248 / 2457600 can be expressed as 31333 / 9600
 */
 
-const char CycInt_fileid[] = "Hatari cycInt.c : " __DATE__ " " __TIME__;
+const char CycInt_fileid[] = "Hatari cycInt.c";
 
 #include <stdint.h>
 #include <inttypes.h>

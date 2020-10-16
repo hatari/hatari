@@ -83,7 +83,7 @@
 /* 2015/11/09	[NP]	Add refill_prefetch for i_ADD #xx,d16(An) (Cubase, 'addi.w #5,2(a0)')		*/
 
 
-const char GenCpu_fileid[] = "Hatari gencpu.c : " __DATE__ " " __TIME__;
+const char GenCpu_fileid[] = "Hatari gencpu.c";
 
 #include <ctype.h>
 #include <string.h>

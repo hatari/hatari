@@ -24,7 +24,7 @@
   Tyranny by DHS).
 */
 
-const char Screen_fileid[] = "Hatari screen.c : " __DATE__ " " __TIME__;
+const char Screen_fileid[] = "Hatari screen.c";
 
 #include <SDL.h>
 #include <SDL_endian.h>

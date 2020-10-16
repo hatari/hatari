@@ -11,7 +11,7 @@
 
    Read unzip.h for more info
 */
-const char Unzip_fileid[] = "Hatari unzip.c : " __DATE__ " " __TIME__;
+const char Unzip_fileid[] = "Hatari unzip.c";
 
 #include <config.h>
 

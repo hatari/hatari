@@ -33,7 +33,7 @@
     4 - 7  Length Of Data To Follow
     8 - end  Data (Samples)
 */
-const char WAVFormat_fileid[] = "Hatari wavFormat.c : " __DATE__ " " __TIME__;
+const char WAVFormat_fileid[] = "Hatari wavFormat.c";
 
 #include <SDL_endian.h>
 

@@ -137,7 +137,7 @@
 /* 2015/02/11	[NP]	Replace BusErrorPC by regs.instruction_pc, to get similar code to WinUAE's cpu	*/
 
 
-const char NewCpu_fileid[] = "Hatari newcpu.c : " __DATE__ " " __TIME__;
+const char NewCpu_fileid[] = "Hatari newcpu.c";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"

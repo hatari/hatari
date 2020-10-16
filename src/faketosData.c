@@ -7,7 +7,7 @@
  * NOTE: This file is included by tos.c - do not compile and link this file
  * separately!
  */
-const char FakeTosData_fileid[] = "Hatari fakeTosData.c : " __DATE__ " " __TIME__;
+const char FakeTosData_fileid[] = "Hatari fakeTosData.c";
 
 /*
  * This is the assembled code from fakeTos.s, our ROM TOS replacement for

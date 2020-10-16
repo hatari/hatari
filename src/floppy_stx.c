@@ -14,7 +14,7 @@
    - Jean Louis Guerin (Dr CoolZic)
    - Nicolas Pomarede
 */
-const char floppy_stx_fileid[] = "Hatari floppy_stx.c : " __DATE__ " " __TIME__;
+const char floppy_stx_fileid[] = "Hatari floppy_stx.c";
 
 #include "main.h"
 #include "file.h"

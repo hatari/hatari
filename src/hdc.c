@@ -6,7 +6,7 @@
 
   Low-level hard drive emulation
 */
-const char HDC_fileid[] = "Hatari hdc.c : " __DATE__ " " __TIME__;
+const char HDC_fileid[] = "Hatari hdc.c";
 
 #include <errno.h>
 #include <SDL_endian.h>

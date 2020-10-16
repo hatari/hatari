@@ -6,7 +6,7 @@
 
   Here we process a key press and the remapping of the scancodes.
 */
-const char Keymap_fileid[] = "Hatari keymap.c : " __DATE__ " " __TIME__;
+const char Keymap_fileid[] = "Hatari keymap.c";
 
 #include <ctype.h>
 #include "main.h"

@@ -18,7 +18,7 @@
 /*			'move.b a1,(a0)' should give an illegal exception				*/
 
 
-const char ReadCpu_fileid[] = "Hatari readcpu.c : " __DATE__ " " __TIME__;
+const char ReadCpu_fileid[] = "Hatari readcpu.c";
 
 #include <ctype.h>
 #include <string.h>

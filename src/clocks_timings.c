@@ -117,7 +117,7 @@ FALCON :
 */
 
 
-const char ClocksTimings_fileid[] = "Hatari clocks_timings.c : " __DATE__ " " __TIME__;
+const char ClocksTimings_fileid[] = "Hatari clocks_timings.c";
 
 #include <SDL.h>
 #include <SDL_endian.h>

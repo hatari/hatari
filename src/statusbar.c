@@ -32,7 +32,7 @@
     correct in Falcon & TT 8-bit palette modes?
   - call Statusbar_AddMessage() from log.c?
 */
-const char Statusbar_fileid[] = "Hatari statusbar.c : " __DATE__ " " __TIME__;
+const char Statusbar_fileid[] = "Hatari statusbar.c";
 
 #include <assert.h>
 #include "main.h"

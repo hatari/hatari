@@ -6,7 +6,7 @@
 
   Zipped disk support, uses zlib
 */
-const char ZIP_fileid[] = "Hatari zip.c : " __DATE__ " " __TIME__;
+const char ZIP_fileid[] = "Hatari zip.c";
 
 #include "main.h"
 #include <unistd.h>

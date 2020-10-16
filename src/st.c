@@ -21,7 +21,7 @@
   TRACK 2, SIDE 0
   TRACK 2, SIDE 1
 */
-const char ST_fileid[] = "Hatari st.c : " __DATE__ " " __TIME__;
+const char ST_fileid[] = "Hatari st.c";
 
 #include "main.h"
 #include "file.h"

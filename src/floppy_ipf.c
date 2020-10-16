@@ -12,7 +12,7 @@
   RAW stream files made with KryoFlux board or CT RAW dumped with an Amiga are also handled
   by the capsimage library.
 */
-const char floppy_ipf_fileid[] = "Hatari floppy_ipf.c : " __DATE__ " " __TIME__;
+const char floppy_ipf_fileid[] = "Hatari floppy_ipf.c";
 
 #include "main.h"
 #include "file.h"

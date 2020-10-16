@@ -6,7 +6,7 @@
 
   MSA Disk support
 */
-const char MSA_fileid[] = "Hatari msa.c : " __DATE__ " " __TIME__;
+const char MSA_fileid[] = "Hatari msa.c";
 
 #include <SDL_endian.h>
 

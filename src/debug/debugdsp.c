@@ -7,7 +7,7 @@
   debugdsp.c - function needed for the DSP debugging tasks like memory
   and register dumps.
 */
-const char DebugDsp_fileid[] = "Hatari debugdsp.c : " __DATE__ " " __TIME__;
+const char DebugDsp_fileid[] = "Hatari debugdsp.c";
 
 #include <stdio.h>
 #include <ctype.h>
