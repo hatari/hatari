@@ -19,6 +19,7 @@ testdir=$(mktemp -d)
 
 touch "$testdir"/empty.txt
 
+export HATARI_TEST=serial
 export SDL_VIDEODRIVER=dummy
 export SDL_AUDIODRIVER=dummy
 unset TERM

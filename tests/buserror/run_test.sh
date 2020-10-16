@@ -29,6 +29,7 @@ case "$machine" in
  *)		echo "Unsupported machine type: $machine"; exit 1;;
 esac
 
+export HATARI_TEST=buserror
 export SDL_VIDEODRIVER=dummy
 export SDL_AUDIODRIVER=dummy
 

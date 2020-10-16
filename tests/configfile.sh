@@ -37,6 +37,7 @@ dd if=/dev/zero of="$scsifile" bs=512 count=1000 2> /dev/null
 idefile="$testdir"/ide.img
 dd if=/dev/zero of="$idefile" bs=512 count=1000 2> /dev/null
 
+export HATARI_TEST=configfile
 export SDL_VIDEODRIVER=dummy
 export SDL_AUDIODRIVER=dummy
 export HOME="$testdir"

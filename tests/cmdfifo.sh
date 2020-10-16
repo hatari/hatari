@@ -31,6 +31,7 @@ szYMCaptureFileName=$testdir/sndrec.wav
 AviRecordFile=$testdir/videorec.avi
 EOF
 
+export HATARI_TEST=cmdfifo
 export SDL_VIDEODRIVER=dummy
 export SDL_AUDIODRIVER=dummy
 unset TERM

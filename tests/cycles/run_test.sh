@@ -20,6 +20,7 @@ remove_temp() {
 }
 trap remove_temp EXIT
 
+export HATARI_TEST=cycles
 export SDL_VIDEODRIVER=dummy
 export SDL_AUDIODRIVER=dummy
 

@@ -864,14 +864,16 @@ static void Main_UnInit(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Load initial configuration file(s)
+ * Load initial configuration files. The global config file is skipped in
+ * test mode (i.e. if the HATARI_TEST environment variable has been set),
+ * so that the test has always full control over the configuration settings.
  */
 static void Main_LoadInitialConfig(void)
 {
 	char *psGlobalConfig;
 
 	psGlobalConfig = malloc(FILENAME_MAX);
-	if (psGlobalConfig)
+	if (psGlobalConfig && !getenv("HATARI_TEST"))
 	{
 		File_MakePathBuf(psGlobalConfig, FILENAME_MAX, CONFDIR,
 		                 "hatari", "cfg");

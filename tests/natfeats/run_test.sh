@@ -15,6 +15,7 @@ fi;
 basedir=$(dirname $0)
 testdir=$(mktemp -d)
 
+export HATARI_TEST=natfeats
 export SDL_VIDEODRIVER=dummy
 export SDL_AUDIODRIVER=dummy
 unset TERM

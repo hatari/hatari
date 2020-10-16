@@ -31,6 +31,7 @@ basedir=$(dirname $0)
 testdir=$(mktemp -d)
 cmdfifo="$testdir/cmdfifo"
 
+export HATARI_TEST=screen
 export SDL_VIDEODRIVER=dummy
 export SDL_AUDIODRIVER=dummy
 unset TERM

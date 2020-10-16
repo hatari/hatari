@@ -27,6 +27,7 @@ remove_temp() {
 }
 trap remove_temp EXIT
 
+export HATARI_TEST=gemdos
 export SDL_VIDEODRIVER=dummy
 export SDL_AUDIODRIVER=dummy
 
