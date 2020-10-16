@@ -36,7 +36,9 @@ everything that should work, does still work:
     - WinUAE & oldUAE CPU cores
     - SDL1 & SDL2
   - All above Hatari builds pass "make test"
-    - GitHub automation for this?
+    - Check that everything built fine on Travis and Cirrus-CI:
+      https://travis-ci.com/github/hatari/hatari
+      https://cirrus-ci.com/github/hatari/hatari
 
 * Check that all programs/demos listed in compatibility.html as fixed
   during early development still work, change their Hatari version to
