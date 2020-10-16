@@ -155,8 +155,6 @@ void VDI_SetResolution(int GEMColor, int WidthRequest, int HeightRequest)
 }
 
 
-#if ENABLE_TRACING
-
 /*-----------------------------------------------------------------------*/
 
 /* AES opcodes which have string args */
@@ -312,6 +310,7 @@ static const char* AES_Opcode2Name(Uint16 opcode)
 		return "???";
 }
 
+#if ENABLE_TRACING
 /**
  * Output AES call info, including some of args
  */
@@ -377,6 +376,7 @@ static void AES_OpcodeInfo(FILE *fp, Uint16 opcode)
 		fputs("???\n", fp);
 	fflush(fp);
 }
+#endif
 
 /**
  * Verify given VDI table pointer and store variables from
@@ -424,6 +424,9 @@ void AES_Info(FILE *fp, Uint32 bShowOpcodes)
 			return;
 	}
 	else
+#if !ENABLE_TRACING
+		fputs("Hatari build with ENABLE_TRACING required to retain AES/VDI call info!\n", fp);
+#else
 	{
 		if (!bVdiAesIntercept)
 		{
@@ -458,6 +461,7 @@ void AES_Info(FILE *fp, Uint32 bShowOpcodes)
 		AESAddrin, STMemory_ReadWord(AESControl+2*3));
 	fprintf(fp, "- Addrout: %#8x, %d longs\n",
 		AESAddrout, STMemory_ReadWord(AESControl+2*4));
+#endif
 }
 
 
@@ -795,9 +799,8 @@ static bool VDI_StoreVars(Uint32 TablePtr)
  */
 void VDI_Info(FILE *fp, Uint32 bShowOpcodes)
 {
-	Uint16 opcode, subcode, nintin;
+	Uint16 opcode;
 	const char *extra_info;
-	const char *name;
 
 	if (bShowOpcodes)
 	{
@@ -822,6 +825,9 @@ void VDI_Info(FILE *fp, Uint32 bShowOpcodes)
 			return;
 	}
 	else
+#if !ENABLE_TRACING
+		fputs("Hatari build with ENABLE_TRACING required to retain AES/VDI call info!\n", fp);
+#else
 	{
 		if (!bVdiAesIntercept)
 		{
@@ -840,11 +846,10 @@ void VDI_Info(FILE *fp, Uint32 bShowOpcodes)
 		fputs("VDI parameter block contents changed since last call!\n", fp);
 		return;
 	}
-
 	fputs("Latest VDI Parameter block:\n", fp);
-	subcode = STMemory_ReadWord(VDIControl+2*5);
-	nintin = STMemory_ReadWord(VDIControl+2*3);
-	name = VDI_Opcode2Name(opcode, subcode, nintin, &extra_info);
+	Uint16 subcode = STMemory_ReadWord(VDIControl+2*5);
+	Uint16 nintin = STMemory_ReadWord(VDIControl+2*3);
+	const char *name = VDI_Opcode2Name(opcode, subcode, nintin, &extra_info);
 	fprintf(fp, "- Opcode/Subcode: %hd/%hd (%s%s%s)\n",
 		opcode, subcode, name, extra_info ? ", " : "", extra_info ? extra_info : "");
 	fprintf(fp, "- Device handle: %d\n",
@@ -858,18 +863,8 @@ void VDI_Info(FILE *fp, Uint32 bShowOpcodes)
 		VDIIntin, STMemory_ReadWord(VDIControl+2*3));
 	fprintf(fp, "- Intout:  %#8x, %d words\n",
 		VDIIntout, STMemory_ReadWord(VDIControl+2*4));
+#endif
 }
-
-#else /* !ENABLE_TRACING */
-void AES_Info(FILE *fp, Uint32 bShowOpcodes)
-{
-	fputs("Hatari isn't configured with ENABLE_TRACING\n", fp);
-}
-void VDI_Info(FILE *fp, Uint32 bShowOpcodes)
-{
-	fputs("Hatari isn't configured with ENABLE_TRACING\n", fp);
-}
-#endif /* !ENABLE_TRACING */
 
 
 /*-----------------------------------------------------------------------*/
@@ -895,9 +890,9 @@ static inline bool VDI_isWorkstationOpen(Uint16 opcode)
 bool VDI_AES_Entry(void)
 {
 	Uint16 call = Regs[REG_D0];
+#if ENABLE_TRACING
 	Uint32 TablePtr = Regs[REG_D1];
 
-#if ENABLE_TRACING
 	/* AES call? */
 	if (call == 0xC8)
 	{
@@ -913,23 +908,23 @@ bool VDI_AES_Entry(void)
 		 */
 		return false;
 	}
-#endif
-
 	/* VDI call? */
 	if (call == 0x73)
 	{
+		Uint16 subcode, nintin;
+		const char *extra_info, *name;
+
 		if (!VDI_StoreVars(TablePtr))
 			return false;
-#if ENABLE_TRACING
-		{
-		Uint16 subcode = STMemory_ReadWord(VDIControl+2*5);
-		Uint16 nintin = STMemory_ReadWord(VDIControl+2*3);
-		const char *extra_info;
-		const char *name = VDI_Opcode2Name(VDIOpCode, subcode, nintin, &extra_info);
+		subcode = STMemory_ReadWord(VDIControl+2*5);
+		nintin = STMemory_ReadWord(VDIControl+2*3);
+		name = VDI_Opcode2Name(VDIOpCode, subcode, nintin, &extra_info);
 		LOG_TRACE(TRACE_OS_VDI, "VDI call %3hd/%3hd (%s%s%s)\n",
 			  VDIOpCode, subcode, name, extra_info ? ", " : "", extra_info ? extra_info : "");
-		}
+	}
 #endif
+	if (call == 0x73)
+	{
 		/* Only workstation open needs to be handled at trap return */
 		return bUseVDIRes && VDI_isWorkstationOpen(VDIOpCode);
 	}
