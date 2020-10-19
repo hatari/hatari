@@ -3083,11 +3083,20 @@ static bool GemDOS_SFirst(Uint32 Params)
 	{
 		if (DTACount < DTA_CACHE_MAX)
 		{
+			INTERNAL_DTA *pNewIntDTAs;
 			/* increase DTA cache size */
-			InternalDTAs = realloc(InternalDTAs, (DTACount + DTA_CACHE_INC) * sizeof(*InternalDTAs));
-			assert(InternalDTAs);
-			memset(InternalDTAs + DTACount, 0, DTA_CACHE_INC * sizeof(*InternalDTAs));
-			DTACount += DTA_CACHE_INC;
+			pNewIntDTAs = realloc(InternalDTAs, (DTACount + DTA_CACHE_INC) * sizeof(*InternalDTAs));
+			if (pNewIntDTAs)
+			{
+				InternalDTAs = pNewIntDTAs;
+				memset(InternalDTAs + DTACount, 0, DTA_CACHE_INC * sizeof(*InternalDTAs));
+				DTACount += DTA_CACHE_INC;
+			}
+			else
+			{
+				Log_Printf(LOG_WARN, "Failed to alloc GEMDOS HD DTA entries, wrapping DTA index\n");
+				DTAIndex = 0;
+			}
 		}
 		else
 		{
