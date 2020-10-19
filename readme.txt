@@ -103,7 +103,7 @@ command sequence to configure the build of Hatari in a separate build directory
 
 	mkdir -p build
 	cd build
-	cmake -G "Unix Makefiles" ..
+	cmake ..
 
 Have a look at the manual of CMake for other options. Alternatively, you can
 use the "cmake-gui" program to configure the sources with a graphical
@@ -113,16 +113,16 @@ For your convenience we also ship an old-fashioned configure script which can
 be used as a wrapper for running cmake. Type "./configure --help" to see the
 options of this script.
 
-Assuming that you've used the Makefile generator of CMake, and cmake finished
-the configuration successfully, you can compile Hatari by running:
+Once you have successfully configured the build settings, you can compile
+Hatari with:
 
-	gmake -j$(getconf _NPROCESSORS_ONLN)
+	cmake --build . -j$(getconf _NPROCESSORS_ONLN)
 
 If all works fine, you should get the executable "hatari" in the src/ sub-
 directory of the build tree. You can then either run the executable from
 there, or install the emulator system-wide by typing:
 
-	gmake install
+	cmake --install .
 
 
  3.1) WinUAE and "old" UAE CPU cores
