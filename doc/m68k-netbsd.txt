@@ -15,9 +15,9 @@ Atari HW supported by NetBSD is listed in wiki:
 
 NetBSD releases of interest:
 * 1995: v1.1, initial Atari TT/Falcon support
-* 1965: v1.2, Stable Atari support
+* 1996: v1.2, Stable Atari support
 * 1998: v1.3, Medusa Hades, Riebl ethernet and Falcon IDE support,
-              FAT32 & EXT2 support, XFree86, pgksource packages system
+              FAT32 & EXT2 support, XFree86, pkgsource packages system
 * 1999: v1.4, new virtual memory system & full USB support, m68k Linux compat
 * 2002: v1.6, last non-SMP release, ELF format binaries, multibyte locales
 * 2004: v2.0, POSIX threads and SMP support, m68k GCC 3.3.1
@@ -33,6 +33,8 @@ NetBSD releases of interest:
 
 NetBSD releases before v7 are in archive:
 	https://cdn.netbsd.org/pub/NetBSD/NetBSD-archive/
+
+v7.0 support ended in June 2020, rest are still supported.
 
 
 Fetching NetBSD binaries
