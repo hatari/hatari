@@ -151,10 +151,10 @@ Code: 2f00 4eb9 0000 2a98 508f 60ff ffff ff64 <42a7> 4878 ffff 2f00
 1. Install compiler:
    $ sudo apt install gcc-m68k-linux-gnu
 
-2. Get latest m68k kernel sources (without history):
-   $ git clone --depth 1 --branch m68k-v5.8 \
-     git://git.kernel.org/pub/scm/linux/kernel/git/geert/linux-m68k.git
-   $ cd linux-m68k
+2. Get latest upstream kernel release sources (without history):
+   $ git clone --depth 1 --branch v5.9 \
+     git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
+   $ cd linux
 
 3. Apply Linux issue workaround patches:
    $ git am /path/to/hatari/tools/linux/000*.patch
@@ -162,13 +162,22 @@ Code: 2f00 4eb9 0000 2a98 508f 60ff ffff ff64 <42a7> 4878 ffff 2f00
 4. Get Hatari compatible configuration:
    $ cp /path/to/hatari/tools/linux/kernel.config .config
 
-5. Fine-tune kernel config for your requirements (optional):
-   $ ARCH=m68k CROSS_COMPILE=m68k-linux-gnu- make -j4 menuconfig
-
-6. Compile configured kernel:
+5. Compile configured kernel:
    $ ARCH=m68k CROSS_COMPILE=m68k-linux-gnu- make -j4 vmlinux
 
 Notes:
+
+- If support for Atari format FAT is important [1], use m68k-linux
+  instead of the upstream Linux m68k support in above step 2):
+   $ git clone --depth 1 --branch m68k-v5.8 \
+     git://git.kernel.org/pub/scm/linux/kernel/git/geert/linux-m68k.git
+   $ cd linux-m68k
+
+  [1] changes it applies on top of upstream:
+     https://git.kernel.org/pub/scm/linux/kernel/git/geert/linux-m68k.git/log/?h=m68k-v5.8
+
+- You can fine-tune kernel config for your requirements with:
+   $ ARCH=m68k CROSS_COMPILE=m68k-linux-gnu- make -j4 menuconfig
 
 - Using "optimize for size" instead of "optimize for performance"
   is a difference between 3.3MB vs 3.8MB (stripped) kernel image
@@ -176,7 +185,7 @@ Notes:
 - Normal Linux builds require 030 (or better) with MMU and FPU
   (only uCLinux would work on 68000 without MMU)
 
-- Using included kernel.config file as-is builds non-modular kernel
+- Using included kernel.config file as-is, builds non-modular kernel
   that includes all relevant features for mounting root fs directly.
   It saves bootup time compared to using initramfs for loading the
   needed external modules
@@ -319,8 +328,8 @@ Notes:
 1. Set suitable options in lilo.cfg, for example:
 -------------------------------------
 [LILO]
-Kernel = vmlinux-v5.8
-Symbols = System.map-v5.8
+Kernel = vmlinux-v5.9
+Symbols = System.map-v5.9
 Ramdisk =
 Args = video=atafb:sthigh console=tty
 KernelToFastRam = FALSE
@@ -386,13 +395,13 @@ shows easiest method to simulate that with Hatari.
 
 4. If you don't have a TOS ROM image, download latest EmuTOS release
    from:
-     https://sourceforge.net/projects/emutos/files/emutos/0.9.12/emutos-512k-0.9.12.zip/download
+     https://sourceforge.net/projects/emutos/files/emutos/1.0/emutos-512k-1.0.zip/download
    and extract it:
-   $ unzip emutos-512k-0.9.12.zip
+   $ unzip emutos-512k-1.0.zip
 
 5. Then run Hatari with them:
    $ hatari --trace os_base --log-level info \
-      --tos emutos-512k-0.9.12/etos512k.img \
+      --tos emutos-512k-1.0/etos512k.img \
       --fast-forward on --fastfdc on --timer-d on \
       --machine falcon --dsp none --fpu 68882 \
       --cpuclock 32 --cpu-exact off --compatible off \
