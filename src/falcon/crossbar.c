@@ -339,7 +339,7 @@ void Crossbar_Reset(bool bCold)
 	memset(adc.buffer_right, 0, sizeof(adc.buffer_right));
 	adc.readPosition_float = 0;
 	adc.readPosition = 0;
-	adc.writePosition = 0;
+	adc.writePosition = (adc.readPosition+DACBUFFER_SIZE/2)%DACBUFFER_SIZE;
 
 	/* DSP inits */
 	dspXmit.wordCount = 0;
