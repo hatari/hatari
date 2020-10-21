@@ -51,19 +51,34 @@ Emulation:
   - Large rewrite of the blitter's core, improving cycle accuracy and
     handling the complex cases where xcount=1 and nfsr=1. Code is slighlty
     smaller and closer to the logic of the real hardware
-  - Handle restart in non HOG mode when the CPU uses a RMW instruction (eg TAS)
-  - Improve access to memory regions that would generate a bus error for the CPU
+  - Handle restart in non HOG mode when the CPU uses a RMW instruction
+    (eg TAS)
+  - Improve access to memory regions that would generate a bus error
+    for the CPU
 - Emulate additional RTC/NVRAM registers
 
 Emulator:
-- Memory snapshot version increase due to FDC changes
-  (i.e. old snapshots won't work with new version)
-- Use floppy track's size in bytes to detect DD/HD/ED
-  (instead of counting sectors)
-- Add --lilo debug option for more convenient m68k Linux loading
-  - Support config file values with '=' in them
-- Fix: run-time IDE byte swap change requires IDE re-init
-- Fix: TOS booting from A: although SCSI drive was enabled
+- Miscellaneous:
+  - Fix: freeze at Hatari exit and RS-232 device file changes,
+    when device file(s) are FIFO(s)
+  - Fix: when autostarting programs without pre-existing INF file,
+    enable blitter also with EmuTOS
+  - Use floppy track's size in bytes to detect DD/HD/ED
+    (instead of counting sectors)
+  - Add --lilo debug option for more convenient m68k Linux loading
+    - Support config file values with '=' in them
+- Memory handling:
+  - Memory snapshot version increase due to FDC changes
+    (i.e. old snapshots won't work with new version)
+  - Accept 10MB as valid ST-RAM amount (max on real MegaSTE/TT machines)
+    and correct invalid Falcon ST-RAM amounts
+  - Fix: 24-bit address mode change while emulation is running
+    (triggered e.g. when TT-RAM is enabled for TT)
+- HD images:
+  - Fix: run-time IDE byte swap change requires IDE re-init
+  - Fix: TOS booting from A: although SCSI drive was enabled
+  - Support read-only HD image files, and show error dialogs
+    for image file open/lock issues
 - GEMDOS HD emulation:
   - Support FASTLOAD program flag with GEMDOS HD
   - GEMDOS HD emulation cartridge assembly functionality is moved almost
@@ -74,8 +89,6 @@ Emulator:
     (= cache max size is reached)
   - Invalid DTA in Fsnext() return -ENMFIL, like TOS does
   - Fix: Dsetpath/Dgetpath empty path handling
-- Support read-only HD image files, and show error dialogs
-  for image file open/lock issues
 - Hatari graphics support:
   - Low/med-rez line doubling uses less CPU and doubled lines in
     "TV" display mode are now drawn at half intensity, not as black
@@ -92,19 +105,12 @@ Emulator:
     removed and "Linear scaling" option in GUI is replaced with
     the "GPU scaling" option (=bUseSdlRenderer config option)
   - Added new "--screenshot-dir" option to select the folder for screenshots
-- Show mouse grab toggle shortcut key in startup statusbar message
-- Center host mouse to Hatari window on Atari resets and resolution
-  changes only when window is focused and mouse pointer is within it
-- Accept 10MB as valid ST-RAM amount (max on real MegaSTE/TT machines)
-  and correct invalid Falcon ST-RAM amounts
-- Fix: 24-bit address mode change while emulation is running
-  (triggered e.g. when TT-RAM is enabled for TT)
-- Fix: when autostarting programs without pre-existing INF file,
-  enable blitter also with EmuTOS
-- Fix: keypad emulation with SDL2
-- Fix: simulated (socket API) key input with SDL2
-- Fix: freeze at Hatari exit and RS-232 device file changes,
-  when device file(s) are FIFO(s)
+- Input handling:
+  - Show mouse grab toggle shortcut key in startup statusbar message
+  - Center host mouse to Hatari window on Atari resets and resolution
+    changes only when window is focused and mouse pointer is within it
+  - Fix: keypad emulation with SDL2
+  - Fix: simulated (socket API) key input with SDL2
 - Profiler:
   - Profiler backtrace shows now real caller addresses
     and their offsets from the function entry points
@@ -166,13 +172,16 @@ Documentation:
 
 Fixed demos:
 - Pacemaker STE demo (end part), when it's run from GEMDOS HD
-- Multi scrolls part in Closure by Sync (regression since Hatari 2.2, vsync
-  in bottom border)
-- Fullscreen part in Hard As Ice STE demo by I.C.E. (screen with no vertical
-  DE signal)
-- Fullast Vinner by Troed/Sync (improved vblank position, partial fix for now)
-- Electric Night Falcon demo by Dune (MFP DMA sound interrupt on timer A using AER)
-- Oompa by No Extra (after greetings part) (blitter access to bus error regions)
+- Multi scrolls part in Closure by Sync
+  (regression since Hatari 2.2, vsync in bottom border)
+- Fullscreen part in Hard As Ice STE demo by I.C.E.
+  (screen with no vertical DE signal)
+- Fullast Vinner by Troed/Sync
+  (improved vblank position, partial fix for now)
+- Electric Night Falcon demo by Dune
+  (MFP DMA sound interrupt on timer A using AER)
+- Oompa by No Extra (after greetings part)
+  (blitter access to bus error regions)
 
 Fixed programs:
 - MS Write (crash), when it's run from GEMDOS HD
