@@ -1,3 +1,8 @@
+Contents:
+- Active Hatari developers
+- Contributors
+- Code from other projects
+
 
  Active Hatari developers:
  -------------------------
@@ -148,9 +153,13 @@ random order - and if someone is missing here, please remind us!):
 - Christophe de Dinechin : patch to improve Spec512_StoreCyclePalette
   when using 16 or 32 MHz
 
-- Fredrik Noring (Noring of NoCrew) : Tracked down a bug in the blitter emulation and a
-  bug in the PSG shadow register emulation. Patch to improve clearing borders in fullscreen
-  mode. Patch to fix PNG header alignment when recording AVI files.
+- Fredrik Noring (Noring of NoCrew) : Tracked down a bug in the
+  blitter emulation and a bug in the PSG shadow register emulation.
+  Patch to improve clearing borders in fullscreen mode. Patch to fix
+  PNG header alignment when recording AVI files.
+
+See also "thanks.txt" for people who've helped Hatari development in
+other ways than code contributions.
 
 
  Code from other projects

@@ -62,3 +62,5 @@ is missing here, please remind me!):
 
 - Andrea Musuruane (Hatari Fedora package maintainer) :
   Hatari bug reports
+
+See "authors.txt" for people who've contributed also code to Hatari.
