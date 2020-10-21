@@ -2,7 +2,7 @@
 Version=1.0
 Type=Application
 Name=Hatari UI
-Comment=Gtk UI for Hatari (Atari ST/STE/TT/Falcon) emulator
+Comment=Gtk UI for Hatari (Atari ST/STE/TT/Falcon emulator)
 Exec=hatariui
 Icon=hatari
 StartupNotify=true
