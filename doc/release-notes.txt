@@ -66,7 +66,10 @@ Emulator:
   - Use floppy track's size in bytes to detect DD/HD/ED
     (instead of counting sectors)
   - Add --lilo debug option for more convenient m68k Linux loading
-    - Support config file values with '=' in them
+- Config file handling:
+  - Support config file values with '=' in them
+  - Skip reading global config file if HATARI_TEST environment
+    variable is set
 - Memory handling:
   - Memory snapshot version increase due to FDC changes
     (i.e. old snapshots won't work with new version)
@@ -105,7 +108,14 @@ Emulator:
     removed and "Linear scaling" option in GUI is replaced with
     the "GPU scaling" option (=bUseSdlRenderer config option)
   - Added new "--screenshot-dir" option to select the folder for screenshots
+  - Fix: [ffmpeg/video] Invalid PNG signature 0x89504E470D0A1A
+  - Fix: garbage graphics (by clearing the whole render area)
+  - Fix: Spec512_StoreCyclePalette when using 16 or 32 MHz
 - Input handling:
+  - Support SDL "Hat" events in addition to "Axes" events
+    (= support 80's game controllers, also in SDL GUI)
+  - Map a turbofire button independent of the fire button if the game
+    controller is capable
   - Show mouse grab toggle shortcut key in startup statusbar message
   - Center host mouse to Hatari window on Atari resets and resolution
     changes only when window is focused and mouse pointer is within it
@@ -154,12 +164,12 @@ Tools and Hatari Python/Gtk UI:
   anymore install Python v2 by default.  To use a script with v2,
   change "python3" in its first line to "python2"
 
-Building:
+Building and unit tests:
 - Source repository moved from Mercurial to Git
 - Fix: issue with multilib capable cross-compilers
 - Only Caps library v5.1 is supported (support for old v4.2 is dropped)
 - Obsolete Mudflap option replaced with AddressSanitizer support
-- Add tests for GEMDOS HD, fullscreen/overscan display and Hatari
+- Add tests for GEMDOS HD, fullscreen/overscan display, blitter and Hatari
   command FIFO + improve CPU/MMU variant coverage in earlier tests
 
 Documentation:

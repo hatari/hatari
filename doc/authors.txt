@@ -145,6 +145,9 @@ random order - and if someone is missing here, please remind us!):
 - Steven Noonan : patch to prevent a crash if Halt dialog was called
   before SDLGui_SetScreen()
 
+- Chritophe de Dinechin : patch to improve Spec512_StoreCyclePalette
+  when using 16 or 32 MHz
+
 
  Code from other projects
  ------------------------
