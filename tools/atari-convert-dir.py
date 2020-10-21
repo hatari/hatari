@@ -63,7 +63,7 @@ def convert_dir(srcdir, dstdir):
     try:
         os.mkdir(dstdir)
     except OSError:
-        debug("ERROR: directory creation failed, name conflict???")
+        debug("ERROR: directory creation failed, name conflict?")
         return
     # directory sorting requires full names
     dircontents = [os.path.join(srcdir, x) for x in os.listdir(srcdir)]
@@ -79,7 +79,7 @@ def convert_dir(srcdir, dstdir):
             try:
                 shutil.copyfile(original, newname)
             except IOError:
-                debug("ERROR: file copy failed, name conflict (with read-only file)???")
+                debug("  ERROR: file copy failed, non-readable file, or name conflict (with read-only file?)")
                 continue
             shutil.copystat(original, newname)
 
