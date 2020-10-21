@@ -20,9 +20,6 @@ is missing here, please remind me!):
   TOS ROM handling, 32-bit IDE transfers, bus error fault in 24-bit,
   Debian bugs on Hatari Python UI, debugger enhancement suggestions.
 
-- Fredrik Noring : Tracked down a bug in the blitter emulation and a
-  bug in the PSG shadow register emulation.
-
 - Jean Louis Guerin (DrCoolZic): 'Panzer' program, very useful
   for testing some FDC behaviours and timings on real hardware and to
   compare them with the emulated system. Also wrote some nice docs on

@@ -145,8 +145,12 @@ random order - and if someone is missing here, please remind us!):
 - Steven Noonan : patch to prevent a crash if Halt dialog was called
   before SDLGui_SetScreen()
 
-- Chritophe de Dinechin : patch to improve Spec512_StoreCyclePalette
+- Christophe de Dinechin : patch to improve Spec512_StoreCyclePalette
   when using 16 or 32 MHz
+
+- Fredrik Noring (Noring of NoCrew) : Tracked down a bug in the blitter emulation and a
+  bug in the PSG shadow register emulation. Patch to improve clearing borders in fullscreen
+  mode. Patch to fix PNG header alignment when recording AVI files.
 
 
  Code from other projects
