@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Utility to generate from Hatari C-code Python code for mapping
 # Hatari configuration variable names and types of those variables.

@@ -12,7 +12,7 @@ Following features are deprecated and will be removed in a future release:
 - SDL 2.x "bUseSdlRenderer" config and "GPU scaling" GUI options
   (after HW support for SDL2 is available widely enough)
 - The old UAE CPU core (i.e. the new WinUAE CPU core should be used instead)
-- Python 2 support (Python 2 is end of life in 2020, use Python 3 instead)
+- Python v2 support in Python scripts (Python 2 was end of life in 2020)
 - The "external" disassembler (i.e. use "--disasm uae" instead)
 - Hatari XBios(255) API enabled with the "--bios-intercept" option
   (i.e. use "--natfeats" & "--cmd-fifo" options and "hconsole" instead)
@@ -142,6 +142,11 @@ Emulator:
   - Test code for rest of features (except for NF_SCSIDRV)
   - When Hatari resets or exits due to emulated program
     NF_SHUTDOWN / NF_EXIT call, output user a note about that
+
+Tools and Hatari Python/Gtk UI:
+- Python scripts use now "python3" because most current distros don't
+  anymore install Python v2 by default.  To use a script with v2,
+  change "python3" in its first line to "python2"
 
 Building:
 - Source repository moved from Mercurial to Git

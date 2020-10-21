@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # A Python Gtk UI for Hatari that can embed the Hatari emulator window.
 #

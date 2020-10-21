@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # A Debug UI for the Hatari, part of Python Gtk Hatari UI
 #
