@@ -535,6 +535,7 @@ Commercial game demos/previews (many of these are pretty good):
 
 Free/shareware/PD games:
 - 2048            (by Paradize)
+- A Day at the Races
 - Alterra
 - Archon 4KB
 - Alien Blockade* (quixx)
@@ -1131,25 +1132,21 @@ Broken programs:
 Falcon programs
 ---------------
 
-Falcon emulation requires 512kB version of EmuTOS
-(the one shipped with Hatari).
+Falcon emulation requires 512kB version of EmuTOS (the one shipped
+with Hatari).  Programs using DSP require newer version of EmuTOS than
+the v1.0 (current latest release) shipped with Hatari v2.3.
 
-Latest EmuTOS missing:
-- HiColor support
-- XBios functions for DSP
-
-probably explains partly why graphics in many of the demos & games
-look broken, their sound or music doesn't work, or why they freeze at
-startup.
+Latest EmuTOS missing (16-bit) HiColor support probably explains
+partly why graphics in several demos & games look broken, or they
+crash / freeze at startup.
 
 Following Falcon only demos, games and apps work (mostly) fine though.
-If they use DSP for music, that will be missing.
 
 
 Falcon demos
 ............
 
-Working demos:
+Working demos (comments are for EmuTOS v1.0 or older):
 - 1600x600
 - 30l coke, needs DSP
 - 4getful (by gwEm, 4KB intro Falcon version)
@@ -1219,6 +1216,9 @@ Working demos:
 Demos regressed in EmuTOS v0.8.7, working again in EmuTOS >0.9.3:
 - Blue 4k (by New Beat)
   - Ikbdws() stack usage compared to TOS4 was issue
+
+Demos working in EmuTOS >v1.0 (with DSP support):
+- Voxel (by DrTypo)
 
 Partly working demos:
 - Agony (by DNT crew)
@@ -1373,6 +1373,7 @@ Falcon applications
 
 Working applications:
 - Aniplayer v2.22
+  - Can decode data faster with DSP
 - BIQ codec / player (by .tscc, has sources)
 - Cecile hard disk (image) driver
 - DSP-debug debugger
@@ -1382,56 +1383,62 @@ Working applications:
 - Rainbow 2 multimedia, needs WinUAE CPU core for MMU
 - Smurf (GEM image viewer)
 
+Application working under EmuTOS >v1.0 (with DSP support):
+- AceMidi demo (v1.01)
+- AceTracker v1 & v2
+- Apex Media v2.41
+  - Viewer TTPs won't work for >256 color images
+- Centurbo benchmark
+  - DSP speed 2x, and bogus speeds for FPU & CPU as with normal TOS
+- DSPdit (by .tscc)
+- FlaySID
+  - sound in some SID songs is worse compared to TOS v4
+- Flextracker
+- Iphigenie v1.4b (sound system monitor and manager / DSP LOD loader)
+- Whip! (virtual light machine)
+  - mic input not tested
+- Winrec (direct to disk GEM audio recorder/effects)
+  - Starts fine and GUI works, actual recording not tested
+
 Partly working applications:
-- Centurbo benchmark:
-  - DSP speed 0, with normal TOS the correct 32Mhz
-   (bogus speed values for FPU & CPU as with normal TOS)
 - Delmpaint (GFA)
    - some draw operations do black on black
    - file selector in wrong size if program is started
      from some other resolution than 320x200@256
+- GemGT2 v1.1, GemMOD v0.85, and GemPLAY v1.95
+  - Work OK, but GT2 & MOD DSP players are unusable noisy
+  - http://yescrew.atari.org/eng/products.htm
 - Escape paint (GEM)
   - Icons don't show in image operations window, and their
     places are inverted on mouse-over, image names show in
     image list window only on highlight, some UI elements
     flicker
 - Fractal Playground
-  - DSP needs to be disabled, keyboard input doesn't work
-- Whip! (virtual light machine)
-  - Cursor is frozen unless DSP is disabled
-  - Non-DSP effects work
-- Winrec (direct to disk GEM audio recorder/effects)
-  - Starts fine and GUI works, but I didn't try recording,
-    may actually work fine
+  - pressing any key crashes program to illegal instruction (regression)
+  - http://rg.atari.org/utils.htm
+- MP2 player:
+  - Sound is just noise
+  - outlines (3D look) missing from buttons in the UI
+  - Needs to be started from 640x400 or larger resolution, otherwise it
+    positions itself completely outside the screen (also with TOS v4)
 
 Broken applications:
-- AceMidi demo (softsynth sounds need DSP)
-  - freezes after loading sound bank
-- AceTracker:
-  - exits after starting
+- Animator v0.20.4
+  - Crashes to NULL pointer access
+  - Requires HiColor?
+- Apex Alpha
+  - Requires HiColor?
 - Centview (GEM image viewer)
-  - For JPG images, requires running jpegd.prg first
-  - Says "Ce fichier n'a pu etre ouvert"
-- DSPdit (by .tscc)
-  - panic with bus error
+  - Crashes to NULL pointer access
+  - Requires HiColor?
 - FalcAMP (GEM)
   - buttons aren't drawn in window
-  - complains about DSP
-- FlaySID
-  - says "cannot connect with DSP matrix" when playing
-    (has no sound with Hatari even with real TOS)
-- Flextracker
-  - black screen after pressing space at startup at Dsp_LoadProg()
-  - Needs WinUAE Hatari CPU core (with normal TOS)
-- Gemplay v1.49, v1.92 and v1.95
-  - Says "needs Falcon 030 to run"
 - Indypaint
   - cursor moves, but screen is black, F1-F4 keys don't work
   - needs HiColor mode
-- MP2 player:
-  - Says that DSP and audio subsystem are already in use
-  - When playing is forced, there's no sound
-  - Time runs in large jumps
+- Voxx (vocoder), demo and free version
+  - Most of graphics missing
+  - Needs at minimum 640x480x16 color VGA resolution
 
 
 	- Eero
