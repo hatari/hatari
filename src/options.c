@@ -1923,7 +1923,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			{
 				ConfigureParams.System.nMachineType = MACHINE_MEGA_STE;
 				ConfigureParams.System.nCpuLevel = 0;
-				Configuration_ChangeCpuFreq ( 16 );
+				Configuration_ChangeCpuFreq ( 8 );
 			}
 			else if (strcasecmp(argv[i], "tt") == 0)
 			{
