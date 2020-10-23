@@ -1028,7 +1028,7 @@ void DmaSnd_InterruptHandler_Microwire(void)
 	}
 	
 	/* How many cycle was this sound interrupt delayed (>= 0) */
-	microwire.pendingCyclesOver += -INT_CONVERT_FROM_INTERNAL ( PendingInterruptCount , INT_CPU8_CYCLE );
+	microwire.pendingCyclesOver += -INT_CONVERT_FROM_INTERNAL ( PendingInterruptCount , INT_CPU_CYCLE );
 
 	/* Remove this interrupt from list and re-order */
 	CycInt_AcknowledgeInterrupt();
