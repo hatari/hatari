@@ -43,6 +43,7 @@ Emulation:
 - Sound:
   - Add a better filter for downsampling the internal 250 kHz signal, should
     give better results when the YM2149 outputs high frequency sounds
+  - Fix microwire mask shifting when CPU runs > 8 MHz
 - MFP :
   - Rewrite MFP code to handle several MFP objects and add support
     for the TT's 2nd MFP (not all TT's MFP signals are emulated yet)
@@ -56,6 +57,7 @@ Emulation:
   - Improve access to memory regions that would generate a bus error
     for the CPU
 - Emulate additional RTC/NVRAM registers
+- megaSTE should start at 8 MHz, not 16 MHz
 
 Emulator:
 - Miscellaneous:
@@ -199,6 +201,7 @@ Fixed programs:
 - EmuTos drawing vertical lines with blitter and leaving some trails
   (blitter in non HOG mode using TAS intruction to restart)
 - Cecile v2.22, now also works if no IDE drive has been configured
+- Trans D-Bug Express by PHF (lock when running in megaSTE mode at 16 MHz)
 
 
  Version 2.2.1 (2019-02-08)
