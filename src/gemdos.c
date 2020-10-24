@@ -1141,10 +1141,11 @@ static char* match_host_dir_entry(const char *path, const char *name, bool patte
 	{
 		while ((entry = readdir(dir)))
 		{
-			Str_DecomposedToPrecomposedUtf8(entry->d_name, entry->d_name);   /* for OSX */
-			if (fsfirst_match(name, entry->d_name))
+			char *d_name = entry->d_name;
+			Str_DecomposedToPrecomposedUtf8(d_name, d_name);   /* for OSX */
+			if (fsfirst_match(name, d_name))
 			{
-				match = strdup(entry->d_name);
+				match = strdup(d_name);
 				break;
 			}
 		}
@@ -1153,10 +1154,11 @@ static char* match_host_dir_entry(const char *path, const char *name, bool patte
 	{
 		while ((entry = readdir(dir)))
 		{
-			Str_DecomposedToPrecomposedUtf8(entry->d_name, entry->d_name);   /* for OSX */
-			if (strcasecmp(name, entry->d_name) == 0)
+			char *d_name = entry->d_name;
+			Str_DecomposedToPrecomposedUtf8(d_name, d_name);   /* for OSX */
+			if (strcasecmp(name, d_name) == 0)
 			{
-				match = strdup(entry->d_name);
+				match = strdup(d_name);
 				break;
 			}
 		}
@@ -3049,8 +3051,9 @@ static bool GemDOS_SFirst(Uint32 Params)
 	j = 0;
 	for (i=0; i < count; i++)
 	{
-		Str_DecomposedToPrecomposedUtf8(files[i]->d_name, files[i]->d_name);   /* for OSX */
-		if (fsfirst_match(dirmask, files[i]->d_name))
+		char *d_name = files[i]->d_name;
+		Str_DecomposedToPrecomposedUtf8(d_name, d_name);   /* for OSX */
+		if (fsfirst_match(dirmask, d_name))
 		{
 			InternalDTAs[useidx].found[j] = files[i];
 			j++;
