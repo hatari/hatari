@@ -2080,15 +2080,15 @@ href="http://www.umich.edu/~archive/atari/Games/Space/zero_5.zip">Zero-5</a><br 
 
 <p>Most programs that work on TT work also in the Falcon emulation.
 As all 1-8 bit GEM programs work without problems under TT emulation
-this section lists only TT-specific games and demos.</p>
+this section lists only programs that have TT-specific features.</p>
 
 <h3>TT games</h3>
 
 <table>
-  <caption>TT games</caption>
+  <caption>TT applications and games</caption>
   <thead>
     <tr class="backdropped">
-      <th>Game</th>
+      <th>App/Game</th>
       <th>Hatari version</th>
       <th>Notes</th>
     </tr>
@@ -2099,6 +2099,11 @@ this section lists only TT-specific games and demos.</p>
       <td>2.0</td>
       <td>VGA/TT-medium only. Some version(s) bus error due to DSP register
           check (although they should support TT with chip music)</td>
+    </tr>
+    <tr>
+      <td><a href="https://gtello.pagesperso-orange.fr/mplayere.htm">M_PLAYER</a></td>
+      <td>2.3-dev</td>
+      <td>Movie player and creator. v4.02 has TT microwire support for audio</td>
     </tr>
     <tr>
       <td><a href="http://atari-forum.com/viewtopic.php?f=26&amp;t=13658&amp;start=50">OpenTTD</a></td>
@@ -3484,7 +3489,8 @@ if demo is stated to require that.</p>
       <td>1.9</td>
       <td>-</td>
       <td>emu</td>
-      <td>At least 4MB RAM, FPU and VGA monitor</td>
+      <td>At least 4MB RAM, FPU and VGA monitor.  Rendering looks
+         correct only with the cycle exact mode</td>
     </tr>
     <tr>
       <td>Dune
@@ -4363,7 +4369,7 @@ for latter to be feasible).
       <td>1.6</td>
       <td>emu</td>
       <td>DSP generated softsynth sounds need Hatari at least v1.6 to
-          sound OKish, and 2.0 to sound good</td>
+          sound OKish, and v2.0+ to sound good</td>
     </tr>
     <tr>
       <td><a href="http://nb.atari.org/main.php?page=productions">AceTracker v2</a></td>
@@ -4379,8 +4385,15 @@ for latter to be feasible).
       <td></td>
     </tr>
     <tr>
-      <td><a href="http://pagesperso-orange.fr/didierm/index-e.htm">Aniplayer</a></td>
-      <td class="minor">2.0</td>
+      <td>Animator (v0.20.4)</td>
+      <td>2.3-dev</td>
+      <td></td>
+      <td>Replacement for Aviplayer. Doesn't play all the files that
+          M_PLAYER does</td>
+    </tr>
+    <tr>
+      <td><a href="http://pagesperso-orange.fr/didierm/index-e.htm">Aniplayer v2.22</a></td>
+      <td class="minor">2.3-dev</td>
       <td>emu</td>
       <td>(Harmless) DSP stack underflow on JPG slide show image switching.
            DSP synchronization error when trying to play MP2/MP3.
@@ -4388,16 +4401,30 @@ for latter to be feasible).
 	   Old Quicktime and AVI videos OK</td>
     </tr>
     <tr>
-      <td><a href="http://www.leonik.net/dml/sec_apex.py">Apex Media</a></td>
-      <td>2.1</td>
+      <td><a href="http://www.leonik.net/dml/sec_apex3.py">Apex Alpha</a></td>
+      <td class="major">2.3-dev</td>
+      <td>-</td>
+      <td>Requires MMU to start, but after that Pterm(-1) is called
+          constantly.  Doesn't work with base Falcons?</td>
+    </tr>
+    <tr>
+      <td><a href="http://umich.edu/~archive/atari/Falcon/Graphics/">Apex demo v2.10</a></td>
+      <td class="major">2.3-dev</td>
+      <td>emu</td>
+      <td>apex210d.prg crashes on startup, but it had worked with
+          an early Hatari version</td>
+    </tr>
+    <tr>
+      <td><a href="http://www.leonik.net/dml/sec_apex.py">Apex Media v2.41</a></td>
+      <td>2.3-dev</td>
       <td>-</td>
       <td>The latest v2.41 works fine, as do the separate viewers.
-          Resolution changing gets stuck on DSP access unless cycle exact +
-	  prefetch are disabled, one enables MMU, or oldUAE CPU core is used</td>
+          Decoding of several image formats uses DSP, but otherwise
+	  works also fine without DSP</td>
     </tr>
     <tr>
       <td><a href="http://deunstg.free.fr/sct1/s_avi030.htm">AVI 030</a></td>
-      <td class="major">2.0</td>
+      <td class="major">2.3-dev</td>
       <td>-</td>
       <td>TTP worked with Hatari v1.1, freezes with v1.6, exits with v1.8+</td>
     </tr>
@@ -4409,11 +4436,11 @@ for latter to be feasible).
     </tr>
     <tr>
       <td><a href="http://centek.free.fr/atari/softs/s_centbe.htm">Centurbo bench</a></td>
-      <td class="minor">1.9</td>
+      <td class="minor">2.3-dev</td>
       <td>emu</td>
-      <td>New WinUAE CPU core: FPU 812 Mhz, DSP 56 Mhz, CPU 26 Mhz<br>
-          Old WinUAE CPU core: FPU 221 Mhz, DSP 32 Mhz, CPU 15 Mhz<br>
-          Old UAE CPU core: FPU 403 Mhz, DSP 32 Mhz, CPU 78 Mhz<br>
+      <td>New (v2.3) WinUAE CPU core: FPU ~500 Mhz, DSP 64 Mhz, CPU 100-160 Mhz<br>
+          Old (v1.8) WinUAE CPU core: FPU 221 Mhz, DSP 32 Mhz, CPU 15 Mhz<br>
+          Old (v1.8) UAE CPU core: FPU 403 Mhz, DSP 32 Mhz, CPU 78 Mhz<br>
 	  (moving mouse drops FPU and CPU numbers slightly)</td>
     </tr>
     <tr>
@@ -4436,21 +4463,23 @@ for latter to be feasible).
     </tr>
     <tr>
       <td><a href="http://deunstg.free.fr/sct1/falcamp/">FalcAMP</a></td>
-      <td class="minor">2.1</td>
+      <td class="minor">2.3-dev</td>
       <td>emu</td>
-      <td>MOD playing works fine, MP3s have no sound / complain about DSP timeout</td>
+      <td>MOD playing works fine, MP3s have no sound / complain about DSP timeout
+          (v1.20b, v1.09 just freezes with MP3 files)</td>
     </tr>
     <tr>
       <td><a href="http://deunstg.free.fr/sct1/flaysid/">FlaySID (v3.01)</a></td>
-      <td class="minor">2.1</td>
+      <td class="minor">2.3-dev</td>
       <td>emu</td>
-      <td>No sound from SID playback with DSP engine, only with YM engine</td>
+      <td>SID playback with DSP engine is much heavier than with the YM engine.
+          Timing seems off in both</td>
     </tr>
     <tr>
       <td><a href="http://nb.atari.org/main.php?page=productions">FlexTrax</a></td>
-      <td class="minor">2.1</td>
+      <td class="minor">2.3-dev</td>
       <td>emu</td>
-      <td>Freezes with old UAE core, but even with WinUAE core, sounds is noise.
+      <td>Very heavy to emulate, sound is noisy.
           Startup graphics look OK only in VGA mode</td>
     </tr>
     <tr>
@@ -4458,7 +4487,8 @@ for latter to be feasible).
       <td>2.0</td>
       <td>emu</td>
       <td>Requires v2.0 WinUAE CPU core and beefy machine for AM playback.
-          Fileselector dir selection doesn't work with v1.92 or newer (GemPlay bug)</td>
+          Fileselector dir selection doesn't work with v1.92 or newer
+	  without adding "C:" in from of the file pattern (GemPlay bug)</td>
     </tr>
     <tr>
       <td><a href="http://rg.atari.org/utils.htm">Godpaint</a></td>
@@ -4505,9 +4535,9 @@ for latter to be feasible).
     </tr>
     <tr>
       <td><a href="http://www.axxim.de/r3dias/R3_Vocoder3.htm">Voxx</a></td>
-      <td class="major">2.1</td>
+      <td class="major">2.3-dev</td>
       <td>emu</td>
-      <td>Demo runs, free version freezes after showing startup logo, and
+      <td>Demo runs, but free version freezes after showing startup logo, and
           DSP underflow (no user-space instructions are executed, only TOS
 	  interrupts).  Requires VGA with 640x480@16 resolution at minimum</td>
     </tr>
