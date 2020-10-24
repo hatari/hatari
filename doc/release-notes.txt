@@ -93,6 +93,8 @@ Emulator:
     demand and give warning if its entries need to be re-cycled
     (= cache max size is reached)
   - Invalid DTA in Fsnext() return -ENMFIL, like TOS does
+  - Fix: skip non-existing host files on FSnext() instead
+    of returning an error (latter broke directory listings)
   - Fix: Dsetpath/Dgetpath empty path handling
 - Hatari graphics support:
   - Low/med-rez line doubling uses less CPU and doubled lines in

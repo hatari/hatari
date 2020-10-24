@@ -101,6 +101,13 @@ typedef struct {
   char dta_name[TOS_NAMELEN];
 } DTA;
 
+/* PopulateDTA() return values */
+typedef enum {
+	DTA_ERR = -1,
+	DTA_OK = 0,
+	DTA_SKIP = 1
+} dta_ret_t;
+
 #define DTA_MAGIC_NUMBER  0x12983476
 #define DTA_CACHE_INC     256      /* DTA cache initial and increment size (grows on demand) */
 #define DTA_CACHE_MAX     4096     /* max DTA cache size (multiple of DTA_CACHE_INC) */
@@ -289,9 +296,9 @@ static Uint8 GemDOS_ConvertAttribute(mode_t mode)
 /*-----------------------------------------------------------------------*/
 /**
  * Populate the DTA buffer with file info.
- * @return   0 if entry is ok, 1 if entry should be skipped, < 0 for errors.
+ * @return   DTA_OK if entry is ok, DTA_SKIP if it should be skipped, DTA_ERR on errors
  */
-static int PopulateDTA(char *path, struct dirent *file, DTA *pDTA, Uint32 DTA_Gemdos)
+static dta_ret_t PopulateDTA(char *path, struct dirent *file, DTA *pDTA, Uint32 DTA_Gemdos)
 {
 	/* TODO: host file path can be longer than MAX_GEMDOS_PATH */
 	char tempstr[MAX_GEMDOS_PATH];
@@ -303,23 +310,25 @@ static int PopulateDTA(char *path, struct dirent *file, DTA *pDTA, Uint32 DTA_Ge
 	             path, PATHSEP, file->d_name) >= (int)sizeof(tempstr))
 	{
 		Log_Printf(LOG_ERROR, "PopulateDTA: path is too long.\n");
-		return -1;
+		return DTA_ERR;
 	}
 
 	if (stat(tempstr, &filestat) != 0)
 	{
+		/* skip file if it doesn't exist, otherwise return an error */
+		dta_ret_t ret = (errno == ENOENT ? DTA_SKIP : DTA_ERR);
 		perror(tempstr);
-		return -1;   /* return on error */
+		return ret;
 	}
 
 	if (!pDTA)
-		return -2;   /* no DTA pointer set */
+		return DTA_ERR;   /* no DTA pointer set */
 
 	/* Check file attributes (check is done according to the Profibuch) */
 	nFileAttr = GemDOS_ConvertAttribute(filestat.st_mode);
 	nAttrMask = nAttrSFirst|GEMDOS_FILE_ATTRIB_WRITECLOSE|GEMDOS_FILE_ATTRIB_READONLY;
 	if (nFileAttr != 0 && !(nAttrMask & nFileAttr))
-		return 1;
+		return DTA_SKIP;
 
 	GemDOS_DateTime2Tos(filestat.st_mtime, &DateTime, tempstr);
 
@@ -337,7 +346,7 @@ static int PopulateDTA(char *path, struct dirent *file, DTA *pDTA, Uint32 DTA_Ge
 	do_put_mem_word(pDTA->dta_date, DateTime.dateword);
 	pDTA->dta_attrib = nFileAttr;
 
-	return 0;
+	return DTA_OK;
 }
 
 
@@ -2914,9 +2923,9 @@ static bool GemDOS_SNext(void)
 		ret = PopulateDTA(InternalDTAs[Index].path,
 				  temp[InternalDTAs[Index].centry++],
 				  pDTA, DTA_Gemdos);
-	} while (ret == 1);
+	} while (ret == DTA_SKIP);
 
-	if (ret < 0)
+	if (ret == DTA_ERR)
 	{
 		Log_Printf(LOG_WARN, "GEMDOS Fsnext(): Error setting DTA\n");
 		Regs[REG_D0] = GEMDOS_EINTRN;
