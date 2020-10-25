@@ -457,22 +457,22 @@ void AES_Info(FILE *fp, Uint32 bShowOpcodes)
 	 */
 	fputs("Latest AES Parameter block:\n", fp);
 #if ENABLE_TRACING
-	fprintf(fp, "- Opcode: %3hd ", opcode);
+	fprintf(fp, "- Opcode:  0x%02hX ", opcode);
 	AES_OpcodeInfo(fp, opcode);
 #else
-	fprintf(fp, "- Opcode: %3hd (%s)\n",
+	fprintf(fp, "- Opcode:  0x%02hX (%s)\n",
 		opcode, AES_Opcode2Name(opcode));
 #endif
-	fprintf(fp, "- Control: %#8x\n", AES.Control);
-	fprintf(fp, "- Global:  %#8x, %d bytes\n",
+	fprintf(fp, "- Control: 0x%08x\n", AES.Control);
+	fprintf(fp, "- Global:  0x%08x, %d bytes\n",
 		AES.Global, 2+2+2+4+4+4+4+4+4);
-	fprintf(fp, "- Intin:   %#8x, %d words\n",
+	fprintf(fp, "- Intin:   0x%08x, %d words\n",
 		AES.Intin, STMemory_ReadWord(AES.Control+2*1));
-	fprintf(fp, "- Intout:  %#8x, %d words\n",
+	fprintf(fp, "- Intout:  0x%08x, %d words\n",
 		AES.Intout, STMemory_ReadWord(AES.Control+2*2));
-	fprintf(fp, "- Addrin:  %#8x, %d longs\n",
+	fprintf(fp, "- Addrin:  0x%08x, %d longs\n",
 		AES.Addrin, STMemory_ReadWord(AES.Control+2*3));
-	fprintf(fp, "- Addrout: %#8x, %d longs\n",
+	fprintf(fp, "- Addrout: 0x%08x, %d longs\n",
 		AES.Addrout, STMemory_ReadWord(AES.Control+2*4));
 	fflush(fp);
 }
@@ -873,18 +873,18 @@ void VDI_Info(FILE *fp, Uint32 bShowOpcodes)
 	Uint16 subcode = STMemory_ReadWord(VDI.Control+2*5);
 	Uint16 nintin = STMemory_ReadWord(VDI.Control+2*3);
 	const char *name = VDI_Opcode2Name(opcode, subcode, nintin, &extra_info);
-	fprintf(fp, "- Opcode/Subcode: %hd/%hd (%s%s%s)\n",
+	fprintf(fp, "- Opcode/Subcode: 0x%02hX/0x%02hX (%s%s%s)\n",
 		opcode, subcode, name, extra_info ? ", " : "", extra_info ? extra_info : "");
 	fprintf(fp, "- Device handle: %d\n",
 		STMemory_ReadWord(VDI.Control+2*6));
-	fprintf(fp, "- Control: %#8x\n", VDI.Control);
-	fprintf(fp, "- Ptsin:   %#8x, %d coordinate word pairs\n",
+	fprintf(fp, "- Control: 0x%08x\n", VDI.Control);
+	fprintf(fp, "- Ptsin:   0x%08x, %d coordinate word pairs\n",
 		VDI.Ptsin, STMemory_ReadWord(VDI.Control+2*1));
-	fprintf(fp, "- Ptsout:  %#8x, %d coordinate word pairs\n",
+	fprintf(fp, "- Ptsout:  0x%08x, %d coordinate word pairs\n",
 		VDI.Ptsout, STMemory_ReadWord(VDI.Control+2*2));
-	fprintf(fp, "- Intin:   %#8x, %d words\n",
+	fprintf(fp, "- Intin:   0x%08x, %d words\n",
 		VDI.Intin, STMemory_ReadWord(VDI.Control+2*3));
-	fprintf(fp, "- Intout:  %#8x, %d words\n",
+	fprintf(fp, "- Intout:  0x%08x, %d words\n",
 		VDI.Intout, STMemory_ReadWord(VDI.Control+2*4));
 	fflush(fp);
 }
@@ -923,7 +923,7 @@ bool VDI_AES_Entry(void)
 			return false;
 		if (LOG_TRACE_LEVEL(TRACE_OS_AES))
 		{
-			fprintf(TraceFile, "AES call %3hd ", AES.OpCode);
+			fprintf(TraceFile, "AES 0x%02hX ", AES.OpCode);
 			AES_OpcodeInfo(TraceFile, AES.OpCode);
 			fflush(TraceFile);
 		}
@@ -944,7 +944,7 @@ bool VDI_AES_Entry(void)
 		subcode = STMemory_ReadWord(VDI.Control+2*5);
 		nintin = STMemory_ReadWord(VDI.Control+2*3);
 		name = VDI_Opcode2Name(VDI.OpCode, subcode, nintin, &extra_info);
-		LOG_TRACE(TRACE_OS_VDI, "VDI call %3hd/%3hd (%s%s%s)\n",
+		LOG_TRACE(TRACE_OS_VDI, "VDI 0x%02hX/0x%02hX (%s%s%s)\n",
 			  VDI.OpCode, subcode, name, extra_info ? ", " : "", extra_info ? extra_info : "");
 	}
 #endif
