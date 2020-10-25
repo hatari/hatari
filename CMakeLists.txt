@@ -78,6 +78,13 @@ if(ASAN_AVAILABLE)
 	    CACHE BOOL "Enable GCC/LLVM run-time stack/pointer debugging (~2x slowdown)")
 endif(ASAN_AVAILABLE)
 
+find_program(GZIP gzip)
+if(UNIX AND GZIP)
+	set(ENABLE_MAN_PAGES 1 CACHE BOOL "Built and install man pages")
+else()
+	set(ENABLE_MAN_PAGES 0 CACHE BOOL "Built and install man pages")
+endif()
+
 if(APPLE)
 	set(ENABLE_OSX_BUNDLE 1
 	    CACHE BOOL "Built Hatari as macOS application bundle")

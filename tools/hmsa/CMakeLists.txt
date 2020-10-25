@@ -23,10 +23,10 @@ endif(ZLIB_FOUND)
 
 install(TARGETS hmsa RUNTIME DESTINATION ${BINDIR})
 
-# if(UNIX)
+if(ENABLE_MAN_PAGES)
 	add_custom_target(hmsa_manpage ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/hmsa.1.gz)
 	add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hmsa.1.gz
 		COMMAND gzip -c -9 ${CMAKE_CURRENT_SOURCE_DIR}/hmsa.1 > ${CMAKE_CURRENT_BINARY_DIR}/hmsa.1.gz
 		DEPENDS hmsa.1)
 	INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/hmsa.1.gz DESTINATION ${MANDIR})
-# endif(UNIX)
+endif(ENABLE_MAN_PAGES)

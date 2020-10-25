@@ -10,10 +10,10 @@ INSTALL(FILES example-commands example-debugger
 INSTALL(FILES release-notes.txt
 	DESTINATION ${DATADIR}/hconsole/)
 
-# if(UNIX)
+if(ENABLE_MAN_PAGES)
 	add_custom_target(hconsole_man ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/hconsole.1.gz)
 	add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hconsole.1.gz
 		COMMAND gzip -c -9 ${CMAKE_CURRENT_SOURCE_DIR}/hconsole.1 > ${CMAKE_CURRENT_BINARY_DIR}/hconsole.1.gz
 		DEPENDS hconsole.1)
 	INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/hconsole.1.gz DESTINATION ${MANDIR})
-# endif(UNIX)
+endif(ENABLE_MAN_PAGES)
