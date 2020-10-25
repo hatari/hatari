@@ -162,22 +162,6 @@ void VDI_SetResolution(int GEMColor, int WidthRequest, int HeightRequest)
 
 /*-----------------------------------------------------------------------*/
 
-/* AES opcodes which have string args */
-static const struct {
-	int code;	/* AES opcode */
-	int count;	/* number of char * args _first_ in addrin[] */
-} AESStrings[] = {
-	{ 0x0D, 1 },	/* appl_find() */
-	{ 0x12, 1 },	/* appl_search() */
-	{ 0x23, 1 },	/* menu_register() */
-	{ 0x34, 1 },	/* form_alert() */
-	{ 0x51, 1 },	/* scrp_write() */
-	{ 0x5A, 2 },	/* fsel_input() */
-	{ 0x5B, 3 },	/* fsel_exinput() */
-	{ 0x6E, 1 },	/* rsrc_load() */
-	{ 0x7C, 1 }	/* shell_find() */
-};
-
 /* AES opcode -> function name mapping */
 static const char* AESName_10[] = {
 	"appl_init",		/* (0x0A) */
@@ -321,6 +305,21 @@ static const char* AES_Opcode2Name(Uint16 opcode)
  */
 static void AES_OpcodeInfo(FILE *fp, Uint16 opcode)
 {
+	/* AES opcodes which have string args */
+	static const struct {
+		int code;	/* AES opcode */
+		int count;	/* number of char * args _first_ in addrin[] */
+	} strings[] = {
+		{ 0x0D, 1 },	/* appl_find() */
+		{ 0x12, 1 },	/* appl_search() */
+		{ 0x23, 1 },	/* menu_register() */
+		{ 0x34, 1 },	/* form_alert() */
+		{ 0x51, 1 },	/* scrp_write() */
+		{ 0x5A, 2 },	/* fsel_input() */
+		{ 0x5B, 3 },	/* fsel_exinput() */
+		{ 0x6E, 1 },	/* rsrc_load() */
+		{ 0x7C, 1 }	/* shell_find() */
+	};
 	int code = opcode - 10;
 	fprintf(fp, "AES call %3hd ", opcode);
 	if (code >= 0 && code < ARRAY_SIZE(AESName_10) && AESName_10[code])
@@ -332,12 +331,12 @@ static void AES_OpcodeInfo(FILE *fp, Uint16 opcode)
 
 		items = 0;
 		/* there are so few of these that linear search is fine */
-		for (i = 0; i < ARRAY_SIZE(AESStrings); i++)
+		for (i = 0; i < ARRAY_SIZE(strings); i++)
 		{
 			/* something that can be shown? */
-			if (AESStrings[i].code == opcode)
+			if (strings[i].code == opcode)
 			{
-				items = AESStrings[i].count;
+				items = strings[i].count;
 				break;
 			}
 		}
