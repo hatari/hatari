@@ -27,6 +27,7 @@ const char VDI_fileid[] = "Hatari vdi.c";
 #include "vdi.h"
 #include "video.h"
 
+/* #undef ENABLE_TRACING */
 #define DEBUG 0
 
 Uint32 VDI_OldPC;                  /* When call Trap#2, store off PC */
@@ -321,7 +322,6 @@ static void AES_OpcodeInfo(FILE *fp, Uint16 opcode)
 		{ 0x7C, 1 }	/* shell_find() */
 	};
 	int code = opcode - 10;
-	fprintf(fp, "AES call %3hd ", opcode);
 	if (code >= 0 && code < ARRAY_SIZE(AESName_10) && AESName_10[code])
 	{
 		bool first = true;
@@ -378,7 +378,6 @@ static void AES_OpcodeInfo(FILE *fp, Uint16 opcode)
 	}
 	else
 		fputs("???\n", fp);
-	fflush(fp);
 }
 #endif
 
@@ -430,10 +429,11 @@ void AES_Info(FILE *fp, Uint32 bShowOpcodes)
 			return;
 	}
 	else
-#if !ENABLE_TRACING
-		fputs("Hatari build with ENABLE_TRACING required to retain AES/VDI call info!\n", fp);
-#else
 	{
+#if !ENABLE_TRACING
+		fputs("Hatari build with ENABLE_TRACING required to retain AES call info!\n", fp);
+		return;
+#else
 		if (!bVdiAesIntercept)
 		{
 			fputs("VDI/AES interception isn't enabled!\n", fp);
@@ -441,24 +441,28 @@ void AES_Info(FILE *fp, Uint32 bShowOpcodes)
 		}
 		if (!AES.Control)
 		{
-			fputs("No traced AES calls!\n", fp);
+			fputs("No traced AES calls -> no AES call info!\n", fp);
 			return;
 		}
 		opcode = STMemory_ReadWord(AES.Control);
+		if (opcode != AES.OpCode)
+		{
+			fputs("AES parameter block contents changed since last call!\n", fp);
+			return;
+		}
+#endif
 	}
 	/* TODO: replace use of STMemory calls with getting the data
-	 * from already converted VDI.* array members
+	 * from already converted AES.* array members
 	 */
-	if (opcode != AES.OpCode)
-	{
-		fputs("AES parameter block contents changed since last call!\n", fp);
-		return;
-	}
-
 	fputs("Latest AES Parameter block:\n", fp);
+#if ENABLE_TRACING
+	fprintf(fp, "- Opcode: %3hd ", opcode);
+	AES_OpcodeInfo(fp, opcode);
+#else
 	fprintf(fp, "- Opcode: %3hd (%s)\n",
 		opcode, AES_Opcode2Name(opcode));
-
+#endif
 	fprintf(fp, "- Control: %#8x\n", AES.Control);
 	fprintf(fp, "- Global:  %#8x, %d bytes\n",
 		AES.Global, 2+2+2+4+4+4+4+4+4);
@@ -470,7 +474,7 @@ void AES_Info(FILE *fp, Uint32 bShowOpcodes)
 		AES.Addrin, STMemory_ReadWord(AES.Control+2*3));
 	fprintf(fp, "- Addrout: %#8x, %d longs\n",
 		AES.Addrout, STMemory_ReadWord(AES.Control+2*4));
-#endif
+	fflush(fp);
 }
 
 
@@ -836,10 +840,11 @@ void VDI_Info(FILE *fp, Uint32 bShowOpcodes)
 			return;
 	}
 	else
-#if !ENABLE_TRACING
-		fputs("Hatari build with ENABLE_TRACING required to retain AES/VDI call info!\n", fp);
-#else
 	{
+#if !ENABLE_TRACING
+		fputs("Hatari build with ENABLE_TRACING required to retain VDI call info!\n", fp);
+		return;
+#else
 		if (!bVdiAesIntercept)
 		{
 			fputs("VDI/AES interception isn't enabled!\n", fp);
@@ -847,19 +852,20 @@ void VDI_Info(FILE *fp, Uint32 bShowOpcodes)
 		}
 		if (!VDI.Control)
 		{
-			fputs("No traced VDI calls!\n", fp);
+			fputs("No traced VDI calls -> no VDI call info!\n", fp);
 			return;
 		}
 		opcode = STMemory_ReadWord(VDI.Control);
+		if (opcode != VDI.OpCode)
+		{
+			fputs("VDI parameter block contents changed since last call!\n", fp);
+			return;
+		}
+#endif
 	}
 	/* TODO: replace use of STMemory calls with getting the data
 	 * from already converted VDI.* array members
 	 */
-	if (opcode != VDI.OpCode)
-	{
-		fputs("VDI parameter block contents changed since last call!\n", fp);
-		return;
-	}
 	fputs("Latest VDI Parameter block:\n", fp);
 	Uint16 subcode = STMemory_ReadWord(VDI.Control+2*5);
 	Uint16 nintin = STMemory_ReadWord(VDI.Control+2*3);
@@ -877,7 +883,7 @@ void VDI_Info(FILE *fp, Uint32 bShowOpcodes)
 		VDI.Intin, STMemory_ReadWord(VDI.Control+2*3));
 	fprintf(fp, "- Intout:  %#8x, %d words\n",
 		VDI.Intout, STMemory_ReadWord(VDI.Control+2*4));
-#endif
+	fflush(fp);
 }
 
 
@@ -914,7 +920,9 @@ bool VDI_AES_Entry(void)
 			return false;
 		if (LOG_TRACE_LEVEL(TRACE_OS_AES))
 		{
+			fprintf(TraceFile, "AES call %3hd ", AES.OpCode);
 			AES_OpcodeInfo(TraceFile, AES.OpCode);
+			fflush(TraceFile);
 		}
 		/* using same special opcode trick doesn't work for
 		 * both VDI & AES as AES functions can be called
