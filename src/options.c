@@ -459,7 +459,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_SOUND,   NULL, "--sound",
 	  "<x>", "Sound frequency (x=off/6000-50066, off=fastest)" },
 	{ OPT_SOUNDBUFFERSIZE,   NULL, "--sound-buffer-size",
-	  "<x>", "Sound buffer size in ms (x=0/10-100, 0=default)" },
+	  "<x>", "Sound buffer size in ms (x=0/10-100, 0=SDL default)" },
 	{ OPT_SOUNDSYNC,   NULL, "--sound-sync",
 	  "<bool>", "Sound synchronized emulation (on|off, off=default)" },
 	{ OPT_YM_MIXING,   NULL, "--ym-mixing",
