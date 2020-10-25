@@ -828,8 +828,11 @@ void VDI_Info(FILE *fp, Uint32 bShowOpcodes)
 			}
 			fprintf(fp, "%02x %-16s",
 				opcode, VDI_Opcode2Name(opcode, 0, 0, &extra_info));
-			if (++opcode % 4 == 0) fputs("\n", fp);
+			if (++opcode % 4 == 0)
+				fputs("\n", fp);
 		}
+		if (opcode % 4)
+			fputs("\n", fp);
 		return;
 	}
 	opcode = Vars_GetVdiOpcode();
