@@ -750,6 +750,7 @@ Monochrome games:
 - Space war     (bug: score missing)
 - Take2*        (line-A bitblit)
 - Wallball
+- Whack a Virus (Sommarhack 2020)
 
 Text games:
 - Advent        (Colossal Cave)
@@ -1020,6 +1021,7 @@ Color games:
 - Power Up
 - R0x (line-A bitblit)
 - R0x Zero (line-A bitblit, overscan screen needs 50Hz version of Emutos)
+- Randomazer
 - Roger (line-A bitblit)
 - R-Type Deluxe (arcade conversion)
   http://atari-forum.com/viewtopic.php?f=28&t=29047
@@ -1028,6 +1030,7 @@ Color games:
 - ScummVM-lite (STE enhanced)
   http://www.happydaze.se/scummvm-lite-atari/
 - Skulls (shareware "minesweeper")
+- Sporny's Wrecking Ball
 - Spy 4k
 - Stardust* (tunnel sequence demo)
 - STEtris (STOS)
@@ -1097,15 +1100,16 @@ v0.9.6 or newer.
 
 Working applications:
 - Mandelbrot playtime (fracplay, uses FPU)
+- M_PLAYER v4.02 (app works also on Falcon, but not with EmuTOS)
+  - https://gtello.pagesperso-orange.fr/mplayere.htm
 - PixArt4 (requires EmuTOS >v0.9.8)
   - http://www.1632systems.co.uk/www/html/Product/pixart.htm
-- Vision v4.1a (works also in ST, but is much nicer in TT low/med)
+- Vision v4.7 (works also in ST, but is much nicer in TT low/med)
   - http://jlusetti.free.fr/visione.htm
 
 Working demos:
 - 256mbrot, Bragg, Glasstro, Orion-B, Yabt (TT/Falcon intros by ray//.tSCc)
 - 4getful (by gwEm, 4KB intro TT-version)
-  - Use either EmuTOS <v0.9, or less accurate Hatari oldUAE CPU core
 - Adebug 3DTT demo (by Brainstorm)
 - CrY image viewer (by .tSCc)
 - Mandelbrot explorer (by .tSCc)
@@ -1183,6 +1187,7 @@ Working demos (comments are for EmuTOS v1.0 or older):
   - MP2 music with DSP missing
 - Joy (by New Beat)
   - With YM and MP2 DSP music
+- The Keff Demo (by An Cool)
 - Laser Days E.P. (by .tSCc)
   - With MP2 DSP music
 - More (by New Beat)
@@ -1218,18 +1223,42 @@ Demos regressed in EmuTOS v0.8.7, working again in EmuTOS >0.9.3:
   - Ikbdws() stack usage compared to TOS4 was issue
 
 Demos working in EmuTOS >v1.0 (with DSP support):
+- 4kbtro (by Wilfire)
+- 96ktro (by Cruor)
+  - Unlike with TOS v4, freezes unless MMU used and sound is pure noise
+- Aggressive Party 2 4k (NoCrew)
+- Agony (by DNT crew)
+- Bound 2, Bound 3 (by Crac)
+- Chaos A.D. (by DNT crew)
+- Dan's Lustiges Kinderfest (by Lazer)
+- Ex Illusion (by Aura)
+- FOG-intro (by Psychosis)
+- Motion (unfinished demo by Aggression)
+- ROT3DBMP
+- Sidetracked (by Collapze)
+  - Unlike with TOS4, sound breaks when (infos/credits/greets)
+    text is drawn, but screen clearing before that works properly
+- The mountains flight (by Cruor)
+- The Ultimate Seduction (Sommarhack 2020 invite)
+- Tron2001 (by ICE)
 - Voxel (by DrTypo)
+- Zero Three Zero (by The Pixel Twins)
 
 Partly working demos:
-- Agony (by DNT crew)
-  - freezes after a while
-    XBIOS 109 (Dsp_ExecProg)
-    Bus error bget at 00400000
 - Built-in Obsolescence (by Digital Chaos)
-  - requires WinUAE core
-  - Eventually dies to Dsp Stack Over/underflow
-- Motion (unfinished demo by Aggression)
-  - only writer screens work
+  - Crashes at end to ROM address error
+- Doomino (by STAX)
+  - Info screen at start looks just garbage
+
+Demos NOT working with EmuTOS >1.0:
+- Bound (by Crac)
+  - Needs HiColor
+- Enraged (by Avena)
+  - Doesn't start
+
+TODO - check rest with >v1.0...
+
+Partly working demos:
 - Illness (by Escape)
   - freezes after a while to
     Bus error lget at 4e700cb9
@@ -1349,8 +1378,10 @@ Games working with extra hacks:
     kbdvec correctly which use causes EmuTOS to panic.  This can be worked
     around with the following hack.prg:
     http://sourceforge.net/mailarchive/message.php?msg_id=26841274
-  - with EmuTOS, enabling DSP freezes the games right at startup
+  - with EmuTOS <=1.0, enabling DSP freezes the games right at startup
     (with normal TOS4, DSP is used for background music)
+
+TODO - check rest with >v1.0...
 
 Games that might be possible to get working (they show something
 and/or don't use DSP XBios calls or DSP sound matrix):
@@ -1400,6 +1431,11 @@ Application working under EmuTOS >v1.0 (with DSP support):
 - Winrec (direct to disk GEM audio recorder/effects)
   - Starts fine and GUI works, actual recording not tested
 
+Applications working with extra hacks:
+- Fractal Playground
+  - Requires "hack.prg" like Reservoir Gods games, othewise
+    pressing any key crashes the program
+
 Partly working applications:
 - Delmpaint (GFA)
    - some draw operations do black on black
@@ -1413,9 +1449,6 @@ Partly working applications:
     places are inverted on mouse-over, image names show in
     image list window only on highlight, some UI elements
     flicker
-- Fractal Playground
-  - pressing any key crashes program to illegal instruction (regression)
-  - http://rg.atari.org/utils.htm
 - MP2 player:
   - Sound is just noise
   - outlines (3D look) missing from buttons in the UI
