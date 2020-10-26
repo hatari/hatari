@@ -3136,29 +3136,29 @@ if demo is stated to require that.</p>
     <tr>
       <td>Aggression:
       <a href="http://www.pouet.net/prod.php?which=13699">Aggressive II party info</a></td>
-      <td>1.4</td>
+      <td>2.3-dev</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Graphics don't look same as on pouet.net screenshot</td>
+      <td></td>
     </tr>
     <tr>
       <td>Aggression:
       <a href="http://pouet.net/prod.php?which=15723">Motion</a></td>
-      <td class="minor">2.0</td>
+      <td class="minor">2.3-dev</td>
       <td>-</td>
       <td>emu</td>
       <td>Unfinished Aggression demo with 030 and DSP source code.
-          Almost all screens work. Susie screen requires MMU, but
-	  dies to $e001c8 write bus error and Torus screen just exits</td>
+          All screens work except "Susie", which is stuck polling
+	  fffffc00</td>
     </tr>
     <tr>
       <td>An cool:
       <a href="http://pouet.net/prod.php?which=24781">The Keff demo</a></td>
-      <td class="major">2.0</td>
+      <td>2.3-dev</td>
       <td>yes</td>
       <td>-</td>
-      <td>Gets stuck after dragons pic + bus error on black screen
-          when tunnel screen should start</td>
+      <td>If MMU is enabled, gets stuck after dragons pic (bus error)
+          on black screen when tunnel screen should start</td>
     </tr>
     <tr>
       <td>Archangel:
@@ -3171,11 +3171,10 @@ if demo is stated to require that.</p>
     <tr>
       <td>Aura:
       <a href="http://pouet.net/prod.php?which=15730">E.X.Illusion</a></td>
-      <td class="minor">2.1</td>
+      <td>2.3-dev</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Needs WinUAE CPU core. Disable cycle-exact + prefetch, otherwise
-          demo and music hang to DSP over/underflow</td>
+      <td>Needs WinUAE CPU core</td>
     </tr>
     <tr>
       <td>Avena:
@@ -3195,25 +3194,25 @@ if demo is stated to require that.</p>
       <td>3K</td>
     </tr>
     <tr>
-      <td>Avena &uml; Digital Chaos:
+      <td>Avena &amp; Digital Chaos:
       <a href="http://www.pouet.net/prod.php?which=11224">Enraged</a></td>
-      <td class="major">2.1</td>
+      <td class="major">2.3-dev</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Display update is wrong in first and plasma rotozoom screens.
-          Freezes after few screens (just before 3D one) to DSP
-	  stack overflow</td>
+      <td>Display update is wrong in first and many following screens
+          (updated only in narrow strips). There's 40s of black screen
+	  before 3D world, and a long period of white screen few screens
+	  later before one screen, and freeze on black screendemo crashes</td>
     </tr>
     <tr>
       <td>Avena:
       <a href="http://pouet.net/prod.php?which=1177">Sonolumineszenz</a></td>
-      <td class="minor">2.1</td>
+      <td class="minor">2.3-dev</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Disable cycle-exact (cache emulation), or use old UAE CPU core,
-          otherwise this breaks in start to DSP stack overflow.
-	  There are a lot of "Dsp: Modulo addressing result unpredictable"
-	  warnings in the "whale" screen</td>
+      <td>There are a lot of "Dsp: Modulo addressing result unpredictable"
+	  warnings in the "whale" screen. Start runs too fast, and
+	  white period after whale screen takes too long</td>
     </tr>
     <tr>
       <td>Avena:
@@ -3266,11 +3265,12 @@ if demo is stated to require that.</p>
     <tr>
       <td>Collapze:
       <a href="http://www.pouet.net/prod.php?which=54343">Sidetracked</a></td>
-      <td class="minor">2.0</td>
+      <td class="major">2.3-dev</td>
       <td>yes</td>
       <td>emu</td>
-      <td>VGA-only GFA musicdemo with DSP playback. Screen isn't
-          cleared properly when switching between greets and info texts</td>
+      <td>VGA-only GFA musicdemo with DSP playback. Screen is cleared properly
+          when switching between greets and info texts only with EmuTOS.
+	  Bombs on startup with v2.3, worked in v2.2</td>
     </tr>
     <tr>
       <td>Crac:
@@ -3283,11 +3283,10 @@ if demo is stated to require that.</p>
     <tr>
       <td>Crac:
       <a href="http://www.pouet.net/prod.php?which=23587">Bound 2</a></td>
-      <td class="minor">2.1</td>
+      <td>2.3-dev</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Disable cycle-exact + prefetch, or use old AUE CPU core,
-          otherwise demo exits at start</td>
+      <td></td>
     </tr>
     <tr>
       <td>Crac:
@@ -3300,7 +3299,7 @@ if demo is stated to require that.</p>
     <tr>
       <td>Crac:
       <a href="http://www.pouet.net/prod.php?which=23589">Bound 4</a></td>
-      <td class="major">2.1</td>
+      <td class="major">2.3-dev</td>
       <td>yes</td>
       <td>emu</td>
       <td>Freezes waiting on DSP interrupt (or Video Address Counter?)</td>
@@ -3309,7 +3308,7 @@ if demo is stated to require that.</p>
       <td>Crac:
       <a href="http://www.pouet.net/prod.php?which=25559">Bound 5</a>
       </td>
-      <td class="major">2.1</td>
+      <td class="major">2.3-dev</td>
       <td>yes</td>
       <td>emu</td>
       <td>Freezes in tiger screen</td>
@@ -3317,20 +3316,18 @@ if demo is stated to require that.</p>
     <tr>
       <td>Cruor:
       <a href="http://www.pouet.net/prod.php?which=15453">96ktro</a></td>
-      <td class="minor">2.1</td>
+      <td>2.3-dev</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Disable cycle-exact + prefetch, or use old AUE CPU core,
-          otherwise demo freezes at start</td>
+      <td></td>
     </tr>
     <tr>
       <td>Cruor:
       <a href="http://www.pouet.net/prod.php?which=15454">The mountains flight</a></td>
-      <td class="minor">2.1</td>
+      <td>2.3-dev</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Disable cycle-exact + prefetch, or use old AUE CPU core,
-          otherwise demo freezes at start</td>
+      <td></td>
     </tr>
     <tr>
       <td>Dekadence:
@@ -3456,6 +3453,14 @@ if demo is stated to require that.</p>
       <td>Needs 14MB RAM + FPU, music with DSP (NoCrew DSP MP2-player)</td>
     </tr>
     <tr>
+      <td>DHS / New Beat / SMFX:
+      <a href="https://www.pouet.net/prod.php?which=84837">The Ultimate Seduction</a></td>
+      <td>2.3-dev</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>Sommarhack 2020 invite, music with DSP, 14MB</td>
+    </tr>
+    <tr>
       <td>Digital Chaos:
       <a href="http://www.pouet.net/prod.php?which=17802">Built-in Obsolescence</a></td>
       <td>1.6.2</td>
@@ -3466,7 +3471,7 @@ if demo is stated to require that.</p>
     <tr>
       <td>DNT Crew:
       <a href="http://pouet.net/prod.php?which=16806">Agony</a></td>
-      <td class="minor">2.1</td>
+      <td class="minor">2.3-dev</td>
       <td>yes</td>
       <td>emu</td>
       <td>Type "spread.ntk" to prompt.  After bouncing ball fades to black,
@@ -3475,7 +3480,7 @@ if demo is stated to require that.</p>
     <tr>
       <td>DNT Crew:
       <a href="http://www.pouet.net/prod.php?which=16807">Chaos A.D.</a>*</td>
-      <td class="minor">2.0</td>
+      <td class="minor">2.3-dev</td>
       <td>yes</td>
       <td>emu</td>
       <td>Uses its own IKBD 6301 routine to decode the demo's protection.
@@ -3723,8 +3728,8 @@ if demo is stated to require that.</p>
       <td>2.0</td>
       <td>yes</td>
       <td>-</td>
-      <td>Bus error at startup unless IDE enabled.
-          Non-interactive game(?) demo</td>
+      <td>Bus error at startup unless IDE enabled.  Wrong screen size
+          if MMU enabled. Non-interactive game(?) demo</td>
     </tr>
     <tr>
       <td>Impulse:
@@ -3769,11 +3774,10 @@ if demo is stated to require that.</p>
     <tr>
       <td>Lazer:
       <a href="http://pouet.net/prod.php?which=17965">Dan's Lustiges Kinderfest</a></td>
-      <td>2.1</td>
+      <td>2.3-dev</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Disable cycle-exact + prefetch, or use old UAE CPU core,
-          otherwise demo freezes right at start</td>
+      <td></td>
     </tr>
     <tr>
       <td>Lazer:
@@ -3794,20 +3798,18 @@ if demo is stated to require that.</p>
     <tr>
       <td>Lazer:
       <a href="http://pouet.net/prod.php?which=28749">Oergs</a></td>
-      <td class="minor">2.1</td>
+      <td>2.3-dev</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Disable cycle-exact + prefetch, or use old UAE CPU core,
-          otherwise demo freezes right at start</td>
+      <td></td>
     </tr>
     <tr>
       <td>Lazer:
       <a href="http://pouet.net/prod.php?which=8585">Warum</a></td>
-      <td class="minor">2.1</td>
+      <td>2.3-dev</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Disable cycle-exact + prefetch, or use old UAE CPU core,
-          otherwise demo freezes before showing anything</td>
+      <td></td>
     </tr>
     <tr>
       <td>Level 42:
@@ -4102,7 +4104,7 @@ if demo is stated to require that.</p>
       <td>2.0</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Needs FPU. Real time ray-tracing</td>
+      <td>Needs FPU. Real time ray-tracing. Doesn't work with MMU</td>
     </tr>
     <tr>
       <td>The Respectables:
@@ -4141,11 +4143,10 @@ if demo is stated to require that.</p>
     <tr>
       <td>tSCc:
       <a href="http://pouet.net/prod.php?which=1014">A Rh positive</a></td>
-      <td class="minor">2.1</td>
+      <td>2.3-dev</td>
       <td>-</td>
       <td>emu</td>
-      <td>4K.  Disable cycle-exact + prefetch, or use old UAE CPU core,
-          otherwise this crashes to illegal instruction</td>
+      <td>4K demo</td>
     <tr>
       <td>tSCc:
       <a href="http://www.pouet.net/prod.php?which=16426">Beams</a> (Falcon version)</td>
