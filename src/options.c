@@ -2227,7 +2227,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 		case OPT_PARSE:
 			i += 1;
-			ok = DebugUI_SetParseFile(argv[i]);
+			ok = DebugUI_AddParseFile(argv[i]);
 			break;
 
 		case OPT_SAVECONFIG:

@@ -56,8 +56,9 @@ static int debugCommands;
 /* stores last 'e' command result as hex, used for TAB-completion */
 static char lastResult[10];
 
-/* parse debugger commands from here on init */
-static const char *parseFileName;
+/* array of files from which to read debugger commands after debugger is initialized */
+static char **parseFileNames;
+static int parseFiles;
 
 /* to which directory to change after (potentially recursed) scripts parsing finishes */
 static char *finalDir;
@@ -1094,26 +1095,43 @@ void DebugUI_Init(void)
 	memcpy(&debugCommand[debugCommands], dspcmd, sizeof(dbgcommand_t) * dspcmds);
 	debugCommands += dspcmds;
 
-	if (parseFileName)
-		DebugUI_ParseFile(parseFileName, true);
+
+	if (parseFiles)
+	{
+		int i;
+		for (i = 0; i < parseFiles; i++)
+		{
+			DebugUI_ParseFile(parseFileNames[i], true);
+			free(parseFileNames[i]);
+		}
+		free(parseFileNames);
+		parseFileNames = NULL;
+		parseFiles = 0;
+	}
 }
 
 
 /**
- * Set debugger commands file during Hatari startup before things
+ * Add debugger command files during Hatari startup before things
  * needed by the debugger are initialized so that it can be parsed
  * when debugger itself gets initialized.
- * Return true if file exists, false otherwise.
+ * Return true if file exists and it could be added, false otherwise.
  */
-bool DebugUI_SetParseFile(const char *path)
+bool DebugUI_AddParseFile(const char *path)
 {
-	if (File_Exists(path))
+	if (!File_Exists(path))
 	{
-		parseFileName = path;
-		return true;
+		fprintf(stderr, "ERROR: debugger input file '%s' missing.\n", path);
+		return false;
 	}
-	fprintf(stderr, "ERROR: debugger input file '%s' missing.\n", path);
-	return false;
+	parseFileNames = realloc(parseFileNames, (parseFiles+1)*sizeof(char*));
+	if (!parseFileNames)
+	{
+		perror("DebugUI_AddParseFile");
+		return false;
+	}
+	parseFileNames[parseFiles++] = strdup(path);
+	return true;
 }
 
 
