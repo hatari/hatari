@@ -1165,7 +1165,7 @@ Working demos (comments are for EmuTOS v1.0 or older):
 - Bugs from outer space (by Impulse)
   - bad sound
 - Cebit 93 (by Respectables)
-  - needs WinUAE CPU core
+- Chrome Dragon (by Opium)
 - Cooler than ever (by ICE)
   - bad sound
 - DBA Magazine 14 intro (by Lazer)
@@ -1174,7 +1174,6 @@ Working demos (comments are for EmuTOS v1.0 or older):
 - Firestarter (by Shadows)
 - Flu 4k (by New Beat), needs FPU
 - Fungle beats (by FUN)
-  - needs WinUAE CPU core
 - Game of Life 4k (by Aggression)
 - Gourand triangles demos (by ray//.tSCc)
   - these have asm sources!
@@ -1194,6 +1193,8 @@ Working demos (comments are for EmuTOS v1.0 or older):
 - Mouse (animation + music)
 - Oergs (by Lazer, pic + music)
 - Old Stuff (by Extream)
+- Payback 2015 (by Dekadence)
+  - 060+FPU demo, unlike with TOS4, works only with MMU
 - Prepare (by Extream)
 - Revertant 1.2 (by Cobra / Mystic Bytes)
   - With MP2 DSP music (not working)
@@ -1229,32 +1230,49 @@ Demos working in EmuTOS >v1.0 (with DSP support):
 - Aggressive Party 2 4k (NoCrew)
 - Agony (by DNT crew)
 - Bound 2, Bound 3 (by Crac)
+- Bound 42 (by MMJ Prod)
 - Chaos A.D. (by DNT crew)
+- Cycedelic knockout (by Mugwumps)
 - Dan's Lustiges Kinderfest (by Lazer)
 - Ex Illusion (by Aura)
 - FOG-intro (by Psychosis)
+- Hmmm... (by Escape)
+  - Clearly slower than with TOS4, sound is missing
 - Motion (unfinished demo by Aggression)
 - ROT3DBMP
 - Sidetracked (by Collapze)
   - Unlike with TOS4, sound breaks when (infos/credits/greets)
     text is drawn, but screen clearing before that works properly
+- Silly Venture 2k19 invitro (by Mystic Bytes)
+- Stocasto (by NoCrew)
+  - works also with v1.0, but then 3D objects are missing
 - The mountains flight (by Cruor)
 - The Ultimate Seduction (Sommarhack 2020 invite)
 - Tron2001 (by ICE)
+- Unexpected Fun (by Orion_)
 - Voxel (by DrTypo)
+- We Reached Stars (by Orion_)
+  - 060+FPU demo
+- Whirlpool 128k (by Extream)
+- Why (by Extream)
 - Zero Three Zero (by The Pixel Twins)
 
 Partly working demos:
+- '_' (by Escape)
+  - many times slower than with TOS4, sound missing
 - Built-in Obsolescence (by Digital Chaos)
   - Crashes at end to ROM address error
 - Doomino (by STAX)
-  - Info screen at start looks just garbage
+  - Info screen at start looks just garbage (HiColor?)
 
 Demos NOT working with EmuTOS >1.0:
 - Bound (by Crac)
   - Needs HiColor
 - Enraged (by Avena)
   - Doesn't start
+- Stercus Accidit
+  - Line F panic
+- X-tasie (by Trio)
 
 TODO - check rest with >v1.0...
 
@@ -1278,7 +1296,6 @@ but don't work with EmuTOS at all:
   M68000 Bus Error reading at address $3b4.
 - Tere Ra'I (by Cerebral Vortex / Dune / Sector One)
 - Silly Venture 2k16 invitro (by Dune / Mystic Bytes)
-- Unexpected Fun (by Orion_)
   - these stop as Dsp_Lock() fails
 
 
@@ -1411,7 +1428,7 @@ Working applications:
 - Godpaint (by Reservoir Gods)
 - ICDraw, .ICO and .IB3 GEM viewer
 - Kronos v1.91 benchmark
-- Rainbow 2 multimedia, needs WinUAE CPU core for MMU
+- Rainbow 2 multimedia, needs MMU
 - Smurf (GEM image viewer)
 
 Application working under EmuTOS >v1.0 (with DSP support):

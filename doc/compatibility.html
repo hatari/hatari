@@ -2230,9 +2230,10 @@ of the programs using DSP work with it, they need a real Falcon TOS
 v4.x.</p>
 
 <p>If something works only with either WinUAE or oldUAE CPU core,
-that's documented.  Many timing critical demos (for example ones using
-NoCrew's DSP MP2-player) that are marked as working in the list below,
-<em>work only with the (default) WinUAE CPU core</em>.</p>
+that may be documented, but mostly things are tested only with the
+(default) WinUAE CPU core.  It's the only one supporting MMU and many
+timing critical demos (for example ones using NoCrew's DSP MP2-player)
+<em>work only with it</em>.</p>
 
 <p>Only few Falcon programs require MMU emulation to be enabled
 to work. <em>Unless otherwise indicated, programs work with MMU
@@ -3265,12 +3266,12 @@ if demo is stated to require that.</p>
     <tr>
       <td>Collapze:
       <a href="http://www.pouet.net/prod.php?which=54343">Sidetracked</a></td>
-      <td class="major">2.3-dev</td>
+      <td class="minor">2.3-dev</td>
       <td>yes</td>
       <td>emu</td>
       <td>VGA-only GFA musicdemo with DSP playback. Screen is cleared properly
           when switching between greets and info texts only with EmuTOS.
-	  Bombs on startup with v2.3, worked in v2.2</td>
+	  In Hatari v2.3, requires MMU and EmuTOS with DSP support</td>
     </tr>
     <tr>
       <td>Crac:
@@ -3340,7 +3341,7 @@ if demo is stated to require that.</p>
     <tr>
       <td>Dekadence:
       <a href="http://www.pouet.net/prod.php?which=64683">Payback 2015</a></td>
-      <td class="minor">2.1</td>
+      <td>2.3-dev</td>
       <td>yes</td>
       <td>-</td>
       <td>Needs FPU and TT-RAM. Startup takes several <strong>minutes</strong>
@@ -3348,9 +3349,7 @@ if demo is stated to require that.</p>
 	  fast forward faster:
 	  --machine falcon --cpulevel 6 --cpuclock 32 --fpu internal
 	  --dsp none --sound off --fast-forward yes -s 14
-	  --ttram 64 --addr24 off.
-	  Dies to bus error later in the demo.
-	  </td>
+	  --ttram 64 --addr24 off (maybe even --cpu-exact off)</td>
     </tr>
     <tr>
       <td>DHS:
@@ -3543,7 +3542,7 @@ if demo is stated to require that.</p>
     <tr>
       <td>EKO:
       <a href="http://www.pouet.net/prod.php?which=8572">E.K.O System</a></td>
-      <td class="minor">2.1</td>
+      <td class="minor">2.3-dev</td>
       <td>yes</td>
       <td>emu</td>
       <td>Requires WinUAE CPU core. "Betty Boo" picture is missing split
@@ -3553,11 +3552,11 @@ if demo is stated to require that.</p>
     <tr>
       <td>EKO:
       <a href="http://www.pouet.net/prod.php?which=25916">Epidemic musicdisk</a></td>
-      <td class="major">2.1</td>
+      <td class="major">2.3-dev</td>
       <td>yes</td>
       <td>-</td>
-      <td>Bus error for $fffffd write when drawing menu, if space pressed
-          in EKO logo screen, otherwise illegal instruction $7bf1 earlier</td>
+      <td>After rotating "EKO" dot-logo, shows garbage screen,
+          and demo terminates</td>
     </tr>
     <tr>
       <td>EKO:
@@ -3578,22 +3577,19 @@ if demo is stated to require that.</p>
     <tr>
       <td>Escape:
       <a href="http://pouet.net/prod.php?which=15676">_</a></td>
-      <td class="major">2.1</td>
+      <td class="major">2.3-dev</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Disable cycle-exact + prefetch, or use old AUE CPU core,
-          otherwise demo freezes at startup waiting for DSP.
-	  Freezes after few screens to illegal DSP instructions</td>
+      <td>Freezes after few screens to illegal DSP instructions,
+          or with MMU, to double bus error</td>
     </tr>
     <tr>
       <td>Escape:
       <a href="http://pouet.net/prod.php?which=3192">Hmmm...</a></td>
-      <td class="minor">2.1</td>
+      <td>2.3-dev</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Disable cycle-exact + prefetch, or use old AUE CPU core,
-          otherwise demo freezes at startup waiting for DSP.
-          Classic from 2001</td>
+      <td>Classic from 2001</td>
     </tr>
    <tr>
       <td>Escape:
@@ -3606,7 +3602,7 @@ if demo is stated to require that.</p>
     <tr>
       <td>EXA:
       <a href="http://www.pouet.net/prod.php?which=17784">Entracte</a></td>
-      <td class="major">2.0</td>
+      <td class="major">2.3-dev</td>
       <td>-</td>
       <td>-</td>
       <td>Counts CPU cycles at start and exits because Hatari is not accurate enough</td>
@@ -3614,7 +3610,7 @@ if demo is stated to require that.</p>
     <tr>
       <td>EXA:
       <a href="http://www.pouet.net/prod.php?which=17778">Evolution</a></td>
-      <td class="major">2.0</td>
+      <td class="major">2.3-dev</td>
       <td>-</td>
       <td>-</td>
       <td>Counts CPU cycles at start and exits because Hatari is not accurate enough</td>
@@ -3638,12 +3634,10 @@ if demo is stated to require that.</p>
     <tr>
       <td>Extream:
       <a href="http://pouet.net/prod.php?which=13601">Whirlpool 128k</a></td>
-      <td class="major">2.1</td>
+      <td>2.3-dev</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Disable cycle-exact + prefetch, or use old UAE CPU core,
-          otherwise fails at start (worked in v2.0 without them).
-          Uses strange resolution / screen transitions</td>
+      <td>Uses strange resolution / screen transitions</td>
     </tr>
     <tr>
       <td>Extream:
@@ -3656,7 +3650,7 @@ if demo is stated to require that.</p>
     <tr>
       <td>Fit:
       <a href="http://www.pouet.net/prod.php?which=17311">Hex Pistols</a></td>
-      <td class="major">2.1</td>
+      <td class="major">2.3-dev</td>
       <td>yes</td>
       <td>emu</td>
       <td>14MB + FPU, .tSCc port from Amiga.  Works only with old UAE
@@ -3674,7 +3668,7 @@ if demo is stated to require that.</p>
     <tr>
       <td>Fit:
       <a href="http://www.pouet.net/prod.php?which=26083">Stercus Accidit</a></td>
-      <td class="major">2.1</td>
+      <td class="major">2.3-dev</td>
       <td>yes</td>
       <td>emu</td>
       <td>8MB + FPU, .tSCc port from Amiga.
@@ -3707,12 +3701,11 @@ if demo is stated to require that.</p>
     <tr>
       <td>Hydroxid:
       <a href="http://www.pouet.net/prod.php?which=16805">Symposium'96</a></td>
-      <td class="major">2.1</td>
+      <td class="major">2.3-dev</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Disable cycle-exact + prefetch, or use old UAE CPU core,
-          otherwise demo doesn't start.  Double bus error (NULL pointer)
-	  after few screens, when fullscreen face texture bender ends</td>
+      <td>Double bus error (NULL pointer) after few screens, when fullscreen
+          face texture bender ends</td>
     </tr>
     <tr>
       <td>ICE:
@@ -3862,22 +3855,18 @@ if demo is stated to require that.</p>
     <tr>
       <td>MJJ Prod:
       <a href="http://pouet.net/prod.php?which=28764">Bound 42</a></td>
-      <td class="minor">2.1</td>
+      <td>2.3-dev</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Cyan millstone not visible with WinUAE CPU core, with old UAE
-          core it shows, but demo crashes afterwards.  Turbo vs. Std
-	  Falcon timings demo setting doesn't affect this</td>
+      <td></td>
     </tr>
     <tr>
       <td>Mugwumps:
       <a href="http://pouet.net/prod.php?which=15917">Cycedelic knockout</a></td>
-      <td class="minor">2.1</td>
+      <td>2.3-dev</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Disable cycle-exact + prefetch, or use old UAE CPU core,
-          otherwise demo fails at start to DSP stack overflow.
-          Needs to be started from Falcon video mode</td>
+      <td>Needs to be started from Falcon video mode</td>
     </tr>
     <tr>
       <td>Mystic bytes:
@@ -3892,7 +3881,7 @@ if demo is stated to require that.</p>
     <tr>
       <td>Mystic bytes:
       <a href="http://www.pouet.net/prod.php?which=78884">Lockup</a></td>
-      <td class="major">2.1</td>
+      <td class="major">2.3-dev</td>
       <td>yes</td>
       <td>emu</td>
       <td>14MB RAM. Runs with DSP disabled, but without music or
@@ -3910,10 +3899,10 @@ if demo is stated to require that.</p>
     <tr>
       <td>Mystic bytes:
       <a href="http://www.pouet.net/prod.php?which=82676">Silly Venture 2k19 invitro</a></td>
-      <td class="minor">2.2.1</td>
+      <td class="minor">2.3-dev</td>
       <td>yes</td>
       <td>emu</td>
-      <td>14MB RAM. Plasma screen looks like garbage</td>
+      <td>14MB RAM. Plasma screen doesn't look correct at all</td>
     </tr>
     <tr>
       <td>Mystic bytes:
@@ -3984,15 +3973,16 @@ if demo is stated to require that.</p>
     <tr>
       <td>NoCrew:
       <a href="http://www.pouet.net/prod.php?which=15140">Stocasto</a></td>
-      <td class="minor">2.0</td>
+      <td class="minor">2.3-dev</td>
       <td>yes</td>
       <td>emu</td>
-      <td>No sound, otherwise works</td>
+      <td>No sound, otherwise works. Background color black, not blue
+         like in video</td>
     </tr>
     <tr>
       <td>Opium:
       <a href="http://www.pouet.net/prod.php?which=17822">Chrome Dragon</a></td>
-      <td class="minor">2.0</td>
+      <td class="minor">2.3-dev</td>
       <td>yes</td>
       <td>-</td>
       <td>Requires RGB. At least since v1.8, music is missing and
@@ -4010,7 +4000,7 @@ if demo is stated to require that.</p>
     <tr>
       <td>Orion_:
       <a href="http://www.pouet.net/prod.php?which=64508">Unexpected Fun</a></td>
-      <td class="minor">2.0</td>
+      <td class="minor">2.3-dev</td>
       <td>yes</td>
       <td>-</td>
       <td>needs 8 MB TT ram, music with DSP.
@@ -4125,11 +4115,10 @@ if demo is stated to require that.</p>
     <tr>
       <td>Trio:
       <a href="http://www.pouet.net/prod.php?which=15974">X-tasie</a></td>
-      <td class="minor">2.0</td>
+      <td class="minor">2.3-dev</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Demo requires 030 MMU, i.e. it only runs with WinUAE CPU core and when
-          MMU has been enabled. There's a Videl emulation problem left when
+      <td>Requires MMU. There's a Videl emulation problem left when
           user moves mouse (before clicking) in the first screen</td>
     </tr>
     <tr>
@@ -4175,16 +4164,16 @@ if demo is stated to require that.</p>
     <tr>
       <td>tSCc:
       <a href="http://pouet.net/prod.php?which=1013">Terrorize your soul</a></td>
-      <td class="minor">2.1</td>
+      <td class="minor">2.3-dev</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Works only with WinUAE CPU core. Music is mostly silent or noise.
-          Z-buffer screen (before Rubik's cube) uses 68-pixel width, Videl
-	  should repeat the pattern instead of stretching (same as when
-	  it is later roto-zoomed). Last 4 screens + greetings execute
-	  constantly illegal DSP instructions, but they still work
-	  (last "firecube" screen before greets isn't show in demo's
-	  Youtube video)</td>
+      <td>Works only with WinUAE CPU core. Music is silent / noise in
+          last screens. Z-buffer screen (before Rubik's cube) uses
+	  68-pixel width, Videl should repeat the pattern instead of
+	  stretching (same as when it is later roto-zoomed). Last 4
+	  screens + greets execute constantly illegal DSP instructions,
+	  but they still work (last "firecube" screen before greets
+	  isn't show in demo's Youtube video)</td>
     </tr>
     <tr>
       <td>Tony Benett:
@@ -4322,12 +4311,13 @@ for latter to be feasible).
     <tr>
       <td>Orion_:
       <a href="http://www.pouet.net/prod.php?which=58045">We Reached Stars</a></td>
-      <td class="major">2.3-dev</td>
+      <td>2.3-dev</td>
       <td>yes</td>
       <td>-</td>
-      <td>needs 060 + 8 MB TT ram. Music with DSP. Polygon mountains
-          part at start may be  missing all details (issue with palette?)
-	  and demo freezes in middle of that</td>
+      <td>Music with DSP. Requires 060 + 32Mhz + 16 MB TT ram:
+          --fast-boot on --machine falcon --dsp none
+	  --mmu off --cpulevel 6 --cpuclock 32 --fpu internal
+	  -s 4 --addr24 off --ttram 16 --sound off</td>
     </tr>
     <tr>
       <td>TBL:
