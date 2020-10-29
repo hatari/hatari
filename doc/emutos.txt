@@ -1,4 +1,4 @@
-
+§
 Contents:
 - Hatari and EmuTOS
 - What is EmuTOS
@@ -1226,9 +1226,10 @@ Demos regressed in EmuTOS v0.8.7, working again in EmuTOS >0.9.3:
 Demos working in EmuTOS >v1.0 (with DSP support):
 - 4kbtro (by Wilfire)
 - 96ktro (by Cruor)
-  - Unlike with TOS v4, freezes unless MMU used and sound is pure noise
+  - Unlike with TOS v4, freezes unless MMU used and sound is mostly noise
 - Aggressive Party 2 4k (NoCrew)
 - Agony (by DNT crew)
+- Beams (by .tscc):
 - Bound 2, Bound 3 (by Crac)
 - Bound 42 (by MMJ Prod)
 - Chaos A.D. (by DNT crew)
@@ -1237,15 +1238,22 @@ Demos working in EmuTOS >v1.0 (with DSP support):
 - Ex Illusion (by Aura)
 - FOG-intro (by Psychosis)
 - Hmmm... (by Escape)
-  - Clearly slower than with TOS4, sound is missing
+  - Many times slower than with TOS4, sound is missing
+- Illness (by Escape)
+- JESTERday (by POV), musicdemo
 - Motion (unfinished demo by Aggression)
+- I want you to remember (by KÜA Software & Pixel Twins)
+  - Monochrome, with DSP music
 - ROT3DBMP
 - Sidetracked (by Collapze)
   - Unlike with TOS4, sound breaks when (infos/credits/greets)
     text is drawn, but screen clearing before that works properly
+- Silly Venture 2k14 invitro (by Dune / Sector One)
+- Silly Venture 2k16 invitro (by Dune / Mystic Bytes)
 - Silly Venture 2k19 invitro (by Mystic Bytes)
 - Stocasto (by NoCrew)
   - works also with v1.0, but then 3D objects are missing
+- Tere Ra'I (by Cerebral Vortex / Dune / Sector One)
 - The mountains flight (by Cruor)
 - The Ultimate Seduction (Sommarhack 2020 invite)
 - Tron2001 (by ICE)
@@ -1255,11 +1263,12 @@ Demos working in EmuTOS >v1.0 (with DSP support):
   - 060+FPU demo
 - Whirlpool 128k (by Extream)
 - Why (by Extream)
+- Yepyha (by Toons)
 - Zero Three Zero (by The Pixel Twins)
 
 Partly working demos:
 - '_' (by Escape)
-  - many times slower than with TOS4, sound missing
+  - Many times slower than with TOS4, sound missing
 - Built-in Obsolescence (by Digital Chaos)
   - Crashes at end to ROM address error
 - Doomino (by STAX)
@@ -1268,35 +1277,13 @@ Partly working demos:
 Demos NOT working with EmuTOS >1.0:
 - Bound (by Crac)
   - Needs HiColor
+- GEM demo (by DHS & AssemSoft):
+  - needs HiColor mode
 - Enraged (by Avena)
   - Doesn't start
 - Stercus Accidit
   - Line F panic
 - X-tasie (by Trio)
-
-TODO - check rest with >v1.0...
-
-Partly working demos:
-- Illness (by Escape)
-  - freezes after a while to
-    Bus error lget at 4e700cb9
-- I want you to remember (by KÜA Software & Pixel Twins)
-  - No music as it needs DSP
-- Jesterday (by POV)
-  - Music demo, but no music as it needs DSP
-- Yepyha (by Toons)
-  - Music is missing (needs DSP?)
-
-Demos that with normal TOS work without DSP HW,
-but don't work with EmuTOS at all:
-- GEM demo (by DHS & AssemSoft):
-  - needs HiColor mode
-- Beams (by .tscc):
-  panic with bus error:
-  M68000 Bus Error reading at address $3b4.
-- Tere Ra'I (by Cerebral Vortex / Dune / Sector One)
-- Silly Venture 2k16 invitro (by Dune / Mystic Bytes)
-  - these stop as Dsp_Lock() fails
 
 
 Falcon games
@@ -1440,8 +1427,9 @@ Application working under EmuTOS >v1.0 (with DSP support):
   - DSP speed 2x, and bogus speeds for FPU & CPU as with normal TOS
 - DSPdit (by .tscc)
 - FlaySID
-  - sound in some SID songs is worse compared to TOS v4
 - Flextracker
+- GemGT2 v1.1, GemMOD v0.85, and GemPLAY v1.95
+  - http://yescrew.atari.org/eng/products.htm
 - Iphigenie v1.4b (sound system monitor and manager / DSP LOD loader)
 - Whip! (virtual light machine)
   - mic input not tested
@@ -1458,16 +1446,12 @@ Partly working applications:
    - some draw operations do black on black
    - file selector in wrong size if program is started
      from some other resolution than 320x200@256
-- GemGT2 v1.1, GemMOD v0.85, and GemPLAY v1.95
-  - Work OK, but GT2 & MOD DSP players are unusable noisy
-  - http://yescrew.atari.org/eng/products.htm
 - Escape paint (GEM)
   - Icons don't show in image operations window, and their
     places are inverted on mouse-over, image names show in
     image list window only on highlight, some UI elements
     flicker
 - MP2 player:
-  - Sound is just noise
   - outlines (3D look) missing from buttons in the UI
   - Needs to be started from 640x400 or larger resolution, otherwise it
     positions itself completely outside the screen (also with TOS v4)
@@ -1482,7 +1466,7 @@ Broken applications:
   - Crashes to NULL pointer access
   - Requires HiColor?
 - FalcAMP (GEM)
-  - buttons aren't drawn in window
+  - Music playback works, but all playback control buttons are missing
 - Indypaint
   - cursor moves, but screen is black, F1-F4 keys don't work
   - needs HiColor mode
