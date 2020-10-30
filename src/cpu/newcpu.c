@@ -4998,6 +4998,11 @@ static int do_specialties (int cycles)
 		if ( MFP_UpdateNeeded == true )
 			MFP_UpdateIRQ_All ( 0 );
 
+		/* Keep on running DSP if necessary, even if CPU is stopped */
+		/* During STOP state, the CPU runs for 2 or 4 cycles on each loop depending on settings */
+		if (bDspEnabled)
+			DSP_Run ( 2 * ( currprefs.cpu_cycle_exact ? 2 : 4 ) );
+
 		/* Check if there's an interrupt to process (could be a delayed MFP interrupt) */
 		if (regs.spcflags & SPCFLAG_MFP) {
 			MFP_DelayIRQ ();			/* Handle IRQ propagation */
