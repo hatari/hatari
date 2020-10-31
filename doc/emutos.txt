@@ -1162,6 +1162,8 @@ Working demos (comments are for EmuTOS v1.0 or older):
 - Autowachen Verboten (by Lazer)
 - Binliner (preview by Avena)
 - Birdshow
+- Blue 4k (by New Beat)
+  - Ikbdws() stack usage was issue in v0.8.7-v0.9.3
 - Bugs from outer space (by Impulse)
   - bad sound
 - Cebit 93 (by Respectables)
@@ -1219,10 +1221,6 @@ Working demos (comments are for EmuTOS v1.0 or older):
 - Why (by Extream)
 - ZZ 9 Plural Z Alpha (by tSCc)
 
-Demos regressed in EmuTOS v0.8.7, working again in EmuTOS >0.9.3:
-- Blue 4k (by New Beat)
-  - Ikbdws() stack usage compared to TOS4 was issue
-
 Demos working in EmuTOS >v1.0 (with DSP support):
 - 4kbtro (by Wilfire)
 - 96ktro (by Cruor)
@@ -1237,8 +1235,6 @@ Demos working in EmuTOS >v1.0 (with DSP support):
 - Dan's Lustiges Kinderfest (by Lazer)
 - Ex Illusion (by Aura)
 - FOG-intro (by Psychosis)
-- Hmmm... (by Escape)
-  - Many times slower than with TOS4, sound is missing
 - Illness (by Escape)
 - JESTERday (by POV), musicdemo
 - Motion (unfinished demo by Aggression)
@@ -1266,15 +1262,17 @@ Demos working in EmuTOS >v1.0 (with DSP support):
 - Yepyha (by Toons)
 - Zero Three Zero (by The Pixel Twins)
 
-Partly working demos:
-- '_' (by Escape)
-  - Many times slower than with TOS4, sound missing
+Partly working demos (>v1.0):
 - Built-in Obsolescence (by Digital Chaos)
   - Crashes at end to ROM address error
 - Doomino (by STAX)
   - Info screen at start looks just garbage (HiColor?)
+- Hmmm... (by Escape)
+  - Many times slower than with TOS4, sound missing
+- '_' (by Escape)
+  - Many times slower than with TOS4, sound missing
 
-Demos NOT working with EmuTOS >1.0:
+Broken demos (even with EmuTOS >1.0):
 - Bound (by Crac)
   - Needs HiColor
 - GEM demo (by DHS & AssemSoft):
@@ -1289,92 +1287,75 @@ Demos NOT working with EmuTOS >1.0:
 Falcon games
 ............
 
-Games regressed in EmuTOS v0.8.x (not working anymore):
-- Columns by Deadheart* (demo)
-  -  colors/graphics are wrong
-    (in v0.8.7 screen was just black with music on background)
-- Rave*
-  - colors/graphics are wrong
-    (in v0.8.6, only at actual game lower half)
-- SBM v0.8 & v1.03 (Bomberman clone)*
-  - Bus error wget at 00400000
-
-Games working in EmuTOS >=v0.9.0:
+Working games (comments are for EmuTOS v1.0 or older):
 - Aces High (preview)
 - BeGEMeD* (Falcon version)
+- Block Blizzard preview (line-A bitblit + hide cursor / show mouse)
 - Blum
 - Cavemania (demo version)
+- Chainz:
+  - vga, press space at start to disable DSP use
+- Chorensha (old, non-DSP version)
 - Corsair
 - DB 4K
 - Double Bobble 2000* (by Reservoir Gods), disable DSP
 - Dry Egg (needs >4MB RAM)
 - FalcTron
 - Ganymed (start with F1)
+- GEM breakout
 - Heretic (very slow)
 - Hexogan (use number pad)
 - Impulse (Breakout clone)*
+- Jeu de Poker
+  - needs 640x480@256 VGA mode
+- Jewelz
+  - vga, select hatari mode (F2)
+- King Solitaire
 - Lamemine
-- Les Dinosaures (demo)
+- Landmine (GEM minesweeper)
+- Let's play Shanghai
+  - needs 640x400@256 mode
 - LlamaZap free version (requires joypad, not joystick)
 - Madtris
+- Manga Puzzle
+  - needs 256 color mode
+- Masters of Chaos (multiplayer "dungeon master")
 - Nibe
+- Pac Them*
 - Running (demo)*
 - Radical Race (demo)*
+- Risk 030 demo
+  - Needs 640x480@16 VGA mode
+- Santarun (GEM, slowish)
 - Spice (Defender clone)*
 - Static (Patience by Reservoir Gods), disable DSP
 - Steinbruch
+- Sweety Things
 - Switch
 - Tank Blaster
 - Tautology (by Reservoir Gods)
 - Tautology II* (by Reservoir Gods)
+- The Ultimate Minesweeper (16-color GEM game)
 - Toy Man
-- Willie's Adventure (preview1), disable DSP
-- Willie's Adventure* (preview2)
-
-Games working in EmuTOS >v0.9.0:
-- Jeu de Poker
-  - needs 640x480@256 VGA mode
-- Landmine (GEM minesweeper)
-- Let's play Shanghai
-  - needs 640x400@256 mode
-- Manga Puzzle
-  - needs 256 color mode
-- Pac Them*
-- Santarun (GEM, slowish)
-- Vertical Mayhem(+) (Columns clone)*
-- Zodiax (Falcon "R-type")
-  - Sound requires EmuTOS >v0.9.5 (for sound matrix default values)
-
-Games working in EmuTOS >v0.9.3:
-- Chainz:
-  - vga, press space at start to disable DSP use
-- Jewelz
-  - vga, select hatari mode (F2)
-- King Solitaire
-- Risk 030 demo
-  - Needs 640x480@16 VGA mode
-- Sweety Things
 - Ultimate Arena Falcon edition:
   - doesn't recognize it's on Falcon -> select "Test"
   - crashes sometimes
+- Vertical Mayhem(+) (Columns clone)*
+- Willie's Adventure (preview1), disable DSP
+- Willie's Adventure* (preview2)
+- Zodiax (Falcon "R-type")
+  - Sound requires EmuTOS >v0.9.5 (for sound matrix default values)
 
-Chainz, Jewels, Sweety and Poker games need to be started from 640x480
-mode in EmuTOS v<0.9.9, otherwise EmuTOS constrains mouse movements to
-too small area.
+Chainz, Jewels, Sweety and Jeu de Poker games need to be started from
+640x480 mode in EmuTOS <v0.9.9, otherwise EmuTOS constrains mouse
+movements to a too small area.
 
-Games working in EmuTOS >v0.9.5:
-- GEM breakout
-- The Ultimate Minesweeper (16-color GEM game)
-(Earlier EmuTOS versions have problems with mouse clicks)
-
-Games working in EmuTOS >0.9.6:
-- Chorensha (old, non-DSP version)
-- Block Blizzard preview (line-A bitblit + hide cursor / show mouse)
-- Masters of Chaos (multiplayer "dungeon master")
-
-Games (mostly) working with EmuTOS >v0.9.9.1:
-- Painium: fire button works only until game itself starts
-  - Needs at least 8MB RAM
+Games working under EmuTOS >v1.0 (with DSP support):
+- Aazohm Krypth
+- Bad Mood (90's demo)
+- Bad Mood (v0.37 game from 2017)
+- Crown of Creation (preview)
+- Des Lazers & des Hommes
 
 Games working with extra hacks:
 - Bugger, Bunion, SkyFall, Sworm games by Resorvoir Gods:
@@ -1385,22 +1366,50 @@ Games working with extra hacks:
   - with EmuTOS <=1.0, enabling DSP freezes the games right at startup
     (with normal TOS4, DSP is used for background music)
 
-TODO - check rest with >v1.0...
+Partly working games:
+- Painium:
+  - fire button works only until game itself starts
+  - Needs at least 8MB RAM, and EmuTOS v0.9.9.1
 
-Games that might be possible to get working (they show something
-and/or don't use DSP XBios calls or DSP sound matrix):
-- Bomb Squad: graphics look wrong (HiColor?)
-- Confusion (demos 1 & 2): title screen doesn't come up
-- Conquest of Elysium: screen with garbage
-- Gold island (demo, vga only), parts of blits are missing
-- Des Lazers & des Hommes, game area graphics are missing (they're rendered with DSP)
-- It's Great (start from st-med rez): mouse doesn't work
-- Men at War: freezes at startup (uses sound matrix)
-- Multibriques: colors are wrong
-- Neurobot: just exits
-- Tetrhex: Null pointer access bus error after trying to set 256 color mode
-- Tron 2: illegal instruction panic on startup
-- TsccTron: bus error reading at address $0 at startup
+Broken games (even with EmuTOS >1.0):
+- Bomb Squad:
+  - parts of blits are missing, and some look wrong
+- Boom preview
+  - crashes to bus error or freezes depending on amount of RAM
+- Columns by Deadheart* (demo)
+  - colors/graphics are broken
+- Confusion (demos 1 & 2):
+  - title screen doesn't come up
+- Conquest of Elysium:
+  - black graphics (needs HiColor?)
+- Epi-Lepsie (by PARX)
+  - colors wrong (HiColor?), input doesn't work
+- Gold island (demo, vga only)
+  - some blits are just opaque red
+- It's Great (start from st-med rez)
+  - mouse doesn't work
+- Les Dinosaures (v1.02 demo by PARX)
+  - colors wrong (HiColor?), freezes at start
+  - supposed to have worked with some earlier EmuTOS version
+- Men at War
+  - freezes at startup (uses sound matrix)
+- Multibriques:
+  - Broken graphics after intro
+- Neurobot:
+  - just exits immediately
+- Rave*
+  - colors/graphics are broken
+    (in v0.8.6, only at lower half during actual game)
+- SBM v0.8 & v1.03 (Bomberman clone)*
+  - Bus error and wrong graphics
+- Tetrhex (1.41)
+  - Null pointer access bus error after trying to set 256 color mode
+- Tron 2
+  - bus error panic on startup
+- TsccTron
+  - bus error reading at address $0 on startup
+- Watership (vga)
+  - bus error panic on startup
 
 
 Falcon applications
@@ -1456,7 +1465,7 @@ Partly working applications:
   - Needs to be started from 640x400 or larger resolution, otherwise it
     positions itself completely outside the screen (also with TOS v4)
 
-Broken applications:
+Broken applications (even with EmuTOS >v1.0):
 - Animator v0.20.4
   - Crashes to NULL pointer access
   - Requires HiColor?
