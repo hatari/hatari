@@ -1,4 +1,4 @@
-§
+
 Contents:
 - Hatari and EmuTOS
 - What is EmuTOS
@@ -1322,7 +1322,7 @@ Working games (comments are for EmuTOS v1.0 or older):
 - Masters of Chaos (multiplayer "dungeon master")
 - Nibe
 - Pac Them*
-- Running (demo)*
+- Running (demo version)*
 - Radical Race (demo)*
 - Risk 030 demo
   - Needs 640x480@16 VGA mode
@@ -1353,9 +1353,17 @@ movements to a too small area.
 Games working under EmuTOS >v1.0 (with DSP support):
 - Aazohm Krypth
 - Bad Mood (90's demo)
-- Bad Mood (v0.37 game from 2017)
+- Bad Mood (v0.37 game from 2017)*
+- Beats of Rage (by Thadoss/Dune)
+  - Needs MMU enabled
 - Crown of Creation (preview)
 - Des Lazers & des Hommes
+- H2O* (by EKO)
+- Racer (by Thadoss/Dune)
+- Racer 2 (by Thadoss/Dune)*
+- Running* (shareware version)
+- Towers II
+- Wotanoid (asteroids clone)
 
 Games working with extra hacks:
 - Bugger, Bunion, SkyFall, Sworm games by Resorvoir Gods:
@@ -1386,22 +1394,30 @@ Broken games (even with EmuTOS >1.0):
   - colors wrong (HiColor?), input doesn't work
 - Gold island (demo, vga only)
   - some blits are just opaque red
+- Gravon (demo)
+  - crashes at start, requires HiColor
 - It's Great (start from st-med rez)
   - mouse doesn't work
+- "K" preview (by EXA)*
+  - bus error at kart race start
 - Les Dinosaures (v1.02 demo by PARX)
   - colors wrong (HiColor?), freezes at start
   - supposed to have worked with some earlier EmuTOS version
 - Men at War
   - freezes at startup (uses sound matrix)
+- Moonspeeder (preview 2)
+ - screen is just black (HiColor?)
 - Multibriques:
-  - Broken graphics after intro
+  - broken graphics after intro
 - Neurobot:
   - just exits immediately
 - Rave*
   - colors/graphics are broken
     (in v0.8.6, only at lower half during actual game)
 - SBM v0.8 & v1.03 (Bomberman clone)*
-  - Bus error and wrong graphics
+  - bus error and wrong graphics
+- TeknoBalls
+  - crashes at start to NULL pointer (HiColor?)
 - Tetrhex (1.41)
   - Null pointer access bus error after trying to set 256 color mode
 - Tron 2
@@ -1446,9 +1462,9 @@ Application working under EmuTOS >v1.0 (with DSP support):
   - Starts fine and GUI works, actual recording not tested
 
 Applications working with extra hacks:
-- Fractal Playground
-  - Requires "hack.prg" like Reservoir Gods games, othewise
-    pressing any key crashes the program
+- Fractal Playground, Godleness, GodBoyX by Reservoir Gods
+  - Like RG games, these require "hack.prg", otherwise
+    pressing any key crashes them
 
 Partly working applications:
 - Delmpaint (GFA)
