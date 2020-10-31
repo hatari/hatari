@@ -213,7 +213,7 @@ struct dma_s {
 	Uint32 frameStartAddr;		/* Sound frame start */
 	Uint32 frameEndAddr;		/* Sound frame end */
 	Uint32 frameCounter;		/* Counter in current sound frame */
-	Uint32 frameLen;		/* Length of the frame */
+	Uint32 frameLen;		/* TODO: Remove when it's ok to break memory snapshots (was: Length of the frame) */
 	Uint32 isRunning;		/* Is Playing / Recording ? */
 	Uint32 loopMode;		/* Loop mode enabled ? */
 	Uint32 currentFrame;		/* Current Frame Played / Recorded (in stereo, 2 frames = 1 track) */
@@ -1485,7 +1485,7 @@ static void Crossbar_setDmaPlay_Settings(void)
 	/* DMA settings */
 	dmaPlay.frameStartAddr = crossbar.dmaPlay_CurrentFrameStart;
 	dmaPlay.frameEndAddr = crossbar.dmaPlay_CurrentFrameEnd;
-	dmaPlay.frameLen = dmaPlay.frameEndAddr - dmaPlay.frameStartAddr;
+	dmaPlay.frameLen = dmaPlay.frameEndAddr - dmaPlay.frameStartAddr;  /* TODO: Remove later */
 //	dmaPlay.frameCounter = crossbar.dmaPlay_CurrentFrameCount - crossbar.dmaPlay_CurrentFrameStart;
 	dmaPlay.frameCounter = 0;
 
@@ -1506,32 +1506,32 @@ static void Crossbar_Process_DMAPlay_Transfer(void)
 {
 	Uint16 temp, increment_frame;
 	Sint16 value, eightBits;
-	Sint8  *pFrameStart;
+	Uint32 nFramePos;
 	Uint8  dmaCtrlReg;
 
 	/* if DMA play is not running, return */
 	if (dmaPlay.isRunning == 0)
 		return;
 
-	pFrameStart = (Sint8 *)&STRam[dmaPlay.frameStartAddr];
+	nFramePos = (dmaPlay.frameStartAddr + dmaPlay.frameCounter) % STRamEnd;
 	increment_frame = 0;
 
 	/* 16 bits stereo mode ? */
 	if (crossbar.is16Bits) {
 		eightBits = 1;
-		value = (Sint16)do_get_mem_word(&pFrameStart[dmaPlay.frameCounter]);
+		value = (Sint16)do_get_mem_word(&STRam[nFramePos]);
 		increment_frame = 2;
 	}
 	/* 8 bits stereo ? */
 	else if (crossbar.isStereo) {
 		eightBits = 64;
-		value = (Sint16) pFrameStart[dmaPlay.frameCounter];
+		value = (Sint8)STRam[nFramePos];
 		increment_frame = 1;
 	}
 	/* 8 bits mono */
 	else {
 		eightBits = 64;
-		value = (Sint16) pFrameStart[dmaPlay.frameCounter];
+		value = (Sint8)STRam[nFramePos];
 		if ((dmaPlay.currentFrame & 1) == 0) {
 			increment_frame = 1;
 		}
@@ -1592,7 +1592,7 @@ static void Crossbar_Process_DMAPlay_Transfer(void)
 	}
 
 	/* Check if end-of-frame has been reached and raise interrupts if needed. */
-	if (dmaPlay.frameCounter >= dmaPlay.frameLen)
+	if (dmaPlay.frameStartAddr + dmaPlay.frameCounter >= dmaPlay.frameEndAddr)
 	{
 		/* DMA sound idle : update SNDINT */
 		Crossbar_Update_SNDINT_Line ( false , MFP_GPIP_STATE_LOW );	/* O/LOW=dma sound idle */
@@ -1634,7 +1634,7 @@ static void Crossbar_setDmaRecord_Settings(void)
 	/* DMA settings */
 	dmaRecord.frameStartAddr = crossbar.dmaRecord_CurrentFrameStart;
 	dmaRecord.frameEndAddr = crossbar.dmaRecord_CurrentFrameEnd;
-	dmaRecord.frameLen = dmaRecord.frameEndAddr - dmaRecord.frameStartAddr;
+	dmaRecord.frameLen = dmaRecord.frameEndAddr - dmaRecord.frameStartAddr;  /* TODO: Remove later */
 //	dmaRecord.frameCounter = crossbar.dmaRecord_CurrentFrameCount - crossbar.dmaRecord_CurrentFrameStart;
 	dmaRecord.frameCounter = 0;
 
@@ -1652,35 +1652,35 @@ static void Crossbar_setDmaRecord_Settings(void)
  */
 void Crossbar_SendDataToDmaRecord(Sint16 value)
 {
-	Sint8  *pFrameStart;
+	Uint32 nFramePos;
 	Uint8  dmaCtrlReg;
 
 	if (dmaRecord.isRunning == 0) {
 		return;
 	}
 
-	pFrameStart = (Sint8 *)&STRam[dmaRecord.frameStartAddr];
+	nFramePos = (dmaRecord.frameStartAddr + dmaRecord.frameCounter) % STRamEnd;
 
 	/* 16 bits stereo mode ? */
 	if (crossbar.is16Bits) {
-		do_put_mem_word(&pFrameStart[dmaRecord.frameCounter], value);
+		do_put_mem_word(&STRam[nFramePos], value);
 		dmaRecord.frameCounter += 2;
 	}
 	/* 8 bits stereo ? */
 	else if (crossbar.isStereo) {
-		do_put_mem_word(&pFrameStart[dmaRecord.frameCounter], value);
+		do_put_mem_word(&STRam[nFramePos], value);
 		dmaRecord.frameCounter += 2;
 //		pFrameStart[dmaRecord.frameCounter] = (Uint8)value;
 //		dmaRecord.frameCounter ++;
 	}
 	/* 8 bits mono */
 	else {
-		pFrameStart[dmaRecord.frameCounter] = (Uint8)value;
+		STRam[nFramePos] = (Uint8)value;
 		dmaRecord.frameCounter ++;
 	}
 
 	/* Check if end-of-frame has been reached and raise interrupts if needed. */
-	if (dmaRecord.frameCounter >= dmaRecord.frameLen)
+	if (dmaRecord.frameStartAddr + dmaRecord.frameCounter >= dmaRecord.frameEndAddr)
 	{
 		/* DMA sound idle : update SNDINT */
 		Crossbar_Update_SNDINT_Line ( true , MFP_GPIP_STATE_LOW );	/* O/LOW=dma sound idle */

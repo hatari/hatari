@@ -199,6 +199,7 @@ Fixed demos:
   (MFP DMA sound interrupt on timer A using AER)
 - Oompa by No Extra (after greetings part)
   (blitter access to bus error regions)
+- E.K.O System (music should now play in the racing scene)
 
 Fixed programs:
 - MS Write (crash), when it's run from GEMDOS HD
