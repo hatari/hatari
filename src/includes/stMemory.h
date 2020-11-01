@@ -63,6 +63,9 @@ extern Uint32	STMemory_ReadLong ( Uint32 addr );
 extern Uint16	STMemory_ReadWord ( Uint32 addr );
 extern Uint8	STMemory_ReadByte ( Uint32 addr );
 
+extern Uint16	STMemory_DMA_ReadWord ( Uint32 addr );
+extern void	STMemory_DMA_WriteWord ( Uint32 addr , Uint16 value );
+
 extern void	STMemory_MMU_Config_ReadByte ( void );
 extern void	STMemory_MMU_Config_WriteByte ( void );
 
