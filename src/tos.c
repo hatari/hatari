@@ -25,6 +25,7 @@ const char TOS_fileid[] = "Hatari tos.c";
 #include "file.h"
 #include "gemdos.h"
 #include "hdc.h"
+#include "ide.h"
 #include "ioMem.h"
 #include "log.h"
 #include "m68000.h"
@@ -846,6 +847,7 @@ static void TOS_CheckSysConfig(void)
 		Log_AlertDlg(LOG_ERROR, "TOS version %x.%02x is for Atari Falcon only.\n"
 		             " ==> Switching to Falcon mode now.\n",
 		             TosVersion >> 8, TosVersion & 0xff);
+		Ide_UnInit();
 		IoMem_UnInit();
 		ConfigureParams.System.nMachineType = MACHINE_FALCON;
 		ClocksTimings_InitMachine ( ConfigureParams.System.nMachineType );
@@ -855,6 +857,7 @@ static void TOS_CheckSysConfig(void)
 		DSP_Enable();
 #endif
 		IoMem_Init();
+		Ide_Init();
 		Configuration_ChangeCpuFreq ( 16 );
 		ConfigureParams.System.nCpuLevel = 3;
 	}
