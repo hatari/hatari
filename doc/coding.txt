@@ -27,7 +27,10 @@ existing source code.
   always try to adapt to the coding style of the file that you're
   currently editing.
 
-- For new files, pick one of the existing coding styles, don't add a new one.
+- For new files, use the main Hatari coding style (see the various *.c file
+  in the main src/ folder) for files that are specific to Hatari. Don't add
+  a new one coding style, unless the new files are shared with other projects
+  and need to be synchronized from time to time.
 
 - Try to avoid including a header file from within another header file.
   Include all necessary header files in the right order in the *.c files
