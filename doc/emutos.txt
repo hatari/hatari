@@ -1164,6 +1164,8 @@ Working demos (comments are for EmuTOS v1.0 or older):
 - Birdshow
 - Blue 4k (by New Beat)
   - Ikbdws() stack usage was issue in v0.8.7-v0.9.3
+- Bound (by Crac)
+  - DSP sound effect requires >v1.0, startup texts need HiColor
 - Bugs from outer space (by Impulse)
   - bad sound
 - Cebit 93 (by Respectables)
@@ -1185,12 +1187,12 @@ Working demos (comments are for EmuTOS v1.0 or older):
     end screen at top & bottom
 - ImPerfect (by XI / Satantronic)
 - It's that time of the year again (by New Beat)
-  - MP2 music with DSP missing
+  - MP2 DSP music requires >v1.0
 - Joy (by New Beat)
   - With YM and MP2 DSP music
 - The Keff Demo (by An Cool)
 - Laser Days E.P. (by .tSCc)
-  - With MP2 DSP music
+  - MP2 DSP music requires >v1.0
 - More (by New Beat)
 - Mouse (animation + music)
 - Oergs (by Lazer, pic + music)
@@ -1199,13 +1201,13 @@ Working demos (comments are for EmuTOS v1.0 or older):
   - 060+FPU demo, unlike with TOS4, works only with MMU
 - Prepare (by Extream)
 - Revertant 1.2 (by Cobra / Mystic Bytes)
-  - With MP2 DSP music (not working)
+  - MP2 DSP music requires >v1.0
 - RGB Reine (by New Beat)
 - Rock Solid (by Paranoia)
 - Schlumpf invtro (by Lazer)
   - horizontal scrolling is bad with some EmuTOS versions
 - She danced to Tainted Love (musicdisk by tSCc)
-  - MP2 music requires DSP
+  - MP2 DSP music requires >v1.0
 - Six Sievert (by tSCc)
 - Snowstorm (by Reservoir Gods), disable DSP
 - Sonolumineszenz (by Avena)
@@ -1248,7 +1250,7 @@ Demos working in EmuTOS >v1.0 (with DSP support):
 - Silly Venture 2k16 invitro (by Dune / Mystic Bytes)
 - Silly Venture 2k19 invitro (by Mystic Bytes)
 - Stocasto (by NoCrew)
-  - works also with v1.0, but then 3D objects are missing
+  - works also with v1.0, but then DSP 3D objects are missing
 - Tere Ra'I (by Cerebral Vortex / Dune / Sector One)
 - The mountains flight (by Cruor)
 - The Ultimate Seduction (Sommarhack 2020 invite)
@@ -1273,8 +1275,6 @@ Partly working demos (>v1.0):
   - Many times slower than with TOS4, sound missing
 
 Broken demos (even with EmuTOS >1.0):
-- Bound (by Crac)
-  - Needs HiColor
 - GEM demo (by DHS & AssemSoft):
   - needs HiColor mode
 - Enraged (by Avena)
@@ -1355,7 +1355,7 @@ Games working under EmuTOS >v1.0 (with DSP support):
 - Bad Mood (90's demo)
 - Bad Mood (v0.37 game from 2017)*
 - Beats of Rage (by Thadoss/Dune)
-  - Needs MMU enabled
+  - Unlike TOS4, needs MMU enabled
 - Crown of Creation (preview)
 - Des Lazers & des Hommes
 - H2O* (by EKO)
