@@ -29,7 +29,7 @@
 <h1 class="pageheader">Hatari Atari Software Compatibility List</h1>
 
 <p class="pageheader">
-Version 2.2.1, February 2019
+Version 2.3-dev, November 2020
 </p>
 <p class="pageheader">
 This list has been written by: <strong>Thomas Huth</strong>, <strong>Eero Tamminen</strong>
@@ -2082,13 +2082,13 @@ href="http://www.umich.edu/~archive/atari/Games/Space/zero_5.zip">Zero-5</a><br 
 As all 1-8 bit GEM programs work without problems under TT emulation
 this section lists only programs that have TT-specific features.</p>
 
-<h3>TT games</h3>
+<h3>TT applications and games</h3>
 
 <table>
   <caption>TT applications and games</caption>
   <thead>
     <tr class="backdropped">
-      <th>App/Game</th>
+      <th>Program</th>
       <th>Hatari version</th>
       <th>Notes</th>
     </tr>
@@ -2099,6 +2099,12 @@ this section lists only programs that have TT-specific features.</p>
       <td>2.0</td>
       <td>VGA/TT-medium only. Some version(s) bus error due to DSP register
           check (although they should support TT with chip music)</td>
+    </tr>
+    <tr>
+      <td><a href="http://s390174849.online.de/ray.tscc.de/misc.htm#cryview">CrY image viewer</a></td>
+      <td class="minor">2.2</td>
+      <td>Needs at least some TT-RAM.  interlaced 16bpp CrY mode flickers badly
+          + colors are wrong (by tSCc)</td>
     </tr>
     <tr>
       <td><a href="https://gtello.pagesperso-orange.fr/mplayere.htm">M_PLAYER</a></td>
@@ -2175,12 +2181,6 @@ with FPU and no DSP. Start from TT-low resolution.</td>
       <a href="http://www.pouet.net/prod.php?which=16426">Beams</a></td>
       <td>2.1</td>
       <td>TT-version. At least 8MB RAM</td>
-    </tr>
-    <tr>
-      <td>tSCc:
-      <a href="http://s390174849.online.de/ray.tscc.de/misc.htm#cryview">CrY image viewer</a></td>
-      <td class="minor">2.2</td>
-      <td>Needs at least some TT-RAM.  interlaced 16bpp CrY mode flickers badly + colors are wrong</td>
     </tr>
     <tr>
       <td>tSCc:
