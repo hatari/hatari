@@ -1,8 +1,8 @@
 [Desktop Entry]
-Version=1.0
 Type=Application
 Name=Hatari
 Comment=Emulator for Atari ST/STE/TT/Falcon computers
+Comment[fr]=Emulateur pour les ordinateurs Atari ST/STE/TT/Falcon
 Exec=hatari %f
 Icon=hatari
 MimeType=application/x-st-disk-image;application/vnd.msa-disk-image;application/vnd.fastcopy-disk-image;application/x-stx-disk-image;
