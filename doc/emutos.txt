@@ -1456,6 +1456,10 @@ Application working under EmuTOS >v1.0 (with DSP support):
 - GemGT2 v1.1, GemMOD v0.85, and GemPLAY v1.95
   - http://yescrew.atari.org/eng/products.htm
 - Iphigenie v1.4b (sound system monitor and manager / DSP LOD loader)
+- MP2AUDIO player:
+  - outlines (3D look) missing from buttons in the UI
+  - Needs to be started from 640x400 or larger resolution, otherwise it
+    positions itself completely outside the screen (also with TOS v4)
 - Whip! (virtual light machine)
   - mic input not tested
 - Winrec (direct to disk GEM audio recorder/effects)
@@ -1476,10 +1480,6 @@ Partly working applications:
     places are inverted on mouse-over, image names show in
     image list window only on highlight, some UI elements
     flicker
-- MP2 player:
-  - outlines (3D look) missing from buttons in the UI
-  - Needs to be started from 640x400 or larger resolution, otherwise it
-    positions itself completely outside the screen (also with TOS v4)
 
 Broken applications (even with EmuTOS >v1.0):
 - Animator v0.20.4
