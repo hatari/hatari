@@ -44,6 +44,8 @@ matrix:
     - env:
         - CONFIG="--enable-winuae-cpu --enable-werror --enable-debug"
       arch: ppc64le
+      script:
+        - make -j4 && ctest -j$(nproc)
 
     - env:
         - CONFIG="--enable-winuae-cpu --enable-werror --enable-debug"
