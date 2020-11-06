@@ -562,7 +562,7 @@ Free/shareware/PD games:
 - Dot 2 Dots     (for kids)
 - Downfall       (2-player, EmuTOS >v0.9.12)
 - Droid          (floppy only, bootsector has 0 for reserved sectors)
-- Droid 2        (floppy only)*
+- Droid 2*       (floppy only)
 - Entombed
   - doesn't show title, copyright, hiscore nor help after EmuTOS v0.8.6
   - TOS v2 shows title but not others and sound is wrong
@@ -1131,6 +1131,7 @@ Working games:
 - GEM Santarun
 - GEM Slashem v3.3.1
 - Oxyd (Falcon version)
+- PM Doom, Heretic & Hexen v0.55 (ports by Patrice Mandin)
 - The Ultimate Minesweeper (GEM)
 
 Most of above GEM games run even on ST, but only TT has large enough
@@ -1222,6 +1223,7 @@ Working demos (comments are for EmuTOS v1.0 or older):
 - Snowstorm (by Reservoir Gods), disable DSP
 - Sonolumineszenz (by Avena)
   - works before v0.9.1, but without sounds
+- STrEet figher II (by Patrice Mandin)
 - Terrorize Your Soul (by tSCc)
   - fonts and colors aren't right on all screens
 - Tiny Things (no music as it's on DSP)
@@ -1311,10 +1313,12 @@ Working games (comments are for EmuTOS v1.0 or older):
 - Double Bobble 2000* (by Reservoir Gods), disable DSP
 - Dry Egg (needs >4MB RAM)
 - FalcTron
+- Galaga 88
 - Ganymed (start with F1)
+- Grenzüberschreitung
 - Heretic (very slow)
 - Hexogan (use number pad)
-- Impulse (Breakout clone)*
+- Impulse* (Breakout clone)
 - Jeu de Poker
   - needs 640x480@256 VGA mode
 - Jewelz
@@ -1327,12 +1331,16 @@ Working games (comments are for EmuTOS v1.0 or older):
 - Madtris
 - Masters of Chaos (multiplayer "dungeon master")
 - Nibe
+- Offworld Security
 - Pac Them*
-- Running (demo version)*
-- Radical Race (demo)*
+- Pacmaniac Pacmania
+- Pingo 98 (classic version)
+- Running* (demo version)
+- Radical* Race (demo)
+- Raiden
 - Risk 030 demo
   - Needs 640x480@16 VGA mode
-- Spice (Defender clone)*
+- Spice* (Defender clone)
 - Static (Patience by Reservoir Gods), disable DSP
 - Steinbruch
 - Sweety Things
@@ -1344,11 +1352,14 @@ Working games (comments are for EmuTOS v1.0 or older):
 - Ultimate Arena Falcon edition:
   - doesn't recognize it's on Falcon -> select "Test"
   - crashes sometimes
-- Vertical Mayhem(+) (Columns clone)*
+- Vertical Mayhem(+)* (Columns clone)
+- Vroom 030 (too fast)
 - Willie's Adventure (preview1), disable DSP
 - Willie's Adventure* (preview2)
+- X-moon preview* (music with DSP)
 - Zodiax (Falcon "R-type")
-  - Sound requires EmuTOS >v0.9.5 (for sound matrix default values)
+  - sound requires EmuTOS >v0.9.5 (for sound matrix default values),
+    start from 640x400@16
 
 Chainz, Jewels, Sweety and Jeu de Poker games need to be started from
 640x480 mode in EmuTOS <v0.9.9, otherwise EmuTOS constrains mouse
@@ -1357,17 +1368,20 @@ movements to a too small area.
 Games working under EmuTOS >v1.0 (with DSP support):
 - Aazohm Krypth
 - Bad Mood (90's demo)
-- Bad Mood (v0.37 game from 2017)*
-- Beats of Rage (by Thadoss/Dune)
+- Bad Mood* (v0.37 game from 2017)
+- Beats of Rage* (by Thadoss/Dune)
   - Unlike TOS4, needs MMU enabled
 - Crown of Creation (preview)
 - Des Lazers & des Hommes
 - H2O* (by EKO)
+- Kwiks* (by Digital Nightmares)
+- Push It
 - Racer (by Thadoss/Dune)
-- Racer 2 (by Thadoss/Dune)*
+- Racer 2* (by Thadoss/Dune)
 - Running* (shareware version)
 - Towers II
-- Wotanoid (asteroids clone)
+- Trionoids* (Columns clone)
+- Wotanoid (Asteroids clone)
 
 Games working with extra hacks:
 - Bugger, Bunion, SkyFall, Sworm games by Resorvoir Gods:
@@ -1379,12 +1393,12 @@ Games working with extra hacks:
     (with normal TOS4, DSP is used for background music)
 
 Partly working games:
-- Painium:
+- Painium
   - fire button works only until game itself starts
   - Needs at least 8MB RAM, and EmuTOS v0.9.9.1
 
 Broken games (even with EmuTOS >1.0):
-- Bomb Squad:
+- Bomb Squad
   - parts of blits are missing, and some look wrong
 - Boom preview
   - crashes to bus error or freezes depending on amount of RAM
@@ -1394,6 +1408,8 @@ Broken games (even with EmuTOS >1.0):
   - title screen doesn't come up
 - Conquest of Elysium:
   - black graphics (needs HiColor?)
+- Downfall
+  - "Error while loading BLACKWHT.BGR"
 - Epi-Lepsie (by PARX)
   - colors wrong (HiColor?), input doesn't work
 - Gold island (demo, vga only)
@@ -1402,7 +1418,7 @@ Broken games (even with EmuTOS >1.0):
   - crashes at start, requires HiColor
 - It's Great (start from st-med rez)
   - mouse doesn't work
-- "K" preview (by EXA)*
+- "K" preview* (by EXA)
   - bus error at kart race start
 - Les Dinosaures (v1.02 demo by PARX)
   - colors wrong (HiColor?), freezes at start
@@ -1411,17 +1427,23 @@ Broken games (even with EmuTOS >1.0):
   - freezes at startup (uses sound matrix)
 - Moonspeeder (preview 2)
  - screen is just black (HiColor?)
-- Multibriques:
+- Multibriques
   - broken graphics after intro
-- Neurobot:
+- Neurobot
   - just exits immediately
 - NoMess (GEM)
   - Window is only couple of pixels in size, like with TOS <v4
+- Poing 2000 demo
+  - Fire input doesn't work to start game
 - Rave*
   - colors/graphics are broken
     (in v0.8.6, only at lower half during actual game)
-- SBM v0.8 & v1.03 (Bomberman clone)*
+- Reeking Rubber
+  - broken graphics & termination on actual game start (HiColor?)
+- SBM v0.8 & v1.03* (Bomberman clone)
   - bus error and wrong graphics
+- Slippery Sam
+  - freezes at start (queries e.g. DSP reg $FFA206)
 - TeknoBalls
   - crashes at start to NULL pointer (HiColor?)
 - Tetrhex (1.41)
