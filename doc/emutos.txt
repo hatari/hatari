@@ -1122,11 +1122,21 @@ Working demos:
 
 Working games:
 - Capy (by YesCREW)
+- GEM Breakout
+- GEM Klikomania
+- GEM Landmine
+- GEM Manga Puzzle (needs 256 color mode)
+- GEM Milanopoly
 - GEM NetHack v3.4.3
+- GEM Santarun
 - GEM Slashem v3.3.1
 - Oxyd (Falcon version)
+- The Ultimate Minesweeper (GEM)
 
-Broken programs:
+Most of above GEM games run even on ST, but only TT has large enough
+resolution with enough colors for them to be properly playable.
+
+Broken games:
 - OpenTTD:
   - Needs hundreds of MBs of TT-RAM
   - Needs to be started from TT-low resolution
@@ -1302,7 +1312,6 @@ Working games (comments are for EmuTOS v1.0 or older):
 - Dry Egg (needs >4MB RAM)
 - FalcTron
 - Ganymed (start with F1)
-- GEM breakout
 - Heretic (very slow)
 - Hexogan (use number pad)
 - Impulse (Breakout clone)*
@@ -1312,13 +1321,10 @@ Working games (comments are for EmuTOS v1.0 or older):
   - vga, select hatari mode (F2)
 - King Solitaire
 - Lamemine
-- Landmine (GEM minesweeper)
 - Let's play Shanghai
   - needs 640x400@256 mode
 - LlamaZap free version (requires joypad, not joystick)
 - Madtris
-- Manga Puzzle
-  - needs 256 color mode
 - Masters of Chaos (multiplayer "dungeon master")
 - Nibe
 - Pac Them*
@@ -1326,7 +1332,6 @@ Working games (comments are for EmuTOS v1.0 or older):
 - Radical Race (demo)*
 - Risk 030 demo
   - Needs 640x480@16 VGA mode
-- Santarun (GEM, slowish)
 - Spice (Defender clone)*
 - Static (Patience by Reservoir Gods), disable DSP
 - Steinbruch
@@ -1335,7 +1340,6 @@ Working games (comments are for EmuTOS v1.0 or older):
 - Tank Blaster
 - Tautology (by Reservoir Gods)
 - Tautology II* (by Reservoir Gods)
-- The Ultimate Minesweeper (16-color GEM game)
 - Toy Man
 - Ultimate Arena Falcon edition:
   - doesn't recognize it's on Falcon -> select "Test"
@@ -1411,6 +1415,8 @@ Broken games (even with EmuTOS >1.0):
   - broken graphics after intro
 - Neurobot:
   - just exits immediately
+- NoMess (GEM)
+  - Window is only couple of pixels in size, like with TOS <v4
 - Rave*
   - colors/graphics are broken
     (in v0.8.6, only at lower half during actual game)
