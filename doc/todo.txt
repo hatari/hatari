@@ -48,6 +48,9 @@ Emulation improvements
 - Last DSP emulation / Falcon sound matrix items:
 	- Dsp SSI internal clock (is it used on falcon ?)
 	- Verify DSP instructions cycle count, especially with external RAM
+	- Emulation of global sound reset (,expand/extend) and mute bits in
+	  $ff8937 & $ff8938 registers used by TOS4
+	  ("Questions on Falcon DMA sound" mail thread)
 
 - FPU 80-bit precision mode (selected with FPUCW instruction, and
   extra instructions on 040), if there are programs depending on it.
@@ -79,6 +82,31 @@ For more information, see "compatibility.html".
 
 Other potential Hatari functionality improvements
 -------------------------------------------------
+
+- Improve (64e4e6d59) fix for IDE crash (and similar issues) when machine
+  type is changed. Maybe call Change_CopyChangedParamsToConfiguration()
+  from TOS_CheckSysConfig()?
+
+- Copying AES/VDI vectors state at AES/VDI call so that it can be
+  reliably shown with "info aes/vdi" command afterwards
+
+- dspmemwrite, dsploadbin & dspsavebin debugger commands similar to
+  their CPU variants
+
+- Finish support for reproducible builds.  Use SOURCE_DATE_EPOCH spec
+  raken either from date or last git commit (git log -1 --pretty=%ct),
+  unless user overrides it.  Convert this seconds value at runtime to
+  to user readable string when it's output to user.
+  - timestamp handling spec:
+    https://reproducible-builds.org/specs/source-date-epoch/#idm53
+  - example for CMake:
+    https://reproducible-builds.org/docs/source-date-epoch/#cmake
+  - kernel docs + example:
+    https://www.kernel.org/doc/html/latest/kbuild/reproducible-builds.html
+    https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/scripts/mkcompile_h#n26
+
+- Better keymap table format e.g. for French
+  ("Suggestion for enhanced keymap table format" mail thread)
 
 - Improved boot drive & partition handling code:
   - count partitions the same way in ACSI, IDE & GEMDOS
@@ -190,3 +218,6 @@ on BerliOS hatari-devel mail thread for more info.)
 	- By default the directory config values should be empty in
 	  which case the code will at run-time decide to use current
 	  directory, but not modify the path config setting.
+
+- Add Hatari "fileid" to more files (to ease locating "stolen" code)
+  and Git hook to remove trailing whitespace (sed -i 's/[\t ]*$//')?
