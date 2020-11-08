@@ -114,6 +114,7 @@ void VDI_SetResolution(int GEMColor, int WidthRequest, int HeightRequest)
 {
 	int w = WidthRequest;
 	int h = HeightRequest;
+	int minw, minh;
 
 	/* Color depth */
 	switch (GEMColor)
@@ -121,38 +122,55 @@ void VDI_SetResolution(int GEMColor, int WidthRequest, int HeightRequest)
 	 case GEMCOLOR_2:
 		VDIRes = ST_HIGH_RES;
 		VDIPlanes = 1;
+		minw = 640;
+		minh = 400;
 		break;
 	 case GEMCOLOR_4:
 		VDIRes = ST_MEDIUM_RES;
 		VDIPlanes = 2;
+		minw = 640;
+		minh = 200;
 		break;
 	 case GEMCOLOR_16:
 		VDIRes = ST_LOW_RES;
 		VDIPlanes = 4;
+		minw = 320;
+		minh = 200;
 		break;
+	default:
+		fprintf(stderr, "Invalid VDI planes mode request: %d!\n", GEMColor);
+		exit(1);
 	}
-	/* screen size in bytes needs to be below limit */
-	VDI_ByteLimit(&w, &h, VDIPlanes);
-
 #if DEBUG
 	printf("%s v0x%04x, RAM=%dkB\n", bIsEmuTOS ? "EmuTOS" : "TOS", TosVersion,  ConfigureParams.Memory.STRamSize_KB);
 #endif
+	/* Make sure VDI screen size is acceptable and aligned to TOS requirements */
+
 	/* width needs to be aligned to 16 bytes */
-	VDIWidth = Opt_ValueAlignMinMax(w, 128/VDIPlanes, MIN_VDI_WIDTH, MAX_VDI_WIDTH);
+	w = Opt_ValueAlignMinMax(w, 128/VDIPlanes, minw, MAX_VDI_WIDTH);
 
 	/* height needs to be multiple of cell height (either 8 or 16) */
-	VDIHeight = Opt_ValueAlignMinMax(h, 16, MIN_VDI_HEIGHT, MAX_VDI_HEIGHT);
+	h = Opt_ValueAlignMinMax(h, 16, minh, MAX_VDI_HEIGHT);
 
-	if (w != VDIWidth || h != VDIHeight)
+	/* screen size in bytes needs to be below limit */
+	if (VDI_ByteLimit(&w, &h, VDIPlanes))
+	{
+		/* align again */
+		w = Opt_ValueAlignMinMax(w, 128/VDIPlanes, minw, MAX_VDI_WIDTH);
+		h = Opt_ValueAlignMinMax(h, 16, minh, MAX_VDI_HEIGHT);
+	}
+	if (w != WidthRequest || h != HeightRequest)
 	{
 		Log_Printf(LOG_WARN, "VDI screen: request = %dx%d@%d, result = %dx%d@%d\n",
-		       WidthRequest, HeightRequest, VDIPlanes, VDIWidth, VDIHeight, VDIPlanes);
+		       WidthRequest, HeightRequest, VDIPlanes, w, h, VDIPlanes);
 	}
 	else
 	{
 		Log_Printf(LOG_DEBUG, "VDI screen: %dx%d@%d\n",
-			   VDIWidth, VDIHeight, VDIPlanes);
+			   w, h, VDIPlanes);
 	}
+	VDIWidth = w;
+	VDIHeight = h;
 	if (bUseVDIRes)
 	{
 		/* INF file overriding so that (re-)boot uses correct bit-depth */
