@@ -504,28 +504,90 @@ class Tester:
             raise AssertionError
 
     def create_config(self):
-        "create Hatari configuration file for testing"
-        # write specific configuration to:
-        # - avoid user's own config
+        "create Hatari default configuration file for testing"
+        # override user's own config with default config to:
         # - get rid of the dialogs
-        # - don't warp mouse on resolution changes
+        # - disable NatFeats
+        # - disable fast boot options
+        # - run as fast as possible (fast forward)
+        # - use best CPU emulation options & 24-bit addressing
+        # - disable ST blitter & (for now) MMU
+        # - use dummy DSP & HW FPU types for speed
+        #   (OS doesn't use them, it just checks for their presence)
+        # - enable TOS patching and disable cartridge
         # - limit Videl zooming to same sizes as ST screen zooming
-        # - get rid of statusbar and borders in TOS screenshots
+        # - don't warp mouse on resolution changes
+        # - get rid of borders in TOS screenshots
         #   to make them smaller & more consistent
         # - disable GEMDOS emu by default
+        # - disable GEMDOS HD write protection and host time use
+        # - disable fast FDC & floppy write protection
         # - use empty floppy disk image to avoid TOS error when no disks
+        # - enable both floppy drives, as double sided
         # - set printer output file
         # - disable serial in and set serial output file
         # - disable MIDI in, use MIDI out as fifo file to signify test completion
         dummy = open(self.dummycfg, "w")
-        dummy.write("[Log]\nnAlertDlgLogLevel = 0\nbConfirmQuit = FALSE\n\n")
-        dummy.write("[Screen]\nnMaxWidth = 832\nnMaxHeight = 576\nbCrop = TRUE\nbAllowOverscan = FALSE\nbMouseWarp = FALSE\n\n")
-        dummy.write("[HardDisk]\nbUseHardDiskDirectory = FALSE\n\n")
-        dummy.write("[Floppy]\nszDiskAFileName = blank-a.st.gz\n\n")
-        dummy.write("[Printer]\nbEnablePrinting = TRUE\nszPrintToFileName = %s\n\n" % self.printout)
-        dummy.write("[RS232]\nbEnableRS232 = TRUE\nszInFileName = \nszOutFileName = %s\n" % self.serialout)
-        dummy.write("bEnableSccB = TRUE\nsSccBOutFileName = %s\n\n" % self.serialout)
-        dummy.write("[Midi]\nbEnableMidi = TRUE\nsMidiInFileName = \nsMidiOutFileName = %s\n\n" % self.fifofile)
+        dummy.write("""
+[Log]
+nAlertDlgLogLevel = 0
+bConfirmQuit = FALSE
+bNatFeats = FALSE
+
+[System]
+bFastBoot = FALSE
+bPatchTimerD = FALSE
+bFastForward = TRUE
+bCompatibleCpu = TRUE
+bCycleExactCpu = TRUE
+bAddressSpace24 = TRUE
+bBlitter = FALSE
+bMMU = FALSE
+nDSPType = 1
+n_FPUType = 0
+
+[ROM]
+bPatchTos = TRUE
+szCartridgeImageFileName =
+
+[Screen]
+nMaxWidth = 832
+nMaxHeight = 576
+bAllowOverscan = FALSE
+bMouseWarp = FALSE
+bCrop = TRUE
+
+[HardDisk]
+nGemdosDrive = 0
+bUseHardDiskDirectory = FALSE
+bGemdosHostTime = FALSE
+nWriteProtection = 0
+
+[Floppy]
+FastFloppy = FALSE
+nWriteProtection = 0
+EnableDriveA = TRUE
+DriveA_NumberOfHeads = 2
+EnableDriveB = TRUE
+DriveB_NumberOfHeads = 2
+szDiskAFileName = blank-a.st.gz
+
+[Printer]
+bEnablePrinting = TRUE
+szPrintToFileName = %s
+
+[RS232]
+bEnableRS232 = TRUE
+bEnableSccB = TRUE
+szInFileName =
+szOutFileName = %s
+sSccBOutFileName = %s
+
+[Midi]
+bEnableMidi = TRUE
+sMidiInFileName =
+sMidiOutFileName = %s
+""" % (self.printout, self.serialout, self.serialout, self.fifofile))
         dummy.close()
 
     def cleanup_all_files(self):
@@ -804,7 +866,7 @@ class Tester:
         report.write("\n")
 
         # print report out too
-        print("--- %s ---" % self.report)
+        print("\n--- %s ---" % self.report)
         report = open(self.report, "r")
         for line in report.readlines():
             print(line.strip())
@@ -815,6 +877,8 @@ def main():
     "tester main function"
     info = "Hatari TOS bootup tester"
     print("\n%s\n%s\n" % (info, "-"*len(info)))
+    # avoid global config file
+    os.environ["HATARI_TEST"] = "boot"
     config = Config(sys.argv)
     tester = Tester()
     tester.run(config)
