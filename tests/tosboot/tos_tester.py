@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright (C) 2012-2019 by Eero Tamminen <oak at helsinkinet fi>
+# Copyright (C) 2012-2020 by Eero Tamminen <oak at helsinkinet fi>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -498,7 +498,7 @@ class Tester:
     def alarm_handler(self, signum, dummy):
         "output error if (timer) signal came before passing current test stage"
         if signum == signal.SIGALRM:
-            print("ERROR: timeout triggered -> test FAILED")
+            raise OSError("ERROR: timeout")
         else:
             print("ERROR: unknown signal %d received" % signum)
             raise AssertionError
