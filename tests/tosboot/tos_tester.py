@@ -410,8 +410,13 @@ For example:
         #
         # Below ones should be potentially relevant ones to test
         # (EmuTOS supports NatFeats so it can have impact too)
-        generic_opts = ("--compatible", "--timer-d", "--fastfdc", "--fast-boot", "--natfeats")
-        winuae_opts = ("--cpu-exact", "--mmu", "--addr24", "--fpu-softfloat")
+        generic_opts = (
+            "--compatible", "--timer-d", "--fast-boot",
+            "--natfeats", "--fastfdc", "--drive-b"
+        )
+        winuae_opts = (
+            "--cpu-exact", "--mmu", "--addr24", "--fpu-softfloat"
+        )
         for option in self.bools:
             if option not in generic_opts:
                 if option not in winuae_opts:
