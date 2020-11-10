@@ -154,9 +154,9 @@ class TOS:
             raise AssertionError("Unknown '%s' TOS version 0x%x" % (name, version))
 
         if self.etos:
-            print("%s is EmuTOS v%x %dkB" % (name, version, size))
+            print("%s is EmuTOS v%x %dkB (wait startup: %ds, rest: %ds)" % (name, version, size, info[0], info[1]))
         else:
-            print("%s is normal TOS v%x" % (name, version))
+            print("%s is normal TOS v%x (wait memcheck: %ds, rest: %ds)" % (name, version, info[0], info[1])
         # 0: whether / how long to wait to dismiss memory test
         # 1: how long to wait until concluding test failed
         # 2: list of machines supported by this TOS version
@@ -180,6 +180,7 @@ class TOS:
         # TOS isn't support.
         #
         # (And even with a driver, only TOS 4.x supports IDE.)
+        print("NOTE: '%s' hard disk tests are supported only for EmuTOS" % hdinterface)
         return False
 
     def supports_monitor(self, monitortype, machine):
@@ -453,8 +454,7 @@ def exit_if_missing(names):
     "exit if given (test input) file is missing"
     for name in names:
         if not os.path.exists(name):
-            print("ERROR: test file '%s' missing")
-            sys.exit(1)
+            error_exit("test file '%s' missing")
 
 
 # how long to wait for invoked Hatari to open FIFO (= MIDI output file)
@@ -629,6 +629,7 @@ class Tester:
             init_ok = True
 
         if memwait:
+            print("Final start/memcheck wait: %ds" % memwait)
             # pass memory test
             time.sleep(memwait)
             instance.run("keypress %s" % hconsole.Scancode.Space)
@@ -717,6 +718,7 @@ class Tester:
             testargs += ["--ide-master", self.hdimage, "--auto", self.hdprg]
         else:
             raise AssertionError("unknown disk type '%s'" % disk)
+
         results = self.test(identity, testargs, memwait, testwait)
         self.results[tos.name].append((identity, results))
 
