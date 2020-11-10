@@ -19,8 +19,8 @@ int main()
 {
 	clear_screen();
 	write2console(INPUT_FILE);
-	write2printer(INPUT_FILE);
 	write2serial(INPUT_FILE);
+	write2printer(INPUT_FILE);
 	write_midi();
 	wait_enter();
 	return 0;

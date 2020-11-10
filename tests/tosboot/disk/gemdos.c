@@ -27,10 +27,11 @@
  *     - for now, directly copy OUTPUT_FILE -> "CON:"
  *   - TODO: restore stdin & stdout
  *    - close OUTPUT_FILE & "CON:"
- * - output same file similarly to PRN: (printer)
- *   - NOTE: this fails for TOS v1.02 - v2.06 when done in a program
- *     auto-started from the AUTO-folder or from DESKTOP.INF
  * - output same file similarly to AUX: (serial)
+ * - output same file similarly to PRN: (printer)
+ *   - NOTE: this fails for TOS v1.02 - v2.06, when done in a program
+ *     auto-started from the AUTO-folder or from DESKTOP.INF, unless
+ *     program waits long enough for OS to initialize 200hz timer
  * - truncate OUTPUT_FILE -> expected to fail
  * - make OUTPUT_FILE writable
  * - truncate OUTPUT_FILE
@@ -53,8 +54,8 @@ int main()
 
 	copy_file(INPUT_FILE, OUTPUT_FILE);
 	write2console(OUTPUT_FILE);
-	write2printer(OUTPUT_FILE);
 	write2serial(OUTPUT_FILE);
+	write2printer(OUTPUT_FILE);
 	truncate_file(OUTPUT_FILE);
 
 	write_midi();
