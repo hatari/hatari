@@ -27,14 +27,8 @@
 #   "Use all F1,F2,.... as standard function keys "
 # F1-F8 press F key, F9-F12 press cmd and F keys
 #
-# Comments start with # or ;
-# Every active line begins with two numbers separated by a comma
-# First number is the symbolic Mac key code (see the SDL_keysym.h file
-# from the SDL library header files usually in /usr/include/SDL/).
-# Second number is the scancode of equivalent key of the keyboard Atari.
-# first number can be replaced by a symbol
-#
-#
+# 'keymap-sample.txt' file explains the syntax and values that can
+# be used for keyboard mapping.
 
 # function keys line
 #
