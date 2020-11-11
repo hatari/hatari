@@ -274,6 +274,9 @@ Their main run-time dependencies are:
   - gui-sdl/ -- builtin SDL v1 / v2 GUI for Hatari
   - gui-win/ -- MS Windows console code + icon
 * tests/ -- shell/python scripts & programs for testing emulator functionality
+  - keymap/ -- programs showing keycodes to use in Hatari keymap files
+  - natfeats/ -- test and example Atari code for using Hatari features
+  - etc.
 * tools/ -- shell/python scripts & programs useful with Hatari
   - debugger/ -- debug symbol conversion scripts & profile data tools
   - hconsole/ -- out-of-process Hatari control / automation tool
