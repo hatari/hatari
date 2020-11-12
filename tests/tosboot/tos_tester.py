@@ -225,6 +225,7 @@ class Config:
 
     # defaults
     fast = False
+    opts = []
     bools = []
     disks = ("floppy", "gemdos", "scsi")
     graphics = ("mono", "rgb", "vga", "vdi1", "vdi4")
@@ -233,15 +234,21 @@ class Config:
     ttrams = (0, 32)
 
     def __init__(self, argv):
-        longopts = ["bool=", "disks=", "fast", "graphics=", "help", "machines=", "memsizes=", "ttrams="]
+        longopts = ["bool=", "disks=", "fast", "graphics=", "help", "machines=", "memsizes=", "opts=", "ttrams="]
         try:
-            opts, paths = getopt.gnu_getopt(argv[1:], "b:d:fg:hm:s:t:", longopts)
+            opts, paths = getopt.gnu_getopt(argv[1:], "b:d:fg:hm:s:o:t:", longopts)
         except getopt.GetoptError as error:
             self.usage(error)
         self.handle_options(opts)
         self.images = self.check_images(paths)
-        configs = (self.disks, self.graphics, self.machines, self.memsizes, self.ttrams, self.bools)
-        print("Test configuration:\n\t%s %s %s RAM=%s TTRAM=%s bool=%s\n" % configs)
+        print("\nTest configurations:")
+        print("- machines = %s" % self.machines)
+        print("- graphics = %s" % self.graphics)
+        print("- disks = %s" % self.disks)
+        print("- RAM = %s" % self.memsizes)
+        print("- TTRAM = %s" % self.ttrams)
+        print("- bools = %s" % self.bools)
+        print("- fixed = '%s'\n" % ' '.join(self.opts))
 
 
     def check_images(self, paths):
@@ -267,7 +274,9 @@ class Config:
             if opt in ("-f", "--fast"):
                 self.fast = True
             elif opt in ("-b", "--bool"):
-                self.bools += args
+                self.bools = args
+            elif opt in ("-o", "--opts"):
+                self.opts = arg.split()
             elif opt in ("-d", "--disks"):
                 unknown, self.disks = validate(args, self.all_disks)
             elif opt in ("-g", "--graphics"):
@@ -314,8 +323,10 @@ Options:
 \t-s, --memsizes\t(%s)
 \t-t, --ttrams\t(0-512, in 4MB steps)
 \t-b, --bool\t(extra boolean Hatari options to test)
+\t-o, --opts\t(hatari options to pass as-is)
 
-Multiple values for an option need to be comma separated. If some
+Multiple values for an option need to be comma separated. If option
+is given multiple times, last given value(s) are used. If some
 option isn't given, default list of values will be used for that.
 
 For example:
@@ -325,7 +336,8 @@ For example:
 \t--memsizes 0,4,14 \\
 \t--ttrams 0,32 \\
 \t--graphics mono,rgb \\
-\t--bool --compatible,--mmu
+\t--bool --compatible,--driver-b \\
+\t--opts "--mmu on"
 """ % (name, disks, graphics, machines, memsizes, name))
         if msg:
             print("ERROR: %s\n" % msg)
@@ -722,15 +734,6 @@ sMidiOutFileName = %s
             else:
                 testargs += ["--addr24", "on"]
 
-        memwait = tos.memwait
-        testwait = tos.fullwait
-        if bool_opt:
-            if bool_opt[0] == '--mmu' and bool_opt[1] == 'on':
-                # MMU doubles memory wait
-                memwait *= 2
-            identity += "-%s%s" % (bool_opt[0].replace("-", ""), bool_opt[1])
-            testargs += bool_opt
-
         if monitor.startswith("vdi"):
             planes = monitor[-1]
             testargs += ["--vdi-planes", planes]
@@ -742,6 +745,23 @@ sMidiOutFileName = %s
                 testargs += ["--vdi-width", "640", "--vdi-height", "400"]
         else:
             testargs += ["--monitor", monitor]
+
+        memwait = tos.memwait
+        testwait = tos.fullwait
+        mmu = False
+        if bool_opt:
+            if bool_opt[0] == '--mmu' and bool_opt[1] == 'on':
+                mmu = True
+            identity += "-%s%s" % (bool_opt[0].replace('-', ''), bool_opt[1])
+            testargs += bool_opt
+        if config.opts:
+            if "--mmu" in config.opts:
+                mmu = True
+            # pass-through Hatari options
+            testargs += config.opts
+        if mmu and machine in ("tt", "falcon"):
+            # MMU doubles memory wait
+            memwait *= 2
 
         if config.fast:
             testargs += ["--fast-forward", "yes", "--fast-boot", "yes",
