@@ -106,7 +106,7 @@ class TOS:
         # older TOS versions don't support autostarting
         # programs from GEMDOS HD dir with *.INF files
         f.seek(0x2C, 0)
-        etos = (f.read(4) == "ETOS")
+        etos = (f.read(4) == b"ETOS")
         return (version, etos)
 
 
@@ -154,7 +154,7 @@ class TOS:
             raise AssertionError("Unknown '%s' TOS version 0x%x" % (name, version))
 
         if self.etos:
-            print("%s is EmuTOS v%x %dkB (wait startup: %ds, rest: %ds)" % (name, version, size, info[0], info[1]))
+            print("%s is %dkB EmuTOS corresponding to TOS v%x (wait startup: %ds, rest: %ds)" % (name, size, version, info[0], info[1]))
         else:
             print("%s is normal TOS v%x (wait memcheck: %ds, rest: %ds)" % (name, version, info[0], info[1])
         # 0: whether / how long to wait to dismiss memory test
