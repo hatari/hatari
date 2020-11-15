@@ -116,7 +116,7 @@ options of this script.
 Once you have successfully configured the build settings, you can compile
 Hatari with:
 
-	cmake --build . -j$(getconf _NPROCESSORS_ONLN)
+	cmake --build . -j $(getconf _NPROCESSORS_ONLN)
 
 If all works fine, you should get the executable "hatari" in the src/ sub-
 directory of the build tree. You can then either run the executable from
