@@ -1236,9 +1236,10 @@ Working demos (comments are for EmuTOS v1.0 or older):
 - ZZ 9 Plural Z Alpha (by tSCc)
 
 Demos working in EmuTOS >v1.0 (with DSP support):
+- '_' (by Escape)
 - 4kbtro (by Wilfire)
 - 96ktro (by Cruor)
-  - Unlike with TOS v4, freezes unless MMU used and sound is mostly noise
+  - Unlike with TOS v4, freezes unless MMU used
 - Aggressive Party 2 4k (NoCrew)
 - Agony (by DNT crew)
 - Beams (by .tscc):
@@ -1282,9 +1283,8 @@ Partly working demos (>v1.0):
 - Doomino (by STAX)
   - Info screen at start looks just garbage (HiColor?)
 - Hmmm... (by Escape)
-  - Many times slower than with TOS4, sound missing
-- '_' (by Escape)
-  - Many times slower than with TOS4, sound missing
+  - Unlike with TOS4, demo exits at end of screen with
+    blue 3D donut on red bg (after 4min of running)
 
 Broken demos (even with EmuTOS >1.0):
 - GEM demo (by DHS & AssemSoft):
