@@ -48,7 +48,8 @@ keydown 29
 keypress Z
 keyup 29
 
-# press Return
-keypress 28
+# wait for EmuCON to start
+sleep 1
+
 # and output some text to EmuTOS console
 text Welcome to 'hconsole' example...
