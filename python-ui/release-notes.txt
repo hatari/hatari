@@ -2,6 +2,13 @@
 User visible changes in Hatari (Python Gtk) UI
 ----------------------------------------------
 
+2020-11:
+- Python scripts are changed to use "python3" hashbang (they
+  should still work also with "python2"), and ".desktop" files
+  were updated. Inspired by patching done by distros
+- Support for Hatari configuration Float and (keyboard) Key types
+  (fixes assert when user asks UI to to save changed settings)
+
 2019-02:
 - Documentation updates
 

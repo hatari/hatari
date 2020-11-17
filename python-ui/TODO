@@ -4,6 +4,14 @@ TODO
 Potential TODO items for Hatari UI (in addition to the ones listed in
 its sources).
 
+* Fix Python/Gtk deprecation warnings (these require also
+  newer versions of the Glib/Gtk bindings):
+  - See: https://python-gtk-3-tutorial.readthedocs.io/en/latest/
+  - Menus & ActionGroups -> Application framework
+  - Table -> Grid layout in dialogs
+  - Positional -> named arguments
+  - GObject -> Glib
+
 * WinUAE CPU core specific configuration options:
   - MMU
   - FPU
