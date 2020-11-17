@@ -17,6 +17,7 @@ Contents:
    3.3 Notes for Linux distribution packagers
        3.3.1 Known distro problems
 4. Running Hatari
+   4.1 Known Windows (SDL) issues
 5. Hatari tools and their run-time dependencies
 6. Hatari source subdirectory contents
 7. Contact
@@ -237,6 +238,25 @@ doc/manual.html. Here are just some hints for the impatient people:
 * While the emulator is running, you can open the configuration menu
   by pressing F12, the F11 key will toggle fullscreen/windowed mode.
   Pressing ALTGR-q will quit the emulator.
+
+
+ 4.1) Known Windows (SDL) issues
+
+On Windows, Hatari console output doesn't go to console like on other
+platforms.
+
+This is because Windows SDL v1 library redirects all console output
+(including help!) to stdout.txt and stderr.txt files (by default), and
+SDL v2 library discards all that output.
+
+To see Hatari help/warning/trace output, and to interact with Hatari
+debugger, there two options:
+- Run Hatari with "-W" option, or
+- Compile Hatari with "-mconsole" option (as last --linker flag) to
+  build Hatari for the Windows console subsystem
+    
+Because these cause separate console output window to be opened (in
+addition to the Hatari window), they are not enabled by default. 
 
 
  5) Hatari tools and their run-time dependencies
