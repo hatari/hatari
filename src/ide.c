@@ -2446,6 +2446,9 @@ static void ide_data_writew(void *opaque, uint32_t addr, uint32_t val)
 	IDEState *s = ((IDEState *)opaque)->cur_drive;
 	uint8_t *p;
 
+	if (!s->data_ptr || s->data_ptr > s->data_end)
+		return;
+
 	p = s->data_ptr;
 	*(uint16_t *)p = le16_to_cpu(val);
 	p += 2;
@@ -2459,6 +2462,10 @@ static uint32_t ide_data_readw(void *opaque, uint32_t addr)
 	IDEState *s = ((IDEState *)opaque)->cur_drive;
 	uint8_t *p;
 	int ret;
+
+	if (!s->data_ptr || s->data_ptr > s->data_end)
+		return 0xffff;
+
 	p = s->data_ptr;
 	ret = cpu_to_le16(*(uint16_t *)p);
 	p += 2;
@@ -2473,6 +2480,9 @@ static void ide_data_writel(void *opaque, uint32_t addr, uint32_t val)
 	IDEState *s = ((IDEState *)opaque)->cur_drive;
 	uint8_t *p;
 
+	if (!s->data_ptr || s->data_ptr > s->data_end)
+		return;
+
 	p = s->data_ptr;
 	*(uint32_t *)p = le32_to_cpu(val);
 	p += 4;
@@ -2485,7 +2495,10 @@ static uint32_t ide_data_readl(void *opaque, uint32_t addr)
 {
 	IDEState *s = ((IDEState *)opaque)->cur_drive;
 	uint8_t *p;
-	int ret;
+	uint32_t ret;
+
+	if (!s->data_ptr || s->data_ptr > s->data_end)
+		return 0xffffffff;
 
 	p = s->data_ptr;
 	ret = cpu_to_le32(*(uint32_t *)p);
