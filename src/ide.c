@@ -94,6 +94,8 @@ static uint32_t fcha2io(uint32_t address)
 
 /**
  * Handle byte read access from IDE IO memory.
+ * Note: Registers are available from usermode, too, so there is no check for
+ * the supervisor mode required here.
  */
 uae_u32 REGPARAM3 Ide_Mem_bget(uaecptr addr)
 {
@@ -197,6 +199,8 @@ uae_u32 REGPARAM3 Ide_Mem_lget(uaecptr addr)
 
 /**
  * Handle byte write access to IDE IO memory.
+ * Note: Registers are available from usermode, too, so there is no check for
+ * the supervisor mode required here.
  */
 void REGPARAM3 Ide_Mem_bput(uaecptr addr, uae_u32 val)
 {
