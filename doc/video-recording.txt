@@ -5,7 +5,7 @@ Getting best output from Hatari
 -------------------------------
 
 * Do NOT use external recorders (such as Quicktime X on OSX), as they
-  won't get perfect framerate and sound sync like Hatari itself does.
+  won't get perfect framerate and sound sync like Hatari itself does
 
 * Disable (default) frame skip, either from the Hatari GUI, or with
   following command line option:
@@ -15,9 +15,43 @@ Getting best output from Hatari
   the Hatari GUI, or with following command line options:
 	--sound 50066 --ym-mixing table
 
-* If you have enough free disk space, ask Hatari to use uncompressed
-  AVI format for the recording with the following command line option:
-	--avi-vcodec bmp
+
+Getting better performance
+--------------------------
+
+By default Hatari will:
+* Scale its framebuffer to (approximately) same size regardless of
+  Atari resolution (= Atari monitor emulation)
+
+* Use its highest AVI compression method (PNG)
+
+* Use most accurate target machine emulation
+
+But all these are quite CPU intensive, and can together make recording
+very slow.
+
+It is better to:
+
+* Use "--max-width" and "--max-height" options to limit the (recorded)
+  Hatari framebuffer size to (smaller) original Atari resolution, both
+  to speed up compression and (significantly) reduce resulting video
+  size. For example, if you don't need overscan borders, use this for
+  ST-low resolution:
+	--max-width 320 --max-height 200
+
+  + To have Hatari window contents still shown at a usable size on
+    larger displays, ask Hatari framebuffer to be scaled to its window
+    with "--zoom" option (requires Hatari to be built with SDL v2):
+	--zoom 2 --max-width 320 --max-height 200
+
+* Select suitable AVI compression method (see next section)
+
+* When recording Falcon programs, if program doesn't use DSP, disable
+  it with "--dsp none"
+
+* When recording TT and Falcon programs, one could disable also CPU
+  cache emulation with "--cpu-exact off" when recorded program works
+  fine without cycle-exact emulation
 
 
 Hatari AVI compression notes
@@ -30,10 +64,12 @@ use PNG compression to produce smaller AVI recordings.
 Additionally, by default Hatari will use the highest PNG compression
 level (same as with screenshots), but this is *really* CPU intensive.
 
-Because of the PNG compression CPU usage, it is better to use
-uncompressed BMP format.  If you don't have enough disk space for
-this, next best option is to ask Hatari to use lower compression
-level, e.g. with:
+Because of the PNG compression CPU usage, you could try using
+uncompressed BMP format instead:
+	--avi-vcodec bmp
+
+If that takes too much disk space, next best option is to ask Hatari
+to use lower compression level, e.g:
 	--png-level 4
 
 Valid compression levels are 0-9, with 9 being default/highest/slowest.
