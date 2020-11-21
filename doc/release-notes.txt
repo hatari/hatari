@@ -26,6 +26,7 @@ Emulation:
 Emulator:
 - ACSI/IDE/SCSI handling:
   - Fix: IDE crash when switching to Falcon mode at run-time
+  - Fix: No error dialog on IDE image mount errors
 - TOS support:
   - Fix: TOS 2.07 (Sparrow TOS) support
 - macOS GUI:

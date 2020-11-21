@@ -576,14 +576,21 @@ static int bdrv_open(BlockDriverState *bs, const char *filename, unsigned long b
 		/* Maybe the file is read-only? */
 		bs->fhndl = fopen(filename, "rb");
 		if (!bs->fhndl)
+		{
 			perror("bdrv_open");
+			Log_AlertDlg(LOG_ERROR, "Cannot open IDE HD for reading\n'%s'.\n", filename);
+			return -1;
+		}
+		Log_AlertDlg(LOG_WARN, "IDE HD file is read-only, no writes will go through\n'%s'.\n",
+			     filename);
 		bs->read_only = 1;
 	}
 	else if (!File_Lock(bs->fhndl))
 	{
-		Log_Printf(LOG_ERROR, "Cannot lock IDE HD file for writing!\n");
+		Log_AlertDlg(LOG_ERROR, "Locking IDE HD file for writing failed\n'%s'!\n", filename);
 		fclose(bs->fhndl);
 		bs->fhndl = NULL;
+		return -1;
 	}
 
 	/* call the change callback */
