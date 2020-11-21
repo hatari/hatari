@@ -883,6 +883,8 @@ bool HDC_Init(void)
 			nAcsiPartitions += HDC_PartitionCount(AcsiBus.devs[i].image_file, TRACE_SCSI_CMD, NULL);
 			bAcsiEmuOn = true;
 		}
+		else
+			ConfigureParams.Acsi[i].bUseDevice = false;
 	}
 	/* set total number of partitions */
 	nNumDrives += nAcsiPartitions;

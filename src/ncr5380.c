@@ -1041,6 +1041,8 @@ bool Ncr5380_Init(void)
 			nScsiPartitions += HDC_PartitionCount(ScsiBus.devs[i].image_file, TRACE_SCSI_CMD, NULL);
 			bScsiEmuOn = true;
 		}
+		else
+			ConfigureParams.Scsi[i].bUseDevice = false;
 	}
 	nNumDrives += nScsiPartitions;
 #endif

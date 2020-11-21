@@ -2740,7 +2740,11 @@ void Ide_Init(void)
 		if (ConfigureParams.Ide[i].bUseDevice)
 		{
 			int is_byteswap;
-			bdrv_open(hd_table[i], ConfigureParams.Ide[i].sDeviceFile, ConfigureParams.Ide[i].nBlockSize, 0);
+			if (bdrv_open(hd_table[i], ConfigureParams.Ide[i].sDeviceFile, ConfigureParams.Ide[i].nBlockSize, 0) < 0)
+			{
+				ConfigureParams.Ide[i].bUseDevice = false;
+				continue;
+			}
 			nIDEPartitions += HDC_PartitionCount(hd_table[i]->fhndl, TRACE_IDE, &is_byteswap);
 			/* Our IDE implementation is little endian by default,
 			 * so we need to byteswap if the image is not swapped! */
