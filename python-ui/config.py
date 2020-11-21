@@ -3,7 +3,7 @@
 # configuration files: loading, saving, setting/getting variables,
 # mapping them to sections, listing changes
 #
-# Copyright (C) 2008-2012 by Eero Tamminen
+# Copyright (C) 2008-2012,2016-2020 by Eero Tamminen
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,6 +25,8 @@ from conftypes import conftypes
 
 def value_to_text(key, value):
     "value_to_text(key, value) -> text, convert Python type to string"
+    #if key not in conftypes:
+    #    print("ERROR: key '%s' missing!" % key)
     assert(key in conftypes)
     valtype = type(value)
     if valtype == bool:
@@ -33,11 +35,12 @@ def value_to_text(key, value):
             text = "TRUE"
         else:
             text = "FALSE"
-    elif valtype == int:
-        assert(conftypes[key] == "Int")
+    elif valtype in (float, int):
+        assert(conftypes[key] in ("Float", "Int"))
         text = str(value)
     else:
-        assert(conftypes[key] == "String")
+        # keyboard key name or any string
+        assert(conftypes[key] in ("Key", "String"))
         if value == None:
             text = ""
         else:
@@ -56,6 +59,9 @@ def text_to_value(text):
         try:
             # integer?
             value = int(text)
+            # if not exact, maybe it's float?
+            if text != '%d' % value:
+                value = float(text)
         except ValueError:
             # string
             value = text
