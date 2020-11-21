@@ -774,7 +774,7 @@ int HDC_PartitionCount(FILE *fp, const Uint64 tracelevel, int *pIsByteSwapped)
  * Check file size for sane values (non-zero, multiple of 512),
  * and return the size
  */
-off_t HDC_CheckAndGetSize(const char *filename, unsigned long blockSize)
+off_t HDC_CheckAndGetSize(const char *hdtype, const char *filename, unsigned long blockSize)
 {
 	off_t filesize;
 	char shortname[48];
@@ -784,8 +784,8 @@ off_t HDC_CheckAndGetSize(const char *filename, unsigned long blockSize)
 	filesize = File_Length(filename);
 	if (filesize < 0)
 	{
-		Log_AlertDlg(LOG_ERROR, "Unable to get size of HD image file\n'%s'!",
-		             shortname);
+		Log_AlertDlg(LOG_ERROR, "Unable to get size of %s HD image file\n'%s'!",
+		             hdtype, shortname);
 		if (sizeof(off_t) < 8)
 		{
 			Log_Printf(LOG_ERROR, "Note: This version of Hatari has been built"
@@ -796,16 +796,16 @@ off_t HDC_CheckAndGetSize(const char *filename, unsigned long blockSize)
 	}
 	if (filesize == 0)
 	{
-		Log_AlertDlg(LOG_ERROR, "Can not use HD image file\n'%s'\n"
+		Log_AlertDlg(LOG_ERROR, "Can not use %s HD image file\n'%s'\n"
 		                        "since the file is empty.",
-		             shortname);
+		             hdtype, shortname);
 		return -EINVAL;
 	}
 	if ((filesize & (blockSize - 1)) != 0)
 	{
-		Log_AlertDlg(LOG_ERROR, "Can not use the hard disk image file\n"
+		Log_AlertDlg(LOG_ERROR, "Can not use the %s HD image file\n"
 		                        "'%s'\nsince its size is not a multiple"
-		                        " of %ld.", shortname, blockSize);
+		                        " of %ld.", hdtype, shortname, blockSize);
 		return -EINVAL;
 	}
 
@@ -815,16 +815,16 @@ off_t HDC_CheckAndGetSize(const char *filename, unsigned long blockSize)
 /**
  * Open a disk image file
  */
-int HDC_InitDevice(SCSI_DEV *dev, char *filename, unsigned long blockSize)
+int HDC_InitDevice(const char *hdtype, SCSI_DEV *dev, char *filename, unsigned long blockSize)
 {
 	off_t filesize;
 	FILE *fp;
 
 	dev->enabled = false;
-	Log_Printf(LOG_INFO, "Mounting hard drive image '%s'\n", filename);
+	Log_Printf(LOG_INFO, "Mounting %s HD image '%s'\n", hdtype, filename);
 
 	/* Check size for sanity */
-	filesize = HDC_CheckAndGetSize(filename, blockSize);
+	filesize = HDC_CheckAndGetSize(hdtype, filename, blockSize);
 	if (filesize < 0)
 		return filesize;
 
@@ -832,14 +832,17 @@ int HDC_InitDevice(SCSI_DEV *dev, char *filename, unsigned long blockSize)
 	{
 		if (!(fp = fopen(filename, "rb")))
 		{
-			Log_AlertDlg(LOG_ERROR, "Cannot open HD file for reading\n'%s'!\n", filename);
+			Log_AlertDlg(LOG_ERROR, "Cannot open %s HD file for reading\n'%s'!\n",
+				     hdtype, filename);
 			return -ENOENT;
 		}
-		Log_AlertDlg(LOG_WARN, "HD file is read-only, no writes will go through\n'%s'.\n", filename);
+		Log_AlertDlg(LOG_WARN, "%s HD file is read-only, no writes will go through\n'%s'.\n",
+			     hdtype, filename);
 	}
 	else if (!File_Lock(fp))
 	{
-		Log_AlertDlg(LOG_ERROR, "Locking HD file for writing failed\n'%s'!\n", filename);
+		Log_AlertDlg(LOG_ERROR, "Locking %s HD file for writing failed\n'%s'!\n",
+			     hdtype, filename);
 		fclose(fp);
 		return -ENOLCK;
 	}
@@ -875,7 +878,7 @@ bool HDC_Init(void)
 	{
 		if (!ConfigureParams.Acsi[i].bUseDevice)
 			continue;
-		if (HDC_InitDevice(&AcsiBus.devs[i], ConfigureParams.Acsi[i].sDeviceFile, ConfigureParams.Acsi[i].nBlockSize) == 0)
+		if (HDC_InitDevice("ACSI", &AcsiBus.devs[i], ConfigureParams.Acsi[i].sDeviceFile, ConfigureParams.Acsi[i].nBlockSize) == 0)
 		{
 			nAcsiPartitions += HDC_PartitionCount(AcsiBus.devs[i].image_file, TRACE_SCSI_CMD, NULL);
 			bAcsiEmuOn = true;
@@ -1028,7 +1031,7 @@ static void Acsi_DmaTransfer(void)
 			int wlen = fwrite(&STRam[nDmaAddr], 1, AcsiBus.data_len, AcsiBus.dmawrite_to_fh);
 			if (wlen != AcsiBus.data_len)
 			{
-				Log_Printf(LOG_ERROR, "Could not write all bytes to hard disk image.\n");
+				Log_Printf(LOG_ERROR, "Could not write all bytes to ACSI HD image.\n");
 				AcsiBus.status = HD_STATUS_ERROR;
 			}
 #endif

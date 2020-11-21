@@ -560,7 +560,7 @@ static int bdrv_open(BlockDriverState *bs, const char *filename, unsigned long b
 	Log_Printf(LOG_INFO, "Mounting IDE hard drive image %s\n", filename);
 
 	bs->read_only = 0;
-	bs->file_size = HDC_CheckAndGetSize(filename, blockSize);
+	bs->file_size = HDC_CheckAndGetSize("IDE", filename, blockSize);
 	if (bs->file_size <= 0)
 		return -1;
 	if (bs->file_size < 2 * 16 * 63 * bs->sector_size)
@@ -581,7 +581,7 @@ static int bdrv_open(BlockDriverState *bs, const char *filename, unsigned long b
 	}
 	else if (!File_Lock(bs->fhndl))
 	{
-		Log_Printf(LOG_ERROR, "Cannot lock HD file for writing!\n");
+		Log_Printf(LOG_ERROR, "Cannot lock IDE HD file for writing!\n");
 		fclose(bs->fhndl);
 		bs->fhndl = NULL;
 	}

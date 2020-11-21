@@ -94,12 +94,12 @@ extern bool bAcsiEmuOn;
  */
 extern bool HDC_Init(void);
 extern void HDC_UnInit(void);
-extern int HDC_InitDevice(SCSI_DEV *dev, char *filename, unsigned long blockSize);
+extern int HDC_InitDevice(const char *hdtype, SCSI_DEV *dev, char *filename, unsigned long blockSize);
 extern void HDC_ResetCommandStatus(void);
 extern short int HDC_ReadCommandByte(int addr);
 extern void HDC_WriteCommandByte(int addr, Uint8 byte);
 extern int HDC_PartitionCount(FILE *fp, const Uint64 tracelevel, int *pIsByteSwapped);
-extern off_t HDC_CheckAndGetSize(const char *filename, unsigned long blockSize);
+extern off_t HDC_CheckAndGetSize(const char *hdtype, const char *filename, unsigned long blockSize);
 extern bool HDC_WriteCommandPacket(SCSI_CTRLR *ctr, Uint8 b);
 extern void HDC_DmaTransfer(void);
 
