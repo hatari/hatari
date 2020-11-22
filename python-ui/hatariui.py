@@ -675,7 +675,7 @@ def usage(actions, msg=None):
     print("\nOptions:")
     print("\t-h, --help\t\tthis help")
     print("\t-n, --nomenu\t\tomit menus")
-    print("\t-e, --embed\t\tembed Hatari window in middle of controls")
+    print("\t-e, --embed\t\tembed Hatari window in middle of controls (X11 only)")
     print("\t-f, --fullscreen\tstart in fullscreen")
     print("\t-l, --left <controls>\ttoolbar at left")
     print("\t-r, --right <controls>\ttoolbar at right")
@@ -730,7 +730,11 @@ def main():
     for opt, arg in opts:
         print(opt, arg)
         if opt in ("-e", "--embed"):
-            embed = True
+            # GtkSocket window embedding needs both Python UI (Gtk3) and Hatari (SDL2) to run on X server
+            if "DISPLAY" in os.environ and "WAYLAND_DISPLAY" not in os.environ:
+                embed = True
+            else:
+                print("WARNING: ignoring embed option (Hatari window embedding works only under X11)")
         elif opt in ("-f", "--fullscreen"):
             fullscreen = True
         elif opt in ("-n", "--nomenu"):
