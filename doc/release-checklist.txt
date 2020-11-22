@@ -36,6 +36,7 @@ everything that should work, does still work:
     - all optional features enabled, and disabled
     - WinUAE & oldUAE CPU cores
     - SDL1 & SDL2
+    - Mac GUI
   - All above Hatari builds pass "make test"
     - Check that everything built fine on Travis and Cirrus-CI:
       https://travis-ci.com/github/hatari/hatari
@@ -45,7 +46,8 @@ everything that should work, does still work:
   during early development still work, change their Hatari version to
   new release and make sure they're listed also in release-notes.txt
 
-* Check that (Python) hatariui still works with latest changes
+* Check that (Python/Gtk) hatariui still works with latest changes,
+  including saving changed config, and running under X11 & Wayland
 
 
 Release candidate
@@ -81,7 +83,7 @@ If no release-critical issues were reported, do actual release:
   - readme.txt
   - release-notes.txt
 
-*Build final binary packages
+* Build final binary packages
 
 * Announce new release "everywhere"
 
