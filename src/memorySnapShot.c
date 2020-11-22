@@ -222,7 +222,7 @@ static bool MemorySnapShot_OpenFile(const char *pszFileName, bool bSave, bool bC
 			Log_AlertDlg(LOG_ERROR,
 				     "Unable to restore Hatari memory state.\n"
 				     "Given state file is compatible only with\n"
-				     "Hatari version " VERSION_STRING ".");
+				     "Hatari version %s", VersionString);
 			bCaptureError = true;
 			return false;
 		}
