@@ -428,6 +428,7 @@ Demos:
 - SillyVenture 2k10 & 2k11 (invitros by Mystic Bytes & Aggression)
 - SillyVenture 2020 (invitro by Agenda, Hemoroids & Mystic Bytes)
 - Smag-FX 3 (by SMFX)
+- Sommar TTRAK (TTRAK v1.00 intro)
 - Sommarhack 2011 (invite by DHS)
 - Soundtracker (by Equinox)
 - SoWatt (by CareBears)
@@ -863,6 +864,8 @@ Not working:
 MIDI programs are available from Tim's MIDI world:
 	http://tamw.atari-users.net/
 
+See STE notes on info for MOD trackers and chip composers.
+
 
 Working Atari STE programs
 --------------------------
@@ -1080,7 +1083,7 @@ Non-working Atari STE programs
 
 Some non-working demos:
 - Original Beat Maker (OG.PRG, SV2019, by CrazyQ)
-  - STE recognization fails -> bus error / panic
+  - STE recognization fails with TOS 2.x / EmuTOS -> bus error
 
 Non-working games and music programs:
 - Newer Audio Sculpture versions (v1.5beta doesn't handle
@@ -1130,18 +1133,14 @@ Working games:
 - GEM NetHack v3.4.3
 - GEM Santarun
 - GEM Slashem v3.3.1
+- OpenTTD (start from TT-low with 256MBs of TT-RAM)
 - Oxyd (Falcon version)
 - PM Doom, Heretic & Hexen v0.55 (ports by Patrice Mandin)
 - The Ultimate Minesweeper (GEM)
 
-Most of above GEM games run even on ST, but only TT has large enough
-resolution with enough colors for them to be properly playable.
-
-Broken games:
-- OpenTTD:
-  - Needs hundreds of MBs of TT-RAM
-  - Needs to be started from TT-low resolution
- (- works also on Falcon with FPU, DSP can be disabled for speed)
+Most of above GEM games run even on ST, but only TT (and Falcon) have
+large enough resolution with enough colors for them to be properly
+playable.
 
 
 Falcon programs
@@ -1442,6 +1441,8 @@ Broken games (even with EmuTOS >1.0):
   - broken graphics & termination on actual game start (HiColor?)
 - SBM v0.8 & v1.03* (Bomberman clone)
   - bus error and wrong graphics
+- ScummVm (OL version)
+  - broken graphics (HiColor?)
 - Slippery Sam
   - freezes at start (queries e.g. DSP reg $FFA206)
 - TeknoBalls

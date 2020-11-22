@@ -2119,10 +2119,13 @@ this section lists only programs that have TT-specific features.</p>
     <tr>
       <td><a href="http://atari-forum.com/viewtopic.php?f=26&amp;t=13658&amp;start=50">OpenTTD</a></td>
       <td>1.9</td>
-      <td>"hatari-prg-args --machine tt --tos tos306uk.img  -s 4 --ttram 256 --
-./openttd-m68020.gtp -m null -s null -b 8bpp-optimized", then select
-"original" as "Land generator" at game start. Works also on Falcons
-with FPU and no DSP. Start from TT-low resolution.</td>
+      <td>"hatari-prg-args --tos-res ttlow --machine tt
+           --tos etos512k.img -s 4 --ttram 256 --addr24 off
+	   -- ./openttd-m68020.gtp -m null -s null -b 8bpp-optimized",
+	   then select "original" as "Land generator" at game start.
+	   Game startup takes minutes with nothing happening on screen.
+	   Works also on Falcons with FPU and no DSP, as long as it's
+	   started from 256-color resolution</td>
     </tr>
     <tr>
       <td>Oxyd 2 TT</td>
