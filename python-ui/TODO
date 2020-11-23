@@ -12,10 +12,16 @@ its sources).
   - Positional -> named arguments
   - GObject -> Glib
 
+* Interface between UI and Hatari so that Hatari will forward error
+  and other dialog texts to UI for showing, and waits until user has
+  acknowledged them (two-way communication)
+
 * WinUAE CPU core specific configuration options:
   - MMU
   - FPU
   - 32-bit addressing
+
+* Support all 8 ACSI and SCSI drives
 
 * Separate "Atari monitor" and "Hatari window" settings dialogs
   (move options from "Display" and monitor setting from "Machine"
