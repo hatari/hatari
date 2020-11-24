@@ -9,13 +9,6 @@ addons:
       - libsdl2-dev
       - portaudio19-dev
       - imagemagick
-  homebrew:
-    packages:
-      - sdl2
-      - libpng
-      - tidy-html5
-      - graphicsmagick
-    update: true
 
 before_script:
   - ./configure ${CONFIG}
@@ -24,18 +17,6 @@ script:
 
 matrix:
   include:
-
-    - env:
-        - CONFIG="--enable-osx-bundle --disable-winuae-cpu --enable-debug"
-      os: osx
-      osx_image: xcode10
-      compiler: clang
-
-    - env:
-        - CONFIG="--enable-osx-bundle --enable-winuae-cpu --enable-debug"
-      os: osx
-      osx_image: xcode12
-      compiler: clang
 
     - env:
         - CONFIG="--disable-winuae-cpu --enable-werror --enable-debug"
@@ -50,7 +31,3 @@ matrix:
     - env:
         - CONFIG="--enable-winuae-cpu --enable-werror --enable-debug"
       arch: s390x
-
-    - env:
-        - CONFIG="--disable-winuae-cpu --enable-small-mem --enable-werror"
-      compiler: clang
