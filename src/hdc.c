@@ -55,8 +55,8 @@ const char HDC_fileid[] = "Hatari hdc.c";
 
 /* HDC globals */
 static SCSI_CTRLR AcsiBus;
-int nAcsiPartitions = 0;
-bool bAcsiEmuOn = false;
+int nAcsiPartitions;
+bool bAcsiEmuOn;
 
 /* Our dummy INQUIRY response data */
 static unsigned char inquiry_bytes[] =
