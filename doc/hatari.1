@@ -2,7 +2,7 @@
 .\" First parameter, NAME, should be all caps
 .\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
 .\" other parameters are allowed: see man(7), man(1)
-.TH "HATARI" "1" "2020-03-29" "Hatari" ""
+.TH "HATARI" "1" "2020-11-27" "Hatari" ""
 .\" Please adjust this date whenever revising the manpage.
 
 .SH "NAME"
@@ -25,9 +25,10 @@ emulation.
 .PP
 To run the emulator a TOS ROM image is needed. EmuTOS, a free
 implementation of TOS is shipped with Hatari. It boots faster than
-original TOS versions, but some buggy (floppy only) programs won't
-work correctly with it.  For best compatibility, it is recommended to
-use a TOS ROM from a real Atari.
+original TOS versions and doesn't need separate HD drivers, but some
+buggy (typically floppy only) programs won't work correctly with it.
+For best compatibility, it is recommended to use a TOS ROM from a real
+Atari.
 .PP
 As an argument, one can give either a name of a directory that should
 be emulated as a virtual GEMDOS hard disk, a floppy disk image or an
@@ -38,10 +39,8 @@ program will be started.  These shortcuts correspond to "-d <dir>",
 options.
 .PP
 Booting will be done from the disk image or directory that's given
-last on the command line as an option or the argument (and which
-corresponds to A: or C:). If you want to give floppy image name with
-an autostarting program name, give it with --disk-a option before the
-program name.
+last on the command line, either as an option or an argument (and
+which corresponds to A: or C:).
 
 .SH "OPTIONS"
 Hatari options are split into several categories:
