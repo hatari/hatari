@@ -43,8 +43,8 @@ everything that should work, does still work:
       https://cirrus-ci.com/github/hatari/hatari
 
 * Check that all programs/demos listed in compatibility.html as fixed
-  during early development still work, change their Hatari version to
-  new release and make sure they're listed also in release-notes.txt
+  during early development still work, and make sure they're listed
+  also in release-notes.txt
 
 * Check that (Python/Gtk) hatariui still works with latest changes,
   including saving changed config, and running under X11 & Wayland
@@ -56,6 +56,9 @@ Release candidate
 After found issues have been fixed, prepare for release candidate:
 
 * Check that Hatari documentation and WWW-site repository are up to date
+
+* Fix remaining x.x-dev versions in compatibility.html to new release:
+  sed -i 's/x.x-dev/x.x/'
 
 * Validate HTML documentation with https://validator.w3.org/
 
@@ -80,6 +83,8 @@ If no release-critical issues were reported, do actual release:
 * Update release version & date in:
   - version.h
   - manual.html
+  - debugger.html
+  - compatibility.html
   - readme.txt
   - release-notes.txt
 
