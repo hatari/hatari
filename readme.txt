@@ -250,11 +250,11 @@ This is because Windows SDL v1 library redirects all console output
 SDL v2 library discards all that output.
 
 To see Hatari help/warning/trace output, and to interact with Hatari
-debugger, there two options:
+debugger, there are two options:
 - Run Hatari with "-W" option, or
 - Compile Hatari with "-mconsole" option (as last --linker flag) to
   build Hatari for the Windows console subsystem
-    
+
 Because these cause separate console output window to be opened (in
 addition to the Hatari window), they are not enabled by default. 
 
