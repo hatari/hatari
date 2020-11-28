@@ -81,12 +81,18 @@ Final release
 If no release-critical issues were reported, do actual release:
 
 * Update release version & date in:
-  - version.h
-  - manual.html
-  - debugger.html
-  - compatibility.html
-  - readme.txt
-  - release-notes.txt
+  + Sources:
+    - version.h
+    - Mac GUI plist files
+  + Documentation:
+    - compatibility.html
+    - Doxyfile
+    - debugger.html
+    - manual.html
+    - readme.txt
+    - release-notes.txt
+  + Packaging:
+    - hatari.spec
 
 * Build final binary packages
 
