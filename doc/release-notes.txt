@@ -4,8 +4,8 @@
                                 Release Notes
 
 
- Development version
- -------------------
+ Version 2.3.0 (2020-11-28)
+ --------------------------
 
 Following features are deprecated and will be removed in a future release:
 - Support for the SDL 1.2 library (i.e. SDL 2.x should be used instead)

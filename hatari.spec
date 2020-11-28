@@ -10,7 +10,7 @@ URL:          http://hatari.tuxfamily.org/
 License:      GPLv2+
 Group:        System/Emulators/Other
 Autoreqprov:  on
-Version:      2.2.1
+Version:      2.3.0
 Release:      1
 Summary:      An Atari ST/STE/TT/Falcon emulator
 Source:       %{name}-%{version}.tar.bz2
@@ -74,6 +74,9 @@ rm -rf $RPM_BUILD_ROOT
 %_docdir/%{name}/images/*
 
 %changelog -n hatari
+
+* Sat Nov 11 2020 - Nicolas Pomarede
+- Hatari version 2.3.0
 
 * Fri Feb 08 2019 - Nicolas Pomarede
 - Hatari version 2.2.1

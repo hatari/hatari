@@ -13,4 +13,4 @@
 //#define PROG_NAME "Hatari v2.3.0-devel (" __DATE__ ") " CPU_CORE_NAME
 
 /* release */
-#define PROG_NAME "Hatari v2.2.1"
+#define PROG_NAME "Hatari v2.3.0"
