@@ -387,6 +387,7 @@ Demos:
 - Grafik -und Sounddemo (by Eckhard Kruse), font issues
 - Hallucinations (by Reservoir Gods)
 - Hiatus (by SMFX)
+- Hatari 2.2 intro (by Mr.Styckx)
 - If pigs could fly (by Syndicate)
 - Illusion (by Dune)
 - Infinity/Madstars (by Holocaust)
@@ -921,6 +922,7 @@ Demos:
 - Grimey (by Reservoir Gods)
 - Hatari 1.9 intro (by Mr. Styckx)
 - Hatari 2.1 intro (by Mr. Styckx)
+- Hatari 2.3 intro (by Evil/DHS, spkr/SMFX and Mr.Styckx)
 - Heal Old Geek (by Hemoroids, only endpart.prg needs STE)
 - High Fidelity Dreams (by Aura)
 - HighResMode 1 & 2 (by Paradox)
@@ -1374,6 +1376,7 @@ Games working under EmuTOS >v1.0 (with DSP support):
 - Des Lazers & des Hommes
 - H2O* (by EKO)
 - Kwiks* (by Digital Nightmares)
+- NoMess (GEM, requires color icon support)
 - Push It
 - Racer (by Thadoss/Dune)
 - Racer 2* (by Thadoss/Dune)
@@ -1430,8 +1433,6 @@ Broken games (even with EmuTOS >1.0):
   - broken graphics after intro
 - Neurobot
   - just exits immediately
-- NoMess (GEM)
-  - Window is only couple of pixels in size, like with TOS <v4
 - Poing 2000 demo
   - Fire input doesn't work to start game
 - Rave*
@@ -1500,30 +1501,29 @@ Applications working with extra hacks:
     pressing any key crashes them
 
 Partly working applications:
-- Delmpaint (GFA)
-   - some draw operations do black on black
-   - file selector in wrong size if program is started
-     from some other resolution than 320x200@256
-- Escape paint (GEM)
-  - Icons don't show in image operations window, and their
-    places are inverted on mouse-over, image names show in
-    image list window only on highlight, some UI elements
-    flicker
+- FalcAMP (GEM, requires DSP & color icons support)
+  - Colors and 3D look missing from icons, and text from plugins dialog
+- Delmpaint (GFA, requires MMU)
+   - Startup and help screen colors are wrong
+   - Help pager doesn't work properly
+   - Should be started from 320x200@256 resolution
+- Escape paint (GEM, requires color icons support)
+  - Setting windows can't be moved, their titlebars and borders aren't
+    refreshed when exposed, and few of the settings windows don't come
+    on screen
 
 Broken applications (even with EmuTOS >v1.0):
 - Animator v0.20.4
   - Crashes to NULL pointer access
-  - Requires HiColor?
+  - Requires HiColor
 - Apex Alpha
-  - Requires HiColor?
+  - Requires HiColor
 - Centview (GEM image viewer)
-  - Crashes to NULL pointer access
-  - Requires HiColor?
-- FalcAMP (GEM)
-  - Music playback works, but all playback control buttons are missing
+  - Crashes to NULL pointer access when viewing image
+  - Requires HiColor
 - Indypaint
   - cursor moves, but screen is black, F1-F4 keys don't work
-  - needs HiColor mode
+  - requires HiColor
 - Voxx (vocoder), demo and free version
   - Most of graphics missing
   - Needs at minimum 640x480x16 color VGA resolution
