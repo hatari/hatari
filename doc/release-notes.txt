@@ -29,10 +29,10 @@ Emulation:
   - Fix: IDE controller is now always available in Falcon mode, even if
     no hard disks have been configured.
 - CPU:
-  - Update CPU core to latest WinUAE 4.4.0 beta : full support for undocument
-    fields in 68000 bus/address error stack frames, as well as CCR flags for
-    most of the 680x0 instructions (using a cpu tester program on the real
-    hardware that checks all possible opcodes' combinations)
+  - Update CPU core to latest WinUAE 4.4.0 beta : full support for
+    undocumented fields in 68000 bus/address error stack frames, as well as
+    CCR flags for most of the 680x0 instructions (using a cpu tester program
+    on the real hardware that checks all possible opcodes' combinations)
   - 68030 MMU hardware bus error support + various fixes
   - FPU fixes
 - Video:
@@ -50,7 +50,7 @@ Emulation:
   - Improved Falcon's DMA sound interrupt on GPIP7 and AER
 - Blitter:
   - Large rewrite of the blitter's core, improving cycle accuracy and
-    handling the complex cases where xcount=1 and nfsr=1. Code is slighlty
+    handling the complex cases where xcount=1 and nfsr=1. Code is slightly
     smaller and closer to the logic of the real hardware
   - Handle restart in non HOG mode when the CPU uses a RMW instruction
     (eg TAS)
@@ -205,7 +205,7 @@ Fixed programs:
 - MS Write (crash), when it's run from GEMDOS HD
 - Akaisex program reading AKAI S1000 HD floppies converted to STX
 - EmuTos drawing vertical lines with blitter and leaving some trails
-  (blitter in non HOG mode using TAS intruction to restart)
+  (blitter in non HOG mode using TAS instruction to restart)
 - Cecile v2.22, now also works if no IDE drive has been configured
 - Trans D-Bug Express by PHF (lock when running in megaSTE mode at 16 MHz)
 
