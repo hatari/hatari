@@ -1007,7 +1007,7 @@ Color games:
 - Breakdance (scene game, STOS, EmuTOS >v0.9.3)
 - ChuChu Rocket* (RG's full version, EmuTOS >0.9.7)
 - Crash Time Plumber
-- Droid STE rewrite (WIP)
+- Droid STE rewrite
 - Dynabusters+*
 - Frantick
 - Giana Sisters STE rewrite: (EmuTOS >v0.9.3)
@@ -1408,7 +1408,7 @@ Broken games (even with EmuTOS >1.0):
   - colors/graphics are broken
 - Confusion (demos 1 & 2):
   - title screen doesn't come up
-- Conquest of Elysium:
+- Conquest of Elysium II:
   - black graphics (needs HiColor?)
 - Downfall
   - "Error while loading BLACKWHT.BGR"
@@ -1422,13 +1422,19 @@ Broken games (even with EmuTOS >1.0):
   - mouse doesn't work
 - "K" preview* (by EXA)
   - bus error at kart race start
+- Killing Impact
+  - broken graphics and double bus error
 - Les Dinosaures (v1.02 demo by PARX)
   - colors wrong (HiColor?), freezes at start
   - supposed to have worked with some earlier EmuTOS version
 - Men at War
   - freezes at startup (uses sound matrix)
+- Moongame
+  - colors and graphics wrong (HiColor?)
 - Moonspeeder (preview 2)
  - screen is just black (HiColor?)
+- Mouse trap
+  - NULL pointer bus error at start, panic & reboot
 - Multibriques
   - broken graphics after intro
 - Neurobot
@@ -1502,7 +1508,7 @@ Applications working with extra hacks:
 
 Partly working applications:
 - FalcAMP (GEM, requires DSP & color icons support)
-  - Colors and 3D look missing from icons, and text from plugins dialog
+  - 3D look missing from icons, and text from plugins dialog
 - Delmpaint (GFA, requires MMU)
    - Startup and help screen colors are wrong
    - Help pager doesn't work properly
