@@ -224,6 +224,7 @@ struct dma_s {
 	Uint32 isConnectedToDspInHandShakeMode;
 	Uint32 isConnectedToDma;
 	Uint32 handshakeMode_Frame;	/* state of the frame in handshake mode */
+	Uint32 handshakeMode_masterClk;	/* 0 = crossbar master clock ; 1 = DSP master clock */
 };
 
 struct crossbar_s {
@@ -315,11 +316,13 @@ void Crossbar_Reset(bool bCold)
 	dmaPlay.currentFrame = 0;
 	dmaPlay.isConnectedToDspInHandShakeMode = 0;
 	dmaPlay.handshakeMode_Frame = 0;
+	dmaPlay.handshakeMode_masterClk = 0;
 	dmaRecord.isRunning = 0;
 	dmaRecord.loopMode = 0;
 	dmaRecord.currentFrame = 0;
 	dmaRecord.isConnectedToDspInHandShakeMode = 0;
 	dmaRecord.handshakeMode_Frame = 0;
+	dmaRecord.handshakeMode_masterClk = 0;
 
 	/* DMA stopped, force SNDINT to 0/LOW */
 	crossbar.SNDINT_Signal = MFP_GPIP_STATE_LOW;
@@ -1055,6 +1058,7 @@ void Crossbar_DstControler_WriteWord(void)
 
 	dmaPlay.isConnectedToDspInHandShakeMode = (((destCtrl >> 4) & 7) == 0 ? 1 : 0);
 	dmaPlay.handshakeMode_Frame = dmaPlay.isConnectedToDspInHandShakeMode;
+	dmaPlay.handshakeMode_masterClk = 0;
 
 	dmaRecord.isConnectedToDspInHandShakeMode = ((destCtrl & 0xf) == 2 ? 1 : 0);
 }
@@ -1538,7 +1542,8 @@ static void Crossbar_Process_DMAPlay_Transfer(void)
 	}
 
 //fprintf ( stderr , "cbar %x %x %x\n" , dmaPlay.frameCounter , value , increment_frame );
-	if (dmaPlay.isConnectedToDspInHandShakeMode) {
+//	if (dmaPlay.isConnectedToDspInHandShakeMode && dmaPlay.handshakeMode_Frame != 0) {
+	if (dmaPlay.isConnectedToDspInHandShakeMode == 1 && dmaPlay.handshakeMode_masterClk == 1) {
 		/* Handshake mode */
 		if (dmaPlay.handshakeMode_Frame == 0)
 			return;
@@ -1619,6 +1624,7 @@ static void Crossbar_Process_DMAPlay_Transfer(void)
  * Function called when DmaPlay is in handshake mode */
 void Crossbar_DmaPlayInHandShakeMode(void)
 {
+	dmaPlay.handshakeMode_masterClk = 1;
 	dmaPlay.handshakeMode_Frame = 1;
 }
 
