@@ -336,6 +336,14 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 			bReInitIDEEmu = true;
 		}
 	}
+	/* Falcon has always an IDE controller */
+	if (!bReInitIDEEmu && changed->System.nMachineType == MACHINE_FALCON &&
+	    (current->System.nMachineType != MACHINE_FALCON ||
+	     current->System.bFastBoot != changed->System.bFastBoot))
+	{
+		Dprintf("- IDE subsystem>\n");
+		bReInitIDEEmu = true;
+	}
 	if (bReInitIDEEmu)
 		Ide_UnInit();
 
