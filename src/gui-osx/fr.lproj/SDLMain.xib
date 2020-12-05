@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="13771" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="14113" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none">
     <dependencies>
         <deployment version="1060" identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="13771"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="14113"/>
         <capability name="box content view" minToolsVersion="7.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -295,11 +295,11 @@ DQ
                         <tabViewItems>
                             <tabViewItem label="Disques" identifier="1" id="471">
                                 <view key="view" id="472">
-                                    <rect key="frame" x="10" y="25" width="643" height="384"/>
+                                    <rect key="frame" x="10" y="29" width="643" height="380"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <box autoresizesSubviews="NO" borderType="line" title="Disques Durs" id="4606">
-                                            <rect key="frame" x="1" y="3" width="630" height="181"/>
+                                            <rect key="frame" x="1" y="-1" width="630" height="181"/>
                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                             <view key="contentView" id="Y59-JM-xzm">
                                                 <rect key="frame" x="1" y="1" width="628" height="165"/>
@@ -536,7 +536,7 @@ DQ
                                             </view>
                                         </box>
                                         <box autoresizesSubviews="NO" borderType="line" title="Disquettes" id="4702">
-                                            <rect key="frame" x="1" y="188" width="641" height="194"/>
+                                            <rect key="frame" x="1" y="184" width="641" height="194"/>
                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                             <view key="contentView" id="snU-mk-sng">
                                                 <rect key="frame" x="1" y="1" width="639" height="178"/>
@@ -1750,7 +1750,7 @@ DQ
                                                 </subviews>
                                             </view>
                                         </box>
-                                        <box autoresizesSubviews="NO" misplaced="YES" borderType="line" title="FPU (WINUE CORE)" id="vGb-U9-KbN">
+                                        <box autoresizesSubviews="NO" misplaced="YES" borderType="line" title="FPU (WINUAE CORE)" id="vGb-U9-KbN">
                                             <rect key="frame" x="336" y="222" width="128" height="158"/>
                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                             <view key="contentView" id="WZ3-QC-qKS">
@@ -2413,6 +2413,7 @@ DQ
         </window>
         <customObject id="329" userLabel="PrefsController" customClass="PrefsController">
             <connections>
+                <outlet property="FPUType" destination="uXo-YU-PWN" id="Exk-qF-P2h"/>
                 <outlet property="FastBootPatch" destination="4718" id="4734"/>
                 <outlet property="HDWriteProtection" destination="4668" id="4681"/>
                 <outlet property="MMU_Emulation" destination="39w-d7-zDS" id="Pzs-It-jZi"/>
