@@ -954,6 +954,25 @@ static void dsp_postexecute_interrupts(void)
 	Uint32 index, instr, i;
 	Sint32 ipl_to_raise, ipl_sr;
 
+
+	if (dsp_core.interrupt_state == DSP_INTERRUPT_NONE) {
+		/* Is there a HostPort Transmit interrupt to triger ? */
+		if (dsp_core.periph[DSP_SPACE_X][DSP_HOST_HCR] & (1<<DSP_HOST_HCR_HTIE)) {
+			if (dsp_core.periph[DSP_SPACE_X][DSP_HOST_HSR] & (1<<DSP_HOST_HSR_HTDE)) {
+				dsp_add_interrupt(DSP_INTER_HOST_TRX_DATA);
+			}
+		}
+
+		/* Is there a HostPort Receive interrupt to triger ? */
+		if (dsp_core.periph[DSP_SPACE_X][DSP_HOST_HCR] & (1<<DSP_HOST_HCR_HRIE)) {
+			if (dsp_core.periph[DSP_SPACE_X][DSP_HOST_HSR] & (1<<DSP_HOST_HSR_HRDF)) {
+
+				dsp_add_interrupt(DSP_INTER_HOST_RCV_DATA);
+			}
+		}
+	}
+
+
 	/* REP is not interruptible */
 	if (dsp_core.loop_rep) {
 		return;
@@ -1078,6 +1097,7 @@ static void dsp_postexecute_interrupts(void)
 	if (ipl_to_raise > 3) {
 		ipl_to_raise = 3;
 	}
+
 
 	dsp_core.interrupt_instr_fetch = dsp_interrupt[index].vectorAddr;
 	dsp_core.interrupt_pipeline_count = 5;

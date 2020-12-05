@@ -1001,11 +1001,6 @@ static void dsp_core_dsp2host(void)
 	/* Set HTDE bit to say that DSP can write */
 	dsp_core.periph[DSP_SPACE_X][DSP_HOST_HSR] |= 1<<DSP_HOST_HSR_HTDE;
 
-	/* Is there an interrupt to send ? */
-	if (dsp_core.periph[DSP_SPACE_X][DSP_HOST_HCR] & (1<<DSP_HOST_HCR_HTIE)) {
-		dsp_add_interrupt(DSP_INTER_HOST_TRX_DATA);
-	}
-
 	/* Set RXDF bit to say that host can read */
 	dsp_core.hostport[CPU_HOST_ISR] |= 1<<CPU_HOST_ISR_RXDF;
 	dsp_core_hostport_update_hreq();
@@ -1032,11 +1027,6 @@ static void dsp_core_host2dsp(void)
 
 	/* Set HRDF bit to say that DSP can read */
 	dsp_core.periph[DSP_SPACE_X][DSP_HOST_HSR] |= 1<<DSP_HOST_HSR_HRDF;
-
-	/* Is there an interrupt to send ? */
-	if (dsp_core.periph[DSP_SPACE_X][DSP_HOST_HCR] & (1<<DSP_HOST_HCR_HRIE)) {
-		dsp_add_interrupt(DSP_INTER_HOST_RCV_DATA);
-	}
 
 	/* Set TXDE bit to say that host can write */
 	dsp_core.hostport[CPU_HOST_ISR] |= 1<<CPU_HOST_ISR_TXDE;
@@ -1156,11 +1146,6 @@ void dsp_core_write_host(int addr, Uint8 value)
 
 					/* Set HRDF bit to say that DSP can read */
 					dsp_core.periph[DSP_SPACE_X][DSP_HOST_HSR] |= 1<<DSP_HOST_HSR_HRDF;
-
-					/* Is there an interrupt to send ? */
-					if (dsp_core.periph[DSP_SPACE_X][DSP_HOST_HCR] & (1<<DSP_HOST_HCR_HRIE)) {
-						dsp_add_interrupt(DSP_INTER_HOST_RCV_DATA);
-					}
 
 					LOG_TRACE(TRACE_DSP_HOST_INTERFACE, "Dsp: (Host->DSP): Dsp HRDF set\n");
 				}
