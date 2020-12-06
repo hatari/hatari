@@ -4,8 +4,8 @@
                                 Release Notes
 
 
- Version 2.3.0 (2020-11-28)
- --------------------------
+ Development version
+ -------------------
 
 Following features are deprecated and will be removed in a future release:
 - Support for the SDL 1.2 library (i.e. SDL 2.x should be used instead)
@@ -17,6 +17,30 @@ Following features are deprecated and will be removed in a future release:
 - Hatari XBios(255) API enabled with the "--bios-intercept" option
   (i.e. use "--natfeats" & "--cmd-fifo" options and "hconsole" instead)
 - The old ~/.hatari configuration file location (use ~/.config/hatari instead)
+
+Emulation:
+- DSP:
+  - Fix: master clock use for crossbar/DSP Handshake mode
+  - Fix: hostport PORTB interrupt handling
+
+Emulator:
+- ACSI/IDE/SCSI handling:
+  - Fix: IDE crash when switching to Falcon mode at run-time
+- TOS support:
+  - Fix: TOS 2.07 (Sparrow TOS) support
+- macOS GUI:
+  - Fix: FPU setting didn't work
+
+Fixed Falcon programs:
+- Music missing in H2O game, in Running game main screen,
+  Stocasto demo and Epidemic music disk
+  (crossbar/DSP handshake mode, regression from v1.6)
+- Lockup demo freezing at startup
+  (DSP hostport PORTB interrupt handling)
+
+
+ Version 2.3.0 (2020-11-28)
+ --------------------------
 
 Emulation:
 - FDC / Disk :
