@@ -1836,6 +1836,10 @@ void	MFP_GPIP_ReadByte_Main ( MFP_STRUCT *pMFP )
 			gpip_new |= 0x80;
 		else
 			gpip_new &= ~0x80;
+
+		/* Sparrow / TOS 2.07 still use monitor detection via GPIP7 */
+		if (TosVersion == 0x207 && !bUseHighRes)
+			gpip_new ^= 0x80;
 	}
 	else
 	{
