@@ -252,9 +252,9 @@ supports all Atari HW except for Falcon DSP & 16-bit Videl TrueColor mode.)</p>
   <li>with the (deprecated) UAE CPU core: 68000 - 68040 emulation (less accurate, but faster)</li>
   <li>cycle-accurate 68000 emulation (only) with the WinUAE CPU core, and
       several options for disabling CPU accuracy for performance</li>
-  <li>68881, 68882 and CPU internal FPU emulation, either using
-      host FPU (default, faster), or emulating them completely
-      in SW (more accurate in some corner-cases)</li>
+  <li>68881, 68882 and 68040/060 internal FPU emulation, either using
+      host FPU (default, faster), or emulating them more accurately
+      in SW (bit-exact except for last few bits in trig/log functions)</li>
 </ul>
 
 <h4>ST hardware emulation</h4>
