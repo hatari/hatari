@@ -875,7 +875,9 @@ static void TOS_CheckSysConfig(void)
 		Configuration_ChangeCpuFreq ( 8 );
 		ConfigureParams.System.nCpuLevel = 0;
 	}
-	else if (TosVersion < 0x0300 && (Config_IsMachineTT() || Config_IsMachineFalcon()))
+	else if (TosVersion < 0x0300 &&
+		 (Config_IsMachineTT() ||
+		  (Config_IsMachineFalcon() && TosVersion != 0x0207)))
 	{
 		Log_AlertDlg(LOG_ERROR, "This TOS version does not work in TT/Falcon mode.\n"
 		             " ==> Switching to STE mode now.\n");
