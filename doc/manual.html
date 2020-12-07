@@ -172,6 +172,13 @@ common to all (FDC, IKBD, MFP, MIDI, PSG, RS-232...).</p>
       <td class="hwnote">[x] = Needs 68030+ CPU, requires 512k EmuTOS or TOS 2.06</td>
     </tr>
     <tr>
+      <td class="hwfeat">FPU</td>
+      <td>[1]</td><td>[1]</td><td>[1]</td><td>[1]</td><td>X</td><td>[2]</td>
+      <td class="hwnote">
+        [1] = Memory mapped FPU add-ons, not supported by Hatari<br>
+        [2] = 68881/68882 FPU through CPU coprocessor interface</td>
+    </tr>
+    <tr>
       <td class="hwfeat">NVRAM</td>
       <td></td><td></td><td></td><td></td><td>X</td><td>X</td>
       <td class="hwnote"></td>
@@ -254,7 +261,7 @@ supports all Atari HW except for Falcon DSP & 16-bit Videl TrueColor mode.)</p>
       several options for disabling CPU accuracy for performance</li>
   <li>68881, 68882 and 68040/060 internal FPU emulation, either using
       host FPU (default, faster), or emulating them more accurately
-      in SW (bit-exact except for last few bits in trig/log functions)</li>
+      in SW</li>
 </ul>
 
 <h4>ST hardware emulation</h4>
@@ -1348,12 +1355,14 @@ changes that you have made.
        alt="Hatari's GUI - the CPU dialog" />
 </div>
 
+<h5>CPU type</h5>
+
 <p>
  The CPU type option can be used to select the level of the central processing
  unit. If you are not sure what to use, simply select 68000 for ST and STE
- machines and 68030 for TT and Falcon emulation, since this were the original
+ machines and 68030 for TT and Falcon emulation, since these were the original
  configurations used in the Atari computers. In case you want to vary
- the CPU type, you have got to be aware of some constraints:
+ the CPU type, you should be aware of some constraints:
 </p>
 <ul>
  <li>
@@ -1375,7 +1384,7 @@ changes that you have made.
  </li>
  <li>
   68010 and 68040, 68060 have never been used in official Atari computers,
-  so don't use these CPU types unless you have got some good reasons.
+  so don't use these CPU types without a good reason.
  </li>
  <li>
   The 68060 option is only available in the &quot;WinUAE&quot; builds of
@@ -1383,6 +1392,8 @@ changes that you have made.
   this option unless you know what you are doing.
  </li>
 </ul>
+
+<h5>CPU options</h5>
 
 <p>
  The CPU clock option can be used to select the frequency that is used
@@ -1400,22 +1411,31 @@ changes that you have made.
 </p>
 <p>
  The &quot;Cycle exact&quot;, the &quot;MMU emulation&quot; and
- &quot;24-bit addressing&quot; option are only available in the
+ &quot;24-bit addressing&quot; options are only available in the
  &quot;WinUAE&quot; builds
  of Hatari. They are considered as experimental and should only be changed
  if you know what you are doing.
 </p>
+
+<h5>FPU type</h5>
+
 <p>
  The FPU settings are also only available with the &quot;WinUAE&quot; builds
- of Hatari. They can be used to select the type of floating point unit of CPUs
- &gt;= 68020. In the non-WinUAE builds of Hatari, the FPU is always enabled for
- 68030 and 68040 CPUs.<br/>
- When emulating the FPU, you can use your own PC's CPU/FPU to do the math.
- This is the default and fastest method, but recent CPU might have some slight
- differences in rounding when compared to a real Motorala FPU.<br/>
- For higher precision, you can select the "Softfloat" emulation mode : this will
- emulate all the FPU operations using only the CPU and with the same rules as the
- Motorala's FPU. In that case, FPU emulation will be a little slower.
+ of Hatari. They can be used to select the type of floating point unit of
+ &gt;= 68020 CPUs. In the non-WinUAE builds of Hatari, the FPU is always
+ enabled for 68030 and 68040 CPUs.
+</p>
+<p>
+ When emulating the Motorola FPU, PC host FPU can be used to do the math.
+ This is the default and fastest method, but its results have some slight
+ differences compared to a real Motorala FPU.
+</p>
+<p>
+ For higher precision, you can select the "Softfloat" emulation mode :
+ this will emulate all the FPU operations using only the CPU and with
+ the same rules as the Motorala's FPU. This emulation is bit-exact
+ (except for the last few bits in trig/log functions), and a little
+ slower than using host FPU.
 </p>
 
 
