@@ -1377,6 +1377,7 @@ Games working under EmuTOS >v1.0 (with DSP support):
 - H2O* (by EKO)
 - Kwiks* (by Digital Nightmares)
 - NoMess (GEM, requires color icon support)
+- Pong 2000 demo (use joypad)
 - Push It
 - Racer (by Thadoss/Dune)
 - Racer 2* (by Thadoss/Dune)
@@ -1395,21 +1396,21 @@ Games working with extra hacks:
     (with normal TOS4, DSP is used for background music)
 
 Partly working games:
+- Bomb Squad
+  - Game is 4x slower than with TOS4 (see EmuTOS incompatible.txt)
 - Painium
   - fire button works only until game itself starts
-  - Needs at least 8MB RAM, and EmuTOS v0.9.9.1
+  - Needs at least 8MB RAM, and EmuTOS v0.9.9.1+
 
 Broken games (even with EmuTOS >1.0):
-- Bomb Squad
-  - parts of blits are missing, and some look wrong
 - Boom preview
   - crashes to bus error or freezes depending on amount of RAM
 - Columns by Deadheart* (demo)
-  - colors/graphics are broken
+  - broken graphics (needs HiColor?)
 - Confusion (demos 1 & 2):
   - title screen doesn't come up
 - Conquest of Elysium II:
-  - black graphics (needs HiColor?)
+  - broken graphics (needs HiColor?)
 - Downfall
   - "Error while loading BLACKWHT.BGR"
 - Epi-Lepsie (by PARX)
@@ -1439,15 +1440,13 @@ Broken games (even with EmuTOS >1.0):
   - broken graphics after intro
 - Neurobot
   - just exits immediately
-- Poing 2000 demo
-  - Fire input doesn't work to start game
 - Rave*
-  - colors/graphics are broken
-    (in v0.8.6, only at lower half during actual game)
+  - broken graphics (needs HiColor?)
+  - in v0.8.6, only at lower half during actual game
 - Reeking Rubber
   - broken graphics & termination on actual game start (HiColor?)
 - SBM v0.8 & v1.03* (Bomberman clone)
-  - bus error and wrong graphics
+  - panic and wrong graphics
 - ScummVm (OL version)
   - broken graphics (HiColor?)
 - Slippery Sam
@@ -1455,7 +1454,7 @@ Broken games (even with EmuTOS >1.0):
 - TeknoBalls
   - crashes at start to NULL pointer (HiColor?)
 - Tetrhex (1.41)
-  - Null pointer access bus error after trying to set 256 color mode
+  - Panic on trying to overwrite ROM after VsetScreen(0x0, 0x0, 3, 0x14B)
 - Tron 2
   - bus error panic on startup
 - TsccTron
@@ -1510,9 +1509,8 @@ Partly working applications:
 - FalcAMP (GEM, requires DSP & color icons support)
   - 3D look missing from icons, and text from plugins dialog
 - Delmpaint (GFA, requires MMU)
-   - Startup and help screen colors are wrong
-   - Help pager doesn't work properly
-   - Should be started from 320x200@256 resolution
+   - Some startup and help screen colors are wrong
+   - Due to program bugs, start from 320x200@256 resolution
 - Escape paint (GEM, requires color icons support)
   - Setting windows can't be moved, their titlebars and borders aren't
     refreshed when exposed, and few of the settings windows don't come
