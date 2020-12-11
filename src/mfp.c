@@ -343,8 +343,6 @@ MFP_STRUCT		*pMFP_Main;
 MFP_STRUCT		*pMFP_TT;
 
 
-static bool bAppliedTimerDPatch;    /* true if the Timer-D patch has been applied */
-
 #define	PATCH_TIMER_TDDR_FAKE		0x64		/* TDDR value to slow down timer D */
 
 
@@ -457,9 +455,6 @@ static void	MFP_Init_Pointers ( MFP_STRUCT *pAllMFP )
 void	MFP_Reset_All ( void )
 {
 	int	i;
-
-	/* Reset MFP internal variables */
-	bAppliedTimerDPatch = false;
 
 	for ( i=0 ; i<MFP_MAX_NB ; i++ )
 	{
