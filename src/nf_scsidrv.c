@@ -34,6 +34,7 @@ const char NfScsiDrv_fileid[] = "Hatari nf_scsidrv.c";
 // The driver interface version, 1.02
 #define INTERFACE_VERSION 0x0102
 // Maximum is 20 characters
+// (newer TOS side SCSI driver versions will ignore the name)
 #define BUS_NAME "Linux Generic SCSI"
 // The SG driver supports cAllCmds
 #define BUS_FEATURES 0x02
