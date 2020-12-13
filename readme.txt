@@ -93,7 +93,7 @@ Hatari (some Linux distributions use separate development packages for these
 header files)!
 
 For compiling Hatari, you need a C compiler that supports the C99 standard
-(preferably GNU C or Clang), and a working CMake (v2.8 or newer) installation,
+(preferably GNU C or Clang), and a working CMake (v3.3 or newer) installation,
 see http://www.cmake.org/ for details.
 
 CMake can generate makefiles for various flavours of "Make" (like GNU-Make)
