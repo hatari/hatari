@@ -468,7 +468,7 @@ class HatariConfigMapping(ConfigStore):
 
     def set_compatible(self, value):
         self.set("[System]", "bCompatibleCpu", value)
-        self._change_option("--compatible %s" % str(value))
+        self._change_option("--compatible %s" % value)
 
     # ------------ Timer-D ---------------
     def get_timerd(self):
@@ -476,7 +476,7 @@ class HatariConfigMapping(ConfigStore):
 
     def set_timerd(self, value):
         self.set("[System]", "bPatchTimerD", value)
-        self._change_option("--timer-d %s" % str(value))
+        self._change_option("--timer-d %s" % value)
 
     # ------------ fastforward ---------------
     def get_fastforward(self):
@@ -484,7 +484,7 @@ class HatariConfigMapping(ConfigStore):
 
     def set_fastforward(self, value):
         self.set("[System]", "bFastForward", value)
-        self._change_option("--fast-forward %s" % str(value))
+        self._change_option("--fast-forward %s" % value)
 
     # ------------ sound ---------------
     def get_sound_values(self):
@@ -537,14 +537,14 @@ class HatariConfigMapping(ConfigStore):
 
     def set_sync(self, value):
         self.set("[Sound]", "bEnableSoundSync", value)
-        self._change_option("--sound-sync %s" % str(value))
+        self._change_option("--sound-sync %s" % value)
 
     def get_mic(self):
         return self.get("[Sound]", "bEnableMicrophone")
 
     def set_mic(self, value):
         self.set("[Sound]", "bEnableMicrophone", value)
-        self._change_option("--mic %s" % str(value))
+        self._change_option("--mic %s" % value)
 
     # ----------- joystick --------------
     def get_joystick_types(self):
@@ -582,7 +582,7 @@ class HatariConfigMapping(ConfigStore):
 
     def set_floppy(self, drive, filename):
         self.set("[Floppy]", "szDisk%cFileName" %  ("A", "B")[drive], filename)
-        self._change_option("--disk-%c" % ("a", "b")[drive], str(filename))
+        self._change_option("--disk-%c" % ("a", "b")[drive], filename)
 
     def get_floppy_drives(self):
         return (self.get("[Floppy]", "EnableDriveA"), self.get("[Floppy]", "EnableDriveB"))
@@ -592,7 +592,7 @@ class HatariConfigMapping(ConfigStore):
         for drive in ("A", "B"):
             value = drives[idx]
             self.set("[Floppy]", "EnableDrive%c" % drive, value)
-            self._change_option("--drive-%c %s" % (drive.lower(), str(value)))
+            self._change_option("--drive-%c %s" % (drive.lower(), value))
             idx += 1
 
     def get_fastfdc(self):
@@ -600,7 +600,7 @@ class HatariConfigMapping(ConfigStore):
 
     def set_fastfdc(self, value):
         self.set("[Floppy]", "FastFloppy", value)
-        self._change_option("--fastfdc %s" % str(value))
+        self._change_option("--fastfdc %s" % value)
 
     def get_doublesided(self):
         driveA = self.get("[Floppy]", "DriveA_NumberOfHeads")
@@ -692,7 +692,7 @@ class HatariConfigMapping(ConfigStore):
             if filename and os.path.isfile(filename):
                 self.set("[HardDisk]", "bUseHardDiskImage", True)
             self.set("[HardDisk]", "szHardDiskImage", filename)
-        self._change_option("--acsi", str(filename))
+        self._change_option("--acsi", filename)
 
     # ------------ IDE master (file) ---------------
     def get_idemaster_image(self):
@@ -710,7 +710,7 @@ class HatariConfigMapping(ConfigStore):
             if filename and os.path.isfile(filename):
                 self.set("[HardDisk]", "bUseIdeMasterHardDiskImage", True)
             self.set("[HardDisk]", "szIdeMasterHardDiskImage", filename)
-        self._change_option("--ide-master", str(filename))
+        self._change_option("--ide-master", filename)
 
     # ------------ IDE slave (file) ---------------
     def get_ideslave_image(self):
@@ -728,7 +728,7 @@ class HatariConfigMapping(ConfigStore):
             if filename and os.path.isfile(filename):
                 self.set("[HardDisk]", "bUseIdeSlaveHardDiskImage", True)
             self.set("[HardDisk]", "szIdeSlaveHardDiskImage", filename)
-        self._change_option("--ide-slave", str(filename))
+        self._change_option("--ide-slave", filename)
 
     # ------------ TOS ROM ---------------
     def get_tos(self):
@@ -736,7 +736,7 @@ class HatariConfigMapping(ConfigStore):
 
     def set_tos(self, filename):
         self.set("[ROM]", "szTosImageFileName", filename)
-        self._change_option("--tos", str(filename))
+        self._change_option("--tos", filename)
 
     # ------------ memory ---------------
     def get_memory_names(self):
@@ -842,7 +842,7 @@ class HatariConfigMapping(ConfigStore):
 
     def set_desktop(self, value):
         self.set("[Screen]", "bKeepResolution", value)
-        self._change_option("--desktop %s" % str(value))
+        self._change_option("--desktop %s" % value)
 
     # --------- keep desktop res - st ------
     def get_desktop_st(self):
@@ -855,7 +855,7 @@ class HatariConfigMapping(ConfigStore):
     def set_desktop_st(self, value):
         if self.has_keepstres:
             self.set("[Screen]", "bKeepResolutionST", value)
-            self._change_option("--desktop-st %s" % str(value))
+            self._change_option("--desktop-st %s" % value)
 
     # ------------ force max ---------------
     def get_force_max(self):
@@ -863,7 +863,7 @@ class HatariConfigMapping(ConfigStore):
 
     def set_force_max(self, value):
         self.set("[Screen]", "bForceMax", value)
-        self._change_option("--force-max %s" % str(value))
+        self._change_option("--force-max %s" % value)
 
     # ------------ show borders ---------------
     def get_borders(self):
@@ -871,7 +871,7 @@ class HatariConfigMapping(ConfigStore):
 
     def set_borders(self, value):
         self.set("[Screen]", "bAllowOverscan", value)
-        self._change_option("--borders %s" % str(value))
+        self._change_option("--borders %s" % value)
 
     # ------------ show statusbar ---------------
     def get_statusbar(self):
@@ -879,7 +879,7 @@ class HatariConfigMapping(ConfigStore):
 
     def set_statusbar(self, value):
         self.set("[Screen]", "bShowStatusbar", value)
-        self._change_option("--statusbar %s" % str(value))
+        self._change_option("--statusbar %s" % value)
 
     # ------------ crop statusbar ---------------
     def get_crop(self):
@@ -887,7 +887,7 @@ class HatariConfigMapping(ConfigStore):
 
     def set_crop(self, value):
         self.set("[Screen]", "bCrop", value)
-        self._change_option("--crop %s" % str(value))
+        self._change_option("--crop %s" % value)
 
     # ------------ show led ---------------
     def get_led(self):
@@ -895,7 +895,7 @@ class HatariConfigMapping(ConfigStore):
 
     def set_led(self, value):
         self.set("[Screen]", "bShowDriveLed", value)
-        self._change_option("--drive-led %s" % str(value))
+        self._change_option("--drive-led %s" % value)
 
     # ------------ monitor aspect ratio ---------------
     def get_aspectcorrection(self):
@@ -903,7 +903,7 @@ class HatariConfigMapping(ConfigStore):
 
     def set_aspectcorrection(self, value):
         self.set("[Screen]", "bAspectCorrect", value)
-        self._change_option("--aspect %s" % str(value))
+        self._change_option("--aspect %s" % value)
 
     # ------------ max window size ---------------
     def set_desktop_size(self, w, h):
