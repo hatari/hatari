@@ -1114,7 +1114,7 @@ static void SDLGui_ScaleMouseButtonCoordinates(SDL_MouseButtonEvent *bev)
  *   (will be stored in parameter pEventOut)
  * - SDLGUI_QUIT if user wants to close Hatari
  * - SDLGUI_ERROR if unable to show dialog
- * GUI item indeces are positive, other return values are negative
+ * GUI item indices are positive, other return values are negative
  */
 int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut, bool KeepCurrentObject)
 {

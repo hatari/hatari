@@ -7,7 +7,7 @@
   WAV File output
 
   As well as YM file output we also have output in .WAV format. These .WAV
-  files can then be run through convertors to any other format, such as MP3.
+  files can then be run through converters to any other format, such as MP3.
   We simply save out the WAVE format headers and then write the sample data
   (at the current rate of playback) as we build it up each frame. When we stop
   recording we complete the size information in the headers and close up.

@@ -144,7 +144,7 @@ static void DlgJoystick_DefineKeys(int nActJoy)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Adapt dialog using the values from the configration structure.
+ * Adapt dialog using the values from the configuration structure.
  */
 static void DlgJoystick_ReadValuesFromConf(int nActJoy)
 {

@@ -103,7 +103,7 @@ static int entries;				/* How many files are in the actual directory? */
 static int oldMouseY = 0;			/* Keep the latest Y mouse position for scrollbar move computing */
 static int mouseClicked = 0;			/* used to know if mouse if down for the first time or not */
 static int mouseIsOut = 0;			/* used to keep info that mouse if above or under the scrollbar when mousebutton is down */
-static float scrollbar_Ypos = 0.0;		/* scrollbar heigth */
+static float scrollbar_Ypos = 0.0;		/* scrollbar height */
 
 static char *dirpath;				/* for get_dtype() */
 #ifndef HAVE_DIRENT_D_TYPE

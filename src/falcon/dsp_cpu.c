@@ -956,14 +956,14 @@ static void dsp_postexecute_interrupts(void)
 
 
 	if (dsp_core.interrupt_state == DSP_INTERRUPT_NONE) {
-		/* Is there a HostPort Transmit interrupt to triger ? */
+		/* Is there a HostPort Transmit interrupt to trigger ? */
 		if (dsp_core.periph[DSP_SPACE_X][DSP_HOST_HCR] & (1<<DSP_HOST_HCR_HTIE)) {
 			if (dsp_core.periph[DSP_SPACE_X][DSP_HOST_HSR] & (1<<DSP_HOST_HSR_HTDE)) {
 				dsp_add_interrupt(DSP_INTER_HOST_TRX_DATA);
 			}
 		}
 
-		/* Is there a HostPort Receive interrupt to triger ? */
+		/* Is there a HostPort Receive interrupt to trigger ? */
 		if (dsp_core.periph[DSP_SPACE_X][DSP_HOST_HCR] & (1<<DSP_HOST_HCR_HRIE)) {
 			if (dsp_core.periph[DSP_SPACE_X][DSP_HOST_HSR] & (1<<DSP_HOST_HSR_HRDF)) {
 

@@ -10,7 +10,7 @@
 #include <SDL_types.h>
 
 
-#define CRC32_POLY	0x04c11db7	/* IEEE 802.3 recommandation */
+#define CRC32_POLY	0x04c11db7	/* IEEE 802.3 recommendation */
 
 extern void    crc32_reset ( Uint32 *crc );
 extern void    crc32_add_byte ( Uint32 *crc , Uint8 c );
