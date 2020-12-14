@@ -28,6 +28,10 @@ if str is bytes:
     def bytes(s, encoding):
         return s
 
+def _path_quote(path):
+    "quote spaces in paths as expected by Hatari socket API"
+    return path.replace(" ", "\\ ")
+
 
 # Running Hatari instance
 class Hatari:
@@ -325,17 +329,23 @@ class HatariConfigMapping(ConfigStore):
             else:
                 getattr(self, method)()
 
-    def _change_option(self, option, quoted = None):
-        "handle option changing, and quote spaces for quoted part of it"
-        if quoted:
-            option = "%s %s" % (option, quoted.replace(" ", "\\ "))
+    def _change_option(self, option, filename = ""):
+        "handle option changing, and handle filenames appropriately"
+        if filename is None:
+            option = "%s none" % option
+        elif filename:
+            if os.path.isfile(filename):
+                option = "%s %s" % (option, _path_quote(filename))
+            else:
+                print("WARN: skipping '%s' option with non-existing filename '%s'" % (option, filename))
+                return
         if self._lock_updates:
             self._options.append(option)
         else:
             self._hatari.change_option(option)
 
     def lock_updates(self):
-        "lock_updates(), collect Hatari configuration changes"
+        "lock_updates(), collect Hatari configuration changes to trigger only single reboot"
         self._lock_updates = True
 
     def flush_updates(self):
@@ -665,10 +675,13 @@ class HatariConfigMapping(ConfigStore):
         return self.get("[HardDisk]", "szHardDiskDirectory")
 
     def set_hd_dir(self, dirname):
-        if dirname and os.path.isdir(dirname):
-            self.set("[HardDisk]", "bUseHardDiskDirectory", True)
         self.set("[HardDisk]", "szHardDiskDirectory", dirname)
-        self._change_option("--harddrive", str(dirname))
+        if dirname:
+            if os.path.isdir(dirname):
+                self.set("[HardDisk]", "bUseHardDiskDirectory", True)
+                self._change_option("--harddrive %s" % _path_quote(dirname))
+        else:
+            self._change_option("--harddrive none")
 
     # ------------ ACSI HD (file) ---------------
     def get_acsi_image(self):
@@ -784,7 +797,7 @@ class HatariConfigMapping(ConfigStore):
         else:
             # switch 24-bit addressing back for compatibility
             self.set("[System]", "bAddressSpace24", True)
-            self._change_option("--addr24 on", False)
+            self._change_option("--addr24 on")
 
     # ------------ monitor ---------------
     def get_monitor_types(self):

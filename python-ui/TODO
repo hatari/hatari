@@ -22,6 +22,11 @@ its sources).
 
 * Support all 8 ACSI and SCSI drives
 
+* Use file selector widget instead of text widget for specifying input
+  paths for memory snapshots and devices, so that user can't provide
+  invalid paths (sound, snapshot and device output files can be
+  non-existing as they're created on demand)
+
 * Separate "Atari monitor" and "Hatari window" settings dialogs
   (move options from "Display" and monitor setting from "Machine"
   dialogs to here and add VDI options to Atari Monitor dialog)
