@@ -207,15 +207,15 @@ class UICallbacks:
     # ------- quit callback -----------
     def quit(self, widget, arg = None):
         # due to Gtk API, needs to return True when *not* quitting
-        if not self.killdialog.run(self.hatari):
-            return True
-        if self.io_id:
-            GObject.source_remove(self.io_id)
         if self.config.is_changed():
             if not self.quitdialog:
                 self.quitdialog = QuitSaveDialog(self.mainwin)
             if not self.quitdialog.run(self.config):
                 return True
+        if not self.killdialog.run(self.hatari):
+            return True
+        if self.io_id:
+            GObject.source_remove(self.io_id)
         Gtk.main_quit()
         if os.path.exists(self.tmpconfpath):
             os.unlink(self.tmpconfpath)

@@ -2,6 +2,10 @@
 User visible changes in Hatari (Python Gtk) UI
 ----------------------------------------------
 
+2020-12:
+- Make config save/discard/cancel dialog cancellable and its
+  content properly resizable (requires Gtk >= v3.22)
+
 2020-11:
 - Python scripts are changed to use "python3" hashbang (they
   should still work also with "python2"), and ".desktop" files

@@ -23,7 +23,7 @@ Requirements
 
 - Python2 >= 2.7, or python3 >= 3.5
 - python-gi (Python GObject Introspection)
-- Gtk v3 and its gir bindings (gir1.2-gtk-3.0)
+- Gtk >= v3.22 and its gir bindings (gir1.2-gtk-3.0)
 
 Hatari UI is included with the Hatari sources:
 	https://git.tuxfamily.org/hatari/hatari.git/tree/python-ui

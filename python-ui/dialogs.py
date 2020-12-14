@@ -175,12 +175,14 @@ class QuitSaveDialog(HatariUIDialog):
         dialog = Gtk.Dialog("Quit and Save?", parent,
             Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
             ("Save changes",    Gtk.ResponseType.YES,
-             "Discard changes", Gtk.ResponseType.NO,
+             "Ignore changes",  Gtk.ResponseType.NO,
              Gtk.STOCK_CANCEL,  Gtk.ResponseType.CANCEL))
         dialog.vbox.add(Gtk.Label(label="You have unsaved configuration changes:"))
         viewport = Gtk.Viewport()
         viewport.add(Gtk.Label())
         scrolledwindow = Gtk.ScrolledWindow()
+        scrolledwindow.set_propagate_natural_width(True)
+        scrolledwindow.set_propagate_natural_height(True)
         scrolledwindow.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
         scrolledwindow.add(viewport)
         dialog.vbox.add(scrolledwindow)
@@ -223,7 +225,7 @@ class KillDialog(HatariUIDialog):
         Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
         Gtk.MessageType.QUESTION, Gtk.ButtonsType.OK_CANCEL,
         """\
-Hatari emulator is already/still running and it needs to be terminated first. However, if it contains unsaved data, that will be lost.
+Hatari emulator is already/still running and it needs to be terminated first. If emulated applications contain unsaved data, that will be lost.
 
 Terminate Hatari anyway?""")
 
