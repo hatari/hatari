@@ -3,7 +3,7 @@
 # Utility to generate from Hatari C-code Python code for mapping
 # Hatari configuration variable names and types of those variables.
 #
-# Copyright (C) 2012 by Eero Tamminen
+# Copyright (C) 2012-2020 by Eero Tamminen
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

@@ -1,7 +1,7 @@
 #
 # Classes for the Hatari UI dialogs
 #
-# Copyright (C) 2008-2019 by Eero Tamminen
+# Copyright (C) 2008-2020 by Eero Tamminen
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
