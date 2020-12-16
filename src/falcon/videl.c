@@ -1183,4 +1183,8 @@ void Videl_Info(FILE *fp, Uint32 dummy)
 		(IoMem_ReadByte(0xff8205)<<16) +
 		(IoMem_ReadByte(0xff8207)<<8)  +
 		 IoMem_ReadByte(0xff8209));
+
+	fprintf(fp, "Palette type: %s\n", videl.bUseSTShifter ?
+		"ST/STE compat ($FF8240)" :
+		"Falcon ($FF9800)");
 }
