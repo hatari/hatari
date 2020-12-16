@@ -19,6 +19,8 @@ Following features are deprecated and will be removed in a future release:
 - The old ~/.hatari configuration file location (use ~/.config/hatari instead)
 
 Emulation:
+- CPU:
+  - Fix unneeded extra prefetch for movem in 68020/30 cpu
 - DSP:
   - Fix: master clock use for crossbar/DSP Handshake mode
   - Fix: hostport PORTB interrupt handling
@@ -39,6 +41,7 @@ Fixed Falcon programs:
   (crossbar/DSP handshake mode, regression from v1.6)
 - Lockup demo freezing at startup
   (DSP hostport PORTB interrupt handling)
+- DELMPAINT (unneeded extra prefetch in movem)
 
 
  Version 2.3.0 (2020-11-28)
