@@ -649,17 +649,18 @@ void Control_ReparentWindow(int width, int height, bool noembed)
 	}
 	else
 	{
-		char buffer[12];  /* 32-bits in hex (+ '\r') + '\n' + '\0' */
+		if (parent_win != wm_win) {
+			/* hide WM window for Hatari */
+			XUnmapWindow(display, wm_win);
 
-		/* hide WM window for Hatari */
-		XUnmapWindow(display, wm_win);
-
-		/* reparent main Hatari window to given parent */
-		XReparentWindow(display, sdl_win, parent_win, 0, 0);
-
+			/* reparent main Hatari window to given parent */
+			XReparentWindow(display, sdl_win, parent_win, 0, 0);
+		}
 		/* whether to send new window size */
 		if (bSendEmbedInfo && ControlSocket)
 		{
+			char buffer[12]; /* 32-bits in hex (+ '\r') + '\n' + '\0' */
+
 			Log_Printf(LOG_INFO, "New %dx%d SDL window with ID: %lx\n",
 				width, height, sdl_win);
 			sprintf(buffer, "%dx%d", width, height);

@@ -32,6 +32,9 @@ Emulator:
   - Fix: Duplicate disk image mount failure handling
 - TOS support:
   - Fix: TOS 2.07 (Sparrow TOS) support
+- Hatari window handling:
+  - Fix: Hatari window disappearing from Python UI
+    when Hatari changes its SDL2 framebuffer size
 - macOS GUI:
   - Fix: FPU setting doesn't work when GUI runs in French
 
