@@ -82,15 +82,21 @@ If no release-critical issues were reported, do actual release:
 
 * Update release version & date in:
   + Sources:
-    - version.h
-    - Mac GUI plist files
+    - src/includes/version.h
+    - src/memorySnapShot.c (if needed)
+    - Mac GUI plist files :
+        src/gui-osx/Info-Hatari.plist
+        src/gui-osx/Info-Hatari Winuae.plist
+        src/gui-osx/en.lproj/InfoPlist.strings
+        src/gui-osx/fr.lproj/InfoPlist.strings
   + Documentation:
-    - compatibility.html
-    - Doxyfile
-    - debugger.html
-    - manual.html
     - readme.txt
-    - release-notes.txt
+    - doc/compatibility.html
+    - doc/doxygen/Doxyfile
+    - doc/debugger.html
+    - doc/emutos (based on latest EmuTOS release)
+    - doc/manual.html
+    - doc/release-notes.txt
   + Packaging:
     - hatari.spec
 
