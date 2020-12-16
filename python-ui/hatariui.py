@@ -121,7 +121,7 @@ class UICallbacks:
         # add vertical elements
         vbox = Gtk.VBox()
         if menu:
-            vbox.add(menu)
+            vbox.pack_start(menu, False, True, 0)
         if toolbars["top"]:
             vbox.pack_start(toolbars["top"], False, True, 0)
         vbox.add(hbox)
@@ -154,8 +154,8 @@ class UICallbacks:
         # set initial embedded hatari size
         width, height = self.config.get_window_size()
         socket.set_size_request(width, height)
-        # no resizing for the Hatari window
-        box.pack_start(socket, False, False, 0)
+        # allow Hatari window resizing
+        box.pack_start(socket, True, True, 0)
         self.hatariwin = socket
 
     # ------- run callback -----------
