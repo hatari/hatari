@@ -1403,6 +1403,12 @@ Games working with extra hacks:
 Partly working games:
 - Bomb Squad
   - Game is 4x slower than with TOS4 (see EmuTOS incompatible.txt)
+- Confusion demo 1:
+  - Works with EmuTOS >1.0, but freezes unless DSP is set to "none"
+- Epi-Lepsie (by PARX)
+  - colors completely wrong
+- Les Dinosaures (v1.02 demo by PARX)
+  - colors wrong
 - Painium
   - fire button works only until game itself starts
   - Needs at least 8MB RAM
@@ -1412,14 +1418,14 @@ Broken games (even with EmuTOS >1.0):
   - crashes to bus error or freezes depending on amount of RAM
 - Columns by Deadheart* (demo)
   - broken graphics (needs HiColor?)
-- Confusion (demos 1 & 2):
-  - title screen doesn't come up
+- Confusion demo 2:
+  - title screen doesn't come up if DSP is enabled, and when
+    it's disabled, panic with broken graphics (needs HiColor?)
 - Conquest of Elysium II:
   - broken graphics (needs HiColor?)
 - Downfall
-  - "Error while loading BLACKWHT.BGR"
-- Epi-Lepsie (by PARX)
-  - colors wrong (HiColor?), input doesn't work
+  - Complains about "Error while loading BLACKWHT.BGR", but actually
+    fails to Setscreen(0xDB4F00, 0xDB4F00, 0xFFFF) -> needs HiColor
 - Gold island (demo, vga only)
   - some blits are just opaque red
 - Gravon (demo)
@@ -1430,11 +1436,9 @@ Broken games (even with EmuTOS >1.0):
   - bus error at kart race start
 - Killing Impact
   - broken graphics and double bus error
-- Les Dinosaures (v1.02 demo by PARX)
-  - colors wrong (HiColor?), freezes at start
-  - supposed to have worked with some earlier EmuTOS version
 - Men at War
-  - freezes at startup (uses sound matrix)
+  - freezes at startup after Supexec
+    (uses VDI + sets sound matrix before that)
 - Moongame
   - colors and graphics wrong (HiColor?)
 - Moonspeeder (preview 2)
