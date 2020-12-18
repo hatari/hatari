@@ -3,6 +3,8 @@ User visible changes in Hatari (Python Gtk) UI
 ----------------------------------------------
 
 2020-12:
+- Launcher script asks for different UI layout under
+  Wayland (as X11 embedding doesn't work with it)
 - Fix asserts on missing Hatari config file
 - Handle (ignore) invalid file paths in config file
 - Allow Hatari window to be scaled freely now that Hatari
