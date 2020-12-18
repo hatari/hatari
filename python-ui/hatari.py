@@ -84,7 +84,9 @@ class Hatari:
         return result
 
     def save_config(self):
-        os.popen(self.hataribin + " --saveconfig")
+        "ask Hatari to save config.  Return None on success, otherwise Hatari return code"
+        pipe = os.popen(self.hataribin + " --saveconfig")
+        return pipe.close()
 
     def _create_server(self):
         if self.server:
@@ -310,6 +312,9 @@ class HatariConfigMapping(ConfigStore):
         self._desktop_h = 0
         self._options = []
         self._winuae = hatari.is_winuae()
+
+    def init_compat(self):
+        "do config mapping initializations needing config loading to have succeeded"
         # initialize has_* attribs for things that may not be anymore
         # valid on Hatari config file and/or command line
         self.get_machine()

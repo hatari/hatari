@@ -55,16 +55,24 @@ class UICallbacks:
         error = self.hatari.is_compatible()
         if error:
             ErrorDialog(None).run(error)
-            sys.exit(-1)
+            sys.exit(1)
 
         self.config = HatariConfigMapping(self.hatari)
         try:
             self.config.validate()
         except (KeyError, AttributeError):
-            NoteDialog(None).run("Loading Hatari configuration failed!\nRetrying after saving Hatari configuration.")
-            self.hatari.save_config()
+            NoteDialog(None).run("Hatari configuration validation failed!\nRetrying after saving Hatari configuration.")
+            error = self.hatari.save_config()
+            if error:
+                ErrorDialog(None).run("Hatari configuration saving failed (code: %d), quitting!" % error)
+                sys.exit(error)
             self.config = HatariConfigMapping(self.hatari)
-            self.config.validate()
+            try:
+                self.config.validate()
+            except (KeyError, AttributeError):
+                ErrorDialog(None).run("Invalid Hatari configuration, quitting!")
+                sys.exit(1)
+        self.config.init_compat()
 
         # windows are created when needed
         self.mainwin = None
