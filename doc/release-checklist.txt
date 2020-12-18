@@ -47,7 +47,8 @@ everything that should work, does still work:
   also in release-notes.txt
 
 * Check that (Python/Gtk) hatariui still works with latest changes,
-  including saving changed config, and running under X11 & Wayland
+  including starting with no existing Hatari config, saving changed
+  config, and running under X11 & Wayland
 
 
 Release candidate
