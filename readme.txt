@@ -12,10 +12,12 @@ Contents:
 1. License
 2. What is Hatari?
 3. Compiling and installing
-   3.1 WinUAE and "old" UAE CPU cores
-   3.2 IPF support using capsimage library
-   3.3 Notes for Linux distribution packagers
-       3.3.1 Known distro problems
+   3.1 Installing Hatari dependencies
+   3.2 Configuring and compiling
+   3.3 WinUAE and "old" UAE CPU cores
+   3.4 IPF support using capsimage library
+   3.5 Notes for Linux distribution packagers
+       3.5.1 Known distro problems
 4. Running Hatari
    4.1 Known Windows (SDL) issues
 5. Hatari tools and their run-time dependencies
@@ -70,7 +72,10 @@ possible so that it is able to run most of the old Atari games and demos.
  3) Compiling and installing
  ---------------------------
 
-For using Hatari, you need to have installed the following libraries:
+To build and use Hatari, you first need to install its dependent libraries.
+
+
+ 3.1) Installing Hatari dependencies
 
 Required:
 - The SDL library v1.2.10 or newer (http://www.libsdl.org)
@@ -95,6 +100,17 @@ header files)!
 For compiling Hatari, you need a C compiler that supports the C99 standard
 (preferably GNU C or Clang), and a working CMake (v3.3 or newer) installation,
 see http://www.cmake.org/ for details.
+
+On RedHat based Linux distributions, you get (most of) these with:
+	sudo dnf install gcc cmake SDL2-devel zlib-devel libpng-devel \
+	  readline-devel portaudio-devel
+
+And on Debian/Ubuntu based ones with:
+	sudo apt install gcc cmake libsdl2-dev zlib1g-dev libpng-dev \
+	  libreadline-dev portaudio19-dev
+
+
+ 3.2) Configuring and compiling
 
 CMake can generate makefiles for various flavours of "Make" (like GNU-Make)
 and various IDEs like Xcode on macOS. To run CMake, you have to pass the
@@ -126,7 +142,7 @@ there, or install the emulator system-wide by typing:
 	cmake --install .
 
 
- 3.1) WinUAE and "old" UAE CPU cores
+ 3.3) WinUAE and "old" UAE CPU cores
 
 Up to version 1.9, Hatari had 2 different CPU cores : the "old" UAE CPU core
 used for STF/STE and the WinUAE CPU core for better TT/Falcon emulation.
@@ -145,7 +161,7 @@ at acceptable speed.  Support for old CPU core will be removed soon though
 as it's not anymore properly tested.
 
 
- 3.2) IPF support using capsimage library
+ 3.4) IPF support using capsimage library
 
 Hatari can use the optional capsimage library to access IPF and CTR
 files. Those files are created using the Kryoflux board and allow to
@@ -172,7 +188,7 @@ You should also copy the libcapsimage.so* files in your library path,
 for example in /usr/local/lib/caps/
 
 
- 3.3) Notes for Linux distribution packagers
+ 3.5) Notes for Linux distribution packagers
 
 TOS tester in tests/tosboot/ directory can be used to verify that
 Hatari was built fine enough that it's able to boot all tested TOS
@@ -194,7 +210,7 @@ Alternatively one could add a mime type for TOS binaries with xdg-mime:
 But registering handlers for mime-types seems desktop specific.
 
 
- 3.3.1) Known distro problems
+ 3.5.1) Known distro problems
 
 If Hatari is built with portaudio support, *and* either portaudio or
 ALSA is configured to use pulseaudio plugin, that plugin aborts Hatari
