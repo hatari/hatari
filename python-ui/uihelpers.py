@@ -19,7 +19,7 @@ import gi
 # use correct version of gtk
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
-from gi.repository import GObject
+from gi.repository import GLib
 
 
 # leak debugging
@@ -169,7 +169,7 @@ class HatariTextInsert:
         self.pressed = False
         self.hatari = hatari
         print("OUTPUT '%s'" % text)
-        GObject.timeout_add(100, _text_insert_cb, self)
+        GLib.timeout_add(100, _text_insert_cb, self)
 
 # callback to insert text object to Hatari character at the time
 # (first key down, on next call up), at given interval

@@ -158,6 +158,9 @@ random order - and if someone is missing here, please remind us!):
   Patch to improve clearing borders in fullscreen mode. Patch to fix
   PNG header alignment when recording AVI files.
 
+- Jens Guenther : extra info on Python UI embedding issue and fixes
+  for PyGtk deprecations warnings in Python UI
+
 See also "thanks.txt" for people who've helped Hatari development in
 other ways than code contributions.
 

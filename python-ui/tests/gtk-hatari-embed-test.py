@@ -33,7 +33,7 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 from gi.repository import Gdk
 from gi.repository import GdkX11
-from gi.repository import GObject
+from gi.repository import GLib
 
 def usage(error):
     print("\nusage: %s <widget> <embed method>\n" % sys.argv[0].split(os.path.sep)[-1])
@@ -68,7 +68,7 @@ class AppUI():
         self.window.show_all()
         # wait a while before starting Hatari to make
         # sure parent window has been realized
-        GObject.timeout_add(500, self.timeout_cb)
+        GLib.timeout_add(500, self.timeout_cb)
 
     def create_window(self):
         window = Gtk.Window(Gtk.WindowType.TOPLEVEL)
