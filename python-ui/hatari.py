@@ -291,13 +291,19 @@ class HatariConfigMapping(ConfigStore):
     has_hd_sections = True # from v2.2 onwards separate ACSI/SCSI/IDE sections
     has_modeltype = True   # from v2.0 onwards
     has_keepstres = True   # only with SDL1
+
     "access methods to Hatari configuration file variables and command line options"
     def __init__(self, hatari):
         confdirs = [".config/hatari", ".hatari"]
         ConfigStore.__init__(self, confdirs)
         conffilename = "hatari.cfg"
-        self.load(self.get_filepath(conffilename))
-
+        confpath = self.get_filepath(conffilename)
+        print("confpath: %s" % confpath)
+        error = self.load(confpath)
+        if error:
+            print("WARNING: %s %s!" % (confpath, error))
+        else:
+            print("loaded config: %s" % confpath)
         self._hatari = hatari
         self._lock_updates = False
         self._desktop_w = 0

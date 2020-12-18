@@ -95,32 +95,33 @@ class ConfigStore:
     def get_filepath(self, filename):
         "get_filepath(filename) -> return correct full path to config file"
         # user config has preference over system one
+        sep = os.path.sep
         for path in (self.userpath, os.getenv("HATARI_SYSTEM_CONFDIR")):
             if path:
-                file = "%s%c%s" % (path, os.path.sep, filename)
-                if os.path.isfile(file):
-                    return file
+                confpath = "%s%c%s" % (path, sep, filename)
+                if os.path.isfile(confpath):
+                    return confpath
         # writing needs path name although it's missing for reading
-        return "%s%c%s" % (self.userpath, os.path.sep, filename)
+        return "%s%c%s" % (self.userpath, sep, filename)
 
     def load(self, path):
-        "load(path) -> load given configuration file"
+        "load(path): load given configuration file -> message on error, None on success"
         if os.path.isfile(path):
             sections = self._read(path)
             if sections:
                 self.sections = sections
             else:
-                print("ERROR: configuration file loading failed!")
-                return
+                return "loading failed"
         else:
-            print("WARNING: configuration file missing!")
-            if self.defaults:
-                print("-> using dummy 'defaults'.")
+            if not self.defaults:
+                return "file missing"
+            print("-> using dummy 'defaults'.")
             self.sections = self.defaults
         self.path = path
         self.cfgfile = os.path.basename(path)
         self.original = self.get_checkpoint()
         self.changed = False
+        return None
 
     def is_loaded(self):
         "is_loaded() -> True if configuration loading succeeded"
