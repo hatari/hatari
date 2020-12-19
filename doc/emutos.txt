@@ -402,6 +402,7 @@ Demos:
 - Lots of Dots (by Acid Maker & Friends)
 - MonaST (by GGN/tln, 256B intro)
 - Motus (by SMFX)
+- My Galaxy (by Dune & Sector One & MJJ Prod)
 - Music Disc 1 (by G. Gaubatz)
 - No Cooper (by 1984)
 - No more froggies (by Sector1)
@@ -450,6 +451,7 @@ Demos:
 - Synergy megademo (by Synergy)
 - Syntax Terror (by Delta Force)
 - Temptation aka Project "A" (by NoExtra)
+- The Puppet Show (by Fantasy & Dune)
 - The Stupendous Demo (by Pixel Twins, has couple of STE screen)
 - The Union demo (by The Union)
 - The twist (by Team "The twist")
@@ -1251,6 +1253,7 @@ Demos working in EmuTOS >v1.0 (with DSP support):
 - Aggressive Party 2 4k (NoCrew)
 - Agony (by DNT crew)
 - Beams (by .tscc):
+- Bird to be alive (by Dune etc)
 - Bound 2, Bound 3 (by Crac)
 - Bound 42 (by MMJ Prod)
 - Built-in Obsolescence (by Digital Chaos)
@@ -1266,6 +1269,7 @@ Demos working in EmuTOS >v1.0 (with DSP support):
 - Motion (unfinished demo by Aggression)
 - I want you to remember (by KÜA Software & Pixel Twins)
   - Monochrome, with DSP music
+- Papa was a Blade Runner (by EKO)
 - ROT3DBMP
 - Sidetracked (by Collapze)
 - Silly Venture 2k14 invitro (by Dune / Sector One)
@@ -1338,7 +1342,7 @@ Working games (comments are for EmuTOS v1.0 or older):
 - Nibe
 - Offworld Security
 - Pac Them*
-- Pacmaniac Pacmania
+- Pacmania X68000
 - Pingo 98 (classic version)
 - Running* (demo version)
 - Radical* Race (demo)
@@ -1375,6 +1379,7 @@ Games working under EmuTOS >v1.0 (with DSP support):
 - Des Lazers & des Hommes
 - H2O* (by EKO)
 - Kwiks* (by Digital Nightmares)
+- Les Dinosaures (v1.02 demo by PARX)
 - NoMess (GEM, requires color icon support)
 - Pong 2000 demo (use joypad)
 - Push It
@@ -1400,8 +1405,10 @@ Partly working games:
   - Game is 4x slower than with TOS4 (see EmuTOS incompatible.txt)
 - Epi-Lepsie (by PARX)
   - colors completely wrong
-- Les Dinosaures (v1.02 demo by PARX)
-  - colors wrong
+- Men at War
+  - Unlike with TOS4, men.prg works only when started by mawintro.prg
+- Multibriques v1.0 demo (by PARX)
+  - Bg color at end of startup PARX screen is white instead of black
 - Painium
   - fire button works only until game itself starts
   - Needs at least 8MB RAM
@@ -1425,18 +1432,15 @@ Broken games (even with EmuTOS >1.0):
 - "K" preview* (by EXA)
   - bus error writing $f8f9faf7 at kart race start
 - Killing Impact
-  - broken graphics and double bus error
-- Men at War
-  - freezes at startup after Supexec
-    (uses VDI + sets sound matrix before that)
+  - address error panic when actual game would start
 - Moongame
   - colors and graphics wrong (HiColor?)
 - Moonspeeder (preview 2)
- - screen is just black (HiColor?)
+  - broken graphics (needs HiColor?)
 - Mouse trap
   - NULL pointer bus error at start, panic & reboot
-- Multibriques
-  - broken graphics after intro
+- Multibriques v1.5 (by PARX)
+  - completely wrong colors after intro
 - Neurobot
   - just exits immediately
 - Rave*
@@ -1489,6 +1493,7 @@ Application working under EmuTOS >v1.0 (with DSP support):
 - Flextracker
 - GemGT2 v1.1, GemMOD v0.85, and GemPLAY v1.95
   - http://yescrew.atari.org/eng/products.htm
+- Graoumf Tracker (v0.8890)
 - Iphigenie v1.4b (sound system monitor and manager / DSP LOD loader)
 - MP2AUDIO player:
   - outlines (3D look) missing from buttons in the UI
@@ -1513,9 +1518,14 @@ Partly working applications:
   - Videos needing HiColor either refuse to run,
     or program crashes on exit leaving desktop
     with broken graphics
+- Apex Animator 2.10 (demo)
+  - Separate 256-color viewers programs work, HiColor ones don't
 - Apex Alpha (demo)
   - Works with MMU + FPU + VGA
   - Requires HiColor with RGB?
+- AVI030
+  - Extra text cursors visible on screen and panics after video exits
+    (HiColor support?)
 - FalcAMP (GEM, requires DSP & color icons support)
   - 3D look missing from icons, and text from plugins dialog
 - Escape paint (GEM, requires color icons support)
