@@ -20,21 +20,26 @@ Following features are deprecated and will be removed in a future release:
 
 Emulation:
 - CPU:
-  - Fix unneeded extra prefetch for movem in 68020/30 cpu
+  - Fix: unneeded extra prefetch for movem in 68020/30 cpu
+    (regression in v2.3)
 - DSP:
   - Fix: master clock use for crossbar/DSP Handshake mode
+    (partial regression in v1.6)
   - Fix: hostport PORTB interrupt handling
 
 Emulator:
 - ACSI/IDE/SCSI handling:
   - Fix: IDE crash when switching to Falcon mode at run-time
+    (regression in v2.3)
   - Fix: No error dialog on IDE image mount errors
   - Fix: Duplicate disk image mount failure handling
 - TOS support:
   - Fix: TOS 2.07 (Sparrow TOS) support
+    (regression in v2.3)
 - Hatari window handling:
   - Fix: Hatari window disappearing from Python UI
-    when Hatari changes its SDL2 framebuffer size
+    when Hatari changes its framebuffer size
+    (SDL2 specific)
 - macOS GUI:
   - Fix: FPU setting doesn't work when GUI runs in French
 
@@ -45,10 +50,17 @@ Python UI:
 Fixed Falcon programs:
 - Music missing in H2O game, in Running game main screen,
   Stocasto demo and Epidemic music disk
-  (crossbar/DSP handshake mode, regression from v1.6)
+  (crossbar/DSP handshake mode)
 - Lockup demo freezing at startup
   (DSP hostport PORTB interrupt handling)
-- DELMPAINT (unneeded extra prefetch in movem)
+- Several demos (Cruor 96k, Hmmm..., Keff, Payback 2015) and games
+  (Beats of Rage, Capy, Confusion preview 2, Men at War preview,
+  Moonspeeder preview 2, Neurobot, Pacmania X68000, Slippery Sam
+  and Sokoban by Fun) not starting with TOS4 or EmuTOS unless MMU
+  was enabled (unneeded extra prefetch in movem)
+- Built-in Obsolescence demo, Delmpaint app and Sidetracked GFA
+  musicdisk had other issues also with MMU under TOS4 or EmuTOS
+  (unneeded extra prefetch in movem)
 
 
  Version 2.3.0 (2020-11-28)
