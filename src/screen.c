@@ -451,7 +451,7 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 	{
 		int deskw, deskh;
 		if (getenv("PARENT_WIN_ID") != NULL)	/* Embedded window? */
-			sdlVideoFlags = SDL_WINDOW_BORDERLESS;
+			sdlVideoFlags = SDL_WINDOW_BORDERLESS|SDL_WINDOW_HIDDEN;
 		else if (ConfigureParams.Screen.bResizable && bUseSdlRenderer)
 			sdlVideoFlags = SDL_WINDOW_RESIZABLE;
 		else
