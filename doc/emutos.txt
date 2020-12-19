@@ -1219,7 +1219,7 @@ Working demos (comments are for EmuTOS v1.0 or older):
 - Oergs (by Lazer, pic + music)
 - Old Stuff (by Extream)
 - Payback 2015 (by Dekadence)
-  - 060+FPU demo, unlike with TOS4, works only with MMU
+  - 060+FPU demo
 - Prepare (by Extream)
 - Revertant 1.2 (by Cobra / Mystic Bytes)
   - MP2 DSP music requires >v1.0
@@ -1246,20 +1246,21 @@ Working demos (comments are for EmuTOS v1.0 or older):
 - ZZ 9 Plural Z Alpha (by tSCc)
 
 Demos working in EmuTOS >v1.0 (with DSP support):
-- '_' (by Escape)
 - 4kbtro (by Wilfire)
 - 96ktro (by Cruor)
-  - Unlike with TOS v4, freezes unless MMU used
 - Aggressive Party 2 4k (NoCrew)
 - Agony (by DNT crew)
 - Beams (by .tscc):
 - Bound 2, Bound 3 (by Crac)
 - Bound 42 (by MMJ Prod)
+- Built-in Obsolescence (by Digital Chaos)
 - Chaos A.D. (by DNT crew)
 - Cycedelic knockout (by Mugwumps)
 - Dan's Lustiges Kinderfest (by Lazer)
+- Enraged (by Avena)
 - Ex Illusion (by Aura)
 - FOG-intro (by Psychosis)
+- Hmmm... (by Escape)
 - Illness (by Escape)
 - JESTERday (by POV), musicdemo
 - Motion (unfinished demo by Aggression)
@@ -1267,11 +1268,11 @@ Demos working in EmuTOS >v1.0 (with DSP support):
   - Monochrome, with DSP music
 - ROT3DBMP
 - Sidetracked (by Collapze)
-  - Unlike with TOS4, sound breaks when (infos/credits/greets)
-    text is drawn, but screen clearing before that works properly
 - Silly Venture 2k14 invitro (by Dune / Sector One)
 - Silly Venture 2k16 invitro (by Dune / Mystic Bytes)
 - Silly Venture 2k19 invitro (by Mystic Bytes)
+- Stercus Accidit (by Fit)
+  - Works only with oldUAE CPU core
 - Stocasto (by NoCrew)
   - works also with v1.0, but then DSP 3D objects are missing
 - Tere Ra'I (by Cerebral Vortex / Dune / Sector One)
@@ -1284,26 +1285,19 @@ Demos working in EmuTOS >v1.0 (with DSP support):
   - 060+FPU demo
 - Whirlpool 128k (by Extream)
 - Why (by Extream)
+- X-tasie (by Trio, requires MMU)
 - Yepyha (by Toons)
 - Zero Three Zero (by The Pixel Twins)
 
 Partly working demos (>v1.0):
-- Built-in Obsolescence (by Digital Chaos)
-  - Crashes at end to ROM address error
 - Doomino (by STAX)
   - Info screen at start looks just garbage (HiColor?)
-- Hmmm... (by Escape)
-  - Unlike with TOS4, demo exits at end of screen with
-    blue 3D donut on red bg (after 4min of running)
 
 Broken demos (even with EmuTOS >1.0):
+- '_' (by Escape)
+  - Crashes in first screen
 - GEM demo (by DHS & AssemSoft):
   - needs HiColor mode
-- Enraged (by Avena)
-  - Doesn't start
-- Stercus Accidit
-  - Line F panic
-- X-tasie (by Trio)
 
 
 Falcon games
@@ -1376,7 +1370,7 @@ Games working under EmuTOS >v1.0 (with DSP support):
 - Bad Mood (90's demo)
 - Bad Mood* (v0.37 game from 2017)
 - Beats of Rage* (by Thadoss/Dune)
-  - Unlike TOS4, needs MMU enabled
+- Boom preview
 - Crown of Creation (preview)
 - Des Lazers & des Hommes
 - H2O* (by EKO)
@@ -1387,6 +1381,7 @@ Games working under EmuTOS >v1.0 (with DSP support):
 - Racer (by Thadoss/Dune)
 - Racer 2* (by Thadoss/Dune)
 - Running* (shareware version)
+- TeknoBalls (Arkanoid clone)
 - Towers II
 - Trionoids* (Columns clone)
 - Wotanoid (Asteroids clone)
@@ -1403,8 +1398,6 @@ Games working with extra hacks:
 Partly working games:
 - Bomb Squad
   - Game is 4x slower than with TOS4 (see EmuTOS incompatible.txt)
-- Confusion demo 1:
-  - Works with EmuTOS >1.0, but freezes unless DSP is set to "none"
 - Epi-Lepsie (by PARX)
   - colors completely wrong
 - Les Dinosaures (v1.02 demo by PARX)
@@ -1414,13 +1407,10 @@ Partly working games:
   - Needs at least 8MB RAM
 
 Broken games (even with EmuTOS >1.0):
-- Boom preview
-  - crashes to bus error or freezes depending on amount of RAM
 - Columns by Deadheart* (demo)
   - broken graphics (needs HiColor?)
-- Confusion demo 2:
-  - title screen doesn't come up if DSP is enabled, and when
-    it's disabled, panic with broken graphics (needs HiColor?)
+- Confusion demo 1 & 2:
+  - freeze at start to black screen
 - Conquest of Elysium II:
   - broken graphics (needs HiColor?)
 - Downfall
@@ -1433,7 +1423,7 @@ Broken games (even with EmuTOS >1.0):
 - It's Great (start from st-med rez)
   - mouse doesn't work
 - "K" preview* (by EXA)
-  - bus error at kart race start
+  - bus error writing $f8f9faf7 at kart race start
 - Killing Impact
   - broken graphics and double bus error
 - Men at War
@@ -1460,8 +1450,6 @@ Broken games (even with EmuTOS >1.0):
   - broken graphics (HiColor?)
 - Slippery Sam
   - freezes at start (queries e.g. DSP reg $FFA206)
-- TeknoBalls
-  - crashes at start to NULL pointer (HiColor?)
 - Tetrhex (1.41)
   - Panic on trying to overwrite ROM after VsetScreen(0x0, 0x0, 3, 0x14B)
 - Tron 2
@@ -1494,6 +1482,8 @@ Application working under EmuTOS >v1.0 (with DSP support):
   - Viewer TTPs won't work for >256 color images
 - Centurbo benchmark
   - DSP speed 2x, and bogus speeds for FPU & CPU as with normal TOS
+- Delmpaint (GFA)
+   - Due to program bugs, start from 320x200@256 resolution
 - DSPdit (by .tscc)
 - FlaySID
 - Flextracker
@@ -1504,6 +1494,9 @@ Application working under EmuTOS >v1.0 (with DSP support):
   - outlines (3D look) missing from buttons in the UI
   - Needs to be started from 640x400 or larger resolution, otherwise it
     positions itself completely outside the screen (also with TOS v4)
+- Voxx (vocoder), demo and free version
+  - GUI looks OK, no idea about actual functionality
+  - Needs at minimum 640x480x16 color VGA resolution
 - Whip! (virtual light machine)
   - mic input not tested
 - Winrec (direct to disk GEM audio recorder/effects)
@@ -1515,31 +1508,28 @@ Applications working with extra hacks:
     pressing any key crashes them
 
 Partly working applications:
+- Animator v0.20.4
+  - FLI and FLC viewing works
+  - Videos needing HiColor either refuse to run,
+    or program crashes on exit leaving desktop
+    with broken graphics
+- Apex Alpha (demo)
+  - Works with MMU + FPU + VGA
+  - Requires HiColor with RGB?
 - FalcAMP (GEM, requires DSP & color icons support)
   - 3D look missing from icons, and text from plugins dialog
-- Delmpaint (GFA, requires MMU)
-   - Some startup and help screen colors are wrong
-   - Due to program bugs, start from 320x200@256 resolution
 - Escape paint (GEM, requires color icons support)
   - Setting windows can't be moved, their titlebars and borders aren't
     refreshed when exposed, and few of the settings windows don't come
     on screen
 
 Broken applications (even with EmuTOS >v1.0):
-- Animator v0.20.4
-  - Crashes to NULL pointer access
-  - Requires HiColor
-- Apex Alpha
-  - Requires HiColor
 - Centview (GEM image viewer)
   - Crashes to NULL pointer access when viewing image
   - Requires HiColor
 - Indypaint
   - cursor moves, but screen is black, F1-F4 keys don't work
   - requires HiColor
-- Voxx (vocoder), demo and free version
-  - Most of graphics missing
-  - Needs at minimum 640x480x16 color VGA resolution
 
 
 	- Eero
