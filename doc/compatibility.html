@@ -2335,6 +2335,14 @@ VGA one are indicated separately.</p>
 	  completely broken with v3.07a. v3.07a doesn't work with MMU</td>
     </tr>
     <tr>
+      <td><a href=https://www.pouet.net/prod.php?which=60837">Beats of Rage</a></td>
+      <td>2.3.1</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>Music with DSP. Freezes if user doesn't start game before
+          it shows (empty) hall-of-fame screen</td>
+    </tr>
+    <tr>
       <td>Blackhole</td>
       <td>1.0</td>
       <td>yes</td>
@@ -2434,11 +2442,11 @@ VGA one are indicated separately.</p>
     </tr>
     <tr>
       <td>Confusion (demo)</td>
-      <td>1.3</td>
+      <td>2.3.1</td>
       <td>yes</td>
       <td>-</td>
       <td>Background music if DSP emu enabled.  Both demos 1 &amp; 2
-          work. Demo 2 needs MMU with Hatari v2.3</td>
+          work</td>
     </tr>
     <tr>
       <td>Conquest of Elysium II</td>
@@ -2624,7 +2632,7 @@ VGA one are indicated separately.</p>
       <td>Preview for a Karting game by EXA.  First entry in Training menu allows playing</td>
     </tr>
     <tr>
-      <td><a href="http://www.sebastien-pastore.com/killing/">Killing Impact</a></td>
+      <td><a href="http://christophe.bray.free.fr/informatique/falcon/falcon_jeux2.htm">Killing Impact</a></td>
       <td class="major">2.3</td>
       <td>yes</td>
       <td>-</td>
@@ -2933,8 +2941,8 @@ VGA one are indicated separately.</p>
       <td>1.6</td>
       <td>yes</td>
       <td>dummy</td>
-      <td>Needs 14MB of RAM, and MMU with Hatari v2.3. Background
-          music if DSP emu enabled</td>
+      <td>Needs 14MB of RAM, and MMU with Hatari v2.3+.
+          Background music if DSP emu enabled</td>
     </tr>
     <tr>
       <td>Sokoban by FUN</td>
@@ -3214,7 +3222,7 @@ if demo is stated to require that.</p>
       <td>Display update is wrong in first and many following screens
           (updated only in narrow strips). There's 40s of black screen
 	  before 3D world, and a long period of white screen few screens
-	  later before one screen, and freeze on black screendemo crashes</td>
+	  later before one screen, and freeze on black screen</td>
     </tr>
     <tr>
       <td>Avena:
@@ -3277,12 +3285,10 @@ if demo is stated to require that.</p>
     <tr>
       <td>Collapze:
       <a href="http://www.pouet.net/prod.php?which=54343">Sidetracked</a></td>
-      <td class="major">2.3</td>
+      <td>2.3.1</td>
       <td>yes</td>
       <td>emu</td>
-      <td>VGA-only GFA musicdemo with DSP playback and GT2 songs.
-          Works only with EmuTOS &gt;v1.0 and MMU, not with TOS4,
-	  and only from a HD (or floppy) image, not GEMDOS HD</td>
+      <td>VGA-only GFA musicdemo with DSP playback and GT2 songs</td>
     </tr>
     <tr>
       <td>Crac:
@@ -3361,7 +3367,7 @@ if demo is stated to require that.</p>
 	  fast forward faster:
 	  --machine falcon --cpulevel 6 --cpuclock 32 --fpu internal
 	  --dsp none --sound off --fast-forward yes -s 14
-	  --ttram 64 --addr24 off (maybe even --cpu-exact off)</td>
+	  --ttram 64 --addr24 off --cpu-exact on</td>
     </tr>
     <tr>
       <td>DHS:
@@ -3591,11 +3597,10 @@ if demo is stated to require that.</p>
     <tr>
       <td>Escape:
       <a href="http://pouet.net/prod.php?which=15676">_</a></td>
-      <td class="major">2.3</td>
+      <td class="major">2.3.1</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Freezes after few screens to illegal DSP instructions,
-          or with MMU, to double bus error</td>
+      <td>Freezes after few screens to illegal DSP instructions</td>
     </tr>
     <tr>
       <td>Escape:
@@ -4404,18 +4409,20 @@ for latter to be feasible).
 	   Old Quicktime and AVI videos OK</td>
     </tr>
     <tr>
-      <td><a href="http://www.leonik.net/dml/sec_apex3.py">Apex Alpha</a></td>
-      <td class="major">2.3</td>
+      <td><a href="http://www.leonik.net/dml/sec_apex3.py">Apex Alpha (demo)</a></td>
+      <td class="minor">2.3.1</td>
       <td>-</td>
-      <td>Requires MMU to start, but after that Pterm(-1) is called
-          constantly.  Doesn't work with base Falcons?</td>
+      <td>Requires MMU and FPU.  Screen isn't updated properly. Doesn't seem to do much?</td>
     </tr>
     <tr>
       <td><a href="http://umich.edu/~archive/atari/Falcon/Graphics/">Apex demo v2.10</a></td>
-      <td class="major">2.3</td>
+      <td class="major">2.3.1</td>
       <td>emu</td>
-      <td>apex210d.prg crashes on startup, but it had worked with
-          an early Hatari version</td>
+      <td>apex210d.prg crashes on startup. Separate image viewer programs work fine.
+          On real Falcon, application (its bus error detection for Expose digitizer)
+	  crashes under debugger, but works when run normally
+	  (<a href="https://listengine.tuxfamily.org/lists.tuxfamily.org/hatari-devel/2015/10/msg00046.html">details</a>)
+	  </td>
     </tr>
     <tr>
       <td><a href="http://www.leonik.net/dml/sec_apex.py">Apex Media v2.41</a></td>
@@ -4427,9 +4434,9 @@ for latter to be feasible).
     </tr>
     <tr>
       <td><a href="http://deunstg.free.fr/sct1/s_avi030.htm">AVI 030</a></td>
-      <td class="major">2.3</td>
+      <td>2.3.1</td>
       <td>-</td>
-      <td>TTP worked with Hatari v1.1, freezes with v1.6, exits with v1.8+</td>
+      <td>Very picky about which AVI files it supports</td>
     </tr>
     <tr>
       <td><a href="http://centek.free.fr/atari/softs/s_cent_1.htm">Centview</a></td>
@@ -4454,10 +4461,9 @@ for latter to be feasible).
     </tr>
     <tr>
       <td><a href="http://pouet.net/prod.php?which=29344">Delmpaint</a></td>
-      <td>2.3</td>
+      <td>2.3.1</td>
       <td>-</td>
-      <td>MMU needs to be enabled with Hatari v2.3, or program bus errors at startup.
-          Program errors at exit if started in other than 256-color low rez</td>
+      <td>Program errors at exit if started in other than 256-color low rez</td>
     </tr>
     <tr>
       <td><a href="http://pouet.net/prod.php?which=25328">Escapepaint</a></td>
@@ -4476,7 +4482,9 @@ for latter to be feasible).
       <td><a href="http://deunstg.free.fr/sct1/flaysid/">FlaySID (v3.01)</a></td>
       <td class="minor">2.3</td>
       <td>emu</td>
-      <td>SID playback with DSP engine is much heavier than with the YM engine</td>
+      <td>SID playback with DSP engine is much heavier than with the
+          YM engine, which may explain it being noisier (Hatari not
+	  able to emulate it at full speed on my machine)</td>
     </tr>
     <tr>
       <td><a href="http://nb.atari.org/main.php?page=productions">FlexTrax</a></td>
@@ -4498,6 +4506,12 @@ for latter to be feasible).
       <td>1.0</td>
       <td>-</td>
       <td></td>
+    </tr>
+    <tr>
+      <td><a href="https://www.pouet.net/prod.php?which=50033">Graoumf Tracker</a> (v0.8890)</td>
+      <td>2.3.1</td>
+      <td>emu</td>
+      <td>32-voice DSP soundtracker</td>
     </tr>
     <tr>
       <td><a href="http://dhs.nu/files.php?t=single&amp;ID=135">Hextracker</a></td>
@@ -4538,10 +4552,10 @@ for latter to be feasible).
     </tr>
     <tr>
       <td><a href="http://www.axxim.de/r3dias/R3_Vocoder3.htm">Voxx</a></td>
-      <td class="major">2.3</td>
+      <td class="major">2.3.1</td>
       <td>emu</td>
-      <td>Demo runs, but free version freezes after showing startup logo, and
-          DSP underflow (no user-space instructions are executed, only TOS
+      <td>Demo version runs, but free version freezes after showing startup logo,
+          and DSP underflow (no user-space instructions are executed, only TOS
 	  interrupts).  Requires VGA with 640x480@16 resolution at minimum</td>
     </tr>
     <tr>
