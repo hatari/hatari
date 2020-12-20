@@ -3,14 +3,16 @@ User visible changes in Hatari (Python Gtk) UI
 ----------------------------------------------
 
 2020-12:
+- Requires now Gtk v3.22 or newer
 - Launcher script asks for different UI layout under
   Wayland (as X11 embedding doesn't work with it)
-- Fix asserts on missing Hatari config file
-- Handle (ignore) invalid file paths in config file
+- Fix: asserts on missing Hatari config file
+- Fix: (ignore) invalid file paths in config file
+- Fix: GObject deprecation warnings
 - Allow Hatari window to be scaled freely now that Hatari
   supports it, and prevent menubar from padding itself
 - Make config save/discard/cancel dialog cancellable and its
-  content properly resizable (requires Gtk >= v3.22)
+  content properly resizable
 
 2020-11:
 - Python scripts are changed to use "python3" hashbang (they

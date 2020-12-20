@@ -38,6 +38,10 @@ Emulator:
 - macOS GUI:
   - Fix: FPU setting doesn't work when GUI runs in French
 
+Python UI:
+  - Several fixes (see its own release-notes.txt)
+  - Requires now Gtk v3.22 or newer
+
 Fixed Falcon programs:
 - Music missing in H2O game, in Running game main screen,
   Stocasto demo and Epidemic music disk
