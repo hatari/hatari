@@ -2311,36 +2311,37 @@ VGA one are indicated separately.</p>
     </tr>
     <tr>
       <td><a href="http://www.leonik.net/dml/sec_bm.py">Bad Mood (v0.37 from 2017)</a></td>
-      <td class="minor">2.3</td>
+      <td class="minor">2.3.1</td>
       <td>yes</td>
       <td>emu</td>
       <td>Enhanced Doom I/II port and engine rewrite. Game requires WinUAE
       CPU core, DSP and 14 MB RAM. WAD cache creation crashes/freezes,
       so one needs to get pre-built WAD cache. Statusbar doesn't show due
-      to Videl emulation omissions, unless "--natfeats yes" is used to
-      tell game to use Hatari specific (more CPU intensive) statusbar
-      drawing mode. Game uses MMU if it's available, but doesn't work yet
+      to Videl emulation omissions (in earlier versions "--natfeats yes"
+      could be used to tell game to use heavier Hatari specific statusbar
+      drawing mode). Game uses MMU if it's available, but doesn't work yet
       with Hatari 030 MMU emulation. Some parts have clear speed differences
       to real Falcon due to CPU, FPU (instruction too fast) and Videl
       emulation (screen updated only at VBL) inaccuracies</td>
     </tr>
     <tr>
       <td><a href="http://www.klockars.net/bad_mood.html">Bad Mood<br />(90's demo)</a></td>
-      <td>2.3</td>
+      <td>2.3.1</td>
       <td>-</td>
       <td>emu</td>
       <td>Old Doom level viewer. All tested versions (v2.14a, v307a) work
           with Doom1 WAD.  Heretic shareware WAD looks fine with older
 	  2.14a version (as long as one isn't inside a wall), and
-	  completely broken with v3.07a. v3.07a doesn't work with MMU</td>
+	  completely broken with v3.07a. v3.07a (bm307.ttp) doesn't
+	  work with MMU</td>
     </tr>
     <tr>
-      <td><a href=https://www.pouet.net/prod.php?which=60837">Beats of Rage</a></td>
+      <td><a href="https://www.pouet.net/prod.php?which=60837">Beats of Rage</a></td>
       <td>2.3.1</td>
       <td>yes</td>
       <td>-</td>
-      <td>Music with DSP. Freezes if user doesn't start game before
-          it shows (empty) hall-of-fame screen</td>
+      <td>Music with DSP. Due to game bug (data file corruption), it can freeze
+          if user doesn't start game before it shows hall-of-fame screen</td>
     </tr>
     <tr>
       <td>Blackhole</td>
@@ -2393,11 +2394,10 @@ VGA one are indicated separately.</p>
     </tr>
     <tr>
       <td><a href="http://yescrew.atari.org/eng/products.htm#capy">Capy</a></td>
-      <td class="major">2.3</td>
+      <td>2.3.1</td>
       <td>yes</td>
       <td>emu</td>
-      <td>VGA/TT-medium (640x480x16) only. Requires MMU to work, otherwise
-          crashes to bus error at $ff9c00 on start</td>
+      <td>VGA/TT-medium (640x480x16) only</td>
     </tr>
     <tr>
       <td><a href="http://pouet.net/prod.php?which=29351">Cavemania (demo)</a></td>
@@ -2425,13 +2425,12 @@ VGA one are indicated separately.</p>
     </tr>
     <tr>
       <td><a href="http://demozoo.org/productions/55648/">Color runner</a></td>
-      <td class="major">2.3</td>
+      <td class="major">2.3.1</td>
       <td>yes</td>
       <td>-</td>
-      <td>Unable to start game (only joypad fire works, not directions).
-          Music with DSP. 14MB, joypad only. VGA for correct screen height.
-	  Requires MMU to work, otherwise crashes to bus error at $ffff9c00
-	  at the very beginning</td>
+      <td>14MB + VGA, joypad only. Music with DSP.  Game proceeds to main
+          menu only if MMU is enabled or DSP disabled.  Unable to start
+	  the game itself (only joypad fire works, not directions)</td>
     </tr>
     <tr>
       <td>Columns by Deadheart (demo)</td>
@@ -2493,12 +2492,11 @@ VGA one are indicated separately.</p>
     </tr>
     <tr>
       <td><a href="https://demozoo.org/productions/65504/">Dry Egg</a></td>
-      <td>2.3</td>
+      <td>2.3.1</td>
       <td>yes</td>
       <td>-</td>
-      <td>Music with DSP.  Use joypad for control.
-          Bus Error writing at address $e00000 with TOS v4,
-          works with EmuTOS</td>
+      <td>Music with DSP. Use joypad for control.  Works only with
+          EmuTOS (bus Error writing at address $e00000 with TOS v4)</td>
     </tr>
     <tr>
       <td><a href="https://demozoo.org/productions/65505/">DuSau</a></td>
@@ -2633,7 +2631,7 @@ VGA one are indicated separately.</p>
     </tr>
     <tr>
       <td><a href="http://christophe.bray.free.fr/informatique/falcon/falcon_jeux2.htm">Killing Impact</a></td>
-      <td class="major">2.3</td>
+      <td class="major">2.3.1</td>
       <td>yes</td>
       <td>-</td>
       <td>Modern version of Joust, up to 4 players.  Sound with DSP.
@@ -2708,16 +2706,15 @@ VGA one are indicated separately.</p>
     </tr>
     <tr>
       <td><a href="http://pouet.net/prod.php?which=28903">Men at War (preview)</a></td>
-      <td class="minor">2.3</td>
+      <td>2.3.1</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Requires both WinUAE CPU core and DSP to be enabled.
-          Bullets only close to opponent. Separate intro program
-	  double bus errors at end, works only with 14MB (slightly
-	  longer with MMU)</td>
+      <td>Separate intro program requires 14MB, and double bus errors
+          at end with TOS4, whereas it runs fine and starts the game
+	  with EmuTOS. Bullets only close to opponent</td>
     </tr>
     <tr>
-      <td>Mini F1 demo</td>
+      <td>Mini F1 (demo)</td>
       <td class="major">2.3</td>
       <td>-</td>
       <td>-</td>
@@ -2727,41 +2724,40 @@ VGA one are indicated separately.</p>
     </tr>
     <tr>
       <td>Moongame</td>
-      <td class="major">2.3</td>
+      <td class="major">2.3.1</td>
       <td>-</td>
       <td>emu</td>
-      <td>Pointer cannot be moved in the game menu. Doesn't work with MMU</td>
+      <td>Pointer cannot be moved in the game menu. Double bus error with MMU</td>
     </tr>
     <tr>
       <td>Moonspeeder (preview 2)</td>
-      <td class="minor">2.3</td>
+      <td class="minor">2.3.1</td>
       <td>Yes</td>
       <td>emu</td>
       <td>lst*.* files need to be renamed with GEMDOS HD emulation as
-          game searches them with different name (space before dot).
-	  Doesn't work if MMU is enabled
+          game searches them with different name (space before dot)
       </td>
     </tr>
     <tr>
       <td>Mouse trap</td>
-      <td class="major">2.3</td>
+      <td class="major">2.3.1</td>
       <td>yes</td>
       <td>-</td>
       <td>Initial game screen looks OK, then suddenly screen mode gets wrong</td>
     </tr>
     <tr>
       <td>Multi Briques</td>
-      <td>1.6</td>
+      <td>2.3.1</td>
       <td>yes</td>
       <td>emu</td>
-      <td>v1.50 of game works. v1.00 game intro screen doesn't react to input</td>
+      <td>v1.50 and v1.00 (preview) versions of the game work</td>
     </tr>
     <tr>
       <td>Neurobot.108</td>
-      <td>1.0</td>
+      <td>2.3.1</td>
       <td>yes</td>
       <td>-</td>
-      <td>Requires MMU with Hatari v2.3</td>
+      <td></td>
     </tr>
     <tr>
       <td>Nibe2</td>
@@ -2775,7 +2771,7 @@ VGA one are indicated separately.</p>
       <td>1.9</td>
       <td>yes</td>
       <td>-</td>
-      <td>In earlier Hatari versions startup screen was black</td>
+      <td></td>
     </tr>
     <tr>
       <td><a href="http://logitron.atari.online.fr/skuum_english.htm">Operation Skuum</a></td>
@@ -2793,10 +2789,11 @@ VGA one are indicated separately.</p>
     </tr>
     <tr>
       <td><a href="http://atari-forum.com/viewtopic.php?f=68&amp;t=24111">Pacmania X68000</a></td>
-      <td>2.3</td>
+      <td>2.3.1</td>
       <td>-</td>
       <td>-</td>
-      <td>Needs 14MB RAM. Game scrolling is jerky. Requires MMU</td>
+      <td>Needs 14MB RAM. Vertical game scrolling can be jerky. Demo
+          mode double bus errors after it has gone through all levels</td>
     </tr>
     <tr>
       <td>Painium Disaster</td>
@@ -2816,9 +2813,9 @@ VGA one are indicated separately.</p>
       <td>Pingo98</td>
       <td class="minor">2.3</td>
       <td>yes</td>
-      <td>-</td>
+      <td>emu</td>
       <td>Colors wrong in classic version, TC version just exits.
-          Background music with DSP</td>
+          Had worked in some earlier Hatari version with DSP disabled</td>
     </tr>
     <tr>
       <td>Poker</td>
@@ -2855,6 +2852,20 @@ VGA one are indicated separately.</p>
       <td>-</td>
       <td>-</td>
       <td>Hicolor / VGA only</td>
+    </tr>
+    <tr>
+      <td><a href="https://www.pouet.net/prod.php?which=62163">Racer</a></td>
+      <td>2.3</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>Music with DSP</td>
+    </tr>
+    <tr>
+      <td><a href="https://www.pouet.net/prod.php?which=64845">Racer 2</a></td>
+      <td>2.3</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>Music with DSP</td>
     </tr>
     <tr>
       <td>Radical Race (demo)</td>
@@ -2905,8 +2916,8 @@ VGA one are indicated separately.</p>
       <td>1.6</td>
       <td>-</td>
       <td>-</td>
-      <td>Nice bomberman clone. v0.8 works fine, v1.03
-          crashes randomly and requires WinUAE core</td>
+      <td>Nice bomberman clone. v0.8 needs at least 2MB RAM.
+          v1.03 crashes unless MMU is enabled with 4 or 8MB RAM</td>
     </tr>
     <tr>
       <td>Shangai (demo)</td>
@@ -2938,19 +2949,19 @@ VGA one are indicated separately.</p>
     </tr>
     <tr>
       <td><a href="http://pouet.net/prod.php?which=29341">Slippery Sam</a></td>
-      <td>1.6</td>
+      <td class="minor">2.3.1</td>
       <td>yes</td>
       <td>dummy</td>
-      <td>Needs 14MB of RAM, and MMU with Hatari v2.3+.
-          Background music if DSP emu enabled</td>
+      <td>Background music with DSP, but game works with DSP emulation
+          only with the oldAUE CPU core. With WinUAE CPU core,
+	  game freezes at start unless "dummy" mode is used</td>
     </tr>
     <tr>
       <td>Sokoban by FUN</td>
-      <td>2.3</td>
+      <td>2.3.1</td>
       <td>yes</td>
-      <td>emu</td>
-      <td>VGA 640x480x16 only. Requires MMU to work, otherwise crashes
-          to bus error at $ff97fe</td>
+      <td>dummy emu</td>
+      <td>VGA 640x480x16 only. Background music with DSP</td>
     </tr>
     <tr>
       <td>Space Taxi</td>
@@ -3069,7 +3080,7 @@ VGA one are indicated separately.</p>
     </tr>
     <tr>
       <td>Ufo War</td>
-      <td class="major">2.3</td>
+      <td class="major">2.3.1</td>
       <td>yes</td>
       <td>-</td>
       <td>256-color, 80-column, no interlace video mode only.
@@ -3162,7 +3173,7 @@ if demo is stated to require that.</p>
     <tr>
       <td>Aggression:
       <a href="http://pouet.net/prod.php?which=15723">Motion</a></td>
-      <td class="minor">2.3</td>
+      <td class="minor">2.3.1</td>
       <td>-</td>
       <td>emu</td>
       <td>Unfinished Aggression demo with 030 and DSP source code.
@@ -3174,11 +3185,10 @@ if demo is stated to require that.</p>
     <tr>
       <td>An cool:
       <a href="http://pouet.net/prod.php?which=24781">The Keff demo</a></td>
-      <td>2.3</td>
+      <td>2.3.1</td>
       <td>yes</td>
       <td>-</td>
-      <td>If MMU is enabled, gets stuck after dragons pic (bus error)
-          on black screen when tunnel screen should start</td>
+      <td></td>
     </tr>
     <tr>
       <td>Archangel:
@@ -3259,7 +3269,7 @@ if demo is stated to require that.</p>
       <td>AVR animation+music with Brainstorm player</td>
     </tr>
     <tr>
-      <td>Cerebral Vortex / Dune / Sector One
+      <td>Cerebral Vortex / Dune / Sector One:
       <a href="http://www.pouet.net/prod.php?which=74937">Bird to be alive</a></td>
       <td>2.1</td>
       <td>yes</td>
@@ -3267,7 +3277,7 @@ if demo is stated to require that.</p>
       <td></td>
     </tr>
     <tr>
-      <td>Cerebral Vortex / Dune / Sector One
+      <td>Cerebral Vortex / Dune / Sector One:
       <a href="http://www.pouet.net/prod.php?which=64515">Tere Ra'I</a></td>
       <td>1.8</td>
       <td>yes</td>
@@ -3515,7 +3525,7 @@ if demo is stated to require that.</p>
          correct only with the cycle exact mode</td>
     </tr>
     <tr>
-      <td>Dune
+      <td>Dune:
       <a href="http://www.pouet.net/prod.php?which=68566">Electric Night</a></td>
       <td>2.0</td>
       <td>yes</td>
@@ -3525,7 +3535,7 @@ if demo is stated to require that.</p>
 	  it works without frameskip (except for credits at end)</td>
     </tr>
     <tr>
-      <td>Dune / Sector One
+      <td>Dune / Sector One:
       <a href="https://demozoo.org/productions/195441/">4musiK</a></td>
       <td>2.2</td>
       <td>yes</td>
@@ -3534,7 +3544,7 @@ if demo is stated to require that.</p>
           Graphics won't show if TT-RAM is used</td>
     </tr>
     <tr>
-      <td>Dune / Sector One
+      <td>Dune / Sector One:
       <a href="http://www.pouet.net/prod.php?which=63713">Silly Venture 2k14 invitro</a></td>
       <td>2.0</td>
       <td>yes</td>
@@ -3542,7 +3552,7 @@ if demo is stated to require that.</p>
       <td>Music with DSP</td>
     </tr>
     <tr>
-      <td>Dune / Mystic Bytes
+      <td>Dune / Mystic Bytes:
       <a href="http://www.pouet.net/prod.php?which=67665">Silly Venture 2k16 invitro</a></td>
       <td>2.0</td>
       <td>yes</td>
@@ -3587,12 +3597,12 @@ if demo is stated to require that.</p>
     </tr>
     <tr>
       <td>EKO:
-      <a href="http://www.pouet.net/prod.php?which=1179">Papa was a Bladerunner</a></td>
-      <td>1.3</td>
+      <a href="http://www.pouet.net/prod.php?which=1179">Papa was a Blade Runner</a></td>
+      <td>2.3.1</td>
       <td>yes</td>
       <td>emu</td>
       <td>Texture mapping uses DSP, but otherwise works fine also without DSP.
-          Freezes with Hatari v2.3 if MMU is enabled</td>
+          Freezes in Hatari v2.3+ in "flat 3D" screen if MMU is enabled</td>
     </tr>
     <tr>
       <td>Escape:
@@ -3737,11 +3747,10 @@ if demo is stated to require that.</p>
     <tr>
       <td>ICE:
       <a href="http://www.umich.edu/%7Earchive/atari/Falcon/Games/tron2001.lzh">Tron2001</a></td>
-      <td>2.0</td>
+      <td>2.3</td>
       <td>yes</td>
       <td>-</td>
-      <td>Bus error at startup unless IDE enabled.  Wrong screen size
-          if MMU enabled. Non-interactive game(?) demo</td>
+      <td>Bus error at startup unless IDE enabled. Non-interactive preview</td>
     </tr>
     <tr>
       <td>Impulse:
@@ -3810,10 +3819,10 @@ if demo is stated to require that.</p>
     <tr>
       <td>Lazer:
       <a href="http://pouet.net/prod.php?which=28749">Oergs</a></td>
-      <td>2.3</td>
+      <td>2.3.1</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Doesn't work if MMU is enabled</td>
+      <td>Crashes at start if MMU is enabled</td>
     </tr>
     <tr>
       <td>Lazer:
@@ -4108,10 +4117,11 @@ if demo is stated to require that.</p>
     <tr>
       <td>The Pixel Twins:
       <a href="http://www.pouet.net/prod.php?which=66698">Zero Three Zero</a></td>
-      <td>2.0</td>
+      <td>2.3.1</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Needs FPU. Real time ray-tracing. Doesn't work with MMU</td>
+      <td>Needs FPU. Real time ray-tracing. Double bus errors before
+          demo title if MMU is enabled</td>
     </tr>
     <tr>
       <td>The Respectables:
@@ -4132,7 +4142,7 @@ if demo is stated to require that.</p>
     <tr>
       <td>Trio:
       <a href="http://www.pouet.net/prod.php?which=15974">X-tasie</a></td>
-      <td class="minor">2.3</td>
+      <td class="minor">2.3.1</td>
       <td>yes</td>
       <td>emu</td>
       <td>Requires MMU. There's a Videl emulation problem left when
