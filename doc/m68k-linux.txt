@@ -21,7 +21,7 @@ Contents:
 1. Introduction
 ---------------
 
-Here are instructions on building m68k:
+Here are instructions on building m68k Linux:
 - kernel
 - ramdisk
 - root file system
