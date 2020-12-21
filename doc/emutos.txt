@@ -1302,6 +1302,9 @@ Broken demos (even with EmuTOS >1.0):
   - Crashes in first screen
 - GEM demo (by DHS & AssemSoft):
   - needs HiColor mode
+- Who Okayed This?
+  - Fixed Epidemic music disk and its intro bus error panic,
+    the new intro before them works
 
 
 Falcon games
@@ -1377,9 +1380,11 @@ Games working under EmuTOS >v1.0 (with DSP support):
 - Boom preview
 - Crown of Creation (preview)
 - Des Lazers & des Hommes
+- Epi-Lepsie (by PARX)
 - H2O* (by EKO)
 - Kwiks* (by Digital Nightmares)
 - Les Dinosaures (v1.02 demo by PARX)
+- Multibriques (by PARX)
 - NoMess (GEM, requires color icon support)
 - Pong 2000 demo (use joypad)
 - Push It
@@ -1403,12 +1408,8 @@ Games working with extra hacks:
 Partly working games:
 - Bomb Squad
   - Game is 4x slower than with TOS4 (see EmuTOS incompatible.txt)
-- Epi-Lepsie (by PARX)
-  - colors completely wrong
 - Men at War
   - Unlike with TOS4, men.prg works only when started by mawintro.prg
-- Multibriques v1.0 demo (by PARX)
-  - Bg color at end of startup PARX screen is white instead of black
 - Painium
   - fire button works only until game itself starts
   - Needs at least 8MB RAM
@@ -1439,8 +1440,6 @@ Broken games (even with EmuTOS >1.0):
   - broken graphics (needs HiColor?)
 - Mouse trap
   - NULL pointer bus error at start, panic & reboot
-- Multibriques v1.5 (by PARX)
-  - completely wrong colors after intro
 - Neurobot
   - just exits immediately
 - Rave*
@@ -1482,6 +1481,7 @@ Working applications:
 Application working under EmuTOS >v1.0 (with DSP support):
 - AceMidi demo (v1.01)
 - AceTracker v1 & v2
+- AFM (audio fun machine)
 - Apex Media v2.41
   - Viewer TTPs won't work for >256 color images
 - Centurbo benchmark
