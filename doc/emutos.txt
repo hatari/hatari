@@ -1146,6 +1146,7 @@ Working games:
 - GEM NetHack v3.4.3
 - GEM Santarun
 - GEM Slashem v3.3.1
+- OpenDUNE
 - OpenTTD (start from TT-low with 256MBs of TT-RAM)
 - Oxyd (Falcon version)
 - PM Doom, Heretic & Hexen v0.55 (ports by Patrice Mandin)
