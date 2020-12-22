@@ -1056,7 +1056,7 @@ static uint8_t *TOS_LoadImage(void)
 			if (ConfigureParams.System.bAddressSpace24)
 			{
 				/* Print a message and force 32 bit addressing (keeping 24 bit with TT RAM would crash TOS) */
-				Log_AlertDlg(LOG_ERROR, "Enabling 32-bit addressing for TT-RAM access.\nThis can cause issues in some programs!\n");
+				Log_AlertDlg(LOG_ERROR, "Automatically enabling 32-bit addressing\nto support TT-RAM. This can cause issues\nin some programs!\n");
 				ConfigureParams.System.bAddressSpace24 = false;
 				M68000_CheckCpuSettings();
 			}
