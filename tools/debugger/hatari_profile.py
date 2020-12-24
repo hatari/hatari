@@ -556,7 +556,7 @@ class ProfileSymbols(Output):
                 if self.verbose:
                     self.message("0x%x: %s (relative)" % (addr, name))
         # relocate relative address aliases
-        for addr, name in self.rel_aliases.items():
+        for name, addr in self.rel_aliases.items():
             addr += area[0]
             # -1 used because compiler can add TEXT symbol right after end of TEXT section
             if addr < area[0] or addr-1 > area[1]:
