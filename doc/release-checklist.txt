@@ -95,7 +95,7 @@ If no release-critical issues were reported, do actual release:
     - doc/compatibility.html
     - doc/doxygen/Doxyfile
     - doc/debugger.html
-    - doc/emutos (based on latest EmuTOS release)
+    - doc/emutos.txt (based on latest EmuTOS release)
     - doc/manual.html
     - doc/release-notes.txt
   + Packaging:
