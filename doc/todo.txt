@@ -86,6 +86,11 @@ For more information, see "compatibility.html".
 Other potential Hatari functionality improvements
 -------------------------------------------------
 
+- Always build Hatari with raw MIDI device access, and make PortMidi
+  support run-time configurable because while it's easier to use, it
+  supports only MIDI events i.e. prevents using MIDI for networking in
+  games (e.g. MidiMaze), and for debug output
+
 - Improve (64e4e6d59) fix for IDE crash (and similar issues) when machine
   type is changed. Maybe call Change_CopyChangedParamsToConfiguration()
   from TOS_CheckSysConfig()?
