@@ -305,13 +305,16 @@ Set joystick type (none/keys/real) for given port
 Enable printer support and write data to <file>
 .TP
 .B \-\-midi <bool>
-Whether to enable MIDI support (PortMidi only)
+Whether to enable MIDI device support
+(when Hatari is built with PortMidi support)
 .TP
 .B \-\-midi\-in <filename>
-Enable MIDI support and write raw MIDI data to <file> (Linux only)
+Enable MIDI support and write raw MIDI data to <file>
+(when not built with PortMidi support)
 .TP
 .B \-\-midi\-out <filename>
-Enable MIDI support and read raw MIDI data from <file> (Linux only)
+Enable MIDI support and read raw MIDI data from <file>
+(when not built with PortMidi support)
 .TP
 .B \-\-rs232\-in <filename>
 Enable MFP serial port support and use <file> as the input device

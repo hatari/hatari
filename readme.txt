@@ -87,7 +87,7 @@ Optional:
 - The GNU Readline library for Hatari debugger command line editing
 - The Xlib library to support Hatari Python UI window embedding on
   systems with the X window system (Linux and other unixes)
-- The PortMidi library required for MIDI support on macOS and Windows
+- The PortMidi library required for MIDI device support on macOS and Windows
   (http://portmedia.sourceforge.net/)
 - The portaudio library for Falcon microphone handling
 - The udev library for NatFeats SCSI driver media change detection

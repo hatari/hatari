@@ -400,7 +400,7 @@ decrease AVI video recording file sizes. You can get it from
 command line editing.</li>
 <li>The Xlib library to support Hatari Python UI window embedding
 on systems with the X window system (Linux and other unixes).</li>
-<li>The PortMidi library required for MIDI support on macOS and Windows
+<li>The PortMidi library required for MIDI device support on macOS and Windows
 <a href="http://portmedia.sourceforge.net/">http://portmedia.sourceforge.net/</a>.</li>
 <li>The portaudio library for Falcon microphone recording support.</li>
 <li>The udev library for NatFeats SCSI driver media change detection (Linux).</li>
@@ -818,15 +818,16 @@ given port</p>
 <p class="paramdesc">Enable printer support and write data
 to &lt;file&gt;</p>
 <p class="parameter">--midi &lt;bool&gt;</p>
-<p class="paramdesc">Enable MIDI support (PortMidi only)</p>
+<p class="paramdesc">Enable MIDI support
+(when Hatari is built with PortMidi support)</p>
 <p class="parameter">--midi-in
 &lt;filename&gt;</p>
-<p class="paramdesc">Enable MIDI support and write MIDI data
-to &lt;file&gt; (Linux only)</p>
+<p class="paramdesc">Enable MIDI support and write MIDI data to &lt;file&gt;
+(when not built with PortMidi support)</p>
 <p class="parameter">--midi-out
 &lt;filename&gt;</p>
-<p class="paramdesc">Enable MIDI support and read MIDI data
-from &lt;file&gt; (Linux only)</p>
+<p class="paramdesc">Enable MIDI support and read MIDI data from &lt;file&gt;
+(when not built with PortMidi support)</p>
 <p class="parameter">--rs232-in
 &lt;filename&gt;</p>
 <p class="paramdesc">Enable MFP serial port support and use
