@@ -141,6 +141,10 @@ there, or install the emulator system-wide by typing:
 
 	cmake --install .
 
+Note: This only works with CMake version 3.15 and later. On earlier versions,
+you have to use the install command of the generator program instead, e.g.
+"make install" if you are using the classical "make" for building Hatari.
+
 
  3.3) WinUAE and "old" UAE CPU cores
 
