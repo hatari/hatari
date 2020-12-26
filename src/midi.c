@@ -619,7 +619,7 @@ static bool Midi_Host_WriteByte(Uint8 byte)
 			if (error == pmNoError || error == pmGotData)
 				return true;
 			msg = Pm_GetErrorText(error);
-			LOG_TRACE(TRACE_MIDI, "MIDI: PortMidi write error %d: '%s'\n",
+			Log_Printf(LOG_WARN, "MIDI: PortMidi write error %d: '%s'\n",
 				  error, msg);
 			return false;
 		}
