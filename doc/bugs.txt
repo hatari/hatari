@@ -55,8 +55,18 @@ Emulator bugs
   - MIDI support on these platforms requires Hatari to be built with
     PortMidi library, and PortMidi requires additional Hatari code to
     translate MIDI port data from/to PortMidi MIDI events. However,
-    that translation doesn't work 100% correctly yet (partly due to
-    missing PortMidi documentation)
+    that translation doesn't work 100% correctly yet
+
+    For example, PortMidi complains about invalid MIDI event data at
+    startup (MIDI setup?) of "Sequencer One" and "Fractal Music"
+    programs, loading of every song (MIDI setup / sysex?) in "Cubase
+    Lite", or starting song in "Dr. T's KCS" (v4.0) and "GenEdit"
+    (v2.02), after which PortMidi connection gets closed and nothing
+    else will go through. And if MIDI events would still be let
+    through, they would then use wrong instruments
+
+    (PortMidi is missing documentation that would help in resolving
+    whether this is Hatari or PortMidi bug.)
 
 
 Known issues / workarounds
