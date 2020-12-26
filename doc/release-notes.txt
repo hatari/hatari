@@ -51,6 +51,10 @@ Tools:
 - Fix: assert in hatari_profile (profile post-processor)
   with relative symbols
 
+Documentation:
+- Add PortMidi info to devices dialog section in manual
+- Updated compatibility documentation
+
 Fixed Falcon programs:
 - Music missing in H2O game, in Running game main screen,
   Stocasto demo and Epidemic music disk

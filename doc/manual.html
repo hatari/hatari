@@ -1948,14 +1948,42 @@ emulated machine.</p>
 device files for serial input and output.  On Linux a good choice is
 /dev/ttyS0 or /dev/ttyS1.
 </p>
-<p>Check the third checkbox to enable MIDI support.
+<p>
+Check the third checkbox to enable MIDI support.
+</p>
+<h5>MIDI support</h5>
+<p>
+Hatari MIDI support can be provided either with a PortMidi library
+(required on Mac / Windows), or using "raw" MIDI device files. Latter
+supports also MIDI networking in games, and can be used for debug
+output, while PortMidi handles only MIDI events and doesn't currently
+work with all MIDI SW.
+</p>
+<h6>"raw" MIDI device file selection</h6>
+<p>
 Click on <span class="button">Browse</span> to select a suitable
-MIDI device files for MIDI input and output.</p>
-<p><span class="file">midi-linux.txt</span> file explains how to
+MIDI device files for MIDI input and output.
+</p>
+<p>
+<span class="file">midi-linux.txt</span> file explains how to
 select the correct MIDI device file, how to set up software sound
-synthesizing on Linux (using Alsa) if your sound card/driver doesn't
-support MIDI, and how to set up MIDI networking e.g. between multiple
-Hatari instances.
+synthesizing on Linux (using ALSA) if your sound card/driver doesn't
+support MIDI, and how to set up MIDI networking between multiple
+Hatari instances, even over internet.
+</p>
+<div class="floatimage">
+  <img src="images/devices-portmidi.png" width="520" height="114"
+       alt="Hatari's GUI - PortMidi MIDI device selection" />
+</div>
+<h6>PortMidi MIDI device selection</h6>
+<p>
+Click on arrow buttons to select a suitable MIDI devices for MIDI
+input and output.
+</p>
+<p>
+PortMidi will list only currently active MIDI devices.  On Linux
+these are subset of ones listed e.g. by ALSA
+<span class="commandline">aconnect -l</span> command.
 </p>
 
 
