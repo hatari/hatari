@@ -1517,25 +1517,25 @@ static void Crossbar_Process_DMAPlay_Transfer(void)
 	if (dmaPlay.isRunning == 0)
 		return;
 
-	nFramePos = (dmaPlay.frameStartAddr + dmaPlay.frameCounter) % STRamEnd;
+	nFramePos = (dmaPlay.frameStartAddr + dmaPlay.frameCounter) & (DMA_MaskAddressHigh() << 16 | 0xffff);
 	increment_frame = 0;
 
 	/* 16 bits stereo mode ? */
 	if (crossbar.is16Bits) {
 		eightBits = 1;
-		value = (Sint16)do_get_mem_word(&STRam[nFramePos]);
+		value = (Sint16)STMemory_DMA_ReadWord(nFramePos);
 		increment_frame = 2;
 	}
 	/* 8 bits stereo ? */
 	else if (crossbar.isStereo) {
 		eightBits = 64;
-		value = (Sint8)STRam[nFramePos];
+		value = (Sint8)STMemory_DMA_ReadByte(nFramePos);
 		increment_frame = 1;
 	}
 	/* 8 bits mono */
 	else {
 		eightBits = 64;
-		value = (Sint8)STRam[nFramePos];
+		value = (Sint8)STMemory_DMA_ReadByte(nFramePos);
 		if ((dmaPlay.currentFrame & 1) == 0) {
 			increment_frame = 1;
 		}
@@ -1665,23 +1665,23 @@ void Crossbar_SendDataToDmaRecord(Sint16 value)
 		return;
 	}
 
-	nFramePos = (dmaRecord.frameStartAddr + dmaRecord.frameCounter) % STRamEnd;
+	nFramePos = (dmaRecord.frameStartAddr + dmaRecord.frameCounter) & (DMA_MaskAddressHigh() << 16 | 0xffff);
 
 	/* 16 bits stereo mode ? */
 	if (crossbar.is16Bits) {
-		do_put_mem_word(&STRam[nFramePos], value);
+		STMemory_DMA_WriteWord(nFramePos, value);
 		dmaRecord.frameCounter += 2;
 	}
 	/* 8 bits stereo ? */
 	else if (crossbar.isStereo) {
-		do_put_mem_word(&STRam[nFramePos], value);
+		STMemory_DMA_WriteWord(nFramePos, value);
 		dmaRecord.frameCounter += 2;
 //		pFrameStart[dmaRecord.frameCounter] = (Uint8)value;
 //		dmaRecord.frameCounter ++;
 	}
 	/* 8 bits mono */
 	else {
-		STRam[nFramePos] = (Uint8)value;
+		STMemory_DMA_WriteByte(nFramePos, value);
 		dmaRecord.frameCounter ++;
 	}
 
