@@ -107,6 +107,13 @@ struct videl_s {
 
 static struct videl_s videl;
 
+static void Videl_SetDefaultSavedRes(void)
+{
+	/* Default resolution to boot with */
+	videl.save_scrWidth = 640;
+	videl.save_scrHeight = 480;
+	videl.save_scrBpp = 4;
+}
 
 /**
  * Called upon startup (and via VIDEL_reset())
@@ -114,11 +121,7 @@ static struct videl_s videl;
 void Videl_Init(void)
 {
 	videl.hostColorsSync = false;
-
-	/* Default resolution to boot with */
-	videl.save_scrWidth = 640;
-	videl.save_scrHeight = 480;
-	videl.save_scrBpp = 4;
+	Videl_SetDefaultSavedRes();
 }
 
 /**
@@ -151,6 +154,12 @@ void VIDEL_MemorySnapShot_Capture(bool bSave)
 {
 	/* Save/Restore details */
 	MemorySnapShot_Store(&videl, sizeof(videl));
+
+	/* Make sure that the save_scr* variables match the ones during reset,
+	 * so that resolution changes get evaluated properly (e.g. to set the
+	 * right zooming variables */
+	if (!bSave)
+		Videl_SetDefaultSavedRes();
 }
 
 /**
