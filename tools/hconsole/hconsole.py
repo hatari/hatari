@@ -24,15 +24,6 @@ import signal
 import socket
 import readline
 
-# Python v2:
-# - lacks Python v3 encoding arg for bytes()
-# - input() evaluates given string and fails on empty one
-if str is bytes:
-    def bytes(s, encoding):
-        return s
-    def input(prompt):
-        return raw_input(prompt)
-
 class Scancode:
     "Atari scancodes for keys without alphanumeric characters"
     # US keyboard scancode mapping for characters which need shift

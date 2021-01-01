@@ -22,11 +22,6 @@ import socket
 import select
 from config import ConfigStore
 
-# Python v2:
-# - lacks Python v3 encoding arg for bytes()
-if str is bytes:
-    def bytes(s, encoding):
-        return s
 
 def _path_quote(path):
     "quote spaces in paths as expected by Hatari socket API"

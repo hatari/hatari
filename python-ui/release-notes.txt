@@ -2,6 +2,9 @@
 User visible changes in Hatari (Python Gtk) UI
 ----------------------------------------------
 
+2021-01:
+- Python v2 support removed
+
 2020-12:
 - Requires now Gtk v3.22 or newer
 - Launcher script asks for different UI layout under
