@@ -490,7 +490,7 @@ int STMemory_CorrectSTRamSize(void)
 	{
 		if (STRamSize_KB > 10*1024)
 		{
-			Log_Printf(LOG_INFO, "maximum MegaSTE/TT ST-RAM amount is 10MB, not %dMB\n",
+			Log_Printf(LOG_INFO, "max ST-RAM on real MegaSTE/TT would be 10MB due to VME, not %dMB\n",
 				   STRamSize_KB/1024);
 		}
 	}
@@ -936,6 +936,9 @@ int	STMemory_RAM_Validate_Size_KB ( int TotalMem )
 	 * These memory amounts are accepted for all machine types, but in
 	 * case of Falcon, rounded up later in STMemory_SetDefaultConfig(),
 	 * to amounts Falcon mem config reg actually supports
+	 *
+	 * Note: Hatari emulates ST with Ricoch chipset, and MegaST with
+	 * IMP one, see ioMem.c::IoMem_FixVoidAccessFor*ST()
 	 */
 	switch (TotalMem)
 	{
@@ -946,16 +949,16 @@ int	STMemory_RAM_Validate_Size_KB ( int TotalMem )
 	case 640:
 	case 2176:
 	case 2560:
-		/* (Mega)ST/STE/MegaSTE/TT/Falcon */
+		/* all machines */
 	case 512:
 	case 1024:
 	case 2048:
+		/* max on original (Mega)ST(e) machines */
 	case 4096:
-		/* MegaSTE/TT/Falcon */
 	case  8*1024:
-		/* MegaSTE/TT max */
+		/* max on real TT, and HW modified MegaSTE (due to VME) */
 	case 10*1024:
-		/* Falcon max */
+		/* max on Falcon, and HW modified ST/MegaST/STE */
 	case 14*1024:
 		return TotalMem;
 	}
