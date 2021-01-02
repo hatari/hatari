@@ -15,7 +15,10 @@ Contents:
 9.1 Debian installer
 9.2 Running initrd as normal disk
 9.3 Bootstrapping Debian installation on PC
-10. Debian and Linux issues
+10. Linux kernel issues
+10.1 Known issues
+10.2 TODO / investigate more
+11 User-space issues with cache/prefetch enabled
 
 
 1. Introduction
@@ -121,27 +124,31 @@ sd 0:0:0:0: [sda] Attached SCSI disk
 VFS: Cannot open root device "sda" or unknown-block(8,0): error -6
 ------------------------------------------------------------
 
-- Random BUSERROR Oopses on kernel boot when CPU cache & prefetch
-  emulation is enabled, which sometimes result in kernel panic.
+- Oops on kernel boot in init (Busybox shell) when either 030 CPU
+  cache or prefetch emulation is enabled, resulting in kernel panic.
   According to kernel developer, they don't happen on real HW,
   so they seem to be Hatari issue:
+
 ------------------------------------------------------------
-Run /init as init process
-Data read fault at 0x801740c4 in Super Data (pc=0x299c)
-BAD KERNEL BUSERR
-Oops: 00000000
-PC: [<0000299c>] user_inthandler+0x0/0x20
-SR: 2d00  SP: (ptrval)  a2: 8017a478
-d0: 00000018    d1: 0000001a    d2: 00000000    d3: 8017a480
-d4: 00000018    d5: 00000054    a0: 8017a480    a1: 8016f84c
-Process exe (pid: 25, task=(ptrval))
-Frame format=B ssw=0345 isc=2f00 isb=48e7 daddr=801740c4 dobuf=80176e58
-baddr=801740c4 dibuf=801740c4 ver=0
-Stack from 009d9ff8:
-        02088001 ebf40114
-Call Trace:
-Code: 2f00 4eb9 0000 2a98 508f 60ff ffff ff64 <42a7> 4878 ffff 2f00
-      48e7 7ce0 200f 0280 ffff e000 2440 2452 e9ef   010a 0032 0440
+Kernel panic - not syncing: Attempted to kill init! exitcode=0x0000000b
+CPU: 0 PID: 1 Comm: sh Not tainted 5.10.0hatari-00003-g91e781c8eb56 #1
+Stack from 00821de4:
+        ...
+Call Trace: [<00263ed8>] panic+0xbe/0x27a
+ [<0002f1a6>] do_signal_stop+0x0/0x14c
+ [<00028410>] do_exit+0x11c/0x670
+ [<0002f1a6>] do_signal_stop+0x0/0x14c
+ [<0002d00c>] __list_del_entry+0x0/0x2c
+ [<000289e6>] do_group_exit+0x4c/0x84
+ [<0002fb22>] get_signal+0x118/0x478
+ [<00003f1e>] do_notify_resume+0x32/0x464
+ [<000054fc>] send_fault_sig+0x28/0x8c
+ [<000056d8>] do_page_fault+0x178/0x1f8
+ [<00002824>] do_signal_return+0x10/0x1a
+ [<00020007>] _I_CALL_TOP+0xf2f/0x1900
+ [<0000b280>] rnd_cont+0xe/0x12
+ [<00007201>] atari_register_vme_int+0xb/0x3a
+ [<000066f6>] mfp_timer_c_handler+0x1e/0x3c
 ------------------------------------------------------------
 
 
@@ -234,7 +241,7 @@ host).
 8. Make 4MB EXT2 HD image out of it:
    $ /sbin/mkfs.ext2 -t ext2 -L BUSYBOX -d disk/ rootfs.img 4M
 
-Notes:
+TODO:
 - After qemu-m68k user-space emulation is good enough, installation of
   host BusyBox can be skipped and m68k BusyBox can itself be queried
   for list of tools to symlink
@@ -345,6 +352,7 @@ KernelToFastRam = FALSE
 
 Options explanation (these can also be set in lilo.cfg):
 - video=atafb:sthigh -- frame buffer starts in ST-high
+  (mono is fastest mode with large enough resolution)
 - console=tty -- console output goes to frame buffer
 - debug=nfcon -- kernel debug messages go to Hatari console
 - root=<device> -- what device is used for mounting root file system
@@ -358,10 +366,6 @@ Other notes:
   otherwise kernel may give arguments after it also to init!
 - Kernel doesn't need DSP, and avoiding it's emulation with
   "--dsp none" at least doubles "--fast-forward on" speed
-- Current (v4/v5) Linux kernels don't work with TT emulation
-  (see workarounds in Hatari issues section above)
-- Linux works with 040/060 + MMU emulation better with ST/STE,
-  than with TT/Falcon emulation (see TODO issues later on)
 
 
 7. Native bootstrap
@@ -650,19 +654,20 @@ $ aranym-mmu -l linux.config
 ------------------------------------------------------------
 
 
-10. Debian and Linux issues
----------------------------
+10. Linux kernel issues
+-----------------------
 
-Known issues:
+10.1 Known issues
+-----------------
 
-- Kernel barfs at ST-RAM memory range given after TT-RAM.  However,
+- Linux barfs at ST-RAM memory range given after TT-RAM.  However,
   if kernel is loaded to TT-RAM and ST-RAM range is given before
   TT-RAM range, kernel crashes.  Based on mails from 2013, this
   seems to be a known Linux/Atari issue
 
   Workaround: Hatari lilo.c gives ST-RAM before TT-RAM in bootinfo
 
-- Kernel NULL pointer oops with following, due to its bus_error030()
+- Linux NULL pointer Oops with following, due to its bus_error030()
   not respecting page faults being disabled in kernel_probe_read():
 	# echo t > /proc/sysrq-trigger
 
@@ -676,28 +681,65 @@ Known issues:
   Workaround: kernel patch
 
 
-TODO / investigate more:
+10.2 TODO / investigate more
+----------------------------
 
-- Kernel doesn't recognize ACSI drive at all, although kernel reports
-  it to have ACSI support.  Only SCSI & IDE drives are recognized
+- Kernel doesn't recognize ACSI drives at all, although kernel
+  reports finding Atari ACSI HW:
+------------------------------------------------------------
+Atari hardware found: STND_SHIFTER ST_MFP YM2149 MSTE_CLK ACSI
+...
+Please append a correct "root=" boot option; here are the available
+partitions:
+0200            3280 fd0
+ (driver?)
+0201            3280 fd1
+ (driver?)
+0100            4096 ram0
+ (driver?)
+Kernel panic - not syncing: VFS: Unable to mount root fs on unknown-block(0,0)
+------------------------------------------------------------
+  Only SCSI & IDE drives are recognized
 
-- Kernel oopses at startup always to NULL pointer access with Debian
-  kernels and some other kernel builds (only with cache emulation?)
+- Kernel double bus errors right at start when 040/060 is used with
+  CPU cache/prefetch enabled.  It's possible that compiling 040 (or
+  060) specific kernel would help:
+	http://www.linux-m68k.org/faq/afterburner.html
 
-- Debian installer usage
+- Hatari v.2.3.x regression: With 040/060 CPU cache/prefetch emulation
+  disabled, kernel dies to NULL pointer in mfp_timer_c_handler() when
+  user-space processes are started
+------------------------------------------------------------
+Unable to handle kernel access at virtual address (ptrval)
+Oops: 00000000
+PC: [<000066e4>] mfp_timer_c_handler+0xc/0x3c
+SR: 2700  SP: (ptrval)  a2: 0081fa70
+d0: 00000000    d1: 0000000d    d2: 00002d04    d3: 0000000d
+d4: 00388c20    d5: 0026414a    a0: 000066d8    a1: 0031958c
+Process init (pid: 1, task=(ptrval))
+Frame format=7 eff addr=00000000 ssw=0121 faddr=00fffa23
+...
+Call Trace:
+ [<00049ab0>] __handle_irq_event_percpu+0x46/0xd6
+ [<000048e4>] timer_interrupt+0x0/0x30
+ [<00112cca>] cap_bprm_creds_from_file+0x2bc/0x372
+ [<00049b5c>] handle_irq_event_percpu+0x1c/0x52
+ [<00049bb4>] handle_irq_event+0x22/0x36
+------------------------------------------------------------
 
-- Kernel freezes right at start if TT or Falcon machine is used with
-  040/060 when CPU cache/prefetch emulation is enabled. With ST/STE
-  + 040/060 + MMU + FPU, cache/prefetch emulation can be enabled
-
-  (Hatari git regression: regardless of machine type, with 040/060,
-  Kernel dies to NULL pointer in mfp_timer_c_handler().)
-
-  Linux boots fine with real 060 Falcon though:
+  This didn't happen with 2019 v2.3-dev Git version, and Linux
+  boots fine on real 060 Falcon:
 	https://www.youtube.com/watch?v=8Sriz45Z4oM
 
-- When 030 caches are enabled (--cpu-exact on), busybox
-  'setsid cttyhack' fails to:
+
+11. User-space issues with cache/prefetch enabled
+--------------------------------------------------
+
+These cannot be tested any more because booting fails when
+cache & prefetch are enabled, but with Hatari v2.2.1, Linux
+could occasionally booted succesfully with them enabled too.
+
+-  busybox 'setsid cttyhack' fails to:
 ------------------------------------------------------------
 *** ILLEGAL INSTRUCTION ***   FORMAT=0
 Current process id is 34
