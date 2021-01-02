@@ -27,6 +27,12 @@ Emulator:
 - Falcon:
   - Fix: restore zoom mode correctly when loading snapshots
   - Correct also smaller specified memory amounts to valid ones
+- MegaSTE/TT:
+  - Add VME/SCU registers "--vme <none|dummy>" access option
+    (needed to support both Linux and TOS v2 & v3 until Hatari
+    implements real VME/SCU register emulation)
+- Debugger:
+  - Add "info vme" and VME/SCU reg access tracing support
 
 
  Version 2.3.1 (2020-12-27)

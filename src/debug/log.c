@@ -150,6 +150,8 @@ static flagname_t TraceFlags[] = {
 
 	{ TRACE_MEM		 , "mem" } ,
 
+	{ TRACE_VME		 , "vme" } ,
+
 	{ TRACE_ALL		 , "all" }
 };
 #endif /* ENABLE_TRACING */

@@ -41,6 +41,7 @@ const char IoMem_fileid[] = "Hatari ioMem.c";
 #include "log.h"
 #include "scc.h"
 #include "fdc.h"
+#include "vme.h"
 
 
 static void (*pInterceptReadTable[0x8000])(void);	/* Table with read access handlers */
@@ -202,12 +203,7 @@ static void IoMem_FixAccessForMegaSTE(void)
 	pInterceptReadTable[0xff8e23 - 0xff8000] = IoMem_VoidRead;
 	pInterceptWriteTable[0xff8e23 - 0xff8000] = IoMem_VoidWrite;
 
-	/* VME bus - we don't support it yet, but TOS uses FF8E09 to detect the Mega-STE */
-	for (addr = 0xff8e01; addr <= 0xff8e0f; addr += 2)
-	{
-		pInterceptReadTable[addr - 0xff8000] = IoMem_ReadWithoutInterception;
-		pInterceptWriteTable[addr - 0xff8000] = IoMem_WriteWithoutInterception;
-	}
+	/* VME/SCU 0xff8e01-0xff8e0f registers set at run-time in ioMem.c/vme.c for MegaSTE */
 
 	/* The Mega-STE has a Z85C30 SCC serial port, too: */
 	for (addr = 0xff8c80; addr <= 0xff8c87; addr++)
@@ -328,6 +324,9 @@ void IoMem_Init(void)
 	else if ( ConfigureParams.System.nMachineType == MACHINE_MEGA_STE )
 		IoMem_FixAccessForMegaSTE();
 
+	/* Whether to support VME / SCU register access */
+	if (Config_IsMachineTT() || Config_IsMachineMegaSTE())
+		VME_SetAccess(pInterceptReadTable, pInterceptWriteTable);
 
 	/* Set registers for Falcon */
 	if (Config_IsMachineFalcon())

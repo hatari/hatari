@@ -157,6 +157,7 @@ enum {
 	OPT_MMU,
 	OPT_MACHINE,		/* system options */
 	OPT_BLITTER,
+	OPT_VME,
 	OPT_DSP,
 	OPT_TIMERD,
 	OPT_FASTBOOT,
@@ -434,6 +435,8 @@ static const opt_t HatariOptions[] = {
 	  "<bool>", "Use blitter emulation (ST only)" },
 	{ OPT_DSP,       NULL, "--dsp",
 	  "<x>", "DSP emulation (x = none/dummy/emu, Falcon only)" },
+	{ OPT_VME,	NULL, "--vme",
+	  "<x>", "VME mode (x = none/dummy, MegaSTE/TT only)" },
 	{ OPT_TIMERD,    NULL, "--timer-d",
 	  "<bool>", "Patch Timer-D (about doubles ST emulation speed)" },
 	{ OPT_FASTBOOT, NULL, "--fast-boot",
@@ -1975,6 +1978,23 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				return Opt_ShowError(OPT_DSP, argv[i], "Unknown DSP type");
 			}
 			bLoadAutoSave = false;
+			break;
+
+		case OPT_VME:
+			i += 1;
+			if (strcasecmp(argv[i], "dummy") == 0)
+			{
+				ConfigureParams.System.nVMEType = VME_TYPE_DUMMY;
+			}
+			else if (strcasecmp(argv[i], "none") == 0)
+			{
+				ConfigureParams.System.nVMEType = VME_TYPE_NONE;
+			}
+			else
+			{
+				return Opt_ShowError(OPT_VME, argv[i], "Unknown VME type");
+			}
+			bLoadAutoSave = false; /* TODO: needed? */
 			break;
 
 			/* sound options */
