@@ -152,7 +152,7 @@ Code: 2f00 4eb9 0000 2a98 508f 60ff ffff ff64 <42a7> 4878 ffff 2f00
    $ sudo apt install gcc-m68k-linux-gnu
 
 2. Get latest upstream kernel release sources (without history):
-   $ git clone --depth 1 --branch v5.9 \
+   $ git clone --depth 1 --branch v5.10 \
      git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
    $ cd linux
 
@@ -167,20 +167,11 @@ Code: 2f00 4eb9 0000 2a98 508f 60ff ffff ff64 <42a7> 4878 ffff 2f00
 
 Notes:
 
-- If support for Atari format FAT is important [1], use m68k-linux
-  instead of the upstream Linux m68k support in above step 2):
-   $ git clone --depth 1 --branch m68k-v5.8 \
-     git://git.kernel.org/pub/scm/linux/kernel/git/geert/linux-m68k.git
-   $ cd linux-m68k
-
-  [1] changes it applies on top of upstream:
-     https://git.kernel.org/pub/scm/linux/kernel/git/geert/linux-m68k.git/log/?h=m68k-v5.8
-
 - You can fine-tune kernel config for your requirements with:
    $ ARCH=m68k CROSS_COMPILE=m68k-linux-gnu- make -j4 menuconfig
 
 - Using "optimize for size" instead of "optimize for performance"
-  is a difference between 3.3MB vs 3.8MB (stripped) kernel image
+  reduced (stripped) kernel image by ~15%
 
 - Normal Linux builds require 030 (or better) with MMU and FPU
   (only uCLinux would work on 68000 without MMU)
@@ -328,8 +319,8 @@ Notes:
 1. Set suitable options in lilo.cfg, for example:
 -------------------------------------
 [LILO]
-Kernel = vmlinux-v5.9
-Symbols = System.map-v5.9
+Kernel = vmlinux-v5.10
+Symbols = System.map-v5.10
 Ramdisk =
 Args = video=atafb:sthigh console=tty
 KernelToFastRam = FALSE
@@ -534,51 +525,54 @@ actually *is* writable and try again.
 9.1 Debian installer
 --------------------
 
-These are setup instructions for debugging Debian installer freezes in
-Hatari.  You need matching kernel, initrd and installation ISO image
-files for this.
-
-Note: old Debian 4.9 kernels work much worse, so this uses 4.19, which
-can at least boot until it tries to run init.
+These are setup instructions for testing Debian installer in Hatari.
+You need matching kernel, initrd and installation ISO image files for
+this.
 
 0. Work directory:
    $ mkdir -p debian/installer
    $ cd debian/installer
 
 1. Get latest Debian installer initrd:
-   $ wget https://cdimage.debian.org/cdimage/ports/debian-installer/m68k/debian-installer-images_20190410_m68k.tar.gz
+   $ wget https://cdimage.debian.org/cdimage/ports/debian-installer/2020-12-03/m68k/debian-installer-images_20201202_m68k.tar.gz
    $ tar xvf debian-installer-images*.gz
-   $ cp installer-m68k/*/images/nativehd/initrd.gz ..
+   $ cp installer-m68k/current/images/nativehd/initrd.gz ..
 
-2. get kernel files (including symbols) for version matching above tar output:
-   $ wget http://ftp.ports.debian.org/debian-ports/pool-m68k/main/l/linux/linux-image-4.19.0-4-m68k_4.19.28-2_m68k.deb
+2. get kernel files for version matching above tar output:
+   $ wget http://ftp.ports.debian.org/debian-ports/pool-m68k/main/l/linux/linux-image-5.10.0-1-m68k_5.10.4-1_m68k.deb
    $ ar x linux-image-*_m68k.deb
    $ tar xvf data.tar.xz
    $ cp -av boot/* ..
 
-3. Set up lilo.cfg, which skips (very slow) crypto init:
+3. get kernel debug symbols (from the huge debug package):
+   $ wget http://ftp.ports.debian.org/debian-ports/pool-m68k/main/l/linux/linux-image-5.10.0-1-m68k-dbg_5.10.4-1_m68k.deb
+   $ tar xvf data.tar.xz --wildcards '*/System.map-*'
+   $ cp -av cp -av usr/lib/debug/boot/System.map-* ..
+
+4. Set up lilo.cfg with a framebuffer mode supported by Debian installer
+   (it needs at least 16 colors to be usable):
    $ cd ..
    $ cat > lilo.cfg
 [LILO]
-Kernel = vmlinuz-4.19.0-4-m68k
-Symbols = System.map-4.19.0-4-m68k
-Args = video=atafb:sthigh console=tty initcall_blacklist=dh_init
+Kernel = vmlinux-5.10.0-1-m68k
+Symbols = System.map-5.10.0-1-m68k
+Args = video=atafb:vga16 console=tty
 Ramdisk = initrd.gz
 KernelToFastRam = FALSE
 RamdiskToFastRam = TRUE
 ^D
 
-4. Get ISO image release matching installer & kernel (checksum files are in same directory):
-    $ wget https://cdimage.debian.org/cdimage/ports/2019-04-12/debian-10.0-m68k-NETINST-1.iso
+5. Get ISO image release matching installer & kernel (checksum files are in same directory):
+    $ wget https://cdimage.debian.org/cdimage/ports/snapshots/2020-12-03/debian-10.0.0-m68k-NETINST-1.iso
 
-5. Try running Hatari with them:
+6. Try running Hatari with them:
     $ hatari --log-level debug \
       --fast-forward on --fastfdc on --timer-d on \
       --machine falcon --dsp none --fpu 68882 \
       --cpuclock 32 --cpu-exact off --compatible off \
       --mmu on -s 14 --ttram 128 --addr24 off \
-      -c lilo.cfg --natfeats on \
-      --ide-master debian-10.0-m68k-NETINST-1.iso \
+      --monitor vga -c lilo.cfg --natfeats on \
+      --ide-master debian-10.0.0-m68k-NETINST-1.iso \
       --lilo "debug=nfcon root=/dev/ram init=/init"
 
 NOTE: Hatari doesn't support networking so network install obviously
