@@ -7,6 +7,14 @@
  Development version
  -------------------
 
+Emulation:
+- Improved DSP interrupts handling (from Previous NeXT emulator)
+
+Emulator:
+- Falcon:
+  - Fix: restore zoom mode correctly when loading snapshots
+  - Correct also smaller specified memory amounts to valid ones
+
 Tools & Python UI:
 - Python v2 support removed
 
