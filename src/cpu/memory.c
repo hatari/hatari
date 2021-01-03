@@ -73,6 +73,8 @@ int candirect = -1;
 #ifdef JIT
 /* Set by each memory handler that does not simply access real memory. */
 int special_mem;
+/* do not use get_n_addr */
+int jit_n_addr_unsafe;
 #endif
 
 #ifdef NATMEM_OFFSET
@@ -1874,6 +1876,12 @@ static void map_banks2 (addrbank *bank, int start, int size, int realsize, int q
 		write_log (_T("Broken mapping, size=%x, realsize=%x\nStart is %x\n"),
 			size, realsize, start);
 	}
+
+#ifdef JIT
+	if ((bank->jit_read_flag | bank->jit_write_flag) & S_N_ADDR) {
+		jit_n_addr_unsafe = 1;
+	}
+#endif
 
 #ifndef ADDRESS_SPACE_24BIT
 	if (start >= 0x100) {
