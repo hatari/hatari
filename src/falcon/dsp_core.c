@@ -719,7 +719,7 @@ void dsp_core_ssi_writeTSR(void)
 {
 	/* Dummy write : Just clear SSI TDE bit */
 	dsp_core.periph[DSP_SPACE_X][DSP_SSI_SR] &= 0xff-(1<<DSP_SSI_SR_TDE);
-	dsp_set_interrupt(DSP_INTER_SSI_TRX_DATA, 0);
+	dsp_set_interrupt(DSP_INTER_SSI_TRX_DATA_E, 0);
 	dsp_set_interrupt(DSP_INTER_SSI_TRX_DATA, 0);
 }
 
@@ -768,7 +768,7 @@ void dsp_core_ssi_Receive_SC0(void)
 		/* Send value to DSP receive */
 		dsp_core.ssi.RX = value;
 
-		/* generate interrupt */
+		/* generate interrupt (hack: DATA_E is replaced by DATA for now, else there's no sound */
 		if (dsp_core.periph[DSP_SPACE_X][DSP_SSI_SR] & (1<<DSP_SSI_SR_RDF))
 			dsp_set_interrupt(DSP_INTER_SSI_RCV_DATA, 1);
 		else
