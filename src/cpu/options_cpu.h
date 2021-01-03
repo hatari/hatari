@@ -443,6 +443,7 @@ struct ramboard
 	uae_u32 write_address;
 	bool readonly;
 	bool nodma;
+	bool force16bit;
 	struct boardloadfile lf;
 };
 struct expansion_params
