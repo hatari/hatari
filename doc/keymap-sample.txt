@@ -1,36 +1,54 @@
-# This is an example for a keyboard mapping file that can be used in Hatari
-# by loading it from the keyboard setup dialog.
+# Keymap. This format allows you to associate SDL key descriptions with
+# scancodes simulating the corresponding keys pressed on the emulated ST.
 #
-# Lines starting with a '#' or with a ';' are comments. All other lines
-# should contain exactly one key name and a scancode, separated by a comma.
-# Comment characters can be quoted with '\#' and '\;'.
+# Format is the following:
+# <host_description>,<guest_description>
 #
-# The key name is the libSDL symbolic name of the key, see the following
-# URL for a list: https://wiki.libsdl.org/SDL_Keycode
-# You can also use the symbolic keycode value instead of the name,
-# which you can get with the "--trace keymap" output from Hatari, for
-# example, but note that the values are different between SDL1 and SDL2
-# and thus they are not portable.
+# <host_description> is the scancode of the key pressed (which you can see
+# when running hatari with the "--trace keymap" option). 
+# Optionally you can:
+# * Add a SDL key modifier (see https://wiki.libsdl.org/SDL_Keymod#Related_Functions)
+# * Add a modifier mask. This mask will be bitwise "AND"'ed to the
+#   actual key pressed before it is compared with items from this keymap.
+#   This allows to mask out e.g. NumLock to make mappings work regardless 
+#   of the status of that modifier.
+# All these (scancode, modifiers, mask) must appear in this order and be
+# separated by a pipe |.
 #
-# The given host key will be mapped to the ST key which is specified by
-# second number - the ST scan code of the key.  "--trace keymap" output
-# shows the already mapped scan code.
+# <guest_description> is the pipe-separated ordered list of scancodes to send
+# to the ST (4 max). For convenience you can use LSHIFT, RSHIFT and
+# ALTERNATE in lieu of 2a,36,38 respectively.
+# You can find scancodes in many Atari documentation places, e.g.
+# https://tho-otto.de/keyboards/
+# or https://freemint.github.io/tos.hyp/en/scancode.html
 #
-# All numbers should be given as decimals (not hexadecimals).
+# Notes:
+# * All scan codes must be in hexadecimal.
+# * The parser is not very smart so don't add spaces etc.
+# * Make the narrowest specification appear first.
 #
-# Note that using keyboard mapping file causes Hatari to use symbolic
-# key mapping.  Symbolic key mapping does not work with so called "dead"
-# keys.
-#
-# Scan codes for Atari keyboard key positions can be seen here:
-#   http://eerott.mbnet.fi/hatari/img/st-keymap.png
-#
-# tests/keymap/ directory contains programs to discover/test the PC SDL
-# and Atari scan code values.  Hatari's default PC key code -> ST scan
-# code mappings are in src/keymap.c source file.
-#
-# Example: If you want to get the 'y' and 'z' keys right with a german TOS
-# ROM, you can use the following two lines to map the PC keys to the right
-# ST scan codes:
-Y,44
-Z,21
+# Examples (taken from the French keyboard mapping):
+
+# Simple scancode mapping
+04,1e
+
+# Mapping with SHIFT keys and mask (LSHIFT) to mask out other modifiers
+# like Numlock, so these mapping (for left and right shift) will work
+# regardless of Numlock
+10|KMOD_LSHIFT|KMOD_LSHIFT,LSHIFT|33
+10|KMOD_RSHIFT|KMOD_RSHIFT,RSHIFT|33
+
+
+# Mapping with modifier, which converst a shifted key from the host
+# to ALT-230 to display µ on the Atari
+31|KMOD_LSHIFT|KMOD_LSHIFT,ALTERNATE|6e|6f|70
+
+
+# Mapping for CAPS LOCK 1 and shift keys, to obtain "1"
+1e|KMOD_LSHIFT|KMOD_LSHIFT,LSHIFT|02
+1e|KMOD_RSHIFT|KMOD_RSHIFT,RSHIFT|02
+1e|KMOD_CAPS|KMOD_CAPS,02
+
+# Mapping for ALT-key on the PC ~, translated to ALT-SHIFT-key
+# on the Atari
+1f|KMOD_RALT|KMOD_RALT,LSHIFT|ALTERNATE|2b

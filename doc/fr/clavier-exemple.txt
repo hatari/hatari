@@ -1,131 +1,147 @@
-# This file must be UTF-8 coded
-# Mai 2017, Cocoa Pod.
-
-# FRENCH ------------------------------------------------
-# Mappage du clavier AZERTY-fr d'un Macbook Pro
+# Keymap. Ce format permet d'associer des codes de touches (scancode) et modificateurs
+# SDL (shift, alt, capslock, etc.) a une combinaison de touche correspondante
+# sur l'ATARI émulé.
 #
-# Tests sur Macbook Pro (MacBookPro5,3), MacOS 10.12 fr
-# Tests sur Macbook Air, MacOS 10.11 fr
-# Tests sur émulateur Hatari 2.0 _ ST, MegaST, STE, MegaSTE, tout TOS fr
-# Apple: Dans "Préférences Système / clavier",  Valider l'option :
-# "Utiliser les touches F1,F2,.... Comme des touches de fonction standard"
-# F1-F8 presser la touche F, F9-F12  presser les touches cmd et F.
+# Le format est le suivant:
+# <description_hôte>,<description_Atari>
 #
-# Les commentaires commencent par un # ou un ;
-# Chaque ligne active commence par deux chiffres séparés par une virgule.
-# le premier est la valeur du symbole de la touche de votre clavier et le
-# deuxième est le scancode de la touche équivalente du clavier Atari.
-# Le premier chiffre peut être remplacé par un symbol.
-
-# ENGLISH ------------------------------------------------
-# Mapping for Macbook Pro keyboard AZERTY-fr
+# <description_hôte> est le code de touche (scancode en anglais) de la touche du PC
+# concernée (visible dans la console quand on éxecute hatari avec l'option --trace keymap). 
+# On peut aussi:
+# * Spécifier un modificateur SDL (void https://wiki.libsdl.org/SDL_Keymod#Related_Functions)
+# * Ajouter un masque. Ce masque sera appliqué avec l'opérateur booléan ET à la touche
+#   pressée avant qu'elle ne soit comparée aux entrées de la liste d'association.
+#   Ceci permet d'ignorer le status de Verr.num de sorte qu'une association puisse fonctionner
+#   indépendemment de l'état de cette touche.
+# Toutes ces spécifications (scancode, modificateurs, masque) doivent apparaître dans cet
+# ordre et être séparés par le caractère barre verticale '|'.
 #
-# Tested on Macbook Pro (MacBookPro5,3), MacOS 10.12 fr
-# Tested on Macbook Air, MacOS 10.11 fr
-# Tested on emulator Hatari 2.0 _ ST, MegaST, STE, MegaSTE, all TOS Fr
-# On Apple: in "System Preferences / Keyboard", Validate the option :
-#   "Use all F1,F2,.... as standard function keys "
-# F1-F8 press F key, F9-F12 press cmd and F keys
+# <description_Atari> est la liste (séparée par barre verticale '|') des touches à envoyer 
+# à l'Atari (4 maximum). Par facilité, on peut utiliser LSHIFT, RSHIFT et ALTERNATE au lieu 
+# de 2a,36,38 respectively, respectivement..
+# On peut trouver les codes de touche des Atari dans de nombreux livres et documentations,
+# par exemple:
+# https://tho-otto.de/keyboards/
+# or https://freemint.github.io/tos.hyp/en/scancode.html
 #
-# 'keymap-sample.txt' file explains the syntax and values that can
-# be used for keyboard mapping.
+# Notes:
+# * Tous les codes de touches doivent être en hexadecimal.
+# * L'analyseur n'est pas très sophistiqué donc n'ajoutez pas d'espace etc au milieu des specifications.
+# * Les associations les plus limitantes doivent apparaître en premier dans le fichier car elles ont priorité.
 
-# function keys line
-#
- Escape,1
- F1,59
- F2,60
- F3,61
- F4,62
- F5,63
- F6,64
- F7,65
- F8,66
- F9,67	 # hit cmd-F9
- F10,68	 # hit cmd-F10
-# F11, 	 # cmd-F11  Does not exist in ATARI
-# F12,	 # cmd-F12  Does not exist in ATARI
-
-# first line: @ é " ' ( § è ! ç à ) -
-#
- <,43
- &,2
- é,3
- ",4
- ',5
- (,6
- §,7
- è,8
- !,9
- ç,10
- à,11
- ),12
- -,13
- Backspace,14
- Delete,83        #  fn + Backspace
-
-
-# second line: a z e r t y u i o p ^ $
-#
- Tab,15
- a,16
- z,17
- e,18
- r,19
- t,20
- y,21
- u,22
- i,23
- o,24
- p,25
- ^,26
- $,27
-
-# third line: q s d f g h j k l m ù `
-#
- q,30
- s,31
- d,32
- f,33
- g,34
- h,35
- j,36
- k,37
- l,38
- m,39
- ù,40
- `,41
-
-# forth line: < w x c v b n , ; : =
-#
- @,96
- w,44
- x,45
- c,46
- v,47
- b,48
- n,49
- 44,50    # comma
- 59,51    # semicolon
- :,52
- =,53
-
- Space,57
- CapsLock,58
-
- Return,28
- Left,75
- Right,77
- Down,80
- Up,72
-
- Keypad Enter,114   # fn + Return
- Home,71            # fn + Left
- End,97             # fn + Right
- PageDown,100       # fn + Down
- PageUp,99          # fn + Up
-
- Left Ctrl,29
- Left Shift,42
-# Left Alt,56      # fail, but not need to remap !!!!!
- Right Shift,54
+04,1e
+# ,
+10,32
+# ?
+10|KMOD_LSHIFT|KMOD_LSHIFT,LSHIFT|33
+10|KMOD_RSHIFT|KMOD_RSHIFT,RSHIFT|33
+# a
+14,10
+# z
+1a,11
+# w
+1d,2c
+# 1
+1e|KMOD_LSHIFT|KMOD_LSHIFT,LSHIFT|02
+1e|KMOD_RSHIFT|KMOD_RSHIFT,RSHIFT|02
+1e|KMOD_CAPS|KMOD_CAPS,02
+# ~
+1f|KMOD_RALT|KMOD_RALT,LSHIFT|ALTERNATE|2b
+# 2
+1f|KMOD_LSHIFT|KMOD_LSHIFT,LSHIFT|03
+1f|KMOD_RSHIFT|KMOD_RSHIFT,RSHIFT|03
+1f|KMOD_CAPS|KMOD_CAPS,03
+# #
+20|KMOD_RALT|KMOD_RALT,2b
+# 3
+20|KMOD_LSHIFT|KMOD_LSHIFT,LSHIFT|04
+20|KMOD_RSHIFT|KMOD_RSHIFT,RSHIFT|04
+20|KMOD_CAPS|KMOD_CAPS,04
+# {
+21|KMOD_RALT|KMOD_RALT,2a|ALTERNATE|1a
+# 4
+21|KMOD_LSHIFT|KMOD_LSHIFT,LSHIFT|05
+21|KMOD_RSHIFT|KMOD_RSHIFT,RSHIFT|05
+# [
+22|KMOD_RALT|KMOD_RALT,ALTERNATE|1a
+# 5
+22|KMOD_LSHIFT|KMOD_LSHIFT,LSHIFT|06
+22|KMOD_RSHIFT|KMOD_RSHIFT,RSHIFT|06
+# |
+23|KMOD_RALT|KMOD_RALT,LSHIFT|2b
+# 6
+23|KMOD_LSHIFT|KMOD_LSHIFT,LSHIFT|07
+23|KMOD_RSHIFT|KMOD_RSHIFT,RSHIFT|07
+# -
+23,0d
+# 7
+24|KMOD_LSHIFT|KMOD_LSHIFT,LSHIFT|08
+24|KMOD_RSHIFT|KMOD_RSHIFT,RSHIFT|08
+# `
+24|KMOD_RALT|KMOD_RALT,29
+# 8
+25|KMOD_LSHIFT|KMOD_LSHIFT,LSHIFT|09
+25|KMOD_RSHIFT|KMOD_RSHIFT,RSHIFT|09
+# \
+25|KMOD_RALT|KMOD_RALT,ALTERNATE|28
+# _
+25,LSHIFT|0d
+# ^
+26|KMOD_RALT|KMOD_RALT,1a
+# 9
+26|KMOD_LSHIFT|KMOD_LSHIFT,LSHIFT|0a
+26|KMOD_RSHIFT|KMOD_RSHIFT,RSHIFT|0a
+# @
+27|KMOD_RALT|KMOD_RALT,ALTERNATE|2b
+# 0
+27|KMOD_LSHIFT|KMOD_LSHIFT,LSHIFT|0b
+27|KMOD_RSHIFT|KMOD_RSHIFT,RSHIFT|0b
+# °
+2d|KMOD_LSHIFT|KMOD_LSHIFT,LSHIFT|0c
+2d|KMOD_RSHIFT|KMOD_RSHIFT,RSHIFT|0c
+# ]
+2d|KMOD_RALT|KMOD_RALT,ALTERNATE|1b
+# + (près de efface)
+2e|KMOD_SHIFT|KMOD_SHIFT,RSHIFT|35
+# }
+2e|KMOD_RALT|KMOD_RALT,LSHIFT|ALTERNATE|1b
+# =
+2e,35
+# ¨
+2f|KMOD_LSHIFT|KMOD_LSHIFT,LSHIFT|1a
+2f|KMOD_RSHIFT|KMOD_RSHIFT,RSHIFT|1a
+# ^
+2f,1a
+# £
+30|KMOD_LSHIFT|KMOD_LSHIFT,LSHIFT|29
+30|KMOD_RSHIFT|KMOD_RSHIFT,RSHIFT|29
+# $
+30,1b
+# µ, ouaip, on peut même émuler les ALT-xyz :)
+31|KMOD_LSHIFT|KMOD_LSHIFT,ALTERNATE|6e|6f|70
+31|KMOD_RSHIFT|KMOD_RSHIFT,ALTERNATE|6e|6f|70
+# * (pas pavé numérique)
+31,RSHIFT|1b
+# m
+33|KMOD_LSHIFT|KMOD_LSHIFT,LSHIFT|27
+33|KMOD_RSHIFT|KMOD_RSHIFT,RSHIFT|27
+33|KMOD_LALT|KMOD_LALT,ALTERNATE|27
+33,27
+# %
+34|KMOD_LSHIFT|KMOD_LSHIFT,LSHIFT|28
+34|KMOD_RSHIFT|KMOD_RSHIFT,RSHIFT|28
+# ù
+34,28
+# ³ (alt-239)
+35|KMOD_LSHIFT|KMOD_LSHIFT,ALTERNATE|6e|6b|6a
+35|KMOD_RSHIFT|KMOD_RSHIFT,ALTERNATE|6e|6b|6a
+# ² (alt-253)
+35,ALTERNATE|6e|6b|6f
+# ;
+36,33
+# . (pas pavé numérique)
+36|KMOD_LSHIFT|KMOD_LSHIFT,LSHIFT|33
+36|KMOD_RSHIFT|KMOD_RSHIFT,RSHIFT|33
+# §
+38|KMOD_LSHIFT|KMOD_LSHIFT,07
+38|KMOD_RSHIFT|KMOD_RSHIFT,07
