@@ -2101,3 +2101,32 @@ int memory_valid_address(uaecptr addr, uae_u32 size)
 	addr &= ab->mask;
 	return addr + size <= ab->allocated_size;
 }
+
+void dma_put_word(uaecptr addr, uae_u16 v)
+{
+	addrbank* ab = &get_mem_bank(addr);
+	if (ab->flags & ABFLAG_NODMA)
+		return;
+	put_word(addr, v);
+}
+void dma_put_byte(uaecptr addr, uae_u8 v)
+{
+	addrbank* ab = &get_mem_bank(addr);
+	if (ab->flags & ABFLAG_NODMA)
+		return;
+	put_byte(addr, v);
+}
+uae_u16 dma_get_word(uaecptr addr)
+{
+	addrbank* ab = &get_mem_bank(addr);
+	if (ab->flags & ABFLAG_NODMA)
+		return 0xffff;
+	return get_word(addr);
+}
+uae_u8 dma_get_byte(uaecptr addr)
+{
+	addrbank* ab = &get_mem_bank(addr);
+	if (ab->flags & ABFLAG_NODMA)
+		return 0xff;
+	return get_byte(addr);
+}
