@@ -139,18 +139,40 @@ extern "C" {
 #define DSP_INTERRUPT_DISABLED  0x1
 #define DSP_INTERRUPT_LONG      0x2
 
-#define DSP_INTER_RESET			0x0
-#define DSP_INTER_ILLEGAL		0x1
-#define DSP_INTER_STACK_ERROR		0x2
-#define DSP_INTER_TRACE			0x3
-#define DSP_INTER_SWI			0x4
-#define DSP_INTER_HOST_COMMAND		0x5
-#define DSP_INTER_HOST_RCV_DATA		0x6
-#define DSP_INTER_HOST_TRX_DATA		0x7
-#define DSP_INTER_SSI_RCV_DATA_E	0x8
-#define DSP_INTER_SSI_RCV_DATA		0x9
-#define DSP_INTER_SSI_TRX_DATA_E	0xa
-#define DSP_INTER_SSI_TRX_DATA		0xb
+#define DSP_INTER_RESET				0
+#define DSP_INTER_STACK_ERROR		1
+#define DSP_INTER_TRACE				2
+#define DSP_INTER_SWI				3
+#define DSP_INTER_IRQA				4
+#define DSP_INTER_IRQB				5
+#define DSP_INTER_SSI_RCV_DATA		6
+#define DSP_INTER_SSI_RCV_DATA_E	7
+#define DSP_INTER_SSI_TRX_DATA		8
+#define DSP_INTER_SSI_TRX_DATA_E	9
+#define DSP_INTER_SCI_RCV_DATA		10
+#define DSP_INTER_SCI_RCV_DATA_E	11
+#define DSP_INTER_SCI_TRX_DATA		12
+#define DSP_INTER_SCI_IDLE_LINE		13
+#define DSP_INTER_SCI_TIMER			14
+#define DSP_INTER_NMI				15
+#define DSP_INTER_HOST_RCV_DATA		16
+#define DSP_INTER_HOST_TRX_DATA		17
+#define DSP_INTER_HOST_COMMAND		18
+#define DSP_INTER_ILLEGAL			31
+
+#define DSP_INTER_NMI_MASK	0x8000800F
+#define DSP_INTER_IRQA_MASK	0x00000010
+#define DSP_INTER_IRQB_MASK	0x00000020
+#define DSP_INTER_SSI_MASK	0x000003C0
+#define DSP_INTER_SCI_MASK	0x00007C00
+#define DSP_INTER_HOST_MASK	0x00070000
+
+#define DSP_INTER_EDGE_MASK	0x8004C00E
+
+
+#define DSP_PRIORITY_LIST_EXIT 32
+extern const char dsp_inter_priority_list[32];
+extern const char *dsp_interrupt_name[32];
 
 
 typedef struct dsp_core_ssi_s dsp_core_ssi_t;
@@ -236,11 +258,15 @@ struct dsp_core_s {
 	Uint16	interrupt_state;		/* NONE, FAST or LONG interrupt */
 	Uint16  interrupt_instr_fetch;		/* vector of the current interrupt */
 	Uint16  interrupt_save_pc;		/* save next pc value before interrupt */
-	Uint16  interrupt_counter;		/* count number of pending interrupts */
 	Uint16  interrupt_IplToRaise;		/* save the IPL level to save in the SR register */
 	Uint16  interrupt_pipeline_count;	/* used to prefetch correctly the 2 inter instructions */
-	Sint16  interrupt_ipl[12];		/* store the current IPL for each interrupt */
-	Uint16  interrupt_isPending[12];	/* store if interrupt is pending for each interrupt */
+
+	/* Interruptions new */
+	Uint32 interrupt_status;
+	Uint32 interrupt_enable;
+	Uint32 interrupt_mask;
+	Uint32 interrupt_mask_level[3];
+	Uint32 interrupt_edgetriggered_mask;
 
 	/* AGU pipeline simulation for indirect move ea instructions */
 	Uint16	agu_move_indirect_instr;	/* is the current instruction an indirect move ? (LUA, MOVE, MOVEC, MOVEM, TCC) (0=no ; 1 = yes)*/

@@ -45,7 +45,7 @@ dsp_core_t dsp_core;
 static void dsp_core_dsp2host(void);
 static void dsp_core_host2dsp(void);
 
-static void (*dsp_host_interrupt)(int);   /* Function to set/clear host interrupt */
+static void (*dsp_host_interrupt)(int set);   /* Function to trigger host interrupt */
 
 static Uint32 const x_rom[0x100] = {
 	/* mulaw table */
@@ -613,21 +613,27 @@ void dsp_core_reset(void)
 	}
 
 	/* Interruptions */
-	memset((void*)dsp_core.interrupt_isPending, 0, sizeof(dsp_core.interrupt_isPending));
 	dsp_core.interrupt_state = DSP_INTERRUPT_NONE;
 	dsp_core.interrupt_instr_fetch = -1;
 	dsp_core.interrupt_save_pc = -1;
-	dsp_core.interrupt_counter = 0;
 	dsp_core.interrupt_pipeline_count = 0;
-	for (i=0;i<5;i++) {
-		dsp_core.interrupt_ipl[i] = 3;
-	}
-	for (i=5;i<12;i++) {
-		dsp_core.interrupt_ipl[i] = -1;
-	}
+	/* New Interruptions */
+	memset(dsp_core.interrupt_mask_level, 0, sizeof(dsp_core.interrupt_mask_level));
+	dsp_core.interrupt_status = 0;
+	dsp_core.interrupt_mask = (DSP_INTER_IRQA_MASK|DSP_INTER_IRQB_MASK);
+	dsp_core.interrupt_enable = 0;
+	dsp_core.interrupt_edgetriggered_mask = DSP_INTER_EDGE_MASK;
 
 	/* host port init, dsp side */
 	dsp_core.periph[DSP_SPACE_X][DSP_HOST_HSR]=(1<<DSP_HOST_HSR_HTDE);
+	dsp_set_interrupt(DSP_INTER_HOST_TRX_DATA, 1);
+
+
+	/* host port init, dsp side */
+	dsp_core.periph[DSP_SPACE_X][DSP_HOST_HSR]=(1<<DSP_HOST_HSR_HTDE);
+
+	/* host port init, hreq */
+	dsp_host_interrupt(0);
 
 	/* host port init, cpu side */
 	dsp_core.hostport[CPU_HOST_ICR] = 0x0;
@@ -694,6 +700,9 @@ void dsp_core_ssi_writeTX(Uint32 value)
 {
 	/* Clear SSI TDE bit */
 	dsp_core.periph[DSP_SPACE_X][DSP_SSI_SR] &= 0xff-(1<<DSP_SSI_SR_TDE);
+	dsp_set_interrupt(DSP_INTER_SSI_TRX_DATA_E, 0);
+	dsp_set_interrupt(DSP_INTER_SSI_TRX_DATA, 0);
+
 	dsp_core.ssi.TX = value;
 	LOG_TRACE(TRACE_DSP_HOST_SSI, "Dsp set TX register: 0x%06x\n", value);
 
@@ -710,6 +719,8 @@ void dsp_core_ssi_writeTSR(void)
 {
 	/* Dummy write : Just clear SSI TDE bit */
 	dsp_core.periph[DSP_SPACE_X][DSP_SSI_SR] &= 0xff-(1<<DSP_SSI_SR_TDE);
+	dsp_set_interrupt(DSP_INTER_SSI_TRX_DATA, 0);
+	dsp_set_interrupt(DSP_INTER_SSI_TRX_DATA, 0);
 }
 
 /* SSI get RX register */
@@ -717,6 +728,9 @@ Uint32 dsp_core_ssi_readRX(void)
 {
 	/* Clear SSI RDF bit */
 	dsp_core.periph[DSP_SPACE_X][DSP_SSI_SR] &= 0xff-(1<<DSP_SSI_SR_RDF);
+	dsp_set_interrupt(DSP_INTER_SSI_RCV_DATA_E, 0);
+	dsp_set_interrupt(DSP_INTER_SSI_RCV_DATA, 0);
+
 	LOG_TRACE(TRACE_DSP_HOST_SSI, "Dsp read RX register: 0x%06x\n", dsp_core.ssi.RX);
 	return dsp_core.ssi.RX;
 }
@@ -754,17 +768,14 @@ void dsp_core_ssi_Receive_SC0(void)
 		/* Send value to DSP receive */
 		dsp_core.ssi.RX = value;
 
-		/* generate interrupt ? */
-		if (dsp_core.periph[DSP_SPACE_X][DSP_SSI_CRB] & (1<<DSP_SSI_CRB_RIE)) {
-			if (dsp_core.periph[DSP_SPACE_X][DSP_SSI_SR] & (1<<DSP_SSI_SR_RDF)) {
-				dsp_add_interrupt(DSP_INTER_SSI_RCV_DATA);
-			} else {
-				dsp_add_interrupt(DSP_INTER_SSI_RCV_DATA);
-			}
-		}
-	}else{
-		dsp_core.ssi.RX = 0;
+		/* generate interrupt */
+		if (dsp_core.periph[DSP_SPACE_X][DSP_SSI_SR] & (1<<DSP_SSI_SR_RDF))
+			dsp_set_interrupt(DSP_INTER_SSI_RCV_DATA, 1);
+		else
+			dsp_set_interrupt(DSP_INTER_SSI_RCV_DATA, 1);
 	}
+	else
+		dsp_core.ssi.RX = 0;
 
 	/* set RDF */
 	dsp_core.periph[DSP_SPACE_X][DSP_SSI_SR] |= 1<<DSP_SSI_SR_RDF;
@@ -851,17 +862,14 @@ void dsp_core_ssi_Receive_SCK(void)
 		/* Send value to crossbar */
 		dsp_core.ssi.transmit_value = value;
 
-		/* generate interrupt ? */
-		if (dsp_core.periph[DSP_SPACE_X][DSP_SSI_CRB] & (1<<DSP_SSI_CRB_TIE)) {
-			if (dsp_core.periph[DSP_SPACE_X][DSP_SSI_SR] & (1<<DSP_SSI_SR_TDE)) {
-				dsp_add_interrupt(DSP_INTER_SSI_TRX_DATA);
-			} else {
-				dsp_add_interrupt(DSP_INTER_SSI_TRX_DATA);
-			}
-		}
-	}else{
-		dsp_core.ssi.transmit_value = 0;
+		/* generate interrupt */
+		if (dsp_core.periph[DSP_SPACE_X][DSP_SSI_SR] & (1<<DSP_SSI_SR_TDE))
+			dsp_set_interrupt(DSP_INTER_SSI_TRX_DATA, 1);
+		else
+			dsp_set_interrupt(DSP_INTER_SSI_TRX_DATA, 1);
 	}
+	else
+		dsp_core.ssi.transmit_value = 0;
 
 	/* set TDE */
 	dsp_core.periph[DSP_SPACE_X][DSP_SSI_SR] |= (1<<DSP_SSI_SR_TDE);
@@ -946,40 +954,16 @@ static void dsp_core_hostport_update_trdy(void)
 
 static void dsp_core_hostport_update_hreq(void)
 {
-	int hreq;
-
-#if 0
-	hreq = (dsp_core.hostport[CPU_HOST_ICR] & dsp_core.hostport[CPU_HOST_ISR]) & 0x3;
-
-	/* Trigger host interrupt? */
-	if (hreq && (dsp_core.hostport[CPU_HOST_ISR] & (1<<CPU_HOST_ISR_HREQ)) == 0) {
-		dsp_host_interrupt();
+	/* Set HREQ bit in hostport and trigger host interrupt? */
+	if ((dsp_core.hostport[CPU_HOST_ICR] & dsp_core.hostport[CPU_HOST_ISR]) & 0x3) {
+		dsp_core.hostport[CPU_HOST_ISR] |= 1<<CPU_HOST_ISR_HREQ;
+		dsp_host_interrupt(1);
+	} else {
+		dsp_core.hostport[CPU_HOST_ISR] &= 0x7f;
+		dsp_host_interrupt(0);
 	}
-
-	/* Set HREQ bit in hostport */
-	dsp_core.hostport[CPU_HOST_ISR] &= 0x7f;
-	dsp_core.hostport[CPU_HOST_ISR] |= (hreq?1:0) << CPU_HOST_ISR_HREQ;
-#else
-	hreq = (dsp_core.hostport[CPU_HOST_ICR] & dsp_core.hostport[CPU_HOST_ISR]) & 0x3;
-
-    if ( hreq != 0 )
-		hreq = 1 << CPU_HOST_ISR_HREQ;
-
-	/* If hreq doesn't change, we do nothing */
-    if ( hreq == ( dsp_core.hostport[CPU_HOST_ISR] & 0x80 ) )
-		return;
-
-	if ( hreq )								/* 0->1 transition */
-		dsp_host_interrupt ( 1 );			/* set host interrupt */
-	else									/* 1->0 transition */
-		dsp_host_interrupt ( 0 );			/* unset host interrupt */
-
-	/* Set/clear HREQ bit in hostport */
-	dsp_core.hostport[CPU_HOST_ISR] &= 0x7f;
-	dsp_core.hostport[CPU_HOST_ISR] |= hreq;
-//fprintf ( stderr , "dsp_core_hostport_update_hreq %x\n" , hreq );
-#endif
 }
+
 
 /* Host port transfer ? (dsp->host) */
 static void dsp_core_dsp2host(void)
@@ -1000,6 +984,7 @@ static void dsp_core_dsp2host(void)
 
 	/* Set HTDE bit to say that DSP can write */
 	dsp_core.periph[DSP_SPACE_X][DSP_HOST_HSR] |= 1<<DSP_HOST_HSR_HTDE;
+	dsp_set_interrupt(DSP_INTER_HOST_TRX_DATA, 1);
 
 	/* Set RXDF bit to say that host can read */
 	dsp_core.hostport[CPU_HOST_ISR] |= 1<<CPU_HOST_ISR_RXDF;
@@ -1027,6 +1012,7 @@ static void dsp_core_host2dsp(void)
 
 	/* Set HRDF bit to say that DSP can read */
 	dsp_core.periph[DSP_SPACE_X][DSP_HOST_HSR] |= 1<<DSP_HOST_HSR_HRDF;
+	dsp_set_interrupt(DSP_INTER_HOST_RCV_DATA, 1);
 
 	/* Set TXDE bit to say that host can write */
 	dsp_core.hostport[CPU_HOST_ISR] |= 1<<CPU_HOST_ISR_TXDE;
@@ -1041,6 +1027,7 @@ void dsp_core_hostport_dspread(void)
 {
 	/* Clear HRDF bit to say that DSP has read */
 	dsp_core.periph[DSP_SPACE_X][DSP_HOST_HSR] &= 0xff-(1<<DSP_HOST_HSR_HRDF);
+	dsp_set_interrupt(DSP_INTER_HOST_RCV_DATA, 0);
 
 	LOG_TRACE(TRACE_DSP_HOST_INTERFACE, "Dsp: (Host->DSP): Dsp HRDF cleared\n");
 
@@ -1052,6 +1039,7 @@ void dsp_core_hostport_dspwrite(void)
 {
 	/* Clear HTDE bit to say that DSP has written */
 	dsp_core.periph[DSP_SPACE_X][DSP_HOST_HSR] &= 0xff-(1<<DSP_HOST_HSR_HTDE);
+	dsp_set_interrupt(DSP_INTER_HOST_TRX_DATA, 0);
 
 	LOG_TRACE(TRACE_DSP_HOST_INTERFACE, "Dsp: (DSP->Host): Dsp HTDE cleared\n");
 
@@ -1081,10 +1069,8 @@ void dsp_core_write_host(int addr, Uint8 value)
 		case CPU_HOST_ICR:
 			dsp_core.hostport[CPU_HOST_ICR]=value & 0xfb;
 			/* Set HF1 and HF0 accordingly on the host side */
-			dsp_core.periph[DSP_SPACE_X][DSP_HOST_HSR] &=
-					0xff-((1<<DSP_HOST_HSR_HF1)|(1<<DSP_HOST_HSR_HF0));
-			dsp_core.periph[DSP_SPACE_X][DSP_HOST_HSR] |=
-					dsp_core.hostport[CPU_HOST_ICR] & ((1<<DSP_HOST_HSR_HF1)|(1<<DSP_HOST_HSR_HF0));
+			dsp_core.periph[DSP_SPACE_X][DSP_HOST_HSR] &= 0xff-((1<<DSP_HOST_HSR_HF1)|(1<<DSP_HOST_HSR_HF0));
+			dsp_core.periph[DSP_SPACE_X][DSP_HOST_HSR] |= dsp_core.hostport[CPU_HOST_ICR] & ((1<<DSP_HOST_HSR_HF1)|(1<<DSP_HOST_HSR_HF0));
 			dsp_core_hostport_update_hreq();
 			break;
 		case CPU_HOST_CVR:
@@ -1093,12 +1079,11 @@ void dsp_core_write_host(int addr, Uint8 value)
 			if (value & (1<<7)) {
 				dsp_core.periph[DSP_SPACE_X][DSP_HOST_HSR] |= (1<<DSP_HOST_HSR_HCP);
 				/* Is there an interrupt to send ? */
-				if (dsp_core.periph[DSP_SPACE_X][DSP_HOST_HCR] & (1<<DSP_HOST_HCR_HCIE)) {
-					dsp_add_interrupt(DSP_INTER_HOST_COMMAND);
-				}
+				dsp_set_interrupt(DSP_INTER_HOST_COMMAND, 1);
 			}
 			else{
 				dsp_core.periph[DSP_SPACE_X][DSP_HOST_HSR] &= 0xff - (1<<DSP_HOST_HSR_HCP);
+				dsp_set_interrupt(DSP_INTER_HOST_COMMAND, 0);
 			}
 
 			LOG_TRACE(TRACE_DSP_HOST_COMMAND, "Dsp: (Host->DSP): Host command = %06x\n", value & 0x9f);
