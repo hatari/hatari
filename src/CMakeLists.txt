@@ -42,14 +42,8 @@ if(WIN32)
 	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--as-needed -lssp")
 endif(WIN32)
 
-if(ENABLE_WINUAE_CPU)
-	set(CPUDIR cpu)
-else()
-	set(CPUDIR uae-cpu)
-endif(ENABLE_WINUAE_CPU)
-
 include_directories(includes debug falcon
-		    ${CMAKE_BINARY_DIR} ${SDL_INCLUDE_DIR} ${CPUDIR})
+		    ${CMAKE_BINARY_DIR} ${SDL_INCLUDE_DIR} cpu)
 
 if(ZLIB_FOUND)
 	include_directories(${ZLIB_INCLUDE_DIR})
@@ -71,12 +65,12 @@ endif(CAPSIMAGE_FOUND)
 link_directories(${CMAKE_CURRENT_BINARY_DIR}/debug
 		 ${CMAKE_CURRENT_BINARY_DIR}/falcon
 		 ${CMAKE_CURRENT_BINARY_DIR}/gui-sdl
-		 ${CMAKE_CURRENT_BINARY_DIR}/${CPUDIR})
+		 ${CMAKE_CURRENT_BINARY_DIR}/cpu)
 
 add_subdirectory(debug)
 add_subdirectory(falcon)
 add_subdirectory(gui-sdl)
-add_subdirectory(${CPUDIR})
+add_subdirectory(cpu)
 
 # When building for macOS, add specific sources
 if(ENABLE_OSX_BUNDLE)

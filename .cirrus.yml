@@ -10,7 +10,7 @@ fedora_task:
   script:
     - mkdir build
     - cd build
-    - ../configure --enable-old-uae-cpu --enable-small-mem --disable-dsp
+    - ../configure --enable-small-mem --disable-dsp
                   --enable-werror --enable-debug || { cat config.log; exit 1; }
     - make -j4
     - ctest -j4 || { cat Testing/Temporary/LastTest.log; exit 1; }
