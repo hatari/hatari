@@ -750,12 +750,9 @@ static void TOS_FixRom(Uint32 *logopatch_addr)
 		if (pPatch->Version == TosVersion
 		    && (pPatch->Country == TosCountry || pPatch->Country == -1))
 		{
-#if ENABLE_WINUAE_CPU
 			bool use_mmu = ConfigureParams.System.bMMU &&
 			               ConfigureParams.System.nCpuLevel == 3;
-#else
-			bool use_mmu = false;
-#endif
+
 			/* Only apply the patch if it is really needed: */
 			if (pPatch->Flags == TP_ALWAYS
 			    || (pPatch->Flags == TP_HDIMAGE_OFF && !bAcsiEmuOn
@@ -812,9 +809,7 @@ static void TOS_CheckSysConfig(void)
 {
 	int oldCpuLevel = ConfigureParams.System.nCpuLevel;
 	MACHINETYPE oldMachineType = ConfigureParams.System.nMachineType;
-#if ENABLE_WINUAE_CPU
 	FPUTYPE oldFpuType = ConfigureParams.System.n_FPUType;
-#endif
 
 	if (((TosVersion == 0x0106 || TosVersion == 0x0162) && ConfigureParams.System.nMachineType != MACHINE_STE)
 	    || (TosVersion == 0x0162 && ConfigureParams.System.nCpuLevel != 0))
@@ -895,7 +890,6 @@ static void TOS_CheckSysConfig(void)
 		             " ==> Switching to 68020 mode now.\n");
 		ConfigureParams.System.nCpuLevel = 2;
 	}
-#if ENABLE_WINUAE_CPU
 	else if ((TosVersion & 0x0f00) == 0x0300 &&
 	         (ConfigureParams.System.nCpuLevel < 2 || ConfigureParams.System.n_FPUType == FPU_NONE))
 	{
@@ -904,19 +898,10 @@ static void TOS_CheckSysConfig(void)
 		ConfigureParams.System.nCpuLevel = 3;
 		ConfigureParams.System.n_FPUType = FPU_68882;
 	}
-#else
-	else if ((TosVersion & 0x0f00) == 0x0300 && ConfigureParams.System.nCpuLevel < 3)
-	{
-		Log_AlertDlg(LOG_ERROR, "TOS versions 3.0x require a CPU >= 68020 with FPU.\n"
-		             " ==> Switching to 68030 mode with FPU now.\n");
-		ConfigureParams.System.nCpuLevel = 3;
-	}
-#endif
 
 	/* TOS version triggered changes? */
 	if (ConfigureParams.System.nMachineType != oldMachineType)
 	{
-#if ENABLE_WINUAE_CPU
 		if (Config_IsMachineTT())
 		{
 			ConfigureParams.System.bCompatibleFPU = true;
@@ -929,14 +914,10 @@ static void TOS_CheckSysConfig(void)
 			ConfigureParams.System.bAddressSpace24 = true;
 			ConfigureParams.System.bMMU = false;
 		}
-#endif
 		M68000_CheckCpuSettings();
 	}
 	else if (ConfigureParams.System.nCpuLevel != oldCpuLevel
-#if ENABLE_WINUAE_CPU
-		 || ConfigureParams.System.n_FPUType != oldFpuType
-#endif
-		)
+		 || ConfigureParams.System.n_FPUType != oldFpuType)
 	{
 		M68000_CheckCpuSettings();
 	}
@@ -1041,7 +1022,6 @@ static uint8_t *TOS_LoadImage(void)
 	if (!(bIsEmuTOS && TosSize == 512*1024))
 		TOS_CheckSysConfig();
 
-#if ENABLE_WINUAE_CPU
 	/* 32-bit addressing is supported only by CPU >= 68020, TOS v3, TOS v4 and EmuTOS */
 	if (ConfigureParams.System.nCpuLevel < 2 || (TosVersion < 0x0300 && !bIsEmuTOS))
 	{
@@ -1073,7 +1053,6 @@ static uint8_t *TOS_LoadImage(void)
 			break;
 		}
 	}
-#endif
 
 	return pTosFile;
 }

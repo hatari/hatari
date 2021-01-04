@@ -354,7 +354,6 @@ typedef enum
   DSP_TYPE_EMU
 } DSPTYPE;
 
-#if ENABLE_WINUAE_CPU
 typedef enum
 {
   FPU_NONE = 0,
@@ -362,7 +361,6 @@ typedef enum
   FPU_68882 = 68882,
   FPU_CPU = 68040
 } FPUTYPE;
-#endif
 
 typedef enum
 {
@@ -387,13 +385,11 @@ typedef struct
   bool bAddressSpace24;           /* Always set to true with old UAE cpu */
   VIDEOTIMINGMODE VideoTimingMode;
 
-#if ENABLE_WINUAE_CPU
   bool bCycleExactCpu;
   FPUTYPE n_FPUType;
   bool bCompatibleFPU;            /* More compatible FPU */
   bool bSoftFloatFPU;
   bool bMMU;                      /* TRUE if MMU is enabled */
-#endif
 } CNF_SYSTEM;
 
 typedef struct

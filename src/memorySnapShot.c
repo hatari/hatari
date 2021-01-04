@@ -166,11 +166,8 @@ static int MemorySnapShot_fseek(MSS_File fhndl, int pos)
 static bool MemorySnapShot_OpenFile(const char *pszFileName, bool bSave, bool bConfirm)
 {
 	char VersionString[] = VERSION_STRING;
-#if ENABLE_WINUAE_CPU
-# define CORE_VERSION 1
-#else
-# define CORE_VERSION 0
-#endif
+
+#define CORE_VERSION 1
 	Uint8 CpuCore;
 
 	/* Set error */

@@ -89,14 +89,7 @@ void M68000_SetDebugger(bool debug) { }
 /* fake UAE core registers */
 #include "newcpu.h"
 struct regstruct regs;
-#if ENABLE_WINUAE_CPU
-void m68k_dumpstate(uaecptr *nextpc, uaecptr prevpc) { }
 void m68k_dumpstate_file (FILE *f, uaecptr *nextpc, uaecptr prevpc) { }
-void m68k_disasm(uaecptr addr, uaecptr *nextpc, uaecptr lastpc, int cnt) { }
-#else
-void m68k_dumpstate (FILE *f, uaecptr *nextpc) { }
-void m68k_disasm (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt) { }
-#endif
 
 /* fake debugui.c stuff */
 #include "debug_priv.h"

@@ -354,24 +354,20 @@ static void Blitter_FlushCycles(void)
 
 //fprintf ( stderr , "blitter flush_cyc cyc=%d pass=%d %d cur_cyc=%lu\n" , BlitterVars.op_cycles , BlitterVars.pass_cycles , nCyclesMainCounter , currcycle/cpucycleunit );
 
-#if ENABLE_WINUAE_CPU
 	if ( BLITTER_RUN_CE )					/* In CE mode, flush cycles already counted in the current cpu instruction */
 	{
 		M68000_AddCycles_CE ( currcycle * 2 / CYCLE_UNIT );
  		currcycle = 0;
 	}
-#endif
 
 	PendingInterruptCount -= op_cycles;
 	while (PendingInterruptCount <= 0 && PendingInterruptFunction)
 		CALL_VAR(PendingInterruptFunction);
 
-#if ENABLE_WINUAE_CPU
 	/* Run DSP while blitter owns the bus */
 	if (bDspEnabled) {
 		DSP_Run(2 * BlitterVars.op_cycles);
 	}
-#endif
 
 	BlitterVars.pass_cycles += BlitterVars.op_cycles;
 	BlitterVars.op_cycles = 0;

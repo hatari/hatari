@@ -812,7 +812,6 @@ BOOL flag1, flag2;
 	}
 
 	//deal with TT RAM Size Stepper
-#ifdef ENABLE_WINUAE_CPU
 	int ttramsize_MB=ConfigureParams.Memory.TTRamSize_KB/1024 ;	//JV 12-2016
 
 	IMPORT_NTEXTFIELD(TTRAMSizeValue, ttramsize_MB); 			// MS 12-2016
@@ -831,8 +830,7 @@ BOOL flag1, flag2;
 		[FPUType selectCellWithTag:3];
 	//not needed anymore
 	//IMPORT_SWITCH(CompatibleFPU, ConfigureParams.System.bCompatibleFPU);
-#endif
-	
+
 	int i;
 	for (i = 0; i <= DLGSOUND_50KHZ-DLGSOUND_11KHZ; i++)
 	{
@@ -1078,7 +1076,6 @@ BOOL flag1, flag2;
 	 case 3: ConfigureParams.System.VideoTimingMode=VIDEO_TIMING_MODE_WS3; break;
 	 case 4: ConfigureParams.System.VideoTimingMode=VIDEO_TIMING_MODE_WS4; break;
 	}
-#ifdef ENABLE_WINUAE_CPU
 	int ttramsizeMB=[TTRAMSizeValue intValue]*1024;										//JV 12-2016
 	ConfigureParams.Memory.TTRamSize_KB=ttramsizeMB;
 
@@ -1097,7 +1094,6 @@ BOOL flag1, flag2;
 		ConfigureParams.System.n_FPUType = FPU_CPU;
 	//not needed anymore
 	//EXPORT_SWITCH(CompatibleFPU, ConfigureParams.System.bCompatibleFPU);
-#endif
 
 	ConfigureParams.Sound.nPlaybackFreq = nSoundFreqs[[[playbackQuality selectedCell] tag]];
 
@@ -1221,7 +1217,6 @@ BOOL flag1, flag2;
 	configNm = [NSMutableString stringWithCapacity:50] ; [configNm setString:@""] ; [configNm retain] ;
 	opnPanel = [NSOpenPanel openPanel]; [opnPanel retain] ;
 	savPanel = [NSSavePanel savePanel]; [savPanel retain] ;
-#ifdef ENABLE_WINUAE_CPU
 	cycleExactCPU.enabled = true;
 	MMU_Emulation.enabled = true;
 	adressSpace24.enabled = true;
@@ -1229,8 +1224,6 @@ BOOL flag1, flag2;
 	//CompatibleFPU.enabled = true;
 	FPUType.enabled = true;
 	bCell68060.enabled = true;
-#endif
-    
 }
 
 @end

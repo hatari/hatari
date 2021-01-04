@@ -607,14 +607,11 @@ static const struct Config_Tag configs_System[] =
 	{ "bFastBoot", Bool_Tag, &ConfigureParams.System.bFastBoot },
 	{ "bFastForward", Bool_Tag, &ConfigureParams.System.bFastForward },
 	{ "bAddressSpace24", Bool_Tag, &ConfigureParams.System.bAddressSpace24 },
-
-#if ENABLE_WINUAE_CPU
 	{ "bCycleExactCpu", Bool_Tag, &ConfigureParams.System.bCycleExactCpu },
 	{ "n_FPUType", Int_Tag, &ConfigureParams.System.n_FPUType },
 /* JIT	{ "bCompatibleFPU", Bool_Tag, &ConfigureParams.System.bCompatibleFPU }, */
 	{ "bSoftFloatFPU", Bool_Tag, &ConfigureParams.System.bSoftFloatFPU },
 	{ "bMMU", Bool_Tag, &ConfigureParams.System.bMMU },
-#endif
 	{ "VideoTiming", Int_Tag, &ConfigureParams.System.VideoTimingMode },
 	{ NULL , Error_Tag, NULL }
 };
@@ -889,13 +886,11 @@ void Configuration_SetDefault(void)
 	ConfigureParams.System.nCpuFreq = 8;	nCpuFreqShift = 0;
 	ConfigureParams.System.nDSPType = DSP_TYPE_NONE;
 	ConfigureParams.System.bAddressSpace24 = true;
-#if ENABLE_WINUAE_CPU
 	ConfigureParams.System.n_FPUType = FPU_NONE;
 	ConfigureParams.System.bCompatibleFPU = true; /* JIT */
 	ConfigureParams.System.bSoftFloatFPU = false;
 	ConfigureParams.System.bMMU = false;
 	ConfigureParams.System.bCycleExactCpu = true;
-#endif
 	ConfigureParams.System.VideoTimingMode = VIDEO_TIMING_MODE_WS3;
 	ConfigureParams.System.bCompatibleCpu = true;
 	ConfigureParams.System.bBlitter = false;
@@ -1059,12 +1054,8 @@ void Configuration_Apply(bool bReset)
 	FDC_Drive_Set_NumberOfHeads ( 1 , ConfigureParams.DiskImage.DriveB_NumberOfHeads );
 
 	/* Update disassembler */
-#if ENABLE_WINUAE_CPU
 	Disasm_SetCPUType(ConfigureParams.System.nCpuLevel, ConfigureParams.System.n_FPUType,
 	                  ConfigureParams.System.bMMU);
-#else
-	Disasm_SetCPUType(ConfigureParams.System.nCpuLevel, 0, false);
-#endif
 
 #if ENABLE_DSP_EMU
 	/* Enable DSP ? */
@@ -1296,12 +1287,10 @@ void Configuration_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&ConfigureParams.System.bPatchTimerD, sizeof(ConfigureParams.System.bPatchTimerD));
 	MemorySnapShot_Store(&ConfigureParams.System.bAddressSpace24, sizeof(ConfigureParams.System.bAddressSpace24));
 
-#if ENABLE_WINUAE_CPU
 	MemorySnapShot_Store(&ConfigureParams.System.bCycleExactCpu, sizeof(ConfigureParams.System.bCycleExactCpu));
 	MemorySnapShot_Store(&ConfigureParams.System.n_FPUType, sizeof(ConfigureParams.System.n_FPUType));
 	MemorySnapShot_Store(&ConfigureParams.System.bCompatibleFPU, sizeof(ConfigureParams.System.bCompatibleFPU));
 	MemorySnapShot_Store(&ConfigureParams.System.bMMU, sizeof(ConfigureParams.System.bMMU));
-#endif
 
 	MemorySnapShot_Store(&ConfigureParams.DiskImage.FastFloppy, sizeof(ConfigureParams.DiskImage.FastFloppy));
 

@@ -141,9 +141,7 @@ enum {
 	OPT_IDESLAVEHDIMAGE,
 	OPT_IDEBYTESWAP,
 	OPT_MEMSIZE,		/* memory options */
-#if ENABLE_WINUAE_CPU
 	OPT_TT_RAM,
-#endif
 	OPT_MEMSTATE,
 	OPT_TOS,		/* ROM options */
 	OPT_PATCHTOS,
@@ -151,14 +149,12 @@ enum {
 	OPT_CPULEVEL,		/* CPU options */
 	OPT_CPUCLOCK,
 	OPT_COMPATIBLE,
-#if ENABLE_WINUAE_CPU
 	OPT_CPU_CYCLE_EXACT,	/* WinUAE CPU/FPU/bus options */
 	OPT_CPU_ADDR24,
 	OPT_FPU_TYPE,
 /*	OPT_FPU_JIT_COMPAT, */
 	OPT_FPU_SOFTFLOAT,
 	OPT_MMU,
-#endif
 	OPT_MACHINE,		/* system options */
 	OPT_BLITTER,
 	OPT_DSP,
@@ -174,9 +170,7 @@ enum {
 #endif
 	OPT_DEBUG,
 	OPT_EXCEPTIONS,
-#if ENABLE_WINUAE_CPU
 	OPT_LILO,
-#endif
 	OPT_BIOSINTERCEPT,
 	OPT_CONOUT,
 	OPT_DISASM,
@@ -400,10 +394,8 @@ static const opt_t HatariOptions[] = {
 	{ OPT_HEADER, NULL, NULL, NULL, "Memory" },
 	{ OPT_MEMSIZE,   "-s", "--memsize",
 	  "<x>", "ST RAM size (x = size in MiB from 0 to 14, 0 = 512KiB ; else size in KiB)" },
-#if ENABLE_WINUAE_CPU
 	{ OPT_TT_RAM,   NULL, "--ttram",
 	  "<x>", "TT RAM size (x = size in MiB from 0 to 512)" },
-#endif
 	{ OPT_MEMSTATE,   NULL, "--memstate",
 	  "<file>", "Load memory snap-shot <file>" },
 
@@ -415,18 +407,13 @@ static const opt_t HatariOptions[] = {
 	{ OPT_CARTRIDGE, NULL, "--cartridge",
 	  "<file>", "Use ROM cartridge image <file>" },
 
-#if ENABLE_WINUAE_CPU
 	{ OPT_HEADER, NULL, NULL, NULL, "CPU/FPU/bus" },
-#else
-	{ OPT_HEADER, NULL, NULL, NULL, "CPU" },
-#endif
 	{ OPT_CPULEVEL,  NULL, "--cpulevel",
 	  "<x>", "Set the CPU type (x => 680x0) (EmuTOS/TOS 2.06 only!)" },
 	{ OPT_CPUCLOCK,  NULL, "--cpuclock",
 	  "<x>", "Set the CPU clock (x = 8/16/32)" },
 	{ OPT_COMPATIBLE, NULL, "--compatible",
 	  "<bool>", "Use a more compatible (but slower) prefetch mode for CPU" },
-#if ENABLE_WINUAE_CPU
 	{ OPT_CPU_CYCLE_EXACT, NULL, "--cpu-exact",
 	  "<bool>", "Use cycle exact CPU emulation" },
 	{ OPT_CPU_ADDR24, NULL, "--addr24",
@@ -439,7 +426,6 @@ static const opt_t HatariOptions[] = {
 	  "<bool>", "Use full software FPU emulation" },
 	{ OPT_MMU, NULL, "--mmu",
 	  "<bool>", "Use MMU emulation" },
-#endif
 
 	{ OPT_HEADER, NULL, NULL, NULL, "Misc system" },
 	{ OPT_MACHINE,   NULL, "--machine",
@@ -474,9 +460,7 @@ static const opt_t HatariOptions[] = {
 	  NULL, "Toggle whether CPU exceptions invoke debugger" },
 	{ OPT_EXCEPTIONS, NULL, "--debug-except",
 	  "<flags>", "Exceptions invoking debugger, see '--debug-except help'" },
-#if ENABLE_WINUAE_CPU
 	{ OPT_LILO, NULL, "--lilo", "<x>", "Boot Linux (see manual page)" },
-#endif
 	{ OPT_BIOSINTERCEPT, NULL, "--bios-intercept",
 	  "<bool>", "Enable/disable XBIOS command parsing support" },
 	{ OPT_CONOUT,   NULL, "--conout",
@@ -1767,13 +1751,11 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			bLoadAutoSave = false;
 			break;
 
-#if ENABLE_WINUAE_CPU
 		case OPT_TT_RAM:
 			memsize = atoi(argv[++i]);
 			ConfigureParams.Memory.TTRamSize_KB = Opt_ValueAlignMinMax(memsize+3, 4, 0, 512) * 1024;
 			bLoadAutoSave = false;
 			break;
-#endif
 
 		case OPT_TOS:
 			i += 1;
@@ -1817,11 +1799,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 		case OPT_CPULEVEL:
 			/* UAE core uses cpu_level variable */
 			ncpu = atoi(argv[++i]);
-#if ENABLE_WINUAE_CPU
 			if(ncpu < 0 || ncpu == 5 || ncpu > 6)
-#else
-			if(ncpu < 0 || ncpu > 4)
-#endif
 			{
 				return Opt_ShowError(OPT_CPULEVEL, argv[i], "Invalid CPU level");
 			}
@@ -1848,7 +1826,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				bLoadAutoSave = false;
 			}
 			break;
-#if ENABLE_WINUAE_CPU
 		case OPT_CPU_ADDR24:
 			ok = Opt_Bool(argv[++i], OPT_CPU_ADDR24, &ConfigureParams.System.bAddressSpace24);
 			bLoadAutoSave = false;
@@ -1896,7 +1873,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			ok = Opt_Bool(argv[++i], OPT_MMU, &ConfigureParams.System.bMMU);
 			bLoadAutoSave = false;
 			break;
-#endif
 
 			/* system options */
 		case OPT_MACHINE:
@@ -1944,7 +1920,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			{
 				return Opt_ShowError(OPT_MACHINE, argv[i], "Unknown machine type");
 			}
-#if ENABLE_WINUAE_CPU
 			if (Config_IsMachineST() || Config_IsMachineSTE())
 			{
 				ConfigureParams.System.bMMU = false;
@@ -1959,7 +1934,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			{
 				ConfigureParams.System.n_FPUType = FPU_NONE;	/* TODO: or leave it as-is? */
 			}
-#endif
 			bLoadAutoSave = false;
 			break;
 
@@ -2118,7 +2092,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				        oldmask, ExceptionDebugMask);
 			}
 			break;
-#if ENABLE_WINUAE_CPU
+
 		case OPT_LILO: {
 			size_t len;
 			len = strlen(argv[++i]);
@@ -2137,7 +2111,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			bUseTos = false;
 			break;
 		}
-#endif
+
 		case OPT_BIOSINTERCEPT:
 			ok = Opt_Bool(argv[++i], OPT_BIOSINTERCEPT, &bBiosIntercept);
 			Log_Printf(LOG_DEBUG, "XBIOS 11/20/255 Hatari versions %sabled: "

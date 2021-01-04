@@ -53,8 +53,6 @@ set(ENABLE_TRACING 1
     CACHE BOOL "Enable tracing messages for debugging")
 set(ENABLE_SMALL_MEM 0
     CACHE BOOL "Enable to use less memory - at the expense of emulation speed")
-set(ENABLE_WINUAE_CPU 1
-    CACHE BOOL "Enable WinUAE CPU core")
 
 # Run-time checks with GCC / LLVM (Clang) AddressSanitizer:
 # - stack protection
