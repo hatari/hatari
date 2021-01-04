@@ -38,8 +38,10 @@ endif()
 if(WIN32)
 	set(GUIWIN_SOURCES gui-win/opencon.c)
 	set(GUIWIN_RES gui-win/hatari-winicon.rc)
-	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mwindows")
-	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--as-needed -lssp")
+	if(CMAKE_COMPILER_IS_GNUCC)
+		set(CMAKE_EXE_LINKER_FLAGS
+		    "${CMAKE_EXE_LINKER_FLAGS} -mwindows -Wl,--as-needed -lssp")
+	endif(CMAKE_COMPILER_IS_GNUCC)
 endif(WIN32)
 
 include_directories(includes debug falcon
