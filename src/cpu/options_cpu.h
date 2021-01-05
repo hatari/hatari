@@ -735,7 +735,6 @@ struct uae_prefs {
 	int m68k_speed;
 	double m68k_speed_throttle;
 	double x86_speed_throttle;
-	int cpu_level;				/* Hatari ; TODO remove and only use cpu_model (was here for compat with old uae core) */
 	int cpu_model;
 	int mmu_model;
 	bool mmu_ec;

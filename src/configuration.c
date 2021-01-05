@@ -1000,7 +1000,7 @@ void Configuration_Apply(bool bReset)
 		Crossbar_Recalculate_Clocks_Cycles();
 
 	/* Check/constrain CPU settings and change corresponding
-	 * UAE cpu_level & cpu_compatible variables
+	 * cpu_model/cpu_compatible/cpu_cycle_exact/... variables
 	 */
 //fprintf (stderr,"M68000_CheckCpuSettings conf 1\n" );
 	M68000_CheckCpuSettings();

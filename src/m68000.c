@@ -305,7 +305,6 @@ void M68000_Start(void)
  * Check whether CPU settings have been changed.
  * Possible values for WinUAE :
  *	cpu_model : 68000 , 68010, 68020, 68030, 68040, 68060
- *	cpu_level : not used anymore
  *	cpu_compatible : 0/false (no prefetch for 68000/20/30)  1/true (prefetch opcode for 68000/20/30)
  *	cpu_cycle_exact : 0/false   1/true (most accurate, implies cpu_compatible)
  *	cpu_memory_cycle_exact : 0/false   1/true (less accurate than cpu_cycle_exact)
@@ -330,20 +329,17 @@ void M68000_Start(void)
 void M68000_CheckCpuSettings(void)
 {
 //fprintf ( stderr,"M68000_CheckCpuSettings in\n" );
-	changed_prefs.cpu_level = ConfigureParams.System.nCpuLevel;
-
 	/* WinUAE core uses cpu_model instead of cpu_level, so we've got to
 	 * convert these values here: */
-	switch (changed_prefs.cpu_level) {
+	switch (ConfigureParams.System.nCpuLevel) {
 		case 0 : changed_prefs.cpu_model = 68000; break;
 		case 1 : changed_prefs.cpu_model = 68010; break;
 		case 2 : changed_prefs.cpu_model = 68020; break;
 		case 3 : changed_prefs.cpu_model = 68030; break;
 		case 4 : changed_prefs.cpu_model = 68040; break;
 		case 5 : changed_prefs.cpu_model = 68060; break;
-		default: fprintf (stderr, "M68000_CheckCpuSettings() : Error, cpu_level unknown\n");
+		default: fprintf (stderr, "M68000_CheckCpuSettings() : Error, cpu_level %d unknown\n" , ConfigureParams.System.nCpuLevel);
 	}
-	currprefs.cpu_level = changed_prefs.cpu_level;			/* TODO remove, not used anymore */
 
 	/* Only 68040/60 can have 'internal' FPU */
 	if ( ( ConfigureParams.System.n_FPUType == FPU_CPU ) && ( changed_prefs.cpu_model < 68040 ) )

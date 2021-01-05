@@ -3357,7 +3357,7 @@ static bool GemDOS_Super(Uint32 Params)
 	/* Get SR, return address and vector offset from stack frame */
 	nSR = STMemory_ReadWord(Regs[REG_A7]);
 	nRetAddr = STMemory_ReadLong(Regs[REG_A7] + SIZE_WORD);
-	if (currprefs.cpu_level > 0)
+	if (currprefs.cpu_model > 68000)
 		nVec = STMemory_ReadWord(Regs[REG_A7] + SIZE_WORD + SIZE_LONG);
 
 	if (nParam == 1)                /* Query mode? */
@@ -3371,7 +3371,7 @@ static bool GemDOS_Super(Uint32 Params)
 		nParam = regs.usp;
 	}
 
-	if (currprefs.cpu_level > 0)
+	if (currprefs.cpu_model > 68000)
 		nExcFrameSize = SIZE_WORD + SIZE_LONG + SIZE_WORD;
 	else
 		nExcFrameSize = SIZE_WORD + SIZE_LONG;
@@ -3962,7 +3962,7 @@ int GemDOS_Trap(void)
 	else
  	{
 		Params = Regs[REG_A7] + SIZE_WORD + SIZE_LONG;  /* skip SR & PC pushed to super stack */
-		if (currprefs.cpu_level > 0)
+		if (currprefs.cpu_model > 68000)
 			Params += SIZE_WORD;   /* Skip extra word if CPU is >=68010 */
 	}
 
