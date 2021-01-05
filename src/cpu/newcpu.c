@@ -2196,7 +2196,7 @@ static void update_68k_cycles (void)
 	} else if (currprefs.cpu_frequency) {
 		cpucycleunit = CYCLE_UNIT * baseclock / currprefs.cpu_frequency;
 #endif
-	} else if (currprefs.cpu_cycle_exact && currprefs.cpu_clock_multiplier == 0) {
+	} else if (currprefs.cpu_memory_cycle_exact && currprefs.cpu_clock_multiplier == 0) {
 		if (currprefs.cpu_model >= 68040) {
 			cpucycleunit = CYCLE_UNIT / 16;
 		} if (currprefs.cpu_model == 68030) {
@@ -2527,6 +2527,13 @@ static void MakeFromSR_x(int t0trace)
 	}
 	if (currprefs.mmu_model)
 		mmu_set_super (regs.s != 0);
+
+#ifdef JIT
+	// if JIT enabled and T1, T0 or M changes: end compile.
+	if (currprefs.cachesize && (oldt0 != regs.t0 || oldt1 != regs.t1 || oldm != regs.m)) {
+		set_special(SPCFLAG_END_COMPILE);
+	}
+#endif
 
 	doint_imm();
 	if (regs.t1 || regs.t0) {
@@ -4763,8 +4770,9 @@ void doint(void)
 //fprintf ( stderr , "doint1 %d ipl=%x ipl_pin=%x intmask=%x spcflags=%x\n" , m68k_interrupt_delay,regs.ipl, regs.ipl_pin , regs.intmask, regs.spcflags );
 	if (m68k_interrupt_delay) {
 		regs.ipl_pin = intlev ();
-		set_special (SPCFLAG_INT);
 //fprintf ( stderr , "doint2 %d ipl=%x ipl_pin=%x intmask=%x spcflags=%x\n" , m68k_interrupt_delay,regs.ipl, regs.ipl_pin , regs.intmask, regs.spcflags );
+		if (regs.ipl_pin > regs.intmask || regs.ipl_pin == 7)
+			set_special(SPCFLAG_INT);
 		return;
 	}
 	if (currprefs.cpu_compatible && currprefs.cpu_model < 68020)
@@ -5073,8 +5081,8 @@ static int do_specialties (int cycles)
 
 //fprintf ( stderr , "dospec1 %d %d spcflags=%x ipl=%x ipl_pin=%x intmask=%x\n" , m68k_interrupt_delay,time_for_interrupt() , regs.spcflags , regs.ipl , regs.ipl_pin, regs.intmask );
 	if (m68k_interrupt_delay) {
-		unset_special(SPCFLAG_INT);
 		if (time_for_interrupt ()) {
+			unset_special(SPCFLAG_INT);
 			do_interrupt (regs.ipl);
 		}
 	} else {
@@ -5455,6 +5463,7 @@ static void m68k_run_1_ce (void)
 					MFP_UpdateIRQ_All ( 0 );
 #endif
 
+//				wait_memory_cycles();			// TODO NP : plus haut ou ici ?
 				if (cpu_tracer) {
 					cputrace.state = 0;
 				}
@@ -5467,7 +5476,7 @@ cont:
 #endif
 				}
 
-				if (r->spcflags || time_for_interrupt ()) {
+				if (r->spcflags) {
 					if (do_specialties (0))
 						exit = true;
 				}
@@ -5482,7 +5491,7 @@ cont:
 			}
 		} CATCH (prb) {
 			bus_error();
-			if (r->spcflags || time_for_interrupt()) {
+			if (r->spcflags) {
 				if (do_specialties(0))
 					exit = true;
 			}
@@ -5652,7 +5661,7 @@ void process_cpu_indirect_memory_write(uae_u32 addr, uae_u32 data, int size)
 	cpu_thread_indirect_mode = 0xff;
 }
 
-static void run_cpu_thread(void *(*f)(void *))
+static void run_cpu_thread(void (*f)(void *))
 {
 	int framecnt = -1;
 	int vp = 0;
@@ -5921,7 +5930,7 @@ void execute_normal(void)
 typedef void compiled_handler (void);
 
 #ifdef WITH_THREADED_CPU
-static void *cpu_thread_run_jit(void *v)
+static void cpu_thread_run_jit(void *v)
 {
 	cpu_thread_tid = uae_thread_get_id();
 	cpu_thread_active = 1;
@@ -5950,7 +5959,6 @@ static void *cpu_thread_run_jit(void *v)
 	}
 #endif
 	cpu_thread_active = 0;
-	return 0;
 }
 #endif
 
@@ -5987,6 +5995,25 @@ static void m68k_run_jit(void)
 					if (do_specialties(0)) {
 						return;
 					}
+				}
+				// If T0, T1 or M got set: run normal emulation loop
+				if (regs.t0 || regs.t1 || regs.m) {
+					flush_icache(3);
+					struct regstruct *r = &regs;
+					bool exit = false;
+					check_debugger();
+					while (!exit && (regs.t0 || regs.t1 || regs.m)) {
+						r->instruction_pc = m68k_getpc();
+						r->opcode = x_get_iword(0);
+						(*cpufunctbl[r->opcode])(r->opcode);
+						count_instr(r->opcode);
+						do_cycles(4 * CYCLE_UNIT);
+						if (r->spcflags) {
+							if (do_specialties(cpu_cycles))
+								exit = true;
+						}
+					}
+					unset_special(SPCFLAG_END_COMPILE);
 				}
 			}
 
@@ -7059,7 +7086,7 @@ cont:
 #endif
 
 #ifdef WITH_THREADED_CPU
-static void *cpu_thread_run_2(void *v)
+static void cpu_thread_run_2(void *v)
 {
 	bool exit = false;
 	struct regstruct *r = &regs;
@@ -8695,7 +8722,7 @@ void cpureset (void)
 #ifndef WINUAE_FOR_HATARI
 	send_internalevent(INTERNALEVENT_CPURESET);
 	if ((currprefs.cpu_compatible || currprefs.cpu_memory_cycle_exact) && currprefs.cpu_model <= 68020) {
-		custom_reset_cpu (false, false);
+		custom_reset_cpu(false, false);
 		return;
 	}
 #endif
@@ -8728,7 +8755,7 @@ void cpureset (void)
 	// (which is probably what program wanted anyway)
 #ifndef WINUAE_FOR_HATARI
 	write_log (_T("CPU Reset PC=%x (%s), invalid memory -> %x.\n"), pc, ab->name, ksboot + 2);
-	custom_reset_cpu (false, false);
+	custom_reset_cpu(false, false);
 	m68k_setpc_normal (ksboot);
 #else
 	write_log (_T("CPU Reset PC=%x (%s), invalid memory\n"), pc, ab->name);
@@ -11042,11 +11069,11 @@ void fill_prefetch_030(void)
 
 void fill_prefetch (void)
 {
-	reset_pipeline_state();
 	if (currprefs.cachesize)
 		return;
 	if (!currprefs.cpu_compatible)
 		return;
+	reset_pipeline_state();
 	if (currprefs.cpu_model >= 68040) {
 		if (currprefs.cpu_compatible || currprefs.cpu_memory_cycle_exact) {
 			fill_icache040(m68k_getpc() + 16);

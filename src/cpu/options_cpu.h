@@ -5,8 +5,8 @@
   or at your option any later version. Read the file gpl.txt for details.
 */
 
-#ifndef OPTIONS_CPU_H
-#define OPTIONS_CPU_H
+#ifndef UAE_OPTIONS_H
+#define UAE_OPTIONS_H
 
 #include "uae/types.h"
 
@@ -17,7 +17,7 @@
 
 
 #define UAEMAJOR 4
-#define UAEMINOR 4
+#define UAEMINOR 5
 #define UAESUBREV 0
 
 #define MAX_AMIGADISPLAYS 4
@@ -542,6 +542,7 @@ struct uae_prefs {
 	bool comp_constjump;
 	bool comp_catchfault;
 	int cachesize;
+	TCHAR jitblacklist[MAX_DPATH];
 	bool fpu_strict;
 	int fpu_mode;
 
@@ -609,6 +610,7 @@ struct uae_prefs {
 	int collision_level;
 	int leds_on_screen;
 	int leds_on_screen_mask[2];
+	int leds_on_screen_multiplier[2];
 	int power_led_dim;
 	struct wh osd_pos;
 	int keyboard_leds[3];
@@ -733,7 +735,7 @@ struct uae_prefs {
 	int m68k_speed;
 	double m68k_speed_throttle;
 	double x86_speed_throttle;
-	int cpu_level;				/* Hatari */
+	int cpu_level;				/* Hatari ; TODO remove and only use cpu_model (was here for compat with old uae core) */
 	int cpu_model;
 	int mmu_model;
 	bool mmu_ec;
@@ -1019,4 +1021,4 @@ extern void error_log (const TCHAR*, ...);
 
 #endif
 
-#endif /* OPTIONS_CPU_H */
+#endif /* UAE_OPTIONS_H */
