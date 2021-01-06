@@ -343,8 +343,10 @@ void M68000_CheckCpuSettings(void)
 
 	/* Only 68040/60 can have 'internal' FPU */
 	if ( ( ConfigureParams.System.n_FPUType == FPU_CPU ) && ( changed_prefs.cpu_model < 68040 ) )
+	{
+		Log_Printf(LOG_WARN, "Internal FPU is supported only for 040/060, disabling FPU\n");
 		ConfigureParams.System.n_FPUType = FPU_NONE;
-
+	}
 	/* 68000/10 can't have an FPU */
 	if ( ( ConfigureParams.System.n_FPUType != FPU_NONE ) && ( changed_prefs.cpu_model < 68020 ) )
 	{
