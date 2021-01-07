@@ -327,15 +327,31 @@ static char *DebugDsp_MatchNext(const char *text, int state)
 }
 
 /**
+ * Variable + debugger variable function for tracking
+ * subroutine call depth for "dspnext" breakpoint
+ */
+static int DspCallDepth;
+Uint32 DebugDsp_CallDepth(void)
+{
+	return DspCallDepth;
+}
+/* Depth tracking can start anywhere i.e. it can go below initial
+ * value.  Start from large enough value that it should never goes
+ * negative, as then DebugCpu_CallDepth() return value would wrap
+ */
+#define CALL_START_DEPTH 10000
+
+/**
  * Command: Step DSP, but proceed through subroutines
  * Does this by temporary conditional breakpoint
  */
 static int DebugDsp_Next(int nArgc, char *psArgv[])
 {
-	char command[40];
+	char command[80];
 	if (nArgc > 1)
 	{
 		int optype;
+		bool depthcheck = false;
 		if(strcmp(psArgv[1], "branch") == 0)
 			optype = CALL_BRANCH;
 		else if(strcmp(psArgv[1], "exreturn") == 0)
@@ -343,7 +359,10 @@ static int DebugDsp_Next(int nArgc, char *psArgv[])
 		else if(strcmp(psArgv[1], "subcall") == 0)
 			optype = CALL_SUBROUTINE;
 		else if (strcmp(psArgv[1], "subreturn") == 0)
+		{
 			optype = CALL_SUBRETURN;
+			depthcheck = true;
+		}
 		else if (strcmp(psArgv[1], "return") == 0)
 			optype = CALL_SUBRETURN | CALL_EXCRETURN;
 		else
@@ -351,7 +370,16 @@ static int DebugDsp_Next(int nArgc, char *psArgv[])
 			fprintf(stderr, "Unrecognized opcode type given!\n");
 			return DEBUGGER_CMDDONE;
 		}
-		sprintf(command, "DspOpcodeType & $%x > 0 :once :quiet\n", optype);
+		/* DspOpCodeType increases call depth on subroutine calls, and
+		 * decreases depth on return from them, so it must be first check
+		 * to get called on every relevant instruction.
+		 */
+		DspCallDepth = CALL_START_DEPTH;
+		if (depthcheck)
+			sprintf(command, "DspOpcodeType & $%x > 0  &&  DspCallDepth < $%x  :once :quiet\n",
+				optype, CALL_START_DEPTH);
+		else
+			sprintf(command, "DspOpcodeType & $%x > 0 :once :quiet\n", optype);
 	}
 	else
 	{
@@ -390,6 +418,7 @@ Uint32 DebugDsp_OpcodeType(void)
 
 	/* subroutine returns */
 	if (opcode == 0xC) {	/* (just) RTS */
+		DspCallDepth--;
 		return CALL_SUBRETURN;
 	}
 	if (
@@ -407,6 +436,7 @@ Uint32 DebugDsp_OpcodeType(void)
 	    (opcode & 0xFFC0A0) == 0xB00A0 ||	/* JSSET 00001011 00aaaaaa 1S1bbbbb */
 	    (opcode & 0xFFC0A0) == 0xB80A0 ||	/* JSSET 00001011 10pppppp 1S1bbbbb */
 	    (opcode & 0xFFC0E0) == 0xBC020) {	/* JSSET 00001011 11DDDDDD 001bbbbb */
+		DspCallDepth++;
 		return CALL_SUBROUTINE;
 	}
 	/* exception handler returns */

@@ -38,6 +38,8 @@ Emulator:
 - Debugger:
   - More readable "variables" command output
   - Add "info vme" and VME/SCU reg access tracing support
+  - "next subreturn" will run until current function returns,
+    even if function calls other functions before that
 
 
  Version 2.3.1 (2020-12-27)

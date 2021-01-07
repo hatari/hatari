@@ -126,6 +126,7 @@ info_func_t DebugInfo_GetInfoFunc(const char *name) {
 #ifdef ENABLE_DSP_EMU
 #include "debugdsp.h"
 void DebugDsp_InitSession(void) { }
+Uint32 DebugDsp_CallDepth(void) { return 0; }
 Uint32 DebugDsp_InstrCount(void) { return 0; }
 Uint32 DebugDsp_OpcodeType(void) { return 0; }
 #endif

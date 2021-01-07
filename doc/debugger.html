@@ -947,7 +947,7 @@ these debugger input files also with the debugger "file" command,
 command line option.
 </p>
 
-<h3>Stepping through code</h3>
+<h3 id="Stepping">Stepping through code</h3>
 
 <p>
 After analyzing the emulation state and/or setting new breakpoints,
@@ -987,13 +987,29 @@ type is encountered, by giving it the instruction type:
 </ul>
 
 <p>
-For example: "n branch", or "dn branch".
+"subreturn" differs from others by running until current subroutine
+ends, even if other subroutines are called before that.  This is
+particularly useful for profiling more complex functions; set
+breakpoint on function start, enable profiling and run until that
+functions returns, to get its full profile. Example: "n subreturn",
+or "dn subreturn".
 </p>
 
-<p>
-(Note: CHK, CHK2, FBCC, FDBCC, &amp; FTRAPCC exception / branch CPU
-instructions aren't supported currently.)
-</p>
+<p>Notes:</p>
+<ul>
+<li>"next subreturn" works only for real subroutines i.e. code called
+    with BSR/JSR and returning with RT[DRS]. In (GCC) optimized compiled
+    C-code, calls to functions in same C / object file may get inlined
+    or just called with JMP.  If that's the case, and making the
+    function non-static doesn't help, move it to another C-file</li>
+<li>"exreturn" and "return" run only until first instruction of given
+    type is encountered.  They cannot implement similar functionality
+    as "subreturn", because it's not possible for "next" command to
+    track CPU / DSP exception invocations, and therefore it cannot
+    do call depth tracking required for this either</li>
+<li>Tracking CPU CHK2 and FPU FBCC, FDBCC &amp; FTRAPCC exception /
+    branch instructions isn't supported currently</li>
+</ul>
 
 
 <h3>Tracing</h3>
@@ -2010,9 +2026,26 @@ Please see <a href="#Profiling">Profiling</a> section for more info.
 profile  on
 c
 [after a while, use AltGr+Pause to get back to debugger]
-profile  counts
+profile  addresses
 </pre>
 Please see <a href="#Profiling">Profiling</a> section for more info.
+</dd>
+
+<dt><em>Profiling specific function and everything it calls</em></dt>
+<dd>Set breakpoint for the function entrypoint and when it is hit,
+enable profiling and continue to the end of the function:
+<pre>
+address myfunction
+c
+[back in debugger at myfunction]
+profile on
+next subreturn
+[back in debugger when function returns]
+</pre>
+Please see <a href="#Profiling">Profiling</a> section on and how
+to save and analyze profiling information after that, and
+<a href="#Stepping">Stepping</a> section for some "next subreturn"
+command limitations.
 </dd>
 
 <dt><em>Seeing program callstack when breakpoint is hit</em></dt>
@@ -2038,7 +2071,7 @@ profile  stack
 </dd>
 
 <dt><em>Seeing how program functions/symbols call each other</em></dt>
-<dd><a href="#Profile_data_post-processing">Profile data
+<dd><a href="#Profile_data_post_processing">Profile data
 post-processing</a> can provide execution callgraphs.
 </dd>
 

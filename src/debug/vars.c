@@ -158,11 +158,13 @@ static const var_addr_t hatari_vars[] = {
 	{ "Basepage", (Uint32*)DebugInfo_GetBASEPAGE, VALUE_TYPE_FUNCTION32, 0, "invalid before Desktop is up" },
 	{ "BiosOpcode", (Uint32*)GetBiosOpcode, VALUE_TYPE_FUNCTION32, 16, "$FFFF when not on BIOS trap" },
 	{ "BSS", (Uint32*)DebugInfo_GetBSS, VALUE_TYPE_FUNCTION32, 0, "invalid before Desktop is up" },
+	{ "CpuCallDepth", (Uint32*)DebugCpu_CallDepth, VALUE_TYPE_FUNCTION32, 0, NULL }, /* call depth for 'next subreturn' */
 	{ "CpuInstr", (Uint32*)DebugCpu_InstrCount, VALUE_TYPE_FUNCTION32, 0, "CPU instructions count" },
 	{ "CpuOpcodeType", (Uint32*)DebugCpu_OpcodeType, VALUE_TYPE_FUNCTION32, 0, NULL }, /* opcode type for 'next' */
 	{ "CycleCounter", (Uint32*)GetCycleCounter, VALUE_TYPE_FUNCTION32, 0, "global cycles counter (lower 32 bits)" },
 	{ "DATA", (Uint32*)DebugInfo_GetDATA, VALUE_TYPE_FUNCTION32, 0, "invalid before Desktop is up" },
 #if ENABLE_DSP_EMU
+	{ "DspCallDepth", (Uint32*)DebugDsp_CallDepth, VALUE_TYPE_FUNCTION32, 0, NULL }, /* call depth for 'dspnext subreturn' */
 	{ "DspInstr", (Uint32*)DebugDsp_InstrCount, VALUE_TYPE_FUNCTION32, 0, "DSP instructions count" },
 	{ "DspOpcodeType", (Uint32*)DebugDsp_OpcodeType, VALUE_TYPE_FUNCTION32, 0, NULL }, /* opcode type for 'dspnext' */
 #endif

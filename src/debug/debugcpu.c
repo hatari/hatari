@@ -728,15 +728,31 @@ static char *DebugCpu_MatchNext(const char *text, int state)
 }
 
 /**
+ * Variable + debugger variable function for tracking
+ * subroutine call depth for "next" breakpoint
+ */
+static int CpuCallDepth;
+Uint32 DebugCpu_CallDepth(void)
+{
+	return CpuCallDepth;
+}
+/* Depth tracking can start anywhere i.e. it can go below initial
+ * value.  Start from large enough value that it should never goes
+ * negative, as then DebugCpu_CallDepth() return value would wrap
+ */
+#define CALL_START_DEPTH 10000
+
+/**
  * Command: Step CPU, but proceed through subroutines
  * Does this by temporary conditional breakpoint
  */
 static int DebugCpu_Next(int nArgc, char *psArgv[])
 {
-	char command[40];
+	char command[80];
 	if (nArgc > 1)
 	{
 		int optype;
+		bool depthcheck = false;
 		if(strcmp(psArgv[1], "branch") == 0)
 			optype = CALL_BRANCH;
 		else if(strcmp(psArgv[1], "exception") == 0)
@@ -746,7 +762,10 @@ static int DebugCpu_Next(int nArgc, char *psArgv[])
 		else if(strcmp(psArgv[1], "subcall") == 0)
 			optype = CALL_SUBROUTINE;
 		else if (strcmp(psArgv[1], "subreturn") == 0)
+		{
 			optype = CALL_SUBRETURN;
+			depthcheck = true;
+		}
 		else if (strcmp(psArgv[1], "return") == 0)
 			optype = CALL_SUBRETURN | CALL_EXCRETURN;
 		else
@@ -754,7 +773,18 @@ static int DebugCpu_Next(int nArgc, char *psArgv[])
 			fprintf(stderr, "Unrecognized opcode type given!\n");
 			return DEBUGGER_CMDDONE;
 		}
-		sprintf(command, "CpuOpcodeType & $%x > 0 :once :quiet\n", optype);
+		/* CpuOpCodeType increases call depth on subroutine calls,
+		 * and decreases depth on return from them, so it must be
+		 * first check to get called on every relevant instruction.
+		 */
+		if (depthcheck)
+		{
+			CpuCallDepth = CALL_START_DEPTH;
+			sprintf(command, "CpuOpcodeType & $%x > 0  &&  CpuCallDepth < $%x  :once :quiet\n",
+				optype, CALL_START_DEPTH);
+		}
+		else
+			sprintf(command, "CpuOpcodeType & $%x > 0 :once :quiet\n", optype);
 	}
 	else
 	{
@@ -801,16 +831,21 @@ Uint32 DebugCpu_OpcodeType(void)
 	if (opcode == 0x4e74 ||			/* RTD */
 	    opcode == 0x4e75 ||			/* RTS */
 	    opcode == 0x4e77)			/* RTR */
+	{
+		CpuCallDepth--;
 		return CALL_SUBRETURN;
-
+	}
 	if (opcode == 0x4e73)			/* RTE */
+	{
 		return CALL_EXCRETURN;
-
+	}
 	/* NOTE: BSR needs to be matched before BRA/BCC! */
 	if ((opcode & 0xff00) == 0x6100 ||	/* BSR */
 	    (opcode & 0xffc0) == 0x4e80)	/* JSR */
+	{
+		CpuCallDepth++;
 		return CALL_SUBROUTINE;
-
+	}
 	/* TODO: ftrapcc, chk2? */
 	if (opcode == 0x4e72 ||			/* STOP */
 	    opcode == 0x4afc ||			/* ILLEGAL */
@@ -818,8 +853,9 @@ Uint32 DebugCpu_OpcodeType(void)
 	    (opcode & 0xfff0) == 0x4e40 ||	/* TRAP */
 	    (opcode & 0xf1c0) == 0x4180 ||	/* CHK */
 	    (opcode & 0xfff8) == 0x4848)	/* BKPT */
+	{
 		return CALL_EXCEPTION;
-
+	}
 	/* TODO: fbcc, fdbcc */
 	if ((opcode & 0xf000) == 0x6000 ||	/* BRA / BCC */
 	    (opcode & 0xffc0) == 0x4ec0 ||	/* JMP */

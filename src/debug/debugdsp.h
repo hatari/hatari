@@ -16,6 +16,7 @@ extern void DebugDsp_SetDebugging(void);
 #define DebugDsp_SetDebugging()
 #endif /* !ENABLE_DSP_EMU */
 extern void DebugDsp_Check(void);
+extern Uint32 DebugDsp_CallDepth(void);
 extern Uint32 DebugDsp_InstrCount(void);
 extern Uint32 DebugDsp_OpcodeType(void);
 extern int DebugDsp_DisAsm(int nArgc, char *psArgs[]);

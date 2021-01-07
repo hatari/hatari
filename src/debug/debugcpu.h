@@ -12,6 +12,8 @@
 
 extern void DebugCpu_Check(void);
 extern void DebugCpu_SetDebugging(void);
+
+extern Uint32 DebugCpu_CallDepth(void);
 extern Uint32 DebugCpu_InstrCount(void);
 extern Uint32 DebugCpu_OpcodeType(void);
 
