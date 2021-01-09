@@ -55,7 +55,7 @@ bool BenchmarkMode;	   /* Start in benchmark mode (try to run at maximum emulati
 
 int ConOutDevice = CONOUT_DEVICE_NONE; /* device number for xconout device to track */
 
-static bool bNoSDLParachute, bBiosIntercept;
+static bool bBiosIntercept;
 
 /*  List of supported options. */
 enum {
@@ -179,7 +179,6 @@ enum {
 	OPT_TRACEFILE,
 	OPT_PARSE,
 	OPT_SAVECONFIG,
-	OPT_PARACHUTE,
 	OPT_CONTROLSOCKET,
 	OPT_CMDFIFO,
 	OPT_LOGFILE,
@@ -469,8 +468,6 @@ static const opt_t HatariOptions[] = {
 	  "<file>", "Parse/execute debugger commands from <file>" },
 	{ OPT_SAVECONFIG, NULL, "--saveconfig",
 	  NULL, "Save current Hatari configuration and exit" },
-	{ OPT_PARACHUTE, NULL, "--no-parachute",
-	  NULL, "Disable SDL parachute to get Hatari core dumps" },
 #if HAVE_UNIX_DOMAIN_SOCKETS
 	{ OPT_CONTROLSOCKET, NULL, "--control-socket",
 	  "<file>", "Hatari connects to given socket for commands" },
@@ -880,21 +877,6 @@ static bool Opt_StrCpy(int optid, bool checkexist, char *dst, const char *src, s
 	}
 	strcpy(dst, src);
 	return true;
-}
-
-
-/**
- * Return SDL_INIT_NOPARACHUTE flag if user requested SDL parachute
- * to be disabled to get proper Hatari core dumps.  By default returns
- * zero so that SDL parachute will be used to restore video mode on
- * unclean Hatari termination.
- */
-Uint32 Opt_GetNoParachuteFlag(void)
-{
-	if (bNoSDLParachute)
-		return SDL_INIT_NOPARACHUTE;
-
-	return 0;
 }
 
 
@@ -2110,10 +2092,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 		case OPT_NATFEATS:
 			ok = Opt_Bool(argv[++i], OPT_NATFEATS, &ConfigureParams.Log.bNatFeats);
 			Log_Printf(LOG_DEBUG, "Native Features %s.\n", ConfigureParams.Log.bNatFeats ? "enabled" : "disabled");
-			break;
-
-		case OPT_PARACHUTE:
-			bNoSDLParachute = true;
 			break;
 
 		case OPT_DISASM:

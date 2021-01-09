@@ -705,7 +705,7 @@ static void Main_Init(void)
 
 	/* Init SDL's video subsystem. Note: Audio subsystem
 	   will be initialized later (failure not fatal). */
-	if (SDL_Init(SDL_INIT_VIDEO | Opt_GetNoParachuteFlag()) < 0)
+	if (SDL_Init(SDL_INIT_VIDEO) < 0)
 	{
 		fprintf(stderr, "ERROR: could not initialize the SDL library:\n %s\n", SDL_GetError() );
 		exit(-1);

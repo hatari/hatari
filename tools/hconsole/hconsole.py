@@ -398,7 +398,6 @@ class Tokens:
     "--trace-file",
     "--parse",
     "--saveconfig",
-    "--no-parachute",
     "--cmd-fifo",
     "--log-file",
     "--log-level",
