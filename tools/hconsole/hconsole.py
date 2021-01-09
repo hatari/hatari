@@ -315,7 +315,6 @@ class Tokens:
     "--bpp",
     "--disable-video",
     "--borders",
-    "--desktop-st",
     "--spec512",
     "--video-timing",
     "--desktop",

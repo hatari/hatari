@@ -85,7 +85,6 @@ enum {
 	OPT_FORCEBPP,
 	OPT_DISABLE_VIDEO,
 	OPT_BORDERS,		/* ST/STE display options */
-	OPT_RESOLUTION_ST,
 	OPT_SPEC512,
 	OPT_VIDEO_TIMING,
 	OPT_RESOLUTION,		/* TT/Falcon display options */
@@ -259,8 +258,6 @@ static const opt_t HatariOptions[] = {
 	{ OPT_HEADER, NULL, NULL, NULL, "ST/STE specific display" },
 	{ OPT_BORDERS, NULL, "--borders",
 	  "<bool>", "Show screen borders (for overscan demos etc)" },
-	{ OPT_RESOLUTION_ST, NULL, "--desktop-st",
-	  "<bool>", "Keep desktop resolution on fullscreen" },
 	{ OPT_SPEC512, NULL, "--spec512",
 	  "<x>", "Spec512 palette threshold (0 <= x <= 512, 0=disable)" },
 	{ OPT_VIDEO_TIMING,   NULL, "--video-timing",
@@ -1206,11 +1203,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			/* ST/STE display options */
 		case OPT_BORDERS:
 			ok = Opt_Bool(argv[++i], OPT_BORDERS, &ConfigureParams.Screen.bAllowOverscan);
-			break;
-
-		case OPT_RESOLUTION_ST:
-			fprintf(stderr, "The --desktop-st option is not supported anymore!\n");
-			i++;
 			break;
 
 		case OPT_SPEC512:
