@@ -8,7 +8,6 @@
  -------------------
 
 Following features are deprecated and will be removed in a future release:
-- Support for the SDL 1.2 library (i.e. SDL 2.x should be used instead)
 - SDL 2.x "bUseSdlRenderer" config and "GPU scaling" GUI options
   (after HW support for SDL2 is available widely enough)
 - The "external" disassembler (i.e. use "--disasm uae" instead)
@@ -16,7 +15,8 @@ Following features are deprecated and will be removed in a future release:
   (i.e. use "--natfeats" & "--cmd-fifo" options and "hconsole" instead)
 - The old ~/.hatari configuration file location (use ~/.config/hatari instead)
 
-Removed features (that were deprecated for several releases):
+Removed features (that were marked as deprecated in earlier releases):
+- Support for the SDL 1.2 library (i.e. SDL 2.x should be used instead)
 - The old UAE CPU core (i.e. the new WinUAE CPU core is now always used)
 - Python v2 support in Python scripts (Python 2 was end of life in 2020)
 

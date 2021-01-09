@@ -99,8 +99,6 @@ Grab mouse (also) in windowed mode
 .TP
 .B \-\-resizable <bool>
 Allow window resizing
-
-NOTE: this is supported only by Hatari SDL2 build
 .TP
 .B \-\-borders <bool>
 Show ST/STE/Falcon screen borders (for low/med resolution overscan demos)
@@ -132,8 +130,8 @@ Maximum width and height options are part of Hatari's Atari monitor
 emulation. They limit the size Hatari should aim for its internal SDL
 framebuffer, and how much of the Atari screen borders are visible.
 
-On an SDL2 build, framebuffer is then scaled to the Hatari output
-window based on the specified Hatari zoom factor (see below).
+The framebuffer is then scaled to the Hatari output window based on
+the specified Hatari zoom factor (see below).
 
 Aim of this is to have all resolutions show up in approximately same
 size, like on a real Atari monitor. Hatari's internal integer scaling
@@ -146,14 +144,9 @@ ST-low resolution scaling by forcing Hatari to ask SDL for CGA / QVGA
 resolution.
 .TP
 .B \-z, \-\-zoom <x>
-With the Hatari SDL1 build, this is just a shortcut for overriding
-maximum screen size settings with values that result in ST/STe low
-resolution being doubled or not (1=no, 2=yes).
-
-With the Hatari SDL2 build, this option overrides max width/height
-options so that e.g. ST-low resolution gets always doubled, and all
-resolutions (except TT-high) have approximately the same size, like on
-a real CRT monitor.
+This option overrides max width/height options so that e.g. ST-low
+resolution gets always doubled, and all resolutions (except TT-high)
+have approximately the same size, like on a real CRT monitor.
 
 Zoom factor is then used to scale that up (or down) to the Hatari
 output window.  This way scaling results always in approximately
@@ -164,7 +157,7 @@ the output, with integer zoom factors, scaling is done using nearest
 neighboring pixels for sharper output.  This applies also to window
 resizes.
 
-To get SDL1 "-z 1" behavior with SDL2, use "--zoom 1 --max-width 416
+To avoid zooming of low resolutions, use "--zoom 1 --max-width 416
 --max-height 276" (if you don't need borders, 320x200 size is enough).
 Disabling low resolution doubling like this is not recommended for
 Falcon emulation because TOS v4 bootup and some demos switch
@@ -177,24 +170,6 @@ Force internal bitdepth (x = 8/15/16/32, 0=disable)
 Run emulation without displaying video (audio only)
 
 .SH "ST/STE specific display options"
-.TP
-.B \-\-desktop\-st <bool>
-NOTE: this has effect only for SDL1 Hatari build.  In SDL2 build,
-\fB--desktop\fP option controls also ST/STe mode.
-
-Whether to use desktop resolution on fullscreen to avoid issues
-related to resolution switching (messing multi-screen setups, several
-seconds delay needed for resolution switching by some LCD monitors and
-the resulting sound break). Otherwise fullscreen will use a resolution
-that is closest to the Hatari window size.
-
-As Hatari ST/STe display code doesn't support zooming (except low-rez
-doubling) with SDL1, it doesn't get scaled (by Hatari or monitor) when
-this is enabled, and you may get large black borders around ST/STe screen.
-Therefore this is mainly useful only if you suffer from the described
-effects, but still want to grab mouse and remove other distractions
-from the screen just by toggling fullscreen mode. (disabled by
-default)
 .TP
 .B \-\-spec512 <x>
 Hatari uses this threshold to decide when to render a screen with

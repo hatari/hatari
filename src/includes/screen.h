@@ -10,21 +10,14 @@
 
 #include <SDL_video.h>    /* for SDL_Surface */
 
-#if WITH_SDL2
 extern SDL_Window *sdlWindow;
-static inline int SDL_SetColors(SDL_Surface *surface, SDL_Color *colors,
-                                int firstcolor, int ncolors)
-{
-	return SDL_SetPaletteColors(surface->format->palette, colors,
-	                            firstcolor, ncolors);
-}
+
+/* TODO: Get rid of the following wrappers: */
 void SDL_UpdateRects(SDL_Surface *screen, int numrects, SDL_Rect *rects);
 void SDL_UpdateRect(SDL_Surface *screen, Sint32 x, Sint32 y, Sint32 w, Sint32 h);
-void Screen_SetTextureScale(int width, int height, int win_width, int win_height, bool bForceCreation);
 #define SDL_GRAB_OFF false
 #define SDL_GRAB_ON true
 #define SDL_WM_GrabInput SDL_SetRelativeMouseMode
-#endif
 
 /* The 'screen' is a representation of the ST video memory	*/
 /* taking into account all the border tricks. Data are stored	*/
@@ -117,6 +110,8 @@ extern void Screen_ReturnFromFullScreen(void);
 extern void Screen_ModeChanged(bool bForceChange);
 extern bool Screen_Draw(void);
 extern bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChange);
+extern void Screen_SetTextureScale(int width, int height, int win_width,
+                                   int win_height, bool bForceCreation);
 extern void Screen_SetGenConvSize(int width, int height, int bpp, bool bForceChange);
 extern void Screen_GenConvUpdate(SDL_Rect *extra, bool forced);
 extern Uint32 Screen_GetGenConvWidth(void);

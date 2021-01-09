@@ -226,10 +226,7 @@ supports all Atari HW except for Falcon DSP & 16-bit Videl TrueColor mode.)</p>
 
 <h4>Emulator features</h4>
 <ul>
-  <li>with SDL1: 2x scaling for ST-low resolutions,
-      aspect correction and integer factor scaling
-      for small Falcon resolutions</li>
-  <li>with SDL2: scaling any resolution to any size</li>
+  <li>scaling any resolution to any size (using the SDL2 scaling)</li>
   <li>interleaved lines rendering with TV "monitor type"
       for ST-medium and (scaled) ST-low resolutions</li>
   <li>joystick and joypad emulation via cursor keys and
@@ -649,14 +646,9 @@ resolution.
 </p>
 <p class="parameter">-z, --zoom &lt;x&gt;</p>
 <p class="paramdesc">
-With the Hatari SDL1 build, this is just a shortcut for overriding
-maximum screen size settings with values that result in ST/STe low
-resolution being doubled or not (1=no, 2=yes).
-</p><p class="paramdesc">
-With the Hatari SDL2 build, this option overrides max width/height
-options so that e.g. ST-low resolution gets always doubled, and all
-resolutions (except TT-high) have approximately the same size, like on
-a real CRT monitor.
+This option overrides max width/height options so that e.g. ST-low
+resolution gets always doubled, and all resolutions (except TT-high)
+have approximately the same size, like on a real CRT monitor.
 </p><p class="paramdesc">
 Zoom factor is then used to scale that up (or down) to the Hatari
 output window.  This way scaling results always in approximately
@@ -667,7 +659,7 @@ the output, with integer zoom factors, scaling is done using nearest
 neighboring pixels for sharper output.  This applies also to window
 resizes.
 </p><p class="paramdesc">
-To get SDL1 "-z 1" behavior with SDL2, use "--zoom 1 --max-width 416
+To avoid zooming for low ST resolutions, use "--zoom 1 --max-width 416
 --max-height 276" (if you don't need borders, 320x200 size is enough).
 Disabling low resolution doubling like this is not recommended for
 Falcon emulation because TOS v4 bootup and some demos switch
@@ -682,23 +674,6 @@ resolutions frequently.
 <p class="paramdesc">Run emulation without displaying video (audio only)</p>
 
 <h3>ST/STE specific display options</h3>
-<p class="parameter">--desktop-st
-&lt;bool&gt;</p>
-<p class="paramdesc">
-NOTE: this has effect only for SDL1 Hatari build.  In SDL2 build,
-<i>--desktop</i> option controls also ST/STe mode.</p>
-<p class="paramdesc">Whether to use desktop resolution on fullscreen
-to avoid issues related to resolution switching (messing multi-screen
-setups, several seconds delay needed for resolution switching by some
-LCD monitors and the resulting sound break). Otherwise fullscreen will
-use a resolution that is closest to the Hatari window size.</p>
-<p class="paramdesc">As Hatari ST/STe display code doesn't support
-zooming (except low-rez doubling), it doesn't get scaled (by Hatari or
-monitor) when this is enabled, and you may get large black borders
-around ST/STe screen. Therefore this is mainly useful only if you
-suffer from the described effects, but still want to grab mouse and
-remove other distractions from the screen just by toggling fullscreen
-mode. (disabled by default)</p>
 <p class="parameter">--spec512
 &lt;x&gt;</p>
 <p class="paramdesc">Hatari uses this threshold to decide
@@ -1866,8 +1841,6 @@ the screenshots and recorded videos.
  layout. However, you might experience some problems with special keys like
  brackets etc.</p>
 <p>"Scancode" uses the scancode values of your PC keys for keyboard mapping.
- This only works on certain architectures like Linux where the scancodes are
- similar to the ST scancodes (e.g. it does not work on macOS with SDL1.2).
  If it works on your system, this often gives better results than the symbolic
  mapping. Note that you also need a TOS version with the right language
  (e.g. use a French TOS if you are using a French keyboard).</p>
@@ -2791,21 +2764,6 @@ the (Linux/Unix) "top" command.
 <h3>Build options impact on performance</h3>
 
 <p>
-<em>Linux</em>: Some HW platforms don't have properly HW accelerated
-3D driver and SDL implementation. On these platforms it's better to
-build Hatari with SDL v1.x than SDL 2.x, as latter can cause CPU
-based 3D driver to be used for scaling Hatari graphics.
-</p>
-
-<p>
-<em>MacOS</em>: With SDL v1.x, frame skipping, zooming and drive LED
-options (listed below) seem to have a large effect on performance in
-the windowed mode. This is apparently due to issues in the SDL macOS
-backend and how macOS itself composites non-fullscreen window
-contents. These shouldn't be an issue with the SDL2 build of Hatari.
-</p>
-
-<p>
 <em>Compiler</em>: Unless you have disabled compiler optimizations
 (like GCC's -O2 or -O3 options) in the Hatari build, the extra
 optimization flags (like GCC's "-mtune=i686") don't seem to have very
@@ -2815,26 +2773,9 @@ demos) that use very heavily interrupts.
 </p>
 
 <p>
-<em>CPU emulation</em>: Hatari can be built with two different CPU
-core implementations. The newer WinUAE CPU core has more accurate CPU
-emulation and supports all of the higher end 680x0 CPU features. This
-accuracy causes it to be clearly slower, than the OldAUE CPU core
-implementation. If run-time options (acceptable to you) don't give
-enough performance, give the OldUAE CPU core also a try.
-</p>
-
-<p>
 <em>Older versions</em>: If nothing else helps, try (building) much
 earlier Hatari version.  More accurate emulation in newer Hatari
 versions means that they can be slower despite optimizations.
-</p>
-
-<h3>Run-time options not affecting emulation accuracy</h3>
-
-<p>
-Hatari currently runs best in 16 or 32 bits per pixel color depth
-mode, so try to avoid 24 bits per pixel display modes if possible.
-16-bit mode is faster with SDL1.  MacOS uses always 32-bit mode.
 </p>
 
 

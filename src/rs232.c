@@ -350,11 +350,7 @@ void RS232_Init(void)
 		if (!RS232Thread)
 		{
 			bQuitThread = false;
-#if WITH_SDL2
 			RS232Thread = SDL_CreateThread(RS232_ThreadFunc, "rs232", NULL);
-#else
-			RS232Thread = SDL_CreateThread(RS232_ThreadFunc, NULL);
-#endif
 			Dprintf(("RS232 thread has been created.\n"));
 		}
 	}
@@ -376,11 +372,8 @@ void RS232_UnInit(void)
 		 * wait until it exits, otherwise there's a data race
 		 * on accessing/modifying hComIn.
 		 */
-		Dprintf(("Killing RS232 thread...\n"));
+		Dprintf(("Stopping RS232 thread...\n"));
 		bQuitThread = true;
-#if !WITH_SDL2
-		SDL_KillThread(RS232Thread);
-#endif
 		RS232Thread = NULL;
 	}
 	RS232_CloseCOMPort();

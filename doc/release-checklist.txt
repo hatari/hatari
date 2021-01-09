@@ -35,7 +35,6 @@ everything that should work, does still work:
     - all optional dependencies being present, and none
     - all optional features enabled, and disabled
     - WinUAE & oldUAE CPU cores
-    - SDL1 & SDL2
     - Mac GUI
   - All above Hatari builds pass "make test"
     - Check that everything built fine on Travis and Cirrus-CI:

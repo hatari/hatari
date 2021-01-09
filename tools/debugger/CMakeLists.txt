@@ -1,5 +1,5 @@
 
-include_directories(${SDL_INCLUDE_DIR})
+include_directories(${SDL2_INCLUDE_DIR})
 
 add_executable(gst2ascii gst2ascii.c)
 

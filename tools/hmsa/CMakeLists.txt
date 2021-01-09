@@ -1,6 +1,6 @@
 
 include_directories(${CMAKE_BINARY_DIR} ${CMAKE_SOURCE_DIR}/src/includes
-		    ${CMAKE_SOURCE_DIR}/src/debug ${SDL_INCLUDE_DIR})
+		    ${CMAKE_SOURCE_DIR}/src/debug ${SDL2_INCLUDE_DIR})
 
 set(HMSA_SOURCES hmsa.c floppy.c ../../src/file.c)
 

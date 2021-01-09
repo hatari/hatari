@@ -19,7 +19,6 @@ print_help()
   echo "  --disable-dsp              Disable DSP emulation for Falcon mode."
   echo "  --disable-tracing          Disable tracing messages for debugging"
   echo "  --disable-osx-bundle       Disable application bundling on macOS"
-  echo "  --disable-sdl2             Do not compile with libsdl 2.0, use 1.2 instead"
   echo "  --enable-werror            Use -Werror flag to stop on compiler warnings"
   echo "  --cross-compile-win64_32   Build the 32 bit Windows version using mingw-w64"
   echo "  --cross-compile-win64_64   Build the 64 bit Windows version using mingw-w64"
@@ -75,12 +74,6 @@ do
     ;;
     --disable-osx-bundle)
       cmake_args="$cmake_args -DENABLE_OSX_BUNDLE:BOOL=0"
-    ;;
-    --enable-sdl2)
-      cmake_args="$cmake_args -DENABLE_SDL2:BOOL=1"
-    ;;
-    --disable-sdl2)
-      cmake_args="$cmake_args -DENABLE_SDL2:BOOL=0"
     ;;
     --enable-werror)
       cmake_args="$cmake_args -DENABLE_WERROR:BOOL=1"

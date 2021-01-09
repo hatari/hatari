@@ -209,11 +209,7 @@ static void ShortCut_BossKey(void)
 	Main_PauseEmulation(true);
 
 	/* Minimize Window and give up processing to next one! */
-#if WITH_SDL2
 	SDL_MinimizeWindow(sdlWindow);
-#else
-	SDL_WM_IconifyWindow();
-#endif
 }
 
 

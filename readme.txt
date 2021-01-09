@@ -62,7 +62,7 @@ for Hatari and the licenses of the other code concerned.
  ------------------
 
 Hatari is an Atari ST/STE/TT/Falcon emulator for Linux, FreeBSD, NetBSD, macOS,
-Windows and other Systems which are supported by the SDL library. Unlike most
+Windows and other Systems which are supported by the SDL2 library. Unlike most
 other open source ST emulators which try to give you a good environment for
 running GEM applications, Hatari tries to emulate the hardware as close as
 possible so that it is able to run most of the old Atari games and demos.
@@ -77,7 +77,7 @@ To build and use Hatari, you first need to install its dependent libraries.
  3.1) Installing Hatari dependencies
 
 Required:
-- The SDL library v1.2.10 or newer (http://www.libsdl.org)
+- The SDL library v2.0 (http://www.libsdl.org)
 
 Optional:
 - The zlib compression library (http://www.gzip.org/zlib/)
@@ -243,11 +243,8 @@ doc/manual.html. Here are just some hints for the impatient people:
  4.1) Known Windows (SDL) issues
 
 On Windows, Hatari console output doesn't go to console like on other
-platforms.
-
-This is because Windows SDL v1 library redirects all console output
-(including help!) to stdout.txt and stderr.txt files (by default), and
-SDL v2 library discards all that output.
+platforms. This is because Windows SDL v2 library discards all that
+output by default.
 
 To see Hatari help/warning/trace output, and to interact with Hatari
 debugger, there are two options:
@@ -290,7 +287,7 @@ Their main run-time dependencies are:
   - falcon/ -- Falcon emulation specific code (Videl used also for TT)
   - includes/ -- common include files
   - gui-osx/ -- builtin MacOS GUI
-  - gui-sdl/ -- builtin SDL v1 / v2 GUI for Hatari
+  - gui-sdl/ -- builtin SDL GUI for Hatari
   - gui-win/ -- MS Windows console code + icon
 * tests/ -- shell/python scripts & programs for testing emulator functionality
   - keymap/ -- programs showing keycodes to use in Hatari keymap files

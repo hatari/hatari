@@ -298,14 +298,10 @@ typedef struct
   bool bForceMax;
   bool bUseExtVdiResolutions;
   bool bKeepResolution;
-#if !WITH_SDL2
-  bool bKeepResolutionST;
-#else
   bool bResizable;
   bool bUseVsync;
   bool bUseSdlRenderer;
   float nZoomFactor;
-#endif
   int nSpec512Threshold;
   int nForceBpp;
   int nVdiColors;

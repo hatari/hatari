@@ -98,14 +98,10 @@ static SGOBJ monitordlg[] =
 #define DLGSCRN_CROP        28
 #define DLGSCRN_CAPTURE     29
 #define DLGSCRN_RECANIM     30
-#if WITH_SDL2
 #define DLGSCRN_GPUSCALE    33
 #define DLGSCRN_RESIZABLE   34
 #define DLGSCRN_VSYNC       35
 #define DLGSCRN_EXIT_WINDOW 36
-#else
-#define DLGSCRN_EXIT_WINDOW 31
-#endif
 
 /* needs to match Frame skip values in windowdlg[]! */
 static const int skip_frames[] = { 0, 1, 2, 4, AUTO_FRAMESKIP_LIMIT };
@@ -119,11 +115,7 @@ static char sMaxHeight[5];
 /* The window dialog: */
 static SGOBJ windowdlg[] =
 {
-#if WITH_SDL2
 	{ SGBOX, 0, 0, 0,0, 52,25, NULL },
-#else
-	{ SGBOX, 0, 0, 0,0, 52,20, NULL },
-#endif
 	{ SGBOX,      0, 0,  1,1, 50,10, NULL },
 	{ SGTEXT,     0, 0,  4,2, 20,1, "Hatari screen options" },
 	{ SGCHECKBOX, 0, 0,  4,4, 12,1, "_Fullscreen" },
@@ -137,17 +129,10 @@ static SGOBJ windowdlg[] =
 	{ SGRADIOBUT, 0, 0, 21,7,  3,1, "_2" },
 	{ SGRADIOBUT, 0, 0, 21,8,  3,1, "_4" },
 	{ SGRADIOBUT, 0, 0, 21,9,  6,1, "_Auto" },
-#if WITH_SDL2
 	{ SGTEXT,     0, 0, 35,4, 10,1, "resolution" },
 	{ SGTEXT,     0, 0, 35,5, 13,1, "in fullscreen" },
 	{ SGTEXT,     0, 0, 33,2,  1,1, "" },
 	{ SGCHECKBOX, 0, 0, 33,3, 14,1, "_Keep desktop" },
-#else
-	{ SGTEXT,     0, 0, 33,2, 14,1, "Keep desktop" },
-	{ SGTEXT,     0, 0, 33,3, 14,1, "resolution:" },
-	{ SGCHECKBOX, 0, 0, 35,4,  8,1, "ST/ST_e" },
-	{ SGCHECKBOX, 0, 0, 35,5, 11,1, "_TT/Falcon" },
-#endif
 	{ SGTEXT,     0, 0, 33,7, 15,1, "Max zoomed win:" },
 	{ SGBUTTON,   0, 0, 35,8,  1,1, "\x04", SG_SHORTCUT_LEFT },
 	{ SGTEXT,     0, 0, 37,8,  4,1, sMaxWidth },
@@ -163,16 +148,13 @@ static SGOBJ windowdlg[] =
 	{ SGBUTTON,   0, 0, 29,13, 14,1, " _Screenshot " },
 	{ SGBUTTON,   0, 0, 29,15, 14,1, NULL },      /* Record text set later */
 
-#if WITH_SDL2
 	{ SGBOX,      0, 0,  1,18, 50,4, NULL },
 	{ SGTEXT,     0, 0, 20,18, 12,1, "SDL2 options" },
 	{ SGCHECKBOX, 0, 0,  8,20, 20,1, "GPU scal_ing" },
 	{ SGCHECKBOX, 0, 0, 23,20, 20,1, "Resi_zable" },
 	{ SGCHECKBOX, 0, 0, 36,20, 11,1, "_VSync" },
 	{ SGBUTTON, SG_DEFAULT, 0, 17,23, 20,1, "Back to main menu" },
-#else
-	{ SGBUTTON, SG_DEFAULT, 0, 17,18, 20,1, "Back to main menu" },
-#endif
+
 	{ SGSTOP, 0, 0, 0,0, 0,0, NULL }
 };
 
@@ -339,12 +321,6 @@ void Dialog_WindowDlg(void)
 		windowdlg[DLGSCRN_KEEP_RES].state |= SG_SELECTED;
 	else
 		windowdlg[DLGSCRN_KEEP_RES].state &= ~SG_SELECTED;
-#if !WITH_SDL2
-	if (ConfigureParams.Screen.bKeepResolutionST)
-		windowdlg[DLGSCRN_KEEP_RES_ST].state |= SG_SELECTED;
-	else
-		windowdlg[DLGSCRN_KEEP_RES_ST].state &= ~SG_SELECTED;
-#endif
 
 	windowdlg[DLGSCRN_STATUSBAR].state &= ~SG_SELECTED;
 	windowdlg[DLGSCRN_DRIVELED].state &= ~SG_SELECTED;
@@ -382,7 +358,6 @@ void Dialog_WindowDlg(void)
 	else
 		windowdlg[DLGSCRN_RECANIM].txt = RECORD_START;
 
-#if WITH_SDL2
 	/* SDL2 options */
 	if (ConfigureParams.Screen.bResizable)
 		windowdlg[DLGSCRN_RESIZABLE].state |= SG_SELECTED;
@@ -397,7 +372,6 @@ void Dialog_WindowDlg(void)
 		windowdlg[DLGSCRN_VSYNC].state |= SG_SELECTED;
 	else
 		windowdlg[DLGSCRN_VSYNC].state &= ~SG_SELECTED;
-#endif
 
 	/* The window dialog main loop */
 	do
@@ -461,9 +435,6 @@ void Dialog_WindowDlg(void)
 
 	ConfigureParams.Screen.bFullScreen = (windowdlg[DLGSCRN_FULLSCRN].state & SG_SELECTED);
 	ConfigureParams.Screen.bKeepResolution = (windowdlg[DLGSCRN_KEEP_RES].state & SG_SELECTED);
-#if !WITH_SDL2
-	ConfigureParams.Screen.bKeepResolutionST = (windowdlg[DLGSCRN_KEEP_RES_ST].state & SG_SELECTED);
-#endif
 
 	ConfigureParams.Screen.nMaxWidth = maxw;
 	ConfigureParams.Screen.nMaxHeight = maxh;
@@ -486,9 +457,7 @@ void Dialog_WindowDlg(void)
 
 	ConfigureParams.Screen.bCrop = (windowdlg[DLGSCRN_CROP].state & SG_SELECTED);
 
-#if WITH_SDL2
 	ConfigureParams.Screen.bResizable = (windowdlg[DLGSCRN_RESIZABLE].state & SG_SELECTED);
 	ConfigureParams.Screen.bUseSdlRenderer = (windowdlg[DLGSCRN_GPUSCALE].state & SG_SELECTED);
 	ConfigureParams.Screen.bUseVsync = (windowdlg[DLGSCRN_VSYNC].state & SG_SELECTED);
-#endif
 }

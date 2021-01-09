@@ -10,7 +10,7 @@
 
 #include <SDL_keyboard.h>
 
-#if WITH_SDL2
+/* TODO: Get rid of these defines later... */
 #define SDLKey SDL_Keycode
 #define SDL_keysym SDL_Keysym
 #define KMOD_LMETA KMOD_LGUI
@@ -30,13 +30,12 @@
 #define SDLK_KP9 SDLK_KP_9
 #define SDLK_PRINT SDLK_PRINTSCREEN
 #define SDLK_SCROLLOCK SDLK_SCROLLLOCK
-#endif
 
 extern void Keymap_Init(void);
 extern void Keymap_LoadRemapFile(char *pszFileName);
 extern void Keymap_DebounceAllKeys(void);
-extern void Keymap_KeyDown(SDL_keysym *sdlkey);
-extern void Keymap_KeyUp(SDL_keysym *sdlkey);
+extern void Keymap_KeyDown(SDL_Keysym *sdlkey);
+extern void Keymap_KeyUp(SDL_Keysym *sdlkey);
 extern void Keymap_SimulateCharacter(char asckey, bool press);
 extern int Keymap_GetKeyFromName(const char *name);
 extern const char *Keymap_GetKeyName(int keycode);

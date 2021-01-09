@@ -78,11 +78,7 @@ static const struct Config_Tag configs_Screen[] =
 	{ "nFrameSkips", Int_Tag, &ConfigureParams.Screen.nFrameSkips },
 	{ "bFullScreen", Bool_Tag, &ConfigureParams.Screen.bFullScreen },
 	{ "bKeepResolution", Bool_Tag, &ConfigureParams.Screen.bKeepResolution },
-#if WITH_SDL2
 	{ "bResizable", Bool_Tag, &ConfigureParams.Screen.bResizable },
-#else
-	{ "bKeepResolutionST", Bool_Tag, &ConfigureParams.Screen.bKeepResolutionST },
-#endif
 	{ "bAllowOverscan", Bool_Tag, &ConfigureParams.Screen.bAllowOverscan },
 	{ "nSpec512Threshold", Int_Tag, &ConfigureParams.Screen.nSpec512Threshold },
 	{ "nForceBpp", Int_Tag, &ConfigureParams.Screen.nForceBpp },
@@ -98,26 +94,13 @@ static const struct Config_Tag configs_Screen[] =
 	{ "bForceMax", Bool_Tag, &ConfigureParams.Screen.bForceMax },
 	{ "nMaxWidth", Int_Tag, &ConfigureParams.Screen.nMaxWidth },
 	{ "nMaxHeight", Int_Tag, &ConfigureParams.Screen.nMaxHeight },
-#if WITH_SDL2
 	{ "nZoomFactor", Float_Tag, &ConfigureParams.Screen.nZoomFactor },
 	{ "bUseSdlRenderer", Bool_Tag, &ConfigureParams.Screen.bUseSdlRenderer },
 	{ "bUseVsync", Bool_Tag, &ConfigureParams.Screen.bUseVsync },
-#endif
 	{ NULL , Error_Tag, NULL }
 };
 
 /* Used to load/save joystick 0 options */
-#if !WITH_SDL2
-static const struct Config_Tag configs_Joystick0_Sdl1[] =
-{
-	{ "nKeyCodeUp", Int_Tag, &ConfigureParams.Joysticks.Joy[0].nKeyCodeUp },
-	{ "nKeyCodeDown", Int_Tag, &ConfigureParams.Joysticks.Joy[0].nKeyCodeDown },
-	{ "nKeyCodeLeft", Int_Tag, &ConfigureParams.Joysticks.Joy[0].nKeyCodeLeft },
-	{ "nKeyCodeRight", Int_Tag, &ConfigureParams.Joysticks.Joy[0].nKeyCodeRight },
-	{ "nKeyCodeFire", Int_Tag, &ConfigureParams.Joysticks.Joy[0].nKeyCodeFire },
-	{ NULL , Error_Tag, NULL }
-};
-#endif
 static const struct Config_Tag configs_Joystick0[] =
 {
 	{ "nJoystickMode", Int_Tag, &ConfigureParams.Joysticks.Joy[0].nJoystickMode },
@@ -133,17 +116,6 @@ static const struct Config_Tag configs_Joystick0[] =
 };
 
 /* Used to load/save joystick 1 options */
-#if !WITH_SDL2
-static const struct Config_Tag configs_Joystick1_Sdl1[] =
-{
-	{ "nKeyCodeUp", Int_Tag, &ConfigureParams.Joysticks.Joy[1].nKeyCodeUp },
-	{ "nKeyCodeDown", Int_Tag, &ConfigureParams.Joysticks.Joy[1].nKeyCodeDown },
-	{ "nKeyCodeLeft", Int_Tag, &ConfigureParams.Joysticks.Joy[1].nKeyCodeLeft },
-	{ "nKeyCodeRight", Int_Tag, &ConfigureParams.Joysticks.Joy[1].nKeyCodeRight },
-	{ "nKeyCodeFire", Int_Tag, &ConfigureParams.Joysticks.Joy[1].nKeyCodeFire },
-	{ NULL , Error_Tag, NULL }
-};
-#endif
 static const struct Config_Tag configs_Joystick1[] =
 {
 	{ "nJoystickMode", Int_Tag, &ConfigureParams.Joysticks.Joy[1].nJoystickMode },
@@ -159,17 +131,6 @@ static const struct Config_Tag configs_Joystick1[] =
 };
 
 /* Used to load/save joystick 2 options */
-#if !WITH_SDL2
-static const struct Config_Tag configs_Joystick2_Sdl1[] =
-{
-	{ "nKeyCodeUp", Int_Tag, &ConfigureParams.Joysticks.Joy[2].nKeyCodeUp },
-	{ "nKeyCodeDown", Int_Tag, &ConfigureParams.Joysticks.Joy[2].nKeyCodeDown },
-	{ "nKeyCodeLeft", Int_Tag, &ConfigureParams.Joysticks.Joy[2].nKeyCodeLeft },
-	{ "nKeyCodeRight", Int_Tag, &ConfigureParams.Joysticks.Joy[2].nKeyCodeRight },
-	{ "nKeyCodeFire", Int_Tag, &ConfigureParams.Joysticks.Joy[2].nKeyCodeFire },
-	{ NULL , Error_Tag, NULL }
-};
-#endif
 static const struct Config_Tag configs_Joystick2[] =
 {
 	{ "nJoystickMode", Int_Tag, &ConfigureParams.Joysticks.Joy[2].nJoystickMode },
@@ -185,17 +146,6 @@ static const struct Config_Tag configs_Joystick2[] =
 };
 
 /* Used to load/save joystick 3 options */
-#if !WITH_SDL2
-static const struct Config_Tag configs_Joystick3_Sdl1[] =
-{
-	{ "nKeyCodeUp", Int_Tag, &ConfigureParams.Joysticks.Joy[3].nKeyCodeUp },
-	{ "nKeyCodeDown", Int_Tag, &ConfigureParams.Joysticks.Joy[3].nKeyCodeDown },
-	{ "nKeyCodeLeft", Int_Tag, &ConfigureParams.Joysticks.Joy[3].nKeyCodeLeft },
-	{ "nKeyCodeRight", Int_Tag, &ConfigureParams.Joysticks.Joy[3].nKeyCodeRight },
-	{ "nKeyCodeFire", Int_Tag, &ConfigureParams.Joysticks.Joy[3].nKeyCodeFire },
-	{ NULL , Error_Tag, NULL }
-};
-#endif
 static const struct Config_Tag configs_Joystick3[] =
 {
 	{ "nJoystickMode", Int_Tag, &ConfigureParams.Joysticks.Joy[3].nJoystickMode },
@@ -211,17 +161,6 @@ static const struct Config_Tag configs_Joystick3[] =
 };
 
 /* Used to load/save joystick 4 options */
-#if !WITH_SDL2
-static const struct Config_Tag configs_Joystick4_Sdl1[] =
-{
-	{ "nKeyCodeUp", Int_Tag, &ConfigureParams.Joysticks.Joy[4].nKeyCodeUp },
-	{ "nKeyCodeDown", Int_Tag, &ConfigureParams.Joysticks.Joy[4].nKeyCodeDown },
-	{ "nKeyCodeLeft", Int_Tag, &ConfigureParams.Joysticks.Joy[4].nKeyCodeLeft },
-	{ "nKeyCodeRight", Int_Tag, &ConfigureParams.Joysticks.Joy[4].nKeyCodeRight },
-	{ "nKeyCodeFire", Int_Tag, &ConfigureParams.Joysticks.Joy[4].nKeyCodeFire },
-	{ NULL , Error_Tag, NULL }
-};
-#endif
 static const struct Config_Tag configs_Joystick4[] =
 {
 	{ "nJoystickMode", Int_Tag, &ConfigureParams.Joysticks.Joy[4].nJoystickMode },
@@ -237,17 +176,6 @@ static const struct Config_Tag configs_Joystick4[] =
 };
 
 /* Used to load/save joystick 5 options */
-#if !WITH_SDL2
-static const struct Config_Tag configs_Joystick5_Sdl1[] =
-{
-	{ "nKeyCodeUp", Int_Tag, &ConfigureParams.Joysticks.Joy[5].nKeyCodeUp },
-	{ "nKeyCodeDown", Int_Tag, &ConfigureParams.Joysticks.Joy[5].nKeyCodeDown },
-	{ "nKeyCodeLeft", Int_Tag, &ConfigureParams.Joysticks.Joy[5].nKeyCodeLeft },
-	{ "nKeyCodeRight", Int_Tag, &ConfigureParams.Joysticks.Joy[5].nKeyCodeRight },
-	{ "nKeyCodeFire", Int_Tag, &ConfigureParams.Joysticks.Joy[5].nKeyCodeFire },
-	{ NULL , Error_Tag, NULL }
-};
-#endif
 static const struct Config_Tag configs_Joystick5[] =
 {
 	{ "nJoystickMode", Int_Tag, &ConfigureParams.Joysticks.Joy[5].nJoystickMode },
@@ -270,64 +198,6 @@ static const struct Config_Tag configs_Keyboard[] =
 	{ "szMappingFileName", String_Tag, ConfigureParams.Keyboard.szMappingFileName },
 	{ NULL , Error_Tag, NULL }
 };
-
-#if !WITH_SDL2
-/* Used to load/save shortcut key bindings with modifiers options */
-static const struct Config_Tag configs_ShortCutWithMod_Sdl1[] =
-{
-	{ "keyOptions",    Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_OPTIONS] },
-	{ "keyFullScreen", Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_FULLSCREEN] },
-	{ "keyMouseMode",  Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_MOUSEGRAB] },
-	{ "keyColdReset",  Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_COLDRESET] },
-	{ "keyWarmReset",  Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_WARMRESET] },
-	{ "keyScreenShot", Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_SCREENSHOT] },
-	{ "keyBossKey",    Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_BOSSKEY] },
-	{ "keyCursorEmu",  Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_CURSOREMU] },
-	{ "keyFastForward",Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_FASTFORWARD] },
-	{ "keyRecAnim",    Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_RECANIM] },
-	{ "keyRecSound",   Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_RECSOUND] },
-	{ "keySound",      Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_SOUND] },
-	{ "keyPause",      Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_PAUSE] },
-	{ "keyDebugger",   Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_DEBUG] },
-	{ "keyQuit",       Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_QUIT] },
-	{ "keyLoadMem",    Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_LOADMEM] },
-	{ "keySaveMem",    Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_SAVEMEM] },
-	{ "keyInsertDiskA",Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_INSERTDISKA] },
-	{ "keySwitchJoy0", Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_JOY_0] },
-	{ "keySwitchJoy1", Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_JOY_1] },
-	{ "keySwitchPadA", Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_PAD_A] },
-	{ "keySwitchPadB", Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_PAD_B] },
-	{ NULL , Error_Tag, NULL }
-};
-
-/* Used to load/save shortcut key bindings without modifiers options */
-static const struct Config_Tag configs_ShortCutWithoutMod_Sdl1[] =
-{
-	{ "keyOptions",    Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_OPTIONS] },
-	{ "keyFullScreen", Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_FULLSCREEN] },
-	{ "keyMouseMode",  Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_MOUSEGRAB] },
-	{ "keyColdReset",  Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_COLDRESET] },
-	{ "keyWarmReset",  Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_WARMRESET] },
-	{ "keyScreenShot", Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_SCREENSHOT] },
-	{ "keyBossKey",    Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_BOSSKEY] },
-	{ "keyCursorEmu",  Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_CURSOREMU] },
-	{ "keyFastForward",Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_FASTFORWARD] },
-	{ "keyRecAnim",    Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_RECANIM] },
-	{ "keyRecSound",   Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_RECSOUND] },
-	{ "keySound",      Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_SOUND] },
-	{ "keyPause",      Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_PAUSE] },
-	{ "keyDebugger",   Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_DEBUG] },
-	{ "keyQuit",       Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_QUIT] },
-	{ "keyLoadMem",    Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_LOADMEM] },
-	{ "keySaveMem",    Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_SAVEMEM] },
-	{ "keyInsertDiskA",Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_INSERTDISKA] },
-	{ "keySwitchJoy0", Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_JOY_0] },
-	{ "keySwitchJoy1", Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_JOY_1] },
-	{ "keySwitchPadA", Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_PAD_A] },
-	{ "keySwitchPadB", Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_PAD_B] },
-	{ NULL , Error_Tag, NULL }
-};
-#endif
 
 /* Used to load/save shortcut key bindings with modifiers options */
 static const struct Config_Tag configs_ShortCutWithMod[] =
@@ -816,11 +686,7 @@ void Configuration_SetDefault(void)
 	/* Set defaults for Screen */
 	ConfigureParams.Screen.bFullScreen = false;
 	ConfigureParams.Screen.bKeepResolution = true;
-#if WITH_SDL2
 	ConfigureParams.Screen.bResizable = true;
-#else
-	ConfigureParams.Screen.bKeepResolutionST = false;
-#endif
 	ConfigureParams.Screen.nFrameSkips = AUTO_FRAMESKIP_LIMIT;
 	ConfigureParams.Screen.bAllowOverscan = true;
 	ConfigureParams.Screen.nSpec512Threshold = 1;
@@ -843,11 +709,9 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Screen.nMaxHeight = 2*NUM_VISIBLE_LINES+STATUSBAR_MAX_HEIGHT;
 	ConfigureParams.Screen.bForceMax = false;
 	ConfigureParams.Screen.DisableVideo = false;
-#if WITH_SDL2
 	ConfigureParams.Screen.nZoomFactor = 1.0;
 	ConfigureParams.Screen.bUseSdlRenderer = true;
 	ConfigureParams.Screen.bUseVsync = false;
-#endif
 
 	/* Set defaults for Sound */
 	ConfigureParams.Sound.bEnableMicrophone = true;
@@ -1125,17 +989,6 @@ void Configuration_Load(const char *psFileName)
 		break;
 	}
 	Configuration_LoadSection(psFileName, configs_HardDisk_Old, "[HardDisk]");
-
-#if !WITH_SDL2	/* for old SDL1 keycode compatibility */
-	Configuration_LoadSection(psFileName, configs_ShortCutWithMod_Sdl1, "[ShortcutsWithModifiers]");
-	Configuration_LoadSection(psFileName, configs_ShortCutWithoutMod_Sdl1, "[ShortcutsWithoutModifiers]");
-	Configuration_LoadSection(psFileName, configs_Joystick0_Sdl1, "[Joystick0]");
-	Configuration_LoadSection(psFileName, configs_Joystick1_Sdl1, "[Joystick1]");
-	Configuration_LoadSection(psFileName, configs_Joystick2_Sdl1, "[Joystick2]");
-	Configuration_LoadSection(psFileName, configs_Joystick3_Sdl1, "[Joystick3]");
-	Configuration_LoadSection(psFileName, configs_Joystick4_Sdl1, "[Joystick4]");
-	Configuration_LoadSection(psFileName, configs_Joystick5_Sdl1, "[Joystick5]");
-#endif
 
 	/* Now the regular loading of the sections:
 	 * Start with Log so that logging works as early as possible */

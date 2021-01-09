@@ -1,9 +1,6 @@
-# SDL v1 build: "make SDL=sdl"
-# SDL v2 build: "make SDL=sdl2"
 
-SDL    ?= sdl
-CFLAGS := -O -Wall $$(pkg-config --cflags $(SDL))
-LIBS   := $$(pkg-config --libs $(SDL))
+CFLAGS := -O -Wall $$(pkg-config --cflags sdl2)
+LIBS   := $$(pkg-config --libs sdl2)
 
 all: listkeys checkkeys
 

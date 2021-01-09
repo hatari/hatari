@@ -171,12 +171,7 @@ void Audio_Init(void)
 		return;
 	}
 
-#if WITH_SDL2						/* SDL2 does not set desiredAudioSpec.size anymore */
 	SoundBufferSize = desiredAudioSpec.samples;
-#else
-	SoundBufferSize = desiredAudioSpec.size;	/* May be different than the requested one! */
-	SoundBufferSize /= 4;				/* bytes -> samples (16 bit signed stereo -> 4 bytes per sample) */
-#endif
 	if (SoundBufferSize > MIXBUFFER_SIZE/2)
 	{
 		Log_Printf(LOG_WARN, "Soundbuffer size is too big (%d > %d)!\n",

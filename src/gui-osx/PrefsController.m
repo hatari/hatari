@@ -185,13 +185,6 @@ SDLKey Preferences_KeysForJoysticks[] =
 	SDLK_LALT,
 	SDLK_RMETA,
 	SDLK_LMETA,
-#if !WITH_SDL2
-	SDLK_LSUPER,
-	SDLK_RSUPER,
-	SDLK_COMPOSE,
-	SDLK_BREAK,
-	SDLK_EURO,
-#endif
 	SDLK_MODE,
 	SDLK_HELP,
 	SDLK_PRINT,
@@ -788,11 +781,9 @@ BOOL flag1, flag2;
 	IMPORT_SWITCH(FastBootPatch,ConfigureParams.System.bFastBoot);
 	IMPORT_RADIO(YMVoicesMixing,ConfigureParams.Sound.YmVolumeMixing);
 
-#if WITH_SDL2
 	IMPORT_SWITCH(SDL2UseGpuScaling, ConfigureParams.Screen.bUseSdlRenderer);
 	IMPORT_SWITCH(SDL2Resizable, ConfigureParams.Screen.bResizable);
 	IMPORT_SWITCH(SDL2UseVSync, ConfigureParams.Screen.bUseVsync);
-#endif
 
 	//deal with the Max Zoomed Stepper
 	IMPORT_NTEXTFIELD(maxZoomedWidth, ConfigureParams.Screen.nMaxWidth);
@@ -1048,21 +1039,19 @@ BOOL flag1, flag2;
 	// EXPORT_SWITCH(zoomSTLowRes, ConfigureParams.Screen.bZoomLowRes);
 	EXPORT_SWITCH(showStatusBar,ConfigureParams.Screen.bShowStatusbar);
 	EXPORT_DROPDOWN(enableDSP,ConfigureParams.System.nDSPType);
-	
+
 	EXPORT_SWITCH(falconTTRatio, ConfigureParams.Screen.bAspectCorrect);
 	EXPORT_SWITCH(fullScreen, ConfigureParams.Screen.bFullScreen);
 	EXPORT_SWITCH(ledDisks, ConfigureParams.Screen.bShowDriveLed);
 	EXPORT_SWITCH(keepDesktopResolution, ConfigureParams.Screen.bKeepResolution);
-	
+
 	//v1.6.1
 	EXPORT_SWITCH(FastBootPatch,ConfigureParams.System.bFastBoot);
 	EXPORT_RADIO(YMVoicesMixing,ConfigureParams.Sound.YmVolumeMixing);
 
-#if WITH_SDL2
 	EXPORT_SWITCH(SDL2UseGpuScaling, ConfigureParams.Screen.bUseSdlRenderer);
 	EXPORT_SWITCH(SDL2Resizable, ConfigureParams.Screen.bResizable);
 	EXPORT_SWITCH(SDL2UseVSync, ConfigureParams.Screen.bUseVsync);
-#endif
 
 	EXPORT_NTEXTFIELD(maxZoomedWidth, ConfigureParams.Screen.nMaxWidth);
 	EXPORT_NTEXTFIELD(maxZoomedHeight, ConfigureParams.Screen.nMaxHeight);

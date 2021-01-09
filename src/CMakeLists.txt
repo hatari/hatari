@@ -45,7 +45,7 @@ if(WIN32)
 endif(WIN32)
 
 include_directories(includes debug falcon
-		    ${CMAKE_BINARY_DIR} ${SDL_INCLUDE_DIR} cpu)
+		    ${CMAKE_BINARY_DIR} ${SDL2_INCLUDE_DIR} cpu)
 
 if(ZLIB_FOUND)
 	include_directories(${ZLIB_INCLUDE_DIR})
@@ -140,15 +140,15 @@ else()
 	add_executable(hatari ${SOURCES})
 endif(ENABLE_OSX_BUNDLE)
 
-target_link_libraries(hatari Falcon UaeCpu GuiSdl Floppy Debug ${SDL_LIBRARY})
+target_link_libraries(hatari Falcon UaeCpu GuiSdl Floppy Debug ${SDL2_LIBRARY})
 
 if(MATH_FOUND AND NOT APPLE)
 	target_link_libraries(hatari ${MATH_LIBRARY})
 endif()
 
-if(SDLMAIN_LIBRARY)
-	target_link_libraries(hatari ${SDLMAIN_LIBRARY})
-endif(SDLMAIN_LIBRARY)
+if(SDL2MAIN_LIBRARY)
+	target_link_libraries(hatari ${SDL2MAIN_LIBRARY})
+endif(SDL2MAIN_LIBRARY)
 
 if(READLINE_FOUND)
 	target_link_libraries(hatari ${READLINE_LIBRARY})

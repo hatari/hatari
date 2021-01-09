@@ -3,7 +3,7 @@ set(TEST_SOURCE_DIR ${CMAKE_SOURCE_DIR}/tests/debugger)
 
 include_directories(${CMAKE_BINARY_DIR} ${CMAKE_SOURCE_DIR}/src/includes
 		    ${CMAKE_SOURCE_DIR}/src/debug ${CMAKE_SOURCE_DIR}/src/falcon
-		    ${CMAKE_SOURCE_DIR}/src/debug ${SDL_INCLUDE_DIR}
+		    ${CMAKE_SOURCE_DIR}/src/debug ${SDL2_INCLUDE_DIR}
 		    ${CMAKE_SOURCE_DIR}/src/cpu)
 
 add_library(DebuggerTestLib test-dummies.c  ${CMAKE_SOURCE_DIR}/src/str.c

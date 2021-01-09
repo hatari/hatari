@@ -7,10 +7,8 @@
 #
 # The key name is the libSDL symbolic name of the key, see the following
 # URL for a list: https://wiki.libsdl.org/SDL_Keycode
-# You can also use the symbolic keycode value instead of the name,
-# which you can get with the "--trace keymap" output from Hatari, for
-# example, but note that the values are different between SDL1 and SDL2
-# and thus they are not portable.
+# You can also use the symbolic keycode value instead of the name, which
+# you can get with the "--trace keymap" output from Hatari, for example.
 #
 # The given host key will be mapped to the ST key which is specified by
 # second number - the ST scan code of the key.  "--trace keymap" output
