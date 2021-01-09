@@ -98,7 +98,6 @@ static bool bRGBTableInSync;            /* Is RGB table up to date? */
 
 /* These are used for the generic screen conversion functions */
 static int genconv_width_req, genconv_height_req, genconv_bpp;
-static bool genconv_do_update;          /* HW surface is available -> the SDL need not to update the surface after ->pixel access */
 
 
 static bool Screen_DrawFrame(bool bForceFlip);
@@ -1447,7 +1446,6 @@ void Screen_SetGenConvSize(int width, int height, int bpp, bool bForceChange)
 			 */
 			Statusbar_Init(sdlscrn);
 		}
-		genconv_do_update = true;
 		return;
 	}
 
@@ -1459,9 +1457,6 @@ void Screen_SetGenConvSize(int width, int height, int bpp, bool bForceChange)
 
 	DEBUGPRINT(("Surface Pitch = %d, width = %d, height = %d\n", sdlscrn->pitch, sdlscrn->w, sdlscrn->h));
 	DEBUGPRINT(("Must Lock? %s\n", SDL_MUSTLOCK(sdlscrn) ? "YES" : "NO"));
-
-	genconv_do_update = true;
-
 	DEBUGPRINT(("Pixel format:bitspp=%d, tmasks r=%04x g=%04x b=%04x"
 			", tshifts r=%d g=%d b=%d"
 			", tlosses r=%d g=%d b=%d\n",
@@ -1480,9 +1475,6 @@ void Screen_GenConvUpdate(SDL_Rect *extra, bool forced)
 
 	/* Don't update anything on screen if video output is disabled */
 	if ( ConfigureParams.Screen.DisableVideo )
-		return;
-
-	if (!forced && !genconv_do_update) // the HW surface is available
 		return;
 
 	rects[0] = STScreenRect;
