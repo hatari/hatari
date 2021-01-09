@@ -85,14 +85,7 @@ static void ShortCut_MouseGrab(void)
 	/* If we are in windowed mode, toggle the mouse cursor mode now: */
 	if (!bInFullScreen)
 	{
-		if (bGrabMouse)
-		{
-			SDL_WM_GrabInput(SDL_GRAB_ON);
-		}
-		else
-		{
-			SDL_WM_GrabInput(SDL_GRAB_OFF);
-		}
+		SDL_SetRelativeMouseMode(bGrabMouse);
 	}
 }
 
@@ -203,7 +196,7 @@ static void ShortCut_BossKey(void)
 
 	if (bGrabMouse)
 	{
-		SDL_WM_GrabInput(SDL_GRAB_OFF);
+		SDL_SetRelativeMouseMode(false);
 		bGrabMouse = false;
 	}
 	Main_PauseEmulation(true);

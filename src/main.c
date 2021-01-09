@@ -206,7 +206,7 @@ bool Main_PauseEmulation(bool visualize)
 
 		if (bGrabMouse && !bInFullScreen)
 			/* Un-grab mouse pointer in windowed mode */
-			SDL_WM_GrabInput(SDL_GRAB_OFF);
+			SDL_SetRelativeMouseMode(false);
 	}
 	return true;
 }
@@ -231,7 +231,7 @@ bool Main_UnPauseEmulation(void)
 
 	if (bGrabMouse)
 		/* Grab mouse pointer again */
-		SDL_WM_GrabInput(SDL_GRAB_ON);
+		SDL_SetRelativeMouseMode(true);
 	return true;
 }
 

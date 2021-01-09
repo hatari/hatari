@@ -695,10 +695,7 @@ static void Screen_ChangeResolution(bool bForceChange)
 		Screen_SetSTResolution(bForceChange);
 	}
 
-	if (bInFullScreen || bGrabMouse)
-		SDL_WM_GrabInput(SDL_GRAB_ON);
-	else
-		SDL_WM_GrabInput(SDL_GRAB_OFF);
+	SDL_SetRelativeMouseMode(bInFullScreen || bGrabMouse);
 }
 
 
@@ -911,7 +908,7 @@ void Screen_EnterFullScreen(void)
 		{
 			Screen_Refresh();
 		}
-		SDL_WM_GrabInput(SDL_GRAB_ON);  /* Grab mouse pointer in fullscreen */
+		SDL_SetRelativeMouseMode(true);  /* Grab mouse pointer in fullscreen */
 	}
 }
 
@@ -961,7 +958,7 @@ void Screen_ReturnFromFullScreen(void)
 		if (!bGrabMouse)
 		{
 			/* Un-grab mouse pointer in windowed mode */
-			SDL_WM_GrabInput(SDL_GRAB_OFF);
+			SDL_SetRelativeMouseMode(false);
 		}
 	}
 }
