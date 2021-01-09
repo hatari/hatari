@@ -418,7 +418,7 @@ this enabled unless you know what you are doing!
 Use ROM cartridge image <file> (only works if GEMDOS HD emulation and
 extended VDI resolution are disabled)
 
-.SH "Common CPU options"
+.SH "CPU/FPU/bus options"
 .TP
 .B \-\-cpulevel <x>
 Specify CPU (680x0) to use (use x >= 1 with EmuTOS or TOS >= 2.06 only!)
@@ -429,8 +429,6 @@ Set the CPU clock (8, 16 or 32 Mhz)
 .B \-\-compatible <bool>
 Use a more compatible, but slower 68000 CPU mode with
 better prefetch accuracy and cycle counting
-
-.SH "WinUAE CPU core options"
 .TP
 .B \-\-cpu\-exact <bool>
 Use cycle exact CPU emulation (cache emulation)
@@ -471,9 +469,10 @@ needed for Linux to boot with TT emulation until there's full SCU
 interrupt support.  No VME tracing support.
 .TP
 .B \-\-timer\-d <bool>
-Patch redundantly high Timer-D frequency set by TOS.  This about doubles
-Hatari speed (for ST/e emulation) as the original Timer-D frequency causes
-most of the interrupts.
+Patch redundantly high Timer-D frequency set by TOS.  This can
+increase Hatari speed significantly (especially for ST/e emulation) as
+the original Timer-D frequency causes large amount of extra interrupts
+to emulate.
 .TP
 .B \-\-fast\-boot <bool>
 Patch TOS and initialize the so-called "memvalid" system variables to by-pass

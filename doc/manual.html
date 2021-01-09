@@ -937,7 +937,7 @@ you are doing!</p>
 (only works if GEMDOS HD emulation and extended VDI resolution are
 disabled)</p>
 
-<h3>Common CPU options</h3>
+<h3>CPU/FPU/bus options</h3>
 <p class="parameter">
 --cpulevel &lt;x&gt;</p>
 <p class="paramdesc">Specify CPU (680x0) to use (use x &gt;=
@@ -949,8 +949,6 @@ disabled)</p>
 &lt;bool&gt;</p>
 <p class="paramdesc">Use a more compatible, but slower 68000
 CPU mode with better prefetch accuracy and cycle counting</p>
-
-<h3>WinUAE CPU core options</h3>
 <p class="parameter">--cpu-exact &lt;bool&gt;</p>
 <p class="paramdesc">Use cycle exact CPU emulation (cache emulation)</p>
 <p class="parameter">--addr24 &lt;bool&gt;</p>
@@ -987,10 +985,10 @@ interrupt support.  No VME tracing support.
 or emu, Falcon only)</p>
 <p class="parameter">--timer-d
 &lt;bool&gt;</p>
-<p class="paramdesc">Patch redundantly high Timer-D
-frequency set by TOS. This about doubles Hatari speed (for ST/e
-emulation) as the original Timer-D frequency causes most of the
-interrupts.</p>
+<p class="paramdesc">Patch redundantly high Timer-D frequency set by TOS.
+This can increase Hatari speed significantly (especially for ST/e emulation)
+as the original Timer-D frequency causes large amount of extra interrupts
+to emulate.</p>
 <p class="parameter">--fast-boot
 &lt;bool&gt;</p>
 <p class="paramdesc">Patch TOS and initialize the so-called
