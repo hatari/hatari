@@ -12,7 +12,7 @@ Contents
 0. Status summary
 -----------------
 
-Apparently NetBSD works fine with WinAUE Amiga emulation.  However,
+Apparently NetBSD works fine with WinUAE Amiga emulation.  However,
 none of the NetBSD kernel variants or versions boots yet with Hatari.
 This just documents how to test them.
 

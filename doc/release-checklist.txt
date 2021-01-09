@@ -34,7 +34,6 @@ everything that should work, does still work:
   - Building different Hatari build configurations works:
     - all optional dependencies being present, and none
     - all optional features enabled, and disabled
-    - WinUAE & oldUAE CPU cores
     - Mac GUI
   - All above Hatari builds pass "make test"
     - Check that everything built fine on Travis and Cirrus-CI:

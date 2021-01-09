@@ -1277,7 +1277,7 @@ Demos working in EmuTOS >v1.0 (with DSP support):
 - Silly Venture 2k16 invitro (by Dune / Mystic Bytes)
 - Silly Venture 2k19 invitro (by Mystic Bytes)
 - Stercus Accidit (by Fit)
-  - Works only with oldUAE CPU core
+  - Worked with the (removed) oldUAE CPU core
 - Stocasto (by NoCrew)
   - works also with v1.0, but then DSP 3D objects are missing
 - Tere Ra'I (by Cerebral Vortex / Dune / Sector One)
