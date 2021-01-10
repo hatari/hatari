@@ -790,10 +790,12 @@ class HatariConfigMapping(ConfigStore):
         return self.get("[Memory]", "nTTRamSize")
 
     def set_ttram(self, memsize):
-        # guarantee correct type (Gtk float -> config int)
-        memsize = int(memsize)
+        # enforce 4MB granularity used also by Hatari
+        memsize = (int(memsize)+3) & ~3
         self.set("[Memory]", "nTTRamSize", memsize)
         self._change_option("--ttram %d" % memsize)
+        # TODO: addressing change should check also eventual
+        # CPU level like Hatari does, but this code doesn't know it
         if memsize:
             # TT-RAM need 32-bit addressing (i.e. disable 24-bit)
             self.set("[System]", "bAddressSpace24", False)
