@@ -648,11 +648,9 @@ class UIActions:
         accelgroup = None
         # create menu?
         if havemenu:
-            # this would steal keys from embedded Hatari
-            if not embed:
-                accelgroup = Gtk.AccelGroup()
-                for action in self.actions.list_actions():
-                    action.set_accel_group(accelgroup)
+            accelgroup = Gtk.AccelGroup()
+            for action in self.actions.list_actions():
+                action.set_accel_group(accelgroup)
             menu = self._get_menu()
         else:
             menu = None
