@@ -651,7 +651,8 @@ class PathDialog(HatariUIDialog):
         row = 0
         self.paths = []
         for (key, path, label) in paths:
-            fsel = FselEntry(self.dialog, self._validate_fname, key)
+            label = "%s:" % label
+            fsel = FselEntry(self.dialog, title=label, validate=self._validate_fname, data=key)
             fsel.set_filename(path)
             self.paths.append((key, fsel))
             table_add_widget_row(table, row, 0, label, fsel.get_container())
@@ -968,7 +969,7 @@ class MachineDialog(HatariUIDialog):
         table.show_all()
 
     def _fsel(self, label, action):
-        fsel = Gtk.FileChooserButton(label)
+        fsel = Gtk.FileChooserButton(title=label)
         # Hatari cannot access URIs
         fsel.set_local_only(True)
         fsel.set_width_chars(12)

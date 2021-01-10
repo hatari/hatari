@@ -345,7 +345,7 @@ class FselAndEjectFactory:
 
     def get(self, label, path, filename, action):
         "returns file selection button and box having that + eject button"
-        fsel = Gtk.FileChooserButton(label)
+        fsel = Gtk.FileChooserButton(title=label)
         # Hatari cannot access URIs
         fsel.set_local_only(True)
         fsel.set_width_chars(12)
@@ -372,7 +372,8 @@ class FselAndEjectFactory:
 #   but file chooser button doesn't support that
 # i.e. I had to do my own (less nice) container widget...
 class FselEntry:
-    def __init__(self, parent, validate = None, data = None):
+    def __init__(self, parent, title = "Select a file", validate = None, data = None):
+        self._title = title
         self._parent = parent
         self._validate = validate
         self._validate_data = data
@@ -389,7 +390,7 @@ class FselEntry:
     def _select_file_cb(self, widget):
         fname = self._entry.get_text()
         while True:
-            fname = get_save_filename("Select file", self._parent, fname)
+            fname = get_save_filename(self._title, self._parent, fname)
             if not fname:
                 # assume cancel
                 return

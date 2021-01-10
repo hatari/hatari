@@ -39,7 +39,7 @@ def dialog_apply_cb(widget, dialog):
 class SaveDialog:
     def __init__(self, parent):
         table, self.dialog = create_table_dialog(parent, "Save from memory", 3, 2)
-        self.file = FselEntry(self.dialog)
+        self.file = FselEntry(self.dialog, "Memory save file name:")
         table_add_widget_row(table, 0, 0, "File name:", self.file.get_container())
         self.address = table_add_entry_row(table, 1, 0, "Save address:", 6)
         self.address.connect("activate", dialog_apply_cb, self.dialog)
@@ -84,7 +84,7 @@ class SaveDialog:
 
 class LoadDialog:
     def __init__(self, parent):
-        chooser = Gtk.FileChooserButton('Select a File')
+        chooser = Gtk.FileChooserButton(title="Select memory file to load:")
         chooser.set_local_only(True)  # Hatari cannot access URIs
         chooser.set_width_chars(12)
         table, self.dialog = create_table_dialog(parent, "Load to memory", 2, 2)
