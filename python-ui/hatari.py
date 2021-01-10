@@ -541,8 +541,8 @@ class HatariConfigMapping(ConfigStore):
 
     def set_bufsize(self, value):
         value = int(value)
-        if value < 10: value = 10
-        if value > 100: value = 100
+        if value < 10 or value > 100:
+            value = 0
         self.set("[Sound]", "nSdlAudioBufferSize", value)
         self._change_option("--sound-buffer-size %d" % value)
 

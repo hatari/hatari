@@ -703,8 +703,10 @@ class SoundDialog(HatariUIDialog):
         ymmixer.set_active(config.get_ymmixer())
         self.ymmixer = ymmixer
 
-        adj = Gtk.Adjustment(config.get_bufsize(), 0, 110, 10, 10, 10)
-        bufsize = Gtk.HScale(adjustment=adj)
+        bufsize = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, 100, 10)
+        for pos in ((0, "auto"), (10, "min"), (100, "max")):
+            bufsize.add_mark(pos[0], Gtk.PositionType.BOTTOM, pos[1])
+        bufsize.set_value(config.get_bufsize())
         bufsize.set_digits(0)
         bufsize.set_tooltip_text("0 = use default value. In some situations, SDL default may cause large (~0.5s) sound delay at lower frequency.  If you have this problem, try with e.g. 20 ms, otherwise keep at 0.")
         self.bufsize = bufsize
