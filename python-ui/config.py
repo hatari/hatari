@@ -76,7 +76,11 @@ class ConfigStore:
         "ConfigStore(userconfdir, fgfile[,defaults,miss_is_error])"
         self.defaults = defaults
         self.userpath = self._get_full_userpath(confdirs)
+        # this is only about ConfigStore checks i.e. value existing in
+        # current Hatari config, value_to_text() will still fail if
+        # config name isn't even in conftypes (= all Hatari configs)
         self.miss_is_error = miss_is_error
+        self.changed = False
 
     def _get_full_userpath(self, confdirs):
         "get_userpath(leafdir) -> config file default save path from HOME, CWD or their subdir"

@@ -491,35 +491,34 @@ class HatariDebugUI:
     def options_cb(self, widget):
         if not self.dialog_options:
             self.dialog_options = OptionsDialog(self.window)
-        old_lines = self.config.get("[General]", "nLines")
-        old_follow_pc = self.config.get("[General]", "bFollowPC")
+        old_lines = self.config.get("[Debugger]", "nDisasmLines")
+        old_follow_pc = self.address.get_follow_pc()
         lines, follow_pc = self.dialog_options.run(old_lines, old_follow_pc)
         if lines != old_lines:
-            self.config.set("[General]", "nLines", lines)
+            self.config.set("[Debugger]", "nDisasmLines", lines)
             self.address.set_lines(lines)
         if follow_pc != old_follow_pc:
-            self.config.set("[General]", "bFollowPC", follow_pc)
             self.address.set_follow_pc(follow_pc)
 
     def load_options(self):
         # TODO: move config to MemoryAddress class?
         # (depends on how monitoring of addresses should work)
         lines = self.address.get_lines()
-        follow_pc = self.address.get_follow_pc()
-        miss_is_error = False # needed for adding windows
+        # ConfigStore does checks and type conversions based on names
+        # of Hatari config sections and keys, so this needs to use
+        # same names to avoid asserts, and it can't e.g. save
+        # follow_pc option value, which will keep as run-time one
         defaults = {
-            "[General]": {
-            	"nLines": lines,
-                "bFollowPC": follow_pc
+            "[Debugger]": {
+                "nDisasmLines": lines,
             }
         }
         userconfdir = ".hatari"
-        config = ConfigStore(userconfdir, defaults, miss_is_error)
-        configpath = config.get_filepath("debugui.cfg")
+        config = ConfigStore(userconfdir, defaults)
+        configpath = config.get_filepath(".debugui.cfg")
         config.load(configpath) # set defaults
         try:
-            self.address.set_lines(config.get("[General]", "nLines"))
-            self.address.set_follow_pc(config.get("[General]", "bFollowPC"))
+            self.address.set_lines(config.get("[Debugger]", "nDisasmLines"))
         except (KeyError, AttributeError):
             ErrorDialog(None).run("Debug UI configuration mismatch!\nTry again after removing: '%s'." % configpath)
         self.config = config
