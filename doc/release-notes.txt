@@ -14,6 +14,8 @@ Following features are deprecated and will be removed in a future release:
 - Hatari XBios(255) API enabled with the "--bios-intercept" option
   (i.e. use "--natfeats" & "--cmd-fifo" options and "hconsole" instead)
 - The old ~/.hatari configuration file location (use ~/.config/hatari instead)
+- The rendering functions for 16 bits-per-pixel host screens (almost all
+  recent hardware should have 32 bpp nowadays)
 
 Removed features (that were marked as deprecated in earlier releases):
 - Support for the SDL 1.2 library (i.e. SDL 2.x should be used instead)
