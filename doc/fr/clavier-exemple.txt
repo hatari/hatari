@@ -145,3 +145,7 @@
 # §
 38|KMOD_LSHIFT|KMOD_LSHIFT,07
 38|KMOD_RSHIFT|KMOD_RSHIFT,07
+# Page précédente -> HELP
+4b,62
+# Page suivante -> UNDO
+4e,61
