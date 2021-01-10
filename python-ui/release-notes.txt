@@ -3,8 +3,12 @@ User visible changes in Hatari (Python Gtk) UI
 ----------------------------------------------
 
 2021-01:
-- Removed support for obsolete (SDL1 specific) Hatari
-  options and for Python v2
+- Fix: saving of debug UI config, sound buffer size
+  setting and more of the PyGTK (deprecation) warnings
+- Update TT-RAM and trace settings for latest Hatari
+- Use more descriptive titles for all file selectors
+- Remove support for obsolete (SDL1 specific) Hatari
+  options and Python v2 support
 
 2020-12:
 - Requires now Gtk v3.22 or newer

@@ -8,7 +8,6 @@ its sources).
   - See: https://python-gtk-3-tutorial.readthedocs.io/en/latest/
   - Menus & ActionGroups -> Application framework
   - Table -> Grid layout in dialogs
-  - Positional -> named arguments
 
 * Interface between UI and Hatari so that Hatari will forward error
   and other dialog texts to UI for showing, and waits until user has
