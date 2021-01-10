@@ -126,7 +126,6 @@ int Cycles_GetInternalCycleOnReadAccess(void)
 	{
 		AddCycles = 4 + WaitStateCycles;
 	}
-#ifdef WINUAE_FOR_HATARI
 	/* When using WinUAE CPU in CE mode, 'currcycle' will be the number of cycles */
 	/* inside the current opcode just before accessing memory. */
 	/* As memory accesses take 4 cycles, we just need to add 4 cycles to get */
@@ -136,7 +135,6 @@ int Cycles_GetInternalCycleOnReadAccess(void)
 	{
 		AddCycles = currcycle*2/CYCLE_UNIT + 4;
 	}
-#endif
 	else							/* BUS_MODE_CPU */
 	{
 		/* TODO: Find proper cycles count depending on the opcode/family of the current instruction */
@@ -174,7 +172,6 @@ int Cycles_GetInternalCycleOnWriteAccess(void)
 	{
 		AddCycles = 4 + WaitStateCycles;
 	}
-#ifdef WINUAE_FOR_HATARI
 	/* When using WinUAE CPU in CE mode, 'currcycle' will be the number of cycles */
 	/* inside the current opcode just before accessing memory. */
 	/* As memory accesses take 4 cycles, we just need to add 4 cycles to get */
@@ -184,7 +181,6 @@ int Cycles_GetInternalCycleOnWriteAccess(void)
 	{
 		AddCycles = currcycle*2/CYCLE_UNIT + 4;
 	}
-#endif
 	else							/* BUS_MODE_CPU */
 	{
 		/* TODO: Find proper cycles count depending on the type of the current instruction */

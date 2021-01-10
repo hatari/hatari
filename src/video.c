@@ -4591,9 +4591,6 @@ void Video_InterruptHandler_VBL ( void )
 	/* for a warm or cold reset and the cpu is about to be reset at the end of the current instruction */
 	/* (else this could cause bus error / halt because at this point RAM was already cleared, but CPU core could */
 	/* try to access it to process the VBL interrupt and read the vector's address (especially when using MMU)) */
-#ifndef WINUAE_FOR_HATARI
-	int quit_program = 0;					/* doesn't exist in old cpu core */
-#endif
 	if ( quit_program == 0 )
 		M68000_Exception(EXCEPTION_NR_VBLANK, M68000_EXC_SRC_AUTOVEC);	/* Vertical blank interrupt, level 4 */
 

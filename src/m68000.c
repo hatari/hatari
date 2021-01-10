@@ -564,44 +564,6 @@ void M68000_BusError ( Uint32 addr , int ReadWrite , int Size , int AccessType ,
  */
 void M68000_Exception(Uint32 ExceptionNr , int ExceptionSource)
 {
-#ifndef WINUAE_FOR_HATARI
-	if ((ExceptionSource == M68000_EXC_SRC_AUTOVEC)
-		&& (ExceptionNr>24 && ExceptionNr<32))		/* 68k autovector interrupt? */
-	{
-		/* Handle autovector interrupts the UAE's way
-		 * (see intlev() and do_specialties() in UAE CPU core) */
-		/* In our case, this part is only called for HBL and VBL interrupts */
-		int intnr = ExceptionNr - 24;
-		pendingInterrupts |= (1 << intnr);
-		M68000_SetSpecial(SPCFLAG_INT);
-	}
-
-	else							/* MFP or direct CPU exceptions */
-	{
-		Uint16 SR;
-
-		/* Was the CPU stopped, i.e. by a STOP instruction? */
-		if (regs.spcflags & SPCFLAG_STOP)
-		{
-			regs.stopped = 0;
-			M68000_UnsetSpecial(SPCFLAG_STOP);    /* All is go,go,go! */
-		}
-
-		/* 68k exceptions are handled by Exception() of the UAE CPU core */
-		Exception(ExceptionNr, m68k_getpc(), ExceptionSource);
-
-		/* Set Status Register so interrupt can ONLY be stopped by another interrupt
-		 * of higher priority */
-		if ( (ExceptionSource == M68000_EXC_SRC_INT_MFP)
-		  || (ExceptionSource == M68000_EXC_SRC_INT_DSP) )
-		{
-			SR = M68000_GetSR();
-			SR = (SR&SR_CLEAR_IPL)|0x0600;		/* MFP or DSP, level 6 */
-			M68000_SetSR(SR);
-		}
-	}
-
-#else
 	if ( ExceptionNr > 24 && ExceptionNr < 32 )		/* Level 1-7 interrupts */
 	{
 		/* In our case, this part is called for HBL, VBL and MFP/DSP interrupts */
@@ -616,7 +578,6 @@ void M68000_Exception(Uint32 ExceptionNr , int ExceptionSource)
 	{
 		Exception(ExceptionNr);
 	}
-#endif
 }
 
 
@@ -639,7 +600,6 @@ void M68000_Exception(Uint32 ExceptionNr , int ExceptionSource)
  */
 void	M68000_Update_intlev ( void )
 {	
-#ifdef WINUAE_FOR_HATARI
 	Uint8	Level6_IRQ;
 
 #if ENABLE_DSP_EMU
@@ -661,7 +621,6 @@ void	M68000_Update_intlev ( void )
 	/* doint() will update regs.ipl_pin, so copy it into regs.ipl */
 	if ( ConfigureParams.System.bCycleExactCpu )
 		regs.ipl = regs.ipl_pin;			/* See ipl_fetch() in cpu/cpu_prefetch.h */
-#endif
 }
 
 
@@ -683,17 +642,12 @@ void	M68000_Update_intlev ( void )
  */
 void M68000_WaitState(int WaitCycles)
 {
-#ifndef WINUAE_FOR_HATARI
-	WaitStateCycles += WaitCycles;				/* Cumulate all the wait states for this instruction */
-
-#else
 	if ( ConfigureParams.System.bCycleExactCpu )
 		currcycle += ( WaitCycles * CYCLE_UNIT / 2 );	/* Add wait states immediately to the CE cycles counter */
 	else
 	{
 		WaitStateCycles += WaitCycles;			/* Cumulate all the wait states for this instruction */
 	}
-#endif
 }
 
 
@@ -772,30 +726,24 @@ void	M68000_SyncCpuBus_OnWriteAccess ( void )
 void	M68000_Flush_All_Caches ( uaecptr addr , int size )
 {
 //fprintf ( stderr , "M68000_Flush_All_Caches\n" );
-#ifdef WINUAE_FOR_HATARI
 	flush_cpu_caches(true);
 	invalidate_cpu_data_caches();
-#endif
 }
 
 
 void	M68000_Flush_Instr_Cache ( uaecptr addr , int size )
 {
 //fprintf ( stderr , "M68000_Flush_Instr_Cache\n" );
-#ifdef WINUAE_FOR_HATARI
 	/* Instruction cache for cpu >= 68020 */
 	flush_cpu_caches(true);
-#endif
 }
 
 
 void	M68000_Flush_Data_Cache ( uaecptr addr , int size )
 {
 //fprintf ( stderr , "M68000_Flush_Data_Cache\n" );
-#ifdef WINUAE_FOR_HATARI
 	/* Data cache for cpu >= 68030 */
 	invalidate_cpu_data_caches();
-#endif
 }
 
 
@@ -812,7 +760,6 @@ void	M68000_Flush_Data_Cache ( uaecptr addr , int size )
  */
 void	M68000_SetBlitter_CE ( bool state )
 {
-#ifdef WINUAE_FOR_HATARI
 //fprintf ( stderr , "M68000_SetBlitter_CE state=%s\n" , state ? "on" : "off" );
 	if ( state )
 	{
@@ -822,7 +769,6 @@ void	M68000_SetBlitter_CE ( bool state )
 	{
 		set_x_funcs_hatari_blitter ( 0 );		/* off */
 	}
-#endif
 }
 
 
@@ -900,11 +846,7 @@ void	M68000_SetSR ( Uint16 v )
 void	M68000_SetPC ( uaecptr v )
 {
 	m68k_setpc ( v );
-#ifdef WINUAE_FOR_HATARI
 	fill_prefetch();
-#else
-	refill_prefetch (m68k_getpc(), 0);
-#endif
 }
 
 
