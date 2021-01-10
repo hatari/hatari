@@ -469,16 +469,16 @@ class DisplayDialog(HatariUIDialog):
         slow.set_active(0)
         slow.set_tooltip_text("VBL wait multiplier to slow down emulation. Breaks sound and large enough slowdown causes mouse clicks not to work.")
 
-        maxw, maxh = config.get_max_size()
         topw, toph = config.get_desktop_size()
-        maxadjw = Gtk.Adjustment(maxw, 320, topw, 8, 40)
-        maxadjh = Gtk.Adjustment(maxh, 200, toph, 8, 40)
-        scalew = Gtk.HScale(adjustment=maxadjw)
-        scaleh = Gtk.HScale(adjustment=maxadjh)
-        scalew.set_digits(0)
-        scaleh.set_digits(0)
-        scalew.set_tooltip_text("Preferred/maximum zoomed width")
-        scaleh.set_tooltip_text("Preferred/maximum zoomed height")
+        maxw = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 320, topw, 8)
+        maxh = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 200, toph, 8)
+        maxw.set_tooltip_text("Preferred/maximum zoomed width")
+        maxh.set_tooltip_text("Preferred/maximum zoomed height")
+        confw, confh = config.get_max_size()
+        maxw.set_value(confw)
+        maxh.set_value(confh)
+        maxw.set_digits(0)
+        maxh.set_digits(0)
 
         force_max = Gtk.CheckButton("Force max resolution (Falcon)")
         force_max.set_active(config.get_force_max())
@@ -510,8 +510,8 @@ class DisplayDialog(HatariUIDialog):
              Gtk.STOCK_CANCEL,  Gtk.ResponseType.CANCEL))
 
         dialog.vbox.add(Gtk.Label(label="Max zoomed size:"))
-        dialog.vbox.add(scalew)
-        dialog.vbox.add(scaleh)
+        dialog.vbox.add(maxw)
+        dialog.vbox.add(maxh)
         dialog.vbox.add(force_max)
         dialog.vbox.add(desktop)
         dialog.vbox.add(borders)
@@ -525,13 +525,13 @@ class DisplayDialog(HatariUIDialog):
         dialog.vbox.show_all()
 
         self.dialog = dialog
-        self.skip = skip
-        self.slow = slow
-        self.maxw = maxadjw
-        self.maxh = maxadjh
+        self.maxw = maxw
+        self.maxh = maxh
         self.force_max = force_max
         self.desktop = desktop
         self.borders = borders
+        self.skip = skip
+        self.slow = slow
         self.statusbar = statusbar
         self.led = led
         self.crop = crop

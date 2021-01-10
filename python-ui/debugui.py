@@ -125,16 +125,19 @@ class OptionsDialog:
             (Gtk.STOCK_APPLY,  Gtk.ResponseType.APPLY,
              Gtk.STOCK_CLOSE, Gtk.ResponseType.CLOSE))
 
-        self.lines = Gtk.Adjustment(0, 5, 50)
-        scale = Gtk.HScale(adjustment=self.lines)
-        scale.set_digits(0)
+        lines = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, 50, 5)
+        lines.set_tooltip_text("Change view mode afterwards to get new (min size) into effect")
+        lines.set_digits(0)
+        self.lines = lines
 
-        self.follow_pc = Gtk.CheckButton("On stop, set address to PC")
+        follow = Gtk.CheckButton("On stop, set address to PC")
+        follow.set_tooltip_text("Run-time option, not saved to Debugger config file")
+        self.follow_pc = follow
 
         vbox = self.dialog.vbox
         vbox.add(Gtk.Label(label="Memdump/disasm lines:"))
-        vbox.add(scale)
-        vbox.add(self.follow_pc)
+        vbox.add(lines)
+        vbox.add(follow)
         vbox.show_all()
 
     def run(self, lines, follow_pc):
