@@ -76,15 +76,15 @@ Uint32 ST2RGB[4096];          /* Table to convert ST 0x777 / STe 0xfff palette t
 Uint8 *pSTScreen;
 FRAMEBUFFER *pFrameBuffer;    /* Pointer into current 'FrameBuffer' */
 
-static FRAMEBUFFER FrameBuffers[NUM_FRAMEBUFFERS]; /* Store frame buffer details to tell how to update */
-static Uint8 *pSTScreenCopy;                       /* Keep track of current and previous ST screen data */
-static Uint8 *pPCScreenDest;                       /* Destination PC buffer */
-static int STScreenEndHorizLine;                   /* End lines to be converted */
+static FRAMEBUFFER FrameBuffer;     /* Store frame buffer details to tell how to update */
+static Uint8 *pSTScreenCopy;        /* Keep track of current and previous ST screen data */
+static Uint8 *pPCScreenDest;        /* Destination PC buffer */
+static int STScreenEndHorizLine;    /* End lines to be converted */
 static int PCScreenBytesPerLine;
 static int STScreenWidthBytes;
-static int PCScreenOffsetX;                        /* how many pixels to skip from left when drawing */
-static int PCScreenOffsetY;                        /* how many pixels to skip from top when drawing */
-static SDL_Rect STScreenRect;                      /* screen size without statusbar */
+static int PCScreenOffsetX;         /* how many pixels to skip from left when drawing */
+static int PCScreenOffsetY;         /* how many pixels to skip from top when drawing */
+static SDL_Rect STScreenRect;       /* screen size without statusbar */
 
 static int STScreenLineOffset[NUM_VISIBLE_LINES];  /* Offsets for ST screen lines eg, 0,160,320... */
 static Uint16 HBLPalette[16], PrevHBLPalette[16];  /* Current palette for line, also copy of first line */
@@ -717,25 +717,21 @@ void Screen_ModeChanged(bool bForceChange)
  */
 void Screen_Init(void)
 {
-	int i;
 	SDL_Surface *pIconSurf;
 	char sIconFileName[FILENAME_MAX];
 
 	/* Clear frame buffer structures and set current pointer */
-	memset(FrameBuffers, 0, NUM_FRAMEBUFFERS * sizeof(FRAMEBUFFER));
+	memset(&FrameBuffer, 0, sizeof(FRAMEBUFFER));
 
-	/* Allocate previous screen check workspace. We are going to double-buffer a double-buffered screen. Oh. */
-	for (i = 0; i < NUM_FRAMEBUFFERS; i++)
+	/* Allocate screen check workspace. */
+	FrameBuffer.pSTScreen = malloc(MAX_VDI_BYTES);
+	FrameBuffer.pSTScreenCopy = malloc(MAX_VDI_BYTES);
+	if (!FrameBuffer.pSTScreen || !FrameBuffer.pSTScreenCopy)
 	{
-		FrameBuffers[i].pSTScreen = malloc(MAX_VDI_BYTES);
-		FrameBuffers[i].pSTScreenCopy = malloc(MAX_VDI_BYTES);
-		if (!FrameBuffers[i].pSTScreen || !FrameBuffers[i].pSTScreenCopy)
-		{
-			fprintf(stderr, "ERROR: Failed to allocate frame buffer memory.\n");
-			exit(-1);
-		}
+		fprintf(stderr, "ERROR: Failed to allocate frame buffer memory.\n");
+		exit(-1);
 	}
-	pFrameBuffer = &FrameBuffers[0];
+	pFrameBuffer = &FrameBuffer;  /* TODO: Replace pFrameBuffer with FrameBuffer everywhere */
 
 	/* Set initial window resolution */
 	bInFullScreen = ConfigureParams.Screen.bFullScreen;
@@ -766,14 +762,9 @@ void Screen_Init(void)
  */
 void Screen_UnInit(void)
 {
-	int i;
-
 	/* Free memory used for copies */
-	for (i = 0; i < NUM_FRAMEBUFFERS; i++)
-	{
-		free(FrameBuffers[i].pSTScreen);
-		free(FrameBuffers[i].pSTScreenCopy);
-	}
+	free(FrameBuffer.pSTScreen);
+	free(FrameBuffer.pSTScreenCopy);
 
 	Screen_FreeSDL2Resources();
 	if (sdlWindow)
@@ -820,11 +811,8 @@ void Screen_Reset(void)
  */
 void Screen_SetFullUpdate(void)
 {
-	int i;
-
 	/* Update frame buffers */
-	for (i = 0; i < NUM_FRAMEBUFFERS; i++)
-		FrameBuffers[i].bFullUpdate = true;
+	FrameBuffer.bFullUpdate = true;
 }
 
 
@@ -1211,32 +1199,16 @@ void Screen_UnLock(void)
 static void Screen_Blit(SDL_Rect *sbar_rect)
 {
 	unsigned char *pTmpScreen;
+	int count = 1;
+	SDL_Rect rects[2];
 
-#if 0	/* double buffering cannot be used with partial screen updates */
-# if NUM_FRAMEBUFFERS > 1
-	if (bInFullScreen && (sdlscrn->flags & SDL_DOUBLEBUF))
+	rects[0] = STScreenRect;
+	if (sbar_rect)
 	{
-		/* Swap screen */
-		if (pFrameBuffer==&FrameBuffers[0])
-			pFrameBuffer = &FrameBuffers[1];
-		else
-			pFrameBuffer = &FrameBuffers[0];
-		SDL_Flip(sdlscrn);
+		rects[1] = *sbar_rect;
+		count = 2;
 	}
-	else
-# endif
-#endif
-	{
-		int count = 1;
-		SDL_Rect rects[2];
-		rects[0] = STScreenRect;
-		if (sbar_rect)
-		{
-			rects[1] = *sbar_rect;
-			count = 2;
-		}
-		SDL_UpdateRects(sdlscrn, count, rects);
-	}
+	SDL_UpdateRects(sdlscrn, count, rects);
 
 	/* Swap copy/raster buffers in screen. */
 	pTmpScreen = pFrameBuffer->pSTScreenCopy;

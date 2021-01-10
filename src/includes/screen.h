@@ -58,9 +58,6 @@ typedef struct
   bool bFullUpdate;             /* Set TRUE to cause full update on next draw */
 } FRAMEBUFFER;
 
-/* Number of frame buffers (1 or 2) - should be 2 for supporting screen flipping */
-#define NUM_FRAMEBUFFERS  2
-
 
 /* ST/TT resolution defines */
 enum
