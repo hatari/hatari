@@ -136,7 +136,7 @@ class UICallbacks:
         if toolbars["bottom"]:
             vbox.pack_start(toolbars["bottom"], False, True, 0)
         # put them to main window
-        mainwin = Gtk.Window(Gtk.WindowType.TOPLEVEL)
+        mainwin = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
         mainwin.set_title("%s %s" % (UInfo.name, UInfo.version))
         mainwin.set_icon_from_file(UInfo.icon)
         if accelgroup:
@@ -386,7 +386,7 @@ class UICallbacks:
     def panel(self, action, box):
         title = action.get_name()
         if title not in self.panels:
-            window = Gtk.Window(Gtk.WindowType.TOPLEVEL)
+            window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
             window.set_transient_for(self.mainwin)
             window.set_icon_from_file(UInfo.icon)
             window.set_title(title)
@@ -409,7 +409,7 @@ class UIActions:
 
         self.help = UIHelp()
 
-        self.actions = Gtk.ActionGroup("All")
+        self.actions = Gtk.ActionGroup(name="All")
 
         # name, icon ID, label, accel, tooltip, callback
         self.actions.add_toggle_actions((
@@ -620,7 +620,7 @@ class UIActions:
             else:
                 item = Gtk.SeparatorMenuItem()
             submenu.add(item)
-        baritem = Gtk.MenuItem(title, False)
+        baritem = Gtk.MenuItem(label=title)
         baritem.set_submenu(submenu)
         bar.add(baritem)
 

@@ -130,7 +130,7 @@ class OptionsDialog:
         lines.set_digits(0)
         self.lines = lines
 
-        follow = Gtk.CheckButton("On stop, set address to PC")
+        follow = Gtk.CheckButton(label="On stop, set address to PC")
         follow.set_tooltip_text("Run-time option, not saved to Debugger config file")
         self.follow_pc = follow
 
@@ -392,7 +392,7 @@ class HatariDebugUI:
         vbox.pack_start(hbox2, False, True, 0)
 
         # and the window for all of this
-        window = Gtk.Window(Gtk.WindowType.TOPLEVEL)
+        window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
         window.set_events(Gdk.EventMask.KEY_RELEASE_MASK)
         window.connect("key_release_event", self.key_event_cb)
         if do_destroy:
