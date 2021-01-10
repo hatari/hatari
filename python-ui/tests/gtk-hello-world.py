@@ -6,7 +6,7 @@ from gi.repository import Gtk
 
 class AppUI():
     def __init__(self):
-        self.window = Gtk.Window(Gtk.WindowType.TOPLEVEL)
+        self.window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
         self.window.connect("destroy", Gtk.main_quit)
 
         label = Gtk.Label(label="Hello World!")

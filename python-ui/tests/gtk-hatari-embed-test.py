@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 #
+# To test Git version of Hatari, use something like:
+#   PATH=../../build/src:$PATH ./gtk-hatari-embed-test.py ...
+#
 # Tests embedding hatari with three different methods:
 # "hatari": ask Hatari to reparent to given window
-# "sdl1": Give SDL window into which it should reparent
-#   -> SDL doesn't handle (mouse, key, expose) events
-#      although according to "xev" it's window receives them!
-#      Bug in SDL (not one of the originally needed features?)?
 # "reparent": Find Hatari window and reparent it into pygtk widget in python
 #   - Needs "xwininfo" and "awk" i.e. not real alternative
 #
@@ -15,15 +14,15 @@
 #   "socket"
 #
 # Results:
-#   drawingarea & evenbox / sdl1 & hatari:
+#   "drawingarea" & "evenbox" with "hatari":
 #     -> XCB fails unknown seq num when importing Hatari window
-#   drawingarea & evenbox / reparent:
+#   "drawingarea" & "evenbox" with "reparent":
+#     -> Hatari window opens outside of test app before reparented
 #     -> keyboard input doesn't work
-#   socket / sdl1:
-#     -> keyboard input doesn't work
-#   socket / reparent & hatari:
-#     -> works fine
-
+#   "socket" with "reparent":
+#     -> Hatari window opens outside of test app before reparented
+#   "socket" with "hatari":
+#     -> only method working flawlessly
 import os
 import sys
 import time
@@ -40,7 +39,7 @@ def usage(error):
     print("Opens window with given <widget>, runs Hatari and tries to embed it")
     print("with given <method>\n")
     print("<widget> can be <drawingarea|eventbox|socket>")
-    print("<method> can be <sdl1|hatari|reparent>\n")
+    print("<method> can be <hatari|reparent>\n")
     print("ERROR: %s\n" % error)
     sys.exit(1)
 
@@ -50,7 +49,7 @@ class AppUI():
     hatari_ht = 436 # Hatari window enables statusbar by default
 
     def __init__(self, widget, method):
-        if method in ("hatari", "reparent", "sdl1"):
+        if method in ("hatari", "reparent"):
             self.method = method
         else:
             usage("unknown <method> '%s'" % method)
@@ -71,7 +70,7 @@ class AppUI():
         GLib.timeout_add(500, self.timeout_cb)
 
     def create_window(self):
-        window = Gtk.Window(Gtk.WindowType.TOPLEVEL)
+        window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
         window.connect("destroy", self.do_quit)
         return window
 
@@ -88,7 +87,7 @@ class AppUI():
         # receive *any* keyevents.
         self.hatari_pid = 0
         vbox = Gtk.VBox()
-        button = Gtk.Button("Test Button", can_focus=False)
+        button = Gtk.Button(label="Test Button", can_focus=False)
         vbox.add(button)
         widget = widgettype(can_focus=True)
         widget.set_size_request(self.hatari_wd, self.hatari_ht)
@@ -130,24 +129,19 @@ class AppUI():
                     self.hatari_pid = 0
             else:
                 print("Waiting Hatari process to embed itself...")
-                # method == "sdl1" or "hatari"
                 self.hatari_pid = pid
         else:
             # child runs Hatari
-            args = ("hatari", "-m", "-z", "2")
+            args = ("hatari", "-m")
             os.execvpe("hatari", args, self.get_hatari_env())
 
     def get_hatari_env(self):
         if self.method == "reparent":
             return os.environ
-        # tell Hatari / SDL to use (embed itself inside) given widget's window
+        # tell Hatari to embed itself inside given widget's window
         win_id = self.hatariparent.get_window().get_xid()
         env = os.environ
-        if self.method == "sdl1":
-            # SDL2 doesn't support this anymore
-            env["SDL_WINDOWID"] = str(win_id)
-        elif self.method == "hatari":
-            env["PARENT_WIN_ID"] = str(win_id)
+        env["PARENT_WIN_ID"] = str(win_id)
         return env
 
     def find_hatari_window(self):
