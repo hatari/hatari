@@ -4,10 +4,14 @@ TODO
 Potential TODO items for Hatari UI (in addition to the ones listed in
 its sources).
 
-* Fix Gtk v3 and its Python bindings deprecation warnings:
-  - See: https://python-gtk-3-tutorial.readthedocs.io/en/latest/
-  - Menus & ActionGroups -> Application framework
-  - Table -> Grid layout in dialogs
+* Fix rest of Gtk v3 / PyGTK deprecation warnings by creating all
+  Python UI menus with XML and Gtk application framework instead of
+  using Gtk v2 Action + ActionGroup widgets, see:
+  - https://python-gtk-3-tutorial.readthedocs.io/en/latest/application.html
+
+* Rewrite all configuration dialogs into Mac UI style single dialog
+  with tabs, using Gtk v3 Grid layout widget, so that only single
+  configuration menu entry remains
 
 * Interface between UI and Hatari so that Hatari will forward error
   and other dialog texts to UI for showing, and waits until user has

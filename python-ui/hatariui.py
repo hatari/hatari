@@ -155,7 +155,6 @@ class UICallbacks:
         socket = Gtk.Socket(can_focus=True)
         # without this, closing Hatari would remove the socket widget
         socket.connect("plug-removed", lambda obj: True)
-        socket.modify_bg(Gtk.StateType.NORMAL, Gdk.color_parse("black"))
         socket.set_events(Gdk.EventMask.ALL_EVENTS_MASK)
         # set max Hatari window size = desktop size
         monitor  = Gdk.Display.get_default().get_primary_monitor()
