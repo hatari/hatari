@@ -39,8 +39,8 @@ def dialog_apply_cb(widget, dialog):
 class SaveDialog:
     def __init__(self, parent):
         table, self.dialog = create_table_dialog(parent, "Save from memory", 3, 2)
-        self.file = FselEntry(self.dialog, "Memory save file name:")
-        table_add_widget_row(table, 0, 0, "File name:", self.file.get_container())
+        self.fsel = FselEntry(self.dialog, "Memory save file name:")
+        table_add_widget_row(table, 0, 0, "File name:", self.fsel.get_container())
         self.address = table_add_entry_row(table, 1, 0, "Save address:", 6)
         self.address.connect("activate", dialog_apply_cb, self.dialog)
         self.length = table_add_entry_row(table, 2, 0, "Number of bytes:", 6)
@@ -55,7 +55,7 @@ class SaveDialog:
         while 1:
             response = self.dialog.run()
             if response == Gtk.ResponseType.APPLY:
-                filename = self.file.get_filename()
+                filename = self.fsel.get_filename()
                 address_txt = self.address.get_text()
                 length_txt = self.length.get_text()
                 if filename and address_txt and length_txt:
@@ -88,7 +88,7 @@ class LoadDialog:
         chooser.set_local_only(True)  # Hatari cannot access URIs
         chooser.set_width_chars(12)
         table, self.dialog = create_table_dialog(parent, "Load to memory", 2, 2)
-        self.file = table_add_widget_row(table, 0, 0, "File name:", chooser)
+        self.fsel = table_add_widget_row(table, 0, 0, "File name:", chooser)
         self.address = table_add_entry_row(table, 1, 0, "Load address:", 6)
         self.address.connect("activate", dialog_apply_cb, self.dialog)
 
@@ -101,7 +101,7 @@ class LoadDialog:
         while 1:
             response = self.dialog.run()
             if response == Gtk.ResponseType.APPLY:
-                filename = self.file.get_filename()
+                filename = self.fsel.get_filename()
                 address_txt = self.address.get_text()
                 if filename and address_txt:
                     try:
@@ -121,10 +121,11 @@ class LoadDialog:
 class OptionsDialog:
     def __init__(self, parent):
         self.dialog = Gtk.Dialog("Debugger UI options", parent,
-            Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
-            (Gtk.STOCK_APPLY,  Gtk.ResponseType.APPLY,
-             Gtk.STOCK_CLOSE, Gtk.ResponseType.CLOSE))
-
+            modal=True, destroy_with_parent=True)
+        self.dialog.add_buttons(
+            Gtk.STOCK_APPLY,  Gtk.ResponseType.APPLY,
+            Gtk.STOCK_CLOSE, Gtk.ResponseType.CLOSE
+        )
         lines = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, 50, 5)
         lines.set_tooltip_text("Change view mode afterwards to get new (min size) into effect")
         lines.set_digits(0)
@@ -158,6 +159,7 @@ class OptionsDialog:
 # constants for the other classes
 class Constants:
     # dump modes
+    NODUMP = 0
     DISASM = 1
     MEMDUMP = 2
     REGISTERS = 3
@@ -181,7 +183,7 @@ class MemoryAddress:
         # widgets
         self.entry, self.memory = self.create_widgets()
         # settings
-        self.dumpmode = Constants.REGISTERS
+        self.dumpmode = Constants.NODUMP
         self.follow_pc = True
         self.lines = 12
         # addresses
@@ -197,12 +199,12 @@ class MemoryAddress:
         self.last  = None
 
     def create_widgets(self):
-        entry = Gtk.Entry(max_length=6, width_chars=6)
+        entry = Gtk.Entry(max_length=6, width_chars=7)
         entry.connect("activate", self._entry_cb)
-        memory = Gtk.Label(halign=Gtk.Align.START, margin_start=8, margin_end=8, margin_top=8)
-        mono = Pango.FontDescription("monospace")
-        memory.modify_font(mono)
-        entry.modify_font(mono)
+        memory = Gtk.TextView()
+        memory.set_monospace(True)
+        memory.set_cursor_visible(False)
+        memory.set_editable(False)
         return (entry, memory)
 
     def _entry_cb(self, widget):
@@ -219,7 +221,7 @@ class MemoryAddress:
     def get(self):
         return self.first
 
-    def get_memory_label(self):
+    def get_memory_view(self):
         return self.memory
 
     def get_address_entry(self):
@@ -238,13 +240,16 @@ class MemoryAddress:
         self.lines = lines
 
     def set_dumpmode(self, mode):
+        if mode == self.dumpmode:
+            return
         self.dumpmode = mode
         self.dump()
 
     def dump(self, address = None, move_idx = 0):
         if self.dumpmode == Constants.REGISTERS:
             output = self._get_registers()
-            self.memory.set_label("".join(output))
+            text = self.memory.get_buffer()
+            text.set_text("".join(output))
             return
 
         if not address:
@@ -263,7 +268,8 @@ class MemoryAddress:
         else:
             print("ERROR: unknown dumpmode:", self.dumpmode)
             return
-        self.memory.set_label("".join(output))
+        text = self.memory.get_buffer()
+        text.set_text("".join(output))
         if move_idx:
             self.reset_entry()
 
@@ -358,8 +364,9 @@ class MemoryAddress:
 class HatariDebugUI:
 
     def __init__(self, hatariobj, do_destroy = False):
-        self.address = MemoryAddress(hatariobj)
         self.hatari = hatariobj
+        self.address = MemoryAddress(hatariobj)
+        self.address.set_dumpmode(Constants.REGISTERS)
         # set when needed/created
         self.dialog_load = None
         self.dialog_save = None
@@ -379,7 +386,7 @@ class HatariDebugUI:
         self.create_top_buttons(hbox1)
 
         # disasm/memory dump at the middle
-        addr = self.address.get_memory_label()
+        addr = self.address.get_memory_view()
 
         # buttons at bottom
         hbox2 = Gtk.HBox()
@@ -414,16 +421,17 @@ class HatariDebugUI:
         buttons = (
             ("<<<", "Page_Up",  -Constants.MOVE_MAX),
             ("<<",  "Up",       -Constants.MOVE_MED),
-            ("<",   "Left",     -Constants.MOVE_MIN),
-            (">",   "Right",     Constants.MOVE_MIN),
+            ("<",   None,       -Constants.MOVE_MIN),
+            (">",   None,        Constants.MOVE_MIN),
             (">>",  "Down",      Constants.MOVE_MED),
             (">>>", "Page_Down", Constants.MOVE_MAX)
         )
         self.keys = {}
         for label, keyname, offset in buttons:
             button = create_button(label, self.set_address_offset, offset)
-            keyval = Gdk.keyval_from_name(keyname)
-            self.keys[keyval] =  offset
+            if keyname:
+                keyval = Gdk.keyval_from_name(keyname)
+                self.keys[keyval] =  offset
             box.add(button)
 
         # to middle of <<>> buttons
@@ -502,6 +510,7 @@ class HatariDebugUI:
             self.address.set_lines(lines)
         if follow_pc != old_follow_pc:
             self.address.set_follow_pc(follow_pc)
+        self.address.dump()
 
     def load_options(self):
         # TODO: move config to MemoryAddress class?
