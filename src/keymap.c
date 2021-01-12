@@ -195,7 +195,7 @@ static char Keymap_SymbolicToStScanCode(SDL_keysym* pKeySym)
 
 
 /**
- * Remap SDL scancode key to ST Scan code - this is the version for SDL2
+ * Remap SDL scancode key to ST Scan code
  */
 static char Keymap_PcToStScanCode(SDL_keysym* pKeySym)
 {
