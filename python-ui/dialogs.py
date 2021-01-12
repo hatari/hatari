@@ -486,11 +486,7 @@ class DisplayDialog(HatariUIDialog):
 
         desktop = Gtk.CheckButton("Keep desktop resolution, scales")
         desktop.set_active(config.get_desktop())
-        desktop.set_tooltip_text("Whether to keep screen resolution in fullscreen. With SDL1, only applies to Falcon/TT and scales Atari screen by an integer factor. Avoids potential monitor res switch delay & sound skips")
-
-        desktop_st = Gtk.CheckButton("Keep desktop resolution, NO scaling")
-        desktop_st.set_active(config.get_desktop_st())
-        desktop_st.set_tooltip_text("SDL1 / ST & STE only. Whether to keep screen resolution in fullscreen. Avoids potential monitor res switch delay & sound skips")
+        desktop.set_tooltip_text("Whether to keep screen resolution in fullscreen. Avoids potential monitor res switch delay & resulting sound skips")
 
         borders = Gtk.CheckButton("Atari screen borders")
         borders.set_active(config.get_borders())
@@ -518,7 +514,6 @@ class DisplayDialog(HatariUIDialog):
         dialog.vbox.add(scaleh)
         dialog.vbox.add(force_max)
         dialog.vbox.add(desktop)
-        dialog.vbox.add(desktop_st)
         dialog.vbox.add(borders)
         dialog.vbox.add(Gtk.Label(label="Frameskip:"))
         dialog.vbox.add(skip)
@@ -536,7 +531,6 @@ class DisplayDialog(HatariUIDialog):
         self.maxh = maxadjh
         self.force_max = force_max
         self.desktop = desktop
-        self.desktop_st = desktop_st
         self.borders = borders
         self.statusbar = statusbar
         self.led = led
@@ -555,7 +549,6 @@ class DisplayDialog(HatariUIDialog):
             config.set_max_size(self.maxw.get_value(), self.maxh.get_value())
             config.set_force_max(self.force_max.get_active())
             config.set_desktop(self.desktop.get_active())
-            config.set_desktop_st(self.desktop_st.get_active())
             config.set_borders(self.borders.get_active())
             config.set_statusbar(self.statusbar.get_active())
             config.set_led(self.led.get_active())

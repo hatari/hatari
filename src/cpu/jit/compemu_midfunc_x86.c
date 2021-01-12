@@ -116,44 +116,104 @@ MIDFUNC(0,duplicate_carry,(void))
 	log_vwrite(FLAGX);
 }
 
-MIDFUNC(3,setcc_for_cntzero,(RR4 /* cnt */, RR4 data, int size))
+MIDFUNC(0,clear_overflow,(void))
 {
-	uae_u8 *branchadd;
-	uae_u8 *branchadd2;
+	make_flags_live_internal();
+	raw_pushfl();
+
+	// clear OF flag
+	// and dword [esp],~0x0800
+	emit_byte(0x81);
+	emit_byte(0x24);
+	emit_byte(0x24);
+	emit_byte(0xff);
+	emit_byte(0xf7);
+	emit_byte(0xff);
+	emit_byte(0xff);
+
+	raw_popfl();
+}
+
+// This is complex because x86 shift behavior is different than 680x0.
+// - shift count 0: does not modify any flags | clears C, modifies Z and N. Does not modify X.
+// - shift count larger or same than data size : C undefined | C always equals last bit shifted out.
+// - shift count mask: masked by 31 (except if 64bit data size) | masked by 63.
+MIDFUNC(6, setcc_for_cntzero, (RR4 /* cnt */, RR4 data, RR4 odata, int obit, int size, int ov))
+{
+	uae_u8 *branchadd1, *branchadd2, *branchadd3, *branchadd4;
 
 	evict(FLAGX);
 	make_flags_live_internal();
 
 	raw_pushfl();
-	/*
-	 * shift count can only be in CL register; see shrl_b_rr
-	 */
+
+	if (ov) {
+		// clear OF flag
+		// and dword [esp],~0x0800
+		emit_byte(0x81);
+		emit_byte(0x24);
+		emit_byte(0x24);
+		emit_byte(0xff);
+		emit_byte(0xf7);
+		emit_byte(0xff);
+		emit_byte(0xff);
+	}
+
+	// Shift count can only be in CL register; see shrl_b_rr
+	// Zero shift count?
 	raw_test_b_rr(X86_CL, X86_CL);
-	/* if zero, leave X unaffected; carry flag will already be cleared */
 	raw_jz_b_oponly();
-	branchadd = get_target();
+	branchadd4 = get_target();
 	skip_byte();
 
-	/* shift count was non-zero; update also x-flag */
+	// Shift count lower than data size?
+	raw_cmp_b_ri(X86_CL, size == 0 ? 7 : (size == 1 ? 15 : 31));
+	raw_jcc_b_oponly(NATIVE_CC_LS);
+	branchadd2 = get_target();
+	skip_byte();
+
+	*branchadd4 = (uintptr)get_target() - ((uintptr)branchadd4 + 1);
+	// Shift count: zero, same or larger than data size
+	// Need to update C, N and Z.
 	raw_popfl();
+	data = readreg(data, 4);
+	/* Update Z and N (Clears also C). */
+	switch (size)
+	{
+	case 0: raw_test_b_rr(data, data); break;
+	case 1: raw_test_w_rr(data, data); break;
+	case 2: raw_test_l_rr(data, data); break;
+	}
+	unlock2(data);
+	// Update C (BT does not modify other flags).
+	odata = readreg(odata, 4);
+	raw_bt_l_ri(odata, obit);
+	unlock2(odata);
+	raw_pushfl();
+
+	// If zero shift count: X must not be modified.
+	raw_test_b_rr(X86_CL, X86_CL);
+	raw_jz_b_oponly();
+	branchadd1 = get_target();
+	skip_byte();
+
+	// Non-zero shift count.
+	// Do not modify C, N and Z.
+	// C -> X
+	*branchadd2 = (uintptr)get_target() - ((uintptr)branchadd2 + 1);
+	raw_popfl();
+	// Execute "duplicate_carry()"
 	COMPCALL(setcc_m)((uintptr)live.state[FLAGX].mem, NATIVE_CC_CS);
 	log_vwrite(FLAGX);
 	raw_jmp_b_oponly();
-	branchadd2 = get_target();
+	branchadd3 = get_target();
 	skip_byte();
-	*branchadd = (uintptr)get_target() - ((uintptr)branchadd + 1);
 
-	/* shift count was zero; need to set Z & N flags since the native flags were unaffected */
+	// Zero shift count after CNZ adjustments
+	*branchadd1 = (uintptr)get_target() - ((uintptr)branchadd1 + 1);
 	raw_popfl();
-	data = readreg(data, size);
-	switch (size)
-	{
-		case 1: raw_test_b_rr(data, data); break;
-		case 2: raw_test_w_rr(data, data); break;
-		case 4: raw_test_l_rr(data, data); break;
-	}
-	unlock2(data);
-	*branchadd2 = (uintptr)get_target() - ((uintptr)branchadd2 + 1);
+
+	*branchadd3 = (uintptr)get_target() - ((uintptr)branchadd3 + 1);
 }
 
 /*
@@ -2172,6 +2232,15 @@ MIDFUNC(2,cmp_b,(RR1 d, RR1 s))
 	raw_cmp_b(d,s);
 	unlock2(d);
 	unlock2(s);
+}
+
+MIDFUNC(2, cmp_b_ri, (RR1 r, IMM i))
+{
+	CLOBBER_CMP;
+	r = readreg(r, 1);
+
+	raw_cmp_b_ri(r, i);
+	unlock2(r);
 }
 
 

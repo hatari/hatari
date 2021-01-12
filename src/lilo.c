@@ -23,9 +23,6 @@
 
 bool bUseLilo;
 
-/* needs WinUAE CPU for MMU etc support */
-#if ENABLE_WINUAE_CPU
-
 #define LILO_DEBUG 1
 #if LILO_DEBUG
 #define Dprintf(a) printf a
@@ -845,13 +842,3 @@ static bool add_bi_string(uint16_t tag, const char *s)
 {
 	return add_bi_record(tag, strlen(s) + 1, s);
 }
-
-#else
-
-bool lilo_init(void)
-{
-	/* never called as nothing sets bUseLilo true */
-	return false;
-}
-
-#endif /* ENABLE_WINUAE_CPU */

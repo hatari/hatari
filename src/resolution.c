@@ -32,7 +32,6 @@ static int DesktopWidth, DesktopHeight;
  */
 void Resolution_Init(void)
 {
-#if WITH_SDL2
 	SDL_DisplayMode dm;
 	if (SDL_GetDesktopDisplayMode(0, &dm) == 0)
 	{
@@ -45,23 +44,7 @@ void Resolution_Init(void)
 		DesktopWidth = 2*NUM_VISIBLE_LINE_PIXELS;
 		DesktopHeight = 2*NUM_VISIBLE_LINES+STATUSBAR_MAX_HEIGHT;
 	}
-#else /* !WITH_SDL2 */
-	/* Needs to be called after SDL video and configuration
-	 * initialization, but before Hatari Screen init is called
-	 * for the first time!
-	 */
-	const SDL_VideoInfo* info = SDL_GetVideoInfo();
-	if (info->current_w >= 640 && info->current_h >= 400) {
-		DesktopWidth = info->current_w;
-		DesktopHeight = info->current_h;
-	} else {
-		/* target 800x600 screen with statusbar out of screen */
-		DesktopWidth = 2*NUM_VISIBLE_LINE_PIXELS;
-		DesktopHeight = 2*NUM_VISIBLE_LINES+STATUSBAR_MAX_HEIGHT;
-		Log_Printf(LOG_WARN, "invalid desktop size %dx%d, defaulting to %dx%d!\n",
-		           info->current_w, info->current_h, DesktopWidth, DesktopHeight);
-	}
-#endif /* !WITH_SDL2 */
+
 	/* if user hasn't set own max zoom size, use desktop size */
 	if (!(ConfigureParams.Screen.nMaxWidth &&
 	      ConfigureParams.Screen.nMaxHeight)) {
@@ -95,54 +78,6 @@ static void Resolution_GetMaxSize(int *width, int *height)
 }
 
 /**
- * Select best resolution from given SDL video modes.
- * - If width and height are given, select the smallest mode larger
- *   or equal to requested size
- * - Otherwise select the largest available mode
- * return true for success and false if no matching mode was found.
- */
-#if !WITH_SDL2
-static bool Resolution_Select(SDL_Rect **modes, int *width, int *height)
-{
-#define TOO_LARGE 0x7fff
-	int i, bestw, besth;
-
-	if (!(*width && *height)) {
-		/* search the largest mode (prefer wider ones) */
-		for (i = 0; modes[i]; i++) {
-			if ((modes[i]->w > *width) && (modes[i]->h >= *height)) {
-				*width = modes[i]->w;
-				*height = modes[i]->h;
-			}
-		}
-		DEBUGPRINT(("resolution: largest found video mode: %dx%d\n",*width,*height));
-		return true;
-	}
-
-	/* Search the smallest mode larger or equal to requested size */
-	bestw = TOO_LARGE;
-	besth = TOO_LARGE;
-	for (i = 0; modes[i]; i++) {
-		if ((modes[i]->w >= *width) && (modes[i]->h >= *height)) {
-			if ((modes[i]->w < bestw) || (modes[i]->h < besth)) {
-				bestw = modes[i]->w;
-				besth = modes[i]->h;
-			}
-		}
-	}
-	if (bestw == TOO_LARGE || besth == TOO_LARGE) {
-		return false;
-	}
-	*width = bestw;
-	*height = besth;
-	DEBUGPRINT(("resolution: video mode found: %dx%d\n",*width,*height));
-	return true;
-#undef TOO_LARGE
-}
-#endif /* !WITH_SDL2 */
-
-
-/**
  * Search video mode size that best suits the given width/height/bpp
  * constraints and set them into given arguments.  With zeroed arguments,
  * set largest video mode.
@@ -151,12 +86,6 @@ static bool Resolution_Select(SDL_Rect **modes, int *width, int *height)
  */
 bool Resolution_Search(int *width, int *height, int *bpp, bool keep)
 {
-#if !WITH_SDL2
-	SDL_Rect **modes;
-	SDL_PixelFormat pixelformat;
-	Uint32 modeflags = 0 /*SDL_HWSURFACE | SDL_HWPALETTE*/;
-#endif
-
 	/* Search in available modes the best suited */
 	DEBUGPRINT(("resolution: video mode asked: %dx%dx%d (%s)\n",
 		 *width, *height, *bpp, bInFullScreen ? "fullscreen" : "windowed"));
@@ -167,11 +96,7 @@ bool Resolution_Search(int *width, int *height, int *bpp, bool keep)
 		if (keep)
 		{
 			Resolution_GetDesktopSize(width, height);
-#if WITH_SDL2
 			return false;
-#else
-			return true;
-#endif
 		}
 	}
 	if (ConfigureParams.Screen.bForceMax)
@@ -180,45 +105,6 @@ bool Resolution_Search(int *width, int *height, int *bpp, bool keep)
 		Resolution_GetMaxSize(width, height);
 		return true;
 	}
-
-#if !WITH_SDL2
-	if (bInFullScreen)
-		modeflags |= SDL_FULLSCREEN;
-
-	/*--- Search a video mode with asked bpp ---*/
-	if (*bpp != 0) {
-		pixelformat.BitsPerPixel = *bpp;
-		modes = SDL_ListModes(&pixelformat, modeflags);
-		if ((modes != (SDL_Rect **) 0) && (modes != (SDL_Rect **) -1)) {
-			DEBUGPRINT(("resolution: searching a good video mode (given bpp)\n"));
-			if (Resolution_Select(modes, width, height)) {
-				DEBUGPRINT(("resolution: video mode selected: %dx%dx%d\n",
-					 *width, *height, *bpp));
-				return false;
-			}
-		}
-	}
-
-	/*--- Search a video mode with any bpp ---*/
-	modes = SDL_ListModes(NULL, modeflags);
-	if ((modes != (SDL_Rect **) 0) && (modes != (SDL_Rect **) -1)) {
-		DEBUGPRINT(("resolution: searching a good video mode (any bpp)\n"));
-		if (Resolution_Select(modes, width, height)) {
-			DEBUGPRINT(("resolution: video mode selected: %dx%dx%d\n",
-				 *width, *height, *bpp));
-			return false;
-		}
-	}
-
-	if (modes == (SDL_Rect **) 0) {
-		Log_Printf(LOG_WARN, "no suitable video modes available!\n");
-	}
-
-	if (modes == (SDL_Rect **) -1) {
-		/* Any mode available */
-		DEBUGPRINT(("resolution: All resolutions available.\n"));
-	}
-#endif /* !WITH_SDL2 */
 
 	DEBUGPRINT(("resolution: video mode selected: %dx%dx%d\n",
 		 *width, *height, *bpp));

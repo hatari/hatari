@@ -106,7 +106,7 @@ static int mouseIsOut = 0;			/* used to keep info that mouse if above or under t
 static float scrollbar_Ypos = 0.0;		/* scrollbar height */
 
 static char *dirpath;				/* for get_dtype() */
-#ifndef HAVE_DIRENT_D_TYPE
+#if !defined(HAVE_DIRENT_D_TYPE) && !defined(DT_UNKNOWN)
 enum {
 	DT_UNKNOWN,
 	DT_LNK,
@@ -358,21 +358,12 @@ static void DlgFileSelect_HandleSdlEvents(SDL_Event *pEvent)
 	int oldypos = ypos;
 	switch (pEvent->type)
 	{
-#if WITH_SDL2
 	 case SDL_MOUSEWHEEL:
 		if (pEvent->wheel.y>0)
 			DlgFileSelect_ScrollUp();
 		else if (pEvent->wheel.y<0)
 			DlgFileSelect_ScrollDown();
 		break;
-#else
-	 case SDL_MOUSEBUTTONDOWN:
-		if (pEvent->button.button == SDL_BUTTON_WHEELUP)
-			DlgFileSelect_ScrollUp();
-		else if (pEvent->button.button == SDL_BUTTON_WHEELDOWN)
-			DlgFileSelect_ScrollDown();
-		break;
-#endif
 	 case SDL_KEYDOWN:
 		switch (pEvent->key.keysym.sym)
 		{

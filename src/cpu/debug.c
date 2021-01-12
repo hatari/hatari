@@ -1861,7 +1861,44 @@ void record_dma_replace(int hpos, int vpos, int type, int extra)
 	dr->extra = extra;
 }
 
-struct dma_rec *record_dma (uae_u16 reg, uae_u16 dat, uae_u32 addr, int hpos, int vpos, int type, int extra)
+void record_dma_write(uae_u16 reg, uae_u32 dat, uae_u32 addr, int hpos, int vpos, int type, int extra)
+{
+	struct dma_rec* dr;
+
+	if (!dma_record[0]) {
+		dma_record[0] = xmalloc(struct dma_rec, NR_DMA_REC_HPOS * NR_DMA_REC_VPOS);
+		dma_record[1] = xmalloc(struct dma_rec, NR_DMA_REC_HPOS * NR_DMA_REC_VPOS);
+		dma_record_toggle = 0;
+		record_dma_reset();
+		dma_record_frame[0] = -1;
+		dma_record_frame[1] = -1;
+	}
+
+	if (hpos >= NR_DMA_REC_HPOS || vpos >= NR_DMA_REC_VPOS)
+		return;
+
+	dr = &dma_record[dma_record_toggle][vpos * NR_DMA_REC_HPOS + hpos];
+	dma_record_frame[dma_record_toggle] = timeframes;
+	if (dr->reg != 0xffff) {
+		write_log(_T("DMA conflict: v=%d h=%d OREG=%04X NREG=%04X\n"), vpos, hpos, dr->reg, reg);
+		return;
+	}
+	dr->reg = reg;
+	dr->dat = dat;
+	dr->addr = addr;
+	dr->type = type;
+	dr->extra = extra;
+	dr->intlev = regs.intmask;
+	last_dma_rec = dr;
+}
+struct dma_rec *last_dma_rec;
+void record_dma_read_value(uae_u32 v)
+{
+	if (last_dma_rec) {
+		last_dma_rec->dat = v;
+	}
+}
+void record_dma_read(uae_u16 reg, uae_u32 addr, int hpos, int vpos, int type, int extra)
 {
 	struct dma_rec *dr;
 
@@ -1875,21 +1912,21 @@ struct dma_rec *record_dma (uae_u16 reg, uae_u16 dat, uae_u32 addr, int hpos, in
 	}
 
 	if (hpos >= NR_DMA_REC_HPOS || vpos >= NR_DMA_REC_VPOS)
-		return NULL;
+		return;
 
 	dr = &dma_record[dma_record_toggle][vpos * NR_DMA_REC_HPOS + hpos];
 	dma_record_frame[dma_record_toggle] = timeframes;
 	if (dr->reg != 0xffff) {
 		write_log (_T("DMA conflict: v=%d h=%d OREG=%04X NREG=%04X\n"), vpos, hpos, dr->reg, reg);
-		return dr;
+		return;
 	}
 	dr->reg = reg;
-	dr->dat = dat;
+	dr->dat = 0;
 	dr->addr = addr;
 	dr->type = type;
 	dr->extra = extra;
 	dr->intlev = regs.intmask;
-	return dr;
+	last_dma_rec = dr;
 }
 
 
@@ -1898,7 +1935,10 @@ static bool get_record_dma_info(struct dma_rec *dr, int hpos, int vpos, uae_u32 
 	bool longsize = false;
 	bool got = false;
 	int r = dr->reg;
+	int regsize = 3;
 	const TCHAR *sr;
+	int br = dr->extra & 7;
+	int chcnt = -1;
 
 	if (l1)
 		l1[0] = 0;
@@ -1916,21 +1956,57 @@ static bool get_record_dma_info(struct dma_rec *dr, int hpos, int vpos, uae_u32 
 
 	sr = _T("    ");
 	if (dr->type == DMARECORD_COPPER) {
-		sr = _T("COP ");
-	} else if (dr->type == DMARECORD_BLITTER) {
-		if (dr->extra == 2)
-			sr = _T("BLL ");
+		if (dr->extra == 3)
+			sr = _T("COPW");
 		else
-			sr = _T("BLT ");
+			sr = _T("COP ");
+	} else if (dr->type == DMARECORD_BLITTER) {
+		if (dr->extra & 0x20) {
+			if (br == 0)
+				sr = _T("BLL-A");
+			if (br == 1)
+				sr = _T("BLL-B");
+			if (br == 2)
+				sr = _T("BLL-C");
+			if (br == 3)
+				sr = _T("BLL-D");
+		} else if (dr->extra & 0x10) {
+			if (br == 0)
+				sr = _T("BLF-A");
+			if (br == 1)
+				sr = _T("BLF-B");
+			if (br == 2)
+				sr = _T("BLF-C");
+			if (br == 3)
+				sr = _T("BLF-D");
+		} else {
+			if (br == 0)
+				sr = _T("BLT-A");
+			if (br == 1)
+				sr = _T("BLT-B");
+			if (br == 2)
+				sr = _T("BLT-C");
+			if (br == 3)
+				sr = _T("BLT-D");
+		}
+		regsize = 2;
 	} else if (dr->type == DMARECORD_REFRESH) {
-		sr = _T("RFS ");
+		sr = _T("RFS");
+		chcnt = br;
 	} else if (dr->type == DMARECORD_AUDIO) {
-		sr = _T("AUD ");
+		sr = _T("AUD");
+		chcnt = br;
 	} else if (dr->type == DMARECORD_DISK) {
-		sr = _T("DSK ");
+		sr = _T("DSK");
+		chcnt = br;
 	} else if (dr->type == DMARECORD_SPRITE) {
-		sr = _T("SPR ");
+		sr = _T("SPR");
+		chcnt = br;
+	} else if (dr->type == DMARECORD_BITPLANE) {
+		sr = _T("BPL");
+		chcnt = br;
 	}
+
 	_stprintf (l1, _T("[%02X %3d]"), hpos, hpos);
 	if (l4) {
 		_tcscpy (l4, _T("        "));
@@ -1950,10 +2026,23 @@ static bool get_record_dma_info(struct dma_rec *dr, int hpos, int vpos, uae_u32 
 			if ((r & 0xff) == 1)
 				l2[5] = 'B';
 		} else {
-			_stprintf (l2, _T("%4s %03X"), sr, r);
+			if (chcnt >= 0) {
+				if (regsize == 3)
+					_stprintf(l2, _T("%3s%d %03X"), sr, chcnt, r);
+				else
+					_stprintf(l2, _T("%4s%d %02X"), sr, chcnt, r);
+			} else {
+				if (regsize == 3)
+					_stprintf(l2, _T("%4s %03X"), sr, r);
+				else
+					_stprintf(l2, _T("%5s %02X"), sr, r);
+			}
 		}
 		if (l3) {
-			_stprintf (l3, longsize ? _T("%08X") : _T("    %04X"), dr->dat);
+			uae_u32 v = dr->dat;
+			if (!longsize)
+				v &= 0xffff;
+			_stprintf (l3, longsize ? _T("%08X") : _T("    %04X"), v);
 		}
 		if (l4 && dr->addr != 0xffffffff)
 			_stprintf (l4, _T("%08X"), dr->addr & 0x00ffffff);
@@ -1965,8 +2054,8 @@ static bool get_record_dma_info(struct dma_rec *dr, int hpos, int vpos, uae_u32 
 	}
 	if (l3) {
 		int cl2 = 0;
-		if (dr->evt & DMA_EVENT_BLITNASTY)
-			l3[cl2++] = 'N';
+		if (dr->evt & DMA_EVENT_BLITFINALD)
+			l3[cl2++] = 'D';
 		if (dr->evt & DMA_EVENT_BLITSTARTFINISH)
 			l3[cl2++] = 'B';
 		if (dr->evt & DMA_EVENT_CPUBLITTERSTEAL)
@@ -2920,11 +3009,11 @@ void debug_check_reg(uae_u32 addr, int write, uae_u16 v)
 
 	if (spc & CD_DMA_PTR) {
 		uae_u32 addr = (custom_storage[((reg & ~2) >> 1)].value << 16) | custom_storage[((reg | 2) >> 1)].value;
-		if (currprefs.z3chipmem_size) {
-			if (addr >= currprefs.z3chipmem_start && addr < currprefs.z3chipmem_start + currprefs.z3chipmem_size)
+		if (currprefs.z3chipmem.size) {
+			if (addr >= currprefs.z3chipmem.start_address && addr < currprefs.z3chipmem.start_address + currprefs.z3chipmem.size)
 				return;
 		}
-		if(addr >= currprefs.chipmem_size)
+		if(addr >= currprefs.chipmem.size)
 			write_log(_T("DMA pointer %04x (%s) set to invalid value %08x %s=%08x\n"), reg, cd->name, addr,
 				custom_storage[reg >> 1].pc & 1 ? _T("COP") : _T("PC"), custom_storage[reg >> 1].pc);
 	}
@@ -2959,11 +3048,11 @@ static void is_valid_dma(int reg, int ptrreg, uaecptr addr)
 		return;
 	if (reg == 0x1fe) // refresh
 		return;
-	if (currprefs.z3chipmem_size) {
-		if (addr >= currprefs.z3chipmem_start && addr < currprefs.z3chipmem_start + currprefs.z3chipmem_size)
+	if (currprefs.z3chipmem.size) {
+		if (addr >= currprefs.z3chipmem.start_address && addr < currprefs.z3chipmem.start_address + currprefs.z3chipmem.size)
 			return;
 	}
-	if (!(addr & ~(currprefs.chipmem_size - 1)))
+	if (!(addr & ~(currprefs.chipmem.size - 1)))
 		return;
 	const struct customData *cdreg = &custd[reg >> 1];
 	const struct customData *cdptr = &custd[ptrreg >> 1];
@@ -3302,39 +3391,59 @@ static uae_u8 *REGPARAM2 debug_xlate (uaecptr addr)
 	return debug_mem_banks[munge24 (addr) >> 16]->xlateaddr (addr);
 }
 
-uae_u16 debug_wputpeekdma_chipset (uaecptr addr, uae_u32 v, uae_u32 mask, int reg)
+struct peekdma peekdma_data;
+
+static void peekdma_save(int type, uaecptr addr, uae_u32 mask, int reg, int ptrreg)
 {
-	if (!memwatch_enabled)
-		return v;
-	addr &= 0x1fe;
-	addr += 0xdff000;
-	memwatch_func (addr, 2, 2, &v, mask, reg);
-	return v;
+	peekdma_data.type = type;
+	peekdma_data.addr = addr;
+	peekdma_data.mask = mask;
+	peekdma_data.reg = reg;
+	peekdma_data.ptrreg = ptrreg;
 }
-uae_u16 debug_wputpeekdma_chipram (uaecptr addr, uae_u32 v, uae_u32 mask, int reg, int ptrreg)
-{
-	if (!memwatch_enabled)
-		return v;
-	is_valid_dma(reg, ptrreg, addr);
-	if (debug_mem_banks[addr >> 16] == NULL)
-		return v;
-	if (!currprefs.z3chipmem_size)
-		addr &= chipmem_bank.mask;
-	memwatch_func (addr & chipmem_bank.mask, 2, 2, &v, mask, reg);
-	return v;
-}
-uae_u16 debug_wgetpeekdma_chipram (uaecptr addr, uae_u32 v, uae_u32 mask, int reg, int ptrreg)
+
+uae_u32 debug_getpeekdma_value(uae_u32 v)
 {
 	uae_u32 vv = v;
 	if (!memwatch_enabled)
 		return v;
-	is_valid_dma(reg, ptrreg, addr);
-	if (debug_mem_banks[addr >> 16] == NULL)
+	is_valid_dma(peekdma_data.reg, peekdma_data.ptrreg, peekdma_data.addr);
+	if (debug_mem_banks[peekdma_data.addr >> 16] == NULL)
 		return v;
-	if (!currprefs.z3chipmem_size)
-		addr &= chipmem_bank.mask;
-	memwatch_func (addr, 1, 2, &vv, mask, reg);
+	if (!currprefs.z3chipmem.size)
+		peekdma_data.addr &= chipmem_bank.mask;
+	memwatch_func(peekdma_data.addr, 1, 2, &vv, peekdma_data.mask, peekdma_data.reg);
 	return vv;
+}
+
+uae_u32 debug_putpeekdma_chipset(uaecptr addr, uae_u32 v, uae_u32 mask, int reg)
+{
+	peekdma_save(0, addr, mask, reg, 0);
+	if (!memwatch_enabled)
+		return v;
+	peekdma_data.addr &= 0x1fe;
+	peekdma_data.addr += 0xdff000;
+	memwatch_func(peekdma_data.addr, 2, 2, &v, peekdma_data.mask, peekdma_data.reg);
+	return v;
+}
+
+uae_u32 debug_putpeekdma_chipram(uaecptr addr, uae_u32 v, uae_u32 mask, int reg, int ptrreg)
+{
+	peekdma_save(1, addr, mask, reg, ptrreg);
+	if (!memwatch_enabled)
+		return v;
+	is_valid_dma(peekdma_data.reg, peekdma_data.ptrreg, peekdma_data.addr);
+	if (debug_mem_banks[peekdma_data.addr >> 16] == NULL)
+		return v;
+	if (!currprefs.z3chipmem.size)
+		peekdma_data.addr &= chipmem_bank.mask;
+	memwatch_func(peekdma_data.addr & chipmem_bank.mask, 2, 2, &v, peekdma_data.mask, peekdma_data.reg);
+	return v;
+}
+
+void debug_getpeekdma_chipram(uaecptr addr, uae_u32 mask, int reg, int ptrreg)
+{
+	peekdma_save(2, addr, mask, reg, ptrreg);
 }
 
 static void debug_putlpeek (uaecptr addr, uae_u32 v)
@@ -4283,7 +4392,7 @@ static uaecptr get_base (const uae_char *name, int offset)
 		if (!b || !b->check (v2, 20))
 			goto fail;
 		if ((b->flags & ABFLAG_ROM) || (b->flags & ABFLAG_RAM) || (b->flags & ABFLAG_ROMIN)) {
-			p = b->xlateaddr (v2);
+			p = get_real_address_debug(v2);
 			if (!memcmp (p, name, strlen (name) + 1))
 				return v;
 		}
@@ -5915,11 +6024,11 @@ static bool debug_line (TCHAR *input)
 						_stprintf(buf, _T("0 dff000 200 NONE"));
 						pbuf = buf;
 						memwatch(&pbuf);
-						_stprintf(buf, _T("1 0 %08x NONE"), currprefs.chipmem_size);
+						_stprintf(buf, _T("1 0 %08x NONE"), currprefs.chipmem.size);
 						pbuf = buf;
 						memwatch(&pbuf);
-						if (currprefs.bogomem_size) {
-							_stprintf(buf, _T("2 c00000 %08x NONE"), currprefs.bogomem_size);
+						if (currprefs.bogomem.size) {
+							_stprintf(buf, _T("2 c00000 %08x NONE"), currprefs.bogomem.size);
 							pbuf = buf;
 							memwatch(&pbuf);
 						}
@@ -7421,9 +7530,11 @@ static uae_u32 get_value(struct dsprintfstack **stackp, uae_u32 *sizep, uaecptr 
 		uae_u32 v = stack->val;
 		if (stack->size == 0)
 			v &= 0xff;
-		else if (stack->size = 1)
+		else if (stack->size == 1)
 			v &= 0xffff;
-		*sizep = stack->size;
+		if (size == 1)
+			v &= 0xffff;
+		*sizep = size;
 		stack++;
 		*stackp = stack;
 		return v;

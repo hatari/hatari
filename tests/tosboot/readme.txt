@@ -131,10 +131,6 @@ Memory configurations:
 And both with GEMDOS HD and just floppy.  For EmuTOS, also ACSI (with
 ST/STe/TT), IDE (with Falcon) and SCSI (with Falcon/TT).
 
-Testing should be done both for old UAE CPU core and the new WinUAE
-one.  This should give good enough coverage of all the possible bootup
-issues.
-
 Note that it's enough to give the whole set of HW configurations to
 TOS tester, it will automatically select a suitable subset of HW
 combinations to test, for each given TOS versions.

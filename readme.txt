@@ -14,10 +14,9 @@ Contents:
 3. Compiling and installing
    3.1 Installing Hatari dependencies
    3.2 Configuring and compiling
-   3.3 WinUAE and "old" UAE CPU cores
-   3.4 IPF support using capsimage library
-   3.5 Notes for Linux distribution packagers
-       3.5.1 Known distro problems
+   3.3 IPF support using capsimage library
+   3.4 Notes for Linux distribution packagers
+       3.4.1 Known distro problems
 4. Running Hatari
    4.1 Known Windows (SDL) issues
 5. Hatari tools and their run-time dependencies
@@ -63,7 +62,7 @@ for Hatari and the licenses of the other code concerned.
  ------------------
 
 Hatari is an Atari ST/STE/TT/Falcon emulator for Linux, FreeBSD, NetBSD, macOS,
-Windows and other Systems which are supported by the SDL library. Unlike most
+Windows and other Systems which are supported by the SDL2 library. Unlike most
 other open source ST emulators which try to give you a good environment for
 running GEM applications, Hatari tries to emulate the hardware as close as
 possible so that it is able to run most of the old Atari games and demos.
@@ -78,7 +77,7 @@ To build and use Hatari, you first need to install its dependent libraries.
  3.1) Installing Hatari dependencies
 
 Required:
-- The SDL library v1.2.10 or newer (http://www.libsdl.org)
+- The SDL library v2.0 (http://www.libsdl.org)
 
 Optional:
 - The zlib compression library (http://www.gzip.org/zlib/)
@@ -146,26 +145,7 @@ you have to use the install command of the generator program instead, e.g.
 "make install" if you are using the classical "make" for building Hatari.
 
 
- 3.3) WinUAE and "old" UAE CPU cores
-
-Up to version 1.9, Hatari had 2 different CPU cores : the "old" UAE CPU core
-used for STF/STE and the WinUAE CPU core for better TT/Falcon emulation.
-Default was to use the old UAE CPU core.
-
-Starting with Hatari 2.0, all the STF/STE specific code from the old CPU core
-was integrated into the new WinUAE CPU core. Some improvements were
-also added to the new CPU Core, greatly improving cycle accuracy and low
-level 680xx emulation.
-
-Therefore, the new CPU core is now the default for all emulated machines.
-
-Old CPU core can still be used by running "./configure --enable-old-uae-cpu"
-which may be useful on weakest machines too slow to run the new CPU core
-at acceptable speed.  Support for old CPU core will be removed soon though
-as it's not anymore properly tested.
-
-
- 3.4) IPF support using capsimage library
+ 3.3) IPF support using capsimage library
 
 Hatari can use the optional capsimage library to access IPF and CTR
 files. Those files are created using the Kryoflux board and allow to
@@ -192,7 +172,7 @@ You should also copy the libcapsimage.so* files in your library path,
 for example in /usr/local/lib/caps/
 
 
- 3.5) Notes for Linux distribution packagers
+ 3.4) Notes for Linux distribution packagers
 
 TOS tester in tests/tosboot/ directory can be used to verify that
 Hatari was built fine enough that it's able to boot all tested TOS
@@ -214,7 +194,7 @@ Alternatively one could add a mime type for TOS binaries with xdg-mime:
 But registering handlers for mime-types seems desktop specific.
 
 
- 3.5.1) Known distro problems
+ 3.4.1) Known distro problems
 
 If Hatari is built with portaudio support, *and* either portaudio or
 ALSA is configured to use pulseaudio plugin, that plugin aborts Hatari
@@ -263,11 +243,8 @@ doc/manual.html. Here are just some hints for the impatient people:
  4.1) Known Windows (SDL) issues
 
 On Windows, Hatari console output doesn't go to console like on other
-platforms.
-
-This is because Windows SDL v1 library redirects all console output
-(including help!) to stdout.txt and stderr.txt files (by default), and
-SDL v2 library discards all that output.
+platforms. This is because Windows SDL v2 library discards all that
+output by default.
 
 To see Hatari help/warning/trace output, and to interact with Hatari
 debugger, there are two options:
@@ -306,12 +283,11 @@ Their main run-time dependencies are:
 * src/ -- C-sources for Hatari emulator program
   - convert/ -- screen format conversion functions
   - cpu/ -- cycle-exact WinUAE CPU core (+FPU/MMU)
-  - uae-cpu/ -- old UAE CPU core (+FPU)
   - debug/ -- builtin debugger/profiler
   - falcon/ -- Falcon emulation specific code (Videl used also for TT)
   - includes/ -- common include files
   - gui-osx/ -- builtin MacOS GUI
-  - gui-sdl/ -- builtin SDL v1 / v2 GUI for Hatari
+  - gui-sdl/ -- builtin SDL GUI for Hatari
   - gui-win/ -- MS Windows console code + icon
 * tests/ -- shell/python scripts & programs for testing emulator functionality
   - keymap/ -- programs showing keycodes to use in Hatari keymap files

@@ -47,50 +47,66 @@ $ hatari_profile.py -a etos512k.sym -st -l 2 -p etos-boot.txt
 Hatari profile data processor
 
 Parsing absolute symbol address information from etos512k.sym...
-1538 lines with 1236 code symbols/addresses parsed, 0 unknown.
+WARNING: replacing '_os_header' at 0xe00000 with '__text'
+WARNING: replacing '_instruction_cache_kludge' at 0xe00660 with '_invalidate_instruction_cache'
+1806 lines with 1187 code symbols/addresses parsed, 0 unknown.
 
 Parsing profile information from etos-boot.txt...
-16993 lines processed with 465 functions.
+18900 lines processed with 531 functions.
+...
+Of all 38474 switches, ignored 3731 for type(s) ['r', 'u', 'x'].
 
 CPU profile information from 'etos-boot.txt':
-- Hatari v1.6.2+ (Apr 15 2013), OldUAE CPU core
+- Hatari v2.3.1, WinUAE CPU core
 
-Time spent in profile = 4.60740s.
+Time spent in profile = 6.72122s.
 
-Calls:
-- max = 1800, in ___mulsi3 at 0xe60790, on line 16477
-- 16659 in total
+Visits/calls:
+- max = 1768, in _memcpy at 0xe46ea0, on line 7944
+- 40800 in total
 Executed instructions:
-- max = 315254, in _timeout_gpip+38 at 0xe06fd8, on line 3237
-- 3074165 in total
+- max = 140992, in _timeout_gpip+22 at 0xe0b484, on line 4393
+- 2566629 in total
 Used cycles:
-- max = 6311628, in _timeout_gpip+38 at 0xe06fd8, on line 3237
-- 36957124 in total
+- max = 23997200, in _stop_until_interrupt+38 at 0xe4724a, on line 8213
+- 53912568 in total
 
-Calls:
- 10.80%   10.88%      1800  ___mulsi3
-  8.04%    8.16%      1339  _memcpy
-  5.20%    0.26%       866  _int_timerc
-  4.61%                768  _call_user_wheel
-  3.86%    3.86%       643  _min
-  3.76%    3.82%       627  _sti
-  3.76%    3.76%       627  _cli
-  3.30%    3.30%       550  _bcostat4
+Visits/calls:
+   4.33%   4.38%        1768      1786   _memcpy
+   3.55%   0.40%        1450       165   _gsx2
+   3.55%  24.78%        1449     10112   _GSX_ENTRY
+   3.55%   3.58%        1449      1459   _get_vwk_by_handle
+   3.55%  21.17%        1449      8636   _screen
+   3.45%  27.77%        1407     11329   gemgsxif.o
+   2.98%   3.00%        1214      1222   _bconstat2
+   2.95%   2.95%        1203      1203   _kbshift
+   2.78%   2.79%        1134      1137   _bcostat4
+   2.51%                1024             vdi_blit.o
+   2.35%   3.25%         959      1327   _cputc
+   2.35%   5.60%         957      2283   _bconout2
+   2.29%                 936             _just_rte
+   2.27%                 927             kprint.o
+   2.23%   7.48%         911      3052   _biostrap
+   2.10%   2.10%         858       858   gemdosif.o
+   2.10%   2.12%         858       867   _enable_interrupts
 
 Executed instructions:
- 61.58%   61.79%   1892940  _timeout_gpip
-  8.62%    9.33%    264918  _draw_rect
-  4.96%    4.98%    152582  _run_calibration
-  4.06%    4.09%    124944  _blank_out
-  3.22%              99134  meminit
+  32.96%  33.10%  33.19%      846043    849564    851784   _timeout_gpip
+  10.61%  10.66%  10.72%      272360    273633    275161   _blank_out
+   8.74%   8.81%   8.88%      224230    226006    227862   _draw_rect_common
+   5.94%   5.96%   5.96%      152525    152895    153039   _run_calibration
+   5.63%                      144385                       _ascii_out
+   3.52%   3.55%  22.77%       90398     91014    584547   _screen
+   2.62%                       67293                       ikbd.o
 
 Used cycles:
- 61.58%   62.01%  22759756  _timeout_gpip
-  5.69%    6.85%   2104464  _draw_rect
-  4.29%            1586108  meminit
-  4.19%    4.22%   1547768  _run_calibration
-  3.04%    3.07%   1122816  _blank_out
-  2.88%    2.98%   1065272  _stop_until_interrupt
+  44.62%  44.62%  45.46%    24057296  24057392  24509580   _stop_until_interrupt
+  18.87%  19.01%  19.06%    10171140  10248940  10277724   _timeout_gpip
+   4.77%   4.82%   4.85%     2571980   2597744   2616824   _blank_out
+   3.83%   3.89%   3.93%     2065076   2096668   2121104   _draw_rect_common
+   2.82%                     1521072                       _ascii_out
+   2.58%   2.60%   2.60%     1391076   1400236   1402000   _run_calibration
+   2.19%   2.21%  11.51%     1181264   1193784   6203852   _screen
 -------------------------------------------------------------
 .fi
 .PP

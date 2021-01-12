@@ -55,7 +55,7 @@ bool BenchmarkMode;	   /* Start in benchmark mode (try to run at maximum emulati
 
 int ConOutDevice = CONOUT_DEVICE_NONE; /* device number for xconout device to track */
 
-static bool bNoSDLParachute, bBiosIntercept;
+static bool bBiosIntercept;
 
 /*  List of supported options. */
 enum {
@@ -85,7 +85,6 @@ enum {
 	OPT_FORCEBPP,
 	OPT_DISABLE_VIDEO,
 	OPT_BORDERS,		/* ST/STE display options */
-	OPT_RESOLUTION_ST,
 	OPT_SPEC512,
 	OPT_VIDEO_TIMING,
 	OPT_RESOLUTION,		/* TT/Falcon display options */
@@ -141,9 +140,7 @@ enum {
 	OPT_IDESLAVEHDIMAGE,
 	OPT_IDEBYTESWAP,
 	OPT_MEMSIZE,		/* memory options */
-#if ENABLE_WINUAE_CPU
 	OPT_TT_RAM,
-#endif
 	OPT_MEMSTATE,
 	OPT_TOS,		/* ROM options */
 	OPT_PATCHTOS,
@@ -151,16 +148,15 @@ enum {
 	OPT_CPULEVEL,		/* CPU options */
 	OPT_CPUCLOCK,
 	OPT_COMPATIBLE,
-#if ENABLE_WINUAE_CPU
 	OPT_CPU_CYCLE_EXACT,	/* WinUAE CPU/FPU/bus options */
 	OPT_CPU_ADDR24,
 	OPT_FPU_TYPE,
 /*	OPT_FPU_JIT_COMPAT, */
 	OPT_FPU_SOFTFLOAT,
 	OPT_MMU,
-#endif
 	OPT_MACHINE,		/* system options */
 	OPT_BLITTER,
+	OPT_VME,
 	OPT_DSP,
 	OPT_TIMERD,
 	OPT_FASTBOOT,
@@ -174,9 +170,7 @@ enum {
 #endif
 	OPT_DEBUG,
 	OPT_EXCEPTIONS,
-#if ENABLE_WINUAE_CPU
 	OPT_LILO,
-#endif
 	OPT_BIOSINTERCEPT,
 	OPT_CONOUT,
 	OPT_DISASM,
@@ -185,7 +179,6 @@ enum {
 	OPT_TRACEFILE,
 	OPT_PARSE,
 	OPT_SAVECONFIG,
-	OPT_PARACHUTE,
 	OPT_CONTROLSOCKET,
 	OPT_CMDFIFO,
 	OPT_LOGFILE,
@@ -249,21 +242,13 @@ static const opt_t HatariOptions[] = {
 	  "<bool>", "Show statusbar (floppy leds etc)" },
 	{ OPT_DRIVE_LED,   NULL, "--drive-led",
 	  "<bool>", "Show overlay drive led when statusbar isn't shown" },
-#if WITH_SDL2
+
 	{ OPT_MAXWIDTH, NULL, "--max-width",
 	  "<x>", "Maximum Hatari screen width before scaling" },
 	{ OPT_MAXHEIGHT, NULL, "--max-height",
 	  "<x>", "Maximum Hatari screen height before scaling" },
 	{ OPT_ZOOM, "-z", "--zoom",
 	  "<x>", "Hatari screen/window scaling factor (1.0 - 8.0)" },
-#else
-	{ OPT_MAXWIDTH, NULL, "--max-width",
-	  "<x>", "Maximum window width for borders & zooming" },
-	{ OPT_MAXHEIGHT, NULL, "--max-height",
-	  "<x>", "Maximum window height for borders & zooming" },
-	{ OPT_ZOOM, "-z", "--zoom",
-	  "<x>", "Double small ST/STe resolutions (1=no, 2=yes)" },
-#endif
 	{ OPT_FORCEBPP, NULL, "--bpp",
 	  "<x>", "Force internal bitdepth (x = 15/16/32, 0=disable)" },
 	{ OPT_DISABLE_VIDEO,   NULL, "--disable-video",
@@ -272,8 +257,6 @@ static const opt_t HatariOptions[] = {
 	{ OPT_HEADER, NULL, NULL, NULL, "ST/STE specific display" },
 	{ OPT_BORDERS, NULL, "--borders",
 	  "<bool>", "Show screen borders (for overscan demos etc)" },
-	{ OPT_RESOLUTION_ST, NULL, "--desktop-st",
-	  "<bool>", "Keep desktop resolution on fullscreen" },
 	{ OPT_SPEC512, NULL, "--spec512",
 	  "<x>", "Spec512 palette threshold (0 <= x <= 512, 0=disable)" },
 	{ OPT_VIDEO_TIMING,   NULL, "--video-timing",
@@ -400,10 +383,8 @@ static const opt_t HatariOptions[] = {
 	{ OPT_HEADER, NULL, NULL, NULL, "Memory" },
 	{ OPT_MEMSIZE,   "-s", "--memsize",
 	  "<x>", "ST RAM size (x = size in MiB from 0 to 14, 0 = 512KiB ; else size in KiB)" },
-#if ENABLE_WINUAE_CPU
 	{ OPT_TT_RAM,   NULL, "--ttram",
 	  "<x>", "TT RAM size (x = size in MiB from 0 to 512)" },
-#endif
 	{ OPT_MEMSTATE,   NULL, "--memstate",
 	  "<file>", "Load memory snap-shot <file>" },
 
@@ -415,18 +396,13 @@ static const opt_t HatariOptions[] = {
 	{ OPT_CARTRIDGE, NULL, "--cartridge",
 	  "<file>", "Use ROM cartridge image <file>" },
 
-#if ENABLE_WINUAE_CPU
 	{ OPT_HEADER, NULL, NULL, NULL, "CPU/FPU/bus" },
-#else
-	{ OPT_HEADER, NULL, NULL, NULL, "CPU" },
-#endif
 	{ OPT_CPULEVEL,  NULL, "--cpulevel",
 	  "<x>", "Set the CPU type (x => 680x0) (EmuTOS/TOS 2.06 only!)" },
 	{ OPT_CPUCLOCK,  NULL, "--cpuclock",
 	  "<x>", "Set the CPU clock (x = 8/16/32)" },
 	{ OPT_COMPATIBLE, NULL, "--compatible",
 	  "<bool>", "Use a more compatible (but slower) prefetch mode for CPU" },
-#if ENABLE_WINUAE_CPU
 	{ OPT_CPU_CYCLE_EXACT, NULL, "--cpu-exact",
 	  "<bool>", "Use cycle exact CPU emulation" },
 	{ OPT_CPU_ADDR24, NULL, "--addr24",
@@ -439,7 +415,6 @@ static const opt_t HatariOptions[] = {
 	  "<bool>", "Use full software FPU emulation" },
 	{ OPT_MMU, NULL, "--mmu",
 	  "<bool>", "Use MMU emulation" },
-#endif
 
 	{ OPT_HEADER, NULL, NULL, NULL, "Misc system" },
 	{ OPT_MACHINE,   NULL, "--machine",
@@ -448,6 +423,8 @@ static const opt_t HatariOptions[] = {
 	  "<bool>", "Use blitter emulation (ST only)" },
 	{ OPT_DSP,       NULL, "--dsp",
 	  "<x>", "DSP emulation (x = none/dummy/emu, Falcon only)" },
+	{ OPT_VME,	NULL, "--vme",
+	  "<x>", "VME mode (x = none/dummy, MegaSTE/TT only)" },
 	{ OPT_TIMERD,    NULL, "--timer-d",
 	  "<bool>", "Patch Timer-D (about doubles ST emulation speed)" },
 	{ OPT_FASTBOOT, NULL, "--fast-boot",
@@ -474,9 +451,7 @@ static const opt_t HatariOptions[] = {
 	  NULL, "Toggle whether CPU exceptions invoke debugger" },
 	{ OPT_EXCEPTIONS, NULL, "--debug-except",
 	  "<flags>", "Exceptions invoking debugger, see '--debug-except help'" },
-#if ENABLE_WINUAE_CPU
 	{ OPT_LILO, NULL, "--lilo", "<x>", "Boot Linux (see manual page)" },
-#endif
 	{ OPT_BIOSINTERCEPT, NULL, "--bios-intercept",
 	  "<bool>", "Enable/disable XBIOS command parsing support" },
 	{ OPT_CONOUT,   NULL, "--conout",
@@ -493,8 +468,6 @@ static const opt_t HatariOptions[] = {
 	  "<file>", "Parse/execute debugger commands from <file>" },
 	{ OPT_SAVECONFIG, NULL, "--saveconfig",
 	  NULL, "Save current Hatari configuration and exit" },
-	{ OPT_PARACHUTE, NULL, "--no-parachute",
-	  NULL, "Disable SDL parachute to get Hatari core dumps" },
 #if HAVE_UNIX_DOMAIN_SOCKETS
 	{ OPT_CONTROLSOCKET, NULL, "--control-socket",
 	  "<file>", "Hatari connects to given socket for commands" },
@@ -908,21 +881,6 @@ static bool Opt_StrCpy(int optid, bool checkexist, char *dst, const char *src, s
 
 
 /**
- * Return SDL_INIT_NOPARACHUTE flag if user requested SDL parachute
- * to be disabled to get proper Hatari core dumps.  By default returns
- * zero so that SDL parachute will be used to restore video mode on
- * unclean Hatari termination.
- */
-Uint32 Opt_GetNoParachuteFlag(void)
-{
-	if (bNoSDLParachute)
-		return SDL_INIT_NOPARACHUTE;
-
-	return 0;
-}
-
-
-/**
  * Do final validation for the earlier + parsed options
  *
  * Return false if they fail validation.
@@ -1056,11 +1014,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 	int ncpu, skips, planes, cpuclock, threshold, memsize, port, freq, temp, drive;
 	const char *errstr, *str;
 	int i, ok = true;
-#if WITH_SDL2
 	float zoom;
-#else
-	int zoom;
-#endif
 	int val;
 
 	/* Defaults for loading initial memory snap-shots */
@@ -1167,12 +1121,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_RESIZABLE:
-#if WITH_SDL2
 			ok = Opt_Bool(argv[++i], OPT_RESIZABLE, &ConfigureParams.Screen.bResizable);
-#else
-			fprintf(stderr, "The --resizable option is supported only in SDL2 build!\n");
-			i++;
-#endif
 			break;
 
 		case OPT_FRAMESKIPS:
@@ -1238,15 +1187,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			ok = Opt_Bool(argv[++i], OPT_BORDERS, &ConfigureParams.Screen.bAllowOverscan);
 			break;
 
-		case OPT_RESOLUTION_ST:
-#if WITH_SDL2
-			fprintf(stderr, "The --desktop-st option is not supported in SDL2 build!\n");
-			i++;
-#else
-			ok = Opt_Bool(argv[++i], OPT_RESOLUTION_ST, &ConfigureParams.Screen.bKeepResolutionST);
-#endif
-			break;
-			
 		case OPT_SPEC512:
 			threshold = atoi(argv[++i]);
 			if (threshold < 0 || threshold > 512)
@@ -1259,19 +1199,13 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_ZOOM:
-#if WITH_SDL2
 			zoom = atof(argv[++i]);
 			if (zoom < 1.0 || zoom > 8.0)
-#else
-			zoom = atoi(argv[++i]);
-			if (zoom < 1 || zoom > 2)
-#endif
 			{
 				return Opt_ShowError(OPT_ZOOM, argv[i], "Invalid zoom value");
 			}
 			ConfigureParams.Screen.nMaxWidth = NUM_VISIBLE_LINE_PIXELS;
 			ConfigureParams.Screen.nMaxHeight = NUM_VISIBLE_LINES;
-#if WITH_SDL2
 			/* double ST-low always so that resulting screen size
 			 * is approximately same size with same zoom factor
 			 * regardless of the machine or monitor type
@@ -1279,14 +1213,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			ConfigureParams.Screen.nMaxWidth *= 2;
 			ConfigureParams.Screen.nMaxHeight *= 2;
 			ConfigureParams.Screen.nZoomFactor = zoom;
-#else
-			/* zoom factor only for ST-low mode */
-			if (zoom > 1)
-			{
-				ConfigureParams.Screen.nMaxWidth *= 2;
-				ConfigureParams.Screen.nMaxHeight *= 2;
-			}
-#endif
 			ConfigureParams.Screen.nMaxHeight += STATUSBAR_MAX_HEIGHT;
 			break;
 
@@ -1767,13 +1693,11 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			bLoadAutoSave = false;
 			break;
 
-#if ENABLE_WINUAE_CPU
 		case OPT_TT_RAM:
 			memsize = atoi(argv[++i]);
 			ConfigureParams.Memory.TTRamSize_KB = Opt_ValueAlignMinMax(memsize+3, 4, 0, 512) * 1024;
 			bLoadAutoSave = false;
 			break;
-#endif
 
 		case OPT_TOS:
 			i += 1;
@@ -1817,11 +1741,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 		case OPT_CPULEVEL:
 			/* UAE core uses cpu_level variable */
 			ncpu = atoi(argv[++i]);
-#if ENABLE_WINUAE_CPU
 			if(ncpu < 0 || ncpu == 5 || ncpu > 6)
-#else
-			if(ncpu < 0 || ncpu > 4)
-#endif
 			{
 				return Opt_ShowError(OPT_CPULEVEL, argv[i], "Invalid CPU level");
 			}
@@ -1848,7 +1768,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				bLoadAutoSave = false;
 			}
 			break;
-#if ENABLE_WINUAE_CPU
 		case OPT_CPU_ADDR24:
 			ok = Opt_Bool(argv[++i], OPT_CPU_ADDR24, &ConfigureParams.System.bAddressSpace24);
 			bLoadAutoSave = false;
@@ -1896,7 +1815,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			ok = Opt_Bool(argv[++i], OPT_MMU, &ConfigureParams.System.bMMU);
 			bLoadAutoSave = false;
 			break;
-#endif
 
 			/* system options */
 		case OPT_MACHINE:
@@ -1944,7 +1862,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			{
 				return Opt_ShowError(OPT_MACHINE, argv[i], "Unknown machine type");
 			}
-#if ENABLE_WINUAE_CPU
 			if (Config_IsMachineST() || Config_IsMachineSTE())
 			{
 				ConfigureParams.System.bMMU = false;
@@ -1959,7 +1876,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			{
 				ConfigureParams.System.n_FPUType = FPU_NONE;	/* TODO: or leave it as-is? */
 			}
-#endif
 			bLoadAutoSave = false;
 			break;
 
@@ -2001,6 +1917,23 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				return Opt_ShowError(OPT_DSP, argv[i], "Unknown DSP type");
 			}
 			bLoadAutoSave = false;
+			break;
+
+		case OPT_VME:
+			i += 1;
+			if (strcasecmp(argv[i], "dummy") == 0)
+			{
+				ConfigureParams.System.nVMEType = VME_TYPE_DUMMY;
+			}
+			else if (strcasecmp(argv[i], "none") == 0)
+			{
+				ConfigureParams.System.nVMEType = VME_TYPE_NONE;
+			}
+			else
+			{
+				return Opt_ShowError(OPT_VME, argv[i], "Unknown VME type");
+			}
+			bLoadAutoSave = false; /* TODO: needed? */
 			break;
 
 			/* sound options */
@@ -2118,7 +2051,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				        oldmask, ExceptionDebugMask);
 			}
 			break;
-#if ENABLE_WINUAE_CPU
+
 		case OPT_LILO: {
 			size_t len;
 			len = strlen(argv[++i]);
@@ -2137,7 +2070,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			bUseTos = false;
 			break;
 		}
-#endif
+
 		case OPT_BIOSINTERCEPT:
 			ok = Opt_Bool(argv[++i], OPT_BIOSINTERCEPT, &bBiosIntercept);
 			Log_Printf(LOG_DEBUG, "XBIOS 11/20/255 Hatari versions %sabled: "
@@ -2159,10 +2092,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 		case OPT_NATFEATS:
 			ok = Opt_Bool(argv[++i], OPT_NATFEATS, &ConfigureParams.Log.bNatFeats);
 			Log_Printf(LOG_DEBUG, "Native Features %s.\n", ConfigureParams.Log.bNatFeats ? "enabled" : "disabled");
-			break;
-
-		case OPT_PARACHUTE:
-			bNoSDLParachute = true;
 			break;
 
 		case OPT_DISASM:

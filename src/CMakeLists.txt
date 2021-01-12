@@ -9,7 +9,7 @@ set(SOURCES
 	ncr5380.c paths.c  psg.c printer.c resolution.c rs232.c reset.c rtc.c
 	scandir.c scc.c stMemory.c screen.c screenConvert.c screenSnapShot.c
 	shortcut.c sound.c spec512.c statusbar.c str.c tos.c utils.c
-	vdi.c inffile.c video.c wavFormat.c xbios.c ymFormat.c lilo.c)
+	vdi.c vme.c inffile.c video.c wavFormat.c xbios.c ymFormat.c lilo.c)
 
 # Disk image code is shared with the hmsa tool, so we put it into a library:
 add_library(Floppy createBlankImage.c dim.c msa.c st.c zip.c)
@@ -38,18 +38,14 @@ endif()
 if(WIN32)
 	set(GUIWIN_SOURCES gui-win/opencon.c)
 	set(GUIWIN_RES gui-win/hatari-winicon.rc)
-	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mwindows")
-	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--as-needed -lssp")
+	if(CMAKE_COMPILER_IS_GNUCC)
+		set(CMAKE_EXE_LINKER_FLAGS
+		    "${CMAKE_EXE_LINKER_FLAGS} -mwindows -Wl,--as-needed -lssp")
+	endif(CMAKE_COMPILER_IS_GNUCC)
 endif(WIN32)
 
-if(ENABLE_WINUAE_CPU)
-	set(CPUDIR cpu)
-else()
-	set(CPUDIR uae-cpu)
-endif(ENABLE_WINUAE_CPU)
-
 include_directories(includes debug falcon
-		    ${CMAKE_BINARY_DIR} ${SDL_INCLUDE_DIR} ${CPUDIR})
+		    ${CMAKE_BINARY_DIR} ${SDL2_INCLUDE_DIR} cpu)
 
 if(ZLIB_FOUND)
 	include_directories(${ZLIB_INCLUDE_DIR})
@@ -71,12 +67,12 @@ endif(CAPSIMAGE_FOUND)
 link_directories(${CMAKE_CURRENT_BINARY_DIR}/debug
 		 ${CMAKE_CURRENT_BINARY_DIR}/falcon
 		 ${CMAKE_CURRENT_BINARY_DIR}/gui-sdl
-		 ${CMAKE_CURRENT_BINARY_DIR}/${CPUDIR})
+		 ${CMAKE_CURRENT_BINARY_DIR}/cpu)
 
 add_subdirectory(debug)
 add_subdirectory(falcon)
 add_subdirectory(gui-sdl)
-add_subdirectory(${CPUDIR})
+add_subdirectory(cpu)
 
 # When building for macOS, add specific sources
 if(ENABLE_OSX_BUNDLE)
@@ -144,15 +140,15 @@ else()
 	add_executable(hatari ${SOURCES})
 endif(ENABLE_OSX_BUNDLE)
 
-target_link_libraries(hatari Falcon UaeCpu GuiSdl Floppy Debug ${SDL_LIBRARY})
+target_link_libraries(hatari Falcon UaeCpu GuiSdl Floppy Debug ${SDL2_LIBRARY})
 
 if(MATH_FOUND AND NOT APPLE)
 	target_link_libraries(hatari ${MATH_LIBRARY})
 endif()
 
-if(SDLMAIN_LIBRARY)
-	target_link_libraries(hatari ${SDLMAIN_LIBRARY})
-endif(SDLMAIN_LIBRARY)
+if(SDL2MAIN_LIBRARY)
+	target_link_libraries(hatari ${SDL2MAIN_LIBRARY})
+endif(SDL2MAIN_LIBRARY)
 
 if(READLINE_FOUND)
 	target_link_libraries(hatari ${READLINE_LIBRARY})

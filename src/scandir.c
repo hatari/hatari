@@ -154,7 +154,7 @@ error_out:
 /*-----------------------------------------------------------------------
  * Here come alphasort and scandir for Windows
  *-----------------------------------------------------------------------*/
-#if defined(WIN32) || defined(__CEGCC__)
+#if (defined(WIN32) || defined(__CEGCC__)) && !defined(DIRENT_H)
 
 #include <windows.h>
 #include <wchar.h>

@@ -42,15 +42,9 @@ static SGOBJ cpudlg[] =
 	{ SGRADIOBUT, 0, 0, 3, 5, 7,1, "680_00" },
 	{ SGRADIOBUT, 0, 0, 3, 6, 7,1, "680_10" },
 	{ SGRADIOBUT, 0, 0, 3, 7, 7,1, "680_20" },
-#ifdef ENABLE_WINUAE_CPU
 	{ SGRADIOBUT, 0, 0, 3, 8, 7,1, "680_30" },
 	{ SGRADIOBUT, 0, 0, 3, 9, 7,1, "680_40" },
 	{ SGRADIOBUT, 0, 0, 3,10, 7,1, "68060" },
-#else
-	{ SGRADIOBUT, 0, 0, 3, 8,11,1, "680_30+FPU" },
-	{ SGRADIOBUT, 0, 0, 3, 9, 7,1, "680_40" },
-	{ SGTEXT, 0, 0, 3,10, 7,1, "" },
-#endif
 
 	{ SGBOX, 0, 0, 16,3, 13,9, NULL },
 	{ SGTEXT, 0, 0, 17,3, 15,1, "CPU clock" },
@@ -60,32 +54,18 @@ static SGOBJ cpudlg[] =
 
 	{ SGBOX, 0, 0, 30,3, 14,9, NULL },
 	{ SGTEXT, 0, 0, 31,3, 11,1, "FPU" },
-#ifdef ENABLE_WINUAE_CPU
 	{ SGRADIOBUT, 0, 0, 31,5, 6,1, "N_one" },
 	{ SGRADIOBUT, 0, 0, 31,6, 7,1, "68881" },
 	{ SGRADIOBUT, 0, 0, 31,7, 7,1, "68882" },
 	{ SGRADIOBUT, 0, 0, 31,8, 10,1, "_internal" },
-#else
-	{ SGTEXT, 0, 0, 31,5, 10,1, "FPU config" },
-	{ SGTEXT, 0, 0, 31,6, 10,1, "unavailable" },
-	{ SGTEXT, 0, 0, 31,7, 10,1, "in old UAE" },
-	{ SGTEXT, 0, 0, 31,8, 10,1, "CPU core" },
-#endif
 
 	{ SGBOX, 0, 0, 2,13, 42,8, NULL },
 	{ SGTEXT, 0, 0, 3,13, 11,1, "CPU parameters" },
 	{ SGCHECKBOX, 0, 0, 3,15, 23,1, "Prefetc_h mode, slower" },
-#ifdef ENABLE_WINUAE_CPU
 	{ SGCHECKBOX, 0, 0, 3,16, 21,1, "Cycle e_xact, slower" },
 	{ SGCHECKBOX, 0, 0, 3,17, 15,1, "MM_U emulation" },
 	{ SGCHECKBOX, 0, 0, 3,18, 20,1, "24 bits add_ressing" },
 	{ SGCHECKBOX, 0, 0, 3,19, 38,1, "Full software FPU emulation(softfloat)" },
-#else
-	{ SGTEXT, 0, 0, 3,16, 1,1, "" },
-	{ SGTEXT, 0, 0, 3,17, 1,1, "" },
-	{ SGTEXT, 0, 0, 3,18, 1,1, "" },
-	{ SGTEXT, 0, 0, 3,18, 1,1, "" },
-#endif
 
 	{ SGBUTTON, SG_DEFAULT, 0, 13,22, 19,1, "Back to main menu" },
 	{ SGSTOP, 0, 0, 0,0, 0,0, NULL }
@@ -127,7 +107,6 @@ void DlgCpu_Main(void)
 	else
 		cpudlg[DLGCPU_PREFETCH].state &= ~SG_SELECTED;
 
-#ifdef ENABLE_WINUAE_CPU
 	/* Address space 24 bits */
 	if (ConfigureParams.System.bAddressSpace24)
 		cpudlg[DLGCPU_24BITS].state |= SG_SELECTED;
@@ -165,7 +144,6 @@ void DlgCpu_Main(void)
 		cpudlg[DLGCPU_SOFTFLOAT].state |= SG_SELECTED;
 	else
 		cpudlg[DLGCPU_SOFTFLOAT].state &= ~SG_SELECTED;
-#endif
 
 	/* Show the dialog: */
 	SDLGui_DoDialog(cpudlg, NULL, false);
@@ -190,7 +168,6 @@ void DlgCpu_Main(void)
 
 	ConfigureParams.System.bCompatibleCpu = (cpudlg[DLGCPU_PREFETCH].state & SG_SELECTED);
 
-#ifdef ENABLE_WINUAE_CPU
 	ConfigureParams.System.bCycleExactCpu = (cpudlg[DLGCPU_CYC_EXACT].state & SG_SELECTED);
 	ConfigureParams.System.bMMU = (cpudlg[DLGCPU_MMU_EMUL].state & SG_SELECTED);
 	ConfigureParams.System.bAddressSpace24 = (cpudlg[DLGCPU_24BITS].state & SG_SELECTED);
@@ -205,5 +182,4 @@ void DlgCpu_Main(void)
 		ConfigureParams.System.n_FPUType = FPU_68882;
 	else
 		ConfigureParams.System.n_FPUType = FPU_CPU;
-#endif
 }

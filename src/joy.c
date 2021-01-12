@@ -72,11 +72,7 @@ static Uint16 nSteJoySelect;
  */
 const char *Joy_GetName(int id)
 {
-#if WITH_SDL2
 	return SDL_JoystickName(sdlJoystick[id]);
-#else
-	return SDL_JoystickName(id);
-#endif
 }
 
 /**

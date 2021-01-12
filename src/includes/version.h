@@ -5,12 +5,7 @@
 */
 
 /* devel */
-#if ENABLE_WINUAE_CPU
-# define CPU_CORE_NAME "(WinUAE CPU core)"
-#else
-# define CPU_CORE_NAME "(OldUAE CPU core)"
-#endif
-//#define PROG_NAME "Hatari v2.4.0-devel (" __DATE__ ") " CPU_CORE_NAME
+#define PROG_NAME "Hatari v2.4.0-devel (" __DATE__ ")"
 
 /* release */
-#define PROG_NAME "Hatari v2.3.1"
+//#define PROG_NAME "Hatari v2.3.1"

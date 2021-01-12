@@ -22,11 +22,6 @@ import socket
 import select
 from config import ConfigStore
 
-# Python v2:
-# - lacks Python v3 encoding arg for bytes()
-if str is bytes:
-    def bytes(s, encoding):
-        return s
 
 def _path_quote(path):
     "quote spaces in paths as expected by Hatari socket API"
@@ -292,7 +287,6 @@ class HatariConfigMapping(ConfigStore):
     }
     has_hd_sections = True # from v2.2 onwards separate ACSI/SCSI/IDE sections
     has_modeltype = True   # from v2.0 onwards
-    has_keepstres = True   # only with SDL1
 
     "access methods to Hatari configuration file variables and command line options"
     def __init__(self, hatari):
@@ -319,7 +313,6 @@ class HatariConfigMapping(ConfigStore):
         # valid on Hatari config file and/or command line
         self.get_machine()
         self.get_acsi_image()
-        self.get_desktop_st()
 
     def validate(self):
         "exception is thrown if the loaded configuration isn't compatible"
@@ -867,19 +860,6 @@ class HatariConfigMapping(ConfigStore):
     def set_desktop(self, value):
         self.set("[Screen]", "bKeepResolution", value)
         self._change_option("--desktop %s" % value)
-
-    # --------- keep desktop res - st ------
-    def get_desktop_st(self):
-        try:
-            return self.get("[Screen]", "bKeepResolutionST")
-        except KeyError:
-            self.has_keepstres = False
-            return False
-
-    def set_desktop_st(self, value):
-        if self.has_keepstres:
-            self.set("[Screen]", "bKeepResolutionST", value)
-            self._change_option("--desktop-st %s" % value)
 
     # ------------ force max ---------------
     def get_force_max(self):

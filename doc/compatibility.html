@@ -2194,7 +2194,7 @@ this section lists only programs that have TT-specific features.</p>
       <td>tSCc:
       <a href="http://s390174849.online.de/ray.tscc.de/demos.htm">256mbrot, Bragg256, Glasstro, Orion-B, Yabt</a></td>
       <td>1.8</td>
-      <td>TT/Falcon intros, Bragg256 requires WinUAE CPU core</td>
+      <td>TT/Falcon intros</td>
     </tr>
     <tr>
       <td>tSCc:
@@ -2248,12 +2248,6 @@ otherwise "-".</p>
 downloads) doesn't yet support OS calls for controlling the DSP, none
 of the programs using DSP work with it, they need a real Falcon TOS
 v4.x.</p>
-
-<p>If something works only with either WinUAE or oldUAE CPU core,
-that may be documented, but mostly things are tested only with the
-(default) WinUAE CPU core.  It's the only one supporting MMU and many
-timing critical demos (for example ones using NoCrew's DSP MP2-player)
-<em>work only with it</em>.</p>
 
 <p>Only few Falcon programs require MMU emulation to be enabled
 to work. <em>Unless otherwise indicated, programs work with MMU
@@ -2314,15 +2308,16 @@ VGA one are indicated separately.</p>
       <td class="minor">2.3.1</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Enhanced Doom I/II port and engine rewrite. Game requires WinUAE
-      CPU core, DSP and 14 MB RAM. WAD cache creation crashes/freezes,
+      <td>Enhanced Doom I/II port and engine rewrite.
+      Game requires DSP and 14 MB RAM. WAD cache creation crashes/freezes,
       so one needs to get pre-built WAD cache. Statusbar doesn't show due
       to Videl emulation omissions (in earlier versions "--natfeats yes"
       could be used to tell game to use heavier Hatari specific statusbar
       drawing mode). Game uses MMU if it's available, but doesn't work yet
-      with Hatari 030 MMU emulation. Some parts have clear speed differences
-      to real Falcon due to CPU, FPU (instruction too fast) and Videl
-      emulation (screen updated only at VBL) inaccuracies</td>
+      with Hatari 030 MMU emulation, nor with 32-bit addressing / TT-RAM.
+      Some parts have clear speed differences to real Falcon due to CPU,
+      FPU (instruction too fast) and Videl emulation (screen updated only
+      at VBL) inaccuracies</td>
     </tr>
     <tr>
       <td><a href="http://www.klockars.net/bad_mood.html">Bad Mood<br />(90's demo)</a></td>
@@ -2807,7 +2802,7 @@ VGA one are indicated separately.</p>
       <td class="major">2.3</td>
       <td>yes</td>
       <td>-</td>
-      <td>Main menu works only with WinUAE core.  Actual game screen is scrambled / doesn't work</td>
+      <td>Actual game screen is scrambled / doesn't work</td>
     </tr>
     <tr>
       <td>Pingo98</td>
@@ -2952,9 +2947,9 @@ VGA one are indicated separately.</p>
       <td class="minor">2.3.1</td>
       <td>yes</td>
       <td>dummy</td>
-      <td>Background music with DSP, but game works with DSP emulation
-          only with the oldAUE CPU core. With WinUAE CPU core,
-	  game freezes at start unless "dummy" mode is used</td>
+      <td>Background music with DSP. Game freezes at start unless
+	  "dummy" DSP mode is used (full DSP emulation worked with
+	  the removed oldUAE CPU core)</td>
     </tr>
     <tr>
       <td>Sokoban by FUN</td>
@@ -3075,8 +3070,8 @@ VGA one are indicated separately.</p>
       <td class="minor">2.3</td>
       <td>yes</td>
       <td>-</td>
-      <td>Requires WinUAE CPU core. Screen bottom is just black
-          (palette tricks?). Background music if DSP emu enabled</td>
+      <td>Screen bottom is just black (palette tricks?).
+          Background music if DSP emu enabled</td>
     </tr>
     <tr>
       <td>Ufo War</td>
@@ -3130,7 +3125,7 @@ VGA one are indicated separately.</p>
       <td>1.7</td>
       <td>yes</td>
       <td>-</td>
-      <td>Works only with WinUAE core. Needs Joypad. Background music if DSP emu enabled</td>
+      <td>Needs Joypad. Background music if DSP emu enabled</td>
     </tr>
     <tr>
       <td>Zodiax (demo)</td>
@@ -3146,9 +3141,8 @@ VGA one are indicated separately.</p>
 <h3>Falcon demos</h3>
 
 <p>Some demos require FPU, although normal Falcon's don't have a one.
-Old UAE CPU core always emulates FPU both for TT and Falcon machines.
-With the (default) WinUAE CPU core you need to enable FPU separately
-if demo is stated to require that.</p>
+You need to enable (68882) FPU separately if demo is stated to require
+FPU.</p>
 
 <table>
   <caption>Falcon demos</caption>
@@ -3204,7 +3198,7 @@ if demo is stated to require that.</p>
       <td>2.3</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Needs WinUAE CPU core</td>
+      <td></td>
     </tr>
     <tr>
       <td>Avena:
@@ -3447,8 +3441,8 @@ if demo is stated to require that.</p>
       <td>2.1</td>
       <td>yes</td>
       <td>-</td>
-      <td>WinUAE CPU only. 030 + FPU and 4MB + 32MB TT-RAM
-          (less for Codein). Supposed to work with 060, but that dies
+      <td>030 + FPU and 4MB + 32MB TT-RAM (less for Codein).
+          Supposed to work with 060, but that dies
 	  to FPU exception at start. Music with DSP emu</td>
     </tr>
     <tr>
@@ -3505,7 +3499,7 @@ if demo is stated to require that.</p>
       <td>1.6.2</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Requires WinUAE CPU core, gives DSP stack overflows</td>
+      <td>Gives DSP stack overflows</td>
     </tr>
     <tr>
       <td>DNT Crew:
@@ -3523,9 +3517,8 @@ if demo is stated to require that.</p>
       <td>yes</td>
       <td>emu</td>
       <td>Uses its own IKBD 6301 routine to decode the demo's protection.
-	  Sound is rather noisy. First plasma is half the correct height
-	  (and doubled with oldUAE CPU core). Picture before dot tunnel
-	  (on white background) isn't visible</td>
+	  Sound is rather noisy. First plasma is half the correct height.
+	  Picture before dot tunnel (on white background) isn't visible</td>
     </tr>
     <tr>
       <td>DrTypo:
@@ -3542,9 +3535,7 @@ if demo is stated to require that.</p>
       <td>2.0</td>
       <td>yes</td>
       <td>emu</td>
-      <td>With WinUAE CPU core max frameskip isn't enough on most
-          screens on 3GHz i3-540, although with oldAUE CPU core
-	  it works without frameskip (except for credits at end)</td>
+      <td>Requires very powerful machine to run at full speed</td>
     </tr>
     <tr>
       <td>Dune / Sector One:
@@ -3577,7 +3568,7 @@ if demo is stated to require that.</p>
       <td>2.1</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Requires WinUAE CPU core</td>
+      <td></td>
     </tr>
     <tr>
       <td>EKO:
@@ -3585,9 +3576,8 @@ if demo is stated to require that.</p>
       <td class="minor">2.3</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Requires WinUAE CPU core. "Betty Boo" picture is missing split
-          screen transition to it and from it (shown in Youtube video).
-	  Music issues in some screens</td>
+      <td>"Betty Boo" picture is missing split screen transition to it and
+          from it (shown in Youtube video). Music issues in some screens</td>
     </tr>
     <tr>
       <td>EKO:
@@ -3681,11 +3671,12 @@ if demo is stated to require that.</p>
     <tr>
       <td>Fit:
       <a href="http://www.pouet.net/prod.php?which=17311">Hex Pistols</a></td>
-      <td class="major">2.3</td>
+      <td class="major">2.3.1</td>
       <td>yes</td>
       <td>emu</td>
-      <td>14MB + FPU, .tSCc port from Amiga.  Works only with old UAE
-          CPU core, bombs at startup with WinUAE CPU core</td>
+      <td>14MB + FPU, .tSCc port from Amiga.  Startup fails due
+          to Line-F panic with EmuTOS, and bombs + Pterm() with TOS4
+          (worked with the removed oldUAE CPU core)</td>
     </tr>
     <tr>
       <td>Fit:
@@ -3699,11 +3690,12 @@ if demo is stated to require that.</p>
     <tr>
       <td>Fit:
       <a href="http://www.pouet.net/prod.php?which=26083">Stercus Accidit</a></td>
-      <td class="major">2.3</td>
+      <td class="major">2.3.1</td>
       <td>yes</td>
       <td>emu</td>
-      <td>8MB + FPU, .tSCc port from Amiga.
-          Works only with old AUE CPU core</td>
+      <td>8MB + FPU, .tSCc port from Amiga. Startup fails due to
+          Line-F panic with EmuTOS, and bombs + Pterm() with TOS4
+	  (worked with the removed oldUAE CPU core)</td>
     </tr>
     <tr>
       <td>Fun Industries:
@@ -3816,7 +3808,7 @@ if demo is stated to require that.</p>
       <td>1.6</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Nice. Requires WinUAE CPU core</td>
+      <td>Nice</td>
     </tr>
     <tr>
       <td>Lazer:
@@ -3938,7 +3930,7 @@ if demo is stated to require that.</p>
       <td>1.6</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Requires WinUAE CPU core. Ends in black screen after plasma tunnel</td>
+      <td>Ends in black screen after plasma tunnel</td>
     </tr>
     <tr>
       <td>Mystic bytes:
@@ -4131,7 +4123,7 @@ if demo is stated to require that.</p>
       <td>1.9</td>
       <td>yes</td>
       <td>-</td>
-      <td>Requires WinUAE CPU core for screen to be drawn correctly</td>
+      <td></td>
     </tr>
     <tr>
       <td>Trio:
@@ -4196,7 +4188,7 @@ if demo is stated to require that.</p>
       <td class="minor">2.3</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Works only with WinUAE CPU core. Music is silent / noise in
+      <td>Music is silent / noise in
           last screens. Z-buffer screen (before Rubik's cube) uses
 	  68-pixel width, Videl should repeat the pattern instead of
 	  stretching (same as when it is later roto-zoomed). Last 4
@@ -4395,8 +4387,7 @@ for latter to be feasible).
       <td><a href="http://nb.atari.org/main.php?page=productions">AceTracker v2</a></td>
       <td>2.0</td>
       <td>emu</td>
-      <td>Sounds good with WinUAE CPU core, but needs beefy machine
-          for fast enough DSP emulation</td>
+      <td>Sounds good, but needs beefy machine for fast enough DSP emulation</td>
     </tr>
     <tr>
       <td>AFM (audio fun machine)</td>
@@ -4463,7 +4454,6 @@ for latter to be feasible).
       <td>emu</td>
       <td>New (v2.3) WinUAE CPU core: FPU ~500 Mhz, DSP 64 Mhz, CPU 100-160 Mhz<br>
           Old (v1.8) WinUAE CPU core: FPU 221 Mhz, DSP 32 Mhz, CPU 15 Mhz<br>
-          Old (v1.8) UAE CPU core: FPU 403 Mhz, DSP 32 Mhz, CPU 78 Mhz<br>
 	  (moving mouse drops FPU and CPU numbers slightly)</td>
     </tr>
     <tr>
@@ -4508,7 +4498,7 @@ for latter to be feasible).
       <td><a href="http://yescrew.atari.org/eng/index_e.htm">GemPLAY</a></td>
       <td>2.0</td>
       <td>emu</td>
-      <td>Requires v2.0 WinUAE CPU core and beefy machine for AM playback.
+      <td>Requires beefy machine for AM playback.
           Fileselector dir selection doesn't work with v1.92 or newer
 	  without adding "C:" in from of the file pattern (GemPlay bug)</td>
     </tr>
@@ -4547,8 +4537,7 @@ for latter to be feasible).
       <td><a href="http://www.rainbowpainter.com/about/rainbow2multimedia.html">Rainbow II multimedia</a></td>
       <td>1.5</td>
       <td>emu</td>
-      <td>Works only with the new WinUAE CPU core. With old UAE core,
-          bombs immediately at startup (MMU not emulated in old UAE).
+      <td>Uses / requires MMU emulation.
           Mouse cannot traverse whole screen unless mouse grab or
           fullscreen mode is used</td>
     </tr>
@@ -4603,8 +4592,8 @@ support or work only on them.</p>
     <tr>
       <td><a href="http://adebug.sourceforge.net/">Adebug (reloaded)</a></td>
       <td>1.7</td>
-      <td>Debugger supporting 68000 - 68030.  On Falcon and TT this
-          uses MMU i.e. requires WinUAE CPU core</td>
+      <td>Debugger supporting 68000 - 68030.
+          Uses/requires MMU on Falcon and TT</td>
     </tr>
     <tr>
       <td>Calamus SL (1991 demo)</td>
@@ -4632,9 +4621,9 @@ support or work only on them.</p>
     <tr>
       <td><a href="http://freemint.de/en/">FreeMiNT</a></td>
       <td>1.2</td>
-      <td>Needs to be installed/booted from an ACSI or IDE HD image and
-      memory protection needs to be disabled (Hatari old UAE core doesn't
-      emulate MMU)</td>
+      <td>Needs to be installed/booted from an ACSI or IDE HD image.
+          Disable memory protection (TODO: test with v2.3.1 MMU
+	  emulation)</td>
     </tr>
     <tr>
       <td><a href="http://www.seimet.de/atari/en/hddriver.html">HD Driver</a></td>
@@ -4648,9 +4637,8 @@ support or work only on them.</p>
       <td><a href="http://www.seimet.de/atari/en/index.html">ROMSPEED</a></td>
       <td class="minor">1.9</td>
       <td>Utility to copy and run ROM from Fast-RAM to accelerate its working.
-      Requires TT-RAM / WinUAE CPU core to work.  Different memory
-      timings on different memory areas aren't emulated yet, so no
-      speed changes are visible</td>
+      Requires TT-RAM.  Different memory timings on different memory areas
+      aren't emulated yet, so no speed changes are visible</td>
     </tr>
   </tbody>
 </table>

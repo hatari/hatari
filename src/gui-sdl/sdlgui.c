@@ -30,11 +30,6 @@ const char SDLGui_fileid[] = "Hatari sdlgui.c";
 # define Dprintf(a)
 #endif
 
-#if WITH_SDL2
-#define SDL_SRCCOLORKEY SDL_TRUE
-#define SDLKey SDL_Keycode
-#endif
-
 static SDL_Surface *pSdlGuiScrn;            /* Pointer to the actual main SDL screen surface */
 static SDL_Surface *pSmallFontGfx = NULL;   /* The small font graphics */
 static SDL_Surface *pBigFontGfx = NULL;     /* The big font graphics */
@@ -121,12 +116,12 @@ int SDLGui_Init(void)
 	}
 
 	/* Set color palette of the font graphics: */
-	SDL_SetColors(pSmallFontGfx, blackWhiteColors, 0, 2);
-	SDL_SetColors(pBigFontGfx, blackWhiteColors, 0, 2);
+	SDL_SetPaletteColors(pSmallFontGfx->format->palette, blackWhiteColors, 0, 2);
+	SDL_SetPaletteColors(pBigFontGfx->format->palette, blackWhiteColors, 0, 2);
 
 	/* Set font color 0 as transparent: */
-	SDL_SetColorKey(pSmallFontGfx, (SDL_SRCCOLORKEY|SDL_RLEACCEL), 0);
-	SDL_SetColorKey(pBigFontGfx, (SDL_SRCCOLORKEY|SDL_RLEACCEL), 0);
+	SDL_SetColorKey(pSmallFontGfx, SDL_RLEACCEL, 0);
+	SDL_SetColorKey(pBigFontGfx, SDL_RLEACCEL, 0);
 
 	return 0;
 }
@@ -600,22 +595,14 @@ static void SDLGui_EditField(SGOBJ *dlg, int objnum)
 	char *txt;                          /* Shortcut for dlg[objnum].txt */
 	SDL_Rect rect;
 	SDL_Event event;
-#if !WITH_SDL2
-	int nOldUnicodeMode;
-#endif
 
 	rect.x = (dlg[0].x + dlg[objnum].x) * sdlgui_fontwidth;
 	rect.y = (dlg[0].y + dlg[objnum].y) * sdlgui_fontheight;
 	rect.w = (dlg[objnum].w + 1) * sdlgui_fontwidth - 1;
 	rect.h = dlg[objnum].h * sdlgui_fontheight;
 
-#if WITH_SDL2
 	SDL_SetTextInputRect(&rect);
 	SDL_StartTextInput();
-#else
-	/* Enable unicode translation to get shifted etc chars with SDL_PollEvent */
-	nOldUnicodeMode = SDL_EnableUNICODE(true);
-#endif
 
 	txt = dlg[objnum].txt;
 	cursorPos = strlen(txt);
@@ -643,7 +630,6 @@ static void SDLGui_EditField(SGOBJ *dlg, int objnum)
 				 case SDL_MOUSEBUTTONDOWN:          /* Mouse pressed -> stop editing */
 					bStopEditing = true;
 					break;
-#if WITH_SDL2
 				 case SDL_TEXTINPUT:
 					if (strlen(txt) < (size_t)dlg[objnum].w)
 					{
@@ -653,7 +639,6 @@ static void SDLGui_EditField(SGOBJ *dlg, int objnum)
 						cursorPos += 1;
 					}
 					break;
-#endif
 				 case SDL_KEYDOWN:                  /* Key pressed */
 					switch (event.key.keysym.sym)
 					{
@@ -681,19 +666,6 @@ static void SDLGui_EditField(SGOBJ *dlg, int objnum)
 							memmove(&txt[cursorPos], &txt[cursorPos+1], strlen(&txt[cursorPos+1])+1);
 						break;
 					 default:
-#if !WITH_SDL2
-						/* If it is a "good" key then insert it into the text field */
-						if (event.key.keysym.unicode >= 32 && event.key.keysym.unicode < 128
-						        && event.key.keysym.unicode != PATHSEP)
-						{
-							if (strlen(txt) < (size_t)dlg[objnum].w)
-							{
-								memmove(&txt[cursorPos+1], &txt[cursorPos], strlen(&txt[cursorPos])+1);
-								txt[cursorPos] = event.key.keysym.unicode;
-								cursorPos += 1;
-							}
-						}
-#endif
 						break;
 					}
 					break;
@@ -721,11 +693,7 @@ static void SDLGui_EditField(SGOBJ *dlg, int objnum)
 	}
 	while (!bStopEditing);
 
-#if WITH_SDL2
 	SDL_StopTextInput();
-#else
-	SDL_EnableUNICODE(nOldUnicodeMode);
-#endif
 }
 
 
@@ -1094,7 +1062,6 @@ static int SDLGui_HandleShortcut(SGOBJ *dlg, int key)
  */
 static void SDLGui_ScaleMouseButtonCoordinates(SDL_MouseButtonEvent *bev)
 {
-#if WITH_SDL2
 	int win_width, win_height;
 
 	if (bInFullScreen)
@@ -1103,7 +1070,6 @@ static void SDLGui_ScaleMouseButtonCoordinates(SDL_MouseButtonEvent *bev)
 	SDL_GetWindowSize(sdlWindow, &win_width, &win_height);
 	bev->x = bev->x * pSdlGuiScrn->w / win_width;
 	bev->y = bev->y * pSdlGuiScrn->h / win_height;
-#endif
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1121,15 +1087,12 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut, bool KeepCurrentObject)
 	int oldbutton = SDLGUI_NOTFOUND;
 	int retbutton = SDLGUI_NOTFOUND;
 	int i, j, b, value, obj;
-	SDLKey key;
+	SDL_Keycode key;
 	int focused;
 	SDL_Event sdlEvent;
 	SDL_Surface *pBgSurface;
 	SDL_Rect dlgrect, bgrect;
 	SDL_Joystick *joy = NULL;
-#if !WITH_SDL2
-	int nOldUnicodeMode;
-#endif
 
 	/* In the case of dialog using a scrollbar, we must keep the previous */
 	/* value of current_object, as the same dialog is displayed in a loop */
@@ -1158,7 +1121,7 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut, bool KeepCurrentObject)
 	                                  pSdlGuiScrn->format->Rmask, pSdlGuiScrn->format->Gmask, pSdlGuiScrn->format->Bmask, pSdlGuiScrn->format->Amask);
 	if (pSdlGuiScrn->format->palette != NULL)
 	{
-		SDL_SetColors(pBgSurface, pSdlGuiScrn->format->palette->colors, 0, pSdlGuiScrn->format->palette->ncolors-1);
+		SDL_SetPaletteColors(pBgSurface->format->palette, pSdlGuiScrn->format->palette->colors, 0, pSdlGuiScrn->format->palette->ncolors-1);
 	}
 
 	if (pBgSurface != NULL)
@@ -1225,10 +1188,6 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut, bool KeepCurrentObject)
 	if (SDL_NumJoysticks() > 0)
 		joy = SDL_JoystickOpen(0);
 
-#if !WITH_SDL2
-	/* Enable unicode translation to get shifted etc chars with SDL_PollEvent */
-	nOldUnicodeMode = SDL_EnableUNICODE(true);
-#endif
 	Dprintf(("ENTER - obj: %d, old: %d, ret: %d\n", obj, oldbutton, retbutton));
 
 	/* The main loop */
@@ -1371,10 +1330,6 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut, bool KeepCurrentObject)
 						retbutton = SDLGui_HandleShortcut(dlg, SG_SHORTCUT_DOWN);
 					else
 					{
-#if !WITH_SDL2
-						/* unicode member is needed to handle shifted etc special chars */
-						key = sdlEvent.key.keysym.unicode;
-#endif
 						if (key >= 33 && key <= 126)
 							retbutton = SDLGui_HandleShortcut(dlg, toupper(key));
 					}
@@ -1418,7 +1373,6 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut, bool KeepCurrentObject)
 				}
 				break;
 
-#if WITH_SDL2
 			 case SDL_WINDOWEVENT:
 				if (sdlEvent.window.event == SDL_WINDOWEVENT_SIZE_CHANGED
 				    || sdlEvent.window.event == SDL_WINDOWEVENT_RESTORED
@@ -1427,7 +1381,6 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut, bool KeepCurrentObject)
 					SDL_UpdateRect(pSdlGuiScrn, 0, 0, 0, 0);
 				}
 				break;
-#endif
 
 			 default:
 				if (pEventOut)
@@ -1451,9 +1404,6 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut, bool KeepCurrentObject)
 	if (retbutton == SDLGUI_QUIT)
 		bQuitProgram = true;
 
-#if !WITH_SDL2
-	SDL_EnableUNICODE(nOldUnicodeMode);
-#endif
 	if (joy)
 		SDL_JoystickClose(joy);
 

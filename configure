@@ -18,10 +18,7 @@ print_help()
   echo "  --enable-small-mem         Use less memory at the expense of emulation speed"
   echo "  --disable-dsp              Disable DSP emulation for Falcon mode."
   echo "  --disable-tracing          Disable tracing messages for debugging"
-  echo "  --enable-winuae-cpu        Use WinUAE CPU core (default)"
-  echo "  --enable-old-uae-cpu       Use old UAE CPU core (deprecated)"
   echo "  --disable-osx-bundle       Disable application bundling on macOS"
-  echo "  --disable-sdl2             Do not compile with libsdl 2.0, use 1.2 instead"
   echo "  --enable-werror            Use -Werror flag to stop on compiler warnings"
   echo "  --cross-compile-win64_32   Build the 32 bit Windows version using mingw-w64"
   echo "  --cross-compile-win64_64   Build the 64 bit Windows version using mingw-w64"
@@ -72,29 +69,11 @@ do
     --disable-small-mem)
       cmake_args="$cmake_args -DENABLE_SMALL_MEM:BOOL=0"
     ;;
-    --enable-winuae-cpu)
-      cmake_args="$cmake_args -DENABLE_WINUAE_CPU:BOOL=1"
-    ;;
-    --disable-winuae-cpu)
-      cmake_args="$cmake_args -DENABLE_WINUAE_CPU:BOOL=0"
-    ;;
-    --enable-old-uae-cpu)
-      cmake_args="$cmake_args -DENABLE_WINUAE_CPU:BOOL=0"
-    ;;
-    --disable-old-uae-cpu)
-      cmake_args="$cmake_args -DENABLE_WINUAE_CPU:BOOL=1"
-    ;;
     --enable-osx-bundle)
       cmake_args="$cmake_args -DENABLE_OSX_BUNDLE:BOOL=1"
     ;;
     --disable-osx-bundle)
       cmake_args="$cmake_args -DENABLE_OSX_BUNDLE:BOOL=0"
-    ;;
-    --enable-sdl2)
-      cmake_args="$cmake_args -DENABLE_SDL2:BOOL=1"
-    ;;
-    --disable-sdl2)
-      cmake_args="$cmake_args -DENABLE_SDL2:BOOL=0"
     ;;
     --enable-werror)
       cmake_args="$cmake_args -DENABLE_WERROR:BOOL=1"

@@ -541,18 +541,12 @@ void Statusbar_UpdateInfo(void)
 	}
 
 	/* Prefetch mode or cycle exact mode ? */
-#if ENABLE_WINUAE_CPU
 	if ( ConfigureParams.System.bCycleExactCpu )
 		end = Statusbar_AddString(end, "(CE)");
 	else if ( ConfigureParams.System.bCompatibleCpu )
 		end = Statusbar_AddString(end, "(PF)");
-#else
-	if ( ConfigureParams.System.bCompatibleCpu )
-		end = Statusbar_AddString(end, "(PF)");
-#endif
 
 	/* additional WinUAE CPU/FPU info */
-#if ENABLE_WINUAE_CPU
 	*end++ = '/';
 	switch (ConfigureParams.System.n_FPUType)
 	{
@@ -576,7 +570,6 @@ void Statusbar_UpdateInfo(void)
 	{
 		end = Statusbar_AddString(end, "/MMU");
 	}
-#endif
 
 	/* amount of memory in MB */
 	*end++ = ' ';

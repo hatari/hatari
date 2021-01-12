@@ -76,15 +76,15 @@ Uint32 ST2RGB[4096];          /* Table to convert ST 0x777 / STe 0xfff palette t
 Uint8 *pSTScreen;
 FRAMEBUFFER *pFrameBuffer;    /* Pointer into current 'FrameBuffer' */
 
-static FRAMEBUFFER FrameBuffers[NUM_FRAMEBUFFERS]; /* Store frame buffer details to tell how to update */
-static Uint8 *pSTScreenCopy;                       /* Keep track of current and previous ST screen data */
-static Uint8 *pPCScreenDest;                       /* Destination PC buffer */
-static int STScreenEndHorizLine;                   /* End lines to be converted */
+static FRAMEBUFFER FrameBuffer;     /* Store frame buffer details to tell how to update */
+static Uint8 *pSTScreenCopy;        /* Keep track of current and previous ST screen data */
+static Uint8 *pPCScreenDest;        /* Destination PC buffer */
+static int STScreenEndHorizLine;    /* End lines to be converted */
 static int PCScreenBytesPerLine;
 static int STScreenWidthBytes;
-static int PCScreenOffsetX;                        /* how many pixels to skip from left when drawing */
-static int PCScreenOffsetY;                        /* how many pixels to skip from top when drawing */
-static SDL_Rect STScreenRect;                      /* screen size without statusbar */
+static int PCScreenOffsetX;         /* how many pixels to skip from left when drawing */
+static int PCScreenOffsetY;         /* how many pixels to skip from top when drawing */
+static SDL_Rect STScreenRect;       /* screen size without statusbar */
 
 static int STScreenLineOffset[NUM_VISIBLE_LINES];  /* Offsets for ST screen lines eg, 0,160,320... */
 static Uint16 HBLPalette[16], PrevHBLPalette[16];  /* Current palette for line, also copy of first line */
@@ -98,12 +98,9 @@ static bool bRGBTableInSync;            /* Is RGB table up to date? */
 
 /* These are used for the generic screen conversion functions */
 static int genconv_width_req, genconv_height_req, genconv_bpp;
-static bool genconv_do_update;          /* HW surface is available -> the SDL need not to update the surface after ->pixel access */
 
 
 static bool Screen_DrawFrame(bool bForceFlip);
-
-#if WITH_SDL2
 
 SDL_Window *sdlWindow;
 static SDL_Renderer *sdlRenderer;
@@ -143,9 +140,7 @@ void SDL_UpdateRect(SDL_Surface *screen, Sint32 x, Sint32 y, Sint32 w, Sint32 h)
 	SDL_UpdateRects(screen, 1, &rect);
 }
 
-#endif /* WITH_SDL2 */
 
-/*-----------------------------------------------------------------------*/
 /**
  * Create ST 0x777 / STe 0xfff color format to 16 or 32 bits per pixel
  * conversion table. Called each time when changed resolution or to/from
@@ -286,17 +281,9 @@ static bool Screen_UseGenConvScreen(void)
 
 static bool Screen_WantToKeepResolution(void)
 {
-#if WITH_SDL2
 	return ConfigureParams.Screen.bKeepResolution;
-#else
-	if (Screen_UseGenConvScreen())
-		return ConfigureParams.Screen.bKeepResolution;
-	else
-		return ConfigureParams.Screen.bKeepResolutionST;
-#endif
 }
 
-#if WITH_SDL2
 static void Screen_FreeSDL2Resources(void)
 {
 	if (sdlTexture)
@@ -387,7 +374,7 @@ void Screen_SetTextureScale(int width, int height, int win_width, int win_height
 		}
 	}
 }
-#endif
+
 
 /**
  * Change the SDL video mode.
@@ -398,7 +385,6 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 	Uint32 sdlVideoFlags;
 	char *psSdlVideoDriver;
 	bool bUseDummyMode;
-#if WITH_SDL2
 	static bool bPrevUseVsync = false;
 	static bool bPrevInFullScreen;
 	int win_width, win_height;
@@ -406,7 +392,7 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 
 	if (bitdepth == 0 || bitdepth == 24)
 		bitdepth = 32;
-#endif
+
 	/* Check if we really have to change the video mode: */
 	if (sdlscrn != NULL && sdlscrn->w == width && sdlscrn->h == height
 	    && sdlscrn->format->BitsPerPixel == bitdepth && !bForceChange)
@@ -414,12 +400,6 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 
 	psSdlVideoDriver = SDL_getenv("SDL_VIDEODRIVER");
 	bUseDummyMode = psSdlVideoDriver && !strcmp(psSdlVideoDriver, "dummy");
-#if !WITH_SDL2
-	if (bUseDummyMode)
-	{
-		ConfigureParams.Screen.DisableVideo = true;
-	}
-#endif
 
 	if (bInFullScreen)
 	{
@@ -427,7 +407,6 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 		Control_ReparentWindow(width, height, bInFullScreen);
 	}
 
-#if WITH_SDL2
 	bUseSdlRenderer = ConfigureParams.Screen.bUseSdlRenderer && !bUseDummyMode;
 
 	/* SDL Video attributes: */
@@ -558,39 +537,6 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 		bIsSoftwareRenderer = true;
 	}
 
-#else	/* !WITH_SDL2 */
-
-	/* SDL Video attributes: */
-	if (bInFullScreen)
-	{
-		sdlVideoFlags  = SDL_HWSURFACE|SDL_FULLSCREEN/*|SDL_DOUBLEBUF*/;
-		/* SDL_DOUBLEBUF helps avoiding tearing and can be faster on suitable HW,
-		 * but it doesn't work with partial screen updates done by the ST screen
-		 * update code or the Hatari GUI, so double buffering is disabled. */
-	}
-	else
-	{
-		sdlVideoFlags  = SDL_SWSURFACE;
-	}
-
-	/* Set new video mode */
-	DEBUGPRINT(("SDL screen request: %d x %d @ %d (%s)\n", width, height, bitdepth,
-	            bInFullScreen?"fullscreen":"windowed"));
-	sdlscrn = SDL_SetVideoMode(width, height, bitdepth, sdlVideoFlags);
-
-	/* By default ConfigureParams.Screen.nForceBpp and therefore
-	 * BitCount is zero which means "SDL color depth autodetection".
-	 * In this case the SDL_SetVideoMode() call might return
-	 * a 24 bpp resolution
-	 */
-	if (sdlscrn && sdlscrn->format->BitsPerPixel == 24)
-	{
-		Log_Printf(LOG_WARN, "Unsupported color depth 24, trying 32 bpp instead...\n");
-		sdlscrn = SDL_SetVideoMode(width, height, 32, sdlVideoFlags);
-	}
-
-#endif	/* !WITH_SDL2 */
-
 	/* Exit if we can not open a screen */
 	if (!sdlscrn)
 	{
@@ -694,24 +640,6 @@ static void Screen_SetSTResolution(bool bForceChange)
 
 	PCScreenOffsetX = PCScreenOffsetY = 0;
 
-	/* Video attributes: */
-#if !WITH_SDL2
-	if (bInFullScreen && ConfigureParams.Screen.bKeepResolutionST)
-	{
-		/* use desktop resolution */
-		Resolution_GetDesktopSize(&maxW, &maxH);
-		SBarHeight = Statusbar_GetHeightForSize(maxW, maxH);
-		/* re-calculate statusbar height for this resolution */
-		Statusbar_SetHeight(maxW, maxH-SBarHeight);
-		/* center Atari screen to resolution */
-		PCScreenOffsetY = (maxH - Height)/2;
-		PCScreenOffsetX = (maxW - Width)/2;
-		/* and select desktop resolution */
-		Height = maxH;
-		Width = maxW;
-	}
-#endif
-
 	if (Screen_SetSDLVideoSize(Width, Height, BitCount, bForceChange))
 	{
 		Statusbar_Init(sdlscrn);
@@ -767,10 +695,7 @@ static void Screen_ChangeResolution(bool bForceChange)
 		Screen_SetSTResolution(bForceChange);
 	}
 
-	if (bInFullScreen || bGrabMouse)
-		SDL_WM_GrabInput(SDL_GRAB_ON);
-	else
-		SDL_WM_GrabInput(SDL_GRAB_OFF);
+	SDL_SetRelativeMouseMode(bInFullScreen || bGrabMouse);
 }
 
 
@@ -792,25 +717,21 @@ void Screen_ModeChanged(bool bForceChange)
  */
 void Screen_Init(void)
 {
-	int i;
 	SDL_Surface *pIconSurf;
 	char sIconFileName[FILENAME_MAX];
 
 	/* Clear frame buffer structures and set current pointer */
-	memset(FrameBuffers, 0, NUM_FRAMEBUFFERS * sizeof(FRAMEBUFFER));
+	memset(&FrameBuffer, 0, sizeof(FRAMEBUFFER));
 
-	/* Allocate previous screen check workspace. We are going to double-buffer a double-buffered screen. Oh. */
-	for (i = 0; i < NUM_FRAMEBUFFERS; i++)
+	/* Allocate screen check workspace. */
+	FrameBuffer.pSTScreen = malloc(MAX_VDI_BYTES);
+	FrameBuffer.pSTScreenCopy = malloc(MAX_VDI_BYTES);
+	if (!FrameBuffer.pSTScreen || !FrameBuffer.pSTScreenCopy)
 	{
-		FrameBuffers[i].pSTScreen = malloc(MAX_VDI_BYTES);
-		FrameBuffers[i].pSTScreenCopy = malloc(MAX_VDI_BYTES);
-		if (!FrameBuffers[i].pSTScreen || !FrameBuffers[i].pSTScreenCopy)
-		{
-			fprintf(stderr, "ERROR: Failed to allocate frame buffer memory.\n");
-			exit(-1);
-		}
+		fprintf(stderr, "ERROR: Failed to allocate frame buffer memory.\n");
+		exit(-1);
 	}
-	pFrameBuffer = &FrameBuffers[0];
+	pFrameBuffer = &FrameBuffer;  /* TODO: Replace pFrameBuffer with FrameBuffer everywhere */
 
 	/* Set initial window resolution */
 	bInFullScreen = ConfigureParams.Screen.bFullScreen;
@@ -825,13 +746,8 @@ void Screen_Init(void)
 	pIconSurf = SDL_LoadBMP(sIconFileName);
 	if (pIconSurf)
 	{
-#if WITH_SDL2
 		SDL_SetColorKey(pIconSurf, SDL_TRUE, SDL_MapRGB(pIconSurf->format, 255, 255, 255));
 		SDL_SetWindowIcon(sdlWindow, pIconSurf);
-#else
-		SDL_SetColorKey(pIconSurf, SDL_SRCCOLORKEY, SDL_MapRGB(pIconSurf->format, 255, 255, 255));
-		SDL_WM_SetIcon(pIconSurf, NULL);
-#endif
 		SDL_FreeSurface(pIconSurf);
 	}
 
@@ -846,23 +762,16 @@ void Screen_Init(void)
  */
 void Screen_UnInit(void)
 {
-	int i;
-
 	/* Free memory used for copies */
-	for (i = 0; i < NUM_FRAMEBUFFERS; i++)
-	{
-		free(FrameBuffers[i].pSTScreen);
-		free(FrameBuffers[i].pSTScreenCopy);
-	}
+	free(FrameBuffer.pSTScreen);
+	free(FrameBuffer.pSTScreenCopy);
 
-#if WITH_SDL2
 	Screen_FreeSDL2Resources();
 	if (sdlWindow)
 	{
 		SDL_DestroyWindow(sdlWindow);
 		sdlWindow = NULL;
 	}
-#endif
 }
 
 
@@ -902,11 +811,8 @@ void Screen_Reset(void)
  */
 void Screen_SetFullUpdate(void)
 {
-	int i;
-
 	/* Update frame buffers */
-	for (i = 0; i < NUM_FRAMEBUFFERS; i++)
-		FrameBuffers[i].bFullUpdate = true;
+	FrameBuffer.bFullUpdate = true;
 }
 
 
@@ -990,7 +896,7 @@ void Screen_EnterFullScreen(void)
 		{
 			Screen_Refresh();
 		}
-		SDL_WM_GrabInput(SDL_GRAB_ON);  /* Grab mouse pointer in fullscreen */
+		SDL_SetRelativeMouseMode(true);  /* Grab mouse pointer in fullscreen */
 	}
 }
 
@@ -1040,7 +946,7 @@ void Screen_ReturnFromFullScreen(void)
 		if (!bGrabMouse)
 		{
 			/* Un-grab mouse pointer in windowed mode */
-			SDL_WM_GrabInput(SDL_GRAB_OFF);
+			SDL_SetRelativeMouseMode(false);
 		}
 	}
 }
@@ -1293,32 +1199,16 @@ void Screen_UnLock(void)
 static void Screen_Blit(SDL_Rect *sbar_rect)
 {
 	unsigned char *pTmpScreen;
+	int count = 1;
+	SDL_Rect rects[2];
 
-#if 0	/* double buffering cannot be used with partial screen updates */
-# if NUM_FRAMEBUFFERS > 1
-	if (bInFullScreen && (sdlscrn->flags & SDL_DOUBLEBUF))
+	rects[0] = STScreenRect;
+	if (sbar_rect)
 	{
-		/* Swap screen */
-		if (pFrameBuffer==&FrameBuffers[0])
-			pFrameBuffer = &FrameBuffers[1];
-		else
-			pFrameBuffer = &FrameBuffers[0];
-		SDL_Flip(sdlscrn);
+		rects[1] = *sbar_rect;
+		count = 2;
 	}
-	else
-# endif
-#endif
-	{
-		int count = 1;
-		SDL_Rect rects[2];
-		rects[0] = STScreenRect;
-		if (sbar_rect)
-		{
-			rects[1] = *sbar_rect;
-			count = 2;
-		}
-		SDL_UpdateRects(sdlscrn, count, rects);
-	}
+	SDL_UpdateRects(sdlscrn, count, rects);
 
 	/* Swap copy/raster buffers in screen. */
 	pTmpScreen = pFrameBuffer->pSTScreenCopy;
@@ -1453,23 +1343,8 @@ void Screen_SetGenConvSize(int width, int height, int bpp, bool bForceChange)
 
 	/* constrain size request to user's desktop size */
 	Resolution_GetDesktopSize(&maxw, &maxh);
-#if !WITH_SDL2
-	scalex = scaley = 1;
-	while (width > maxw*scalex) {
-		scalex *= 2;
-	}
-	while (height > maxh*scaley) {
-		scaley *= 2;
-	}
-	if (scalex * scaley > 1) {
-		Log_Printf(LOG_WARN, "Too large screen size %dx%d -> divided by %dx%d!\n",
-			width, height, scalex, scaley);
-		width /= scalex;
-		height /= scaley;
-	}
-#endif
-
 	Resolution_GetLimits(&maxw, &maxh, &bpp, keep);
+
 	nScreenZoomX = nScreenZoomY = 1;
 
 	if (ConfigureParams.Screen.bAspectCorrect) {
@@ -1517,10 +1392,6 @@ void Screen_SetGenConvSize(int width, int height, int bpp, bool bForceChange)
 	screenheight = height + sbarheight;
 	screenwidth = width;
 
-#if !WITH_SDL2
-	/* get resolution corresponding to these */
-	Resolution_Search(&screenwidth, &screenheight, &bpp, keep);
-#endif
 	/* re-calculate statusbar height for this resolution */
 	sbarheight = Statusbar_SetHeight(screenwidth, screenheight-sbarheight);
 
@@ -1544,11 +1415,6 @@ void Screen_SetGenConvSize(int width, int height, int bpp, bool bForceChange)
 			 */
 			Statusbar_Init(sdlscrn);
 		}
-#if WITH_SDL2
-		genconv_do_update = true;
-#else
-		genconv_do_update = ( sdlscrn->flags & SDL_HWSURFACE ) == 0;
-#endif
 		return;
 	}
 
@@ -1560,14 +1426,6 @@ void Screen_SetGenConvSize(int width, int height, int bpp, bool bForceChange)
 
 	DEBUGPRINT(("Surface Pitch = %d, width = %d, height = %d\n", sdlscrn->pitch, sdlscrn->w, sdlscrn->h));
 	DEBUGPRINT(("Must Lock? %s\n", SDL_MUSTLOCK(sdlscrn) ? "YES" : "NO"));
-
-#if WITH_SDL2
-	genconv_do_update = true;
-#else
-	// is the SDL_update needed?
-	genconv_do_update = ( sdlscrn->flags & SDL_HWSURFACE ) == 0;
-#endif
-
 	DEBUGPRINT(("Pixel format:bitspp=%d, tmasks r=%04x g=%04x b=%04x"
 			", tshifts r=%d g=%d b=%d"
 			", tlosses r=%d g=%d b=%d\n",
@@ -1586,9 +1444,6 @@ void Screen_GenConvUpdate(SDL_Rect *extra, bool forced)
 
 	/* Don't update anything on screen if video output is disabled */
 	if ( ConfigureParams.Screen.DisableVideo )
-		return;
-
-	if (!forced && !genconv_do_update) // the HW surface is available
 		return;
 
 	rects[0] = STScreenRect;

@@ -88,6 +88,7 @@ const char AVIRecord_fileid[] = "Hatari avi_record.c";
 #include "version.h"
 #include "audio.h"
 #include "configuration.h"
+#include "file.h"
 #include "log.h"
 #include "screen.h"
 #include "screenSnapShot.h"

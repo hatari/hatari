@@ -4,19 +4,41 @@
                                 Release Notes
 
 
- Version 2.3.1 (2020-12-27)
- --------------------------
+ Development version
+ -------------------
 
 Following features are deprecated and will be removed in a future release:
-- Support for the SDL 1.2 library (i.e. SDL 2.x should be used instead)
 - SDL 2.x "bUseSdlRenderer" config and "GPU scaling" GUI options
   (after HW support for SDL2 is available widely enough)
-- The old UAE CPU core (i.e. the new WinUAE CPU core should be used instead)
-- Python v2 support in Python scripts (Python 2 was end of life in 2020)
 - The "external" disassembler (i.e. use "--disasm uae" instead)
 - Hatari XBios(255) API enabled with the "--bios-intercept" option
   (i.e. use "--natfeats" & "--cmd-fifo" options and "hconsole" instead)
 - The old ~/.hatari configuration file location (use ~/.config/hatari instead)
+
+Removed features (that were marked as deprecated in earlier releases):
+- Support for the SDL 1.2 library (i.e. SDL 2.x should be used instead)
+- The old UAE CPU core (i.e. the new WinUAE CPU core is now always used)
+- Python v2 support in Python scripts (Python 2 was end of life in 2020)
+
+Emulation:
+- Improved DSP interrupts handling (from Previous NeXT emulator)
+
+Emulator:
+- Falcon:
+  - Fix: restore zoom mode correctly when loading snapshots
+  - Correct also smaller specified memory amounts to valid ones
+- MegaSTE/TT:
+  - Add VME/SCU registers "--vme <none|dummy>" access option
+    (needed to support both Linux and TOS v2 & v3 until Hatari
+    implements real VME/SCU register emulation)
+- GEMDOS HD:
+  - Fix: clear GEMDOS Fread / Fwrite errors
+- Debugger:
+  - Add "info vme" and VME/SCU reg access tracing support
+
+
+ Version 2.3.1 (2020-12-27)
+ --------------------------
 
 Emulation:
 - CPU:

@@ -45,16 +45,12 @@ endfunction (check_large_file)
 # Conditional build features
 # ##########################
 
-set(ENABLE_SDL2 1
-    CACHE BOOL "Enable building with libSDL2 instead of v1.2")
 set(ENABLE_DSP_EMU 1
     CACHE BOOL "Enable DSP 56k emulator for Falcon mode")
 set(ENABLE_TRACING 1
     CACHE BOOL "Enable tracing messages for debugging")
 set(ENABLE_SMALL_MEM 0
     CACHE BOOL "Enable to use less memory - at the expense of emulation speed")
-set(ENABLE_WINUAE_CPU 1
-    CACHE BOOL "Enable WinUAE CPU core")
 
 # Run-time checks with GCC / LLVM (Clang) AddressSanitizer:
 # - stack protection
@@ -102,21 +98,9 @@ endif(APPLE)
 # Check for libraries:
 # ####################
 
-if(ENABLE_SDL2)
-	find_package(SDL2)
-	#if(NOT SDL2_FOUND)
-	#	message(FATAL_ERROR "SDL2 library not found!")
-	#endif(NOT SDL2_FOUND)
-	set(SDL_INCLUDE_DIR ${SDL2_INCLUDE_DIR})
-	set(SDL_LIBRARY ${SDL2_LIBRARY})
-	set(SDLMAIN_LIBRARY ${SDL2MAIN_LIBRARY})
-endif(ENABLE_SDL2)
-
+find_package(SDL2)
 if(NOT SDL2_FOUND)
-	find_package(SDL)
-	if(NOT SDL_FOUND)
-		message(FATAL_ERROR "SDL library not found!")
-	endif(NOT SDL_FOUND)
+	message(FATAL_ERROR "SDL2 library not found!")
 endif(NOT SDL2_FOUND)
 
 find_package(Math)
@@ -183,16 +167,9 @@ if(DETECTED_LFS_CFLAGS)
 endif(DETECTED_LFS_CFLAGS)
 
 # Additional CFLAGS suggested by the SDL library:
-if(SDL2_FOUND)
-	add_definitions(-DWITH_SDL2)
-	execute_process(COMMAND pkg-config --cflags-only-other sdl2
-			OUTPUT_VARIABLE DETECTED_SDL_CFLAGS
-			ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
-else(SDL2_FOUND)
-	execute_process(COMMAND pkg-config --cflags-only-other sdl
-			OUTPUT_VARIABLE DETECTED_SDL_CFLAGS
-			ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
-endif(SDL2_FOUND)
+execute_process(COMMAND pkg-config --cflags-only-other sdl2
+		OUTPUT_VARIABLE DETECTED_SDL_CFLAGS
+		ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
 if(DETECTED_SDL_CFLAGS)
 	add_definitions(${DETECTED_SDL_CFLAGS})
 	# message(STATUS "Additional CFLAGS of SDL: ${DETECTED_SDL_CFLAGS}")
@@ -201,10 +178,8 @@ endif(DETECTED_SDL_CFLAGS)
 if(ENABLE_OSX_BUNDLE)
 	# Use OSX native alert windows
 	add_definitions(-DALERT_HOOKS=1)
-	if(SDL2_FOUND)
-		# We still want to use our SDLMain.m with SDL2
-		add_definitions(-DSDL_MAIN_NEEDED=1)
-	endif(SDL2_FOUND)
+	# We still want to use our SDLMain.m with SDL2
+	add_definitions(-DSDL_MAIN_NEEDED=1)
 endif(ENABLE_OSX_BUNDLE)
 
 # ###########################
@@ -215,7 +190,7 @@ check_include_files(termios.h HAVE_TERMIOS_H)
 check_include_files(sys/ioctl.h HAVE_SYS_IOCTL_H)
 check_include_files(strings.h HAVE_STRINGS_H)
 check_include_files(malloc.h HAVE_MALLOC_H)
-check_include_files(${SDL_INCLUDE_DIR}/SDL_config.h HAVE_SDL_CONFIG_H)
+check_include_files(${SDL2_INCLUDE_DIR}/SDL_config.h HAVE_SDL_CONFIG_H)
 check_include_files(sys/time.h HAVE_SYS_TIME_H)
 check_include_files(sys/times.h HAVE_SYS_TIMES_H)
 check_include_files(utime.h HAVE_UTIME_H)
@@ -347,6 +322,10 @@ add_subdirectory(tests)
 add_subdirectory(tools)
 
 include(FindPythonInterp)
+if(PYTHONINTERP_FOUND AND PYTHON_VERSION_MAJOR LESS 3)
+	message("Note: Hatari needs at least Python 3 ... ignoring older version")
+	unset(PYTHONINTERP_FOUND)
+endif()
 if(PYTHONINTERP_FOUND)
 	add_subdirectory(python-ui)
 endif(PYTHONINTERP_FOUND)
@@ -368,16 +347,7 @@ Libraries summary :
 -------------------
 ")
 
-if(SDL2_FOUND)
-  message("  - sdl :\tusing SDL2 v${SDL2_VERSION_STRING}")
-else()
-  if(SDL_VERSION_STRING)
-    message("  - sdl :\tusing SDL v${SDL_VERSION_STRING}")
-  else()
-    message("  - sdl :\tusing SDL1")
-  endif(SDL_VERSION_STRING)
-  message("         \tNOTE: The SDL1 support is deprecated and will be removed soon")
-endif(SDL2_FOUND)
+message("  - sdl :\tusing SDL2 v${SDL2_VERSION_STRING}")
 
 if(Readline_FOUND)
   message( "  - readline :\tfound, enables history/completion in the debugger" )

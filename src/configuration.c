@@ -78,11 +78,7 @@ static const struct Config_Tag configs_Screen[] =
 	{ "nFrameSkips", Int_Tag, &ConfigureParams.Screen.nFrameSkips },
 	{ "bFullScreen", Bool_Tag, &ConfigureParams.Screen.bFullScreen },
 	{ "bKeepResolution", Bool_Tag, &ConfigureParams.Screen.bKeepResolution },
-#if WITH_SDL2
 	{ "bResizable", Bool_Tag, &ConfigureParams.Screen.bResizable },
-#else
-	{ "bKeepResolutionST", Bool_Tag, &ConfigureParams.Screen.bKeepResolutionST },
-#endif
 	{ "bAllowOverscan", Bool_Tag, &ConfigureParams.Screen.bAllowOverscan },
 	{ "nSpec512Threshold", Int_Tag, &ConfigureParams.Screen.nSpec512Threshold },
 	{ "nForceBpp", Int_Tag, &ConfigureParams.Screen.nForceBpp },
@@ -98,26 +94,13 @@ static const struct Config_Tag configs_Screen[] =
 	{ "bForceMax", Bool_Tag, &ConfigureParams.Screen.bForceMax },
 	{ "nMaxWidth", Int_Tag, &ConfigureParams.Screen.nMaxWidth },
 	{ "nMaxHeight", Int_Tag, &ConfigureParams.Screen.nMaxHeight },
-#if WITH_SDL2
 	{ "nZoomFactor", Float_Tag, &ConfigureParams.Screen.nZoomFactor },
 	{ "bUseSdlRenderer", Bool_Tag, &ConfigureParams.Screen.bUseSdlRenderer },
 	{ "bUseVsync", Bool_Tag, &ConfigureParams.Screen.bUseVsync },
-#endif
 	{ NULL , Error_Tag, NULL }
 };
 
 /* Used to load/save joystick 0 options */
-#if !WITH_SDL2
-static const struct Config_Tag configs_Joystick0_Sdl1[] =
-{
-	{ "nKeyCodeUp", Int_Tag, &ConfigureParams.Joysticks.Joy[0].nKeyCodeUp },
-	{ "nKeyCodeDown", Int_Tag, &ConfigureParams.Joysticks.Joy[0].nKeyCodeDown },
-	{ "nKeyCodeLeft", Int_Tag, &ConfigureParams.Joysticks.Joy[0].nKeyCodeLeft },
-	{ "nKeyCodeRight", Int_Tag, &ConfigureParams.Joysticks.Joy[0].nKeyCodeRight },
-	{ "nKeyCodeFire", Int_Tag, &ConfigureParams.Joysticks.Joy[0].nKeyCodeFire },
-	{ NULL , Error_Tag, NULL }
-};
-#endif
 static const struct Config_Tag configs_Joystick0[] =
 {
 	{ "nJoystickMode", Int_Tag, &ConfigureParams.Joysticks.Joy[0].nJoystickMode },
@@ -133,17 +116,6 @@ static const struct Config_Tag configs_Joystick0[] =
 };
 
 /* Used to load/save joystick 1 options */
-#if !WITH_SDL2
-static const struct Config_Tag configs_Joystick1_Sdl1[] =
-{
-	{ "nKeyCodeUp", Int_Tag, &ConfigureParams.Joysticks.Joy[1].nKeyCodeUp },
-	{ "nKeyCodeDown", Int_Tag, &ConfigureParams.Joysticks.Joy[1].nKeyCodeDown },
-	{ "nKeyCodeLeft", Int_Tag, &ConfigureParams.Joysticks.Joy[1].nKeyCodeLeft },
-	{ "nKeyCodeRight", Int_Tag, &ConfigureParams.Joysticks.Joy[1].nKeyCodeRight },
-	{ "nKeyCodeFire", Int_Tag, &ConfigureParams.Joysticks.Joy[1].nKeyCodeFire },
-	{ NULL , Error_Tag, NULL }
-};
-#endif
 static const struct Config_Tag configs_Joystick1[] =
 {
 	{ "nJoystickMode", Int_Tag, &ConfigureParams.Joysticks.Joy[1].nJoystickMode },
@@ -159,17 +131,6 @@ static const struct Config_Tag configs_Joystick1[] =
 };
 
 /* Used to load/save joystick 2 options */
-#if !WITH_SDL2
-static const struct Config_Tag configs_Joystick2_Sdl1[] =
-{
-	{ "nKeyCodeUp", Int_Tag, &ConfigureParams.Joysticks.Joy[2].nKeyCodeUp },
-	{ "nKeyCodeDown", Int_Tag, &ConfigureParams.Joysticks.Joy[2].nKeyCodeDown },
-	{ "nKeyCodeLeft", Int_Tag, &ConfigureParams.Joysticks.Joy[2].nKeyCodeLeft },
-	{ "nKeyCodeRight", Int_Tag, &ConfigureParams.Joysticks.Joy[2].nKeyCodeRight },
-	{ "nKeyCodeFire", Int_Tag, &ConfigureParams.Joysticks.Joy[2].nKeyCodeFire },
-	{ NULL , Error_Tag, NULL }
-};
-#endif
 static const struct Config_Tag configs_Joystick2[] =
 {
 	{ "nJoystickMode", Int_Tag, &ConfigureParams.Joysticks.Joy[2].nJoystickMode },
@@ -185,17 +146,6 @@ static const struct Config_Tag configs_Joystick2[] =
 };
 
 /* Used to load/save joystick 3 options */
-#if !WITH_SDL2
-static const struct Config_Tag configs_Joystick3_Sdl1[] =
-{
-	{ "nKeyCodeUp", Int_Tag, &ConfigureParams.Joysticks.Joy[3].nKeyCodeUp },
-	{ "nKeyCodeDown", Int_Tag, &ConfigureParams.Joysticks.Joy[3].nKeyCodeDown },
-	{ "nKeyCodeLeft", Int_Tag, &ConfigureParams.Joysticks.Joy[3].nKeyCodeLeft },
-	{ "nKeyCodeRight", Int_Tag, &ConfigureParams.Joysticks.Joy[3].nKeyCodeRight },
-	{ "nKeyCodeFire", Int_Tag, &ConfigureParams.Joysticks.Joy[3].nKeyCodeFire },
-	{ NULL , Error_Tag, NULL }
-};
-#endif
 static const struct Config_Tag configs_Joystick3[] =
 {
 	{ "nJoystickMode", Int_Tag, &ConfigureParams.Joysticks.Joy[3].nJoystickMode },
@@ -211,17 +161,6 @@ static const struct Config_Tag configs_Joystick3[] =
 };
 
 /* Used to load/save joystick 4 options */
-#if !WITH_SDL2
-static const struct Config_Tag configs_Joystick4_Sdl1[] =
-{
-	{ "nKeyCodeUp", Int_Tag, &ConfigureParams.Joysticks.Joy[4].nKeyCodeUp },
-	{ "nKeyCodeDown", Int_Tag, &ConfigureParams.Joysticks.Joy[4].nKeyCodeDown },
-	{ "nKeyCodeLeft", Int_Tag, &ConfigureParams.Joysticks.Joy[4].nKeyCodeLeft },
-	{ "nKeyCodeRight", Int_Tag, &ConfigureParams.Joysticks.Joy[4].nKeyCodeRight },
-	{ "nKeyCodeFire", Int_Tag, &ConfigureParams.Joysticks.Joy[4].nKeyCodeFire },
-	{ NULL , Error_Tag, NULL }
-};
-#endif
 static const struct Config_Tag configs_Joystick4[] =
 {
 	{ "nJoystickMode", Int_Tag, &ConfigureParams.Joysticks.Joy[4].nJoystickMode },
@@ -237,17 +176,6 @@ static const struct Config_Tag configs_Joystick4[] =
 };
 
 /* Used to load/save joystick 5 options */
-#if !WITH_SDL2
-static const struct Config_Tag configs_Joystick5_Sdl1[] =
-{
-	{ "nKeyCodeUp", Int_Tag, &ConfigureParams.Joysticks.Joy[5].nKeyCodeUp },
-	{ "nKeyCodeDown", Int_Tag, &ConfigureParams.Joysticks.Joy[5].nKeyCodeDown },
-	{ "nKeyCodeLeft", Int_Tag, &ConfigureParams.Joysticks.Joy[5].nKeyCodeLeft },
-	{ "nKeyCodeRight", Int_Tag, &ConfigureParams.Joysticks.Joy[5].nKeyCodeRight },
-	{ "nKeyCodeFire", Int_Tag, &ConfigureParams.Joysticks.Joy[5].nKeyCodeFire },
-	{ NULL , Error_Tag, NULL }
-};
-#endif
 static const struct Config_Tag configs_Joystick5[] =
 {
 	{ "nJoystickMode", Int_Tag, &ConfigureParams.Joysticks.Joy[5].nJoystickMode },
@@ -270,64 +198,6 @@ static const struct Config_Tag configs_Keyboard[] =
 	{ "szMappingFileName", String_Tag, ConfigureParams.Keyboard.szMappingFileName },
 	{ NULL , Error_Tag, NULL }
 };
-
-#if !WITH_SDL2
-/* Used to load/save shortcut key bindings with modifiers options */
-static const struct Config_Tag configs_ShortCutWithMod_Sdl1[] =
-{
-	{ "keyOptions",    Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_OPTIONS] },
-	{ "keyFullScreen", Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_FULLSCREEN] },
-	{ "keyMouseMode",  Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_MOUSEGRAB] },
-	{ "keyColdReset",  Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_COLDRESET] },
-	{ "keyWarmReset",  Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_WARMRESET] },
-	{ "keyScreenShot", Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_SCREENSHOT] },
-	{ "keyBossKey",    Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_BOSSKEY] },
-	{ "keyCursorEmu",  Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_CURSOREMU] },
-	{ "keyFastForward",Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_FASTFORWARD] },
-	{ "keyRecAnim",    Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_RECANIM] },
-	{ "keyRecSound",   Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_RECSOUND] },
-	{ "keySound",      Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_SOUND] },
-	{ "keyPause",      Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_PAUSE] },
-	{ "keyDebugger",   Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_DEBUG] },
-	{ "keyQuit",       Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_QUIT] },
-	{ "keyLoadMem",    Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_LOADMEM] },
-	{ "keySaveMem",    Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_SAVEMEM] },
-	{ "keyInsertDiskA",Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_INSERTDISKA] },
-	{ "keySwitchJoy0", Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_JOY_0] },
-	{ "keySwitchJoy1", Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_JOY_1] },
-	{ "keySwitchPadA", Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_PAD_A] },
-	{ "keySwitchPadB", Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_PAD_B] },
-	{ NULL , Error_Tag, NULL }
-};
-
-/* Used to load/save shortcut key bindings without modifiers options */
-static const struct Config_Tag configs_ShortCutWithoutMod_Sdl1[] =
-{
-	{ "keyOptions",    Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_OPTIONS] },
-	{ "keyFullScreen", Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_FULLSCREEN] },
-	{ "keyMouseMode",  Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_MOUSEGRAB] },
-	{ "keyColdReset",  Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_COLDRESET] },
-	{ "keyWarmReset",  Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_WARMRESET] },
-	{ "keyScreenShot", Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_SCREENSHOT] },
-	{ "keyBossKey",    Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_BOSSKEY] },
-	{ "keyCursorEmu",  Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_CURSOREMU] },
-	{ "keyFastForward",Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_FASTFORWARD] },
-	{ "keyRecAnim",    Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_RECANIM] },
-	{ "keyRecSound",   Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_RECSOUND] },
-	{ "keySound",      Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_SOUND] },
-	{ "keyPause",      Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_PAUSE] },
-	{ "keyDebugger",   Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_DEBUG] },
-	{ "keyQuit",       Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_QUIT] },
-	{ "keyLoadMem",    Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_LOADMEM] },
-	{ "keySaveMem",    Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_SAVEMEM] },
-	{ "keyInsertDiskA",Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_INSERTDISKA] },
-	{ "keySwitchJoy0", Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_JOY_0] },
-	{ "keySwitchJoy1", Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_JOY_1] },
-	{ "keySwitchPadA", Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_PAD_A] },
-	{ "keySwitchPadB", Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_PAD_B] },
-	{ NULL , Error_Tag, NULL }
-};
-#endif
 
 /* Used to load/save shortcut key bindings with modifiers options */
 static const struct Config_Tag configs_ShortCutWithMod[] =
@@ -603,18 +473,16 @@ static const struct Config_Tag configs_System[] =
 	{ "nModelType", Int_Tag, &ConfigureParams.System.nMachineType },
 	{ "bBlitter", Bool_Tag, &ConfigureParams.System.bBlitter },
 	{ "nDSPType", Int_Tag, &ConfigureParams.System.nDSPType },
+	{ "nVMEType", Int_Tag, &ConfigureParams.System.nVMEType },
 	{ "bPatchTimerD", Bool_Tag, &ConfigureParams.System.bPatchTimerD },
 	{ "bFastBoot", Bool_Tag, &ConfigureParams.System.bFastBoot },
 	{ "bFastForward", Bool_Tag, &ConfigureParams.System.bFastForward },
 	{ "bAddressSpace24", Bool_Tag, &ConfigureParams.System.bAddressSpace24 },
-
-#if ENABLE_WINUAE_CPU
 	{ "bCycleExactCpu", Bool_Tag, &ConfigureParams.System.bCycleExactCpu },
 	{ "n_FPUType", Int_Tag, &ConfigureParams.System.n_FPUType },
 /* JIT	{ "bCompatibleFPU", Bool_Tag, &ConfigureParams.System.bCompatibleFPU }, */
 	{ "bSoftFloatFPU", Bool_Tag, &ConfigureParams.System.bSoftFloatFPU },
 	{ "bMMU", Bool_Tag, &ConfigureParams.System.bMMU },
-#endif
 	{ "VideoTiming", Int_Tag, &ConfigureParams.System.VideoTimingMode },
 	{ NULL , Error_Tag, NULL }
 };
@@ -818,11 +686,7 @@ void Configuration_SetDefault(void)
 	/* Set defaults for Screen */
 	ConfigureParams.Screen.bFullScreen = false;
 	ConfigureParams.Screen.bKeepResolution = true;
-#if WITH_SDL2
 	ConfigureParams.Screen.bResizable = true;
-#else
-	ConfigureParams.Screen.bKeepResolutionST = false;
-#endif
 	ConfigureParams.Screen.nFrameSkips = AUTO_FRAMESKIP_LIMIT;
 	ConfigureParams.Screen.bAllowOverscan = true;
 	ConfigureParams.Screen.nSpec512Threshold = 1;
@@ -845,11 +709,9 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Screen.nMaxHeight = 2*NUM_VISIBLE_LINES+STATUSBAR_MAX_HEIGHT;
 	ConfigureParams.Screen.bForceMax = false;
 	ConfigureParams.Screen.DisableVideo = false;
-#if WITH_SDL2
 	ConfigureParams.Screen.nZoomFactor = 1.0;
 	ConfigureParams.Screen.bUseSdlRenderer = true;
 	ConfigureParams.Screen.bUseVsync = false;
-#endif
 
 	/* Set defaults for Sound */
 	ConfigureParams.Sound.bEnableMicrophone = true;
@@ -888,14 +750,13 @@ void Configuration_SetDefault(void)
 	ConfigureParams.System.nCpuLevel = 0;
 	ConfigureParams.System.nCpuFreq = 8;	nCpuFreqShift = 0;
 	ConfigureParams.System.nDSPType = DSP_TYPE_NONE;
+	ConfigureParams.System.nVMEType = VME_TYPE_DUMMY; /* for TOS MegaSTE detection */
 	ConfigureParams.System.bAddressSpace24 = true;
-#if ENABLE_WINUAE_CPU
 	ConfigureParams.System.n_FPUType = FPU_NONE;
 	ConfigureParams.System.bCompatibleFPU = true; /* JIT */
 	ConfigureParams.System.bSoftFloatFPU = false;
 	ConfigureParams.System.bMMU = false;
 	ConfigureParams.System.bCycleExactCpu = true;
-#endif
 	ConfigureParams.System.VideoTimingMode = VIDEO_TIMING_MODE_WS3;
 	ConfigureParams.System.bCompatibleCpu = true;
 	ConfigureParams.System.bBlitter = false;
@@ -1005,7 +866,7 @@ void Configuration_Apply(bool bReset)
 		Crossbar_Recalculate_Clocks_Cycles();
 
 	/* Check/constrain CPU settings and change corresponding
-	 * UAE cpu_level & cpu_compatible variables
+	 * cpu_model/cpu_compatible/cpu_cycle_exact/... variables
 	 */
 //fprintf (stderr,"M68000_CheckCpuSettings conf 1\n" );
 	M68000_CheckCpuSettings();
@@ -1059,12 +920,8 @@ void Configuration_Apply(bool bReset)
 	FDC_Drive_Set_NumberOfHeads ( 1 , ConfigureParams.DiskImage.DriveB_NumberOfHeads );
 
 	/* Update disassembler */
-#if ENABLE_WINUAE_CPU
 	Disasm_SetCPUType(ConfigureParams.System.nCpuLevel, ConfigureParams.System.n_FPUType,
 	                  ConfigureParams.System.bMMU);
-#else
-	Disasm_SetCPUType(ConfigureParams.System.nCpuLevel, 0, false);
-#endif
 
 #if ENABLE_DSP_EMU
 	/* Enable DSP ? */
@@ -1132,17 +989,6 @@ void Configuration_Load(const char *psFileName)
 		break;
 	}
 	Configuration_LoadSection(psFileName, configs_HardDisk_Old, "[HardDisk]");
-
-#if !WITH_SDL2	/* for old SDL1 keycode compatibility */
-	Configuration_LoadSection(psFileName, configs_ShortCutWithMod_Sdl1, "[ShortcutsWithModifiers]");
-	Configuration_LoadSection(psFileName, configs_ShortCutWithoutMod_Sdl1, "[ShortcutsWithoutModifiers]");
-	Configuration_LoadSection(psFileName, configs_Joystick0_Sdl1, "[Joystick0]");
-	Configuration_LoadSection(psFileName, configs_Joystick1_Sdl1, "[Joystick1]");
-	Configuration_LoadSection(psFileName, configs_Joystick2_Sdl1, "[Joystick2]");
-	Configuration_LoadSection(psFileName, configs_Joystick3_Sdl1, "[Joystick3]");
-	Configuration_LoadSection(psFileName, configs_Joystick4_Sdl1, "[Joystick4]");
-	Configuration_LoadSection(psFileName, configs_Joystick5_Sdl1, "[Joystick5]");
-#endif
 
 	/* Now the regular loading of the sections:
 	 * Start with Log so that logging works as early as possible */
@@ -1292,16 +1138,17 @@ void Configuration_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&ConfigureParams.System.nMachineType, sizeof(ConfigureParams.System.nMachineType));
 	MemorySnapShot_Store(&ConfigureParams.System.bBlitter, sizeof(ConfigureParams.System.bBlitter));
 	MemorySnapShot_Store(&ConfigureParams.System.nDSPType, sizeof(ConfigureParams.System.nDSPType));
+	/* TODO: enable after VME/SCU interrupt emulation is implemented
+	MemorySnapShot_Store(&ConfigureParams.System.nVMEType, sizeof(ConfigureParams.System.nVMEType));
+	 */
 	MemorySnapShot_Store(&bOldRealTimeClock, sizeof(bOldRealTimeClock));	/* TODO: Can be removed later */
 	MemorySnapShot_Store(&ConfigureParams.System.bPatchTimerD, sizeof(ConfigureParams.System.bPatchTimerD));
 	MemorySnapShot_Store(&ConfigureParams.System.bAddressSpace24, sizeof(ConfigureParams.System.bAddressSpace24));
 
-#if ENABLE_WINUAE_CPU
 	MemorySnapShot_Store(&ConfigureParams.System.bCycleExactCpu, sizeof(ConfigureParams.System.bCycleExactCpu));
 	MemorySnapShot_Store(&ConfigureParams.System.n_FPUType, sizeof(ConfigureParams.System.n_FPUType));
 	MemorySnapShot_Store(&ConfigureParams.System.bCompatibleFPU, sizeof(ConfigureParams.System.bCompatibleFPU));
 	MemorySnapShot_Store(&ConfigureParams.System.bMMU, sizeof(ConfigureParams.System.bMMU));
-#endif
 
 	MemorySnapShot_Store(&ConfigureParams.DiskImage.FastFloppy, sizeof(ConfigureParams.DiskImage.FastFloppy));
 

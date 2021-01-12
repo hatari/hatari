@@ -185,13 +185,6 @@ SDLKey Preferences_KeysForJoysticks[] =
 	SDLK_LALT,
 	SDLK_RMETA,
 	SDLK_LMETA,
-#if !WITH_SDL2
-	SDLK_LSUPER,
-	SDLK_RSUPER,
-	SDLK_COMPOSE,
-	SDLK_BREAK,
-	SDLK_EURO,
-#endif
 	SDLK_MODE,
 	SDLK_HELP,
 	SDLK_PRINT,
@@ -788,11 +781,9 @@ BOOL flag1, flag2;
 	IMPORT_SWITCH(FastBootPatch,ConfigureParams.System.bFastBoot);
 	IMPORT_RADIO(YMVoicesMixing,ConfigureParams.Sound.YmVolumeMixing);
 
-#if WITH_SDL2
 	IMPORT_SWITCH(SDL2UseGpuScaling, ConfigureParams.Screen.bUseSdlRenderer);
 	IMPORT_SWITCH(SDL2Resizable, ConfigureParams.Screen.bResizable);
 	IMPORT_SWITCH(SDL2UseVSync, ConfigureParams.Screen.bUseVsync);
-#endif
 
 	//deal with the Max Zoomed Stepper
 	IMPORT_NTEXTFIELD(maxZoomedWidth, ConfigureParams.Screen.nMaxWidth);
@@ -812,7 +803,6 @@ BOOL flag1, flag2;
 	}
 
 	//deal with TT RAM Size Stepper
-#ifdef ENABLE_WINUAE_CPU
 	int ttramsize_MB=ConfigureParams.Memory.TTRamSize_KB/1024 ;	//JV 12-2016
 
 	IMPORT_NTEXTFIELD(TTRAMSizeValue, ttramsize_MB); 			// MS 12-2016
@@ -831,8 +821,7 @@ BOOL flag1, flag2;
 		[FPUType selectCellWithTag:3];
 	//not needed anymore
 	//IMPORT_SWITCH(CompatibleFPU, ConfigureParams.System.bCompatibleFPU);
-#endif
-	
+
 	int i;
 	for (i = 0; i <= DLGSOUND_50KHZ-DLGSOUND_11KHZ; i++)
 	{
@@ -1050,21 +1039,19 @@ BOOL flag1, flag2;
 	// EXPORT_SWITCH(zoomSTLowRes, ConfigureParams.Screen.bZoomLowRes);
 	EXPORT_SWITCH(showStatusBar,ConfigureParams.Screen.bShowStatusbar);
 	EXPORT_DROPDOWN(enableDSP,ConfigureParams.System.nDSPType);
-	
+
 	EXPORT_SWITCH(falconTTRatio, ConfigureParams.Screen.bAspectCorrect);
 	EXPORT_SWITCH(fullScreen, ConfigureParams.Screen.bFullScreen);
 	EXPORT_SWITCH(ledDisks, ConfigureParams.Screen.bShowDriveLed);
 	EXPORT_SWITCH(keepDesktopResolution, ConfigureParams.Screen.bKeepResolution);
-	
+
 	//v1.6.1
 	EXPORT_SWITCH(FastBootPatch,ConfigureParams.System.bFastBoot);
 	EXPORT_RADIO(YMVoicesMixing,ConfigureParams.Sound.YmVolumeMixing);
 
-#if WITH_SDL2
 	EXPORT_SWITCH(SDL2UseGpuScaling, ConfigureParams.Screen.bUseSdlRenderer);
 	EXPORT_SWITCH(SDL2Resizable, ConfigureParams.Screen.bResizable);
 	EXPORT_SWITCH(SDL2UseVSync, ConfigureParams.Screen.bUseVsync);
-#endif
 
 	EXPORT_NTEXTFIELD(maxZoomedWidth, ConfigureParams.Screen.nMaxWidth);
 	EXPORT_NTEXTFIELD(maxZoomedHeight, ConfigureParams.Screen.nMaxHeight);
@@ -1078,7 +1065,6 @@ BOOL flag1, flag2;
 	 case 3: ConfigureParams.System.VideoTimingMode=VIDEO_TIMING_MODE_WS3; break;
 	 case 4: ConfigureParams.System.VideoTimingMode=VIDEO_TIMING_MODE_WS4; break;
 	}
-#ifdef ENABLE_WINUAE_CPU
 	int ttramsizeMB=[TTRAMSizeValue intValue]*1024;										//JV 12-2016
 	ConfigureParams.Memory.TTRamSize_KB=ttramsizeMB;
 
@@ -1097,7 +1083,6 @@ BOOL flag1, flag2;
 		ConfigureParams.System.n_FPUType = FPU_CPU;
 	//not needed anymore
 	//EXPORT_SWITCH(CompatibleFPU, ConfigureParams.System.bCompatibleFPU);
-#endif
 
 	ConfigureParams.Sound.nPlaybackFreq = nSoundFreqs[[[playbackQuality selectedCell] tag]];
 
@@ -1221,7 +1206,6 @@ BOOL flag1, flag2;
 	configNm = [NSMutableString stringWithCapacity:50] ; [configNm setString:@""] ; [configNm retain] ;
 	opnPanel = [NSOpenPanel openPanel]; [opnPanel retain] ;
 	savPanel = [NSSavePanel savePanel]; [savPanel retain] ;
-#ifdef ENABLE_WINUAE_CPU
 	cycleExactCPU.enabled = true;
 	MMU_Emulation.enabled = true;
 	adressSpace24.enabled = true;
@@ -1229,8 +1213,6 @@ BOOL flag1, flag2;
 	//CompatibleFPU.enabled = true;
 	FPUType.enabled = true;
 	bCell68060.enabled = true;
-#endif
-    
 }
 
 @end

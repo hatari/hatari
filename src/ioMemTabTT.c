@@ -180,14 +180,7 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_TT[] =
 	{ 0xff8c80, 8, SCC_IoMem_ReadByte, SCC_IoMem_WriteByte },                               /* SCC */
 	{ 0xff8c88, 8, IoMem_VoidRead_00, IoMem_VoidWrite },                                    /* No bus error here */
 
-	{ 0xff8e01, 1, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception },         /* SCU system interrupt mask */
-	{ 0xff8e03, 1, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception },         /* SCU system interrupt state */
-	{ 0xff8e05, 1, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception },         /* SCU system interrupter */
-	{ 0xff8e07, 1, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception },         /* SCU VME interrupter */
-	{ 0xff8e09, 1, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception },         /* SCU general purpose 1 */
-	{ 0xff8e0b, 1, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception },         /* SCU general purpose 2 */
-	{ 0xff8e0d, 1, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception },         /* SCU VME interrupt mask */
-	{ 0xff8e0f, 1, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception },         /* SCU VME interrupt state */
+	/* VME/SCU 0xff8e01-0xff8e0f registers set at run-time in ioMem.c/vme.c for TT */
 
 	{ 0xff9000, SIZE_WORD, IoMem_VoidRead, IoMem_VoidWrite },                /* No bus error here */
 	{ 0xff9200, SIZE_WORD, IoMemTabTT_ReadDIPSwitches, IoMem_VoidWrite },    /* DIP switches */

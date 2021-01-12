@@ -96,13 +96,11 @@ static struct {
 	Uint32 loop_end;      /* address of last loop end */
 	Uint32 loop_count;    /* how many times it was looped */
 	Uint32 disasm_addr;   /* 'addresses' command start address */
-#if ENABLE_WINUAE_CPU
 	Uint32 i_prefetched;  /* instructions that don't incur prefetch hit/miss */
 	Uint32 i_hit_counts[MAX_I_HITS];    /* I-cache hit counts */
 	Uint32 d_hit_counts[MAX_D_HITS];    /* D-cache hit counts */
 	Uint32 i_miss_counts[MAX_I_MISSES]; /* I-cache miss counts */
 	Uint32 d_miss_counts[MAX_D_MISSES]; /* D-cache miss counts */
-#endif
 	bool processed;	      /* true when data is already processed */
 	bool enabled;         /* true when profiling enabled */
 } cpu_profile;
@@ -160,10 +158,8 @@ static inline Uint32 address2index(Uint32 pc)
 			/* and after TOS as it's higher */
 			pc += TosSize;
 		}
-#if ENABLE_WINUAE_CPU
 	} else if (TTmemory && pc >= TTRAM_START && pc < TTRAM_START + 1024*(unsigned)ConfigureParams.Memory.TTRamSize_KB) {
 		pc += STRamEnd + TosSize + CART_SIZE - TTRAM_START;
-#endif
 	} else {
 		if (++cpu_warnings.address <= MAX_SHOW_COUNT) {
 			fprintf(stderr, "WARNING: 'invalid' CPU PC profile instruction address 0x%x!\n", pc);
@@ -387,7 +383,6 @@ void Profile_CpuShowStats(void)
 	show_cpu_warnings();
 }
 
-#if ENABLE_WINUAE_CPU
 /**
  * show percentage histogram of given array items
  */
@@ -437,11 +432,6 @@ void Profile_CpuShowCaches(void)
 	show_histogram("Data cache misses per instruction",
 		       ARRAY_SIZE(cpu_profile.d_miss_counts), cpu_profile.d_miss_counts);
 }
-#else
-void Profile_CpuShowCaches(void) {
-	fprintf(stderr, "Cache information is recorded only with WinUAE CPU.\n");
-}
-#endif
 
 /**
  * Show CPU instructions which execution was profiled, in the address order,
@@ -539,7 +529,6 @@ static void leave_instruction_column(int *oldcols)
 	Disasm_SetColumns(newcols);
 }
 
-#if ENABLE_WINUAE_CPU
 /**
  * compare function for qsort() to sort CPU profile data by instruction cache misses.
  */
@@ -647,15 +636,6 @@ void Profile_CpuShowDataHits(int show)
 
 	Disasm_SetColumns(oldcols);
 }
-
-#else
-void Profile_CpuShowInstrMisses(int show) {
-	fprintf(stderr, "Cache information is recorded only with WinUAE CPU.\n");
-}
-void Profile_CpuShowDataHits(int show) {
-	fprintf(stderr, "Cache information is recorded only with WinUAE CPU.\n");
-}
-#endif
 
 
 /**
@@ -1105,7 +1085,6 @@ static void log_last_loop(void)
 	}
 }
 
-# if DEBUG || ENABLE_WINUAE_CPU
 /**
  * Warning for values going out of expected range
  */
@@ -1126,7 +1105,6 @@ static Uint32 warn_too_large(const char *name, const int value, const int limit,
 #endif
 	return limit - 1;
 }
-#endif
 
 /**
  * Update CPU cycle and count statistics for PC address.
@@ -1139,11 +1117,7 @@ void Profile_CpuUpdate(void)
 	counters_t *counters = &(cpu_profile.all);
 	Uint32 pc, prev_pc, idx, cycles;
 	cpu_profile_item_t *prev;
-#if ENABLE_WINUAE_CPU
 	Uint32 i_hits, d_hits, i_misses, d_misses;
-#else
-	const Uint32 i_misses = 0, d_hits = 0;
-#endif
 
 	prev_pc = cpu_profile.prev_pc;
 	/* PC may have extra bits when using 24 bit addressing, they need to be masked away as
@@ -1188,7 +1162,6 @@ void Profile_CpuUpdate(void)
 		prev->cycles = MAX_CPU_PROFILE_VALUE;
 	}
 
-#if ENABLE_WINUAE_CPU
 	/* only WinUAE CPU core provides cache information */
 	i_hits = CpuInstruction.I_Cache_hit;
 	d_hits = CpuInstruction.D_Cache_hit;
@@ -1248,7 +1221,6 @@ void Profile_CpuUpdate(void)
 		d_misses = warn_too_large("number of CPU data cache misses", d_misses, MAX_D_MISSES, prev_pc, pc);
 	}
 	cpu_profile.d_miss_counts[d_misses]++;
-#endif   /* ENABLE_WINUAE_CPU */
 
 	if (cpu_callinfo.sites) {
 		collect_calls(prev_pc, counters);
@@ -1277,24 +1249,6 @@ void Profile_CpuUpdate(void)
 	if (unlikely(cycles > 512 && OpcodeFamily != i_STOP)) {
 		warn_too_large("cycles", cycles, 512, prev_pc, pc);
 	}
-# if !ENABLE_WINUAE_CPU
-	{
-		static Uint32 prev_cycles = 0, prev_pc2 = 0;
-		if (unlikely(cycles == 0 && prev_cycles == 0)) {
-			if (++cpu_warnings.zerocycles <= MAX_SHOW_COUNT) {
-				Uint32 nextpc;
-				fputs("WARNING: Zero cycles for successive opcodes:\n", stderr);
-				Disasm(stderr, prev_pc2, &nextpc, 1);
-				Disasm(stderr, prev_pc, &nextpc, 1);
-				if (cpu_warnings.zerocycles == MAX_SHOW_COUNT) {
-					fprintf(stderr, "Further warnings won't be shown.\n");
-				}
-			}
-		}
-		prev_cycles = cycles;
-		prev_pc2 = prev_pc;
-	}
-# endif
 #endif
 }
 

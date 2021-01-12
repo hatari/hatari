@@ -659,7 +659,8 @@ static bool Profile_Save(const char *fname, bool bForDsp)
 {
 	FILE *out;
 	Uint32 freq;
-	const char *proc, *core;
+	const char *proc;
+
 	if (!(out = fopen(fname, "w"))) {
 		fprintf(stderr, "ERROR: opening '%s' for writing failed!\n", fname);
 		perror(NULL);
@@ -672,12 +673,8 @@ static bool Profile_Save(const char *fname, bool bForDsp)
 		freq = MachineClocks.CPU_Freq_Emul;
 		proc = "CPU";
 	}
-#if ENABLE_WINUAE_CPU
-	core = "WinUAE";
-#else
-	core = "OldUAE";
-#endif
-	fprintf(out, "Hatari %s profile (%s, %s CPU core)\n", proc, PROG_NAME, core);
+
+	fprintf(out, "Hatari %s profile (%s)\n", proc, PROG_NAME);
 	fprintf(out, "Cycles/second:\t%u\n", freq);
 	if (bForDsp) {
 		Profile_DspSave(out);

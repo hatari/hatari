@@ -1,14 +1,25 @@
 Contents
 --------
 
+0. Status summary
 1. NetBSD Atari HW support history
 2. Fetching NetBSD binaries
-3. Running NetBSD
-4. Issues
+3. Testing NetBSD kernel
+4. Kernel issues
+5. Installing NetBSD
 
 
-NetBSD Atari HW support history
--------------------------------
+0. Status summary
+-----------------
+
+Apparently NetBSD works fine with WinUAE Amiga emulation.  However,
+none of the NetBSD kernel variants or versions boots yet with Hatari.
+This just documents how to test them.
+
+
+
+1. NetBSD Atari HW support history
+----------------------------------
 
 Atari HW supported by NetBSD is listed in wiki:
 	http://wiki.netbsd.org/ports/atari/
@@ -37,10 +48,10 @@ NetBSD releases before v7 are in archive:
 v7.0 support ended in June 2020, rest are still supported.
 
 
-Fetching NetBSD binaries
-------------------------
+2. Fetching NetBSD binaries
+---------------------------
 
-Fetching NetBSD v8.1 binaries:
+Fetching NetBSD v8.1 binaries (which work better than latest v9.1):
 
 * Get TOS kernel loader "loadbsd.ttp":
 	wget https://cdn.netbsd.org/pub/NetBSD/NetBSD-8.1/atari/installation/misc/loadbsd.ttp
@@ -59,41 +70,55 @@ Fetching NetBSD v8.1 binaries:
 	wget https://cdn.netbsd.org/pub/NetBSD/NetBSD-8.1/atari/installation/miniroot/sysinst.fs.gz
 	gunzip sysinst.fs.gz
 
-Full installation instructions:
-	https://cdn.netbsd.org/pub/NetBSD/NetBSD-8.1/atari/INSTALL.html
 
-(Atari instructions are not completely up to date, as they still
-mention e.g. install floppies that seem to have disappeared in v3.0.)
-
-
-Running NetBSD
---------------
-
-0. Create empty hard disk image:
-	atari-hd-image.sh 64 ide-64mb.img 
+3. Testing NetBSD kernel
+------------------------
 
 1. Start Hatari with the directory having the downloaded files:
-	hatari --monitor vga --machine falcon --dsp none \
-	--mmu on -s 14 --ide-master ide-64mb.img \
-	--gemdos-drive z .
+	hatari --monitor vga --machine falcon --dsp none --mmu on -s 14 .
 
    Note: BSD seems to render correctly only with VGA monitor, and it
-   needs an MMU. It won't boot on TT machine, most likely for the same
-   reason it fails with Linux, due to missing SCU & VME emulation.
+   doesn't work at all without MMU.
 
-2. Run "loadbsd.ttp" from Z: drive and give "-b small030.bsd"
-   as an argument
+2. Run "loadbsd.ttp" and give "-b small030.bsd" as an argument
 
-   You need "-b" option if you want kernel to ask for root drive,
-   otherwise you can just drag the kernel file to TTP.
+   Note: You need "-b" option if you want kernel to ask for root
+   drive, otherwise you can just drag the kernel file to TTP.
 
 
-Issues
-------
+4. Kernel issues
+----------------
 
-NetBSD v1.6.2, v2.1 and v8.1 all fail at boot, after recognizing
-floppy and IDE, to "MMU fault" panic or trap 2.  Without '-b'
-option, you end up in BSD kernel debugger.
+* 030 (Mega)ST(e) / netbsd-SMALL030 kernel:
 
-NetBSD v9.0 outputs garbage to Atari screen, output will become
-correctly visible only when kernel fails.
+  - double address/bus error immediately on boot => no ST models supported?
+
+* TT / netbsd-ATARITT kernel:
+
+  - freezes very early at boot, in loop checking bits in a non-IO
+    address, which remains zero with Hatari.  It could be due to
+    missing SCU & VME emulation, but changing SCU/VME register access
+    to error out, doesn't help like it does with Linux.  Maybe SCC
+    issue?
+
+* Falcon / netbsd-FALCON kernel:
+
+  - Freezes at SCSI bus scanning unless there's IDE device
+    => Same as with Linux, Hatari SCSI emulation isn't good enough
+
+  - NetBSD v1.6.2, v2.1 and v8.1 all fail at boot, after recognizing
+    floppy and IDE, to "MMU fault" panic or trap 2 (Without '-b'
+    option, you end up in BSD kernel debugger).
+
+  - NetBSD v9.x outputs garbage to Atari screen, output will become
+    correctly visible only when boot fails.
+
+Unlike with Linux, 030 cache and prefetch emulation doesn't have
+impact on these.  Neither does 32-bit adressing / TT-RAM.
+
+
+5. Installing NetBSD
+--------------------
+
+Full installation instructions:
+	https://cdn.netbsd.org/pub/NetBSD/NetBSD-9.1/atari/INSTALL.html

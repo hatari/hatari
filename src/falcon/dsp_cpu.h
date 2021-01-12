@@ -116,7 +116,8 @@ extern void dsp56k_execute_instruction(void);	/* Execute 1 instruction */
 extern Uint16 dsp56k_execute_one_disasm_instruction(FILE *out, Uint16 pc);	/* Execute 1 instruction in disasm mode */
 
 /* Interrupt relative functions */
-void dsp_add_interrupt(Uint16 inter);
+void dsp_set_interrupt(Uint32 intr, Uint32 set);
+void dsp_set_interrupt_mask(Uint32 intr, Uint32 set);
 
 #ifdef __cplusplus
 }

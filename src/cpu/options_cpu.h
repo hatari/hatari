@@ -5,8 +5,8 @@
   or at your option any later version. Read the file gpl.txt for details.
 */
 
-#ifndef OPTIONS_CPU_H
-#define OPTIONS_CPU_H
+#ifndef UAE_OPTIONS_H
+#define UAE_OPTIONS_H
 
 #include "uae/types.h"
 
@@ -17,7 +17,7 @@
 
 
 #define UAEMAJOR 4
-#define UAEMINOR 4
+#define UAEMINOR 5
 #define UAESUBREV 0
 
 #define MAX_AMIGADISPLAYS 4
@@ -373,7 +373,8 @@ struct gfx_filterdata
 	int gfx_filter_keep_autoscale_aspect;
 };
 
-#define MAX_DUPLICATE_EXPANSION_BOARDS 4
+#define MAX_DUPLICATE_EXPANSION_BOARDS 5
+#define MAX_AVAILABLE_DUPLICATE_EXPANSION_BOARDS 4
 #define MAX_EXPANSION_BOARDS 20
 #define ROMCONFIG_CONFIGTEXT_LEN 256
 struct boardromconfig;
@@ -384,6 +385,7 @@ struct romconfig
 	uae_u32 board_ram_size;
 	bool autoboot_disabled;
 	bool inserted;
+	bool dma24bit;
 	int device_id;
 	int device_settings;
 	int subtype;
@@ -440,6 +442,8 @@ struct ramboard
 	uae_u32 end_address;
 	uae_u32 write_address;
 	bool readonly;
+	bool nodma;
+	bool force16bit;
 	struct boardloadfile lf;
 };
 struct expansion_params
@@ -538,6 +542,7 @@ struct uae_prefs {
 	bool comp_constjump;
 	bool comp_catchfault;
 	int cachesize;
+	TCHAR jitblacklist[MAX_DPATH];
 	bool fpu_strict;
 	int fpu_mode;
 
@@ -605,6 +610,7 @@ struct uae_prefs {
 	int collision_level;
 	int leds_on_screen;
 	int leds_on_screen_mask[2];
+	int leds_on_screen_multiplier[2];
 	int power_led_dim;
 	struct wh osd_pos;
 	int keyboard_leds[3];
@@ -729,7 +735,6 @@ struct uae_prefs {
 	int m68k_speed;
 	double m68k_speed_throttle;
 	double x86_speed_throttle;
-	int cpu_level;				/* Hatari */
 	int cpu_model;
 	int mmu_model;
 	bool mmu_ec;
@@ -753,20 +758,19 @@ struct uae_prefs {
 	struct ramboard z3fastmem[MAX_RAM_BOARDS];
 	struct ramboard fastmem[MAX_RAM_BOARDS];
 	struct romboard romboards[MAX_ROM_BOARDS];
-	uae_u32 z3chipmem_size;
-	uae_u32 z3chipmem_start;
-	uae_u32 chipmem_size;
-	uae_u32 bogomem_size;
-	uae_u32 mbresmem_low_size;
-	uae_u32 mbresmem_high_size;
-	uae_u32 mem25bit_size;
+	struct ramboard z3chipmem;
+	struct ramboard chipmem;
+	struct ramboard bogomem;
+	struct ramboard mbresmem_low;
+	struct ramboard mbresmem_high;
+	struct ramboard mem25bit;
 	uae_u32 debugmem_start;
 	uae_u32 debugmem_size;
 	int cpuboard_type;
 	int cpuboard_subtype;
 	int cpuboard_settings;
-	uae_u32 cpuboardmem1_size;
-	uae_u32 cpuboardmem2_size;
+	struct ramboard cpuboardmem1;
+	struct ramboard cpuboardmem2;
 	int ppc_implementation;
 	bool rtg_hardwareinterrupt;
 	bool rtg_hardwaresprite;
@@ -1016,4 +1020,4 @@ extern void error_log (const TCHAR*, ...);
 
 #endif
 
-#endif /* OPTIONS_CPU_H */
+#endif /* UAE_OPTIONS_H */

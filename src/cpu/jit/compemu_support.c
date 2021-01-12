@@ -251,9 +251,11 @@ static uae_u32 raw_cputbl_count[65536] = { 0, };
 static uae_u16 opcode_nums[65536];
 
 
-static int untranslated_compfn(const void *e1, const void *e2)
+static int __cdecl untranslated_compfn(const void *e1, const void *e2)
 {
-	return raw_cputbl_count[*(const uae_u16 *)e1] < raw_cputbl_count[*(const uae_u16 *)e2];
+	int v1 = *(const uae_u16*)e1;
+	int v2 = *(const uae_u16*)e2;
+	return (int)raw_cputbl_count[v2] - (int)raw_cputbl_count[v1];
 }
 #endif
 
@@ -808,7 +810,7 @@ static inline blockinfo* get_blockinfo_addr_new(void* addr, int /* setstate */)
 
 static void prepare_block(blockinfo* bi);
 
-/* Managment of blockinfos.
+/* Management of blockinfos.
 
    A blockinfo struct is allocated whenever a new block has to be
    compiled. If the list of free blockinfos is empty, we allocate a new
@@ -2304,11 +2306,11 @@ static void bt_l_ri_noclobber(RR4 r, IMM i)
 static void f_tomem(int r)
 {
 	if (live.fate[r].status==DIRTY) {
-#if defined(USE_LONG_DOUBLE)
-		raw_fmov_ext_mr((uintptr)live.fate[r].mem,live.fate[r].realreg);
-#else
-		raw_fmov_mr((uintptr)live.fate[r].mem,live.fate[r].realreg);
-#endif
+		if (use_long_double) {
+			raw_fmov_ext_mr((uintptr)live.fate[r].mem, live.fate[r].realreg);
+		} else {
+			raw_fmov_mr((uintptr)live.fate[r].mem, live.fate[r].realreg);
+		}
 		live.fate[r].status=CLEAN;
 	}
 }
@@ -2316,11 +2318,11 @@ static void f_tomem(int r)
 static void f_tomem_drop(int r)
 {
 	if (live.fate[r].status==DIRTY) {
-#if defined(USE_LONG_DOUBLE)
-		raw_fmov_ext_mr_drop((uintptr)live.fate[r].mem,live.fate[r].realreg);
-#else
-		raw_fmov_mr_drop((uintptr)live.fate[r].mem,live.fate[r].realreg);
-#endif
+		if (use_long_double) {
+			raw_fmov_ext_mr_drop((uintptr)live.fate[r].mem, live.fate[r].realreg);
+		} else {
+			raw_fmov_mr_drop((uintptr)live.fate[r].mem,live.fate[r].realreg);
+		}
 		live.fate[r].status=INMEM;
 	}
 }
@@ -2424,11 +2426,11 @@ static int f_alloc_reg(int r, int willclobber)
 
 	if (!willclobber) {
 		if (live.fate[r].status!=UNDEF) {
-#if defined(USE_LONG_DOUBLE)
-			raw_fmov_ext_rm(bestreg,(uintptr)live.fate[r].mem);
-#else
-			raw_fmov_rm(bestreg,(uintptr)live.fate[r].mem);
-#endif
+			if (use_long_double) {
+				raw_fmov_ext_rm(bestreg, (uintptr)live.fate[r].mem);
+			} else {
+				raw_fmov_rm(bestreg,(uintptr)live.fate[r].mem);
+			}
 		}
 		live.fate[r].status=CLEAN;
 	}
@@ -2958,9 +2960,9 @@ void compiler_exit(void)
 		opcode_nums[i] = i;
 		untranslated_count += raw_cputbl_count[i];
 	}
-	bug("Sorting out untranslated instructions count...");
+	bug("Sorting out untranslated instructions count, total %llu...\n", untranslated_count);
 	qsort(opcode_nums, 65536, sizeof(uae_u16), untranslated_compfn);
-	jit_log("Rank  Opc      Count Name");
+	jit_log("Rank  Opc      Count Name\n");
 	for (int i = 0; i < untranslated_top_ten; i++) {
 		uae_u32 count = raw_cputbl_count[opcode_nums[i]];
 		struct instr *dp;
@@ -2970,7 +2972,7 @@ void compiler_exit(void)
 		dp = table68k + opcode_nums[i];
 		for (lookup = lookuptab; lookup->mnemo != (instrmnem)dp->mnemo; lookup++)
 			;
-		bug("%03d: %04x %10u %s", i, opcode_nums[i], count, lookup->name);
+		bug(_T("%03d: %04x %10u %s\n"), i, opcode_nums[i], count, lookup->name);
 	}
 #endif
 
@@ -3061,7 +3063,7 @@ static void init_comp(void)
 		}
 		else if (i==FP_RESULT) {
 #ifdef UAE
-			live.fate[i].mem=(uae_u32*)(&regs.fp_result);
+			live.fate[i].mem=(uae_u32*)(&regs.fp_result.fp);
 #else
 			live.fate[i].mem=(uae_u32*)(&fpu.result);
 #endif
@@ -3491,7 +3493,7 @@ void get_n_addr(int address, int dest, int tmp)
 #if FIXED_ADDRESSING
 		lea_l_brr(dest,address,MEMBaseDiff);
 #else
-# error "Only fixed adressing mode supported"
+# error "Only fixed addressing mode supported"
 #endif
 		forget_about(tmp);
 		(void) f;
@@ -4181,13 +4183,8 @@ static bool read_fpu_opcode(const char **pp)
 }
 #endif
 
-static bool merge_blacklist()
+static bool merge_blacklist2(const char *blacklist)
 {
-#ifdef UAE
-	const char *blacklist = "";
-#else
-	const char *blacklist = bx_options.jit.jitblacklist;
-#endif
 #ifdef USE_JIT_FPU
 	for (unsigned int i = 0; i < (sizeof(jit_opcodes) / sizeof(jit_opcodes[0])); i++)
 		*jit_opcodes[i].disabled = false;
@@ -4195,8 +4192,42 @@ static bool merge_blacklist()
 	if (blacklist[0] != '\0') {
 		const char *p = blacklist;
 		for (;;) {
+			int len;
 			if (*p == 0)
 				return true;
+
+			const char *endp = strchr(p, ',');
+			if (endp) {
+				len = endp - p - 1;
+			} else {
+				len = strlen(p);
+			}
+
+			TCHAR *s = au(p);
+			bool found = false;
+			for (int i = 0; lookuptab[i].name; i++) {
+				if (!_tcsnicmp(s, lookuptab[i].name, len) && _tcslen(lookuptab[i].name) == len) {
+					int mnemo = lookuptab[i].mnemo;
+					for (int opcode = 0; opcode < 65536; opcode++) {
+						struct instr *table = &table68k[opcode];
+						if (table->mnemo == mnemo) {
+							reset_compop(cft_map(opcode));
+							if (currprefs.cachesize) {
+								jit_log("<JIT compiler> : blacklist opcode : %04x", opcode);
+							}
+						}
+					}
+					p += len;
+					if (*p)
+						p++;
+					found = true;
+					break;
+				}
+			}
+			xfree(s);
+			if (found) {
+				continue;
+			}
 
 			int opcode1 = read_opcode(p);
 			if (opcode1 < 0)
@@ -4223,7 +4254,9 @@ static bool merge_blacklist()
 			}
 
 			if (*p == 0 || *p == ',') {
-				jit_log("<JIT compiler> : blacklist opcodes : %04x-%04x", opcode1, opcode2);
+				if (currprefs.cachesize) {
+					jit_log("<JIT compiler> : blacklist opcodes : %04x-%04x", opcode1, opcode2);
+				}
 				for (int opcode = opcode1; opcode <= opcode2; opcode++)
 					reset_compop(cft_map(opcode));
 
@@ -4239,6 +4272,20 @@ static bool merge_blacklist()
 	return true;
 }
 
+static bool merge_blacklist(void)
+{
+	bool ret;
+#ifdef UAE
+	const char *blacklist = ua(currprefs.jitblacklist);
+	ret = merge_blacklist2(blacklist);
+	xfree((void*)blacklist);
+#else
+	const char *blacklist = bx_options.jit.jitblacklist;
+	ret = merge_blacklist2(blacklist);
+#endif
+	return ret;
+}
+
 void build_comp(void)
 {
 #ifdef FSUAE
@@ -4247,7 +4294,7 @@ void build_comp(void)
 		return;
 	}
 #endif
-	int i;
+	int i, j;
 	unsigned long opcode;
 	const struct comptbl* tbl=op_smalltbl_0_comp_ff;
 	const struct comptbl* nftbl=op_smalltbl_0_comp_nf;
@@ -4308,13 +4355,27 @@ void build_comp(void)
 			nfcompfunctbl[cft_map(nftbl[i].opcode)] = NULL;
 		else
 			nfcompfunctbl[cft_map(nftbl[i].opcode)] = nftbl[i].handler;
+		for (j = 0; nfctbl[j].handler_ff; j++) {
+			if (nfctbl[j].opcode == nftbl[i].opcode) {
 #ifdef NOFLAGS_SUPPORT_GENCOMP
 #ifdef NOFLAGS_SUPPORT_GENCPU
-		nfcpufunctbl[cft_map(nftbl[i].opcode)] = nfctbl[i].handler_nf;
+				nfcpufunctbl[cft_map(nftbl[i].opcode)] = nfctbl[j].handler_nf;
 #else
-		nfcpufunctbl[cft_map(nftbl[i].opcode)] = nfctbl[i].handler_ff;
+				nfcpufunctbl[cft_map(nftbl[i].opcode)] = nfctbl[j].handler_ff;
 #endif
 #endif
+				break;
+			}
+		}
+		if (!nfctbl[j].handler_ff && currprefs.cachesize) {
+			int mnemo = table68k[nftbl[i].opcode].mnemo;
+			struct mnemolookup *lookup;
+			for (lookup = lookuptab; lookup->mnemo != mnemo; lookup++)
+				;
+			char *s = ua(lookup->name);
+			jit_log("%04x (%s) unavailable", nftbl[i].opcode, s);
+			xfree(s);
+		}
 	}
 
 #ifdef NOFLAGS_SUPPORT_GENCOMP
@@ -4338,7 +4399,7 @@ void build_comp(void)
 		int isaddx;
 		int cflow;
 
-		if ((instrmnem)table68k[opcode].mnemo == i_ILLG || table68k[opcode].clev > cpu_level)
+		if (table68k[opcode].mnemo == i_ILLG || table68k[opcode].clev > cpu_level)
 			continue;
 
 		if (table68k[opcode].handler != -1) {

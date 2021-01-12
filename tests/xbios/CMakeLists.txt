@@ -6,11 +6,9 @@ foreach (lvl RANGE 0 4)
           COMMAND ${testrunner} $<TARGET_FILE:hatari> --cpulevel ${lvl})
 endforeach(lvl)
 
-if(ENABLE_WINUAE_CPU)
- add_test(NAME xbios-68030-mmu
-          COMMAND ${testrunner} $<TARGET_FILE:hatari> --cpulevel 3 --mmu true)
- add_test(NAME xbios-68060
-          COMMAND ${testrunner} $<TARGET_FILE:hatari> --cpulevel 6 --mmu false)
- add_test(NAME xbios-68060-mmu
-          COMMAND ${testrunner} $<TARGET_FILE:hatari> --cpulevel 6 --mmu true)
-endif(ENABLE_WINUAE_CPU)
+add_test(NAME xbios-68030-mmu
+         COMMAND ${testrunner} $<TARGET_FILE:hatari> --cpulevel 3 --mmu true)
+add_test(NAME xbios-68060
+         COMMAND ${testrunner} $<TARGET_FILE:hatari> --cpulevel 6 --mmu false)
+add_test(NAME xbios-68060-mmu
+         COMMAND ${testrunner} $<TARGET_FILE:hatari> --cpulevel 6 --mmu true)

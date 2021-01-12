@@ -298,14 +298,10 @@ typedef struct
   bool bForceMax;
   bool bUseExtVdiResolutions;
   bool bKeepResolution;
-#if !WITH_SDL2
-  bool bKeepResolutionST;
-#else
   bool bResizable;
   bool bUseVsync;
   bool bUseSdlRenderer;
   float nZoomFactor;
-#endif
   int nSpec512Threshold;
   int nForceBpp;
   int nVdiColors;
@@ -354,7 +350,12 @@ typedef enum
   DSP_TYPE_EMU
 } DSPTYPE;
 
-#if ENABLE_WINUAE_CPU
+typedef enum
+{
+  VME_TYPE_NONE,
+  VME_TYPE_DUMMY
+} VMETYPE;
+
 typedef enum
 {
   FPU_NONE = 0,
@@ -362,7 +363,6 @@ typedef enum
   FPU_68882 = 68882,
   FPU_CPU = 68040
 } FPUTYPE;
-#endif
 
 typedef enum
 {
@@ -381,19 +381,18 @@ typedef struct
   MACHINETYPE nMachineType;
   bool bBlitter;                  /* TRUE if Blitter is enabled */
   DSPTYPE nDSPType;               /* how to "emulate" DSP */
+  VMETYPE nVMEType;               /* how to "emulate" SCU/VME */
   bool bPatchTimerD;
   bool bFastBoot;                 /* Enable to patch TOS for fast boot */
   bool bFastForward;
   bool bAddressSpace24;           /* Always set to true with old UAE cpu */
   VIDEOTIMINGMODE VideoTimingMode;
 
-#if ENABLE_WINUAE_CPU
   bool bCycleExactCpu;
   FPUTYPE n_FPUType;
   bool bCompatibleFPU;            /* More compatible FPU */
   bool bSoftFloatFPU;
   bool bMMU;                      /* TRUE if MMU is enabled */
-#endif
 } CNF_SYSTEM;
 
 typedef struct

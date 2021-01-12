@@ -137,7 +137,6 @@ bool Change_DoNeedReset(CNF_PARAMS *current, CNF_PARAMS *changed)
 	if (changed->System.nCpuLevel != current->System.nCpuLevel)
 		return true;
 
-#if ENABLE_WINUAE_CPU
 	/* Did change CPU address mode? */
 	if (changed->System.bAddressSpace24 != current->System.bAddressSpace24)
 		return true;
@@ -161,7 +160,6 @@ bool Change_DoNeedReset(CNF_PARAMS *current, CNF_PARAMS *changed)
 	/* Did change size of TT-RAM? */
 	if (current->Memory.TTRamSize_KB != changed->Memory.TTRamSize_KB)
 		return true;
-#endif
 
 	/* Did change size of memory? */
 	if (current->Memory.STRamSize_KB != changed->Memory.STRamSize_KB)
@@ -210,11 +208,9 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	     || changed->Screen.nMaxHeight != current->Screen.nMaxHeight
 	     || changed->Screen.bAllowOverscan != current->Screen.bAllowOverscan
 	     || changed->Screen.bShowStatusbar != current->Screen.bShowStatusbar
-#if WITH_SDL2
 	     || changed->Screen.bUseSdlRenderer != current->Screen.bUseSdlRenderer
 	     || changed->Screen.bResizable != current->Screen.bResizable
 	     || changed->Screen.bUseVsync != current->Screen.bUseVsync
-#endif
 	    ))
 	{
 		Dprintf("- screenmode>\n");

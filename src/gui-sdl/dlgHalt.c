@@ -58,10 +58,8 @@ static void do_quit(int exitval)
 void Dialog_HaltDlg(void)
 {
 	bool show = SDL_ShowCursor(SDL_QUERY);
-#if WITH_SDL2
 	bool mode = SDL_GetRelativeMouseMode();
 	SDL_SetRelativeMouseMode(SDL_FALSE);
-#endif
 	SDL_ShowCursor(SDL_ENABLE);
 
 	/* if we get halt with --run-vbls, just quit right away */
@@ -99,7 +97,5 @@ void Dialog_HaltDlg(void)
 		do_quit(1);
 	}
 	SDL_ShowCursor(show);
-#if WITH_SDL2
 	SDL_SetRelativeMouseMode(mode);
-#endif
 }

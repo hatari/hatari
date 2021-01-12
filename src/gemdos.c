@@ -1684,14 +1684,14 @@ static bool GemDOS_DFree(Uint32 Params)
 
 
 /*-----------------------------------------------------------------------*/
-/**
- * Helper to map Unix errno to GEMDOS error value
- */
 typedef enum {
 	ERROR_FILE,
 	ERROR_PATH
 } etype_t;
 
+/**
+ * Helper to log libc errno and map it to GEMDOS error value
+ */
 static Uint32 errno2gemdos(const int error, const etype_t etype)
 {
 	LOG_TRACE(TRACE_OS_GEMDOS, "-> ERROR (errno = %d)\n", error);
@@ -2334,10 +2334,13 @@ static bool GemDOS_Read(Uint32 Params)
 	
 	if (ferror(FileHandles[Handle].FileHandle))
 	{
+		int errnum = errno;
 		Log_Printf(LOG_WARN, "GEMDOS failed to read from '%s': %s\n",
 			   FileHandles[Handle].szActualName, strerror(errno));
-		Regs[REG_D0] = errno2gemdos(errno, ERROR_FILE);
-	} else
+		Regs[REG_D0] = errno2gemdos(errnum, ERROR_FILE);
+		clearerr(FileHandles[Handle].FileHandle);
+	}
+	else
 		/* Return number of bytes read */
 		Regs[REG_D0] = nBytesRead;
 
@@ -2402,9 +2405,11 @@ static bool GemDOS_Write(Uint32 Params)
 	nBytesWritten = fwrite(pBuffer, 1, Size, fp);
 	if (fh_idx >= 0 && ferror(fp))
 	{
+		int errnum = errno;
 		Log_Printf(LOG_WARN, "GEMDOS failed to write to '%s'\n",
 			   FileHandles[fh_idx].szActualName);
-		Regs[REG_D0] = errno2gemdos(errno, ERROR_FILE);
+		Regs[REG_D0] = errno2gemdos(errnum, ERROR_FILE);
+		clearerr(fp);
 	}
 	else
 	{
@@ -3357,7 +3362,7 @@ static bool GemDOS_Super(Uint32 Params)
 	/* Get SR, return address and vector offset from stack frame */
 	nSR = STMemory_ReadWord(Regs[REG_A7]);
 	nRetAddr = STMemory_ReadLong(Regs[REG_A7] + SIZE_WORD);
-	if (currprefs.cpu_level > 0)
+	if (currprefs.cpu_model > 68000)
 		nVec = STMemory_ReadWord(Regs[REG_A7] + SIZE_WORD + SIZE_LONG);
 
 	if (nParam == 1)                /* Query mode? */
@@ -3371,7 +3376,7 @@ static bool GemDOS_Super(Uint32 Params)
 		nParam = regs.usp;
 	}
 
-	if (currprefs.cpu_level > 0)
+	if (currprefs.cpu_model > 68000)
 		nExcFrameSize = SIZE_WORD + SIZE_LONG + SIZE_WORD;
 	else
 		nExcFrameSize = SIZE_WORD + SIZE_LONG;
@@ -3962,7 +3967,7 @@ int GemDOS_Trap(void)
 	else
  	{
 		Params = Regs[REG_A7] + SIZE_WORD + SIZE_LONG;  /* skip SR & PC pushed to super stack */
-		if (currprefs.cpu_level > 0)
+		if (currprefs.cpu_model > 68000)
 			Params += SIZE_WORD;   /* Skip extra word if CPU is >=68010 */
 	}
 

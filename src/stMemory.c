@@ -463,18 +463,21 @@ int STMemory_CorrectSTRamSize(void)
 
 	if (Config_IsMachineFalcon())
 	{
-		/* These values need to match ones used in STMemory_SetDefaultConfig()
-		 * above.
-		 *
-		 * Check ranges which might have non-supported memory values:
-		 *   10MB, 6MB & 2.5MB
+		/* Falcon ST RAM values need to match to ones used
+		 * in STMemory_SetDefaultConfig() above.
 		 */
-		if (STRamSize_KB > 8*1024 && STRamSize_KB < 14*1024)
+		if (STRamSize_KB > 8*1024)
 			STRamSize_KB = 14*1024;
-		else if (STRamSize_KB > 4*1024 && STRamSize_KB < 8*1024)
+		else if (STRamSize_KB > 4*1024)
 			STRamSize_KB = 8*1024;
-		else if (STRamSize_KB > 2*1024 && STRamSize_KB < 4*1024)
+		else if (STRamSize_KB > 2*1024)
 			STRamSize_KB = 4*1024;
+		else if (STRamSize_KB > 1024)
+			STRamSize_KB = 2*1024;
+		else if (STRamSize_KB > 512)
+			STRamSize_KB = 1024;
+		else
+			STRamSize_KB = 512;
 
 		if (STRamSize_KB != ConfigureParams.Memory.STRamSize_KB)
 		{
@@ -487,7 +490,7 @@ int STMemory_CorrectSTRamSize(void)
 	{
 		if (STRamSize_KB > 10*1024)
 		{
-			Log_Printf(LOG_INFO, "maximum MegaSTE/TT ST-RAM amount is 10MB, not %dMB\n",
+			Log_Printf(LOG_INFO, "max ST-RAM on real MegaSTE/TT would be 10MB due to VME, not %dMB\n",
 				   STRamSize_KB/1024);
 		}
 	}
@@ -928,12 +931,37 @@ int	STMemory_RAM_Validate_Size_KB ( int TotalMem )
 	if ( TotalMem <= 14 )
 		TotalMem *= 1024;
 
-	/* New format where ST RAM size is in KB */
-	if (  ( TotalMem ==  128 ) || ( TotalMem ==  256 ) || ( TotalMem ==  512 ) || ( TotalMem ==  640 )
-		|| ( TotalMem == 1024 ) || ( TotalMem == 2048 ) || ( TotalMem == 2176 ) || ( TotalMem == 2560 )
-		|| ( TotalMem == 4096 ) || ( TotalMem == 8*1024 ) || ( TotalMem == 10*1024 ) || ( TotalMem == 14*1024 ) )
+	/* New format where ST RAM size is in KB
+	 *
+	 * These memory amounts are accepted for all machine types, but in
+	 * case of Falcon, rounded up later in STMemory_SetDefaultConfig(),
+	 * to amounts Falcon mem config reg actually supports
+	 *
+	 * Note: Hatari emulates ST with Ricoch chipset, and MegaST with
+	 * IMP one, see ioMem.c::IoMem_FixVoidAccessFor*ST()
+	 */
+	switch (TotalMem)
+	{
+		/* all ST/STE MMU chipsets */
+	case 128:
+	case 256:
+		/* other than IMP ST/STE MMU chipset (mixed banks) */
+	case 640:
+	case 2176:
+	case 2560:
+		/* all machines */
+	case 512:
+	case 1024:
+	case 2048:
+		/* max on original (Mega)ST(e) machines */
+	case 4096:
+	case  8*1024:
+		/* max on real TT, and HW modified MegaSTE (due to VME) */
+	case 10*1024:
+		/* max on Falcon, and HW modified ST/MegaST/STE */
+	case 14*1024:
 		return TotalMem;
-
+	}
 	return -1;
 }
 

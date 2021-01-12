@@ -73,6 +73,8 @@ int candirect = -1;
 #ifdef JIT
 /* Set by each memory handler that does not simply access real memory. */
 int special_mem;
+/* do not use get_n_addr */
+int jit_n_addr_unsafe;
 #endif
 
 #ifdef NATMEM_OFFSET
@@ -1875,6 +1877,12 @@ static void map_banks2 (addrbank *bank, int start, int size, int realsize, int q
 			size, realsize, start);
 	}
 
+#ifdef JIT
+	if ((bank->jit_read_flag | bank->jit_write_flag) & S_N_ADDR) {
+		jit_n_addr_unsafe = 1;
+	}
+#endif
+
 #ifndef ADDRESS_SPACE_24BIT
 	if (start >= 0x100) {
 		int real_left = 0;
@@ -2100,4 +2108,33 @@ int memory_valid_address(uaecptr addr, uae_u32 size)
 	addr -= ab->startaccessmask;
 	addr &= ab->mask;
 	return addr + size <= ab->allocated_size;
+}
+
+void dma_put_word(uaecptr addr, uae_u16 v)
+{
+	addrbank* ab = &get_mem_bank(addr);
+	if (ab->flags & ABFLAG_NODMA)
+		return;
+	put_word(addr, v);
+}
+void dma_put_byte(uaecptr addr, uae_u8 v)
+{
+	addrbank* ab = &get_mem_bank(addr);
+	if (ab->flags & ABFLAG_NODMA)
+		return;
+	put_byte(addr, v);
+}
+uae_u16 dma_get_word(uaecptr addr)
+{
+	addrbank* ab = &get_mem_bank(addr);
+	if (ab->flags & ABFLAG_NODMA)
+		return 0xffff;
+	return get_word(addr);
+}
+uae_u8 dma_get_byte(uaecptr addr)
+{
+	addrbank* ab = &get_mem_bank(addr);
+	if (ab->flags & ABFLAG_NODMA)
+		return 0xff;
+	return get_byte(addr);
 }

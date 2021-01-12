@@ -24,6 +24,9 @@
 #ifdef __GNUC__
 #define HAVE_VAR_ATTRIBUTE_UNUSED 1
 #endif
+#if defined(_MSC_VER)
+#include "../includes/vs-fix.h"
+#endif
 #endif
 
 #ifndef UAE
@@ -344,6 +347,7 @@ extern void gettimeofday( struct timeval *tv, void *blah );
 #define O_RDWR   _O_RDWR
 #define O_CREAT  _O_CREAT
 #define O_TRUNC  _O_TRUNC
+#ifndef WINUAE_FOR_HATARI
 #define strcasecmp _tcsicmp 
 #define strncasecmp _tcsncicmp 
 #define W_OK 0x2
@@ -354,6 +358,7 @@ struct direct
 {
     TCHAR d_name[1];
 };
+#endif /* WINUAE_FOR_HATARI */
 #include <sys/utime.h>
 #define utimbuf __utimbuf64
 #define USE_ZFILE

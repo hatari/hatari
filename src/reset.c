@@ -36,6 +36,7 @@ const char Reset_fileid[] = "Hatari reset.c";
 #include "vdi.h"
 #include "nvram.h"
 #include "video.h"
+#include "vme.h"
 #include "falcon/videl.h"
 #include "falcon/dsp.h"
 #include "debugcpu.h"
@@ -84,7 +85,10 @@ static int Reset_ST(bool bCold)
 	{
 		Ncr5380_Reset();
 	}
-
+	if (Config_IsMachineTT() || Config_IsMachineMegaSTE())
+	{
+		VME_Reset();
+	}
 	if (Config_IsMachineFalcon())
 	{
 		DSP_Reset();                  /* Reset the DSP */

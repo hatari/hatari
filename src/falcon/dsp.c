@@ -120,7 +120,7 @@ int	DSP_ProcessIACK ( void )
 		VecNr = IoMem_ReadByte ( 0xffa203 );
 	else
 		VecNr = -1;
-	
+
 	return VecNr;
 }
 
@@ -219,7 +219,7 @@ void DSP_MemorySnapShot_Capture(bool bSave)
 
 	if ( bDspEnabled )
 		DSP_Enable();
-	else	
+	else
 		DSP_Disable();
 #endif
 }
@@ -263,7 +263,7 @@ void DSP_Run(int nHostCycles)
 	}
 
 #endif
-} 
+}
 
 /**
  * Enable/disable DSP debugging mode
@@ -491,29 +491,35 @@ void DSP_Info(FILE *fp, Uint32 dummy)
 	int i, j;
 	const char *stackname[] = { "SSH", "SSL" };
 
-	fputs("DSP core information:\n", fp);
+	fputs("\nDSP core information:\n", fp);
 
 	for (i = 0; i < ARRAY_SIZE(stackname); i++) {
-		fprintf(fp, "- %s stack:", stackname[i]);
+		fprintf(fp, "  %s stack:", stackname[i]);
 		for (j = 0; j < ARRAY_SIZE(dsp_core.stack[0]); j++) {
 			fprintf(fp, " %04hx", dsp_core.stack[i][j]);
 		}
 		fputs("\n", fp);
 	}
 
-	fprintf(fp, "- Interrupt IPL:");
-	for (i = 0; i < ARRAY_SIZE(dsp_core.interrupt_ipl); i++) {
-		fprintf(fp, " %04hx", dsp_core.interrupt_ipl[i]);
+	fprintf(stderr, "\nInterrupts:\n");
+	for (i = 0; i < 32; i++) {
+		fprintf(stderr, "  %s: ", dsp_interrupt_name[i]);
+		if ((1<<i) & dsp_core.interrupt_status & (dsp_core.interrupt_mask|DSP_INTER_NMI_MASK)) {
+			fprintf(stderr, "Pending ");
+		}
+		if ((1<<i) & DSP_INTER_NMI_MASK) {
+			fprintf(stderr, "at level 3");
+		} else {
+			for (j = 2; j>=0; j--) {
+				if ((1<<i) & dsp_core.interrupt_mask_level[j]) {
+					fprintf(stderr, "at level %i", j);
+				}
+			}
+		}
+		fputs("\n", stderr);
 	}
-	fputs("\n", fp);
 
-	fprintf(fp, "- Pending ints: ");
-	for (i = 0; i < ARRAY_SIZE(dsp_core.interrupt_isPending); i++) {
-		fprintf(fp, " %04hx", dsp_core.interrupt_isPending[i]);
-	}
-	fputs("\n", fp);
-
-	fprintf(fp, "- Hostport:");
+	fprintf(fp, "\nHostport:");
 	for (i = 0; i < ARRAY_SIZE(dsp_core.hostport); i++) {
 		fprintf(fp, " %02x", dsp_core.hostport[i]);
 	}
@@ -533,7 +539,7 @@ void DSP_DisasmRegisters(FILE *fp)
 		dsp_core.registers[DSP_REG_A2], dsp_core.registers[DSP_REG_A1], dsp_core.registers[DSP_REG_A0]);
 	fprintf(fp, "B: B2: %02x  B1: %06x  B0: %06x\n",
 		dsp_core.registers[DSP_REG_B2], dsp_core.registers[DSP_REG_B1], dsp_core.registers[DSP_REG_B0]);
-	
+
 	fprintf(fp, "X: X1: %06x  X0: %06x\n", dsp_core.registers[DSP_REG_X1], dsp_core.registers[DSP_REG_X0]);
 	fprintf(fp, "Y: Y1: %06x  Y0: %06x\n", dsp_core.registers[DSP_REG_Y1], dsp_core.registers[DSP_REG_Y0]);
 
@@ -569,7 +575,7 @@ int DSP_GetRegisterAddress(const char *regname, Uint32 **addr, Uint32 *mask)
 		size_t bits;
 		Uint32 mask;
 	} reg_addr_t;
-	
+
 	/* sorted by name so that this can be bisected */
 	static const reg_addr_t registers[] = {
 
@@ -654,7 +660,7 @@ int DSP_GetRegisterAddress(const char *regname, Uint32 **addr, Uint32 *mask)
 		return 0;
 	}
 	len = i;
-	
+
 	/* bisect */
 	l = 0;
 	r = ARRAY_SIZE(registers) - 1;
@@ -696,7 +702,7 @@ bool DSP_Disasm_SetRegister(const char *arg, Uint32 value)
 	if (arg[0]=='S' || arg[0]=='s') {
 		if (arg[1]=='P' || arg[1]=='p') {
 			dsp_core.registers[DSP_REG_SP] = value & BITMASK(6);
-			value &= BITMASK(4); 
+			value &= BITMASK(4);
 			dsp_core.registers[DSP_REG_SSH] = dsp_core.stack[0][value];
 			dsp_core.registers[DSP_REG_SSL] = dsp_core.stack[1][value];
 			return true;
@@ -829,8 +835,8 @@ void DSP_HandleReadAccess(void)
 {
 	Uint32 addr;
 	Uint8 value;
-	bool multi_access = false; 
-	
+	bool multi_access = false;
+
 	for (addr = IoAccessBaseAddress; addr < IoAccessBaseAddress+nIoMemAccessSize; addr++)
 	{
 #if ENABLE_DSP_EMU
@@ -856,7 +862,7 @@ void DSP_HandleReadAccess(void)
 void DSP_HandleWriteAccess(void)
 {
 	Uint32 addr;
-	bool multi_access = false; 
+	bool multi_access = false;
 
 	for (addr = IoAccessBaseAddress; addr < IoAccessBaseAddress+nIoMemAccessSize; addr++)
 	{
