@@ -226,7 +226,7 @@ static uint8_t Keymap_SymbolicToStScanCode(const SDL_keysym* pKeySym)
 
 
 /**
- * Remap SDL scancode key to ST Scan code - this is the version for SDL2
+ * Remap SDL scancode key to ST Scan code
  */
 static uint8_t Keymap_PcToStScanCode(const SDL_keysym* pKeySym)
 {
