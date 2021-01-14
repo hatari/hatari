@@ -3670,32 +3670,12 @@ FPU.</p>
     </tr>
     <tr>
       <td>Fit:
-      <a href="http://www.pouet.net/prod.php?which=17311">Hex Pistols</a></td>
-      <td class="major">2.3.1</td>
-      <td>yes</td>
-      <td>emu</td>
-      <td>14MB + FPU, .tSCc port from Amiga.  Startup fails due
-          to Line-F panic with EmuTOS, and bombs + Pterm() with TOS4
-          (worked with the removed oldUAE CPU core)</td>
-    </tr>
-    <tr>
-      <td>Fit:
       <a href="http://pouet.net/prod.php?which=990">Mahabharata</a></td>
       <td>2.1</td>
       <td>yes</td>
       <td>emu</td>
       <td>Bombay-style... With some HW / 3D drivers, SDL2 fails to create
           wide enough screen texture, workaround added to 2.1</td>
-    </tr>
-    <tr>
-      <td>Fit:
-      <a href="http://www.pouet.net/prod.php?which=26083">Stercus Accidit</a></td>
-      <td class="major">2.3.1</td>
-      <td>yes</td>
-      <td>emu</td>
-      <td>8MB + FPU, .tSCc port from Amiga. Startup fails due to
-          Line-F panic with EmuTOS, and bombs + Pterm() with TOS4
-	  (worked with the removed oldUAE CPU core)</td>
     </tr>
     <tr>
       <td>Fun Industries:
@@ -4276,10 +4256,16 @@ site.</p>
 <p>
 Falcon demos that are documented to be for a 060 CPU.  Issue with some
 of them is them relying on CT TOS and its emulation for the missing
-060 CPU and FPU instructions.  Hatari doesn't support CT TOS ROMs (as
-it would require emulating additional hardware of the CT60, or
-patching out that HW support, and there being too many ROM versions
-for latter to be feasible).
+060 CPU and FPU instructions.  Some of them may work with the oldUAE
+CPU core included to earlier Hatari versions, because it did not limit
+its instruction emulation only to instructions available on the actual
+selected CPU and FPU HW type.
+</p>
+<p>
+Hatari does not support CT TOS ROMs (as that would require either
+emulating the extra HW in CT60, or patching out that HW support, but
+there are too many ROM versions for it to be feasible). Its extra
+instruction emulation unfortuantely is not available separately.
 </p>
 
 <table>
@@ -4294,6 +4280,26 @@ for latter to be feasible).
     </tr>
   </thead>
   <tbody>
+    <tr>
+      <td>Fit:
+      <a href="http://www.pouet.net/prod.php?which=17311">Hex Pistols</a></td>
+      <td class="major">2.3.1</td>
+      <td>yes</td>
+      <td>emu</td>
+      <td>14MB + 060 FPU, .tSCc port from Amiga.  Startup fails due
+          to panic with EmuTOS, and bombs / Pterm() with TOS4
+          (demo worked with the removed oldUAE CPU core)</td>
+    </tr>
+    <tr>
+      <td>Fit:
+      <a href="http://www.pouet.net/prod.php?which=26083">Stercus Accidit</a></td>
+      <td class="major">2.3.1</td>
+      <td>yes</td>
+      <td>emu</td>
+      <td>8MB + 060 FPU, .tSCc port from Amiga. Startup fails due
+          to panic with EmuTOS, and bombs / Pterm() with TOS4
+          (demo worked with the removed oldUAE CPU core)</td>
+    </tr>
     <tr>
       <td>Lamers:
       <a href="https://demozoo.org/productions/195301/">Lamer than Lamers</a></td>
