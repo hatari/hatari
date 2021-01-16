@@ -31,10 +31,66 @@
 #endif
 
 int nIDEPartitions = 0;
+
 struct IDEState;
+typedef void EndTransferFunc(struct IDEState *);
+typedef struct BlockDriverState BlockDriverState;
 
+/* NOTE: IDEState represents in fact one drive */
+typedef struct IDEState
+{
+	/* ide config */
+	int is_cdrom;
+	int cylinders, heads, sectors;
+	int64_t nb_sectors;
+	int mult_sectors;
+	int identify_set;
+	uint16_t identify_data[256];
+	int drive_serial;
+	/* ide regs */
+	uint8_t feature;
+	uint8_t error;
+	uint32_t nsector;
+	uint8_t sector;
+	uint8_t lcyl;
+	uint8_t hcyl;
+	/* other part of tf for lba48 support */
+	uint8_t hob_feature;
+	uint8_t hob_nsector;
+	uint8_t hob_sector;
+	uint8_t hob_lcyl;
+	uint8_t hob_hcyl;
 
-static struct IDEState *opaque_ide_if;
+	uint8_t select;
+	uint8_t status;
+
+	/* 0x3f6 command, only meaningful for drive 0 */
+	uint8_t cmd;
+	/* set for lba48 access */
+	uint8_t lba48;
+	/* depends on bit 4 in select, only meaningful for drive 0 */
+	struct IDEState *cur_drive;
+	BlockDriverState *bs;
+	/* ATAPI specific */
+	uint8_t sense_key;
+	uint8_t asc;
+	int packet_transfer_size;
+	int elementary_transfer_size;
+	int io_buffer_index;
+	int lba;
+	int cd_sector_size;
+	/* ATA DMA state */
+	int io_buffer_size;
+	/* PIO transfer handling */
+	int req_nb_sectors; /* number of sectors per interrupt */
+	EndTransferFunc *end_transfer_func;
+	uint8_t *data_ptr;
+	uint8_t *data_end;
+	uint8_t *io_buffer;
+	int media_changed;
+} IDEState;
+
+static IDEState ide_state[2];
 
 static void ide_ioport_write(void *opaque, uint32_t addr, uint32_t val);
 static uint32_t ide_ioport_read(void *opaque, uint32_t addr1);
@@ -116,11 +172,11 @@ uae_u32 REGPARAM3 Ide_Mem_bget(uaecptr addr)
 
 	if (ideport >= 1 && ideport <= 7)
 	{
-		retval = ide_ioport_read(opaque_ide_if, ideport);
+		retval = ide_ioport_read(ide_state, ideport);
 	}
 	else if (ideport == 8 || ideport == 22)
 	{
-		retval = ide_status_read(opaque_ide_if, 0);
+		retval = ide_status_read(ide_state, 0);
 	}
 	else
 	{
@@ -151,7 +207,7 @@ uae_u32 REGPARAM3 Ide_Mem_wget(uaecptr addr)
 
 	if (addr == 0xf00000 || addr == 0xf00002)
 	{
-		retval = ide_data_readw(opaque_ide_if, 0);
+		retval = ide_data_readw(ide_state, 0);
 	}
 	else
 	{
@@ -182,7 +238,7 @@ uae_u32 REGPARAM3 Ide_Mem_lget(uaecptr addr)
 
 	if (addr == 0xf00000)
 	{
-		retval = ide_data_readl(opaque_ide_if, 0);
+		retval = ide_data_readl(ide_state, 0);
 	}
 	else
 	{
@@ -223,11 +279,11 @@ void REGPARAM3 Ide_Mem_bput(uaecptr addr, uae_u32 val)
 
 	if (ideport >= 1 && ideport <= 7)
 	{
-		ide_ioport_write(opaque_ide_if, ideport, val);
+		ide_ioport_write(ide_state, ideport, val);
 	}
 	else if (ideport == 8 || ideport == 22)
 	{
-		ide_cmd_write(opaque_ide_if, 0, val);
+		ide_cmd_write(ide_state, 0, val);
 	}
 }
 
@@ -253,7 +309,7 @@ void REGPARAM3 Ide_Mem_wput(uaecptr addr, uae_u32 val)
 
 	if (addr == 0xf00000 || addr == 0xf00002)
 	{
-		ide_data_writew(opaque_ide_if, 0, val);
+		ide_data_writew(ide_state, 0, val);
 	}
 }
 
@@ -281,7 +337,7 @@ void REGPARAM3 Ide_Mem_lput(uaecptr addr, uae_u32 val)
 
 	if (addr == 0xf00000)
 	{
-		ide_data_writel(opaque_ide_if, 0, val);
+		ide_data_writel(ide_state, 0, val);
 	}
 }
 
@@ -330,8 +386,6 @@ void REGPARAM3 Ide_Mem_lput(uaecptr addr, uae_u32 val)
 #define ENOMEDIUM ENODEV
 #endif
 
-
-typedef struct BlockDriverState BlockDriverState;
 
 struct BlockDriverState {
     int64_t total_sectors; /* if we are reading a disk image, give its
@@ -890,62 +944,6 @@ static void bdrv_eject(BlockDriverState *bs, int eject_flag)
 #define SENSE_NOT_READY       2
 #define SENSE_ILLEGAL_REQUEST 5
 #define SENSE_UNIT_ATTENTION  6
-
-typedef void EndTransferFunc(struct IDEState *);
-
-/* NOTE: IDEState represents in fact one drive */
-typedef struct IDEState
-{
-	/* ide config */
-	int is_cdrom;
-	int cylinders, heads, sectors;
-	int64_t nb_sectors;
-	int mult_sectors;
-	int identify_set;
-	uint16_t identify_data[256];
-	int drive_serial;
-	/* ide regs */
-	uint8_t feature;
-	uint8_t error;
-	uint32_t nsector;
-	uint8_t sector;
-	uint8_t lcyl;
-	uint8_t hcyl;
-	/* other part of tf for lba48 support */
-	uint8_t hob_feature;
-	uint8_t hob_nsector;
-	uint8_t hob_sector;
-	uint8_t hob_lcyl;
-	uint8_t hob_hcyl;
-
-	uint8_t select;
-	uint8_t status;
-
-	/* 0x3f6 command, only meaningful for drive 0 */
-	uint8_t cmd;
-	/* set for lba48 access */
-	uint8_t lba48;
-	/* depends on bit 4 in select, only meaningful for drive 0 */
-	struct IDEState *cur_drive;
-	BlockDriverState *bs;
-	/* ATAPI specific */
-	uint8_t sense_key;
-	uint8_t asc;
-	int packet_transfer_size;
-	int elementary_transfer_size;
-	int io_buffer_index;
-	int lba;
-	int cd_sector_size;
-	/* ATA DMA state */
-	int io_buffer_size;
-	/* PIO transfer handling */
-	int req_nb_sectors; /* number of sectors per interrupt */
-	EndTransferFunc *end_transfer_func;
-	uint8_t *data_ptr;
-	uint8_t *data_end;
-	uint8_t *io_buffer;
-	int media_changed;
-} IDEState;
 
 
 static void padstr(char *str, const char *src, int len)
@@ -2729,8 +2727,7 @@ void Ide_Init(void)
 	if (!Ide_IsAvailable() )
 		return;
 
-	opaque_ide_if = calloc(2, sizeof(IDEState));
-	assert(opaque_ide_if);
+	memset(ide_state, 0, sizeof(ide_state));
 
 	for (i = 0; i < 2; i++)
 	{
@@ -2759,7 +2756,7 @@ void Ide_Init(void)
 		}
 	}
 
-	ide_init2(&opaque_ide_if[0], hd_table[0],
+	ide_init2(&ide_state[0], hd_table[0],
 	          ConfigureParams.Ide[1].bUseDevice ? hd_table[1] : NULL);
 }
 
@@ -2784,18 +2781,13 @@ void Ide_UnInit(void)
 		}
 	}
 
-	if (opaque_ide_if)
+	for (i = 0; i < 2; i++)
 	{
-		for (i = 0; i < 2; i++)
+		if (ide_state[i].io_buffer)
 		{
-			if (opaque_ide_if[i].io_buffer)
-			{
-				free(opaque_ide_if[i].io_buffer);
-				opaque_ide_if[i].io_buffer = NULL;
-			}
+			free(ide_state[i].io_buffer);
+			ide_state[i].io_buffer = NULL;
 		}
-		free(opaque_ide_if);
-		opaque_ide_if = NULL;
 	}
 
 	nIDEPartitions = 0;
