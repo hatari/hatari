@@ -92,14 +92,14 @@ typedef struct IDEState
 
 static IDEState ide_state[2];
 
-static void ide_ioport_write(void *opaque, uint32_t addr, uint32_t val);
-static uint32_t ide_ioport_read(void *opaque, uint32_t addr1);
-static uint32_t ide_status_read(void *opaque, uint32_t addr);
-static void ide_cmd_write(void *opaque, uint32_t addr, uint32_t val);
-static void ide_data_writew(void *opaque, uint32_t addr, uint32_t val);
-static uint32_t ide_data_readw(void *opaque, uint32_t addr);
-static void ide_data_writel(void *opaque, uint32_t addr, uint32_t val);
-static uint32_t ide_data_readl(void *opaque, uint32_t addr);
+static void ide_ioport_write(IDEState *ide_if, uint32_t addr, uint32_t val);
+static uint32_t ide_ioport_read(IDEState *ide_if, uint32_t addr1);
+static uint32_t ide_status_read(IDEState *ide_if, uint32_t addr);
+static void ide_cmd_write(IDEState *ide_if, uint32_t addr, uint32_t val);
+static void ide_data_writew(IDEState *ide_if, uint32_t addr, uint32_t val);
+static uint32_t ide_data_readw(IDEState *ide_if, uint32_t addr);
+static void ide_data_writel(IDEState *ide_if, uint32_t addr, uint32_t val);
+static uint32_t ide_data_readl(IDEState *ide_if, uint32_t addr);
 
 /**
  * Check whether IDE is available: The Falcon always has an IDE controller,
@@ -399,7 +399,6 @@ struct BlockDriverState {
     void *change_opaque;
 
     FILE *fhndl;
-    void *opaque;
     off_t file_size;
     int media_changed;
     int byteswap;
@@ -1972,9 +1971,8 @@ static void ide_clear_hob(IDEState *ide_if)
 	ide_if[1].select &= ~(1 << 7);
 }
 
-static void ide_ioport_write(void *opaque, uint32_t addr, uint32_t val)
+static void ide_ioport_write(IDEState *ide_if, uint32_t addr, uint32_t val)
 {
-	IDEState *ide_if = opaque;
 	IDEState *s;
 	int unit, n;
 	int lba48 = 0;
@@ -2316,9 +2314,8 @@ static void ide_ioport_write(void *opaque, uint32_t addr, uint32_t val)
 	}
 }
 
-static uint32_t ide_ioport_read(void *opaque, uint32_t addr1)
+static uint32_t ide_ioport_read(IDEState *ide_if, uint32_t addr1)
 {
-	IDEState *ide_if = opaque;
 	IDEState *s = ide_if->cur_drive;
 	uint32_t addr;
 	int ret;
@@ -2395,9 +2392,8 @@ static uint32_t ide_ioport_read(void *opaque, uint32_t addr1)
 	return ret;
 }
 
-static uint32_t ide_status_read(void *opaque, uint32_t addr)
+static uint32_t ide_status_read(IDEState *ide_if, uint32_t addr)
 {
-	IDEState *ide_if = opaque;
 	IDEState *s = ide_if->cur_drive;
 	int ret;
 
@@ -2411,9 +2407,8 @@ static uint32_t ide_status_read(void *opaque, uint32_t addr)
 	return ret;
 }
 
-static void ide_cmd_write(void *opaque, uint32_t addr, uint32_t val)
+static void ide_cmd_write(IDEState *ide_if, uint32_t addr, uint32_t val)
 {
-	IDEState *ide_if = opaque;
 	IDEState *s;
 	int i;
 
@@ -2450,9 +2445,9 @@ static void ide_cmd_write(void *opaque, uint32_t addr, uint32_t val)
 	ide_if[1].cmd = val;
 }
 
-static void ide_data_writew(void *opaque, uint32_t addr, uint32_t val)
+static void ide_data_writew(IDEState *ide_if, uint32_t addr, uint32_t val)
 {
-	IDEState *s = ((IDEState *)opaque)->cur_drive;
+	IDEState *s = ide_if->cur_drive;
 	uint8_t *p;
 
 	if (!s->data_ptr || s->data_ptr > s->data_end)
@@ -2466,9 +2461,9 @@ static void ide_data_writew(void *opaque, uint32_t addr, uint32_t val)
 		s->end_transfer_func(s);
 }
 
-static uint32_t ide_data_readw(void *opaque, uint32_t addr)
+static uint32_t ide_data_readw(IDEState *ide_if, uint32_t addr)
 {
-	IDEState *s = ((IDEState *)opaque)->cur_drive;
+	IDEState *s = ide_if->cur_drive;
 	uint8_t *p;
 	int ret;
 
@@ -2484,9 +2479,9 @@ static uint32_t ide_data_readw(void *opaque, uint32_t addr)
 	return ret;
 }
 
-static void ide_data_writel(void *opaque, uint32_t addr, uint32_t val)
+static void ide_data_writel(IDEState *ide_if, uint32_t addr, uint32_t val)
 {
-	IDEState *s = ((IDEState *)opaque)->cur_drive;
+	IDEState *s = ide_if->cur_drive;
 	uint8_t *p;
 
 	if (!s->data_ptr || s->data_ptr > s->data_end)
@@ -2500,9 +2495,9 @@ static void ide_data_writel(void *opaque, uint32_t addr, uint32_t val)
 		s->end_transfer_func(s);
 }
 
-static uint32_t ide_data_readl(void *opaque, uint32_t addr)
+static uint32_t ide_data_readl(IDEState *ide_if, uint32_t addr)
 {
-	IDEState *s = ((IDEState *)opaque)->cur_drive;
+	IDEState *s = ide_if->cur_drive;
 	uint8_t *p;
 	uint32_t ret;
 
