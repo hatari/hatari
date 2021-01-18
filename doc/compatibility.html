@@ -4260,18 +4260,19 @@ site.</p>
 <h3>060 Falcon demos</h3>
 
 <p>
-Falcon demos that are documented to be for a 060 CPU.  Issue with some
-of them is them relying on CT TOS and its emulation for the missing
-060 CPU and FPU instructions.  Some of them may work with the oldUAE
-CPU core included to earlier Hatari versions, because it did not limit
-its instruction emulation only to instructions available on the actual
-selected CPU and FPU HW type.
+Here are Falcon demos documented to be for a 060 CPU.  Issue with
+several of them is them relying on CT TOS and its emulation for the
+030/040 CPU/FPU instructions missing in 060.  Some of the demos may
+even have worked with the oldUAE CPU core included to earlier Hatari
+versions, because it did not limit its instruction emulation only to
+instructions available on the actual selected CPU and FPU HW type.
 </p>
 <p>
-Hatari does not support CT TOS ROMs (as that would require either
-emulating the extra HW in CT60, or patching out that HW support, but
-there are too many ROM versions for it to be feasible). Its extra
-instruction emulation unfortuantely is not available separately.
+FPSP060 is standalone Atari program providing emulation of the
+instructions missing on 060.  Just have it in AUTO folder for demos
+listed as requiring it.  See:
+<a href="https://github.com/th-otto/fpsp">Thorsten Otto's FPSP
+repository</a>.
 </p>
 
 <table>
@@ -4289,42 +4290,42 @@ instruction emulation unfortuantely is not available separately.
     <tr>
       <td>Fit:
       <a href="http://www.pouet.net/prod.php?which=17311">Hex Pistols</a></td>
-      <td class="major">2.3.1</td>
+      <td class="minor">2.4-dev</td>
       <td>yes</td>
       <td>emu</td>
-      <td>14MB + 060 FPU, .tSCc port from Amiga.  Startup fails due
-          to panic with EmuTOS, and bombs / Pterm() with TOS4
-          (demo worked with the removed oldUAE CPU core)</td>
+      <td>14MB + 060 FPU, .tSCc port from Amiga.  Requires FPSP060.
+          Background effects (spirals etc) are missing in several
+          screens, as are the in/out zoomed faces before the 3
+          bottles screen</td>
     </tr>
     <tr>
       <td>Fit:
       <a href="http://www.pouet.net/prod.php?which=26083">Stercus Accidit</a></td>
-      <td class="major">2.3.1</td>
+      <td class="minor">2.4-dev</td>
       <td>yes</td>
       <td>emu</td>
-      <td>8MB + 060 FPU, .tSCc port from Amiga. Startup fails due
-          to panic with EmuTOS, and bombs / Pterm() with TOS4
-          (demo worked with the removed oldUAE CPU core)</td>
+      <td>8MB + 060 FPU, .tSCc port from Amiga.  Requires FPSP060.
+          All effects are not correct (rectangular instead of rounded)</td>
     </tr>
     <tr>
       <td>Lamers:
       <a href="https://demozoo.org/productions/195301/">Lamer than Lamers</a></td>
-      <td class="minor">2.3</td>
+      <td>2.4-dev</td>
       <td>yes</td>
       <td>-</td>
-      <td>Works with 030 + 32MB TT-RAM + FPU, but freezes during demo title
-          if 060 used. Music if DSP enabled.  Lower part of "THE END"
-	  has garbage</td>
+      <td>Requires 32MB TT-RAM + FPU. Starts with 030 or 060 + FPSP060,
+          Music if DSP enabled</td>
     </tr>
     <tr>
       <td>Lamers:
       <a href="http://www.pouet.net/prod.php?which=78717">F22.0</a></td>
-      <td class="major">2.3</td>
+      <td>2.4-dev</td>
       <td>yes</td>
       <td>-</td>
-      <td>Stops while loading assets.  060 + 64MB TT-RAM + FPU:
-	  --machine falcon --dsp none --cpulevel 6
-	  --fpu internal --sound off --fast-forward yes
+      <td>060 + 64MB TT-RAM + FPU + FPSP060.  Works only with EmuTOS:
+	  --machine falcon --tos etos512k.img --dsp none --sound off
+	  --cpu-exact off --compatible off --fast-forward yes
+	  --cpulevel 6 --cpuclock 32 --fpu internal
 	  --addr24 off --ttram 64 -s 4</td>
     </tr>
     <tr>
@@ -4367,7 +4368,8 @@ instruction emulation unfortuantely is not available separately.
       <td class="minor">2.3</td>
       <td>-</td>
       <td>-</td>
-      <td>512b intro, starts only with 030 + 68882, but renders wrong</td>
+      <td>512b intro, requires FPU. Starts with 030 or 060 + FPSP060,
+      but renders wrong</td>
     </tr>
   </tbody>
 </table>

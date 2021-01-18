@@ -1265,21 +1265,23 @@ Demos working in EmuTOS >v1.0 (with DSP support):
 - Dan's Lustiges Kinderfest (by Lazer)
 - Enraged (by Avena)
 - Ex Illusion (by Aura)
+- F22.0 (060, by Lamers)
 - FOG-intro (by Psychosis)
+- Hex Pistols (060, by Fit)
 - Hmmm... (by Escape)
+- I want you to remember (by KÜA Software & Pixel Twins)
+  - Monochrome, with DSP music
 - Illness (by Escape)
 - JESTERday (by POV), musicdemo
 - Motion (unfinished demo by Aggression)
-- I want you to remember (by KÜA Software & Pixel Twins)
-  - Monochrome, with DSP music
+- Lamer than Lamers (060, by Lamers)
 - Papa was a Blade Runner (by EKO)
 - ROT3DBMP
 - Sidetracked (by Collapze)
 - Silly Venture 2k14 invitro (by Dune / Sector One)
 - Silly Venture 2k16 invitro (by Dune / Mystic Bytes)
 - Silly Venture 2k19 invitro (by Mystic Bytes)
-- Stercus Accidit (by Fit)
-  - Worked with the (removed) oldUAE CPU core
+- Stercus Accidit (060, by Fit)
 - Stocasto (by NoCrew)
   - works also with v1.0, but then DSP 3D objects are missing
 - Tere Ra'I (by Cerebral Vortex / Dune / Sector One)
