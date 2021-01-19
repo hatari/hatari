@@ -3441,18 +3441,6 @@ FPU.</p>
     </tr>
     <tr>
       <td>DHS:
-      <a href="http://pouet.net/prod.php?which=53186">Codein</a>,
-      <a href="http://pouet.net/prod.php?which=25677">Derealization</a>
-      </td>
-      <td>2.1</td>
-      <td>yes</td>
-      <td>-</td>
-      <td>030 + FPU and 4MB + 32MB TT-RAM (less for Codein).
-          Supposed to work with 060, but that dies
-	  to FPU exception at start. Music with DSP emu</td>
-    </tr>
-    <tr>
-      <td>DHS:
       <a href="http://pouet.net/prod.php?which=2165">Don't Break The Oath</a></td>
       <td>1.5</td>
       <td>yes</td>
@@ -4288,24 +4276,33 @@ repository</a>.
   </thead>
   <tbody>
     <tr>
+      <td>DHS:
+      <a href="http://pouet.net/prod.php?which=53186">Codein</a>,
+      <a href="http://pouet.net/prod.php?which=25677">Derealization</a>
+      </td>
+      <td>2.4-dev</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>4MB + 32MB TT-RAM (less for Codein) + FPU. Start
+          with 030 or 060 + FPSP060. Music if DSP enabled</td>
+    </tr>
+    <tr>
       <td>Fit:
       <a href="http://www.pouet.net/prod.php?which=17311">Hex Pistols</a></td>
-      <td class="minor">2.4-dev</td>
+      <td>2.4-dev</td>
       <td>yes</td>
       <td>emu</td>
-      <td>14MB + 060 FPU, .tSCc port from Amiga.  Requires FPSP060.
-          Background effects (spirals etc) are missing in several
-          screens, as are the in/out zoomed faces before the 3
-          bottles screen</td>
+      <td>14MB + 060 + FPU, .tSCc port from Amiga.  Requires FPSP060
+          and full software FPU emulation (--fpu-softfloat on)</td>
     </tr>
     <tr>
       <td>Fit:
       <a href="http://www.pouet.net/prod.php?which=26083">Stercus Accidit</a></td>
-      <td class="minor">2.4-dev</td>
+      <td>2.4-dev</td>
       <td>yes</td>
       <td>emu</td>
-      <td>8MB + 060 FPU, .tSCc port from Amiga.  Requires FPSP060.
-          All effects are not correct (rectangular instead of rounded)</td>
+      <td>8MB + 060 + FPU, .tSCc port from Amiga.  Requires FPSP060
+          and full software FPU emulation (--fpu-softfloat on)</td>
     </tr>
     <tr>
       <td>Lamers:
