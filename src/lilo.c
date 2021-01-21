@@ -281,7 +281,7 @@ bool lilo_init(void)
 	ROMBaseHost[0x0002] = 0x4e;		/* jmp <abs.addr> */
 	ROMBaseHost[0x0003] = 0xf9;
 
-	/* TODO: 0x30 is AB40 reset address, not Falcon/TT one */
+	/* TODO: ROM + 0x30 is Linux reset address on AB40, 0x4 on Falcon/TT */
 #if 0
 	if (!(ConfigureParams.Log.bNatFeats && ConfigureParams.Lilo.bHaltOnReboot)) {
 		/* set up a minimal OS for successful Linux/m68k reboot */
