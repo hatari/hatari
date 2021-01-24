@@ -26,10 +26,6 @@
 #include "str.h"
 #include "sysdeps.h"
 
-#if HAVE_MALLOC_H
-# include <malloc.h>
-#endif
-
 int nIDEPartitions = 0;
 
 struct IDEState;
