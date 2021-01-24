@@ -1980,6 +1980,7 @@ more:
 					case 2:	size = 12; sizeChar = 'X'; break;
 					case 7: if((opcode[1] & 0xE000) != 0x6000)	// MOVE.P <ea>,FPn{Dn-Factor}
 								goto more;	// illegal size mask
+						/* fallthrough */
 					case 3:	size = 12; sizeChar = 'P'; break;
 					case 4:	size = 2; sizeChar = 'W'; break;
 					case 5:	size = 8; sizeChar = 'D'; break;

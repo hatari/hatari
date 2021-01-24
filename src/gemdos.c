@@ -1700,6 +1700,7 @@ static Uint32 errno2gemdos(const int error, const etype_t etype)
 	case ENOENT:
 		if (etype == ERROR_FILE)
 			return GEMDOS_EFILNF;/* File not found */
+		/* fallthrough */
 	case ENOTDIR:
 		return GEMDOS_EPTHNF;        /* Path not found */
 	case ENOTEMPTY:
