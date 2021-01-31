@@ -92,13 +92,6 @@ static bool	STX_LoadSaveFile_TRCK ( int Drive , STX_SAVE_TRACK_STRUCT *pStxSaveT
 
 static bool	STX_Insert_internal ( int Drive , const char *FilenameSTX , uint8_t *pImageBuffer , long ImageSize );
 
-static uint16_t	STX_ReadU16_LE ( uint8_t *p );
-static uint32_t	STX_ReadU32_LE ( uint8_t *p );
-static uint16_t	STX_ReadU16_BE ( uint8_t *p );
-static uint32_t	STX_ReadU32_BE ( uint8_t *p );
-static void	STX_WriteU16_BE ( uint8_t *p , uint16_t val );
-static void	STX_WriteU32_BE ( uint8_t *p , uint32_t val );
-
 static void	STX_FreeStruct ( STX_MAIN_STRUCT *pStxMain );
 static void	STX_FreeSaveStruct ( int Drive );
 static void	STX_FreeSaveSectorsStructAll ( STX_SAVE_SECTOR_STRUCT *pSaveSectorsStruct , uint32_t SaveSectorsCount );
@@ -426,10 +419,10 @@ bool STX_WriteDisk ( int Drive , const char *pszFileName , uint8_t *pBuffer , in
 	*p++ = WD1772_SAVE_VERSION;						/* +6 */
 	*p++ = WD1772_SAVE_REVISION;						/* +7 */
 
-	STX_WriteU32_BE ( p , SaveSectorsCount_real );				/* +8 ... +11 */
+	Mem_WriteU32_BE ( p , SaveSectorsCount_real );				/* +8 ... +11 */
 	p += 4;
 	
-	STX_WriteU32_BE ( p , STX_SaveStruct[ Drive ].SaveTracksCount );	/* +12 ... +15 */
+	Mem_WriteU32_BE ( p , STX_SaveStruct[ Drive ].SaveTracksCount );	/* +12 ... +15 */
 	p += 4;
 	
 	if ( fwrite ( buf , p-buf , 1 , FileOut ) != 1 )
@@ -458,21 +451,21 @@ bool STX_WriteDisk ( int Drive , const char *pszFileName , uint8_t *pBuffer , in
 		p += strlen ( WD1772_SAVE_SECTOR_ID );
 
 		BlockLen = 20-4 + pStxSaveSector->SectorSize;
-		STX_WriteU32_BE ( p , BlockLen );				/* +4 ... +7 */
+		Mem_WriteU32_BE ( p , BlockLen );				/* +4 ... +7 */
 		p += 4;
 
 		*p++ = pStxSaveSector->Track;					/* +8 */
 		*p++ = pStxSaveSector->Side;					/* +9 */
-		STX_WriteU16_BE ( p , pStxSaveSector->BitPosition );		/* +10 ... +11 */
+		Mem_WriteU16_BE ( p , pStxSaveSector->BitPosition );		/* +10 ... +11 */
 		p += 2;
 		*p++ = pStxSaveSector->ID_Track;				/* +12 */
 		*p++ = pStxSaveSector->ID_Head;					/* +13 */
 		*p++ = pStxSaveSector->ID_Sector;				/* +14 */
 		*p++ = pStxSaveSector->ID_Size;					/* +15 */
-		STX_WriteU16_BE ( p , pStxSaveSector->ID_CRC );			/* +16 ... +17 */
+		Mem_WriteU16_BE ( p , pStxSaveSector->ID_CRC );			/* +16 ... +17 */
 		p += 2;
 		
-		STX_WriteU16_BE ( p , pStxSaveSector->SectorSize );		/* +18 ... +19 */
+		Mem_WriteU16_BE ( p , pStxSaveSector->SectorSize );		/* +18 ... +19 */
 		p += 2;
 
 		/* Write the header */
@@ -509,13 +502,13 @@ bool STX_WriteDisk ( int Drive , const char *pszFileName , uint8_t *pBuffer , in
 		p += strlen ( WD1772_SAVE_TRACK_ID );
 
 		BlockLen = 12-4 + pStxSaveTrack->TrackSizeWrite;
-		STX_WriteU32_BE ( p , BlockLen );				/* +4 ... +7 */
+		Mem_WriteU32_BE ( p , BlockLen );				/* +4 ... +7 */
 		p += 4;
 
 		*p++ = pStxSaveTrack->Track;					/* +8 */			
 		*p++ = pStxSaveTrack->Side;					/* +9 */
 
-		STX_WriteU16_BE ( p , pStxSaveTrack->TrackSizeWrite );		/* +10 ... +11 */
+		Mem_WriteU16_BE ( p , pStxSaveTrack->TrackSizeWrite );		/* +10 ... +11 */
 		p += 2;
 
 		/* Write the header */
@@ -590,10 +583,10 @@ static bool	STX_LoadSaveFile ( int Drive , const char *FilenameSave )
 		return false;
 	}
 
-	STX_SaveStruct[ Drive ].SaveSectorsCount = STX_ReadU32_BE ( p );	/* +8 ... +11 */
+	STX_SaveStruct[ Drive ].SaveSectorsCount = Mem_ReadU32_BE ( p );	/* +8 ... +11 */
 	p += 4;
 
-	STX_SaveStruct[ Drive ].SaveTracksCount = STX_ReadU32_BE ( p );		/* +12 ... +15 */
+	STX_SaveStruct[ Drive ].SaveTracksCount = Mem_ReadU32_BE ( p );		/* +12 ... +15 */
 	p += 4;
 
 
@@ -702,7 +695,7 @@ static bool	STX_LoadSaveFile ( int Drive , const char *FilenameSave )
 
 		/* Next block */
 		p = p_save + 4;
-		p += STX_ReadU32_BE ( p );
+		p += Mem_ReadU32_BE ( p );
 	}
 
 	free ( SaveFileBuffer );
@@ -720,17 +713,17 @@ static bool	STX_LoadSaveFile_SECT ( int Drive, STX_SAVE_SECTOR_STRUCT *pStxSaveS
 	pStxSaveSector->Track = *p++;
 	pStxSaveSector->Side = *p++;
 
-	pStxSaveSector->BitPosition = STX_ReadU16_BE ( p );
+	pStxSaveSector->BitPosition = Mem_ReadU16_BE ( p );
 	p += 2;
 
 	pStxSaveSector->ID_Track = *p++;
 	pStxSaveSector->ID_Head = *p++;
 	pStxSaveSector->ID_Sector = *p++;
 	pStxSaveSector->ID_Size = *p++;
-	pStxSaveSector->ID_CRC = STX_ReadU16_BE ( p );
+	pStxSaveSector->ID_CRC = Mem_ReadU16_BE ( p );
 	p += 2;
 
-	pStxSaveSector->SectorSize = STX_ReadU16_BE ( p );
+	pStxSaveSector->SectorSize = Mem_ReadU16_BE ( p );
 	p += 2;
 
 	/* Copy the sector's data */
@@ -760,7 +753,7 @@ static bool	STX_LoadSaveFile_TRCK ( int Drive , STX_SAVE_TRACK_STRUCT *pStxSaveT
 	pStxSaveTrack->Track = *p++;
 	pStxSaveTrack->Side = *p++;
 
-	pStxSaveTrack->TrackSizeWrite = STX_ReadU16_BE ( p );
+	pStxSaveTrack->TrackSizeWrite = Mem_ReadU16_BE ( p );
 	p += 2;
 
 	/* Copy the track's data */
@@ -874,58 +867,6 @@ bool	STX_Eject ( int Drive )
 	return true;
 }
 
-
-/*-----------------------------------------------------------------------*/
-/*
- * Read words and longs stored in little endian order
- */
-static uint16_t	STX_ReadU16_LE ( uint8_t *p )
-{
-	return (p[1]<<8) +p [0];
-}
-
-static uint32_t	STX_ReadU32_LE ( uint8_t *p )
-{
-	return (p[3]<<24) + (p[2]<<16) + (p[1]<<8) +p[0];
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
- * Read words and longs stored in big endian order
- */
-static uint16_t	STX_ReadU16_BE ( uint8_t *p )
-{
-	return (p[0]<<8) + p[1];
-}
-
-static uint32_t	STX_ReadU32_BE ( uint8_t *p )
-{
-	return (p[0]<<24) + (p[1]<<16) + (p[2]<<8) +p[3];
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
- * Store words and longs in big endian order
- */
-static void	STX_WriteU16_BE ( uint8_t *p , uint16_t val )
-{
-	p[ 1 ] = val & 0xff;
-	val >>= 8;
-	p[ 0 ] = val & 0xff;
-}
-
-static void	STX_WriteU32_BE ( uint8_t *p , uint32_t val )
-{
-	p[ 3 ] = val & 0xff;
-	val >>= 8;
-	p[ 2 ] = val & 0xff;
-	val >>= 8;
-	p[ 1 ] = val & 0xff;
-	val >>= 8;
-	p[ 0 ] = val & 0xff;
-}
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -1068,12 +1009,12 @@ STX_MAIN_STRUCT	*STX_BuildStruct ( uint8_t *pFileBuffer , int Debug )
 
 	/* Read file's header */
 	memcpy ( pStxMain->FileID , p , 4 ); p += 4;
-	pStxMain->Version	=	STX_ReadU16_LE ( p ); p += 2;
-	pStxMain->ImagingTool	=	STX_ReadU16_LE ( p ); p += 2;
-	pStxMain->Reserved_1	=	STX_ReadU16_LE ( p ); p += 2;
+	pStxMain->Version	=	Mem_ReadU16_LE ( p ); p += 2;
+	pStxMain->ImagingTool	=	Mem_ReadU16_LE ( p ); p += 2;
+	pStxMain->Reserved_1	=	Mem_ReadU16_LE ( p ); p += 2;
 	pStxMain->TracksCount	=	*p++;;
 	pStxMain->Revision	=	*p++;
-	pStxMain->Reserved_2	=	STX_ReadU32_LE ( p ); p += 4;
+	pStxMain->Reserved_2	=	Mem_ReadU32_LE ( p ); p += 4;
 
 	if ( Debug & STX_DEBUG_FLAG_STRUCTURE )
 		fprintf ( stderr , "STX header ID='%.4s' Version=%4.4x ImagingTool=%4.4x Reserved1=%4.4x"
@@ -1098,11 +1039,11 @@ STX_MAIN_STRUCT	*STX_BuildStruct ( uint8_t *pFileBuffer , int Debug )
 	{
 		p_cur = p;
 
-		pStxTrack->BlockSize		=	STX_ReadU32_LE ( p ); p += 4;
-		pStxTrack->FuzzySize		=	STX_ReadU32_LE ( p ); p += 4;
-		pStxTrack->SectorsCount		=	STX_ReadU16_LE ( p ); p += 2;
-		pStxTrack->Flags		=	STX_ReadU16_LE ( p ); p += 2;
-		pStxTrack->MFMSize		=	STX_ReadU16_LE ( p ); p += 2;
+		pStxTrack->BlockSize		=	Mem_ReadU32_LE ( p ); p += 4;
+		pStxTrack->FuzzySize		=	Mem_ReadU32_LE ( p ); p += 4;
+		pStxTrack->SectorsCount		=	Mem_ReadU16_LE ( p ); p += 2;
+		pStxTrack->Flags		=	Mem_ReadU16_LE ( p ); p += 2;
+		pStxTrack->MFMSize		=	Mem_ReadU16_LE ( p ); p += 2;
 		pStxTrack->TrackNumber		=	*p++;
 		pStxTrack->RecordType		=	*p++;
 
@@ -1150,14 +1091,14 @@ STX_MAIN_STRUCT	*STX_BuildStruct ( uint8_t *pFileBuffer , int Debug )
 		else if ( ( pStxTrack->Flags & STX_TRACK_FLAG_TRACK_IMAGE_SYNC ) == 0 )	/* Track with size+data */
 		{
 			pStxTrack->TrackImageSyncPosition = 0;
-			pStxTrack->TrackImageSize = STX_ReadU16_LE ( pStxTrack->pTrackData );
+			pStxTrack->TrackImageSize = Mem_ReadU16_LE ( pStxTrack->pTrackData );
 			pStxTrack->pTrackImageData = pStxTrack->pTrackData + 2;
 			pStxTrack->pSectorsImageData = pStxTrack->pTrackImageData + pStxTrack->TrackImageSize;
 		}
 		else									/* Track with sync offset + size + data */
 		{
-			pStxTrack->TrackImageSyncPosition = STX_ReadU16_LE ( pStxTrack->pTrackData );
-			pStxTrack->TrackImageSize = STX_ReadU16_LE ( pStxTrack->pTrackData + 2 );
+			pStxTrack->TrackImageSyncPosition = Mem_ReadU16_LE ( pStxTrack->pTrackData );
+			pStxTrack->TrackImageSize = Mem_ReadU16_LE ( pStxTrack->pTrackData + 2 );
 			pStxTrack->pTrackImageData = pStxTrack->pTrackData + 4;
 			pStxTrack->pSectorsImageData = pStxTrack->pTrackImageData + pStxTrack->TrackImageSize;
 		}
@@ -1173,9 +1114,9 @@ STX_MAIN_STRUCT	*STX_BuildStruct ( uint8_t *pFileBuffer , int Debug )
 		{
 			pStxSector = &(pStxTrack->pSectorsStruct[ Sector ]);
 
-			pStxSector->DataOffset = STX_ReadU32_LE ( p ); p += 4;
-			pStxSector->BitPosition = STX_ReadU16_LE ( p ); p += 2;
-			pStxSector->ReadTime = STX_ReadU16_LE ( p ); p += 2;
+			pStxSector->DataOffset = Mem_ReadU32_LE ( p ); p += 4;
+			pStxSector->BitPosition = Mem_ReadU16_LE ( p ); p += 2;
+			pStxSector->ReadTime = Mem_ReadU16_LE ( p ); p += 2;
 			pStxSector->ID_Track = *p++;
 			pStxSector->ID_Head = *p++;
 			pStxSector->ID_Sector = *p++;
@@ -1223,8 +1164,8 @@ STX_MAIN_STRUCT	*STX_BuildStruct ( uint8_t *pFileBuffer , int Debug )
 		{
 			if ( pStxMain->Revision == 2 )			/* Specific timing table  */
 			{
-				pStxTrack->TimingFlags = STX_ReadU16_LE ( pStxTrack->pTiming );	/* always '5' ? */
-				pStxTrack->TimingSize = STX_ReadU16_LE ( pStxTrack->pTiming + 2 );
+				pStxTrack->TimingFlags = Mem_ReadU16_LE ( pStxTrack->pTiming );	/* always '5' ? */
+				pStxTrack->TimingSize = Mem_ReadU16_LE ( pStxTrack->pTiming + 2 );
 				pStxTrack->pTimingData = pStxTrack->pTiming + 4;	/* 2 bytes of timing for each block of 16 bytes */
 			}
 
