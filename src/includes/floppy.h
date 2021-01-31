@@ -25,6 +25,7 @@
 #define	FLOPPY_IMAGE_TYPE_DIM			3
 #define	FLOPPY_IMAGE_TYPE_IPF			4		/* handled by capsimage library */
 #define	FLOPPY_IMAGE_TYPE_STX			5
+#define	FLOPPY_IMAGE_TYPE_SCP			6
 
 #define	FLOPPY_BOOT_SECTOR_EXE_SUM		0x1234
 

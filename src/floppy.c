@@ -40,6 +40,7 @@ const char Floppy_fileid[] = "Hatari floppy.c";
 #include "dim.h"
 #include "floppy_ipf.h"
 #include "floppy_stx.h"
+#include "floppy_scp.h"
 #include "zip.h"
 #include "str.h"
 #include "video.h"
@@ -62,6 +63,7 @@ static const char * const pszDiskImageNameExts[] =
 	".raw",
 	".ctr",
 	".stx",
+	".scp",
 	NULL
 };
 
@@ -549,6 +551,8 @@ bool Floppy_InsertDiskIntoDrive(int Drive)
 		EmulationDrives[Drive].pBuffer = IPF_ReadDisk(Drive, filename, &nImageBytes, &ImageType);
 	else if (STX_FileNameIsSTX(filename, true))
 		EmulationDrives[Drive].pBuffer = STX_ReadDisk(Drive, filename, &nImageBytes, &ImageType);
+	else if (SCP_FileNameIsSCP(filename, true))
+		EmulationDrives[Drive].pBuffer = SCP_ReadDisk(Drive, filename, &nImageBytes, &ImageType);
 	else if (ZIP_FileNameIsZIP(filename))
 	{
 		const char *zippath = ConfigureParams.DiskImage.szDiskZipPath[Drive];
@@ -585,6 +589,18 @@ bool Floppy_InsertDiskIntoDrive(int Drive)
 		}
 	}
 
+	/* For SCP, call specific function to handle the inserted image */
+	else if ( ImageType == FLOPPY_IMAGE_TYPE_SCP )
+	{
+		if ( SCP_Insert ( Drive , filename , EmulationDrives[Drive].pBuffer , nImageBytes ) == false )
+		{
+			free ( EmulationDrives[Drive].pBuffer );
+			EmulationDrives[Drive].pBuffer = NULL;
+			Log_AlertDlg(LOG_INFO, "SCP image '%s' loading failed", filename);
+			return false;
+		}
+	}
+
 	/* Store image filename (required for ejecting the disk later!) */
 	strcpy(EmulationDrives[Drive].sFileName, filename);
 
@@ -600,6 +616,8 @@ bool Floppy_InsertDiskIntoDrive(int Drive)
 	else if ( ImageType == FLOPPY_IMAGE_TYPE_STX )
 		EmulationDrives[Drive].bOKToSave = true;
 	else if ( ImageType == FLOPPY_IMAGE_TYPE_IPF )
+		EmulationDrives[Drive].bOKToSave = false;
+	else if ( ImageType == FLOPPY_IMAGE_TYPE_SCP )
 		EmulationDrives[Drive].bOKToSave = false;
 	else
 		EmulationDrives[Drive].bOKToSave = false;
@@ -646,6 +664,8 @@ bool Floppy_EjectDiskFromDrive(int Drive)
 					bSaved = IPF_WriteDisk(Drive, psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
 				else if (STX_FileNameIsSTX(psFileName, true))
 					bSaved = STX_WriteDisk(Drive, psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
+				else if (SCP_FileNameIsSCP(psFileName, true))
+					bSaved = SCP_WriteDisk(Drive, psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
 				else if (ZIP_FileNameIsZIP(psFileName))
 					bSaved = ZIP_WriteDisk(Drive, psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
 				if (bSaved)
@@ -671,6 +691,9 @@ bool Floppy_EjectDiskFromDrive(int Drive)
 	/* Free data used by this STX image */
 	else if ( EmulationDrives[Drive].ImageType == FLOPPY_IMAGE_TYPE_STX )
 		STX_Eject ( Drive );
+	/* Free data used by this SCP image */
+	else if ( EmulationDrives[Drive].ImageType == FLOPPY_IMAGE_TYPE_SCP )
+		SCP_Eject ( Drive );
 
 
 	/* Drive is now empty */

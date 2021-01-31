@@ -21,6 +21,7 @@ const char ZIP_fileid[] = "Hatari zip.c";
 #include "floppy.h"
 #include "floppy_ipf.h"
 #include "floppy_stx.h"
+#include "floppy_scp.h"
 #include "log.h"
 #include "msa.h"
 #include "st.h"
@@ -49,6 +50,7 @@ static const char * const pszDiskNameExts[] =
 	".raw",
 	".ctr",
 	".stx",
+	".scp",
 	NULL
 };
 
@@ -364,6 +366,12 @@ static long ZIP_CheckImageFile(unzFile uf, char *filename, int namelen, int *pIm
 	if (IPF_FileNameIsIPF(filename, false))
 	{
 		*pImageType = FLOPPY_IMAGE_TYPE_IPF;
+		return file_info.uncompressed_size;
+	}
+
+	if (SCP_FileNameIsSCP(filename, false))
+	{
+		*pImageType = FLOPPY_IMAGE_TYPE_SCP;
 		return file_info.uncompressed_size;
 	}
 

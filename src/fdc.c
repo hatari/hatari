@@ -26,6 +26,7 @@ const char FDC_fileid[] = "Hatari fdc.c";
 #include "floppy.h"
 #include "floppy_ipf.h"
 #include "floppy_stx.h"
+#include "floppy_scp.h"
 #include "ioMem.h"
 #include "log.h"
 #include "m68000.h"

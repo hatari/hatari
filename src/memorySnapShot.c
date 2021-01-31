@@ -30,6 +30,7 @@ const char MemorySnapShot_fileid[] = "Hatari memorySnapShot.c";
 #include "floppy.h"
 #include "floppy_ipf.h"
 #include "floppy_stx.h"
+#include "floppy_scp.h"
 #include "gemdos.h"
 #include "acia.h"
 #include "ikbd.h"
@@ -347,6 +348,7 @@ void MemorySnapShot_Capture_Do(void)
 		Floppy_MemorySnapShot_Capture(true);
 		IPF_MemorySnapShot_Capture(true);			/* After fdc/floppy are saved */
 		STX_MemorySnapShot_Capture(true);			/* After fdc/floppy are saved */
+		SCP_MemorySnapShot_Capture(true);			/* After fdc/floppy are saved */
 		GemDOS_MemorySnapShot_Capture(true);
 		ACIA_MemorySnapShot_Capture(true);
 		IKBD_MemorySnapShot_Capture(true);
@@ -441,6 +443,7 @@ void MemorySnapShot_Restore_Do(void)
 		Floppy_MemorySnapShot_Capture(false);
 		IPF_MemorySnapShot_Capture(false);			/* After fdc/floppy are restored, as IPF depends on them */
 		STX_MemorySnapShot_Capture(false);			/* After fdc/floppy are restored, as STX depends on them */
+		SCP_MemorySnapShot_Capture(false);			/* After fdc/floppy are restored, as SCP depends on them */
 		GemDOS_MemorySnapShot_Capture(false);
 		ACIA_MemorySnapShot_Capture(false);
 		IKBD_MemorySnapShot_Capture(false);			/* After ACIA */

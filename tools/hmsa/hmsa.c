@@ -87,7 +87,7 @@ bool DlgAlert_Query(const char *text)
  * ../src/file.c requires zip.c, which calls IPF_FileNameIsIPF
  * We create an empty function to replace it, as we don't use IPF here
  * and don't want to compile with all the IPF related files.
- * We do it also for STX.
+ * We do it also for STX and SCP.
  */
 extern bool IPF_FileNameIsIPF(const char *pszFileName, bool bAllowGZ);		/* function prototype */
 bool IPF_FileNameIsIPF(const char *pszFileName, bool bAllowGZ)
@@ -98,6 +98,11 @@ extern bool STX_FileNameIsSTX(const char *pszFileName, bool bAllowGZ);		/* funct
 bool STX_FileNameIsSTX(const char *pszFileName, bool bAllowGZ)
 {
 	return false;
+}
+extern bool SCP_FileNameIsSCP(const char *pszFileName, bool bAllowGZ);		/* function prototype */
+bool SCP_FileNameIsSCP(const char *pszFileName, bool bAllowGZ)
+{
+	return FALSE;
 }
 
 

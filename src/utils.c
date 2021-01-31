@@ -121,3 +121,79 @@ int	Hatari_rand ( void )
 
 
 
+
+/*-----------------------------------------------------------------------*/
+/*
+ * Read words and longs from memory stored in little endian order (eg intel x86 cpu)
+ */
+Uint16	Mem_ReadU16_LE ( Uint8 *p )
+{
+	return (p[1]<<8) +p [0];
+}
+
+Uint32	Mem_ReadU32_LE ( Uint8 *p )
+{
+	return (p[3]<<24) + (p[2]<<16) + (p[1]<<8) +p[0];
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+ * Read words and longs from memory stored in big endian order (eg 680xx cpu)
+ */
+Uint16	Mem_ReadU16_BE ( Uint8 *p )
+{
+	return (p[0]<<8) + p[1];
+}
+
+Uint32	Mem_ReadU32_BE ( Uint8 *p )
+{
+	return (p[0]<<24) + (p[1]<<16) + (p[2]<<8) +p[3];
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+ * Store words and longs in memory in little endian order (eg intel x86 cpu)
+ */
+void	Mem_WriteU16_LE ( Uint8 *p , Uint16 val )
+{
+	p[ 0 ] = val & 0xff;
+	val >>= 8;
+	p[ 1 ] = val & 0xff;
+}
+
+void	Mem_WriteU32_LE ( Uint8 *p , Uint32 val )
+{
+	p[ 0 ] = val & 0xff;
+	val >>= 8;
+	p[ 1 ] = val & 0xff;
+	val >>= 8;
+	p[ 1 ] = val & 0xff;
+	val >>= 8;
+	p[ 3 ] = val & 0xff;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+ * Store words and longs in memory in big endian order (eg 680xx cpu)
+ */
+void	Mem_WriteU16_BE ( Uint8 *p , Uint16 val )
+{
+	p[ 1 ] = val & 0xff;
+	val >>= 8;
+	p[ 0 ] = val & 0xff;
+}
+
+void	Mem_WriteU32_BE ( Uint8 *p , Uint32 val )
+{
+	p[ 3 ] = val & 0xff;
+	val >>= 8;
+	p[ 2 ] = val & 0xff;
+	val >>= 8;
+	p[ 1 ] = val & 0xff;
+	val >>= 8;
+	p[ 0 ] = val & 0xff;
+}
+
