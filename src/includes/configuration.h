@@ -385,7 +385,7 @@ typedef struct
   bool bPatchTimerD;
   bool bFastBoot;                 /* Enable to patch TOS for fast boot */
   bool bFastForward;
-  bool bAddressSpace24;           /* Always set to true with old UAE cpu */
+  bool bAddressSpace24;           /* true if using a 24-bit address bus */
   VIDEOTIMINGMODE VideoTimingMode;
 
   bool bCycleExactCpu;
