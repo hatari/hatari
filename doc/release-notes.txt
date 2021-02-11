@@ -68,6 +68,7 @@ Emulator improvements:
     and prevent user seeing invalid VDI mode sizes
 - GEMDOS HD:
   - Fix: clear GEMDOS Fread / Fwrite errors
+  - Fix: Allow GEMDOS tasks to use other tasks' file handles
 - Debugger:
   - Repeat CPU & DSP "step" and "next" commands on Enter
   - Output PC location in CPU & DSP disassembly
@@ -103,6 +104,7 @@ Documentation:
 
 Fixed programs:
 - maxYMiser FM v1.53 by gwEn (support for syncsquare effect)
+- We Were @ demo HD version under GEMDOS HD (file handle access)
 
 
  Version 2.3.1 (2020-12-27)

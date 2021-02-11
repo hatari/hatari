@@ -1053,9 +1053,10 @@ static int GemDOS_GetValidFileHandle(int Handle)
 		Uint32 current = STMemory_ReadLong(act_pd);
 		if (FileHandles[Handle].Basepage == current || Forced >= 0)
 			return Handle;
-		/* bug in Atari program or in Hatari GEMDOS emu */
-		Log_Printf(LOG_WARN, "PREVENTED: program 0x%x accessing program 0x%x file handle %d.",
+		/* A potential bug in Atari program or Hatari GEMDOS emulation */
+		Log_Printf(LOG_WARN, "program (basebase 0x%x) accessing another program (basepage 0x%x) file handle %d.",
 			     current, FileHandles[Handle].Basepage, Handle);
+		return Handle;
 	}
 	/* invalid handle */
 	return -1;
