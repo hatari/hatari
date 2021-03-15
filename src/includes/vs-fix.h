@@ -7,6 +7,7 @@
 #ifndef VS_FIX_H
 #define VS_FIX_H
 
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h> /* For getting SDK version */
 
 // Stop Visual Studio complaining
