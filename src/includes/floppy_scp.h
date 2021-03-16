@@ -28,8 +28,9 @@ typedef struct {
 
 	SCP_TRACK_REV_STRUCT	*pTrackRevs;			/* Contains as many entries as set in RevolutionsNbr */
 
-	Uint32		FileOffset;				/* Offset for this track header (in bytes, from start of the scp file) */
+	Uint32		TrackHeaderOffset;			/* Offset for this track header (in bytes, from start of the scp file) */
 								/* 0=no flux data for this track */
+	Uint8		*pTrackHeader;				/* Pointer to this track header in memory */
 } SCP_TRACK_STRUCT;
 
 
@@ -45,7 +46,7 @@ typedef struct {
 	Uint8		StartTrack;				/* +6 : Start Track (0-167) */
 	Uint8		EndTrack;				/* +7 : End Track (0-167) */
 	Uint8		Flags;					/* +8 :  */
-	Uint8		CellTimeBits;				/* +9 : Number of bits to encode a cell time ; should be 0 = 16 bits */
+	Uint8		CellTimeWidth;				/* +9 : Number of bits to encode a cell time ; should be 0 = 16 bits */
 	Uint8		HeadsNbr;				/* +10 : Number of heads in the file ; 0=both 1=bottom 2=top */
 	Uint8		CaptureRes;				/* +11 : Resolution of the capture ; should be 0 = 25 nanosecs */
 	Uint32		CRC;					/* +12 : CRC  */
@@ -81,6 +82,7 @@ extern bool	SCP_Eject ( int Drive );
 
 extern SCP_MAIN_STRUCT *SCP_BuildStruct ( Uint8 *pFileBuffer , int Debug );
 
+extern int	SCP_LoadTrack ( int Drive , int Track , int Side );
 
 extern int	FDC_GetBytesPerTrack_STX ( Uint8 Drive , Uint8 Track , Uint8 Side );
 extern Uint32	FDC_GetCyclesPerRev_FdcCycles_STX ( Uint8 Drive , Uint8 Track , Uint8 Side );
@@ -94,5 +96,44 @@ extern Uint8	FDC_WriteSector_STX ( Uint8 Drive , Uint8 Track , Uint8 Sector , Ui
 extern Uint8	FDC_ReadAddress_STX ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side );
 extern Uint8	FDC_ReadTrack_STX ( Uint8 Drive , Uint8 Track , Uint8 Side );
 extern Uint8	FDC_WriteTrack_STX ( Uint8 Drive , Uint8 Track , Uint8 Side , int TrackSize );
+
+
+
+/*-----------------------------------------------------------------------*/
+/*
+ * Flux to MFM bit decoding - Support for SCP disk image - BEGIN
+ * based on code by Keir Fraser https://github.com/keirf/Disk-Utilities  
+ */
+
+struct scp_stream {
+	struct fd_stream s;
+	int Drive;		/* Drive number 0 or 1 used for this stream */
+
+	/* Current track number. */
+	unsigned int track;
+
+	/* Raw track data. */
+	uint16_t *dat;
+	unsigned int datsz;
+
+	bool index_cued;
+	unsigned int revs;       /* stored disk revolutions */
+	unsigned int dat_idx;    /* current index into dat[] */
+	unsigned int index_pos;  /* next index offset */
+	int jitter;              /* accumulated injected jitter */
+
+	int total_ticks;         /* total ticks to final index pulse */
+	int acc_ticks;           /* accumulated ticks so far */
+
+	unsigned int *index_off; /* data offsets of each index */
+};
+
+#define SCK_NS_PER_TICK (25u)
+
+/*
+ * Flux to MFM bit decoding - Support for SCP disk image - END
+ */
+
+
 
 #endif		/* HATARI_FLOPPY_SCP_H */

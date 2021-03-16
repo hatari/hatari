@@ -17,9 +17,9 @@ const char floppy_scp_fileid[] = "Hatari floppy_scp.c";
 
 #include "main.h"
 #include "file.h"
+#include "fdc.h"
 #include "floppy.h"
 #include "floppy_scp.h"
-#include "fdc.h"
 #include "log.h"
 #include "memorySnapShot.h"
 #include "screen.h"
@@ -27,6 +27,8 @@ const char floppy_scp_fileid[] = "Hatari floppy_scp.c";
 #include "m68000.h"
 #include "cycles.h"
 #include "utils.h"
+
+
 
 
 #define	SCP_DEBUG_FLAG_STRUCTURE	1
@@ -40,8 +42,10 @@ const char floppy_scp_fileid[] = "Hatari floppy_scp.c";
 
 typedef struct
 {
-	SCP_MAIN_STRUCT		*ImageBuffer[ MAX_FLOPPYDRIVES ];	/* For the SCP disk images */
+	SCP_MAIN_STRUCT		*ImageStruct[ MAX_FLOPPYDRIVES ];	/* For the SCP disk images */
 
+	struct scp_stream	SCP_Stream[ MAX_FLOPPYDRIVES ];
+	struct fd_stream_type	SCP_Stream_Type[ MAX_FLOPPYDRIVES ];
 
 } SCP_STRUCT;
 
@@ -58,8 +62,11 @@ static SCP_STRUCT	SCP_State;			/* All variables related to the SCP support */
 /*--------------------------------------------------------------*/
 
 static bool	SCP_Insert_internal ( int Drive , const char *FilenameSTX , Uint8 *pImageBuffer , long ImageSize );
-
 static void	SCP_FreeStruct ( SCP_MAIN_STRUCT *pScpMain );
+
+static int	scp_select_track (struct fd_stream *s, unsigned int tracknr);
+static void	scp_reset (struct fd_stream *s);
+static int	scp_next_flux (struct fd_stream *s);
 
 
 
@@ -69,13 +76,13 @@ static void	SCP_FreeStruct ( SCP_MAIN_STRUCT *pScpMain );
  */
 void SCP_MemorySnapShot_Capture(bool bSave)
 {
+#if 0		// TODO
 	int	StructSize;
 	int	Drive;
 	int	Track , Side;
 	int	TrackSize;
 	Uint8	*p;
 
-#if 0		// TODO
 	if ( bSave )					/* Saving snapshot */
 	{
 		StructSize = sizeof ( IPF_State );	/* 0 if HAVE_CAPSIMAGE is not defined */
@@ -245,7 +252,7 @@ bool	SCP_Init ( void )
 
 	for ( i=0 ; i<MAX_FLOPPYDRIVES ; i++ )
 	{
-		SCP_State.ImageBuffer[ i ] = NULL;
+		SCP_State.ImageStruct[ i ] = NULL;
 
 	}
 
@@ -272,20 +279,44 @@ bool	SCP_Insert ( int Drive , const char *FilenameSTX , Uint8 *pImageBuffer , lo
 /*-----------------------------------------------------------------------*/
 /*
  * Init the resources to handle the SCP image inserted into a drive (0=A: 1=B:)
- * This function is used when restoring a memory snapshot and does not load
- * an optional ".wd1772" save file (the saved data are already in the memory
- * snapshot)
  */
 static bool	SCP_Insert_internal ( int Drive , const char *FilenameSCP , Uint8 *pImageBuffer , long ImageSize )
 {
 	Log_Printf ( LOG_DEBUG , "SCP : SCP_Insert_internal drive=%d file=%s buf=%p size=%ld\n" , Drive , FilenameSCP , pImageBuffer , ImageSize );
 
-	SCP_State.ImageBuffer[ Drive ] = SCP_BuildStruct ( pImageBuffer , SCP_DEBUG_FLAG );
-	if ( SCP_State.ImageBuffer[ Drive ] == NULL )
+	SCP_State.ImageStruct[ Drive ] = SCP_BuildStruct ( pImageBuffer , SCP_DEBUG_FLAG );
+	if ( SCP_State.ImageStruct[ Drive ] == NULL )
 	{
 		Log_Printf ( LOG_ERROR , "SCP : SCP_Insert_internal drive=%d file=%s buf=%p size=%ld, error in SCP_BuildStruct\n" , Drive , FilenameSCP , pImageBuffer , ImageSize );
 		return false;
 	}
+
+	/* Init the flux decoder for an SCP stream */
+	SCP_State.SCP_Stream_Type[ Drive ].select_track = scp_select_track;
+	SCP_State.SCP_Stream_Type[ Drive ].reset = scp_reset;
+	SCP_State.SCP_Stream_Type[ Drive ].next_flux = scp_next_flux;
+	SCP_State.SCP_Stream_Type[ Drive ].flux_struct_param = &(SCP_State.SCP_Stream[ Drive ]);
+
+	fd_stream_setup ( &(SCP_State.SCP_Stream[ Drive ].s) , &(SCP_State.SCP_Stream_Type[ Drive ]) , 300 , 300 );
+	fd_stream_reset ( &(SCP_State.SCP_Stream[ Drive ].s) );
+
+	SCP_State.SCP_Stream[ Drive ].Drive = Drive;
+	SCP_State.SCP_Stream[ Drive ].track = -1;		/* no track loaded */
+	SCP_State.SCP_Stream[ Drive ].dat = NULL;		/* no track loaded */
+	SCP_State.SCP_Stream[ Drive ].revs = SCP_State.ImageStruct[ Drive ]->RevolutionsNbr;
+	SCP_State.SCP_Stream[ Drive ].index_cued = !!(SCP_State.ImageStruct[ Drive ]->Flags & (1u<<0)) || (SCP_State.SCP_Stream[ Drive ].revs == 1);
+	if ( !SCP_State.SCP_Stream[ Drive ].index_cued )
+		SCP_State.SCP_Stream[ Drive ].revs--;
+
+	SCP_State.SCP_Stream[ Drive ].index_off = malloc ( SCP_State.ImageStruct[ Drive ]->RevolutionsNbr * sizeof ( unsigned int ) );
+	if ( SCP_State.SCP_Stream[ Drive ].index_off == NULL )
+	{
+		Log_Printf ( LOG_ERROR , "SCP : SCP_Insert_internal drive=%d file=%s buf=%p size=%ld, malloc error\n" , Drive , FilenameSCP , pImageBuffer , ImageSize );
+		SCP_FreeStruct ( SCP_State.ImageStruct[ Drive ] );
+		SCP_State.ImageStruct[ Drive ] = NULL;
+		return false;
+	}
+
 
 	return true;
 }
@@ -301,10 +332,15 @@ bool	SCP_Eject ( int Drive )
 {
 	Log_Printf ( LOG_DEBUG , "SCP : SCP_Eject drive=%d\n" , Drive );
 
-	if ( SCP_State.ImageBuffer[ Drive ] )
+	if ( SCP_State.ImageStruct[ Drive ] )
 	{
-		SCP_FreeStruct ( SCP_State.ImageBuffer[ Drive ] );
-		SCP_State.ImageBuffer[ Drive ] = NULL;
+		SCP_FreeStruct ( SCP_State.ImageStruct[ Drive ] );
+		SCP_State.ImageStruct[ Drive ] = NULL;
+
+		/* Free the stream's data */
+		free ( SCP_State.SCP_Stream[ Drive ].index_off );
+		if ( SCP_State.SCP_Stream[ Drive ].dat )
+			free ( SCP_State.SCP_Stream[ Drive ].dat );
 	}
 
 	return true;
@@ -326,7 +362,7 @@ static void	SCP_FreeStruct ( SCP_MAIN_STRUCT *pScpMain )
 
 	for ( Track = 0 ; Track <= pScpMain->EndTrack ; Track++ )
 	{
-		if ( pScpMain->pTracks[ Track ].FileOffset != 0 )
+		if ( pScpMain->pTracks[ Track ].TrackHeaderOffset != 0 )
 			free ( pScpMain->pTracks[ Track ].pTrackRevs );
 	}
 
@@ -356,7 +392,7 @@ SCP_MAIN_STRUCT	*SCP_BuildStruct ( Uint8 *pFileBuffer , int Debug )
 	Uint8			*pTrack;
 	Uint32			Track_offset;
 	int			Rev;
-
+	bool			error;
 
 
 	pScpMain = calloc ( 1 , sizeof ( SCP_MAIN_STRUCT ) );
@@ -373,7 +409,7 @@ SCP_MAIN_STRUCT	*SCP_BuildStruct ( Uint8 *pFileBuffer , int Debug )
 	pScpMain->StartTrack		=	*p++;
 	pScpMain->EndTrack		=	*p++;
 	pScpMain->Flags			=	*p++;
-	pScpMain->CellTimeBits		=	*p++;
+	pScpMain->CellTimeWidth		=	*p++;
 	pScpMain->HeadsNbr		=	*p++;
 	pScpMain->CaptureRes		=	*p++;
 	pScpMain->CRC			=	Mem_ReadU32_LE ( p ); p += 4;
@@ -381,10 +417,29 @@ SCP_MAIN_STRUCT	*SCP_BuildStruct ( Uint8 *pFileBuffer , int Debug )
 
 	if ( Debug & SCP_DEBUG_FLAG_STRUCTURE )
 		fprintf ( stderr , "SCP header ID='%.3s' Version=0x%2.2x DiskType=0x%2.2x RevolutionsNbr=%d"
-			" StartTrack=0x%2.2x EndTrack=0x%2.2x Flags=0x%2.2x CellTimeBits=%d HeadsNbr=%d CaptureRes=%d"
+			" StartTrack=0x%2.2x EndTrack=0x%2.2x Flags=0x%2.2x CellTimeWidth=%d HeadsNbr=%d CaptureRes=%d"
 			" CRC=0x%8.8x\n" , pScpMain->FileID , pScpMain->Version , pScpMain->DiskType ,
 			pScpMain->RevolutionsNbr , pScpMain->StartTrack , pScpMain->EndTrack , pScpMain->Flags ,
-			pScpMain->CellTimeBits , pScpMain->HeadsNbr , pScpMain->CaptureRes , pScpMain->CRC );
+			pScpMain->CellTimeWidth , pScpMain->HeadsNbr , pScpMain->CaptureRes , pScpMain->CRC );
+
+
+	/* Check that the SCP file is supported */
+	error = false;
+	if ( pScpMain->RevolutionsNbr == 0 )
+		{ error = true ; fprintf ( stderr , "SCP file error : RevolutionsNbr=0\n" ); }
+
+	if ( ( pScpMain->CellTimeWidth != 0 ) && ( pScpMain->CellTimeWidth != 16 ) )
+		{ error = true ; fprintf ( stderr , "SCP file error : unsupported cell time width=%d\n" , pScpMain->CellTimeWidth ); }
+
+	if ( ( pScpMain->Flags & SCP_FLAG_RPM ) != 0 )
+		{ error = true ; fprintf ( stderr , "SCP file error : unsupported RPM!=300\n" ); }
+
+	if ( error )
+	{
+		SCP_FreeStruct ( pScpMain );
+		return NULL;
+	}
+
 
 	pScpMain->WarnedWriteSector = false;
 	pScpMain->WarnedWriteTrack = false;
@@ -410,19 +465,21 @@ SCP_MAIN_STRUCT	*SCP_BuildStruct ( Uint8 *pFileBuffer , int Debug )
 			if ( Debug & SCP_DEBUG_FLAG_STRUCTURE )
 				fprintf ( stderr , "    Track_scp=0x%2.2x no data (tr %2.2d side %d)\n" ,
 					Track , Track / 2 , Track & 1 );
-			pScpTracks[ Track ].FileOffset = 0;	/* ignore this track */
+			pScpTracks[ Track ].TrackHeaderOffset = 0;	/* ignore this track */
+			pScpTracks[ Track ].pTrackHeader = NULL;
 			continue;
 		}
 
-		pScpTracks[ Track ].FileOffset = Track_offset;
 		pTrack = pFileBuffer + Track_offset;		/* point to the start of the track block */
+		pScpTracks[ Track ].TrackHeaderOffset = Track_offset;
+		pScpTracks[ Track ].pTrackHeader = pTrack;
 
 		memcpy ( pScpTracks[ Track ].TrackId , pTrack , SCP_HEADER_ID_LEN ); pTrack += SCP_TRACK_HEADER_ID_LEN;
 		pScpTracks[ Track ].TrackNumber	= *pTrack++;
 
 		if ( Debug & SCP_DEBUG_FLAG_STRUCTURE )
 			fprintf ( stderr , "    Track_scp=0x%2.2x Offset=0x%8.8x ID='%.3s' TrackNumber=0x%2.2x (tr %2.2d side %d)\n" ,
-				Track , pScpTracks[ Track ].FileOffset , pScpTracks[ Track ].TrackId , pScpTracks[ Track ].TrackNumber ,
+				Track , pScpTracks[ Track ].TrackHeaderOffset , pScpTracks[ Track ].TrackId , pScpTracks[ Track ].TrackNumber ,
 				Track / 2 , Track & 1 );
 
 		if ( Track != pScpTracks[ Track ].TrackNumber )
@@ -451,11 +508,184 @@ SCP_MAIN_STRUCT	*SCP_BuildStruct ( Uint8 *pFileBuffer , int Debug )
 					Rev , pScpTrackRevs[ Rev ].Duration_ns , pScpTrackRevs[ Rev ].FluxNbr ,
 					pScpTrackRevs[ Rev ].DataOffset );
 		}
-
 	}
-
 
 	return pScpMain;
 }
 
+
+
+
+int	SCP_LoadTrack ( int Drive , int Track , int Side )
+{
+	int		res;
+
+	res = fd_stream_select_track ( &(SCP_State.SCP_Stream[ Drive ].s) , Track*2+Side );
+	if ( res )
+		return -1;			// TODO set error code for FDC
+
+	/* Uncomment next line to dump the track's content */
+	FD_Stream_DumpTrack ( &(SCP_State.SCP_Stream[ Drive ].s) , 0 );
+
+	return 0;
+}
+
+
+
+
+/*-----------------------------------------------------------------------*/
+/*
+ * Flux to MFM bit decoding - Support for SCP disk image - BEGIN
+ * based on code by Keir Fraser https://github.com/keirf/Disk-Utilities  
+ */
+
+static int scp_select_track (struct fd_stream *s, unsigned int tracknr)
+{
+	struct scp_stream *scss = s->type->flux_struct_param;
+	unsigned int rev;
+	SCP_TRACK_STRUCT	*pScpTracks;
+	SCP_TRACK_REV_STRUCT	*pScpTrackRevs;
+
+	if (scss->dat && (scss->track == tracknr))
+	    return 0;
+
+	pScpTracks = &(SCP_State.ImageStruct[ scss->Drive ]->pTracks[ tracknr ]);
+	pScpTrackRevs = pScpTracks->pTrackRevs;
+	if ( pScpTracks->TrackHeaderOffset == 0 )		/* No flux data for this track */
+		return -1;
+
+	free(scss->dat);
+	scss->dat = NULL;
+	scss->datsz = 0;
+
+	if (!scss->index_cued)
+	{
+		/* Skip first partial revolution. */
+		pScpTrackRevs++;
+	}
+
+	scss->total_ticks = 0;
+	for (rev = 0 ; rev < scss->revs ; rev++)
+	{
+		scss->index_off[rev] = pScpTrackRevs[ rev ].FluxNbr;
+		scss->total_ticks += pScpTrackRevs[ rev ].Duration_ns;
+		scss->datsz += scss->index_off[rev];
+	}
+
+	scss->dat = malloc(scss->datsz * sizeof(scss->dat[0]));
+	if (scss->dat==NULL)
+		return -1;
+	scss->datsz = 0;
+
+	for (rev = 0 ; rev < scss->revs ; rev++)
+	{
+		memcpy(&scss->dat[scss->datsz], pScpTracks->pTrackHeader + pScpTrackRevs[ rev ].DataOffset ,
+		      scss->index_off[rev] * sizeof(scss->dat[0]));
+		scss->datsz += scss->index_off[rev];
+		scss->index_off[rev] = scss->datsz;
+	}
+
+	scss->track = tracknr;
+
+	s->max_revolutions = scss->revs + 1;
+	return 0;
+}
+
+
+static void scp_reset (struct fd_stream *s)
+{
+	struct scp_stream *scss = s->type->flux_struct_param;
+
+	scss->jitter = 0;
+	scss->dat_idx = 0;
+	scss->index_pos = 0;
+	scss->acc_ticks = 0;
+}
+
+
+static int scp_next_flux (struct fd_stream *s)
+{
+	struct scp_stream *scss = s->type->flux_struct_param;
+	uint32_t val = 0, t;
+	unsigned int nr_index_seen = 0;
+
+	for (;;) {
+		if (scss->dat_idx >= scss->index_pos)
+		{
+			uint32_t rev = s->nr_index % scss->revs;
+			if ((rev == 0) && (scss->index_pos != 0))
+			{
+				/* We are wrapping back to the start of the dump. Unless a flux
+				* reversal sits exactly on the index we have some time to
+				* donate to the first reversal of the first revolution. */
+				val = scss->total_ticks - scss->acc_ticks;
+				scss->acc_ticks = -val;
+			}
+			scss->index_pos = scss->index_off[rev];
+			if (rev == 0)
+				scss->dat_idx = 0;
+			s->ns_to_index = s->flux;
+			/* Some drives return no flux transitions for tracks >= 160.
+			* Bail if we see no flux transitions in a complete revolution. */
+			if (nr_index_seen++)
+				break;
+		}
+
+//printf ( "idx %04x %04x\n" , scss->dat_idx , be16toh(scss->dat[scss->dat_idx]) );
+		t = be16toh(scss->dat[scss->dat_idx++]);
+
+		if (t == 0)	/* overflow */
+		{
+			val += 0x10000;
+			continue;
+		}
+
+		val += t;
+		break;
+	}
+
+	scss->acc_ticks += val;
+
+	/* If we are replaying a single revolution then jitter it a little to
+	* trigger weak-bit variations. */
+	if (scss->revs == 1)
+	{
+		int32_t jitter = fd_stream_rnd16(&s->prng_seed) & 3;
+		if ((scss->jitter >= 4) || (scss->jitter <= -4))
+		{
+			/* Already accumulated significant jitter; adjust for it. */
+			jitter = scss->jitter / 2;
+		}
+		else if (jitter & 1)
+		{
+			/* Add one bit of jitter. */
+			jitter >>= 1;
+		}
+		else
+		{
+			/* Subtract one bit of jitter. */
+			jitter >>= 1;
+			jitter = -jitter;
+		}
+		scss->jitter -= jitter;
+		val += jitter;
+	}
+
+	val = (uint64_t)val * SCK_NS_PER_TICK;
+
+	/* If we are replaying a single revolution then randomly ignore 
+	* very short pulses (<1us). */
+	if ((scss->revs == 1) && (val < 1000) && (fd_stream_rnd16(&s->prng_seed) & 1))
+	{
+		scss->jitter += val;
+		val = 0;
+	}
+
+	s->flux += val;
+	return 0;
+}
+
+/*
+ * Flux to MFM bit decoding - Support for SCP disk image - END
+ */
 

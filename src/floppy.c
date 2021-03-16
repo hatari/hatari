@@ -29,6 +29,7 @@ const char Floppy_fileid[] = "Hatari floppy.c";
 #include "main.h"
 #include "configuration.h"
 #include "file.h"
+#include "fdc.h"
 #include "floppy.h"
 #include "gemdos.h"
 #include "hdc.h"
