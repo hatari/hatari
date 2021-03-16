@@ -4967,3 +4967,209 @@ void FDC_DensityMode_ReadWord ( void )
 }
 
 
+
+
+/*-----------------------------------------------------------------------*/
+/*
+ * Flux to MFM bit decoding - BEGIN
+ * based on code by Keir Fraser https://github.com/keirf/Disk-Utilities
+ */
+
+/* Flux-based streams */
+#define CLOCK_CENTRE  2000   /* 2000ns = 2us */
+#define CLOCK_MAX_ADJ 10     /* +/- 10% adjustment */
+#define CLOCK_MIN(_c) (((_c) * (100 - CLOCK_MAX_ADJ)) / 100)
+#define CLOCK_MAX(_c) (((_c) * (100 + CLOCK_MAX_ADJ)) / 100)
+
+/* Amount to adjust phase/period of our clock based on each observed flux.
+ * These defaults are used until modified by stream_pll_set_parameters(). */
+#define DEFAULT_PERIOD_ADJ_PCT  5
+#define DEFAULT_PHASE_ADJ_PCT  60
+
+#define min_int(x,y)	(((x) < (y)) ? (x) : (y))
+#define max_int(x,y)	(((x) > (y)) ? (x) : (y))
+
+
+static int	flux_next_bit ( struct fd_stream *s );
+
+
+uint16_t fd_stream_rnd16(uint32_t *p_seed)
+{
+    *p_seed = *p_seed * 1103515245 + 12345;
+    return *p_seed >> 16;
+}
+
+
+void fd_stream_setup ( struct fd_stream *s , const struct fd_stream_type *st ,
+		       unsigned int drive_rpm , unsigned int data_rpm )
+{
+	memset(s, 0, sizeof(*s));
+	s->type = st;
+	s->pll_period_adj_pct = DEFAULT_PERIOD_ADJ_PCT;
+	s->pll_phase_adj_pct = DEFAULT_PHASE_ADJ_PCT;
+	s->clock = s->clock_centre = CLOCK_CENTRE;
+	s->prng_seed = 0xae659201u;
+}
+
+
+int fd_stream_select_track(struct fd_stream *s, unsigned int tracknr)
+{
+	int rc;
+
+	s->max_revolutions = 0;
+	rc = s->type->select_track(s, tracknr);
+	if (rc)
+	    return rc;
+	s->max_revolutions = max_int(s->max_revolutions, 4);
+
+	fd_stream_reset(s);
+	return 0;
+}
+
+
+static void _fd_stream_reset(struct fd_stream *s)
+{
+	/* Flux-based streams */
+	s->flux = 0;
+	s->clocked_zeros = 0;
+
+	s->word = 0;
+	s->nr_index = 0;
+	s->latency = 0;
+	s->index_offset_bc
+	    = s->index_offset_ns
+	    = s->track_len_bc
+	    = s->track_len_ns
+	    = (1u<<31)-1; /* bad */
+	s->ns_to_index = INT_MAX;
+
+	s->type->reset(s);
+}
+
+
+void fd_stream_reset(struct fd_stream *s)
+{
+	/* Reset the PLL clock, then allow 100 bit times for PLL lock. */
+	s->clock = s->clock_centre;
+	_fd_stream_reset(s);
+
+#if 0	// [NP] Don't adjust the PLL with the first 100 bits ; not needed for Hatari
+	fd_stream_next_bits(s, 100);
+
+	/* Now reset everything except the PLL clock. */
+	_fd_stream_reset(s);
+
+	if (s->nr_index == 0)
+	    fd_stream_next_index(s);
+#endif
+}
+
+
+void fd_stream_next_index(struct fd_stream *s)
+{
+	do {
+	    if (fd_stream_next_bit(s) == -1)
+		break;
+	} while (s->index_offset_bc != 0);
+}
+
+
+int fd_stream_next_bit(struct fd_stream *s)
+{
+	uint64_t lat = s->latency;
+	int b;
+	if (s->nr_index > s->max_revolutions)
+	    return -1;
+	s->index_offset_bc++;
+	if ((b = flux_next_bit(s)) == -1)
+	    return -1;
+	lat = s->latency - lat;
+	s->index_offset_ns += lat;
+	s->ns_to_index -= lat;
+	if (s->ns_to_index <= 0)
+	{
+		s->track_len_bc = s->index_offset_bc;
+		s->track_len_ns = s->index_offset_ns;
+		s->ns_to_index = INT_MAX;
+		s->index_offset_bc = s->index_offset_ns = 0;
+		s->nr_index++;
+	}
+	s->word = (s->word << 1) | b;
+	return b;
+}
+
+
+int fd_stream_next_bits(struct fd_stream *s, unsigned int bits)
+{
+	unsigned int i;
+	for (i = 0; i < bits; i++)
+		if (fd_stream_next_bit(s) == -1)
+			return -1;
+	return 0;
+}
+
+
+int fd_stream_next_bytes(struct fd_stream *s, void *p, unsigned int bytes)
+{
+	unsigned int i;
+	unsigned char *dat = p;
+
+	for (i = 0; i < bytes; i++)
+	{
+		if (fd_stream_next_bits(s, 8) == -1)
+			return -1;
+		dat[i] = (uint8_t)s->word;
+	}
+
+	return 0;
+}
+
+
+static int flux_next_bit(struct fd_stream *s)
+{
+	int new_flux;
+
+	while ( s->flux < (s->clock/2) )
+		if (s->type->next_flux(s) != 0)
+			return -1;
+
+	s->latency += s->clock;
+	s->flux -= s->clock;
+
+	if (s->flux >= (s->clock/2))
+	{
+		s->clocked_zeros++;
+		return 0;
+	}
+
+	/* PLL: Adjust clock frequency according to phase mismatch.
+	* eg. pll_period_adj_pct=0% -> timing-window centre freq. never changes */
+	if (s->clocked_zeros <= 3)
+	{
+		/* In sync: adjust base clock by a fraction of phase mismatch. */
+		s->clock += s->flux * s->pll_period_adj_pct / 100;
+	}
+	else
+	{
+		/* Out of sync: adjust base clock towards centre. */
+		s->clock += (s->clock_centre - s->clock) * s->pll_period_adj_pct / 100;
+	}
+
+	/* Clamp the clock's adjustment range. */
+	s->clock = max_int(CLOCK_MIN(s->clock_centre),
+		      min_int(CLOCK_MAX(s->clock_centre), s->clock));
+
+	/* PLL: Adjust clock phase according to mismatch.
+	* eg. pll_phase_adj_pct=100% -> timing window snaps to observed flux. */
+	new_flux = s->flux * (100 - s->pll_phase_adj_pct) / 100;
+	s->latency += s->flux - new_flux;
+	s->flux = new_flux;
+
+	s->clocked_zeros = 0;
+	return 1;
+}
+
+/*
+ * Flux to MFM bit decoding - END
+ */
+

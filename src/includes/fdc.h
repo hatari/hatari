@@ -118,4 +118,78 @@ extern void	FDC_WriteDMAAddress ( uint32_t Address );
 extern void	FDC_DensityMode_WriteWord ( void );
 extern void	FDC_DensityMode_ReadWord ( void );
 
+
+
+/*-----------------------------------------------------------------------*/
+/*
+ * Flux to MFM bit decoding - BEGIN
+ * based on code by Keir Fraser https://github.com/keirf/Disk-Utilities
+ */
+
+struct fd_stream {
+	const struct fd_stream_type *type;
+
+	/* Accumulated read latency in nanosecs. Can be reset by the caller. */
+	uint64_t latency;
+
+	/* N = last bitcell returned was Nth full bitcell after index pulse. */
+	uint32_t index_offset_bc; /* offset in bitcells (=N) */
+	uint32_t index_offset_ns; /* offset in nanoseconds */
+
+	/* Distance between the most recent two index pulses. */
+	uint32_t track_len_bc; /* in bitcells */
+	uint32_t track_len_ns; /* in nanoseconds */
+
+	/* Number of index pulses seen so far. */
+	uint32_t nr_index;
+
+	/* Maximum number of full revolutions to read. */
+	uint32_t max_revolutions;
+
+	/* Most recent 32 bits read from the stream. */
+	uint32_t word;
+
+	/* Flux-based streams: Adjustable parameters for FDC PLL emulation. When a
+	* flux transition occurs off-centre in the timing window, what percentage
+	* of that error delta is applied to the window period and phase. */
+	int pll_period_adj_pct; /* 0 - 100 */
+	int pll_phase_adj_pct;  /* 0 - 100 */
+
+	/* Flux-based streams. */
+	int flux;                /* Nanoseconds to next flux reversal */
+	int clock, clock_centre; /* Clock base value in nanoseconds */
+	unsigned int clocked_zeros;
+	int ns_to_index;         /* Distance to next index pulse */
+
+	uint32_t prng_seed;
+};
+
+
+struct fd_stream_type {
+    int		(*select_track)(struct fd_stream *, unsigned int tracknr);
+    void	(*reset)(struct fd_stream *);
+    int		(*next_flux)(struct fd_stream *);
+    void	*flux_struct_param;			/* pointer to "struct scp_stream" */
+};
+
+
+uint16_t fd_stream_rnd16 ( uint32_t *p_seed );
+void	fd_stream_setup ( struct fd_stream *s , const struct fd_stream_type *st,
+			  unsigned int drive_rpm, unsigned int data_rpm);
+int	fd_stream_select_track ( struct fd_stream *s , unsigned int tracknr );
+void	fd_stream_reset ( struct fd_stream *s );
+void	fd_stream_next_index ( struct fd_stream *s );
+int	fd_stream_next_bit ( struct fd_stream *s );
+int	fd_stream_next_bits ( struct fd_stream *s , unsigned int bits );
+int	fd_stream_next_bytes ( struct fd_stream *s , void *p , unsigned int bytes );
+
+/*
+ * Flux to MFM bit decoding - END
+ */
+
+
+void	FD_Stream_DumpTrack ( struct fd_stream *s , int InitialShift );
+
+
+
 #endif /* ifndef HATARI_FDC_H */
