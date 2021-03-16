@@ -13,7 +13,7 @@ addons:
 before_script:
   - ./configure ${CONFIG}
 script:
-  - make -j$(nproc) && ctest -j$(nproc)
+  - make -j3 && ctest -j2
 
 matrix:
   include:
