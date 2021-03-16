@@ -981,7 +981,9 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 				strcpy(path, home);
 				File_AddSlashToEndFileName(path);
 				File_ShrinkName(dlgpath, path, DLGPATH_SIZE);
+#if WIN32
 				refreshDrive(path[0]);
+#endif
 				reloaddir = true;
 				break;
 
