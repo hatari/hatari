@@ -57,7 +57,11 @@ static char sCurrDrive[3];
 #define DLGPATH_SIZE 62
 static char dlgpath[DLGPATH_SIZE+1];    /* Path name in the dialog */
 
+#if WIN32
+#define DLGFNAME_SIZE 49 /* make it a little bit shorter on Windows so we have place on drive change*/
+#else
 #define DLGFNAME_SIZE 56
+#endif
 static char dlgfname[DLGFNAME_SIZE+1];  /* Name of the selected file in the dialog */
 
 #define DLGFILENAMES_SIZE 59
