@@ -12,6 +12,11 @@ const char DlgFileSelect_fileid[] = "Hatari dlgFileSelect.c";
 #include <sys/stat.h>
 #include <unistd.h>
 
+#if WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#endif
+
 #include "main.h"
 #include "scandir.h"
 #include "sdlgui.h"
@@ -38,13 +43,25 @@ const char DlgFileSelect_fileid[] = "Hatari dlgFileSelect.c";
 #define SGFSDLG_OKAY       32
 #define SGFSDLG_CANCEL     33
 
+#if WIN32
+#define SGFSDLG_DRIVE_LESS	34
+#define SGFSDLG_DRIVE_TEXT	35
+#define SGFSDLG_DRIVE_MORE	36
+
+static char sCurrDrive[3];
+#endif
+
 #define SCROLLOUT_ABOVE  1
 #define SCROLLOUT_UNDER  2
 
 #define DLGPATH_SIZE 62
 static char dlgpath[DLGPATH_SIZE+1];    /* Path name in the dialog */
 
+#if WIN32
+#define DLGFNAME_SIZE 49 /* make it a little bit shorter on Windows so we have place on drive change*/
+#else
 #define DLGFNAME_SIZE 56
+#endif
 static char dlgfname[DLGFNAME_SIZE+1];  /* Name of the selected file in the dialog */
 
 #define DLGFILENAMES_SIZE 59
@@ -92,6 +109,12 @@ static SGOBJ fsdlg[] =
 	{ SGCHECKBOX, SG_EXIT, 0, 2,23, 19,1, "_Show hidden files" },
 	{ SGBUTTON, SG_DEFAULT, 0, 32,23, 8,1, "OK" },
 	{ SGBUTTON, SG_CANCEL, 0, 50,23, 8,1, "Cancel" },
+#if WIN32
+	/* Drive selection */
+	{ SGBUTTON,   0, 0, 57,4, 1,1, "\x04", SG_SHORTCUT_LEFT },
+	{ SGTEXT,     0, 0, 59,4, 2,1, sCurrDrive },
+	{ SGBUTTON,   0, 0, 62,4, 1,1, "\x03", SG_SHORTCUT_RIGHT },
+#endif
 	{ SGSTOP, 0, 0, 0,0, 0,0, NULL }
 };
 
@@ -539,6 +562,74 @@ static void DlgFileSelect_Convert_ypos_to_scrollbar_Ypos(void)
 		scrollbar_Ypos = (float)ypos / ((float)entries/(float)(SGFS_NUMENTRIES-2));
 }
 
+#if WIN32
+
+/*-----------------------------------------------------------------------*/
+/**
+* Find next or previous drive relative to the current (sCurrDrive)
+* Is meaningful only on Windows (or another OSes with mounting by letters)
+* step can be 1 or -1 (next or previous)
+* path will be filled with root dir of the new drive if there will be some available
+* returns 1 if drive was changed, otherwise 0
+*/
+char findNextOrPreviousDrive(char step, char *path)
+{
+	char chDrv;
+	UINT driverType;
+	char rootPath[3];
+
+	char endDrv = step > 0 ? 'Z' : 'A';
+
+	for (chDrv = sCurrDrive[0] + step; chDrv != endDrv + step; chDrv += step)
+	{
+		/* make root path */
+		sprintf_s(rootPath, 3, "%c:", chDrv);
+
+		/* get driver type */
+		driverType = GetDriveTypeA(rootPath);
+		if ((driverType == DRIVE_NO_ROOT_DIR) || (driverType == DRIVE_UNKNOWN))
+			continue;
+
+		sCurrDrive[0] = rootPath[0];
+
+		path[0] = rootPath[0];
+		path[1] = rootPath[1];
+		path[2] = PATHSEP;
+		path[3] = '\0';
+		
+		return 1;
+	}
+
+	return 0;
+}
+
+/**
+* Refreshes drive according driveletter or if driveletter is root ('\\'), it extracts drive from getcwd
+*/
+void refreshDrive(char driveletter)
+{
+	/* if we don't have root path with letter get it from cwd */
+	if (driveletter == PATHSEP)
+	{
+		char* pTempName = malloc(FILENAME_MAX);
+		if (!getcwd(pTempName, FILENAME_MAX))
+		{
+			perror("WinInitializeDriveLetter - getcwd");
+			driveletter = 'C';
+		}
+		driveletter = pTempName[0];
+		free(pTempName);
+	}
+
+	/* find drive of given path */
+	sCurrDrive[0] = driveletter;
+	sCurrDrive[1] = ':';
+	sCurrDrive[2] = '\0';
+
+}
+
+#endif
+
 /*-----------------------------------------------------------------------*/
 /**
  * Show and process a file selection dialog.
@@ -637,6 +728,10 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 	File_MakeValidPathName(path);
 	File_ShrinkName(dlgpath, path, DLGPATH_SIZE);
 	File_ShrinkName(dlgfname, fname, DLGFNAME_SIZE);
+
+#if WIN32
+	refreshDrive(path[0]);
+#endif
 
 	/* The first time we display the dialog, we reset the current position */
 	/* On next calls, current_object's value will be kept to handle scrolling */
@@ -890,6 +985,9 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 				strcpy(path, home);
 				File_AddSlashToEndFileName(path);
 				File_ShrinkName(dlgpath, path, DLGPATH_SIZE);
+#if WIN32
+				refreshDrive(path[0]);
+#endif
 				reloaddir = true;
 				break;
 
@@ -901,7 +999,11 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 					zipfiles = NULL;
 					browsingzip = false;
 				}
+#if WIN32
+				path[0] = sCurrDrive[0]; path[1] = ':'; path[2] = PATHSEP; path[3] = '\0';
+#else
 				path[0] = PATHSEP; path[1] = '\0';
+#endif
 				strcpy(dlgpath, path);
 				reloaddir = true;
 				break;
@@ -928,6 +1030,22 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 			case SDLGUI_UNKNOWNEVENT:
 				DlgFileSelect_HandleSdlEvents(&sdlEvent);
 				break;
+#if WIN32
+			case SGFSDLG_DRIVE_LESS:
+				if (findNextOrPreviousDrive(-1, path))
+				{
+					strcpy(dlgpath, path);
+					reloaddir = true;
+				}
+				break;
+			case SGFSDLG_DRIVE_MORE:
+				if (findNextOrPreviousDrive(1, path))
+				{
+					strcpy(dlgpath, path);
+					reloaddir = true;
+				}
+				break;
+#endif
 			} /* switch */
 
 			if (reloaddir)
