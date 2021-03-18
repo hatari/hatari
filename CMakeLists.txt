@@ -182,6 +182,10 @@ if(ENABLE_OSX_BUNDLE)
 	add_definitions(-DSDL_MAIN_NEEDED=1)
 endif(ENABLE_OSX_BUNDLE)
 
+if(MSVC)
+	add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+endif(MSVC)
+
 # ###########################
 # Check for optional headers:
 # ###########################

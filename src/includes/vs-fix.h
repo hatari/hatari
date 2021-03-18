@@ -11,7 +11,6 @@
 #include <windows.h> /* For getting SDK version */
 
 // Stop Visual Studio complaining
-#define _CRT_SECURE_NO_WARNINGS	/* Insecure strcpy etc. */
 #pragma warning (disable:4018)	/* signed / unsigned mismatch */
 #pragma warning (disable:4049)	/* compiler limit, end of line numbering */
 #pragma warning (disable:4101)	/* unreferenced local variable */
