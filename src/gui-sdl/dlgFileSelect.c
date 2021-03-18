@@ -564,15 +564,14 @@ static void DlgFileSelect_Convert_ypos_to_scrollbar_Ypos(void)
 
 #if WIN32
 
-/*-----------------------------------------------------------------------*/
 /**
-* Find next or previous drive relative to the current (sCurrDrive)
-* Is meaningful only on Windows (or another OSes with mounting by letters)
-* step can be 1 or -1 (next or previous)
-* path will be filled with root dir of the new drive if there will be some available
-* returns 1 if drive was changed, otherwise 0
-*/
-char findNextOrPreviousDrive(char step, char *path)
+ * Find next or previous drive relative to the current (sCurrDrive)
+ * Is meaningful only on Windows (or another OSes with mounting by letters)
+ * step can be 1 or -1 (next or previous)
+ * path will be filled with root dir of the new drive if there will be some available
+ * returns 1 if drive was changed, otherwise 0
+ */
+static char findNextOrPreviousDrive(char step, char *path)
 {
 	char chDrv;
 	UINT driverType;
@@ -604,9 +603,9 @@ char findNextOrPreviousDrive(char step, char *path)
 }
 
 /**
-* Refreshes drive according driveletter or if driveletter is root ('\\'), it extracts drive from getcwd
-*/
-void refreshDrive(char driveletter)
+ * Refreshes drive according driveletter or if driveletter is root ('\\'), it extracts drive from getcwd
+ */
+static void refreshDrive(char driveletter)
 {
 	/* if we don't have root path with letter get it from cwd */
 	if (driveletter == PATHSEP)
