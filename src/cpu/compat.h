@@ -35,7 +35,7 @@ static inline void to_upper (TCHAR *s, int len) {
 
 static inline void my_trim (TCHAR *s)
 {
-	int len;
+	size_t len;
 	while (_tcslen (s) > 0 && _tcscspn (s, _T("\t \r\n")) == 0)
 		memmove (s, s + 1, (_tcslen (s + 1) + 1) * sizeof (TCHAR));
 	len = _tcslen (s);
