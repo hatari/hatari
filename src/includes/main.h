@@ -43,6 +43,8 @@
 #define PATHSEP '/'
 #endif
 
+#define DRIVESEP ':'
+
 #define CALL_VAR(func)  { ((void(*)(void))func)(); }
 
 #ifndef ARRAY_SIZE

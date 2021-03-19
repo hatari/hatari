@@ -596,7 +596,7 @@ static char findNextOrPreviousDrive(char step, char *path)
 		/* make root path */
 		sprintf_s(rootPath, 3, "%c:", chDrv);
 
-		/* get driver type */
+		/* get drive type */
 		driverType = GetDriveTypeA(rootPath);
 		if ((driverType == DRIVE_NO_ROOT_DIR) || (driverType == DRIVE_UNKNOWN))
 			continue;
@@ -619,21 +619,32 @@ static char findNextOrPreviousDrive(char step, char *path)
  */
 static void refreshDrive(char driveletter)
 {
+	const char DEFAULT_DRIVE = 'C';
+
 	/* if we don't have root path with letter get it from cwd */
 	if (driveletter == PATHSEP)
 	{
 		char* pTempName = malloc(FILENAME_MAX);
-		if (!getcwd(pTempName, FILENAME_MAX))
+
+		if (!pTempName)
 		{
-			perror("WinInitializeDriveLetter - getcwd");
-			driveletter = 'C';
+			perror("Error while allocating temporary memory in refreshDrive()");
+			driveletter = DEFAULT_DRIVE;
 		}
-		driveletter = pTempName[0];
-		free(pTempName);
+		else
+		{
+			if (!getcwd(pTempName, FILENAME_MAX))
+			{
+				perror("refreshDrive - getcwd");
+				pTempName[0] = DEFAULT_DRIVE;
+			}
+			driveletter = pTempName[0];
+			free(pTempName);
+		}
 	}
 
 	/* find drive of given path */
-	sCurrDrive[0] = driveletter;
+	sCurrDrive[0] = toupper(driveletter);
 	sCurrDrive[1] = ':';
 	sCurrDrive[2] = '\0';
 

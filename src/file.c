@@ -131,16 +131,16 @@ static bool File_IsRootFileName(const char *pszFileName)
 		return true;
 
 #ifdef WIN32
-	if (pszFileName[1] == ':')
+	if (pszFileName[1] == DRIVESEP)
 		return true;
 #endif
 
 #ifdef GEKKO
-	if (strlen(pszFileName) > 2 && pszFileName[2] == ':')	// sd:
+	if (strlen(pszFileName) > 2 && pszFileName[2] == DRIVESEP)	// sd:
 		return true;
-	if (strlen(pszFileName) > 3 && pszFileName[3] == ':')	// fat:
+	if (strlen(pszFileName) > 3 && pszFileName[3] == DRIVESEP)	// fat:
 		return true;
-	if (strlen(pszFileName) > 4 && pszFileName[4] == ':')	// fat3:
+	if (strlen(pszFileName) > 4 && pszFileName[4] == DRIVESEP)	// fat3:
 		return true;
 #endif
 
@@ -154,7 +154,7 @@ static bool File_IsRootFileName(const char *pszFileName)
  */
 const char *File_RemoveFileNameDrive(const char *pszFileName)
 {
-	if ( (pszFileName[0] != '\0') && (pszFileName[1] == ':') )
+	if ( (pszFileName[0] != '\0') && (pszFileName[1] == DRIVESEP) )
 		return &pszFileName[2];
 	else
 		return pszFileName;
@@ -955,15 +955,20 @@ void File_MakeValidPathName(char *pPathName)
  */
 void File_PathShorten(char *path, int dirs)
 {
-	int i, n = 0;
+	int i, n = 0, len = 0;
 	/* ignore last char, it may or may not be '/' */
-	i = strlen(path)-1;
+	len = i = strlen(path)-1;
 	assert(i >= 0);
 	while(i > 0 && n < dirs)
 	{
 		if (path[--i] == PATHSEP)
 			n++;
 	}
+#ifdef WIN32
+	/* if we have only drive with root, don't shorten it more*/
+	if (len == 2 && n == 0 && path[1] == DRIVESEP && path[2] == PATHSEP)
+		return;
+#endif
 	if (path[i] == PATHSEP)
 	{
 		path[i+1] = '\0';
