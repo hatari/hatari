@@ -1019,7 +1019,7 @@ static uint8_t *TOS_LoadImage(void)
 	 * 512k EmuTOS declares itself as TOS 2.x, but it can handle
 	 * all machine types, so it can & needs to be skipped here
 	 */
-	if (!(bIsEmuTOS && TosSize == 512*1024))
+	if (!bIsEmuTOS || TosSize < 512 * 1024)
 		TOS_CheckSysConfig();
 
 	/* 32-bit addressing is supported only by CPU >= 68020, TOS v3, TOS v4 and EmuTOS */
