@@ -278,17 +278,30 @@ bool Vars_GetVariableValue(const char *name, Uint32 *value)
 int Vars_List(int nArgc, char *psArgv[])
 {
 	Uint32 value;
-	int i;
-	fputs("Hatari debugger builtin symbols and their values are:\n", stderr);
+	char numstr[16];
+	int i, maxlen = 0;
 	for (i = 0; i < ARRAY_SIZE(hatari_vars); i++) {
-		const var_addr_t *hvar = hatari_vars + i;
-		value = Vars_GetValue(hvar);
-		fprintf(stderr, "  - %s: $%X / #%d", hvar->name, value, value);
-		if (hvar->info) {
-			fprintf(stderr, " -- %s\n", hvar->info);
-		} else {
-			fprintf(stderr, "\n");
+		int len = strlen(hatari_vars[i].name);
+		if (len > maxlen) {
+			maxlen = len;
 		}
 	}
+	fputs("Hatari debugger builtin symbols and their values are:\n", stderr);
+	for (i = 0; i < ARRAY_SIZE(hatari_vars); i++) {
+		const var_addr_t *hvar = &hatari_vars[i];
+		if (!hvar->info) {
+			/* debugger internal variables don't have descriptions */
+			continue;
+		}
+		value = Vars_GetValue(hvar);
+		if (hvar->bits == 16) {
+			fprintf(stderr, " %*s:     $%04X", maxlen, hvar->name, value);
+		} else {
+			fprintf(stderr, " %*s: $%08X", maxlen, hvar->name, value);
+		}
+		sprintf(numstr, "(%d)", value);
+		fprintf(stderr, " %-*s %s\n", 12, numstr, hvar->info);
+	}
+	fputs("Some of the variables are valid only in specific situations.\n", stderr);
 	return DEBUGGER_CMDDONE;
 }
