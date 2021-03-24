@@ -847,8 +847,8 @@ m  BSS
 </li>
 <li>If you want to stop at a specific cycle within a frame (that is,
     PC relative to the current VBL/HBL in cycles), set breakpoints to
-    specific "HBL" and "FrameCycles" variable values.  If you want,
-    for example, to break after 20 HBLs, use:
+    specific "VBL", "FrameCycles", "HBL" and "LineCycles" variable
+    values.  If you want, for example, to break after 20 HBLs, use:
 <pre>
 b  HBL = "HBL+20"
 </pre>
@@ -1907,7 +1907,7 @@ b  VdiOpcode = $8  :quiet :info vdi
 <dd>To stop e.g. when VBL is 100, HBL is 40 and line cycles is 5,
 use the corresponding debugger variables:
 <pre>
-b  VBL = 100  &amp;&amp;  HBL = 40  &amp;&amp;  FrameCycles = 5
+b  VBL = 100  &amp;&amp;  HBL = 40  &amp;&amp;  LineCycles = 5
 </pre>
 </dd>
 

@@ -36,6 +36,7 @@ Emulator:
 - GEMDOS HD:
   - Fix: clear GEMDOS Fread / Fwrite errors
 - Debugger:
+  - More readable "variables" command output
   - Add "info vme" and VME/SCU reg access tracing support
 
 
