@@ -30,7 +30,7 @@ typedef struct {
 	Uint32 *addr;
 	value_t vtype;
 	size_t bits;
-	const char *info;
+	const char *info; /* NULL for debugger internal variables */
 } var_addr_t;
 
 
