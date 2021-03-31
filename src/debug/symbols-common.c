@@ -280,6 +280,8 @@ static symbol_list_t* symbols_load_dri(FILE *fp, const prg_section_t *sections, 
 	char name[23];
 	uint16_t symid;
 	uint32_t address;
+	bool offset_addresses;
+	uint32_t textlen = sections[0].end - sections[0].offset;
 
 	if (tablesize % DRI_ENTRY_SIZE || !tablesize) {
 		fprintf(stderr, "ERROR: invalid DRI/GST symbol table size %d!\n", tablesize);
@@ -291,6 +293,7 @@ static symbol_list_t* symbols_load_dri(FILE *fp, const prg_section_t *sections, 
 	}
 
 	invalid = dtypes = notypes = ofiles = locals = count = 0;
+	offset_addresses = false;
 	for (i = 1; i <= symbols; i++) {
 		/* read DRI symbol table slot */
 		if (fread(name, 8, 1, fp) != 1 ||
@@ -322,10 +325,14 @@ static symbol_list_t* symbols_load_dri(FILE *fp, const prg_section_t *sections, 
 		case 0x0400:
 			symtype = SYMTYPE_DATA;
 			section = &(sections[1]);
+			if (address < textlen)
+				offset_addresses = true;
 			break;
 		case 0x0100:
 			symtype = SYMTYPE_BSS;
 			section = &(sections[2]);
+			if (address < textlen)
+				offset_addresses = true;
 			break;
 		default:
 			if ((symid & 0xe000) == 0xe000) {
@@ -357,15 +364,6 @@ static symbol_list_t* symbols_load_dri(FILE *fp, const prg_section_t *sections, 
 				continue;
 			}
 		}
-		if (section) {
-			address += section->offset;
-			if (address > section->end) {
-				fprintf(stderr, "WARNING: ignoring symbol '%s' of type %c in slot %d with invalid offset 0x%x (>= 0x%x).\n",
-					name, symbol_char(symtype), i, address, section->end);
-				invalid++;
-				continue;
-			}
-		}
 		list->names[count].address = address;
 		list->names[count].type = symtype;
 		list->names[count].name = strdup(name);
@@ -377,7 +375,46 @@ static symbol_list_t* symbols_load_dri(FILE *fp, const prg_section_t *sections, 
 		symbol_list_free(list);
 		return NULL;
 	}
+
 	list->symbols = symbols;
+	list->namecount = count;
+
+	/*
+	 * now offset the addresses if needed, and check them
+	 */
+	count = 0;
+	for (i = 0; i < list->namecount; i++) {
+		switch (list->names[i].type) {
+		case SYMTYPE_TEXT:
+			section = &(sections[0]);
+			break;
+		case SYMTYPE_DATA:
+			section = &(sections[1]);
+			break;
+		case SYMTYPE_BSS:
+			section = &(sections[2]);
+			break;
+		default:
+			section = NULL;
+			break;
+		}
+		if (section) {
+			if (offset_addresses)
+				list->names[i].address += section->offset;
+			if (list->names[i].address > section->end) {
+				fprintf(stderr, "WARNING: ignoring symbol '%s' of type %c in slot %d with invalid offset 0x%x (>= 0x%x).\n",
+					name, symbol_char(symtype), i, list->names[i].address, section->end);
+				invalid++;
+				free(list->names[i].name);
+				continue;
+			}
+		}
+		list->names[count] = list->names[i];
+		count++;
+	}
+	/*
+	 * update new final count again
+	 */
 	list->namecount = count;
 
 	if (invalid) {
