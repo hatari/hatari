@@ -16,6 +16,7 @@ typedef struct {
 	char *name;
 	uint32_t address;
 	symtype_t type;
+	bool name_allocated;
 } symbol_t;
 
 typedef struct {
@@ -25,7 +26,8 @@ typedef struct {
 	int datacount;		/* DATA/BSS symbol address count */
 	symbol_t *addresses;	/* TEXT + DATA/BSS items sorted by address */
 	symbol_t *names;	/* all items sorted by symbol name */
-	char *strtab;
+	char *strtab;		/* from a.out only */
+	char *debug_strtab;	/* from pure-c debug information only */
 } symbol_list_t;
 
 typedef struct {
@@ -204,14 +206,14 @@ static void symbol_list_free(symbol_list_t *list)
 		return;
 	}
 	assert(list->namecount);
-	if (list->strtab) {
-		free(list->strtab);
-		list->strtab = NULL;
-	} else {
-		for (i = 0; i < list->namecount; i++) {
+	for (i = 0; i < list->namecount; i++) {
+		if (list->names[i].name_allocated)
 			free(list->names[i].name);
-		}
 	}
+	free(list->strtab);
+	list->strtab = NULL;
+	free(list->debug_strtab);
+	list->debug_strtab = NULL;
 	free(list->addresses);
 	free(list->names);
 
@@ -260,6 +262,217 @@ static bool symbol_remove_obj(const char *name)
 		}
 	}
 	return false;
+}
+
+
+/*
+ * functions to deal with Pure-C Debug informations
+ */
+
+static uint32_t get_be32(const uint8_t *p)
+{
+	const uint32_t *p32 = (const uint32_t *)p;
+	return SDL_SwapBE32(*p32);
+}
+
+
+struct pdb_h {
+	uint32_t magic;
+	uint32_t size_fileinfos;
+	uint32_t size_lineinfo;
+	uint32_t size_varinfo;
+	uint32_t size_unknown;
+	uint32_t size_typeinfo;
+	uint32_t size_structinfo;
+	uint32_t size_stringtable;
+};
+#define SIZEOF_PDB_HEADER (8 * sizeof(uint32_t))
+
+#define PDB_STORAGE_NONE     0 /* no storage; absolute value */
+#define PDB_STORAGE_TEXT     4 /* in text segment */
+#define PDB_STORAGE_DATA     5 /* in data segment */
+#define PDB_STORAGE_BSS      6 /* in bss segment */
+
+struct pdb_varinfo {
+	int8_t type;
+	uint8_t storage;
+	uint32_t name_offset;
+	uint32_t typeinfo_offset;
+	uint32_t value;
+};
+#define SIZEOF_VARINFO ((size_t)14)
+
+
+static void read_pc_debug_header(const uint8_t *ptr, struct pdb_h *header)
+{
+	header->magic = get_be32(ptr + 0);
+	header->size_fileinfos = get_be32(ptr + 4);
+	header->size_lineinfo = get_be32(ptr + 8);
+	header->size_varinfo = get_be32(ptr + 12);
+	header->size_unknown = get_be32(ptr + 16);
+	header->size_typeinfo = get_be32(ptr + 20);
+	header->size_structinfo = get_be32(ptr + 24);
+	header->size_stringtable = get_be32(ptr + 28);
+}
+
+
+static void read_varinfo(const uint8_t *ptr, struct pdb_varinfo *info)
+{
+	info->type = ptr[0];
+	info->storage = ptr[1];
+	info->name_offset = get_be32(ptr + 2);
+	info->typeinfo_offset = get_be32(ptr + 6);
+	info->value = get_be32(ptr + 10);
+}
+
+
+static int read_pc_debug_names(FILE *fp, symbol_list_t *list, uint32_t offset)
+{
+	uint8_t *buf;
+	size_t filesize;
+	size_t nread;
+	uint8_t *p, *end;
+	uint32_t reloc_offset;
+	uint32_t debug_offset;
+	uint32_t varinfo_offset;
+	uint32_t strtable_offset;
+	struct pdb_h pdb_h;
+	int len;
+	uint8_t storage;
+	int i;
+
+	fseek(fp, 0, SEEK_END);
+	filesize = ftell(fp);
+	fseek(fp, 0, SEEK_SET);
+	buf = malloc(filesize);
+	if (buf == NULL)
+	{
+		perror("");
+		return 0;
+	}
+	nread = fread(buf, 1, filesize, fp);
+	if (nread != filesize)
+	{
+		perror("ERROR: reading failed");
+		free(buf);
+		return 0;
+	}
+	reloc_offset = offset;
+
+	/*
+	 * skip the TPA relocation table
+	 */
+	{
+		uint32_t first_reloc = get_be32(buf + reloc_offset);
+		reloc_offset += 4;
+		if (first_reloc != 0)
+		{
+			while (reloc_offset < filesize && buf[reloc_offset] != 0)
+				reloc_offset++;
+			reloc_offset++;
+		}
+		if (reloc_offset & 1)
+			reloc_offset++;
+		debug_offset = reloc_offset;
+	}
+
+	if (debug_offset + SIZEOF_PDB_HEADER >= filesize)
+	{
+		/* fprintf(stderr, "no debug information present\n"); */
+		/* this is not an error */
+		free(buf);
+		return 1;
+	}
+	read_pc_debug_header(buf + debug_offset, &pdb_h);
+	if (pdb_h.magic != 0x51444231UL) /* 'QDB1' (in executables) */
+	{
+		fprintf(stderr, "unknown debug format 0x%08lx\n", (unsigned long)pdb_h.magic);
+		free(buf);
+		return 0;
+	}
+	if (pdb_h.size_stringtable == 0)
+	{
+		free(buf);
+		return 0;
+	}
+	printf("Reading symbol names from Pure-C debug information\n");
+
+	list->debug_strtab = (char *)malloc(pdb_h.size_stringtable);
+	if (list->debug_strtab == NULL)
+	{
+		perror("");
+		return 0;
+	}
+
+	varinfo_offset = SIZEOF_PDB_HEADER + debug_offset + pdb_h.size_fileinfos + pdb_h.size_lineinfo;
+	strtable_offset = varinfo_offset + pdb_h.size_varinfo + pdb_h.size_unknown + pdb_h.size_typeinfo + pdb_h.size_structinfo;
+	if (strtable_offset >= filesize || strtable_offset + pdb_h.size_stringtable > filesize)
+	{
+		free(buf);
+		return 0;
+	}
+	memcpy(list->debug_strtab, buf + strtable_offset, pdb_h.size_stringtable);
+
+	if (pdb_h.size_varinfo != 0)
+	{
+		for (i = 0; i < list->namecount; i++)
+		{
+			switch (list->names[i].type)
+			{
+			case SYMTYPE_TEXT:
+				storage = PDB_STORAGE_TEXT;
+				break;
+			case SYMTYPE_DATA:
+				storage = PDB_STORAGE_DATA;
+				break;
+			case SYMTYPE_BSS:
+				storage = PDB_STORAGE_BSS;
+				break;
+			default:
+				storage = PDB_STORAGE_NONE;
+				break;
+			}
+			if (storage != PDB_STORAGE_NONE)
+			{
+				len = (int)strlen(list->names[i].name);
+				/*
+				 * only need to care about possibly truncated names
+				 */
+				if (len == 8 || len == 22)
+				{
+					/*
+					 * Fixme: slurp the infos all in, and sort them so we can do a binary search
+					 */
+					p = buf + varinfo_offset;
+					end = p + pdb_h.size_varinfo;
+					while (p < end)
+					{
+						struct pdb_varinfo info;
+
+						read_varinfo(p, &info);
+						if (info.storage == storage && info.value == list->names[i].address &&
+							((storage == PDB_STORAGE_TEXT && (info.type == 7 || info.type == 8)) ||
+							 ((storage == PDB_STORAGE_DATA || storage == PDB_STORAGE_BSS) && (info.type == 4 || info.type == 5 || info.type == 6))))
+						{
+							char *name = (char *)buf + strtable_offset + info.name_offset;
+							if (strcmp(list->names[i].name, name) != 0)
+							{
+								if (list->names[i].name_allocated)
+									free(list->names[i].name);
+								list->names[i].name = list->debug_strtab + info.name_offset;
+								list->names[i].name_allocated = false;
+							}
+							break;
+						}
+						p += SIZEOF_VARINFO;
+					}
+				}
+			}
+		}
+	}
+
+	free(buf);
+	return 1;
 }
 
 
@@ -367,6 +580,7 @@ static symbol_list_t* symbols_load_dri(FILE *fp, const prg_section_t *sections, 
 		list->names[count].address = address;
 		list->names[count].type = symtype;
 		list->names[count].name = strdup(name);
+		list->names[count].name_allocated = true;
 		assert(list->names[count].name);
 		count++;
 	}
@@ -437,6 +651,12 @@ static symbol_list_t* symbols_load_dri(FILE *fp, const prg_section_t *sections, 
 		 */
 		fprintf(stderr, "NOTE: ignored %d object symbols (= name has '/', ends in '.[ao]' or is GCC internal).\n", ofiles);
 	}
+
+	/*
+	 * now try to read the real names from Pure-C debug info
+	 */
+	read_pc_debug_names(fp, list, 28 + (sections[2].offset - sections[0].offset) + tablesize);
+
 	return list;
 }
 
