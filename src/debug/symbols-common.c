@@ -198,12 +198,30 @@ static symbol_list_t* symbol_list_alloc(int symbols)
  */
 static void symbol_list_free(symbol_list_t *list)
 {
-	if (list) {
-		if (list->names) {
-			free(list->names);
-		}
-		free(list);
+	int i;
+
+	if (!list) {
+		return;
 	}
+	assert(list->namecount);
+	if (list->strtab) {
+		free(list->strtab);
+		list->strtab = NULL;
+	} else {
+		for (i = 0; i < list->namecount; i++) {
+			free(list->names[i].name);
+		}
+	}
+	free(list->addresses);
+	free(list->names);
+
+	/* catch use of freed list */
+	list->addresses = NULL;
+	list->codecount = 0;
+	list->datacount = 0;
+	list->names = NULL;
+	list->namecount = 0;
+	free(list);
 }
 
 /**
