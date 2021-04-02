@@ -1,7 +1,7 @@
 
-if(READLINE_FOUND)
+if(Readline_FOUND)
 	include_directories(${READLINE_INCLUDE_DIR})
-endif(READLINE_FOUND)
+endif(Readline_FOUND)
 
 if(ENABLE_DSP_EMU)
 	set(DSPDBG_C debugdsp.c)

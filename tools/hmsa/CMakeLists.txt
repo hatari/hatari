@@ -13,9 +13,9 @@ add_executable(hmsa ${HMSA_SOURCES})
 
 target_link_libraries(hmsa Floppy)
 
-if(MATH_FOUND)
+if(Math_FOUND)
 	target_link_libraries(hmsa ${MATH_LIBRARY})
-endif(MATH_FOUND)
+endif(Math_FOUND)
 
 if(ZLIB_FOUND)
 	target_link_libraries(hmsa ${ZLIB_LIBRARY})

@@ -68,9 +68,9 @@ if(X11_FOUND)
 	include_directories(${X11_INCLUDE_DIR})
 endif(X11_FOUND)
 
-if(CAPSIMAGE_FOUND)
+if(CapsImage_FOUND)
 	include_directories(${CAPSIMAGE_INCLUDE_DIR})
-endif(CAPSIMAGE_FOUND)
+endif(CapsImage_FOUND)
 
 
 link_directories(${CMAKE_CURRENT_BINARY_DIR}/debug
@@ -151,7 +151,7 @@ endif(ENABLE_OSX_BUNDLE)
 
 target_link_libraries(hatari Falcon UaeCpu GuiSdl Floppy Debug ${SDL2_LIBRARY})
 
-if(MATH_FOUND AND NOT APPLE)
+if(Math_FOUND AND NOT APPLE)
 	target_link_libraries(hatari ${MATH_LIBRARY})
 endif()
 
@@ -159,9 +159,9 @@ if(SDL2MAIN_LIBRARY)
 	target_link_libraries(hatari ${SDL2MAIN_LIBRARY})
 endif(SDL2MAIN_LIBRARY)
 
-if(READLINE_FOUND)
+if(Readline_FOUND)
 	target_link_libraries(hatari ${READLINE_LIBRARY})
-endif(READLINE_FOUND)
+endif(Readline_FOUND)
 
 if(ZLIB_FOUND)
 	target_link_libraries(hatari ${ZLIB_LIBRARY})
@@ -175,21 +175,21 @@ if(X11_FOUND)
 	target_link_libraries(hatari ${X11_LIBRARIES})
 endif(X11_FOUND)
 
-if(PORTAUDIO_FOUND)
+if(PortAudio_FOUND)
 	target_link_libraries(hatari ${PORTAUDIO_LIBRARY})
-endif(PORTAUDIO_FOUND)
+endif(PortAudio_FOUND)
 
-if(PORTMIDI_FOUND)
+if(PortMidi_FOUND)
 	target_link_libraries(hatari ${PORTMIDI_LIBRARY})
-endif(PORTMIDI_FOUND)
+endif(PortMidi_FOUND)
 
-if(CAPSIMAGE_FOUND)
+if(CapsImage_FOUND)
 	target_link_libraries(hatari ${CAPSIMAGE_LIBRARY})
-endif(CAPSIMAGE_FOUND)
+endif(CapsImage_FOUND)
 
-if(UDEV_FOUND)
+if(Udev_FOUND)
 	target_link_libraries(hatari ${UDEV_LIBRARY})
-endif(UDEV_FOUND)
+endif(Udev_FOUND)
 
 if(WIN32)
 	# Needed for socket() on Windows
