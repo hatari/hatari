@@ -56,6 +56,14 @@ if(PNG_FOUND)
 	include_directories(${PNG_INCLUDE_DIR})
 endif(PNG_FOUND)
 
+if(PortAudio_FOUND)
+	include_directories(${PORTAUDIO_INCLUDE_DIR})
+endif(PortAudio_FOUND)
+
+if(PortMidi_FOUND)
+	include_directories(${PORTMIDI_INCLUDE_DIR})
+endif(PortMidi_FOUND)
+
 if(X11_FOUND)
 	include_directories(${X11_INCLUDE_DIR})
 endif(X11_FOUND)
@@ -63,6 +71,7 @@ endif(X11_FOUND)
 if(CAPSIMAGE_FOUND)
 	include_directories(${CAPSIMAGE_INCLUDE_DIR})
 endif(CAPSIMAGE_FOUND)
+
 
 link_directories(${CMAKE_CURRENT_BINARY_DIR}/debug
 		 ${CMAKE_CURRENT_BINARY_DIR}/falcon
