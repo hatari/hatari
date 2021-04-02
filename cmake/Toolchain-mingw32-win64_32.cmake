@@ -19,6 +19,8 @@ SET(CMAKE_C_COMPILER ${MINGW_EXE_PREFIX}-gcc)
 SET(CMAKE_CXX_COMPILER ${MINGW_EXE_PREFIX}-g++)
 SET(CMAKE_RC_COMPILER ${MINGW_EXE_PREFIX}-windres)
 
+SET(ENV{PKG_CONFIG} ${MINGW_EXE_PREFIX}-pkg-config)
+
 # Base directory for the target environment
 # We use the output from '-print-sysroot'
 EXECUTE_PROCESS(

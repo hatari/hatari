@@ -72,6 +72,10 @@ if(CapsImage_FOUND)
 	include_directories(${CAPSIMAGE_INCLUDE_DIR})
 endif(CapsImage_FOUND)
 
+if(SDL2_OTHER_CFLAGS)
+	add_definitions(${SDL2_OTHER_CFLAGS})
+	# message(STATUS "Additional CFLAGS of SDL: ${SDL2_OTHER_CFLAGS}")
+endif(SDL2_OTHER_CFLAGS)
 
 link_directories(${CMAKE_CURRENT_BINARY_DIR}/debug
 		 ${CMAKE_CURRENT_BINARY_DIR}/falcon
