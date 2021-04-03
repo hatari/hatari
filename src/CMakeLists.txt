@@ -72,11 +72,6 @@ if(CapsImage_FOUND)
 	include_directories(${CAPSIMAGE_INCLUDE_DIR})
 endif(CapsImage_FOUND)
 
-if(SDL2_OTHER_CFLAGS)
-	add_definitions(${SDL2_OTHER_CFLAGS})
-	# message(STATUS "Additional CFLAGS of SDL: ${SDL2_OTHER_CFLAGS}")
-endif(SDL2_OTHER_CFLAGS)
-
 link_directories(${CMAKE_CURRENT_BINARY_DIR}/debug
 		 ${CMAKE_CURRENT_BINARY_DIR}/falcon
 		 ${CMAKE_CURRENT_BINARY_DIR}/gui-sdl
@@ -152,6 +147,11 @@ elseif(WIN32)
 else()
 	add_executable(hatari ${SOURCES})
 endif(ENABLE_OSX_BUNDLE)
+
+if(SDL2_OTHER_CFLAGS)
+	target_compile_definitions(hatari PRIVATE ${SDL2_OTHER_CFLAGS})
+	# message(STATUS "Additional CFLAGS of SDL: ${SDL2_OTHER_CFLAGS}")
+endif(SDL2_OTHER_CFLAGS)
 
 target_link_libraries(hatari Falcon UaeCpu GuiSdl Floppy Debug ${SDL2_LIBRARY})
 
