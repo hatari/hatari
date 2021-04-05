@@ -52,9 +52,9 @@ void Resolution_Init(void)
 		ConfigureParams.Screen.nMaxHeight = DesktopHeight;
 	}
 	DEBUGPRINT(("Desktop resolution: %dx%d\n",DesktopWidth, DesktopHeight));
-	Log_Printf(LOG_DEBUG, "Configured max Hatari resolution = %dx%d, optimal for ST = %dx%d\n",
+	Log_Printf(LOG_DEBUG, "Configured max Hatari resolution = %dx%d, optimal for ST = %dx%d(+%d)\n",
 		ConfigureParams.Screen.nMaxWidth, ConfigureParams.Screen.nMaxHeight,
-		2*NUM_VISIBLE_LINE_PIXELS, 2*NUM_VISIBLE_LINES+STATUSBAR_MAX_HEIGHT);
+		2*NUM_VISIBLE_LINE_PIXELS, 2*NUM_VISIBLE_LINES, STATUSBAR_MAX_HEIGHT);
 }
 
 /**
