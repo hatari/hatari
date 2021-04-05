@@ -72,23 +72,19 @@ void Resolution_GetDesktopSize(int *width, int *height)
  */
 static void Resolution_GetMaxSize(int *width, int *height)
 {
-	DEBUGPRINT(("resolution: force to specified max size\n"));
+	DEBUGPRINT(("resolution: use specified max size\n"));
 	*width = ConfigureParams.Screen.nMaxWidth;
 	*height = ConfigureParams.Screen.nMaxHeight;
 }
 
+
 /**
- * Search video mode size that best suits the given width/height/bpp
- * constraints and set them into given arguments.  With zeroed arguments,
- * set largest video mode.
- * 
- * Return true if mode is forced (shouldn't be further limited).
+ * Set given width & height arguments to maximum size allowed in the
+ * configuration.
  */
-bool Resolution_Search(int *width, int *height, int *bpp, bool keep)
+void Resolution_GetLimits(int *width, int *height, int *bpp, bool keep)
 {
-	/* Search in available modes the best suited */
-	DEBUGPRINT(("resolution: video mode asked: %dx%dx%d (%s)\n",
-		 *width, *height, *bpp, bInFullScreen ? "fullscreen" : "windowed"));
+	*width = *height = 0;
 
 	if (bInFullScreen)
 	{
@@ -96,44 +92,18 @@ bool Resolution_Search(int *width, int *height, int *bpp, bool keep)
 		if (keep)
 		{
 			Resolution_GetDesktopSize(width, height);
-			return false;
 		}
 	}
 	if (ConfigureParams.Screen.bForceMax)
 	{
 		/* force given max size */
 		Resolution_GetMaxSize(width, height);
-		return true;
-	}
-
-	DEBUGPRINT(("resolution: video mode selected: %dx%dx%d\n",
-		 *width, *height, *bpp));
-	return false;
-}
-
-
-/**
- * Set given width & height arguments to maximum size allowed in the
- * configuration, or if that's too large for the requested bit depth,
- * to the largest available video mode size.
- */
-void Resolution_GetLimits(int *width, int *height, int *bpp, bool keep)
-{
-	*width = *height = 0;
-
-	/* constrain max size to what HW/SDL offers */
-	DEBUGPRINT(("resolution: request limits for: %dx%dx%d\n", *width, *height, *bpp));
-
-	/* forced resolution? */
-	if (Resolution_Search(width, height, bpp, keep)) {
 		return;
 	}
 
 	if (!(*width && *height) ||
 	    (ConfigureParams.Screen.nMaxWidth < *width &&
 	     ConfigureParams.Screen.nMaxHeight < *height)) {
-		DEBUGPRINT(("resolution: limit to user configured max\n"));
-		*width = ConfigureParams.Screen.nMaxWidth;
-		*height = ConfigureParams.Screen.nMaxHeight;
+		Resolution_GetMaxSize(width, height);
 	}
 }
