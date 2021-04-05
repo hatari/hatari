@@ -1342,7 +1342,6 @@ void Screen_SetGenConvSize(int width, int height, int bpp, bool bForceChange)
 		bpp = 32;
 
 	/* constrain size request to user's desktop size */
-	Resolution_GetDesktopSize(&maxw, &maxh);
 	Resolution_GetLimits(&maxw, &maxh, &bpp, keep);
 
 	nScreenZoomX = nScreenZoomY = 1;
