@@ -341,7 +341,7 @@ void Screen_SetTextureScale(int width, int height, int win_width, int win_height
 	else
 		quality = '1';	// linear filtering
 
-	DEBUGPRINT(("%dx%d / %dx%d -> scale = %.1f / Render Scale Quality = %c\n",
+	DEBUGPRINT(("%dx%d / %dx%d -> scale = %g, Render Scale Quality = %c\n",
 		    win_width, win_height, width, height, scale, quality));
 
 	if (bForce || quality != prev_quality)
