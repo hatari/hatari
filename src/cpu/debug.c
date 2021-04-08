@@ -1331,10 +1331,10 @@ struct cop_rec
 	uae_u16 w1, w2;
 	int hpos, vpos;
 	int bhpos, bvpos;
-	uaecptr addr;
+	uaecptr addr, nextaddr;
 };
 static struct cop_rec *cop_record[2];
-static int nr_cop_records[2], curr_cop_set;
+static int nr_cop_records[2], curr_cop_set, selected_cop_set;
 
 #define NR_DMA_REC_HPOS 256
 #define NR_DMA_REC_VPOS 1000
@@ -2010,7 +2010,7 @@ static bool get_record_dma_info(struct dma_rec *dr, int hpos, int vpos, uae_u32 
 		chcnt = br;
 	} else if (dr->type == DMARECORD_BITPLANE) {
 		sr = _T("BPL");
-		chcnt = br;
+		chcnt = br + 1;
 	}
 
 	_stprintf (l1, _T("[%02X %3d]"), hpos, hpos);
@@ -2074,6 +2074,8 @@ static bool get_record_dma_info(struct dma_rec *dr, int hpos, int vpos, uae_u32 
 			l3[cl2++] = 'p';
 		if (dr->evt & DMA_EVENT_COPPERWAKE)
 			l3[cl2++] = 'W';
+		if (dr->evt & DMA_EVENT_COPPERSKIP)
+			l3[cl2++] = 'S';
 		if (dr->evt & DMA_EVENT_NOONEGETS) {
 			l3[cl2++] = '#';
 		} else if (dr->evt & DMA_EVENT_COPPERWANTED) {
@@ -2188,12 +2190,13 @@ void record_copper_blitwait (uaecptr addr, int hpos, int vpos)
 	cop_record[curr_cop_set][t].bvpos = vpos;
 }
 
-void record_copper (uaecptr addr, uae_u16 word1, uae_u16 word2, int hpos, int vpos)
+void record_copper (uaecptr addr, uaecptr nextaddr, uae_u16 word1, uae_u16 word2, int hpos, int vpos)
 {
 	int t = nr_cop_records[curr_cop_set];
 	init_record_copper();
 	if (t < NR_COPPER_RECORDS) {
 		cop_record[curr_cop_set][t].addr = addr;
+		cop_record[curr_cop_set][t].nextaddr = nextaddr;
 		cop_record[curr_cop_set][t].w1 = word1;
 		cop_record[curr_cop_set][t].w2 = word2;
 		cop_record[curr_cop_set][t].hpos = hpos;
@@ -2211,9 +2214,9 @@ void record_copper (uaecptr addr, uae_u16 word1, uae_u16 word2, int hpos, int vp
 	}
 }
 
-static struct cop_rec *find_copper_records (uaecptr addr)
+static struct cop_rec *find_copper_records(uaecptr addr)
 {
-	int s = curr_cop_set ^ 1;
+	int s = selected_cop_set;
 	int t = nr_cop_records[s];
 	int i;
 	for (i = 0; i < t; i++) {
@@ -2224,15 +2227,15 @@ static struct cop_rec *find_copper_records (uaecptr addr)
 }
 
 /* simple decode copper by Mark Cox */
-static void decode_copper_insn (FILE* file, uae_u16 mword1, uae_u16 mword2, unsigned long addr)
+static uaecptr decode_copper_insn(FILE *file, uae_u16 mword1, uae_u16 mword2, uaecptr addr)
 {
 	struct cop_rec *cr = NULL;
 	uae_u32 insn_type, insn;
 	TCHAR here = ' ';
 	TCHAR record[] = _T("          ");
 
-	if ((cr = find_copper_records (addr))) {
-		_stprintf (record, _T(" [%03x %03x]"), cr->vpos, cr->hpos);
+	if ((cr = find_copper_records(addr))) {
+		_stprintf(record, _T(" [%03x %03x]"), cr->vpos, cr->hpos);
 		insn = (cr->w1 << 16) | cr->w2;
 	} else {
 		insn = (mword1 << 16) | mword2;
@@ -2240,24 +2243,24 @@ static void decode_copper_insn (FILE* file, uae_u16 mword1, uae_u16 mword2, unsi
 
 	insn_type = insn & 0x00010001;
 
-	if (get_copper_address (-1) >= addr && get_copper_address(-1) <= addr + 3)
+	if (get_copper_address(-1) >= addr && get_copper_address(-1) <= addr + 3)
 		here = '*';
 
 	console_out_f (_T("%c%08x: %04x %04x%s\t;%c "), here, addr, insn >> 16, insn & 0xFFFF, record, insn != ((mword1 << 16) | mword2) ? '!' : ' ');
 
 	switch (insn_type) {
 	case 0x00010000: /* WAIT insn */
-		console_out (_T("Wait for "));
-		disassemble_wait (file, insn);
+		console_out(_T("Wait for "));
+		disassemble_wait(file, insn);
 
 		if (insn == 0xfffffffe)
-			console_out (_T("                           \t;  End of Copperlist\n"));
+			console_out(_T("                           \t;  End of Copperlist\n"));
 
 		break;
 
 	case 0x00010001: /* SKIP insn */
-		console_out (_T("Skip if "));
-		disassemble_wait (file, insn);
+		console_out(_T("Skip if "));
+		disassemble_wait(file, insn);
 		break;
 
 	case 0x00000000:
@@ -2271,9 +2274,9 @@ static void decode_copper_insn (FILE* file, uae_u16 mword1, uae_u16 mword2, unsi
 				i++;
 			}
 			if (custd[i].name)
-				console_out_f (_T("%s := 0x%04x\n"), custd[i].name, insn & 0xffff);
+				console_out_f(_T("%s := 0x%04x\n"), custd[i].name, insn & 0xffff);
 			else
-				console_out_f (_T("%04x := 0x%04x\n"), addr, insn & 0xffff);
+				console_out_f(_T("%04x := 0x%04x\n"), addr, insn & 0xffff);
 		}
 		break;
 
@@ -2282,15 +2285,21 @@ static void decode_copper_insn (FILE* file, uae_u16 mword1, uae_u16 mword2, unsi
 	}
 
 	if (cr && cr->bvpos >= 0) {
-		console_out_f (_T("                 BLT [%03x %03x]\n"), cr->bvpos, cr->bhpos);
+		console_out_f(_T("                 BLT [%03x %03x]\n"), cr->bvpos, cr->bhpos);
 	}
+	if (cr && cr->nextaddr != 0xffffffff && cr->nextaddr != addr + 4) {
+		console_out_f(_T(" %08x: Copper jump\n"), cr->nextaddr);
+		return cr->nextaddr;
+	}
+	return addr + 4;
 }
 
-static uaecptr decode_copperlist (FILE* file, uaecptr address, int nolines)
+static uaecptr decode_copperlist(FILE *file, uaecptr address, int nolines)
 {
+	uaecptr next;
 	while (nolines-- > 0) {
-		decode_copper_insn (file, chipmem_wget_indirect (address), chipmem_wget_indirect (address + 2), address);
-		address += 4;
+		next = decode_copper_insn(file, chipmem_wget_indirect(address), chipmem_wget_indirect(address + 2), address);
+		address = next;
 	}
 	return address;
 	/* You may wonder why I don't stop this at the end of the copperlist?
@@ -2324,15 +2333,20 @@ static int copper_debugger (TCHAR **c)
 			debug_copper &= ~4;
 		}
 	} else {
-		if (more_params (c)) {
-			maddr = readhex (c);
+		if (more_params(c)) {
+			maddr = readhex(c);
 			if (maddr == 1 || maddr == 2)
-				maddr = get_copper_address (maddr);
+				maddr = get_copper_address(maddr);
 			else if (maddr == 0)
-				maddr = get_copper_address (-1);
-		} else
+				maddr = get_copper_address(-1);
+		} else {
 			maddr = nxcopper;
-
+		}
+		selected_cop_set = curr_cop_set;
+		if (!find_copper_records(maddr)) {
+			selected_cop_set = curr_cop_set ^ 1;
+		}
+ 
 		if (more_params (c))
 			lines = readhex (c);
 		else
