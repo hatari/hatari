@@ -60,6 +60,38 @@ cygwin_task:
   test_script:
     - C:\tools\cygwin\bin\bash.exe -lc "cd '%cd%' ; ctest -j4"
 
+msys2_task:
+  windows_container:
+    image: cirrusci/windowsservercore:2019
+    cpu: 4
+    memory: 4G
+  env:
+    MSYS: winsymlinks:nativestrict
+    MSYSTEM: MINGW64
+    CHERE_INVOKING: 1
+  choco_cache:
+    folder: '%temp%\chocolatey'
+  install_script:
+    - choco install -y --no-progress msys2
+    # Keep the log and temporary files out of the cache:
+    - del %temp%\chocolatey\*.log
+    - del %temp%\chocolatey\*log.txt
+    - del %temp%\chocolatey\*.tmp
+    # Install the required libraries:
+    - C:\tools\msys64\usr\bin\bash -lc "pacman --noconfirm -S --needed
+         make pkg-config diffutils
+         mingw-w64-x86_64-cmake
+         mingw-w64-x86_64-gcc
+         mingw-w64-x86_64-SDL2
+         mingw-w64-x86_64-libpng
+         mingw-w64-x86_64-portaudio
+         mingw-w64-x86_64-portmidi"
+  script:
+    - C:\tools\msys64\usr\bin\bash -lc "cmake -G 'MSYS Makefiles' ."
+    - C:\tools\msys64\usr\bin\bash -lc "make -j4"
+  test_script:
+    - C:\tools\msys64\usr\bin\bash -lc "ctest"
+
 visualstudio_task:
   windows_container:
     image: cirrusci/windowsservercore:2019
