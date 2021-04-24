@@ -3,8 +3,7 @@ Bus Error testing results (word access):
 
 $FF8002 - $FF8006
 $FF8008 - $FF800C
-$FF800E - $FF8060
-$FF8064 - $FF8200
+$FF800E - $FF8200
 $FF82C4 - $FF8604
 $FF8610 - $FF8800
 $FF8804 - $FF8900
