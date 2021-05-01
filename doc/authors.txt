@@ -129,9 +129,9 @@ random order - and if someone is missing here, please remind us!):
   and MacOS screenshot dir handling.
 
 - Thorsten Otto: improvements to the code that patches the TOS ROMs,
-  a.out symbol table & absolute symbols support, few debugger & tracing
-  usability improvements, fixed (sin, mulaw & a-law) DSP ROM tables,
-  fmovem test program, key mapping improvement.
+  Pure-C long symbol names, a.out symbol table & absolute symbols support,
+  few debugger & tracing usability improvements, fixed (sin, mulaw & a-law)
+  DSP ROM tables, fmovem test program, key mapping improvement.
 
 - Andreas Grabher : FPU improvements using the SoftFloat library,
   most of the 030 MMU implementation and few bug reports & patches
