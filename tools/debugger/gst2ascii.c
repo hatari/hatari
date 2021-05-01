@@ -1,7 +1,7 @@
 /*
  * Hatari - gst2ascii.c
  * 
- * Copyright (C) 2013-2017 by Eero Tamminen
+ * Copyright (C) 2013-2021 by Eero Tamminen
  * 
  * This file is distributed under the GNU General Public License, version 2
  * or at your option any later version. Read the file gpl.txt for details.
@@ -35,13 +35,6 @@ typedef enum {
 } symtype_t;
 
 #define ARRAY_SIZE(x) (int)(sizeof(x)/sizeof(x[0]))
-
-static struct {
-	symtype_t notypes;
-	bool no_local;
-	bool no_obj;
-	bool sort_name;
-} Options;
 
 #include "../../src/debug/symbols-common.c"
 
@@ -108,7 +101,7 @@ static void usage(const char *msg)
  * the given file and add given offsets to the addresses.
  * Return symbols list or NULL for failure.
  */
-static symbol_list_t* symbols_load(const char *filename)
+static symbol_list_t* symbols_load(const char *filename, const symbol_opts_t *opts)
 {
 	symbol_list_t *list;
 	uint16_t magic;
@@ -125,7 +118,7 @@ static symbol_list_t* symbols_load(const char *filename)
 	if (SDL_SwapBE16(magic) != ATARI_PROGRAM_MAGIC) {
 		usage("file isn't an Atari program file");
 	}
-	list = symbols_load_binary(fp, ~Options.notypes);
+	list = symbols_load_binary(fp, opts);
 	fclose(fp);
 
 	if (!list) {
@@ -165,7 +158,7 @@ static symbol_list_t* symbols_load(const char *filename)
 /**
  * Show symbols sorted by selected option
  */
-static int symbols_show(symbol_list_t* list)
+static int symbols_show(symbol_list_t* list, const symbol_opts_t *opts)
 {
 	symbol_t *entry, *entries;
 	char symchar;
@@ -175,7 +168,7 @@ static int symbols_show(symbol_list_t* list)
 		fprintf(stderr, "No symbols!\n");
 		return 1;
 	}
-	if (Options.sort_name) {
+	if (opts->sort_name) {
 		entries = list->names;
 	} else {
 		entries = list->addresses;
@@ -195,34 +188,37 @@ static int symbols_show(symbol_list_t* list)
  */
 int main(int argc, const char *argv[])
 {
+	symbol_opts_t opts;
 	int i;
 
 	PrgPath = *argv;
+	memset(&opts, 0, sizeof(opts));
+
 	for (i = 1; i+1 < argc; i++) {
 		if (argv[i][0] != '-') {
 			break;
 		}
 		switch(tolower((unsigned char)argv[i][1])) {
 		case 'a':
-			Options.notypes |= SYMTYPE_ABS;
+			opts.notypes |= SYMTYPE_ABS;
 			break;
 		case 'b':
-			Options.notypes |= SYMTYPE_BSS;
+			opts.notypes |= SYMTYPE_BSS;
 			break;
 		case 'd':
-			Options.notypes |= SYMTYPE_DATA;
+			opts.notypes |= SYMTYPE_DATA;
 			break;
 		case 't':
-			Options.notypes |= SYMTYPE_TEXT;
+			opts.notypes |= SYMTYPE_TEXT;
 			break;
 		case 'l':
-			Options.no_local = true;
+			opts.no_local = true;
 			break;
 		case 'o':
-			Options.no_obj = true;
+			opts.no_obj = true;
 			break;
 		case 'n':
-			Options.sort_name = true;
+			opts.sort_name = true;
 			break;
 		default:
 			usage("unknown option");
@@ -231,5 +227,5 @@ int main(int argc, const char *argv[])
 	if (i+1 != argc) {
 		usage("incorrect number of arguments");
 	}
-	return symbols_show(symbols_load(argv[i]));
+	return symbols_show(symbols_load(argv[i], &opts), &opts);
 }

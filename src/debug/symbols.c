@@ -239,6 +239,7 @@ static symbol_list_t* Symbols_Load(const char *filename, Uint32 *offsets, Uint32
 		return NULL;
 	}
 	if (Opt_IsAtariProgram(filename)) {
+		symbol_opts_t opts;
 		const char *last = CurrentProgramPath;
 		if (!last) {
 			/* "pc=text" breakpoint used as point for loading program symbols gives false hits during bootup */
@@ -248,7 +249,10 @@ static symbol_list_t* Symbols_Load(const char *filename, Uint32 *offsets, Uint32
 		}
 		fprintf(stderr, "Reading symbols from program '%s' symbol table...\n", filename);
 		fp = fopen(filename, "rb");
-		list = symbols_load_binary(fp, SYMTYPE_ALL);
+		opts.notypes = 0;
+		opts.no_obj = true;
+		opts.no_local = true;
+		list = symbols_load_binary(fp, &opts);
 		SymbolsAreForProgram = true;
 	} else {
 		fprintf(stderr, "Reading 'nm' style ASCII symbols from '%s'...\n", filename);

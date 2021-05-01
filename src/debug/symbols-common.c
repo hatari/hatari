@@ -33,6 +33,13 @@ typedef struct {
 	uint32_t end;
 } prg_section_t;
 
+typedef struct {
+	symtype_t notypes;
+	bool no_local;
+	bool no_obj;
+	bool sort_name;
+} symbol_opts_t;
+
 /* Magic used to denote different symbol table formats */
 #define SYMBOL_FORMAT_GNU  0x474E555f	/* "MiNT" */
 #define SYMBOL_FORMAT_MINT 0x4D694E54	/* "GNU_" */
@@ -244,11 +251,11 @@ static bool symbol_remove_obj(const char *name)
  *	http://toshyp.atari.org/en/005005.html
  * Return symbols list or NULL for failure.
  */
-static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, symtype_t gettype, uint32_t tablesize, bool no_local, bool no_obj)
+static symbol_list_t* symbols_load_dri(FILE *fp, const prg_section_t *sections, uint32_t tablesize, const symbol_opts_t *opts)
 {
 	int i, count, symbols, invalid;
 	int notypes, dtypes, locals, ofiles;
-	prg_section_t *section;
+	const prg_section_t *section;
 	symbol_list_t *list;
 	symtype_t symtype;
 #define DRI_ENTRY_SIZE	14
@@ -316,17 +323,17 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, symtyp
 			invalid++;
 			continue;
 		}
-		if (!(gettype & symtype)) {
+		if (opts->notypes & symtype) {
 			notypes++;
 			continue;
 		}
-		if (no_local) {
+		if (opts->no_local) {
 			if (name[0] == '.' && name[1] == 'L') {
 				locals++;
 				continue;
 			}
 		}
-		if (no_obj) {
+		if (opts->no_obj) {
 			if (symbol_remove_obj(name)) {
 				ofiles++;
 				continue;
@@ -384,7 +391,7 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, symtyp
  * a.out format symbol table, and add given offsets to the addresses.
  * Return symbols list or NULL for failure.
  */
-static symbol_list_t* symbols_load_gnu(FILE *fp, prg_section_t *sections, symtype_t gettype, uint32_t tablesize, Uint32 stroff, Uint32 strsize, bool no_local, bool no_obj)
+static symbol_list_t* symbols_load_gnu(FILE *fp, const prg_section_t *sections, uint32_t tablesize, Uint32 stroff, Uint32 strsize, const symbol_opts_t *opts)
 {
 	size_t slots = tablesize / SIZEOF_STRUCT_NLIST;
 	size_t i;
@@ -401,7 +408,7 @@ static symbol_list_t* symbols_load_gnu(FILE *fp, prg_section_t *sections, symtyp
 	unsigned short n_desc;
 	static char dummy[] = "<invalid>";
 	int dtypes, locals, ofiles, count, notypes, invalid, weak;
-	prg_section_t *section;
+	const prg_section_t *section;
 
 	if (!(list = symbol_list_alloc(slots))) {
 		return NULL;
@@ -517,17 +524,17 @@ static symbol_list_t* symbols_load_gnu(FILE *fp, prg_section_t *sections, symtyp
 			dtypes++;
 			continue;
 		}
-		if (!(gettype & symtype)) {
+		if (opts->notypes & symtype) {
 			notypes++;
 			continue;
 		}
-		if (no_local) {
+		if (opts->no_local) {
 			if (name[0] == '.' && name[1] == 'L') {
 				locals++;
 				continue;
 			}
 		}
-		if (no_obj) {
+		if (opts->no_obj) {
 			if (symbol_remove_obj(name)) {
 				ofiles++;
 				continue;
@@ -637,7 +644,7 @@ static bool symbols_print_prg_info(Uint32 tabletype, Uint32 prgflags, Uint16 rel
  * loader function to load the symbols.
  * Return symbols list or NULL for failure.
  */
-static symbol_list_t* symbols_load_binary(FILE *fp, symtype_t gettype)
+static symbol_list_t* symbols_load_binary(FILE *fp, const symbol_opts_t *opts)
 {
 	Uint32 textlen, datalen, bsslen, tablesize, tabletype, prgflags;
 	prg_section_t sections[3];
@@ -810,11 +817,7 @@ static symbol_list_t* symbols_load_binary(FILE *fp, symtype_t gettype)
 			return NULL;
 		}
 		fprintf(stderr, "Trying to load symbol table at offset 0x%x...\n", offset);
-#ifdef SYMBOLS_IN_HATARI
-		symbols = symbols_load_gnu(fp, sections, gettype, tablesize, stroff, strsize, true, true);
-#else
-		symbols = symbols_load_gnu(fp, sections, gettype, tablesize, stroff, strsize, Options.no_local, Options.no_obj);
-#endif
+		symbols = symbols_load_gnu(fp, sections, tablesize, stroff, strsize, opts);
 	} else {
 		/* go to start of symbol table */
 		offset = 0x1C + textlen + datalen;
@@ -823,11 +826,7 @@ static symbol_list_t* symbols_load_binary(FILE *fp, symtype_t gettype)
 			return NULL;
 		}
 		fprintf(stderr, "Trying to load symbol table at offset 0x%x...\n", offset);
-#ifdef SYMBOLS_IN_HATARI
-		symbols = symbols_load_dri(fp, sections, gettype, tablesize, true, true);
-#else
-		symbols = symbols_load_dri(fp, sections, gettype, tablesize, Options.no_local, Options.no_obj);
-#endif
+		symbols = symbols_load_dri(fp, sections, tablesize, opts);
 	}
 #ifndef SYMBOLS_IN_HATARI
 	if (!symbols) {
@@ -836,5 +835,6 @@ static symbol_list_t* symbols_load_binary(FILE *fp, symtype_t gettype)
 	}
 	fprintf(stderr, "Load the listed symbols to Hatari debugger with 'symbols <filename> TEXT'.\n");
 #endif
+
 	return symbols;
 }
