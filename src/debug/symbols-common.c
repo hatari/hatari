@@ -1,7 +1,7 @@
 /*
  * Hatari - symbols-common.c
  *
- * Copyright (C) 2010-2019 by Eero Tamminen
+ * Copyright (C) 2010-2021 by Eero Tamminen
  *
  * This file is distributed under the GNU General Public License, version 2
  * or at your option any later version. Read the file gpl.txt for details.
@@ -654,9 +654,6 @@ static symbol_list_t* symbols_load_binary(FILE *fp, const symbol_opts_t *opts)
 	Uint32 symoff = 0;
 	Uint32 stroff = 0;
 	Uint32 strsize = 0;
-#ifdef SYMBOLS_IN_HATARI
-	Uint32 start;
-#endif
 
 	/* get TEXT, DATA & BSS section sizes */
 	fseek(fp, 2, SEEK_SET);
@@ -756,46 +753,41 @@ static symbol_list_t* symbols_load_binary(FILE *fp, const symbol_opts_t *opts)
 	if (!symbols_print_prg_info(tabletype, prgflags, relocflag)) {
 		return NULL;
 	}
-#ifndef SYMBOLS_IN_HATARI
 	fprintf(stderr, "Program section sizes:\n- text: %d\n- data: %d\n- bss:  %d\n",
 		textlen, datalen, bsslen);
-#endif
 
 	if (!tablesize) {
 		fprintf(stderr, "ERROR: symbol table missing from the program!\n");
 		return NULL;
 	}
-#ifndef SYMBOLS_IN_HATARI
 	fprintf(stderr, "- syms: %d\n", tablesize);
-#endif
 
 #ifdef SYMBOLS_IN_HATARI
-	/* offsets & max sizes for running program TEXT/DATA/BSS section symbols */
-	start = DebugInfo_GetTEXT();
-	if (!start) {
-		fprintf(stderr, "ERROR: no valid program basepage!\n");
-		return NULL;
-	}
-	sections[0].offset = start;
-	sections[0].end = start + textlen;
-	if (DebugInfo_GetTEXTEnd() != sections[0].end) {
-		fprintf(stderr, "ERROR: given program TEXT section size differs from one in RAM!\n");
-		return NULL;
-	}
-
-	start = DebugInfo_GetDATA();
-	sections[1].offset = start;
-	sections[1].end = start + datalen;
-
-	start = DebugInfo_GetBSS();
-	sections[2].offset = start;
-	sections[2].end = start + bsslen;
-
-	if (sections[0].end != sections[1].offset) {
-		fprintf(stderr, "WARNING: DATA start doesn't match TEXT start + size!\n");
-	}
-	if (sections[1].end != sections[2].offset) {
-		fprintf(stderr, "WARNING: BSS start doesn't match DATA start + size!\n");
+	{
+		/* offsets & max sizes for running program TEXT/DATA/BSS section symbols */
+		Uint32 start = DebugInfo_GetTEXT();
+		if (!start) {
+			fprintf(stderr, "ERROR: no valid program basepage!\n");
+			return NULL;
+		}
+		sections[0].offset = start;
+		sections[0].end = start + textlen;
+		if (DebugInfo_GetTEXTEnd() != sections[0].end) {
+			fprintf(stderr, "ERROR: given program TEXT section size differs from one in RAM!\n");
+			return NULL;
+		}
+		start = DebugInfo_GetDATA();
+		sections[1].offset = start;
+		sections[1].end = start + datalen;
+		if (sections[1].offset != sections[0].end) {
+			fprintf(stderr, "WARNING: DATA start doesn't match TEXT start + size!\n");
+		}
+		start = DebugInfo_GetBSS();
+		sections[2].offset = start;
+		sections[2].end = start + bsslen;
+		if (sections[2].offset != sections[1].end) {
+			fprintf(stderr, "WARNING: BSS start doesn't match DATA start + size!\n");
+		}
 	}
 #else
 
@@ -828,13 +820,5 @@ static symbol_list_t* symbols_load_binary(FILE *fp, const symbol_opts_t *opts)
 		fprintf(stderr, "Trying to load symbol table at offset 0x%x...\n", offset);
 		symbols = symbols_load_dri(fp, sections, tablesize, opts);
 	}
-#ifndef SYMBOLS_IN_HATARI
-	if (!symbols) {
-		fprintf(stderr, "\n\n*** Try with 'nm -n <program>' (Atari/cross-compiler tool) instead ***\n\n");
-		return NULL;
-	}
-	fprintf(stderr, "Load the listed symbols to Hatari debugger with 'symbols <filename> TEXT'.\n");
-#endif
-
 	return symbols;
 }

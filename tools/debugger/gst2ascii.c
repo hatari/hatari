@@ -122,6 +122,7 @@ static symbol_list_t* symbols_load(const char *filename, const symbol_opts_t *op
 	fclose(fp);
 
 	if (!list) {
+		fprintf(stderr, "\n\n*** Try with 'nm -n <program>' (Atari/cross-compiler tool) instead ***\n\n");
 		usage("no symbols, or reading them failed");
 	}
 
@@ -180,6 +181,7 @@ static int symbols_show(symbol_list_t* list, const symbol_opts_t *opts)
 	}
 
 	fprintf(stderr, "%d (unignored) symbols processed.\n", list->namecount);
+	fprintf(stderr, "\nLoad the listed symbols to Hatari debugger with 'symbols <filename> TEXT'.\n");
 	return 0;
 }
 
