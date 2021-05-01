@@ -2,14 +2,16 @@
  * Hatari - symbols-common.c
  *
  * Copyright (C) 2010-2021 by Eero Tamminen
+ * Copyright (C) 2017,2021 by Thorsten Otto
  *
  * This file is distributed under the GNU General Public License, version 2
  * or at your option any later version. Read the file gpl.txt for details.
  *
- * symbols-common.c - Hatari debugger symbol/address handling; parsing, sorting,
- * matching, TAB completion support etc.
+ * symbols-common.c - Hatari debugger symbol/address handling; parsing,
+ * sorting, matching, TAB completion support etc.
+ *
  * This code is shared between the internal debug "symbols" command
- * and the standalone gst2asciii tool.
+ * and the standalone "gst2asciii" tool.
  */
 
 typedef struct {
@@ -331,15 +333,11 @@ static int read_pc_debug_names(FILE *fp, symbol_list_t *list, uint32_t offset)
 	uint8_t *buf;
 	size_t filesize;
 	size_t nread;
-	uint8_t *p, *end;
 	uint32_t reloc_offset;
 	uint32_t debug_offset;
 	uint32_t varinfo_offset;
 	uint32_t strtable_offset;
 	struct pdb_h pdb_h;
-	int len;
-	uint8_t storage;
-	int i;
 
 	fseek(fp, 0, SEEK_END);
 	filesize = ftell(fp);
@@ -415,8 +413,10 @@ static int read_pc_debug_names(FILE *fp, symbol_list_t *list, uint32_t offset)
 
 	if (pdb_h.size_varinfo != 0)
 	{
+		int i;
 		for (i = 0; i < list->namecount; i++)
 		{
+			uint8_t storage;
 			switch (list->names[i].type)
 			{
 			case SYMTYPE_TEXT:
@@ -434,38 +434,38 @@ static int read_pc_debug_names(FILE *fp, symbol_list_t *list, uint32_t offset)
 			}
 			if (storage != PDB_STORAGE_NONE)
 			{
-				len = (int)strlen(list->names[i].name);
+				uint8_t *p, *end;
+				int len = (int)strlen(list->names[i].name);
 				/*
 				 * only need to care about possibly truncated names
 				 */
-				if (len == 8 || len == 22)
+				if (len != 8 && len != 22)
+					continue;
+				/*
+				 * Fixme: slurp the infos all in, and sort them so we can do a binary search
+				 */
+				p = buf + varinfo_offset;
+				end = p + pdb_h.size_varinfo;
+				while (p < end)
 				{
-					/*
-					 * Fixme: slurp the infos all in, and sort them so we can do a binary search
-					 */
-					p = buf + varinfo_offset;
-					end = p + pdb_h.size_varinfo;
-					while (p < end)
-					{
-						struct pdb_varinfo info;
+					struct pdb_varinfo info;
 
-						read_varinfo(p, &info);
-						if (info.storage == storage && info.value == list->names[i].address &&
-							((storage == PDB_STORAGE_TEXT && (info.type == 7 || info.type == 8)) ||
-							 ((storage == PDB_STORAGE_DATA || storage == PDB_STORAGE_BSS) && (info.type == 4 || info.type == 5 || info.type == 6))))
+					read_varinfo(p, &info);
+					if (info.storage == storage && info.value == list->names[i].address &&
+					    ((storage == PDB_STORAGE_TEXT && (info.type == 7 || info.type == 8)) ||
+					     ((storage == PDB_STORAGE_DATA || storage == PDB_STORAGE_BSS) && (info.type == 4 || info.type == 5 || info.type == 6))))
+					{
+						char *name = (char *)buf + strtable_offset + info.name_offset;
+						if (strcmp(list->names[i].name, name) != 0)
 						{
-							char *name = (char *)buf + strtable_offset + info.name_offset;
-							if (strcmp(list->names[i].name, name) != 0)
-							{
-								if (list->names[i].name_allocated)
-									free(list->names[i].name);
-								list->names[i].name = list->debug_strtab + info.name_offset;
-								list->names[i].name_allocated = false;
-							}
-							break;
+							if (list->names[i].name_allocated)
+								free(list->names[i].name);
+							list->names[i].name = list->debug_strtab + info.name_offset;
+							list->names[i].name_allocated = false;
 						}
-						p += SIZEOF_VARINFO;
+						break;
 					}
+					p += SIZEOF_VARINFO;
 				}
 			}
 		}
