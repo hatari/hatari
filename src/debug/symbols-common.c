@@ -44,6 +44,16 @@ typedef struct {
 	bool sort_name;
 } symbol_opts_t;
 
+typedef struct {
+	int debug;    /* debug symbols */
+	int locals;   /* unnamed / local symbols */
+	int gccint;   /* GCC internal symbols */
+	int files;    /* object file names */
+	int weak;     /* weak (undefined) symbols */
+	int invalid;  /* invalid symbol types for addresses */
+	int unwanted; /* explicitly disabed symbol types */
+} ignore_counts_t;
+
 /* Magic used to denote different symbol table formats */
 #define SYMBOL_FORMAT_GNU  0x474E555f	/* "MiNT" */
 #define SYMBOL_FORMAT_MINT 0x4D694E54	/* "GNU_" */
@@ -53,20 +63,7 @@ typedef struct {
 #define ATARI_PROGRAM_MAGIC 0x601A
 
 
-/* ------------------ load and free functions ------------------ */
-
-/**
- * return true if given symbol name is object/library/file name
- */
-static bool is_obj_file(const char *name)
-{
-	int len = strlen(name);
-	/* object (.a or .o) / file name? */
-	if (len > 2 && ((name[len-2] == '.' && (name[len-1] == 'a' || name[len-1] == 'o')) || strchr(name, '/'))) {
-		    return true;
-	}
-	return false;
-}
+/* ------------------ symbol comparisons ------------------ */
 
 /**
  * compare function for qsort() to sort according to
@@ -135,13 +132,6 @@ static int symbols_check_addresses(const symbol_t *syms, int count)
 			if (syms[j].type == SYMTYPE_ABS) {
 				continue;
 			}
-			/* ASCII symbol files contain also object file addresses,
-			 * those will often have the same address as the first symbol
-			 * in given object -> no point warning about them
-			 */
-			if (is_obj_file(syms[i].name) || is_obj_file(syms[j].name)) {
-				continue;
-			}
 			fprintf(stderr, "WARNING: symbols '%s' & '%s' have the same 0x%x address.\n",
 				syms[i].name, syms[j].name, syms[i].address);
 			dups++;
@@ -162,10 +152,6 @@ static int symbols_check_names(const symbol_t *syms, int count)
 	for (i = 0; i < (count - 1); i++)
 	{
 		for (j = i + 1; j < count && strcmp(syms[i].name, syms[j].name) == 0; j++) {
-			/* this is common case for object files having different sections */
-			if (syms[i].type != syms[j].type && is_obj_file(syms[i].name)) {
-				continue;
-			}
 			fprintf(stderr, "WARNING: addresses 0x%x & 0x%x have the same '%s' name.\n",
 				syms[i].address, syms[j].address, syms[i].name);
 			dups++;
@@ -174,6 +160,9 @@ static int symbols_check_names(const symbol_t *syms, int count)
 	}
 	return dups;
 }
+
+
+/* ----------------- symbol list alloc / free ------------------ */
 
 /**
  * Allocate symbol list & names for given number of items.
@@ -242,34 +231,8 @@ static char symbol_char(int type)
 	}
 }
 
-/**
- * Return true if symbol name matches internal GCC symbol name,
- * or is object / file name.
- */
-static bool symbol_remove_obj(const char *name)
-{
-	static const char *gcc_sym[] = {
-		"___gnu_compiled_c",
-		"gcc2_compiled."
-	};
-	int i;
 
-	if (is_obj_file(name)) {
-		return true;
-	}
-	/* useless symbols GCC (v2) seems to add to every object? */
-	for (i = 0; i < ARRAY_SIZE(gcc_sym); i++) {
-		if (strcmp(name, gcc_sym[i]) == 0) {
-			return true;
-		}
-	}
-	return false;
-}
-
-
-/*
- * functions to deal with Pure-C Debug informations
- */
+/* -------- Pure-C debug information handling --------- */
 
 static uint32_t get_be32(const uint8_t *p)
 {
@@ -476,6 +439,105 @@ static int read_pc_debug_names(FILE *fp, symbol_list_t *list, uint32_t offset)
 }
 
 
+/* ---------- symbol ignore count handling ------------- */
+
+/**
+ * return true if given symbol name is object/library/file name
+ */
+static bool is_file_name(const char *name)
+{
+	int len = strlen(name);
+	/* object (.a or .o) / file name? */
+	if (len > 2 && ((name[len-2] == '.' && (name[len-1] == 'a' || name[len-1] == 'o')) || strchr(name, '/'))) {
+		    return true;
+	}
+	return false;
+}
+
+/**
+ * Return true if symbol name matches internal GCC symbol name
+ */
+static bool is_gcc_internal(const char *name)
+{
+	static const char *gcc_sym[] = {
+		"___gnu_compiled_c",
+		"gcc2_compiled."
+	};
+	int i;
+	/* useless symbols GCC (v2) seems to add to every object? */
+	for (i = 0; i < ARRAY_SIZE(gcc_sym); i++) {
+		if (strcmp(name, gcc_sym[i]) == 0) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
+ * Return true if symbol should be ignored based on its name & type
+ * and given options, and increase appropiate ignore count
+ */
+static bool ignore_symbol(const char *name, symtype_t symtype, const symbol_opts_t *opts, ignore_counts_t *counts)
+{
+	if (opts->notypes & symtype) {
+		counts->unwanted++;
+		return true;
+	}
+	if (opts->no_local) {
+		if (name[0] == '.' && name[1] == 'L') {
+			counts->locals++;
+			return true;
+		}
+	}
+	if (opts->no_obj) {
+		if (is_gcc_internal(name)) {
+			counts->gccint++;
+			return true;
+		}
+		if (is_file_name(name)) {
+			counts->files++;
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
+ * show counts for all ignored symbol categories
+ */
+static void show_ignored(const ignore_counts_t *counts)
+{
+	if (counts->debug) {
+		fprintf(stderr, "NOTE: ignored %d debugging symbols.\n", counts->debug);
+	}
+	if (counts->locals) {
+		fprintf(stderr, "NOTE: ignored %d unnamed / local symbols ('.L*').\n", counts->locals);
+	}
+	if (counts->gccint) {
+		fprintf(stderr, "NOTE: ignored %d GCC internal symbols.\n", counts->gccint);
+	}
+	if (counts->files) {
+		/* object file path names most likely get truncated and
+		 * as result cause unnecessary symbol name conflicts
+		 * in addition to object file addresses conflicting
+		 * with first symbol in the object file.
+		 */
+		fprintf(stderr, "NOTE: ignored %d file symbols ('*.[ao]'|'*/*').\n", counts->files);
+	}
+	if (counts->weak) {
+		fprintf(stderr, "NOTE: ignored %d weak / undefined symbols.\n", counts->weak);
+	}
+	if (counts->invalid) {
+		fprintf(stderr, "NOTE: ignored %d invalid symbols.\n", counts->invalid);
+	}
+	if (counts->unwanted) {
+		fprintf(stderr, "NOTE: ignored %d other unwanted symbol types.\n", counts->unwanted);
+	}
+}
+
+
+/* ---------- symbol table type specific loading ------------- */
+
 /**
  * Load symbols of given type and the symbol address addresses from
  * DRI/GST format symbol table, and add given offsets to the addresses:
@@ -484,8 +546,8 @@ static int read_pc_debug_names(FILE *fp, symbol_list_t *list, uint32_t offset)
  */
 static symbol_list_t* symbols_load_dri(FILE *fp, const prg_section_t *sections, uint32_t tablesize, const symbol_opts_t *opts)
 {
-	int i, count, symbols, invalid;
-	int notypes, dtypes, locals, ofiles;
+	int i, count, symbols;
+	ignore_counts_t ignore;
 	const prg_section_t *section;
 	symbol_list_t *list;
 	symtype_t symtype;
@@ -505,8 +567,10 @@ static symbol_list_t* symbols_load_dri(FILE *fp, const prg_section_t *sections, 
 		return NULL;
 	}
 
-	invalid = dtypes = notypes = ofiles = locals = count = 0;
+	memset(&ignore, 0, sizeof(ignore));
 	offset_addresses = false;
+	count = 0;
+
 	for (i = 1; i <= symbols; i++) {
 		/* read DRI symbol table slot */
 		if (fread(name, 8, 1, fp) != 1 ||
@@ -549,7 +613,7 @@ static symbol_list_t* symbols_load_dri(FILE *fp, const prg_section_t *sections, 
 			break;
 		default:
 			if ((symid & 0xe000) == 0xe000) {
-				dtypes++;
+				ignore.debug++;
 				continue;
 			}
 			if ((symid & 0x4000) == 0x4000) {
@@ -558,24 +622,12 @@ static symbol_list_t* symbols_load_dri(FILE *fp, const prg_section_t *sections, 
 				break;
 			}
 			fprintf(stderr, "WARNING: ignoring symbol '%s' in slot %d of unknown type 0x%x.\n", name, i, symid);
-			invalid++;
+			ignore.invalid++;
 			continue;
 		}
-		if (opts->notypes & symtype) {
-			notypes++;
+		/* whether to ignore symbol based on options and its name & type */
+		if (ignore_symbol(name, symtype, opts, &ignore)) {
 			continue;
-		}
-		if (opts->no_local) {
-			if (name[0] == '.' && name[1] == 'L') {
-				locals++;
-				continue;
-			}
-		}
-		if (opts->no_obj) {
-			if (symbol_remove_obj(name)) {
-				ofiles++;
-				continue;
-			}
 		}
 		list->names[count].address = address;
 		list->names[count].type = symtype;
@@ -618,7 +670,7 @@ static symbol_list_t* symbols_load_dri(FILE *fp, const prg_section_t *sections, 
 			if (list->names[i].address > section->end) {
 				fprintf(stderr, "WARNING: ignoring symbol '%s' of type %c in slot %d with invalid offset 0x%x (>= 0x%x).\n",
 					name, symbol_char(symtype), i, list->names[i].address, section->end);
-				invalid++;
+				ignore.invalid++;
 				free(list->names[i].name);
 				continue;
 			}
@@ -631,32 +683,12 @@ static symbol_list_t* symbols_load_dri(FILE *fp, const prg_section_t *sections, 
 	 */
 	list->namecount = count;
 
-	if (invalid) {
-		fprintf(stderr, "NOTE: ignored %d invalid symbols.\n", invalid);
-	}
-	if (dtypes) {
-		fprintf(stderr, "NOTE: ignored %d debugging symbols.\n", dtypes);
-	}
-	if (notypes) {
-		fprintf(stderr, "NOTE: ignored %d other unwanted symbol types.\n", notypes);
-	}
-	if (locals) {
-		fprintf(stderr, "NOTE: ignored %d unnamed / local symbols (= name starts with '.L').\n", locals);
-	}
-	if (ofiles) {
-		/* object file path names most likely get truncated and
-		 * as result cause unnecessary symbol name conflicts in
-		 * addition to object file addresses conflicting with
-		 * first symbol in the object file.
-		 */
-		fprintf(stderr, "NOTE: ignored %d object symbols (= name has '/', ends in '.[ao]' or is GCC internal).\n", ofiles);
-	}
-
 	/*
 	 * now try to read the real names from Pure-C debug info
 	 */
 	read_pc_debug_names(fp, list, 28 + (sections[2].offset - sections[0].offset) + tablesize);
 
+	show_ignored(&ignore);
 	return list;
 }
 
@@ -682,7 +714,8 @@ static symbol_list_t* symbols_load_gnu(FILE *fp, const prg_section_t *sections, 
 	unsigned char n_other;
 	unsigned short n_desc;
 	static char dummy[] = "<invalid>";
-	int dtypes, locals, ofiles, count, notypes, invalid, weak;
+	int count;
+	ignore_counts_t ignore;
 	const prg_section_t *section;
 
 	if (!(list = symbol_list_alloc(slots))) {
@@ -708,7 +741,9 @@ static symbol_list_t* symbols_load_gnu(FILE *fp, const prg_section_t *sections, 
 	p = (unsigned char *)list->strtab;
 	sym = list->names;
 
-	weak = invalid = dtypes = notypes = ofiles = locals = count = 0;
+	memset(&ignore, 0, sizeof(ignore));
+	count = 0;
+
 	for (i = 0; i < slots; i++)
 	{
 		strx = SDL_SwapBE32(*(Uint32*)p);
@@ -721,19 +756,19 @@ static symbol_list_t* symbols_load_gnu(FILE *fp, const prg_section_t *sections, 
 		p += 4;
 		name = dummy;
 		if (!strx) {
-			invalid++;
+			ignore.invalid++;
 			continue;
 		}
 		if (strx >= strsize) {
 			fprintf(stderr, "symbol name index %x out of range\n", (unsigned int)strx);
-			invalid++;
+			ignore.invalid++;
 			continue;
 		}
 		name = list->strtab + strx + stroff;
 
 		if (n_type & N_STAB)
 		{
-			dtypes++;
+			ignore.debug++;
 			continue;
 		}
 		section = NULL;
@@ -742,7 +777,7 @@ static symbol_list_t* symbols_load_gnu(FILE *fp, const prg_section_t *sections, 
 		case N_UNDF:
 		case N_UNDF|N_EXT:
 			/* shouldn't happen here */
-			weak++;
+			ignore.weak++;
 			continue;
 		case N_ABS:
 		case N_ABS|N_EXT:
@@ -765,8 +800,8 @@ static symbol_list_t* symbols_load_gnu(FILE *fp, const prg_section_t *sections, 
 			symtype = SYMTYPE_BSS;
 			section = &(sections[2]);
 			break;
-		case N_FN: /* filenames, not object addresses? */
-			dtypes++;
+		case N_FN: /* filename symbol */
+			ignore.files++;
 			continue;
 		case N_SIZE:
 		case N_WARNING:
@@ -775,17 +810,17 @@ static symbol_list_t* symbols_load_gnu(FILE *fp, const prg_section_t *sections, 
 		case N_SETD:
 		case N_SETB:
 		case N_SETV:
-			dtypes++;
+			ignore.debug++;
 			continue;
 		case N_WEAKU:
 		case N_WEAKT:
 		case N_WEAKD:
 		case N_WEAKB:
-			weak++;
+			ignore.weak++;
 			continue;
 		default:
 			fprintf(stderr, "WARNING: ignoring symbol '%s' in slot %u of unknown type 0x%x.\n", name, (unsigned int)i, n_type);
-			invalid++;
+			ignore.invalid++;
 			continue;
 		}
 		/*
@@ -796,31 +831,19 @@ static symbol_list_t* symbols_load_gnu(FILE *fp, const prg_section_t *sections, 
 		{
 			/* if we ever want to know a symbols size, get that here */
 			fprintf(stderr, "WARNING: ignoring common symbol '%s' in slot %u.\n", name, (unsigned int)i);
-			dtypes++;
+			ignore.debug++;
 			continue;
 		}
-		if (opts->notypes & symtype) {
-			notypes++;
+		/* whether to ignore symbol based on options and its name & type */
+		if (ignore_symbol(name, symtype, opts, &ignore)) {
 			continue;
-		}
-		if (opts->no_local) {
-			if (name[0] == '.' && name[1] == 'L') {
-				locals++;
-				continue;
-			}
-		}
-		if (opts->no_obj) {
-			if (symbol_remove_obj(name)) {
-				ofiles++;
-				continue;
-			}
 		}
 		if (section) {
 			address += sections[0].offset;	/* all GNU symbol addresses are TEXT relative */
 			if (address > section->end) {
 				fprintf(stderr, "WARNING: ignoring symbol '%s' of type %c in slot %u with invalid offset 0x%x (>= 0x%x).\n",
 					name, symbol_char(symtype), (unsigned int)i, address, section->end);
-				invalid++;
+				ignore.invalid++;
 				continue;
 			}
 		}
@@ -835,33 +858,12 @@ static symbol_list_t* symbols_load_gnu(FILE *fp, const prg_section_t *sections, 
 	list->symbols = slots;
 	list->namecount = count;
 
-	if (invalid) {
-		fprintf(stderr, "NOTE: ignored %d invalid symbols.\n", invalid);
-	}
-	if (dtypes) {
-		fprintf(stderr, "NOTE: ignored %d debugging symbols.\n", dtypes);
-	}
-	if (weak) {
-		fprintf(stderr, "NOTE: ignored %d weak / undefined symbols.\n", weak);
-	}
-	if (notypes) {
-		fprintf(stderr, "NOTE: ignored %d other unwanted symbol types.\n", notypes);
-	}
-	if (locals) {
-		fprintf(stderr, "NOTE: ignored %d unnamed / local symbols (= name starts with '.L').\n", locals);
-	}
-	if (ofiles) {
-		/* object file path names most likely get truncated and
-		 * as result cause unnecessary symbol name conflicts in
-		 * addition to object file addresses conflicting with
-		 * first symbol in the object file.
-		 */
-		fprintf(stderr, "NOTE: ignored %d object symbols (= name has '/', ends in '.[ao]' or is GCC internal).\n", ofiles);
-	}
-
+	show_ignored(&ignore);
 	return list;
 }
 
+
+/* ---------- program info + symbols loading ------------- */
 
 /**
  * Print program header information.
