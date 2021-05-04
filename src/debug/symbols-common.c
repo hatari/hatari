@@ -555,7 +555,7 @@ static symbol_list_t* symbols_load_dri(FILE *fp, const prg_section_t *sections, 
 	char name[23];
 	uint16_t symid;
 	uint32_t address;
-	bool offset_addresses;
+	bool use_bssdata_offset;
 	uint32_t textlen = sections[0].end - sections[0].offset;
 
 	if (tablesize % DRI_ENTRY_SIZE || !tablesize) {
@@ -568,7 +568,7 @@ static symbol_list_t* symbols_load_dri(FILE *fp, const prg_section_t *sections, 
 	}
 
 	memset(&ignore, 0, sizeof(ignore));
-	offset_addresses = false;
+	use_bssdata_offset = false;
 	count = 0;
 
 	for (i = 1; i <= symbols; i++) {
@@ -597,19 +597,16 @@ static symbol_list_t* symbols_load_dri(FILE *fp, const prg_section_t *sections, 
 		switch (symid & 0xf00) {
 		case 0x0200:
 			symtype = SYMTYPE_TEXT;
-			section = &(sections[0]);
 			break;
 		case 0x0400:
 			symtype = SYMTYPE_DATA;
-			section = &(sections[1]);
 			if (address < textlen)
-				offset_addresses = true;
+				use_bssdata_offset = true;
 			break;
 		case 0x0100:
 			symtype = SYMTYPE_BSS;
-			section = &(sections[2]);
 			if (address < textlen)
-				offset_addresses = true;
+				use_bssdata_offset = true;
 			break;
 		default:
 			if ((symid & 0xe000) == 0xe000) {
@@ -618,7 +615,6 @@ static symbol_list_t* symbols_load_dri(FILE *fp, const prg_section_t *sections, 
 			}
 			if ((symid & 0x4000) == 0x4000) {
 				symtype = SYMTYPE_ABS;
-				section = NULL;
 				break;
 			}
 			fprintf(stderr, "WARNING: ignoring symbol '%s' in slot %d of unknown type 0x%x.\n", name, i, symid);
@@ -646,47 +642,59 @@ static symbol_list_t* symbols_load_dri(FILE *fp, const prg_section_t *sections, 
 	list->namecount = count;
 
 	/*
+	 * now try to read the real names from Pure-C debug info
+	 */
+	read_pc_debug_names(fp, list, 28 + (sections[2].offset - sections[0].offset) + tablesize);
+
+	/*
 	 * now offset the addresses if needed, and check them
 	 */
+	fprintf(stderr, "Offsetting BSS/DATA symbols from %s.\n",
+		use_bssdata_offset ? "their own sections" : "TEXT section");
 	count = 0;
 	for (i = 0; i < list->namecount; i++) {
-		switch (list->names[i].type) {
+		/* offsets are by default based on TEXT section */
+		const prg_section_t *offset_section = &(sections[0]);
+		symbol_t *item = &list->names[i];
+		switch (item->type) {
 		case SYMTYPE_TEXT:
 			section = &(sections[0]);
 			break;
 		case SYMTYPE_DATA:
 			section = &(sections[1]);
+			if (use_bssdata_offset) {
+				offset_section = &(sections[1]);
+			}
 			break;
 		case SYMTYPE_BSS:
 			section = &(sections[2]);
+			if (use_bssdata_offset) {
+				offset_section = &(sections[2]);
+			}
 			break;
 		default:
 			section = NULL;
 			break;
 		}
-		if (section) {
-			if (offset_addresses)
-				list->names[i].address += section->offset;
-			if (list->names[i].address > section->end) {
-				fprintf(stderr, "WARNING: ignoring symbol '%s' of type %c in slot %d with invalid offset 0x%x (>= 0x%x).\n",
-					name, symbol_char(symtype), i, list->names[i].address, section->end);
+		if (section && offset_section) {
+			item->address += offset_section->offset;
+			if (item->address > section->end) {
+				fprintf(stderr, "WARNING: ignoring %c symbol '%s' in slot %d with invalid offset 0x%x (>= 0x%x).\n",
+					symbol_char(item->type), item->name, i, item->address, section->end);
+				if (item->name_allocated) {
+					free(item->name);
+				}
 				ignore.invalid++;
-				free(list->names[i].name);
 				continue;
 			}
 		}
-		list->names[count] = list->names[i];
+		list->names[count] = *item;
 		count++;
 	}
 	/*
 	 * update new final count again
 	 */
 	list->namecount = count;
-
-	/*
-	 * now try to read the real names from Pure-C debug info
-	 */
-	read_pc_debug_names(fp, list, 28 + (sections[2].offset - sections[0].offset) + tablesize);
 
 	show_ignored(&ignore);
 	return list;
