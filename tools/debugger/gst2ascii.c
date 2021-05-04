@@ -122,7 +122,6 @@ static symbol_list_t* symbols_load(const char *filename, const symbol_opts_t *op
 	fclose(fp);
 
 	if (!list) {
-		fprintf(stderr, "\n\n*** Try with 'nm -n <program>' (Atari/cross-compiler tool) instead ***\n\n");
 		usage("no symbols, or reading them failed");
 	}
 

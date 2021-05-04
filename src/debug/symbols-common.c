@@ -347,7 +347,7 @@ static int read_pc_debug_names(FILE *fp, symbol_list_t *list, uint32_t offset)
 	read_pc_debug_header(buf + debug_offset, &pdb_h);
 	if (pdb_h.magic != 0x51444231UL) /* 'QDB1' (in executables) */
 	{
-		fprintf(stderr, "unknown debug format 0x%08lx\n", (unsigned long)pdb_h.magic);
+		fprintf(stderr, "ERROR: unknown debug format 0x%08lx\n", (unsigned long)pdb_h.magic);
 		free(buf);
 		return 0;
 	}
@@ -356,7 +356,7 @@ static int read_pc_debug_names(FILE *fp, symbol_list_t *list, uint32_t offset)
 		free(buf);
 		return 0;
 	}
-	printf("Reading symbol names from Pure-C debug information\n");
+	fprintf(stderr, "Reading symbol names from Pure-C debug information.\n");
 
 	list->debug_strtab = (char *)malloc(pdb_h.size_stringtable);
 	if (list->debug_strtab == NULL)
@@ -1038,14 +1038,12 @@ static symbol_list_t* symbols_load_binary(FILE *fp, const symbol_opts_t *opts)
 	if (!symbols_print_prg_info(tabletype, prgflags, relocflag)) {
 		return NULL;
 	}
-	fprintf(stderr, "Program section sizes:\n- text: %d\n- data: %d\n- bss:  %d\n",
-		textlen, datalen, bsslen);
-
 	if (!tablesize) {
 		fprintf(stderr, "ERROR: symbol table missing from the program!\n");
 		return NULL;
 	}
-	fprintf(stderr, "- syms: %d\n", tablesize);
+	fprintf(stderr, "Program section sizes:\n  text: 0x%x, data: 0x%x, bss: 0x%x, symtab: 0x%x\n",
+		textlen, datalen, bsslen, tablesize);
 
 #ifdef SYMBOLS_IN_HATARI
 	{
@@ -1093,7 +1091,7 @@ static symbol_list_t* symbols_load_binary(FILE *fp, const symbol_opts_t *opts)
 			perror("ERROR: seeking to symbol table failed");
 			return NULL;
 		}
-		fprintf(stderr, "Trying to load symbol table at offset 0x%x...\n", offset);
+		fprintf(stderr, "Trying to load a.out symbol table at offset 0x%x...\n", offset);
 		symbols = symbols_load_gnu(fp, sections, tablesize, stroff, strsize, opts);
 	} else {
 		/* go to start of symbol table */
@@ -1102,7 +1100,7 @@ static symbol_list_t* symbols_load_binary(FILE *fp, const symbol_opts_t *opts)
 			perror("ERROR: seeking to symbol table failed");
 			return NULL;
 		}
-		fprintf(stderr, "Trying to load symbol table at offset 0x%x...\n", offset);
+		fprintf(stderr, "Trying to load DRI symbol table at offset 0x%x...\n", offset);
 		symbols = symbols_load_dri(fp, sections, tablesize, opts);
 	}
 	return symbols;
