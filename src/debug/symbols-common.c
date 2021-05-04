@@ -927,9 +927,16 @@ static bool symbols_print_prg_info(Uint32 tabletype, Uint32 prgflags, Uint16 rel
 /**
  * Parse program header and use symbol table format specific
  * loader function to load the symbols.
+ *
+ * update_sections() callback is called with .end fields set
+ * to sizes of corresponding sections.  It should set suitable
+ * start offsets and update end end positions accordingly.
+ * If that succeeds, it should return true.
+ *
  * Return symbols list or NULL for failure.
  */
-static symbol_list_t* symbols_load_binary(FILE *fp, const symbol_opts_t *opts)
+static symbol_list_t* symbols_load_binary(FILE *fp, const symbol_opts_t *opts,
+					  bool (*update_sections)(prg_section_t*))
 {
 	Uint32 textlen, datalen, bsslen, tablesize, tabletype, prgflags;
 	prg_section_t sections[3];
@@ -1045,44 +1052,13 @@ static symbol_list_t* symbols_load_binary(FILE *fp, const symbol_opts_t *opts)
 	fprintf(stderr, "Program section sizes:\n  text: 0x%x, data: 0x%x, bss: 0x%x, symtab: 0x%x\n",
 		textlen, datalen, bsslen, tablesize);
 
-#ifdef SYMBOLS_IN_HATARI
-	{
-		/* offsets & max sizes for running program TEXT/DATA/BSS section symbols */
-		Uint32 start = DebugInfo_GetTEXT();
-		if (!start) {
-			fprintf(stderr, "ERROR: no valid program basepage!\n");
-			return NULL;
-		}
-		sections[0].offset = start;
-		sections[0].end = start + textlen;
-		if (DebugInfo_GetTEXTEnd() != sections[0].end) {
-			fprintf(stderr, "ERROR: given program TEXT section size differs from one in RAM!\n");
-			return NULL;
-		}
-		start = DebugInfo_GetDATA();
-		sections[1].offset = start;
-		sections[1].end = start + datalen;
-		if (sections[1].offset != sections[0].end) {
-			fprintf(stderr, "WARNING: DATA start doesn't match TEXT start + size!\n");
-		}
-		start = DebugInfo_GetBSS();
-		sections[2].offset = start;
-		sections[2].end = start + bsslen;
-		if (sections[2].offset != sections[1].end) {
-			fprintf(stderr, "WARNING: BSS start doesn't match DATA start + size!\n");
-		}
-	}
-#else
-
-	/* symbols already have suitable offsets, so only acceptable end position needs to be calculated */
-	sections[0].offset = 0;
 	sections[0].end = textlen;
-	sections[1].offset = textlen;
-	sections[1].end = textlen + datalen;
-	sections[2].offset = textlen + datalen;
-	sections[2].end = textlen + datalen + bsslen;
-
-#endif
+	sections[1].end = datalen;
+	sections[2].end = bsslen;
+	/* add suitable offsets to section beginnings & ends, and validate them */
+	if (!update_sections(sections)) {
+		return NULL;
+	}
 
 	if (tabletype == SYMBOL_FORMAT_GNU) {
 		/* go to start of symbol table */

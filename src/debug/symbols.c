@@ -36,13 +36,12 @@ const char Symbols_fileid[] = "Hatari symbols.c";
 #include "configuration.h"
 #include "a.out.h"
 
+#include "symbols-common.c"
+
 /* how many characters the symbol name can have.
  * NOTE: change also sscanf width arg if you change this!!!
  */
 #define MAX_SYM_SIZE 32
-
-#define SYMBOLS_IN_HATARI 1
-#include "symbols-common.c"
 
 /* TODO: add symbol name/address file names to configuration? */
 static symbol_list_t *CpuSymbolsList;
@@ -225,6 +224,43 @@ static void symbols_trim_addresses(symbol_list_t* list)
 }
 
 /**
+ * Set sections to match running process by adding TEXT/DATA/BSS
+ * start addresses to section offsets and ends, and return true if
+ * results match it.
+ */
+static bool update_sections(prg_section_t *sections)
+{
+	/* offsets & max sizes for running program TEXT/DATA/BSS section symbols */
+	Uint32 start = DebugInfo_GetTEXT();
+	if (!start) {
+		fprintf(stderr, "ERROR: no valid program basepage!\n");
+		return false;
+	}
+	sections[0].offset = start;
+	sections[0].end += start;
+	if (DebugInfo_GetTEXTEnd() != sections[0].end) {
+		fprintf(stderr, "ERROR: given program TEXT section size differs from one in RAM!\n");
+		return false;
+	}
+
+	start = DebugInfo_GetDATA();
+	sections[1].offset = start;
+	if (sections[1].offset != sections[0].end) {
+		fprintf(stderr, "WARNING: DATA start doesn't match TEXT start + size!\n");
+	}
+	sections[1].end += start;
+
+	start = DebugInfo_GetBSS();
+	sections[2].offset = start;
+	if (sections[2].offset != sections[1].end) {
+		fprintf(stderr, "WARNING: BSS start doesn't match DATA start + size!\n");
+	}
+	sections[2].end += start;
+
+	return true;
+}
+
+/**
  * Load symbols of given type and the symbol address addresses from
  * the given file and add given offsets to the addresses.
  * Return symbols list or NULL for failure.
@@ -252,7 +288,7 @@ static symbol_list_t* Symbols_Load(const char *filename, Uint32 *offsets, Uint32
 		opts.notypes = 0;
 		opts.no_obj = true;
 		opts.no_local = true;
-		list = symbols_load_binary(fp, &opts);
+		list = symbols_load_binary(fp, &opts, update_sections);
 		SymbolsAreForProgram = true;
 	} else {
 		fprintf(stderr, "Reading 'nm' style ASCII symbols from '%s'...\n", filename);

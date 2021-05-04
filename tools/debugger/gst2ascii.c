@@ -97,6 +97,26 @@ static void usage(const char *msg)
 }
 
 /**
+ * Sections just follow each other, so just add their sizes
+ * (initially in .end fields) to successive fields and return true
+ */
+static bool update_sections(prg_section_t *sections)
+{
+	uint32_t offset;
+	sections[0].offset = 0;
+	offset = sections[0].end;
+
+	sections[1].offset = offset;
+	offset += sections[1].end;
+	sections[1].end = offset;
+
+	sections[2].offset = offset;
+	offset += sections[2].end;
+	sections[2].end = offset;
+	return true;
+}
+
+/**
  * Load symbols of given type and the symbol address addresses from
  * the given file and add given offsets to the addresses.
  * Return symbols list or NULL for failure.
@@ -118,7 +138,7 @@ static symbol_list_t* symbols_load(const char *filename, const symbol_opts_t *op
 	if (SDL_SwapBE16(magic) != ATARI_PROGRAM_MAGIC) {
 		usage("file isn't an Atari program file");
 	}
-	list = symbols_load_binary(fp, opts);
+	list = symbols_load_binary(fp, opts, update_sections);
 	fclose(fp);
 
 	if (!list) {
