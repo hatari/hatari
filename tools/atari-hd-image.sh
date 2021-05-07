@@ -33,8 +33,8 @@ PATH=/sbin:$PATH
 export PATH
 
 # check tools
-if [ -z "$(which mkdosfs)" ] || [ -z "$(which python)" ]; then
-	echo "ERROR: either mkdosfs or python tool missing!"
+if [ -z "$(which mkdosfs)" ] || [ -z "$(which python3)" ]; then
+	echo "ERROR: either mkdosfs or python3 missing!"
 	exit 1
 fi
 
@@ -147,7 +147,7 @@ echo "$step) Create DOS Master Boot Record / partition table..."
 # - http://en.wikipedia.org/wiki/File_Allocation_Table#Boot_Sector
 # For DOS MBR, the values are little endian.
 # -----------
-python << EOF
+python3 << EOF
 #!/usr/bin/env python3
 mbr = bytearray(512)
 
