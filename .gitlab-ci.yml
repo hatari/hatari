@@ -38,7 +38,7 @@ build-clang:
  - make test
 
 build-mingw:
- image: fedora:latest
+ image: fedora:33
  before_script:
  - dnf update -y
  - dnf install -y cmake make gcc python-unversioned-command mingw32-gcc
