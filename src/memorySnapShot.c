@@ -526,6 +526,7 @@ void save_u8(uae_u8 data)
 uae_u64 restore_u64(void)
 {
 	uae_u64 data;
+	bCaptureSave=false;			/* (re)force bCaptureSave=false to prevent gcc11 warning */
 	MemorySnapShot_Store(&data, 8);
 	return data;
 }
@@ -533,6 +534,7 @@ uae_u64 restore_u64(void)
 uae_u32 restore_u32(void)
 {
 	uae_u32 data;
+	bCaptureSave=false;
 	MemorySnapShot_Store(&data, 4);
 //printf ("r32 %x\n", data);
 	return data;
@@ -541,6 +543,7 @@ uae_u32 restore_u32(void)
 uae_u16 restore_u16(void)
 {
 	uae_u16 data;
+	bCaptureSave=false;
 	MemorySnapShot_Store(&data, 2);
 //printf ("r16 %x\n", data);
 	return data;
@@ -549,6 +552,7 @@ uae_u16 restore_u16(void)
 uae_u8 restore_u8(void)
 {
 	uae_u8 data;
+	bCaptureSave=false;
 	MemorySnapShot_Store(&data, 1);
 //printf ("r8 %x\n", data);
 	return data;
