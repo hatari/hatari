@@ -60,101 +60,103 @@ static flagname_t ExceptionFlags[] = {
 
 #if ENABLE_TRACING
 static flagname_t TraceFlags[] = {
+	{ TRACE_ALL		 , "all" },
 	{ TRACE_NONE		 , "none" },
 
-	{ TRACE_VIDEO_SYNC	 , "video_sync" } ,
-	{ TRACE_VIDEO_RES	 , "video_res" } ,
-	{ TRACE_VIDEO_COLOR	 , "video_color" } ,
-	{ TRACE_VIDEO_BORDER_V   , "video_border_v" } ,
-	{ TRACE_VIDEO_BORDER_H   , "video_border_h" } ,
-	{ TRACE_VIDEO_ADDR	 , "video_addr" } ,
-	{ TRACE_VIDEO_HBL	 , "video_hbl" } ,
-	{ TRACE_VIDEO_VBL	 , "video_vbl" } ,
-	{ TRACE_VIDEO_STE	 , "video_ste" } ,
-	{ TRACE_VIDEO_ALL	 , "video_all" } ,
+	{ TRACE_ACIA		 , "acia" },
 
-	{ TRACE_MFP_EXCEPTION	 , "mfp_exception" } ,
-	{ TRACE_MFP_START	 , "mfp_start" } ,
-	{ TRACE_MFP_READ	 , "mfp_read" } ,
-	{ TRACE_MFP_WRITE	 , "mfp_write" } ,
-	{ TRACE_MFP_ALL 	 , "mfp_all" } ,
-
-	{ TRACE_PSG_READ	 , "psg_read" } ,
-	{ TRACE_PSG_WRITE	 , "psg_write" } ,
-	{ TRACE_PSG_ALL 	 , "psg_all" } ,
-
-	{ TRACE_CPU_PAIRING	 , "cpu_pairing" } ,
-	{ TRACE_CPU_DISASM	 , "cpu_disasm" } ,
-	{ TRACE_CPU_EXCEPTION	 , "cpu_exception" } ,
-	{ TRACE_CPU_REGS	 , "cpu_regs" } ,
-	{ TRACE_CPU_ALL 	 , "cpu_all" } ,
-
-	{ TRACE_INT		 , "int" } ,
-
-	{ TRACE_FDC		 , "fdc" } ,
-
-	{ TRACE_ACIA		 , "acia" } ,
-
-	{ TRACE_IKBD_CMDS	 , "ikbd_cmds" } ,
-	{ TRACE_IKBD_ACIA	 , "ikbd_acia" } ,
-	{ TRACE_IKBD_EXEC	 , "ikbd_exec" } ,
-	{ TRACE_IKBD_ALL	 , "ikbd_all" } ,
-
-	{ TRACE_BLITTER 	 , "blitter" } ,
+	{ TRACE_OS_AES  	 , "aes" },
 
 	{ TRACE_OS_BIOS 	 , "bios" },
-	{ TRACE_OS_XBIOS	 , "xbios" },
-	{ TRACE_OS_GEMDOS	 , "gemdos" },
-	{ TRACE_OS_VDI  	 , "vdi" },
-	{ TRACE_OS_AES  	 , "aes" },
-	{ TRACE_OS_ALL  	 , "os_all" } ,
 
-	{ TRACE_IOMEM_RD	 , "io_read" } ,
-	{ TRACE_IOMEM_WR	 , "io_write" } ,
-	{ TRACE_IOMEM_ALL	 , "io_all" } ,
+	{ TRACE_BLITTER 	 , "blitter" },
 
-	{ TRACE_DMASND  	 , "dmasound" } ,
+	{ TRACE_CPU_ALL 	 , "cpu_all" },
+	{ TRACE_CPU_DISASM	 , "cpu_disasm" },
+	{ TRACE_CPU_EXCEPTION	 , "cpu_exception" },
+	{ TRACE_CPU_PAIRING	 , "cpu_pairing" },
+	{ TRACE_CPU_REGS	 , "cpu_regs" },
+	{ TRACE_CPU_SYMBOLS	 , "cpu_symbols" },
 
-	{ TRACE_CROSSBAR  	 , "crossbar" } ,
+	{ TRACE_CROSSBAR  	 , "crossbar" },
 
-	{ TRACE_VIDEL  	         , "videl" } ,
+	{ TRACE_DMASND  	 , "dmasound" },
 
-	{ TRACE_DSP_HOST_INTERFACE, "dsp_host_interface" },
-	{ TRACE_DSP_HOST_COMMAND , "dsp_host_command" },
-	{ TRACE_DSP_HOST_SSI	 , "dsp_host_ssi" },
-	{ TRACE_DSP_INTERRUPT	 , "dsp_interrupt" },
+	{ TRACE_DSP_ALL		 , "dsp_all" },
 	{ TRACE_DSP_DISASM	 , "dsp_disasm" },
 	{ TRACE_DSP_DISASM_REG	 , "dsp_disasm_reg" },
 	{ TRACE_DSP_DISASM_MEM	 , "dsp_disasm_mem" },
+	{ TRACE_DSP_HOST_COMMAND , "dsp_host_command" },
+	{ TRACE_DSP_HOST_INTERFACE,"dsp_host_interface" },
+	{ TRACE_DSP_HOST_SSI	 , "dsp_host_ssi" },
+	{ TRACE_DSP_INTERRUPT	 , "dsp_interrupt" },
 	{ TRACE_DSP_STATE	 , "dsp_state" },
-	{ TRACE_DSP_ALL		 , "dsp_all" },
-
 	{ TRACE_DSP_SYMBOLS	 , "dsp_symbols" },
-	{ TRACE_CPU_SYMBOLS	 , "cpu_symbols" },
 
-	{ TRACE_NVRAM		 , "nvram" } ,
+	{ TRACE_FDC		 , "fdc" },
 
-	{ TRACE_SCSI_CMD	 , "scsi_cmd" } ,
+	{ TRACE_OS_GEMDOS	 , "gemdos" },
 
-	{ TRACE_NATFEATS	 , "natfeats" } ,
+	{ TRACE_IDE		 , "ide" },
 
-	{ TRACE_KEYMAP		 , "keymap" } ,
+	{ TRACE_IKBD_ALL	 , "ikbd_all" },
+	{ TRACE_IKBD_ACIA	 , "ikbd_acia" },
+	{ TRACE_IKBD_CMDS	 , "ikbd_cmds" },
+	{ TRACE_IKBD_EXEC	 , "ikbd_exec" },
 
-	{ TRACE_MIDI		 , "midi" } ,
+	{ TRACE_INT		 , "int" },
 
-	{ TRACE_IDE		 , "ide" } ,
+	{ TRACE_IOMEM_ALL	 , "io_all" },
+	{ TRACE_IOMEM_RD	 , "io_read" },
+	{ TRACE_IOMEM_WR	 , "io_write" },
 
-	{ TRACE_OS_BASE		 , "os_base" } ,
+	{ TRACE_KEYMAP		 , "keymap" },
 
-	{ TRACE_SCSIDRV		 , "scsidrv" } ,
+	{ TRACE_MEM		 , "mem" },
 
-	{ TRACE_MEM		 , "mem" } ,
+	{ TRACE_MFP_ALL 	 , "mfp_all" },
+	{ TRACE_MFP_EXCEPTION	 , "mfp_exception" },
+	{ TRACE_MFP_READ	 , "mfp_read" },
+	{ TRACE_MFP_START	 , "mfp_start" },
+	{ TRACE_MFP_WRITE	 , "mfp_write" },
 
-	{ TRACE_VME		 , "vme" } ,
+	{ TRACE_MIDI		 , "midi" },
+
+	{ TRACE_NATFEATS	 , "natfeats" },
+
+	{ TRACE_NVRAM		 , "nvram" },
+
+	{ TRACE_OS_ALL  	 , "os_all" },
+	{ TRACE_OS_BASE		 , "os_base" },
+
+	{ TRACE_PSG_ALL 	 , "psg_all" },
+	{ TRACE_PSG_READ	 , "psg_read" },
+	{ TRACE_PSG_WRITE	 , "psg_write" },
 
 	{ TRACE_SCC		 , "scc" },
 
-	{ TRACE_ALL		 , "all" }
+	{ TRACE_SCSI_CMD	 , "scsi_cmd" },
+
+	{ TRACE_SCSIDRV		 , "scsidrv" },
+
+	{ TRACE_OS_VDI  	 , "vdi" },
+
+	{ TRACE_VIDEL  	         , "videl" },
+
+	{ TRACE_VIDEO_ALL	 , "video_all" },
+	{ TRACE_VIDEO_ADDR	 , "video_addr" },
+	{ TRACE_VIDEO_COLOR	 , "video_color" },
+	{ TRACE_VIDEO_BORDER_H   , "video_border_h" },
+	{ TRACE_VIDEO_BORDER_V   , "video_border_v" },
+	{ TRACE_VIDEO_HBL	 , "video_hbl" },
+	{ TRACE_VIDEO_RES	 , "video_res" },
+	{ TRACE_VIDEO_STE	 , "video_ste" },
+	{ TRACE_VIDEO_SYNC	 , "video_sync" },
+	{ TRACE_VIDEO_VBL	 , "video_vbl" },
+
+	{ TRACE_VME		 , "vme" },
+
+	{ TRACE_OS_XBIOS	 , "xbios" },
 };
 #endif /* ENABLE_TRACING */
 

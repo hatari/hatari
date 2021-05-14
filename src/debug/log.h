@@ -103,91 +103,174 @@ extern char *Log_MatchTrace(const char *text, int state);
 #include "config.h"
 
 /* Up to 64 levels when using Uint64 for HatariTraceFlags */
-#define	TRACE_VIDEO_SYNC	 (1<<0)
-#define	TRACE_VIDEO_RES 	 (1<<1)
-#define	TRACE_VIDEO_COLOR	 (1<<2)
-#define	TRACE_VIDEO_BORDER_V	 (1<<3)
-#define	TRACE_VIDEO_BORDER_H	 (1<<4)
-#define	TRACE_VIDEO_ADDR	 (1<<5)
-#define	TRACE_VIDEO_VBL 	 (1<<6)
-#define	TRACE_VIDEO_HBL 	 (1<<7)
-#define	TRACE_VIDEO_STE 	 (1<<8)
+enum {
+	TRACE_BIT_ACIA,
 
-#define	TRACE_MFP_EXCEPTION	 (1<<9)
-#define	TRACE_MFP_START 	 (1<<10)
-#define	TRACE_MFP_READ  	 (1<<11)
-#define	TRACE_MFP_WRITE 	 (1<<12)
+	TRACE_BIT_BLITTER,
 
-#define	TRACE_PSG_READ  	 (1<<13)
-#define	TRACE_PSG_WRITE 	 (1<<14)
+	TRACE_BIT_CPU_DISASM,
+	TRACE_BIT_CPU_EXCEPTION,
+	TRACE_BIT_CPU_PAIRING,
+	TRACE_BIT_CPU_REGS,
+	TRACE_BIT_CPU_SYMBOLS,
 
-#define	TRACE_CPU_PAIRING	 (1<<15)
-#define	TRACE_CPU_DISASM	 (1<<16)
-#define	TRACE_CPU_EXCEPTION	 (1<<17)
-#define	TRACE_CPU_REGS		 (1<<18)
+	TRACE_BIT_CROSSBAR,
 
-#define	TRACE_INT		 (1<<19)
+	TRACE_BIT_DMASND,
 
-#define	TRACE_FDC		 (1<<20)
+	TRACE_BIT_DSP_DISASM,
+	TRACE_BIT_DSP_DISASM_MEM,
+	TRACE_BIT_DSP_DISASM_REG,
+	TRACE_BIT_DSP_HOST_COMMAND,
+	TRACE_BIT_DSP_HOST_INTERFACE,
+	TRACE_BIT_DSP_HOST_SSI,
+	TRACE_BIT_DSP_INTERRUPT,
+	TRACE_BIT_DSP_STATE,
+	TRACE_BIT_DSP_SYMBOLS,
 
-#define TRACE_ACIA		 (1<<21)
+	TRACE_BIT_FDC,
 
-#define	TRACE_IKBD_CMDS 	 (1<<22)
-#define	TRACE_IKBD_ACIA 	 (1<<23)
-#define	TRACE_IKBD_EXEC 	 (1<<24)
+	TRACE_BIT_IDE,
 
-#define TRACE_BLITTER		 (1<<25)
+	TRACE_BIT_IKBD_ACIA,
+	TRACE_BIT_IKBD_CMDS,
+	TRACE_BIT_IKBD_EXEC,
 
-#define TRACE_OS_BIOS		 (1<<26)
-#define TRACE_OS_XBIOS  	 (1<<27)
-#define TRACE_OS_GEMDOS 	 (1<<28)
-#define TRACE_OS_VDI		 (1<<29)
-#define TRACE_OS_AES		 (1<<30)
+	TRACE_BIT_INT,
 
-#define TRACE_IOMEM_RD  	 (1ll<<31)
-#define TRACE_IOMEM_WR  	 (1ll<<32)
+	TRACE_BIT_IOMEM_RD,
+	TRACE_BIT_IOMEM_WR,
 
-#define TRACE_DMASND		 (1ll<<33)
+	TRACE_BIT_KEYMAP,
 
-#define TRACE_CROSSBAR		 (1ll<<34)
-#define TRACE_VIDEL		 (1ll<<35)
+	TRACE_BIT_MEM,
 
-#define TRACE_DSP_HOST_INTERFACE (1ll<<36)
-#define TRACE_DSP_HOST_COMMAND	 (1ll<<37)
-#define TRACE_DSP_HOST_SSI	 (1ll<<38)
-#define TRACE_DSP_DISASM	 (1ll<<39)
-#define TRACE_DSP_DISASM_REG	 (1ll<<40)
-#define TRACE_DSP_DISASM_MEM	 (1ll<<41)
-#define TRACE_DSP_STATE		 (1ll<<42)
-#define TRACE_DSP_INTERRUPT	 (1ll<<43)
+	TRACE_BIT_MFP_EXCEPTION,
+	TRACE_BIT_MFP_READ,
+	TRACE_BIT_MFP_START,
+	TRACE_BIT_MFP_WRITE,
 
-#define TRACE_DSP_SYMBOLS	 (1ll<<44)
-#define TRACE_CPU_SYMBOLS	 (1ll<<45)
+	TRACE_BIT_MIDI,
 
-#define TRACE_NVRAM		 (1ll<<46)
+	TRACE_BIT_NATFEATS,
 
-#define TRACE_SCSI_CMD		 (1ll<<47)
+	TRACE_BIT_NVRAM,
 
-#define TRACE_NATFEATS		 (1ll<<48)
+	TRACE_BIT_OS_AES,
+	TRACE_BIT_OS_BASE,
+	TRACE_BIT_OS_BIOS,
+	TRACE_BIT_OS_GEMDOS,
+	TRACE_BIT_OS_VDI,
+	TRACE_BIT_OS_XBIOS,
 
-#define TRACE_KEYMAP		 (1ll<<49)
+	TRACE_BIT_PSG_READ,
+	TRACE_BIT_PSG_WRITE,
 
-#define TRACE_MIDI		 (1ll<<50)
+	TRACE_BIT_SCC,
 
-#define TRACE_IDE		 (1ll<<51)
+	TRACE_BIT_SCSI_CMD,
 
-#define TRACE_OS_BASE		 (1ll<<52)
+	TRACE_BIT_SCSIDRV,
 
-#define TRACE_SCSIDRV		 (1ll<<53)
-    
-#define TRACE_MEM		 (1ll<<54)
+	TRACE_BIT_VIDEL,
 
-#define TRACE_VME		 (1ll<<55)
+	TRACE_BIT_VIDEO_ADDR,
+	TRACE_BIT_VIDEO_BORDER_H,
+	TRACE_BIT_VIDEO_BORDER_V,
+	TRACE_BIT_VIDEO_COLOR,
+	TRACE_BIT_VIDEO_HBL,
+	TRACE_BIT_VIDEO_RES,
+	TRACE_BIT_VIDEO_STE,
+	TRACE_BIT_VIDEO_SYNC,
+	TRACE_BIT_VIDEO_VBL,
 
-#define TRACE_SCC		 (1ll<<56)
+	TRACE_BIT_VME
+};
+
+#define TRACE_ACIA               (1ll<<TRACE_BIT_ACIA)
+
+#define TRACE_BLITTER            (1ll<<TRACE_BIT_BLITTER)
+
+#define TRACE_CPU_DISASM         (1ll<<TRACE_BIT_CPU_DISASM)
+#define TRACE_CPU_EXCEPTION      (1ll<<TRACE_BIT_CPU_EXCEPTION)
+#define TRACE_CPU_PAIRING        (1ll<<TRACE_BIT_CPU_PAIRING)
+#define TRACE_CPU_REGS           (1ll<<TRACE_BIT_CPU_REGS)
+#define TRACE_CPU_SYMBOLS        (1ll<<TRACE_BIT_CPU_SYMBOLS)
+
+#define TRACE_CROSSBAR           (1ll<<TRACE_BIT_CROSSBAR)
+
+#define TRACE_DMASND             (1ll<<TRACE_BIT_DMASND)
+
+#define TRACE_DSP_DISASM         (1ll<<TRACE_BIT_DSP_DISASM)
+#define TRACE_DSP_DISASM_MEM     (1ll<<TRACE_BIT_DSP_DISASM_MEM)
+#define TRACE_DSP_DISASM_REG     (1ll<<TRACE_BIT_DSP_DISASM_REG)
+#define TRACE_DSP_HOST_COMMAND   (1ll<<TRACE_BIT_DSP_HOST_COMMAND)
+#define TRACE_DSP_HOST_INTERFACE (1ll<<TRACE_BIT_DSP_HOST_INTERFACE)
+#define TRACE_DSP_HOST_SSI       (1ll<<TRACE_BIT_DSP_HOST_SSI)
+#define TRACE_DSP_INTERRUPT      (1ll<<TRACE_BIT_DSP_INTERRUPT)
+#define TRACE_DSP_STATE          (1ll<<TRACE_BIT_DSP_STATE)
+#define TRACE_DSP_SYMBOLS        (1ll<<TRACE_BIT_DSP_SYMBOLS)
+
+#define TRACE_FDC                (1ll<<TRACE_BIT_FDC)
+
+#define TRACE_IDE                (1ll<<TRACE_BIT_IDE)
+
+#define TRACE_IKBD_ACIA          (1ll<<TRACE_BIT_IKBD_ACIA)
+#define TRACE_IKBD_CMDS          (1ll<<TRACE_BIT_IKBD_CMDS)
+#define TRACE_IKBD_EXEC          (1ll<<TRACE_BIT_IKBD_EXEC)
+
+#define TRACE_INT                (1ll<<TRACE_BIT_INT)
+
+#define TRACE_IOMEM_RD           (1ll<<TRACE_BIT_IOMEM_RD)
+#define TRACE_IOMEM_WR           (1ll<<TRACE_BIT_IOMEM_WR)
+
+#define TRACE_KEYMAP             (1ll<<TRACE_BIT_KEYMAP)
+
+#define TRACE_MEM                (1ll<<TRACE_BIT_MEM)
+
+#define TRACE_MFP_EXCEPTION      (1ll<<TRACE_BIT_MFP_EXCEPTION)
+#define TRACE_MFP_READ           (1ll<<TRACE_BIT_MFP_READ)
+#define TRACE_MFP_START          (1ll<<TRACE_BIT_MFP_START)
+#define TRACE_MFP_WRITE          (1ll<<TRACE_BIT_MFP_WRITE)
+
+#define TRACE_MIDI               (1ll<<TRACE_BIT_MIDI)
+
+#define TRACE_NATFEATS           (1ll<<TRACE_BIT_NATFEATS)
+
+#define TRACE_NVRAM              (1ll<<TRACE_BIT_NVRAM)
+
+#define TRACE_OS_AES             (1ll<<TRACE_BIT_OS_AES)
+#define TRACE_OS_BASE            (1ll<<TRACE_BIT_OS_BASE)
+#define TRACE_OS_BIOS            (1ll<<TRACE_BIT_OS_BIOS)
+#define TRACE_OS_GEMDOS          (1ll<<TRACE_BIT_OS_GEMDOS)
+#define TRACE_OS_VDI             (1ll<<TRACE_BIT_OS_VDI)
+#define TRACE_OS_XBIOS           (1ll<<TRACE_BIT_OS_XBIOS)
+
+#define TRACE_PSG_READ           (1ll<<TRACE_BIT_PSG_READ)
+#define TRACE_PSG_WRITE          (1ll<<TRACE_BIT_PSG_WRITE)
+
+#define TRACE_SCC                (1ll<<TRACE_BIT_SCC)
+
+#define TRACE_SCSI_CMD           (1ll<<TRACE_BIT_SCSI_CMD)
+
+#define TRACE_SCSIDRV            (1ll<<TRACE_BIT_SCSIDRV)
+
+#define TRACE_VIDEL              (1ll<<TRACE_BIT_VIDEL)
+
+#define TRACE_VIDEO_ADDR         (1ll<<TRACE_BIT_VIDEO_ADDR)
+#define TRACE_VIDEO_BORDER_H     (1ll<<TRACE_BIT_VIDEO_BORDER_H)
+#define TRACE_VIDEO_BORDER_V     (1ll<<TRACE_BIT_VIDEO_BORDER_V)
+#define TRACE_VIDEO_COLOR        (1ll<<TRACE_BIT_VIDEO_COLOR)
+#define TRACE_VIDEO_HBL          (1ll<<TRACE_BIT_VIDEO_HBL)
+#define TRACE_VIDEO_RES          (1ll<<TRACE_BIT_VIDEO_RES)
+#define TRACE_VIDEO_STE          (1ll<<TRACE_BIT_VIDEO_STE)
+#define TRACE_VIDEO_SYNC         (1ll<<TRACE_BIT_VIDEO_SYNC)
+#define TRACE_VIDEO_VBL          (1ll<<TRACE_BIT_VIDEO_VBL)
+
+#define TRACE_VME                (1ll<<TRACE_BIT_VME)
 
 #define	TRACE_NONE		 (0)
-#define	TRACE_ALL		 (~0)
+#define	TRACE_ALL		 (~0ll)
 
 
 #define	TRACE_VIDEO_ALL		( TRACE_VIDEO_SYNC | TRACE_VIDEO_RES | TRACE_VIDEO_COLOR \
