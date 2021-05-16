@@ -529,7 +529,7 @@ static void fp_cos(fpdata *a, fpdata *b)
 {
     a->fpx = floatx80_cos(b->fpx, &fs);
 }
-static void fp_sincos(fpdata * a, fpdata * b, fpdata * c)
+static void fp_sincos(fpdata *a, fpdata *b, fpdata *c)
 {
 	a->fpx = floatx80_sincos(b->fpx, &c->fpx, &fs);
 }
