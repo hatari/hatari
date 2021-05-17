@@ -37,7 +37,8 @@ Emulator:
   - Fix: clear GEMDOS Fread / Fwrite errors
 - Debugger:
   - More readable "variables" command output
-  - Add "info vme" and VME/SCU reg access tracing support
+  - Add "info vme" command
+  - Add "scc" and "vme" (VME/SCU reg access) tracing support
   - "next subreturn" will run until current function returns,
     even if function calls other functions before that
   - Symbol loadind code is now shared between debugger "symbols"

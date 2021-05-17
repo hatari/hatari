@@ -184,6 +184,8 @@ extern char *Log_MatchTrace(const char *text, int state);
 
 #define TRACE_VME		 (1ll<<55)
 
+#define TRACE_SCC		 (1ll<<56)
+
 #define	TRACE_NONE		 (0)
 #define	TRACE_ALL		 (~0)
 

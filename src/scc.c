@@ -1,5 +1,5 @@
 /*
- * scc.cpp - SCC 85C30 emulation code
+ * scc.c - SCC 85C30 emulation code
  *
  * Adaptions to Hatari:
  *
@@ -45,14 +45,6 @@
 #include "memorySnapShot.h"
 #include "scc.h"
 
-#if 0
-#define bug printf
-#define D(x) x
-#else
-#define bug(...)
-#define D(x)
-#endif
-
 #ifndef O_NONBLOCK
 # ifdef O_NDELAY
 #  define O_NONBLOCK O_NDELAY
@@ -95,8 +87,6 @@ void SCC_Init(void)
 
 	scc[0].rd_handle = scc[0].wr_handle = -1;
 	scc[1].rd_handle = scc[1].wr_handle = -1;
-
-	D(bug("SCC: interface initialized\n"));
 
 	if (!ConfigureParams.RS232.bEnableSccB || !SCC_IsAvailable(&ConfigureParams))
 		return;
@@ -160,7 +150,6 @@ void SCC_Init(void)
 
 void SCC_UnInit(void)
 {
-	D(bug("SCC: interface destroyed\n"));
 	if (scc[1].rd_handle >= 0)
 	{
 		if (scc[1].wr_handle == scc[1].rd_handle)
@@ -191,6 +180,7 @@ void SCC_MemorySnapShot_Capture(bool bSave)
 
 static void SCC_channelAreset(void)
 {
+	LOG_TRACE(TRACE_SCC, "SCC: reset channel A\n");
 	scc[0].regs[15] = 0xF8;
 	scc[0].regs[14] = 0xA0;
 	scc[0].regs[11] = 0x08;
@@ -202,6 +192,7 @@ static void SCC_channelAreset(void)
 
 static void SCC_channelBreset(void)
 {
+	LOG_TRACE(TRACE_SCC, "SCC: reset channel B\n");
 	scc[1].regs[15] = 0xF8;
 	scc[1].regs[14] = 0xA0;
 	scc[1].regs[11] = 0x08;
@@ -236,15 +227,15 @@ static uint8_t SCC_serial_getData(int channel)
 	uint8_t value = 0;
 	int nb;
 
-	D(bug("SCC: getData\n"));
 	if (scc[channel].rd_handle >= 0)
 	{
 		nb = read(scc[channel].rd_handle, &value, 1);
 		if (nb < 0)
 		{
-			D(bug("SCC: impossible to get data\n"));
+			Log_Printf(LOG_WARN, "SCC: channel %d read failed\n", channel);
 		}
 	}
+	LOG_TRACE(TRACE_SCC, "SCC: getData(%d) => %d\n", channel, value);
 	return value;
 }
 
@@ -252,7 +243,7 @@ static void SCC_serial_setData(int channel, uint8_t value)
 {
 	int nb;
 
-	D(bug("SCC: setData\n"));
+	LOG_TRACE(TRACE_SCC, "SCC: setData(%d, %d)\n", channel, value);
 	if (scc[channel].wr_handle >= 0)
 	{
 		do
@@ -288,7 +279,7 @@ static void SCC_serial_setBaud(int channel, int value)
 #if HAVE_TERMIOS_H
 	speed_t new_speed = B0;
 
-	D(bug("SCC: setBaud %i\n", value));
+	LOG_TRACE(TRACE_SCC, "SCC: setBaud(%i, %i)\n", channel, value);
 
 	switch (value)
 	{
@@ -310,7 +301,8 @@ static void SCC_serial_setBaud(int channel, int value)
 	 case 110:	new_speed = B110;	break;
 	 case 75:	new_speed = B75;	break;
 	 case 50:	new_speed = B50;	break;
-	 default:	D(bug("SCC: unsupported baud rate %i\n", value)); break;
+	 default:	Log_Printf(LOG_DEBUG, "SCC: unsupported baud rate %i\n", value);
+		break;
 	}
 
 	if (new_speed == B0)
@@ -322,7 +314,7 @@ static void SCC_serial_setBaud(int channel, int value)
 #endif
 }
 
-static inline uint16_t SCC_getTBE(int chn)
+static uint16_t SCC_getTBE(int chn)
 {
 	uint16_t value = 0;
 
@@ -359,7 +351,7 @@ static uint16_t SCC_serial_getStatus(int chn)
 
 		if (ioctl(scc[chn].rd_handle, FIONREAD, &nbchar) < 0)
 		{
-			D(bug("SCC: Can't get input fifo count\n"));
+			Log_Printf(LOG_DEBUG, "SCC: Can't get input fifo count\n");
 		}
 		scc[chn].charcount = nbchar; // to optimize input (see UGLY in handleWrite)
 		if (nbchar > 0)
@@ -375,7 +367,7 @@ static uint16_t SCC_serial_getStatus(int chn)
 		value |= (1 << TBE);  // fake TBE to optimize output (for ttyS0)
 		if (ioctl(scc[chn].wr_handle, TIOCMGET, &status) < 0)
 		{
-			D(bug("SCC: Can't get status\n"));
+			Log_Printf(LOG_DEBUG, "SCC: Can't get status\n");
 		}
 		if (status & TIOCM_CTS)
 			value |= (1 << CTS);
@@ -399,7 +391,7 @@ static uint16_t SCC_serial_getStatus(int chn)
 	if (diff & (1 << CTS))
 		value |= 0x100;  // ext status IC on CTS change
 
-	D(bug("SCC: getStatus 0x%04x\n", value));
+	LOG_TRACE(TRACE_SCC, "SCC: getStatus(%d) => 0x%04x\n", chn, value);
 
 	scc[chn].oldStatus = value;
 	return value;
@@ -414,7 +406,7 @@ static void SCC_serial_setRTS(int chn, bool value)
 	{
 		if (ioctl(scc[chn].wr_handle, TIOCMGET, &status) < 0)
 		{
-			D(bug("SCC: Can't get status for RTS\n"));
+			Log_Printf(LOG_DEBUG, "SCC: Can't get status for RTS\n");
 		}
 		if (value)
 			status |= TIOCM_RTS;
@@ -434,7 +426,7 @@ static void SCC_serial_setDTR(int chn, bool value)
 	{
 		if (ioctl(scc[chn].wr_handle, TIOCMGET, &status) < 0)
 		{
-			D(bug("SCC: Can't get status for DTR\n"));
+			Log_Printf(LOG_DEBUG, "SCC: Can't get status for DTR\n");
 		}
 		if (value)
 			status |= TIOCM_DTR;
@@ -556,7 +548,7 @@ static uint8_t SCC_ReadControl(int chn)
 		break;
 
 	 default: // RR5,RR6,RR7,RR10,RR14 not processed
-		D(bug("scc : unprocessed read address=$%x *********\n", active_reg));
+		Log_Printf(LOG_DEBUG, "SCC: unprocessed read address=$%x\n", active_reg);
 		value = 0;
 		break;
 	}
@@ -583,7 +575,7 @@ static uint8_t SCC_handleRead(uint32_t addr)
 		value = scc[channel].regs[8];
 		break;
 	 default:
-		D(bug("scc : illegal read address=$%x\n", addr));
+		Log_Printf(LOG_DEBUG, "SCC: illegal read address=$%x\n", addr);
 		break;
 	}
 
@@ -778,7 +770,7 @@ static void SCC_WriteControl(int chn, uint8_t value)
 				BaudRate = 50;
 				break;
 			 default:
-				D(bug("SCC: unexpected LSB constant for baud rate\n"));
+				Log_Printf(LOG_DEBUG, "SCC: unexpected LSB constant for baud rate\n");
 				break;
 			}
 			break;
@@ -832,7 +824,7 @@ static void SCC_WriteControl(int chn, uint8_t value)
 		 case 0xff: // HSMODEM dummy value->silently ignored
 			break;
 		 default:
-			D(bug("SCC: unexpected MSB constant for baud rate\n"));
+			Log_Printf(LOG_DEBUG, "SCC: unexpected MSB constant for baud rate\n");
 			break;
 		}
 		if (BaudRate)  // set only if defined
@@ -862,7 +854,7 @@ static void SCC_WriteControl(int chn, uint8_t value)
 	{
 		if (value & 1)
 		{
-			D(bug("SCC WR7 prime not yet processed\n"));
+			Log_Printf(LOG_DEBUG, "SCC: WR7 prime not yet processed\n");
 		}
 	}
 
@@ -890,7 +882,7 @@ static void SCC_handleWrite(uint32_t addr, uint8_t value)
 		SCC_serial_setData(channel, value);
 		break;
 	 default:
-		D(bug( "scc : illegal write address =$%x\n", addr));
+		Log_Printf(LOG_DEBUG, "SCC: illegal write address=$%x\n", addr);
 		break;
 	}
 }
@@ -923,14 +915,14 @@ int SCC_doInterrupt(void)
 		return vector; // no status included in vector
 	if ((scc[0].regs[9] & 0x32) != 0)  // shouldn't happen with TOS, (to be completed if needed)
 	{
-		D(bug( "unexpected WR9 contents \n"));
+		Log_Printf(LOG_DEBUG, "SCC: unexpected WR9 contents\n");
 		// no Soft IACK, Status Low control bit expected, no NV
 		return 0;
 	}
 	switch (i)
 	{
 	 case 0: /* this shouldn't happen :-) */
-		D(bug( "scc_do_interrupt called with no pending interrupt\n"));
+		Log_Printf(LOG_WARN, "SCC: doInterrupt() called with no pending interrupt\n");
 		vector = 0; // cancel
 		break;
 	 case 1:
@@ -952,9 +944,7 @@ int SCC_doInterrupt(void)
 		break;
 		// special receive condition not yet processed
 	}
-#if 0
-	D(bug( "SCC_doInterrupt : vector %d\n", vector));
-#endif
+	LOG_TRACE(TRACE_SCC, "SCC: SCC_doInterrupt : vector %d\n", vector);
 	return vector ;
 }
 

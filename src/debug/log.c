@@ -152,6 +152,8 @@ static flagname_t TraceFlags[] = {
 
 	{ TRACE_VME		 , "vme" } ,
 
+	{ TRACE_SCC		 , "scc" },
+
 	{ TRACE_ALL		 , "all" }
 };
 #endif /* ENABLE_TRACING */
