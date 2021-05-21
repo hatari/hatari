@@ -358,21 +358,20 @@ static uint16_t SCC_serial_getStatus(int chn)
 			value = 0x0401;  // RxIC+RBF
 	}
 #endif
-#if defined(HAVE_SYS_IOCTL_H) && defined(TIOCMGET)
 	if (scc[chn].wr_handle >= 0 && scc[chn].bFileHandleIsATTY)
 	{
-		int status = 0;
-
 		value |= SCC_getTBE(chn); // TxIC
 		value |= (1 << TBE);  // fake TBE to optimize output (for ttyS0)
+#if defined(HAVE_SYS_IOCTL_H) && defined(TIOCMGET)
+		int status = 0;
 		if (ioctl(scc[chn].wr_handle, TIOCMGET, &status) < 0)
 		{
 			Log_Printf(LOG_DEBUG, "SCC: Can't get status\n");
 		}
 		if (status & TIOCM_CTS)
 			value |= (1 << CTS);
-	}
 #endif
+	}
 
 	if (scc[chn].wr_handle >= 0 && !scc[chn].bFileHandleIsATTY)
 	{
