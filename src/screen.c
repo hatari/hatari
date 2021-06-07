@@ -746,6 +746,7 @@ void Screen_Init(void)
 
 	/* Set initial window resolution */
 	bInFullScreen = ConfigureParams.Screen.bFullScreen;
+	bGrabMouse = ConfigureParams.Screen.bGrabMouse;
 	Screen_ChangeResolution(false);
 	ScreenDrawFunctionsNormal[ST_HIGH_RES] = Screen_ConvertHighRes;
 
