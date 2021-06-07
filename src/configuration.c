@@ -77,6 +77,7 @@ static const struct Config_Tag configs_Screen[] =
 	{ "nMonitorType", Int_Tag, &ConfigureParams.Screen.nMonitorType },
 	{ "nFrameSkips", Int_Tag, &ConfigureParams.Screen.nFrameSkips },
 	{ "bFullScreen", Bool_Tag, &ConfigureParams.Screen.bFullScreen },
+	{ "bGrabMouse", Bool_Tag, &ConfigureParams.Screen.bGrabMouse },
 	{ "bKeepResolution", Bool_Tag, &ConfigureParams.Screen.bKeepResolution },
 	{ "bResizable", Bool_Tag, &ConfigureParams.Screen.bResizable },
 	{ "bAllowOverscan", Bool_Tag, &ConfigureParams.Screen.bAllowOverscan },

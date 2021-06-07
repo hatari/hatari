@@ -294,6 +294,7 @@ typedef struct
   bool bShowStatusbar;
   bool bShowDriveLed;
   bool bMouseWarp;
+  bool bGrabMouse;
   bool bCrop;
   bool bForceMax;
   bool bUseExtVdiResolutions;
