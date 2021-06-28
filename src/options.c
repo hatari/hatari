@@ -675,7 +675,6 @@ bool Opt_ShowError(unsigned int optid, const char *value, const char *error)
  */
 int Opt_ValueAlignMinMax(int value, int align, int min, int max)
 {
-	value = (value/align)*align;
 	if (value > max)
 	{
 		/* align down */
@@ -687,7 +686,7 @@ int Opt_ValueAlignMinMax(int value, int align, int min, int max)
 		min += align-1;
 		return (min/align)*align;
 	}
-	return value;
+	return (value/align)*align;
 }
 
 
