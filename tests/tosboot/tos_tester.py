@@ -242,12 +242,12 @@ class Config:
         self.handle_options(opts)
         self.images = self.check_images(paths)
         print("\nTest configurations:")
-        print("- machines = %s" % self.machines)
-        print("- graphics = %s" % self.graphics)
-        print("- disks = %s" % self.disks)
-        print("- RAM = %s" % self.memsizes)
-        print("- TTRAM = %s" % self.ttrams)
-        print("- bools = %s" % self.bools)
+        print("- machines = %s" % (self.machines,))
+        print("- graphics = %s" % (self.graphics,))
+        print("- disks = %s" % (self.disks,))
+        print("- RAM = %s" % (self.memsizes,))
+        print("- TTRAM = %s" % (self.ttrams,))
+        print("- bools = %s" % (self.bools,))
         print("- fixed = '%s'\n" % ' '.join(self.opts))
 
 
@@ -336,7 +336,7 @@ For example:
 \t--memsizes 0,4,14 \\
 \t--ttrams 0,32 \\
 \t--graphics mono,rgb \\
-\t--bool --compatible,--driver-b \\
+\t--bool --compatible,--drive-b \\
 \t--opts "--mmu on"
 """ % (name, disks, graphics, machines, memsizes, name))
         if msg:
