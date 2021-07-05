@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright (C) 2012-2020 by Eero Tamminen <oak at helsinkinet fi>
+# Copyright (C) 2012-2021 by Eero Tamminen <oak at helsinkinet fi>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -89,13 +89,15 @@ class TOS:
             raise AssertionError("'%s' given as TOS image isn't a file" % img)
 
         size = os.stat(img).st_size
-        tossizes = (196608, 262144, 524288)
-        if size not in tossizes:
-            raise AssertionError("image '%s' size not one of TOS sizes %s" % (img, repr(tossizes)))
+        if size % 1024:
+            raise AssertionError("image '%s' has invalid size of %g KB" % (img, size/1024.))
+        size /= 1024
+        if size not in (192, 256, 512, 1024):
+            raise AssertionError("image '%s' size (%d KB) is not one of TOS sizes" % (img, size))
 
         name = os.path.basename(img)
         name = name[:name.rfind('.')]
-        return (img, size/1024, name)
+        return (img, size, name)
 
 
     def _add_version(self):
@@ -115,8 +117,8 @@ class TOS:
         name, size, version = self.name, self.size, self.version
 
         if self.etos:
-            # EmuTOS 512k, 256k and 192k versions have different machine support
-            if size == 512:
+            # EmuTOS 1024/512k, 256k and 192k versions have different machine support
+            if size in (512, 1024):
                 # startup screen on falcon 14MB is really slow
                 info = (5, 10, ("st", "megast", "ste", "megaste", "tt", "falcon"))
             elif size == 256:
