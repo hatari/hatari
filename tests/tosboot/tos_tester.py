@@ -391,7 +391,7 @@ For example:
             return True
         return False
 
-    def valid_ttram(self, machine, tos, ttram, disk, winuae):
+    def valid_ttram(self, machine, tos, ttram, disk):
         "return whether given TT-RAM size is valid for given machine"
         if machine in ("st", "megast", "ste", "megaste"):
             if ttram == 0:
@@ -399,9 +399,6 @@ For example:
         elif machine in ("tt", "falcon"):
             if ttram == 0:
                 return True
-            if not winuae:
-                warning("TT-RAM / 32-bit addressing is supported only by Hatari WinUAE CPU core version")
-                return False
             if ttram < 0 or ttram > 512:
                 return False
             return tos.supports_32bit_addressing(disk)
@@ -409,7 +406,7 @@ For example:
             raise AssertionError("unknown machine %s" % machine)
         return False
 
-    def validate_bools(self, winuae):
+    def validate_bools(self):
         "exit with error if given bool option is invalid"
         # Several bool options are left out of these lists, either because
         # they can be problematic for running of the tests themselves, or
@@ -417,22 +414,14 @@ For example:
         #
         # Below ones should be potentially relevant ones to test
         # (EmuTOS supports NatFeats so it can have impact too)
-        generic_opts = (
+        opts = (
             "--compatible", "--timer-d", "--fast-boot",
-            "--natfeats", "--fastfdc", "--drive-b"
-        )
-        winuae_opts = (
+            "--natfeats", "--fastfdc", "--drive-b",
             "--cpu-exact", "--mmu", "--addr24", "--fpu-softfloat"
         )
         for option in self.bools:
-            if option not in generic_opts:
-                if option not in winuae_opts:
-                    if winuae:
-                        error_exit("bool option '%s' not in relevant options sets:\n\t%s\n\t%s" % (option, generic_opts, winuae_opts))
-                    else:
-                        error_exit("bool option '%s' not in relevant options set:\n\t%s" % (option, generic_opts))
-                elif not winuae:
-                    error_exit("bool option '%s' is supported only by WinUAE CPU core" % option)
+            if option not in opts:
+                error_exit("bool option '%s' not in relevant options set:\n\t%s" % (option, opts))
 
     def valid_bool(self, machine, option):
         "return True if given bool option is relevant to test"
@@ -505,7 +494,8 @@ class Tester:
         self.create_files()
         signal.signal(signal.SIGALRM, self.alarm_handler)
         hatari = hconsole.Hatari(["--confirm-quit", "no"])
-        self.winuae = hatari.winuae
+        if not hatari.winuae:
+            error_exit("Hatari version available does not have WinAUE CPU core")
         hatari.kill_hatari()
 
     def alarm_handler(self, signum, dummy):
@@ -728,11 +718,10 @@ sMidiOutFileName = %s
         "compose test ID and Hatari command line args, then call .test()"
         identity = "%s-%s-%s-%s-%dM-%dM" % (tos.name, machine, monitor, disk, memory, ttram)
         testargs = ["--tos", tos.path, "--machine", machine, "--memsize", str(memory)]
-        if self.winuae:
-            if ttram:
-                testargs += ["--addr24", "off", "--ttram", str(ttram)]
-            else:
-                testargs += ["--addr24", "on"]
+        if ttram:
+            testargs += ["--addr24", "off", "--ttram", str(ttram)]
+        else:
+            testargs += ["--addr24", "on"]
 
         if monitor.startswith("vdi"):
             planes = monitor[-1]
@@ -809,7 +798,7 @@ sMidiOutFileName = %s
 
     def run(self, config):
         "run all TOS boot test combinations"
-        config.validate_bools(self.winuae)
+        config.validate_bools()
 
         self.results = {}
         for tos in config.images:
@@ -829,7 +818,7 @@ sMidiOutFileName = %s
                             if not config.valid_disktype(machine, tos, disk):
                                 continue
                             for ttram in config.ttrams:
-                                if not config.valid_ttram(machine, tos, ttram, disk, self.winuae):
+                                if not config.valid_ttram(machine, tos, ttram, disk):
                                     continue
                                 no_bools = True
                                 for opt in config.bools:
