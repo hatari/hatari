@@ -23,9 +23,12 @@ Removed features (that were marked as deprecated in earlier releases):
 - Python v2 support in Python scripts (Python 2 was end of life in 2020)
 
 Emulation:
+- Improved FPU instruction emulation (from WinUAE emulator)
 - Improved DSP interrupts handling (from Previous NeXT emulator)
 
 Emulator:
+- TOS support:
+  - Support 1024k EmuTOS images also on TT & Falcon
 - Falcon:
   - Fix: restore zoom mode correctly when loading snapshots
   - Correct also smaller specified memory amounts to valid ones
@@ -47,6 +50,15 @@ Emulator:
   - Auto-detection for whether section offsets should be used
     for symbol addresses
   - Trace options are listed in alphabetical order
+- Windows:
+  - Next/prev drive change buttons added to SDL GUI file select dialog
+
+Tools:
+- TOS boot tester: support 1024k EmuTOS images, misc fixes
+
+Documentation:
+- Compatibility updates, especially for 060 programs that need
+  FPSP060.PRG for missing instructions emulation
 
 
  Version 2.3.1 (2020-12-27)

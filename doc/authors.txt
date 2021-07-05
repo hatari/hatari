@@ -161,6 +161,8 @@ random order - and if someone is missing here, please remind us!):
 - Jens Guenther : extra info on Python UI embedding issue and fixes
   for PyGtk deprecations warnings in Python UI
 
+- Václav Lipert : Ability to change Windows drive in file select dialog
+
 See also "thanks.txt" for people who've helped Hatari development in
 other ways than code contributions.
 
