@@ -151,7 +151,7 @@ class TOS:
         if self.etos:
             print("%s is %dkB EmuTOS corresponding to TOS v%x (wait startup: %ds, rest: %ds)" % (name, size, version, info[0], info[1]))
         else:
-            print("%s is normal TOS v%x (wait memcheck: %ds, rest: %ds)" % (name, version, info[0], info[1])
+            print("%s is normal TOS v%x (wait memcheck: %ds, rest: %ds)" % (name, version, info[0], info[1]))
         # 0: whether / how long to wait to dismiss memory test
         # 1: how long to wait until concluding test failed
         # 2: list of machines supported by this TOS version
@@ -259,7 +259,7 @@ class Config:
                 images.append(TOS(img))
             except AssertionError as msg:
                 self.usage(msg)
-        if len(images) < 1:
+        if not images:
             self.usage("no TOS image files given")
         return images
 
@@ -383,7 +383,7 @@ For example:
         if machine in ("st", "megast", "ste", "megaste"):
             sizes = (0, 1, 2, 4)
         elif machine in ("tt", "falcon"):
-            # 0 (512kB) isn't valid memory size for Falcon/TT
+            # 0 (512kB) is not a valid memory size for Falcon/TT
             sizes = self.all_memsizes[1:]
         else:
             raise AssertionError("unknown machine %s" % machine)
@@ -461,6 +461,7 @@ def verify_file_empty(filename, identity):
     if size != 0:
         os.rename(filename, "%s.%s" % (filename, identity))
         return "file '%s' isn't empty (%d bytes)" % (filename, size)
+    return None
 
 def exit_if_missing(names):
     "exit if given (test input) file is missing"
@@ -489,12 +490,12 @@ class Tester:
     # they need to use floppy and boot test program from AUTO/
     bootauto  = "bootauto.st.gz"
     bootdesk  = "bootdesk.st.gz"
-    floppyprg = "A:\MINIMAL.PRG"
+    floppyprg = "A:\\MINIMAL.PRG"
     # with EmuTOS, same image works for ACSI, SCSI and IDE testing,
     # whereas with real TOS, different images with different drivers
     # would be needed, potentially also for different machine types...
     hdimage   = "hd.img"
-    hdprg     = "C:\MINIMAL.PRG"
+    hdprg     = "C:\\MINIMAL.PRG"
     results   = None
 
     def __init__(self):
@@ -699,8 +700,7 @@ sMidiOutFileName = %s
             self.get_screenshot(instance, identity)
             instance.run("kill")
             return (False, False, False, False)
-        else:
-            init_ok = True
+        init_ok = True
 
         if memwait:
             print("Final start/memcheck wait: %ds" % memwait)
