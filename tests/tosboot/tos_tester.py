@@ -151,7 +151,7 @@ class TOS:
             raise AssertionError("Unknown '%s' TOS version 0x%x" % (name, version))
 
         if self.etos:
-            print("%s is %dkB EmuTOS corresponding to TOS v%x (wait startup: %ds, rest: %ds)" % (name, size, version, info[0], info[1]))
+            print("%s is %dkB EmuTOS declaring itself TOS v%x (wait startup: %ds, rest: %ds)" % (name, size, version, info[0], info[1]))
         else:
             print("%s is normal TOS v%x (wait memcheck: %ds, rest: %ds)" % (name, version, info[0], info[1]))
         # 0: whether / how long to wait to dismiss memory test
@@ -223,7 +223,7 @@ class Config:
     all_disks = ("floppy", "gemdos", "acsi", "ide", "scsi")
     all_graphics = ("mono", "rgb", "vga", "tv", "vdi1", "vdi2", "vdi4")
     all_machines = ("st", "megast", "ste", "megaste", "tt", "falcon")
-    all_memsizes = (0, 1, 2, 4, 6, 8, 10, 12, 14)
+    all_memsizes = (0, 1, 2, 4, 8, 10, 14)
 
     # defaults
     fast = False
@@ -381,32 +381,26 @@ For example:
         return False
 
     def valid_memsize(self, machine, memsize):
-        "return whether given memory size is valid for given machine"
-        if machine in ("st", "megast", "ste", "megaste"):
-            sizes = (0, 1, 2, 4)
-        elif machine in ("tt", "falcon"):
-            # 0 (512kB) is not a valid memory size for Falcon/TT
-            sizes = self.all_memsizes[1:]
-        else:
-            raise AssertionError("unknown machine %s" % machine)
-        if memsize in sizes:
-            return True
-        return False
+        "return True if given memory size is valid for given machine"
+        # TT & MegaSTE can address only 10MB RAM due to VME, but
+        # currently Hatari allows all RAM amounts on all HW
+        if memsize > 10 and machine in ("megaste", "tt"):
+            # TODO: return False when Hatari supports VME
+            # (or disable VME when testing 14MB)
+            return True # False
+        return True
 
     def valid_ttram(self, machine, tos, ttram, disk):
         "return whether given TT-RAM size is valid for given machine"
+        if ttram == 0:
+            return True
         if machine in ("st", "megast", "ste", "megaste"):
-            if ttram == 0:
-                return True
-        elif machine in ("tt", "falcon"):
-            if ttram == 0:
-                return True
+            return False
+        if machine in ("tt", "falcon"):
             if ttram < 0 or ttram > 512:
                 return False
             return tos.supports_32bit_addressing(disk)
-        else:
-            raise AssertionError("unknown machine %s" % machine)
-        return False
+        raise AssertionError("unknown machine %s" % machine)
 
     def validate_bools(self):
         "exit with error if given bool option is invalid"
