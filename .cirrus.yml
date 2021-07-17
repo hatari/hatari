@@ -31,9 +31,10 @@ freebsd_task:
 
 macos_task:
   osx_instance:
-    image: catalina-base
+    image: big-sur-base
   install_script:
-    - brew install cmake sdl2 libpng make tidy-html5 imagemagick
+    - brew update
+    - brew install sdl2 libpng make tidy-html5 imagemagick
   script:
     - export PATH=/usr/local/bin:$PATH
     - ./configure --disable-osx-bundle --enable-debug
