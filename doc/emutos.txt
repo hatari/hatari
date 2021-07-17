@@ -436,7 +436,6 @@ Demos:
 - Remote Entry #2 - 11110 Edition (by Spice Boys)
 - Remote Entry #2 - Delta Quadrant Edition (by Spice Boys)
 - Renegade Breakdown - Sommarhack 2021 invitro (by Spkr / SMFX)
-  - Run from floppy, GEMDOS HD cannot parse its relocation table
 - RGB plasma (by Omega, panic at return to desktop)
 - Santa Claus Barbie Was Drunk As A Cochon (by MJJ Prod)
 - Save The Earth (by Defence Force)

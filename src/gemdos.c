@@ -4350,8 +4350,7 @@ int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr, bool bFullBpSe
 
 	if (nRelTabIdx >= nFileSize)
 	{
-		Log_Printf(LOG_ERROR, "Failed to parse relocation table of '%s'.\n", psPrgName);
-		return GEMDOS_EPLFMT;
+		Log_Printf(LOG_WARN, "Relocation table of '%s' is not terminated!\n", psPrgName);
 	}
 
 	return 0;
