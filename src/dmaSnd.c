@@ -714,7 +714,7 @@ void DmaSnd_STE_HBL_Update(void)
 
 	/* If DMA sound is ON or FIFO is not empty, update sound */
 	if  ( (nDmaSoundControl & DMASNDCTRL_PLAY) || ( dma.FIFO_NbBytes > 0 ) )
-		Sound_Update(false);
+		Sound_Update ( false , CyclesGlobalClockCounter );
 
 	/* As long as display is OFF, the DMA will refill the FIFO after playing some samples during the HBL */
 	DmaSnd_FIFO_Refill ();
@@ -730,7 +730,7 @@ static Uint32 DmaSnd_GetFrameCount(void)
 	Uint32 nActCount;
 
 	/* Update sound to get the current DMA frame address */
-	Sound_Update(false);
+	Sound_Update ( false , CyclesGlobalClockCounter );
 
 	if (nDmaSoundControl & DMASNDCTRL_PLAY)
 		nActCount = dma.frameCounterAddr;
@@ -778,7 +778,7 @@ void DmaSnd_SoundControl_WriteWord(void)
 	}
 
         /* Before starting/stopping DMA sound, create samples up until this point with current values */
-	Sound_Update(false);
+	Sound_Update ( false , Cycles_GetClockCounterOnWriteAccess() );
 
 	DMASndCtrl_old = nDmaSoundControl;
 	nDmaSoundControl = IoMem_ReadWord(0xff8900) & 3;

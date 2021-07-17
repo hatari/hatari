@@ -317,14 +317,16 @@ bool		Sound_BufferIndexNeedReset = false;
 
 
 #ifdef YM_250_MORE
-#define		YM_BUFFER_250_SIZE	( MIXBUFFER_SIZE * 8 )	/* Size to store samples generated at 250 kHz (must be a power of 2) */
-							/* As we usually output at 44.1 or 48 kHz using MIXBUFFER_SIZE, having */
-							/* a buffer x8 is nearly equivalent when generating at 250 kHz */
-ymsample	YM_Buffer_250[ YM_BUFFER_250_SIZE ];
-static int	YM_Buffer_250_pos_write = 0;		/* Current writing position into above buffer */
-static int	YM_Buffer_250_pos_read = 0;		/* Current reading position into above buffer */
+#define		YM_BUFFER_250_SIZE	32768		/* Size to store YM samples generated at 250 kHz (must be a power of 2) */
+							/* As we fill YM_Buffer_250[] at least once per VBL (min freq = 50 Hz) */
+							/* we can have 5000 YM samples per VBL. We use a slightly larger buffer */
+							/* to have some kind of double buffering */
+#define		YM_BUFFER_250_SIZE_MASK	( YM_BUFFER_250_SIZE - 1 )	/* To limit index values inside the ring buffer */
+ymsample	YM_Buffer_250[ YM_BUFFER_250_SIZE ];	/* Ring buffer to store YM samples */
+static int	YM_Buffer_250_pos_write;		/* Current writing position into above buffer */
+static int	YM_Buffer_250_pos_read;			/* Current reading position into above buffer */
 
-static int	SamplesToGenerate_250;
+static Uint64	YM2149_Clock_250_prev;			/* 250 kHz counter */
 
 #endif
 
@@ -344,6 +346,7 @@ static void	YM2149_Normalise_5bit_Table(ymu16 *in_5bit , yms16 *out_5bit, unsign
 
 static void	YM2149_EnvBuild		(void);
 static void	Ym2149_BuildVolumeTable	(void);
+static Uint64	YM2149_ConvertCpuClock_250 ( Uint64 CpuClock );
 static void	Ym2149_Init		(void);
 static void	Ym2149_Reset		(void);
 
@@ -356,8 +359,13 @@ static ymu16	YM2149_NoisePer		(ymu8 rNoise);
 static ymu16	YM2149_EnvPer		(ymu8 rHigh , ymu8 rLow);
 static void	YM2149_TonePerFilter	(ymu16 per , ymu16 *pTone_force);
 
-static int	Sound_SetSamplesPassed(bool FillFrame);
-static void	Sound_GenerateSamples(int SamplesToGenerate);
+static void	YM2149_Run		( Uint64 CPU_Clock );
+
+static int	Sound_SetSamplesPassed	(bool FillFrame);
+#if 0
+static void	Sound_GenerateSamples	(int SamplesToGenerate , Uint64 CPU_Clock);
+#endif
+static int	Sound_GenerateSamples_new(int SamplesToGenerate , Uint64 CPU_Clock);
 
 
 
@@ -780,10 +788,28 @@ static void	Ym2149_BuildVolumeTable(void)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Convert a CPU clock value (as in CyclesGlobalClockCounter)
+ * into a 250 kHz YM2149 clock (taking nCpuFreqShift into account)
+ */
+static Uint64	YM2149_ConvertCpuClock_250 ( Uint64 CpuClock )
+{
+	Uint64		Clock_250;
+
+	Clock_250 = ( CpuClock >> nCpuFreqShift );		/* Number of CPU cycles at 8 MHz */
+	Clock_250 >>= 5;					/* Divide by 32 -> 250 kHz */
+
+//fprintf ( stderr , "convert_250 %lx -> %lx\n" , CpuClock , Clock_250 );
+	return Clock_250;
+}
+
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Init some internal tables for faster results (env, volume)
  * and reset the internal states.
  */
-
 static void	Ym2149_Init(void)
 {
 	/* Build the 16 envelope shapes */
@@ -794,7 +820,13 @@ static void	Ym2149_Init(void)
 
 	/* Reset YM2149 internal states */
 	Ym2149_Reset();
+
+	/* Clear internal YM audio buffer at 250 kHz */
+	memset ( YM_Buffer_250 , 0 , sizeof(YM_Buffer_250) );
+	YM_Buffer_250_pos_write = 0;
+	YM_Buffer_250_pos_read = 0;
 }
+
 
 
 
@@ -840,6 +872,8 @@ static void	Ym2149_Reset(void)
 
 	Env_shape = 0;
 	Env_pos = 0;
+
+	YM2149_Clock_250_prev = YM2149_ConvertCpuClock_250 ( CyclesGlobalClockCounter );
 }
 
 
@@ -1296,11 +1330,11 @@ static void	YM2149_DoSamples_250_Debug ( int SamplesToGenerate , int pos )
 		fwrite ( &WavHeader, sizeof(WavHeader), 1, file_ptr );
 	}
 
-	for ( n=0 ; n<SamplesToGenerate_250 ; n++ )
+	for ( n=0 ; n<SamplesToGenerate ; n++ )
 	{
 		sample = SDL_SwapLE16 ( YM_Buffer_250[ pos ] );
 		fwrite ( &sample , sizeof(sample) , 1 , file_ptr );
-		pos = ( pos + 1 ) % YM_BUFFER_250_SIZE;
+		pos = ( pos + 1 ) & YM_BUFFER_250_SIZE_MASK;
 		wav_size += 2;
 	}
 
@@ -1324,7 +1358,9 @@ static void	YM2149_DoSamples_250_Debug ( int SamplesToGenerate , int pos )
 #endif
 
 
-static void	YM2149_DoSamples_250 ( int SamplesToGenerate )
+
+
+static void	YM2149_DoSamples_250 ( int SamplesToGenerate_250 )
 {
 	ymsample	sample;
 	ymu32		bt;
@@ -1335,20 +1371,12 @@ static void	YM2149_DoSamples_250 ( int SamplesToGenerate )
 	int		n;
 
 
-	/* Generate enough 250 kHz samples to obtain SamplesToGenerate + 1 samples after downsampling to YM_REPLAY_FREQ */
-	SamplesToGenerate_250 = floor ( (double)( SamplesToGenerate + 1 ) * YM_ATARI_CLOCK_COUNTER / YM_REPLAY_FREQ );
+//fprintf ( stderr , "ym2149_dosamples_250 in nb=%d ym_pos_wr=%d\n",SamplesToGenerate_250 , YM_Buffer_250_pos_write );
 
-	/* We need to generate less samples if some of the previous ones were not read yet */
-	/* (handle the case where pos_write can wrap at the end of the ring buffer) */
-	if ( YM_Buffer_250_pos_write >= YM_Buffer_250_pos_read )
-		SamplesToGenerate_250 -= ( YM_Buffer_250_pos_write - YM_Buffer_250_pos_read );
-	else
-		SamplesToGenerate_250 -= ( YM_Buffer_250_pos_write + YM_BUFFER_250_SIZE - YM_Buffer_250_pos_read );
-
-	/* Don't do anything if there's already enough samples between pos_read and pos_write */
-	if ( SamplesToGenerate_250 <= 0 )
-		return;
-
+	/* We write new samples at position YM_Buffer_250_pos_write while we read them at the same time */
+	/* at position YM_Buffer_250_pos_read (to create the output at YM_REPLAY_FREQ) */
+	/* This means we must ensure YM_Buffer_250[] is large enough to avoid overwriting data */
+	/* that are not read yet */
 	pos = YM_Buffer_250_pos_write;
 
 	/* Emulate as many internal YM cycles as needed to generate samples */
@@ -1369,10 +1397,12 @@ static void	YM2149_DoSamples_250 ( int SamplesToGenerate )
 			Noise_val = YM2149_RndCompute();/* 0 or 0xffff */
 		}
 
+//fprintf ( stderr , "ym2149_dosamples_250 max=%d n=%d ToneA_count=%d ToneA_per=%d val=%x pos=%d\n",SamplesToGenerate_250,n,ToneA_count,ToneA_per,ToneA_val,pos );
 		/* Other counters are increased on every call, at 250 KHz */
 		ToneA_count++;
 		if ( ToneA_count >= ToneA_per )
 		{
+//fprintf ( stderr , "ym2149_dosamples_250 max=%d n=%d ToneA_count=%d ToneA_per=%d val=%x pos=%d toggle\n",SamplesToGenerate_250,n,ToneA_count,ToneA_per,ToneA_val,pos );
 			ToneA_count = 0;
 			ToneA_val ^= YM_SQUARE_UP;	/* 0 or 0x1f */
 		}
@@ -1444,7 +1474,7 @@ static void	YM2149_DoSamples_250 ( int SamplesToGenerate )
 
 		/* Store sample */
 		YM_Buffer_250[ pos ] = sample;
-		pos = ( pos + 1 ) % YM_BUFFER_250_SIZE;
+		pos = ( pos + 1 ) & YM_BUFFER_250_SIZE_MASK;
 	}
 
 
@@ -1455,6 +1485,40 @@ static void	YM2149_DoSamples_250 ( int SamplesToGenerate )
 
 	YM_Buffer_250_pos_write = pos;
 
+//fprintf ( stderr , "ym2149_dosamples_250 out nb=%d ym_pos_wr=%d\n",SamplesToGenerate_250 , YM_Buffer_250_pos_write );
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Run internal YM2149 emulation, producing as much samples as needed
+ * for this time range.
+ * We compute how many CPU cycles passed since the previous call to YM2149_Run
+ * (using CyclesGlobalClockCounter) and we convert this into a number
+ * of internal YM2149 updates at 250 kHz.
+ * When the CPU runs at 8 MHz, the YM2149 runs at 1/4 of this freq (2 MHz),
+ * so it takes 32 CPU cycles to do 1 internal YM2149 update at 250 kHz.
+ * (when cpu runs at higher freq, we must take nCpuFreqShift into account)
+ *
+ * On each call, we consider samples were already generated up to (and including) counter value
+ * YM2149_Clock_250_prev. We must generate as many samples to reach (and include) YM2149_Clock_250_new.
+ */
+static void	YM2149_Run ( Uint64 CPU_Clock )
+{
+	Uint64		YM2149_Clock_250_new;
+	int		YM2149_Nb_Updates_250;
+
+
+	YM2149_Clock_250_new = YM2149_ConvertCpuClock_250 ( CPU_Clock );
+
+	YM2149_Nb_Updates_250 = YM2149_Clock_250_new - YM2149_Clock_250_prev;
+
+	if ( YM2149_Nb_Updates_250 > 0 )
+	{
+		YM2149_DoSamples_250 ( YM2149_Nb_Updates_250 );
+		YM2149_Clock_250_prev = YM2149_Clock_250_new;
+	}
 }
 
 
@@ -1482,12 +1546,12 @@ static ymsample	YM2149_Next_Resample_Nearest ( void )
 	if ( pos_fract < 0.5 )
 		sample = YM_Buffer_250[ YM_Buffer_250_pos_read ];
 	else
-		sample = YM_Buffer_250[ ( YM_Buffer_250_pos_read + 1 ) % YM_BUFFER_250_SIZE ];
+		sample = YM_Buffer_250[ ( YM_Buffer_250_pos_read + 1 ) & YM_BUFFER_250_SIZE_MASK ];
 
 	/* Increase fractional pos and integer pos */
 	pos_fract += ( (double)YM_ATARI_CLOCK_COUNTER ) / YM_REPLAY_FREQ;
 
-	YM_Buffer_250_pos_read = ( YM_Buffer_250_pos_read + (int)pos_fract ) % YM_BUFFER_250_SIZE;
+	YM_Buffer_250_pos_read = ( YM_Buffer_250_pos_read + (int)pos_fract ) & YM_BUFFER_250_SIZE_MASK;
 	pos_fract -= (int)pos_fract;			/* 0 <= pos_fract < 1 */
 
 	return sample;
@@ -1514,14 +1578,14 @@ static ymsample	YM2149_Next_Resample_Weighted_Average_2 ( void )
 
 	/* Get the 2 samples that surround pos_read and do a weighted average */
 	sample_before = YM_Buffer_250[ YM_Buffer_250_pos_read ];
-	sample_after = YM_Buffer_250[ ( YM_Buffer_250_pos_read + 1 ) % YM_BUFFER_250_SIZE ];
+	sample_after = YM_Buffer_250[ ( YM_Buffer_250_pos_read + 1 ) & YM_BUFFER_250_SIZE_MASK ];
 	sample = round ( ( 1.0 - pos_fract ) * sample_before + pos_fract * sample_after );
 //fprintf ( stderr , "b=%04x a=%04x frac=%f -> res=%04x\n" , sample_before , sample_after , pos_fract , sample );
 
 	/* Increase fractional pos and integer pos */
 	pos_fract += ( (double)YM_ATARI_CLOCK_COUNTER ) / YM_REPLAY_FREQ;
 
-	YM_Buffer_250_pos_read = ( YM_Buffer_250_pos_read + (int)pos_fract ) % YM_BUFFER_250_SIZE;
+	YM_Buffer_250_pos_read = ( YM_Buffer_250_pos_read + (int)pos_fract ) & YM_BUFFER_250_SIZE_MASK;
 	pos_fract -= (int)pos_fract;			/* 0 <= pos_fract < 1 */
 
 	return sample;
@@ -1559,10 +1623,12 @@ static ymsample	YM2149_Next_Resample_Weighted_Average_2 ( void )
 	interval_fract = ( YM_ATARI_CLOCK_COUNTER * 0x10000LL ) / YM_REPLAY_FREQ;	/* 'LL' ensure the div is made on 64 bits */
 	total = 0;
 
+//fprintf ( stderr , "next 1 %d\n" , YM_Buffer_250_pos_read );
+
 	if ( pos_fract )				/* start position : 0xffff <= pos_fract <= 0 */
 	{
 		total += ((Sint64)YM_Buffer_250[ YM_Buffer_250_pos_read ]) * ( 0x10000 - pos_fract );
-		YM_Buffer_250_pos_read = ( YM_Buffer_250_pos_read + 1 ) % YM_BUFFER_250_SIZE;
+		YM_Buffer_250_pos_read = ( YM_Buffer_250_pos_read + 1 ) & YM_BUFFER_250_SIZE_MASK;
 		pos_fract -= 0x10000;			/* next sample */
 	}
 
@@ -1571,7 +1637,7 @@ static ymsample	YM2149_Next_Resample_Weighted_Average_2 ( void )
 	while ( pos_fract & 0xffff0000 )		/* check integer part */
 	{
 		total += ((Sint64)YM_Buffer_250[ YM_Buffer_250_pos_read ]) * 0x10000;
-		YM_Buffer_250_pos_read = ( YM_Buffer_250_pos_read + 1 ) % YM_BUFFER_250_SIZE;
+		YM_Buffer_250_pos_read = ( YM_Buffer_250_pos_read + 1 ) & YM_BUFFER_250_SIZE_MASK;
 		pos_fract -= 0x10000;			/* next sample */
 	}
 
@@ -1580,6 +1646,7 @@ static ymsample	YM2149_Next_Resample_Weighted_Average_2 ( void )
 		total += ((Sint64)YM_Buffer_250[ YM_Buffer_250_pos_read ]) * pos_fract;
 	}
 
+//fprintf ( stderr , "next 2 %d\n" , YM_Buffer_250_pos_read );
 	sample = total / interval_fract;
 	return sample;
 }
@@ -1852,12 +1919,17 @@ void Sound_MemorySnapShot_Capture(bool bSave)
 
 	MemorySnapShot_Store(SoundRegs, sizeof(SoundRegs));
 
+	MemorySnapShot_Store(&YM2149_Clock_250_prev, sizeof(YM2149_Clock_250_prev));
+
 	// MemorySnapShot_Store(&YmVolumeMixing, sizeof(YmVolumeMixing));
 
-#ifdef YM_250
-Env_pos = 0;
-#endif
-
+	if ( !bSave )
+	{
+		/* Clear internal YM audio buffer at 250 kHz */
+		memset ( YM_Buffer_250 , 0 , sizeof(YM_Buffer_250) );
+		YM_Buffer_250_pos_write = 0;
+		YM_Buffer_250_pos_read = 0;
+	}
 }
 
 
@@ -1938,18 +2010,21 @@ static int Sound_SetSamplesPassed(bool FillFrame)
 /**
  * Generate samples for all channels during this time-frame
  */
-static void Sound_GenerateSamples(int SamplesToGenerate)
+#if 0
+static void Sound_GenerateSamples(int SamplesToGenerate , Uint64 CPU_Clock)
 {
 	int	i;
 	int	idx;
 
+fprintf ( stderr , "sound_gen in nb=%d ym_pos_rd=%d ym_pos_wr=%d clock=%ld\n" , SamplesToGenerate , YM_Buffer_250_pos_read , YM_Buffer_250_pos_write , CPU_Clock );
 	if (SamplesToGenerate <= 0)
 		return;
 
 	if (Config_IsMachineFalcon())
 	{
 #ifdef YM_250_MORE
-		YM2149_DoSamples_250 ( SamplesToGenerate );
+//		YM2149_DoSamples_250 ( SamplesToGenerate );
+		YM2149_Run ( CPU_Clock );
 #endif
 		for (i = 0; i < SamplesToGenerate; i++)
 		{
@@ -1970,7 +2045,8 @@ static void Sound_GenerateSamples(int SamplesToGenerate)
 	else if (!Config_IsMachineST())
 	{
 #ifdef YM_250_MORE
-		YM2149_DoSamples_250 ( SamplesToGenerate );
+//		YM2149_DoSamples_250 ( SamplesToGenerate );
+		YM2149_Run ( CPU_Clock );
 #endif
 		for (i = 0; i < SamplesToGenerate; i++)
 		{
@@ -1991,10 +2067,12 @@ static void Sound_GenerateSamples(int SamplesToGenerate)
 	else
 	{
 #ifdef YM_250_MORE
-		YM2149_DoSamples_250 ( SamplesToGenerate );
+//		YM2149_DoSamples_250 ( SamplesToGenerate );
+		YM2149_Run ( CPU_Clock );
 #endif
 		for (i = 0; i < SamplesToGenerate; i++)
 		{
+//fprintf ( stderr , "sound generate %d %d\n" , i , SamplesToGenerate );
 			idx = (ActiveSndBufIdx + i) % MIXBUFFER_SIZE;
 #ifndef YM_250
 			MixBuffer[idx][0] = MixBuffer[idx][1] = Subsonic_IIR_HPF_Left( YM2149_NextSample() );
@@ -2011,8 +2089,71 @@ static void Sound_GenerateSamples(int SamplesToGenerate)
 	ActiveSndBufIdx = (ActiveSndBufIdx + SamplesToGenerate) % MIXBUFFER_SIZE;
 	nGeneratedSamples += SamplesToGenerate;
 	CurrentSamplesNb += SamplesToGenerate;				/* number of samples generated for current VBL */
+fprintf ( stderr , "sound_gen out nb=%d ym_pos_rd=%d ym_pos_wr=%d clock=%ld\n" , SamplesToGenerate , YM_Buffer_250_pos_read , YM_Buffer_250_pos_write , CPU_Clock );
 }
+#endif
 
+
+static int Sound_GenerateSamples_new(int SamplesToGenerate , Uint64 CPU_Clock)
+{
+	int	idx;
+	int	ym_margin;
+
+//fprintf ( stderr , "sound_gen in nb=%d ym_pos_rd=%d ym_pos_wr=%d clock=%ld\n" , SamplesToGenerate , YM_Buffer_250_pos_read , YM_Buffer_250_pos_write , CPU_Clock );
+// 	if (SamplesToGenerate <= 0)
+// 		return;
+
+	/* Run YM2149 emulation at 250 kHz to reach CPU_Clock counter value */
+	/* This fills YM_Buffer_250[] and update YM_Buffer_250_pos_write */
+	YM2149_Run ( CPU_Clock );
+
+	ym_margin = ceil ( ((double)YM_ATARI_CLOCK_COUNTER) / nAudioFrequency ) + 2;
+//fprintf ( stderr , "sound_gen margin=%d read_max=%d\n" , ym_margin , ( YM_Buffer_250_pos_write - ym_margin ) & YM_BUFFER_250_SIZE_MASK );
+
+	SamplesToGenerate = 0;
+
+	if (Config_IsMachineFalcon())
+	{
+		while ( ( ( YM_Buffer_250_pos_write - YM_Buffer_250_pos_read ) & YM_BUFFER_250_SIZE_MASK ) >= ym_margin )
+		{
+			idx = (ActiveSndBufIdx + SamplesToGenerate) % MIXBUFFER_SIZE;
+			MixBuffer[idx][0] = MixBuffer[idx][1] = Subsonic_IIR_HPF_Left( YM2149_NextSample_250_2() );
+			SamplesToGenerate++;
+		}
+		/* If Falcon emulation, crossbar does the job */
+		if ( SamplesToGenerate > 0 )
+			Crossbar_GenerateSamples(ActiveSndBufIdx, SamplesToGenerate);
+	}
+
+	else if (!Config_IsMachineST())
+	{
+		while ( ( ( YM_Buffer_250_pos_write - YM_Buffer_250_pos_read ) & YM_BUFFER_250_SIZE_MASK ) >= ym_margin )
+		{
+			idx = (ActiveSndBufIdx + SamplesToGenerate) % MIXBUFFER_SIZE;
+			MixBuffer[idx][0] = MixBuffer[idx][1] = YM2149_NextSample_250_2();
+			SamplesToGenerate++;
+		}
+		/* If Ste or TT emulation, DmaSnd does mixing and filtering */
+		if ( SamplesToGenerate > 0 )
+			DmaSnd_GenerateSamples(ActiveSndBufIdx, SamplesToGenerate);
+	}
+
+	else
+	{
+		while ( ( ( YM_Buffer_250_pos_write - YM_Buffer_250_pos_read ) & YM_BUFFER_250_SIZE_MASK ) >= ym_margin )
+		{
+			idx = (ActiveSndBufIdx + SamplesToGenerate) % MIXBUFFER_SIZE;
+			MixBuffer[idx][0] = MixBuffer[idx][1] = Subsonic_IIR_HPF_Left( YM2149_NextSample_250_2() );
+			SamplesToGenerate++;
+		}
+	}
+
+	ActiveSndBufIdx = (ActiveSndBufIdx + SamplesToGenerate) % MIXBUFFER_SIZE;
+	nGeneratedSamples += SamplesToGenerate;
+	CurrentSamplesNb += SamplesToGenerate;				/* number of samples generated for current VBL */
+//fprintf ( stderr , "sound_gen out nb=%d ym_pos_rd=%d ym_pos_wr=%d clock=%ld\n" , SamplesToGenerate , YM_Buffer_250_pos_read , YM_Buffer_250_pos_write , CPU_Clock );
+	return SamplesToGenerate;
+}
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -2021,11 +2162,12 @@ static void Sound_GenerateSamples(int SamplesToGenerate)
  * that we generate exactly SamplesPerFrame samples between 2 calls
  * to Sound_Update_VBL.
  */
-void Sound_Update(bool FillFrame)
+void Sound_Update( bool FillFrame, Uint64 CPU_Clock)
 {
 	int OldSndBufIdx = ActiveSndBufIdx;
 	int SamplesToGenerate;
 
+//if ( !FillFrame ) return;
 	/* Make sure that we don't interfere with the audio callback function */
 	Audio_Lock();
 
@@ -2034,7 +2176,8 @@ void Sound_Update(bool FillFrame)
 //fprintf ( stderr , "sound update %d %d\n" , FillFrame , SamplesToGenerate );
 
 	/* And generate */
-	Sound_GenerateSamples( SamplesToGenerate );
+//	Sound_GenerateSamples( SamplesToGenerate , CPU_Clock );
+	SamplesToGenerate = Sound_GenerateSamples_new ( SamplesToGenerate , CPU_Clock );
 
 	/* Allow audio callback function to occur again */
 	Audio_Unlock();
@@ -2056,12 +2199,12 @@ void Sound_Update(bool FillFrame)
  */
 void Sound_Update_VBL(void)
 {
-	Sound_Update(true);					/* generate as many samples as needed to fill this VBL */
+	Sound_Update ( true , CyclesGlobalClockCounter );		/* generate as many samples as needed to fill this VBL */
 //fprintf ( stderr , "vbl done %d %d\n" , SamplesPerFrame , CurrentSamplesNb );
 
 	CurrentSamplesNb = 0;					/* VBL is complete, reset counter for next VBL */
 
-	/*Compute a fractional equivalent of SamplesPerFrame for the next VBL, to avoid rounding propagation */
+	/* Compute a fractional equivalent of SamplesPerFrame for the next VBL, to avoid rounding propagation */
 	SamplesPerFrame_unrounded += (yms64) ClocksTimings_GetSamplesPerVBL ( ConfigureParams.System.nMachineType ,
 			nScreenRefreshRate , nAudioFrequency );
 	SamplesPerFrame = SamplesPerFrame_unrounded >> 28;		/* use integer part */

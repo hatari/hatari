@@ -552,7 +552,7 @@ void Crossbar_DmaCtrlReg_WriteByte(void)
 	else if (dmaPlay.isRunning && ((sndCtrl & CROSSBAR_SNDCTRL_PLAY) == 0))
 	{
 		/* Create samples up until this point with current values */
-		Sound_Update(false);
+		Sound_Update ( false , Cycles_GetClockCounterOnWriteAccess() );
 
 		/* Turning off DMA play sound emulation */
 		dmaPlay.isRunning = 0;
@@ -1607,7 +1607,7 @@ static void Crossbar_Process_DMAPlay_Transfer(void)
 		}
 		else {
 			/* Create samples up until this point with current values */
-			Sound_Update(false);
+			Sound_Update ( false , CyclesGlobalClockCounter );
 
 			dmaCtrlReg = IoMem_ReadByte(0xff8901) & 0xfe;
 			IoMem_WriteByte(0xff8901, dmaCtrlReg);

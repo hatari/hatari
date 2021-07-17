@@ -54,6 +54,7 @@ static void Audio_CallBack(void *userdata, Uint8 *stream, int len)
 	 * See: main.c - Main_WaitOnVbl()
 	 */
 
+//fprintf ( stderr , "audio cb in len=%d gensmpl=%d idx=%d\n" , len , nGeneratedSamples , CompleteSndBufIdx );
 	pulse_swallowing_count = 0;	/* 0 = Unaltered emulation rate */
 
 	if (ConfigureParams.Sound.bEnableSoundSync)
@@ -104,6 +105,7 @@ static void Audio_CallBack(void *userdata, Uint8 *stream, int len)
 	}
 
 	CompleteSndBufIdx = CompleteSndBufIdx % MIXBUFFER_SIZE;
+//fprintf ( stderr , "audio cb out len=%d gensmpl=%d idx=%d\n" , len , nGeneratedSamples , CompleteSndBufIdx );
 }
 
 
