@@ -336,7 +336,7 @@ void PSG_Set_DataRegister(Uint8 val)
 		return;					/* not valid, ignore write and do nothing */
 
 	/* Create samples up until this point with current values */
-	Sound_Update ( false , Cycles_GetClockCounterOnWriteAccess() );
+	Sound_Update ( Cycles_GetClockCounterOnWriteAccess() );
 
 	/* When a read is made from $ff8800 without changing PSGRegisterSelect, we should return */
 	/* the non masked value. */
