@@ -294,6 +294,10 @@ enum { CP_GENERIC = 1, CP_CDTV, CP_CDTVCR, CP_CD32, CP_A500, CP_A500P, CP_A600,
 #define MONITOREMU_OPALVISION 11
 #define MONITOREMU_COLORBURST 12
 
+#define OVERSCANMODE_OVERSCAN 3
+#define OVERSCANMODE_BROADCAST 4
+#define OVERSCANMODE_EXTREME 5
+
 #define MAX_FILTERSHADERS 4
 
 #define MAX_CHIPSET_REFRESH 10
@@ -455,13 +459,14 @@ struct expansion_params
 #define Z3MAPPING_UAE 1
 #define Z3MAPPING_REAL 2
 
+#define GFX_SIZE_EXTRA_NUM 6
 struct monconfig
 {
 	struct wh gfx_size_win;
 	struct wh gfx_size_fs;
 	struct wh gfx_size;
-	struct wh gfx_size_win_xtra[6];
-	struct wh gfx_size_fs_xtra[6];
+	struct wh gfx_size_win_xtra[GFX_SIZE_EXTRA_NUM];
+	struct wh gfx_size_fs_xtra[GFX_SIZE_EXTRA_NUM];
 };
 
 
@@ -571,6 +576,7 @@ struct uae_prefs {
 	int gfx_api_options;
 	int color_mode;
 	int gfx_extrawidth;
+	int gfx_extraheight;
 	bool lightboost_strobo;
 	int lightboost_strobo_ratio;
 	bool gfx_grayscale;
@@ -579,6 +585,7 @@ struct uae_prefs {
 	int gfx_display_sections;
 	int gfx_variable_sync;
 	bool gfx_windowed_resize;
+	int gfx_overscanmode;
 
 	struct gfx_filterdata gf[2];
 
@@ -697,7 +704,7 @@ struct uae_prefs {
 	int cs_hacks;
 	int cs_ciatype[2];
 	int cs_kbhandshake;
-	bool cs_ocshsyncbug;
+	bool cs_ocshblankbug;
 
 	struct boardromconfig expansionboard[MAX_EXPANSION_BOARDS];
 
