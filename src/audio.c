@@ -26,7 +26,6 @@ int nAudioFrequency = 44100;			/* Sound playback frequency */
 bool bSoundWorking = false;			/* Is sound OK */
 static volatile bool bPlayingBuffer = false;	/* Is playing buffer? */
 int SoundBufferSize = 1024 / 4;			/* Size of sound buffer (in samples) */
-int CompleteSndBufIdx;				/* Replay-index into MixBuffer */
 int SdlAudioBufferSize = 0;			/* in ms (0 = use default) */
 int pulse_swallowing_count = 0;			/* Sound disciplined emulation rate controlled by  */
 						/*  window comparator and pulse swallowing counter */
@@ -54,7 +53,7 @@ static void Audio_CallBack(void *userdata, Uint8 *stream, int len)
 	 * See: main.c - Main_WaitOnVbl()
 	 */
 
-//fprintf ( stderr , "audio cb in len=%d gensmpl=%d idx=%d\n" , len , nGeneratedSamples , CompleteSndBufIdx );
+//fprintf ( stderr , "audio cb in len=%d gensmpl=%d idx=%d\n" , len , nGeneratedSamples , AudioMixBuffer_pos_read );
 	pulse_swallowing_count = 0;	/* 0 = Unaltered emulation rate */
 
 	if (ConfigureParams.Sound.bEnableSoundSync)
@@ -82,30 +81,30 @@ static void Audio_CallBack(void *userdata, Uint8 *stream, int len)
 		 * 'signed' to 'unsigned' */
 		for (i = 0; i < len; i++)
 		{
-			*pBuffer++ = MixBuffer[(CompleteSndBufIdx + i) % MIXBUFFER_SIZE][0];
-			*pBuffer++ = MixBuffer[(CompleteSndBufIdx + i) % MIXBUFFER_SIZE][1];
+			*pBuffer++ = AudioMixBuffer[(AudioMixBuffer_pos_read + i) % AUDIOMIXBUFFER_SIZE][0];
+			*pBuffer++ = AudioMixBuffer[(AudioMixBuffer_pos_read + i) % AUDIOMIXBUFFER_SIZE][1];
 		}
-		CompleteSndBufIdx += len;
+		AudioMixBuffer_pos_read += len;
 		nGeneratedSamples -= len;
 	}
 	else  /* Not enough samples available: */
 	{
 		for (i = 0; i < nGeneratedSamples; i++)
 		{
-			*pBuffer++ = MixBuffer[(CompleteSndBufIdx + i) % MIXBUFFER_SIZE][0];
-			*pBuffer++ = MixBuffer[(CompleteSndBufIdx + i) % MIXBUFFER_SIZE][1];
+			*pBuffer++ = AudioMixBuffer[(AudioMixBuffer_pos_read + i) % AUDIOMIXBUFFER_SIZE][0];
+			*pBuffer++ = AudioMixBuffer[(AudioMixBuffer_pos_read + i) % AUDIOMIXBUFFER_SIZE][1];
 		}
 		/* Clear rest of the buffer to ensure we don't play random bytes instead */
 		/* of missing samples */
 		memset(pBuffer, 0, (len - nGeneratedSamples) * 4);
 
-		CompleteSndBufIdx += nGeneratedSamples;
+		AudioMixBuffer_pos_read += nGeneratedSamples;
 		nGeneratedSamples = 0;
 		
 	}
 
-	CompleteSndBufIdx = CompleteSndBufIdx % MIXBUFFER_SIZE;
-//fprintf ( stderr , "audio cb out len=%d gensmpl=%d idx=%d\n" , len , nGeneratedSamples , CompleteSndBufIdx );
+	AudioMixBuffer_pos_read = AudioMixBuffer_pos_read % AUDIOMIXBUFFER_SIZE;
+//fprintf ( stderr , "audio cb out len=%d gensmpl=%d idx=%d\n" , len , nGeneratedSamples , AudioMixBuffer_pos_read );
 }
 
 
@@ -174,10 +173,10 @@ void Audio_Init(void)
 	}
 
 	SoundBufferSize = desiredAudioSpec.samples;
-	if (SoundBufferSize > MIXBUFFER_SIZE/2)
+	if (SoundBufferSize > AUDIOMIXBUFFER_SIZE/2)
 	{
 		Log_Printf(LOG_WARN, "Soundbuffer size is too big (%d > %d)!\n",
-			   SoundBufferSize, MIXBUFFER_SIZE/2);
+			   SoundBufferSize, AUDIOMIXBUFFER_SIZE/2);
 	}
 
 	/* All OK */

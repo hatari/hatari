@@ -297,10 +297,13 @@ int		YM2149_Resample_Method = YM2149_RESAMPLE_METHOD_WEIGHTED_AVERAGE_N;
 
 bool		bEnvelopeFreqFlag;			/* Cleared each frame for YM saving */
 
-Sint16		MixBuffer[MIXBUFFER_SIZE][2];
+Sint16		AudioMixBuffer[AUDIOMIXBUFFER_SIZE][2];	/* Ring buffer to store mixed audio output (YM2149, DMA sound, ...) */
+int		AudioMixBuffer_pos_write;		/* Current writing position into above buffer */
+int		AudioMixBuffer_pos_read;		/* Current reading position into above buffer */
+
 int		nGeneratedSamples;			/* Generated samples since audio buffer update */
-static int	ActiveSndBufIdx;			/* Current working index into above mix buffer */
-static int	ActiveSndBufIdxAvi;			/* Current working index to save an AVI audio frame */
+
+static int	AudioMixBuffer_pos_write_avi;		/* Current working index to save an AVI audio frame */
 
 bool		Sound_BufferIndexNeedReset = false;
 
@@ -1433,19 +1436,19 @@ void Sound_Reset(void)
 	Audio_Lock();
 
 	/* Clear sound mixing buffer: */
-	memset(MixBuffer, 0, sizeof(MixBuffer));
+	memset(AudioMixBuffer, 0, sizeof(AudioMixBuffer));
 
 	/* Clear cycle counts, buffer index and register '13' flags */
 	Cycles_SetCounter(CYCLES_COUNTER_SOUND, 0);
 	bEnvelopeFreqFlag = false;
 
-	CompleteSndBufIdx = 0;
+	AudioMixBuffer_pos_read = 0;
 	/* We do not start with 0 here to fake some initial samples: */
 	nGeneratedSamples = SoundBufferSize + SAMPLES_PER_FRAME;
-	ActiveSndBufIdx = nGeneratedSamples % MIXBUFFER_SIZE;
-	ActiveSndBufIdxAvi = ActiveSndBufIdx;
-//fprintf ( stderr , "Sound_Reset SoundBufferSize %d SAMPLES_PER_FRAME %d nGeneratedSamples %d , ActiveSndBufIdx %d\n" ,
-//	SoundBufferSize , SAMPLES_PER_FRAME, nGeneratedSamples , ActiveSndBufIdx );
+	AudioMixBuffer_pos_write = nGeneratedSamples % AUDIOMIXBUFFER_SIZE;
+	AudioMixBuffer_pos_write_avi = AudioMixBuffer_pos_write;
+//fprintf ( stderr , "Sound_Reset SoundBufferSize %d SAMPLES_PER_FRAME %d nGeneratedSamples %d , AudioMixBuffer_pos_write %d\n" ,
+//	SoundBufferSize , SAMPLES_PER_FRAME, nGeneratedSamples , AudioMixBuffer_pos_write );
 
 	Ym2149_Reset();
 
@@ -1463,10 +1466,10 @@ void Sound_ResetBufferIndex(void)
 {
 	Audio_Lock();
 	nGeneratedSamples = SoundBufferSize + SAMPLES_PER_FRAME;
-	ActiveSndBufIdx =  (CompleteSndBufIdx + nGeneratedSamples) % MIXBUFFER_SIZE;
-	ActiveSndBufIdxAvi = ActiveSndBufIdx;
-//fprintf ( stderr , "Sound_ResetBufferIndex SoundBufferSize %d SAMPLES_PER_FRAME %d nGeneratedSamples %d , ActiveSndBufIdx %d\n" ,
-//	SoundBufferSize , SAMPLES_PER_FRAME, nGeneratedSamples , ActiveSndBufIdx );
+	AudioMixBuffer_pos_write =  (AudioMixBuffer_pos_read + nGeneratedSamples) % AUDIOMIXBUFFER_SIZE;
+	AudioMixBuffer_pos_write_avi = AudioMixBuffer_pos_write;
+//fprintf ( stderr , "Sound_ResetBufferIndex SoundBufferSize %d SAMPLES_PER_FRAME %d nGeneratedSamples %d , AudioMixBuffer_pos_write %d\n" ,
+//	SoundBufferSize , SAMPLES_PER_FRAME, nGeneratedSamples , AudioMixBuffer_pos_write );
 	Audio_Unlock();
 }
 
@@ -1547,39 +1550,39 @@ static int Sound_GenerateSamples(Uint64 CPU_Clock)
 	{
 		while ( ( ( YM_Buffer_250_pos_write - YM_Buffer_250_pos_read ) & YM_BUFFER_250_SIZE_MASK ) >= ym_margin )
 		{
-			idx = (ActiveSndBufIdx + Sample_Nbr) % MIXBUFFER_SIZE;
-			MixBuffer[idx][0] = MixBuffer[idx][1] = Subsonic_IIR_HPF_Left( YM2149_NextSample_250() );
+			idx = (AudioMixBuffer_pos_write + Sample_Nbr) % AUDIOMIXBUFFER_SIZE;
+			AudioMixBuffer[idx][0] = AudioMixBuffer[idx][1] = Subsonic_IIR_HPF_Left( YM2149_NextSample_250() );
 			Sample_Nbr++;
 		}
 		/* If Falcon emulation, crossbar does the job */
 		if ( Sample_Nbr > 0 )
-			Crossbar_GenerateSamples(ActiveSndBufIdx, Sample_Nbr);
+			Crossbar_GenerateSamples(AudioMixBuffer_pos_write, Sample_Nbr);
 	}
 
 	else if (!Config_IsMachineST())
 	{
 		while ( ( ( YM_Buffer_250_pos_write - YM_Buffer_250_pos_read ) & YM_BUFFER_250_SIZE_MASK ) >= ym_margin )
 		{
-			idx = (ActiveSndBufIdx + Sample_Nbr) % MIXBUFFER_SIZE;
-			MixBuffer[idx][0] = MixBuffer[idx][1] = YM2149_NextSample_250();
+			idx = (AudioMixBuffer_pos_write + Sample_Nbr) % AUDIOMIXBUFFER_SIZE;
+			AudioMixBuffer[idx][0] = AudioMixBuffer[idx][1] = YM2149_NextSample_250();
 			Sample_Nbr++;
 		}
 		/* If Ste or TT emulation, DmaSnd does mixing and filtering */
 		if ( Sample_Nbr > 0 )
-			DmaSnd_GenerateSamples(ActiveSndBufIdx, Sample_Nbr);
+			DmaSnd_GenerateSamples(AudioMixBuffer_pos_write, Sample_Nbr);
 	}
 
 	else
 	{
 		while ( ( ( YM_Buffer_250_pos_write - YM_Buffer_250_pos_read ) & YM_BUFFER_250_SIZE_MASK ) >= ym_margin )
 		{
-			idx = (ActiveSndBufIdx + Sample_Nbr) % MIXBUFFER_SIZE;
-			MixBuffer[idx][0] = MixBuffer[idx][1] = Subsonic_IIR_HPF_Left( YM2149_NextSample_250() );
+			idx = (AudioMixBuffer_pos_write + Sample_Nbr) % AUDIOMIXBUFFER_SIZE;
+			AudioMixBuffer[idx][0] = AudioMixBuffer[idx][1] = Subsonic_IIR_HPF_Left( YM2149_NextSample_250() );
 			Sample_Nbr++;
 		}
 	}
 
-	ActiveSndBufIdx = (ActiveSndBufIdx + Sample_Nbr) % MIXBUFFER_SIZE;
+	AudioMixBuffer_pos_write = (AudioMixBuffer_pos_write + Sample_Nbr) % AUDIOMIXBUFFER_SIZE;
 	nGeneratedSamples += Sample_Nbr;
 //fprintf ( stderr , "sound_gen out nb=%d ym_pos_rd=%d ym_pos_wr=%d clock=%ld\n" , Sample_Nbr , YM_Buffer_250_pos_read , YM_Buffer_250_pos_write , CPU_Clock );
 	return Sample_Nbr;
@@ -1593,7 +1596,7 @@ static int Sound_GenerateSamples(Uint64 CPU_Clock)
  */
 void Sound_Update( Uint64 CPU_Clock)
 {
-	int OldSndBufIdx = ActiveSndBufIdx;
+	int pos_write_prev = AudioMixBuffer_pos_write;
 	int Samples_Nbr;
 	int nGeneratedSamples_before;
 
@@ -1608,10 +1611,11 @@ void Sound_Update( Uint64 CPU_Clock)
 	/* This should never happen, except if the system suffers major slowdown due to	other	*/
 	/* processes or if we run in fast forward mode.						*/
 	/* In the case of slowdown, we set Sound_BufferIndexNeedReset to "resync" the working	*/
-	/* buffer's index ActiveSndBufIdx with the system buffer's index CompleteSndBufIdx.	*/
+	/* buffer's index AudioMixBuffer_pos_write with the system buffer's index		*/
+	/* AudioMixBuffer_pos_read.								*/
 	/* In the case of fast forward, we do nothing here, Sound_BufferIndexNeedReset will be	*/
 	/* set when the user exits fast forward mode.						*/
-	if ( ( Samples_Nbr > MIXBUFFER_SIZE - nGeneratedSamples_before ) && ( ConfigureParams.System.bFastForward == false )
+	if ( ( Samples_Nbr > AUDIOMIXBUFFER_SIZE - nGeneratedSamples_before ) && ( ConfigureParams.System.bFastForward == false )
 	    && ( ConfigureParams.Sound.bEnableSound == true ) )
 	{
 		static int logcnt = 0;
@@ -1628,7 +1632,7 @@ void Sound_Update( Uint64 CPU_Clock)
 
 	/* Save to WAV file, if open */
 	if (bRecordingWav)
-		WAVFormat_Update(MixBuffer, OldSndBufIdx, Samples_Nbr);
+		WAVFormat_Update(AudioMixBuffer, pos_write_prev, Samples_Nbr);
 }
 
 
@@ -1641,7 +1645,7 @@ void Sound_Update( Uint64 CPU_Clock)
  */
 void Sound_Update_VBL(void)
 {
-	Sound_Update ( CyclesGlobalClockCounter );		/* generate as many samples as needed to fill this VBL */
+	Sound_Update ( CyclesGlobalClockCounter );			/* generate as many samples as needed to fill this VBL */
 
 	/* Reset sound buffer if needed (after pause, fast forward, slow system, ...) */
 	if ( Sound_BufferIndexNeedReset )
@@ -1655,14 +1659,14 @@ void Sound_Update_VBL(void)
 	{
 		int Len;
 
-		Len = ActiveSndBufIdx - ActiveSndBufIdxAvi;	/* number of generated samples for this frame */
+		Len = AudioMixBuffer_pos_write - AudioMixBuffer_pos_write_avi;	/* number of generated samples for this frame */
 		if ( Len < 0 )
-			Len += MIXBUFFER_SIZE;			/* end of ring buffer was reached */
+			Len += AUDIOMIXBUFFER_SIZE;			/* end of ring buffer was reached */
 
-		Avi_RecordAudioStream ( MixBuffer , ActiveSndBufIdxAvi , Len );
+		Avi_RecordAudioStream ( AudioMixBuffer , AudioMixBuffer_pos_write_avi , Len );
 	}
 
-	ActiveSndBufIdxAvi = ActiveSndBufIdx;			/* save new position for next AVI audio frame */
+	AudioMixBuffer_pos_write_avi = AudioMixBuffer_pos_write;	/* save new position for next AVI audio frame */
 
 	/* Clear write to register '13', used for YM file saving */
 	bEnvelopeFreqFlag = false;

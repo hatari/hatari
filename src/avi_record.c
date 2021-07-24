@@ -1061,8 +1061,8 @@ static bool	Avi_RecordAudioStream_PCM ( RECORD_AVI_PARAMS *pAviParams , Sint16 p
 	for ( i = 0 ; i < SampleLength; i++ )
 	{
 		/* Convert sample to little endian */
-		sample[0] = SDL_SwapLE16 ( pSamples[ (SampleIndex+i) % MIXBUFFER_SIZE ][0]);
-		sample[1] = SDL_SwapLE16 ( pSamples[ (SampleIndex+i) % MIXBUFFER_SIZE ][1]);
+		sample[0] = SDL_SwapLE16 ( pSamples[ (SampleIndex+i) % AUDIOMIXBUFFER_SIZE ][0]);
+		sample[1] = SDL_SwapLE16 ( pSamples[ (SampleIndex+i) % AUDIOMIXBUFFER_SIZE ][1]);
 		/* And store */
 		if ( fwrite ( &sample , sizeof ( sample ) , 1 , pAviParams->FileOut ) != 1 )
 		{

@@ -14,12 +14,17 @@
 
 /* definitions common for all sound rendering engines */
 
-#define MIXBUFFER_SIZE    16384			/* Size of circular buffer to store sample to (44Khz) */
 
 extern Uint8	SoundRegs[ 14 ];		/* store YM regs 0 to 13 */
 extern int	nGeneratedSamples;
 extern bool	bEnvelopeFreqFlag;
-extern Sint16	MixBuffer[MIXBUFFER_SIZE][2];
+
+#define AUDIOMIXBUFFER_SIZE    16384		/* Size of circular buffer to store samples (eg 44Khz), must be a power of 2 */
+#define AUDIOMIXBUFFER_SIZE_MASK ( AUDIOMIXBUFFER_SIZE - 1 )	/* To limit index values inside AudioMixBuffer[] */
+extern Sint16	AudioMixBuffer[AUDIOMIXBUFFER_SIZE][2];	/* Ring buffer to store mixed audio output (YM2149, DMA sound, ...) */
+extern int	AudioMixBuffer_pos_write;	/* Current writing position into above buffer */
+extern int	AudioMixBuffer_pos_read;	/* Current reading position into above buffer */
+
 extern bool	Sound_BufferIndexNeedReset;
 
 /* STSound sound renderer active */

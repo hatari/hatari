@@ -1859,9 +1859,9 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 	if (crossbar.isDacMuted) {
 		/* Output sound = 0 */
 		for (i = 0; i < nSamplesToGenerate; i++) {
-			nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
-			MixBuffer[nBufIdx][0] = 0;
-			MixBuffer[nBufIdx][1] = 0;
+			nBufIdx = (nMixBufIdx + i) % AUDIOMIXBUFFER_SIZE;
+			AudioMixBuffer[nBufIdx][0] = 0;
+			AudioMixBuffer[nBufIdx][1] = 0;
 		}
 
 		/* Counters are refreshed for when DAC becomes unmuted */
@@ -1872,7 +1872,7 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 
 	for (i = 0; i < nSamplesToGenerate; i++)
 	{
-		nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
+		nBufIdx = (nMixBufIdx + i) % AUDIOMIXBUFFER_SIZE;
 
 		/* ADC mixing (PSG sound or microphone sound for left and right channels) */
 		switch (crossbar.codecAdcInput) {
@@ -1885,17 +1885,17 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 			case 1:
 				/* Microphone sound for left channel, PSG sound for right channel */
 				adc_leftData = adc.buffer_left[crossbar.adc2dac_readBufferPosition];
-				adc_rightData = MixBuffer[nBufIdx][1];
+				adc_rightData = AudioMixBuffer[nBufIdx][1];
 				break;
 			case 2:
 				/* PSG sound for left channel, microphone sound for right channel */
-				adc_leftData = MixBuffer[nBufIdx][0];
+				adc_leftData = AudioMixBuffer[nBufIdx][0];
 				adc_rightData = adc.buffer_right[crossbar.adc2dac_readBufferPosition];
 				break;
 			case 3:
 				/* PSG sound for left and right channels */
-				adc_leftData = MixBuffer[nBufIdx][0];
-				adc_rightData = MixBuffer[nBufIdx][1];
+				adc_leftData = AudioMixBuffer[nBufIdx][0];
+				adc_rightData = AudioMixBuffer[nBufIdx][1];
 				break;
 		}
 
@@ -1937,8 +1937,8 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 				break;
 		}
 
-		MixBuffer[nBufIdx][0] = (dac_LeftData * crossbar.attenuationSettingLeft) >> 16;
-		MixBuffer[nBufIdx][1] = (dac_RightData * crossbar.attenuationSettingRight) >> 16;
+		AudioMixBuffer[nBufIdx][0] = (dac_LeftData * crossbar.attenuationSettingLeft) >> 16;
+		AudioMixBuffer[nBufIdx][1] = (dac_RightData * crossbar.attenuationSettingRight) >> 16;
 
 		/* Upgrade dac's buffer read pointer */
 		dac.readPosition_float += crossbar.frequence_ratio;
