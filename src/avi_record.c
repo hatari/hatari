@@ -1046,6 +1046,7 @@ static bool	Avi_RecordAudioStream_PCM ( RECORD_AVI_PARAMS *pAviParams , Sint16 p
 	AVI_CHUNK	Chunk;
 	Sint16		sample[2];
 	int		i;
+	int		idx;
 
 	/* Write the audio frame header */
 	Avi_Store4cc ( Chunk.ChunkName , "01wb" );				/* stream 1, wave bytes */
@@ -1058,11 +1059,13 @@ static bool	Avi_RecordAudioStream_PCM ( RECORD_AVI_PARAMS *pAviParams , Sint16 p
 	}
 
 	/* Write the audio frame data */
+	idx = SampleIndex & AUDIOMIXBUFFER_SIZE_MASK;
 	for ( i = 0 ; i < SampleLength; i++ )
 	{
 		/* Convert sample to little endian */
-		sample[0] = SDL_SwapLE16 ( pSamples[ (SampleIndex+i) % AUDIOMIXBUFFER_SIZE ][0]);
-		sample[1] = SDL_SwapLE16 ( pSamples[ (SampleIndex+i) % AUDIOMIXBUFFER_SIZE ][1]);
+		sample[0] = SDL_SwapLE16 ( pSamples[ idx ][0]);
+		sample[1] = SDL_SwapLE16 ( pSamples[ idx ][1]);
+		idx = ( idx+1 ) & AUDIOMIXBUFFER_SIZE_MASK;
 		/* And store */
 		if ( fwrite ( &sample , sizeof ( sample ) , 1 , pAviParams->FileOut ) != 1 )
 		{

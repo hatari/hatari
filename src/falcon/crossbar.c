@@ -1859,7 +1859,7 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 	if (crossbar.isDacMuted) {
 		/* Output sound = 0 */
 		for (i = 0; i < nSamplesToGenerate; i++) {
-			nBufIdx = (nMixBufIdx + i) % AUDIOMIXBUFFER_SIZE;
+			nBufIdx = (nMixBufIdx + i) & AUDIOMIXBUFFER_SIZE_MASK;
 			AudioMixBuffer[nBufIdx][0] = 0;
 			AudioMixBuffer[nBufIdx][1] = 0;
 		}
@@ -1872,7 +1872,7 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 
 	for (i = 0; i < nSamplesToGenerate; i++)
 	{
-		nBufIdx = (nMixBufIdx + i) % AUDIOMIXBUFFER_SIZE;
+		nBufIdx = (nMixBufIdx + i) & AUDIOMIXBUFFER_SIZE_MASK;
 
 		/* ADC mixing (PSG sound or microphone sound for left and right channels) */
 		switch (crossbar.codecAdcInput) {

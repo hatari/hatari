@@ -530,7 +530,7 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 	{
 		for (i = 0; i < nSamplesToGenerate; i++)
 		{
-			nBufIdx = (nMixBufIdx + i) % AUDIOMIXBUFFER_SIZE;
+			nBufIdx = (nMixBufIdx + i) & AUDIOMIXBUFFER_SIZE_MASK;
 
 			switch (microwire.mixing) {
 				case 1:
@@ -580,7 +580,7 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 				DmaInitSample = false;
 			}
 
-			nBufIdx = (nMixBufIdx + i) % AUDIOMIXBUFFER_SIZE;
+			nBufIdx = (nMixBufIdx + i) & AUDIOMIXBUFFER_SIZE_MASK;
 
 			switch (microwire.mixing) {
 				case 1:
@@ -624,7 +624,7 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 				DmaInitSample = false;
 			}
 
-			nBufIdx = (nMixBufIdx + i) % AUDIOMIXBUFFER_SIZE;
+			nBufIdx = (nMixBufIdx + i) & AUDIOMIXBUFFER_SIZE_MASK;
 
 			switch (microwire.mixing) {
 				case 1:
@@ -675,7 +675,7 @@ static void DmaSnd_Apply_LMC(int nMixBufIdx, int nSamplesToGenerate)
 
 	/* Apply LMC1992 sound modifications (Left, Right and Master Volume) */
 	for (i = 0; i < nSamplesToGenerate; i++) {
-		nBufIdx = (nMixBufIdx + i) % AUDIOMIXBUFFER_SIZE;
+		nBufIdx = (nMixBufIdx + i) & AUDIOMIXBUFFER_SIZE_MASK;
 
 		sample = DmaSnd_IIRfilterL( Subsonic_IIR_HPF_Left( AudioMixBuffer[nBufIdx][0]));
 		if (sample<-32767)						/* check for overflow to clip waveform */

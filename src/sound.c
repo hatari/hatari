@@ -1445,7 +1445,7 @@ void Sound_Reset(void)
 	AudioMixBuffer_pos_read = 0;
 	/* We do not start with 0 here to fake some initial samples: */
 	nGeneratedSamples = SoundBufferSize + SAMPLES_PER_FRAME;
-	AudioMixBuffer_pos_write = nGeneratedSamples % AUDIOMIXBUFFER_SIZE;
+	AudioMixBuffer_pos_write = nGeneratedSamples & AUDIOMIXBUFFER_SIZE_MASK;
 	AudioMixBuffer_pos_write_avi = AudioMixBuffer_pos_write;
 //fprintf ( stderr , "Sound_Reset SoundBufferSize %d SAMPLES_PER_FRAME %d nGeneratedSamples %d , AudioMixBuffer_pos_write %d\n" ,
 //	SoundBufferSize , SAMPLES_PER_FRAME, nGeneratedSamples , AudioMixBuffer_pos_write );
@@ -1466,7 +1466,7 @@ void Sound_ResetBufferIndex(void)
 {
 	Audio_Lock();
 	nGeneratedSamples = SoundBufferSize + SAMPLES_PER_FRAME;
-	AudioMixBuffer_pos_write =  (AudioMixBuffer_pos_read + nGeneratedSamples) % AUDIOMIXBUFFER_SIZE;
+	AudioMixBuffer_pos_write =  (AudioMixBuffer_pos_read + nGeneratedSamples) & AUDIOMIXBUFFER_SIZE_MASK;
 	AudioMixBuffer_pos_write_avi = AudioMixBuffer_pos_write;
 //fprintf ( stderr , "Sound_ResetBufferIndex SoundBufferSize %d SAMPLES_PER_FRAME %d nGeneratedSamples %d , AudioMixBuffer_pos_write %d\n" ,
 //	SoundBufferSize , SAMPLES_PER_FRAME, nGeneratedSamples , AudioMixBuffer_pos_write );
@@ -1545,13 +1545,14 @@ static int Sound_GenerateSamples(Uint64 CPU_Clock)
 //fprintf ( stderr , "sound_gen margin=%d read_max=%d\n" , ym_margin , ( YM_Buffer_250_pos_write - ym_margin ) & YM_BUFFER_250_SIZE_MASK );
 
 	Sample_Nbr = 0;
+	idx = AudioMixBuffer_pos_write & AUDIOMIXBUFFER_SIZE_MASK;
 
 	if (Config_IsMachineFalcon())
 	{
 		while ( ( ( YM_Buffer_250_pos_write - YM_Buffer_250_pos_read ) & YM_BUFFER_250_SIZE_MASK ) >= ym_margin )
 		{
-			idx = (AudioMixBuffer_pos_write + Sample_Nbr) % AUDIOMIXBUFFER_SIZE;
 			AudioMixBuffer[idx][0] = AudioMixBuffer[idx][1] = Subsonic_IIR_HPF_Left( YM2149_NextSample_250() );
+			idx = ( idx+1 ) & AUDIOMIXBUFFER_SIZE_MASK;
 			Sample_Nbr++;
 		}
 		/* If Falcon emulation, crossbar does the job */
@@ -1563,8 +1564,8 @@ static int Sound_GenerateSamples(Uint64 CPU_Clock)
 	{
 		while ( ( ( YM_Buffer_250_pos_write - YM_Buffer_250_pos_read ) & YM_BUFFER_250_SIZE_MASK ) >= ym_margin )
 		{
-			idx = (AudioMixBuffer_pos_write + Sample_Nbr) % AUDIOMIXBUFFER_SIZE;
 			AudioMixBuffer[idx][0] = AudioMixBuffer[idx][1] = YM2149_NextSample_250();
+			idx = ( idx+1 ) & AUDIOMIXBUFFER_SIZE_MASK;
 			Sample_Nbr++;
 		}
 		/* If Ste or TT emulation, DmaSnd does mixing and filtering */
@@ -1576,13 +1577,13 @@ static int Sound_GenerateSamples(Uint64 CPU_Clock)
 	{
 		while ( ( ( YM_Buffer_250_pos_write - YM_Buffer_250_pos_read ) & YM_BUFFER_250_SIZE_MASK ) >= ym_margin )
 		{
-			idx = (AudioMixBuffer_pos_write + Sample_Nbr) % AUDIOMIXBUFFER_SIZE;
 			AudioMixBuffer[idx][0] = AudioMixBuffer[idx][1] = Subsonic_IIR_HPF_Left( YM2149_NextSample_250() );
+			idx = ( idx+1 ) & AUDIOMIXBUFFER_SIZE_MASK;
 			Sample_Nbr++;
 		}
 	}
 
-	AudioMixBuffer_pos_write = (AudioMixBuffer_pos_write + Sample_Nbr) % AUDIOMIXBUFFER_SIZE;
+	AudioMixBuffer_pos_write = (AudioMixBuffer_pos_write + Sample_Nbr) & AUDIOMIXBUFFER_SIZE_MASK;
 	nGeneratedSamples += Sample_Nbr;
 //fprintf ( stderr , "sound_gen out nb=%d ym_pos_rd=%d ym_pos_wr=%d clock=%ld\n" , Sample_Nbr , YM_Buffer_250_pos_read , YM_Buffer_250_pos_write , CPU_Clock );
 	return Sample_Nbr;

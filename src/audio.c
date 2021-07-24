@@ -81,8 +81,8 @@ static void Audio_CallBack(void *userdata, Uint8 *stream, int len)
 		 * 'signed' to 'unsigned' */
 		for (i = 0; i < len; i++)
 		{
-			*pBuffer++ = AudioMixBuffer[(AudioMixBuffer_pos_read + i) % AUDIOMIXBUFFER_SIZE][0];
-			*pBuffer++ = AudioMixBuffer[(AudioMixBuffer_pos_read + i) % AUDIOMIXBUFFER_SIZE][1];
+			*pBuffer++ = AudioMixBuffer[(AudioMixBuffer_pos_read + i) & AUDIOMIXBUFFER_SIZE_MASK][0];
+			*pBuffer++ = AudioMixBuffer[(AudioMixBuffer_pos_read + i) & AUDIOMIXBUFFER_SIZE_MASK][1];
 		}
 		AudioMixBuffer_pos_read += len;
 		nGeneratedSamples -= len;
@@ -91,8 +91,8 @@ static void Audio_CallBack(void *userdata, Uint8 *stream, int len)
 	{
 		for (i = 0; i < nGeneratedSamples; i++)
 		{
-			*pBuffer++ = AudioMixBuffer[(AudioMixBuffer_pos_read + i) % AUDIOMIXBUFFER_SIZE][0];
-			*pBuffer++ = AudioMixBuffer[(AudioMixBuffer_pos_read + i) % AUDIOMIXBUFFER_SIZE][1];
+			*pBuffer++ = AudioMixBuffer[(AudioMixBuffer_pos_read + i) & AUDIOMIXBUFFER_SIZE_MASK][0];
+			*pBuffer++ = AudioMixBuffer[(AudioMixBuffer_pos_read + i) & AUDIOMIXBUFFER_SIZE_MASK][1];
 		}
 		/* Clear rest of the buffer to ensure we don't play random bytes instead */
 		/* of missing samples */
@@ -103,7 +103,7 @@ static void Audio_CallBack(void *userdata, Uint8 *stream, int len)
 		
 	}
 
-	AudioMixBuffer_pos_read = AudioMixBuffer_pos_read % AUDIOMIXBUFFER_SIZE;
+	AudioMixBuffer_pos_read = AudioMixBuffer_pos_read & AUDIOMIXBUFFER_SIZE_MASK;
 //fprintf ( stderr , "audio cb out len=%d gensmpl=%d idx=%d\n" , len , nGeneratedSamples , AudioMixBuffer_pos_read );
 }
 

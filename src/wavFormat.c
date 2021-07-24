@@ -176,15 +176,18 @@ void WAVFormat_Update(Sint16 pSamples[][2], int Index, int Length)
 {
 	Sint16 sample[2];
 	int i;
+	int idx;
 
 	if (bRecordingWav)
 	{
 		/* Output, better if did in two section if wrap */
+		idx = Index & AUDIOMIXBUFFER_SIZE_MASK;
 		for(i = 0; i < Length; i++)
 		{
 			/* Convert sample to little endian */
-			sample[0] = SDL_SwapLE16(pSamples[(Index+i)%AUDIOMIXBUFFER_SIZE][0]);
-			sample[1] = SDL_SwapLE16(pSamples[(Index+i)%AUDIOMIXBUFFER_SIZE][1]);
+			sample[0] = SDL_SwapLE16(pSamples[idx][0]);
+			sample[1] = SDL_SwapLE16(pSamples[idx][1]);
+			idx = ( idx+1 ) & AUDIOMIXBUFFER_SIZE_MASK;
 			/* And store */
 			if (fwrite(&sample, sizeof(sample), 1, WavFileHndl) != 1)
 			{
