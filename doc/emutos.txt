@@ -1040,6 +1040,7 @@ Color games:
 - Giana Sisters STE rewrite:
   http://atari-forum.com/viewtopic.php?f=3&t=26360
 - H Mec 2 (line-A bitblit)
+- Metal Slug STE (mission 1)
 - Micromachines preview (by .tscc)
 - Mr Boomer (line-A bitblit)
 - No Limit II (shareware pinball)
@@ -1264,7 +1265,7 @@ Working demos (comments are for EmuTOS v1.0 or older):
 - Why (by Extream)
 - ZZ 9 Plural Z Alpha (by tSCc)
 
-Demos working in EmuTOS >v1.0 (with DSP support):
+Demos working under EmuTOS >= v1.1 (with DSP support):
 - 4kbtro (by Wilfire)
 - 96ktro (by Cruor)
 - Aggressive Party 2 4k (NoCrew)
@@ -1318,11 +1319,11 @@ Demos working in EmuTOS >v1.0 (with DSP support):
 - Yepyha (by Toons)
 - Zero Three Zero (by The Pixel Twins)
 
-Partly working demos (>v1.0):
+Demos working partly under EmuTOS >= v1.1:
 - Doomino (by STAX)
   - Info screen at start looks just garbage (HiColor?)
 
-Broken demos (even with EmuTOS >1.0):
+Broken demos (with EmuTOS v1.1.x):
 - '_' (by Escape)
   - Crashes in first screen
 - GEM demo (by DHS & AssemSoft):
@@ -1399,7 +1400,7 @@ Working games (comments are for EmuTOS v1.0 or older):
 - Zodiax (Falcon "R-type")
     start from 640x400@16
 
-Games working under EmuTOS >v1.0 (with DSP support):
+Games working under EmuTOS >= v1.1 (with DSP support):
 - Aazohm Krypth
 - Bad Mood (90's demo)
 - Bad Mood* (v0.37 game from 2017)
@@ -1441,7 +1442,7 @@ Partly working games:
   - fire button works only until game itself starts
   - Needs at least 8MB RAM
 
-Broken games (even with EmuTOS >1.0):
+Broken games (with EmuTOS v1.1.x):
 - Columns by Deadheart* (demo)
   - broken graphics (needs HiColor?)
 - Confusion demo 1 & 2:
@@ -1505,7 +1506,7 @@ Working applications:
 - Rainbow 2 multimedia, needs MMU
 - Smurf (GEM image viewer)
 
-Application working under EmuTOS >v1.0 (with DSP support):
+Applications working under EmuTOS >= v1.1 (with DSP support):
 - AceMidi demo (v1.01)
 - AceTracker v1 & v2
 - AFM (audio fun machine)
@@ -1531,8 +1532,12 @@ Application working under EmuTOS >v1.0 (with DSP support):
   - Needs at minimum 640x480x16 color VGA resolution
 - Whip! (virtual light machine)
   - mic input not tested
-- Winrec (direct to disk GEM audio recorder/effects)
+- WinRec (direct to disk GEM audio recorder/effects)
   - Starts fine and GUI works, actual recording not tested
+
+Applications working under EmuTOS > v1.1.1:
+- FalcAMP (GEM, requires DSP & color icons support)
+  - 3D look in icons & text in some dialogs needs EmuTOS Git version
 
 Applications working with extra hacks:
 - Fractal Playground, Godleness, GodBoyX by Reservoir Gods
@@ -1551,19 +1556,15 @@ Partly working applications:
   - Works with MMU + FPU + VGA
   - Requires HiColor with RGB?
 - AVI030
-  - Extra text cursors visible on screen and panics after video exits
-    (HiColor support?)
-- FalcAMP (GEM, requires DSP & color icons support)
-  - 3D look missing from icons, and text from plugins dialog
+  - All videos do not work (HiColor support?)
+- Centview (GEM image viewer)
+  - Crashes to bus error when trying to view >256 color images
 - Escape paint (GEM, requires color icons support)
   - Setting windows can't be moved, their titlebars and borders aren't
     refreshed when exposed, and few of the settings windows don't come
     on screen
 
-Broken applications (even with EmuTOS >v1.0):
-- Centview (GEM image viewer)
-  - Crashes to NULL pointer access when viewing image
-  - Requires HiColor
+Broken applications (with EmuTOS v1.1.1):
 - Indypaint
   - cursor moves, but screen is black, F1-F4 keys don't work
   - requires HiColor
