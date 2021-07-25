@@ -23,8 +23,13 @@ Removed features (that were marked as deprecated in earlier releases):
 - Python v2 support in Python scripts (Python 2 was end of life in 2020)
 
 Emulation:
-- Improved FPU instruction emulation (from WinUAE emulator)
-- Improved DSP interrupts handling (from Previous NeXT emulator)
+- CPU:
+  - Improved FPU instruction emulation (from WinUAE emulator)
+- DSP:
+  - Improved interrupts handling (from Previous NeXT emulator)
+- Sound:
+  - Improve accuracy of YM2149's sample generation by using the main
+    CPU clock as a reference for all timings
 
 Emulator:
 - TOS support:
@@ -59,6 +64,9 @@ Tools:
 Documentation:
 - Compatibility updates, especially for 060 programs that need
   FPSP060.PRG for missing instructions emulation
+
+Fixed programs:
+- maxYMiser FM v1.53 by gwEn (support for syncsquare effect)
 
 
  Version 2.3.1 (2020-12-27)
