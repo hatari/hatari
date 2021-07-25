@@ -1056,11 +1056,22 @@ static void set_x_funcs (void)
 				x_get_word = get_word_dc030;
 				x_get_byte = get_byte_dc030;
 			}
-
 		}
-		x_do_cycles = do_cycles;
-		x_do_cycles_pre = do_cycles;
-		x_do_cycles_post = do_cycles_post;
+		if (currprefs.cpu_cycle_exact) {
+#ifndef WINUAE_FOR_HATARI
+			x_do_cycles = do_cycles_ce020;
+			x_do_cycles_pre = do_cycles_ce020;
+			x_do_cycles_post = do_cycles_ce020_post;
+#else
+			x_do_cycles = do_cycles_ce020_long;
+			x_do_cycles_pre = do_cycles_ce020_long;
+			x_do_cycles_post = do_cycles_ce020_post;
+#endif
+		} else {
+			x_do_cycles = do_cycles;
+			x_do_cycles_pre = do_cycles;
+			x_do_cycles_post = do_cycles_post;
+		}
 	} else if (currprefs.cpu_model < 68020) {
 		// 68000/010
 		if (currprefs.cpu_cycle_exact) {
@@ -10443,7 +10454,7 @@ void mem_access_delay_long_write_c040 (uaecptr addr, uae_u32 v)
 		wait_cpu_cycle_write_ce020 (addr + 2, 1, (v >>  0) & 0xffff);
 		break;
 	case CE_MEMBANK_CHIP32:
-		if ((addr & 3) == 3) {
+		if ((addr & 3) != 0) {
 			wait_cpu_cycle_write_ce020 (addr + 0, 1, (v >> 16) & 0xffff);
 			wait_cpu_cycle_write_ce020 (addr + 2, 1, (v >>  0) & 0xffff);
 		} else {
@@ -10452,7 +10463,7 @@ void mem_access_delay_long_write_c040 (uaecptr addr, uae_u32 v)
 		break;
 	case CE_MEMBANK_FAST16:
 		put_long (addr, v);
-		do_cycles_ce020_mem (2 * CPU020_MEM_CYCLE, v);
+		do_cycles_c040_mem(1, v);
 		break;
 	case CE_MEMBANK_FAST32:
 		put_long (addr, v);
