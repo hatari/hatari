@@ -47,7 +47,7 @@ In examples, different execution environments are indicated by prompts:
 	# -- root shell prompt
 	> -- Hatari debugger prompt
 
-"wget" examples don't give exact package names because versions in
+"wget" examples do not give exact package names because versions in
 them change frequently. Replace "*" in those file names with the
 version available in the given remote directory!
 
@@ -55,7 +55,7 @@ version available in the given remote directory!
 2. Hatari issues
 ----------------
 
-- LILO reset code hasn't yet been updated from Aranym's Falcon
+- LILO reset code has not yet been updated from Aranym's Falcon
   AfterBurner behavior to normal Falcon (they use different reset
   addresses), so resets fail with LILO
 
@@ -69,7 +69,7 @@ version available in the given remote directory!
   missing MMU-translation within Hatari?
   DEBUG: Your Atari program just did something terribly stupid: dummy_xlate($c00123ee)
 
-- Hatari doesn't implement VME/SCU interrupt handling although it by
+- Hatari does not implement VME/SCU interrupt handling although it by
   default allows access to related registers, and as result Linux
   freezes at boot on MegaSTE / TT
   => workaround: use Hatari "--vme none" option with them
@@ -124,39 +124,44 @@ VFS: Cannot open root device "sda" or unknown-block(8,0): error -6
 - Oops on kernel boot in init (Busybox shell) when either 030 CPU
   cache or prefetch emulation is enabled, resulting in kernel panic.
   According to kernel developer, they don't happen on real HW,
-  so they seem to be Hatari issue:
+  so they seem to be Hatari issue.  Kernel gives same backtrace
+  on ST, TT and Falcon:
 
 ------------------------------------------------------------
 Kernel panic - not syncing: Attempted to kill init! exitcode=0x0000000b
-CPU: 0 PID: 1 Comm: sh Not tainted 5.10.0hatari-00003-g91e781c8eb56 #1
-Stack from 00821de4:
+CPU: 0 PID: 1 Comm: sh Not tainted 5.13.0hatari-00003-gd93c73bd2fd #1
+Stack from 0081bde4:
         ...
-Call Trace: [<00263ed8>] panic+0xbe/0x27a
- [<0002f1a6>] do_signal_stop+0x0/0x14c
- [<00028410>] do_exit+0x11c/0x670
- [<0002f1a6>] do_signal_stop+0x0/0x14c
- [<0002d00c>] __list_del_entry+0x0/0x2c
- [<000289e6>] do_group_exit+0x4c/0x84
- [<0002fb22>] get_signal+0x118/0x478
- [<00003f1e>] do_notify_resume+0x32/0x464
+Call Trace: [<0026cef8>] panic+0xbe/0x27a
+ [<0002f4a4>] do_signal_stop+0x0/0x14c
+ [<000284a6>] do_exit+0x146/0x6ac
+ [<0002f4a4>] do_signal_stop+0x0/0x14c
+ [<0002d2dc>] __list_del_entry+0x0/0x2c
+ [<00028a8e>] do_group_exit+0x4c/0x84
+ [<0002fe96>] get_signal+0x144/0x4aa
+ [<00003f58>] do_notify_resume+0x3c/0x478
  [<000054fc>] send_fault_sig+0x28/0x8c
- [<000056d8>] do_page_fault+0x178/0x1f8
- [<00002824>] do_signal_return+0x10/0x1a
- [<00020007>] _I_CALL_TOP+0xf2f/0x1900
- [<0000b280>] rnd_cont+0xe/0x12
- [<00007201>] atari_register_vme_int+0xb/0x3a
- [<000066f6>] mfp_timer_c_handler+0x1e/0x3c
+ [<000056e4>] do_page_fault+0x184/0x204
+ [<00002850>] do_signal_return+0x10/0x1a
+ [<0026c62c>] memset+0x64/0x90
+ [<00020007>] _I_CALL_TOP+0xfb3/0x1900
+ [<0000b280>] grs_sgl+0x18/0x22
+ [<00007201>] stdma_try_lock+0x13/0x38
+ [<000066f6>] atari_mste_hwclk+0x1c/0x2ba
 ------------------------------------------------------------
 
 
 3. Building m68k kernel
 -----------------------
 
+0. Install generic build tools:
+   $ sudo apt install bc bison flex
+
 1. Install compiler:
    $ sudo apt install gcc-m68k-linux-gnu
 
 2. Get latest upstream kernel release sources (without history):
-   $ git clone --depth 1 --branch v5.10 \
+   $ git clone --depth 1 --branch v5.13 \
      git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
    $ cd linux
 
@@ -705,23 +710,46 @@ Kernel panic - not syncing: VFS: Unable to mount root fs on unknown-block(0,0)
 
 - Hatari v.2.3.x regression: With 040/060 CPU cache/prefetch emulation
   disabled, kernel dies to NULL pointer in mfp_timer_c_handler() when
-  user-space processes are started
+  first user-space process is started:
 ------------------------------------------------------------
-Unable to handle kernel access at virtual address (ptrval)
-Oops: 00000000
-PC: [<000066e4>] mfp_timer_c_handler+0xc/0x3c
-SR: 2700  SP: (ptrval)  a2: 0081fa70
+68060 access error, fslw=1210000
+*** BUS ERROR ***   FORMAT=4
+Current process id is 1
+BAD KERNEL TRAP: 00000000
+PC: [<000066aa>] mfp_timer_c_handler+0xc/0x3c
+SR: 2700  SP: (ptrval)  a2: 00818a90
 d0: 00000000    d1: 0000000d    d2: 00002d04    d3: 0000000d
-d4: 00388c20    d5: 0026414a    a0: 000066d8    a1: 0031958c
+d4: 00000165    d5: 0026d16a    a0: 0000669e    a1: 0032570c
 Process init (pid: 1, task=(ptrval))
-Frame format=7 eff addr=00000000 ssw=0121 faddr=00fffa23
+Frame format=4 fault addr=00fffa23 fslw=01210000
 ...
 Call Trace:
- [<00049ab0>] __handle_irq_event_percpu+0x46/0xd6
- [<000048e4>] timer_interrupt+0x0/0x30
- [<00112cca>] cap_bprm_creds_from_file+0x2bc/0x372
- [<00049b5c>] handle_irq_event_percpu+0x1c/0x52
- [<00049bb4>] handle_irq_event+0x22/0x36
+ [<00049734>] __handle_irq_event_percpu+0x46/0xd6
+ [<00112cca>] mqueue_get_inode+0x1aa/0x258
+ [<000497e0>] handle_irq_event_percpu+0x1c/0x52
+ [<00049838>] handle_irq_event+0x22/0x36
+ [<0004c264>] handle_simple_irq+0x52/0x56
+ [<0004917a>] generic_handle_irq+0x2a/0x36
+ [<000029cc>] do_IRQ+0x24/0x3a
+ [<000028d8>] user_irqvec_fixup+0xc/0x14
+ [<0026ae84>] xas_store+0x0/0x308
+ [<00069d94>] page_cache_ra_unbounded+0x13c/0x16a
+ [<00069cc6>] page_cache_ra_unbounded+0x6e/0x16a
+ [<00069e1a>] do_page_cache_ra+0x58/0x66
+ [<0006496c>] filemap_fault+0x246/0x35e
+ [<00083974>] find_vma+0x0/0x6a
+ [<0007e4fe>] __do_fault+0x3a/0x68
+ [<00080d60>] handle_mm_fault+0x3e8/0x588
+ [<00100cca>] fat_get_cluster+0x1c/0x2a8
+ [<00001e14>] kernel_pg_dir+0xe14/0x1000
+ [<00001b00>] kernel_pg_dir+0xb00/0x1000
+ [<0000561c>] do_page_fault+0xbc/0x204
+ [<00084708>] do_brk_flags+0x166/0x188
+ [<00004df2>] buserr_c+0x178/0x494
+ [<000026d8>] buserr+0x20/0x28
+ [<000e5208>] padzero+0x30/0x3a
+ [<000e5aa2>] load_elf_binary+0x522/0xb52
+...
 ------------------------------------------------------------
 
   This didn't happen with 2019 v2.3-dev Git version, and Linux
