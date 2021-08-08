@@ -338,24 +338,33 @@ void wait_cpu_cycle_write_ce020 (uaecptr addr, int mode, uae_u32 v)
 #endif						/* WINUAE_FOR_HATARI */
 }
 
+#ifndef WINUAE_FOR_HATARI
 void do_cycles_ce (unsigned long cycles)
 {
 	cycles += extra_cycle;
 	while (cycles >= CYCLE_UNIT) {
-#ifndef WINUAE_FOR_HATARI
 		int hpos = current_hpos () + 1;
 		decide_line (hpos);
 		sync_copper (hpos);
 		decide_fetch_ce (hpos);
 		if (bltstate != BLT_done)
 			decide_blitter (hpos);
-#endif						/* WINUAE_FOR_HATARI */
 		do_cycles (1 * CYCLE_UNIT);
 		cycles -= CYCLE_UNIT;
 	}
 	extra_cycle = cycles;
 }
-
+#else
+/* [NP] Unlike Amiga, for Hatari in 68000 CE mode, we don't need to update other components */
+/* on every sub cycle, so we can do all cycles in one single call to speed up */
+/* emulation (this gains approx 7%) */
+void do_cycles_ce (unsigned long cycles)
+{
+	cycles += extra_cycle;
+	extra_cycle = cycles & ( CYCLE_UNIT-1 );
+	do_cycles ( cycles - extra_cycle );
+}
+#endif
 
 #ifdef WINUAE_FOR_HATARI
 /* Same as do_cycles_ce() with cycle exact blitter support */
