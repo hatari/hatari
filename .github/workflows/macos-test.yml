@@ -22,7 +22,12 @@ jobs:
       # Runs a set of commands using the runners shell
       - name: Run a multi-line script
         run: |
-           brew install qt@5
+           brew install qt5
+           echo "/usr/local/opt/qt@5/bin" >> $GITHUB_PATH
+           echo "Qt5_DIR=/usr/local/opt/qt@5/lib/cmake/Qt5" >> $GITHUB_ENV
+      - name: check install
+        run: |
+           export
            cd tools/hrdb
            qmake .
            make
