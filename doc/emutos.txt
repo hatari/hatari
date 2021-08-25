@@ -483,6 +483,8 @@ Demos:
 - We do not rip or recycle anything (by Spice Boys)
 - Yanartas (by Checkpoint)
 - YmRockerz musicdisks from "Wave upon Wave" to "Seven"
+- X-files (by Martin Cubitt, in STOS)
+  - Error #046 => run from desktop instead of auto/-folder
 - Xmas2000 (by Paranoid)
 
 Color toys:
@@ -797,6 +799,28 @@ Mono/GEM toys:
 - ST life
 - Wator         (slow)
 - Worm farm
+
+
+Broken floppy demos
+-------------------
+
+- Amiga demo (by Exceptions)
+  - bus errors before *any* OS calls
+- B.I.G demo (by Exceptions)
+  - bus errors before *any* OS calls
+- Froggies over the Fence ()
+  - Line-F panic, earlier bus error at $400000 after first OS call:
+    Rwabs(0,0x30000,8,1,0)
+  - with high-RAM etos512, complains about 1/2 MB RAM
+- Place to be (by EKO)
+  - with 192k, black screen / panic at start
+  - with cart, bus errors after intro screens
+- Things not to do (by Inner Circle) - NULL pointer access at 0x7d80a
+  - Floprd(0x7d800, 252, 2, 0, 0, 9)
+- Swedish New Year (by CareBears) - panic at 0x7006 after first OS call
+  - Floprd(0x7000, 0, 1, 79, 0, 9)
+- WhattaHeck (by CareBears) - panic at 0x7000 after first OS call
+  - Floprd(0x7000, 0, 2, 0, 0, 1)
 
 
 Atari ST games with broken input handling
@@ -1534,6 +1558,8 @@ Applications working under EmuTOS >= v1.1 (with DSP support):
   - Starts fine and GUI works, actual recording not tested
 
 Applications working under EmuTOS > v1.1.1:
+- Escape paint (GEM, requires color icons support)
+  - Correct window management needs EmuTOS Git version
 - FalcAMP (GEM, requires DSP & color icons support)
   - 3D look in icons & text in some dialogs needs EmuTOS Git version
 - MP2AUDIO player:
@@ -1561,10 +1587,6 @@ Partly working applications:
   - All videos do not work (HiColor support?)
 - Centview (GEM image viewer)
   - Crashes to bus error when trying to view >256 color images
-- Escape paint (GEM, requires color icons support)
-  - Setting windows can't be moved, their titlebars and borders aren't
-    refreshed when exposed, and few of the settings windows don't come
-    on screen
 
 Broken applications (with EmuTOS v1.1.1):
 - Indypaint
