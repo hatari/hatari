@@ -24,6 +24,7 @@ const char Options_fileid[] = "Hatari options.c";
 #include "version.h"
 #include "options.h"
 #include "configuration.h"
+#include "console.h"
 #include "control.h"
 #include "debugui.h"
 #include "file.h"
@@ -52,8 +53,6 @@ bool bLoadMemorySave;      /* Load memory snapshot provided via option at startu
 bool AviRecordOnStartup;   /* Start avi recording at startup */
 bool BenchmarkMode;	   /* Start in benchmark mode (try to run at maximum emulation */
 			   /* speed allowed by the CPU). Disable audio/video for best results */
-
-int ConOutDevice = CONOUT_DEVICE_NONE; /* device number for xconout device to track */
 
 static bool bBiosIntercept;
 
@@ -1011,7 +1010,8 @@ static bool Opt_HandleArgument(const char *path)
  */
 bool Opt_ParseParameters(int argc, const char * const argv[])
 {
-	int ncpu, skips, planes, cpuclock, threshold, memsize, port, freq, temp, drive;
+	int ncpu, skips, planes, cpuclock, threshold, memsize;
+	int dev, port, freq, temp, drive;
 	const char *errstr, *str;
 	int i, ok = true;
 	float zoom;
@@ -2081,12 +2081,12 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 		case OPT_CONOUT:
 			i += 1;
-			ConOutDevice = atoi(argv[i]);
-			if (ConOutDevice < 0 || ConOutDevice > 7)
+			dev = atoi(argv[i]);
+			if (!Console_SetDevice(dev))
 			{
 				return Opt_ShowError(OPT_CONOUT, argv[i], "Invalid console device vector number");
 			}
-			Log_Printf(LOG_DEBUG, "Xcounout device %d vector redirection enabled.\n", ConOutDevice);
+			Log_Printf(LOG_DEBUG, "Xcounout device %d vector redirection enabled.\n", dev);
 			break;
 
 		case OPT_NATFEATS:

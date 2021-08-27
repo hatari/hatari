@@ -916,7 +916,7 @@ void DebugCpu_Check(void)
 	{
 		History_AddCpu();
 	}
-	if (ConOutDevice != CONOUT_DEVICE_NONE)
+	if (ConOutDevices)
 	{
 		Console_Check();
 	}
@@ -934,7 +934,7 @@ void DebugCpu_SetDebugging(void)
 
 	if (nCpuActiveCBs || nCpuSteps || bCpuProfiling || History_TrackCpu()
 	    || LOG_TRACE_LEVEL((TRACE_CPU_DISASM|TRACE_CPU_SYMBOLS|TRACE_CPU_REGS))
-	    || ConOutDevice != CONOUT_DEVICE_NONE)
+	    || ConOutDevices)
 	{
 		M68000_SetDebugger(true);
 		nCpuInstructions = 0;

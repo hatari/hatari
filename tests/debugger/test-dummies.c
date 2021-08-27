@@ -151,7 +151,7 @@ Uint32 DSP_ReadMemory(Uint16 addr, char space, const char **mem_str)
 
 /* fake console redirection */
 #include "console.h"
-int ConOutDevice;
+int ConOutDevices;
 void Console_Check(void) { }
 
 /* fake profiler stuff */
