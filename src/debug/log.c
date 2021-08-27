@@ -472,7 +472,9 @@ const char* Log_SetTraceOptions (const char *FlagsStr)
 		bVdiAesIntercept = true;
 
 	if ((LogTraceFlags & TRACE_OS_BASE))
-		Console_SetDevice(2);
+		Console_SetTrace(true);
+	else if (!LogTraceFlags)
+		Console_SetTrace(false);
 
 	return errstr;
 }

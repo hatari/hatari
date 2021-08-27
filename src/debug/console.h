@@ -11,6 +11,7 @@
 extern int ConOutDevices;
 
 extern bool Console_SetDevice(int dev);
+extern void Console_SetTrace(bool enable);
 extern void Console_Check(void);
 
 #endif

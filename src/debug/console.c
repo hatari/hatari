@@ -27,6 +27,7 @@ int ConOutDevices;
 
 /* device number for xconout devices to track */
 static int con_dev = CONOUT_DEVICE_NONE;
+static bool con_trace;
 
 /**
  * Set which Atari xconout device output goes to host console.
@@ -42,6 +43,21 @@ bool Console_SetDevice(int dev)
 	}
 	con_dev = dev;
 	return true;
+}
+
+/**
+ * Enable / disable xconout 2 host output for tracing.
+ * Overrides Console_SetDevice() device while enabled
+ */
+void Console_SetTrace(bool enable)
+{
+	if (enable && !con_trace) {
+		ConOutDevices++;
+	}
+	if (con_trace && !enable) {
+		ConOutDevices--;
+	}
+	con_trace = enable;
 }
 
 /**
@@ -209,9 +225,14 @@ static void vt52_emu(Uint8 value)
 void Console_Check(void)
 {
 	Uint32 pc, xconout, stack, stackbeg, stackend;
-	int increment, dev = con_dev;
+	int increment, dev;
 	Uint16 chr;
 
+	if (con_trace) {
+		dev = 2;
+	} else {
+		dev = con_dev;
+	}
 	/* xconout vector for requested device? */
 	xconout = STMemory_ReadLong(0x57e + dev * SIZE_LONG);
 	pc = M68000_GetPC();
