@@ -1751,7 +1751,7 @@ uae_u32 m68k_disasm_2(TCHAR *buf, int bufsize, uaecptr pc, uae_u16 *bufpc, int b
 		TCHAR *symbolpos;
 		bool skip = false;
 
-		seaddr2 = deaddr2 = 0;
+		seaddr2 = deaddr2 = 0xffffffff;
 		oldpc = pc;
 		opcode = get_disasm_word(pc, bufpc, bufpcsize, 0);
 		extra = get_disasm_word(pc, bufpc, bufpcsize, 2);
