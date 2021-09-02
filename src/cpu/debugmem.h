@@ -27,12 +27,12 @@ static inline void branch_stack_push(uaecptr oldpc, uaecptr newpc)	{}
 
 #else		/* ! WINUAE_FOR_HATARI */
 
-uaecptr debugmem_reloc(uaecptr exeaddress, uae_u32 len, uaecptr task, uae_u32 *stack);
-void debugmem_init(void);
+uaecptr debugmem_reloc(uaecptr exeaddress, uae_u32 len, uaecptr dbgaddress, uae_u32 dbglen, uaecptr task, uae_u32 *stack);
+void debugmem_init(bool);
 uaecptr debugmem_allocmem(int mode, uae_u32 size, uae_u32 flags, uae_u32 caller);
 uae_u32 debugmem_freemem(int mode, uaecptr addr, uae_u32 size, uae_u32 caller);
 void debugmem_trap(uaecptr addr);
-void debugmem_addsegs(TrapContext *ctx, uaecptr seg, uaecptr name, uae_u32 lock);
+void debugmem_addsegs(TrapContext *ctx, uaecptr seg, uaecptr name, uae_u32 lock, bool residentonly);
 void debugmem_remsegs(uaecptr seg);
 uae_u32 debugmem_exit(void);
 bool debugmem_break(int);

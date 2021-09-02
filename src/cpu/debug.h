@@ -64,7 +64,7 @@ extern int debug_read_memory_8 (uaecptr addr);
 extern int debug_write_memory_16 (uaecptr addr, uae_u16 v);
 extern int debug_write_memory_8 (uaecptr addr, uae_u8 v);
 extern bool debug_enforcer(void);
-extern uae_u8 *get_real_address_debug(uaecptr addr);
+extern uae_u8 *get_real_address_debug(uaecptr addr);		// WINUAE_FOR_HATARI
 extern int debug_safe_addr(uaecptr addr, int size);
 extern void debug_invalid_reg(int reg, int size, uae_u16 val);
 extern void debug_check_reg(uae_u32 addr, int write, uae_u16 v);
@@ -72,6 +72,7 @@ extern int memwatch_access_validator;
 #define DEBUG_SPRINTF_ADDRESS 0xbfff00
 extern bool debug_sprintf(uaecptr, uae_u32, int);
 extern bool debug_get_prefetch(int idx, uae_u16 *opword);
+extern void debug_hsync(void);
 
 extern void debug_init_trainer(const TCHAR*);
 extern void debug_trainer_match(void);
@@ -176,7 +177,8 @@ extern struct memwatch_node mwnodes[MEMWATCH_TOTAL];
 extern void memwatch_dump2 (TCHAR *buf, int bufsize, int num);
 
 void debug_getpeekdma_chipram(uaecptr addr, uae_u32 mask, int reg, int ptrreg);
-uae_u32 debug_getpeekdma_value(uae_u32 v);
+void debug_getpeekdma_value(uae_u32);
+void debug_getpeekdma_value_long(uae_u32, int);
 uae_u32 debug_putpeekdma_chipram(uaecptr addr, uae_u32 v, uae_u32 mask, int reg, int ptrreg);
 uae_u32 debug_putpeekdma_chipset(uaecptr addr, uae_u32 v, uae_u32 mask, int reg);
 void debug_lgetpeek(uaecptr addr, uae_u32 v);
@@ -215,9 +217,10 @@ extern struct peekdma peekdma_data;
 struct dma_rec
 {
     uae_u16 reg;
-    uae_u32 dat;
+    uae_u64 dat;
+	uae_u16 size;
     uae_u32 addr;
-    uae_u16 evt;
+    uae_u32 evt;
     uae_s16 type;
 	uae_u16 extra;
 	uae_s8 intlev;
@@ -227,7 +230,7 @@ struct dma_rec
 extern struct dma_rec *last_dma_rec;
 
 #define DMA_EVENT_BLITIRQ 1
-#define DMA_EVENT_BLITNASTY 2
+#define DMA_EVENT_BLITFINALD 2
 #define DMA_EVENT_BLITSTARTFINISH 4
 #define DMA_EVENT_BPLFETCHUPDATE 8
 #define DMA_EVENT_COPPERWAKE 16
@@ -238,7 +241,22 @@ extern struct dma_rec *last_dma_rec;
 #define DMA_EVENT_CPUBLITTERSTEAL 512
 #define DMA_EVENT_CPUBLITTERSTOLEN 1024
 #define DMA_EVENT_COPPERSKIP 2048
+#define DMA_EVENT_DDFSTRT 4096
+#define DMA_EVENT_DDFSTOP 8192
+#define DMA_EVENT_DDFSTOP2 16384
 #define DMA_EVENT_SPECIAL 32768
+#define DMA_EVENT_VB 0x10000
+#define DMA_EVENT_VS 0x20000
+#define DMA_EVENT_LOF 0x40000
+#define DMA_EVENT_LOL 0x80000
+#define DMA_EVENT_HBS 0x100000
+#define DMA_EVENT_HBE 0x200000
+#define DMA_EVENT_HDIWS 0x400000
+#define DMA_EVENT_HDIWE 0x800000
+#define DMA_EVENT_VDIW 0x1000000
+#define DMA_EVENT_HSS 0x2000000
+#define DMA_EVENT_HSE 0x4000000
+
 
 #define DMARECORD_REFRESH 1
 #define DMARECORD_CPU 2
@@ -253,9 +271,10 @@ extern struct dma_rec *last_dma_rec;
 extern void record_dma_read(uae_u16 reg, uae_u32 addr, int hpos, int vpos, int type, int extra);
 extern void record_dma_write(uae_u16 reg, uae_u32 v, uae_u32 addr, int hpos, int vpos, int type, int extra);
 extern void record_dma_read_value(uae_u32 v);
+extern void record_dma_read_value_wide(uae_u64 v, bool quad);
 extern void record_dma_replace(int hpos, int vpos, int type, int extra);
 extern void record_dma_reset(void);
-extern void record_dma_event(int evt, int hpos, int vpos);
+extern void record_dma_event(uae_u32 evt, int hpos, int vpos);
 extern void debug_draw(uae_u8 *buf, int bpp, int line, int width, int height, uae_u32 *xredcolors, uae_u32 *xgreencolors, uae_u32 *xbluescolors);
 
 #define TRACE_SKIP_INS 1
