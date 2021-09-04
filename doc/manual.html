@@ -1191,8 +1191,8 @@ changes that you have made.
 <p>
  To enter a folder or choose a file, simply click on the entry in the
  main box of the dialog. To navigate in the file list, you can use the
- scrollbar on the right with mouse, or use keyboard up + down arrow,
- page up + down, Home and End keys.
+ scrollbar on the right with mouse, use mousewheel, keyboard up + down
+ arrow (with Alt), or page up + down keys.
 </p>
 <p>
  You can use the three buttons in the upper right corner for additional folder
@@ -1963,23 +1963,32 @@ these are subset of ones listed e.g. by ALSA
 
 <p>There are multiple ways to interact with the SDL GUI.</p>
 
-<p>TAB and cursor keys change focus between UI elements.  Additionally
-Home key moves focus to first item, End key to last one.  Initially
-focus is on default UI element, but focus changes are remembered
-between dialog invocations. Enter and Space invoke focused item. UI
-elements with underlined characters can be invoked directly with Alt +
-key with that character.  Alt + arrow keys will act on arrow
-buttons.</p>
+<p>
+TAB and cursor keys change the focus between UI elements. Home key
+moves focus to the first dialog item, End key to the last one.
+Initially focus is on the default UI element, but focus changes are
+remembered between dialog invocations.
+</p>
+<p>
+Enter and Space invoke the focused item, ESC key invokes the dialog
+cancel option (if there is one).
+</p>
+<p>
+UI element which name has an underlined character can be invoked
+directly by pressing Alt + key with that character.  Alt + arrow keys
+will act on dialog arrow buttons.
+</p>
 
-<p>Most importantly:</p>
+<p>Main keyboard interactions:</p>
 <ul>
 <li><em>Options GUI main view</em>: Enter accepts configuration, ESC
 cancels it.</li>
-<li><em>Options GUI dialogs</em>: Enter (or End+Enter if focus was moved)
+<li><em>Options GUI dialogs</em>: Enter (or End + Enter if focus was moved)
 returns back to main view.</li>
-<li><em>Fileselector</em>: Page up and down keys scroll the file list.
-Enter on focused file name selects it.  Enter on OK button accepts
-the selected file. ESC cancels the dialog/selection.</li>
+<li><em>Fileselector</em>: Page up and down keys move the file list by
+one page, mouse wheel and Alt + cursor keys scroll it by one item.
+Enter on the focused file name selects it. Enter on the OK button
+accepts the selected file. ESC cancels the dialog/selection.</li>
 <li><em>Alert dialogs</em>: Enter accepts and ESC cancels the dialog.</li>
 </ul>
 
