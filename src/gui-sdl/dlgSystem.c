@@ -127,7 +127,7 @@ void DlgSystem_Main(void)
 		systemdlg[DLGSYS_FASTBOOT].state &= ~SG_SELECTED;
 
 	/* Show the dialog: */
-	SDLGui_DoDialog(systemdlg, NULL, false);
+	SDLGui_DoDialog(systemdlg);
 
 	/* Read values from dialog: */
 

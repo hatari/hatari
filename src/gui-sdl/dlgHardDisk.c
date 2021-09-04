@@ -254,7 +254,7 @@ void DlgHardDisk_Main(void)
 	/* Draw and process the dialog */
 	do
 	{
-		but = SDLGui_DoDialog(diskdlg, NULL, false);
+		but = SDLGui_DoDialog(diskdlg);
 		switch (but)
 		{
 		 case DISKDLG_ACSIPREVID:

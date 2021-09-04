@@ -239,7 +239,7 @@ void Dialog_MonitorDlg(void)
 	/* The monitor dialog main loop */
 	do
 	{
-		but = SDLGui_DoDialog(monitordlg, NULL, false);
+		but = SDLGui_DoDialog(monitordlg);
 		switch (but)
 		{
 		 case DLGSCRN_VDI_WLESS:
@@ -376,7 +376,7 @@ void Dialog_WindowDlg(void)
 	/* The window dialog main loop */
 	do
 	{
-		but = SDLGui_DoDialog(windowdlg, NULL, false);
+		but = SDLGui_DoDialog(windowdlg);
 		switch (but)
 		{
 		 case DLGSCRN_MAX_WLESS:

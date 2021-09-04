@@ -1076,13 +1076,14 @@ static void SDLGui_ScaleMouseButtonCoordinates(SDL_MouseButtonEvent *bev)
 /**
  * Show and process a dialog. Returns either:
  * - index of the GUI item that was invoked
- * - SDLGUI_UNKNOWNEVENT if an unsupported event occurred
- *   (will be stored in parameter pEventOut)
  * - SDLGUI_QUIT if user wants to close Hatari
  * - SDLGUI_ERROR if unable to show dialog
+ * - for events not handled here, 'isEventOut' callback is checked
+ *   for whether caller is interested about given event type:
+ *   => event is stored to pEventOut and SDLGUI_UNKNOWNEVENT returned
  * GUI item indices are positive, other return values are negative
  */
-int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut, bool KeepCurrentObject)
+int SDLGui_DoDialogExt(SGOBJ *dlg, bool (*isEventOut)(SDL_EventType), SDL_Event *pEventOut, bool KeepCurrentObject)
 {
 	int oldbutton = SDLGUI_NOTFOUND;
 	int retbutton = SDLGUI_NOTFOUND;
@@ -1390,16 +1391,16 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut, bool KeepCurrentObject)
 		}
 	}
 
+	/* Copy event data of unsupported events if caller wants to have it */
+	if (retbutton == SDLGUI_UNKNOWNEVENT && pEventOut)
+		memcpy(pEventOut, &sdlEvent, sizeof(SDL_Event));
+
 	/* Restore background */
 	if (pBgSurface)
 	{
 		SDL_BlitSurface(pBgSurface, &bgrect, pSdlGuiScrn,  &dlgrect);
 		SDL_FreeSurface(pBgSurface);
 	}
-
-	/* Copy event data of unsupported events if caller wants to have it */
-	if (retbutton == SDLGUI_UNKNOWNEVENT && pEventOut)
-		memcpy(pEventOut, &sdlEvent, sizeof(SDL_Event));
 
 	if (retbutton == SDLGUI_QUIT)
 		bQuitProgram = true;
@@ -1409,4 +1410,17 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut, bool KeepCurrentObject)
 
 	Dprintf(("EXIT - ret: %d, current: %d\n", retbutton, current_object));
 	return retbutton;
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Show and process a dialog. Returns either:
+ * - index of the GUI item that was invoked
+ * - SDLGUI_QUIT if user wants to close Hatari
+ * - SDLGUI_ERROR if unable to show dialog
+ * GUI item indices are positive, other return values are negative
+ */
+int SDLGui_DoDialog(SGOBJ *dlg)
+{
+	return SDLGui_DoDialogExt(dlg, NULL, NULL, false);
 }

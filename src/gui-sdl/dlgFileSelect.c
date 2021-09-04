@@ -374,6 +374,18 @@ static void DlgFileSelect_ManageScrollbar(void)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Return true for handled SDL events, should match what's
+ * handled in DlgFileSelect_HandleSdlEvents()
+ */
+static bool acceptEvents(SDL_EventType evtype)
+{
+	if (evtype == SDL_MOUSEWHEEL || evtype == SDL_KEYDOWN)
+		return true;
+	return false;
+}
+
+/*-----------------------------------------------------------------------*/
+/**
  * Handle SDL events.
  */
 static void DlgFileSelect_HandleSdlEvents(SDL_Event *pEvent)
@@ -812,7 +824,7 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 		}
 
 		/* Show dialog: */
-		retbut = SDLGui_DoDialog(fsdlg, &sdlEvent, KeepCurrentObject);
+		retbut = SDLGui_DoDialogExt(fsdlg, acceptEvents, &sdlEvent, KeepCurrentObject);
 		KeepCurrentObject = true;				/* Don't reset current_object for next calls */
 
 		/* Has the user clicked on a file or folder? */

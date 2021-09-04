@@ -155,7 +155,7 @@ static void DlgFloppy_QueryInsert(char *namea, int ida, char *nameb, int idb, co
 	char *dlgname;
 
 	SDLGui_CenterDlg(alertdlg);
-	switch (SDLGui_DoDialog(alertdlg, NULL, false))
+	switch (SDLGui_DoDialog(alertdlg))
 	{
 		case DLGMOUNT_A:
 			dlgname = namea;
@@ -256,7 +256,7 @@ void DlgFloppy_Main(void)
 	/* Draw and process the dialog */
 	do
 	{
-		but = SDLGui_DoDialog(floppydlg, NULL, false);
+		but = SDLGui_DoDialog(floppydlg);
 		switch (but)
 		{
 		 case FLOPPYDLG_EJECTA:                         /* Eject disk in drive A: */

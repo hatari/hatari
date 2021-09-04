@@ -41,6 +41,9 @@ Emulator:
   - Add VME/SCU registers "--vme <none|dummy>" access option
     (needed to support both Linux and TOS v2 & v3 until Hatari
     implements real VME/SCU register emulation)
+- SDL GUI:
+  - Fix: ignore unrecognized events in file selector
+    (buttons could be incorrectly shown as selected)
 - GEMDOS HD:
   - Fix: clear GEMDOS Fread / Fwrite errors
 - Debugger:

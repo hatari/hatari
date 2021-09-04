@@ -146,7 +146,7 @@ void DlgCpu_Main(void)
 		cpudlg[DLGCPU_SOFTFLOAT].state &= ~SG_SELECTED;
 
 	/* Show the dialog: */
-	SDLGui_DoDialog(cpudlg, NULL, false);
+	SDLGui_DoDialog(cpudlg);
 
 	/* Read values from dialog: */
 
