@@ -65,8 +65,15 @@ Emulator bugs
     else will go through. And if MIDI events would still be let
     through, they would then use wrong instruments
 
-    (PortMidi is missing documentation that would help in resolving
-    whether this is Hatari or PortMidi bug.)
+    Based on PortMidi sources, "pmBadData" error comes only in
+    following situations:
+    - Previous sysex message not terminated (with EOX: 0xf7)
+    - Sysex data that is not realtime (0xf8 bits not set)
+    - Non-sysex data does not have status bit (0x80) set
+
+    However, midi.c code does not do any of above when the "pmBadData"
+    error happens, so issue seems to be in encoding of the MIDI data
+    for PortMidi.
 
 
 Known issues / workarounds
