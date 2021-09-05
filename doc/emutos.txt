@@ -1058,6 +1058,7 @@ Color games:
 - Breakdance (scene game, STOS)
 - ChuChu Rocket* (RG's full version)
 - Crash Time Plumber
+- Dread* (playable Wolf3D clone demo v1905)
 - Droid STE rewrite
 - Dynabusters+*
 - Frantick
@@ -1562,10 +1563,13 @@ Applications working under EmuTOS > v1.1.1:
   - Correct window management needs EmuTOS Git version
 - FalcAMP (GEM, requires DSP & color icons support)
   - 3D look in icons & text in some dialogs needs EmuTOS Git version
-- MP2AUDIO player:
+- MP2AUDIO player
   - 3D look in icons needs EmuTOS Git version
   - Needs to be started from 640x400 or larger resolution, otherwise it
     positions itself completely outside the screen (also with TOS v4)
+- Videl Inside (v1.2)
+  - EmuTOS Git version (with Srealloc() support) is needed to avoid
+    desktop crash with modes larger than earlier static screen alloc
 
 Applications working with extra hacks:
 - Fractal Playground, Godleness, GodBoyX by Reservoir Gods
