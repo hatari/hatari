@@ -658,10 +658,12 @@ static int DebugUI_ParseCommand(const char *input_orig)
 		retval = debugCommand[i].pFunction(nArgc, psArgs);
 	}
 	/* Save commando string if it can be repeated */
-	if (retval == DEBUGGER_CMDCONT)
+	if (retval == DEBUGGER_CMDCONT || retval == DEBUGGER_ENDCONT)
 	{
 		if (psArgs[0] != sLastCmd)
 			strlcpy(sLastCmd, psArgs[0], sizeof(sLastCmd));
+		if (retval == DEBUGGER_ENDCONT)
+			retval = DEBUGGER_END;
 	}
 	else
 		sLastCmd[0] = '\0';

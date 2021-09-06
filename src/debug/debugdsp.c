@@ -309,7 +309,7 @@ static int DebugDsp_Continue(int nArgc, char *psArgv[])
 static int DebugDsp_Step(int nArgc, char *psArgv[])
 {
 	nDspSteps = 1;
-	return DEBUGGER_END;
+	return DEBUGGER_ENDCONT;
 }
 
 
@@ -391,7 +391,7 @@ static int DebugDsp_Next(int nArgc, char *psArgv[])
 		if (optype != CALL_SUBROUTINE && optype != CALL_EXCEPTION)
 		{
 			nDspSteps = 1;
-			return DEBUGGER_END;
+			return DEBUGGER_ENDCONT;
 		}
 
 		nextpc = DSP_GetNextPC(DSP_GetPC());
@@ -400,7 +400,7 @@ static int DebugDsp_Next(int nArgc, char *psArgv[])
 	/* use breakpoint, not steps */
 	if (BreakCond_Command(command, true)) {
 		nDspSteps = 0;
-		return DEBUGGER_END;
+		return DEBUGGER_ENDCONT;
 	}
 	return DEBUGGER_CMDDONE;
 }

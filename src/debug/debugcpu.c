@@ -710,7 +710,7 @@ static int DebugCpu_Continue(int nArgc, char *psArgv[])
 static int DebugCpu_Step(int nArgc, char *psArgv[])
 {
 	nCpuSteps = 1;
-	return DEBUGGER_END;
+	return DEBUGGER_ENDCONT;
 }
 
 
@@ -808,14 +808,14 @@ static int DebugCpu_Next(int nArgc, char *psArgv[])
 		else
 		{
 			nCpuSteps = 1;
-			return DEBUGGER_END;
+			return DEBUGGER_ENDCONT;
 		}
 	}
 	/* use breakpoint, not steps */
 	if (BreakCond_Command(command, false))
 	{
 		nCpuSteps = 0;
-		return DEBUGGER_END;
+		return DEBUGGER_ENDCONT;
 	}
 	return DEBUGGER_CMDDONE;
 }

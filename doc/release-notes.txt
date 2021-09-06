@@ -47,6 +47,7 @@ Emulator:
 - GEMDOS HD:
   - Fix: clear GEMDOS Fread / Fwrite errors
 - Debugger:
+  - Repeat CPU & DSP "step" and "next" commands on Enter
   - More readable "variables" command output
   - Add "info vme" command
   - Add "scc" and "vme" (VME/SCU reg access) tracing support
