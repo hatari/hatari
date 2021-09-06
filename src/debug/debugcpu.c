@@ -165,7 +165,7 @@ static bool DebugCpu_ShowAddressInfo(Uint32 addr, FILE *fp)
  */
 int DebugCpu_DisAsm(int nArgc, char *psArgs[])
 {
-	Uint32 disasm_upper = 0;
+	Uint32 prev_addr, disasm_upper = 0, pc = M68000_GetPC();
 	int shown, lines = INT_MAX;
 	uaecptr nextpc;
 
@@ -188,7 +188,7 @@ int DebugCpu_DisAsm(int nArgc, char *psArgs[])
 	{
 		/* continue */
 		if(!disasm_addr)
-			disasm_addr = M68000_GetPC();
+			disasm_addr = pc;
 	}
 
 	/* limit is topmost address or instruction count */
@@ -199,8 +199,21 @@ int DebugCpu_DisAsm(int nArgc, char *psArgs[])
 	}
 
 	/* output a range */
+	prev_addr = disasm_addr;
 	for (shown = 0; shown < lines && disasm_addr < disasm_upper; shown++)
 	{
+		if (prev_addr < pc && disasm_addr > pc)
+		{
+			fputs("ERROR, disassembly misaligned with PC address, correcting\n", debugOutput);
+			disasm_addr = pc;
+			shown++;
+		}
+		if (disasm_addr == pc)
+		{
+			fputs("(PC)\n", debugOutput);
+			shown++;
+		}
+		prev_addr = disasm_addr;
 		if (DebugCpu_ShowAddressInfo(disasm_addr, debugOutput))
 			shown++;
 		Disasm(debugOutput, (uaecptr)disasm_addr, &nextpc, 1);

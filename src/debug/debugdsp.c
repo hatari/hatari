@@ -125,7 +125,7 @@ static bool DebugDsp_ShowAddressInfo(Uint16 addr, FILE *fp)
 int DebugDsp_DisAsm(int nArgc, char *psArgs[])
 {
 	Uint32 lower, upper;
-	Uint16 dsp_disasm_upper = 0;
+	Uint16 prev_addr, dsp_disasm_upper = 0, pc = DSP_GetPC();
 	int shown, lines = INT_MAX;
 
 	if (!bDspEnabled)
@@ -166,17 +166,28 @@ int DebugDsp_DisAsm(int nArgc, char *psArgs[])
 	{
 		/* continue */
 		if(!dsp_disasm_addr)
-		{
-			dsp_disasm_addr = DSP_GetPC();
-		}
+			dsp_disasm_addr = pc;
 	}
 	if (!dsp_disasm_upper)
 	{
 		lines = DebugUI_GetPageLines(ConfigureParams.Debugger.nDisasmLines, 8);
 		dsp_disasm_upper = 0xFFFF;
 	}
+	prev_addr = dsp_disasm_addr;
 	fprintf(debugOutput, "DSP disasm 0x%hx-0x%hx:\n", dsp_disasm_addr, dsp_disasm_upper);
 	for (shown = 1; shown < lines && dsp_disasm_addr < dsp_disasm_upper; shown++) {
+		if (prev_addr < pc && dsp_disasm_addr > pc)
+		{
+			fputs("ERROR, disassembly misaligned with PC address, correcting\n", debugOutput);
+			dsp_disasm_addr = pc;
+			shown++;
+		}
+		if (dsp_disasm_addr == pc)
+		{
+			fputs("(PC)\n", debugOutput);
+			shown++;
+		}
+		prev_addr = dsp_disasm_addr;
 		if (DebugDsp_ShowAddressInfo(dsp_disasm_addr, debugOutput))
 			shown++;
 		dsp_disasm_addr = DSP_DisasmAddress(debugOutput, dsp_disasm_addr, dsp_disasm_addr);
