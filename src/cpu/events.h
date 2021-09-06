@@ -18,7 +18,8 @@
 
 #include "machdep/rpt.h"
 
-extern frame_time_t vsyncmintime, vsyncmaxtime, vsyncwaittime;
+extern frame_time_t vsyncmintime, vsyncmintimepre;
+extern frame_time_t vsyncmaxtime, vsyncwaittime;
 extern int vsynctimebase, syncbase;
 extern void reset_frame_rate_hack (void);
 extern unsigned long int vsync_cycles;
@@ -43,8 +44,9 @@ extern void do_cycles_ce020_long (unsigned long cycles);
 #endif
 extern void events_schedule (void);
 extern void do_cycles_slow (unsigned long cycles_to_add);
+extern void events_reset_syncline(void);
 
-extern bool is_cycle_ce (uaecptr);
+extern bool is_cycle_ce(uaecptr);
 
 extern unsigned long currcycle, nextevent;
 extern int is_syncline, is_syncline_end;
@@ -69,7 +71,7 @@ struct ev2
 };
 
 enum {
-    ev_cia, ev_audio, ev_misc, ev_hsync,
+    ev_cia, ev_audio, ev_misc, ev_hsync, ev_hsynch,
     ev_max
 };
 
@@ -89,6 +91,7 @@ extern int maxhpos;
 STATIC_INLINE void cycles_do_special (void)
 {
 	/* Currently unused in Hatari */
+
 }
 
 STATIC_INLINE void do_extra_cycles (unsigned long cycles_to_add)
@@ -105,6 +108,7 @@ STATIC_INLINE void set_cycles (unsigned long int x)
 {
 	currcycle = x;
 	eventtab[ev_hsync].oldcycles = x;
+	eventtab[ev_hsynch].active = 0;
 #ifdef EVT_DEBUG
 	if (currcycle & (CYCLE_UNIT - 1))
 		write_log (_T("%x\n"), currcycle);

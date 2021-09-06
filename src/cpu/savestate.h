@@ -58,7 +58,9 @@ extern TCHAR *restore_string_func (uae_u8 **);
 #define SAVESTATE_PATH_CD 5
 
 extern void save_path_func (uae_u8 **, const TCHAR*, int type);
-extern TCHAR *restore_path_func (uae_u8 **, int type);
+extern void save_path_full_func(uae_u8 **, const TCHAR*, int type);
+extern TCHAR *restore_path_func(uae_u8 **, int type);
+extern TCHAR *restore_path_full_func(uae_u8 **);
 
 #ifndef WINUAE_FOR_HATARI
 #define save_u64(x) save_u64_func (&dst, (x))
@@ -76,7 +78,9 @@ extern TCHAR *restore_path_func (uae_u8 **, int type);
 #define restore_string() restore_string_func (&src)
 
 #define save_path(x, p) save_path_func (&dst, (x), p)
+#define save_path_full(x, p) save_path_full_func (&dst, (x), p)
 #define restore_path(p) restore_path_func (&src, p)
+#define restore_path_full() restore_path_full_func (&src)
 
 
 /* save, restore and initialize routines for Amiga's subsystems */
@@ -169,6 +173,8 @@ extern uae_u8 *restore_filesys (uae_u8 *src);
 extern uae_u8 *save_filesys (int num, int *len);
 extern uae_u8 *restore_filesys_common (uae_u8 *src);
 extern uae_u8 *save_filesys_common (int *len);
+extern uae_u8 *restore_filesys_paths(uae_u8 *src);
+extern uae_u8 *save_filesys_paths(int num, int *len);
 extern int save_filesys_cando(void);
 
 extern uae_u8 *restore_gayle(uae_u8 *src);
@@ -240,6 +246,7 @@ extern uae_u8 *restore_action_replay (uae_u8 *);
 extern uae_u8 *save_action_replay (int *, uae_u8 *);
 extern uae_u8 *restore_hrtmon (uae_u8 *);
 extern uae_u8 *save_hrtmon (int *, uae_u8 *);
+extern void restore_ar_finish (void);
 
 extern void savestate_initsave (const TCHAR *filename, int docompress, int nodialogs, bool save);
 extern int save_state (const TCHAR *filename, const TCHAR *description);

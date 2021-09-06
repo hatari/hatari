@@ -24,6 +24,7 @@ const char Log_fileid[] = "Hatari log.c";
 
 #include "main.h"
 #include "configuration.h"
+#include "console.h"
 #include "dialog.h"
 #include "log.h"
 #include "screen.h"
@@ -470,8 +471,10 @@ const char* Log_SetTraceOptions (const char *FlagsStr)
 	if (LogTraceFlags & (TRACE_OS_AES|TRACE_OS_VDI))
 		bVdiAesIntercept = true;
 
-	if ((LogTraceFlags & TRACE_OS_BASE) && ConOutDevice == CONOUT_DEVICE_NONE)
-		ConOutDevice = 2;
+	if ((LogTraceFlags & TRACE_OS_BASE))
+		Console_SetTrace(true);
+	else if (!LogTraceFlags)
+		Console_SetTrace(false);
 
 	return errstr;
 }
