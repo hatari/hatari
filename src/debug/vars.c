@@ -139,6 +139,19 @@ Uint32 Vars_GetVdiOpcode(void)
 	return INVALID_OPCODE;
 }
 
+/** return 1 if PC is on Symbol, 0 otherwise
+ */
+static Uint32 PConSymbol(void)
+{
+	const char *sym;
+	Uint32 pc = M68000_GetPC();
+	sym = Symbols_GetByCpuAddress(pc, SYMTYPE_TEXT);
+	if (sym) {
+		return 1;
+	}
+	return 0;
+}
+
 /** return first word in OS call parameters
  */
 static Uint32 GetOsCallParam(void)
@@ -176,6 +189,7 @@ static const var_addr_t hatari_vars[] = {
 	{ "LineFOpcode", (Uint32*)GetLineFOpcode, VALUE_TYPE_FUNCTION32, 16, "$FFFF when not on Line-F opcode" },
 	{ "NextPC", (Uint32*)GetNextPC, VALUE_TYPE_FUNCTION32, 0, "Next instruction address" },
 	{ "OsCallParam", (Uint32*)GetOsCallParam, VALUE_TYPE_FUNCTION32, 16, "valid only on OS call opcode breakpoint" },
+	{ "PConSymbol", (Uint32*)PConSymbol, VALUE_TYPE_FUNCTION32, 16, "1 if PC on symbol, 0 otherwise" },
 	{ "TEXT", (Uint32*)DebugInfo_GetTEXT, VALUE_TYPE_FUNCTION32, 0, "invalid before Desktop is up" },
 	{ "TEXTEnd", (Uint32*)DebugInfo_GetTEXTEnd, VALUE_TYPE_FUNCTION32, 0, "invalid before Desktop is up" },
 	{ "VBL", (Uint32*)&nVBLs, VALUE_TYPE_VAR32, sizeof(nVBLs)*8, "number of VBL interrupts" },
