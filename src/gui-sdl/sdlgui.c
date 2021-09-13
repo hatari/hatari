@@ -34,7 +34,6 @@ static SDL_Surface *pSdlGuiScrn;            /* Pointer to the actual main SDL sc
 static SDL_Surface *pSmallFontGfx = NULL;   /* The small font graphics */
 static SDL_Surface *pBigFontGfx = NULL;     /* The big font graphics */
 static SDL_Surface *pFontGfx = NULL;        /* The actual font graphics */
-static int current_object = SDLGUI_NOTFOUND;/* Current selected object */
 
 static struct {
 	Uint32 darkbar, midbar, lightbar;
@@ -1074,7 +1073,14 @@ static void SDLGui_ScaleMouseButtonCoordinates(SDL_MouseButtonEvent *bev)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Show and process a dialog. Returns either:
+ * Show and process a dialog.
+ *
+ * Dialogs using a scrollbar, must return the previous return value
+ * in 'current_object' arg, as the same dialog is displayed in a loop
+ * to handle scrolling. Other dialogs should give zero as 'current_object'
+ * (ie no object selected at start when displaying the dialog)
+ *
+ * Returns either:
  * - index of the GUI item that was invoked
  * - SDLGUI_QUIT if user wants to close Hatari
  * - SDLGUI_ERROR if unable to show dialog
@@ -1083,7 +1089,7 @@ static void SDLGui_ScaleMouseButtonCoordinates(SDL_MouseButtonEvent *bev)
  *   => event is stored to pEventOut and SDLGUI_UNKNOWNEVENT returned
  * GUI item indices are positive, other return values are negative
  */
-int SDLGui_DoDialogExt(SGOBJ *dlg, bool (*isEventOut)(SDL_EventType), SDL_Event *pEventOut, bool KeepCurrentObject)
+int SDLGui_DoDialogExt(SGOBJ *dlg, bool (*isEventOut)(SDL_EventType), SDL_Event *pEventOut, int current_object)
 {
 	int oldbutton = SDLGUI_NOTFOUND;
 	int retbutton = SDLGUI_NOTFOUND;
@@ -1095,12 +1101,8 @@ int SDLGui_DoDialogExt(SGOBJ *dlg, bool (*isEventOut)(SDL_EventType), SDL_Event 
 	SDL_Rect dlgrect, bgrect;
 	SDL_Joystick *joy = NULL;
 
-	/* In the case of dialog using a scrollbar, we must keep the previous */
-	/* value of current_object, as the same dialog is displayed in a loop */
-	/* to handle scrolling. For other dialogs, we need to reset current_object */
-	/* (ie no object selected at start when displaying the dialog) */
-	if ( !KeepCurrentObject )
-		current_object = 0;
+	/* either both, or neither of these should be present */
+	assert((isEventOut && pEventOut) || (!isEventOut && !pEventOut));
 
 	if (pSdlGuiScrn->h / sdlgui_fontheight < dlg[0].h)
 	{
@@ -1160,15 +1162,14 @@ int SDLGui_DoDialogExt(SGOBJ *dlg, bool (*isEventOut)(SDL_EventType), SDL_Event 
 	/* also if the mouse pointer has left the scrollbar */
 	if (current_object != SDLGUI_NOTFOUND && dlg[current_object].type == SGSCROLLBAR) {
 		obj = current_object;
-		retbutton = obj;
 		oldbutton = obj;
 		if (b & SDL_BUTTON(1))
 		{
+			retbutton = obj;
 			dlg[obj].state |= SG_MOUSEDOWN;
 		}
 		else
 		{
-			current_object = 0;
 			dlg[obj].state &= ~SG_MOUSEDOWN;
 		}
 	}
@@ -1180,8 +1181,8 @@ int SDLGui_DoDialogExt(SGOBJ *dlg, bool (*isEventOut)(SDL_EventType), SDL_Event 
 			oldbutton = obj;
 			if (b & SDL_BUTTON(1))
 			{
-				dlg[obj].state |= SG_SELECTED;
 				retbutton = obj;
+				dlg[obj].state |= SG_SELECTED;
 			}
 		}
 	}
@@ -1206,8 +1207,7 @@ int SDLGui_DoDialogExt(SGOBJ *dlg, bool (*isEventOut)(SDL_EventType), SDL_Event 
 				if (sdlEvent.button.button != SDL_BUTTON_LEFT)
 				{
 					/* Not left mouse button -> unsupported event */
-					if (pEventOut)
-						retbutton = SDLGUI_UNKNOWNEVENT;
+					retbutton = SDLGUI_UNKNOWNEVENT;
 					break;
 				}
 				/* It was the left button: Find the object under the mouse cursor */
@@ -1240,8 +1240,7 @@ int SDLGui_DoDialogExt(SGOBJ *dlg, bool (*isEventOut)(SDL_EventType), SDL_Event 
 				if (sdlEvent.button.button != SDL_BUTTON_LEFT)
 				{
 					/* Not left mouse button -> unsupported event */
-					if (pEventOut)
-						retbutton = SDLGUI_UNKNOWNEVENT;
+					retbutton = SDLGUI_UNKNOWNEVENT;
 					break;
 				}
 				/* It was the left button: Find the object under the mouse cursor */
@@ -1334,7 +1333,7 @@ int SDLGui_DoDialogExt(SGOBJ *dlg, bool (*isEventOut)(SDL_EventType), SDL_Event 
 						if (key >= 33 && key <= 126)
 							retbutton = SDLGui_HandleShortcut(dlg, toupper(key));
 					}
-					if (!retbutton && pEventOut)
+					if (!retbutton)
 						retbutton = SDLGUI_UNKNOWNEVENT;
 					break;
 				}
@@ -1368,8 +1367,7 @@ int SDLGui_DoDialogExt(SGOBJ *dlg, bool (*isEventOut)(SDL_EventType), SDL_Event 
 					retbutton = SDLGui_SearchFlags(dlg, SG_CANCEL);
 					break;
 				 default:
-					if (pEventOut)
-						retbutton = SDLGUI_UNKNOWNEVENT;
+					retbutton = SDLGUI_UNKNOWNEVENT;
 					break;
 				}
 				break;
@@ -1384,16 +1382,23 @@ int SDLGui_DoDialogExt(SGOBJ *dlg, bool (*isEventOut)(SDL_EventType), SDL_Event 
 				break;
 
 			 default:
-				if (pEventOut)
-					retbutton = SDLGUI_UNKNOWNEVENT;
+				retbutton = SDLGUI_UNKNOWNEVENT;
 				break;
 			}
+			/* continue if unknown events were not not requested
+			 * specifically for this event type
+			 */
+			if (retbutton == SDLGUI_UNKNOWNEVENT &&
+			    !(isEventOut && isEventOut(sdlEvent.type)))
+			    retbutton = SDLGUI_NOTFOUND;
 		}
 	}
 
 	/* Copy event data of unsupported events if caller wants to have it */
-	if (retbutton == SDLGUI_UNKNOWNEVENT && pEventOut)
+	if (retbutton == SDLGUI_UNKNOWNEVENT)
+	{
 		memcpy(pEventOut, &sdlEvent, sizeof(SDL_Event));
+	}
 
 	/* Restore background */
 	if (pBgSurface)
@@ -1408,7 +1413,7 @@ int SDLGui_DoDialogExt(SGOBJ *dlg, bool (*isEventOut)(SDL_EventType), SDL_Event 
 	if (joy)
 		SDL_JoystickClose(joy);
 
-	Dprintf(("EXIT - ret: %d, current: %d\n", retbutton, current_object));
+	Dprintf(("EXIT - ret: %d\n", retbutton));
 	return retbutton;
 }
 
@@ -1422,5 +1427,5 @@ int SDLGui_DoDialogExt(SGOBJ *dlg, bool (*isEventOut)(SDL_EventType), SDL_Event 
  */
 int SDLGui_DoDialog(SGOBJ *dlg)
 {
-	return SDLGui_DoDialogExt(dlg, NULL, NULL, false);
+	return SDLGui_DoDialogExt(dlg, NULL, NULL, 0);
 }
