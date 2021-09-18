@@ -1102,7 +1102,7 @@ int SDLGui_DoDialogExt(SGOBJ *dlg, bool (*isEventOut)(SDL_EventType), SDL_Event 
 	SDL_Joystick *joy = NULL;
 
 	/* either both, or neither of these should be present */
-	assert((isEventOut && pEventOut) || (!isEventOut && !pEventOut));
+	assert((isEventOut && pEventOut) || (!isEventOut && !pEventOut));
 
 	if (pSdlGuiScrn->h / sdlgui_fontheight < dlg[0].h)
 	{
