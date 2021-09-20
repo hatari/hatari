@@ -21,6 +21,10 @@ Emulator improvements:
 - RTC:
   - CLI/config option to override RTC year for applications that
     do not handle current dates
+Debugger:
+  - When history is enabled, disassembly address defaults to an
+    address in history preceeding PC reg value (instead of to PC),
+    when (re-)entering debugger, to give more context
 
 
  Version 2.4.1 (2022-08-03)

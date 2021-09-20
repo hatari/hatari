@@ -13,6 +13,7 @@ const char History_fileid[] = "Hatari history.c";
 #include <assert.h>
 #include <errno.h>
 #include "main.h"
+#include "configuration.h"
 #include "debugui.h"
 #include "debug_priv.h"
 #include "dsp.h"
@@ -158,6 +159,55 @@ void History_Mark(debug_reason_t reason)
 }
 
 /**
+ * Find lowest address in history that is within range:
+ *   (pc-offset) - pc
+ * where 'offset' is the history disasm offset limit.
+ *
+ * If history has no such address, return given pc value.
+ */
+Uint32 History_DisasmAddr(Uint32 pc, Uint32 offset, bool for_dsp)
+{
+	unsigned int i, count;
+	Uint32 limit, first;
+	int track;
+
+	if (!offset) {
+		return pc;
+	}
+	track = for_dsp ? HISTORY_TRACK_DSP : HISTORY_TRACK_CPU;
+	if (!(track & HistoryTracking)) {
+		return pc;
+	}
+	count = History.count;
+	if (count > History.limit) {
+		count = History.limit;
+	}
+	if (count <= 0) {
+		return pc;
+	}
+	first = pc;
+	limit = pc - offset;
+	i = History.idx + History.limit - count;
+	while (count-- > 0) {
+		i++;
+		i %= History.limit;
+		assert(History.item[i].valid);
+		if (History.item[i].for_dsp != for_dsp) {
+			continue;
+		}
+		if (for_dsp) {
+			pc = History.item[i].pc.dsp;
+		} else {
+			pc = History.item[i].pc.cpu;
+		}
+		if (pc >= limit && pc < first) {
+			first = pc;
+		}
+	}
+	return first;
+}
+
+/**
  * Output collected CPU/DSP debugger/breakpoint history
  */
 static Uint32 History_Output(Uint32 count, FILE *fp)
@@ -183,20 +233,17 @@ static Uint32 History_Output(Uint32 count, FILE *fp)
 	}
 	retval = count;
 
-	i = History.idx;
 	show_all = false;
-	if (History.item[i].shown) {
+	if (History.item[History.idx].shown) {
 		/* even last item already shown, show all again */
 		show_all = true;
 	}
-	i = (i + History.limit - count) % History.limit;
 
+	i = History.idx + History.limit - count;
 	while (count-- > 0) {
 		i++;
 		i %= History.limit;
-		if (!History.item[i].valid) {
-			fprintf(fp, "ERROR: invalid history item %d!", count);
-		}
+		assert(History.item[i].valid);
 		if (History.item[i].shown && !show_all) {
 			continue;
 		}

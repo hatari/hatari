@@ -364,6 +364,7 @@ Usage:  d [start address-[end address]]
 </pre>
 <pre>
 &gt; disasm pc
+(PC)
 $00aa6e : 2f08                                 move.l    a0,-(sp)
 $00aa70 : 0241 0fff                            andi.w    #$fff,d1
 $00aa74 : 207c 00fe 78c0                       movea.l   #$fe78c0,a0
@@ -375,8 +376,14 @@ $00aa7e : 4ed0                                 jmp       (a0)
 Both commands accept in addition to numeric addresses also register
 and symbol names, like in above example.  If you don't specify an
 address, the commands continue showing from an address that comes
-after the previously shown data.  "disasm" command default address
-will be reset to PC address every time you re-enter the debugger.
+after the previously shown data.
+</p>
+
+<p>
+"disasm" command default address will be reset to program counter (PC)
+address every time you re-enter the debugger.  If history is enabled
+and it includes addresses just before PC, disassembly will instead
+start from such an address to give more context.
 </p>
 
 <p>

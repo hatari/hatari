@@ -1075,6 +1075,7 @@ int DebugCpu_Init(const dbgcommand_t **table)
  */
 void DebugCpu_InitSession(void)
 {
-	disasm_addr = M68000_GetPC();
+#define MAX_CPU_DISASM_OFFSET 16
+	disasm_addr = History_DisasmAddr(M68000_GetPC(), MAX_CPU_DISASM_OFFSET, false);
 	Profile_CpuStop();
 }
