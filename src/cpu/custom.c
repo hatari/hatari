@@ -66,25 +66,19 @@ typedef struct _LARGE_INTEGER
 #ifdef CPUEMU_13
 
 #ifndef WINUAE_FOR_HATARI
-uae_u8 cycle_line[256 + 1];
-
-static void sync_ce020 (void)
+static void sync_cycles(void)
 {
-	unsigned long c;
-	int extra;
+        unsigned long c;
+        int extra;
 
-	c = get_cycles ();
-	extra = c & (CYCLE_UNIT - 1);
-	if (extra) {
-		extra = CYCLE_UNIT - extra;
-		do_cycles (extra);
-	}
+        c = get_cycles();
+        extra = c & (CYCLE_UNIT - 1);
+        if (extra) {
+                extra = CYCLE_UNIT - extra;
+                do_cycles(extra);
+        }
 }
-
-#define SETIFCHIP \
-	if (addr < 0xd80000) \
-		last_custom_value1 = v;
-#endif		/* WINUAE_FOR_HATARI */
+#endif
 
 uae_u32 wait_cpu_cycle_read (uaecptr addr, int mode)
 {
@@ -92,39 +86,57 @@ uae_u32 wait_cpu_cycle_read (uaecptr addr, int mode)
 #ifndef WINUAE_FOR_HATARI
 	int hpos;
 
-	hpos = dma_cycle ();
-	x_do_cycles_pre (CYCLE_UNIT);
+	sync_cycles();
+	hpos = dma_cycle(addr, 0xffffffff, &mode);
 
 #ifdef DEBUGGER
-	struct dma_rec *dr = NULL;
 	if (debug_dma) {
 		int reg = 0x1000;
-		if (mode < 0)
-			reg |= 4;
-		else if (mode > 0)
+		if (mode == -3) {
 			reg |= 2;
-		else
+			v = regs.chipset_latch_rw;
+		} else if (mode < 0) {
+			reg |= 4;
+		} else if (mode > 0) {
+			reg |= 2;
+		} else {
 			reg |= 1;
-		dr = record_dma (reg, v, addr, hpos, vpos, DMARECORD_CPU);
-		checknasty (hpos, vpos);
+		}
+		record_dma_read(reg, addr, hpos, vpos, DMARECORD_CPU, mode == -2 || mode == 2 ? 0 : 1);
 	}
+	peekdma_data.mask = 0;
 #endif
-	if (mode < 0)
-		v = get_long (addr);
-	else if (mode > 0)
-		v = get_word (addr);
-	else if (mode == 0)
-		v = get_byte (addr);
+
+	x_do_cycles_pre(CYCLE_UNIT);
+
+	switch(mode)
+	{
+		case -1:
+		v = get_long(addr);
+		break;
+		case -2:
+		v = get_longi(addr);
+		break;
+		case 1:
+		v = get_word(addr);
+		break;
+		case 2:
+		v = get_wordi(addr);
+		break;
+		case 0:
+		v = get_byte(addr);
+		break;
+	}
 
 #ifdef DEBUGGER
-	if (debug_dma)
-		dr->dat = v;
+	if (debug_dma) {
+		record_dma_read_value(v);
+	}
 #endif
 
-	x_do_cycles_post (CYCLE_UNIT, v);
-
 	regs.chipset_latch_rw = regs.chipset_latch_read = v;
-	SETIFCHIP
+		
+	x_do_cycles_post(CYCLE_UNIT, v);
 
 #else						/* WINUAE_FOR_HATARI */
 //	fprintf ( stderr , "mem read ce %x %d %lu %lu\n" , addr , mode ,currcycle / cpucycleunit , currcycle );
@@ -135,12 +147,24 @@ uae_u32 wait_cpu_cycle_read (uaecptr addr, int mode)
 //		fprintf ( stderr , "mem wait read after %x %d %lu %lu\n" , addr , mode , currcycle / cpucycleunit , currcycle );
 	}
 
-	if (mode < 0)
-		v = get_long (addr);
-	else if (mode > 0)
-		v = get_word (addr);
-	else if (mode == 0)
-		v = get_byte (addr);
+	switch(mode)
+	{
+		case -1:
+		v = get_long(addr);
+		break;
+		case -2:
+		v = get_longi(addr);
+		break;
+		case 1:
+		v = get_word(addr);
+		break;
+		case 2:
+		v = get_wordi(addr);
+		break;
+		case 0:
+		v = get_byte(addr);
+		break;
+	}
 
 	x_do_cycles_post (2*CYCLE_UNIT, v);
 #endif						/* WINUAE_FOR_HATARI */
@@ -154,40 +178,53 @@ uae_u32 wait_cpu_cycle_read_ce020 (uaecptr addr, int mode)
 #ifndef WINUAE_FOR_HATARI
 	int hpos;
 
-	sync_ce020 ();
-	hpos = dma_cycle ();
-	x_do_cycles_pre (CYCLE_UNIT);
+	sync_cycles();
+	hpos = dma_cycle(0xffffffff, 0xffff, NULL);
 
 #ifdef DEBUGGER
-	struct dma_rec *dr = NULL;
 	if (debug_dma) {
 		int reg = 0x1000;
-		if (mode < 0)
+		if (mode < 0) {
 			reg |= 4;
-		else if (mode > 0)
+		} else if (mode > 0) {
 			reg |= 2;
-		else
+		} else {
 			reg |= 1;
-		dr = record_dma (reg, v, addr, hpos, vpos, DMARECORD_CPU);
-		checknasty (hpos, vpos);
+		}
+		record_dma_read(reg, addr, hpos, vpos, DMARECORD_CPU, mode == -2 || mode == 2 ? 0 : 1);
 	}
+	peekdma_data.mask = 0;
 #endif
-	if (mode < 0)
-		v = get_long (addr);
-	else if (mode > 0)
-		v = get_word (addr);
-	else if (mode == 0)
-		v = get_byte (addr);
+
+	x_do_cycles_pre(CYCLE_UNIT);
+
+	switch (mode) {
+		case -1:
+		v = get_long(addr);
+		break;
+		case -2:
+		v = get_longi(addr);
+		break;
+		case 1:
+		v = get_word(addr);
+		break;
+		case 2:
+		v = get_wordi(addr);
+		break;
+		case 0:
+		v = get_byte(addr);
+		break;
+	}
 
 #ifdef DEBUGGER
-	if (debug_dma)
-		dr->dat = v;
+	if (debug_dma) {
+		record_dma_read_value(v);
+	}
 #endif
-	if (currprefs.cpu_model == 68020)
-		x_do_cycles_post (CYCLE_UNIT / 2, v);
 
 	regs.chipset_latch_rw = regs.chipset_latch_read = v;
-	SETIFCHIP
+		
+	x_do_cycles_post(CYCLE_UNIT, v);
 
 #else						/* WINUAE_FOR_HATARI */
 
@@ -204,12 +241,23 @@ uae_u32 wait_cpu_cycle_read_ce020 (uaecptr addr, int mode)
 
 //fprintf ( stderr , "wait read2 ce020 %lu %lu\n" , currcycle / cpucycleunit , currcycle );
 
-	if (mode < 0)
-		v = get_long (addr);
-	else if (mode > 0)
-		v = get_word (addr);
-	else if (mode == 0)
-		v = get_byte (addr);
+	switch (mode) {
+		case -1:
+		v = get_long(addr);
+		break;
+		case -2:
+		v = get_longi(addr);
+		break;
+		case 1:
+		v = get_word(addr);
+		break;
+		case 2:
+		v = get_wordi(addr);
+		break;
+		case 0:
+		v = get_byte(addr);
+		break;
+	}
 
 //fprintf ( stderr , "wait read3 ce020 %lu %lu\n" , currcycle / cpucycleunit , currcycle );
 	x_do_cycles_post (3*cpucycleunit, v);
@@ -225,34 +273,41 @@ void wait_cpu_cycle_write (uaecptr addr, int mode, uae_u32 v)
 #ifndef WINUAE_FOR_HATARI
 	int hpos;
 
-	hpos = dma_cycle ();
-	x_do_cycles_pre (CYCLE_UNIT);
+	sync_cycles();
+	hpos = dma_cycle(addr, v, &mode);
 
 #ifdef DEBUGGER
 	if (debug_dma) {
 		int reg = 0x1100;
-		if (mode < 0)
-			reg |= 4;
-		else if (mode > 0)
+		if (mode == -3) {
 			reg |= 2;
-		else
+		} else if (mode < 0) {
+			reg |= 4;
+		} else if (mode > 0) {
+			reg |= 2;
+		} else {
 			reg |= 1;
-		record_dma (reg, v, addr, hpos, vpos, DMARECORD_CPU);
-		checknasty (hpos, vpos);
+		}
+		record_dma_write(reg, v, addr, hpos, vpos, DMARECORD_CPU, 1);
 	}
+	peekdma_data.mask = 0;
 #endif
 
-	if (mode < 0)
-		put_long (addr, v);
-	else if (mode > 0)
-		put_word (addr, v);
-	else if (mode == 0)
-		put_byte (addr, v);
+	x_do_cycles_pre(CYCLE_UNIT);
 
-	x_do_cycles_post (CYCLE_UNIT, v);
+	if (mode > -2) {
+		if (mode < 0) {
+			put_long(addr, v);
+		} else if (mode > 0) {
+			put_word(addr, v);
+		} else if (mode == 0) {
+			put_byte(addr, v);
+		}
+	}
 
 	regs.chipset_latch_rw = regs.chipset_latch_write = v;
-	SETIFCHIP
+		
+	x_do_cycles_post(CYCLE_UNIT, v);
 
 #else						/* WINUAE_FOR_HATARI */
 //	fprintf ( stderr , "mem write ce %x %d %lu %lu\n" , addr , mode ,currcycle / cpucycleunit , currcycle );
@@ -263,12 +318,15 @@ void wait_cpu_cycle_write (uaecptr addr, int mode, uae_u32 v)
 //		fprintf ( stderr , "mem wait write after %x %d %lu %lu\n" , addr , mode , currcycle / cpucycleunit , currcycle );
 	}
 
-	if (mode < 0)
-		put_long (addr, v);
-	else if (mode > 0)
-		put_word (addr, v);
-	else if (mode == 0)
-		put_byte (addr, v);
+	if (mode > -2) {
+		if (mode < 0) {
+			put_long(addr, v);
+		} else if (mode > 0) {
+			put_word(addr, v);
+		} else if (mode == 0) {
+			put_byte(addr, v);
+		}
+	}
 
 	x_do_cycles_post (2*CYCLE_UNIT, v);
 #endif						/* WINUAE_FOR_HATARI */
@@ -279,9 +337,8 @@ void wait_cpu_cycle_write_ce020 (uaecptr addr, int mode, uae_u32 v)
 #ifndef WINUAE_FOR_HATARI
 	int hpos;
 
-	sync_ce020 ();
-	hpos = dma_cycle ();
-	x_do_cycles_pre (CYCLE_UNIT);
+	sync_cycles();
+	hpos = dma_cycle(0xffffffff, 0xffff, NULL);
 
 #ifdef DEBUGGER
 	if (debug_dma) {
@@ -292,23 +349,26 @@ void wait_cpu_cycle_write_ce020 (uaecptr addr, int mode, uae_u32 v)
 			reg |= 2;
 		else
 			reg |= 1;
-		record_dma (reg, v, addr, hpos, vpos, DMARECORD_CPU);
-		checknasty (hpos, vpos);
+		record_dma_write(reg, v, addr, hpos, vpos, DMARECORD_CPU, 1);
 	}
+	peekdma_data.mask = 0;
 #endif
 
-	if (mode < 0)
-		put_long (addr, v);
-	else if (mode > 0)
-		put_word (addr, v);
-	else if (mode == 0)
-		put_byte (addr, v);
+	x_do_cycles_pre(CYCLE_UNIT);
 
-	if (currprefs.cpu_model == 68020)
-		x_do_cycles_post (CYCLE_UNIT / 2, v);
+	if (mode < 0) {
+		put_long(addr, v);
+	} else if (mode > 0) {
+		put_word(addr, v);
+	} else if (mode == 0) {
+		put_byte(addr, v);
+	}
 
 	regs.chipset_latch_rw = regs.chipset_latch_write = v;
-	SETIFCHIP
+		
+	// chipset buffer latches the write, CPU does
+	// not need to wait for the chipset cycle to finish.
+	x_do_cycles_post(cpucycleunit, v);
 
 #else						/* WINUAE_FOR_HATARI */
 
