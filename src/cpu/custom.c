@@ -451,16 +451,9 @@ void do_cycles_ce_hatari_blitter (uae_u32 cycles)
 #endif
 
 
-#ifndef WINUAE_FOR_HATARI
 void do_cycles_ce020 (uae_u32 cycles)
-#else
-/* [NP] : confusing, because same function name as in cpu_prefetch.h with do_cycles_ce020( int ), */
-/* but here unsigned long parameter is already multiplied by cpucycleunit. */
-/* Requires C++, so we rename to do_cycles_ce020_long() to keep C compatibility */
-void do_cycles_ce020 (uae_u32 cycles)
-#endif
 {
-	unsigned long c;
+	uae_u32 c;
 #ifndef WINUAE_FOR_HATARI
 	int extra;
 #else
