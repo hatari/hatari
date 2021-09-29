@@ -34,7 +34,7 @@
 /* declared in newcpu.c */
 extern struct regstruct mmu_backup_regs;
 /* declared in events.h */
-unsigned long currcycle;
+uae_u32 currcycle;
 /* declared in savestate.h */
 int savestate_state = 0;
 TCHAR *savestate_fname;
@@ -339,7 +339,7 @@ void wait_cpu_cycle_write_ce020 (uaecptr addr, int mode, uae_u32 v)
 }
 
 #ifndef WINUAE_FOR_HATARI
-void do_cycles_ce (unsigned long cycles)
+void do_cycles_ce (uae_u32 cycles)
 {
 	cycles += extra_cycle;
 	while (cycles >= CYCLE_UNIT) {
@@ -358,7 +358,7 @@ void do_cycles_ce (unsigned long cycles)
 /* [NP] Unlike Amiga, for Hatari in 68000 CE mode, we don't need to update other components */
 /* on every sub cycle, so we can do all cycles in one single call to speed up */
 /* emulation (this gains approx 7%) */
-void do_cycles_ce (unsigned long cycles)
+void do_cycles_ce (uae_u32 cycles)
 {
 	cycles += extra_cycle;
 	extra_cycle = cycles & ( CYCLE_UNIT-1 );
@@ -368,7 +368,7 @@ void do_cycles_ce (unsigned long cycles)
 
 #ifdef WINUAE_FOR_HATARI
 /* Same as do_cycles_ce() with cycle exact blitter support */
-void do_cycles_ce_hatari_blitter (unsigned long cycles)
+void do_cycles_ce_hatari_blitter (uae_u32 cycles)
 {
 	cycles += extra_cycle;
 	while (cycles >= CYCLE_UNIT) {
@@ -392,12 +392,12 @@ void do_cycles_ce_hatari_blitter (unsigned long cycles)
 
 
 #ifndef WINUAE_FOR_HATARI
-void do_cycles_ce020 (unsigned long cycles)
+void do_cycles_ce020 (uae_u32 cycles)
 #else
 /* [NP] : confusing, because same function name as in cpu_prefetch.h with do_cycles_ce020( int ), */
 /* but here unsigned long parameter is already multiplied by cpucycleunit. */
 /* Requires C++, so we rename to do_cycles_ce020_long() to keep C compatibility */
-void do_cycles_ce020_long (unsigned long cycles)
+void do_cycles_ce020 (uae_u32 cycles)
 #endif
 {
 	unsigned long c;
@@ -411,7 +411,7 @@ void do_cycles_ce020_long (unsigned long cycles)
 		return;
 	c = get_cycles ();
 	extra = c & (CYCLE_UNIT - 1);
-//fprintf ( stderr , "do_cycles_ce020_long %d %d %d\n" , cycles , c , extra );
+//fprintf ( stderr , "do_cycles_ce020 %d %d %d\n" , cycles , c , extra );
 	if (extra) {
 		extra = CYCLE_UNIT - extra;
 		if (extra >= cycles) {

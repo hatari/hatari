@@ -249,9 +249,9 @@ static uae_u32 (*x2_get_byte)(uaecptr);
 static void (*x2_put_long)(uaecptr,uae_u32);
 static void (*x2_put_word)(uaecptr,uae_u32);
 static void (*x2_put_byte)(uaecptr,uae_u32);
-static void (*x2_do_cycles)(unsigned long);
-static void (*x2_do_cycles_pre)(unsigned long);
-static void (*x2_do_cycles_post)(unsigned long, uae_u32);
+static void (*x2_do_cycles)(uae_u32);
+static void (*x2_do_cycles_pre)(uae_u32);
+static void (*x2_do_cycles_post)(uae_u32, uae_u32);
 
 uae_u32 (*x_prefetch)(int);
 uae_u32 (*x_next_iword)(void);
@@ -276,9 +276,9 @@ void (*x_cp_put_word)(uaecptr,uae_u32);
 void (*x_cp_put_byte)(uaecptr,uae_u32);
 uae_u32 (REGPARAM3 *x_cp_get_disp_ea_020)(uae_u32 base, int idx) REGPARAM;
 
-void (*x_do_cycles)(unsigned long);
-void (*x_do_cycles_pre)(unsigned long);
-void (*x_do_cycles_post)(unsigned long, uae_u32);
+void (*x_do_cycles)(uae_u32);
+void (*x_do_cycles_pre)(uae_u32);
+void (*x_do_cycles_post)(uae_u32, uae_u32);
 
 uae_u32(*x_phys_get_iword)(uaecptr);
 uae_u32(*x_phys_get_ilong)(uaecptr);
@@ -701,7 +701,7 @@ static void cputracefunc2_x_put_byte (uaecptr o, uae_u32 val)
 		write_log (_T("cputracefunc2_x_put_byte %d <> %d\n"), v, val);
 }
 
-static void cputracefunc_x_do_cycles (unsigned long cycles)
+static void cputracefunc_x_do_cycles (uae_u32 cycles)
 {
 	while (cycles >= CYCLE_UNIT) {
 		cputrace.cyclecounter += CYCLE_UNIT;
@@ -714,7 +714,7 @@ static void cputracefunc_x_do_cycles (unsigned long cycles)
 	}
 }
 
-static void cputracefunc2_x_do_cycles (unsigned long cycles)
+static void cputracefunc2_x_do_cycles (uae_u32 cycles)
 {
 	if (cputrace.cyclecounter > (long)cycles) {
 		cputrace.cyclecounter -= cycles;
@@ -728,7 +728,7 @@ static void cputracefunc2_x_do_cycles (unsigned long cycles)
 		x_do_cycles (cycles);
 }
 
-static void cputracefunc_x_do_cycles_pre (unsigned long cycles)
+static void cputracefunc_x_do_cycles_pre (uae_u32 cycles)
 {
 	cputrace.cyclecounter_post = 0;
 	cputrace.cyclecounter_pre = 0;
@@ -745,7 +745,7 @@ static void cputracefunc_x_do_cycles_pre (unsigned long cycles)
 }
 // cyclecounter_pre = how many cycles we need to SWALLOW
 // -1 = rerun whole access
-static void cputracefunc2_x_do_cycles_pre (unsigned long cycles)
+static void cputracefunc2_x_do_cycles_pre (uae_u32 cycles)
 {
 	if (cputrace.cyclecounter_pre == -1) {
 		cputrace.cyclecounter_pre = 0;
@@ -765,7 +765,7 @@ static void cputracefunc2_x_do_cycles_pre (unsigned long cycles)
 		x_do_cycles (cycles);
 }
 
-static void cputracefunc_x_do_cycles_post (unsigned long cycles, uae_u32 v)
+static void cputracefunc_x_do_cycles_post (uae_u32 cycles, uae_u32 v)
 {
 	if (cputrace.memoryoffset < 1) {
 #if CPUTRACE_DEBUG
@@ -789,7 +789,7 @@ static void cputracefunc_x_do_cycles_post (unsigned long cycles, uae_u32 v)
 	cputrace.cyclecounter_post = 0;
 }
 // cyclecounter_post = how many cycles we need to WAIT
-static void cputracefunc2_x_do_cycles_post (unsigned long cycles, uae_u32 v)
+static void cputracefunc2_x_do_cycles_post (uae_u32 cycles, uae_u32 v)
 {
 	uae_u32 c;
 	if (cputrace.cyclecounter_post) {
@@ -803,21 +803,17 @@ static void cputracefunc2_x_do_cycles_post (unsigned long cycles, uae_u32 v)
 		x_do_cycles (c);
 }
 
-static void do_cycles_post (unsigned long cycles, uae_u32 v)
+static void do_cycles_post (uae_u32 cycles, uae_u32 v)
 {
 	do_cycles (cycles);
 }
-static void do_cycles_ce_post (unsigned long cycles, uae_u32 v)
+static void do_cycles_ce_post (uae_u32 cycles, uae_u32 v)
 {
 	do_cycles_ce (cycles);
 }
-static void do_cycles_ce020_post (unsigned long cycles, uae_u32 v)
+static void do_cycles_ce020_post (uae_u32 cycles, uae_u32 v)
 {
-#ifndef WINUAE_FOR_HATARI
 	do_cycles_ce020 (cycles);
-#else
-	do_cycles_ce020_long (cycles);
-#endif
 }
 
 static uae_u8 dcache_check_nommu(uaecptr addr, bool write, uae_u32 size)
@@ -913,11 +909,11 @@ static void set_x_ifetches(void)
 
 #ifdef WINUAE_FOR_HATARI
 
-void (*x_do_cycles_hatari_blitter_save)(unsigned long);
-void (*x_do_cycles_pre_hatari_blitter_save)(unsigned long);
-void (*x_do_cycles_post_hatari_blitter_save)(unsigned long, uae_u32);
+void (*x_do_cycles_hatari_blitter_save)(uae_u32);
+void (*x_do_cycles_pre_hatari_blitter_save)(uae_u32);
+void (*x_do_cycles_post_hatari_blitter_save)(uae_u32, uae_u32);
 
-static void do_cycles_ce_post_hatari_blitter (unsigned long cycles, uae_u32 v)
+static void do_cycles_ce_post_hatari_blitter (uae_u32 cycles, uae_u32 v)
 {
 	do_cycles_ce_hatari_blitter (cycles);
 }
@@ -1058,15 +1054,9 @@ static void set_x_funcs (void)
 			}
 		}
 		if (currprefs.cpu_cycle_exact) {
-#ifndef WINUAE_FOR_HATARI
 			x_do_cycles = do_cycles_ce020;
 			x_do_cycles_pre = do_cycles_ce020;
 			x_do_cycles_post = do_cycles_ce020_post;
-#else
-			x_do_cycles = do_cycles_ce020_long;
-			x_do_cycles_pre = do_cycles_ce020_long;
-			x_do_cycles_post = do_cycles_ce020_post;
-#endif
 		} else {
 			x_do_cycles = do_cycles;
 			x_do_cycles_pre = do_cycles;
@@ -1326,15 +1316,9 @@ static void set_x_funcs (void)
 		x_get_long = get_long_ce020;
 		x_get_word = get_word_ce020;
 		x_get_byte = get_byte_ce020;
-#ifndef WINUAE_FOR_HATARI
 		x_do_cycles = do_cycles_ce020;
 		x_do_cycles_pre = do_cycles_ce020;
 		x_do_cycles_post = do_cycles_ce020_post;
-#else
-		x_do_cycles = do_cycles_ce020_long;
-		x_do_cycles_pre = do_cycles_ce020_long;
-		x_do_cycles_post = do_cycles_ce020_post;
-#endif
 	} else if (currprefs.cpu_model == 68030) {
 		x_prefetch = get_word_ce030_prefetch;
 		x_get_ilong = get_long_ce030_prefetch;
@@ -1357,15 +1341,9 @@ static void set_x_funcs (void)
 			x_get_word = get_word_ce030;
 			x_get_byte = get_byte_ce030;
 		}
-#ifndef WINUAE_FOR_HATARI
 		x_do_cycles = do_cycles_ce020;
 		x_do_cycles_pre = do_cycles_ce020;
 		x_do_cycles_post = do_cycles_ce020_post;
-#else
-		x_do_cycles = do_cycles_ce020_long;
-		x_do_cycles_pre = do_cycles_ce020_long;
-		x_do_cycles_post = do_cycles_ce020_post;
-#endif
 	} else if (currprefs.cpu_model >= 68040) {
 		x_prefetch = NULL;
 		x_get_ilong = get_ilong_cache_040;
@@ -1388,15 +1366,9 @@ static void set_x_funcs (void)
 			x_put_word = mem_access_delay_word_write_c040;
 			x_put_long = mem_access_delay_long_write_c040;
 		}
-#ifndef WINUAE_FOR_HATARI
 		x_do_cycles = do_cycles_ce020;
 		x_do_cycles_pre = do_cycles_ce020;
 		x_do_cycles_post = do_cycles_ce020_post;
-#else
-		x_do_cycles = do_cycles_ce020_long;
-		x_do_cycles_pre = do_cycles_ce020_long;
-		x_do_cycles_post = do_cycles_ce020_post;
-#endif
 	}
 	x2_prefetch = x_prefetch;
 	x2_get_ilong = x_get_ilong;
@@ -1882,7 +1854,7 @@ void set_cpu_caches (bool flush)
 	flush_cpu_caches(flush);
 }
 
-STATIC_INLINE void count_instr (unsigned int opcode)
+STATIC_INLINE void count_instr (uae_u32 opcode)
 {
 }
 
@@ -1947,7 +1919,7 @@ const struct cputbl *getjitcputbl(int cpulvl, int direct)
 static void build_cpufunctbl (void)
 {
 	int i, opcnt;
-	unsigned long opcode;
+	uae_u32 opcode;
 	const struct cputbl *tbl = NULL;
 	int lvl, mode, jit;
 
@@ -2153,7 +2125,7 @@ static void build_cpufunctbl (void)
 }
 
 #define CYCLES_DIV 8192
-static unsigned long cycles_mult;
+static uae_u32 cycles_mult;
 
 static void update_68k_cycles (void)
 {
@@ -2179,9 +2151,9 @@ static void update_68k_cycles (void)
 	} else {
 		if (currprefs.m68k_speed >= 0 && !currprefs.cpu_cycle_exact && !currprefs.cpu_compatible) {
 			if (currprefs.m68k_speed_throttle < 0) {
-				cycles_mult = (unsigned long)(CYCLES_DIV * 1000 / (1000 + currprefs.m68k_speed_throttle));
+				cycles_mult = (uae_u32)(CYCLES_DIV * 1000 / (1000 + currprefs.m68k_speed_throttle));
 			} else if (currprefs.m68k_speed_throttle > 0) {
-				cycles_mult = (unsigned long)(CYCLES_DIV * 1000 / (1000 + currprefs.m68k_speed_throttle));
+				cycles_mult = (uae_u32)(CYCLES_DIV * 1000 / (1000 + currprefs.m68k_speed_throttle));
 			}
 		}
 	}
@@ -9585,11 +9557,7 @@ static void fill_icache030(uae_u32 addr)
 			if (currprefs.mmu_model) {
 				TRY (prb) {
 					if (currprefs.cpu_cycle_exact)
-#ifndef WINUAE_FOR_HATARI
 						do_cycles_ce020(3 * (CPU020_MEM_CYCLE - 1));
-#else
-						do_cycles_ce020_long(3 * (CPU020_MEM_CYCLE - 1));
-#endif
 					for (int j = 0; j < 3; j++) {
 						i++;
 						i &= 3;
@@ -9762,11 +9730,7 @@ static void dcache030_maybe_burst(uaecptr addr, struct cache030 *c, int lws)
 		if (currprefs.mmu_model) {
 			TRY (prb) {
 				if (currprefs.cpu_cycle_exact)
-#ifndef WINUAE_FOR_HATARI
 					do_cycles_ce020(3 * (CPU020_MEM_CYCLE - 1));
-#else
-					do_cycles_ce020_long(3 * (CPU020_MEM_CYCLE - 1));
-#endif
 				for (int j = 0; j < 3; j++) {
 					i++;
 					i &= 3;
