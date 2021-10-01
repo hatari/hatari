@@ -45,23 +45,7 @@ unsigned long int hsync_counter = 0, vsync_counter = 0;
 
 uae_u16 dmacon;
 
-static int extra_cycle;
-
-#if 0
-typedef struct _LARGE_INTEGER
-{
-     union
-     {
-          struct
-          {
-               unsigned long LowPart;
-               long HighPart;
-          };
-          int64_t QuadPart;
-     };
-} LARGE_INTEGER, *PLARGE_INTEGER;
-#endif
-
+static uae_u32 extra_cycle;
 
 #ifdef CPUEMU_13
 
@@ -454,11 +438,7 @@ void do_cycles_ce_hatari_blitter (uae_u32 cycles)
 void do_cycles_ce020 (uae_u32 cycles)
 {
 	uae_u32 c;
-#ifndef WINUAE_FOR_HATARI
-	int extra;
-#else
-	unsigned long extra;			/* remove warning "comparison between signed/unsigned" */
-#endif
+	uae_u32 extra;
 
 	if (!cycles)
 		return;
@@ -489,7 +469,7 @@ void do_cycles_ce020 (uae_u32 cycles)
 		do_cycles (1 * CYCLE_UNIT);
 		c -= CYCLE_UNIT;
 	}
-	if (c > 0)
+	if (c)
 		do_cycles (c);
 }
 
