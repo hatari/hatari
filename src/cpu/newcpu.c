@@ -2760,7 +2760,7 @@ static int iack_cycle(int nr)
 	if (1) {
 		// non-autovectored
 		vector = x_get_byte(0x00fffff1 | ((nr - 24) << 1));
-		if (currprefs.cpu_cycle_exact)
+		if (currprefs.cpu_compatible)
 			x_do_cycles(4 * cpucycleunit);
 	} else {
 		// autovectored
@@ -4752,7 +4752,8 @@ void doint(void)
 #endif
 //fprintf ( stderr , "doint1 %d ipl=%x ipl_pin=%x intmask=%x spcflags=%x\n" , m68k_interrupt_delay,regs.ipl, regs.ipl_pin , regs.intmask, regs.spcflags );
 	if (m68k_interrupt_delay) {
-		regs.ipl_pin = intlev ();
+		int il = intlev();
+		regs.ipl_pin = il;
 //fprintf ( stderr , "doint2 %d ipl=%x ipl_pin=%x intmask=%x spcflags=%x\n" , m68k_interrupt_delay,regs.ipl, regs.ipl_pin , regs.intmask, regs.spcflags );
 		if (regs.ipl_pin > regs.intmask || regs.ipl_pin == 7)
 			set_special(SPCFLAG_INT);
