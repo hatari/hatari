@@ -955,9 +955,12 @@ void File_MakeValidPathName(char *pPathName)
  */
 void File_PathShorten(char *path, int dirs)
 {
-	int i, n = 0, len = 0;
+	int i, n = 0;
 	/* ignore last char, it may or may not be '/' */
-	len = i = strlen(path)-1;
+	i = strlen(path)-1;
+#ifdef WIN32
+	int len = i;
+#endif
 	assert(i >= 0);
 	while(i > 0 && n < dirs)
 	{
