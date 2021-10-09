@@ -220,14 +220,13 @@ Use extended VDI resolution with bit depth <x> (x = 1, 2 or 4)
 Use extended VDI resolution with width <w> (320 < w <= 2048)
 .TP
 .B \-\-vdi\-height <h>
-Use extended VDI resolution with height <h> (200 < h <= 1280)
+Use extended VDI resolution with height <h> (160 < h <= 1280)
 .PP
 Because TOS and popular GEM programs have problems with certain screen
 sizes, Hatari enforces restrictions on VDI screen size.  In total VDI
-screen size is limited to 32-300kB, width to multiple of 128/planes,
-and height to multiple of 16 pixels (or 8, depending on system font
-height). That translates to following maximum standard resolutions for
-the VDI mode:
+screen size is limited to 32-300kB, width to multiple of 16/planes,
+and height to multiple of 8 pixels (smaller system font height). That
+translates to following maximum standard resolutions for the VDI mode:
 .TP
 .B monochrome
 FullHD (1920×1080), WUXGA (1920x1200) and QWXGA (2048x1152)

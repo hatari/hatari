@@ -730,14 +730,13 @@ depth &lt;x&gt; (x = 1, 2 or 4)</p>
 <p class="parameter">--vdi-height
 &lt;h&gt;</p>
 <p class="paramdesc">Use extended VDI resolution with height
-&lt;h&gt; (200 &lt; h &lt;= 1280)</p>
+&lt;h&gt; (160 &lt; h &lt;= 1280)</p>
 <p>
 Because TOS and popular GEM programs have problems with certain screen
 sizes, Hatari enforces restrictions on VDI screen size.  In total VDI
-screen size is limited to 32-300kB, width to multiple of 128/planes,
-and height to multiple of 16 pixels (or 8, depending on system font
-height). That translates to following maximum standard resolutions for
-the VDI mode:
+screen size is limited to 32-300kB, width to multiple of 16/planes,
+and height to multiple of 8 pixels (smaller system font height). That
+translates to following maximum standard resolutions for the VDI mode:
 </p>
 <p class="parameter">monochrome</p>
 <p class="paramdesc">
@@ -1714,8 +1713,8 @@ resolutions:</em></p>
 <ul>
 <li>Only GEM conformant applications work with them, 99% of all games
 and demos don't.</li>
-<li>Several GEM programs accessing screen directly (like NVDI) crash
-with large enough screen sizes.</li>
+<li>GEM programs accessing screen directly (like NVDI) may crash with
+large enough screen sizes.</li>
 <li>Memory reserved for (larger) extended resolutions breaks TOS v3 memory
 detection, so you need to interrupt boot up memory detection.</li>
 <li>TOS v4 isn't compatible with them. In Falcon emulation you need to
@@ -2218,11 +2217,14 @@ a bit tricky for these effects. As a result, some demos using these
 techniques might not be displayed correctly in Hatari, known ones are
 listed in the <span class="file">compatibility.html</span> file.
 </p>
-<p>Beside that you can setup extended VDI modes. These only work with
-GEM-compliant applications and they are equal to fitting a videocard
-into your Mega ST.</p>
-<p>Make sure to disable extended VDI modes for playing games as 99% of
-all ST games will not be able to make use of higher resolutions.</p>
+<p>Beside that you can setup extended VDI mode. It works well only
+with GEM-compliant applications, but allows using larger screen
+resolutions than the standard ST ones. VDI mode is not accelerated, so
+better optimized VDI implementation (e.g. NVDI) is recommended,
+especially for larger screen sizes.
+</p>
+<p>Make sure to disable extended VDI mode for (non-GEM) games as 99%
+of all ST games will not be able to make use of higher resolutions.</p>
 
 <h3 id="Emulated_printer">Emulated printer</h3>
 
