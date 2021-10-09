@@ -82,11 +82,11 @@ void VDI_Reset(void)
  * Limit width and height to VDI screen size in bytes, retaining their ratio.
  * Return true if limiting was done.
  */
-static bool VDI_ByteLimit(int *width, int *height, int planes)
+bool VDI_ByteLimit(int *width, int *height, int planes)
 {
 	double ratio;
 	int size;
-	
+
 	size = (*width)*(*height)*planes/8;
 	if (size <= MAX_VDI_BYTES)
 		return false;

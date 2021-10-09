@@ -52,6 +52,7 @@ extern bool bUseVDIRes, bVdiAesIntercept;
 extern int VDIWidth,VDIHeight;
 extern int VDIRes,VDIPlanes;
 
+extern bool VDI_ByteLimit(int *width, int *height, int planes);
 extern void VDI_SetResolution(int GEMColor, int WidthRequest, int HeightRequest);
 extern void AES_Info(FILE *fp, Uint32 bShowOpcodes);
 extern void VDI_Info(FILE *fp, Uint32 bShowOpcodes);
