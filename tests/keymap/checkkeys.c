@@ -22,7 +22,7 @@ static void quit(int rc)
 static void print_modifiers(void)
 {
 	int mod;
-	printf(" modifiers:");
+	printf(" -");
 	mod = SDL_GetModState();
 	if(!mod) {
 		printf(" (none)");
@@ -54,14 +54,17 @@ static void print_modifiers(void)
 
 static void PrintKey(SDL_Keysym *sym, int pressed)
 {
-	/* Print the keycode, name and state */
+	/* Print the keycode, scancode, their names names and state */
 	if ( sym->sym ) {
-		printf("Key %s: 0x%2x - %s ",
+		printf("Key %s: 0x%2x/0x%2x (%d/%d) - %s - %s",
 		       pressed ?  "pressed " : "released",
-		       sym->sym, SDL_GetKeyName(sym->sym));
+		       sym->sym, sym->scancode,
+		       sym->sym, sym->scancode,
+		       SDL_GetKeyName(sym->sym),
+		       SDL_GetScancodeName(sym->scancode));
 	} else {
-		printf("Unknown Key (scancode = 0x%2x) %s ",
-		       sym->scancode,
+		printf("Unknown Key, scancode = 0x%2x (%d) - %s",
+		       sym->scancode, sym->scancode,
 		       pressed ?  "pressed" : "released");
 	}
 	print_modifiers();
@@ -121,6 +124,7 @@ int main(int argc, char *argv[])
 
 	/* Watch keystrokes */
 	done = 0;
+	puts("Status: hex sym/scan (dec) - sym - scan - modifiers\n");
 	while ( !done ) {
 		/* Check for events */
 		SDL_WaitEvent(&event);
