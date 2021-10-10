@@ -60,7 +60,7 @@ CNF_PARAMS CurrentParams;
 
 
 // Keys to be listed in the Joysticks dropdowns
-SDLKey Preferences_KeysForJoysticks[] =
+SDL_Keycode Preferences_KeysForJoysticks[] =
 {
 	SDLK_BACKSPACE,
 	SDLK_TAB,
@@ -133,16 +133,16 @@ SDLKey Preferences_KeysForJoysticks[] =
 	SDLK_y,
 	SDLK_z,
 	SDLK_DELETE,
-	SDLK_KP0,
-	SDLK_KP1,
-	SDLK_KP2,
-	SDLK_KP3,
-	SDLK_KP4,
-	SDLK_KP5,
-	SDLK_KP6,
-	SDLK_KP7,
-	SDLK_KP8,
-	SDLK_KP9,
+	SDLK_KP_0,
+	SDLK_KP_1,
+	SDLK_KP_2,
+	SDLK_KP_3,
+	SDLK_KP_4,
+	SDLK_KP_5,
+	SDLK_KP_6,
+	SDLK_KP_7,
+	SDLK_KP_8,
+	SDLK_KP_9,
 	SDLK_KP_PERIOD,
 	SDLK_KP_DIVIDE,
 	SDLK_KP_MULTIPLY,
@@ -174,20 +174,20 @@ SDLKey Preferences_KeysForJoysticks[] =
 	SDLK_F13,
 	SDLK_F14,
 	SDLK_F15,
-	SDLK_NUMLOCK,
+	SDLK_NUMLOCKCLEAR,
 	SDLK_CAPSLOCK,
-	SDLK_SCROLLOCK,
+	SDLK_SCROLLLOCK,
 	SDLK_RSHIFT,
 	SDLK_LSHIFT,
 	SDLK_RCTRL,
 	SDLK_LCTRL,
 	SDLK_RALT,
 	SDLK_LALT,
-	SDLK_RMETA,
-	SDLK_LMETA,
+	SDLK_RGUI,
+	SDLK_LGUI,
 	SDLK_MODE,
 	SDLK_HELP,
-	SDLK_PRINT,
+	SDLK_PRINTSCREEN,
 	SDLK_SYSREQ,
 	SDLK_MENU,
 	SDLK_POWER,
@@ -551,7 +551,7 @@ BOOL flag1, flag2;
 	unsigned int i;
 	for (i = 0; i < Preferences_cKeysForJoysticks; i++)
 	{
-		SDLKey key = Preferences_KeysForJoysticks[i];
+		SDL_Keycode key = Preferences_KeysForJoysticks[i];
 		const char* szKeyName = SDL_GetKeyName(key);
 		[dropDown addItemWithTitle:[[NSString stringWithCString:szKeyName encoding:NSASCIIStringEncoding] capitalizedString]];
 		dropDown.lastItem.tag = key ;
