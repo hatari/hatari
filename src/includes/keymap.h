@@ -32,10 +32,10 @@
 #define SDLK_SCROLLOCK SDLK_SCROLLLOCK
 
 extern void Keymap_Init(void);
-extern void Keymap_LoadRemapFile(char *pszFileName);
+extern void Keymap_LoadRemapFile(const char *pszFileName);
 extern void Keymap_DebounceAllKeys(void);
-extern void Keymap_KeyDown(SDL_Keysym *sdlkey);
-extern void Keymap_KeyUp(SDL_Keysym *sdlkey);
+extern void Keymap_KeyDown(const SDL_Keysym *sdlkey);
+extern void Keymap_KeyUp(const SDL_Keysym *sdlkey);
 extern void Keymap_SimulateCharacter(char asckey, bool press);
 extern int Keymap_GetKeyFromName(const char *name);
 extern const char *Keymap_GetKeyName(int keycode);

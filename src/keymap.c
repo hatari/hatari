@@ -4,7 +4,9 @@
   This file is distributed under the GNU General Public License, version 2
   or at your option any later version. Read the file gpl.txt for details.
 
-  Here we process a key press and the remapping of the scancodes.
+  Map SDL key events to ST scancodes and send them to IKBD as
+  pressed/released keys.  Based on Hatari configuration options,
+  several different ways can be used to map SDL key events.
 */
 const char Keymap_fileid[] = "Hatari keymap.c";
 
@@ -48,9 +50,10 @@ void Keymap_Init(void)
 }
 
 /**
- * Map SDL symbolic key to ST scan code
+ * Map SDL symbolic key to ST scan code.
+ * This assumes a QWERTY ST keyboard.
  */
-static char Keymap_SymbolicToStScanCode(SDL_keysym* pKeySym)
+static char Keymap_SymbolicToStScanCode(const SDL_Keysym* pKeySym)
 {
 	char code;
 
@@ -197,7 +200,7 @@ static char Keymap_SymbolicToStScanCode(SDL_keysym* pKeySym)
 /**
  * Remap SDL scancode key to ST Scan code
  */
-static char Keymap_PcToStScanCode(SDL_keysym* pKeySym)
+static char Keymap_PcToStScanCode(const SDL_Keysym* pKeySym)
 {
 	switch (pKeySym->scancode)
 	{
@@ -343,7 +346,7 @@ static char Keymap_PcToStScanCode(SDL_keysym* pKeySym)
  * so that we can easily toggle between number and cursor mode with the
  * numlock key.
  */
-static char Keymap_GetKeyPadScanCode(SDL_keysym* pKeySym)
+static char Keymap_GetKeyPadScanCode(const SDL_Keysym* pKeySym)
 {
 	if (SDL_GetModState() & KMOD_NUM)
 	{
@@ -385,7 +388,7 @@ static char Keymap_GetKeyPadScanCode(SDL_keysym* pKeySym)
 /**
  * Remap SDL Key to ST Scan code
  */
-static char Keymap_RemapKeyToSTScanCode(SDL_keysym* pKeySym)
+static char Keymap_RemapKeyToSTScanCode(const SDL_Keysym* pKeySym)
 {
 	/* Check for keypad first so we can handle numlock */
 	if (ConfigureParams.Keyboard.nKeymapType != KEYMAP_LOADED)
@@ -422,7 +425,7 @@ static char Keymap_RemapKeyToSTScanCode(SDL_keysym* pKeySym)
 /**
  * Load keyboard remap file
  */
-void Keymap_LoadRemapFile(char *pszFileName)
+void Keymap_LoadRemapFile(const char *pszFileName)
 {
 	char szString[1024];
 	int STScanCode, PCKeyCode;
@@ -575,9 +578,9 @@ void Keymap_DebounceAllKeys(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * User press key down
+ * User pressed a key down
  */
-void Keymap_KeyDown(SDL_keysym *sdlkey)
+void Keymap_KeyDown(const SDL_Keysym *sdlkey)
 {
 	uint8_t STScanCode;
 	int symkey = sdlkey->sym;
@@ -618,9 +621,9 @@ void Keymap_KeyDown(SDL_keysym *sdlkey)
 
 /*-----------------------------------------------------------------------*/
 /**
- * User released key
+ * User released a key
  */
-void Keymap_KeyUp(SDL_keysym *sdlkey)
+void Keymap_KeyUp(const SDL_Keysym *sdlkey)
 {
 	uint8_t STScanCode;
 	int symkey = sdlkey->sym;
