@@ -4209,7 +4209,7 @@ void GemDOS_Boot(void)
 	 */
 	if (!GEMDOS_EMU_ON &&
 	    !INF_Overriding(AUTOSTART_INTERCEPT) &&
-	    !(LogTraceFlags & (TRACE_OS_GEMDOS|TRACE_OS_BASE)))
+	    !LOG_TRACE_LEVEL(TRACE_OS_GEMDOS|TRACE_OS_BASE))
 		return;
 
 	/* Get the address of the p_run variable that points to the actual basepage */
