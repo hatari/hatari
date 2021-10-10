@@ -586,7 +586,7 @@ static void DlgFileSelect_Convert_ypos_to_scrollbar_Ypos(void)
 static char findNextOrPreviousDrive(char step, char *path)
 {
 	char chDrv;
-	UINT driverType;
+	UINT driveType;
 	char rootPath[3];
 
 	char endDrv = step > 0 ? 'Z' : 'A';
@@ -596,9 +596,9 @@ static char findNextOrPreviousDrive(char step, char *path)
 		/* make root path */
 		sprintf_s(rootPath, 3, "%c:", chDrv);
 
-		/* get driver type */
-		driverType = GetDriveTypeA(rootPath);
-		if ((driverType == DRIVE_NO_ROOT_DIR) || (driverType == DRIVE_UNKNOWN))
+		/* get drive type */
+		driveType = GetDriveTypeA(rootPath);
+		if ((driveType == DRIVE_NO_ROOT_DIR) || (driveType == DRIVE_UNKNOWN))
 			continue;
 
 		sCurrDrive[0] = rootPath[0];
