@@ -22,6 +22,7 @@ const char DlgFileSelect_fileid[] = "Hatari dlgFileSelect.c";
 #include "sdlgui.h"
 #include "file.h"
 #include "paths.h"
+#include "str.h"
 #include "zip.h"
 #include "log.h"
 
@@ -544,7 +545,7 @@ static char* zip_get_path(const char *zipdir, const char *zipfilename, int brows
 	if (browsingzip)
 	{
 		char *zippath;
-		zippath = malloc(strlen(zipdir) + strlen(zipfilename) + 1);
+		zippath = Str_Alloc(strlen(zipdir) + strlen(zipfilename));
 		strcpy(zippath, zipdir);
 		strcat(zippath, zipfilename);
 		return zippath;
@@ -622,7 +623,7 @@ static void refreshDrive(char driveletter)
 	/* if we don't have root path with letter get it from cwd */
 	if (driveletter == PATHSEP)
 	{
-		char* pTempName = malloc(FILENAME_MAX);
+		char* pTempName = Str_Alloc(FILENAME_MAX);
 		if (!getcwd(pTempName, FILENAME_MAX))
 		{
 			perror("WinInitializeDriveLetter - getcwd");
