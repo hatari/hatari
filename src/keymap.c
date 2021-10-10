@@ -577,6 +577,25 @@ void Keymap_DebounceAllKeys(void)
 
 
 /*-----------------------------------------------------------------------*/
+/* Returns false if SDL_Keycode is for modifier key that
+ * won't be converted to ST scancode, true otherwise
+ */
+static bool IsKeyTranslatable(SDL_Keycode symkey)
+{
+	switch (symkey)
+	{
+	case SDLK_RALT:
+	case SDLK_LGUI:
+	case SDLK_RGUI:
+	case SDLK_MODE:
+	case SDLK_NUMLOCKCLEAR:
+		return false;
+	}
+	return true;
+}
+
+
+/*-----------------------------------------------------------------------*/
 /**
  * User pressed a key down
  */
@@ -597,13 +616,9 @@ void Keymap_KeyDown(const SDL_Keysym *sdlkey)
 	if (Joy_KeyDown(symkey, modkey))
 		return;
 
-	/* Handle special keys */
-	if (symkey == SDLK_RALT || symkey == SDLK_LMETA || symkey == SDLK_RMETA
-	        || symkey == SDLK_MODE || symkey == SDLK_NUMLOCK)
-	{
-		/* Ignore modifier keys that aren't passed to the ST */
+	/* Ignore modifier keys that are not passed to the ST */
+	if (!IsKeyTranslatable(symkey))
 		return;
-	}
 
 	STScanCode = Keymap_RemapKeyToSTScanCode(sdlkey);
 	LOG_TRACE(TRACE_KEYMAP, "key map: sym=0x%x to ST-scan=0x%02x\n", symkey, STScanCode);
@@ -641,13 +656,9 @@ void Keymap_KeyUp(const SDL_Keysym *sdlkey)
 	if (Joy_KeyUp(symkey, modkey))
 		return;
 
-	/* Handle special keys */
-	if (symkey == SDLK_RALT || symkey == SDLK_LMETA || symkey == SDLK_RMETA
-	        || symkey == SDLK_MODE || symkey == SDLK_NUMLOCK)
-	{
-		/* Ignore modifier keys that aren't passed to the ST */
+	/* Ignore modifier keys that are not passed to the ST */
+	if (!IsKeyTranslatable(symkey))
 		return;
-	}
 
 	STScanCode = Keymap_RemapKeyToSTScanCode(sdlkey);
 	/* Release key (only if was pressed) */
