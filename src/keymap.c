@@ -23,6 +23,8 @@ const char Keymap_fileid[] = "Hatari keymap.c";
 #include "debugui.h"
 #include "log.h"
 
+/* if not able to map */
+#define ST_NO_SCANCODE 0xff
 
 /* Table for loaded keys: */
 static int LoadedKeymap[KBD_MAX_SCANCODE][2];
@@ -53,9 +55,9 @@ void Keymap_Init(void)
  * Map SDL symbolic key to ST scan code.
  * This assumes a QWERTY ST keyboard.
  */
-static char Keymap_SymbolicToStScanCode(const SDL_Keysym* pKeySym)
+static uint8_t Keymap_SymbolicToStScanCode(const SDL_Keysym* pKeySym)
 {
-	char code;
+	uint8_t code;
 
 	switch (pKeySym->sym)
 	{
@@ -190,7 +192,7 @@ static char Keymap_SymbolicToStScanCode(const SDL_Keysym* pKeySym)
 	 case SDLK_HELP: code = 0x62; break;
 	 case SDLK_PRINTSCREEN: code = 0x62; break;
 	 case SDLK_UNDO: code = 0x61; break;
-	 default: code = -1;
+	 default: code = ST_NO_SCANCODE;
 	}
 
 	return code;
@@ -200,7 +202,7 @@ static char Keymap_SymbolicToStScanCode(const SDL_Keysym* pKeySym)
 /**
  * Remap SDL scancode key to ST Scan code
  */
-static char Keymap_PcToStScanCode(const SDL_Keysym* pKeySym)
+static uint8_t Keymap_PcToStScanCode(const SDL_Keysym* pKeySym)
 {
 	switch (pKeySym->scancode)
 	{
@@ -336,7 +338,7 @@ static char Keymap_PcToStScanCode(const SDL_Keysym* pKeySym)
 			return Keymap_SymbolicToStScanCode(pKeySym);
 		}
 		Log_Printf(LOG_WARN, "Unhandled scancode 0x%x!\n", pKeySym->scancode);
-		return -1;
+		return ST_NO_SCANCODE;
 	}
 }
 
@@ -346,7 +348,7 @@ static char Keymap_PcToStScanCode(const SDL_Keysym* pKeySym)
  * so that we can easily toggle between number and cursor mode with the
  * numlock key.
  */
-static char Keymap_GetKeyPadScanCode(const SDL_Keysym* pKeySym)
+static uint8_t Keymap_GetKeyPadScanCode(const SDL_Keysym* pKeySym)
 {
 	if (SDL_GetModState() & KMOD_NUM)
 	{
@@ -380,15 +382,14 @@ static char Keymap_GetKeyPadScanCode(const SDL_Keysym* pKeySym)
 		 default:  break;
 		}
 	}
-
-	return -1;
+	return ST_NO_SCANCODE;
 }
 
 
 /**
  * Remap SDL Key to ST Scan code
  */
-static char Keymap_RemapKeyToSTScanCode(const SDL_Keysym* pKeySym)
+static uint8_t Keymap_RemapKeyToSTScanCode(const SDL_Keysym* pKeySym)
 {
 	/* Check for keypad first so we can handle numlock */
 	if (ConfigureParams.Keyboard.nKeymapType != KEYMAP_LOADED)
@@ -622,7 +623,7 @@ void Keymap_KeyDown(const SDL_Keysym *sdlkey)
 
 	STScanCode = Keymap_RemapKeyToSTScanCode(sdlkey);
 	LOG_TRACE(TRACE_KEYMAP, "key map: sym=0x%x to ST-scan=0x%02x\n", symkey, STScanCode);
-	if (STScanCode != (uint8_t)-1)
+	if (STScanCode != ST_NO_SCANCODE)
 	{
 		if (!Keyboard.KeyStates[STScanCode])
 		{
@@ -662,7 +663,7 @@ void Keymap_KeyUp(const SDL_Keysym *sdlkey)
 
 	STScanCode = Keymap_RemapKeyToSTScanCode(sdlkey);
 	/* Release key (only if was pressed) */
-	if (STScanCode != (uint8_t)-1)
+	if (STScanCode != ST_NO_SCANCODE)
 	{
 		if (Keyboard.KeyStates[STScanCode])
 		{
