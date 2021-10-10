@@ -29,18 +29,26 @@ const char Keymap_fileid[] = "Hatari keymap.c";
 /* if not able to map */
 #define ST_NO_SCANCODE 0xff
 
+/* Some ST keyboard scancodes */
+#define ST_ESC		0x01
+#define ST_CONTROL	0x1d
+#define ST_LSHIFT	0x2a
+#define ST_RSHIFT	0x36
+#define ST_ALTERNATE	0x38
+#define ST_CAPSLOCK	0x3a
+
 /* Table for loaded keys: */
 static int LoadedKeymap[KBD_MAX_SCANCODE][2];
 
 /* List of ST scan codes to NOT de-bounce when running in maximum speed */
 static const uint8_t DebounceExtendedKeys[] =
 {
-	0x1d,  /* CTRL */
-	0x2a,  /* Left SHIFT */
-	0x01,  /* ESC */
-	0x38,  /* ALT */
-	0x36,  /* Right SHIFT */
-	0      /* term */
+	ST_CONTROL,
+	ST_LSHIFT,
+	ST_ESC,
+	ST_ALTERNATE,
+	ST_RSHIFT,
+	0  /* End of list */
 };
 
 
@@ -69,7 +77,7 @@ static uint8_t Keymap_SymbolicToStScanCode_default(const SDL_Keysym* pKeySym)
 	 case SDLK_TAB: code = 0x0F; break;
 	 case SDLK_CLEAR: code = 0x47; break;
 	 case SDLK_RETURN: code = 0x1C; break;
-	 case SDLK_ESCAPE: code = 0x01; break;
+	 case SDLK_ESCAPE: code = ST_ESC; break;
 	 case SDLK_SPACE: code = 0x39; break;
 	 case SDLK_EXCLAIM: code = 0x09; break;     /* on azerty? */
 	 case SDLK_QUOTEDBL: code = 0x04; break;    /* on azerty? */
@@ -213,14 +221,14 @@ static uint8_t Keymap_SymbolicToStScanCode_default(const SDL_Keysym* pKeySym)
 	 case SDLK_F12: code = 0x61; break;         /* ST Undo */
 	 case SDLK_F13: code = 0x62; break;         /* ST Help */
 	 /* Key state modifier keys */
-	 case SDLK_CAPSLOCK: code = 0x3A; break;
+	 case SDLK_CAPSLOCK: code = ST_CAPSLOCK; break;
 	 case SDLK_SCROLLLOCK: code = 0x61; break;  /* ST Undo */
-	 case SDLK_RSHIFT: code = 0x36; break;
-	 case SDLK_LSHIFT: code = 0x2A; break;
-	 case SDLK_RCTRL: code = 0x1D; break;
-	 case SDLK_LCTRL: code = 0x1D; break;
-	 case SDLK_RALT: code = 0x38; break;
-	 case SDLK_LALT: code = 0x38; break;
+	 case SDLK_RSHIFT: code = ST_RSHIFT; break;
+	 case SDLK_LSHIFT: code = ST_LSHIFT; break;
+	 case SDLK_RCTRL: code = ST_CONTROL; break;
+	 case SDLK_LCTRL: code = ST_CONTROL; break;
+	 case SDLK_RALT: code = ST_ALTERNATE; break;
+	 case SDLK_LALT: code = ST_ALTERNATE; break;
 	 /* Miscellaneous function keys */
 	 case SDLK_HELP: code = 0x62; break;
 	 case SDLK_PRINTSCREEN: code = 0x62; break; /* ST Help */
@@ -434,7 +442,7 @@ static uint8_t Keymap_PcToStScanCode(const SDL_Keysym* pKeySym)
 	 case SDL_SCANCODE_9: return 0x0a;
 	 case SDL_SCANCODE_0: return 0x0b;
 	 case SDL_SCANCODE_RETURN: return 0x1c;
-	 case SDL_SCANCODE_ESCAPE: return 0x01;
+	 case SDL_SCANCODE_ESCAPE: return ST_ESC;
 	 case SDL_SCANCODE_BACKSPACE: return 0x0e;
 	 case SDL_SCANCODE_TAB: return 0x0f;
 	 case SDL_SCANCODE_SPACE: return 0x39;
@@ -450,7 +458,7 @@ static uint8_t Keymap_PcToStScanCode(const SDL_Keysym* pKeySym)
 	 case SDL_SCANCODE_COMMA: return 0x33;
 	 case SDL_SCANCODE_PERIOD: return 0x34;
 	 case SDL_SCANCODE_SLASH: return 0x35;
-	 case SDL_SCANCODE_CAPSLOCK: return 0x3a;
+	 case SDL_SCANCODE_CAPSLOCK: return ST_CAPSLOCK;
 	 case SDL_SCANCODE_F1: return 0x3b;
 	 case SDL_SCANCODE_F2: return 0x3c;
 	 case SDL_SCANCODE_F3: return 0x3d;
@@ -513,11 +521,11 @@ static uint8_t Keymap_PcToStScanCode(const SDL_Keysym* pKeySym)
 	 case SDL_SCANCODE_KP_HASH: return 0x0c;
 	 case SDL_SCANCODE_KP_SPACE: return 0x39;
 	 case SDL_SCANCODE_KP_CLEAR: return 0x47;
-	 case SDL_SCANCODE_LCTRL: return 0x1d;
-	 case SDL_SCANCODE_LSHIFT: return 0x2a;
-	 case SDL_SCANCODE_LALT: return 0x38;
-	 case SDL_SCANCODE_RCTRL: return 0x1d;
-	 case SDL_SCANCODE_RSHIFT: return 0x36;
+	 case SDL_SCANCODE_LCTRL: return ST_CONTROL;
+	 case SDL_SCANCODE_LSHIFT: return ST_LSHIFT;
+	 case SDL_SCANCODE_LALT: return ST_ALTERNATE;
+	 case SDL_SCANCODE_RCTRL: return ST_CONTROL;
+	 case SDL_SCANCODE_RSHIFT: return ST_RSHIFT;
 	 default:
 		if (!pKeySym->scancode && pKeySym->sym)
 		{
