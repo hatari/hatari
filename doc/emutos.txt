@@ -956,6 +956,7 @@ Demos:
 - BoingSTE
 - CD-player (by Light)
 - Cernit Trandafir (by DHS)
+- Chipo Django 1 (by Rabenauge)
 - Circus BackSTage (by BlaBLa)
 - City Frames (by DHS)
 - Core Flakes (by New Core)
