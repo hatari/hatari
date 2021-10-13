@@ -30,7 +30,7 @@ const char Keymap_fileid[] = "Hatari keymap.c";
 static int LoadedKeymap[KBD_MAX_SCANCODE][2];
 
 /* List of ST scan codes to NOT de-bounce when running in maximum speed */
-static const char DebounceExtendedKeys[] =
+static const uint8_t DebounceExtendedKeys[] =
 {
 	0x1d,  /* CTRL */
 	0x2a,  /* Left SHIFT */
@@ -516,7 +516,7 @@ void Keymap_LoadRemapFile(const char *pszFileName)
  * Scan list of keys to NOT de-bounce when running in maximum speed, eg ALT,SHIFT,CTRL etc...
  * @return true if key requires de-bouncing
  */
-static bool Keymap_DebounceSTKey(char STScanCode)
+static bool Keymap_DebounceSTKey(uint8_t STScanCode)
 {
 	int i=0;
 
