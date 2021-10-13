@@ -560,7 +560,7 @@ void Keymap_DebounceAllKeys(void)
 	}
 
 	/* Now run through each key looking for ones held down */
-	for (nScanCode = 1; nScanCode <= KBD_MAX_SCANCODE; nScanCode++)
+	for (nScanCode = 1; nScanCode < ARRAY_SIZE(Keyboard.KeyStates); nScanCode++)
 	{
 		/* Is key held? */
 		if (Keyboard.KeyStates[nScanCode])
