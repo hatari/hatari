@@ -324,7 +324,7 @@ static void Screen_FreeSDL2Resources(void)
  */
 void Screen_SetTextureScale(int width, int height, int win_width, int win_height, bool bForce)
 {
-	static char prev_quality = '0';
+	static char prev_quality;
 	float scale_w, scale_h, scale;
 	char quality;
 	int pfmt;
@@ -391,7 +391,7 @@ void Screen_SetTextureScale(int width, int height, int win_width, int win_height
  * Change the SDL video mode.
  * @return true if mode has been changed, false if change was not necessary
  */
-bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChange)
+static bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChange)
 {
 	Uint32 sdlVideoFlags;
 	char *psSdlVideoDriver;
