@@ -279,11 +279,6 @@ static bool Screen_UseGenConvScreen(void)
 		|| bUseHighRes || bUseVDIRes;
 }
 
-static bool Screen_WantToKeepResolution(void)
-{
-	return ConfigureParams.Screen.bKeepResolution;
-}
-
 static void Screen_FreeSDL2Resources(void)
 {
 	if (sdlTexture)
@@ -606,7 +601,7 @@ static void Screen_SetSTResolution(bool bForceChange)
 	/* Statusbar height for doubled screen size */
 	SBarHeight = Statusbar_GetHeightForSize(640, 400);
 
-	Resolution_GetLimits(&maxW, &maxH, &BitCount, Screen_WantToKeepResolution());
+	Resolution_GetLimits(&maxW, &maxH, &BitCount, ConfigureParams.Screen.bKeepResolution);
 
 	/* Zoom if necessary, factors used for scaling mouse motions */
 	if (STRes == ST_LOW_RES &&
@@ -892,7 +887,7 @@ void Screen_EnterFullScreen(void)
 			Screen_ClearScreen();       /* Black out screen bitmap as will be invalid when return */
 		}
 
-		if (!Screen_WantToKeepResolution())
+		if (!ConfigureParams.Screen.bKeepResolution)
 		{
 			/* Give monitor time to change to new resolution */
 			SDL_Delay(20);
@@ -938,7 +933,7 @@ void Screen_ReturnFromFullScreen(void)
 			Screen_SetSTResolution(true);
 		}
 
-		if (!Screen_WantToKeepResolution())
+		if (!ConfigureParams.Screen.bKeepResolution)
 		{
 			/* Give monitor time to switch resolution */
 			SDL_Delay(20);
