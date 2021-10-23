@@ -975,8 +975,8 @@ static const dbgcommand_t cpucommands[] =
 	  "disasm", "d",
 	  "disassemble from PC, or given address",
 	  "[<start address>[-<end address>]]\n"
-	  "\tIf no address is given, this command disassembles from the last\n"
-	  "\tposition or from current PC if no last position is available.",
+	  "\tWhen no address is given, disassemble from the last disasm\n"
+	  "\taddress, or from current PC when debugger is (re-)entered.",
 	  false },
 	{ DebugCpu_Profile, Profile_Match,
 	  "profile", "",
@@ -987,8 +987,8 @@ static const dbgcommand_t cpucommands[] =
 	  "cpureg", "r",
 	  "dump register values or set register to value",
 	  "[REG=value]\n"
-	  "\tSet CPU register to value or dumps all register if no parameter\n"
-	  "\thas been specified.",
+	  "\tSet CPU register to given value, or dump all registers\n"
+	  "\twhen no parameter is given.",
 	  true },
 	{ DebugCpu_MemDump, Symbols_MatchCpuDataAddress,
 	  "memdump", "m",
@@ -1010,13 +1010,13 @@ static const dbgcommand_t cpucommands[] =
 	{ DebugCpu_LoadBin, NULL,
 	  "loadbin", "l",
 	  "load a file into memory",
-	  "filename address\n"
+	  "<filename> <address>\n"
 	  "\tLoad the file <filename> into memory starting at <address>.",
 	  false },
 	{ DebugCpu_SaveBin, NULL,
 	  "savebin", "",
 	  "save memory to a file",
-	  "filename address length\n"
+	  "<filename> <address> <length>\n"
 	  "\tSave the memory block at <address> with given <length> to\n"
 	  "\tthe file <filename>.",
 	  false },
@@ -1029,7 +1029,7 @@ static const dbgcommand_t cpucommands[] =
 	  "step", "s",
 	  "single-step CPU",
 	  "\n"
-	  "\tExecute next CPU instruction (equals 'c 1')",
+	  "\tExecute next CPU instruction (like 'c 1', but repeats on Enter).",
 	  false },
 	{ DebugCpu_Next, DebugCpu_MatchNext,
 	  "next", "n",
@@ -1038,7 +1038,7 @@ static const dbgcommand_t cpucommands[] =
 	  "\tSame as 'step' command if there are no subroutine calls.\n"
           "\tWhen there are, those calls are treated as one instruction.\n"
 	  "\tIf argument is given, continues until instruction of given\n"
-	  "\ttype is encountered.",
+	  "\ttype is encountered.  Repeats on Enter.",
 	  false },
 	{ DebugCpu_Continue, NULL,
 	  "cont", "c",

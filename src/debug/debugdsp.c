@@ -595,14 +595,14 @@ static const dbgcommand_t dspcommands[] =
 	  "dspdisasm", "dd",
 	  "disassemble DSP code",
 	  "[<start address>[-<end address>]]\n"
-	  "\tDisassemble from DSP-PC, otherwise at given address.",
+	  "\tDisassemble from DSP PC address, otherwise from given address.",
 	  false },
 	{ DebugDsp_MemDump, Symbols_MatchDspDataAddress,
 	  "dspmemdump", "dm",
 	  "dump DSP memory",
 	  "[<x|y|p> <start address>[-<end address>]]\n"
 	  "\tdump DSP memory from given memory space and address, or\n"
-	  "\tcontinue from previous address if not specified.",
+	  "\tcontinue from previous address if none specified.",
 	  false },
 	{ Symbols_Command, NULL,
 	  "dspsymbols", "",
@@ -617,14 +617,15 @@ static const dbgcommand_t dspcommands[] =
 	{ DebugDsp_Register, DebugDsp_MatchRegister,
 	  "dspreg", "dr",
 	  "read/write DSP registers",
-	  "[REG=value]"
-	  "\tSet or dump contents of DSP registers.",
+	  "[REG=value]\n"
+	  "\tSet DSP register to given value, or dump all registers\n"
+	  "\twhen no parameter is given.",
 	  true },
 	{ DebugDsp_Step, NULL,
 	  "dspstep", "ds",
 	  "single-step DSP",
 	  "\n"
-	  "\tExecute next DSP instruction (equals 'dc 1')",
+	  "\tExecute next DSP instruction (like 'dc 1', but repeats on Enter).",
 	  false },
 	{ DebugDsp_Next, DebugDsp_MatchNext,
 	  "dspnext", "dn",
@@ -633,7 +634,7 @@ static const dbgcommand_t dspcommands[] =
 	  "\tSame as 'dspstep' command if there are no subroutine calls.\n"
           "\tWhen there are, those calls are treated as one instruction.\n"
 	  "\tIf argument is given, continues until instruction of given\n"
-	  "\ttype is encountered.",
+	  "\ttype is encountered.  Repeats on Enter.",
 	  false },
 	{ DebugDsp_Continue, NULL,
 	  "dspcont", "dc",
