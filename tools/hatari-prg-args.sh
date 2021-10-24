@@ -81,7 +81,7 @@ if [ \! -f $prg ]; then
 		prg=""
 	else
 		# non-existing *non-Atari* path given
-		usage "given Atari program '$prg' doesn't exist"
+		usage "given Atari program '$prg' does not exist"
 	fi
 fi
 
@@ -104,7 +104,7 @@ for arg in $*; do
 	if [ "${arg#$path}" != "$arg" ]; then
 		# file path needing conversion
 		if [ \! -f $arg ]; then
-			usage "given file name '$arg' doesn't exits"
+			usage "given file name '$arg' does not exist"
 		fi
 		# prefix with separator & drive letter & remove host path,
 		# upper-case, convert path separators
@@ -113,7 +113,6 @@ for arg in $*; do
 		$echo -n "${prefix}$arg" >> $args
 	fi
 	prefix=" "
-	shift
 done
 
 # calculate command line length and append zero just in case
