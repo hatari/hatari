@@ -165,7 +165,7 @@ static bool DebugCpu_ShowAddressInfo(Uint32 addr, FILE *fp)
  */
 int DebugCpu_DisAsm(int nArgc, char *psArgs[])
 {
-	Uint32 disasm_upper = 0;
+	Uint32 prev_addr, disasm_upper = 0, pc = M68000_GetPC();
 	int shown, lines = INT_MAX;
 	uaecptr nextpc;
 
@@ -188,7 +188,7 @@ int DebugCpu_DisAsm(int nArgc, char *psArgs[])
 	{
 		/* continue */
 		if(!disasm_addr)
-			disasm_addr = M68000_GetPC();
+			disasm_addr = pc;
 	}
 
 	/* limit is topmost address or instruction count */
@@ -199,8 +199,21 @@ int DebugCpu_DisAsm(int nArgc, char *psArgs[])
 	}
 
 	/* output a range */
+	prev_addr = disasm_addr;
 	for (shown = 0; shown < lines && disasm_addr < disasm_upper; shown++)
 	{
+		if (prev_addr < pc && disasm_addr > pc)
+		{
+			fputs("ERROR, disassembly misaligned with PC address, correcting\n", debugOutput);
+			disasm_addr = pc;
+			shown++;
+		}
+		if (disasm_addr == pc)
+		{
+			fputs("(PC)\n", debugOutput);
+			shown++;
+		}
+		prev_addr = disasm_addr;
 		if (DebugCpu_ShowAddressInfo(disasm_addr, debugOutput))
 			shown++;
 		Disasm(debugOutput, (uaecptr)disasm_addr, &nextpc, 1);
@@ -710,7 +723,7 @@ static int DebugCpu_Continue(int nArgc, char *psArgv[])
 static int DebugCpu_Step(int nArgc, char *psArgv[])
 {
 	nCpuSteps = 1;
-	return DEBUGGER_END;
+	return DEBUGGER_ENDCONT;
 }
 
 
@@ -808,14 +821,14 @@ static int DebugCpu_Next(int nArgc, char *psArgv[])
 		else
 		{
 			nCpuSteps = 1;
-			return DEBUGGER_END;
+			return DEBUGGER_ENDCONT;
 		}
 	}
 	/* use breakpoint, not steps */
 	if (BreakCond_Command(command, false))
 	{
 		nCpuSteps = 0;
-		return DEBUGGER_END;
+		return DEBUGGER_ENDCONT;
 	}
 	return DEBUGGER_CMDDONE;
 }
@@ -962,8 +975,8 @@ static const dbgcommand_t cpucommands[] =
 	  "disasm", "d",
 	  "disassemble from PC, or given address",
 	  "[<start address>[-<end address>]]\n"
-	  "\tIf no address is given, this command disassembles from the last\n"
-	  "\tposition or from current PC if no last position is available.",
+	  "\tWhen no address is given, disassemble from the last disasm\n"
+	  "\taddress, or from current PC when debugger is (re-)entered.",
 	  false },
 	{ DebugCpu_Profile, Profile_Match,
 	  "profile", "",
@@ -974,8 +987,8 @@ static const dbgcommand_t cpucommands[] =
 	  "cpureg", "r",
 	  "dump register values or set register to value",
 	  "[REG=value]\n"
-	  "\tSet CPU register to value or dumps all register if no parameter\n"
-	  "\thas been specified.",
+	  "\tSet CPU register to given value, or dump all registers\n"
+	  "\twhen no parameter is given.",
 	  true },
 	{ DebugCpu_MemDump, Symbols_MatchCpuDataAddress,
 	  "memdump", "m",
@@ -997,13 +1010,13 @@ static const dbgcommand_t cpucommands[] =
 	{ DebugCpu_LoadBin, NULL,
 	  "loadbin", "l",
 	  "load a file into memory",
-	  "filename address\n"
+	  "<filename> <address>\n"
 	  "\tLoad the file <filename> into memory starting at <address>.",
 	  false },
 	{ DebugCpu_SaveBin, NULL,
 	  "savebin", "",
 	  "save memory to a file",
-	  "filename address length\n"
+	  "<filename> <address> <length>\n"
 	  "\tSave the memory block at <address> with given <length> to\n"
 	  "\tthe file <filename>.",
 	  false },
@@ -1016,7 +1029,7 @@ static const dbgcommand_t cpucommands[] =
 	  "step", "s",
 	  "single-step CPU",
 	  "\n"
-	  "\tExecute next CPU instruction (equals 'c 1')",
+	  "\tExecute next CPU instruction (like 'c 1', but repeats on Enter).",
 	  false },
 	{ DebugCpu_Next, DebugCpu_MatchNext,
 	  "next", "n",
@@ -1025,7 +1038,7 @@ static const dbgcommand_t cpucommands[] =
 	  "\tSame as 'step' command if there are no subroutine calls.\n"
           "\tWhen there are, those calls are treated as one instruction.\n"
 	  "\tIf argument is given, continues until instruction of given\n"
-	  "\ttype is encountered.",
+	  "\ttype is encountered.  Repeats on Enter.",
 	  false },
 	{ DebugCpu_Continue, NULL,
 	  "cont", "c",

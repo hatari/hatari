@@ -8,9 +8,12 @@
 #ifndef HATARI_VDI_H
 #define HATARI_VDI_H
 
-/* TOS needs screen width to be aligned to 128/planes and height to VDI text
- * height (16, larger of these, is used in calculating the limits in Hatari).
- * Max. screen size supported by EmuTOS (and TOS v3.x?) is 300kB.
+/* TOS requires screen width to be aligned to 16/planes and height is
+ * better to be aligned to VDI text height (8, smaller of these, is
+ * used in calculating the limits in Hatari).
+ *
+ * Earlier programs have been determined to have issues when screen
+ * size goes over 300kB, so that is taken as limit too.
  *
  * Below MAX_VDI_* values are reasonable limits for monochrome resolutions.
  * 300kB limits screen size to max. resolution of 2048x1200 or 1920x1280,
@@ -30,8 +33,12 @@
 #define MAX_VDI_HEIGHT 1280
 /* smaller doesn't make sense even for testing */
 #define MIN_VDI_WIDTH   320
-#define MIN_VDI_HEIGHT  208
+#define MIN_VDI_HEIGHT  160
 
+/* width must be aligned to a short */
+#define VDI_ALIGN_WIDTH(planes) (16/planes)
+/* height should be multiple of cell height (8 or 16) */
+#define VDI_ALIGN_HEIGHT        8
 
 enum
 {
@@ -45,6 +52,7 @@ extern bool bUseVDIRes, bVdiAesIntercept;
 extern int VDIWidth,VDIHeight;
 extern int VDIRes,VDIPlanes;
 
+extern bool VDI_ByteLimit(int *width, int *height, int planes);
 extern void VDI_SetResolution(int GEMColor, int WidthRequest, int HeightRequest);
 extern void AES_Info(FILE *fp, Uint32 bShowOpcodes);
 extern void VDI_Info(FILE *fp, Uint32 bShowOpcodes);

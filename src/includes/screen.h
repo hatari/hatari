@@ -103,7 +103,6 @@ extern void Screen_EnterFullScreen(void);
 extern void Screen_ReturnFromFullScreen(void);
 extern void Screen_ModeChanged(bool bForceChange);
 extern bool Screen_Draw(void);
-extern bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChange);
 extern void Screen_SetTextureScale(int width, int height, int win_width,
                                    int win_height, bool bForceCreation);
 extern void Screen_SetGenConvSize(int width, int height, int bpp, bool bForceChange);

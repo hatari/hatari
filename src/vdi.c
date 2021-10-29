@@ -82,11 +82,11 @@ void VDI_Reset(void)
  * Limit width and height to VDI screen size in bytes, retaining their ratio.
  * Return true if limiting was done.
  */
-static bool VDI_ByteLimit(int *width, int *height, int planes)
+bool VDI_ByteLimit(int *width, int *height, int planes)
 {
 	double ratio;
 	int size;
-	
+
 	size = (*width)*(*height)*planes/8;
 	if (size <= MAX_VDI_BYTES)
 		return false;
@@ -114,7 +114,7 @@ void VDI_SetResolution(int GEMColor, int WidthRequest, int HeightRequest)
 {
 	int w = WidthRequest;
 	int h = HeightRequest;
-	int minw, minh;
+	int walign;
 
 	/* Color depth */
 	switch (GEMColor)
@@ -122,20 +122,14 @@ void VDI_SetResolution(int GEMColor, int WidthRequest, int HeightRequest)
 	 case GEMCOLOR_2:
 		VDIRes = ST_HIGH_RES;
 		VDIPlanes = 1;
-		minw = 640;
-		minh = 400;
 		break;
 	 case GEMCOLOR_4:
 		VDIRes = ST_MEDIUM_RES;
 		VDIPlanes = 2;
-		minw = 640;
-		minh = 200;
 		break;
 	 case GEMCOLOR_16:
 		VDIRes = ST_LOW_RES;
 		VDIPlanes = 4;
-		minw = 320;
-		minh = 200;
 		break;
 	default:
 		fprintf(stderr, "Invalid VDI planes mode request: %d!\n", GEMColor);
@@ -146,18 +140,16 @@ void VDI_SetResolution(int GEMColor, int WidthRequest, int HeightRequest)
 #endif
 	/* Make sure VDI screen size is acceptable and aligned to TOS requirements */
 
-	/* width needs to be aligned to 16 bytes */
-	w = Opt_ValueAlignMinMax(w, 128/VDIPlanes, minw, MAX_VDI_WIDTH);
-
-	/* height needs to be multiple of cell height (either 8 or 16) */
-	h = Opt_ValueAlignMinMax(h, 16, minh, MAX_VDI_HEIGHT);
+	walign = VDI_ALIGN_WIDTH(VDIPlanes);
+	w = Opt_ValueAlignMinMax(w, walign, MIN_VDI_WIDTH, MAX_VDI_WIDTH);
+	h = Opt_ValueAlignMinMax(h, VDI_ALIGN_HEIGHT, MIN_VDI_HEIGHT, MAX_VDI_HEIGHT);
 
 	/* screen size in bytes needs to be below limit */
 	if (VDI_ByteLimit(&w, &h, VDIPlanes))
 	{
 		/* align again */
-		w = Opt_ValueAlignMinMax(w, 128/VDIPlanes, minw, MAX_VDI_WIDTH);
-		h = Opt_ValueAlignMinMax(h, 16, minh, MAX_VDI_HEIGHT);
+		w = Opt_ValueAlignMinMax(w, walign, MIN_VDI_WIDTH, MAX_VDI_WIDTH);
+		h = Opt_ValueAlignMinMax(h, VDI_ALIGN_HEIGHT, MIN_VDI_HEIGHT, MAX_VDI_HEIGHT);
 	}
 	if (w != WidthRequest || h != HeightRequest)
 	{

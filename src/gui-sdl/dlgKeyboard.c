@@ -245,7 +245,7 @@ void Dialog_KeyboardDlg(void)
 	/* Show the dialog: */
 	do
 	{
-		but = SDLGui_DoDialog(keyboarddlg, NULL, false);
+		but = SDLGui_DoDialog(keyboarddlg);
 
 		switch (but)
 		{

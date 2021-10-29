@@ -22,38 +22,35 @@ extern frame_time_t vsyncmintime, vsyncmintimepre;
 extern frame_time_t vsyncmaxtime, vsyncwaittime;
 extern int vsynctimebase, syncbase;
 extern void reset_frame_rate_hack (void);
-extern unsigned long int vsync_cycles;
-extern unsigned long start_cycles;
+extern uae_u32 vsync_cycles;
+extern uae_u32 start_cycles;
 extern int event2_count;
 extern bool event_wait;
 
 extern void compute_vsynctime (void);
 extern void init_eventtab (void);
-extern void do_cycles_ce (unsigned long cycles);
-////extern void do_cycles_ce_internal (unsigned long cycles);
+extern void do_cycles_ce (uae_u32 cycles);
 #ifdef WINUAE_FOR_HATARI
-extern void do_cycles_ce_hatari_blitter (unsigned long cycles);
+extern void do_cycles_ce_hatari_blitter (uae_u32 cycles);
 #endif
 #ifndef WINUAE_FOR_HATARI
-extern void do_cycles_ce020 (unsigned long cycles);
-///extern void do_cycles_ce020_internal (unsigned long cycles);
+extern void do_cycles_ce020 (uae_u32 cycles);
 #else
 /* [NP] avoid conflict with do_cycles_ce020( int ) in cpu_prefetch.h */
-extern void do_cycles_ce020_long (unsigned long cycles);
-///extern void do_cycles_ce020_internal_long (unsigned long cycles);
+extern void do_cycles_ce020 (uae_u32 cycles);
 #endif
 extern void events_schedule (void);
-extern void do_cycles_slow (unsigned long cycles_to_add);
+extern void do_cycles_slow (uae_u32 cycles_to_add);
 extern void events_reset_syncline(void);
 
 extern bool is_cycle_ce(uaecptr);
 
-extern unsigned long currcycle, nextevent;
+extern uae_u32 currcycle, nextevent;
 extern int is_syncline, is_syncline_end;
 typedef void (*evfunc)(void);
 typedef void (*evfunc2)(uae_u32);
 
-typedef unsigned long int evt;
+typedef unsigned int evt;
 
 struct ev
 {
@@ -94,17 +91,17 @@ STATIC_INLINE void cycles_do_special (void)
 
 }
 
-STATIC_INLINE void do_extra_cycles (unsigned long cycles_to_add)
+STATIC_INLINE void do_extra_cycles (uae_u32 cycles_to_add)
 {
 	/* Currently unused in Hatari */
 }
 
-STATIC_INLINE unsigned long int get_cycles (void)
+STATIC_INLINE uae_u32 get_cycles (void)
 {
 	return currcycle;
 }
 
-STATIC_INLINE void set_cycles (unsigned long int x)
+STATIC_INLINE void set_cycles (uae_u32 x)
 {
 	currcycle = x;
 	eventtab[ev_hsync].oldcycles = x;
@@ -123,10 +120,10 @@ STATIC_INLINE int current_hpos_safe (void)
 
 extern int current_hpos(void);
 
-STATIC_INLINE bool cycles_in_range (unsigned long endcycles)
+STATIC_INLINE bool cycles_in_range (uae_u32 endcycles)
 {
-	signed long c = get_cycles ();
-	return (signed long)endcycles - c > 0;
+	uae_u32 c = get_cycles ();
+	return (uae_u32)endcycles - c > 0;
 }
 
 extern void MISC_handler (void);

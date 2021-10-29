@@ -93,7 +93,7 @@ int Dialog_MainDlg(bool *bReset, bool *bLoadedSnapshot)
 
 	do
 	{
-		retbut = SDLGui_DoDialog(maindlg, NULL, false);
+		retbut = SDLGui_DoDialog(maindlg);
 		switch (retbut)
 		{
 		 case MAINDLG_ABOUT:

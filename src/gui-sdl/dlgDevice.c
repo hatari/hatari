@@ -157,7 +157,7 @@ void Dialog_DeviceDlg(void)
 	/* The devices dialog main loop */
 	do
 	{
-		but = SDLGui_DoDialog(devicedlg, NULL, false);
+		but = SDLGui_DoDialog(devicedlg);
 
 		switch(but)
 		{

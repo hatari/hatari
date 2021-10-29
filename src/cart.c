@@ -96,9 +96,10 @@ static void Cart_LoadImage(void)
  */
 bool Cart_UseBuiltinCartridge(void)
 {
+#define NEEDS_CART (TRACE_OS_GEMDOS | TRACE_OS_BASE | TRACE_OS_VDI | TRACE_OS_AES)
 	return (bUseVDIRes || INF_Overriding(AUTOSTART_INTERCEPT) ||
 	        ConfigureParams.HardDisk.bUseHardDiskDirectories ||
-	        LogTraceFlags & (TRACE_OS_GEMDOS | TRACE_OS_BASE | TRACE_OS_VDI | TRACE_OS_AES))
+	        LOG_TRACE_LEVEL(NEEDS_CART))
 	       && (TosVersion >= 0x100 || !bUseTos);
 }
 

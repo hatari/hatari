@@ -13,7 +13,8 @@
 /* DebugUI_ParseCommand() return values */
 enum {
 	DEBUGGER_END,      // Leave debugger
-	DEBUGGER_CMDCONT,  // Command can continue
+	DEBUGGER_ENDCONT,  // Command can be repeated + leaves debugger
+	DEBUGGER_CMDCONT,  // Command can be repeated
 	DEBUGGER_CMDDONE   // Command done
 };
 

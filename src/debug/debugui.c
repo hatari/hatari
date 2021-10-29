@@ -658,10 +658,12 @@ static int DebugUI_ParseCommand(const char *input_orig)
 		retval = debugCommand[i].pFunction(nArgc, psArgs);
 	}
 	/* Save commando string if it can be repeated */
-	if (retval == DEBUGGER_CMDCONT)
+	if (retval == DEBUGGER_CMDCONT || retval == DEBUGGER_ENDCONT)
 	{
 		if (psArgs[0] != sLastCmd)
 			strlcpy(sLastCmd, psArgs[0], sizeof(sLastCmd));
+		if (retval == DEBUGGER_ENDCONT)
+			retval = DEBUGGER_END;
 	}
 	else
 		sLastCmd[0] = '\0';
@@ -989,7 +991,7 @@ static const dbgcommand_t uicommand[] =
 	  false },
 	{ DebugUI_SetLogFile, NULL,
 	  "logfile", "f",
-	  "open or close log file",
+	  "set (memdump/disasm/etc) log file",
 	  "[filename]\n"
 	  "\tOpen log file, no argument closes the log file. Output of\n"
 	  "\tregister & memory dumps and disassembly will be written to it.",
@@ -1006,8 +1008,8 @@ static const dbgcommand_t uicommand[] =
 	{ DebugUI_Rename, NULL,
 	  "rename", "",
 	  "rename given file",
-	  "old new\n"
-	  "\tRenames file with 'old' name to 'new'.",
+	  "<old> <new>\n"
+	  "\tRename file with <old> name to <new>.",
 	  false },
 	{ DebugUI_Reset, DebugUI_MatchReset,
 	  "reset", "",

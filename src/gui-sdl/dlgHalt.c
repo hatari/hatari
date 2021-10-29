@@ -73,7 +73,7 @@ void Dialog_HaltDlg(void)
 	if (SDLGui_SetScreen(sdlscrn))
 		return;
 	SDLGui_CenterDlg(haltdlg);
-	switch (SDLGui_DoDialog(haltdlg, NULL, false)) {
+	switch (SDLGui_DoDialog(haltdlg)) {
 
 	case DLGHALT_WARM:
 		/* Reset to exit 'halt' state (resets CPU and regs.spcflags) */

@@ -146,7 +146,7 @@ void Dialog_SoundDlg(void)
 	/* The sound dialog main loop */
 	do
 	{
-		but = SDLGui_DoDialog(sounddlg, NULL, false);
+		but = SDLGui_DoDialog(sounddlg);
 		switch (but)
 		{
 		 case DLGSOUND_RECBROWSE:                    /* Choose a new record file */

@@ -730,14 +730,13 @@ depth &lt;x&gt; (x = 1, 2 or 4)</p>
 <p class="parameter">--vdi-height
 &lt;h&gt;</p>
 <p class="paramdesc">Use extended VDI resolution with height
-&lt;h&gt; (200 &lt; h &lt;= 1280)</p>
+&lt;h&gt; (160 &lt; h &lt;= 1280)</p>
 <p>
 Because TOS and popular GEM programs have problems with certain screen
 sizes, Hatari enforces restrictions on VDI screen size.  In total VDI
-screen size is limited to 32-300kB, width to multiple of 128/planes,
-and height to multiple of 16 pixels (or 8, depending on system font
-height). That translates to following maximum standard resolutions for
-the VDI mode:
+screen size is limited to 32-300kB, width to multiple of 16/planes,
+and height to multiple of 8 pixels (smaller system font height). That
+translates to following maximum standard resolutions for the VDI mode:
 </p>
 <p class="parameter">monochrome</p>
 <p class="paramdesc">
@@ -1191,8 +1190,8 @@ changes that you have made.
 <p>
  To enter a folder or choose a file, simply click on the entry in the
  main box of the dialog. To navigate in the file list, you can use the
- scrollbar on the right with mouse, or use keyboard up + down arrow,
- page up + down, Home and End keys.
+ scrollbar on the right with mouse, use mousewheel, keyboard up + down
+ arrow (with Alt), or page up + down keys.
 </p>
 <p>
  You can use the three buttons in the upper right corner for additional folder
@@ -1714,8 +1713,8 @@ resolutions:</em></p>
 <ul>
 <li>Only GEM conformant applications work with them, 99% of all games
 and demos don't.</li>
-<li>Several GEM programs accessing screen directly (like NVDI) crash
-with large enough screen sizes.</li>
+<li>GEM programs accessing screen directly (like NVDI) may crash with
+large enough screen sizes.</li>
 <li>Memory reserved for (larger) extended resolutions breaks TOS v3 memory
 detection, so you need to interrupt boot up memory detection.</li>
 <li>TOS v4 isn't compatible with them. In Falcon emulation you need to
@@ -1963,23 +1962,32 @@ these are subset of ones listed e.g. by ALSA
 
 <p>There are multiple ways to interact with the SDL GUI.</p>
 
-<p>TAB and cursor keys change focus between UI elements.  Additionally
-Home key moves focus to first item, End key to last one.  Initially
-focus is on default UI element, but focus changes are remembered
-between dialog invocations. Enter and Space invoke focused item. UI
-elements with underlined characters can be invoked directly with Alt +
-key with that character.  Alt + arrow keys will act on arrow
-buttons.</p>
+<p>
+TAB and cursor keys change the focus between UI elements. Home key
+moves focus to the first dialog item, End key to the last one.
+Initially focus is on the default UI element, but focus changes are
+remembered between dialog invocations.
+</p>
+<p>
+Enter and Space invoke the focused item, ESC key invokes the dialog
+cancel option (if there is one).
+</p>
+<p>
+UI element which name has an underlined character can be invoked
+directly by pressing Alt + key with that character.  Alt + arrow keys
+will act on dialog arrow buttons.
+</p>
 
-<p>Most importantly:</p>
+<p>Main keyboard interactions:</p>
 <ul>
 <li><em>Options GUI main view</em>: Enter accepts configuration, ESC
 cancels it.</li>
-<li><em>Options GUI dialogs</em>: Enter (or End+Enter if focus was moved)
+<li><em>Options GUI dialogs</em>: Enter (or End + Enter if focus was moved)
 returns back to main view.</li>
-<li><em>Fileselector</em>: Page up and down keys scroll the file list.
-Enter on focused file name selects it.  Enter on OK button accepts
-the selected file. ESC cancels the dialog/selection.</li>
+<li><em>Fileselector</em>: Page up and down keys move the file list by
+one page, mouse wheel and Alt + cursor keys scroll it by one item.
+Enter on the focused file name selects it. Enter on the OK button
+accepts the selected file. ESC cancels the dialog/selection.</li>
 <li><em>Alert dialogs</em>: Enter accepts and ESC cancels the dialog.</li>
 </ul>
 
@@ -2138,8 +2146,26 @@ key on the ST. The following keys have special meanings: </p>
       <td><span class="key">Page Down</span></td>
       <td>will emulate the ST's ) in the keypad</td>
     </tr>
+    <tr>
+      <td><span class="key">Num Lock</span></td>
+      <td>Toggle cursor emulation mode in the keypad (see below)</td>
+    </tr>
   </tbody>
 </table>
+
+<p>
+You can use the <span class="key">Num Lock</span> key to toggle between
+normal Atari ST keypad mode and a special cursor key mode. The cursor key
+mode is designed for Atari programs and games that expect the original
+Atari cursor key layout (like the game &quot;Dungeon Master&quot;), i.e.
+where the &quot;Insert&quot; and &quot;Clr-Home&quot; keys are right next
+to the cursor keys. The <span class="key">7</span> on the keypad is then
+mapped to the &quot;Insert&quot; Atari key, and the <span class="key">9</span>
+key on the keypad is mapped to the &quot;Clr-Home&quot; Atari key.
+The keypad numbers <span class="key">8</span>, <span class="key">4</span>,
+<span class="key">5</span> and <span class="key">6</span> are mapped to the
+&uarr;, &larr;, &darr; and &rarr; cursor keys on the Atari side respectively.
+</p>
 
 <p>If joystick emulation via keyboard is enabled, by default cursor keys
 are used for the directions and <span class="key">right CTRL</span> key
@@ -2209,11 +2235,14 @@ a bit tricky for these effects. As a result, some demos using these
 techniques might not be displayed correctly in Hatari, known ones are
 listed in the <span class="file">compatibility.html</span> file.
 </p>
-<p>Beside that you can setup extended VDI modes. These only work with
-GEM-compliant applications and they are equal to fitting a videocard
-into your Mega ST.</p>
-<p>Make sure to disable extended VDI modes for playing games as 99% of
-all ST games will not be able to make use of higher resolutions.</p>
+<p>Beside that you can setup extended VDI mode. It works well only
+with GEM-compliant applications, but allows using larger screen
+resolutions than the standard ST ones. VDI mode is not accelerated, so
+better optimized VDI implementation (e.g. NVDI) is recommended,
+especially for larger screen sizes.
+</p>
+<p>Make sure to disable extended VDI mode for (non-GEM) games as 99%
+of all ST games will not be able to make use of higher resolutions.</p>
 
 <h3 id="Emulated_printer">Emulated printer</h3>
 

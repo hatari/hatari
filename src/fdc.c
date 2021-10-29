@@ -1055,6 +1055,8 @@ void	FDC_DMA_FIFO_Push ( Uint8 Byte )
 	STMemory_SafeCopy ( Address , FDC_DMA.FIFO , FDC_DMA_FIFO_SIZE , "FDC DMA push to fifo" );
 	FDC_WriteDMAAddress ( Address + FDC_DMA_FIFO_SIZE );
 	FDC_DMA.FIFO_Size = 0;						/* FIFO is now empty again */
+	/* When the FIFO transfers data to RAM it takes 4 cycles per word and the CPU is stalled during this time */
+	M68000_WaitState ( 4 * FDC_DMA_FIFO_SIZE / 2 );
 
 	/* Store the last word that was just transferred by the DMA */
 	FDC_DMA.ff8604_recent_val = ( FDC_DMA.FIFO [ FDC_DMA_FIFO_SIZE-2 ] << 8 ) | FDC_DMA.FIFO [ FDC_DMA_FIFO_SIZE-1 ];
@@ -1106,6 +1108,8 @@ Uint8	FDC_DMA_FIFO_Pull ( void )
 		memcpy ( FDC_DMA.FIFO , &STRam[ Address ] , FDC_DMA_FIFO_SIZE );/* TODO : check we read from a valid RAM location ? */
 		FDC_WriteDMAAddress ( Address + FDC_DMA_FIFO_SIZE );
 		FDC_DMA.FIFO_Size = FDC_DMA_FIFO_SIZE - 1;			/* FIFO is now full again (minus the byte we will return below) */
+		/* When the FIFO reads data from RAM it takes 4 cycles per word and the CPU is stalled during this time */
+		M68000_WaitState ( 4 * FDC_DMA_FIFO_SIZE / 2 );
 
 		/* Store the last word that was just transferred by the DMA */
 		FDC_DMA.ff8604_recent_val = ( FDC_DMA.FIFO [ FDC_DMA_FIFO_SIZE-2 ] << 8 ) | FDC_DMA.FIFO [ FDC_DMA_FIFO_SIZE-1 ];

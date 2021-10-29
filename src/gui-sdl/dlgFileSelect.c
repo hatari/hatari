@@ -22,6 +22,7 @@ const char DlgFileSelect_fileid[] = "Hatari dlgFileSelect.c";
 #include "sdlgui.h"
 #include "file.h"
 #include "paths.h"
+#include "str.h"
 #include "zip.h"
 #include "log.h"
 
@@ -374,6 +375,18 @@ static void DlgFileSelect_ManageScrollbar(void)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Return true for handled SDL events, should match what's
+ * handled in DlgFileSelect_HandleSdlEvents()
+ */
+static bool acceptEvents(SDL_EventType evtype)
+{
+	if (evtype == SDL_MOUSEWHEEL || evtype == SDL_KEYDOWN)
+		return true;
+	return false;
+}
+
+/*-----------------------------------------------------------------------*/
+/**
  * Handle SDL events.
  */
 static void DlgFileSelect_HandleSdlEvents(SDL_Event *pEvent)
@@ -532,7 +545,7 @@ static char* zip_get_path(const char *zipdir, const char *zipfilename, int brows
 	if (browsingzip)
 	{
 		char *zippath;
-		zippath = malloc(strlen(zipdir) + strlen(zipfilename) + 1);
+		zippath = Str_Alloc(strlen(zipdir) + strlen(zipfilename));
 		strcpy(zippath, zipdir);
 		strcat(zippath, zipfilename);
 		return zippath;
@@ -574,7 +587,7 @@ static void DlgFileSelect_Convert_ypos_to_scrollbar_Ypos(void)
 static char findNextOrPreviousDrive(char step, char *path)
 {
 	char chDrv;
-	UINT driverType;
+	UINT driveType;
 	char rootPath[3];
 
 	char endDrv = step > 0 ? 'Z' : 'A';
@@ -584,9 +597,9 @@ static char findNextOrPreviousDrive(char step, char *path)
 		/* make root path */
 		sprintf_s(rootPath, 3, "%c:", chDrv);
 
-		/* get driver type */
-		driverType = GetDriveTypeA(rootPath);
-		if ((driverType == DRIVE_NO_ROOT_DIR) || (driverType == DRIVE_UNKNOWN))
+		/* get drive type */
+		driveType = GetDriveTypeA(rootPath);
+		if ((driveType == DRIVE_NO_ROOT_DIR) || (driveType == DRIVE_UNKNOWN))
 			continue;
 
 		sCurrDrive[0] = rootPath[0];
@@ -610,7 +623,7 @@ static void refreshDrive(char driveletter)
 	/* if we don't have root path with letter get it from cwd */
 	if (driveletter == PATHSEP)
 	{
-		char* pTempName = malloc(FILENAME_MAX);
+		char* pTempName = Str_Alloc(FILENAME_MAX);
 		if (!getcwd(pTempName, FILENAME_MAX))
 		{
 			perror("WinInitializeDriveLetter - getcwd");
@@ -658,7 +671,6 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 		char *mtxt;
 		const char *ctxt;
 	} dlgtitle;                         /* A hack to silent recent GCCs warnings */
-	bool KeepCurrentObject;
 
 	dlgtitle.ctxt = title;
 
@@ -732,10 +744,8 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 	refreshDrive(path[0]);
 #endif
 
-	/* The first time we display the dialog, we reset the current position */
-	/* On next calls, current_object's value will be kept to handle scrolling */
-	KeepCurrentObject = false;
-
+	/* current object when entering the dialog */
+	retbut = SDLGUI_NOTFOUND;
 	do
 	{
 		if (reloaddir)
@@ -812,8 +822,7 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 		}
 
 		/* Show dialog: */
-		retbut = SDLGui_DoDialog(fsdlg, &sdlEvent, KeepCurrentObject);
-		KeepCurrentObject = true;				/* Don't reset current_object for next calls */
+		retbut = SDLGui_DoDialogExt(fsdlg, acceptEvents, &sdlEvent, retbut);
 
 		/* Has the user clicked on a file or folder? */
 		if (retbut>=SGFSDLG_ENTRYFIRST && retbut<=SGFSDLG_ENTRYLAST && retbut-SGFSDLG_ENTRYFIRST+ypos<entries)

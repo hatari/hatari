@@ -24,6 +24,7 @@
 #include "newcpu.h"
 #include "cpu_prefetch.h"
 #include "debug.h"
+#include "disasm.h"
 #include "debugmem.h"
 //#include "cia.h"
 //#include "xwin.h"
@@ -72,6 +73,7 @@ int debugger_active;
 static int debug_rewind;
 static int memwatch_triggered;
 static int inside_debugger;
+int debugger_used;
 int memwatch_access_validator;
 int memwatch_enabled;
 int debugging;
@@ -124,11 +126,13 @@ void deactivate_debugger (void)
 
 void activate_debugger (void)
 {
+	disasm_init();
 	if (isfullscreen() > 0)
 		return;
 
 	debugger_load_libraries();
 
+	debugger_used = 1;
 	inside_debugger = 1;
 	debug_pc = 0xffffffff;
 	trace_mode = 0;
@@ -4904,6 +4908,8 @@ static void breakfunc(uae_u32 v)
 {
 	write_log(_T("Cycle breakpoint hit\n"));
 	debugging = 1;
+	debug_vpos = -1;
+	debug_hpos = -1;
 	set_special(SPCFLAG_BRK);
 }
 
@@ -5907,7 +5913,7 @@ static bool debug_line (TCHAR *input)
 				} else {
 					uae_u32 daddr;
 					int count;
-					if (*inptr == 'p') {
+					if (*inptr == 'p' && inptr[1] == 'p' && inptr[2] == 'c') {
 						ppcmode = true;
 						next_char(&inptr);
 					} else if(*inptr == 'o') {

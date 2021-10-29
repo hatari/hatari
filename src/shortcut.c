@@ -448,7 +448,7 @@ bool ShortCut_CheckKeys(int modkey, int symkey, bool press)
 	if (symkey == SDLK_UNKNOWN)
 		return false;
 
-	if (modkey & (KMOD_RALT|KMOD_LMETA|KMOD_RMETA|KMOD_MODE))
+	if (modkey & (KMOD_RALT|KMOD_LGUI|KMOD_RGUI|KMOD_MODE))
 		key = ShortCut_CheckKey(symkey, ConfigureParams.Shortcut.withModifier);
 	else
 		key = ShortCut_CheckKey(symkey, ConfigureParams.Shortcut.withoutModifier);

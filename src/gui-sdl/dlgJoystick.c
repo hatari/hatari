@@ -226,7 +226,7 @@ void Dialog_JoyDlg(void)
 
 	do
 	{
-		but = SDLGui_DoDialog(joydlg, NULL, false);
+		but = SDLGui_DoDialog(joydlg);
 		switch (but)
 		{
 		 case DLGJOY_PREVSDLJOY:        // Select the previous SDL joystick

@@ -125,7 +125,7 @@ static bool DebugDsp_ShowAddressInfo(Uint16 addr, FILE *fp)
 int DebugDsp_DisAsm(int nArgc, char *psArgs[])
 {
 	Uint32 lower, upper;
-	Uint16 dsp_disasm_upper = 0;
+	Uint16 prev_addr, dsp_disasm_upper = 0, pc = DSP_GetPC();
 	int shown, lines = INT_MAX;
 
 	if (!bDspEnabled)
@@ -166,17 +166,28 @@ int DebugDsp_DisAsm(int nArgc, char *psArgs[])
 	{
 		/* continue */
 		if(!dsp_disasm_addr)
-		{
-			dsp_disasm_addr = DSP_GetPC();
-		}
+			dsp_disasm_addr = pc;
 	}
 	if (!dsp_disasm_upper)
 	{
 		lines = DebugUI_GetPageLines(ConfigureParams.Debugger.nDisasmLines, 8);
 		dsp_disasm_upper = 0xFFFF;
 	}
+	prev_addr = dsp_disasm_addr;
 	fprintf(debugOutput, "DSP disasm 0x%hx-0x%hx:\n", dsp_disasm_addr, dsp_disasm_upper);
 	for (shown = 1; shown < lines && dsp_disasm_addr < dsp_disasm_upper; shown++) {
+		if (prev_addr < pc && dsp_disasm_addr > pc)
+		{
+			fputs("ERROR, disassembly misaligned with PC address, correcting\n", debugOutput);
+			dsp_disasm_addr = pc;
+			shown++;
+		}
+		if (dsp_disasm_addr == pc)
+		{
+			fputs("(PC)\n", debugOutput);
+			shown++;
+		}
+		prev_addr = dsp_disasm_addr;
 		if (DebugDsp_ShowAddressInfo(dsp_disasm_addr, debugOutput))
 			shown++;
 		dsp_disasm_addr = DSP_DisasmAddress(debugOutput, dsp_disasm_addr, dsp_disasm_addr);
@@ -309,7 +320,7 @@ static int DebugDsp_Continue(int nArgc, char *psArgv[])
 static int DebugDsp_Step(int nArgc, char *psArgv[])
 {
 	nDspSteps = 1;
-	return DEBUGGER_END;
+	return DEBUGGER_ENDCONT;
 }
 
 
@@ -391,7 +402,7 @@ static int DebugDsp_Next(int nArgc, char *psArgv[])
 		if (optype != CALL_SUBROUTINE && optype != CALL_EXCEPTION)
 		{
 			nDspSteps = 1;
-			return DEBUGGER_END;
+			return DEBUGGER_ENDCONT;
 		}
 
 		nextpc = DSP_GetNextPC(DSP_GetPC());
@@ -400,7 +411,7 @@ static int DebugDsp_Next(int nArgc, char *psArgv[])
 	/* use breakpoint, not steps */
 	if (BreakCond_Command(command, true)) {
 		nDspSteps = 0;
-		return DEBUGGER_END;
+		return DEBUGGER_ENDCONT;
 	}
 	return DEBUGGER_CMDDONE;
 }
@@ -584,14 +595,14 @@ static const dbgcommand_t dspcommands[] =
 	  "dspdisasm", "dd",
 	  "disassemble DSP code",
 	  "[<start address>[-<end address>]]\n"
-	  "\tDisassemble from DSP-PC, otherwise at given address.",
+	  "\tDisassemble from DSP PC address, otherwise from given address.",
 	  false },
 	{ DebugDsp_MemDump, Symbols_MatchDspDataAddress,
 	  "dspmemdump", "dm",
 	  "dump DSP memory",
 	  "[<x|y|p> <start address>[-<end address>]]\n"
 	  "\tdump DSP memory from given memory space and address, or\n"
-	  "\tcontinue from previous address if not specified.",
+	  "\tcontinue from previous address if none specified.",
 	  false },
 	{ Symbols_Command, NULL,
 	  "dspsymbols", "",
@@ -606,14 +617,15 @@ static const dbgcommand_t dspcommands[] =
 	{ DebugDsp_Register, DebugDsp_MatchRegister,
 	  "dspreg", "dr",
 	  "read/write DSP registers",
-	  "[REG=value]"
-	  "\tSet or dump contents of DSP registers.",
+	  "[REG=value]\n"
+	  "\tSet DSP register to given value, or dump all registers\n"
+	  "\twhen no parameter is given.",
 	  true },
 	{ DebugDsp_Step, NULL,
 	  "dspstep", "ds",
 	  "single-step DSP",
 	  "\n"
-	  "\tExecute next DSP instruction (equals 'dc 1')",
+	  "\tExecute next DSP instruction (like 'dc 1', but repeats on Enter).",
 	  false },
 	{ DebugDsp_Next, DebugDsp_MatchNext,
 	  "dspnext", "dn",
@@ -622,7 +634,7 @@ static const dbgcommand_t dspcommands[] =
 	  "\tSame as 'dspstep' command if there are no subroutine calls.\n"
           "\tWhen there are, those calls are treated as one instruction.\n"
 	  "\tIf argument is given, continues until instruction of given\n"
-	  "\ttype is encountered.",
+	  "\ttype is encountered.  Repeats on Enter.",
 	  false },
 	{ DebugDsp_Continue, NULL,
 	  "dspcont", "dc",

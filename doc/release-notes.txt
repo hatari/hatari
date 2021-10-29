@@ -41,9 +41,19 @@ Emulator:
   - Add VME/SCU registers "--vme <none|dummy>" access option
     (needed to support both Linux and TOS v2 & v3 until Hatari
     implements real VME/SCU register emulation)
+- VDI mode:
+  - Relax VDI mode width alignment from 128/planes to
+    16/planes, and height from 16 to 8 pixels
+- SDL GUI:
+  - Fix: ignore unrecognized events in file selector
+    (buttons could be incorrectly shown as selected)
+  - Do VDI mode size changes in (faster) 16 pix increments,
+    and prevent user seeing invalid VDI mode sizes
 - GEMDOS HD:
   - Fix: clear GEMDOS Fread / Fwrite errors
 - Debugger:
+  - Repeat CPU & DSP "step" and "next" commands on Enter
+  - Output PC location in CPU & DSP disassembly
   - More readable "variables" command output
   - Add "info vme" command
   - Add "scc" and "vme" (VME/SCU reg access) tracing support

@@ -955,15 +955,23 @@ void File_MakeValidPathName(char *pPathName)
  */
 void File_PathShorten(char *path, int dirs)
 {
-	int i, n = 0;
+	int n = 0;
 	/* ignore last char, it may or may not be '/' */
-	i = strlen(path)-1;
+	int i = strlen(path) - 1;
+#ifdef WIN32
+	int len = i;
+#endif
 	assert(i >= 0);
 	while(i > 0 && n < dirs)
 	{
 		if (path[--i] == PATHSEP)
 			n++;
 	}
+#ifdef WIN32
+	/* if we have only drive with root, don't shorten it more*/
+	if (len == 2 && n == 0 && path[1] == ':' && path[2] == PATHSEP)
+		return;
+#endif
 	if (path[i] == PATHSEP)
 	{
 		path[i+1] = '\0';

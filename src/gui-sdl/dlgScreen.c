@@ -8,6 +8,7 @@
 */
 const char DlgScreen_fileid[] = "Hatari dlgScreen.c";
 
+#include <assert.h>
 #include "main.h"
 #include "configuration.h"
 #include "dialog.h"
@@ -22,6 +23,10 @@ const char DlgScreen_fileid[] = "Hatari dlgScreen.c";
 #include "statusbar.h"
 #include "clocks_timings.h"
 
+/* how many pixels to increment VDI mode
+ * width/height on each click
+ */
+#define VDI_SIZE_INC	     16
 
 /* The Monitor dialog: */
 #define DLGSCRN_MONO         3
@@ -164,38 +169,24 @@ static SGOBJ windowdlg[] =
 
 
 /* ---------------------------------------------------------------- */
-
-static int nVdiStepX, nVdiStepY;   /* VDI resolution changing steps */
-
 /**
- * Set width and height stepping for VDI resolution changing.
- * Depending on the color depth we can only change the VDI resolution
- * in certain steps:
- * - The screen width must be dividable by 16 bytes (i.e. 128 pixels in
- *   monochrome, 32 pixels in 16 color mode), or the text mode scrolling
- *   function of TOS will fail.
- * - The screen height must be a multiple of the character cell height
- *   (i.e. 16 pixels in monochrome, 8 pixels in color mode).
+ * To be called when changing VDI mode bit-depth.
+ * Sets width & height stepping for VDI resolution changing,
+ * and returns number of planes. See vdi.[ch] for details.
  */
-static void DlgMonitor_SetVdiStepping(void)
+static int DlgMonitor_SetVdiStepping(int *stepx, int *stepy)
 {
+	int planes;
 	if (monitordlg[DLGSCRN_BPP1].state & SG_SELECTED)
-	{
-		nVdiStepX = 128;
-		nVdiStepY = 16;
-	}
+		planes = 1;
 	else if (monitordlg[DLGSCRN_BPP2].state & SG_SELECTED)
-	{
-		nVdiStepX = 64;
-		nVdiStepY = 8;
-	}
+		planes = 2;
 	else
-	{
-		nVdiStepX = 32;
-		nVdiStepY = 8;
-	}
+		planes = 4;
+	*stepy = VDI_ALIGN_HEIGHT;
+	*stepx = VDI_ALIGN_WIDTH(planes);
+	return planes;
 }
-
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -203,7 +194,7 @@ static void DlgMonitor_SetVdiStepping(void)
  */
 void Dialog_MonitorDlg(void)
 {
-	int but, vdiw, vdih;
+	int but, vdiw, vdih, stepx, stepy, planes;
 	unsigned int i;
 	MONITORTYPE	mti;
 
@@ -232,44 +223,49 @@ void Dialog_MonitorDlg(void)
 
 	vdiw = ConfigureParams.Screen.nVdiWidth;
 	vdih = ConfigureParams.Screen.nVdiHeight;
+	planes = DlgMonitor_SetVdiStepping(&stepx, &stepy);
+	assert(VDI_SIZE_INC >= stepx && VDI_SIZE_INC >= stepy);
 	sprintf(sVdiWidth, "%4i", vdiw);
 	sprintf(sVdiHeight, "%4i", vdih);
-	DlgMonitor_SetVdiStepping();
 
 	/* The monitor dialog main loop */
 	do
 	{
-		but = SDLGui_DoDialog(monitordlg, NULL, false);
+		bool update = true;
+		but = SDLGui_DoDialog(monitordlg);
 		switch (but)
 		{
 		 case DLGSCRN_VDI_WLESS:
-			vdiw = Opt_ValueAlignMinMax(vdiw - nVdiStepX, nVdiStepX, MIN_VDI_WIDTH, MAX_VDI_WIDTH);
-			sprintf(sVdiWidth, "%4i", vdiw);
+			vdiw -= VDI_SIZE_INC;
 			break;
 		 case DLGSCRN_VDI_WMORE:
-			vdiw = Opt_ValueAlignMinMax(vdiw + nVdiStepX, nVdiStepX, MIN_VDI_WIDTH, MAX_VDI_WIDTH);
-			sprintf(sVdiWidth, "%4i", vdiw);
+			vdiw += VDI_SIZE_INC;
 			break;
 
 		 case DLGSCRN_VDI_HLESS:
-			vdih = Opt_ValueAlignMinMax(vdih - nVdiStepY, nVdiStepY, MIN_VDI_HEIGHT, MAX_VDI_HEIGHT);
-			sprintf(sVdiHeight, "%4i", vdih);
+			vdih -= VDI_SIZE_INC;
 			break;
 		 case DLGSCRN_VDI_HMORE:
-			vdih = Opt_ValueAlignMinMax(vdih + nVdiStepY, nVdiStepY, MIN_VDI_HEIGHT, MAX_VDI_HEIGHT);
-			sprintf(sVdiHeight, "%4i", vdih);
+			vdih += VDI_SIZE_INC;
 			break;
 
 		 case DLGSCRN_BPP1:
 		 case DLGSCRN_BPP2:
 		 case DLGSCRN_BPP4:
-			DlgMonitor_SetVdiStepping();
-			/* Align resolution to actual conditions: */
-			vdiw = Opt_ValueAlignMinMax(vdiw, nVdiStepX, MIN_VDI_WIDTH, MAX_VDI_WIDTH);
-			vdih = Opt_ValueAlignMinMax(vdih, nVdiStepY, MIN_VDI_HEIGHT, MAX_VDI_HEIGHT);
+			planes = DlgMonitor_SetVdiStepping(&stepx, &stepy);
+			break;
+
+		default:
+			update = false;
+		}
+		if (update)
+		{
+			/* clamp & align */
+			VDI_ByteLimit(&vdiw, &vdih, planes);
+			vdiw = Opt_ValueAlignMinMax(vdiw, stepx, MIN_VDI_WIDTH, MAX_VDI_WIDTH);
+			vdih = Opt_ValueAlignMinMax(vdih, stepy, MIN_VDI_HEIGHT, MAX_VDI_HEIGHT);
 			sprintf(sVdiWidth, "%4i", vdiw);
 			sprintf(sVdiHeight, "%4i", vdih);
-			break;
 		}
 	}
 	while (but != DLGSCRN_EXIT_MONITOR && but != SDLGUI_QUIT
@@ -376,7 +372,7 @@ void Dialog_WindowDlg(void)
 	/* The window dialog main loop */
 	do
 	{
-		but = SDLGui_DoDialog(windowdlg, NULL, false);
+		but = SDLGui_DoDialog(windowdlg);
 		switch (but)
 		{
 		 case DLGSCRN_MAX_WLESS:
