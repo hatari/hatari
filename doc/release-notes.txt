@@ -71,6 +71,7 @@ Emulator:
   - Next/prev drive change buttons added to SDL GUI file select dialog
 
 Tools:
+- Add (SDL2 specific) "listkeys" key mapping helper back
 - TOS boot tester: support 1024k EmuTOS images, misc fixes
 
 Documentation:
