@@ -564,6 +564,7 @@ static void	IKBD_Boot_ROM ( bool ClearAllRAM )
 	KeyboardProcessor.Mouse.DeltaX = KeyboardProcessor.Mouse.DeltaY = 0;
 	KeyboardProcessor.Mouse.XScale = KeyboardProcessor.Mouse.YScale = 0;
 	KeyboardProcessor.Mouse.XThreshold = KeyboardProcessor.Mouse.YThreshold = 1;
+	KeyboardProcessor.Mouse.KeyCodeDeltaX = KeyboardProcessor.Mouse.KeyCodeDeltaY = 1;
 	KeyboardProcessor.Mouse.YAxis = 1;          /* Y origin at top */
 	KeyboardProcessor.Mouse.Action = 0;
 
@@ -1587,45 +1588,52 @@ static void IKBD_SendCursorMousePacket(void)
 	while ( (i<10) && ((KeyboardProcessor.Mouse.DeltaX!=0) || (KeyboardProcessor.Mouse.DeltaY!=0)
 	                   || (!IKBD_ButtonsEqual(Keyboard.bOldLButtonDown,Keyboard.bLButtonDown)) || (!IKBD_ButtonsEqual(Keyboard.bOldRButtonDown,Keyboard.bRButtonDown))) )
 	{
-		/* Left? */
-		if (KeyboardProcessor.Mouse.DeltaX<0)
+		if ( KeyboardProcessor.Mouse.DeltaX != 0 )
 		{
-			if ( IKBD_OutputBuffer_CheckFreeCount ( 2 ) )
+			/* Left? */
+			if (KeyboardProcessor.Mouse.DeltaX <= -KeyboardProcessor.Mouse.KeyCodeDeltaX)
 			{
-				IKBD_Cmd_Return_Byte (75);		/* Left cursor */
-				IKBD_Cmd_Return_Byte (75|0x80);
+				if ( IKBD_OutputBuffer_CheckFreeCount ( 2 ) )
+				{
+					IKBD_Cmd_Return_Byte (75);		/* Left cursor */
+					IKBD_Cmd_Return_Byte (75|0x80);
+				}
+				KeyboardProcessor.Mouse.DeltaX += KeyboardProcessor.Mouse.KeyCodeDeltaX;
 			}
-			KeyboardProcessor.Mouse.DeltaX++;
+			/* Right? */
+			if (KeyboardProcessor.Mouse.DeltaX >= KeyboardProcessor.Mouse.KeyCodeDeltaX)
+			{
+				if ( IKBD_OutputBuffer_CheckFreeCount ( 2 ) )
+				{
+					IKBD_Cmd_Return_Byte (77);		/* Right cursor */
+					IKBD_Cmd_Return_Byte (77|0x80);
+				}
+				KeyboardProcessor.Mouse.DeltaX -= KeyboardProcessor.Mouse.KeyCodeDeltaX;
+			}
 		}
-		/* Right? */
-		if (KeyboardProcessor.Mouse.DeltaX>0)
+
+		if ( KeyboardProcessor.Mouse.DeltaY != 0 )
 		{
-			if ( IKBD_OutputBuffer_CheckFreeCount ( 2 ) )
+			/* Up? */
+			if (KeyboardProcessor.Mouse.DeltaY <= -KeyboardProcessor.Mouse.KeyCodeDeltaY)
 			{
-				IKBD_Cmd_Return_Byte (77);		/* Right cursor */
-				IKBD_Cmd_Return_Byte (77|0x80);
+				if ( IKBD_OutputBuffer_CheckFreeCount ( 2 ) )
+				{
+					IKBD_Cmd_Return_Byte (72);		/* Up cursor */
+					IKBD_Cmd_Return_Byte (72|0x80);
+				}
+				KeyboardProcessor.Mouse.DeltaY += KeyboardProcessor.Mouse.KeyCodeDeltaY;
 			}
-			KeyboardProcessor.Mouse.DeltaX--;
-		}
-		/* Up? */
-		if (KeyboardProcessor.Mouse.DeltaY<0)
-		{
-			if ( IKBD_OutputBuffer_CheckFreeCount ( 2 ) )
+			/* Down? */
+			if (KeyboardProcessor.Mouse.DeltaY >= KeyboardProcessor.Mouse.KeyCodeDeltaY)
 			{
-				IKBD_Cmd_Return_Byte (72);		/* Up cursor */
-				IKBD_Cmd_Return_Byte (72|0x80);
+				if ( IKBD_OutputBuffer_CheckFreeCount ( 2 ) )
+				{
+					IKBD_Cmd_Return_Byte (80);		/* Down cursor */
+					IKBD_Cmd_Return_Byte (80|0x80);
+				}
+				KeyboardProcessor.Mouse.DeltaY -= KeyboardProcessor.Mouse.KeyCodeDeltaY;
 			}
-			KeyboardProcessor.Mouse.DeltaY++;
-		}
-		/* Down? */
-		if (KeyboardProcessor.Mouse.DeltaY>0)
-		{
-			if ( IKBD_OutputBuffer_CheckFreeCount ( 2 ) )
-			{
-				IKBD_Cmd_Return_Byte (80);		/* Down cursor */
-				IKBD_Cmd_Return_Byte (80|0x80);
-			}
-			KeyboardProcessor.Mouse.DeltaY--;
 		}
 
 		if ( IKBD_OutputBuffer_CheckFreeCount ( 2 ) )
