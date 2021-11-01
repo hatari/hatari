@@ -1347,18 +1347,18 @@ static void IKBD_DuplicateMouseFireButtons(void)
 	{
 		/* If pressed right mouse button, should go to joystick 1 */
 		if (Keyboard.bRButtonDown&BUTTON_MOUSE)
-			KeyboardProcessor.Joy.JoyData[1] |= 0x80;
+			KeyboardProcessor.Joy.JoyData[JOYID_JOYSTICK1] |= ATARIJOY_BITMASK_FIRE;
 		/* And left mouse button, should go to joystick 0 */
 		if (Keyboard.bLButtonDown&BUTTON_MOUSE)
-			KeyboardProcessor.Joy.JoyData[0] |= 0x80;
+			KeyboardProcessor.Joy.JoyData[JOYID_JOYSTICK0] |= ATARIJOY_BITMASK_FIRE;
 	}
 	/* If mouse is on, joystick 1 fire button goes to the mouse instead */
 	else
 	{
 		/* Is fire button pressed? */
-		if (KeyboardProcessor.Joy.JoyData[1]&0x80)
+		if (KeyboardProcessor.Joy.JoyData[JOYID_JOYSTICK1]&ATARIJOY_BITMASK_FIRE)
 		{
-			KeyboardProcessor.Joy.JoyData[1] &= 0x7f;  /* Clear fire button bit */
+			KeyboardProcessor.Joy.JoyData[JOYID_JOYSTICK1] &= ~ATARIJOY_BITMASK_FIRE;  /* Clear fire button bit */
 			Keyboard.bRButtonDown |= BUTTON_JOYSTICK;  /* Mimic right mouse button */
 		}
 		else
@@ -1422,14 +1422,14 @@ static void IKBD_SendRelMousePacket(void)
 static void IKBD_GetJoystickData(void)
 {
 	/* Joystick 1 */
-	KeyboardProcessor.Joy.JoyData[1] = Joy_GetStickData(1);
+	KeyboardProcessor.Joy.JoyData[JOYID_JOYSTICK1] = Joy_GetStickData(JOYID_JOYSTICK1);
 
 	/* If mouse is on, joystick 0 is not connected */
 	if (KeyboardProcessor.MouseMode==AUTOMODE_OFF
 	        || (bBothMouseAndJoy && KeyboardProcessor.MouseMode==AUTOMODE_MOUSEREL))
-		KeyboardProcessor.Joy.JoyData[0] = Joy_GetStickData(0);
+		KeyboardProcessor.Joy.JoyData[JOYID_JOYSTICK0] = Joy_GetStickData(JOYID_JOYSTICK0);
 	else
-		KeyboardProcessor.Joy.JoyData[0] = 0x00;
+		KeyboardProcessor.Joy.JoyData[JOYID_JOYSTICK0] = 0x00;
 }
 
 
@@ -1442,27 +1442,27 @@ static void IKBD_SendAutoJoysticks(void)
 	Uint8 JoyData;
 
 	/* Did joystick 0/mouse change? */
-	JoyData = KeyboardProcessor.Joy.JoyData[0];
-	if (JoyData!=KeyboardProcessor.Joy.PrevJoyData[0])
+	JoyData = KeyboardProcessor.Joy.JoyData[JOYID_JOYSTICK0];
+	if (JoyData!=KeyboardProcessor.Joy.PrevJoyData[JOYID_JOYSTICK0])
 	{
 		if ( IKBD_OutputBuffer_CheckFreeCount ( 2 ) )
 		{
 			IKBD_Cmd_Return_Byte (0xFE);			/* Joystick 0 / Mouse */
 			IKBD_Cmd_Return_Byte (JoyData);
 		}
-		KeyboardProcessor.Joy.PrevJoyData[0] = JoyData;
+		KeyboardProcessor.Joy.PrevJoyData[JOYID_JOYSTICK0] = JoyData;
 	}
 
 	/* Did joystick 1(default) change? */
-	JoyData = KeyboardProcessor.Joy.JoyData[1];
-	if (JoyData!=KeyboardProcessor.Joy.PrevJoyData[1])
+	JoyData = KeyboardProcessor.Joy.JoyData[JOYID_JOYSTICK1];
+	if (JoyData!=KeyboardProcessor.Joy.PrevJoyData[JOYID_JOYSTICK1])
 	{
 		if ( IKBD_OutputBuffer_CheckFreeCount ( 2 ) )
 		{
 			IKBD_Cmd_Return_Byte (0xFF);			/* Joystick 1 */
 			IKBD_Cmd_Return_Byte (JoyData);
 		}
-		KeyboardProcessor.Joy.PrevJoyData[1] = JoyData;
+		KeyboardProcessor.Joy.PrevJoyData[JOYID_JOYSTICK1] = JoyData;
 	}
 }
 
@@ -1479,11 +1479,11 @@ static void IKBD_SendAutoJoysticksMonitoring(void)
 	Uint8 Byte1;
 	Uint8 Byte2;
 
-	Byte1 = ( ( KeyboardProcessor.Joy.JoyData[0] & 0x80 ) >> 6 )
-		| ( ( KeyboardProcessor.Joy.JoyData[1] & 0x80 ) >> 7 );
+	Byte1 = ( ( KeyboardProcessor.Joy.JoyData[JOYID_JOYSTICK0] & ATARIJOY_BITMASK_FIRE ) >> 6 )
+		| ( ( KeyboardProcessor.Joy.JoyData[JOYID_JOYSTICK1] & ATARIJOY_BITMASK_FIRE ) >> 7 );
 
-	Byte2 = ( ( KeyboardProcessor.Joy.JoyData[0] & 0x0f ) << 4 )
-		| ( KeyboardProcessor.Joy.JoyData[1] & 0x0f );
+	Byte2 = ( ( KeyboardProcessor.Joy.JoyData[JOYID_JOYSTICK0] & 0x0f ) << 4 )
+		| ( KeyboardProcessor.Joy.JoyData[JOYID_JOYSTICK1] & 0x0f );
 
 	IKBD_Cmd_Return_Byte (Byte1);
 	IKBD_Cmd_Return_Byte (Byte2);
@@ -2231,7 +2231,7 @@ static void IKBD_Cmd_ReturnJoystickAuto(void)
 	}
 
 	/* This command resets the internally previously stored joystick states */
-	KeyboardProcessor.Joy.PrevJoyData[0] = KeyboardProcessor.Joy.PrevJoyData[1] = 0;
+	KeyboardProcessor.Joy.PrevJoyData[JOYID_JOYSTICK0] = KeyboardProcessor.Joy.PrevJoyData[JOYID_JOYSTICK1] = 0;
 
 	/* This is a hack for the STE Utopos (=> v1.50) and Falcon Double Bubble
 	 * 2000 games. They expect the joystick data to be sent within a certain
@@ -2269,8 +2269,8 @@ static void IKBD_Cmd_ReturnJoystick(void)
 	if ( IKBD_OutputBuffer_CheckFreeCount ( 3 ) )
 	{
 		IKBD_Cmd_Return_Byte_Delay ( 0xFD , IKBD_Delay_Random ( 7500 , 10000 ) );
-		IKBD_Cmd_Return_Byte (Joy_GetStickData(0));
-		IKBD_Cmd_Return_Byte (Joy_GetStickData(1));
+		IKBD_Cmd_Return_Byte (Joy_GetStickData(JOYID_JOYSTICK0));
+		IKBD_Cmd_Return_Byte (Joy_GetStickData(JOYID_JOYSTICK1));
 	}
 }
 
@@ -2999,7 +2999,7 @@ static void IKBD_CustomCodeHandler_Transbeauce2Menu_Read ( void )
 	if ( ScanCodeState[ 0x39 ] )	res |= 0x80;		/* space */
 
 	/* joystick emulation (bit mapping is same as cursor above, with bit 7 = fire button */
-	res |= ( Joy_GetStickData(1) & 0x8f ) ;			/* keep bits 0-3 and 7 */
+	res |= ( Joy_GetStickData(JOYID_JOYSTICK1) & 0x8f ) ;			/* keep bits 0-3 and 7 */
 
 	IKBD_Send_Byte_Delay ( res , 0 );
 }
