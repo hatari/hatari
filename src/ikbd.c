@@ -1370,25 +1370,31 @@ static void IKBD_DuplicateMouseFireButtons(void)
 /*-----------------------------------------------------------------------*/
 /**
  * Send 'relative' mouse position
+ * In case DeltaX or DeltaY are more than 127 units, we send the position
+ * using several packets (with a while loop)
  */
 static void IKBD_SendRelMousePacket(void)
 {
 	int ByteRelX,ByteRelY;
 	Uint8 Header;
 
-	if ( (KeyboardProcessor.Mouse.DeltaX!=0) || (KeyboardProcessor.Mouse.DeltaY!=0)
-	        || (!IKBD_ButtonsEqual(Keyboard.bOldLButtonDown,Keyboard.bLButtonDown)) || (!IKBD_ButtonsEqual(Keyboard.bOldRButtonDown,Keyboard.bRButtonDown)) )
+	while ( true )
 	{
-		/* Send packet to keyboard process */
-		while (true)
-		{
-			ByteRelX = KeyboardProcessor.Mouse.DeltaX;
-			if (ByteRelX>127)  ByteRelX = 127;
-			if (ByteRelX<-128)  ByteRelX = -128;
-			ByteRelY = KeyboardProcessor.Mouse.DeltaY;
-			if (ByteRelY>127)  ByteRelY = 127;
-			if (ByteRelY<-128)  ByteRelY = -128;
+		ByteRelX = KeyboardProcessor.Mouse.DeltaX;
+		if ( ByteRelX > 127 )		ByteRelX = 127;
+		if ( ByteRelX < -128 )		ByteRelX = -128;
 
+		ByteRelY = KeyboardProcessor.Mouse.DeltaY;
+		if ( ByteRelY > 127 )		ByteRelY = 127;
+		if ( ByteRelY < -128 )		ByteRelY = -128;
+
+		if ( ( ( ByteRelX < 0 ) && ( ByteRelX <= -KeyboardProcessor.Mouse.XThreshold ) )
+		  || ( ( ByteRelX > 0 ) && ( ByteRelX >= KeyboardProcessor.Mouse.XThreshold ) )
+		  || ( ( ByteRelY < 0 ) && ( ByteRelY <= -KeyboardProcessor.Mouse.YThreshold ) )
+		  || ( ( ByteRelY > 0 ) && ( ByteRelY >= KeyboardProcessor.Mouse.YThreshold ) )
+		  || ( !IKBD_ButtonsEqual(Keyboard.bOldLButtonDown,Keyboard.bLButtonDown ) )
+		  || ( !IKBD_ButtonsEqual(Keyboard.bOldRButtonDown,Keyboard.bRButtonDown ) ) )
+		{
 			Header = 0xf8;
 			if (Keyboard.bLButtonDown)
 				Header |= 0x02;
@@ -1405,13 +1411,13 @@ static void IKBD_SendRelMousePacket(void)
 			KeyboardProcessor.Mouse.DeltaX -= ByteRelX;
 			KeyboardProcessor.Mouse.DeltaY -= ByteRelY;
 
-			if ( (KeyboardProcessor.Mouse.DeltaX==0) && (KeyboardProcessor.Mouse.DeltaY==0) )
-				break;
-
 			/* Store buttons for next time around */
 			Keyboard.bOldLButtonDown = Keyboard.bLButtonDown;
 			Keyboard.bOldRButtonDown = Keyboard.bRButtonDown;
 		}
+
+		else
+			break;					/* exit the while loop */
 	}
 }
 
