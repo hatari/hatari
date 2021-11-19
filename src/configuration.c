@@ -37,6 +37,7 @@ const char Configuration_fileid[] = "Hatari configuration.c";
 #include "joy.h"
 #include "falcon/crossbar.h"
 #include "stMemory.h"
+#include "tos.h"
 
 
 CNF_PARAMS ConfigureParams;                 /* List of configuration for the emulator */
@@ -196,6 +197,8 @@ static const struct Config_Tag configs_Keyboard[] =
 {
 	{ "bDisableKeyRepeat", Bool_Tag, &ConfigureParams.Keyboard.bDisableKeyRepeat },
 	{ "nKeymapType", Int_Tag, &ConfigureParams.Keyboard.nKeymapType },
+	{ "nKbdLayout", Int_Tag, &ConfigureParams.Keyboard.nKbdLayout },
+	{ "nLanguage", Int_Tag, &ConfigureParams.Keyboard.nLanguage },
 	{ "szMappingFileName", String_Tag, ConfigureParams.Keyboard.szMappingFileName },
 	{ NULL , Error_Tag, NULL }
 };
@@ -623,6 +626,8 @@ void Configuration_SetDefault(void)
 	/* Set defaults for Keyboard */
 	ConfigureParams.Keyboard.bDisableKeyRepeat = false;
 	ConfigureParams.Keyboard.nKeymapType = KEYMAP_SYMBOLIC;
+	ConfigureParams.Keyboard.nKbdLayout = TOS_LANG_UNKNOWN;
+	ConfigureParams.Keyboard.nLanguage = TOS_LANG_UNKNOWN;
 	strcpy(ConfigureParams.Keyboard.szMappingFileName, "");
   
 	/* Set defaults for Shortcuts */

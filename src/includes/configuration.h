@@ -102,6 +102,8 @@ typedef struct
 {
   bool bDisableKeyRepeat;
   KEYMAPTYPE nKeymapType;
+  int nKbdLayout;
+  int nLanguage;
   char szMappingFileName[FILENAME_MAX];
 } CNF_KEYBOARD;
 
