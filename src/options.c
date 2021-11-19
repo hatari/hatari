@@ -65,6 +65,8 @@ enum {
 	OPT_CONFIRMQUIT,
 	OPT_CONFIGFILE,
 	OPT_KEYMAPFILE,
+	OPT_KBD_LAYOUT,
+	OPT_LANGUAGE,
 	OPT_FASTFORWARD,
 	OPT_AUTOSTART,
 
@@ -226,6 +228,10 @@ static const opt_t HatariOptions[] = {
 	  "<file>", "Read (additional) configuration values from <file>" },
 	{ OPT_KEYMAPFILE, "-k", "--keymap",
 	  "<file>", "Read (additional) keyboard mappings from <file>" },
+	{ OPT_KBD_LAYOUT, NULL, "--layout",
+	  "<x>", "Set (TT/Falcon) NVRAM keyboard layout value" },
+	{ OPT_LANGUAGE, NULL, "--language",
+	  "<x>", "Set (TT/Falcon) NVRAM language value" },
 	{ OPT_FASTFORWARD, NULL, "--fast-forward",
 	  "<bool>", "Help skipping stuff on fast machine" },
 	{ OPT_AUTOSTART, NULL, "--auto",
@@ -2010,6 +2016,22 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 		case OPT_MICROPHONE:
 			ok = Opt_Bool(argv[++i], OPT_MICROPHONE, &ConfigureParams.Sound.bEnableMicrophone);
+			break;
+
+		case OPT_LANGUAGE:
+			val = TOS_ParseCountryCode(argv[++i], "language");
+			if (val != TOS_LANG_UNKNOWN)
+				ConfigureParams.Keyboard.nLanguage = val;
+			else
+				ok = false;
+			break;
+
+		case OPT_KBD_LAYOUT:
+			val = TOS_ParseCountryCode(argv[++i], "keyboard layout");
+			if (val != TOS_LANG_UNKNOWN)
+				ConfigureParams.Keyboard.nKbdLayout = val;
+			else
+				ok = false;
 			break;
 
 		case OPT_KEYMAPFILE:
