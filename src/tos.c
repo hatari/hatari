@@ -1271,3 +1271,16 @@ int TOS_ParseCountryCode(const char *code, const char *info)
 	}
 	return TOS_LANG_UNKNOWN;
 }
+
+/**
+ * TOS_LanguageName: return name for given country code
+ */
+const char *TOS_LanguageName(int code)
+{
+	for (int i = 0; i < ARRAY_SIZE(countries); i++) {
+		if (code == countries[i].value) {
+			return countries[i].name;
+		}
+	}
+	return "Unknown";
+}

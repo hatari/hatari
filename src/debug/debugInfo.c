@@ -301,10 +301,6 @@ static void DebugInfo_PrintOSHeader(FILE *fp, Uint32 sysbase)
 	Uint32 gemblock, basepage;
 	Uint16 osversion, datespec, osconf, langbits;
 	const char *lang;
-	static const char langs[][3] = {
-		"us", "de", "fr", "uk", "es", "it", "se", "ch" /* fr */, "ch" /* de */,
-		"tr", "fi", "no", "dk", "sa", "nl", "cs", "hu"
-	};
 
 	/* first more technical info */
 
@@ -352,14 +348,9 @@ static void DebugInfo_PrintOSHeader(FILE *fp, Uint32 sysbase)
 
 	osconf = STMemory_ReadWord(sysbase+0x1C);
 	langbits = osconf >> 1;
-	if (langbits == 127) {
-		lang = "all";
-	} else if (langbits < ARRAY_SIZE(langs)) {
-		lang = langs[langbits];
-	} else {
-		lang = "unknown";
-	}
-	fprintf(fp, "OS config    : %s, %s (0x%x)\n", lang, osconf&1 ? "PAL":"NTSC", osconf);
+	lang = TOS_LanguageName(langbits);
+	fprintf(fp, "OS config    : %s (0x%x), %s (%d)\n",
+		osconf&1 ? "PAL":"NTSC", osconf, lang, langbits);
 	fprintf(fp, "Phystop      : %d KB\n", (STMemory_ReadLong(OS_PHYSTOP) + 511) / 1024);
 }
 

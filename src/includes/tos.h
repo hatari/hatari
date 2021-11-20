@@ -52,5 +52,6 @@ extern int TOS_InitImage(void);
 extern void TOS_SetTestPrgName(const char *testprg);
 
 extern int TOS_ParseCountryCode(const char *code, const char *info);
+extern const char *TOS_LanguageName(int code);
 
 #endif
