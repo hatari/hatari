@@ -31,6 +31,7 @@ const char Configuration_fileid[] = "Hatari configuration.c";
 #include "avi_record.h"
 #include "clocks_timings.h"
 #include "68kDisass.h"
+#include "disasm.h"
 #include "fdc.h"
 #include "dsp.h"
 #include "joy.h"
@@ -534,6 +535,8 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Debugger.bSymbolsAutoLoad = true;
 	ConfigureParams.Debugger.bMatchAllSymbols = false;
 	ConfigureParams.Debugger.nDisasmOptions = Disasm_GetOptions();
+	if ( ConfigureParams.Debugger.bDisasmUAE )
+		disasm_init();
 
 	/* Set defaults for floppy disk images */
 	ConfigureParams.DiskImage.bAutoInsertDiskB = true;
