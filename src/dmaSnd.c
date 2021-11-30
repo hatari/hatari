@@ -305,6 +305,18 @@ static void DmaSnd_Update_XSINT_Line ( Uint8 Bit )
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Return the value of the XSINT line
+ *  0=dma sound is idle
+ *  1=dma sound is playing
+ */
+Uint8	DmaSnd_Get_XSINT_Line ( void )
+{
+	return dma.XSINT_Signal;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * This function is called on every HBL to ensure the DMA Audio's FIFO
  * is kept full.
  * In Hatari, the FIFO is handled like a ring buffer (to avoid memcopying bytes

@@ -1117,6 +1117,20 @@ const char	*Video_GetTimings_Name ( void )
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Return the value of the MONO output signal depending on the monitor :
+ *	1=monochrome monitor	0=color monitor
+ */
+Uint8	Video_Get_MONO_Line ( void )
+{
+	if ( bUseHighRes )
+		return 1;
+	else
+		return 0;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Convert the elapsed number of cycles since the start of the VBL
  * into the corresponding HBL number and the cycle position in the current
  * HBL. We use the starting cycle position of the closest HBL to compute

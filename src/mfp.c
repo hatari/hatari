@@ -395,6 +395,7 @@ static bool	MFP_InterruptRequest ( MFP_STRUCT *pMFP , int Int , Uint8 Bit , Uint
 static int	MFP_CheckPendingInterrupts ( MFP_STRUCT *pMFP );
 static void	MFP_GPIP_Update_Interrupt ( MFP_STRUCT *pMFP , Uint8 GPIP_old , Uint8 GPIP_new , Uint8 AER_old , Uint8 AER_new , Uint8 DDR_old , Uint8 DDR_new );
 
+static Uint8	MFP_Main_Compute_GPIP7 ( void );
 static void	MFP_GPIP_ReadByte_Main ( MFP_STRUCT *pMFP );
 static void	MFP_GPIP_ReadByte_TT ( MFP_STRUCT *pMFP );
 
@@ -1116,6 +1117,12 @@ void	MFP_GPIP_Set_Line_Input ( MFP_STRUCT *pMFP , Uint8 LineNr , Uint8 Bit )
 
 //fprintf ( stderr , "gpip set0 mask=%x bit=%d ddr=%x gpip=%x\n", Mask, Bit, pMFP->DDR, pMFP->GPIP );
 
+	/* Special case when changing bit 7 of the main MFP : depending on the machine type, */
+	/* this can be a combination of several signals. So we override Bit with its new value */
+	if ( ( pMFP == pMFP_Main ) && ( LineNr == MFP_GPIP_LINE7 ) )
+		Bit = MFP_Main_Compute_GPIP7 ();
+
+
 	/* Check that corresponding line is defined as input in DDR (0=input 1=output) */
 	/* and that the bit is changing */
 	if ( ( ( pMFP->DDR & Mask ) == 0 )
@@ -1130,8 +1137,6 @@ void	MFP_GPIP_Set_Line_Input ( MFP_STRUCT *pMFP , Uint8 LineNr , Uint8 Bit )
 		else
 		{
 			pMFP->GPIP &= ~Mask;
-			/* TODO : For now, assume AER=0 and do an interrupt on 1->0 transition */
-//			MFP_InputOnChannel ( MFP_GPIP_LineToIntNumber[ LineNr ] , 0 );
 		}
 
 		/* Update possible interrupts after changing GPIP */
@@ -1139,7 +1144,6 @@ void	MFP_GPIP_Set_Line_Input ( MFP_STRUCT *pMFP , Uint8 LineNr , Uint8 Bit )
 	}
 //fprintf ( stderr , "gpip set gpip_old=%x gpip_new=%x\n" , GPIP_old , pMFP->GPIP );
 }
-
 
 
 /*-----------------------------------------------------------------------*/
@@ -1784,6 +1788,44 @@ void	MFP_GPIP_ReadByte ( void )
 		MFP_GPIP_ReadByte_TT ( pMFP_TT );
 }
 
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Compute value of GPIP bit 7 for main MFP.
+ * This bit can be a combination of the monochrome monitor signal and
+ * the dma sound status (depending on the machine type)
+ */
+Uint8    MFP_Main_Compute_GPIP7 ( void )
+{
+	Uint8	Bit;
+
+	if (Config_IsMachineFalcon())
+	{
+		if (nCbar_DmaSoundControl & CROSSBAR_SNDCTRL_PLAY || nCbar_DmaSoundControl & CROSSBAR_SNDCTRL_RECORD)
+			Bit = 1;
+		else
+			Bit = 0;
+
+		/* Sparrow / TOS 2.07 still use monitor detection via GPIP7 */
+		if (TosVersion == 0x207 && !Video_Get_MONO_Line())
+			Bit ^= 1;
+	}
+	else
+	{
+		if (!Video_Get_MONO_Line())
+			Bit  = 1;		/* Color monitor : set bit 7 */
+		else
+			Bit = 0;		/* Monochrome monitor : clear bit 7 */
+
+		/* In case of STE/TT, bit 7 is XORed with DMA sound XSINT signal */
+		if ( ( Config_IsMachineSTE() || Config_IsMachineTT() ) && DmaSnd_Get_XSINT_Line() )
+			Bit ^= 1;
+	}
+
+	return Bit;
+}
+
+
 /*-----------------------------------------------------------------------*/
 /**
  * Handle read from main MFP GPIP pins register (0xfffa01).
@@ -1812,28 +1854,12 @@ void	MFP_GPIP_ReadByte_Main ( MFP_STRUCT *pMFP )
 	gpip_new = pMFP->GPIP;
 
 	/* Bit 7 */
-	if (Config_IsMachineFalcon())
-	{
-		if (nCbar_DmaSoundControl & CROSSBAR_SNDCTRL_PLAY || nCbar_DmaSoundControl & CROSSBAR_SNDCTRL_RECORD)
-			gpip_new |= 0x80;
-		else
-			gpip_new &= ~0x80;
-
-		/* Sparrow / TOS 2.07 still use monitor detection via GPIP7 */
-		if (TosVersion == 0x207 && !bUseHighRes)
-			gpip_new ^= 0x80;
-	}
+	if ( MFP_Main_Compute_GPIP7() )
+		gpip_new |= 0x80;		/* set bit 7 */
 	else
-	{
-		if (!bUseHighRes)
-			gpip_new |= 0x80;	/* Color monitor -> set top bit */
-		else
-			gpip_new &= ~0x80;
+		gpip_new &= ~0x80;		/* clear bit 7 */
 
-		if (nDmaSoundControl & DMASNDCTRL_PLAY)
-			gpip_new ^= 0x80;	/* Top bit is XORed with DMA sound control play bit (Ste/TT emulation mode)*/
-	}
-
+	/* Bit 0 */
 	if (ConfigureParams.Printer.bEnablePrinting)
 	{
 		/* Signal that printer is not busy */
