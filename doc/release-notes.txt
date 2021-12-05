@@ -34,6 +34,9 @@ Emulation:
 Emulator:
 - TOS support:
   - Support 1024k EmuTOS images also on TT & Falcon
+- NVRAM:
+  - Config settings + CLI options to override NVRAM keyboard layout
+    and language values at start
 - Falcon:
   - Fix: restore zoom mode correctly when loading snapshots
   - Correct also smaller specified memory amounts to valid ones
