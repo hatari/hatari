@@ -99,6 +99,7 @@ const char DmaSnd_fileid[] = "Hatari dmaSnd.c";
 #include "audio.h"
 #include "configuration.h"
 #include "dmaSnd.h"
+#include "cycles.h"
 #include "cycInt.h"
 #include "ioMem.h"
 #include "log.h"
@@ -110,6 +111,7 @@ const char DmaSnd_fileid[] = "Hatari dmaSnd.c";
 #include "screen.h"
 #include "video.h"
 #include "m68000.h"
+#include "clocks_timings.h"
 
 #define TONE_STEPS 13
 

@@ -153,6 +153,9 @@ extern MFP_STRUCT		*pMFP_TT;
 /* MFP Registers */
 extern bool	MFP_UpdateNeeded;
 
+extern int	MFP_ConvertCycle_CPU_MFP_TIMER ( int CPU_Cycles );
+extern int	MFP_ConvertCycle_MFP_TIMER_CPU ( int MFP_Cycles );
+
 extern void	MFP_Init ( MFP_STRUCT *pAllMFP );
 extern void	MFP_Reset_All ( void );
 extern void	MFP_MemorySnapShot_Capture ( bool bSave );

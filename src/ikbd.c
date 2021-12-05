@@ -80,6 +80,7 @@ const char IKBD_fileid[] = "Hatari ikbd.c";
 #include "main.h"
 #include "configuration.h"
 #include "ikbd.h"
+#include "cycles.h"
 #include "cycInt.h"
 #include "ioMem.h"
 #include "joy.h"

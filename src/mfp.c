@@ -151,6 +151,7 @@ const char MFP_fileid[] = "Hatari mfp.c";
 #include "screen.h"
 #include "video.h"
 #include "ncr5380.h"
+#include "clocks_timings.h"
 
 
 /*
@@ -399,6 +400,34 @@ static Uint8	MFP_Main_Compute_GPIP7 ( void );
 static void	MFP_GPIP_ReadByte_Main ( MFP_STRUCT *pMFP );
 static void	MFP_GPIP_ReadByte_TT ( MFP_STRUCT *pMFP );
 
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Convert a number of CPU cycles running at CPU_Freq to a number of
+ * MFP timer cycles running at MFP_Timer_Freq (XTAL)
+ */
+int	MFP_ConvertCycle_CPU_MFP_TIMER ( int CPU_Cycles )
+{
+	int	MFP_Cycles;
+
+	MFP_Cycles = (int)( ( (Uint64)CPU_Cycles * MachineClocks.MFP_Timer_Freq ) / MachineClocks.CPU_Freq );
+	return MFP_Cycles;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Convert a number of MFP timer cycles running at MFP_Timer_Freq (XTAL)
+ * to a number of CPU cycles running at CPU_Freq
+ */
+int	MFP_ConvertCycle_MFP_TIMER_CPU ( int MFP_Cycles )
+{
+	int	CPU_Cycles;
+
+	CPU_Cycles = (int)( ( (Uint64)MFP_Cycles * MachineClocks.CPU_Freq ) / MachineClocks.MFP_Timer_Freq );
+	return CPU_Cycles;
+}
 
 
 /*-----------------------------------------------------------------------*/

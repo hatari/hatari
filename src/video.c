@@ -456,6 +456,7 @@ const char Video_fileid[] = "Hatari video.c";
 #include "ikbd.h"
 #include "floppy_ipf.h"
 #include "statusbar.h"
+#include "clocks_timings.h"
 
 
 /* The border's mask allows to keep track of all the border tricks		*/

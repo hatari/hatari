@@ -20,6 +20,7 @@ const char Reset_fileid[] = "Hatari reset.c";
 #include "acia.h"
 #include "ikbd.h"
 #include "ioMem.h"
+#include "cycles.h"
 #include "cycInt.h"
 #include "m68000.h"
 #include "mfp.h"
