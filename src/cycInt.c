@@ -521,11 +521,11 @@ static void CycInt_InsertInt ( interrupt_id IntId )
 	int	n, prev;
 
 #ifdef CYCINT_DEBUG
-	fprintf ( stderr , "int before active=%02d active_cyc=%lu new=%02d cyc=%lu clock=%lu\n" , CycInt_ActiveInt , CycInt_ActiveInt_Cycles , IntId , InterruptHandlers[ IntId ].Cycles , CyclesGlobalClockCounter );
+	fprintf ( stderr , "int before active=%02d active_cyc=%"PRIu64" new=%02d cyc=%"PRIu64" clock=%"PRIu64"\n" , CycInt_ActiveInt , CycInt_ActiveInt_Cycles , IntId , InterruptHandlers[ IntId ].Cycles , CyclesGlobalClockCounter );
 	n = CycInt_ActiveInt;
 	do
 	{
-		fprintf ( stderr , "  int %02d prev=%02d next=%02d cyc=%lu\n" , n , InterruptHandlers[ n ].IntList_Prev , InterruptHandlers[ n ].IntList_Next , InterruptHandlers[ n ].Cycles );
+		fprintf ( stderr , "  int %02d prev=%02d next=%02d cyc=%"PRIu64"\n" , n , InterruptHandlers[ n ].IntList_Prev , InterruptHandlers[ n ].IntList_Next , InterruptHandlers[ n ].Cycles );
 		n = InterruptHandlers[ n ].IntList_Next;
 	} while ( n >= 0 );
 #endif
@@ -557,11 +557,11 @@ static void CycInt_InsertInt ( interrupt_id IntId )
 	}
 
 #ifdef CYCINT_DEBUG
-	fprintf ( stderr , "int after active=%02d active_cyc=%lu new=%02d cyc=%lu clock=%lu\n" , CycInt_ActiveInt , CycInt_ActiveInt_Cycles , IntId , InterruptHandlers[ IntId ].Cycles , CyclesGlobalClockCounter );
+	fprintf ( stderr , "int after active=%02d active_cyc=%"PRIu64" new=%02d cyc=%"PRIu64" clock=%"PRIu64"\n" , CycInt_ActiveInt , CycInt_ActiveInt_Cycles , IntId , InterruptHandlers[ IntId ].Cycles , CyclesGlobalClockCounter );
 	n = CycInt_ActiveInt;
 	do
 	{
-		fprintf ( stderr , "  int %02d prev=%02d next=%02d cyc=%lu\n" , n , InterruptHandlers[ n ].IntList_Prev , InterruptHandlers[ n ].IntList_Next , InterruptHandlers[ n ].Cycles );
+		fprintf ( stderr , "  int %02d prev=%02d next=%02d cyc=%"PRIu64"\n" , n , InterruptHandlers[ n ].IntList_Prev , InterruptHandlers[ n ].IntList_Next , InterruptHandlers[ n ].Cycles );
 		n = InterruptHandlers[ n ].IntList_Next;
 	} while ( n >= 0 );
 #endif
@@ -584,7 +584,7 @@ void CycInt_AcknowledgeInterrupt(void)
 	/* New ActiveInt is first of the list */
 	InterruptHandlers[ CycInt_ActiveInt ].IntList_Prev = -1;
 
-	LOG_TRACE(TRACE_INT, "int ack video_cyc=%d active_int=%d active_cyc=%lu pending_count=%d\n",
+	LOG_TRACE(TRACE_INT, "int ack video_cyc=%d active_int=%d active_cyc=%"PRIu64" pending_count=%d\n",
 	               Cycles_GetCounter(CYCLES_COUNTER_VIDEO), CycInt_ActiveInt, InterruptHandlers[CycInt_ActiveInt].Cycles, PendingInterruptCount );
 }
 
@@ -714,11 +714,11 @@ void CycInt_RemovePendingInterrupt(interrupt_id Handler)
 	          Cycles_GetCounter(CYCLES_COUNTER_VIDEO), Handler,
 	          InterruptHandlers[Handler].Cycles, PendingInterruptCount);
 #ifdef CYCINT_DEBUG
-	fprintf ( stderr , "int remove after active=%02d active_cyc=%lu clock=%lu\n" , CycInt_ActiveInt , CycInt_ActiveInt_Cycles , CyclesGlobalClockCounter );
+	fprintf ( stderr , "int remove after active=%02d active_cyc=%"PRIu64" clock=%"PRIu64"\n" , CycInt_ActiveInt , CycInt_ActiveInt_Cycles , CyclesGlobalClockCounter );
 	int n = CycInt_ActiveInt;
 	do
 	{
-		fprintf ( stderr , "  int %02d prev=%02d next=%02d cyc=%lu\n" , n , InterruptHandlers[ n ].IntList_Prev , InterruptHandlers[ n ].IntList_Next , InterruptHandlers[ n ].Cycles );
+		fprintf ( stderr , "  int %02d prev=%02d next=%02d cyc=%"PRIu64"\n" , n , InterruptHandlers[ n ].IntList_Prev , InterruptHandlers[ n ].IntList_Next , InterruptHandlers[ n ].Cycles );
 		n = InterruptHandlers[ n ].IntList_Next;
 	} while ( n >= 0 );
 #endif
@@ -796,11 +796,11 @@ int	CycInt_GetActiveInt(void)
 void	CycInt_CallActiveHandler(void)
 {
 #ifdef CYCINT_DEBUG
-	fprintf ( stderr , "int remove after active=%02d active_cyc=%lu clock=%lu\n" , CycInt_ActiveInt , CycInt_ActiveInt_Cycles , CyclesGlobalClockCounter );
+	fprintf ( stderr , "int remove after active=%02d active_cyc=%"PRIu64" clock=%"PRIu64"\n" , CycInt_ActiveInt , CycInt_ActiveInt_Cycles , CyclesGlobalClockCounter );
 	int n = CycInt_ActiveInt;
 	do
 	{
-		fprintf ( stderr , "  int %02d prev=%02d next=%02d cyc=%lu\n" , n , InterruptHandlers[ n ].IntList_Prev , InterruptHandlers[ n ].IntList_Next , InterruptHandlers[ n ].Cycles );
+		fprintf ( stderr , "  int %02d prev=%02d next=%02d cyc=%"PRIu64"\n" , n , InterruptHandlers[ n ].IntList_Prev , InterruptHandlers[ n ].IntList_Next , InterruptHandlers[ n ].Cycles );
 		n = InterruptHandlers[ n ].IntList_Next;
 	} while ( n >= 0 );
 #endif
