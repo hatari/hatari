@@ -1800,8 +1800,6 @@ void IKBD_InterruptHandler_AutoSend(void)
 	/* Did user try to quit? */
 	if (bQuitProgram)
 	{
-		/* Pass NULL interrupt function to quit cleanly */
-		CycInt_AddAbsoluteInterrupt(4, INT_CPU_CYCLE, INTERRUPT_NULL);
 		/* Assure that CPU core shuts down */
 		M68000_SetSpecial(SPCFLAG_BRK);
 		return;
