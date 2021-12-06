@@ -52,8 +52,8 @@ static uae_u32 extra_cycle;
 #ifndef WINUAE_FOR_HATARI
 static void sync_cycles(void)
 {
-        unsigned long c;
-        int extra;
+        uae_u32 c;
+        uae_u32 extra;
 
         c = get_cycles();
         extra = c & (CYCLE_UNIT - 1);

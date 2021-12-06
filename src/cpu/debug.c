@@ -6420,6 +6420,7 @@ void debug (void)
 		return;
 
 	bogusframe = 1;
+	disasm_init();
 	addhistory ();
 
 #if 0
