@@ -666,16 +666,18 @@ static PmEvent* Midi_BuildEvent(Uint8 byte)
 	static const Uint8 shifts[] = { 0,8,16,24 };
 	static PmEvent midiEvent = { 0,0 };
 	static Uint32 midimsg;
-//	static Uint8 runningStatus = 0;
+	static Uint8 runningStatus = 0;
 	static Uint8 bytesToWait = 0;
 	static Uint8 bytesCollected = 0;
 	static bool processingSysex = false;
+	static bool expectStatus = true;
 
 	// -- status byte
-	if (byte & 0x80)
+	if ((byte & 0x80) > 0)
 	{
 		if (byte >= 0xF8)
 		{
+			
 			midiEvent.message = Pm_Message(byte,0,0);
 			return &midiEvent;
 		}
@@ -684,7 +686,7 @@ static PmEvent* Midi_BuildEvent(Uint8 byte)
 			processingSysex = false;
 			if (byte >= 0xF0)
 			{
-//				runningStatus = 0;
+				runningStatus = 0;
 				if (byte == 0xF0)
 				{
 					processingSysex = true;
@@ -692,8 +694,13 @@ static PmEvent* Midi_BuildEvent(Uint8 byte)
 				}
 				else if (byte == 0xF7)
 				{
-					midiEvent.message = midimsg | (((Uint32)byte) << shifts[bytesCollected]);
+					midimsg |= ((Uint32)0xF7) << shifts[bytesCollected++];
+					
+					LOG_TRACE(TRACE_MIDI, "MIDI: SYX END event %X %X %X %X\n",  (midimsg & 0x000000FF), (midimsg & 0x0000FF00) >> shifts[1], (midimsg & 0x00FF0000) >> shifts[2],(midimsg & 0xFF000000) >> shifts[3]);
+					midiEvent.message = midimsg;
 					midimsg = bytesToWait = bytesCollected = 0;
+					processingSysex = false;
+					expectStatus = true;
 					return &midiEvent;
 				}
 				else
@@ -701,27 +708,46 @@ static PmEvent* Midi_BuildEvent(Uint8 byte)
 			}
 			else
 			{
-//				runningStatus = byte;
+				runningStatus = byte;
 				bytesCollected = 0;
 			}
 		}
+
+		
 		midimsg = byte;
 		bytesToWait = Midi_GetDataLength(byte);
+		expectStatus = false;
+		
 	}
 
 	// -- data byte
 	else
 	{
-		if (processingSysex)
-			midimsg |= ((Uint32)byte) << shifts[bytesCollected++];
+	   if ((expectStatus == true) && (runningStatus >= 0x80) && (processingSysex == false)) {
+		// reuse the previous status here.
+		LOG_TRACE(TRACE_MIDI,"Running status : status %X byte %X\n", runningStatus, byte);
+		bytesToWait = Midi_GetDataLength(runningStatus);
+		midimsg = ((Uint32)runningStatus);
+		midimsg |= ((Uint32)byte) << shifts[++bytesCollected];
+		expectStatus = false;
+	    }
 		else
-			midimsg |= ((Uint32)byte) << shifts[++bytesCollected];
-		if (bytesCollected >= bytesToWait)
+		
+			if ((expectStatus == false) && (processingSysex == false))
+				midimsg |= ((Uint32)byte) << shifts[++bytesCollected];
+
+		if (processingSysex == true)
+			midimsg |= ((Uint32)byte) << shifts[bytesCollected++];
+		
+		if ((bytesCollected >= bytesToWait) && bytesCollected > 0)
 		{
 			midiEvent.message = midimsg;
+			LOG_TRACE(TRACE_MIDI, "MIDI:  event %X %X %X %X\n",  (midimsg & 0x000000FF), (midimsg & 0x0000FF00) >> shifts[1], (midimsg & 0x00FF0000) >> shifts[2],(midimsg & 0xFF000000) >> shifts[3]);
 			midimsg = 0;
 			bytesCollected = 0;
 			bytesToWait = processingSysex ? 4 : 0;
+			expectStatus = true;
+			
 			return &midiEvent;
 		}
 	}
