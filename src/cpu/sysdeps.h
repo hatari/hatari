@@ -65,6 +65,8 @@ using namespace std;
 #define CPU_powerpc 1
 #elif defined(__mips__) || defined(mips) || defined(__mips64)
 #define CPU_mips 1
+#elif defined(__loongarch__)
+#define CPU_loongarch 1
 #elif defined(JIT)
 #error unrecognized CPU type
 #endif
