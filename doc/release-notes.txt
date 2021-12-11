@@ -34,6 +34,8 @@ Emulation:
 Emulator:
 - TOS support:
   - Support 1024k EmuTOS images also on TT & Falcon
+- MIDI support:
+  - Using PortMidi for MIDI should work now fine (but see bugs.txt)
 - NVRAM:
   - Config settings + CLI options to override NVRAM keyboard layout
     and language values at start

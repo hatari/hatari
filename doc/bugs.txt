@@ -50,30 +50,15 @@ Emulator bugs
     the main thead, but it would mean that RS232 won't work on Windows
     until somebody contributes code for that too
 
-* MIDI support on Mac / Windows:
+* MIDI support with PortMidi:
 
-  - MIDI support on these platforms requires Hatari to be built with
-    PortMidi library, and PortMidi requires additional Hatari code to
-    translate MIDI port data from/to PortMidi MIDI events. However,
-    that translation doesn't work 100% correctly yet
+    Playback of Notator 3.x "DEMO8.SON" song (which has very large
+    amounts of sysex data) will trigger PortMidi "host error" around
+    7:00 mark, resulting in MIDI output being disabled (until MIDI
+    device is changed or Hatari restarted).
 
-    For example, PortMidi complains about invalid MIDI event data at
-    startup (MIDI setup?) of "Sequencer One" and "Fractal Music"
-    programs, loading of every song (MIDI setup / sysex?) in "Cubase
-    Lite", or starting song in "Dr. T's KCS" (v4.0) and "GenEdit"
-    (v2.02), after which PortMidi connection gets closed and nothing
-    else will go through. And if MIDI events would still be let
-    through, they would then use wrong instruments
-
-    Based on PortMidi sources, "pmBadData" error comes only in
-    following situations:
-    - Previous sysex message not terminated (with EOX: 0xf7)
-    - Sysex data that is not realtime (0xf8 bits not set)
-    - Non-sysex data does not have status bit (0x80) set
-
-    However, midi.c code does not do any of above when the "pmBadData"
-    error happens, so issue seems to be in encoding of the MIDI data
-    for PortMidi.
+    When using (STE) TOS v1.62, this error is trigged only randomly,
+    so it may be interrupt timing related.
 
 
 Known issues / workarounds
