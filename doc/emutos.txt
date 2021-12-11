@@ -395,7 +395,7 @@ Demos:
 - Frenchies (by Frenchies, 96KB intro)
 - Fruit is Great! (256b 50Hz overscan by Effect)
 - Glokzilla (by MJJ Prod)
-- Grafik -und Sounddemo (by Eckhard Kruse), font issues
+- Grafik -und Sounddemo (by Eckhard Kruse)
 - Hallucinations (by Reservoir Gods)
 - Helvetin Hyttysiä (by Spice Boys)
 - Hiatus (by SMFX)
@@ -565,7 +565,7 @@ Free/shareware/PD games:
 - Alterra
 - Archon 4KB
 - Alien Blockade* (quixx)
-- Atax            (minor gfx issues)
+- Atax
 - Bellum*
 - Blaster
 - Blind labyrinth (line-A bitblits, mouse issues)
@@ -744,7 +744,7 @@ Monochrome games:
 - Balloons
 - Bolo          (demo levels, floppy only)
 - Bouncing boubles
-- Columns*      (text input positioning issue)
+- Columns*
 - Criss Cross
 - CW Puzzle     (line-A bitblit + line & point draw in start)
 - Delta patrol
