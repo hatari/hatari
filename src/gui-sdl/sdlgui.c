@@ -1315,6 +1315,9 @@ int SDLGui_DoDialogExt(SGOBJ *dlg, bool (*isEventOut)(SDL_EventType), SDL_Event 
 				break;
 
 			 case SDL_KEYDOWN:                     /* Key pressed */
+				/* keys that need to support repeat,
+				 * need to be checked on press
+				 */
 				key = sdlEvent.key.keysym.sym;
 				/* keyboard shortcuts are with modifiers */
 				if (sdlEvent.key.keysym.mod & KMOD_LALT
@@ -1358,6 +1361,19 @@ int SDLGui_DoDialogExt(SGOBJ *dlg, bool (*isEventOut)(SDL_EventType), SDL_Event 
 					SDLGui_RemoveFocus(dlg, focused);
 					focused = SDLGui_FocusNext(dlg, 1, -1);
 					break;
+				 default:
+					retbutton = SDLGUI_UNKNOWNEVENT;
+					break;
+				}
+				break;
+
+			case SDL_KEYUP:                     /* Key released */
+				/* keys potentially exiting dialog need
+				 * to be handed only on release, to avoid
+				 * leaking release events to emulation
+				 */
+				switch (sdlEvent.key.keysym.sym)
+				{
 				 case SDLK_SPACE:
 				 case SDLK_RETURN:
 				 case SDLK_KP_ENTER:

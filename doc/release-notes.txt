@@ -56,6 +56,7 @@ Emulator:
 - SDL GUI:
   - Fix: ignore unrecognized events in file selector
     (buttons could be incorrectly shown as selected)
+  - Fix: avoid key release event from SDL GUI closing leaking to emulation
   - Do VDI mode size changes in (faster) 16 pix increments,
     and prevent user seeing invalid VDI mode sizes
 - GEMDOS HD:
