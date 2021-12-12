@@ -716,93 +716,89 @@ static PmEvent* Midi_BuildEvent(Uint8 byte)
 	// -- status byte
 	if (byte & 0x80)
 	{
+		// -- realtime
 		if (byte >= 0xF8)
 		{
-			midiEvent.message = Pm_Message(byte,0,0);
+			midiEvent.message = Pm_Message(byte, 0, 0);
 			return &midiEvent;
 		}
-		else
+		// -- sysex end
+		if (byte == 0xF7)
 		{
-			processingSysex = false;
-			if (byte >= 0xF0)
-			{
-				runningStatus = 0;
-				if (byte == 0xF0)
-				{
-					processingSysex = true;
-					bytesCollected = 1;
-				}
-				else if (byte == 0xF7)
-				{
-					midimsg |= ((Uint32)0xF7) << shifts[bytesCollected];
-					midiEvent.message = midimsg;
-
-					LOG_TRACE(TRACE_MIDI, "MIDI: SYX END event %X %X %X %X\n",
-						  (midimsg & 0x000000FF),
-						  (midimsg & 0x0000FF00) >> shifts[1],
-						  (midimsg & 0x00FF0000) >> shifts[2],
-						  (midimsg & 0xFF000000) >> shifts[3]);
-
-					midimsg = bytesToWait = bytesCollected = 0;
-					processingSysex = false;
-					expectStatus = true;
-					return &midiEvent;
-				}
-				else
-					bytesCollected = 0;
-			}
-			else
-			{
-				runningStatus = byte;
-				bytesCollected = 0;
-			}
-		}
-		midimsg = byte;
-		bytesToWait = Midi_GetDataLength(byte);
-		expectStatus = false;
-	}
-
-	// -- data byte
-	else
-	{
-		if (processingSysex)
-		{
-			midimsg |= ((Uint32)byte) << shifts[bytesCollected++];
-		}
-		else
-		{
-			if (!expectStatus)
-			{
-				midimsg |= ((Uint32)byte) << shifts[++bytesCollected];
-			}
-			else if (runningStatus >= 0x80)
-			{
-				// reuse the previous status here.
-				LOG_TRACE(TRACE_MIDI, "MIDI: running status %X byte %X\n",
-					  runningStatus, byte);
-				bytesToWait = Midi_GetDataLength(runningStatus);
-				midimsg = ((Uint32)runningStatus);
-				midimsg |= ((Uint32)byte) << shifts[++bytesCollected];
-				expectStatus = false;
-			}
-		}
-
-		if (bytesCollected >= bytesToWait && bytesCollected > 0)
-		{
+			midimsg |= ((Uint32)0xF7) << shifts[bytesCollected];
 			midiEvent.message = midimsg;
-			LOG_TRACE(TRACE_MIDI, "MIDI: event %X %X %X %X\n",
+
+			LOG_TRACE(TRACE_MIDI, "MIDI: SYX END event %X %X %X %X\n",
 				  (midimsg & 0x000000FF),
 				  (midimsg & 0x0000FF00) >> shifts[1],
 				  (midimsg & 0x00FF0000) >> shifts[2],
 				  (midimsg & 0xFF000000) >> shifts[3]);
-			bytesToWait = processingSysex ? 4 : 0;
-			midimsg = bytesCollected = 0;
+
+			midimsg = bytesToWait = bytesCollected = 0;
+			processingSysex = false;
 			expectStatus = true;
+			runningStatus = 0;
 
 			return &midiEvent;
 		}
+		processingSysex = false;
+		bytesCollected = 0;
+		runningStatus = 0;
+
+		// -- sysex start
+		if (byte == 0xF0)
+		{
+			processingSysex = true;
+			bytesCollected = 1;
+		}
+		else if (byte < 0xF0)
+		{
+			runningStatus = byte;
+		}
+		midimsg = byte;
+		bytesToWait = Midi_GetDataLength(byte);
+		expectStatus = false;
+
+		return NULL;
 	}
-	
+
+	// -- data byte
+	if (processingSysex)
+	{
+		midimsg |= ((Uint32)byte) << shifts[bytesCollected++];
+	}
+	else
+	{
+		if (!expectStatus)
+		{
+			midimsg |= ((Uint32)byte) << shifts[++bytesCollected];
+		}
+		else if (runningStatus >= 0x80)
+		{
+			// reuse the previous status here.
+			LOG_TRACE(TRACE_MIDI, "MIDI: running status %X byte %X\n",
+				  runningStatus, byte);
+			bytesToWait = Midi_GetDataLength(runningStatus);
+			midimsg = ((Uint32)runningStatus);
+			midimsg |= ((Uint32)byte) << shifts[++bytesCollected];
+			expectStatus = false;
+		}
+	}
+	if (bytesCollected >= bytesToWait && bytesCollected > 0)
+	{
+		midiEvent.message = midimsg;
+		LOG_TRACE(TRACE_MIDI, "MIDI: event %X %X %X %X\n",
+			  (midimsg & 0x000000FF),
+			  (midimsg & 0x0000FF00) >> shifts[1],
+			  (midimsg & 0x00FF0000) >> shifts[2],
+			  (midimsg & 0xFF000000) >> shifts[3]);
+		bytesToWait = processingSysex ? 4 : 0;
+		midimsg = bytesCollected = 0;
+		expectStatus = true;
+
+		return &midiEvent;
+	}
+
 	return NULL;
 }
 
