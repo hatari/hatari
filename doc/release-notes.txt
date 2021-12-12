@@ -35,7 +35,9 @@ Emulator:
 - TOS support:
   - Support 1024k EmuTOS images also on TT & Falcon
 - MIDI support:
-  - Using PortMidi for MIDI should work now fine (but see bugs.txt)
+  - Fix: PortMidi rejects Hatari MIDI events
+  - Fix: MIDI IRQ needs to be re-enabled on MIDI device change
+    even when there's no reset
 - NVRAM:
   - Config settings + CLI options to override NVRAM keyboard layout
     and language values at start

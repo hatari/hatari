@@ -484,6 +484,11 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	{
 		Dprintf("- midi<\n");
 		Midi_Init();
+		if (!NeedReset)
+		{
+			/* Restart MIDI IRQ stopped on Midi_UnInit() */
+			Midi_Reset();
+		}
 	}
 
 	/* Force things associated with screen change */

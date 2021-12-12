@@ -567,6 +567,7 @@ static int Midi_Host_ReadByte(void)
 		return fgetc(pMidiFhIn);
 	else return EOF;
 #else
+	// TODO: should these be reset with Midi_Init()?
 	static Uint8 msg[4];
 	static Uint8 ibyte = 0;
 	static int bytesAvailable = 0;
@@ -668,6 +669,7 @@ static int Midi_GetDataLength(Uint8 status)
 static PmEvent* Midi_BuildEvent(Uint8 byte)
 {
 	static const Uint8 shifts[] = { 0,8,16,24 };
+	// TODO: should these be reset with Midi_Init()?
 	static PmEvent midiEvent = { 0,0 };
 	static Uint32 midimsg;
 	static Uint8 runningStatus = 0;
@@ -779,6 +781,7 @@ static PmEvent* Midi_BuildEvent(Uint8 byte)
  */
 static int Midi_SplitEvent(PmEvent* midiEvent, Uint8* msg)
 {
+	// TODO: should be reset with Midi_Init()?
 	static bool processingSysex = false;
 	PmMessage midiMessage = midiEvent->message;
 	int i, bytesAvailable = 0;
