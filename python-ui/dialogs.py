@@ -796,6 +796,7 @@ class TraceDialog(HatariUIDialog):
         "mfp_start",
         "mfp_write",
         "midi",
+        "midi_raw",
         "natfeats",
         "nvram",
         "os_base",

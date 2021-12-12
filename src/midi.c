@@ -161,7 +161,7 @@ static void	MIDI_UpdateIRQ ( void )
 	/* Update SR and IRQ line if a change happened */
 	if ( ( MidiStatusRegister & ACIA_SR_INTERRUPT_REQUEST ) != irq_bit_new )
 	{
-		LOG_TRACE ( TRACE_MIDI, "midi update irq irq_new=%d VBL=%d HBL=%d\n" , irq_bit_new?1:0 , nVBLs , nHBL );
+		LOG_TRACE ( TRACE_MIDI_RAW, "midi update irq irq_new=%d VBL=%d HBL=%d\n" , irq_bit_new?1:0 , nVBLs , nHBL );
 
 		if ( irq_bit_new )
 		{
@@ -202,7 +202,7 @@ void Midi_Control_ReadByte(void)
 
 	IoMem[0xfffc04] = MidiStatusRegister;
 
-	LOG_TRACE ( TRACE_MIDI, "midi read fffc04 sr=0x%02x VBL=%d HBL=%d\n" , MidiStatusRegister , nVBLs , nHBL );
+	LOG_TRACE ( TRACE_MIDI_RAW, "midi read fffc04 sr=0x%02x VBL=%d HBL=%d\n" , MidiStatusRegister , nVBLs , nHBL );
 }
 
 
@@ -215,7 +215,7 @@ void Midi_Control_WriteByte(void)
 
 	MidiControlRegister = IoMem[0xfffc04];
 
-	LOG_TRACE ( TRACE_MIDI, "midi write fffc04 cr=0x%02x VBL=%d HBL=%d\n" , MidiControlRegister , nVBLs , nHBL );
+	LOG_TRACE ( TRACE_MIDI_RAW, "midi write fffc04 cr=0x%02x VBL=%d HBL=%d\n" , MidiControlRegister , nVBLs , nHBL );
 
 	MIDI_UpdateIRQ ();
 }
@@ -226,7 +226,7 @@ void Midi_Control_WriteByte(void)
  */
 void Midi_Data_ReadByte(void)
 {
-	LOG_TRACE ( TRACE_MIDI, "midi read fffc06 rdr=0x%02x VBL=%d HBL=%d\n" , nRxDataByte , nVBLs , nHBL );
+	LOG_TRACE ( TRACE_MIDI_RAW, "midi read fffc06 rdr=0x%02x VBL=%d HBL=%d\n" , nRxDataByte , nVBLs , nHBL );
 //fprintf ( stderr , "midi rx %x\n" , nRxDataByte);
 
 	ACIA_AddWaitCycles ();						/* Additional cycles when accessing the ACIA */
@@ -268,7 +268,7 @@ void Midi_Data_WriteByte(void)
 		TSR_Complete_Time += MIDI_TRANSFER_BYTE_CYCLE;
 	}
 
-	LOG_TRACE ( TRACE_MIDI, "midi write fffc06 tdr=0x%02x VBL=%d HBL=%d\n" , nTxDataByte , nVBLs , nHBL );
+	LOG_TRACE ( TRACE_MIDI_RAW, "midi write fffc06 tdr=0x%02x VBL=%d HBL=%d\n" , nTxDataByte , nVBLs , nHBL );
 //fprintf ( stderr , "midi tx %x sr=%x\n" , nTxDataByte , MidiStatusRegister );
 
 	MidiStatusRegister &= ~ACIA_SR_TX_EMPTY;
@@ -525,7 +525,11 @@ static bool Midi_Host_SwitchPort(const char* portName, bool forInput)
 		}
 	}
 	if (i >= count)
+	{
+		LOG_TRACE(TRACE_MIDI, "MIDI: no %s ports matching '%s'\n",
+			  forInput ? "input" : "output", portName);
 		return false;
+	}
 
 	// -- close current port in any case, then try open new one
 	if (forInput == true)

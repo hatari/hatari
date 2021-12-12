@@ -122,6 +122,7 @@ static flagname_t TraceFlags[] = {
 	{ TRACE_MFP_WRITE	 , "mfp_write" },
 
 	{ TRACE_MIDI		 , "midi" },
+	{ TRACE_MIDI_RAW	 , "midi_raw" },
 
 	{ TRACE_NATFEATS	 , "natfeats" },
 
