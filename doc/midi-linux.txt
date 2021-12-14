@@ -42,7 +42,8 @@ Start Hatari, and in the "Devices" option screen, select "Enable MIDI
 emulation".  Then for the input option, select "Virtual Keyboard",
 and for the "output" option, select "Synth input port".
 
-That's all!  (but see "bugs.txt" for issues with PortMidi)
+That's all!
+
 
 Rest of this document is about lower level MIDI (raw device) access
 without PortMidi, Linux MIDI usage in general, and notes of some
