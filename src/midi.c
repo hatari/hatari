@@ -497,33 +497,46 @@ int Midi_Host_GetPortIndex(const char* portName, bool forInput)
 }
 
 /**
- * closes current midi port (if any) and opens 'portName' if MIDI enabled
- * returns true if successful, false otherwise
+ * Closes current midi port (if any) and opens 'portName' if MIDI
+ * enabled. If there is no exact match, last device where 'portName'
+ * matches beginning of the device name, is used. Returns true for
+ * success, false otherwise
  */
 #ifdef HAVE_PORTMIDI
 static bool Midi_Host_SwitchPort(const char* portName, bool forInput)
 {
-	int i, count;
+	int i, prefixmatch, len, count;
 	bool err;
 
 	if (!ConfigureParams.Midi.bEnableMidi)
 		return false;
+
+	// -- no names
+	if (strcasecmp("off", portName) == 0)
+		return false;
+
+	len = strlen(portName);
+	prefixmatch = -1;
 
 	// -- find PortMidi index for 'portName'
 	count = Pm_CountDevices();
 	for (i = 0; i < count; i++)
 	{
 		const PmDeviceInfo* info = Pm_GetDeviceInfo(i);
-		if (info)
-		{
-			if (forInput && !info->input)
-				continue;
-			else if (!forInput && info->input)
-				continue;
-			if (!strcmp(info->name, portName))
-				break;
-		}
+		if (!info)
+			continue;
+		if (forInput && !info->input)
+			continue;
+		if (!forInput && info->input)
+			continue;
+		if (!strcmp(info->name, portName))
+			break;
+		if (!strncmp(info->name, portName, len))
+			prefixmatch = i;
 	}
+	if (i >= count && prefixmatch >= 0)
+		i = prefixmatch;
+
 	if (i >= count)
 	{
 		LOG_TRACE(TRACE_MIDI, "MIDI: no %s ports matching '%s'\n",
