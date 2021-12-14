@@ -539,7 +539,8 @@ static bool Midi_Host_SwitchPort(const char* portName, bool forInput)
 			midiIn = NULL;
 		}
 		err = (Pm_OpenInput(&midiIn, i, NULL, INPUT_BUFFER_SIZE, NULL, NULL) == pmNoError);
-		LOG_TRACE(TRACE_MIDI, "MIDI: input port %d '%s' open %s\n", i, portName, err ? "succeeded" : "failed");
+		LOG_TRACE(TRACE_MIDI, "MIDI: input port %d '%s' open %s\n",
+			  i, portName, err ? "succeeded" : "failed");
 		return err;
 	}
 	else
@@ -549,11 +550,35 @@ static bool Midi_Host_SwitchPort(const char* portName, bool forInput)
 			midiOut = NULL;
 		}
 		err = (Pm_OpenOutput(&midiOut, i, NULL, 0, NULL, NULL, 0) == pmNoError);
-		LOG_TRACE(TRACE_MIDI, "MIDI: output port %d '%s' open %s\n", i, portName, err ? "succeeded" : "failed");
+		LOG_TRACE(TRACE_MIDI, "MIDI: output port %d '%s' open %s\n",
+			  i, portName, err ? "succeeded" : "failed");
 		return err;
 	}
 
 	return false;
+}
+
+/**
+ * Log PortMidi error regardless of whether it's a host (backend)
+ * or general PortMidi error (which need to be handled differently)
+ */
+static void Midi_LogError(PmError error)
+{
+	const char *msg;
+	char buf[PM_HOST_ERROR_MSG_LEN+1];
+
+	if (error == pmHostError)
+	{
+		Pm_GetHostErrorText(buf, sizeof(buf)-1);
+		buf[sizeof(buf)-1] = '\0';
+		msg = buf;
+	}
+	else
+	{
+		msg = Pm_GetErrorText(error);
+	}
+	Log_Printf(LOG_WARN, "MIDI: PortMidi write error %d: '%s'\n",
+		   error, msg);
 }
 #endif
 
@@ -619,13 +644,10 @@ static bool Midi_Host_WriteByte(Uint8 byte)
 		PmEvent* midiEvent = Midi_BuildEvent(byte);
 		if (midiEvent)
 		{
-			const char *msg;
 			PmError error = Pm_Write(midiOut, midiEvent, 1);
 			if (error == pmNoError || error == pmGotData)
 				return true;
-			msg = Pm_GetErrorText(error);
-			Log_Printf(LOG_WARN, "MIDI: PortMidi write error %d: '%s'\n",
-				  error, msg);
+			Midi_LogError(error);
 			return false;
 		}
 		return true;
