@@ -19,7 +19,8 @@ extern void Midi_Control_WriteByte(void);
 extern void Midi_Data_WriteByte(void);
 extern void Midi_InterruptHandler_Update(void);
 
-extern const char* Midi_Host_GetPortName(int index, bool forInput);
-extern int Midi_Host_GetPortIndex(const char* portName, bool forInput);
+#ifdef HAVE_PORTMIDI
+extern const char* Midi_Host_GetPortName(const char *name, int offset, bool forInput);
+#endif
 
 #endif

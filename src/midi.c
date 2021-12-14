@@ -72,10 +72,6 @@ static FILE *pMidiFhOut = NULL;    /* File handle used for Midi output */
 #define INPUT_BUFFER_SIZE  1024		 // PortMidi handles buffering
 static PmStream* midiIn  = NULL;	 // current midi input port
 static PmStream* midiOut = NULL;	 // current midi output port
-static int numInputs  = 0;				 // number of available input ports
-static int numOutputs = 0;				 // number of available output ports
-static const PmDeviceInfo** inports  = NULL;	// array of available input ports
-static const PmDeviceInfo** outports = NULL;	// array of available output ports
 
 static bool Midi_Host_SwitchPort(const char* portName, bool forInput);
 static int Midi_GetDataLength(Uint8 status);
@@ -372,58 +368,25 @@ static bool Midi_Host_Open(void)
 			 ConfigureParams.Midi.sMidiInFileName);
 	}
 #else
-	/* Need to always get MIDI device info, for MIDI setup dialog */
-	int i;
-	int iindex = 0;
-	int oindex = 0;
-	int numPorts = 0;
-	
+	int i, ports;
 	if (Pm_Initialize() != pmNoError)
 	{
 		LOG_TRACE(TRACE_MIDI, "MIDI: PortMidi initialization failed\n");
 		return false;
 	}
-	// -- get rid of earlier portmidi descriptor arrays (if allocated)
-	// -- the information may be stale (USB Midi etc)
-	if (inports)
-		free (inports);
-	if (outports)
-		free (outports);
-	inports = outports = NULL;
-	numInputs = numOutputs = 0;
-
-	// -- count number of input and output ports
-	numPorts = Pm_CountDevices();
-	for (i = 0; i < numPorts; i++)
+	// -- log available ports
+	ports = Pm_CountDevices();
+	for (i = 0; i < ports; i++)
 	{
 		const PmDeviceInfo *info = Pm_GetDeviceInfo(i);
-		if (info->input)
-			numInputs++;
-		else if (info->output)
-			numOutputs++;
-	}
-
-	// -- allocate descriptor arrays
-	inports  = malloc(numInputs  * sizeof(PmDeviceInfo*));
-	outports = malloc(numOutputs * sizeof(PmDeviceInfo*));
-	
-	// -- populate descriptor arrays
-	for (i = 0; i < numPorts; i++)
-	{
-		const PmDeviceInfo* info = Pm_GetDeviceInfo(i);
-		if (info)
-		{
-			LOG_TRACE(TRACE_MIDI, "MIDI: device %d: '%s'\n", i, info->name);
-			if (info->input)
-				inports[iindex++] = info;
-			if (info->output)
-				outports[oindex++] = info;
-		}
-		else
-			LOG_TRACE(TRACE_MIDI, "MIDI: info disappeared for device %d!\n", i);
+		if (!info)
+			continue;
+		LOG_TRACE(TRACE_MIDI, "MIDI: %s %d: '%s'\n",
+			  info->input ? "input " : "output", i, info->name);
 	}
 
 	// -- open input and output ports according to configuration
+	// -- ignore errors to avoid MIDI being disabled
 	if (ConfigureParams.Midi.sMidiInPortName[0])
 		Midi_Host_SwitchPort(ConfigureParams.Midi.sMidiInPortName, true);
 	if (ConfigureParams.Midi.sMidiOutPortName[0])
@@ -458,42 +421,57 @@ static void Midi_Host_Close(void)
 
 
 
-/* ---------------------------------------------------------------------------- */
-/**
- * returns port name for input or output port at 'index'
- */
-const char* Midi_Host_GetPortName(int index, bool forInput)
-{
 #ifdef HAVE_PORTMIDI
-	if (forInput && index < numInputs)
-		return inports[index]->name;
-	else if (!forInput && index < numOutputs)
-		return outports[index]->name;
-#endif
-
-	return NULL;
-}
-
-/* ---------------------------------------------------------------------------- */
 /**
- * returns port descriptor array index for input or output 'portName'
+ * Returns port name if there's one matching the given port name
+ * with given offset and direction.
+ *
+ * Offset interpretation:
+ *   0: return matching device name
+ *  <0: return name of device before matching one
+ *  >0: return name of device after matching one
+ *
+ * As special case, for NULL name with positive offset,
+ * name of the first port in correct direction is returned.
  */
-int Midi_Host_GetPortIndex(const char* portName, bool forInput)
+const char* Midi_Host_GetPortName(const char *name, int offset, bool forInput)
 {
-#ifdef HAVE_PORTMIDI
-	int i = 0;
-	int numPorts = forInput ? numInputs : numOutputs;
-	const PmDeviceInfo** ports = forInput ? inports : outports;
+	const PmDeviceInfo* info;
+	const char *prev = NULL;
+	bool prev_matched = false;
+	int i, count;
 
-	if (ports)
+	// -- find port with given offset from named one
+	count = Pm_CountDevices();
+	for (i = 0; i < count; i++)
 	{
-		for (i = 0; i < numPorts; i++)
-			if (!strcmp(portName, ports[i]->name))
-				return i;
+		info = Pm_GetDeviceInfo(i);
+		if (!info)
+			continue;
+		if (forInput && !info->input)
+			continue;
+		if (!forInput && info->input)
+			continue;
+		if (!name)
+		{
+			if (offset <= 0)
+				return NULL;
+			return info->name;
+		}
+		if (!strcmp(info->name, name))
+		{
+			if (!offset)
+				return name;
+			if (offset < 0)
+				return prev;
+			prev_matched = true;
+			continue;
+		}
+		if (prev_matched)
+			return info->name;
+		prev = info->name;
 	}
-#endif
-
-	return -1;
+	return NULL;
 }
 
 /**
@@ -502,7 +480,6 @@ int Midi_Host_GetPortIndex(const char* portName, bool forInput)
  * matches beginning of the device name, is used. Returns true for
  * success, false otherwise
  */
-#ifdef HAVE_PORTMIDI
 static bool Midi_Host_SwitchPort(const char* portName, bool forInput)
 {
 	int i, prefixmatch, len, count;
