@@ -19,6 +19,8 @@ Following features are deprecated and will be removed in a future release:
 
 Removed features (that were marked as deprecated in earlier releases):
 - Support for the SDL 1.2 library (i.e. SDL 2.x should be used instead)
+- Support for building Hatari for Windows CE has been removed, too, since
+  this was relying on version 1.2 of the SDL library.
 - The old UAE CPU core (i.e. the new WinUAE CPU core is now always used)
 - Python v2 support in Python scripts (Python 2 was end of life in 2020)
 

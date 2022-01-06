@@ -172,7 +172,7 @@ static char *Paths_InitExecDir(const char *argv0)
 				*p = 0;                     /* Strip file name from path */
 		}
 	}
-//#elif defined(WIN32) || defined(__CEGCC__)
+//#elif defined(WIN32)
 //	/* On Windows we can use GetModuleFileName for getting the exe path */
 //	GetModuleFileName(NULL, psExecDir, FILENAME_MAX);
 #endif

@@ -39,19 +39,3 @@ Configuration file for the Nokia 770/N800/N810 TI Omap2/ARMv6 based devices:
 
 For more information on these devices, see e.g:
 	http://en.wikipedia.org/wiki/Nokia_N800
-
-
-win-ce.cfg
-----------
-
-Configuration file for Windows Mobile based devices:
-- Start in fullscreen mode
-- Smaller border values / screen size limited to 320x240 resolution
-- Options that are more suitable for the device performance:
-  - Non-compatible (but faster) CPU mode
-  - Frameskip enabled
-  - High spec512 threshold
-  - 11kHz sound
-
-For more information on Windows CE and device based on it, see:
-	http://en.wikipedia.org/wiki/Windowsce
