@@ -493,7 +493,7 @@ void CycInt_ResumeStoppedInterrupt(interrupt_id Handler)
 /**
  * Return cycles passed for an interrupt handler
  */
-int CycInt_FindCyclesPassed(interrupt_id Handler, int CycleType)
+int CycInt_FindCyclesPassed(interrupt_id Handler, int CycleType, int AddCpuCycles)
 {
 	Sint64 CyclesPassed, CyclesFromLastInterrupt;
 
@@ -584,8 +584,9 @@ void CycInt_AcknowledgeInterrupt(void)
 	/* New ActiveInt is first of the list */
 	InterruptHandlers[ CycInt_ActiveInt ].IntList_Prev = -1;
 
-	LOG_TRACE(TRACE_INT, "int ack video_cyc=%d active_int=%d active_cyc=%"PRIu64" pending_count=%d\n",
-	               Cycles_GetCounter(CYCLES_COUNTER_VIDEO), CycInt_ActiveInt, InterruptHandlers[CycInt_ActiveInt].Cycles, PendingInterruptCount );
+	LOG_TRACE(TRACE_INT, "int ack video_cyc=%d active_int=%d clock=%"PRIu64" active_cyc=%"PRIu64" pending_count=%d\n",
+			Cycles_GetCounter(CYCLES_COUNTER_VIDEO), CycInt_ActiveInt,
+			CyclesGlobalClockCounter , InterruptHandlers[CycInt_ActiveInt].Cycles, PendingInterruptCount );
 }
 
 
@@ -605,9 +606,9 @@ void CycInt_AddAbsoluteInterrupt(int CycleTime, int CycleType, interrupt_id Hand
 
 	CycInt_InsertInt ( Handler );
 
-	LOG_TRACE(TRACE_INT, "int add abs video_cyc=%d handler=%d handler_cyc=%"PRId64" pending_count=%d\n",
+	LOG_TRACE(TRACE_INT, "int add abs video_cyc=%d handler=%d clock=%"PRIu64" handler_cyc=%"PRIu64" pending_count=%d\n",
 	          Cycles_GetCounter(CYCLES_COUNTER_VIDEO), Handler,
-	          InterruptHandlers[Handler].Cycles, PendingInterruptCount );
+	          CyclesGlobalClockCounter , InterruptHandlers[Handler].Cycles, PendingInterruptCount );
 }
 
 
@@ -644,9 +645,9 @@ void CycInt_AddRelativeInterruptWithOffset(int CycleTime, int CycleType, interru
 
 	CycInt_InsertInt ( Handler );
 
-	LOG_TRACE(TRACE_INT, "int add rel offset video_cyc=%d handler=%d handler_cyc=%"PRId64" offset_cyc=%d pending_count=%d\n",
+	LOG_TRACE(TRACE_INT, "int add rel offset video_cyc=%d handler=%d clock=%"PRIu64" handler_cyc=%"PRIu64" offset_cyc=%d pending_count=%d\n",
 	          Cycles_GetCounter(CYCLES_COUNTER_VIDEO), Handler,
-	          InterruptHandlers[Handler].Cycles, CycleOffset, PendingInterruptCount);
+	          CyclesGlobalClockCounter , InterruptHandlers[Handler].Cycles, CycleOffset, PendingInterruptCount);
 }
 
 
@@ -669,9 +670,9 @@ void CycInt_ModifyInterrupt(int CycleTime, int CycleType, interrupt_id Handler)
 
 	CycInt_InsertInt ( Handler );
 
-	LOG_TRACE(TRACE_INT, "int modify video_cyc=%d handler=%d handler_cyc=%"PRId64" pending_count=%d\n",
+	LOG_TRACE(TRACE_INT, "int modify video_cyc=%d handler=%d clock=%"PRIu64" handler_cyc=%"PRIu64" pending_count=%d\n",
 	          Cycles_GetCounter(CYCLES_COUNTER_VIDEO), Handler,
-	          InterruptHandlers[Handler].Cycles, PendingInterruptCount );
+	          CyclesGlobalClockCounter , InterruptHandlers[Handler].Cycles, PendingInterruptCount );
 }
 
 
@@ -685,9 +686,9 @@ void CycInt_RemovePendingInterrupt(interrupt_id Handler)
 	/* Check interrupt is not already disabled ; if so, don't do anything */
 	if ( InterruptHandlers[ Handler ].Active == false )
 	{
-		LOG_TRACE(TRACE_INT, "int remove pending already disabled video_cyc=%d handler=%d handler_cyc=%"PRId64" pending_count=%d\n",
+		LOG_TRACE(TRACE_INT, "int remove pending already disabled video_cyc=%d handler=%d clock=%"PRIu64" handler_cyc=%"PRIu64" pending_count=%d\n",
 			Cycles_GetCounter(CYCLES_COUNTER_VIDEO), Handler,
-			InterruptHandlers[Handler].Cycles, PendingInterruptCount);
+			CyclesGlobalClockCounter , InterruptHandlers[Handler].Cycles, PendingInterruptCount);
 		return;
 	}
 
@@ -710,9 +711,9 @@ void CycInt_RemovePendingInterrupt(interrupt_id Handler)
 		InterruptHandlers[ InterruptHandlers[Handler].IntList_Next ].IntList_Prev = InterruptHandlers[ Handler ].IntList_Prev;
 	}
 
-	LOG_TRACE(TRACE_INT, "int remove pending video_cyc=%d handler=%d handler_cyc=%"PRId64" pending_count=%d\n",
+	LOG_TRACE(TRACE_INT, "int remove pending video_cyc=%d handler=%d clock=%"PRIu64" handler_cyc=%"PRIu64" pending_count=%d\n",
 	          Cycles_GetCounter(CYCLES_COUNTER_VIDEO), Handler,
-	          InterruptHandlers[Handler].Cycles, PendingInterruptCount);
+	          CyclesGlobalClockCounter , InterruptHandlers[Handler].Cycles, PendingInterruptCount);
 #ifdef CYCINT_DEBUG
 	fprintf ( stderr , "int remove after active=%02d active_cyc=%"PRIu64" clock=%"PRIu64"\n" , CycInt_ActiveInt , CycInt_ActiveInt_Cycles , CyclesGlobalClockCounter );
 	int n = CycInt_ActiveInt;
@@ -736,27 +737,29 @@ void CycInt_ResumeStoppedInterrupt(interrupt_id Handler)
 
 	CycInt_InsertInt ( Handler );
 
-	LOG_TRACE(TRACE_INT, "int resume stopped video_cyc=%d handler=%d handler_cyc=%"PRId64" pending_count=%d\n",
+	LOG_TRACE(TRACE_INT, "int resume stopped video_cyc=%d handler=%d clock=%"PRIu64" handler_cyc=%"PRIu64" pending_count=%d\n",
 	          Cycles_GetCounter(CYCLES_COUNTER_VIDEO), Handler,
-	          InterruptHandlers[Handler].Cycles, PendingInterruptCount);
+	          CyclesGlobalClockCounter , InterruptHandlers[Handler].Cycles, PendingInterruptCount);
 }
 
 
 
 /*-----------------------------------------------------------------------*/
 /**
- * Return cycles passed for an interrupt handler
+ * Return cycles remaining for an interrupt handler
+ * Remaining cycles are counted from current clock CyclesGlobalClockCounter,
+ * with a possible extra CPU cycles delay in AddCpuCycles
  */
 // TODO : this should be renamed to CycInt_FindCyclesRemaining instead
-int CycInt_FindCyclesPassed(interrupt_id Handler, int CycleType)
+int CycInt_FindCyclesPassed(interrupt_id Handler, int CycleType, int AddCpuCycles)
 {
 	Sint64 Cycles;
 
-	Cycles = InterruptHandlers[Handler].Cycles - INT_CONVERT_TO_INTERNAL(CyclesGlobalClockCounter,INT_CPU_CYCLE);
+	Cycles = InterruptHandlers[Handler].Cycles - INT_CONVERT_TO_INTERNAL( ( CyclesGlobalClockCounter+AddCpuCycles ) , INT_CPU_CYCLE );
 
-	LOG_TRACE(TRACE_INT, "int find passed cyc video_cyc=%d handler=%d int_cyc=%"PRId64" remain_cyc=%"PRId64"\n",
+	LOG_TRACE(TRACE_INT, "int find passed cyc video_cyc=%d handler=%d clock=%"PRIu64" int_cyc=%"PRIu64" remain_cyc=%"PRIu64"\n",
 	          Cycles_GetCounter(CYCLES_COUNTER_VIDEO), Handler,
-	          InterruptHandlers[Handler].Cycles, Cycles);
+	          CyclesGlobalClockCounter , InterruptHandlers[Handler].Cycles, Cycles);
 
 	return INT_CONVERT_FROM_INTERNAL ( Cycles , CycleType ) ;
 }
