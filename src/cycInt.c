@@ -468,26 +468,6 @@ void CycInt_RemovePendingInterrupt(interrupt_id Handler)
 }
 
 
-/*-----------------------------------------------------------------------*/
-/**
- * Resume a stopped interrupt from its current cycle count (for MFP timers)
- */
-void CycInt_ResumeStoppedInterrupt(interrupt_id Handler)
-{
-	/* Restart interrupt */
-	InterruptHandlers[Handler].Active = true;
-
-	/* Update list cycle counts */
-	CycInt_UpdateInterrupt();
-	/* Set new */
-	CycInt_SetNewInterrupt();
-
-	LOG_TRACE(TRACE_INT, "int resume stopped video_cyc=%d handler=%d handler_cyc=%"PRId64" pending_count=%d\n",
-	          Cycles_GetCounter(CYCLES_COUNTER_VIDEO), Handler,
-	          InterruptHandlers[Handler].Cycles, PendingInterruptCount);
-}
-
-
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -723,23 +703,6 @@ void CycInt_RemovePendingInterrupt(interrupt_id Handler)
 		n = InterruptHandlers[ n ].IntList_Next;
 	} while ( n >= 0 );
 #endif
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Resume a stopped interrupt from its current cycle count (for MFP timers)
- */
-void CycInt_ResumeStoppedInterrupt(interrupt_id Handler)
-{
-	/* Restart interrupt */
-	InterruptHandlers[ Handler ].Active = true;
-
-	CycInt_InsertInt ( Handler );
-
-	LOG_TRACE(TRACE_INT, "int resume stopped video_cyc=%d handler=%d clock=%"PRIu64" handler_cyc=%"PRIu64" pending_count=%d\n",
-	          Cycles_GetCounter(CYCLES_COUNTER_VIDEO), Handler,
-	          CyclesGlobalClockCounter , InterruptHandlers[Handler].Cycles, PendingInterruptCount);
 }
 
 
