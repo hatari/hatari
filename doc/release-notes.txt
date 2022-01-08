@@ -48,6 +48,7 @@ Emulator:
 - Falcon:
   - Fix: restore zoom mode correctly when loading snapshots
   - Correct also smaller specified memory amounts to valid ones
+  - Microphone emulation now uses SDL2 instead of PortAudio
 - MegaSTE/TT:
   - Add VME/SCU registers "--vme <none|dummy>" access option
     (needed to support both Linux and TOS v2 & v3 until Hatari

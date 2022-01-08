@@ -21,7 +21,7 @@ Prefix:       /usr
 BuildRequires: cmake coreutils cpio cpp diffutils file filesystem findutils tar
 BuildRequires: grep gzip libgcc make man mktemp patch readline sed util-linux
 BuildRequires: glibc-devel zlib-devel SDL2-devel libpng-devel readline-devel
-BuildRequires: portaudio-devel binutils gcc rpm
+BuildRequires: binutils gcc rpm
 
 # Required by zip2st and atari-hd-image
 Requires: unzip

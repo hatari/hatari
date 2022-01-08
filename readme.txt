@@ -88,7 +88,6 @@ Optional:
   systems with the X window system (Linux and other unixes)
 - The PortMidi library required for MIDI device support on macOS and Windows
   (http://portmedia.sourceforge.net/)
-- The portaudio library for Falcon microphone handling
 - The udev library for NatFeats SCSI driver media change detection
 - The IPF support library (http://www.softpres.org/download)
 
@@ -102,11 +101,11 @@ see http://www.cmake.org/ for details.
 
 On RedHat based Linux distributions, you get (most of) these with:
 	sudo dnf install gcc cmake SDL2-devel zlib-devel libpng-devel \
-	  readline-devel portaudio-devel
+	  readline-devel
 
 And on Debian/Ubuntu based ones with:
 	sudo apt install gcc cmake libsdl2-dev zlib1g-dev libpng-dev \
-	  libreadline-dev portaudio19-dev
+	  libreadline-dev
 
 
  3.2) Configuring and compiling
@@ -195,20 +194,6 @@ But registering handlers for mime-types seems desktop specific.
 
 
  3.4.1) Known distro problems
-
-If Hatari is built with portaudio support, *and* either portaudio or
-ALSA is configured to use pulseaudio plugin, that plugin aborts Hatari
-at Falcon emulation startup, if Pulseaudio server is not running.
-
-This is because:
-- Falcon microphone emulation initializes Portaudio, which uses ALSA
-- Many distributions enable (by default) pulseaudio plugin(s) for ALSA
-  and/or portaudio
-- Pulseaudio plugin aborts when it cannot connect to pulseaudio server
-
-Note: Normal Hatari audio output goes through SDL, which uses
-pulseaudio library directly.  That doesn't have this issue.
-
 
 Old RHEL 5 and the derived CentOS v5.x Linux distributions ship
 with a broken readline library:
