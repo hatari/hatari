@@ -14,7 +14,7 @@ build-alt:
  script:
  - apt-get install -y -qq cmake libsdl2-dev portaudio19-dev libportmidi-dev
  - rm -rf /usr/include/zlib.h /usr/include/png.h /usr/include/readline*
- - ./configure --enable-small-mem --disable-dsp --enable-debug --disable-tracing
+ - ./configure --disable-small-mem --disable-dsp --enable-debug --disable-tracing
  - make
  - make test
 
