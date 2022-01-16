@@ -34,8 +34,8 @@
     $FF8911 (byte) : Frame End Mi
     $FF8913 (byte) : Frame End Lo
     $FF8920 (word) : Sound Mode Control (frequency, mono/stereo)
-    $FF8922 (byte) : Microwire Data Register
-    $FF8924 (byte) : Microwire Mask Register
+    $FF8922 (word) : Microwire Data Register
+    $FF8924 (word) : Microwire Mask Register
 
   
   The Microwire and LMC 1992 commands :
@@ -1482,6 +1482,6 @@ void DmaSnd_Info(FILE *fp, Uint32 dummy)
 		return;
 	}
 	fprintf(fp, "\n");
-	fprintf(fp, "$FF8922.b : Microwire Data     : %02x\n", IoMem_ReadByte(0xff8922));
-	fprintf(fp, "$FF8922.b : Microwire Mask     : %02x\n", IoMem_ReadByte(0xff8924));
+	fprintf(fp, "$FF8922.w : Microwire Data     : %02x\n", IoMem_ReadWord(0xff8922));
+	fprintf(fp, "$FF8924.w : Microwire Mask     : %02x\n", IoMem_ReadWord(0xff8924));
 }
