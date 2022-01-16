@@ -395,7 +395,7 @@ Demos:
 - Frenchies (by Frenchies, 96KB intro)
 - Fruit is Great! (256b 50Hz overscan by Effect)
 - Glokzilla (by MJJ Prod)
-- Grafik -und Sounddemo (by Eckhard Kruse), font issues
+- Grafik -und Sounddemo (by Eckhard Kruse)
 - Hallucinations (by Reservoir Gods)
 - Helvetin Hyttysiä (by Spice Boys)
 - Hiatus (by SMFX)
@@ -565,7 +565,7 @@ Free/shareware/PD games:
 - Alterra
 - Archon 4KB
 - Alien Blockade* (quixx)
-- Atax            (minor gfx issues)
+- Atax
 - Bellum*
 - Blaster
 - Blind labyrinth (line-A bitblits, mouse issues)
@@ -576,7 +576,6 @@ Free/shareware/PD games:
 - Boom
 - Bugs*          (line-A bitblits)
 - Candyman       (line-A bitblits)
-- Catch Me If You Can* (+ STE support)
 - ChuChu Rocket* (RG's STFM Lite version)
 - Clogged Up
 - Cops and Robbers Too! (line-A bitblits)
@@ -597,7 +596,6 @@ Free/shareware/PD games:
 - French adaptations of classic games:
   Boulderdash, Demineur, Jewel, Qbert, Sokoban
 - Frogger*
-- Frogs          (MIDI multiplayer, optional STE audio/blitter support)
 - Fuzzball*
 - GodPey         (floppy only, by Reservoir Gods)
 - Golgafrincham  (mod compile with 2-player minigame)
@@ -746,7 +744,7 @@ Monochrome games:
 - Balloons
 - Bolo          (demo levels, floppy only)
 - Bouncing boubles
-- Columns*      (text input positioning issue)
+- Columns*
 - Criss Cross
 - CW Puzzle     (line-A bitblit + line & point draw in start)
 - Delta patrol
@@ -958,6 +956,7 @@ Demos:
 - BoingSTE
 - CD-player (by Light)
 - Cernit Trandafir (by DHS)
+- Chipo Django 1 (by Rabenauge)
 - Circus BackSTage (by BlaBLa)
 - City Frames (by DHS)
 - Core Flakes (by New Core)
@@ -1056,12 +1055,15 @@ Color games:
 - Bombaman
 - Boom (screen flashes during scrolling messages)
 - Breakdance (scene game, STOS)
+- Catch Me If You Can*
 - ChuChu Rocket* (RG's full version)
 - Crash Time Plumber
 - Dread* (playable Wolf3D clone demo v1905)
 - Droid STE rewrite
 - Dynabusters+*
+- Exchange Puzzle (SV20 edition, optional STe palette support)
 - Frantick
+- Frogs (optional STE audio/blitter support, MIDI multiplayer)
 - Giana Sisters STE rewrite:
   http://atari-forum.com/viewtopic.php?f=3&t=26360
 - H Mec 2 (line-A bitblit)
@@ -1079,7 +1081,7 @@ Color games:
 - Power Up
 - R0x (line-A bitblit)
 - R0x Zero (line-A bitblit, overscan screen needs 50Hz version of Emutos)
-- Randomazer
+- Randomazer 1.x & SV2020 editions
 - Roger (line-A bitblit)
 - R-Type Deluxe (arcade conversion)
   http://atari-forum.com/viewtopic.php?f=28&t=29047
@@ -1099,6 +1101,7 @@ Color games:
 - The chronicles of Omega
 - Tomtar
 - Trapped II (DMA audio, line-A functions 1, 2, 3, 5, 7, 9)
+- Treasure in Cave (by Freedom)
 - Ultimate Arena v1.3 light (slow with EmuTOS)
 - Utopos* (demo)
 - Wolfenstein3D v0.8a* (a bit unstable)

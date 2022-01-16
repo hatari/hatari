@@ -72,10 +72,6 @@ static FILE *pMidiFhOut = NULL;    /* File handle used for Midi output */
 #define INPUT_BUFFER_SIZE  1024		 // PortMidi handles buffering
 static PmStream* midiIn  = NULL;	 // current midi input port
 static PmStream* midiOut = NULL;	 // current midi output port
-static int numInputs  = 0;				 // number of available input ports
-static int numOutputs = 0;				 // number of available output ports
-static const PmDeviceInfo** inports  = NULL;	// array of available input ports
-static const PmDeviceInfo** outports = NULL;	// array of available output ports
 
 static bool Midi_Host_SwitchPort(const char* portName, bool forInput);
 static int Midi_GetDataLength(Uint8 status);
@@ -161,7 +157,7 @@ static void	MIDI_UpdateIRQ ( void )
 	/* Update SR and IRQ line if a change happened */
 	if ( ( MidiStatusRegister & ACIA_SR_INTERRUPT_REQUEST ) != irq_bit_new )
 	{
-		LOG_TRACE ( TRACE_MIDI, "midi update irq irq_new=%d VBL=%d HBL=%d\n" , irq_bit_new?1:0 , nVBLs , nHBL );
+		LOG_TRACE ( TRACE_MIDI_RAW, "midi update irq irq_new=%d VBL=%d HBL=%d\n" , irq_bit_new?1:0 , nVBLs , nHBL );
 
 		if ( irq_bit_new )
 		{
@@ -202,7 +198,7 @@ void Midi_Control_ReadByte(void)
 
 	IoMem[0xfffc04] = MidiStatusRegister;
 
-	LOG_TRACE ( TRACE_MIDI, "midi read fffc04 sr=0x%02x VBL=%d HBL=%d\n" , MidiStatusRegister , nVBLs , nHBL );
+	LOG_TRACE ( TRACE_MIDI_RAW, "midi read fffc04 sr=0x%02x VBL=%d HBL=%d\n" , MidiStatusRegister , nVBLs , nHBL );
 }
 
 
@@ -215,7 +211,7 @@ void Midi_Control_WriteByte(void)
 
 	MidiControlRegister = IoMem[0xfffc04];
 
-	LOG_TRACE ( TRACE_MIDI, "midi write fffc04 cr=0x%02x VBL=%d HBL=%d\n" , MidiControlRegister , nVBLs , nHBL );
+	LOG_TRACE ( TRACE_MIDI_RAW, "midi write fffc04 cr=0x%02x VBL=%d HBL=%d\n" , MidiControlRegister , nVBLs , nHBL );
 
 	MIDI_UpdateIRQ ();
 }
@@ -226,7 +222,7 @@ void Midi_Control_WriteByte(void)
  */
 void Midi_Data_ReadByte(void)
 {
-	LOG_TRACE ( TRACE_MIDI, "midi read fffc06 rdr=0x%02x VBL=%d HBL=%d\n" , nRxDataByte , nVBLs , nHBL );
+	LOG_TRACE ( TRACE_MIDI_RAW, "midi read fffc06 rdr=0x%02x VBL=%d HBL=%d\n" , nRxDataByte , nVBLs , nHBL );
 //fprintf ( stderr , "midi rx %x\n" , nRxDataByte);
 
 	ACIA_AddWaitCycles ();						/* Additional cycles when accessing the ACIA */
@@ -268,7 +264,7 @@ void Midi_Data_WriteByte(void)
 		TSR_Complete_Time += MIDI_TRANSFER_BYTE_CYCLE;
 	}
 
-	LOG_TRACE ( TRACE_MIDI, "midi write fffc06 tdr=0x%02x VBL=%d HBL=%d\n" , nTxDataByte , nVBLs , nHBL );
+	LOG_TRACE ( TRACE_MIDI_RAW, "midi write fffc06 tdr=0x%02x VBL=%d HBL=%d\n" , nTxDataByte , nVBLs , nHBL );
 //fprintf ( stderr , "midi tx %x sr=%x\n" , nTxDataByte , MidiStatusRegister );
 
 	MidiStatusRegister &= ~ACIA_SR_TX_EMPTY;
@@ -372,58 +368,25 @@ static bool Midi_Host_Open(void)
 			 ConfigureParams.Midi.sMidiInFileName);
 	}
 #else
-	/* Need to always get MIDI device info, for MIDI setup dialog */
-	int i;
-	int iindex = 0;
-	int oindex = 0;
-	int numPorts = 0;
-	
+	int i, ports;
 	if (Pm_Initialize() != pmNoError)
 	{
 		LOG_TRACE(TRACE_MIDI, "MIDI: PortMidi initialization failed\n");
 		return false;
 	}
-	// -- get rid of earlier portmidi descriptor arrays (if allocated)
-	// -- the information may be stale (USB Midi etc)
-	if (inports)
-		free (inports);
-	if (outports)
-		free (outports);
-	inports = outports = NULL;
-	numInputs = numOutputs = 0;
-
-	// -- count number of input and output ports
-	numPorts = Pm_CountDevices();
-	for (i = 0; i < numPorts; i++)
+	// -- log available ports
+	ports = Pm_CountDevices();
+	for (i = 0; i < ports; i++)
 	{
 		const PmDeviceInfo *info = Pm_GetDeviceInfo(i);
-		if (info->input)
-			numInputs++;
-		else if (info->output)
-			numOutputs++;
-	}
-
-	// -- allocate descriptor arrays
-	inports  = malloc(numInputs  * sizeof(PmDeviceInfo*));
-	outports = malloc(numOutputs * sizeof(PmDeviceInfo*));
-	
-	// -- populate descriptor arrays
-	for (i = 0; i < numPorts; i++)
-	{
-		const PmDeviceInfo* info = Pm_GetDeviceInfo(i);
-		if (info)
-		{
-			LOG_TRACE(TRACE_MIDI, "MIDI: device %d: '%s'\n", i, info->name);
-			if (info->input)
-				inports[iindex++] = info;
-			if (info->output)
-				outports[oindex++] = info;
-		}
-		else
-			LOG_TRACE(TRACE_MIDI, "MIDI: info disappeared for device %d!\n", i);
+		if (!info)
+			continue;
+		LOG_TRACE(TRACE_MIDI, "MIDI: %s %d: '%s'\n",
+			  info->input ? "input " : "output", i, info->name);
 	}
 
 	// -- open input and output ports according to configuration
+	// -- ignore errors to avoid MIDI being disabled
 	if (ConfigureParams.Midi.sMidiInPortName[0])
 		Midi_Host_SwitchPort(ConfigureParams.Midi.sMidiInPortName, true);
 	if (ConfigureParams.Midi.sMidiOutPortName[0])
@@ -458,74 +421,105 @@ static void Midi_Host_Close(void)
 
 
 
-/* ---------------------------------------------------------------------------- */
-/**
- * returns port name for input or output port at 'index'
- */
-const char* Midi_Host_GetPortName(int index, bool forInput)
-{
 #ifdef HAVE_PORTMIDI
-	if (forInput && index < numInputs)
-		return inports[index]->name;
-	else if (!forInput && index < numOutputs)
-		return outports[index]->name;
-#endif
+/**
+ * Returns port name if there's one matching the given port name
+ * with given offset and direction.
+ *
+ * Offset interpretation:
+ *   0: return matching device name
+ *  <0: return name of device before matching one
+ *  >0: return name of device after matching one
+ *
+ * As special case, for NULL name with positive offset,
+ * name of the first port in correct direction is returned.
+ */
+const char* Midi_Host_GetPortName(const char *name, int offset, bool forInput)
+{
+	const PmDeviceInfo* info;
+	const char *prev = NULL;
+	bool prev_matched = false;
+	int i, count;
 
+	// -- find port with given offset from named one
+	count = Pm_CountDevices();
+	for (i = 0; i < count; i++)
+	{
+		info = Pm_GetDeviceInfo(i);
+		if (!info)
+			continue;
+		if (forInput && !info->input)
+			continue;
+		if (!forInput && info->input)
+			continue;
+		if (!name)
+		{
+			if (offset <= 0)
+				return NULL;
+			return info->name;
+		}
+		if (!strcmp(info->name, name))
+		{
+			if (!offset)
+				return name;
+			if (offset < 0)
+				return prev;
+			prev_matched = true;
+			continue;
+		}
+		if (prev_matched)
+			return info->name;
+		prev = info->name;
+	}
 	return NULL;
 }
 
-/* ---------------------------------------------------------------------------- */
 /**
- * returns port descriptor array index for input or output 'portName'
+ * Closes current midi port (if any) and opens 'portName' if MIDI
+ * enabled. If there is no exact match, last device where 'portName'
+ * matches beginning of the device name, is used. Returns true for
+ * success, false otherwise
  */
-int Midi_Host_GetPortIndex(const char* portName, bool forInput)
-{
-#ifdef HAVE_PORTMIDI
-	int i = 0;
-	int numPorts = forInput ? numInputs : numOutputs;
-	const PmDeviceInfo** ports = forInput ? inports : outports;
-
-	if (ports)
-	{
-		for (i = 0; i < numPorts; i++)
-			if (!strcmp(portName, ports[i]->name))
-				return i;
-	}
-#endif
-
-	return -1;
-}
-
-/**
- * closes current midi port (if any) and opens 'portName' if MIDI enabled
- * returns true if successful, false otherwise
- */
-#ifdef HAVE_PORTMIDI
 static bool Midi_Host_SwitchPort(const char* portName, bool forInput)
 {
-	int i, count;
+	int i, prefixmatch, len, count;
 	bool err;
 
 	if (!ConfigureParams.Midi.bEnableMidi)
 		return false;
+
+	// -- no names
+	if (strcasecmp("off", portName) == 0)
+		return false;
+
+	len = strlen(portName);
+	prefixmatch = -1;
 
 	// -- find PortMidi index for 'portName'
 	count = Pm_CountDevices();
 	for (i = 0; i < count; i++)
 	{
 		const PmDeviceInfo* info = Pm_GetDeviceInfo(i);
-		if (info)
-		{
-			if (forInput && !info->input)
-				continue;
-			else if (!forInput && info->input)
-				continue;
-			if (!strcmp(info->name, portName))
-				break;
-		}
+		if (!info)
+			continue;
+		if (forInput && !info->input)
+			continue;
+		if (!forInput && info->input)
+			continue;
+		if (!strcmp(info->name, portName))
+			break;
+		if (!strncmp(info->name, portName, len))
+			prefixmatch = i;
 	}
+	if (i >= count && prefixmatch >= 0)
+		i = prefixmatch;
+
 	if (i >= count)
+	{
+		LOG_TRACE(TRACE_MIDI, "MIDI: no %s ports matching '%s'\n",
+			  forInput ? "input" : "output", portName);
 		return false;
+	}
 
 	// -- close current port in any case, then try open new one
 	if (forInput == true)
@@ -535,7 +529,8 @@ static bool Midi_Host_SwitchPort(const char* portName, bool forInput)
 			midiIn = NULL;
 		}
 		err = (Pm_OpenInput(&midiIn, i, NULL, INPUT_BUFFER_SIZE, NULL, NULL) == pmNoError);
-		LOG_TRACE(TRACE_MIDI, "MIDI: input port %d '%s' open %s\n", i, portName, err ? "succeeded" : "failed");
+		LOG_TRACE(TRACE_MIDI, "MIDI: input port %d '%s' open %s\n",
+			  i, portName, err ? "succeeded" : "failed");
 		return err;
 	}
 	else
@@ -545,11 +540,35 @@ static bool Midi_Host_SwitchPort(const char* portName, bool forInput)
 			midiOut = NULL;
 		}
 		err = (Pm_OpenOutput(&midiOut, i, NULL, 0, NULL, NULL, 0) == pmNoError);
-		LOG_TRACE(TRACE_MIDI, "MIDI: output port %d '%s' open %s\n", i, portName, err ? "succeeded" : "failed");
+		LOG_TRACE(TRACE_MIDI, "MIDI: output port %d '%s' open %s\n",
+			  i, portName, err ? "succeeded" : "failed");
 		return err;
 	}
 
 	return false;
+}
+
+/**
+ * Log PortMidi error regardless of whether it's a host (backend)
+ * or general PortMidi error (which need to be handled differently)
+ */
+static void Midi_LogError(PmError error)
+{
+	const char *msg;
+	char buf[PM_HOST_ERROR_MSG_LEN+1];
+
+	if (error == pmHostError)
+	{
+		Pm_GetHostErrorText(buf, sizeof(buf)-1);
+		buf[sizeof(buf)-1] = '\0';
+		msg = buf;
+	}
+	else
+	{
+		msg = Pm_GetErrorText(error);
+	}
+	Log_Printf(LOG_WARN, "MIDI: PortMidi write error %d: '%s'\n",
+		   error, msg);
 }
 #endif
 
@@ -563,6 +582,7 @@ static int Midi_Host_ReadByte(void)
 		return fgetc(pMidiFhIn);
 	else return EOF;
 #else
+	// TODO: should these be reset with Midi_Init()?
 	static Uint8 msg[4];
 	static Uint8 ibyte = 0;
 	static int bytesAvailable = 0;
@@ -614,13 +634,10 @@ static bool Midi_Host_WriteByte(Uint8 byte)
 		PmEvent* midiEvent = Midi_BuildEvent(byte);
 		if (midiEvent)
 		{
-			const char *msg;
 			PmError error = Pm_Write(midiOut, midiEvent, 1);
 			if (error == pmNoError || error == pmGotData)
 				return true;
-			msg = Pm_GetErrorText(error);
-			Log_Printf(LOG_WARN, "MIDI: PortMidi write error %d: '%s'\n",
-				  error, msg);
+			Midi_LogError(error);
 			return false;
 		}
 		return true;
@@ -664,68 +681,101 @@ static int Midi_GetDataLength(Uint8 status)
 static PmEvent* Midi_BuildEvent(Uint8 byte)
 {
 	static const Uint8 shifts[] = { 0,8,16,24 };
+	// TODO: should these be reset with Midi_Init()?
 	static PmEvent midiEvent = { 0,0 };
 	static Uint32 midimsg;
-//	static Uint8 runningStatus = 0;
+	static Uint8 runningStatus = 0;
 	static Uint8 bytesToWait = 0;
 	static Uint8 bytesCollected = 0;
 	static bool processingSysex = false;
+	static bool expectStatus = true;
 
 	// -- status byte
 	if (byte & 0x80)
 	{
+		// -- realtime
 		if (byte >= 0xF8)
 		{
-			midiEvent.message = Pm_Message(byte,0,0);
+			midiEvent.message = Pm_Message(byte, 0, 0);
 			return &midiEvent;
 		}
-		else
+		// -- sysex end
+		if (byte == 0xF7)
 		{
+			midimsg |= ((Uint32)0xF7) << shifts[bytesCollected];
+			midiEvent.message = midimsg;
+
+			LOG_TRACE(TRACE_MIDI, "MIDI: SYX END event %X %X %X %X\n",
+				  (midimsg & 0x000000FF),
+				  (midimsg & 0x0000FF00) >> shifts[1],
+				  (midimsg & 0x00FF0000) >> shifts[2],
+				  (midimsg & 0xFF000000) >> shifts[3]);
+
+			midimsg = bytesToWait = bytesCollected = 0;
 			processingSysex = false;
-			if (byte >= 0xF0)
-			{
-//				runningStatus = 0;
-				if (byte == 0xF0)
-				{
-					processingSysex = true;
-					bytesCollected = 1;
-				}
-				else if (byte == 0xF7)
-				{
-					midiEvent.message = midimsg | (((Uint32)byte) << shifts[bytesCollected]);
-					midimsg = bytesToWait = bytesCollected = 0;
-					return &midiEvent;
-				}
-				else
-					bytesCollected = 0;
-			}
-			else
-			{
-//				runningStatus = byte;
-				bytesCollected = 0;
-			}
+			expectStatus = true;
+			runningStatus = 0;
+
+			return &midiEvent;
+		}
+		processingSysex = false;
+		bytesCollected = 0;
+		runningStatus = 0;
+
+		// -- sysex start
+		if (byte == 0xF0)
+		{
+			processingSysex = true;
+			bytesCollected = 1;
+		}
+		else if (byte < 0xF0)
+		{
+			runningStatus = byte;
 		}
 		midimsg = byte;
 		bytesToWait = Midi_GetDataLength(byte);
+		expectStatus = false;
+
+		return NULL;
 	}
 
 	// -- data byte
+	if (processingSysex)
+	{
+		midimsg |= ((Uint32)byte) << shifts[bytesCollected++];
+	}
 	else
 	{
-		if (processingSysex)
-			midimsg |= ((Uint32)byte) << shifts[bytesCollected++];
-		else
-			midimsg |= ((Uint32)byte) << shifts[++bytesCollected];
-		if (bytesCollected >= bytesToWait)
+		if (!expectStatus)
 		{
-			midiEvent.message = midimsg;
-			midimsg = 0;
-			bytesCollected = 0;
-			bytesToWait = processingSysex ? 4 : 0;
-			return &midiEvent;
+			midimsg |= ((Uint32)byte) << shifts[++bytesCollected];
+		}
+		else if (runningStatus >= 0x80)
+		{
+			// reuse the previous status here.
+			LOG_TRACE(TRACE_MIDI, "MIDI: running status %X byte %X\n",
+				  runningStatus, byte);
+			bytesToWait = Midi_GetDataLength(runningStatus);
+			midimsg = ((Uint32)runningStatus);
+			midimsg |= ((Uint32)byte) << shifts[++bytesCollected];
+			expectStatus = false;
 		}
 	}
-	
+	if (bytesCollected >= bytesToWait && bytesCollected > 0)
+	{
+		midiEvent.message = midimsg;
+		LOG_TRACE(TRACE_MIDI, "MIDI: event %X %X %X %X\n",
+			  (midimsg & 0x000000FF),
+			  (midimsg & 0x0000FF00) >> shifts[1],
+			  (midimsg & 0x00FF0000) >> shifts[2],
+			  (midimsg & 0xFF000000) >> shifts[3]);
+		bytesToWait = processingSysex ? 4 : 0;
+		midimsg = bytesCollected = 0;
+		expectStatus = true;
+
+		return &midiEvent;
+	}
+
 	return NULL;
 }
 
@@ -739,6 +789,7 @@ static PmEvent* Midi_BuildEvent(Uint8 byte)
  */
 static int Midi_SplitEvent(PmEvent* midiEvent, Uint8* msg)
 {
+	// TODO: should be reset with Midi_Init()?
 	static bool processingSysex = false;
 	PmMessage midiMessage = midiEvent->message;
 	int i, bytesAvailable = 0;

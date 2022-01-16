@@ -22,7 +22,7 @@ const char ScanDir_fileid[] = "Hatari scandir.c";
 /*-----------------------------------------------------------------------
  * Here come alphasort and scandir for POSIX-like OSes
  *-----------------------------------------------------------------------*/
-#if !defined(WIN32) && !defined(__CEGCC__)
+#if !defined(WIN32)
 
 
 /**
@@ -43,7 +43,7 @@ int alphasort(const struct dirent **d1, const struct dirent **d2)
 		((sizeof(struct dirent) - sizeof(dp)->d_name) +     \
 		(((dp)->d_reclen + 1 + 3) &~ 3))
 
-#if (defined(__sun) && defined(__SVR4)) || defined(__CEGCC__)
+#if (defined(__sun) && defined(__SVR4))
 # define dirfd(d) ((d)->dd_fd)
 #elif defined(__BEOS__)
 # define dirfd(d) ((d)->fd)
@@ -154,7 +154,7 @@ error_out:
 /*-----------------------------------------------------------------------
  * Here come alphasort and scandir for Windows
  *-----------------------------------------------------------------------*/
-#if (defined(WIN32) || defined(__CEGCC__)) && !defined(DIRENT_H)
+#if defined(WIN32) && !defined(DIRENT_H)
 
 #include <windows.h>
 #include <wchar.h>
@@ -221,16 +221,7 @@ int scandir(const char *dirname, struct dirent ***namelist,
 
 	Log_Printf(LOG_DEBUG, "scandir : findIn processed='%s'\n", findIn);
 
-#if defined(__CEGCC__)
-	void *findInW = NULL;
-	findInW = malloc((len+6)*2);
-	if (!findInW)
-		return -1;
-	mbstowcs(findInW, findIn, len+6);
-	h = FindFirstFileW(findInW, &find);
-#else
 	h = FindFirstFile(findIn, &find);
-#endif
 
 	if (h == INVALID_HANDLE_VALUE)
 	{
@@ -247,11 +238,7 @@ int scandir(const char *dirname, struct dirent ***namelist,
 	do
 	{
 		selectDir=(struct dirent*)malloc(sizeof(struct dirent)+lstrlen(find.cFileName)+1);
-#if defined(__CEGCC__)
-		wcstombs(selectDir->d_name, find.cFileName, lstrlen(find.cFileName)+1);
-#else
 		strcpy(selectDir->d_name, find.cFileName);
-#endif
 		//Log_Printf(LOG_DEBUG, "scandir : findFile='%s'\n", selectDir->d_name);
 		if (!sdfilter || (*sdfilter)(selectDir))
 		{
@@ -273,11 +260,7 @@ int scandir(const char *dirname, struct dirent ***namelist,
 			free(selectDir);
 		}
 
-#if defined(__CEGCC__)
-		ret = FindNextFileW(h, &find);
-#else
 		ret = FindNextFile(h, &find);
-#endif
 	}
 	while (ret);
 
@@ -291,10 +274,6 @@ int scandir(const char *dirname, struct dirent ***namelist,
 	FindClose(h);
 
 	free(findIn);
-
-#if defined(__CEGCC__)
-	free(findInW);
-#endif
 
 	if (dcomp)
 		qsort(dir, nDir, sizeof(*dir),

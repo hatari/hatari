@@ -94,6 +94,7 @@ const char crossbar_fileid[] = "Hatari Crossbar.c";
 #include "main.h"
 #include "audio.h"
 #include "configuration.h"
+#include "cycles.h"
 #include "cycInt.h"
 #include "dmaSnd.h"
 #include "m68000.h"

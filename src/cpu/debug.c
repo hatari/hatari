@@ -1948,9 +1948,11 @@ void record_dma_read(uae_u16 reg, uae_u32 addr, int hpos, int vpos, int type, in
 	dr = &dma_record[dma_record_toggle][vpos * NR_DMA_REC_HPOS + hpos];
 	dma_record_frame[dma_record_toggle] = timeframes;
 	if (dr->reg != 0xffff) {
-		dma_conflict(vpos, hpos, dr, reg, false);
-		dr->cf_reg = reg;
-		dr->cf_addr = addr;
+		if (dr->reg != reg) {
+			dma_conflict(vpos, hpos, dr, reg, false);
+			dr->cf_reg = reg;
+			dr->cf_addr = addr;
+		}
 		return;
 	}
 	dr->reg = reg;
@@ -2115,7 +2117,7 @@ static bool get_record_dma_info(struct dma_rec *dr, int hpos, int vpos, uae_u32 
 			l3[cl2++] = 'b';
 		if (dr->evt & DMA_EVENT_BPLFETCHUPDATE)
 			l3[cl2++] = 'p';
-		if (dr->evt & DMA_EVENT_COPPERWAKE)
+		if (dr->evt & (DMA_EVENT_COPPERWAKE | DMA_EVENT_COPPERSKIP))
 			l3[cl2++] = 'W';
 		if (dr->evt & DMA_EVENT_COPPERSKIP)
 			l3[cl2++] = 'S';
@@ -6418,6 +6420,7 @@ void debug (void)
 		return;
 
 	bogusframe = 1;
+	disasm_init();
 	addhistory ();
 
 #if 0

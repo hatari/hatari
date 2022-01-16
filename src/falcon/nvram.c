@@ -60,6 +60,7 @@ const char NvRam_fileid[] = "Hatari nvram.c";
 #include "log.h"
 #include "nvram.h"
 #include "paths.h"
+#include "tos.h"
 #include "vdi.h"
 
 // Defs for NVRAM control register A (10) bits
@@ -302,9 +303,13 @@ void NvRam_Init(void)
 			nvram[NVRAM_VMODE2] &= ~0x10;		// TV/RGB mode
 			nvram[NVRAM_VMODE2] |= 0x20;		// 50 Hz
 		}
-		NvRam_SetChecksum();
 	}
+	if (ConfigureParams.Keyboard.nLanguage != TOS_LANG_UNKNOWN)
+		nvram[NVRAM_LANGUAGE] = ConfigureParams.Keyboard.nLanguage;
+	if (ConfigureParams.Keyboard.nKbdLayout != TOS_LANG_UNKNOWN)
+		nvram[NVRAM_KEYBOARDLAYOUT] = ConfigureParams.Keyboard.nKbdLayout;
 
+	NvRam_SetChecksum();
 	NvRam_Reset();
 }
 

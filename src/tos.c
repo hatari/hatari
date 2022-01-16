@@ -1221,3 +1221,66 @@ int TOS_InitImage(void)
 	bTosImageLoaded = true;
 	return 0;
 }
+
+static const struct {
+	uint8_t value;
+	const char *code;
+	const char *name;
+} countries[] = {
+	{ TOS_LANG_US,    "us",    "USA" },
+	{ TOS_LANG_DE,    "de",    "Germany" },
+	{ TOS_LANG_FR,    "fr",    "France" },
+	{ TOS_LANG_UK,    "uk",    "United Kingdom" },
+	{ TOS_LANG_ES,    "es",    "Spain" },
+	{ TOS_LANG_IT,    "it",    "Italy" },
+	{ TOS_LANG_SE,    "se",    "Sweden" },
+	{ TOS_LANG_CH_FR, "ch_fr", "Switzerland (French)" },
+	{ TOS_LANG_CH_DE, "ch_de", "Switzerland (German)" },
+	{ TOS_LANG_TR,    "tr",    "Turkey" },
+	{ TOS_LANG_FI,    "fi",    "Finland" },
+	{ TOS_LANG_NO,    "no",    "Norway" },
+	{ TOS_LANG_DK,    "dk",    "Denmark" },
+	{ TOS_LANG_SA,    "sa",    "Saudi Arabia" },
+	{ TOS_LANG_NL,    "nl",    "Holland" },
+	{ TOS_LANG_CS,    "cs",    "Czech Republic" },
+	{ TOS_LANG_HU,    "hu",    "Hungary" },
+	{ TOS_LANG_RU,    "ru",    "Russia" },
+	{ TOS_LANG_GR,    "gr",    "Greece" },
+};
+
+/**
+ * TOS_ValidCountryCode: returns parsed country code if
+ * it's recognized, otherwise valid ones are shown and
+ * TOS_LANG_UNKNOWN is returned
+ */
+int TOS_ParseCountryCode(const char *code, const char *info)
+{
+	for (int i = 0; i < ARRAY_SIZE(countries); i++) {
+		if (strcmp(code, countries[i].code) == 0) {
+			return countries[i].value;
+		}
+	}
+	fprintf(stderr, "Unrecognized %s code '%s'!\n", info, code);
+
+	fprintf(stderr, "\nTOS v4 supports:\n");
+	for (int i = 0; i < ARRAY_SIZE(countries); i++) {
+		if (i == 7)
+			fprintf(stderr, "\nEmuTOS 1024k (v1.1.x) supports also:\n");
+		fprintf(stderr, "- %s : %s\n",
+			countries[i].code, countries[i].name);
+	}
+	return TOS_LANG_UNKNOWN;
+}
+
+/**
+ * TOS_LanguageName: return name for given country code
+ */
+const char *TOS_LanguageName(int code)
+{
+	for (int i = 0; i < ARRAY_SIZE(countries); i++) {
+		if (code == countries[i].value) {
+			return countries[i].name;
+		}
+	}
+	return "Unknown";
+}

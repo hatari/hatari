@@ -571,11 +571,12 @@ BOOL flag1, flag2;
 	[midiOutPort addItemWithTitle:[NSString stringWithCString:szinPortName encoding:NSASCIIStringEncoding]];
 	
 	int i = 0;
-	const char* portName;
-	while ((portName = Midi_Host_GetPortName(i++, true)))
+	const char* portName = NULL;
+	while ((portName = Midi_Host_GetPortName(portName, +1, true)))
 		[midiInPort addItemWithTitle:[NSString stringWithCString:portName encoding:NSASCIIStringEncoding]];
 	i = 0;
-	while ((portName = Midi_Host_GetPortName(i++, false)))
+	portName = NULL;
+	while ((portName = Midi_Host_GetPortName(portName, +1, false)))
 		[midiOutPort addItemWithTitle:[NSString stringWithCString:portName encoding:NSASCIIStringEncoding]];
 }
 

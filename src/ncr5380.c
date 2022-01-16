@@ -16,6 +16,7 @@ const char NCR5380_fileid[] = "Hatari ncr5380.c";
 
 #include "main.h"
 #include "configuration.h"
+#include "cycles.h"
 #include "cycInt.h"
 #include "file.h"
 #include "fdc.h"

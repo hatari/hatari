@@ -123,32 +123,50 @@ VFS: Cannot open root device "sda" or unknown-block(8,0): error -6
 
 - Oops on kernel boot in init (Busybox shell) when either 030 CPU
   cache or prefetch emulation is enabled, resulting in kernel panic.
-  According to kernel developer, they don't happen on real HW,
-  so they seem to be Hatari issue.  Kernel gives same backtrace
-  on ST, TT and Falcon:
+  According to kernel developer, there are no panics on real HW, so
+  they seem to be Hatari issue.
+
+  Kernel gives same backtrace on 030 (Mega)ST(s), TT and Falcon,
+  regardless of whether it is started with LILO, or by native
+  bootstrap program:
 
 ------------------------------------------------------------
 Kernel panic - not syncing: Attempted to kill init! exitcode=0x0000000b
-CPU: 0 PID: 1 Comm: sh Not tainted 5.13.0hatari-00003-gd93c73bd2fd #1
-Stack from 0081bde4:
+CPU: 0 PID: 1 Comm: sh Not tainted 5.15.0hatari-00003-gbe4064817898 #3
+Stack from 0081bde0:
         ...
-Call Trace: [<0026cef8>] panic+0xbe/0x27a
- [<0002f4a4>] do_signal_stop+0x0/0x14c
- [<000284a6>] do_exit+0x146/0x6ac
- [<0002f4a4>] do_signal_stop+0x0/0x14c
- [<0002d2dc>] __list_del_entry+0x0/0x2c
- [<00028a8e>] do_group_exit+0x4c/0x84
- [<0002fe96>] get_signal+0x144/0x4aa
- [<00003f58>] do_notify_resume+0x3c/0x478
- [<000054fc>] send_fault_sig+0x28/0x8c
- [<000056e4>] do_page_fault+0x184/0x204
- [<00002850>] do_signal_return+0x10/0x1a
- [<0026c62c>] memset+0x64/0x90
- [<00020007>] _I_CALL_TOP+0xfb3/0x1900
- [<0000b280>] grs_sgl+0x18/0x22
- [<00007201>] stdma_try_lock+0x13/0x38
- [<000066f6>] atari_mste_hwclk+0x1c/0x2ba
+Call Trace: [<00271df0>] panic+0xb6/0x262
+ [<0002f6b6>] do_signal_stop+0x0/0x14a
+ [<0002877c>] do_exit+0x13a/0x6a6
+ [<0002f6b6>] do_signal_stop+0x0/0x14a
+ [<00028d6a>] do_group_exit+0x4c/0x84
+ [<000301c8>] get_signal+0x14c/0x4a8
+ [<00003ecc>] do_notify_resume+0x3c/0x478
+ [<00005648>] send_fault_sig+0x28/0x8c
+ [<00005834>] do_page_fault+0x188/0x208
+ [<00275b16>] __schedule+0x17e/0x2d4
+ [<00002810>] do_signal_return+0x10/0x1a
+ [<00020007>] _I_CALL_TOP+0xd8f/0x1900
+ [<0000b280>] sp_over+0x38/0x3c
+ [<00007201>] atari_ethernat_startup+0x57/0x5a
+ [<000066f6>] atari_get_model+0x66/0xf0
 ------------------------------------------------------------
+
+If ethernat is ifdeffed out, it ends in:
+------------------------------------------------------------
+...
+ [<00005834>] do_page_fault+0x188/0x208
+ [<00002810>] do_signal_return+0x10/0x1a
+ [<0027155c>] memset+0x64/0x90
+ [<00020007>] _I_CALL_TOP+0xeab/0x1900
+ [<0000b280>] statick+0x12/0x1c
+ [<00007201>] atari_mfptimer_disable+0x2f/0x32
+ [<000066f6>] atari_get_model+0x66/0xf0
+------------------------------------------------------------
+
+The weird thing is that both "sp_over" and "statick" are symbols from
+arch/m68k/fpsp040/res_func.S, i.e. code for emulating missing 030
+instructions on 040.
 
 
 3. Building m68k kernel
@@ -161,7 +179,7 @@ Call Trace: [<0026cef8>] panic+0xbe/0x27a
    $ sudo apt install gcc-m68k-linux-gnu
 
 2. Get latest upstream kernel release sources (without history):
-   $ git clone --depth 1 --branch v5.13 \
+   $ git clone --depth 1 --branch v5.15 \
      git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
    $ cd linux
 
@@ -392,13 +410,13 @@ shows easiest method to simulate that with Hatari.
 
 4. If you don't have a TOS ROM image, download latest EmuTOS release
    from:
-     https://sourceforge.net/projects/emutos/files/emutos/1.0/emutos-512k-1.0.zip/download
+     https://sourceforge.net/projects/emutos/files/emutos/1.1.1/emutos-1024k-1.1.1.zip/download
    and extract it:
-   $ unzip emutos-512k-1.0.zip
+   $ unzip emutos-1024k-1.1.1.zip
 
 5. Then run Hatari with them:
    $ hatari --trace os_base --log-level info \
-      --tos emutos-512k-1.0/etos512k.img \
+      --tos emutos-1024k-1.1.1/etos1024k.img \
       --fast-forward on --fastfdc on --timer-d on \
       --machine falcon --dsp none --fpu 68882 \
       --cpuclock 32 --cpu-exact off --compatible off \

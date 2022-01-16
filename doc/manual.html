@@ -398,7 +398,6 @@ command line editing.</li>
 on systems with the X window system (Linux and other unixes).</li>
 <li>The PortMidi library required for MIDI device support on macOS and Windows
 <a href="http://portmedia.sourceforge.net/">http://portmedia.sourceforge.net/</a>.</li>
-<li>The portaudio library for Falcon microphone recording support.</li>
 <li>The udev library for NatFeats SCSI driver media change detection (Linux).</li>
 <li>The IPF support library
 <a href="http://www.softpres.org/download">http://www.softpres.org/download</a>.</li>
@@ -567,8 +566,17 @@ user configuration files
 </p>
 <p class="parameter">-k, --keymap
 &lt;file&gt;</p>
-<p class="paramdesc">load keyboard mapping from
-&lt;file&gt;</p>
+<p class="paramdesc">load keyboard mapping from &lt;file&gt;.
+"Symbolic" mapping will be used as fallback for keys not defined there
+</p>
+<p class="parameter">--layout &lt;x&gt;</p>
+<p class="paramdesc">Set NVRAM keyboard layout value.
+While both TT and Falcon machines have NVRAM, only TOS v4 and EmuTOS
+1024k ROM versions support multiple layouts</p>
+<p class="parameter">--language &lt;x&gt;</p>
+<p class="paramdesc">Set NVRAM language value.
+While both TT and Falcon machines have NVRAM, only TOS v4 and EmuTOS
+1024k ROM versions support multiple languages</p>
 <p class="parameter">--fast-forward
 &lt;bool&gt;</p>
 <p class="paramdesc">On fast machine helps skipping (fast
@@ -1927,8 +1935,8 @@ Check the third checkbox to enable MIDI support.
 Hatari MIDI support can be provided either with a PortMidi library
 (required on Mac / Windows), or using "raw" MIDI device files. Latter
 supports also MIDI networking in games, and can be used for debug
-output, while PortMidi handles only MIDI events and doesn't currently
-work with all MIDI SW.
+output, while PortMidi handles only MIDI events, but makes it easier
+to connect Hatari to host MIDI programs (software synthetizers etc).
 </p>
 <h6>"raw" MIDI device file selection</h6>
 <p>
@@ -1938,9 +1946,9 @@ MIDI device files for MIDI input and output.
 <p>
 <span class="file">midi-linux.txt</span> file explains how to
 select the correct MIDI device file, how to set up software sound
-synthesizing on Linux (using ALSA) if your sound card/driver doesn't
-support MIDI, and how to set up MIDI networking between multiple
-Hatari instances, even over internet.
+synthesizing on Linux (using ALSA and virtual MIDI devices) if your
+sound card/driver doesn't support MIDI, and how to set up MIDI
+networking between multiple Hatari instances, even over internet.
 </p>
 <div class="floatimage">
   <img src="images/devices-portmidi.png" width="520" height="114"
@@ -1952,9 +1960,15 @@ Click on arrow buttons to select a suitable MIDI devices for MIDI
 input and output.
 </p>
 <p>
-PortMidi will list only currently active MIDI devices.  On Linux
-these are subset of ones listed e.g. by ALSA
-<span class="commandline">aconnect -l</span> command.
+PortMidi lists only MIDI devices that were active when Hatari was
+started. To see ones added after that, Hatari needs to be restarted.
+</p>
+<p>
+PS. For MIDI devices which names are not constant, but include e.g.
+instance identifier at end, Hatari supports matching device by first
+part of the name when there's no full match.  To use this, remove the
+device identifier part from the end of the device name in saved Hatari
+configuration file.
 </p>
 
 

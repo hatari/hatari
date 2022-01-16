@@ -30,6 +30,7 @@
 #include "dsp.h"
 #include "crossbar.h"
 #include "configuration.h"
+#include "cycles.h"
 #include "cycInt.h"
 #include "m68000.h"
 

@@ -50,24 +50,6 @@ Emulator bugs
     the main thead, but it would mean that RS232 won't work on Windows
     until somebody contributes code for that too
 
-* MIDI support on Mac / Windows:
-
-  - MIDI support on these platforms requires Hatari to be built with
-    PortMidi library, and PortMidi requires additional Hatari code to
-    translate MIDI port data from/to PortMidi MIDI events. However,
-    that translation doesn't work 100% correctly yet
-
-    For example, PortMidi complains about invalid MIDI event data at
-    startup (MIDI setup?) of "Sequencer One" and "Fractal Music"
-    programs, loading of every song (MIDI setup / sysex?) in "Cubase
-    Lite", or starting song in "Dr. T's KCS" (v4.0) and "GenEdit"
-    (v2.02), after which PortMidi connection gets closed and nothing
-    else will go through. And if MIDI events would still be let
-    through, they would then use wrong instruments
-
-    (PortMidi is missing documentation that would help in resolving
-    whether this is Hatari or PortMidi bug.)
-
 
 Known issues / workarounds
 --------------------------
@@ -79,6 +61,19 @@ Known issues / workarounds
 
     WA: put tests/autostart/4_secs.prg to AUTO/-folder to slow down
     program startup enough for printing to work
+
+* PortMidi device disconnects:
+
+    Playback of Notator 3.x "DEMO8.SON" song (which has very large
+    amounts of sysex data) can trigger "Operation not permitted"
+    PortMidi "host error" around 7:00 mark, resulting in MIDI output
+    being disabled (until MIDI device is changed or Hatari restarted).
+
+    This is triggered completely randomly, but seems to be issue on
+    the receiving end as it happens only when connected to Qsynth /
+    FluidSynth, not when using just MIDI through as output.
+
+    WA: Avoid non-working MIDI data / softsynth combinations.
 
 
 External bug reports

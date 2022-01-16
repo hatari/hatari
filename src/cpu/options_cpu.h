@@ -163,9 +163,12 @@ struct floppyslot
 {
 	TCHAR df[MAX_DPATH];
 	int dfxtype;
+	int dfxsubtype;
+	TCHAR dfxsubtypeid[32];
 	int dfxclick;
 	TCHAR dfxclickexternal[256];
 	bool forcedwriteprotect;
+	TCHAR config[256];
 };
 
 #define ASPECTMULT 1024
@@ -939,7 +942,7 @@ extern void cfgfile_target_write_bool (struct zfile *f, const TCHAR *option, boo
 extern void cfgfile_target_dwrite_bool (struct zfile *f, const TCHAR *option, bool b);
 
 extern void cfgfile_write_str(struct zfile *f, const TCHAR *option, const TCHAR *value);
-extern void cfgfile_write_str_escape(struct zfile* f, const TCHAR* option, const TCHAR* value);
+extern void cfgfile_write_str_escape(struct zfile *f, const TCHAR *option, const TCHAR *value);
 extern void cfgfile_dwrite_str(struct zfile *f, const TCHAR *option, const TCHAR *value);
 extern void cfgfile_dwrite_str_escape(struct zfile *f, const TCHAR *option, const TCHAR *value);
 extern void cfgfile_target_write_str(struct zfile *f, const TCHAR *option, const TCHAR *value);

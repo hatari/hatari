@@ -8,6 +8,35 @@
 #ifndef HATARI_TOS_H
 #define HATARI_TOS_H
 
+/*
+ * List of language and keyboard layout country codes supported
+ * by currently available TOS versions.  Subset of:
+ * https://freemint.github.io/tos.hyp/en/bios_cookiejar.html#Cookie_2C_20_AKP
+ */
+enum {
+      TOS_LANG_US = 0,
+      TOS_LANG_DE = 1,
+      TOS_LANG_FR = 2,
+      TOS_LANG_UK = 3,
+      TOS_LANG_ES = 4,
+      TOS_LANG_IT = 5,
+      TOS_LANG_SE = 6,
+      TOS_LANG_CH_FR = 7,
+      TOS_LANG_CH_DE = 8,
+      TOS_LANG_TR = 9,
+      TOS_LANG_FI = 10,
+      TOS_LANG_NO = 11,
+      TOS_LANG_DK = 12,
+      TOS_LANG_SA = 13,
+      TOS_LANG_NL = 14,
+      TOS_LANG_CS = 15,
+      TOS_LANG_HU = 16,
+      TOS_LANG_RU = 19,
+      TOS_LANG_GR = 31,
+      TOS_LANG_ALL = 127,
+      TOS_LANG_UNKNOWN = -1
+};
+
 extern bool bIsEmuTOS;
 extern Uint32 EmuTosVersion;
 extern Uint16 TosVersion;
@@ -21,5 +50,8 @@ extern int nNumDrives;
 extern void TOS_MemorySnapShot_Capture(bool bSave);
 extern int TOS_InitImage(void);
 extern void TOS_SetTestPrgName(const char *testprg);
+
+extern int TOS_ParseCountryCode(const char *code, const char *info);
+extern const char *TOS_LanguageName(int code);
 
 #endif

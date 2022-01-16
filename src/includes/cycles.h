@@ -21,7 +21,7 @@ enum
 };
 
 
-extern int	nCyclesMainCounter;
+extern int	nCyclesMainCounter;			// TODO : remove, use CyclesGlobalClockCounter instead
 extern Uint64	CyclesGlobalClockCounter;
 
 extern int	CurrentInstrCycles;

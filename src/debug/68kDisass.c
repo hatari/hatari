@@ -20,6 +20,7 @@
 #include "profile.h"
 #include "tos.h"
 #include "68kDisass.h"
+#include "disasm.h"
 
 #define ADDRESS_ON_PC		1
 #define USE_SYMBOLS			1
@@ -2716,6 +2717,7 @@ const char *Disasm_ParseOption(const char *arg)
 	{
 		fputs("Selected UAE CPU core internal disassembler.\n", stderr);
 		ConfigureParams.Debugger.bDisasmUAE = true;
+		disasm_init();
 		return NULL;
 	}
 	if (strcasecmp(arg, "ext") == 0)

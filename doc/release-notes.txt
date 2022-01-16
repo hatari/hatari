@@ -19,6 +19,8 @@ Following features are deprecated and will be removed in a future release:
 
 Removed features (that were marked as deprecated in earlier releases):
 - Support for the SDL 1.2 library (i.e. SDL 2.x should be used instead)
+- Support for building Hatari for Windows CE has been removed, too, since
+  this was relying on version 1.2 of the SDL library.
 - The old UAE CPU core (i.e. the new WinUAE CPU core is now always used)
 - Python v2 support in Python scripts (Python 2 was end of life in 2020)
 
@@ -34,9 +36,19 @@ Emulation:
 Emulator:
 - TOS support:
   - Support 1024k EmuTOS images also on TT & Falcon
+- MIDI support:
+  - Fix: PortMidi rejects Hatari MIDI events
+  - Fix: MIDI IRQ needs to be re-enabled on MIDI device change
+    even when there's no reset
+  - Support for matching PortMidi device name by prefix when
+    there's no exact full match
+- NVRAM:
+  - Config settings + CLI options to override NVRAM keyboard layout
+    and language values at start
 - Falcon:
   - Fix: restore zoom mode correctly when loading snapshots
   - Correct also smaller specified memory amounts to valid ones
+  - Microphone emulation now uses SDL2 instead of PortAudio
 - MegaSTE/TT:
   - Add VME/SCU registers "--vme <none|dummy>" access option
     (needed to support both Linux and TOS v2 & v3 until Hatari
@@ -47,6 +59,7 @@ Emulator:
 - SDL GUI:
   - Fix: ignore unrecognized events in file selector
     (buttons could be incorrectly shown as selected)
+  - Fix: avoid key release event from SDL GUI closing leaking to emulation
   - Do VDI mode size changes in (faster) 16 pix increments,
     and prevent user seeing invalid VDI mode sizes
 - GEMDOS HD:
@@ -66,11 +79,14 @@ Emulator:
     symbol names from Pure-C debug information
   - Auto-detection for whether section offsets should be used
     for symbol addresses
+  - MIDI trace options are split to "midi" (listing device and MIDI
+    events) and "midi_raw" (tracing IRQ and register read/write access)
   - Trace options are listed in alphabetical order
 - Windows:
   - Next/prev drive change buttons added to SDL GUI file select dialog
 
 Tools:
+- Add (SDL2 specific) "listkeys" key mapping helper back
 - TOS boot tester: support 1024k EmuTOS images, misc fixes
 
 Documentation:

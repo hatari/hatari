@@ -5,7 +5,7 @@
   or at your option any later version. Read the file gpl.txt for details.
 
   Functions for showing and parsing all of Hatari's command line options.
-  
+
   To add a new option:
   - Add option ID to the enum
   - Add the option information to HatariOptions[]
@@ -59,13 +59,17 @@ static bool bBiosIntercept;
 /*  List of supported options. */
 enum {
 	OPT_HEADER,	/* options section header */
+
 	OPT_HELP,		/* general options */
 	OPT_VERSION,
 	OPT_CONFIRMQUIT,
 	OPT_CONFIGFILE,
 	OPT_KEYMAPFILE,
+	OPT_KBD_LAYOUT,
+	OPT_LANGUAGE,
 	OPT_FASTFORWARD,
 	OPT_AUTOSTART,
+
 	OPT_MONO,		/* common display options */
 	OPT_MONITOR,
 	OPT_TOS_RESOLUTION,
@@ -83,16 +87,20 @@ enum {
 	OPT_ZOOM,
 	OPT_FORCEBPP,
 	OPT_DISABLE_VIDEO,
+
 	OPT_BORDERS,		/* ST/STE display options */
 	OPT_SPEC512,
 	OPT_VIDEO_TIMING,
+
 	OPT_RESOLUTION,		/* TT/Falcon display options */
 	OPT_FORCE_MAX,
 	OPT_ASPECT,
+
 	OPT_VDI,		/* VDI options */
 	OPT_VDI_PLANES,
 	OPT_VDI_WIDTH,
 	OPT_VDI_HEIGHT,
+
 	OPT_SCREEN_CROP,        /* screen capture options */
 	OPT_AVIRECORD,
 	OPT_AVIRECORD_VCODEC,
@@ -100,6 +108,7 @@ enum {
 	OPT_AVIRECORD_FPS,
 	OPT_AVIRECORD_FILE,
 	OPT_SCRSHOT_DIR,
+
 	OPT_JOYSTICK,		/* device options */
 	OPT_JOYSTICK0,
 	OPT_JOYSTICK1,
@@ -119,7 +128,8 @@ enum {
 	// OPT_SCCB,
 	// OPT_SCCBIN,
 	OPT_SCCBOUT,
-	OPT_DRIVEA,		/* disk options */
+
+	OPT_DRIVEA,		/* floppy options */
 	OPT_DRIVEB,
 	OPT_DRIVEA_HEADS,
 	OPT_DRIVEB_HEADS,
@@ -127,7 +137,8 @@ enum {
 	OPT_DISKB,
 	OPT_FASTFLOPPY,
 	OPT_WRITEPROT_FLOPPY,
-	OPT_HARDDRIVE,
+
+	OPT_HARDDRIVE,		/* HD options */
 	OPT_WRITEPROT_HD,
 	OPT_GEMDOS_CASE,
 	OPT_GEMDOS_HOSTTIME,
@@ -138,32 +149,38 @@ enum {
 	OPT_IDEMASTERHDIMAGE,
 	OPT_IDESLAVEHDIMAGE,
 	OPT_IDEBYTESWAP,
+
 	OPT_MEMSIZE,		/* memory options */
 	OPT_TT_RAM,
 	OPT_MEMSTATE,
+
 	OPT_TOS,		/* ROM options */
 	OPT_PATCHTOS,
 	OPT_CARTRIDGE,
+
 	OPT_CPULEVEL,		/* CPU options */
 	OPT_CPUCLOCK,
 	OPT_COMPATIBLE,
-	OPT_CPU_CYCLE_EXACT,	/* WinUAE CPU/FPU/bus options */
+	OPT_CPU_CYCLE_EXACT,
 	OPT_CPU_ADDR24,
 	OPT_FPU_TYPE,
 /*	OPT_FPU_JIT_COMPAT, */
 	OPT_FPU_SOFTFLOAT,
 	OPT_MMU,
+
 	OPT_MACHINE,		/* system options */
 	OPT_BLITTER,
 	OPT_VME,
 	OPT_DSP,
 	OPT_TIMERD,
 	OPT_FASTBOOT,
+
 	OPT_MICROPHONE,		/* sound options */
 	OPT_SOUND,
 	OPT_SOUNDBUFFERSIZE,
 	OPT_SOUNDSYNC,
 	OPT_YM_MIXING,
+
 #ifdef WIN32
 	OPT_WINCON,		/* debug options */
 #endif
@@ -199,7 +216,7 @@ typedef struct {
 
 /* it's easier to edit these if they are kept in the same order as the enums */
 static const opt_t HatariOptions[] = {
-	
+
 	{ OPT_HEADER, NULL, NULL, NULL, "General" },
 	{ OPT_HELP,      "-h", "--help",
 	  NULL, "Print this help text and exit" },
@@ -211,6 +228,10 @@ static const opt_t HatariOptions[] = {
 	  "<file>", "Read (additional) configuration values from <file>" },
 	{ OPT_KEYMAPFILE, "-k", "--keymap",
 	  "<file>", "Read (additional) keyboard mappings from <file>" },
+	{ OPT_KBD_LAYOUT, NULL, "--layout",
+	  "<x>", "Set (TT/Falcon) NVRAM keyboard layout value" },
+	{ OPT_LANGUAGE, NULL, "--language",
+	  "<x>", "Set (TT/Falcon) NVRAM language value" },
 	{ OPT_FASTFORWARD, NULL, "--fast-forward",
 	  "<bool>", "Help skipping stuff on fast machine" },
 	{ OPT_AUTOSTART, NULL, "--auto",
@@ -241,7 +262,6 @@ static const opt_t HatariOptions[] = {
 	  "<bool>", "Show statusbar (floppy leds etc)" },
 	{ OPT_DRIVE_LED,   NULL, "--drive-led",
 	  "<bool>", "Show overlay drive led when statusbar isn't shown" },
-
 	{ OPT_MAXWIDTH, NULL, "--max-width",
 	  "<x>", "Maximum Hatari screen width before scaling" },
 	{ OPT_MAXHEIGHT, NULL, "--max-height",
@@ -579,7 +599,7 @@ static const opt_t *Opt_ShowHelpSection(const opt_t *start_opt)
 		}
 	}
 	last = opt;
-	
+
 	/* output all options */
 	for (opt = start_opt; opt != last; opt++)
 	{
@@ -791,7 +811,7 @@ static int Opt_CheckBracketValue(const opt_t *opt, const char *str)
  * matches string under given index in the argv against all Hatari
  * short and long options. If match is found, returns ID for that,
  * otherwise shows help and returns OPT_ERROR.
- * 
+ *
  * Checks also that if option is supposed to have argument,
  * whether there's one.
  */
@@ -802,7 +822,7 @@ static int Opt_WhichOption(int argc, const char * const argv[], int idx)
 	int id;
 
 	for (opt = HatariOptions; opt->id != OPT_ERROR; opt++)
-	{	
+	{
 		/* exact option name matches? */
 		if (!((opt->str && !strcmp(str, opt->str)) ||
 		      (opt->chr && !strcmp(str, opt->chr))))
@@ -1235,7 +1255,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 		case OPT_RESOLUTION:
 			ok = Opt_Bool(argv[++i], OPT_RESOLUTION, &ConfigureParams.Screen.bKeepResolution);
 			break;
-			
+
 		case OPT_MAXWIDTH:
 			ConfigureParams.Screen.nMaxWidth = atoi(argv[++i]);
 			break;
@@ -1247,7 +1267,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 		case OPT_FORCE_MAX:
 			ok = Opt_Bool(argv[++i], OPT_FORCE_MAX, &ConfigureParams.Screen.bForceMax);
 			break;
-			
+
 		case OPT_ASPECT:
 			ok = Opt_Bool(argv[++i], OPT_ASPECT, &ConfigureParams.Screen.bAspectCorrect);
 			break;
@@ -1406,7 +1426,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 					argv[i], sizeof(ConfigureParams.Midi.sMidiInFileName),
 					&ConfigureParams.Midi.bEnableMidi);
 			break;
-			
+
 		case OPT_MIDI_OUT:
 			i += 1;
 			ok = Opt_StrCpy(OPT_MIDI_OUT, false, ConfigureParams.Midi.sMidiOutFileName,
@@ -1993,9 +2013,25 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 		case OPT_SOUNDSYNC:
 			ok = Opt_Bool(argv[++i], OPT_SOUNDSYNC, &ConfigureParams.Sound.bEnableSoundSync);
 			break;
-			
+
 		case OPT_MICROPHONE:
 			ok = Opt_Bool(argv[++i], OPT_MICROPHONE, &ConfigureParams.Sound.bEnableMicrophone);
+			break;
+
+		case OPT_LANGUAGE:
+			val = TOS_ParseCountryCode(argv[++i], "language");
+			if (val != TOS_LANG_UNKNOWN)
+				ConfigureParams.Keyboard.nLanguage = val;
+			else
+				ok = false;
+			break;
+
+		case OPT_KBD_LAYOUT:
+			val = TOS_ParseCountryCode(argv[++i], "keyboard layout");
+			if (val != TOS_LANG_UNKNOWN)
+				ConfigureParams.Keyboard.nKbdLayout = val;
+			else
+				ok = false;
 			break;
 
 		case OPT_KEYMAPFILE:
@@ -2008,7 +2044,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				ConfigureParams.Keyboard.nKeymapType = KEYMAP_LOADED;
 			}
 			break;
-			
+
 			/* debug options */
 #ifdef WIN32
 		case OPT_WINCON:
@@ -2106,7 +2142,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				return Opt_ShowError(OPT_DISASM, argv[i], errstr);
 			}
 			break;
-			
+
 		case OPT_TRACE:
 			i += 1;
 			errstr = Log_SetTraceOptions(argv[i]);
@@ -2189,7 +2225,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			Log_Printf(LOG_DEBUG, "Exit after %d VBLs.\n", val);
 			Main_SetRunVBLs(val);
 			break;
-		       
+
 		case OPT_BENCHMARK:
 			BenchmarkMode = true;
 			break;
@@ -2220,7 +2256,7 @@ char *Opt_MatchOption(const char *text, int state)
 {
 	static int i, len;
 	const char *name;
-	
+
 	if (!state)
 	{
 		/* first match */

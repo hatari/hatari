@@ -56,10 +56,6 @@ if(PNG_FOUND)
 	include_directories(${PNG_INCLUDE_DIR})
 endif(PNG_FOUND)
 
-if(PortAudio_FOUND)
-	include_directories(${PORTAUDIO_INCLUDE_DIR})
-endif(PortAudio_FOUND)
-
 if(PortMidi_FOUND)
 	include_directories(${PORTMIDI_INCLUDE_DIR})
 endif(PortMidi_FOUND)
@@ -178,10 +174,6 @@ endif(PNG_FOUND)
 if(X11_FOUND)
 	target_link_libraries(hatari ${X11_LIBRARIES})
 endif(X11_FOUND)
-
-if(PortAudio_FOUND)
-	target_link_libraries(hatari ${PORTAUDIO_LIBRARY})
-endif(PortAudio_FOUND)
 
 if(PortMidi_FOUND)
 	target_link_libraries(hatari ${PORTMIDI_LIBRARY})

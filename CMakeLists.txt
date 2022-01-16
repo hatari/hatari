@@ -51,7 +51,7 @@ set(ENABLE_DSP_EMU 1
     CACHE BOOL "Enable DSP 56k emulator for Falcon mode")
 set(ENABLE_TRACING 1
     CACHE BOOL "Enable tracing messages for debugging")
-set(ENABLE_SMALL_MEM 0
+set(ENABLE_SMALL_MEM 1
     CACHE BOOL "Enable to use less memory - at the expense of emulation speed")
 
 # Run-time checks with GCC / LLVM (Clang) AddressSanitizer:
@@ -129,11 +129,6 @@ if (NOT ENABLE_OSX_BUNDLE)
 		set(HAVE_X11 1)
 	endif(X11_FOUND)
 endif()
-
-find_package(PortAudio)
-if(PortAudio_FOUND)
-	set(HAVE_PORTAUDIO 1)
-endif(PortAudio_FOUND)
 
 find_package(PortMidi)
 if(PortMidi_FOUND)
@@ -369,12 +364,6 @@ if(PNG_FOUND)
 else()
   message( "  - png :\tnot found, install it to compress screenshot/avi files using png" )
 endif(PNG_FOUND)
-
-if(PortAudio_FOUND)
-  message( "  - portaudio :\tfound, enables the microphone input in Falcon mode" )
-else()
-  message( "  - portaudio :\tnot found, install it to enable the Falcon microphone input" )
-endif(PortAudio_FOUND)
 
 if(PortMidi_FOUND)
   message( "  - portmidi :\tfound, required for (non-Linux) MIDI support" )

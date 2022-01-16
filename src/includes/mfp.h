@@ -120,14 +120,6 @@ typedef struct {
 	Uint32 TimerCClockCycles;
 	Uint32 TimerDClockCycles;
 
-	/* If a timer is stopped then restarted later without writing to the data register, */
-	/* we must resume the timer from where we left in the interrupts table, instead of */
-	/* computing a new number of clock cycles to restart the interrupt. */
-	bool TimerACanResume;
-	bool TimerBCanResume;
-	bool TimerCCanResume;
-	bool TimerDCanResume;
-
 	Uint8	PatchTimerD_Done;			/* 0=false 1=true */
 	Uint8	PatchTimerD_TDDR_old;			/* Value of TDDR before forcing it to PATCH_TIMER_TDDR_FAKE */
 
@@ -152,6 +144,9 @@ extern MFP_STRUCT		*pMFP_TT;
 
 /* MFP Registers */
 extern bool	MFP_UpdateNeeded;
+
+extern int	MFP_ConvertCycle_CPU_MFP_TIMER ( int CPU_Cycles );
+extern int	MFP_ConvertCycle_MFP_TIMER_CPU ( int MFP_Cycles );
 
 extern void	MFP_Init ( MFP_STRUCT *pAllMFP );
 extern void	MFP_Reset_All ( void );

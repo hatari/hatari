@@ -176,11 +176,12 @@ static bool Control_DeviceAction(const char *name, action_t action)
 		bool *pvalue;
 		void(*init)(void);
 		void(*uninit)(void);
+		void(*reset)(void);
 	} item[] = {
-		{ "printer", &ConfigureParams.Printer.bEnablePrinting, Printer_Init, Printer_UnInit },
-		{ "rs232",   &ConfigureParams.RS232.bEnableRS232, RS232_Init, RS232_UnInit },
-		{ "sccb",    &ConfigureParams.RS232.bEnableSccB, SCC_Init, SCC_UnInit },
-		{ "midi",    &ConfigureParams.Midi.bEnableMidi, Midi_Init, Midi_UnInit },
+		{ "printer", &ConfigureParams.Printer.bEnablePrinting, Printer_Init, Printer_UnInit, NULL },
+		{ "rs232",   &ConfigureParams.RS232.bEnableRS232, RS232_Init, RS232_UnInit, NULL },
+		{ "sccb",    &ConfigureParams.RS232.bEnableSccB, SCC_Init, SCC_UnInit, NULL },
+		{ "midi",    &ConfigureParams.Midi.bEnableMidi, Midi_Init, Midi_UnInit, Midi_Reset },
 		{ NULL, NULL, NULL, NULL }
 	};
 	int i;
@@ -204,6 +205,8 @@ static bool Control_DeviceAction(const char *name, action_t action)
 			*(item[i].pvalue) = value;
 			if (value) {
 				item[i].init();
+				if (item[i].reset)
+					item[i].reset();
 			} else {
 				item[i].uninit();
 			}

@@ -80,6 +80,7 @@ const char IKBD_fileid[] = "Hatari ikbd.c";
 #include "main.h"
 #include "configuration.h"
 #include "ikbd.h"
+#include "cycles.h"
 #include "cycInt.h"
 #include "ioMem.h"
 #include "joy.h"
@@ -564,6 +565,7 @@ static void	IKBD_Boot_ROM ( bool ClearAllRAM )
 	KeyboardProcessor.Mouse.DeltaX = KeyboardProcessor.Mouse.DeltaY = 0;
 	KeyboardProcessor.Mouse.XScale = KeyboardProcessor.Mouse.YScale = 0;
 	KeyboardProcessor.Mouse.XThreshold = KeyboardProcessor.Mouse.YThreshold = 1;
+	KeyboardProcessor.Mouse.KeyCodeDeltaX = KeyboardProcessor.Mouse.KeyCodeDeltaY = 1;
 	KeyboardProcessor.Mouse.YAxis = 1;          /* Y origin at top */
 	KeyboardProcessor.Mouse.Action = 0;
 
@@ -1346,18 +1348,18 @@ static void IKBD_DuplicateMouseFireButtons(void)
 	{
 		/* If pressed right mouse button, should go to joystick 1 */
 		if (Keyboard.bRButtonDown&BUTTON_MOUSE)
-			KeyboardProcessor.Joy.JoyData[1] |= 0x80;
+			KeyboardProcessor.Joy.JoyData[JOYID_JOYSTICK1] |= ATARIJOY_BITMASK_FIRE;
 		/* And left mouse button, should go to joystick 0 */
 		if (Keyboard.bLButtonDown&BUTTON_MOUSE)
-			KeyboardProcessor.Joy.JoyData[0] |= 0x80;
+			KeyboardProcessor.Joy.JoyData[JOYID_JOYSTICK0] |= ATARIJOY_BITMASK_FIRE;
 	}
 	/* If mouse is on, joystick 1 fire button goes to the mouse instead */
 	else
 	{
 		/* Is fire button pressed? */
-		if (KeyboardProcessor.Joy.JoyData[1]&0x80)
+		if (KeyboardProcessor.Joy.JoyData[JOYID_JOYSTICK1]&ATARIJOY_BITMASK_FIRE)
 		{
-			KeyboardProcessor.Joy.JoyData[1] &= 0x7f;  /* Clear fire button bit */
+			KeyboardProcessor.Joy.JoyData[JOYID_JOYSTICK1] &= ~ATARIJOY_BITMASK_FIRE;  /* Clear fire button bit */
 			Keyboard.bRButtonDown |= BUTTON_JOYSTICK;  /* Mimic right mouse button */
 		}
 		else
@@ -1369,25 +1371,31 @@ static void IKBD_DuplicateMouseFireButtons(void)
 /*-----------------------------------------------------------------------*/
 /**
  * Send 'relative' mouse position
+ * In case DeltaX or DeltaY are more than 127 units, we send the position
+ * using several packets (with a while loop)
  */
 static void IKBD_SendRelMousePacket(void)
 {
 	int ByteRelX,ByteRelY;
 	Uint8 Header;
 
-	if ( (KeyboardProcessor.Mouse.DeltaX!=0) || (KeyboardProcessor.Mouse.DeltaY!=0)
-	        || (!IKBD_ButtonsEqual(Keyboard.bOldLButtonDown,Keyboard.bLButtonDown)) || (!IKBD_ButtonsEqual(Keyboard.bOldRButtonDown,Keyboard.bRButtonDown)) )
+	while ( true )
 	{
-		/* Send packet to keyboard process */
-		while (true)
-		{
-			ByteRelX = KeyboardProcessor.Mouse.DeltaX;
-			if (ByteRelX>127)  ByteRelX = 127;
-			if (ByteRelX<-128)  ByteRelX = -128;
-			ByteRelY = KeyboardProcessor.Mouse.DeltaY;
-			if (ByteRelY>127)  ByteRelY = 127;
-			if (ByteRelY<-128)  ByteRelY = -128;
+		ByteRelX = KeyboardProcessor.Mouse.DeltaX;
+		if ( ByteRelX > 127 )		ByteRelX = 127;
+		if ( ByteRelX < -128 )		ByteRelX = -128;
 
+		ByteRelY = KeyboardProcessor.Mouse.DeltaY;
+		if ( ByteRelY > 127 )		ByteRelY = 127;
+		if ( ByteRelY < -128 )		ByteRelY = -128;
+
+		if ( ( ( ByteRelX < 0 ) && ( ByteRelX <= -KeyboardProcessor.Mouse.XThreshold ) )
+		  || ( ( ByteRelX > 0 ) && ( ByteRelX >= KeyboardProcessor.Mouse.XThreshold ) )
+		  || ( ( ByteRelY < 0 ) && ( ByteRelY <= -KeyboardProcessor.Mouse.YThreshold ) )
+		  || ( ( ByteRelY > 0 ) && ( ByteRelY >= KeyboardProcessor.Mouse.YThreshold ) )
+		  || ( !IKBD_ButtonsEqual(Keyboard.bOldLButtonDown,Keyboard.bLButtonDown ) )
+		  || ( !IKBD_ButtonsEqual(Keyboard.bOldRButtonDown,Keyboard.bRButtonDown ) ) )
+		{
 			Header = 0xf8;
 			if (Keyboard.bLButtonDown)
 				Header |= 0x02;
@@ -1404,13 +1412,13 @@ static void IKBD_SendRelMousePacket(void)
 			KeyboardProcessor.Mouse.DeltaX -= ByteRelX;
 			KeyboardProcessor.Mouse.DeltaY -= ByteRelY;
 
-			if ( (KeyboardProcessor.Mouse.DeltaX==0) && (KeyboardProcessor.Mouse.DeltaY==0) )
-				break;
-
 			/* Store buttons for next time around */
 			Keyboard.bOldLButtonDown = Keyboard.bLButtonDown;
 			Keyboard.bOldRButtonDown = Keyboard.bRButtonDown;
 		}
+
+		else
+			break;					/* exit the while loop */
 	}
 }
 
@@ -1421,14 +1429,14 @@ static void IKBD_SendRelMousePacket(void)
 static void IKBD_GetJoystickData(void)
 {
 	/* Joystick 1 */
-	KeyboardProcessor.Joy.JoyData[1] = Joy_GetStickData(1);
+	KeyboardProcessor.Joy.JoyData[JOYID_JOYSTICK1] = Joy_GetStickData(JOYID_JOYSTICK1);
 
 	/* If mouse is on, joystick 0 is not connected */
 	if (KeyboardProcessor.MouseMode==AUTOMODE_OFF
 	        || (bBothMouseAndJoy && KeyboardProcessor.MouseMode==AUTOMODE_MOUSEREL))
-		KeyboardProcessor.Joy.JoyData[0] = Joy_GetStickData(0);
+		KeyboardProcessor.Joy.JoyData[JOYID_JOYSTICK0] = Joy_GetStickData(JOYID_JOYSTICK0);
 	else
-		KeyboardProcessor.Joy.JoyData[0] = 0x00;
+		KeyboardProcessor.Joy.JoyData[JOYID_JOYSTICK0] = 0x00;
 }
 
 
@@ -1441,27 +1449,27 @@ static void IKBD_SendAutoJoysticks(void)
 	Uint8 JoyData;
 
 	/* Did joystick 0/mouse change? */
-	JoyData = KeyboardProcessor.Joy.JoyData[0];
-	if (JoyData!=KeyboardProcessor.Joy.PrevJoyData[0])
+	JoyData = KeyboardProcessor.Joy.JoyData[JOYID_JOYSTICK0];
+	if (JoyData!=KeyboardProcessor.Joy.PrevJoyData[JOYID_JOYSTICK0])
 	{
 		if ( IKBD_OutputBuffer_CheckFreeCount ( 2 ) )
 		{
 			IKBD_Cmd_Return_Byte (0xFE);			/* Joystick 0 / Mouse */
 			IKBD_Cmd_Return_Byte (JoyData);
 		}
-		KeyboardProcessor.Joy.PrevJoyData[0] = JoyData;
+		KeyboardProcessor.Joy.PrevJoyData[JOYID_JOYSTICK0] = JoyData;
 	}
 
 	/* Did joystick 1(default) change? */
-	JoyData = KeyboardProcessor.Joy.JoyData[1];
-	if (JoyData!=KeyboardProcessor.Joy.PrevJoyData[1])
+	JoyData = KeyboardProcessor.Joy.JoyData[JOYID_JOYSTICK1];
+	if (JoyData!=KeyboardProcessor.Joy.PrevJoyData[JOYID_JOYSTICK1])
 	{
 		if ( IKBD_OutputBuffer_CheckFreeCount ( 2 ) )
 		{
 			IKBD_Cmd_Return_Byte (0xFF);			/* Joystick 1 */
 			IKBD_Cmd_Return_Byte (JoyData);
 		}
-		KeyboardProcessor.Joy.PrevJoyData[1] = JoyData;
+		KeyboardProcessor.Joy.PrevJoyData[JOYID_JOYSTICK1] = JoyData;
 	}
 }
 
@@ -1478,11 +1486,11 @@ static void IKBD_SendAutoJoysticksMonitoring(void)
 	Uint8 Byte1;
 	Uint8 Byte2;
 
-	Byte1 = ( ( KeyboardProcessor.Joy.JoyData[0] & 0x80 ) >> 6 )
-		| ( ( KeyboardProcessor.Joy.JoyData[1] & 0x80 ) >> 7 );
+	Byte1 = ( ( KeyboardProcessor.Joy.JoyData[JOYID_JOYSTICK0] & ATARIJOY_BITMASK_FIRE ) >> 6 )
+		| ( ( KeyboardProcessor.Joy.JoyData[JOYID_JOYSTICK1] & ATARIJOY_BITMASK_FIRE ) >> 7 );
 
-	Byte2 = ( ( KeyboardProcessor.Joy.JoyData[0] & 0x0f ) << 4 )
-		| ( KeyboardProcessor.Joy.JoyData[1] & 0x0f );
+	Byte2 = ( ( KeyboardProcessor.Joy.JoyData[JOYID_JOYSTICK0] & 0x0f ) << 4 )
+		| ( KeyboardProcessor.Joy.JoyData[JOYID_JOYSTICK1] & 0x0f );
 
 	IKBD_Cmd_Return_Byte (Byte1);
 	IKBD_Cmd_Return_Byte (Byte2);
@@ -1587,45 +1595,52 @@ static void IKBD_SendCursorMousePacket(void)
 	while ( (i<10) && ((KeyboardProcessor.Mouse.DeltaX!=0) || (KeyboardProcessor.Mouse.DeltaY!=0)
 	                   || (!IKBD_ButtonsEqual(Keyboard.bOldLButtonDown,Keyboard.bLButtonDown)) || (!IKBD_ButtonsEqual(Keyboard.bOldRButtonDown,Keyboard.bRButtonDown))) )
 	{
-		/* Left? */
-		if (KeyboardProcessor.Mouse.DeltaX<0)
+		if ( KeyboardProcessor.Mouse.DeltaX != 0 )
 		{
-			if ( IKBD_OutputBuffer_CheckFreeCount ( 2 ) )
+			/* Left? */
+			if (KeyboardProcessor.Mouse.DeltaX <= -KeyboardProcessor.Mouse.KeyCodeDeltaX)
 			{
-				IKBD_Cmd_Return_Byte (75);		/* Left cursor */
-				IKBD_Cmd_Return_Byte (75|0x80);
+				if ( IKBD_OutputBuffer_CheckFreeCount ( 2 ) )
+				{
+					IKBD_Cmd_Return_Byte (75);		/* Left cursor */
+					IKBD_Cmd_Return_Byte (75|0x80);
+				}
+				KeyboardProcessor.Mouse.DeltaX += KeyboardProcessor.Mouse.KeyCodeDeltaX;
 			}
-			KeyboardProcessor.Mouse.DeltaX++;
+			/* Right? */
+			if (KeyboardProcessor.Mouse.DeltaX >= KeyboardProcessor.Mouse.KeyCodeDeltaX)
+			{
+				if ( IKBD_OutputBuffer_CheckFreeCount ( 2 ) )
+				{
+					IKBD_Cmd_Return_Byte (77);		/* Right cursor */
+					IKBD_Cmd_Return_Byte (77|0x80);
+				}
+				KeyboardProcessor.Mouse.DeltaX -= KeyboardProcessor.Mouse.KeyCodeDeltaX;
+			}
 		}
-		/* Right? */
-		if (KeyboardProcessor.Mouse.DeltaX>0)
+
+		if ( KeyboardProcessor.Mouse.DeltaY != 0 )
 		{
-			if ( IKBD_OutputBuffer_CheckFreeCount ( 2 ) )
+			/* Up? */
+			if (KeyboardProcessor.Mouse.DeltaY <= -KeyboardProcessor.Mouse.KeyCodeDeltaY)
 			{
-				IKBD_Cmd_Return_Byte (77);		/* Right cursor */
-				IKBD_Cmd_Return_Byte (77|0x80);
+				if ( IKBD_OutputBuffer_CheckFreeCount ( 2 ) )
+				{
+					IKBD_Cmd_Return_Byte (72);		/* Up cursor */
+					IKBD_Cmd_Return_Byte (72|0x80);
+				}
+				KeyboardProcessor.Mouse.DeltaY += KeyboardProcessor.Mouse.KeyCodeDeltaY;
 			}
-			KeyboardProcessor.Mouse.DeltaX--;
-		}
-		/* Up? */
-		if (KeyboardProcessor.Mouse.DeltaY<0)
-		{
-			if ( IKBD_OutputBuffer_CheckFreeCount ( 2 ) )
+			/* Down? */
+			if (KeyboardProcessor.Mouse.DeltaY >= KeyboardProcessor.Mouse.KeyCodeDeltaY)
 			{
-				IKBD_Cmd_Return_Byte (72);		/* Up cursor */
-				IKBD_Cmd_Return_Byte (72|0x80);
+				if ( IKBD_OutputBuffer_CheckFreeCount ( 2 ) )
+				{
+					IKBD_Cmd_Return_Byte (80);		/* Down cursor */
+					IKBD_Cmd_Return_Byte (80|0x80);
+				}
+				KeyboardProcessor.Mouse.DeltaY -= KeyboardProcessor.Mouse.KeyCodeDeltaY;
 			}
-			KeyboardProcessor.Mouse.DeltaY++;
-		}
-		/* Down? */
-		if (KeyboardProcessor.Mouse.DeltaY>0)
-		{
-			if ( IKBD_OutputBuffer_CheckFreeCount ( 2 ) )
-			{
-				IKBD_Cmd_Return_Byte (80);		/* Down cursor */
-				IKBD_Cmd_Return_Byte (80|0x80);
-			}
-			KeyboardProcessor.Mouse.DeltaY--;
 		}
 
 		if ( IKBD_OutputBuffer_CheckFreeCount ( 2 ) )
@@ -1785,8 +1800,6 @@ void IKBD_InterruptHandler_AutoSend(void)
 	/* Did user try to quit? */
 	if (bQuitProgram)
 	{
-		/* Pass NULL interrupt function to quit cleanly */
-		CycInt_AddAbsoluteInterrupt(4, INT_CPU_CYCLE, INTERRUPT_NULL);
 		/* Assure that CPU core shuts down */
 		M68000_SetSpecial(SPCFLAG_BRK);
 		return;
@@ -2223,7 +2236,7 @@ static void IKBD_Cmd_ReturnJoystickAuto(void)
 	}
 
 	/* This command resets the internally previously stored joystick states */
-	KeyboardProcessor.Joy.PrevJoyData[0] = KeyboardProcessor.Joy.PrevJoyData[1] = 0;
+	KeyboardProcessor.Joy.PrevJoyData[JOYID_JOYSTICK0] = KeyboardProcessor.Joy.PrevJoyData[JOYID_JOYSTICK1] = 0;
 
 	/* This is a hack for the STE Utopos (=> v1.50) and Falcon Double Bubble
 	 * 2000 games. They expect the joystick data to be sent within a certain
@@ -2261,8 +2274,8 @@ static void IKBD_Cmd_ReturnJoystick(void)
 	if ( IKBD_OutputBuffer_CheckFreeCount ( 3 ) )
 	{
 		IKBD_Cmd_Return_Byte_Delay ( 0xFD , IKBD_Delay_Random ( 7500 , 10000 ) );
-		IKBD_Cmd_Return_Byte (Joy_GetStickData(0));
-		IKBD_Cmd_Return_Byte (Joy_GetStickData(1));
+		IKBD_Cmd_Return_Byte (Joy_GetStickData(JOYID_JOYSTICK0));
+		IKBD_Cmd_Return_Byte (Joy_GetStickData(JOYID_JOYSTICK1));
 	}
 }
 
@@ -2991,7 +3004,7 @@ static void IKBD_CustomCodeHandler_Transbeauce2Menu_Read ( void )
 	if ( ScanCodeState[ 0x39 ] )	res |= 0x80;		/* space */
 
 	/* joystick emulation (bit mapping is same as cursor above, with bit 7 = fire button */
-	res |= ( Joy_GetStickData(1) & 0x8f ) ;			/* keep bits 0-3 and 7 */
+	res |= ( Joy_GetStickData(JOYID_JOYSTICK1) & 0x8f ) ;			/* keep bits 0-3 and 7 */
 
 	IKBD_Send_Byte_Delay ( res , 0 );
 }

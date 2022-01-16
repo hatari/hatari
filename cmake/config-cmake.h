@@ -6,9 +6,6 @@
 /* Define if you have a readline compatible library */
 #cmakedefine HAVE_LIBREADLINE 1
 
-/* Define if you have the PortAudio library */
-#cmakedefine HAVE_PORTAUDIO 1
-
 /* Define if you have the PortMidi library */
 #cmakedefine HAVE_PORTMIDI 1
 

@@ -27,18 +27,23 @@ Quick start
 *If* Hatari is built with PortMidi, getting MIDI output from Hatari is
 simple.
 
-Just start a MIDI software synthetizer (on Debian/Ubuntu):
-$ sudo apt install qsynth
-$ qsynth
+Install a MIDI software synthetizer and virtual MIDI keyboard
+(on Debian/Ubuntu):
+  sudo apt install qsynth vkeybd
 
-(Hatari scans for ALSA MIDI devices only at start, so the MIDI output
-and input devices need to be there before starting Hatari.)
+Then start them:
+  qsynth &
+  vkeybd &
 
-Then start Hatari, and in the "Devices" option screen, select "Enable
-MIDI emulation" and for the "output" option, select "Synth input
-port".
+(Hatari scans for the ALSA MIDI devices only at start, so the relevant
+MIDI output and input devices need to be there before starting Hatari.)
+
+Start Hatari, and in the "Devices" option screen, select "Enable MIDI
+emulation".  Then for the input option, select "Virtual Keyboard",
+and for the "output" option, select "Synth input port".
 
 That's all!
+
 
 Rest of this document is about lower level MIDI (raw device) access
 without PortMidi, Linux MIDI usage in general, and notes of some
@@ -48,15 +53,17 @@ useful Open Source MIDI software available on Linux.
 Using a soundcard with built-in MIDI synthesis capability
 ---------------------------------------------------------
 
-If your soundcard is capable of playing MIDI sound (i.e. you can play a .mid
-file with the "aplaymidi" command using the appropriate port), you can use this
-synthesis device for Hatari, too. However, you still might have to install and
-connect a virtual midi device, so that Hatari can access it through a
-/dev/snd/midiC*D* device file (see instructions below).
+If your soundcard is capable of playing MIDI sound (i.e. you can play
+a .mid file with the "aplaymidi" command using the appropriate port),
+you can use this synthesis device for Hatari, too. However, you still
+might have to install and connect a virtual midi device, so that
+Hatari can access it through a /dev/snd/midiC*D* device file (see
+instructions below).
 
-Please note that you might also have to load instrument patches into your sound
-card first, for example with the program "sfxload" for AWE64 based sound cards,
-or with the program "sbiload" for OPL3 based sound cards.
+Please note that you might also have to load instrument patches into
+your sound card first, for example with the program "sfxload" for
+AWE64 based sound cards, or with the program "sbiload" for OPL3 based
+sound cards.
 
 
 Making MIDI soft-synthetizer to work with ALSA

@@ -2,10 +2,13 @@
 CFLAGS := -O -Wall $$(pkg-config --cflags sdl2)
 LIBS   := $$(pkg-config --libs sdl2)
 
-all: checkkeys
+all: listkeys checkkeys
 
 checkkeys: checkkeys.c makefile
 	$(CC) -o $@ $(CFLAGS) $< $(LIBS)
 
+listkeys: listkeys.c makefile
+	$(CC) -o $@ $(CFLAGS) $< $(LIBS)
+
 clean:
-	$(RM) checkkeys *.[oO] *~
+	$(RM) listkeys checkkeys *.[oO] *~

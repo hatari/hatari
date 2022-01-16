@@ -229,7 +229,9 @@ extern const char *OpcodeName[];
 static inline void M68000_AddCycles(int cycles)
 {
 	cycles = (cycles + 3) & ~3;
+#ifndef CYCINT_NEW
 	PendingInterruptCount -= INT_CONVERT_TO_INTERNAL ( cycles , INT_CPU_CYCLE );
+#endif
 	nCyclesMainCounter += cycles;
 	CyclesGlobalClockCounter += cycles;
 }
@@ -320,8 +322,9 @@ static inline void M68000_AddCyclesWithPairing(int cycles)
 		cycles = (cycles + 3) & ~3;		/* no pairing, round current instr to 4 cycles */
 	}
 
+#ifndef CYCINT_NEW
 	PendingInterruptCount -= INT_CONVERT_TO_INTERNAL ( cycles , INT_CPU_CYCLE );
-
+#endif
 	nCyclesMainCounter += cycles;
 	CyclesGlobalClockCounter += cycles;
 	BusCyclePenalty = 0;
@@ -340,8 +343,9 @@ static inline void M68000_AddCyclesWithPairing(int cycles)
  */
 static inline void M68000_AddCycles_CE(int cycles)
 {
+#ifndef CYCINT_NEW
 	PendingInterruptCount -= INT_CONVERT_TO_INTERNAL ( cycles , INT_CPU_CYCLE );
-
+#endif
 	nCyclesMainCounter += cycles;
 	CyclesGlobalClockCounter += cycles;
 }

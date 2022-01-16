@@ -151,6 +151,7 @@ enum {
 	TRACE_BIT_MFP_WRITE,
 
 	TRACE_BIT_MIDI,
+	TRACE_BIT_MIDI_RAW,
 
 	TRACE_BIT_NATFEATS,
 
@@ -234,6 +235,7 @@ enum {
 #define TRACE_MFP_WRITE          (1ll<<TRACE_BIT_MFP_WRITE)
 
 #define TRACE_MIDI               (1ll<<TRACE_BIT_MIDI)
+#define TRACE_MIDI_RAW           (1ll<<TRACE_BIT_MIDI_RAW)
 
 #define TRACE_NATFEATS           (1ll<<TRACE_BIT_NATFEATS)
 

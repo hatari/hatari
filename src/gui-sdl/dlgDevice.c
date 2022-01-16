@@ -14,6 +14,7 @@ const char DlgDevice_fileid[] = "Hatari dlgDevice.c";
 #include "dialog.h"
 #include "sdlgui.h"
 #include "file.h"
+#include "midi.h"  /* needed only with PortMidi */
 #include "screen.h"
 
 
@@ -97,24 +98,6 @@ static SGOBJ devicedlg[] =
 };
 
 
-#ifdef HAVE_PORTMIDI
-#include "midi.h"
-static int midiInput  = -1;
-static int midiOutput = -1;
-
-static void setupMidiControls(void)
-{
-	const char *inportName,*outportName;
-	midiInput  = Midi_Host_GetPortIndex(ConfigureParams.Midi.sMidiInPortName,  true);
-	midiOutput = Midi_Host_GetPortIndex(ConfigureParams.Midi.sMidiOutPortName, false);
-	inportName  = (midiInput  < 0) ? "Off" : ConfigureParams.Midi.sMidiInPortName;
-	outportName = (midiOutput < 0) ? "Off" : ConfigureParams.Midi.sMidiOutPortName;
-	File_ShrinkName(dlgMidiInName,  inportName,  devicedlg[DEVDLG_MIDIINNAME].w);
-	File_ShrinkName(dlgMidiOutName, outportName, devicedlg[DEVDLG_MIDIOUTNAME].w);
-}
-#endif
-
-
 /*-----------------------------------------------------------------------*/
 /**
  * Show and process the "Device" dialog.
@@ -123,7 +106,7 @@ void Dialog_DeviceDlg(void)
 {
 	int but;
 #ifdef HAVE_PORTMIDI
-	const char* portName;
+	const char *name, *midiInName, *midiOutName;
 #endif
 
 	SDLGui_CenterDlg(devicedlg);
@@ -151,7 +134,11 @@ void Dialog_DeviceDlg(void)
 	File_ShrinkName(dlgMidiInName, ConfigureParams.Midi.sMidiInFileName, devicedlg[DEVDLG_MIDIINNAME].w);
 	File_ShrinkName(dlgMidiOutName, ConfigureParams.Midi.sMidiOutFileName, devicedlg[DEVDLG_MIDIOUTNAME].w);
 #else
-	setupMidiControls();
+	midiInName = Midi_Host_GetPortName(ConfigureParams.Midi.sMidiInPortName, 0, true);
+	File_ShrinkName(dlgMidiInName, midiInName ? midiInName : "Off", devicedlg[DEVDLG_MIDIINNAME].w);
+
+	midiOutName = Midi_Host_GetPortName(ConfigureParams.Midi.sMidiOutPortName, 0, false);
+	File_ShrinkName(dlgMidiOutName,  midiOutName ? midiOutName : "Off", devicedlg[DEVDLG_MIDIOUTNAME].w);
 #endif
 
 	/* The devices dialog main loop */
@@ -194,37 +181,31 @@ void Dialog_DeviceDlg(void)
 			break;
 #else
 		case DEVDLG_PREVIN:
-			if (midiInput >= 0)
-			{
-				midiInput--;
-				portName = (midiInput == -1) ? "Off" : Midi_Host_GetPortName(midiInput, true);
-				if (portName)
-					File_ShrinkName(dlgMidiInName, portName, devicedlg[DEVDLG_MIDIINNAME].w);
-			}
+			midiInName = Midi_Host_GetPortName(midiInName, -1, true);
+			File_ShrinkName(dlgMidiInName, midiInName ? midiInName : "Off",
+					devicedlg[DEVDLG_MIDIINNAME].w);
 			break;
 		case DEVDLG_NEXTIN:
-			portName = Midi_Host_GetPortName(midiInput + 1, true);
-			if (portName)
+			name = Midi_Host_GetPortName(midiInName, +1, true);
+			if (name)
 			{
-				midiInput++;
-				File_ShrinkName(dlgMidiInName, portName, devicedlg[DEVDLG_MIDIINNAME].w);
+				midiInName = name;
+				File_ShrinkName(dlgMidiInName, midiInName,
+						devicedlg[DEVDLG_MIDIINNAME].w);
 			}
 			break;
 		case DEVDLG_PREVOUT:
-			if (midiOutput >= 0)
-			{
-				midiOutput--;
-				portName = (midiOutput == -1) ? "Off" : Midi_Host_GetPortName(midiOutput, false);
-				if (portName)
-					File_ShrinkName(dlgMidiOutName, portName, devicedlg[DEVDLG_MIDIOUTNAME].w);
-			}
+			midiOutName = Midi_Host_GetPortName(midiOutName, -1, false);
+			File_ShrinkName(dlgMidiOutName, midiOutName ? midiOutName : "Off",
+					devicedlg[DEVDLG_MIDIOUTNAME].w);
 			break;
 		case DEVDLG_NEXTOUT:
-			portName = Midi_Host_GetPortName(midiOutput + 1, false);
-			if (portName)
+			name = Midi_Host_GetPortName(midiOutName, +1, false);
+			if (name)
 			{
-				midiOutput++;
-				File_ShrinkName(dlgMidiOutName, portName, devicedlg[DEVDLG_MIDIOUTNAME].w);
+				midiOutName = name;
+				File_ShrinkName(dlgMidiOutName, midiOutName,
+						devicedlg[DEVDLG_MIDIOUTNAME].w);
 			}
 			break;
 #endif
@@ -239,8 +220,8 @@ void Dialog_DeviceDlg(void)
 	ConfigureParams.Midi.bEnableMidi = (devicedlg[DEVDLG_MIDIENABLE].state & SG_SELECTED);
 #ifdef HAVE_PORTMIDI
 	assert(sizeof(dlgMidiInName) <= sizeof(ConfigureParams.Midi.sMidiInPortName));
-	strcpy(ConfigureParams.Midi.sMidiInPortName, dlgMidiInName);
+	strcpy(ConfigureParams.Midi.sMidiInPortName, midiInName ? midiInName : "Off");
 	assert(sizeof(dlgMidiOutName) <= sizeof(ConfigureParams.Midi.sMidiOutPortName));
-	strcpy(ConfigureParams.Midi.sMidiOutPortName, dlgMidiOutName);
+	strcpy(ConfigureParams.Midi.sMidiOutPortName, midiOutName ? midiOutName : "Off");
 #endif
 }

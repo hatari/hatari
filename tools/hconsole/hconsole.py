@@ -542,11 +542,11 @@ give help when you give them invalid input.
     def do_sleep(self, line):
         items = line.split()[1:]
         try:
-            secs = int(items[0])
+            secs = float(items[0])
         except:
-            secs = 0
-        if secs > 0:
-            print("Sleeping for %d secs..." % secs)
+            secs = -1.0
+        if secs > 0.0:
+            print("Sleeping for %g secs..." % secs)
             time.sleep(secs)
         else:
             print("usage: sleep <seconds>")

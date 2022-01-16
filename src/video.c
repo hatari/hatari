@@ -456,6 +456,7 @@ const char Video_fileid[] = "Hatari video.c";
 #include "ikbd.h"
 #include "floppy_ipf.h"
 #include "statusbar.h"
+#include "clocks_timings.h"
 
 
 /* The border's mask allows to keep track of all the border tricks		*/
@@ -1112,6 +1113,20 @@ void	Video_SetTimings( MACHINETYPE MachineType , VIDEOTIMINGMODE Mode )
 const char	*Video_GetTimings_Name ( void )
 {
 	return pVideoTiming->VideoTimingName;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Return the value of the MONO output signal depending on the monitor :
+ *	1=monochrome monitor	0=color monitor
+ */
+Uint8	Video_Get_MONO_Line ( void )
+{
+	if ( bUseHighRes )
+		return 1;
+	else
+		return 0;
 }
 
 

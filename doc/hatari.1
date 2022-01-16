@@ -62,7 +62,18 @@ override values read from the global and user configuration
 files
 .TP
 .B \-k, \-\-keymap <file>
-Load keyboard mapping from <file>
+Load keyboard mapping from <file>. "Symbolic" mapping will be used as
+fallback for keys not defined there
+.TP
+.B \-\-layout <x>
+Set NVRAM keyboard layout value. While both TT and Falcon machines
+have NVRAM, only TOS v4 and EmuTOS 1024k ROM versions support multiple
+layouts
+.TP
+.B \-\-language <x>
+Set NVRAM language value. While both TT and Falcon machines have
+NVRAM, only TOS v4 and EmuTOS 1024k ROM versions support multiple
+languages
 .TP
 .B \-\-fast\-forward <bool>
 Fast-forward through the boring parts by running emulator at maximum

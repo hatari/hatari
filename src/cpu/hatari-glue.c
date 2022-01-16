@@ -14,6 +14,7 @@ const char HatariGlue_fileid[] = "Hatari hatari-glue.c";
 
 #include "main.h"
 #include "configuration.h"
+#include "cycles.h"
 #include "cycInt.h"
 #include "tos.h"
 #include "gemdos.h"
