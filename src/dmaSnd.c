@@ -1482,6 +1482,6 @@ void DmaSnd_Info(FILE *fp, Uint32 dummy)
 		return;
 	}
 	fprintf(fp, "\n");
-	fprintf(fp, "$FF8922.w : Microwire Data     : %02x\n", IoMem_ReadWord(0xff8922));
-	fprintf(fp, "$FF8924.w : Microwire Mask     : %02x\n", IoMem_ReadWord(0xff8924));
+	fprintf(fp, "$FF8922.w : Microwire Data     : %04x\n", IoMem_ReadWord(0xff8922));
+	fprintf(fp, "$FF8924.w : Microwire Mask     : %04x\n", IoMem_ReadWord(0xff8924));
 }
