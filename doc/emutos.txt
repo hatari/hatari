@@ -657,6 +657,7 @@ Free/shareware/PD games:
 - Tiles Osmosis
 - Time Bandit
 - Teserae*
+- The errand boy (text adventure)
 - The lost world (line-A bitblits)
 - Trace
 - Unheart
@@ -1118,6 +1119,9 @@ line-A bitblits:
 
 STE drawing programs:
 - Art for Kids / demo
+
+STE (enhanced) video players:
+- MP_STE
 
 STE (enhanced) music applications:
 - Blipp Blopper
