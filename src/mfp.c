@@ -128,6 +128,12 @@
 /*			CycInt_ResumeStoppedInterrupt() anymore (fix ST CNX screen	*/
 /*			in Punish Your Machine when saving MFP registers by doing very	*/
 /*			fast start/stop on each MFP timer)				*/
+/* 2022/01/27	[NP]	Call MFP_UpdateTimers / CycInt_Process before accessing any MFP	*/
+/*			registers, to ensure MFP timers are updated in chronological	*/
+/*			order (fix the game Super Hang On, where 'bclr #0,$fffffa0f'	*/
+/*			to clear Timer B ISR sometimes happens at the same time that	*/
+/*			Timer C expires, which used the wrong ISR value and gave	*/
+/*			flickering raster colors)					*/
 
 
 const char MFP_fileid[] = "Hatari mfp.c";
@@ -394,6 +400,7 @@ static void	MFP_Init_Pointers ( MFP_STRUCT *pAllMFP );
 static void	MFP_Reset ( MFP_STRUCT *pMFP );
 
 static Uint8	MFP_ConvertIntNumber ( MFP_STRUCT *pMFP , Sint16 Interrupt , Uint8 **pMFP_IER , Uint8 **pMFP_IPR , Uint8 **pMFP_ISR , Uint8 **pMFP_IMR );
+static void	MFP_UpdateTimers ( MFP_STRUCT *pMFP , Uint64 Clock );
 static void	MFP_Exception ( MFP_STRUCT *pMFP , Sint16 Interrupt );
 static bool	MFP_ProcessIRQ ( MFP_STRUCT *pMFP );
 static void	MFP_UpdateIRQ ( MFP_STRUCT *pMFP , Uint64 Event_Time );
@@ -530,6 +537,7 @@ static void	MFP_Reset ( MFP_STRUCT *pMFP )
 	pMFP->TD_MAINCOUNTER = 0;
 
 	/* Clear counters */
+	// TODO drop those 4 variables, as they are not really used in MFP_ReadTimer_xx
 	pMFP->TimerAClockCycles = 0;
 	pMFP->TimerBClockCycles = 0;
 	pMFP->TimerCClockCycles = 0;
@@ -549,7 +557,6 @@ static void	MFP_Reset ( MFP_STRUCT *pMFP )
 	pMFP->Pending_Time_Min = UINT64_MAX;
 	for ( i=0 ; i<=MFP_INT_MAX ; i++ )
 		pMFP->Pending_Time[ i ] = UINT64_MAX;
-
 }
 
 
@@ -648,6 +655,24 @@ static Uint8	MFP_ConvertIntNumber ( MFP_STRUCT *pMFP , Sint16 Interrupt , Uint8 
 
 	return Bit;
 }
+
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Update the internal CycInt counters to check if some MFP timers expired.
+ * This should be called before accessing the MFP registers for read or write
+ * to ensure MFP events are processed in chronological order.
+ */
+static void	MFP_UpdateTimers ( MFP_STRUCT *pMFP , Uint64 Clock )
+{
+	CycInt_Process_Clock ( Clock );
+	if ( MFP_UpdateNeeded == true )
+		MFP_UpdateIRQ ( pMFP , Clock );
+}
+
+
 
 
 /*-----------------------------------------------------------------------*/
@@ -903,7 +928,7 @@ static void	MFP_UpdateIRQ ( MFP_STRUCT *pMFP , Uint64 Event_Time )
 {
 	int	NewInt = -1;
 
-//fprintf ( stderr , "updirq in irq=%d even_time=%"PRIu64" - ipr %x %x imr %x %x isr %x %x - clock=%"PRIu64"\n" , pMFP->IRQ , Event_Time , pMFP->IPRA , pMFP->IPRB , pMFP->IMRA , pMFP->IMRB , pMFP->ISRA , pMFP->ISRB , CyclesGlobalClockCounter  );
+//fprintf ( stderr , "updirq in irq=%d event_time=%"PRIu64" - ipr %x %x imr %x %x isr %x %x - clock=%"PRIu64"\n" , pMFP->IRQ , Event_Time , pMFP->IPRA , pMFP->IPRB , pMFP->IMRA , pMFP->IMRB , pMFP->ISRA , pMFP->ISRB , CyclesGlobalClockCounter  );
 
 	if ( ( pMFP->IPRA & pMFP->IMRA ) | ( pMFP->IPRB & pMFP->IMRB ) )
 	{
@@ -1867,6 +1892,9 @@ void	MFP_GPIP_ReadByte_Main ( MFP_STRUCT *pMFP )
 
 	M68000_WaitState(4);
 
+	/* Update timers' state before writing to register */
+	MFP_UpdateTimers ( pMFP , Cycles_GetClockCounterOnReadAccess() );
+
 	gpip_new = pMFP->GPIP;
 
 	/* Bit 7 */
@@ -1923,6 +1951,9 @@ void	MFP_GPIP_ReadByte_TT ( MFP_STRUCT *pMFP )
 
 	M68000_WaitState(4);
 
+	/* Update timers' state before writing to register */
+	MFP_UpdateTimers ( pMFP , Cycles_GetClockCounterOnReadAccess() );
+
 	/* TODO : handle all bits, bit 7 is scsi, bit 4 is DC signal, other bits default to 1 for now */
 	gpip_new = pMFP->GPIP;
 	gpip_new |= 0x6f;					/* force bits 0-3 and 5-6 to 1 */
@@ -1957,6 +1988,9 @@ void	MFP_ActiveEdge_ReadByte ( void )
 	else
 		pMFP = pMFP_TT;
 
+	/* Update timers' state before writing to register */
+	MFP_UpdateTimers ( pMFP , Cycles_GetClockCounterOnReadAccess() );
+
 	IoMem[IoAccessCurrentAddress] = pMFP->AER;
 
 	if ( LOG_TRACE_LEVEL( TRACE_MFP_READ ) )
@@ -1983,6 +2017,9 @@ void	MFP_DataDirection_ReadByte ( void )
 		pMFP = pMFP_Main;
 	else
 		pMFP = pMFP_TT;
+
+	/* Update timers' state before writing to register */
+	MFP_UpdateTimers ( pMFP , Cycles_GetClockCounterOnReadAccess() );
 
 	IoMem[IoAccessCurrentAddress] = pMFP->DDR;
 
@@ -2011,6 +2048,9 @@ void	MFP_EnableA_ReadByte ( void )
 	else
 		pMFP = pMFP_TT;
 
+	/* Update timers' state before writing to register */
+	MFP_UpdateTimers ( pMFP , Cycles_GetClockCounterOnReadAccess() );
+
 	IoMem[IoAccessCurrentAddress] = pMFP->IERA;
 
 	if ( LOG_TRACE_LEVEL( TRACE_MFP_READ ) )
@@ -2037,6 +2077,9 @@ void	MFP_EnableB_ReadByte ( void )
 		pMFP = pMFP_Main;
 	else
 		pMFP = pMFP_TT;
+
+	/* Update timers' state before writing to register */
+	MFP_UpdateTimers ( pMFP , Cycles_GetClockCounterOnReadAccess() );
 
 	IoMem[IoAccessCurrentAddress] = pMFP->IERB;
 
@@ -2065,6 +2108,9 @@ void	MFP_PendingA_ReadByte ( void )
 	else
 		pMFP = pMFP_TT;
 
+	/* Update timers' state before writing to register */
+	MFP_UpdateTimers ( pMFP , Cycles_GetClockCounterOnReadAccess() );
+
 	IoMem[IoAccessCurrentAddress] = pMFP->IPRA;
 
 	if ( LOG_TRACE_LEVEL( TRACE_MFP_READ ) )
@@ -2091,6 +2137,9 @@ void	MFP_PendingB_ReadByte ( void )
 		pMFP = pMFP_Main;
 	else
 		pMFP = pMFP_TT;
+
+	/* Update timers' state before writing to register */
+	MFP_UpdateTimers ( pMFP , Cycles_GetClockCounterOnReadAccess() );
 
 	IoMem[IoAccessCurrentAddress] = pMFP->IPRB;
 
@@ -2119,6 +2168,9 @@ void	MFP_InServiceA_ReadByte ( void )
 	else
 		pMFP = pMFP_TT;
 
+	/* Update timers' state before writing to register */
+	MFP_UpdateTimers ( pMFP , Cycles_GetClockCounterOnReadAccess() );
+
 	IoMem[IoAccessCurrentAddress] = pMFP->ISRA;
 
 	if ( LOG_TRACE_LEVEL( TRACE_MFP_READ ) )
@@ -2145,6 +2197,9 @@ void	MFP_InServiceB_ReadByte ( void )
 		pMFP = pMFP_Main;
 	else
 		pMFP = pMFP_TT;
+
+	/* Update timers' state before writing to register */
+	MFP_UpdateTimers ( pMFP , Cycles_GetClockCounterOnReadAccess() );
 
 	IoMem[IoAccessCurrentAddress] = pMFP->ISRB;
 
@@ -2173,6 +2228,9 @@ void	MFP_MaskA_ReadByte ( void )
 	else
 		pMFP = pMFP_TT;
 
+	/* Update timers' state before writing to register */
+	MFP_UpdateTimers ( pMFP , Cycles_GetClockCounterOnReadAccess() );
+
 	IoMem[IoAccessCurrentAddress] = pMFP->IMRA;
 
 	if ( LOG_TRACE_LEVEL( TRACE_MFP_READ ) )
@@ -2199,6 +2257,9 @@ void	MFP_MaskB_ReadByte ( void )
 		pMFP = pMFP_Main;
 	else
 		pMFP = pMFP_TT;
+
+	/* Update timers' state before writing to register */
+	MFP_UpdateTimers ( pMFP , Cycles_GetClockCounterOnReadAccess() );
 
 	IoMem[IoAccessCurrentAddress] = pMFP->IMRB;
 
@@ -2227,6 +2288,9 @@ void	MFP_VectorReg_ReadByte ( void )
 	else
 		pMFP = pMFP_TT;
 
+	/* Update timers' state before writing to register */
+	MFP_UpdateTimers ( pMFP , Cycles_GetClockCounterOnReadAccess() );
+
 	IoMem[IoAccessCurrentAddress] = pMFP->VR;
 
 	if ( LOG_TRACE_LEVEL( TRACE_MFP_READ ) )
@@ -2253,6 +2317,9 @@ void	MFP_TimerACtrl_ReadByte ( void )
 		pMFP = pMFP_Main;
 	else
 		pMFP = pMFP_TT;
+
+	/* Update timers' state before writing to register */
+	MFP_UpdateTimers ( pMFP , Cycles_GetClockCounterOnReadAccess() );
 
 	IoMem[IoAccessCurrentAddress] = pMFP->TACR;
 
@@ -2281,6 +2348,9 @@ void	MFP_TimerBCtrl_ReadByte ( void )
 	else
 		pMFP = pMFP_TT;
 
+	/* Update timers' state before writing to register */
+	MFP_UpdateTimers ( pMFP , Cycles_GetClockCounterOnReadAccess() );
+
 	IoMem[IoAccessCurrentAddress] = pMFP->TBCR;
 
 	if ( LOG_TRACE_LEVEL( TRACE_MFP_READ ) )
@@ -2308,6 +2378,9 @@ void	MFP_TimerCDCtrl_ReadByte ( void )
 	else
 		pMFP = pMFP_TT;
 
+	/* Update timers' state before writing to register */
+	MFP_UpdateTimers ( pMFP , Cycles_GetClockCounterOnReadAccess() );
+
 	IoMem[IoAccessCurrentAddress] = pMFP->TCDCR;
 
 	if ( LOG_TRACE_LEVEL( TRACE_MFP_READ ) )
@@ -2334,6 +2407,9 @@ void	MFP_TimerAData_ReadByte ( void )
 		pMFP = pMFP_Main;
 	else
 		pMFP = pMFP_TT;
+
+	/* Update timers' state before writing to register */
+	MFP_UpdateTimers ( pMFP , Cycles_GetClockCounterOnReadAccess() );
 
 	if ( pMFP->TACR != 8 )				/* Is event count? Need to update counter */
 		MFP_ReadTimerA ( pMFP , false );	/* Store result in 'TA_MAINCOUNTER' */
@@ -2365,6 +2441,9 @@ void MFP_TimerBData_ReadByte(void)
 		pMFP = pMFP_Main;
 	else
 		pMFP = pMFP_TT;
+
+	/* Update timers' state before writing to register */
+	MFP_UpdateTimers ( pMFP , Cycles_GetClockCounterOnReadAccess() );
 
 	/* Is it event count mode or not? */
 	if ( pMFP->TBCR != 8 )
@@ -2454,6 +2533,9 @@ void	MFP_TimerCData_ReadByte(void)
 	else
 		pMFP = pMFP_TT;
 
+	/* Update timers' state before writing to register */
+	MFP_UpdateTimers ( pMFP , Cycles_GetClockCounterOnReadAccess() );
+
 	MFP_ReadTimerC ( pMFP , false );		/* Store result in 'TC_MAINCOUNTER' */
 
 	IoMem[IoAccessCurrentAddress] = pMFP->TC_MAINCOUNTER;
@@ -2483,6 +2565,9 @@ void	MFP_TimerDData_ReadByte ( void )
 		pMFP = pMFP_Main;
 	else
 		pMFP = pMFP_TT;
+
+	/* Update timers' state before writing to register */
+	MFP_UpdateTimers ( pMFP , Cycles_GetClockCounterOnReadAccess() );
 
 	/* Special case for the main MFP when bPatchTimerD is used */
 	/* NOTE : in TT mode TOS also starts useless timer D on the TT MFP, so we should restore */
@@ -2531,6 +2616,9 @@ void	MFP_GPIP_WriteByte ( void )
 	else
 		pMFP = pMFP_TT;
 
+	/* Update timers' state before writing to register */
+	MFP_UpdateTimers ( pMFP , Cycles_GetClockCounterOnWriteAccess() );
+
 	if ( LOG_TRACE_LEVEL( TRACE_MFP_WRITE ) )
 	{
 		int FrameCycles, HblCounterVideo, LineCycles;
@@ -2568,6 +2656,9 @@ void	MFP_ActiveEdge_WriteByte ( void )
 		pMFP = pMFP_Main;
 	else
 		pMFP = pMFP_TT;
+
+	/* Update timers' state before writing to register */
+	MFP_UpdateTimers ( pMFP , Cycles_GetClockCounterOnWriteAccess() );
 
 	if ( LOG_TRACE_LEVEL( TRACE_MFP_WRITE ) )
 	{
@@ -2644,6 +2735,9 @@ void	MFP_DataDirection_WriteByte ( void )
 	else
 		pMFP = pMFP_TT;
 
+	/* Update timers' state before writing to register */
+	MFP_UpdateTimers ( pMFP , Cycles_GetClockCounterOnWriteAccess() );
+
 	if ( LOG_TRACE_LEVEL( TRACE_MFP_WRITE ) )
 	{
 		int FrameCycles, HblCounterVideo, LineCycles;
@@ -2676,6 +2770,9 @@ void	MFP_EnableA_WriteByte ( void )
 	else
 		pMFP = pMFP_TT;
 
+	/* Update timers' state before writing to register */
+	MFP_UpdateTimers ( pMFP , Cycles_GetClockCounterOnWriteAccess() );
+
 	if ( LOG_TRACE_LEVEL( TRACE_MFP_WRITE ) )
 	{
 		int FrameCycles, HblCounterVideo, LineCycles;
@@ -2704,6 +2801,9 @@ void	MFP_EnableB_WriteByte ( void )
 		pMFP = pMFP_Main;
 	else
 		pMFP = pMFP_TT;
+
+	/* Update timers' state before writing to register */
+	MFP_UpdateTimers ( pMFP , Cycles_GetClockCounterOnWriteAccess() );
 
 	if ( LOG_TRACE_LEVEL( TRACE_MFP_WRITE ) )
 	{
@@ -2734,6 +2834,9 @@ void	MFP_PendingA_WriteByte ( void )
 	else
 		pMFP = pMFP_TT;
 
+	/* Update timers' state before writing to register */
+	MFP_UpdateTimers ( pMFP , Cycles_GetClockCounterOnWriteAccess() );
+
 	if ( LOG_TRACE_LEVEL( TRACE_MFP_WRITE ) )
 	{
 		int FrameCycles, HblCounterVideo, LineCycles;
@@ -2761,6 +2864,9 @@ void	MFP_PendingB_WriteByte ( void )
 		pMFP = pMFP_Main;
 	else
 		pMFP = pMFP_TT;
+
+	/* Update timers' state before writing to register */
+	MFP_UpdateTimers ( pMFP , Cycles_GetClockCounterOnWriteAccess() );
 
 	if ( LOG_TRACE_LEVEL( TRACE_MFP_WRITE ) )
 	{
@@ -2790,6 +2896,9 @@ void	MFP_InServiceA_WriteByte ( void )
 	else
 		pMFP = pMFP_TT;
 
+	/* Update timers' state before writing to register */
+	MFP_UpdateTimers ( pMFP , Cycles_GetClockCounterOnWriteAccess() );
+
 	if ( LOG_TRACE_LEVEL( TRACE_MFP_WRITE ) )
 	{
 		int FrameCycles, HblCounterVideo, LineCycles;
@@ -2817,6 +2926,9 @@ void	MFP_InServiceB_WriteByte ( void )
 		pMFP = pMFP_Main;
 	else
 		pMFP = pMFP_TT;
+
+	/* Update timers' state before writing to register */
+	MFP_UpdateTimers ( pMFP , Cycles_GetClockCounterOnWriteAccess() );
 
 	if ( LOG_TRACE_LEVEL( TRACE_MFP_WRITE ) )
 	{
@@ -2846,6 +2958,9 @@ void	MFP_MaskA_WriteByte ( void )
 	else
 		pMFP = pMFP_TT;
 
+	/* Update timers' state before writing to register */
+	MFP_UpdateTimers ( pMFP , Cycles_GetClockCounterOnWriteAccess() );
+
 	if ( LOG_TRACE_LEVEL( TRACE_MFP_WRITE ) )
 	{
 		int FrameCycles, HblCounterVideo, LineCycles;
@@ -2873,6 +2988,9 @@ void	MFP_MaskB_WriteByte ( void )
 		pMFP = pMFP_Main;
 	else
 		pMFP = pMFP_TT;
+
+	/* Update timers' state before writing to register */
+	MFP_UpdateTimers ( pMFP , Cycles_GetClockCounterOnWriteAccess() );
 
 	if ( LOG_TRACE_LEVEL( TRACE_MFP_WRITE ) )
 	{
@@ -2902,6 +3020,9 @@ void	MFP_VectorReg_WriteByte ( void )
 		pMFP = pMFP_Main;
 	else
 		pMFP = pMFP_TT;
+
+	/* Update timers' state before writing to register */
+	MFP_UpdateTimers ( pMFP , Cycles_GetClockCounterOnWriteAccess() );
 
 	if ( LOG_TRACE_LEVEL( TRACE_MFP_WRITE ) )
 	{
@@ -2944,6 +3065,9 @@ void	MFP_TimerACtrl_WriteByte ( void )
 	else
 		pMFP = pMFP_TT;
 
+	/* Update timers' state before writing to register */
+	MFP_UpdateTimers ( pMFP , Cycles_GetClockCounterOnWriteAccess() );
+
 	if ( LOG_TRACE_LEVEL( TRACE_MFP_WRITE ) )
 	{
 		int FrameCycles, HblCounterVideo, LineCycles;
@@ -2984,6 +3108,9 @@ void MFP_TimerBCtrl_WriteByte(void)
 		pMFP = pMFP_Main;
 	else
 		pMFP = pMFP_TT;
+
+	/* Update timers' state before writing to register */
+	MFP_UpdateTimers ( pMFP , Cycles_GetClockCounterOnWriteAccess() );
 
 	if ( LOG_TRACE_LEVEL( TRACE_MFP_WRITE ) )
 	{
@@ -3026,6 +3153,9 @@ void	MFP_TimerCDCtrl_WriteByte(void)
 		pMFP = pMFP_Main;
 	else
 		pMFP = pMFP_TT;
+
+	/* Update timers' state before writing to register */
+	MFP_UpdateTimers ( pMFP , Cycles_GetClockCounterOnWriteAccess() );
 
 	if ( LOG_TRACE_LEVEL( TRACE_MFP_WRITE ) )
 	{
@@ -3115,6 +3245,9 @@ void	MFP_TimerAData_WriteByte ( void )
 	else
 		pMFP = pMFP_TT;
 
+	/* Update timers' state before writing to register */
+	MFP_UpdateTimers ( pMFP , Cycles_GetClockCounterOnWriteAccess() );
+
 	if ( LOG_TRACE_LEVEL( TRACE_MFP_WRITE ) )
 	{
 		int FrameCycles, HblCounterVideo, LineCycles;
@@ -3146,6 +3279,9 @@ void	MFP_TimerBData_WriteByte ( void )
 		pMFP = pMFP_Main;
 	else
 		pMFP = pMFP_TT;
+
+	/* Update timers' state before writing to register */
+	MFP_UpdateTimers ( pMFP , Cycles_GetClockCounterOnWriteAccess() );
 
 	if ( LOG_TRACE_LEVEL( TRACE_MFP_WRITE ) )
 	{
@@ -3179,6 +3315,9 @@ void	MFP_TimerCData_WriteByte ( void )
 	else
 		pMFP = pMFP_TT;
 
+	/* Update timers' state before writing to register */
+	MFP_UpdateTimers ( pMFP , Cycles_GetClockCounterOnWriteAccess() );
+
 	if ( LOG_TRACE_LEVEL( TRACE_MFP_WRITE ) )
 	{
 		int FrameCycles, HblCounterVideo, LineCycles;
@@ -3211,6 +3350,9 @@ void	MFP_TimerDData_WriteByte ( void )
 		pMFP = pMFP_Main;
 	else
 		pMFP = pMFP_TT;
+
+	/* Update timers' state before writing to register */
+	MFP_UpdateTimers ( pMFP , Cycles_GetClockCounterOnWriteAccess() );
 
 	if ( LOG_TRACE_LEVEL( TRACE_MFP_WRITE ) )
 	{

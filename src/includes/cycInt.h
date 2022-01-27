@@ -116,6 +116,11 @@ static inline void CycInt_Process_stop(int stop_cond)
 	while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( stop_cond == 0 ) )
 		CALL_VAR(PendingInterruptFunction);
 }
+static inline void CycInt_Process_Clock(void)
+{
+	while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) )
+		CALL_VAR(PendingInterruptFunction);
+}
 
 #else
 
@@ -127,6 +132,12 @@ static inline void CycInt_Process(void)
 static inline void CycInt_Process_stop(int stop_cond)
 {
 	while ( ( CycInt_ActiveInt_Cycles <= ( CyclesGlobalClockCounter << CYCINT_SHIFT ) ) && ( stop_cond == 0 ) )
+		CycInt_CallActiveHandler();
+}
+/* Same as CycInt_Process but use a specific cycles clock value */
+static inline void CycInt_Process_Clock(Uint64 Clock)
+{
+	while ( CycInt_ActiveInt_Cycles <= ( Clock << CYCINT_SHIFT ) )
 		CycInt_CallActiveHandler();
 }
 
