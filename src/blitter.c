@@ -251,7 +251,7 @@ static Uint16	Blitter_HOG_CPU_IgnoreMaxCpuCycles;		/* Max number of blitter cycl
 
 
 /* Return 'true' if CE mode can be enabled for blitter (ie when using 68000 CE mode) */
-#define	BLITTER_RUN_CE		( ( currprefs.cpu_cycle_exact ) && ( currprefs.cpu_model == 68000 ) )
+#define	BLITTER_RUN_CE		( CpuRunCycleExact && ( currprefs.cpu_model == 68000 ) )
 
 
 /* Used to compute the blitter's usage during each VBL (for statusbar) */

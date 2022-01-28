@@ -213,6 +213,7 @@ extern int nCpuFreqShift;
 extern int WaitStateCycles;
 extern int BusMode;
 extern bool	CPU_IACK;
+extern bool	CpuRunCycleExact;
 
 extern int	LastOpcodeFamily;
 extern int	LastInstrCycles;

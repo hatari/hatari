@@ -5334,6 +5334,9 @@ static void m68k_run_1_ce (void)
 	bool exit = false;
 
 	Log_Printf(LOG_DEBUG, "m68k_run_1_ce\n");
+#ifdef WINUAE_FOR_HATARI
+	CpuRunCycleExact = true;
+#endif
 
 	while (!exit) {
 		check_debugger();
@@ -6506,6 +6509,9 @@ static void m68k_run_3ce (void)
 	int extracycles = 0;
 
 	Log_Printf(LOG_DEBUG, "m68k_run_3ce\n");
+#ifdef WINUAE_FOR_HATARI
+	CpuRunCycleExact = true;
+#endif
 
 	while (!exit) {
 		check_debugger();
@@ -6692,6 +6698,9 @@ static void m68k_run_2ce (void)
 	bool first = true;
 
 	Log_Printf(LOG_DEBUG, "m68k_run_2ce\n");
+#ifdef WINUAE_FOR_HATARI
+	CpuRunCycleExact = true;
+#endif
 
 	while (!exit) {
 		check_debugger();
@@ -7565,6 +7574,9 @@ void m68k_go (int may_quit)
 
 		/* Restore debugger state (breakpoints) after a reset */
 		M68000_RestoreDebugger();
+
+		/* Set cycle exact mode to false by default */
+		CpuRunCycleExact = false;
 #endif
 
 #if 0
