@@ -1842,7 +1842,7 @@ Uint8    MFP_Main_Compute_GPIP7 ( void )
 
 	if (Config_IsMachineFalcon())
 	{
-		if (nCbar_DmaSoundControl & CROSSBAR_SNDCTRL_PLAY || nCbar_DmaSoundControl & CROSSBAR_SNDCTRL_RECORD)
+		if (Crossbar_Get_SNDINT_Line())
 			Bit = 1;
 		else
 			Bit = 0;
