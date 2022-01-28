@@ -271,7 +271,8 @@ struct crossbar_s {
 
 	Uint32 save_special_transfer;		/* Used in a special undocumented transfer mode (dsp sent is not in handshake mode and dsp receive is in handshake mode) */
 
-	Uint8  SNDINT_Signal;		/* Value of the SNDINT/SOUNDINT signal (connected to MFP) */
+	Uint8  SNDINT_Signal;		/* Value of the SNDINT signal (connected to MFP's GPIP7) */
+	Uint8  SOUNDINT_Signal;		/* Value of the SOUNDINT signal (connected to MFP's Timer A input) */
 };
 
 struct codec_s {
@@ -325,10 +326,11 @@ void Crossbar_Reset(bool bCold)
 	dmaRecord.handshakeMode_Frame = 0;
 	dmaRecord.handshakeMode_masterClk = 0;
 
-	/* DMA stopped, force SNDINT to 0/LOW */
+	/* DMA stopped, force SNDINT/SOUNDINT to 0/LOW */
 	crossbar.SNDINT_Signal = MFP_GPIP_STATE_LOW;
-	MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE7 , MFP_GPIP_STATE_LOW );
-	MFP_TimerA_Set_Line_Input ( pMFP_Main , MFP_GPIP_STATE_LOW );
+	crossbar.SOUNDINT_Signal = MFP_GPIP_STATE_LOW;
+	MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE7 , crossbar.SNDINT_Signal );
+	MFP_TimerA_Set_Line_Input ( pMFP_Main , crossbar.SOUNDINT_Signal );
 
 
 	/* DAC inits */
@@ -431,7 +433,7 @@ void Crossbar_MemorySnapShot_Capture(bool bSave)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Update the value of the SNDINT/SOUNDINT line ; this line is connected to TAI and to GPIP7
+ * Update the value of the SNDINT/SOUNDINT lines ; these line are connected to TAI and to GPIP7
  * Depending on the transition, this can trigger MFP interrupt for Timer A or for GPIP7
  *  - Bit is set to 0/LOW when dma sound is idle
  *  - Bit is set to 1/HIGH when dma sound is playing / recording
@@ -449,7 +451,7 @@ static void Crossbar_Update_SNDINT_Line ( bool RecordMode , Uint8 Bit )
 
 		/* Send a TimerA_Int at end of replay buffer if enabled */
 		if (dmaPlay.timerA_int) {
-			crossbar.SNDINT_Signal = Bit;
+			crossbar.SOUNDINT_Signal = Bit;
 			MFP_TimerA_Set_Line_Input ( pMFP_Main , Bit );			/* Update events count / interrupt for timer A if needed */
 			LOG_TRACE(TRACE_CROSSBAR, "Crossbar : MFP Timer A interrupt from DMA play\n");
 		}
@@ -466,14 +468,21 @@ static void Crossbar_Update_SNDINT_Line ( bool RecordMode , Uint8 Bit )
 
 		/* Send a TimerA_Int at end of record buffer if enabled */
 		if (dmaRecord.timerA_int) {
-			crossbar.SNDINT_Signal = Bit;
+			crossbar.SOUNDINT_Signal = Bit;
 			MFP_TimerA_Set_Line_Input ( pMFP_Main , Bit );			/* Update events count / interrupt for timer A if needed */
 			LOG_TRACE(TRACE_CROSSBAR, "Crossbar : MFP Timer A interrupt from DMA record\n");
 		}
 	}
+}
 
-// 	MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE7 , Bit );
-// 	MFP_TimerA_Set_Line_Input ( pMFP_Main , Bit );			/* Update events count / interrupt for timer A if needed */
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Return the value of the SNDINT line, used to update MFP's GPIP7
+ */
+Uint8 Crossbar_Get_SNDINT_Line (void)
+{
+	return crossbar.SNDINT_Signal;
 }
 
 

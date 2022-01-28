@@ -67,6 +67,7 @@ extern void Crossbar_AdcInput_WriteByte(void);
 extern void Crossbar_InputAmp_WriteByte(void);
 extern void Crossbar_OutputReduct_WriteWord(void);
 extern void Crossbar_CodecStatus_WriteWord(void);
+extern Uint8 Crossbar_Get_SNDINT_Line (void);
 extern void Crossbar_Microwire_WriteWord(void);
 
 /* Called by cycint.c */
