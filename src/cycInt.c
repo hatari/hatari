@@ -758,11 +758,13 @@ int	CycInt_GetActiveInt(void)
 /*-----------------------------------------------------------------------*/
 /**
  * Call the handler associated with the active interrupt (it should never be NULL)
+ * Clock is the time when the active interrupt triggered and it's used to
+ * compute PendingInterruptCount
  */
-void	CycInt_CallActiveHandler(void)
+void	CycInt_CallActiveHandler(Uint64 Clock)
 {
 #ifdef CYCINT_DEBUG
-	fprintf ( stderr , "int remove after active=%02d active_cyc=%"PRIu64" clock=%"PRIu64"\n" , CycInt_ActiveInt , CycInt_ActiveInt_Cycles , CyclesGlobalClockCounter );
+	fprintf ( stderr , "int remove after active=%02d active_cyc=%"PRIu64" clock=%"PRIu64"\n" , CycInt_ActiveInt , CycInt_ActiveInt_Cycles , Clock );
 	int n = CycInt_ActiveInt;
 	do
 	{
@@ -775,7 +777,7 @@ void	CycInt_CallActiveHandler(void)
 	/* A value <0 indicates that the interrupt was delayed by some cycles */
 	/* TODO : rename this variable later to sthg more explicit when old cycInt code is removed */
 	/* (keep only CycInt_DelayedCycles for example) */
-	PendingInterruptCount = CycInt_ActiveInt_Cycles - INT_CONVERT_TO_INTERNAL(CyclesGlobalClockCounter,INT_CPU_CYCLE);
+	PendingInterruptCount = CycInt_ActiveInt_Cycles - INT_CONVERT_TO_INTERNAL(Clock,INT_CPU_CYCLE);
 	CycInt_DelayedCycles = PendingInterruptCount;
 //fprintf ( stderr , "int call handler pending=%d\n" , PendingInterruptCount );
 

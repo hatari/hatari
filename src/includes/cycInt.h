@@ -102,7 +102,7 @@ extern int	CycInt_FindCyclesPassed(interrupt_id Handler, int CycleType, int AddC
 
 extern bool	CycInt_InterruptActive(interrupt_id Handler);
 extern int	CycInt_GetActiveInt(void);
-extern void	CycInt_CallActiveHandler(void);
+extern void	CycInt_CallActiveHandler(Uint64 Clock);
 
 #ifndef CYCINT_NEW
 
@@ -127,18 +127,18 @@ static inline void CycInt_Process_Clock(void)
 static inline void CycInt_Process(void)
 {
 	while ( CycInt_ActiveInt_Cycles <= ( CyclesGlobalClockCounter << CYCINT_SHIFT ) )
-		CycInt_CallActiveHandler();
+		CycInt_CallActiveHandler( CyclesGlobalClockCounter );
 }
 static inline void CycInt_Process_stop(int stop_cond)
 {
 	while ( ( CycInt_ActiveInt_Cycles <= ( CyclesGlobalClockCounter << CYCINT_SHIFT ) ) && ( stop_cond == 0 ) )
-		CycInt_CallActiveHandler();
+		CycInt_CallActiveHandler( CyclesGlobalClockCounter );
 }
 /* Same as CycInt_Process but use a specific cycles clock value */
 static inline void CycInt_Process_Clock(Uint64 Clock)
 {
 	while ( CycInt_ActiveInt_Cycles <= ( Clock << CYCINT_SHIFT ) )
-		CycInt_CallActiveHandler();
+		CycInt_CallActiveHandler( Clock );
 }
 
 #endif

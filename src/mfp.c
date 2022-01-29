@@ -667,6 +667,7 @@ static Uint8	MFP_ConvertIntNumber ( MFP_STRUCT *pMFP , Sint16 Interrupt , Uint8 
  */
 static void	MFP_UpdateTimers ( MFP_STRUCT *pMFP , Uint64 Clock )
 {
+//fprintf ( stderr , "mfp update timers clock=%"PRIu64"\n" , Clock );
 	CycInt_Process_Clock ( Clock );
 	if ( MFP_UpdateNeeded == true )
 		MFP_UpdateIRQ ( pMFP , Clock );
