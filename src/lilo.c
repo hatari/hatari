@@ -269,7 +269,7 @@ static bool add_bi_string(uint16_t tag, const char *s);
 
 bool lilo_init(void)
 {
-	uint8_t *ROMBaseHost = STRam + TosAddress;
+	uint8_t *ROMBaseHost = &RomMem[TosAddress];
 
 	if (!ConfigureParams.System.bMMU || ConfigureParams.Memory.STRamSize_KB < 8*1024) {
 		Log_AlertDlg(LOG_FATAL, "Linux requires MMU and at least 8MB of RAM!");
@@ -672,7 +672,7 @@ static bool check_kernel(void *kernel, Elf32_Addr *kernel_offset,
 	tmp = (uint32_t *)RAMBaseHost;
 	tmp[0] = SDL_SwapBE32(*kernel_offset + KERNEL_START);	/* SP */
 	tmp[1] = SDL_SwapBE32(TosAddress);		/* PC = ROMBase */
-	uint8_t *ROMBaseHost = STRam + TosAddress;
+	uint8_t *ROMBaseHost = &RomMem[TosAddress];
 	ROMBaseHost[4] = (*kernel_offset + KERNEL_START) >> 24;
 	ROMBaseHost[5] = (*kernel_offset + KERNEL_START) >> 16;
 	ROMBaseHost[6] = (*kernel_offset + KERNEL_START) >>  8;
