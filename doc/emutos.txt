@@ -927,6 +927,7 @@ Working MIDI programs:
 
 Not working:
 - Cubase 2.x / lite (see EmuTOS incompatible.txt)
+- ST versions of Hypnosis / Quaderno (see EmuTOS incompatible.txt)
 
 MIDI programs are available from Tim's MIDI world:
 	http://tamw.atari-users.net/
@@ -1590,6 +1591,10 @@ Applications working under EmuTOS > v1.1.1:
   - 3D look in icons needs EmuTOS Git version
   - Needs to be started from 640x400 or larger resolution, otherwise it
     positions itself completely outside the screen (also with TOS v4)
+- Quaderno
+  - Falcon version, expects 640x400@256
+  - EmuTOS Git version with TOS v4 compatibility for doing wind_set()
+    for a window that's created, but not yet opened, is needed
 - Videl Inside (v1.2)
   - EmuTOS Git version (with Srealloc() support) is needed to avoid
     desktop crash with modes larger than earlier static screen alloc
