@@ -1361,13 +1361,13 @@ static Uint32 MFP_StartTimer_AB ( MFP_STRUCT *pMFP , Uint8 TimerControl, Uint16 
 		CycInt_RemovePendingInterrupt(Handler);
 		if (TimerClockCycles)
 		{
+			/* Take into account the cycles in the current instruction when the MFP access happened to start the timer */
+			/* We must count CycInt delays from this point */
+			int	AddCurCycles_internal = INT_CONVERT_TO_INTERNAL ( Cycles_GetInternalCycleOnWriteAccess() , INT_CPU_CYCLE );
+
 			/* Start timer from now? If not continue timer using PendingCycleOver */
 			if (bFirstTimer)
 			{
-				/* Take into account the cycles in the current instruction when the MFP access happened to start the timer */
-				/* We must count CycInt delays from this point */
-				int	AddCurCycles_internal = INT_CONVERT_TO_INTERNAL ( Cycles_GetInternalCycleOnWriteAccess() , INT_CPU_CYCLE );
-
 				CycInt_AddRelativeInterruptWithOffset(TimerClockCycles, INT_MFP_CYCLE, Handler, AddCurCycles_internal);
 			}
 			else
@@ -1378,7 +1378,7 @@ static Uint32 MFP_StartTimer_AB ( MFP_STRUCT *pMFP , Uint8 TimerControl, Uint16 
 				if ( (Sint64)PendingCyclesOver > TimerClockCyclesInternal )
 					PendingCyclesOver = PendingCyclesOver % TimerClockCyclesInternal;
 
-				CycInt_AddRelativeInterruptWithOffset(TimerClockCycles, INT_MFP_CYCLE, Handler, -PendingCyclesOver);
+				CycInt_AddRelativeInterruptWithOffset(TimerClockCycles, INT_MFP_CYCLE, Handler, AddCurCycles_internal - PendingCyclesOver);
 			}
 		}
 
@@ -1459,24 +1459,23 @@ static Uint32 MFP_StartTimer_CD (  MFP_STRUCT *pMFP , Uint8 TimerControl, Uint16
 		CycInt_RemovePendingInterrupt(Handler);
 		if (TimerClockCycles)
 		{
+			/* Take into account the cycles in the current instruction when the MFP access happened to start the timer */
+			/* We must count CycInt delays from this point */
+			int	AddCurCycles_internal = INT_CONVERT_TO_INTERNAL ( Cycles_GetInternalCycleOnWriteAccess() , INT_CPU_CYCLE );
+
 			/* Start timer from now? If not continue timer using PendingCycleOver */
 			if (bFirstTimer)
 			{
-				/* Take into account the cycles in the current instruction when the MFP access happened to start the timer */
-				/* We must count CycInt delays from this point */
-				int	AddCurCycles_internal = INT_CONVERT_TO_INTERNAL ( Cycles_GetInternalCycleOnWriteAccess() , INT_CPU_CYCLE );
-
 				CycInt_AddRelativeInterruptWithOffset(TimerClockCycles, INT_MFP_CYCLE, Handler, AddCurCycles_internal);
 			}
 			else
 			{
 				Sint64	TimerClockCyclesInternal = INT_CONVERT_TO_INTERNAL ( (Sint64)TimerClockCycles , INT_MFP_CYCLE );
-
 				/* In case we miss more than one int, we must correct the delay for the next one */
 				if ( (Sint64)PendingCyclesOver > TimerClockCyclesInternal )
 					PendingCyclesOver = PendingCyclesOver % TimerClockCyclesInternal;
 
-				CycInt_AddRelativeInterruptWithOffset(TimerClockCycles, INT_MFP_CYCLE, Handler, -PendingCyclesOver);
+				CycInt_AddRelativeInterruptWithOffset(TimerClockCycles, INT_MFP_CYCLE, Handler, AddCurCycles_internal - PendingCyclesOver);
 			}
 		}
 	}

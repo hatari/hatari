@@ -576,6 +576,12 @@ void CycInt_AcknowledgeInterrupt(void)
  * We take into account CycInt_DelayedCycles (<=0) which can be =0 if the
  * interrupt could be processed at exactly InterruptHandlers[].Cycles or can be <0
  * if the interrupt was delayed by some cycles
+ *
+ * TODO : CyclesGlobalClockCounter is the cycle counter at the start of the current
+ * instruction, but it doesn't take into account the number of cycles already
+ * used in the current instruction. We use Cycles_GetInternalCycleOnReadAccess / OnWriteAccess
+ * in the calling function to adjust this, but it would be better to do it
+ * automatically here (also for the other functions below)
  */
 void CycInt_AddAbsoluteInterrupt(int CycleTime, int CycleType, interrupt_id Handler)
 {
