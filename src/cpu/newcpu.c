@@ -4759,8 +4759,9 @@ void doint(void)
 		int il = intlev();
 		regs.ipl_pin = il;
 //fprintf ( stderr , "doint2 %d ipl=%x ipl_pin=%x intmask=%x spcflags=%x\n" , m68k_interrupt_delay,regs.ipl, regs.ipl_pin , regs.intmask, regs.spcflags );
-		if (regs.ipl_pin > regs.intmask || regs.ipl_pin == 7)
+		if (regs.ipl_pin > regs.intmask || regs.ipl_pin == 7) {
 			set_special(SPCFLAG_INT);
+		}
 		return;
 	}
 	if (currprefs.cpu_compatible && currprefs.cpu_model < 68020)
@@ -5433,6 +5434,7 @@ static void m68k_run_1_ce (void)
 #endif
 
 				r->instruction_pc = m68k_getpc ();
+
 				(*cpufunctbl[r->opcode])(r->opcode);
 				if (!regs.loop_mode)
 					regs.ird = regs.opcode;
@@ -6445,6 +6447,7 @@ insretry:
 #endif
 
 					regs.instruction_cnt++;
+					regs.ipl = regs.ipl_pin;
 					if (regs.spcflags || time_for_interrupt ()) {
 						if (do_specialties (0))
 							return;
@@ -6459,9 +6462,6 @@ insretry:
 //						DSP_Run ( DSP_CPU_FREQ_RATIO * ( CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter ) );
 					}
 #endif
-
-					regs.ipl = regs.ipl_pin;
-
 				}
 
 #ifdef WINUAE_FOR_HATARI
@@ -6860,12 +6860,12 @@ fprintf ( stderr , "cache valid %d tag1 %x lws1 %x ctag %x data %x mem=%x\n" , c
 #endif
 
 		cont:
+				regs.ipl = regs.ipl_pin;
 				if (r->spcflags || time_for_interrupt ()) {
 					if (do_specialties (0))
 						exit = true;
 				}
 
-				regs.ipl = regs.ipl_pin;
 #ifdef WINUAE_FOR_HATARI
 				/* Run DSP 56k code if necessary */
 				if (bDspEnabled) {
@@ -6882,11 +6882,11 @@ fprintf ( stderr , "cache valid %d tag1 %x lws1 %x ctag %x data %x mem=%x\n" , c
 			}
 		} CATCH(prb) {
 			bus_error();
+			regs.ipl = regs.ipl_pin;
 			if (r->spcflags || time_for_interrupt()) {
 				if (do_specialties(0))
 					exit = true;
 			}
-			regs.ipl = regs.ipl_pin;
 		} ENDTRY
 	}
 }
