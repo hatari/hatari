@@ -651,7 +651,7 @@ void CycInt_ModifyInterrupt(int CycleTime, int CycleType, interrupt_id Handler)
 
 	/* Enable interrupt with new Cycles value */
 	InterruptHandlers[ Handler ].Active = true;
-	InterruptHandlers[ Handler ].Cycles += INT_CONVERT_TO_INTERNAL((Sint64)CycleTime , CycleType);
+	InterruptHandlers[ Handler ].Cycles = INT_CONVERT_TO_INTERNAL((Sint64)CycleTime , CycleType);
 	InterruptHandlers[ Handler ].Cycles += INT_CONVERT_TO_INTERNAL(CyclesGlobalClockCounter,INT_CPU_CYCLE);
 
 	CycInt_InsertInt ( Handler );
