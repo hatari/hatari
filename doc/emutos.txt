@@ -377,7 +377,7 @@ Demos:
 - Cross the Deserts (by Chronicle) - one screen gfx is partly corrupted
 - Crowd Teaser (by SMFX)
 - Cuddly Demos (by CareBears)
-- Darktrip (by Legend), doesn't work with >2MB of RAM
+- Darktrip (by Legend) - does not work properly with >2MB of RAM
 - Dark Side of the Spoon (by ULM)
 - Darwin's Dilemma (by Cerebral Vortex, DHS and SMFX)
 - DataSTorm Invite (by Genesis Project)
@@ -415,7 +415,7 @@ Demos:
 - No more froggies (by Sector1)
 - O-demo (by Oxygene)
 - Odd Stuff (by Dune & Sector One)
-- Oh no!! more froggies (by Sector One, needs <4MB RAM)
+- Oh no!! more froggies (by Sector One) - does not work with >2MB of RAM
 - Oldskool Rebirth (by MJJ Prod)
 - Ooh Crikey (by Lost Boys)
 - Outline 2008 invite (by DHS)
@@ -427,7 +427,7 @@ Demos:
 - Panic (Paolo Simoes)
 - Paradise (by Dune Design)
 - Pause (by Cerebral Vortex / Dekadence / SMFX)
-- Phaleon Gigademo (by Next), select "fast loader"
+- Phaleon Gigademo (by Next) - select "fast loader"
 - Posh (by Checkpoint)
 - POV disk 165 (except for EiL 99 invite)
 - Prix (by Ephidrena)
@@ -436,10 +436,10 @@ Demos:
 - Remote Entry #2 - 11110 Edition (by Spice Boys)
 - Remote Entry #2 - Delta Quadrant Edition (by Spice Boys)
 - Renegade Breakdown - Sommarhack 2021 invitro (by Spkr / SMFX)
-- RGB plasma (by Omega, panic at return to desktop)
+- RGB plasma (by Omega)
 - Santa Claus Barbie Was Drunk As A Cochon (by MJJ Prod)
 - Save The Earth (by Defence Force)
-- Second Reality 2013 (by Checkpoint, crash at end)
+- Second Reality 2013 (by Checkpoint)
 - Serial (by Dekadence)
 - SillyVenture 2k10 & 2k11 (invitros by Mystic Bytes & Aggression)
 - SillyVenture 2020 (invitro by Agenda, Hemoroids & Mystic Bytes)
@@ -449,7 +449,6 @@ Demos:
   - Glitches are intentional, not EmuTOS issue
 - Sommarhack 2011 (invite by DHS)
 - Soundtracker (by Equinox)
-- SoWatt (by CareBears)
 - Sowatt sprite record (rec16e, by Oxygene)
 - ST NICCC 2000 (by Oxygene)
 - ST NICCC 2015 (by Checkpoint)
@@ -457,13 +456,13 @@ Demos:
 - Starfield Humppa (by Dekadence)
 - Stone tower (by FUN)
 - Superstar! (intro by Positivity/Dma-Sc/Ukko)
-- Suretrip (by Checkpoint, works until overscan screen)
+- Suretrip 49% (by Checkpoint)
 - Sweety (by DHS)
 - Synergy megademo (by Synergy)
 - Syntax Terror (by Delta Force)
 - Temptation aka Project "A" (by NoExtra)
 - The Puppet Show (by Fantasy & Dune)
-- The Stupendous Demo (by Pixel Twins, has couple of STE screen)
+- The Stupendous Demo (by Pixel Twins) - has couple of STE screen
 - The Union demo (by The Union)
 - The Truth (by Dekadence)
 - The twist (by Team "The twist")
@@ -478,14 +477,13 @@ Demos:
 - Unstatic (by Cyprian, Dma-Sc & bob_er)
 - Virtual (by Equinox)
 - Visualize (by Checkpoint)
-- Vodka demo (by Equinox)
+- Vodka demo (by Equinox) - does not work with >1MB of RAM
 - We Accidentally Your Oculus (by Sector One)
 - We do not rip or recycle anything (by Spice Boys)
-- Yanartas (by Checkpoint)
-- YmRockerz musicdisks from "Wave upon Wave" to "Seven"
 - X-files (by Martin Cubitt, in STOS)
   - Error #046 => run from desktop instead of auto/-folder
 - Xmas2000 (by Paranoid)
+- YmRockerz musicdisks from "Wave upon Wave" to "Seven"
 
 Color toys:
 - Fplanet
@@ -816,6 +814,10 @@ Broken floppy demos
   - with cart, bus errors after intro screens
 - Things not to do (by Inner Circle) - NULL pointer access at 0x7d80a
   - Floprd(0x7d800, 252, 2, 0, 0, 9)
+- SoWatt (by CareBears)
+  - Worked before EmuTOS v0.9.10
+  - after first OS call, constant bus errors at same PC address
+  - Floprd(0x70000, 0, 1, 81, 1, 6)
 - Swedish New Year (by CareBears) - panic at 0x7006 after first OS call
   - Floprd(0x7000, 0, 1, 79, 0, 9)
 - WhattaHeck (by CareBears) - panic at 0x7000 after first OS call
@@ -1063,6 +1065,8 @@ Demos:
 - Wonderful World (by Paradox)
 - XiTEC Presentation (by Omega)
 - Xmas 2004 (by Paradox)
+- Yanartas (by Checkpoint)
+  - ST demo that works only on STE
 
 Color games:
 - 4K Pacman
