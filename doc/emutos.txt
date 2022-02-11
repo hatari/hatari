@@ -590,6 +590,7 @@ Free/shareware/PD games:
   - Does not show title, copyright, hiscore nor help after EmuTOS v0.8.6
   - TOS v2 shows title but not others and sound is wrong
 - Flip'em*       (4KB puzzle)
+- Fly Robin Fly
 - Fokker         (2-player biplanes, use joystick 0)
 - French adaptations of classic games:
   Boulderdash, Demineur, Jewel, Qbert, Sokoban
@@ -798,29 +799,33 @@ Mono/GEM toys:
 - Worm farm
 
 
-Broken floppy demos
--------------------
+Broken (floppy) demo classics
+-----------------------------
 
 - Amiga demo (by Exceptions)
   - bus errors before *any* OS calls
 - B.I.G demo (by Exceptions)
   - bus errors before *any* OS calls
-- Froggies over the Fence ()
+- Froggies over the Fence (by Legacy, ST Connexion, Overlanders)
   - Line-F panic, earlier bus error at $400000 after first OS call:
     Rwabs(0,0x30000,8,1,0)
   - with high-RAM etos512, complains about 1/2 MB RAM
 - Place to be (by EKO)
   - with 192k, black screen / panic at start
   - with cart, bus errors after intro screens
-- Things not to do (by Inner Circle) - NULL pointer access at 0x7d80a
+- Things not to do (by Inner Circle)
+  - NULL pointer access at 0x7d80a
   - Floprd(0x7d800, 252, 2, 0, 0, 9)
 - SoWatt (by CareBears)
-  - Worked before EmuTOS v0.9.10
-  - after first OS call, constant bus errors at same PC address
+  - constant bus errors at same PC address
+  - Worked before EmuTOS v0.9.10 commit 5981ef6, which puts EmuTOS
+    default disk buffer at a low memory location ($1004)
   - Floprd(0x70000, 0, 1, 81, 1, 6)
-- Swedish New Year (by CareBears) - panic at 0x7006 after first OS call
+- Swedish New Year (by CareBears)
+  - panic at 0x7006 after first OS call
   - Floprd(0x7000, 0, 1, 79, 0, 9)
-- WhattaHeck (by CareBears) - panic at 0x7000 after first OS call
+- WhattaHeck (by CareBears)
+  - panic at 0x7000 after first OS call
   - Floprd(0x7000, 0, 2, 0, 0, 1)
 
 
