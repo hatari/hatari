@@ -3591,7 +3591,8 @@ static void Video_CopyScreenLineColor(void)
 	if ((nHBL < nStartHBL) || (nHBL >= nEndHBL + BlankLines)
 	    || (LineBorderMask & ( BORDERMASK_EMPTY_LINE|BORDERMASK_NO_DE ) )
 	    || ShifterFrame.VBlank_signal
-	    || ( VerticalOverscan & V_OVERSCAN_NO_DE ) )
+	    || ( VerticalOverscan & V_OVERSCAN_NO_DE )
+	    || pVideoRaster + SCREENBYTES_MIDDLE > &STRam[STRamEnd] )
 	{
 		/* Clear line to color '0' */
 		memset(pSTScreen, 0, SCREENBYTES_LINE);
