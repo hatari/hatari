@@ -566,7 +566,6 @@ static void Screen_ConvertWithoutZoom(Uint16 *fvram, int vw, int vh, int vbpp, i
                                       int hscrolloffset, int leftBorder, int rightBorder,
                                       int upperBorder, int lowerBorder)
 {
-	Uint16 *fvram_line;
 	Uint8 *hvram = sdlscrn->pixels;
 
 	Uint16 lowBorderSize, rightBorderSize;
@@ -626,7 +625,6 @@ static void Screen_ConvertWithoutZoom(Uint16 *fvram, int vw, int vh, int vbpp, i
 	hvram += ((scrheight-vh_clip)>>1) * sdlscrn->pitch;
 	hvram += ((scrwidth-vw_clip)>>1) * nBytesPerPixel;
 
-	fvram_line = fvram;
 	scrwidth = leftBorder + vw + rightBorder;
 
 	/* render the graphic area */
@@ -635,14 +633,14 @@ static void Screen_ConvertWithoutZoom(Uint16 *fvram, int vw, int vh, int vbpp, i
 		switch (nBytesPerPixel)
 		{
 		 case 2:
-			ScreenConv_BitplaneTo16bppNoZoom(fvram_line, hvram,
+			ScreenConv_BitplaneTo16bppNoZoom(fvram, hvram,
 			                                 scrwidth, scrheight, vw, vh,
 			                                 vbpp, nextline, hscrolloffset,
 			                                 leftBorder, rightBorderSize,
 			                                 upperBorder, lowBorderSize);
 			break;
 		 case 4:
-			ScreenConv_BitplaneTo32bppNoZoom(fvram_line, hvram,
+			ScreenConv_BitplaneTo32bppNoZoom(fvram, hvram,
 			                                 scrwidth, scrheight, vw, vh,
 			                                 vbpp, nextline, hscrolloffset,
 			                                 leftBorder, rightBorderSize,
@@ -654,14 +652,14 @@ static void Screen_ConvertWithoutZoom(Uint16 *fvram, int vw, int vh, int vbpp, i
 		switch (nBytesPerPixel)
 		{
 		 case 2:
-			ScreenConv_HiColorTo16bppNoZoom(fvram_line, hvram,
+			ScreenConv_HiColorTo16bppNoZoom(fvram, hvram,
 			                                scrwidth, scrheight, vw, vh,
 			                                vbpp, nextline, hscrolloffset,
 			                                leftBorder, rightBorderSize,
 			                                upperBorder, lowBorderSize);
 			break;
 		 case 4:
-			ScreenConv_HiColorTo32bppNoZoom(fvram_line, hvram,
+			ScreenConv_HiColorTo32bppNoZoom(fvram, hvram,
 			                                scrwidth, scrheight, vw, vh,
 			                                vbpp, nextline, hscrolloffset,
 			                                leftBorder, rightBorderSize,
