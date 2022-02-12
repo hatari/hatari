@@ -3409,6 +3409,12 @@ static void Video_StoreResolution(int y , bool start)
  */
 static void Video_CopyScreenLineMono(void)
 {
+	if (pVideoRaster + SCREENBYTES_MONOLINE > &STRam[STRamEnd])
+	{
+		memset(pSTScreen, 0, SCREENBYTES_MONOLINE);
+		return;
+	}
+
 	/* Copy one line - 80 bytes in ST high resolution */
 	memcpy(pSTScreen, pVideoRaster, SCREENBYTES_MONOLINE);
 	pVideoRaster += SCREENBYTES_MONOLINE;
