@@ -3412,6 +3412,7 @@ static void Video_CopyScreenLineMono(void)
 	if (pVideoRaster + SCREENBYTES_MONOLINE > &STRam[STRamEnd])
 	{
 		memset(pSTScreen, 0, SCREENBYTES_MONOLINE);
+		pSTScreen += SCREENBYTES_MONOLINE;
 		return;
 	}
 
