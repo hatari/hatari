@@ -623,7 +623,7 @@ void	M68000_Update_intlev ( void )
 
 	/* Temporary case for WinUAE CPU in CE mode */
 	/* doint() will update regs.ipl_pin, so copy it into regs.ipl */
-	if ( ConfigureParams.System.bCycleExactCpu )
+	if ( CpuRunCycleExact )
 		regs.ipl = regs.ipl_pin;			/* See ipl_fetch() in cpu/cpu_prefetch.h */
 }
 
@@ -646,7 +646,7 @@ void	M68000_Update_intlev ( void )
  */
 void M68000_WaitState(int WaitCycles)
 {
-	if ( ConfigureParams.System.bCycleExactCpu )
+	if ( CpuRunCycleExact )
 		currcycle += ( WaitCycles * CYCLE_UNIT / 2 );	/* Add wait states immediately to the CE cycles counter */
 	else
 	{
