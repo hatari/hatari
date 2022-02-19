@@ -442,11 +442,14 @@ static bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bFo
 		else
 			sdlVideoFlags = 0;
 		/* Make sure that window is not bigger than current desktop */
-		Resolution_GetDesktopSize(&deskw, &deskh);
-		if (win_width > deskw)
-			win_width = deskw;
-		if (win_height > deskh)
-			win_height = deskh;
+		if (bUseSdlRenderer)
+		{
+			Resolution_GetDesktopSize(&deskw, &deskh);
+			if (win_width > deskw)
+				win_width = deskw;
+			if (win_height > deskh)
+				win_height = deskh;
+		}
 	}
 
 	Screen_FreeSDL2Resources();
