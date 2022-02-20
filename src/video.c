@@ -2990,7 +2990,7 @@ void Video_InterruptHandler_HBL ( void )
 	M68000_Exception(EXCEPTION_NR_HBLANK , M68000_EXC_SRC_AUTOVEC);	/* Horizontal blank interrupt, level 2 */
 
 
-	if (!Config_IsMachineFalcon())
+	if (!Config_IsMachineTT() && !Config_IsMachineFalcon())
 	{
 		Video_EndHBL();				/* Check some borders removal and copy line to display buffer */
 	}
@@ -3409,13 +3409,6 @@ static void Video_StoreResolution(int y , bool start)
  */
 static void Video_CopyScreenLineMono(void)
 {
-	if (pVideoRaster + SCREENBYTES_MONOLINE > &STRam[STRamEnd])
-	{
-		memset(pSTScreen, 0, SCREENBYTES_MONOLINE);
-		pSTScreen += SCREENBYTES_MONOLINE;
-		return;
-	}
-
 	/* Copy one line - 80 bytes in ST high resolution */
 	memcpy(pSTScreen, pVideoRaster, SCREENBYTES_MONOLINE);
 	pVideoRaster += SCREENBYTES_MONOLINE;
@@ -3598,8 +3591,7 @@ static void Video_CopyScreenLineColor(void)
 	if ((nHBL < nStartHBL) || (nHBL >= nEndHBL + BlankLines)
 	    || (LineBorderMask & ( BORDERMASK_EMPTY_LINE|BORDERMASK_NO_DE ) )
 	    || ShifterFrame.VBlank_signal
-	    || ( VerticalOverscan & V_OVERSCAN_NO_DE )
-	    || pVideoRaster + SCREENBYTES_MIDDLE > &STRam[STRamEnd] )
+	    || ( VerticalOverscan & V_OVERSCAN_NO_DE ) )
 	{
 		/* Clear line to color '0' */
 		memset(pSTScreen, 0, SCREENBYTES_LINE);

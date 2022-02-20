@@ -23,6 +23,7 @@ const char Memory_fileid[] = "Hatari memory.c";
 #include "ide.h"
 #include "ioMem.h"
 #include "reset.h"
+#include "screen.h"
 #include "stMemory.h"
 #include "m68000.h"
 #include "configuration.h"
@@ -1652,29 +1653,51 @@ void memory_init(uae_u32 NewSTMemSize, uae_u32 NewTTMemSize, uae_u32 NewRomMemSt
 
 #if ENABLE_SMALL_MEM
 
-	/* Allocate memory for ROM areas, IDE and IO memory space (0xE00000 - 0xFFFFFF) */
-	ROMmemory = malloc(2*1024*1024);
-	if (!ROMmemory) {
-		fprintf(stderr, "Out of memory (ROM/IO mem)!\n");
-		SDL_Quit();
-		exit(1);
-	}
-	IdeMemory = ROMmemory + 0x100000;
-	IOmemory  = ROMmemory + 0x1f0000;
+	/* Allocate memory for normal ST RAM. Note that we always allocate
+	 * either 4 MiB, 8 MiB or the full 16 MiB, since the functions that
+	 * might access the memory directly (via "DMA" like the shifter, see
+	 * the Video_CopyScreenLine*() functions) might also try to access
+	 * the memory beyond the end of the RAM in case the base address has
+	 * been wrongly set up by the Atari program (the accesses are only
+	 * limited by the value returned from DMA_MaskAddressHigh()). To
+	 * compensate for reads beyond the end, we also add a "runaway ramp"
+	 * buffer with the size of the maximum ST screen, so that the function
+	 * Video_CopyScreenLineColor() should never go out of bounds. */
+	int alloc_size = NUM_VISIBLE_LINE_PIXELS * NUM_VISIBLE_LINES / 2;
+	if (STmem_size > 0x800000)
+		alloc_size += 0x1000000;
+	else if (STmem_size > 0x400000)
+		alloc_size += 0x800000;
+	else
+		alloc_size += 0x400000;
 
-	/* Allocate memory for normal ST RAM */
-	STmemory = malloc(STmem_size);
-	while (!STmemory && STmem_size > 512*1024) {
-		STmem_size >>= 1;
-		STmemory = (uae_u8 *)malloc (STmem_size);
-		if (STmemory)
-			write_log ("Reducing STmem size to %dkb\n", STmem_size >> 10);
-	}
-	if (!STmemory) {
+	STmemory = malloc(alloc_size);
+	if (!STmemory)
+	{
 		write_log ("virtual memory exhausted (STmemory)!\n");
 		SDL_Quit();
 		exit(1);
 	}
+	memset(STmemory, 0, alloc_size);
+
+	/* Set up memory for ROM areas, IDE and IO memory space (0xE00000 - 0xFFFFFF) */
+	if (alloc_size >= 0x1000000)
+	{
+		ROMmemory = STmemory + ROMmem_start;
+	}
+	else
+	{
+		ROMmemory = malloc(2*1024*1024);
+		if (!ROMmemory)
+		{
+			fprintf(stderr, "Out of memory (ROM/IO mem)!\n");
+			SDL_Quit();
+			exit(1);
+		}
+	}
+
+	IdeMemory = ROMmemory + 0x100000;
+	IOmemory  = ROMmemory + 0x1f0000;
 
 #else
 
@@ -1842,10 +1865,10 @@ void memory_uninit (void)
 		STmemory = NULL;
 	}
 
-	if (ROMmemory) {
+	if (STmem_size <= 0x800000 && ROMmemory) {
 		free(ROMmemory);
-		ROMmemory = NULL;
 	}
+	ROMmemory = NULL;
 
 #endif  /* ENABLE_SMALL_MEM */
 }
