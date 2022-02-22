@@ -5213,7 +5213,9 @@ static void m68k_run_1 (void)
 	struct regstruct *r = &regs;
 	bool exit = false;
 
+#ifdef WINUAE_FOR_HATARI
 	Log_Printf(LOG_DEBUG, "m68k_run_1\n");
+#endif
 
 	while (!exit) {
 		check_debugger();
@@ -5323,8 +5325,8 @@ static void m68k_run_1_ce (void)
 	bool first = true;
 	bool exit = false;
 
-	Log_Printf(LOG_DEBUG, "m68k_run_1_ce\n");
 #ifdef WINUAE_FOR_HATARI
+	Log_Printf(LOG_DEBUG, "m68k_run_1_ce\n");
 	CpuRunCycleExact = true;
 #endif
 
@@ -5943,7 +5945,9 @@ static void cpu_thread_run_jit(void *v)
 
 static void m68k_run_jit(void)
 {
+#ifdef WINUAE_FOR_HATARI
 	Log_Printf(LOG_DEBUG, "m68k_run_jit\n");
+#endif
 #ifdef WITH_THREADED_CPU
 	if (currprefs.cpu_thread) {
 		run_cpu_thread(cpu_thread_run_jit);
@@ -6288,6 +6292,8 @@ static void m68k_run_mmu030 (void)
 
 #ifdef WINUAE_FOR_HATARI
 	Log_Printf(LOG_DEBUG,  "m68k_run_mmu030\n");
+	if ( currprefs.cpu_cycle_exact )		/* m68k_run_mmu030 can run with CE mode ON or OFF */
+		CpuRunCycleExact = true;
 #endif
 
 	mmu030_opcode_stageb = -1;
@@ -6497,8 +6503,8 @@ static void m68k_run_3ce (void)
 	bool exit = false;
 	int extracycles = 0;
 
-	Log_Printf(LOG_DEBUG, "m68k_run_3ce\n");
 #ifdef WINUAE_FOR_HATARI
+	Log_Printf(LOG_DEBUG, "m68k_run_3ce\n");
 	CpuRunCycleExact = true;
 #endif
 
@@ -6594,7 +6600,9 @@ static void m68k_run_3p(void)
 	bool exit = false;
 	int cycles;
 
+#ifdef WINUAE_FOR_HATARI
 	Log_Printf(LOG_DEBUG, "m68k_run_3p\n");
+#endif
 
 	while (!exit)  {
 		check_debugger();
@@ -6686,8 +6694,8 @@ static void m68k_run_2ce (void)
 	bool exit = false;
 	bool first = true;
 
-	Log_Printf(LOG_DEBUG, "m68k_run_2ce\n");
 #ifdef WINUAE_FOR_HATARI
+	Log_Printf(LOG_DEBUG, "m68k_run_2ce\n");
 	CpuRunCycleExact = true;
 #endif
 
@@ -6889,7 +6897,9 @@ static void m68k_run_2p (void)
 	bool exit = false;
 	bool first = true;
 
+#ifdef WINUAE_FOR_HATARI
 	Log_Printf(LOG_DEBUG, "m68k_run_2p\n");
+#endif
 
 	while (!exit) {
 		check_debugger();
@@ -7121,7 +7131,9 @@ static void m68k_run_2_000(void)
 	struct regstruct *r = &regs;
 	bool exit = false;
 
+#ifdef WINUAE_FOR_HATARI
 	Log_Printf(LOG_DEBUG, "m68k_run_2_000\n");
+#endif
 
 	while (!exit) {
 		check_debugger();
@@ -7211,7 +7223,9 @@ static void m68k_run_2_020(void)
 	struct regstruct *r = &regs;
 	bool exit = false;
 
+#ifdef WINUAE_FOR_HATARI
 	Log_Printf(LOG_DEBUG, "m68k_run_2_020\n");
+#endif
 
 	while (!exit) {
 		check_debugger();
