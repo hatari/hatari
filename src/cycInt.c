@@ -473,7 +473,7 @@ void CycInt_RemovePendingInterrupt(interrupt_id Handler)
 /**
  * Return cycles passed for an interrupt handler
  */
-int CycInt_FindCyclesPassed(interrupt_id Handler, int CycleType)
+int CycInt_FindCyclesRemaining(interrupt_id Handler, int CycleType)
 {
 	Sint64 CyclesPassed, CyclesFromLastInterrupt;
 
@@ -719,8 +719,7 @@ void CycInt_RemovePendingInterrupt(interrupt_id Handler)
  * Remaining cycles are counted from current clock CyclesGlobalClockCounter,
  * with a possible extra CPU cycles delay in AddCpuCycles
  */
-// TODO : this should be renamed to CycInt_FindCyclesRemaining instead
-int CycInt_FindCyclesPassed(interrupt_id Handler, int CycleType)
+int CycInt_FindCyclesRemaining(interrupt_id Handler, int CycleType)
 {
 	Sint64 Cycles;
 

@@ -1520,8 +1520,8 @@ static Uint8	MFP_ReadTimer_AB ( MFP_STRUCT *pMFP , Uint8 TimerControl, Uint8 Mai
 	if (CycInt_InterruptActive(Handler) && (TimerControl > 0) && (TimerControl <= 7))
 	{
 		/* Find cycles passed since last interrupt */
-		MainCounter = MFP_CYCLE_TO_REG ( CycInt_FindCyclesPassed ( Handler, INT_MFP_CYCLE ), TimerControl );
-//fprintf ( stderr , "mfp read AB count %d int_cyc=%d\n" , MainCounter , CycInt_FindCyclesPassed ( Handler, INT_MFP_CYCLE ) );
+		MainCounter = MFP_CYCLE_TO_REG ( CycInt_FindCyclesRemaining ( Handler, INT_MFP_CYCLE ), TimerControl );
+//fprintf ( stderr , "mfp read AB count %d int_cyc=%d\n" , MainCounter , CycInt_FindCyclesRemaining ( Handler, INT_MFP_CYCLE ) );
 	}
 
 	/* If the timer is stopped when the internal mfp data reg is already < 1 */
@@ -1529,7 +1529,7 @@ static Uint8	MFP_ReadTimer_AB ( MFP_STRUCT *pMFP , Uint8 TimerControl, Uint8 Mai
 	/* if no write is made to the data reg before */
 	if ( TimerIsStopping )
 	{
-		if ( CycInt_FindCyclesPassed ( Handler, INT_MFP_CYCLE ) < MFP_REG_TO_CYCLES ( 1 , TimerControl ) )
+		if ( CycInt_FindCyclesRemaining ( Handler, INT_MFP_CYCLE ) < MFP_REG_TO_CYCLES ( 1 , TimerControl ) )
 		{
 			MainCounter = 0;			/* internal mfp counter becomes 0 (=256) */
 			LOG_TRACE(TRACE_MFP_READ , "mfp%s read AB handler=%d stopping timer while data reg between 1 and 0 : forcing data to 256\n" ,
@@ -1560,8 +1560,8 @@ static Uint8	MFP_ReadTimer_CD ( MFP_STRUCT *pMFP , Uint8 TimerControl, Uint8 Tim
 	if (CycInt_InterruptActive(Handler))
 	{
 		/* Find cycles passed since last interrupt */
-		MainCounter = MFP_CYCLE_TO_REG ( CycInt_FindCyclesPassed ( Handler, INT_MFP_CYCLE ), TimerControl );
-//fprintf ( stderr , "mfp read CD count %d int_cyc=%d\n" , MainCounter , CycInt_FindCyclesPassed ( Handler, INT_MFP_CYCLE ) );
+		MainCounter = MFP_CYCLE_TO_REG ( CycInt_FindCyclesRemaining ( Handler, INT_MFP_CYCLE ), TimerControl );
+//fprintf ( stderr , "mfp read CD count %d int_cyc=%d\n" , MainCounter , CycInt_FindCyclesRemaining ( Handler, INT_MFP_CYCLE ) );
 	}
 
 	/* If the timer is stopped when the internal mfp data reg is already < 1 */
@@ -1569,7 +1569,7 @@ static Uint8	MFP_ReadTimer_CD ( MFP_STRUCT *pMFP , Uint8 TimerControl, Uint8 Tim
 	/* if no write is made to the data reg before */
 	if ( TimerIsStopping )
 	{
-		if ( CycInt_FindCyclesPassed ( Handler, INT_MFP_CYCLE ) < MFP_REG_TO_CYCLES ( 1 , TimerControl ) )
+		if ( CycInt_FindCyclesRemaining ( Handler, INT_MFP_CYCLE ) < MFP_REG_TO_CYCLES ( 1 , TimerControl ) )
 		{
 			MainCounter = 0;			/* internal mfp counter becomes 0 (=256) */
 			LOG_TRACE(TRACE_MFP_READ , "mfp%s read CD handler=%d stopping timer while data reg between 1 and 0 : forcing data to 256\n" ,
