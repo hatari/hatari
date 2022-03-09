@@ -1368,15 +1368,10 @@ static Uint32 MFP_StartTimer_AB ( MFP_STRUCT *pMFP , Uint8 TimerControl, Uint16 
 		CycInt_RemovePendingInterrupt(Handler);
 		if (TimerClockCycles)
 		{
-			/* Take into account the cycles in the current instruction when the MFP access happened to start the timer */
-			/* We must count CycInt delays from this point */
-			int	AddCurCycles_internal = INT_CONVERT_TO_INTERNAL ( Cycles_GetInternalCycleOnWriteAccess() , INT_CPU_CYCLE );
-AddCurCycles_internal=0;
-
 			/* Start timer from now? If not continue timer using PendingCycleOver */
 			if (bFirstTimer)
 			{
-				CycInt_AddRelativeInterruptWithOffset(TimerClockCycles, INT_MFP_CYCLE, Handler, AddCurCycles_internal);
+				CycInt_AddRelativeInterrupt(TimerClockCycles, INT_MFP_CYCLE, Handler);
 			}
 			else
 			{
@@ -1386,7 +1381,7 @@ AddCurCycles_internal=0;
 				if ( (Sint64)PendingCyclesOver > TimerClockCyclesInternal )
 					PendingCyclesOver = PendingCyclesOver % TimerClockCyclesInternal;
 
-				CycInt_AddRelativeInterruptWithOffset(TimerClockCycles, INT_MFP_CYCLE, Handler, AddCurCycles_internal - PendingCyclesOver);
+				CycInt_AddRelativeInterruptWithOffset(TimerClockCycles, INT_MFP_CYCLE, Handler, PendingCyclesOver);
 			}
 		}
 
@@ -1467,15 +1462,10 @@ static Uint32 MFP_StartTimer_CD (  MFP_STRUCT *pMFP , Uint8 TimerControl, Uint16
 		CycInt_RemovePendingInterrupt(Handler);
 		if (TimerClockCycles)
 		{
-			/* Take into account the cycles in the current instruction when the MFP access happened to start the timer */
-			/* We must count CycInt delays from this point */
-			int	AddCurCycles_internal = INT_CONVERT_TO_INTERNAL ( Cycles_GetInternalCycleOnWriteAccess() , INT_CPU_CYCLE );
-AddCurCycles_internal=0;
-
 			/* Start timer from now? If not continue timer using PendingCycleOver */
 			if (bFirstTimer)
 			{
-				CycInt_AddRelativeInterruptWithOffset(TimerClockCycles, INT_MFP_CYCLE, Handler, AddCurCycles_internal);
+				CycInt_AddRelativeInterrupt(TimerClockCycles, INT_MFP_CYCLE, Handler);
 			}
 			else
 			{
@@ -1484,7 +1474,7 @@ AddCurCycles_internal=0;
 				if ( (Sint64)PendingCyclesOver > TimerClockCyclesInternal )
 					PendingCyclesOver = PendingCyclesOver % TimerClockCyclesInternal;
 
-				CycInt_AddRelativeInterruptWithOffset(TimerClockCycles, INT_MFP_CYCLE, Handler, AddCurCycles_internal - PendingCyclesOver);
+				CycInt_AddRelativeInterruptWithOffset(TimerClockCycles, INT_MFP_CYCLE, Handler, - PendingCyclesOver);
 			}
 		}
 	}

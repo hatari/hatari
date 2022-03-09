@@ -574,17 +574,15 @@ void CycInt_AcknowledgeInterrupt(void)
 /**
  * Add interrupt from the time last one should have occurred.
  * We take into account CycInt_DelayedCycles (<=0) which can be =0 if the
- * interrupt could be processed at exactly InterruptHandlers[].Cycles or can be <0
+ * interrupt could be processed at exactly InterruptHandlers[].Cycles or can be < 0
  * if the interrupt was delayed by some cycles
- *
- * TODO : CyclesGlobalClockCounter is the cycle counter at the start of the current
- * instruction, but it doesn't take into account the number of cycles already
- * used in the current instruction. We use Cycles_GetInternalCycleOnReadAccess / OnWriteAccess
- * in the calling function to adjust this, but it would be better to do it
- * automatically here (also for the other functions below)
  */
 void CycInt_AddAbsoluteInterrupt(int CycleTime, int CycleType, interrupt_id Handler)
 {
+	/* Check interrupt is not already enabled ; if so, remove it first */
+	if ( InterruptHandlers[ Handler ].Active == true )
+		CycInt_RemovePendingInterrupt ( Handler );
+
 	/* Enable interrupt with new Cycles value */
 	InterruptHandlers[ Handler ].Active = true;
 	InterruptHandlers[ Handler ].Cycles = INT_CONVERT_TO_INTERNAL((Sint64)CycleTime , CycleType) + CycInt_DelayedCycles;
