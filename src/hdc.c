@@ -390,6 +390,7 @@ static void HDC_Cmd_ModeSense(SCSI_CTRLR *ctr)
 		break;
 
 	 case 0x04:
+	 case 0x3f:
 		HDC_CmdModeSense0x04(dev, ctr);
 		break;
 
