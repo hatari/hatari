@@ -345,10 +345,10 @@ static void DmaSnd_FIFO_Refill(void)
 	{
 		/* Add one word to the FIFO */
 		LOG_TRACE(TRACE_DMASND, "DMA snd fifo refill adr=%x pos %d nb %d %x %x\n", dma.frameCounterAddr , dma.FIFO_Pos , dma.FIFO_NbBytes ,
-			STRam[ dma.frameCounterAddr ] , STRam[ dma.frameCounterAddr+1 ] );
+			STMemory_DMA_ReadByte ( dma.frameCounterAddr ) , STMemory_DMA_ReadByte ( dma.frameCounterAddr+1 ) );
 
-		dma.FIFO[ ( dma.FIFO_Pos+dma.FIFO_NbBytes+0 ) & DMASND_FIFO_SIZE_MASK ] = (Sint8)STRam[ dma.frameCounterAddr ];	/* add upper byte of the word */
-		dma.FIFO[ ( dma.FIFO_Pos+dma.FIFO_NbBytes+1 ) & DMASND_FIFO_SIZE_MASK ] = (Sint8)STRam[ dma.frameCounterAddr+1 ];	/* add lower byte of the word */
+		dma.FIFO[ ( dma.FIFO_Pos+dma.FIFO_NbBytes+0 ) & DMASND_FIFO_SIZE_MASK ] = (Sint8)STMemory_DMA_ReadByte ( dma.frameCounterAddr );	/* add upper byte of the word */
+		dma.FIFO[ ( dma.FIFO_Pos+dma.FIFO_NbBytes+1 ) & DMASND_FIFO_SIZE_MASK ] = (Sint8)STMemory_DMA_ReadByte ( dma.frameCounterAddr+1 );	/* add lower byte of the word */
 
 		dma.FIFO_NbBytes += 2;				/* One word more in the FIFO */
 
