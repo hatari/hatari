@@ -473,7 +473,7 @@ void CycInt_RemovePendingInterrupt(interrupt_id Handler)
 /**
  * Return cycles passed for an interrupt handler
  */
-int CycInt_FindCyclesPassed(interrupt_id Handler, int CycleType, int AddCpuCycles)
+int CycInt_FindCyclesPassed(interrupt_id Handler, int CycleType)
 {
 	Sint64 CyclesPassed, CyclesFromLastInterrupt;
 
@@ -720,12 +720,11 @@ void CycInt_RemovePendingInterrupt(interrupt_id Handler)
  * with a possible extra CPU cycles delay in AddCpuCycles
  */
 // TODO : this should be renamed to CycInt_FindCyclesRemaining instead
-int CycInt_FindCyclesPassed(interrupt_id Handler, int CycleType, int AddCpuCycles)
+int CycInt_FindCyclesPassed(interrupt_id Handler, int CycleType)
 {
 	Sint64 Cycles;
 
-AddCpuCycles=0;		// TODO : remove AddCpuCycles param from calling functions
-	Cycles = InterruptHandlers[Handler].Cycles - INT_CONVERT_TO_INTERNAL( ( Cycles_GetClockCounterImmediate()+AddCpuCycles ) , INT_CPU_CYCLE );
+	Cycles = InterruptHandlers[Handler].Cycles - INT_CONVERT_TO_INTERNAL( ( Cycles_GetClockCounterImmediate() ) , INT_CPU_CYCLE );
 
 	LOG_TRACE(TRACE_INT, "int find passed cyc video_cyc=%d handler=%d clock=%"PRIu64" int_cyc=%"PRIu64" remain_cyc=%"PRIu64"\n",
 	          Cycles_GetCounter(CYCLES_COUNTER_VIDEO), Handler,

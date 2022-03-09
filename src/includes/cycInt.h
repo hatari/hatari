@@ -98,7 +98,7 @@ extern void	CycInt_AddRelativeInterrupt(int CycleTime, int CycleType, interrupt_
 extern void	CycInt_AddRelativeInterruptWithOffset(int CycleTime, int CycleType, interrupt_id Handler, int CycleOffset);
 extern void	CycInt_ModifyInterrupt(int CycleTime, int CycleType, interrupt_id Handler);
 extern void	CycInt_RemovePendingInterrupt(interrupt_id Handler);
-extern int	CycInt_FindCyclesPassed(interrupt_id Handler, int CycleType, int AddCpuCycles);
+extern int	CycInt_FindCyclesPassed(interrupt_id Handler, int CycleType);
 
 extern bool	CycInt_InterruptActive(interrupt_id Handler);
 extern int	CycInt_GetActiveInt(void);
