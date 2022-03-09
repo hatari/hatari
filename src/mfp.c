@@ -664,10 +664,17 @@ static Uint8	MFP_ConvertIntNumber ( MFP_STRUCT *pMFP , Sint16 Interrupt , Uint8 
  * Update the internal CycInt counters to check if some MFP timers expired.
  * This should be called before accessing the MFP registers for read or write
  * to ensure MFP events are processed in chronological order.
+ * This should only be called when CPU runs in Cycle Exact mode, because
+ * we need accurate cycles counting when calling CycInt functions during
+ * the processing of an instruction.
  */
 static void	MFP_UpdateTimers ( MFP_STRUCT *pMFP , Uint64 Clock )
 {
 //fprintf ( stderr , "mfp update timers clock=%"PRIu64"\n" , Clock );
+	if ( !CpuRunCycleExact )
+		return;
+
+Clock = Cycles_GetClockCounterImmediate();		// TODO : use Cycles_GetClockCounterImmediate() in calling function
 	CycInt_Process_Clock ( Clock );
 	if ( MFP_UpdateNeeded == true )
 		MFP_UpdateIRQ ( pMFP , Clock );
@@ -1364,6 +1371,7 @@ static Uint32 MFP_StartTimer_AB ( MFP_STRUCT *pMFP , Uint8 TimerControl, Uint16 
 			/* Take into account the cycles in the current instruction when the MFP access happened to start the timer */
 			/* We must count CycInt delays from this point */
 			int	AddCurCycles_internal = INT_CONVERT_TO_INTERNAL ( Cycles_GetInternalCycleOnWriteAccess() , INT_CPU_CYCLE );
+AddCurCycles_internal=0;
 
 			/* Start timer from now? If not continue timer using PendingCycleOver */
 			if (bFirstTimer)
@@ -1462,6 +1470,7 @@ static Uint32 MFP_StartTimer_CD (  MFP_STRUCT *pMFP , Uint8 TimerControl, Uint16
 			/* Take into account the cycles in the current instruction when the MFP access happened to start the timer */
 			/* We must count CycInt delays from this point */
 			int	AddCurCycles_internal = INT_CONVERT_TO_INTERNAL ( Cycles_GetInternalCycleOnWriteAccess() , INT_CPU_CYCLE );
+AddCurCycles_internal=0;
 
 			/* Start timer from now? If not continue timer using PendingCycleOver */
 			if (bFirstTimer)

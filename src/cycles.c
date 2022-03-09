@@ -305,3 +305,20 @@ Uint64 Cycles_GetClockCounterOnWriteAccess(void)
 
 
 
+/*-----------------------------------------------------------------------*/
+/**
+ * Read the main clock counter
+ * This function is mainly used in CycInt_xxx functions, either after processing
+ * the current instruction (then currcycle=0) or during the processing of the current
+ * instruction.
+ */
+Uint64 Cycles_GetClockCounterImmediate(void)
+{
+	if ( CpuRunCycleExact )
+		return CyclesGlobalClockCounter + currcycle*2/CYCLE_UNIT;
+	else
+		return CyclesGlobalClockCounter;
+}
+
+
+

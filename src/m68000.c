@@ -668,9 +668,10 @@ int	M68000_WaitEClock ( void )
 	int	CyclesToNextE;
 
 	/* We must wait for the next multiple of 10 cycles to be synchronised with E Clock */
-	CyclesToNextE = 10 - CyclesGlobalClockCounter % 10;
+	CyclesToNextE = 10 - Cycles_GetClockCounterImmediate() % 10;
 	if ( CyclesToNextE == 10 )		/* we're already synchronised with E Clock */
 		CyclesToNextE = 0;
+
 	return CyclesToNextE;
 }
 
