@@ -423,6 +423,31 @@ static void HDC_Cmd_FormatDrive(SCSI_CTRLR *ctr)
 
 
 /**
+ * Report LUNs.
+ */
+static void HDC_Cmd_ReportLuns(SCSI_CTRLR *ctr)
+{
+        SCSI_DEV *dev = &ctr->devs[ctr->target];
+	Uint8 *buf;
+
+        LOG_TRACE(TRACE_SCSI_CMD, "HDC: REPORT LUNS (%s).\n", HDC_CmdInfoStr(ctr));
+
+        buf = HDC_PrepRespBuf(ctr, 16);
+
+	// LUN list length, 8 bytes per LUN
+	buf[0] = 0;
+	buf[1] = 0;
+	buf[2] = 0;
+	buf[3] = 8;
+	memset(&buf[4], 0, 12);
+
+        ctr->status = HD_STATUS_OK;
+        dev->nLastError = HD_REQSENS_OK;
+        dev->bSetLastBlockAddr = false;
+}
+
+
+/**
  * Read capacity of our disk.
  */
 static void HDC_Cmd_ReadCapacity(SCSI_CTRLR *ctr)
@@ -606,6 +631,10 @@ static void HDC_EmulateCommandPacket(SCSI_CTRLR *ctr)
 
 	 case HD_FORMAT_DRIVE:
 		HDC_Cmd_FormatDrive(ctr);
+		break;
+
+	case HD_REPORT_LUNS:
+		HDC_Cmd_ReportLuns(ctr);
 		break;
 
 	 /* as of yet unsupported commands */
@@ -960,7 +989,8 @@ bool HDC_WriteCommandPacket(SCSI_CTRLR *ctr, Uint8 b)
 
 	/* have we received a complete 6-byte class 0 or 10-byte class 1 packet yet? */
 	if ((ctr->opcode < 0x20 && ctr->byteCount == 6) ||
-	    (ctr->opcode >= 0x20 && ctr->opcode < 0x60 && ctr->byteCount == 10))
+	    (ctr->opcode >= 0x20 && ctr->opcode < 0x60 && ctr->byteCount == 10) ||
+	    (ctr->opcode == 0xa0 && ctr->byteCount == 12))
 	{
 		/* We currently only support LUN 0, however INQUIRY must
 		 * always be handled, see SCSI standard */

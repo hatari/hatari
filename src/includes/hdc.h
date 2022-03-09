@@ -33,6 +33,7 @@
 #define HD_REQ_SENSE       0x03               /* Request sense */
 #define HD_SHIP            0x1B               /* Ship drive */
 #define HD_READ_CAPACITY1  0x25               /* Read capacity (class 1) */
+#define HD_REPORT_LUNS     0xa0               /* Report Luns */
 
 /* Status codes */
 #define HD_STATUS_OK       0x00
