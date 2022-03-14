@@ -905,7 +905,7 @@ void	Video_InitTimings(void)
 	pVideoTiming1->VBlank_On_50_CheckLine	= 307;
 	pVideoTiming1->VBlank_On_60_CheckLine	= 257;
 	pVideoTiming1->VBlank_On_Hi_CheckLine	= 501;
-	pVideoTiming1->VBlank_Off_50_CheckLine	=  25;
+	pVideoTiming1->VBlank_Off_50_CheckLine	=  23;
 	pVideoTiming1->VBlank_Off_60_CheckLine	=  14;
 	pVideoTiming1->VBlank_Off_Hi_CheckLine	=   0;
 	pVideoTiming1->VBlank_CheckPos		= 502;
@@ -984,7 +984,7 @@ void	Video_InitTimings(void)
 	pVideoTiming1->VBlank_On_50_CheckLine	= 307;
 	pVideoTiming1->VBlank_On_60_CheckLine	= 257;
 	pVideoTiming1->VBlank_On_Hi_CheckLine	= 501;
-	pVideoTiming1->VBlank_Off_50_CheckLine	=  25;
+	pVideoTiming1->VBlank_Off_50_CheckLine	=  23;
 	pVideoTiming1->VBlank_Off_60_CheckLine	=  14;
 	pVideoTiming1->VBlank_Off_Hi_CheckLine	=   0;
 	pVideoTiming1->VBlank_CheckPos		= 502;
