@@ -98,6 +98,26 @@ static unsigned long HDC_GetLBA(SCSI_CTRLR *ctr)
 }
 
 /**
+ * Return number of bytes for a command block.
+ */
+static int HDC_GetCommandByteCount(SCSI_CTRLR *ctr)
+{
+	if (ctr->opcode == 0x88 || ctr->opcode == 0x8a || ctr->opcode == 0x8f ||
+		ctr->opcode == 0x91 || ctr->opcode == 0x9e || ctr->opcode == 0x9f) {
+		return 16;
+	}
+	else if (ctr->opcode == 0xa0) {
+		return 12;
+	}
+	else if (ctr->opcode == 0x05 || (ctr->opcode >= 0x20 && ctr->opcode <= 0x7d)) {
+		return 10;
+	} else {
+		return 6;
+	}
+}
+
+
+/**
  * Return the count specified in the current ACSI command block.
  */
 static int HDC_GetCount(SCSI_CTRLR *ctr)
@@ -106,17 +126,6 @@ static int HDC_GetCount(SCSI_CTRLR *ctr)
 		return ctr->command[4];			/* Class 0 */
 	else
 		return HDC_ReadInt16(ctr->command, 7);	/* Class 1 */
-}
-
-/**
- * Return the control byte specified in the current ACSI command block.
- */
-static inline Uint8 HDC_GetControl(SCSI_CTRLR *ctr)
-{
-	if (ctr->opcode < 0x20)
-		return ctr->command[5];			/* Class 0 */
-	else
-		return ctr->command[9];			/* Class 1 */
 }
 
 /**
@@ -142,12 +151,18 @@ static Uint8 *HDC_PrepRespBuf(SCSI_CTRLR *ctr, int size)
  */
 static inline char *HDC_CmdInfoStr(SCSI_CTRLR *ctr)
 {
-	static char str[80];
+	char cdb[80] = { 0 };
 
-	snprintf(str, sizeof(str),
-	         "%s, t=%i, lun=%i, opc=0x%x, cnt=0x%x, ctrl=0x%x",
-	         ctr->typestr, ctr->target, HDC_GetLUN(ctr), ctr->opcode,
-	         HDC_GetCount(ctr), HDC_GetControl(ctr));
+	for (int i = 0; i < HDC_GetCommandByteCount(ctr); i++) {
+		char tmp[5];
+		snprintf(tmp, sizeof(tmp), "%s%02x", i ? ":" : "", ctr->command[i]);
+		strcat(cdb, tmp);
+	}
+
+	static char str[160];
+
+	snprintf(str, sizeof(str), "%s, t=%i, lun=%i, cdb=%s",
+                 ctr->typestr, ctr->target, HDC_GetLUN(ctr), cdb);
 
 	return str;
 }
