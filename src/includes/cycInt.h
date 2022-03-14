@@ -116,7 +116,7 @@ static inline void CycInt_Process_stop(int stop_cond)
 	while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( stop_cond == 0 ) )
 		CALL_VAR(PendingInterruptFunction);
 }
-static inline void CycInt_Process_Clock(void)
+static inline void CycInt_Process_Clock(Uint64 Clock)
 {
 	while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) )
 		CALL_VAR(PendingInterruptFunction);
