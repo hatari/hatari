@@ -315,10 +315,8 @@ static void HDC_Cmd_RequestSense(SCSI_CTRLR *ctr)
  * Mode sense - Vendor specific page 00h.
  * (Just enough to make the HDX tool from AHDI 5.0 happy)
  */
-static void HDC_CmdModeSense0x00(SCSI_DEV *dev, SCSI_CTRLR *ctr)
+static void HDC_CmdModeSense0x00(SCSI_DEV *dev, SCSI_CTRLR *ctr, Uint8 *buf)
 {
-	Uint8 *buf = HDC_PrepRespBuf(ctr, 16);
-
 	buf[0] = 0;
 	buf[1] = 14;
 	buf[2] = 0;
@@ -345,10 +343,8 @@ static void HDC_CmdModeSense0x00(SCSI_DEV *dev, SCSI_CTRLR *ctr)
 /**
  * Mode sense - Rigid disk geometry page (requested by ASV).
  */
-static void HDC_CmdModeSense0x04(SCSI_DEV *dev, SCSI_CTRLR *ctr)
+static void HDC_CmdModeSense0x04(SCSI_DEV *dev, SCSI_CTRLR *ctr, Uint8 *buf)
 {
-	Uint8 *buf = HDC_PrepRespBuf(ctr, 24);
-
 	buf[0] = 4;
 	buf[1] = 22;
 
@@ -400,16 +396,27 @@ static void HDC_Cmd_ModeSense(SCSI_CTRLR *ctr)
 
 	switch(ctr->command[2])
 	{
-	 case 0x00:
-		HDC_CmdModeSense0x00(dev, ctr);
+        case 0x00: {
+		Uint8 *buf = HDC_PrepRespBuf(ctr, 16);
+		HDC_CmdModeSense0x00(dev, ctr, buf);
 		break;
+	}
 
-	 case 0x04:
-	 case 0x3f:
-		HDC_CmdModeSense0x04(dev, ctr);
+        case 0x04: {
+		Uint8 *buf = HDC_PrepRespBuf(ctr, 24);
+		HDC_CmdModeSense0x04(dev, ctr, buf);
 		break;
+	}
 
-	 default:
+        case 0x3f: {
+		Uint8 *buf = HDC_PrepRespBuf(ctr, 44);
+		buf[0] = 44;
+		HDC_CmdModeSense0x04(dev, ctr, buf + 4);
+		HDC_CmdModeSense0x00(dev, ctr, buf + 28);
+		break;
+	}
+
+        default:
 		Log_Printf(LOG_TODO, "HDC: Unsupported MODE SENSE command\n");
 		ctr->status = HD_STATUS_ERROR;
 		dev->nLastError = HD_REQSENS_INVARG;
