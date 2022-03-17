@@ -375,8 +375,8 @@ static void HDC_CmdModeSense0x04(SCSI_DEV *dev, SCSI_CTRLR *ctr, Uint8 *buf)
 
 	buf[19] = 0;
 
-	buf[20] = 0;
-	buf[21] = 0;
+	buf[20] = 0x1c;	// Medium rotation rate 7200
+	buf[21] = 0x20;
 
 	buf[22] = 0;
 	buf[23] = 0;
@@ -403,21 +403,28 @@ static void HDC_Cmd_ModeSense(SCSI_CTRLR *ctr)
 	}
 
         case 0x04: {
-		Uint8 *buf = HDC_PrepRespBuf(ctr, 24);
-		HDC_CmdModeSense0x04(dev, ctr, buf);
+		Uint8 *buf = HDC_PrepRespBuf(ctr, 28);
+		HDC_CmdModeSense0x04(dev, ctr, buf + 4);
+		buf[0] = 24;
+		buf[1] = 0;
+		buf[2] = 0;
+		buf[3] = 0;
 		break;
 	}
 
         case 0x3f: {
 		Uint8 *buf = HDC_PrepRespBuf(ctr, 44);
-		buf[0] = 44;
 		HDC_CmdModeSense0x04(dev, ctr, buf + 4);
 		HDC_CmdModeSense0x00(dev, ctr, buf + 28);
+		buf[0] = 44;
+		buf[1] = 0;
+		buf[2] = 0;
+		buf[3] = 0;
 		break;
 	}
 
         default:
-		Log_Printf(LOG_TODO, "HDC: Unsupported MODE SENSE command\n");
+		Log_Printf(LOG_TODO, "HDC: Unsupported MODE SENSE mode page\n");
 		ctr->status = HD_STATUS_ERROR;
 		dev->nLastError = HD_REQSENS_INVARG;
 		return;
