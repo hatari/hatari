@@ -106,7 +106,7 @@ static int HDC_GetCommandByteCount(SCSI_CTRLR *ctr)
 		ctr->opcode == 0x91 || ctr->opcode == 0x9e || ctr->opcode == 0x9f) {
 		return 16;
 	}
-	else if (ctr->opcode == 0xa0) {
+	else if (ctr->opcode == HD_REPORT_LUNS) {
 		return 12;
 	}
 	else if (ctr->opcode == 0x05 || (ctr->opcode >= 0x20 && ctr->opcode <= 0x7d)) {
@@ -1017,10 +1017,10 @@ bool HDC_WriteCommandPacket(SCSI_CTRLR *ctr, Uint8 b)
 		ctr->command[ctr->byteCount] = b;
 	++ctr->byteCount;
 
-	/* have we received a complete 6-byte class 0 or 10-byte class 1 packet yet? */
+	/* have we received a complete command packet yet? */
 	if ((ctr->opcode < 0x20 && ctr->byteCount == 6) ||
 	    (ctr->opcode >= 0x20 && ctr->opcode < 0x60 && ctr->byteCount == 10) ||
-	    (ctr->opcode == 0xa0 && ctr->byteCount == 12))
+	    (ctr->opcode == HD_REPORT_LUNS && ctr->byteCount == 12))
 	{
 		/* We currently only support LUN 0, however INQUIRY must
 		 * always be handled, see SCSI standard */
@@ -1046,7 +1046,7 @@ bool HDC_WriteCommandPacket(SCSI_CTRLR *ctr, Uint8 b)
 			}
 		}
 	}
-	else if (ctr->opcode >= 0x60)
+	else if (ctr->opcode >= 0x60 && ctr->opcode != HD_REPORT_LUNS)
 	{
 		/* Commands >= 0x60 are not supported right now */
 		ctr->status = HD_STATUS_ERROR;
