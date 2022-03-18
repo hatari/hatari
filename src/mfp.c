@@ -1380,7 +1380,7 @@ static Uint32 MFP_StartTimer_AB ( MFP_STRUCT *pMFP , Uint8 TimerControl, Uint16 
 				if ( (Sint64)PendingCyclesOver > TimerClockCyclesInternal )
 					PendingCyclesOver = PendingCyclesOver % TimerClockCyclesInternal;
 
-				CycInt_AddRelativeInterruptWithOffset(TimerClockCycles, INT_MFP_CYCLE, Handler, PendingCyclesOver);
+				CycInt_AddRelativeInterruptWithOffset(TimerClockCycles, INT_MFP_CYCLE, Handler, -PendingCyclesOver);
 			}
 		}
 
@@ -1473,7 +1473,7 @@ static Uint32 MFP_StartTimer_CD (  MFP_STRUCT *pMFP , Uint8 TimerControl, Uint16
 				if ( (Sint64)PendingCyclesOver > TimerClockCyclesInternal )
 					PendingCyclesOver = PendingCyclesOver % TimerClockCyclesInternal;
 
-				CycInt_AddRelativeInterruptWithOffset(TimerClockCycles, INT_MFP_CYCLE, Handler, - PendingCyclesOver);
+				CycInt_AddRelativeInterruptWithOffset(TimerClockCycles, INT_MFP_CYCLE, Handler, -PendingCyclesOver);
 			}
 		}
 	}
