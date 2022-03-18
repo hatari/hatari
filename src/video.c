@@ -659,8 +659,8 @@ typedef struct
 	int	VBlank_On_50_CheckLine;		/* 307 */
 	int	VBlank_On_60_CheckLine;		/* 257 */
 	int	VBlank_On_Hi_CheckLine;		/* 501 (no blank in mono mode ?) */
-	int	VBlank_Off_50_CheckLine;	/*  25 */
-	int	VBlank_Off_60_CheckLine;	/*  16 */
+	int	VBlank_Off_50_CheckLine;	/*  23 */
+	int	VBlank_Off_60_CheckLine;	/*  14 */
 	int	VBlank_Off_Hi_CheckLine;	/*   0 (no blank in mono mode ?) */
 	int	VBlank_CheckPos;		/* 502 same for ON and OFF test */
 
