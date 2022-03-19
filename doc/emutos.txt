@@ -942,8 +942,8 @@ notes for more info on them.
 Working Atari STE programs
 --------------------------
 
-There are not that many STE specific (or even STE enhanced) programs:
-    http://atari-ste.anvil-soft.com/html/archivapps.htm
+There are not that many STE specific (or even STE enhanced) programs (see
+the "STE software compatibility list" section in compatibility.html).
 
 But following STE specific & enhanced demos, games and apps work
 fine with EmuTOS.
