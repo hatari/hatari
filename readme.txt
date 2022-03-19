@@ -80,7 +80,7 @@ Required:
 - The SDL library v2.0 (http://www.libsdl.org)
 
 Optional:
-- The zlib compression library (http://www.gzip.org/zlib/)
+- The zlib compression library (https://zlib.net/)
 - The PNG image library for PNG format screenshots and to decrease
   AVI video recording file sizes (http://www.libpng.org/)
 - The GNU Readline library for Hatari debugger command line editing
