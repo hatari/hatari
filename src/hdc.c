@@ -103,15 +103,20 @@ static unsigned long HDC_GetLBA(SCSI_CTRLR *ctr)
 static int HDC_GetCommandByteCount(SCSI_CTRLR *ctr)
 {
 	if (ctr->opcode == 0x88 || ctr->opcode == 0x8a || ctr->opcode == 0x8f ||
-		ctr->opcode == 0x91 || ctr->opcode == 0x9e || ctr->opcode == 0x9f) {
+	    ctr->opcode == 0x91 || ctr->opcode == 0x9e || ctr->opcode == 0x9f)
+	{
 		return 16;
 	}
-	else if (ctr->opcode == HD_REPORT_LUNS) {
+	else if (ctr->opcode == HD_REPORT_LUNS)
+	{
 		return 12;
 	}
-	else if (ctr->opcode == 0x05 || (ctr->opcode >= 0x20 && ctr->opcode <= 0x7d)) {
+	else if (ctr->opcode == 0x05 || (ctr->opcode >= 0x20 && ctr->opcode <= 0x7d))
+	{
 		return 10;
-	} else {
+	}
+	else
+	{
 		return 6;
 	}
 }
@@ -153,7 +158,8 @@ static inline char *HDC_CmdInfoStr(SCSI_CTRLR *ctr)
 {
 	char cdb[80] = { 0 };
 
-	for (int i = 0; i < HDC_GetCommandByteCount(ctr); i++) {
+	for (int i = 0; i < HDC_GetCommandByteCount(ctr); i++)
+	{
 		char tmp[5];
 		snprintf(tmp, sizeof(tmp), "%s%02x", i ? ":" : "", ctr->command[i]);
 		strcat(cdb, tmp);
@@ -162,7 +168,7 @@ static inline char *HDC_CmdInfoStr(SCSI_CTRLR *ctr)
 	static char str[160];
 
 	snprintf(str, sizeof(str), "%s, t=%i, lun=%i, cdb=%s",
-                 ctr->typestr, ctr->target, HDC_GetLUN(ctr), cdb);
+	         ctr->typestr, ctr->target, HDC_GetLUN(ctr), cdb);
 
 	return str;
 }
@@ -388,6 +394,7 @@ static void HDC_CmdModeSense0x04(SCSI_DEV *dev, SCSI_CTRLR *ctr, Uint8 *buf)
  */
 static void HDC_Cmd_ModeSense(SCSI_CTRLR *ctr)
 {
+	Uint8 *buf;
 	SCSI_DEV *dev = &ctr->devs[ctr->target];
 
 	LOG_TRACE(TRACE_SCSI_CMD, "HDC: MODE SENSE (%s).\n", HDC_CmdInfoStr(ctr));
@@ -396,24 +403,22 @@ static void HDC_Cmd_ModeSense(SCSI_CTRLR *ctr)
 
 	switch(ctr->command[2])
 	{
-        case 0x00: {
-		Uint8 *buf = HDC_PrepRespBuf(ctr, 16);
+	 case 0x00:
+		buf = HDC_PrepRespBuf(ctr, 16);
 		HDC_CmdModeSense0x00(dev, ctr, buf);
 		break;
-	}
 
-        case 0x04: {
-		Uint8 *buf = HDC_PrepRespBuf(ctr, 28);
+	 case 0x04:
+		buf = HDC_PrepRespBuf(ctr, 28);
 		HDC_CmdModeSense0x04(dev, ctr, buf + 4);
 		buf[0] = 24;
 		buf[1] = 0;
 		buf[2] = 0;
 		buf[3] = 0;
 		break;
-	}
 
-        case 0x3f: {
-		Uint8 *buf = HDC_PrepRespBuf(ctr, 44);
+	 case 0x3f:
+		buf = HDC_PrepRespBuf(ctr, 44);
 		HDC_CmdModeSense0x04(dev, ctr, buf + 4);
 		HDC_CmdModeSense0x00(dev, ctr, buf + 28);
 		buf[0] = 44;
@@ -421,9 +426,8 @@ static void HDC_Cmd_ModeSense(SCSI_CTRLR *ctr)
 		buf[2] = 0;
 		buf[3] = 0;
 		break;
-	}
 
-        default:
+	 default:
 		Log_Printf(LOG_TODO, "HDC: Unsupported MODE SENSE mode page\n");
 		ctr->status = HD_STATUS_ERROR;
 		dev->nLastError = HD_REQSENS_INVARG;
@@ -457,23 +461,23 @@ static void HDC_Cmd_FormatDrive(SCSI_CTRLR *ctr)
  */
 static void HDC_Cmd_ReportLuns(SCSI_CTRLR *ctr)
 {
-        SCSI_DEV *dev = &ctr->devs[ctr->target];
+	SCSI_DEV *dev = &ctr->devs[ctr->target];
 	Uint8 *buf;
 
-        LOG_TRACE(TRACE_SCSI_CMD, "HDC: REPORT LUNS (%s).\n", HDC_CmdInfoStr(ctr));
+	LOG_TRACE(TRACE_SCSI_CMD, "HDC: REPORT LUNS (%s).\n", HDC_CmdInfoStr(ctr));
 
-        buf = HDC_PrepRespBuf(ctr, 16);
+	buf = HDC_PrepRespBuf(ctr, 16);
 
-	// LUN list length, 8 bytes per LUN
+	/* LUN list length, 8 bytes per LUN */
 	buf[0] = 0;
 	buf[1] = 0;
 	buf[2] = 0;
 	buf[3] = 8;
 	memset(&buf[4], 0, 12);
 
-        ctr->status = HD_STATUS_OK;
-        dev->nLastError = HD_REQSENS_OK;
-        dev->bSetLastBlockAddr = false;
+	ctr->status = HD_STATUS_OK;
+	dev->nLastError = HD_REQSENS_OK;
+	dev->bSetLastBlockAddr = false;
 }
 
 
