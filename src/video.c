@@ -659,8 +659,8 @@ typedef struct
 	int	VBlank_On_50_CheckLine;		/* 307 */
 	int	VBlank_On_60_CheckLine;		/* 257 */
 	int	VBlank_On_Hi_CheckLine;		/* 501 (no blank in mono mode ?) */
-	int	VBlank_Off_50_CheckLine;	/*  23 */
-	int	VBlank_Off_60_CheckLine;	/*  14 */
+	int	VBlank_Off_50_CheckLine;	/*  24 */
+	int	VBlank_Off_60_CheckLine;	/*  15 */
 	int	VBlank_Off_Hi_CheckLine;	/*   0 (no blank in mono mode ?) */
 	int	VBlank_CheckPos;		/* 502 same for ON and OFF test */
 
@@ -905,8 +905,8 @@ void	Video_InitTimings(void)
 	pVideoTiming1->VBlank_On_50_CheckLine	= 307;
 	pVideoTiming1->VBlank_On_60_CheckLine	= 257;
 	pVideoTiming1->VBlank_On_Hi_CheckLine	= 501;
-	pVideoTiming1->VBlank_Off_50_CheckLine	=  23;
-	pVideoTiming1->VBlank_Off_60_CheckLine	=  14;
+	pVideoTiming1->VBlank_Off_50_CheckLine	=  24;
+	pVideoTiming1->VBlank_Off_60_CheckLine	=  15;
 	pVideoTiming1->VBlank_Off_Hi_CheckLine	=   0;
 	pVideoTiming1->VBlank_CheckPos		= 502;
 
@@ -984,8 +984,8 @@ void	Video_InitTimings(void)
 	pVideoTiming1->VBlank_On_50_CheckLine	= 307;
 	pVideoTiming1->VBlank_On_60_CheckLine	= 257;
 	pVideoTiming1->VBlank_On_Hi_CheckLine	= 501;
-	pVideoTiming1->VBlank_Off_50_CheckLine	=  23;
-	pVideoTiming1->VBlank_Off_60_CheckLine	=  14;
+	pVideoTiming1->VBlank_Off_50_CheckLine	=  24;
+	pVideoTiming1->VBlank_Off_60_CheckLine	=  15;
 	pVideoTiming1->VBlank_Off_Hi_CheckLine	=   0;
 	pVideoTiming1->VBlank_CheckPos		= 502;
 
