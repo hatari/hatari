@@ -643,6 +643,10 @@ void	M68000_Update_intlev ( void )
  * - When CPU runs in cycle exact mode, wait states are added immediately.
  * - For other less precise modes, all the wait states are cumulated and added
  *   after the instruction was processed.
+ *
+ * NOTE : this function should only be called in the context of emulating an opcode,
+ * it should not be called in the context of an internal timer called by CycInt_Process()
+ * because cycles would not be correctly added to CyclesGlobalClockCounter
  */
 void M68000_WaitState(int WaitCycles)
 {
