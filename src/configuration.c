@@ -848,14 +848,12 @@ void Configuration_Apply(bool bReset)
 	Video_SetTimings ( ConfigureParams.System.nMachineType , ConfigureParams.System.VideoTimingMode );
 
 	/* Sound settings */
-	/* SDL sound buffer in ms */
+	/* SDL sound buffer in ms (or 0 for using the default value from SDL) */
 	SdlAudioBufferSize = ConfigureParams.Sound.SdlAudioBufferSize;
-	if ( SdlAudioBufferSize == 0 )			/* use default setting for SDL */
-		;
-	else if ( SdlAudioBufferSize < 10 )		/* min of 10 ms */
-		SdlAudioBufferSize = 10;
-	else if ( SdlAudioBufferSize > 100 )		/* max of 100 ms */
-		SdlAudioBufferSize = 100;
+	if (SdlAudioBufferSize < 10 && SdlAudioBufferSize != 0)
+		SdlAudioBufferSize = 10;		/* min of 10 ms */
+	else if (SdlAudioBufferSize > 100)
+		SdlAudioBufferSize = 100;		/* max of 100 ms */
 
 	/* Set playback frequency */
 	Audio_SetOutputAudioFreq(ConfigureParams.Sound.nPlaybackFreq);
