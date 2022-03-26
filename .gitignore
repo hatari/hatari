@@ -22,13 +22,6 @@ src/cpu/cpustbl.c
 src/cpu/cputbl.h
 src/cpu/gencpu
 
-src/uae-cpu/build68k
-src/uae-cpu/cpudefs.c
-src/uae-cpu/cpuemu.c
-src/uae-cpu/cpustbl.c
-src/uae-cpu/cputbl.h
-src/uae-cpu/gencpu
-
 tests/debugger/test-breakcond
 tests/debugger/test-evaluate
 tests/debugger/test-symbols
@@ -45,3 +38,8 @@ build/*
 Hatari.build/*
 Release/*
 Debug/*
+
+# Created by the Eclipse IDE (CDT)
+.cproject
+.project
+.settings/
