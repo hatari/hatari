@@ -378,5 +378,6 @@ extern void M68000_ChangeCpuFreq ( void );
 extern Uint16 M68000_GetSR ( void );
 extern void M68000_SetSR ( Uint16 v );
 extern void M68000_SetPC ( uaecptr v );
+extern void M68000_MMU_Info(FILE *fp, Uint32 flags);
 
 #endif

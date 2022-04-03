@@ -89,6 +89,8 @@ const char M68000_fileid[] = "Hatari m68000.c";
 #include "tos.h"
 #include "falcon/crossbar.h"
 #include "cart.h"
+#include "cpu/cpummu.h"
+#include "cpu/cpummu030.h"
 
 #if ENABLE_DSP_EMU
 #include "dsp.h"
@@ -861,4 +863,35 @@ void	M68000_SetPC ( uaecptr v )
 	fill_prefetch();
 }
 
-
+/**
+ * Dump the contents of the MMU registers
+ */
+void M68000_MMU_Info(FILE *fp, Uint32 flags)
+{
+	if (!ConfigureParams.System.bMMU || ConfigureParams.System.nCpuLevel < 2)
+	{
+		fprintf(fp, "MMU is not enabled.\n");
+		return;
+	}
+	else if (ConfigureParams.System.nCpuLevel <= 3) /* 68020/68030 mode? */
+	{
+		fprintf(fp, "MMUSR:\t0x%04x\n", mmusr_030);
+		fprintf(fp, "SRP:\t0x%016" PRIx64 "\n", (uint64_t)srp_030);
+		fprintf(fp, "CRP:\t0x%016" PRIx64 "\n", (uint64_t)crp_030);
+		fprintf(fp, "TC:\t0x%08x\n", tc_030);
+		fprintf(fp, "TT0:\t0x%08x\n", tt0_030);
+		fprintf(fp, "TT1:\t0x%08x\n", tt1_030);
+	}
+	else	/* 68040 / 68060 mode */
+	{
+		fprintf(fp, "MMUSR:\t0x%04x\n", regs.mmusr);
+		fprintf(fp, "SRP:\t0x%08x\n", regs.srp);
+		fprintf(fp, "URP:\t0x%08x\n", regs.urp);
+		fprintf(fp, "TC:\t0x%08x\n", regs.tcr);
+		fprintf(fp, "DTT0:\t0x%08x\n", regs.dtt0);
+		fprintf(fp, "DTT1:\t0x%08x\n", regs.dtt1);
+		fprintf(fp, "ITT0:\t0x%08x\n", regs.itt0);
+		fprintf(fp, "ITT0:\t0x%08x\n", regs.itt1);
+		/* TODO: Also call mmu_dump_tables() here? */
+	}
+}
