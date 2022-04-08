@@ -74,6 +74,8 @@
 
 const char M68000_fileid[] = "Hatari m68000.c";
 
+#include <inttypes.h>
+
 #include "main.h"
 #include "configuration.h"
 #include "gemdos.h"
