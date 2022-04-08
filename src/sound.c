@@ -317,8 +317,8 @@ ymsample	YM_Buffer_250[ YM_BUFFER_250_SIZE ];	/* Ring buffer to store YM samples
 static int	YM_Buffer_250_pos_write;		/* Current writing position into above buffer */
 static int	YM_Buffer_250_pos_read;			/* Current reading position into above buffer */
 
-static Uint64	YM2149_Clock_250_prev;			/* 250 kHz counter */
-
+static Uint64	YM2149_Clock_250;			/* 250 kHz counter */
+static Uint64	YM2149_Clock_250_CpuClock;		/* Corresponding value of CyclesGlobalClockCounter at the time YM2149_Clock_250 was updated */
 
 
 /*--------------------------------------------------------------*/
@@ -336,7 +336,7 @@ static void	YM2149_Normalise_5bit_Table(ymu16 *in_5bit , yms16 *out_5bit, unsign
 
 static void	YM2149_EnvBuild		(void);
 static void	Ym2149_BuildVolumeTable	(void);
-static Uint64	YM2149_ConvertCpuClock_250 ( Uint64 CpuClock );
+static void	YM2149_UpdateClock_250	( Uint64 CpuClock );
 static void	Ym2149_Init		(void);
 static void	Ym2149_Reset		(void);
 
@@ -774,16 +774,37 @@ static void	Ym2149_BuildVolumeTable(void)
 /**
  * Convert a CPU clock value (as in CyclesGlobalClockCounter)
  * into a 250 kHz YM2149 clock (taking nCpuFreqShift into account)
+ *
+ * NOTE : we should not use this simple method :
+ *	Clock_250 = CpuClock / ( 32 << nCpuFreqShift )
+ * because it won't work if nCpuFreqShift is changed on the fly (when the
+ * CPU goes from 8 MHz to 16 MHz in the case of the MegaSTE for example)
+ *
+ * To get the correct 250 kHZ clock, we must compute how many CpuClock units
+ * elapsed since the previous call and convert this increment into
+ * an increment for the 250 kHz clock
  */
-static Uint64	YM2149_ConvertCpuClock_250 ( Uint64 CpuClock )
+static void	YM2149_UpdateClock_250 ( Uint64 CpuClock )
 {
-	Uint64		Clock_250;
+	Uint64		CpuClockDiff;
+	Uint64		YM_Div;
+	Uint64		YM_Inc;
 
-	Clock_250 = ( CpuClock >> nCpuFreqShift );		/* Number of CPU cycles at 8 MHz */
-	Clock_250 >>= 5;					/* Divide by 32 -> 250 kHz */
+	/* We divide Cpuclock by YM_Div to get a 250 Hz YM clock (YM_Div=32 for a 8 MHz CPU) */
+	YM_Div = 32 << nCpuFreqShift;
 
-//fprintf ( stderr , "convert_250 %lx -> %lx\n" , CpuClock , Clock_250 );
-	return Clock_250;
+	/* We update YM2149_Clock_250 only if enough CpuClock units elapsed (at least YM_Div) */
+	CpuClockDiff = CpuClock - YM2149_Clock_250_CpuClock;
+	if ( CpuClockDiff >= YM_Div )
+	{
+		YM_Inc = CpuClockDiff / YM_Div;			/* truncate to lower integer */
+//fprintf ( stderr , "update_250  in div=%lu clock_cpu=%lu cpu_diff=%lu inc=%lu clock_250_in=%lu\n" , YM_Div, CpuClock, CpuClockDiff, YM_Inc, YM2149_Clock_250 );
+		YM2149_Clock_250 += YM_Inc;
+		YM2149_Clock_250_CpuClock = CpuClock;
+//fprintf ( stderr , "update_250 out div=%lu clock_cpu=%lu cpu_diff=%lu inc=%lu clock_250_in=%lu\n" , YM_Div, CpuClock, CpuClockDiff, YM_Inc, YM2149_Clock_250 );
+	}
+
+//fprintf ( stderr , "update_250 clock_cpu=%lx -> clock_250=%lx\n" , CpuClock , YM2149_Clock_250 );
 }
 
 
@@ -804,6 +825,10 @@ static void	Ym2149_Init(void)
 
 	/* Reset YM2149 internal states */
 	Ym2149_Reset();
+
+	/* Reset 250 Hz clock */
+	YM2149_Clock_250 = 0;
+	YM2149_Clock_250_CpuClock = CyclesGlobalClockCounter;
 
 	/* Clear internal YM audio buffer at 250 kHz */
 	memset ( YM_Buffer_250 , 0 , sizeof(YM_Buffer_250) );
@@ -839,8 +864,6 @@ static void	Ym2149_Reset(void)
 	ToneA_val = ToneB_val = ToneC_val = Noise_val = YM_SQUARE_DOWN;
 
 	RndRack = 1;
-
-	YM2149_Clock_250_prev = YM2149_ConvertCpuClock_250 ( CyclesGlobalClockCounter );
 }
 
 
@@ -1127,22 +1150,22 @@ static void	YM2149_DoSamples_250_Debug ( int SamplesToGenerate , int pos )
  * (when cpu runs at higher freq, we must take nCpuFreqShift into account)
  *
  * On each call, we consider samples were already generated up to (and including) counter value
- * YM2149_Clock_250_prev. We must generate as many samples to reach (and include) YM2149_Clock_250_new.
+ * YM2149_Clock_250_prev. We must generate as many samples to reach (and include) YM2149_Clock_250.
  */
 static void	YM2149_Run ( Uint64 CPU_Clock )
 {
-	Uint64		YM2149_Clock_250_new;
+	Uint64		YM2149_Clock_250_prev;
 	int		YM2149_Nb_Updates_250;
 
 
-	YM2149_Clock_250_new = YM2149_ConvertCpuClock_250 ( CPU_Clock );
+	YM2149_Clock_250_prev = YM2149_Clock_250;
+	YM2149_UpdateClock_250 ( CPU_Clock );
 
-	YM2149_Nb_Updates_250 = YM2149_Clock_250_new - YM2149_Clock_250_prev;
+	YM2149_Nb_Updates_250 = YM2149_Clock_250 - YM2149_Clock_250_prev;
 
 	if ( YM2149_Nb_Updates_250 > 0 )
 	{
 		YM2149_DoSamples_250 ( YM2149_Nb_Updates_250 );
-		YM2149_Clock_250_prev = YM2149_Clock_250_new;
 	}
 }
 
@@ -1511,7 +1534,8 @@ void Sound_MemorySnapShot_Capture(bool bSave)
 
 	MemorySnapShot_Store(SoundRegs, sizeof(SoundRegs));
 
-	MemorySnapShot_Store(&YM2149_Clock_250_prev, sizeof(YM2149_Clock_250_prev));
+	MemorySnapShot_Store(&YM2149_Clock_250, sizeof(YM2149_Clock_250));
+	MemorySnapShot_Store(&YM2149_Clock_250_CpuClock, sizeof(YM2149_Clock_250_CpuClock));
 
 	MemorySnapShot_Store(&YmVolumeMixing, sizeof(YmVolumeMixing));
 
