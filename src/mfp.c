@@ -416,14 +416,14 @@ static void	MFP_GPIP_ReadByte_TT ( MFP_STRUCT *pMFP );
 
 /*-----------------------------------------------------------------------*/
 /**
- * Convert a number of CPU cycles running at CPU_Freq to a number of
+ * Convert a number of CPU cycles running at CPU_Freq_Emul to a number of
  * MFP timer cycles running at MFP_Timer_Freq (XTAL)
  */
 int	MFP_ConvertCycle_CPU_MFP_TIMER ( int CPU_Cycles )
 {
 	int	MFP_Cycles;
 
-	MFP_Cycles = (int)( ( (Uint64)CPU_Cycles * MachineClocks.MFP_Timer_Freq ) / MachineClocks.CPU_Freq );
+	MFP_Cycles = (int)( ( (Uint64)CPU_Cycles * MachineClocks.MFP_Timer_Freq ) / MachineClocks.CPU_Freq_Emul );
 	return MFP_Cycles;
 }
 
@@ -431,13 +431,13 @@ int	MFP_ConvertCycle_CPU_MFP_TIMER ( int CPU_Cycles )
 /*-----------------------------------------------------------------------*/
 /**
  * Convert a number of MFP timer cycles running at MFP_Timer_Freq (XTAL)
- * to a number of CPU cycles running at CPU_Freq
+ * to a number of CPU cycles running at CPU_Freq_Emul
  */
 int	MFP_ConvertCycle_MFP_TIMER_CPU ( int MFP_Cycles )
 {
 	int	CPU_Cycles;
 
-	CPU_Cycles = (int)( ( (Uint64)MFP_Cycles * MachineClocks.CPU_Freq ) / MachineClocks.MFP_Timer_Freq );
+	CPU_Cycles = (int)( ( (Uint64)MFP_Cycles * MachineClocks.CPU_Freq_Emul ) / MachineClocks.MFP_Timer_Freq );
 	return CPU_Cycles;
 }
 

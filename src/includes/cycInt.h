@@ -73,12 +73,12 @@ typedef enum
 
 /* Convert CPU or MFP cycles to internal cycles */
 #define INT_CONVERT_TO_INTERNAL( cyc , type )	( type == INT_CPU_CYCLE ? (cyc) << CYCINT_SHIFT : \
-						type == INT_MFP_CYCLE ? (int)( ( (Uint64)( (cyc) << CYCINT_SHIFT ) * MachineClocks.CPU_Freq ) / MachineClocks.MFP_Timer_Freq ) : \
+						type == INT_MFP_CYCLE ? (int)( ( (Uint64)( (cyc) << CYCINT_SHIFT ) * MachineClocks.CPU_Freq_Emul ) / MachineClocks.MFP_Timer_Freq ) : \
 						(cyc) << ( nCpuFreqShift + CYCINT_SHIFT ) )
 
 /* Convert internal cycles to real CPU or MFP cycles */
 #define INT_CONVERT_FROM_INTERNAL( cyc , type )	( type == INT_CPU_CYCLE ? (cyc) >> CYCINT_SHIFT : \
-						type == INT_MFP_CYCLE ? (int)( ( (Uint64)(cyc) * MachineClocks.MFP_Timer_Freq ) / MachineClocks.CPU_Freq ) >> CYCINT_SHIFT : \
+						type == INT_MFP_CYCLE ? (int)( ( (Uint64)(cyc) * MachineClocks.MFP_Timer_Freq ) / MachineClocks.CPU_Freq_Emul ) >> CYCINT_SHIFT : \
 						(cyc) >> ( nCpuFreqShift + CYCINT_SHIFT ) )
 
 
