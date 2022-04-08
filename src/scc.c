@@ -283,7 +283,9 @@ static void SCC_serial_setBaud(int channel, int value)
 
 	switch (value)
 	{
+#ifdef B230400					/* B230400 is not defined on all systems */
 	 case 230400:	new_speed = B230400;	break;
+#endif
 	 case 115200:	new_speed = B115200;	break;
 	 case 57600:	new_speed = B57600;	break;
 	 case 38400:	new_speed = B38400;	break;
