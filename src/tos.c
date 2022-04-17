@@ -1004,13 +1004,14 @@ static uint8_t *TOS_LoadImage(void)
 		 * just for fun. */
 		TosAddress = 0xfc0000;
 	}
-	else if (TosVersion < 0x100 || TosVersion >= 0x500 || TosSize > 1024*1024L
+	else if (TosVersion < 0x100 || TosVersion >= 0x700 || TosSize > 1024*1024L
 	         || (TosAddress == 0xfc0000 && TosSize > 224*1024L)
 	         || (bRamTosImage && TosAddress + TosSize > STRamEnd)
 	         || (!bRamTosImage && TosAddress != 0xe00000 && TosAddress != 0xfc0000))
 	{
 		Log_AlertDlg(LOG_FATAL, "Your TOS image seems not to be a valid TOS ROM file!\n"
-		             "(TOS version %x, address $%x)", TosVersion, TosAddress);
+		             "(TOS version %x.%02x, address $%x)",
+			     TosVersion >> 8, TosVersion & 0xff, TosAddress);
 		free(pTosFile);
 		return NULL;
 	}
