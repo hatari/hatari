@@ -267,7 +267,8 @@ extern struct dma_rec *last_dma_rec;
 #define DMARECORD_BITPLANE 6
 #define DMARECORD_SPRITE 7
 #define DMARECORD_DISK 8
-#define DMARECORD_MAX 9
+#define DMARECORD_CONFLICT 9
+#define DMARECORD_MAX 10
 
 extern void record_dma_read(uae_u16 reg, uae_u32 addr, int hpos, int vpos, int type, int extra);
 extern void record_dma_write(uae_u16 reg, uae_u32 v, uae_u32 addr, int hpos, int vpos, int type, int extra);
