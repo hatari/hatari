@@ -1369,7 +1369,7 @@ void Screen_SetGenConvSize(int width, int height, int bpp, bool bForceChange)
 			nScreenZoomY *= 2;
 		}
 		if (nScreenZoomX*nScreenZoomY > 2) {
-			Log_Printf(LOG_WARN, "Strange screen size %dx%d -> aspect corrected by %dx%d!\n",
+			Log_Printf(LOG_INFO, "Strange screen size %dx%d -> aspect corrected by %dx%d!\n",
 				width, height, nScreenZoomX, nScreenZoomY);
 		}
 	}
