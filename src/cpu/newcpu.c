@@ -5977,6 +5977,7 @@ static void m68k_run_jit(void)
 				check_uae_int_request();
 				if (regs.spcflags) {
 					if (do_specialties(0)) {
+						STOPTRY;
 						return;
 					}
 				}
@@ -6152,7 +6153,7 @@ static void m68k_run_mmu060 (void)
 					MFP_UpdateIRQ_All ( 0 );
 #endif
 				if (regs.spcflags) {
-					if (do_specialties (cpu_cycles)) {
+					if (do_specialties(cpu_cycles)) {
 						STOPTRY;
 						return;
 					}
