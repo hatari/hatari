@@ -403,7 +403,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_MEMSIZE,   "-s", "--memsize",
 	  "<x>", "ST RAM size (x = size in MiB from 0 to 14, 0 = 512KiB ; else size in KiB)" },
 	{ OPT_TT_RAM,   NULL, "--ttram",
-	  "<x>", "TT RAM size (x = size in MiB from 0 to 512)" },
+	  "<x>", "TT RAM size (x = size in MiB from 0 to 1024, in steps of 4)" },
 	{ OPT_MEMSTATE,   NULL, "--memstate",
 	  "<file>", "Load memory snap-shot <file>" },
 
@@ -1714,7 +1714,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 		case OPT_TT_RAM:
 			memsize = atoi(argv[++i]);
-			ConfigureParams.Memory.TTRamSize_KB = Opt_ValueAlignMinMax(memsize+3, 4, 0, 512) * 1024;
+			ConfigureParams.Memory.TTRamSize_KB = Opt_ValueAlignMinMax(memsize+3, 4, 0, 1024) * 1024;
 			bLoadAutoSave = false;
 			break;
 

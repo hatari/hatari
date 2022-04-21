@@ -949,9 +949,9 @@ class MachineDialog(HatariUIDialog):
         self.memory = table_add_widget_row(table, row, col, "Memory:", combo, fullspan)
         row += 1
 
-        ttram = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, 512, 4)
+        ttram = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, 1024, 4)
         ttram.set_digits(0)
-        ttram.set_tooltip_text("TT-RAM needs Falcon/TT with WinUAE CPU core and implies 32-bit addressing.  0 = disabled, 24-bit addressing.")
+        ttram.set_tooltip_text("TT-RAM needs Falcon/TT and requires 32-bit addressing.  0 = disabled, 24-bit addressing.")
         self.ttram = table_add_widget_row(table, row, col, "TT-RAM", ttram, fullspan)
         row += 1
 

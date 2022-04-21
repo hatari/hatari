@@ -297,8 +297,8 @@ class Config:
                 except ValueError:
                     self.usage("non-numeric TT-RAM sizes: %s" % arg)
                 for ram in args:
-                    if ram < 0 or ram > 512:
-                        self.usage("invalid TT-RAM (0-512) size: %d" % ram)
+                    if ram < 0 or ram > 1024:
+                        self.usage("invalid TT-RAM (0-1024) size: %d" % ram)
                 self.ttrams = args
             if unknown:
                 self.usage("%s are invalid values for %s" % (list(unknown), opt))
@@ -323,7 +323,7 @@ Options:
 \t-g, --graphics\t(%s)
 \t-m, --machines\t(%s)
 \t-s, --memsizes\t(%s)
-\t-t, --ttrams\t(0-512, in 4MB steps)
+\t-t, --ttrams\t(0-1024, in 4MiB steps)
 \t-b, --bool\t(extra boolean Hatari options to test)
 \t-o, --opts\t(hatari options to pass as-is)
 
@@ -397,7 +397,7 @@ For example:
         if machine in ("st", "megast", "ste", "megaste"):
             return False
         if machine in ("tt", "falcon"):
-            if ttram < 0 or ttram > 512:
+            if ttram < 0 or ttram > 1024:
                 return False
             return tos.supports_32bit_addressing(disk)
         raise AssertionError("unknown machine %s" % machine)
