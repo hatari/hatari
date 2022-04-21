@@ -1066,8 +1066,8 @@ BOOL flag1, flag2;
 	 case 3: ConfigureParams.System.VideoTimingMode=VIDEO_TIMING_MODE_WS3; break;
 	 case 4: ConfigureParams.System.VideoTimingMode=VIDEO_TIMING_MODE_WS4; break;
 	}
-	int ttramsizeMB=[TTRAMSizeValue intValue]*1024;										//JV 12-2016
-	ConfigureParams.Memory.TTRamSize_KB=ttramsizeMB;
+	int ttramsize_MB=[TTRAMSizeValue intValue];							//JV 12-2016
+	ConfigureParams.Memory.TTRamSize_KB=1024*ttramsize_MB;
 
 	//EXPORT_NTEXTFIELD(TTRAMSizeValue, ConfigureParams.Memory.TTRamSize_KB);			// MS 12-2016
 
