@@ -322,7 +322,7 @@ and later HW:</p>
   <li>TT low/med/high resolution support</li>
   <li>Second (TT) MFP chip</li>
   <li>ST/TT palette switching and video shifter</li>
-  <li>Up to 512 MiB of TT-RAM and 32-bit memory addressing</li>
+  <li>Up to 1024 MiB of TT-RAM and 32-bit memory addressing</li>
   <li>Only TOS version 3.05 and 3.06 (and 512k EmuTOS) can be used in TT mode.</li>
 </ul>
 
@@ -333,7 +333,7 @@ and later HW:</p>
   <li>STE/Falcon palette switching and shifter</li>
   <li>Mono/RGB/VGA/TV monitor types</li>
   <li>DSP co-processor emulation</li>
-  <li>RAM up to 14MiB (ST-RAM) and up to 512 MiB (TT-RAM)</li>
+  <li>Up to 14 MiB of ST-RAM and 1024 MiB of TT-RAM</li>
   <li>Experimental microphone (jack) emulation</li>
   <li>Experimental Crossbar sound matrix (ADC (mic &amp; PSG), DAC, DMA, DSP)
       interconnect emulation + support for the additional DMA sound
@@ -922,12 +922,12 @@ IDE 0</p>
 &lt;x&gt;</p>
 <p class="paramdesc">Set amount of emulated RAM, x = 1 to 14
 MiB, or 0 for 512 KiB. Other values are considered as a size in KiB.
-While Hatari allows 14MB for all machine types, on real HW, ST/STE can
-have up to 4MB, MegaSTE/TT up to 10MB and Falcon up to 14MB RAM.</p>
+While Hatari allows 14 MiB for all machine types, on real HW, ST/STE can
+have up to 4 MiB, MegaSTE/TT up to 10MiB, and Falcon up to 14 MiB RAM.</p>
 <p class="parameter">--ttram
 &lt;x&gt;</p>
 <p class="paramdesc">Set amount of emulated TT RAM (for Falcon and TT
-mode), x = 0 to 512 MiB</p>
+mode), x = 0 to 1024 MiB (in 4MiB steps)</p>
 
 <h3>ROM options</h3>
 <p class="parameter">-t,
@@ -1585,11 +1585,11 @@ ends with a 'b'.
 </div>
 
 <p>You can select the amount of RAM for the emulated machine here.
-While Hatari allows 14MB for all machine types, on real HW, ST/STE can
-have up to 4MB, MegaSTE/TT up to 10MB and Falcon up to 14MB RAM. Of
-values below 4MB, only ones that were valid on a real unmodified STFM
+While Hatari allows 14 MiB for all machine types, on real HW, ST/STE can
+have up to 4 MiB, MegaSTE/TT up to 10MiB, and Falcon up to 14 MiB RAM. Of
+values below 4 MiB, only ones that were valid on a real unmodified STFM
 are available</p>
-<p>TT RAM size allows to emulate up to 512 MiB of 32-bit RAM. This is
+<p>TT RAM size allows to emulate up to 1024 MiB of 32-bit RAM. This is
 only useful in Falcon and TT mode, and require to disable "24 bit
 addressing" mode in the CPU options (Hatari needs to patch Falcon TOS
 v4 for this)
@@ -2435,8 +2435,8 @@ for bigger images is not tested very well yet.
 </p>
 <p>
 The maximum size of partitions inside the hard disk (images) depends on the
-TOS version. TOS 1.00 and 1.02 support up to 256 MB, TOS 1.04 to 3.06 up to
-512 MB and TOS 4.0x supports up to 1 GB partitions.
+TOS version. TOS 1.00 and 1.02 support up to 256 MiB, TOS 1.04 to 3.06 up to
+512 MiB and TOS 4.0x supports up to 1 GB partitions.
 </p>
 <p>
 NOTE: you need to be careful when mounting device files.  Depending on

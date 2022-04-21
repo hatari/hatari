@@ -82,9 +82,9 @@ supports:
 
 * TV, VGA, RGB and monochrome monitors and 1, 2 & 4 plane VDI modes
 
-* Different amounts of ST-RAM from 0 (0.5MB) to 14MB
+* Different amounts of ST-RAM from 0 (0.5 MiB) to 14 MiB
 
-* Different amounts of TT-RAM from 0 to 512MB
+* Different amounts of TT-RAM from 0 to 1024 MiB
 
 * With and without GEMDOS harddisk directory emulation
 
