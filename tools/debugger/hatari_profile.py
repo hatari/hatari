@@ -698,6 +698,7 @@ class ProfileCallers(Output):
     def parse_callers(self, fobj, parsed, line):
         "parse callee: caller call count information"
         #0x<hex>: 0x<hex> = <count>[ <flags>][, <inclusive/totals>[, <exclusive/totals>]]; N*[0x<hex> = <count>...;][ <symbol>]
+        self.message("parsing call info...")
         self.callinfo = {}
         while True:
             parsed += 1
@@ -1072,6 +1073,7 @@ class EmulatorProfile(Output):
 
     def _parse_disassembly(self, fobj, line):
         "parse profile disassembly"
+        self.message("parsing disassembly...")
         prev_addr = 0
         discontinued = False
         function = FunctionStats(None, -1, 0, self.stats.items)
