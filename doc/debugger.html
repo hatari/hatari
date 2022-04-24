@@ -817,22 +817,22 @@ by "variables" (v) command. For example:
 b  AesOpcode ! AesOpcode  &amp;&amp;  AesOpcode &lt; 0xffff  :trace
 </pre>
 </li>
-<li>To stop when TOS starts next program, set a breakpoint for
+<li>To stop when TOS starts loading next program, set a breakpoint for
     Pexec(0,...) OS call:
 <pre>
 b GemdosOpcode = 0x4B &amp;&amp; OsCallParam = 0x0
 </pre>
 </li>
-<li>Then, to stop emulation on the first instruction of that
-    program, set a breakpoint when program counter matches
-    the TEXT (i.e. code) segment address (taken from program
-    basepage):
+<li>To stop emulation after program has been loaded, but before
+    it runs, set next breakpoint on its first instruction i.e. when
+    program counter matches the TEXT (code) segment address (taken
+    from program basepage):
 <pre>
 b  pc = TEXT :once
 </pre>
-Note1: It is better to trigger it only once, because if you would leave it
-on, during (re)boot you would get a warning for every instruction
-(until TOS sets a valid basepage).
+Note1: It is better to trigger this breakpoint only once, because if
+you would leave it on, during (re)boot you would get a warning for
+every instruction (until TOS sets a valid basepage).
 <br />
 Note2: you cannot use an <em>address</em> breakpoint for this because
 variable values are evaluated at run-time only for conditional
