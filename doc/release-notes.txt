@@ -25,15 +25,42 @@ Removed features (that were marked as deprecated in earlier releases):
 - Python v2 support in Python scripts (Python 2 was end of life in 2020)
 
 Emulation improvements:
+- Internal timers:
+  - Rewrite the internal timers used to emulate delays/events/mfp timers
+    (gain ~10% on average, up to 60% in very specific cases)
 - CPU:
-  - Improved FPU instruction emulation (from WinUAE emulator)
+  - Improve FPU emulation (exceptions, unimplemeted instructions, fsincos)
+  - Improve FPU emulation in softfloat mode
+  - Improve IPL timing update in various opcodes
+  - Faster emulation of 68000 in cycle exact mode (gain ~7%)
+- MFP:
+  - Use the new internal timers for MFP timers
+  - Improve accuracy when reading MFP's Timer Data Register
+  - More accurate emulation by processing all internal timers first before
+    reading/writing any MFP register (was previously delayed after processing
+    the current CPU instruction, which was too late in some cases)
+- Video:
+ - Fix position for detecting when VBLANK should be disabled in 50 Hz and 60 Hz
 - DSP:
-  - Improved interrupts handling (from Previous NeXT emulator)
+  - Improved interrupts handling and SSI (from Previous NeXT emulator)
 - Sound:
   - Improve accuracy of YM2149's sample generation by using the main
-    CPU clock as a reference for all timings
+    CPU clock as a reference for all timings (syncsquare effect as used
+    in recent maxYMiser v1.53)
+  - Use specific memory functions when doing DMA for STE and Falcon sound
+    (don't generate bus error when pointed memory is not present)
+  - Improve value of MFP GPIP bit 7 for DMA sound in the case of STE/TT
+    (video mono XOR dma sound xsint)
+  - Use 2 different signals SOUNDINT and SNDINT for Falcon (connected to
+    MFP GPIP7 and MFP Timer A input)
+- FDC:
+  - Stall the CPU during 32 cycles when DMA FIFO if filled/transferred
 - SCSI:
   - Improve MODE SENSE, add REPORT LUNS support
+- IKBD:
+  - support deltax/deltay in command $A (set mouse keycode mode)
+    and threshold x/y in command $B (set mouse threshold)
+
 
 Emulator improvements:
 - TOS support:
@@ -102,9 +129,18 @@ Documentation:
 - Compatibility updates, especially for 060 programs that need
   FPSP060.PRG for missing instructions emulation
 
+Fixed demos:
+- Hackabonds Demo (wrong vblank detection)
+- We Were @ HD version under GEMDOS HD (file handle access)
+
 Fixed programs:
 - maxYMiser FM v1.53 by gwEn (support for syncsquare effect)
-- We Were @ demo HD version under GEMDOS HD (file handle access)
+
+Fixed games:
+- Chambers of Shaolin : DMA sound was wrong in STE mode with 1 MB RAM
+  (mfp gpip bit 7)
+- Super Hang On : fix flickering raster colors (bclr #0,$fffffa0f sometimes
+  happened at the same time timer C expired)
 
 
  Version 2.3.1 (2020-12-27)
