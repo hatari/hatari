@@ -332,13 +332,13 @@ void Screen_SetTextureScale(int width, int height, int win_width, int win_height
 	if (bInFullScreen)
 		/* SDL letterboxes fullscreen so it's enough for
 		 * closest dimension to window size being evenly
-		 * divisable.
+		 * divisible.
 		 */
 		scale = fminf(scale_w, scale_h);
 	else
 		/* For windowed mode (= no letterboxing), both
 		 * dimensions (here, their avg) need to be evenly
-		 * divisable for nearest neighbor scaling to look good.
+		 * divisible for nearest neighbor scaling to look good.
 		 */
 		scale = (scale_w + scale_h) / 2.0;
 

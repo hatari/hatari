@@ -1387,7 +1387,7 @@ static Uint32 Video_CalculateAddress ( void )
 		NbBytes = ( (X-LineStartCycle)>>1 ) & (~1);	/* 2 cycles per byte */
 
 
-		/* when left border is open, we have 2 bytes less than theorical value */
+		/* when left border is open, we have 2 bytes less than theoretical value */
 		/* (26 bytes in left border, which is not a multiple of 4 cycles) */
 		if ( LineBorderMask & BORDERMASK_LEFT_OFF )
 			NbBytes -= 2;

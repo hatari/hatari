@@ -37,8 +37,8 @@
 /* 2008/01/13	[NP]	One line should contain 512/4 + 1 colors slots, not 512/4. Else, if	*/
 /*			a program manages to change colors every 4 cycles, the '-1' terminator	*/
 /*			added by Spec512_StartFrame will in fact be written on cycle 0 in the	*/
-/*			next line (this is theorical, practically no program changes the color	*/
-/*			128 times per line).							*/
+/*			next line (this is theoretical, practically no program changes the 	*/
+/*			color 128 times per line).						*/
 /*			Use nCyclesPerLine instead of 512 to check if nHorPos is too big and if	*/
 /*			the colors must be stored on the next line when freq is 50 or 60Hz	*/
 /*			(readme.prg by TEX (in 1987))						*/

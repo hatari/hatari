@@ -780,7 +780,7 @@ Call Trace:
 
 These cannot be tested any more because booting fails when
 cache & prefetch are enabled, but with Hatari v2.2.1, Linux
-could occasionally booted succesfully with them enabled too.
+could occasionally booted successfully with them enabled too.
 
 -  busybox 'setsid cttyhack' fails to:
 ------------------------------------------------------------
