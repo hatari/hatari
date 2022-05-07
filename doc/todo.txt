@@ -18,9 +18,11 @@ Emulation improvements
 ----------------------
 
 - Improve disk image formats support:
-	- Support .DIM images created with the "Get sectors: used" option
+  - Support .DIM images created with the "Get sectors: used" option
+  - Support files created with GCopy, see:
+    https://www.atari-forum.com/viewtopic.php?t=6090
 
-- Real HD 6301 (keyboard processor of the ST) emulation.
+- Finish real HD 6301 (keyboard processor of the ST) emulation.
   (Current special casing is enough for all known demos using 6301)
 
 - Get the games/demos working that are marked as non-working in the manual.
@@ -63,6 +65,9 @@ Emulation improvements
 - Beam Racing Algorithm for lagless VSYNC ON.  WinUAE implements it
   with DirectX:
 	https://github.com/tonioni/WinUAE/issues/133
+
+- Properly emulate the DMA sector count register for ACSI transfers
+  https://listengine.tuxfamily.org/lists.tuxfamily.org/hatari-devel/2021/09/msg00006.html
 
 
 Programs known as not fully functional (not an exhaustive list)
