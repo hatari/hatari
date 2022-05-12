@@ -839,6 +839,8 @@ static void Main_LoadInitialConfig(void)
 
 	/* Now try the users configuration file */
 	Configuration_Load(NULL);
+	if (ConfigureParams.Keyboard.nLanguage == TOS_LANG_UNKNOWN)
+		ConfigureParams.Keyboard.nLanguage = TOS_DefaultLanguage();
 }
 
 /*-----------------------------------------------------------------------*/

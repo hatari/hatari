@@ -75,11 +75,11 @@ Emulator improvements:
   - The RS232 receiver code has been rewritten to use polling instead
     of using a thread. This should avoid deadlocks on BSD/macOS systems
     when shutting down or reconfiguring the RS232 settings.
-- NVRAM:
-  - Config settings + CLI options to override NVRAM keyboard layout
-    and language values at start
 - TT/Falcon:
   - Increase max TT-RAM amount to 1024 MiB
+  - Separate config + CLI options to override NVRAM language and
+    keyboard layout settings
+  - NVRAM language default is taken from the LANG env variable
 - Falcon:
   - Fix: restore zoom mode correctly when loading snapshots
   - Correct also smaller specified memory amounts to valid ones

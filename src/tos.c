@@ -1251,8 +1251,8 @@ static const struct {
 
 /**
  * TOS_ValidCountryCode: returns parsed country code if
- * it's recognized, otherwise valid ones are shown and
- * TOS_LANG_UNKNOWN is returned
+ * it's recognized, otherwise TOS_LANG_UNKNOWN is returned.
+ * If info is set, valid ones are shown in latter case
  */
 int TOS_ParseCountryCode(const char *code, const char *info)
 {
@@ -1260,6 +1260,9 @@ int TOS_ParseCountryCode(const char *code, const char *info)
 		if (strcmp(code, countries[i].code) == 0) {
 			return countries[i].value;
 		}
+	}
+	if (!info) {
+		return TOS_LANG_UNKNOWN;
 	}
 	fprintf(stderr, "Unrecognized %s code '%s'!\n", info, code);
 
@@ -1269,6 +1272,31 @@ int TOS_ParseCountryCode(const char *code, const char *info)
 			fprintf(stderr, "\nEmuTOS 1024k (v1.1.x) supports also:\n");
 		fprintf(stderr, "- %s : %s\n",
 			countries[i].code, countries[i].name);
+	}
+	return TOS_LANG_UNKNOWN;
+}
+
+/**
+ * TOS_DefaultLanguage: return TOS country code matching LANG
+ * environment variable. Supports LANG formats: "uk", "en_UK.*"
+ */
+int TOS_DefaultLanguage(void)
+{
+	int len;
+	const char *lang = getenv("LANG");
+	if (!lang)
+		return TOS_LANG_UNKNOWN;
+
+	len = strlen(lang);
+	if (len == 2)
+		return TOS_ParseCountryCode(lang, NULL);
+
+	if (len >= 5 && lang[2] == '_') {
+		char cc[3];
+		cc[0] = tolower(lang[3]);
+		cc[1] = tolower(lang[4]);
+		cc[2] = '\0';
+		return TOS_ParseCountryCode(cc, NULL);
 	}
 	return TOS_LANG_UNKNOWN;
 }
