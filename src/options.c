@@ -65,6 +65,7 @@ enum {
 	OPT_CONFIRMQUIT,
 	OPT_CONFIGFILE,
 	OPT_KEYMAPFILE,
+	OPT_COUNTRY_CODE,
 	OPT_KBD_LAYOUT,
 	OPT_LANGUAGE,
 	OPT_FASTFORWARD,
@@ -228,10 +229,12 @@ static const opt_t HatariOptions[] = {
 	  "<file>", "Read (additional) configuration values from <file>" },
 	{ OPT_KEYMAPFILE, "-k", "--keymap",
 	  "<file>", "Read (additional) keyboard mappings from <file>" },
+	{ OPT_COUNTRY_CODE, NULL, "--country",
+	  "<x>", "Set country code for multi-code EmuTOS ROM" },
 	{ OPT_KBD_LAYOUT, NULL, "--layout",
-	  "<x>", "Set (TT/Falcon) NVRAM keyboard layout value" },
+	  "<x>", "Set (TT/Falcon) NVRAM keyboard layout" },
 	{ OPT_LANGUAGE, NULL, "--language",
-	  "<x>", "Set (TT/Falcon) NVRAM language value" },
+	  "<x>", "Set (TT/Falcon) NVRAM language" },
 	{ OPT_FASTFORWARD, NULL, "--fast-forward",
 	  "<bool>", "Help skipping stuff on fast machine" },
 	{ OPT_AUTOSTART, NULL, "--auto",
@@ -757,6 +760,23 @@ static bool Opt_Bool(const char *arg, int optid, bool *conf)
 	return Opt_ShowError(optid, orig, "Not a <bool> value");
 }
 
+/**
+ * If 'conf' given, set it to parsed country code value
+ * Return false for any other value, otherwise true
+ */
+static bool Opt_CountryCode(const char *arg, int optid, int *conf)
+{
+	int val = TOS_ParseCountryCode(arg);
+	if (val != TOS_LANG_UNKNOWN)
+	{
+		*conf = val;
+		return true;
+	}
+	Opt_ShowError(optid, arg, "Invalid value");
+	TOS_ShowCountryCodes();
+	return false;
+
+}
 
 /**
  * checks str argument against options of type "--option<digit>".
@@ -2018,20 +2038,16 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			ok = Opt_Bool(argv[++i], OPT_MICROPHONE, &ConfigureParams.Sound.bEnableMicrophone);
 			break;
 
+		case OPT_COUNTRY_CODE:
+			ok = Opt_CountryCode(argv[++i], OPT_COUNTRY_CODE, &ConfigureParams.Keyboard.nCountryCode);
+			break;
+
 		case OPT_LANGUAGE:
-			val = TOS_ParseCountryCode(argv[++i], "language");
-			if (val != TOS_LANG_UNKNOWN)
-				ConfigureParams.Keyboard.nLanguage = val;
-			else
-				ok = false;
+			ok = Opt_CountryCode(argv[++i], OPT_LANGUAGE, &ConfigureParams.Keyboard.nLanguage);
 			break;
 
 		case OPT_KBD_LAYOUT:
-			val = TOS_ParseCountryCode(argv[++i], "keyboard layout");
-			if (val != TOS_LANG_UNKNOWN)
-				ConfigureParams.Keyboard.nKbdLayout = val;
-			else
-				ok = false;
+			ok = Opt_CountryCode(argv[++i], OPT_KBD_LAYOUT, &ConfigureParams.Keyboard.nKbdLayout);
 			break;
 
 		case OPT_KEYMAPFILE:

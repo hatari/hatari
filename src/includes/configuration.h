@@ -102,6 +102,7 @@ typedef struct
 {
   bool bDisableKeyRepeat;
   KEYMAPTYPE nKeymapType;
+  int nCountryCode;
   int nKbdLayout;
   int nLanguage;
   char szMappingFileName[FILENAME_MAX];

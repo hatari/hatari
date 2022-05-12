@@ -197,6 +197,7 @@ static const struct Config_Tag configs_Keyboard[] =
 {
 	{ "bDisableKeyRepeat", Bool_Tag, &ConfigureParams.Keyboard.bDisableKeyRepeat },
 	{ "nKeymapType", Int_Tag, &ConfigureParams.Keyboard.nKeymapType },
+	{ "nCountryCode", Int_Tag, &ConfigureParams.Keyboard.nCountryCode },
 	{ "nKbdLayout", Int_Tag, &ConfigureParams.Keyboard.nKbdLayout },
 	{ "nLanguage", Int_Tag, &ConfigureParams.Keyboard.nLanguage },
 	{ "szMappingFileName", String_Tag, ConfigureParams.Keyboard.szMappingFileName },
@@ -626,6 +627,7 @@ void Configuration_SetDefault(void)
 	/* Set defaults for Keyboard */
 	ConfigureParams.Keyboard.bDisableKeyRepeat = false;
 	ConfigureParams.Keyboard.nKeymapType = KEYMAP_SYMBOLIC;
+	ConfigureParams.Keyboard.nCountryCode = TOS_LANG_UNKNOWN;
 	ConfigureParams.Keyboard.nKbdLayout = TOS_LANG_UNKNOWN;
 	ConfigureParams.Keyboard.nLanguage = TOS_LANG_UNKNOWN;
 	strcpy(ConfigureParams.Keyboard.szMappingFileName, "");

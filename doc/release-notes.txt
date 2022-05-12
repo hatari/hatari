@@ -65,6 +65,9 @@ Emulation improvements:
 Emulator improvements:
 - TOS support:
   - Support 1024k EmuTOS images also on TT & Falcon
+  - Add country code option to select EmuTOS language, keyboard
+    layout and screen refresh rate on Mega/ST/STe machines (ones
+    lacking NVRAM)
 - MIDI support:
   - Fix: PortMidi rejects Hatari MIDI events
   - Fix: MIDI IRQ needs to be re-enabled on MIDI device change

@@ -30,6 +30,7 @@ const char TOS_fileid[] = "Hatari tos.c";
 #include "log.h"
 #include "m68000.h"
 #include "memorySnapShot.h"
+#include "nvram.h"
 #include "stMemory.h"
 #include "str.h"
 #include "tos.h"
@@ -1103,6 +1104,7 @@ int TOS_InitImage(void)
 {
 	uint8_t *pTosFile = NULL;
 	Uint32 logopatch_addr = 0;
+	Uint16 osconf, countrycode;
 
 	bTosImageLoaded = false;
 
@@ -1179,6 +1181,21 @@ int TOS_InitImage(void)
 		Log_Printf(LOG_DEBUG, "Skipped TOS patches.\n");
 	}
 
+	/* whether to override EmuTOS country code */
+	osconf = STMemory_ReadWord(TosAddress+0x1C);
+	countrycode = osconf >> 1;
+	if (bIsEmuTOS && countrycode == TOS_LANG_ALL && !NvRam_Present() &&
+	    ConfigureParams.Keyboard.nCountryCode != TOS_LANG_UNKNOWN)
+	{
+		countrycode = ConfigureParams.Keyboard.nLanguage;
+		/* low bit: us -> NTSC (0), any other -> PAL (1) */
+		osconf = (countrycode << 1) | (countrycode?1:0);
+		STMemory_WriteWord(TosAddress+0x1C, osconf);
+		Log_Printf(LOG_WARN, "=> EmuTOS country code: %d (%s), %s\n",
+			   countrycode, TOS_LanguageName(countrycode),
+			   (osconf & 1) ? "PAL" : "NTSC");
+	}
+
 	/*
 	 * patch some values into the "Draw logo" patch.
 	 * Needs to be called after final VDI resolution has been determined.
@@ -1252,20 +1269,19 @@ static const struct {
 /**
  * TOS_ValidCountryCode: returns parsed country code if
  * it's recognized, otherwise TOS_LANG_UNKNOWN is returned.
- * If info is set, valid ones are shown in latter case
  */
-int TOS_ParseCountryCode(const char *code, const char *info)
+int TOS_ParseCountryCode(const char *code)
 {
 	for (int i = 0; i < ARRAY_SIZE(countries); i++) {
 		if (strcmp(code, countries[i].code) == 0) {
 			return countries[i].value;
 		}
 	}
-	if (!info) {
-		return TOS_LANG_UNKNOWN;
-	}
-	fprintf(stderr, "Unrecognized %s code '%s'!\n", info, code);
+	return TOS_LANG_UNKNOWN;
+}
 
+void TOS_ShowCountryCodes(void)
+{
 	fprintf(stderr, "\nTOS v4 supports:\n");
 	for (int i = 0; i < ARRAY_SIZE(countries); i++) {
 		if (i == 7)
@@ -1273,7 +1289,6 @@ int TOS_ParseCountryCode(const char *code, const char *info)
 		fprintf(stderr, "- %s : %s\n",
 			countries[i].code, countries[i].name);
 	}
-	return TOS_LANG_UNKNOWN;
 }
 
 /**
@@ -1289,14 +1304,14 @@ int TOS_DefaultLanguage(void)
 
 	len = strlen(lang);
 	if (len == 2)
-		return TOS_ParseCountryCode(lang, NULL);
+		return TOS_ParseCountryCode(lang);
 
 	if (len >= 5 && lang[2] == '_') {
 		char cc[3];
 		cc[0] = tolower(lang[3]);
 		cc[1] = tolower(lang[4]);
 		cc[2] = '\0';
-		return TOS_ParseCountryCode(cc, NULL);
+		return TOS_ParseCountryCode(cc);
 	}
 	return TOS_LANG_UNKNOWN;
 }

@@ -569,10 +569,30 @@ user configuration files
 <p class="paramdesc">load keyboard mapping from &lt;file&gt;.
 "Symbolic" mapping will be used as fallback for keys not defined there
 </p>
+<p class="parameter">--country &lt;x&gt;</p>
+<p class="paramdesc">
+Set EmuTOS ROM country code on Mega/ST/STe machines lacking NVRAM,
+when EmuTOS indicates supporting multiple ones.
+</p><p class="paramdesc">
+In 512k EmuTOS images, country code selects the TOS keyboard layout
+and screen refresh (US = 60Hz NTSC, 50Hz PAL otherwise).  In 1024k
+EmuTOS images (coming with Hatari binaries and supporting multiple
+languages), country code selects also TOS language.
+</p><p class="paramdesc">
+Alternatively, one can use "tos-lang-change" tool from EmuTOS project
+to modify country code in the ROM image file itself. That works
+also for TOS v4</p>
 <p class="parameter">--layout &lt;x&gt;</p>
 <p class="paramdesc">Set NVRAM keyboard layout value.
-While both TT and Falcon machines have NVRAM, only TOS v4 and EmuTOS
-1024k ROM versions support multiple layouts</p>
+Set NVRAM keyboard layout value. While both TT and Falcon machines
+have NVRAM, only TOS v4 and EmuTOS 512k / 1024k ROM versions support
+multiple layouts.</p>
+<p class="paramdesc">
+Regardless of whether keyboard layout change is done through the ROM
+country code or NVRAM setting, it may impact your key mappings in
+Hatari key mapping files, Hatari Python UI arguments, or key injection
+in your automation scripts for Hatari debugger, command FIFO or
+hconsole tool</p>
 <p class="parameter">--language &lt;x&gt;</p>
 <p class="paramdesc">Set NVRAM language value.
 While both TT and Falcon machines have NVRAM, only TOS v4 and EmuTOS
