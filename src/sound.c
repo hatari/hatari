@@ -815,8 +815,7 @@ static void	YM2149_UpdateClock_250 ( Uint64 CpuClock )
 //fprintf ( stderr , "inc_float=%f %d\n" , CpuClockDiff / ( ((double)MachineClocks.CPU_Freq_Emul) / YM_ATARI_CLOCK_COUNTER ) , (int)(CpuClockDiff / ( ((double)MachineClocks.CPU_Freq_Emul) / YM_ATARI_CLOCK_COUNTER ) ) );
 //	YM_Inc = (int)(CpuClockDiff / ( ((double)MachineClocks.CPU_Freq_Emul) / YM_ATARI_CLOCK_COUNTER ) );			/* truncate to lower integer */
 		YM2149_Clock_250 += YM_Inc;
-//		YM2149_Clock_250_CpuClock = CpuClock - CpuClockDiff % YM_Div;
-		YM2149_Clock_250_CpuClock = CpuClock;
+		YM2149_Clock_250_CpuClock = CpuClock - CpuClockDiff % YM_Div;
 //fprintf ( stderr , "update_250 out div=%lu clock_cpu=%lu cpu_diff=%lu inc=%lu clock_250_in=%lu\n" , YM_Div, CpuClock, CpuClockDiff, YM_Inc, YM2149_Clock_250 );
 	}
 
