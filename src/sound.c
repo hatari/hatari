@@ -321,6 +321,15 @@ static Uint64	YM2149_Clock_250;			/* 250 kHz counter */
 static Uint64	YM2149_Clock_250_CpuClock;		/* Corresponding value of CyclesGlobalClockCounter at the time YM2149_Clock_250 was updated */
 
 
+
+/* Some variables used for stats / debug */
+#define		SOUND_STATS_SIZE	60
+static int	Sound_Stats_Array[ SOUND_STATS_SIZE ];
+static int	Sound_Stats_Index = 0;
+static int	Sound_Stats_SamplePerVBL;
+
+
+
 /*--------------------------------------------------------------*/
 /* Local functions prototypes					*/
 /*--------------------------------------------------------------*/
@@ -924,13 +933,11 @@ static ymu16	YM2149_EnvPer(ymu8 rHigh , ymu8 rLow)
  * Main function : compute the value of the next sample.
  * Mixes all 3 voices with tone+noise+env and apply low pass
  * filter if needed.
- * All operations are done with integer math, using <<24 to simulate
- * floating point precision : upper 8 bits are the integer part, lower 24
- * are the fractional part.
- * Tone is a square wave with 2 states 0 or 1. If integer part of posX is
- * even (bit24=0) we consider output is 0, else (bit24=1) we consider
- * output is 1. This gives the value of bt for one voice after extending it
- * to all 0 bits or all 1 bits using a '-'
+ * For maximum accuracy, this function emulates all single cycles at 250 kHz
+ * As output we get a "raw" 250 kHz signal that will be later downsampled
+ * to the chosen output frequency (eg 44.1 kHz)
+ * Creating a complete 250 kHz signal allow to emulate effects that require
+ * precise cycle accuracy (such as "syncsquare" used in maxYMiser v1.53)
  */
 static void	YM2149_DoSamples_250 ( int SamplesToGenerate_250 )
 {
@@ -1271,7 +1278,7 @@ static ymsample	YM2149_Next_Resample_Weighted_Average_2 ( void )
 	interval_fract = ( YM_ATARI_CLOCK_COUNTER * 0x10000LL ) / YM_REPLAY_FREQ;	/* 'LL' ensure the div is made on 64 bits */
 	total = 0;
 
-//fprintf ( stderr , "next 1 %d\n" , YM_Buffer_250_pos_read );
+//fprintf ( stderr , "next 1 clock=%d freq=%d interval=%x  %d\n" , YM_ATARI_CLOCK_COUNTER , YM_REPLAY_FREQ , interval_fract , YM_Buffer_250_pos_read );
 
 	if ( pos_fract )				/* start position : 0xffff <= pos_fract <= 0 */
 	{
@@ -1551,6 +1558,60 @@ void Sound_MemorySnapShot_Capture(bool bSave)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Store how many samples were generated during one VBL
+ */
+static void Sound_Stats_Add ( int Samples_Nbr )
+{
+	Sound_Stats_Array[ Sound_Stats_Index++ ] = Samples_Nbr;
+	if ( Sound_Stats_Index == SOUND_STATS_SIZE )
+		Sound_Stats_Index = 0;
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Use all the numbers of samples per vbl to show an estimate of the
+ * final number of generated samples during 1 second. This value should
+ * stay as close as possible over time to the chosen audio frequency (eg 44100 Hz).
+ * If not, it means the accuracy should be improved when generating YM samples
+ */
+void Sound_Stats_Show ( void )
+{
+	int i;
+	double sum;
+	double vbl_per_sec;
+	double freq_gen;
+	double freq_diff;
+	static double diff_min=0, diff_max=0;
+
+	sum = 0;
+	for ( i=0 ; i<SOUND_STATS_SIZE ; i++ )
+	      sum += Sound_Stats_Array[ i  ];
+
+	sum = sum / SOUND_STATS_SIZE;
+
+	vbl_per_sec = ClocksTimings_GetVBLPerSec ( ConfigureParams.System.nMachineType , nScreenRefreshRate );
+	vbl_per_sec /= pow ( 2 , CLOCKS_TIMINGS_SHIFT_VBL );
+
+	freq_gen = sum * vbl_per_sec;
+	freq_diff = YM_REPLAY_FREQ-freq_gen;
+
+	/* Update min/max values, ignore big changes */
+	if ( ( freq_diff < 0 ) && ( freq_diff > -20 ) && ( freq_diff < diff_min ) )
+		diff_min = freq_diff;
+
+	if ( ( freq_diff > 0 ) && ( freq_diff < 20 ) && ( freq_diff > diff_max ) )
+		diff_max = freq_diff;
+
+	fprintf ( stderr , "Sound_Stats_Show vbl_per_sec=%.4f freq_gen=%.4f freq_diff=%.4f (min=%.4f max=%.4f)\n" ,
+		  vbl_per_sec , freq_gen , YM_REPLAY_FREQ-freq_gen , diff_min , diff_max );
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Generate output samples for all channels (YM2149, DMA or crossbar) during this time-frame
  */
 static int Sound_GenerateSamples(Uint64 CPU_Clock)
@@ -1631,6 +1692,8 @@ void Sound_Update( Uint64 CPU_Clock)
 	/* Generate samples */
 	nGeneratedSamples_before = nGeneratedSamples;
 	Samples_Nbr = Sound_GenerateSamples ( CPU_Clock );
+	Sound_Stats_SamplePerVBL += Samples_Nbr;
+//fprintf ( stderr , "sound update vbl=%d hbl=%d nbr=%d\n" , nVBLs , nHBL, Samples_Nbr );
 
 	/* Check we don't fill the sound's ring buffer before it's played by Audio_Callback()	*/
 	/* This should never happen, except if the system suffers major slowdown due to	other	*/
@@ -1671,6 +1734,11 @@ void Sound_Update( Uint64 CPU_Clock)
 void Sound_Update_VBL(void)
 {
 	Sound_Update ( CyclesGlobalClockCounter );			/* generate as many samples as needed to fill this VBL */
+//fprintf ( stderr , "sound_update_vbl vbl=%d nbr=%d\n" , nVBLs, Sound_Stats_SamplePerVBL );
+
+	/* Update some stats */
+	Sound_Stats_Add ( Sound_Stats_SamplePerVBL );
+//	Sound_Stats_Show ();
 
 	/* Reset sound buffer if needed (after pause, fast forward, slow system, ...) */
 	if ( Sound_BufferIndexNeedReset )
@@ -1692,6 +1760,8 @@ void Sound_Update_VBL(void)
 	}
 
 	AudioMixBuffer_pos_write_avi = AudioMixBuffer_pos_write;	/* save new position for next AVI audio frame */
+
+	Sound_Stats_SamplePerVBL = 0;
 
 	/* Clear write to register '13', used for YM file saving */
 	bEnvelopeFreqFlag = false;
