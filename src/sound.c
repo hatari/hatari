@@ -792,6 +792,9 @@ static void	Ym2149_BuildVolumeTable(void)
  * To get the correct 250 kHZ clock, we must compute how many CpuClock units
  * elapsed since the previous call and convert this increment into
  * an increment for the 250 kHz clock
+ * To update YM2149_Clock_250_CpuClock we should only take into account
+ * the value of CpuClockDiff that corresponds to an integer increment YM_inc :
+ * the ignored (remainder) CpuClock will be taken into account on the next call.
  */
 static void	YM2149_UpdateClock_250 ( Uint64 CpuClock )
 {
@@ -799,21 +802,25 @@ static void	YM2149_UpdateClock_250 ( Uint64 CpuClock )
 	Uint64		YM_Div;
 	Uint64		YM_Inc;
 
-	/* We divide Cpuclock by YM_Div to get a 250 Hz YM clock (YM_Div=32 for a 8 MHz CPU) */
+	/* We divide Cpuclock by YM_Div to get a 250 Hz YM clock (YM_Div=32 for an STF with a 8 MHz CPU) */
 	YM_Div = 32 << nCpuFreqShift;
 
+//fprintf ( stderr , "ym_div %lu %f\n" , YM_Div , ((double)MachineClocks.CPU_Freq_Emul) / YM_ATARI_CLOCK_COUNTER );
 	/* We update YM2149_Clock_250 only if enough CpuClock units elapsed (at least YM_Div) */
 	CpuClockDiff = CpuClock - YM2149_Clock_250_CpuClock;
 	if ( CpuClockDiff >= YM_Div )
 	{
 		YM_Inc = CpuClockDiff / YM_Div;			/* truncate to lower integer */
 //fprintf ( stderr , "update_250  in div=%lu clock_cpu=%lu cpu_diff=%lu inc=%lu clock_250_in=%lu\n" , YM_Div, CpuClock, CpuClockDiff, YM_Inc, YM2149_Clock_250 );
+//fprintf ( stderr , "inc_float=%f %d\n" , CpuClockDiff / ( ((double)MachineClocks.CPU_Freq_Emul) / YM_ATARI_CLOCK_COUNTER ) , (int)(CpuClockDiff / ( ((double)MachineClocks.CPU_Freq_Emul) / YM_ATARI_CLOCK_COUNTER ) ) );
+//	YM_Inc = (int)(CpuClockDiff / ( ((double)MachineClocks.CPU_Freq_Emul) / YM_ATARI_CLOCK_COUNTER ) );			/* truncate to lower integer */
 		YM2149_Clock_250 += YM_Inc;
+//		YM2149_Clock_250_CpuClock = CpuClock - CpuClockDiff % YM_Div;
 		YM2149_Clock_250_CpuClock = CpuClock;
 //fprintf ( stderr , "update_250 out div=%lu clock_cpu=%lu cpu_diff=%lu inc=%lu clock_250_in=%lu\n" , YM_Div, CpuClock, CpuClockDiff, YM_Inc, YM2149_Clock_250 );
 	}
 
-//fprintf ( stderr , "update_250 clock_cpu=%lx -> clock_250=%lx\n" , CpuClock , YM2149_Clock_250 );
+//fprintf ( stderr , "update_250 clock_cpu=%ld -> ym_inc=%ld clock_250=%ld clock_250_cpu_clock=%ld\n" , CpuClock , YM_Inc , YM2149_Clock_250 , YM2149_Clock_250_CpuClock );
 }
 
 
