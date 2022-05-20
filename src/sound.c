@@ -793,16 +793,19 @@ static void	Ym2149_BuildVolumeTable(void)
  * elapsed since the previous call and convert this increment into
  * an increment for the 250 kHz clock
  * To update YM2149_Clock_250_CpuClock we should only take into account
- * the value of CpuClockDiff that corresponds to an integer increment YM_inc :
- * the ignored (remainder) CpuClock will be taken into account on the next call.
+ * the part of CpuClockDiff that corresponds to an integer increment YM_inc :
+ * the ignored (remainder) CpuClockDiff's units will be taken into account on the next call.
  */
-static void	YM2149_UpdateClock_250 ( Uint64 CpuClock )
+
+/* integer version : use it when YM2149's clock is the same as CPU's clock (eg STF) */
+
+static void	YM2149_UpdateClock_250_int ( Uint64 CpuClock )
 {
 	Uint64		CpuClockDiff;
 	Uint64		YM_Div;
 	Uint64		YM_Inc;
 
-	/* We divide Cpuclock by YM_Div to get a 250 Hz YM clock (YM_Div=32 for an STF with a 8 MHz CPU) */
+	/* We divide CpuClockDiff by YM_Div to get a 250 Hz YM clock increment (YM_Div=32 for an STF with a 8 MHz CPU) */
 	YM_Div = 32 << nCpuFreqShift;
 
 //fprintf ( stderr , "ym_div %lu %f\n" , YM_Div , ((double)MachineClocks.CPU_Freq_Emul) / YM_ATARI_CLOCK_COUNTER );
@@ -812,8 +815,6 @@ static void	YM2149_UpdateClock_250 ( Uint64 CpuClock )
 	{
 		YM_Inc = CpuClockDiff / YM_Div;			/* truncate to lower integer */
 //fprintf ( stderr , "update_250  in div=%lu clock_cpu=%lu cpu_diff=%lu inc=%lu clock_250_in=%lu\n" , YM_Div, CpuClock, CpuClockDiff, YM_Inc, YM2149_Clock_250 );
-//fprintf ( stderr , "inc_float=%f %d\n" , CpuClockDiff / ( ((double)MachineClocks.CPU_Freq_Emul) / YM_ATARI_CLOCK_COUNTER ) , (int)(CpuClockDiff / ( ((double)MachineClocks.CPU_Freq_Emul) / YM_ATARI_CLOCK_COUNTER ) ) );
-//	YM_Inc = (int)(CpuClockDiff / ( ((double)MachineClocks.CPU_Freq_Emul) / YM_ATARI_CLOCK_COUNTER ) );			/* truncate to lower integer */
 		YM2149_Clock_250 += YM_Inc;
 		YM2149_Clock_250_CpuClock = CpuClock - CpuClockDiff % YM_Div;
 //fprintf ( stderr , "update_250 out div=%lu clock_cpu=%lu cpu_diff=%lu inc=%lu clock_250_in=%lu\n" , YM_Div, CpuClock, CpuClockDiff, YM_Inc, YM2149_Clock_250 );
@@ -822,6 +823,52 @@ static void	YM2149_UpdateClock_250 ( Uint64 CpuClock )
 //fprintf ( stderr , "update_250 clock_cpu=%ld -> ym_inc=%ld clock_250=%ld clock_250_cpu_clock=%ld\n" , CpuClock , YM_Inc , YM2149_Clock_250 , YM2149_Clock_250_CpuClock );
 }
 
+
+
+/* floating point version : use it when YM2149's clock is different from CPU's clock (eg STE) */
+
+static void	YM2149_UpdateClock_250_float ( Uint64 CpuClock )
+{
+	Uint64		CpuClockDiff;
+	double		YM_Div;
+	Uint64		YM_Inc;
+
+	/* We divide CpuClockDiff by YM_Div to get a 250 Hz YM clock increment (YM_Div=32.0425 for an STE with a 8 MHz CPU) */
+	YM_Div = ((double)MachineClocks.CPU_Freq_Emul) / YM_ATARI_CLOCK_COUNTER;
+
+//fprintf ( stderr , "ym_div %f\n" , YM_Div );
+	/* We update YM2149_Clock_250 only if enough CpuClock units elapsed (at least YM_Div) */
+	CpuClockDiff = CpuClock - YM2149_Clock_250_CpuClock;
+	if ( CpuClockDiff >= YM_Div )
+	{
+		YM_Inc = CpuClockDiff / YM_Div;			/* will truncate to lower integer when casting to Uint64 */
+//fprintf ( stderr , "update_250  in div=%f clock_cpu=%lu cpu_diff=%lu inc=%lu clock_250_in=%lu\n" , YM_Div, CpuClock, CpuClockDiff, YM_Inc, YM2149_Clock_250 );
+		YM2149_Clock_250 += YM_Inc;
+		YM2149_Clock_250_CpuClock = CpuClock - round ( fmod ( CpuClockDiff , YM_Div ) );
+//fprintf ( stderr , "update_250 out div=%f clock_cpu=%lu cpu_diff=%lu inc=%lu clock_250_in=%lu\n" , YM_Div, CpuClock, CpuClockDiff, YM_Inc, YM2149_Clock_250 );
+	}
+
+//fprintf ( stderr , "update_250 clock_cpu=%ld -> ym_inc=%ld clock_250=%ld clock_250_cpu_clock=%ld\n" , CpuClock , YM_Inc , YM2149_Clock_250 , YM2149_Clock_250_CpuClock );
+}
+
+
+
+/*
+ * In case of STF/MegaST, we use the 'integer' version that should give less rounding
+ * than the 'floating point' version. It should slightly faster too.
+ * For other machines, we use the 'floating point' version because CPU and YM/DMA Audio don't
+ * share the same clock.
+ *
+ * In the end, 'integer' and 'floating point' versions will sound the same because
+ * floating point precision should be good enough to avoid rounding errors.
+ */
+static void	YM2149_UpdateClock_250 ( Uint64 CpuClock )
+{
+	if ( ConfigureParams.System.nMachineType == MACHINE_ST || ConfigureParams.System.nMachineType == MACHINE_MEGA_ST )
+		YM2149_UpdateClock_250_int ( CpuClock );
+	else
+		YM2149_UpdateClock_250_float ( CpuClock );
+}
 
 
 
@@ -1602,16 +1649,17 @@ void Sound_Stats_Show ( void )
 
 	freq_gen = sum * vbl_per_sec;
 	freq_diff = YM_REPLAY_FREQ-freq_gen;
+	freq_diff = freq_gen - YM_REPLAY_FREQ;
 
 	/* Update min/max values, ignore big changes */
-	if ( ( freq_diff < 0 ) && ( freq_diff > -20 ) && ( freq_diff < diff_min ) )
+	if ( ( freq_diff < 0 ) && ( freq_diff > -40 ) && ( freq_diff < diff_min ) )
 		diff_min = freq_diff;
 
-	if ( ( freq_diff > 0 ) && ( freq_diff < 20 ) && ( freq_diff > diff_max ) )
+	if ( ( freq_diff > 0 ) && ( freq_diff < 40 ) && ( freq_diff > diff_max ) )
 		diff_max = freq_diff;
 
 	fprintf ( stderr , "Sound_Stats_Show vbl_per_sec=%.4f freq_gen=%.4f freq_diff=%.4f (min=%.4f max=%.4f)\n" ,
-		  vbl_per_sec , freq_gen , YM_REPLAY_FREQ-freq_gen , diff_min , diff_max );
+		  vbl_per_sec , freq_gen , freq_diff , diff_min , diff_max );
 }
 
 
