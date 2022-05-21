@@ -691,6 +691,11 @@ static int		VideoTiming;
 #define VIDEO_CYCLE_TO_HPOS( cyc )	( cyc >> nCpuFreqShift )
 
 
+/* TEMP : to update CYCLES_COUNTER_VIDEO during an opcode */
+int	Video_GetPosition_ForceInc = 0;
+/* TEMP : to update CYCLES_COUNTER_VIDEO during an opcode */
+
+
 /*--------------------------------------------------------------*/
 /* Local functions prototypes                                   */
 /*--------------------------------------------------------------*/
@@ -1191,6 +1196,7 @@ if ( *pLineCycles < 0 )
 void	Video_GetPosition ( int *pFrameCycles , int *pHBL , int *pLineCycles )
 {
 	*pFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
+*pFrameCycles += Video_GetPosition_ForceInc;	/* TEMP : to update CYCLES_COUNTER_VIDEO during an opcode */
 	Video_ConvertPosition ( *pFrameCycles , pHBL , pLineCycles );
 }
 
@@ -2921,6 +2927,12 @@ void Video_InterruptHandler_HBL ( void )
 	int PendingCyclesOver;
 	int NewHBLPos;
 
+
+if ( CycInt_From_Opcode )		/* TEMP : to update CYCLES_COUNTER_VIDEO during an opcode */
+{
+  Video_GetPosition_ForceInc = currcycle / 256;
+//  fprintf ( stderr , "Video_InterruptHandler_HBL from opcode currcycle=%d add=%d\n" , currcycle , Video_GetPosition_ForceInc );
+}
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
 	/* How many cycle was this HBL delayed (>= 0) */
@@ -3057,6 +3069,7 @@ void Video_InterruptHandler_HBL ( void )
 			Video_AddInterruptHBL ( nHBL , pVideoTiming->RestartVideoCounter_Pos );
 		}
 	}
+Video_GetPosition_ForceInc = 0;		/* TEMP : to update CYCLES_COUNTER_VIDEO during an opcode */
 }
 
 

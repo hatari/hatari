@@ -135,6 +135,14 @@ static void CycInt_SetNewInterrupt(void);
 static void CycInt_InsertInt ( interrupt_id IntId );
 #endif
 
+/* TEMP : to update CYCLES_COUNTER_VIDEO during an opcode */
+/* This is a temporary case needed to handle updating CYCLES_COUNTER_VIDEO */
+/* when cycint handler is called while processing an opcode (see MFP_UpdateTimers() ) */
+/* This should be removed once we replace CYCLES_COUNTER_VIDEO with CyclesGlobalClockCounter */
+bool   CycInt_From_Opcode = false;
+/* TEMP : to update CYCLES_COUNTER_VIDEO during an opcode */
+
+
 
 /*-----------------------------------------------------------------------*/
 /**

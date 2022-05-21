@@ -674,9 +674,11 @@ static void	MFP_UpdateTimers ( MFP_STRUCT *pMFP , Uint64 Clock )
 	if ( !CpuRunCycleExact )
 		return;
 
+CycInt_From_Opcode = true;			/* TEMP for CYCLES_COUNTER_VIDEO, see cycInt.c */
 	CycInt_Process_Clock ( Clock );
 	if ( MFP_UpdateNeeded == true )
 		MFP_UpdateIRQ ( pMFP , Clock );
+CycInt_From_Opcode = false;			/* TEMP for CYCLES_COUNTER_VIDEO, see cycInt.c */
 }
 
 

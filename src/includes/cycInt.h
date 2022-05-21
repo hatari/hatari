@@ -141,6 +141,11 @@ static inline void CycInt_Process_Clock(Uint64 Clock)
 		CycInt_CallActiveHandler( Clock );
 }
 
+
+/* TEMP : to update CYCLES_COUNTER_VIDEO during an opcode */
+extern bool   CycInt_From_Opcode;
+/* TEMP : to update CYCLES_COUNTER_VIDEO during an opcode */
+
 #endif
 
 
