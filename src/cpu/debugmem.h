@@ -5,6 +5,8 @@
 /* We use some #define / static inline to replace with 'empty' equivalent at compile time */
 /* and to avoid useless overhead at runtime */
 
+#include "symbols.h"  // use functions from here instead */
+
 #define	debugmem_trace	0
 
 static inline int debugmem_get_segment(uaecptr addr, bool *exact, bool *ext, TCHAR *out, TCHAR *name)

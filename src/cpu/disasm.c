@@ -289,16 +289,17 @@ static void showea_val(TCHAR *buffer, uae_u16 opcode, uaecptr addr, int size)
 		}
 	}
 skip:
-#ifndef WINUAE_FOR_HATARI
 	for (int i = 0; i < size; i++) {
+#ifndef WINUAE_FOR_HATARI
 		TCHAR name[256];
 		if (debugmem_get_symbol(addr + i, name, sizeof(name) / sizeof(TCHAR))) {
+#else
+		const char *name;
+		if ((name = Symbols_GetByCpuAddress(addr + i, SYMTYPE_TEXT))) {
+#endif
 			_stprintf(buffer + _tcslen(buffer), _T(" %s"), name);
 		}
 	}
-#else
-	return;
-#endif
 }
 
 uaecptr ShowEA_disp(uaecptr *pcp, uaecptr base, TCHAR *buffer, const TCHAR *name, bool pcrel)
