@@ -808,11 +808,21 @@ void Profile_CpuSave(FILE *out)
 {
 	Uint32 text, end;
 	fputs("Field names:\tExecuted instructions, Used cycles, Instruction cache misses, Data cache hits\n", out);
-	/* (Python) regexp that matches address and all described fields from disassembly:
-	 * $<hex>  :  <ASM>  <percentage>% (<count>, <cycles>, <i-misses>, <d-hits>)
-	 * $e5af38 :   rts           0.00% (12, 0, 12, 0)
-	 */
-	fputs("Field regexp:\t^\\$([0-9a-f]+) :.*% \\((.*)\\)$\n", out);
+
+	/* (Python) regexp that matches address & profiling data fields from the disassembly */
+	if (ConfigureParams.Debugger.bDisasmUAE) {
+		 /* WinAUE CPU core disassembler (current default) output:
+		  * <addr> <code>  <ASM>     <percentage>% (<count>, <cycles>, <i-misses>, <d-hits>)
+		  * 00e00cfe 4e75  rts  == $e66218   0.16% (48753, 780396, 0, 0)
+		  */
+		fputs("Field regexp:\t^([0-9a-f]+) .*% \\((.*)\\)$\n", out);
+	} else {
+		 /* External 68kDisass disassembler (earlier default) output:
+		  * $<addr>  :  <ASM>  <percentage>% (<count>, <cycles>, <i-misses>, <d-hits>)
+		  * $e5af38 :   rts           0.00% (12, 0, 12, 0)
+		  */
+		fputs("Field regexp:\t^\\$([0-9a-f]+) :.*% \\((.*)\\)$\n", out);
+	}
 	/* some information for interpreting the addresses */
 	fprintf(out, "ST_RAM:\t\t0x%06x-0x%06x\n", 0, STRamEnd);
 	end = TosAddress + TosSize;
