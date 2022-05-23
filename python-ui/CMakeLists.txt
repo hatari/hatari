@@ -11,12 +11,21 @@ INSTALL(PROGRAMS hatariui
 INSTALL(PROGRAMS hatariui.py debugui.py
 	DESTINATION ${DATADIR}/hatariui/)
 
-# Hatari UI Help menu items search for Hatari UI docs from here, so
-# changing their target dir would require change also in uihelpers.py
-INSTALL(FILES README TODO release-notes.txt hatari-icon.png hatari-logo.png
+# Hatari UI images go to same place as python code.
+# Changing that would require change also in uihelpers.py
+INSTALL(FILES hatari-icon.png hatari-logo.png
 	config.py dialogs.py hatari.py uihelpers.py
 	${CMAKE_CURRENT_SOURCE_DIR}/conftypes.py
 	DESTINATION ${DATADIR}/hatariui/)
+
+# Hatari UI Help menu items are searched from docdir.
+# Changing their target dir would require change also in uihelpers.py
+INSTALL(FILES README TODO release-notes.txt hatari-ui.html
+	DESTINATION ${DOCDIR}/hatariui/)
+
+# images/ must be where hatari-ui.html is
+INSTALL(DIRECTORY images
+	DESTINATION ${DOCDIR}/hatariui/)
 
 INSTALL(FILES hatariui.desktop
 	DESTINATION share/applications)

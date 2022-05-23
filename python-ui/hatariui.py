@@ -4,7 +4,7 @@
 #
 # Requires Gtk 3.x and Python GLib Introspection libraries.
 #
-# Copyright (C) 2008-2020 by Eero Tamminen
+# Copyright (C) 2008-2022 by Eero Tamminen
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -449,16 +449,17 @@ class UIActions:
         ("manual", None, "Hatari manual", None, None, self.help.view_hatari_manual),
         ("compatibility", None, "Hatari compatibility list", None, None, self.help.view_hatari_compatibility),
         ("release", None, "Hatari release notes", None, None, self.help.view_hatari_releasenotes),
+        ("hatariui", None, "Hatari UI information", None, None, self.help.view_hatariui_page),
         ("uirelease", None, "Hatari UI release notes", None, None, self.help.view_hatariui_releasenotes),
+        ("bugs", None, "Hatari bugs", None, None, self.help.view_hatari_bugs),
         ("todo", None, "Hatari TODO", None, None, self.help.view_hatari_todo),
 
         ("hatari", None, "Hatari home page", None, None, self.help.view_hatari_page),
-        ("hatariui", None, "Hatari UI home page", None, None, self.help.view_hatariui_page),
         ("mails", None, "Hatari mailing lists", None, None, self.help.view_hatari_mails),
         ("changes", None, "Latest Hatari changes", None, None, self.help.view_hatari_repository),
 
         ("authors", None, "Hatari authors", None, None, self.help.view_hatari_authors),
-        ("about", Gtk.STOCK_INFO, "Hatari UI info", "<Ctrl>I", "Hatari UI information", cb.about)
+        ("about", Gtk.STOCK_INFO, "About Hatari UI", "<Ctrl>I", "About Hatari UI", cb.about)
         ))
         self.action_names = [x.get_name() for x in self.actions.list_actions()]
 
@@ -630,7 +631,7 @@ class UIActions:
         ("Devices", ("display", "floppy", "harddisk", "joystick", "machine", "device", "sound")),
         ("Configuration", ("path", None, "lconfig", "sconfig")),
         ("Debug", ("debug", "trace")),
-        ("Help", ("manual", "compatibility", "release", "uirelease", "todo", None, "hatari", "hatariui", "mails", "changes", None, "authors", "about",))
+        ("Help", ("manual", "compatibility", "release", "hatariui", "uirelease", "bugs", "todo", None, "hatari", "mails", "changes", None, "authors", "about",))
         )
         bar = Gtk.MenuBar()
 
