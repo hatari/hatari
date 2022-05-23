@@ -168,6 +168,9 @@ random order - and if someone is missing here, please remind us!):
 
 - Václav Lipert : Ability to change Windows drive in file select dialog
 
+- Chris Jenkins : patch to compile the macOS version when PortMidi is not 
+  available.
+
 See also "thanks.txt" for people who've helped Hatari development in
 other ways than code contributions.
 
