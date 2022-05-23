@@ -570,6 +570,7 @@ BOOL flag1, flag2;
 	[midiInPort  addItemWithTitle:[NSString stringWithCString:szinPortName encoding:NSASCIIStringEncoding]];
 	[midiOutPort addItemWithTitle:[NSString stringWithCString:szinPortName encoding:NSASCIIStringEncoding]];
 	
+#ifdef HAVE_PORTMIDI
 	int i = 0;
 	const char* portName = NULL;
 	while ((portName = Midi_Host_GetPortName(portName, +1, true)))
@@ -578,6 +579,7 @@ BOOL flag1, flag2;
 	portName = NULL;
 	while ((portName = Midi_Host_GetPortName(portName, +1, false)))
 		[midiOutPort addItemWithTitle:[NSString stringWithCString:portName encoding:NSASCIIStringEncoding]];
+#endif		// HAVE_PORTMIDI
 }
 
 // ----------------------------------------------------------------------------
