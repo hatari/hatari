@@ -1,6 +1,8 @@
 
-INSTALL(FILES authors.txt emutos.txt keymap-sample.txt memory-usage.txt
-	midi-linux.txt release-notes.txt todo.txt
+INSTALL(FILES authors.txt bugs.txt emutos.txt keymap-sample.txt
+        m68k-linux.txt memory-usage.txt midi-linux.txt
+	release-notes.txt scsi-driver.txt thanks.txt todo.txt
+	video-recording.txt
 	DESTINATION ${DOCDIR})
 
 INSTALL(FILES compatibility.html manual.html debugger.html manual.css toc.js
