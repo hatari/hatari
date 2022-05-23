@@ -28,3 +28,9 @@ if(ENABLE_MAN_PAGES)
 		DEPENDS hatariui.1)
 	INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/hatariui.1.gz DESTINATION ${MANDIR})
 endif(ENABLE_MAN_PAGES)
+
+find_program(TIDY tidy)
+if(TIDY)
+	add_test(NAME tidy-hatariui
+	         COMMAND tidy -q -e ${CMAKE_CURRENT_SOURCE_DIR}/hatari-ui.html)
+endif()
