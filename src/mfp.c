@@ -1798,6 +1798,7 @@ static void	MFP_InterruptHandler_TimerD ( MFP_STRUCT *pMFP , interrupt_id Handle
 void	MFP_Main_InterruptHandler_TimerD ( void )
 {
 	MFP_InterruptHandler_TimerD ( pMFP_Main , INTERRUPT_MFP_MAIN_TIMERD );
+	RS232_Update();
 }
 
 

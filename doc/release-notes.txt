@@ -71,6 +71,9 @@ Emulator improvements:
     even when there's no reset
   - Support for matching PortMidi device name by prefix when
     there's no exact full match
+- RS232:
+  - The RS232 receiver code has been rewritten to use polling instead
+    of using a thread. This should avoid deadlocks when shutting down.
 - NVRAM:
   - Config settings + CLI options to override NVRAM keyboard layout
     and language values at start

@@ -9,18 +9,16 @@
   This is similar to the printing functions, we open a direct file
   (e.g. /dev/ttyS0) and send bytes over it.
   Using such method mimics the ST exactly, and even allows us to connect
-  to an actual ST! To wait for incoming data, we create a thread which copies
-  the bytes into an input buffer. This method fits in with the internet code
-  which also reads data into a buffer.
+  to an actual ST!
 */
 const char RS232_fileid[] = "Hatari rs232.c";
 
 #include <SDL.h>
-#include <SDL_thread.h>
 #include <errno.h>
 
 #include "main.h"
 #include "configuration.h"
+#include "file.h"
 #include "ioMem.h"
 #include "m68000.h"
 #include "mfp.h"
@@ -48,11 +46,9 @@ const char RS232_fileid[] = "Hatari rs232.c";
 static FILE *hComIn = NULL;        /* Handle to file for reading */
 static FILE *hComOut = NULL;       /* Handle to file for writing */
 
-#define  MAX_RS232INPUT_BUFFER    2048  /* Must be ^2 */
+static bool bByteReceived = false; /* Is a received byte pending? */
+static uint8_t nRxByte;
 
-static unsigned char InputBuffer_RS232[MAX_RS232INPUT_BUFFER];
-static int InputBuffer_Head=0, InputBuffer_Tail=0;
-static volatile bool bQuitThread = false;
 
 #if HAVE_TERMIOS_H
 
@@ -171,7 +167,7 @@ static bool RS232_OpenCOMPort(void)
 	if (!hComOut && ConfigureParams.RS232.szOutFileName[0])
 	{
 		/* Create our COM file for output */
-		hComOut = fopen(ConfigureParams.RS232.szOutFileName, "wb");
+		hComOut = File_Open(ConfigureParams.RS232.szOutFileName, "wb");
 		if (hComOut)
 		{
 			setvbuf(hComOut, NULL, _IONBF, 0);
@@ -196,7 +192,7 @@ static bool RS232_OpenCOMPort(void)
 	if (!hComIn && ConfigureParams.RS232.szInFileName[0])
 	{
 		/* Create our COM file for input */
-		hComIn = fopen(ConfigureParams.RS232.szInFileName, "rb");
+		hComIn = File_Open(ConfigureParams.RS232.szInFileName, "rb");
 		if (hComIn)
 		{
 			setvbuf(hComIn, NULL, _IONBF, 0);
@@ -235,92 +231,42 @@ static void RS232_CloseCOMPort(void)
 	 */
 	if (hComOut)
 	{
-		fclose(hComOut);
+		File_Close(hComOut);
 		hComOut = NULL;
 	}
 	if (hComIn)
 	{
-		fclose(hComIn);
+		File_Close(hComIn);
 		hComIn = NULL;
 	}
 	Dprintf(("Closed RS232 files.\n"));
 }
 
 
-/* thread stuff */
-static SDL_sem* pSemFreeBuf;       /* Semaphore to sync free space in InputBuffer_RS232 */
-static SDL_Thread *RS232Thread = NULL; /* Thread handle for reading incoming data */
-
-
 /*-----------------------------------------------------------------------*/
-/**
- * Add incoming bytes from other machine into our input buffer
- */
-static void RS232_AddBytesToInputBuffer(unsigned char *pBytes, int nBytes)
+void RS232_Update(void)
 {
-	int i;
-
-	/* Copy bytes into input buffer */
-	for (i=0; i<nBytes; i++)
+	if (!bByteReceived && hComIn && File_InputAvailable(hComIn))
 	{
-		SDL_SemWait(pSemFreeBuf);    /* Wait for free space in buffer */
-		InputBuffer_RS232[InputBuffer_Tail] = *pBytes++;
-		InputBuffer_Tail = (InputBuffer_Tail+1) % MAX_RS232INPUT_BUFFER;
-	}
-}
+		int ch = fgetc(hComIn);
 
-
-/*-----------------------------------------------------------------------*/
-/**
- * Thread to read incoming RS-232 data, and pass to emulator input buffer
- */
-static int RS232_ThreadFunc(void *pData)
-{
-	int iInChar;
-	unsigned char cInChar;
-
-	/* Check for any RS-232 incoming data */
-	while (!bQuitThread)
-	{
-		if (hComIn)
+		if (ch != EOF)
 		{
-			/* Read the bytes in, if we have any */
-			iInChar = fgetc(hComIn);
-			if (iInChar != EOF)
-			{
-				/* Copy into our internal queue */
-				cInChar = iInChar;
-				RS232_AddBytesToInputBuffer(&cInChar, 1);
-				/* FIXME: Use semaphores to lock MFP variables? */
-				MFP_InputOnChannel ( pMFP_Main , MFP_INT_RCV_BUF_FULL , 0 );
-				Dprintf(("RS232: Read character $%x\n", iInChar));
-				/* Sleep for a while */
-				SDL_Delay(2);
-			}
-			else
-			{
-				/*Dprintf(("RS232: Reached end of input file!\n"));*/
-				/* potential data race on hComIn modification */
-				clearerr(hComIn);
-				SDL_Delay(20);
-			}
+			nRxByte = ch;
+			bByteReceived = true;
+			MFP_InputOnChannel(pMFP_Main, MFP_INT_RCV_BUF_FULL, 0);
 		}
 		else
 		{
-			/* No RS-232 connection, sleep for 0.2s */
-			SDL_Delay(200);
+			nRxByte = 0xff;
 		}
 	}
-
-	return true;
 }
 
 
 /*-----------------------------------------------------------------------*/
 /**
- * Initialize RS-232, start thread to wait for incoming data
- * (we will open a connection when first bytes are sent even
- *  if RS-232 isn't initialized for reading).
+ * Initialize RS-232 (open and configure device handles if enabled).
  */
 void RS232_Init(void)
 {
@@ -334,26 +280,6 @@ void RS232_Init(void)
 			return;
 		}
 	}
-	if (hComIn)
-	{
-		/* Create semaphore */
-		if (pSemFreeBuf == NULL)
-			pSemFreeBuf = SDL_CreateSemaphore(MAX_RS232INPUT_BUFFER - 1);
-		if (pSemFreeBuf == NULL)
-		{
-			RS232_CloseCOMPort();
-			Log_Printf(LOG_WARN, "RS232_Init: Can't create semaphore!\n");
-			return;
-		}
-
-		/* Create thread to wait for incoming bytes over RS-232 */
-		if (!RS232Thread)
-		{
-			bQuitThread = false;
-			RS232Thread = SDL_CreateThread(RS232_ThreadFunc, "rs232", NULL);
-			Dprintf(("RS232 thread has been created.\n"));
-		}
-	}
 }
 
 
@@ -363,26 +289,7 @@ void RS232_Init(void)
  */
 void RS232_UnInit(void)
 {
-	/* Close, kill thread and free resource */
-	if (RS232Thread)
-	{
-		/* Instead of killing the thread directly, we should
-		 * probably better inform it via IPC so that it can
-		 * terminate gracefully... but then we would need to
-		 * wait until it exits, otherwise there's a data race
-		 * on accessing/modifying hComIn.
-		 */
-		Dprintf(("Stopping RS232 thread...\n"));
-		bQuitThread = true;
-		RS232Thread = NULL;
-	}
 	RS232_CloseCOMPort();
-
-	if (pSemFreeBuf)
-	{
-		SDL_DestroySemaphore(pSemFreeBuf);
-		pSemFreeBuf = NULL;
-	}
 }
 
 
@@ -605,50 +512,6 @@ static bool RS232_TransferBytesTo(Uint8 *pBytes, int nBytes)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Read characters from our internal input buffer (bytes from other machine)
- */
-static bool RS232_ReadBytes(Uint8 *pBytes, int nBytes)
-{
-	int i;
-
-	/* Connected? */
-	if (hComIn && InputBuffer_Head != InputBuffer_Tail)
-	{
-		/* Read bytes out of input buffer */
-		for (i=0; i<nBytes; i++)
-		{
-			*pBytes++ = InputBuffer_RS232[InputBuffer_Head];
-			InputBuffer_Head = (InputBuffer_Head+1) % MAX_RS232INPUT_BUFFER;
-			SDL_SemPost(pSemFreeBuf);    /* Signal free space */
-		}
-		return true;
-	}
-
-	return false;
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Return true if bytes waiting!
- */
-static bool RS232_GetStatus(void)
-{
-	/* Connected? */
-	if (hComIn)
-	{
-		/* Do we have bytes in the input buffer? */
-		if (InputBuffer_Head != InputBuffer_Tail)
-			return true;
-	}
-
-	/* No, none */
-	return false;
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
  * Read from the Synchronous Character Register.
  */
 void RS232_SCR_ReadByte(void)
@@ -703,7 +566,7 @@ void RS232_RSR_ReadByte(void)
 {
 	M68000_WaitState(4);
 
-	if (RS232_GetStatus())
+	if (bByteReceived)
 		IoMem[0xfffa2b] |= 0x80;        /* Buffer full */
 	else
 		IoMem[0xfffa2b] &= ~0x80;       /* Buffer not full */
@@ -757,19 +620,11 @@ void RS232_TSR_WriteByte(void)
  */
 void RS232_UDR_ReadByte(void)
 {
-	Uint8 InByte = 0;
-
 	M68000_WaitState(4);
 
-	RS232_ReadBytes(&InByte, 1);
-	IoMem[0xfffa2f] = InByte;
+	IoMem[0xfffa2f] = nRxByte;
+	bByteReceived = false;
 	Dprintf(("RS232: Read from UDR: $%x\n", (int)IoMem[0xfffa2f]));
-
-	if (RS232_GetStatus())              /* More data waiting? */
-	{
-		/* Yes, generate another interrupt. */
-		MFP_InputOnChannel ( pMFP_Main , MFP_INT_RCV_BUF_FULL , 0 );
-	}
 }
 
 /*-----------------------------------------------------------------------*/
