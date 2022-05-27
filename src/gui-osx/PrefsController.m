@@ -596,10 +596,12 @@ BOOL flag1, flag2;
 //
 - (void)saveMidiDropdowns
 {
-	strncpy(ConfigureParams.Midi.sMidiInPortName,  [[midiInPort  titleOfSelectedItem] UTF8String], FILENAME_MAX);
-	strncpy(ConfigureParams.Midi.sMidiOutPortName, [[midiOutPort titleOfSelectedItem] UTF8String], FILENAME_MAX);
-	ConfigureParams.Midi.sMidiInPortName[FILENAME_MAX-1]  = 0;
-	ConfigureParams.Midi.sMidiOutPortName[FILENAME_MAX-1] = 0;
+	const char *midiOutPortUtf8String = [[midiOutPort titleOfSelectedItem] UTF8String];
+	const char *midiInPortUtf8String = [[midiInPort  titleOfSelectedItem] UTF8String];
+	strlcpy(ConfigureParams.Midi.sMidiOutPortName, midiOutPortUtf8String ? midiOutPortUtf8String : "Off",
+	        sizeof(ConfigureParams.Midi.sMidiOutPortName));
+	strlcpy(ConfigureParams.Midi.sMidiInPortName, midiInPortUtf8String ? midiInPortUtf8String : "Off",
+	        sizeof(ConfigureParams.Midi.sMidiInPortName));
 }
 
 
