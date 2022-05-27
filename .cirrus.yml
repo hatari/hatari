@@ -6,7 +6,7 @@ fedora_task:
   install_script:
     - dnf update -y
     - dnf install -y cmake make gcc diffutils python-unversioned-command
-          GraphicsMagick SDL2-devel libpng-devel zlib-devel
+          GraphicsMagick SDL2-devel libpng-devel zlib-devel tidy
   script:
     - mkdir build
     - cd build
