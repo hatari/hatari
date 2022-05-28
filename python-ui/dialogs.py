@@ -308,7 +308,7 @@ class FloppyDialog(HatariUIDialog):
 
         driveb = Gtk.CheckButton("Drive B connected")
         driveb.set_active(config.get_floppy_drives()[1])
-        driveb.set_tooltip_text("Wheter drive B is connected. Can affect behavior of some demos & games")
+        driveb.set_tooltip_text("Whether drive B is connected. Can affect behavior of some demos & games")
         table_add_widget_row(table, row, 0, None, driveb)
         row += 1
 

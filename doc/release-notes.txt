@@ -103,7 +103,7 @@ Emulator improvements:
 - Debugger:
   - Fix: profile header so that profile data post-processor knows how
     to parse built-in WinAUE CPU core ("uae") disassembly output, not
-    just "ext" dissassembler output
+    just "ext" disassembler output
   - Repeat CPU & DSP "step" and "next" commands on Enter
   - Output PC location in CPU & DSP disassembly
   - More readable "variables" command output
