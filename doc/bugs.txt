@@ -28,29 +28,6 @@ to missing EmuTOS functionality and byte-exactness with old TOS
 versions, not to Hatari.
 
 
-Emulator bugs
--------------
-
-* RS232 support on Mac / BSD:
-
-  - Threaded RS232 code is completely broken for BSD derived systems
-    like Mac, because they don't implement fine-grained FILE operation
-    locking like Linux/Glibc does (and Windows?). As a result,
-    re-configuring, or closing RS232 files, will cause deadlock with
-    the reading thread
-
-  - With SDL1, close deadlock could be handled by killing the read
-    thread before closing file handles, but SDL2 removed that
-    functionality. As a result, enabling RS232 will freeze SDL2 Hatari
-    version on exit on BSD / Mac, even if RS232 was unused
-
-  - Solving this would require rewriting the code with OS specific
-    primitives (instead of using SDL), either for threading, or using
-    select().  I'd prefer latter, for clarify and to avoid polling in
-    the main thead, but it would mean that RS232 won't work on Windows
-    until somebody contributes code for that too
-
-
 Known issues / workarounds
 --------------------------
 

@@ -73,7 +73,8 @@ Emulator improvements:
     there's no exact full match
 - RS232:
   - The RS232 receiver code has been rewritten to use polling instead
-    of using a thread. This should avoid deadlocks when shutting down.
+    of using a thread. This should avoid deadlocks on BSD/macOS systems
+    when shutting down or reconfiguring the RS232 settings.
 - NVRAM:
   - Config settings + CLI options to override NVRAM keyboard layout
     and language values at start
