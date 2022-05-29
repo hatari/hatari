@@ -9,8 +9,8 @@ if [ $# -lt 1 ] || [ -n "$(echo "$1"|tr -d 0-9)" ] || [ "$1" -lt 2 ] || [ "$1" -
 	exit 1
 fi
 count=$1
+# rest of args go to Hatari
 shift
-args=$*
 
 # open fifos
 for i in $(seq "$count"); do
@@ -27,8 +27,8 @@ hatari=$(which hatari)
 catpids=""
 for i in $(seq $((count-1))); do
 	next=$((i+1))
-	echo "$hatari" --midi-in "midi$i" --midi-out "midi$next" $args &
-	"$hatari" --midi-in "midi$i" --midi-out "midi$next" $args &
+	echo "$hatari --midi-in midi$i --midi-out midi$next $* &"
+	"$hatari" --midi-in "midi$i" --midi-out "midi$next" "$@" &
 	# Without this Hataris would deadlock as fifos
 	# block the process until both ends are opened.
 	# Hatari opens midi output first (for writing),
@@ -37,8 +37,8 @@ for i in $(seq $((count-1))); do
 	catpids="$catpids $!"
 done
 # and join the beginning and end of the MIDI ring
-echo "$hatari" --midi-in "midi$count" --midi-out midi1 $args &
-"$hatari" --midi-in "midi$count" --midi-out midi1 $args &
+echo "$hatari --midi-in midi$count --midi-out midi1 $* &"
+"$hatari" --midi-in "midi$count" --midi-out midi1 "$@" &
 cat midi1 >/dev/null &
 catpids="$catpids $!"
 

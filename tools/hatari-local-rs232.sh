@@ -9,8 +9,7 @@
 
 # open fifos
 for i in 1 2; do
-	mkfifo rs232-$i
-	if [ $? -ne 0 ]; then
+	if ! mkfifo rs232-$i; then
 		echo "ERROR: creating FIFO 'rs232-$i' for RS232 communication failed!"
 		exit 1
 	fi
@@ -19,14 +18,11 @@ done
 # show full path
 hatari=$(which hatari)
 
-# pass all args to the Hatari instances
-args=$*
-
-# connect the Hatari instances with fifos
-echo "$hatari --rs232-in rs232-1 --rs232-out rs232-2 $args &"
-hatari --rs232-in rs232-1 --rs232-out rs232-2 $args &
-echo "$hatari --rs232-in rs232-2 --rs232-out rs232-1 $args &"
-hatari --rs232-in rs232-2 --rs232-out rs232-1 $args &
+# connect the Hatari instances with fifos and pass all args to them
+echo "$hatari --rs232-in rs232-1 --rs232-out rs232-2 $* &"
+"$hatari" --rs232-in rs232-1 --rs232-out rs232-2 "$@" &
+echo "$hatari --rs232-in rs232-2 --rs232-out rs232-1 $* &"
+"$hatari" --rs232-in rs232-2 --rs232-out rs232-1 "$@" &
 
 # Without this Hataris would deadlock as fifos
 # block the process until both ends are opened.
