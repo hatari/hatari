@@ -20,7 +20,7 @@ TOSDIR ?= tos
 BUILD_TOS = $(TOSDIR)/etos512k.img
 
 # Hatari machine config for AHCC build
-BUILD_CONFIG = --tos-res high --machine tt --tos $(BUILD_TOS)
+BUILD_CONFIG = --layout uk --tos-res high --machine tt --tos $(BUILD_TOS)
 
 # where the code & test programs are
 DIR = disk
