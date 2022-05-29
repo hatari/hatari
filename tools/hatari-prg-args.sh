@@ -49,23 +49,22 @@ usage ()
 if [ $# -lt 3 ]; then
 	usage "not enough arguments"
 fi
-echo " $* " | grep -q ' -- '
-if [ $? -ne 0 ]; then
+if ! echo " $* " | grep -q ' -- '; then
 	usage "Separator missing for Hatari -- Atari options"
 fi
 
 # quiet option comes first
 quit=0
-if [ $1 = "-q" ]; then
+if [ "$1" = "-q" ]; then
 	quit=1
 	shift
 fi
 
 # collect/remove hatari arguments
 hargs=""
-for arg in $*; do
+for arg in "$@"; do
 	shift
-	if [ $arg = '--' ]; then
+	if [ "$arg" = '--' ]; then
 		break
 	fi
 	hargs="$hargs $arg"
@@ -74,7 +73,7 @@ done
 # check atari program
 prg=$1
 shift
-if [ \! -f $prg ]; then
+if [ ! -f "$prg" ]; then
 	if [ "${prg#[A-Z]:}" != "$prg" ]; then
 		# program path inside disk image
 		hargs="--auto $prg $hargs"
@@ -95,30 +94,35 @@ dir=$(mktemp -d)
 
 # collect/convert atari program arguments
 args=$dir/args
-rm -f $args
-touch $args
+rm -f "$args"
+touch "$args"
 prefix=""
 drive="C:\\"
 path="${prg%/*}/"
-for arg in $*; do
+for arg in "$@"; do
 	if [ "${arg#$path}" != "$arg" ]; then
 		# file path needing conversion
-		if [ \! -f $arg ]; then
+		if [ ! -f "$arg" ]; then
 			usage "given file name '$arg' does not exist"
 		fi
 		# prefix with separator & drive letter & remove host path,
 		# upper-case, convert path separators
-		$echo -n "${prefix}${drive}${arg#$path}" | tr a-z A-Z | tr '/' '\\' >> $args
+		#
+		# it gets 3 things wrong no same line:
+		# shellcheck disable=SC2018
+		# shellcheck disable=SC2019
+		# shellcheck disable=SC1003
+		$echo -n "${prefix}${drive}${arg#$path}" | tr a-z A-Z | tr '/' '\\' >> "$args"
 	else
-		$echo -n "${prefix}$arg" >> $args
+		$echo -n "${prefix}$arg" >> "$args"
 	fi
 	prefix=" "
 done
 
 # calculate command line length and append zero just in case
-cmdlen=$(wc -c $args | awk '{print $1}')
-printf "\0" >> $args
-if [ $cmdlen -gt 126 ]; then
+cmdlen=$(wc -c "$args" | awk '{print $1}')
+printf "\0" >> "$args"
+if [ "$cmdlen" -gt 126 ]; then
 	usage "command line is too long, $cmdlen chars (basepage limit is 126)"
 fi
 
@@ -127,18 +131,18 @@ fi
 # until TOS has started, it's not possible to set breakpoint
 # to program startup, there's no valid basepage and therefore
 # no valid TEXT variable.  So set breakpoint on Pexec(0,...)
-cat > $dir/pexec.ini << EOF
+cat > "$dir/pexec.ini" << EOF
 b GemdosOpcode = 0x4B && OsCallParam = 0x0 :once :quiet :trace :file $dir/start.ini
 EOF
 
 # real work can be done when program starts,
 # i.e. PC is at TEXT section beginning
-cat > $dir/start.ini << EOF
+cat > "$dir/start.ini" << EOF
 b pc = text :once :trace :quiet :file $dir/basepage.ini
 EOF
 
 # add command line args args to program basepage
-cat > $dir/basepage.ini << EOF
+cat > "$dir/basepage.ini" << EOF
 setopt dec
 w "basepage+0x80" $cmdlen
 l $args "basepage+0x81"
@@ -148,21 +152,22 @@ EOF
 # quit Hatari after program exits
 if [ $quit -eq 1 ]; then
 	# catch Pterm0() & Pterm()
-	cat >> $dir/basepage.ini << EOF
+	cat >> "$dir/basepage.ini" << EOF
 b GemdosOpcode = 0x00 :quiet :trace :file $dir/quit.ini
 b GemdosOpcode = 0x4C :quiet :trace :file $dir/quit.ini
 EOF
-	echo "quit" > $dir/quit.ini
+	echo "quit" > "$dir/quit.ini"
 fi
 
 # --------- ready, run ----------
 
 # show args & debugger scripts
-head $dir/*
+head "$dir"/*
 
 # run Hatari
-echo $hatari --parse $dir/pexec.ini $hargs $prg
-$hatari --parse $dir/pexec.ini $hargs $prg
+echo "$hatari --parse $dir/pexec.ini $hargs $prg"
+# shellcheck disable=SC2086 # options must be split to work
+$hatari --parse "$dir/pexec.ini" $hargs "$prg"
 
 # cleanup
-rm -r $dir
+rm -r "$dir"
