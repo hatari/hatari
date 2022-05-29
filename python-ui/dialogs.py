@@ -885,50 +885,51 @@ class TraceDialog(HatariUIDialog):
 # Machine dialog for settings needing reboot
 
 class MachineDialog(HatariUIDialog):
-    def _machine_cb(self, widget, data):
-        if not widget.get_active():
-            return
-        machine = data.lower()
-        if machine == "ste" or machine == "st":
-            self.clocks[0].set_active(True)
+    def _machine_cb(self, widget, types):
+        machine = types[widget.get_active()].lower()
+        if "mega" in machine:
+            self.clocks.set_active(1)
             self.cpulevel.set_active(0)
-        elif machine == "falcon":
-            self.clocks[1].set_active(True)
-            self.dsps[2].set_active(True)
-            self.cpulevel.set_active(3)
+        elif "st" in machine:
+            self.clocks.set_active(0)
+            self.cpulevel.set_active(0)
         elif machine == "tt":
-            self.clocks[2].set_active(True)
+            self.clocks.set_active(2)
             self.cpulevel.set_active(3)
+        elif machine == "falcon":
+            self.clocks.set_active(1)
+            self.cpulevel.set_active(3)
+            self.dsps.set_active(2)
 
     def _create_dialog(self, config):
         table, self.dialog = create_table_dialog(self.parent, "Machine configuration", 6, 4, "Set and reboot")
 
         col = 0
         row = 0
-        self.machines = table_add_radio_rows(table, row, col, "Machine:",
-                        config.get_machine_types(), self._machine_cb)
+        types = config.get_machine_types()
+        self.machines = table_add_combo_row(table, row, col, "Machine:", types, self._machine_cb, types)
         row += 1
 
-        self.dsps = table_add_radio_rows(table, row, col, "DSP type:", config.get_dsp_types())
+        self.dsps = table_add_combo_row(table, row, col, "DSP type:", config.get_dsp_types())
         row += 1
-
-        # start next table column
-        col = 2
-        row = 0
-        self.monitors = table_add_radio_rows(table, row, col, "Monitor:", config.get_monitor_types())
-        row += 1
-
-        self.clocks = table_add_radio_rows(table, row, col, "CPU clock:", config.get_cpuclock_types())
-        row += 1
-
-        # fullspan at bottom
-        fullspan = True
 
         self.cpulevel = table_add_combo_row(table, row, col, "CPU type:", config.get_cpulevel_types())
         row += 1
 
+        self.clocks = table_add_combo_row(table, row, col, "CPU clock:", config.get_cpuclock_types())
+        row += 1
+
+        self.monitors = table_add_combo_row(table, row, col, "Monitor:", config.get_monitor_types())
+        row += 1
+
         self.memory = table_add_combo_row(table, row, col, "Memory:", config.get_memory_names())
         row += 1
+
+        # use next table column
+        col = 2
+
+        # fullspan at bottom
+        fullspan = True
 
         ttram = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, 1024, 4)
         ttram.set_digits(0)
@@ -962,11 +963,11 @@ class MachineDialog(HatariUIDialog):
         return fsel
 
     def _get_config(self, config):
-        self.machines[config.get_machine()].set_active(True)
-        self.monitors[config.get_monitor()].set_active(True)
-        self.clocks[config.get_cpuclock()].set_active(True)
-        self.dsps[config.get_dsp()].set_active(True)
+        self.machines.set_active(config.get_machine())
+        self.dsps.set_active(config.get_dsp())
         self.cpulevel.set_active(config.get_cpulevel())
+        self.clocks.set_active(config.get_cpuclock())
+        self.monitors.set_active(config.get_monitor())
         self.memory.set_active(config.get_memory())
         self.ttram.set_value(config.get_ttram())
         tos = config.get_tos()
@@ -984,11 +985,11 @@ class MachineDialog(HatariUIDialog):
 
     def _set_config(self, config):
         config.lock_updates()
-        config.set_machine(self._get_active_radio(self.machines))
-        config.set_monitor(self._get_active_radio(self.monitors))
-        config.set_cpuclock(self._get_active_radio(self.clocks))
-        config.set_dsp(self._get_active_radio(self.dsps))
+        config.set_machine(self.machines.get_active())
+        config.set_dsp(self.dsps.get_active())
         config.set_cpulevel(self.cpulevel.get_active())
+        config.set_cpuclock(self.clocks.get_active())
+        config.set_monitor(self.monitors.get_active())
         config.set_memory(self.memory.get_active())
         config.set_ttram(self.ttram.get_value())
         config.set_tos(self.tos.get_filename())
