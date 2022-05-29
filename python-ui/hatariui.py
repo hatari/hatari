@@ -122,6 +122,7 @@ class UICallbacks:
         hbox = Gtk.HBox()
         if toolbars["left"]:
             hbox.pack_start(toolbars["left"], False, True, 0)
+        self._set_max_win_size()
         if embed:
             self._add_uisocket(hbox)
         if toolbars["right"]:
@@ -150,17 +151,24 @@ class UICallbacks:
         mainwin.connect("delete_event", self.quit)
         self.mainwin = mainwin
 
+    def _set_max_win_size(self):
+        # set max Hatari window size = desktop size
+        display = Gdk.Display.get_default()
+        if not display.get_n_monitors():
+            print("ERROR: no monitors supported by Gdk")
+            sys.exit(error)
+        monitor  = display.get_monitor(0)
+        geometry = monitor.get_geometry()
+        scale    = monitor.get_scale_factor()
+        print("%dx%d monitor @ %.2f scale" % (geometry.width, geometry.height, scale))
+        self.config.set_desktop_size(scale * geometry.width, scale * geometry.height)
+
     def _add_uisocket(self, box):
         # add Hatari parent container to given box
         socket = Gtk.Socket(can_focus=True)
         # without this, closing Hatari would remove the socket widget
         socket.connect("plug-removed", lambda obj: True)
         socket.set_events(Gdk.EventMask.ALL_EVENTS_MASK)
-        # set max Hatari window size = desktop size
-        monitor  = Gdk.Display.get_default().get_primary_monitor()
-        geometry = monitor.get_geometry()
-        scale    = monitor.get_scale_factor()
-        self.config.set_desktop_size(scale * geometry.width, scale * geometry.height)
         # set initial embedded hatari size
         width, height = self.config.get_window_size()
         socket.set_size_request(width, height)
