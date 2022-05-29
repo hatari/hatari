@@ -24,7 +24,8 @@ from gi.repository import Pango
 
 from uihelpers import UInfo, HatariTextInsert, create_table_dialog, \
      table_add_entry_row, table_add_widget_row, table_add_separator, \
-     table_add_radio_rows, create_button, FselEntry, FselAndEjectFactory
+     table_add_combo_row, table_add_radio_rows, create_button, \
+     FselEntry, FselAndEjectFactory
 
 
 # -----------------
@@ -292,12 +293,9 @@ class FloppyDialog(HatariUIDialog):
             self.floppy.append(fsel)
             row += 1
 
-        protect = Gtk.ComboBoxText()
-        for text in config.get_protection_types():
-            protect.append_text(text)
-        protect.set_active(config.get_floppy_protection())
+        protect = table_add_combo_row(table, row, 0, "Write protection:", config.get_protection_types())
         protect.set_tooltip_text("Write protect floppy image contents")
-        table_add_widget_row(table, row, 0, "Write protection:", protect)
+        protect.set_active(config.get_floppy_protection())
         row += 1
 
         ds = Gtk.CheckButton("Double sided drives")
@@ -383,27 +381,18 @@ class HardDiskDialog(HatariUIDialog):
         self.hddir = fsel
         row += 1
 
-        hddrive = Gtk.ComboBoxText()
-        for text in config.get_hd_drives():
-            hddrive.append_text(text)
+        hddrive = table_add_combo_row(table, row, 0, "GEMDOS HD drive:", config.get_hd_drives())
         hddrive.set_tooltip_text("Whether GEMDOS HD emulation uses fixed drive letter, or first free drive letter after ASCI & IDE drives (detection unreliable)")
-        table_add_widget_row(table, row, 0, "GEMDOS HD drive:", hddrive)
         self.hddrive = hddrive
         row += 1
 
-        protect = Gtk.ComboBoxText()
-        for text in config.get_protection_types():
-            protect.append_text(text)
+        protect = table_add_combo_row(table, row, 0, "Write protection:", config.get_protection_types())
         protect.set_tooltip_text("Whether/how to write protect (GEMDOS HD) emulation files, 'auto' means using host files' own properties")
-        table_add_widget_row(table, row, 0, "Write protection:", protect)
         self.protect = protect
         row += 1
 
-        lower = Gtk.ComboBoxText()
-        for text in config.get_hd_cases():
-            lower.append_text(text)
+        lower = table_add_combo_row(table, row, 0, "File names:", config.get_hd_cases())
         lower.set_tooltip_text("What to do with names of files created by Atari programs through GEMDOS HD emulation")
-        table_add_widget_row(table, row, 0, "File names:", lower)
         self.lower = lower
 
         table.show_all()
@@ -567,12 +556,9 @@ class JoystickDialog(HatariUIDialog):
         self.joy = []
         joytypes = config.get_joystick_types()
         for label in config.get_joystick_names():
-            combo = Gtk.ComboBoxText()
-            for text in joytypes:
-                combo.append_text(text)
+            combo = table_add_combo_row(table, joy, 0, "%s:" % label, joytypes)
             combo.set_active(config.get_joystick(joy))
-            widget = table_add_widget_row(table, joy, 0, "%s:" % label, combo)
-            self.joy.append(widget)
+            self.joy.append(combo)
             joy += 1
 
         table.show_all()
@@ -938,16 +924,10 @@ class MachineDialog(HatariUIDialog):
         # fullspan at bottom
         fullspan = True
 
-        combo = Gtk.ComboBoxText()
-        for text in config.get_cpulevel_types():
-            combo.append_text(text)
-        self.cpulevel = table_add_widget_row(table, row, col, "CPU type:", combo, fullspan)
+        self.cpulevel = table_add_combo_row(table, row, col, "CPU type:", config.get_cpulevel_types())
         row += 1
 
-        combo = Gtk.ComboBoxText()
-        for text in config.get_memory_names():
-            combo.append_text(text)
-        self.memory = table_add_widget_row(table, row, col, "Memory:", combo, fullspan)
+        self.memory = table_add_combo_row(table, row, col, "Memory:", config.get_memory_names())
         row += 1
 
         ttram = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, 1024, 4)

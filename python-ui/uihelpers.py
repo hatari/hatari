@@ -262,7 +262,6 @@ def table_add_widget_row(table, row, col, label, widget, fullspan = False):
     "table_add_widget_row(table,row,col,label,widget) -> widget"
     # add given label right aligned to given row in given table
     # add given widget to the right column and returns it
-    # return entry for that line
     if label:
         if fullspan:
             lcol = 0
@@ -275,6 +274,17 @@ def table_add_widget_row(table, row, col, label, widget, fullspan = False):
     else:
         table.attach(widget, col+1, col+2, row, row+1)
     return widget
+
+def table_add_combo_row(table, row, col, label, texts, cb = None, data = None):
+    "table_add_combo_row(table,row,col,label,texts[,cb]) -> combo"
+    # - add given label right aligned to given row in given table
+    # - create/add combo box with given texts to right column and return it
+    combo = Gtk.ComboBoxText()
+    for text in texts:
+        combo.append_text(text)
+    if cb:
+        combo.connect("changed", cb, data)
+    return table_add_widget_row(table, row, col, label, combo, True)
 
 def table_add_radio_rows(table, row, col, label, texts, cb = None):
     "table_add_radio_rows(table,row,col,label,texts[,cb]) -> [radios]"
