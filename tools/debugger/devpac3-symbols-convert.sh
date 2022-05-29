@@ -25,7 +25,7 @@ if [ $# -ne 1 ]; then
 	usage "incorrect number of arguments"
 fi
 
-if [ \! -f $1 ]; then
+if [ ! -f "$1" ]; then
 	usage "given '$1' symbol file not found"
 fi
 
@@ -39,7 +39,7 @@ awk '
 	print $1, type, $3;
 	next
 }
-' $1 | sort
+' "$1" | sort
 
 # parse code listing
 # - has problem that in Devpac output the offsets in
