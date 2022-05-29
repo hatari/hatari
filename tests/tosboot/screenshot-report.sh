@@ -6,7 +6,7 @@
 #   but not in current dir and images for which
 #   there are no reference images.
 #
-# Copyright (C) 2012 by Eero Tamminen <oak at helsinkinet fi>
+# Copyright (C) 2012,2022 by Eero Tamminen <oak at helsinkinet fi>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-if [ -z "$(ls *.png *.bmp 2>/dev/null)" ]; then
+if [ -z "$(ls ./*.png ./*.bmp 2>/dev/null)" ]; then
 	echo "ERROR: no screenshots!"
 	echo
 	echo "Run this from a directory with PNG/BMP screenshots"
@@ -63,7 +63,7 @@ new=""
 # images in reference dir, but not in current one
 for refimg in $(ls $refdir/*.png $refdir/*.bmp 2>/dev/null); do
 	img=${refimg##*/}
-	if [ \! -f "$img" ]; then
+	if [ ! -f "$img" ]; then
 		missing="$missing $img"
 		continue
 	fi
@@ -75,23 +75,22 @@ if [ -z "$missing" ]; then
 else
 	echo "<ul>" >> $report
 	for img in $missing; do
-		get_name $img
+		get_name "$img"
 		echo "<li>$name" >> $report
 	done
 	echo "</ul>" >> $report
 	echo "Missing:"
-	echo $missing
+	echo "$missing"
 fi
 
 # images that don't match the references ones
-for img in $(ls *.png *.bmp 2>/dev/null); do
+for img in $(ls ./*.png ./*.bmp 2>/dev/null); do
 	refimg=$refdir/$img
-	if [ \! -f "$refimg" ]; then
+	if [ ! -f "$refimg" ]; then
 		new="$new $img"
 		continue
 	fi
-	cmp $img $refimg > /dev/null
-	if [ $? -eq 0 ]; then
+	if cmp "$img" "$refimg" > /dev/null; then
 		matching="$matching $img"
 		continue
 	fi
@@ -109,11 +108,10 @@ else
 	mkdir -p $difdir
 	for img in $mismatched; do
 		refimg=$refdir/$img
-		get_name $img
-		diff=$difdir/$name.png
+		get_name "$img"
 		# disable compare usage, it gets stuck with TT mono images
-		#compare $img $refimg $diff
-		#if [ $? -eq 0 ]; then
+		#diff=$difdir/$name.png
+		#if compare "$img" "$refimg" "$diff"; then
 		#	echo "<p><div align=center><img src=$img><img src=$diff><img src=$refimg><br>$name</div>" >> $report
 		#else
 			echo "<p><div align=center><img src=$img><img src=$refimg><br>$name</div>" >> $report
@@ -127,7 +125,7 @@ if [ -z "$matching" ]; then
 else
 	echo "<ul>" >> $report
 	for img in $matching; do
-		get_name $img
+		get_name "$img"
 		echo "<li>$name" >> $report
 	done
 	echo "</ul>" >> $report
@@ -140,11 +138,11 @@ else
 	msg="<p>These are candidates to be moved to the '$refdir' directory:"
 	echo "<p>$msg" >> $report
 	for img in $new; do
-		get_name $img
+		get_name "$img"
 		echo "<p><div><img src=$img alt=$img><br>$name</div>" >> $report
 	done
-	echo $msg
-	echo $new
+	echo "$msg"
+	echo "$new"
 fi
 
 echo "</body></html>" >> $report
