@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if [ $# -lt 1 -o "$1" = "-h" -o "$1" = "--help" ]; then
+if [ $# -lt 1 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 	echo "Usage: $0 <hatari> ..."
 	exit 1
 fi
@@ -12,7 +12,6 @@ if [ ! -x "$hatari" ]; then
 	exit 1
 fi;
 
-basedir=$(dirname $0)
 testdir=$(mktemp -d)
 cmdfifo="$testdir/cmdfifo"
 
@@ -37,7 +36,7 @@ export SDL_AUDIODRIVER=dummy
 unset TERM
 
 HOME="$testdir" $hatari --confirm-quit false --screenshot-dir "$testdir" \
-	--tos none --cmd-fifo "$cmdfifo" $* > "$testdir/out.txt" 2>&1 &
+	--tos none --cmd-fifo "$cmdfifo" "$@" > "$testdir/out.txt" 2>&1 &
 hatari_pid=$!
 
 # Wait until the fifo has been created by Hatari
@@ -95,6 +94,7 @@ if [ ! -e "$testdir/testmem.sav" ]; then
 	exit 1
 fi
 
+# shellcheck disable=SC2144 # there's only one match
 if [ ! -e "$testdir"/grab0001.* ]; then
 	echo "Screenshot FAILED. Hatari output:"
 	cat "$testdir/out.txt"

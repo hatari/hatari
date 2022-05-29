@@ -2,7 +2,7 @@
 #
 # Check whether loading and saving of config files works as expected
 
-if [ $# -ne 1 -o "$1" = "-h" -o "$1" = "--help" ]; then
+if [ $# -lt 1 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 	echo "Usage: $0 <hatari>"
 	exit 1;
 fi
@@ -15,7 +15,7 @@ if [ ! -x "$hatari" ]; then
 fi;
 
 testdir=$(mktemp -d)
-if [ $(uname -s) = "Darwin" ]; then
+if [ "$(uname -s)" = "Darwin" ]; then
 	mkdir -p "${testdir}/Library/Application Support"
 	cfgfile="${testdir}/Library/Application Support/Hatari/hatari.cfg"
 else
