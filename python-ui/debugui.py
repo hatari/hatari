@@ -2,7 +2,7 @@
 #
 # A Debug UI for the Hatari, part of Python Gtk Hatari UI
 #
-# Copyright (C) 2008-2020 by Eero Tamminen
+# Copyright (C) 2008-2022 by Eero Tamminen
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -308,6 +308,9 @@ class MemoryAddress:
         self.second = address + linewidth
         return output
 
+    def _get_line_addr(self, line, offset):
+        return int(line[offset:line.find(' ')], 16)
+
     def _get_disasm(self, address, move_idx):
         # TODO: uses brute force i.e. ask for more lines that user has
         # requested to be sure that the window is filled, assuming
@@ -341,10 +344,16 @@ class MemoryAddress:
                 output = output[-self.lines:]
             else:
                 output = output[:self.lines]
-        # with disasm need to re-get the addresses from the output
-        self.first  = int(output[0][1:output[0].find(":")], 16)
-        self.second = int(output[1][1:output[1].find(":")], 16)
-        self.last   = int(output[-1][1:output[-1].find(":")], 16)
+        # remove symbol lines from the output for address checking
+        addresses = [line for line in output if ' ' in line]
+        # address offset for UAE core and external disassembler output
+        offset = 0
+        if addresses[0][0] == '$':
+            offset = 1
+        # need to re-get the addresses from the disassembly output
+        self.first  = self._get_line_addr(addresses[0], offset)
+        self.second = self._get_line_addr(addresses[1], offset)
+        self.last   = self._get_line_addr(addresses[-1], offset)
         return output
 
     def _set_clamped(self, first, last):
