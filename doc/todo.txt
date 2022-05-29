@@ -2,8 +2,9 @@
 Hatari TO-DO list
 =================
 
-Items below are mostly missing features.  Failures and known issues
-are listed in the "bugs.txt".
+Items below are missing emulation and general emulator features.
+Failures and known issues, e.g. for specific OS versions, are
+listed in the "bugs.txt".
 
 Contents:
 - Emulation improvements

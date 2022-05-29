@@ -52,13 +52,32 @@ Known issues / workarounds
 
     WA: Avoid non-working MIDI data / softsynth combinations.
 
+* Mac GUI support only PortMidi devices, not raw MIDI devices:
+
+    Direct file access is required to use MIDI for debugging output or
+    networking (up to 16 machines) over MIDI.  Mac users have not yet
+    contributed a support for that to Mac GUI.
+
+    WA: configure that with SDL GUI for now
+
+* Neither RS-232 nor raw MIDI device file input is supported on Windows:
+
+    Input for both RS-232 and raw MIDI device files is checked with
+    File_InputAvailable() function which uses select() POSIX
+    functionality to do it.  Windows users have not yet contributed
+    corresponding Windows functionality to it.
+
+    WA: Use Linux version of Hatari under Windows:
+    https://docs.microsoft.com/en-us/windows/wsl/tutorials/gui-apps
+
 
 External bug reports
 --------------------
 
-* Problem: On real Falcon there is a minor feature in videl. You can simply
+* Problem: On real Falcon there is a minor feature in VIDEL. You can simply
   fade whole screen to black, if you just clear the Horizontal Border End
-  ($ffff8286) and start fading colors from 0 to 255 to $ffff9800 or vice versa.
+  ($ffff8286) and start fading colors from 0 to 255 to $ffff9800 or vice
+  versa:
 	test <put picture to screen>
 	move.w #255-1,d7
 	moveq #0,d6
