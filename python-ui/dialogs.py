@@ -298,22 +298,24 @@ class FloppyDialog(HatariUIDialog):
         protect.set_active(config.get_floppy_protection())
         row += 1
 
+        vbox = Gtk.VBox()
         ds = Gtk.CheckButton("Double sided drives")
-        ds.set_active(config.get_doublesided())
         ds.set_tooltip_text("Whether drives are double or single sided. Can affect behavior of some games")
-        table_add_widget_row(table, row, 0, None, ds)
-        row += 1
+        ds.set_active(config.get_doublesided())
+        vbox.add(ds)
 
         driveb = Gtk.CheckButton("Drive B connected")
-        driveb.set_active(config.get_floppy_drives()[1])
         driveb.set_tooltip_text("Whether drive B is connected. Can affect behavior of some demos & games")
-        table_add_widget_row(table, row, 0, None, driveb)
-        row += 1
+        driveb.set_active(config.get_floppy_drives()[1])
+        vbox.add(driveb)
 
         fastfdc = Gtk.CheckButton("Fast floppy access")
-        fastfdc.set_active(config.get_fastfdc())
         fastfdc.set_tooltip_text("Can cause incompatibilities with some games/demos")
-        table_add_widget_row(table, row, 0, None, fastfdc)
+        fastfdc.set_active(config.get_fastfdc())
+        vbox.add(fastfdc)
+
+        table_add_widget_row(table, row, 0, None, vbox)
+        row += 1
 
         table.show_all()
 
@@ -346,7 +348,7 @@ class FloppyDialog(HatariUIDialog):
 
 class HardDiskDialog(HatariUIDialog):
     def _create_dialog(self, config):
-        table, self.dialog = create_table_dialog(self.parent, "Hard disks", 4, 4, "Set and reboot")
+        table, self.dialog = create_table_dialog(self.parent, "Hard disks", 4, 2, "Set and reboot")
         factory = FselAndEjectFactory()
 
         row = 0
@@ -861,8 +863,8 @@ class TraceDialog(HatariUIDialog):
             self.tracewidgets[trace].set_active(False)
 
     def _load_traces(self, widget):
-        # this doesn't load traces, just sets them from internal variable
-        # that run method gets from caller and sets. It's up to caller
+        # this does not load traces, just sets them from internal variable
+        # that run method gets from caller and sets. It is up to caller
         # whether the saving or loading happens actually to disk
         self._set_traces(self.savedpoints)
 
@@ -899,18 +901,19 @@ class MachineDialog(HatariUIDialog):
         elif machine == "falcon":
             self.clocks.set_active(1)
             self.cpulevel.set_active(3)
-            self.dsps.set_active(2)
+            self.dsp.set_active(2)
 
     def _create_dialog(self, config):
-        table, self.dialog = create_table_dialog(self.parent, "Machine configuration", 6, 4, "Set and reboot")
+        table, self.dialog = create_table_dialog(self.parent, "Machine configuration", 6, 2, "Set and reboot")
 
         col = 0
         row = 0
         types = config.get_machine_types()
-        self.machines = table_add_combo_row(table, row, col, "Machine:", types, self._machine_cb, types)
+        self.machine = table_add_combo_row(table, row, col, "Machine:", types, self._machine_cb, types)
         row += 1
 
-        self.dsps = table_add_combo_row(table, row, col, "DSP type:", config.get_dsp_types())
+        self.dsp = table_add_combo_row(table, row, col, "DSP type:", config.get_dsp_types())
+        self.dsp.set_tooltip_text("Disable DSP to improve Hatari performance significantly for Falcon programs that work (also) without it.  Some programs using DSP unconditionally, may work with dummy mode (and just lack e.g. sound).")
         row += 1
 
         self.cpulevel = table_add_combo_row(table, row, col, "CPU type:", config.get_cpulevel_types())
@@ -934,7 +937,7 @@ class MachineDialog(HatariUIDialog):
         ttram = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, 1024, 4)
         ttram.set_digits(0)
         ttram.set_tooltip_text("TT-RAM needs Falcon/TT and requires 32-bit addressing.  0 = disabled, 24-bit addressing.")
-        self.ttram = table_add_widget_row(table, row, col, "TT-RAM", ttram, fullspan)
+        self.ttram = table_add_widget_row(table, row, col, "TT-RAM:", ttram, fullspan)
         row += 1
 
         label = "TOS image:"
@@ -944,12 +947,12 @@ class MachineDialog(HatariUIDialog):
 
         vbox = Gtk.VBox()
         self.compatible = Gtk.CheckButton("Compatible CPU")
-        self.timerd = Gtk.CheckButton("Patch Timer-D")
         self.compatible.set_tooltip_text("Needed for overscan and other timing sensitive things to work correctly")
-        self.timerd.set_tooltip_text("Improves ST/STE emulation performance, but some rare demos/games don't work with this")
         vbox.add(self.compatible)
+        self.timerd = Gtk.CheckButton("Patch Timer-D")
+        self.timerd.set_tooltip_text("Improves ST/STE emulation performance, but some rare demos/games do not work with this")
         vbox.add(self.timerd)
-        table_add_widget_row(table, row, col, "Misc.:", vbox, fullspan)
+        table_add_widget_row(table, row, col, "Misc:", vbox, fullspan)
         row += 1
 
         table.show_all()
@@ -963,8 +966,8 @@ class MachineDialog(HatariUIDialog):
         return fsel
 
     def _get_config(self, config):
-        self.machines.set_active(config.get_machine())
-        self.dsps.set_active(config.get_dsp())
+        self.machine.set_active(config.get_machine())
+        self.dsp.set_active(config.get_dsp())
         self.cpulevel.set_active(config.get_cpulevel())
         self.clocks.set_active(config.get_cpuclock())
         self.monitors.set_active(config.get_monitor())
@@ -985,8 +988,8 @@ class MachineDialog(HatariUIDialog):
 
     def _set_config(self, config):
         config.lock_updates()
-        config.set_machine(self.machines.get_active())
-        config.set_dsp(self.dsps.get_active())
+        config.set_machine(self.machine.get_active())
+        config.set_dsp(self.dsp.get_active())
         config.set_cpulevel(self.cpulevel.get_active())
         config.set_cpuclock(self.clocks.get_active())
         config.set_monitor(self.monitors.get_active())

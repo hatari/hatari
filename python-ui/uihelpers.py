@@ -261,7 +261,7 @@ def table_add_entry_row(table, row, col, label, size = None):
 def table_add_widget_row(table, row, col, label, widget, fullspan = False):
     "table_add_widget_row(table,row,col,label,widget) -> widget"
     # add given label right aligned to given row in given table
-    # add given widget to the right column and returns it
+    # add given widget to the right column and return it
     if label:
         if fullspan:
             lcol = 0
