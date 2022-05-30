@@ -675,70 +675,75 @@ class PathDialog(HatariUIDialog):
 class SoundDialog(HatariUIDialog):
 
     def _create_dialog(self, config):
-        enabled, curhz = config.get_sound()
+        table, self.dialog = create_table_dialog(self.parent, "Sound settings", 6, 2, "Apply")
+        row = 0
 
-        self.enabled = Gtk.CheckButton("Sound enabled")
-        self.enabled.set_active(enabled)
+        col = 1
+        fullspan = True
+        self.enabled = table_add_widget_row(table, row, col, None, Gtk.CheckButton("Sound enabled"), fullspan)
+        row += 1
 
-        hz = Gtk.ComboBoxText()
-        for text in config.get_sound_values():
-            hz.append_text(text)
-        hz.set_active(curhz)
-        self.hz = hz
+        col = 0
+        self.hz = table_add_combo_row(table, row, col, "Sound frequency:", config.get_sound_values())
+        row += 1
 
-        ymmixer = Gtk.ComboBoxText()
-        for text in config.get_ymmixer_types():
-            ymmixer.append_text(text)
-        ymmixer.set_active(config.get_ymmixer())
-        self.ymmixer = ymmixer
+        self.ymmixer = table_add_combo_row(table, row, col, "YM mixing method:", config.get_ymmixer_types())
+        self.ymmixer.set_tooltip_text("Which method is used to mix YM voices")
+        row += 1
 
         bufsize = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, 100, 10)
         for pos in ((0, "auto"), (10, "min"), (100, "max")):
             bufsize.add_mark(pos[0], Gtk.PositionType.BOTTOM, pos[1])
-        bufsize.set_value(config.get_bufsize())
+        bufsize.set_tooltip_text("SDL sound buffer size in ms. 0 = use default value. In some situations, SDL default may cause large (~0.5s) sound delay at lower frequency.  If you have this problem, try with e.g. 20 ms, otherwise keep at 0.")
         bufsize.set_digits(0)
-        bufsize.set_tooltip_text("0 = use default value. In some situations, SDL default may cause large (~0.5s) sound delay at lower frequency.  If you have this problem, try with e.g. 20 ms, otherwise keep at 0.")
-        self.bufsize = bufsize
+        self.bufsize = table_add_widget_row(table, row, col, "Sound buffer size:", bufsize)
+        row += 1
 
+        vbox = Gtk.VBox()
         self.sync = Gtk.CheckButton("Emulation speed synched to sound output")
         self.sync.set_tooltip_text("Constantly adjust emulation screen update rate to match sound output. Can help if you suffer from sound buffer under/overflow.")
-        self.sync.set_active(config.get_sync())
+        vbox.add(self.sync)
 
         self.mic = Gtk.CheckButton("Enable (Falcon) microphone")
-        self.mic.set_active(config.get_mic())
+        vbox.add(self.mic)
 
-        dialog = Gtk.Dialog("Sound settings", self.parent,
-            Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
-            (Gtk.STOCK_APPLY,  Gtk.ResponseType.APPLY,
-             Gtk.STOCK_CANCEL,  Gtk.ResponseType.CANCEL))
-        dialog.vbox.add(self.enabled)
-        dialog.vbox.add(Gtk.Label(label="Sound frequency:"))
-        dialog.vbox.add(hz)
-        dialog.vbox.add(Gtk.Label(label="YM voices mixing method:"))
-        dialog.vbox.add(ymmixer)
-        dialog.vbox.add(Gtk.Label(label="SDL sound buffer size (ms):"))
-        dialog.vbox.add(bufsize)
-        dialog.vbox.add(self.sync)
-        dialog.vbox.add(self.mic)
-        dialog.vbox.show_all()
-        self.dialog = dialog
+        col = 1
+        table_add_widget_row(table, row, col, None, vbox, fullspan)
+        row += 1
+
+        table.show_all()
+
+    def _get_config(self, config):
+        enabled, curhz = config.get_sound()
+        self.enabled.set_active(enabled)
+        self.hz.set_active(curhz)
+
+        self.sync.set_active(config.get_sync())
+        self.mic.set_active(config.get_mic())
+        self.ymmixer.set_active(config.get_ymmixer())
+        self.bufsize.set_value(config.get_bufsize())
+
+    def _set_config(self, config):
+        config.lock_updates()
+        enabled = self.enabled.get_active()
+        hz = self.hz.get_active()
+        config.set_sound(enabled, hz)
+        config.set_mic(self.mic.get_active())
+        config.set_sync(self.sync.get_active())
+        config.set_ymmixer(self.ymmixer.get_active())
+        config.set_bufsize(self.bufsize.get_value())
+        config.flush_updates()
 
     def run(self, config):
         "run(config), show sound dialog"
         if not self.dialog:
             self._create_dialog(config)
+
+        self._get_config(config)
         response = self.dialog.run()
         self.dialog.hide()
         if response == Gtk.ResponseType.APPLY:
-            config.lock_updates()
-            config.set_mic(self.mic.get_active())
-            config.set_sync(self.sync.get_active())
-            config.set_bufsize(self.bufsize.get_value())
-            config.set_ymmixer(self.ymmixer.get_active())
-            enabled = self.enabled.get_active()
-            hz = self.hz.get_active()
-            config.set_sound(enabled, hz)
-            config.flush_updates()
+            self._set_config(config)
 
 
 # ---------------------------
