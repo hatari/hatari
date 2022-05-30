@@ -3,9 +3,9 @@ User visible changes in Hatari (Python Gtk) UI
 ----------------------------------------------
 
 2022-05:
-- Fix: disassembly parsing exception due to Hatari changes
 - Fix: dialog exceptions under Wayland
-- Improve machine dialog
+- Fix: debug UI disassembly parsing exception due to Hatari changes
+- Improved layouts for Display, Machine and Sound dialogs
 - Add hatari-ui.html doc
 - Add "scc" tracing
 
