@@ -447,104 +447,101 @@ class HardDiskDialog(HatariUIDialog):
 class DisplayDialog(HatariUIDialog):
 
     def _create_dialog(self, config):
+        table, self.dialog = create_table_dialog(self.parent, "Display settings", 9, 2)
 
-        skip = Gtk.ComboBoxText()
-        for text in config.get_frameskip_names():
-            skip.append_text(text)
-        skip.set_active(config.get_frameskip())
-        skip.set_tooltip_text("Set how many frames are skipped to speed up emulation")
+        row = 0
+        col = 0
+        self.skip = table_add_combo_row(table, row, col, "Frameskip:", config.get_frameskip_names())
+        self.skip.set_tooltip_text("Set how many frames are skipped to speed up emulation")
+        row += 1
 
-        slow = Gtk.ComboBoxText()
-        for text in config.get_slowdown_names():
-            slow.append_text(text)
-        slow.set_active(0)
-        slow.set_tooltip_text("VBL wait multiplier to slow down emulation. Breaks sound and large enough slowdown causes mouse clicks not to work.")
+        self.slow = table_add_combo_row(table, row, col, "Slowdown:", config.get_slowdown_names())
+        self.slow.set_tooltip_text("VBL wait multiplier to slow down emulation. Breaks sound and large enough slowdown causes mouse clicks not to work.")
+        row += 1
 
         topw, toph = config.get_desktop_size()
         maxw = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 320, topw, 8)
         maxh = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 200, toph, 8)
         maxw.set_tooltip_text("Preferred/maximum zoomed width")
         maxh.set_tooltip_text("Preferred/maximum zoomed height")
-        confw, confh = config.get_max_size()
-        maxw.set_value(confw)
-        maxh.set_value(confh)
         maxw.set_digits(0)
         maxh.set_digits(0)
 
-        force_max = Gtk.CheckButton("Force max resolution (Falcon)")
-        force_max.set_active(config.get_force_max())
-        force_max.set_tooltip_text("Whether to force maximum resolution to help recording videos of demos which do resolution changes")
+        self.maxw = table_add_widget_row(table, row, col, "Max zoom width:", maxw)
+        row += 1
+        self.maxh = table_add_widget_row(table, row, col, "Max zoom height:", maxh)
+        row += 1
 
-        desktop = Gtk.CheckButton("Keep desktop resolution, scales")
-        desktop.set_active(config.get_desktop())
-        desktop.set_tooltip_text("Whether to keep screen resolution in fullscreen. Avoids potential monitor res switch delay & resulting sound skips")
+        vbox = Gtk.VBox()
+        force_max = Gtk.CheckButton("Force max resolution (Falcon)")
+        force_max.set_tooltip_text("Force maximum resolution to help recording videos of demos which do resolution changes")
+        self.force_max = force_max
+        vbox.add(force_max)
+
+        desktop = Gtk.CheckButton("Keep desktop resolution (scales)")
+        desktop.set_tooltip_text("Keep screen resolution in fullscreen. Avoids potential monitor res switch delay & resulting sound skips")
+        self.desktop = desktop
+        vbox.add(desktop)
 
         borders = Gtk.CheckButton("Atari screen borders")
-        borders.set_active(config.get_borders())
-        borders.set_tooltip_text("Whether to show overscan borders in ST/STE low/mid-rez or in Falcon color resolutions. Visible border area is affected by max. zoom size")
-
-        statusbar = Gtk.CheckButton("Show statusbar")
-        statusbar.set_active(config.get_statusbar())
-        statusbar.set_tooltip_text("Whether to show statusbar with floppy leds etc")
+        borders.set_tooltip_text("Show overscan borders in ST/STE low/mid-rez and in Falcon color resolutions. Visible border area is affected by max zoom size")
+        self.borders = borders
+        vbox.add(borders)
 
         led = Gtk.CheckButton("Show overlay led")
-        led.set_active(config.get_led())
-        led.set_tooltip_text("Whether to show overlay drive led when statusbar isn't visible")
+        led.set_tooltip_text("Show overlay drive led when statusbar is not visible")
+        self.led = led
+        vbox.add(led)
+
+        statusbar = Gtk.CheckButton("Show statusbar")
+        statusbar.set_tooltip_text("Show statusbar with TOS and machine info, disk leds etc")
+        self.statusbar = statusbar
+        vbox.add(statusbar)
 
         crop = Gtk.CheckButton("Remove statusbar from screen capture")
-        crop.set_active(config.get_crop())
-        crop.set_tooltip_text("Whether to crop statusbar from screenshots and video recordings")
-
-        dialog = Gtk.Dialog("Display settings", self.parent,
-            Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
-            (Gtk.STOCK_APPLY,  Gtk.ResponseType.APPLY,
-             Gtk.STOCK_CANCEL,  Gtk.ResponseType.CANCEL))
-
-        dialog.vbox.add(Gtk.Label(label="Max zoomed size:"))
-        dialog.vbox.add(maxw)
-        dialog.vbox.add(maxh)
-        dialog.vbox.add(force_max)
-        dialog.vbox.add(desktop)
-        dialog.vbox.add(borders)
-        dialog.vbox.add(Gtk.Label(label="Frameskip:"))
-        dialog.vbox.add(skip)
-        dialog.vbox.add(Gtk.Label(label="Slowdown:"))
-        dialog.vbox.add(slow)
-        dialog.vbox.add(statusbar)
-        dialog.vbox.add(led)
-        dialog.vbox.add(crop)
-        dialog.vbox.show_all()
-
-        self.dialog = dialog
-        self.maxw = maxw
-        self.maxh = maxh
-        self.force_max = force_max
-        self.desktop = desktop
-        self.borders = borders
-        self.skip = skip
-        self.slow = slow
-        self.statusbar = statusbar
-        self.led = led
+        crop.set_tooltip_text("Crop statusbar from screenshots and video recordings")
         self.crop = crop
+        vbox.add(crop)
+
+        table_add_widget_row(table, row, col, None, vbox)
+        table.show_all()
+
+
+    def _get_config(self, config):
+        self.slow.set_active(0)
+        self.skip.set_active(config.get_frameskip())
+        confw, confh = config.get_max_size()
+        self.maxw.set_value(confw)
+        self.maxh.set_value(confh)
+        self.force_max.set_active(config.get_force_max())
+        self.desktop.set_active(config.get_desktop())
+        self.borders.set_active(config.get_borders())
+        self.led.set_active(config.get_led())
+        self.statusbar.set_active(config.get_statusbar())
+        self.crop.set_active(config.get_crop())
+
+    def _set_config(self, config):
+        config.lock_updates()
+        config.set_slowdown(self.slow.get_active())
+        config.set_frameskip(self.skip.get_active())
+        config.set_max_size(self.maxw.get_value(), self.maxh.get_value())
+        config.set_force_max(self.force_max.get_active())
+        config.set_desktop(self.desktop.get_active())
+        config.set_borders(self.borders.get_active())
+        config.set_led(self.led.get_active())
+        config.set_statusbar(self.statusbar.get_active())
+        config.set_crop(self.crop.get_active())
+        config.flush_updates()
 
     def run(self, config):
         "run(config), show display dialog"
         if not self.dialog:
             self._create_dialog(config)
+        self._get_config(config)
         response = self.dialog.run()
         self.dialog.hide()
         if response == Gtk.ResponseType.APPLY:
-            config.lock_updates()
-            config.set_frameskip(self.skip.get_active())
-            config.set_slowdown(self.slow.get_active())
-            config.set_max_size(self.maxw.get_value(), self.maxh.get_value())
-            config.set_force_max(self.force_max.get_active())
-            config.set_desktop(self.desktop.get_active())
-            config.set_borders(self.borders.get_active())
-            config.set_statusbar(self.statusbar.get_active())
-            config.set_led(self.led.get_active())
-            config.set_crop(self.crop.get_active())
-            config.flush_updates()
+            self._set_config(config)
 
 
 # ----------------------------------
