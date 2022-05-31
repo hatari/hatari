@@ -2758,7 +2758,7 @@ static int iack_cycle(int nr)
 #else
 	int iack_start = CPU_IACK_CYCLES_START;
 	int e_cycles;
-	int cycle_exact = currprefs.cpu_cycle_exact && !currprefs.mmu_model;
+	int cycle_exact = currprefs.cpu_cycle_exact && !currprefs.mmu_model;	// TODO/CHECK HATARI : use CpuRunCycleExact instead ?
 
 	/* In cycle exact mode, the cycles before reaching IACK are already counted */
 	if (cycle_exact)
@@ -4967,7 +4967,7 @@ static int do_specialties (int cycles)
 #ifdef WINUAE_FOR_HATARI
 		if (!first)
 		{
-			if (currprefs.cpu_cycle_exact && !currprefs.mmu_model)
+			if (CpuRunCycleExact)
 			{
 				/* Flush all CE cycles so far to update PendingInterruptCount */
 				M68000_AddCycles_CE ( currcycle * 2 / CYCLE_UNIT );
