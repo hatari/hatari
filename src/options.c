@@ -1389,7 +1389,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				return Opt_ShowError(OPT_JOYSTICK0, argv[i], "Invalid joystick port");
 			}
 			i += 1;
-			if (strcasecmp(argv[i], "none") == 0)
+			if (strcasecmp(argv[i], "none") == 0 || strcasecmp(argv[i], "off") == 0)
 			{
 				ConfigureParams.Joysticks.Joy[port].nJoystickMode = JOYSTICK_DISABLED;
 			}
@@ -1799,7 +1799,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 		case OPT_FPU_TYPE:
 			i += 1;
-			if (strcasecmp(argv[i], "none") == 0)
+			if (strcasecmp(argv[i], "none") || strcasecmp(argv[i], "off") == 0)
 			{
 				ConfigureParams.System.n_FPUType = FPU_NONE;
 			}
@@ -1915,7 +1915,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 		case OPT_DSP:
 			i += 1;
-			if (strcasecmp(argv[i], "none") == 0)
+			if (strcasecmp(argv[i], "none") == 0 || strcasecmp(argv[i], "off") == 0)
 			{
 				ConfigureParams.System.nDSPType = DSP_TYPE_NONE;
 			}
@@ -1944,7 +1944,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			{
 				ConfigureParams.System.nVMEType = VME_TYPE_DUMMY;
 			}
-			else if (strcasecmp(argv[i], "none") == 0)
+			else if (strcasecmp(argv[i], "none") == 0 || strcasecmp(argv[i], "off") == 0)
 			{
 				ConfigureParams.System.nVMEType = VME_TYPE_NONE;
 			}
