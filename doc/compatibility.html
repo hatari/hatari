@@ -2327,11 +2327,11 @@ VGA one are indicated separately.</p>
     </tr>
     <tr>
       <td><a href="http://www.atarimania.com/game-atari-st-addsub-falcon030_23139.html">Addsub</a></td>
-      <td class="minor">2.3</td>
+      <td class="minor">2.4</td>
       <td>-</td>
       <td>-</td>
       <td>Cannot be played. Exits when joystick up direction is used,
-          often also on second startup</td>
+          fire takes piece under cursor, but other input has no effect</td>
     </tr>
     <tr>
       <td><a href="https://demozoo.org/productions/59217/">Ausbruch</a></td>
@@ -2341,30 +2341,32 @@ VGA one are indicated separately.</p>
       <td>Use STE joypad. Background music if DSP emu enabled</td>
     </tr>
     <tr>
-      <td><a href="http://www.leonik.net/dml/sec_bm.py">Bad Mood (v0.37 from 2017)</a></td>
-      <td class="minor">2.3.1</td>
+      <td><a href="http://www.leonik.net/dml/sec_bm.py">Bad Mood</a></td>
+      <td class="minor">2.4</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Enhanced Doom I/II port and engine rewrite.
-      Game requires DSP and 14 MB RAM. WAD cache creation crashes/freezes,
-      so one needs to get pre-built WAD cache. Statusbar doesn't show due
-      to Videl emulation omissions (in earlier versions "--natfeats yes"
-      could be used to tell game to use heavier Hatari specific statusbar
-      drawing mode). Game uses MMU if it's available, but doesn't work yet
-      with Hatari 030 MMU emulation, nor with 32-bit addressing / TT-RAM.
-      Some parts have clear speed differences to real Falcon due to CPU,
-      FPU (instruction too fast) and Videl emulation (screen updated only
-      at VBL) inaccuracies</td>
+      <td>Enhanced Doom I/II game port and engine rewrite (v0.35-v0.37 from 2017):<ul>
+      <li>Requires DSP and 14 MB RAM</li>
+      <li>WAD cache creation crashes/freezes, so one needs to get pre-built WAD cache</li>
+      <li>Uses MMU if it is available, but crashes with Hatari 030 MMU emulation</li>
+      <li>32-bit addressing / TT-RAM works only with Hatari specific "bmhat.ttp" version</li>
+      <li>Game statusbar does not show due to Videl emulation omissions
+          (in earlier versions "--natfeats yes" could be used enable use of
+	  heavier Hatari specific statusbar drawing mode, but not any more)</li>
+      <li>Some parts have clear speed differences to real Falcon due to CPU, FPU
+          (instruction too fast) and Videl emulation (screen updated only at VBL)
+	  inaccuracies</li>
+      </ul>
     </tr>
     <tr>
-      <td><a href="http://www.klockars.net/bad_mood.html">Bad Mood<br />(90's demo)</a></td>
-      <td>2.3.1</td>
+      <td><a href="http://www.klockars.net/bad_mood.html">Bad Mood (demo)</a></td>
+      <td>2.4</td>
       <td>-</td>
       <td>emu</td>
-      <td>Old Doom level viewer. All tested versions (v2.14a, v307a) work
-          with Doom1 WAD.  Heretic shareware WAD looks fine with older
+      <td>Old Doom level viewer (from 90's). All tested versions (v2.14a, v307a)
+          work with Doom1 WAD.  Heretic shareware WAD looks fine with older
 	  2.14a version (as long as one isn't inside a wall), and
-	  completely broken with v3.07a. v3.07a (bm307.ttp) doesn't
+	  completely broken with v3.07a. v3.07a (bm307.ttp) does not
 	  work with MMU</td>
     </tr>
     <tr>
@@ -2457,7 +2459,7 @@ VGA one are indicated separately.</p>
     </tr>
     <tr>
       <td><a href="http://demozoo.org/productions/55648/">Color runner</a></td>
-      <td class="major">2.3.1</td>
+      <td class="major">2.4</td>
       <td>yes</td>
       <td>-</td>
       <td>14MB + VGA, joypad only. Music with DSP.  Game proceeds to main
@@ -2664,7 +2666,7 @@ VGA one are indicated separately.</p>
     </tr>
     <tr>
       <td><a href="http://christophe.bray.free.fr/informatique/falcon/falcon_jeux2.htm">Killing Impact</a></td>
-      <td class="major">2.3.1</td>
+      <td class="major">2.4</td>
       <td>yes</td>
       <td>-</td>
       <td>Modern version of Joust, up to 4 players.  Sound with DSP.
@@ -2747,7 +2749,7 @@ VGA one are indicated separately.</p>
     </tr>
     <tr>
       <td>Mini F1 (demo)</td>
-      <td class="major">2.3</td>
+      <td class="major">2.4</td>
       <td>-</td>
       <td>-</td>
       <td>Freezes when the game would start (until VideoAddressCounter == $2A?).
@@ -2756,23 +2758,24 @@ VGA one are indicated separately.</p>
     </tr>
     <tr>
       <td>Moongame</td>
-      <td class="major">2.3.1</td>
+      <td class="major">2.4</td>
       <td>-</td>
       <td>emu</td>
       <td>Pointer cannot be moved in the game menu. Double bus error with MMU</td>
     </tr>
     <tr>
       <td>Moonspeeder (preview 2)</td>
-      <td class="minor">2.3.1</td>
+      <td class="minor">2.4</td>
       <td>Yes</td>
       <td>emu</td>
       <td>lst*.* files need to be renamed with GEMDOS HD emulation as
-          game searches them with different name (space before dot)
+          game searches them with different name (space before dot).
+	  Game freezes if left to menu for longer time.
       </td>
     </tr>
     <tr>
       <td>Mouse trap</td>
-      <td class="major">2.3.1</td>
+      <td class="major">2.4</td>
       <td>yes</td>
       <td>-</td>
       <td>Initial game screen looks OK, then suddenly screen mode gets wrong</td>
@@ -2843,11 +2846,11 @@ VGA one are indicated separately.</p>
     </tr>
     <tr>
       <td>Pingo98</td>
-      <td class="minor">2.3</td>
+      <td class="minor">2.4</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Colors wrong in classic version, TC version just exits.
-          Had worked in some earlier Hatari version with DSP disabled</td>
+      <td>Colors wrong in classic version. TC version just exits, but
+          had worked in some very early Hatari version with DSP disabled</td>
     </tr>
     <tr>
       <td>Poker</td>
@@ -2981,19 +2984,18 @@ VGA one are indicated separately.</p>
     </tr>
     <tr>
       <td><a href="http://pouet.net/prod.php?which=29341">Slippery Sam</a></td>
-      <td class="minor">2.3.1</td>
+      <td>2.4</td>
       <td>yes</td>
-      <td>dummy</td>
-      <td>Background music with DSP. Game freezes at start unless
-	  "dummy" DSP mode is used (full DSP emulation worked with
-	  the removed oldUAE CPU core)</td>
+      <td>-</td>
+      <td>Background music with DSP</td>
     </tr>
     <tr>
       <td>Sokoban by FUN</td>
-      <td>2.3.1</td>
+      <td>2.4</td>
       <td>yes</td>
-      <td>dummy emu</td>
-      <td>VGA 640x480x16 only. Background music with DSP</td>
+      <td>-</td>
+      <td>VGA 640x480x16 only. Background music with DSP,
+          occasional screen glitches without it</td>
     </tr>
     <tr>
       <td>Space Taxi</td>
@@ -3104,7 +3106,7 @@ VGA one are indicated separately.</p>
     </tr>
     <tr>
       <td>TsccTron (preview)</td>
-      <td class="minor">2.3</td>
+      <td class="minor">2.4</td>
       <td>yes</td>
       <td>-</td>
       <td>Screen bottom is just black (palette tricks?).
@@ -3112,7 +3114,7 @@ VGA one are indicated separately.</p>
     </tr>
     <tr>
       <td>Ufo War</td>
-      <td class="major">2.3.1</td>
+      <td class="major">2.4</td>
       <td>yes</td>
       <td>-</td>
       <td>256-color, 80-column, no interlace video mode only.
@@ -3125,7 +3127,7 @@ VGA one are indicated separately.</p>
       <td>Ultimate Arena (demo)</td>
       <td>1.5</td>
       <td>yes</td>
-      <td>yes</td>
+      <td>-</td>
       <td>Falcon version of the game</td>
     </tr>
     <tr>
