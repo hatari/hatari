@@ -1449,9 +1449,8 @@ Working games (DSP comments are for EmuTOS v1.0 or older):
 - Tautology (by Reservoir Gods)
 - Tautology II* (by Reservoir Gods)
 - Toy Man
-- Ultimate Arena Falcon edition:
+- Ultimate Arena Falcon edition (demo):
   - Does not recognize it's on Falcon -> select "Test"
-  - Crashes sometimes
 - Vertical Mayhem(+)* (Columns clone)
 - Vroom 030 (too fast)
 - Willie's Adventure (preview1)
@@ -1486,6 +1485,12 @@ Games working under EmuTOS >= v1.1 (with DSP support):
 - Trionoids* (Columns clone)
 - Wotanoid (Asteroids clone)
 
+Games working with EmuTOS >1.1.1:
+- Men at War
+- Slippery Sam
+- Tetrhex (1.41)
+- TsccTron
+
 Games working with extra hacks:
 - Bugger, Bunion, SkyFall, Sworm games by Resorvoir Gods:
   - use an undocumented TOS4 vector for keyboard input instead of accessing
@@ -1517,11 +1522,9 @@ Broken games (with EmuTOS v1.1.x):
 - It's Great (start from st-med rez)
   - Mouse doesn't work
 - "K" preview* (by EXA)
-  - Freezes when game would start
+  - Bus error panic when game would start
 - Killing Impact
-  - Address error panic when actual game would start
-- Men at War
-  - Freezes when doing Supexec() after loading "field1.m2f" file
+  - Might work but Hatari does not emulate Videl correctly
 - Moongame
   - Broken graphics (needs HiColor?)
 - Moonspeeder (preview 2)
@@ -1536,17 +1539,15 @@ Broken games (with EmuTOS v1.1.x):
 - Reeking Rubber
   - Broken graphics & termination on actual game start (HiColor?)
 - SBM v0.8 & v1.03* (Bomberman clone)
-  - Panic and wrong graphics
+  - Bus error panic and wrong graphics
+- Sokoban By FUN
+  - Graphics partially wrong, actual game cannot be started
 - ScummVm (OL version)
   - Broken graphics (needs HiColor?)
-- Slippery Sam
-  - Freezes at start (queries e.g. DSP reg $FFA206)
-- Tetrhex (1.41)
-  - Panic on trying to overwrite ROM after VsetScreen(0x0, 0x0, 3, 0x14B)
 - Tron 2 (VGA only)
-  - Illegal instruction after reading "tjip.mod" -> panic
-- TsccTron
-  - Bus error writing to address $0 on startup
+  - Works but graphics are broken -> needs HiColor
+- Ufo War
+  - Might work but Hatari does not emulate Videl correctly
 - Watership (VGA only)
   - Bus error reading $fffffffe on startup -> panic
 
