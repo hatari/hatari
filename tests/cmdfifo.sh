@@ -22,7 +22,7 @@ trap remove_temp EXIT
 
 mkdir -p "$testdir/.config/hatari"
 
-cat > "$testdir/.config/hatari/hatari.cfg" <<EOF
+cat > "$testdir/hatari.cfg" <<EOF
 [Sound]
 szYMCaptureFileName=$testdir/sndrec.wav
 
@@ -36,7 +36,8 @@ export SDL_AUDIODRIVER=dummy
 unset TERM
 
 HOME="$testdir" $hatari --confirm-quit false --screenshot-dir "$testdir" \
-	--tos none --cmd-fifo "$cmdfifo" "$@" > "$testdir/out.txt" 2>&1 &
+	-c "$testdir/hatari.cfg" --tos none --cmd-fifo "$cmdfifo" "$@" \
+	> "$testdir/out.txt" 2>&1 &
 hatari_pid=$!
 
 # Wait until the fifo has been created by Hatari
