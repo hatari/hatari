@@ -35,6 +35,9 @@ const char File_fileid[] = "Hatari file.c";
 #ifdef HAVE_FLOCK
 # include <sys/file.h>
 #endif
+#if defined(__APPLE__)
+#include <sys/disk.h>
+#endif
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -378,6 +381,31 @@ off_t File_Length(const char *pszFileName)
 	hDiskFile = fopen(pszFileName, "rb");
 	if (hDiskFile!=NULL)
 	{
+#if defined(__APPLE__)
+		/* special handling for character/block devices on macOS, where the
+		   seeking method doesn't determine the size */
+		struct stat buf;
+		unsigned long blocksize;
+		unsigned long numblocks;
+		int fd = fileno(hDiskFile);
+
+		if ((fstat(fd, &buf) == 0) &&
+		    (S_ISBLK(buf.st_mode) || S_ISCHR(buf.st_mode)))
+		    /* both S_ISBLK() and S_ISCHR() is needed, because /dev/rdisk?
+		       devices in macOS identify themselves as character devices,
+		       not block devices, meanwhile /dev/disk?, which are a lot
+		       slower and buffered, say they are block devices...
+		       Thanks, Apple!
+		       This hack allows either of them to be used by Hatari. */
+		{
+			if ((ioctl(fd, DKIOCGETBLOCKSIZE, &blocksize) == 0) &&
+			    (ioctl(fd, DKIOCGETBLOCKCOUNT, &numblocks) == 0))
+			{
+				FileSize = blocksize * numblocks;
+				return FileSize;
+			}
+		}
+#endif
 		fseeko(hDiskFile, 0, SEEK_END);
 		FileSize = ftello(hDiskFile);
 		fclose(hDiskFile);
