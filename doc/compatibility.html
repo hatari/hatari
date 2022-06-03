@@ -629,8 +629,8 @@ for border removal).</p>
     <tr>
       <td>Chaos:
       <a href="http://pouet.net/prod.php?which=11839">Pandemonium</a></td>
-      <td class="minor">1.5</td>
-      <td>The Mega-3D screen exits prematuraly (crash due to a cpu timing problem ?)</td>
+      <td>2.3</td>
+      <td></td>
     </tr>
     <tr>
       <td>Checkpoint:
@@ -651,7 +651,7 @@ for border removal).</p>
     <tr>
       <td>Dead Braincells:
       <a href="http://www.pouet.net/prod.php?which=29701">Monoscreen</a></td>
-      <td class="minor">1.9</td>
+      <td class="minor">2.4</td>
       <td>(Partial) monochrome overscan isn't supported by Hatari.
           Demo requires manual monitor timings adjustments to work
 	  (which may be SM124 specific)</td>
@@ -735,7 +735,7 @@ for border removal).</p>
     <tr>
       <td>Futur Minds:
       <a href="http://pouet.net/prod.php?which=755">Snork</a></td>
-      <td class="minor">1.5</td>
+      <td class="minor">2.4</td>
       <td>DNT screen 1 is mixing low/med res on the same line, which is not supported
 	  by Hatari at the moment</td>
     </tr>
@@ -784,7 +784,7 @@ for border removal).</p>
     <tr>
       <td>Omega:
       <a href="http://pouet.net/prod.php?which=26007">Omega</a></td>
-      <td class="minor">1.3</td>
+      <td class="minor">2.4</td>
       <td>In full overscan screen, planes are shifted due to missing hi/lo stabilizer</td>
     </tr>
     <tr>
@@ -1095,10 +1095,10 @@ configuration or data files are not writable.</p>
     </tr>
     <tr>
       <td><a href="http://dhs.nu/files.php?t=single&amp;ID=135">Hextracker</a></td>
-      <td>1.5</td>
+      <td class="minor">2.4</td>
       <td>Uses non-standard mouse event scaling factor.
-          Mouse cannot traverse whole Hatari window unless
-          mouse grab or fullscreen mode is used</td>
+          Mouse cannot (vertically) traverse whole Hatari window
+          unless mouse grab or fullscreen mode is used</td>
     </tr>
     <tr>
       <td><a href="http://www.atarimania.com/utility-atari-st-m_28275.html">M</a></td>
@@ -1435,7 +1435,7 @@ are just STE enhanced.  These are marked with '*' (for more info, see
     </tr>
     <tr>
       <td><a href="http://www.atarimania.com/game-atari-st-dynabusters_28670.html">Dynabusters+</a></td>
-      <td class="minor">2.0</td>
+      <td class="minor">2.4</td>
       <td>Hi-score ("Table") screen flickers</td>
     </tr>
     <tr>
@@ -1588,9 +1588,8 @@ are just STE enhanced.  These are marked with '*' (for more info, see
     </tr>
     <tr>
       <td>Whitewater Madness</td>
-      <td class="minor">1.6</td>
-      <td>Bottom part of the screen is not correct, due to changing video address
-	when display is already on</td>
+      <td>2.3.1</td>
+      <td></td>
     </tr>
     <tr>
       <td><a href="http://www.atarimania.com/game-atari-st-wolfenstein-3d_28676.html">Wolfenstein 3D*</a></td>
@@ -1605,12 +1604,9 @@ are just STE enhanced.  These are marked with '*' (for more info, see
     <tr>
       <td><a
 href="http://www.umich.edu/~archive/atari/Games/Space/zero_5.zip">Zero-5</a><br />(ST Review -demo)</td>
-      <td class="minor">2.0</td>
+      <td>2.3.1</td>
       <td>STE DMA sound, Blitter and palette.  STE joypad / mouse control.
-      Mouse cursor flickers in menus.  Demo crashes after landing on moon,
-      getting back on space and few quantum bombs have exploded (could be
-      demo issue).  Earlier Hatari versions had issues in mouse control +
-      flicker and wrong colors on the bottom part of the in-game screen</td>
+      Mouse cursor flickers in menus</td>
     </tr>
   </tbody>
 </table>
@@ -1662,7 +1658,7 @@ href="http://www.umich.edu/~archive/atari/Games/Space/zero_5.zip">Zero-5</a><br 
     <tr>
       <td>Brainless Institute:
       <a href="http://www.pouet.net/prod.php?which=15437">Bad Taste</a></td>
-      <td class="major">1.4</td>
+      <td class="major">2.4</td>
       <td>Demo crashes during the vector balls at the beginning. This is due to
 	the blitter overwriting some code (due to a bug in the sprite routine)
 	but the reason why it happens only under Hatari was not found yet</td>
@@ -1842,7 +1838,7 @@ href="http://www.umich.edu/~archive/atari/Games/Space/zero_5.zip">Zero-5</a><br 
     <tr>
       <td>Light:
       <a href="http://www.pouet.net/prod.php?which=21333">VGA slideshow</a></td>
-      <td class="minor">2.0</td>
+      <td class="minor">2.4</td>
       <td>Some vertical bad pixels stripes and one of the images broken, otherwise fine</td>
     </tr>
     <tr>
@@ -1926,9 +1922,9 @@ href="http://www.umich.edu/~archive/atari/Games/Space/zero_5.zip">Zero-5</a><br 
     <tr>
       <td>Paradox:
       <a href="http://pouet.net/prod.php?which=15053">X-mas 2004 demo</a></td>
-      <td class="minor">2.0</td>
+      <td class="minor">2.4</td>
       <td>The last (4th) screen horizontal scroll texts don't look right
-      and are jerky. It also needs frameskip even on 1.4Gz Athlon XP</td>
+      and are jerky</td>
     </tr>
     <tr>
       <td>Paradox:
@@ -2074,7 +2070,7 @@ href="http://www.umich.edu/~archive/atari/Games/Space/zero_5.zip">Zero-5</a><br 
   <tbody>
     <tr>
       <td><a href="http://dhs.nu/files.php?t=single&amp;ID=135">Hextracker</a> (0.849b)</td>
-      <td class="minor">2.0</td>
+      <td class="minor">2.4</td>
       <td>Uses non-standard mouse event scaling factor.
           Mouse cannot (vertically) traverse whole Hatari window
           unless mouse grab or fullscreen mode is used</td>
@@ -2131,16 +2127,17 @@ this section lists only programs that have TT-specific features.</p>
     </tr>
     <tr>
       <td><a href="http://s390174849.online.de/ray.tscc.de/misc.htm#cryview">CrY image viewer</a></td>
-      <td class="minor">2.2</td>
-      <td>Needs at least some TT-RAM.  interlaced 16bpp CrY mode flickers badly
-          + colors are wrong (by tSCc)</td>
+      <td class="major">2.4</td>
+      <td>Needs at least some TT-RAM.  Either the 8-bit (grayscale)
+          luminance screen, or Cyan-red color screen is shown, not
+	  the correct interlaced "16bpp CrY mode" result (by tSCc)</td>
     </tr>
     <tr>
       <td><a href="https://www.frontierastro.co.uk/Files/files.html">Frontier: Elite 2</a></td>
-      <td class="major">2.4-dev</td>
+      <td class="major">2.4</td>
       <td>Palette issues (also present in Falcon emulation): Intro sequence partly
           plays in grayscale, in-game colors are completely wrong. Workaround:
-          Play in ST emulation mode; preferrably with 16 or 32 MHz CPU clock to
+          Play in ST/E emulation mode; preferrably with 16 or 32 MHz CPU clock to
           achieve a usable frame rate</td>
     </tr>
     <tr>
@@ -2242,13 +2239,13 @@ this section lists only programs that have TT-specific features.</p>
     <tr>
       <td>tSCc:
       <a href="http://s390174849.online.de/ray.tscc.de/misc.htm#ttruecol">TC fish / blobs</a></td>
-      <td class="minor">2.2</td>
-      <td>Flickers badly</td>
+      <td class="minor">2.4</td>
+      <td>Does not interlace properly, but is viewable</td>
     </tr>
     <tr>
       <td>tSCc:
       <a href="http://s390174849.online.de/ray.tscc.de/misc.htm#tthires">TT-hires</a></td>
-      <td class="major">2.2</td>
+      <td class="major">2.4</td>
       <td>Needs 8MB. Slideshow flickers badly + graphics and colors are wrong</td>
     </tr>
     <tr>
@@ -2598,7 +2595,7 @@ VGA one are indicated separately.</p>
       <td>1.4</td>
       <td>yes</td>
       <td>emu</td>
-      <td>3D hovercraft.  Slow</td>
+      <td>3D hovercraft. Does not work with MMU</td>
     </tr>
     <tr>
       <td>Great</td>
@@ -4568,11 +4565,12 @@ repository</a>.
       <td>32-voice DSP soundtracker</td>
     </tr>
     <tr>
-      <td><a href="http://dhs.nu/files.php?t=single&amp;ID=135">Hextracker</a></td>
-      <td>2.1</td>
+      <td><a href="http://dhs.nu/files.php?t=single&amp;ID=135">Hextracker</a> (v0.849)</td>
+      <td class="minor">2.4</td>
       <td>-</td>
-      <td>Freezes at startup if auto-started with TOS v4
-          (autostarting works with other TOS versions)</td>
+      <td>Uses non-standard mouse event scaling factor.
+          Mouse cannot (vertically) traverse whole Hatari window
+          unless mouse grab or fullscreen mode is used</td>
     </tr>
     <tr>
       <td><a href="http://pouet.net/prod.php?which=29348">Indypaint</a></td>
