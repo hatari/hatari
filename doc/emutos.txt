@@ -1172,6 +1172,7 @@ Non-working Atari STE programs
 Some non-working demos:
 - Original Beat Maker (OG.PRG, SV2019, by CrazyQ)
   - STE recognization fails with TOS 2.x / EmuTOS -> bus error
+- VGA slideshow (by Light)
 
 Non-working games and music programs:
 - Newer Audio Sculpture versions (v1.5beta doesn't handle
@@ -1460,12 +1461,13 @@ Working games (DSP comments are for EmuTOS v1.0 or older):
 - Zodiax (Falcon "R-type")
   - Start from 640x400@16
 
-Games working under EmuTOS >= v1.1 (with DSP support):
+Games working under EmuTOS >= v1.1.1 (DSP support + fixes):
 - Aazohm Krypth
 - Bad Mood (90's demo)
 - Bad Mood* (v0.37 game from 2017)
 - Beats of Rage* (by Thadoss/Dune)
 - Boom preview
+- Conquest of Elysium II (preview)
 - Crown of Creation (preview)
 - Des Lazers & des Hommes
 - Epi-Lepsie (by PARX)
@@ -1473,6 +1475,7 @@ Games working under EmuTOS >= v1.1 (with DSP support):
 - H2O* (by EKO)
 - Kwiks* (by Digital Nightmares)
 - Les Dinosaures (v1.02 demo by PARX)
+- Men at War
 - Multibriques (by PARX)
 - NoMess (GEM, requires color icon support)
 - Pong 2000 demo (use joypad)
@@ -1480,16 +1483,19 @@ Games working under EmuTOS >= v1.1 (with DSP support):
 - Racer (by Thadoss/Dune)
 - Racer 2* (by Thadoss/Dune)
 - Running* (shareware version)
+- Slippery Sam
+- TsccTron
 - TeknoBalls (Arkanoid clone)
 - Towers II
 - Trionoids* (Columns clone)
 - Wotanoid (Asteroids clone)
 
 Games working with EmuTOS >1.1.1:
-- Men at War
-- Slippery Sam
 - Tetrhex (1.41)
-- TsccTron
+
+Games working after patching EmuTOS to allow 16-bit v_planes value:
+- Confusion demo 1 & 2
+- Gravon (demo)
 
 Games working with extra hacks:
 - Bugger, Bunion, SkyFall, Sworm games by Resorvoir Gods:
@@ -1510,15 +1516,11 @@ Partly working games:
 Broken games (with EmuTOS v1.1.x):
 - Columns by Deadheart* (demo)
   - Broken graphics (needs HiColor?)
-- Confusion demo 1 & 2:
-  - Freeze at start to black screen
-- Conquest of Elysium II:
-  - Broken graphics (needs HiColor?)
+- Conquest of Elysium II v2.0 & 2.3:
+  - Freezes at start to black screen
 - Downfall
   - Complains about "Error while loading BLACKWHT.BGR", but actually
     fails to Setscreen(0xDB4F00, 0xDB4F00, 0xFFFF) -> needs HiColor
-- Gravon (demo)
-  - Bus error panic at start, requires HiColor
 - It's Great (start from st-med rez)
   - Mouse doesn't work
 - "K" preview* (by EXA)
