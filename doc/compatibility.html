@@ -2122,6 +2122,12 @@ this section lists only programs that have TT-specific features.</p>
   </thead>
   <tbody>
     <tr>
+      <td><a href="https://github.com/atari800/atari800/releases/tag/ATARI800_4_2_0">Atari800</a></td>
+      <td>2.3</td>
+      <td>Requires TT-RAM and 256-color VGA mode. Really slow. Sound
+          works on Falcon as-is, on TT it requires XBIOS sound emulator</td>
+    </tr>
+    <tr>
       <td><a href="http://yescrew.atari.org/eng/products.htm#capy">Capy</a></td>
       <td>2.0</td>
       <td>VGA/TT-medium only. Some version(s) bus error due to DSP register
@@ -2332,11 +2338,12 @@ VGA one are indicated separately.</p>
     </tr>
     <tr>
       <td><a href="http://www.atarimania.com/game-atari-st-addsub-falcon030_23139.html">Addsub</a></td>
-      <td class="minor">2.4</td>
+      <td>2.3</td>
       <td>-</td>
       <td>-</td>
-      <td>Cannot be played. Exits when joystick up direction is used,
-          fire takes piece under cursor, but other input has no effect</td>
+      <td>Player 1 keys are Z + C, Player 2 keys are up + down.
+          Space key removes the focused piece for both players.
+	  Joystick up or ESC exits</td>
     </tr>
     <tr>
       <td><a href="https://demozoo.org/productions/59217/">Ausbruch</a></td>
@@ -4457,7 +4464,7 @@ repository</a>.
     <tr>
       <td>Animator (v0.20.4)</td>
       <td>2.3</td>
-      <td></td>
+      <td>-</td>
       <td>Replacement for Aviplayer. Doesn't play all the files that
           M_PLAYER does</td>
     </tr>
@@ -4472,13 +4479,16 @@ repository</a>.
     </tr>
     <tr>
       <td><a href="http://www.leonik.net/dml/sec_apex3.py">Apex Alpha (demo)</a></td>
-      <td class="minor">2.3.1</td>
+      <td class="minor">2.4</td>
       <td>-</td>
-      <td>Requires MMU and FPU.  Screen isn't updated properly. Doesn't seem to do much?</td>
+      <td>Requires MMU + FPU.  Screen isn't drawn properly, but
+          dragging scorpion image over top + bottom left screen
+	  area reveals GUI buttons that can be moved around the
+	  screen. Doesn't seem to do much else</td>
     </tr>
     <tr>
       <td><a href="http://umich.edu/~archive/atari/Falcon/Graphics/">Apex demo v2.10</a></td>
-      <td class="major">2.3.1</td>
+      <td class="major">2.4</td>
       <td>emu</td>
       <td>apex210d.prg crashes on startup. Separate image viewer programs work fine.
           On real Falcon, application (its bus error detection for Expose digitizer)
@@ -4508,11 +4518,12 @@ repository</a>.
     </tr>
     <tr>
       <td><a href="http://centek.free.fr/atari/softs/s_centbe.htm">Centurbo bench</a></td>
-      <td class="minor">2.3</td>
+      <td class="minor">2.4</td>
       <td>emu</td>
-      <td>New (v2.3) WinUAE CPU core: FPU ~500 Mhz, DSP 64 Mhz, CPU 100-160 Mhz<br>
+      <td>New (v2.4) WinUAE CPU core: FPU 500-800 Mhz, DSP 64 Mhz, CPU 100-150 Mhz<br>
           Old (v1.8) WinUAE CPU core: FPU 221 Mhz, DSP 32 Mhz, CPU 15 Mhz<br>
-	  (moving mouse drops FPU and CPU numbers slightly)</td>
+	  SW FPU emu shows slightly higher Mhz than HW FPU emu.
+	  Moving mouse drops FPU and CPU numbers up to 20%</td>
     </tr>
     <tr>
       <td>Chronos 3D player</td>
@@ -4622,9 +4633,10 @@ repository</a>.
     </tr>
     <tr>
       <td><a href="http://www.axxim.de/r3dias/R3_Vocoder3.htm">Voxx</a></td>
-      <td class="major">2.3.1</td>
+      <td class="major">2.4</td>
       <td>emu</td>
-      <td>Demo version runs, but free version freezes after showing startup logo,
+      <td>Demo version runs, but does not accept any input.
+          Free v1.00 version freezes after showing startup logo,
           and DSP underflow (no user-space instructions are executed, only TOS
 	  interrupts).  Requires VGA with 640x480@16 resolution at minimum</td>
     </tr>

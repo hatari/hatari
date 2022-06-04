@@ -1398,6 +1398,7 @@ Falcon games
 
 Working games (DSP comments are for EmuTOS v1.0 or older):
 - Aces High (preview)
+- Addsub
 - BeGEMeD* (Falcon version)
 - Block Blizzard preview (line-A bitblit + hide cursor / show mouse)
 - Blum
@@ -1575,6 +1576,7 @@ Applications working under EmuTOS >= v1.1 (with DSP support):
 - AFM (audio fun machine)
 - Apex Media v2.41
   - Viewer TTPs won't work for >256 color images
+- Atari800 v4.2 emulator
 - Centurbo benchmark
   - DSP speed 2x, and bogus speeds for FPU & CPU as with normal TOS
 - Delmpaint (GFA)
@@ -1587,7 +1589,7 @@ Applications working under EmuTOS >= v1.1 (with DSP support):
 - Graoumf Tracker (v0.8890)
 - Iphigenie v1.4b (sound system monitor and manager / DSP LOD loader)
 - Voxx (vocoder), demo and free version
-  - GUI looks OK, no idea about actual functionality
+  - GUI looks OK, does not yet fully work with Hatari to test rest
   - Needs at minimum 640x480x16 color VGA resolution
 - Whip! (virtual light machine)
   - mic input not tested
@@ -1626,7 +1628,7 @@ Partly working applications:
   - Separate 256-color viewers programs work, HiColor ones don't
 - Apex Alpha (demo)
   - Works with MMU + FPU + VGA
-  - Requires HiColor with RGB?
+  - Requires HiColor for RGB (TOS v4 works with RGB)?
 - AVI030
   - All videos do not work (HiColor support?)
 - Centview (GEM image viewer)
