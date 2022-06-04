@@ -1799,7 +1799,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 		case OPT_FPU_TYPE:
 			i += 1;
-			if (strcasecmp(argv[i], "none") || strcasecmp(argv[i], "off") == 0)
+			if (strcasecmp(argv[i], "none") == 0 || strcasecmp(argv[i], "off") == 0)
 			{
 				ConfigureParams.System.n_FPUType = FPU_NONE;
 			}
