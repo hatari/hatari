@@ -1251,10 +1251,11 @@ Falcon demos
 ............
 
 Working demos (comments are for EmuTOS v1.0 or older):
-- 1600x600
+- 1600x600 (by Archangel)
 - 30l coke, needs DSP
-- 4getful (by gwEm, 4KB intro Falcon version)
+- 4getful (4k intro by gwEm, Falcon version)
   - Has way too low volume
+- 4orce (4k intro by DHS)
 - A Rh Positive 4k (by tSCc), needs DSP
 - Ascii (by Reservoir Gods), disable DSP
 - Ath/0 (by Dekadence)
@@ -1264,11 +1265,10 @@ Working demos (comments are for EmuTOS v1.0 or older):
 - Birdshow
 - Blue 4k (by New Beat)
   - Ikbdws() stack usage was issue in v0.8.7-v0.9.3
-- Bound (by Crac)
-  - DSP sound effect requires >v1.0, startup texts need HiColor
 - Bugs from outer space (by Impulse)
   - Bad sound
 - Cebit 93 (by Respectables)
+- Chipo Django 1 (by Rabenauge)
 - Chrome Dragon (by Opium)
 - Cooler than ever (by ICE)
   - Bad sound
@@ -1286,13 +1286,7 @@ Working demos (comments are for EmuTOS v1.0 or older):
   - Plasma screen has garbage on right side,
     end screen at top & bottom
 - ImPerfect (by XI / Satantronic)
-- It's that time of the year again (by New Beat)
-  - MP2 DSP music requires >v1.0
-- Joy (by New Beat)
-  - With YM and MP2 DSP music
 - The Keff Demo (by An Cool)
-- Laser Days E.P. (by .tSCc)
-  - MP2 DSP music requires >v1.0
 - More (by New Beat)
 - Mouse (animation + music)
 - Oergs (by Lazer, pic + music)
@@ -1300,14 +1294,10 @@ Working demos (comments are for EmuTOS v1.0 or older):
 - Payback 2015 (by Dekadence)
   - 060+FPU demo
 - Prepare (by Extream)
-- Revertant 1.2 (by Cobra / Mystic Bytes)
-  - MP2 DSP music requires >v1.0
 - RGB Reine (by New Beat)
 - Rock Solid (by Paranoia)
 - Schlumpf invtro (by Lazer)
   - Horizontal scrolling is bad with some EmuTOS versions
-- She danced to Tainted Love (musicdisk by tSCc)
-  - MP2 DSP music requires >v1.0
 - Six Sievert (by tSCc)
 - Snowstorm (by Reservoir Gods), disable DSP
 - Sonolumineszenz (by Avena)
@@ -1331,7 +1321,7 @@ Demos working under EmuTOS >= v1.1 (with DSP support):
 - Agony (by DNT crew)
 - Beams (by .tscc):
 - Bird to be alive (by Dune etc)
-- Bound 2, Bound 3 (by Crac)
+- Bound 3, Bound 5 (by Crac)
 - Bound 42 (by MMJ Prod)
 - Built-in Obsolescence (by Digital Chaos)
 - Chaos A.D. (by DNT crew)
@@ -1348,14 +1338,24 @@ Demos working under EmuTOS >= v1.1 (with DSP support):
 - I want you to remember (by KÜA Software & Pixel Twins)
   - Monochrome, with DSP music
 - Illness (by Escape)
+- It's that time of the year again (by New Beat)
+  - Works also with v1.0, but MP2 DSP music requires >v1.0
 - JESTERday (by POV), musicdemo
+- Joy (by New Beat)
+  - Works also with v1.0, but MP2 DSP music requires >v1.0
 - Lamer than Lamers (060, by Lamers)
+- Laser Days E.P. (by .tSCc)
+  - Works also with v1.0, but MP2 DSP music requires >v1.0
 - Motion (unfinished demo by Aggression)
 - No Signal (MP2 musicdisk by DHS)
 - Papa was a Blade Runner (by EKO)
+- Revertant 1.2 (by Cobra / Mystic Bytes)
+  - Works also with v1.0, but MP2 DSP music requires >v1.0
 - ROT3DBMP
 - Shades of Circuits (v1.1 musicdisk by Dry Bone Records)
-  - Works also with EmuTOS v1.0, but startup texts look bad
+  - Works also with v1.0, but startup texts look bad
+- She danced to Tainted Love (musicdisk by tSCc)
+  - Works also with v1.0, but MP2 DSP music requires >v1.0
 - Sidetracked (by Collapze)
 - Silly Venture 2k14 invitro (by Dune / Sector One)
 - Silly Venture 2k16 invitro (by Dune / Mystic Bytes)
@@ -1378,6 +1378,12 @@ Demos working under EmuTOS >= v1.1 (with DSP support):
 - Zero Three Zero (by The Pixel Twins)
 
 Demos working partly under EmuTOS >= v1.1:
+- 124 beers later (by Trio)
+  - Works also with 1.0, but fighter screen DSP textures need v1.1
+  - Ground texture missing in last screen
+- Bound, Bound 2, Bound 4 (by Crac)
+  - Bound works also with 1.0, but DSP sound effect needs v1.1
+  - Startup texts broken, need HiColor
 - Doomino (by STAX)
   - Info screen at start looks just garbage (HiColor?)
 
@@ -1396,20 +1402,16 @@ Broken demos (with EmuTOS v1.1.x):
 Falcon games
 ............
 
-Working games (DSP comments are for EmuTOS v1.0 or older):
+Games working under EmuTOS >= v1.0:
 - Aces High (preview)
 - Addsub
 - BeGEMeD* (Falcon version)
 - Block Blizzard preview (line-A bitblit + hide cursor / show mouse)
 - Blum
 - Cavemania (demo version)
-- Chainz (VGA only):
-  - Press space at start to disable DSP use
 - Chorensha (old, non-DSP version)
 - Corsair
 - DB 4K
-- Double Bobble 2000* (by Reservoir Gods)
-  - Disable DSP
 - Dry Egg (needs >4MB RAM)
 - FalcTron
 - Galaga 88
@@ -1420,8 +1422,6 @@ Working games (DSP comments are for EmuTOS v1.0 or older):
 - Impulse* (Breakout clone)
 - Jeu de Poker (VGA only)
   - Needs 640x480@256 mode
-- Jewelz (VGA only)
-  - Select hatari mode (F2) to disable DSP music
 - King Solitaire
 - Lamemine
 - L'Abbaye Des Morts
@@ -1442,8 +1442,6 @@ Working games (DSP comments are for EmuTOS v1.0 or older):
 - Risk 030 demo (VGA only)
   - Needs 640x480@16 mode
 - Spice* (Defender clone)
-- Static (Patience by Reservoir Gods)
-  - Disable DSP
 - Steinbruch
 - Sweety Things
 - Switch
@@ -1468,12 +1466,19 @@ Games working under EmuTOS >= v1.1.1 (DSP support + fixes):
 - Bad Mood* (v0.37 game from 2017)
 - Beats of Rage* (by Thadoss/Dune)
 - Boom preview
+- Chainz (VGA only):
+  - For v1.0, press space at start to disable DSP music
+- Chorensha (DSP version)
 - Conquest of Elysium II (preview)
 - Crown of Creation (preview)
 - Des Lazers & des Hommes
+- Double Bobble 2000* (by Reservoir Gods)
+  - For v1.0, disable DSP from Hatari
 - Epi-Lepsie (by PARX)
 - Gold island (demo, VGA only)
 - H2O* (by EKO)
+- Jewelz (VGA only)
+  - For v1.0, select hatari mode (F2) to disable DSP music
 - Kwiks* (by Digital Nightmares)
 - Les Dinosaures (v1.02 demo by PARX)
 - Men at War
@@ -1485,6 +1490,8 @@ Games working under EmuTOS >= v1.1.1 (DSP support + fixes):
 - Racer 2* (by Thadoss/Dune)
 - Running* (shareware version)
 - Slippery Sam
+- Static (Patience by Reservoir Gods)
+  - For v1.0, disable DSP from Hatari
 - TsccTron
 - TeknoBalls (Arkanoid clone)
 - Towers II
@@ -1496,7 +1503,7 @@ Games working with EmuTOS >1.1.1:
 
 Games working after patching EmuTOS to allow 16-bit v_planes value:
 - Confusion demo 1 & 2
-- Gravon (demo)
+- Gravon (demo + full version)
 
 Games working with extra hacks:
 - Bugger, Bunion, SkyFall, Sworm games by Resorvoir Gods:
@@ -1558,12 +1565,11 @@ Broken games (with EmuTOS v1.1.x):
 Falcon applications
 ...................
 
-Working applications:
+Applications working under EmuTOS >= v1.0:
 - Aniplayer v2.22
   - Can decode data faster with DSP
 - BIQ codec / player (by .tscc, has sources)
 - Cecile hard disk (image) driver
-- DSP-debug debugger
 - Godpaint (by Reservoir Gods)
 - ICDraw, .ICO and .IB3 GEM viewer
 - Kronos v1.91 benchmark
@@ -1581,6 +1587,7 @@ Applications working under EmuTOS >= v1.1 (with DSP support):
   - DSP speed 2x, and bogus speeds for FPU & CPU as with normal TOS
 - Delmpaint (GFA)
    - Due to program bugs, start from 320x200@256 resolution
+- DSPDebug (by Brainstorm)
 - DSPdit (by .tscc)
 - FlaySID
 - Flextracker
