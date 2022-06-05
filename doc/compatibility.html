@@ -3218,7 +3218,7 @@ FPU.</p>
     <tr>
       <td>Aggression:
       <a href="http://pouet.net/prod.php?which=15723">Motion</a></td>
-      <td class="minor">2.3.1</td>
+      <td class="minor">2.4</td>
       <td>-</td>
       <td>emu</td>
       <td>Unfinished Aggression demo with 030 and DSP source code.
@@ -3271,23 +3271,23 @@ FPU.</p>
     <tr>
       <td>Avena &amp; Digital Chaos:
       <a href="http://www.pouet.net/prod.php?which=11224">Enraged</a></td>
-      <td class="major">2.3</td>
+      <td class="major">2.4</td>
       <td>yes</td>
       <td>emu</td>
       <td>Display update is wrong in first and many following screens
-          (updated only in narrow strips). There's 40s of black screen
-	  before 3D world, and a long period of white screen few screens
-	  later before one screen, and freeze on black screen</td>
+          (updated only in narrow strips). There's also a long period
+	  of white between the 2 plasma screens between the 3D screens</td>
     </tr>
     <tr>
       <td>Avena:
       <a href="http://pouet.net/prod.php?which=1177">Sonolumineszenz</a></td>
-      <td class="minor">2.3</td>
+      <td class="minor">2.4</td>
       <td>yes</td>
       <td>emu</td>
       <td>There are a lot of "Dsp: Modulo addressing result unpredictable"
 	  warnings in the "whale" screen. Start runs too fast, and
-	  white period after whale screen takes too long</td>
+	  white period after whale screen takes too long.  Freezes 4 mins
+	  into demo when bouncing head should turn into a spikeball</td>
     </tr>
     <tr>
       <td>Avena:
@@ -3373,7 +3373,7 @@ FPU.</p>
     <tr>
       <td>Crac:
       <a href="http://www.pouet.net/prod.php?which=23589">Bound 4</a></td>
-      <td class="major">2.3</td>
+      <td class="major">2.4</td>
       <td>yes</td>
       <td>emu</td>
       <td>Freezes waiting on DSP interrupt (or Video Address Counter?)</td>
@@ -3382,7 +3382,7 @@ FPU.</p>
       <td>Crac:
       <a href="http://www.pouet.net/prod.php?which=25559">Bound 5</a>
       </td>
-      <td class="major">2.3</td>
+      <td class="major">2.4</td>
       <td>yes</td>
       <td>emu</td>
       <td>Freezes in tiger screen</td>
@@ -3628,6 +3628,14 @@ FPU.</p>
     </tr>
     <tr>
       <td>EKO:
+      <a href="https://www.pouet.net/prod.php?which=25917">Mars DSP</a></td>
+      <td class="major">2.4</td>
+      <td>-</td>
+      <td>emu</td>
+      <td>Freezes at start waiting DSP (btst #1,$ffffa202.w)</td>
+    </tr>
+    <tr>
+      <td>EKO:
       <a href="http://www.pouet.net/prod.php?which=1179">Papa was a Blade Runner</a></td>
       <td>2.3.1</td>
       <td>yes</td>
@@ -3638,7 +3646,7 @@ FPU.</p>
     <tr>
       <td>Escape:
       <a href="http://pouet.net/prod.php?which=15676">_</a></td>
-      <td class="major">2.3.1</td>
+      <td class="major">2.4</td>
       <td>yes</td>
       <td>emu</td>
       <td>Freezes after few screens to illegal DSP instructions</td>
@@ -3662,7 +3670,7 @@ FPU.</p>
     <tr>
       <td>EXA:
       <a href="http://www.pouet.net/prod.php?which=17784">Entracte</a></td>
-      <td class="major">2.3</td>
+      <td class="major">2.4</td>
       <td>-</td>
       <td>-</td>
       <td>Counts CPU cycles at start and exits because Hatari is not accurate enough</td>
@@ -3670,7 +3678,7 @@ FPU.</p>
     <tr>
       <td>EXA:
       <a href="http://www.pouet.net/prod.php?which=17778">Evolution</a></td>
-      <td class="major">2.3</td>
+      <td class="major">2.4</td>
       <td>-</td>
       <td>-</td>
       <td>Counts CPU cycles at start and exits because Hatari is not accurate enough</td>
@@ -3743,11 +3751,11 @@ FPU.</p>
     <tr>
       <td>Hydroxid:
       <a href="http://www.pouet.net/prod.php?which=16805">Symposium'96</a></td>
-      <td class="major">2.3</td>
+      <td class="major">2.4</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Double bus error (NULL pointer) after few screens, when fullscreen
-          face texture bender ends</td>
+      <td>Crashes at start with MMU. Double bus error (NULL pointer)
+          otherwise when fullscreen face texture bender ends</td>
     </tr>
     <tr>
       <td>ICE:
@@ -4021,7 +4029,7 @@ FPU.</p>
     <tr>
       <td>Opium:
       <a href="http://www.pouet.net/prod.php?which=17822">Chrome Dragon</a></td>
-      <td class="minor">2.3</td>
+      <td class="minor">2.4</td>
       <td>yes</td>
       <td>-</td>
       <td>Requires RGB. At least since v1.8, music is missing and
@@ -4088,7 +4096,7 @@ FPU.</p>
     <tr>
       <td>Rabenauge:
       <a href="https://www.pouet.net/prod.php?which=90085">Chipo Django 1</a></td>
-      <td class="minor">2.3.1</td>
+      <td class="minor">2.4</td>
       <td>yes</td>
       <td>-</td>
       <td>STE mod chip music disk that supports also Falcon (and Amiga).
@@ -4159,7 +4167,7 @@ FPU.</p>
       <td>1.6</td>
       <td>yes</td>
       <td>-</td>
-      <td></td>
+      <td>Textures visible in fighter and last screen only with DSP</td>
     </tr>
     <tr>
       <td>Trio:
@@ -4334,11 +4342,11 @@ repository</a>.
       <a href="http://pouet.net/prod.php?which=53186">Codein</a>,
       <a href="http://pouet.net/prod.php?which=25677">Derealization</a>
       </td>
-      <td>2.4-dev</td>
+      <td>2.4</td>
       <td>yes</td>
       <td>-</td>
       <td>4MB + 32MB TT-RAM (less for Codein) + FPU. Start
-          with 030 or 060 + FPSP060. Music if DSP enabled</td>
+          with 030, or 060 + FPSP060. Music with DSP</td>
     </tr>
     <tr>
       <td>Fit:
@@ -4361,23 +4369,25 @@ repository</a>.
     <tr>
       <td>Lamers:
       <a href="https://demozoo.org/productions/195301/">Lamer than Lamers</a></td>
-      <td>2.4-dev</td>
+      <td>2.4</td>
       <td>yes</td>
       <td>-</td>
-      <td>Requires 32MB TT-RAM + FPU. Starts with 030 or 060 + FPSP060,
-          Music if DSP enabled</td>
+      <td>Requires 32MB TT-RAM + FPU. Starts with 030, or 060 + FPSP060.
+          Music with DSP</td>
     </tr>
     <tr>
       <td>Lamers:
       <a href="http://www.pouet.net/prod.php?which=78717">F22.0</a></td>
-      <td>2.4-dev</td>
+      <td>2.4</td>
       <td>yes</td>
       <td>-</td>
-      <td>060 + 64MB TT-RAM + FPU + FPSP060.  Works only with EmuTOS:
-	  --machine falcon --tos etos512k.img --dsp none --sound off
-	  --cpu-exact off --compatible off --fast-forward yes
-	  --cpulevel 6 --cpuclock 32 --fpu internal
-	  --addr24 off --ttram 64 -s 4</td>
+      <td>060 + 64MB TT-RAM + FPU + FPSP060.  Music with DSP, but
+          emulation too slow for it to sound decent, so best to
+	  disable that + cycle-exactness for speed. Works only
+	  with EmuTOS:
+	  --tos etos1024k.img --machine falcon --dsp none --sound off
+	  --fpu internal --cpulevel 6 --cpuclock 32 --cpu-exact off
+	  --addr24 off --ttram 64 -s 4 --fast-forward yes</td>
     </tr>
     <tr>
       <td>MadWizards:
@@ -4416,8 +4426,8 @@ repository</a>.
     <tr>
       <td>XI / Satantronic:
       <a href="http://www.pouet.net/prod.php?which=81758">Imperfect</a></td>
-      <td class="minor">2.3</td>
-      <td>-</td>
+      <td class="minor">2.4</td>
+      <td>yes</td>
       <td>-</td>
       <td>512b intro, requires FPU. Starts with 030 or 060 + FPSP060,
       but renders wrong</td>
