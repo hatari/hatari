@@ -6435,7 +6435,8 @@ insretry:
 //fprintf ( stderr, "cyc_2ce %d\n" , currcycle );
 					/* Flush all CE cycles so far to update PendingInterruptCount */
 					M68000_AddCycles_CE ( currcycle * 2 / CYCLE_UNIT );
-//					currcycle = 0;	// FIXME : uncomment this when using DSP_CyclesGlobalClockCounter in DSP_Run
+					int dsp_cycles = 2 * currcycle * 2 / CYCLE_UNIT;	// FIXME : remove this when using DSP_CyclesGlobalClockCounter in DSP_Run
+					currcycle = 0;
 
 					/* We can have several interrupts at the same time before the next CPU instruction */
 					/* We must check for pending interrupt and call do_specialties_interrupt() only */
@@ -6462,7 +6463,7 @@ insretry:
 					/* Run DSP 56k code if necessary */
 					if (bDspEnabled) {
 //fprintf ( stderr, "dsp cyc_2ce %d\n" , currcycle );
-						DSP_Run(2 * currcycle * 2 / CYCLE_UNIT);
+						DSP_Run( dsp_cycles );
 //fprintf ( stderr, "dsp cyc_2ce %d - %d\n" , currcycle * 2 / CYCLE_UNIT , (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) );
 //						DSP_Run ( DSP_CPU_FREQ_RATIO * ( CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter ) );
 					}
@@ -6551,7 +6552,8 @@ static void m68k_run_3ce (void)
 //fprintf ( stderr, "cyc_3ce %ld\n" , currcycle );
 				/* Flush all CE cycles so far to update PendingInterruptCount */
 				M68000_AddCycles_CE ( currcycle * 2 / CYCLE_UNIT );
-//				currcycle = 0;	// FIXME : uncomment this when using DSP_CyclesGlobalClockCounter in DSP_Run
+				int dsp_cycles = 2 * currcycle * 2 / CYCLE_UNIT;	// FIXME : remove this when using DSP_CyclesGlobalClockCounter in DSP_Run
+				currcycle = 0;
 
 				/* We can have several interrupts at the same time before the next CPU instruction */
 				/* We must check for pending interrupt and call do_specialties_interrupt() only */
@@ -6584,7 +6586,7 @@ static void m68k_run_3ce (void)
 #ifdef WINUAE_FOR_HATARI
 				/* Run DSP 56k code if necessary */
 				if (bDspEnabled) {
-					DSP_Run(2 * currcycle * 2 / CYCLE_UNIT);
+					DSP_Run( dsp_cycles );
 //					DSP_Run ( DSP_CPU_FREQ_RATIO * ( CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter ) );
 				}
 
@@ -6656,6 +6658,8 @@ static void m68k_run_3p(void)
 					M68000_AddCycles(WaitStateCycles);
 					WaitStateCycles = 0;
 				}
+				int dsp_cycles = 2 * cycles * 2 / CYCLE_UNIT;	// FIXME : remove this when using DSP_CyclesGlobalClockCounter in DSP_Run
+				currcycle = 0;
 
 				/* We can have several interrupts at the same time before the next CPU instruction */
 				/* We must check for pending interrupt and call do_specialties_interrupt() only */
@@ -6677,7 +6681,7 @@ static void m68k_run_3p(void)
 #ifdef WINUAE_FOR_HATARI
 				/* Run DSP 56k code if necessary */
 				if (bDspEnabled) {
-					DSP_Run(2 * cycles * 2 / CYCLE_UNIT);
+					DSP_Run( dsp_cycles );
 //					DSP_Run ( DSP_CPU_FREQ_RATIO * ( CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter ) );
 				}
 
@@ -6852,7 +6856,8 @@ fprintf ( stderr , "cache valid %d tag1 %x lws1 %x ctag %x data %x mem=%x\n" , c
 //fprintf ( stderr, "cyc_2ce %d\n" , currcycle );
 				/* Flush all CE cycles so far to update PendingInterruptCount */
 				M68000_AddCycles_CE ( currcycle * 2 / CYCLE_UNIT );
-//				currcycle = 0;	// FIXME : uncomment this when using DSP_CyclesGlobalClockCounter in DSP_Run
+				int dsp_cycles = 2 * currcycle * 2 / CYCLE_UNIT;	// FIXME : remove this when using DSP_CyclesGlobalClockCounter in DSP_Run
+				currcycle = 0;
 
 				/* We can have several interrupts at the same time before the next CPU instruction */
 				/* We must check for pending interrupt and call do_specialties_interrupt() only */
@@ -6877,7 +6882,7 @@ fprintf ( stderr , "cache valid %d tag1 %x lws1 %x ctag %x data %x mem=%x\n" , c
 				/* Run DSP 56k code if necessary */
 				if (bDspEnabled) {
 //fprintf ( stderr, "dsp cyc_2ce %d\n" , currcycle );
-					DSP_Run(2 * currcycle * 2 / CYCLE_UNIT);
+					DSP_Run( dsp_cycles );
 //fprintf ( stderr, "dsp cyc_2ce %d - %d\n" , currcycle * 2 / CYCLE_UNIT , (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) );
 //					DSP_Run ( DSP_CPU_FREQ_RATIO * ( CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter ) );
 				}
@@ -7051,6 +7056,8 @@ cont:
 					WaitStateCycles = 0;
 				}
 //fprintf ( stderr , "waits %d %d %ld\n" , cpu_cycles*2/CYCLE_UNIT , WaitStateCycles , CyclesGlobalClockCounter );
+				int dsp_cycles = 2 * cpu_cycles * 2 / CYCLE_UNIT;	// FIXME : remove this when using DSP_CyclesGlobalClockCounter in DSP_Run
+				currcycle = 0;
 
 				/* We can have several interrupts at the same time before the next CPU instruction */
 				/* We must check for pending interrupt and call do_specialties_interrupt() only */
@@ -7075,7 +7082,7 @@ cont:
 				if (bDspEnabled) {
 //if ( DSP_CPU_FREQ_RATIO * ( (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) << nCpuFreqShift )  - 2 * cpu_cycles * 2 / CYCLE_UNIT >= 8 )
 //fprintf ( stderr , "dsp %d %d\n" , 2 * cpu_cycles * 2 / CYCLE_UNIT , DSP_CPU_FREQ_RATIO * ( (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) << nCpuFreqShift ) );
-					DSP_Run(2 * cpu_cycles * 2 / CYCLE_UNIT);
+					DSP_Run( dsp_cycles );
 //					DSP_Run ( DSP_CPU_FREQ_RATIO * ( CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter ) );
 				}
 
