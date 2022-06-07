@@ -98,12 +98,15 @@ TT :
 FALCON :
   MCLK		= 32 MHz (CLK32)
   VIDEL	IN 	= 32 MHz (VID32MHZ), 25 MHz (25K)
-  COMBEL	IN = 32 MHz (CLK32)				OUT = 4 MHz (CLK4), 500 kHz (KHZ500)
+  COMBEL	IN = 32 MHz (CLK32)				OUT = 8 MHz (CLK8, not used), 4 MHz (CLK4), 500 kHz (KHZ500)
   BUS		= 16 MHz
+
+  DSP 56001	IN = 32 MHz (DSP_32M)
+
+  DMA		IN = 32 MHz (DSP_32M)				OUT = 8 MHz (CLK8), 16 MHz (FCCLK), 2 MHz (CLK2)
 
   CPU 68030	IN = 16 MHz (CPUCLKB)
   FPU 68882	IN = 16 MHz (CPUCLKA)
-  DMA		IN = 8 MHz (CLK8)
   CODEC		IN = 25 MHz (25K)
   MFP 68901	IN = 4 MHz (CLK4), 2.4576 MHz (external clock)
   FDC AJAX	IN = 16 MHz (FCCLK)
@@ -111,8 +114,6 @@ FALCON :
   YM3439	IN = 2 MHz (CLK2)
   ACIA MC6850	IN = 500 kHz (KHZ500)
   IKBD HD6301	IN = 1 MHZ (local clock)
-
-  DSP 56001	IN = 32 MHz (DSP_32M)
 
 */
 
