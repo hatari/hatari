@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if [ $# -lt 3 -o "$1" = "-h" -o "$1" = "--help" ]; then
+if [ $# -lt 3 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 	echo "Usage: $0 <hatari> b|w <machine>"
 	exit 1;
 fi
@@ -16,7 +16,7 @@ width=$1
 shift
 machine=$1
 shift
-basedir=$(dirname $0)
+basedir=$(dirname "$0")
 testdir=$(mktemp -d)
 
 case "$machine" in
@@ -34,9 +34,9 @@ export SDL_VIDEODRIVER=dummy
 export SDL_AUDIODRIVER=dummy
 
 cp "$basedir/buserr_$width.prg" "$testdir"
-HOME="$testdir" $hatari --log-level fatal --fast-forward on --machine $machine \
-	--sound off --run-vbls 500 --tos none $* "$testdir/buserr_$width.prg" \
-	2> $testdir/stderr.txt > $testdir/stdout.txt
+HOME="$testdir" $hatari --log-level fatal --fast-forward on --machine "$machine" \
+	--sound off --run-vbls 500 -t none "$@" "$testdir/buserr_$width.prg" \
+	2> "$testdir"/stderr.txt > "$testdir"/stdout.txt
 exitstat=$?
 if [ $exitstat -ne 0 ]; then
 	echo "Running hatari failed. Status=${exitstat}, output in ${testdir}"

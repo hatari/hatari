@@ -2,7 +2,7 @@
 
 cd "$(dirname "$0")/.." || exit 1
 
-if [ -z $(which checkbashisms) ]; then
+if [ -z "$(which checkbashisms)" ]; then
 	echo "'checkbashisms' (from debian dev-scripts) missing"
 	exit 1
 fi

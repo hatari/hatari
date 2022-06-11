@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if [ $# -lt 2 -o "$1" = "-h" -o "$1" = "--help" ]; then
+if [ $# -lt 2 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 	echo "Usage: $0 <hatari> <prg> ..."
 	exit 1
 fi
@@ -15,7 +15,6 @@ fi;
 prg=$1
 shift
 
-basedir=$(dirname $0)
 testdir=$(mktemp -d)
 
 export SDL_VIDEODRIVER=dummy
@@ -24,7 +23,8 @@ unset TERM
 
 # export LD_PRELOAD=libefence.so
 
-export HATARI_TEST=$(basename "$prg")
+HATARI_TEST=$(basename "$prg")
+export HATARI_TEST
 HOME="$testdir" $hatari --log-level fatal --sound off --bios-intercept on \
 	--fast-forward on --run-vbls 500 --frameskips 0 --tos none \
 	--screenshot-dir "$testdir" "$@" "$prg" > "$testdir/out.txt" 2>&1
@@ -37,6 +37,7 @@ if [ $exitstat -ne 0 ]; then
 	exit 1
 fi
 
+# shellcheck disable=SC2144 # there's only one match
 if [ ! -e "$testdir"/grab0007.* ]; then
 	echo "Test FAILED: Screenshot has not been taken."
 	cat "$testdir/out.txt"

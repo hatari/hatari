@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if [ $# -lt 3 -o "$1" = "-h" -o "$1" = "--help" ]; then
+if [ $# -lt 3 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 	echo "Usage: $0 <hatari> <prg> <ref.png> ..."
 	exit 1
 fi
@@ -27,9 +27,7 @@ shift
 refpng=$1
 shift
 
-basedir=$(dirname $0)
 testdir=$(mktemp -d)
-cmdfifo="$testdir/cmdfifo"
 
 export HATARI_TEST=screen
 export SDL_VIDEODRIVER=dummy
@@ -39,7 +37,7 @@ unset TERM
 HOME="$testdir" $hatari --log-level fatal --sound off -z 1 --max-width 416 \
 	--bios-intercept on --statusbar off --drive-led off --fast-forward on \
 	--run-vbls 500 --frameskips 0 --tos none --screenshot-dir "$testdir" \
-	$* "$prg" > "$testdir/out.txt" 2>&1
+	"$@" "$prg" > "$testdir/out.txt" 2>&1
 exitstat=$?
 
 if [ $exitstat -ne 0 ]; then
@@ -49,6 +47,7 @@ if [ $exitstat -ne 0 ]; then
 	exit 1
 fi
 
+# shellcheck disable=SC2144 # there's only one match
 if [ ! -e "$testdir"/grab0001.* ]; then
 	echo "Test FAILED: Screenshot has not been taken."
 	cat "$testdir/out.txt"

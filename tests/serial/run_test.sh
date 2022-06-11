@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if [ $# -lt 1 -o "$1" = "-h" -o "$1" = "--help" ]; then
+if [ $# -lt 1 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 	echo "Usage: $0 <hatari> <machine>"
 	exit 1
 fi
@@ -14,7 +14,7 @@ fi
 sertype=$2
 machine=$3
 
-basedir=$(dirname $0)
+basedir=$(dirname "$0")
 testdir=$(mktemp -d)
 
 touch "$testdir"/empty.txt
@@ -38,6 +38,7 @@ else
 	exit 1
 fi
 
+# shellcheck disable=SC2086 # word splitting of $serparams is desired here
 HOME="$testdir" $hatari --log-level fatal --sound off --tos none \
 	--fast-forward on  --run-vbls 500 $serparams --machine "$machine" \
 	"$basedir"/"$testprog" > "$testdir/out.txt"

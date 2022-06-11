@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if [ $# -lt 1 -o "$1" = "-h" -o "$1" = "--help" ]; then
+if [ $# -lt 1 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 	echo "Usage: $0 <hatari> ..."
 	exit 1;
 fi
@@ -12,7 +12,7 @@ if [ ! -x "$hatari" ]; then
 	exit 1;
 fi;
 
-basedir=$(dirname $0)
+basedir=$(dirname "$0")
 testdir=$(mktemp -d)
 
 remove_temp() {
@@ -25,7 +25,7 @@ export SDL_VIDEODRIVER=dummy
 export SDL_AUDIODRIVER=dummy
 
 HOME="$testdir" $hatari --log-level fatal --sound off --cpuclock 32 --tos none \
-	--run-vbls 500 --bios-intercept on $* "$basedir/xbiostst.prg" \
+	--run-vbls 500 --bios-intercept on "$@" "$basedir/xbiostst.prg" \
 	2> "$testdir/out.txt" << EOF
 c
 c
