@@ -97,6 +97,7 @@ Emulator improvements:
   - Fix: avoid key release event from SDL GUI closing leaking to emulation
   - Do VDI mode size changes in (faster) 16 pix increments,
     and prevent user seeing invalid VDI mode sizes
+  - Fine-tune CPU dialog texts and keyboard shortcuts
 - GEMDOS HD:
   - Fix: clear GEMDOS Fread / Fwrite errors
   - Fix: Allow GEMDOS tasks to use other tasks' file handles
