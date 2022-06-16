@@ -365,7 +365,7 @@ static void ScreenConv_BitplaneTo16bppNoZoom(Uint16 *fvram_line, Uint8 *hvram,
                                              int upperBorder, int lowBorder)
 {
 	Uint16 *hvram_line = (Uint16 *)hvram;
-	Uint16 *pRamEnd = (Uint16 *)&STRam[STRamEnd];
+	uint32_t nLineEndAddr = Video_GetScreenBaseAddr() + nextline * 2;
 	int pitch = sdlscrn->pitch >> 1;
 	int h;
 
@@ -381,7 +381,7 @@ static void ScreenConv_BitplaneTo16bppNoZoom(Uint16 *fvram_line, Uint8 *hvram,
 	{
 		Uint16 *hvram_column = hvram_line;
 
-		if (fvram_line + nextline > pRamEnd)
+		if (nLineEndAddr > STRamEnd)
 		{
 			Screen_memset_uint16(hvram_line, palette.native[0], pitch);
 			hvram_line += pitch;
@@ -400,6 +400,7 @@ static void ScreenConv_BitplaneTo16bppNoZoom(Uint16 *fvram_line, Uint8 *hvram,
 		/* Right border */
 		Screen_memset_uint16(hvram_column, palette.native[0], rightBorder);
 
+		nLineEndAddr += nextline * 2;
 		fvram_line += nextline;
 		hvram_line += pitch;
 	}
@@ -420,7 +421,7 @@ static void ScreenConv_BitplaneTo32bppNoZoom(Uint16 *fvram_line, Uint8 *hvram,
                                              int upperBorder, int lowBorder)
 {
 	Uint32 *hvram_line = (Uint32 *)hvram;
-	Uint16 *pRamEnd = (Uint16 *)&STRam[STRamEnd];
+	uint32_t nLineEndAddr = Video_GetScreenBaseAddr() + nextline * 2;
 	int pitch = sdlscrn->pitch >> 2;
 	int h;
 
@@ -436,7 +437,7 @@ static void ScreenConv_BitplaneTo32bppNoZoom(Uint16 *fvram_line, Uint8 *hvram,
 	{
 		Uint32 *hvram_column = hvram_line;
 
-		if (fvram_line + nextline > pRamEnd)
+		if (nLineEndAddr > STRamEnd)
 		{
 			Screen_memset_uint32(hvram_line, palette.native[0], pitch);
 			hvram_line += pitch;
@@ -455,6 +456,7 @@ static void ScreenConv_BitplaneTo32bppNoZoom(Uint16 *fvram_line, Uint8 *hvram,
 		/* Right border */
 		Screen_memset_uint32(hvram_column, palette.native[0], rightBorder);
 
+		nLineEndAddr += nextline * 2;
 		fvram_line += nextline;
 		hvram_line += pitch;
 	}
@@ -475,7 +477,7 @@ static void ScreenConv_HiColorTo16bppNoZoom(Uint16 *fvram_line, Uint8 *hvram,
                                             int upperBorder, int lowBorder)
 {
 	Uint16 *hvram_line = (Uint16 *)hvram;
-	Uint16 *pRamEnd = (Uint16 *)&STRam[STRamEnd];
+	uint32_t nLineEndAddr = Video_GetScreenBaseAddr() + nextline * 2;
 	int pitch = sdlscrn->pitch >> 1;
 	int h;
 
@@ -495,7 +497,7 @@ static void ScreenConv_HiColorTo16bppNoZoom(Uint16 *fvram_line, Uint8 *hvram,
 		int w;
 #endif
 
-		if (fvram_line + nextline > pRamEnd)
+		if (nLineEndAddr > STRamEnd)
 		{
 			Screen_memset_uint16(hvram_line, palette.native[0], pitch);
 			hvram_line += pitch;
@@ -522,6 +524,7 @@ static void ScreenConv_HiColorTo16bppNoZoom(Uint16 *fvram_line, Uint8 *hvram,
 		/* Right border */
 		Screen_memset_uint16(hvram_column, palette.native[0], rightBorder);
 
+		nLineEndAddr += nextline * 2;
 		fvram_line += nextline;
 		hvram_line += pitch;
 	}
@@ -542,7 +545,7 @@ static void ScreenConv_HiColorTo32bppNoZoom(Uint16 *fvram_line, Uint8 *hvram,
                                             int upperBorder, int lowBorder)
 {
 	Uint32 *hvram_line = (Uint32 *)hvram;
-	Uint16 *pRamEnd = (Uint16 *)&STRam[STRamEnd];
+	uint32_t nLineEndAddr = Video_GetScreenBaseAddr() + nextline * 2;
 	int pitch = sdlscrn->pitch >> 2;
 	int h, w;
 
@@ -559,7 +562,7 @@ static void ScreenConv_HiColorTo32bppNoZoom(Uint16 *fvram_line, Uint8 *hvram,
 		Uint16 *fvram_column = fvram_line;
 		Uint32 *hvram_column = hvram_line;
 
-		if (fvram_line + nextline > pRamEnd)
+		if (nLineEndAddr > STRamEnd)
 		{
 			Screen_memset_uint32(hvram_line, palette.native[0], pitch);
 			hvram_line += pitch;
@@ -583,6 +586,7 @@ static void ScreenConv_HiColorTo32bppNoZoom(Uint16 *fvram_line, Uint8 *hvram,
 		/* Right border */
 		Screen_memset_uint32(hvram_column, palette.native[0], rightBorder);
 
+		nLineEndAddr += nextline * 2;
 		fvram_line += nextline;
 		hvram_line += pitch;
 	}
@@ -716,7 +720,7 @@ static void ScreenConv_BitplaneTo16bppZoomed(Uint16 *fvram, Uint8 *hvram,
 	Uint16 *hvram_line = (Uint16 *)hvram;
 	Uint16 *hvram_column = p2cline;
 	Uint16 *fvram_line;
-	Uint16 *pRamEnd = (Uint16 *)&STRam[STRamEnd];
+	uint32_t nLineEndAddr = Video_GetScreenBaseAddr() + nextline * 2;
 	unsigned int nBytesPerPixel = sdlscrn->format->BytesPerPixel;
 	int pitch = sdlscrn->pitch >> 1;
 	int cursrcline = -1;
@@ -742,7 +746,7 @@ static void ScreenConv_BitplaneTo16bppZoomed(Uint16 *fvram, Uint8 *hvram,
 		{
 			memcpy(hvram_line, hvram_line - pitch, scrwidth * nBytesPerPixel);
 		}
-		else if (fvram_line + nextline > pRamEnd)
+		else if (nLineEndAddr > STRamEnd)
 		{
 			Screen_memset_uint16(hvram_line, palette.native[0], pitch);
 		}
@@ -764,6 +768,8 @@ static void ScreenConv_BitplaneTo16bppZoomed(Uint16 *fvram, Uint8 *hvram,
 
 			/* Display the Right border */
 			Screen_memset_uint16(hvram_column, palette.native[0], rightBorder * coefx);
+
+			nLineEndAddr += nextline * 2;
 		}
 
 		hvram_line += pitch;
@@ -793,7 +799,7 @@ static void ScreenConv_BitplaneTo32bppZoomed(Uint16 *fvram, Uint8 *hvram,
 	Uint32 *hvram_line = (Uint32 *)hvram;
 	Uint32 *hvram_column = p2cline;
 	Uint16 *fvram_line;
-	Uint16 *pRamEnd = (Uint16 *)&STRam[STRamEnd];
+	uint32_t nLineEndAddr = Video_GetScreenBaseAddr() + nextline * 2;
 	unsigned int nBytesPerPixel = sdlscrn->format->BytesPerPixel;
 	int pitch = sdlscrn->pitch >> 2;
 	int cursrcline = -1;
@@ -819,7 +825,7 @@ static void ScreenConv_BitplaneTo32bppZoomed(Uint16 *fvram, Uint8 *hvram,
 		{
 			memcpy(hvram_line, hvram_line - pitch, scrwidth * nBytesPerPixel);
 		}
-		else if (fvram_line + nextline > pRamEnd)
+		else if (nLineEndAddr > STRamEnd)
 		{
 			Screen_memset_uint32(hvram_line, palette.native[0], pitch);
 		}
@@ -842,6 +848,8 @@ static void ScreenConv_BitplaneTo32bppZoomed(Uint16 *fvram, Uint8 *hvram,
 
 			/* Display the Right border */
 			Screen_memset_uint32(hvram_column, palette.native[0], rightBorder * coefx);
+
+			nLineEndAddr += nextline * 2;
 		}
 
 		hvram_line += pitch;
@@ -869,7 +877,7 @@ static void ScreenConv_HiColorTo16bppZoomed(Uint16 *fvram, Uint8 *hvram,
 	Uint16 *hvram_line = (Uint16 *)hvram;
 	Uint16 *hvram_column = hvram_line;
 	Uint16 *fvram_line;
-	Uint16 *pRamEnd = (Uint16 *)&STRam[STRamEnd];
+	uint32_t nLineEndAddr = Video_GetScreenBaseAddr() + nextline * 2;
 	unsigned int nBytesPerPixel = sdlscrn->format->BytesPerPixel;
 	int pitch = sdlscrn->pitch >> 1;
 	int cursrcline = -1;
@@ -898,7 +906,7 @@ static void ScreenConv_HiColorTo16bppZoomed(Uint16 *fvram, Uint8 *hvram,
 		{
 			memcpy(hvram_line, hvram_line - pitch, scrwidth * nBytesPerPixel);
 		}
-		else if (fvram_line + nextline > pRamEnd)
+		else if (nLineEndAddr > STRamEnd)
 		{
 			Screen_memset_uint16(hvram_line, palette.native[0], pitch);
 		}
@@ -916,6 +924,8 @@ static void ScreenConv_HiColorTo16bppZoomed(Uint16 *fvram, Uint8 *hvram,
 
 			/* Display the Right border */
 			Screen_memset_uint16(hvram_column, palette.native[0], rightBorder * coefx);
+
+			nLineEndAddr += nextline * 2;
 		}
 
 		hvram_line += pitch;
@@ -941,7 +951,7 @@ static void ScreenConv_HiColorTo32bppZoomed(Uint16 *fvram, Uint8 *hvram,
 	Uint32 *hvram_line = (Uint32 *)hvram;
 	Uint32 *hvram_column = hvram_line;
 	Uint16 *fvram_line;
-	Uint16 *pRamEnd = (Uint16 *)&STRam[STRamEnd];
+	uint32_t nLineEndAddr = Video_GetScreenBaseAddr() + nextline * 2;
 	unsigned int nBytesPerPixel = sdlscrn->format->BytesPerPixel;
 	int pitch = sdlscrn->pitch >> 2;
 	int cursrcline = -1;
@@ -969,7 +979,7 @@ static void ScreenConv_HiColorTo32bppZoomed(Uint16 *fvram, Uint8 *hvram,
 		{
 			memcpy(hvram_line, hvram_line - pitch, scrwidth * nBytesPerPixel);
 		}
-		else if (fvram_line + nextline > pRamEnd)
+		else if (nLineEndAddr > STRamEnd)
 		{
 			Screen_memset_uint32(hvram_line, palette.native[0], pitch);
 		}
@@ -995,6 +1005,8 @@ static void ScreenConv_HiColorTo32bppZoomed(Uint16 *fvram, Uint8 *hvram,
 
 			/* Display the Right border */
 			Screen_memset_uint32(hvram_column, palette.native[0], rightBorder * coefx);
+
+			nLineEndAddr += nextline * 2;
 		}
 
 		hvram_line += pitch;
