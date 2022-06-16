@@ -4191,12 +4191,7 @@ static void Video_InitShifterLines ( void )
 static void Video_RestartVideoCounter(void)
 {
 	/* Get screen address pointer, aligned to 256 bytes on ST (ie ignore lowest byte) */
-	VideoBase = (Uint32)IoMem_ReadByte(0xff8201)<<16 | (Uint32)IoMem_ReadByte(0xff8203)<<8;
-	if (!Config_IsMachineST())
-	{
-		/* on STe 2 aligned, on TT 8 aligned. We do STe. */
-		VideoBase |= IoMem_ReadByte(0xff820d) & ~1;
-	}
+	VideoBase = Video_GetScreenBaseAddr();
 	pVideoRaster = &STRam[VideoBase];
 }
 
@@ -4627,6 +4622,33 @@ void Video_InterruptHandler_VBL ( void )
 
 
 /*-----------------------------------------------------------------------*/
+/**
+ * Get the video RAM base address, taking the differences for the low
+ * byte into account for each machine type.
+ */
+uint32_t Video_GetScreenBaseAddr(void)
+{
+	uint32_t nBase;
+
+	nBase = (Uint32)IoMem_ReadByte(0xff8201) << 16;
+	nBase |= (Uint32)IoMem_ReadByte(0xff8203) << 8;
+	if (!Config_IsMachineST())
+	{
+		/* On STe 2 aligned and on TT 8 aligned. On Falcon 4 aligned
+		 * in bitplane mode, and 2 aligned in hi-color */
+		uint32_t nLowByte = IoMem_ReadByte(0xff820d);
+		if (Config_IsMachineTT())
+			nBase |= nLowByte & ~7;
+		else if (Config_IsMachineFalcon() && !(IoMem_ReadWord(0xff8266) & 0x100))
+			nBase |= nLowByte & ~3;
+		else
+			nBase |= nLowByte & ~1;
+	}
+
+	return nBase;
+}
+
+
 /**
  * Write to video address base high, med and low register (0xff8201/03/0d).
  * On STE/TT, when a program writes to high or med registers, base low register
