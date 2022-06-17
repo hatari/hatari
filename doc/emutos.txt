@@ -1346,6 +1346,7 @@ Demos working under EmuTOS >= v1.1 (with DSP support):
 - Lamer than Lamers (060, by Lamers)
 - Laser Days E.P. (by .tSCc)
   - Works also with v1.0, but MP2 DSP music requires >v1.0
+- Lockup (by Mystic Bytes)
 - Motion (unfinished demo by Aggression)
 - No Signal (MP2 musicdisk by DHS)
 - Papa was a Blade Runner (by EKO)
@@ -1580,6 +1581,7 @@ Applications working under EmuTOS >= v1.1 (with DSP support):
 - AceMidi demo (v1.01)
 - AceTracker v1 & v2
 - AFM (audio fun machine)
+  - UI needs color mode
 - Apex Media v2.41
   - Viewer TTPs won't work for >256 color images
 - Atari800 v4.2 emulator
@@ -1599,9 +1601,9 @@ Applications working under EmuTOS >= v1.1 (with DSP support):
   - GUI looks OK, does not yet fully work with Hatari to test rest
   - Needs at minimum 640x480x16 color VGA resolution
 - Whip! (virtual light machine)
-  - mic input not tested
 - WinRec (direct to disk GEM audio recorder/effects)
-  - Starts fine and GUI works, actual recording not tested
+  - Oscilloscope & spectralizer show only in VGA resolution,
+    although they work fine also in RBG with TOS v4
 
 Applications working under EmuTOS > v1.1.1:
 - Escape paint (GEM, requires color icons support)
