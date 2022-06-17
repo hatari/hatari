@@ -103,6 +103,8 @@ Emulator improvements:
 - Command line:
   - Support "off" as alias for "none" when disabling DSP, FPU,
     Joysticks and VME, for consistency with HW on/off options
+- NatFeats:
+  - Fix: freeze with NF_STDERR("")
 - Debugger:
   - Fix: profile header so that profile data post-processor knows how
     to parse built-in WinAUE CPU core ("uae") disassembly output, not

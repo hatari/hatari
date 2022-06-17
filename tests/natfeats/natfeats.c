@@ -200,6 +200,7 @@ int main()
 	old_ff = nf_fastforward(1);
 	nf_print("Emulator name:\n");
 	nf_showname();
+	nf_print(""); /* check regression b2a81850 + its fix */
 	nf_print("Invoking debugger...\n");
 	nf_debugger();
 	nf_print("Restoring fastforward & shutting down...\n");
