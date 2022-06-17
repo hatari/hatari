@@ -3767,11 +3767,11 @@ FPU.</p>
     </tr>
     <tr>
       <td>ICE:
-      <a href="http://www.umich.edu/%7Earchive/atari/Falcon/Games/tron2001.lzh">Tron2001</a></td>
-      <td>2.3</td>
+      <a href="https://www.pouet.net/prod.php?which=28715">Tron2001</a></td>
+      <td>2.4</td>
       <td>yes</td>
       <td>-</td>
-      <td>Bus error at startup unless IDE enabled. Non-interactive preview</td>
+      <td>Non-interactive preview</td>
     </tr>
     <tr>
       <td>Impulse:
@@ -3930,7 +3930,7 @@ FPU.</p>
     <tr>
       <td>Mystic bytes:
       <a href="http://www.pouet.net/prod.php?which=78884">Lockup</a></td>
-      <td class="minor">2.3.1</td>
+      <td class="minor">2.4</td>
       <td>-</td>
       <td>emu</td>
       <td>14MB RAM. Requires at least Hatari v2.3.1. Music missing</td>
@@ -4172,7 +4172,7 @@ FPU.</p>
     <tr>
       <td>Trio:
       <a href="http://www.pouet.net/prod.php?which=15974">X-tasie</a></td>
-      <td class="minor">2.3.1</td>
+      <td class="minor">2.4</td>
       <td>yes</td>
       <td>emu</td>
       <td>Requires MMU. There's a Videl emulation problem left when
@@ -4351,7 +4351,7 @@ repository</a>.
     <tr>
       <td>Fit:
       <a href="http://www.pouet.net/prod.php?which=17311">Hex Pistols</a></td>
-      <td>2.4-dev</td>
+      <td>2.4</td>
       <td>yes</td>
       <td>emu</td>
       <td>14MB + 060 + FPU, .tSCc port from Amiga.  Requires FPSP060
@@ -4360,7 +4360,7 @@ repository</a>.
     <tr>
       <td>Fit:
       <a href="http://www.pouet.net/prod.php?which=26083">Stercus Accidit</a></td>
-      <td>2.4-dev</td>
+      <td>2.4</td>
       <td>yes</td>
       <td>emu</td>
       <td>8MB + 060 + FPU, .tSCc port from Amiga.  Requires FPSP060
@@ -4465,11 +4465,11 @@ repository</a>.
       <td>Sounds good, but needs beefy machine for fast enough DSP emulation</td>
     </tr>
     <tr>
-      <td>AFM (audio fun machine)</td>
-      <td class="minor">2.3</td>
+      <td>AFM (audio fun machine) v1.03</td>
+      <td class="minor">2.4</td>
       <td>emu</td>
-      <td>Glitchy sound / noise when equaliser is enabled,
-          otherwise sound is fine</td>
+      <td>Broken sound / noise when equaliser is enabled.
+          Sound is fine when equaliser is disabled</td>
     </tr>
     <tr>
       <td>Animator (v0.20.4)</td>
@@ -4480,12 +4480,13 @@ repository</a>.
     </tr>
     <tr>
       <td><a href="http://pagesperso-orange.fr/didierm/index-e.htm">Aniplayer v2.22</a></td>
-      <td class="minor">2.3</td>
+      <td class="minor">2.4</td>
       <td>emu</td>
-      <td>(Harmless) DSP stack underflow on JPG slide show image switching.
-           DSP synchronization error when trying to play MP2/MP3.
-	   Mpeg 1 videos either look incorrect, or lose DSP sync.
-	   Old Quicktime and AVI videos OK</td>
+      <td>On first MP2/MP3 file play, complains about DSP sync. After
+          that, MP2/MP3 files play, but not correctly, bits of songs
+	  are repeated many times when they should not.  Does not
+	  handle colors properly for MPG files either.
+	  Rest seems to work OK</td>
     </tr>
     <tr>
       <td><a href="http://www.leonik.net/dml/sec_apex3.py">Apex Alpha (demo)</a></td>
@@ -4530,7 +4531,7 @@ repository</a>.
       <td><a href="http://centek.free.fr/atari/softs/s_centbe.htm">Centurbo bench</a></td>
       <td class="minor">2.4</td>
       <td>emu</td>
-      <td>New (v2.4) WinUAE CPU core: FPU 500-800 Mhz, DSP 64 Mhz, CPU 100-150 Mhz<br>
+      <td>New (v2.4) WinUAE CPU core: FPU 500-800 Mhz, DSP 64 Mhz, CPU 90-120 Mhz<br>
           Old (v1.8) WinUAE CPU core: FPU 221 Mhz, DSP 32 Mhz, CPU 15 Mhz<br>
 	  SW FPU emu shows slightly higher Mhz than HW FPU emu.
 	  Moving mouse drops FPU and CPU numbers up to 20%</td>
@@ -4555,22 +4556,23 @@ repository</a>.
     </tr>
     <tr>
       <td><a href="http://deunstg.free.fr/sct1/falcamp/">FalcAMP</a></td>
-      <td class="minor">2.3</td>
+      <td class="minor">2.4</td>
       <td>emu</td>
       <td>MOD playing works fine, MP3s have no sound / complain about DSP timeout
-          (v1.20b, v1.09 just freezes with MP3 files)</td>
+          (v1.20b, v1.09 just does not do anything with MP3 files)</td>
     </tr>
     <tr>
       <td><a href="http://deunstg.free.fr/sct1/flaysid/">FlaySID (v3.01)</a></td>
-      <td>2.3</td>
+      <td class="major">2.4</td>
       <td>emu</td>
-      <td></td>
+      <td>Freezes when starting SID playback with DSP engine.
+          Worked fine with Hatari v2.3.1</td>
     </tr>
     <tr>
       <td><a href="http://nb.atari.org/main.php?page=productions">FlexTrax</a></td>
-      <td class="minor">2.3</td>
+      <td class="minor">2.4</td>
       <td>emu</td>
-      <td>Very heavy to emulate, sound is noisy.
+      <td>Heavy to emulate, sound is very noisy.
           Startup graphics look OK only in VGA mode</td>
     </tr>
     <tr>
