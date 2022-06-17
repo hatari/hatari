@@ -908,20 +908,52 @@ class MachineDialog(HatariUIDialog):
     def _create_dialog(self, config):
         table, self.dialog = create_table_dialog(self.parent, "Machine configuration", 6, 2, "Set and reboot")
 
+        # option for non-combos
+        fullspan = True
         col = 0
         row = 0
         types = config.get_machine_types()
         self.machine = table_add_combo_row(table, row, col, "Machine:", types, self._machine_cb, types)
         row += 1
 
-        self.dsp = table_add_combo_row(table, row, col, "DSP type:", config.get_dsp_types())
-        self.dsp.set_tooltip_text("Disable DSP to improve Hatari performance significantly for Falcon programs that work (also) without it.  Some programs using DSP unconditionally, may work with dummy mode (and just lack e.g. sound).")
+        vbox1 = Gtk.VBox()
+        self.blitter = Gtk.CheckButton("Blitter (ST only)")
+        self.blitter.set_tooltip_text("Whether to emulate add-on Blitter chip for ST")
+        self.timerd = Gtk.CheckButton("Patch Timer-D")
+        self.timerd.set_tooltip_text("Improves ST/STE emulation performance, but some rare demos/games do not work with this")
+        vbox1.add(self.blitter)
+        vbox1.add(self.timerd)
+        table_add_widget_row(table, row, col, "Misc:", vbox1, fullspan)
         row += 1
 
         self.cpulevel = table_add_combo_row(table, row, col, "CPU type:", config.get_cpulevel_types())
         row += 1
 
+        vbox2 = Gtk.VBox()
+        self.compatible = Gtk.CheckButton("Prefetch emulation")
+        self.compatible.set_tooltip_text("Needed for overscan and other timing sensitive things to work correctly. Uses more host CPU")
+        self.exact = Gtk.CheckButton("Cycle exact with cache emulation")
+        self.exact.set_tooltip_text("Cycle exactness increases emulation accuracy and 680x0 cache emulation increases emulated code performance, but requires significantly more host CPU")
+        self.mmu = Gtk.CheckButton("MMU emulation")
+        vbox2.add(self.compatible)
+        vbox2.add(self.exact)
+        vbox2.add(self.mmu)
+        table_add_widget_row(table, row, col, None, vbox2, fullspan)
+        row += 1
+
         self.clocks = table_add_combo_row(table, row, col, "CPU clock:", config.get_cpuclock_types())
+        row += 1
+
+        self.fpu = table_add_combo_row(table, row, col, "FPU type:", config.get_fpu_types())
+        row += 1
+
+        self.softfp = Gtk.CheckButton("Accurate FPU emulation")
+        self.softfp.set_tooltip_text("Emulate FPU in software instead of using host FPU.  Uses more host CPU")
+        table_add_widget_row(table, row, col, None, self.softfp, fullspan)
+        row += 1
+
+        self.dsp = table_add_combo_row(table, row, col, "DSP type:", config.get_dsp_types())
+        self.dsp.set_tooltip_text("Disable DSP to improve Hatari performance significantly for Falcon programs that work (also) without it.  Some programs using DSP unconditionally, may work with dummy mode (and just lack e.g. sound).")
         row += 1
 
         self.monitors = table_add_combo_row(table, row, col, "Monitor:", config.get_monitor_types())
@@ -933,9 +965,6 @@ class MachineDialog(HatariUIDialog):
         # use next table column
         col = 2
 
-        # fullspan at bottom
-        fullspan = True
-
         ttram = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, 1024, 4)
         ttram.set_digits(0)
         ttram.set_tooltip_text("TT-RAM needs Falcon/TT and requires 32-bit addressing.  0 = disabled, 24-bit addressing.")
@@ -945,16 +974,6 @@ class MachineDialog(HatariUIDialog):
         label = "TOS image:"
         fsel = self._fsel(label, Gtk.FileChooserAction.OPEN)
         self.tos = table_add_widget_row(table, row, col, label, fsel, fullspan)
-        row += 1
-
-        vbox = Gtk.VBox()
-        self.compatible = Gtk.CheckButton("Compatible CPU")
-        self.compatible.set_tooltip_text("Needed for overscan and other timing sensitive things to work correctly")
-        vbox.add(self.compatible)
-        self.timerd = Gtk.CheckButton("Patch Timer-D")
-        self.timerd.set_tooltip_text("Improves ST/STE emulation performance, but some rare demos/games do not work with this")
-        vbox.add(self.timerd)
-        table_add_widget_row(table, row, col, "Misc:", vbox, fullspan)
         row += 1
 
         table.show_all()
@@ -969,17 +988,22 @@ class MachineDialog(HatariUIDialog):
 
     def _get_config(self, config):
         self.machine.set_active(config.get_machine())
-        self.dsp.set_active(config.get_dsp())
+        self.blitter.set_active(config.get_blitter())
+        self.timerd.set_active(config.get_timerd())
         self.cpulevel.set_active(config.get_cpulevel())
+        self.compatible.set_active(config.get_compatible())
+        self.exact.set_active(config.get_cycle_exact())
+        self.mmu.set_active(config.get_mmu())
         self.clocks.set_active(config.get_cpuclock())
+        self.fpu.set_active(config.get_fpu_type())
+        self.softfp.set_active(config.get_fpu_soft())
+        self.dsp.set_active(config.get_dsp())
         self.monitors.set_active(config.get_monitor())
         self.memory.set_active(config.get_memory())
         self.ttram.set_value(config.get_ttram())
         tos = config.get_tos()
         if tos:
             self.tos.set_filename(tos)
-        self.compatible.set_active(config.get_compatible())
-        self.timerd.set_active(config.get_timerd())
 
     def _get_active_radio(self, radios):
         idx = 0
@@ -991,15 +1015,20 @@ class MachineDialog(HatariUIDialog):
     def _set_config(self, config):
         config.lock_updates()
         config.set_machine(self.machine.get_active())
-        config.set_dsp(self.dsp.get_active())
+        config.set_blitter(self.blitter.get_active())
+        config.set_timerd(self.timerd.get_active())
         config.set_cpulevel(self.cpulevel.get_active())
+        config.set_compatible(self.compatible.get_active())
+        config.set_cycle_exact(self.exact.get_active())
+        config.set_mmu(self.mmu.get_active())
         config.set_cpuclock(self.clocks.get_active())
+        config.set_fpu_type(self.fpu.get_active())
+        config.set_fpu_soft(self.softfp.get_active())
+        config.set_dsp(self.dsp.get_active())
         config.set_monitor(self.monitors.get_active())
         config.set_memory(self.memory.get_active())
         config.set_ttram(self.ttram.get_value())
         config.set_tos(self.tos.get_filename())
-        config.set_compatible(self.compatible.get_active())
-        config.set_timerd(self.timerd.get_active())
         config.flush_updates()
 
     def run(self, config):

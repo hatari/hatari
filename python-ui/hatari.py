@@ -2,7 +2,7 @@
 # Classes for Hatari emulator instance and mapping its congfiguration
 # variables with its command line option.
 #
-# Copyright (C) 2008-2020 by Eero Tamminen
+# Copyright (C) 2008-2022 by Eero Tamminen
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -447,6 +447,32 @@ class HatariConfigMapping(ConfigStore):
         self.set("[System]", "nCpuLevel", value)
         self._change_option("--cpulevel %d" % value)
 
+    # ------------ compatible ---------------
+    def get_compatible(self):
+        return self.get("[System]", "bCompatibleCpu")
+
+    def set_compatible(self, value):
+        self.set("[System]", "bCompatibleCpu", value)
+        self._change_option("--compatible %s" % value)
+
+    # ------------ CPU exact ---------------
+    def get_cycle_exact(self):
+        return self.get("[System]", "bCycleExactCpu")
+
+    def set_cycle_exact(self, value):
+        self.set("[System]", "bCycleExactCpu", value)
+        if self._winuae:
+            self._change_option("--cpu-exact %s" % value)
+
+    # ------------ MMU ---------------
+    def get_mmu(self):
+        return self.get("[System]", "bMMU")
+
+    def set_mmu(self, value):
+        self.set("[System]", "bMMU", value)
+        if self._winuae:
+            self._change_option("--mmu %s" % value)
+
     # ------------ CPU clock ---------------
     def get_cpuclock_types(self):
         return ("8 MHz", "16 MHz", "32 MHz")
@@ -465,6 +491,35 @@ class HatariConfigMapping(ConfigStore):
         self.set("[System]", "nCpuFreq", value)
         self._change_option("--cpuclock %d" % value)
 
+    # ------------ FPU type ---------------
+    def get_fpu_types(self):
+        return ("None", "68881", "68882", "Internal")
+
+    def get_fpu_type(self):
+        return self.get("[System]", "n_FPUType")
+
+    def set_fpu_type(self, value):
+        self.set("[System]", "n_FPUType", value)
+        if self._winuae:
+            self._change_option("--fpu %s" % self.get_fpu_types()[value])
+
+    # ------------ SW FPU --------------
+    def get_fpu_soft(self):
+        return self.get("[System]", "bSoftFloatFPU")
+
+    def set_fpu_soft(self, value):
+        self.set("[System]", "bSoftFloatFPU", value)
+        if self._winuae:
+            self._change_option("--fpu-softfloat %s" % value)
+
+    # ------------ ST blitter --------------
+    def get_blitter(self):
+        return self.get("[System]", "bBlitter")
+
+    def set_blitter(self, value):
+        self.set("[System]", "bBlitter", value)
+        self._change_option("--blitter %s" % value)
+
     # ------------ DSP type ---------------
     def get_dsp_types(self):
         return ("None", "Dummy", "Emulated")
@@ -475,14 +530,6 @@ class HatariConfigMapping(ConfigStore):
     def set_dsp(self, value):
         self.set("[System]", "nDSPType", value)
         self._change_option("--dsp %s" % ("none", "dummy", "emu")[value])
-
-    # ------------ compatible ---------------
-    def get_compatible(self):
-        return self.get("[System]", "bCompatibleCpu")
-
-    def set_compatible(self, value):
-        self.set("[System]", "bCompatibleCpu", value)
-        self._change_option("--compatible %s" % value)
 
     # ------------ Timer-D ---------------
     def get_timerd(self):

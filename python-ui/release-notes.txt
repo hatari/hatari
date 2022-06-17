@@ -1,6 +1,17 @@
+Deprecations
+------------
+
+Following is deprecated and will be removed in a future release:
+- Support for older Hatari versions built with the oldAUE CPU core
+  (Hatari removed oldUAE build support in v2.4 release)
+
 
 User visible changes in Hatari (Python Gtk) UI
 ----------------------------------------------
+
+2022-06:
+- Add support for setting CPU compatibility + cycle-accuracy,
+  FPU type + accuracy, MMU and ST blitter options
 
 2022-05:
 - Fix: dialog exceptions under Wayland
