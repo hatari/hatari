@@ -66,10 +66,12 @@ static int mem_string_ok(Uint32 addr)
 				return i;
 			}
 		}
+		/* unterminated NF string -> error */
+		M68000_BusError(addr, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, 0);
 		return -1;
 	}
 	for (i = 0; i < NF_MAX_STRING; i++) {
-		if (!STMemory_CheckAreaType(addr, 1, ABFLAG_RAM | ABFLAG_ROM)) {
+		if (!STMemory_CheckAreaType(addr + i, 1, ABFLAG_RAM | ABFLAG_ROM)) {
 			/* ends in invalid area -> error */
 			M68000_BusError(addr, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, 0);
 			return -1;
@@ -78,6 +80,7 @@ static int mem_string_ok(Uint32 addr)
 			return i;
 		}
 	}
+	assert(false); /* should never be reached */
 	return -1;
 }
 
