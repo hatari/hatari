@@ -313,7 +313,7 @@ void Midi_InterruptHandler_Update(void)
 
 	/* Read the bytes in, if we have any */
 	nInChar = Midi_Host_ReadByte();
-	if (nInChar != EOF)
+	if (nInChar >= 0)
 	{
 		LOG_TRACE(TRACE_MIDI, "MIDI: Read character -> $%x\n", nInChar);
 		/* Copy into our internal queue */
@@ -326,7 +326,8 @@ void Midi_InterruptHandler_Update(void)
 #ifndef HAVE_PORTMIDI
 	else if (pMidiFhIn)
 	{
-		LOG_TRACE(TRACE_MIDI, "MIDI: read error (doesn't stop MIDI)\n");
+		if (nInChar != EOF)
+			LOG_TRACE(TRACE_MIDI, "MIDI: read error %d (does not stop MIDI)\n", nInChar);
 		clearerr(pMidiFhIn);
 	}
 #endif
@@ -347,15 +348,17 @@ void Midi_InterruptHandler_Update(void)
 static bool Midi_Host_Open(void)
 {
 #ifndef HAVE_PORTMIDI
+	int ok;
 	if (ConfigureParams.Midi.sMidiOutFileName[0])
 	{
 		/* Open MIDI output file */
 		pMidiFhOut = File_Open(ConfigureParams.Midi.sMidiOutFileName, "wb");
 		if (!pMidiFhOut)
 			return false;
-		setvbuf(pMidiFhOut, NULL, _IONBF, 0);    /* No output buffering! */
-		LOG_TRACE(TRACE_MIDI, "MIDI: Opened file '%s' for output\n",
-			 ConfigureParams.Midi.sMidiOutFileName);
+		ok = setvbuf(pMidiFhOut, NULL, _IONBF, 0);    /* No output buffering! */
+		LOG_TRACE(TRACE_MIDI, "MIDI: Opened file '%s' (%s) for output\n",
+			 ConfigureParams.Midi.sMidiOutFileName,
+			  ok == 0 ? "unbuffered" : "buffered");
 	}
 	if (ConfigureParams.Midi.sMidiInFileName[0])
 	{
@@ -363,9 +366,10 @@ static bool Midi_Host_Open(void)
 		pMidiFhIn = File_Open(ConfigureParams.Midi.sMidiInFileName, "rb");
 		if (!pMidiFhIn)
 			return false;
-		setvbuf(pMidiFhIn, NULL, _IONBF, 0);    /* No input buffering! */
-		LOG_TRACE(TRACE_MIDI, "MIDI: Opened file '%s' for input\n",
-			 ConfigureParams.Midi.sMidiInFileName);
+		ok = setvbuf(pMidiFhIn, NULL, _IONBF, 0);    /* No input buffering! */
+		LOG_TRACE(TRACE_MIDI, "MIDI: Opened file '%s' (%s) for input\n",
+			 ConfigureParams.Midi.sMidiInFileName,
+			  ok == 0 ? "unbuffered" : "buffered");
 	}
 #else
 	int i, ports;
