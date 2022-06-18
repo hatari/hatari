@@ -107,3 +107,6 @@
 
 /* Define to 1 if udev support is available */
 #cmakedefine HAVE_UDEV 1
+
+/* Define to 1 if the capstone library is available */
+#cmakedefine HAVE_CAPSTONE 1
