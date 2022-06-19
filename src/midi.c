@@ -23,6 +23,7 @@
 const char Midi_fileid[] = "Hatari midi.c";
 
 #include <SDL_types.h>
+#include <errno.h>
 
 #include "main.h"
 #include "configuration.h"
@@ -313,9 +314,9 @@ void Midi_InterruptHandler_Update(void)
 
 	/* Read the bytes in, if we have any */
 	nInChar = Midi_Host_ReadByte();
-	if (nInChar >= 0)
+	if (nInChar != EOF)
 	{
-		LOG_TRACE(TRACE_MIDI, "MIDI: Read character -> $%x\n", nInChar);
+		LOG_TRACE(TRACE_MIDI, "MIDI: read byte -> $%x\n", nInChar);
 		/* Copy into our internal queue */
 		nRxDataByte = nInChar;
 		MidiStatusRegister |= ACIA_SR_RX_FULL;
@@ -323,14 +324,6 @@ void Midi_InterruptHandler_Update(void)
 		/* Do we need to generate a receive interrupt? */
 		MIDI_UpdateIRQ ();
 	}
-#ifndef HAVE_PORTMIDI
-	else if (pMidiFhIn)
-	{
-		if (nInChar != EOF)
-			LOG_TRACE(TRACE_MIDI, "MIDI: read error %d (does not stop MIDI)\n", nInChar);
-		clearerr(pMidiFhIn);
-	}
-#endif
 
 	/* Set timer */
 	CycInt_AddRelativeInterrupt ( MIDI_TRANSFER_BYTE_CYCLE , INT_CPU_CYCLE , INTERRUPT_MIDI );
@@ -583,8 +576,22 @@ static int Midi_Host_ReadByte(void)
 {
 #ifndef HAVE_PORTMIDI
 	if (pMidiFhIn && File_InputAvailable(pMidiFhIn))
-		return fgetc(pMidiFhIn);
-	else return EOF;
+	{
+		/* man 3p: fgetc() returns EOF on all errors, but
+		 * sets errno only for other than end-of-file issues
+		 */
+		errno = 0;
+		int ret = fgetc(pMidiFhIn);
+		if (ret != EOF)
+			return ret;
+		if (errno && errno != EAGAIN)
+		{
+			LOG_TRACE(TRACE_MIDI, "MIDI: read error: %s\n", strerror(errno));
+		}
+		/* affects only EOF indicator */
+		clearerr(pMidiFhIn);
+	}
+	return EOF;
 #else
 	// TODO: should these be reset with Midi_Init()?
 	static Uint8 msg[4];
