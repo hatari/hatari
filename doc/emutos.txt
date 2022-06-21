@@ -1204,6 +1204,7 @@ Working demos:
 - 4getful (by gwEm, 4KB intro TT-version)
 - Adebug 3DTT demo (by Brainstorm)
 - CrY image viewer (by .tSCc)
+- Elegant Machinery (by Evolution)
 - Mandelbrot explorer (by .tSCc)
 - TC fish (by .tSCc)
 - TT highres slideshow (by .tSCc)
@@ -1387,6 +1388,8 @@ Demos working partly under EmuTOS >= v1.1:
   - Startup texts broken, need HiColor
 - Doomino (by STAX)
   - Info screen at start looks just garbage (HiColor?)
+- X-perience (by Abstract)
+  - Demo freezes, also with TOS v4
 
 Broken demos (with EmuTOS v1.1.x):
 - '_' (by Escape)
