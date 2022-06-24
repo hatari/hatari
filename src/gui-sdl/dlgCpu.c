@@ -63,7 +63,7 @@ static SGOBJ cpudlg[] =
 	{ SGTEXT, 0, 0, 3,12, 25,1, "CPU emulation parameters" },
 	{ SGCHECKBOX, 0, 0, 3,14, 21,1, "_Prefetch emulation*" },
 	{ SGCHECKBOX, 0, 0, 3,15, 35,1, "_Cycle-exact with cache emulation*" },
-	{ SGCHECKBOX, 0, 0, 3,16, 15,1, "_MMU emulation" },
+	{ SGCHECKBOX, 0, 0, 3,16, 16,1, "_MMU emulation*" },
 	{ SGCHECKBOX, 0, 0, 3,17, 20,1, "24-bit _addressing" },
 	{ SGCHECKBOX, 0, 0, 3,18, 26,1, "Accurate _FPU emulation*" },
 	{ SGTEXT, 0, 0, 3,20, 20,1, "* Uses more host CPU" },
