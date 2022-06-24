@@ -315,14 +315,38 @@ are also listed.</p>
       <td>Uses sync-scrolling in ST mode and STE HW scrolling in STE mode.</td>
     </tr>
     <tr>
+      <td>Metal Mutant</td>
+      <td>1.0</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
       <td>Microprose Golf</td>
       <td>1.7</td>
       <td>Requires Hatari &ge; 1.7 to avoid a crash during the game's intro</td>
     </tr>
     <tr>
-      <td>Metal Mutant</td>
-      <td>1.0</td>
-      <td>&nbsp;</td>
+      <td><a href="http://www.atarimania.com/game-atari-st-midi-maze_9972.html">Midi Maze</a> (v1.0)</td>
+      <td class="major">2.4</td>
+      <td>Multiplayer connection fails with "MIDI ring boo-boo"
+          error dialog when trying to start a game</td>
+    </tr>
+    <tr>
+      <td><a href="http://www.atarimania.com/game-atari-st-midi-maze-ii_36059.html">Midi Maze II</a> (v1.5)</td>
+      <td class="minor">2.4</td>
+      <td>After playing for a while game ends to
+          "The MIDI ring has timed out" error message</td>
+    </tr>
+    <tr>
+      <td><a href="http://www.atarimania.com/game-atari-st-midi-maze-iii_9971.html">Midi Maze 3</a> (v0.9)</td>
+      <td class="major">2.4</td>
+      <td>Multiplayer connection fails to "ring-timeout-error"
+          message when trying to start a new game</td>
+    </tr>
+    <tr>
+      <td><a href="https://demozoo.org/productions/197206/">MidiWiz</a> v1.1i</td>
+      <td class="major">2.4</td>
+      <td>Neither MIDI nor RS-232 multiplayer connection works,
+          data sync at game start never completes</td>
     </tr>
     <tr>
       <td><a href="http://www.atarimania.com/game-atari-st-monster-business_10017.html">Monster Business</a></td>
@@ -2750,7 +2774,7 @@ VGA one are indicated separately.</p>
       <td>1.1</td>
       <td>-</td>
       <td>-</td>
-      <td>2-4 player "Dungeon Master". 4 players needs MIDI. Works only with 1-2MB of RAM</td>
+      <td>2-4 player "Dungeon Master". 4 players needs MIDI</td>
     </tr>
     <tr>
       <td><a href="http://pouet.net/prod.php?which=28903">Men at War (preview)</a></td>
@@ -4698,20 +4722,23 @@ support or work only on them.</p>
       <td>Debugger supporting 68000 - 68030</td>
     </tr>
     <tr>
-      <td>Calamus SL (1991 demo)</td>
-      <td>1.0</td>
-      <td>Nice with Hatari TT or 32Mhz Falcon emulation at
-          e.g. 1024x768x1 VDI resolution...</td>
-    </tr>
-    <tr>
-      <td><a href="http://www.calamus.net/download/lite_tos.php">Calamus SL lite 20xx</a></td>
-      <td>1.9</td>
-      <td>Newer versions work only with EmuTOS (2015-04-26 git version or newer),
-          FPU, lot of both ST and TT-RAM and at least 800x600 resolution.
-	  ("--machine tt -m -s 14 --ttram 32 --tos etos512k.img", or
-	   "--machine falcon --dsp none --fpu 68882
-	    --vdi-width 896 --vdi-height 608 --vdi-planes 4
-	    -s 14 --addr24 off --ttram 32 --tos etos512k.img")</td>
+      <td><a href="https://calamus.net/">Calamus</a></td>
+      <td>2.4</td>
+      <td>
+	<dl>
+	  <dt>Calamus SL (1991 demo):</dt>
+	  <dd><ul>
+	  <li>Nice with TT-med or TT-high, and larger VDI modes</li>
+	  <li>Requires at minimum in 640x400@1 on 1MB ST
+	  </ul></dd>
+	  <dt>Calamus SL2000 Lite, SL2003 R3, L2006 R7, LE2015 R1:</dt>
+	  <dd><ul>
+	  <li>Work only with EmuTOS, and only its v0.9.5 - v0.9.12 versions</li>
+	  <li>Require at minimum 8MB RAM and 800x600 resolution
+	      (e.g. TT-high or 800x600@16 VDI mode)</li>
+	  </ul></dd>
+	</dl>
+      </td>
     </tr>
     <tr>
       <td><a href="http://centek.free.fr/atari/softs/s_cecile.htm">C&eacute;cile v2.22</a></td>
@@ -4721,11 +4748,26 @@ support or work only on them.</p>
           &quot;fast boot&quot; option.</td>
     </tr>
     <tr>
-      <td><a href="http://freemint.de/en/">FreeMiNT</a></td>
-      <td>1.2</td>
-      <td>Needs to be installed/booted from an ACSI or IDE HD image.
-          Disable memory protection (TODO: test with v2.3.1 MMU
-	  emulation)</td>
+      <td><a href="https://freemint.github.io/">FreeMiNT / XaAES</a></td>
+      <td class="minor">2.4</td>
+      <td>Needs to be installed/booted from a hard disk image as MiNT
+	  overrides GEMDOS (i.e. GEMDOS HD cannot do its interception).
+	<dl>
+	  <dt>FreeMiNT v1.19, 2022-06-21 bootable snapshot:</dt>
+	  <dd><ul>
+	  <li>Disable SCC drivers (e.g. "rm mint/*/*/scc.xdd"),
+	      or MiNT boot freezes</li>
+	  <li>Under TT + MMU + 24-bits (only), switching to XaAES and
+	      clicking on "Quit all Apps" + "Quit XaAES", freezes Hatari</li>
+	  </ul></dd>
+	  <dt>VanillaMiNT-030-1.19, from March 2017:</dt>
+	  <dd><ul>
+	  <li>Under TT emulation, if either MMU or 32-bit addressing is
+	  enabled, MiNT crashes at startup to "Bus Error writing at
+	  address $fffffff".  Under Falcon emulation, both work</li>
+	  </ul></dd>
+	</dl>
+      </td>
     </tr>
     <tr>
       <td><a href="http://www.seimet.de/atari/en/hddriver.html">HD Driver</a></td>
