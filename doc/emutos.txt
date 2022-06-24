@@ -617,6 +617,7 @@ Free/shareware/PD games:
 - In nihilum reverteris (interactive color novel)
 - Japlish        (line-A polygon lines)
 - Jetpac
+- Jitterbugs     (MIDI multiplayer, GFA, slow)
 - Killing Spree  (2014 preview by TLB at Atarimania)
 - Laserball 2014
 - LeMans         (line-A get pixel, draw line, bitblit, show mouse)
@@ -628,6 +629,8 @@ Free/shareware/PD games:
 - Midi Maze*     (MIDI multiplayer, works also in mono)
 - Midi Maze II   (MIDI multiplayer)
 - Midi Maze 3    (MIDI multiplayer)
+- MidiWiz 1.1i   (MIDI / RS-232 multiplayer)
+  - Requires EmuTOS >v1.1.1 to work also on ST
 - Missile Alert
 - Monkeys and Balloons
 - Monopoly
@@ -892,6 +895,12 @@ GEM games (more input issues):
 Atari ST applications (including commercial)
 --------------------------------------------
 
+Working debuggers (support also e.g. TT):
+- Adebug reloaded (68000-68030 debugger)
+- Peacebug v1.19 (supports remote control over MIDI)
+- Peacebug v1.30
+- Templmon 2.01
+
 Working drawing / image viewing programs:
 - Degas Elite, see http://www.youtube.com/watch?v=G4st-x4-BJg (at 16:30)
 - Iffcnv, IFF converter/viewer
@@ -930,6 +939,7 @@ Working MIDI programs:
 - MusicEditDemo 8.001 (tries to use GDOS + HighWire)
 - Music Mouse (uses line-A hline for cursor)
 - Notator 3.0
+- Pro Midi Player 8.0
 - Realtime 1.25
 - Sequencer One
 - SMF-PLAYer 1.1
@@ -1199,7 +1209,9 @@ requires EmuTOS v0.9.6+.
 has no specific Falcon support, it's listed for TT.)
 
 Working applications:
-- Adebug reloaded (68000-68030 debugger)
+- Calamus SL demo (1991 demo version)
+- Calamus SL/L/LE 20xx versions
+  - Work only with EmuTOS v0.9.5 - v0.9.12
 - Mandelbrot playtime (fracplay, uses FPU)
 - M_PLAYER v4.02 (app works also on Falcon, but not with EmuTOS)
   - https://gtello.pagesperso-orange.fr/mplayere.htm
@@ -1224,9 +1236,15 @@ Working demos:
 
 Working games:
 - Capy (by YesCREW)
+- DGEM v0.16 (Dungeon Master GEM version)
+  - Start from TT-med (or use 640x400@16 VDI mode on ST/e)
 - GEM Breakout
 - GEM Klikomania
 - GEM Landmine
+- GEM Magnetic v0.8 (Magnetic Scrolls game runner)
+  - Crashes on resolutions smaller than game window. Setup game colors
+    to black and white, disable graphics and use TT mono monitor
+    (or use 672x672@1 VDI mode on ST/e)
 - GEM Manga Puzzle (needs 256 color mode)
 - GEM Milanopoly
 - GEM NetHack v3.4.3
