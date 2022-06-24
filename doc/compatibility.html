@@ -2375,11 +2375,12 @@ VGA one are indicated separately.</p>
       <td>2.4</td>
       <td>-</td>
       <td>emu</td>
-      <td>Old Doom level viewer (from 90's). All tested versions (v2.14a, v307a)
-          work with Doom1 WAD.  Heretic shareware WAD looks fine with older
-	  2.14a version (as long as one isn't inside a wall), and
-	  completely broken with v3.07a. v3.07a (bm307.ttp) does not
-	  work with MMU</td>
+      <td>Old Doom level viewer (from 90's). All tested versions
+	  (v1.9a, v2.14a, v3.03a, v307a) work with Doom1 WAD.
+	  Heretic shareware WAD looks fine with older versions,
+	  (as long as one is not inside a wall), and broken with
+	  v3.x. "bm307.ttp" shows just black with MMU, but
+	  "bm307fh.ttp" and older versions work fine with MMU</td>
     </tr>
     <tr>
       <td><a href="https://www.pouet.net/prod.php?which=60837">Beats of Rage</a></td>
@@ -2964,7 +2965,7 @@ VGA one are indicated separately.</p>
       <td>-</td>
       <td>-</td>
       <td>Nice bomberman clone. v0.8 needs at least 2MB RAM.
-          v1.03 crashes unless MMU is enabled with 4 or 8MB RAM</td>
+          v1.03 needs at least 8MB to start reliably</td>
     </tr>
     <tr>
       <td>Shangai (demo)</td>
@@ -3763,8 +3764,8 @@ FPU.</p>
       <td class="major">2.4</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Crashes at start with MMU. Double bus error (NULL pointer)
-          otherwise when fullscreen face texture bender ends</td>
+      <td>Double bus error (NULL pointer) when fullscreen face texture
+	  (sin wave) bender screen ends</td>
     </tr>
     <tr>
       <td>ICE:
@@ -3852,7 +3853,7 @@ FPU.</p>
       <td>2.3.1</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Crashes at start if MMU is enabled</td>
+      <td>Freezes at start with "Dsp: Stack Overflow" if MMU is enabled</td>
     </tr>
     <tr>
       <td>Lazer:
@@ -4159,8 +4160,8 @@ FPU.</p>
       <td>2.3.1</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Needs FPU. Real time ray-tracing. Double bus errors before
-          demo title if MMU is enabled</td>
+      <td>Needs FPU. Real time ray-tracing with DSP.
+          Double bus errors before demo title if MMU is enabled</td>
     </tr>
     <tr>
       <td>The Respectables:
@@ -4639,9 +4640,8 @@ repository</a>.
       <td><a href="http://www.rainbowpainter.com/about/rainbow2multimedia.html">Rainbow II multimedia</a></td>
       <td>1.5</td>
       <td>emu</td>
-      <td>Uses / requires MMU emulation.
-          Mouse cannot traverse whole screen unless mouse grab or
-          fullscreen mode is used</td>
+      <td>Mouse cannot traverse whole scrolled application screen
+	  area unless mouse grab or fullscreen mode is used</td>
     </tr>
     <tr>
       <td><a href="http://atari-forum.com/viewtopic.php?f=26&amp;t=27728&amp;start=25">ScummVm</a></td>
@@ -4695,8 +4695,7 @@ support or work only on them.</p>
     <tr>
       <td><a href="http://adebug.sourceforge.net/">Adebug (reloaded)</a></td>
       <td>1.7</td>
-      <td>Debugger supporting 68000 - 68030.
-          Uses/requires MMU on Falcon and TT</td>
+      <td>Debugger supporting 68000 - 68030</td>
     </tr>
     <tr>
       <td>Calamus SL (1991 demo)</td>

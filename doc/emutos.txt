@@ -1388,6 +1388,8 @@ Demos working partly under EmuTOS >= v1.1:
   - Startup texts broken, need HiColor
 - Doomino (by STAX)
   - Info screen at start looks just garbage (HiColor?)
+- Symposium'96 (by Hydroxid)
+  - Cannot run to end due to Hatari issue
 - X-perience (by Abstract)
   - Demo freezes, also with TOS v4
 
@@ -1521,6 +1523,8 @@ Games working with extra hacks:
 Partly working games:
 - Bomb Squad
   - Game is 4x slower than with TOS4 (see EmuTOS incompatible.txt)
+- Color Runner
+  - Game cannot be started from main menu (same as with TOS v4)
 - Painium
   - Fire button works only until game itself starts
   - Works only with 8MB RAM
@@ -1540,7 +1544,7 @@ Broken games (with EmuTOS v1.1.x):
 - Killing Impact
   - Might work but Hatari does not emulate Videl correctly
 - Moongame
-  - Broken graphics (needs HiColor?)
+  - Stuck at black screen or broken graphics (needs HiColor?)
 - Moonspeeder (preview 2)
   - Broken graphics (needs HiColor?)
 - Mouse trap
