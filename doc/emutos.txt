@@ -67,19 +67,24 @@ the etos512k.img[1] from a preceding EmuTOS release:
 Earlier Hatari binary releases have included one of the smaller
 EmuTOS image files.
 
-[1] the "all languages" version intended mainly for TT & Falcon.
-    While the 192k and 256k version on some cases work better
-    for ST and STE programs, only the 512k image contains
-    support for all the hardware and languages.
+[1] the "all languages" version intended mainly for TT & Falcon:
+
+    While 192k and 256k EmuTOS variants work better for ST and STE
+    programs in some cases, only the larger image variants contain
+    support for all the hardware.  Older 512k EmuTOS variants support
+    also all the EmuTOS languages, but noawadays only the new EmuTOS
+    1024k variant does (has space for all of them).
 
 Notes for older EmuTOS versions:
 
 * EmuTOS <= v0.9.6:
+
   EmuTOS changed its INF file format in v0.9.7.  Hatari's Atari
   program autostarting and TOS resolution setting functionality
   supports only EmuTOS >= v0.9.7 INF file format
 
 * EmuTOS <= v0.8.5 with Hatari <= v2.0:
+
   In order to work with Hatari, EmuTOS v0.8.5 and earlier require
   the FastBoot option to be enabled. This is used to skip some memory
   tests (that Hatari v2.0 and earlier do not support) when EmuTOS
@@ -118,8 +123,8 @@ TOS ROM images:
   than Atari TOS versions.
 
 * Convenience.  EmuTOS doesn't need HD driver to access hard disk
-  images, and same 512K image supports all the hardware that different
-  Atari TOS versions support.
+  images, and same 512 (or 1024k) image supports all the hardware that
+  different Atari TOS versions support.
 
 * Continuity.  Users who want to continue using Atari compatible
   operating systems and need an open source replacement of TOS for
@@ -143,7 +148,7 @@ Many commercial games (e.g. Bombjack, Nebulus, Oids, Super Hang-On,
 Turrican, Xenon...) and almost all ST/STe/TT applications work fine
 with EmuTOS.
 
-Because (even 192k version of) EmuTOS uses a bit more memory than
+Because (even 192k variant of) EmuTOS uses a bit more memory than
 normal TOS, badly written (typically floppy-only) games & demos may
 blindly overwrite EmuTOS memory. They also often rely on (undocumented)
 TOS internal variables & functions being at specific memory locations,
@@ -164,10 +169,10 @@ with newer TOS versions, should usually be fine.
 Support for Falcon 16-bit resolution is missing and Falcon DSP support
 was added only after EmuTOS v1.0.
 
-Additionally, older EmuTOS versions (up to v0.9.1) lacked support for
-the (deprecated) line-A graphics functions which are used in many
+Additionally, very old EmuTOS versions (up to v0.9.1) lacked support
+for the (deprecated) line-A graphics functions which are used in many
 free/shareware games (ones done with GFA basic etc).  This isn't an
-issue with latest EmuTOS versions.
+issue with newer EmuTOS versions.
 
 Lists of known issues and incompatible applications are listed in
 bugs.txt & incompatible.txt files coming with EmuTOS:
@@ -181,11 +186,11 @@ EmuTOS debug symbols
 --------------------
 
 After loading EmuTOS debug symbols from the file coming with the 512k
-EmuTOS image, using debugger "symbols etos512k.sym" command, you can
-ask debugger to "trace cpu_symbols", to get trace of all the
+(or 1024k) EmuTOS image, using debugger "symbols etos512k.sym" command,
+you can ask debugger to "trace cpu_symbols", to get trace of all the
 (non-static) function calls EmuTOS does.
 
-For smaller EmuTOS versions, there's a script[1] you can use to convert
+For smaller EmuTOS variants, there's a script[1] you can use to convert
 the emutos2.map file (produced during EmuTOS build) to a format you
 can load to Hatari debugger with its "symbols" command[2].
 
@@ -202,8 +207,8 @@ EmuTOS debug output
 -------------------
 
 Start Hatari with "--natfeats on --trace os_base" options to get
-EmuTOS debug output (with 512k images), and to redirect EmuTOS panic
-output and other console messages to Hatari's console.
+EmuTOS debug output (with 512k or 1024k images), and to redirect
+EmuTOS panic output and other console messages to Hatari's console.
 
 For extra debug output and to add your own debug statements, you
 need to uncomment following line from suitable EmuTOS source file(s):
@@ -336,11 +341,11 @@ last Falcon demos, games and applications.
 Working Atari ST demos and games
 --------------------------------
 
-For STs, 192kB EmuTOS variant is best as it leaves most RAM free.
+For STs, 192k EmuTOS variant is best as it leaves most RAM free.
 
-If ST has more memory, *and* OS speed is important (i.e. app uses
-OS drawing functions), 512k variant could be used instead, as that
-is compiled with higher optimizations than 192k one.
+If ST has more memory, *and* OS speed is important (i.e. app uses OS
+drawing functions), 512k (or 1024k) variant could be used instead, as
+that is compiled with higher optimizations than 192k one.
 
 Some old, floppy only games expect certain memory areas occupied by
 EmuTOS, to be over-writable without issues.  These need 192k image.
@@ -809,7 +814,7 @@ Broken (floppy) demo classics
 - Froggies over the Fence (by Legacy, ST Connexion, Overlanders)
   - Line-F panic, earlier bus error at $400000 after first OS call:
     Rwabs(0,0x30000,8,1,0)
-  - with high-RAM etos512, complains about 1/2 MB RAM
+  - with high-RAM etos512k, complains about 1/2 MB RAM
 - Place to be (by EKO)
   - with 192k, black screen / panic at start
   - with cart, bus errors after intro screens
@@ -940,8 +945,8 @@ MIDI programs are available from Tim's MIDI world:
 	http://tamw.atari-users.net/
 
 Most of the non-GEM ST tracker & chip music composer programs work
-also with EmuTOS, most even with the 512kB EmuTOS version. See STE
-notes for more info on them.
+also with EmuTOS, most even with the 512k/1024k EmuTOS variants.
+See STE notes for more info on them.
 
 
 Working Atari STE programs
@@ -953,10 +958,10 @@ the "STE software compatibility list" section in compatibility.html).
 But following STE specific & enhanced demos, games and apps work
 fine with EmuTOS.
 
-Note: STE emulation needs 256kB variant of EmuTOS.  If you use 60Hz
-EmuTOS version (etos256us.img), you may get screen flicker and music
-playback issues with demos and games.  You should use at least EmuTOS
-version 0.9.4, preferably newer.
+Note: STE emulation needs 256k variant of EmuTOS.  With US i.e. 60Hz
+image (etos256us.img), you may get screen flicker and music playback
+issues with demos and games.  Full STE support requires EmuTOS
+v0.9.4+.
 
 Demos:
 - 1st Step (by Tobe/MJJ Prod)
@@ -1186,11 +1191,15 @@ Non-working games and music programs:
 Atari TT programs
 -----------------
 
-TT emulation requires 512kB version of EmuTOS (the one shipped with
-Hatari).  TT-low (256-color) mode and sound support requires EmuTOS
-v0.9.6 or newer.
+TT emulation requires 512k (or 1024k) variant of EmuTOS (the one
+shipped with Hatari).  TT-low (256-color) mode and sound support
+requires EmuTOS v0.9.6+.
+
+(If program supports features common to both TT and Falcon, but
+has no specific Falcon support, it's listed for TT.)
 
 Working applications:
+- Adebug reloaded (68000-68030 debugger)
 - Mandelbrot playtime (fracplay, uses FPU)
 - M_PLAYER v4.02 (app works also on Falcon, but not with EmuTOS)
   - https://gtello.pagesperso-orange.fr/mplayere.htm
@@ -1237,9 +1246,8 @@ playable.
 Falcon programs
 ---------------
 
-Falcon emulation requires 512kB version of EmuTOS (the one shipped
-with Hatari).  Programs using DSP require newer version of EmuTOS than
-the v1.0 (current latest release) shipped with Hatari v2.3.
+Falcon emulation requires 512k (or 1024k) variant of EmuTOS (the one
+shipped with Hatari).  Programs using DSP require EmuTOS v1.1.1+.
 
 Latest EmuTOS missing (16-bit) HiColor support probably explains
 partly why graphics in several demos & games look broken, or they
