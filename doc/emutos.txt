@@ -1210,8 +1210,8 @@ has no specific Falcon support, it's listed for TT.)
 
 Working applications:
 - Calamus SL demo (1991 demo version)
-- Calamus SL/L/LE 20xx versions
-  - Work only with EmuTOS v0.9.5 - v0.9.12
+- Calamus SL/L/LE 20xx lite versions
+  - Need either GDOS or older EmuTOS v0.9.5 - v0.9.12
 - Mandelbrot playtime (fracplay, uses FPU)
 - M_PLAYER v4.02 (app works also on Falcon, but not with EmuTOS)
   - https://gtello.pagesperso-orange.fr/mplayere.htm
