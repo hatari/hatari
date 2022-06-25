@@ -128,8 +128,9 @@ Emulator improvements:
     symbol names from Pure-C debug information
   - Auto-detection for whether section offsets should be used
     when loading symbol information
-  - MIDI trace options are split to "midi" (listing device and MIDI
-    events) and "midi_raw" (tracing IRQ and register read/write access)
+  - MIDI trace options are split to "midi" (device & MIDI events)
+    and "midi_raw" (IRQ and register read/write access).  Trace
+    logging added also for MIDI byte writes, not just reads
   - Trace options are listed in alphabetical order
 - Windows:
   - Next/prev drive change buttons added to SDL GUI file select dialog

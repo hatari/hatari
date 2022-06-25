@@ -244,7 +244,6 @@ void Midi_Data_ReadByte(void)
 void Midi_Data_WriteByte(void)
 {
 	Uint8 nTxDataByte;
-	bool ok;
 	
 	ACIA_AddWaitCycles ();						/* Additional cycles when accessing the ACIA */
 
@@ -275,10 +274,11 @@ void Midi_Data_WriteByte(void)
 	if (!ConfigureParams.Midi.bEnableMidi)
 		return;
 
-	ok = Midi_Host_WriteByte(nTxDataByte);
-
-	/* If there was an error then stop the midi emulation */
-	if (!ok)
+	if (Midi_Host_WriteByte(nTxDataByte))
+	{
+		LOG_TRACE(TRACE_MIDI, "MIDI: write byte -> $%x\n", nTxDataByte);
+	}
+	else
 	{
 		LOG_TRACE(TRACE_MIDI, "MIDI: write error -> stop MIDI\n");
 		Midi_UnInit();
