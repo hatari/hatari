@@ -724,7 +724,7 @@ static bool set_machine_type(void)
 		 */
 		if (ConfigureParams.System.nMachineType == MACHINE_FALCON) {
 			/* let's try claiming it's Falcon AfterBurner like Aranym does */
-			bi.mch_cookie = SDL_SwapBE32(ATARI_MCH_AB40);
+			bi.mch_type = SDL_SwapBE32(ATARI_MACH_AB40);
 		}
 #endif
 		break;
