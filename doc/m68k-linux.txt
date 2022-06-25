@@ -31,7 +31,7 @@ Here are instructions on building m68k Linux:
 
 And using them with Hatari.
 
-Build instructions are for Debian as that's the only Linux distribution
+Build instructions are for Debian as that is the only Linux distribution
 still building latest SW package versions for m68k, in ports:
 	http://ftp.ports.debian.org/debian-ports/pool-m68k/main/
 
@@ -60,7 +60,7 @@ version available in the given remote directory!
   addresses), so resets fail with LILO
 
 - PC address points to ST-RAM in debugger even for emulated Linux
-  code running in TT-RAM, because it's not MMU-translated
+  code running in TT-RAM, because it is not MMU-translated
   => workaround: load Linux to ST-RAM when debugging/profiling
 
 - There are lot of ("--log-level debug" and profiler) warnings about
@@ -179,7 +179,7 @@ instructions on 040.
    $ sudo apt install gcc-m68k-linux-gnu
 
 2. Get latest upstream kernel release sources (without history):
-   $ git clone --depth 1 --branch v5.16 \
+   $ git clone --depth 1 --branch v5.18 \
      git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
    $ cd linux
 
@@ -209,7 +209,7 @@ Notes:
   needed external modules
 
 - Bootup works faster when kernel is uncompressed, as uncompression
-  would happen in emulated code => don't compress kernel
+  would happen in emulated code => do not compress kernel
 
 
 4. Building root file system
@@ -274,7 +274,7 @@ This builds a minimal hard disk root file system with kernel "libc"
 utilities intended for initramfs.  These utilities are separate
 binaries (not symlinks like with BusyBox) and they're much more
 limited than BusyBox; they lack many of the standard options and shell
-doesn't e.g. have file name completion. In total they take only few
+does not e.g. have file name completion. In total they take only few
 hundred KB of space though.
 
 5. Fetch klibc library and utility packages:
@@ -298,7 +298,7 @@ hundred KB of space though.
 Notes:
 - these utilities would fit even to a floppy image:
 	$ zip2st disk/ klibc.st
-  But FAT file system cannot be used for Linux root fs because it's
+  But FAT file system cannot be used for Linux root fs because it is
   lacking security features required from one
 
 
@@ -346,8 +346,8 @@ Notes:
 1. Set suitable options in lilo.cfg, for example:
 -------------------------------------
 [LILO]
-Kernel = vmlinux-v5.10
-Symbols = System.map-v5.10
+Kernel = vmlinux-v5.18
+Symbols = System.map-v5.18
 Ramdisk =
 Args = video=atafb:sthigh console=tty
 KernelToFastRam = FALSE
@@ -384,14 +384,14 @@ Other notes:
   there are random bus errors & failures on Linux system calls
 - Keep "init=" last on "--lilo" option kernel command line,
   otherwise kernel may give arguments after it also to init!
-- Kernel doesn't need DSP, and avoiding it's emulation with
+- Kernel does not need DSP, and avoiding it is emulation with
   "--dsp none" at least doubles "--fast-forward on" speed
 
 
 7. Native bootstrap
 -------------------
 
-Real HW doesn't have LILO, so a separate bootstrap program is needed
+Real HW does not have LILO, so a separate bootstrap program is needed
 for loading the kernel into RAM and executing it from there. Following
 shows easiest method to simulate that with Hatari.
 
@@ -408,7 +408,7 @@ shows easiest method to simulate that with Hatari.
 3. Get kernel to bootstrap:
    $ cp /path/to/m68k-kernel/vmlinux gemdos-hd/
 
-4. If you don't have a TOS ROM image, download latest EmuTOS release
+4. If you do not have a TOS ROM image, download latest EmuTOS release
    from:
      https://sourceforge.net/projects/emutos/files/emutos/1.1.1/emutos-1024k-1.1.1.zip/download
    and extract it:
@@ -425,13 +425,13 @@ shows easiest method to simulate that with Hatari.
       gemdos-hd/bootstra.tos
 
 Hatari notes:
-- Because GEMDOS HD is specific to TOS, it's not accessible from Linux
-- Because TOS doesn't have driver for the Linux disk, and GEMDOS HD
-  is assigned to C:, IDE content isn't accessible from TOS
+- Because GEMDOS HD is specific to TOS, it is not accessible from Linux
+- Because TOS does not have driver for the Linux disk, and GEMDOS HD
+  is assigned to C:, IDE content is not accessible from TOS
 
 On real HW:
 - Linux rootfs would be put to a partition (e.g. "sda2"),
-  it wouldn't start from IDE drive first sector ("sda")
+  it would not start from IDE drive first sector ("sda")
 - NatFeats is not available, so debug option can be removed,
   or debug device set to a more suitable one (e.g. serial)
 
@@ -458,7 +458,7 @@ loaded before Linux boots.
 
 For now, all debugging and profiling should be done with kernel loaded
 to ST-RAM (see Hatari issues section).  For that, its size needs to be
-<8MB uncompressed, otherwise it won't work from ST-RAM.
+<8MB uncompressed, otherwise it wo not work from ST-RAM.
 
 Related lilo.cfg options are:
 	KernelToFastRam = FALSE
@@ -558,18 +558,19 @@ this.
    $ cd debian/installer
 
 1. Get latest Debian installer initrd:
-   $ wget https://cdimage.debian.org/cdimage/ports/debian-installer/2020-12-03/m68k/debian-installer-images_20201202_m68k.tar.gz
+   $ wget https://cdimage.debian.org/cdimage/ports/debian-installer/2022-03-17/m68k/debian-installer-images_2021XXXX_m68k.tar.gz
    $ tar xvf debian-installer-images*.gz
    $ cp installer-m68k/current/images/nativehd/initrd.gz ..
 
-2. get kernel files for version matching above tar output:
-   $ wget http://ftp.ports.debian.org/debian-ports/pool-m68k/main/l/linux/linux-image-5.10.0-1-m68k_5.10.4-1_m68k.deb
+2. get kernel files for version matching above tar output
+   (if it is still available):
+   $ wget http://ftp.ports.debian.org/debian-ports/pool-m68k/main/l/linux/linux-image-5.18.0-2-m68k_5.18.5-1_m68k.deb
    $ ar x linux-image-*_m68k.deb
    $ tar xvf data.tar.xz
    $ cp -av boot/* ..
 
 3. get kernel debug symbols (from the huge debug package):
-   $ wget http://ftp.ports.debian.org/debian-ports/pool-m68k/main/l/linux/linux-image-5.10.0-1-m68k-dbg_5.10.4-1_m68k.deb
+   $ wget http://ftp.ports.debian.org/debian-ports/pool-m68k/main/l/linux/linux-image-5.18.0-2-m68k-dbg_5.18.5-1_m68k.deb
    $ tar xvf data.tar.xz --wildcards '*/System.map-*'
    $ cp -av cp -av usr/lib/debug/boot/System.map-* ..
 
@@ -578,8 +579,8 @@ this.
    $ cd ..
    $ cat > lilo.cfg
 [LILO]
-Kernel = vmlinux-5.10.0-1-m68k
-Symbols = System.map-5.10.0-1-m68k
+Kernel = vmlinux-5.18.5-1-m68k
+Symbols = System.map-5.18.5-1-m68k
 Args = video=atafb:vga16 console=tty
 Ramdisk = initrd.gz
 KernelToFastRam = FALSE
@@ -587,7 +588,7 @@ RamdiskToFastRam = TRUE
 ^D
 
 5. Get ISO image release matching installer & kernel (checksum files are in same directory):
-    $ wget https://cdimage.debian.org/cdimage/ports/snapshots/2020-12-03/debian-10.0.0-m68k-NETINST-1.iso
+   $ wget https://cdimage.debian.org/cdimage/ports/snapshots/2022-03-28/debian-11.0.0-m68k-NETINST-1.iso
 
 6. Try running Hatari with them:
     $ hatari --log-level debug \
@@ -596,11 +597,11 @@ RamdiskToFastRam = TRUE
       --cpuclock 32 --cpu-exact off --compatible off \
       --mmu on -s 14 --ttram 128 --addr24 off \
       --monitor vga -c lilo.cfg --natfeats on \
-      --ide-master debian-10.0.0-m68k-NETINST-1.iso \
+      --ide-master debian-11.0.0-m68k-NETINST-1.iso \
       --lilo "debug=nfcon root=/dev/ram init=/init"
 
-NOTE: Hatari doesn't support networking so network install obviously
-won't work.  There aren't any ready made images of pre-installed and
+NOTE: Hatari does not support networking so network install obviously
+wo not work.  There are not any ready made images of pre-installed and
 up to date m68k Debian installs either.
 
 
@@ -633,7 +634,7 @@ Doing first stage of setting up minimal m68k Debian system image
    # /sbin/mkfs.ext2 -t ext2 -L DEBIAN -d debian-chroot debian.img 512M
    # chown $USER.$USER debian.img
 
-NOTE: debootstrap needs to be done on a partition that isn't mounted
+NOTE: debootstrap needs to be done on a partition that is not mounted
 with "noexec" or "nodev" option, otherwise it fails!
 
 To finish bootstrapping, one would need to boot it on m68k system
@@ -643,7 +644,7 @@ TODO: test again whether there are improvements to last status:
 - Hatari:
   debootstrap fails to kernel oops
 - m68k system-qemu:
-  doesn't support required HW
+  does not support required HW
 - m68k user-qemu (from Debian Stretch):
   fails completely on any m68k Debian binary
 - Aranym:
@@ -696,7 +697,7 @@ $ aranym-mmu -l linux.config
 - Hatari debug output shows IDE and DSP reset messages on Falcon at
   2Hz (from floppy media change detection) if Linux is started with
   --lilo, instead of from TOS.  This is because TOS initializes PSG
-  port-A register bits to sensible values and Linux doesn't.
+  port-A register bits to sensible values and Linux does not.
 
   Workaround: kernel patch
 
@@ -704,7 +705,7 @@ $ aranym-mmu -l linux.config
 10.2 TODO / investigate more
 ----------------------------
 
-- Kernel doesn't recognize ACSI drives at all, although kernel
+- Kernel does not recognize ACSI drives at all, although kernel
   reports finding Atari ACSI HW:
 ------------------------------------------------------------
 Atari hardware found: STND_SHIFTER ST_MFP YM2149 MSTE_CLK ACSI
@@ -722,7 +723,7 @@ Kernel panic - not syncing: VFS: Unable to mount root fs on unknown-block(0,0)
   Only SCSI & IDE drives are recognized
 
 - Kernel double bus errors right at start when 040/060 is used with
-  CPU cache/prefetch enabled.  It's possible that compiling 040 (or
+  CPU cache/prefetch enabled.  It is possible that compiling 040 (or
   060) specific kernel would help:
 	http://www.linux-m68k.org/faq/afterburner.html
 
@@ -770,7 +771,7 @@ Call Trace:
 ...
 ------------------------------------------------------------
 
-  This didn't happen with 2019 v2.3-dev Git version, and Linux
+  This did not happen with 2019 v2.3-dev Git version, and Linux
   boots fine on real 060 Falcon:
 	https://www.youtube.com/watch?v=8Sriz45Z4oM
 
