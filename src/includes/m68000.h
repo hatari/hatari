@@ -27,6 +27,10 @@
 #include "log.h"
 
 
+#ifdef REG_A0		/* REG_A0 can already be defined in RISC-V's header */
+#undef REG_A0
+#endif
+
 /* 68000 Register defines */
 enum {
   REG_D0,    /* D0.. */
