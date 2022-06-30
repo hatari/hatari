@@ -3286,7 +3286,7 @@ void Video_InterruptHandler_EndLine(void)
 if ( CycInt_From_Opcode )		/* TEMP : to update CYCLES_COUNTER_VIDEO during an opcode */
 {
   Video_GetPosition_ForceInc = currcycle / 256;
-//  fprintf ( stderr , "Video_InterruptHandler_HBL from opcode currcycle=%d add=%d\n" , currcycle , Video_GetPosition_ForceInc );
+//  fprintf ( stderr , "Video_InterruptHandler_EndLine from opcode currcycle=%d add=%d\n" , currcycle , Video_GetPosition_ForceInc );
 }
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
@@ -3345,6 +3345,7 @@ if ( CycInt_From_Opcode )		/* TEMP : to update CYCLES_COUNTER_VIDEO during an op
 				MFP_TimerB_EventCount ( pMFP_TT , PendingCycles );	/* DE signal is also connected to timer B on the TT MFP */
 		}
 	}
+Video_GetPosition_ForceInc = 0;		/* TEMP : to update CYCLES_COUNTER_VIDEO during an opcode */
 }
 
 
