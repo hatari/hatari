@@ -1201,6 +1201,21 @@ void	Video_GetPosition ( int *pFrameCycles , int *pHBL , int *pLineCycles )
 }
 
 
+/* Same as Video_GetPosition combined with Video_GetPosition_ForceInc, except Video_GetPosition_CE */
+/* is only used from Video_AddInterrupt(). */
+/* TODO This will be merged later with different code when we use CyclesGlobalClockCounter instead of CYCLES_COUNTER_VIDEO */
+
+static void	Video_GetPosition_CE ( int *pFrameCycles , int *pHBL , int *pLineCycles )
+{
+	if ( !CpuRunCycleExact )
+		return Video_GetPosition ( pFrameCycles , pHBL , pLineCycles );
+
+	*pFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
+	*pFrameCycles += currcycle / 256;		/* TEMP : to update CYCLES_COUNTER_VIDEO with new cycInt code */
+	Video_ConvertPosition ( *pFrameCycles , pHBL , pLineCycles );
+}
+
+
 void	Video_GetPosition_OnWriteAccess ( int *pFrameCycles , int *pHBL , int *pLineCycles )
 {
 	*pFrameCycles = Cycles_GetCounterOnWriteAccess(CYCLES_COUNTER_VIDEO);
@@ -4422,7 +4437,7 @@ static void Video_AddInterrupt ( int Line , int Pos , interrupt_id Handler )
 	if ( nHBL >= nScanlinesPerFrame )
 	  return;				/* don't set a new hbl/timer B if we're on the last line, as the vbl will happen first */
 	
-	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+	Video_GetPosition_CE ( &FrameCycles , &HblCounterVideo , &LineCycles );
 //fprintf ( stderr , "add int pos=%d handler=%d LineCycles=%d nCyclesPerLine=%d\n" , Pos , Handler , LineCycles , nCyclesPerLine );
 
 	Pos <<= nCpuFreqShift;			/* convert Pos at 8 MHz into number of cycles at 8/16/32 MHz */
@@ -4433,7 +4448,7 @@ static void Video_AddInterrupt ( int Line , int Pos , interrupt_id Handler )
 		CyclesToPos = Pos + ShifterFrame.ShifterLines[Line-1].StartCycle - FrameCycles + nCyclesPerLine;
 
 	CycInt_AddRelativeInterrupt ( CyclesToPos , INT_CPU_CYCLE, Handler );
-//fprintf ( stderr , "add int pos=%d handler=%d LineCycles=%d nCyclesPerLine=%d -> %d cycles\n" , Pos , Handler , LineCycles , nCyclesPerLine , CycleToPos );
+//fprintf ( stderr , "add int pos=%d handler=%d LineCycles=%d nCyclesPerLine=%d -> %d cycles\n" , Pos , Handler , LineCycles , nCyclesPerLine , CyclesToPos );
 }
 
 
