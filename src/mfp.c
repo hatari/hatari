@@ -2476,7 +2476,11 @@ void MFP_TimerBData_ReadByte(void)
 
 			/* If Timer B's change happens before the read cycle of the current instruction, we must return */
 			/* the current value - 1 (because MFP_TimerB_EventCount_Interrupt was not called yet) */
-			if ( (nHBL >= nStartHBL ) && ( nHBL < nEndHBL )	/* ensure display is ON and timer B can happen */
+			/* NOTE This is only needed when CpuRunCycleExact=false ; when CpuRunCycleExact=true, MFP_UpdateTimers() */
+			/* was already called above and MFP_TimerB_EventCount_Interrupt should have been called too if needed */
+			/* so TB_count should already be the correct value */
+			if ( !CpuRunCycleExact
+				&& (nHBL >= nStartHBL ) && ( nHBL < nEndHBL )	/* ensure display is ON and timer B can happen */
 				&& ( LineTimerBPos > pos_start ) && ( LineTimerBPos < pos_read ) )
 			{
 				LOG_TRACE(TRACE_MFP_READ , "mfp%s read tbdr overlaps pos_start=%d TB_pos=%d pos_read=%d nHBL=%d \n",
