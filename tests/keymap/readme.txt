@@ -5,6 +5,6 @@ checkkeys   -- SDL program to print pressed SDL keys codes
 listkeys    -- SDL program to list SDL scancodes & keycodes
 
 Sources for first (keytest.*) can be compiled with AHCC from:
-	http://members.chello.nl/h.robbers/
+	https://docs.dev-docs.org/htm/search.php?find=AHCC
 
 Sources for last two can be compiled with make & gcc on PC.

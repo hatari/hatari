@@ -256,13 +256,13 @@ FluidSynth:
   http://www.iiwu.org/fluidsynth/
 
 Horgand:
-  http://horgand.berlios.de/
+  https://sourceforge.net/projects/horgand.berlios/
 
 Soundfonts:
   http://alsa.opensrc.org/SoundFontHandling
 
 List of some soft-synthetizers:
-  http://alsa.opensrc.org/SoftSynths
+  http://alsa.opensrc.org/SoftSynth
 
 Kaconnect:
   http://alsamodular.sourceforge.net/
