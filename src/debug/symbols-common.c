@@ -475,7 +475,7 @@ static bool is_gcc_internal(const char *name)
 
 /**
  * Return true if symbol should be ignored based on its name & type
- * and given options, and increase appropiate ignore count
+ * and given options, and increase appropriate ignore count
  */
 static bool ignore_symbol(const char *name, symtype_t symtype, const symbol_opts_t *opts, ignore_counts_t *counts)
 {
