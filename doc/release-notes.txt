@@ -4,8 +4,8 @@
                                 Release Notes
 
 
- Development version
- -------------------
+ Version 2.4.0 (2022-07-09)
+ --------------------------
 
 Following features are deprecated and will be removed in a future release:
 - SDL 2.x "bUseSdlRenderer" config and "GPU scaling" GUI options
@@ -54,7 +54,7 @@ Emulation improvements:
   - Use 2 different signals SOUNDINT and SNDINT for Falcon (connected to
     MFP GPIP7 and MFP Timer A input)
 - FDC:
-  - Stall the CPU during 32 cycles when DMA FIFO if filled/transferred
+  - Stall the CPU during 32 cycles when DMA FIFO is filled/transferred
 - SCSI:
   - Improve MODE SENSE, add REPORT LUNS support
 - IKBD:
