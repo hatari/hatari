@@ -1518,19 +1518,6 @@ static void set_x_funcs (void)
 			dcache_lput = put_long030_cicheck;
 			dcache_wput = put_word030_cicheck;
 			dcache_bput = put_byte030_cicheck;
-			if (currprefs.cpu_data_cache) {
-				dcache_lput = mem_access_delay_long_write_ce030_cicheck;
-				dcache_wput = mem_access_delay_word_write_ce030_cicheck;
-				dcache_bput = mem_access_delay_byte_write_ce030_cicheck;
-			} else {
-				dcache_lput = mem_access_delay_long_write_ce020;
-				dcache_wput = mem_access_delay_word_write_ce020;
-				dcache_bput = mem_access_delay_byte_write_ce020;
-			}
-		} else if (currprefs.cpu_data_cache) {
-			dcache_lput = put_long030_cicheck;
-			dcache_wput = put_word030_cicheck;
-			dcache_bput = put_byte030_cicheck;
 		}
 	}
 }
