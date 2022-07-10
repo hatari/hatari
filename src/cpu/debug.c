@@ -15,7 +15,6 @@
 #include "hatari-glue.h"
 
 #include <ctype.h>
-#include <signal.h>
 
 #include "options_cpu.h"
 //#include "uae.h"
