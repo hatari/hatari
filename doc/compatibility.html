@@ -4754,12 +4754,15 @@ support or work only on them.</p>
       <td>Needs to be installed/booted from a hard disk image as MiNT
 	  overrides GEMDOS (i.e. GEMDOS HD cannot do its interception).
 	<dl>
-	  <dt>FreeMiNT v1.19, 2022-06-21 bootable snapshot:</dt>
+	  <dt>FreeMiNT v1.19, <a href="https://tho-otto.de/snapshots/freemint/bootable/">bootable snapshot</a>
+	      from summer 2022:</dt>
 	  <dd><ul>
-	  <li>Disable SCC drivers (e.g. "rm mint/*/*/scc.xdd"),
-	      or MiNT boot freezes</li>
-	  <li>Under TT + MMU + 24-bits (only), switching to XaAES and
-	      clicking on "Quit all Apps" + "Quit XaAES", freezes Hatari</li>
+	  <li>Disable SCC drivers (e.g. "rm mint/*/*/scc.xdd"), or MiNT
+	      boot freezes (due to Hatari's incomplete SCC emulation)</li>
+	  <li>With 030 MMU + FPU + cycle-exact (cache) emulation enabled,
+	      switching to XaAES, clicking on "Quit all Apps" and then
+	      "Quit XaAES" (in "Process" menu), freezes Hatari.
+	      This happens only with EmuTOS v1.1.x</li>
 	  </ul></dd>
 	  <dt>VanillaMiNT-030-1.19, from March 2017:</dt>
 	  <dd><ul>
