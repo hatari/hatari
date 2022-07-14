@@ -35,8 +35,8 @@
 #define MIN_VDI_WIDTH   320
 #define MIN_VDI_HEIGHT  160
 
-/* width must be aligned to a short */
-#define VDI_ALIGN_WIDTH(planes) (16/planes)
+/* bitplanes are interleaved in chunks of 16 pixels */
+#define VDI_ALIGN_WIDTH        16
 /* height should be multiple of cell height (8 or 16) */
 #define VDI_ALIGN_HEIGHT        8
 

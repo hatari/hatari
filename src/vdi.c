@@ -114,7 +114,6 @@ void VDI_SetResolution(int GEMColor, int WidthRequest, int HeightRequest)
 {
 	int w = WidthRequest;
 	int h = HeightRequest;
-	int walign;
 
 	/* Color depth */
 	switch (GEMColor)
@@ -140,15 +139,14 @@ void VDI_SetResolution(int GEMColor, int WidthRequest, int HeightRequest)
 #endif
 	/* Make sure VDI screen size is acceptable and aligned to TOS requirements */
 
-	walign = VDI_ALIGN_WIDTH(VDIPlanes);
-	w = Opt_ValueAlignMinMax(w, walign, MIN_VDI_WIDTH, MAX_VDI_WIDTH);
+	w = Opt_ValueAlignMinMax(w, VDI_ALIGN_WIDTH, MIN_VDI_WIDTH, MAX_VDI_WIDTH);
 	h = Opt_ValueAlignMinMax(h, VDI_ALIGN_HEIGHT, MIN_VDI_HEIGHT, MAX_VDI_HEIGHT);
 
 	/* screen size in bytes needs to be below limit */
 	if (VDI_ByteLimit(&w, &h, VDIPlanes))
 	{
 		/* align again */
-		w = Opt_ValueAlignMinMax(w, walign, MIN_VDI_WIDTH, MAX_VDI_WIDTH);
+		w = Opt_ValueAlignMinMax(w, VDI_ALIGN_WIDTH, MIN_VDI_WIDTH, MAX_VDI_WIDTH);
 		h = Opt_ValueAlignMinMax(h, VDI_ALIGN_HEIGHT, MIN_VDI_HEIGHT, MAX_VDI_HEIGHT);
 	}
 	if (w != WidthRequest || h != HeightRequest)

@@ -183,8 +183,8 @@ static int DlgMonitor_SetVdiStepping(int *stepx, int *stepy)
 		planes = 2;
 	else
 		planes = 4;
+	*stepx = VDI_ALIGN_WIDTH;
 	*stepy = VDI_ALIGN_HEIGHT;
-	*stepx = VDI_ALIGN_WIDTH(planes);
 	return planes;
 }
 
