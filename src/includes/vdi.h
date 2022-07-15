@@ -8,9 +8,9 @@
 #ifndef HATARI_VDI_H
 #define HATARI_VDI_H
 
-/* TOS requires screen width to be aligned to 16/planes and height is
- * better to be aligned to VDI text height (8, smaller of these, is
- * used in calculating the limits in Hatari).
+/* Bitplanes are interleaved in chunks of 16 pixels and height should
+ * be aligned to VDI text height (8, smaller of these, is used in
+ * calculating the limits in Hatari).
  *
  * Earlier programs have been determined to have issues when screen
  * size goes over 300kB, so that is taken as limit too.
