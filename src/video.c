@@ -733,6 +733,8 @@ static void	Video_AddInterruptHBL ( int Line , int Pos );
 static void	Video_ColorReg_WriteWord(void);
 static void	Video_ColorReg_ReadWord(void);
 
+static void	Video_TT_RasterHBL(void);
+
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -3015,12 +3017,7 @@ if ( CycInt_From_Opcode )		/* TEMP : to update CYCLES_COUNTER_VIDEO during an op
 	}
 	else if (Config_IsMachineTT())
 	{
-		/* Only update video counter in TT mode */
-		int width, height, bpp, linebytes;
-		Video_GetTTRes(&width, &height, &bpp);
-		linebytes = width * bpp / 8;
-		pVideoRaster = ((pVideoRaster - STRam + linebytes)
-		                & 0xffffff) + STRam;
+		Video_TT_RasterHBL();
 	}
 	else
 	{
@@ -5591,6 +5588,41 @@ void Video_TTColorRegs_STRegWrite(void)
 		addr += 2;
 	}
 	bTTColorsSync = false;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * This function is called during Video_InterruptHandler_HBL.
+ * In TT mode we don't call Video_EndHBL() which is STF/STE specific and
+ * call Video_CopyScreenLineColor/Mono later,  but we must still update pVideoRaster
+ * in case a program reads video counter at $FF8205/07/09
+ *
+ * This is a rather simple version that assumes the TT screen is using the
+ * same display mode during the whole frame.
+ * NOTE : This function will be called at the end of line nHBL, so the next displayed
+ * line will be in fact nHBL+1
+ */
+static void Video_TT_RasterHBL(void)
+{
+	/* Only update video counter in TT mode */
+	int width, height, bpp, linebytes , lines;
+	Video_GetTTRes(&width, &height, &bpp);
+	linebytes = width * bpp / 8;
+
+	if ( nHBL+1 < nStartHBL )
+	{
+		/* pVideoRaster was set during Video_ClearOnVBL using VideoBase */
+		/* It's already the correct value */
+	}
+	else
+	{
+		lines = nHBL+1 - nStartHBL;
+		if ( lines >= height )
+			lines = height;
+
+		pVideoRaster = ( ( Video_GetScreenBaseAddr() + lines * linebytes ) & 0xffffff ) + STRam;
+	}
 }
 
 
