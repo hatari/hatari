@@ -2984,13 +2984,6 @@ if ( CycInt_From_Opcode )		/* TEMP : to update CYCLES_COUNTER_VIDEO during an op
 		return;
 	}
 
-
-	if (Config_IsMachineFalcon())
-	{
-		VIDEL_VideoRasterHBL();
-	}
-
-	
 	/* Increment the hbl jitter index */
 	HblJitterIndex++;
 	HblJitterIndex %= HBL_JITTER_ARRAY_SIZE;
@@ -3016,8 +3009,20 @@ if ( CycInt_From_Opcode )		/* TEMP : to update CYCLES_COUNTER_VIDEO during an op
 	/* Set pending bit for HBL interrupt in the CPU IPL */
 	M68000_Exception(EXCEPTION_NR_HBLANK , M68000_EXC_SRC_AUTOVEC);	/* Horizontal blank interrupt, level 2 */
 
-
-	if (!Config_IsMachineTT() && !Config_IsMachineFalcon())
+	if (Config_IsMachineFalcon())
+	{
+		VIDEL_VideoRasterHBL();
+	}
+	else if (Config_IsMachineTT())
+	{
+		/* Only update video counter in TT mode */
+		int width, height, bpp, linebytes;
+		Video_GetTTRes(&width, &height, &bpp);
+		linebytes = width * bpp / 8;
+		pVideoRaster = ((pVideoRaster - STRam + linebytes)
+		                & 0xffffff) + STRam;
+	}
+	else
 	{
 		Video_EndHBL();				/* Check some borders removal and copy line to display buffer */
 	}

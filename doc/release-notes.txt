@@ -7,6 +7,10 @@
  Development version
  -------------------
 
+Emulation improvements:
+- Fix regression in TT mode: Update video counter again on each HBL
+  (fixes e.g. Hextracker when run in TT mode)
+
 Emulator improvements:
 - VDI mode:
   - Fix: VDI width needs to be aligned to (at least) 16-pixels
