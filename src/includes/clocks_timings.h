@@ -54,9 +54,15 @@ typedef struct
 
 } CLOCKS_STRUCT;
 
-
-
 extern CLOCKS_STRUCT	MachineClocks;
+
+
+
+typedef struct {
+  Uint64	Cycles;
+  Uint64	Remainder;
+} CLOCKS_CYCLES_STRUCT;
+
 
 extern bool	RoundVBLPerSec;
 
@@ -72,6 +78,7 @@ Uint32	ClocksTimings_GetVBLPerSec ( MACHINETYPE MachineType , int ScreenRefreshR
 Uint32	ClocksTimings_GetVBLDuration_micro ( MACHINETYPE MachineType , int ScreenRefreshRate );
 Sint64	ClocksTimings_GetSamplesPerVBL ( MACHINETYPE MachineType , int ScreenRefreshRate , int AudioFreq );
 
+void	ClocksTimings_ConvertCycles ( Uint32 CyclesIn , Uint64 ClockFreqIn , CLOCKS_CYCLES_STRUCT *CyclesStructOut , Uint64 ClockFreqOut );
 
 
 

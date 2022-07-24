@@ -542,3 +542,33 @@ Sint64	ClocksTimings_GetSamplesPerVBL ( MACHINETYPE MachineType , int ScreenRefr
 	return SamplesPerVBL;
 }
 
+
+
+
+/*-----------------------------------------------------------------------------------------*/
+/**
+ * Convert a number of cycles "CyclesIn" for a clock running at "ClockFreqIn" into
+ * an equivalent number of cycles for a clock running at "ClockFreqOut".
+ * As clocks are rarely multiple of each other, this will give a remainder that must be kept
+ * and used on next call.
+ * This method uses only integer operations (integer division and modulo) and gives much more
+ * precise results than using floating point, because there's no roundings that accumulate
+ * after a while.
+ */
+void	ClocksTimings_ConvertCycles ( Uint32 CyclesIn , Uint64 ClockFreqIn , CLOCKS_CYCLES_STRUCT *CyclesStructOut , Uint64 ClockFreqOut )
+{
+	Uint64	CyclesTotal;
+	Uint64	CyclesOut;
+	Uint64	CyclesOut_remainder;
+
+	CyclesTotal = CyclesIn * ClockFreqOut;
+	CyclesTotal += CyclesStructOut->Remainder;
+
+	CyclesOut = CyclesTotal / ClockFreqIn;
+	CyclesOut_remainder = CyclesTotal % ClockFreqIn;
+
+	CyclesStructOut->Cycles = CyclesOut;
+	CyclesStructOut->Remainder = CyclesOut_remainder;
+}
+
+

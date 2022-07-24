@@ -329,6 +329,8 @@ static int	Sound_Stats_Index = 0;
 static int	Sound_Stats_SamplePerVBL;
 
 
+static CLOCKS_CYCLES_STRUCT	YM2149_ConvertCycles_250;
+
 
 /*--------------------------------------------------------------*/
 /* Local functions prototypes					*/
@@ -782,7 +784,7 @@ static void	Ym2149_BuildVolumeTable(void)
 /*-----------------------------------------------------------------------*/
 /**
  * Convert a CPU clock value (as in CyclesGlobalClockCounter)
- * into a 250 kHz YM2149 clock (taking nCpuFreqShift into account)
+ * into a 250 kHz YM2149 clock.
  *
  * NOTE : we should not use this simple method :
  *	Clock_250 = CpuClock / ( 32 << nCpuFreqShift )
@@ -792,11 +794,10 @@ static void	Ym2149_BuildVolumeTable(void)
  * To get the correct 250 kHZ clock, we must compute how many CpuClock units
  * elapsed since the previous call and convert this increment into
  * an increment for the 250 kHz clock
- * To update YM2149_Clock_250_CpuClock we should only take into account
- * the part of CpuClockDiff that corresponds to an integer increment YM_inc :
- * the ignored (remainder) CpuClockDiff's units will be taken into account on the next call.
+ * After each call the remainder will be saved to be used on the next call
  */
 
+#if 0
 /* integer version : use it when YM2149's clock is the same as CPU's clock (eg STF) */
 
 static void	YM2149_UpdateClock_250_int ( Uint64 CpuClock )
@@ -850,7 +851,24 @@ static void	YM2149_UpdateClock_250_float ( Uint64 CpuClock )
 
 //fprintf ( stderr , "update_250 clock_cpu=%ld -> ym_inc=%ld clock_250=%ld clock_250_cpu_clock=%ld\n" , CpuClock , YM_Inc , YM2149_Clock_250 , YM2149_Clock_250_CpuClock );
 }
+#endif
 
+
+static void	YM2149_UpdateClock_250_int_new ( Uint64 CpuClock )
+{
+	Uint64		CpuClockDiff;
+
+
+	CpuClockDiff = CpuClock - YM2149_Clock_250_CpuClock;
+	ClocksTimings_ConvertCycles ( CpuClockDiff , MachineClocks.CPU_Freq_Emul , &YM2149_ConvertCycles_250 , YM_ATARI_CLOCK_COUNTER );
+
+	YM2149_Clock_250 += YM2149_ConvertCycles_250.Cycles;
+	YM2149_Clock_250_CpuClock = CpuClock;
+//fprintf ( stderr , "update_250_new out clock_cpu=%lu cpu_diff=%lu inc=%lu rem=%lu clock_250_in=%lu\n" , CpuClock, CpuClockDiff, YM2149_ConvertCycles_250.Cycles, YM2149_ConvertCycles_250.Remainder , YM2149_Clock_250 );
+
+
+//fprintf ( stderr , "update_250 clock_cpu=%ld -> ym_inc=%ld clock_250=%ld clock_250_cpu_clock=%ld\n" , CpuClock , YM2149_ConvertCycles_250.Cycles , YM2149_Clock_250 , YM2149_Clock_250_CpuClock );
+}
 
 
 /*
@@ -865,9 +883,13 @@ static void	YM2149_UpdateClock_250_float ( Uint64 CpuClock )
 static void	YM2149_UpdateClock_250 ( Uint64 CpuClock )
 {
 	if ( ConfigureParams.System.nMachineType == MACHINE_ST || ConfigureParams.System.nMachineType == MACHINE_MEGA_ST )
-		YM2149_UpdateClock_250_int ( CpuClock );
+{
+//		YM2149_UpdateClock_250_int ( CpuClock );
+		YM2149_UpdateClock_250_int_new ( CpuClock );
+}
 	else
-		YM2149_UpdateClock_250_float ( CpuClock );
+//		YM2149_UpdateClock_250_float ( CpuClock );
+		YM2149_UpdateClock_250_int_new ( CpuClock );
 }
 
 
