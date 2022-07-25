@@ -36,9 +36,12 @@ downloading other versions or the source code of EmuTOS, please visit
 the EmuTOS website.
 
 The tos.img file included with the latest Hatari releases is
-the etos512k.img[1] from a preceding EmuTOS release:
+the etos1024k.img[1] from a preceding EmuTOS release:
 - Hatari v2.4.0:
   https://sourceforge.net/projects/emutos/files/emutos/1.1.1/
+
+The tos.img file included with earlier Hatari releases is
+the etos512k.img[1] from a preceding EmuTOS release:
 - Hatari v2.3.0, v2.3.1:
   https://sourceforge.net/projects/emutos/files/emutos/1.0/
 - Hatari v2.2.0, v2.2.1:
@@ -66,15 +69,12 @@ the etos512k.img[1] from a preceding EmuTOS release:
 - Hatari v0.95:
   http://sourceforge.net/projects/emutos/files/emutos/0.8.2/
 
-Earlier Hatari binary releases have included one of the smaller
-EmuTOS image files.
-
-[1] the "all languages" version intended mainly for TT & Falcon:
+[1] This is the "all languages" version, intended mainly for TT & Falcon:
 
     While 192k and 256k EmuTOS variants work better for ST and STE
     programs in some cases, only the larger image variants contain
     support for all the hardware.  Older 512k EmuTOS variants support
-    also all the EmuTOS languages, but noawadays only the new EmuTOS
+    also all the EmuTOS languages, but nowadays only the new EmuTOS
     1024k variant does (has space for all of them).
 
 Notes for older EmuTOS versions:
