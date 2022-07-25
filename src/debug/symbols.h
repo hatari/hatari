@@ -16,6 +16,13 @@ typedef enum {
 	SYMTYPE_ALL  = SYMTYPE_TEXT|SYMTYPE_DATA|SYMTYPE_BSS|SYMTYPE_ABS
 } symtype_t;
 
+typedef struct {
+	char *name;
+	uint32_t address;
+	symtype_t type;
+	bool name_allocated;
+} symbol_t;
+
 extern const char Symbols_Description[];
 
 /* readline completion support functions for CPU */

@@ -14,12 +14,7 @@
  * and the standalone "gst2asciii" tool.
  */
 
-typedef struct {
-	char *name;
-	uint32_t address;
-	symtype_t type;
-	bool name_allocated;
-} symbol_t;
+#include "symbols.h"
 
 typedef struct {
 	int symbols;		/* initial symbol count */

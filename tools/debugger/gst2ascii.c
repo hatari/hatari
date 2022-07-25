@@ -27,13 +27,6 @@
 #include <assert.h>
 #include "../../src/debug/a.out.h"
 
-typedef enum {
-	SYMTYPE_TEXT = 1,
-	SYMTYPE_DATA = 2,
-	SYMTYPE_BSS  = 4,
-	SYMTYPE_ABS  = 8
-} symtype_t;
-
 #define ARRAY_SIZE(x) (int)(sizeof(x)/sizeof(x[0]))
 
 #include "../../src/debug/symbols-common.c"
