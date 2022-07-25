@@ -51,6 +51,7 @@ const char Statusbar_fileid[] = "Hatari statusbar.c";
 #include "stMemory.h"
 #include "blitter.h"
 #include "str.h"
+#include "lilo.h"
 
 #define DEBUG 0
 #if DEBUG
@@ -631,6 +632,10 @@ void Statusbar_UpdateInfo(void)
 		{
 			end = Statusbar_AddString(end, "EmuTOS");
 		}
+	}
+	else if (bUseLilo)
+	{
+		end = Statusbar_AddString(end, "Linux");
 	}
 	else
 	{
