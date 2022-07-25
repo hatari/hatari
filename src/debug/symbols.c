@@ -185,7 +185,7 @@ static void symbols_trim_names(symbol_list_t* list)
 	int i, next, count, dups;
 
 	count = list->namecount;
-	for (dups = i = 0; i < count - 1; i++) {
+	for (dups = i = 0; i < count - 1; ) {
 		next = i + 1;
 		if (strcmp(sym[i].name, sym[next].name) == 0 &&
 		    sym[i].address == sym[next].address &&
@@ -194,12 +194,14 @@ static void symbols_trim_names(symbol_list_t* list)
 			memmove(sym+i, sym+next, (count-next) * sizeof(symbol_t));
 			count--;
 			dups++;
+		} else {
+			i++;
 		}
 	}
 	if (dups || list->namecount < list->symbols) {
-		list->names = realloc(list->names, i * sizeof(symbol_t));
+		list->names = realloc(list->names, count * sizeof(symbol_t));
 		assert(list->names);
-		list->namecount = i;
+		list->namecount = count;
 	}
 	if (dups) {
 		fprintf(stderr, "WARNING: removed %d complete symbol duplicates\n", dups);
