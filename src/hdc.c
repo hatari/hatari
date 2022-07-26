@@ -778,8 +778,8 @@ int HDC_PartitionCount(FILE *fp, const Uint64 tracelevel, int *pIsByteSwapped)
 		{
 			boot = pinfo[0];
 			ptype = pinfo[4];
-			start = SDL_SwapLE32(*(long*)(pinfo+8));
-			sectors = SDL_SwapLE32(*(long*)(pinfo+12));
+			start = SDL_SwapLE32(*(Uint32*)(pinfo+8));
+			sectors = SDL_SwapLE32(*(Uint32*)(pinfo+12));
 			total += sectors;
 			LOG_TRACE(tracelevel, "- Partition %d: type=0x%02x, start=0x%08x, size=%.1f MB %s%s\n",
 				  i, ptype, start, sectors/2048.0, boot ? "(boot)" : "", sectors ? "" : "(invalid)");
