@@ -131,7 +131,9 @@ enum {
 /* Bus access mode */
 #define	BUS_MODE_CPU		0			/* bus is owned by the cpu */
 #define	BUS_MODE_BLITTER	1			/* bus is owned by the blitter */
-
+#define BUS_MODE_DEBUGGER	2			/* bus is owned by debugger : special case to access RAM 0-0x7FF */
+							/* without doing a bus error when not in supervisor mode */
+							/* eg : this is used in some debug functions that do get_long/word/byte */
 
 /* [NP] Notes on IACK :
  * When an interrupt happens, it's possible a similar interrupt happens again

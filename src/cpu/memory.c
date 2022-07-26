@@ -676,7 +676,8 @@ static uae_u32 REGPARAM3 SysMem_lget(uaecptr addr)
 	addr -= STmem_start & STmem_mask;
 	addr &= STmem_mask;
 
-	if(addr < 0x800 && !is_super_access(true))
+	/* Only CPU will trigger bus error if bit S=0, not the blitter or the debugger */
+	if(addr < 0x800 && !is_super_access(true) && BusMode == BUS_MODE_CPU)
 	{
 		M68000_BusError(addr_in, BUS_ERROR_READ, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA, 0);
 		return 0;
@@ -692,7 +693,7 @@ static uae_u32 REGPARAM3 SysMem_wget(uaecptr addr)
 	addr -= STmem_start & STmem_mask;
 	addr &= STmem_mask;
 
-	/* Only CPU will trigger bus error if bit S=0, not the blitter */
+	/* Only CPU will trigger bus error if bit S=0, not the blitter or the debugger */
 	if(addr < 0x800 && !is_super_access(true) && BusMode == BUS_MODE_CPU)
 	{
 		M68000_BusError(addr_in, BUS_ERROR_READ, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA, 0);
@@ -709,7 +710,8 @@ static uae_u32 REGPARAM3 SysMem_bget(uaecptr addr)
 	addr -= STmem_start & STmem_mask;
 	addr &= STmem_mask;
 
-	if(addr < 0x800 && !is_super_access(true))
+	/* Only CPU will trigger bus error if bit S=0, not the blitter or the debugger */
+	if(addr < 0x800 && !is_super_access(true) && BusMode == BUS_MODE_CPU)
 	{
 		M68000_BusError(addr_in, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, 0);
 		return 0;

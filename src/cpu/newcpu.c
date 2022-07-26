@@ -9629,6 +9629,10 @@ static void fill_icache030(uae_u32 addr)
 #if VALIDATE_68030_DATACACHE
 static void validate_dcache030(void)
 {
+#ifdef WINUAE_FOR_HATARI
+	int	BusMode_old = BusMode;
+	BusMode = BUS_MODE_DEBUGGER;				/* Don't trigger bus error when reading RAM 0-$7FF */
+#endif
 	for (int i = 0; i < CACHELINES030; i++) {
 		struct cache030 *c = &dcaches030[i];
 		uae_u32 addr = c->tag & ~((CACHELINES030 << 4) - 1);
@@ -9643,10 +9647,17 @@ static void validate_dcache030(void)
 			addr += 4;
 		}
 	}
+#ifdef WINUAE_FOR_HATARI
+	BusMode = BusMode_old;
+#endif
 }
 
 static void validate_dcache030_read(uae_u32 addr, uae_u32 ov, int size)
 {
+#ifdef WINUAE_FOR_HATARI
+	int	BusMode_old = BusMode;
+	BusMode = BUS_MODE_DEBUGGER;				/* Don't trigger bus error when reading RAM 0-$7FF */
+#endif
 	uae_u32 ov2;
 	if (size == 2) {
 		ov2 = get_long(addr);
@@ -9660,6 +9671,9 @@ static void validate_dcache030_read(uae_u32 addr, uae_u32 ov, int size)
 	if (ov2 != ov) {
 		write_log(_T("Address read %08x data cache mismatch %08x != %08x\n"), addr, ov2, ov);
 	}
+#ifdef WINUAE_FOR_HATARI
+	BusMode = BusMode_old;
+#endif
 }
 #endif
 
@@ -9856,15 +9870,19 @@ bool read_dcache030_2_real (uaecptr addr, uae_u32 size, uae_u32 *valp);
 static bool read_dcache030_2(uaecptr addr, uae_u32 size, uae_u32 *valp)
 {
   bool b;
+  int	BusMode_old = BusMode;
 
   b = read_dcache030_2_real ( addr , size , valp );
   if ( b==false)
     return false;
 
+  BusMode = BUS_MODE_DEBUGGER;				/* Don't trigger bus error when reading RAM 0-$7FF */
   if ( ( ( size==2 ) && ( *valp != get_long ( addr ) ) )
     || ( ( size==1 ) && ( (*valp&0xffff) != (get_word ( addr ) & 0xffff) ) )
     || ( ( size==0 ) && ( (*valp&0xff) != (get_byte ( addr ) & 0xff ) ) ) )
     fprintf ( stderr , "d-cache mismatch pc=%x addr=%x size=%d cache=%x != mem=%x, d-cache error ?\n" , m68k_getpc(), addr, size, *valp , get_long(addr) );
+
+  BusMode = BusMode_old;
   return true;
 }
 bool read_dcache030_2_real(uaecptr addr, uae_u32 size, uae_u32 *valp)
