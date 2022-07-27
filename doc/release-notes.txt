@@ -18,8 +18,15 @@ Following features are deprecated and will be removed in a future release:
  -------------------
 
 Emulation improvements:
-- Fix regression in TT mode: Update video counter again on each HBL
-  (fixes e.g. Hextracker when run in TT mode)
+- Sound:
+  - Much more precise function to convert CPU clocks to YM2149 clocks
+    in the case where YM2149 doesn't use the same source clock as the CPU
+    (fixes e.g. some STE sound glitches in BLSPLAY.TTP)
+- Video:
+  - Fix regression in TT mode: Update video counter again on each HBL
+    (fixes e.g. Hextracker when run in TT mode)
+- DSP:
+  - Don't enable DSP is not in Falcon mode
 
 Emulator improvements:
 - VDI mode:
