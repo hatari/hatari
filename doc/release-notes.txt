@@ -30,6 +30,8 @@ Emulator improvements:
 - DSP:
   - Avoid small extra overhead on non-Falcon machines when DSP config
     option is set
+- GEMDOS HD:
+  - Fix: memory leak on program loading
 - VDI mode:
   - Fix: VDI width needs to be aligned to (at least) 16-pixels
 - Statusbar:
