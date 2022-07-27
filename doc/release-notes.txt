@@ -25,10 +25,11 @@ Emulation improvements:
 - Video:
   - Fix regression in TT mode: Update video counter again on each HBL
     (fixes e.g. Hextracker when run in TT mode)
-- DSP:
-  - Don't enable DSP is not in Falcon mode
 
 Emulator improvements:
+- DSP:
+  - Avoid small extra overhead on non-Falcon machines when DSP config
+    option is set
 - VDI mode:
   - Fix: VDI width needs to be aligned to (at least) 16-pixels
 - Statusbar:
