@@ -191,8 +191,11 @@ void DSP_Reset(void)
 void DSP_Enable(void)
 {
 #if ENABLE_DSP_EMU
-	bDspEnabled = true;
-	DSP_CyclesGlobalClockCounter = CyclesGlobalClockCounter;
+	if ( Config_IsMachineFalcon() )
+	{
+		bDspEnabled = true;
+		DSP_CyclesGlobalClockCounter = CyclesGlobalClockCounter;
+	}
 #endif
 }
 
