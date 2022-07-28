@@ -1532,9 +1532,9 @@ static void ide_atapi_cmd(IDEState *s)
 		LOG_TRACE_PRINT("IDE: ATAPI limit=0x%x packet", s->lcyl | (s->hcyl << 8));
 		for (i = 0; i < ATAPI_PACKET_SIZE; i++)
 		{
-			printf(" %02x", packet[i]);
+			LOG_TRACE_PRINT(" %02x", packet[i]);
 		}
-		printf("\n");
+		LOG_TRACE_PRINT("\n");
 	}
 
 	switch (s->io_buffer[0])

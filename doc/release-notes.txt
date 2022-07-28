@@ -38,6 +38,7 @@ Emulator improvements:
   - Show "Linux" when running Linux directly with --lilo
 - Debugger:
   - Fix: to duplicate symbol name removal
+  - Fix: all IDE trace output did not go to trace file
 
 Documentation:
 - Document Hatari outputs and their controls in debugger manual
