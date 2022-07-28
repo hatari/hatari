@@ -118,7 +118,7 @@ nDisasmLines = -1
 nBacktraceLines = 0
 nExceptionDebugMask = 515
 nDisasmOptions = 15
-bDisasmUAE = FALSE
+bDisasmUAE = TRUE
 bSymbolsAutoLoad = TRUE
 bMatchAllSymbols = FALSE
 </pre>
@@ -303,6 +303,40 @@ With command argument completion (see <a href="#readline">readline</a>),
 result from the last "evaluate" command can be inserted by typing '$'
 and pressing TAB.
 </p>
+
+
+<h4>Hatari outputs and their controls</h4>
+
+<p>When debugging something, there can be so much output that you
+want to store emulator output for more detailed inspection later.</p>
+
+<p>Hatari has 5 different kinds of outputs and their controls:</p>
+<ul>
+<li><a href="#Tracing">Tracing</a>, controlled by "--trace" and
+    "--trace-file" options</li>
+<li>Logging, controlled by "--log-level" and "--log-file" options</li>
+<li>Debugger CPU+DSP <a href="Inspecting_emulation_state">disassembly /
+    memdump / register</a> commands output, controlled by "logfile" command</li>
+<li>Xconout redirection [1] + Hatari command line help,
+    hard-coded to "stdout"</li>
+<li>Rest of debugger (breakpoints etc) + Hatari output,
+    hard-coded to "stderr"</li>
+</ul>
+
+<p>With 3 first options defaulting to "stderr".</p>
+
+<p>If you want to catch all of them, it is better just to redirect
+all "stdout" and "stderr" output from Hatari to a file:</p>
+<pre>
+hatari --parse debugger.ini --trace os_base 2&gt;&amp;1 | tee out.log
+</pre>
+
+<p>("2&gt;&amp;1" redirects stderr to stdout for piping, and tee"
+command both saves and shows the output, so that you can still see
+the saved output in more or less real-time.)</p>
+
+<p>[1] E.g. VT52 console redirection to Hatari standard output is enabled
+with "os_base" and "os_all" trace settings and "--conout 2" option.</p>
 
 
 <h3 id="Inspecting_emulation_state">Inspecting emulation state</h3>
@@ -1078,6 +1112,7 @@ For example, following tracks Line-A calls:
 <pre>
 b  LineAOpcode ! LineAOpcode  &amp;&amp;  LineAOpcode &lt; 0xffff  :trace
 </pre>
+
 
 
 <h3>Profiling</h3>
