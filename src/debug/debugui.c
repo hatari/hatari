@@ -991,7 +991,7 @@ static const dbgcommand_t uicommand[] =
 	  false },
 	{ DebugUI_SetLogFile, NULL,
 	  "logfile", "f",
-	  "set (memdump/disasm/etc) log file",
+	  "set (memdump/disasm/registers) log file",
 	  "[filename]\n"
 	  "\tOpen log file, no argument closes the log file. Output of\n"
 	  "\tregister & memory dumps and disassembly will be written to it.",
