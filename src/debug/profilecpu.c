@@ -500,9 +500,11 @@ Uint32 Profile_CpuShowAddresses(Uint32 lower, Uint32 upper, FILE *out, paging_t 
 		addrs++;
 	}
 	if (idx < end) {
-		printf("Disassembled %d (of active %d) CPU addresses.\n", addrs, active);
+		fprintf(stderr, "Disassembled %d (of active %d) CPU addresses.\n",
+			addrs, active);
 	} else {
-		printf("Disassembled last %d (of active %d) CPU addresses, wrapping...\n", addrs, active);
+		fprintf(stderr, "Disassembled last %d (of active %d) CPU addresses, wrapping...\n",
+			addrs, active);
 		nextpc = 0;
 	}
 	/* restore disassembly columns */
@@ -568,17 +570,17 @@ void Profile_CpuShowInstrMisses(int show)
 
 	leave_instruction_column(oldcols);
 
-	printf("addr:\t\ti-cache misses:\n");
+	fprintf(stderr, "addr:\t\ti-cache misses:\n");
 	show = (show < active ? show : active);
 	for (end = sort_arr + show; sort_arr < end; sort_arr++) {
 		addr = index2address(*sort_arr);
 		count = data[*sort_arr].i_misses;
 		percentage = 100.0*count/cpu_profile.all.i_misses;
-		printf("0x%06x\t%5.2f%%\t%d%s\t", addr, percentage, count,
+		fprintf(stderr, "0x%06x\t%5.2f%%\t%d%s\t", addr, percentage, count,
 		       count == MAX_CPU_PROFILE_VALUE ? " (OVERFLOW)" : "");
-		Disasm(stdout, addr, &nextpc, 1);
+		Disasm(stderr, addr, &nextpc, 1);
 	}
-	printf("%d CPU addresses listed.\n", show);
+	fprintf(stderr, "%d CPU addresses listed.\n", show);
 
 	Disasm_SetColumns(oldcols);
 }
@@ -622,17 +624,17 @@ void Profile_CpuShowDataHits(int show)
 
 	leave_instruction_column(oldcols);
 
-	printf("addr:\t\td-cache hits:\n");
+	fprintf(stderr, "addr:\t\td-cache hits:\n");
 	show = (show < active ? show : active);
 	for (end = sort_arr + show; sort_arr < end; sort_arr++) {
 		addr = index2address(*sort_arr);
 		count = data[*sort_arr].d_hits;
 		percentage = 100.0*count/cpu_profile.all.d_hits;
-		printf("0x%06x\t%5.2f%%\t%d%s\t", addr, percentage, count,
+		fprintf(stderr, "0x%06x\t%5.2f%%\t%d%s\t", addr, percentage, count,
 		       count == MAX_CPU_PROFILE_VALUE ? " (OVERFLOW)" : "");
-		Disasm(stdout, addr, &nextpc, 1);
+		Disasm(stderr, addr, &nextpc, 1);
 	}
-	printf("%d CPU addresses listed.\n", show);
+	fprintf(stderr, "%d CPU addresses listed.\n", show);
 
 	Disasm_SetColumns(oldcols);
 }
@@ -677,17 +679,17 @@ void Profile_CpuShowCycles(int show)
 
 	leave_instruction_column(oldcols);
 
-	printf("addr:\t\tcycles:\n");
+	fprintf(stderr, "addr:\t\tcycles:\n");
 	show = (show < active ? show : active);
 	for (end = sort_arr + show; sort_arr < end; sort_arr++) {
 		addr = index2address(*sort_arr);
 		count = data[*sort_arr].cycles;
 		percentage = 100.0*count/cpu_profile.all.cycles;
-		printf("0x%06x\t%5.2f%%\t%d%s\t", addr, percentage, count,
+		fprintf(stderr, "0x%06x\t%5.2f%%\t%d%s\t", addr, percentage, count,
 		       count == MAX_CPU_PROFILE_VALUE ? " (OVERFLOW)" : "");
-		Disasm(stdout, addr, &nextpc, 1);
+		Disasm(stderr, addr, &nextpc, 1);
 	}
-	printf("%d CPU addresses listed.\n", show);
+	fprintf(stderr, "%d CPU addresses listed.\n", show);
 
 	Disasm_SetColumns(oldcols);
 }
@@ -736,17 +738,17 @@ void Profile_CpuShowCounts(int show, bool only_symbols)
 
 	if (!only_symbols) {
 		leave_instruction_column(oldcols);
-		printf("addr:\t\tcount:\n");
+		fprintf(stderr, "addr:\t\tcount:\n");
 		for (end = sort_arr + show; sort_arr < end; sort_arr++) {
 			addr = index2address(*sort_arr);
 			count = data[*sort_arr].count;
 			percentage = 100.0*count/cpu_profile.all.count;
-			printf("0x%06x\t%5.2f%%\t%d%s\t",
+			fprintf(stderr, "0x%06x\t%5.2f%%\t%d%s\t",
 			       addr, percentage, count,
 			       count == MAX_CPU_PROFILE_VALUE ? " (OVERFLOW)" : "");
-			Disasm(stdout, addr, &nextpc, 1);
+			Disasm(stderr, addr, &nextpc, 1);
 		}
-		printf("%d CPU addresses listed.\n", show);
+		fprintf(stderr, "%d CPU addresses listed.\n", show);
 		Disasm_SetColumns(oldcols);
 		return;
 	}
@@ -760,7 +762,7 @@ void Profile_CpuShowCounts(int show, bool only_symbols)
 
 	leave_instruction_column(oldcols);
 
-	printf("addr:        %%:   count:  symbol:                    disassembly:\n");
+	fprintf(stderr, "addr:        %%:   count:  symbol:                    disassembly:\n");
 	for (end = sort_arr + active; sort_arr < end; sort_arr++) {
 
 		addr = index2address(*sort_arr);
@@ -770,17 +772,17 @@ void Profile_CpuShowCounts(int show, bool only_symbols)
 		}
 		count = data[*sort_arr].count;
 		percentage = 100.0*count/cpu_profile.all.count;
-		printf("0x%06x %6.2f %8d  %-26s %s",
+		fprintf(stderr, "0x%06x %6.2f %8d  %-26s %s",
 		       addr, percentage, count, name,
 		       count == MAX_CPU_PROFILE_VALUE ? "(OVERFLOW) " : "");
-		Disasm(stdout, addr, &nextpc, 1);
+		Disasm(stderr, addr, &nextpc, 1);
 
 		matched++;
 		if (matched >= show || matched >= symbols) {
 			break;
 		}
 	}
-	printf("%d CPU symbols listed.\n", matched);
+	fprintf(stderr, "%d CPU symbols listed.\n", matched);
 
 	Disasm_SetColumns(oldcols);
 }
@@ -858,7 +860,7 @@ bool Profile_CpuStart(void)
 		free(cpu_profile.data);
 		cpu_profile.sort_arr = NULL;
 		cpu_profile.data = NULL;
-		printf("Freed previous CPU profile buffers.\n");
+		fprintf(stderr, "Freed previous CPU profile buffers.\n");
 	}
 	if (!cpu_profile.enabled) {
 		return false;
@@ -880,7 +882,7 @@ bool Profile_CpuStart(void)
 		perror("ERROR, new CPU profile buffer alloc failed");
 		return false;
 	}
-	printf("Allocated CPU profile buffer (%d MB).\n",
+	fprintf(stderr, "Allocated CPU profile buffer (%d MB).\n",
 	       (int)sizeof(*cpu_profile.data)*size/(1024*1024));
 	cpu_profile.size = size;
 
@@ -1106,7 +1108,7 @@ static Uint32 warn_too_large(const char *name, const int value, const int limit,
 		Disasm(stderr, prev_pc, &nextpc, 1);
 		Disasm(stderr, pc, &nextpc, 1);
 		if (cpu_warnings.largevalue == MAX_SHOW_COUNT) {
-			fprintf(stderr, "Further warnings won't be shown.\n");
+			fprintf(stderr, "Further warnings will not be shown.\n");
 		}
 	}
 #if DEBUG
@@ -1251,7 +1253,7 @@ void Profile_CpuUpdate(void)
 			fputs("WARNING: instruction opcode family is zero (=i_ILLG) for instruction:\n", stderr);
 			Disasm(stderr, prev_pc, &nextpc, 1);
 			if (cpu_warnings.opfamily == MAX_SHOW_COUNT) {
-				fprintf(stderr, "Further warnings won't be shown.\n");
+				fprintf(stderr, "Further warnings will not be shown.\n");
 			}
 		}
 	}
@@ -1399,7 +1401,7 @@ void Profile_CpuStop(void)
 		cpu_profile.data = NULL;
 		return;
 	}
-	printf("Allocated CPU profile address buffer (%d KB).\n",
+	fprintf(stderr, "Allocated CPU profile address buffer (%d KB).\n",
 	       (int)sizeof(*sort_arr)*(active+512)/1024);
 	cpu_profile.sort_arr = sort_arr;
 	cpu_profile.active = active;

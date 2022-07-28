@@ -168,10 +168,13 @@ Uint16 Profile_DspShowAddresses(Uint32 addr, Uint32 upper, FILE *out, paging_t u
 		addrs++;
 		shown++;
 	}
+	/* use stderr for debugger feedback like elsewhere */
 	if (addr < end) {
-		printf("Disassembled %d (of active %d) DSP addresses.\n", addrs, active);
+		fprintf(stderr, "Disassembled %d (of active %d) DSP addresses.\n",
+			addrs, active);
 	} else {
-		printf("Disassembled last %d (of active %d) DSP addresses, wrapping...\n", addrs, active);
+		fprintf(stderr, "Disassembled last %d (of active %d) DSP addresses, wrapping...\n",
+			addrs, active);
 		nextpc = 0;
 	}
 	return nextpc;
@@ -214,16 +217,16 @@ void Profile_DspShowCycles(int show)
 	sort_arr = dsp_profile.sort_arr;
 	qsort(sort_arr, active, sizeof(*sort_arr), cmp_dsp_cycles);
 
-	printf("addr:\tcycles:\n");
+	fprintf(stderr, "addr:\tcycles:\n");
 	show = (show < active ? show : active);
 	for (end = sort_arr + show; sort_arr < end; sort_arr++) {
 		addr = *sort_arr;
 		count = data[addr].cycles;
 		percentage = 100.0*count/dsp_profile.ram.counters.cycles;
-		printf("0x%04x\t%5.2f%%\t%"PRIu64"%s\n", addr, percentage, count,
+		fprintf(stderr, "0x%04x\t%5.2f%%\t%"PRIu64"%s\n", addr, percentage, count,
 		       count == MAX_DSP_PROFILE_VALUE ? " (OVERFLOW)" : "");
 	}
-	printf("%d DSP addresses listed.\n", show);
+	fprintf(stderr, "%d DSP addresses listed.\n", show);
 }
 
 
@@ -269,16 +272,16 @@ void Profile_DspShowCounts(int show, bool only_symbols)
 	qsort(sort_arr, active, sizeof(*sort_arr), cmp_dsp_count);
 
 	if (!only_symbols) {
-		printf("addr:\tcount:\n");
+		fprintf(stderr, "addr:\tcount:\n");
 		for (end = sort_arr + show; sort_arr < end; sort_arr++) {
 			addr = *sort_arr;
 			count = data[addr].count;
 			percentage = 100.0*count/dsp_profile.ram.counters.count;
-			printf("0x%04x\t%5.2f%%\t%"PRIu64"%s\n",
+			fprintf(stderr, "0x%04x\t%5.2f%%\t%"PRIu64"%s\n",
 			       addr, percentage, count,
 			       count == MAX_DSP_PROFILE_VALUE ? " (OVERFLOW)" : "");
 		}
-		printf("%d DSP addresses listed.\n", show);
+		fprintf(stderr, "%d DSP addresses listed.\n", show);
 		return;
 	}
 
@@ -287,9 +290,9 @@ void Profile_DspShowCounts(int show, bool only_symbols)
 		fprintf(stderr, "ERROR: no DSP symbols loaded!\n");
 		return;
 	}
-	matched = 0;	
+	matched = 0;
 
-	printf("addr:\tcount:\t\tsymbol:\n");
+	fprintf(stderr, "addr:\tcount:\t\tsymbol:\n");
 	for (end = sort_arr + active; sort_arr < end; sort_arr++) {
 
 		addr = *sort_arr;
@@ -299,7 +302,7 @@ void Profile_DspShowCounts(int show, bool only_symbols)
 		}
 		count = data[addr].count;
 		percentage = 100.0*count/dsp_profile.ram.counters.count;
-		printf("0x%04x\t%.2f%%\t%"PRIu64"\t%s%s\n",
+		fprintf(stderr, "0x%04x\t%.2f%%\t%"PRIu64"\t%s%s\n",
 		       addr, percentage, count, name,
 		       count == MAX_DSP_PROFILE_VALUE ? " (OVERFLOW)" : "");
 
@@ -308,7 +311,7 @@ void Profile_DspShowCounts(int show, bool only_symbols)
 			break;
 		}
 	}
-	printf("%d DSP symbols listed.\n", matched);
+	fprintf(stderr, "%d DSP symbols listed.\n", matched);
 }
 
 
@@ -361,7 +364,7 @@ bool Profile_DspStart(void)
 		free(dsp_profile.data);
 		dsp_profile.sort_arr = NULL;
 		dsp_profile.data = NULL;
-		printf("Freed previous DSP profile buffers.\n");
+		fprintf(stderr, "Freed previous DSP profile buffers.\n");
 	}
 	if (!dsp_profile.enabled) {
 		return false;
@@ -374,7 +377,7 @@ bool Profile_DspStart(void)
 		perror("ERROR, new DSP profile buffer alloc failed");
 		return false;
 	}
-	printf("Allocated DSP profile buffer (%d KB).\n",
+	fprintf(stderr, "Allocated DSP profile buffer (%d KB).\n",
 	       (int)sizeof(*dsp_profile.data)*DSP_PROFILE_ARR_SIZE/1024);
 
 	Profile_AllocCallinfo(&(dsp_callinfo), Symbols_DspCodeCount(), "DSP");
@@ -703,7 +706,7 @@ void Profile_DspStop(void)
 		dsp_profile.data = NULL;
 		return;
 	}
-	printf("Allocated DSP profile address buffer (%d KB).\n",
+	fprintf(stderr, "Allocated DSP profile address buffer (%d KB).\n",
 	       (int)sizeof(*sort_arr)*(dsp_profile.ram.active+512)/1024);
 	dsp_profile.sort_arr = sort_arr;
 
