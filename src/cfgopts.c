@@ -63,6 +63,7 @@ const char CfgOpts_fileid[] = "Hatari cfgopts.c";
 #include "cfgopts.h"
 #include "str.h"
 #include "keymap.h"
+#include "log.h"
 
 
 static int parse_input_config_entry(const struct Config_Tag *ptr)
@@ -186,7 +187,7 @@ int input_config(const char *filename, const struct Config_Tag configs[], const 
 					if (parse_input_config_entry(ptr) == 0)
 						count++;
 					else
-						printf("Error in Config file %s on line %d\n",
+						Log_Printf(LOG_WARN, "Error in Config file %s on line %d\n",
 						       filename, lineno);
 				}
 			}
@@ -245,7 +246,7 @@ static int write_token(FILE *outfile, const struct Config_Tag *ptr)
 
 	 case Error_Tag:
 	 default:
-		fprintf(stderr, "Error in Config structure (Contact author).\n");
+		Log_Printf(LOG_WARN, "Internal error in Config structure (contact developers)\n");
 		return -1;
 	}
 
@@ -407,7 +408,7 @@ int update_config(const char *filename, const struct Config_Tag configs[], const
 					if (write_token(tempfile, ptr) == 0)
 					{
 						count += 1;
-						fprintf(stderr, "Wrote new token %s -> %s \n", header, ptr->code);
+						Log_Printf(LOG_INFO, "Wrote new token %s -> %s \n", header, ptr->code);
 					}
 				}
 			}
