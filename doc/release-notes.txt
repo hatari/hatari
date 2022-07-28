@@ -39,6 +39,9 @@ Emulator improvements:
 - Debugger:
   - Fix: to duplicate symbol name removal
 
+Documentation:
+- Document Hatari outputs and their controls in debugger manual
+
 
  Version 2.4.0 (2022-07-09)
  --------------------------

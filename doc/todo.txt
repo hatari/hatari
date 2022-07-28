@@ -28,6 +28,11 @@ Emulation improvements
 
 - Get the games/demos working that are marked as non-working in the manual.
 
+- Emulate different memory access timings on different memory areas.
+
+- Improve PSG accesses timings from elsewhere than ST-RAM (HW timings
+  and testier are in "PSG_WaitState() inaccuracy" mail thread).
+
 - Improve STE / Crossbar DMA data handling.  Mask addresses similarly to
   HW (instead of modulo ST-RAM size), and generate errors when needed
 
