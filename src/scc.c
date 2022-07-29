@@ -261,6 +261,7 @@ static void SCC_serial_setBaudAttr(int handle, speed_t new_speed)
 	if (handle < 0)
 		return;
 
+	memset(&options, 0, sizeof(options));
 	tcgetattr(handle, &options);
 
 	cfsetispeed(&options, new_speed);
