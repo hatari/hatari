@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright (C) 2012-2021 by Eero Tamminen <oak at helsinkinet fi>
+# Copyright (C) 2012-2022 by Eero Tamminen <oak at helsinkinet fi>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -143,7 +143,7 @@ class TOS:
             info = (3, 14, ("st", "megast", "ste", "megaste"))
         elif version <= 0x306:
             # MMU slowdown is taken care of in prepare_test()
-            info = (3, 16, ("tt",))
+            info = (3, 20, ("tt",))
         elif version <= 0x404:
             # no-IDE scan slowdown is taken care of in prepare_test()
             info = (3, 28, ("falcon",))
@@ -694,7 +694,7 @@ sMidiOutFileName = %s
             time.sleep(memwait)
             instance.run("keypress %s" % hconsole.Scancode.Space)
 
-        # wait until test program has been run and output something to fifo
+        # wait until test program has been run and outputs something to fifo
         prog_ok, tests_ok = self.wait_fifo(fifo, testwait)
         if tests_ok:
             output_ok = self.verify_output(identity)
@@ -746,6 +746,7 @@ sMidiOutFileName = %s
             testargs += config.opts
         if mmu and machine in ("tt", "falcon"):
             # MMU doubles memory wait
+            testwait += memwait
             memwait *= 2
 
         if config.fast:
@@ -753,6 +754,7 @@ sMidiOutFileName = %s
                          "--fastfdc", "yes", "--timer-d", "yes"]
         elif machine == "falcon" and disk != "ide":
             # Falcon IDE interface scanning when there's no IDE takes long
+            testwait += 8
             memwait += 8
 
         if disk == "gemdos":
