@@ -53,6 +53,8 @@ set(ENABLE_TRACING 1
     CACHE BOOL "Enable tracing messages for debugging")
 set(ENABLE_SMALL_MEM 1
     CACHE BOOL "Enable to use less memory - at the expense of emulation speed")
+set(ENABLE_UI 1
+    CACHE BOOL "Enable building the Python GTK+3 user interface, requires GTK+3 bindings")
 
 # Run-time checks with GCC / LLVM (Clang) AddressSanitizer:
 # - stack protection
@@ -319,14 +321,16 @@ add_subdirectory(doc)
 add_subdirectory(tests)
 add_subdirectory(tools)
 
-include(FindPythonInterp)
-if(PYTHONINTERP_FOUND AND PYTHON_VERSION_MAJOR LESS 3)
-	message("Note: Hatari needs at least Python 3 ... ignoring older version")
-	unset(PYTHONINTERP_FOUND)
-endif()
-if(PYTHONINTERP_FOUND)
-	add_subdirectory(python-ui)
-endif(PYTHONINTERP_FOUND)
+if(ENABLE_UI)
+	include(FindPythonInterp)
+	if(PYTHONINTERP_FOUND AND PYTHON_VERSION_MAJOR LESS 3)
+		message("Note: Hatari needs at least Python 3 ... ignoring older version")
+		unset(PYTHONINTERP_FOUND)
+	endif()
+	if(PYTHONINTERP_FOUND)
+		add_subdirectory(python-ui)
+	endif(PYTHONINTERP_FOUND)
+endif(ENABLE_UI)
 
 if(UNIX AND NOT ENABLE_OSX_BUNDLE)
 	add_subdirectory(share)
