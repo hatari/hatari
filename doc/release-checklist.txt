@@ -36,6 +36,7 @@ everything that should work, does still work:
     - all optional features enabled, and disabled
     - Mac GUI
   - All above Hatari builds pass "make test"
+    - also with "cmake -D ENABLE_ASAN:BOOL=1" builds
     - Check that everything built fine on Travis and Cirrus-CI:
       https://travis-ci.com/github/hatari/hatari
       https://cirrus-ci.com/github/hatari/hatari
@@ -64,7 +65,7 @@ After found issues have been fixed, prepare for release candidate:
 * Go through commit log / ask others to make sure relevant changes are
   listed in release-notes.txt, and updated in todo.txt
 
-* Get latest etos512.img version for binary packages and document
+* Get latest etos1024.img version for binary packages and document
   that in emutos.txt
 
 * Build binary packages for OSes that aren't covered by the daily builds
