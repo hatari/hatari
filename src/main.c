@@ -826,8 +826,11 @@ static void Main_LoadInitialConfig(void)
 {
 	char *psGlobalConfig;
 
-	psGlobalConfig = malloc(FILENAME_MAX);
-	if (psGlobalConfig && !getenv("HATARI_TEST"))
+	if (getenv("HATARI_TEST"))
+		psGlobalConfig = NULL;
+	else
+		psGlobalConfig = malloc(FILENAME_MAX);
+	if (psGlobalConfig)
 	{
 		File_MakePathBuf(psGlobalConfig, FILENAME_MAX, CONFDIR,
 		                 "hatari", "cfg");
