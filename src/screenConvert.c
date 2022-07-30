@@ -30,6 +30,7 @@ struct screen_zoom_s {
 static struct screen_zoom_s screen_zoom;
 static bool bTTSampleHold = false;		/* TT special video mode */
 static int nSampleHoldIdx;
+static uint32_t nScreenBaseAddr;		/* address of screen in STRam */
 
 
 /* TOS palette (bpp < 16) to SDL color mapping */
@@ -365,7 +366,7 @@ static void ScreenConv_BitplaneTo16bppNoZoom(Uint16 *fvram_line, Uint8 *hvram,
                                              int upperBorder, int lowBorder)
 {
 	Uint16 *hvram_line = (Uint16 *)hvram;
-	uint32_t nLineEndAddr = Video_GetScreenBaseAddr() + nextline * 2;
+	uint32_t nLineEndAddr = nScreenBaseAddr + nextline * 2;
 	int pitch = sdlscrn->pitch >> 1;
 	int h;
 
@@ -421,7 +422,7 @@ static void ScreenConv_BitplaneTo32bppNoZoom(Uint16 *fvram_line, Uint8 *hvram,
                                              int upperBorder, int lowBorder)
 {
 	Uint32 *hvram_line = (Uint32 *)hvram;
-	uint32_t nLineEndAddr = Video_GetScreenBaseAddr() + nextline * 2;
+	uint32_t nLineEndAddr = nScreenBaseAddr + nextline * 2;
 	int pitch = sdlscrn->pitch >> 2;
 	int h;
 
@@ -477,7 +478,7 @@ static void ScreenConv_HiColorTo16bppNoZoom(Uint16 *fvram_line, Uint8 *hvram,
                                             int upperBorder, int lowBorder)
 {
 	Uint16 *hvram_line = (Uint16 *)hvram;
-	uint32_t nLineEndAddr = Video_GetScreenBaseAddr() + nextline * 2;
+	uint32_t nLineEndAddr = nScreenBaseAddr + nextline * 2;
 	int pitch = sdlscrn->pitch >> 1;
 	int h;
 
@@ -545,7 +546,7 @@ static void ScreenConv_HiColorTo32bppNoZoom(Uint16 *fvram_line, Uint8 *hvram,
                                             int upperBorder, int lowBorder)
 {
 	Uint32 *hvram_line = (Uint32 *)hvram;
-	uint32_t nLineEndAddr = Video_GetScreenBaseAddr() + nextline * 2;
+	uint32_t nLineEndAddr = nScreenBaseAddr + nextline * 2;
 	int pitch = sdlscrn->pitch >> 2;
 	int h, w;
 
@@ -720,7 +721,7 @@ static void ScreenConv_BitplaneTo16bppZoomed(Uint16 *fvram, Uint8 *hvram,
 	Uint16 *hvram_line = (Uint16 *)hvram;
 	Uint16 *hvram_column = p2cline;
 	Uint16 *fvram_line;
-	uint32_t nLineEndAddr = Video_GetScreenBaseAddr() + nextline * 2;
+	uint32_t nLineEndAddr = nScreenBaseAddr + nextline * 2;
 	unsigned int nBytesPerPixel = sdlscrn->format->BytesPerPixel;
 	int pitch = sdlscrn->pitch >> 1;
 	int cursrcline = -1;
@@ -799,7 +800,7 @@ static void ScreenConv_BitplaneTo32bppZoomed(Uint16 *fvram, Uint8 *hvram,
 	Uint32 *hvram_line = (Uint32 *)hvram;
 	Uint32 *hvram_column = p2cline;
 	Uint16 *fvram_line;
-	uint32_t nLineEndAddr = Video_GetScreenBaseAddr() + nextline * 2;
+	uint32_t nLineEndAddr = nScreenBaseAddr + nextline * 2;
 	unsigned int nBytesPerPixel = sdlscrn->format->BytesPerPixel;
 	int pitch = sdlscrn->pitch >> 2;
 	int cursrcline = -1;
@@ -877,7 +878,7 @@ static void ScreenConv_HiColorTo16bppZoomed(Uint16 *fvram, Uint8 *hvram,
 	Uint16 *hvram_line = (Uint16 *)hvram;
 	Uint16 *hvram_column = hvram_line;
 	Uint16 *fvram_line;
-	uint32_t nLineEndAddr = Video_GetScreenBaseAddr() + nextline * 2;
+	uint32_t nLineEndAddr = nScreenBaseAddr + nextline * 2;
 	unsigned int nBytesPerPixel = sdlscrn->format->BytesPerPixel;
 	int pitch = sdlscrn->pitch >> 1;
 	int cursrcline = -1;
@@ -951,7 +952,7 @@ static void ScreenConv_HiColorTo32bppZoomed(Uint16 *fvram, Uint8 *hvram,
 	Uint32 *hvram_line = (Uint32 *)hvram;
 	Uint32 *hvram_column = hvram_line;
 	Uint16 *fvram_line;
-	uint32_t nLineEndAddr = Video_GetScreenBaseAddr() + nextline * 2;
+	uint32_t nLineEndAddr = nScreenBaseAddr + nextline * 2;
 	unsigned int nBytesPerPixel = sdlscrn->format->BytesPerPixel;
 	int pitch = sdlscrn->pitch >> 2;
 	int cursrcline = -1;
@@ -1134,10 +1135,13 @@ static void Screen_ConvertWithZoom(Uint16 *fvram, int vw, int vh, int vbpp, int 
 	}
 }
 
-void Screen_GenConvert(void *fvram, int vw, int vh, int vbpp, int nextline,
-                       int hscroll, int leftBorderSize, int rightBorderSize,
+void Screen_GenConvert(uint32_t vaddr, void *fvram, int vw, int vh,
+                       int vbpp, int nextline, int hscroll,
+                       int leftBorderSize, int rightBorderSize,
                        int upperBorderSize, int lowerBorderSize)
 {
+	nScreenBaseAddr = vaddr;
+
 	if (nScreenZoomX * nScreenZoomY != 1) {
 		Screen_ConvertWithZoom(fvram, vw, vh, vbpp, nextline, hscroll,
 		                       leftBorderSize, rightBorderSize,
@@ -1163,7 +1167,7 @@ bool Screen_GenDraw(uint32_t vaddr, int vw, int vh, int vbpp, int nextline,
 	else
 		hscrolloffset = IoMem_ReadByte(0xff8265) & 0x0f;
 
-	Screen_GenConvert(&STRam[vaddr], vw, vh, vbpp, nextline, hscrolloffset,
+	Screen_GenConvert(vaddr, &STRam[vaddr], vw, vh, vbpp, nextline, hscrolloffset,
 	                  leftBorder, rightBorder, upperBorder, lowerBorder);
 
 	Screen_UnLock();

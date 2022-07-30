@@ -984,7 +984,7 @@ bool VIDEL_renderScreen(void)
 
 	VIDEL_UpdateColors();
 
-	Screen_GenConvert(&STRam[videoBase], videl.XSize, videl.YSize,
+	Screen_GenConvert(videoBase, &STRam[videoBase], videl.XSize, videl.YSize,
 	                  videl.save_scrBpp, nextline, hscrolloffset,
 	                  videl.leftBorderSize, videl.rightBorderSize,
 	                  videl.upperBorderSize, videl.lowerBorderSize);

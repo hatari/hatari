@@ -25,6 +25,8 @@ Emulation improvements:
 - Video:
   - Fix regression in TT mode: Update video counter again on each HBL
     (fixes e.g. Hextracker when run in TT mode)
+  - Fixed a possible crash in VDI mode (when ST program sets a bad
+    video base address)
 
 Emulator improvements:
 - DSP:

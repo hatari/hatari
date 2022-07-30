@@ -191,7 +191,7 @@ static void Screen_ConvertHighRes(void)
 {
 	int linewidth = 640 / 16;
 
-	Screen_GenConvert(pSTScreen, 640, 400, 1, linewidth, 0, 0, 0, 0, 0);
+	Screen_GenConvert(VideoBase, pSTScreen, 640, 400, 1, linewidth, 0, 0, 0, 0, 0);
 	bScreenContentsChanged = true;
 }
 
