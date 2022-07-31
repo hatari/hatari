@@ -325,7 +325,18 @@ if(PYTHONINTERP_FOUND AND PYTHON_VERSION_MAJOR LESS 3)
 	unset(PYTHONINTERP_FOUND)
 endif()
 if(PYTHONINTERP_FOUND)
-	add_subdirectory(python-ui)
+	execute_process(COMMAND ${PYTHON_EXECUTABLE} -c "\
+import gi\n\
+gi.require_version('Gtk', '3.0')\n\
+from gi.repository import Gtk\n\
+from gi.repository import Gdk\n\
+from gi.repository import GdkPixbuf\n\
+from gi.repository import GLib"
+			RESULT_VARIABLE PYTHON_GTK_RESULT
+			OUTPUT_QUIET ERROR_QUIET)
+	if(${PYTHON_GTK_RESULT} EQUAL 0)
+		add_subdirectory(python-ui)
+	endif()
 endif(PYTHONINTERP_FOUND)
 
 if(UNIX AND NOT ENABLE_OSX_BUNDLE)
@@ -376,6 +387,12 @@ if(CapsImage_FOUND)
 else()
   message( "  - capsimage :\tv5 not found, install it to use .IPF, .RAW and .CTR disk images" )
 endif(CapsImage_FOUND)
+
+if(${PYTHON_GTK_RESULT} EQUAL 0)
+  message( "  - python Gtk:\tfound, python-ui can be used" )
+else()
+  message( "  - python Gtk:\tnot found, install it to enable the python-ui" )
+endif()
 
 if(Udev_FOUND)
   message( "  - udev :\tfound, required for media change detection in NatFeats SCSI" )
