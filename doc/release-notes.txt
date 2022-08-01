@@ -25,8 +25,6 @@ Emulation improvements:
 - Video:
   - Fix regression in TT mode: Update video counter again on each HBL
     (fixes e.g. Hextracker when run in TT mode)
-  - Fixed a possible crash in VDI mode (when ST program sets a bad
-    video base address)
 
 Emulator improvements:
 - DSP:
@@ -43,6 +41,9 @@ Emulator improvements:
   - Fix: all IDE trace output did not go to trace file
   - Like with rest of debugger, profiler responses go
     now to stderr (not stdout)
+- Video:
+  - Fixed a possible crash in VDI mode (when ST program sets a bad
+    video base address)
 
 Documentation:
 - Document Hatari outputs and their controls in debugger manual
