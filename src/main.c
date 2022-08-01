@@ -815,6 +815,7 @@ static void Main_UnInit(void)
 	Log_UnInit();
 
 	Paths_UnInit();
+	DebugUI_UnInit();
 }
 
 
