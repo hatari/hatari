@@ -13,7 +13,7 @@ When first thinking about new release
 * Check whether any of the (new) changes distro packages apply to
   Hatari sources should be in Hatari itself:
   - https://sources.debian.org/patches/hatari/
-  - https://src.fedoraproject.org/rpms/hatari/tree/master
+  - https://src.fedoraproject.org/rpms/hatari/tree/main
   - https://packages.gentoo.org/packages/games-emulation/hatari
   - https://svnweb.mageia.org/packages/cauldron/hatari/current/
   - https://build.opensuse.org/search?search_text=hatari

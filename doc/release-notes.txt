@@ -32,8 +32,12 @@ Emulator improvements:
     option is set
 - Misc:
   - Fix memory leaks on PNG save and GEMDOS HD program load
+  - All Hatari output (outside of debugger) uses now appropriate
+    logging and trace functions so that they can be controlled
 - VDI mode:
   - Fix: VDI width needs to be aligned to (at least) 16-pixels
+  - Fix: a possible crash with (default) SMALL_MEM build config
+    (when ST program sets a bad video base address)
 - Statusbar:
   - Show "Linux" when running Linux directly with --lilo
 - Debugger:
@@ -41,9 +45,6 @@ Emulator improvements:
   - Fix: all IDE trace output did not go to trace file
   - Like with rest of debugger, profiler responses go
     now to stderr (not stdout)
-- Video:
-  - Fixed a possible crash in VDI mode (when ST program sets a bad
-    video base address)
 
 Documentation:
 - Document Hatari outputs and their controls in debugger manual
