@@ -19,8 +19,8 @@ supported by the tested TOS version.
 Verification screenshot is taken at the end of each boot before
 proceeding to testing of the next combination.  Screenshot name
 indicates the used combination, for example:
-        etos512k-falcon-rgb-gemdos-14M.png
-        etos512k-st-mono-floppy-1M.png
+        etos1024k-falcon-rgb-gemdos-14M.png
+        etos1024k-st-mono-floppy-1M.png
 
 
 NOTE: If you want to test the latest, uninstalled version of Hatari,

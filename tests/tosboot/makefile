@@ -17,7 +17,7 @@ all: test
 TOSDIR ?= tos
 
 # TOSDIR should contain at least this!
-BUILD_TOS = $(TOSDIR)/etos512k.img
+BUILD_TOS = $(TOSDIR)/etos1024k.img
 
 # Hatari machine config for AHCC build
 BUILD_CONFIG = --layout uk --tos-res high --machine tt --tos $(BUILD_TOS)
@@ -36,8 +36,8 @@ BUILD_TOOLS = $(AHCC_FILES) $(BUILD_TOS)
 # - EmuTOS, AHCC and installed Hatari
 #
 # before running make:
-# - symlink etos512k.img and ahcc_p.ttp + its include & lib dirs
-#   under $(DIR)/ subdir
+# - symlink etos1024k.img under $(TOSDIR)/ subdir
+# - symlink ahcc_p.ttp + its include & lib dirs under $(DIR)/ subdir
 #
 # -> otherwise toolcheck fails
 

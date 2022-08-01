@@ -4,10 +4,10 @@
 # 1. symlink ahcc_p.ttp program, include and lib directories for AHCC
 #    under the same directory where this script and sources are
 # 2. run:
-#    hconsole.py ./ahcc-gemdos -- --machine tt -s 14 -m --tos etos512.img .
+#    hconsole.py ./ahcc-gemdos -- --machine tt -s 14 -m --tos etos1024k.img .
 #
 # Notes:
-# - EmuTOS 512k is needed for EmuCON console
+# - EmuTOS 512k or 1024k is needed for EmuCON console
 # - AHCC requires 030 machine (alternatively you can use AHCCST)
 
 # boot faster (few secs instead of >10s) and show EmuCON output on console

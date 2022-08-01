@@ -1,6 +1,7 @@
-etos512k.img
 ahcc_p.ttp
 include
 lib
 GEMDOS.O
 GEMDOS.MAP
+COMMON.O
+COMMON.MAP
