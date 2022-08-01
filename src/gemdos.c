@@ -392,6 +392,23 @@ static void GemDOS_ClearAllInternalDTAs(void)
 	DTAIndex = 0;
 }
 
+/**
+ * Free all DTA cache structures
+ */
+static void GemDOS_FreeAllInternalDTAs(void)
+{
+	int i;
+	for(i = 0; i < DTACount; i++)
+	{
+		ClearInternalDTA(i);
+	}
+	if (InternalDTAs)
+	{
+		free(InternalDTAs);
+		InternalDTAs = NULL;
+	}
+	DTAIndex = 0;
+}
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -527,10 +544,6 @@ static void GemDOS_ClearAllFileHandles(void)
 void GemDOS_Init(void)
 {
 	bInitGemDOS = false;
-
-	GemDOS_ClearAllFileHandles();
-	GemDOS_ClearAllInternalDTAs();
-
 }
 
 /*-----------------------------------------------------------------------*/
@@ -696,6 +709,9 @@ void GemDOS_InitDrives(void)
 	int ImagePartitions;
 	bool bMultiPartitions;
 
+	GemDOS_ClearAllFileHandles();
+	GemDOS_ClearAllInternalDTAs();
+
 	bMultiPartitions = GemDOS_DetermineMaxPartitions(&nMaxDrives);
 
 	/* initialize data for harddrive emulation: */
@@ -790,6 +806,8 @@ void GemDOS_InitDrives(void)
 void GemDOS_UnInitDrives(void)
 {
 	int i;
+
+	GemDOS_FreeAllInternalDTAs();
 
 	GemDOS_Reset();        /* Close all open files on emulated drive */
 
