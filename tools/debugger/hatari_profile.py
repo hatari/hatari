@@ -70,7 +70,7 @@ Long options for above are:
 (Timing --info is shown only for cycles list.)
 
 For example:
-	hatari-profile -a etos512k.sym -st -f 10 prof1.txt prof2.txt
+	hatari-profile -a etos1024k.sym -st -f 10 prof1.txt prof2.txt
 
 For each given profile file, output is:
 - profile statistics

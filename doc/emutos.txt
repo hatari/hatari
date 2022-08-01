@@ -188,7 +188,7 @@ EmuTOS debug symbols
 --------------------
 
 After loading EmuTOS debug symbols from the file coming with the 512k
-(or 1024k) EmuTOS image, using debugger "symbols etos512k.sym" command,
+(or 1024k) EmuTOS image, using debugger "symbols etos1024k.sym" command,
 you can ask debugger to "trace cpu_symbols", to get trace of all the
 (non-static) function calls EmuTOS does.
 
@@ -276,7 +276,7 @@ with:
 > history on
 > setopt -D
 Exception debugging enabled.
-> symbols etos512k.sym
+> symbols etos1024k.sym
 > profile on
 > trace os_all
 > b LineAOpcode ! LineAOpcode :trace
