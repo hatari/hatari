@@ -324,6 +324,7 @@ if(PYTHONINTERP_FOUND AND PYTHON_VERSION_MAJOR LESS 3)
 	message("Note: Hatari needs at least Python 3 ... ignoring older version")
 	unset(PYTHONINTERP_FOUND)
 endif()
+set(PYTHON_GTK_FOUND 0)
 if(PYTHONINTERP_FOUND)
 	execute_process(COMMAND ${PYTHON_EXECUTABLE} -c "\
 import gi\n\
@@ -335,6 +336,7 @@ from gi.repository import GLib"
 			RESULT_VARIABLE PYTHON_GTK_RESULT
 			OUTPUT_QUIET ERROR_QUIET)
 	if(${PYTHON_GTK_RESULT} EQUAL 0)
+		set(PYTHON_GTK_FOUND 1)
 		add_subdirectory(python-ui)
 	endif()
 endif(PYTHONINTERP_FOUND)
@@ -388,11 +390,11 @@ else()
   message( "  - capsimage :\tv5 not found, install it to use .IPF, .RAW and .CTR disk images" )
 endif(CapsImage_FOUND)
 
-if(${PYTHON_GTK_RESULT} EQUAL 0)
+if(PYTHON_GTK_FOUND)
   message( "  - python Gtk:\tfound, python-ui can be used" )
 else()
   message( "  - python Gtk:\tnot found, install it to enable the python-ui" )
-endif()
+endif(PYTHON_GTK_FOUND)
 
 if(Udev_FOUND)
   message( "  - udev :\tfound, required for media change detection in NatFeats SCSI" )
