@@ -1907,10 +1907,10 @@ void	MFP_GPIP_ReadByte_Main ( MFP_STRUCT *pMFP )
 		gpip_new |= 1;
 
 		/* Printer BUSY bit is also used by parallel port joystick adapters as fire button */
-		if (ConfigureParams.Joysticks.Joy[JOYID_PARPORT1].nJoystickMode != JOYSTICK_DISABLED)
+		if (ConfigureParams.Joysticks.Joy[JOYID_PARPORT2].nJoystickMode != JOYSTICK_DISABLED)
 		{
 			/* Fire pressed? */
-			if (Joy_GetStickData(JOYID_PARPORT1) & 0x80)
+			if (Joy_GetStickData(JOYID_PARPORT2) & 0x80)
 				gpip_new &= ~1;
 		}
 	}

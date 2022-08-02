@@ -285,13 +285,13 @@ Uint8 PSG_Get_DataRegister(void)
 
 	if (PSGRegisterSelect == PSG_REG_IO_PORTA)
 	{
-		/* Second parallel port joystick uses centronics strobe bit as fire button: */
-		if (ConfigureParams.Joysticks.Joy[JOYID_PARPORT2].nJoystickMode != JOYSTICK_DISABLED)
+		/* First parallel port joystick uses centronics strobe bit as fire button: */
+		if (ConfigureParams.Joysticks.Joy[JOYID_PARPORT1].nJoystickMode != JOYSTICK_DISABLED)
 		{
-			if (Joy_GetStickData(JOYID_PARPORT2) & 0x80)
-				PSGRegisters[PSG_REG_IO_PORTA] &= ~32;
+			if (Joy_GetStickData(JOYID_PARPORT1) & 0x80)
+				PSGRegisters[PSG_REG_IO_PORTA] &= ~0x20;
 			else
-				PSGRegisters[PSG_REG_IO_PORTA] |= 32;
+				PSGRegisters[PSG_REG_IO_PORTA] |= 0x20;
 		}
 	}
 	else if (PSGRegisterSelect == PSG_REG_IO_PORTB)
@@ -299,13 +299,13 @@ Uint8 PSG_Get_DataRegister(void)
 		/* PSG register 15 is parallel port data register - used by parallel port joysticks: */
 		if (ConfigureParams.Joysticks.Joy[JOYID_PARPORT1].nJoystickMode != JOYSTICK_DISABLED)
 		{
-			PSGRegisters[PSG_REG_IO_PORTB] &= 0x0f;
-			PSGRegisters[PSG_REG_IO_PORTB] |= ~Joy_GetStickData(JOYID_PARPORT1) << 4;
+			PSGRegisters[PSG_REG_IO_PORTB] &= 0xf0;
+			PSGRegisters[PSG_REG_IO_PORTB] |= ~Joy_GetStickData(JOYID_PARPORT1) & 0x0f;
 		}
 		if (ConfigureParams.Joysticks.Joy[JOYID_PARPORT2].nJoystickMode != JOYSTICK_DISABLED)
 		{
-			PSGRegisters[PSG_REG_IO_PORTB] &= 0xf0;
-			PSGRegisters[PSG_REG_IO_PORTB] |= ~Joy_GetStickData(JOYID_PARPORT2) & 0x0f;
+			PSGRegisters[PSG_REG_IO_PORTB] &= 0x0f;
+			PSGRegisters[PSG_REG_IO_PORTB] |= ~Joy_GetStickData(JOYID_PARPORT2) << 4;
 		}
 	}
 
