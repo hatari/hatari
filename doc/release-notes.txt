@@ -14,8 +14,8 @@ Following features are deprecated and will be removed in a future release:
   recent hardware should have 32 bpp nowadays)
 
 
- Development version
- -------------------
+ Version 2.4.1 (2022-08-03)
+ --------------------------
 
 Emulation improvements:
 - Sound:
