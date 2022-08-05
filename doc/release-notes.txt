@@ -3,10 +3,6 @@
                                    --------
                                 Release Notes
 
-
- Development version
- -------------------
-
 Following features are deprecated and will be removed in a future release:
 - SDL 2.x "bUseSdlRenderer" config and "GPU scaling" GUI options
   (after HW support for SDL2 is available widely enough)
@@ -17,6 +13,46 @@ Following features are deprecated and will be removed in a future release:
 - The rendering functions for 16 bits-per-pixel host screens (almost all
   recent hardware should have 32 bpp nowadays)
 
+
+ Version 2.4.1 (2022-08-03)
+ --------------------------
+
+Emulation improvements:
+- Sound:
+  - Much more precise function to convert CPU clocks to YM2149 clocks
+    in the case where YM2149 doesn't use the same source clock as the CPU
+    (fixes e.g. some STE sound glitches in BLSPLAY.TTP)
+- Video:
+  - Fix regression in TT mode: Update video counter again on each HBL
+    (fixes e.g. Hextracker when run in TT mode)
+
+Emulator improvements:
+- DSP:
+  - Avoid small extra overhead on non-Falcon machines when DSP config
+    option is set
+- Misc:
+  - Fix memory leaks on PNG save and GEMDOS HD program load
+  - All Hatari output (outside of debugger) uses now appropriate
+    logging and trace functions so that they can be controlled
+- VDI mode:
+  - Fix: VDI width needs to be aligned to (at least) 16-pixels
+  - Fix: a possible crash with (default) SMALL_MEM build config
+    (when ST program sets a bad video base address)
+- Statusbar:
+  - Show "Linux" when running Linux directly with --lilo
+- Debugger:
+  - Fix: to duplicate symbol name removal
+  - Fix: all IDE trace output did not go to trace file
+  - Like with rest of debugger, profiler responses go
+    now to stderr (not stdout)
+
+Documentation:
+- Document Hatari outputs and their controls in debugger manual
+
+
+ Version 2.4.0 (2022-07-09)
+ --------------------------
+
 Removed features (that were marked as deprecated in earlier releases):
 - Support for the SDL 1.2 library (i.e. SDL 2.x should be used instead)
 - Support for building Hatari for Windows CE has been removed, too, since
@@ -24,51 +60,100 @@ Removed features (that were marked as deprecated in earlier releases):
 - The old UAE CPU core (i.e. the new WinUAE CPU core is now always used)
 - Python v2 support in Python scripts (Python 2 was end of life in 2020)
 
-Emulation:
+Emulation improvements:
+- Internal timers:
+  - Rewrite the internal timers used to emulate delays/events/mfp timers
+    (gain ~10% on average, up to 60% in very specific cases)
 - CPU:
-  - Improved FPU instruction emulation (from WinUAE emulator)
+  - Improve FPU emulation (exceptions, unimplemeted instructions, fsincos)
+  - Improve FPU emulation in softfloat mode
+  - Improve IPL timing update in various opcodes
+  - Faster emulation of 68000 in cycle exact mode (gain ~7%)
+- MFP:
+  - Use the new internal timers for MFP timers
+  - Improve accuracy when reading MFP's Timer Data Register
+  - More accurate emulation by processing all internal timers first before
+    reading/writing any MFP register (was previously delayed after processing
+    the current CPU instruction, which was too late in some cases)
+- Video:
+ - Fix position for detecting when VBLANK should be disabled in 50 Hz and 60 Hz
 - DSP:
-  - Improved interrupts handling (from Previous NeXT emulator)
+  - Improved interrupts handling and SSI (from Previous NeXT emulator)
 - Sound:
   - Improve accuracy of YM2149's sample generation by using the main
-    CPU clock as a reference for all timings
+    CPU clock as a reference for all timings (syncsquare effect as used
+    in recent maxYMiser v1.53)
+  - Use specific memory functions when doing DMA for STE and Falcon sound
+    (don't generate bus error when pointed memory is not present)
+  - Improve value of MFP GPIP bit 7 for DMA sound in the case of STE/TT
+    (video mono XOR dma sound xsint)
+  - Use 2 different signals SOUNDINT and SNDINT for Falcon (connected to
+    MFP GPIP7 and MFP Timer A input)
+- FDC:
+  - Stall the CPU during 32 cycles when DMA FIFO is filled/transferred
+- SCSI:
+  - Improve MODE SENSE, add REPORT LUNS support
+- IKBD:
+  - support deltax/deltay in command $A (set mouse keycode mode)
+    and threshold x/y in command $B (set mouse threshold)
 
-Emulator:
+
+Emulator improvements:
 - TOS support:
   - Support 1024k EmuTOS images also on TT & Falcon
+  - Add country code option to select EmuTOS language, keyboard
+    layout and screen refresh rate on Mega/ST/STe machines (ones
+    lacking NVRAM)
 - MIDI support:
   - Fix: PortMidi rejects Hatari MIDI events
   - Fix: MIDI IRQ needs to be re-enabled on MIDI device change
     even when there's no reset
   - Support for matching PortMidi device name by prefix when
     there's no exact full match
-- NVRAM:
-  - Config settings + CLI options to override NVRAM keyboard layout
-    and language values at start
+- RS232:
+  - The RS232 receiver code has been rewritten to use polling instead
+    of using a thread. This should avoid deadlocks on BSD/macOS systems
+    when shutting down or reconfiguring the RS232 settings.
+- TT/Falcon:
+  - Increase max TT-RAM amount to 1024 MiB
+  - Separate config + CLI options to override NVRAM language and
+    keyboard layout settings
+  - NVRAM language default is taken from the LANG env variable
 - Falcon:
   - Fix: restore zoom mode correctly when loading snapshots
   - Correct also smaller specified memory amounts to valid ones
   - Microphone emulation now uses SDL2 instead of PortAudio
 - MegaSTE/TT:
   - Add VME/SCU registers "--vme <none|dummy>" access option
-    (needed to support both Linux and TOS v2 & v3 until Hatari
-    implements real VME/SCU register emulation)
+    (Linux needs "none" option and TOS v2 / v3 need "dummy" one
+    until Hatari implements real VME/SCU register emulation)
 - VDI mode:
   - Relax VDI mode width alignment from 128/planes to
-    16/planes, and height from 16 to 8 pixels
+    16/planes, and height alignment from 16 to 8 pixels
 - SDL GUI:
   - Fix: ignore unrecognized events in file selector
     (buttons could be incorrectly shown as selected)
   - Fix: avoid key release event from SDL GUI closing leaking to emulation
   - Do VDI mode size changes in (faster) 16 pix increments,
     and prevent user seeing invalid VDI mode sizes
+  - Fine-tune CPU dialog texts and keyboard shortcuts
 - GEMDOS HD:
   - Fix: clear GEMDOS Fread / Fwrite errors
+  - Fix: Allow GEMDOS tasks to use other tasks' file handles
+- Command line:
+  - Support "off" as alias for "none" when disabling DSP, FPU,
+    Joysticks and VME, for consistency with HW on/off options
+- NatFeats:
+  - Fix: freeze with NF_STDERR when string is empty or unterminated
 - Debugger:
+  - Fix: profile header so that profile data post-processor knows how
+    to parse built-in WinAUE CPU core ("uae") disassembly output, not
+    just "ext" disassembler output
   - Repeat CPU & DSP "step" and "next" commands on Enter
   - Output PC location in CPU & DSP disassembly
   - More readable "variables" command output
-  - Add "info vme" command
+  - Add "PConSymbol" variable for breaking on symbol addresses
+  - Add "mmu" and "vme" options for "info" command
   - Add "scc" and "vme" (VME/SCU reg access) tracing support
   - Setting trace to "none" disables also xconout console output
     enabled by "os_base" trace option
@@ -78,12 +163,16 @@ Emulator:
     command & "gst2ascii" tool, and it can now read also long
     symbol names from Pure-C debug information
   - Auto-detection for whether section offsets should be used
-    for symbol addresses
-  - MIDI trace options are split to "midi" (listing device and MIDI
-    events) and "midi_raw" (tracing IRQ and register read/write access)
+    when loading symbol information
+  - MIDI trace options are split to "midi" (device & MIDI events)
+    and "midi_raw" (IRQ and register read/write access).  Trace
+    logging added also for MIDI byte writes, not just reads
   - Trace options are listed in alphabetical order
 - Windows:
   - Next/prev drive change buttons added to SDL GUI file select dialog
+
+Build/configure:
+- SMALL_MEM option is enabled by default
 
 Tools:
 - Add (SDL2 specific) "listkeys" key mapping helper back
@@ -93,8 +182,18 @@ Documentation:
 - Compatibility updates, especially for 060 programs that need
   FPSP060.PRG for missing instructions emulation
 
+Fixed demos:
+- Hackabonds Demo (wrong vblank detection)
+- We Were @ HD version under GEMDOS HD (file handle access)
+
 Fixed programs:
 - maxYMiser FM v1.53 by gwEn (support for syncsquare effect)
+
+Fixed games:
+- Chambers of Shaolin : DMA sound was wrong in STE mode with 1 MB RAM
+  (mfp gpip bit 7)
+- Super Hang On : fix flickering raster colors (bclr #0,$fffffa0f sometimes
+  happened at the same time timer C expired)
 
 
  Version 2.3.1 (2020-12-27)

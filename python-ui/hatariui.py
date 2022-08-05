@@ -4,7 +4,7 @@
 #
 # Requires Gtk 3.x and Python GLib Introspection libraries.
 #
-# Copyright (C) 2008-2020 by Eero Tamminen
+# Copyright (C) 2008-2022 by Eero Tamminen
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -122,6 +122,7 @@ class UICallbacks:
         hbox = Gtk.HBox()
         if toolbars["left"]:
             hbox.pack_start(toolbars["left"], False, True, 0)
+        self._set_max_win_size()
         if embed:
             self._add_uisocket(hbox)
         if toolbars["right"]:
@@ -150,17 +151,24 @@ class UICallbacks:
         mainwin.connect("delete_event", self.quit)
         self.mainwin = mainwin
 
+    def _set_max_win_size(self):
+        # set max Hatari window size = desktop size
+        display = Gdk.Display.get_default()
+        if not display.get_n_monitors():
+            print("ERROR: no monitors supported by Gdk")
+            sys.exit(error)
+        monitor  = display.get_monitor(0)
+        geometry = monitor.get_geometry()
+        scale    = monitor.get_scale_factor()
+        print("%dx%d monitor @ %.2f scale" % (geometry.width, geometry.height, scale))
+        self.config.set_desktop_size(scale * geometry.width, scale * geometry.height)
+
     def _add_uisocket(self, box):
         # add Hatari parent container to given box
         socket = Gtk.Socket(can_focus=True)
         # without this, closing Hatari would remove the socket widget
         socket.connect("plug-removed", lambda obj: True)
         socket.set_events(Gdk.EventMask.ALL_EVENTS_MASK)
-        # set max Hatari window size = desktop size
-        monitor  = Gdk.Display.get_default().get_primary_monitor()
-        geometry = monitor.get_geometry()
-        scale    = monitor.get_scale_factor()
-        self.config.set_desktop_size(scale * geometry.width, scale * geometry.height)
         # set initial embedded hatari size
         width, height = self.config.get_window_size()
         socket.set_size_request(width, height)
@@ -449,16 +457,17 @@ class UIActions:
         ("manual", None, "Hatari manual", None, None, self.help.view_hatari_manual),
         ("compatibility", None, "Hatari compatibility list", None, None, self.help.view_hatari_compatibility),
         ("release", None, "Hatari release notes", None, None, self.help.view_hatari_releasenotes),
+        ("hatariui", None, "Hatari UI information", None, None, self.help.view_hatariui_page),
         ("uirelease", None, "Hatari UI release notes", None, None, self.help.view_hatariui_releasenotes),
+        ("bugs", None, "Hatari bugs", None, None, self.help.view_hatari_bugs),
         ("todo", None, "Hatari TODO", None, None, self.help.view_hatari_todo),
 
         ("hatari", None, "Hatari home page", None, None, self.help.view_hatari_page),
-        ("hatariui", None, "Hatari UI home page", None, None, self.help.view_hatariui_page),
         ("mails", None, "Hatari mailing lists", None, None, self.help.view_hatari_mails),
         ("changes", None, "Latest Hatari changes", None, None, self.help.view_hatari_repository),
 
         ("authors", None, "Hatari authors", None, None, self.help.view_hatari_authors),
-        ("about", Gtk.STOCK_INFO, "Hatari UI info", "<Ctrl>I", "Hatari UI information", cb.about)
+        ("about", Gtk.STOCK_INFO, "About Hatari UI", "<Ctrl>I", "About Hatari UI", cb.about)
         ))
         self.action_names = [x.get_name() for x in self.actions.list_actions()]
 
@@ -630,7 +639,7 @@ class UIActions:
         ("Devices", ("display", "floppy", "harddisk", "joystick", "machine", "device", "sound")),
         ("Configuration", ("path", None, "lconfig", "sconfig")),
         ("Debug", ("debug", "trace")),
-        ("Help", ("manual", "compatibility", "release", "uirelease", "todo", None, "hatari", "hatariui", "mails", "changes", None, "authors", "about",))
+        ("Help", ("manual", "compatibility", "release", "hatariui", "uirelease", "bugs", "todo", None, "hatari", "mails", "changes", None, "authors", "about",))
         )
         bar = Gtk.MenuBar()
 

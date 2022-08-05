@@ -1,14 +1,15 @@
 
+# example.py imports hconsole.py, so it needs to be in the same dir
 INSTALL(PROGRAMS hconsole.py example.py
 	DESTINATION ${DATADIR}/hconsole/)
 
-# files related to example.py
+# files imported by example.py, also need to be in the same dir
 INSTALL(FILES example-commands example-debugger
 	DESTINATION ${DATADIR}/hconsole/)
 
 # documentation
 INSTALL(FILES release-notes.txt
-	DESTINATION ${DATADIR}/hconsole/)
+	DESTINATION ${DOCDIR}/hconsole/)
 
 if(ENABLE_MAN_PAGES)
 	add_custom_target(hconsole_man ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/hconsole.1.gz)

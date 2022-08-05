@@ -435,7 +435,7 @@ bool Control_CheckUpdates(void)
 		if (bRemotePaused) {
 			/* return only when there're UI events
 			 * (redraws etc) to save battery:
-			 *   http://bugzilla.libsdl.org/show_bug.cgi?id=323
+			 * https://github.com/libsdl-org/SDL-1.2/issues/222
 			 */
 			int uisock = Control_GetUISocket();
 			if (uisock) {

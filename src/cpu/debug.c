@@ -15,7 +15,6 @@
 #include "hatari-glue.h"
 
 #include <ctype.h>
-#include <signal.h>
 
 #include "options_cpu.h"
 //#include "uae.h"
@@ -102,9 +101,9 @@ static uaecptr debug_copper_pc;
 extern int audio_channel_mask;
 extern int inputdevice_logging;
 
-static void debug_cycles(void)
+static void debug_cycles(int mode)
 {
-	trace_cycles = 1;
+	trace_cycles = mode;
 	last_cycles2 = get_cycles();
 	last_vpos2 = vpos;
 	last_hpos2 = current_hpos();
@@ -141,7 +140,7 @@ void activate_debugger (void)
 		// during disassembly etc..
 		return;
 	}
-	debug_cycles();
+	debug_cycles(1);
 	debugger_active = 1;
 	set_special (SPCFLAG_BRK);
 	debugging = 1;
@@ -534,7 +533,7 @@ static bool iscancel (int counter)
 static bool isoperator(TCHAR **cp)
 {
 	TCHAR c = **cp;
-	return c == '+' || c == '-' || c == '/' || c == '*' || c == '(' || c == ')';
+	return c == '+' || c == '-' || c == '/' || c == '*' || c == '(' || c == ')' || c == '|' || c == '&' || c == '^';
 }
 
 static void ignore_ws (TCHAR **c)
@@ -1434,7 +1433,13 @@ static void set_dbg_color(int index, int extra, uae_u8 r, uae_u8 g, uae_u8 b, in
 		debug_colors[index].name = name;
 	if (max > 0)
 		debug_colors[index].max = max;
-	debug_colors[index].l[extra] = lc((r << 16) | (g << 8) | (b << 0));
+	if (extra >= 0) {
+		debug_colors[index].l[extra] = lc((r << 16) | (g << 8) | (b << 0));
+	} else {
+		for (int i = 0; i < DMARECORD_MAX; i++) {
+			debug_colors[index].l[i] = lc((r << 16) | (g << 8) | (b << 0));
+		}
+	}
 }
 
 static void set_debug_colors(void)
@@ -1451,6 +1456,7 @@ static void set_debug_colors(void)
 	set_dbg_color(DMARECORD_BITPLANE,		0, 0x00, 0x00, 0xff, 8, _T("Bitplane"));
 	set_dbg_color(DMARECORD_SPRITE,			0, 0xff, 0x00, 0xff, 8, _T("Sprite"));
 	set_dbg_color(DMARECORD_DISK,			0, 0xff, 0xff, 0xff, 3, _T("Disk"));
+ 	set_dbg_color(DMARECORD_CONFLICT,		0, 0xff, 0xb8, 0x40, 0, _T("Conflict"));
 
 	for (int i = 0; i < DMARECORD_MAX; i++) {
 		for (int j = 1; j < DMARECORD_SUBITEMS; j++) {
@@ -4912,6 +4918,7 @@ static void breakfunc(uae_u32 v)
 	debugging = 1;
 	debug_vpos = -1;
 	debug_hpos = -1;
+	debug_cycles(2);
 	set_special(SPCFLAG_BRK);
 }
 
@@ -5948,7 +5955,7 @@ static bool debug_line (TCHAR *input)
 			break;
 		case 't':
 			no_trace_exceptions = 0;
-			debug_cycles();
+			debug_cycles(2);
 			trace_param[0] = trace_param[1] = 0;
 			if (*inptr == 't') {
 				no_trace_exceptions = 1;
@@ -5998,7 +6005,7 @@ static bool debug_line (TCHAR *input)
 			trace_mode = TRACE_MATCH_PC;
 			trace_param[0] = nextpc;
 			exception_debugging = 1;
-			debug_cycles();
+			debug_cycles(2);
 			return true;
 
 		case 'f':
@@ -6010,14 +6017,15 @@ static bool debug_line (TCHAR *input)
 				if (process_breakpoint (&inptr))
 					return true;
 			} else if (inptr[0] == 'c' || inptr[0] == 's') {
-				if (cycle_breakpoint(&inptr))
+				if (cycle_breakpoint(&inptr)) {
 					return true;
+				}
 			} else if (inptr[0] == 'e' && inptr[1] == 'n') {
 				break_if_enforcer = break_if_enforcer ? false : true;
 				console_out_f(_T("Break when enforcer hit: %s\n"), break_if_enforcer ? _T("enabled") : _T("disabled"));
 			} else {
 				if (instruction_breakpoint(&inptr)) {
-					debug_cycles();
+					debug_cycles(1);
 					return true;
 				}
 			}
@@ -6366,6 +6374,7 @@ static void debug_1 (void)
 {
 	TCHAR input[MAX_LINEWIDTH];
 
+	custom_dumpstate(0);
 	m68k_dumpstate(&nextpc, debug_pc);
 	debug_pc = 0xffffffff;
 	nxdis = nextpc; nxmem = 0;
@@ -6457,7 +6466,7 @@ void debug (void)
 					continue;
 				if (bpn->type == BREAKPOINT_REG_PC) {
 					if (bpn->value1 == pc) {
-						bp = 1;
+						bp = i + 1;
 						break;
 					}
 				} else if (bpn->type >= 0 && bpn->type < BREAKPOINT_REG_END) {
@@ -6529,7 +6538,7 @@ void debug (void)
 							while (seglist) {
 								uae_u32 size = get_long_debug (seglist - 4) - 4;
 								if (pc >= (seglist + 4) && pc < (seglist + size)) {
-									bp = 1;
+									bp = i + 1;
 									break;
 								}
 								seglist = BPTR2APTR(get_long_debug (seglist));
@@ -6580,7 +6589,7 @@ void debug (void)
 			}
 			if (bp > 0)
 				console_out_f(_T("Breakpoint %d triggered.\n"), bp - 1);
-			debug_cycles();
+			debug_cycles(1);
 		}
 	} else {
 		memwatch_hit_msg(memwatch_triggered - 1);
@@ -6608,7 +6617,7 @@ void debug (void)
 	debugmem_disable();
 
 	if (trace_cycles && last_frame >= 0) {
-		if (last_frame + 2 >= timeframes) {
+		if (last_frame + 2 >= timeframes || trace_cycles > 1) {
 			console_out_f(_T("Cycles: %d Chip, %d CPU. (V=%d H=%d -> V=%d H=%d)\n"),
 				(last_cycles2 - last_cycles1) / CYCLE_UNIT,
 				(last_cycles2 - last_cycles1) / cpucycleunit,

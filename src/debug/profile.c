@@ -556,10 +556,10 @@ int Profile_AllocCallinfo(callinfo_t *callinfo, int count, const char *name)
 		/* alloc & clear new data */
 		callinfo->site = calloc(count, sizeof(callee_t));
 		if (callinfo->site) {
-			printf("Allocated %s profile callsite buffer for %d symbols.\n", name, count);
+			fprintf(stderr, "Allocated %s profile callsite buffer for %d symbols.\n", name, count);
 			callinfo->prev_pc = callinfo->return_pc = PC_UNDEFINED;
 		} else {
-			fprintf(stderr, "ERROR: callesite buffer alloc failed!\n");
+			fprintf(stderr, "ERROR: callsite buffer alloc failed!\n");
 			callinfo->sites = 0;
 		}
 	}
@@ -776,9 +776,9 @@ int Profile_Command(int nArgc, char *psArgs[], bool bForDsp)
 			lower = *disasm_addr;
 		}
 		if (bForDsp) {
-			*disasm_addr = Profile_DspShowAddresses(lower, upper, stdout, PAGING_ENABLED);
+			*disasm_addr = Profile_DspShowAddresses(lower, upper, stderr, PAGING_ENABLED);
 		} else {
-			*disasm_addr = Profile_CpuShowAddresses(lower, upper, stdout, PAGING_ENABLED);
+			*disasm_addr = Profile_CpuShowAddresses(lower, upper, stderr, PAGING_ENABLED);
 		}
 		return DEBUGGER_CMDCONT;
 
@@ -834,9 +834,9 @@ int Profile_Command(int nArgc, char *psArgs[], bool bForDsp)
 		}
 	} else if (strcmp(psArgs[1], "callers") == 0) {
 		if (bForDsp) {
-			Profile_DspShowCallers(stdout);
+			Profile_DspShowCallers(stderr);
 		} else {
-			Profile_CpuShowCallers(stdout);
+			Profile_CpuShowCallers(stderr);
 		}
 	} else if (strcmp(psArgs[1], "stack") == 0) {
 		Profile_ShowStack(bForDsp);

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if [ $# -lt 1 -o "$1" = "-h" -o "$1" = "--help" ]; then
+if [ $# -lt 1 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 	echo "Usage: $0 <hatari> ..."
 	exit 1
 fi
@@ -12,7 +12,6 @@ if [ ! -x "$hatari" ]; then
 	exit 1
 fi;
 
-basedir=$(dirname $0)
 testdir=$(mktemp -d)
 cmdfifo="$testdir/cmdfifo"
 
@@ -23,7 +22,7 @@ trap remove_temp EXIT
 
 mkdir -p "$testdir/.config/hatari"
 
-cat > "$testdir/.config/hatari/hatari.cfg" <<EOF
+cat > "$testdir/hatari.cfg" <<EOF
 [Sound]
 szYMCaptureFileName=$testdir/sndrec.wav
 
@@ -37,7 +36,8 @@ export SDL_AUDIODRIVER=dummy
 unset TERM
 
 HOME="$testdir" $hatari --confirm-quit false --screenshot-dir "$testdir" \
-	--tos none --cmd-fifo "$cmdfifo" $* > "$testdir/out.txt" 2>&1 &
+	-c "$testdir/hatari.cfg" --tos none --cmd-fifo "$cmdfifo" "$@" \
+	> "$testdir/out.txt" 2>&1 &
 hatari_pid=$!
 
 # Wait until the fifo has been created by Hatari
@@ -71,45 +71,44 @@ echo "hatari-shortcut quit" > "$cmdfifo"
 
 wait $hatari_pid
 exitstat=$?
+
+echo "--------------- Hatari output: -------------------"
+cat "$testdir/out.txt"
+echo "--------------------------------------------------"
+
 if [ $exitstat -ne 0 ]; then
-	echo "Running hatari FAILED. Status=${exitstat}. Hatari output:"
-	cat "$testdir/out.txt"
+	echo "ERROR: Running hatari FAILED. Status=${exitstat}"
 	exit 1
 fi
 
 if [ -e "$cmdfifo" ]; then
-	echo "FIFO removal FAILED. Hatari output:"
-	cat "$testdir/out.txt"
+	echo "ERROR: FIFO removal FAILED"
 	exit 1
 fi
 
 if ! grep -q -i "D4.*00000000.*D5.*00000000" "$testdir/out.txt"; then
-	echo "Register dump FAILED. Hatari output:"
-	cat "$testdir/out.txt"
+	echo "ERROR: Register dump FAILED"
 	exit 1
 fi
 
 if [ ! -e "$testdir/testmem.sav" ]; then
-	echo "Memory snapshot FAILED. Hatari output:"
-	cat "$testdir/out.txt"
+	echo "ERROR: Memory snapshot FAILED"
 	exit 1
 fi
 
+# shellcheck disable=SC2144 # there's only one match
 if [ ! -e "$testdir"/grab0001.* ]; then
-	echo "Screenshot FAILED. Hatari output:"
-	cat "$testdir/out.txt"
+	echo "ERROR: Screenshot FAILED"
 	exit 1
 fi
 
 if [ ! -e "$testdir/sndrec.wav" ]; then
-	echo "Sound recording FAILED. Hatari output:"
-	cat "$testdir/out.txt"
+	echo "ERROR: Sound recording FAILED"
 	exit 1
 fi
 
 if [ ! -e "$testdir/videorec.avi" ]; then
-	echo "Video recording FAILED. Hatari output:"
-	cat "$testdir/out.txt"
+	echo "ERROR: Video recording FAILED"
 	exit 1
 fi
 

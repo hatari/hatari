@@ -18,8 +18,6 @@ its sources).
   acknowledged them (two-way communication)
 
 * WinUAE CPU core specific configuration options:
-  - MMU
-  - FPU
   - 32-bit addressing
 
 * Support all 8 ACSI and SCSI drives

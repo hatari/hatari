@@ -1,7 +1,7 @@
 /*
  * Hatari - natfeats.c
  * 
- * Copyright (C) 2012-2016, 2019 by Eero Tamminen
+ * Copyright (C) 2012-2016, 2019-2022 by Eero Tamminen
  *
  * This file is distributed under the GNU General Public License, version 2
  * or at your option any later version. Read the file gpl.txt for details.
@@ -46,7 +46,7 @@ const char Natfeats_fileid[] = "Hatari natfeats.c";
  * Check whether given string address is valid
  * and whether strings is of "reasonable" length.
  *
- * Returns string length or zero for error.
+ * Returns string length or negative value for error.
  */
 static int mem_string_ok(Uint32 addr)
 {
@@ -56,7 +56,7 @@ static int mem_string_ok(Uint32 addr)
 	if (!STMemory_CheckAreaType(addr, 1, ABFLAG_RAM | ABFLAG_ROM)) {
 		/* invalid starting address -> error */
 		M68000_BusError(addr, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, 0);
-		return 0;
+		return -1;
 	}
 	buf = (const char *)STMemory_STAddrToPointer(addr);
 	if (STMemory_CheckAreaType(addr, NF_MAX_STRING, ABFLAG_RAM | ABFLAG_ROM)) {
@@ -66,19 +66,22 @@ static int mem_string_ok(Uint32 addr)
 				return i;
 			}
 		}
-		return 0;
+		/* unterminated NF string -> error */
+		M68000_BusError(addr, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, 0);
+		return -1;
 	}
 	for (i = 0; i < NF_MAX_STRING; i++) {
-		if (!STMemory_CheckAreaType(addr, 1, ABFLAG_RAM | ABFLAG_ROM)) {
+		if (!STMemory_CheckAreaType(addr + i, 1, ABFLAG_RAM | ABFLAG_ROM)) {
 			/* ends in invalid area -> error */
 			M68000_BusError(addr, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, 0);
-			return 0;
+			return -1;
 		}
 		if (!buf[i]) {
 			return i;
 		}
 	}
-	return 0;
+	assert(false); /* should never be reached */
+	return -1;
 }
 
 /**
@@ -143,7 +146,7 @@ static bool nf_stderr(Uint32 stack, Uint32 subid, Uint32 *retval)
 		/* unrecognized subid, nothing printed */
 		return true;
 	}
-	if (!mem_string_ok(ptr)) {
+	if (mem_string_ok(ptr) < 0) {
 		return false;
 	}
 	str = (const char *)STMemory_STAddrToPointer (ptr);
@@ -258,7 +261,7 @@ static bool nf_command(Uint32 stack, Uint32 subid, Uint32 *retval)
 		return true;
 	}
 	ptr = STMemory_ReadLong(stack);
-	if (!mem_string_ok(ptr)) {
+	if (mem_string_ok(ptr) < 0) {
 		return false;
 	}
 	buffer = (const char *)STMemory_STAddrToPointer(ptr);

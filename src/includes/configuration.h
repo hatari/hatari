@@ -102,6 +102,7 @@ typedef struct
 {
   bool bDisableKeyRepeat;
   KEYMAPTYPE nKeymapType;
+  int nCountryCode;
   int nKbdLayout;
   int nLanguage;
   char szMappingFileName[FILENAME_MAX];
@@ -322,6 +323,7 @@ typedef struct
   char szPrintToFileName[FILENAME_MAX];
 } CNF_PRINTER;
 
+#define MAX_MIDI_PORT_NAME 256 /* a guess */
 
 /* Midi configuration */
 typedef struct
@@ -329,8 +331,8 @@ typedef struct
   bool bEnableMidi;
   char sMidiInFileName[FILENAME_MAX];
   char sMidiOutFileName[FILENAME_MAX];
-  char sMidiInPortName[FILENAME_MAX];
-  char sMidiOutPortName[FILENAME_MAX];
+  char sMidiInPortName[MAX_MIDI_PORT_NAME];
+  char sMidiOutPortName[MAX_MIDI_PORT_NAME];
 } CNF_MIDI;
 
 

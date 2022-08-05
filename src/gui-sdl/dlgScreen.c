@@ -183,8 +183,8 @@ static int DlgMonitor_SetVdiStepping(int *stepx, int *stepy)
 		planes = 2;
 	else
 		planes = 4;
+	*stepx = VDI_ALIGN_WIDTH;
 	*stepy = VDI_ALIGN_HEIGHT;
-	*stepx = VDI_ALIGN_WIDTH(planes);
 	return planes;
 }
 
@@ -416,7 +416,7 @@ void Dialog_WindowDlg(void)
 				Avi_StartRecording ( ConfigureParams.Video.AviRecordFile , ConfigureParams.Screen.bCrop ,
 					ConfigureParams.Video.AviRecordFps == 0 ?
 						ClocksTimings_GetVBLPerSec ( ConfigureParams.System.nMachineType , nScreenRefreshRate ) :
-						(Uint32)ConfigureParams.Video.AviRecordFps << CLOCKS_TIMINGS_SHIFT_VBL ,
+						ClocksTimings_GetVBLPerSec ( ConfigureParams.System.nMachineType , ConfigureParams.Video.AviRecordFps ) ,
 					1 << CLOCKS_TIMINGS_SHIFT_VBL ,
 					ConfigureParams.Video.AviRecordVcodec );
 				windowdlg[DLGSCRN_RECANIM].txt = RECORD_STOP;

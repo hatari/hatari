@@ -13,6 +13,7 @@ extern void memory_reset(void);
 
 #ifdef JIT
 extern int special_mem;
+extern int special_mem_default;
 extern int jit_n_addr_unsafe;
 #endif
 

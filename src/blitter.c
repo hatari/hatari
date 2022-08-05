@@ -251,7 +251,7 @@ static Uint16	Blitter_HOG_CPU_IgnoreMaxCpuCycles;		/* Max number of blitter cycl
 
 
 /* Return 'true' if CE mode can be enabled for blitter (ie when using 68000 CE mode) */
-#define	BLITTER_RUN_CE		( ( currprefs.cpu_cycle_exact ) && ( currprefs.cpu_model == 68000 ) )
+#define	BLITTER_RUN_CE		( CpuRunCycleExact && ( currprefs.cpu_model == 68000 ) )
 
 
 /* Used to compute the blitter's usage during each VBL (for statusbar) */
@@ -1536,8 +1536,8 @@ void	Blitter_HOG_CPU_mem_access_after ( int bus_count )
 
 int	Blitter_Check_Simultaneous_CPU ( void )
 {
-	static int cpu_skip_cycles = 0;
-//fprintf ( stderr , "blitter simult phase=%d bus=%d %x cur_cyc=%lu\n" , BlitterPhase , BusMode , BlitterRegs.ctrl , currcycle/cpucycleunit );
+	// static int cpu_skip_cycles = 0;
+	// fprintf(stderr, "blitter simult phase=%d bus=%d %x cur_cyc=%lu\n", BlitterPhase, BusMode, BlitterRegs.ctrl, currcycle/cpucycleunit);
 
 	if ( BlitterPhase & BLITTER_PHASE_IGNORE_LAST_CPU_CYCLES )
 	{
@@ -1545,12 +1545,12 @@ int	Blitter_Check_Simultaneous_CPU ( void )
 		if ( Blitter_HOG_CPU_IgnoreMaxCpuCycles <= 0 )
 			Blitter_Stop_IgnoreLastCpuCycles();	/* No more CPU in parallel, stop ignoring next CPU cycles */
 
-		cpu_skip_cycles += 2;
-//fprintf ( stderr , "blitter cpu skip %d cycles, max skip %d\n" , cpu_skip_cycles , Blitter_HOG_CPU_IgnoreMaxCpuCycles );
+		// cpu_skip_cycles += 2;
+		// fprintf(stderr, "blitter cpu skip %d cycles, max skip %d\n", cpu_skip_cycles, Blitter_HOG_CPU_IgnoreMaxCpuCycles);
 		return 1;					/* Skip next do_cycles() */
 	}
 
-	cpu_skip_cycles = 0;
+	// cpu_skip_cycles = 0;
 	return 0;						/* Don't skip next do_cycles() */
 }
 

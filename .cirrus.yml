@@ -6,7 +6,7 @@ fedora_task:
   install_script:
     - dnf update -y
     - dnf install -y cmake make gcc diffutils python-unversioned-command
-          GraphicsMagick SDL2-devel libpng-devel zlib-devel portaudio-devel
+          GraphicsMagick SDL2-devel libpng-devel zlib-devel tidy
   script:
     - mkdir build
     - cd build
@@ -85,7 +85,6 @@ msys2_task:
          mingw-w64-x86_64-gcc
          mingw-w64-x86_64-SDL2
          mingw-w64-x86_64-libpng
-         mingw-w64-x86_64-portaudio
          mingw-w64-x86_64-portmidi"
   script:
     - C:\tools\msys64\usr\bin\bash -lc "cmake -G 'MSYS Makefiles' ."

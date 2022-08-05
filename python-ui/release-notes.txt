@@ -1,6 +1,30 @@
+Deprecations
+------------
+
+Following is deprecated and will be removed in a future release:
+- Support for older Hatari versions built with the oldAUE CPU core
+  (Hatari removed oldUAE build support in v2.4 release)
+
 
 User visible changes in Hatari (Python Gtk) UI
 ----------------------------------------------
+
+2022-06:
+- Add support for setting CPU compatibility + cycle-accuracy,
+  FPU type + accuracy, MMU and ST blitter options
+
+2022-05:
+- Fix: dialog exceptions under Wayland
+- Fix: debug UI disassembly parsing exception due to Hatari changes
+- Improved layouts for Display, Machine and Sound dialogs
+- Add hatari-ui.html doc
+- Add "scc" tracing
+
+2022-04:
+- Increase TT-ram to 1GB supported now by Hatari
+
+2021-12:
+- Add "midi_raw" tracing
 
 2021-01:
 - Fix: saving of debug UI config, sound buffer size

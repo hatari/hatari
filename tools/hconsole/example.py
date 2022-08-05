@@ -3,9 +3,9 @@
 # This is an example of scripting hatari using hconsole
 #
 # Run with (using correct EmuTOS path):
-#   PATH=../../build/src/:$PATH ./example.py --tos etos512k.img
+#   PATH=../../build/src/:$PATH ./example.py --tos etos1024k.img
 # Or if Hatari and hconsole are installed to the system:
-#   /usr/share/hatari/hconsole/example.py --tos etos512k.img
+#   /usr/share/hatari/hconsole/example.py --tos etos1024k.img
 
 import hconsole, os, sys
 

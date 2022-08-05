@@ -1160,7 +1160,7 @@ int SDLGui_DoDialogExt(SGOBJ *dlg, bool (*isEventOut)(SDL_EventType), SDL_Event 
 
 	/* If current object is the scrollbar, and mouse is still down, we can scroll it */
 	/* also if the mouse pointer has left the scrollbar */
-	if (current_object != SDLGUI_NOTFOUND && dlg[current_object].type == SGSCROLLBAR) {
+	if (current_object >= 0 && dlg[current_object].type == SGSCROLLBAR) {
 		obj = current_object;
 		oldbutton = obj;
 		if (b & SDL_BUTTON(1))

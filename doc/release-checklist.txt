@@ -13,7 +13,7 @@ When first thinking about new release
 * Check whether any of the (new) changes distro packages apply to
   Hatari sources should be in Hatari itself:
   - https://sources.debian.org/patches/hatari/
-  - https://src.fedoraproject.org/rpms/hatari/tree/master
+  - https://src.fedoraproject.org/rpms/hatari/tree/main
   - https://packages.gentoo.org/packages/games-emulation/hatari
   - https://svnweb.mageia.org/packages/cauldron/hatari/current/
   - https://build.opensuse.org/search?search_text=hatari
@@ -36,7 +36,11 @@ everything that should work, does still work:
     - all optional features enabled, and disabled
     - Mac GUI
   - All above Hatari builds pass "make test"
-    - Check that everything built fine on Travis and Cirrus-CI:
+  - Run Hatari with valgrind
+  - Check a build with "cmake -D ENABLE_ASAN:BOOL=1".
+    Use this if ASAN prints weird stack traces for leaks:
+    export ASAN_OPTIONS="fast_unwind_on_malloc=0"
+  - Check that everything built fine on Travis and Cirrus-CI:
       https://travis-ci.com/github/hatari/hatari
       https://cirrus-ci.com/github/hatari/hatari
 
@@ -64,7 +68,7 @@ After found issues have been fixed, prepare for release candidate:
 * Go through commit log / ask others to make sure relevant changes are
   listed in release-notes.txt, and updated in todo.txt
 
-* Get latest etos512.img version for binary packages and document
+* Get latest etos1024.img version for binary packages and document
   that in emutos.txt
 
 * Build binary packages for OSes that aren't covered by the daily builds

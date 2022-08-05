@@ -2,8 +2,9 @@
 Hatari TO-DO list
 =================
 
-Items below are mostly missing features.  Failures and known issues
-are listed in the "bugs.txt".
+Items below are missing emulation and general emulator features.
+Failures and known issues, e.g. for specific OS versions, are
+listed in the "bugs.txt".
 
 Contents:
 - Emulation improvements
@@ -18,12 +19,19 @@ Emulation improvements
 ----------------------
 
 - Improve disk image formats support:
-	- Support .DIM images created with the "Get sectors: used" option
+  - Support .DIM images created with the "Get sectors: used" option
+  - Support files created with GCopy, see:
+    https://www.atari-forum.com/viewtopic.php?t=6090
 
-- Real HD 6301 (keyboard processor of the ST) emulation.
+- Finish real HD 6301 (keyboard processor of the ST) emulation.
   (Current special casing is enough for all known demos using 6301)
 
 - Get the games/demos working that are marked as non-working in the manual.
+
+- Emulate different memory access timings on different memory areas.
+
+- Improve PSG accesses timings from elsewhere than ST-RAM (HW timings
+  and testier are in "PSG_WaitState() inaccuracy" mail thread).
 
 - Improve STE / Crossbar DMA data handling.  Mask addresses similarly to
   HW (instead of modulo ST-RAM size), and generate errors when needed
@@ -63,6 +71,9 @@ Emulation improvements
 - Beam Racing Algorithm for lagless VSYNC ON.  WinUAE implements it
   with DirectX:
 	https://github.com/tonioni/WinUAE/issues/133
+
+- Properly emulate the DMA sector count register for ACSI transfers
+  https://listengine.tuxfamily.org/lists.tuxfamily.org/hatari-devel/2021/09/msg00006.html
 
 
 Programs known as not fully functional (not an exhaustive list)

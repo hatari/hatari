@@ -34,10 +34,10 @@ const char DlgCpu_fileid[] = "Hatari dlgCpu.c";
 
 static SGOBJ cpudlg[] =
 {
-	{ SGBOX, 0, 0, 0,0, 46,24, NULL },
-	{ SGTEXT, 0, 0, 17,1, 14,1, "CPU options" },
+	{ SGBOX, 0, 0, 0,0, 44,24, NULL },
+	{ SGTEXT, 0, 0, 17,1, 11,1, "CPU options" },
 
-	{ SGBOX, 0, 0, 2,3, 13,9, NULL },
+	{ SGBOX, 0, 0, 2,3, 12,8, NULL },
 	{ SGTEXT, 0, 0, 3,3, 8,1, "CPU type" },
 	{ SGRADIOBUT, 0, 0, 3, 5, 7,1, "680_00" },
 	{ SGRADIOBUT, 0, 0, 3, 6, 7,1, "680_10" },
@@ -46,26 +46,27 @@ static SGOBJ cpudlg[] =
 	{ SGRADIOBUT, 0, 0, 3, 9, 7,1, "680_40" },
 	{ SGRADIOBUT, 0, 0, 3,10, 7,1, "68060" },
 
-	{ SGBOX, 0, 0, 16,3, 13,9, NULL },
+	{ SGBOX, 0, 0, 16,3, 12,8, NULL },
 	{ SGTEXT, 0, 0, 17,3, 15,1, "CPU clock" },
 	{ SGRADIOBUT, 0, 0, 17,5, 8,1, " _8 Mhz" },
 	{ SGRADIOBUT, 0, 0, 17,6, 8,1, "1_6 Mhz" },
-	{ SGRADIOBUT, 0, 0, 17,7, 8,1, "32 _Mhz" },
+	{ SGRADIOBUT, 0, 0, 17,7, 8,1, "32 Mh_z" },
 
-	{ SGBOX, 0, 0, 30,3, 14,9, NULL },
+	{ SGBOX, 0, 0, 30,3, 12,8, NULL },
 	{ SGTEXT, 0, 0, 31,3, 11,1, "FPU" },
-	{ SGRADIOBUT, 0, 0, 31,5, 6,1, "N_one" },
+	{ SGRADIOBUT, 0, 0, 31,5, 6,1, "_None" },
 	{ SGRADIOBUT, 0, 0, 31,6, 7,1, "68881" },
 	{ SGRADIOBUT, 0, 0, 31,7, 7,1, "68882" },
-	{ SGRADIOBUT, 0, 0, 31,8, 10,1, "_internal" },
+	{ SGRADIOBUT, 0, 0, 31,8, 10,1, "_Internal" },
 
-	{ SGBOX, 0, 0, 2,13, 42,8, NULL },
-	{ SGTEXT, 0, 0, 3,13, 11,1, "CPU parameters" },
-	{ SGCHECKBOX, 0, 0, 3,15, 23,1, "Prefetc_h mode, slower" },
-	{ SGCHECKBOX, 0, 0, 3,16, 21,1, "Cycle e_xact, slower" },
-	{ SGCHECKBOX, 0, 0, 3,17, 15,1, "MM_U emulation" },
-	{ SGCHECKBOX, 0, 0, 3,18, 20,1, "24 bits add_ressing" },
-	{ SGCHECKBOX, 0, 0, 3,19, 38,1, "Full software FPU emulation(softfloat)" },
+	{ SGBOX, 0, 0, 2,12, 40,9, NULL },
+	{ SGTEXT, 0, 0, 3,12, 25,1, "CPU emulation parameters" },
+	{ SGCHECKBOX, 0, 0, 3,14, 21,1, "_Prefetch emulation*" },
+	{ SGCHECKBOX, 0, 0, 3,15, 35,1, "_Cycle-exact with cache emulation*" },
+	{ SGCHECKBOX, 0, 0, 3,16, 16,1, "_MMU emulation*" },
+	{ SGCHECKBOX, 0, 0, 3,17, 20,1, "24-bit _addressing" },
+	{ SGCHECKBOX, 0, 0, 3,18, 26,1, "Accurate _FPU emulation*" },
+	{ SGTEXT, 0, 0, 3,20, 20,1, "* Uses more host CPU" },
 
 	{ SGBUTTON, SG_DEFAULT, 0, 13,22, 19,1, "Back to main menu" },
 	{ SGSTOP, 0, 0, 0,0, 0,0, NULL }

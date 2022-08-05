@@ -23,6 +23,7 @@ const char Memory_fileid[] = "Hatari memory.c";
 #include "ide.h"
 #include "ioMem.h"
 #include "reset.h"
+#include "screen.h"
 #include "stMemory.h"
 #include "m68000.h"
 #include "configuration.h"
@@ -72,7 +73,7 @@ int candirect = -1;
 
 #ifdef JIT
 /* Set by each memory handler that does not simply access real memory. */
-int special_mem;
+int special_mem, special_mem_default;
 /* do not use get_n_addr */
 int jit_n_addr_unsafe;
 #endif
@@ -392,10 +393,10 @@ static int REGPARAM2 dummy_check (uaecptr addr, uae_u32 size)
 
 static uae_u8 * REGPARAM3 dummy_xlate(uaecptr addr)
 {
-    write_log("Your Atari program just did something terribly stupid:"
-              " dummy_xlate($%x)\n", addr);
-    /*Reset_Warm();*/
-    return STmem_xlate(addr);  /* So we don't crash. */
+	write_log("Your Atari program just did something terribly stupid:"
+	          " dummy_xlate($%x)\n", addr);
+	/*Reset_Warm();*/
+	return STmem_xlate(addr);  /* So we don't crash. */
 }
 
 
@@ -488,64 +489,64 @@ uae_u8 *REGPARAM3 sub_bank_xlate(uaecptr addr) REGPARAM
 
 static uae_u32 REGPARAM3 BusErrMem_lget(uaecptr addr)
 {
-    print_illegal_counted("Bus error lget", addr);
+	print_illegal_counted("Bus error lget", addr);
 
-    M68000_BusError(addr, BUS_ERROR_READ, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA, 0);
-    return 0;
+	M68000_BusError(addr, BUS_ERROR_READ, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA, 0);
+	return 0;
 }
 
 static uae_u32 REGPARAM3 BusErrMem_wget(uaecptr addr)
 {
-    print_illegal_counted("Bus error wget", addr);
+	print_illegal_counted("Bus error wget", addr);
 
-    M68000_BusError(addr, BUS_ERROR_READ, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA, 0);
-    return 0;
+	M68000_BusError(addr, BUS_ERROR_READ, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA, 0);
+	return 0;
 }
 
 static uae_u32 REGPARAM3 BusErrMem_bget(uaecptr addr)
 {
-    print_illegal_counted("Bus error bget", addr);
+	print_illegal_counted("Bus error bget", addr);
 
-    M68000_BusError(addr, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, 0);
-    return 0;
+	M68000_BusError(addr, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, 0);
+	return 0;
 }
 
 static void REGPARAM3 BusErrMem_lput(uaecptr addr, uae_u32 l)
 {
-    print_illegal_counted("Bus error lput", addr);
+	print_illegal_counted("Bus error lput", addr);
 
-    M68000_BusError(addr, BUS_ERROR_WRITE, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA, l);
+	M68000_BusError(addr, BUS_ERROR_WRITE, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA, l);
 }
 
 static void REGPARAM3 BusErrMem_wput(uaecptr addr, uae_u32 w)
 {
-    print_illegal_counted("Bus error wput", addr);
+	print_illegal_counted("Bus error wput", addr);
 
-    M68000_BusError(addr, BUS_ERROR_WRITE, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA, w);
+	M68000_BusError(addr, BUS_ERROR_WRITE, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA, w);
 }
 
 static void REGPARAM3 BusErrMem_bput(uaecptr addr, uae_u32 b)
 {
-    print_illegal_counted("Bus error bput", addr);
+	print_illegal_counted("Bus error bput", addr);
 
-    M68000_BusError(addr, BUS_ERROR_WRITE, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, b);
+	M68000_BusError(addr, BUS_ERROR_WRITE, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, b);
 }
 
 static int REGPARAM3 BusErrMem_check(uaecptr addr, uae_u32 size)
 {
-    if (illegal_mem)
-	write_log ("Bus error check at %08lx\n", (long)addr);
+	if (illegal_mem)
+		write_log ("Bus error check at %08lx\n", (long)addr);
 
-    return 0;
+	return 0;
 }
 
 static uae_u8 * REGPARAM3 BusErrMem_xlate (uaecptr addr)
 {
-    write_log("Your Atari program just did something terribly stupid:"
-              " BusErrMem_xlate($%x)\n", addr);
+	write_log("Your Atari program just did something terribly stupid:"
+	          " BusErrMem_xlate($%x)\n", addr);
 
-    /*M68000_BusError(addr);*/
-    return STmem_xlate(addr);  /* So we don't crash. */
+	/*M68000_BusError(addr);*/
+	return STmem_xlate(addr);  /* So we don't crash. */
 }
 
 
@@ -556,108 +557,108 @@ static uae_u8 * REGPARAM3 BusErrMem_xlate (uaecptr addr)
 
 static uae_u32 REGPARAM3 STmem_lget(uaecptr addr)
 {
-    addr -= STmem_start & STmem_mask;
-    addr &= STmem_mask;
-    return do_get_mem_long(STmemory + addr);
+	addr -= STmem_start & STmem_mask;
+	addr &= STmem_mask;
+	return do_get_mem_long(STmemory + addr);
 }
 
 static uae_u32 REGPARAM3 STmem_wget(uaecptr addr)
 {
-    addr -= STmem_start & STmem_mask;
-    addr &= STmem_mask;
-    return do_get_mem_word(STmemory + addr);
+	addr -= STmem_start & STmem_mask;
+	addr &= STmem_mask;
+	return do_get_mem_word(STmemory + addr);
 }
 
 static uae_u32 REGPARAM3 STmem_bget(uaecptr addr)
 {
-    addr -= STmem_start & STmem_mask;
-    addr &= STmem_mask;
-    return STmemory[addr];
+	addr -= STmem_start & STmem_mask;
+	addr &= STmem_mask;
+	return STmemory[addr];
 }
 
 static void REGPARAM3 STmem_lput(uaecptr addr, uae_u32 l)
 {
-    addr -= STmem_start & STmem_mask;
-    addr &= STmem_mask;
-    do_put_mem_long(STmemory + addr, l);
+	addr -= STmem_start & STmem_mask;
+	addr &= STmem_mask;
+	do_put_mem_long(STmemory + addr, l);
 }
 
 static void REGPARAM3 STmem_wput(uaecptr addr, uae_u32 w)
 {
-    addr -= STmem_start & STmem_mask;
-    addr &= STmem_mask;
-    do_put_mem_word(STmemory + addr, w);
+	addr -= STmem_start & STmem_mask;
+	addr &= STmem_mask;
+	do_put_mem_word(STmemory + addr, w);
 }
 
 static void REGPARAM3 STmem_bput(uaecptr addr, uae_u32 b)
 {
-    addr -= STmem_start & STmem_mask;
-    addr &= STmem_mask;
-    STmemory[addr] = b;
+	addr -= STmem_start & STmem_mask;
+	addr &= STmem_mask;
+	STmemory[addr] = b;
 }
 
 static int REGPARAM3 STmem_check(uaecptr addr, uae_u32 size)
 {
-    addr -= STmem_start & STmem_mask;
-    addr &= STmem_mask;
-    return (addr + size) <= STmem_size;
+	addr -= STmem_start & STmem_mask;
+	addr &= STmem_mask;
+	return (addr + size) <= STmem_size;
 }
 
 static uae_u8 * REGPARAM3 STmem_xlate(uaecptr addr)
 {
-    addr -= STmem_start & STmem_mask;
-    addr &= STmem_mask;
-    return STmemory + addr;
+	addr -= STmem_start & STmem_mask;
+	addr &= STmem_mask;
+	return STmemory + addr;
 }
 
 /* Same functions for ST RAM but with MMU/MCU enabled to translate addresses */
 
 static uae_u32 REGPARAM3 STmem_lget_MMU(uaecptr addr)
 {
-    addr -= STmem_start & STmem_mask;
-    addr &= STmem_mask;
-    addr = STMemory_MMU_Translate_Addr ( addr );
-    return do_get_mem_long(STmemory + addr);
+	addr -= STmem_start & STmem_mask;
+	addr &= STmem_mask;
+	addr = STMemory_MMU_Translate_Addr ( addr );
+	return do_get_mem_long(STmemory + addr);
 }
 
 static uae_u32 REGPARAM3 STmem_wget_MMU(uaecptr addr)
 {
-    addr -= STmem_start & STmem_mask;
-    addr &= STmem_mask;
-    addr = STMemory_MMU_Translate_Addr ( addr );
-    return do_get_mem_word(STmemory + addr);
+	addr -= STmem_start & STmem_mask;
+	addr &= STmem_mask;
+	addr = STMemory_MMU_Translate_Addr ( addr );
+	return do_get_mem_word(STmemory + addr);
 }
 
 static uae_u32 REGPARAM3 STmem_bget_MMU(uaecptr addr)
 {
-    addr -= STmem_start & STmem_mask;
-    addr &= STmem_mask;
-    addr = STMemory_MMU_Translate_Addr ( addr );
-    return STmemory[addr];
+	addr -= STmem_start & STmem_mask;
+	addr &= STmem_mask;
+	addr = STMemory_MMU_Translate_Addr ( addr );
+	return STmemory[addr];
 }
 
 static void REGPARAM3 STmem_lput_MMU(uaecptr addr, uae_u32 l)
 {
-    addr -= STmem_start & STmem_mask;
-    addr &= STmem_mask;
-    addr = STMemory_MMU_Translate_Addr ( addr );
-    do_put_mem_long(STmemory + addr, l);
+	addr -= STmem_start & STmem_mask;
+	addr &= STmem_mask;
+	addr = STMemory_MMU_Translate_Addr ( addr );
+	do_put_mem_long(STmemory + addr, l);
 }
 
 static void REGPARAM3 STmem_wput_MMU(uaecptr addr, uae_u32 w)
 {
-    addr -= STmem_start & STmem_mask;
-    addr &= STmem_mask;
-    addr = STMemory_MMU_Translate_Addr ( addr );
-    do_put_mem_word(STmemory + addr, w);
+	addr -= STmem_start & STmem_mask;
+	addr &= STmem_mask;
+	addr = STMemory_MMU_Translate_Addr ( addr );
+	do_put_mem_word(STmemory + addr, w);
 }
 
 static void REGPARAM3 STmem_bput_MMU(uaecptr addr, uae_u32 b)
 {
-    addr -= STmem_start & STmem_mask;
-    addr &= STmem_mask;
-    addr = STMemory_MMU_Translate_Addr ( addr );
-    STmemory[addr] = b;
+	addr -= STmem_start & STmem_mask;
+	addr &= STmem_mask;
+	addr = STMemory_MMU_Translate_Addr ( addr );
+	STmemory[addr] = b;
 }
 
 
@@ -670,218 +671,224 @@ static void REGPARAM3 STmem_bput_MMU(uaecptr addr, uae_u32 b)
  */
 static uae_u32 REGPARAM3 SysMem_lget(uaecptr addr)
 {
-    uaecptr addr_in = addr;
+	uaecptr addr_in = addr;
 
-    addr -= STmem_start & STmem_mask;
-    addr &= STmem_mask;
+	addr -= STmem_start & STmem_mask;
+	addr &= STmem_mask;
 
-    if(addr < 0x800 && !is_super_access(true))
-    {
-      M68000_BusError(addr_in, BUS_ERROR_READ, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA, 0);
-      return 0;
-    }
+	/* Only CPU will trigger bus error if bit S=0, not the blitter or the debugger */
+	if(addr < 0x800 && !is_super_access(true) && BusMode == BUS_MODE_CPU)
+	{
+		M68000_BusError(addr_in, BUS_ERROR_READ, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA, 0);
+		return 0;
+	}
 
-    return do_get_mem_long(STmemory + addr);
+	return do_get_mem_long(STmemory + addr);
 }
 
 static uae_u32 REGPARAM3 SysMem_wget(uaecptr addr)
 {
-    uaecptr addr_in = addr;
+	uaecptr addr_in = addr;
 
-    addr -= STmem_start & STmem_mask;
-    addr &= STmem_mask;
+	addr -= STmem_start & STmem_mask;
+	addr &= STmem_mask;
 
-    /* Only CPU will trigger bus error if bit S=0, not the blitter */
-    if(addr < 0x800 && !is_super_access(true) && BusMode == BUS_MODE_CPU)
-    {
-      M68000_BusError(addr_in, BUS_ERROR_READ, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA, 0);
-      return 0;
-    }
+	/* Only CPU will trigger bus error if bit S=0, not the blitter or the debugger */
+	if(addr < 0x800 && !is_super_access(true) && BusMode == BUS_MODE_CPU)
+	{
+		M68000_BusError(addr_in, BUS_ERROR_READ, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA, 0);
+		return 0;
+	}
 
-    return do_get_mem_word(STmemory + addr);
+	return do_get_mem_word(STmemory + addr);
 }
 
 static uae_u32 REGPARAM3 SysMem_bget(uaecptr addr)
 {
-    uaecptr addr_in = addr;
+	uaecptr addr_in = addr;
 
-    addr -= STmem_start & STmem_mask;
-    addr &= STmem_mask;
+	addr -= STmem_start & STmem_mask;
+	addr &= STmem_mask;
 
-    if(addr < 0x800 && !is_super_access(true))
-    {
-      M68000_BusError(addr_in, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, 0);
-      return 0;
-    }
+	/* Only CPU will trigger bus error if bit S=0, not the blitter or the debugger */
+	if(addr < 0x800 && !is_super_access(true) && BusMode == BUS_MODE_CPU)
+	{
+		M68000_BusError(addr_in, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, 0);
+		return 0;
+	}
 
-    return STmemory[addr];
+	return STmemory[addr];
 }
 
 static void REGPARAM3 SysMem_lput(uaecptr addr, uae_u32 l)
 {
-    uaecptr addr_in = addr;
+	uaecptr addr_in = addr;
 
-    addr -= STmem_start & STmem_mask;
-    addr &= STmem_mask;
+	addr -= STmem_start & STmem_mask;
+	addr &= STmem_mask;
 
-    if(addr < 0x8 || (addr < 0x800 && !is_super_access(false)))
-    {
-      M68000_BusError(addr_in, BUS_ERROR_WRITE, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA, l);
-      return;
-    }
+	if(addr < 0x8 || (addr < 0x800 && !is_super_access(false)))
+	{
+		M68000_BusError(addr_in, BUS_ERROR_WRITE, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA, l);
+		return;
+	}
 
-    do_put_mem_long(STmemory + addr, l);
+	do_put_mem_long(STmemory + addr, l);
 }
 
 static void REGPARAM3 SysMem_wput(uaecptr addr, uae_u32 w)
 {
-    uaecptr addr_in = addr;
+	uaecptr addr_in = addr;
 
-    addr -= STmem_start & STmem_mask;
-    addr &= STmem_mask;
+	addr -= STmem_start & STmem_mask;
+	addr &= STmem_mask;
 
-    /* Only CPU will trigger bus error if bit S=0, not the blitter */
-    if(addr < 0x8 || (addr < 0x800 && !is_super_access(false)))
-    {
-      if ( BusMode == BUS_MODE_CPU )
-      {
-	M68000_BusError(addr_in, BUS_ERROR_WRITE, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA, w);
-	return;
-      }
-      /* If blitter writes < 0x8 then it should be ignored, else the write should be made */
-      else if ( ( BusMode == BUS_MODE_BLITTER ) && ( addr < 0x8 ) )
-	return;
-    }
+	/* Only CPU will trigger bus error if bit S=0, not the blitter */
+	if (addr < 0x8 || (addr < 0x800 && !is_super_access(false)))
+	{
+		if (BusMode == BUS_MODE_CPU)
+		{
+			M68000_BusError(addr_in, BUS_ERROR_WRITE, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA, w);
+			return;
+		}
+		/* If blitter writes < 0x8 then it should be ignored, else the write should be made */
+		else if ( ( BusMode == BUS_MODE_BLITTER ) && ( addr < 0x8 ) )
+		{
+			return;
+		}
+	}
 
-    do_put_mem_word(STmemory + addr, w);
+	do_put_mem_word(STmemory + addr, w);
 }
 
 static void REGPARAM3 SysMem_bput(uaecptr addr, uae_u32 b)
 {
-    uaecptr addr_in = addr;
+	uaecptr addr_in = addr;
 
-    addr -= STmem_start & STmem_mask;
-    addr &= STmem_mask;
+	addr -= STmem_start & STmem_mask;
+	addr &= STmem_mask;
 
-    if(addr < 0x8 || (addr < 0x800 && !is_super_access(false)))
-    {
-      M68000_BusError(addr_in, BUS_ERROR_WRITE, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, b);
-      return;
-    }
+	if (addr < 0x8 || (addr < 0x800 && !is_super_access(false)))
+	{
+		M68000_BusError(addr_in, BUS_ERROR_WRITE, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, b);
+		return;
+	}
 
-    STmemory[addr] = b;
+	STmemory[addr] = b;
 }
 
 /* Same functions for ST RAM system but with MMU/MCU enabled to translate addresses */
 
 static uae_u32 REGPARAM3 SysMem_lget_MMU(uaecptr addr)
 {
-    uaecptr addr_in = addr;
+	uaecptr addr_in = addr;
 
-    addr -= STmem_start & STmem_mask;
-    addr &= STmem_mask;
+	addr -= STmem_start & STmem_mask;
+	addr &= STmem_mask;
 
-    if(addr < 0x800 && !is_super_access(true))
-    {
-      M68000_BusError(addr_in, BUS_ERROR_READ, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA, 0);
-      return 0;
-    }
+	if (addr < 0x800 && !is_super_access(true))
+	{
+		M68000_BusError(addr_in, BUS_ERROR_READ, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA, 0);
+		return 0;
+	}
 
-    addr = STMemory_MMU_Translate_Addr ( addr );
-    return do_get_mem_long(STmemory + addr);
+	addr = STMemory_MMU_Translate_Addr ( addr );
+	return do_get_mem_long(STmemory + addr);
 }
 
 static uae_u32 REGPARAM3 SysMem_wget_MMU(uaecptr addr)
 {
-    uaecptr addr_in = addr;
+	uaecptr addr_in = addr;
 
-    addr -= STmem_start & STmem_mask;
-    addr &= STmem_mask;
+	addr -= STmem_start & STmem_mask;
+	addr &= STmem_mask;
 
-    /* Only CPU will trigger bus error if bit S=0, not the blitter */
-    if(addr < 0x800 && !is_super_access(true) && BusMode == BUS_MODE_CPU)
-    {
-      M68000_BusError(addr_in, BUS_ERROR_READ, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA, 0);
-      return 0;
-    }
+	/* Only CPU will trigger bus error if bit S=0, not the blitter */
+	if (addr < 0x800 && !is_super_access(true) && BusMode == BUS_MODE_CPU)
+	{
+		M68000_BusError(addr_in, BUS_ERROR_READ, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA, 0);
+		return 0;
+	}
 
-    addr = STMemory_MMU_Translate_Addr ( addr );
-    return do_get_mem_word(STmemory + addr);
+	addr = STMemory_MMU_Translate_Addr ( addr );
+	return do_get_mem_word(STmemory + addr);
 }
 
 static uae_u32 REGPARAM3 SysMem_bget_MMU(uaecptr addr)
 {
-    uaecptr addr_in = addr;
+	uaecptr addr_in = addr;
 
-    addr -= STmem_start & STmem_mask;
-    addr &= STmem_mask;
+	addr -= STmem_start & STmem_mask;
+	addr &= STmem_mask;
 
-    if(addr < 0x800 && !is_super_access(true))
-    {
-      M68000_BusError(addr_in, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, 0);
-      return 0;
-    }
+	if (addr < 0x800 && !is_super_access(true))
+	{
+		M68000_BusError(addr_in, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, 0);
+		return 0;
+	}
 
-    addr = STMemory_MMU_Translate_Addr ( addr );
-    return STmemory[addr];
+	addr = STMemory_MMU_Translate_Addr ( addr );
+	return STmemory[addr];
 }
 
 static void REGPARAM3 SysMem_lput_MMU(uaecptr addr, uae_u32 l)
 {
-    uaecptr addr_in = addr;
+	uaecptr addr_in = addr;
 
-    addr -= STmem_start & STmem_mask;
-    addr &= STmem_mask;
+	addr -= STmem_start & STmem_mask;
+	addr &= STmem_mask;
 
-    if(addr < 0x8 || (addr < 0x800 && !is_super_access(false)))
-    {
-      M68000_BusError(addr_in, BUS_ERROR_WRITE, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA, l);
-      return;
-    }
+	if (addr < 0x8 || (addr < 0x800 && !is_super_access(false)))
+	{
+		M68000_BusError(addr_in, BUS_ERROR_WRITE, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA, l);
+		return;
+	}
 
-    addr = STMemory_MMU_Translate_Addr ( addr );
-    do_put_mem_long(STmemory + addr, l);
+	addr = STMemory_MMU_Translate_Addr ( addr );
+	do_put_mem_long(STmemory + addr, l);
 }
 
 static void REGPARAM3 SysMem_wput_MMU(uaecptr addr, uae_u32 w)
 {
-    uaecptr addr_in = addr;
+	uaecptr addr_in = addr;
 
-    addr -= STmem_start & STmem_mask;
-    addr &= STmem_mask;
+	addr -= STmem_start & STmem_mask;
+	addr &= STmem_mask;
 
-    /* Only CPU will trigger bus error if bit S=0, not the blitter */
-    if(addr < 0x8 || (addr < 0x800 && !is_super_access(false)))
-    {
-      if ( BusMode == BUS_MODE_CPU )
-      {
-	M68000_BusError(addr_in, BUS_ERROR_WRITE, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA, w);
-	return;
-      }
-      /* If blitter writes < 0x8 then it should be ignored, else the write should be made */
-      else if ( ( BusMode == BUS_MODE_BLITTER ) && ( addr < 0x8 ) )
-	return;
-    }
+	/* Only CPU will trigger bus error if bit S=0, not the blitter */
+	if (addr < 0x8 || (addr < 0x800 && !is_super_access(false)))
+	{
+		if ( BusMode == BUS_MODE_CPU )
+		{
+			M68000_BusError(addr_in, BUS_ERROR_WRITE, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA, w);
+			return;
+		}
+		/* If blitter writes < 0x8 then it should be ignored, else the write should be made */
+		else if ( ( BusMode == BUS_MODE_BLITTER ) && ( addr < 0x8 ) )
+		{
+			return;
+		}
+	}
 
-    addr = STMemory_MMU_Translate_Addr ( addr );
-    do_put_mem_word(STmemory + addr, w);
+	addr = STMemory_MMU_Translate_Addr ( addr );
+	do_put_mem_word(STmemory + addr, w);
 }
 
 static void REGPARAM3 SysMem_bput_MMU(uaecptr addr, uae_u32 b)
 {
-    uaecptr addr_in = addr;
+	uaecptr addr_in = addr;
 
-    addr -= STmem_start & STmem_mask;
-    addr &= STmem_mask;
+	addr -= STmem_start & STmem_mask;
+	addr &= STmem_mask;
 
-    if(addr < 0x8 || (addr < 0x800 && !is_super_access(false)))
-    {
-      M68000_BusError(addr_in, BUS_ERROR_WRITE, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, b);
-      return;
-    }
+	if (addr < 0x8 || (addr < 0x800 && !is_super_access(false)))
+	{
+		M68000_BusError(addr_in, BUS_ERROR_WRITE, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, b);
+		return;
+	}
 
-    addr = STMemory_MMU_Translate_Addr ( addr );
-    STmemory[addr] = b;
+	addr = STMemory_MMU_Translate_Addr ( addr );
+	STmemory[addr] = b;
 }
 
 
@@ -1389,16 +1396,16 @@ bool mapped_malloc (addrbank *ab)
 	}
 	ab->startmask = start;
 	ab->startaccessmask = start & ab->mask;
-        if (!md.directsupport || (ab->flags & ABFLAG_ALLOCINDIRECT)) {
-                if (!(ab->flags & ABFLAG_ALLOCINDIRECT)) {
-                        if (canbang) {
-                                write_log(_T("JIT direct switched off: %s\n"), ab->name);
-                        }
-                        nocanbang();
-                }
-                ab->flags &= ~ABFLAG_DIRECTMAP;
-                if (ab->flags & ABFLAG_NOALLOC) {
-                        ab->allocated_size = ab->reserved_size;
+	if (!md.directsupport || (ab->flags & ABFLAG_ALLOCINDIRECT)) {
+		if (!(ab->flags & ABFLAG_ALLOCINDIRECT)) {
+			if (canbang) {
+				write_log(_T("JIT direct switched off: %s\n"), ab->name);
+			}
+			nocanbang();
+		}
+		ab->flags &= ~ABFLAG_DIRECTMAP;
+		if (ab->flags & ABFLAG_NOALLOC) {
+			ab->allocated_size = ab->reserved_size;
 #if MAPPED_MALLOC_DEBUG
 			write_log(_T("mapped_malloc noalloc %s\n"), ab->name);
 #endif
@@ -1477,8 +1484,8 @@ bool mapped_malloc (addrbank *ab)
 
 static void init_mem_banks (void)
 {
-        // unsigned so i << 16 won't overflow to negative when i >= 32768
-        for (unsigned int i = 0; i < MEMORY_BANKS; i++)
+	// unsigned so i << 16 won't overflow to negative when i >= 32768
+	for (unsigned int i = 0; i < MEMORY_BANKS; i++)
 		put_mem_bank (i << 16, &dummy_bank, 0);
 #ifdef NATMEM_OFFSET
 	delete_shmmaps (0, 0xFFFF0000);
@@ -1634,187 +1641,211 @@ void memory_map_Standard_RAM ( Uint32 MMU_Bank0_Size , Uint32 MMU_Bank1_Size )
  */
 void memory_init(uae_u32 NewSTMemSize, uae_u32 NewTTMemSize, uae_u32 NewRomMemStart)
 {
-    int 	addr;
+	int addr;
 
-    last_address_space_24 = ConfigureParams.System.bAddressSpace24;
+	last_address_space_24 = ConfigureParams.System.bAddressSpace24;
 
-    /* Round to next multiple of 65536 bytes */
-    STmem_size = (NewSTMemSize + 65535) & 0xFFFF0000;
-    TTmem_size = (NewTTMemSize + 65535) & 0xFFFF0000;
+	/* Round to next multiple of 65536 bytes */
+	STmem_size = (NewSTMemSize + 65535) & 0xFFFF0000;
+	TTmem_size = (NewTTMemSize + 65535) & 0xFFFF0000;
 
-//fprintf ( stderr , "memory_init: STmem_size=$%x, TTmem_size=$%x, ROM-Start=$%x,\n", STmem_size, TTmem_size, NewRomMemStart);
-    /*write_log("memory_init: STmem_size=$%x, TTmem_size=$%x, ROM-Start=$%x,\n",
-              STmem_size, TTmem_size, NewRomMemStart);*/
+	//fprintf ( stderr , "memory_init: STmem_size=$%x, TTmem_size=$%x, ROM-Start=$%x,\n", STmem_size, TTmem_size, NewRomMemStart);
+	/*write_log("memory_init: STmem_size=$%x, TTmem_size=$%x, ROM-Start=$%x,\n",
+	            STmem_size, TTmem_size, NewRomMemStart);*/
 
 #if ENABLE_SMALL_MEM
 
-    /* Allocate memory for ROM areas, IDE and IO memory space (0xE00000 - 0xFFFFFF) */
-    ROMmemory = malloc(2*1024*1024);
-    if (!ROMmemory) {
-	fprintf(stderr, "Out of memory (ROM/IO mem)!\n");
-	SDL_Quit();
-	exit(1);
-    }
-    IdeMemory = ROMmemory + 0x100000;
-    IOmemory  = ROMmemory + 0x1f0000;
+	/* Allocate memory for normal ST RAM. Note that we always allocate
+	 * either 4 MiB, 8 MiB or the full 16 MiB, since the functions that
+	 * might access the memory directly (via "DMA" like the shifter, see
+	 * the Video_CopyScreenLine*() functions) might also try to access
+	 * the memory beyond the end of the RAM in case the base address has
+	 * been wrongly set up by the Atari program (the accesses are only
+	 * limited by the value returned from DMA_MaskAddressHigh()). To
+	 * compensate for reads beyond the end, we also add a "runaway ramp"
+	 * buffer with the size of the maximum ST screen, so that the function
+	 * Video_CopyScreenLineColor() should never go out of bounds. */
+	int alloc_size = NUM_VISIBLE_LINE_PIXELS * NUM_VISIBLE_LINES / 2;
+	if (STmem_size > 0x800000)
+		alloc_size += 0x1000000;
+	else if (STmem_size > 0x400000)
+		alloc_size += 0x800000;
+	else
+		alloc_size += 0x400000;
 
-    /* Allocate memory for normal ST RAM */
-    STmemory = malloc(STmem_size);
-    while (!STmemory && STmem_size > 512*1024) {
-	STmem_size >>= 1;
-	STmemory = (uae_u8 *)malloc (STmem_size);
-	if (STmemory)
-	    write_log ("Reducing STmem size to %dkb\n", STmem_size >> 10);
-    }
-    if (!STmemory) {
-	write_log ("virtual memory exhausted (STmemory)!\n");
-	SDL_Quit();
-	exit(1);
-    }
+	STmemory = malloc(alloc_size);
+	if (!STmemory)
+	{
+		write_log ("virtual memory exhausted (STmemory)!\n");
+		SDL_Quit();
+		exit(1);
+	}
+	memset(STmemory, 0, alloc_size);
+
+	/* Set up memory for ROM areas, IDE and IO memory space (0xE00000 - 0xFFFFFF) */
+	if (alloc_size >= 0x1000000)
+	{
+		ROMmemory = STmemory + ROMmem_start;
+	}
+	else
+	{
+		ROMmemory = malloc(2*1024*1024);
+		if (!ROMmemory)
+		{
+			fprintf(stderr, "Out of memory (ROM/IO mem)!\n");
+			SDL_Quit();
+			exit(1);
+		}
+	}
+
+	IdeMemory = ROMmemory + 0x100000;
+	IOmemory  = ROMmemory + 0x1f0000;
 
 #else
 
-    /* STmemory points to the 16 MiB STRam array, we just have to set up
-     * the remaining pointers here: */
-    ROMmemory = STRam + ROMmem_start;
-    IdeMemory = STRam + IdeMem_start;
-    IOmemory = STRam + IOmem_start;
+	/* STmemory points to the 16 MiB STRam array, we just have to set up
+	* the remaining pointers here: */
+	ROMmemory = STRam + ROMmem_start;
+	IdeMemory = STRam + IdeMem_start;
+	IOmemory = STRam + IOmem_start;
 
 #endif
 
-    init_mem_banks();
-    init_ce_banks();
+	init_mem_banks();
+	init_ce_banks();
 
-    /* Set the infos about memory pointers for each mem bank, used for direct memory access in stMemory.c */
-    STmem_bank.baseaddr = STmemory;
-    STmem_bank.mask = STmem_mask;
-    STmem_bank.start = STmem_start;
-    init_bank ( &STmem_bank , STmem_size );
+	/* Set the infos about memory pointers for each mem bank, used for direct memory access in stMemory.c */
+	STmem_bank.baseaddr = STmemory;
+	STmem_bank.mask = STmem_mask;
+	STmem_bank.start = STmem_start;
+	init_bank ( &STmem_bank , STmem_size );
 
-    SysMem_bank.baseaddr = STmemory;
-    SysMem_bank.mask = STmem_mask;
-    SysMem_bank.start = STmem_start;
-    init_bank ( &SysMem_bank , STmem_size );
+	SysMem_bank.baseaddr = STmemory;
+	SysMem_bank.mask = STmem_mask;
+	SysMem_bank.start = STmem_start;
+	init_bank ( &SysMem_bank , STmem_size );
 
-    STmem_bank_MMU.baseaddr = STmemory;
-    STmem_bank_MMU.mask = STmem_mask;
-    STmem_bank_MMU.start = STmem_start;
-    init_bank ( &STmem_bank_MMU , STmem_size );
+	STmem_bank_MMU.baseaddr = STmemory;
+	STmem_bank_MMU.mask = STmem_mask;
+	STmem_bank_MMU.start = STmem_start;
+	init_bank ( &STmem_bank_MMU , STmem_size );
 
-    SysMem_bank_MMU.baseaddr = STmemory;
-    SysMem_bank_MMU.mask = STmem_mask;
-    SysMem_bank_MMU.start = STmem_start;
-    init_bank ( &SysMem_bank_MMU , STmem_size );
+	SysMem_bank_MMU.baseaddr = STmemory;
+	SysMem_bank_MMU.mask = STmem_mask;
+	SysMem_bank_MMU.start = STmem_start;
+	init_bank ( &SysMem_bank_MMU , STmem_size );
 
-    dummy_bank.baseaddr = NULL;				/* No real memory allocated for this region */
-    init_bank ( &dummy_bank , 0 );
-    VoidMem_bank.baseaddr = NULL;			/* No real memory allocated for this region */
-    init_bank ( &VoidMem_bank , 0 );
-    BusErrMem_bank.baseaddr = NULL;			/* No real memory allocated for this region */
-    init_bank ( &BusErrMem_bank , 0 );
-
-
-    /* Map the standard RAM (Max is 4 MB on unmodified STF/STE) */
-    memory_map_Standard_RAM ( MMU_Bank0_Size , MMU_Bank1_Size );
+	dummy_bank.baseaddr = NULL;				/* No real memory allocated for this region */
+	init_bank ( &dummy_bank , 0 );
+	VoidMem_bank.baseaddr = NULL;			/* No real memory allocated for this region */
+	init_bank ( &VoidMem_bank , 0 );
+	BusErrMem_bank.baseaddr = NULL;			/* No real memory allocated for this region */
+	init_bank ( &BusErrMem_bank , 0 );
 
 
-    /* Handle extra RAM on TT and Falcon starting at 0x1000000 and up to 0x80000000 */
-    /* This requires the CPU to use 32 bit addressing */
-    TTmemory = NULL;
-    if (!ConfigureParams.System.bAddressSpace24)
-    {
-	/* If there's no Fast-RAM, region 0x01000000 - 0x80000000 (2047 MB) must return bus errors */
-	map_banks_ce ( &BusErrMem_bank, TTmem_start >> 16, ( TTmem_end - TTmem_start ) >> 16, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
+	/* Map the standard RAM (Max is 4 MB on unmodified STF/STE) */
+	memory_map_Standard_RAM ( MMU_Bank0_Size , MMU_Bank1_Size );
 
-	if ( TTmem_size > 0 )
+
+	/* Handle extra RAM on TT and Falcon starting at 0x1000000 and up to 0x80000000 */
+	/* This requires the CPU to use 32 bit addressing */
+	TTmemory = NULL;
+	if (!ConfigureParams.System.bAddressSpace24)
 	{
-	    TTmemory = (uae_u8 *)malloc ( TTmem_size );
+		/* If there's no Fast-RAM, region 0x01000000 - 0x80000000 (2047 MB) must return bus errors */
+		map_banks_ce ( &BusErrMem_bank, TTmem_start >> 16, ( TTmem_end - TTmem_start ) >> 16, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
 
-	    if ( TTmemory != NULL )
-	    {
-		/* 32 bit RAM for CPU only + cache/burst allowed */
-		map_banks_ce ( &TTmem_bank, TTmem_start >> 16, TTmem_size >> 16, 0, CE_MEMBANK_FAST32, CACHE_ENABLE_ALL);
-		TTmem_mask = 0xffffffff;
-		TTmem_bank.baseaddr = TTmemory;
-		TTmem_bank.mask = TTmem_mask;
-		TTmem_bank.start = TTmem_start;
-		init_bank ( &TTmem_bank , TTmem_size );
-	    }
-	    else
-	    {
-		write_log ("can't allocate %d MB for TT RAM\n" , TTmem_size / ( 1024*1024 ) );
-		TTmem_size = 0;
-	    }
+		if (TTmem_size > 0)
+		{
+			TTmemory = (uae_u8 *)malloc ( TTmem_size );
+
+			if (TTmemory != NULL)
+			{
+				/* 32 bit RAM for CPU only + cache/burst allowed */
+				map_banks_ce ( &TTmem_bank, TTmem_start >> 16, TTmem_size >> 16, 0, CE_MEMBANK_FAST32, CACHE_ENABLE_ALL);
+				TTmem_mask = 0xffffffff;
+				TTmem_bank.baseaddr = TTmemory;
+				TTmem_bank.mask = TTmem_mask;
+				TTmem_bank.start = TTmem_start;
+				init_bank ( &TTmem_bank , TTmem_size );
+			}
+			else
+			{
+				write_log ("can't allocate %d MB for TT RAM\n" , TTmem_size / ( 1024*1024 ) );
+				TTmem_size = 0;
+			}
+		}
 	}
-    }
 
 
-    /* ROM memory: */
-    /* Depending on which ROM version we are using, the other ROM region is illegal! */
-    if(NewRomMemStart == 0xFC0000)
-    {
-        map_banks_ce(&ROMmem_bank, 0xFC0000 >> 16, 0x3, 0, CE_MEMBANK_FAST16, CACHE_ENABLE_BOTH);	/* [NP] tested on real STF, no bus wait from ROM */
-        map_banks_ce(&BusErrMem_bank, 0xE00000 >> 16, 0x10, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
-    }
-    else if(NewRomMemStart == 0xE00000)
-    {
-        map_banks_ce(&ROMmem_bank, 0xE00000 >> 16, 0x10, 0, CE_MEMBANK_FAST16, CACHE_ENABLE_BOTH);	/* [NP] tested on real STF, no bus wait from ROM */
-        map_banks_ce(&BusErrMem_bank, 0xFC0000 >> 16, 0x3, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
-    }
-    else
-    {
-        write_log("Illegal ROM memory start!\n");
-    }
-
-    /* Cartridge memory: */
-    map_banks_ce(&ROMmem_bank, 0xFA0000 >> 16, 0x2, 0, CE_MEMBANK_FAST16, CACHE_ENABLE_BOTH);		/* [NP] tested on real STF, no bus wait from cartridge */
-    ROMmem_bank.baseaddr = ROMmemory;
-    ROMmem_bank.mask = ROMmem_mask;
-    ROMmem_bank.start = ROMmem_start;
-    init_bank ( &ROMmem_bank , ROMmem_size );
-
-    /* IO memory: */
-    map_banks_ce(&IOmem_bank, IOmem_start>>16, 0x1, 0, CE_MEMBANK_FAST16, CE_MEMBANK_NOT_CACHABLE);	/* [NP] tested on real STF, no bus wait for IO memory */
-    IOmem_bank.baseaddr = IOmemory;									/* except for some shifter registers */
-    IOmem_bank.mask = IOmem_mask;
-    IOmem_bank.start = IOmem_start;
-    init_bank ( &IOmem_bank , IOmem_size );
-
-    /* IDE controller memory region at 0xF00000 (for Falcon or can be forced for other machines, else it's a bus error region) */
-    if (Ide_IsAvailable())
-    {
-	map_banks_ce(&IdeMem_bank, IdeMem_start >> 16, 0x1, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);	/* IDE controller on the Falcon */
-	IdeMem_bank.baseaddr = IdeMemory;
-	IdeMem_bank.mask = IdeMem_mask;
-	IdeMem_bank.start = IdeMem_start ;
-	init_bank ( &IdeMem_bank , IdeMem_size );
-    }
-    else
-	map_banks_ce(&BusErrMem_bank, IdeMem_start >> 16, 0x1, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
-
-    /* Illegal memory regions cause a bus error on the ST: */
-    map_banks_ce(&BusErrMem_bank, 0xF10000 >> 16, 0x9, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
-
-    /* According to the "Atari TT030 Hardware Reference Manual", the
-     * lowest 16 MBs (i.e. the 24-bit address space) are always mirrored
-     * to 0xff000000, so we remap memory 00xxxxxx to FFxxxxxx here. If not,
-     * we'd get some crashes when booting TOS 3 and 4 (e.g. both TOS 3.06
-     * and TOS 4.04 touch 0xffff8606 before setting up the MMU tables) */
-    if (!ConfigureParams.System.bAddressSpace24)
-    {
-      /* Copy all 256 banks 0x0000-0x00FF to banks 0xFF00-0xFFFF */
-      for ( addr=0x0 ; addr<=0x00ffffff ; addr+=0x10000 )
+	/* ROM memory: */
+	/* Depending on which ROM version we are using, the other ROM region is illegal! */
+	if(NewRomMemStart == 0xFC0000)
 	{
-	  //printf ( "put mem %x %x\n" , addr , addr|0xff000000 );
-	  put_mem_bank ( 0xff000000|addr , &get_mem_bank ( addr ) , 0 );
-
-	  /* Copy the CE parameters */
-	  ce_banktype[ (0xff000000|addr)>>16 ] = ce_banktype[ addr>>16 ];
-	  ce_cachable[ (0xff000000|addr)>>16 ] = ce_cachable[ addr>>16 ];
+		map_banks_ce(&ROMmem_bank, 0xFC0000 >> 16, 0x3, 0, CE_MEMBANK_FAST16, CACHE_ENABLE_BOTH);	/* [NP] tested on real STF, no bus wait from ROM */
+		map_banks_ce(&BusErrMem_bank, 0xE00000 >> 16, 0x10, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
 	}
-    }
+	else if(NewRomMemStart == 0xE00000)
+	{
+		map_banks_ce(&ROMmem_bank, 0xE00000 >> 16, 0x10, 0, CE_MEMBANK_FAST16, CACHE_ENABLE_BOTH);	/* [NP] tested on real STF, no bus wait from ROM */
+		map_banks_ce(&BusErrMem_bank, 0xFC0000 >> 16, 0x3, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
+	}
+	else
+	{
+		write_log("Illegal ROM memory start!\n");
+	}
 
-    illegal_count = 0;
+	/* Cartridge memory: */
+	map_banks_ce(&ROMmem_bank, 0xFA0000 >> 16, 0x2, 0, CE_MEMBANK_FAST16, CACHE_ENABLE_BOTH);		/* [NP] tested on real STF, no bus wait from cartridge */
+	ROMmem_bank.baseaddr = ROMmemory;
+	ROMmem_bank.mask = ROMmem_mask;
+	ROMmem_bank.start = ROMmem_start;
+	init_bank ( &ROMmem_bank , ROMmem_size );
+
+	/* IO memory: */
+	map_banks_ce(&IOmem_bank, IOmem_start>>16, 0x1, 0, CE_MEMBANK_FAST16, CE_MEMBANK_NOT_CACHABLE);	/* [NP] tested on real STF, no bus wait for IO memory */
+	IOmem_bank.baseaddr = IOmemory;									/* except for some shifter registers */
+	IOmem_bank.mask = IOmem_mask;
+	IOmem_bank.start = IOmem_start;
+	init_bank ( &IOmem_bank , IOmem_size );
+
+	/* IDE controller memory region at 0xF00000 (for Falcon or can be forced for other machines, else it's a bus error region) */
+	if (Ide_IsAvailable())
+	{
+		map_banks_ce(&IdeMem_bank, IdeMem_start >> 16, 0x1, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);	/* IDE controller on the Falcon */
+		IdeMem_bank.baseaddr = IdeMemory;
+		IdeMem_bank.mask = IdeMem_mask;
+		IdeMem_bank.start = IdeMem_start ;
+		init_bank ( &IdeMem_bank , IdeMem_size );
+	}
+	else
+	{
+		map_banks_ce(&BusErrMem_bank, IdeMem_start >> 16, 0x1, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
+	}
+
+	/* Illegal memory regions cause a bus error on the ST: */
+	map_banks_ce(&BusErrMem_bank, 0xF10000 >> 16, 0x9, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
+
+	/* According to the "Atari TT030 Hardware Reference Manual", the
+	 * lowest 16 MBs (i.e. the 24-bit address space) are always mirrored
+	 * to 0xff000000, so we remap memory 00xxxxxx to FFxxxxxx here. If not,
+	 * we'd get some crashes when booting TOS 3 and 4 (e.g. both TOS 3.06
+	 * and TOS 4.04 touch 0xffff8606 before setting up the MMU tables) */
+	if (!ConfigureParams.System.bAddressSpace24)
+	{
+		/* Copy all 256 banks 0x0000-0x00FF to banks 0xFF00-0xFFFF */
+		for ( addr=0x0 ; addr<=0x00ffffff ; addr+=0x10000 )
+		{
+			//printf ( "put mem %x %x\n" , addr , addr|0xff000000 );
+			put_mem_bank ( 0xff000000|addr , &get_mem_bank ( addr ) , 0 );
+
+			/* Copy the CE parameters */
+			ce_banktype[ (0xff000000|addr)>>16 ] = ce_banktype[ addr>>16 ];
+			ce_cachable[ (0xff000000|addr)>>16 ] = ce_cachable[ addr>>16 ];
+		}
+	}
+
+	illegal_count = 0;
 }
 
 
@@ -1823,23 +1854,23 @@ void memory_init(uae_u32 NewSTMemSize, uae_u32 NewTTMemSize, uae_u32 NewRomMemSt
  */
 void memory_uninit (void)
 {
-    /* Here, we free allocated memory from memory_init */
-    if (TTmemory) {
-	free(TTmemory);
-	TTmemory = NULL;
-    }
+	/* Here, we free allocated memory from memory_init */
+	if (TTmemory) {
+		free(TTmemory);
+		TTmemory = NULL;
+	}
 
 #if ENABLE_SMALL_MEM
 
-    if (STmemory) {
-	free(STmemory);
-	STmemory = NULL;
-    }
+	if (STmemory) {
+		free(STmemory);
+		STmemory = NULL;
+	}
 
-    if (ROMmemory) {
-	free(ROMmemory);
+	if (STmem_size <= 0x800000 && ROMmemory) {
+		free(ROMmemory);
+	}
 	ROMmemory = NULL;
-    }
 
 #endif  /* ENABLE_SMALL_MEM */
 }

@@ -1,7 +1,7 @@
 #
 # Classes for the Hatari UI dialogs
 #
-# Copyright (C) 2008-2020 by Eero Tamminen
+# Copyright (C) 2008-2022 by Eero Tamminen
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,7 +24,8 @@ from gi.repository import Pango
 
 from uihelpers import UInfo, HatariTextInsert, create_table_dialog, \
      table_add_entry_row, table_add_widget_row, table_add_separator, \
-     table_add_radio_rows, create_button, FselEntry, FselAndEjectFactory
+     table_add_combo_row, table_add_radio_rows, create_button, \
+     FselEntry, FselAndEjectFactory
 
 
 # -----------------
@@ -292,30 +293,29 @@ class FloppyDialog(HatariUIDialog):
             self.floppy.append(fsel)
             row += 1
 
-        protect = Gtk.ComboBoxText()
-        for text in config.get_protection_types():
-            protect.append_text(text)
-        protect.set_active(config.get_floppy_protection())
+        protect = table_add_combo_row(table, row, 0, "Write protection:", config.get_protection_types())
         protect.set_tooltip_text("Write protect floppy image contents")
-        table_add_widget_row(table, row, 0, "Write protection:", protect)
+        protect.set_active(config.get_floppy_protection())
         row += 1
 
+        vbox = Gtk.VBox()
         ds = Gtk.CheckButton("Double sided drives")
-        ds.set_active(config.get_doublesided())
         ds.set_tooltip_text("Whether drives are double or single sided. Can affect behavior of some games")
-        table_add_widget_row(table, row, 0, None, ds)
-        row += 1
+        ds.set_active(config.get_doublesided())
+        vbox.add(ds)
 
         driveb = Gtk.CheckButton("Drive B connected")
+        driveb.set_tooltip_text("Whether drive B is connected. Can affect behavior of some demos & games")
         driveb.set_active(config.get_floppy_drives()[1])
-        driveb.set_tooltip_text("Wheter drive B is connected. Can affect behavior of some demos & games")
-        table_add_widget_row(table, row, 0, None, driveb)
-        row += 1
+        vbox.add(driveb)
 
         fastfdc = Gtk.CheckButton("Fast floppy access")
-        fastfdc.set_active(config.get_fastfdc())
         fastfdc.set_tooltip_text("Can cause incompatibilities with some games/demos")
-        table_add_widget_row(table, row, 0, None, fastfdc)
+        fastfdc.set_active(config.get_fastfdc())
+        vbox.add(fastfdc)
+
+        table_add_widget_row(table, row, 0, None, vbox)
+        row += 1
 
         table.show_all()
 
@@ -348,7 +348,7 @@ class FloppyDialog(HatariUIDialog):
 
 class HardDiskDialog(HatariUIDialog):
     def _create_dialog(self, config):
-        table, self.dialog = create_table_dialog(self.parent, "Hard disks", 4, 4, "Set and reboot")
+        table, self.dialog = create_table_dialog(self.parent, "Hard disks", 4, 2, "Set and reboot")
         factory = FselAndEjectFactory()
 
         row = 0
@@ -383,27 +383,18 @@ class HardDiskDialog(HatariUIDialog):
         self.hddir = fsel
         row += 1
 
-        hddrive = Gtk.ComboBoxText()
-        for text in config.get_hd_drives():
-            hddrive.append_text(text)
+        hddrive = table_add_combo_row(table, row, 0, "GEMDOS HD drive:", config.get_hd_drives())
         hddrive.set_tooltip_text("Whether GEMDOS HD emulation uses fixed drive letter, or first free drive letter after ASCI & IDE drives (detection unreliable)")
-        table_add_widget_row(table, row, 0, "GEMDOS HD drive:", hddrive)
         self.hddrive = hddrive
         row += 1
 
-        protect = Gtk.ComboBoxText()
-        for text in config.get_protection_types():
-            protect.append_text(text)
+        protect = table_add_combo_row(table, row, 0, "Write protection:", config.get_protection_types())
         protect.set_tooltip_text("Whether/how to write protect (GEMDOS HD) emulation files, 'auto' means using host files' own properties")
-        table_add_widget_row(table, row, 0, "Write protection:", protect)
         self.protect = protect
         row += 1
 
-        lower = Gtk.ComboBoxText()
-        for text in config.get_hd_cases():
-            lower.append_text(text)
+        lower = table_add_combo_row(table, row, 0, "File names:", config.get_hd_cases())
         lower.set_tooltip_text("What to do with names of files created by Atari programs through GEMDOS HD emulation")
-        table_add_widget_row(table, row, 0, "File names:", lower)
         self.lower = lower
 
         table.show_all()
@@ -456,104 +447,101 @@ class HardDiskDialog(HatariUIDialog):
 class DisplayDialog(HatariUIDialog):
 
     def _create_dialog(self, config):
+        table, self.dialog = create_table_dialog(self.parent, "Display settings", 9, 2)
 
-        skip = Gtk.ComboBoxText()
-        for text in config.get_frameskip_names():
-            skip.append_text(text)
-        skip.set_active(config.get_frameskip())
-        skip.set_tooltip_text("Set how many frames are skipped to speed up emulation")
+        row = 0
+        col = 0
+        self.skip = table_add_combo_row(table, row, col, "Frameskip:", config.get_frameskip_names())
+        self.skip.set_tooltip_text("Set how many frames are skipped to speed up emulation")
+        row += 1
 
-        slow = Gtk.ComboBoxText()
-        for text in config.get_slowdown_names():
-            slow.append_text(text)
-        slow.set_active(0)
-        slow.set_tooltip_text("VBL wait multiplier to slow down emulation. Breaks sound and large enough slowdown causes mouse clicks not to work.")
+        self.slow = table_add_combo_row(table, row, col, "Slowdown:", config.get_slowdown_names())
+        self.slow.set_tooltip_text("VBL wait multiplier to slow down emulation. Breaks sound and large enough slowdown causes mouse clicks not to work.")
+        row += 1
 
         topw, toph = config.get_desktop_size()
         maxw = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 320, topw, 8)
         maxh = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 200, toph, 8)
         maxw.set_tooltip_text("Preferred/maximum zoomed width")
         maxh.set_tooltip_text("Preferred/maximum zoomed height")
-        confw, confh = config.get_max_size()
-        maxw.set_value(confw)
-        maxh.set_value(confh)
         maxw.set_digits(0)
         maxh.set_digits(0)
 
-        force_max = Gtk.CheckButton("Force max resolution (Falcon)")
-        force_max.set_active(config.get_force_max())
-        force_max.set_tooltip_text("Whether to force maximum resolution to help recording videos of demos which do resolution changes")
+        self.maxw = table_add_widget_row(table, row, col, "Max zoom width:", maxw)
+        row += 1
+        self.maxh = table_add_widget_row(table, row, col, "Max zoom height:", maxh)
+        row += 1
 
-        desktop = Gtk.CheckButton("Keep desktop resolution, scales")
-        desktop.set_active(config.get_desktop())
-        desktop.set_tooltip_text("Whether to keep screen resolution in fullscreen. Avoids potential monitor res switch delay & resulting sound skips")
+        vbox = Gtk.VBox()
+        force_max = Gtk.CheckButton("Force max resolution (Falcon)")
+        force_max.set_tooltip_text("Force maximum resolution to help recording videos of demos which do resolution changes")
+        self.force_max = force_max
+        vbox.add(force_max)
+
+        desktop = Gtk.CheckButton("Keep desktop resolution (scales)")
+        desktop.set_tooltip_text("Keep screen resolution in fullscreen. Avoids potential monitor res switch delay & resulting sound skips")
+        self.desktop = desktop
+        vbox.add(desktop)
 
         borders = Gtk.CheckButton("Atari screen borders")
-        borders.set_active(config.get_borders())
-        borders.set_tooltip_text("Whether to show overscan borders in ST/STE low/mid-rez or in Falcon color resolutions. Visible border area is affected by max. zoom size")
-
-        statusbar = Gtk.CheckButton("Show statusbar")
-        statusbar.set_active(config.get_statusbar())
-        statusbar.set_tooltip_text("Whether to show statusbar with floppy leds etc")
+        borders.set_tooltip_text("Show overscan borders in ST/STE low/mid-rez and in Falcon color resolutions. Visible border area is affected by max zoom size")
+        self.borders = borders
+        vbox.add(borders)
 
         led = Gtk.CheckButton("Show overlay led")
-        led.set_active(config.get_led())
-        led.set_tooltip_text("Whether to show overlay drive led when statusbar isn't visible")
+        led.set_tooltip_text("Show overlay drive led when statusbar is not visible")
+        self.led = led
+        vbox.add(led)
+
+        statusbar = Gtk.CheckButton("Show statusbar")
+        statusbar.set_tooltip_text("Show statusbar with TOS and machine info, disk leds etc")
+        self.statusbar = statusbar
+        vbox.add(statusbar)
 
         crop = Gtk.CheckButton("Remove statusbar from screen capture")
-        crop.set_active(config.get_crop())
-        crop.set_tooltip_text("Whether to crop statusbar from screenshots and video recordings")
-
-        dialog = Gtk.Dialog("Display settings", self.parent,
-            Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
-            (Gtk.STOCK_APPLY,  Gtk.ResponseType.APPLY,
-             Gtk.STOCK_CANCEL,  Gtk.ResponseType.CANCEL))
-
-        dialog.vbox.add(Gtk.Label(label="Max zoomed size:"))
-        dialog.vbox.add(maxw)
-        dialog.vbox.add(maxh)
-        dialog.vbox.add(force_max)
-        dialog.vbox.add(desktop)
-        dialog.vbox.add(borders)
-        dialog.vbox.add(Gtk.Label(label="Frameskip:"))
-        dialog.vbox.add(skip)
-        dialog.vbox.add(Gtk.Label(label="Slowdown:"))
-        dialog.vbox.add(slow)
-        dialog.vbox.add(statusbar)
-        dialog.vbox.add(led)
-        dialog.vbox.add(crop)
-        dialog.vbox.show_all()
-
-        self.dialog = dialog
-        self.maxw = maxw
-        self.maxh = maxh
-        self.force_max = force_max
-        self.desktop = desktop
-        self.borders = borders
-        self.skip = skip
-        self.slow = slow
-        self.statusbar = statusbar
-        self.led = led
+        crop.set_tooltip_text("Crop statusbar from screenshots and video recordings")
         self.crop = crop
+        vbox.add(crop)
+
+        table_add_widget_row(table, row, col, None, vbox)
+        table.show_all()
+
+
+    def _get_config(self, config):
+        self.slow.set_active(0)
+        self.skip.set_active(config.get_frameskip())
+        confw, confh = config.get_max_size()
+        self.maxw.set_value(confw)
+        self.maxh.set_value(confh)
+        self.force_max.set_active(config.get_force_max())
+        self.desktop.set_active(config.get_desktop())
+        self.borders.set_active(config.get_borders())
+        self.led.set_active(config.get_led())
+        self.statusbar.set_active(config.get_statusbar())
+        self.crop.set_active(config.get_crop())
+
+    def _set_config(self, config):
+        config.lock_updates()
+        config.set_slowdown(self.slow.get_active())
+        config.set_frameskip(self.skip.get_active())
+        config.set_max_size(self.maxw.get_value(), self.maxh.get_value())
+        config.set_force_max(self.force_max.get_active())
+        config.set_desktop(self.desktop.get_active())
+        config.set_borders(self.borders.get_active())
+        config.set_led(self.led.get_active())
+        config.set_statusbar(self.statusbar.get_active())
+        config.set_crop(self.crop.get_active())
+        config.flush_updates()
 
     def run(self, config):
         "run(config), show display dialog"
         if not self.dialog:
             self._create_dialog(config)
+        self._get_config(config)
         response = self.dialog.run()
         self.dialog.hide()
         if response == Gtk.ResponseType.APPLY:
-            config.lock_updates()
-            config.set_frameskip(self.skip.get_active())
-            config.set_slowdown(self.slow.get_active())
-            config.set_max_size(self.maxw.get_value(), self.maxh.get_value())
-            config.set_force_max(self.force_max.get_active())
-            config.set_desktop(self.desktop.get_active())
-            config.set_borders(self.borders.get_active())
-            config.set_statusbar(self.statusbar.get_active())
-            config.set_led(self.led.get_active())
-            config.set_crop(self.crop.get_active())
-            config.flush_updates()
+            self._set_config(config)
 
 
 # ----------------------------------
@@ -567,12 +555,9 @@ class JoystickDialog(HatariUIDialog):
         self.joy = []
         joytypes = config.get_joystick_types()
         for label in config.get_joystick_names():
-            combo = Gtk.ComboBoxText()
-            for text in joytypes:
-                combo.append_text(text)
+            combo = table_add_combo_row(table, joy, 0, "%s:" % label, joytypes)
             combo.set_active(config.get_joystick(joy))
-            widget = table_add_widget_row(table, joy, 0, "%s:" % label, combo)
-            self.joy.append(widget)
+            self.joy.append(combo)
             joy += 1
 
         table.show_all()
@@ -687,70 +672,75 @@ class PathDialog(HatariUIDialog):
 class SoundDialog(HatariUIDialog):
 
     def _create_dialog(self, config):
-        enabled, curhz = config.get_sound()
+        table, self.dialog = create_table_dialog(self.parent, "Sound settings", 6, 2, "Apply")
+        row = 0
 
-        self.enabled = Gtk.CheckButton("Sound enabled")
-        self.enabled.set_active(enabled)
+        col = 1
+        fullspan = True
+        self.enabled = table_add_widget_row(table, row, col, None, Gtk.CheckButton("Sound enabled"), fullspan)
+        row += 1
 
-        hz = Gtk.ComboBoxText()
-        for text in config.get_sound_values():
-            hz.append_text(text)
-        hz.set_active(curhz)
-        self.hz = hz
+        col = 0
+        self.hz = table_add_combo_row(table, row, col, "Sound frequency:", config.get_sound_values())
+        row += 1
 
-        ymmixer = Gtk.ComboBoxText()
-        for text in config.get_ymmixer_types():
-            ymmixer.append_text(text)
-        ymmixer.set_active(config.get_ymmixer())
-        self.ymmixer = ymmixer
+        self.ymmixer = table_add_combo_row(table, row, col, "YM mixing method:", config.get_ymmixer_types())
+        self.ymmixer.set_tooltip_text("Which method is used to mix YM voices")
+        row += 1
 
         bufsize = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, 100, 10)
         for pos in ((0, "auto"), (10, "min"), (100, "max")):
             bufsize.add_mark(pos[0], Gtk.PositionType.BOTTOM, pos[1])
-        bufsize.set_value(config.get_bufsize())
+        bufsize.set_tooltip_text("SDL sound buffer size in ms. 0 = use default value. In some situations, SDL default may cause large (~0.5s) sound delay at lower frequency.  If you have this problem, try with e.g. 20 ms, otherwise keep at 0.")
         bufsize.set_digits(0)
-        bufsize.set_tooltip_text("0 = use default value. In some situations, SDL default may cause large (~0.5s) sound delay at lower frequency.  If you have this problem, try with e.g. 20 ms, otherwise keep at 0.")
-        self.bufsize = bufsize
+        self.bufsize = table_add_widget_row(table, row, col, "Sound buffer size:", bufsize)
+        row += 1
 
+        vbox = Gtk.VBox()
         self.sync = Gtk.CheckButton("Emulation speed synched to sound output")
         self.sync.set_tooltip_text("Constantly adjust emulation screen update rate to match sound output. Can help if you suffer from sound buffer under/overflow.")
-        self.sync.set_active(config.get_sync())
+        vbox.add(self.sync)
 
         self.mic = Gtk.CheckButton("Enable (Falcon) microphone")
-        self.mic.set_active(config.get_mic())
+        vbox.add(self.mic)
 
-        dialog = Gtk.Dialog("Sound settings", self.parent,
-            Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
-            (Gtk.STOCK_APPLY,  Gtk.ResponseType.APPLY,
-             Gtk.STOCK_CANCEL,  Gtk.ResponseType.CANCEL))
-        dialog.vbox.add(self.enabled)
-        dialog.vbox.add(Gtk.Label(label="Sound frequency:"))
-        dialog.vbox.add(hz)
-        dialog.vbox.add(Gtk.Label(label="YM voices mixing method:"))
-        dialog.vbox.add(ymmixer)
-        dialog.vbox.add(Gtk.Label(label="SDL sound buffer size (ms):"))
-        dialog.vbox.add(bufsize)
-        dialog.vbox.add(self.sync)
-        dialog.vbox.add(self.mic)
-        dialog.vbox.show_all()
-        self.dialog = dialog
+        col = 1
+        table_add_widget_row(table, row, col, None, vbox, fullspan)
+        row += 1
+
+        table.show_all()
+
+    def _get_config(self, config):
+        enabled, curhz = config.get_sound()
+        self.enabled.set_active(enabled)
+        self.hz.set_active(curhz)
+
+        self.sync.set_active(config.get_sync())
+        self.mic.set_active(config.get_mic())
+        self.ymmixer.set_active(config.get_ymmixer())
+        self.bufsize.set_value(config.get_bufsize())
+
+    def _set_config(self, config):
+        config.lock_updates()
+        enabled = self.enabled.get_active()
+        hz = self.hz.get_active()
+        config.set_sound(enabled, hz)
+        config.set_mic(self.mic.get_active())
+        config.set_sync(self.sync.get_active())
+        config.set_ymmixer(self.ymmixer.get_active())
+        config.set_bufsize(self.bufsize.get_value())
+        config.flush_updates()
 
     def run(self, config):
         "run(config), show sound dialog"
         if not self.dialog:
             self._create_dialog(config)
+
+        self._get_config(config)
         response = self.dialog.run()
         self.dialog.hide()
         if response == Gtk.ResponseType.APPLY:
-            config.lock_updates()
-            config.set_mic(self.mic.get_active())
-            config.set_sync(self.sync.get_active())
-            config.set_bufsize(self.bufsize.get_value())
-            config.set_ymmixer(self.ymmixer.get_active())
-            enabled = self.enabled.get_active()
-            hz = self.hz.get_active()
-            config.set_sound(enabled, hz)
-            config.flush_updates()
+            self._set_config(config)
 
 
 # ---------------------------
@@ -802,6 +792,7 @@ class TraceDialog(HatariUIDialog):
         "os_base",
         "psg_read",
         "psg_write",
+        "scc",
         "scsi_cmd",
         "scsidrv",
         "vdi",
@@ -874,8 +865,8 @@ class TraceDialog(HatariUIDialog):
             self.tracewidgets[trace].set_active(False)
 
     def _load_traces(self, widget):
-        # this doesn't load traces, just sets them from internal variable
-        # that run method gets from caller and sets. It's up to caller
+        # this does not load traces, just sets them from internal variable
+        # that run method gets from caller and sets. It is up to caller
         # whether the saving or loading happens actually to disk
         self._set_traces(self.savedpoints)
 
@@ -898,76 +889,91 @@ class TraceDialog(HatariUIDialog):
 # Machine dialog for settings needing reboot
 
 class MachineDialog(HatariUIDialog):
-    def _machine_cb(self, widget, data):
-        if not widget.get_active():
-            return
-        machine = data.lower()
-        if machine == "ste" or machine == "st":
-            self.clocks[0].set_active(True)
+    def _machine_cb(self, widget, types):
+        machine = types[widget.get_active()].lower()
+        if "mega" in machine:
+            self.clocks.set_active(1)
             self.cpulevel.set_active(0)
-        elif machine == "falcon":
-            self.clocks[1].set_active(True)
-            self.dsps[2].set_active(True)
-            self.cpulevel.set_active(3)
+        elif "st" in machine:
+            self.clocks.set_active(0)
+            self.cpulevel.set_active(0)
         elif machine == "tt":
-            self.clocks[2].set_active(True)
+            self.clocks.set_active(2)
             self.cpulevel.set_active(3)
+        elif machine == "falcon":
+            self.clocks.set_active(1)
+            self.cpulevel.set_active(3)
+            self.dsp.set_active(2)
 
     def _create_dialog(self, config):
-        table, self.dialog = create_table_dialog(self.parent, "Machine configuration", 6, 4, "Set and reboot")
+        table, self.dialog = create_table_dialog(self.parent, "Machine configuration", 6, 2, "Set and reboot")
 
+        # option for non-combos
+        fullspan = True
         col = 0
         row = 0
-        self.machines = table_add_radio_rows(table, row, col, "Machine:",
-                        config.get_machine_types(), self._machine_cb)
+        types = config.get_machine_types()
+        self.machine = table_add_combo_row(table, row, col, "Machine:", types, self._machine_cb, types)
         row += 1
 
-        self.dsps = table_add_radio_rows(table, row, col, "DSP type:", config.get_dsp_types())
+        vbox1 = Gtk.VBox()
+        self.blitter = Gtk.CheckButton("Blitter (ST only)")
+        self.blitter.set_tooltip_text("Whether to emulate add-on Blitter chip for ST")
+        self.timerd = Gtk.CheckButton("Patch Timer-D")
+        self.timerd.set_tooltip_text("Improves ST/STE emulation performance, but some rare demos/games do not work with this")
+        vbox1.add(self.blitter)
+        vbox1.add(self.timerd)
+        table_add_widget_row(table, row, col, "Misc:", vbox1, fullspan)
         row += 1
 
-        # start next table column
+        self.cpulevel = table_add_combo_row(table, row, col, "CPU type:", config.get_cpulevel_types())
+        row += 1
+
+        vbox2 = Gtk.VBox()
+        self.compatible = Gtk.CheckButton("Prefetch emulation")
+        self.compatible.set_tooltip_text("Needed for overscan and other timing sensitive things to work correctly. Uses more host CPU")
+        self.exact = Gtk.CheckButton("Cycle exact with cache emulation")
+        self.exact.set_tooltip_text("Cycle exactness increases emulation accuracy and 680x0 cache emulation increases emulated code performance, but requires significantly more host CPU")
+        self.mmu = Gtk.CheckButton("MMU emulation")
+        vbox2.add(self.compatible)
+        vbox2.add(self.exact)
+        vbox2.add(self.mmu)
+        table_add_widget_row(table, row, col, None, vbox2, fullspan)
+        row += 1
+
+        self.clocks = table_add_combo_row(table, row, col, "CPU clock:", config.get_cpuclock_types())
+        row += 1
+
+        self.fpu = table_add_combo_row(table, row, col, "FPU type:", config.get_fpu_types())
+        row += 1
+
+        self.softfp = Gtk.CheckButton("Accurate FPU emulation")
+        self.softfp.set_tooltip_text("Emulate FPU in software instead of using host FPU.  Uses more host CPU")
+        table_add_widget_row(table, row, col, None, self.softfp, fullspan)
+        row += 1
+
+        self.dsp = table_add_combo_row(table, row, col, "DSP type:", config.get_dsp_types())
+        self.dsp.set_tooltip_text("Disable DSP to improve Hatari performance significantly for Falcon programs that work (also) without it.  Some programs using DSP unconditionally, may work with dummy mode (and just lack e.g. sound).")
+        row += 1
+
+        self.monitors = table_add_combo_row(table, row, col, "Monitor:", config.get_monitor_types())
+        row += 1
+
+        self.memory = table_add_combo_row(table, row, col, "Memory:", config.get_memory_names())
+        row += 1
+
+        # use next table column
         col = 2
-        row = 0
-        self.monitors = table_add_radio_rows(table, row, col, "Monitor:", config.get_monitor_types())
-        row += 1
 
-        self.clocks = table_add_radio_rows(table, row, col, "CPU clock:", config.get_cpuclock_types())
-        row += 1
-
-        # fullspan at bottom
-        fullspan = True
-
-        combo = Gtk.ComboBoxText()
-        for text in config.get_cpulevel_types():
-            combo.append_text(text)
-        self.cpulevel = table_add_widget_row(table, row, col, "CPU type:", combo, fullspan)
-        row += 1
-
-        combo = Gtk.ComboBoxText()
-        for text in config.get_memory_names():
-            combo.append_text(text)
-        self.memory = table_add_widget_row(table, row, col, "Memory:", combo, fullspan)
-        row += 1
-
-        ttram = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, 512, 4)
+        ttram = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, 1024, 4)
         ttram.set_digits(0)
-        ttram.set_tooltip_text("TT-RAM needs Falcon/TT with WinUAE CPU core and implies 32-bit addressing.  0 = disabled, 24-bit addressing.")
-        self.ttram = table_add_widget_row(table, row, col, "TT-RAM", ttram, fullspan)
+        ttram.set_tooltip_text("TT-RAM needs Falcon/TT and requires 32-bit addressing.  0 = disabled, 24-bit addressing.")
+        self.ttram = table_add_widget_row(table, row, col, "TT-RAM:", ttram, fullspan)
         row += 1
 
         label = "TOS image:"
         fsel = self._fsel(label, Gtk.FileChooserAction.OPEN)
         self.tos = table_add_widget_row(table, row, col, label, fsel, fullspan)
-        row += 1
-
-        vbox = Gtk.VBox()
-        self.compatible = Gtk.CheckButton("Compatible CPU")
-        self.timerd = Gtk.CheckButton("Patch Timer-D")
-        self.compatible.set_tooltip_text("Needed for overscan and other timing sensitive things to work correctly")
-        self.timerd.set_tooltip_text("Improves ST/STE emulation performance, but some rare demos/games don't work with this")
-        vbox.add(self.compatible)
-        vbox.add(self.timerd)
-        table_add_widget_row(table, row, col, "Misc.:", vbox, fullspan)
         row += 1
 
         table.show_all()
@@ -981,18 +987,23 @@ class MachineDialog(HatariUIDialog):
         return fsel
 
     def _get_config(self, config):
-        self.machines[config.get_machine()].set_active(True)
-        self.monitors[config.get_monitor()].set_active(True)
-        self.clocks[config.get_cpuclock()].set_active(True)
-        self.dsps[config.get_dsp()].set_active(True)
+        self.machine.set_active(config.get_machine())
+        self.blitter.set_active(config.get_blitter())
+        self.timerd.set_active(config.get_timerd())
         self.cpulevel.set_active(config.get_cpulevel())
+        self.compatible.set_active(config.get_compatible())
+        self.exact.set_active(config.get_cycle_exact())
+        self.mmu.set_active(config.get_mmu())
+        self.clocks.set_active(config.get_cpuclock())
+        self.fpu.set_active(config.get_fpu_type())
+        self.softfp.set_active(config.get_fpu_soft())
+        self.dsp.set_active(config.get_dsp())
+        self.monitors.set_active(config.get_monitor())
         self.memory.set_active(config.get_memory())
         self.ttram.set_value(config.get_ttram())
         tos = config.get_tos()
         if tos:
             self.tos.set_filename(tos)
-        self.compatible.set_active(config.get_compatible())
-        self.timerd.set_active(config.get_timerd())
 
     def _get_active_radio(self, radios):
         idx = 0
@@ -1003,16 +1014,21 @@ class MachineDialog(HatariUIDialog):
 
     def _set_config(self, config):
         config.lock_updates()
-        config.set_machine(self._get_active_radio(self.machines))
-        config.set_monitor(self._get_active_radio(self.monitors))
-        config.set_cpuclock(self._get_active_radio(self.clocks))
-        config.set_dsp(self._get_active_radio(self.dsps))
+        config.set_machine(self.machine.get_active())
+        config.set_blitter(self.blitter.get_active())
+        config.set_timerd(self.timerd.get_active())
         config.set_cpulevel(self.cpulevel.get_active())
+        config.set_compatible(self.compatible.get_active())
+        config.set_cycle_exact(self.exact.get_active())
+        config.set_mmu(self.mmu.get_active())
+        config.set_cpuclock(self.clocks.get_active())
+        config.set_fpu_type(self.fpu.get_active())
+        config.set_fpu_soft(self.softfp.get_active())
+        config.set_dsp(self.dsp.get_active())
+        config.set_monitor(self.monitors.get_active())
         config.set_memory(self.memory.get_active())
         config.set_ttram(self.ttram.get_value())
         config.set_tos(self.tos.get_filename())
-        config.set_compatible(self.compatible.get_active())
-        config.set_timerd(self.timerd.get_active())
         config.flush_updates()
 
     def run(self, config):

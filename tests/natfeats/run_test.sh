@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if [ $# -lt 1 -o "$1" = "-h" -o "$1" = "--help" ]; then
+if [ $# -lt 1 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 	echo "Usage: $0 <hatari> ..."
 	exit 1;
 fi
@@ -12,7 +12,7 @@ if [ ! -x "$hatari" ]; then
 	exit 1;
 fi;
 
-basedir=$(dirname $0)
+basedir=$(dirname "$0")
 testdir=$(mktemp -d)
 
 export HATARI_TEST=natfeats
@@ -21,7 +21,7 @@ export SDL_AUDIODRIVER=dummy
 unset TERM
 
 echo c | HOME="$testdir" $hatari --log-level fatal --sound off --natfeats on \
-	--tos none --fast-forward on  --run-vbls 500 $* "$basedir/nf_ahcc.tos" \
+	-t none --fast-forward on --run-vbls 500 "$@" "$basedir/nf_ahcc.tos" \
 	2>&1 | sed -e 's/^Hatari v.*/Hatari v/' -e 's/^CPU=.*$/CPU=.../' \
 		   -e 's/^00.*/00.../' -e '/^> c$/d' -e 's/^> //' \
 	> "$testdir/out.txt"

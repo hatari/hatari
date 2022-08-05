@@ -24,7 +24,7 @@ usage ()
 	echo "Example:"
 	echo " for zip in *.zip; do $name \$zip; done"
 	echo
-	if [ \! -z "$1" ]; then
+	if [ -n "$1" ]; then
 		echo "ERROR: $1!"
 	fi
 	exit 1
@@ -38,7 +38,7 @@ fi
 ZIPFILE=$1
 STFILE=$2
 
-if [ \! -e "$ZIPFILE" ]; then
+if [ ! -e "$ZIPFILE" ]; then
 	usage "given ZIP file or directory '$ZIPFILE' is missing"
 fi
 
@@ -47,14 +47,14 @@ if [ -z "$STFILE" ]; then
 	# with extension removed and spaces converted to underscores
 	BASENAME=${ZIPFILE%.zip}
 	BASENAME=${BASENAME%.ZIP}
-	if [ -z $(which basename) ]; then
+	if [ -z "$(which basename)" ]; then
 		# goes to same place as source directory
 		STFILE=${BASENAME}.st
 	else
 		# basename can reliably give last path component
 		STFILE=$(basename "$BASENAME").st
 	fi
-	STFILE=$(echo $STFILE | tr ' ' '_')
+	STFILE=$(echo "$STFILE" | tr ' ' '_')
 fi
 if [ -f "$STFILE" ]; then
 	echo "ERROR: ST file '$STFILE' already exists, remove it first. Aborting..."
@@ -67,15 +67,16 @@ TEMPDIR=""
 # script exit/error handling
 exit_cleanup ()
 {
-	if [ $? -eq 0 ]; then
+	retval=$?
+	if [ $retval -eq 0 ]; then
 		echo "$step) Cleaning up temporary files..."
 	else
 		echo
-		echo "ERROR, cleaning up..."
+		echo "ERROR (retval $retval), cleaning up..."
 	fi
-	if [ \! -z "$TEMPDIR" ]; then
+	if [ -n "$TEMPDIR" ]; then
 		echo "rm -rv $TEMPDIR"
-		rm -rv $TEMPDIR
+		rm -rv "$TEMPDIR"
 	fi
 	echo "Done."
 }
@@ -95,24 +96,25 @@ else
 	trap exit_cleanup EXIT
 
 	echo
-	step=$(($step+1))
+	step=$((step+1))
 	echo "$step) Unzipping..."
 	echo "unzip $ZIPFILE -d $TEMPDIR"
 	unzip "$ZIPFILE" -d "$TEMPDIR" || exit 2
 
 	# .zip files created with STZip sometimes have wrong access rights...
 	echo "chmod -R u+rw $TEMPDIR/*"
-	chmod -R u+rw $TEMPDIR/*
+	chmod -R u+rw "$TEMPDIR"/*
 	ZIPDIR=$TEMPDIR
 fi
 
 echo
-step=$(($step+1))
+step=$((step+1))
 echo "$step) Checking/skipping intermediate directories..."
 while true; do
+	# shellcheck disable=SC2012
 	count=$(ls "$ZIPDIR"|wc -l)
-	if [ $count -ne 1 ]; then
-		if [ $count -eq 0 ]; then
+	if [ "$count" -ne 1 ]; then
+		if [ "$count" -eq 0 ]; then
 			echo "ERROR: zip content is empty!"
 			exit 1
 		fi
@@ -120,11 +122,11 @@ while true; do
 		break
 	fi
 	dir=$(ls "$ZIPDIR")
-	if [ \! -d "$ZIPDIR/$dir" ]; then
+	if [ ! -d "$ZIPDIR/$dir" ]; then
 		# not dir
 		break
 	fi
-	if [ -z "$(echo $dir|grep -v -i '^auto$')" ]; then
+	if ! echo "$dir" | grep -q -v -i '^auto$'; then
 		# don't skip AUTO dir
 		break
 	fi
@@ -146,13 +148,13 @@ done
 
 if [ $disksize -gt 0 ]; then
 	echo
-	step=$(($step+1))
+	step=$((step+1))
 	echo "$step) Creating $disksize KB disk image..."
 	echo "dd if=/dev/zero of=$STFILE bs=1024 count=$disksize"
 	dd if=/dev/zero of="$STFILE" bs=1024 count=$disksize
 
 	echo
-	step=$(($step+1))
+	step=$((step+1))
 	echo "$step) Formatting disk image..."
 	case $disksize in
 		360) format="-t 80 -h 1 -n 9" ;;
@@ -161,10 +163,13 @@ if [ $disksize -gt 0 ]; then
 		*)   format="-f $disksize" ;;
 	esac
 	echo "mformat -a $format -i $STFILE ::"
+	# https://www.shellcheck.net/wiki/SC2086
+	# format options are suppposed to be separate
+	# shellcheck disable=SC2086
 	mformat -a $format -i "$STFILE" ::
 
 	echo
-	step=$(($step+1))
+	step=$((step+1))
 	echo "$step) Copying data to disk image..."
 	echo "MTOOLS_NO_VFAT=1 mcopy -i $STFILE -spmv $ZIPDIR/* ::"
 	MTOOLS_NO_VFAT=1 mcopy -i "$STFILE" -spmv "$ZIPDIR"/* ::
@@ -173,5 +178,5 @@ else
 fi
 
 echo
-step=$(($step+1))
+step=$((step+1))
 # do cleanup in exit handler

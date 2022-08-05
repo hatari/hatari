@@ -1053,9 +1053,10 @@ static int GemDOS_GetValidFileHandle(int Handle)
 		Uint32 current = STMemory_ReadLong(act_pd);
 		if (FileHandles[Handle].Basepage == current || Forced >= 0)
 			return Handle;
-		/* bug in Atari program or in Hatari GEMDOS emu */
-		Log_Printf(LOG_WARN, "PREVENTED: program 0x%x accessing program 0x%x file handle %d.",
+		/* A potential bug in Atari program or Hatari GEMDOS emulation */
+		Log_Printf(LOG_WARN, "program (basebase 0x%x) accessing another program (basepage 0x%x) file handle %d.",
 			     current, FileHandles[Handle].Basepage, Handle);
+		return Handle;
 	}
 	/* invalid handle */
 	return -1;
@@ -4255,6 +4256,7 @@ int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr, bool bFullBpSe
 	/* Check program header size and magic */
 	if (nFileSize < 30 || prg[0] != 0x60 || prg[1] != 0x1a)
 	{
+		free(prg);
 		Log_Printf(LOG_ERROR, "The file '%s' is not a valid PRG.\n", psPrgName);
 		return GEMDOS_EPLFMT;
 	}
@@ -4270,16 +4272,21 @@ int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr, bool bFullBpSe
 		memtop = STMemory_ReadLong(0x5a4);
 	if (baseaddr + 0x100 + nTextLen + nDataLen + nBssLen > memtop)
 	{
+		free(prg);
 		Log_Printf(LOG_ERROR, "Program too large: '%s'.\n", psPrgName);
 		return GEMDOS_ENSMEM;
 	}
 
 	if (!STMemory_SafeCopy(baseaddr + 0x100, prg + 28, nTextLen + nDataLen, psPrgName))
+	{
+		free(prg);
 		return GEMDOS_EIMBA;
+	}
 
 	/* Clear BSS */
 	if (!STMemory_SafeClear(baseaddr + 0x100 + nTextLen + nDataLen, nBssLen))
 	{
+		free(prg);
 		Log_Printf(LOG_ERROR, "Failed to clear BSS for '%s'.\n", psPrgName);
 		return GEMDOS_EIMBA;
 	}
@@ -4309,6 +4316,7 @@ int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr, bool bFullBpSe
 		nCurrAddr = baseaddr + 0x100 + nTextLen + nDataLen + nBssLen;
 		if (!STMemory_SafeClear(nCurrAddr, STMemory_ReadLong(baseaddr + 4) - nCurrAddr))
 		{
+			free(prg);
 			Log_Printf(LOG_ERROR, "Failed to clear heap for '%s'.\n",
 			           psPrgName);
 			return GEMDOS_EIMBA;
@@ -4316,11 +4324,15 @@ int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr, bool bFullBpSe
 	}
 
 	if (*(uint16_t *)&prg[26] != 0)   /* No reloc information available? */
+	{
+		free(prg);
 		return 0;
+	}
 
 	nRelTabIdx = 0x1c + nTextLen + nDataLen + nSymLen;
 	if (nRelTabIdx > nFileSize - 3)
 	{
+		free(prg);
 		Log_Printf(LOG_ERROR, "Can not parse relocation table of '%s'.\n", psPrgName);
 		return GEMDOS_EPLFMT;
 	}
@@ -4328,7 +4340,10 @@ int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr, bool bFullBpSe
 	          | (prg[nRelTabIdx + 2] << 8) | prg[nRelTabIdx + 3];
 
 	if (nRelOff == 0)
+	{
+		free(prg);
 		return 0;
+	}
 
 	nCurrAddr = baseaddr + 0x100 + nRelOff;
 	STMemory_WriteLong(nCurrAddr, STMemory_ReadLong(nCurrAddr) + baseaddr + 0x100);
@@ -4347,6 +4362,7 @@ int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr, bool bFullBpSe
 		STMemory_WriteLong(nCurrAddr, STMemory_ReadLong(nCurrAddr) + baseaddr + 0x100);
 		nRelTabIdx += 1;
 	}
+	free(prg);
 
 	if (nRelTabIdx >= nFileSize)
 	{

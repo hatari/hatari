@@ -1017,9 +1017,6 @@ static void set_x_funcs (void)
 				x_get_ibyte = NULL;
 				x_next_iword = next_iword_mmu030c_state;
 				x_next_ilong = next_ilong_mmu030c_state;
-				x_do_cycles = do_cycles;
-				x_do_cycles_pre = do_cycles;
-				x_do_cycles_post = do_cycles_post;
 			} else if (currprefs.cpu_compatible) {
 				x_prefetch = get_iword_mmu030c_state;
 				x_get_ilong = get_ilong_mmu030c_state;
@@ -1027,9 +1024,6 @@ static void set_x_funcs (void)
 				x_get_ibyte = NULL;
 				x_next_iword = next_iword_mmu030c_state;
 				x_next_ilong = next_ilong_mmu030c_state;
-				x_do_cycles = do_cycles;
-				x_do_cycles_pre = do_cycles;
-				x_do_cycles_post = do_cycles_post;
 			} else {
 				x_prefetch = get_iword_mmu030;
 				x_get_ilong = get_ilong_mmu030;
@@ -1053,15 +1047,10 @@ static void set_x_funcs (void)
 				x_get_byte = get_byte_dc030;
 			}
 		}
-		if (currprefs.cpu_cycle_exact) {
-			x_do_cycles = do_cycles_ce020;
-			x_do_cycles_pre = do_cycles_ce020;
-			x_do_cycles_post = do_cycles_ce020_post;
-		} else {
-			x_do_cycles = do_cycles;
-			x_do_cycles_pre = do_cycles;
-			x_do_cycles_post = do_cycles_post;
-		}
+		x_do_cycles = do_cycles;
+		x_do_cycles_pre = do_cycles;
+		x_do_cycles_post = do_cycles_post;
+
 	} else if (currprefs.cpu_model < 68020) {
 		// 68000/010
 		if (currprefs.cpu_cycle_exact) {
@@ -1516,19 +1505,6 @@ static void set_x_funcs (void)
 			dcache_lget = mem_access_delay_long_read_ce020;
 			dcache_wget = mem_access_delay_word_read_ce020;
 			dcache_bget = mem_access_delay_byte_read_ce020;
-			if (currprefs.cpu_data_cache) {
-				dcache_lput = mem_access_delay_long_write_ce030_cicheck;
-				dcache_wput = mem_access_delay_word_write_ce030_cicheck;
-				dcache_bput = mem_access_delay_byte_write_ce030_cicheck;
-			} else {
-				dcache_lput = mem_access_delay_long_write_ce020;
-				dcache_wput = mem_access_delay_word_write_ce020;
-				dcache_bput = mem_access_delay_byte_write_ce020;
-			}
-		} else if (currprefs.cpu_data_cache) {
-			dcache_lput = put_long030_cicheck;
-			dcache_wput = put_word030_cicheck;
-			dcache_bput = put_byte030_cicheck;
 			if (currprefs.cpu_data_cache) {
 				dcache_lput = mem_access_delay_long_write_ce030_cicheck;
 				dcache_wput = mem_access_delay_word_write_ce030_cicheck;
@@ -2769,7 +2745,7 @@ static int iack_cycle(int nr)
 #else
 	int iack_start = CPU_IACK_CYCLES_START;
 	int e_cycles;
-	int cycle_exact = currprefs.cpu_cycle_exact && !currprefs.mmu_model;
+	int cycle_exact = currprefs.cpu_cycle_exact && !currprefs.mmu_model;	// TODO/CHECK HATARI : use CpuRunCycleExact instead ?
 
 	/* In cycle exact mode, the cycles before reaching IACK are already counted */
 	if (cycle_exact)
@@ -4759,8 +4735,9 @@ void doint(void)
 		int il = intlev();
 		regs.ipl_pin = il;
 //fprintf ( stderr , "doint2 %d ipl=%x ipl_pin=%x intmask=%x spcflags=%x\n" , m68k_interrupt_delay,regs.ipl, regs.ipl_pin , regs.intmask, regs.spcflags );
-		if (regs.ipl_pin > regs.intmask || regs.ipl_pin == 7)
+		if (regs.ipl_pin > regs.intmask || regs.ipl_pin == 7) {
 			set_special(SPCFLAG_INT);
+		}
 		return;
 	}
 	if (currprefs.cpu_compatible && currprefs.cpu_model < 68020)
@@ -4971,38 +4948,13 @@ static int do_specialties (int cycles)
 			cputrace.cyclecounter = cputrace.cyclecounter_pre = cputrace.cyclecounter_post = 0;
 			cputrace.readcounter = cputrace.writecounter = 0;
 		}
-
-		if (m68k_interrupt_delay) {
-			unset_special(SPCFLAG_INT);
-			ipl_fetch ();
-			if (time_for_interrupt ()) {
-				do_interrupt (regs.ipl);
-			}
-		} else {
-			if (regs.spcflags & (SPCFLAG_INT | SPCFLAG_DOINT)) {
-				int intr = intlev ();
-				unset_special (SPCFLAG_INT | SPCFLAG_DOINT);
-#ifdef WITH_PPC
-				bool m68kint = true;
-				if (ppc_state) {
-					m68kint = ppc_interrupt(intr);
-				}
-				if (m68kint) {
-#endif
-					if (intr > 0 && intr > regs.intmask)
-						do_interrupt (intr);
-#ifdef WITH_PPC
-				}
-#endif
-			}
-		}
-
 		if (!first)
-			x_do_cycles(currprefs.cpu_cycle_exact ? 2 * CYCLE_UNIT : 4 * CYCLE_UNIT);
+			x_do_cycles (currprefs.cpu_cycle_exact ? 2 * CYCLE_UNIT : 4 * CYCLE_UNIT);
+
 #ifdef WINUAE_FOR_HATARI
 		if (!first)
 		{
-			if (currprefs.cpu_cycle_exact && !currprefs.mmu_model)
+			if (CpuRunCycleExact)
 			{
 				/* Flush all CE cycles so far to update PendingInterruptCount */
 				M68000_AddCycles_CE ( currcycle * 2 / CYCLE_UNIT );
@@ -5036,6 +4988,32 @@ static int do_specialties (int cycles)
 		if (regs.spcflags & SPCFLAG_COPPER)
 			do_copper ();
 #endif
+
+		if (m68k_interrupt_delay) {
+			unset_special(SPCFLAG_INT);
+			ipl_fetch ();
+			if (time_for_interrupt ()) {
+				do_interrupt (regs.ipl);
+			}
+		} else {
+			if (regs.spcflags & (SPCFLAG_INT | SPCFLAG_DOINT)) {
+				int intr = intlev ();
+				unset_special (SPCFLAG_INT | SPCFLAG_DOINT);
+#ifdef WITH_PPC
+				bool m68kint = true;
+				if (ppc_state) {
+					m68kint = ppc_interrupt(intr);
+				}
+				if (m68kint) {
+#endif
+					if (intr > 0 && intr > regs.intmask)
+						do_interrupt (intr);
+#ifdef WITH_PPC
+				}
+#endif
+			}
+		}
+
 		if (regs.spcflags & SPCFLAG_MODE_CHANGE) {
 			m68k_resumestopped();
 			return 1;
@@ -5223,7 +5201,9 @@ static void m68k_run_1 (void)
 	struct regstruct *r = &regs;
 	bool exit = false;
 
+#ifdef WINUAE_FOR_HATARI
 	Log_Printf(LOG_DEBUG, "m68k_run_1\n");
+#endif
 
 	while (!exit) {
 		check_debugger();
@@ -5238,10 +5218,8 @@ static void m68k_run_1 (void)
 				if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
 				{
 					int FrameCycles, HblCounterVideo, LineCycles;
-
 					Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
-
-					LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
+					LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d %"PRIu64" : " , FrameCycles, LineCycles, HblCounterVideo , CyclesGlobalClockCounter );
 					m68k_disasm_file(TraceFile, m68k_getpc (), NULL, m68k_getpc (), 1);
 				}
 #endif
@@ -5335,7 +5313,10 @@ static void m68k_run_1_ce (void)
 	bool first = true;
 	bool exit = false;
 
+#ifdef WINUAE_FOR_HATARI
 	Log_Printf(LOG_DEBUG, "m68k_run_1_ce\n");
+	CpuRunCycleExact = true;
+#endif
 
 	while (!exit) {
 		check_debugger();
@@ -5382,11 +5363,8 @@ static void m68k_run_1_ce (void)
 				if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
 				{
 					int FrameCycles, HblCounterVideo, LineCycles;
-
 					Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
-
-//fprintf ( stderr , "clock %ld\n" , CyclesGlobalClockCounter );
-					LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
+					LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d %"PRIu64" : " , FrameCycles, LineCycles, HblCounterVideo , CyclesGlobalClockCounter );
 					m68k_disasm_file(TraceFile, m68k_getpc (), NULL, m68k_getpc (), 1);
 				}
 #endif
@@ -5435,6 +5413,7 @@ static void m68k_run_1_ce (void)
 #endif
 
 				r->instruction_pc = m68k_getpc ();
+
 				(*cpufunctbl[r->opcode])(r->opcode);
 				if (!regs.loop_mode)
 					regs.ird = regs.opcode;
@@ -5884,7 +5863,7 @@ void execute_normal(void)
 		/* Take note: This is the do-it-normal loop */
 		r->opcode = get_jit_opcode();
 
-		special_mem = DISTRUST_CONSISTENT_MEM;
+		special_mem = special_mem_default;
 		pc_hist[blocklen].location = (uae_u16*)r->pc_p;
 
 		(*cpufunctbl[r->opcode])(r->opcode);
@@ -5954,7 +5933,9 @@ static void cpu_thread_run_jit(void *v)
 
 static void m68k_run_jit(void)
 {
+#ifdef WINUAE_FOR_HATARI
 	Log_Printf(LOG_DEBUG, "m68k_run_jit\n");
+#endif
 #ifdef WITH_THREADED_CPU
 	if (currprefs.cpu_thread) {
 		run_cpu_thread(cpu_thread_run_jit);
@@ -5973,7 +5954,7 @@ static void m68k_run_jit(void)
 				{
 					int FrameCycles, HblCounterVideo, LineCycles;
 					Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
-					LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
+					LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d %"PRIu64" : " , FrameCycles, LineCycles, HblCounterVideo , CyclesGlobalClockCounter );
 					m68k_disasm_file(TraceFile, m68k_getpc (), NULL, m68k_getpc (), 1);
 				}
 #endif
@@ -5983,6 +5964,7 @@ static void m68k_run_jit(void)
 				check_uae_int_request();
 				if (regs.spcflags) {
 					if (do_specialties(0)) {
+						STOPTRY;
 						return;
 					}
 				}
@@ -6122,7 +6104,7 @@ static void m68k_run_mmu060 (void)
 				{
 					int FrameCycles, HblCounterVideo, LineCycles;
 					Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
-					LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
+					LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d %"PRIu64" : " , FrameCycles, LineCycles, HblCounterVideo , CyclesGlobalClockCounter );
 					m68k_disasm_file(TraceFile, m68k_getpc (), NULL, m68k_getpc (), 1);
 				}
 #endif
@@ -6158,8 +6140,10 @@ static void m68k_run_mmu060 (void)
 					MFP_UpdateIRQ_All ( 0 );
 #endif
 				if (regs.spcflags) {
-					if (do_specialties (cpu_cycles))
+					if (do_specialties(cpu_cycles)) {
+						STOPTRY;
 						return;
+					}
 				}
 #ifdef WINUAE_FOR_HATARI
 				/* Run DSP 56k code if necessary */
@@ -6213,7 +6197,7 @@ static void m68k_run_mmu040 (void)
 				{
 					int FrameCycles, HblCounterVideo, LineCycles;
 					Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
-					LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
+					LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d %"PRIu64" : " , FrameCycles, LineCycles, HblCounterVideo , CyclesGlobalClockCounter );
 					m68k_disasm_file(TraceFile, m68k_getpc (), NULL, m68k_getpc (), 1);
 				}
 #endif
@@ -6253,8 +6237,10 @@ static void m68k_run_mmu040 (void)
 #endif
 
 				if (regs.spcflags) {
-					if (do_specialties (cpu_cycles))
+					if (do_specialties (cpu_cycles)) {
+						STOPTRY;
 						return;
+					}
 				}
 
 #ifdef WINUAE_FOR_HATARI
@@ -6299,6 +6285,8 @@ static void m68k_run_mmu030 (void)
 
 #ifdef WINUAE_FOR_HATARI
 	Log_Printf(LOG_DEBUG,  "m68k_run_mmu030\n");
+	if ( currprefs.cpu_cycle_exact )		/* m68k_run_mmu030 can run with CE mode ON or OFF */
+		CpuRunCycleExact = true;
 #endif
 
 	mmu030_opcode_stageb = -1;
@@ -6352,7 +6340,7 @@ insretry:
 					{
 						int FrameCycles, HblCounterVideo, LineCycles;
 						Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
-						LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
+						LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d %"PRIu64" : " , FrameCycles, LineCycles, HblCounterVideo , CyclesGlobalClockCounter );
 						m68k_disasm_file(TraceFile, m68k_getpc (), NULL, m68k_getpc (), 1);
 					}
 #endif
@@ -6415,8 +6403,10 @@ insretry:
 						MFP_UpdateIRQ_All ( 0 );
 #endif
 					if (regs.spcflags) {
-						if (do_specialties (cpu_cycles))
+						if (do_specialties (cpu_cycles)) {
+							STOPTRY;
 							return;
+						}
 					}
 #ifdef WINUAE_FOR_HATARI
 					/* Run DSP 56k code if necessary */
@@ -6432,7 +6422,8 @@ insretry:
 //fprintf ( stderr, "cyc_2ce %d\n" , currcycle );
 					/* Flush all CE cycles so far to update PendingInterruptCount */
 					M68000_AddCycles_CE ( currcycle * 2 / CYCLE_UNIT );
-//					currcycle = 0;	// FIXME : uncomment this when using DSP_CyclesGlobalClockCounter in DSP_Run
+					int dsp_cycles = 2 * currcycle * 2 / CYCLE_UNIT;	// FIXME : remove this when using DSP_CyclesGlobalClockCounter in DSP_Run
+					currcycle = 0;
 
 					/* We can have several interrupts at the same time before the next CPU instruction */
 					/* We must check for pending interrupt and call do_specialties_interrupt() only */
@@ -6447,23 +6438,23 @@ insretry:
 #endif
 
 					regs.instruction_cnt++;
+					regs.ipl = regs.ipl_pin;
 					if (regs.spcflags || time_for_interrupt ()) {
-						if (do_specialties (0))
+						if (do_specialties (0)) {
+							STOPTRY;
 							return;
+						}
 					}
 
 #ifdef WINUAE_FOR_HATARI
 					/* Run DSP 56k code if necessary */
 					if (bDspEnabled) {
 //fprintf ( stderr, "dsp cyc_2ce %d\n" , currcycle );
-						DSP_Run(2 * currcycle * 2 / CYCLE_UNIT);
+						DSP_Run( dsp_cycles );
 //fprintf ( stderr, "dsp cyc_2ce %d - %d\n" , currcycle * 2 / CYCLE_UNIT , (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) );
 //						DSP_Run ( DSP_CPU_FREQ_RATIO * ( CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter ) );
 					}
 #endif
-
-					regs.ipl = regs.ipl_pin;
-
 				}
 
 #ifdef WINUAE_FOR_HATARI
@@ -6510,7 +6501,10 @@ static void m68k_run_3ce (void)
 	bool exit = false;
 	int extracycles = 0;
 
+#ifdef WINUAE_FOR_HATARI
 	Log_Printf(LOG_DEBUG, "m68k_run_3ce\n");
+	CpuRunCycleExact = true;
+#endif
 
 	while (!exit) {
 		check_debugger();
@@ -6522,7 +6516,7 @@ static void m68k_run_3ce (void)
 				{
 					int FrameCycles, HblCounterVideo, LineCycles;
 					Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
-					LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
+					LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d %"PRIu64" : " , FrameCycles, LineCycles, HblCounterVideo , CyclesGlobalClockCounter );
 					m68k_disasm_file(TraceFile, m68k_getpc (), NULL, m68k_getpc (), 1);
 				}
 				currcycle = CYCLE_UNIT / 2;	/* Assume at least 1 cycle per instruction */
@@ -6545,7 +6539,8 @@ static void m68k_run_3ce (void)
 //fprintf ( stderr, "cyc_3ce %ld\n" , currcycle );
 				/* Flush all CE cycles so far to update PendingInterruptCount */
 				M68000_AddCycles_CE ( currcycle * 2 / CYCLE_UNIT );
-//				currcycle = 0;	// FIXME : uncomment this when using DSP_CyclesGlobalClockCounter in DSP_Run
+				int dsp_cycles = 2 * currcycle * 2 / CYCLE_UNIT;	// FIXME : remove this when using DSP_CyclesGlobalClockCounter in DSP_Run
+				currcycle = 0;
 
 				/* We can have several interrupts at the same time before the next CPU instruction */
 				/* We must check for pending interrupt and call do_specialties_interrupt() only */
@@ -6578,7 +6573,7 @@ static void m68k_run_3ce (void)
 #ifdef WINUAE_FOR_HATARI
 				/* Run DSP 56k code if necessary */
 				if (bDspEnabled) {
-					DSP_Run(2 * currcycle * 2 / CYCLE_UNIT);
+					DSP_Run( dsp_cycles );
 //					DSP_Run ( DSP_CPU_FREQ_RATIO * ( CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter ) );
 				}
 
@@ -6604,7 +6599,9 @@ static void m68k_run_3p(void)
 	bool exit = false;
 	int cycles;
 
+#ifdef WINUAE_FOR_HATARI
 	Log_Printf(LOG_DEBUG, "m68k_run_3p\n");
+#endif
 
 	while (!exit)  {
 		check_debugger();
@@ -6616,7 +6613,7 @@ static void m68k_run_3p(void)
 				{
 					int FrameCycles, HblCounterVideo, LineCycles;
 					Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
-					LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
+					LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d %"PRIu64" : " , FrameCycles, LineCycles, HblCounterVideo , CyclesGlobalClockCounter );
 					m68k_disasm_file(TraceFile, m68k_getpc (), NULL, m68k_getpc (), 1);
 				}
 #endif
@@ -6648,6 +6645,8 @@ static void m68k_run_3p(void)
 					M68000_AddCycles(WaitStateCycles);
 					WaitStateCycles = 0;
 				}
+				int dsp_cycles = 2 * cycles * 2 / CYCLE_UNIT;	// FIXME : remove this when using DSP_CyclesGlobalClockCounter in DSP_Run
+				currcycle = 0;
 
 				/* We can have several interrupts at the same time before the next CPU instruction */
 				/* We must check for pending interrupt and call do_specialties_interrupt() only */
@@ -6669,7 +6668,7 @@ static void m68k_run_3p(void)
 #ifdef WINUAE_FOR_HATARI
 				/* Run DSP 56k code if necessary */
 				if (bDspEnabled) {
-					DSP_Run(2 * cycles * 2 / CYCLE_UNIT);
+					DSP_Run( dsp_cycles );
 //					DSP_Run ( DSP_CPU_FREQ_RATIO * ( CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter ) );
 				}
 
@@ -6696,7 +6695,10 @@ static void m68k_run_2ce (void)
 	bool exit = false;
 	bool first = true;
 
+#ifdef WINUAE_FOR_HATARI
 	Log_Printf(LOG_DEBUG, "m68k_run_2ce\n");
+	CpuRunCycleExact = true;
+#endif
 
 	while (!exit) {
 		check_debugger();
@@ -6749,7 +6751,7 @@ static void m68k_run_2ce (void)
 				{
 					int FrameCycles, HblCounterVideo, LineCycles;
 					Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
-					LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
+					LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d %"PRIu64" : " , FrameCycles, LineCycles, HblCounterVideo , CyclesGlobalClockCounter );
 					m68k_disasm_file(TraceFile, m68k_getpc (), NULL, m68k_getpc (), 1);
 #if 0
 // logs to debug data cache issues
@@ -6841,7 +6843,8 @@ fprintf ( stderr , "cache valid %d tag1 %x lws1 %x ctag %x data %x mem=%x\n" , c
 //fprintf ( stderr, "cyc_2ce %d\n" , currcycle );
 				/* Flush all CE cycles so far to update PendingInterruptCount */
 				M68000_AddCycles_CE ( currcycle * 2 / CYCLE_UNIT );
-//				currcycle = 0;	// FIXME : uncomment this when using DSP_CyclesGlobalClockCounter in DSP_Run
+				int dsp_cycles = 2 * currcycle * 2 / CYCLE_UNIT;	// FIXME : remove this when using DSP_CyclesGlobalClockCounter in DSP_Run
+				currcycle = 0;
 
 				/* We can have several interrupts at the same time before the next CPU instruction */
 				/* We must check for pending interrupt and call do_specialties_interrupt() only */
@@ -6856,17 +6859,17 @@ fprintf ( stderr , "cache valid %d tag1 %x lws1 %x ctag %x data %x mem=%x\n" , c
 #endif
 
 		cont:
+				regs.ipl = regs.ipl_pin;
 				if (r->spcflags || time_for_interrupt ()) {
 					if (do_specialties (0))
 						exit = true;
 				}
 
-				regs.ipl = regs.ipl_pin;
 #ifdef WINUAE_FOR_HATARI
 				/* Run DSP 56k code if necessary */
 				if (bDspEnabled) {
 //fprintf ( stderr, "dsp cyc_2ce %d\n" , currcycle );
-					DSP_Run(2 * currcycle * 2 / CYCLE_UNIT);
+					DSP_Run( dsp_cycles );
 //fprintf ( stderr, "dsp cyc_2ce %d - %d\n" , currcycle * 2 / CYCLE_UNIT , (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) );
 //					DSP_Run ( DSP_CPU_FREQ_RATIO * ( CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter ) );
 				}
@@ -6878,11 +6881,11 @@ fprintf ( stderr , "cache valid %d tag1 %x lws1 %x ctag %x data %x mem=%x\n" , c
 			}
 		} CATCH(prb) {
 			bus_error();
+			regs.ipl = regs.ipl_pin;
 			if (r->spcflags || time_for_interrupt()) {
 				if (do_specialties(0))
 					exit = true;
 			}
-			regs.ipl = regs.ipl_pin;
 		} ENDTRY
 	}
 }
@@ -6896,7 +6899,9 @@ static void m68k_run_2p (void)
 	bool exit = false;
 	bool first = true;
 
+#ifdef WINUAE_FOR_HATARI
 	Log_Printf(LOG_DEBUG, "m68k_run_2p\n");
+#endif
 
 	while (!exit) {
 		check_debugger();
@@ -6947,7 +6952,7 @@ static void m68k_run_2p (void)
 				{
 					int FrameCycles, HblCounterVideo, LineCycles;
 					Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
-					LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
+					LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d %"PRIu64" : " , FrameCycles, LineCycles, HblCounterVideo , CyclesGlobalClockCounter );
 					m68k_disasm_file(TraceFile, m68k_getpc (), NULL, m68k_getpc (), 1);
 				}
 #endif
@@ -7038,6 +7043,8 @@ cont:
 					WaitStateCycles = 0;
 				}
 //fprintf ( stderr , "waits %d %d %ld\n" , cpu_cycles*2/CYCLE_UNIT , WaitStateCycles , CyclesGlobalClockCounter );
+				int dsp_cycles = 2 * cpu_cycles * 2 / CYCLE_UNIT;	// FIXME : remove this when using DSP_CyclesGlobalClockCounter in DSP_Run
+				currcycle = 0;
 
 				/* We can have several interrupts at the same time before the next CPU instruction */
 				/* We must check for pending interrupt and call do_specialties_interrupt() only */
@@ -7062,7 +7069,7 @@ cont:
 				if (bDspEnabled) {
 //if ( DSP_CPU_FREQ_RATIO * ( (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) << nCpuFreqShift )  - 2 * cpu_cycles * 2 / CYCLE_UNIT >= 8 )
 //fprintf ( stderr , "dsp %d %d\n" , 2 * cpu_cycles * 2 / CYCLE_UNIT , DSP_CPU_FREQ_RATIO * ( (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) << nCpuFreqShift ) );
-					DSP_Run(2 * cpu_cycles * 2 / CYCLE_UNIT);
+					DSP_Run( dsp_cycles );
 //					DSP_Run ( DSP_CPU_FREQ_RATIO * ( CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter ) );
 				}
 
@@ -7128,7 +7135,9 @@ static void m68k_run_2_000(void)
 	struct regstruct *r = &regs;
 	bool exit = false;
 
+#ifdef WINUAE_FOR_HATARI
 	Log_Printf(LOG_DEBUG, "m68k_run_2_000\n");
+#endif
 
 	while (!exit) {
 		check_debugger();
@@ -7140,7 +7149,7 @@ static void m68k_run_2_000(void)
 				{
 					int FrameCycles, HblCounterVideo, LineCycles;
 					Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
-					LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
+					LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d %"PRIu64" : " , FrameCycles, LineCycles, HblCounterVideo , CyclesGlobalClockCounter );
 					m68k_disasm_file(stderr, m68k_getpc (), NULL, m68k_getpc (), 1);
 				}
 #endif
@@ -7218,7 +7227,9 @@ static void m68k_run_2_020(void)
 	struct regstruct *r = &regs;
 	bool exit = false;
 
+#ifdef WINUAE_FOR_HATARI
 	Log_Printf(LOG_DEBUG, "m68k_run_2_020\n");
+#endif
 
 	while (!exit) {
 		check_debugger();
@@ -7230,7 +7241,7 @@ static void m68k_run_2_020(void)
 				{
 					int FrameCycles, HblCounterVideo, LineCycles;
 					Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
-					LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
+					LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d %"PRIu64" : " , FrameCycles, LineCycles, HblCounterVideo , CyclesGlobalClockCounter );
 					m68k_disasm_file(TraceFile, m68k_getpc (), NULL, m68k_getpc (), 1);
 				}
 #endif
@@ -7307,7 +7318,7 @@ static void m68k_run_mmu (void)
 		{
 			int FrameCycles, HblCounterVideo, LineCycles;
 			Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
-			LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
+			LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d %"PRIu64" : " , FrameCycles, LineCycles, HblCounterVideo , CyclesGlobalClockCounter );
 			m68k_disasm_file(TraceFile, m68k_getpc (), NULL, m68k_getpc (), 1);
 		}
 #endif
@@ -7570,6 +7581,9 @@ void m68k_go (int may_quit)
 
 		/* Restore debugger state (breakpoints) after a reset */
 		M68000_RestoreDebugger();
+
+		/* Set cycle exact mode to false by default */
+		CpuRunCycleExact = false;
 #endif
 
 #if 0
@@ -9615,6 +9629,10 @@ static void fill_icache030(uae_u32 addr)
 #if VALIDATE_68030_DATACACHE
 static void validate_dcache030(void)
 {
+#ifdef WINUAE_FOR_HATARI
+	int	BusMode_old = BusMode;
+	BusMode = BUS_MODE_DEBUGGER;				/* Don't trigger bus error when reading RAM 0-$7FF */
+#endif
 	for (int i = 0; i < CACHELINES030; i++) {
 		struct cache030 *c = &dcaches030[i];
 		uae_u32 addr = c->tag & ~((CACHELINES030 << 4) - 1);
@@ -9629,10 +9647,17 @@ static void validate_dcache030(void)
 			addr += 4;
 		}
 	}
+#ifdef WINUAE_FOR_HATARI
+	BusMode = BusMode_old;
+#endif
 }
 
 static void validate_dcache030_read(uae_u32 addr, uae_u32 ov, int size)
 {
+#ifdef WINUAE_FOR_HATARI
+	int	BusMode_old = BusMode;
+	BusMode = BUS_MODE_DEBUGGER;				/* Don't trigger bus error when reading RAM 0-$7FF */
+#endif
 	uae_u32 ov2;
 	if (size == 2) {
 		ov2 = get_long(addr);
@@ -9646,6 +9671,9 @@ static void validate_dcache030_read(uae_u32 addr, uae_u32 ov, int size)
 	if (ov2 != ov) {
 		write_log(_T("Address read %08x data cache mismatch %08x != %08x\n"), addr, ov2, ov);
 	}
+#ifdef WINUAE_FOR_HATARI
+	BusMode = BusMode_old;
+#endif
 }
 #endif
 
@@ -9842,15 +9870,19 @@ bool read_dcache030_2_real (uaecptr addr, uae_u32 size, uae_u32 *valp);
 static bool read_dcache030_2(uaecptr addr, uae_u32 size, uae_u32 *valp)
 {
   bool b;
+  int	BusMode_old = BusMode;
 
   b = read_dcache030_2_real ( addr , size , valp );
   if ( b==false)
     return false;
 
+  BusMode = BUS_MODE_DEBUGGER;				/* Don't trigger bus error when reading RAM 0-$7FF */
   if ( ( ( size==2 ) && ( *valp != get_long ( addr ) ) )
     || ( ( size==1 ) && ( (*valp&0xffff) != (get_word ( addr ) & 0xffff) ) )
     || ( ( size==0 ) && ( (*valp&0xff) != (get_byte ( addr ) & 0xff ) ) ) )
     fprintf ( stderr , "d-cache mismatch pc=%x addr=%x size=%d cache=%x != mem=%x, d-cache error ?\n" , m68k_getpc(), addr, size, *valp , get_long(addr) );
+
+  BusMode = BusMode_old;
   return true;
 }
 bool read_dcache030_2_real(uaecptr addr, uae_u32 size, uae_u32 *valp)

@@ -30,6 +30,7 @@ const char TOS_fileid[] = "Hatari tos.c";
 #include "log.h"
 #include "m68000.h"
 #include "memorySnapShot.h"
+#include "nvram.h"
 #include "stMemory.h"
 #include "str.h"
 #include "tos.h"
@@ -1004,13 +1005,14 @@ static uint8_t *TOS_LoadImage(void)
 		 * just for fun. */
 		TosAddress = 0xfc0000;
 	}
-	else if (TosVersion < 0x100 || TosVersion >= 0x500 || TosSize > 1024*1024L
+	else if (TosVersion < 0x100 || TosVersion >= 0x700 || TosSize > 1024*1024L
 	         || (TosAddress == 0xfc0000 && TosSize > 224*1024L)
 	         || (bRamTosImage && TosAddress + TosSize > STRamEnd)
 	         || (!bRamTosImage && TosAddress != 0xe00000 && TosAddress != 0xfc0000))
 	{
 		Log_AlertDlg(LOG_FATAL, "Your TOS image seems not to be a valid TOS ROM file!\n"
-		             "(TOS version %x, address $%x)", TosVersion, TosAddress);
+		             "(TOS version %x.%02x, address $%x)",
+			     TosVersion >> 8, TosVersion & 0xff, TosAddress);
 		free(pTosFile);
 		return NULL;
 	}
@@ -1102,6 +1104,7 @@ int TOS_InitImage(void)
 {
 	uint8_t *pTosFile = NULL;
 	Uint32 logopatch_addr = 0;
+	Uint16 osconf, countrycode;
 
 	bTosImageLoaded = false;
 
@@ -1178,6 +1181,21 @@ int TOS_InitImage(void)
 		Log_Printf(LOG_DEBUG, "Skipped TOS patches.\n");
 	}
 
+	/* whether to override EmuTOS country code */
+	osconf = STMemory_ReadWord(TosAddress+0x1C);
+	countrycode = osconf >> 1;
+	if (bIsEmuTOS && countrycode == TOS_LANG_ALL && !NvRam_Present() &&
+	    ConfigureParams.Keyboard.nCountryCode != TOS_LANG_UNKNOWN)
+	{
+		countrycode = ConfigureParams.Keyboard.nLanguage;
+		/* low bit: us -> NTSC (0), any other -> PAL (1) */
+		osconf = (countrycode << 1) | (countrycode?1:0);
+		STMemory_WriteWord(TosAddress+0x1C, osconf);
+		Log_Printf(LOG_WARN, "=> EmuTOS country code: %d (%s), %s\n",
+			   countrycode, TOS_LanguageName(countrycode),
+			   (osconf & 1) ? "PAL" : "NTSC");
+	}
+
 	/*
 	 * patch some values into the "Draw logo" patch.
 	 * Needs to be called after final VDI resolution has been determined.
@@ -1250,24 +1268,50 @@ static const struct {
 
 /**
  * TOS_ValidCountryCode: returns parsed country code if
- * it's recognized, otherwise valid ones are shown and
- * TOS_LANG_UNKNOWN is returned
+ * it's recognized, otherwise TOS_LANG_UNKNOWN is returned.
  */
-int TOS_ParseCountryCode(const char *code, const char *info)
+int TOS_ParseCountryCode(const char *code)
 {
 	for (int i = 0; i < ARRAY_SIZE(countries); i++) {
 		if (strcmp(code, countries[i].code) == 0) {
 			return countries[i].value;
 		}
 	}
-	fprintf(stderr, "Unrecognized %s code '%s'!\n", info, code);
+	return TOS_LANG_UNKNOWN;
+}
 
+void TOS_ShowCountryCodes(void)
+{
 	fprintf(stderr, "\nTOS v4 supports:\n");
 	for (int i = 0; i < ARRAY_SIZE(countries); i++) {
 		if (i == 7)
 			fprintf(stderr, "\nEmuTOS 1024k (v1.1.x) supports also:\n");
 		fprintf(stderr, "- %s : %s\n",
 			countries[i].code, countries[i].name);
+	}
+}
+
+/**
+ * TOS_DefaultLanguage: return TOS country code matching LANG
+ * environment variable. Supports LANG formats: "uk", "en_UK.*"
+ */
+int TOS_DefaultLanguage(void)
+{
+	int len;
+	const char *lang = getenv("LANG");
+	if (!lang)
+		return TOS_LANG_UNKNOWN;
+
+	len = strlen(lang);
+	if (len == 2)
+		return TOS_ParseCountryCode(lang);
+
+	if (len >= 5 && lang[2] == '_') {
+		char cc[3];
+		cc[0] = tolower(lang[3]);
+		cc[1] = tolower(lang[4]);
+		cc[2] = '\0';
+		return TOS_ParseCountryCode(cc);
 	}
 	return TOS_LANG_UNKNOWN;
 }

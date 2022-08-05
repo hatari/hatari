@@ -826,8 +826,11 @@ static void Main_LoadInitialConfig(void)
 {
 	char *psGlobalConfig;
 
-	psGlobalConfig = malloc(FILENAME_MAX);
-	if (psGlobalConfig && !getenv("HATARI_TEST"))
+	if (getenv("HATARI_TEST"))
+		psGlobalConfig = NULL;
+	else
+		psGlobalConfig = malloc(FILENAME_MAX);
+	if (psGlobalConfig)
 	{
 		File_MakePathBuf(psGlobalConfig, FILENAME_MAX, CONFDIR,
 		                 "hatari", "cfg");
@@ -839,6 +842,8 @@ static void Main_LoadInitialConfig(void)
 
 	/* Now try the users configuration file */
 	Configuration_Load(NULL);
+	if (ConfigureParams.Keyboard.nLanguage == TOS_LANG_UNKNOWN)
+		ConfigureParams.Keyboard.nLanguage = TOS_DefaultLanguage();
 }
 
 /*-----------------------------------------------------------------------*/
@@ -955,7 +960,7 @@ int main(int argc, char *argv[])
 		Avi_StartRecording ( ConfigureParams.Video.AviRecordFile , ConfigureParams.Screen.bCrop ,
 			ConfigureParams.Video.AviRecordFps == 0 ?
 				ClocksTimings_GetVBLPerSec ( ConfigureParams.System.nMachineType , nScreenRefreshRate ) :
-				(Uint32)ConfigureParams.Video.AviRecordFps << CLOCKS_TIMINGS_SHIFT_VBL ,
+				ClocksTimings_GetVBLPerSec ( ConfigureParams.System.nMachineType , ConfigureParams.Video.AviRecordFps ) ,
 			1 << CLOCKS_TIMINGS_SHIFT_VBL ,
 			ConfigureParams.Video.AviRecordVcodec );
 

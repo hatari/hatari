@@ -12,7 +12,7 @@ build-normal:
 
 build-alt:
  script:
- - apt-get install -y -qq cmake libsdl2-dev portaudio19-dev libportmidi-dev
+ - apt-get install -y -qq cmake libsdl2-dev libportmidi-dev python3
  - rm -rf /usr/include/zlib.h /usr/include/png.h /usr/include/readline*
  - ./configure --disable-small-mem --disable-dsp --enable-debug --disable-tracing
  - make
@@ -32,17 +32,17 @@ build-32bit:
 build-clang:
  script:
  - apt-get install -y -qq cmake clang libsdl2-dev libpng-dev zlib1g-dev
-                      libudev-dev portaudio19-dev libportmidi-dev tidy
+                      libudev-dev libportmidi-dev tidy python3
  - CC="clang" CFLAGS="-O3 -Werror" ./configure --enable-debug
  - make
  - make test
 
 build-mingw:
- image: fedora:33
+ image: fedora:latest
  before_script:
  - dnf update -y
  - dnf install -y cmake make gcc python-unversioned-command mingw32-gcc
-                  mingw32-SDL2 mingw32-zlib
+                  mingw32-SDL2 mingw32-zlib python3
  script:
  - cmake -DCMAKE_TOOLCHAIN_FILE=cmake/Toolchain-mingw32-win64_32.cmake
          -DENABLE_WERROR:BOOL=1 .

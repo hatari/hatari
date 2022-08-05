@@ -7,7 +7,7 @@ diskfile=hd.img   # HD image filename
 partname=DOS      # partition name
 
 # no args or first arg has non-digit characters?
-if [ $# -lt 1 ] || [ -n "$(echo $1|tr -d 0-9)" ]; then
+if [ $# -lt 1 ] || [ -n "$(echo "$1"|tr -d 0-9)" ]; then
 	name=${0##*/}
 	echo
 	echo "usage: $name <size> [filename] [partition name] [directory]"
@@ -101,7 +101,7 @@ sectorsize=512
 
 # partition size in sectors:
 # 16*32*512 is 1/4MB -> multiply by 4 to get number of required sectors
-partsectors=$((4*$disksize*$diskheads*$tracksectors))
+partsectors=$((4*disksize*diskheads*tracksectors))
 
 # temporary files
 tmppart=$diskfile.part
@@ -230,7 +230,7 @@ od -t x1 "$diskfile"
 # ------------------------------------------------------------------
 
 echo
-step=$(($step+1))
+step=$((step+1))
 echo "$step) Create an Atari TOS compatible DOS partition..."
 # mkdosfs keeps the sector count below 32765 when -A is used by increasing
 # the logical sector size (this is for TOS compatibility, -A guarantees
@@ -243,12 +243,12 @@ clustertmp=$((partsectors/2))
 echo "Sectors: $partsectors, sectors/track: $tracksize, clusters: $clustertmp"
 while [ $clustertmp -gt 32765 ]; do
 	clustertmp=$((clustertmp/2))
-	tracksize=$(($tracksize*2))
+	tracksize=$((tracksize*2))
 	echo "Doubling sector size as >32765 clusters -> $clustertmp clusters"
 done
-sectors=$(($partsectors/$tracksize))
-sectors=$(($sectors*$tracksize))
-kilobytes=$(($sectors/2))
+sectors=$((partsectors/tracksize))
+sectors=$((sectors*tracksize))
+kilobytes=$((sectors/2))
 if [ $sectors -ne $partsectors ]; then
 	echo "Align sector count with clusters/sectors/track: $partsectors -> $sectors ($kilobytes kB)"
 fi
@@ -259,22 +259,22 @@ mkdosfs -A -F 16 -n "$partname" -C "$tmppart" $kilobytes
 
 if [ -n "$contentdir" ]; then
 	echo
-	step=$(($step+1))
+	step=$((step+1))
 	echo "$step) Clip/convert long file names to Atari compatible 8+3 format..."
 	echo "$convert $contentdir $convertdir"
-	$convert "$contentdir" "$convertdir"
-	if [ $? -ne 0 ]; then
+	if ! $convert "$contentdir" "$convertdir"; then
 		error="conversion failed."
 		exit 2
 	fi
 
 	echo
-	step=$(($step+1))
+	step=$((step+1))
 	# copy contents of given directory to the new partition
 	echo "$step) Copy the initial content to the partition..."
-	echo "MTOOLS_NO_VFAT=1 mcopy -i $tmppart -spmv $convertdir/* ::"
-	MTOOLS_NO_VFAT=1 mcopy -i "$tmppart" -spmv "$convertdir"/* ::
-	if [ $? -ne 0 ]; then
+	echo "export MTOOLS_NO_VFAT=1"
+	export MTOOLS_NO_VFAT=1
+	echo "mcopy -i $tmppart -spmv $convertdir/* ::"
+	if ! mcopy -i "$tmppart" -spmv "$convertdir"/* ::; then
 		error="mcopy failed."
 		exit 2
 	fi
@@ -285,12 +285,12 @@ fi
 # ------------------------------------------------------------------
 
 echo
-step=$(($step+1))
+step=$((step+1))
 # copy the partition into disk
 echo "$step) Copy the partition to disk image..."
-echo "dd if=$tmppart of=$diskfile bs=512 seek=$((1+$skip)) count=$sectors"
-dd if="$tmppart" of="$diskfile" bs=512 seek=$((1+$skip)) count=$sectors
+echo "dd if=$tmppart of=$diskfile bs=512 seek=$((1+skip)) count=$sectors"
+dd if="$tmppart" of="$diskfile" bs=512 seek=$((1+skip)) count=$sectors
 
-step=$(($step+1))
+step=$((step+1))
 # cleanup is done by exit_cleanup() trap
 error=""

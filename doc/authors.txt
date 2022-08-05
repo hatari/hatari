@@ -142,6 +142,11 @@ random order - and if someone is missing here, please remind us!):
 - Jari Kleimola : PortMidi support which allows MIDI usage on
   Windows & OSX + required SDL & OSX GUI changes
 
+- Federico Ulivi : tracked down and provided fixes for the invalid
+  PortMidi data issues, finally making PortMidi support stable. Helped
+  determine remaining Notator sysex issue to be softsynth bug, not
+  Hatari one
+
 - Mark Fechtner : patch to not use tmpfile() directly under Windows
 
 - Miro Kropáček : patch for correct V flag when using BCD instructions
@@ -162,6 +167,9 @@ random order - and if someone is missing here, please remind us!):
   for PyGtk deprecations warnings in Python UI
 
 - Václav Lipert : Ability to change Windows drive in file select dialog
+
+- Chris Jenkins : patch to compile the macOS version when PortMidi is not 
+  available.
 
 See also "thanks.txt" for people who've helped Hatari development in
 other ways than code contributions.

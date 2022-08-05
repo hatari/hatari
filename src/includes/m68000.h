@@ -26,8 +26,7 @@
 #include "cycInt.h"
 #include "log.h"
 
-
-/* 68000 Register defines */
+/* 68000 register defines */
 enum {
   REG_D0,    /* D0.. */
   REG_D1,
@@ -132,7 +131,9 @@ enum {
 /* Bus access mode */
 #define	BUS_MODE_CPU		0			/* bus is owned by the cpu */
 #define	BUS_MODE_BLITTER	1			/* bus is owned by the blitter */
-
+#define BUS_MODE_DEBUGGER	2			/* bus is owned by debugger : special case to access RAM 0-0x7FF */
+							/* without doing a bus error when not in supervisor mode */
+							/* eg : this is used in some debug functions that do get_long/word/byte */
 
 /* [NP] Notes on IACK :
  * When an interrupt happens, it's possible a similar interrupt happens again
@@ -213,6 +214,7 @@ extern int nCpuFreqShift;
 extern int WaitStateCycles;
 extern int BusMode;
 extern bool	CPU_IACK;
+extern bool	CpuRunCycleExact;
 
 extern int	LastOpcodeFamily;
 extern int	LastInstrCycles;
@@ -377,5 +379,6 @@ extern void M68000_ChangeCpuFreq ( void );
 extern Uint16 M68000_GetSR ( void );
 extern void M68000_SetSR ( Uint16 v );
 extern void M68000_SetPC ( uaecptr v );
+extern void M68000_MMU_Info(FILE *fp, Uint32 flags);
 
 #endif

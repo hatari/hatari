@@ -570,6 +570,7 @@ BOOL flag1, flag2;
 	[midiInPort  addItemWithTitle:[NSString stringWithCString:szinPortName encoding:NSASCIIStringEncoding]];
 	[midiOutPort addItemWithTitle:[NSString stringWithCString:szinPortName encoding:NSASCIIStringEncoding]];
 	
+#ifdef HAVE_PORTMIDI
 	int i = 0;
 	const char* portName = NULL;
 	while ((portName = Midi_Host_GetPortName(portName, +1, true)))
@@ -578,6 +579,7 @@ BOOL flag1, flag2;
 	portName = NULL;
 	while ((portName = Midi_Host_GetPortName(portName, +1, false)))
 		[midiOutPort addItemWithTitle:[NSString stringWithCString:portName encoding:NSASCIIStringEncoding]];
+#endif		// HAVE_PORTMIDI
 }
 
 // ----------------------------------------------------------------------------
@@ -594,10 +596,12 @@ BOOL flag1, flag2;
 //
 - (void)saveMidiDropdowns
 {
-	strncpy(ConfigureParams.Midi.sMidiInPortName,  [[midiInPort  titleOfSelectedItem] UTF8String], FILENAME_MAX);
-	strncpy(ConfigureParams.Midi.sMidiOutPortName, [[midiOutPort titleOfSelectedItem] UTF8String], FILENAME_MAX);
-	ConfigureParams.Midi.sMidiInPortName[FILENAME_MAX-1]  = 0;
-	ConfigureParams.Midi.sMidiOutPortName[FILENAME_MAX-1] = 0;
+	const char *midiOutPortUtf8String = [[midiOutPort titleOfSelectedItem] UTF8String];
+	const char *midiInPortUtf8String = [[midiInPort  titleOfSelectedItem] UTF8String];
+	strlcpy(ConfigureParams.Midi.sMidiOutPortName, midiOutPortUtf8String ? midiOutPortUtf8String : "Off",
+	        sizeof(ConfigureParams.Midi.sMidiOutPortName));
+	strlcpy(ConfigureParams.Midi.sMidiInPortName, midiInPortUtf8String ? midiInPortUtf8String : "Off",
+	        sizeof(ConfigureParams.Midi.sMidiInPortName));
 }
 
 
@@ -1066,8 +1070,8 @@ BOOL flag1, flag2;
 	 case 3: ConfigureParams.System.VideoTimingMode=VIDEO_TIMING_MODE_WS3; break;
 	 case 4: ConfigureParams.System.VideoTimingMode=VIDEO_TIMING_MODE_WS4; break;
 	}
-	int ttramsizeMB=[TTRAMSizeValue intValue]*1024;										//JV 12-2016
-	ConfigureParams.Memory.TTRamSize_KB=ttramsizeMB;
+	int ttramsize_MB=[TTRAMSizeValue intValue];							//JV 12-2016
+	ConfigureParams.Memory.TTRamSize_KB=1024*ttramsize_MB;
 
 	//EXPORT_NTEXTFIELD(TTRAMSizeValue, ConfigureParams.Memory.TTRamSize_KB);			// MS 12-2016
 

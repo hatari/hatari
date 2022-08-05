@@ -216,7 +216,8 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
 	ret = (int)( ftello ( fp ) - start );			/* size of the png image */
 png_cleanup:
 	if (png_ptr)
-		png_destroy_write_struct(&png_ptr, NULL);
+		/* handles info_ptr being NULL */
+		png_destroy_write_struct(&png_ptr, &info_ptr);
 	return ret;
 }
 #endif

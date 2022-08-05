@@ -9,7 +9,7 @@
 
 static void ConvertLowRes_320x32Bit_Spec(void)
 {
-	Uint32 *edi, *ebp;
+	Uint32 *edi;
 	Uint32 *esi;
 	Uint32 eax, ebx, ecx, edx;
 	Uint32 pixelspace[5]; /* Workspace to store pixels to so can print in right order for Spec512 */
@@ -27,10 +27,9 @@ static void ConvertLowRes_320x32Bit_Spec(void)
 
 		Spec512_StartScanLine();        /* Build up palettes for every 4 pixels, store in 'ScanLinePalettes' */
 
-		/* Get screen addresses, 'edi'-ST screen, 'ebp'-Previous ST screen, 'esi'-PC screen */
+		/* Get screen addresses, 'edi'-ST screen, 'esi'-PC screen */
 		eax = STScreenLineOffset[y] + STScreenLeftSkipBytes;  /* Offset for this line + Amount to skip on left hand side */
 		edi = (Uint32 *)((Uint8 *)pSTScreen + eax);       /* ST format screen 4-plane 16 colors */
-		ebp = (Uint32 *)((Uint8 *)pSTScreenCopy + eax);   /* Previous ST format screen */
 		esi = (Uint32 *)pPCScreenDest;                    /* PC format screen */
 
 		x = STScreenWidthBytes >> 3;    /* Amount to draw across in 16-pixels (8 bytes) */
@@ -84,7 +83,6 @@ static void ConvertLowRes_320x32Bit_Spec(void)
 
 			esi += 16;                  /* Next PC pixels */
 			edi += 2;                   /* Next ST pixels */
-			ebp += 2;                   /* Next ST copy pixels */
 		}
 		while (--x);                    /* Loop on X */
 

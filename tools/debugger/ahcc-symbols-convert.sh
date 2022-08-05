@@ -12,7 +12,7 @@ usage ()
 	echo "format understood by the Hatari debugger 'symbols' command."
 	echo
 	echo "For example:"
-	echo "  $name etos512.map > etos512.sym"
+	echo "  $name etos1024k.map > etos1024k.sym"
 	echo
 	echo "ERROR: $1!"
 	echo
@@ -22,7 +22,7 @@ if [ $# -ne 1 ]; then
 	usage "incorrect number of arguments"
 fi
 
-if [ \! -f $1 ]; then
+if [ ! -f "$1" ]; then
 	usage "given '$1' address map file not found"
 fi
 
@@ -30,8 +30,9 @@ fi
 # remove "[ size]" stuff that confuses awk field parsing,
 # and convert those with awk to the "nm" format:
 #   <address> <type> <symbol name>
-egrep ' (TEXT|DATA|BSS) ' $1 | egrep -v '(TEXT|DATA|BSS)[[:space:]]*$' |\
-sed 's/\[[^]]*\]//' | awk '
+grep -E ' (TEXT|DATA|BSS) ' "$1" |\
+ grep -E -v '(TEXT|DATA|BSS)[[:space:]]*$' |\
+ sed 's/\[[^]]*\]//' | awk '
 /^ .* TEXT / { print $1, "T", $4 }
 /^ .* DATA / { print $1, "D", $4 }
 /^ .* BSS /  { print $1, "B", $4 }'

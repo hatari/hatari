@@ -97,7 +97,7 @@ static const TCHAR *disasm_lc_hex2(const TCHAR *s, bool noprefix)
 				if (!s2) {
 					break;
 				}
-				tmp[0] = 'x';
+				tmp[s2 - tmp] = 'x';
 			}
 		}
 	}
@@ -289,16 +289,17 @@ static void showea_val(TCHAR *buffer, uae_u16 opcode, uaecptr addr, int size)
 		}
 	}
 skip:
-#ifndef WINUAE_FOR_HATARI
 	for (int i = 0; i < size; i++) {
+#ifndef WINUAE_FOR_HATARI
 		TCHAR name[256];
 		if (debugmem_get_symbol(addr + i, name, sizeof(name) / sizeof(TCHAR))) {
+#else
+		const char *name;
+		if ((name = Symbols_GetByCpuAddress(addr + i, SYMTYPE_TEXT))) {
+#endif
 			_stprintf(buffer + _tcslen(buffer), _T(" %s"), name);
 		}
 	}
-#else
-	return;
-#endif
 }
 
 uaecptr ShowEA_disp(uaecptr *pcp, uaecptr base, TCHAR *buffer, const TCHAR *name, bool pcrel)
@@ -682,7 +683,7 @@ uaecptr ShowEA(void *f, uaecptr pc, uae_u16 opcode, int reg, amodes mode, wordsi
 
 static const TCHAR *ccnames[] =
 {
-	_T("T "),_T("F "),_T("HI"),_T("LS"),_T("CC"),_T("CS"),_T("NE"),_T("EQ"),
+	_T("T"), _T("F"), _T("HI"),_T("LS"),_T("CC"),_T("CS"),_T("NE"),_T("EQ"),
 	_T("VC"),_T("VS"),_T("PL"),_T("MI"),_T("GE"),_T("LT"),_T("GT"),_T("LE")
 };
 static const TCHAR *fpccnames[] =
@@ -1970,7 +1971,7 @@ uae_u32 m68k_disasm_2(TCHAR *buf, int bufsize, uaecptr pc, uae_u16 *bufpc, int b
 					_tcscpy(ccpt, fpccnames[extra & 0x1f]);
 				}
 			} else {
-				_tcsncpy(ccpt, ccnames[dp->cc], 2);
+				_tcscpy(ccpt, ccnames[dp->cc]);
 				if (dp->mnemo == i_Bcc && dp->cc == 0) {
 					_tcscpy(ccpt, _T("RA")); // BT -> BRA
 				}

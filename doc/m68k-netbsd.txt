@@ -114,7 +114,7 @@ Fetching NetBSD v8.1 binaries (which work better than latest v9.1):
     correctly visible only when boot fails.
 
 Unlike with Linux, 030 cache and prefetch emulation doesn't have
-impact on these.  Neither does 32-bit adressing / TT-RAM.
+impact on these.  Neither does 32-bit addressing / TT-RAM.
 
 
 5. Installing NetBSD

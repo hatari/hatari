@@ -28,29 +28,6 @@ to missing EmuTOS functionality and byte-exactness with old TOS
 versions, not to Hatari.
 
 
-Emulator bugs
--------------
-
-* RS232 support on Mac / BSD:
-
-  - Threaded RS232 code is completely broken for BSD derived systems
-    like Mac, because they don't implement fine-grained FILE operation
-    locking like Linux/Glibc does (and Windows?). As a result,
-    re-configuring, or closing RS232 files, will cause deadlock with
-    the reading thread
-
-  - With SDL1, close deadlock could be handled by killing the read
-    thread before closing file handles, but SDL2 removed that
-    functionality. As a result, enabling RS232 will freeze SDL2 Hatari
-    version on exit on BSD / Mac, even if RS232 was unused
-
-  - Solving this would require rewriting the code with OS specific
-    primitives (instead of using SDL), either for threading, or using
-    select().  I'd prefer latter, for clarify and to avoid polling in
-    the main thead, but it would mean that RS232 won't work on Windows
-    until somebody contributes code for that too
-
-
 Known issues / workarounds
 --------------------------
 
@@ -75,13 +52,32 @@ Known issues / workarounds
 
     WA: Avoid non-working MIDI data / softsynth combinations.
 
+* Mac GUI support only PortMidi devices, not raw MIDI devices:
+
+    Direct file access is required to use MIDI for debugging output or
+    networking (up to 16 machines) over MIDI.  Mac users have not yet
+    contributed a support for that to Mac GUI.
+
+    WA: configure that with SDL GUI for now
+
+* Neither RS-232 nor raw MIDI device file input is supported on Windows:
+
+    Input for both RS-232 and raw MIDI device files is checked with
+    File_InputAvailable() function which uses select() POSIX
+    functionality to do it.  Windows users have not yet contributed
+    corresponding Windows functionality to it.
+
+    WA: Use Linux version of Hatari under Windows:
+    https://docs.microsoft.com/en-us/windows/wsl/tutorials/gui-apps
+
 
 External bug reports
 --------------------
 
-* Problem: On real Falcon there is a minor feature in videl. You can simply
+* Problem: On real Falcon there is a minor feature in VIDEL. You can simply
   fade whole screen to black, if you just clear the Horizontal Border End
-  ($ffff8286) and start fading colors from 0 to 255 to $ffff9800 or vice versa.
+  ($ffff8286) and start fading colors from 0 to 255 to $ffff9800 or vice
+  versa:
 	test <put picture to screen>
 	move.w #255-1,d7
 	moveq #0,d6
@@ -91,7 +87,6 @@ External bug reports
 	addq.l #1,d6
 	dbf d7,.loop
   Now it does this exactly opposite direction, it fades bgcolor from 0 to 255.
-  http://developer.berlios.de/bugs/?func=detailbug&bug_id=18002&group_id=10436
 
 * To compare my real Falcon with Hatari on my Windows 7 PC, I make some short
   benchmarks with Kronos. The disk benchmark in Kronos runs in 1-2 minutes on
@@ -99,7 +94,6 @@ External bug reports
   longer than 20 minutes with GEMDOS emulation.  Only when I use the AltGr + X
   option, before the benchmark runs, then the disk benchmark in kronos is
   comparable fast as my 16MHz Falcon.
-  http://developer.berlios.de/bugs/?func=detailbug&bug_id=18298&group_id=10436
 
   -> Hatari GEMDOS emulation needs to do a lot of extra kernel file & directory
      accesses which with current code seem unavoidable.  They're a problem only

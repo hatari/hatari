@@ -23,6 +23,7 @@
 const char Midi_fileid[] = "Hatari midi.c";
 
 #include <SDL_types.h>
+#include <errno.h>
 
 #include "main.h"
 #include "configuration.h"
@@ -243,7 +244,6 @@ void Midi_Data_ReadByte(void)
 void Midi_Data_WriteByte(void)
 {
 	Uint8 nTxDataByte;
-	bool ok;
 	
 	ACIA_AddWaitCycles ();						/* Additional cycles when accessing the ACIA */
 
@@ -274,10 +274,11 @@ void Midi_Data_WriteByte(void)
 	if (!ConfigureParams.Midi.bEnableMidi)
 		return;
 
-	ok = Midi_Host_WriteByte(nTxDataByte);
-
-	/* If there was an error then stop the midi emulation */
-	if (!ok)
+	if (Midi_Host_WriteByte(nTxDataByte))
+	{
+		LOG_TRACE(TRACE_MIDI, "MIDI: write byte -> $%x\n", nTxDataByte);
+	}
+	else
 	{
 		LOG_TRACE(TRACE_MIDI, "MIDI: write error -> stop MIDI\n");
 		Midi_UnInit();
@@ -315,7 +316,7 @@ void Midi_InterruptHandler_Update(void)
 	nInChar = Midi_Host_ReadByte();
 	if (nInChar != EOF)
 	{
-		LOG_TRACE(TRACE_MIDI, "MIDI: Read character -> $%x\n", nInChar);
+		LOG_TRACE(TRACE_MIDI, "MIDI: read byte -> $%x\n", nInChar);
 		/* Copy into our internal queue */
 		nRxDataByte = nInChar;
 		MidiStatusRegister |= ACIA_SR_RX_FULL;
@@ -323,13 +324,6 @@ void Midi_InterruptHandler_Update(void)
 		/* Do we need to generate a receive interrupt? */
 		MIDI_UpdateIRQ ();
 	}
-#ifndef HAVE_PORTMIDI
-	else if (pMidiFhIn)
-	{
-		LOG_TRACE(TRACE_MIDI, "MIDI: read error (doesn't stop MIDI)\n");
-		clearerr(pMidiFhIn);
-	}
-#endif
 
 	/* Set timer */
 	CycInt_AddRelativeInterrupt ( MIDI_TRANSFER_BYTE_CYCLE , INT_CPU_CYCLE , INTERRUPT_MIDI );
@@ -347,15 +341,17 @@ void Midi_InterruptHandler_Update(void)
 static bool Midi_Host_Open(void)
 {
 #ifndef HAVE_PORTMIDI
+	int ok;
 	if (ConfigureParams.Midi.sMidiOutFileName[0])
 	{
 		/* Open MIDI output file */
 		pMidiFhOut = File_Open(ConfigureParams.Midi.sMidiOutFileName, "wb");
 		if (!pMidiFhOut)
 			return false;
-		setvbuf(pMidiFhOut, NULL, _IONBF, 0);    /* No output buffering! */
-		LOG_TRACE(TRACE_MIDI, "MIDI: Opened file '%s' for output\n",
-			 ConfigureParams.Midi.sMidiOutFileName);
+		ok = setvbuf(pMidiFhOut, NULL, _IONBF, 0);    /* No output buffering! */
+		LOG_TRACE(TRACE_MIDI, "MIDI: Opened file '%s' (%s) for output\n",
+			 ConfigureParams.Midi.sMidiOutFileName,
+			  ok == 0 ? "unbuffered" : "buffered");
 	}
 	if (ConfigureParams.Midi.sMidiInFileName[0])
 	{
@@ -363,9 +359,10 @@ static bool Midi_Host_Open(void)
 		pMidiFhIn = File_Open(ConfigureParams.Midi.sMidiInFileName, "rb");
 		if (!pMidiFhIn)
 			return false;
-		setvbuf(pMidiFhIn, NULL, _IONBF, 0);    /* No input buffering! */
-		LOG_TRACE(TRACE_MIDI, "MIDI: Opened file '%s' for input\n",
-			 ConfigureParams.Midi.sMidiInFileName);
+		ok = setvbuf(pMidiFhIn, NULL, _IONBF, 0);    /* No input buffering! */
+		LOG_TRACE(TRACE_MIDI, "MIDI: Opened file '%s' (%s) for input\n",
+			 ConfigureParams.Midi.sMidiInFileName,
+			  ok == 0 ? "unbuffered" : "buffered");
 	}
 #else
 	int i, ports;
@@ -579,8 +576,22 @@ static int Midi_Host_ReadByte(void)
 {
 #ifndef HAVE_PORTMIDI
 	if (pMidiFhIn && File_InputAvailable(pMidiFhIn))
-		return fgetc(pMidiFhIn);
-	else return EOF;
+	{
+		/* man 3p: fgetc() returns EOF on all errors, but
+		 * sets errno only for other than end-of-file issues
+		 */
+		errno = 0;
+		int ret = fgetc(pMidiFhIn);
+		if (ret != EOF)
+			return ret;
+		if (errno && errno != EAGAIN)
+		{
+			LOG_TRACE(TRACE_MIDI, "MIDI: read error: %s\n", strerror(errno));
+		}
+		/* affects only EOF indicator */
+		clearerr(pMidiFhIn);
+	}
+	return EOF;
 #else
 	// TODO: should these be reset with Midi_Init()?
 	static Uint8 msg[4];

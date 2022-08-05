@@ -1,7 +1,7 @@
 # This is an example hconsole input file
 #
 # You can try it with something like this:
-#   hconsole.py example-commands --exit -- --tos etos512k.img
+#   hconsole.py example-commands --exit -- --tos etos1024k.img
 #
 # I.e. specify EmuTOS image for Hatari and exit after the the input file.
 #

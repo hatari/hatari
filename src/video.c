@@ -659,8 +659,8 @@ typedef struct
 	int	VBlank_On_50_CheckLine;		/* 307 */
 	int	VBlank_On_60_CheckLine;		/* 257 */
 	int	VBlank_On_Hi_CheckLine;		/* 501 (no blank in mono mode ?) */
-	int	VBlank_Off_50_CheckLine;	/*  25 */
-	int	VBlank_Off_60_CheckLine;	/*  16 */
+	int	VBlank_Off_50_CheckLine;	/*  24 */
+	int	VBlank_Off_60_CheckLine;	/*  15 */
 	int	VBlank_Off_Hi_CheckLine;	/*   0 (no blank in mono mode ?) */
 	int	VBlank_CheckPos;		/* 502 same for ON and OFF test */
 
@@ -689,6 +689,11 @@ static int		VideoTiming;
 /* to the equivalent number of cycles when CPU runs at 8/16/32 MHz */
 #define VIDEO_HPOS_TO_CYCLE( pos )	( pos << nCpuFreqShift )
 #define VIDEO_CYCLE_TO_HPOS( cyc )	( cyc >> nCpuFreqShift )
+
+
+/* TEMP : to update CYCLES_COUNTER_VIDEO during an opcode */
+int	Video_GetPosition_ForceInc = 0;
+/* TEMP : to update CYCLES_COUNTER_VIDEO during an opcode */
 
 
 /*--------------------------------------------------------------*/
@@ -727,6 +732,8 @@ static void	Video_AddInterruptHBL ( int Line , int Pos );
 
 static void	Video_ColorReg_WriteWord(void);
 static void	Video_ColorReg_ReadWord(void);
+
+static void	Video_TT_RasterHBL(void);
 
 
 /*-----------------------------------------------------------------------*/
@@ -905,8 +912,8 @@ void	Video_InitTimings(void)
 	pVideoTiming1->VBlank_On_50_CheckLine	= 307;
 	pVideoTiming1->VBlank_On_60_CheckLine	= 257;
 	pVideoTiming1->VBlank_On_Hi_CheckLine	= 501;
-	pVideoTiming1->VBlank_Off_50_CheckLine	=  25;
-	pVideoTiming1->VBlank_Off_60_CheckLine	=  14;
+	pVideoTiming1->VBlank_Off_50_CheckLine	=  24;
+	pVideoTiming1->VBlank_Off_60_CheckLine	=  15;
 	pVideoTiming1->VBlank_Off_Hi_CheckLine	=   0;
 	pVideoTiming1->VBlank_CheckPos		= 502;
 
@@ -984,8 +991,8 @@ void	Video_InitTimings(void)
 	pVideoTiming1->VBlank_On_50_CheckLine	= 307;
 	pVideoTiming1->VBlank_On_60_CheckLine	= 257;
 	pVideoTiming1->VBlank_On_Hi_CheckLine	= 501;
-	pVideoTiming1->VBlank_Off_50_CheckLine	=  25;
-	pVideoTiming1->VBlank_Off_60_CheckLine	=  14;
+	pVideoTiming1->VBlank_Off_50_CheckLine	=  24;
+	pVideoTiming1->VBlank_Off_60_CheckLine	=  15;
 	pVideoTiming1->VBlank_Off_Hi_CheckLine	=   0;
 	pVideoTiming1->VBlank_CheckPos		= 502;
 
@@ -1191,6 +1198,22 @@ if ( *pLineCycles < 0 )
 void	Video_GetPosition ( int *pFrameCycles , int *pHBL , int *pLineCycles )
 {
 	*pFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
+*pFrameCycles += Video_GetPosition_ForceInc;	/* TEMP : to update CYCLES_COUNTER_VIDEO during an opcode */
+	Video_ConvertPosition ( *pFrameCycles , pHBL , pLineCycles );
+}
+
+
+/* Same as Video_GetPosition combined with Video_GetPosition_ForceInc, except Video_GetPosition_CE */
+/* is only used from Video_AddInterrupt(). */
+/* TODO This will be merged later with different code when we use CyclesGlobalClockCounter instead of CYCLES_COUNTER_VIDEO */
+
+static void	Video_GetPosition_CE ( int *pFrameCycles , int *pHBL , int *pLineCycles )
+{
+	if ( !CpuRunCycleExact )
+		return Video_GetPosition ( pFrameCycles , pHBL , pLineCycles );
+
+	*pFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
+	*pFrameCycles += currcycle / 256;		/* TEMP : to update CYCLES_COUNTER_VIDEO with new cycInt code */
 	Video_ConvertPosition ( *pFrameCycles , pHBL , pLineCycles );
 }
 
@@ -1387,7 +1410,7 @@ static Uint32 Video_CalculateAddress ( void )
 		NbBytes = ( (X-LineStartCycle)>>1 ) & (~1);	/* 2 cycles per byte */
 
 
-		/* when left border is open, we have 2 bytes less than theorical value */
+		/* when left border is open, we have 2 bytes less than theoretical value */
 		/* (26 bytes in left border, which is not a multiple of 4 cycles) */
 		if ( LineBorderMask & BORDERMASK_LEFT_OFF )
 			NbBytes -= 2;
@@ -2921,6 +2944,12 @@ void Video_InterruptHandler_HBL ( void )
 	int PendingCyclesOver;
 	int NewHBLPos;
 
+
+if ( CycInt_From_Opcode )		/* TEMP : to update CYCLES_COUNTER_VIDEO during an opcode */
+{
+  Video_GetPosition_ForceInc = currcycle / 256;
+//  fprintf ( stderr , "Video_InterruptHandler_HBL from opcode currcycle=%d add=%d\n" , currcycle , Video_GetPosition_ForceInc );
+}
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
 	/* How many cycle was this HBL delayed (>= 0) */
@@ -2957,13 +2986,6 @@ void Video_InterruptHandler_HBL ( void )
 		return;
 	}
 
-
-	if (Config_IsMachineFalcon())
-	{
-		VIDEL_VideoRasterHBL();
-	}
-
-	
 	/* Increment the hbl jitter index */
 	HblJitterIndex++;
 	HblJitterIndex %= HBL_JITTER_ARRAY_SIZE;
@@ -2989,8 +3011,15 @@ void Video_InterruptHandler_HBL ( void )
 	/* Set pending bit for HBL interrupt in the CPU IPL */
 	M68000_Exception(EXCEPTION_NR_HBLANK , M68000_EXC_SRC_AUTOVEC);	/* Horizontal blank interrupt, level 2 */
 
-
-	if (!Config_IsMachineFalcon())
+	if (Config_IsMachineFalcon())
+	{
+		VIDEL_VideoRasterHBL();
+	}
+	else if (Config_IsMachineTT())
+	{
+		Video_TT_RasterHBL();
+	}
+	else
 	{
 		Video_EndHBL();				/* Check some borders removal and copy line to display buffer */
 	}
@@ -3057,6 +3086,7 @@ void Video_InterruptHandler_HBL ( void )
 			Video_AddInterruptHBL ( nHBL , pVideoTiming->RestartVideoCounter_Pos );
 		}
 	}
+Video_GetPosition_ForceInc = 0;		/* TEMP : to update CYCLES_COUNTER_VIDEO during an opcode */
 }
 
 
@@ -3270,6 +3300,11 @@ void Video_InterruptHandler_EndLine(void)
 	int FrameCycles, HblCounterVideo, LineCycles;
 	int PendingCycles = -INT_CONVERT_FROM_INTERNAL ( PendingInterruptCount , INT_CPU_CYCLE );
 
+if ( CycInt_From_Opcode )		/* TEMP : to update CYCLES_COUNTER_VIDEO during an opcode */
+{
+  Video_GetPosition_ForceInc = currcycle / 256;
+//  fprintf ( stderr , "Video_InterruptHandler_EndLine from opcode currcycle=%d add=%d\n" , currcycle , Video_GetPosition_ForceInc );
+}
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
 	LOG_TRACE ( TRACE_VIDEO_HBL , "EndLine TB %d video_cyc=%d line_cyc=%d pending_int_cnt=%d\n" ,
@@ -3327,6 +3362,7 @@ void Video_InterruptHandler_EndLine(void)
 				MFP_TimerB_EventCount ( pMFP_TT , PendingCycles );	/* DE signal is also connected to timer B on the TT MFP */
 		}
 	}
+Video_GetPosition_ForceInc = 0;		/* TEMP : to update CYCLES_COUNTER_VIDEO during an opcode */
 }
 
 
@@ -4178,12 +4214,7 @@ static void Video_InitShifterLines ( void )
 static void Video_RestartVideoCounter(void)
 {
 	/* Get screen address pointer, aligned to 256 bytes on ST (ie ignore lowest byte) */
-	VideoBase = (Uint32)IoMem_ReadByte(0xff8201)<<16 | (Uint32)IoMem_ReadByte(0xff8203)<<8;
-	if (!Config_IsMachineST())
-	{
-		/* on STe 2 aligned, on TT 8 aligned. We do STe. */
-		VideoBase |= IoMem_ReadByte(0xff820d) & ~1;
-	}
+	VideoBase = Video_GetScreenBaseAddr();
 	pVideoRaster = &STRam[VideoBase];
 }
 
@@ -4408,7 +4439,7 @@ static void Video_AddInterrupt ( int Line , int Pos , interrupt_id Handler )
 	if ( nHBL >= nScanlinesPerFrame )
 	  return;				/* don't set a new hbl/timer B if we're on the last line, as the vbl will happen first */
 	
-	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+	Video_GetPosition_CE ( &FrameCycles , &HblCounterVideo , &LineCycles );
 //fprintf ( stderr , "add int pos=%d handler=%d LineCycles=%d nCyclesPerLine=%d\n" , Pos , Handler , LineCycles , nCyclesPerLine );
 
 	Pos <<= nCpuFreqShift;			/* convert Pos at 8 MHz into number of cycles at 8/16/32 MHz */
@@ -4419,7 +4450,7 @@ static void Video_AddInterrupt ( int Line , int Pos , interrupt_id Handler )
 		CyclesToPos = Pos + ShifterFrame.ShifterLines[Line-1].StartCycle - FrameCycles + nCyclesPerLine;
 
 	CycInt_AddRelativeInterrupt ( CyclesToPos , INT_CPU_CYCLE, Handler );
-//fprintf ( stderr , "add int pos=%d handler=%d LineCycles=%d nCyclesPerLine=%d -> %d cycles\n" , Pos , Handler , LineCycles , nCyclesPerLine , CycleToPos );
+//fprintf ( stderr , "add int pos=%d handler=%d LineCycles=%d nCyclesPerLine=%d -> %d cycles\n" , Pos , Handler , LineCycles , nCyclesPerLine , CyclesToPos );
 }
 
 
@@ -4614,6 +4645,33 @@ void Video_InterruptHandler_VBL ( void )
 
 
 /*-----------------------------------------------------------------------*/
+/**
+ * Get the video RAM base address, taking the differences for the low
+ * byte into account for each machine type.
+ */
+uint32_t Video_GetScreenBaseAddr(void)
+{
+	uint32_t nBase;
+
+	nBase = (Uint32)IoMem_ReadByte(0xff8201) << 16;
+	nBase |= (Uint32)IoMem_ReadByte(0xff8203) << 8;
+	if (!Config_IsMachineST())
+	{
+		/* On STe 2 aligned and on TT 8 aligned. On Falcon 4 aligned
+		 * in bitplane mode, and 2 aligned in hi-color */
+		uint32_t nLowByte = IoMem_ReadByte(0xff820d);
+		if (Config_IsMachineTT())
+			nBase |= nLowByte & ~7;
+		else if (Config_IsMachineFalcon() && !(IoMem_ReadWord(0xff8266) & 0x100))
+			nBase |= nLowByte & ~3;
+		else
+			nBase |= nLowByte & ~1;
+	}
+
+	return nBase;
+}
+
+
 /**
  * Write to video address base high, med and low register (0xff8201/03/0d).
  * On STE/TT, when a program writes to high or med registers, base low register
@@ -5530,6 +5588,41 @@ void Video_TTColorRegs_STRegWrite(void)
 		addr += 2;
 	}
 	bTTColorsSync = false;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * This function is called during Video_InterruptHandler_HBL.
+ * In TT mode we don't call Video_EndHBL() which is STF/STE specific and
+ * call Video_CopyScreenLineColor/Mono later,  but we must still update pVideoRaster
+ * in case a program reads video counter at $FF8205/07/09
+ *
+ * This is a rather simple version that assumes the TT screen is using the
+ * same display mode during the whole frame.
+ * NOTE : This function will be called at the end of line nHBL, so the next displayed
+ * line will be in fact nHBL+1
+ */
+static void Video_TT_RasterHBL(void)
+{
+	/* Only update video counter in TT mode */
+	int width, height, bpp, linebytes , lines;
+	Video_GetTTRes(&width, &height, &bpp);
+	linebytes = width * bpp / 8;
+
+	if ( nHBL+1 < nStartHBL )
+	{
+		/* pVideoRaster was set during Video_ClearOnVBL using VideoBase */
+		/* It's already the correct value */
+	}
+	else
+	{
+		lines = nHBL+1 - nStartHBL;
+		if ( lines >= height )
+			lines = height;
+
+		pVideoRaster = ( ( Video_GetScreenBaseAddr() + lines * linebytes ) & 0xffffff ) + STRam;
+	}
 }
 
 

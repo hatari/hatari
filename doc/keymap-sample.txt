@@ -20,8 +20,9 @@
 # key mapping.  Symbolic key mapping does not work with so called "dead"
 # keys.
 #
-# Scan codes for Atari keyboard key positions can be seen here:
-#   http://eerott.mbnet.fi/hatari/img/st-keymap.png
+# Scan codes for Atari keyboard key positions in different TOS versions
+# are documented here:
+#   http://tho-otto.de/keyboards/
 #
 # tests/keymap/ directory contains programs to discover/test the PC SDL
 # and Atari scan code values.  Hatari's default PC key code -> ST scan

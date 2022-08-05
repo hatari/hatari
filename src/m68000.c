@@ -74,6 +74,8 @@
 
 const char M68000_fileid[] = "Hatari m68000.c";
 
+#include <inttypes.h>
+
 #include "main.h"
 #include "configuration.h"
 #include "gemdos.h"
@@ -89,6 +91,8 @@ const char M68000_fileid[] = "Hatari m68000.c";
 #include "tos.h"
 #include "falcon/crossbar.h"
 #include "cart.h"
+#include "cpu/cpummu.h"
+#include "cpu/cpummu030.h"
 
 #if ENABLE_DSP_EMU
 #include "dsp.h"
@@ -103,6 +107,8 @@ int nCpuFreqShift;		/* Used to emulate higher CPU frequencies: 0=8MHz, 1=16MHz, 
 int WaitStateCycles = 0;	/* Used to emulate the wait state cycles of certain IO registers */
 int BusMode = BUS_MODE_CPU;	/* Used to tell which part is owning the bus (cpu, blitter, ...) */
 bool CPU_IACK = false;		/* Set to true during an exception when getting the interrupt's vector number */
+bool CpuRunCycleExact;		/* true if the cpu core is running in cycle exact mode (ie m68k_run_1_ce, m68k_run_2ce, ...) */
+
 static bool M68000_DebuggerFlag;/* Is debugger enabled or not ? */
 
 int LastOpcodeFamily = i_NOP;	/* see the enum in readcpu.h i_XXX */
@@ -621,7 +627,7 @@ void	M68000_Update_intlev ( void )
 
 	/* Temporary case for WinUAE CPU in CE mode */
 	/* doint() will update regs.ipl_pin, so copy it into regs.ipl */
-	if ( ConfigureParams.System.bCycleExactCpu )
+	if ( CpuRunCycleExact )
 		regs.ipl = regs.ipl_pin;			/* See ipl_fetch() in cpu/cpu_prefetch.h */
 }
 
@@ -641,10 +647,14 @@ void	M68000_Update_intlev ( void )
  * - When CPU runs in cycle exact mode, wait states are added immediately.
  * - For other less precise modes, all the wait states are cumulated and added
  *   after the instruction was processed.
+ *
+ * NOTE : this function should only be called in the context of emulating an opcode,
+ * it should not be called in the context of an internal timer called by CycInt_Process()
+ * because cycles would not be correctly added to CyclesGlobalClockCounter
  */
 void M68000_WaitState(int WaitCycles)
 {
-	if ( ConfigureParams.System.bCycleExactCpu )
+	if ( CpuRunCycleExact )
 		currcycle += ( WaitCycles * CYCLE_UNIT / 2 );	/* Add wait states immediately to the CE cycles counter */
 	else
 	{
@@ -666,9 +676,10 @@ int	M68000_WaitEClock ( void )
 	int	CyclesToNextE;
 
 	/* We must wait for the next multiple of 10 cycles to be synchronised with E Clock */
-	CyclesToNextE = 10 - CyclesGlobalClockCounter % 10;
+	CyclesToNextE = 10 - Cycles_GetClockCounterImmediate() % 10;
 	if ( CyclesToNextE == 10 )		/* we're already synchronised with E Clock */
 		CyclesToNextE = 0;
+
 	return CyclesToNextE;
 }
 
@@ -800,8 +811,11 @@ int	DMA_MaskAddressHigh ( void )
 	if (Config_IsMachineTT() || Config_IsMachineFalcon())
 		return 0xff;					/* Falcon / TT can access 24 bits with DMA */
 
-	else if (ConfigureParams.Memory.STRamSize_KB > 4*1024)	/* ST/STE with more than 4 MB */
+	else if (ConfigureParams.Memory.STRamSize_KB > 8*1024)	/* ST/STE with more than 8 MB */
 		return 0xff;					/* Allow 'fake' 24 bits for DMA */
+
+	else if (ConfigureParams.Memory.STRamSize_KB > 4*1024)	/* ST/STE with more than 4 MB */
+		return 0x7f;					/* Allow 'fake' 23 bits for DMA */
 
 	else							/* ST/STE with <= 4 MB */
 		return 0x3f;					/* Limit DMA range to 22 bits (same as real HW) */
@@ -851,4 +865,35 @@ void	M68000_SetPC ( uaecptr v )
 	fill_prefetch();
 }
 
-
+/**
+ * Dump the contents of the MMU registers
+ */
+void M68000_MMU_Info(FILE *fp, Uint32 flags)
+{
+	if (!ConfigureParams.System.bMMU || ConfigureParams.System.nCpuLevel < 2)
+	{
+		fprintf(fp, "MMU is not enabled.\n");
+		return;
+	}
+	else if (ConfigureParams.System.nCpuLevel <= 3) /* 68020/68030 mode? */
+	{
+		fprintf(fp, "MMUSR:\t0x%04x\n", mmusr_030);
+		fprintf(fp, "SRP:\t0x%016" PRIx64 "\n", (uint64_t)srp_030);
+		fprintf(fp, "CRP:\t0x%016" PRIx64 "\n", (uint64_t)crp_030);
+		fprintf(fp, "TC:\t0x%08x\n", tc_030);
+		fprintf(fp, "TT0:\t0x%08x\n", tt0_030);
+		fprintf(fp, "TT1:\t0x%08x\n", tt1_030);
+	}
+	else	/* 68040 / 68060 mode */
+	{
+		fprintf(fp, "MMUSR:\t0x%04x\n", regs.mmusr);
+		fprintf(fp, "SRP:\t0x%08x\n", regs.srp);
+		fprintf(fp, "URP:\t0x%08x\n", regs.urp);
+		fprintf(fp, "TC:\t0x%08x\n", regs.tcr);
+		fprintf(fp, "DTT0:\t0x%08x\n", regs.dtt0);
+		fprintf(fp, "DTT1:\t0x%08x\n", regs.dtt1);
+		fprintf(fp, "ITT0:\t0x%08x\n", regs.itt0);
+		fprintf(fp, "ITT0:\t0x%08x\n", regs.itt1);
+		/* TODO: Also call mmu_dump_tables() here? */
+	}
+}

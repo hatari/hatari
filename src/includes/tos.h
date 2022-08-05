@@ -51,7 +51,9 @@ extern void TOS_MemorySnapShot_Capture(bool bSave);
 extern int TOS_InitImage(void);
 extern void TOS_SetTestPrgName(const char *testprg);
 
-extern int TOS_ParseCountryCode(const char *code, const char *info);
+extern int TOS_DefaultLanguage(void);
+extern int TOS_ParseCountryCode(const char *code);
+extern void TOS_ShowCountryCodes(void);
 extern const char *TOS_LanguageName(int code);
 
 #endif

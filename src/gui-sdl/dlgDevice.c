@@ -16,6 +16,7 @@ const char DlgDevice_fileid[] = "Hatari dlgDevice.c";
 #include "file.h"
 #include "midi.h"  /* needed only with PortMidi */
 #include "screen.h"
+#include "str.h"
 
 
 #define DEVDLG_PRNENABLE       3
@@ -219,9 +220,9 @@ void Dialog_DeviceDlg(void)
 	ConfigureParams.RS232.bEnableRS232 = (devicedlg[DEVDLG_RS232ENABLE].state & SG_SELECTED);
 	ConfigureParams.Midi.bEnableMidi = (devicedlg[DEVDLG_MIDIENABLE].state & SG_SELECTED);
 #ifdef HAVE_PORTMIDI
-	assert(sizeof(dlgMidiInName) <= sizeof(ConfigureParams.Midi.sMidiInPortName));
-	strcpy(ConfigureParams.Midi.sMidiInPortName, midiInName ? midiInName : "Off");
-	assert(sizeof(dlgMidiOutName) <= sizeof(ConfigureParams.Midi.sMidiOutPortName));
-	strcpy(ConfigureParams.Midi.sMidiOutPortName, midiOutName ? midiOutName : "Off");
+	strlcpy(ConfigureParams.Midi.sMidiInPortName, midiInName ? midiInName : "Off",
+	       sizeof(ConfigureParams.Midi.sMidiInPortName));
+	strlcpy(ConfigureParams.Midi.sMidiOutPortName, midiOutName ? midiOutName : "Off",
+	       sizeof(ConfigureParams.Midi.sMidiOutPortName));
 #endif
 }

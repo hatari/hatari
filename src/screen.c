@@ -191,7 +191,7 @@ static void Screen_ConvertHighRes(void)
 {
 	int linewidth = 640 / 16;
 
-	Screen_GenConvert(pSTScreen, 640, 400, 1, linewidth, 0, 0, 0, 0, 0);
+	Screen_GenConvert(VideoBase, pSTScreen, 640, 400, 1, linewidth, 0, 0, 0, 0, 0);
 	bScreenContentsChanged = true;
 }
 
@@ -332,13 +332,13 @@ void Screen_SetTextureScale(int width, int height, int win_width, int win_height
 	if (bInFullScreen)
 		/* SDL letterboxes fullscreen so it's enough for
 		 * closest dimension to window size being evenly
-		 * divisable.
+		 * divisible.
 		 */
 		scale = fminf(scale_w, scale_h);
 	else
 		/* For windowed mode (= no letterboxing), both
 		 * dimensions (here, their avg) need to be evenly
-		 * divisable for nearest neighbor scaling to look good.
+		 * divisible for nearest neighbor scaling to look good.
 		 */
 		scale = (scale_w + scale_h) / 2.0;
 
@@ -442,11 +442,14 @@ static bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bFo
 		else
 			sdlVideoFlags = 0;
 		/* Make sure that window is not bigger than current desktop */
-		Resolution_GetDesktopSize(&deskw, &deskh);
-		if (win_width > deskw)
-			win_width = deskw;
-		if (win_height > deskh)
-			win_height = deskh;
+		if (bUseSdlRenderer)
+		{
+			Resolution_GetDesktopSize(&deskw, &deskh);
+			if (win_width > deskw)
+				win_width = deskw;
+			if (win_height > deskh)
+				win_height = deskh;
+		}
 	}
 
 	Screen_FreeSDL2Resources();
@@ -1366,7 +1369,7 @@ void Screen_SetGenConvSize(int width, int height, int bpp, bool bForceChange)
 			nScreenZoomY *= 2;
 		}
 		if (nScreenZoomX*nScreenZoomY > 2) {
-			Log_Printf(LOG_WARN, "Strange screen size %dx%d -> aspect corrected by %dx%d!\n",
+			Log_Printf(LOG_INFO, "Strange screen size %dx%d -> aspect corrected by %dx%d!\n",
 				width, height, nScreenZoomX, nScreenZoomY);
 		}
 	}

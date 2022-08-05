@@ -209,6 +209,7 @@ extern void	Video_AddInterruptTimerB ( int LineVideo , int CycleVideo , int Pos 
 extern void	Video_StartInterrupts ( int PendingCyclesOver );
 extern void	Video_InterruptHandler_VBL(void);
 
+extern uint32_t Video_GetScreenBaseAddr(void);
 extern void Video_ScreenBase_WriteByte(void);
 extern void Video_ScreenCounter_ReadByte(void);
 extern void Video_ScreenCounter_WriteByte(void);

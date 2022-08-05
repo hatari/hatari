@@ -1,0 +1,49 @@
+From 195ebb885ddf6d8c4d0ac737fd8f9bc35d54d0fe Mon Sep 17 00:00:00 2001
+From: Eero Tamminen <oak@helsinkinet.fi>
+Date: Sat, 25 Jun 2022 17:29:42 +0300
+Subject: [PATCH] Drop Atari EtherNAT support when it's not configured in
+
+Not having it configured, but crashes happening in its IRQ handling
+code is confusing.
+---
+ arch/m68k/atari/ataints.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/arch/m68k/atari/ataints.c b/arch/m68k/atari/ataints.c
+index 56f02ea2c..0d267efe7 100644
+--- a/arch/m68k/atari/ataints.c
++++ b/arch/m68k/atari/ataints.c
+@@ -180,6 +180,7 @@ static struct irq_chip atari_mfptimer_chip = {
+ };
+ 
+ 
++#ifdef CONFIG_ATARI_ETHERNAT
+ /*
+  * EtherNAT CPLD interrupt handling
+  * CPLD interrupt register is at phys. 0x80000023
+@@ -252,6 +253,7 @@ static struct irq_chip atari_ethernat_chip = {
+ 	.irq_enable	= atari_ethernat_enable,
+ 	.irq_disable	= atari_ethernat_disable,
+ };
++#endif
+ 
+ /*
+  * void atari_init_IRQ (void)
+@@ -348,12 +350,13 @@ void __init atari_init_IRQ(void)
+ 			stmfp_base.name, &stmfp_base))
+ 		pr_err("Couldn't register %s interrupt\n", stmfp_base.name);
+ 
++#ifdef CONFIG_ATARI_ETHERNAT
+ 	/*
+ 	 * EtherNAT ethernet / USB interrupt handlers
+ 	 */
+-
+ 	m68k_setup_irq_controller(&atari_ethernat_chip, handle_simple_irq,
+ 				  139, 2);
++#endif
+ }
+ 
+ 
+-- 
+2.30.2
+

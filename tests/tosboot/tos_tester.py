@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright (C) 2012-2021 by Eero Tamminen <oak at helsinkinet fi>
+# Copyright (C) 2012-2022 by Eero Tamminen <oak at helsinkinet fi>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,8 +19,8 @@ supported by the tested TOS version.
 Verification screenshot is taken at the end of each boot before
 proceeding to testing of the next combination.  Screenshot name
 indicates the used combination, for example:
-        etos512k-falcon-rgb-gemdos-14M.png
-        etos512k-st-mono-floppy-1M.png
+        etos1024k-falcon-rgb-gemdos-14M.png
+        etos1024k-st-mono-floppy-1M.png
 
 
 NOTE: If you want to test the latest, uninstalled version of Hatari,
@@ -143,7 +143,7 @@ class TOS:
             info = (3, 14, ("st", "megast", "ste", "megaste"))
         elif version <= 0x306:
             # MMU slowdown is taken care of in prepare_test()
-            info = (3, 16, ("tt",))
+            info = (3, 20, ("tt",))
         elif version <= 0x404:
             # no-IDE scan slowdown is taken care of in prepare_test()
             info = (3, 28, ("falcon",))
@@ -297,8 +297,8 @@ class Config:
                 except ValueError:
                     self.usage("non-numeric TT-RAM sizes: %s" % arg)
                 for ram in args:
-                    if ram < 0 or ram > 512:
-                        self.usage("invalid TT-RAM (0-512) size: %d" % ram)
+                    if ram < 0 or ram > 1024:
+                        self.usage("invalid TT-RAM (0-1024) size: %d" % ram)
                 self.ttrams = args
             if unknown:
                 self.usage("%s are invalid values for %s" % (list(unknown), opt))
@@ -323,7 +323,7 @@ Options:
 \t-g, --graphics\t(%s)
 \t-m, --machines\t(%s)
 \t-s, --memsizes\t(%s)
-\t-t, --ttrams\t(0-512, in 4MB steps)
+\t-t, --ttrams\t(0-1024, in 4MiB steps)
 \t-b, --bool\t(extra boolean Hatari options to test)
 \t-o, --opts\t(hatari options to pass as-is)
 
@@ -397,7 +397,7 @@ For example:
         if machine in ("st", "megast", "ste", "megaste"):
             return False
         if machine in ("tt", "falcon"):
-            if ttram < 0 or ttram > 512:
+            if ttram < 0 or ttram > 1024:
                 return False
             return tos.supports_32bit_addressing(disk)
         raise AssertionError("unknown machine %s" % machine)
@@ -694,7 +694,7 @@ sMidiOutFileName = %s
             time.sleep(memwait)
             instance.run("keypress %s" % hconsole.Scancode.Space)
 
-        # wait until test program has been run and output something to fifo
+        # wait until test program has been run and outputs something to fifo
         prog_ok, tests_ok = self.wait_fifo(fifo, testwait)
         if tests_ok:
             output_ok = self.verify_output(identity)
@@ -746,6 +746,7 @@ sMidiOutFileName = %s
             testargs += config.opts
         if mmu and machine in ("tt", "falcon"):
             # MMU doubles memory wait
+            testwait += memwait
             memwait *= 2
 
         if config.fast:
@@ -753,6 +754,7 @@ sMidiOutFileName = %s
                          "--fastfdc", "yes", "--timer-d", "yes"]
         elif machine == "falcon" and disk != "ide":
             # Falcon IDE interface scanning when there's no IDE takes long
+            testwait += 8
             memwait += 8
 
         if disk == "gemdos":

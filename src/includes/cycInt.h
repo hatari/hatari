@@ -73,12 +73,12 @@ typedef enum
 
 /* Convert CPU or MFP cycles to internal cycles */
 #define INT_CONVERT_TO_INTERNAL( cyc , type )	( type == INT_CPU_CYCLE ? (cyc) << CYCINT_SHIFT : \
-						type == INT_MFP_CYCLE ? (int)( ( (Uint64)( (cyc) << CYCINT_SHIFT ) * MachineClocks.CPU_Freq ) / MachineClocks.MFP_Timer_Freq ) : \
+						type == INT_MFP_CYCLE ? (int)( ( (Uint64)( (cyc) << CYCINT_SHIFT ) * MachineClocks.CPU_Freq_Emul ) / MachineClocks.MFP_Timer_Freq ) : \
 						(cyc) << ( nCpuFreqShift + CYCINT_SHIFT ) )
 
 /* Convert internal cycles to real CPU or MFP cycles */
 #define INT_CONVERT_FROM_INTERNAL( cyc , type )	( type == INT_CPU_CYCLE ? (cyc) >> CYCINT_SHIFT : \
-						type == INT_MFP_CYCLE ? (int)( ( (Uint64)(cyc) * MachineClocks.MFP_Timer_Freq ) / MachineClocks.CPU_Freq ) >> CYCINT_SHIFT : \
+						type == INT_MFP_CYCLE ? (int)( ( (Uint64)(cyc) * MachineClocks.MFP_Timer_Freq ) / MachineClocks.CPU_Freq_Emul ) >> CYCINT_SHIFT : \
 						(cyc) >> ( nCpuFreqShift + CYCINT_SHIFT ) )
 
 
@@ -98,11 +98,11 @@ extern void	CycInt_AddRelativeInterrupt(int CycleTime, int CycleType, interrupt_
 extern void	CycInt_AddRelativeInterruptWithOffset(int CycleTime, int CycleType, interrupt_id Handler, int CycleOffset);
 extern void	CycInt_ModifyInterrupt(int CycleTime, int CycleType, interrupt_id Handler);
 extern void	CycInt_RemovePendingInterrupt(interrupt_id Handler);
-extern int	CycInt_FindCyclesPassed(interrupt_id Handler, int CycleType, int AddCpuCycles);
+extern int	CycInt_FindCyclesRemaining(interrupt_id Handler, int CycleType);
 
 extern bool	CycInt_InterruptActive(interrupt_id Handler);
 extern int	CycInt_GetActiveInt(void);
-extern void	CycInt_CallActiveHandler(void);
+extern void	CycInt_CallActiveHandler(Uint64 Clock);
 
 #ifndef CYCINT_NEW
 
@@ -116,21 +116,37 @@ static inline void CycInt_Process_stop(int stop_cond)
 	while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( stop_cond == 0 ) )
 		CALL_VAR(PendingInterruptFunction);
 }
+static inline void CycInt_Process_Clock(Uint64 Clock)
+{
+	while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) )
+		CALL_VAR(PendingInterruptFunction);
+}
 
 #else
 
 static inline void CycInt_Process(void)
 {
 	while ( CycInt_ActiveInt_Cycles <= ( CyclesGlobalClockCounter << CYCINT_SHIFT ) )
-		CycInt_CallActiveHandler();
+		CycInt_CallActiveHandler( CyclesGlobalClockCounter );
 }
 static inline void CycInt_Process_stop(int stop_cond)
 {
 	while ( ( CycInt_ActiveInt_Cycles <= ( CyclesGlobalClockCounter << CYCINT_SHIFT ) ) && ( stop_cond == 0 ) )
-		CycInt_CallActiveHandler();
+		CycInt_CallActiveHandler( CyclesGlobalClockCounter );
+}
+/* Same as CycInt_Process but use a specific cycles clock value */
+static inline void CycInt_Process_Clock(Uint64 Clock)
+{
+	while ( CycInt_ActiveInt_Cycles <= ( Clock << CYCINT_SHIFT ) )
+		CycInt_CallActiveHandler( Clock );
 }
 
 #endif
+
+
+/* TEMP : to update CYCLES_COUNTER_VIDEO during an opcode */
+extern bool   CycInt_From_Opcode;
+/* TEMP : to update CYCLES_COUNTER_VIDEO during an opcode */
 
 
 #endif /* ifndef HATARI_CYCINT_H */

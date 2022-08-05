@@ -25,12 +25,12 @@ if [ $# -ne 1 ]; then
 	usage "incorrect number of arguments"
 fi
 
-if [ \! -f $1 ]; then
+if [ ! -f "$1" ]; then
 	usage "given '$1' symbol file not found"
 fi
 
 # remove CR & parse symbol information at the end of the file
-tr -d '\r' < $1 | awk '
+tr -d '\r' < "$1" | awk '
 BEGIN { show = 0 }
 /^_SYMBOL P/ { show = 1; next }
 /^_SYMBOL / { show = 0; next }

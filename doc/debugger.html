@@ -16,7 +16,7 @@
 <h1 class="pageheader">Hatari Debugger User's Manual</h1>
 
 <p class="pageheader">
-Version 2.3.1, December 2020
+Version 2.4.1, August 2022
 </p>
 <p class="pageheader">
 Debugger manual written by: <strong>Eero Tamminen</strong>
@@ -118,7 +118,7 @@ nDisasmLines = -1
 nBacktraceLines = 0
 nExceptionDebugMask = 515
 nDisasmOptions = 15
-bDisasmUAE = FALSE
+bDisasmUAE = TRUE
 bSymbolsAutoLoad = TRUE
 bMatchAllSymbols = FALSE
 </pre>
@@ -303,6 +303,40 @@ With command argument completion (see <a href="#readline">readline</a>),
 result from the last "evaluate" command can be inserted by typing '$'
 and pressing TAB.
 </p>
+
+
+<h4>Hatari outputs and their controls</h4>
+
+<p>When debugging something, there can be so much output that you
+want to store emulator output for more detailed inspection later.</p>
+
+<p>Hatari has 5 different kinds of outputs and their controls:</p>
+<ul>
+<li><a href="#Tracing">Tracing</a>, controlled by "--trace" and
+    "--trace-file" options</li>
+<li>Logging, controlled by "--log-level" and "--log-file" options</li>
+<li>Debugger CPU+DSP <a href="Inspecting_emulation_state">disassembly /
+    memdump / register</a> commands output, controlled by "logfile" command</li>
+<li>Xconout redirection [1] + Hatari command line help,
+    hard-coded to "stdout"</li>
+<li>Rest of debugger (breakpoints etc) + Hatari output,
+    hard-coded to "stderr"</li>
+</ul>
+
+<p>With 3 first options defaulting to "stderr".</p>
+
+<p>If you want to catch all of them, it is better just to redirect
+all "stdout" and "stderr" output from Hatari to a file:</p>
+<pre>
+hatari --parse debugger.ini --trace os_base 2&gt;&amp;1 | tee out.log
+</pre>
+
+<p>("2&gt;&amp;1" redirects stderr to stdout for piping, and tee"
+command both saves and shows the output, so that you can still see
+the saved output in more or less real-time.)</p>
+
+<p>[1] E.g. VT52 console redirection to Hatari standard output is enabled
+with "os_base" and "os_all" trace settings and "--conout 2" option.</p>
 
 
 <h3 id="Inspecting_emulation_state">Inspecting emulation state</h3>
@@ -817,22 +851,22 @@ by "variables" (v) command. For example:
 b  AesOpcode ! AesOpcode  &amp;&amp;  AesOpcode &lt; 0xffff  :trace
 </pre>
 </li>
-<li>To stop when TOS starts next program, set a breakpoint for
+<li>To stop when TOS starts loading next program, set a breakpoint for
     Pexec(0,...) OS call:
 <pre>
 b GemdosOpcode = 0x4B &amp;&amp; OsCallParam = 0x0
 </pre>
 </li>
-<li>Then, to stop emulation on the first instruction of that
-    program, set a breakpoint when program counter matches
-    the TEXT (i.e. code) segment address (taken from program
-    basepage):
+<li>To stop emulation after program has been loaded, but before
+    it runs, set next breakpoint on its first instruction i.e. when
+    program counter matches the TEXT (code) segment address (taken
+    from program basepage):
 <pre>
 b  pc = TEXT :once
 </pre>
-Note1: It is better to trigger it only once, because if you would leave it
-on, during (re)boot you would get a warning for every instruction
-(until TOS sets a valid basepage).
+Note1: It is better to trigger this breakpoint only once, because if
+you would leave it on, during (re)boot you would get a warning for
+every instruction (until TOS sets a valid basepage).
 <br />
 Note2: you cannot use an <em>address</em> breakpoint for this because
 variable values are evaluated at run-time only for conditional
@@ -851,6 +885,11 @@ m  BSS
     values.  If you want, for example, to break after 20 HBLs, use:
 <pre>
 b  HBL = "HBL+20"
+</pre>
+</li>
+<li>To stop on every symbol, break on:
+<pre>
+b  PConSymbol = 1
 </pre>
 </li>
 </ul>
@@ -1075,6 +1114,7 @@ b  LineAOpcode ! LineAOpcode  &amp;&amp;  LineAOpcode &lt; 0xffff  :trace
 </pre>
 
 
+
 <h3>Profiling</h3>
 
 <p>
@@ -1221,7 +1261,7 @@ Disassembled 8 (of active 14240) CPU addresses.
 Unlike normal disassembly, "profile addresses" command shows only
 memory addresses which instructions were executed during profiling.
 You get instruction cache misses only when using cycle-accurate 030
-emulation with a Hatari version configured to use WinUAE CPU core.
+emulation.
 <p>
 If you have loaded symbol information, symbol names are shown above
 the corresponding addresses.  With the "profile symbols" command you
@@ -1239,8 +1279,7 @@ default emulation options are used is following:</p>
 <li>Executed CPU and DSP instruction counts are accurate.</li>
 <li>68000 cycle counts have been tested to be accurate to within 1%.</li>
 <li>DSP cycle counts (and the variance information) should be accurate.</li>
-<li>030 CPU instruction cache hit/miss counts (provided by WinUAE CPU core)
-    are assumed to be accurate.</li>
+<li>030 CPU instruction cache hit/miss counts are assumed to be accurate.</li>
 <li>As to 680x0 cycles... Cycles used by a given CPU instruction depend
     on what instruction(s) is executed, where it was executed (ST or
     TT-RAM) and what data was processed before it (was it cached).
@@ -1418,7 +1457,7 @@ but by jumping inside its code.</p>
 <p>If your code is in fixed location, you should tell
 post-processor to handle symbol addresses as absolute (-a):</p>
 <pre>
-$ hatari_profile.py <b>-a</b> etos512k.sym emutos-profile.txt
+$ hatari_profile.py <b>-a</b> etos1024k.sym emutos-profile.txt
 </pre>
 
 <p>Normal programs are relocated and you should instead give
@@ -1672,7 +1711,7 @@ Generating 'program-profile-2.dot' DOT callgraph file...
 "dot" format.  Dot files can be viewed:</p>
 <ul>
 <li>With "dotty" program included with GraphViz</li>
-<li>With <a href="http://code.google.com/p/jrfonseca/wiki/XDot">XDot</a>
+<li>With <a href="https://github.com/jrfonseca/xdot.py">XDot</a>
     Python GUI (best option on Linux), or some platform specific viewer</li>
 <li>By converting dot file to PostScript or SVG format before
     viewing it with viewers for those:
@@ -2108,7 +2147,7 @@ Hatari.
 
 <p>
 In addition to the normal line editing keys, libreadline supports
-several keyboard shorcuts ('^' indicates Control-key):
+several keyboard shortcuts ('^' indicates Control-key):
 </p>
 <ul>
  <li>Cursor movement (sometimes preferable over using arrow keys):</li>

@@ -261,6 +261,7 @@ static void SCC_serial_setBaudAttr(int handle, speed_t new_speed)
 	if (handle < 0)
 		return;
 
+	memset(&options, 0, sizeof(options));
 	tcgetattr(handle, &options);
 
 	cfsetispeed(&options, new_speed);
@@ -283,7 +284,9 @@ static void SCC_serial_setBaud(int channel, int value)
 
 	switch (value)
 	{
+#ifdef B230400					/* B230400 is not defined on all systems */
 	 case 230400:	new_speed = B230400;	break;
+#endif
 	 case 115200:	new_speed = B115200;	break;
 	 case 57600:	new_speed = B57600;	break;
 	 case 38400:	new_speed = B38400;	break;

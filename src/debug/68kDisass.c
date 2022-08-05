@@ -2566,8 +2566,10 @@ static void Disass68k_loop (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
  */
 Uint32 Disasm_GetNextPC(Uint32 pc)
 {
+	char buf[256];
+
 	uaecptr nextpc;
-	Disass68k_loop (NULL, pc, &nextpc, 1);
+	sm68k_disasm(buf, NULL, pc, &nextpc, -1);
 	return nextpc;
 }
 

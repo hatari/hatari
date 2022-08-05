@@ -197,6 +197,7 @@ static const struct Config_Tag configs_Keyboard[] =
 {
 	{ "bDisableKeyRepeat", Bool_Tag, &ConfigureParams.Keyboard.bDisableKeyRepeat },
 	{ "nKeymapType", Int_Tag, &ConfigureParams.Keyboard.nKeymapType },
+	{ "nCountryCode", Int_Tag, &ConfigureParams.Keyboard.nCountryCode },
 	{ "nKbdLayout", Int_Tag, &ConfigureParams.Keyboard.nKbdLayout },
 	{ "nLanguage", Int_Tag, &ConfigureParams.Keyboard.nLanguage },
 	{ "szMappingFileName", String_Tag, ConfigureParams.Keyboard.szMappingFileName },
@@ -626,6 +627,7 @@ void Configuration_SetDefault(void)
 	/* Set defaults for Keyboard */
 	ConfigureParams.Keyboard.bDisableKeyRepeat = false;
 	ConfigureParams.Keyboard.nKeymapType = KEYMAP_SYMBOLIC;
+	ConfigureParams.Keyboard.nCountryCode = TOS_LANG_UNKNOWN;
 	ConfigureParams.Keyboard.nKbdLayout = TOS_LANG_UNKNOWN;
 	ConfigureParams.Keyboard.nLanguage = TOS_LANG_UNKNOWN;
 	strcpy(ConfigureParams.Keyboard.szMappingFileName, "");
@@ -848,14 +850,12 @@ void Configuration_Apply(bool bReset)
 	Video_SetTimings ( ConfigureParams.System.nMachineType , ConfigureParams.System.VideoTimingMode );
 
 	/* Sound settings */
-	/* SDL sound buffer in ms */
+	/* SDL sound buffer in ms (or 0 for using the default value from SDL) */
 	SdlAudioBufferSize = ConfigureParams.Sound.SdlAudioBufferSize;
-	if ( SdlAudioBufferSize == 0 )			/* use default setting for SDL */
-		;
-	else if ( SdlAudioBufferSize < 10 )		/* min of 10 ms */
-		SdlAudioBufferSize = 10;
-	else if ( SdlAudioBufferSize > 100 )		/* max of 100 ms */
-		SdlAudioBufferSize = 100;
+	if (SdlAudioBufferSize < 10 && SdlAudioBufferSize != 0)
+		SdlAudioBufferSize = 10;		/* min of 10 ms */
+	else if (SdlAudioBufferSize > 100)
+		SdlAudioBufferSize = 100;		/* max of 100 ms */
 
 	/* Set playback frequency */
 	Audio_SetOutputAudioFreq(ConfigureParams.Sound.nPlaybackFreq);

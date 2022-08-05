@@ -24,7 +24,7 @@
 <h1 class="pageheader">Hatari User's Manual</h1>
 
 <p class="pageheader">
-Version 2.3.1, December 2020
+Version 2.4.1, August 2022
 </p>
 <p class="pageheader">
 Manual written by: <strong>Thomas Huth</strong>, <strong>Matthias Arndt</strong>
@@ -156,7 +156,7 @@ common to all (FDC, IKBD, MFP, MIDI, PSG, RS-232...).</p>
     <tr>
       <td class="hwfeat">SCSI</td>
       <td></td><td></td><td></td><td></td><td>X</td><td>X</td>
-      <td class="hwnote"></td>
+      <td class="hwnote">Hatari support is incomplete</td>
     </tr>
     <tr>
       <td colspan="7" class="hwsubdiv">Other HW features:</td><td></td>
@@ -218,8 +218,8 @@ common to all (FDC, IKBD, MFP, MIDI, PSG, RS-232...).</p>
   </tfoot>
 </table>
 
-<p>(512k version of EmuTOS included with Hatari binary packages
-supports all Atari HW except for Falcon DSP & 16-bit Videl TrueColor mode.)</p>
+<p>(EmuTOS v1.1+ included with Hatari binary packages supports
+all Atari HW except for Falcon 16-bit Videl TrueColor mode.)</p>
 
 
 <h3>Features</h3>
@@ -322,7 +322,7 @@ and later HW:</p>
   <li>TT low/med/high resolution support</li>
   <li>Second (TT) MFP chip</li>
   <li>ST/TT palette switching and video shifter</li>
-  <li>Up to 512 MiB of TT-RAM and 32-bit memory addressing</li>
+  <li>Up to 1024 MiB of TT-RAM and 32-bit memory addressing</li>
   <li>Only TOS version 3.05 and 3.06 (and 512k EmuTOS) can be used in TT mode.</li>
 </ul>
 
@@ -333,7 +333,7 @@ and later HW:</p>
   <li>STE/Falcon palette switching and shifter</li>
   <li>Mono/RGB/VGA/TV monitor types</li>
   <li>DSP co-processor emulation</li>
-  <li>RAM up to 14MiB (ST-RAM) and up to 512 MiB (TT-RAM)</li>
+  <li>Up to 14 MiB of ST-RAM and 1024 MiB of TT-RAM</li>
   <li>Experimental microphone (jack) emulation</li>
   <li>Experimental Crossbar sound matrix (ADC (mic &amp; PSG), DAC, DMA, DSP)
       interconnect emulation + support for the additional DMA sound
@@ -387,7 +387,7 @@ well tested.
 <p>Optional:</p>
 <ul>
 <li>The zLib compression library. You can get it from
-<a href="http://www.gzip.org/zlib/">http://www.gzip.org/zlib/</a>.
+<a href="https://zlib.net/">https://zlib.net/</a>.
 </li>
 <li>The PNG image library for PNG format screenshots and to
 decrease AVI video recording file sizes. You can get it from
@@ -569,14 +569,35 @@ user configuration files
 <p class="paramdesc">load keyboard mapping from &lt;file&gt;.
 "Symbolic" mapping will be used as fallback for keys not defined there
 </p>
+<p class="parameter">--country &lt;x&gt;</p>
+<p class="paramdesc">
+Set EmuTOS ROM country code on Mega/ST/STe machines lacking NVRAM,
+when EmuTOS indicates supporting multiple ones.
+</p><p class="paramdesc">
+In 512k EmuTOS images, country code selects the TOS keyboard layout
+and screen refresh (US = 60Hz NTSC, 50Hz PAL otherwise).  In 1024k
+EmuTOS images (coming with Hatari binaries and supporting multiple
+languages), country code selects also TOS language.
+</p><p class="paramdesc">
+Alternatively, one can use "tos-lang-change" tool from EmuTOS project
+to modify country code in the ROM image file itself. That works
+also for TOS v4</p>
 <p class="parameter">--layout &lt;x&gt;</p>
 <p class="paramdesc">Set NVRAM keyboard layout value.
-While both TT and Falcon machines have NVRAM, only TOS v4 and EmuTOS
-1024k ROM versions support multiple layouts</p>
+Set NVRAM keyboard layout value. While both TT and Falcon machines
+have NVRAM, only TOS v4 and EmuTOS 512k / 1024k ROM versions support
+multiple layouts.</p>
+<p class="paramdesc">
+Regardless of whether keyboard layout change is done through the ROM
+country code or NVRAM setting, it may impact your key mappings in
+Hatari key mapping files, Hatari Python UI arguments, or key injection
+in your automation scripts for Hatari debugger, command FIFO or
+hconsole tool</p>
 <p class="parameter">--language &lt;x&gt;</p>
 <p class="paramdesc">Set NVRAM language value.
 While both TT and Falcon machines have NVRAM, only TOS v4 and EmuTOS
-1024k ROM versions support multiple languages</p>
+1024k ROM versions support multiple languages.  Default is taken from
+the LANG environment variable
 <p class="parameter">--fast-forward
 &lt;bool&gt;</p>
 <p class="paramdesc">On fast machine helps skipping (fast
@@ -742,7 +763,7 @@ depth &lt;x&gt; (x = 1, 2 or 4)</p>
 <p>
 Because TOS and popular GEM programs have problems with certain screen
 sizes, Hatari enforces restrictions on VDI screen size.  In total VDI
-screen size is limited to 32-300kB, width to multiple of 16/planes,
+screen size is limited to 32-300kB, width to multiple of 16 pixels,
 and height to multiple of 8 pixels (smaller system font height). That
 translates to following maximum standard resolutions for the VDI mode:
 </p>
@@ -922,12 +943,12 @@ IDE 0</p>
 &lt;x&gt;</p>
 <p class="paramdesc">Set amount of emulated RAM, x = 1 to 14
 MiB, or 0 for 512 KiB. Other values are considered as a size in KiB.
-While Hatari allows 14MB for all machine types, on real HW, ST/STE can
-have up to 4MB, MegaSTE/TT up to 10MB and Falcon up to 14MB RAM.</p>
+While Hatari allows 14 MiB for all machine types, on real HW, ST/STE can
+have up to 4 MiB, MegaSTE/TT up to 10MiB, and Falcon up to 14 MiB RAM.</p>
 <p class="parameter">--ttram
 &lt;x&gt;</p>
 <p class="paramdesc">Set amount of emulated TT RAM (for Falcon and TT
-mode), x = 0 to 512 MiB</p>
+mode), x = 0 to 1024 MiB (in 4MiB steps)</p>
 
 <h3>ROM options</h3>
 <p class="parameter">-t,
@@ -954,8 +975,8 @@ disabled)</p>
 <p class="paramdesc">Set the CPU clock (8, 16 or 32 MHz)</p>
 <p class="parameter">--compatible
 &lt;bool&gt;</p>
-<p class="paramdesc">Use a more compatible, but slower 68000
-CPU mode with better prefetch accuracy and cycle counting</p>
+<p class="paramdesc">Use a more compatible 68000 CPU mode
+with better prefetch accuracy and cycle counting</p>
 <p class="parameter">--cpu-exact &lt;bool&gt;</p>
 <p class="paramdesc">Use cycle exact CPU emulation (cache emulation)</p>
 <p class="parameter">--addr24 &lt;bool&gt;</p>
@@ -1585,11 +1606,11 @@ ends with a 'b'.
 </div>
 
 <p>You can select the amount of RAM for the emulated machine here.
-While Hatari allows 14MB for all machine types, on real HW, ST/STE can
-have up to 4MB, MegaSTE/TT up to 10MB and Falcon up to 14MB RAM. Of
-values below 4MB, only ones that were valid on a real unmodified STFM
+While Hatari allows 14 MiB for all machine types, on real HW, ST/STE can
+have up to 4 MiB, MegaSTE/TT up to 10MiB, and Falcon up to 14 MiB RAM. Of
+values below 4 MiB, only ones that were valid on a real unmodified STFM
 are available</p>
-<p>TT RAM size allows to emulate up to 512 MiB of 32-bit RAM. This is
+<p>TT RAM size allows to emulate up to 1024 MiB of 32-bit RAM. This is
 only useful in Falcon and TT mode, and require to disable "24 bit
 addressing" mode in the CPU options (Hatari needs to patch Falcon TOS
 v4 for this)
@@ -2435,8 +2456,8 @@ for bigger images is not tested very well yet.
 </p>
 <p>
 The maximum size of partitions inside the hard disk (images) depends on the
-TOS version. TOS 1.00 and 1.02 support up to 256 MB, TOS 1.04 to 3.06 up to
-512 MB and TOS 4.0x supports up to 1 GB partitions.
+TOS version. TOS 1.00 and 1.02 support up to 256 MiB, TOS 1.04 to 3.06 up to
+512 MiB and TOS 4.0x supports up to 1 GB partitions.
 </p>
 <p>
 NOTE: you need to be careful when mounting device files.  Depending on

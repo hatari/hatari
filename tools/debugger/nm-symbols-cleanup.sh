@@ -31,9 +31,10 @@ if [ $# -ne 1 ]; then
 	usage "incorrect number of arguments"
 fi
 
-if [ \! -f $1 ]; then
+if [ ! -f "$1" ]; then
 	usage "given '$1' nm output file not found"
 fi
 
 # clean symbol cruft & sort by hex address
-cat $1 | grep -v -e ' [aAwW] ' -e ' t \.L' -e gcc2_compiled -e _gnu_compiled_c | sed 's%/.*/%%' | sort
+grep -v -e ' [aAwW] ' -e ' t \.L' -e gcc2_compiled -e _gnu_compiled_c "$1" |\
+  sed 's%/.*/%%' | sort

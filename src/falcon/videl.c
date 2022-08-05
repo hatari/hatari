@@ -602,26 +602,11 @@ void VIDEL_VMD_WriteWord(void)
 
 
 /**
- *  VIDEL_getVideoramAddress: returns the video RAM address.
- *  On Falcon, video address must be a multiple of four in bitplane modes.
- */
-static Uint32 VIDEL_getVideoramAddress(void)
-{
-	Uint32 videoBase;
-
-	videoBase  = (Uint32) IoMem_ReadByte(0xff8201) << 16;
-	videoBase |= (Uint32) IoMem_ReadByte(0xff8203) << 8;
-	videoBase |= IoMem_ReadByte(0xff820d) & ~3;
-
-	return videoBase;
-}
-
-/**
  * Reset appropriate registers on VBL etc
  */
 void VIDEL_RestartVideoCounter(void)
 {
-	videl.videoRaster = VIDEL_getVideoramAddress();
+	videl.videoRaster = Video_GetScreenBaseAddr();
 	/* counter for VFC register $ff82a0 */
 	videl.vertFreqCounter = 0;
 }
@@ -950,7 +935,7 @@ bool VIDEL_renderScreen(void)
 
 	bool change = false;
 
-	Uint32 videoBase = VIDEL_getVideoramAddress();
+	Uint32 videoBase = Video_GetScreenBaseAddr();
 
 	if (vw > 0 && vw != videl.save_scrWidth) {
 		LOG_TRACE(TRACE_VIDEL, "Videl : width change from %d to %d\n", videl.save_scrWidth, vw);
@@ -999,7 +984,7 @@ bool VIDEL_renderScreen(void)
 
 	VIDEL_UpdateColors();
 
-	Screen_GenConvert(&STRam[videoBase], videl.XSize, videl.YSize,
+	Screen_GenConvert(videoBase, &STRam[videoBase], videl.XSize, videl.YSize,
 	                  videl.save_scrBpp, nextline, hscrolloffset,
 	                  videl.leftBorderSize, videl.rightBorderSize,
 	                  videl.upperBorderSize, videl.lowerBorderSize);

@@ -6,18 +6,18 @@
 
 bb_host=/bin/busybox
 
-if [ \! -x $bb_host ]; then
+if [ ! -x $bb_host ]; then
 	echo "ERROR: host BusyBox '$bb_host' missing, do:"
 	echo "  sudo apt install busybox"
 	exit 1
 fi
 
-if [ \! -x bin/busybox ]; then
+if [ ! -x bin/busybox ]; then
 	echo "ERROR: m68k BusyBox 'bin/busybox' missing!"
 	exit 1
 fi
 
 # symlink Busybox tools
 for tool in $($bb_host --list-full); do
-	ln -sfv /bin/busybox $tool
+	ln -sfv /bin/busybox "$tool"
 done

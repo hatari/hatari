@@ -271,7 +271,8 @@ struct crossbar_s {
 
 	Uint32 save_special_transfer;		/* Used in a special undocumented transfer mode (dsp sent is not in handshake mode and dsp receive is in handshake mode) */
 
-	Uint8  SNDINT_Signal;		/* Value of the SNDINT/SOUNDINT signal (connected to MFP) */
+	Uint8  SNDINT_Signal;		/* Value of the SNDINT signal (connected to MFP's GPIP7) */
+	Uint8  SOUNDINT_Signal;		/* Value of the SOUNDINT signal (connected to MFP's Timer A input) */
 };
 
 struct codec_s {
@@ -325,10 +326,11 @@ void Crossbar_Reset(bool bCold)
 	dmaRecord.handshakeMode_Frame = 0;
 	dmaRecord.handshakeMode_masterClk = 0;
 
-	/* DMA stopped, force SNDINT to 0/LOW */
+	/* DMA stopped, force SNDINT/SOUNDINT to 0/LOW */
 	crossbar.SNDINT_Signal = MFP_GPIP_STATE_LOW;
-	MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE7 , MFP_GPIP_STATE_LOW );
-	MFP_TimerA_Set_Line_Input ( pMFP_Main , MFP_GPIP_STATE_LOW );
+	crossbar.SOUNDINT_Signal = MFP_GPIP_STATE_LOW;
+	MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE7 , crossbar.SNDINT_Signal );
+	MFP_TimerA_Set_Line_Input ( pMFP_Main , crossbar.SOUNDINT_Signal );
 
 
 	/* DAC inits */
@@ -431,7 +433,7 @@ void Crossbar_MemorySnapShot_Capture(bool bSave)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Update the value of the SNDINT/SOUNDINT line ; this line is connected to TAI and to GPIP7
+ * Update the value of the SNDINT/SOUNDINT lines ; these line are connected to TAI and to GPIP7
  * Depending on the transition, this can trigger MFP interrupt for Timer A or for GPIP7
  *  - Bit is set to 0/LOW when dma sound is idle
  *  - Bit is set to 1/HIGH when dma sound is playing / recording
@@ -449,7 +451,7 @@ static void Crossbar_Update_SNDINT_Line ( bool RecordMode , Uint8 Bit )
 
 		/* Send a TimerA_Int at end of replay buffer if enabled */
 		if (dmaPlay.timerA_int) {
-			crossbar.SNDINT_Signal = Bit;
+			crossbar.SOUNDINT_Signal = Bit;
 			MFP_TimerA_Set_Line_Input ( pMFP_Main , Bit );			/* Update events count / interrupt for timer A if needed */
 			LOG_TRACE(TRACE_CROSSBAR, "Crossbar : MFP Timer A interrupt from DMA play\n");
 		}
@@ -466,14 +468,21 @@ static void Crossbar_Update_SNDINT_Line ( bool RecordMode , Uint8 Bit )
 
 		/* Send a TimerA_Int at end of record buffer if enabled */
 		if (dmaRecord.timerA_int) {
-			crossbar.SNDINT_Signal = Bit;
+			crossbar.SOUNDINT_Signal = Bit;
 			MFP_TimerA_Set_Line_Input ( pMFP_Main , Bit );			/* Update events count / interrupt for timer A if needed */
 			LOG_TRACE(TRACE_CROSSBAR, "Crossbar : MFP Timer A interrupt from DMA record\n");
 		}
 	}
+}
 
-// 	MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE7 , Bit );
-// 	MFP_TimerA_Set_Line_Input ( pMFP_Main , Bit );			/* Update events count / interrupt for timer A if needed */
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Return the value of the SNDINT line, used to update MFP's GPIP7
+ */
+Uint8 Crossbar_Get_SNDINT_Line (void)
+{
+	return crossbar.SNDINT_Signal;
 }
 
 
@@ -1187,17 +1196,19 @@ void Crossbar_Recalculate_Clocks_Cycles(void)
 
 	/* Calculate 25 Mhz clock cycles */
 	/* Take nCpuFreqShift into account to keep a constant sound rate at all cpu freq */
-	cyclesClk = ((double)( ( CPU_FREQ << nCpuFreqShift ) ) / Crossbar_DetectSampleRate(25)) / (double)(crossbar.playTracks) / 2.0;
+	cyclesClk = ((double)( MachineClocks.CPU_Freq_Emul ) / Crossbar_DetectSampleRate(25)) / (double)(crossbar.playTracks) / 2.0;
 
 	crossbar.clock25_cycles = (int)(cyclesClk);
 	crossbar.clock25_cycles_decimal = (int)((cyclesClk - (double)(crossbar.clock25_cycles)) * (double)DECIMAL_PRECISION);
+//fprintf ( stderr , "freq_25=%d cyclesclk=%f cyc_int=%d cyc_float=%d\n",Crossbar_DetectSampleRate(25), cyclesClk, crossbar.clock25_cycles, crossbar.clock25_cycles_decimal);
 
 	/* Calculate 32 Mhz clock cycles */
 	/* Take nCpuFreqShift into account to keep a constant sound rate at all cpu freq */
-	cyclesClk = ((double)( ( CPU_FREQ << nCpuFreqShift ) ) / Crossbar_DetectSampleRate(32)) / (double)(crossbar.playTracks) / 2.0;
+	cyclesClk = ((double)( MachineClocks.CPU_Freq_Emul ) / Crossbar_DetectSampleRate(32)) / (double)(crossbar.playTracks) / 2.0;
 
 	crossbar.clock32_cycles = (int)(cyclesClk);
 	crossbar.clock32_cycles_decimal = (int)((cyclesClk - (double)(crossbar.clock32_cycles)) * (double)DECIMAL_PRECISION);
+//fprintf ( stderr , "freq_32=%d cyclesclk=%f cyc_int=%d cyc_float=%d\n",Crossbar_DetectSampleRate(32), cyclesClk, crossbar.clock25_cycles, crossbar.clock25_cycles_decimal);
 
 	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : Recalculate_clock_Cycles\n");
 	LOG_TRACE(TRACE_CROSSBAR, "           clock25 : %d\n", crossbar.clock25_cycles);
@@ -1856,6 +1867,10 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 	Sint16 dac_read_left, dac_read_right;
 
 //fprintf ( stderr , "gen %03x %03x %03x %03x\n" , dac.writePosition , dac.readPosition , (dac.writePosition-dac.readPosition)%DACBUFFER_SIZE , nSamplesToGenerate );
+//fprintf ( stderr,  "codecAdcInput %d wordCount %d codecInputSource %d\n" , crossbar.codecAdcInput, dac.wordCount, crossbar.codecInputSource);
+//Uint32 read_pos_in = dac.readPosition;
+//Uint64 read_pos_float_in = dac.readPosition_float;
+//fprintf ( stderr , "gen_in read_pos=%d read_pos_f=%lx ratio=%lx\n" , read_pos_in,read_pos_float_in,crossbar.frequence_ratio );
 
 	if (crossbar.isDacMuted) {
 		/* Output sound = 0 */
@@ -1957,6 +1972,8 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 
 		dac.readPosition = (dac.readPosition + n) % DACBUFFER_SIZE;
 		dac.readPosition_float &= 0xffffffff;			/* only keep the fractional part */
+//read_pos_float_in += crossbar.frequence_ratio;
+//fprintf ( stderr , "gen_one i=%d read_pos=%x read_pos_f=%lx ratio=%lx n=%d read_pos_f_total=%lx\n" , i, dac.readPosition,dac.readPosition_float,crossbar.frequence_ratio, n, read_pos_float_in );
 
 		/* Upgrade adc->dac's buffer read pointer */
 		crossbar.adc2dac_readBufferPosition_float += crossbar.frequence_ratio;
@@ -1964,6 +1981,8 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 		crossbar.adc2dac_readBufferPosition = (crossbar.adc2dac_readBufferPosition + n) % DACBUFFER_SIZE;
 		crossbar.adc2dac_readBufferPosition_float &= 0xffffffff;			/* only keep the fractional part */
 	}
+
+//fprintf ( stderr , "gen_out read_pos_delta=%x\n" , dac.readPosition-read_pos_in );
 
 	/* If the DAC didn't receive any data since last call to Crossbar_GenerateSamples() */
 	/* then we need to adjust dac.writePosition to be always ahead of dac.readPosition */

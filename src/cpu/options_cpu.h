@@ -300,6 +300,7 @@ enum { CP_GENERIC = 1, CP_CDTV, CP_CDTVCR, CP_CD32, CP_A500, CP_A500P, CP_A600,
 #define OVERSCANMODE_OVERSCAN 3
 #define OVERSCANMODE_BROADCAST 4
 #define OVERSCANMODE_EXTREME 5
+#define OVERSCANMODE_ULTRA 6
 
 #define MAX_FILTERSHADERS 4
 
@@ -662,6 +663,7 @@ struct uae_prefs {
 #endif
 	bool reset_delay;
 	bool crash_auto_reset;
+	int monitorblankdelay;
 
 #ifndef WINUAE_FOR_HATARI
 	int cs_compatible;
@@ -707,7 +709,7 @@ struct uae_prefs {
 	int cs_hacks;
 	int cs_ciatype[2];
 	int cs_kbhandshake;
-	bool cs_ocshblankbug;
+	int cs_hvcsync;
 
 	struct boardromconfig expansionboard[MAX_EXPANSION_BOARDS];
 
@@ -796,6 +798,7 @@ struct uae_prefs {
 	int uaeboard_order;
 
 	bool kickshifter;
+	bool scsidevicedisable;
 	bool filesys_no_uaefsdb;
 	bool filesys_custom_uaefsdb;
 	bool mmkeyboard;
@@ -809,6 +812,7 @@ struct uae_prefs {
 	bool obs_sound_toccata_mixer;
 	bool obs_sound_es1370;
 	bool obs_sound_fm801;
+	bool cputester;
 
 	int mountitems;
 	struct uaedev_config_data mountconfig[MOUNT_CONFIG_SIZE];

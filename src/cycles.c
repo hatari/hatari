@@ -131,7 +131,7 @@ int Cycles_GetInternalCycleOnReadAccess(void)
 	/* As memory accesses take 4 cycles, we just need to add 4 cycles to get */
 	/* the number of cycles when the read will be completed. */
 	/* (see mem_access_delay_XXX_read() in cpu_prefetch.h and wait_cpu_cycle_read() in custom.c) */
-	else if ( currprefs.cpu_cycle_exact )
+	else if ( CpuRunCycleExact )
 	{
 		AddCycles = currcycle*2/CYCLE_UNIT + 4;
 	}
@@ -177,7 +177,7 @@ int Cycles_GetInternalCycleOnWriteAccess(void)
 	/* As memory accesses take 4 cycles, we just need to add 4 cycles to get */
 	/* the number of cycles when the write will be completed. */
 	/* (see mem_access_delay_XXX_write() in cpu_prefetch.h and wait_cpu_cycle_write() in custom.c) */
-	else if ( currprefs.cpu_cycle_exact )
+	else if ( CpuRunCycleExact )
 	{
 		AddCycles = currcycle*2/CYCLE_UNIT + 4;
 	}
@@ -301,6 +301,23 @@ Uint64 Cycles_GetClockCounterOnWriteAccess(void)
 	AddCycles = Cycles_GetInternalCycleOnWriteAccess();
 
 	return CyclesGlobalClockCounter + AddCycles;
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Read the main clock counter
+ * This function is mainly used in CycInt_xxx functions, either after processing
+ * the current instruction (then currcycle=0) or during the processing of the current
+ * instruction.
+ */
+Uint64 Cycles_GetClockCounterImmediate(void)
+{
+	if ( CpuRunCycleExact )
+		return CyclesGlobalClockCounter + currcycle*2/CYCLE_UNIT;
+	else
+		return CyclesGlobalClockCounter;
 }
 
 

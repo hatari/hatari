@@ -49,7 +49,6 @@ char szPath[FILENAME_MAX] ;
 			if (ret == NSAlertFirstButtonReturn)
 				return ;
 
-			printf("%d\n",ret);
 			ret = ret == NSAlertSecondButtonReturn ? 0 : 1 ;
 			Floppy_SetDiskFileName(ret, szPath, NULL);
 			Floppy_InsertDiskIntoDrive(ret);

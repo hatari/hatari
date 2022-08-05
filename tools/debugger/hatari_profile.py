@@ -70,7 +70,7 @@ Long options for above are:
 (Timing --info is shown only for cycles list.)
 
 For example:
-	hatari-profile -a etos512k.sym -st -f 10 prof1.txt prof2.txt
+	hatari-profile -a etos1024k.sym -st -f 10 prof1.txt prof2.txt
 
 For each given profile file, output is:
 - profile statistics
@@ -698,6 +698,7 @@ class ProfileCallers(Output):
     def parse_callers(self, fobj, parsed, line):
         "parse callee: caller call count information"
         #0x<hex>: 0x<hex> = <count>[ <flags>][, <inclusive/totals>[, <exclusive/totals>]]; N*[0x<hex> = <count>...;][ <symbol>]
+        self.message("parsing call info...")
         self.callinfo = {}
         while True:
             parsed += 1
@@ -1072,6 +1073,7 @@ class EmulatorProfile(Output):
 
     def _parse_disassembly(self, fobj, line):
         "parse profile disassembly"
+        self.message("parsing disassembly...")
         prev_addr = 0
         discontinued = False
         function = FunctionStats(None, -1, 0, self.stats.items)

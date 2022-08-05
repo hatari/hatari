@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Hatari Python / Gtk UI</title>
+  <meta name="description"
+        content="Description of Hatari Python / Gtk UI" />
+  <meta name="author" content="Hatari development team" />
+  <meta name="keywords" content="hatari, documentation" />
+  <meta name="viewport" content="width=device-width; initial-scale=1.0;" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+
+<body>
+
+<h1>Control and debugger UI for Hatari</h1>
+
+<b>Contents:</b>
+<ul>
+<li><a href="#intro">Introduction</a></li>
+<ul>
+  <li><a href="#why">Why another UI?</a></li>
+  <li><a href="#current">Current features</a></li>
+  <li><a href="#future">Potential future features</a></li>
+  <li><a href="#issues">Known issues</a></li>
+</ul>
+<li><a href="#getting">Getting Hatari UI</a></li>
+<ul>
+  <li><a href="#portability">Portability</a></li>
+</ul>
+<li><a href="#screenshots">Screenshots</a></li>
+<ul>
+  <li><a href="#latest">Current UI screenshot</a></li>
+  <li><a href="#older">Screenshots for older versions</a></li>
+</ul>
+<li><a href="#cli">Command line usage</a></li>
+<ul>
+  <li><a href="#keycodes">Keycodes</a></li>
+</ul>
+</ul>
+
+<h2 id="intro">Introduction</h2>
+
+<p>Hatari UI is an out-of-process user interface for the Hatari
+emulator and its built-in debugger which can (optionally) embed the
+Hatari emulator window. Having the UI in another process allows doing
+it with a higher level language and avoiding adding GUI toolkit
+dependencies to Hatari itself.</p>
+
+<p>The UI is done with PyGtk i.e. in Python language, using the Gtk
+widget set.  it is an additional UI, the built-in Hatari SDL UI is not
+being replaced or going anywhere!</p>
+
+
+<h3 id="why">Why another UI?</h3>
+
+<p>While the built-in SDL UI for Hatari has its good points,
+it has also many minor shortcomings:
+<ul>
+<li>There is no UI for the debugger or for viewing trace/debug logs.</li>
+<li>The configuration UI itself is not configurable and although its
+    quite nice for an UI done with C and libSDL, it is still very hard
+    to modify (e.g. its layout).
+</li>
+<li>It does not currently support UTF-8 or internationalization and is not
+    scalable enough to support localization well (translations need
+    up to 1/3 more space).
+</li>
+<li>The file selector does not support unicode (all file systems use
+    nowadays Unicode file names) nor bookmarks or other goodies in
+    modern file selectors.
+</li>
+<li>Invoking the UI stops the emulation.</li>
+<li>It does not allow configuring all the things that one can configure
+    e.g. from command line (Spec512, fast forward, Falcon DSP settings,
+    trace settings and bios-tracing, log files and levels).
+</li>
+</ul>
+
+<p>As you can see from the <a href="#screenshots">screenshots</a>,
+the features offered by the new UI are nice also on desktops, but
+the configurability is especially important for devices that have
+constrained input methods; limited set of keys and e.g. high DPI
+touchscreen. Something like this UI is really a must on devices with
+no right or middlebutton, where use of stylus or finger makes
+double clicks hard because the pixels are so small that hitting
+the same place twice is not easy and which lacks standard Atari
+keys.</p>
+
+<p>One of the targets for the UI configurability and features
+was Nokia N8x0 (Linux) devices with 226 DPI 800x480 touchscreen and
+limited number of keys. This reflects slightly in the UI design too.
+For example text pasting is done in separate dialog instead of in
+an inline control and one can easily add buttons for synthetizing
+specific key presses.</p>
+
+
+<h3 id="current">Current features</h3>
+
+<ul>
+<li>Besides the UI menu, user can specify whether there are toolbars,
+    where they are (on left, right, top or bottom, or in a separate
+    panel window) and what controls the toolbars have (from
+    a predefined set).
+</li>
+<li>Optional support for embedding the Hatari window (UI keyboard
+    shortcuts would prevent those keys from being used with Hatari
+    so keyboard shortcuts are disabled when Hatari window is embedded).
+</li>
+<li>User can specify buttons which synthetize specified text strings
+    or Atari keycodes to the emulator.  There is also a dialog for
+    pasting text (e.g. from other programs) to Hatari.
+</li>
+<li>An UI for the Hatari debugger and dialog for changing
+    the emulation tracing points at run time.
+</li>
+<li>An ability to pause Hatari completely.<br>
+    (SDL UI cannot do this because SDL does constant polling even when
+    Hatari is completely idle; on OSX this prevents screensaver from
+    starting and on laptops it drains the battery.)
+</li>
+<li>Support all main options that can affect Hatari speed (frameskip,
+    fastforward, spec512 and sound) without a need to reset the emulation
+    and dialogs for configuring the other main Hatari options (which
+    require reset).
+</li>
+<li>Gtk file selector used for floppies, harddisks, ROMs etc.</li>
+<li>Saving and loading Hatari configurations (user can have multiple
+    setups between which he can switch such as STE+color for demos vs.
+    TT+mono for applications).
+</li>
+</ul>
+
+<p>See <a href="#screenshots">screenshots</a> for more details.
+
+
+<h3 id="future">Potential future features</h3>
+
+<p>There are several other features that would be nice in the new UI:
+<ul>
+<li>Support for less often used Hatari options.</li>
+<li>Multiple views to registers, emulated memory areas or disassembly which
+    are refreshed by the debugger UI each time the emulator is stopped.
+</li>
+<li>Debugger breakpoint support.</li>
+<li>Trace/debug log view window with log level controls.</li>
+<li>Saving/loading the configuration for Hatari <b>UI</b> itself.</li>
+<li>Saving Hatari configuration changes to separate file
+    from configuration file Hatari normally reads.
+</li>
+<li>UI internationalization and localization (after somebody asks for it).
+</li>
+</ul>
+
+
+<h3 id="issues">Known issues</h3>
+
+<p>There are some issues which cannot be handled in an external UI
+(without additional support from Hatari):
+<ul>
+<li>Hatari window embedding to the Hatari UI window is done by telling
+    Hatari to reparent its SDL framebuffer X11 window under (given)
+    Hatari UI window XID.  Therefore embedding will only work under
+    X11, not under Wayland, Mac or Windows
+</li>
+<li>Hatari UI does not notice nor adapt if user changes Hatari
+    configuration options from within Hatari itself (as Hatari does not
+    currently tell about them).  This is not very serious issue as
+    with Hatari UI, the configuration changes are supposed
+    to be done through it, not by using the internal Hatari UI.
+</li>
+<li>To take Machine setup "Use harddisk" option disabling into
+    use, it is not enough to reboot the emulation. You need to
+    re-run Hatari as Hatari does not support doing that externally
+    at run-time.
+</li>
+</ul>
+
+
+<h2 id="getting">Getting Hatari UI</h2>
+
+<p>Hatari is available from major Linux distributions and Hatari UI
+is included with it.
+
+The latest version can be found from the Hatari Git repository:
+<a href="https://git.tuxfamily.org/hatari/hatari.git/tree/python-ui">https://git.tuxfamily.org/hatari/hatari.git/tree/python-ui</a>
+
+
+<h3 id="portability">Portability</h3>
+
+<p>Besides Linux, the UI could eventually be used even on Windows
+by first installing the PyGtk dependencies listed on (otherwise unrelated)
+<a href="http://gramps-project.org/wiki/index.php?title=Windows_installer#Installation">Gramps
+application Windows dependencies</a> page.  Additionally the Hatari
+control socket code needs to be ported to Windows (i.e. use WinSock
+or have proper Cygwin build of Hatari with unix domain socket support).
+</p>
+
+<p>Mac should not be a problem, under its UI glitz it is mostly BSD unix.</p>
+
+
+<h2 id="screenshots">Screenshots</h2>
+
+<h3 id="latest">Current UI screenshot</h3>
+
+<p>Current Hatari UI uses standard Gtk menu and toolbars
+instead of the button boxes used in older versions.  You can still
+configure the buttons included to the top / bottom / left / right
+of the Hatari screen though.</p>
+
+<p><img alt="Hatari UI" src="images/hatari-ui-0.9.png"><br>
+Hatari UI with the about dialog open and with options:<pre>
+hatari-ui.py --embed --right "about,|,run,pause,forward,|,reset,|,quit"
+</pre>
+
+
+<h3 id="older">Screenshots for older versions</h3>
+
+While the older UI is bit different, these option examples and their
+screenshots show how to specify elements and their layout for the
+Hatari Python UI.
+
+<p><img alt="Hatari UI" src="images/hatari-ui-0.7.png"><br>
+Hatari UI with the about dialog open and with options:<pre>
+hatari-ui.py --embed
+--top "about,run,pause,reset,screenshot,setup,quit"
+--panel "Input,..."
+--panel "Speed settings,..."
+--bottom "debug,trace,peripherals,Speed settings,Input"
+</pre>
+
+<hr>
+<p><img alt="No embedding" src="images/hatari-ui-noembed.png"><br>
+An example UI configuration without the embedding option:<pre>
+hatari-ui.py
+--top "about,run,pause,quit"
+--panel "Function keys,..."
+--panel "Other keys,..."
+--right "setup,debug,trace,Function keys,Other keys"
+--bottom "sound,spec512,|,fastforward,|,frameskip"
+</pre>
+
+<hr>
+<p><img alt="Speed panel example" src="images/hatari-ui-speed.png"><br>
+A panel with controls for configuring performance:<pre>
+--panel "Speed settings,frameskip,&gt;,fastforward,|,spec512,|,sound,&gt;,close"
+</pre>
+
+<hr>
+<p><img alt="Input panel example" src="images/hatari-ui-input.png"><br>
+Another panel, with buttons for keys and mouse button events</p>
+
+<hr>
+<p><img alt="Peripherals settings" src="images/hatari-ui-peripherals.png"><br>
+Peripherals settings dialog</p>
+
+<hr>
+<p><img alt="Machine setup" src="images/hatari-ui-setup-edit.png"><br>
+Machine settings dialog</p>
+
+<hr>
+<p><img alt="Debug UI" src="images/hatari-ui-debug.png"><br>
+Debug UI</p>
+
+<hr>
+<p><img alt="Trace settings" src="images/hatari-ui-trace.png"><br>
+Trace settings dialog</p>
+
+<hr>
+<p><img alt="Unsaved options" src="images/hatari-ui-quit.png"><br>
+Quitting with unsaved options</p>
+
+
+<h2 id="cli">Command line usage</h2>
+
+<hr>
+<pre>
+Hatari UI v1.4
+==============
+
+Usage: hatariui.py [options] [directory|disk image|Atari program]
+
+Options:
+	-h, --help		this help
+	-n, --nomenu		omit menus
+	-e, --embed		embed Hatari window in middle of controls (X11 only)
+	-f, --fullscreen	start in fullscreen
+	-l, --left &lt;controls&gt;	toolbar at left
+	-r, --right &lt;controls&gt;	toolbar at right
+	-t, --top &lt;controls&gt;	toolbar at top
+	-b, --bottom &lt;controls&gt;	toolbar at bottom
+	-p, --panel &lt;name&gt;,&lt;controls&gt;
+				separate window with given name and controls
+
+Available (panel/toolbar) controls:
+	|		Separator between controls
+	&gt;		Start next toolbar row in panel windows
+	changes		Latest Hatari changes
+	pause		Pause Hatari to save battery
+	bugs		Hatari bugs
+	path		Device & save file paths
+	recanim		Record animation
+	sound		Sound settings
+	forward		Whether to fast forward Hatari (needs fast machine)
+	joystick	Joystick settings
+	uireadme	Hatari UI README
+	todo		Hatari TODO
+	trace		Hatari tracing setup
+	input		Simulate text input and mouse clicks
+	hatariui	Hatari UI home page
+	full		Toggle whether Hatari is fullscreen
+	harddisk	Hard disk images and directories
+	uirelease	Hatari UI release notes
+	authors		Hatari authors
+	shot		Grab a screenshot
+	lconfig		Load configuration
+	release		Hatari release notes
+	floppy		Floppy images
+	hatari		Hatari home page
+	recsound	Record YM/Wav
+	mails		Hatari mailing lists
+	debug		Activate Hatari debugger
+	reset		Warm or cold reset Hatari
+	display		Display settings
+	machine		Hatari st/e/tt/falcon configuration
+	sconfig		Save configuration
+	device		Toggle Midi, Printer, RS232 peripherals
+	load		Load emulation snapshot
+	save		Save emulation snapshot
+	about		Hatari UI information
+	quit		Quit Hatari UI
+	manual		Hatari manual
+	run		(Re-)run Hatari
+	compatibility	Hatari compatibility list
+	&lt;panel name&gt;	Button for the specified panel window
+	&lt;name&gt;=&lt;string/code&gt;
+			Synthetize string or single key &lt;code&gt;
+
+You can have as many panels as you wish.  For each panel you need to add
+a control with the name of the panel (see "MyPanel" below).
+
+For example:
+	hatariui.py --embed \
+	--top "about,run,pause,quit" \
+	--panel "MyPanel,Macro=Test,Undo=97,Help=98,&gt;,F1=59,F2=60,F3=61,F4=62,&gt;,close" \
+	--right "MyPanel,debug,trace,machine" \
+	--bottom "sound,|,forward,|,full,|,quit"
+
+if no options are given, the UI uses basic controls.
+</pre>
+<hr>
+
+<h3 id="keycodes">Keycodes</h3>
+
+<p>To configure the keys, you need Atari keycode map matching your TOS
+language / version.  Thorsten Otto has documented them here:
+<a href="http://tho-otto.de/keyboards/">http://tho-otto.de/keyboards/</a>
+
+</body>

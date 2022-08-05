@@ -481,19 +481,19 @@ bool	IPF_Insert ( int Drive , Uint8 *pImageBuffer , long ImageSize )
 		/* Print some debug infos */
 		if ( CAPSGetImageInfo ( &cii , ImageId ) == imgeOk )
 		{
-			printf("Type: %d\n", (int)cii.type);
-			printf("Release: %d\n", (int)cii.release);
-			printf("Revision: %d\n", (int)cii.revision);
-			printf("Min Cylinder: %d\n", (int)cii.mincylinder);
-			printf("Max Cylinder: %d\n", (int)cii.maxcylinder);
-			printf("Min Head: %d\n", (int)cii.minhead);
-			printf("Max Head: %d\n", (int)cii.maxhead);
-			printf("Creation Date: %04d/%02d/%02d %02d:%02d:%02d.%03d\n", (int)cii.crdt.year, (int)cii.crdt.month, (int)cii.crdt.day, (int)cii.crdt.hour, (int)cii.crdt.min, (int)cii.crdt.sec, (int)cii.crdt.tick);
-			printf("Platforms:");
+			Log_Printf ( LOG_INFO , "\tType: %d\n", (int)cii.type);
+			Log_Printf ( LOG_INFO , "\tRelease: %d\n", (int)cii.release);
+			Log_Printf ( LOG_INFO , "\tRevision: %d\n", (int)cii.revision);
+			Log_Printf ( LOG_INFO , "\tMin Cylinder: %d\n", (int)cii.mincylinder);
+			Log_Printf ( LOG_INFO , "\tMax Cylinder: %d\n", (int)cii.maxcylinder);
+			Log_Printf ( LOG_INFO , "\tMin Head: %d\n", (int)cii.minhead);
+			Log_Printf ( LOG_INFO , "\tMax Head: %d\n", (int)cii.maxhead);
+			Log_Printf ( LOG_INFO , "\tCreation Date: %04d/%02d/%02d %02d:%02d:%02d.%03d\n", (int)cii.crdt.year, (int)cii.crdt.month, (int)cii.crdt.day, (int)cii.crdt.hour, (int)cii.crdt.min, (int)cii.crdt.sec, (int)cii.crdt.tick);
+			Log_Printf ( LOG_INFO , "\tPlatforms:");
 			for (i = 0; i < CAPS_MAXPLATFORM; i++)
 				if (cii.platform[i] != ciipNA)
-					printf ( " %s" , CAPSGetPlatformName(cii.platform[i]) );
-			printf("\n");
+					Log_Printf ( LOG_INFO , " %s" , CAPSGetPlatformName(cii.platform[i]) );
+			Log_Printf ( LOG_INFO , "\n");
 
 			/* Some IPF disks are not correctly supported yet : display a warning */
 			if ( (int)cii.release == 3222 ) 				/* Sundog */

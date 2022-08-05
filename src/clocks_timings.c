@@ -98,12 +98,15 @@ TT :
 FALCON :
   MCLK		= 32 MHz (CLK32)
   VIDEL	IN 	= 32 MHz (VID32MHZ), 25 MHz (25K)
-  COMBEL	IN = 32 MHz (CLK32)				OUT = 4 MHz (CLK4), 500 kHz (KHZ500)
+  COMBEL	IN = 32 MHz (CLK32)				OUT = 8 MHz (CLK8, not used), 4 MHz (CLK4), 500 kHz (KHZ500)
   BUS		= 16 MHz
+
+  DSP 56001	IN = 32 MHz (DSP_32M)
+
+  DMA		IN = 32 MHz (DSP_32M)				OUT = 8 MHz (CLK8), 16 MHz (FCCLK), 2 MHz (CLK2)
 
   CPU 68030	IN = 16 MHz (CPUCLKB)
   FPU 68882	IN = 16 MHz (CPUCLKA)
-  DMA		IN = 8 MHz (CLK8)
   CODEC		IN = 25 MHz (25K)
   MFP 68901	IN = 4 MHz (CLK4), 2.4576 MHz (external clock)
   FDC AJAX	IN = 16 MHz (FCCLK)
@@ -111,8 +114,6 @@ FALCON :
   YM3439	IN = 2 MHz (CLK2)
   ACIA MC6850	IN = 500 kHz (KHZ500)
   IKBD HD6301	IN = 1 MHZ (local clock)
-
-  DSP 56001	IN = 32 MHz (DSP_32M)
 
 */
 
@@ -423,8 +424,18 @@ Uint32	ClocksTimings_GetCyclesPerVBL ( MACHINETYPE MachineType , int ScreenRefre
 		CyclesPerVBL <<= nCpuFreqShift;
 	}
 
+	else if (MachineType == MACHINE_FALCON)
+	{
+		/* TODO : for now we assume all Falcon video modes are based on the same number */
+		/* of cycles per VBL as an STF/STE at 50 Hz, taking nCpuFreqShift into account, */
+		/* which gives 50.053 VBL/sec */
+		/* This should be changed when Videl emulation gets improved */
+		CyclesPerVBL = ATARI_STF_CYCLES_PER_VBL_PAL;
+		CyclesPerVBL <<= nCpuFreqShift;
+	}
+
 	/* For machines where cpu freq can be changed, the number of cycles per VBL is not constant */
-	else										/* MACHINE_TT or MACHINE_FALCON */
+	else										/* MACHINE_TT TODO : use ATARI_STF_CYCLES_PER_VBL_xxx too ?*/
 		CyclesPerVBL = MachineClocks.CPU_Freq_Emul / ScreenRefreshRate;
 
 //fprintf ( stderr , "clock cycles per vbl %d %d -> %d\n" , MachineType , ScreenRefreshRate , CyclesPerVBL );
@@ -530,4 +541,34 @@ Sint64	ClocksTimings_GetSamplesPerVBL ( MACHINETYPE MachineType , int ScreenRefr
 //fprintf ( stderr , "clock sample per vbl %d %d %d -> %ld\n" , MachineType , MachineClocks.CPU_Freq_Emul , AudioFreq , SamplesPerVBL );
 	return SamplesPerVBL;
 }
+
+
+
+
+/*-----------------------------------------------------------------------------------------*/
+/**
+ * Convert a number of cycles "CyclesIn" for a clock running at "ClockFreqIn" into
+ * an equivalent number of cycles for a clock running at "ClockFreqOut".
+ * As clocks are rarely multiple of each other, this will give a remainder that must be kept
+ * and used on next call.
+ * This method uses only integer operations (integer division and modulo) and gives much more
+ * precise results than using floating point, because there's no roundings that accumulate
+ * after a while.
+ */
+void	ClocksTimings_ConvertCycles ( Uint32 CyclesIn , Uint64 ClockFreqIn , CLOCKS_CYCLES_STRUCT *CyclesStructOut , Uint64 ClockFreqOut )
+{
+	Uint64	CyclesTotal;
+	Uint64	CyclesOut;
+	Uint64	CyclesOut_remainder;
+
+	CyclesTotal = CyclesIn * ClockFreqOut;
+	CyclesTotal += CyclesStructOut->Remainder;
+
+	CyclesOut = CyclesTotal / ClockFreqIn;
+	CyclesOut_remainder = CyclesTotal % ClockFreqIn;
+
+	CyclesStructOut->Cycles = CyclesOut;
+	CyclesStructOut->Remainder = CyclesOut_remainder;
+}
+
 

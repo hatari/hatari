@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if [ $# -lt 1 -o "$1" = "-h" -o "$1" = "--help" ]; then
+if [ $# -lt 1 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 	echo "Usage: $0 <hatari>"
 	exit 1;
 fi
@@ -12,7 +12,7 @@ if [ ! -x "$hatari" ]; then
 	exit 1;
 fi;
 
-basedir=$(dirname $0)
+basedir=$(dirname "$0")
 testdir=$(mktemp -d)
 
 remove_temp() {
@@ -26,7 +26,7 @@ export SDL_AUDIODRIVER=dummy
 
 cp "$basedir/cyccheck.prg" "$testdir"
 HOME="$testdir" $hatari --log-level fatal --fast-forward on --sound off \
-	--run-vbls 1000 --tos none $* "$testdir/cyccheck.prg" \
+	--run-vbls 1000 --tos none "$@" "$testdir/cyccheck.prg" \
 	> "$testdir/log.txt" 2>&1
 exitstat=$?
 if [ $exitstat -ne 0 ]; then
