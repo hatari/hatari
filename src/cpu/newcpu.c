@@ -4927,7 +4927,7 @@ static int do_specialties (int cycles)
 	}
 
 	bool first = true;
-	while ((regs.spcflags & SPCFLAG_STOP) && !(regs.spcflags & SPCFLAG_BRK)) {
+	while (regs.spcflags & SPCFLAG_STOP) {
 //fprintf ( stderr , "stop wait %d %ld %ld\n" , currcycle , CyclesGlobalClockCounter );
 	isstopped:
 #ifndef WINUAE_FOR_HATARI
@@ -4948,8 +4948,51 @@ static int do_specialties (int cycles)
 			cputrace.cyclecounter = cputrace.cyclecounter_pre = cputrace.cyclecounter_post = 0;
 			cputrace.readcounter = cputrace.writecounter = 0;
 		}
-		if (!first)
-			x_do_cycles (currprefs.cpu_cycle_exact ? 2 * CYCLE_UNIT : 4 * CYCLE_UNIT);
+
+		if (m68k_interrupt_delay) {
+			unset_special(SPCFLAG_INT);
+			if (first) {
+				ipl_fetch();
+			}
+			if (time_for_interrupt()) {
+#ifndef WINUAE_FOR_HATARI
+		// FIXME [NP] For Atari emulation, adding those 4 cycles breaks some demos (eg 'Closure' by Sync)
+		// Need more tests to understand this difference between Amiga and Atari
+				x_do_cycles(4 * cpucycleunit);
+#endif
+				do_interrupt(regs.ipl);
+				break;
+			}
+		} else {
+			if (regs.spcflags & (SPCFLAG_INT | SPCFLAG_DOINT)) {
+				int intr = intlev ();
+				unset_special (SPCFLAG_INT | SPCFLAG_DOINT);
+#ifdef WITH_PPC
+				bool m68kint = true;
+				if (ppc_state) {
+					m68kint = ppc_interrupt(intr);
+				}
+				if (m68kint) {
+#endif
+					if (intr > 0 && intr > regs.intmask)
+						do_interrupt (intr);
+#ifdef WITH_PPC
+				}
+#endif
+			}
+		}
+
+		if (!first) {
+			if (currprefs.cpu_compatible) {
+				x_do_cycles(2 * cpucycleunit);
+				ipl_fetch();
+				x_do_cycles(2 * cpucycleunit);
+			} else {
+				x_do_cycles(4 * cpucycleunit);
+				ipl_fetch();
+			}
+		}
+		first = false;
 
 #ifdef WINUAE_FOR_HATARI
 		if (!first)
@@ -4983,40 +5026,19 @@ static int do_specialties (int cycles)
 			M68000_Update_intlev ();		/* Refresh the list of pending interrupts */
 		}
 #endif
-		first = false;
+
 #ifndef WINUAE_FOR_HATARI
 		if (regs.spcflags & SPCFLAG_COPPER)
 			do_copper ();
 #endif
-
-		if (m68k_interrupt_delay) {
-			unset_special(SPCFLAG_INT);
-			ipl_fetch ();
-			if (time_for_interrupt ()) {
-				do_interrupt (regs.ipl);
-			}
-		} else {
-			if (regs.spcflags & (SPCFLAG_INT | SPCFLAG_DOINT)) {
-				int intr = intlev ();
-				unset_special (SPCFLAG_INT | SPCFLAG_DOINT);
-#ifdef WITH_PPC
-				bool m68kint = true;
-				if (ppc_state) {
-					m68kint = ppc_interrupt(intr);
-				}
-				if (m68kint) {
-#endif
-					if (intr > 0 && intr > regs.intmask)
-						do_interrupt (intr);
-#ifdef WITH_PPC
-				}
-#endif
-			}
-		}
-
 		if (regs.spcflags & SPCFLAG_MODE_CHANGE) {
 			m68k_resumestopped();
 			return 1;
+		}
+
+		if (regs.spcflags & SPCFLAG_BRK) {
+			stopped_debug = false;
+			goto dodebug;
 		}
 
 #ifdef WITH_PPC
@@ -5073,6 +5095,7 @@ static int do_specialties (int cycles)
 #endif
 
 	if ((regs.spcflags & SPCFLAG_BRK) || stopped_debug) {
+dodebug:
 		unset_special(SPCFLAG_BRK);
 #ifdef DEBUGGER
 		if (stopped_debug && !regs.stopped) {
