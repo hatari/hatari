@@ -26,6 +26,10 @@ Emulation improvements
 - Finish real HD 6301 (keyboard processor of the ST) emulation.
   (Current special casing is enough for all known demos using 6301)
 
+- Allow time to be set on machines with RTC (= using host time).
+  This requires calculating offset to host time on write, and
+  using that offset on further reads.
+
 - Get the games/demos working that are marked as non-working in the manual.
 
 - Emulate different memory access timings on different memory areas.
