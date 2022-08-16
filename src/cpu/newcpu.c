@@ -4722,6 +4722,11 @@ STATIC_INLINE bool time_for_interrupt (void)
 	return regs.ipl > regs.intmask || regs.ipl == 7;
 }
 
+void intlev_load(void)
+{
+	doint();
+}
+
 void doint(void)
 {
 #ifdef WITH_PPC
