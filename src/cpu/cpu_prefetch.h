@@ -60,7 +60,7 @@ STATIC_INLINE void do_cycles_ce020_internal(int clocks)
 	}
 	int cycs = clocks * cpucycleunit;
 //fprintf ( stderr , "do_cycles_ce020_internal %d %d" , cycs , regs.ce020memcycles );
-	int diff = regs.ce020endcycle - regs.ce020startcycle;
+	int diff = (int)(regs.ce020endcycle - regs.ce020startcycle);
 	if (diff > 0) {
 		if (diff >= cycs) {
 			regs.ce020startcycle += cycs;
