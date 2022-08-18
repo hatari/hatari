@@ -40,7 +40,7 @@ extern void set_picasso_hack_rate(int hz);
 /* Set to 1 to leave out the current frame in average frame time calculation.
 * Useful if the debugger was active.  */
 extern int bogusframe;
-extern unsigned long int hsync_counter, vsync_counter;
+extern uae_u32 hsync_counter, vsync_counter;
 
 extern uae_u16 dmacon;
 extern uae_u16 intena, intreq, intreqr;
@@ -161,7 +161,7 @@ STATIC_INLINE int GET_PLANES(uae_u16 bplcon0)
 }
 
 extern void fpscounter_reset(void);
-extern unsigned long idletime;
+extern frame_time_t idletime;
 extern int lightpen_x[2], lightpen_y[2];
 extern int lightpen_cx[2], lightpen_cy[2], lightpen_active, lightpen_enabled, lightpen_enabled2;
 
