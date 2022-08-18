@@ -588,6 +588,7 @@ struct uae_prefs {
 	int gfx_variable_sync;
 	bool gfx_windowed_resize;
 	int gfx_overscanmode;
+	int gfx_monitorblankdelay;
 
 	struct gfx_filterdata gf[2];
 
@@ -787,6 +788,10 @@ struct uae_prefs {
 	bool rtg_hardwaresprite;
 	bool rtg_more_compatible;
 	bool rtg_multithread;
+	bool rtg_overlay;
+	bool rtg_vgascreensplit;
+	bool rtg_paletteswitch;
+	bool rtg_dacswitch;
 	struct rtgboardconfig rtgboards[MAX_RTG_BOARDS];
 	uae_u32 custom_memory_addrs[MAX_CUSTOM_MEMORY_ADDRS];
 	uae_u32 custom_memory_sizes[MAX_CUSTOM_MEMORY_ADDRS];
@@ -1013,7 +1018,7 @@ extern void fixup_cpu (struct uae_prefs *prefs);
 extern void cfgfile_compatibility_romtype(struct uae_prefs *p);
 extern void cfgfile_compatibility_rtg(struct uae_prefs *p);
 extern bool cfgfile_detect_art(struct uae_prefs *p, TCHAR *path);
-extern const TCHAR *cfgfile_getconfigdata(int *len);
+extern const TCHAR *cfgfile_getconfigdata(size_t *len);
 extern bool cfgfile_createconfigstore(struct uae_prefs *p);
 extern void cfgfile_get_shader_config(struct uae_prefs *p, int rtg);
 

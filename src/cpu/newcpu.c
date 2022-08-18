@@ -8107,7 +8107,7 @@ void restore_cpu_finish (void)
 	//activate_debugger ();
 }
 
-uae_u8 *save_cpu_trace (int *len, uae_u8 *dstptr)
+uae_u8 *save_cpu_trace(size_t *len, uae_u8 *dstptr)
 {
 	uae_u8 *dstbak, *dst;
 
@@ -8185,7 +8185,7 @@ uae_u8 *save_cpu_trace (int *len, uae_u8 *dstptr)
 	return dstbak;
 }
 
-uae_u8 *restore_cpu_trace (uae_u8 *src)
+uae_u8 *restore_cpu_trace(uae_u8 *src)
 {
 	cpu_tracer = 0;
 	cputrace.state = 0;
@@ -8295,7 +8295,7 @@ uae_u8 *restore_cpu_trace (uae_u8 *src)
 	return src;
 }
 
-uae_u8 *restore_cpu_extra (uae_u8 *src)
+uae_u8 *restore_cpu_extra(uae_u8 *src)
 {
 	restore_u32 ();
 	uae_u32 flags = restore_u32 ();
@@ -8322,7 +8322,7 @@ uae_u8 *restore_cpu_extra (uae_u8 *src)
 	return src;
 }
 
-uae_u8 *save_cpu_extra (int *len, uae_u8 *dstptr)
+uae_u8 *save_cpu_extra(size_t *len, uae_u8 *dstptr)
 {
 	uae_u8 *dstbak, *dst;
 	uae_u32 flags;
@@ -8350,7 +8350,7 @@ uae_u8 *save_cpu_extra (int *len, uae_u8 *dstptr)
 	return dstbak;
 }
 
-uae_u8 *save_cpu (int *len, uae_u8 *dstptr)
+uae_u8 *save_cpu(size_t *len, uae_u8 *dstptr)
 {
 	uae_u8 *dstbak, *dst;
 	int model, khz;
@@ -8509,7 +8509,7 @@ uae_u8 *save_cpu (int *len, uae_u8 *dstptr)
 	return dstbak;
 }
 
-uae_u8 *save_mmu (int *len, uae_u8 *dstptr)
+uae_u8 *save_mmu(size_t *len, uae_u8 *dstptr)
 {
 	uae_u8 *dstbak, *dst;
 	int model;
@@ -8530,7 +8530,7 @@ uae_u8 *save_mmu (int *len, uae_u8 *dstptr)
 	return dstbak;
 }
 
-uae_u8 *restore_mmu (uae_u8 *src)
+uae_u8 *restore_mmu(uae_u8 *src)
 {
 	int flags, model;
 

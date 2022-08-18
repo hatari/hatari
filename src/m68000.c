@@ -443,7 +443,7 @@ void M68000_PatchCpuTables(void)
  */
 void M68000_MemorySnapShot_Capture(bool bSave)
 {
-	int len;
+	size_t len;
 	uae_u8 chunk[ 1000 ];
 
 	MemorySnapShot_Store(&pendingInterrupts, sizeof(pendingInterrupts));	/* for intlev() */
