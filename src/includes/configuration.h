@@ -386,6 +386,7 @@ typedef struct
   bool bBlitter;                  /* TRUE if Blitter is enabled */
   DSPTYPE nDSPType;               /* how to "emulate" DSP */
   VMETYPE nVMEType;               /* how to "emulate" SCU/VME */
+  int nRtcYear;
   bool bPatchTimerD;
   bool bFastBoot;                 /* Enable to patch TOS for fast boot */
   bool bFastForward;

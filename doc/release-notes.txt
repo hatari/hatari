@@ -14,6 +14,15 @@ Following features are deprecated and will be removed in a future release:
   recent hardware should have 32 bpp nowadays)
 
 
+ Development version
+ -------------------
+
+Emulator improvements:
+- RTC:
+  - CLI/config option to override RTC year for applications that
+    do not handle current dates
+
+
  Version 2.4.1 (2022-08-03)
  --------------------------
 

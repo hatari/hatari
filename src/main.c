@@ -44,6 +44,7 @@ const char Main_fileid[] = "Hatari main.c";
 #include "reset.h"
 #include "resolution.h"
 #include "rs232.h"
+#include "rtc.h"
 #include "scc.h"
 #include "screen.h"
 #include "sdlgui.h"
@@ -771,7 +772,8 @@ static void Main_Init(void)
 	IoMem_Init();
 	NvRam_Init();
 	Sound_Init();
-	
+	Rtc_Init();
+
 	/* done as last, needs CPU & DSP running... */
 	DebugUI_Init();
 }

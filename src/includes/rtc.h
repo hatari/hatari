@@ -10,6 +10,7 @@
 #ifndef HATARI_RTC_H
 #define HATARI_RTC_H
 
+extern void Rtc_Init(void);
 extern void Rtc_SecondsUnits_ReadByte(void);
 extern void Rtc_SecondsTens_ReadByte(void);
 extern void Rtc_MinutesUnits_ReadByte(void);

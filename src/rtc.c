@@ -62,12 +62,14 @@ const char Rtc_fileid[] = "Hatari rtc.c";
 #include <time.h>
 
 #include "main.h"
+#include "configuration.h"
 #include "ioMem.h"
 #include "rtc.h"
 
 
 static bool rtc_bank;           /* RTC bank select (0=normal, 1=configuration(?)) */
 static Sint8 fake_am, fake_amz;
+static int year_offset;
 
 
 /*-----------------------------------------------------------------------*/
@@ -80,6 +82,20 @@ static struct tm* get_localtime(void)
 	/* Get system time */
 	time_t nTimeTicks = time(NULL);
 	return localtime(&nTimeTicks);
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * tm->tm_year starts from 1900, GEMDOS year from 1980
+ * Set suitable tm->tm_year offset for GEMDOS
+ */
+void Rtc_Init(void)
+{
+	year_offset = 80;
+	if (!ConfigureParams.System.nRtcYear)
+		return;
+
+	year_offset += 1900 + get_localtime()->tm_year - ConfigureParams.System.nRtcYear;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -231,14 +247,13 @@ void Rtc_MonthTens_ReadByte(void)
 	IoMem[0xfffc35] = (get_localtime()->tm_mon + 1) / 10;
 }
 
-
 /*-----------------------------------------------------------------------*/
 /**
  * Read year units.
  */
 void Rtc_YearUnits_ReadByte(void)
 {
-	IoMem[0xfffc37] = get_localtime()->tm_year % 10;
+	IoMem[0xfffc37] = (get_localtime()->tm_year - year_offset) % 10;
 }
 
 
@@ -248,7 +263,7 @@ void Rtc_YearUnits_ReadByte(void)
  */
 void Rtc_YearTens_ReadByte(void)
 {
-	IoMem[0xfffc39] = (get_localtime()->tm_year - 80) / 10;
+	IoMem[0xfffc39] = (get_localtime()->tm_year - year_offset) / 10;
 }
 
 

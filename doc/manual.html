@@ -1008,6 +1008,12 @@ With "none", register access causes errors (=no VME HW), which is
 needed for Linux to boot with TT emulation until there's full SCU
 interrupt support.  No VME tracing support.
 </p>
+<p class="parameter">--rtc-year &lt;x&gt;</p>
+<p class="paramdesc">With the default value 0, RTC date and time are
+taken from the host. If application does not handle current dates,
+this can be used to change RTC year to a more compatible one.  See
+also "--gemdos-time" option.
+</p>
 <p class="parameter">--dsp &lt;x&gt;</p>
 <p class="paramdesc">Falcon DSP emulation (x = none, dummy
 or emu, Falcon only)</p>
