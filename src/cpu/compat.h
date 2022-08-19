@@ -28,7 +28,7 @@
 static inline void to_lower (TCHAR *s, int len) {
 	int i;
 	if (len < 0 )
-		len = _tcslen(s);
+		len = uaetcslen(s);
 	for (i = 0; i < len; i++) {
 		s[i] = tolower(s[i]);
 	}
@@ -38,12 +38,11 @@ static inline void to_lower (TCHAR *s, int len) {
 static inline void to_upper (TCHAR *s, int len) {
 	int i;
 	if (len < 0 )
-		len = _tcslen(s);
+		len = uaetcslen(s);
 	for (i = 0; i < len; i++) {
 		s[i] = toupper(s[i]);
 	}
 }
-
 
 static inline void my_trim (TCHAR *s)
 {
