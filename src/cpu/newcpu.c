@@ -6283,7 +6283,7 @@ static void m68k_run_mmu040 (void)
 #endif
 
 				if (regs.spcflags) {
-					if (do_specialties (cpu_cycles)) {
+					if (do_specialties(cpu_cycles)) {
 						STOPTRY;
 						return;
 					}
@@ -6486,7 +6486,7 @@ insretry:
 					regs.instruction_cnt++;
 					regs.ipl = regs.ipl_pin;
 					if (regs.spcflags || time_for_interrupt ()) {
-						if (do_specialties (0)) {
+						if (do_specialties(0)) {
 							STOPTRY;
 							return;
 						}
