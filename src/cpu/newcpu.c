@@ -3834,6 +3834,10 @@ static void m68k_reset2(bool hardreset)
 	}
 #endif
 
+	// Force config changes (CPU speed) into effect on hard reset
+	update_68k_cycles();
+
+
 #ifdef SAVESTATE
 	if (isrestore ()) {
 		m68k_reset_sr();
