@@ -52,15 +52,16 @@ static uae_u32 extra_cycle;
 #ifndef WINUAE_FOR_HATARI
 static void sync_cycles(void)
 {
-        uae_u32 c;
-        uae_u32 extra;
-
-        c = get_cycles();
-        extra = c & (CYCLE_UNIT - 1);
-        if (extra) {
-                extra = CYCLE_UNIT - extra;
-                do_cycles(extra);
-        }
+	if (extra_cycle) {
+		do_cycles(extra_cycle);
+		extra_cycle = 0;
+	}
+	evt_t c = get_cycles();
+	int extra = c & (CYCLE_UNIT - 1);
+	if (extra) {
+		extra = CYCLE_UNIT - extra;
+		do_cycles(extra);
+	}
 }
 #endif
 
