@@ -1983,7 +1983,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			year = atoi(argv[++i]);
 			if(year && (year < 1980 || year >= 2080))
 			{
-				return Opt_ShowError(OPT_CPUCLOCK, argv[i], "Invalid RTC year");
+				return Opt_ShowError(OPT_RTC_YEAR, argv[i], "Invalid RTC year");
 			}
 			ConfigureParams.System.nRtcYear = year;
 			break;
