@@ -83,7 +83,6 @@ static const struct Config_Tag configs_Screen[] =
 	{ "bResizable", Bool_Tag, &ConfigureParams.Screen.bResizable },
 	{ "bAllowOverscan", Bool_Tag, &ConfigureParams.Screen.bAllowOverscan },
 	{ "nSpec512Threshold", Int_Tag, &ConfigureParams.Screen.nSpec512Threshold },
-	{ "nForceBpp", Int_Tag, &ConfigureParams.Screen.nForceBpp },
 	{ "bAspectCorrect", Bool_Tag, &ConfigureParams.Screen.bAspectCorrect },
 	{ "bUseExtVdiResolutions", Bool_Tag, &ConfigureParams.Screen.bUseExtVdiResolutions },
 	{ "nVdiWidth", Int_Tag, &ConfigureParams.Screen.nVdiWidth },
@@ -701,7 +700,6 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Screen.nFrameSkips = AUTO_FRAMESKIP_LIMIT;
 	ConfigureParams.Screen.bAllowOverscan = true;
 	ConfigureParams.Screen.nSpec512Threshold = 1;
-	ConfigureParams.Screen.nForceBpp = 0;
 	ConfigureParams.Screen.bAspectCorrect = true;
 	ConfigureParams.Screen.nMonitorType = MONITOR_TYPE_RGB;
 	ConfigureParams.Screen.bUseExtVdiResolutions = false;
@@ -825,10 +823,6 @@ void Configuration_Apply(bool bReset)
 	if (ConfigureParams.Screen.nFrameSkips < AUTO_FRAMESKIP_LIMIT)
 	{
 		nFrameSkips = ConfigureParams.Screen.nFrameSkips;
-	}
-	if (ConfigureParams.Screen.nForceBpp < 15)	/* Avoid 8-bit depth */
-	{
-		ConfigureParams.Screen.nForceBpp = 0;
 	}
 
 	/* Check/convert ST RAM size in KB */

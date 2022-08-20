@@ -82,7 +82,7 @@ static void Resolution_GetMaxSize(int *width, int *height)
  * Set given width & height arguments to maximum size allowed in the
  * configuration.
  */
-void Resolution_GetLimits(int *width, int *height, int *bpp, bool keep)
+void Resolution_GetLimits(int *width, int *height, bool keep)
 {
 	*width = *height = 0;
 

@@ -130,8 +130,7 @@ void Videl_Init(void)
 void VIDEL_reset(void)
 {
 	Videl_Init();
-	Screen_SetGenConvSize(videl.save_scrWidth, videl.save_scrHeight,
-	                      ConfigureParams.Screen.nForceBpp, false);
+	Screen_SetGenConvSize(videl.save_scrWidth, videl.save_scrHeight, 0, false);
 
 	videl.bUseSTShifter = false;				/* Use Falcon color palette by default */
 	videl.reg_ffff8006_save = IoMem_ReadByte(0xff8006);
@@ -898,11 +897,7 @@ void Videl_ScreenModeChanged(bool bForceChange)
 {
 	int bpp;
 
-	if (ConfigureParams.Screen.nForceBpp)
-	{
-		bpp = ConfigureParams.Screen.nForceBpp;
-	}
-	else if (Avi_AreWeRecording())
+	if (Avi_AreWeRecording())
 	{
 		/* Avoid changing the bpp if we are recording */
 		bpp = sdlscrn->format->BitsPerPixel;

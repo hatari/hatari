@@ -86,7 +86,6 @@ enum {
 	OPT_MAXWIDTH,
 	OPT_MAXHEIGHT,
 	OPT_ZOOM,
-	OPT_FORCEBPP,
 	OPT_DISABLE_VIDEO,
 
 	OPT_BORDERS,		/* ST/STE display options */
@@ -272,8 +271,6 @@ static const opt_t HatariOptions[] = {
 	  "<x>", "Maximum Hatari screen height before scaling" },
 	{ OPT_ZOOM, "-z", "--zoom",
 	  "<x>", "Hatari screen/window scaling factor (1.0 - 8.0)" },
-	{ OPT_FORCEBPP, NULL, "--bpp",
-	  "<x>", "Force internal bitdepth (x = 15/16/32, 0=disable)" },
 	{ OPT_DISABLE_VIDEO,   NULL, "--disable-video",
 	  "<bool>", "Run emulation without displaying video (audio only)" },
 
@@ -1200,24 +1197,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 		case OPT_DRIVE_LED:
 			ok = Opt_Bool(argv[++i], OPT_DRIVE_LED, &ConfigureParams.Screen.bShowDriveLed);
-			break;
-
-		case OPT_FORCEBPP:
-			planes = atoi(argv[++i]);
-			switch(planes)
-			{
-			case 32:
-			case 16:
-			case 15:
-				break;       /* supported */
-			case 24:
-				planes = 32; /* We do not support 24 bpp (yet) */
-				break;
-			default:
-				return Opt_ShowError(OPT_FORCEBPP, argv[i], "Invalid bit depth");
-			}
-			Log_Printf(LOG_DEBUG, "Hatari window BPP = %d.\n", planes);
-			ConfigureParams.Screen.nForceBpp = planes;
 			break;
 
 		case OPT_DISABLE_VIDEO:

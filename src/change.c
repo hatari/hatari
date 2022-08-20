@@ -202,8 +202,7 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	 * (if switch between Colour/Mono cause reset later) or toggle statusbar
 	 */
 	if (!NeedReset &&
-	    (changed->Screen.nForceBpp != current->Screen.nForceBpp
-	     || changed->Screen.bAspectCorrect != current->Screen.bAspectCorrect
+	    (changed->Screen.bAspectCorrect != current->Screen.bAspectCorrect
 	     || changed->Screen.nMaxWidth != current->Screen.nMaxWidth
 	     || changed->Screen.nMaxHeight != current->Screen.nMaxHeight
 	     || changed->Screen.bAllowOverscan != current->Screen.bAllowOverscan

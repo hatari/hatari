@@ -582,11 +582,8 @@ static bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bFo
  */
 static void Screen_SetSTResolution(bool bForceChange)
 {
-	int Width, Height, nZoom, SBarHeight, BitCount, maxW, maxH;
+	int Width, Height, nZoom, SBarHeight, maxW, maxH;
 	bool bDoubleLowRes = false;
-
-	/* Bits per pixel */
-	BitCount = ConfigureParams.Screen.nForceBpp;
 
 	nBorderPixelsTop = nBorderPixelsBottom = 0;
 	nBorderPixelsLeft = nBorderPixelsRight = 0;
@@ -610,7 +607,7 @@ static void Screen_SetSTResolution(bool bForceChange)
 	/* Statusbar height for doubled screen size */
 	SBarHeight = Statusbar_GetHeightForSize(640, 400);
 
-	Resolution_GetLimits(&maxW, &maxH, &BitCount, ConfigureParams.Screen.bKeepResolution);
+	Resolution_GetLimits(&maxW, &maxH, ConfigureParams.Screen.bKeepResolution);
 
 	/* Zoom if necessary, factors used for scaling mouse motions */
 	if (STRes == ST_LOW_RES &&
@@ -655,7 +652,7 @@ static void Screen_SetSTResolution(bool bForceChange)
 
 	PCScreenOffsetX = PCScreenOffsetY = 0;
 
-	if (Screen_SetSDLVideoSize(Width, Height, BitCount, bForceChange))
+	if (Screen_SetSDLVideoSize(Width, Height, 32, bForceChange))
 	{
 		Statusbar_Init(sdlscrn);
 
@@ -685,11 +682,9 @@ static void Screen_SetSTResolution(bool bForceChange)
  */
 static void Screen_ChangeResolution(bool bForceChange)
 {
-	int hbpp = ConfigureParams.Screen.nForceBpp;
-
 	if (bUseVDIRes)
 	{
-		Screen_SetGenConvSize(VDIWidth, VDIHeight, hbpp, bForceChange);
+		Screen_SetGenConvSize(VDIWidth, VDIHeight, 32, bForceChange);
 	}
 	else if (Config_IsMachineFalcon())
 	{
@@ -699,11 +694,11 @@ static void Screen_ChangeResolution(bool bForceChange)
 	{
 		int width, height, bpp;
 		Video_GetTTRes(&width, &height, &bpp);
-		Screen_SetGenConvSize(width, height, hbpp, bForceChange);
+		Screen_SetGenConvSize(width, height, 32, bForceChange);
 	}
 	else if (bUseHighRes)
 	{
-		Screen_SetGenConvSize(640, 400, hbpp, bForceChange);
+		Screen_SetGenConvSize(640, 400, 32, bForceChange);
 	}
 	else
 	{
@@ -1353,11 +1348,8 @@ void Screen_SetGenConvSize(int width, int height, int bpp, bool bForceChange)
 	int screenwidth, screenheight, maxw, maxh;
 	int scalex, scaley, sbarheight;
 
-	if (bpp == 24)
-		bpp = 32;
-
 	/* constrain size request to user's desktop size */
-	Resolution_GetLimits(&maxw, &maxh, &bpp, keep);
+	Resolution_GetLimits(&maxw, &maxh, keep);
 
 	nScreenZoomX = nScreenZoomY = 1;
 

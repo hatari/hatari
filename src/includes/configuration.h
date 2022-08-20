@@ -306,7 +306,6 @@ typedef struct
   bool bUseSdlRenderer;
   float nZoomFactor;
   int nSpec512Threshold;
-  int nForceBpp;
   int nVdiColors;
   int nVdiWidth;
   int nVdiHeight;
