@@ -147,7 +147,12 @@ endif(Udev_FOUND)
 
 find_package(Capstone)
 if(Capstone_FOUND)
-	set(HAVE_CAPSTONE 1)
+	set(CMAKE_REQUIRED_INCLUDES ${CAPSTONE_INCLUDE_DIR})
+	CHECK_INCLUDE_FILE("m68k.h" HAVE_CAPSTONE_M68K)
+	unset(CMAKE_REQUIRED_INCLUDES)
+	if(NOT HAVE_CAPSTONE_M68K)
+		unset(Capstone_FOUND)
+	endif()
 endif(Capstone_FOUND)
 
 # Check if Large File Support is available with the standard POSIX flags

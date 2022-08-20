@@ -108,5 +108,5 @@
 /* Define to 1 if udev support is available */
 #cmakedefine HAVE_UDEV 1
 
-/* Define to 1 if the capstone library is available */
-#cmakedefine HAVE_CAPSTONE 1
+/* Define to 1 if the capstone library with m68k support is available */
+#cmakedefine HAVE_CAPSTONE_M68K 1

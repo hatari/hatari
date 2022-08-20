@@ -25,7 +25,7 @@ Emulator improvements:
     address in history preceeding PC reg value (instead of to PC),
     when (re-)entering debugger, to give more context
   - The built-in "external" disassembler has been replace by using
-    the disassembler of the Capstone library
+    the disassembler of the Capstone library (version >= 4.0)
 
 
  Version 2.4.1 (2022-08-03)

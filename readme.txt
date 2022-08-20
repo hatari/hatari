@@ -90,8 +90,8 @@ Optional:
   (http://portmedia.sourceforge.net/)
 - The udev library for NatFeats SCSI driver media change detection
 - The IPF support library (http://www.softpres.org/download)
-- The Capstone library for traditional disassembly output in the debugger
-  (https://www.capstone-engine.org/)
+- The Capstone library (version >= 4.0) for traditional disassembly output
+  in the debugger (https://www.capstone-engine.org/)
 
 Don't forget to also install the header files of these libraries for compiling
 Hatari (some Linux distributions use separate development packages for these

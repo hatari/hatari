@@ -8,7 +8,7 @@
 #include "main.h"
 #include <ctype.h>
 
-#if HAVE_CAPSTONE
+#if HAVE_CAPSTONE_M68K
 #include <capstone.h>
 #endif
 
@@ -51,7 +51,7 @@ static int			optionPosComment = 82;	// comment, if defined
 
 static int optionCPUTypeMask;
 
-#if HAVE_CAPSTONE
+#if HAVE_CAPSTONE_M68K
 
 static int Disass68k(csh cshandle, long addr, char *labelBuffer,
                      char *opcodeBuffer, char *operandBuffer, char *commentBuffer)
@@ -196,7 +196,7 @@ static void Disass68k_loop (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
 		*nextpc = addr;
 }
 
-#endif /* HAVE_CAPSTONE */
+#endif /* HAVE_CAPSTONE_M68K */
 
 /**
  * Calculate next PC address from given one, without output
@@ -218,7 +218,7 @@ Uint32 Disasm_GetNextPC(Uint32 pc)
  */
 void Disasm (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
 {
-#if HAVE_CAPSTONE
+#if HAVE_CAPSTONE_M68K
 	if (!ConfigureParams.Debugger.bDisasmUAE)
 	{
 		Disass68k_loop (f, addr, nextpc, cnt);
@@ -307,7 +307,7 @@ void Disasm_SetCPUType(int CPU, int FPU, bool bMMU)
 {
 	switch (CPU)
 	{
-#ifdef HAVE_CAPSTONE
+#ifdef HAVE_CAPSTONE_M68K
 	 case 0:  optionCPUTypeMask = CS_MODE_M68K_000; break;
 	 case 1:  optionCPUTypeMask = CS_MODE_M68K_010; break;
 	 case 2:  optionCPUTypeMask = CS_MODE_M68K_020; break;
@@ -363,7 +363,7 @@ const char *Disasm_ParseOption(const char *arg)
 	}
 	if (strcasecmp(arg, "ext") == 0)
 	{
-#if HAVE_CAPSTONE
+#if HAVE_CAPSTONE_M68K
 		fputs("Selected external disassembler.\n", stderr);
 		fprintf(stderr, "Disassembly output flags are %d.\n", options);
 		ConfigureParams.Debugger.bDisasmUAE = false;
