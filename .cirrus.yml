@@ -6,7 +6,7 @@ fedora_task:
   install_script:
     - dnf update -y
     - dnf install -y cmake make gcc diffutils python-unversioned-command
-          GraphicsMagick SDL2-devel libpng-devel zlib-devel tidy
+          capstone-devel GraphicsMagick SDL2-devel libpng-devel zlib-devel tidy
   script:
     - mkdir build
     - cd build
@@ -22,7 +22,7 @@ freebsd_task:
     memory: 4G
   install_script:
     - pkg update
-    - pkg install -y pkgconf cmake gmake GraphicsMagick png
+    - pkg install -y pkgconf cmake gmake capstone4 GraphicsMagick png
           devel/sdl20 devel/libedit
   script:
     - ./configure --enable-debug || { cat config.log; exit 1; }

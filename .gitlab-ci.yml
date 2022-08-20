@@ -12,7 +12,8 @@ build-normal:
 
 build-alt:
  script:
- - apt-get install -y -qq cmake libsdl2-dev libportmidi-dev python3
+ - apt-get install -y -qq cmake python3 libcapstone-dev libsdl2-dev
+                   libportmidi-dev
  - rm -rf /usr/include/zlib.h /usr/include/png.h /usr/include/readline*
  - ./configure --disable-small-mem --disable-dsp --enable-debug --disable-tracing
  - make
@@ -32,7 +33,7 @@ build-32bit:
 build-clang:
  script:
  - apt-get install -y -qq cmake clang libsdl2-dev libpng-dev zlib1g-dev
-                      libudev-dev libportmidi-dev tidy python3
+                      libcapstone-dev libudev-dev libportmidi-dev tidy python3
  - CC="clang" CFLAGS="-O3 -Werror" ./configure --enable-debug
  - make
  - make test
