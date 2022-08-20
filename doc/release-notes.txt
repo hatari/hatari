@@ -6,7 +6,6 @@
 Following features are deprecated and will be removed in a future release:
 - SDL 2.x "bUseSdlRenderer" config and "GPU scaling" GUI options
   (after HW support for SDL2 is available widely enough)
-- The "external" disassembler (i.e. use "--disasm uae" instead)
 - Hatari XBios(255) API enabled with the "--bios-intercept" option
   (i.e. use "--natfeats" & "--cmd-fifo" options and "hconsole" instead)
 - The old ~/.hatari configuration file location (use ~/.config/hatari instead)
@@ -21,10 +20,12 @@ Emulator improvements:
 - RTC:
   - CLI/config option to override RTC year for applications that
     do not handle current dates
-Debugger:
+- Debugger:
   - When history is enabled, disassembly address defaults to an
     address in history preceeding PC reg value (instead of to PC),
     when (re-)entering debugger, to give more context
+  - The built-in "external" disassembler has been replace by using
+    the disassembler of the Capstone library
 
 
  Version 2.4.1 (2022-08-03)
