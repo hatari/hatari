@@ -53,6 +53,27 @@ static int optionCPUTypeMask;
 
 #if HAVE_CAPSTONE_M68K
 
+static void Disass68k_ConvertA7ToSP(char *sOpBuf)
+{
+	char *ptr;
+	int cnt;
+
+	/* Do this twice, once for source and once for destination */
+	for (cnt = 0; cnt < 2 ; cnt++)
+	{
+		ptr = strstr(sOpBuf, "(a7");
+		if (ptr)
+			memcpy(ptr + 1, "sp", 2);
+	}
+
+	if (strncmp(sOpBuf, "a7,", 3) == 0)
+		memcpy(sOpBuf, "sp", 2);
+
+	cnt = strlen(sOpBuf);
+	if (cnt > 4 && strncmp(&sOpBuf[cnt - 4], ", a7", 4) == 0)
+		memcpy(&sOpBuf[cnt - 2], "sp", 2);
+}
+
 static int Disass68k(csh cshandle, long addr, char *labelBuffer,
                      char *opcodeBuffer, char *operandBuffer, char *commentBuffer)
 {
@@ -88,6 +109,10 @@ static int Disass68k(csh cshandle, long addr, char *labelBuffer,
 		Str_ToUpper(opcodeBuffer);
 
 	strcpy(operandBuffer, insn->op_str);
+
+	/* Replace "a7" with "sp"? */
+	if ((options & doptStackSP) != 0)
+		Disass68k_ConvertA7ToSP(operandBuffer);
 
 	/* Operands in uppercase letters? */
 	if (!(options & doptRegisterSmall))
@@ -352,7 +377,7 @@ const char *Disasm_ParseOption(const char *arg)
 			{ doptNoSpace, "no space after comma in the operands list" },
 			{ doptOpcodesSmall, "opcodes in small letters" },
 			{ doptRegisterSmall, "register names in small letters" },
-			// { doptStackSP, "stack pointer as 'SP', not 'A7'" },
+			{ doptStackSP, "stack pointer as 'SP', not 'A7'" },
 			{ 0, NULL }
 		};
 		int i;
