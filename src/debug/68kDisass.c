@@ -29,17 +29,17 @@
 #define USE_SYMBOLS			1
 
 typedef enum {
-	doptNoBrackets = 1,		// hide brackets around absolute addressing
+	doptNoSpace = 1,	// no space after a comma in the operands list
 	doptOpcodesSmall = 2,	// opcodes are small letters
 	doptRegisterSmall = 4,	// register names are small letters
 	doptStackSP = 8		// stack pointer is named "SP" instead of "A7" (except for MOVEM)
 } Diss68kOptions;
 
 // Note: doptNoBrackets and doptStackSP are not implemented anymore
-static Diss68kOptions	options = doptOpcodesSmall | doptRegisterSmall;
+static Diss68kOptions	options = doptOpcodesSmall | doptRegisterSmall | doptNoSpace;
 
 /* all options */
-static const Diss68kOptions optionsMask = doptOpcodesSmall | doptRegisterSmall | doptStackSP | doptNoBrackets;
+static const Diss68kOptions optionsMask = doptOpcodesSmall | doptRegisterSmall | doptStackSP | doptNoSpace;
 
 // values <0 will hide the group
 static int			optionPosAddress = 0;	// current address
@@ -59,6 +59,7 @@ static int Disass68k(csh cshandle, long addr, char *labelBuffer,
 	const int maxsize = MAX_68000_INSTRUCTION_SIZE;
 	cs_insn *insn;
 	void *mem;
+	char *ch;
 
 	labelBuffer[0] = 0;
 	opcodeBuffer[0] = 0;
@@ -72,24 +73,41 @@ static int Disass68k(csh cshandle, long addr, char *labelBuffer,
 		return 2;
 	}
 	mem = STMemory_STAddrToPointer(addr);
-	if (cs_disasm(cshandle, mem, maxsize, addr, 1, &insn) > 0)
+	if (cs_disasm(cshandle, mem, maxsize, addr, 1, &insn) <= 0)
 	{
-		strcpy(opcodeBuffer, insn->mnemonic);
-		if (!(options & doptOpcodesSmall))
-			Str_ToUpper(opcodeBuffer);
-
-		strcpy(operandBuffer, insn->op_str);
-		if (!(options & doptRegisterSmall))
-			Str_ToUpper(operandBuffer);
-
-		cs_free(insn, 1);
-		return insn->size;
+		strcpy(commentBuffer, "unknown opcode");
+		strcpy(opcodeBuffer, "DC.W");
+		sprintf(operandBuffer,"$%4.4x", STMemory_ReadWord(addr));
+		return 2;
 	}
 
-	strcpy(commentBuffer, "unknown opcode");
-	strcpy(opcodeBuffer, "DC.W");
-	sprintf(operandBuffer,"$%4.4x", STMemory_ReadWord(addr));
-	return 2;
+	strcpy(opcodeBuffer, insn->mnemonic);
+
+	/* Instruction mnemonic in uppercase letter? */
+	if (!(options & doptOpcodesSmall))
+		Str_ToUpper(opcodeBuffer);
+
+	strcpy(operandBuffer, insn->op_str);
+
+	/* Operands in uppercase letters? */
+	if (!(options & doptRegisterSmall))
+		Str_ToUpper(operandBuffer);
+
+	/* Remove spaces after comma? */
+	if ((options & doptNoSpace) != 0)
+	{
+		for (ch = operandBuffer; *ch != 0; ch++)
+		{
+			if (ch[0] == ',' && ch[1] == ' ')
+			{
+				++ch;
+				memmove(ch, ch + 1, strlen(ch + 1) + 1);
+			}
+		}
+	}
+
+	cs_free(insn, 1);
+	return insn->size;
 }
 
 static void		Disass68kComposeStr(char *dbuf, const char *str, int position, int maxPos)
@@ -331,7 +349,7 @@ const char *Disasm_ParseOption(const char *arg)
 			int flag;
 			const char *desc;
 		} option[] = {
-			{ doptNoBrackets, "no brackets around absolute addressing" },
+			{ doptNoSpace, "no space after comma in the operands list" },
 			{ doptOpcodesSmall, "opcodes in small letters" },
 			{ doptRegisterSmall, "register names in small letters" },
 			// { doptStackSP, "stack pointer as 'SP', not 'A7'" },
@@ -345,7 +363,7 @@ const char *Disasm_ParseOption(const char *arg)
 		      "\t      and supports options below\n"
 		      "\t<bitmask> - disassembly output option flags\n"
 		      "Flag values:\n", stderr);
-		for (i = 1; option[i].desc; i++) {
+		for (i = 0; option[i].desc; i++) {
 			assert(option[i].flag == (1 << i));
 			fprintf(stderr, "\t%d: %s\n", option[i].flag, option[i].desc);
 		}
