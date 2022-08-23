@@ -4753,6 +4753,20 @@ void intlev_load(void)
 	doint();
 }
 
+bool stop_interrupt_pending(void)
+{
+	if (m68k_interrupt_delay) {
+		int il = intlev();
+		regs.ipl_pin = il;
+		if (regs.ipl_pin > regs.intmask || regs.ipl_pin == 7) {
+			if (regs.spcflags & SPCFLAG_INT) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 void doint(void)
 {
 #ifdef WITH_PPC
@@ -4825,6 +4839,16 @@ static void check_debugger(void)
 		}
 #endif
 	}
+}
+
+static void debug_cpu_stop(void)
+{
+#ifndef WINUAE_FOR_HATARI
+	record_dma_event(DMA_EVENT_CPUSTOP, current_hpos(), vpos);
+	if (time_for_interrupt()) {
+		record_dma_event(DMA_EVENT_CPUSTOPIPL, current_hpos(), vpos);
+	}
+#endif
 }
 
 static int do_specialties (int cycles)
@@ -4948,7 +4972,7 @@ static int do_specialties (int cycles)
 		Exception (3);
 	}
 #endif
-	bool first = true;
+
 	while (regs.spcflags & SPCFLAG_STOP) {
 //fprintf ( stderr , "stop wait %d %ld %ld\n" , currcycle , CyclesGlobalClockCounter );
 
@@ -4985,16 +5009,23 @@ static int do_specialties (int cycles)
 		if (m68k_interrupt_delay) {
 			unset_special(SPCFLAG_INT);
 			if (time_for_interrupt()) {
-				if (!first) {
-					// extra loop because even after higher ipl detection,
-					// stop needs to do one more loop before it exits.
+				// extra STOP "round"
 #ifndef WINUAE_FOR_HATARI
-		// FIXME [NP] For Atari emulation, adding those 4 cycles breaks some demos (eg 'Closure' by Sync)
-		// Need more tests to understand this difference between Amiga and Atari
-		// Also timings don't look good when interrupt is already pending before STOP
+				if (debug_dma) {
+					debug_cpu_stop();
+					x_do_cycles(2 * cpucycleunit);
+					debug_cpu_stop();
+					x_do_cycles(2 * cpucycleunit);
+				} else {
 					x_do_cycles(4 * cpucycleunit);
-#endif
 				}
+#else
+				// FIXME [NP] For Atari emulation, adding those 4 cycles breaks some demos (eg 'Closure' by Sync),
+				// so we don't add them
+				// Need more tests to understand this difference between Amiga and Atari
+				// Also timings don't look good when interrupt is already pending before STOP
+//					x_do_cycles(4 * cpucycleunit);
+#endif
 				do_interrupt(regs.ipl);
 				break;
 			}
@@ -5017,22 +5048,30 @@ static int do_specialties (int cycles)
 			}
 		}
 
-		first = false;
 		ipl_fetch();
+
+#ifndef WINUAE_FOR_HATARI
+		if (debug_dma) {
+			debug_cpu_stop();
+			x_do_cycles(2 * cpucycleunit);
+			debug_cpu_stop();
+			x_do_cycles(2 * cpucycleunit);
+		} else {
+			x_do_cycles(4 * cpucycleunit);
+		}
+#else
 		x_do_cycles(4 * cpucycleunit);
+#endif
 
 #ifdef WINUAE_FOR_HATARI
-		if (!first)
+		if (CpuRunCycleExact)
 		{
-			if (CpuRunCycleExact)
-			{
-				/* Flush all CE cycles so far to update PendingInterruptCount */
-				M68000_AddCycles_CE ( currcycle * 2 / CYCLE_UNIT );
-				currcycle = 0;
-			}
-			else
-				M68000_AddCycles(4);
+			/* Flush all CE cycles so far to update PendingInterruptCount */
+			M68000_AddCycles_CE ( currcycle * 2 / CYCLE_UNIT );
+			currcycle = 0;
 		}
+		else
+			M68000_AddCycles(4);
 
 		/* It is possible one or more ints happen at the same time */
 		/* We must process them during the same cpu cycle then choose the highest priority one */
@@ -5055,8 +5094,9 @@ static int do_specialties (int cycles)
 #endif
 
 #ifndef WINUAE_FOR_HATARI
-		if (regs.spcflags & SPCFLAG_COPPER)
+		if (regs.spcflags & SPCFLAG_COPPER) {
 			do_copper ();
+		}
 #endif
 		if (regs.spcflags & SPCFLAG_MODE_CHANGE) {
 			m68k_resumestopped();
@@ -8847,6 +8887,22 @@ bool cpureset (void)
 	return false;
 }
 
+void do_cycles_stop(int c)
+{
+#ifndef WINUAE_FOR_HATARI
+	if (debug_dma) {
+		while (c >= 2) {
+			debug_cpu_stop();
+			do_cycles_ce000_internal(2);
+			c -= 2;
+		}
+	} else {
+		do_cycles_ce000_internal(c);
+	}
+#else
+	do_cycles_ce000_internal(c);
+#endif
+}
 
 void m68k_setstopped (void)
 {
