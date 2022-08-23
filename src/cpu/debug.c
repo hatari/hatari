@@ -3819,7 +3819,6 @@ void debug_lgetpeek (uaecptr addr, uae_u32 v)
 	memwatch_func (addr, 1, 4, &vv, MW_MASK_CPU_D_R, 0);
 }
 
-#ifndef WINUAE_FOR_HATARI
 
 struct membank_store
 {
@@ -6888,7 +6887,6 @@ const TCHAR *debuginfo (int mode)
 	return txt;
 }
 
-#endif	/* WINUAE_FOR_HATARI */
 
 void mmu_disasm (uaecptr pc, int lines)
 {
@@ -7793,6 +7791,13 @@ bool debug_trainer_event(int evt, int state)
 	}
 	return false;
 }
+
+#else	/* !WINUAE_FOR_HATARI */
+
+void debug_exception(int nr)
+{
+}
+
 #endif	/* WINUAE_FOR_HATARI */
 
 
