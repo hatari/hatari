@@ -2252,6 +2252,9 @@ static void prefs_changed_cpu (void)
 	currprefs.int_no_unimplemented = changed_prefs.int_no_unimplemented;
 	currprefs.fpu_no_unimplemented = changed_prefs.fpu_no_unimplemented;
 	currprefs.blitter_cycle_exact = changed_prefs.blitter_cycle_exact;
+#ifndef WINUAE_FOR_HATARI
+	mman_set_barriers(false);
+#endif
 }
 
 static int check_prefs_changed_cpu2(void)
@@ -7472,6 +7475,7 @@ void m68k_go (int may_quit)
 #ifndef WINUAE_FOR_HATARI
 		if (startup) {
 			custom_prepare ();
+			mman_set_barriers(false);
 			protect_roms (true);
 		}
 		startup = 0;
@@ -7548,6 +7552,7 @@ void m68k_go (int may_quit)
 	}
 #ifndef WINUAE_FOR_HATARI
 	protect_roms (false);
+	mman_set_barriers(false);
 #endif
 	in_m68k_go--;
 }
