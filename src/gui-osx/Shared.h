@@ -14,12 +14,6 @@
 
 // disk extensions allowed in open box
 #define allF	@"st",@"msa",@"dim",@"gz",@"zip",@"stx",@"ipf",@"raw",@"ctr"
-// cartridge extensions
-#define allC	@"img",@"rom",@"bin",@"cart"
-// TOS extensions
-#define allT	@"img",@"rom",@"bin"
-
-
 
 // Wrapper to run an NSWindow modally
 @protocol NSWindowDelegate;
@@ -48,8 +42,8 @@ void GuiOsx_Resume(void);
 
 // Some useful tools
 // choose file to open
-- (NSString *)hopenfile:(BOOL)chooseDir defoDir:(NSString *)defoDir defoFile:(NSString *)defoFile types:(NSArray *)types ;
-- (NSString *)hopenfile:(BOOL)chooseDir defoDir:(NSString *)defoDir defoFile:(NSString *)defoFile types:(NSArray *)types titre:(NSString *)titre ;
+- (NSString *)hopenfile:(BOOL)chooseDir defoDir:(NSString *)defoDir defoFile:(NSString *)defoFile ;
+- (NSString *)hopenfile:(BOOL)chooseDir defoDir:(NSString *)defoDir defoFile:(NSString *)defoFile titre:(NSString *)titre ;
 
 // choose file to save
 - (NSString *)hsavefile:(BOOL)creatDir defoDir:(NSString *)defoDir defoFile:(NSString *)defoFile types:(NSArray *)types ;

@@ -90,13 +90,13 @@ void GuiOsx_Resume(void)
 
 // Open file or directory
 //
-- (NSString *)hopenfile:(BOOL)chooseDir defoDir:(NSString *)defoDir defoFile:(NSString *)defoFile types:(NSArray *)types
+- (NSString *)hopenfile:(BOOL)chooseDir defoDir:(NSString *)defoDir defoFile:(NSString *)defoFile
 {
-	return [self hopenfile:chooseDir defoDir:defoDir defoFile:defoFile types:types titre:nil] ;
+	return [self hopenfile:chooseDir defoDir:defoDir defoFile:defoFile titre:nil] ;
 }
 
 /*----------------------------------------------------------------------*/
-- (NSString *)hopenfile:(BOOL)chooseDir defoDir:(NSString *)defoDir defoFile:(NSString *)defoFile types:(NSArray *)types titre:(NSString *)titre
+- (NSString *)hopenfile:(BOOL)chooseDir defoDir:(NSString *)defoDir defoFile:(NSString *)defoFile titre:(NSString *)titre
 {
 NSOpenPanel *openPanel ;
 	NSArray     *lesURLs = nil ;
@@ -106,9 +106,7 @@ NSOpenPanel *openPanel ;
 	openPanel.canChooseDirectories = chooseDir ;
 	openPanel.canChooseFiles = !chooseDir;
 	openPanel.allowsMultipleSelection = NO ;
-	if (types != nil) 
-	 {	openPanel.allowedFileTypes = types ;
-		openPanel.allowsOtherFileTypes = YES ;  } ;
+
 	if (titre != nil) openPanel.title = titre ;
 
 //	if ([openPanel respondsToSelector:@selector(setDirectoryURL:)])

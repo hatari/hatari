@@ -192,7 +192,7 @@ char szPath[FILENAME_MAX] ;											// for general use
 {
 	NSString	*aDisk ;
 
-	aDisk = [NSApp hopenfile:NO defoDir:nil defoFile:@"" types:@[allF]] ;
+	aDisk = [NSApp hopenfile:NO defoDir:nil defoFile:@""] ;
 	if (aDisk.length == 0) return ;                 		// user canceled
 
 	[aDisk getCString:szPath maxLength:FILENAME_MAX-1 encoding:NSASCIIStringEncoding] ;
@@ -355,7 +355,7 @@ char szPath[FILENAME_MAX] ;											// for general use
 	 {	directoryToOpen = @"~".stringByExpandingTildeInPath ;			// Currently no path: we use user's directory
 		fileToPreselect = nil; } ;
 
-	newPath = [NSApp hopenfile:NO defoDir:directoryToOpen defoFile:fileToPreselect types:@[@"sav"] ] ;
+	newPath = [NSApp hopenfile:NO defoDir:directoryToOpen defoFile:fileToPreselect] ;
 	if (newPath.length != 0)											// Perform the memory snapshot load
 		MemorySnapShot_Restore([newPath cStringUsingEncoding:NSASCIIStringEncoding], TRUE);
 
@@ -428,7 +428,7 @@ char szPath[FILENAME_MAX] ;											// for general use
 
 	GuiOsx_Pause(true);
 
-	newCfg = [NSApp hopenfile:NO defoDir:nil defoFile:ConfigFile types:@[@"cfg"] ] ;
+	newCfg = [NSApp hopenfile:NO defoDir:nil defoFile:ConfigFile] ;
 
 	if (newCfg.length != 0)
 	{

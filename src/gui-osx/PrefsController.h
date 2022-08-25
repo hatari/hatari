@@ -191,7 +191,7 @@
 - (void)saveAllControls;
 - (void)insertFloppyImageIntoDrive:(int)drive forTextField:(NSTextField*)floppyTextField  realPath:(NSMutableString *)realPath ;
 - (BOOL)choosePathForControl:(NSTextField*)textField chooseDirectories:(BOOL)chooseDirectories defaultInitialDir:(NSString*)defaultInitialDir 
-																					mutString:(NSMutableString *)mutString what:(NSArray *)what ;
+	mutString:(NSMutableString *)mutString ;
 - (void)initKeysDropDown:(NSPopUpButton*)dropDown;
 - (void)setJoystickControls;
 - (void)saveJoystickControls;

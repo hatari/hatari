@@ -235,7 +235,7 @@ char szPath[FILENAME_MAX];
 /*  Returns: TRUE is the user selected a path, FALSE if he/she aborted   */
 /*-----------------------------------------------------------------------*/
 - (BOOL)choosePathForControl:(NSTextField*)textField chooseDirectories:(BOOL)chooseDirectories defaultInitialDir:(NSString*)defaultInitialDir 
-    mutString:(NSMutableString *)mutString what:(NSArray *)what
+    mutString:(NSMutableString *)mutString
 {
 	NSString *directoryToOpen ;
 	NSString *fileToPreselect ;
@@ -248,8 +248,9 @@ char szPath[FILENAME_MAX];
 	 {	directoryToOpen = defaultInitialDir.stringByExpandingTildeInPath ;	// no path: use user's directory
 		fileToPreselect = nil; } ;
 
-	newPath = [NSApp hopenfile:chooseDirectories defoDir:directoryToOpen
-                      defoFile:fileToPreselect types:what];
+	newPath = [NSApp hopenfile:chooseDirectories
+					   defoDir:directoryToOpen
+                      defoFile:fileToPreselect];
 	if (newPath.length != 0)												// user canceled if empty
 	{
 		[mutString setString:[NSString stringWithString:newPath]] ;			// save this path
@@ -269,9 +270,10 @@ char szPath[FILENAME_MAX];
 - (void)insertFloppyImageIntoDrive:(int)drive forTextField:(NSTextField*)floppyTextField
                           realPath:(NSMutableString *)realPath
 {
-	if ([self choosePathForControl:floppyTextField  chooseDirectories:NO
+	if ([self choosePathForControl:floppyTextField
+				 chooseDirectories:NO
                  defaultInitialDir:imgeDir
-                         mutString:realPath  what:@[allF]])
+                         mutString:realPath])
 		
 		Floppy_SetDiskFileName(drive, [realPath cStringUsingEncoding:NSASCIIStringEncoding], NULL);
 		// Insert the floppy image at this path  ????
@@ -281,7 +283,7 @@ char szPath[FILENAME_MAX];
 //-----------------------------------------------------------------------------
 - (NSString *)initial:(NSString *)route
 {
-BOOL flag1, flag2;
+	BOOL flag1, flag2;
 
 	if ((route==nil) || (route.length == 0))  return @"~" ;
 	flag1 = [[NSFileManager defaultManager] fileExistsAtPath:route isDirectory:&flag2] ;
@@ -296,14 +298,14 @@ BOOL flag1, flag2;
 - (IBAction)chooseCartridgeImage:(id)sender;
 {
     [self choosePathForControl: cartridgeImage chooseDirectories:NO defaultInitialDir:[self initial:cartridge]  // cartridge
-        mutString:cartridge  what:@[allC]];
+        mutString:cartridge];
 }
 
 /*----------------------------------------------------------------------*/
 - (IBAction)chooseDefaultImagesLocation:(id)sender
 {
 	[self choosePathForControl: defaultImagesLocation chooseDirectories:YES defaultInitialDir:[self initial:imgeDir]                                // images location
-        mutString:imgeDir  what:nil];
+        mutString:imgeDir];
 }
 /*----------------------------------------------------------------------*/
 - (IBAction)chooseFloppyImageA:(id)sender
@@ -319,62 +321,62 @@ BOOL flag1, flag2;
 - (IBAction)chooseGemdosImage:(id)sender																// directory for Gemdos
 {
 	[self choosePathForControl: gemdosImage chooseDirectories:YES defaultInitialDir:INITIAL_DIR(gemdos)	// gemdos
-                mutString:gemdos  what:nil] ;
+                mutString:gemdos] ;
 	if (gemdos.length >2 ) [gemdosImage setStringValue:[NSApp pathUser:gemdos]] ;
 }
 /*----------------------------------------------------------------------*/
 - (IBAction)chooseHdImage:(id)sender
 {
 	[self choosePathForControl: hdImage chooseDirectories:NO defaultInitialDir:[self initial:hrdDisk]	// HD image ?
-            mutString:hrdDisk  what:@[@"img",@"hdv"]] ;
+            mutString:hrdDisk] ;
 }
 /*----------------------------------------------------------------------*/
 - (IBAction)chooseIdeMasterHdImage:(id)sender
 {
 	[self choosePathForControl: ideMasterHdImage chooseDirectories:NO defaultInitialDir:[self initial:masterIDE]		// IDE master
-            mutString:masterIDE  what:@[@"hdv"]];
+            mutString:masterIDE];
 }
 /*----------------------------------------------------------------------*/
 - (IBAction)chooseIdeSlaveHdImage:(id)sender
 {
 	[self choosePathForControl: ideSlaveHdImage chooseDirectories:NO defaultInitialDir:[self initial:slaveIDE]			// IDE slave
-            mutString:slaveIDE  what:@[@"hdv"]];
+            mutString:slaveIDE];
 }
 /*----------------------------------------------------------------------*/
 - (IBAction)chooseKeyboardMappingFile:(id)sender
 {
 	[self choosePathForControl: keyboardMappingFile chooseDirectories:NO defaultInitialDir:[self initial:keyboard]		// keyboard mapping
-            mutString:keyboard  what:@[@"txt",@"map"]];
+            mutString:keyboard];
 }
 /*----------------------------------------------------------------------*/
 - (IBAction)chooseMidiOutputFile:(id)sender
 {
 	[self choosePathForControl: writeMidiToFile chooseDirectories:NO defaultInitialDir:[self initial:midiOut]			// midi output 
-            mutString:midiOut  what:@[@"mid"]];
+            mutString:midiOut];
 }
 /*----------------------------------------------------------------------*/
 - (IBAction)choosePrintToFile:(id)sender
 {
 	[self choosePathForControl: printToFile chooseDirectories:NO defaultInitialDir:[self initial:printit]				// print to file
-            mutString:printit  what:@[@"prn"]];
+            mutString:printit];
 }
 /*----------------------------------------------------------------------*/
 - (IBAction)chooseRS232InputFile:(id)sender
 {
 	[self choosePathForControl: readRS232FromFile chooseDirectories:NO defaultInitialDir:[self initial:rs232In]			// RS232 input
-        mutString:rs232In  what:nil];
+        mutString:rs232In];
 }
 /*----------------------------------------------------------------------*/
 - (IBAction)chooseRS232OutputFile:(id)sender
 {
 	[self choosePathForControl: writeRS232ToFile chooseDirectories:NO defaultInitialDir:[self initial:rs232Out]			// RS232 output
-        mutString:rs232Out  what:nil];
+        mutString:rs232Out];
 }
 /*----------------------------------------------------------------------*/
 - (IBAction)chooseTosImage:(id)sender;
 {
 	[self choosePathForControl: tosImage chooseDirectories:NO defaultInitialDir:[self initial:TOS]						// TOS image
-        mutString:TOS  what:@[allT]];
+        mutString:TOS];
 }
 
 
