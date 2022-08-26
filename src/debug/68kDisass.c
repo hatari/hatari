@@ -81,6 +81,7 @@ static int Disass68k(csh cshandle, long addr, char *labelBuffer,
 	cs_insn *insn;
 	void *mem;
 	char *ch;
+	int size;
 
 	labelBuffer[0] = 0;
 	opcodeBuffer[0] = 0;
@@ -131,8 +132,9 @@ static int Disass68k(csh cshandle, long addr, char *labelBuffer,
 		}
 	}
 
+	size = insn->size;
 	cs_free(insn, 1);
-	return insn->size;
+	return size;
 }
 
 static void		Disass68kComposeStr(char *dbuf, const char *str, int position, int maxPos)
