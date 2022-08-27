@@ -53,6 +53,36 @@ static int optionCPUTypeMask;
 
 #if HAVE_CAPSTONE_M68K
 
+static void Disass68k_AddLineAComment(uint16_t opcode, char *sCommentBuffer)
+{
+	static const char *sLineAName[16] =
+	{
+		"Init",
+		"Put pixel",
+		"Get pixel",
+		"Arbitrary line",
+		"Horizontal line",
+		"Filled rectangle",
+		"Filled polygon",
+		"BitBlt",
+		"TextBlt",
+		"Show mouse",
+		"Hide mouse",
+		"Transform mouse",
+		"Undraw sprite",
+		"Draw sprite",
+		"Copy raster form",
+		"Seedfill"
+	};
+
+	opcode &= 0x0fff;
+	if (opcode < ARRAY_SIZE(sLineAName))
+		sprintf(sCommentBuffer, "Line-A $%03x (\"%s\")", opcode,
+		        sLineAName[opcode]);
+	else
+		sprintf(sCommentBuffer, "Line-A $%03x", opcode);
+}
+
 static void Disass68k_ConvertA7ToSP(char *sOpBuf)
 {
 	char *ptr;
@@ -78,6 +108,7 @@ static int Disass68k(csh cshandle, long addr, char *labelBuffer,
                      char *opcodeBuffer, char *operandBuffer, char *commentBuffer)
 {
 	const int maxsize = MAX_68000_INSTRUCTION_SIZE;
+	uint16_t opcode;
 	cs_insn *insn;
 	void *mem;
 	char *ch;
@@ -134,6 +165,10 @@ static int Disass68k(csh cshandle, long addr, char *labelBuffer,
 			}
 		}
 	}
+
+	opcode = do_get_mem_word(mem);
+	if (opcode >= 0xa000 && opcode <= 0xafff)
+		Disass68k_AddLineAComment(opcode, commentBuffer);
 
 	size = insn->size;
 	cs_free(insn, 1);
