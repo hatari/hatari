@@ -50,7 +50,10 @@ using namespace std;
 #define UAE
 #endif
 
-#if defined(__x86_64__) || defined(_M_AMD64)
+#if defined(__arm__) || defined(_M_ARM) || defined(_M_ARM64) || defined(_M_ARM64EC) || defined(__aarch64__)
+#define CPU_arm 1
+#define ARM_ASSEMBLY 1
+#elif defined(__x86_64__) || defined(_M_AMD64)
 #define CPU_x86_64 1
 #define CPU_64_BIT 1
 #define X86_64_ASSEMBLY 1
@@ -59,8 +62,6 @@ using namespace std;
 #define CPU_i386 1
 #define X86_ASSEMBLY 1
 #define SAHF_SETO_PROFITABLE
-#elif defined(__arm__) || defined(_M_ARM) || defined(__aarch64__)
-#define CPU_arm 1
 #elif defined(__powerpc__) || defined(_M_PPC) || defined(__ppc__) || defined(__ppc64__)
 #define CPU_powerpc 1
 #elif defined(__mips__) || defined(mips) || defined(__mips64)
