@@ -98,8 +98,11 @@ static int Disass68k(csh cshandle, long addr, char *labelBuffer,
 	if (cs_disasm(cshandle, mem, maxsize, addr, 1, &insn) <= 0)
 	{
 		strcpy(commentBuffer, "unknown opcode");
-		strcpy(opcodeBuffer, "DC.W");
-		sprintf(operandBuffer,"$%4.4x", STMemory_ReadWord(addr));
+		strcpy(opcodeBuffer,
+		       (options & doptOpcodesSmall) ? "dc.w" : "DC.W");
+		sprintf(operandBuffer,
+		        (options & doptRegisterSmall) ? "$%4.4x" : "$%4.4X",
+		        STMemory_ReadWord(addr));
 		return 2;
 	}
 
