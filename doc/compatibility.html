@@ -1463,7 +1463,8 @@ are just STE enhanced.  These are marked with '*' (for more info, see
     <tr>
       <td><a href="http://www.atarimania.com/game-atari-st-dynabusters_28670.html">Dynabusters+</a></td>
       <td class="minor">2.4</td>
-      <td>Hi-score ("Table") screen flickers</td>
+      <td>Hi-score ("Table") screen flickers.
+          Supports JagPad / Power Pad</td>
     </tr>
     <tr>
       <td>Frantick</td>
@@ -1498,7 +1499,8 @@ are just STE enhanced.  These are marked with '*' (for more info, see
     <tr>
       <td>Obsession (demo)</td>
       <td>before 1.0</td>
-      <td>Opens top, left (with STE shifter bug) and bottom borders</td>
+      <td>Opens top, left (with STE shifter bug) and bottom borders.
+          Supports JagPad / Power Pad</td>
     </tr>
     <tr>
       <td>Operation Garfield</td>
@@ -1586,12 +1588,13 @@ are just STE enhanced.  These are marked with '*' (for more info, see
     <tr>
       <td>Substation (demo)</td>
       <td>before 1.0</td>
-      <td>&nbsp;</td>
+      <td>Supports JagPad / Power Pad</td>
     </tr>
     <tr>
       <td>Team</td>
       <td>1.0</td>
-      <td>HW scrolling, DMA sound, overscan</td>
+      <td>HW scrolling, DMA sound, overscan.
+          Supports JagPad / Power Pad</td>
     </tr>
     <tr>
       <td>TomTar</td>
@@ -2386,6 +2389,7 @@ VGA one are indicated separately.</p>
       <td>emu</td>
       <td>Enhanced Doom I/II game port and engine rewrite (v0.35-v0.37 from 2017):<ul>
       <li>Requires DSP and 14 MB RAM</li>
+      <li>Supports JagPad / Power Pad</li>
       <li>WAD cache creation crashes/freezes, so one needs to get pre-built WAD cache</li>
       <li>Uses MMU if it is available, but crashes with Hatari 030 MMU emulation</li>
       <li>32-bit addressing / TT-RAM works only with Hatari specific "bmhat.ttp" version</li>
@@ -2414,8 +2418,9 @@ VGA one are indicated separately.</p>
       <td>2.3.1</td>
       <td>yes</td>
       <td>-</td>
-      <td>Music with DSP. Due to game bug (data file corruption), it can freeze
-          if user doesn't start game before it shows hall-of-fame screen</td>
+      <td>Music with DSP. Supports JagPad / Power Pad. Due to game bug
+          (data file corruption), it can freeze if user doesn't start
+	  game before it shows hall-of-fame screen</td>
     </tr>
     <tr>
       <td>Blackhole</td>
@@ -2443,7 +2448,7 @@ VGA one are indicated separately.</p>
       <td>1.0</td>
       <td>yes</td>
       <td>-</td>
-      <td></td>
+      <td>Supports JagPad / Power Pad</td>
     </tr>
     <tr>
       <td><a href="http://pouet.net/prod.php?which=28910">Boom preview</a></td>
@@ -2555,7 +2560,7 @@ VGA one are indicated separately.</p>
       <td>1.9</td>
       <td>yes</td>
       <td>emu</td>
-      <td>With earlier Hatari versions (1.4) worked also without DSP emulation</td>
+      <td>Supports JagPad / Power Pad</td>
     </tr>
     <tr>
       <td><a href="https://web.archive.org/web/20160904010309/http://reboot.atari.org:80/new-reboot/downfallfalcon.html">DownFall</a></td>
@@ -2588,13 +2593,14 @@ VGA one are indicated separately.</p>
       <td></td>
     </tr>
    <tr>
-      <td>Evolution Dino Dudes<br />(aka. Humans)</td>
+      <td>Evolution: Dino Dudes<br />(aka. Humans)</td>
       <td class="major">2.3</td>
       <td>yes</td>
       <td>-</td>
-      <td>Needs jagpad. Sound with DSP. Intro and menu work,
-          but graphics are distorted in game itself (writes
-	  twice to the $ff820e register during one VBL!)</td>
+      <td>One of the Falcon launch games. Requires JagPad / Power Pad.
+          Sound with DSP. Intro and menu work, but graphics are
+	  distorted in game itself (writes twice to the $ff820e
+	  register during one VBL!)</td>
     </tr>
     <tr>
       <td>Falcon Fighter II</td>
@@ -2710,8 +2716,8 @@ VGA one are indicated separately.</p>
       <td>yes</td>
       <td>-</td>
       <td>Modern version of Joust, up to 4 players.  Sound with DSP.
-          Game screen colors etc are all wrong.  Doesn't start with
-	  MMU enabled</td>
+          Supports JagPad / Power Pad.  Game screen colors etc are all
+	  wrong.  Doesn't start with MMU enabled</td>
     </tr>
     <tr>
       <td>King Solitaire</td>
@@ -2762,8 +2768,11 @@ VGA one are indicated separately.</p>
       <td>1.6</td>
       <td>-</td>
       <td>-</td>
-      <td>Linked version doesn't have (DSP) music, others have. Playable with
-          STE joypad, but would benefit from extra buttons in jagpad</td>
+      <td>One of the Falcon launch games. Linked version does not have
+          (DSP) music, some others have. Somewhat playable also with
+	  STE joypad, but proper play would require emulation also of
+	  JagPad / Power Pad 1-9 keys (to select power-ups, ships and
+	  other functions)</td>
     </tr>
     <tr>
       <td>Madtris</td>
@@ -2784,8 +2793,9 @@ VGA one are indicated separately.</p>
       <td>2.3.1</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Separate intro program requires 14MB, and double bus errors
-          at end with TOS4. Bullets show only close to opponent</td>
+      <td>Supports JagPad / Power Pad. Separate intro program requires
+          14MB, and double bus errors at end with TOS4. Bullets show
+	  only close to opponent</td>
     </tr>
     <tr>
       <td>Mini F1 (demo)</td>
@@ -2808,9 +2818,10 @@ VGA one are indicated separately.</p>
       <td class="minor">2.4</td>
       <td>Yes</td>
       <td>emu</td>
-      <td>lst*.* files need to be renamed with GEMDOS HD emulation as
-          game searches them with different name (space before dot).
-	  Game freezes if left to menu for longer time.
+      <td>Supports JagPad / Power Pad. lst*.* files need to be renamed
+          with GEMDOS HD emulation as game searches them with different
+	  name (space before dot). Game freezes if left to menu for
+	  longer time
       </td>
     </tr>
     <tr>
@@ -2947,14 +2958,15 @@ VGA one are indicated separately.</p>
       <td>1.0</td>
       <td>-</td>
       <td>-</td>
-      <td>Nice</td>
+      <td>Supports JagPad / Power Pad. Nice</td>
     </tr>
     <tr>
       <td>Raiden</td>
       <td>1.0</td>
       <td>yes</td>
       <td>-</td>
-      <td>Use joypad, needs over 4MB</td>
+      <td>One of the Falcon launch games. Needs over 4MB and joypad.
+          Proper play would require JagPad / Power Pad emulation</td>
     </tr>
     <tr>
       <td><a href="http://www.pouet.net/prod.php?which=32093">Rave</a></td>
@@ -2976,6 +2988,20 @@ VGA one are indicated separately.</p>
       <td>-</td>
       <td>-</td>
       <td>VGA (640x480) only. Auto-starting works from Hatari v2.1 onward</td>
+    </tr>
+    <tr>
+      <td>Road Riot 4WD</td>
+      <td>?</td>
+      <td>?</td>
+      <td>?</td>
+      <td>TODO. One of the Falcon launch games.  Supports JagPad / Power Pad</td>
+    </tr>
+    <tr>
+      <td>Robinson's Requiem</td>
+      <td>?</td>
+      <td>?</td>
+      <td>?</td>
+      <td>TODO. Supports JagPad / Power Pad</td>
     </tr>
     <tr>
       <td>Running</td>
@@ -3057,6 +3083,13 @@ VGA one are indicated separately.</p>
       <td>-</td>
       <td>-</td>
       <td>Play solitaire against computer</td>
+    </tr>
+    <tr>
+      <td>Steel Talons</td>
+      <td>?</td>
+      <td>?</td>
+      <td>?</td>
+      <td>TODO. One of the Falcon launch games.  Requires JagPad / Power Pad</td>
     </tr>
     <tr>
       <td><a href="http://paradize.final-memory.org/games.shtml">Sweety Thingies</a></td>
