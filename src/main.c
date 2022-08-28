@@ -823,10 +823,10 @@ static void Main_UnInit(void)
 	SDL_Quit();
 
 	/* Close debug log file */
+	DebugUI_UnInit();
 	Log_UnInit();
 
 	Paths_UnInit();
-	DebugUI_UnInit();
 }
 
 

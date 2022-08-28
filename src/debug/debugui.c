@@ -1074,6 +1074,8 @@ void DebugUI_Init(void)
 	const dbgcommand_t *cpucmd, *dspcmd;
 	int cpucmds, dspcmds;
 
+	Log_ResetMsgRepeat();
+
 	/* already initialized? */
 	if (debugCommands)
 		return;
@@ -1120,6 +1122,7 @@ void DebugUI_UnInit(void)
 {
 	Profile_CpuFree();
 	Profile_DspFree();
+	Log_ResetMsgRepeat();
 	free(debugCommand);
 	debugCommands = 0;
 }

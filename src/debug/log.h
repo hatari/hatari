@@ -82,6 +82,10 @@ extern void Log_AlertDlg(LOGTYPE nType, const char *psFormat, ...)
 extern LOGTYPE Log_ParseOptions(const char *OptionStr);
 extern const char* Log_SetTraceOptions(const char *OptionsStr);
 extern char *Log_MatchTrace(const char *text, int state);
+extern void Log_ToggleMsgRepeat(void);
+extern void Log_ResetMsgRepeat(void);
+extern void Log_Trace(const char *format, ...)
+	__attribute__ ((format (printf, 1, 2)));
 
 #ifndef __GNUC__
 #undef __attribute__
@@ -298,10 +302,10 @@ extern uint64_t LogTraceFlags;
 
 #if ENABLE_TRACING
 
-#define	LOG_TRACE(level, ...) \
-	if (unlikely(LogTraceFlags & (level))) { fprintf(TraceFile, __VA_ARGS__); fflush(TraceFile); }
-
 #define LOG_TRACE_LEVEL( level )	(unlikely(LogTraceFlags & (level)))
+
+#define	LOG_TRACE(level, ...) \
+	if (LOG_TRACE_LEVEL(level))	{ Log_Trace(__VA_ARGS__); }
 
 #else		/* ENABLE_TRACING */
 
@@ -315,7 +319,7 @@ extern uint64_t LogTraceFlags;
  * In code it's used in such a way that it will be optimized away when tracing
  * is disabled.
  */
-#define LOG_TRACE_PRINT(...)	fprintf(TraceFile , __VA_ARGS__)
+#define LOG_TRACE_PRINT(...)	Log_Trace(__VA_ARGS__)
 
 
 #endif		/* HATARI_LOG_H */

@@ -31,6 +31,7 @@ const char Log_fileid[] = "Hatari log.c";
 #include "file.h"
 #include "vdi.h"
 #include "options.h"
+#include "str.h"
 
 int ExceptionDebugMask;
 
@@ -166,6 +167,24 @@ static flagname_t TraceFlags[] = {
 uint64_t LogTraceFlags = TRACE_NONE;
 FILE *TraceFile = NULL;
 
+
+/* SDL GUI Alerts can show 4*50 chars at max, and much longer
+ * console messages are not very readable either, just slow
+ */
+#define MAX_MSG_LEN 256
+#define REPEAT_LIMIT_INIT 8
+
+/* FILE* for output stream, message line repeat suppression limit,
+ * current repeat count, and previous line content for checking
+ * repetition
+ */
+static struct {
+	FILE *fp;
+	int limit;
+	int count;
+	char prev[MAX_MSG_LEN];
+} MsgState;
+
 static FILE *hLogFile = NULL;
 
 /* local settings, to be able change them temporarily */
@@ -181,6 +200,7 @@ void Log_Default(void)
 	hLogFile = stderr;
 	TraceFile = stderr;
 	TextLogLevel = LOG_INFO;
+	MsgState.limit = REPEAT_LIMIT_INIT;
 }
 
 /**
@@ -204,7 +224,7 @@ int Log_Init(void)
 
 	hLogFile = File_Open(ConfigureParams.Log.sLogFileName, "w");
 	TraceFile = File_Open(ConfigureParams.Log.sTraceFileName, "w");
-   
+
 	return (hLogFile && TraceFile);
 }
 
@@ -231,18 +251,117 @@ void Log_UnInit(void)
 	TraceFile = File_Close(TraceFile);
 }
 
+/*-----------------------------------------------------------------------
+ * log/trace message repeat suppression handling
+ */
+
+static void printMsgRepeat(FILE *fp)
+{
+	/* strings already include trailing newline */
+	fprintf(fp, "%d repeats of: %s", MsgState.count, MsgState.prev);
+}
+
+/**
+ * If there is a pending that has not been output yet, output it.
+ */
+static void printPendingMsgRepeat(FILE *fp)
+{
+	if (likely(MsgState.count == 0))
+		return;
+	if (MsgState.count > 1)
+		printMsgRepeat(fp);
+	else
+		fputs(MsgState.prev, fp);
+}
+
+/**
+ * Output pending and given messages when appropriate and
+ * store given message if it's not a repeat.
+ */
+static void addMsgRepeat(FILE *fp, const char *line)
+{
+	/* repeated message? */
+	if (fp == MsgState.fp &&
+	    unlikely(strcmp(line, MsgState.prev) == 0))
+	{
+		MsgState.count++;
+		/* limit crossed? -> print + increase repeat limit */
+		if (unlikely(MsgState.count >= MsgState.limit))
+		{
+			printMsgRepeat(fp);
+			MsgState.limit *= 2;
+			MsgState.count = 0;
+			fflush(fp);
+		}
+		return;
+	}
+	/* no repeat -> print previous message/repeat */
+	printPendingMsgRepeat(MsgState.fp);
+
+	/* store + print new message */
+	Str_Copy(MsgState.prev, line, sizeof(MsgState.prev));
+	MsgState.limit = REPEAT_LIMIT_INIT;
+	MsgState.count = 0;
+	MsgState.fp = fp;
+	fputs(line, fp);
+	fflush(fp);
+}
+
+/**
+ * Output pending message repeat info and reset repeat info.
+ */
+void Log_ResetMsgRepeat(void)
+{
+	printPendingMsgRepeat(MsgState.fp);
+	MsgState.prev[0] = '\0';
+	if (MsgState.limit)
+		MsgState.limit = REPEAT_LIMIT_INIT;
+	MsgState.count = 0;
+	MsgState.fp = NULL;
+}
+
+/**
+ * Toggle whether message repeats are shown
+ */
+void Log_ToggleMsgRepeat(void)
+{
+	if (MsgState.limit)
+	{
+		fprintf(stderr, "Message repeats will be shown as-is\n");
+		MsgState.limit = 0;
+	}
+	else
+	{
+		fprintf(stderr, "Message repeats will be suppressed\n");
+		MsgState.limit = REPEAT_LIMIT_INIT;
+	}
+	Log_ResetMsgRepeat();
+}
 
 /*-----------------------------------------------------------------------*/
 /**
- * Print log prefix when needed
+ * Add log prefix to given string and return its lenght
  */
-static void Log_PrintPrefix(FILE *fp, LOGTYPE idx)
+static int Log_AddPrefix(char *msg, int len, LOGTYPE idx)
 {
 	static const char* prefix[] = LOG_NAMES;
 
 	assert(idx >= 0 && idx < ARRAY_SIZE(prefix));
-	if (prefix[idx])
-		fprintf(fp, "%s: ", prefix[idx]);
+	return snprintf(msg, len, "%s: ", prefix[idx]);
+}
+
+/**
+ * Add a new-line if it's missing. 'msg' points to place
+ * where it should be, and size is buffer size.
+ */
+static void addMissingNewline(char *msg, int size)
+{
+	assert(size > 2);
+	if (size > 2 && msg[0] != '\n')
+	{
+		msg[1] = '\n';
+		msg[2] = '\0';
+	}
 }
 
 
@@ -252,18 +371,29 @@ static void Log_PrintPrefix(FILE *fp, LOGTYPE idx)
  */
 void Log_Printf(LOGTYPE nType, const char *psFormat, ...)
 {
-	va_list argptr;
+	if (!(hLogFile && nType <= TextLogLevel))
+		return;
 
-	if (hLogFile && nType <= TextLogLevel)
-	{
-		Log_PrintPrefix(hLogFile, nType);
-		va_start(argptr, psFormat);
-		vfprintf(hLogFile, psFormat, argptr);
-		va_end(argptr);
-		/* Add a new-line if necessary: */
-		if (psFormat[strlen(psFormat)-1] != '\n')
-			fputs("\n", hLogFile);
-	}
+	char line[sizeof(MsgState.prev)];
+	int count, len = sizeof(line);
+	char *msg = line;
+
+	count = Log_AddPrefix(line, len, nType);
+	msg += count;
+	len -= count;
+
+	va_list argptr;
+	va_start(argptr, psFormat);
+	count = vsnprintf(msg, len, psFormat, argptr);
+	va_end(argptr);
+	msg += count;
+	len -= count;
+
+	addMissingNewline(msg-1, len+1);
+	if (MsgState.limit)
+		addMsgRepeat(hLogFile, line);
+	else
+		fputs(line, hLogFile);
 }
 
 
@@ -278,30 +408,35 @@ void Log_AlertDlg(LOGTYPE nType, const char *psFormat, ...)
 	/* Output to log file: */
 	if (hLogFile && nType <= TextLogLevel)
 	{
-		Log_PrintPrefix(hLogFile, nType);
+		char line[sizeof(MsgState.prev)];
+		int count, len = sizeof(line);
+		char *msg = line;
+
+		count = Log_AddPrefix(line, len, nType);
+		msg += count;
+		len -= count;
+
 		va_start(argptr, psFormat);
-		vfprintf(hLogFile, psFormat, argptr);
+		count = vsnprintf(msg, len, psFormat, argptr);
 		va_end(argptr);
-		/* Add a new-line if necessary: */
-		if (psFormat[strlen(psFormat)-1] != '\n')
-			fputs("\n", hLogFile);
+		msg += count;
+		len -= count;
+
+		addMissingNewline(msg-1, len+1);
+		if (MsgState.limit)
+			addMsgRepeat(hLogFile, line);
+		else
+			fputs(line, hLogFile);
 	}
 
 	/* Show alert dialog box: */
 	if (sdlscrn && nType <= AlertDlgLogLevel)
 	{
-		char *psTmpBuf;
-		psTmpBuf = malloc(2048);
-		if (!psTmpBuf)
-		{
-			perror("Log_AlertDlg");
-			return;
-		}
+		char buf[MAX_MSG_LEN];
 		va_start(argptr, psFormat);
-		vsnprintf(psTmpBuf, 2048, psFormat, argptr);
+		vsnprintf(buf, sizeof(buf), psFormat, argptr);
 		va_end(argptr);
-		DlgAlert_Notice(psTmpBuf);
-		free(psTmpBuf);
+		DlgAlert_Notice(buf);
 	}
 }
 
@@ -504,6 +639,31 @@ char *Log_MatchTrace(const char *text, int state)
 	return NULL;
 }
 
+/**
+ * Do trace output with optional repeat suppression
+ */
+void Log_Trace(const char *format, ...)
+{
+	va_list argptr;
+	char line[sizeof(MsgState.prev)];
+
+	if (!TraceFile)
+		return;
+
+	va_start(argptr, format);
+	if (MsgState.limit)
+	{
+		vsnprintf(line, sizeof(line), format, argptr);
+		addMsgRepeat(TraceFile, line);
+	}
+	else
+	{
+		vfprintf(TraceFile, format, argptr);
+		fflush(TraceFile);
+	}
+	va_end(argptr);
+}
+
 #else	/* !ENABLE_TRACING */
 
 /** dummy */
@@ -517,5 +677,8 @@ char *Log_MatchTrace(const char *text, int state)
 {
 	return NULL;
 }
+
+/** dummy */
+void Log_Trace(const char *format, ...) {}
 
 #endif	/* !ENABLE_TRACING */

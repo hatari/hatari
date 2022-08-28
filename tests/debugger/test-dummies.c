@@ -8,6 +8,7 @@
 
 uint64_t LogTraceFlags = 0;
 FILE *TraceFile;
+void Log_Trace(const char *format, ...) { }
 
 /* fake Hatari configuration variables for number parsing */
 #include "configuration.h"

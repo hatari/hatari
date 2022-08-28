@@ -193,6 +193,7 @@ enum {
 	OPT_NATFEATS,
 	OPT_TRACE,
 	OPT_TRACEFILE,
+	OPT_MSG_REPEAT,
 	OPT_PARSE,
 	OPT_SAVECONFIG,
 	OPT_CONTROLSOCKET,
@@ -485,6 +486,8 @@ static const opt_t HatariOptions[] = {
 	  "<flags>", "Activate emulation tracing, see '--trace help'" },
 	{ OPT_TRACEFILE, NULL, "--trace-file",
 	  "<file>", "Save trace output to <file> (default=stderr)" },
+	{ OPT_MSG_REPEAT, NULL, "--msg-repeat",
+	  NULL, "Toggle log/trace message repeats (default=suppress)" },
 	{ OPT_PARSE, NULL, "--parse",
 	  "<file>", "Parse/execute debugger commands from <file>" },
 	{ OPT_SAVECONFIG, NULL, "--saveconfig",
@@ -2169,6 +2172,10 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			ok = Opt_StrCpy(OPT_TRACEFILE, false, ConfigureParams.Log.sTraceFileName,
 					argv[i], sizeof(ConfigureParams.Log.sTraceFileName),
 					NULL);
+			break;
+
+		case OPT_MSG_REPEAT:
+			Log_ToggleMsgRepeat();
 			break;
 
 		case OPT_CONTROLSOCKET:
