@@ -102,24 +102,6 @@ error_msg:
 
 
 /**
- * Check whether given address matches any DSP symbol and whether
- * there's profiling information available for it.  If yes, show it.
- * 
- * @return true if symbol was shown, false otherwise
- */
-static bool DebugDsp_ShowAddressInfo(uint16_t addr, FILE *fp)
-{
-	const char *symbol = Symbols_GetByDspAddress(addr, SYMTYPE_ALL);
-	if (symbol)
-	{
-		fprintf(fp, "%s:\n", symbol);
-		return true;
-	}
-	return false;
-}
-
-
-/**
  * DSP disassemble - arg = starting address/range, or PC.
  */
 int DebugDsp_DisAsm(int nArgc, char *psArgs[])
@@ -176,6 +158,8 @@ int DebugDsp_DisAsm(int nArgc, char *psArgs[])
 	prev_addr = dsp_disasm_addr;
 	fprintf(debugOutput, "DSP disasm 0x%hx-0x%hx:\n", dsp_disasm_addr, dsp_disasm_upper);
 	for (shown = 1; shown < lines && dsp_disasm_addr < dsp_disasm_upper; shown++) {
+		const char *symbol;
+
 		if (prev_addr < pc && dsp_disasm_addr > pc)
 		{
 			fputs("ERROR, disassembly misaligned with PC address, correcting\n", debugOutput);
@@ -188,8 +172,12 @@ int DebugDsp_DisAsm(int nArgc, char *psArgs[])
 			shown++;
 		}
 		prev_addr = dsp_disasm_addr;
-		if (DebugDsp_ShowAddressInfo(dsp_disasm_addr, debugOutput))
+		symbol = Symbols_GetByDspAddress(dsp_disasm_addr, SYMTYPE_ALL);
+		if (symbol)
+		{
+			fprintf(debugOutput, "%s:\n", symbol);
 			shown++;
+		}
 		dsp_disasm_addr = DSP_DisasmAddress(debugOutput, dsp_disasm_addr, dsp_disasm_addr);
 	}
 	fflush(debugOutput);
@@ -529,7 +517,10 @@ void DebugDsp_Check(void)
 	}
 	if (LOG_TRACE_LEVEL((TRACE_DSP_DISASM|TRACE_DSP_SYMBOLS)))
 	{
-		DebugDsp_ShowAddressInfo(DSP_GetPC(), TraceFile);
+		const char *symbol;
+		symbol = Symbols_GetByDspAddress(DSP_GetPC(), SYMTYPE_ALL);
+		if (symbol)
+			LOG_TRACE_PRINT("%s\n", symbol);
 	}
 	if (nDspActiveCBs)
 	{

@@ -144,23 +144,6 @@ static int DebugCpu_SaveBin(int nArgc, char *psArgs[])
 
 
 /**
- * Check whether given address matches any CPU symbol and whether
- * there's profiling information available for it.  If yes, show it.
- * 
- * @return true if symbol was shown, false otherwise
- */
-static bool DebugCpu_ShowAddressInfo(uint32_t addr, FILE *fp)
-{
-	const char *symbol = Symbols_GetByCpuAddress(addr, SYMTYPE_ALL);
-	if (symbol)
-	{
-		fprintf(fp, "%s:\n", symbol);
-		return true;
-	}
-	return false;
-}
-
-/**
  * Disassemble - arg = starting address, or PC.
  */
 int DebugCpu_DisAsm(int nArgc, char *psArgs[])
@@ -202,6 +185,7 @@ int DebugCpu_DisAsm(int nArgc, char *psArgs[])
 	prev_addr = disasm_addr;
 	for (shown = 0; shown < lines && disasm_addr < disasm_upper; shown++)
 	{
+		const char *symbol;
 		if (prev_addr < pc && disasm_addr > pc)
 		{
 			fputs("ERROR, disassembly misaligned with PC address, correcting\n", debugOutput);
@@ -214,8 +198,12 @@ int DebugCpu_DisAsm(int nArgc, char *psArgs[])
 			shown++;
 		}
 		prev_addr = disasm_addr;
-		if (DebugCpu_ShowAddressInfo(disasm_addr, debugOutput))
+		symbol = Symbols_GetByCpuAddress(disasm_addr, SYMTYPE_ALL);
+		if (symbol)
+		{
+			fprintf(debugOutput, "%s:\n", symbol);
 			shown++;
+		}
 		Disasm(debugOutput, (uaecptr)disasm_addr, &nextpc, 1);
 		disasm_addr = nextpc;
 	}
@@ -900,7 +888,10 @@ void DebugCpu_Check(void)
 	}
 	if (LOG_TRACE_LEVEL((TRACE_CPU_DISASM|TRACE_CPU_SYMBOLS)))
 	{
-		DebugCpu_ShowAddressInfo(M68000_GetPC(), TraceFile);
+		const char *symbol;
+		symbol = Symbols_GetByCpuAddress(M68000_GetPC(), SYMTYPE_ALL);
+		if (symbol)
+			LOG_TRACE_PRINT("%s\n", symbol);
 	}
 	if (LOG_TRACE_LEVEL(TRACE_CPU_REGS))
 	{
