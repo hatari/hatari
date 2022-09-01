@@ -11,6 +11,10 @@ set(SOURCES
 	shortcut.c sound.c spec512.c statusbar.c str.c tos.c utils.c
 	vdi.c vme.c inffile.c video.c wavFormat.c xbios.c ymFormat.c lilo.c)
 
+if(EMSCRIPTEN)
+	set(SOURCES ${SOURCES} emscripten.js emscripten_shell.html database.js)
+endif()	
+
 # Disk image code is shared with the hmsa tool, so we put it into a library:
 add_library(Floppy createBlankImage.c dim.c msa.c st.c zip.c)
 
@@ -143,6 +147,21 @@ elseif(WIN32)
 	set_source_files_properties(${GUIWIN_RES} PROPERTIES LANGUAGE RC)
 	add_executable(hatari ${GUIWIN_RES} ${SOURCES} ${GUIWIN_SOURCES})
 
+#emscripten needs some em-specific linker flags
+elseif(EMSCRIPTEN)
+	add_executable(hatari ${SOURCES})
+	set_target_properties(
+		hatari
+		PROPERTIES
+		LINK_FLAGS
+		"-O3 \
+-fno-exceptions \
+-s USE_SDL=2 -s USE_ZLIB=1 -s INITIAL_MEMORY=262144000 -s ASYNCIFY -s -s ASSERTIONS=0 \
+--extern-pre-js ../../src/scroll.js \
+-s EXPORTED_RUNTIME_METHODS='[\"ccall\",\"cwrap\"]' \
+-s EXPORTED_FUNCTIONS=\"['_main','_Reset_Warm','_Reset_Cold','_Statusbar_UpdateInfo','_Main_UnPauseEmulation','_Floppy_InsertDiskIntoDrive','_Floppy_SetDiskFileName','_Floppy_EjectDiskFromDrive','_Configuration_ChangeMemory','_Configuration_ChangeSystem','_Configuration_ChangeTos','_Configuration_ChangeUseHardDiskDirectories','_Configuration_ChangeFastForward','_Configuration_Apply','_IoMem_UnInit','_IoMem_Init']\" \
+--preload-file ../../emscripten/@/share/hatari/ --pre-js ../../src/emscripten.js --shell-file ../../src/emscripten_shell.html"
+	)
 # Other targets, use default sources
 else()
 	add_executable(hatari ${SOURCES})

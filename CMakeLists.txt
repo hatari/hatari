@@ -251,6 +251,14 @@ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
 	#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wshadow -D_FORTIFY_SOURCE=2")
 endif()
 
+if(EMSCRIPTEN)
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-rtti -fno-exceptions -Os -s USE_SDL=2 -s USE_ZLIB=1") 
+#-O3
+#-gsource-map --profiling 
+#-flto
+	set(CMAKE_EXECUTABLE_SUFFIX ".html")
+endif()	
+
 if(ENABLE_WERROR)
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
 endif(ENABLE_WERROR)
