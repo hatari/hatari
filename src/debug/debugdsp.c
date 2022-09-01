@@ -672,6 +672,7 @@ int DebugDsp_Init(const dbgcommand_t **table)
  */
 void DebugDsp_InitSession(void)
 {
-	dsp_disasm_addr = DSP_GetPC();
+#define MAX_DSP_DISASM_OFFSET 8
+	dsp_disasm_addr = (Uint16)History_DisasmAddr(DSP_GetPC(), MAX_DSP_DISASM_OFFSET, true);
 	Profile_DspStop();
 }

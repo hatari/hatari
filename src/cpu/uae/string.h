@@ -86,4 +86,13 @@ static inline size_t uae_strlcpy(char *dst, const char *src, size_t size)
 	return src_len;
 }
 
+static inline int uaestrlen(const char* s)
+{
+	return (int)strlen(s);
+}
+static inline int uaetcslen(const TCHAR* s)
+{
+	return (int)_tcslen(s);
+}
+
 #endif /* UAE_STRING_H */

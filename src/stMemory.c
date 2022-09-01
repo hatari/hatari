@@ -510,7 +510,7 @@ bool	STMemory_CheckAreaType ( Uint32 addr , int size , int mem_type )
 
 	if ( ( pBank->flags & mem_type ) == 0 )
 	{
-		Log_Printf(LOG_ERROR, "pBank flags mismatch: 0x%x & 0x%x (RAM = 0x%x)\n",
+		Log_Printf(LOG_DEBUG, "pBank flags mismatch: 0x%x & 0x%x (RAM = 0x%x)\n",
 		           pBank->flags, mem_type, ABFLAG_RAM);
 		return false;
 	}

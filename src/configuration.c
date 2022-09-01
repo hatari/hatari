@@ -479,6 +479,7 @@ static const struct Config_Tag configs_System[] =
 	{ "bBlitter", Bool_Tag, &ConfigureParams.System.bBlitter },
 	{ "nDSPType", Int_Tag, &ConfigureParams.System.nDSPType },
 	{ "nVMEType", Int_Tag, &ConfigureParams.System.nVMEType },
+	{ "nRtcYear", Int_Tag, &ConfigureParams.System.nRtcYear },
 	{ "bPatchTimerD", Bool_Tag, &ConfigureParams.System.bPatchTimerD },
 	{ "bFastBoot", Bool_Tag, &ConfigureParams.System.bFastBoot },
 	{ "bFastForward", Bool_Tag, &ConfigureParams.System.bFastForward },
@@ -761,6 +762,7 @@ void Configuration_SetDefault(void)
 	ConfigureParams.System.nCpuFreq = 8;	nCpuFreqShift = 0;
 	ConfigureParams.System.nDSPType = DSP_TYPE_NONE;
 	ConfigureParams.System.nVMEType = VME_TYPE_DUMMY; /* for TOS MegaSTE detection */
+	ConfigureParams.System.nRtcYear = 0;
 	ConfigureParams.System.bAddressSpace24 = true;
 	ConfigureParams.System.n_FPUType = FPU_NONE;
 	ConfigureParams.System.bCompatibleFPU = true; /* JIT */

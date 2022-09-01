@@ -443,7 +443,7 @@ void M68000_PatchCpuTables(void)
  */
 void M68000_MemorySnapShot_Capture(bool bSave)
 {
-	int len;
+	size_t len;
 	uae_u8 chunk[ 1000 ];
 
 	MemorySnapShot_Store(&pendingInterrupts, sizeof(pendingInterrupts));	/* for intlev() */
@@ -626,9 +626,9 @@ void	M68000_Update_intlev ( void )
 		M68000_UnsetSpecial ( SPCFLAG_INT | SPCFLAG_DOINT );
 
 	/* Temporary case for WinUAE CPU in CE mode */
-	/* doint() will update regs.ipl_pin, so copy it into regs.ipl */
+	/* doint() will update regs.ipl_pin, so copy it into regs.ipl[0] */
 	if ( CpuRunCycleExact )
-		regs.ipl = regs.ipl_pin;			/* See ipl_fetch() in cpu/cpu_prefetch.h */
+		regs.ipl[0] = regs.ipl_pin;			/* See ipl_fetch() in cpu/cpu_prefetch.h */
 }
 
 

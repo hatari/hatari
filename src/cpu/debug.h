@@ -74,11 +74,14 @@ extern int memwatch_access_validator;
 extern bool debug_sprintf(uaecptr, uae_u32, int);
 extern bool debug_get_prefetch(int idx, uae_u16 *opword);
 extern void debug_hsync(void);
+extern void debug_exception(int);
 
 extern void debug_init_trainer(const TCHAR*);
 extern void debug_trainer_match(void);
 extern bool debug_opcode_watch;
 extern bool debug_trainer_event(int evt, int state);
+
+extern void debug_smc_clear(uaecptr addr, int size);
 
 #define BREAKPOINT_TOTAL 20
 #define BREAKPOINT_REG_Dx 0
@@ -222,10 +225,17 @@ struct dma_rec
 	uae_u16 size;
     uae_u32 addr;
     uae_u32 evt;
+	uae_u32 evtdata;
+	bool evtdataset;
     uae_s16 type;
 	uae_u16 extra;
-	uae_s8 intlev;
+	uae_s8 intlev, ipl;
 	uae_u16 cf_reg, cf_dat, cf_addr;
+	int ciareg;
+	int ciamask;
+	bool ciarw;
+	uae_u16 ciavalue;
+	bool end;
 };
 
 extern struct dma_rec *last_dma_rec;
@@ -246,17 +256,22 @@ extern struct dma_rec *last_dma_rec;
 #define DMA_EVENT_DDFSTOP 8192
 #define DMA_EVENT_DDFSTOP2 16384
 #define DMA_EVENT_SPECIAL 32768
-#define DMA_EVENT_VB 0x10000
-#define DMA_EVENT_VS 0x20000
-#define DMA_EVENT_LOF 0x40000
-#define DMA_EVENT_LOL 0x80000
-#define DMA_EVENT_HBS 0x100000
-#define DMA_EVENT_HBE 0x200000
-#define DMA_EVENT_HDIWS 0x400000
-#define DMA_EVENT_HDIWE 0x800000
-#define DMA_EVENT_VDIW 0x1000000
-#define DMA_EVENT_HSS 0x2000000
-#define DMA_EVENT_HSE 0x4000000
+#define DMA_EVENT_VB		0x00010000
+#define DMA_EVENT_VS		0x00020000
+#define DMA_EVENT_LOF		0x00040000
+#define DMA_EVENT_LOL		0x00080000
+#define DMA_EVENT_HBS		0x00100000
+#define DMA_EVENT_HBE		0x00200000
+#define DMA_EVENT_HDIWS		0x00400000
+#define DMA_EVENT_HDIWE		0x00800000
+#define DMA_EVENT_VDIW		0x01000000
+#define DMA_EVENT_HSS		0x02000000
+#define DMA_EVENT_HSE		0x04000000
+#define DMA_EVENT_CIAA_IRQ	0x08000000
+#define DMA_EVENT_CIAB_IRQ	0x10000000
+#define DMA_EVENT_CPUSTOP	0x20000000
+#define DMA_EVENT_CPUSTOPIPL 0x40000000
+#define DMA_EVENT_CPUINS	0x80000000
 
 
 #define DMARECORD_REFRESH 1
@@ -277,6 +292,14 @@ extern void record_dma_read_value_wide(uae_u64 v, bool quad);
 extern void record_dma_replace(int hpos, int vpos, int type, int extra);
 extern void record_dma_reset(void);
 extern void record_dma_event(uae_u32 evt, int hpos, int vpos);
+extern void record_dma_event_data(uae_u32 evt, int hpos, int vpos, uae_u32 data);
+extern void record_dma_clear(int hpos, int vpos);
+extern bool record_dma_check(int hpos, int vpos);
+extern void record_dma_hsync(int);
+extern void record_dma_vsync(int);
+extern void record_cia_access(int r, int mask, uae_u16 value, bool rw, int hpos, int vpos);
+extern void record_dma_ipl(int hpos, int vpos);
+extern void debug_mark_refreshed(uaecptr);
 extern void debug_draw(uae_u8 *buf, int bpp, int line, int width, int height, uae_u32 *xredcolors, uae_u32 *xgreencolors, uae_u32 *xbluescolors);
 
 #define TRACE_SKIP_INS 1

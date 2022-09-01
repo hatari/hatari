@@ -1112,6 +1112,15 @@ void DebugUI_Init(void)
 	}
 }
 
+/**
+ * Debugger user interface de-initialization / free.
+ */
+void DebugUI_UnInit(void)
+{
+	free(debugCommand);
+	debugCommands = 0;
+}
+
 
 /**
  * Add debugger command files during Hatari startup before things

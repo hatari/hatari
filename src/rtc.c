@@ -62,13 +62,41 @@ const char Rtc_fileid[] = "Hatari rtc.c";
 #include <time.h>
 
 #include "main.h"
+#include "configuration.h"
 #include "ioMem.h"
 #include "rtc.h"
 
 
 static bool rtc_bank;           /* RTC bank select (0=normal, 1=configuration(?)) */
 static Sint8 fake_am, fake_amz;
+static int year_offset;
 
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Helper to return pointer to system time struct
+ * (statically allocated by libc)
+ */
+static struct tm* get_localtime(void)
+{
+	/* Get system time */
+	time_t nTimeTicks = time(NULL);
+	return localtime(&nTimeTicks);
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * tm->tm_year starts from 1900, GEMDOS year from 1980
+ * Set suitable tm->tm_year offset for GEMDOS
+ */
+void Rtc_Init(void)
+{
+	year_offset = 80;
+	if (!ConfigureParams.System.nRtcYear)
+		return;
+
+	year_offset += 1900 + get_localtime()->tm_year - ConfigureParams.System.nRtcYear;
+}
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -76,13 +104,7 @@ static Sint8 fake_am, fake_amz;
  */
 void Rtc_SecondsUnits_ReadByte(void)
 {
-	struct tm *SystemTime;
-	time_t nTimeTicks;
-
-	/* Get system time */
-	nTimeTicks = time(NULL);
-	SystemTime = localtime(&nTimeTicks);
-	IoMem[0xfffc21] = SystemTime->tm_sec % 10;
+	IoMem[0xfffc21] = get_localtime()->tm_sec % 10;
 }
 
 
@@ -92,13 +114,7 @@ void Rtc_SecondsUnits_ReadByte(void)
  */
 void Rtc_SecondsTens_ReadByte(void)
 {
-	struct tm *SystemTime;
-	time_t nTimeTicks;
-
-	/* Get system time */
-	nTimeTicks = time(NULL);
-	SystemTime = localtime(&nTimeTicks);
-	IoMem[0xfffc23] = SystemTime->tm_sec / 10;
+	IoMem[0xfffc23] = get_localtime()->tm_sec / 10;
 }
 
 
@@ -114,13 +130,7 @@ void Rtc_MinutesUnits_ReadByte(void)
 	}
 	else
 	{
-		struct tm *SystemTime;
-		time_t nTimeTicks;
-
-		/* Get system time */
-		nTimeTicks = time(NULL);
-		SystemTime = localtime(&nTimeTicks);
-		IoMem[0xfffc25] = SystemTime->tm_min % 10;
+		IoMem[0xfffc25] = get_localtime()->tm_min % 10;
 	}
 }
 
@@ -150,13 +160,7 @@ void Rtc_MinutesTens_ReadByte(void)
 	}
 	else
 	{
-		struct tm *SystemTime;
-		time_t nTimeTicks;
-
-		/* Get system time */
-		nTimeTicks = time(NULL);
-		SystemTime = localtime(&nTimeTicks);
-		IoMem[0xfffc27] = SystemTime->tm_min / 10;
+		IoMem[0xfffc27] = get_localtime()->tm_min / 10;
 	}
 }
 
@@ -180,13 +184,7 @@ void Rtc_MinutesTens_WriteByte(void)
  */
 void Rtc_HoursUnits_ReadByte(void)
 {
-	struct tm *SystemTime;
-	time_t nTimeTicks;
-
-	/* Get system time */
-	nTimeTicks = time(NULL);
-	SystemTime = localtime(&nTimeTicks);
-	IoMem[0xfffc29] = SystemTime->tm_hour % 10;
+	IoMem[0xfffc29] = get_localtime()->tm_hour % 10;
 }
 
 
@@ -196,13 +194,7 @@ void Rtc_HoursUnits_ReadByte(void)
  */
 void Rtc_HoursTens_ReadByte(void)
 {
-	struct tm *SystemTime;
-	time_t nTimeTicks;
-
-	/* Get system time */
-	nTimeTicks = time(NULL);
-	SystemTime = localtime(&nTimeTicks);
-	IoMem[0xfffc2b] = SystemTime->tm_hour / 10;
+	IoMem[0xfffc2b] = get_localtime()->tm_hour / 10;
 }
 
 
@@ -212,13 +204,7 @@ void Rtc_HoursTens_ReadByte(void)
  */
 void Rtc_Weekday_ReadByte(void)
 {
-	struct tm *SystemTime;
-	time_t nTimeTicks;
-
-	/* Get system time */
-	nTimeTicks = time(NULL);
-	SystemTime = localtime(&nTimeTicks);
-	IoMem[0xfffc2d] = SystemTime->tm_wday;
+	IoMem[0xfffc2d] = get_localtime()->tm_wday;
 }
 
 
@@ -228,13 +214,7 @@ void Rtc_Weekday_ReadByte(void)
  */
 void Rtc_DayUnits_ReadByte(void)
 {
-	struct tm *SystemTime;
-	time_t nTimeTicks;
-
-	/* Get system time */
-	nTimeTicks = time(NULL);
-	SystemTime = localtime(&nTimeTicks);
-	IoMem[0xfffc2f] = SystemTime->tm_mday % 10;
+	IoMem[0xfffc2f] = get_localtime()->tm_mday % 10;
 }
 
 
@@ -244,13 +224,7 @@ void Rtc_DayUnits_ReadByte(void)
  */
 void Rtc_DayTens_ReadByte(void)
 {
-	struct tm *SystemTime;
-	time_t nTimeTicks;
-
-	/* Get system time */
-	nTimeTicks = time(NULL);
-	SystemTime = localtime(&nTimeTicks);
-	IoMem[0xfffc31] = SystemTime->tm_mday / 10;
+	IoMem[0xfffc31] = get_localtime()->tm_mday / 10;
 }
 
 
@@ -260,13 +234,7 @@ void Rtc_DayTens_ReadByte(void)
  */
 void Rtc_MonthUnits_ReadByte(void)
 {
-	struct tm *SystemTime;
-	time_t nTimeTicks;
-
-	/* Get system time */
-	nTimeTicks = time(NULL);
-	SystemTime = localtime(&nTimeTicks);
-	IoMem[0xfffc33] = (SystemTime->tm_mon + 1) % 10;
+	IoMem[0xfffc33] = (get_localtime()->tm_mon + 1) % 10;
 }
 
 
@@ -276,15 +244,8 @@ void Rtc_MonthUnits_ReadByte(void)
  */
 void Rtc_MonthTens_ReadByte(void)
 {
-	struct tm *SystemTime;
-	time_t nTimeTicks;
-
-	/* Get system time */
-	nTimeTicks = time(NULL);
-	SystemTime = localtime(&nTimeTicks);
-	IoMem[0xfffc35] = (SystemTime->tm_mon + 1) / 10;
+	IoMem[0xfffc35] = (get_localtime()->tm_mon + 1) / 10;
 }
-
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -292,13 +253,7 @@ void Rtc_MonthTens_ReadByte(void)
  */
 void Rtc_YearUnits_ReadByte(void)
 {
-	struct tm *SystemTime;
-	time_t nTimeTicks;
-
-	/* Get system time */
-	nTimeTicks = time(NULL);
-	SystemTime = localtime(&nTimeTicks);
-	IoMem[0xfffc37] = SystemTime->tm_year % 10;
+	IoMem[0xfffc37] = (get_localtime()->tm_year - year_offset) % 10;
 }
 
 
@@ -308,13 +263,7 @@ void Rtc_YearUnits_ReadByte(void)
  */
 void Rtc_YearTens_ReadByte(void)
 {
-	struct tm *SystemTime;
-	time_t nTimeTicks;
-
-	/* Get system time */
-	nTimeTicks = time(NULL);
-	SystemTime = localtime(&nTimeTicks);
-	IoMem[0xfffc39] = (SystemTime->tm_year - 80) / 10;
+	IoMem[0xfffc39] = (get_localtime()->tm_year - year_offset) / 10;
 }
 
 

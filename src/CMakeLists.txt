@@ -68,6 +68,10 @@ if(CapsImage_FOUND)
 	include_directories(${CAPSIMAGE_INCLUDE_DIR})
 endif(CapsImage_FOUND)
 
+if(Capstone_FOUND)
+	include_directories(${CAPSTONE_INCLUDE_DIR})
+endif(Capstone_FOUND)
+
 link_directories(${CMAKE_CURRENT_BINARY_DIR}/debug
 		 ${CMAKE_CURRENT_BINARY_DIR}/falcon
 		 ${CMAKE_CURRENT_BINARY_DIR}/gui-sdl
@@ -186,6 +190,10 @@ endif(CapsImage_FOUND)
 if(Udev_FOUND)
 	target_link_libraries(hatari ${UDEV_LIBRARY})
 endif(Udev_FOUND)
+
+if(Capstone_FOUND)
+	target_link_libraries(hatari ${CAPSTONE_LIBRARY})
+endif(Capstone_FOUND)
 
 if(WIN32)
 	# Needed for socket() on Windows

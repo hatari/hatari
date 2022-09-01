@@ -105,6 +105,7 @@ static Uint8 nvram[64] = {
 
 static Uint8 nvram_index;
 static char nvram_filename[FILENAME_MAX];
+static int year_offset;
 
 
 /*-----------------------------------------------------------------------*/
@@ -311,6 +312,17 @@ void NvRam_Init(void)
 
 	NvRam_SetChecksum();
 	NvRam_Reset();
+
+	/* Set suitable tm->tm_year offset
+	 * (tm->tm_year starts from 1900, NVRAM year from 1968)
+	 */
+	year_offset = 68;
+	if (!ConfigureParams.System.nRtcYear)
+		return;
+
+	time_t ticks = time(NULL);
+	int year = 1900 + localtime(&ticks)->tm_year;
+	year_offset += year - ConfigureParams.System.nRtcYear;
 }
 
 
@@ -438,7 +450,7 @@ void NvRam_Data_ReadByte(void)
 		value = bin2BCD(getFrozenTime()->tm_mon + 1);
 		break;
 	case 9:
-		value = bin2BCD(getFrozenTime()->tm_year - 68);
+		value = bin2BCD(getFrozenTime()->tm_year - year_offset);
 		break;
 	case 10:
 		/* control reg A
