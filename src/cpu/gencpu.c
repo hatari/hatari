@@ -664,7 +664,7 @@ static void returncycles(int cycles)
 		else if (tail_ce020 == 2)
 			out("regs.ce020memcycles -= 0 * cpucycleunit; /* T=2 */\n");
 #endif
-		out("return;\n");
+		out("return 0;\n");
 		return;
 	}
 	if (do_always_dynamic_cycles) {
@@ -687,7 +687,7 @@ static void returncycles(int cycles)
 static void write_return_cycles_none(void)
 {
 	if (using_ce || using_ce020) {
-		out("return;\n");
+		out("return 0;\n");
 	} else {
 		out("return 0;\n");
 	}
@@ -702,7 +702,7 @@ static void write_return_cycles2(int end, int no4)
 	if (using_ce || using_prefetch) {
 		if (end < 0) {
 			if (using_ce) {
-				out("return;\n");
+				out("return 0;\n");
 			} else {
 				out("return 0;\n");
 			}
@@ -722,7 +722,7 @@ static void write_return_cycles2(int end, int no4)
 	} else {
 		if (end < 0) {
 			if (using_ce020) {
-				out("return;\n");
+				out("return 0;\n");
 			} else {
 				out("return 0;\n");
 			}
@@ -7616,7 +7616,7 @@ static void gen_opcode (unsigned int opcode)
 			incpc ("(uae_s32)src + 2");
 			fill_prefetch_full_000_special(2, NULL);
 			if (using_ce)
-				out("return;\n");
+				out("return 0;\n");
 			else
 				out("return 10 * CYCLE_UNIT / 2;\n");
 		} else {
@@ -9516,13 +9516,13 @@ static void generate_one_opcode (int rp, const char *extra)
 		return;
 	}
 	fprintf(headerfile, "extern %s op_%04x_%d%s_nf;\n",
-		(using_ce || using_ce020) ? "cpuop_func_ce" : "cpuop_func", opcode, postfix, extra);
+		(using_ce || using_ce020) ? "cpuop_func" : "cpuop_func", opcode, postfix, extra);
 	fprintf(headerfile, "extern %s op_%04x_%d%s_ff;\n",
-		(using_ce || using_ce020) ? "cpuop_func_ce" : "cpuop_func", opcode, postfix, extra);
+		(using_ce || using_ce020) ? "cpuop_func" : "cpuop_func", opcode, postfix, extra);
 	out("/* %s */\n", outopcode (opcode));
 	if (i68000)
 		out("#ifndef CPUEMU_68000_ONLY\n");
-	out("%s REGPARAM2 op_%04x_%d%s_ff(uae_u32 opcode)\n{\n", (using_ce || using_ce020) ? "void" : "uae_u32", opcode, postfix, extra);
+	out("%s REGPARAM2 op_%04x_%d%s_ff(uae_u32 opcode)\n{\n", (using_ce || using_ce020) ? "uae_u32" : "uae_u32", opcode, postfix, extra);
 	if ((using_simple_cycles || do_always_dynamic_cycles) && !using_nocycles)
 		out("int count_cycles = 0;\n");
 
