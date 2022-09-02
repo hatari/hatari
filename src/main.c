@@ -73,6 +73,10 @@ const char Main_fileid[] = "Hatari main.c";
 #include "gui-win/opencon.h"
 #endif
 
+#ifdef EMSCRIPTEN
+#include "emscripten.h"
+#endif
+
 bool bQuitProgram = false;                /* Flag to quit program cleanly */
 static int nQuitValue;                    /* exit value */
 
@@ -154,6 +158,9 @@ static Sint64	Time_GetTicks ( void )
 
 static void	Time_Delay ( Sint64 ticks_micro )
 {
+#ifdef EMSCRIPTEN
+	emscripten_sleep ( (Uint32)(ticks_micro / 1000) ) ;	/* micro sec -> milli sec */ 
+#else	
 #if HAVE_NANOSLEEP
 	struct timespec	ts;
 	int		ret;
@@ -167,6 +174,7 @@ static void	Time_Delay ( Sint64 ticks_micro )
 	} while ( ret && ( errno == EINTR ) );		/* keep on sleeping if we were interrupted */
 #else
 	SDL_Delay ( (Uint32)(ticks_micro / 1000) ) ;	/* micro sec -> milli sec */
+#endif
 #endif
 }
 
@@ -366,6 +374,9 @@ void Main_WaitOnVbl(void)
 		}
 		/* Only update DestTicks for next VBL */
 		DestTicks = CurrentTicks + FrameDuration_micro;
+		#ifdef EMSCRIPTEN
+		emscripten_sleep(0);
+		#endif		
 		return;
 	}
 

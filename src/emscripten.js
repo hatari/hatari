@@ -1,1 +1,1 @@
-Module['arguments']=['--desktop','false','-d','/share/hatari/fs/','/share/hatari/boot.msa'];
+Module['arguments']=['--desktop','false','-d','/share/hatari/fs/'];

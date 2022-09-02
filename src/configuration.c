@@ -1208,3 +1208,59 @@ void Configuration_ChangeCpuFreq ( int CpuFreq_new )
 		M68000_ChangeCpuFreq();
 	}
 }
+
+#ifdef EMSCRIPTEN
+void Configuration_ChangeMemory ( int RamSizeKb )
+{
+	ConfigureParams.Memory.STRamSize_KB = RamSizeKb;
+	int size = STMemory_RAM_Validate_Size_KB ( ConfigureParams.Memory.STRamSize_KB );
+	if ( size < 0 )
+	{
+		size = 1024;
+		Log_Printf(LOG_WARN, "Unsupported %d KB ST-RAM amount, defaulting to %d KB\n",
+			   ConfigureParams.Memory.STRamSize_KB, size);
+	}
+	ConfigureParams.Memory.STRamSize_KB = size;
+	STMemory_Init ( ConfigureParams.Memory.STRamSize_KB * 1024 );
+}
+
+void Configuration_ChangeTos ( const char* szTosImageFileName )
+{
+		if(strlen(szTosImageFileName)<4096){
+			strcpy(ConfigureParams.Rom.szTosImageFileName,szTosImageFileName);
+		}
+}
+
+void Configuration_ChangeSystem ( int nMachineType )
+{
+	switch (nMachineType)
+	{
+	 case 0:
+		if (!bOldRealTimeClock)
+			ConfigureParams.System.nMachineType = MACHINE_ST;
+		else
+			ConfigureParams.System.nMachineType = MACHINE_MEGA_ST;
+		break;
+	 case 1:
+		ConfigureParams.System.nMachineType = MACHINE_STE;
+		break;
+	 case 2:
+		ConfigureParams.System.nMachineType = MACHINE_TT;
+		break;
+	 case 3:
+		ConfigureParams.System.nMachineType = MACHINE_FALCON;
+		break;
+	}
+}
+
+void Configuration_ChangeUseHardDiskDirectories ( bool bUseHardDiskDirectories )
+{
+	ConfigureParams.HardDisk.bUseHardDiskDirectories=bUseHardDiskDirectories;
+}
+
+void Configuration_ChangeFastForward ( bool bFastForwardActive )
+{
+	ConfigureParams.System.bFastForward=bFastForwardActive;
+}
+
+#endif

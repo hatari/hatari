@@ -100,6 +100,7 @@ endif(APPLE)
 # Check for libraries:
 # ####################
 
+if (NOT EMSCRIPTEN)
 find_package(SDL2)
 if(NOT SDL2_FOUND)
 	message(FATAL_ERROR "SDL2 library not found!")
@@ -154,6 +155,15 @@ if(Capstone_FOUND)
 		unset(Capstone_FOUND)
 	endif()
 endif(Capstone_FOUND)
+else()
+	find_package(Readline)  	#dummy, otherwise check_include_files won't be there
+  #emscripten has some libs builtin, so mark those as present
+	set(SDL2_FOUND 1)  			
+	set(ZLIB_FOUND 1)
+	set(HAVE_ZLIB_H 1)
+	set(HAVE_LIBZ 1)
+	set(SDL2_INCLUDE_DIR ".")
+endif ()
 
 # Check if Large File Support is available with the standard POSIX flags
 set (HATARI_LFS_FLAGS "-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64")
@@ -252,10 +262,7 @@ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
 endif()
 
 if(EMSCRIPTEN)
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-rtti -fno-exceptions -Os -s USE_SDL=2 -s USE_ZLIB=1") 
-#-O3
-#-gsource-map --profiling 
-#-flto
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-rtti -fno-exceptions -O3 -s USE_SDL=2 -s USE_ZLIB=1") 
 	set(CMAKE_EXECUTABLE_SUFFIX ".html")
 endif()	
 

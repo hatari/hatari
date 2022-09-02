@@ -12,7 +12,9 @@ set(SOURCES
 	vdi.c vme.c inffile.c video.c wavFormat.c xbios.c ymFormat.c lilo.c)
 
 if(EMSCRIPTEN)
-	set(SOURCES ${SOURCES} emscripten.js emscripten_shell.html database.js)
+	message(STATUS "emscripten mode")
+
+	set(SOURCES ${SOURCES} emscripten.js emscripten_shell.html)
 endif()	
 
 # Disk image code is shared with the hmsa tool, so we put it into a library:
@@ -157,10 +159,9 @@ elseif(EMSCRIPTEN)
 		"-O3 \
 -fno-exceptions \
 -s USE_SDL=2 -s USE_ZLIB=1 -s INITIAL_MEMORY=262144000 -s ASYNCIFY -s -s ASSERTIONS=0 \
---extern-pre-js ../../src/scroll.js \
 -s EXPORTED_RUNTIME_METHODS='[\"ccall\",\"cwrap\"]' \
 -s EXPORTED_FUNCTIONS=\"['_main','_Reset_Warm','_Reset_Cold','_Statusbar_UpdateInfo','_Main_UnPauseEmulation','_Floppy_InsertDiskIntoDrive','_Floppy_SetDiskFileName','_Floppy_EjectDiskFromDrive','_Configuration_ChangeMemory','_Configuration_ChangeSystem','_Configuration_ChangeTos','_Configuration_ChangeUseHardDiskDirectories','_Configuration_ChangeFastForward','_Configuration_Apply','_IoMem_UnInit','_IoMem_Init']\" \
---preload-file ../../emscripten/@/share/hatari/ --pre-js ../../src/emscripten.js --shell-file ../../src/emscripten_shell.html"
+--preload-file ../../emscripten/@/share/hatari/ --pre-js ../../src/emscripten.js"
 	)
 # Other targets, use default sources
 else()
