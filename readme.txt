@@ -145,6 +145,13 @@ Note: This only works with CMake version 3.15 and later. On earlier versions,
 you have to use the install command of the generator program instead, e.g.
 "make install" if you are using the classical "make" for building Hatari.
 
+ 3.2.1) Configuring and compiling with emscripten
+
+	mkdir -p build
+	cd build
+	emmake cmake -DEMSCRIPTEN=true -DCMAKE_SYSTEM_NAME=Linux ..
+
+  emmake make -j10 hatari
 
  3.3) IPF support using capsimage library
 

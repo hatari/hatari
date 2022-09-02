@@ -470,5 +470,12 @@ extern void Configuration_Load(const char *psFileName);
 extern void Configuration_Save(void);
 extern void Configuration_MemorySnapShot_Capture(bool bSave);
 extern void Configuration_ChangeCpuFreq ( int CpuFreq_new );
+#ifdef EMSCRIPTEN
+extern void Configuration_ChangeMemory(int RamSizeKb);
+extern void Configuration_ChangeSystem(int nMachineType);
+extern void Configuration_ChangeTos(const char* szTosImageFileName);
+extern void Configuration_ChangeUseHardDiskDirectories(bool bUseHardDiskDirectories);
+extern void Configuration_ChangeFastForward(bool bFastForwardActive);
+#endif
 
 #endif
