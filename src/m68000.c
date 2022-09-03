@@ -680,6 +680,7 @@ int	M68000_WaitEClock ( void )
 	if ( CyclesToNextE == 10 )		/* we're already synchronised with E Clock */
 		CyclesToNextE = 0;
 
+//fprintf ( stderr , "wait eclock delay=%d clock=%"PRIu64"\n" , CyclesToNextE, Cycles_GetClockCounterImmediate() );
 	return CyclesToNextE;
 }
 

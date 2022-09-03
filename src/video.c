@@ -536,20 +536,8 @@ static bool RestartVideoCounter = false;	/* true when reaching the HBL to restar
 int	LineTimerBPos = LINE_END_CYCLE_50 + TIMERB_VIDEO_CYCLE_OFFSET;	/* position of the Timer B interrupt on active lines */
 int	TimerBEventCountCycleStart = -1;	/* value of Cycles_GetCounterOnWriteAccess last time timer B was started for the current VBL */
 
-int HblJitterIndex = 0;
-const int HblJitterArray[] = {
-	8,4,4,0,0 /* measured on STF */
-};
-const int HblJitterArrayPending[] = {
-	4,4,4,4,4 // { 8,8,12,8,12 }; /* measured on STF, not always accurate */
-};
-int VblJitterIndex = 0;
-const int VblJitterArray[] = {
-	8,0,4,0,4 /* measured on STF */
-};
-const int VblJitterArrayPending[] = {
-	8,8,12,8,12 /* not verified on STF, use the same as HBL */
-};
+int HblJitterIndex = 0;				/* TODO : remove before next release */
+int VblJitterIndex = 0;				/* TODO : remove before next release */
 
 static int	BlankLines = 0;			/* Number of empty line with no signal (by switching hi/lo near cycles 500) */
 
@@ -773,8 +761,8 @@ void Video_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&nFirstVisibleHbl, sizeof(nFirstVisibleHbl));
 	MemorySnapShot_Store(&nLastVisibleHbl, sizeof(nLastVisibleHbl));
 	MemorySnapShot_Store(&bSteBorderFlag, sizeof(bSteBorderFlag));
-	MemorySnapShot_Store(&HblJitterIndex, sizeof(HblJitterIndex));
-	MemorySnapShot_Store(&VblJitterIndex, sizeof(VblJitterIndex));
+	MemorySnapShot_Store(&HblJitterIndex, sizeof(HblJitterIndex));		/* TODO : remove before next release */
+	MemorySnapShot_Store(&VblJitterIndex, sizeof(VblJitterIndex));		/* TODO : remove before next release */
 	MemorySnapShot_Store(&ShifterFrame, sizeof(ShifterFrame));
 	MemorySnapShot_Store(&TTSpecialVideoMode, sizeof(TTSpecialVideoMode));
 }
@@ -822,10 +810,6 @@ void Video_Reset(void)
 
 	VideoCounterDelayedOffset = 0;
 	pVideoRasterDelayed = NULL;
-
-	/* Reset jitter indexes */
-	HblJitterIndex = 0;
-	VblJitterIndex = 0;
 
 	TTSpecialVideoMode = nPrevTTSpecialVideoMode = 0;
 
@@ -2986,25 +2970,21 @@ if ( CycInt_From_Opcode )		/* TEMP : to update CYCLES_COUNTER_VIDEO during an op
 		return;
 	}
 
-	/* Increment the hbl jitter index */
-	HblJitterIndex++;
-	HblJitterIndex %= HBL_JITTER_ARRAY_SIZE;
-	
-	LOG_TRACE ( TRACE_VIDEO_HBL , "HBL %d video_cyc=%d pending_cyc=%d jitter=%d\n" ,
-	               nHBL , FrameCycles , PendingCyclesOver , HblJitterArray[ HblJitterIndex ] );
+	LOG_TRACE ( TRACE_VIDEO_HBL , "HBL %d video_cyc=%d pending_cyc=%d\n" ,
+	               nHBL , FrameCycles , PendingCyclesOver );
 
 	/* Print traces if pending HBL bit changed just before IACK when HBL interrupt is allowed */
 	if ( ( CPU_IACK == true ) && ( regs.intmask < 2 ) )
 	{
 		if ( pendingInterrupts & ( 1 << 2 ) )
 		{
-			LOG_TRACE ( TRACE_VIDEO_HBL , "HBL %d, pending set again just before iack, skip one HBL interrupt VBL=%d video_cyc=%d pending_cyc=%d jitter=%d\n" ,
-				nHBL , nVBLs , FrameCycles , PendingCyclesOver , VblJitterArray[ VblJitterIndex ] );
+			LOG_TRACE ( TRACE_VIDEO_HBL , "HBL %d, pending set again just before iack, skip one HBL interrupt VBL=%d video_cyc=%d pending_cyc=%d\n" ,
+				nHBL , nVBLs , FrameCycles , PendingCyclesOver );
 		}
 		else
 		{
-			LOG_TRACE ( TRACE_VIDEO_HBL , "HBL %d, new pending HBL set just before iack VBL=%d video_cyc=%d pending_cyc=%d jitter=%d\n" ,
-				nHBL , nVBLs , FrameCycles , PendingCyclesOver , VblJitterArray[ VblJitterIndex ] );
+			LOG_TRACE ( TRACE_VIDEO_HBL , "HBL %d, new pending HBL set just before iack VBL=%d video_cyc=%d pending_cyc=%d\n" ,
+				nHBL , nVBLs , FrameCycles , PendingCyclesOver );
 		}
 	}
 
@@ -4564,10 +4544,6 @@ void Video_InterruptHandler_VBL ( void )
 	if ( CycInt_GetActiveInt() == INTERRUPT_VIDEO_VBL )
 		CycInt_AcknowledgeInterrupt();
 
-	/* Increment the vbl jitter index */
-	VblJitterIndex++;
-	VblJitterIndex %= VBL_JITTER_ARRAY_SIZE;
-	
 	/* Set frame cycles, used for Video Address */
 	Cycles_SetCounter(CYCLES_COUNTER_VIDEO, PendingCyclesOver + ( pVideoTiming->VblVideoCycleOffset << nCpuFreqShift ) );
 
@@ -4611,8 +4587,8 @@ void Video_InterruptHandler_VBL ( void )
 	/* Update the blitter's stats for the previous VBL */
 	Blitter_StatsUpdateRate ( (int)( CyclesGlobalClockCounter - PendingCyclesOver - VBL_ClockCounter ) );
 
-	LOG_TRACE(TRACE_VIDEO_VBL , "VBL %d video_cyc=%d pending_cyc=%d jitter=%d vbl_cycles=%d\n" ,
-			nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) , PendingCyclesOver , VblJitterArray[ VblJitterIndex ] ,
+	LOG_TRACE(TRACE_VIDEO_VBL , "VBL %d video_cyc=%d pending_cyc=%d vbl_cycles=%d\n" ,
+			nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) , PendingCyclesOver ,
 			(int)( CyclesGlobalClockCounter - PendingCyclesOver - VBL_ClockCounter ) );
 
 	VBL_ClockCounter = CyclesGlobalClockCounter - PendingCyclesOver;
@@ -4622,13 +4598,13 @@ void Video_InterruptHandler_VBL ( void )
 	{
 		if ( pendingInterrupts & ( 1 << 4 ) )
 		{
-			LOG_TRACE ( TRACE_VIDEO_VBL , "VBL %d, pending set again just before iack, skip one VBL interrupt video_cyc=%d pending_cyc=%d jitter=%d\n" ,
-				nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) , PendingCyclesOver , VblJitterArray[ VblJitterIndex ] );
+			LOG_TRACE ( TRACE_VIDEO_VBL , "VBL %d, pending set again just before iack, skip one VBL interrupt video_cyc=%d pending_cyc=%d\n" ,
+				nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) , PendingCyclesOver );
 		}
 		else
 		{
-			LOG_TRACE ( TRACE_VIDEO_VBL , "VBL %d, new pending VBL set just before iack video_cyc=%d pending_cyc=%d jitter=%d\n" ,
-				nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) , PendingCyclesOver , VblJitterArray[ VblJitterIndex ] );
+			LOG_TRACE ( TRACE_VIDEO_VBL , "VBL %d, new pending VBL set just before iack video_cyc=%d pending_cyc=%d\n" ,
+				nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) , PendingCyclesOver );
 		}
 	}
 

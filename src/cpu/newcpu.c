@@ -2847,6 +2847,14 @@ static int iack_cycle(int nr)
 
 		e_cycles = M68000_WaitEClock ();
 //		fprintf ( stderr , "wait e clock %d\n" , e_cycles);
+		if ( nr == 26 )
+		{
+			LOG_TRACE ( TRACE_VIDEO_HBL , "HBL=%d clock=%"PRIu64" e_clock_jitter=%d\n" , nHBL , Cycles_GetClockCounterImmediate() , e_cycles );
+		}
+		else if ( nr == 28 )
+		{
+			LOG_TRACE ( TRACE_VIDEO_VBL , "VBL=%d clock=%"PRIu64" e_clock_jitter=%d\n" , nVBLs , Cycles_GetClockCounterImmediate() , e_cycles );
+		}
 
 		if (cycle_exact)
 		{
