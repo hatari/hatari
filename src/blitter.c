@@ -964,10 +964,41 @@ static void Blitter_Stop_IgnoreLastCpuCycles(void)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Check if some word or long word registers are accessed using byte
+ * operations at addresse IoAccessCurrentAddress.
+ * The blitter doesn't allow reading/writing to word registers using bytes,
+ * in such case we must ignore the read/write.
+ * Return true if it's a byte access.
+ */
+static bool Blitter_CheckAccess_Byte ( void )
+{
+	if ( nIoMemAccessSize == SIZE_BYTE )
+	{
+		if ( LOG_TRACE_LEVEL(TRACE_BLITTER) )
+		{
+			int FrameCycles, HblCounterVideo, LineCycles;
+			Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+
+			LOG_TRACE_PRINT("blitter byte access at address=%x ignored video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" ,
+					IoAccessCurrentAddress ,
+					FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles );
+		}
+		return true;
+	}
+
+  return false;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Read blitter halftone ram.
  */
 static void Blitter_Halftone_ReadWord(int index)
 {
+	if ( Blitter_CheckAccess_Byte() )
+		return;						/* Ignore access */
+
 	IoMem_WriteWord(REG_HT_RAM + index + index, BlitterHalftone[index]);
 }
 
@@ -994,6 +1025,9 @@ void Blitter_Halftone15_ReadWord(void) { Blitter_Halftone_ReadWord(15); }
  */
 void Blitter_SourceXInc_ReadWord(void)
 {
+	if ( Blitter_CheckAccess_Byte() )
+		return;						/* Ignore access */
+
 	IoMem_WriteWord(REG_SRC_X_INC, (Uint16)(BlitterRegs.src_x_incr));
 }
 
@@ -1003,6 +1037,9 @@ void Blitter_SourceXInc_ReadWord(void)
  */
 void Blitter_SourceYInc_ReadWord(void)
 {
+	if ( Blitter_CheckAccess_Byte() )
+		return;						/* Ignore access */
+
 	IoMem_WriteWord(REG_SRC_Y_INC, (Uint16)(BlitterRegs.src_y_incr));
 }
 
@@ -1012,6 +1049,9 @@ void Blitter_SourceYInc_ReadWord(void)
  */
 void Blitter_SourceAddr_ReadLong(void)
 {
+	if ( Blitter_CheckAccess_Byte() )
+		return;						/* Ignore access */
+
 	IoMem_WriteLong(REG_SRC_ADDR, BlitterRegs.src_addr);
 }
 
@@ -1021,6 +1061,9 @@ void Blitter_SourceAddr_ReadLong(void)
  */
 void Blitter_Endmask1_ReadWord(void)
 {
+	if ( Blitter_CheckAccess_Byte() )
+		return;						/* Ignore access */
+
 	IoMem_WriteWord(REG_END_MASK1, BlitterRegs.end_mask_1);
 }
 
@@ -1030,6 +1073,9 @@ void Blitter_Endmask1_ReadWord(void)
  */
 void Blitter_Endmask2_ReadWord(void)
 {
+	if ( Blitter_CheckAccess_Byte() )
+		return;						/* Ignore access */
+
 	IoMem_WriteWord(REG_END_MASK2, BlitterRegs.end_mask_2);
 }
 
@@ -1039,6 +1085,9 @@ void Blitter_Endmask2_ReadWord(void)
  */
 void Blitter_Endmask3_ReadWord(void)
 {
+	if ( Blitter_CheckAccess_Byte() )
+		return;						/* Ignore access */
+
 	IoMem_WriteWord(REG_END_MASK3, BlitterRegs.end_mask_3);
 }
 
@@ -1048,6 +1097,9 @@ void Blitter_Endmask3_ReadWord(void)
  */
 void Blitter_DestXInc_ReadWord(void)
 {
+	if ( Blitter_CheckAccess_Byte() )
+		return;						/* Ignore access */
+
 	IoMem_WriteWord(REG_DST_X_INC, (Uint16)(BlitterRegs.dst_x_incr));
 }
 
@@ -1057,6 +1109,9 @@ void Blitter_DestXInc_ReadWord(void)
  */
 void Blitter_DestYInc_ReadWord(void)
 {
+	if ( Blitter_CheckAccess_Byte() )
+		return;						/* Ignore access */
+
 	IoMem_WriteWord(REG_DST_Y_INC, (Uint16)(BlitterRegs.dst_y_incr));
 }
 
@@ -1066,6 +1121,9 @@ void Blitter_DestYInc_ReadWord(void)
  */
 void Blitter_DestAddr_ReadLong(void)
 {
+	if ( Blitter_CheckAccess_Byte() )
+		return;						/* Ignore access */
+
 	IoMem_WriteLong(REG_DST_ADDR, BlitterRegs.dst_addr);
 }
 
@@ -1075,6 +1133,9 @@ void Blitter_DestAddr_ReadLong(void)
  */
 void Blitter_WordsPerLine_ReadWord(void)
 {
+	if ( Blitter_CheckAccess_Byte() )
+		return;						/* Ignore access */
+
 	IoMem_WriteWord(REG_X_COUNT, (Uint16)(BlitterRegs.x_count & 0xFFFF));
 }
 
@@ -1084,6 +1145,9 @@ void Blitter_WordsPerLine_ReadWord(void)
  */
 void Blitter_LinesPerBitblock_ReadWord(void)
 {
+	if ( Blitter_CheckAccess_Byte() )
+		return;						/* Ignore access */
+
 	IoMem_WriteWord(REG_Y_COUNT, (Uint16)(BlitterRegs.y_count & 0xFFFF));
 }
 
@@ -1131,6 +1195,9 @@ void Blitter_Skew_ReadByte(void)
  */
 static void Blitter_Halftone_WriteWord(int index)
 {
+	if ( Blitter_CheckAccess_Byte() )
+		return;						/* Ignore access */
+
 	BlitterHalftone[index] = IoMem_ReadWord(REG_HT_RAM + index + index);
 }
 
@@ -1157,6 +1224,9 @@ void Blitter_Halftone15_WriteWord(void) { Blitter_Halftone_WriteWord(15); }
  */
 void Blitter_SourceXInc_WriteWord(void)
 {
+	if ( Blitter_CheckAccess_Byte() )
+		return;						/* Ignore access */
+
 	BlitterRegs.src_x_incr = (short)(IoMem_ReadWord(REG_SRC_X_INC) & 0xFFFE);
 }
 
@@ -1166,6 +1236,9 @@ void Blitter_SourceXInc_WriteWord(void)
  */
 void Blitter_SourceYInc_WriteWord(void)
 {
+	if ( Blitter_CheckAccess_Byte() )
+		return;						/* Ignore access */
+
 	BlitterRegs.src_y_incr = (short)(IoMem_ReadWord(REG_SRC_Y_INC) & 0xFFFE);
 }
 
@@ -1175,6 +1248,9 @@ void Blitter_SourceYInc_WriteWord(void)
  */
 void Blitter_SourceAddr_WriteLong(void)
 {
+	if ( Blitter_CheckAccess_Byte() )
+		return;						/* Ignore access */
+
 	if ( ConfigureParams.System.bAddressSpace24 == true )
 		BlitterRegs.src_addr = IoMem_ReadLong(REG_SRC_ADDR) & 0x00FFFFFE;	/* Normal STF/STE */
 	else
@@ -1187,6 +1263,9 @@ void Blitter_SourceAddr_WriteLong(void)
  */
 void Blitter_Endmask1_WriteWord(void)
 {
+	if ( Blitter_CheckAccess_Byte() )
+		return;						/* Ignore access */
+
 	BlitterRegs.end_mask_1 = IoMem_ReadWord(REG_END_MASK1);
 }
 
@@ -1196,6 +1275,9 @@ void Blitter_Endmask1_WriteWord(void)
  */
 void Blitter_Endmask2_WriteWord(void)
 {
+	if ( Blitter_CheckAccess_Byte() )
+		return;						/* Ignore access */
+
 	BlitterRegs.end_mask_2 = IoMem_ReadWord(REG_END_MASK2);
 }
 
@@ -1205,6 +1287,9 @@ void Blitter_Endmask2_WriteWord(void)
  */
 void Blitter_Endmask3_WriteWord(void)
 {
+	if ( Blitter_CheckAccess_Byte() )
+		return;						/* Ignore access */
+
 	BlitterRegs.end_mask_3 = IoMem_ReadWord(REG_END_MASK3);
 }
 
@@ -1214,6 +1299,9 @@ void Blitter_Endmask3_WriteWord(void)
  */
 void Blitter_DestXInc_WriteWord(void)
 {
+	if ( Blitter_CheckAccess_Byte() )
+		return;						/* Ignore access */
+
 	BlitterRegs.dst_x_incr = (short)(IoMem_ReadWord(REG_DST_X_INC) & 0xFFFE);
 }
 
@@ -1223,6 +1311,9 @@ void Blitter_DestXInc_WriteWord(void)
  */
 void Blitter_DestYInc_WriteWord(void)
 {
+	if ( Blitter_CheckAccess_Byte() )
+		return;						/* Ignore access */
+
 	BlitterRegs.dst_y_incr = (short)(IoMem_ReadWord(REG_DST_Y_INC) & 0xFFFE);
 }
 
@@ -1232,6 +1323,9 @@ void Blitter_DestYInc_WriteWord(void)
  */
 void Blitter_DestAddr_WriteLong(void)
 {
+	if ( Blitter_CheckAccess_Byte() )
+		return;						/* Ignore access */
+
 	if ( ConfigureParams.System.bAddressSpace24 == true )
 		BlitterRegs.dst_addr = IoMem_ReadLong(REG_DST_ADDR) & 0x00FFFFFE;	/* Normal STF/STE */
 	else
@@ -1244,6 +1338,9 @@ void Blitter_DestAddr_WriteLong(void)
  */
 void Blitter_WordsPerLine_WriteWord(void)
 {
+	if ( Blitter_CheckAccess_Byte() )
+		return;						/* Ignore access */
+
 	Uint32 x_count = (Uint32)IoMem_ReadWord(REG_X_COUNT);
 
 	if (x_count == 0)
@@ -1259,6 +1356,9 @@ void Blitter_WordsPerLine_WriteWord(void)
  */
 void Blitter_LinesPerBitblock_WriteWord(void)
 {
+	if ( Blitter_CheckAccess_Byte() )
+		return;						/* Ignore access */
+
 	Uint32 y_count = (Uint32)IoMem_ReadWord(REG_Y_COUNT);
 
 	if (y_count == 0)
