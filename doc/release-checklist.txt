@@ -1,5 +1,13 @@
 Things for Hatari dev team to check before new release...
 
+Contents:
+* When first thinking about new release
+* One or two weeks before release
+* Release candidate
+* Final release
+* After release
+
+
 When first thinking about new release
 -------------------------------------
 
@@ -108,3 +116,9 @@ If no release-critical issues were reported, do actual release:
 * Announce new release "everywhere"
 
 * Party!
+
+
+After release
+-------------
+
+* Swich "src/includes/version.h" back "devel" version
