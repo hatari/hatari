@@ -121,4 +121,4 @@ If no release-critical issues were reported, do actual release:
 After release
 -------------
 
-* Swich "src/includes/version.h" back "devel" version
+* Switch "src/includes/version.h" back to "devel" version
