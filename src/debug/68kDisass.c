@@ -25,9 +25,6 @@
 #include "68kDisass.h"
 #include "disasm.h"
 
-#define ADDRESS_ON_PC		1
-#define USE_SYMBOLS			1
-
 typedef enum {
 	doptNoSpace = 1,	// no space after a comma in the operands list
 	doptOpcodesSmall = 2,	// opcodes are small letters
@@ -42,12 +39,12 @@ static Diss68kOptions	options = doptOpcodesSmall | doptRegisterSmall | doptNoSpa
 static const Diss68kOptions optionsMask = doptOpcodesSmall | doptRegisterSmall | doptStackSP | doptNoSpace;
 
 // values <0 will hide the group
-static int			optionPosAddress = 0;	// current address
-static int			optionPosHexdump = 12;	// 16-bit words at this address
-static int			optionPosLabel = 35;	// label, if defined
-static int			optionPosOpcode = 47;	// opcode
-static int			optionPosOperand = 57;	// operands for the opcode
-static int			optionPosComment = 82;	// comment, if defined
+static int optionPosAddress = 0;	// current address
+static int optionPosHexdump = 12;	// 16-bit words at this address
+static int optionPosLabel   = 35;	// label, if defined
+static int optionPosOpcode  = 47;	// opcode
+static int optionPosOperand = 57;	// operands for the opcode
+static int optionPosComment = 82;	// comment, if defined
 
 static int optionCPUTypeMask;
 
@@ -175,10 +172,10 @@ static int Disass68k(csh cshandle, long addr, char *labelBuffer,
 	return size;
 }
 
-static void		Disass68kComposeStr(char *dbuf, const char *str, int position, int maxPos)
+static void Disass68kComposeStr(char *dbuf, const char *str, int position, int maxPos)
 {
-	int		i;
-	int		len = strlen(dbuf);
+	int i;
+	int len = strlen(dbuf);
 	while(len < position) {
 		dbuf[len++] = ' ';		/* Will give harmless warning from GCC */
 	}
@@ -200,7 +197,7 @@ static void Disass68k_loop (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
 	}
 
 	while (cnt-- > 0) {
-		const int	addrWidth = 8;		// 6 on an ST (24 bit addressing), 8 on a TT (32 bit addressing)
+		const int addrWidth = 8;	// 6 on an ST (24 bit addressing), 8 on a TT (32 bit addressing)
 		char	lineBuffer[1024];
 
 		char	addressBuffer[32];
