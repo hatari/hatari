@@ -121,4 +121,5 @@ If no release-critical issues were reported, do actual release:
 After release
 -------------
 
-* Switch "src/includes/version.h" back to "devel" version
+* Switch back to devel, and increase devel version number in
+  "src/includes/version.h" header
