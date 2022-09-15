@@ -1,7 +1,7 @@
 /*
  * Hatari - symbols-common.c
  *
- * Copyright (C) 2010-2021 by Eero Tamminen
+ * Copyright (C) 2010-2022 by Eero Tamminen
  * Copyright (C) 2017,2021 by Thorsten Otto
  *
  * This file is distributed under the GNU General Public License, version 2
@@ -165,7 +165,7 @@ static int symbols_check_names(const symbol_t *syms, int count)
 /* ----------------- symbol list alloc / free ------------------ */
 
 /**
- * Allocate symbol list & names for given number of items.
+ * Allocate zeroed symbol list & names for given number of items.
  * Return allocated list or NULL on failure.
  */
 static symbol_list_t* symbol_list_alloc(int symbols)
@@ -177,7 +177,7 @@ static symbol_list_t* symbol_list_alloc(int symbols)
 	}
 	list = calloc(1, sizeof(symbol_list_t));
 	if (list) {
-		list->names = malloc(symbols * sizeof(symbol_t));
+		list->names = calloc(symbols, sizeof(symbol_t));
 		if (!list->names) {
 			free(list);
 			list = NULL;
@@ -198,8 +198,9 @@ static void symbol_list_free(symbol_list_t *list)
 	}
 	assert(list->namecount);
 	for (i = 0; i < list->namecount; i++) {
-		if (list->names[i].name_allocated)
+		if (list->names[i].name_allocated) {
 			free(list->names[i].name);
+		}
 	}
 	free(list->strtab);
 	list->strtab = NULL;
@@ -421,10 +422,11 @@ static int read_pc_debug_names(FILE *fp, symbol_list_t *list, uint32_t offset)
 						char *name = (char *)buf + strtable_offset + info.name_offset;
 						if (strcmp(list->names[i].name, name) != 0)
 						{
-							if (list->names[i].name_allocated)
+							if (list->names[i].name_allocated) {
 								free(list->names[i].name);
+								list->names[i].name_allocated = false;
+							}
 							list->names[i].name = list->debug_strtab + info.name_offset;
-							list->names[i].name_allocated = false;
 						}
 						break;
 					}
