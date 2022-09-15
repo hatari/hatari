@@ -45,6 +45,7 @@ const char DebugUI_fileid[] = "Hatari debugui.c";
 #include "debugui.h"
 #include "evaluate.h"
 #include "history.h"
+#include "profile.h"
 #include "symbols.h"
 #include "vars.h"
 
@@ -1117,6 +1118,8 @@ void DebugUI_Init(void)
  */
 void DebugUI_UnInit(void)
 {
+	Profile_CpuFree();
+	Profile_DspFree();
 	free(debugCommand);
 	debugCommands = 0;
 }

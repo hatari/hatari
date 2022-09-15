@@ -27,6 +27,7 @@ extern char *Profile_Match(const char *text, int state);
 extern int Profile_Command(int nArgc, char *psArgs[], bool bForDsp);
 
 /* CPU profile control */
+extern void Profile_CpuFree(void);
 extern bool Profile_CpuStart(void);
 extern void Profile_CpuUpdate(void);
 extern void Profile_CpuStop(void);
@@ -36,6 +37,7 @@ extern bool Profile_CpuAddr_HasData(Uint32 addr);
 extern int Profile_CpuAddr_DataStr(char *buffer, int maxlen, Uint32 addr);
 
 /* DSP profile control */
+extern void Profile_DspFree(void);
 extern bool Profile_DspStart(void);
 extern void Profile_DspUpdate(void);
 extern void Profile_DspStop(void);

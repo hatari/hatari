@@ -350,6 +350,23 @@ void Profile_DspSave(FILE *out)
 /* ------------------ DSP profile control ----------------- */
 
 /**
+ * Free data from last profiling run, if any
+ */
+void Profile_DspFree(void)
+{
+	Profile_FreeCallinfo(&(dsp_callinfo));
+	if (dsp_profile.sort_arr) {
+		free(dsp_profile.sort_arr);
+		dsp_profile.sort_arr = NULL;
+	}
+	if (dsp_profile.data) {
+		free(dsp_profile.data);
+		dsp_profile.data = NULL;
+		fprintf(stderr, "Freed previous DSP profile buffers.\n");
+	}
+}
+
+/**
  * Initialize DSP profiling when necessary.  Return true if profiling.
  */
 bool Profile_DspStart(void)
@@ -357,15 +374,7 @@ bool Profile_DspStart(void)
 	dsp_profile_item_t *item;
 	int i;
 
-	Profile_FreeCallinfo(&(dsp_callinfo));
-	if (dsp_profile.sort_arr) {
-		/* remove previous results */
-		free(dsp_profile.sort_arr);
-		free(dsp_profile.data);
-		dsp_profile.sort_arr = NULL;
-		dsp_profile.data = NULL;
-		fprintf(stderr, "Freed previous DSP profile buffers.\n");
-	}
+	Profile_DspFree();
 	if (!dsp_profile.enabled) {
 		return false;
 	}

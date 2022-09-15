@@ -844,21 +844,30 @@ void Profile_CpuSave(FILE *out)
 /* ------------------ CPU profile control ----------------- */
 
 /**
+ * Free data from last profiling run, if any
+ */
+void Profile_CpuFree(void)
+{
+	Profile_FreeCallinfo(&(cpu_callinfo));
+	if (cpu_profile.sort_arr) {
+		free(cpu_profile.sort_arr);
+		cpu_profile.sort_arr = NULL;
+	}
+	if (cpu_profile.data) {
+		free(cpu_profile.data);
+		cpu_profile.data = NULL;
+		fprintf(stderr, "Freed previous CPU profile buffers.\n");
+	}
+}
+
+/**
  * Initialize CPU profiling when necessary.  Return true if profiling.
  */
 bool Profile_CpuStart(void)
 {
 	int size;
 
-	Profile_FreeCallinfo(&(cpu_callinfo));
-	if (cpu_profile.sort_arr) {
-		/* remove previous results */
-		free(cpu_profile.sort_arr);
-		free(cpu_profile.data);
-		cpu_profile.sort_arr = NULL;
-		cpu_profile.data = NULL;
-		fprintf(stderr, "Freed previous CPU profile buffers.\n");
-	}
+	Profile_CpuFree();
 	if (!cpu_profile.enabled) {
 		return false;
 	}
