@@ -52,6 +52,9 @@ everything that should work, does still work:
       https://travis-ci.com/github/hatari/hatari
       https://cirrus-ci.com/github/hatari/hatari
 
+* Check that manual pages do not have errors:
+    troff -man -w w $(git ls-files '*.1')  > /dev/null
+
 * Check that all programs/demos listed in compatibility.html as fixed
   during early development still work, and make sure they're listed
   also in release-notes.txt
