@@ -555,7 +555,7 @@ Sint64	ClocksTimings_GetSamplesPerVBL ( MACHINETYPE MachineType , int ScreenRefr
  * precise results than using floating point, because there's no roundings that accumulate
  * after a while.
  */
-void	ClocksTimings_ConvertCycles ( Uint32 CyclesIn , Uint64 ClockFreqIn , CLOCKS_CYCLES_STRUCT *CyclesStructOut , Uint64 ClockFreqOut )
+void	ClocksTimings_ConvertCycles ( Uint64 CyclesIn , Uint64 ClockFreqIn , CLOCKS_CYCLES_STRUCT *CyclesStructOut , Uint64 ClockFreqOut )
 {
 	Uint64	CyclesTotal;
 	Uint64	CyclesOut;
