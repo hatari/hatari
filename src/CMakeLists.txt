@@ -45,7 +45,7 @@ if(WIN32)
 endif(WIN32)
 
 include_directories(includes debug falcon
-		    ${CMAKE_BINARY_DIR} ${SDL2_INCLUDE_DIR} cpu)
+		    ${CMAKE_BINARY_DIR} ${SDL2_INCLUDE_DIRS} cpu)
 
 if(ZLIB_FOUND)
 	include_directories(${ZLIB_INCLUDE_DIR})
@@ -153,15 +153,11 @@ if(SDL2_OTHER_CFLAGS)
 	# message(STATUS "Additional CFLAGS of SDL: ${SDL2_OTHER_CFLAGS}")
 endif(SDL2_OTHER_CFLAGS)
 
-target_link_libraries(hatari Falcon UaeCpu GuiSdl Floppy Debug ${SDL2_LIBRARY})
+target_link_libraries(hatari Falcon UaeCpu GuiSdl Floppy Debug ${SDL2_LIBRARIES})
 
 if(Math_FOUND AND NOT APPLE)
 	target_link_libraries(hatari ${MATH_LIBRARY})
 endif()
-
-if(SDL2MAIN_LIBRARY)
-	target_link_libraries(hatari ${SDL2MAIN_LIBRARY})
-endif(SDL2MAIN_LIBRARY)
 
 if(Readline_FOUND)
 	target_link_libraries(hatari ${READLINE_LIBRARY})

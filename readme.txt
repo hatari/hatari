@@ -77,7 +77,7 @@ To build and use Hatari, you first need to install its dependent libraries.
  3.1) Installing Hatari dependencies
 
 Required:
-- The SDL library v2.0 (http://www.libsdl.org)
+- The SDL library v2.0.6 or newer (http://www.libsdl.org)
 
 Optional:
 - The zlib compression library (https://zlib.net/)

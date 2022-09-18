@@ -110,17 +110,15 @@ visualstudio_task:
     - del %temp%\chocolatey\windowssdk\*.log
     - del %temp%\chocolatey\VSLogs\*.svclog
     # Install the required libraries and headers:
-    - curl -O "https://www.libsdl.org/release/SDL2-devel-2.0.14-VC.zip"
-    - powershell -command "Expand-Archive -Force '%cd%\SDL2-devel-2.0.14-VC.zip' '%cd%'"
+    - curl -O "https://www.libsdl.org/release/SDL2-devel-2.24.0-VC.zip"
+    - powershell -command "Expand-Archive -Force '%cd%\SDL2-devel-2.24.0-VC.zip' '%cd%'"
     - curl -O https://raw.githubusercontent.com/barrysteyn/scrypt-windows/master/win/include/unistd.h
     - curl -O https://raw.githubusercontent.com/tronkko/dirent/master/include/dirent.h
     - echo // > getopt.h
   script:
     - refreshenv
     - cmake -G "Visual Studio 16 2019" -A X64 -DCMAKE_BUILD_TYPE="Release"
-        -DSDL2_INCLUDE_DIR="%cd%\SDL2-2.0.14\include"
-        -DSDL2_LIBRARY="%cd%\SDL2-2.0.14\lib\x64\SDL2.lib"
-        -DSDL2MAIN_LIBRARY="%cd%\SDL2-2.0.14\lib\x64\SDL2main.lib" .
+            -DSDL2_DIR:PATH=SDL2-2.24.0\cmake .
     - cmake --build . --verbose --target ALL_BUILD --config Release -j4
   test_script:
     - refreshenv

@@ -368,7 +368,7 @@ Libraries summary :
 -------------------
 ")
 
-message("  - sdl :\tusing SDL2 v${SDL2_VERSION_STRING}")
+message("  - sdl :\tusing SDL2 v${SDL2_VERSION}")
 
 if(Readline_FOUND)
   message( "  - readline :\tfound, enables history/completion in the debugger" )
