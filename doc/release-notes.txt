@@ -16,16 +16,29 @@ Following features are deprecated and will be removed in a future release:
  Development version
  -------------------
 
+Emulation improvements:
+- Blitter:
+  - Ignore byte accesses to blitter registers defined as word only
+
 Emulator improvements:
 - RTC:
-  - CLI/config option to override RTC year for applications that
-    do not handle current dates
+  - CLI/config option to override NVRAM/RTC year, useful with
+    applications that do not handle current dates
 - Debugger:
-  - When history is enabled, disassembly address defaults to an
-    address in history preceeding PC reg value (instead of to PC),
-    when (re-)entering debugger, to give more context
-  - The built-in "external" disassembler has been replace by using
-    the disassembler of the Capstone library (version >= 4.0)
+  - Fix: free all debugger allocations before exit
+  - Fix: invalid free on freeing loaded GNU debug symbols
+  - When entering debugger with 'history' enabled, disassembly address
+    defaults to an address in history preceeding the PC register value
+    (to give more context than disassembling directly from PC)
+  - The built-in "external" disassembler has been replaced by a
+    disassembler provided by the Capstone library (version >= 4.0)
+- Mac GUI:
+  - Accept all file names as the used Mac file selector does not
+    show list of the accepted file name extensions any more
+
+Build improvements:
+- Fix: CPU core compile warnings (WinUAE upstream)
+- Fix: groff/troff warnings for manual pages
 
 
  Version 2.4.1 (2022-08-03)
