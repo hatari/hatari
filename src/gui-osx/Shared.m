@@ -27,13 +27,15 @@
 	[window setDelegate:self];
 
 	// Change emulation and UI state
-	GuiOsx_Pause(true);
+	bool bWasRunning = GuiOsx_Pause(true);
 	
 	// Run it as modal
 	[NSApp runModalForWindow:window];
 
 	// Restore emulation and UI state
-	GuiOsx_Resume();
+	if (bWasRunning) {
+		GuiOsx_Resume();
+	}
 }
 
 // On closure of the NSWindow, end the modal session
@@ -67,10 +69,10 @@ void GuiOsx_ExportPathString(NSString* path, char* szTarget, size_t cchTarget)
 /*Pauses emulation														*/
 /* Added the visualize option for 2.0.0									*/
 /*----------------------------------------------------------------------*/
-void GuiOsx_Pause(bool visualize)
+bool GuiOsx_Pause(bool visualize)
 {
 	// Pause emulation
-	Main_PauseEmulation(visualize);
+	return Main_PauseEmulation(visualize);
 }
 
 /*-----------------------------------------------------------------------*/

@@ -426,7 +426,7 @@ char szPath[FILENAME_MAX] ;											// for general use
 	// commit back to the configuration settings if choosing user confirm)
 	CurrentParams = ConfigureParams;
 
-	GuiOsx_Pause(true);
+	bool bWasRunning = GuiOsx_Pause(true);
 
 	newCfg = [NSApp hopenfile:NO defoDir:nil defoFile:ConfigFile] ;
 
@@ -446,7 +446,9 @@ char szPath[FILENAME_MAX] ;											// for general use
 			ConfigureParams = CurrentParams;   //Restore previous Params.
 	} ;
 
-	GuiOsx_Resume();
+	if (bWasRunning) {
+		GuiOsx_Resume();
+	}
 }
 
 /*----------------------------------------------------------------------*/

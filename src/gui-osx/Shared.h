@@ -30,7 +30,7 @@
 void GuiOsx_ExportPathString(NSString* path, char* szTarget, size_t cchTarget);
 
 // Pauses emulation and gets ready to use Cocoa UI
-void GuiOsx_Pause(bool);
+bool GuiOsx_Pause(bool);
 
 // Switches back to emulation mode and resume emulation
 void GuiOsx_Resume(void);
