@@ -192,7 +192,7 @@ if(Capstone_FOUND)
 	target_link_libraries(hatari ${CAPSTONE_LIBRARY})
 endif(Capstone_FOUND)
 
-if(APPLE AND NOT ENABLE_OSX_BUNDLE)
+if(APPLE)
 	target_link_libraries(hatari "-framework Cocoa")
 endif()
 
