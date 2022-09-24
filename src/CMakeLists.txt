@@ -191,6 +191,10 @@ if(Capstone_FOUND)
 	target_link_libraries(hatari ${CAPSTONE_LIBRARY})
 endif(Capstone_FOUND)
 
+if(APPLE AND NOT ENABLE_OSX_BUNDLE)
+	target_link_libraries(hatari "-framework Cocoa")
+endif()
+
 if(WIN32)
 	# Needed for socket() on Windows
 	target_link_libraries(hatari ws2_32)
