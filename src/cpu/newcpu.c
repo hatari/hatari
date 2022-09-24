@@ -7442,8 +7442,8 @@ void m68k_go (int may_quit)
 			if (isrestore ()) {
 #ifndef WINUAE_FOR_HATARI
 				if (debug_dma) {
-					record_dma_reset ();
-					record_dma_reset ();
+					record_dma_reset(0);
+					record_dma_reset(0);
 				}
 #endif
 				restored = savestate_restore_finish ();
