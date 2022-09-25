@@ -9,7 +9,6 @@
 #define HATARI_CYCLES_H
 
 #include <stdbool.h>
-#include <SDL_endian.h>
 
 enum
 {
@@ -22,7 +21,7 @@ enum
 
 
 extern int	nCyclesMainCounter;			// TODO : remove, use CyclesGlobalClockCounter instead
-extern Uint64	CyclesGlobalClockCounter;
+extern uint64_t CyclesGlobalClockCounter;
 
 extern int	CurrentInstrCycles;
 
@@ -34,8 +33,8 @@ extern int Cycles_GetInternalCycleOnReadAccess(void);
 extern int Cycles_GetInternalCycleOnWriteAccess(void);
 extern int Cycles_GetCounterOnReadAccess(int nId);
 extern int Cycles_GetCounterOnWriteAccess(int nId);
-extern Uint64 Cycles_GetClockCounterOnReadAccess(void);
-extern Uint64 Cycles_GetClockCounterOnWriteAccess(void);
-extern Uint64 Cycles_GetClockCounterImmediate(void);
+extern uint64_t Cycles_GetClockCounterOnReadAccess(void);
+extern uint64_t Cycles_GetClockCounterOnWriteAccess(void);
+extern uint64_t Cycles_GetClockCounterImmediate(void);
 
 #endif  /* HATARI_CYCLES_H */
