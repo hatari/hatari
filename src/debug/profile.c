@@ -50,8 +50,8 @@ static const struct {
  */
 static int cmp_callers(const void *c1, const void *c2)
 {
-	Uint32 calls1 = ((const caller_t*)c1)->calls;
-	Uint32 calls2 = ((const caller_t*)c2)->calls;
+	uint32_t calls1 = ((const caller_t*)c1)->calls;
+	uint32_t calls2 = ((const caller_t*)c2)->calls;
 	if (calls1 > calls2) {
 		return -1;
 	}
@@ -85,7 +85,7 @@ static bool output_counter_info(FILE *fp, counters_t *counter)
 /**
  * output caller call counts, call type(s) and costs
  */
-static void output_caller_info(FILE *fp, caller_t *info, Uint32 *typeaddr)
+static void output_caller_info(FILE *fp, caller_t *info, uint32_t *typeaddr)
 {
 	int k, typecount;
 
@@ -116,13 +116,13 @@ static void output_caller_info(FILE *fp, caller_t *info, Uint32 *typeaddr)
 /**
  * Show collected CPU/DSP callee/caller information
  */
-void Profile_ShowCallers(FILE *fp, int sites, callee_t *callsite, const char * (*addr2name)(Uint32, Uint64 *))
+void Profile_ShowCallers(FILE *fp, int sites, callee_t *callsite, const char * (*addr2name)(uint32_t, uint64_t *))
 {
 	int i, j, countissues, countdiff;
 	const char *name;
 	caller_t *info;
-	Uint64 total;
-	Uint32 addr, typeaddr;
+	uint64_t total;
+	uint32_t addr, typeaddr;
 
 	/* legend */
 	fputs("# <callee>: <caller1> = <calls> <types>[ <inclusive/totals>[ <exclusive/totals>]], <caller2> ..., <callee name>", fp);
@@ -237,7 +237,7 @@ static void add_callee_cost(callee_t *callsite, callstack_t *stack)
 /**
  * Add new caller or updated earlier caller stats for call site
  */
-static void add_caller(callee_t *callsite, Uint32 pc, Uint32 prev_pc, calltype_t flag)
+static void add_caller(callee_t *callsite, uint32_t pc, uint32_t prev_pc, calltype_t flag)
 {
 	int i, count, oldcount;
 	caller_t *info;
@@ -297,7 +297,7 @@ static void add_caller(callee_t *callsite, Uint32 pc, Uint32 prev_pc, calltype_t
  * callinfo.return_pc needs to be set before invoking this if the call
  * is of type CALL_SUBROUTINE.
  */
-void Profile_CallStart(int idx, callinfo_t *callinfo, Uint32 prev_pc, calltype_t flag, Uint32 pc, counters_t *totalcost)
+void Profile_CallStart(int idx, callinfo_t *callinfo, uint32_t prev_pc, calltype_t flag, uint32_t pc, counters_t *totalcost)
 {
 	callstack_t *stack;
 	int count;
@@ -365,7 +365,7 @@ void Profile_CallStart(int idx, callinfo_t *callinfo, Uint32 prev_pc, calltype_t
  * costs and update callinfo->return_pc value.  Return address of
  * the instruction which did the returned call.
  */
-Uint32 Profile_CallEnd(callinfo_t *callinfo, counters_t *totalcost)
+uint32_t Profile_CallEnd(callinfo_t *callinfo, counters_t *totalcost)
 {
 	callstack_t *stack;
 
@@ -425,12 +425,12 @@ Uint32 Profile_CallEnd(callinfo_t *callinfo, counters_t *totalcost)
  * stack from last item to top, as these items are in following call stack
  * items, not in same one.
  */
-void Profile_FinalizeCalls(Uint32 pc, callinfo_t *callinfo, counters_t *totalcost,
-			   const char* (*get_symbol)(Uint32, symtype_t),
-			   const char* (*get_caller)(Uint32*))
+void Profile_FinalizeCalls(uint32_t pc, callinfo_t *callinfo, counters_t *totalcost,
+			   const char* (*get_symbol)(uint32_t, symtype_t),
+			   const char* (*get_caller)(uint32_t*))
 {
 	const char *sym, *caller;
-	Uint32 sym_addr, caller_addr;
+	uint32_t sym_addr, caller_addr;
 	int i, lines, offset;
 	bool dots;
 	char sign;
@@ -493,9 +493,9 @@ void Profile_FinalizeCalls(Uint32 pc, callinfo_t *callinfo, counters_t *totalcos
 static void Profile_ShowStack(bool forDsp)
 {
 	const char *sym, *caller;
-	const char *(*get_caller)(Uint32*);
-	const char *(*get_symbol)(Uint32, symtype_t);
-	Uint32 sym_addr, caller_addr;
+	const char *(*get_caller)(uint32_t*);
+	const char *(*get_symbol)(uint32_t, symtype_t);
+	uint32_t sym_addr, caller_addr;
 	int i, offset, depth, top;
 	callinfo_t *callinfo;
 
@@ -658,7 +658,7 @@ const char Profile_Description[] =
 static bool Profile_Save(const char *fname, bool bForDsp)
 {
 	FILE *out;
-	Uint32 freq;
+	uint32_t freq;
 	const char *proc;
 
 	if (!(out = fopen(fname, "w"))) {
@@ -753,7 +753,7 @@ static bool Profile_Loops(int nArgc, char *psArgs[])
 int Profile_Command(int nArgc, char *psArgs[], bool bForDsp)
 {
 	static int show = 16;
-	Uint32 *disasm_addr;
+	uint32_t *disasm_addr;
 	bool *enabled;
 
 	if (nArgc > 2) {
@@ -767,7 +767,7 @@ int Profile_Command(int nArgc, char *psArgs[], bool bForDsp)
 
 	/* continue or explicit addresses command? */
 	if (nArgc < 2 || strcmp(psArgs[1], "addresses") == 0) {
-		Uint32 lower, upper = 0;
+		uint32_t lower, upper = 0;
 		if (nArgc > 2) {
 			if (Eval_Range(psArgs[2], &lower, &upper, false) < 0) {
 				return DEBUGGER_CMDDONE;

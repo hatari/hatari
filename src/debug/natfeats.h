@@ -8,7 +8,7 @@
 #ifndef HATARI_NATFEATS_H
 #define HATARI_NATFEATS_H
 
-extern bool NatFeat_ID(Uint32, Uint32 *retval);
-extern bool NatFeat_Call(Uint32, bool isSuper, Uint32 *retval);
+extern bool NatFeat_ID(uint32_t, uint32_t *retval);
+extern bool NatFeat_Call(uint32_t, bool isSuper, uint32_t *retval);
 
 #endif /* HATARI_NATFEATS_H */

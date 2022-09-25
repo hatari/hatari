@@ -27,7 +27,7 @@ typedef enum {
 /* Hatari variable name & address array items */
 typedef struct {
 	const char *name;
-	Uint32 *addr;
+	uint32_t *addr;
 	value_t vtype;
 	size_t bits;
 	const char *info; /* NULL for debugger internal variables */
@@ -41,10 +41,10 @@ extern char *Vars_MatchCpuVariable(const char *text, int state);
 extern const var_addr_t *Vars_ParseVariable(const char *name);
 
 /* get variable value for given variable name */
-bool Vars_GetVariableValue(const char *name, Uint32 *value);
+bool Vars_GetVariableValue(const char *name, uint32_t *value);
 
 /* get variable value for given variable struct */
-extern Uint32 Vars_GetValue(const var_addr_t *hvar);
+extern uint32_t Vars_GetValue(const var_addr_t *hvar);
 
 /* list variables & their names */
 extern int Vars_List(int nArgc, char *psArgv[]);
@@ -53,7 +53,7 @@ extern int Vars_List(int nArgc, char *psArgv[]);
 #define INVALID_OPCODE 0xFFFFu
 
 /* Whether on AES/VDI trap */
-extern Uint32 Vars_GetAesOpcode(void);
-extern Uint32 Vars_GetVdiOpcode(void);
+extern uint32_t Vars_GetAesOpcode(void);
+extern uint32_t Vars_GetVdiOpcode(void);
 
 #endif

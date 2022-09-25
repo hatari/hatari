@@ -48,7 +48,7 @@ const char Natfeats_fileid[] = "Hatari natfeats.c";
  *
  * Returns string length or negative value for error.
  */
-static int mem_string_ok(Uint32 addr)
+static int mem_string_ok(uint32_t addr)
 {
 	const char *buf;
 	int i;
@@ -92,9 +92,9 @@ static int mem_string_ok(Uint32 addr)
  * subid == 1 -> emulator name includes also version information.
  * Returns length of the name
  */
-static bool nf_name(Uint32 stack, Uint32 subid, Uint32 *retval)
+static bool nf_name(uint32_t stack, uint32_t subid, uint32_t *retval)
 {
-	Uint32 ptr, len;
+	uint32_t ptr, len;
 	const char *str;
 	char *buf;
 
@@ -120,7 +120,7 @@ static bool nf_name(Uint32 stack, Uint32 subid, Uint32 *retval)
  * NF_VERSION - NativeFeatures version
  * returns version number
  */
-static bool nf_version(Uint32 stack, Uint32 subid, Uint32 *retval)
+static bool nf_version(uint32_t stack, uint32_t subid, uint32_t *retval)
 {
 	LOG_TRACE(TRACE_NATFEATS, "NF_VERSION() -> 0x00010000\n");
 	*retval = 0x00010000;
@@ -133,10 +133,10 @@ static bool nf_version(Uint32 stack, Uint32 subid, Uint32 *retval)
  * - pointer to buffer containing the string
  * Returns printed string length
  */
-static bool nf_stderr(Uint32 stack, Uint32 subid, Uint32 *retval)
+static bool nf_stderr(uint32_t stack, uint32_t subid, uint32_t *retval)
 {
 	const char *str;
-	Uint32 ptr;
+	uint32_t ptr;
 
 	ptr = STMemory_ReadLong(stack);
 	LOG_TRACE(TRACE_NATFEATS, "NF_STDERR(0x%x)\n", ptr);
@@ -160,7 +160,7 @@ static bool nf_stderr(Uint32 stack, Uint32 subid, Uint32 *retval)
  *
  * Needs to be called from supervisor mode
  */
-static bool nf_shutdown(Uint32 stack, Uint32 subid, Uint32 *retval)
+static bool nf_shutdown(uint32_t stack, uint32_t subid, uint32_t *retval)
 {
 	const char *msg;
 
@@ -201,9 +201,9 @@ static bool nf_shutdown(Uint32 stack, Uint32 subid, Uint32 *retval)
  * Stack arguments are:
  * - emulator's int32_t exit value
  */
-static bool nf_exit(Uint32 stack, Uint32 subid, Uint32 *retval)
+static bool nf_exit(uint32_t stack, uint32_t subid, uint32_t *retval)
 {
-	Sint32 exitval;
+	int32_t exitval;
 
 	ConfigureParams.Log.bConfirmQuit = false;
 	exitval = STMemory_ReadLong(stack);
@@ -216,7 +216,7 @@ static bool nf_exit(Uint32 stack, Uint32 subid, Uint32 *retval)
 /**
  * NF_DEBUGGER - invoke debugger
  */
-static bool nf_debugger(Uint32 stack, Uint32 subid, Uint32 *retval)
+static bool nf_debugger(uint32_t stack, uint32_t subid, uint32_t *retval)
 {
 	LOG_TRACE(TRACE_NATFEATS, "NF_DEBUGGER()\n");
 	DebugUI(REASON_PROGRAM);
@@ -229,9 +229,9 @@ static bool nf_debugger(Uint32 stack, Uint32 subid, Uint32 *retval)
  * - state 0: off, >=1: on
  * Returns previous fast-forward value
  */
-static bool nf_fastforward(Uint32 stack, Uint32 subid, Uint32 *retval)
+static bool nf_fastforward(uint32_t stack, uint32_t subid, uint32_t *retval)
 {
-	Uint32 val;
+	uint32_t val;
 
 	*retval = ConfigureParams.System.bFastForward;
 	if (subid) {
@@ -251,10 +251,10 @@ static bool nf_fastforward(Uint32 stack, Uint32 subid, Uint32 *retval)
  * Stack arguments are:
  * - pointer to command string
  */
-static bool nf_command(Uint32 stack, Uint32 subid, Uint32 *retval)
+static bool nf_command(uint32_t stack, uint32_t subid, uint32_t *retval)
 {
 	const char *buffer;
-	Uint32 ptr;
+	uint32_t ptr;
 
 	if (subid) {
 		/* unrecognized sub id -> no-op */
@@ -278,7 +278,7 @@ static bool nf_command(Uint32 stack, Uint32 subid, Uint32 *retval)
 static const struct {
 	const char *name;	/* feature name */
 	bool super;		/* should be called only in supervisor mode */
-	bool (*cb)(Uint32 stack, Uint32 subid, Uint32 *retval);
+	bool (*cb)(uint32_t stack, uint32_t subid, uint32_t *retval);
 } features[] = {
 #if NF_COMMAND
 	{ "NF_COMMAND",  false, nf_command },
@@ -309,10 +309,10 @@ static const struct {
  * Return true if caller is to proceed normally,
  * false if there was an exception.
  */
-bool NatFeat_ID(Uint32 stack, Uint32 *retval)
+bool NatFeat_ID(uint32_t stack, uint32_t *retval)
 {
 	const char *name;
-	Uint32 ptr;
+	uint32_t ptr;
 	int i;
 
 	ptr = STMemory_ReadLong(stack);
@@ -342,9 +342,9 @@ bool NatFeat_ID(Uint32 stack, Uint32 *retval)
  * Return true if caller is to proceed normally,
  * false if there was an exception.
  */
-bool NatFeat_Call(Uint32 stack, bool super, Uint32 *retval)
+bool NatFeat_Call(uint32_t stack, bool super, uint32_t *retval)
 {
-	Uint32 subid = STMemory_ReadLong(stack);
+	uint32_t subid = STMemory_ReadLong(stack);
 	unsigned int idx = MASTERID2IDX(subid);
 	subid = MASKOUTMASTERID(subid);
 

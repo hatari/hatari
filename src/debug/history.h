@@ -30,10 +30,10 @@ static inline bool History_TrackDsp(void)
 /* for debugcpu/dsp.c */
 extern void History_AddCpu(void);
 extern void History_AddDsp(void);
-extern Uint32 History_DisasmAddr(Uint32 pc, Uint32 offset, bool for_dsp);
+extern uint32_t History_DisasmAddr(uint32_t pc, uint32_t offset, bool for_dsp);
 
 /* for debugInfo.c */
-extern void History_Show(FILE *fp, Uint32 count);
+extern void History_Show(FILE *fp, uint32_t count);
 
 /* for debugui */
 extern void History_Mark(debug_reason_t reason);

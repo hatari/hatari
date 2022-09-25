@@ -30,20 +30,20 @@ const char Vars_fileid[] = "Hatari vars.c";
 #include "vars.h"
 
 
-static Uint32 GetCycleCounter(void)
+static uint32_t GetCycleCounter(void)
 {
 	/* 64-bit, so only lower 32-bits are returned */
 	return CyclesGlobalClockCounter;
 }
 
 /* Accessor functions for calculated Hatari values */
-static Uint32 GetLineCycles(void)
+static uint32_t GetLineCycles(void)
 {
 	int dummy1, dummy2, lcycles;
 	Video_GetPosition(&dummy1, &dummy2 , &lcycles);
 	return lcycles;
 }
-static Uint32 GetFrameCycles(void)
+static uint32_t GetFrameCycles(void)
 {
 	int dummy1, dummy2, fcycles;
 	Video_GetPosition(&fcycles, &dummy1, &dummy2);
@@ -52,10 +52,10 @@ static Uint32 GetFrameCycles(void)
 
 /* helpers for TOS OS call opcode accessor functions */
 
-static inline Uint16 getLineOpcode(Uint8 line)
+static inline uint16_t getLineOpcode(uint8_t line)
 {
-	Uint32 pc;
-	Uint16 instr;
+	uint32_t pc;
+	uint16_t instr;
 	pc = M68000_GetPC();
 	instr = STMemory_ReadWord(pc);
 	/* for opcode X, Line-A = 0xA00X, Line-F = 0xF00X */
@@ -64,58 +64,58 @@ static inline Uint16 getLineOpcode(Uint8 line)
 	}
 	return INVALID_OPCODE;
 }
-static inline bool isTrap(Uint8 trap)
+static inline bool isTrap(uint8_t trap)
 {
-	Uint32 pc;
-	Uint16 instr;
+	uint32_t pc;
+	uint16_t instr;
 	pc = M68000_GetPC();
 	instr = STMemory_ReadWord(pc);
-	return (instr == (Uint16)0x4e40u + trap);
+	return (instr == (uint16_t)0x4e40u + trap);
 }
-static inline Uint16 getControlOpcode(void)
+static inline uint16_t getControlOpcode(void)
 {
 	/* Control[] address from D1, opcode in Control[0] */
 	return STMemory_ReadWord(STMemory_ReadLong(Regs[REG_D1]));
 }
-static inline Uint16 getStackOpcode(void)
+static inline uint16_t getStackOpcode(void)
 {
 	return STMemory_ReadWord(Regs[REG_A7]);
 }
 
 /* Actual TOS OS call opcode accessor functions */
-static Uint32 GetLineAOpcode(void)
+static uint32_t GetLineAOpcode(void)
 {
 	return getLineOpcode(0xA);
 }
-static Uint32 GetLineFOpcode(void)
+static uint32_t GetLineFOpcode(void)
 {
 	return getLineOpcode(0xF);
 }
-static Uint32 GetGemdosOpcode(void)
+static uint32_t GetGemdosOpcode(void)
 {
 	if (isTrap(1)) {
 		return getStackOpcode();
 	}
 	return INVALID_OPCODE;
 }
-static Uint32 GetBiosOpcode(void)
+static uint32_t GetBiosOpcode(void)
 {
 	if (isTrap(13)) {
 		return getStackOpcode();
 	}
 	return INVALID_OPCODE;
 }
-static Uint32 GetXbiosOpcode(void)
+static uint32_t GetXbiosOpcode(void)
 {
 	if (isTrap(14)) {
 		return getStackOpcode();
 	}
 	return INVALID_OPCODE;
 }
-Uint32 Vars_GetAesOpcode(void)
+uint32_t Vars_GetAesOpcode(void)
 {
 	if (isTrap(2)) {
-		Uint16 d0 = Regs[REG_D0];
+		uint16_t d0 = Regs[REG_D0];
 		if (d0 == 0xC8) {
 			return getControlOpcode();
 		} else if (d0 == 0xC9) {
@@ -125,10 +125,10 @@ Uint32 Vars_GetAesOpcode(void)
 	}
 	return INVALID_OPCODE;
 }
-Uint32 Vars_GetVdiOpcode(void)
+uint32_t Vars_GetVdiOpcode(void)
 {
 	if (isTrap(2)) {
-		Uint16 d0 = Regs[REG_D0];
+		uint16_t d0 = Regs[REG_D0];
 		if (d0 == 0x73) {
 			return getControlOpcode();
 		} else if (d0 == 0xFFFE) {
@@ -141,10 +141,10 @@ Uint32 Vars_GetVdiOpcode(void)
 
 /** return 1 if PC is on Symbol, 0 otherwise
  */
-static Uint32 PConSymbol(void)
+static uint32_t PConSymbol(void)
 {
 	const char *sym;
-	Uint32 pc = M68000_GetPC();
+	uint32_t pc = M68000_GetPC();
 	sym = Symbols_GetByCpuAddress(pc, SYMTYPE_TEXT);
 	if (sym) {
 		return 1;
@@ -154,47 +154,47 @@ static Uint32 PConSymbol(void)
 
 /** return first word in OS call parameters
  */
-static Uint32 GetOsCallParam(void)
+static uint32_t GetOsCallParam(void)
 {
 	/* skip OS call opcode */
 	return STMemory_ReadWord(Regs[REG_A7]+SIZE_WORD);
 }
 
-static Uint32 GetNextPC(void)
+static uint32_t GetNextPC(void)
 {
 	return Disasm_GetNextPC(M68000_GetPC());
 }
 
 /* sorted by variable name so that this can be bisected */
 static const var_addr_t hatari_vars[] = {
-	{ "AesOpcode", (Uint32*)Vars_GetAesOpcode, VALUE_TYPE_FUNCTION32, 16, "$FFFF when not on AES trap" },
-	{ "Basepage", (Uint32*)DebugInfo_GetBASEPAGE, VALUE_TYPE_FUNCTION32, 0, "invalid before Desktop is up" },
-	{ "BiosOpcode", (Uint32*)GetBiosOpcode, VALUE_TYPE_FUNCTION32, 16, "$FFFF when not on BIOS trap" },
-	{ "BSS", (Uint32*)DebugInfo_GetBSS, VALUE_TYPE_FUNCTION32, 0, "invalid before Desktop is up" },
-	{ "CpuCallDepth", (Uint32*)DebugCpu_CallDepth, VALUE_TYPE_FUNCTION32, 0, NULL }, /* call depth for 'next subreturn' */
-	{ "CpuInstr", (Uint32*)DebugCpu_InstrCount, VALUE_TYPE_FUNCTION32, 0, "CPU instructions count" },
-	{ "CpuOpcodeType", (Uint32*)DebugCpu_OpcodeType, VALUE_TYPE_FUNCTION32, 0, NULL }, /* opcode type for 'next' */
-	{ "CycleCounter", (Uint32*)GetCycleCounter, VALUE_TYPE_FUNCTION32, 0, "global cycles counter (lower 32 bits)" },
-	{ "DATA", (Uint32*)DebugInfo_GetDATA, VALUE_TYPE_FUNCTION32, 0, "invalid before Desktop is up" },
+	{ "AesOpcode", (uint32_t*)Vars_GetAesOpcode, VALUE_TYPE_FUNCTION32, 16, "$FFFF when not on AES trap" },
+	{ "Basepage", (uint32_t*)DebugInfo_GetBASEPAGE, VALUE_TYPE_FUNCTION32, 0, "invalid before Desktop is up" },
+	{ "BiosOpcode", (uint32_t*)GetBiosOpcode, VALUE_TYPE_FUNCTION32, 16, "$FFFF when not on BIOS trap" },
+	{ "BSS", (uint32_t*)DebugInfo_GetBSS, VALUE_TYPE_FUNCTION32, 0, "invalid before Desktop is up" },
+	{ "CpuCallDepth", (uint32_t*)DebugCpu_CallDepth, VALUE_TYPE_FUNCTION32, 0, NULL }, /* call depth for 'next subreturn' */
+	{ "CpuInstr", (uint32_t*)DebugCpu_InstrCount, VALUE_TYPE_FUNCTION32, 0, "CPU instructions count" },
+	{ "CpuOpcodeType", (uint32_t*)DebugCpu_OpcodeType, VALUE_TYPE_FUNCTION32, 0, NULL }, /* opcode type for 'next' */
+	{ "CycleCounter", (uint32_t*)GetCycleCounter, VALUE_TYPE_FUNCTION32, 0, "global cycles counter (lower 32 bits)" },
+	{ "DATA", (uint32_t*)DebugInfo_GetDATA, VALUE_TYPE_FUNCTION32, 0, "invalid before Desktop is up" },
 #if ENABLE_DSP_EMU
-	{ "DspCallDepth", (Uint32*)DebugDsp_CallDepth, VALUE_TYPE_FUNCTION32, 0, NULL }, /* call depth for 'dspnext subreturn' */
-	{ "DspInstr", (Uint32*)DebugDsp_InstrCount, VALUE_TYPE_FUNCTION32, 0, "DSP instructions count" },
-	{ "DspOpcodeType", (Uint32*)DebugDsp_OpcodeType, VALUE_TYPE_FUNCTION32, 0, NULL }, /* opcode type for 'dspnext' */
+	{ "DspCallDepth", (uint32_t*)DebugDsp_CallDepth, VALUE_TYPE_FUNCTION32, 0, NULL }, /* call depth for 'dspnext subreturn' */
+	{ "DspInstr", (uint32_t*)DebugDsp_InstrCount, VALUE_TYPE_FUNCTION32, 0, "DSP instructions count" },
+	{ "DspOpcodeType", (uint32_t*)DebugDsp_OpcodeType, VALUE_TYPE_FUNCTION32, 0, NULL }, /* opcode type for 'dspnext' */
 #endif
-	{ "FrameCycles", (Uint32*)GetFrameCycles, VALUE_TYPE_FUNCTION32, 0, "cycles since VBL" },
-	{ "GemdosOpcode", (Uint32*)GetGemdosOpcode, VALUE_TYPE_FUNCTION32, 16, "$FFFF when not on GEMDOS trap" },
-	{ "HBL", (Uint32*)&nHBL, VALUE_TYPE_VAR32, sizeof(nHBL)*8, "number of HBL interrupts"  },
-	{ "LineAOpcode", (Uint32*)GetLineAOpcode, VALUE_TYPE_FUNCTION32, 16, "$FFFF when not on Line-A opcode" },
-	{ "LineCycles", (Uint32*)GetLineCycles, VALUE_TYPE_FUNCTION32, 0, "cycles since HBL (divisible by 4)" },
-	{ "LineFOpcode", (Uint32*)GetLineFOpcode, VALUE_TYPE_FUNCTION32, 16, "$FFFF when not on Line-F opcode" },
-	{ "NextPC", (Uint32*)GetNextPC, VALUE_TYPE_FUNCTION32, 0, "Next instruction address" },
-	{ "OsCallParam", (Uint32*)GetOsCallParam, VALUE_TYPE_FUNCTION32, 16, "valid only on OS call opcode breakpoint" },
-	{ "PConSymbol", (Uint32*)PConSymbol, VALUE_TYPE_FUNCTION32, 16, "1 if PC on symbol, 0 otherwise" },
-	{ "TEXT", (Uint32*)DebugInfo_GetTEXT, VALUE_TYPE_FUNCTION32, 0, "invalid before Desktop is up" },
-	{ "TEXTEnd", (Uint32*)DebugInfo_GetTEXTEnd, VALUE_TYPE_FUNCTION32, 0, "invalid before Desktop is up" },
-	{ "VBL", (Uint32*)&nVBLs, VALUE_TYPE_VAR32, sizeof(nVBLs)*8, "number of VBL interrupts" },
-	{ "VdiOpcode", (Uint32*)Vars_GetVdiOpcode, VALUE_TYPE_FUNCTION32, 16, "$FFFF when not on VDI trap" },
-	{ "XbiosOpcode", (Uint32*)GetXbiosOpcode, VALUE_TYPE_FUNCTION32, 16, "$FFFF when not on XBIOS trap" }
+	{ "FrameCycles", (uint32_t*)GetFrameCycles, VALUE_TYPE_FUNCTION32, 0, "cycles since VBL" },
+	{ "GemdosOpcode", (uint32_t*)GetGemdosOpcode, VALUE_TYPE_FUNCTION32, 16, "$FFFF when not on GEMDOS trap" },
+	{ "HBL", (uint32_t*)&nHBL, VALUE_TYPE_VAR32, sizeof(nHBL)*8, "number of HBL interrupts"  },
+	{ "LineAOpcode", (uint32_t*)GetLineAOpcode, VALUE_TYPE_FUNCTION32, 16, "$FFFF when not on Line-A opcode" },
+	{ "LineCycles", (uint32_t*)GetLineCycles, VALUE_TYPE_FUNCTION32, 0, "cycles since HBL (divisible by 4)" },
+	{ "LineFOpcode", (uint32_t*)GetLineFOpcode, VALUE_TYPE_FUNCTION32, 16, "$FFFF when not on Line-F opcode" },
+	{ "NextPC", (uint32_t*)GetNextPC, VALUE_TYPE_FUNCTION32, 0, "Next instruction address" },
+	{ "OsCallParam", (uint32_t*)GetOsCallParam, VALUE_TYPE_FUNCTION32, 16, "valid only on OS call opcode breakpoint" },
+	{ "PConSymbol", (uint32_t*)PConSymbol, VALUE_TYPE_FUNCTION32, 16, "1 if PC on symbol, 0 otherwise" },
+	{ "TEXT", (uint32_t*)DebugInfo_GetTEXT, VALUE_TYPE_FUNCTION32, 0, "invalid before Desktop is up" },
+	{ "TEXTEnd", (uint32_t*)DebugInfo_GetTEXTEnd, VALUE_TYPE_FUNCTION32, 0, "invalid before Desktop is up" },
+	{ "VBL", (uint32_t*)&nVBLs, VALUE_TYPE_VAR32, sizeof(nVBLs)*8, "number of VBL interrupts" },
+	{ "VdiOpcode", (uint32_t*)Vars_GetVdiOpcode, VALUE_TYPE_FUNCTION32, 16, "$FFFF when not on VDI trap" },
+	{ "XbiosOpcode", (uint32_t*)GetXbiosOpcode, VALUE_TYPE_FUNCTION32, 16, "$FFFF when not on XBIOS trap" }
 };
 
 
@@ -255,13 +255,13 @@ const var_addr_t *Vars_ParseVariable(const char *name)
 
 
 /**
- * Return Uint32 value from given Hatari variable struct*
+ * Return uint32_t value from given Hatari variable struct*
  */
-Uint32 Vars_GetValue(const var_addr_t *hvar)
+uint32_t Vars_GetValue(const var_addr_t *hvar)
 {
 	switch (hvar->vtype) {
 	case VALUE_TYPE_FUNCTION32:
-		return ((Uint32(*)(void))(hvar->addr))();
+		return ((uint32_t(*)(void))(hvar->addr))();
 	case VALUE_TYPE_VAR32:
 		return *(hvar->addr);
 	default:
@@ -276,7 +276,7 @@ Uint32 Vars_GetValue(const var_addr_t *hvar)
  * If given string is a Hatari variable name, set value to given
  * variable's value and return true, otherwise return false.
  */
-bool Vars_GetVariableValue(const char *name, Uint32 *value)
+bool Vars_GetVariableValue(const char *name, uint32_t *value)
 {
 	const var_addr_t *hvar;
 
@@ -293,7 +293,7 @@ bool Vars_GetVariableValue(const char *name, Uint32 *value)
  */
 int Vars_List(int nArgc, char *psArgv[])
 {
-	Uint32 value;
+	uint32_t value;
 	char numstr[16];
 	int i, maxlen = 0;
 	for (i = 0; i < ARRAY_SIZE(hatari_vars); i++) {

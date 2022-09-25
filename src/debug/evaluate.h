@@ -8,8 +8,8 @@
 #ifndef HATARI_EVALUATE_H
 #define HATARI_EVALUATE_H
 
-extern bool Eval_Number(const char *value, Uint32 *number);
-extern int Eval_Range(char *str, Uint32 *lower, Uint32 *upper, bool bForDsp);
-extern const char* Eval_Expression(const char *expression, Uint32 *result, int *offset, bool bForDsp);
+extern bool Eval_Number(const char *value, uint32_t *number);
+extern int Eval_Range(char *str, uint32_t *lower, uint32_t *upper, bool bForDsp);
+extern const char* Eval_Expression(const char *expression, uint32_t *result, int *offset, bool bForDsp);
 
 #endif

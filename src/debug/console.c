@@ -63,9 +63,9 @@ void Console_SetTrace(bool enable)
 /**
  * Maps Atari characters to their closest ASCII equivalents.
  */
-static void map_character(Uint8 value)
+static void map_character(uint8_t value)
 {
-	static const Uint8 map_0_31[32] = {
+	static const uint8_t map_0_31[32] = {
 		'.', '.', '.', '.', '.', '.', '.', '.',	/* 0x00 */
 		/* white space */
 		'\b','\t','\n','.','.','\r', '.', '.',	/* 0x08 */
@@ -73,7 +73,7 @@ static void map_character(Uint8 value)
 		'0', '1', '2', '3', '4', '5', '6', '7',	/* 0x10 */
 		'8', '9', '.', '.', '.', '.', '.', '.' 	/* 0x18 */
 	};
-	static const Uint8 map_128_255[128] = {
+	static const uint8_t map_128_255[128] = {
 		/* accented characters */
 		'C', 'U', 'e', 'a', 'a', 'a', 'a', 'c',	/* 0x80 */
 		'e', 'e', 'e', 'i', 'i', 'i', 'A', 'A',	/* 0x88 */
@@ -113,7 +113,7 @@ static void map_character(Uint8 value)
  * at which point output switches to next line.  Other VT52
  * escape sequences than cursor movement are ignored.
  */
-static void vt52_emu(Uint8 value)
+static void vt52_emu(uint8_t value)
 {
 	/* state machine to handle/ignore VT52 escape sequence */
 	static int escape_index;
@@ -224,9 +224,9 @@ static void vt52_emu(Uint8 value)
  */
 void Console_Check(void)
 {
-	Uint32 pc, xconout, stack, stackbeg, stackend;
+	uint32_t pc, xconout, stack, stackbeg, stackend;
 	int increment, dev;
-	Uint16 chr;
+	uint16_t chr;
 
 	if (con_trace) {
 		dev = 2;

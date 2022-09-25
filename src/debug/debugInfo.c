@@ -75,9 +75,9 @@ const char DebugInfo_fileid[] = "Hatari debuginfo.c";
  * If warnings is set, output warnings if no valid system base
  * return on success sysbase address (+ set rombase), on failure return zero
  */
-static Uint32 DebugInfo_GetSysbase(Uint32 *rombase, bool warnings)
+static uint32_t DebugInfo_GetSysbase(uint32_t *rombase, bool warnings)
 {
-	Uint32 sysbase = STMemory_ReadLong(OS_SYSBASE);
+	uint32_t sysbase = STMemory_ReadLong(OS_SYSBASE);
 
 	if ( !STMemory_CheckAreaType (sysbase, OS_HEADER_SIZE, ABFLAG_RAM | ABFLAG_ROM ) ) {
 		if (warnings) {
@@ -108,13 +108,13 @@ static Uint32 DebugInfo_GetSysbase(Uint32 *rombase, bool warnings)
  * If warnings is set, output warnings if no valid basepage
  * return on success basepage address, on failure return zero
  */
-static Uint32 DebugInfo_CurrentBasepage(Uint32 sysbase, bool warnings)
+static uint32_t DebugInfo_CurrentBasepage(uint32_t sysbase, bool warnings)
 {
-	Uint32 basepage;
-	Uint16 osversion, osconf;
+	uint32_t basepage;
+	uint16_t osversion, osconf;
 
 	if (!sysbase) {
-		Uint32 rombase;
+		uint32_t rombase;
 		sysbase = DebugInfo_GetSysbase(&rombase, warnings);
 		if (!sysbase) {
 			return 0;
@@ -145,9 +145,9 @@ static Uint32 DebugInfo_CurrentBasepage(Uint32 sysbase, bool warnings)
  * GetBasepageValue: return basepage value at given offset in
  * TOS process basepage or zero if that is missing/invalid.
  */
-static Uint32 GetBasepageValue(unsigned offset)
+static uint32_t GetBasepageValue(unsigned offset)
 {
-	Uint32 basepage = DebugInfo_CurrentBasepage(0, false);
+	uint32_t basepage = DebugInfo_CurrentBasepage(0, false);
 	if (!basepage) {
 		return 0;
 	}
@@ -162,7 +162,7 @@ static Uint32 GetBasepageValue(unsigned offset)
  * DebugInfo_DTA: if no DTA address given, get one from current
  * basepage and ask GEMDOS to show its info.
  */
-static void DebugInfo_DTA(FILE *fp, Uint32 dta_addr)
+static void DebugInfo_DTA(FILE *fp, uint32_t dta_addr)
 {
 	if (!dta_addr) {
 		dta_addr = GetBasepageValue(0x20);
@@ -178,7 +178,7 @@ static void DebugInfo_DTA(FILE *fp, Uint32 dta_addr)
  * DebugInfo_GetTEXT: return current program TEXT segment address
  * or zero if basepage missing/invalid.  For virtual debugger variable.
  */
-Uint32 DebugInfo_GetTEXT(void)
+uint32_t DebugInfo_GetTEXT(void)
 {
 	return GetBasepageValue(0x08);
 }
@@ -186,9 +186,9 @@ Uint32 DebugInfo_GetTEXT(void)
  * DebugInfo_GetTEXTEnd: return address following current program TEXT segment
  * or zero if basepage missing/invalid.  For virtual debugger variable.
  */
-Uint32 DebugInfo_GetTEXTEnd(void)
+uint32_t DebugInfo_GetTEXTEnd(void)
 {
-	Uint32 addr = GetBasepageValue(0x08);
+	uint32_t addr = GetBasepageValue(0x08);
 	if (addr) {
 		return addr + GetBasepageValue(0x0C);
 	}
@@ -198,7 +198,7 @@ Uint32 DebugInfo_GetTEXTEnd(void)
  * DebugInfo_GetDATA: return current program DATA segment address
  * or zero if basepage missing/invalid.  For virtual debugger variable.
  */
-Uint32 DebugInfo_GetDATA(void)
+uint32_t DebugInfo_GetDATA(void)
 {
 	return GetBasepageValue(0x010);
 }
@@ -206,14 +206,14 @@ Uint32 DebugInfo_GetDATA(void)
  * DebugInfo_GetBSS: return current program BSS segment address
  * or zero if basepage missing/invalid.  For virtual debugger variable.
  */
-Uint32 DebugInfo_GetBSS(void)
+uint32_t DebugInfo_GetBSS(void)
 {
 	return GetBasepageValue(0x18);
 }
 /**
  * DebugInfo_GetBASEPAGE: return current basepage address.
  */
-Uint32 DebugInfo_GetBASEPAGE(void)
+uint32_t DebugInfo_GetBASEPAGE(void)
 {
 	return DebugInfo_CurrentBasepage(0, false);
 }
@@ -222,9 +222,9 @@ Uint32 DebugInfo_GetBASEPAGE(void)
 /**
  * output nil-terminated string from any Atari memory type
  */
-static Uint32 print_mem_str(Uint32 addr, Uint32 end)
+static uint32_t print_mem_str(uint32_t addr, uint32_t end)
 {
-	Uint8 chr;
+	uint8_t chr;
 	while (addr < end && (chr = STMemory_ReadByte(addr++))) {
 		fputc(chr, stderr);
 	}
@@ -235,10 +235,10 @@ static Uint32 print_mem_str(Uint32 addr, Uint32 end)
  * DebugInfo_Basepage: show TOS process basepage information
  * at given address.
  */
-static void DebugInfo_Basepage(FILE *fp, Uint32 basepage)
+static void DebugInfo_Basepage(FILE *fp, uint32_t basepage)
 {
-	Uint8 cmdlen;
-	Uint32 addr;
+	uint8_t cmdlen;
+	uint32_t addr;
 
 	if (!basepage) {
 		/* default to current process basepage */
@@ -267,7 +267,7 @@ static void DebugInfo_Basepage(FILE *fp, Uint32 basepage)
 	addr = STMemory_ReadLong(basepage+0x2C);
 	fprintf(fp, "- Environment    : 0x%06x\n", addr);
 	if ( STMemory_CheckAreaType ( addr, 4096, ABFLAG_RAM ) ) {
-		Uint32 end = addr + 4096;
+		uint32_t end = addr + 4096;
 		while (addr < end && STMemory_ReadByte(addr)) {
 			fprintf(fp, "  '");
 			addr = print_mem_str(addr, end);
@@ -279,7 +279,7 @@ static void DebugInfo_Basepage(FILE *fp, Uint32 basepage)
 	cmdlen = STMemory_ReadByte(addr++);
 	fprintf(fp, "- Command argslen: %d (at 0x%06x)\n", cmdlen, addr);
 	if (cmdlen) {
-		Uint32 end = addr + cmdlen;
+		uint32_t end = addr + cmdlen;
 		fprintf(fp, "  '");
 		for (;;) {
 			addr = print_mem_str(addr, end);
@@ -296,10 +296,10 @@ static void DebugInfo_Basepage(FILE *fp, Uint32 basepage)
 /**
  * DebugInfo_PrintOSHeader: output OS Header information
  */
-static void DebugInfo_PrintOSHeader(FILE *fp, Uint32 sysbase)
+static void DebugInfo_PrintOSHeader(FILE *fp, uint32_t sysbase)
 {
-	Uint32 gemblock, basepage;
-	Uint16 osversion, datespec, osconf, langbits;
+	uint32_t gemblock, basepage;
+	uint16_t osversion, datespec, osconf, langbits;
 	const char *lang;
 
 	/* first more technical info */
@@ -358,9 +358,9 @@ static void DebugInfo_PrintOSHeader(FILE *fp, Uint32 sysbase)
  * DebugInfo_OSHeader: display TOS OS Header and RAM one
  * if their addresses differ
  */
-static void DebugInfo_OSHeader(FILE *fp, Uint32 dummy)
+static void DebugInfo_OSHeader(FILE *fp, uint32_t dummy)
 {
-	Uint32 sysbase, rombase;
+	uint32_t sysbase, rombase;
 
 	sysbase = DebugInfo_GetSysbase(&rombase, true);
 	if (!sysbase) {
@@ -378,11 +378,11 @@ static void DebugInfo_OSHeader(FILE *fp, Uint32 dummy)
 /**
  * DebugInfo_Cookiejar: display TOS Cookiejar content
  */
-static void DebugInfo_Cookiejar(FILE *fp, Uint32 dummy)
+static void DebugInfo_Cookiejar(FILE *fp, uint32_t dummy)
 {
 	int items;
 
-	Uint32 jar = STMemory_ReadLong(COOKIE_JAR);
+	uint32_t jar = STMemory_ReadLong(COOKIE_JAR);
 	if (!jar) {
 		fprintf(fp, "Cookiejar is empty.\n");
 		return;
@@ -409,7 +409,7 @@ static void DebugInfo_Cookiejar(FILE *fp, Uint32 dummy)
 /**
  * Helper to call debugcpu.c and debugdsp.c debugger commands
  */
-static void DebugInfo_CallCommand(int (*func)(int, char* []), const char *command, Uint32 arg)
+static void DebugInfo_CallCommand(int (*func)(int, char* []), const char *command, uint32_t arg)
 {
 	char cmdbuffer[16], argbuffer[12];
 	char *argv[] = { cmdbuffer, NULL };
@@ -424,46 +424,46 @@ static void DebugInfo_CallCommand(int (*func)(int, char* []), const char *comman
 	func(argc, argv);
 }
 
-static void DebugInfo_CpuRegister(FILE *fp, Uint32 arg)
+static void DebugInfo_CpuRegister(FILE *fp, uint32_t arg)
 {
 	DebugInfo_CallCommand(DebugCpu_Register, "register", arg);
 }
-static void DebugInfo_CpuDisAsm(FILE *fp, Uint32 arg)
+static void DebugInfo_CpuDisAsm(FILE *fp, uint32_t arg)
 {
 	DebugInfo_CallCommand(DebugCpu_DisAsm, "disasm", arg);
 }
-static void DebugInfo_CpuMemDump(FILE *fp, Uint32 arg)
+static void DebugInfo_CpuMemDump(FILE *fp, uint32_t arg)
 {
 	DebugInfo_CallCommand(DebugCpu_MemDump, "memdump", arg);
 }
 
 #if ENABLE_DSP_EMU
 
-static void DebugInfo_DspRegister(FILE *fp, Uint32 arg)
+static void DebugInfo_DspRegister(FILE *fp, uint32_t arg)
 {
 	DebugInfo_CallCommand(DebugDsp_Register, "dspreg", arg);
 }
-static void DebugInfo_DspDisAsm(FILE *fp, Uint32 arg)
+static void DebugInfo_DspDisAsm(FILE *fp, uint32_t arg)
 {
 	DebugInfo_CallCommand(DebugDsp_DisAsm, "dspdisasm", arg);
 }
 
-static void DebugInfo_DspMemDump(FILE *fp, Uint32 arg)
+static void DebugInfo_DspMemDump(FILE *fp, uint32_t arg)
 {
 	char cmdbuf[] = "dspmemdump";
 	char addrbuf[6], spacebuf[2] = "X";
 	char *argv[] = { cmdbuf, spacebuf, addrbuf };
 	spacebuf[0] = (arg>>16)&0xff;
-	sprintf(addrbuf, "$%x", (Uint16)(arg&0xffff));
+	sprintf(addrbuf, "$%x", (uint16_t)(arg&0xffff));
 	DebugDsp_MemDump(3, argv);
 }
 
 /**
- * Convert arguments to Uint32 arg suitable for DSP memdump callback
+ * Convert arguments to uint32_t arg suitable for DSP memdump callback
  */
-static Uint32 DebugInfo_DspMemArgs(int argc, char *argv[])
+static uint32_t DebugInfo_DspMemArgs(int argc, char *argv[])
 {
-	Uint32 value;
+	uint32_t value;
 	char space;
 	if (argc != 2) {
 		return 0;
@@ -477,17 +477,17 @@ static Uint32 DebugInfo_DspMemArgs(int argc, char *argv[])
 		fprintf(stderr, "ERROR: invalid DSP address '%s'!\n", argv[1]);
 		return 0;
 	}
-	return ((Uint32)space<<16) | value;
+	return ((uint32_t)space<<16) | value;
 }
 
 #endif  /* ENABLE_DSP_EMU */
 
 
-static void DebugInfo_RegAddr(FILE *fp, Uint32 arg)
+static void DebugInfo_RegAddr(FILE *fp, uint32_t arg)
 {
 	bool forDsp;
 	char regname[3];
-	Uint32 *reg32, regvalue, mask;
+	uint32_t *reg32, regvalue, mask;
 	char cmdbuf[12], addrbuf[6];
 	char *argv[] = { cmdbuf, addrbuf };
 
@@ -504,7 +504,7 @@ static void DebugInfo_RegAddr(FILE *fp, Uint32 arg)
 		switch (regsize) {
 			/* currently regaddr supports only 32-bit Rx regs, but maybe later... */
 		case 16:
-			regvalue = *((Uint16*)reg32);
+			regvalue = *((uint16_t*)reg32);
 			break;
 		case 32:
 			regvalue = *reg32;
@@ -543,11 +543,11 @@ static void DebugInfo_RegAddr(FILE *fp, Uint32 arg)
 }
 
 /**
- * Convert arguments to Uint32 arg suitable for RegAddr callback
+ * Convert arguments to uint32_t arg suitable for RegAddr callback
  */
-static Uint32 DebugInfo_RegAddrArgs(int argc, char *argv[])
+static uint32_t DebugInfo_RegAddrArgs(int argc, char *argv[])
 {
-	Uint32 value, *regaddr;
+	uint32_t value, *regaddr;
 	if (argc != 2) {
 		return 0;
 	}
@@ -583,14 +583,14 @@ static Uint32 DebugInfo_RegAddrArgs(int argc, char *argv[])
 
 /* file name to be given before calling the Parse function,
  * needs to be set separately as it's a host pointer which
- * can be 64-bit i.e. may not fit into Uint32.
+ * can be 64-bit i.e. may not fit into uint32_t.
  */
 static char *parse_filename;
 
 /**
  * Parse and exec commands in the previously given debugger input file
  */
-static void DebugInfo_FileParse(FILE *fp, Uint32 dummy)
+static void DebugInfo_FileParse(FILE *fp, uint32_t dummy)
 {
 	if (parse_filename) {
 		DebugUI_ParseFile(parse_filename, true);
@@ -603,7 +603,7 @@ static void DebugInfo_FileParse(FILE *fp, Uint32 dummy)
  * Set which input file to parse.
  * Return true if file exists, false on error
  */
-static Uint32 DebugInfo_FileArgs(int argc, char *argv[])
+static uint32_t DebugInfo_FileArgs(int argc, char *argv[])
 {
 	if (argc != 1) {
 		return false;
@@ -627,7 +627,7 @@ static Uint32 DebugInfo_FileArgs(int argc, char *argv[])
 /**
  * Default information on entering the debugger
  */
-static void DebugInfo_Default(FILE *fp, Uint32 dummy)
+static void DebugInfo_Default(FILE *fp, uint32_t dummy)
 {
 	int hbl, fcycles, lcycles;
         uaecptr nextpc, pc = M68000_GetPC();
@@ -648,8 +648,8 @@ static const struct {
 	bool lock;
 	const char *name;
 	info_func_t func;
-	/* convert args in argv into single Uint32 for func */
-	Uint32 (*args)(int argc, char *argv[]);
+	/* convert args in argv into single uint32_t for func */
+	uint32_t (*args)(int argc, char *argv[]);
 	const char *info;
 } infotable[] = {
 	{ false,"acia",      ACIA_Info,            NULL, "Show ACIA register contents" },
@@ -691,7 +691,7 @@ static const struct {
 };
 
 static int LockedFunction = 7; /* index for the "default" function */
-static Uint32 LockedArgument;
+static uint32_t LockedArgument;
 
 /**
  * Show selected debugger session information
@@ -757,7 +757,7 @@ char *DebugInfo_MatchInfo(const char *text, int state)
  */
 int DebugInfo_Command(int nArgc, char *psArgs[])
 {
-	Uint32 value;
+	uint32_t value;
 	const char *cmd;
 	bool ok, lock;
 	int i, sub;

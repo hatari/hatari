@@ -35,8 +35,8 @@ typedef struct {
 	/* reason for debugger entry/breakpoint hit */
 	debug_reason_t reason:8;
 	union {
-		Uint16 dsp;
-		Uint32 cpu;
+		uint16_t dsp;
+		uint32_t cpu;
 	} pc;
 } hist_item_t;
 
@@ -129,7 +129,7 @@ static void History_Advance(void)
  */
 void History_AddCpu(void)
 {
-	Uint32 pc = M68000_GetPC();
+	uint32_t pc = M68000_GetPC();
 
 	History_Advance();
 	History.item[History.idx].for_dsp = false;
@@ -141,7 +141,7 @@ void History_AddCpu(void)
  */
 void History_AddDsp(void)
 {
-	Uint16 pc = DSP_GetPC();
+	uint16_t pc = DSP_GetPC();
 
 	History_Advance();
 	History.item[History.idx].for_dsp = true;
@@ -165,10 +165,10 @@ void History_Mark(debug_reason_t reason)
  *
  * If history has no such address, return given pc value.
  */
-Uint32 History_DisasmAddr(Uint32 pc, Uint32 offset, bool for_dsp)
+uint32_t History_DisasmAddr(uint32_t pc, uint32_t offset, bool for_dsp)
 {
 	unsigned int i, count;
-	Uint32 limit, first;
+	uint32_t limit, first;
 	int track;
 
 	if (!offset) {
@@ -210,10 +210,10 @@ Uint32 History_DisasmAddr(Uint32 pc, Uint32 offset, bool for_dsp)
 /**
  * Output collected CPU/DSP debugger/breakpoint history
  */
-static Uint32 History_Output(Uint32 count, FILE *fp)
+static uint32_t History_Output(uint32_t count, FILE *fp)
 {
 	bool show_all;
-	Uint32 retval;
+	uint32_t retval;
 	int i;
 
 	if (History.count > History.limit) {
@@ -250,10 +250,10 @@ static Uint32 History_Output(Uint32 count, FILE *fp)
 		History.item[i].shown = true;
 
 		if (History.item[i].for_dsp) {
-			Uint16 pc = History.item[i].pc.dsp;
+			uint16_t pc = History.item[i].pc.dsp;
 			DSP_DisasmAddress(fp, pc, pc);
 		} else {
-			Uint32 dummy;
+			uint32_t dummy;
 			Disasm(fp, History.item[i].pc.cpu, &dummy, 1);
 		}
 		if (History.item[i].reason != REASON_NONE) {
@@ -264,7 +264,7 @@ static Uint32 History_Output(Uint32 count, FILE *fp)
 }
 
 /* History_Output() helper for "info" & "lock" commands */
-void History_Show(FILE *fp, Uint32 count)
+void History_Show(FILE *fp, uint32_t count)
 {
 	History_Output(count, fp);
 }
@@ -274,7 +274,7 @@ void History_Show(FILE *fp, Uint32 count)
  */
 static void History_Save(const char *name)
 {
-	Uint32 count;
+	uint32_t count;
 	FILE *fp;
 
 	if (File_Exists(name)) {

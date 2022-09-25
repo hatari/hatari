@@ -90,7 +90,7 @@ static struct {
 	int active;           /* number of active data items in all areas */
 	uint32_t *sort_arr;     /* data indexes used for sorting */
 	int prev_family;      /* previous instruction opcode family */
-	Uint64 prev_cycles;   /* previous instruction cycles counter */
+	uint64_t prev_cycles;   /* previous instruction cycles counter */
 	uint32_t prev_pc;       /* previous instruction address */
 	uint32_t loop_start;    /* address of last loop start */
 	uint32_t loop_end;      /* address of last loop end */
@@ -388,7 +388,7 @@ void Profile_CpuShowStats(void)
  */
 static void show_histogram(const char *title, int count, uint32_t *items)
 {
-	const Uint64 maxval = cpu_profile.all.count;
+	const uint64_t maxval = cpu_profile.all.count;
 	uint32_t value;
 	int i;
 
@@ -788,7 +788,7 @@ void Profile_CpuShowCounts(int show, bool only_symbols)
 }
 
 
-static const char * addr2name(uint32_t addr, Uint64 *total)
+static const char * addr2name(uint32_t addr, uint64_t *total)
 {
 	uint32_t idx = address2index(addr);
 	*total = cpu_profile.data[idx].count;

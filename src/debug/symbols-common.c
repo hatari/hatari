@@ -708,7 +708,7 @@ static symbol_list_t* symbols_load_dri(FILE *fp, const prg_section_t *sections, 
  * a.out format symbol table, and add given offsets to the addresses.
  * Return symbols list or NULL for failure.
  */
-static symbol_list_t* symbols_load_gnu(FILE *fp, const prg_section_t *sections, uint32_t tablesize, Uint32 stroff, Uint32 strsize, const symbol_opts_t *opts)
+static symbol_list_t* symbols_load_gnu(FILE *fp, const prg_section_t *sections, uint32_t tablesize, uint32_t stroff, uint32_t strsize, const symbol_opts_t *opts)
 {
 	size_t slots = tablesize / SIZEOF_STRUCT_NLIST;
 	size_t i;
@@ -756,13 +756,13 @@ static symbol_list_t* symbols_load_gnu(FILE *fp, const prg_section_t *sections, 
 
 	for (i = 0; i < slots; i++)
 	{
-		strx = SDL_SwapBE32(*(Uint32*)p);
+		strx = SDL_SwapBE32(*(uint32_t*)p);
 		p += 4;
 		n_type = *p++;
 		n_other = *p++;
-		n_desc = SDL_SwapBE16(*(Uint16*)p);
+		n_desc = SDL_SwapBE16(*(uint16_t*)p);
 		p += 2;
-		address = SDL_SwapBE32(*(Uint32*)p);
+		address = SDL_SwapBE32(*(uint32_t*)p);
 		p += 4;
 		name = dummy;
 		if (!strx) {
@@ -879,10 +879,10 @@ static symbol_list_t* symbols_load_gnu(FILE *fp, const prg_section_t *sections, 
  * Print program header information.
  * Return false for unrecognized symbol table type.
  */
-static bool symbols_print_prg_info(Uint32 tabletype, Uint32 prgflags, Uint16 relocflag)
+static bool symbols_print_prg_info(uint32_t tabletype, uint32_t prgflags, uint16_t relocflag)
 {
 	static const struct {
-		Uint32 flag;
+		uint32_t flag;
 		const char *name;
 	} flags[] = {
 		{ 0x0001, "FASTLOAD"   },
@@ -940,14 +940,14 @@ static bool symbols_print_prg_info(Uint32 tabletype, Uint32 prgflags, Uint16 rel
 static symbol_list_t* symbols_load_binary(FILE *fp, const symbol_opts_t *opts,
 					  bool (*update_sections)(prg_section_t*))
 {
-	Uint32 textlen, datalen, bsslen, tablesize, tabletype, prgflags;
+	uint32_t textlen, datalen, bsslen, tablesize, tabletype, prgflags;
 	prg_section_t sections[3];
 	int offset, reads = 0;
-	Uint16 relocflag;
+	uint16_t relocflag;
 	symbol_list_t* symbols;
-	Uint32 symoff = 0;
-	Uint32 stroff = 0;
-	Uint32 strsize = 0;
+	uint32_t symoff = 0;
+	uint32_t stroff = 0;
+	uint32_t strsize = 0;
 
 	/* get TEXT, DATA & BSS section sizes */
 	fseek(fp, 2, SEEK_SET);
@@ -978,10 +978,10 @@ static symbol_list_t* symbols_load_binary(FILE *fp, const symbol_opts_t *opts,
 	 * check for GNU-style symbol table in aexec header
 	 */
 	if (tabletype == SYMBOL_FORMAT_MINT) { /* MiNT */
-		Uint32 magic1, magic2;
-		Uint32 dummy;
-		Uint32 a_text, a_data, a_bss, a_syms, a_entry, a_trsize, a_drsize;
-		Uint32 g_tparel_pos, g_tparel_size, g_stkpos, g_symbol_format;
+		uint32_t magic1, magic2;
+		uint32_t dummy;
+		uint32_t a_text, a_data, a_bss, a_syms, a_entry, a_trsize, a_drsize;
+		uint32_t g_tparel_pos, g_tparel_size, g_stkpos, g_symbol_format;
 
 		reads  = fread(&magic1, sizeof(magic1), 1, fp);
 		magic1 = SDL_SwapBE32(magic1);

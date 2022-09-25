@@ -282,7 +282,7 @@ static void Disass68k_loop (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
  * Calculate next PC address from given one, without output
  * @return	next PC address
  */
-Uint32 Disasm_GetNextPC(Uint32 pc)
+uint32_t Disasm_GetNextPC(uint32_t pc)
 {
 	char buf[256];
 
