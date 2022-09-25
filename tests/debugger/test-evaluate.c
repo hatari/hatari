@@ -3,12 +3,10 @@
  * (including Hatari variable and CPU register values in expressions)
  */
 #include <stdio.h>
-#include <SDL_types.h>
 #include <stdbool.h>
 #include "stMemory.h"
 #include "evaluate.h"
 #include "m68000.h"
-#include "main.h"
 #include "screen.h"
 #include "configuration.h"
 #include "video.h"
@@ -28,7 +26,7 @@ int main(int argc, const char *argv[])
 	/* expected to succeed, with given result */
 	struct {
 		const char *expression;
-		Uint32 result;
+		uint32_t result;
 	} success[] = {
 		{ "1+2*3", 7 },
 		{ "(2+5)*3", 9 },
@@ -38,7 +36,7 @@ int main(int argc, const char *argv[])
 	};
 	int i, offset, tests = 0, errors = 0;
 	const char *expression, *errstr;
-	Uint32 result;
+	uint32_t result;
 
 	/* set values needed by above successful calculations */
 	nVBLs = VBL_VALUE;
@@ -59,7 +57,7 @@ int main(int argc, const char *argv[])
 				3+offset, '^', errstr);
 		} else {
 			fprintf(stderr, "  => %x\n  ***Unexpected SUCCESS from expression***\n",
-				(Uint32)result);
+				(uint32_t)result);
 			errors++;
 		}
 	}
@@ -77,10 +75,10 @@ int main(int argc, const char *argv[])
 			errors++;
 		} else if (result != success[i].result) {
 			fprintf(stderr, "  => %x (not %x)\n  ***Wrong result from expression***\n",
-				(Uint32)result, (Uint32)success[i].result);
+				(uint32_t)result, (uint32_t)success[i].result);
 			errors++;
 		} else {
-			fprintf(stderr, "  => 0x%x\n", (Uint32)result);
+			fprintf(stderr, "  => 0x%x\n", (uint32_t)result);
 		}
 	}
 	tests += i;

@@ -60,12 +60,12 @@ static bool AutoLoadFailed;
  * the given ASCII file and add given offsets to the addresses.
  * Return symbols list or NULL for failure.
  */
-static symbol_list_t* symbols_load_ascii(FILE *fp, Uint32 *offsets, Uint32 maxaddr, symtype_t gettype)
+static symbol_list_t* symbols_load_ascii(FILE *fp, uint32_t *offsets, uint32_t maxaddr, symtype_t gettype)
 {
 	symbol_list_t *list;
 	char symchar, buffer[128], name[MAX_SYM_SIZE+1], *buf;
 	int count, line, symbols, weak, unknown, invalid;
-	Uint32 address, offset;
+	uint32_t address, offset;
 	symtype_t symtype;
 
 	/* count content lines */
@@ -233,7 +233,7 @@ static void symbols_trim_addresses(symbol_list_t* list)
 static bool update_sections(prg_section_t *sections)
 {
 	/* offsets & max sizes for running program TEXT/DATA/BSS section symbols */
-	Uint32 start = DebugInfo_GetTEXT();
+	uint32_t start = DebugInfo_GetTEXT();
 	if (!start) {
 		fprintf(stderr, "ERROR: no valid program basepage!\n");
 		return false;
@@ -267,7 +267,7 @@ static bool update_sections(prg_section_t *sections)
  * the given file and add given offsets to the addresses.
  * Return symbols list or NULL for failure.
  */
-static symbol_list_t* Symbols_Load(const char *filename, Uint32 *offsets, Uint32 maxaddr)
+static symbol_list_t* Symbols_Load(const char *filename, uint32_t *offsets, uint32_t maxaddr)
 {
 	symbol_list_t *list;
 	FILE *fp;
@@ -469,7 +469,7 @@ static const symbol_t* Symbols_SearchByName(symbol_t* entries, int count, symtyp
  * Set given symbol's address to variable and return true if one
  * was found from given list.
  */
-static bool Symbols_GetAddress(symbol_list_t* list, symtype_t symtype, const char *name, Uint32 *addr)
+static bool Symbols_GetAddress(symbol_list_t* list, symtype_t symtype, const char *name, uint32_t *addr)
 {
 	const symbol_t *entry;
 	if (!(list && list->names)) {
@@ -482,11 +482,11 @@ static bool Symbols_GetAddress(symbol_list_t* list, symtype_t symtype, const cha
 	}
 	return false;
 }
-bool Symbols_GetCpuAddress(symtype_t symtype, const char *name, Uint32 *addr)
+bool Symbols_GetCpuAddress(symtype_t symtype, const char *name, uint32_t *addr)
 {
 	return Symbols_GetAddress(CpuSymbolsList, symtype, name, addr);
 }
-bool Symbols_GetDspAddress(symtype_t symtype, const char *name, Uint32 *addr)
+bool Symbols_GetDspAddress(symtype_t symtype, const char *name, uint32_t *addr)
 {
 	return Symbols_GetAddress(DspSymbolsList, symtype, name, addr);
 }
@@ -499,11 +499,11 @@ bool Symbols_GetDspAddress(symtype_t symtype, const char *name, Uint32 *addr)
  * Return index for symbol which address matches or precedes
  * the given one.
  */
-static int Symbols_SearchBeforeAddress(symbol_t* entries, int count, Uint32 addr)
+static int Symbols_SearchBeforeAddress(symbol_t* entries, int count, uint32_t addr)
 {
 	/* left, right, middle */
         int l, r, m;
-	Uint32 curr;
+	uint32_t curr;
 
 	/* bisect */
 	l = 0;
@@ -523,7 +523,7 @@ static int Symbols_SearchBeforeAddress(symbol_t* entries, int count, Uint32 addr
 	return r;
 }
 
-static const char* Symbols_GetBeforeAddress(symbol_list_t *list, Uint32 *addr)
+static const char* Symbols_GetBeforeAddress(symbol_list_t *list, uint32_t *addr)
 {
 	if (!(list && list->addresses)) {
 		return NULL;
@@ -535,11 +535,11 @@ static const char* Symbols_GetBeforeAddress(symbol_list_t *list, Uint32 *addr)
 	}
 	return NULL;
 }
-const char* Symbols_GetBeforeCpuAddress(Uint32 *addr)
+const char* Symbols_GetBeforeCpuAddress(uint32_t *addr)
 {
 	return Symbols_GetBeforeAddress(CpuSymbolsList, addr);
 }
-const char* Symbols_GetBeforeDspAddress(Uint32 *addr)
+const char* Symbols_GetBeforeDspAddress(uint32_t *addr)
 {
 	return Symbols_GetBeforeAddress(DspSymbolsList, addr);
 }
@@ -551,11 +551,11 @@ const char* Symbols_GetBeforeDspAddress(Uint32 *addr)
  * Performance critical, called on every instruction
  * when profiling is enabled.
  */
-static int Symbols_SearchByAddress(symbol_t* entries, int count, Uint32 addr)
+static int Symbols_SearchByAddress(symbol_t* entries, int count, uint32_t addr)
 {
 	/* left, right, middle */
         int l, r, m;
-	Uint32 curr;
+	uint32_t curr;
 
 	/* bisect */
 	l = 0;
@@ -581,7 +581,7 @@ static int Symbols_SearchByAddress(symbol_t* entries, int count, Uint32 addr)
  * TEXT symbols will be matched before other symbol types.
  * Returned name is valid only until next Symbols_* function call.
  */
-static const char* Symbols_GetByAddress(symbol_list_t* list, Uint32 addr, symtype_t type)
+static const char* Symbols_GetByAddress(symbol_list_t* list, uint32_t addr, symtype_t type)
 {
 	if (!(list && list->addresses)) {
 		return NULL;
@@ -600,11 +600,11 @@ static const char* Symbols_GetByAddress(symbol_list_t* list, Uint32 addr, symtyp
 	}
 	return NULL;
 }
-const char* Symbols_GetByCpuAddress(Uint32 addr, symtype_t type)
+const char* Symbols_GetByCpuAddress(uint32_t addr, symtype_t type)
 {
 	return Symbols_GetByAddress(CpuSymbolsList, addr, type);
 }
-const char* Symbols_GetByDspAddress(Uint32 addr, symtype_t type)
+const char* Symbols_GetByDspAddress(uint32_t addr, symtype_t type)
 {
 	return Symbols_GetByAddress(DspSymbolsList, addr, type);
 }
@@ -613,18 +613,18 @@ const char* Symbols_GetByDspAddress(Uint32 addr, symtype_t type)
  * Search given list for TEXT symbol by address.
  * Return symbol index if address matches, -1 otherwise.
  */
-static int Symbols_GetCodeIndex(symbol_list_t* list, Uint32 addr)
+static int Symbols_GetCodeIndex(symbol_list_t* list, uint32_t addr)
 {
 	if (!list) {
 		return -1;
 	}
 	return Symbols_SearchByAddress(list->addresses, list->codecount, addr);
 }
-int Symbols_GetCpuCodeIndex(Uint32 addr)
+int Symbols_GetCpuCodeIndex(uint32_t addr)
 {
 	return Symbols_GetCodeIndex(CpuSymbolsList, addr);
 }
-int Symbols_GetDspCodeIndex(Uint32 addr)
+int Symbols_GetDspCodeIndex(uint32_t addr)
 {
 	return Symbols_GetCodeIndex(DspSymbolsList, addr);
 }
@@ -825,7 +825,7 @@ const char Symbols_Description[] =
 int Symbols_Command(int nArgc, char *psArgs[])
 {
 	enum { TYPE_CPU, TYPE_DSP } listtype;
-	Uint32 offsets[3], maxaddr;
+	uint32_t offsets[3], maxaddr;
 	symbol_list_t *list;
 	const char *file;
 	int i;

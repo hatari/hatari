@@ -35,7 +35,7 @@ const char Log_fileid[] = "Hatari log.c";
 int ExceptionDebugMask;
 
 typedef struct {
-	Uint64 flag;
+	uint64_t flag;
 	const char *name;
 } flagname_t;
 
@@ -163,7 +163,7 @@ static flagname_t TraceFlags[] = {
 #endif /* ENABLE_TRACING */
 
 
-Uint64	LogTraceFlags = TRACE_NONE;
+uint64_t LogTraceFlags = TRACE_NONE;
 FILE *TraceFile = NULL;
 
 static FILE *hLogFile = NULL;
@@ -347,7 +347,7 @@ LOGTYPE Log_ParseOptions(const char *arg)
  * Return error string (""=silent 'error') or NULL for success.
  */
 static const char*
-Log_ParseOptionFlags (const char *FlagsStr, flagname_t *Flags, int MaxFlags, Uint64 *Mask)
+Log_ParseOptionFlags (const char *FlagsStr, flagname_t *Flags, int MaxFlags, uint64_t *Mask)
 {
 	char *FlagsCopy;
 	char *cur, *sep;
@@ -447,7 +447,7 @@ const char* Log_SetExceptionDebugMask (const char *FlagsStr)
 {
 	const char *errstr;
 
-	Uint64 mask = ConfigureParams.Debugger.nExceptionDebugMask;
+	uint64_t mask = ConfigureParams.Debugger.nExceptionDebugMask;
 	errstr = Log_ParseOptionFlags(FlagsStr, ExceptionFlags, ARRAY_SIZE(ExceptionFlags), &mask);
 	ConfigureParams.Debugger.nExceptionDebugMask = mask;
 	return errstr;

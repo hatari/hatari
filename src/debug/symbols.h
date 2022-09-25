@@ -27,16 +27,16 @@ extern char* Symbols_MatchDspAddress(const char *text, int state);
 extern char* Symbols_MatchDspCodeAddress(const char *text, int state);
 extern char* Symbols_MatchDspDataAddress(const char *text, int state);
 /* symbol name -> address search */
-extern bool Symbols_GetCpuAddress(symtype_t symtype, const char *name, Uint32 *addr);
-extern bool Symbols_GetDspAddress(symtype_t symtype, const char *name, Uint32 *addr);
+extern bool Symbols_GetCpuAddress(symtype_t symtype, const char *name, uint32_t *addr);
+extern bool Symbols_GetDspAddress(symtype_t symtype, const char *name, uint32_t *addr);
 /* symbol address -> name search */
-extern const char* Symbols_GetByCpuAddress(Uint32 addr, symtype_t symtype);
-extern const char* Symbols_GetByDspAddress(Uint32 addr, symtype_t symtype);
-extern const char* Symbols_GetBeforeCpuAddress(Uint32 *addr);
-extern const char* Symbols_GetBeforeDspAddress(Uint32 *addr);
+extern const char* Symbols_GetByCpuAddress(uint32_t addr, symtype_t symtype);
+extern const char* Symbols_GetByDspAddress(uint32_t addr, symtype_t symtype);
+extern const char* Symbols_GetBeforeCpuAddress(uint32_t *addr);
+extern const char* Symbols_GetBeforeDspAddress(uint32_t *addr);
 /* TEXT symbol address -> index */
-extern int Symbols_GetCpuCodeIndex(Uint32 addr);
-extern int Symbols_GetDspCodeIndex(Uint32 addr);
+extern int Symbols_GetCpuCodeIndex(uint32_t addr);
+extern int Symbols_GetDspCodeIndex(uint32_t addr);
 /* how many TEXT symbols are loaded */
 extern int Symbols_CpuCodeCount(void);
 extern int Symbols_DspCodeCount(void);

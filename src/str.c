@@ -13,7 +13,6 @@ const char Str_fileid[] = "Hatari str.c";
 #include <stdbool.h>
 #include <stdlib.h>
 #include <locale.h>
-#include <SDL_types.h>
 #include "configuration.h"
 #include "str.h"
 

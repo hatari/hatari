@@ -8,8 +8,7 @@
 #define HATARI_LOG_H
 
 #include <stdbool.h>
-#include <SDL_types.h>
-
+#include <stdint.h>
 
 /* Exception debugging
  * -------------------
@@ -102,7 +101,7 @@ extern char *Log_MatchTrace(const char *text, int state);
  */
 #include "config.h"
 
-/* Up to 64 levels when using Uint64 for HatariTraceFlags */
+/* Up to 64 levels when using uint64_t for HatariTraceFlags */
 enum {
 	TRACE_BIT_ACIA,
 
@@ -295,7 +294,7 @@ enum {
 		| TRACE_DSP_DISASM_REG | TRACE_DSP_DISASM_MEM | TRACE_DSP_STATE | TRACE_DSP_INTERRUPT )
 
 extern FILE *TraceFile;
-extern Uint64 LogTraceFlags;
+extern uint64_t LogTraceFlags;
 
 #if ENABLE_TRACING
 

@@ -2,8 +2,8 @@
  * Code to test Hatari symbol/address (re-)loading in src/debug/symbols.c
  */
 #include <stdio.h>
-#include <SDL_types.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include "debug_priv.h"
 #include "symbols.h"
 #include "main.h"
@@ -16,7 +16,7 @@ int main(int argc, const char *argv[])
 		"afoo",
 		"zbar",
 	};
-	Uint32 fail_addr[] = {
+	uint32_t fail_addr[] = {
 		0x10,
 		0x30,
 	};
@@ -25,7 +25,7 @@ int main(int argc, const char *argv[])
 		"os_magic",
 		"p_root"
 	};
-	Uint32 success_addr[] = {
+	uint32_t success_addr[] = {
 		0x14,
 		0x28,
 	};
@@ -45,7 +45,7 @@ int main(int argc, const char *argv[])
 
 	int i, tests = 0, errors = 0;
 	const char *name;
-	Uint32 addr;
+	uint32_t addr;
 
 	DO_CMD(cmd_load);
 	DO_CMD(cmd_show_bycode);
