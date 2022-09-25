@@ -150,71 +150,71 @@ const char Blitter_fileid[] = "Hatari blitter.c";
 /* Blitter registers */
 typedef struct
 {
-	Uint32	src_addr;
-	Uint32	dst_addr;
-	Uint32	x_count;
-	Uint32	y_count;
+	uint32_t	src_addr;
+	uint32_t	dst_addr;
+	uint32_t	x_count;
+	uint32_t	y_count;
 	short	src_x_incr;
 	short	src_y_incr;
 	short	dst_x_incr;
 	short	dst_y_incr;
-	Uint16	end_mask_1;
-	Uint16	end_mask_2;
-	Uint16	end_mask_3;
-	Uint8	hop;
-	Uint8	lop;
-	Uint8	ctrl;
-	Uint8	skew;
+	uint16_t	end_mask_1;
+	uint16_t	end_mask_2;
+	uint16_t	end_mask_3;
+	uint8_t	hop;
+	uint8_t	lop;
+	uint8_t	ctrl;
+	uint8_t	skew;
 } BLITTERREGS;
 
 /* Blitter vars */
 typedef struct
 {
-	Uint32	pass_cycles;
-	Uint32	op_cycles;
-	Uint32	total_cycles;
+	uint32_t	pass_cycles;
+	uint32_t	op_cycles;
+	uint32_t	total_cycles;
 
-	Uint32	buffer;
-	Uint32	x_count_reset;
-	Uint8	hog;
-	Uint8	smudge;
-	Uint8	halftone_line;
-	Uint8	fxsr;
-	Uint8	nfsr;
-	Uint8	skew;
+	uint32_t	buffer;
+	uint32_t	x_count_reset;
+	uint8_t	hog;
+	uint8_t	smudge;
+	uint8_t	halftone_line;
+	uint8_t	fxsr;
+	uint8_t	nfsr;
+	uint8_t	skew;
 } BLITTERVARS;
 
 /* Blitter state */
 typedef struct
 {
-	Uint8	fxsr;
-	Uint8	nfsr;
-	Uint8	have_fxsr;
-	Uint8	need_src;
-	Uint8	have_src;
-	Uint8	fetch_src;
-	Uint8	need_dst;
-	Uint8	have_dst;
+	uint8_t	fxsr;
+	uint8_t	nfsr;
+	uint8_t	have_fxsr;
+	uint8_t	need_src;
+	uint8_t	have_src;
+	uint8_t	fetch_src;
+	uint8_t	need_dst;
+	uint8_t	have_dst;
 
-	Uint16	src_word;
-	Uint16	dst_word;
-	Uint16	bus_word;
+	uint16_t	src_word;
+	uint16_t	dst_word;
+	uint16_t	bus_word;
 
-	Uint16	end_mask;
+	uint16_t	end_mask;
 
-	Uint16	CountBusBlitter;				/* To count bus accesses made by the blitter */
-	Uint16	CountBusCpu;					/* To count bus accesses made by the CPU */
-	Uint8	ContinueLater;					/* 0=false / 1=true */
+	uint16_t	CountBusBlitter;				/* To count bus accesses made by the blitter */
+	uint16_t	CountBusCpu;					/* To count bus accesses made by the CPU */
+	uint8_t	ContinueLater;					/* 0=false / 1=true */
 } BLITTERSTATE;
 
 
 /* Blitter logical op func */
-typedef Uint16 (*BLITTER_OP_FUNC)(void);
+typedef uint16_t (*BLITTER_OP_FUNC)(void);
 
 static BLITTERREGS	BlitterRegs;
 static BLITTERVARS	BlitterVars;
 static BLITTERSTATE	BlitterState;
-static Uint16		BlitterHalftone[16];
+static uint16_t		BlitterHalftone[16];
 
 static BLITTER_OP_FUNC	Blitter_ComputeHOP;
 static BLITTER_OP_FUNC	Blitter_ComputeLOP;
@@ -230,15 +230,15 @@ static BLITTER_OP_FUNC	Blitter_ComputeLOP;
 #define	BLITTER_PHASE_IGNORE_LAST_CPU_CYCLES	16
 #define	BLITTER_PHASE_PAUSE			32		/* cpu owns the bus (COUNT_CPU_BUS) and stops the blitter */
 
-Uint16		BlitterPhase = BLITTER_PHASE_STOP;		/* Internal state of the blitter */
+uint16_t		BlitterPhase = BLITTER_PHASE_STOP;		/* Internal state of the blitter */
 
-static Uint16	Blitter_CyclesBeforeStart;			/* Number of cycles after setting busy bit before calling Blitter_Start */
+static uint16_t	Blitter_CyclesBeforeStart;			/* Number of cycles after setting busy bit before calling Blitter_Start */
 								/* (during this time, the CPU can still run and access the bus) */
 
-static Uint8	Blitter_HOG_CPU_FromBusAccess;			/* 0 or 1 (false/true) */
-static Uint8	Blitter_HOG_CPU_BlitterStartDuringBusAccess;	/* 0 or 1 (false/true) */
-static Uint16	Blitter_HOG_CPU_BusCountError;			/* 0 or 1 (false/true) */
-static Uint16	Blitter_HOG_CPU_IgnoreMaxCpuCycles;		/* Max number of blitter cycles during which the CPU might run in parallel */
+static uint8_t	Blitter_HOG_CPU_FromBusAccess;			/* 0 or 1 (false/true) */
+static uint8_t	Blitter_HOG_CPU_BlitterStartDuringBusAccess;	/* 0 or 1 (false/true) */
+static uint16_t	Blitter_HOG_CPU_BusCountError;			/* 0 or 1 (false/true) */
+static uint16_t	Blitter_HOG_CPU_IgnoreMaxCpuCycles;		/* Max number of blitter cycles during which the CPU might run in parallel */
 								/* (unless the CPU is stalled earlier by a bus access) */
 
 
@@ -428,9 +428,9 @@ static void Blitter_BusArbitration ( int RequestBusMode )
  * Low level memory accesses to read / write a word
  * For each word access we increment the blitter's bus accesses counter.
  */
-static Uint16 Blitter_ReadWord(Uint32 addr)
+static uint16_t Blitter_ReadWord(uint32_t addr)
 {
-	Uint16 value;
+	uint16_t value;
 
 	value = STMemory_DMA_ReadWord ( addr );
 
@@ -442,7 +442,7 @@ static Uint16 Blitter_ReadWord(Uint32 addr)
 	return value;
 }
 
-static void Blitter_WriteWord(Uint32 addr, Uint16 value)
+static void Blitter_WriteWord(uint32_t addr, uint16_t value)
 {
 	BlitterState.bus_word = value;
 
@@ -497,12 +497,12 @@ static void Blitter_SourceShift(void)
 
 static void Blitter_SourceFetch( bool nfsr_on )
 {
-	Uint32 src_word;
+	uint32_t src_word;
 
 	if ( !nfsr_on )
-		src_word = (Uint32)Blitter_ReadWord(BlitterRegs.src_addr);
+		src_word = (uint32_t)Blitter_ReadWord(BlitterRegs.src_addr);
 	else
-		src_word = (Uint32)BlitterState.bus_word;
+		src_word = (uint32_t)BlitterState.bus_word;
 
 	if (BlitterRegs.src_x_incr < 0)
 		BlitterVars.buffer |= src_word << 16;
@@ -510,17 +510,17 @@ static void Blitter_SourceFetch( bool nfsr_on )
 		BlitterVars.buffer |= src_word;
 }
 
-static Uint16 Blitter_SourceRead(void)
+static uint16_t Blitter_SourceRead(void)
 {
-	return (Uint16)(BlitterVars.buffer >> BlitterVars.skew);
+	return (uint16_t)(BlitterVars.buffer >> BlitterVars.skew);
 }
 
-static Uint16 Blitter_DestRead(void)
+static uint16_t Blitter_DestRead(void)
 {
 	return BlitterState.dst_word;
 }
 
-static Uint16 Blitter_GetHalftoneWord(void)
+static uint16_t Blitter_GetHalftoneWord(void)
 {
 	if ( BlitterVars.smudge )
 		return BlitterHalftone[Blitter_SourceRead() & 15];
@@ -531,22 +531,22 @@ static Uint16 Blitter_GetHalftoneWord(void)
 
 /* HOP */
 
-static Uint16 Blitter_HOP_0(void)
+static uint16_t Blitter_HOP_0(void)
 {
 	return 0xFFFF;
 }
 
-static Uint16 Blitter_HOP_1(void)
+static uint16_t Blitter_HOP_1(void)
 {
 	return Blitter_GetHalftoneWord();
 }
 
-static Uint16 Blitter_HOP_2(void)
+static uint16_t Blitter_HOP_2(void)
 {
 	return Blitter_SourceRead();
 }
 
-static Uint16 Blitter_HOP_3(void)
+static uint16_t Blitter_HOP_3(void)
 {
 	return Blitter_SourceRead() & Blitter_GetHalftoneWord();
 }
@@ -568,90 +568,90 @@ static void Blitter_Select_HOP(void)
 
 /* LOP */
 
-static Uint16 Blitter_LOP_0(void)
+static uint16_t Blitter_LOP_0(void)
 {
 	return 0;
 }
 
-static Uint16 Blitter_LOP_1(void)
+static uint16_t Blitter_LOP_1(void)
 {
 	return Blitter_ComputeHOP() & Blitter_DestRead();
 }
 
-static Uint16 Blitter_LOP_2(void)
+static uint16_t Blitter_LOP_2(void)
 {
 	return Blitter_ComputeHOP() & ~Blitter_DestRead();
 }
 
-static Uint16 Blitter_LOP_3(void)
+static uint16_t Blitter_LOP_3(void)
 {
 	return Blitter_ComputeHOP();
 }
 
-static Uint16 Blitter_LOP_4(void)
+static uint16_t Blitter_LOP_4(void)
 {
 	return ~Blitter_ComputeHOP() & Blitter_DestRead();
 }
 
-static Uint16 Blitter_LOP_5(void)
+static uint16_t Blitter_LOP_5(void)
 {
 	return Blitter_DestRead();
 }
 
-static Uint16 Blitter_LOP_6(void)
+static uint16_t Blitter_LOP_6(void)
 {
 	return Blitter_ComputeHOP() ^ Blitter_DestRead();
 }
 
-static Uint16 Blitter_LOP_7(void)
+static uint16_t Blitter_LOP_7(void)
 {
 	return Blitter_ComputeHOP() | Blitter_DestRead();
 }
 
-static Uint16 Blitter_LOP_8(void)
+static uint16_t Blitter_LOP_8(void)
 {
 	return ~Blitter_ComputeHOP() & ~Blitter_DestRead();
 }
 
-static Uint16 Blitter_LOP_9(void)
+static uint16_t Blitter_LOP_9(void)
 {
 	return ~Blitter_ComputeHOP() ^ Blitter_DestRead();
 }
 
-static Uint16 Blitter_LOP_A(void)
+static uint16_t Blitter_LOP_A(void)
 {
 	return ~Blitter_DestRead();
 }
 
-static Uint16 Blitter_LOP_B(void)
+static uint16_t Blitter_LOP_B(void)
 {
 	return Blitter_ComputeHOP() | ~Blitter_DestRead();
 }
 
-static Uint16 Blitter_LOP_C(void)
+static uint16_t Blitter_LOP_C(void)
 {
 	return ~Blitter_ComputeHOP();
 }
 
-static Uint16 Blitter_LOP_D(void)
+static uint16_t Blitter_LOP_D(void)
 {
 	return ~Blitter_ComputeHOP() | Blitter_DestRead();
 }
 
-static Uint16 Blitter_LOP_E(void)
+static uint16_t Blitter_LOP_E(void)
 {
 	return ~Blitter_ComputeHOP() | ~Blitter_DestRead();
 }
 
-static Uint16 Blitter_LOP_F(void)
+static uint16_t Blitter_LOP_F(void)
 {
 	return 0xFFFF;
 }
 
 static const struct {
 	BLITTER_OP_FUNC	lop_func;
-	Uint8		need_src;
-	Uint8		need_dst;
+	uint8_t		need_src;
+	uint8_t		need_dst;
 } Blitter_LOP_Table [16] =
 {
 	{ Blitter_LOP_0, false, false } ,
@@ -682,8 +682,8 @@ static void Blitter_Select_LOP(void)
 
 static void Blitter_ProcessWord(void)
 {
-	Uint16	lop;
-	Uint16	dst_data;
+	uint16_t	lop;
+	uint16_t	dst_data;
 
 
 	/* Do FXSR if needed (only if src is used) */
@@ -1028,7 +1028,7 @@ void Blitter_SourceXInc_ReadWord(void)
 	if ( Blitter_CheckAccess_Byte() )
 		return;						/* Ignore access */
 
-	IoMem_WriteWord(REG_SRC_X_INC, (Uint16)(BlitterRegs.src_x_incr));
+	IoMem_WriteWord(REG_SRC_X_INC, (uint16_t)(BlitterRegs.src_x_incr));
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1040,7 +1040,7 @@ void Blitter_SourceYInc_ReadWord(void)
 	if ( Blitter_CheckAccess_Byte() )
 		return;						/* Ignore access */
 
-	IoMem_WriteWord(REG_SRC_Y_INC, (Uint16)(BlitterRegs.src_y_incr));
+	IoMem_WriteWord(REG_SRC_Y_INC, (uint16_t)(BlitterRegs.src_y_incr));
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1100,7 +1100,7 @@ void Blitter_DestXInc_ReadWord(void)
 	if ( Blitter_CheckAccess_Byte() )
 		return;						/* Ignore access */
 
-	IoMem_WriteWord(REG_DST_X_INC, (Uint16)(BlitterRegs.dst_x_incr));
+	IoMem_WriteWord(REG_DST_X_INC, (uint16_t)(BlitterRegs.dst_x_incr));
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1112,7 +1112,7 @@ void Blitter_DestYInc_ReadWord(void)
 	if ( Blitter_CheckAccess_Byte() )
 		return;						/* Ignore access */
 
-	IoMem_WriteWord(REG_DST_Y_INC, (Uint16)(BlitterRegs.dst_y_incr));
+	IoMem_WriteWord(REG_DST_Y_INC, (uint16_t)(BlitterRegs.dst_y_incr));
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1136,7 +1136,7 @@ void Blitter_WordsPerLine_ReadWord(void)
 	if ( Blitter_CheckAccess_Byte() )
 		return;						/* Ignore access */
 
-	IoMem_WriteWord(REG_X_COUNT, (Uint16)(BlitterRegs.x_count & 0xFFFF));
+	IoMem_WriteWord(REG_X_COUNT, (uint16_t)(BlitterRegs.x_count & 0xFFFF));
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1148,7 +1148,7 @@ void Blitter_LinesPerBitblock_ReadWord(void)
 	if ( Blitter_CheckAccess_Byte() )
 		return;						/* Ignore access */
 
-	IoMem_WriteWord(REG_Y_COUNT, (Uint16)(BlitterRegs.y_count & 0xFFFF));
+	IoMem_WriteWord(REG_Y_COUNT, (uint16_t)(BlitterRegs.y_count & 0xFFFF));
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1341,7 +1341,7 @@ void Blitter_WordsPerLine_WriteWord(void)
 	if ( Blitter_CheckAccess_Byte() )
 		return;						/* Ignore access */
 
-	Uint32 x_count = (Uint32)IoMem_ReadWord(REG_X_COUNT);
+	uint32_t x_count = (uint32_t)IoMem_ReadWord(REG_X_COUNT);
 
 	if (x_count == 0)
 		x_count = 65536;
@@ -1359,7 +1359,7 @@ void Blitter_LinesPerBitblock_WriteWord(void)
 	if ( Blitter_CheckAccess_Byte() )
 		return;						/* Ignore access */
 
-	Uint32 y_count = (Uint32)IoMem_ReadWord(REG_Y_COUNT);
+	uint32_t y_count = (uint32_t)IoMem_ReadWord(REG_Y_COUNT);
 
 	if (y_count == 0)
 		y_count = 65536;
@@ -1537,7 +1537,7 @@ void Blitter_MemorySnapShot_Capture(bool bSave)
 /**
  * Show Blitter register values.
  */
-void Blitter_Info(FILE *fp, Uint32 dummy)
+void Blitter_Info(FILE *fp, uint32_t dummy)
 {
 	BLITTERREGS *regs = &BlitterRegs;
 

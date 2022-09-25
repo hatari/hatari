@@ -231,7 +231,7 @@ bool Floppy_IsWriteProtected(int Drive)
  */
 static bool Floppy_IsBootSectorExecutable(int Drive)
 {
-	Uint8 *pDiskBuffer;
+	uint8_t *pDiskBuffer;
 	int	sum , i;
 
 	if (EmulationDrives[Drive].bDiskInserted)
@@ -264,7 +264,7 @@ static bool Floppy_IsBootSectorExecutable(int Drive)
  */
 static bool Floppy_IsBootSectorOK(int Drive)
 {
-	Uint8 *pDiskBuffer;
+	uint8_t *pDiskBuffer;
 
 	/* Does our drive have a disk in? */
 	if (EmulationDrives[Drive].bDiskInserted)
@@ -718,7 +718,7 @@ static bool Floppy_EjectBothDrives(void)
  * NOTE - Pass information from boot-sector to this function (if we can't
  * decide we leave it alone).
  */
-static void Floppy_DoubleCheckFormat(long nDiskSize, long nSectorsPerDisk, Uint16 *pnSides, Uint16 *pnSectorsPerTrack)
+static void Floppy_DoubleCheckFormat(long nDiskSize, long nSectorsPerDisk, uint16_t *pnSides, uint16_t *pnSectorsPerTrack)
 {
 	long	TotalSectors;
 	int	Sides_fixed;
@@ -779,14 +779,14 @@ static void Floppy_DoubleCheckFormat(long nDiskSize, long nSectorsPerDisk, Uint1
  * is not actually correct with the image - some demos/game disks have incorrect bytes in the
  * boot sector and this attempts to find the correct values.
  */
-void Floppy_FindDiskDetails(const Uint8 *pBuffer, int nImageBytes,
-                            Uint16 *pnSectorsPerTrack, Uint16 *pnSides)
+void Floppy_FindDiskDetails(const uint8_t *pBuffer, int nImageBytes,
+                            uint16_t *pnSectorsPerTrack, uint16_t *pnSides)
 {
-	Uint16 nSectorsPerTrack, nSides, nSectorsPerDisk;
+	uint16_t nSectorsPerTrack, nSides, nSectorsPerDisk;
 
 	/* First do check to find number of sectors and bytes per sector */
-	nSectorsPerTrack = SDL_SwapLE16(*(const Uint16 *)(pBuffer+24));   /* SPT */
-	nSides = SDL_SwapLE16(*(const Uint16 *)(pBuffer+26));             /* SIDE */
+	nSectorsPerTrack = SDL_SwapLE16(*(const uint16_t *)(pBuffer+24));   /* SPT */
+	nSides = SDL_SwapLE16(*(const uint16_t *)(pBuffer+26));             /* SIDE */
 	nSectorsPerDisk = pBuffer[19] | (pBuffer[20] << 8);               /* total sectors */
 
 	/* If the number of sectors announced is incorrect, the boot-sector may
@@ -808,12 +808,12 @@ void Floppy_FindDiskDetails(const Uint8 *pBuffer, int nImageBytes,
  * Read sectors from floppy disk image, return TRUE if all OK
  * NOTE Pass -ve as Count to read whole track
  */
-bool Floppy_ReadSectors(int Drive, Uint8 **pBuffer, Uint16 Sector,
-                        Uint16 Track, Uint16 Side, short Count,
+bool Floppy_ReadSectors(int Drive, uint8_t **pBuffer, uint16_t Sector,
+                        uint16_t Track, uint16_t Side, short Count,
                         int *pnSectorsPerTrack, int *pSectorSize)
 {
-	Uint8 *pDiskBuffer;
-	Uint16 nSectorsPerTrack, nSides, nBytesPerTrack;
+	uint8_t *pDiskBuffer;
+	uint16_t nSectorsPerTrack, nSides, nBytesPerTrack;
 	long Offset;
 	int nImageTracks;
 
@@ -890,12 +890,12 @@ bool Floppy_ReadSectors(int Drive, Uint8 **pBuffer, Uint16 Sector,
  * Write sectors from floppy disk image, return TRUE if all OK
  * NOTE Pass -ve as Count to write whole track
  */
-bool Floppy_WriteSectors(int Drive, Uint8 *pBuffer, Uint16 Sector,
-                         Uint16 Track, Uint16 Side, short Count,
+bool Floppy_WriteSectors(int Drive, uint8_t *pBuffer, uint16_t Sector,
+                         uint16_t Track, uint16_t Side, short Count,
                          int *pnSectorsPerTrack, int *pSectorSize)
 {
-	Uint8 *pDiskBuffer;
-	Uint16 nSectorsPerTrack, nSides, nBytesPerTrack;
+	uint8_t *pDiskBuffer;
+	uint16_t nSectorsPerTrack, nSides, nBytesPerTrack;
 	long Offset;
 	int nImageTracks;
 

@@ -47,7 +47,7 @@ const char floppy_ipf_fileid[] = "Hatari floppy_ipf.c";
 struct
 {
 	int		TrackSize;
-	Uint8		*TrackData;
+	uint8_t		*TrackData;
 } IPF_RawStreamImage[ MAX_FLOPPYDRIVES ][ IPF_MAX_TRACK_RAW_STREAM_IMAGE ][ IPF_MAX_SIDE_RAW_STREAM_IMAGE ];
 
 
@@ -55,8 +55,8 @@ struct
 typedef struct
 {
 #ifdef HAVE_CAPSIMAGE
-	Uint32			CapsLibRelease;
-	Uint32			CapsLibRevision;
+	uint32_t			CapsLibRelease;
+	uint32_t			CapsLibRevision;
 
 	struct CapsFdc		Fdc;				/* Fdc state */
 	struct CapsDrive 	Drive[ MAX_FLOPPYDRIVES ];	/* Physical drives */
@@ -86,7 +86,7 @@ static void	IPF_CallBack_Trk ( struct CapsFdc *pc , CapsULong State );
 static void	IPF_CallBack_Irq ( struct CapsFdc *pc , CapsULong State );
 static void	IPF_CallBack_Drq ( struct CapsFdc *pc , CapsULong State );
 static void	IPF_Drive_Update_Enable_Side ( void );
-static void	IPF_FDC_LogCommand ( Uint8 Command );
+static void	IPF_FDC_LogCommand ( uint8_t Command );
 #endif
 
 
@@ -104,7 +104,7 @@ void IPF_MemorySnapShot_Capture(bool bSave)
 	int	Drive;
 	int	Track , Side;
 	int	TrackSize;
-	Uint8	*p;
+	uint8_t	*p;
 
 
 	if ( bSave )					/* Saving snapshot */
@@ -274,14 +274,14 @@ static char *IPF_FilenameFindTrackSide (char *FileName)
  * Load .IPF file into memory, set number of bytes loaded and return a pointer
  * to the buffer.
  */
-Uint8 *IPF_ReadDisk(int Drive, const char *pszFileName, long *pImageSize, int *pImageType)
+uint8_t *IPF_ReadDisk(int Drive, const char *pszFileName, long *pImageSize, int *pImageType)
 {
 #ifndef HAVE_CAPSIMAGE
 	Log_AlertDlg(LOG_ERROR, "Hatari built without IPF support -> can't handle floppy image");
 	return NULL;
 
 #else
-	Uint8 *pIPFFile;
+	uint8_t *pIPFFile;
 
 	*pImageSize = 0;
 
@@ -303,7 +303,7 @@ Uint8 *IPF_ReadDisk(int Drive, const char *pszFileName, long *pImageSize, int *p
 /**
  * Save .IPF file from memory buffer. Returns true is all OK.
  */
-bool IPF_WriteDisk(int Drive, const char *pszFileName, Uint8 *pBuffer, int ImageSize)
+bool IPF_WriteDisk(int Drive, const char *pszFileName, uint8_t *pBuffer, int ImageSize)
 {
 	/* saving is not supported for IPF files */
 	return false;
@@ -410,7 +410,7 @@ void	IPF_Exit ( void )
 /*
  * Init the resources to handle the IPF image inserted into a drive (0=A: 1=B:)
  */
-bool	IPF_Insert ( int Drive , Uint8 *pImageBuffer , long ImageSize )
+bool	IPF_Insert ( int Drive , uint8_t *pImageBuffer , long ImageSize )
 {
 #ifndef HAVE_CAPSIMAGE
 	return false;
@@ -546,7 +546,7 @@ static bool	IPF_Insert_RawStreamImage ( int Drive )
 	char	TrackSide_buf[ 4 + 1 ];			/* "tt.s" + \0 */
 	int	TrackCount;
 	int	TrackCount_0 , TrackCount_1;
-	Uint8	*p;
+	uint8_t	*p;
 	long	Size;
 
 
@@ -756,7 +756,7 @@ static void	IPF_CallBack_Irq ( struct CapsFdc *pc , CapsULong State )
 #ifdef HAVE_CAPSIMAGE
 static void	IPF_CallBack_Drq ( struct CapsFdc *pc , CapsULong State )
 {
-	Uint8	Byte;
+	uint8_t	Byte;
 
 	if ( State == 0 )
 		return;					/* DRQ bit was reset, do nothing */
@@ -849,7 +849,7 @@ static void	IPF_Drive_Update_Enable_Side ( void )
  * to take into account.
  * We report a side change only when a drive is selected.
  */
-void	IPF_SetDriveSide ( Uint8 io_porta_old , Uint8 io_porta_new )
+void	IPF_SetDriveSide ( uint8_t io_porta_old , uint8_t io_porta_new )
 {
 #ifndef HAVE_CAPSIMAGE
 	return;
@@ -888,7 +888,7 @@ void	IPF_SetDriveSide ( Uint8 io_porta_old , Uint8 io_porta_new )
  * Write a byte into one of the FDC registers
  * 0=command   1=track   2=sector   3=data
  */
-void	IPF_FDC_WriteReg ( Uint8 Reg , Uint8 Byte )
+void	IPF_FDC_WriteReg ( uint8_t Reg , uint8_t Byte )
 {
 #ifndef HAVE_CAPSIMAGE
 	return;						/* This should not be reached (an IPF image can't be inserted without capsimage) */
@@ -933,12 +933,12 @@ void	IPF_FDC_WriteReg ( Uint8 Reg , Uint8 Byte )
  * Read the content of one of the FDC registers
  * 0=status   1=track   2=sector   3=data
  */
-Uint8	IPF_FDC_ReadReg ( Uint8 Reg )
+uint8_t	IPF_FDC_ReadReg ( uint8_t Reg )
 {
 #ifndef HAVE_CAPSIMAGE
 	return 0;					/* This should not be reached (an IPF image can't be inserted without capsimage) */
 #else
-	Uint8	Byte;
+	uint8_t	Byte;
 
 	IPF_Emulate();					/* Update emulation's state up to this point */
 
@@ -956,7 +956,7 @@ Uint8	IPF_FDC_ReadReg ( Uint8 Reg )
  * Return the content of some registers to display them in the statusbar
  * We should not call IPF_Emulate() or similar, reading should not change emulation's state
  */
-void	IPF_FDC_StatusBar ( Uint8 *pCommand , Uint8 *pHead , Uint8 *pTrack , Uint8 *pSector , Uint8 *pSide )
+void	IPF_FDC_StatusBar ( uint8_t *pCommand , uint8_t *pHead , uint8_t *pTrack , uint8_t *pSector , uint8_t *pSide )
 {
 #ifndef HAVE_CAPSIMAGE
 	return;						/* This should not be reached (an IPF image can't be inserted without capsimage) */
@@ -979,9 +979,9 @@ void	IPF_FDC_StatusBar ( Uint8 *pCommand , Uint8 *pHead , Uint8 *pTrack , Uint8 
 
 
 #ifdef HAVE_CAPSIMAGE
-static void	IPF_FDC_LogCommand ( Uint8 Command )
+static void	IPF_FDC_LogCommand ( uint8_t Command )
 {
-	Uint8	Head , Track , Sector , Side , DataReg;
+	uint8_t	Head , Track , Sector , Side , DataReg;
 	int	Drive;
 	int	FrameCycles, HblCounterVideo, LineCycles;
 	char	buf[ 200 ];

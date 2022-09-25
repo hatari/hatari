@@ -515,13 +515,13 @@ static void *ZIP_ExtractFile(unzFile uf, const char *filename, uLong size)
  * Load disk image from a .ZIP archive into memory, set  the number
  * of bytes loaded into pImageSize and return the data or NULL on error.
  */
-Uint8 *ZIP_ReadDisk(int Drive, const char *pszFileName, const char *pszZipPath, long *pImageSize, int *pImageType)
+uint8_t *ZIP_ReadDisk(int Drive, const char *pszFileName, const char *pszZipPath, long *pImageSize, int *pImageType)
 {
 	uLong ImageSize=0;
 	unzFile uf=NULL;
-	Uint8 *buf;
+	uint8_t *buf;
 	char *path;
-	Uint8 *pDiskBuffer = NULL;
+	uint8_t *pDiskBuffer = NULL;
 
 	*pImageSize = 0;
 	*pImageType = FLOPPY_IMAGE_TYPE_NONE;
@@ -623,10 +623,10 @@ Uint8 *ZIP_ReadDisk(int Drive, const char *pszFileName, const char *pszZipPath, 
  * Load first file from a .ZIP archive into memory, and return the number
  * of bytes loaded.
  */
-Uint8 *ZIP_ReadFirstFile(const char *pszFileName, long *pImageSize, const char * const ppszExts[])
+uint8_t *ZIP_ReadFirstFile(const char *pszFileName, long *pImageSize, const char * const ppszExts[])
 {
 	unzFile uf = NULL;
-	Uint8 *pBuffer = NULL;
+	uint8_t *pBuffer = NULL;
 	char *pszZipPath;
 	unz_file_info file_info;
 
@@ -682,7 +682,7 @@ bool ZIP_FileNameIsZIP(const char *pszFileName)
 {
 	return false;
 }
-Uint8 *ZIP_ReadDisk(int Drive, const char *name, const char *path, long *size , int *pImageType)
+uint8_t *ZIP_ReadDisk(int Drive, const char *name, const char *path, long *size , int *pImageType)
 {
 	return NULL;
 }

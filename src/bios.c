@@ -26,11 +26,11 @@ const char Bios__fileid[] = "Hatari bios.c";
  * BIOS Read/Write disk sector
  * Call 4
  */
-static void Bios_RWabs(Uint32 Params)
+static void Bios_RWabs(uint32_t Params)
 {
 #if ENABLE_TRACING
-	Uint32 pBuffer;
-	Uint16 RWFlag, Number, RecNo, Dev;
+	uint32_t pBuffer;
+	uint16_t RWFlag, Number, RecNo, Dev;
 
 	/* Read details from stack */
 	RWFlag = STMemory_ReadWord(Params);
@@ -50,11 +50,11 @@ static void Bios_RWabs(Uint32 Params)
  * BIOS Set/query exception vectors
  * Call 5
  */
-static void Bios_Setexe(Uint32 Params)
+static void Bios_Setexe(uint32_t Params)
 {
 #if ENABLE_TRACING
-	Uint16 vec = STMemory_ReadWord(Params);
-	Uint32 addr = STMemory_ReadLong(Params+SIZE_WORD);
+	uint16_t vec = STMemory_ReadWord(Params);
+	uint32_t addr = STMemory_ReadLong(Params+SIZE_WORD);
 	struct {
 		int vec;
 		const char *name;
@@ -86,7 +86,7 @@ static void Bios_Setexe(Uint32 Params)
 /**
  * Map BIOS call opcode to BIOS function name
  */
-static const char* Bios_Call2Name(Uint16 opcode)
+static const char* Bios_Call2Name(uint16_t opcode)
 {
 	/* GCC uses substrings from above trace statements
 	 * where they match, so having them again here
@@ -103,9 +103,9 @@ static const char* Bios_Call2Name(Uint16 opcode)
 	return "???";
 }
 
-void Bios_Info(FILE *fp, Uint32 dummy)
+void Bios_Info(FILE *fp, uint32_t dummy)
 {
-	Uint16 opcode;
+	uint16_t opcode;
 	for (opcode = 0; opcode <= 0xB; ) {
 		fprintf(fp, "%02x %-9s", opcode,
 			Bios_Call2Name(opcode));
@@ -115,7 +115,7 @@ void Bios_Info(FILE *fp, Uint32 dummy)
 	}
 }
 #else /* !ENABLE_TRACING */
-void Bios_Info(FILE *fp, Uint32 bShowOpcodes)
+void Bios_Info(FILE *fp, uint32_t bShowOpcodes)
 {
 	        fputs("Hatari isn't configured with ENABLE_TRACING\n", fp);
 }
@@ -130,8 +130,8 @@ void Bios_Info(FILE *fp, Uint32 bShowOpcodes)
  */
 bool Bios(void)
 {
-	Uint32 Params;
-	Uint16 BiosCall;
+	uint32_t Params;
+	uint16_t BiosCall;
 
 	/* Get call */
 	Params = Regs[REG_A7];

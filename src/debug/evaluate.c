@@ -20,7 +20,6 @@ const char Eval_fileid[] = "Hatari calculate.c";
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <SDL_types.h>
 #include <inttypes.h>
 #include "configuration.h"
 #include "dsp.h"

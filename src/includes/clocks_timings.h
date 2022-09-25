@@ -17,40 +17,40 @@
 typedef struct
 {
   /* Common to all machines */
-  Uint32        MCLK_Freq;
-  Uint32        BUS_Freq;
+  uint32_t        MCLK_Freq;
+  uint32_t        BUS_Freq;
 
-  Uint32        CPU_Freq;			/* 'normal' CPU Freq (eg 8 MHz for ST or 16 MHz for Falcon) */
-  Uint32        FPU_Freq;
-  Uint32        DMA_Freq;
-  Uint32        MFP_Freq;
-  Uint32        MFP_Timer_Freq;
-  Uint32        FDC_Freq;
-  Uint32        BLITTER_Freq;
-  Uint32        YM_Freq;
-  Uint32        ACIA_Freq;
-  Uint32        IKBD_Freq;
+  uint32_t        CPU_Freq;			/* 'normal' CPU Freq (eg 8 MHz for ST or 16 MHz for Falcon) */
+  uint32_t        FPU_Freq;
+  uint32_t        DMA_Freq;
+  uint32_t        MFP_Freq;
+  uint32_t        MFP_Timer_Freq;
+  uint32_t        FDC_Freq;
+  uint32_t        BLITTER_Freq;
+  uint32_t        YM_Freq;
+  uint32_t        ACIA_Freq;
+  uint32_t        IKBD_Freq;
 
   /* STF specific */
-  Uint32        MMU_Freq;			/* STF only */
-  Uint32        GLUE_Freq;			/* STF only */
-  Uint32        SHIFTER_Freq;			/* STF/STE */
+  uint32_t        MMU_Freq;			/* STF only */
+  uint32_t        GLUE_Freq;			/* STF only */
+  uint32_t        SHIFTER_Freq;			/* STF/STE */
 
   /* STE specific */
-  Uint32        MCU_Freq;			/* replaces MMU+GLUE in STF */
-  Uint32	DMA_Audio_Freq;			/* also used for SND SHIFTER in TT */
+  uint32_t        MCU_Freq;			/* replaces MMU+GLUE in STF */
+  uint32_t	DMA_Audio_Freq;			/* also used for SND SHIFTER in TT */
 
   /* TT specific */
-  Uint32        TTVIDEO_Freq;
+  uint32_t        TTVIDEO_Freq;
 
   /* Falcon specific */
-  Uint32	COMBEL_Freq;			/* includes the BLITTER */
-  Uint32        VIDEL_Freq;
-  Uint32        CODEC_Freq;
-  Uint32        DSP_Freq;
+  uint32_t	COMBEL_Freq;			/* includes the BLITTER */
+  uint32_t        VIDEL_Freq;
+  uint32_t        CODEC_Freq;
+  uint32_t        DSP_Freq;
 
   /* Common to all machines, runtime variables */
-  Uint32        CPU_Freq_Emul;			/* Freq in Hz at which the CPU is emulated (taking nCpuFreqShift and CPU_Freq into account) */
+  uint32_t        CPU_Freq_Emul;			/* Freq in Hz at which the CPU is emulated (taking nCpuFreqShift and CPU_Freq into account) */
 
 } CLOCKS_STRUCT;
 
@@ -59,8 +59,8 @@ extern CLOCKS_STRUCT	MachineClocks;
 
 
 typedef struct {
-  Uint64	Cycles;
-  Uint64	Remainder;
+  uint64_t	Cycles;
+  uint64_t	Remainder;
 } CLOCKS_CYCLES_STRUCT;
 
 
@@ -73,12 +73,12 @@ extern bool	RoundVBLPerSec;
 
 void	ClocksTimings_InitMachine ( MACHINETYPE MachineType );
 void	ClocksTimings_UpdateCpuFreqEmul ( MACHINETYPE MachineType , int nCpuFreqShift );
-Uint32	ClocksTimings_GetCyclesPerVBL ( MACHINETYPE MachineType , int ScreenRefreshRate );
-Uint32	ClocksTimings_GetVBLPerSec ( MACHINETYPE MachineType , int ScreenRefreshRate );
-Uint32	ClocksTimings_GetVBLDuration_micro ( MACHINETYPE MachineType , int ScreenRefreshRate );
-Sint64	ClocksTimings_GetSamplesPerVBL ( MACHINETYPE MachineType , int ScreenRefreshRate , int AudioFreq );
+uint32_t	ClocksTimings_GetCyclesPerVBL ( MACHINETYPE MachineType , int ScreenRefreshRate );
+uint32_t	ClocksTimings_GetVBLPerSec ( MACHINETYPE MachineType , int ScreenRefreshRate );
+uint32_t	ClocksTimings_GetVBLDuration_micro ( MACHINETYPE MachineType , int ScreenRefreshRate );
+int64_t	ClocksTimings_GetSamplesPerVBL ( MACHINETYPE MachineType , int ScreenRefreshRate , int AudioFreq );
 
-void	ClocksTimings_ConvertCycles ( Uint64 CyclesIn , Uint64 ClockFreqIn , CLOCKS_CYCLES_STRUCT *CyclesStructOut , Uint64 ClockFreqOut );
+void	ClocksTimings_ConvertCycles ( uint64_t CyclesIn , uint64_t ClockFreqIn , CLOCKS_CYCLES_STRUCT *CyclesStructOut , uint64_t ClockFreqOut );
 
 
 

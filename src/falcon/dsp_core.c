@@ -1047,9 +1047,9 @@ void dsp_core_hostport_dspwrite(void)
 }
 
 /* Read/writes on host port */
-Uint8 dsp_core_read_host(int addr)
+uint8_t dsp_core_read_host(int addr)
 {
-	Uint8 value;
+	uint8_t value;
 
 	value = dsp_core.hostport[addr];
 	if (addr == CPU_HOST_TRXL) {
@@ -1063,7 +1063,7 @@ Uint8 dsp_core_read_host(int addr)
 	return value;
 }
 
-void dsp_core_write_host(int addr, Uint8 value)
+void dsp_core_write_host(int addr, uint8_t value)
 {
 	switch(addr) {
 		case CPU_HOST_ICR:

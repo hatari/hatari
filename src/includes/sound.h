@@ -15,33 +15,29 @@
 /* definitions common for all sound rendering engines */
 
 
-extern Uint8	SoundRegs[ 14 ];		/* store YM regs 0 to 13 */
+extern uint8_t SoundRegs[14];		/* store YM regs 0 to 13 */
 extern int	nGeneratedSamples;
 extern bool	bEnvelopeFreqFlag;
 
 #define AUDIOMIXBUFFER_SIZE    16384		/* Size of circular buffer to store samples (eg 44Khz), must be a power of 2 */
 #define AUDIOMIXBUFFER_SIZE_MASK ( AUDIOMIXBUFFER_SIZE - 1 )	/* To limit index values inside AudioMixBuffer[] */
-extern Sint16	AudioMixBuffer[AUDIOMIXBUFFER_SIZE][2];	/* Ring buffer to store mixed audio output (YM2149, DMA sound, ...) */
+extern int16_t	AudioMixBuffer[AUDIOMIXBUFFER_SIZE][2];	/* Ring buffer to store mixed audio output (YM2149, DMA sound, ...) */
 extern int	AudioMixBuffer_pos_write;	/* Current writing position into above buffer */
 extern int	AudioMixBuffer_pos_read;	/* Current reading position into above buffer */
 
 extern bool	Sound_BufferIndexNeedReset;
 
-/* STSound sound renderer active */
-#include <SDL_types.h>
-
-
 /* Internal data types */
 
-typedef         Sint64			yms64;
+typedef int64_t yms64;
 
-typedef		Sint8			yms8;
-typedef		Sint16			yms16;
-typedef		Sint32			yms32;
+typedef int8_t  yms8;
+typedef int16_t yms16;
+typedef int32_t yms32;
 
-typedef		Uint8			ymu8;
-typedef		Uint16			ymu16;
-typedef		Uint32			ymu32;
+typedef uint8_t  ymu8;
+typedef uint16_t ymu16;
+typedef uint32_t ymu32;
 
 typedef		yms16			ymsample;	/* Output samples are mono 16bits signed PCM */
 
@@ -72,9 +68,9 @@ extern void Sound_Reset(void);
 extern void Sound_ResetBufferIndex(void);
 extern void Sound_MemorySnapShot_Capture(bool bSave);
 extern void Sound_Stats_Show (void);
-extern void Sound_Update(Uint64 CPU_Clock);
+extern void Sound_Update(uint64_t CPU_Clock);
 extern void Sound_Update_VBL(void);
-extern void Sound_WriteReg( int reg , Uint8 data );
+extern void Sound_WriteReg(int reg, uint8_t data);
 extern bool Sound_BeginRecording(char *pszCaptureFileName);
 extern void Sound_EndRecording(void);
 extern bool Sound_AreWeRecording(void);

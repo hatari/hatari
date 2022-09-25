@@ -10,28 +10,28 @@
 
 typedef struct {
 	/* Content of the STX sector block (16 bytes) */
-	Uint32		DataOffset;				/* Offset of sector data in the track data */
-	Uint16		BitPosition;				/* Position in bits from the start of the track */
+	uint32_t		DataOffset;				/* Offset of sector data in the track data */
+	uint16_t		BitPosition;				/* Position in bits from the start of the track */
 								/* (this seems to be the position of the start of the ID field, */
 								/* just after the IDAM, but it's not always precise) */
-	Uint16		ReadTime;				/* in ms */
+	uint16_t		ReadTime;				/* in ms */
 
-	Uint8		ID_Track;				/* Content of the Address Field */
-	Uint8		ID_Head;
-	Uint8		ID_Sector;
-	Uint8		ID_Size;
-	Uint16		ID_CRC;
+	uint8_t		ID_Track;				/* Content of the Address Field */
+	uint8_t		ID_Head;
+	uint8_t		ID_Sector;
+	uint8_t		ID_Size;
+	uint16_t		ID_CRC;
 
-	Uint8		FDC_Status;				/* FDC status and flags for this sector */
-	Uint8		Reserved;				/* Unused, always 0 */
+	uint8_t		FDC_Status;				/* FDC status and flags for this sector */
+	uint8_t		Reserved;				/* Unused, always 0 */
 
 	/* Other internal variables */
-	Uint16		SectorSize;				/* In bytes, depends on ID_Size */
-	Uint8		*pData;					/* Bytes for this sector or null if RNF */
-	Uint8		*pFuzzyData;				/* Fuzzy mask for this sector or null if no fuzzy bits */
-	Uint8		*pTimingData;				/* Data for variable bit width or null */
+	uint16_t		SectorSize;				/* In bytes, depends on ID_Size */
+	uint8_t		*pData;					/* Bytes for this sector or null if RNF */
+	uint8_t		*pFuzzyData;				/* Fuzzy mask for this sector or null if no fuzzy bits */
+	uint8_t		*pTimingData;				/* Data for variable bit width or null */
 
-	Sint32		SaveSectorIndex;			/* Index in STX_SaveStruct[].pSaveSectorsStruct or -1 if not used */
+	int32_t		SaveSectorIndex;			/* Index in STX_SaveStruct[].pSaveSectorsStruct or -1 if not used */
 } STX_SECTOR_STRUCT;
 
 #define	STX_SECTOR_BLOCK_SIZE		( 4+2+2+1+1+1+1+2+1+1 )	/* Size of the sector block in an STX file = 16 bytes */
@@ -49,33 +49,33 @@ typedef struct {
 
 typedef struct {
 	/* Content of the STX track block (16 bytes) */
-	Uint32		BlockSize;				/* Number of bytes in this track block */
-	Uint32		FuzzySize;				/* Number of bytes in fuzzy mask */
-	Uint16		SectorsCount;				/* Number of sector blocks in this track */
-	Uint16		Flags;					/* Flags for this track */
-	Uint16		MFMSize;				/* Number of MFM bytes in this track */
-	Uint8		TrackNumber;				/* bits 0-6 = track number   bit 7 = side */
-	Uint8		RecordType;				/* Unused */
+	uint32_t		BlockSize;				/* Number of bytes in this track block */
+	uint32_t		FuzzySize;				/* Number of bytes in fuzzy mask */
+	uint16_t		SectorsCount;				/* Number of sector blocks in this track */
+	uint16_t		Flags;					/* Flags for this track */
+	uint16_t		MFMSize;				/* Number of MFM bytes in this track */
+	uint8_t		TrackNumber;				/* bits 0-6 = track number   bit 7 = side */
+	uint8_t		RecordType;				/* Unused */
 
 	/* Other internal variables */
 	STX_SECTOR_STRUCT	*pSectorsStruct;		/* All the sectors struct for this track or null */
 
-	Uint8			*pFuzzyData;			/* Fuzzy mask data for all the fuzzy sectors of the track */
+	uint8_t			*pFuzzyData;			/* Fuzzy mask data for all the fuzzy sectors of the track */
 
-	Uint8			*pTrackData;			/* Track data (after sectors data and fuzzy data) */
-	Uint16			TrackImageSyncPosition;
-	Uint16			TrackImageSize;			/* Number of bytes in pTrackImageData */
-	Uint8			*pTrackImageData;		/* Optional data as returned by the read track command */
+	uint8_t			*pTrackData;			/* Track data (after sectors data and fuzzy data) */
+	uint16_t			TrackImageSyncPosition;
+	uint16_t			TrackImageSize;			/* Number of bytes in pTrackImageData */
+	uint8_t			*pTrackImageData;		/* Optional data as returned by the read track command */
 
-	Uint8			*pSectorsImageData;		/* Optional data for the sectors of this track */
+	uint8_t			*pSectorsImageData;		/* Optional data for the sectors of this track */
 
-	Uint8			*pTiming;
-	Uint16			TimingFlags;			/* always '5' ? */
-	Uint16			TimingSize;
-	Uint8			*pTimingData;			/* Timing data for all the sectors of the track ; each timing */
+	uint8_t			*pTiming;
+	uint16_t			TimingFlags;			/* always '5' ? */
+	uint16_t			TimingSize;
+	uint8_t			*pTimingData;			/* Timing data for all the sectors of the track ; each timing */
 								/* consists of 2 bytes per 16 FDC bytes */
 
-	Sint32			SaveTrackIndex;			/* Index in STX_SaveStruct[].pSaveTracksStruct or -1 if not used */
+	int32_t			SaveTrackIndex;			/* Index in STX_SaveStruct[].pSaveTracksStruct or -1 if not used */
 } STX_TRACK_STRUCT;
 
 #define	STX_TRACK_BLOCK_SIZE		( 4+4+2+2+2+1+1 )	/* Size of the track block in an STX file = 16 bytes */
@@ -91,12 +91,12 @@ typedef struct {
 typedef struct {
 	/* Content of the STX header block (16 bytes) */
 	char		FileID[ 4 ];				/* Should be "RSY\0" */
-	Uint16		Version;				/* Only version 3 is supported */
-	Uint16		ImagingTool;				/* 0x01 (Atari Tool) or 0xCC (Discovery Cartridge) */
-	Uint16		Reserved_1;				/* Unused */
-	Uint8		TracksCount;				/* Number of track blocks in this file */
-	Uint8		Revision;				/* 0x00 (old Pasti file)   0x02 (new Pasti file) */
-	Uint32		Reserved_2;				/* Unused */
+	uint16_t		Version;				/* Only version 3 is supported */
+	uint16_t		ImagingTool;				/* 0x01 (Atari Tool) or 0xCC (Discovery Cartridge) */
+	uint16_t		Reserved_1;				/* Unused */
+	uint8_t		TracksCount;				/* Number of track blocks in this file */
+	uint8_t		Revision;				/* 0x00 (old Pasti file)   0x02 (new Pasti file) */
+	uint32_t		Reserved_2;				/* Unused */
 
 	/* Other internal variables */
 	STX_TRACK_STRUCT	*pTracksStruct;
@@ -114,43 +114,43 @@ typedef struct {
 /* We should have a file format to store them with the .STX file */
 typedef struct {
 	/* Copy track/side + ID field + BitPosition to uniquely identify each sector */
-	Uint8		Track;
-	Uint8		Side;
-	Uint16		BitPosition;
-	Uint8		ID_Track;				/* Content of the Address Field */
-	Uint8		ID_Head;
-	Uint8		ID_Sector;
-	Uint8		ID_Size;
-	Uint16		ID_CRC;
+	uint8_t		Track;
+	uint8_t		Side;
+	uint16_t		BitPosition;
+	uint8_t		ID_Track;				/* Content of the Address Field */
+	uint8_t		ID_Head;
+	uint8_t		ID_Sector;
+	uint8_t		ID_Size;
+	uint16_t		ID_CRC;
 	
-	Uint16		SectorSize;				/* Number of bytes in this sector */
-	Uint8		*pData;					/* Data written for this sector */
+	uint16_t		SectorSize;				/* Number of bytes in this sector */
+	uint8_t		*pData;					/* Data written for this sector */
 
-	Uint8		StructIsUsed;				/* >0 : this structure contains info (and must be saved) */
+	uint8_t		StructIsUsed;				/* >0 : this structure contains info (and must be saved) */
 								/* =0 : this structure is free and can be reused for another sector */
 } STX_SAVE_SECTOR_STRUCT;
 
 
 typedef struct {
-	Uint8		Track;
-	Uint8		Side;
+	uint8_t		Track;
+	uint8_t		Side;
 	
-	Uint16		TrackSizeWrite;				/* Number of bytes in this track (when writing) */
+	uint16_t		TrackSizeWrite;				/* Number of bytes in this track (when writing) */
 								/* (can be rounded to 16 because of DMA buffering */
-	Uint8		*pDataWrite;				/* Data written for this track */
+	uint8_t		*pDataWrite;				/* Data written for this track */
 
-	Uint16		TrackSizeRead;				/* Number of bytes in this track (when reading) */
+	uint16_t		TrackSizeRead;				/* Number of bytes in this track (when reading) */
 								/* Due to interpreting bytes $F5-$FF, TrackSizeRead will often be > TrackSizeWrite */
-	Uint8		*pDataRead;				/* Data saved for this track as they will be read */
+	uint8_t		*pDataRead;				/* Data saved for this track as they will be read */
 								/* (after interpreting bytes $F5-$FF) */
 } STX_SAVE_TRACK_STRUCT;
 
 
 typedef struct {
-	Uint32			SaveSectorsCount;
+	uint32_t			SaveSectorsCount;
 	STX_SAVE_SECTOR_STRUCT	*pSaveSectorsStruct;
 
-	Uint32			SaveTracksCount;
+	uint32_t			SaveTracksCount;
 	STX_SAVE_TRACK_STRUCT	*pSaveTracksStruct;
 } STX_SAVE_STRUCT;
 
@@ -159,26 +159,26 @@ typedef struct {
 extern void	STX_MemorySnapShot_Capture(bool bSave);
 extern bool	STX_FileNameIsSTX(const char *pszFileName, bool bAllowGZ);
 extern bool	STX_FileNameToSave ( const char *FilenameSTX , char *FilenameSave );
-extern Uint8	*STX_ReadDisk(int Drive, const char *pszFileName, long *pImageSize, int *pImageType);
-extern bool	STX_WriteDisk(int Drive, const char *pszFileName, Uint8 *pBuffer, int ImageSize);
+extern uint8_t	*STX_ReadDisk(int Drive, const char *pszFileName, long *pImageSize, int *pImageType);
+extern bool	STX_WriteDisk(int Drive, const char *pszFileName, uint8_t *pBuffer, int ImageSize);
 
 extern bool	STX_Init ( void );
-extern bool	STX_Insert ( int Drive , const char *FilenameSTX , Uint8 *pImageBuffer , long ImageSize );
+extern bool	STX_Insert ( int Drive , const char *FilenameSTX , uint8_t *pImageBuffer , long ImageSize );
 extern bool	STX_Eject ( int Drive );
 
-extern STX_MAIN_STRUCT *STX_BuildStruct ( Uint8 *pFileBuffer , int Debug );
+extern STX_MAIN_STRUCT *STX_BuildStruct ( uint8_t *pFileBuffer , int Debug );
 
 
-extern int	FDC_GetBytesPerTrack_STX ( Uint8 Drive , Uint8 Track , Uint8 Side );
-extern Uint32	FDC_GetCyclesPerRev_FdcCycles_STX ( Uint8 Drive , Uint8 Track , Uint8 Side );
-extern int	FDC_NextSectorID_FdcCycles_STX ( Uint8 Drive , Uint8 NumberOfHeads , Uint8 Track , Uint8 Side );
-extern Uint8	FDC_NextSectorID_TR_STX ( void );
-extern Uint8	FDC_NextSectorID_SR_STX ( void );
-extern Uint8	FDC_NextSectorID_LEN_STX ( void );
-extern Uint8	FDC_NextSectorID_CRC_OK_STX ( void );
-extern Uint8	FDC_ReadSector_STX ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side , int *pSectorSize );
-extern Uint8	FDC_WriteSector_STX ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side , int SectorSize );
-extern Uint8	FDC_ReadAddress_STX ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side );
-extern Uint8	FDC_ReadTrack_STX ( Uint8 Drive , Uint8 Track , Uint8 Side );
-extern Uint8	FDC_WriteTrack_STX ( Uint8 Drive , Uint8 Track , Uint8 Side , int TrackSize );
+extern int	FDC_GetBytesPerTrack_STX ( uint8_t Drive , uint8_t Track , uint8_t Side );
+extern uint32_t	FDC_GetCyclesPerRev_FdcCycles_STX ( uint8_t Drive , uint8_t Track , uint8_t Side );
+extern int	FDC_NextSectorID_FdcCycles_STX ( uint8_t Drive , uint8_t NumberOfHeads , uint8_t Track , uint8_t Side );
+extern uint8_t	FDC_NextSectorID_TR_STX ( void );
+extern uint8_t	FDC_NextSectorID_SR_STX ( void );
+extern uint8_t	FDC_NextSectorID_LEN_STX ( void );
+extern uint8_t	FDC_NextSectorID_CRC_OK_STX ( void );
+extern uint8_t	FDC_ReadSector_STX ( uint8_t Drive , uint8_t Track , uint8_t Sector , uint8_t Side , int *pSectorSize );
+extern uint8_t	FDC_WriteSector_STX ( uint8_t Drive , uint8_t Track , uint8_t Sector , uint8_t Side , int SectorSize );
+extern uint8_t	FDC_ReadAddress_STX ( uint8_t Drive , uint8_t Track , uint8_t Sector , uint8_t Side );
+extern uint8_t	FDC_ReadTrack_STX ( uint8_t Drive , uint8_t Track , uint8_t Side );
+extern uint8_t	FDC_WriteTrack_STX ( uint8_t Drive , uint8_t Track , uint8_t Side , int TrackSize );
 

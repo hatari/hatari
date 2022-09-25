@@ -127,48 +127,48 @@ static float DmaSnd_IIRfilterL(float xn);
 static float DmaSnd_IIRfilterR(float xn);
 static struct first_order_s *DmaSnd_Treble_Shelf(float g, float fc, float Fs);
 static struct first_order_s *DmaSnd_Bass_Shelf(float g, float fc, float Fs);
-static Sint16 DmaSnd_LowPassFilterLeft(Sint16 in);
-static Sint16 DmaSnd_LowPassFilterRight(Sint16 in);
+static int16_t DmaSnd_LowPassFilterLeft(int16_t in);
+static int16_t DmaSnd_LowPassFilterRight(int16_t in);
 static bool DmaSnd_LowPass;
 
 
-Uint16 nDmaSoundControl;                /* Sound control register */
+uint16_t nDmaSoundControl;              /* Sound control register */
 
 struct first_order_s  { float a1, b0, b1; };
 struct second_order_s { float a1, a2, b0, b1, b2; };
 
 struct dma_s {
-	Uint16 soundMode;		/* Sound mode register */
-	Uint32 frameStartAddr;		/* Sound frame start */
-	Uint32 frameEndAddr;		/* Sound frame end */
-	Uint32 frameCounterAddr;	/* Sound frame current address counter */
+	uint16_t soundMode;		/* Sound mode register */
+	uint32_t frameStartAddr;	/* Sound frame start */
+	uint32_t frameEndAddr;		/* Sound frame end */
+	uint32_t frameCounterAddr;	/* Sound frame current address counter */
 
 	/* Internal 8 byte FIFO */
-	Sint8 FIFO[ DMASND_FIFO_SIZE ];
-	Uint16 FIFO_Pos;		/* from 0 to DMASND_FIFO_SIZE-1 */
-	Uint16 FIFO_NbBytes;		/* from 0 to DMASND_FIFO_SIZE */
+	int8_t FIFO[ DMASND_FIFO_SIZE ];
+	uint16_t FIFO_Pos;		/* from 0 to DMASND_FIFO_SIZE-1 */
+	uint16_t FIFO_NbBytes;		/* from 0 to DMASND_FIFO_SIZE */
 
-	Sint16 FrameLeft;		/* latest values read from the FIFO */
-	Sint16 FrameRight;
+	int16_t FrameLeft;		/* latest values read from the FIFO */
+	int16_t FrameRight;
 
-	Uint8  XSINT_Signal;		/* Value of the XSINT signal (connected to MFP) */
+	uint8_t  XSINT_Signal;		/* Value of the XSINT signal (connected to MFP) */
 };
 
-static Sint64	frameCounter_float = 0;
+static int64_t	frameCounter_float = 0;
 static bool	DmaInitSample = false;
 
 
 struct microwire_s {
-	Uint16 data;			/* Microwire Data register */
-	Uint16 mask;			/* Microwire Mask register */
-	Uint16 mwTransferSteps;		/* Microwire shifting counter */
-	Uint16 pendingCyclesOver;	/* Number of delayed cycles for the interrupt */
-	Uint16 mixing;			/* Mixing command */
-	Uint16 bass;			/* Bass command */
-	Uint16 treble;			/* Treble command */
-	Uint16 masterVolume;		/* Master volume command */
-	Uint16 leftVolume;		/* Left channel volume command */
-	Uint16 rightVolume;		/* Right channel volume command */
+	uint16_t data;			/* Microwire Data register */
+	uint16_t mask;			/* Microwire Mask register */
+	uint16_t mwTransferSteps;	/* Microwire shifting counter */
+	uint16_t pendingCyclesOver;	/* Number of delayed cycles for the interrupt */
+	uint16_t mixing;		/* Mixing command */
+	uint16_t bass;			/* Bass command */
+	uint16_t treble;		/* Treble command */
+	uint16_t masterVolume;		/* Master volume command */
+	uint16_t leftVolume;		/* Left channel volume command */
+	uint16_t rightVolume;		/* Right channel volume command */
 };
 
 struct lmc1992_s {
@@ -187,7 +187,7 @@ static struct lmc1992_s lmc1992;
 /* Table gain values = (int)(powf(10.0, dB/20.0)*65536.0 + 0.5)  2dB steps   */
 
 /* Values for LMC1992 Master volume control (*65536) */
-static const Uint16 LMC1992_Master_Volume_Table[64] =
+static const uint16_t LMC1992_Master_Volume_Table[64] =
 {
 	    7,     8,    10,    13,    16,    21,    26,    33,    41,    52,  /* -80dB */
 	   66,    83,   104,   131,   165,   207,   261,   328,   414,   521,  /* -60dB */
@@ -199,7 +199,7 @@ static const Uint16 LMC1992_Master_Volume_Table[64] =
 };
 
 /* Values for LMC1992 Left and right volume control (*65536) */
-static const Uint16 LMC1992_LeftRight_Volume_Table[32] =
+static const uint16_t LMC1992_LeftRight_Volume_Table[32] =
 {
 	  655,   825,  1039,  1308,  1646,  2072,  2609,  3285,  4135,  5206,  /* -40dB */
 	 6554,  8250, 10387, 13076, 16462, 20724, 26090, 32846, 41350, 52057,  /* -20dB */
@@ -208,7 +208,7 @@ static const Uint16 LMC1992_LeftRight_Volume_Table[32] =
 };
 
 /* Values for LMC1992 BASS and TREBLE */
-static const Sint16 LMC1992_Bass_Treble_Table[16] =
+static const int16_t LMC1992_Bass_Treble_Table[16] =
 {
 	0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 12, 12, 12
 };
@@ -224,10 +224,10 @@ static const int DmaSndSampleRates[4] =
 /* Local functions prototypes					*/
 /*--------------------------------------------------------------*/
 
-static void	DmaSnd_Update_XSINT_Line ( Uint8 Bit );
+static void	DmaSnd_Update_XSINT_Line ( uint8_t Bit );
 
 static void	DmaSnd_FIFO_Refill(void);
-static Sint8	DmaSnd_FIFO_PullByte(void);
+static int8_t	DmaSnd_FIFO_PullByte(void);
 static void	DmaSnd_FIFO_SetStereo(void);
 
 static int	DmaSnd_DetectSampleRate(void);
@@ -297,7 +297,7 @@ void DmaSnd_MemorySnapShot_Capture(bool bSave)
  *  - Bit is set to 0/LOW when dma sound is idle
  *  - Bit is set to 1/HIGH when dma sound is playing
  */
-static void DmaSnd_Update_XSINT_Line ( Uint8 Bit )
+static void DmaSnd_Update_XSINT_Line ( uint8_t Bit )
 {
 	dma.XSINT_Signal = Bit;
 	MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE7 , Bit );
@@ -311,7 +311,7 @@ static void DmaSnd_Update_XSINT_Line ( Uint8 Bit )
  *  0=dma sound is idle
  *  1=dma sound is playing
  */
-Uint8	DmaSnd_Get_XSINT_Line ( void )
+uint8_t	DmaSnd_Get_XSINT_Line ( void )
 {
 	return dma.XSINT_Signal;
 }
@@ -347,8 +347,8 @@ static void DmaSnd_FIFO_Refill(void)
 		LOG_TRACE(TRACE_DMASND, "DMA snd fifo refill adr=%x pos %d nb %d %x %x\n", dma.frameCounterAddr , dma.FIFO_Pos , dma.FIFO_NbBytes ,
 			STMemory_DMA_ReadByte ( dma.frameCounterAddr ) , STMemory_DMA_ReadByte ( dma.frameCounterAddr+1 ) );
 
-		dma.FIFO[ ( dma.FIFO_Pos+dma.FIFO_NbBytes+0 ) & DMASND_FIFO_SIZE_MASK ] = (Sint8)STMemory_DMA_ReadByte ( dma.frameCounterAddr );	/* add upper byte of the word */
-		dma.FIFO[ ( dma.FIFO_Pos+dma.FIFO_NbBytes+1 ) & DMASND_FIFO_SIZE_MASK ] = (Sint8)STMemory_DMA_ReadByte ( dma.frameCounterAddr+1 );	/* add lower byte of the word */
+		dma.FIFO[ ( dma.FIFO_Pos+dma.FIFO_NbBytes+0 ) & DMASND_FIFO_SIZE_MASK ] = (int8_t)STMemory_DMA_ReadByte ( dma.frameCounterAddr );	/* add upper byte of the word */
+		dma.FIFO[ ( dma.FIFO_Pos+dma.FIFO_NbBytes+1 ) & DMASND_FIFO_SIZE_MASK ] = (int8_t)STMemory_DMA_ReadByte ( dma.frameCounterAddr+1 );	/* add lower byte of the word */
 
 		dma.FIFO_NbBytes += 2;				/* One word more in the FIFO */
 
@@ -379,9 +379,9 @@ static void DmaSnd_FIFO_Refill(void)
  * to be called if FIFO is empty but DMA sound is still ON.
  * This way, sound remains correct even if the user uses very low output freq.
  */
-static Sint8 DmaSnd_FIFO_PullByte(void)
+static int8_t DmaSnd_FIFO_PullByte(void)
 {
-	Sint8	sample;
+	int8_t	sample;
 
 	if ( dma.FIFO_NbBytes == 0 )
 	{
@@ -394,7 +394,7 @@ static Sint8 DmaSnd_FIFO_PullByte(void)
 	}
 
 
-	LOG_TRACE(TRACE_DMASND, "DMA snd fifo pull pos %d nb %d %02x\n", dma.FIFO_Pos , dma.FIFO_NbBytes , (Uint8)dma.FIFO[ dma.FIFO_Pos ] );
+	LOG_TRACE(TRACE_DMASND, "DMA snd fifo pull pos %d nb %d %02x\n", dma.FIFO_Pos , dma.FIFO_NbBytes , (uint8_t)dma.FIFO[ dma.FIFO_Pos ] );
 
 	sample = dma.FIFO[ dma.FIFO_Pos ];			/* Get oldest byte from the FIFO */
 	dma.FIFO_Pos = (dma.FIFO_Pos+1) & DMASND_FIFO_SIZE_MASK;/* Pos to be pulled on next call */
@@ -413,7 +413,7 @@ static Sint8 DmaSnd_FIFO_PullByte(void)
  */
 static void DmaSnd_FIFO_SetStereo(void)
 {
-	Uint16	NewPos;
+	uint16_t	NewPos;
 
 	if ( dma.FIFO_Pos & 1 )
 	{
@@ -534,9 +534,9 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 {
 	int i;
 	int nBufIdx;
-	Sint8 MonoByte , LeftByte , RightByte;
+	int8_t MonoByte , LeftByte , RightByte;
 	unsigned n;
-	Sint64 FreqRatio;
+	int64_t FreqRatio;
 
 
 	/* DMA Audio OFF and FIFO empty : process YM2149's output */
@@ -579,7 +579,7 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 
 	/* Compute ratio between DMA's sound frequency and host computer's sound frequency, */
 	/* use << 32 to simulate floating point precision */
-	FreqRatio = ( ((Sint64)DmaSnd_DetectSampleRate()) << 32 ) / nAudioFrequency;
+	FreqRatio = ( ((int64_t)DmaSnd_DetectSampleRate()) << 32 ) / nAudioFrequency;
 
 	if (dma.soundMode & DMASNDMODE_MONO)
 	{
@@ -589,8 +589,8 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 			if ( DmaInitSample )
 			{
 				MonoByte = DmaSnd_FIFO_PullByte ();
-				dma.FrameLeft  = DmaSnd_LowPassFilterLeft( (Sint16)MonoByte );
-				dma.FrameRight = DmaSnd_LowPassFilterRight( (Sint16)MonoByte );
+				dma.FrameLeft  = DmaSnd_LowPassFilterLeft( (int16_t)MonoByte );
+				dma.FrameRight = DmaSnd_LowPassFilterRight( (int16_t)MonoByte );
 				DmaInitSample = false;
 			}
 
@@ -617,8 +617,8 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 			while ( n > 0 )						/* pull as many bytes from the FIFO as needed */
 			{
 				MonoByte = DmaSnd_FIFO_PullByte ();
-				dma.FrameLeft  = DmaSnd_LowPassFilterLeft( (Sint16)MonoByte );
-				dma.FrameRight = DmaSnd_LowPassFilterRight( (Sint16)MonoByte );
+				dma.FrameLeft  = DmaSnd_LowPassFilterLeft( (int16_t)MonoByte );
+				dma.FrameRight = DmaSnd_LowPassFilterRight( (int16_t)MonoByte );
 				n--;
 			}
 			frameCounter_float &= 0xffffffff;			/* only keep the fractional part */
@@ -633,8 +633,8 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 			{
 				LeftByte = DmaSnd_FIFO_PullByte ();
 				RightByte = DmaSnd_FIFO_PullByte ();
-				dma.FrameLeft  = DmaSnd_LowPassFilterLeft( (Sint16)LeftByte );
-				dma.FrameRight = DmaSnd_LowPassFilterRight( (Sint16)RightByte );
+				dma.FrameLeft  = DmaSnd_LowPassFilterLeft( (int16_t)LeftByte );
+				dma.FrameRight = DmaSnd_LowPassFilterRight( (int16_t)RightByte );
 				DmaInitSample = false;
 			}
 
@@ -662,8 +662,8 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 			{
 				LeftByte = DmaSnd_FIFO_PullByte ();
 				RightByte = DmaSnd_FIFO_PullByte ();
-				dma.FrameLeft  = DmaSnd_LowPassFilterLeft( (Sint16)LeftByte );
-				dma.FrameRight = DmaSnd_LowPassFilterRight( (Sint16)RightByte );
+				dma.FrameLeft  = DmaSnd_LowPassFilterLeft( (int16_t)LeftByte );
+				dma.FrameRight = DmaSnd_LowPassFilterRight( (int16_t)RightByte );
 				n--;
 			}
 			frameCounter_float &= 0xffffffff;			/* only keep the fractional part */
@@ -685,7 +685,7 @@ static void DmaSnd_Apply_LMC(int nMixBufIdx, int nSamplesToGenerate)
 {
 	int nBufIdx;
 	int i;
-	Sint32 sample;
+	int32_t sample;
 
 	/* Apply LMC1992 sound modifications (Left, Right and Master Volume) */
 	for (i = 0; i < nSamplesToGenerate; i++) {
@@ -739,9 +739,9 @@ void DmaSnd_STE_HBL_Update(void)
 /**
  * Return current frame counter address (value is always even)
  */
-static Uint32 DmaSnd_GetFrameCount(void)
+static uint32_t DmaSnd_GetFrameCount(void)
 {
-	Uint32 nActCount;
+	uint32_t nActCount;
 
 	/* Update sound to get the current DMA frame address */
 	Sound_Update ( CyclesGlobalClockCounter );
@@ -780,7 +780,7 @@ void DmaSnd_SoundControl_ReadWord(void)
  */
 void DmaSnd_SoundControl_WriteWord(void)
 {
-	Uint16 DMASndCtrl_old;
+	uint16_t DMASndCtrl_old;
 
 	if(LOG_TRACE_LEVEL(TRACE_DMASND))
 	{
@@ -994,7 +994,7 @@ void DmaSnd_SoundModeCtrl_ReadByte(void)
  */
 void DmaSnd_SoundModeCtrl_WriteByte(void)
 {
-	Uint16	SoundModeNew;
+	uint16_t	SoundModeNew;
 
 	SoundModeNew = IoMem_ReadByte(0xff8921);
 
@@ -1031,7 +1031,7 @@ void DmaSnd_SoundModeCtrl_WriteByte(void)
 void DmaSnd_InterruptHandler_Microwire(void)
 {
 	int	i;
-	Uint16	cmd;
+	uint16_t	cmd;
 	int	cmd_len;
 
 	/* If emulated computer is the Falcon, let's the crossbar Microwire code do the job. */
@@ -1143,20 +1143,20 @@ void DmaSnd_InterruptHandler_Microwire(void)
 				/* Master volume command */
 				LOG_TRACE ( TRACE_DMASND, "Microwire new master volume=0x%x\n", cmd & 0x3f );
 				microwire.masterVolume = LMC1992_Master_Volume_Table[ cmd & 0x3f ];
-				lmc1992.left_gain = (microwire.leftVolume * (Uint32)microwire.masterVolume) * (2.0/(65536.0*65536.0));
-				lmc1992.right_gain = (microwire.rightVolume * (Uint32)microwire.masterVolume) * (2.0/(65536.0*65536.0));
+				lmc1992.left_gain = (microwire.leftVolume * (uint32_t)microwire.masterVolume) * (2.0/(65536.0*65536.0));
+				lmc1992.right_gain = (microwire.rightVolume * (uint32_t)microwire.masterVolume) * (2.0/(65536.0*65536.0));
 				break;
 			case 4:
 				/* Right channel volume */
 				LOG_TRACE ( TRACE_DMASND, "Microwire new right volume=0x%x\n", cmd & 0x1f );
 				microwire.rightVolume = LMC1992_LeftRight_Volume_Table[ cmd & 0x1f ];
-				lmc1992.right_gain = (microwire.rightVolume * (Uint32)microwire.masterVolume) * (2.0/(65536.0*65536.0));
+				lmc1992.right_gain = (microwire.rightVolume * (uint32_t)microwire.masterVolume) * (2.0/(65536.0*65536.0));
 				break;
 			case 5:
 				/* Left channel volume */
 				LOG_TRACE ( TRACE_DMASND, "Microwire new left volume=0x%x\n", cmd & 0x1f );
 				microwire.leftVolume = LMC1992_LeftRight_Volume_Table[ cmd & 0x1f ];
-				lmc1992.left_gain = (microwire.leftVolume * (Uint32)microwire.masterVolume) * (2.0/(65536.0*65536.0));
+				lmc1992.left_gain = (microwire.leftVolume * (uint32_t)microwire.masterVolume) * (2.0/(65536.0*65536.0));
 				break;
 			default:
 				/* Do nothing */
@@ -1306,10 +1306,10 @@ static float DmaSnd_IIRfilterR(float xn)
 /**
  * LowPass Filter Left
  */
-static Sint16 DmaSnd_LowPassFilterLeft(Sint16 in)
+static int16_t DmaSnd_LowPassFilterLeft(int16_t in)
 {
-	static	Sint16	lowPassFilter[2] = { 0, 0 };
-	static	Sint16	out = 0;
+	static	int16_t	lowPassFilter[2] = { 0, 0 };
+	static	int16_t	out = 0;
 
 	if (DmaSnd_LowPass)
 		out = lowPassFilter[0] + (lowPassFilter[1]<<1) + in;
@@ -1325,10 +1325,10 @@ static Sint16 DmaSnd_LowPassFilterLeft(Sint16 in)
 /**
  * LowPass Filter Right
  */
-static Sint16 DmaSnd_LowPassFilterRight(Sint16 in)
+static int16_t DmaSnd_LowPassFilterRight(int16_t in)
 {
-	static	Sint16	lowPassFilter[2] = { 0, 0 };
-	static	Sint16	out = 0;
+	static	int16_t	lowPassFilter[2] = { 0, 0 };
+	static	int16_t	out = 0;
 
 	if (DmaSnd_LowPass)
 		out = lowPassFilter[0] + (lowPassFilter[1]<<1) + in;
@@ -1451,12 +1451,12 @@ void DmaSnd_Init_Bass_and_Treble_Tables(void)
 			      LMC1992_Bass_Treble_Table[microwire.treble & 0xf]);
 
 	/* Initialize IIR Filter Gain and use as a Volume Control */
-	lmc1992.left_gain = (microwire.leftVolume * (Uint32)microwire.masterVolume) * (2.0/(65536.0*65536.0));
-	lmc1992.right_gain = (microwire.rightVolume * (Uint32)microwire.masterVolume) * (2.0/(65536.0*65536.0));
+	lmc1992.left_gain = (microwire.leftVolume * (uint32_t)microwire.masterVolume) * (2.0/(65536.0*65536.0));
+	lmc1992.right_gain = (microwire.rightVolume * (uint32_t)microwire.masterVolume) * (2.0/(65536.0*65536.0));
 }
 
 
-void DmaSnd_Info(FILE *fp, Uint32 dummy)
+void DmaSnd_Info(FILE *fp, uint32_t dummy)
 {
 	if (Config_IsMachineST())
 	{

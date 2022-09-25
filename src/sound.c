@@ -281,7 +281,7 @@ static ymu16	Vol3Voices = 0;				/* volume 0-0x1f for voices having a constant vo
 
 
 /* Global variables that can be changed/read from other parts of Hatari */
-Uint8		SoundRegs[ 14 ];
+uint8_t		SoundRegs[ 14 ];
 
 int		YmVolumeMixing = YM_TABLE_MIXING;
 
@@ -297,7 +297,7 @@ int		YM2149_Resample_Method = YM2149_RESAMPLE_METHOD_WEIGHTED_AVERAGE_N;
 
 bool		bEnvelopeFreqFlag;			/* Cleared each frame for YM saving */
 
-Sint16		AudioMixBuffer[AUDIOMIXBUFFER_SIZE][2];	/* Ring buffer to store mixed audio output (YM2149, DMA sound, ...) */
+int16_t		AudioMixBuffer[AUDIOMIXBUFFER_SIZE][2];	/* Ring buffer to store mixed audio output (YM2149, DMA sound, ...) */
 int		AudioMixBuffer_pos_write;		/* Current writing position into above buffer */
 int		AudioMixBuffer_pos_read;		/* Current reading position into above buffer */
 
@@ -1405,7 +1405,7 @@ static ymsample	YM2149_NextSample_250 ( void )
  * time an YM register is changed.
  */
 #define BIT_SHIFT 24
-void	Sound_WriteReg( int reg , Uint8 data )
+void Sound_WriteReg(int reg, uint8_t data)
 {
 	switch (reg)
 	{
@@ -1756,7 +1756,7 @@ static int Sound_GenerateSamples(Uint64 CPU_Clock)
  * This is called to built samples up until this clock cycle
  * Sound_Update() can be called several times during a VBL
  */
-void Sound_Update( Uint64 CPU_Clock)
+void Sound_Update(uint64_t CPU_Clock)
 {
 	int pos_write_prev = AudioMixBuffer_pos_write;
 	int Samples_Nbr;

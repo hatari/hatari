@@ -113,9 +113,9 @@ typedef struct
 {
 	bool	Active;				/* Is interrupt active? */
 #ifndef CYCINT_NEW
-	Sint64	Cycles;
+	int64_t	Cycles;
 #else
-	Uint64	Cycles;
+	uint64_t	Cycles;
 #endif
 	void	(*pFunction)(void);
 	int	IntList_Prev;		/* Number of previous interrupt sorted by 'Cycles' value (or -1 if none) */
@@ -126,7 +126,7 @@ typedef struct
 
 static INTERRUPTHANDLER InterruptHandlers[MAX_INTERRUPTS];
 static interrupt_id	CycInt_ActiveInt = 0;
-Uint64			CycInt_ActiveInt_Cycles;
+uint64_t			CycInt_ActiveInt_Cycles;
 
 
 #ifndef CYCINT_NEW
@@ -286,7 +286,7 @@ void CycInt_MemorySnapShot_Capture(bool bSave)
  */
 static void CycInt_SetNewInterrupt(void)
 {
-	Sint64 LowestCycleCount = INT_MAX;
+	int64_t LowestCycleCount = INT_MAX;
 	interrupt_id LowestInterrupt = INTERRUPT_NULL, i;
 
 	LOG_TRACE(TRACE_INT, "int set new in video_cyc=%d active_int=%d pending_count=%d\n",
@@ -322,7 +322,7 @@ static void CycInt_SetNewInterrupt(void)
  */
 static void CycInt_UpdateInterrupt(void)
 {
-	Sint64 CycleSubtract;
+	int64_t CycleSubtract;
 	int i;
 
 	/* Find out how many cycles we went over (<=0) */
@@ -377,7 +377,7 @@ void CycInt_AddAbsoluteInterrupt(int CycleTime, int CycleType, interrupt_id Hand
 		CycInt_UpdateInterrupt();
 
 	InterruptHandlers[Handler].Active = true;
-	InterruptHandlers[Handler].Cycles = INT_CONVERT_TO_INTERNAL((Sint64)CycleTime , CycleType) + CycInt_DelayedCycles;
+	InterruptHandlers[Handler].Cycles = INT_CONVERT_TO_INTERNAL((int64_t)CycleTime , CycleType) + CycInt_DelayedCycles;
 
 	/* Set new active int and compute a new value for PendingInterruptCount*/
 	CycInt_SetNewInterrupt();
@@ -418,7 +418,7 @@ void CycInt_AddRelativeInterruptWithOffset(int CycleTime, int CycleType, interru
 		CycInt_UpdateInterrupt();
 
 	InterruptHandlers[Handler].Active = true;
-	InterruptHandlers[Handler].Cycles = INT_CONVERT_TO_INTERNAL((Sint64)CycleTime , CycleType) + CycleOffset;
+	InterruptHandlers[Handler].Cycles = INT_CONVERT_TO_INTERNAL((int64_t)CycleTime , CycleType) + CycleOffset;
 
 	/* Set new active int and compute a new value for PendingInterruptCount*/
 	CycInt_SetNewInterrupt();
@@ -443,7 +443,7 @@ void CycInt_ModifyInterrupt(int CycleTime, int CycleType, interrupt_id Handler)
 	if ( CycInt_ActiveInt > 0 )
 		CycInt_UpdateInterrupt();
 
-	InterruptHandlers[Handler].Cycles += INT_CONVERT_TO_INTERNAL((Sint64)CycleTime , CycleType);
+	InterruptHandlers[Handler].Cycles += INT_CONVERT_TO_INTERNAL((int64_t)CycleTime , CycleType);
 
 	/* Set new active int and compute a new value for PendingInterruptCount*/
 	CycInt_SetNewInterrupt();
@@ -483,7 +483,7 @@ void CycInt_RemovePendingInterrupt(interrupt_id Handler)
  */
 int CycInt_FindCyclesRemaining(interrupt_id Handler, int CycleType)
 {
-	Sint64 CyclesPassed, CyclesFromLastInterrupt;
+	int64_t CyclesPassed, CyclesFromLastInterrupt;
 
 	CyclesFromLastInterrupt = InterruptHandlers[CycInt_ActiveInt].Cycles - PendingInterruptCount;
 	CyclesPassed = InterruptHandlers[Handler].Cycles - CyclesFromLastInterrupt;
@@ -593,7 +593,7 @@ void CycInt_AddAbsoluteInterrupt(int CycleTime, int CycleType, interrupt_id Hand
 
 	/* Enable interrupt with new Cycles value */
 	InterruptHandlers[ Handler ].Active = true;
-	InterruptHandlers[ Handler ].Cycles = INT_CONVERT_TO_INTERNAL((Sint64)CycleTime , CycleType) + CycInt_DelayedCycles;
+	InterruptHandlers[ Handler ].Cycles = INT_CONVERT_TO_INTERNAL((int64_t)CycleTime , CycleType) + CycInt_DelayedCycles;
 	InterruptHandlers[ Handler ].Cycles += INT_CONVERT_TO_INTERNAL(Cycles_GetClockCounterImmediate(),INT_CPU_CYCLE);
 
 	CycInt_InsertInt ( Handler );
@@ -632,7 +632,7 @@ void CycInt_AddRelativeInterruptWithOffset(int CycleTime, int CycleType, interru
 
 	/* Enable interrupt with new Cycles value */
 	InterruptHandlers[ Handler ].Active = true;
-	InterruptHandlers[ Handler ].Cycles = INT_CONVERT_TO_INTERNAL((Sint64)CycleTime , CycleType) + CycleOffset;
+	InterruptHandlers[ Handler ].Cycles = INT_CONVERT_TO_INTERNAL((int64_t)CycleTime , CycleType) + CycleOffset;
 	InterruptHandlers[ Handler ].Cycles += INT_CONVERT_TO_INTERNAL(Cycles_GetClockCounterImmediate(),INT_CPU_CYCLE);
 
 	CycInt_InsertInt ( Handler );
@@ -657,7 +657,7 @@ void CycInt_ModifyInterrupt(int CycleTime, int CycleType, interrupt_id Handler)
 
 	/* Enable interrupt with new Cycles value */
 	InterruptHandlers[ Handler ].Active = true;
-	InterruptHandlers[ Handler ].Cycles += INT_CONVERT_TO_INTERNAL((Sint64)CycleTime , CycleType);
+	InterruptHandlers[ Handler ].Cycles += INT_CONVERT_TO_INTERNAL((int64_t)CycleTime , CycleType);
 
 	CycInt_InsertInt ( Handler );
 
@@ -726,7 +726,7 @@ void CycInt_RemovePendingInterrupt(interrupt_id Handler)
  */
 int CycInt_FindCyclesRemaining(interrupt_id Handler, int CycleType)
 {
-	Sint64 Cycles;
+	int64_t Cycles;
 
 	Cycles = InterruptHandlers[Handler].Cycles - INT_CONVERT_TO_INTERNAL( ( Cycles_GetClockCounterImmediate() ) , INT_CPU_CYCLE );
 
@@ -771,7 +771,7 @@ int	CycInt_GetActiveInt(void)
  * Clock is the time when the active interrupt triggered and it's used to
  * compute PendingInterruptCount
  */
-void	CycInt_CallActiveHandler(Uint64 Clock)
+void	CycInt_CallActiveHandler(uint64_t Clock)
 {
 #ifdef CYCINT_DEBUG
 	fprintf ( stderr , "int remove after active=%02d active_cyc=%"PRIu64" clock=%"PRIu64"\n" , CycInt_ActiveInt , CycInt_ActiveInt_Cycles , Clock );

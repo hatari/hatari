@@ -11,7 +11,7 @@
 #define BLITTER_H
 
 
-extern Uint16	BlitterPhase;
+extern uint16_t	BlitterPhase;
 
 extern void Blitter_Reset ( void );
 
@@ -84,7 +84,7 @@ extern void Blitter_Skew_WriteByte(void);
 
 extern void Blitter_MemorySnapShot_Capture(bool bSave);
 extern void Blitter_InterruptHandler(void);
-extern void Blitter_Info(FILE *fp, Uint32 arg);
+extern void Blitter_Info(FILE *fp, uint32_t arg);
 
 extern void Blitter_HOG_CPU_mem_access_before ( int bus_count );
 extern void Blitter_HOG_CPU_mem_access_after ( int bus_count );

@@ -38,9 +38,9 @@ enum {
 };
 
 extern bool bIsEmuTOS;
-extern Uint32 EmuTosVersion;
-extern Uint16 TosVersion;
-extern Uint32 TosAddress, TosSize;
+extern uint32_t EmuTosVersion;
+extern uint16_t TosVersion;
+extern uint32_t TosAddress, TosSize;
 extern bool bTosImageLoaded;
 extern bool bRamTosImage;
 extern bool bUseTos;

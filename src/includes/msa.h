@@ -6,6 +6,6 @@
 */
 
 extern bool MSA_FileNameIsMSA(const char *pszFileName, bool bAllowGZ);
-extern Uint8 *MSA_UnCompress(Uint8 *pMSAFile, long *pImageSize, long nBytesLeft);
-extern Uint8 *MSA_ReadDisk(int Drive, const char *pszFileName, long *pImageSize, int *pImageType);
-extern bool MSA_WriteDisk(int Drive, const char *pszFileName, Uint8 *pBuffer, int ImageSize);
+extern uint8_t *MSA_UnCompress(uint8_t *pMSAFile, long *pImageSize, long nBytesLeft);
+extern uint8_t *MSA_ReadDisk(int Drive, const char *pszFileName, long *pImageSize, int *pImageType);
+extern bool MSA_WriteDisk(int Drive, const char *pszFileName, uint8_t *pBuffer, int ImageSize);

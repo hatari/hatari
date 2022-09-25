@@ -20,7 +20,7 @@
 #define CROSSBAR_SNDMODE_16BITSTEREO  0x40
 #define CROSSBAR_SNDMODE_MONO         0x80
 
-extern Uint16 nCbar_DmaSoundControl;
+extern uint16_t nCbar_DmaSoundControl;
 
 /* Called by audio.c */
 void Crossbar_Compute_Ratio(void);
@@ -67,7 +67,7 @@ extern void Crossbar_AdcInput_WriteByte(void);
 extern void Crossbar_InputAmp_WriteByte(void);
 extern void Crossbar_OutputReduct_WriteWord(void);
 extern void Crossbar_CodecStatus_WriteWord(void);
-extern Uint8 Crossbar_Get_SNDINT_Line (void);
+extern uint8_t Crossbar_Get_SNDINT_Line (void);
 extern void Crossbar_Microwire_WriteWord(void);
 
 /* Called by cycint.c */
@@ -79,12 +79,12 @@ extern void Crossbar_InterruptHandler_Microwire(void);
 
 /* Called by dsp.c */
 void Crossbar_DmaPlayInHandShakeMode(void);
-void Crossbar_DmaRecordInHandShakeMode_Frame(Uint32 frame);
+void Crossbar_DmaRecordInHandShakeMode_Frame(uint32_t frame);
 
 /* Called by microphone.c */
-void Crossbar_GetMicrophoneDatas(Sint16 *micro_bufferL, Sint16 *micro_bufferR, Uint32 microBuffer_size);
+void Crossbar_GetMicrophoneDatas(int16_t *micro_bufferL, int16_t *micro_bufferR, uint32_t microBuffer_size);
 
 /* called by debugInfo.c */
-extern void Crossbar_Info(FILE *fp, Uint32 dummy);
+extern void Crossbar_Info(FILE *fp, uint32_t dummy);
 
 #endif /* HATARI_CROSSBAR_H */

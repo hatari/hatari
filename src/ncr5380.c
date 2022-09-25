@@ -655,7 +655,7 @@ static void Ncr5380_UpdateDmaAddrAndLen(uint32_t nDmaAddr, uint32_t nDataLen)
 		IoMem[0xff8705] = nNewAddr >> 8;
 		IoMem[0xff8707] = nNewAddr;
 
-		nNewLen = (Uint32)IoMem[0xff8709] << 24 | IoMem[0xff870b] << 16
+		nNewLen = (uint32_t)IoMem[0xff8709] << 24 | IoMem[0xff870b] << 16
 		          | IoMem[0xff870d] << 8 | IoMem[0xff870f];
 		assert(nDataLen <= nNewLen);
 		nNewLen -= nDataLen;
@@ -690,9 +690,9 @@ static void dma_check(struct soft_scsi *ncr)
 	{
 		if ((IoMem[0xff8715] & 2) == 0)
 			return;
-		nDmaAddr = (Uint32)IoMem[0xff8701] << 24 | IoMem[0xff8703] << 16
+		nDmaAddr = (uint32_t)IoMem[0xff8701] << 24 | IoMem[0xff8703] << 16
 		           | IoMem[0xff8705] << 8 | IoMem[0xff8707];
-		nDataLen = (Uint32)IoMem[0xff8709] << 24 | IoMem[0xff870b] << 16
+		nDataLen = (uint32_t)IoMem[0xff8709] << 24 | IoMem[0xff870b] << 16
 		           | IoMem[0xff870d] << 8 | IoMem[0xff870f];
 	}
 
@@ -735,7 +735,7 @@ static void dma_check(struct soft_scsi *ncr)
 			{
 				/* For more precise emulation, we should not
 				 * pre-write the bytes to the STRam ... */
-				const Uint32 addr = nDmaAddr + nDataLen - nRemainingBytes;
+				const uint32_t addr = nDmaAddr + nDataLen - nRemainingBytes;
 				IoMem[0xff8710 + i] = STMemory_ReadByte(addr + i);
 			}
 		}
@@ -1104,7 +1104,7 @@ void Ncr5380_Reset(void)
 /**
  * Write a command byte to the NCR 5380 SCSI controller
  */
-void Ncr5380_WriteByte(int addr, Uint8 byte)
+void Ncr5380_WriteByte(int addr, uint8_t byte)
 {
 #if WITH_NCR5380
 	ncr5380_bput(&ncr_soft_scsi, addr, byte);
@@ -1114,7 +1114,7 @@ void Ncr5380_WriteByte(int addr, Uint8 byte)
 /**
  * Read a command byte from the NCR 5380 SCSI controller
  */
-Uint8 Ncr5380_ReadByte(int addr)
+uint8_t Ncr5380_ReadByte(int addr)
 {
 #if WITH_NCR5380
 	return ncr5380_bget(&ncr_soft_scsi, addr);

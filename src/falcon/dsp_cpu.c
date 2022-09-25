@@ -154,9 +154,9 @@ static void dsp_compute_ssh_ssl(void);
 
 static void opcode8h_0(void);
 
-static void dsp_update_rn(uint32_t numreg, Sint16 modifier);
+static void dsp_update_rn(uint32_t numreg, int16_t modifier);
 static void dsp_update_rn_bitreverse(uint32_t numreg);
-static void dsp_update_rn_modulo(uint32_t numreg, Sint16 modifier);
+static void dsp_update_rn_modulo(uint32_t numreg, int16_t modifier);
 static int dsp_calc_ea(uint32_t ea_mode, uint32_t *dst_addr);
 static int dsp_calc_cc(uint32_t cc_code);
 
@@ -255,7 +255,7 @@ static uint16_t dsp_asl56(uint32_t *dest);
 static uint16_t dsp_asr56(uint32_t *dest);
 static uint16_t dsp_add56(uint32_t *source, uint32_t *dest);
 static uint16_t dsp_sub56(uint32_t *source, uint32_t *dest);
-static void dsp_mul56(uint32_t source1, uint32_t source2, uint32_t *dest, Uint8 signe);
+static void dsp_mul56(uint32_t source1, uint32_t source2, uint32_t *dest, uint8_t signe);
 static void dsp_rnd56(uint32_t *dest);
 
 /* Instructions with parallel moves */
@@ -1002,7 +1002,7 @@ static void dsp_postexecute_interrupts(void)
 	uint32_t interrupt, inter;
 	uint32_t priority_list_start;
 	uint32_t instr;
-	Sint32 ipl_sr;
+	int32_t ipl_sr;
 
 
 	/* REP is not interruptible */
@@ -1439,7 +1439,7 @@ static void write_memory_raw(int space, uint16_t address, uint32_t value)
 static void write_memory_disasm(int space, uint16_t address, uint32_t value)
 {
 	uint32_t oldvalue, curvalue;
-	Uint8 space_c = 'p';
+	uint8_t space_c = 'p';
 
 	value &= BITMASK(24);
 	oldvalue = read_memory_disasm(space, address);
@@ -1624,12 +1624,12 @@ static void dsp_compute_ssh_ssl(void)
  *	Effective address calculation
  **********************************/
 
-static void dsp_update_rn(uint32_t numreg, Sint16 modifier)
+static void dsp_update_rn(uint32_t numreg, int16_t modifier)
 {
 	uint32_t value;
 	uint16_t m_reg;
 
-	m_reg = (Uint16) dsp_core.registers[DSP_REG_M0+numreg];
+	m_reg = (uint16_t) dsp_core.registers[DSP_REG_M0+numreg];
 	if (m_reg == 65535) {
 		/* Linear addressing mode */
 		value = dsp_core.registers[DSP_REG_R0+numreg]|0x10000;
@@ -1687,7 +1687,7 @@ static void dsp_update_rn_bitreverse(uint32_t numreg)
 	dsp_core.registers[DSP_REG_R0+numreg] = value;
 }
 
-static void dsp_update_rn_modulo(uint32_t numreg, Sint16 modifier)
+static void dsp_update_rn_modulo(uint32_t numreg, int16_t modifier)
 {
 	uint16_t bufsize, bufmask, modulo, abs_modifier;
 	uint32_t r_reg, lobound, hibound;
@@ -4257,7 +4257,7 @@ static uint16_t dsp_sub56(uint32_t *source, uint32_t *dest)
 	return (overflow<<DSP_SR_L)|(overflow<<DSP_SR_V)|(carry<<DSP_SR_C);
 }
 
-static void dsp_mul56(uint32_t source1, uint32_t source2, uint32_t *dest, Uint8 signe)
+static void dsp_mul56(uint32_t source1, uint32_t source2, uint32_t *dest, uint8_t signe)
 {
 	uint32_t part[4], zerodest[3], value;
 

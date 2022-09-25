@@ -30,7 +30,7 @@ const char VDI_fileid[] = "Hatari vdi.c";
 /* #undef ENABLE_TRACING */
 #define DEBUG 0
 
-Uint32 VDI_OldPC;                  /* When call Trap#2, store off PC */
+uint32_t VDI_OldPC;                  /* When call Trap#2, store off PC */
 
 bool bVdiAesIntercept = false;     /* Set to true to trace VDI & AES calls */
 bool bUseVDIRes = false;           /* Set to true (if want VDI), or false (ie for games) */
@@ -40,30 +40,30 @@ int VDIWidth = 640;                /* 640x480, 800x600 or 1024x768 */
 int VDIHeight = 480;
 int VDIPlanes = 4;
 
-static Uint32 LineABase;           /* Line-A structure */
-static Uint32 FontBase;            /* Font base, used for 16-pixel high font */
+static uint32_t LineABase;           /* Line-A structure */
+static uint32_t FontBase;            /* Font base, used for 16-pixel high font */
 
 /* Last VDI opcode, vectors & their contents (for "info vdi") */
 static struct {
-	Uint32 Control;
-	Uint32 Intin;
-	Uint32 Ptsin;
-	Uint32 Intout;
-	Uint32 Ptsout;
+	uint32_t Control;
+	uint32_t Intin;
+	uint32_t Ptsin;
+	uint32_t Intout;
+	uint32_t Ptsout;
 	/* TODO: add arrays for storing above vector contents */
-	Uint16 OpCode;
+	uint16_t OpCode;
 } VDI;
 
 /* Last AES opcode, vectors & their contents (for "info aes") */
 static struct {
-	Uint32 Control;
-	Uint32 Global;
-	Uint32 Intin;
-	Uint32 Intout;
-	Uint32 Addrin;
-	Uint32 Addrout;
+	uint32_t Control;
+	uint32_t Global;
+	uint32_t Intin;
+	uint32_t Intout;
+	uint32_t Addrin;
+	uint32_t Addrout;
 	/* TODO: add arrays for storing above vector contents */
-	Uint16 OpCode;
+	uint16_t OpCode;
 } AES;
 
 
@@ -299,7 +299,7 @@ static const char* AESName_10[] = {
 /**
  * Map AES call opcode to an AES function name
  */
-static const char* AES_Opcode2Name(Uint16 opcode)
+static const char* AES_Opcode2Name(uint16_t opcode)
 {
 	int code = opcode - 10;
 	if (code >= 0 && code < ARRAY_SIZE(AESName_10) && AESName_10[code])
@@ -312,7 +312,7 @@ static const char* AES_Opcode2Name(Uint16 opcode)
 /**
  * Output AES call info, including some of args
  */
-static void AES_OpcodeInfo(FILE *fp, Uint16 opcode)
+static void AES_OpcodeInfo(FILE *fp, uint16_t opcode)
 {
 	/* AES opcodes which have string args */
 	static const struct {
@@ -393,7 +393,7 @@ static void AES_OpcodeInfo(FILE *fp, Uint16 opcode)
  * Verify given VDI table pointer and store variables from
  * it for later use. Return true for success
  */
-static bool AES_StoreVars(Uint32 TablePtr)
+static bool AES_StoreVars(uint32_t TablePtr)
 {
 	if (!STMemory_CheckAreaType(TablePtr, 24, ABFLAG_RAM))
 	{
@@ -416,9 +416,9 @@ static bool AES_StoreVars(Uint32 TablePtr)
  * If opcodes argument is set, show AES opcode/function name table,
  * otherwise AES vectors information.
  */
-void AES_Info(FILE *fp, Uint32 bShowOpcodes)
+void AES_Info(FILE *fp, uint32_t bShowOpcodes)
 {
-	Uint16 opcode;
+	uint16_t opcode;
 	
 	if (bShowOpcodes)
 	{
@@ -491,7 +491,7 @@ void AES_Info(FILE *fp, Uint32 bShowOpcodes)
 /**
  * Map VDI call opcode/sub-opcode to a VDI function name
  */
-static const char* VDI_Opcode2Name(Uint16 opcode, Uint16 subcode, Uint16 nintin, const char **extra_info)
+static const char* VDI_Opcode2Name(uint16_t opcode, uint16_t subcode, uint16_t nintin, const char **extra_info)
 {
 	unsigned int i;
 
@@ -771,7 +771,7 @@ static const char* VDI_Opcode2Name(Uint16 opcode, Uint16 subcode, Uint16 nintin,
 	}
 	else if (opcode > 100)
 	{
-		Uint16 idx = opcode - 100;
+		uint16_t idx = opcode - 100;
 		if (idx < ARRAY_SIZE(names_100))
 		{
 			return names_100[idx];
@@ -795,7 +795,7 @@ static const char* VDI_Opcode2Name(Uint16 opcode, Uint16 subcode, Uint16 nintin,
  * Verify given VDI table pointer and store variables from
  * it for later use. Return true for success
  */
-static bool VDI_StoreVars(Uint32 TablePtr)
+static bool VDI_StoreVars(uint32_t TablePtr)
 {
 	if (!STMemory_CheckAreaType(TablePtr, 20, ABFLAG_RAM))
 	{
@@ -819,14 +819,14 @@ static bool VDI_StoreVars(Uint32 TablePtr)
  * If opcodes argument is set, show VDI opcode/function name table,
  * otherwise VDI vectors information.
  */
-void VDI_Info(FILE *fp, Uint32 bShowOpcodes)
+void VDI_Info(FILE *fp, uint32_t bShowOpcodes)
 {
-	Uint16 opcode;
+	uint16_t opcode;
 	const char *extra_info;
 
 	if (bShowOpcodes)
 	{
-		Uint16 opcode;
+		uint16_t opcode;
 		for (opcode = 0; opcode <= 0x84; )
 		{
 			if (opcode == 0x28)
@@ -878,8 +878,8 @@ void VDI_Info(FILE *fp, Uint32 bShowOpcodes)
 	 * from already converted VDI.* array members
 	 */
 	fputs("Latest VDI Parameter block:\n", fp);
-	Uint16 subcode = STMemory_ReadWord(VDI.Control+2*5);
-	Uint16 nintin = STMemory_ReadWord(VDI.Control+2*3);
+	uint16_t subcode = STMemory_ReadWord(VDI.Control+2*5);
+	uint16_t nintin = STMemory_ReadWord(VDI.Control+2*3);
 	const char *name = VDI_Opcode2Name(opcode, subcode, nintin, &extra_info);
 	fprintf(fp, "- Opcode/Subcode: 0x%02hX/0x%02hX (%s%s%s)\n",
 		opcode, subcode, name, extra_info ? ", " : "", extra_info ? extra_info : "");
@@ -902,7 +902,7 @@ void VDI_Info(FILE *fp, Uint32 bShowOpcodes)
 /**
  * Return true for only VDI opcodes that need to be handled at Trap exit.
  */
-static inline bool VDI_isWorkstationOpen(Uint16 opcode)
+static inline bool VDI_isWorkstationOpen(uint16_t opcode)
 {
 	if (opcode == 1 || opcode == 100)
 		return true;
@@ -920,9 +920,9 @@ static inline bool VDI_isWorkstationOpen(Uint16 opcode)
  */
 bool VDI_AES_Entry(void)
 {
-	Uint16 call = Regs[REG_D0];
+	uint16_t call = Regs[REG_D0];
 #if ENABLE_TRACING
-	Uint32 TablePtr = Regs[REG_D1];
+	uint32_t TablePtr = Regs[REG_D1];
 
 	/* AES call? */
 	if (call == 0xC8)
@@ -944,7 +944,7 @@ bool VDI_AES_Entry(void)
 	/* VDI call? */
 	if (call == 0x73)
 	{
-		Uint16 subcode, nintin;
+		uint16_t subcode, nintin;
 		const char *extra_info, *name;
 
 		if (!VDI_StoreVars(TablePtr))
@@ -971,9 +971,9 @@ bool VDI_AES_Entry(void)
 /**
  * Modify Line-A structure for our VDI resolutions
  */
-void VDI_LineA(Uint32 linea, Uint32 fontbase)
+void VDI_LineA(uint32_t linea, uint32_t fontbase)
 {
-	Uint32 fontadr, font1, font2;
+	uint32_t fontadr, font1, font2;
 
 	LineABase = linea;
 	FontBase = fontbase;

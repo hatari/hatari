@@ -56,12 +56,12 @@ static int CreateBlankImage_GetDiskImageCapacity(int nTracks, int nSectors, int 
  * Write a short integer to addr using little endian byte order
  * (needed for 16 bit values in the bootsector of the disk image).
  */
-static inline void WriteShortLE(void *addr, Uint16 val)
+static inline void WriteShortLE(void *addr, uint16_t val)
 {
-	Uint8 *p = (Uint8 *)addr;
+	uint8_t *p = (uint8_t *)addr;
 
-	p[0] = (Uint8)val;
-	p[1] = (Uint8)(val >> 8);
+	p[0] = (uint8_t)val;
+	p[1] = (uint8_t)(val >> 8);
 }
 
 
@@ -74,13 +74,13 @@ static inline void WriteShortLE(void *addr, Uint16 val)
  */
 bool CreateBlankImage_CreateFile(const char *pszFileName, int nTracks, int nSectors, int nSides, const char *VolumeLabel)
 {
-	Uint8 *pDiskFile;
+	uint8_t *pDiskFile;
 	unsigned long nDiskSize;
 	unsigned short int SPC, nDir, MediaByte, SPF;
 	bool bRet = false;
 	int drive;
 	int LabelSize;
-	Uint8 *pDirStart;
+	uint8_t *pDirStart;
 
 	/* HD/ED disks are all double sided */
 	if (nSectors >= 18)

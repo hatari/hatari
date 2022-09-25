@@ -55,15 +55,15 @@
 typedef struct scsi_data {
 	bool enabled;
 	FILE *image_file;
-	Uint32 nLastBlockAddr;      /* The specified sector number */
+	uint32_t nLastBlockAddr;      /* The specified sector number */
 	bool bSetLastBlockAddr;
-	Uint8 nLastError;
+	uint8_t nLastError;
 	unsigned long hdSize;       /* Size of the hard disk in sectors */
 	unsigned long blockSize;    /* Size of a sector in bytes */
 	/* For NCR5380 emulation: */
 	int direction;
-	Uint8 msgout[4];
-	Uint8 cmd[16];
+	uint8_t msgout[4];
+	uint8_t cmd[16];
 	int cmd_len;
 } SCSI_DEV;
 
@@ -74,11 +74,11 @@ typedef struct {
 	const char *typestr;        /* "ACSI" or "SCSI" */
 	int target;
 	int byteCount;              /* number of command bytes received */
-	Uint8 command[16];
-	Uint8 opcode;
+	uint8_t command[16];
+	uint8_t opcode;
 	bool bDmaError;
 	short int status;           /* return code from the HDC operation */
-	Uint8 *buffer;              /* Response buffer */
+	uint8_t *buffer;              /* Response buffer */
 	int buffer_size;
 	int data_len;
 	int offset;                 /* Current offset into data buffer */
@@ -98,10 +98,10 @@ extern void HDC_UnInit(void);
 extern int HDC_InitDevice(const char *hdtype, SCSI_DEV *dev, char *filename, unsigned long blockSize);
 extern void HDC_ResetCommandStatus(void);
 extern short int HDC_ReadCommandByte(int addr);
-extern void HDC_WriteCommandByte(int addr, Uint8 byte);
-extern int HDC_PartitionCount(FILE *fp, const Uint64 tracelevel, int *pIsByteSwapped);
+extern void HDC_WriteCommandByte(int addr, uint8_t byte);
+extern int HDC_PartitionCount(FILE *fp, const uint64_t tracelevel, int *pIsByteSwapped);
 extern off_t HDC_CheckAndGetSize(const char *hdtype, const char *filename, unsigned long blockSize);
-extern bool HDC_WriteCommandPacket(SCSI_CTRLR *ctr, Uint8 b);
+extern bool HDC_WriteCommandPacket(SCSI_CTRLR *ctr, uint8_t b);
 extern void HDC_DmaTransfer(void);
 
 #endif /* HATARI_HDC_H */

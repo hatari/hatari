@@ -31,14 +31,14 @@ enum
 
 #define NUM_PSG_SOUND_REGISTERS    14		/* Number of sound related registers, not including IO ports */
 
-extern Uint8 PSGRegisters[MAX_PSG_REGISTERS];
+extern uint8_t PSGRegisters[MAX_PSG_REGISTERS];
 
 extern void PSG_Reset(void);
 extern void PSG_MemorySnapShot_Capture(bool bSave);
 
-extern void PSG_Set_SelectRegister(Uint8 val);
-extern Uint8 PSG_Get_DataRegister(void);
-extern void PSG_Set_DataRegister(Uint8 val);
+extern void PSG_Set_SelectRegister(uint8_t val);
+extern uint8_t PSG_Get_DataRegister(void);
+extern void PSG_Set_DataRegister(uint8_t val);
 
 extern void PSG_ff8800_ReadByte(void);
 extern void PSG_ff880x_ReadByte(void);
@@ -47,6 +47,6 @@ extern void PSG_ff8801_WriteByte(void);
 extern void PSG_ff8802_WriteByte(void);
 extern void PSG_ff8803_WriteByte(void);
 
-extern void PSG_Info(FILE *fp, Uint32 dummy);
+extern void PSG_Info(FILE *fp, uint32_t dummy);
 
 #endif  /* HATARI_PSG_H */

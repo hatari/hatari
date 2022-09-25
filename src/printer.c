@@ -86,7 +86,7 @@ void Printer_UnInit(void)
  * if it isn't already open. Returns false if connection to "printer"
  * failed
  */
-bool Printer_TransferByteTo(Uint8 Byte)
+bool Printer_TransferByteTo(uint8_t Byte)
 {
 	/* Do we want to output to a printer/file? */
 	if (!ConfigureParams.Printer.bEnablePrinting)

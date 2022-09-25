@@ -60,7 +60,7 @@ static const char* x_ext_memory_addr_name[] = {
 	"", "", "", "", "", "", "BCR", "IPR"
 };
 
-static Sint32 save_cycles;
+static int32_t save_cycles;
 #endif
 
 static bool bDspDebugging;
@@ -68,7 +68,7 @@ static bool bDspDebugging;
 bool bDspEnabled = false;
 bool bDspHostInterruptPending = false;
 
-Uint64	DSP_CyclesGlobalClockCounter = 0;			/* Value of CyclesGlobalClockCounter when DSP_Run was last called */
+uint64_t	DSP_CyclesGlobalClockCounter = 0;			/* Value of CyclesGlobalClockCounter when DSP_Run was last called */
 
 
 /**
@@ -99,7 +99,7 @@ static void DSP_TriggerHostInterrupt(int hreq)
 /**
  * Return the state of HREQ
  */
-Uint8	DSP_GetHREQ ( void )
+uint8_t	DSP_GetHREQ ( void )
 {
 	if ( bDspHostInterruptPending )
 		return 1;
@@ -620,7 +620,7 @@ int DSP_GetRegisterAddress(const char *regname, uint32_t **addr, uint32_t *mask)
 		{ "OMR", &dsp_core.registers[DSP_REG_OMR], 32, 0x5f },
 
 		/* 16-bit program counter */
-		{ "PC",  (Uint32*)(&dsp_core.pc),  16, BITMASK(16) },
+		{ "PC",  (uint32_t*)(&dsp_core.pc),  16, BITMASK(16) },
 
 		/* 16-bit DSP R (address) registers */
 		{ "R0",  &dsp_core.registers[DSP_REG_R0],  32, BITMASK(16) },
@@ -743,7 +743,7 @@ bool DSP_Disasm_SetRegister(const char *arg, uint32_t value)
 		*addr = value & mask;
 		return true;
 	case 16:
-		*(Uint16*)addr = value & mask;
+		*(uint16_t*)addr = value & mask;
 		return true;
 	}
 #endif
@@ -838,7 +838,7 @@ void DSP_SsiTransmit_SCK(void)
 void DSP_HandleReadAccess(void)
 {
 	uint32_t addr;
-	Uint8 value;
+	uint8_t value;
 	bool multi_access = false;
 
 	for (addr = IoAccessBaseAddress; addr < IoAccessBaseAddress+nIoMemAccessSize; addr++)
@@ -871,7 +871,7 @@ void DSP_HandleWriteAccess(void)
 	for (addr = IoAccessBaseAddress; addr < IoAccessBaseAddress+nIoMemAccessSize; addr++)
 	{
 #if ENABLE_DSP_EMU
-		Uint8 value = IoMem_ReadByte(addr);
+		uint8_t value = IoMem_ReadByte(addr);
 		Dprintf(("HWput_b(0x%08x,0x%02x) at 0x%08x\n", addr, value, m68k_getpc()));
 		dsp_core_write_host(addr-DSP_HW_OFFSET, value);
 #endif

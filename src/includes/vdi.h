@@ -47,17 +47,17 @@ enum
   GEMCOLOR_16
 };
 
-extern Uint32 VDI_OldPC;
+extern uint32_t VDI_OldPC;
 extern bool bUseVDIRes, bVdiAesIntercept;
 extern int VDIWidth,VDIHeight;
 extern int VDIRes,VDIPlanes;
 
 extern bool VDI_ByteLimit(int *width, int *height, int planes);
 extern void VDI_SetResolution(int GEMColor, int WidthRequest, int HeightRequest);
-extern void AES_Info(FILE *fp, Uint32 bShowOpcodes);
-extern void VDI_Info(FILE *fp, Uint32 bShowOpcodes);
+extern void AES_Info(FILE *fp, uint32_t bShowOpcodes);
+extern void VDI_Info(FILE *fp, uint32_t bShowOpcodes);
 extern bool VDI_AES_Entry(void);
-extern void VDI_LineA(Uint32 LineABase, Uint32 FontBase);
+extern void VDI_LineA(uint32_t LineABase, uint32_t FontBase);
 extern void VDI_Complete(void);
 extern void VDI_Reset(void);
 

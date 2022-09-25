@@ -69,28 +69,28 @@ extern void	FDC_Init ( void );
 extern void	FDC_Reset ( bool bCold );
 extern void	FDC_SetDMAStatus ( bool bError );
 
-extern void	FDC_SetIRQ ( Uint8 IRQ_Source );
+extern void	FDC_SetIRQ ( uint8_t IRQ_Source );
 extern void	FDC_ClearIRQ ( void );
 extern void	FDC_ClearHdcIRQ(void);
 extern void	FDC_InterruptHandler_Update ( void );
 
-extern void	FDC_Drive_Set_BusyLed ( Uint8 SR );
+extern void	FDC_Drive_Set_BusyLed ( uint8_t SR );
 extern int	FDC_Get_Statusbar_Text ( char *text, size_t maxlen );
 extern void	FDC_Drive_Set_Enable ( int Drive , bool value );
 extern void	FDC_Drive_Set_NumberOfHeads ( int Drive , int NbrHeads );
 extern void	FDC_InsertFloppy ( int Drive );
 extern void	FDC_EjectFloppy ( int Drive );
-extern void	FDC_SetDriveSide ( Uint8 io_porta_old , Uint8 io_porta_new );
-extern int	FDC_GetBytesPerTrack ( Uint8 Drive , Uint8 Track , Uint8 Side );
-extern int	FDC_GetFloppyDensity ( Uint8 Drive );
-extern int	FDC_MachineHandleDensity ( Uint8 Drive );
+extern void	FDC_SetDriveSide ( uint8_t io_porta_old , uint8_t io_porta_new );
+extern int	FDC_GetBytesPerTrack ( uint8_t Drive , uint8_t Track , uint8_t Side );
+extern int	FDC_GetFloppyDensity ( uint8_t Drive );
+extern int	FDC_MachineHandleDensity ( uint8_t Drive );
 
-extern int	FDC_IndexPulse_GetCurrentPos_FdcCycles ( Uint32 *pFdcCyclesPerRev );
+extern int	FDC_IndexPulse_GetCurrentPos_FdcCycles ( uint32_t *pFdcCyclesPerRev );
 extern int	FDC_IndexPulse_GetCurrentPos_NbBytes ( void );
 extern int	FDC_IndexPulse_GetState ( void );
 extern int	FDC_NextIndexPulse_FdcCycles ( void );
 
-extern Uint8	FDC_GetCmdType ( Uint8 CR );
+extern uint8_t	FDC_GetCmdType ( uint8_t CR );
 
 extern void	FDC_DiskController_WriteWord ( void );
 extern void	FDC_DiskControllerStatus_ReadWord ( void );
@@ -98,22 +98,22 @@ extern void	FDC_DmaModeControl_WriteWord ( void );
 extern void	FDC_DmaStatus_ReadWord ( void );
 extern int	FDC_DMA_GetModeControl_R_WR ( void );
 extern int	FDC_DMA_GetMode(void);
-extern void	FDC_DMA_FIFO_Push ( Uint8 Byte );
-extern Uint8	FDC_DMA_FIFO_Pull ( void );
+extern void	FDC_DMA_FIFO_Push ( uint8_t Byte );
+extern uint8_t	FDC_DMA_FIFO_Pull ( void );
 extern int	FDC_DMA_GetSectorCount ( void );
 
 extern void	FDC_Buffer_Reset ( void );
-extern void	FDC_Buffer_Add_Timing ( Uint8 Byte , Uint16 Timing );
-extern void	FDC_Buffer_Add ( Uint8 Byte );
-extern Uint16	FDC_Buffer_Read_Timing ( void );
-extern Uint8	FDC_Buffer_Read_Byte ( void );
-extern Uint8	FDC_Buffer_Read_Byte_pos ( int pos );
+extern void	FDC_Buffer_Add_Timing ( uint8_t Byte , uint16_t Timing );
+extern void	FDC_Buffer_Add ( uint8_t Byte );
+extern uint16_t	FDC_Buffer_Read_Timing ( void );
+extern uint8_t	FDC_Buffer_Read_Byte ( void );
+extern uint8_t	FDC_Buffer_Read_Byte_pos ( int pos );
 extern int	FDC_Buffer_Get_Size ( void );
 
 extern void	FDC_DmaAddress_ReadByte ( void );
 extern void	FDC_DmaAddress_WriteByte ( void );
-extern Uint32	FDC_GetDMAAddress ( void );
-extern void	FDC_WriteDMAAddress ( Uint32 Address );
+extern uint32_t	FDC_GetDMAAddress ( void );
+extern void	FDC_WriteDMAAddress ( uint32_t Address );
 
 extern void	FDC_DensityMode_WriteWord ( void );
 extern void	FDC_DensityMode_ReadWord ( void );

@@ -12,12 +12,12 @@
 #define DMASNDCTRL_PLAYLOOP     0x02
 #define DMASNDMODE_MONO         0x80
 
-extern Uint16 nDmaSoundControl;
+extern uint16_t nDmaSoundControl;
 
 extern void DmaSnd_Reset(bool bCold);
 extern void DmaSnd_MemorySnapShot_Capture(bool bSave);
 
-extern Uint8 DmaSnd_Get_XSINT_Line(void);
+extern uint8_t DmaSnd_Get_XSINT_Line(void);
 
 extern void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate);
 extern void DmaSnd_STE_HBL_Update(void);
@@ -47,6 +47,6 @@ extern void DmaSnd_MicrowireMask_WriteWord(void);
 
 extern void DmaSnd_Init_Bass_and_Treble_Tables(void);
 
-extern void DmaSnd_Info(FILE *fp, Uint32 dummy);
+extern void DmaSnd_Info(FILE *fp, uint32_t dummy);
 
 #endif /* HATARI_DMASND_H */

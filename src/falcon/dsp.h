@@ -75,8 +75,8 @@ extern void DSP_SsiTransmit_SCK(void);
 /* Dsp Host interface commands */
 extern void DSP_HandleReadAccess(void);
 extern void DSP_HandleWriteAccess(void);
-extern Uint8 DSP_GetHREQ ( void );
-extern int DSP_ProcessIACK ( void );
+extern uint8_t DSP_GetHREQ(void);
+extern int DSP_ProcessIACK(void);
 
 
 #endif /* DSP_H */

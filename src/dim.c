@@ -62,10 +62,10 @@ bool DIM_FileNameIsDIM(const char *pszFileName, bool bAllowGZ)
  * Load .DIM file into memory, set number of bytes loaded and return a pointer
  * to the buffer.
  */
-Uint8 *DIM_ReadDisk(int Drive, const char *pszFileName, long *pImageSize, int *pImageType)
+uint8_t *DIM_ReadDisk(int Drive, const char *pszFileName, long *pImageSize, int *pImageType)
 {
-	Uint8 *pDimFile;
-	Uint8 *pDiskBuffer = NULL;
+	uint8_t *pDimFile;
+	uint8_t *pDiskBuffer = NULL;
 
 	/* Load file into buffer */
 	pDimFile = File_Read(pszFileName, pImageSize, NULL);
@@ -108,12 +108,12 @@ Uint8 *DIM_ReadDisk(int Drive, const char *pszFileName, long *pImageSize, int *p
 /**
  * Save .DIM file from memory buffer. Returns TRUE is all OK
  */
-bool DIM_WriteDisk(int Drive, const char *pszFileName, Uint8 *pBuffer, int ImageSize)
+bool DIM_WriteDisk(int Drive, const char *pszFileName, uint8_t *pBuffer, int ImageSize)
 {
 #ifdef SAVE_TO_DIM_IMAGES
 
 	unsigned short int nSectorsPerTrack, nSides;
-	Uint8 *pDimFile;
+	uint8_t *pDimFile;
 	int nTracks;
 	bool bRet;
 #if HAVE_LIBZ

@@ -22,7 +22,7 @@ const char YMFormat_fileid[] = "Hatari ymFormat.c";
 
 bool bRecordingYM = false;
 static int nYMVBLS = 0;
-static Uint8 *pYMData, *pYMWorkspace = NULL;
+static uint8_t *pYMData, *pYMWorkspace = NULL;
 static char *pszYMFileName = NULL;
 
 /*-----------------------------------------------------------------------*/
@@ -47,7 +47,7 @@ bool YMFormat_BeginRecording(const char *filename)
 	}
 
 	/* Create YM workspace */
-	pYMWorkspace = (Uint8 *)malloc(YM_RECORDSIZE);
+	pYMWorkspace = (uint8_t *)malloc(YM_RECORDSIZE);
 
 	if (!pYMWorkspace)
 	{
@@ -88,13 +88,13 @@ bool YMFormat_BeginRecording(const char *filename)
  */
 static bool YMFormat_ConvertToStreams(void)
 {
-	Uint8 *pNewYMWorkspace;
-	Uint8 *pTmpYMData, *pNewYMData;
-	Uint8 *pTmpYMStream, *pNewYMStream;
+	uint8_t *pNewYMWorkspace;
+	uint8_t *pTmpYMData, *pNewYMData;
+	uint8_t *pTmpYMStream, *pNewYMStream;
 	int Reg, Count;
 
 	/* Allocate new workspace to convert data to */
-	pNewYMWorkspace = (Uint8 *)malloc(YM_RECORDSIZE);
+	pNewYMWorkspace = (uint8_t *)malloc(YM_RECORDSIZE);
 	if (pNewYMWorkspace)
 	{
 		/* Convert data, first copy over header */

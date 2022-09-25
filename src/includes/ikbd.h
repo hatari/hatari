@@ -13,7 +13,7 @@
 typedef struct {
   int X,Y;                        /* Position of mouse */
   int MaxX,MaxY;                  /* Max limits of mouse */
-  Uint8 PrevReadAbsMouseButtons;  /* Previous button mask for 'IKBD_Cmd_ReadAbsMousePos' */
+  uint8_t PrevReadAbsMouseButtons;  /* Previous button mask for 'IKBD_Cmd_ReadAbsMousePos' */
 } ABS_MOUSE;
 
 typedef struct {
@@ -21,14 +21,14 @@ typedef struct {
   int DeltaX,DeltaY;              /* Final XY mouse position delta */
   int XScale,YScale;              /* Scale of mouse */
   int XThreshold,YThreshold;      /* Threshold */
-  Uint8 KeyCodeDeltaX,KeyCodeDeltaY;    /* Delta X,Y for mouse keycode mode */
+  uint8_t KeyCodeDeltaX,KeyCodeDeltaY;    /* Delta X,Y for mouse keycode mode */
   int YAxis;                      /* Y-Axis direction */
-  Uint8 Action;                   /* Bit 0-Report abs position of press, Bit 1-Report abs on release */
+  uint8_t Action;                   /* Bit 0-Report abs position of press, Bit 1-Report abs on release */
 } MOUSE;
 
 typedef struct {
-  Uint8 JoyData[2];               /* Joystick details */
-  Uint8 PrevJoyData[2];           /* Previous joystick details, used to check for 'IKBD_SendAutoJoysticks' */
+  uint8_t JoyData[2];               /* Joystick details */
+  uint8_t PrevJoyData[2];           /* Previous joystick details, used to check for 'IKBD_SendAutoJoysticks' */
 } JOY;
 
 typedef struct {
@@ -45,14 +45,14 @@ typedef struct {
 #define KEYBOARD_BUFFER_MASK      (SIZE_KEYBOARD_BUFFER-1)
 #define SIZE_KEYBOARDINPUT_BUFFER 8
 typedef struct {
-  Uint8 KeyStates[KBD_MAX_SCANCODE + 1];	/* State of ST keys, TRUE is down */
+  uint8_t KeyStates[KBD_MAX_SCANCODE + 1];	/* State of ST keys, TRUE is down */
 
-  Uint8 Buffer[SIZE_KEYBOARD_BUFFER];		/* Keyboard output buffer */
+  uint8_t Buffer[SIZE_KEYBOARD_BUFFER];		/* Keyboard output buffer */
   int BufferHead,BufferTail;			/* Pointers into above buffer */
   int NbBytesInOutputBuffer;			/* Number of bytes in output buffer */
   bool PauseOutput;				/* If true, don't send bytes anymore (see command 0x13) */
 
-  Uint8 InputBuffer[SIZE_KEYBOARDINPUT_BUFFER];	/* Buffer for data send from CPU to keyboard processor (commands) */
+  uint8_t InputBuffer[SIZE_KEYBOARDINPUT_BUFFER];	/* Buffer for data send from CPU to keyboard processor (commands) */
   int nBytesInInputBuffer;			/* Number of command bytes in above buffer */
 
   int bLButtonDown,bRButtonDown;                /* Mouse states in emulation system, BUTTON_xxxx */
@@ -94,8 +94,8 @@ extern void IKBD_InterruptHandler_AutoSend(void);
 
 extern void IKBD_UpdateClockOnVBL ( void );
 
-extern void IKBD_PressSTKey(Uint8 ScanCode, bool bPress);
+extern void IKBD_PressSTKey(uint8_t ScanCode, bool bPress);
 
-extern void IKBD_Info(FILE *fp, Uint32 dummy);
+extern void IKBD_Info(FILE *fp, uint32_t dummy);
 
 #endif  /* HATARI_IKBD_H */

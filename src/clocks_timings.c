@@ -364,7 +364,7 @@ void	ClocksTimings_InitMachine ( MACHINETYPE MachineType )
  */
 void	ClocksTimings_UpdateCpuFreqEmul ( MACHINETYPE MachineType , int nCpuFreqShift )
 {
-	Uint32 Cpu_Freq_Emul;
+	uint32_t Cpu_Freq_Emul;
 
 	Cpu_Freq_Emul = MachineClocks.CPU_Freq;
 
@@ -402,9 +402,9 @@ void	ClocksTimings_UpdateCpuFreqEmul ( MACHINETYPE MachineType , int nCpuFreqShi
  * This value is only precisely known for STF/STE running at 50, 60 or 71 Hz.
  * For the other machines, we return CPU_Freq_Emul / ScreenRefreshRate
  */
-Uint32	ClocksTimings_GetCyclesPerVBL ( MACHINETYPE MachineType , int ScreenRefreshRate )
+uint32_t	ClocksTimings_GetCyclesPerVBL ( MACHINETYPE MachineType , int ScreenRefreshRate )
 {
-	Uint32	CyclesPerVBL;
+	uint32_t	CyclesPerVBL;
 
 	/* STF and STE have the same numbers of cycles per VBL (numbers are for an 8 MHz CPU) */
 	if (MachineType == MACHINE_ST || MachineType == MACHINE_MEGA_ST
@@ -458,11 +458,11 @@ Uint32	ClocksTimings_GetCyclesPerVBL ( MACHINETYPE MachineType , int ScreenRefre
  *	NTSC STF/STE video PAL :	49.986 VBL/sec
  *	NTSC STF/STE video NTSC :	59.958 VBL/sec
  *
- * The returned number of VBL per sec is << 24 (=CLOCKS_TIMINGS_SHIFT_VBL) to simulate floating point using Uint32.
+ * The returned number of VBL per sec is << 24 (=CLOCKS_TIMINGS_SHIFT_VBL) to simulate floating point using uint32_t.
  */
-Uint32	ClocksTimings_GetVBLPerSec ( MACHINETYPE MachineType , int ScreenRefreshRate )
+uint32_t	ClocksTimings_GetVBLPerSec ( MACHINETYPE MachineType , int ScreenRefreshRate )
 {
-	Uint32	VBLPerSec;							/* Upper 8 bits are for int part, 24 lower bits for float part */
+	uint32_t	VBLPerSec;							/* Upper 8 bits are for int part, 24 lower bits for float part */
 
 
 	if ( RoundVBLPerSec == true )
@@ -472,7 +472,7 @@ Uint32	ClocksTimings_GetVBLPerSec ( MACHINETYPE MachineType , int ScreenRefreshR
 
 	else
 	{
-		VBLPerSec = ( (Sint64)MachineClocks.CPU_Freq_Emul << CLOCKS_TIMINGS_SHIFT_VBL ) / ClocksTimings_GetCyclesPerVBL ( MachineType , ScreenRefreshRate );
+		VBLPerSec = ( (int64_t)MachineClocks.CPU_Freq_Emul << CLOCKS_TIMINGS_SHIFT_VBL ) / ClocksTimings_GetCyclesPerVBL ( MachineType , ScreenRefreshRate );
 	}
 
 //fprintf ( stderr , "clock vbl per sec %d %d %d -> %d\n" , MachineType , MachineClocks.CPU_Freq_Emul , ScreenRefreshRate , VBLPerSec );
@@ -490,18 +490,18 @@ Uint32	ClocksTimings_GetVBLPerSec ( MACHINETYPE MachineType , int ScreenRefreshR
  *	PAL  STF/STE video PAL :	19979 micro sec  (instead of 20000 for 50 Hz)
  *	PAL  STF/STE video NTSC :	16656 micro sec  (instead of 16667 for 60 Hz)
  */
-Uint32	ClocksTimings_GetVBLDuration_micro ( MACHINETYPE MachineType , int ScreenRefreshRate )
+uint32_t	ClocksTimings_GetVBLDuration_micro ( MACHINETYPE MachineType , int ScreenRefreshRate )
 {
-	Uint32	VBLDuration_micro;
+	uint32_t	VBLDuration_micro;
 
 	if ( RoundVBLPerSec == true )
 	{
-		VBLDuration_micro = (Uint32) (1000000.0 / ScreenRefreshRate + 0.5);
+		VBLDuration_micro = (uint32_t) (1000000.0 / ScreenRefreshRate + 0.5);
 	}
 
 	else
 	{
-		VBLDuration_micro = (Uint32) (1000000.0 * ClocksTimings_GetCyclesPerVBL ( MachineType , ScreenRefreshRate ) / MachineClocks.CPU_Freq_Emul + 0.5);
+		VBLDuration_micro = (uint32_t) (1000000.0 * ClocksTimings_GetCyclesPerVBL ( MachineType , ScreenRefreshRate ) / MachineClocks.CPU_Freq_Emul + 0.5);
 	}
 
 //fprintf ( stderr , "clock vbl duration %d %d %d -> %d\n" , MachineType , MachineClocks.CPU_Freq_Emul , ScreenRefreshRate , VBLDuration_micro );
@@ -524,18 +524,18 @@ Uint32	ClocksTimings_GetVBLDuration_micro ( MACHINETYPE MachineType , int Screen
  *	PAL  STF/STE video PAL :	881.07 samples per VBL  (instead of 882 for 50 Hz)
  *					44053.56 samples for 50 VBLs (instead of 44100 for 1 sec at 50 Hz)
  */
-Sint64	ClocksTimings_GetSamplesPerVBL ( MACHINETYPE MachineType , int ScreenRefreshRate , int AudioFreq )
+int64_t	ClocksTimings_GetSamplesPerVBL ( MACHINETYPE MachineType , int ScreenRefreshRate , int AudioFreq )
 {
-	Sint64	SamplesPerVBL;
+	int64_t	SamplesPerVBL;
 
 	if ( RoundVBLPerSec == true )
 	{
-		SamplesPerVBL = ( ((Sint64)AudioFreq) << 28 ) / ScreenRefreshRate;
+		SamplesPerVBL = ( ((int64_t)AudioFreq) << 28 ) / ScreenRefreshRate;
 	}
 
 	else
 	{
-		SamplesPerVBL = ( ((Sint64)AudioFreq * ClocksTimings_GetCyclesPerVBL ( MachineType , ScreenRefreshRate ) ) << 28 ) / MachineClocks.CPU_Freq_Emul;
+		SamplesPerVBL = ( ((int64_t)AudioFreq * ClocksTimings_GetCyclesPerVBL ( MachineType , ScreenRefreshRate ) ) << 28 ) / MachineClocks.CPU_Freq_Emul;
 	}
 
 //fprintf ( stderr , "clock sample per vbl %d %d %d -> %ld\n" , MachineType , MachineClocks.CPU_Freq_Emul , AudioFreq , SamplesPerVBL );
@@ -555,11 +555,11 @@ Sint64	ClocksTimings_GetSamplesPerVBL ( MACHINETYPE MachineType , int ScreenRefr
  * precise results than using floating point, because there's no roundings that accumulate
  * after a while.
  */
-void	ClocksTimings_ConvertCycles ( Uint64 CyclesIn , Uint64 ClockFreqIn , CLOCKS_CYCLES_STRUCT *CyclesStructOut , Uint64 ClockFreqOut )
+void	ClocksTimings_ConvertCycles ( uint64_t CyclesIn , uint64_t ClockFreqIn , CLOCKS_CYCLES_STRUCT *CyclesStructOut , uint64_t ClockFreqOut )
 {
-	Uint64	CyclesTotal;
-	Uint64	CyclesOut;
-	Uint64	CyclesOut_remainder;
+	uint64_t	CyclesTotal;
+	uint64_t	CyclesOut;
+	uint64_t	CyclesOut_remainder;
 
 	CyclesTotal = CyclesIn * ClockFreqOut;
 	CyclesTotal += CyclesStructOut->Remainder;
