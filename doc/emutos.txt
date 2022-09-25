@@ -414,8 +414,10 @@ Demos:
 - Let Go (by Dekadence)
 - Lichthaus (by Newline)
 - Lots of Dots (by Acid Maker & Friends)
+- MMoDA (Mini Museum of Digitized Arts) exhibitions (by Pepe)
 - MonaST (by GGN/tln, 256B intro)
 - Motus (by SMFX)
+- Music Box 128k (by Michael Lunn, in STOS)
 - My Galaxy (by Dune & Sector One & MJJ Prod)
 - Music Disc 1 (by G. Gaubatz)
 - No Cooper (by 1984)
@@ -931,6 +933,7 @@ Working MIDI programs:
 - Fractal Music Composer 2
 - FretCalc
 - Henry Cosh's Accompanist
+- Largo (MIDI playlist manager)
 - Ludwig
 - M
 - Mandala
@@ -1219,8 +1222,10 @@ Working applications:
   - https://gtello.pagesperso-orange.fr/mplayere.htm
 - PixArt4
   - http://www.1632systems.co.uk/www/html/Product/pixart.htm
-- Vision v4.7 (works also in ST, but is much nicer in TT low/med)
+- Vision v4.9 (works also in ST, but is much nicer in TT low/med)
   - http://jlusetti.free.fr/visione.htm
+- ZXR v0.1m (ZX Spectrum emulator for 020+ machines)
+  - https://www.atari-forum.com/viewtopic.php?t=34048
 
 Working demos:
 - 256mbrot, Bragg, Glasstro, Orion-B, Yabt (TT/Falcon intros by ray//.tSCc)
@@ -1457,6 +1462,8 @@ Games working under EmuTOS >= v1.0:
 - Jeu de Poker (VGA only)
   - Needs 640x480@256 mode
 - King Solitaire
+- Kniff (VGA only, Omikron Basic v3.60)
+  - needs 640x480@256 mode
 - Lamemine
 - L'Abbaye Des Morts
 - Let's play Shanghai
@@ -1509,7 +1516,7 @@ Games working under EmuTOS >= v1.1.1 (DSP support + fixes):
 - Double Bobble 2000* (by Reservoir Gods)
   - For v1.0, disable DSP from Hatari
 - Epi-Lepsie (by PARX)
-- Gold island (demo, VGA only)
+- Gold island (demo, VGA only, Omikron Basic v3.5x)
 - H2O* (by EKO)
 - Jewelz (VGA only)
   - For v1.0, select hatari mode (F2) to disable DSP music
@@ -1611,6 +1618,7 @@ Applications working under EmuTOS >= v1.0:
 - Kronos v1.91 benchmark
 - Rainbow 2 multimedia, needs MMU
 - Smurf (GEM image viewer)
+- Videlity v1.00r (resolution enhancer)
 
 Applications working under EmuTOS >= v1.1 (with DSP support):
 - AceMidi demo (v1.01)
@@ -1631,6 +1639,7 @@ Applications working under EmuTOS >= v1.1 (with DSP support):
 - GemGT2 v1.1, GemMOD v0.85, and GemPLAY v1.95
   - http://yescrew.atari.org/eng/products.htm
 - Graoumf Tracker (v0.8890)
+- MegaPlayer v1.15 (MegaTracker Player v1.1)
 - Iphigenie v1.4b (sound system monitor and manager / DSP LOD loader)
 - Voxx (vocoder), demo and free version
   - GUI looks OK, does not yet fully work with Hatari to test rest
