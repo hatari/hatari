@@ -32,21 +32,21 @@ static callinfo_t dsp_callinfo;
 #define MAX_DSP_PROFILE_VALUE 0xFFFFFFFFFFFFFFFFLL
 
 typedef struct {
-	Uint64 count;		/* how many times this address is used */
-	Uint64 cycles;		/* how many DSP cycles was taken at this address */
-	Uint16 min_cycle;
-	Uint16 max_cycle;
+	uint64_t count;		/* how many times this address is used */
+	uint64_t cycles;		/* how many DSP cycles was taken at this address */
+	uint16_t min_cycle;
+	uint16_t max_cycle;
 } dsp_profile_item_t;
 
 static struct {
 	dsp_profile_item_t *data; /* profile data */
 	profile_area_t ram;   /* statistics for whole memory */
-	Uint16 *sort_arr;     /* data indexes used for sorting */
-	Uint16 prev_pc;       /* previous PC for which the cycles are for */
-	Uint16 loop_start;    /* address of last loop start */
-	Uint16 loop_end;      /* address of last loop end */
-	Uint32 loop_count;    /* how many times it was looped */
-	Uint32 disasm_addr;   /* 'dspaddresses' command start address */
+	uint16_t *sort_arr;     /* data indexes used for sorting */
+	uint16_t prev_pc;       /* previous PC for which the cycles are for */
+	uint16_t loop_start;    /* address of last loop start */
+	uint16_t loop_end;      /* address of last loop end */
+	uint32_t loop_count;    /* how many times it was looped */
+	uint32_t disasm_addr;   /* 'dspaddresses' command start address */
 	bool processed;	      /* true when data is already processed */
 	bool enabled;         /* true when profiling enabled */
 } dsp_profile;
@@ -58,7 +58,8 @@ static struct {
  * Get DSP cycles, count and count percentage for given address.
  * Return true if data was available and non-zero, false otherwise.
  */
-bool Profile_DspAddressData(Uint16 addr, float *percentage, Uint64 *count, Uint64 *cycles, Uint16 *cycle_diff)
+bool Profile_DspAddressData(uint16_t addr, float *percentage, uint64_t *count,
+                            uint64_t *cycles, uint16_t *cycle_diff)
 {
 	dsp_profile_item_t *item;
 	if (!dsp_profile.data) {
@@ -118,12 +119,12 @@ void Profile_DspShowStats(void)
  * Show DSP instructions which execution was profiled, in the address order,
  * starting from the given address.  Return next disassembly address.
  */
-Uint16 Profile_DspShowAddresses(Uint32 addr, Uint32 upper, FILE *out, paging_t use_paging)
+uint16_t Profile_DspShowAddresses(uint32_t addr, uint32_t upper, FILE *out, paging_t use_paging)
 {
 	int show, shown, addrs, active;
 	dsp_profile_item_t *data;
-	Uint16 nextpc;
-	Uint32 end;
+	uint16_t nextpc;
+	uint32_t end;
 	const char *symbol;
 
 	data = dsp_profile.data;
@@ -186,8 +187,8 @@ Uint16 Profile_DspShowAddresses(Uint32 addr, Uint32 upper, FILE *out, paging_t u
  */
 static int cmp_dsp_cycles(const void *p1, const void *p2)
 {
-	Uint64 count1 = dsp_profile.data[*(const Uint16*)p1].cycles;
-	Uint64 count2 = dsp_profile.data[*(const Uint16*)p2].cycles;
+	uint64_t count1 = dsp_profile.data[*(const uint16_t*)p1].cycles;
+	uint64_t count2 = dsp_profile.data[*(const uint16_t*)p2].cycles;
 	if (count1 > count2) {
 		return -1;
 	}
@@ -203,10 +204,10 @@ static int cmp_dsp_cycles(const void *p1, const void *p2)
 void Profile_DspShowCycles(int show)
 {
 	int active;
-	Uint16 *sort_arr, *end, addr;
+	uint16_t *sort_arr, *end, addr;
 	dsp_profile_item_t *data = dsp_profile.data;
 	float percentage;
-	Uint64 count;
+	uint64_t count;
 
 	if (!data) {
 		fprintf(stderr, "ERROR: no DSP profiling data available!\n");
@@ -236,8 +237,8 @@ void Profile_DspShowCycles(int show)
  */
 static int cmp_dsp_count(const void *p1, const void *p2)
 {
-	Uint64 count1 = dsp_profile.data[*(const Uint16*)p1].count;
-	Uint64 count2 = dsp_profile.data[*(const Uint16*)p2].count;
+	uint64_t count1 = dsp_profile.data[*(const uint16_t*)p1].count;
+	uint64_t count2 = dsp_profile.data[*(const uint16_t*)p2].count;
 	if (count1 > count2) {
 		return -1;
 	}
@@ -256,10 +257,10 @@ void Profile_DspShowCounts(int show, bool only_symbols)
 {
 	dsp_profile_item_t *data = dsp_profile.data;
 	int symbols, matched, active;
-	Uint16 *sort_arr, *end, addr;
+	uint16_t *sort_arr, *end, addr;
 	const char *name;
 	float percentage;
-	Uint64 count;
+	uint64_t count;
 
 	if (!data) {
 		fprintf(stderr, "ERROR: no DSP profiling data available!\n");
@@ -315,7 +316,7 @@ void Profile_DspShowCounts(int show, bool only_symbols)
 }
 
 
-static const char * addr2name(Uint32 addr, Uint64 *total)
+static const char * addr2name(uint32_t addr, uint64_t *total)
 {
 	*total = dsp_profile.data[addr].count;
 	return Symbols_GetByDspAddress(addr, SYMTYPE_TEXT);
@@ -409,7 +410,7 @@ bool Profile_DspStart(void)
 }
 
 /* return true if pc is next instruction for previous pc */
-static bool is_prev_instr(Uint16 prev_pc, Uint16 pc)
+static bool is_prev_instr(uint16_t prev_pc, uint16_t pc)
 {
 	/* just moved to next instruction (1-2 words)? */
 	if (prev_pc < pc && (pc - prev_pc) <= 4) {
@@ -419,10 +420,10 @@ static bool is_prev_instr(Uint16 prev_pc, Uint16 pc)
 }
 
 /* return branch type based on caller instruction type */
-static calltype_t dsp_opcode_type(Uint16 prev_pc, Uint16 pc)
+static calltype_t dsp_opcode_type(uint16_t prev_pc, uint16_t pc)
 {
 	const char *dummy;
-	Uint32 opcode;
+	uint32_t opcode;
 
 	/* 24-bit instruction opcode */
 	opcode = DSP_ReadMemory(prev_pc, 'P', &dummy) & 0xFFFFFF;
@@ -514,11 +515,11 @@ static calltype_t dsp_opcode_type(Uint16 prev_pc, Uint16 pc)
  * instruction, that's why "pc" argument for this function actually
  * needs to be previous PC.
  */
-static void collect_calls(Uint16 pc, counters_t *counters)
+static void collect_calls(uint16_t pc, counters_t *counters)
 {
 	calltype_t flag;
-	Uint16 prev_pc;
-	Uint32 caller_pc;
+	uint16_t prev_pc;
+	uint32_t caller_pc;
 	int idx;
 
 	prev_pc = dsp_callinfo.prev_pc;
@@ -581,7 +582,7 @@ static void log_last_loop(void)
 void Profile_DspUpdate(void)
 {
 	dsp_profile_item_t *prev;
-	Uint16 pc, prev_pc, cycles;
+	uint16_t pc, prev_pc, cycles;
 	counters_t *counters;
 
 	prev_pc = dsp_profile.prev_pc;
@@ -640,11 +641,11 @@ void Profile_DspUpdate(void)
 /**
  * Helper for collecting DSP profile area statistics.
  */
-static void update_area_item(profile_area_t *area, Uint16 addr, dsp_profile_item_t *item)
+static void update_area_item(profile_area_t *area, uint16_t addr, dsp_profile_item_t *item)
 {
-	Uint64 cycles = item->cycles;
-	Uint64 count = item->count;
-	Uint16 diff;
+	uint64_t cycles = item->cycles;
+	uint64_t count = item->count;
+	uint16_t diff;
 
 	if (!count) {
 		return;
@@ -678,8 +679,8 @@ void Profile_DspStop(void)
 {
 	dsp_profile_item_t *item;
 	profile_area_t *area;
-	Uint16 *sort_arr;
-	Uint32 addr;
+	uint16_t *sort_arr;
+	uint32_t addr;
 
 	if (dsp_profile.processed || !dsp_profile.enabled) {
 		return;
@@ -737,7 +738,7 @@ void Profile_DspStop(void)
  * Get pointers to DSP profile enabling and disasm address variables
  * for updating them (in parser).
  */
-void Profile_DspGetPointers(bool **enabled, Uint32 **disasm_addr)
+void Profile_DspGetPointers(bool **enabled, uint32_t **disasm_addr)
 {
 	*disasm_addr = &dsp_profile.disasm_addr;
 	*enabled = &dsp_profile.enabled;
@@ -746,8 +747,8 @@ void Profile_DspGetPointers(bool **enabled, Uint32 **disasm_addr)
 /**
  * Get callinfo & symbol search pointers for stack walking.
  */
-void Profile_DspGetCallinfo(callinfo_t **callinfo, const char* (**get_caller)(Uint32*),
-			    const char* (**get_symbol)(Uint32, symtype_t))
+void Profile_DspGetCallinfo(callinfo_t **callinfo, const char* (**get_caller)(uint32_t*),
+			    const char* (**get_symbol)(uint32_t, symtype_t))
 {
 	*callinfo = &(dsp_callinfo);
 	*get_caller = Symbols_GetBeforeDspAddress;

@@ -280,7 +280,7 @@ void DSP_SetDebugging(bool enabled)
 /**
  * Get DSP program counter (for debugging)
  */
-Uint16 DSP_GetPC(void)
+uint16_t DSP_GetPC(void)
 {
 #if ENABLE_DSP_EMU
 	if (bDspEnabled)
@@ -293,12 +293,12 @@ Uint16 DSP_GetPC(void)
 /**
  * Get next DSP PC without output (for debugging)
  */
-Uint16 DSP_GetNextPC(Uint16 pc)
+uint16_t DSP_GetNextPC(uint16_t pc)
 {
 #if ENABLE_DSP_EMU
 	/* code is reduced copy from dsp56k_execute_one_disasm_instruction() */
 	dsp_core_t dsp_core_save;
-	Uint16 instruction_length;
+	uint16_t instruction_length;
 
 	if (!bDspEnabled)
 		return 0;
@@ -325,7 +325,7 @@ Uint16 DSP_GetNextPC(Uint16 pc)
 /**
  * Get current DSP instruction cycles (for profiling)
  */
-Uint16 DSP_GetInstrCycles(void)
+uint16_t DSP_GetInstrCycles(void)
 {
 #if ENABLE_DSP_EMU
 	if (bDspEnabled)
@@ -339,10 +339,10 @@ Uint16 DSP_GetInstrCycles(void)
 /**
  * Disassemble DSP code between given addresses, return next PC address
  */
-Uint16 DSP_DisasmAddress(FILE *out, Uint16 lowerAdr, Uint16 UpperAdr)
+uint16_t DSP_DisasmAddress(FILE *out, uint16_t lowerAdr, uint16_t UpperAdr)
 {
 #if ENABLE_DSP_EMU
-	Uint16 dsp_pc;
+	uint16_t dsp_pc;
 
 	for (dsp_pc=lowerAdr; dsp_pc<=UpperAdr; dsp_pc++) {
 		dsp_pc += dsp56k_execute_one_disasm_instruction(out, dsp_pc);
@@ -363,7 +363,7 @@ Uint16 DSP_DisasmAddress(FILE *out, Uint16 lowerAdr, Uint16 UpperAdr)
  * Return the value at given address. For valid values AND the return
  * value with BITMASK(24).
  */
-Uint32 DSP_ReadMemory(Uint16 address, char space_id, const char **mem_str)
+uint32_t DSP_ReadMemory(uint16_t address, char space_id, const char **mem_str)
 {
 #if ENABLE_DSP_EMU
 	static const char *spaces[3][4] = {
@@ -444,10 +444,10 @@ Uint32 DSP_ReadMemory(Uint16 address, char space_id, const char **mem_str)
  * Output memory values between given addresses in given DSP address space.
  * Return next DSP address value.
  */
-Uint16 DSP_DisasmMemory(FILE *fp, Uint16 dsp_memdump_addr, Uint16 dsp_memdump_upper, char space)
+uint16_t DSP_DisasmMemory(FILE *fp, uint16_t dsp_memdump_addr, uint16_t dsp_memdump_upper, char space)
 {
 #if ENABLE_DSP_EMU
-	Uint32 mem, mem2, value;
+	uint32_t mem, mem2, value;
 	const char *mem_str;
 
 	for (mem = dsp_memdump_addr; mem <= dsp_memdump_upper; mem++) {
@@ -489,7 +489,7 @@ Uint16 DSP_DisasmMemory(FILE *fp, Uint16 dsp_memdump_addr, Uint16 dsp_memdump_up
  * Show information on DSP core state which isn't
  * shown by any of the other commands (dd, dm, dr).
  */
-void DSP_Info(FILE *fp, Uint32 dummy)
+void DSP_Info(FILE *fp, uint32_t dummy)
 {
 #if ENABLE_DSP_EMU
 	int i, j;
@@ -537,7 +537,7 @@ void DSP_Info(FILE *fp, Uint32 dummy)
 void DSP_DisasmRegisters(FILE *fp)
 {
 #if ENABLE_DSP_EMU
-	Uint32 i;
+	uint32_t i;
 
 	fprintf(fp, "A: A2: %02x  A1: %06x  A0: %06x\n",
 		dsp_core.registers[DSP_REG_A2], dsp_core.registers[DSP_REG_A1], dsp_core.registers[DSP_REG_A0]);
@@ -569,15 +569,15 @@ void DSP_DisasmRegisters(FILE *fp)
  * need special handling (in DSP*SetRegister()) when they are set.
  * Return the register width in bits or zero for an error.
  */
-int DSP_GetRegisterAddress(const char *regname, Uint32 **addr, Uint32 *mask)
+int DSP_GetRegisterAddress(const char *regname, uint32_t **addr, uint32_t *mask)
 {
 #if ENABLE_DSP_EMU
 #define MAX_REGNAME_LEN 4
 	typedef struct {
 		const char name[MAX_REGNAME_LEN];
-		Uint32 *addr;
+		uint32_t *addr;
 		size_t bits;
-		Uint32 mask;
+		uint32_t mask;
 	} reg_addr_t;
 
 	/* sorted by name so that this can be bisected */
@@ -696,10 +696,10 @@ int DSP_GetRegisterAddress(const char *regname, Uint32 **addr, Uint32 *mask)
 /**
  * Set given DSP register value, return false if unknown register given
  */
-bool DSP_Disasm_SetRegister(const char *arg, Uint32 value)
+bool DSP_Disasm_SetRegister(const char *arg, uint32_t value)
 {
 #if ENABLE_DSP_EMU
-	Uint32 *addr, mask, sp_value;
+	uint32_t *addr, mask, sp_value;
 	int bits;
 
 	/* first check registers needing special handling... */
@@ -753,7 +753,7 @@ bool DSP_Disasm_SetRegister(const char *arg, Uint32 value)
 /**
  * Read SSI transmit value
  */
-Uint32 DSP_SsiReadTxValue(void)
+uint32_t DSP_SsiReadTxValue(void)
 {
 #if ENABLE_DSP_EMU
 	return dsp_core.ssi.transmit_value;
@@ -765,7 +765,7 @@ Uint32 DSP_SsiReadTxValue(void)
 /**
  * Write SSI receive value
  */
-void DSP_SsiWriteRxValue(Uint32 value)
+void DSP_SsiWriteRxValue(uint32_t value)
 {
 #if ENABLE_DSP_EMU
 	dsp_core.ssi.received_value = value & 0xffffff;
@@ -789,7 +789,7 @@ void DSP_SsiTransmit_SC0(void)
 #endif
 }
 
-void DSP_SsiReceive_SC1(Uint32 FrameCounter)
+void DSP_SsiReceive_SC1(uint32_t FrameCounter)
 {
 #if ENABLE_DSP_EMU
 	dsp_core_ssi_Receive_SC1(FrameCounter);
@@ -803,14 +803,14 @@ void DSP_SsiTransmit_SC1(void)
 #endif
 }
 
-void DSP_SsiReceive_SC2(Uint32 FrameCounter)
+void DSP_SsiReceive_SC2(uint32_t FrameCounter)
 {
 #if ENABLE_DSP_EMU
 	dsp_core_ssi_Receive_SC2(FrameCounter);
 #endif
 }
 
-void DSP_SsiTransmit_SC2(Uint32 frame)
+void DSP_SsiTransmit_SC2(uint32_t frame)
 {
 #if ENABLE_DSP_EMU
 	Crossbar_DmaRecordInHandShakeMode_Frame(frame);
@@ -837,7 +837,7 @@ void DSP_SsiTransmit_SCK(void)
  */
 void DSP_HandleReadAccess(void)
 {
-	Uint32 addr;
+	uint32_t addr;
 	Uint8 value;
 	bool multi_access = false;
 
@@ -865,7 +865,7 @@ void DSP_HandleReadAccess(void)
  */
 void DSP_HandleWriteAccess(void)
 {
-	Uint32 addr;
+	uint32_t addr;
 	bool multi_access = false;
 
 	for (addr = IoAccessBaseAddress; addr < IoAccessBaseAddress+nIoMemAccessSize; addr++)

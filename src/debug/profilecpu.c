@@ -62,14 +62,14 @@ static callinfo_t cpu_callinfo;
 #define MAX_CPU_PROFILE_VALUE 0xFFFFFFFF
 
 typedef struct {
-	Uint32 count;	/* how many times this address instruction is executed */
-	Uint32 cycles;	/* how many CPU cycles was taken at this address */
+	uint32_t count;	/* how many times this address instruction is executed */
+	uint32_t cycles;	/* how many CPU cycles was taken at this address */
 #if DEBUG_CACHE		  /* track also less relevant cache events */
-	Uint32 i_hits;    /* how many CPU i-cache hits happened at this address */
-	Uint32 d_misses;  /* how many CPU d-cache misses happened at this address */
+	uint32_t i_hits;    /* how many CPU i-cache hits happened at this address */
+	uint32_t d_misses;  /* how many CPU d-cache misses happened at this address */
 #endif
-	Uint32 i_misses;  /* how many CPU i-cache misses happened at this address */
-	Uint32 d_hits;    /* how many CPU d-cache hits happened at this address */
+	uint32_t i_misses;  /* how many CPU i-cache misses happened at this address */
+	uint32_t d_hits;    /* how many CPU d-cache hits happened at this address */
 } cpu_profile_item_t;
 
 
@@ -82,25 +82,25 @@ typedef struct {
 static struct {
 	counters_t all;       /* total counts for all areas */
 	cpu_profile_item_t *data; /* profile data items */
-	Uint32 size;          /* number of allocated profile data items */
+	uint32_t size;          /* number of allocated profile data items */
 	profile_area_t ttram; /* TT-RAM stats */
 	profile_area_t ram;   /* normal RAM stats */
 	profile_area_t rom;   /* cartridge ROM stats */
 	profile_area_t tos;   /* ROM TOS stats */
 	int active;           /* number of active data items in all areas */
-	Uint32 *sort_arr;     /* data indexes used for sorting */
+	uint32_t *sort_arr;     /* data indexes used for sorting */
 	int prev_family;      /* previous instruction opcode family */
 	Uint64 prev_cycles;   /* previous instruction cycles counter */
-	Uint32 prev_pc;       /* previous instruction address */
-	Uint32 loop_start;    /* address of last loop start */
-	Uint32 loop_end;      /* address of last loop end */
-	Uint32 loop_count;    /* how many times it was looped */
-	Uint32 disasm_addr;   /* 'addresses' command start address */
-	Uint32 i_prefetched;  /* instructions that don't incur prefetch hit/miss */
-	Uint32 i_hit_counts[MAX_I_HITS];    /* I-cache hit counts */
-	Uint32 d_hit_counts[MAX_D_HITS];    /* D-cache hit counts */
-	Uint32 i_miss_counts[MAX_I_MISSES]; /* I-cache miss counts */
-	Uint32 d_miss_counts[MAX_D_MISSES]; /* D-cache miss counts */
+	uint32_t prev_pc;       /* previous instruction address */
+	uint32_t loop_start;    /* address of last loop start */
+	uint32_t loop_end;      /* address of last loop end */
+	uint32_t loop_count;    /* how many times it was looped */
+	uint32_t disasm_addr;   /* 'addresses' command start address */
+	uint32_t i_prefetched;  /* instructions that don't incur prefetch hit/miss */
+	uint32_t i_hit_counts[MAX_I_HITS];    /* I-cache hit counts */
+	uint32_t d_hit_counts[MAX_D_HITS];    /* D-cache hit counts */
+	uint32_t i_miss_counts[MAX_I_MISSES]; /* I-cache miss counts */
+	uint32_t d_miss_counts[MAX_D_MISSES]; /* D-cache miss counts */
 	bool processed;	      /* true when data is already processed */
 	bool enabled;         /* true when profiling enabled */
 } cpu_profile;
@@ -127,7 +127,7 @@ static cpu_warnings_t cpu_warnings;
 /**
  * convert Atari memory address to sorting array profile data index.
  */
-static inline Uint32 address2index(Uint32 pc)
+static inline uint32_t address2index(uint32_t pc)
 {
 	if (unlikely(pc & 1)) {
 		if (++cpu_warnings.odd <= MAX_SHOW_COUNT) {
@@ -181,7 +181,7 @@ static inline Uint32 address2index(Uint32 pc)
 /**
  * convert sorting array profile data index to Atari memory address.
  */
-static Uint32 index2address(Uint32 idx)
+static uint32_t index2address(uint32_t idx)
 {
 	idx <<= 1;
 	/* RAM */
@@ -221,10 +221,10 @@ static Uint32 index2address(Uint32 idx)
 /**
  * Return true if there's profile data for given address, false otherwise
  */
-bool Profile_CpuAddr_HasData(Uint32 addr)
+bool Profile_CpuAddr_HasData(uint32_t addr)
 {
 	cpu_profile_item_t *item;
-	Uint32 idx;
+	uint32_t idx;
 
 	if (!cpu_profile.data) {
 		return false;
@@ -244,11 +244,11 @@ bool Profile_CpuAddr_HasData(Uint32 addr)
  * Return zero if there's no profiling data for given address,
  * otherwise return the number of bytes consumed from the given buffer.
  */
-int Profile_CpuAddr_DataStr(char *buffer, int maxlen, Uint32 addr)
+int Profile_CpuAddr_DataStr(char *buffer, int maxlen, uint32_t addr)
 {
 	cpu_profile_item_t *item;
 	float percentage;
-	Uint32 idx;
+	uint32_t idx;
 	int count;
 
 	assert(buffer && maxlen > 0);
@@ -386,10 +386,10 @@ void Profile_CpuShowStats(void)
 /**
  * show percentage histogram of given array items
  */
-static void show_histogram(const char *title, int count, Uint32 *items)
+static void show_histogram(const char *title, int count, uint32_t *items)
 {
 	const Uint64 maxval = cpu_profile.all.count;
-	Uint32 value;
+	uint32_t value;
 	int i;
 
 	fprintf(stderr, "\n%s, number of occurrences:\n", title);
@@ -437,13 +437,13 @@ void Profile_CpuShowCaches(void)
  * Show CPU instructions which execution was profiled, in the address order,
  * starting from the given address.  Return next disassembly address.
  */
-Uint32 Profile_CpuShowAddresses(Uint32 lower, Uint32 upper, FILE *out, paging_t use_paging)
+uint32_t Profile_CpuShowAddresses(uint32_t lower, uint32_t upper, FILE *out, paging_t use_paging)
 {
 	int oldcols[DISASM_COLUMNS], newcols[DISASM_COLUMNS];
 	int show, shown, addrs, active;
 	const char *symbol;
 	cpu_profile_item_t *data;
-	Uint32 idx, end, size;
+	uint32_t idx, end, size;
 	uaecptr nextpc, addr;
 
 	data = cpu_profile.data;
@@ -536,8 +536,8 @@ static void leave_instruction_column(int *oldcols)
  */
 static int cmp_cpu_i_misses(const void *p1, const void *p2)
 {
-	Uint32 count1 = cpu_profile.data[*(const Uint32*)p1].i_misses;
-	Uint32 count2 = cpu_profile.data[*(const Uint32*)p2].i_misses;
+	uint32_t count1 = cpu_profile.data[*(const uint32_t*)p1].i_misses;
+	uint32_t count2 = cpu_profile.data[*(const uint32_t*)p2].i_misses;
 	if (count1 > count2) {
 		return -1;
 	}
@@ -554,10 +554,10 @@ void Profile_CpuShowInstrMisses(int show)
 {
 	int active;
 	int oldcols[DISASM_COLUMNS];
-	Uint32 *sort_arr, *end, addr, nextpc;
+	uint32_t *sort_arr, *end, addr, nextpc;
 	cpu_profile_item_t *data = cpu_profile.data;
 	float percentage;
-	Uint32 count;
+	uint32_t count;
 
 	if (!cpu_profile.all.i_misses) {
 		fprintf(stderr, "No CPU instruction cache miss information available.\n");
@@ -590,8 +590,8 @@ void Profile_CpuShowInstrMisses(int show)
  */
 static int cmp_cpu_d_hits(const void *p1, const void *p2)
 {
-	Uint32 count1 = cpu_profile.data[*(const Uint32*)p1].d_hits;
-	Uint32 count2 = cpu_profile.data[*(const Uint32*)p2].d_hits;
+	uint32_t count1 = cpu_profile.data[*(const uint32_t*)p1].d_hits;
+	uint32_t count2 = cpu_profile.data[*(const uint32_t*)p2].d_hits;
 	if (count1 > count2) {
 		return -1;
 	}
@@ -608,10 +608,10 @@ void Profile_CpuShowDataHits(int show)
 {
 	int active;
 	int oldcols[DISASM_COLUMNS];
-	Uint32 *sort_arr, *end, addr, nextpc;
+	uint32_t *sort_arr, *end, addr, nextpc;
 	cpu_profile_item_t *data = cpu_profile.data;
 	float percentage;
-	Uint32 count;
+	uint32_t count;
 
 	if (!cpu_profile.all.d_hits) {
 		fprintf(stderr, "No CPU data cache hit information available.\n");
@@ -645,8 +645,8 @@ void Profile_CpuShowDataHits(int show)
  */
 static int cmp_cpu_cycles(const void *p1, const void *p2)
 {
-	Uint32 count1 = cpu_profile.data[*(const Uint32*)p1].cycles;
-	Uint32 count2 = cpu_profile.data[*(const Uint32*)p2].cycles;
+	uint32_t count1 = cpu_profile.data[*(const uint32_t*)p1].cycles;
+	uint32_t count2 = cpu_profile.data[*(const uint32_t*)p2].cycles;
 	if (count1 > count2) {
 		return -1;
 	}
@@ -663,10 +663,10 @@ void Profile_CpuShowCycles(int show)
 {
 	int active;
 	int oldcols[DISASM_COLUMNS];
-	Uint32 *sort_arr, *end, addr, nextpc;
+	uint32_t *sort_arr, *end, addr, nextpc;
 	cpu_profile_item_t *data = cpu_profile.data;
 	float percentage;
-	Uint32 count;
+	uint32_t count;
 
 	if (!data) {
 		fprintf(stderr, "ERROR: no CPU profiling data available!\n");
@@ -700,8 +700,8 @@ void Profile_CpuShowCycles(int show)
  */
 static int cmp_cpu_count(const void *p1, const void *p2)
 {
-	Uint32 count1 = cpu_profile.data[*(const Uint32*)p1].count;
-	Uint32 count2 = cpu_profile.data[*(const Uint32*)p2].count;
+	uint32_t count1 = cpu_profile.data[*(const uint32_t*)p1].count;
+	uint32_t count2 = cpu_profile.data[*(const uint32_t*)p2].count;
 	if (count1 > count2) {
 		return -1;
 	}
@@ -721,10 +721,10 @@ void Profile_CpuShowCounts(int show, bool only_symbols)
 	cpu_profile_item_t *data = cpu_profile.data;
 	int symbols, matched, active;
 	int oldcols[DISASM_COLUMNS];
-	Uint32 *sort_arr, *end, addr, nextpc;
+	uint32_t *sort_arr, *end, addr, nextpc;
 	const char *name;
 	float percentage;
-	Uint32 count;
+	uint32_t count;
 
 	if (!data) {
 		fprintf(stderr, "ERROR: no CPU profiling data available!\n");
@@ -788,9 +788,9 @@ void Profile_CpuShowCounts(int show, bool only_symbols)
 }
 
 
-static const char * addr2name(Uint32 addr, Uint64 *total)
+static const char * addr2name(uint32_t addr, Uint64 *total)
 {
-	Uint32 idx = address2index(addr);
+	uint32_t idx = address2index(addr);
 	*total = cpu_profile.data[idx].count;
 	return Symbols_GetByCpuAddress(addr, SYMTYPE_TEXT);
 }
@@ -808,7 +808,7 @@ void Profile_CpuShowCallers(FILE *fp)
  */
 void Profile_CpuSave(FILE *out)
 {
-	Uint32 text, end;
+	uint32_t text, end;
 	fputs("Field names:\tExecuted instructions, Used cycles, Instruction cache misses, Data cache hits\n", out);
 
 	/* (Python) regexp matching disassembly address & profiling data field
@@ -920,7 +920,7 @@ bool Profile_CpuStart(void)
 /**
  * return true if pc could be next instruction for previous pc
  */
-static bool is_prev_instr(Uint32 prev_pc, Uint32 pc)
+static bool is_prev_instr(uint32_t prev_pc, uint32_t pc)
 {
 	/* just moved to next instruction (1-2 words)? */
 	if (prev_pc < pc && (pc - prev_pc) <= 10) {
@@ -932,7 +932,7 @@ static bool is_prev_instr(Uint32 prev_pc, Uint32 pc)
 /**
  * return caller instruction type classification
  */
-static calltype_t cpu_opcode_type(int family, Uint32 prev_pc, Uint32 pc)
+static calltype_t cpu_opcode_type(int family, uint32_t prev_pc, uint32_t pc)
 {
 	switch (family) {
 
@@ -983,10 +983,10 @@ static calltype_t cpu_opcode_type(int family, Uint32 prev_pc, Uint32 pc)
  *
  * Returns number of frames to finish/end.
  */
-static int returned_frames(callinfo_t *callinfo, Uint32 pc)
+static int returned_frames(callinfo_t *callinfo, uint32_t pc)
 {
 	int frames, depth;
-	Uint32 return_pc;
+	uint32_t return_pc;
 
 	depth = callinfo->depth;
 	for (frames = 1; --depth >= 0; frames++) {
@@ -1006,11 +1006,11 @@ static int returned_frames(callinfo_t *callinfo, Uint32 pc)
  * instruction, that's why "pc" argument for this function actually
  * needs to be previous PC.
  */
-static void collect_calls(Uint32 pc, counters_t *counters)
+static void collect_calls(uint32_t pc, counters_t *counters)
 {
 	calltype_t flag;
 	int frames, idx, family;
-	Uint32 prev_pc, caller_pc;
+	uint32_t prev_pc, caller_pc;
 
 	family = cpu_profile.prev_family;
 	cpu_profile.prev_family = OpcodeFamily;
@@ -1041,7 +1041,7 @@ static void collect_calls(Uint32 pc, counters_t *counters)
 		 * only for last return
 		 */
 		if (++cpu_warnings.returns <= MAX_SHOW_COUNT) {
-			Uint32 nextpc;
+			uint32_t nextpc;
 			fprintf(stderr, "WARNING: subroutine call returned 0x%x -> 0x%x, not through RTS etc!\n", prev_pc, pc);
 			Disasm(stderr, prev_pc, &nextpc, 1);
 			if (cpu_warnings.returns == MAX_SHOW_COUNT) {
@@ -1106,10 +1106,10 @@ static void log_last_loop(void)
 /**
  * Warning for values going out of expected range
  */
-static Uint32 warn_too_large(const char *name, const int value, const int limit, const Uint32 prev_pc, const Uint32 pc)
+static uint32_t warn_too_large(const char *name, const int value, const int limit, const uint32_t prev_pc, const uint32_t pc)
 {
 	if (++cpu_warnings.largevalue <= MAX_SHOW_COUNT) {
-		Uint32 nextpc;
+		uint32_t nextpc;
 		fprintf(stderr, "WARNING: unexpected (%d > %d) %s at 0x%x:\n", value, limit - 1, name, pc);
 		Disasm(stderr, prev_pc, &nextpc, 1);
 		Disasm(stderr, pc, &nextpc, 1);
@@ -1133,9 +1133,9 @@ static Uint32 warn_too_large(const char *name, const int value, const int limit,
 void Profile_CpuUpdate(void)
 {
 	counters_t *counters = &(cpu_profile.all);
-	Uint32 pc, prev_pc, idx, cycles;
+	uint32_t pc, prev_pc, idx, cycles;
 	cpu_profile_item_t *prev;
-	Uint32 i_hits, d_hits, i_misses, d_misses;
+	uint32_t i_hits, d_hits, i_misses, d_misses;
 
 	prev_pc = cpu_profile.prev_pc;
 	/* PC may have extra bits when using 24 bit addressing, they need to be masked away as
@@ -1255,7 +1255,7 @@ void Profile_CpuUpdate(void)
 #if DEBUG
 	if (unlikely(OpcodeFamily == 0)) {
 		if (++cpu_warnings.opfamily <= MAX_SHOW_COUNT) {
-			Uint32 nextpc;
+			uint32_t nextpc;
 			fputs("WARNING: instruction opcode family is zero (=i_ILLG) for instruction:\n", stderr);
 			Disasm(stderr, prev_pc, &nextpc, 1);
 			if (cpu_warnings.opfamily == MAX_SHOW_COUNT) {
@@ -1274,10 +1274,10 @@ void Profile_CpuUpdate(void)
 /**
  * Helper for accounting CPU profile area item.
  */
-static void update_area_item(profile_area_t *area, Uint32 addr, cpu_profile_item_t *item)
+static void update_area_item(profile_area_t *area, uint32_t addr, cpu_profile_item_t *item)
 {
-	Uint32 cycles = item->cycles;
-	Uint32 count = item->count;
+	uint32_t cycles = item->cycles;
+	uint32_t count = item->count;
 
 	if (!count) {
 		return;
@@ -1301,10 +1301,10 @@ static void update_area_item(profile_area_t *area, Uint32 addr, cpu_profile_item
 /**
  * Helper for collecting CPU profile area statistics.
  */
-static Uint32 update_area(profile_area_t *area, Uint32 start, Uint32 end)
+static uint32_t update_area(profile_area_t *area, uint32_t start, uint32_t end)
 {
 	cpu_profile_item_t *item;
-	Uint32 addr;
+	uint32_t addr;
 
 	memset(area, 0, sizeof(profile_area_t));
 	area->lowest = end;
@@ -1319,10 +1319,10 @@ static Uint32 update_area(profile_area_t *area, Uint32 start, Uint32 end)
 /**
  * Helper for initializing CPU profile area sorting indexes.
  */
-static Uint32* index_area(profile_area_t *area, Uint32 *sort_arr)
+static uint32_t* index_area(profile_area_t *area, uint32_t *sort_arr)
 {
 	cpu_profile_item_t *item;
-	Uint32 addr;
+	uint32_t addr;
 
 	item = &(cpu_profile.data[area->lowest]);
 	for (addr = area->lowest; addr <= area->highest; addr++, item++) {
@@ -1339,7 +1339,7 @@ static Uint32* index_area(profile_area_t *area, Uint32 *sort_arr)
  */
 void Profile_CpuStop(void)
 {
-	Uint32 *sort_arr, next;
+	uint32_t *sort_arr, next;
 	unsigned int size, stsize;
 	int active;
 
@@ -1428,7 +1428,7 @@ void Profile_CpuStop(void)
  * Get pointers to CPU profile enabling and disasm address variables
  * for updating them (in parser).
  */
-void Profile_CpuGetPointers(bool **enabled, Uint32 **disasm_addr)
+void Profile_CpuGetPointers(bool **enabled, uint32_t **disasm_addr)
 {
 	*disasm_addr = &cpu_profile.disasm_addr;
 	*enabled = &cpu_profile.enabled;
@@ -1437,8 +1437,8 @@ void Profile_CpuGetPointers(bool **enabled, Uint32 **disasm_addr)
 /**
  * Get callinfo & symbol search pointers for stack walking.
  */
-void Profile_CpuGetCallinfo(callinfo_t **callinfo, const char* (**get_caller)(Uint32*),
-			    const char* (**get_symbol)(Uint32, symtype_t))
+void Profile_CpuGetCallinfo(callinfo_t **callinfo, const char* (**get_caller)(uint32_t*),
+			    const char* (**get_symbol)(uint32_t, symtype_t))
 {
 	*callinfo = &(cpu_callinfo);
 	*get_caller = Symbols_GetBeforeCpuAddress;

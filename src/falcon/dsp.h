@@ -32,7 +32,7 @@
 extern bool bDspEnabled;
 extern bool bDspHostInterruptPending;
 
-extern Uint64   DSP_CyclesGlobalClockCounter;
+extern uint64_t   DSP_CyclesGlobalClockCounter;
 
 /* Dsp commands */
 extern bool DSP_ProcessIRQ(void);
@@ -48,27 +48,27 @@ extern void DSP_MemorySnapShot_Capture(bool bSave);
 
 /* Dsp Debugger commands */
 extern void DSP_SetDebugging(bool enabled);
-extern Uint16 DSP_GetPC(void);
-extern Uint16 DSP_GetNextPC(Uint16 pc);
-extern Uint16 DSP_GetInstrCycles(void);
-extern Uint32 DSP_ReadMemory(Uint16 addr, char space, const char **mem_str);
-extern Uint16 DSP_DisasmMemory(FILE *fp, Uint16 dsp_memdump_addr, Uint16 dsp_memdump_upper, char space);
-extern Uint16 DSP_DisasmAddress(FILE *out, Uint16 lowerAdr, Uint16 UpperAdr);
-extern void DSP_Info(FILE *fp, Uint32 dummy);
+extern uint16_t DSP_GetPC(void);
+extern uint16_t DSP_GetNextPC(uint16_t pc);
+extern uint16_t DSP_GetInstrCycles(void);
+extern uint32_t DSP_ReadMemory(uint16_t addr, char space, const char **mem_str);
+extern uint16_t DSP_DisasmMemory(FILE *fp, uint16_t dsp_memdump_addr, uint16_t dsp_memdump_upper, char space);
+extern uint16_t DSP_DisasmAddress(FILE *out, uint16_t lowerAdr, uint16_t UpperAdr);
+extern void DSP_Info(FILE *fp, uint32_t dummy);
 extern void DSP_DisasmRegisters(FILE *fp);
-extern int DSP_GetRegisterAddress(const char *arg, Uint32 **addr, Uint32 *mask);
-extern bool DSP_Disasm_SetRegister(const char *arg, Uint32 value);
+extern int DSP_GetRegisterAddress(const char *arg, uint32_t **addr, uint32_t *mask);
+extern bool DSP_Disasm_SetRegister(const char *arg, uint32_t value);
 
 /* Dsp SSI commands */
-extern Uint32 DSP_SsiReadTxValue(void);
-extern void DSP_SsiWriteRxValue(Uint32 value);
+extern uint32_t DSP_SsiReadTxValue(void);
+extern void DSP_SsiWriteRxValue(uint32_t value);
 extern void DSP_SsiReceive_SC0(void);
-extern void DSP_SsiReceive_SC1(Uint32 value);
-extern void DSP_SsiReceive_SC2(Uint32 value);
+extern void DSP_SsiReceive_SC1(uint32_t value);
+extern void DSP_SsiReceive_SC2(uint32_t value);
 extern void DSP_SsiReceive_SCK(void);
 extern void DSP_SsiTransmit_SC0(void);
 extern void DSP_SsiTransmit_SC1(void);
-extern void DSP_SsiTransmit_SC2(Uint32 frame);
+extern void DSP_SsiTransmit_SC2(uint32_t frame);
 extern void DSP_SsiTransmit_SCK(void);
 
 

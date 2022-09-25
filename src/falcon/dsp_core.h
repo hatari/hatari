@@ -22,7 +22,7 @@
 #ifndef DSP_CORE_H
 #define DSP_CORE_H
 
-#include <SDL_types.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -180,32 +180,32 @@ typedef struct dsp_core_s dsp_core_t;
 typedef struct dsp_interrupt_s dsp_interrupt_t;
 
 struct dsp_core_ssi_s {
-	Uint16  cra_word_length;
-	Uint32  cra_word_mask;
-	Uint16  cra_frame_rate_divider;
+	uint16_t cra_word_length;
+	uint32_t cra_word_mask;
+	uint16_t cra_frame_rate_divider;
 
-	Uint16  crb_src_clock;
-	Uint16  crb_shifter;
-	Uint16  crb_synchro;
-	Uint16  crb_mode;
-	Uint16  crb_te;
-	Uint16  crb_re;
-	Uint16  crb_tie;
-	Uint16  crb_rie;
+	uint16_t crb_src_clock;
+	uint16_t crb_shifter;
+	uint16_t crb_synchro;
+	uint16_t crb_mode;
+	uint16_t crb_te;
+	uint16_t crb_re;
+	uint16_t crb_tie;
+	uint16_t crb_rie;
 
-	Uint32  TX;
-	Uint32  RX;
-	Uint32  transmit_value;		/* DSP Transmit --> SSI */
-	Uint32  received_value;		/* DSP Receive  --> SSI */
-	Uint16  waitFrameTX;
-	Uint16  waitFrameRX;
-	Uint32  dspPlay_handshakeMode_frame;
+	uint32_t TX;
+	uint32_t RX;
+	uint32_t transmit_value;		/* DSP Transmit --> SSI */
+	uint32_t received_value;		/* DSP Receive  --> SSI */
+	uint16_t waitFrameTX;
+	uint16_t waitFrameRX;
+	uint32_t dspPlay_handshakeMode_frame;
 };
 
 struct dsp_interrupt_s {
-	const Uint16 inter;
-	const Uint16 vectorAddr;
-	const Uint16 periph;
+	const uint16_t inter;
+	const uint16_t vectorAddr;
+	const uint16_t periph;
 	const char *name;
 };
 
@@ -216,60 +216,60 @@ struct dsp_core_s {
 	int running;
 
 	/* DSP instruction Cycle counter */
-	Uint16	instr_cycle;
+	uint16_t instr_cycle;
 
 	/* Registers */
-	Uint16	pc;
-	Uint32	registers[64];
+	uint16_t pc;
+	uint32_t registers[64];
 
 	/* stack[0=ssh], stack[1=ssl] */
-	Uint16	stack[2][16];
+	uint16_t stack[2][16];
 
 	/* External ram[] (mapped to p:) */
-	Uint32	ramext[DSP_RAMSIZE];
+	uint32_t ramext[DSP_RAMSIZE];
 
 	/* rom[0] is x:, rom[1] is y: */
-	Uint32	rom[2][512];
+	uint32_t rom[2][512];
 
 	/* Internal ram[0] is x:, ram[1] is y:, ram[2] is p: */
-	Uint32	ramint[3][512];
+	uint32_t ramint[3][512];
 
 	/* peripheral space, [x|y]:0xffc0-0xffff */
-	Uint32	periph[2][64];
-	Uint32	dsp_host_htx;
-	Uint32	dsp_host_rtx;
-	Uint16 dsp_host_isr_HREQ;
+	uint32_t periph[2][64];
+	uint32_t dsp_host_htx;
+	uint32_t dsp_host_rtx;
+	uint16_t dsp_host_isr_HREQ;
 
 
 	/* host port, CPU side */
-	Uint8 hostport[12];
+	uint8_t hostport[12];
 
 	/* SSI */
 	dsp_core_ssi_t ssi;
 
 	/* Misc */
-	Uint32 loop_rep;		/* executing rep ? */
-	Uint32 pc_on_rep;		/* True if PC is on REP instruction */
+	uint32_t loop_rep;		/* executing rep ? */
+	uint32_t pc_on_rep;		/* True if PC is on REP instruction */
 
 	/* For bootstrap routine */
-	Uint16	bootstrap_pos;
+	uint16_t bootstrap_pos;
 
 	/* Interruptions */
-	Uint16	interrupt_state;		/* NONE, FAST or LONG interrupt */
-	Uint16  interrupt_instr_fetch;		/* vector of the current interrupt */
-	Uint16  interrupt_save_pc;		/* save next pc value before interrupt */
-	Uint16  interrupt_IplToRaise;		/* save the IPL level to save in the SR register */
-	Uint16  interrupt_pipeline_count;	/* used to prefetch correctly the 2 inter instructions */
+	uint16_t interrupt_state;		/* NONE, FAST or LONG interrupt */
+	uint16_t interrupt_instr_fetch;		/* vector of the current interrupt */
+	uint16_t interrupt_save_pc;		/* save next pc value before interrupt */
+	uint16_t interrupt_IplToRaise;		/* save the IPL level to save in the SR register */
+	uint16_t interrupt_pipeline_count;	/* used to prefetch correctly the 2 inter instructions */
 
 	/* Interruptions new */
-	Uint32 interrupt_status;
-	Uint32 interrupt_enable;
-	Uint32 interrupt_mask;
-	Uint32 interrupt_mask_level[3];
-	Uint32 interrupt_edgetriggered_mask;
+	uint32_t interrupt_status;
+	uint32_t interrupt_enable;
+	uint32_t interrupt_mask;
+	uint32_t interrupt_mask_level[3];
+	uint32_t interrupt_edgetriggered_mask;
 
 	/* AGU pipeline simulation for indirect move ea instructions */
-	Uint16	agu_move_indirect_instr;	/* is the current instruction an indirect move ? (LUA, MOVE, MOVEC, MOVEM, TCC) (0=no ; 1 = yes)*/
+	uint16_t agu_move_indirect_instr;	/* is the current instruction an indirect move ? (LUA, MOVE, MOVEC, MOVEM, TCC) (0=no ; 1 = yes)*/
 };
 
 
@@ -282,23 +282,23 @@ extern void dsp_core_shutdown(void);
 extern void dsp_core_reset(void);
 
 /* host port read/write by emulator, addr is 0-7, not 0xffa200-0xffa207 */
-extern Uint8 dsp_core_read_host(int addr);
-extern void dsp_core_write_host(int addr, Uint8 value);
+extern uint8_t dsp_core_read_host(int addr);
+extern void dsp_core_write_host(int addr, uint8_t value);
 
 /* dsp_cpu call these to read/write host port */
 extern void dsp_core_hostport_dspread(void);
 extern void dsp_core_hostport_dspwrite(void);
 
 /* dsp_cpu call these to read/write/configure SSI port */
-extern void dsp_core_ssi_configure(Uint32 address, Uint32 value);
-extern void dsp_core_ssi_writeTX(Uint32 value);
+extern void dsp_core_ssi_configure(uint32_t address, uint32_t value);
+extern void dsp_core_ssi_writeTX(uint32_t value);
 extern void dsp_core_ssi_writeTSR(void);
-extern Uint32 dsp_core_ssi_readRX(void);
+extern uint32_t dsp_core_ssi_readRX(void);
 extern void dsp_core_ssi_Receive_SC0(void);
-extern void dsp_core_ssi_Receive_SC1(Uint32 value);
-extern void dsp_core_ssi_Receive_SC2(Uint32 value);
+extern void dsp_core_ssi_Receive_SC1(uint32_t value);
+extern void dsp_core_ssi_Receive_SC2(uint32_t value);
 extern void dsp_core_ssi_Receive_SCK(void);
-extern void dsp_core_setPortCDataRegister(Uint32 value);
+extern void dsp_core_setPortCDataRegister(uint32_t value);
 
 #ifdef __cplusplus
 }

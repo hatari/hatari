@@ -46,14 +46,14 @@
  **********************************/
 
 /* Current instruction */
-static Uint32 cur_inst;
-static Uint16 disasm_cur_inst_len;
+static uint32_t cur_inst;
+static uint16_t disasm_cur_inst_len;
 static char str_instr[80];
 static char str_instr2[120];
 static char parallelmove_name[64];
 
 /* Previous instruction */
-static Uint32 prev_inst_pc;
+static uint32_t prev_inst_pc;
 static bool isLooping;
 
 /* Used to display dc instead of unknown instruction for illegal opcodes */
@@ -70,9 +70,9 @@ void dsp56k_disasm_init(void)
  *	Register change
  **********************************/
 
-static Uint32 registers_save[64];
+static uint32_t registers_save[64];
 #if DSP_DISASM_REG_PC
-static Uint32 pc_save;
+static uint32_t pc_save;
 #endif
 
 static const char *registers_name[64]={
@@ -101,14 +101,14 @@ static const char *registers_name[64]={
  *	Opcode disassembler
  **********************************/
 
-static Uint32 read_memory(Uint32 currPc);
+static uint32_t read_memory(uint32_t currPc);
 
 typedef void (*dsp_emul_t)(void);
 
 static void opcode8h_0(void);
 
-static int dsp_calc_ea(Uint32 ea_mode, char *dest);
-static void dsp_calc_cc(Uint32 cc_mode, char *dest);
+static int dsp_calc_ea(uint32_t ea_mode, char *dest);
+static void dsp_calc_cc(uint32_t cc_mode, char *dest);
 static void dsp_undefined(void);
 
 /* Instructions without parallel moves */
@@ -499,9 +499,9 @@ void dsp56k_disasm_reg_compare(FILE *fp)
 #endif
 }
 
-Uint16 dsp56k_disasm(dsp_trace_disasm_t mode, FILE *fp)
+uint16_t dsp56k_disasm(dsp_trace_disasm_t mode, FILE *fp)
 {
-	Uint32 value;
+	uint32_t value;
 
 	if (mode == DSP_TRACE_MODE) {
 		isInDisasmMode = false;
@@ -542,8 +542,8 @@ Uint16 dsp56k_disasm(dsp_trace_disasm_t mode, FILE *fp)
 const char* dsp56k_getInstructionText(void)
 {
 	const int len = 50;
-	Uint64 count, cycles;
-	Uint16 cycle_diff;
+	uint64_t count, cycles;
+	uint16_t cycle_diff;
 	float percentage;
 	int offset;
 
@@ -568,9 +568,9 @@ static void dsp_pm_class2(void) {
 	sprintf(str_instr, "%s %s", opcodes_alu[cur_inst & BITMASK(8)], parallelmove_name);
 } 
 
-static Uint32 read_memory(Uint32 currPc)
+static uint32_t read_memory(uint32_t currPc)
 {
-	Uint32 value;
+	uint32_t value;
 
 	if (currPc<0x200) {
 		value = dsp_core.ramint[DSP_SPACE_P][currPc];
@@ -585,7 +585,7 @@ static Uint32 read_memory(Uint32 currPc)
  *	Conditions code calculation
  **********************************/
 
-static void dsp_calc_cc(Uint32 cc_mode, char *dest)
+static void dsp_calc_cc(uint32_t cc_mode, char *dest)
 {
 	strcpy(dest, cc_name[cc_mode & BITMASK(4)]);
 }
@@ -594,7 +594,7 @@ static void dsp_calc_cc(Uint32 cc_mode, char *dest)
  *	Effective address calculation
  **********************************/
 
-static int dsp_calc_ea(Uint32 ea_mode, char *dest)
+static int dsp_calc_ea(uint32_t ea_mode, char *dest)
 {
 	int value, retour, numreg;
 
@@ -720,7 +720,7 @@ static void dsp_bchg_aa(void)
 	/* bchg #n,x:aa */
 	/* bchg #n,y:aa */
 	char name[16];
-	Uint32 memspace, value, numbit;
+	uint32_t memspace, value, numbit;
 	
 	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
@@ -740,7 +740,7 @@ static void dsp_bchg_ea(void)
 	/* bchg #n,x:ea */
 	/* bchg #n,y:ea */
 	char name[18], addr_name[16];
-	Uint32 memspace, value, numbit;
+	uint32_t memspace, value, numbit;
 	
 	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
@@ -761,7 +761,7 @@ static void dsp_bchg_pp(void)
 	/* bchg #n,x:pp */
 	/* bchg #n,y:pp */
 	char name[16];
-	Uint32 memspace, value, numbit;
+	uint32_t memspace, value, numbit;
 	
 	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
@@ -779,7 +779,7 @@ static void dsp_bchg_pp(void)
 static void dsp_bchg_reg(void)
 {
 	/* bchg #n,R */
-	Uint32 value, numbit;
+	uint32_t value, numbit;
 	
 	value = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
@@ -792,7 +792,7 @@ static void dsp_bclr_aa(void)
 	/* bclr #n,x:aa */
 	/* bclr #n,y:aa */
 	char name[16];
-	Uint32 memspace, value, numbit;
+	uint32_t memspace, value, numbit;
 	
 	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
@@ -812,7 +812,7 @@ static void dsp_bclr_ea(void)
 	/* bclr #n,x:ea */
 	/* bclr #n,y:ea */
 	char name[18], addr_name[16];
-	Uint32 memspace, value, numbit;
+	uint32_t memspace, value, numbit;
 	
 	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
@@ -833,7 +833,7 @@ static void dsp_bclr_pp(void)
 	/* bclr #n,x:pp */
 	/* bclr #n,y:pp */
 	char name[16];
-	Uint32 memspace, value, numbit;
+	uint32_t memspace, value, numbit;
 	
 	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
@@ -851,7 +851,7 @@ static void dsp_bclr_pp(void)
 static void dsp_bclr_reg(void)
 {
 	/* bclr #n,R */
-	Uint32 value, numbit;
+	uint32_t value, numbit;
 	
 	value = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
@@ -864,7 +864,7 @@ static void dsp_bset_aa(void)
 	/* bset #n,x:aa */
 	/* bset #n,y:aa */
 	char name[16];
-	Uint32 memspace, value, numbit;
+	uint32_t memspace, value, numbit;
 	
 	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
@@ -884,7 +884,7 @@ static void dsp_bset_ea(void)
 	/* bset #n,x:ea */
 	/* bset #n,y:ea */
 	char name[18], addr_name[16];
-	Uint32 memspace, value, numbit;
+	uint32_t memspace, value, numbit;
 	
 	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
@@ -905,7 +905,7 @@ static void dsp_bset_pp(void)
 	/* bset #n,x:pp */
 	/* bset #n,y:pp */
 	char name[16];
-	Uint32 memspace, value, numbit;
+	uint32_t memspace, value, numbit;
 	
 	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
@@ -923,7 +923,7 @@ static void dsp_bset_pp(void)
 static void dsp_bset_reg(void)
 {
 	/* bset #n,R */
-	Uint32 value, numbit;
+	uint32_t value, numbit;
 	
 	value = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
@@ -936,7 +936,7 @@ static void dsp_btst_aa(void)
 	/* btst #n,x:aa */
 	/* btst #n,y:aa */
 	char name[16];
-	Uint32 memspace, value, numbit;
+	uint32_t memspace, value, numbit;
 	
 	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
@@ -956,7 +956,7 @@ static void dsp_btst_ea(void)
 	/* btst #n,x:ea */
 	/* btst #n,y:ea */
 	char name[18], addr_name[16];
-	Uint32 memspace, value, numbit;
+	uint32_t memspace, value, numbit;
 	
 	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
@@ -977,7 +977,7 @@ static void dsp_btst_pp(void)
 	/* btst #n,x:pp */
 	/* btst #n,y:pp */
 	char name[16];
-	Uint32 memspace, value, numbit;
+	uint32_t memspace, value, numbit;
 	
 	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
@@ -995,7 +995,7 @@ static void dsp_btst_pp(void)
 static void dsp_btst_reg(void)
 {
 	/* btst #n,R */
-	Uint32 value, numbit;
+	uint32_t value, numbit;
 	
 	value = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
@@ -1005,7 +1005,7 @@ static void dsp_btst_reg(void)
 
 static void dsp_div(void)
 {
-	Uint32 srcreg=DSP_REG_NULL, destreg;
+	uint32_t srcreg=DSP_REG_NULL, destreg;
 	
 	switch((cur_inst>>4) & BITMASK(2)) {
 		case 0:
@@ -1057,7 +1057,7 @@ static void dsp_do_imm(void)
 static void dsp_do_ea(void)
 {
 	char addr_name[16], name[18];
-	Uint32 ea_mode;
+	uint32_t ea_mode;
 	
 	disasm_cur_inst_len++;
 
@@ -1099,7 +1099,7 @@ static void dsp_illegal(void)
 static void dsp_jcc_ea(void)
 {
 	char cond_name[16], addr_name[16];
-	Uint32 cc_code=0;
+	uint32_t cc_code=0;
 	
 	dsp_calc_ea((cur_inst >>8) & BITMASK(6), addr_name);
 	cc_code=cur_inst & BITMASK(4);
@@ -1111,7 +1111,7 @@ static void dsp_jcc_ea(void)
 static void dsp_jcc_imm(void)
 {
 	char cond_name[16], addr_name[16];
-	Uint32 cc_code=0;
+	uint32_t cc_code=0;
 	
 	sprintf(addr_name, "$%04x", cur_inst & BITMASK(12));
 	cc_code=(cur_inst>>12) & BITMASK(4);
@@ -1125,7 +1125,7 @@ static void dsp_jclr_aa(void)
 	/* jclr #n,x:aa,p:xx */
 	/* jclr #n,y:aa,p:xx */
 	char srcname[16];
-	Uint32 memspace, value, numbit;
+	uint32_t memspace, value, numbit;
 	
 	disasm_cur_inst_len++;
 
@@ -1151,7 +1151,7 @@ static void dsp_jclr_ea(void)
 	/* jclr #n,x:ea,p:xx */
 	/* jclr #n,y:ea,p:xx */
 	char srcname[18], addr_name[16];
-	Uint32 memspace, value, numbit;
+	uint32_t memspace, value, numbit;
 	
 	disasm_cur_inst_len++;
 
@@ -1178,7 +1178,7 @@ static void dsp_jclr_pp(void)
 	/* jclr #n,x:pp,p:xx */
 	/* jclr #n,y:pp,p:xx */
 	char srcname[16];
-	Uint32 memspace, value, numbit;
+	uint32_t memspace, value, numbit;
 	
 	disasm_cur_inst_len++;
 
@@ -1203,7 +1203,7 @@ static void dsp_jclr_pp(void)
 static void dsp_jclr_reg(void)
 {
 	/* jclr #n,R,p:xx */
-	Uint32 value, numbit;
+	uint32_t value, numbit;
 	
 	disasm_cur_inst_len++;
 
@@ -1234,7 +1234,7 @@ static void dsp_jmp_ea(void)
 static void dsp_jscc_ea(void)
 {
 	char cond_name[16], addr_name[16];
-	Uint32 cc_code=0;
+	uint32_t cc_code=0;
 	
 	dsp_calc_ea((cur_inst>>8) & BITMASK(6), addr_name);
 	cc_code=cur_inst & BITMASK(4);
@@ -1246,7 +1246,7 @@ static void dsp_jscc_ea(void)
 static void dsp_jscc_imm(void)
 {
 	char cond_name[16], addr_name[16];
-	Uint32 cc_code=0;
+	uint32_t cc_code=0;
 	
 	sprintf(addr_name, "$%04x", cur_inst & BITMASK(12));
 	cc_code=(cur_inst>>12) & BITMASK(4);
@@ -1260,7 +1260,7 @@ static void dsp_jsclr_aa(void)
 	/* jsclr #n,x:aa,p:xx */
 	/* jsclr #n,y:aa,p:xx */
 	char srcname[16];
-	Uint32 memspace, value, numbit;
+	uint32_t memspace, value, numbit;
 	
 	disasm_cur_inst_len++;
 
@@ -1286,7 +1286,7 @@ static void dsp_jsclr_ea(void)
 	/* jsclr #n,x:ea,p:xx */
 	/* jsclr #n,y:ea,p:xx */
 	char srcname[18], addr_name[16];
-	Uint32 memspace, value, numbit;
+	uint32_t memspace, value, numbit;
 	
 	disasm_cur_inst_len++;
 
@@ -1313,7 +1313,7 @@ static void dsp_jsclr_pp(void)
 	/* jsclr #n,x:pp,p:xx */
 	/* jsclr #n,y:pp,p:xx */
 	char srcname[16];
-	Uint32 memspace, value, numbit;
+	uint32_t memspace, value, numbit;
 	
 	disasm_cur_inst_len++;
 
@@ -1338,7 +1338,7 @@ static void dsp_jsclr_pp(void)
 static void dsp_jsclr_reg(void)
 {
 	/* jsclr #n,R,p:xx */
-	Uint32 value, numbit;
+	uint32_t value, numbit;
 	
 	disasm_cur_inst_len++;
 
@@ -1357,7 +1357,7 @@ static void dsp_jset_aa(void)
 	/* jset #n,x:aa,p:xx */
 	/* jset #n,y:aa,p:xx */
 	char srcname[16];
-	Uint32 memspace, value, numbit;
+	uint32_t memspace, value, numbit;
 	
 	disasm_cur_inst_len++;
 
@@ -1383,7 +1383,7 @@ static void dsp_jset_ea(void)
 	/* jset #n,x:ea,p:xx */
 	/* jset #n,y:ea,p:xx */
 	char srcname[18], addr_name[16];
-	Uint32 memspace, value, numbit;
+	uint32_t memspace, value, numbit;
 	
 	disasm_cur_inst_len++;
 
@@ -1410,7 +1410,7 @@ static void dsp_jset_pp(void)
 	/* jset #n,x:pp,p:xx */
 	/* jset #n,y:pp,p:xx */
 	char srcname[16];
-	Uint32 memspace, value, numbit;
+	uint32_t memspace, value, numbit;
 	
 	disasm_cur_inst_len++;
 
@@ -1435,7 +1435,7 @@ static void dsp_jset_pp(void)
 static void dsp_jset_reg(void)
 {
 	/* jset #n,R,p:xx */
-	Uint32 value, numbit;
+	uint32_t value, numbit;
 	
 	disasm_cur_inst_len++;
 
@@ -1468,7 +1468,7 @@ static void dsp_jsset_aa(void)
 	/* jsset #n,x:aa,p:xx */
 	/* jsset #n,y:aa,p:xx */
 	char srcname[16];
-	Uint32 memspace, value, numbit;
+	uint32_t memspace, value, numbit;
 	
 	disasm_cur_inst_len++;
 
@@ -1494,7 +1494,7 @@ static void dsp_jsset_ea(void)
 	/* jsset #n,x:ea,p:xx */
 	/* jsset #n,y:ea,p:xx */
 	char srcname[18], addr_name[16];
-	Uint32 memspace, value, numbit;
+	uint32_t memspace, value, numbit;
 	
 	disasm_cur_inst_len++;
 
@@ -1521,7 +1521,7 @@ static void dsp_jsset_pp(void)
 	/* jsset #n,x:pp,p:xx */
 	/* jsset #n,y:pp,p:xx */
 	char srcname[16];
-	Uint32 memspace, value, numbit;
+	uint32_t memspace, value, numbit;
 	
 	disasm_cur_inst_len++;
 
@@ -1546,7 +1546,7 @@ static void dsp_jsset_pp(void)
 static void dsp_jsset_reg(void)
 {
 	/* jsset #n,r,p:xx */
-	Uint32 value, numbit;
+	uint32_t value, numbit;
 	
 	disasm_cur_inst_len++;
 
@@ -1575,7 +1575,7 @@ static void dsp_lua(void)
 
 static void dsp_movec_reg(void)
 {
-	Uint32 numreg1, numreg2;
+	uint32_t numreg1, numreg2;
 
 	/* S1,D2 */
 	/* S2,D1 */
@@ -1596,7 +1596,7 @@ static void dsp_movec_aa(void)
 {
 	const char *spacename;
 	char srcname[16],dstname[16];
-	Uint32 numreg, addr;
+	uint32_t numreg, addr;
 
 	/* x:aa,D1 */
 	/* S1,x:aa */
@@ -1627,7 +1627,7 @@ static void dsp_movec_aa(void)
 
 static void dsp_movec_imm(void)
 {
-	Uint32 numreg;
+	uint32_t numreg;
 
 	/* #xx,D1 */
 
@@ -1640,7 +1640,7 @@ static void dsp_movec_ea(void)
 {
 	const char *spacename;
 	char srcname[18], dstname[18], addr_name[16];
-	Uint32 numreg, ea_mode;
+	uint32_t numreg, ea_mode;
 	int retour;
 
 	/* x:ea,D1 */
@@ -1681,7 +1681,7 @@ static void dsp_movem_aa(void)
 	/* S,p:aa */
 	/* p:aa,D */
 	char addr_name[16], srcname[18], dstname[18];
-	Uint32 numreg;
+	uint32_t numreg;
 
 	sprintf(addr_name, "$%04x",(cur_inst>>8) & BITMASK(6));
 	numreg = cur_inst & BITMASK(6);
@@ -1703,7 +1703,7 @@ static void dsp_movem_ea(void)
 	/* S,p:ea */
 	/* p:ea,D */
 	char addr_name[16], srcname[18], dstname[18];
-	Uint32 ea_mode, numreg;
+	uint32_t ea_mode, numreg;
 
 	ea_mode = (cur_inst>>8) & BITMASK(6);
 	dsp_calc_ea(ea_mode, addr_name);
@@ -1724,7 +1724,7 @@ static void dsp_movem_ea(void)
 static void dsp_movep_0(void)
 {
 	char srcname[16]="",dstname[16]="";
-	Uint32 addr, memspace, numreg;
+	uint32_t addr, memspace, numreg;
 
 	/* S,x:pp */
 	/* x:pp,D */
@@ -1763,7 +1763,7 @@ static void dsp_movep_0(void)
 static void dsp_movep_1(void)
 {
 	char srcname[18] = "", dstname[18] = "", name[16] = "";
-	Uint32 addr, memspace; 
+	uint32_t addr, memspace; 
 
 	/* p:ea,x:pp */
 	/* x:pp,p:ea */
@@ -1802,7 +1802,7 @@ static void dsp_movep_1(void)
 static void dsp_movep_23(void)
 {
 	char srcname[18] = "", dstname[18] = "", name[16] = "";
-	Uint32 addr, memspace, easpace, retour; 
+	uint32_t addr, memspace, easpace, retour; 
 
 	/* x:ea,x:pp */
 	/* y:ea,x:pp */
@@ -1865,7 +1865,7 @@ static void dsp_nop(void)
 
 static void dsp_norm(void)
 {
-	Uint32 srcreg, destreg;
+	uint32_t srcreg, destreg;
 
 	srcreg = DSP_REG_R0+((cur_inst>>8) & BITMASK(3));
 	destreg = DSP_REG_A+((cur_inst>>3) & 1);
@@ -1966,7 +1966,7 @@ static void dsp_swi(void)
 static void dsp_tcc(void)
 {
 	char ccname[16];
-	Uint32 src1reg, dst1reg, src2reg, dst2reg;
+	uint32_t src1reg, dst1reg, src2reg, dst2reg;
 
 	dsp_calc_cc((cur_inst>>12) & BITMASK(4), ccname);
 	src1reg = registers_tcc[(cur_inst>>3) & BITMASK(4)][0];
@@ -2003,7 +2003,7 @@ static void dsp_wait(void)
 
 static void dsp_pm(void)
 {
-	Uint32 value;
+	uint32_t value;
 
 	value = (cur_inst >> 20) & BITMASK(4);
 	opcodes_parmove[value]();
@@ -2012,7 +2012,7 @@ static void dsp_pm(void)
 static void dsp_pm_0(void)
 {
 	char space_name[16], addr_name[16];
-	Uint32 memspace, numreg1, numreg2;
+	uint32_t memspace, numreg1, numreg2;
 /*
 	0000 100d 00mm mrrr S,x:ea	x0,D
 	0000 100d 10mm mrrr S,y:ea	y0,D
@@ -2051,7 +2051,7 @@ static void dsp_pm_1(void)
 */
 
 	char addr_name[16];
-	Uint32 memspace, write_flag, retour, s1reg, s2reg, d1reg, d2reg;
+	uint32_t memspace, write_flag, retour, s1reg, s2reg, d1reg, d2reg;
 
 	memspace = (cur_inst>>14) & 1;
 	write_flag = (cur_inst>>15) & 1;
@@ -2143,7 +2143,7 @@ static void dsp_pm_1(void)
 static void dsp_pm_2(void)
 {
 	char addr_name[16];
-	Uint32 numreg1, numreg2;
+	uint32_t numreg1, numreg2;
 /*
 	0010 0000 0000 0000 nop
 	0010 0000 010m mrrr R update
@@ -2174,7 +2174,7 @@ static void dsp_pm_2(void)
 static void dsp_pm_4(void)
 {
 	char addr_name[16];
-	Uint32 value, retour, ea_mode, memspace;
+	uint32_t value, retour, ea_mode, memspace;
 /*
 	0100 l0ll w0aa aaaa l:aa,D
 						S,l:aa
@@ -2269,7 +2269,7 @@ static void dsp_pm_4(void)
 static void dsp_pm_8(void)
 {
 	char addr1_name[16], addr2_name[16];
-	Uint32 ea_mode1, ea_mode2, numreg1, numreg2;
+	uint32_t ea_mode1, ea_mode2, numreg1, numreg2;
 /*
 	1wmm eeff WrrM MRRR x:ea,D1		y:ea,D2	
 						x:ea,D1		S2,y:ea
