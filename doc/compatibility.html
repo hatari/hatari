@@ -4617,8 +4617,10 @@ repository</a>.
       <td>2.0</td>
       <td>emu</td>
       <td>Requires beefy machine for AM playback.
-          Fileselector dir selection doesn't work with v1.92 or newer
-	  without adding "C:" in from of the file pattern (GemPlay bug)</td>
+          Unless user manually adds (e.g. "C:") drive prefix to file
+	  mask in file selector, v1.92 and newer prefix file paths
+	  with "*", which is not accepted by TOS4
+	  (but works with EmuTOS)</td>
     </tr>
     <tr>
       <td><a href="http://rg.atari.org/utils.htm">Godpaint</a></td>
@@ -4645,6 +4647,16 @@ repository</a>.
       <td>1.0</td>
       <td>-</td>
       <td>Errors at exit if started in other than HiColor mode</td>
+    </tr>
+    <tr>
+      <td>MegaPlayer v1.15/v1.16</td>
+      <td>2.3.1</td>
+      <td>emu</td>
+      <td>Plays several tracker formats using DSP with nice GEM UI.
+          Unless user manually adds (e.g. "C:") drive prefix to file
+	  mask in file selector, it prefixes file paths with "*",
+	  which is not accepted by TOS4 (but works with EmuTOS).
+	  Plays Octalyzer MODs badly</td>
     </tr>
     <tr>
       <td><a href="http://mp2.nocrew.org/">MP2 player</a></td>
