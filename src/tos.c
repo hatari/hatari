@@ -82,7 +82,7 @@ enum
 typedef struct
 {
 	uint16_t Version;       /* TOS version number */
-	Sint16 Country;       /* TOS country code: -1 if it does not matter, 0=US, 1=Germany, 2=France, etc. */
+	int16_t Country;       /* TOS country code: -1 if it does not matter, 0=US, 1=Germany, 2=France, etc. */
 	const char *pszName;  /* Name of the patch */
 	int Flags;            /* When should the patch be applied? (see enum above) */
 	uint32_t Address;       /* Where the patch should be applied */

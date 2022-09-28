@@ -16,16 +16,16 @@
 #define CMD_REMOVE_ALL "all"
 
 
-static bool SetCpuRegister(const char *regname, Uint32 value)
+static bool SetCpuRegister(const char *regname, uint32_t value)
 {
-	Uint32 *addr;
+	uint32_t *addr;
 	
 	switch (DebugCpu_GetRegisterAddress(regname, &addr)) {
 	case 32:
 		*addr = value;
 		break;
 	case 16:
-		*(Uint16*)addr = value;
+		*(uint16_t*)addr = value;
 		break;
 	default:
 		fprintf(stderr, "SETUP ERROR: Register '%s' to set (to %x) is unrecognized!\n", regname, value);
@@ -35,16 +35,16 @@ static bool SetCpuRegister(const char *regname, Uint32 value)
 }
 
 #if 0
-static bool SetDspRegister(const char *regname, Uint32 value)
+static bool SetDspRegister(const char *regname, uint32_t value)
 {
-	Uint32 *addr, mask;
+	uint32_t *addr, mask;
 
 	switch (DSP_GetRegisterAddress(regname, &addr, &mask)) {
 	case 32:
 		*addr = value & mask;
 		break;
 	case 16:
-		*(Uint16*)addr = value & mask;
+		*(uint16_t*)addr = value & mask;
 		break;
 	default:
 		return false;

@@ -50,11 +50,11 @@ uint16_t STMemory_ReadWord(uint32_t addr) {
 	val = (STRam[addr] << 8) | STRam[addr+1];
 	return val;
 }
-Uint8 STMemory_ReadByte(uint32_t addr) {
+uint8_t STMemory_ReadByte(uint32_t addr) {
 	if (addr >= STRamEnd) return 0;
 	return STRam[addr];
 }
-void STMemory_WriteByte(uint32_t addr, Uint8 val) {
+void STMemory_WriteByte(uint32_t addr, uint8_t val) {
 	if (addr < STRamEnd)
 		STRam[addr] = val;
 }

@@ -89,15 +89,15 @@ EMULATEDDRIVE **emudrives = NULL;
 
 typedef struct {
   /* GEMDOS internals */
-  Uint8 index[2];
-  Uint8 magic[4];
+  uint8_t index[2];
+  uint8_t magic[4];
   char dta_pat[TOS_NAMELEN]; /* unused */
   char dta_sattrib;          /* unused */
   /* TOS API */
   char dta_attrib;
-  Uint8 dta_time[2];
-  Uint8 dta_date[2];
-  Uint8 dta_size[4];
+  uint8_t dta_time[2];
+  uint8_t dta_date[2];
+  uint8_t dta_size[4];
   char dta_name[TOS_NAMELEN];
 } DTA;
 
@@ -272,9 +272,9 @@ static bool GemDOS_SetFileInformation(int Handle, DATETIME *DateTime)
 /**
  * Convert from FindFirstFile/FindNextFile attribute to GemDOS format
  */
-static Uint8 GemDOS_ConvertAttribute(mode_t mode)
+static uint8_t GemDOS_ConvertAttribute(mode_t mode)
 {
-	Uint8 Attrib = 0;
+	uint8_t Attrib = 0;
 
 	/* Directory attribute */
 	if (S_ISDIR(mode))
@@ -2334,7 +2334,7 @@ static bool GemDOS_Read(uint32_t Params)
 	}
 
 	/* Limit to size of file to prevent errors */
-	if (Size > (Uint32)nBytesLeft)
+	if (Size > (uint32_t)nBytesLeft)
 		Size = nBytesLeft;
 
 	/* Check that read is to valid memory area */
@@ -2377,7 +2377,7 @@ static bool GemDOS_Write(uint32_t Params)
 	char *pBuffer;
 	long nBytesWritten;
 	uint32_t Addr;
-	Sint32 Size;
+	int32_t Size;
 	int Handle, fh_idx;
 	FILE *fp;
 
@@ -2514,7 +2514,7 @@ static bool GemDOS_LSeek(uint32_t Params)
 	FILE *fhndl;
 
 	/* Read details from stack */
-	Offset = (Sint32)STMemory_ReadLong(Params);
+	Offset = (int32_t)STMemory_ReadLong(Params);
 	Handle = STMemory_ReadWord(Params+SIZE_LONG);
 	Mode = STMemory_ReadWord(Params+SIZE_LONG+SIZE_WORD);
 
@@ -3332,7 +3332,7 @@ static bool GemDOS_Pterm0(uint32_t Params)
 static bool GemDOS_Ptermres(uint32_t Params)
 {
 	LOG_TRACE(TRACE_OS_GEMDOS|TRACE_OS_BASE, "GEMDOS 0x31 Ptermres(0x%X, %hd) at PC 0x%X\n",
-		  STMemory_ReadLong(Params), (Sint16)STMemory_ReadWord(Params+SIZE_WORD),
+		  STMemory_ReadLong(Params), (int16_t)STMemory_ReadWord(Params+SIZE_WORD),
 		  CallingPC);
 	GemDOS_TerminateClose();
 	return false;

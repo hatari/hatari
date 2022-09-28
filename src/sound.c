@@ -317,8 +317,8 @@ ymsample	YM_Buffer_250[ YM_BUFFER_250_SIZE ];	/* Ring buffer to store YM samples
 static int	YM_Buffer_250_pos_write;		/* Current writing position into above buffer */
 static int	YM_Buffer_250_pos_read;			/* Current reading position into above buffer */
 
-static Uint64	YM2149_Clock_250;			/* 250 kHz counter */
-static Uint64	YM2149_Clock_250_CpuClock;		/* Corresponding value of CyclesGlobalClockCounter at the time YM2149_Clock_250 was updated */
+static uint64_t	YM2149_Clock_250;			/* 250 kHz counter */
+static uint64_t	YM2149_Clock_250_CpuClock;		/* Corresponding value of CyclesGlobalClockCounter at the time YM2149_Clock_250 was updated */
 
 
 
@@ -347,7 +347,7 @@ static void	YM2149_Normalise_5bit_Table(ymu16 *in_5bit , yms16 *out_5bit, unsign
 
 static void	YM2149_EnvBuild		(void);
 static void	Ym2149_BuildVolumeTable	(void);
-static void	YM2149_UpdateClock_250	( Uint64 CpuClock );
+static void	YM2149_UpdateClock_250	( uint64_t CpuClock );
 static void	Ym2149_Init		(void);
 static void	Ym2149_Reset		(void);
 
@@ -356,8 +356,8 @@ static ymu16	YM2149_TonePer		(ymu8 rHigh , ymu8 rLow);
 static ymu16	YM2149_NoisePer		(ymu8 rNoise);
 static ymu16	YM2149_EnvPer		(ymu8 rHigh , ymu8 rLow);
 
-static void	YM2149_Run		( Uint64 CPU_Clock );
-static int	Sound_GenerateSamples	( Uint64 CPU_Clock);
+static void	YM2149_Run		( uint64_t CPU_Clock );
+static int	Sound_GenerateSamples	( uint64_t CPU_Clock);
 static void	YM2149_DoSamples_250	( int SamplesToGenerate_250 );
 #ifdef YM_250_DEBUG
 static void	YM2149_DoSamples_250_Debug ( int SamplesToGenerate , int pos );
@@ -800,11 +800,11 @@ static void	Ym2149_BuildVolumeTable(void)
 #if 0
 /* integer version : use it when YM2149's clock is the same as CPU's clock (eg STF) */
 
-static void	YM2149_UpdateClock_250_int ( Uint64 CpuClock )
+static void	YM2149_UpdateClock_250_int ( uint64_t CpuClock )
 {
-	Uint64		CpuClockDiff;
-	Uint64		YM_Div;
-	Uint64		YM_Inc;
+	uint64_t		CpuClockDiff;
+	uint64_t		YM_Div;
+	uint64_t		YM_Inc;
 
 	/* We divide CpuClockDiff by YM_Div to get a 250 Hz YM clock increment (YM_Div=32 for an STF with a 8 MHz CPU) */
 	YM_Div = 32 << nCpuFreqShift;
@@ -828,11 +828,11 @@ static void	YM2149_UpdateClock_250_int ( Uint64 CpuClock )
 
 /* floating point version : use it when YM2149's clock is different from CPU's clock (eg STE) */
 
-static void	YM2149_UpdateClock_250_float ( Uint64 CpuClock )
+static void	YM2149_UpdateClock_250_float ( uint64_t CpuClock )
 {
-	Uint64		CpuClockDiff;
+	uint64_t		CpuClockDiff;
 	double		YM_Div;
-	Uint64		YM_Inc;
+	uint64_t		YM_Inc;
 
 	/* We divide CpuClockDiff by YM_Div to get a 250 Hz YM clock increment (YM_Div=32.0425 for an STE with a 8 MHz CPU) */
 	YM_Div = ((double)MachineClocks.CPU_Freq_Emul) / YM_ATARI_CLOCK_COUNTER;
@@ -842,7 +842,7 @@ static void	YM2149_UpdateClock_250_float ( Uint64 CpuClock )
 	CpuClockDiff = CpuClock - YM2149_Clock_250_CpuClock;
 	if ( CpuClockDiff >= YM_Div )
 	{
-		YM_Inc = CpuClockDiff / YM_Div;			/* will truncate to lower integer when casting to Uint64 */
+		YM_Inc = CpuClockDiff / YM_Div;			/* will truncate to lower integer when casting to uint64_t */
 //fprintf ( stderr , "update_250  in div=%f clock_cpu=%lu cpu_diff=%lu inc=%lu clock_250_in=%lu\n" , YM_Div, CpuClock, CpuClockDiff, YM_Inc, YM2149_Clock_250 );
 		YM2149_Clock_250 += YM_Inc;
 		YM2149_Clock_250_CpuClock = CpuClock - round ( fmod ( CpuClockDiff , YM_Div ) );
@@ -854,9 +854,9 @@ static void	YM2149_UpdateClock_250_float ( Uint64 CpuClock )
 #endif
 
 
-static void	YM2149_UpdateClock_250_int_new ( Uint64 CpuClock )
+static void	YM2149_UpdateClock_250_int_new ( uint64_t CpuClock )
 {
-	Uint64		CpuClockDiff;
+	uint64_t		CpuClockDiff;
 
 
 	CpuClockDiff = CpuClock - YM2149_Clock_250_CpuClock;
@@ -880,7 +880,7 @@ static void	YM2149_UpdateClock_250_int_new ( Uint64 CpuClock )
  * In the end, 'integer' and 'floating point' versions will sound the same because
  * floating point precision should be good enough to avoid rounding errors.
  */
-static void	YM2149_UpdateClock_250 ( Uint64 CpuClock )
+static void	YM2149_UpdateClock_250 ( uint64_t CpuClock )
 {
 	if ( ConfigureParams.System.nMachineType == MACHINE_ST || ConfigureParams.System.nMachineType == MACHINE_MEGA_ST )
 {
@@ -1138,7 +1138,7 @@ static void	YM2149_DoSamples_250 ( int SamplesToGenerate_250 )
  */
 static void	YM2149_DoSamples_250_Debug ( int SamplesToGenerate , int pos )
 {
-	static Uint8 WavHeader[] =
+	static uint8_t WavHeader[] =
 	{
 		/* RIFF chunk */
 		'R', 'I', 'F', 'F',      /* "RIFF" (ASCII Characters) */
@@ -1173,21 +1173,21 @@ static void	YM2149_DoSamples_250_Debug ( int SamplesToGenerate , int pos )
 	{
 		file_ptr = fopen( "hatari_250.wav", "wb");
 		/* Patch mono, 2 bytes per sample */
-		WavHeader[22] = (Uint8)0x01;
-		WavHeader[32] = (Uint8)0x02;
+		WavHeader[22] = (uint8_t)0x01;
+		WavHeader[32] = (uint8_t)0x02;
 
 		/* Patch sample frequency in header structure */
 		val = 250000;
-		WavHeader[24] = (Uint8)val;
-		WavHeader[25] = (Uint8)(val >> 8);
-		WavHeader[26] = (Uint8)(val >> 16);
-		WavHeader[27] = (Uint8)(val >> 24);
+		WavHeader[24] = (uint8_t)val;
+		WavHeader[25] = (uint8_t)(val >> 8);
+		WavHeader[26] = (uint8_t)(val >> 16);
+		WavHeader[27] = (uint8_t)(val >> 24);
 		/* Patch bytes per second in header structure */
 		val = 250000 * 2;
-		WavHeader[28] = (Uint8)val;
-		WavHeader[29] = (Uint8)(val >> 8);
-		WavHeader[30] = (Uint8)(val >> 16);
-		WavHeader[31] = (Uint8)(val >> 24);
+		WavHeader[28] = (uint8_t)val;
+		WavHeader[29] = (uint8_t)(val >> 8);
+		WavHeader[30] = (uint8_t)(val >> 16);
+		WavHeader[31] = (uint8_t)(val >> 24);
 
 		fwrite ( &WavHeader, sizeof(WavHeader), 1, file_ptr );
 	}
@@ -1202,15 +1202,15 @@ static void	YM2149_DoSamples_250_Debug ( int SamplesToGenerate , int pos )
 
 	/* Update sizes in header */
 	val = 12+24+8+wav_size-8;			/* RIFF size */
-	WavHeader[4] = (Uint8)val;
-	WavHeader[5] = (Uint8)(val >> 8);
-	WavHeader[6] = (Uint8)(val >> 16);
-	WavHeader[7] = (Uint8)(val >> 24);
+	WavHeader[4] = (uint8_t)val;
+	WavHeader[5] = (uint8_t)(val >> 8);
+	WavHeader[6] = (uint8_t)(val >> 16);
+	WavHeader[7] = (uint8_t)(val >> 24);
 	val = wav_size;					/* data size */
-	WavHeader[40] = (Uint8)val;
-	WavHeader[41] = (Uint8)(val >> 8);
-	WavHeader[42] = (Uint8)(val >> 16);
-	WavHeader[43] = (Uint8)(val >> 24);
+	WavHeader[40] = (uint8_t)val;
+	WavHeader[41] = (uint8_t)(val >> 8);
+	WavHeader[42] = (uint8_t)(val >> 16);
+	WavHeader[43] = (uint8_t)(val >> 24);
 
 	rewind ( file_ptr );
 	fwrite ( &WavHeader, sizeof(WavHeader), 1, file_ptr );
@@ -1234,9 +1234,9 @@ static void	YM2149_DoSamples_250_Debug ( int SamplesToGenerate , int pos )
  * On each call, we consider samples were already generated up to (and including) counter value
  * YM2149_Clock_250_prev. We must generate as many samples to reach (and include) YM2149_Clock_250.
  */
-static void	YM2149_Run ( Uint64 CPU_Clock )
+static void	YM2149_Run ( uint64_t CPU_Clock )
 {
-	Uint64		YM2149_Clock_250_prev;
+	uint64_t		YM2149_Clock_250_prev;
 	int		YM2149_Nb_Updates_250;
 
 
@@ -1344,9 +1344,9 @@ static ymsample	YM2149_Next_Resample_Weighted_Average_2 ( void )
  */
  static ymsample	YM2149_Next_Resample_Weighted_Average_N ( void )
 {
-	static Uint32	pos_fract = 0;
-	Uint32		interval_fract;
-	Sint64		total;
+	static uint32_t	pos_fract = 0;
+	uint32_t		interval_fract;
+	int64_t		total;
 	ymsample	sample;
 
 
@@ -1357,7 +1357,7 @@ static ymsample	YM2149_Next_Resample_Weighted_Average_2 ( void )
 
 	if ( pos_fract )				/* start position : 0xffff <= pos_fract <= 0 */
 	{
-		total += ((Sint64)YM_Buffer_250[ YM_Buffer_250_pos_read ]) * ( 0x10000 - pos_fract );
+		total += ((int64_t)YM_Buffer_250[ YM_Buffer_250_pos_read ]) * ( 0x10000 - pos_fract );
 		YM_Buffer_250_pos_read = ( YM_Buffer_250_pos_read + 1 ) & YM_BUFFER_250_SIZE_MASK;
 		pos_fract -= 0x10000;			/* next sample */
 	}
@@ -1366,14 +1366,14 @@ static ymsample	YM2149_Next_Resample_Weighted_Average_2 ( void )
 
 	while ( pos_fract & 0xffff0000 )		/* check integer part */
 	{
-		total += ((Sint64)YM_Buffer_250[ YM_Buffer_250_pos_read ]) * 0x10000;
+		total += ((int64_t)YM_Buffer_250[ YM_Buffer_250_pos_read ]) * 0x10000;
 		YM_Buffer_250_pos_read = ( YM_Buffer_250_pos_read + 1 ) & YM_BUFFER_250_SIZE_MASK;
 		pos_fract -= 0x10000;			/* next sample */
 	}
 
 	if ( pos_fract )				/* partial end sample if 0xffff <= pos_fract < 0 */
 	{
-		total += ((Sint64)YM_Buffer_250[ YM_Buffer_250_pos_read ]) * pos_fract;
+		total += ((int64_t)YM_Buffer_250[ YM_Buffer_250_pos_read ]) * pos_fract;
 	}
 
 //fprintf ( stderr , "next 2 %d\n" , YM_Buffer_250_pos_read );
@@ -1690,7 +1690,7 @@ void Sound_Stats_Show ( void )
 /**
  * Generate output samples for all channels (YM2149, DMA or crossbar) during this time-frame
  */
-static int Sound_GenerateSamples(Uint64 CPU_Clock)
+static int Sound_GenerateSamples(uint64_t CPU_Clock)
 {
 	int	idx;
 	int	ym_margin;
