@@ -9,6 +9,6 @@
 #define NUMBYTESPERSECTOR    512         /* All disks are 512 bytes per sector */
 
 
-void Floppy_FindDiskDetails(const Uint8 *pBuffer, int nImageBytes,
+void Floppy_FindDiskDetails(const uint8_t *pBuffer, int nImageBytes,
                             unsigned short *pnSectorsPerTrack, unsigned short *pnSides);
 
