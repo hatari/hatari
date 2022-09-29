@@ -70,7 +70,7 @@ typedef struct
 	bool			DoubleSided[ MAX_FLOPPYDRIVES ];/* Is drive double sided or not */
 #endif
 
-	Sint64			FdcClock;			/* Current value of CyclesGlobalClockCounter */
+	int64_t			FdcClock;			/* Current value of CyclesGlobalClockCounter */
 } IPF_STRUCT;
 
 

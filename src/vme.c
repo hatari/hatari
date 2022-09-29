@@ -194,7 +194,7 @@ static void SCUSetupTracing(void (**reads)(void), void (**writes)(void))
 /**
  * Show VME/SCU register values
  */
-void VME_Info(FILE *fp, Uint32 arg)
+void VME_Info(FILE *fp, uint32_t arg)
 {
 	if (!(Config_IsMachineTT() || Config_IsMachineMegaSTE()))
 	{

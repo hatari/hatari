@@ -7,18 +7,18 @@
 #ifndef HATARI_UTILS_H
 #define HATARI_UTILS_H
 
-#include <SDL_types.h>
+#include <inttypes.h>
 
 
 #define CRC32_POLY	0x04c11db7	/* IEEE 802.3 recommendation */
 
-extern void    crc32_reset ( Uint32 *crc );
-extern void    crc32_add_byte ( Uint32 *crc , Uint8 c );
+extern void    crc32_reset ( uint32_t *crc );
+extern void    crc32_add_byte ( uint32_t *crc , uint8_t c );
 
 #define CRC16_POLY	0x1021		/* CCITT */
 
-extern void    crc16_reset ( Uint16 *crc );
-extern void    crc16_add_byte ( Uint16 *crc , Uint8 c );
+extern void    crc16_reset ( uint16_t *crc );
+extern void    crc16_add_byte ( uint16_t *crc , uint8_t c );
 
 
 #endif		/* HATARI_UTILS_H */

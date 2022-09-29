@@ -318,7 +318,7 @@ typedef struct {
 	/* Clock is cleared on cold reset, but keeps its values on warm reset */
 	/* Original RAM location :  $82=year $83=month $84=day $85=hour $86=minute $87=second */
 	uint8_t		Clock[ 6 ];
-	Sint64		Clock_micro;				/* Incremented every VBL to update Clock[] every second */
+	int64_t		Clock_micro;				/* Incremented every VBL to update Clock[] every second */
 
 } IKBD_STRUCT;
 
@@ -1117,7 +1117,7 @@ static uint8_t	IKBD_BCD_Adjust ( uint8_t val )
  */
 void	IKBD_UpdateClockOnVBL ( void )
 {
-	Sint64	FrameDuration_micro;
+	int64_t	FrameDuration_micro;
 	int	i;
 	uint8_t	val;
 	uint8_t	max;

@@ -28,6 +28,6 @@ extern void Rtc_YearUnits_ReadByte(void);
 extern void Rtc_YearTens_ReadByte(void);
 extern void Rtc_ClockMod_ReadByte(void);
 extern void Rtc_ClockMod_WriteByte(void);
-extern void Rtc_Info(FILE *fp, Uint32 dummy);
+extern void Rtc_Info(FILE *fp, uint32_t dummy);
 
 #endif

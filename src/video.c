@@ -5606,7 +5606,7 @@ static void Video_TT_RasterHBL(void)
 /**
  * display video related information (for debugger info command)
  */
-void Video_Info(FILE *fp, Uint32 dummy)
+void Video_Info(FILE *fp, uint32_t dummy)
 {
 	const char *mode;
 	switch (VerticalOverscan) {

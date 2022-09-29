@@ -22,11 +22,11 @@ extern int	AviRecordDefaultFps;
 extern char	AviRecordFile[FILENAME_MAX];
 
 extern bool	Avi_RecordVideoStream ( void );
-extern bool	Avi_RecordAudioStream ( Sint16 pSamples[][2] , int SampleIndex , int SampleLength );
+extern bool	Avi_RecordAudioStream ( int16_t pSamples[][2] , int SampleIndex , int SampleLength );
 
 extern bool	Avi_AreWeRecording ( void );
 extern bool	Avi_SetCompressionLevel(const char *str);
-extern bool	Avi_StartRecording ( char *FileName , bool CropGui , Uint32 Fps , Uint32 Fps_scale , int VideoCodec );
+extern bool	Avi_StartRecording ( char *FileName , bool CropGui , uint32_t Fps , uint32_t Fps_scale , int VideoCodec );
 extern bool	Avi_StopRecording ( void );
 extern void	Avi_SetSurface(SDL_Surface *surf);
 

@@ -16,7 +16,7 @@ const char Utils_fileid[] = "Hatari utils.c";
 
 /************************************************************************/
 /* Functions used to compute the CRC32 of a stream of bytes.		*/
-/* These functions require a pointer to an unsigned int (Uint32) to	*/
+/* These functions require a pointer to an unsigned int (uint32_t) to	*/
 /* store the resulting CRC.						*/
 /*	crc32_reset : call this once to reset the CRC, before adding	*/
 /*		some bytes.						*/
@@ -28,7 +28,7 @@ const char Utils_fileid[] = "Hatari utils.c";
 /* crc32_add_byte().						*/
 /*--------------------------------------------------------------*/
 
-void	crc32_reset ( Uint32 *crc )
+void	crc32_reset ( uint32_t *crc )
 {
 	*crc = 0xffffffff;
 }
@@ -39,7 +39,7 @@ void	crc32_reset ( Uint32 *crc )
 /* Call crc32_reset() first to init the crc value.		*/
 /*--------------------------------------------------------------*/
 
-void	crc32_add_byte ( Uint32 *crc , Uint8 c )
+void	crc32_add_byte ( uint32_t *crc , uint8_t c )
 {
 	int	bit;
     
@@ -58,7 +58,7 @@ void	crc32_add_byte ( Uint32 *crc , Uint8 c )
 
 /************************************************************************/
 /* Functions used to compute the CRC16 of a stream of bytes.		*/
-/* These functions require a pointer to an unsigned int (Uint16) to	*/
+/* These functions require a pointer to an unsigned int (uint16_t) to	*/
 /* store the resulting CRC.						*/
 /*	crc16_reset : call this once to reset the CRC, before adding	*/
 /*		some bytes.						*/
@@ -70,7 +70,7 @@ void	crc32_add_byte ( Uint32 *crc , Uint8 c )
 /* crc16_add_byte().						*/
 /*--------------------------------------------------------------*/
 
-void	crc16_reset ( Uint16 *crc )
+void	crc16_reset ( uint16_t *crc )
 {
 	*crc = 0xffff;
 }
@@ -81,7 +81,7 @@ void	crc16_reset ( Uint16 *crc )
 /* Call crc16_reset() first to init the crc value.		*/
 /*--------------------------------------------------------------*/
 
-void	crc16_add_byte ( Uint16 *crc , Uint8 c )
+void	crc16_add_byte ( uint16_t *crc , uint8_t c )
 {
 	int	bit;
 

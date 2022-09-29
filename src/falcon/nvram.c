@@ -544,7 +544,7 @@ void NvRam_Data_WriteByte(void)
 }
 
 
-void NvRam_Info(FILE *fp, Uint32 dummy)
+void NvRam_Info(FILE *fp, uint32_t dummy)
 {
 	fprintf(fp, "- File: '%s'\n", nvram_filename);
 	fprintf(fp, "- Time: from host (regs: 0, 2, 4, 6-9)\n");

@@ -261,6 +261,6 @@ extern void Video_TTShiftMode_WriteWord(void);
 extern void Video_TTColorRegs_Write(void);
 extern void Video_TTColorRegs_STRegWrite(void);
 
-extern void Video_Info(FILE *fp, Uint32 dummy);
+extern void Video_Info(FILE *fp, uint32_t dummy);
 
 #endif  /* HATARI_VIDEO_H */

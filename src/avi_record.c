@@ -107,42 +107,42 @@ const char AVIRecord_fileid[] = "Hatari avi_record.c";
 
 typedef struct
 {
-	Uint8			ChunkName[4];		/* '00db', '00dc', '01wb', 'ix00' , 'ix01' */
-	Uint8			ChunkSize[4];
+	uint8_t			ChunkName[4];		/* '00db', '00dc', '01wb', 'ix00' , 'ix01' */
+	uint8_t			ChunkSize[4];
 } AVI_CHUNK;
 
 
 typedef struct
 {
-	Uint8			identifier[4];		/* '00db', '00dc', '01wb', 'ix00' , 'ix01' */
-	Uint8			flags[4];
-	Uint8			offset[4];
-	Uint8			length[4];
+	uint8_t			identifier[4];		/* '00db', '00dc', '01wb', 'ix00' , 'ix01' */
+	uint8_t			flags[4];
+	uint8_t			offset[4];
+	uint8_t			length[4];
 } AVI_CHUNK_INDEX;
 
 
 typedef struct
 {
-	Uint8			ChunkName[4];		/* 'strh' */
-	Uint8			ChunkSize[4];
+	uint8_t			ChunkName[4];		/* 'strh' */
+	uint8_t			ChunkSize[4];
 
-	Uint8			stream_type[4];		/* 'vids' or 'auds' */
-	Uint8			stream_handler[4];
-	Uint8			flags[4];
-	Uint8			priority[2];
-	Uint8			language[2];
-	Uint8			initial_frames[4];
-	Uint8			time_scale[4];
-	Uint8			data_rate[4];
-	Uint8			start_time[4];
-	Uint8			data_length[4];
-	Uint8			buffer_size[4];
-	Uint8			quality[4];
-	Uint8			sample_size[4];
-	Uint8			dest_left[2];
-	Uint8			dest_top[2];
-	Uint8			dest_right[2];
-	Uint8			dest_bottom[2];
+	uint8_t			stream_type[4];		/* 'vids' or 'auds' */
+	uint8_t			stream_handler[4];
+	uint8_t			flags[4];
+	uint8_t			priority[2];
+	uint8_t			language[2];
+	uint8_t			initial_frames[4];
+	uint8_t			time_scale[4];
+	uint8_t			data_rate[4];
+	uint8_t			start_time[4];
+	uint8_t			data_length[4];
+	uint8_t			buffer_size[4];
+	uint8_t			quality[4];
+	uint8_t			sample_size[4];
+	uint8_t			dest_left[2];
+	uint8_t			dest_top[2];
+	uint8_t			dest_right[2];
+	uint8_t			dest_bottom[2];
 } AVI_STREAM_HEADER;
 
 
@@ -153,44 +153,44 @@ typedef struct
 
 typedef struct
 {
-	Uint8			offset[8];		/* 64 bit offset in avi file */
-	Uint8			size[4];
-	Uint8			duration[4];
+	uint8_t			offset[8];		/* 64 bit offset in avi file */
+	uint8_t			size[4];
+	uint8_t			duration[4];
 } AVI_STREAM_SUPER_INDEX_ENTRY;
 
 typedef struct
 {
-	Uint8			ChunkName[4];		/* 'indx' */
-	Uint8			ChunkSize[4];
+	uint8_t			ChunkName[4];		/* 'indx' */
+	uint8_t			ChunkSize[4];
 
-	Uint8			longs_per_entry[2];	/* 4 */
-	Uint8			index_sub_type;		/* 0 */
-	Uint8			index_type;		/* must be AVI_INDEX_OF_INDEXES */
-	Uint8			entries_in_use[4];
-	Uint8			chunk_id[4];		/* '00db', '00dc', '01wb' */
-	Uint8			reserved[12];
+	uint8_t			longs_per_entry[2];	/* 4 */
+	uint8_t			index_sub_type;		/* 0 */
+	uint8_t			index_type;		/* must be AVI_INDEX_OF_INDEXES */
+	uint8_t			entries_in_use[4];
+	uint8_t			chunk_id[4];		/* '00db', '00dc', '01wb' */
+	uint8_t			reserved[12];
 	AVI_STREAM_SUPER_INDEX_ENTRY	index[AVI_SUPER_INDEX_SIZE];
 } AVI_STREAM_SUPER_INDEX;
 
 
 typedef struct
 {
-	Uint8			offset[4];		/* 32 bit offset in current 'movi' chunk */
-	Uint8			size[4];
+	uint8_t			offset[4];		/* 32 bit offset in current 'movi' chunk */
+	uint8_t			size[4];
 } AVI_STREAM_INDEX_ENTRY;
 
 typedef struct
 {
-	Uint8			ChunkName[4];		/* 'ix00', 'ix01' */
-	Uint8			ChunkSize[4];
+	uint8_t			ChunkName[4];		/* 'ix00', 'ix01' */
+	uint8_t			ChunkSize[4];
 
-	Uint8			longs_per_entry[2];	/* 2 */
-	Uint8			index_sub_type;		/* must be 0 */
-	Uint8			index_type;		/* must be AVI_INDEX_OF_CHUNKS */
-	Uint8			entries_in_use[4];
-	Uint8			chunk_id[4];		/* '00db', '00dc', '01wb' */
-	Uint8			base_offset[8];		/* all offsets in index array are relative to this */
-	Uint8			reserved[4];
+	uint8_t			longs_per_entry[2];	/* 2 */
+	uint8_t			index_sub_type;		/* must be 0 */
+	uint8_t			index_type;		/* must be AVI_INDEX_OF_CHUNKS */
+	uint8_t			entries_in_use[4];
+	uint8_t			chunk_id[4];		/* '00db', '00dc', '01wb' */
+	uint8_t			base_offset[8];		/* all offsets in index array are relative to this */
+	uint8_t			reserved[4];
 
 //	AVI_STREAM_INDEX_ENTRY	*index;			/* array size is dynamic, don't include it here */
 } AVI_STREAM_INDEX;
@@ -198,28 +198,28 @@ typedef struct
 
 typedef struct
 {
-	Uint8			ChunkName[4];		/* 'strf' */
-	Uint8			ChunkSize[4];
+	uint8_t			ChunkName[4];		/* 'strf' */
+	uint8_t			ChunkSize[4];
 
-	Uint8			size[4];
-	Uint8			width[4];
-	Uint8			height[4];
-	Uint8			planes[2];
-	Uint8			bit_count[2];
-	Uint8			compression[4];
-	Uint8			size_image[4];
-	Uint8			xpels_meter[4];
-	Uint8			ypels_meter[4];
-	Uint8			clr_used[4];
-	Uint8			clr_important[4];
+	uint8_t			size[4];
+	uint8_t			width[4];
+	uint8_t			height[4];
+	uint8_t			planes[2];
+	uint8_t			bit_count[2];
+	uint8_t			compression[4];
+	uint8_t			size_image[4];
+	uint8_t			xpels_meter[4];
+	uint8_t			ypels_meter[4];
+	uint8_t			clr_used[4];
+	uint8_t			clr_important[4];
 } AVI_STREAM_FORMAT_VIDS;
 
 typedef struct
 {
-	Uint8			ChunkName[4];		/* 'LIST' */
-	Uint8			ChunkSize[4];
+	uint8_t			ChunkName[4];		/* 'LIST' */
+	uint8_t			ChunkSize[4];
 
-	Uint8			Name[4];		/* 'strl' */
+	uint8_t			Name[4];		/* 'strl' */
 	AVI_STREAM_HEADER	Header;			/* 'strh' */
 	AVI_STREAM_FORMAT_VIDS	Format;			/* 'strf' */
 	AVI_STREAM_SUPER_INDEX	SuperIndex;		/* 'indx' */
@@ -228,24 +228,24 @@ typedef struct
 
 typedef struct
 {
-	Uint8			ChunkName[4];		/* 'strf' */
-	Uint8			ChunkSize[4];
+	uint8_t			ChunkName[4];		/* 'strf' */
+	uint8_t			ChunkSize[4];
 
-	Uint8			codec[2];
-	Uint8			channels[2];
-	Uint8			sample_rate[4];
-	Uint8			bit_rate[4];
-	Uint8			block_align[2];
-	Uint8			bits_per_sample[2];
-	Uint8			ext_size[2];
+	uint8_t			codec[2];
+	uint8_t			channels[2];
+	uint8_t			sample_rate[4];
+	uint8_t			bit_rate[4];
+	uint8_t			block_align[2];
+	uint8_t			bits_per_sample[2];
+	uint8_t			ext_size[2];
 } AVI_STREAM_FORMAT_AUDS;
 
 typedef struct
 {
-	Uint8			ChunkName[4];		/* 'LIST' */
-	Uint8			ChunkSize[4];
+	uint8_t			ChunkName[4];		/* 'LIST' */
+	uint8_t			ChunkSize[4];
 
-	Uint8			Name[4];		/* 'strl' */
+	uint8_t			Name[4];		/* 'strl' */
 	AVI_STREAM_HEADER	Header;			/* 'strh' */
 	AVI_STREAM_FORMAT_AUDS	Format;			/* 'strf' */
 	AVI_STREAM_SUPER_INDEX	SuperIndex;		/* 'indx' */
@@ -253,84 +253,84 @@ typedef struct
 
 
 typedef struct {
-	Uint8			ChunkName[4];		/* 'avih' */
-	Uint8			ChunkSize[4];
+	uint8_t			ChunkName[4];		/* 'avih' */
+	uint8_t			ChunkSize[4];
 
-	Uint8			microsec_per_frame[4];
-	Uint8			max_bytes_per_second[4];
-	Uint8			padding_granularity[4];
-	Uint8			flags[4];
-	Uint8			total_frames[4];	/* total number of frames in the 1st 'movi' chunk */
-	Uint8			init_frame[4];
-	Uint8			nb_streams[4];
-	Uint8			buffer_size[4];
-	Uint8			width[4];
-	Uint8			height[4];
-	Uint8			scale[4];
-	Uint8			rate[4];
-	Uint8			start[4];
-	Uint8			length[4];
+	uint8_t			microsec_per_frame[4];
+	uint8_t			max_bytes_per_second[4];
+	uint8_t			padding_granularity[4];
+	uint8_t			flags[4];
+	uint8_t			total_frames[4];	/* total number of frames in the 1st 'movi' chunk */
+	uint8_t			init_frame[4];
+	uint8_t			nb_streams[4];
+	uint8_t			buffer_size[4];
+	uint8_t			width[4];
+	uint8_t			height[4];
+	uint8_t			scale[4];
+	uint8_t			rate[4];
+	uint8_t			start[4];
+	uint8_t			length[4];
 } AVI_STREAM_AVIH;
 
 typedef struct
 {
-	Uint8			ChunkName[4];		/* 'LIST' */
-	Uint8			ChunkSize[4];
+	uint8_t			ChunkName[4];		/* 'LIST' */
+	uint8_t			ChunkSize[4];
 
-	Uint8			Name[4];		/* 'hdrl' */
+	uint8_t			Name[4];		/* 'hdrl' */
 	AVI_STREAM_AVIH		Header;
 } AVI_STREAM_LIST_AVIH;
 
 
 typedef struct {
-	Uint8			ChunkName[4];		/* 'dmlh' */
-	Uint8			ChunkSize[4];
+	uint8_t			ChunkName[4];		/* 'dmlh' */
+	uint8_t			ChunkSize[4];
 
-	Uint8			total_frames[4];	/* total number of frames in the whole avi file */
-	Uint8			reserved[244];
+	uint8_t			total_frames[4];	/* total number of frames in the whole avi file */
+	uint8_t			reserved[244];
 } AVI_STREAM_DMLH;
 
 typedef struct
 {
-	Uint8			ChunkName[4];		/* 'LIST' */
-	Uint8			ChunkSize[4];
+	uint8_t			ChunkName[4];		/* 'LIST' */
+	uint8_t			ChunkSize[4];
 
-	Uint8			Name[4];		/* 'odml' */
+	uint8_t			Name[4];		/* 'odml' */
 	AVI_STREAM_DMLH		Header;
 } AVI_STREAM_LIST_ODML;
 
 
 typedef struct {
-	Uint8			ChunkName[4];		/* 'ISFT' (software used) */
-	Uint8			ChunkSize[4];
+	uint8_t			ChunkName[4];		/* 'ISFT' (software used) */
+	uint8_t			ChunkSize[4];
 
-//	Uint8			Text[2];		/* Text's size should be multiple of 2 (including '\0') */
+//	uint8_t			Text[2];		/* Text's size should be multiple of 2 (including '\0') */
 } AVI_STREAM_INFO;
 
 typedef struct
 {
-	Uint8			ChunkName[4];		/* 'LIST' */
-	Uint8			ChunkSize[4];
+	uint8_t			ChunkName[4];		/* 'LIST' */
+	uint8_t			ChunkSize[4];
 
-	Uint8			Name[4];		/* 'INFO' */
+	uint8_t			Name[4];		/* 'INFO' */
 	AVI_STREAM_INFO		Info;
 } AVI_STREAM_LIST_INFO;
 
 
 typedef struct
 {
-	Uint8			ChunkName[4];		/* 'LIST' */
-	Uint8			ChunkSize[4];
+	uint8_t			ChunkName[4];		/* 'LIST' */
+	uint8_t			ChunkSize[4];
 
-	Uint8			Name[4];		/* 'movi' */
+	uint8_t			Name[4];		/* 'movi' */
 } AVI_STREAM_LIST_MOVI;
 
 
 typedef struct
 {
-  Uint8		signature[4];				/* 'RIFF' */
-  Uint8		filesize[4];
-  Uint8		type[4];				/* 'AVI ' */
+  uint8_t		signature[4];				/* 'RIFF' */
+  uint8_t		filesize[4];
+  uint8_t		type[4];				/* 'AVI ' */
   
 } RIFF_HEADER;
 
@@ -362,10 +362,10 @@ typedef struct {
 #define	AVI_FRAME_INDEX_ALLOC_SIZE		50000			/* How many more entries to alloc each time pAviFrameIndex is full */
 									/* We use 50000 (~800 KB) at a time to avoid allocating too often */
 typedef struct {
-  Uint32	VideoFrame_Pos;
-  Uint32	VideoFrame_Length;
-  Uint32	AudioFrame_Pos;
-  Uint32	AudioFrame_Length;
+  uint32_t	VideoFrame_Pos;
+  uint32_t	VideoFrame_Length;
+  uint32_t	AudioFrame_Pos;
+  uint32_t	AudioFrame_Length;
 } RECORD_AVI_FRAME_INDEX;
 
 
@@ -429,11 +429,11 @@ static AVI_FILE_HEADER		AviFileHeader;
 
 
 
-static void	Avi_StoreU8 ( Uint8 *p , Uint8 val );
-static void	Avi_StoreU16 ( Uint8 *p , Uint16 val );
-static void	Avi_StoreU32 ( Uint8 *p , Uint32 val );
-static void	Avi_StoreU64 ( Uint8 *p , Uint64 val );
-static void	Avi_Store4cc ( Uint8 *p , const char *text );
+static void	Avi_StoreU8 ( uint8_t *p , uint8_t val );
+static void	Avi_StoreU16 ( uint8_t *p , uint16_t val );
+static void	Avi_StoreU32 ( uint8_t *p , uint32_t val );
+static void	Avi_StoreU64 ( uint8_t *p , uint64_t val );
+static void	Avi_Store4cc ( uint8_t *p , const char *text );
 
 static bool	Avi_FrameIndex_GrowIfNeeded ( RECORD_AVI_PARAMS *pAviParams );
 static bool	Avi_FrameIndex_Free ( RECORD_AVI_PARAMS *pAviParams );
@@ -452,7 +452,7 @@ static bool	Avi_RecordVideoStream_BMP ( RECORD_AVI_PARAMS *pAviParams );
 #if HAVE_LIBPNG
 static bool	Avi_RecordVideoStream_PNG ( RECORD_AVI_PARAMS *pAviParams );
 #endif
-static bool	Avi_RecordAudioStream_PCM ( RECORD_AVI_PARAMS *pAviParams , Sint16 pSamples[][2], int SampleIndex, int SampleLength );
+static bool	Avi_RecordAudioStream_PCM ( RECORD_AVI_PARAMS *pAviParams , int16_t pSamples[][2], int SampleIndex, int SampleLength );
 
 static void	Avi_BuildFileHeader ( RECORD_AVI_PARAMS *pAviParams , AVI_FILE_HEADER *pAviFileHeader );
 
@@ -461,13 +461,13 @@ static bool	Avi_StopRecording_WithParams ( RECORD_AVI_PARAMS *pAviParams );
 
 
 
-static void	Avi_StoreU8 ( Uint8 *p , Uint8 val )
+static void	Avi_StoreU8 ( uint8_t *p , uint8_t val )
 {
 	*p = val;
 }
 
 
-static void	Avi_StoreU16 ( Uint8 *p , Uint16 val )
+static void	Avi_StoreU16 ( uint8_t *p , uint16_t val )
 {
 	*p++ = val & 0xff;
 	val >>= 8;
@@ -475,28 +475,8 @@ static void	Avi_StoreU16 ( Uint8 *p , Uint16 val )
 }
 
 
-static void	Avi_StoreU32 ( Uint8 *p , Uint32 val )
+static void	Avi_StoreU32 ( uint8_t *p , uint32_t val )
 {
-	*p++ = val & 0xff;
-	val >>= 8;
-	*p++ = val & 0xff;
-	val >>= 8;
-	*p++ = val & 0xff;
-	val >>= 8;
-	*p = val & 0xff;
-}
-
-
-static void	Avi_StoreU64 ( Uint8 *p , Uint64 val )
-{
-	*p++ = val & 0xff;
-	val >>= 8;
-	*p++ = val & 0xff;
-	val >>= 8;
-	*p++ = val & 0xff;
-	val >>= 8;
-	*p++ = val & 0xff;
-	val >>= 8;
 	*p++ = val & 0xff;
 	val >>= 8;
 	*p++ = val & 0xff;
@@ -507,7 +487,27 @@ static void	Avi_StoreU64 ( Uint8 *p , Uint64 val )
 }
 
 
-static void	Avi_Store4cc ( Uint8 *p , const char *text )
+static void	Avi_StoreU64 ( uint8_t *p , uint64_t val )
+{
+	*p++ = val & 0xff;
+	val >>= 8;
+	*p++ = val & 0xff;
+	val >>= 8;
+	*p++ = val & 0xff;
+	val >>= 8;
+	*p++ = val & 0xff;
+	val >>= 8;
+	*p++ = val & 0xff;
+	val >>= 8;
+	*p++ = val & 0xff;
+	val >>= 8;
+	*p++ = val & 0xff;
+	val >>= 8;
+	*p = val & 0xff;
+}
+
+
+static void	Avi_Store4cc ( uint8_t *p , const char *text )
 {
 	memcpy ( p , text , 4 );
 }
@@ -584,7 +584,7 @@ static	bool	Avi_FrameIndex_Add ( RECORD_AVI_PARAMS *pAviParams , AVI_FILE_HEADER
 		if ( pAviParams->AviFrameIndex_Count == 0 )			/* The 1st frame will be the base offset for all entries in the index */
 			pAviParams->VideoFrames_Base_Offset = Frame_Pos;
 
-		pAviParams->pAviFrameIndex[ pAviParams->AviFrameIndex_Count ].VideoFrame_Pos = (Uint32)(Frame_Pos - pAviParams->VideoFrames_Base_Offset );
+		pAviParams->pAviFrameIndex[ pAviParams->AviFrameIndex_Count ].VideoFrame_Pos = (uint32_t)(Frame_Pos - pAviParams->VideoFrames_Base_Offset );
 		pAviParams->pAviFrameIndex[ pAviParams->AviFrameIndex_Count ].VideoFrame_Length = Frame_Length;
 	}
 	else									/* Audio frame */
@@ -592,7 +592,7 @@ static	bool	Avi_FrameIndex_Add ( RECORD_AVI_PARAMS *pAviParams , AVI_FILE_HEADER
 		if ( pAviParams->AviFrameIndex_Count == 0 )			/* The 1st frame will be the base offset for all entries in the index */
 			pAviParams->AudioFrames_Base_Offset = Frame_Pos;
 
-		pAviParams->pAviFrameIndex[ pAviParams->AviFrameIndex_Count ].AudioFrame_Pos = (Uint32)(Frame_Pos - pAviParams->AudioFrames_Base_Offset );
+		pAviParams->pAviFrameIndex[ pAviParams->AviFrameIndex_Count ].AudioFrame_Pos = (uint32_t)(Frame_Pos - pAviParams->AudioFrames_Base_Offset );
 		pAviParams->pAviFrameIndex[ pAviParams->AviFrameIndex_Count ].AudioFrame_Length = Frame_Length;
 	}
 
@@ -745,7 +745,7 @@ static	bool	Avi_WriteMoviAllIndexes ( RECORD_AVI_PARAMS *pAviParams , AVI_FILE_H
 static	bool	Avi_CloseMoviChunk ( RECORD_AVI_PARAMS *pAviParams , AVI_FILE_HEADER *pAviFileHeader )
 {
 	off_t	Pos_End;
-	Uint8	TempSize[4];
+	uint8_t	TempSize[4];
 
 
 //fprintf ( stderr , "avi_close_movi nb=%d fr=%d\n" , pAviParams->MoviChunkCount , pAviParams->TotalVideoFrames );
@@ -789,7 +789,7 @@ static	bool	Avi_CloseMoviChunk ( RECORD_AVI_PARAMS *pAviParams , AVI_FILE_HEADER
 	/* For 'riff' / 'movi' chunks 2 ... n */
 	else
 	{
-		Avi_StoreU32 ( TempSize , (Uint32)(Pos_End - pAviParams->RiffChunkPosStart - 8 ) );
+		Avi_StoreU32 ( TempSize , (uint32_t)(Pos_End - pAviParams->RiffChunkPosStart - 8 ) );
 		if ( fseeko ( pAviParams->FileOut , pAviParams->RiffChunkPosStart+4 , SEEK_SET ) != 0 )
 		{
 			perror ( "Avi_CloseMoviChunk" );
@@ -881,10 +881,10 @@ static bool	Avi_RecordVideoStream_BMP ( RECORD_AVI_PARAMS *pAviParams )
 {
 	AVI_CHUNK	Chunk;
 	int		SizeImage;
-	Uint8		*pBitmapIn , *pBitmapOut;
+	uint8_t		*pBitmapIn , *pBitmapOut;
 	int		y, src_y;
 	int		NeedLock;
-	Uint8		*LineBuf = alloca(3 * pAviParams->Width);		/* temp buffer to convert to 24-bit BGR format */
+	uint8_t		*LineBuf = alloca(3 * pAviParams->Width);		/* temp buffer to convert to 24-bit BGR format */
 
 	SizeImage = Avi_GetBmpSize ( pAviParams->Width , pAviParams->Height , pAviParams->BitCount );
 
@@ -912,17 +912,17 @@ static bool	Avi_RecordVideoStream_BMP ( RECORD_AVI_PARAMS *pAviParams )
 		 * bottom left corner) and bytes are in BGR order (not RGB) */
 		src_y = pAviParams->Surface->h - 1 - pAviParams->CropTop - pAviParams->CropBottom;
 		src_y = src_y - (y * (src_y + 1) + pAviParams->Height/2) / pAviParams->Height;
-		pBitmapIn = (Uint8 *)pAviParams->Surface->pixels
+		pBitmapIn = (uint8_t *)pAviParams->Surface->pixels
 			+ pAviParams->Surface->pitch * src_y
 			+ pAviParams->CropLeft * pAviParams->Surface->format->BytesPerPixel;
 
 		pBitmapOut = LineBuf;
 		switch ( pAviParams->Surface->format->BytesPerPixel ) {
 		 case 2:
-			PixelConvert_16to24Bits_BGR(LineBuf, (Uint16 *)pBitmapIn, pAviParams->Width, pAviParams->Surface);
+			PixelConvert_16to24Bits_BGR(LineBuf, (uint16_t *)pBitmapIn, pAviParams->Width, pAviParams->Surface);
 			break;
 		 case 4:
-			PixelConvert_32to24Bits_BGR(LineBuf, (Uint32 *)pBitmapIn, pAviParams->Width, pAviParams->Surface);
+			PixelConvert_32to24Bits_BGR(LineBuf, (uint32_t *)pBitmapIn, pAviParams->Width, pAviParams->Surface);
 			break;
 		 default:
 			abort();
@@ -950,7 +950,7 @@ static bool	Avi_RecordVideoStream_PNG ( RECORD_AVI_PARAMS *pAviParams )
 	AVI_CHUNK	Chunk;
 	int		SizeImage;
 	off_t		ChunkPos;
-	Uint8	TempSize[4];
+	uint8_t	TempSize[4];
 	
 
 	/* Write the video frame header */
@@ -1021,7 +1021,7 @@ bool	Avi_RecordVideoStream ( void )
 
 	/* Store index for this video frame */
 	Pos_Start += 8;								/* skip header */
-	if ( Avi_FrameIndex_Add ( &AviParams , &AviFileHeader , 0 , Pos_Start , (Uint32)( Pos_End - Pos_Start ) ) == false )
+	if ( Avi_FrameIndex_Add ( &AviParams , &AviFileHeader , 0 , Pos_Start , (uint32_t)( Pos_End - Pos_Start ) ) == false )
 		return false;
 
 	if (AviParams.TotalVideoFrames % ( AviParams.Fps / AviParams.Fps_scale ) == 0)
@@ -1041,10 +1041,10 @@ bool	Avi_RecordVideoStream ( void )
 
 
 
-static bool	Avi_RecordAudioStream_PCM ( RECORD_AVI_PARAMS *pAviParams , Sint16 pSamples[][2] , int SampleIndex , int SampleLength )
+static bool	Avi_RecordAudioStream_PCM ( RECORD_AVI_PARAMS *pAviParams , int16_t pSamples[][2] , int SampleIndex , int SampleLength )
 {
 	AVI_CHUNK	Chunk;
-	Sint16		sample[2];
+	int16_t		sample[2];
 	int		i;
 	int		idx;
 
@@ -1080,7 +1080,7 @@ static bool	Avi_RecordAudioStream_PCM ( RECORD_AVI_PARAMS *pAviParams , Sint16 p
 
 
 
-bool	Avi_RecordAudioStream ( Sint16 pSamples[][2] , int SampleIndex , int SampleLength )
+bool	Avi_RecordAudioStream ( int16_t pSamples[][2] , int SampleIndex , int SampleLength )
 {
 	off_t		Pos_Start , Pos_End;
 
@@ -1104,7 +1104,7 @@ bool	Avi_RecordAudioStream ( Sint16 pSamples[][2] , int SampleIndex , int Sample
 
 	/* Store index for this audio frame */
 	Pos_Start += 8;								/* skip header */
-	if ( Avi_FrameIndex_Add ( &AviParams , &AviFileHeader , 1 , Pos_Start , (Uint32)( Pos_End - Pos_Start ) ) == false )
+	if ( Avi_FrameIndex_Add ( &AviParams , &AviFileHeader , 1 , Pos_Start , (uint32_t)( Pos_End - Pos_Start ) ) == false )
 		return false;
 
 	return true;
@@ -1147,8 +1147,8 @@ static void	Avi_BuildFileHeader ( RECORD_AVI_PARAMS *pAviParams , AVI_FILE_HEADE
 
 	Avi_Store4cc ( pAviFileHeader->AviHeader.Header.ChunkName , "avih" );
 	Avi_StoreU32 ( pAviFileHeader->AviHeader.Header.ChunkSize , sizeof ( AVI_STREAM_AVIH ) - 8 );
-	Avi_StoreU32 ( pAviFileHeader->AviHeader.Header.microsec_per_frame , (Uint32)( ( 1000000 * (Sint64)Fps_scale ) / Fps ) );
-	Avi_StoreU32 ( pAviFileHeader->AviHeader.Header.max_bytes_per_second , (Uint32)( ( (Sint64)SizeImage * Fps ) / Fps_scale + AudioFreq * 4 ) );
+	Avi_StoreU32 ( pAviFileHeader->AviHeader.Header.microsec_per_frame , (uint32_t)( ( 1000000 * (int64_t)Fps_scale ) / Fps ) );
+	Avi_StoreU32 ( pAviFileHeader->AviHeader.Header.max_bytes_per_second , (uint32_t)( ( (int64_t)SizeImage * Fps ) / Fps_scale + AudioFreq * 4 ) );
 	Avi_StoreU32 ( pAviFileHeader->AviHeader.Header.padding_granularity , 0 );
 	Avi_StoreU32 ( pAviFileHeader->AviHeader.Header.flags , AVIF_HASINDEX | AVIF_ISINTERLEAVED | AVIF_TRUSTCKTYPE );
 	Avi_StoreU32 ( pAviFileHeader->AviHeader.Header.total_frames , 0 );			/* number of video frames (-> completed later) */
@@ -1459,7 +1459,7 @@ bool Avi_SetCompressionLevel(const char *str)
 }
 
 
-bool	Avi_StartRecording ( char *FileName , bool CropGui , Uint32 Fps , Uint32 Fps_scale , int VideoCodec )
+bool	Avi_StartRecording ( char *FileName , bool CropGui , uint32_t Fps , uint32_t Fps_scale , int VideoCodec )
 {
 	memset ( &AviParams , 0 , sizeof ( AviParams ) );
 

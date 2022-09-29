@@ -408,7 +408,7 @@ static const char* XBios_Call2Name(Uint16 opcode)
 	return "???";
 }
 
-void XBios_Info(FILE *fp, Uint32 dummy)
+void XBios_Info(FILE *fp, uint32_t dummy)
 {
 	Uint16 opcode;
 	for (opcode = 0; opcode < 168; ) {
@@ -427,7 +427,7 @@ void XBios_Info(FILE *fp, Uint32 dummy)
 #define XBios_Rsconf(params)     false
 #define XBios_Devconnect(params) false
 
-void XBios_Info(FILE *fp, Uint32 bShowOpcodes)
+void XBios_Info(FILE *fp, uint32_t bShowOpcodes)
 {
 	        fputs("Hatari isn't configured with ENABLE_TRACING\n", fp);
 }

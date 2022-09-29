@@ -1126,7 +1126,7 @@ void Videl_Color15_WriteWord(void)
 /**
  * display Videl registers values (for debugger info command)
  */
-void Videl_Info(FILE *fp, Uint32 dummy)
+void Videl_Info(FILE *fp, uint32_t dummy)
 {
 	if (ConfigureParams.System.nMachineType != MACHINE_FALCON) {
 		fprintf(fp, "Not Falcon - no Videl!\n");

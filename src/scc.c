@@ -977,7 +977,7 @@ void SCC_IoMem_WriteByte(void)
 	}
 }
 
-void SCC_Info(FILE *fp, Uint32 dummy)
+void SCC_Info(FILE *fp, uint32_t dummy)
 {
 	unsigned int i, reg;
 	const char *sep;

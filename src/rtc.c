@@ -68,7 +68,7 @@ const char Rtc_fileid[] = "Hatari rtc.c";
 
 
 static bool rtc_bank;           /* RTC bank select (0=normal, 1=configuration(?)) */
-static Sint8 fake_am, fake_amz;
+static int8_t fake_am, fake_amz;
 static int year_offset;
 
 
@@ -290,7 +290,7 @@ void Rtc_ClockMod_WriteByte(void)
 /**
  * Show RTC register values
  */
-void Rtc_Info(FILE *fp, Uint32 dummy)
+void Rtc_Info(FILE *fp, uint32_t dummy)
 {
 	fprintf(fp, "Mode: 0x%02x\n", IoMem[0xfffc2d]);
 	fprintf(fp, "Weekday: %d\n", IoMem[0xfffc2d]);
