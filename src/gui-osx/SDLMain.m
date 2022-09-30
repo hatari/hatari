@@ -467,10 +467,9 @@ static int IsRootCwd()
 static int IsTenPointNineOrLater()
 {
 	// OK for 10.9, but before ??
-	NSOperatingSystemVersion systemVersion = [[NSProcessInfo processInfo] operatingSystemVersion];	
-	int r=(systemVersion.majorVersion==10) && (systemVersion.minorVersion>=9);
-
-	return r;
+	NSOperatingSystemVersion systemVersion = [[NSProcessInfo processInfo] operatingSystemVersion];
+	return ((systemVersion.majorVersion == 10) && (systemVersion.minorVersion>=9)
+			|| systemVersion.majorVersion > 10);
 }
 /*----------------------------------------------------------------------*/
 static int IsFinderLaunch(const int argc, char **argv)
