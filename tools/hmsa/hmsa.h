@@ -8,16 +8,8 @@
 #ifndef HMSA_H
 #define HMSA_H
 
-#include <SDL_types.h>
-
-typedef int BOOL;
-
-#define DRIVE_BUFFER_BYTES    (4*1024*1024)  /* 4MiB area for a disk image */
-
-#ifndef FALSE
-#define FALSE 0
-#define TRUE (!0)
-#endif
+#include <stdint.h>
+#include <stdbool.h>
 
 #ifndef NULL
 #define NULL 0L

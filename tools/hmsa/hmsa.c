@@ -79,7 +79,7 @@ int DlgAlert_Query(const char *text)
 {
 	puts(text);
 	do_newline(text);
-	return TRUE;
+	return true;
 }
 
 
@@ -92,12 +92,12 @@ int DlgAlert_Query(const char *text)
 extern bool IPF_FileNameIsIPF(const char *pszFileName, bool bAllowGZ);		/* function prototype */
 bool IPF_FileNameIsIPF(const char *pszFileName, bool bAllowGZ)
 {
-	return FALSE;
+	return false;
 }
 extern bool STX_FileNameIsSTX(const char *pszFileName, bool bAllowGZ);		/* function prototype */
 bool STX_FileNameIsSTX(const char *pszFileName, bool bAllowGZ)
 {
-	return FALSE;
+	return false;
 }
 
 
@@ -240,7 +240,7 @@ int main(int argc, char *argv[])
 			retval = -1;
 		} else {
 			printf("Converting %s to %s (%li Bytes).\n", srcfile, dstfile, disksize);
-			retval = File_Save(dstfile, diskbuf, disksize, FALSE);
+			retval = File_Save(dstfile, diskbuf, disksize, false);
 		}
 	} else {
 		/* Just read disk image directly into buffer */
