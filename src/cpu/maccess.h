@@ -14,7 +14,7 @@
 #ifndef UAE_MACCESS_H
 #define UAE_MACCESS_H
 
-#include <SDL_endian.h>
+#include "sysdeps.h"
 
 /* Can the actual CPU access unaligned memory? */
 #ifndef CPU_CAN_ACCESS_UNALIGNED
@@ -33,23 +33,23 @@
 
 static inline uae_u32 do_get_mem_long(void *a)
 {
-	return SDL_SwapBE32(*(uae_u32 *)a);
+	return bswap_32(*(uae_u32 *)a);
 }
 
 static inline uae_u16 do_get_mem_word(void *a)
 {
-	return SDL_SwapBE16(*(uae_u16 *)a);
+	return bswap_16(*(uae_u16 *)a);
 }
 
 
 static inline void do_put_mem_long(void *a, uae_u32 v)
 {
-	*(uae_u32 *)a = SDL_SwapBE32(v);
+	*(uae_u32 *)a = bswap_32(v);
 }
 
 static inline void do_put_mem_word(void *a, uae_u16 v)
 {
-	*(uae_u16 *)a = SDL_SwapBE16(v);
+	*(uae_u16 *)a = bswap_16(v);
 }
 
 
@@ -105,19 +105,14 @@ static inline void do_put_mem_byte(uae_u8 *a, uae_u8 v)
 }
 
 
-STATIC_INLINE uae_u64 do_byteswap_64(uae_u64 v)
-{
-	return SDL_Swap64(v);
-}
-
 STATIC_INLINE uae_u32 do_byteswap_32(uae_u32 v)
 {
-	return SDL_Swap32(v);
+	return bswap_32(v);
 }
 
 STATIC_INLINE uae_u16 do_byteswap_16(uae_u16 v)
 {
-	return SDL_Swap16(v);
+	return bswap_16(v);
 }
 
 STATIC_INLINE uae_u32 do_get_mem_word_unswapped(uae_u16 *a)

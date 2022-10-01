@@ -552,8 +552,7 @@ extern bool use_long_double;
 
 /* Try to use system bswap_16/bswap_32 functions. */
 #if defined HAVE_BSWAP_16 && defined HAVE_BSWAP_32
-# include <byteswap.h>
-#  ifdef HAVE_BYTESWAP_H
+# ifdef HAVE_BYTESWAP_H
 #  include <byteswap.h>
 # endif
 #else

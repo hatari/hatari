@@ -195,6 +195,7 @@ endif(MSVC)
 # Check for optional headers:
 # ###########################
 
+check_include_files(byteswap.h HAVE_BYTESWAP_H)
 check_include_files(termios.h HAVE_TERMIOS_H)
 check_include_files(sys/ioctl.h HAVE_SYS_IOCTL_H)
 check_include_files(strings.h HAVE_STRINGS_H)
@@ -208,6 +209,8 @@ check_include_files("sys/socket.h;sys/un.h" HAVE_UNIX_DOMAIN_SOCKETS)
 # Check for optional functions:
 # #############################
 
+check_symbol_exists(bswap_16 "byteswap.h" HAVE_BSWAP_16)
+check_symbol_exists(bswap_32 "byteswap.h" HAVE_BSWAP_32)
 check_symbol_exists(cfmakeraw "termios.h" HAVE_CFMAKERAW)
 check_symbol_exists(tcsetattr "termios.h" HAVE_TCSETATTR)
 check_symbol_exists(setenv "stdlib.h" HAVE_SETENV)
