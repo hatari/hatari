@@ -16,6 +16,18 @@
 
 #include "sysdeps.h"
 
+#if defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
+
+#define be_swap32(x) ((uint32_t)(x))
+#define be_swap16(x) ((uint16_t)(x))
+
+#else
+
+#define be_swap32(x) bswap_32(x)
+#define be_swap16(x) bswap_16(x)
+
+#endif
+
 /* Can the actual CPU access unaligned memory? */
 #ifndef CPU_CAN_ACCESS_UNALIGNED
 # if defined(__i386__) || defined(__x86_64__) || defined(__mc68020__) || \
@@ -26,30 +38,28 @@
 # endif
 #endif
 
-#define ALIGN_POINTER_TO32(p) ((~(unsigned long)(p)) & 3)
-
 /* If the CPU can access unaligned memory, use these accelerated functions: */
 #if CPU_CAN_ACCESS_UNALIGNED
 
 static inline uae_u32 do_get_mem_long(void *a)
 {
-	return bswap_32(*(uae_u32 *)a);
+	return be_swap32(*(uae_u32 *)a);
 }
 
 static inline uae_u16 do_get_mem_word(void *a)
 {
-	return bswap_16(*(uae_u16 *)a);
+	return be_swap16(*(uae_u16 *)a);
 }
 
 
 static inline void do_put_mem_long(void *a, uae_u32 v)
 {
-	*(uae_u32 *)a = bswap_32(v);
+	*(uae_u32 *)a = be_swap32(v);
 }
 
 static inline void do_put_mem_word(void *a, uae_u16 v)
 {
-	*(uae_u16 *)a = bswap_16(v);
+	*(uae_u16 *)a = be_swap16(v);
 }
 
 
