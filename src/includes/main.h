@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <SDL_types.h>
+#include <stdint.h>
 #include <stdbool.h>
 #include <math.h>
 
