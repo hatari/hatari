@@ -48,10 +48,10 @@ static void (*pInterceptReadTable[0x8000])(void);	/* Table with read access hand
 static void (*pInterceptWriteTable[0x8000])(void);	/* Table with write access handlers */
 
 int nIoMemAccessSize;					/* Set to 1, 2 or 4 according to byte, word or long word access */
-Uint32 IoAccessFullAddress;				/* Store the complete 32 bit address received in the IoMem_xxx() handler */
+uint32_t IoAccessFullAddress;				/* Store the complete 32 bit address received in the IoMem_xxx() handler */
 							/* (this is the address to write on the stack in case of a bus error) */
-Uint32 IoAccessBaseAddress;				/* Stores the base address of the IO mem access (masked on 24 bits) */
-Uint32 IoAccessCurrentAddress;				/* Current byte address while handling WORD and LONG accesses (masked on 24 bits) */
+uint32_t IoAccessBaseAddress;				/* Stores the base address of the IO mem access (masked on 24 bits) */
+uint32_t IoAccessCurrentAddress;			/* Current byte address while handling WORD and LONG accesses (masked on 24 bits) */
 static int nBusErrorAccesses;				/* Needed to count bus error accesses */
 
 
@@ -75,7 +75,7 @@ static int nBusErrorAccesses;				/* Needed to count bus error accesses */
   When CPU runs in "cycle exact mode", this is not used because the internal cycles will be computed
   precisely at the CPU emulation level.
 */
-static Uint64	IoAccessInstrPrevClock;
+static uint64_t	IoAccessInstrPrevClock;
 int		IoAccessInstrCount;			/* Number of the accesses made in the current instruction (1..4) */
 							/* 0 means no multiple accesses in the current instruction */
 
@@ -101,9 +101,9 @@ void IoMem_MemorySnapShot_Capture(bool bSave)
 /**
  * Fill a region with bus error handlers.
  */
-static void IoMem_SetBusErrorRegion(Uint32 startaddr, Uint32 endaddr)
+static void IoMem_SetBusErrorRegion(uint32_t startaddr, uint32_t endaddr)
 {
-	Uint32 a;
+	uint32_t a;
 
 	for (a = startaddr; a <= endaddr; a++)
 	{
@@ -124,9 +124,9 @@ static void IoMem_SetBusErrorRegion(Uint32 startaddr, Uint32 endaddr)
 /**
  * Fill a region with void handlers.
  */
-static void IoMem_SetVoidRegion(Uint32 startaddr, Uint32 endaddr)
+static void IoMem_SetVoidRegion(uint32_t startaddr, uint32_t endaddr)
 {
-	Uint32 addr;
+	uint32_t addr;
 
 	for (addr = startaddr; addr <= endaddr; addr++)
 	{
@@ -160,12 +160,12 @@ static void IoMem_FixVoidAccessForST(void)
 static void IoMem_FixVoidAccessForMegaST(void)
 {
 	int i;
-	Uint32 no_be_addrs[] =
+	uint32_t no_be_addrs[] =
 	{
 		0xff8200, 0xff8202, 0xff8204, 0xff8206, 0xff8208,
 		0xff820c, 0xff8608, 0xff860a, 0xff860c, 0
 	};
-	Uint32 no_be_regions[][2] =
+	uint32_t no_be_regions[][2] =
 	{
 		{ 0xff8000, 0xff8000 },
 		{ 0xff8002, 0xff800d },
@@ -228,7 +228,7 @@ static void IoMem_FixAccessForMegaSTE(void)
 static void IoMem_FixVoidAccessForCompatibleFalcon(void)
 {
 	int i;
-	Uint32 no_be_regions[][2] =
+	uint32_t no_be_regions[][2] =
 	{
 		{ 0xff8002, 0xff8005 },
 		{ 0xff8008, 0xff800b },
@@ -262,7 +262,7 @@ static void IoMem_FixVoidAccessForCompatibleFalcon(void)
  */
 void IoMem_Init(void)
 {
-	Uint32 addr;
+	uint32_t addr;
 	int i;
 	const INTERCEPT_ACCESS_FUNC *pInterceptAccessFuncs = NULL;
 
@@ -432,7 +432,7 @@ void IoMem_Reset(void)
  */
 uae_u32 REGPARAM3 IoMem_bget(uaecptr addr)
 {
-	Uint8 val;
+	uint8_t val;
 
 	IoAccessFullAddress = addr;			/* Store initial 32 bits address (eg for bus error stack) */
 
@@ -485,8 +485,8 @@ uae_u32 REGPARAM3 IoMem_bget(uaecptr addr)
  */
 uae_u32 REGPARAM3 IoMem_wget(uaecptr addr)
 {
-	Uint32 idx;
-	Uint16 val;
+	uint32_t idx;
+	uint16_t val;
 
 	IoAccessFullAddress = addr;			/* Store initial 32 bits address (eg for bus error stack) */
 
@@ -552,8 +552,8 @@ uae_u32 REGPARAM3 IoMem_wget(uaecptr addr)
  */
 uae_u32 REGPARAM3 IoMem_lget(uaecptr addr)
 {
-	Uint32 idx;
-	Uint32 val;
+	uint32_t idx;
+	uint32_t val;
 	int n;
 
 	IoAccessFullAddress = addr;			/* Store initial 32 bits address (eg for bus error stack) */
@@ -670,7 +670,7 @@ void REGPARAM3 IoMem_bput(uaecptr addr, uae_u32 val)
  */
 void REGPARAM3 IoMem_wput(uaecptr addr, uae_u32 val)
 {
-	Uint32 idx;
+	uint32_t idx;
 
 	IoAccessFullAddress = addr;			/* Store initial 32 bits address (eg for bus error stack) */
 
@@ -733,7 +733,7 @@ void REGPARAM3 IoMem_wput(uaecptr addr, uae_u32 val)
  */
 void REGPARAM3 IoMem_lput(uaecptr addr, uae_u32 val)
 {
-	Uint32 idx;
+	uint32_t idx;
 	int n;
 
 	IoAccessFullAddress = addr;			/* Store initial 32 bits address (eg for bus error stack) */
@@ -799,7 +799,7 @@ void REGPARAM3 IoMem_lput(uaecptr addr, uae_u32 val)
  * We only check if it would give a bus error on read access, as in our case it would give
  * a bus error too in case of a write
  */
-bool	IoMem_CheckBusError ( Uint32 addr )
+bool	IoMem_CheckBusError ( uint32_t addr )
 {
 	addr &= 0xffff;
 
@@ -866,7 +866,7 @@ void IoMem_BusErrorOddWriteAccess(void)
  */
 void IoMem_VoidRead(void)
 {
-	Uint32 a;
+	uint32_t a;
 
 	/* handler is probably called only once, so we have to take care of the neighbour "void IO registers" */
 	for (a = IoAccessBaseAddress; a < IoAccessBaseAddress + nIoMemAccessSize; a++)
@@ -886,7 +886,7 @@ void IoMem_VoidRead(void)
  */
 void IoMem_VoidRead_00(void)
 {
-	Uint32 a;
+	uint32_t a;
 
 	/* handler is probably called only once, so we have to take care of the neighbour "void IO registers" */
 	for (a = IoAccessBaseAddress; a < IoAccessBaseAddress + nIoMemAccessSize; a++)

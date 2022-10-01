@@ -11,7 +11,7 @@
 /* Hardware address details */
 typedef struct
 {
-	const Uint32 Address;     /* ST hardware address */
+	const uint32_t Address;   /* ST hardware address */
 	const int SpanInBytes;    /* E.g. SIZE_BYTE, SIZE_WORD or SIZE_LONG */
 	void (*ReadFunc)(void);   /* Read function */
 	void (*WriteFunc)(void);  /* Write function */

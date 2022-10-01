@@ -150,11 +150,11 @@ extern int nHBL;
 extern int nStartHBL;
 extern int nEndHBL;
 extern int VerticalOverscan;
-extern Uint16 HBLPalettes[HBL_PALETTE_LINES];
-extern Uint16 *pHBLPalettes;
-extern Uint32 HBLPaletteMasks[HBL_PALETTE_MASKS];
-extern Uint32 *pHBLPaletteMasks;
-extern Uint32 VideoBase;
+extern uint16_t HBLPalettes[HBL_PALETTE_LINES];
+extern uint16_t *pHBLPalettes;
+extern uint32_t HBLPaletteMasks[HBL_PALETTE_MASKS];
+extern uint32_t *pHBLPaletteMasks;
+extern uint32_t VideoBase;
 extern int nScreenRefreshRate;
 
 extern int nScanlinesPerFrame;
@@ -186,7 +186,7 @@ extern void	Video_InitTimings(void);
 extern void	Video_SetTimings( MACHINETYPE MachineType , VIDEOTIMINGMODE Mode );
 extern const char* Video_GetTimings_Name ( void );
 
-extern Uint8	Video_Get_MONO_Line ( void );
+extern uint8_t	Video_Get_MONO_Line ( void );
 
 extern void	Video_ConvertPosition( int FrameCycles , int *pHBL , int *pLineCycles );
 extern void	Video_GetPosition( int *pFrameCycles , int *pHBL , int *pLineCycles );

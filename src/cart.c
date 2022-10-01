@@ -52,7 +52,7 @@ static const char * const psCartNameExts[] =
  */
 static void Cart_LoadImage(void)
 {
-	Uint8 *pCartData;
+	uint8_t *pCartData;
 	long nCartSize;
 	char *pCartFileName = ConfigureParams.Rom.szCartridgeImageFileName;
 

@@ -208,7 +208,7 @@ typedef struct {
 
 extern cpu_instruction_t CpuInstruction;
 
-extern Uint32 BusErrorAddress;
+extern uint32_t BusErrorAddress;
 extern bool bBusErrorReadWrite;
 extern int nCpuFreqShift;
 extern int WaitStateCycles;
@@ -363,8 +363,8 @@ extern void M68000_CheckCpuSettings(void);
 extern void M68000_PatchCpuTables(void);
 extern void M68000_MemorySnapShot_Capture(bool bSave);
 extern bool M68000_IsVerboseBusError(uint32_t pc, uint32_t addr);
-extern void M68000_BusError ( Uint32 addr , int ReadWrite , int Size , int AccessType , uae_u32 val );
-extern void M68000_Exception(Uint32 ExceptionNr , int ExceptionSource);
+extern void M68000_BusError ( uint32_t addr , int ReadWrite , int Size , int AccessType , uae_u32 val );
+extern void M68000_Exception(uint32_t ExceptionNr , int ExceptionSource);
 extern void M68000_Update_intlev ( void );
 extern void M68000_WaitState(int WaitCycles);
 extern int M68000_WaitEClock ( void );
@@ -376,9 +376,9 @@ extern void M68000_Flush_All_Caches ( uaecptr addr , int size );
 extern void M68000_SetBlitter_CE ( bool ce_mode );
 extern int DMA_MaskAddressHigh ( void );
 extern void M68000_ChangeCpuFreq ( void );
-extern Uint16 M68000_GetSR ( void );
-extern void M68000_SetSR ( Uint16 v );
+extern uint16_t M68000_GetSR ( void );
+extern void M68000_SetSR ( uint16_t v );
 extern void M68000_SetPC ( uaecptr v );
-extern void M68000_MMU_Info(FILE *fp, Uint32 flags);
+extern void M68000_MMU_Info(FILE *fp, uint32_t flags);
 
 #endif

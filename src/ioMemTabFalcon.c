@@ -121,7 +121,7 @@ void IoMemTabFalcon_DSPemulation(void (**readtab)(void), void (**writetab)(void)
 */
 static void IoMemTabFalcon_BusCtrl_WriteByte(void)
 {
-	Uint8 busCtrl = IoMem_ReadByte(0xff8007);
+	uint8_t busCtrl = IoMem_ReadByte(0xff8007);
 
 	/* Set Falcon bus or STE compatible bus emulation */
 	if ((busCtrl & 0x20) == 0)
@@ -148,7 +148,7 @@ static void IoMemTabFalcon_BusCtrl_WriteByte(void)
 
 static void IoMemTabFalcon_BusCtrl_ReadByte(void)
 {
-	Uint8 nBusCtrl = IoMem_ReadByte(0xff8007);
+	uint8_t nBusCtrl = IoMem_ReadByte(0xff8007);
 
 	/* Set the bit manually to get it right after cold boot */
 	if (IoMem_IsFalconBusMode())
@@ -178,7 +178,7 @@ static void IoMemTabFalcon_BusCtrl_ReadByte(void)
  * Logic is inverted, i.e. connected means the corresponding bit is 0.
  * Switch 8 is represented by the highest bit in the register.
  */
-Uint8 IoMemTabFalcon_DIPSwitches_Read(void)
+uint8_t IoMemTabFalcon_DIPSwitches_Read(void)
 {
 	return 0xbf;
 }

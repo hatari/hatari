@@ -39,7 +39,7 @@ const char IoMemTabSTE_fileid[] = "Hatari ioMemTabSTE.c";
 */
 void IoMemTabMegaSTE_CacheCpuCtrl_WriteByte(void)
 {
-	Uint8 busCtrl = IoMem_ReadByte(0xff8e21);
+	uint8_t busCtrl = IoMem_ReadByte(0xff8e21);
 
 	/* 68000 Frequency changed ? We change freq only in 68000 mode for a
 	 * normal MegaSTE, if the user did not request a faster one manually */
@@ -74,7 +74,7 @@ void IoMemTabMegaSTE_CacheCpuCtrl_WriteByte(void)
  * (earliest MegaSTE produced had a DD floppy drive, but later
  * it was replaced by an HD drive)
  */
-Uint8 IoMemTabMegaSTE_DIPSwitches_Read(void)
+uint8_t IoMemTabMegaSTE_DIPSwitches_Read(void)
 {
 	return 0xbf;
 }

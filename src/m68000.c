@@ -101,7 +101,7 @@ const char M68000_fileid[] = "Hatari m68000.c";
 /* information about current CPU instruction */
 cpu_instruction_t CpuInstruction;
 
-Uint32 BusErrorAddress;		/* Stores the offending address for bus-/address errors */
+uint32_t BusErrorAddress;		/* Stores the offending address for bus-/address errors */
 bool bBusErrorReadWrite;	/* 0 for write error, 1 for read error */
 int nCpuFreqShift;		/* Used to emulate higher CPU frequencies: 0=8MHz, 1=16MHz, 2=32Mhz */
 int WaitStateCycles = 0;	/* Used to emulate the wait state cycles of certain IO registers */
@@ -541,7 +541,7 @@ bool M68000_IsVerboseBusError(uint32_t pc, uint32_t addr)
  *   AccessType : BUS_ERROR_ACCESS_INSTR or BUS_ERROR_ACCESS_DATA
  *   val : value we wanted to write in case of a BUS_ERROR_WRITE
  */
-void M68000_BusError ( Uint32 addr , int ReadWrite , int Size , int AccessType , uae_u32 val )
+void M68000_BusError ( uint32_t addr , int ReadWrite , int Size , int AccessType , uae_u32 val )
 {
 	LOG_TRACE(TRACE_CPU_EXCEPTION, "Bus error %s at address $%x PC=$%x.\n",
 	          ReadWrite ? "reading" : "writing", addr, M68000_InstrPC);
@@ -570,7 +570,7 @@ void M68000_BusError ( Uint32 addr , int ReadWrite , int Size , int AccessType ,
 /**
  * Exception handler
  */
-void M68000_Exception(Uint32 ExceptionNr , int ExceptionSource)
+void M68000_Exception(uint32_t ExceptionNr , int ExceptionSource)
 {
 	if ( ExceptionNr > 24 && ExceptionNr < 32 )		/* Level 1-7 interrupts */
 	{
@@ -608,7 +608,7 @@ void M68000_Exception(Uint32 ExceptionNr , int ExceptionSource)
  */
 void	M68000_Update_intlev ( void )
 {	
-	Uint8	Level6_IRQ;
+	uint8_t	Level6_IRQ;
 
 #if ENABLE_DSP_EMU
 	Level6_IRQ = MFP_GetIRQ_CPU() | DSP_GetHREQ();
@@ -696,7 +696,7 @@ int	M68000_WaitEClock ( void )
  */
 static void	M68000_SyncCpuBus ( bool read )
 {
-	Uint64	Cycles;
+	uint64_t	Cycles;
 	int	CyclesToNextBus;
 
 	if ( read )
@@ -848,13 +848,13 @@ void	M68000_ChangeCpuFreq ( void )
  * Some CPU registers can't be read or modified directly, some additional
  * actions are required.
  */
-Uint16	M68000_GetSR ( void )
+uint16_t	M68000_GetSR ( void )
 {
 	MakeSR();
 	return regs.sr;
 }
 
-void	M68000_SetSR ( Uint16 v )
+void	M68000_SetSR ( uint16_t v )
 {
 	regs.sr = v;
 	MakeFromSR();
@@ -869,7 +869,7 @@ void	M68000_SetPC ( uaecptr v )
 /**
  * Dump the contents of the MMU registers
  */
-void M68000_MMU_Info(FILE *fp, Uint32 flags)
+void M68000_MMU_Info(FILE *fp, uint32_t flags)
 {
 	if (!ConfigureParams.System.bMMU || ConfigureParams.System.nCpuLevel < 2)
 	{

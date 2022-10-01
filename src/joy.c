@@ -63,8 +63,8 @@ static bool bJoystickWorking[ JOYSTICK_COUNT ] =		/* Is joystick plugged in and 
 };
 
 int JoystickSpaceBar = false;           /* State of space-bar on joystick button 2 */
-static Uint8 nJoyKeyEmu[ JOYSTICK_COUNT ];
-static Uint16 nSteJoySelect;
+static uint8_t nJoyKeyEmu[ JOYSTICK_COUNT ];
+static uint16_t nSteJoySelect;
 
 
 /**
@@ -231,9 +231,9 @@ static bool Joy_ReadJoystick(int nSdlJoyID, JOYREADING *pJoyReading)
  * NOTE : ID 0 is Joystick 0/Mouse and ID 1 is Joystick 1 (default),
  *        ID 2 and 3 are STE joypads and ID 4 and 5 are parport joysticks.
  */
-Uint8 Joy_GetStickData(int nStJoyId)
+uint8_t Joy_GetStickData(int nStJoyId)
 {
-	Uint8 nData = 0;
+	uint8_t nData = 0;
 	JOYREADING JoyReading;
 
 	/* Are we emulating the joystick via the keyboard? */
@@ -546,8 +546,8 @@ bool Joy_KeyUp(int symkey, int modkey)
  */
 void Joy_StePadButtons_DIPSwitches_ReadWord(void)
 {
-	Uint16 nData = 0xff;
-	Uint8 DIP;
+	uint16_t nData = 0xff;
+	uint8_t DIP;
 
 	if ( !Config_IsMachineFalcon()
 	  && ( nIoMemAccessSize == SIZE_BYTE ) && ( IoAccessCurrentAddress == 0xff9200 ) )
@@ -653,7 +653,7 @@ void Joy_StePadButtons_DIPSwitches_WriteWord(void)
  */
 void Joy_StePadMulti_ReadWord(void)
 {
-	Uint16 nData = 0xff;
+	uint16_t nData = 0xff;
 
 	if (ConfigureParams.Joysticks.Joy[JOYID_STEPADA].nJoystickMode != JOYSTICK_DISABLED
 	    && (nSteJoySelect & 0x0f) != 0x0f)
@@ -722,7 +722,7 @@ void Joy_StePadMulti_WriteWord(void)
  */
 void Joy_SteLightpenX_ReadWord(void)
 {
-	Uint16 nData = 0;	/* Lightpen is not supported yet */
+	uint16_t nData = 0;	/* Lightpen is not supported yet */
 
 	Dprintf(("0xff9220 -> 0x%04x\n", nData));
 
@@ -741,7 +741,7 @@ void Joy_SteLightpenX_ReadWord(void)
  */
 void Joy_SteLightpenY_ReadWord(void)
 {
-	Uint16 nData = 0;	/* Lightpen is not supported yet */
+	uint16_t nData = 0;	/* Lightpen is not supported yet */
 
 	Dprintf(("0xff9222 -> 0x%04x\n", nData));
 

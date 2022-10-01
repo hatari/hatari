@@ -60,35 +60,35 @@ static int udev_mon_fd;
 static struct timeval tv;
 #endif
 
-static Uint32 read_stack_long(Uint32 *stack)
+static uint32_t read_stack_long(uint32_t *stack)
 {
-	Uint32 value = STMemory_ReadLong(*stack);
+	uint32_t value = STMemory_ReadLong(*stack);
 
 	*stack += SIZE_LONG;
 
 	return value;
 }
 
-static void *read_stack_pointer(Uint32 *stack)
+static void *read_stack_pointer(uint32_t *stack)
 {
-	Uint32 ptr = read_stack_long(stack);
+	uint32_t ptr = read_stack_long(stack);
 	return ptr ? STMemory_STAddrToPointer(ptr) : 0;
 }
 
-static void write_long(Uint32 addr, Uint32 value)
+static void write_long(uint32_t addr, uint32_t value)
 {
 	STMemory_WriteLong(addr, value);
 }
 
-static void write_word(Uint32 addr, Uint16 value)
+static void write_word(uint32_t addr, uint16_t value)
 {
 	STMemory_WriteWord(addr, value);
 }
 
 // Sets the error status
-static void set_error(Uint32 handle, int errbit)
+static void set_error(uint32_t handle, int errbit)
 {
-	Uint32 i;
+	uint32_t i;
 	for (i = 0; i < SCSI_MAX_HANDLES; i++)
 	{
 		if (handle != i && handle_meta_data[i].fd &&
@@ -145,7 +145,7 @@ static bool check_mchg_udev(void)
 }
 
 // Checks whether a device exists by checking for the device file name
-static int check_device_file(Uint32 id)
+static int check_device_file(uint32_t id)
 {
 	char device_file[16];
 	sprintf(device_file, "/dev/sg%d", id);
@@ -166,19 +166,19 @@ static int check_device_file(Uint32 id)
 	}
 }
 
-static int scsidrv_interface_version(Uint32 stack)
+static int scsidrv_interface_version(uint32_t stack)
 {
 	LOG_TRACE(TRACE_SCSIDRV, "scsidrv_interface_version: version=$%04x", INTERFACE_VERSION);
 
 	return INTERFACE_VERSION;
 }
 
-static int scsidrv_interface_features(Uint32 stack)
+static int scsidrv_interface_features(uint32_t stack)
 {
-	Uint32 st_bus_name = STMemory_ReadLong(stack);
+	uint32_t st_bus_name = STMemory_ReadLong(stack);
 	char *busName = read_stack_pointer(&stack);
-	Uint32 features = read_stack_long(&stack);
-	Uint32 transferLen = read_stack_long(&stack);
+	uint32_t features = read_stack_long(&stack);
+	uint32_t transferLen = read_stack_long(&stack);
 
 	LOG_TRACE(TRACE_SCSIDRV, "scsidrv_interface_features: busName=%s, features=$%04x, transferLen=%d", BUS_NAME, BUS_FEATURES, BUS_TRANSFER_LEN);
 
@@ -197,9 +197,9 @@ static int scsidrv_interface_features(Uint32 stack)
 }
 
 // SCSI Driver: InquireBus()
-static int scsidrv_inquire_bus(Uint32 stack)
+static int scsidrv_inquire_bus(uint32_t stack)
 {
-	Uint32 id = read_stack_long(&stack);
+	uint32_t id = read_stack_long(&stack);
 	char device_file[16];
 
 	LOG_TRACE(TRACE_SCSIDRV, "scsidrv_inquire_bus: id=%d", id);
@@ -220,11 +220,11 @@ static int scsidrv_inquire_bus(Uint32 stack)
 }
 
 // SCSI Driver: Open()
-static int scsidrv_open(Uint32 stack)
+static int scsidrv_open(uint32_t stack)
 {
 	char device_file[16];
-	Uint32 handle;
-	Uint32 id;
+	uint32_t handle;
+	uint32_t id;
 	int fd;
 
 #if HAVE_UDEV
@@ -273,9 +273,9 @@ static int scsidrv_open(Uint32 stack)
 }
 
 // SCSI Driver: Close()
-static int scsidrv_close(Uint32 stack)
+static int scsidrv_close(uint32_t stack)
 {
-	Uint32 handle = read_stack_long(&stack);
+	uint32_t handle = read_stack_long(&stack);
 
 	LOG_TRACE(TRACE_SCSIDRV, "scsidrv_close: handle=%d", handle);
 
@@ -292,18 +292,18 @@ static int scsidrv_close(Uint32 stack)
 }
 
 // SCSI Driver: In() and Out()
-static int scsidrv_inout(Uint32 stack)
+static int scsidrv_inout(uint32_t stack)
 {
-	Uint32 handle = read_stack_long(&stack);
-	Uint32 dir = read_stack_long(&stack);
+	uint32_t handle = read_stack_long(&stack);
+	uint32_t dir = read_stack_long(&stack);
 	unsigned char *cmd = read_stack_pointer(&stack);
-	Uint32 cmd_len = read_stack_long(&stack);
-	Uint32 st_buffer = STMemory_ReadLong(stack);
+	uint32_t cmd_len = read_stack_long(&stack);
+	uint32_t st_buffer = STMemory_ReadLong(stack);
 	unsigned char *buffer = read_stack_pointer(&stack);
-	Uint32 transfer_len = read_stack_long(&stack);
-	Uint32 st_sense_buffer = STMemory_ReadLong(stack);
+	uint32_t transfer_len = read_stack_long(&stack);
+	uint32_t st_sense_buffer = STMemory_ReadLong(stack);
 	unsigned char *sense_buffer = read_stack_pointer(&stack);
-	Uint32 timeout = read_stack_long(&stack);
+	uint32_t timeout = read_stack_long(&stack);
 	int status;
 
 	if (LOG_TRACE_LEVEL(TRACE_SCSIDRV))
@@ -315,7 +315,7 @@ static int scsidrv_inout(Uint32 stack)
 		    handle, dir, cmd_len, buffer, transfer_len, sense_buffer,
 		    timeout);
 
-		Uint32 i;
+		uint32_t i;
 		for (i = 0; i < cmd_len; i++)
 		{
 			char str[8];
@@ -363,7 +363,7 @@ static int scsidrv_inout(Uint32 stack)
 	if (check_mchg_udev())
 	{
 		// cErrMediach for all open handles
-		Uint32 i;
+		uint32_t i;
 		for (i = 0; i < SCSI_MAX_HANDLES; i++)
 		{
 			if (handle_meta_data[i].fd)
@@ -445,11 +445,11 @@ static int scsidrv_inout(Uint32 stack)
 }
 
 // SCSI Driver: Error()
-static int scsidrv_error(Uint32 stack)
+static int scsidrv_error(uint32_t stack)
 {
-	Uint32 handle = read_stack_long(&stack);
-	Uint32 rwflag = read_stack_long(&stack);
-	Uint32 errnum = read_stack_long(&stack);
+	uint32_t handle = read_stack_long(&stack);
+	uint32_t rwflag = read_stack_long(&stack);
+	uint32_t errnum = read_stack_long(&stack);
 	int errbit;
 
 	LOG_TRACE(TRACE_SCSIDRV, "scsidrv_error: handle=%d, rwflag=%d, errno=%d",
@@ -478,9 +478,9 @@ static int scsidrv_error(Uint32 stack)
 }
 
 // SCSI Driver: CheckDev()
-static int scsidrv_check_dev(Uint32 stack)
+static int scsidrv_check_dev(uint32_t stack)
 {
-	Uint32 id = read_stack_long(&stack);
+	uint32_t id = read_stack_long(&stack);
 
 	LOG_TRACE(TRACE_SCSIDRV, "scsidrv_check_dev: id=%d", id);
 
@@ -489,7 +489,7 @@ static int scsidrv_check_dev(Uint32 stack)
 
 static const struct
 {
-	int (*cb)(Uint32 stack);
+	int (*cb)(uint32_t stack);
 } operations[] =
 {
 	{ scsidrv_interface_version },
@@ -502,7 +502,7 @@ static const struct
 	{ scsidrv_check_dev }
 };
 
-bool nf_scsidrv(Uint32 stack, Uint32 subid, Uint32 *retval)
+bool nf_scsidrv(uint32_t stack, uint32_t subid, uint32_t *retval)
 {
 	if (subid >= ARRAY_SIZE(operations))
 	{

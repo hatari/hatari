@@ -196,7 +196,7 @@ static void	CpuDoNOP ( void )
  */
 static bool is_cart_pc(void)
 {
-	Uint32 pc = M68000_GetPC();
+	uint32_t pc = M68000_GetPC();
 
 	if (ConfigureParams.System.bAddressSpace24 || (pc >> 24) == 0xff)
 	{
@@ -328,7 +328,7 @@ uae_u32 REGPARAM3 OpCode_VDI(uae_u32 opcode)
  */
 uae_u32 REGPARAM3 OpCode_NatFeat_ID(uae_u32 opcode)
 {
-	Uint32 stack = Regs[REG_A7] + SIZE_LONG;	/* skip return address */
+	uint32_t stack = Regs[REG_A7] + SIZE_LONG;	/* skip return address */
 
 	if (NatFeat_ID(stack, &(Regs[REG_D0])))
 	{
@@ -342,8 +342,8 @@ uae_u32 REGPARAM3 OpCode_NatFeat_ID(uae_u32 opcode)
  */
 uae_u32 REGPARAM3 OpCode_NatFeat_Call(uae_u32 opcode)
 {
-	Uint32 stack = Regs[REG_A7] + SIZE_LONG;	/* skip return address */
-	Uint16 SR = M68000_GetSR();
+	uint32_t stack = Regs[REG_A7] + SIZE_LONG;	/* skip return address */
+	uint16_t SR = M68000_GetSR();
 	bool super;
 
 	super = ((SR & SR_SUPERMODE) == SR_SUPERMODE);

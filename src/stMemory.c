@@ -28,30 +28,30 @@ const char STMemory_fileid[] = "Hatari stMemory.c";
  * But when the user turned on ENABLE_SMALL_MEM, this only points to a malloc'ed
  * buffer with the ST RAM; the ROM and IO memory will be handled separately. */
 #if ENABLE_SMALL_MEM
-Uint8 *STRam;
+uint8_t *STRam;
 #else
-Uint8 STRam[16*1024*1024];
+uint8_t STRam[16*1024*1024];
 #endif
 
-Uint32 STRamEnd;		/* End of ST Ram, above this address is no-mans-land and ROM/IO memory */
+uint32_t STRamEnd;		/* End of ST Ram, above this address is no-mans-land and ROM/IO memory */
 
 
 
-Uint32	RAM_Bank0_Size;		/* Physical RAM on board in bank0 (in bytes) : 128, 512 or 2048 KB */
-Uint32	RAM_Bank1_Size;		/* Physical RAM on board in bank1 (in bytes) : 128, 512 or 2048 KB */
+uint32_t RAM_Bank0_Size;	/* Physical RAM on board in bank0 (in bytes) : 128, 512 or 2048 KB */
+uint32_t RAM_Bank1_Size;	/* Physical RAM on board in bank1 (in bytes) : 128, 512 or 2048 KB */
 
-Uint32	MMU_Bank0_Size;		/* Logical MMU RAM size for bank0 (in bytes) : 128, 512 or 2048 KB */
-Uint32	MMU_Bank1_Size;		/* Logical MMU RAM size for bank1 (in bytes) : 128, 512 or 2048 KB */
+uint32_t MMU_Bank0_Size;	/* Logical MMU RAM size for bank0 (in bytes) : 128, 512 or 2048 KB */
+uint32_t MMU_Bank1_Size;	/* Logical MMU RAM size for bank1 (in bytes) : 128, 512 or 2048 KB */
 
-Uint8	MMU_Conf_Expected;	/* Expected value for $FF8001 corresponding to ST RAM size if <= 4MB */
+uint8_t MMU_Conf_Expected;	/* Expected value for $FF8001 corresponding to ST RAM size if <= 4MB */
 
 
-static void	STMemory_MMU_ConfToBank ( Uint8 MMU_conf , Uint32 *pBank0 , Uint32 *pBank1 );
-static int	STMemory_MMU_Size ( Uint8 MMU_conf );
-static int	STMemory_MMU_Size_TT ( Uint8 MMU_conf );
+static void	STMemory_MMU_ConfToBank ( uint8_t MMU_conf , uint32_t *pBank0 , uint32_t *pBank1 );
+static int	STMemory_MMU_Size ( uint8_t MMU_conf );
+static int	STMemory_MMU_Size_TT ( uint8_t MMU_conf );
 
-static Uint32	STMemory_MMU_Translate_Addr_STF ( Uint32 addr_logical , int RAM_Bank_Size , int MMU_Bank_Size );
-static Uint32	STMemory_MMU_Translate_Addr_STE ( Uint32 addr_logical , int RAM_Bank_Size , int MMU_Bank_Size );
+static uint32_t	STMemory_MMU_Translate_Addr_STF ( uint32_t addr_logical , int RAM_Bank_Size , int MMU_Bank_Size );
+static uint32_t	STMemory_MMU_Translate_Addr_STE ( uint32_t addr_logical , int RAM_Bank_Size , int MMU_Bank_Size );
 
 
 #define	DMA_READ_WORD_BUS_ERR	0x0000		/* This value is returned when reading a word using DMA (blitter, sound) */
@@ -70,7 +70,7 @@ static Uint32	STMemory_MMU_Translate_Addr_STE ( Uint32 addr_logical , int RAM_Ba
  */
 void	STMemory_Init ( int RAM_Size_Byte )
 {
-	Uint8 val;
+	uint8_t val;
 
 	/* Set default MMU bank size values */
 #if ENABLE_SMALL_MEM
@@ -116,9 +116,9 @@ void	STMemory_Reset ( bool bCold )
  *
  * Return true if whole clear was safe / valid.
  */
-bool STMemory_SafeClear(Uint32 addr, unsigned int len)
+bool STMemory_SafeClear(uint32_t addr, unsigned int len)
 {
-	Uint32 end;
+	uint32_t end;
 
 	if (STMemory_CheckAreaType(addr, len, ABFLAG_RAM))
 	{
@@ -155,9 +155,9 @@ bool STMemory_SafeClear(Uint32 addr, unsigned int len)
  * 
  * Return true if whole copy was safe / valid.
  */
-bool STMemory_SafeCopy(Uint32 addr, Uint8 *src, unsigned int len, const char *name)
+bool STMemory_SafeCopy(uint32_t addr, uint8_t *src, unsigned int len, const char *name)
 {
-	Uint32 end;
+	uint32_t end;
 
 	if ( STMemory_CheckAreaType ( addr, len, ABFLAG_RAM ) )
 	{
@@ -225,8 +225,8 @@ void STMemory_SetDefaultConfig(void)
 	int i;
 	int screensize, limit;
 	int memtop, phystop;
-	Uint8 MMU_Conf_Force;
-	Uint8 nFalcSysCntrl;
+	uint8_t MMU_Conf_Force;
+	uint8_t nFalcSysCntrl;
 
 	if (bRamTosImage)
 	{
@@ -502,7 +502,7 @@ int STMemory_CorrectSTRamSize(void)
  * Check that the region of 'size' starting at 'addr' is entirely inside
  * a memory bank of the same memory type
  */
-bool	STMemory_CheckAreaType ( Uint32 addr , int size , int mem_type )
+bool	STMemory_CheckAreaType ( uint32_t addr , int size , int mem_type )
 {
 	addrbank	*pBank;
 
@@ -528,7 +528,7 @@ bool	STMemory_CheckAreaType ( Uint32 addr , int size , int mem_type )
  *  - an access to a part of the IO region that cause a bus error
  * Returns true if address would give a bus error
  */
-bool	STMemory_CheckAddrBusError ( Uint32 addr )
+bool	STMemory_CheckAddrBusError ( uint32_t addr )
 {
 	/* Check if it's a whole "bus error" region */
 	if ( memory_region_bus_error ( addr ) )
@@ -553,9 +553,9 @@ bool	STMemory_CheckAddrBusError ( Uint32 addr )
  * to ensure we don't try to access a non existing memory region.
  * Basically, this function should be used only for addr in RAM or in ROM
  */
-void	*STMemory_STAddrToPointer ( Uint32 addr )
+void	*STMemory_STAddrToPointer ( uint32_t addr )
 {
-	Uint8	*p;
+	uint8_t	*p;
 
 	if ( ConfigureParams.System.bAddressSpace24 == true )
 		addr &= 0x00ffffff;			/* Only keep the 24 lowest bits */
@@ -604,10 +604,10 @@ char *STMemory_GetStringPointer(uint32_t addr)
  * Write long/word/byte into memory.
  * NOTE - value will be converted to 68000 endian
  */
-void	STMemory_Write ( Uint32 addr , Uint32 val , int size )
+void	STMemory_Write ( uint32_t addr , uint32_t val , int size )
 {
 	addrbank	*pBank;
-	Uint8		*p;
+	uint8_t		*p;
 
 //printf ( "mem direct write %x %x %d\n" , addr , val , size );
 	pBank = &get_mem_bank ( addr );
@@ -625,24 +625,24 @@ void	STMemory_Write ( Uint32 addr , Uint32 val , int size )
 	if ( size == 4 )
 		do_put_mem_long ( p , val );
 	else if ( size == 2 )
-		do_put_mem_word ( p , (Uint16)val );
+		do_put_mem_word ( p , (uint16_t)val );
 	else
-		*p = (Uint8)val;
+		*p = (uint8_t)val;
 }
 
-void	STMemory_WriteLong ( Uint32 addr , Uint32 val )
+void	STMemory_WriteLong ( uint32_t addr , uint32_t val )
 {
 	STMemory_Write ( addr , val , 4 );
 }
 
-void	STMemory_WriteWord ( Uint32 addr , Uint16 val )
+void	STMemory_WriteWord ( uint32_t addr , uint16_t val )
 {
-	STMemory_Write ( addr , (Uint32)val , 2 );
+	STMemory_Write ( addr , (uint32_t)val , 2 );
 }
 
-void	STMemory_WriteByte ( Uint32 addr , Uint8 val )
+void	STMemory_WriteByte ( uint32_t addr , uint8_t val )
 {
-	STMemory_Write ( addr , (Uint32)val , 1 );
+	STMemory_Write ( addr , (uint32_t)val , 1 );
 }
 
 
@@ -650,10 +650,10 @@ void	STMemory_WriteByte ( Uint32 addr , Uint8 val )
  * Read long/word/byte from memory.
  * NOTE - value will be converted to 68000 endian
  */
-Uint32	STMemory_Read ( Uint32 addr , int size )
+uint32_t	STMemory_Read ( uint32_t addr , int size )
 {
 	addrbank	*pBank;
-	Uint8		*p;
+	uint8_t		*p;
 
 //printf ( "mem direct read %x %d\n" , addr , size );
 	pBank = &get_mem_bank ( addr );
@@ -668,24 +668,24 @@ Uint32	STMemory_Read ( Uint32 addr , int size )
 	if ( size == 4 )
 		return do_get_mem_long ( p );
 	else if ( size == 2 )
-		return (Uint32)do_get_mem_word ( p );
+		return (uint32_t)do_get_mem_word ( p );
 	else
-		return (Uint32)*p;
+		return (uint32_t)*p;
 }
 
-Uint32	STMemory_ReadLong ( Uint32 addr )
+uint32_t	STMemory_ReadLong ( uint32_t addr )
 {
-	return (Uint32) STMemory_Read ( addr , 4 );
+	return (uint32_t) STMemory_Read ( addr , 4 );
 }
 
-Uint16	STMemory_ReadWord ( Uint32 addr )
+uint16_t	STMemory_ReadWord ( uint32_t addr )
 {
-	return (Uint16)STMemory_Read ( addr , 2 );
+	return (uint16_t)STMemory_Read ( addr , 2 );
 }
 
-Uint8	STMemory_ReadByte ( Uint32 addr )
+uint8_t	STMemory_ReadByte ( uint32_t addr )
 {
-	return (Uint8)STMemory_Read ( addr , 1 );
+	return (uint8_t)STMemory_Read ( addr , 1 );
 }
 
 
@@ -694,50 +694,50 @@ Uint8	STMemory_ReadByte ( Uint32 addr )
  * Access memory when using DMA
  * Contrary to the CPU, when DMA is used there should be no bus error
  */
-Uint16	STMemory_DMA_ReadWord ( Uint32 addr )
+uint16_t	STMemory_DMA_ReadWord ( uint32_t addr )
 {
-	Uint16 value;
+	uint16_t value;
 
 	/* When reading from a bus error region, just return a constant */
 	if ( STMemory_CheckAddrBusError ( addr ) )
 		value = DMA_READ_WORD_BUS_ERR;
 	else
-		value = (Uint16)get_word ( addr );
+		value = (uint16_t)get_word ( addr );
 //fprintf ( stderr , "readw %x %x %x\n" , addr , value , STMemory_CheckAddrBusError(addr) );
 	return value;
 }
 
 
-void	STMemory_DMA_WriteWord ( Uint32 addr , Uint16 value )
+void	STMemory_DMA_WriteWord ( uint32_t addr , uint16_t value )
 {
 	/* Call put_word only if the address doesn't point to a bus error region */
 	/* (also see SysMem_wput for addr < 0x8) */
 	if ( STMemory_CheckAddrBusError ( addr ) == false )
-		put_word ( addr , (Uint32)(value) );
+		put_word ( addr , (uint32_t)(value) );
 //fprintf ( stderr , "writew %x %x %x\n" , addr , value , STMemory_CheckAddrBusError(addr) );
 }
 
 
-Uint8	STMemory_DMA_ReadByte ( Uint32 addr )
+uint8_t	STMemory_DMA_ReadByte ( uint32_t addr )
 {
-	Uint8 value;
+	uint8_t value;
 
 	/* When reading from a bus error region, just return a constant */
 	if ( STMemory_CheckAddrBusError ( addr ) )
 		value = DMA_READ_BYTE_BUS_ERR;
 	else
-		value = (Uint8)get_byte ( addr );
+		value = (uint8_t)get_byte ( addr );
 //fprintf ( stderr , "readb %x %x %x\n" , addr , value , STMemory_CheckAddrBusError(addr) );
 	return value;
 }
 
 
-void	STMemory_DMA_WriteByte ( Uint32 addr , Uint8 value )
+void	STMemory_DMA_WriteByte ( uint32_t addr , uint8_t value )
 {
 	/* Call put_word only if the address doesn't point to a bus error region */
 	/* (also see SysMem_wput for addr < 0x8) */
 	if ( STMemory_CheckAddrBusError ( addr ) == false )
-		put_byte ( addr , (Uint32)(value) );
+		put_byte ( addr , (uint32_t)(value) );
 //fprintf ( stderr , "writeb %x %x %x\n" , addr , value , STMemory_CheckAddrBusError(addr) );
 }
 
@@ -821,7 +821,7 @@ MMU configuration at $FF8001 :
 
 
 
-static void	STMemory_MMU_ConfToBank ( Uint8 MMU_conf , Uint32 *pBank0 , Uint32 *pBank1 )
+static void	STMemory_MMU_ConfToBank ( uint8_t MMU_conf , uint32_t *pBank0 , uint32_t *pBank1 )
 {
 	if ( Config_IsMachineTT() )
 	{
@@ -849,7 +849,7 @@ static void	STMemory_MMU_ConfToBank ( Uint8 MMU_conf , Uint32 *pBank0 , Uint32 *
  * Return the number of bytes for a given MMU bank configuration on STF/STE
  * Possible values are 00, 01 or 10
  */
-static int	STMemory_MMU_Size ( Uint8 MMU_conf )
+static int	STMemory_MMU_Size ( uint8_t MMU_conf )
 {
 	if ( MMU_conf == 0 )		return MEM_BANK_SIZE_128;
 	else if ( MMU_conf == 1 )	return MEM_BANK_SIZE_512;
@@ -864,7 +864,7 @@ static int	STMemory_MMU_Size ( Uint8 MMU_conf )
  * Return the number of bytes for a given MMU bank configuration on TT
  * Possible values are 0 or 1
  */
-static int	STMemory_MMU_Size_TT ( Uint8 MMU_conf )
+static int	STMemory_MMU_Size_TT ( uint8_t MMU_conf )
 {
 	if ( MMU_conf == 0 )		return MEM_BANK_SIZE_2048;
 	else				return MEM_BANK_SIZE_8192;
@@ -973,7 +973,7 @@ int	STMemory_RAM_Validate_Size_KB ( int TotalMem )
  * Also set the corresponding MMU value to expect at $FF8001
  * Return true if TotalMem is a valid ST RAM size for the MMU, else false
  */
-bool	STMemory_RAM_SetBankSize ( int TotalMem , Uint32 *pBank0_Size , Uint32 *pBank1_Size , Uint8 *pMMU_Conf )
+bool	STMemory_RAM_SetBankSize ( int TotalMem , uint32_t *pBank0_Size , uint32_t *pBank1_Size , uint8_t *pMMU_Conf )
 {
 	int	TotalMem_KB = TotalMem / 1024;
 
@@ -1020,9 +1020,9 @@ bool	STMemory_RAM_SetBankSize ( int TotalMem , Uint32 *pBank0_Size , Uint32 *pBa
  * not be mapped to any RAM at all, but will point to a "void" region ; this looks like a bug in the MMU's logic,
  * maybe not handled by Atari because this bank combination is unlikely to be used in real machines.
  */
-static Uint32	STMemory_MMU_Translate_Addr_STF ( Uint32 addr_logical , int RAM_Bank_Size , int MMU_Bank_Size )
+static uint32_t	STMemory_MMU_Translate_Addr_STF ( uint32_t addr_logical , int RAM_Bank_Size , int MMU_Bank_Size )
 {
-	Uint32	addr;
+	uint32_t	addr;
 
 
 	if ( RAM_Bank_Size == MEM_BANK_SIZE_2048 )
@@ -1133,9 +1133,9 @@ static Uint32	STMemory_MMU_Translate_Addr_STF ( Uint32 addr_logical , int RAM_Ba
  * Note : the following code uses 9 cases for readability and to compare with STF, but it could be
  * largely reduced as many cases are common.
  */
-static Uint32	STMemory_MMU_Translate_Addr_STE ( Uint32 addr_logical , int RAM_Bank_Size , int MMU_Bank_Size )
+static uint32_t	STMemory_MMU_Translate_Addr_STE ( uint32_t addr_logical , int RAM_Bank_Size , int MMU_Bank_Size )
 {
-	Uint32	addr;
+	uint32_t	addr;
 
 
 	if ( RAM_Bank_Size == MEM_BANK_SIZE_2048 )
@@ -1237,11 +1237,11 @@ static Uint32	STMemory_MMU_Translate_Addr_STE ( Uint32 addr_logical , int RAM_Ba
  * Translate a logical address into a physical address inside the STRam[] buffer
  * by taking into account the size of the 2 MMU banks and the machine type (STF or STE)
  */
-Uint32	STMemory_MMU_Translate_Addr ( Uint32 addr_logical )
+uint32_t	STMemory_MMU_Translate_Addr ( uint32_t addr_logical )
 {
-	Uint32	addr;
-	Uint32	addr_physical;
-	Uint32	Bank_Start_physical;
+	uint32_t	addr;
+	uint32_t	addr_physical;
+	uint32_t	Bank_Start_physical;
 	int	RAM_Bank_Size , MMU_Bank_Size;
 
 
