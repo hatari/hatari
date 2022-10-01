@@ -17,9 +17,7 @@ const char Audio_fileid[] = "Hatari audio.c";
 #include "sound.h"
 #include "dmaSnd.h"
 #include "falcon/crossbar.h"
-
-#include "screen.h"
-#include "video.h"	/* FIXME: video.h is dependent on HBL_PALETTE_LINES from screen.h */
+#include "video.h"
 
 
 int nAudioFrequency = 44100;			/* Sound playback frequency */

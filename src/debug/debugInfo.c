@@ -40,7 +40,6 @@ const char DebugInfo_fileid[] = "Hatari debuginfo.c";
 #include "stMemory.h"
 #include "tos.h"
 #include "scc.h"
-#include "screen.h"
 #include "vdi.h"
 #include "video.h"
 #include "videl.h"

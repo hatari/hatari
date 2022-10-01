@@ -23,7 +23,6 @@ const char IoMemTabFalc_fileid[] = "Hatari ioMemTabFalcon.c";
 #include "rs232.h"
 #include "rtc.h"
 #include "scc.h"
-#include "screen.h"
 #include "blitter.h"
 #include "crossbar.h"
 #include "falcon/videl.h"

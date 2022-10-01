@@ -38,7 +38,6 @@ const char TOS_fileid[] = "Hatari tos.c";
 #include "vdi.h"
 #include "falcon/dsp.h"
 #include "clocks_timings.h"
-#include "screen.h"
 #include "video.h"
 
 #include "faketosData.c"

@@ -18,7 +18,6 @@ const char Joy_fileid[] = "Hatari joy.c";
 #include "joy.h"
 #include "log.h"
 #include "m68000.h"
-#include "screen.h"
 #include "video.h"
 #include "statusbar.h"
 

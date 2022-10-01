@@ -13,7 +13,6 @@ const char DlgKeyboard_fileid[] = "Hatari dlgKeyboard.c";
 #include "dialog.h"
 #include "sdlgui.h"
 #include "file.h"
-#include "screen.h"
 #include "str.h"
 #include "keymap.h"
 

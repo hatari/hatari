@@ -150,10 +150,6 @@ extern int nHBL;
 extern int nStartHBL;
 extern int nEndHBL;
 extern int VerticalOverscan;
-extern uint16_t HBLPalettes[HBL_PALETTE_LINES];
-extern uint16_t *pHBLPalettes;
-extern uint32_t HBLPaletteMasks[HBL_PALETTE_MASKS];
-extern uint32_t *pHBLPaletteMasks;
 extern uint32_t VideoBase;
 extern int nScreenRefreshRate;
 

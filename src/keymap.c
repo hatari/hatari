@@ -19,7 +19,6 @@ const char Keymap_fileid[] = "Hatari keymap.c";
 #include "joy.h"
 #include "shortcut.h"
 #include "str.h"
-#include "screen.h"
 #include "debugui.h"
 #include "log.h"
 

@@ -15,7 +15,6 @@ const char DlgDevice_fileid[] = "Hatari dlgDevice.c";
 #include "sdlgui.h"
 #include "file.h"
 #include "midi.h"  /* needed only with PortMidi */
-#include "screen.h"
 #include "str.h"
 
 

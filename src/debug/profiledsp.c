@@ -23,7 +23,6 @@ const char Profiledsp_fileid[] = "Hatari profiledsp.c";
 #include "profile_priv.h"
 #include "debug_priv.h"
 /* for VBL info */
-#include "screen.h"
 #include "video.h"
 
 static callinfo_t dsp_callinfo;

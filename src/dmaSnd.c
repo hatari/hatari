@@ -108,7 +108,6 @@ const char DmaSnd_fileid[] = "Hatari dmaSnd.c";
 #include "sound.h"
 #include "stMemory.h"
 #include "crossbar.h"
-#include "screen.h"
 #include "video.h"
 #include "m68000.h"
 #include "clocks_timings.h"

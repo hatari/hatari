@@ -17,7 +17,6 @@ const char Vars_fileid[] = "Hatari vars.c";
 #include "configuration.h"
 #include "stMemory.h"
 #include "m68000.h"
-#include "screen.h"	 /* for defines needed by video.h */
 #include "video.h"	 /* for Hatari video variable addresses */
 #include "hatari-glue.h" /* for currprefs */
 

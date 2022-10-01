@@ -23,7 +23,6 @@ const char floppy_stx_fileid[] = "Hatari floppy_stx.c";
 #include "fdc.h"
 #include "log.h"
 #include "memorySnapShot.h"
-#include "screen.h"
 #include "video.h"
 #include "cycles.h"
 #include "str.h"

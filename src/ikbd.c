@@ -87,7 +87,6 @@ const char IKBD_fileid[] = "Hatari ikbd.c";
 #include "m68000.h"
 #include "memorySnapShot.h"
 #include "mfp.h"
-#include "screen.h"
 #include "video.h"
 #include "utils.h"
 #include "acia.h"

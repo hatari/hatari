@@ -34,7 +34,6 @@ const char Midi_fileid[] = "Hatari midi.c";
 #include "midi.h"
 #include "file.h"
 #include "acia.h"
-#include "screen.h"
 #include "video.h"
 
 

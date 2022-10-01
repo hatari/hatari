@@ -26,7 +26,6 @@ const char Profilecpu_fileid[] = "Hatari profilecpu.c";
 #include "debug_priv.h"
 #include "stMemory.h"
 #include "tos.h"
-#include "screen.h"
 #include "video.h"
 
 

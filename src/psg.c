@@ -187,7 +187,6 @@ const char PSG_fileid[] = "Hatari psg.c";
 #if ENABLE_DSP_EMU
 #include "falcon/dsp.h"
 #endif
-#include "screen.h"
 #include "video.h"
 #include "statusbar.h"
 #include "mfp.h"

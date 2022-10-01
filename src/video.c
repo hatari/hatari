@@ -495,10 +495,6 @@ int nFrameSkips;                                /* speed up by skipping video fr
 
 bool bUseHighRes;                               /* Use hi-res (ie Mono monitor) */
 int VerticalOverscan;				/* V_OVERSCAN_xxxx for current display frame */
-uint16_t HBLPalettes[HBL_PALETTE_LINES];          /* 1x16 colour palette per screen line, +1 line just in case write after line 200 */
-uint16_t *pHBLPalettes;                           /* Pointer to current palette lists, one per HBL */
-uint32_t HBLPaletteMasks[HBL_PALETTE_MASKS];      /* Bit mask of palette colours changes, top bit set is resolution change */
-uint32_t *pHBLPaletteMasks;
 int nScreenRefreshRate = VIDEO_50HZ;		/* 50 or 60 Hz in color, 71 Hz in mono */
 uint32_t VideoBase;                               /* Base address in ST Ram for screen (read on each VBL) */
 

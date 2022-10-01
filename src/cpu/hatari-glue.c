@@ -23,7 +23,6 @@ const char HatariGlue_fileid[] = "Hatari hatari-glue.c";
 #include "vdi.h"
 #include "stMemory.h"
 #include "ikbd.h"
-#include "screen.h"
 #include "video.h"
 #include "psg.h"
 #include "mfp.h"

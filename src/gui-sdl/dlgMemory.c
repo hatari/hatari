@@ -11,7 +11,6 @@ const char DlgMemory_fileid[] = "Hatari dlgMemory.c";
 #include "sdlgui.h"
 #include "memorySnapShot.h"
 #include "file.h"
-#include "screen.h"
 #include "options.h"
 
 

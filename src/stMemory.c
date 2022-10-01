@@ -19,7 +19,6 @@ const char STMemory_fileid[] = "Hatari stMemory.c";
 #include "tos.h"
 #include "vdi.h"
 #include "m68000.h"
-#include "screen.h"
 #include "video.h"
 
 /* STRam points to our ST Ram. Unless the user enabled SMALL_MEM where we have

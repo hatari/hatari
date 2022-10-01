@@ -161,7 +161,6 @@ const char ACIA_fileid[] = "Hatari acia.c";
 #include "ioMem.h"
 #include "clocks_timings.h"
 #include "mfp.h"
-#include "screen.h"
 #include "video.h"
 
 

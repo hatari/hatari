@@ -165,7 +165,6 @@ void Profile_CpuUpdate(void) { }
 void Profile_CpuStop(void) { }
 
 /* fake Hatari video variables */
-#include "screen.h"
 #include "video.h"
 int nHBL = 20;
 int nVBLs = 71;

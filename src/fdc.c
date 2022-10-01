@@ -33,7 +33,6 @@ const char FDC_fileid[] = "Hatari fdc.c";
 #include "mfp.h"
 #include "psg.h"
 #include "stMemory.h"
-#include "screen.h"
 #include "video.h"
 #include "clocks_timings.h"
 #include "utils.h"

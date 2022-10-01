@@ -7,7 +7,6 @@
 #include "stMemory.h"
 #include "evaluate.h"
 #include "m68000.h"
-#include "screen.h"
 #include "configuration.h"
 #include "video.h"
 

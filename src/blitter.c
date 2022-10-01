@@ -117,7 +117,6 @@ const char Blitter_fileid[] = "Hatari blitter.c";
 #include "mfp.h"
 #include "memorySnapShot.h"
 #include "stMemory.h"
-#include "screen.h"
 #include "video.h"
 #include "hatari-glue.h"
 #include "falcon/dsp.h"

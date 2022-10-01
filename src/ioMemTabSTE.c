@@ -22,7 +22,6 @@ const char IoMemTabSTE_fileid[] = "Hatari ioMemTabSTE.c";
 #include "psg.h"
 #include "rs232.h"
 #include "rtc.h"
-#include "screen.h"
 #include "video.h"
 #include "blitter.h"
 #include "statusbar.h"

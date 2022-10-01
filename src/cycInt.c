@@ -65,7 +65,6 @@ const char CycInt_fileid[] = "Hatari cycInt.c";
 #include "midi.h"
 #include "memorySnapShot.h"
 #include "sound.h"
-#include "screen.h"
 #include "video.h"
 #include "acia.h"
 #include "clocks_timings.h"

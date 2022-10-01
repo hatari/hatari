@@ -76,6 +76,12 @@ Uint32 ST2RGB[4096];          /* Table to convert ST 0x777 / STe 0xfff palette t
 Uint8 *pSTScreen;
 FRAMEBUFFER *pFrameBuffer;    /* Pointer into current 'FrameBuffer' */
 
+uint16_t HBLPalettes[HBL_PALETTE_LINES];          /* 1x16 colour palette per screen line, +1 line just in case write after line 200 */
+uint16_t *pHBLPalettes;                           /* Pointer to current palette lists, one per HBL */
+uint32_t HBLPaletteMasks[HBL_PALETTE_MASKS];      /* Bit mask of palette colours changes, top bit set is resolution change */
+uint32_t *pHBLPaletteMasks;
+
+
 static FRAMEBUFFER FrameBuffer;     /* Store frame buffer details to tell how to update */
 static Uint8 *pSTScreenCopy;        /* Keep track of current and previous ST screen data */
 static Uint8 *pPCScreenDest;        /* Destination PC buffer */
