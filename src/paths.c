@@ -21,7 +21,7 @@ const char Paths_fileid[] = "Hatari paths.c";
 #define mkdir(name,mode) mkdir(name)
 #endif  /* WIN32 */
 
-#if defined(__MACOSX__)
+#if defined(__APPLE__)
 	#define HATARI_HOME_DIR "Library/Application Support/Hatari"
 #elif defined(WIN32)
 	#define HATARI_HOME_DIR "AppData\\Local\\Hatari"
@@ -261,7 +261,7 @@ static void Paths_InitHomeDirs(void)
 
 	/* Hatari home directory does not exists yet...
 	 * ... so let's try to create it: */
-#if !defined(__MACOSX__) && !defined(WIN32)
+#if !defined(__APPLE__) && !defined(WIN32)
 	sprintf(sHatariHomeDir, "%s%c.config", sUserHomeDir, PATHSEP);
 	if (!File_DirExists(sHatariHomeDir))
 	{
@@ -305,7 +305,7 @@ void Paths_Init(const char *argv0)
 	Paths_InitHomeDirs();
 
 	/* Init screenshot directory string */
-#if !defined(__MACOSX__)
+#if !defined(__APPLE__)
 	sScreenShotDir = Str_Dup(sWorkingDir);
 #else
 	sScreenShotDir = Paths_GetMacScreenShotDir();
