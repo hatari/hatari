@@ -104,7 +104,6 @@
 
 const char Blitter_fileid[] = "Hatari blitter.c";
 
-#include <SDL_types.h>
 #include <stdio.h>
 #include <stdlib.h>
 

@@ -18,7 +18,6 @@
 */
 const char MemorySnapShot_fileid[] = "Hatari memorySnapShot.c";
 
-#include <SDL_types.h>
 #include <errno.h>
 
 #include "main.h"
