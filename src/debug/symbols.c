@@ -23,8 +23,6 @@ const char Symbols_fileid[] = "Hatari symbols.c";
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
-#include <SDL_types.h>
-#include <SDL_endian.h>
 #include "main.h"
 #include "file.h"
 #include "options.h"
@@ -35,6 +33,7 @@ const char Symbols_fileid[] = "Hatari symbols.c";
 #include "evaluate.h"
 #include "configuration.h"
 #include "a.out.h"
+#include "maccess.h"
 
 #include "symbols-common.c"
 

@@ -1,5 +1,5 @@
 
-include_directories(${SDL2_INCLUDE_DIRS})
+include_directories(${CMAKE_SOURCE_DIR}/src/cpu)
 
 add_executable(gst2ascii gst2ascii.c)
 

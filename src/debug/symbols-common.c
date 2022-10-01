@@ -238,7 +238,7 @@ static char symbol_char(int type)
 static uint32_t get_be32(const uint8_t *p)
 {
 	const uint32_t *p32 = (const uint32_t *)p;
-	return SDL_SwapBE32(*p32);
+	return be_swap32(*p32);
 }
 
 
@@ -580,8 +580,8 @@ static symbol_list_t* symbols_load_dri(FILE *fp, const prg_section_t *sections, 
 		    fread(&address, sizeof(address), 1, fp) != 1) {
 			break;
 		}
-		address = SDL_SwapBE32(address);
-		symid = SDL_SwapBE16(symid);
+		address = be_swap32(address);
+		symid = be_swap16(symid);
 
 		/* GST extended DRI symbol format? */
 		if ((symid & 0x0048)) {
@@ -756,13 +756,13 @@ static symbol_list_t* symbols_load_gnu(FILE *fp, const prg_section_t *sections, 
 
 	for (i = 0; i < slots; i++)
 	{
-		strx = SDL_SwapBE32(*(uint32_t*)p);
+		strx = get_be32(p);
 		p += 4;
 		n_type = *p++;
 		n_other = *p++;
-		n_desc = SDL_SwapBE16(*(uint16_t*)p);
+		n_desc = be_swap16(*(uint16_t*)p);
 		p += 2;
-		address = SDL_SwapBE32(*(uint32_t*)p);
+		address = get_be32(p);
 		p += 4;
 		name = dummy;
 		if (!strx) {
@@ -952,23 +952,23 @@ static symbol_list_t* symbols_load_binary(FILE *fp, const symbol_opts_t *opts,
 	/* get TEXT, DATA & BSS section sizes */
 	fseek(fp, 2, SEEK_SET);
 	reads += fread(&textlen, sizeof(textlen), 1, fp);
-	textlen = SDL_SwapBE32(textlen);
+	textlen = be_swap32(textlen);
 	reads += fread(&datalen, sizeof(datalen), 1, fp);
-	datalen = SDL_SwapBE32(datalen);
+	datalen = be_swap32(datalen);
 	reads += fread(&bsslen, sizeof(bsslen), 1, fp);
-	bsslen = SDL_SwapBE32(bsslen);
+	bsslen = be_swap32(bsslen);
 
 	/* get symbol table size & type and check that all reads succeeded */
 	reads += fread(&tablesize, sizeof(tablesize), 1, fp);
-	tablesize = SDL_SwapBE32(tablesize);
+	tablesize = be_swap32(tablesize);
 	reads += fread(&tabletype, sizeof(tabletype), 1, fp);
-	tabletype = SDL_SwapBE32(tabletype);
+	tabletype = be_swap32(tabletype);
 
 	/* get program header and whether there's reloc table */
 	reads += fread(&prgflags, sizeof(prgflags), 1, fp);
-	prgflags = SDL_SwapBE32(prgflags);
+	prgflags = be_swap32(prgflags);
 	reads += fread(&relocflag, sizeof(relocflag), 1, fp);
-	relocflag = SDL_SwapBE32(relocflag);
+	relocflag = be_swap32(relocflag);
 
 	if (reads != 7) {
 		fprintf(stderr, "ERROR: program header reading failed!\n");
@@ -984,35 +984,35 @@ static symbol_list_t* symbols_load_binary(FILE *fp, const symbol_opts_t *opts,
 		uint32_t g_tparel_pos, g_tparel_size, g_stkpos, g_symbol_format;
 
 		reads  = fread(&magic1, sizeof(magic1), 1, fp);
-		magic1 = SDL_SwapBE32(magic1);
+		magic1 = be_swap32(magic1);
 		reads += fread(&magic2, sizeof(magic2), 1, fp);
-		magic2 = SDL_SwapBE32(magic2);
+		magic2 = be_swap32(magic2);
 		if (reads == 2 &&
 			((magic1 == 0x283a001a && magic2 == 0x4efb48fa) || 	/* Original binutils: move.l 28(pc),d4; jmp 0(pc,d4.l) */
 			 (magic1 == 0x203a001a && magic2 == 0x4efb08fa))) {	/* binutils >= 2.18-mint-20080209: move.l 28(pc),d0; jmp 0(pc,d0.l) */
 			reads += fread(&dummy, sizeof(dummy), 1, fp);	/* skip a_info */
 			reads += fread(&a_text, sizeof(a_text), 1, fp);
-			a_text = SDL_SwapBE32(a_text);
+			a_text = be_swap32(a_text);
 			reads += fread(&a_data, sizeof(a_data), 1, fp);
-			a_data = SDL_SwapBE32(a_data);
+			a_data = be_swap32(a_data);
 			reads += fread(&a_bss, sizeof(a_bss), 1, fp);
-			a_bss = SDL_SwapBE32(a_bss);
+			a_bss = be_swap32(a_bss);
 			reads += fread(&a_syms, sizeof(a_syms), 1, fp);
-			a_syms = SDL_SwapBE32(a_syms);
+			a_syms = be_swap32(a_syms);
 			reads += fread(&a_entry, sizeof(a_entry), 1, fp);
-			a_entry = SDL_SwapBE32(a_entry);
+			a_entry = be_swap32(a_entry);
 			reads += fread(&a_trsize, sizeof(a_trsize), 1, fp);
-			a_trsize = SDL_SwapBE32(a_trsize);
+			a_trsize = be_swap32(a_trsize);
 			reads += fread(&a_drsize, sizeof(a_drsize), 1, fp);
-			a_drsize = SDL_SwapBE32(a_drsize);
+			a_drsize = be_swap32(a_drsize);
 			reads += fread(&g_tparel_pos, sizeof(g_tparel_pos), 1, fp);
-			g_tparel_pos = SDL_SwapBE32(g_tparel_pos);
+			g_tparel_pos = be_swap32(g_tparel_pos);
 			reads += fread(&g_tparel_size, sizeof(g_tparel_size), 1, fp);
-			g_tparel_size = SDL_SwapBE32(g_tparel_size);
+			g_tparel_size = be_swap32(g_tparel_size);
 			reads += fread(&g_stkpos, sizeof(g_stkpos), 1, fp);
-			g_stkpos = SDL_SwapBE32(g_stkpos);
+			g_stkpos = be_swap32(g_stkpos);
 			reads += fread(&g_symbol_format, sizeof(g_symbol_format), 1, fp);
-			g_symbol_format = SDL_SwapBE32(g_symbol_format);
+			g_symbol_format = be_swap32(g_symbol_format);
 			if (g_symbol_format == 0)
 			{
 				tabletype = SYMBOL_FORMAT_GNU;

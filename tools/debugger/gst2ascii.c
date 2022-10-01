@@ -19,10 +19,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 #if defined(__MINT__)	/* assume MiNT/lib is always big-endian */
-# define SDL_SwapBE16(x) x
-# define SDL_SwapBE32(x) x
+# define be_swap16(x) ((uint16_t)(x))
+# define be_swap32(x) ((uint32_t)(x))
 #else
-# include <SDL_endian.h>
+# include "maccess.h"
 #endif
 #include <assert.h>
 #include "../../src/debug/a.out.h"
@@ -135,7 +135,7 @@ static symbol_list_t* symbols_load(const char *filename, const symbol_opts_t *op
 		usage("reading program file failed");
 	}
 
-	if (SDL_SwapBE16(magic) != ATARI_PROGRAM_MAGIC) {
+	if (be_swap16(magic) != ATARI_PROGRAM_MAGIC) {
 		usage("file isn't an Atari program file");
 	}
 	list = symbols_load_binary(fp, opts, update_sections);
