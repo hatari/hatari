@@ -680,7 +680,7 @@ void Statusbar_UpdateInfo(void)
 
 	*end = '\0';
 
-	strlcpy(DefaultMessage.msg, buffer, MAX_MESSAGE_LEN);
+	Str_Copy(DefaultMessage.msg, buffer, MAX_MESSAGE_LEN);
 	DEBUGPRINT(("Set default message: '%s'\n", DefaultMessage.msg));
 	/* make sure default message gets (re-)drawn when next checked */
 	DefaultMessage.shown = false;

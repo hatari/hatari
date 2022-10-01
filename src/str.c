@@ -10,6 +10,7 @@ const char Str_fileid[] = "Hatari str.c";
 
 #include <stdio.h>
 #include <ctype.h>
+#include <errno.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <locale.h>
@@ -129,6 +130,40 @@ char *Str_Dup(const char *str)
 	}
 
 	return newstr;
+}
+
+/**
+ * Copy string from pSrc to pDest, taking the destination buffer size
+ * into account.
+ * This function is similar to strscpy() in the Linux-kernel, it
+ * is a replacement for strlcpy() (which cannot be used on untrusted
+ * source strings since it tries to find out its length). Our
+ * function here returns -E2BIG instead if the string does not
+ * fit the destination buffer.
+ */
+long Str_Copy(char *pDest, const char *pSrc, long nBufLen)
+{
+	long nCount = 0;
+
+	if (nBufLen == 0)
+		return -E2BIG;
+
+	while (nBufLen) {
+		char c;
+
+		c = pSrc[nCount];
+		pDest[nCount] = c;
+		if (!c)
+			return nCount;
+		nCount++;
+		nBufLen--;
+	}
+
+	/* Hit buffer length without finding a NUL; force NUL-termination. */
+	if (nCount > 0)
+		pDest[nCount - 1] = '\0';
+
+	return -E2BIG;
 }
 
 /**

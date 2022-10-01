@@ -14,10 +14,6 @@
 # include <strings.h>
 #endif
 
-#if !HAVE_LIBC_STRLCPY
-#define strlcpy(dst, src, len) SDL_strlcpy(dst, src, len)
-#endif
-
 /* Define this only for an old Linux system which does not store
  * pathnames in UTF-8. If this is defined, pathnames are converted
  * to the host character set as defined by the locale.
@@ -45,6 +41,7 @@ extern char *Str_ToUpper(char *pString);
 extern char *Str_ToLower(char *pString);
 extern char *Str_Alloc(int len);
 extern char *Str_Dup(const char *str);
+extern long Str_Copy(char *pDest, const char *pSrc, long nBufLen);
 extern char *Str_Trunc(char *str);
 extern bool Str_IsHex(const char *str);
 extern void Str_Filename2TOSname(const char *src, char *dst);

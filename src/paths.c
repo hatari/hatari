@@ -127,7 +127,7 @@ static void Paths_GetExecDirFromPATH(const char *argv0, char *pExecDir, int nMax
 		if (File_Exists(pTmpName))
 		{
 			/* Found the executable - so use the corresponding path: */
-			strlcpy(pExecDir, pAct, nMaxLen);
+			Str_Copy(pExecDir, pAct, nMaxLen);
 			break;
 		}
 		pAct = strtok (NULL, pToken);
@@ -190,7 +190,7 @@ static char *Paths_InitExecDir(const char *argv0)
 			/* There was a path separator in argv[0], so let's assume a
 			 * relative or absolute path to the current directory in argv[0] */
 			char *p;
-			strlcpy(psExecDir, argv0, FILENAME_MAX);
+			Str_Copy(psExecDir, argv0, FILENAME_MAX);
 			p = strrchr(psExecDir, PATHSEP);  /* Search last slash */
 			if (p)
 				*p = 0;                       /* Strip file name from path */

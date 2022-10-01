@@ -188,9 +188,9 @@ static void DlgKbd_DefineShortcutKey(int sc, bool withMod)
 static void DlgKbd_SetName(char *str, size_t maxlen, int keysym)
 {
 	if (keysym)
-		strlcpy(str, Keymap_GetKeyName(keysym), maxlen);
+		Str_Copy(str, Keymap_GetKeyName(keysym), maxlen);
 	else
-		strlcpy(str, "<not set>", maxlen);
+		Str_Copy(str, "<not set>", maxlen);
 }
 
 

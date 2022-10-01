@@ -662,7 +662,7 @@ static int DebugUI_ParseCommand(const char *input_orig)
 	if (retval == DEBUGGER_CMDCONT || retval == DEBUGGER_ENDCONT)
 	{
 		if (psArgs[0] != sLastCmd)
-			strlcpy(sLastCmd, psArgs[0], sizeof(sLastCmd));
+			Str_Copy(sLastCmd, psArgs[0], sizeof(sLastCmd));
 		if (retval == DEBUGGER_ENDCONT)
 			retval = DEBUGGER_END;
 	}

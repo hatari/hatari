@@ -223,7 +223,6 @@ check_symbol_exists(statvfs "sys/statvfs.h" HAVE_STATVFS)
 check_symbol_exists(fseeko "stdio.h" HAVE_FSEEKO)
 check_symbol_exists(ftello "stdio.h" HAVE_FTELLO)
 check_symbol_exists(flock "sys/file.h" HAVE_FLOCK)
-check_symbol_exists(strlcpy "string.h" HAVE_LIBC_STRLCPY)
 check_struct_has_member("struct dirent" d_type dirent.h HAVE_DIRENT_D_TYPE)
 
 # #############

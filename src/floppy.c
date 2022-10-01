@@ -411,8 +411,8 @@ const char* Floppy_SetDiskFileName(int Drive, const char *pszFileName, const cha
 		strcpy(ConfigureParams.DiskImage.szDiskZipPath[Drive], pszZipPath);
 	else
 		ConfigureParams.DiskImage.szDiskZipPath[Drive][0] = '\0';
-	strlcpy(ConfigureParams.DiskImage.szDiskFileName[Drive], filename,
-	        sizeof(ConfigureParams.DiskImage.szDiskFileName[Drive]));
+	Str_Copy(ConfigureParams.DiskImage.szDiskFileName[Drive], filename,
+	         sizeof(ConfigureParams.DiskImage.szDiskFileName[Drive]));
 	free(filename);
 	//File_MakeAbsoluteName(ConfigureParams.DiskImage.szDiskFileName[Drive]);
 	return ConfigureParams.DiskImage.szDiskFileName[Drive];

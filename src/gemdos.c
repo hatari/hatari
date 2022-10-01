@@ -1919,8 +1919,8 @@ static bool GemDOS_ChDir(uint32_t Params)
 	if (strncmp(psTempDirPath, emudrives[Drive-2]->hd_emulation_dir,
 		    strlen(emudrives[Drive-2]->hd_emulation_dir)) == 0)
 	{
-		strlcpy(emudrives[Drive-2]->fs_currpath, psTempDirPath,
-		        sizeof(emudrives[Drive-2]->fs_currpath));
+		Str_Copy(emudrives[Drive-2]->fs_currpath, psTempDirPath,
+		         sizeof(emudrives[Drive-2]->fs_currpath));
 		Regs[REG_D0] = GEMDOS_EOK;
 	}
 	else

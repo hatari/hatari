@@ -303,7 +303,7 @@ void MemorySnapShot_Capture(const char *pszFileName, bool bConfirm)
 {
 //fprintf ( stderr , "MemorySnapShot_Capture in\n" );
 	/* Make a temporary copy of the parameters for MemorySnapShot_Capture_Do() */
-	strlcpy ( Temp_FileName , pszFileName , FILENAME_MAX );
+	Str_Copy(Temp_FileName, pszFileName, FILENAME_MAX);
 	Temp_Confirm = bConfirm;
 
 	/* With WinUAE cpu core, capture is done from m68k_run_xxx() after the end of the current instruction */
@@ -320,7 +320,7 @@ void MemorySnapShot_Capture(const char *pszFileName, bool bConfirm)
 void MemorySnapShot_Capture_Immediate(const char *pszFileName, bool bConfirm)
 {
 	/* Make a temporary copy of the parameters for MemorySnapShot_Capture_Do() */
-	strlcpy ( Temp_FileName , pszFileName , FILENAME_MAX );
+	Str_Copy(Temp_FileName, pszFileName, FILENAME_MAX);
 	Temp_Confirm = bConfirm;
 
 	MemorySnapShot_Capture_Do ();
@@ -395,7 +395,7 @@ void MemorySnapShot_Restore(const char *pszFileName, bool bConfirm)
 {
 //fprintf ( stderr , "MemorySnapShot_Restore in\n" );
 	/* Make a temporary copy of the parameters for MemorySnapShot_Restore_Do() */
-	strlcpy ( Temp_FileName , pszFileName , FILENAME_MAX );
+	Str_Copy(Temp_FileName, pszFileName, FILENAME_MAX);
 	Temp_Confirm = bConfirm;
 
 	/* With WinUAE cpu core, restore is done from m68k_go() after the end of the current instruction */

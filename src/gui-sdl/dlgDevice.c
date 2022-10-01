@@ -219,9 +219,9 @@ void Dialog_DeviceDlg(void)
 	ConfigureParams.RS232.bEnableRS232 = (devicedlg[DEVDLG_RS232ENABLE].state & SG_SELECTED);
 	ConfigureParams.Midi.bEnableMidi = (devicedlg[DEVDLG_MIDIENABLE].state & SG_SELECTED);
 #ifdef HAVE_PORTMIDI
-	strlcpy(ConfigureParams.Midi.sMidiInPortName, midiInName ? midiInName : "Off",
-	       sizeof(ConfigureParams.Midi.sMidiInPortName));
-	strlcpy(ConfigureParams.Midi.sMidiOutPortName, midiOutName ? midiOutName : "Off",
-	       sizeof(ConfigureParams.Midi.sMidiOutPortName));
+	Str_Copy(ConfigureParams.Midi.sMidiInPortName, midiInName ? midiInName : "Off",
+	         sizeof(ConfigureParams.Midi.sMidiInPortName));
+	Str_Copy(ConfigureParams.Midi.sMidiOutPortName, midiOutName ? midiOutName : "Off",
+	         sizeof(ConfigureParams.Midi.sMidiOutPortName));
 #endif
 }
