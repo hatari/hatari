@@ -95,6 +95,7 @@
 
 const char DmaSnd_fileid[] = "Hatari dmaSnd.c";
 
+#include <SDL_stdinc.h>		/* Required for M_PI */
 #include "main.h"
 #include "audio.h"
 #include "configuration.h"
