@@ -22,7 +22,6 @@
 */
 const char Midi_fileid[] = "Hatari midi.c";
 
-#include <SDL_types.h>
 #include <errno.h>
 
 #include "main.h"
@@ -48,12 +47,12 @@ const char Midi_fileid[] = "Hatari midi.c";
 #define	MIDI_TRANSFER_BIT_CYCLE		( 256 << nCpuFreqShift )
 #define	MIDI_TRANSFER_BYTE_CYCLE	(MIDI_TRANSFER_BIT_CYCLE * 10)
 
-static Uint8 MidiControlRegister;
-static Uint8 MidiStatusRegister;
-static Uint8 nRxDataByte;
-static Uint64 TDR_Write_Time;		/* Time of the last write in TDR fffc06 */
-static Uint64 TDR_Empty_Time;		/* Time when TDR will be empty after a write to fffc06 (ie when TDR is transferred to TSR) */
-static Uint64 TSR_Complete_Time;	/* Time when TSR will be completely transferred */
+static uint8_t MidiControlRegister;
+static uint8_t MidiStatusRegister;
+static uint8_t nRxDataByte;
+static uint64_t TDR_Write_Time;		/* Time of the last write in TDR fffc06 */
+static uint64_t TDR_Empty_Time;		/* Time when TDR will be empty after a write to fffc06 (ie when TDR is transferred to TSR) */
+static uint64_t TSR_Complete_Time;	/* Time when TSR will be completely transferred */
 
 
 /*
@@ -62,7 +61,7 @@ static Uint64 TSR_Complete_Time;	/* Time when TSR will be completely transferred
 static bool Midi_Host_Open(void);
 static void Midi_Host_Close(void);
 static int  Midi_Host_ReadByte(void);
-static bool Midi_Host_WriteByte(Uint8 byte);
+static bool Midi_Host_WriteByte(uint8_t byte);
 
 #ifndef HAVE_PORTMIDI
 static FILE *pMidiFhIn  = NULL;    /* File handle used for Midi input */
@@ -74,9 +73,9 @@ static PmStream* midiIn  = NULL;	 // current midi input port
 static PmStream* midiOut = NULL;	 // current midi output port
 
 static bool Midi_Host_SwitchPort(const char* portName, bool forInput);
-static int Midi_GetDataLength(Uint8 status);
-static int Midi_SplitEvent(PmEvent* midiEvent, Uint8* msg);
-static PmEvent* Midi_BuildEvent(Uint8 byte);
+static int Midi_GetDataLength(uint8_t status);
+static int Midi_SplitEvent(PmEvent* midiEvent, uint8_t* msg);
+static PmEvent* Midi_BuildEvent(uint8_t byte);
 #endif
 
 
@@ -142,7 +141,7 @@ void    MIDI_MemorySnapShot_Capture(bool bSave)
  */
 static void	MIDI_UpdateIRQ ( void )
 {
-	Uint8		irq_bit_new;
+	uint8_t irq_bit_new;
 
 	irq_bit_new = 0;
 
@@ -242,7 +241,7 @@ void Midi_Data_ReadByte(void)
  */
 void Midi_Data_WriteByte(void)
 {
-	Uint8 nTxDataByte;
+	uint8_t nTxDataByte;
 	
 	ACIA_AddWaitCycles ();						/* Additional cycles when accessing the ACIA */
 
@@ -593,8 +592,8 @@ static int Midi_Host_ReadByte(void)
 	return EOF;
 #else
 	// TODO: should these be reset with Midi_Init()?
-	static Uint8 msg[4];
-	static Uint8 ibyte = 0;
+	static uint8_t msg[4];
+	static uint8_t ibyte = 0;
 	static int bytesAvailable = 0;
 
 	if (midiIn)
@@ -629,7 +628,7 @@ static int Midi_Host_ReadByte(void)
 /**
  * writes 'byte' into output stream, returns true on success
  */
-static bool Midi_Host_WriteByte(Uint8 byte)
+static bool Midi_Host_WriteByte(uint8_t byte)
 {
 #ifndef HAVE_PORTMIDI
 	if (pMidiFhOut)
@@ -672,9 +671,9 @@ static bool Midi_Host_WriteByte(Uint8 byte)
  * return number of databytes that should accompany 'status' byte
  * four bytes for sysex is a special case to simplify Midi_BuildEvent()
  */
-static int Midi_GetDataLength(Uint8 status)
+static int Midi_GetDataLength(uint8_t status)
 {
-	static const Uint8 dataLength[] = { 2,2,2,2,1,2,2, 4,1,2,1,0,0,0,0 };
+	static const uint8_t dataLength[] = { 2,2,2,2,1,2,2, 4,1,2,1,0,0,0,0 };
 
 	if (status >= 0xF8 || status == 0)
 		return 0;
@@ -688,15 +687,15 @@ static int Midi_GetDataLength(Uint8 status)
  * returns PmEvent when done, or NULL if it needs still more data
  * see MIDI 1.0 Detailed Spec 4.2, pages A-1..A-2 for discussion on running status
  */
-static PmEvent* Midi_BuildEvent(Uint8 byte)
+static PmEvent* Midi_BuildEvent(uint8_t byte)
 {
-	static const Uint8 shifts[] = { 0,8,16,24 };
+	static const uint8_t shifts[] = { 0,8,16,24 };
 	// TODO: should these be reset with Midi_Init()?
 	static PmEvent midiEvent = { 0,0 };
-	static Uint32 midimsg;
-	static Uint8 runningStatus = 0;
-	static Uint8 bytesToWait = 0;
-	static Uint8 bytesCollected = 0;
+	static uint32_t midimsg;
+	static uint8_t runningStatus = 0;
+	static uint8_t bytesToWait = 0;
+	static uint8_t bytesCollected = 0;
 	static bool processingSysex = false;
 	static bool expectStatus = true;
 
@@ -712,7 +711,7 @@ static PmEvent* Midi_BuildEvent(Uint8 byte)
 		// -- sysex end
 		if (byte == 0xF7)
 		{
-			midimsg |= ((Uint32)0xF7) << shifts[bytesCollected];
+			midimsg |= ((uint32_t)0xF7) << shifts[bytesCollected];
 			midiEvent.message = midimsg;
 
 			LOG_TRACE(TRACE_MIDI, "MIDI: SYX END event %X %X %X %X\n",
@@ -752,13 +751,13 @@ static PmEvent* Midi_BuildEvent(Uint8 byte)
 	// -- data byte
 	if (processingSysex)
 	{
-		midimsg |= ((Uint32)byte) << shifts[bytesCollected++];
+		midimsg |= ((uint32_t)byte) << shifts[bytesCollected++];
 	}
 	else
 	{
 		if (!expectStatus)
 		{
-			midimsg |= ((Uint32)byte) << shifts[++bytesCollected];
+			midimsg |= ((uint32_t)byte) << shifts[++bytesCollected];
 		}
 		else if (runningStatus >= 0x80)
 		{
@@ -766,8 +765,8 @@ static PmEvent* Midi_BuildEvent(Uint8 byte)
 			LOG_TRACE(TRACE_MIDI, "MIDI: running status %X byte %X\n",
 				  runningStatus, byte);
 			bytesToWait = Midi_GetDataLength(runningStatus);
-			midimsg = ((Uint32)runningStatus);
-			midimsg |= ((Uint32)byte) << shifts[++bytesCollected];
+			midimsg = ((uint32_t)runningStatus);
+			midimsg |= ((uint32_t)byte) << shifts[++bytesCollected];
 			expectStatus = false;
 		}
 	}
@@ -797,7 +796,7 @@ static PmEvent* Midi_BuildEvent(Uint8 byte)
  * this method is required for sysex handling
  * native framework has already handled running status
  */
-static int Midi_SplitEvent(PmEvent* midiEvent, Uint8* msg)
+static int Midi_SplitEvent(PmEvent* midiEvent, uint8_t* msg)
 {
 	// TODO: should be reset with Midi_Init()?
 	static bool processingSysex = false;
