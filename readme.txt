@@ -147,11 +147,17 @@ you have to use the install command of the generator program instead, e.g.
 
  3.2.1) Configuring and compiling with emscripten
 
-	mkdir -p build
+	mkdir -p build/files
+	# Copy your tos.img to build/files/
 	cd build
 	emmake cmake -DEMSCRIPTEN=true -DCMAKE_SYSTEM_NAME=Linux ..
+	emmake make -j$(getconf _NPROCESSORS_ONLN) hatari
 
-  emmake make -j10 hatari
+The resulting hatari.html can't be used directly, you must provide it via
+a webserver to your browser (use Chromium, it currently works better than
+Firefox). A simple way is to use "python3 -m http.server" as a minimalist
+webserver for testing it locally.
+
 
  3.3) IPF support using capsimage library
 
