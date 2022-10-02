@@ -295,7 +295,7 @@ static int write_header_tokens(FILE *fp, const struct Config_Tag *ptr, const cha
 int update_config(const char *filename, const struct Config_Tag configs[], const char *header)
 {
 	const struct Config_Tag *ptr;
-	int count=0, lineno=0, retval;
+	int count=0, retval;
 	FILE *cfgfile, *tempfile;
 	char *fptr, *tok;
 	char line[1024];
@@ -367,7 +367,6 @@ int update_config(const char *filename, const struct Config_Tag configs[], const
 			/* error or eof? */
 			if (fptr == NULL)
 				break;
-			lineno++;
 			if (fptr[0] == '#')
 			{
 				fprintf(tempfile, "%s\n", fptr);
