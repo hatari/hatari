@@ -110,7 +110,7 @@ extern void Screen_ModeChanged(bool bForceChange);
 extern bool Screen_Draw(void);
 extern void Screen_SetTextureScale(int width, int height, int win_width,
                                    int win_height, bool bForceCreation);
-extern void Screen_SetGenConvSize(int width, int height, int bpp, bool bForceChange);
+extern void Screen_SetGenConvSize(int width, int height, bool bForceChange);
 extern void Screen_GenConvUpdate(SDL_Rect *extra, bool forced);
 extern Uint32 Screen_GetGenConvWidth(void);
 extern Uint32 Screen_GetGenConvHeight(void);

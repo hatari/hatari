@@ -10,16 +10,6 @@
 #ifndef HATARI_CONVERTROUTINES_H
 #define HATARI_CONVERTROUTINES_H
 
-static void ConvertLowRes_320x16Bit(void);
-static void ConvertLowRes_640x16Bit(void);
-static void ConvertLowRes_320x16Bit_Spec(void);
-static void Line_ConvertLowRes_640x16Bit_Spec(Uint32 *edi, Uint32 *ebp, Uint32 *esi, Uint32 eax);
-static void ConvertLowRes_640x16Bit_Spec(void);
-static void Line_ConvertMediumRes_640x16Bit(Uint32 *edi, Uint32 *ebp, Uint16 *esi, Uint32 eax);
-static void ConvertMediumRes_640x16Bit(void);
-static void Line_ConvertMediumRes_640x16Bit_Spec(Uint32 *edi, Uint32 *ebp, Uint16 *esi, Uint32 eax);
-static void ConvertMediumRes_640x16Bit_Spec(void);
-
 static void ConvertLowRes_320x32Bit(void);
 static void ConvertLowRes_640x32Bit(void);
 static void ConvertLowRes_320x32Bit_Spec(void);

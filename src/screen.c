@@ -103,7 +103,7 @@ static int ScrUpdateFlag;               /* Bit mask of how to update screen */
 static bool bRGBTableInSync;            /* Is RGB table up to date? */
 
 /* These are used for the generic screen conversion functions */
-static int genconv_width_req, genconv_height_req, genconv_bpp;
+static int genconv_width_req, genconv_height_req;
 
 
 static bool Screen_DrawFrame(bool bForceFlip);
@@ -206,24 +206,11 @@ static void Screen_ConvertHighRes(void)
  */
 static void Screen_SetDrawFunctions(int nBitCount, bool bDoubleLowRes)
 {
-	if (nBitCount <= 16)
-	{
-		/* High color */
-		if (bDoubleLowRes)
-			ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_640x16Bit;
-		else
-			ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_320x16Bit;
-		ScreenDrawFunctionsNormal[ST_MEDIUM_RES] = ConvertMediumRes_640x16Bit;
-	}
-	else /* Assume 32 bit drawing functions */
-	{
-		/* True color */
-		if (bDoubleLowRes)
-			ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_640x32Bit;
-		else
-			ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_320x32Bit;
-		ScreenDrawFunctionsNormal[ST_MEDIUM_RES] = ConvertMediumRes_640x32Bit;
-	}
+	if (bDoubleLowRes)
+		ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_640x32Bit;
+	else
+		ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_320x32Bit;
+	ScreenDrawFunctionsNormal[ST_MEDIUM_RES] = ConvertMediumRes_640x32Bit;
 }
 
 
@@ -392,7 +379,7 @@ void Screen_SetTextureScale(int width, int height, int win_width, int win_height
  * Change the SDL video mode.
  * @return true if mode has been changed, false if change was not necessary
  */
-static bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChange)
+static bool Screen_SetSDLVideoSize(int width, int height, bool bForceChange)
 {
 	Uint32 sdlVideoFlags;
 	char *psSdlVideoDriver;
@@ -402,12 +389,8 @@ static bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bFo
 	int win_width, win_height;
 	float scale = 1.0;
 
-	if (bitdepth == 0 || bitdepth == 24)
-		bitdepth = 32;
-
 	/* Check if we really have to change the video mode: */
-	if (sdlscrn != NULL && sdlscrn->w == width && sdlscrn->h == height
-	    && sdlscrn->format->BitsPerPixel == bitdepth && !bForceChange)
+	if (sdlscrn != NULL && sdlscrn->w == width && sdlscrn->h == height && !bForceChange)
 		return false;
 
 	psSdlVideoDriver = SDL_getenv("SDL_VIDEODRIVER");
@@ -483,8 +466,8 @@ static bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bFo
 #endif
 
 	/* Set new video mode */
-	DEBUGPRINT(("SDL screen request: %d x %d @ %d (%s) -> window: %d x %d\n", width, height,
-	        bitdepth, (bInFullScreen ? "fullscreen" : "windowed"), win_width, win_height));
+	DEBUGPRINT(("SDL screen request: %d x %d (%s) -> window: %d x %d\n", width, height,
+	           (bInFullScreen ? "fullscreen" : "windowed"), win_width, win_height));
 
 	if (sdlWindow)
 	{
@@ -529,20 +512,10 @@ static bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bFo
 		SDL_GetRendererInfo(sdlRenderer, &sRenderInfo);
 		bIsSoftwareRenderer = sRenderInfo.flags & SDL_RENDERER_SOFTWARE;
 
-		if (bitdepth == 16)
-		{
-			rm = 0xF800;
-			gm = 0x07E0;
-			bm = 0x001F;
-		}
-		else
-		{
-			rm = 0x00FF0000;
-			gm = 0x0000FF00;
-			bm = 0x000000FF;
-		}
-		sdlscrn = SDL_CreateRGBSurface(0, width, height, bitdepth,
-		                               rm, gm, bm, 0);
+		rm = 0x00FF0000;
+		gm = 0x0000FF00;
+		bm = 0x000000FF;
+		sdlscrn = SDL_CreateRGBSurface(0, width, height, 32, rm, gm, bm, 0);
 
 		Screen_SetTextureScale(width, height, win_width, win_height, true);
 	}
@@ -652,7 +625,7 @@ static void Screen_SetSTResolution(bool bForceChange)
 
 	PCScreenOffsetX = PCScreenOffsetY = 0;
 
-	if (Screen_SetSDLVideoSize(Width, Height, 32, bForceChange))
+	if (Screen_SetSDLVideoSize(Width, Height, bForceChange))
 	{
 		Statusbar_Init(sdlscrn);
 
@@ -684,7 +657,7 @@ static void Screen_ChangeResolution(bool bForceChange)
 {
 	if (bUseVDIRes)
 	{
-		Screen_SetGenConvSize(VDIWidth, VDIHeight, 32, bForceChange);
+		Screen_SetGenConvSize(VDIWidth, VDIHeight, bForceChange);
 	}
 	else if (Config_IsMachineFalcon())
 	{
@@ -694,11 +667,11 @@ static void Screen_ChangeResolution(bool bForceChange)
 	{
 		int width, height, bpp;
 		Video_GetTTRes(&width, &height, &bpp);
-		Screen_SetGenConvSize(width, height, 32, bForceChange);
+		Screen_SetGenConvSize(width, height, bForceChange);
 	}
 	else if (bUseHighRes)
 	{
-		Screen_SetGenConvSize(640, 400, 32, bForceChange);
+		Screen_SetGenConvSize(640, 400, bForceChange);
 	}
 	else
 	{
@@ -880,8 +853,7 @@ void Screen_EnterFullScreen(void)
 
 		if (Screen_UseGenConvScreen())
 		{
-			Screen_SetGenConvSize(genconv_width_req, genconv_height_req,
-			                      genconv_bpp, true);
+			Screen_SetGenConvSize(genconv_width_req, genconv_height_req, true);
 			/* force screen redraw */
 			Screen_GenConvUpdate(NULL, true);
 		}
@@ -927,8 +899,7 @@ void Screen_ReturnFromFullScreen(void)
 
 		if (Screen_UseGenConvScreen())
 		{
-			Screen_SetGenConvSize(genconv_width_req, genconv_height_req,
-			                      genconv_bpp, true);
+			Screen_SetGenConvSize(genconv_width_req, genconv_height_req, true);
 			/* force screen redraw */
 			Screen_GenConvUpdate(NULL, true);
 		}
@@ -1277,18 +1248,12 @@ static bool Screen_DrawFrame(bool bForceFlip)
 	{
 		bPrevFrameWasSpec512 = true;
 		/* What mode were we in? Keep to 320xH or 640xH */
-		if (pDrawFunction==ConvertLowRes_320x16Bit)
-			pDrawFunction = ConvertLowRes_320x16Bit_Spec;
-		else if (pDrawFunction==ConvertLowRes_640x16Bit)
-			pDrawFunction = ConvertLowRes_640x16Bit_Spec;
-		else if (pDrawFunction==ConvertLowRes_320x32Bit)
+		if (pDrawFunction==ConvertLowRes_320x32Bit)
 			pDrawFunction = ConvertLowRes_320x32Bit_Spec;
 		else if (pDrawFunction==ConvertLowRes_640x32Bit)
 			pDrawFunction = ConvertLowRes_640x32Bit_Spec;
 		else if (pDrawFunction==ConvertMediumRes_640x32Bit)
 			pDrawFunction = ConvertMediumRes_640x32Bit_Spec;
-		else if (pDrawFunction==ConvertMediumRes_640x16Bit)
-			pDrawFunction = ConvertMediumRes_640x16Bit_Spec;
 	}
 	else if (bPrevFrameWasSpec512)
 	{
@@ -1342,7 +1307,7 @@ bool Screen_Draw(void)
  * This is used to set the size of the SDL screen
  * when we're using the generic conversion functions.
  */
-void Screen_SetGenConvSize(int width, int height, int bpp, bool bForceChange)
+void Screen_SetGenConvSize(int width, int height, bool bForceChange)
 {
 	const bool keep = ConfigureParams.Screen.bKeepResolution;
 	int screenwidth, screenheight, maxw, maxh;
@@ -1401,13 +1366,12 @@ void Screen_SetGenConvSize(int width, int height, int bpp, bool bForceChange)
 	/* re-calculate statusbar height for this resolution */
 	sbarheight = Statusbar_SetHeight(screenwidth, screenheight-sbarheight);
 
-	genconv_bpp = bpp;
 	/* screen area without the statusbar */
 	STScreenRect.x = STScreenRect.y = 0;
 	STScreenRect.w = screenwidth;
 	STScreenRect.h = screenheight - sbarheight;
 
-	if (!Screen_SetSDLVideoSize(screenwidth, screenheight, bpp, bForceChange))
+	if (!Screen_SetSDLVideoSize(screenwidth, screenheight, bForceChange))
 	{
 		/* same host screen size despite Atari resolution change,
 		 * -> no time consuming host video mode change needed
@@ -1568,47 +1532,11 @@ static Uint32* Double_ScreenLine32(Uint32 *line, int size)
 	return next;
 }
 
-/**
- * 16-bit variant of Double_ScreenLine32()
- */
-static Uint16* Double_ScreenLine16(Uint16 *line, int size)
-{
-	SDL_PixelFormat *fmt;
-	int fmt_size = size/2;
-	Uint16 *next;
-	Uint16 mask;
-
-	next = line + fmt_size;
-	/* copy as-is */
-	if (bScrDoubleY)
-	{
-		memcpy(next, line, size);
-		return next + fmt_size;
-	}
-	/* TV-mode -- halve the intensity while copying */
-	fmt = sdlscrn->format;
-	mask = ((fmt->Rmask >> 1) & fmt->Rmask)
-	     | ((fmt->Gmask >> 1) & fmt->Gmask)
-	     | ((fmt->Bmask >> 1) & fmt->Bmask);
-	do {
-		*next++ = (*line++ >> 1) & mask;
-	}
-	while (--fmt_size);
-
-	return next;
-}
 
 /* lookup tables and conversion macros */
 #include "convert/macros.h"
 
 /* Conversion routines */
-
-#include "convert/low320x16.c"		/* LowRes To 320xH x 16-bit color */
-#include "convert/low640x16.c"		/* LowRes To 640xH x 16-bit color */
-#include "convert/med640x16.c"		/* MediumRes To 640xH x 16-bit color */
-#include "convert/low320x16_spec.c"	/* LowRes Spectrum 512 To 320xH x 16-bit color */
-#include "convert/low640x16_spec.c"	/* LowRes Spectrum 512 To 640xH x 16-bit color */
-#include "convert/med640x16_spec.c"	/* MediumRes Spectrum 512 To 640xH x 16-bit color */
 
 #include "convert/low320x32.c"		/* LowRes To 320xH x 32-bit color */
 #include "convert/low640x32.c"		/* LowRes To 640xH x 32-bit color */

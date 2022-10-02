@@ -9,8 +9,6 @@ Following features are deprecated and will be removed in a future release:
 - Hatari XBios(255) API enabled with the "--bios-intercept" option
   (i.e. use "--natfeats" & "--cmd-fifo" options and "hconsole" instead)
 - The old ~/.hatari configuration file location (use ~/.config/hatari instead)
-- The rendering functions for 16 bits-per-pixel host screens (almost all
-  recent hardware should have 32 bpp nowadays)
 
 
  Development version
@@ -21,9 +19,12 @@ Emulation improvements:
   - Ignore byte accesses to blitter registers defined as word only
 
 Emulator improvements:
-- RTC:
+- Command line options:
   - CLI/config option to override NVRAM/RTC year, useful with
     applications that do not handle current dates
+  - The "--bpp" command line option and related code (i.e. the rendering
+    functions for 16 bits-per-pixel host screens) have been removed since
+    almost all recent hardware should support 32 bpp nowadays.
 - Debugger:
   - Fix: free all debugger allocations before exit
   - Fix: invalid free on freeing loaded GNU debug symbols
