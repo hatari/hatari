@@ -456,7 +456,7 @@ void Statusbar_Init(SDL_Surface *surf)
 	bOldRecording = false;
 
 	/* and blit statusbar on screen */
-	SDL_UpdateRects(surf, 1, &FullRect);
+	Screen_UpdateRects(surf, 1, &FullRect);
 	DEBUGPRINT(("Drawn <- Statusbar_Init()\n"));
 }
 
@@ -900,7 +900,7 @@ SDL_Rect* Statusbar_Update(SDL_Surface *surf, bool do_update)
 			last_rect = Statusbar_OverlayDraw(surf);
 			if (do_update && last_rect)
 			{
-				SDL_UpdateRects(surf, 1, last_rect);
+				Screen_UpdateRects(surf, 1, last_rect);
 				last_rect = NULL;
 			}
 		}
@@ -1039,7 +1039,7 @@ SDL_Rect* Statusbar_Update(SDL_Surface *surf, bool do_update)
 	}
 	if (do_update && last_rect)
 	{
-		SDL_UpdateRects(surf, 1, last_rect);
+		Screen_UpdateRects(surf, 1, last_rect);
 		last_rect = NULL;
 	}
 	return last_rect;

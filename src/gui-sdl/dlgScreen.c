@@ -394,7 +394,7 @@ void Dialog_WindowDlg(void)
 			break;
 
 		 case DLGSCRN_CAPTURE:
-			SDL_UpdateRect(sdlscrn, 0,0,0,0);
+			Screen_UpdateRect(sdlscrn, 0,0,0,0);
 			ConfigureParams.Screen.bCrop = (windowdlg[DLGSCRN_CROP].state & SG_SELECTED);
 			ScreenSnapShot_SaveScreen();
 			break;

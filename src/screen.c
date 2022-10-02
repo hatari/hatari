@@ -114,7 +114,7 @@ static SDL_Texture *sdlTexture;
 static bool bUseSdlRenderer;            /* true when using SDL2 renderer */
 static bool bIsSoftwareRenderer;
 
-void SDL_UpdateRects(SDL_Surface *screen, int numrects, SDL_Rect *rects)
+void Screen_UpdateRects(SDL_Surface *screen, int numrects, SDL_Rect *rects)
 {
 	if (bUseSdlRenderer)
 	{
@@ -131,7 +131,7 @@ void SDL_UpdateRects(SDL_Surface *screen, int numrects, SDL_Rect *rects)
 	}
 }
 
-void SDL_UpdateRect(SDL_Surface *screen, Sint32 x, Sint32 y, Sint32 w, Sint32 h)
+void Screen_UpdateRect(SDL_Surface *screen, Sint32 x, Sint32 y, Sint32 w, Sint32 h)
 {
 	SDL_Rect rect;
 
@@ -143,7 +143,7 @@ void SDL_UpdateRect(SDL_Surface *screen, Sint32 x, Sint32 y, Sint32 w, Sint32 h)
 
 	rect.x = x; rect.y = y;
 	rect.w = w; rect.h = h;
-	SDL_UpdateRects(screen, 1, &rect);
+	Screen_UpdateRects(screen, 1, &rect);
 }
 
 
@@ -1189,7 +1189,7 @@ static void Screen_Blit(SDL_Rect *sbar_rect)
 		rects[1] = *sbar_rect;
 		count = 2;
 	}
-	SDL_UpdateRects(sdlscrn, count, rects);
+	Screen_UpdateRects(sdlscrn, count, rects);
 
 	/* Swap copy/raster buffers in screen. */
 	pTmpScreen = pFrameBuffer->pSTScreenCopy;
@@ -1421,7 +1421,7 @@ void Screen_GenConvUpdate(SDL_Rect *extra, bool forced)
 		rects[1] = *extra;
 		count = 2;
 	}
-	SDL_UpdateRects(sdlscrn, count, rects);
+	Screen_UpdateRects(sdlscrn, count, rects);
 }
 
 Uint32 Screen_GetGenConvWidth(void)

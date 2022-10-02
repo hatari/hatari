@@ -169,7 +169,7 @@ static int DlgAlert_ShowDlg(const char *text)
 
 	i = SDLGui_DoDialog(alertdlg);
 
-	SDL_UpdateRect(sdlscrn, 0,0, 0,0);
+	Screen_UpdateRect(sdlscrn, 0,0, 0,0);
 	SDL_ShowCursor(bOldMouseVisibility);
 	Main_WarpMouse(nOldMouseX, nOldMouseY, true);
 

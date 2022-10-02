@@ -632,14 +632,14 @@ void Main_EventHandler(void)
 				/* Note: any changes here should most likely
 				 * be done also in sdlgui.c::SDLGui_DoDialog()
 				 */
-				SDL_UpdateRect(sdlscrn, 0, 0, 0, 0);
+				Screen_UpdateRect(sdlscrn, 0, 0, 0, 0);
 				break;
 			case SDL_WINDOWEVENT_SIZE_CHANGED:
 				/* internal & external window size changes */
 				Screen_SetTextureScale(sdlscrn->w, sdlscrn->h,
 						       event.window.data1,
 						       event.window.data2, false);
-				SDL_UpdateRect(sdlscrn, 0, 0, 0, 0);
+				Screen_UpdateRect(sdlscrn, 0, 0, 0, 0);
 				break;
 				/* mouse & keyboard focus */
 			case SDL_WINDOWEVENT_ENTER:

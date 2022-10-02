@@ -13,8 +13,8 @@
 extern SDL_Window *sdlWindow;
 
 /* TODO: Get rid of the following wrappers: */
-void SDL_UpdateRects(SDL_Surface *screen, int numrects, SDL_Rect *rects);
-void SDL_UpdateRect(SDL_Surface *screen, Sint32 x, Sint32 y, Sint32 w, Sint32 h);
+void Screen_UpdateRects(SDL_Surface *screen, int numrects, SDL_Rect *rects);
+void Screen_UpdateRect(SDL_Surface *screen, Sint32 x, Sint32 y, Sint32 w, Sint32 h);
 
 /* The 'screen' is a representation of the ST video memory	*/
 /* taking into account all the border tricks. Data are stored	*/
