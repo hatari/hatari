@@ -19,7 +19,7 @@
 /*
   Displays a Cocoa alert
 */
-int HookedAlertNotice(const char* szMessage)
+bool HookedAlertNotice(const char* szMessage)
 {
 	NSString *message ;
 	NSRange  cantTOS, firstPv, lastPv ;
@@ -44,7 +44,7 @@ int HookedAlertNotice(const char* szMessage)
 /* Displays a Cocoa alert with a choice (OK and Cancel buttons)			*/
 /*----------------------------------------------------------------------*/
 
-int HookedAlertQuery(const char* szMessage)
+bool HookedAlertQuery(const char* szMessage)
 {
 	NSString *message ;
 	int ret;

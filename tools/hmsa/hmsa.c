@@ -75,7 +75,7 @@ void Log_AlertDlg(LOGTYPE nType, const char *psFormat, ...)
 /**
  * Output Hatari Query dialog string.
  */
-int DlgAlert_Query(const char *text)
+bool DlgAlert_Query(const char *text)
 {
 	puts(text);
 	do_newline(text);
