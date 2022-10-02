@@ -2474,7 +2474,14 @@ static void MakeFromSR_x(int t0trace)
 	regs.m = (regs.sr >> 12) & 1;
 
 	if (regs.intmask != ((regs.sr >> 8) & 7)) {
-		regs.intmask = (regs.sr >> 8) & 7;
+		int newimask = (regs.sr >> 8) & 7;
+		// STOP intmask change enabling already active interrupt: delay it by 1 STOP round
+		if (t0trace < 0 && regs.ipl[0] <= regs.intmask && regs.ipl[0] > newimask && regs.ipl[0] < 7) {
+			regs.ipl[0] = 0;
+			unset_special(SPCFLAG_INT);
+		}
+		regs.intmask = newimask;
+
 		if (m68k_interrupt_delay && (regs.ipl[0] > 0 || regs.ipl[1] > 0)) {
 			set_special(SPCFLAG_INT);
 		}
@@ -4775,11 +4782,21 @@ static bool uae_ppc_poll_check_halt(void)
 
 
 // check if interrupt active
-STATIC_INLINE bool time_for_interrupt (void)
-{
-	int ipl = get_ipl();
-	return ipl > regs.intmask || ipl == 7;
+static int time_for_interrupt(void)
+ {
+ 	int ipl = get_ipl();
+	if (ipl > regs.intmask || ipl == 7) {
+		return ipl;
+	}
+	return 0;
 }
+
+// ipl check mid next memory cycle
+void ipl_fetch_pre(void)
+{
+	ipl_fetch_next();
+	regs.ipl_evt_pre = get_cycles();
+ }
 
 // ipl check was early enough, interrupt possible after current instruction
 void ipl_fetch_now(void)
@@ -4801,6 +4818,7 @@ void ipl_fetch_next(void)
 
 void intlev_load(void)
 {
+	ipl_fetch_now();
 	doint();
 }
 
@@ -4814,6 +4832,11 @@ void doint(void)
 #endif
 	int il = intlev();
 	regs.ipl_pin = il;
+	// check if 68000/010 interrupt was detected mid memory access,
+	// 2 cycles from start of memory cycle (CYCLE_UNIT == 2 CPU clocks)
+	if (il > 0 && get_cycles() == regs.ipl_evt_pre + CYCLE_UNIT) {
+		ipl_fetch_next();
+	}
 #ifdef DEBUGGER
 #ifndef WINUAE_FOR_HATARI
 	if (debug_dma) {
@@ -5036,9 +5059,10 @@ static int do_specialties (int cycles)
 
 //fprintf ( stderr , "dospec1 %d %d spcflags=%x ipl=%x ipl_pin=%x intmask=%x\n" , m68k_interrupt_delay,time_for_interrupt() , regs.spcflags , regs.ipl , regs.ipl_pin, regs.intmask );
 	if (m68k_interrupt_delay) {
-		if (time_for_interrupt()) {
+		int ipl = time_for_interrupt();
+		if (ipl) {
 			unset_special(SPCFLAG_INT);
-			do_interrupt(get_ipl());
+			do_interrupt(ipl);
 		} else {
 			if (regs.ipl[0] == regs.ipl[1]) {
 				unset_special(SPCFLAG_INT);
