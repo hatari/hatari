@@ -2426,8 +2426,8 @@ static bool GemDOS_Write(uint32_t Params)
 	if (fh_idx >= 0 && ferror(fp))
 	{
 		int errnum = errno;
-		Log_Printf(LOG_WARN, "GEMDOS failed to write to '%s'\n",
-			   FileHandles[fh_idx].szActualName);
+		Log_Printf(LOG_WARN, "GEMDOS failed to write to '%s': %s\n",
+			   FileHandles[fh_idx].szActualName, strerror(errno));
 		Regs[REG_D0] = errno2gemdos(errnum, ERROR_FILE);
 		clearerr(fp);
 	}
