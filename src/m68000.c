@@ -408,32 +408,44 @@ void M68000_PatchCpuTables(void)
 	if (Cart_UseBuiltinCartridge())
 	{
 		/* Hatari's specific illegal opcodes */
-		cpufunctbl[GEMDOS_OPCODE] = OpCode_GemDos;	/* 0x0008 */
-		cpufunctbl[PEXEC_OPCODE] = OpCode_Pexec;	/* 0x0009 */
-		cpufunctbl[SYSINIT_OPCODE] = OpCode_SysInit;	/* 0x000a */
-		cpufunctbl[VDI_OPCODE] = OpCode_VDI;		/* 0x000c */
+		cpufunctbl[GEMDOS_OPCODE] = OpCode_GemDos;				/* 0x0008 */
+		cpufunctbl_noret[GEMDOS_OPCODE] = OpCode_GemDos_noret;			/* 0x0008 */
+		cpufunctbl[PEXEC_OPCODE] = OpCode_Pexec;				/* 0x0009 */
+		cpufunctbl_noret[PEXEC_OPCODE] = OpCode_Pexec_noret;			/* 0x0009 */
+		cpufunctbl[SYSINIT_OPCODE] = OpCode_SysInit;				/* 0x000a */
+		cpufunctbl_noret[SYSINIT_OPCODE] = OpCode_SysInit_noret;		/* 0x000a */
+		cpufunctbl[VDI_OPCODE] = OpCode_VDI;					/* 0x000c */
+		cpufunctbl_noret[VDI_OPCODE] = OpCode_VDI_noret;			/* 0x000c */
 	}
 	else
 	{
 		/* No built-in cartridge loaded : set same handler as 0x4afc (illegal) */
-		cpufunctbl[GEMDOS_OPCODE] = cpufunctbl[0x4afc];   /* 0x0008 */
-		cpufunctbl[PEXEC_OPCODE] = cpufunctbl[0x4afc];    /* 0x0009*/
-		cpufunctbl[SYSINIT_OPCODE] = cpufunctbl[0x4afc];  /* 0x000a */
-		cpufunctbl[VDI_OPCODE] = cpufunctbl[0x4afc];      /* 0x000c */
+		cpufunctbl[GEMDOS_OPCODE] = cpufunctbl[0x4afc];   			/* 0x0008 */
+		cpufunctbl_noret[GEMDOS_OPCODE] = cpufunctbl_noret[0x4afc];   		/* 0x0008 */
+		cpufunctbl[PEXEC_OPCODE] = cpufunctbl[0x4afc];   		 	/* 0x0009*/
+		cpufunctbl_noret[PEXEC_OPCODE] = cpufunctbl_noret[0x4afc];    		/* 0x0009*/
+		cpufunctbl[SYSINIT_OPCODE] = cpufunctbl[0x4afc]; 		 	/* 0x000a */
+		cpufunctbl_noret[SYSINIT_OPCODE] = cpufunctbl_noret[0x4afc];  		/* 0x000a */
+		cpufunctbl[VDI_OPCODE] = cpufunctbl[0x4afc];      			/* 0x000c */
+		cpufunctbl_noret[VDI_OPCODE] = cpufunctbl_noret[0x4afc];      		/* 0x000c */
 	}
 
 	/* Install opcodes for Native Features? */
 	if (ConfigureParams.Log.bNatFeats)
 	{
 		/* illegal opcodes for emulators Native Features */
-		cpufunctbl[NATFEAT_ID_OPCODE] = OpCode_NatFeat_ID;	/* 0x7300 */
-		cpufunctbl[NATFEAT_CALL_OPCODE] = OpCode_NatFeat_Call;	/* 0x7301 */
+		cpufunctbl[NATFEAT_ID_OPCODE] = OpCode_NatFeat_ID;			/* 0x7300 */
+		cpufunctbl_noret[NATFEAT_ID_OPCODE] = OpCode_NatFeat_ID_noret;		/* 0x7300 */
+		cpufunctbl[NATFEAT_CALL_OPCODE] = OpCode_NatFeat_Call;			/* 0x7301 */
+		cpufunctbl_noret[NATFEAT_CALL_OPCODE] = OpCode_NatFeat_Call_noret;	/* 0x7301 */
 	}
 	else
 	{
 		/* No Native Features : set same handler as 0x4afc (illegal) */
-		cpufunctbl[NATFEAT_ID_OPCODE] = cpufunctbl[ 0x4afc ];	/* 0x7300 */
-		cpufunctbl[NATFEAT_CALL_OPCODE] = cpufunctbl[ 0x4afc ];	/* 0x7300 */
+		cpufunctbl[NATFEAT_ID_OPCODE] = cpufunctbl[ 0x4afc ];			/* 0x7300 */
+		cpufunctbl_noret[NATFEAT_ID_OPCODE] = cpufunctbl_noret[ 0x4afc ];	/* 0x7300 */
+		cpufunctbl[NATFEAT_CALL_OPCODE] = cpufunctbl[ 0x4afc ];			/* 0x7301 */
+		cpufunctbl_noret[NATFEAT_CALL_OPCODE] = cpufunctbl_noret[ 0x4afc ];	/* 0x7301 */
 	}
 }
 
