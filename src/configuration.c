@@ -766,11 +766,7 @@ void Configuration_SetDefault(void)
 	ConfigureParams.System.bCompatibleFPU = true; /* JIT */
 	ConfigureParams.System.bSoftFloatFPU = false;
 	ConfigureParams.System.bMMU = false;
-#ifdef EMSCRIPTEN
-	ConfigureParams.System.bCycleExactCpu = false;
-#else
 	ConfigureParams.System.bCycleExactCpu = true;
-#endif
 	ConfigureParams.System.VideoTimingMode = VIDEO_TIMING_MODE_WS3;
 	ConfigureParams.System.bCompatibleCpu = true;
 	ConfigureParams.System.bBlitter = false;
