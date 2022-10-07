@@ -539,8 +539,7 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Debugger.bSymbolsAutoLoad = true;
 	ConfigureParams.Debugger.bMatchAllSymbols = false;
 	ConfigureParams.Debugger.nDisasmOptions = Disasm_GetOptions();
-	if ( ConfigureParams.Debugger.bDisasmUAE )
-		disasm_init();
+	Disasm_Init();
 
 	/* Set defaults for floppy disk images */
 	ConfigureParams.DiskImage.bAutoInsertDiskB = true;
@@ -924,8 +923,7 @@ void Configuration_Apply(bool bReset)
 	FDC_Drive_Set_NumberOfHeads ( 1 , ConfigureParams.DiskImage.DriveB_NumberOfHeads );
 
 	/* Update disassembler */
-	Disasm_SetCPUType(ConfigureParams.System.nCpuLevel, ConfigureParams.System.n_FPUType,
-	                  ConfigureParams.System.bMMU);
+	Disasm_Init();
 
 #if ENABLE_DSP_EMU
 	/* Enable DSP ? */

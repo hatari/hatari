@@ -32,6 +32,8 @@ Emulator improvements:
 - Debugger:
   - Fix: free all debugger allocations before exit
   - Fix: invalid free on freeing loaded GNU debug symbols
+  - Preliminary support for disassembly output options working also for
+    CPU core disassembler in addition to external disassember output
   - When entering debugger with 'history' enabled, disassembly address
     defaults to an address in history preceeding the PC register value
     (to give more context than disassembling directly from PC)

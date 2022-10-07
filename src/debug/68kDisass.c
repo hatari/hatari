@@ -26,25 +26,34 @@
 #include "disasm.h"
 
 typedef enum {
-	doptNoSpace = 1,	// no space after a comma in the operands list
-	doptOpcodesSmall = 2,	// opcodes are small letters
-	doptRegisterSmall = 4,	// register names are small letters
-	doptStackSP = 8		// stack pointer is named "SP" instead of "A7" (except for MOVEM)
+	doptNoSpace       = (1 << 0),	// ext: no space after a comma in the operands list
+	doptOpcodesSmall  = (1 << 1),	// opcodes in lower case
+	doptRegisterSmall = (1 << 2),	// register names in lower case
+	doptStackSP       = (1 << 3),	// ext: stack pointer is named "SP" instead of "A7" (except for MOVEM)
+	doptNoWords       = (1 << 4),	// do no show 16-bit words at this address
+	doptShowValues    = (1 << 5),	// uae: show EA & CC value in disassembly
+	doptHexSmall      = (1 << 6),	// uae: hex addresses in lower case
 } Diss68kOptions;
 
-// Note: doptNoBrackets and doptStackSP are not implemented anymore
+// Note: doptNoBrackets is not implemented anymore
 static Diss68kOptions	options = doptOpcodesSmall | doptRegisterSmall | doptNoSpace;
 
-/* all options */
-static const Diss68kOptions optionsMask = doptOpcodesSmall | doptRegisterSmall | doptStackSP | doptNoSpace;
+/* all options for 'ext' and 'uae' disassemblers */
+#define COMMON_OPTS (doptOpcodesSmall | doptRegisterSmall | doptNoWords)
+static const Diss68kOptions extOptMask = COMMON_OPTS | doptStackSP | doptNoSpace;
+static const Diss68kOptions uaeOptMask = COMMON_OPTS | doptShowValues | doptHexSmall;
 
-// values <0 will hide the group
-static int optionPosAddress = 0;	// current address
-static int optionPosHexdump = 12;	// 16-bit words at this address
-static int optionPosLabel   = 35;	// label, if defined
-static int optionPosOpcode  = 47;	// opcode
-static int optionPosOperand = 57;	// operands for the opcode
-static int optionPosComment = 82;	// comment, if defined
+static const int defaultPositions[DISASM_COLUMNS] = {
+	 0, // address: current address
+	10, // hexdump: 16-bit words at this address
+	33, // label: if defined
+	45, // opcode
+	55, // operands: for the opcode
+	80  // comment: if defined
+};
+
+// DISASM_COLUMN_DISABLE value will skip given column data
+static int positions[DISASM_COLUMNS];
 
 static int optionCPUTypeMask;
 
@@ -212,12 +221,12 @@ static void Disass68k_loop (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
 		if (!len)
 			break;
 
-		sprintf(addressBuffer, "$%*.*x :", addrWidth,addrWidth, addr);
+		sprintf(addressBuffer, "$%*.*x", addrWidth,addrWidth, addr);
 
 		hexdumpBuffer[0] = 0;
 		plen = len;
 		if(plen > 80 && (!strncmp(opcodeBuffer, "DC.", 3) || !strncmp(opcodeBuffer, "dc.", 3)))
-			plen = ((optionPosLabel - optionPosHexdump) / 5) * 2;
+			plen = ((positions[DISASM_COLUMN_LABEL] - positions[DISASM_COLUMN_HEXDUMP]) / 5) * 2;
 
 		for(j=0; j<plen; j += 2)
 		{
@@ -234,15 +243,15 @@ static void Disass68k_loop (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
 		}
 
 		lineBuffer[0] = 0;
-		if(optionPosAddress >= 0)
-			Disass68kComposeStr(lineBuffer, addressBuffer, optionPosAddress, 0);
-		if(optionPosHexdump >= 0)
-			Disass68kComposeStr(lineBuffer, hexdumpBuffer, optionPosHexdump, optionPosLabel);
-		if(optionPosLabel >= 0)
-			Disass68kComposeStr(lineBuffer, labelBuffer, optionPosLabel, 0);
-		if(optionPosOpcode >= 0)
-			Disass68kComposeStr(lineBuffer, opcodeBuffer, optionPosOpcode, 0);
-		if(optionPosOperand >= 0)
+		if(positions[DISASM_COLUMN_ADDRESS] >= 0)
+			Disass68kComposeStr(lineBuffer, addressBuffer, positions[DISASM_COLUMN_ADDRESS], 0);
+		if(positions[DISASM_COLUMN_HEXDUMP] >= 0)
+			Disass68kComposeStr(lineBuffer, hexdumpBuffer, positions[DISASM_COLUMN_HEXDUMP], positions[DISASM_COLUMN_LABEL]);
+		if(positions[DISASM_COLUMN_LABEL] >= 0)
+			Disass68kComposeStr(lineBuffer, labelBuffer, positions[DISASM_COLUMN_LABEL], 0);
+		if(positions[DISASM_COLUMN_OPCODE] >= 0)
+			Disass68kComposeStr(lineBuffer, opcodeBuffer, positions[DISASM_COLUMN_OPCODE], 0);
+		if(positions[DISASM_COLUMN_OPERAND] >= 0)
 		{
 			size_t	l = strlen(lineBuffer);
 			if(lineBuffer[l-1] != ' ')		// force at least one space between opcode and operand
@@ -250,19 +259,19 @@ static void Disass68k_loop (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
 				lineBuffer[l++] = ' ';
 				lineBuffer[l] = 0;
 			}
-			Disass68kComposeStr(lineBuffer, operandBuffer, optionPosOperand, 0);
+			Disass68kComposeStr(lineBuffer, operandBuffer, positions[DISASM_COLUMN_OPERAND], 0);
 		}
-		if (optionPosComment >= 0)
+		if (positions[DISASM_COLUMN_COMMENT] >= 0)
 		{
 			if (Profile_CpuAddr_DataStr(commentBuffer, sizeof(commentBuffer), addr))
 			{
-				Disass68kComposeStr(lineBuffer, commentBuffer, optionPosComment+1, 0);
+				Disass68kComposeStr(lineBuffer, commentBuffer, positions[DISASM_COLUMN_COMMENT]+1, 0);
 			}
 			/* show comments only if profile data is missing */
 			else if (commentBuffer[0])
 			{
-				Disass68kComposeStr(lineBuffer, " ;", optionPosComment, 0);
-				Disass68kComposeStr(lineBuffer, commentBuffer, optionPosComment+3, 0);
+				Disass68kComposeStr(lineBuffer, " ;", positions[DISASM_COLUMN_COMMENT], 0);
+				Disass68kComposeStr(lineBuffer, commentBuffer, positions[DISASM_COLUMN_COMMENT]+3, 0);
 			}
 		}
 		addr += len;
@@ -309,10 +318,26 @@ void Disasm (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
 	m68k_disasm_file (f, addr, nextpc, addr, cnt);
 }
 
-static void Disasm_CheckOptionEngine(void)
+/**
+ * warn if flags for the other engine have been specified
+ */
+static void Disasm_CheckOptionEngine(Diss68kOptions opts)
 {
+	const char *name;
+	Diss68kOptions mask;
 	if (ConfigureParams.Debugger.bDisasmUAE)
-		fputs("WARNING: disassembly options are supported only for '--disasm ext'!\n", stderr);
+	{
+		mask = uaeOptMask;
+		name = "uae";
+	}
+	else
+	{
+		mask = extOptMask;
+		name = "ext";
+	}
+	if (opts & ~mask)
+		fprintf(stderr, "WARNING: '--disasm %s' does not support disassembly option(s) 0x%x!\n",
+		       name, opts & ~mask);
 }
 
 /**
@@ -320,12 +345,12 @@ static void Disasm_CheckOptionEngine(void)
  */
 void Disasm_GetColumns(int *pos)
 {
-	pos[DISASM_COLUMN_ADDRESS] = optionPosAddress;
-	pos[DISASM_COLUMN_HEXDUMP] = optionPosHexdump;
-	pos[DISASM_COLUMN_LABEL]   = optionPosLabel;
-	pos[DISASM_COLUMN_OPCODE]  = optionPosOpcode;
-	pos[DISASM_COLUMN_OPERAND] = optionPosOperand;
-	pos[DISASM_COLUMN_COMMENT] = optionPosComment;
+	pos[DISASM_COLUMN_ADDRESS] = positions[DISASM_COLUMN_ADDRESS];
+	pos[DISASM_COLUMN_HEXDUMP] = positions[DISASM_COLUMN_HEXDUMP];
+	pos[DISASM_COLUMN_LABEL]   = positions[DISASM_COLUMN_LABEL];
+	pos[DISASM_COLUMN_OPCODE]  = positions[DISASM_COLUMN_OPCODE];
+	pos[DISASM_COLUMN_OPERAND] = positions[DISASM_COLUMN_OPERAND];
+	pos[DISASM_COLUMN_COMMENT] = positions[DISASM_COLUMN_COMMENT];
 }
 
 /**
@@ -333,12 +358,12 @@ void Disasm_GetColumns(int *pos)
  */
 void Disasm_SetColumns(int *pos)
 {
-	optionPosAddress = pos[DISASM_COLUMN_ADDRESS];
-	optionPosHexdump = pos[DISASM_COLUMN_HEXDUMP];
-	optionPosLabel   = pos[DISASM_COLUMN_LABEL];
-	optionPosOpcode  = pos[DISASM_COLUMN_OPCODE];
-	optionPosOperand = pos[DISASM_COLUMN_OPERAND];
-	optionPosComment = pos[DISASM_COLUMN_COMMENT];
+	positions[DISASM_COLUMN_ADDRESS] = pos[DISASM_COLUMN_ADDRESS];
+	positions[DISASM_COLUMN_HEXDUMP] = pos[DISASM_COLUMN_HEXDUMP];
+	positions[DISASM_COLUMN_LABEL]   = pos[DISASM_COLUMN_LABEL];
+	positions[DISASM_COLUMN_OPCODE]  = pos[DISASM_COLUMN_OPCODE];
+	positions[DISASM_COLUMN_OPERAND] = pos[DISASM_COLUMN_OPERAND];
+	positions[DISASM_COLUMN_COMMENT] = pos[DISASM_COLUMN_COMMENT];
 }
 
 /**
@@ -347,7 +372,7 @@ void Disasm_SetColumns(int *pos)
  * output is new column positions/values in 'newcols' array.
  * It's safe to use same array for both.
  */
-void Disasm_DisableColumn(int column, int *oldcols, int *newcols)
+void Disasm_DisableColumn(int column, const int *oldcols, int *newcols)
 {
 	int i, diff = 0;
 
@@ -381,11 +406,48 @@ int Disasm_GetOptions(void)
 }
 
 /**
- * Set CPU and FPU mask used for disassembly (when changed from the UI or the options)
+ * Initialize disassembly options from config
  */
-void Disasm_SetCPUType(int CPU, int FPU, bool bMMU)
+void Disasm_Init(void)
 {
-	switch (CPU)
+	options = ConfigureParams.Debugger.nDisasmOptions;
+	if (ConfigureParams.Debugger.bDisasmUAE)
+	{
+		if (options & doptOpcodesSmall)
+			disasm_flags |= (DISASM_FLAG_LC_MNEMO | DISASM_FLAG_LC_SIZE);
+		else
+			disasm_flags &= ~(DISASM_FLAG_LC_MNEMO | DISASM_FLAG_LC_SIZE);
+
+		if (options & doptRegisterSmall)
+			disasm_flags |= DISASM_FLAG_LC_REG;
+		else
+			disasm_flags &= ~DISASM_FLAG_LC_REG;
+
+		if (options & doptNoWords)
+			disasm_flags &= ~DISASM_FLAG_WORDS;
+		else
+			disasm_flags |= DISASM_FLAG_WORDS;
+
+		if (options & doptShowValues)
+			disasm_flags |= (DISASM_FLAG_CC | DISASM_FLAG_EA | DISASM_FLAG_VAL);
+		else
+			disasm_flags &= ~(DISASM_FLAG_CC | DISASM_FLAG_EA | DISASM_FLAG_VAL);
+
+		if (options & doptHexSmall)
+			disasm_flags |= DISASM_FLAG_LC_HEX;
+		else
+			disasm_flags &= ~DISASM_FLAG_LC_HEX;
+
+		disasm_init();
+		return;
+	}
+	/* ext disassembler */
+	if (options & doptNoWords)
+		Disasm_DisableColumn(DISASM_COLUMN_HEXDUMP, defaultPositions, positions);
+	else
+		memcpy(positions, defaultPositions, sizeof(positions));
+
+	switch (ConfigureParams.System.nCpuLevel)
 	{
 #ifdef HAVE_CAPSTONE_M68K
 	 case 0:  optionCPUTypeMask = CS_MODE_M68K_000; break;
@@ -411,23 +473,26 @@ const char *Disasm_ParseOption(const char *arg)
 			int flag;
 			const char *desc;
 		} option[] = {
-			{ doptNoSpace, "no space after comma in the operands list" },
-			{ doptOpcodesSmall, "opcodes in small letters" },
-			{ doptRegisterSmall, "register names in small letters" },
-			{ doptStackSP, "stack pointer as 'SP', not 'A7'" },
+			{ doptNoSpace, "ext: no space after comma in the operands list" },
+			{ doptOpcodesSmall, "opcodes in lower case" },
+			{ doptRegisterSmall, "register names in lower case" },
+			{ doptStackSP, "ext: stack pointer as 'SP', not 'A7'" },
+			{ doptNoWords, "do not show 16-bit words at this address" },
+			{ doptShowValues, "uae: show EA + CC values after instruction" },
+			{ doptHexSmall, "uae: hex numbers in lower case" },
 			{ 0, NULL }
 		};
 		int i;
 		fputs("Disassembly settings:\n"
-		      "\tuae - use CPU core internal disassembler which has better\n"
-		      "\t      instruction support\n"
-		      "\text - use external disassembler which has nicer output\n"
-		      "\t      and supports options below\n"
+		      "\tuae - use CPU core internal disassembler\n"
+		      "\t      (better instruction support)\n"
+		      "\text - use external disassembler\n"
+		      "\t      (nicer output)\n"
 		      "\t<bitmask> - disassembly output option flags\n"
 		      "Flag values:\n", stderr);
 		for (i = 0; option[i].desc; i++) {
 			assert(option[i].flag == (1 << i));
-			fprintf(stderr, "\t%d: %s\n", option[i].flag, option[i].desc);
+			fprintf(stderr, "\t0x%02x: %s\n", option[i].flag, option[i].desc);
 		}
 		fprintf(stderr, "Current settings are:\n\t--disasm %s --disasm 0x%x\n",
 			ConfigureParams.Debugger.bDisasmUAE ? "uae" : "ext",
@@ -437,16 +502,18 @@ const char *Disasm_ParseOption(const char *arg)
 	if (strcasecmp(arg, "uae") == 0)
 	{
 		fputs("Selected UAE CPU core internal disassembler.\n", stderr);
+		fprintf(stderr, "Disassembly output flags are 0x%x.\n", options);
 		ConfigureParams.Debugger.bDisasmUAE = true;
-		disasm_init();
+		Disasm_Init();
 		return NULL;
 	}
 	if (strcasecmp(arg, "ext") == 0)
 	{
 #if HAVE_CAPSTONE_M68K
 		fputs("Selected external disassembler.\n", stderr);
-		fprintf(stderr, "Disassembly output flags are %d.\n", options);
+		fprintf(stderr, "Disassembly output flags are 0x%x.\n", options);
 		ConfigureParams.Debugger.bDisasmUAE = false;
+		Disasm_Init();
 		return NULL;
 #else
 		return "external disassembler (capstone) not compiled into this binary";
@@ -455,18 +522,24 @@ const char *Disasm_ParseOption(const char *arg)
 	if (isdigit((unsigned char)*arg))
 	{
 		char *end;
-		int newopt = strtol(arg, &end, 0);
+		unsigned int newopt = strtol(arg, &end, 0);
 		if (*end)
 		{
 			return "not a number";
 		}
-		if ((newopt|optionsMask) != optionsMask)
+		if ((newopt|extOptMask|uaeOptMask) != (extOptMask|uaeOptMask))
 		{
 			return "unknown flags in the bitmask";
 		}
-		fprintf(stderr, "Changed CPU disassembly output flags from %d to %d.\n", options, newopt);
-		ConfigureParams.Debugger.nDisasmOptions = options = newopt;
-		Disasm_CheckOptionEngine();
+		if (newopt != options)
+		{
+			fprintf(stderr, "Changed CPU disassembly output flags from 0x%x to 0x%x.\n", options, newopt);
+			ConfigureParams.Debugger.nDisasmOptions = options = newopt;
+			Disasm_CheckOptionEngine(options);
+			Disasm_Init();
+		}
+		else
+			fprintf(stderr, "No CPU disassembly options changed.\n");
 		return NULL;
 	}
 	return "invalid disasm option";

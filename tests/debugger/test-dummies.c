@@ -205,4 +205,4 @@ uint32_t Disasm_GetNextPC(uint32_t pc) { return pc+2; }
 void Disasm (FILE *f, uaecptr addr, uaecptr *nextpc, int count) {}
 void Disasm_GetColumns(int *columns) {}
 void Disasm_SetColumns(int *columns) {}
-void Disasm_DisableColumn(int column, int *oldcols, int *newcols) {}
+void Disasm_DisableColumn(int column, const int *oldcols, int *newcols) {}

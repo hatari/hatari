@@ -24,10 +24,10 @@ enum {
 
 extern void Disasm_GetColumns(int *columns);
 extern void Disasm_SetColumns(int *columns);
-extern void Disasm_DisableColumn(int column, int *oldcols, int *newcols);
+extern void Disasm_DisableColumn(int column, const int *oldcols, int *newcols);
 
 extern const char* Disasm_ParseOption(const char *arg);
 extern int Disasm_GetOptions(void);
-void Disasm_SetCPUType(int CPU ,int FPU, bool bMMU);
+void Disasm_Init(void);
 
 #endif		/* HATARI_68KDISASS_H */
