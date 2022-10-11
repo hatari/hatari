@@ -133,6 +133,7 @@ static struct {
 typedef struct
 {
 	bool bUsed;
+	bool bReadOnly;
 	char szMode[4];     /* enough for all used fopen() modes: rb/rb+/wb+ */
 	uint32_t Basepage;
 	FILE *FileHandle;
@@ -2144,6 +2145,7 @@ static bool GemDOS_Open(uint32_t Params)
 		FileHandles[Index].FileHandle = OverrideHandle;
 		RealMode = "read-only";
 		ModeStr = "rb";
+		Mode = 0;
 	}
 	else
 	{
@@ -2168,15 +2170,13 @@ static bool GemDOS_Open(uint32_t Params)
 		 * support write-only without truncating the file).
 		 *
 		 * Read-only status is used if:
-		 * - requested by Atari program
 		 * - Hatari write protection is enabled
 		 * - File itself is read-only
 		 * Latter is done to help cases where application
 		 * needlessly requests write access, but file is
 		 * on read-only media (like CD/DVD).
 		 */
-		if (Mode == 0 ||
-		    ConfigureParams.HardDisk.nWriteProtection == WRITEPROT_ON ||
+		if (ConfigureParams.HardDisk.nWriteProtection == WRITEPROT_ON ||
 		    (stat(szActualFileName, &FileStat) == 0 && !(FileStat.st_mode & S_IWUSR)))
 		{
 			ModeStr = "rb";
@@ -2194,6 +2194,7 @@ static bool GemDOS_Open(uint32_t Params)
 	{
 		/* Tag handle table entry as used in this process and return handle */
 		FileHandles[Index].bUsed = true;
+		FileHandles[Index].bReadOnly = (Mode == 0);
 		strcpy(FileHandles[Index].szMode, ModeStr);
 		FileHandles[Index].Basepage = STMemory_ReadLong(act_pd);
 		snprintf(FileHandles[Index].szActualName,
@@ -2436,6 +2437,9 @@ static bool GemDOS_Write(uint32_t Params)
 		fflush(fp);
 		Regs[REG_D0] = nBytesWritten;      /* OK */
 	}
+	if (FileHandles[fh_idx].bReadOnly)
+		Log_Printf(LOG_WARN, "GEMDOS Fwrite() to a file opened as read-only: %s\n",
+			   FileHandles[fh_idx].szActualName);
 	return true;
 }
 
