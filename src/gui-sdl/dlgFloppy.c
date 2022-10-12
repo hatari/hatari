@@ -124,28 +124,6 @@ static void DlgDisk_BrowseDisk(char *dlgname, int drive, int diskid)
 
 
 /**
- * Let user browse given directory, set directory if one selected.
- */
-static void DlgDisk_BrowseDir(char *dlgname, char *confname, int maxlen)
-{
-	char *str, *selname;
-
-	selname = SDLGui_FileSelect("Floppy image directory:", confname, NULL, false);
-	if (!selname)
-		return;
-
-	strcpy(confname, selname);
-	free(selname);
-
-	str = strrchr(confname, PATHSEP);
-	if (str != NULL)
-		str[1] = 0;
-	File_CleanFileName(confname);
-	File_ShrinkName(dlgname, confname, maxlen);
-}
-
-
-/**
  * Ask whether new disk should be inserted to A: or B: and if yes, insert.
  */
 static void DlgFloppy_QueryInsert(char *namea, int ida, char *nameb, int idb, const char *path)
@@ -274,7 +252,7 @@ void DlgFloppy_Main(void)
 			DlgDisk_BrowseDisk(dlgname[1], 1, FLOPPYDLG_DISKB);
 			break;
 		 case FLOPPYDLG_BROWSEIMG:
-			DlgDisk_BrowseDir(dlgdiskdir,
+			SdlGui_DirSelect("Floppy image directory:", dlgdiskdir,
 			                 ConfigureParams.DiskImage.szDiskImageDirectory,
 			                 floppydlg[FLOPPYDLG_IMGDIR].w);
 			break;

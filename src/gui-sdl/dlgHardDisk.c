@@ -113,30 +113,6 @@ static SGOBJ diskdlg[] =
 };
 
 
-/**
- * Let user browse given directory, set directory if one selected.
- * return false if none selected, otherwise return true.
- */
-static bool DlgDisk_BrowseDir(char *dlgname, char *confname, int maxlen)
-{
-	char *str, *selname;
-
-	selname = SDLGui_FileSelect("GEMDOS drive directory:", confname, NULL, false);
-	if (selname)
-	{
-		strcpy(confname, selname);
-		free(selname);
-
-		str = strrchr(confname, PATHSEP);
-		if (str != NULL)
-			str[1] = 0;
-		File_CleanFileName(confname);
-		File_ShrinkName(dlgname, confname, maxlen);
-		return true;
-	}
-	return false;
-}
-
 static void DlgHardDisk_PrepAcsi(int id)
 {
 	if (ConfigureParams.Acsi[id].bUseDevice)
@@ -339,7 +315,7 @@ void DlgHardDisk_Main(void)
 			dlgname_gdos[0] = '\0';
 			break;
 		 case DISKDLG_GEMDOSBROWSE:
-			if (DlgDisk_BrowseDir(dlgname_gdos,
+			if (SdlGui_DirSelect("GEMDOS drive directory:", dlgname_gdos,
 			                     ConfigureParams.HardDisk.szHardDiskDirectories[0],
 			                     diskdlg[DISKDLG_GEMDOSNAME].w))
 				ConfigureParams.HardDisk.bUseHardDiskDirectories = true;

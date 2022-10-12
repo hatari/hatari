@@ -1130,3 +1130,28 @@ bool SDLGui_FileConfSelect(const char *title, char *dlgname, char *confname, int
 	}
 	return false;
 }
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Let user browse given directory.  If one is selected, set directory
+ * to confname & short name to dlgname, and return true, else false.
+ */
+bool SdlGui_DirSelect(const char *title, char *dlgname, char *confname, int maxlen)
+{
+	char *str, *selname;
+
+	selname = SDLGui_FileSelect(title, confname, NULL, false);
+	if (!selname)
+		return false;
+
+	strcpy(confname, selname);
+	free(selname);
+
+	str = strrchr(confname, PATHSEP);
+	if (str != NULL)
+		str[1] = 0;
+	File_CleanFileName(confname);
+	File_ShrinkName(dlgname, confname, maxlen);
+	return true;
+}
