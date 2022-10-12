@@ -2275,7 +2275,6 @@ static void prefs_changed_cpu (void)
 static int check_prefs_changed_cpu2(void)
 {
 	int changed = 0;
-
 #ifdef JIT
 	changed = check_prefs_changed_comp(true) ? 1 : 0;
 #endif
@@ -5233,6 +5232,7 @@ static void m68k_run_1 (void)
 
 #ifdef WINUAE_FOR_HATARI
 	Log_Printf(LOG_DEBUG, "m68k_run_1\n");
+	CpuRunFuncNoret = false;
 #endif
 
 	while (!exit) {
@@ -5346,6 +5346,7 @@ static void m68k_run_1_ce (void)
 #ifdef WINUAE_FOR_HATARI
 	Log_Printf(LOG_DEBUG, "m68k_run_1_ce\n");
 	CpuRunCycleExact = true;
+	CpuRunFuncNoret = true;
 #endif
 
 	while (!exit) {
@@ -5965,6 +5966,7 @@ static void m68k_run_jit(void)
 {
 #ifdef WINUAE_FOR_HATARI
 	Log_Printf(LOG_DEBUG, "m68k_run_jit\n");
+	CpuRunFuncNoret = false;
 #endif
 #ifdef WITH_THREADED_CPU
 	if (currprefs.cpu_thread) {
@@ -6122,6 +6124,7 @@ static void m68k_run_mmu060 (void)
 	check_halt();
 #ifdef WINUAE_FOR_HATARI
 	Log_Printf(LOG_DEBUG,  "m68k_run_mmu060\n");
+	CpuRunFuncNoret = false;
 #endif
 
 	while (!halt) {
@@ -6215,6 +6218,7 @@ static void m68k_run_mmu040 (void)
 	check_halt();
 #ifdef WINUAE_FOR_HATARI
 	Log_Printf(LOG_DEBUG,  "m68k_run_mmu040\n");
+	CpuRunFuncNoret = false;
 #endif
 
 	while (!halt) {
@@ -6315,8 +6319,12 @@ static void m68k_run_mmu030 (void)
 
 #ifdef WINUAE_FOR_HATARI
 	Log_Printf(LOG_DEBUG,  "m68k_run_mmu030\n");
+	CpuRunFuncNoret = false;
 	if ( currprefs.cpu_cycle_exact )		/* m68k_run_mmu030 can run with CE mode ON or OFF */
+	{
 		CpuRunCycleExact = true;
+		CpuRunFuncNoret = true;
+	}
 #endif
 
 	mmu030_opcode_stageb = -1;
@@ -6534,6 +6542,7 @@ static void m68k_run_3ce (void)
 #ifdef WINUAE_FOR_HATARI
 	Log_Printf(LOG_DEBUG, "m68k_run_3ce\n");
 	CpuRunCycleExact = true;
+	CpuRunFuncNoret = true;
 #endif
 
 	while (!exit) {
@@ -6631,6 +6640,7 @@ static void m68k_run_3p(void)
 
 #ifdef WINUAE_FOR_HATARI
 	Log_Printf(LOG_DEBUG, "m68k_run_3p\n");
+	CpuRunFuncNoret = true;
 #endif
 
 	while (!exit)  {
@@ -6728,6 +6738,7 @@ static void m68k_run_2ce (void)
 #ifdef WINUAE_FOR_HATARI
 	Log_Printf(LOG_DEBUG, "m68k_run_2ce\n");
 	CpuRunCycleExact = true;
+	CpuRunFuncNoret = true;
 #endif
 
 	while (!exit) {
@@ -6929,6 +6940,7 @@ static void m68k_run_2p (void)
 
 #ifdef WINUAE_FOR_HATARI
 	Log_Printf(LOG_DEBUG, "m68k_run_2p\n");
+	CpuRunFuncNoret = false;
 #endif
 
 	while (!exit) {
@@ -7163,6 +7175,7 @@ static void m68k_run_2_000(void)
 
 #ifdef WINUAE_FOR_HATARI
 	Log_Printf(LOG_DEBUG, "m68k_run_2_000\n");
+	CpuRunFuncNoret = false;
 #endif
 
 	while (!exit) {
@@ -7255,6 +7268,7 @@ static void m68k_run_2_020(void)
 
 #ifdef WINUAE_FOR_HATARI
 	Log_Printf(LOG_DEBUG, "m68k_run_2_020\n");
+	CpuRunFuncNoret = false;
 #endif
 
 	while (!exit) {

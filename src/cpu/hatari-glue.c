@@ -184,7 +184,7 @@ void Exit680x0(void)
  */
 static void	CpuDoNOP ( void )
 {
-	if ( !CpuRunCycleExact )
+	if ( !CpuRunFuncNoret )
 		(*cpufunctbl[0X4E71])(0x4E71);
 	else
 		(*cpufunctbl_noret[0X4E71])(0x4E71);

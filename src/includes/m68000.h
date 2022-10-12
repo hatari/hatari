@@ -215,6 +215,7 @@ extern int WaitStateCycles;
 extern int BusMode;
 extern bool	CPU_IACK;
 extern bool	CpuRunCycleExact;
+extern bool	CpuRunFuncNoret;
 
 extern int	LastOpcodeFamily;
 extern int	LastInstrCycles;

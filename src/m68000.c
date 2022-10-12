@@ -108,6 +108,7 @@ int WaitStateCycles = 0;	/* Used to emulate the wait state cycles of certain IO 
 int BusMode = BUS_MODE_CPU;	/* Used to tell which part is owning the bus (cpu, blitter, ...) */
 bool CPU_IACK = false;		/* Set to true during an exception when getting the interrupt's vector number */
 bool CpuRunCycleExact;		/* true if the cpu core is running in cycle exact mode (ie m68k_run_1_ce, m68k_run_2ce, ...) */
+bool CpuRunFuncNoret;		/* true if the cpu core is using cpufunctbl_noret instead of cpufunctbl to execute opcode */
 
 static bool M68000_DebuggerFlag;/* Is debugger enabled or not ? */
 
