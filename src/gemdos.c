@@ -482,22 +482,6 @@ static void fsfirst_dirname(const char *string, char *newstr)
 	newstr[i] = '\0';
 }
 
-
-/*-----------------------------------------------------------------------*/
-/**
- * Return directory mask part from the given string
- */
-static const char* fsfirst_dirmask(const char *string)
-{
-	const char *lastsep;
-
-	lastsep = strrchr(string, PATHSEP);
-	if (lastsep)
-		return lastsep + 1;
-	else
-		return string;
-}
-
 /*-----------------------------------------------------------------------*/
 /**
  * Close given internal file handle if it's still in use
@@ -2438,8 +2422,8 @@ static bool GemDOS_Write(uint32_t Params)
 		Regs[REG_D0] = nBytesWritten;      /* OK */
 	}
 	if (FileHandles[fh_idx].bReadOnly)
-		Log_Printf(LOG_WARN, "GEMDOS Fwrite() to a file opened as read-only: %s\n",
-			   FileHandles[fh_idx].szActualName);
+		Log_Printf(LOG_WARN, "GEMDOS Fwrite() to '%s' file, opened as read-only\n",
+			   File_Basename(FileHandles[fh_idx].szActualName));
 	return true;
 }
 
@@ -3082,7 +3066,7 @@ static bool GemDOS_SFirst(uint32_t Params)
 	}
 
 	InternalDTAs[useidx].centry = 0;          /* current entry is 0 */
-	dirmask = fsfirst_dirmask(szActualFileName);/* directory mask part */
+	dirmask = File_Basename(szActualFileName);/* directory mask part */
 	InternalDTAs[useidx].found = files;       /* get files */
 
 	/* count & copy the entries that match our mask and discard the rest */

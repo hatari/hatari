@@ -519,6 +519,17 @@ char * File_FindPossibleExtFileName(const char *pszFileName, const char * const 
 	return NULL;
 }
 
+/*-----------------------------------------------------------------------*/
+/**
+ * Return basename of given path (remove directory names)
+ */
+const char *File_Basename(const char *path)
+{
+	const char *basename;
+	if ((basename = strrchr(path, PATHSEP)))
+		return basename + 1;
+	return path;
+}
 
 /*-----------------------------------------------------------------------*/
 /**
