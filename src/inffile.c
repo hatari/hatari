@@ -8,7 +8,6 @@
 */
 const char INFFILE_fileid[] = "Hatari inffile.c";
 
-#include <SDL_endian.h>
 #include <assert.h>
 #include <errno.h>
 #include <ctype.h>
@@ -596,7 +595,7 @@ static char *get_inf_file(const char **set_infname, int *set_size, int *res_col)
 {
 	char *hostname;
 	const char *contents, *infname;
-	Uint8 *host_content;
+	uint8_t *host_content;
 	long host_size;
 	int size;
 

@@ -44,12 +44,12 @@ void XBios_EnableCommands(bool enable)
  * http://dev-docs.atariforge.org/files/Atari_Debugger_1-24-1990.pdf
  * http://toshyp.atari.org/en/004012.html#Dbmsg
  */
-static bool XBios_Dbmsg(Uint32 Params)
+static bool XBios_Dbmsg(uint32_t Params)
 {
 	/* Read details from stack */
-	const Uint16 reserved = STMemory_ReadWord(Params);
-	const Uint16 msgnum = STMemory_ReadWord(Params+SIZE_WORD);
-	const Uint32 addr = STMemory_ReadLong(Params+SIZE_WORD+SIZE_WORD);
+	const uint16_t reserved = STMemory_ReadWord(Params);
+	const uint16_t msgnum = STMemory_ReadWord(Params+SIZE_WORD);
+	const uint32_t addr = STMemory_ReadLong(Params+SIZE_WORD+SIZE_WORD);
 
 	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x0B Dbmsg(%d, 0x%04X, 0x%x) at PC 0x%X\n",
 		  reserved, msgnum, addr, M68000_GetPC());
@@ -95,7 +95,7 @@ static bool XBios_Dbmsg(Uint32 Params)
  * XBIOS Scrdmp
  * Call 20
  */
-static bool XBios_Scrdmp(Uint32 Params)
+static bool XBios_Scrdmp(uint32_t Params)
 {
 	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x14 Scrdmp() at PC 0x%X\n" , M68000_GetPC());
 
@@ -116,7 +116,7 @@ static bool XBios_Scrdmp(Uint32 Params)
  * XBIOS remote control interface for Hatari
  * Call 255
  */
-static bool XBios_HatariControl(Uint32 Params)
+static bool XBios_HatariControl(uint32_t Params)
 {
 	const char *pText;
 	pText = (const char *)STMemory_STAddrToPointer(STMemory_ReadLong(Params));
@@ -140,10 +140,10 @@ static bool XBios_HatariControl(Uint32 Params)
  * XBIOS Floppy Read
  * Call 8
  */
-static bool XBios_Floprd(Uint32 Params)
+static bool XBios_Floprd(uint32_t Params)
 {
-	Uint32 pBuffer;
-	Uint16 Dev,Sector,Side,Track,Count;
+	uint32_t pBuffer;
+	uint16_t Dev, Sector, Side, Track, Count;
 
 	/* Read details from stack */
 	pBuffer = STMemory_ReadLong(Params);
@@ -164,10 +164,10 @@ static bool XBios_Floprd(Uint32 Params)
  * XBIOS Floppy Write
  * Call 9
  */
-static bool XBios_Flopwr(Uint32 Params)
+static bool XBios_Flopwr(uint32_t Params)
 {
-	Uint32 pBuffer;
-	Uint16 Dev,Sector,Side,Track,Count;
+	uint32_t pBuffer;
+	uint16_t Dev, Sector, Side, Track, Count;
 
 	/* Read details from stack */
 	pBuffer = STMemory_ReadLong(Params);
@@ -188,9 +188,9 @@ static bool XBios_Flopwr(Uint32 Params)
  * XBIOS RsConf
  * Call 15
  */
-static bool XBios_Rsconf(Uint32 Params)
+static bool XBios_Rsconf(uint32_t Params)
 {
-	Sint16 Baud, Ctrl, Ucr, Rsr, Tsr, Scr;
+	int16_t Baud, Ctrl, Ucr, Rsr, Tsr, Scr;
 
 	Baud = STMemory_ReadWord(Params);
 	Ctrl = STMemory_ReadWord(Params+SIZE_WORD);
@@ -208,9 +208,9 @@ static bool XBios_Rsconf(Uint32 Params)
  * XBIOS Devconnect
  * Call 139
  */
-static bool XBios_Devconnect(Uint32 Params)
+static bool XBios_Devconnect(uint32_t Params)
 {
-	Uint16 src,dst,clk,prescale,protocol;
+	uint16_t src, dst, clk, prescale, protocol;
 
 	/* Read details from stack */
 	src = STMemory_ReadWord(Params);
@@ -232,7 +232,7 @@ static bool XBios_Devconnect(Uint32 Params)
  * Mapping is based on TOSHYP information:
  * 	http://toshyp.atari.org/en/004014.html
  */
-static const char* XBios_Call2Name(Uint16 opcode)
+static const char* XBios_Call2Name(uint16_t opcode)
 {
 	static const char* names[] = {
 		"Initmous",
@@ -410,7 +410,7 @@ static const char* XBios_Call2Name(Uint16 opcode)
 
 void XBios_Info(FILE *fp, uint32_t dummy)
 {
-	Uint16 opcode;
+	uint16_t opcode;
 	for (opcode = 0; opcode < 168; ) {
 		fprintf(fp, "%02x %-21s", opcode,
 			XBios_Call2Name(opcode));
@@ -440,8 +440,8 @@ void XBios_Info(FILE *fp, uint32_t bShowOpcodes)
  */
 bool XBios(void)
 {
-	Uint32 Params;
-	Uint16 XBiosCall;
+	uint32_t Params;
+	uint16_t XBiosCall;
 
 	/* Find call */
 	Params = Regs[REG_A7];

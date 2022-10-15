@@ -167,7 +167,7 @@ static bool MemorySnapShot_OpenFile(const char *pszFileName, bool bSave, bool bC
 	char VersionString[] = VERSION_STRING;
 
 #define CORE_VERSION 1
-	Uint8 CpuCore;
+	uint8_t CpuCore;
 
 	/* Set error */
 	bCaptureError = false;
@@ -332,7 +332,7 @@ void MemorySnapShot_Capture_Immediate(const char *pszFileName, bool bConfirm)
  */
 void MemorySnapShot_Capture_Do(void)
 {
-	Uint32 magic = SNAPSHOT_MAGIC;
+	uint32_t magic = SNAPSHOT_MAGIC;
 
 	/* Set to 'saving' */
 	if (MemorySnapShot_OpenFile(Temp_FileName, true, Temp_Confirm))
@@ -411,7 +411,7 @@ void MemorySnapShot_Restore(const char *pszFileName, bool bConfirm)
  */
 void MemorySnapShot_Restore_Do(void)
 {
-	Uint32 magic;
+	uint32_t magic;
 
 //fprintf ( stderr , "MemorySnapShot_Restore_Do in\n" );
 	/* Set to 'restore' */

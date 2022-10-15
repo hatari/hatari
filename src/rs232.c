@@ -13,7 +13,6 @@
 */
 const char RS232_fileid[] = "Hatari rs232.c";
 
-#include <SDL.h>
 #include <errno.h>
 
 #include "main.h"
@@ -313,7 +312,7 @@ void RS232_UnInit(void)
  *     1 1 : 5 Bits
  *   Bit 7: Frequency from TC and RC
  */
-static void RS232_HandleUCR(Sint16 ucr)
+static void RS232_HandleUCR(int16_t ucr)
 {
 #if HAVE_TERMIOS_H
 	int nCharSize;                   /* Bits per character: 5, 6, 7 or 8 */
@@ -487,7 +486,7 @@ void RS232_SetBaudRateFromTimerD(void)
 /**
  * Pass bytes from emulator to RS-232
  */
-static bool RS232_TransferBytesTo(Uint8 *pBytes, int nBytes)
+static bool RS232_TransferBytesTo(uint8_t *pBytes, int nBytes)
 {
 	/* Make sure there's a RS-232 connection if it's enabled */
 	if (ConfigureParams.RS232.bEnableRS232)
@@ -633,7 +632,7 @@ void RS232_UDR_ReadByte(void)
  */
 void RS232_UDR_WriteByte(void)
 {
-	Uint8 OutByte;
+	uint8_t OutByte;
 
 	M68000_WaitState(4);
 

@@ -18,7 +18,6 @@ const char Options_fileid[] = "Hatari options.c";
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include <SDL.h>
 
 #include "main.h"
 #include "version.h"
@@ -942,7 +941,7 @@ static bool Opt_ValidateOptions(void)
 bool Opt_IsAtariProgram(const char *path)
 {
 	bool ret = false;
-	Uint8 test[2];
+	uint8_t test[2];
 	FILE *fp;
 
 	if (File_Exists(path) && (fp = fopen(path, "rb")))
