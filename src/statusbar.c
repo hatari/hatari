@@ -480,8 +480,7 @@ void Statusbar_AddMessage(const char *msg, Uint32 msecs)
 	item->next = MessageList;
 	MessageList = item;
 
-	strncpy(item->msg, msg, MAX_MESSAGE_LEN);
-	item->msg[MAX_MESSAGE_LEN] = '\0';
+	Str_Copy(item->msg, msg, sizeof(item->msg));
 	DEBUGPRINT(("Add message: '%s'\n", item->msg));
 
 	if (msecs)

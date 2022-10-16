@@ -722,8 +722,7 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 	/* Prepare the path and filename variables */
 	if (path_and_name && path_and_name[0])
 	{
-		strncpy(path, path_and_name, FILENAME_MAX);
-		path[FILENAME_MAX-1] = '\0';
+		Str_Copy(path, path_and_name, FILENAME_MAX);
 	}
 	if (!File_DirExists(path))
 	{
@@ -1117,8 +1116,7 @@ bool SDLGui_FileConfSelect(const char *title, char *dlgname, char *confname, int
 		if (!File_DoesFileNameEndWithSlash(selname) &&
 		    (bAllowNew || File_Exists(selname)))
 		{
-			strncpy(confname, selname, FILENAME_MAX);
-			confname[FILENAME_MAX-1] = '\0';
+			Str_Copy(confname, selname, FILENAME_MAX);
 			File_ShrinkName(dlgname, selname, maxlen);
 			free(selname);
 			return true;

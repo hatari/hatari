@@ -13,6 +13,7 @@
 
 #include "main.h"
 #include "paths.h"
+#include "str.h"
 
 /**
  * Returns the user configured screenshot path property, or if none is found
@@ -36,7 +37,7 @@ char *Paths_GetMacScreenShotDir(void) {
 		keyValue = [defaults stringForKey:@"location"];
 	}
 	if (keyValue!=nil) {
-		strncpy(psPath, [keyValue UTF8String], FILENAME_MAX);
+		Str_Copy(psPath, [keyValue UTF8String], FILENAME_MAX);
 	} else {
 		snprintf(psPath, FILENAME_MAX, "%s%c%s",
 			 Paths_GetUserHome(), PATHSEP, "Desktop");

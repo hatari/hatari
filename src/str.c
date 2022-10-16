@@ -475,9 +475,7 @@ void Str_AtariToHost(const char *source, char *dest, int destLen, char replaceme
 {
 	if (!ConfigureParams.HardDisk.bFilenameConversion)
 	{
-		strncpy(dest, source, destLen);
-		if (destLen > 0)
-			dest[destLen-1]= '\0';
+		Str_Copy(dest, source, destLen);
 		return;
 	}
 #if defined(WIN32) || defined(USE_LOCALE_CHARSET)
