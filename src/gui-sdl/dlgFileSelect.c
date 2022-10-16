@@ -1120,13 +1120,11 @@ bool SDLGui_FileConfSelect(const char *title, char *dlgname, char *confname, int
 			strncpy(confname, selname, FILENAME_MAX);
 			confname[FILENAME_MAX-1] = '\0';
 			File_ShrinkName(dlgname, selname, maxlen);
+			free(selname);
+			return true;
 		}
-		else
-		{
-			dlgname[0] = confname[0] = 0;
-		}
+		dlgname[0] = confname[0] = 0;
 		free(selname);
-		return true;
 	}
 	return false;
 }
