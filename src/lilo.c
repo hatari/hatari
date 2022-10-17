@@ -19,7 +19,6 @@
 #include "stMemory.h"	/* STRam etc */
 #include "symbols.h"
 #include <stdint.h>
-#include <SDL_endian.h>
 
 bool bUseLilo;
 
@@ -410,8 +409,8 @@ static void add_chunk(uint32_t start, uint32_t size)
 {
 	size = (size) & ~(GRANULARITY-1);
 	if (size > 0) {
-		bi.memory[bi.num_memory].addr = SDL_SwapBE32(start);
-		bi.memory[bi.num_memory].size = SDL_SwapBE32(size);
+		bi.memory[bi.num_memory].addr = be_swap32(start);
+		bi.memory[bi.num_memory].size = be_swap32(size);
 		bi.num_memory++;
 	}
 }
@@ -455,9 +454,9 @@ static bool check_kernel(void *kernel, Elf32_Addr *kernel_offset,
 
 	kexec_elf = (Elf32_Ehdr *) kernel;
 	if (memcmp(&kexec_elf->e_ident[EI_MAG0], ELFMAG, SELFMAG) != 0 ||
-	    SDL_SwapBE16(kexec_elf->e_type) != ET_EXEC ||
-	    SDL_SwapBE16(kexec_elf->e_machine) != EM_68K ||
-	    SDL_SwapBE32(kexec_elf->e_version) != EV_CURRENT) {
+	    be_swap16(kexec_elf->e_type) != ET_EXEC ||
+	    be_swap16(kexec_elf->e_machine) != EM_68K ||
+	    be_swap32(kexec_elf->e_version) != EV_CURRENT) {
 		fprintf(stderr, "LILO: Invalid ELF header contents in kernel\n");
 		return false;
 	}
@@ -465,22 +464,22 @@ static bool check_kernel(void *kernel, Elf32_Addr *kernel_offset,
 	/*--- Copy the kernel at start of RAM ---*/
 
 	/* Load the program headers */
-	kernel_phdrs = (Elf32_Phdr *) (((char *) kexec_elf) + SDL_SwapBE32(kexec_elf->e_phoff));
+	kernel_phdrs = (Elf32_Phdr *) (((char *) kexec_elf) + be_swap32(kexec_elf->e_phoff));
 
 	/* calculate the total required amount of memory */
-	Dprintf(("LILO: kexec_elf->e_phnum = 0x%08x\n", SDL_SwapBE16(kexec_elf->e_phnum)));
+	Dprintf(("LILO: kexec_elf->e_phnum = 0x%08x\n", be_swap16(kexec_elf->e_phnum)));
 
-	for (i = 0; i < SDL_SwapBE16(kexec_elf->e_phnum); i++) {
-		Dprintf(("LILO: kernel_phdrs[%d].p_vaddr  = 0x%08x\n", i, SDL_SwapBE32(kernel_phdrs[i].p_vaddr)));
-		Dprintf(("LILO: kernel_phdrs[%d].p_offset = 0x%08x\n", i, SDL_SwapBE32(kernel_phdrs[i].p_offset)));
-		Dprintf(("LILO: kernel_phdrs[%d].p_filesz = 0x%08x\n", i, SDL_SwapBE32(kernel_phdrs[i].p_filesz)));
-		Dprintf(("LILO: kernel_phdrs[%d].p_memsz  = 0x%08x\n", i, SDL_SwapBE32(kernel_phdrs[i].p_memsz)));
+	for (i = 0; i < be_swap16(kexec_elf->e_phnum); i++) {
+		Dprintf(("LILO: kernel_phdrs[%d].p_vaddr  = 0x%08x\n", i, be_swap32(kernel_phdrs[i].p_vaddr)));
+		Dprintf(("LILO: kernel_phdrs[%d].p_offset = 0x%08x\n", i, be_swap32(kernel_phdrs[i].p_offset)));
+		Dprintf(("LILO: kernel_phdrs[%d].p_filesz = 0x%08x\n", i, be_swap32(kernel_phdrs[i].p_filesz)));
+		Dprintf(("LILO: kernel_phdrs[%d].p_memsz  = 0x%08x\n", i, be_swap32(kernel_phdrs[i].p_memsz)));
 
-		if (min_addr > SDL_SwapBE32(kernel_phdrs[i].p_vaddr)) {
-			min_addr = SDL_SwapBE32(kernel_phdrs[i].p_vaddr);
+		if (min_addr > be_swap32(kernel_phdrs[i].p_vaddr)) {
+			min_addr = be_swap32(kernel_phdrs[i].p_vaddr);
 		}
-		if (max_addr < SDL_SwapBE32(kernel_phdrs[i].p_vaddr) + SDL_SwapBE32(kernel_phdrs[i].p_memsz)) {
-			max_addr = SDL_SwapBE32(kernel_phdrs[i].p_vaddr) + SDL_SwapBE32(kernel_phdrs[i].p_memsz);
+		if (max_addr < be_swap32(kernel_phdrs[i].p_vaddr) + be_swap32(kernel_phdrs[i].p_memsz)) {
+			max_addr = be_swap32(kernel_phdrs[i].p_vaddr) + be_swap32(kernel_phdrs[i].p_memsz);
 		}
 	}
 
@@ -492,26 +491,26 @@ static bool check_kernel(void *kernel, Elf32_Addr *kernel_offset,
 
 	if (min_addr == 0) {
 		Dprintf(("LILO: new linker:\n"));
-		Dprintf(("LILO:  kernel_phdrs[0].p_vaddr  = 0x%08x\n", SDL_SwapBE32(kernel_phdrs[0].p_vaddr)));
-		Dprintf(("LILO:  kernel_phdrs[0].p_offset = 0x%08x\n", SDL_SwapBE32(kernel_phdrs[0].p_offset)));
-		Dprintf(("LILO:  kernel_phdrs[0].p_filesz = 0x%08x\n", SDL_SwapBE32(kernel_phdrs[0].p_filesz)));
-		Dprintf(("LILO:  kernel_phdrs[0].p_memsz  = 0x%08x\n", SDL_SwapBE32(kernel_phdrs[0].p_memsz)));
+		Dprintf(("LILO:  kernel_phdrs[0].p_vaddr  = 0x%08x\n", be_swap32(kernel_phdrs[0].p_vaddr)));
+		Dprintf(("LILO:  kernel_phdrs[0].p_offset = 0x%08x\n", be_swap32(kernel_phdrs[0].p_offset)));
+		Dprintf(("LILO:  kernel_phdrs[0].p_filesz = 0x%08x\n", be_swap32(kernel_phdrs[0].p_filesz)));
+		Dprintf(("LILO:  kernel_phdrs[0].p_memsz  = 0x%08x\n", be_swap32(kernel_phdrs[0].p_memsz)));
 
 		min_addr = PAGE_SIZE;
 		/*kernel_phdrs[0].p_vaddr += PAGE_SIZE;*/
-		kernel_phdrs[0].p_vaddr = SDL_SwapBE32(SDL_SwapBE32(kernel_phdrs[0].p_vaddr) + PAGE_SIZE);
+		kernel_phdrs[0].p_vaddr = be_swap32(be_swap32(kernel_phdrs[0].p_vaddr) + PAGE_SIZE);
 		/*kernel_phdrs[0].p_offset += PAGE_SIZE;*/
-		kernel_phdrs[0].p_offset = SDL_SwapBE32(SDL_SwapBE32(kernel_phdrs[0].p_offset) + PAGE_SIZE);
+		kernel_phdrs[0].p_offset = be_swap32(be_swap32(kernel_phdrs[0].p_offset) + PAGE_SIZE);
 		/*kernel_phdrs[0].p_filesz -= PAGE_SIZE;*/
-		kernel_phdrs[0].p_filesz = SDL_SwapBE32(SDL_SwapBE32(kernel_phdrs[0].p_filesz) - PAGE_SIZE);
+		kernel_phdrs[0].p_filesz = be_swap32(be_swap32(kernel_phdrs[0].p_filesz) - PAGE_SIZE);
 		/*kernel_phdrs[0].p_memsz -= PAGE_SIZE;*/
-		kernel_phdrs[0].p_memsz = SDL_SwapBE32(SDL_SwapBE32(kernel_phdrs[0].p_memsz) - PAGE_SIZE);
+		kernel_phdrs[0].p_memsz = be_swap32(be_swap32(kernel_phdrs[0].p_memsz) - PAGE_SIZE);
 
 		Dprintf(("LILO: modified to:\n"));
-		Dprintf(("LILO:  kernel_phdrs[0].p_vaddr  = 0x%08x\n", SDL_SwapBE32(kernel_phdrs[0].p_vaddr)));
-		Dprintf(("LILO:  kernel_phdrs[0].p_offset = 0x%08x\n", SDL_SwapBE32(kernel_phdrs[0].p_offset)));
-		Dprintf(("LILO:  kernel_phdrs[0].p_filesz = 0x%08x\n", SDL_SwapBE32(kernel_phdrs[0].p_filesz)));
-		Dprintf(("LILO:  kernel_phdrs[0].p_memsz  = 0x%08x\n", SDL_SwapBE32(kernel_phdrs[0].p_memsz)));
+		Dprintf(("LILO:  kernel_phdrs[0].p_vaddr  = 0x%08x\n", be_swap32(kernel_phdrs[0].p_vaddr)));
+		Dprintf(("LILO:  kernel_phdrs[0].p_offset = 0x%08x\n", be_swap32(kernel_phdrs[0].p_offset)));
+		Dprintf(("LILO:  kernel_phdrs[0].p_filesz = 0x%08x\n", be_swap32(kernel_phdrs[0].p_filesz)));
+		Dprintf(("LILO:  kernel_phdrs[0].p_memsz  = 0x%08x\n", be_swap32(kernel_phdrs[0].p_memsz)));
 	}
 	kernel_size = max_addr - min_addr;
 	Dprintf(("LILO: kernel_size = %u\n", kernel_size));
@@ -540,7 +539,7 @@ static bool check_kernel(void *kernel, Elf32_Addr *kernel_offset,
 	}
 
 	mem_ptr = KERNEL_START;
-	int segments = SDL_SwapBE16(kexec_elf->e_phnum);
+	int segments = be_swap16(kexec_elf->e_phnum);
 	Dprintf(("LILO: copying %d segments to %s...\n", segments,
 		 kernel_to_fastram ? "FastRAM" : "ST-RAM"));
 	for (i = 0; i < segments; i++) {
@@ -548,14 +547,14 @@ static bool check_kernel(void *kernel, Elf32_Addr *kernel_offset,
 		Elf32_Addr segment_ptr;
 		Elf32_Off segment_offset;
 
-		segment_offset = SDL_SwapBE32(kernel_phdrs[i].p_offset);
-		segment_length = SDL_SwapBE32(kernel_phdrs[i].p_filesz);
+		segment_offset = be_swap32(kernel_phdrs[i].p_offset);
+		segment_length = be_swap32(kernel_phdrs[i].p_filesz);
 
 		if (segment_offset == 0xffffffffu) {
 			fprintf(stderr, "LILO: Failed to seek to segment %d\n", i);
 			return false;
 		}
-		segment_ptr = SDL_SwapBE32(kernel_phdrs[i].p_vaddr) - PAGE_SIZE;
+		segment_ptr = be_swap32(kernel_phdrs[i].p_vaddr) - PAGE_SIZE;
 
 		memcpy(hostkbase + mem_ptr + segment_ptr,
 		       (char *) kexec_elf + segment_offset, segment_length);
@@ -597,8 +596,8 @@ static bool check_kernel(void *kernel, Elf32_Addr *kernel_offset,
 			memcpy(RAMBaseHost + rd_start, ((unsigned char *)ramdisk) + RAMDISK_FS_START, rd_len);
 			to_ram_s = "ST-RAM";
 		}
-		bi.ramdisk.addr = SDL_SwapBE32(rd_start);
-		bi.ramdisk.size = SDL_SwapBE32(rd_len);
+		bi.ramdisk.addr = be_swap32(rd_start);
+		bi.ramdisk.size = be_swap32(rd_len);
 		Dprintf(("lilo: Ramdisk at 0x%08x in %s, length=0x%08x\n",
 			 rd_start, to_ram_s, rd_len));
 	} else {
@@ -649,7 +648,7 @@ static bool check_kernel(void *kernel, Elf32_Addr *kernel_offset,
 	if (kernel_to_fastram) {
 		add_chunk(0, RAMSize);
 	}
-	bi.num_memory = SDL_SwapBE32(bi.num_memory);
+	bi.num_memory = be_swap32(bi.num_memory);
 
 	if (!create_bootinfo()) {
 	    fprintf(stderr, "LILO: Can not create bootinfo structure\n");
@@ -664,14 +663,14 @@ static bool check_kernel(void *kernel, Elf32_Addr *kernel_offset,
 	tmp = (uint32_t *)(hostkbase + KERNEL_START + kernel_size);
 	for (i = 0; i < 16; i++) {
 		Dprintf(("LILO: bi_union.record[%2d] = 0x%08x\n",
-			 i, SDL_SwapBE32(tmp[i])));
+			 i, be_swap32(tmp[i])));
 	}
 #endif
 
 	/*--- Init SP & PC ---*/
 	tmp = (uint32_t *)RAMBaseHost;
-	tmp[0] = SDL_SwapBE32(*kernel_offset + KERNEL_START);	/* SP */
-	tmp[1] = SDL_SwapBE32(TosAddress);		/* PC = ROMBase */
+	tmp[0] = be_swap32(*kernel_offset + KERNEL_START);	/* SP */
+	tmp[1] = be_swap32(TosAddress);		/* PC = ROMBase */
 	uint8_t *ROMBaseHost = &RomMem[TosAddress];
 	ROMBaseHost[4] = (*kernel_offset + KERNEL_START) >> 24;
 	ROMBaseHost[5] = (*kernel_offset + KERNEL_START) >> 16;
@@ -689,34 +688,34 @@ static bool check_kernel(void *kernel, Elf32_Addr *kernel_offset,
  */
 static bool set_machine_type(void)
 {
-	bi.machtype = SDL_SwapBE32(MACH_ATARI);
-	bi.mch_type = SDL_SwapBE32(ATARI_MACH_NORMAL);
+	bi.machtype = be_swap32(MACH_ATARI);
+	bi.mch_type = be_swap32(ATARI_MACH_NORMAL);
 
 	switch (ConfigureParams.System.nMachineType) {
 	case MACHINE_FALCON:
-		bi.mch_cookie = SDL_SwapBE32(ATARI_MCH_FALCON);
+		bi.mch_cookie = be_swap32(ATARI_MCH_FALCON);
 		break;
 	case MACHINE_TT:
-		bi.mch_cookie = SDL_SwapBE32(ATARI_MCH_TT);
+		bi.mch_cookie = be_swap32(ATARI_MCH_TT);
 		break;
 	case MACHINE_STE:
 	case MACHINE_MEGA_STE:
-		bi.mch_cookie = SDL_SwapBE32(ATARI_MCH_STE);
+		bi.mch_cookie = be_swap32(ATARI_MCH_STE);
 		break;
 	case MACHINE_ST:
 	case MACHINE_MEGA_ST:
-		bi.mch_cookie = SDL_SwapBE32(ATARI_MCH_ST);
+		bi.mch_cookie = be_swap32(ATARI_MCH_ST);
 		break;
 	}
 
 	switch(ConfigureParams.System.nCpuLevel) {
 	case 3:
-		bi.cputype = SDL_SwapBE32(BI_CPU_68030);
-		bi.mmutype = SDL_SwapBE32(BI_MMU_68030);
+		bi.cputype = be_swap32(BI_CPU_68030);
+		bi.mmutype = be_swap32(BI_MMU_68030);
 		break;
 	case 4:
-		bi.cputype = SDL_SwapBE32(BI_CPU_68040);
-		bi.mmutype = SDL_SwapBE32(BI_MMU_68040);
+		bi.cputype = be_swap32(BI_CPU_68040);
+		bi.mmutype = be_swap32(BI_MMU_68040);
 #if 0
 		/*
 		 * AB40 has different reset address handling:
@@ -724,13 +723,13 @@ static bool set_machine_type(void)
 		 */
 		if (ConfigureParams.System.nMachineType == MACHINE_FALCON) {
 			/* let's try claiming it's Falcon AfterBurner like Aranym does */
-			bi.mch_type = SDL_SwapBE32(ATARI_MACH_AB40);
+			bi.mch_type = be_swap32(ATARI_MACH_AB40);
 		}
 #endif
 		break;
 	case 5: /* special case: 060 */
-		bi.cputype = SDL_SwapBE32(BI_CPU_68060);
-		bi.mmutype = SDL_SwapBE32(BI_MMU_68060);
+		bi.cputype = be_swap32(BI_CPU_68060);
+		bi.mmutype = be_swap32(BI_MMU_68060);
 		break;
 	default:
 		Log_AlertDlg(LOG_FATAL, "LILO: Linux requires at least 030 CPU (for MMU), not 0%d0!",
@@ -740,16 +739,16 @@ static bool set_machine_type(void)
 
 	switch(ConfigureParams.System.n_FPUType) {
 	case FPU_68881:
-		bi.fputype = SDL_SwapBE32(BI_FPU_68881);
+		bi.fputype = be_swap32(BI_FPU_68881);
 		break;
 	case FPU_68882:
-		bi.fputype = SDL_SwapBE32(BI_FPU_68882);
+		bi.fputype = be_swap32(BI_FPU_68882);
 		break;
 	case FPU_CPU:
 		if (ConfigureParams.System.nCpuLevel == 4) {
-			bi.fputype = SDL_SwapBE32(BI_FPU_68040);
+			bi.fputype = be_swap32(BI_FPU_68040);
 		} else if (ConfigureParams.System.nCpuLevel == 5) { /* special case: 060 */
-			bi.fputype = SDL_SwapBE32(BI_FPU_68060);
+			bi.fputype = be_swap32(BI_FPU_68060);
 		}
 		/* TODO: else -> fail? */
 		break;
@@ -785,11 +784,11 @@ static bool create_bootinfo(void)
 	if (!add_bi_record(BI_MMUTYPE, sizeof(bi.mmutype), &bi.mmutype)) {
 		return false;
 	}
-	for (i = 0; i < SDL_SwapBE32((Uint32)bi.num_memory); i++) {
+	for (i = 0; i < be_swap32((uint32_t)bi.num_memory); i++) {
 		if (!add_bi_record(BI_MEMCHUNK, sizeof(bi.memory[i]), &bi.memory[i]))
 			return false;
 	}
-	if (SDL_SwapBE32(bi.ramdisk.size)) {
+	if (be_swap32(bi.ramdisk.size)) {
 		if (!add_bi_record(BI_RAMDISK, sizeof(bi.ramdisk), &bi.ramdisk))
 			return false;
 	}
@@ -805,7 +804,7 @@ static bool create_bootinfo(void)
 	}
 	/* Trailer */
 	record = (struct bi_record *)((char *)&bi_union.record + bi_size);
-	record->tag = SDL_SwapBE16(BI_LAST);
+	record->tag = be_swap16(BI_LAST);
 	bi_size += sizeof(bi_union.record.tag);
 
 	return true;
@@ -826,8 +825,8 @@ static bool add_bi_record(uint16_t tag, uint16_t size, const void *data)
 		return false;
 	}
 	record = (struct bi_record *)((char *)&bi_union.record + bi_size);
-	record->tag = SDL_SwapBE16(tag);
-	record->size = SDL_SwapBE16(size2);
+	record->tag = be_swap16(tag);
+	record->size = be_swap16(size2);
 	memcpy((char *)record + sizeof(struct bi_record), data, size);
 	bi_size += size2;
 
