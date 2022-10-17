@@ -1132,22 +1132,22 @@ bool SDLGui_FileConfSelect(const char *title, char *dlgname, char *confname, int
 /**
  * Let user browse given directory.  If one is selected, set directory
  * to confname & short name to dlgname, and return true, else false.
+ *
+ * (dlgname is limited to maxlen and confname is assumed to be
+ * Hatari config field with FILENAME_MAX amount of space)
  */
-bool SdlGui_DirSelect(const char *title, char *dlgname, char *confname, int maxlen)
+bool SdlGui_DirConfSelect(const char *title, char *dlgname, char *confname, int maxlen)
 {
-	char *str, *selname;
+	char *selname;
 
 	selname = SDLGui_FileSelect(title, confname, NULL, false);
-	if (!selname)
-		return false;
-
-	strcpy(confname, selname);
-	free(selname);
-
-	str = strrchr(confname, PATHSEP);
-	if (str != NULL)
-		str[1] = 0;
-	File_CleanFileName(confname);
-	File_ShrinkName(dlgname, confname, maxlen);
-	return true;
+	if (selname)
+	{
+		File_MakeValidPathName(selname);
+		Str_Copy(confname, selname, FILENAME_MAX);
+		File_ShrinkName(dlgname, selname, maxlen);
+		free(selname);
+		return true;
+	}
+	return false;
 }
