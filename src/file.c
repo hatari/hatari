@@ -954,6 +954,9 @@ void File_MakeValidPathName(char *pPathName)
 	struct stat dirstat;
 	char *pLastSlash;
 
+	if (!pPathName[0])
+		return;		/* Avoid writing to zero-size buffers */
+
 	do
 	{
 		/* Check for a valid path */
@@ -970,12 +973,9 @@ void File_MakeValidPathName(char *pPathName)
 		}
 		else
 		{
-			if (pPathName[0])
-			{
-				/* point to root */
-				pPathName[0] = PATHSEP;
-				pPathName[1] = 0;
-			}
+			/* point to root */
+			pPathName[0] = PATHSEP;
+			pPathName[1] = 0;
 			return;
 		}
 	}
