@@ -252,7 +252,7 @@ void DlgFloppy_Main(void)
 			DlgDisk_BrowseDisk(dlgname[1], 1, FLOPPYDLG_DISKB);
 			break;
 		 case FLOPPYDLG_BROWSEIMG:
-			SdlGui_DirConfSelect("Floppy image directory:", dlgdiskdir,
+			SDLGui_DirConfSelect("Floppy image directory:", dlgdiskdir,
 					     ConfigureParams.DiskImage.szDiskImageDirectory,
 					     floppydlg[FLOPPYDLG_IMGDIR].w);
 			break;

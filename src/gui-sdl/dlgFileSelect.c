@@ -1136,7 +1136,7 @@ bool SDLGui_FileConfSelect(const char *title, char *dlgname, char *confname, int
  * (dlgname is limited to maxlen and confname is assumed to be
  * Hatari config field with FILENAME_MAX amount of space)
  */
-bool SdlGui_DirConfSelect(const char *title, char *dlgname, char *confname, int maxlen)
+bool SDLGui_DirConfSelect(const char *title, char *dlgname, char *confname, int maxlen)
 {
 	char *selname;
 

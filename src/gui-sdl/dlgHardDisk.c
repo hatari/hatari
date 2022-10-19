@@ -315,7 +315,7 @@ void DlgHardDisk_Main(void)
 			dlgname_gdos[0] = '\0';
 			break;
 		 case DISKDLG_GEMDOSBROWSE:
-			if (SdlGui_DirConfSelect("GEMDOS drive directory:", dlgname_gdos,
+			if (SDLGui_DirConfSelect("GEMDOS drive directory:", dlgname_gdos,
 						 ConfigureParams.HardDisk.szHardDiskDirectories[0],
 						 diskdlg[DISKDLG_GEMDOSNAME].w))
 				ConfigureParams.HardDisk.bUseHardDiskDirectories = true;
