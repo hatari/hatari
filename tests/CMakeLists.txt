@@ -1,5 +1,6 @@
 
 add_subdirectory(debugger)
+add_subdirectory(unit)
 
 if(UNIX)
 	add_test(NAME command-fifo COMMAND
