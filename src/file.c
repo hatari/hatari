@@ -30,7 +30,6 @@ const char File_fileid[] = "Hatari file.c";
 #include "createBlankImage.h"
 #include "str.h"
 #include "zip.h"
-#include "log.h"
 
 #ifdef HAVE_FLOCK
 # include <sys/file.h>
@@ -1079,7 +1078,7 @@ char* WinTmpFile(void)
 	                       lpTempPathBuffer);	/* buffer for path */
 	if (dwRetVal > MAX_PATH || (dwRetVal == 0))
 	{
-		Log_Printf(LOG_ERROR, "GetTempPath failed.\n");
+		fprintf(stderr, "GetTempPath failed.\n");
 		return NULL;
 	}
 
@@ -1090,7 +1089,7 @@ char* WinTmpFile(void)
 	                          szTempFileName);	/* buffer for name */
 	if (uRetVal == 0)
 	{
-		Log_Printf(LOG_ERROR, "GetTempFileName failed.\n");
+		fprintf(stderr, "GetTempFileName failed.\n");
 		return NULL;
 	}
 	return (char*)szTempFileName;
