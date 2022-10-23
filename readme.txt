@@ -133,7 +133,7 @@ options of this script.
 Once you have successfully configured the build settings, you can compile
 Hatari with:
 
-	cmake --build . -j $(getconf _NPROCESSORS_ONLN)
+	cmake --build . -j$(getconf _NPROCESSORS_ONLN)
 
 If all works fine, you should get the executable "hatari" in the src/ sub-
 directory of the build tree. You can then either run the executable from
@@ -150,8 +150,8 @@ you have to use the install command of the generator program instead, e.g.
 	mkdir -p build/files
 	# Copy your tos.img to build/files/
 	cd build
-	emmake cmake -DEMSCRIPTEN=true -DCMAKE_SYSTEM_NAME=Linux ..
-	emmake make -j$(getconf _NPROCESSORS_ONLN) hatari
+	emcmake cmake ..
+	cmake --build . -j$(getconf _NPROCESSORS_ONLN) hatari
 
 The resulting hatari.html can't be used directly, you must provide it via
 a webserver to your browser (use Chromium, it currently works better than
