@@ -332,8 +332,11 @@ configure_file(${CMAKE_SOURCE_DIR}/cmake/config-cmake.h
 
 add_subdirectory(src)
 add_subdirectory(doc)
-add_subdirectory(tests)
 add_subdirectory(tools)
+
+if(NOT CMAKE_CROSSCOMPILING)
+	add_subdirectory(tests)
+endif(NOT CMAKE_CROSSCOMPILING)
 
 include(FindPythonInterp)
 if(PYTHONINTERP_FOUND AND PYTHON_VERSION_MAJOR LESS 3)
@@ -374,7 +377,7 @@ Libraries summary :
 -------------------
 ")
 
-message("  - sdl :\tusing SDL2 v${SDL2_VERSION}")
+message("  - sdl :\tusing SDL2 ${SDL2_VERSION}")
 
 if(Readline_FOUND)
   message( "  - readline :\tfound, enables history/completion in the debugger" )
