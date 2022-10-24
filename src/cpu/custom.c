@@ -69,10 +69,14 @@ uae_u32 wait_cpu_cycle_read (uaecptr addr, int mode)
 {
 	uae_u32 v = 0;
 #ifndef WINUAE_FOR_HATARI
-	int hpos;
+	int hpos, ipl;
+	evt_t now = get_cycles();
 
 	sync_cycles();
-	hpos = dma_cycle(addr, 0xffffffff, &mode);
+
+	x_do_cycles_pre(CYCLE_UNIT);
+
+	hpos = dma_cycle(addr, 0xffffffff, &mode, &ipl);
 
 #ifdef DEBUGGER
 	if (debug_dma) {
@@ -91,8 +95,6 @@ uae_u32 wait_cpu_cycle_read (uaecptr addr, int mode)
 	}
 	peekdma_data.mask = 0;
 #endif
-
-	x_do_cycles_pre(CYCLE_UNIT);
 
 	switch(mode)
 	{
@@ -123,7 +125,16 @@ uae_u32 wait_cpu_cycle_read (uaecptr addr, int mode)
 		
 	x_do_cycles_post(CYCLE_UNIT, v);
 
+	// if IPL fetch was pending and CPU had wait states
+	// Use ipl_pin value from previous cycle
+	if (now == regs.ipl_evt && regs.ipl_pin_change_evt > now + cpuipldelay2) {
+		regs.ipl[0] = ipl;
+	}
+
 #else						/* WINUAE_FOR_HATARI */
+	int ipl;
+	evt_t now = get_cycles();
+
 //	fprintf ( stderr , "mem read ce %x %d %lu %lu\n" , addr , mode ,currcycle / cpucycleunit , currcycle );
 	if ( ( ( CyclesGlobalClockCounter + currcycle*2/CYCLE_UNIT ) & 3 ) == 2 )
 	{
@@ -152,19 +163,110 @@ uae_u32 wait_cpu_cycle_read (uaecptr addr, int mode)
 	}
 
 	x_do_cycles_post (2*CYCLE_UNIT, v);
+
+	// if IPL fetch was pending and CPU had wait states
+	// Use ipl_pin value from previous cycle
+	if (now == regs.ipl_evt && regs.ipl_pin_change_evt > now + cpuipldelay2) {
+		regs.ipl[0] = ipl;
+	}
 #endif						/* WINUAE_FOR_HATARI */
 
 	return v;
 }
 
+void wait_cpu_cycle_write (uaecptr addr, int mode, uae_u32 v)
+{
+#ifndef WINUAE_FOR_HATARI
+	int hpos, ipl;
+	evt_t now = get_cycles();
+
+	sync_cycles();
+
+	x_do_cycles_pre(CYCLE_UNIT);
+
+	hpos = dma_cycle(addr, v, &mode, &ipl);
+
+#ifdef DEBUGGER
+	if (debug_dma) {
+		int reg = 0x1100;
+		if (mode == -3) {
+			reg |= 2;
+		} else if (mode < 0) {
+			reg |= 4;
+		} else if (mode > 0) {
+			reg |= 2;
+		} else {
+			reg |= 1;
+		}
+		record_dma_write(reg, v, addr, hpos, vpos, DMARECORD_CPU, 1);
+	}
+	peekdma_data.mask = 0;
+#endif
+
+	if (mode > -2) {
+		if (mode < 0) {
+			put_long(addr, v);
+		} else if (mode > 0) {
+			put_word(addr, v);
+		} else if (mode == 0) {
+			put_byte(addr, v);
+		}
+	}
+
+	regs.chipset_latch_rw = regs.chipset_latch_write = v;
+
+	x_do_cycles_post(CYCLE_UNIT, v);
+
+	// if IPL fetch was pending and CPU had wait states:
+	// Use ipl_pin value from previous cycle
+	if (now == regs.ipl_evt && regs.ipl_pin_change_evt > now + cpuipldelay2) {
+		regs.ipl[0] = ipl;
+	}
+
+#else						/* WINUAE_FOR_HATARI */
+	int ipl;
+	evt_t now = get_cycles();
+
+//	fprintf ( stderr , "mem write ce %x %d %lu %lu\n" , addr , mode ,currcycle / cpucycleunit , currcycle );
+	if ( ( ( CyclesGlobalClockCounter + currcycle*2/CYCLE_UNIT ) & 3 ) == 2 )
+	{
+//		fprintf ( stderr , "mem wait write %x %d %lu %lu\n" , addr , mode , currcycle / cpucycleunit , currcycle );
+		x_do_cycles (2*cpucycleunit);
+//		fprintf ( stderr , "mem wait write after %x %d %lu %lu\n" , addr , mode , currcycle / cpucycleunit , currcycle );
+	}
+
+	if (mode > -2) {
+		if (mode < 0) {
+			put_long(addr, v);
+		} else if (mode > 0) {
+			put_word(addr, v);
+		} else if (mode == 0) {
+			put_byte(addr, v);
+		}
+	}
+
+	x_do_cycles_post (2*CYCLE_UNIT, v);
+
+	// if IPL fetch was pending and CPU had wait states:
+	// Use ipl_pin value from previous cycle
+	if (now == regs.ipl_evt && regs.ipl_pin_change_evt > now + cpuipldelay2) {
+		regs.ipl[0] = ipl;
+	}
+#endif						/* WINUAE_FOR_HATARI */
+}
+
+
 uae_u32 wait_cpu_cycle_read_ce020 (uaecptr addr, int mode)
 {
 	uae_u32 v = 0;
 #ifndef WINUAE_FOR_HATARI
-	int hpos;
+	int hpos, ipl;
 
 	sync_cycles();
-	hpos = dma_cycle(0xffffffff, 0xffff, NULL);
+
+	x_do_cycles_pre(CYCLE_UNIT);
+
+	hpos = dma_cycle(0xffffffff, 0xffff, NULL, &ipl);
 
 #ifdef DEBUGGER
 	if (debug_dma) {
@@ -180,8 +282,6 @@ uae_u32 wait_cpu_cycle_read_ce020 (uaecptr addr, int mode)
 	}
 	peekdma_data.mask = 0;
 #endif
-
-	x_do_cycles_pre(CYCLE_UNIT);
 
 	switch (mode) {
 		case -1:
@@ -253,77 +353,16 @@ uae_u32 wait_cpu_cycle_read_ce020 (uaecptr addr, int mode)
 	return v;
 }
 
-void wait_cpu_cycle_write (uaecptr addr, int mode, uae_u32 v)
-{
-#ifndef WINUAE_FOR_HATARI
-	int hpos;
-
-	sync_cycles();
-	hpos = dma_cycle(addr, v, &mode);
-
-#ifdef DEBUGGER
-	if (debug_dma) {
-		int reg = 0x1100;
-		if (mode == -3) {
-			reg |= 2;
-		} else if (mode < 0) {
-			reg |= 4;
-		} else if (mode > 0) {
-			reg |= 2;
-		} else {
-			reg |= 1;
-		}
-		record_dma_write(reg, v, addr, hpos, vpos, DMARECORD_CPU, 1);
-	}
-	peekdma_data.mask = 0;
-#endif
-
-	x_do_cycles_pre(CYCLE_UNIT);
-
-	if (mode > -2) {
-		if (mode < 0) {
-			put_long(addr, v);
-		} else if (mode > 0) {
-			put_word(addr, v);
-		} else if (mode == 0) {
-			put_byte(addr, v);
-		}
-	}
-
-	regs.chipset_latch_rw = regs.chipset_latch_write = v;
-		
-	x_do_cycles_post(CYCLE_UNIT, v);
-
-#else						/* WINUAE_FOR_HATARI */
-//	fprintf ( stderr , "mem write ce %x %d %lu %lu\n" , addr , mode ,currcycle / cpucycleunit , currcycle );
-	if ( ( ( CyclesGlobalClockCounter + currcycle*2/CYCLE_UNIT ) & 3 ) == 2 )
-	{
-//		fprintf ( stderr , "mem wait write %x %d %lu %lu\n" , addr , mode , currcycle / cpucycleunit , currcycle );
-		x_do_cycles (2*cpucycleunit);
-//		fprintf ( stderr , "mem wait write after %x %d %lu %lu\n" , addr , mode , currcycle / cpucycleunit , currcycle );
-	}
-
-	if (mode > -2) {
-		if (mode < 0) {
-			put_long(addr, v);
-		} else if (mode > 0) {
-			put_word(addr, v);
-		} else if (mode == 0) {
-			put_byte(addr, v);
-		}
-	}
-
-	x_do_cycles_post (2*CYCLE_UNIT, v);
-#endif						/* WINUAE_FOR_HATARI */
-}
-
 void wait_cpu_cycle_write_ce020 (uaecptr addr, int mode, uae_u32 v)
 {
 #ifndef WINUAE_FOR_HATARI
-	int hpos;
+	int hpos, ipl;
 
 	sync_cycles();
-	hpos = dma_cycle(0xffffffff, 0xffff, NULL);
+
+ 	x_do_cycles_pre(CYCLE_UNIT);
+
+	hpos = dma_cycle(0xffffffff, 0xffff, NULL, &ipl);
 
 #ifdef DEBUGGER
 	if (debug_dma) {
@@ -338,8 +377,6 @@ void wait_cpu_cycle_write_ce020 (uaecptr addr, int mode, uae_u32 v)
 	}
 	peekdma_data.mask = 0;
 #endif
-
-	x_do_cycles_pre(CYCLE_UNIT);
 
 	if (mode < 0) {
 		put_long(addr, v);
