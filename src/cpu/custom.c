@@ -69,7 +69,8 @@ uae_u32 wait_cpu_cycle_read (uaecptr addr, int mode)
 {
 	uae_u32 v = 0;
 #ifndef WINUAE_FOR_HATARI
-	int hpos, ipl;
+	int hpos;
+	int ipl = regs.ipl_pin;
 	evt_t now = get_cycles();
 
 	sync_cycles();
@@ -127,12 +128,12 @@ uae_u32 wait_cpu_cycle_read (uaecptr addr, int mode)
 
 	// if IPL fetch was pending and CPU had wait states
 	// Use ipl_pin value from previous cycle
-	if (now == regs.ipl_evt && regs.ipl_pin_change_evt > now + cpuipldelay2) {
+	if (now == regs.ipl_evt) {
 		regs.ipl[0] = ipl;
 	}
 
 #else						/* WINUAE_FOR_HATARI */
-	int ipl;
+	int ipl = regs.ipl_pin;
 	evt_t now = get_cycles();
 
 //	fprintf ( stderr , "mem read ce %x %d %lu %lu\n" , addr , mode ,currcycle / cpucycleunit , currcycle );
@@ -177,7 +178,8 @@ uae_u32 wait_cpu_cycle_read (uaecptr addr, int mode)
 void wait_cpu_cycle_write (uaecptr addr, int mode, uae_u32 v)
 {
 #ifndef WINUAE_FOR_HATARI
-	int hpos, ipl;
+	int hpos;
+	int ipl = regs.ipl_pin;
 	evt_t now = get_cycles();
 
 	sync_cycles();
@@ -219,12 +221,12 @@ void wait_cpu_cycle_write (uaecptr addr, int mode, uae_u32 v)
 
 	// if IPL fetch was pending and CPU had wait states:
 	// Use ipl_pin value from previous cycle
-	if (now == regs.ipl_evt && regs.ipl_pin_change_evt > now + cpuipldelay2) {
+	if (now == regs.ipl_evt) {
 		regs.ipl[0] = ipl;
 	}
 
 #else						/* WINUAE_FOR_HATARI */
-	int ipl;
+	int ipl = regs.ipl_pin;
 	evt_t now = get_cycles();
 
 //	fprintf ( stderr , "mem write ce %x %d %lu %lu\n" , addr , mode ,currcycle / cpucycleunit , currcycle );
@@ -249,7 +251,7 @@ void wait_cpu_cycle_write (uaecptr addr, int mode, uae_u32 v)
 
 	// if IPL fetch was pending and CPU had wait states:
 	// Use ipl_pin value from previous cycle
-	if (now == regs.ipl_evt && regs.ipl_pin_change_evt > now + cpuipldelay2) {
+	if (now == regs.ipl_evt) {
 		regs.ipl[0] = ipl;
 	}
 #endif						/* WINUAE_FOR_HATARI */
