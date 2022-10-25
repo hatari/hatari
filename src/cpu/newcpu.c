@@ -5275,7 +5275,7 @@ static void m68k_run_1 (void)
 
 #ifdef WINUAE_FOR_HATARI
 				//m68k_dumpstate_file(stderr, NULL, 0xffffffff);
-				if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
+				if ((LOG_TRACE_LEVEL(TRACE_CPU_DISASM)) && (!regs.stopped))
 				{
 					int FrameCycles, HblCounterVideo, LineCycles;
 					Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
@@ -5419,7 +5419,7 @@ static void m68k_run_1_ce (void)
 
 #ifdef WINUAE_FOR_HATARI
 				//m68k_dumpstate_file(stderr, NULL, 0xffffffff);
-				if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
+				if ((LOG_TRACE_LEVEL(TRACE_CPU_DISASM)) && (!regs.stopped))
 				{
 					int FrameCycles, HblCounterVideo, LineCycles;
 					Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
@@ -6015,7 +6015,7 @@ static void m68k_run_jit(void)
 			for (;;) {
 #ifdef WINUAE_FOR_HATARI
 				//m68k_dumpstate_file(stderr, NULL, 0xffffffff);
-				if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
+				if ((LOG_TRACE_LEVEL(TRACE_CPU_DISASM)) && (!regs.stopped))
 				{
 					int FrameCycles, HblCounterVideo, LineCycles;
 					Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
@@ -6166,7 +6166,7 @@ static void m68k_run_mmu060 (void)
 			for (;;) {
 #ifdef WINUAE_FOR_HATARI
 				//m68k_dumpstate_file(stderr, NULL, 0xffffffff);
-				if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
+				if ((LOG_TRACE_LEVEL(TRACE_CPU_DISASM)) && (!regs.stopped))
 				{
 					int FrameCycles, HblCounterVideo, LineCycles;
 					Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
@@ -6260,7 +6260,7 @@ static void m68k_run_mmu040 (void)
 			for (;;) {
 #ifdef WINUAE_FOR_HATARI
 				//m68k_dumpstate_file(stderr, NULL, 0xffffffff);
-				if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
+				if ((LOG_TRACE_LEVEL(TRACE_CPU_DISASM)) && (!regs.stopped))
 				{
 					int FrameCycles, HblCounterVideo, LineCycles;
 					Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
@@ -6407,7 +6407,7 @@ insretry:
 				for (;;) {
 #ifdef WINUAE_FOR_HATARI
 					//m68k_dumpstate_file(stderr, NULL, 0xffffffff);
-					if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
+					if ((LOG_TRACE_LEVEL(TRACE_CPU_DISASM)) && (!regs.stopped))
 					{
 						int FrameCycles, HblCounterVideo, LineCycles;
 						Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
@@ -6584,7 +6584,7 @@ static void m68k_run_3ce (void)
 			while (!exit) {
 #ifdef WINUAE_FOR_HATARI
 				//m68k_dumpstate_file(stderr, NULL, 0xffffffff);
-				if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
+				if ((LOG_TRACE_LEVEL(TRACE_CPU_DISASM)) && (!regs.stopped))
 				{
 					int FrameCycles, HblCounterVideo, LineCycles;
 					Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
@@ -6682,7 +6682,7 @@ static void m68k_run_3p(void)
 			while (!exit) {
 #ifdef WINUAE_FOR_HATARI
 				//m68k_dumpstate_file(stderr, NULL, 0xffffffff);
-				if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
+				if ((LOG_TRACE_LEVEL(TRACE_CPU_DISASM)) && (!regs.stopped))
 				{
 					int FrameCycles, HblCounterVideo, LineCycles;
 					Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
@@ -6819,7 +6819,7 @@ static void m68k_run_2ce (void)
 #endif
 #ifdef WINUAE_FOR_HATARI
 				//m68k_dumpstate_file(stderr, NULL, 0xffffffff);
-				if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
+				if ((LOG_TRACE_LEVEL(TRACE_CPU_DISASM)) && (!regs.stopped))
 				{
 					int FrameCycles, HblCounterVideo, LineCycles;
 					Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
@@ -7019,7 +7019,7 @@ static void m68k_run_2p (void)
 			while (!exit) {
 #ifdef WINUAE_FOR_HATARI
 				//m68k_dumpstate_file(stderr, NULL, 0xffffffff);
-				if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
+				if ((LOG_TRACE_LEVEL(TRACE_CPU_DISASM)) && (!regs.stopped))
 				{
 					int FrameCycles, HblCounterVideo, LineCycles;
 					Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
@@ -7217,7 +7217,7 @@ static void m68k_run_2_000(void)
 			while (!exit) {
 #ifdef WINUAE_FOR_HATARI
 				//m68k_dumpstate_file(stderr, NULL, 0xffffffff);
-				if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
+				if ((LOG_TRACE_LEVEL(TRACE_CPU_DISASM)) && (!regs.stopped))
 				{
 					int FrameCycles, HblCounterVideo, LineCycles;
 					Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
@@ -7310,7 +7310,7 @@ static void m68k_run_2_020(void)
 			while (!exit) {
 #ifdef WINUAE_FOR_HATARI
 				//m68k_dumpstate_file(stderr, NULL, 0xffffffff);
-				if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
+				if ((LOG_TRACE_LEVEL(TRACE_CPU_DISASM)) && (!regs.stopped))
 				{
 					int FrameCycles, HblCounterVideo, LineCycles;
 					Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
@@ -7387,7 +7387,7 @@ static void m68k_run_mmu (void)
 	for (;;) {
 #ifdef WINUAE_FOR_HATARI
 		//m68k_dumpstate_file(stderr, NULL, 0xffffffff);
-		if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
+		if ((LOG_TRACE_LEVEL(TRACE_CPU_DISASM)) && (!regs.stopped))
 		{
 			int FrameCycles, HblCounterVideo, LineCycles;
 			Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
