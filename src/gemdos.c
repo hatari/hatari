@@ -896,6 +896,8 @@ static void restore_file_handle_info(int i, FILE_HANDLE *handle)
 		fclose(fp);
 		return;
 	}
+	/* used only for warnings, ignore those after restore */
+	handle->bReadOnly = false;
 	handle->FileHandle = fp;
 }
 
@@ -2021,8 +2023,11 @@ static bool GemDOS_Create(uint32_t Params)
 		 * - GEMDOS_FILE_ATTRIB_WRITECLOSE   (FA_ARCHIVE)
 		 *   (set automatically by GemDOS >= 0.15)
 		 */
+		FileHandles[Index].bReadOnly = false;
 		if (Mode & GEMDOS_FILE_ATTRIB_READONLY)
 		{
+			/* enable write warnings */
+			FileHandles[Index].bReadOnly = true;
 			/* after closing, file should be read-only */
 			if (chmod(szActualFileName, S_IRUSR|S_IRGRP|S_IROTH))
 			{
@@ -2127,9 +2132,9 @@ static bool GemDOS_Open(uint32_t Params)
 	{
 		strcpy(szActualFileName, pszFileName);
 		FileHandles[Index].FileHandle = OverrideHandle;
+		FileHandles[Index].bReadOnly = true;
 		RealMode = "read-only";
 		ModeStr = "rb";
-		Mode = 0;
 	}
 	else
 	{
@@ -2165,11 +2170,13 @@ static bool GemDOS_Open(uint32_t Params)
 		{
 			ModeStr = "rb";
 			RealMode = "read-only";
+			FileHandles[Index].bReadOnly = true;
 		}
 		else
 		{
 			ModeStr = "rb+";
 			RealMode = "read+write";
+			FileHandles[Index].bReadOnly = (Mode == 0);
 		}
 		FileHandles[Index].FileHandle = fopen(szActualFileName, ModeStr);
 	}
@@ -2178,7 +2185,6 @@ static bool GemDOS_Open(uint32_t Params)
 	{
 		/* Tag handle table entry as used in this process and return handle */
 		FileHandles[Index].bUsed = true;
-		FileHandles[Index].bReadOnly = (Mode == 0);
 		strcpy(FileHandles[Index].szMode, ModeStr);
 		FileHandles[Index].Basepage = STMemory_ReadLong(act_pd);
 		snprintf(FileHandles[Index].szActualName,
@@ -2422,7 +2428,7 @@ static bool GemDOS_Write(uint32_t Params)
 		Regs[REG_D0] = nBytesWritten;      /* OK */
 	}
 	if (FileHandles[fh_idx].bReadOnly)
-		Log_Printf(LOG_WARN, "GEMDOS Fwrite() to '%s' file, opened as read-only\n",
+		Log_Printf(LOG_WARN, "GEMDOS Fwrite() to a read-only file '%s'\n",
 			   File_Basename(FileHandles[fh_idx].szActualName));
 	return true;
 }
@@ -3883,8 +3889,9 @@ void GemDOS_Info(FILE *fp, uint32_t bShowOpcodes)
 	{
 		if (!FileHandles[i].bUsed)
 			continue;
-		fprintf(fp, "- %d (0x%x): %s\n", i + BASE_FILEHANDLE,
-			FileHandles[i].Basepage, FileHandles[i].szActualName);
+		fprintf(fp, "- %d (0x%x): %s (%s)\n", i + BASE_FILEHANDLE,
+			FileHandles[i].Basepage, FileHandles[i].szActualName,
+			FileHandles[i].bReadOnly ? "ro" : "rw");
 		used++;
 	}
 	if (!used)
