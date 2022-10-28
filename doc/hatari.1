@@ -610,6 +610,11 @@ for available (comma separated) tracing flags
 .B \-\-trace\-file <file>
 Save trace output to <file> (default=stderr)
 .TP
+.B \-\-msg\-repeat
+Toggle whether successive repeats of identical log or trace messages
+will be suppressed, so that only their count is shown (default=suppress).
+Disassembly, register and (multi-line) AES traces bypass this feature
+.TP
 .B \-\-parse <file>
 Parse/execute debugger commands from <file>
 .TP

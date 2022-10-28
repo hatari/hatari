@@ -35,6 +35,8 @@ Emulator improvements:
 - Debugger:
   - Fix: free all debugger allocations before exit
   - Fix: invalid free on freeing loaded GNU debug symbols
+  - Suppress repeats of identical log & trace messages by default
+    (show only their count) and add "--msg-repeat" option to toggle that
   - Preliminary support for disassembly output options working also for
     CPU core disassembler in addition to external disassember output
   - When entering debugger with 'history' enabled, disassembly address

@@ -1106,6 +1106,12 @@ E.g. EmuTOS uses it for debug output.</p>
 &lt;file&gt;</p>
 <p class="paramdesc">Save trace output to &lt;file&gt;
 (default=stderr)</p>
+<p class="parameter">--msg-repeat</p>
+<p class="paramdesc">Toggle whether successive repeats of identical log
+or trace messages will be suppressed, so that only their count is shown
+(default=suppress). Disassembly, register and (multi-line) AES traces
+bypass this feature
+</p>
 <p class="parameter">--parse
 &lt;file&gt;</p>
 <p class="paramdesc">Parse/execute debugger commands from
