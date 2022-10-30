@@ -308,7 +308,8 @@ static int scsidrv_inout(uint32_t stack)
 
 	if (LOG_TRACE_LEVEL(TRACE_SCSIDRV))
 	{
-		LOG_TRACE_PRINT(
+		LOG_TRACE_DIRECT_INIT();
+		LOG_TRACE_DIRECT(
 		    "scsidrv_inout: handle=%d, dir=%d, cmd_len=%d, buffer=%p,\n"
 		    "               transfer_len=%d, sense_buffer=%p, timeout=%d,\n"
 		    "               cmd=",
@@ -318,10 +319,9 @@ static int scsidrv_inout(uint32_t stack)
 		uint32_t i;
 		for (i = 0; i < cmd_len; i++)
 		{
-			char str[8];
-			sprintf(str, i ? ":$%02X" : "$%02X", cmd[i]);
-			LOG_TRACE_PRINT("%s", str);
+			LOG_TRACE_DIRECT("%s$%02X", i?":":"", cmd[i]);
 		}
+		LOG_TRACE_DIRECT_FLUSH();
 	}
 
 	// Writing is allowed with a RAM or ROM address,

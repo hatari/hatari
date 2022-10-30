@@ -931,7 +931,8 @@ bool VDI_AES_Entry(void)
 			return false;
 		if (LOG_TRACE_LEVEL(TRACE_OS_AES))
 		{
-			fprintf(TraceFile, "AES 0x%02hX ", AES.OpCode);
+			LOG_TRACE_DIRECT_INIT();
+			LOG_TRACE_DIRECT("AES 0x%02hX ", AES.OpCode);
 			AES_OpcodeInfo(TraceFile, AES.OpCode);
 			fflush(TraceFile);
 		}

@@ -321,5 +321,14 @@ extern uint64_t LogTraceFlags;
  */
 #define LOG_TRACE_PRINT(...)	Log_Trace(__VA_ARGS__)
 
+/* Skip message repeat suppression on multi-line output.
+ * LOG_TRACE_DIRECT_INIT() should called before doing them and
+ * LOG_TRACE_DIRECT_FLUSH() can be called after them
+ */
+#define LOG_TRACE_DIRECT(...)	    fprintf(TraceFile, __VA_ARGS__)
+#define	LOG_TRACE_DIRECT_LEVEL(level, ...) \
+	if (LOG_TRACE_LEVEL(level)) { fprintf(TraceFile, __VA_ARGS__); }
+#define LOG_TRACE_DIRECT_INIT()	    Log_ResetMsgRepeat()
+#define LOG_TRACE_DIRECT_FLUSH()    fflush(TraceFile)
 
 #endif		/* HATARI_LOG_H */

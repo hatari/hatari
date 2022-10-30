@@ -796,6 +796,7 @@ void dsp56k_execute_instruction(void)
 	if (LOG_TRACE_LEVEL(TRACE_DSP_DISASM)) {
 		/* Call dsp56k_disasm only when DSP is called in trace mode */
 		if (isDsp_in_disasm_mode == false) {
+			LOG_TRACE_DIRECT_INIT();
 			disasm_return = dsp56k_disasm(DSP_TRACE_MODE, TraceFile);
 
 			if (disasm_return != 0 && LOG_TRACE_LEVEL(TRACE_DSP_DISASM_REG)) {
@@ -830,6 +831,7 @@ void dsp56k_execute_instruction(void)
 		/* Display only when DSP is called in trace mode */
 		if (isDsp_in_disasm_mode == false) {
 			if (disasm_return != 0) {
+				LOG_TRACE_DIRECT_INIT();
 				fprintf(TraceFile, "%s", dsp56k_getInstructionText());
 
 				/* DSP regs trace enabled only if DSP DISASM is enabled */

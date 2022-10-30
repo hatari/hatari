@@ -1528,12 +1528,14 @@ static void ide_atapi_cmd(IDEState *s)
 	if (LOG_TRACE_LEVEL(TRACE_IDE))
 	{
 		int i;
-		LOG_TRACE_PRINT("IDE: ATAPI limit=0x%x packet", s->lcyl | (s->hcyl << 8));
+		LOG_TRACE_DIRECT_INIT();
+		LOG_TRACE_DIRECT("IDE: ATAPI limit=0x%x packet", s->lcyl | (s->hcyl << 8));
 		for (i = 0; i < ATAPI_PACKET_SIZE; i++)
 		{
-			LOG_TRACE_PRINT(" %02x", packet[i]);
+			LOG_TRACE_DIRECT(" %02x", packet[i]);
 		}
-		LOG_TRACE_PRINT("\n");
+		LOG_TRACE_DIRECT("\n");
+		LOG_TRACE_DIRECT_FLUSH();
 	}
 
 	switch (s->io_buffer[0])

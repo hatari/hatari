@@ -896,6 +896,7 @@ void DebugCpu_Check(void)
 	if (LOG_TRACE_LEVEL(TRACE_CPU_REGS))
 	{
 		uaecptr nextpc;
+		LOG_TRACE_DIRECT_INIT ();
 		m68k_dumpstate_file(TraceFile, &nextpc, 0xffffffff);
 	}
 	if (nCpuActiveCBs)

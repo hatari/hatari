@@ -771,7 +771,8 @@ int HDC_PartitionCount(FILE *fp, const uint64_t tracelevel, int *pIsByteSwapped)
 	{
 		int ptype, boot;
 
-		LOG_TRACE(tracelevel, "DOS MBR:\n");
+		LOG_TRACE_DIRECT_INIT();
+		LOG_TRACE_DIRECT_LEVEL(tracelevel, "DOS MBR:\n");
 		/* first partition table entry */
 		pinfo = bootsector + 0x1BE;
 		for (i = 0; i < 4; i++, pinfo += 16)
@@ -781,12 +782,15 @@ int HDC_PartitionCount(FILE *fp, const uint64_t tracelevel, int *pIsByteSwapped)
 			start = SDL_SwapLE32(*(uint32_t*)(pinfo+8));
 			sectors = SDL_SwapLE32(*(uint32_t*)(pinfo+12));
 			total += sectors;
-			LOG_TRACE(tracelevel, "- Partition %d: type=0x%02x, start=0x%08x, size=%.1f MB %s%s\n",
-				  i, ptype, start, sectors/2048.0, boot ? "(boot)" : "", sectors ? "" : "(invalid)");
+			LOG_TRACE_DIRECT_LEVEL(tracelevel,
+				"- Partition %d: type=0x%02x, start=0x%08x, size=%.1f MB %s%s\n",
+				i, ptype, start, sectors/2048.0, boot ? "(boot)" : "", sectors ? "" : "(invalid)");
 			if (ptype)
 				parts++;
 		}
-		LOG_TRACE(tracelevel, "- Total size: %.1f MB in %d partitions\n", total/2048.0, parts);
+		LOG_TRACE_DIRECT_LEVEL(tracelevel,
+			"- Total size: %.1f MB in %d partitions\n", total/2048.0, parts);
+		LOG_TRACE_DIRECT_FLUSH();
 	}
 	else
 	{
@@ -800,7 +804,8 @@ int HDC_PartitionCount(FILE *fp, const uint64_t tracelevel, int *pIsByteSwapped)
 		int j, flags;
 		bool extended;
 
-		LOG_TRACE(tracelevel, "ATARI MBR:\n");
+		LOG_TRACE_DIRECT_INIT();
+		LOG_TRACE_DIRECT_LEVEL(tracelevel, "ATARI MBR:\n");
 		pinfo = bootsector + 0x1C6;
 		for (i = 0; i < 4; i++, pinfo += 12)
 		{
@@ -816,7 +821,7 @@ int HDC_PartitionCount(FILE *fp, const uint64_t tracelevel, int *pIsByteSwapped)
 			extended = strcmp("XGM", pid) == 0;
 			start = HDC_ReadInt32(pinfo, 4);
 			sectors = HDC_ReadInt32(pinfo, 8);
-			LOG_TRACE(tracelevel,
+			LOG_TRACE_DIRECT_LEVEL(tracelevel,
 				  "- Partition %d: ID=%s, start=0x%08x, size=%.1f MB, flags=0x%x %s%s\n",
 				  i, pid, start, sectors/2048.0, flags,
 				  (flags & 0x80) ? "(boot)": "",
@@ -825,7 +830,9 @@ int HDC_PartitionCount(FILE *fp, const uint64_t tracelevel, int *pIsByteSwapped)
 				parts++;
 		}
 		total = HDC_ReadInt32(bootsector, 0x1C2);
-		LOG_TRACE(tracelevel, "- Total size: %.1f MB in %d partitions\n", total/2048.0, parts);
+		LOG_TRACE_DIRECT_LEVEL(tracelevel,
+			"- Total size: %.1f MB in %d partitions\n", total/2048.0, parts);
+		LOG_TRACE_DIRECT_FLUSH();
 	}
 
 	if (fseeko(fp, offset, SEEK_SET) != 0)

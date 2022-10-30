@@ -262,16 +262,18 @@ static void printMsgRepeat(FILE *fp)
 }
 
 /**
- * If there is a pending that has not been output yet, output it.
+ * If there is a pending that has not been output yet, output it
+ * and return true, otherwise false.
  */
-static void printPendingMsgRepeat(FILE *fp)
+static bool printPendingMsgRepeat(FILE *fp)
 {
 	if (likely(MsgState.count == 0))
-		return;
+		return false;
 	if (MsgState.count > 1)
 		printMsgRepeat(fp);
 	else
 		fputs(MsgState.prev, fp);
+	return true;
 }
 
 /**
@@ -312,7 +314,8 @@ static void addMsgRepeat(FILE *fp, const char *line)
  */
 void Log_ResetMsgRepeat(void)
 {
-	printPendingMsgRepeat(MsgState.fp);
+	if (!printPendingMsgRepeat(MsgState.fp))
+		return;
 	MsgState.prev[0] = '\0';
 	if (MsgState.limit)
 		MsgState.limit = REPEAT_LIMIT_INIT;
