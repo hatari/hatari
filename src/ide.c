@@ -23,7 +23,6 @@
 #include "m68000.h"
 #include "mfp.h"
 #include "stMemory.h"
-#include "str.h"
 #include "sysdeps.h"
 
 int nIDEPartitions = 0;
