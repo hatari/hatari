@@ -258,7 +258,12 @@ if(EMSCRIPTEN)
 endif()
 
 if(ENABLE_WERROR)
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
+	if (ENABLE_TRACING)
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
+	else()
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -Wno-error=unused-function")
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-error=unused-but-set-variable")
+	endif()
 endif(ENABLE_WERROR)
 
 # Building Hatari w/o optimization is no fun...
