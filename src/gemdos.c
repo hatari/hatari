@@ -407,6 +407,7 @@ static void GemDOS_FreeAllInternalDTAs(void)
 	{
 		free(InternalDTAs);
 		InternalDTAs = NULL;
+		DTACount = 0;
 	}
 	DTAIndex = 0;
 }
