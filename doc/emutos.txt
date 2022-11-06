@@ -1426,13 +1426,13 @@ Demos working partly under EmuTOS >= v1.1:
 - X-perience (by Abstract)
   - Demo freezes, also with TOS v4
 
-Broken demos (with EmuTOS v1.1.x):
+Broken demos (with EmuTOS v1.2.x):
 - '_' (by Escape)
   - Crashes after first few screens
 - GEM demo (by DHS & AssemSoft):
   - Needs HiColor mode
 - Spin176 (256b intro by MKM / Lamers)
-  - Needs FPU & HiColor mode
+  - Needs FPU & 320x200 HiColor mode
 - Who Okayed This?
   - Both the new and (fixed) old intros (epidemic.prg) do work,
     (fixed) music disk (zikdisk.prg) panics to bus error
@@ -1635,10 +1635,11 @@ Applications working under EmuTOS >= v1.1 (with DSP support):
 - DSPDebug (by Brainstorm)
 - DSPdit (by .tscc)
 - FlaySID
-- Flextracker
+- Flextracker (use VGA)
 - GemGT2 v1.1, GemMOD v0.85, and GemPLAY v1.95
   - http://yescrew.atari.org/eng/products.htm
 - Graoumf Tracker (v0.8890)
+  - Start from 16-color >=640x200 resolution
 - MegaPlayer v1.15 (MegaTracker Player v1.1)
 - Iphigenie v1.4b (sound system monitor and manager / DSP LOD loader)
 - Voxx (vocoder), demo and free version
@@ -1649,22 +1650,22 @@ Applications working under EmuTOS >= v1.1 (with DSP support):
   - Oscilloscope & spectralizer show only in VGA resolution,
     although they work fine also in RBG with TOS v4
 
-Applications working under EmuTOS > v1.1.1:
+Applications working under EmuTOS >= v1.2:
 - Escape paint (GEM, requires color icons support)
-  - Correct window management needs EmuTOS Git version
+  - EmuTOS v1.2 provides correct window management
 - FalcAMP (GEM, requires DSP & color icons support)
-  - 3D look in icons & text in some dialogs needs EmuTOS Git version
+  - 3D look in icons & text in some dialogs
 - MP2AUDIO player
-  - 3D look in icons needs EmuTOS Git version
+  - 3D look in icons
   - Needs to be started from 640x400 or larger resolution, otherwise it
     positions itself completely outside the screen (also with TOS v4)
 - Quaderno
   - Falcon version, expects 640x400@256
-  - EmuTOS Git version with TOS v4 compatibility for doing wind_set()
-    for a window that's created, but not yet opened, is needed
+  - EmuTOS v1.2 provides TOS v4 compatibility for doing wind_set()
+    for a window that's created, but not yet opened
 - Videl Inside (v1.2)
-  - EmuTOS Git version (with Srealloc() support) is needed to avoid
-    desktop crash with modes larger than earlier static screen alloc
+  - EmuTOS v1.2 provides Srealloc() support needed to avoid desktop
+    crash with modes larger than earlier static screen alloc
 
 Applications working with extra hacks:
 - Fractal Playground, Godleness, GodBoyX by Reservoir Gods
@@ -1687,7 +1688,7 @@ Partly working applications:
 - Centview (GEM image viewer)
   - Crashes to bus error when trying to view >256 color images
 
-Broken applications (with EmuTOS v1.1.1):
+Broken applications (with EmuTOS v1.2):
 - Indypaint
   - Cursor moves, but screen is black, F1-F4 keys don't work
   - Requires HiColor
