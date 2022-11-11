@@ -112,6 +112,7 @@ void Midi_Reset(void)
 //fprintf ( stderr , "midi reset\n" );
 	MidiControlRegister = 0;
 	MidiStatusRegister = ACIA_SR_TX_EMPTY;
+	pACIA_MIDI->IRQ_Line = 1;			/* IRQ cleared */
 	nRxDataByte = 1;
 	TDR_Empty_Time = 0;
 	TSR_Complete_Time = 0;
@@ -161,12 +162,14 @@ static void	MIDI_UpdateIRQ ( void )
 		if ( irq_bit_new )
 		{
 			/* Request interrupt by setting GPIP to low/0 */
+			pACIA_MIDI->IRQ_Line = 0;
 			MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE_ACIA , MFP_GPIP_STATE_LOW );
 			MidiStatusRegister |= ACIA_SR_INTERRUPT_REQUEST;
 		}
 		else
 		{
 			/* Clear interrupt request by setting GPIP to high/1 */
+			pACIA_MIDI->IRQ_Line = 1;
 			MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE_ACIA , MFP_GPIP_STATE_HIGH );
 			MidiStatusRegister &= ~ACIA_SR_INTERRUPT_REQUEST;
 		}

@@ -9,15 +9,15 @@
 #define HATARI_ACIA_H
 
 
-typedef struct {
+typedef struct ACIA {
 	/* MC6850 internal registers */
 	uint8_t		CR;					/* Control Register */
 	uint8_t		SR;					/* Status Register */
 	uint8_t		TDR;					/* Transmit Data Register */
 	uint8_t		RDR;					/* Receive Data Register */
 
-	uint32_t		TX_Clock;				/* 500 MHz on ST */
-	uint32_t		RX_Clock;				/* 500 MHz on ST */
+	uint32_t	TX_Clock;				/* 500 MHz on ST */
+	uint32_t	RX_Clock;				/* 500 MHz on ST */
 	int		Clock_Divider;				/* 1, 16 or 64 */
 
 	uint8_t		FirstMasterReset;			/* Set to 1 on first use, always 0 after 1st Master Reset */
@@ -38,12 +38,15 @@ typedef struct {
 	uint8_t		RX_StopBits;				/* How many stop bits left to receive (1 or 2) */
 	uint8_t		RX_Overrun;				/* Set to 1 if previous RDR was not read when RSR is full */ 
 
+	uint8_t		IRQ_Line;				/* 0=IRQ   1=no IRQ */
+
 	/* Callback functions */
 	uint8_t		(*Get_Line_RX) ( void );		/* Input  : RX */
 	void		(*Set_Line_TX) ( int val );		/* Output : TX */
-	void		(*Set_Line_IRQ) ( int val );		/* Output : IRQ */
+	void		(*Set_Line_IRQ) ( struct ACIA *pACIA , int val ); /* Output : IRQ */
+	uint8_t		(*Get_Line_IRQ) ( struct ACIA *pACIA );	/* Output : IRQ */
 
-	void		(*Set_Timers) ( void *pACIA );		/* Start timers to handle RX and TX bits at specified baud rate */
+	void		(*Set_Timers) ( struct ACIA *pACIA );	/* Start timers to handle RX and TX bits at specified baud rate */
 	
 	uint8_t		(*Get_Line_CTS) ( void );		/* Input  : Clear To Send (not connected in ST) */
 	uint8_t		(*Get_Line_DCD) ( void );		/* Input  : Data Carrier Detect (not connected in ST) */

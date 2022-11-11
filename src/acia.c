@@ -231,12 +231,13 @@ ACIA_STRUCT		*pACIA_MIDI;
 
 static void		ACIA_Init_Pointers ( ACIA_STRUCT *pAllACIA );
 
-static void		ACIA_Set_Line_IRQ_MFP ( int bit );
+static void		ACIA_Set_Line_IRQ_MFP ( ACIA_STRUCT *pACIA , int bit );
+static uint8_t		ACIA_Get_Line_IRQ_MFP ( ACIA_STRUCT *pACIA );
 static uint8_t		ACIA_Get_Line_CTS_Dummy ( void );
 static uint8_t		ACIA_Get_Line_DCD_Dummy ( void );
 static void		ACIA_Set_Line_RTS_Dummy ( int bit );
 
-static void		ACIA_Set_Timers_IKBD ( void *pACIA );
+static void		ACIA_Set_Timers_IKBD ( ACIA_STRUCT *pACIA );
 static void		ACIA_Start_InterruptHandler_IKBD ( ACIA_STRUCT *pACIA , int InternalCycleOffset );
 
 static uint8_t		ACIA_MasterReset ( ACIA_STRUCT *pACIA , uint8_t CR );
@@ -305,6 +306,7 @@ static void	ACIA_Init_Pointers ( ACIA_STRUCT *pAllACIA )
 	{
 		/* Set the default common callback functions */
 		pAllACIA[ i ].Set_Line_IRQ = ACIA_Set_Line_IRQ_MFP;
+		pAllACIA[ i ].Get_Line_IRQ = ACIA_Get_Line_IRQ_MFP;
 		pAllACIA[ i ].Get_Line_CTS = ACIA_Get_Line_CTS_Dummy;
 		pAllACIA[ i ].Get_Line_DCD = ACIA_Get_Line_DCD_Dummy;
 		pAllACIA[ i ].Set_Line_RTS = ACIA_Set_Line_RTS_Dummy;
@@ -363,14 +365,15 @@ void	ACIA_MemorySnapShot_Capture ( bool bSave )
 /*-----------------------------------------------------------------------*/
 /**
  * Set or reset the ACIA's IRQ signal.
- * IRQ signal is inverted (0/low sets irq, 1/high resets irq)
+ * IRQ signal is inverted (0/low sets irq, 1/high clears irq)
  * In the ST, the 2 ACIA's IRQ pins are connected to the same MFP input,
  * so they share the same IRQ bit in GPIP4.
  */
-static void	ACIA_Set_Line_IRQ_MFP ( int bit )
+static void	ACIA_Set_Line_IRQ_MFP ( ACIA_STRUCT *pACIA , int bit )
 {
-	LOG_TRACE ( TRACE_ACIA, "acia set irq line val=%d VBL=%d HBL=%d\n" , bit , nVBLs , nHBL );
+	LOG_TRACE ( TRACE_ACIA, "acia %s set irq line val=%d VBL=%d HBL=%d\n" , pACIA->ACIA_Name , bit , nVBLs , nHBL );
 
+	pACIA->IRQ_Line = bit;
 	if ( bit == 0 )
 	{
 		/* There's a small delay on a real ST between the point in time
@@ -385,6 +388,16 @@ static void	ACIA_Set_Line_IRQ_MFP ( int bit )
 	}
 }
 
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Return the value of the ACIA's IRQ signal.
+ * IRQ signal is inverted (0/low sets irq, 1/high clears irq)
+ */
+static uint8_t		ACIA_Get_Line_IRQ_MFP ( ACIA_STRUCT *pACIA )
+{
+	return pACIA->IRQ_Line;
+}
 
 
 
@@ -436,9 +449,9 @@ static void	ACIA_Set_Line_RTS_Dummy ( int bit )
  * value.
  * When CR is changed with a new CR_DIVIDE value, we restart the timers.
  */
-static void	ACIA_Set_Timers_IKBD ( void *pACIA )
+static void	ACIA_Set_Timers_IKBD ( struct ACIA *pACIA )
 {
-	ACIA_Start_InterruptHandler_IKBD ( (ACIA_STRUCT *)pACIA , 0 );
+	ACIA_Start_InterruptHandler_IKBD ( pACIA , 0 );
 }
 
 
@@ -679,7 +692,7 @@ static uint8_t	ACIA_MasterReset ( ACIA_STRUCT *pACIA , uint8_t CR )
 
 	/* On Master Reset, IRQ line is high */
 	/* If it's the 1st reset, RTS should be high, else RTS depends on CR bit 5 and 6 */
-	pACIA->Set_Line_IRQ ( 1 );					/* IRQ line goes high */
+	pACIA->Set_Line_IRQ ( pACIA , 1 );				/* IRQ line goes high */
 	if ( pACIA->FirstMasterReset == 1 )
 	{
 		pACIA->FirstMasterReset = 0;
@@ -724,12 +737,12 @@ static void	ACIA_UpdateIRQ ( ACIA_STRUCT *pACIA )
 		if ( irq_bit_new )
 		{
 			pACIA->SR |= ACIA_SR_BIT_IRQ;			/* Set IRQ bit */
-			pACIA->Set_Line_IRQ ( 0 );			/* IRQ line goes low */
+			pACIA->Set_Line_IRQ ( pACIA , 0 );		/* IRQ line goes low */
 		}
 		else
 		{
 			pACIA->SR &= ~ACIA_SR_BIT_IRQ;			/* Clear IRQ bit */
-			pACIA->Set_Line_IRQ ( 1 );			/* IRQ line goes high */
+			pACIA->Set_Line_IRQ ( pACIA , 1 );		/* IRQ line goes high */
 		}
 	}
 }

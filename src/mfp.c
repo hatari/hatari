@@ -162,6 +162,7 @@ const char MFP_fileid[] = "Hatari mfp.c";
 #include "video.h"
 #include "ncr5380.h"
 #include "clocks_timings.h"
+#include "acia.h"
 
 
 /*
@@ -408,6 +409,7 @@ static int	MFP_CheckPendingInterrupts ( MFP_STRUCT *pMFP );
 static void	MFP_GPIP_Update_Interrupt ( MFP_STRUCT *pMFP , uint8_t GPIP_old , uint8_t GPIP_new , uint8_t AER_old , uint8_t AER_new , uint8_t DDR_old , uint8_t DDR_new );
 
 static uint8_t	MFP_Main_Compute_GPIP7 ( void );
+static uint8_t	MFP_Main_Compute_GPIP_LINE_ACIA ( void );
 static void	MFP_GPIP_ReadByte_Main ( MFP_STRUCT *pMFP );
 static void	MFP_GPIP_ReadByte_TT ( MFP_STRUCT *pMFP );
 
@@ -1180,6 +1182,10 @@ void	MFP_GPIP_Set_Line_Input ( MFP_STRUCT *pMFP , uint8_t LineNr , uint8_t Bit )
 	if ( ( pMFP == pMFP_Main ) && ( LineNr == MFP_GPIP_LINE7 ) )
 		Bit = MFP_Main_Compute_GPIP7 ();
 
+	/* Special case when changing bit 4 of the main MFP : this line is connected */
+	/* to the 2 ACIA's IRQ lines at the same time */
+	if ( ( pMFP == pMFP_Main ) && ( LineNr == MFP_GPIP_LINE_ACIA ) )
+		Bit = MFP_Main_Compute_GPIP_LINE_ACIA ();
 
 	/* Check that corresponding line is defined as input in DDR (0=input 1=output) */
 	/* and that the bit is changing */
@@ -1861,6 +1867,29 @@ uint8_t    MFP_Main_Compute_GPIP7 ( void )
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Compute value of GPIP bit 4 for main MFP.
+ * This bit is a OR between the 2 ACIA's IRQ for IKBD and Midi
+ * NOTE : signal is active low on ACIA, IRQ is set when line's value is 0
+ */
+uint8_t    MFP_Main_Compute_GPIP_LINE_ACIA ( void )
+{
+	uint8_t	Bit;
+
+	/* If any of the ACIA has IRQ set, set IRQ on GPIP 4 */
+	if ( ( pACIA_IKBD->Get_Line_IRQ ( pACIA_IKBD ) == 0 )
+	    || ( pACIA_MIDI->Get_Line_IRQ ( pACIA_MIDI ) == 0 ) )
+		Bit = 0;			/* IRQ ON */
+
+	/* If both ACIA have IRQ clear */
+	else
+		Bit = 1;			/* IRQ OFF */
+
+	return Bit;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Handle read from main MFP GPIP pins register (0xfffa01).
  *
  * - Bit 0 is the BUSY signal of the printer port, it is SET if no printer
@@ -1894,6 +1923,12 @@ void	MFP_GPIP_ReadByte_Main ( MFP_STRUCT *pMFP )
 		gpip_new |= 0x80;		/* set bit 7 */
 	else
 		gpip_new &= ~0x80;		/* clear bit 7 */
+
+	/* Bit 4 */
+	if ( MFP_Main_Compute_GPIP_LINE_ACIA() )
+		gpip_new |= 0x10;		/* set bit 4 */
+	else
+		gpip_new &= ~0x10;		/* clear bit 4 */
 
 	/* Bit 0 */
 	if (ConfigureParams.Printer.bEnablePrinting)
