@@ -15,6 +15,9 @@ Following features are deprecated and will be removed in a future release:
  -------------------
 
 Emulation improvements:
+- MFP:
+  - When IRQ is cleared on one of the 2 ACIAs, do not clear IRQ on
+    the MFP side if the IRQ is still set on the other ACIA
 - Blitter:
   - Ignore byte accesses to blitter registers defined as word only
 
@@ -46,6 +49,12 @@ Emulator improvements:
 Build improvements:
 - Fix: CPU core compile warnings (WinUAE upstream)
 - Fix: groff/troff warnings for manual pages
+
+Programs with fixed MIDI (MFP IRQ clear) handling:
+- Bad Mood
+- Midi Maze
+- Midi Maze II
+- Oxyd 2
 
 
  Version 2.4.1 (2022-08-03)

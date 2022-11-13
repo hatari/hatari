@@ -326,28 +326,25 @@ are also listed.</p>
     </tr>
     <tr>
       <td><a href="http://www.atarimania.com/game-atari-st-midi-maze_9972.html">Midi Maze</a> (v1.0)</td>
-      <td class="major">2.4</td>
-      <td>Multiplayer connection fails with "MIDI ring boo-boo"
-          error dialog when trying to start a game.  This version
-	  of Midi Maze is known to have a timeout bug, but it
-	  should normally trigger only after game has started</td>
+      <td>2.5-dev</td>
+      <td>With Hatari v2.4.1 or earlier, multiplayer connection failed
+          with "MIDI ring boo-boo" error dialog when trying to start
+	  a game</td>
     </tr>
     <tr>
       <td><a href="http://www.atarimania.com/game-atari-st-midi-maze-ii_36059.html">Midi Maze II</a> (v1.5)</td>
-      <td class="minor">2.4</td>
-      <td>After playing for a while game ends to "The MIDI ring has
-          timed out" error message.  Midi Maze II should have fixed
-	  / stable MIDI timeout handling so this is Hatari issue</td>
+      <td>2.5-dev</td>
+      <td>With Hatari v2.4.1 or earlier, after playing for a while,
+          game ends to "The MIDI ring has timed out" error message</td>
     </tr>
     <tr>
       <td><a href="http://www.atarimania.com/game-atari-st-midi-maze-iii_9971.html">Midi Maze 3</a> (v0.9)</td>
-      <td class="major">2.4</td>
-      <td>Multiplayer connection fails to "ring-timeout-error"
-          message when trying to start a new game</td>
+      <td class="minor">2.5-dev</td>
+      <td>Multiplayer game ends right after maze has been drawn once</td>
     </tr>
     <tr>
       <td><a href="https://demozoo.org/productions/197206/">MidiWiz</a> v1.1i</td>
-      <td class="major">2.4</td>
+      <td class="major">2.5-dev</td>
       <td>Neither MIDI nor RS-232 multiplayer connection works,
           data sync at game start never completes</td>
     </tr>
@@ -2203,8 +2200,9 @@ this section lists only programs that have TT-specific features.</p>
     </tr>
     <tr>
       <td>Oxyd 2 TT</td>
-      <td>before 1.0</td>
-      <td>Oxyd 2 in color</td>
+      <td>2.5-dev</td>
+      <td>Oxyd 2 in color.
+          2-player mode via MIDI does not work in Hatari v2.4.1 or earlier</td>
     </tr>
     <tr>
       <td><a href="http://pagesperso-orange.fr/patrice.mandin/en/port-jeux.html">PM Doom, Heretic and Hexen</a></td>
@@ -2384,18 +2382,18 @@ VGA one are indicated separately.</p>
     </tr>
     <tr>
       <td><a href="http://www.leonik.net/dml/sec_bm.py">Bad Mood</a></td>
-      <td class="minor">2.4</td>
+      <td class="minor">2.5-dev</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Enhanced Doom I/II game port and engine rewrite (v0.35-v0.37 from 2017):<ul>
+      <td>Enhanced Doom I/II game port and engine rewrite (v0.35-v0.37 from 2017 + v1.0 from 2022):<ul>
       <li>Requires DSP and 14 MB RAM</li>
       <li>Supports JagPad / Power Pad</li>
+      <li>Hatari v2.4.1 and earlier trigger random IKBD input events
+          when game plays MIDI music</li>
       <li>WAD cache creation crashes/freezes, so one needs to get pre-built WAD cache</li>
       <li>Uses MMU if it is available, but crashes with Hatari 030 MMU emulation</li>
       <li>32-bit addressing / TT-RAM works only with Hatari specific "bmhat.ttp" version</li>
-      <li>Game statusbar does not show due to Videl emulation omissions
-          (in earlier versions "--natfeats yes" could be used enable use of
-	  heavier Hatari specific statusbar drawing mode, but not any more)</li>
+      <li>Game statusbar shows only in Hatari specific version due to Videl emulation omissions</li>
       <li>Some parts have clear speed differences to real Falcon due to CPU, FPU
           (instruction too fast) and Videl emulation (screen updated only at VBL)
 	  inaccuracies</li>
