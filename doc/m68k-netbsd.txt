@@ -16,6 +16,8 @@ Apparently NetBSD works fine with WinUAE Amiga emulation.  However,
 none of the NetBSD kernel variants or versions boots yet with Hatari.
 This just documents how to test them.
 
+According to NetBSD docs: "A minimal system should have a 68030 CPU,
+4MB RAM (of which 2MB can be ST-RAM) and a SCSI or IDE disk."
 
 
 1. NetBSD Atari HW support history
@@ -42,32 +44,31 @@ NetBSD releases of interest:
 * 2020: v9.0, GCC 7.4, LLVM 7.0, reworked SATA & USB3 support, shadow FB
               + anti-aliasing support
 
-NetBSD releases before v7 are in archive:
+NetBSD v7.x and earlier releases are in archive:
 	https://cdn.netbsd.org/pub/NetBSD/NetBSD-archive/
 
-v7.0 support ended in June 2020, rest are still supported.
+Newer releases are still supported.
 
 
 2. Fetching NetBSD binaries
 ---------------------------
 
-Fetching NetBSD v8.1 binaries (which work better than latest v9.1):
+Fetching NetBSD v8.2 binaries (which work better than latest v9.x):
 
 * Get TOS kernel loader "loadbsd.ttp":
-	wget https://cdn.netbsd.org/pub/NetBSD/NetBSD-8.1/atari/installation/misc/loadbsd.ttp
+	wget https://cdn.netbsd.org/pub/NetBSD/NetBSD-8.2/atari/installation/misc/loadbsd.ttp
 
 * Get Hatari compatible kernel:
-	wget https://cdn.netbsd.org/pub/NetBSD/NetBSD-8.1/atari/binary/kernel/kern-SMALL030.gz
-	gunzip kern-SMALL030.gz
-	mv kern-SMALL030 small030.bsd
+	wget https://cdn.netbsd.org/pub/NetBSD/NetBSD-8.2/atari/binary/kernel/netbsd-SMALL030.gz
+	gunzip -c netbsd-SMALL030.gz > small030.bsd
 
-* Get minimal install sets (base & config files):
-	wget https://cdn.netbsd.org/pub/NetBSD/NetBSD-8.1/atari/binary/sets/base.tgz
-	wget https://cdn.netbsd.org/pub/NetBSD/NetBSD-8.1/atari/binary/sets/etc.tgz
+* Get minimal install sets (base & config files, base is tens of MBs):
+	wget https://cdn.netbsd.org/pub/NetBSD/NetBSD-8.2/atari/binary/sets/base.tgz
+	wget https://cdn.netbsd.org/pub/NetBSD/NetBSD-8.2/atari/binary/sets/etc.tgz
   (what the other sets are, is listed in the install manual.)
 
 * Get installer floppy image:
-	wget https://cdn.netbsd.org/pub/NetBSD/NetBSD-8.1/atari/installation/miniroot/sysinst.fs.gz
+	wget https://cdn.netbsd.org/pub/NetBSD/NetBSD-8.2/atari/installation/miniroot/sysinst.fs.gz
 	gunzip sysinst.fs.gz
 
 
@@ -120,5 +121,8 @@ impact on these.  Neither does 32-bit addressing / TT-RAM.
 5. Installing NetBSD
 --------------------
 
+Building (modified) kernel from sources:
+	http://www.netbsd.org/docs/guide/en/chap-kernel.html
+
 Full installation instructions:
-	https://cdn.netbsd.org/pub/NetBSD/NetBSD-9.1/atari/INSTALL.html
+	https://cdn.netbsd.org/pub/NetBSD/NetBSD-9.3/atari/INSTALL.html
