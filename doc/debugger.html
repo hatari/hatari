@@ -269,8 +269,8 @@ get a long value pointed by stack pointer + 2, use "(a7+2)".
 Values of arithmetic expressions are always evaluated before being
 given to a command.  Except for "evaluate" and "address" commands,
 they always need to be marked with quotes (""). Besides arithmetic,
-this can be used also to give symbol/register/variable values to
-commands that don't otherwise interpret them.  If command complains
+this can be used also to give symbol/address/register/variable values
+to commands that don't otherwise interpret them.  If command complains
 that it didn't recognize e.g. a register name, just put it to quotes
 and it will be "evaluated" before being given to the command.
 </p>
@@ -1944,6 +1944,16 @@ b  ($ff820a).b &amp; 2 ! ($ff820a).b &amp; 2
 the ":trace" breakpoint option:
 <pre>
 b  ($ff820a).b &amp; 2 ! ($ff820a).b &amp; 2  :trace
+</pre>
+</dd>
+
+<dt><em>Values in different number base</em></dt>
+<dd>To see values in different number bases, use "evaluate"
+command.  It can be used also with more complex expressions:
+<pre>
+&gt; e ($ff8802).b & 0x7
+  value at ($ff8802).b = $27
+= %111 (bin), #7 (dec), $7 (hex)
 </pre>
 </dd>
 

@@ -1,7 +1,7 @@
 /*
   Hatari - evaluate.c
 
-  Copyright (C) 1994, 2009-2014 by Eero Tamminen
+  Copyright (C) 1994, 2009-2014, 2022 by Eero Tamminen
 
   This file is distributed under the GNU General Public License, version 2
   or at your option any later version. Read the file gpl.txt for details.
@@ -46,6 +46,7 @@ const char Eval_fileid[] = "Hatari calculate.c";
 #define CLAC_OVF_ERR "Overflow"
 #define CLAC_OVR_ERR "Mode overflow"
 #define CLAC_PRG_ERR "Internal program error"
+#define CLAC_WDT_ERR "Invalid address width"
 
 /* define internal allocation sizes (should be enough ;-)		*/
 #define PARDEPTH_MAX	16		/* max. parenth. nesting depth	*/
@@ -112,7 +113,9 @@ static long long apply_op(char op, long long x, long long y);
 /* increase parenthesis level	*/
 static void open_bracket(void);
 /* decrease parenthesis level	*/
-static long long close_bracket(long long x);
+static long long close_bracket(long long x, char width);
+/* parse (addr).[bwl] width	*/
+static int get_width (const char *str, char *width);
 
 
 /**
@@ -394,7 +397,7 @@ const char* Eval_Expression(const char *in, uint32_t *out, int *erroff, bool bFo
 
 	long long value;
 	int dummy, offset = 0;
-	char mark;
+	char mark, width;
 
 	/* Uses global variables:	*/
 
@@ -447,8 +450,10 @@ const char* Eval_Expression(const char *in, uint32_t *out, int *erroff, bool bFo
 			offset ++;
 			break;
 		case ')':
-			value = close_bracket (value);
 			offset ++;
+			/* check for .b/.w/.l width spec */
+			offset += get_width (in+offset, &width);
+			value = close_bracket (value, width);
 			break;
 		default:
 			/* register/symbol/number value needed? */
@@ -714,7 +719,7 @@ static void open_bracket (void)
  * close parenthesis, and evaluate / pop stacks
  */
 /* last parsed value, last param. flag, trigonometric mode	*/
-static long long close_bracket (long long value)
+static long long close_bracket (long long value, char width)
 {
 	/* returns the value of the parenthesised expression	*/
 
@@ -726,9 +731,21 @@ static long long close_bracket (long long value)
 			operation (value, LOWEST_PREDECENCE);
 			/* fetch the indirect ST RAM value */
 			addr = val.buf[val.idx];
-			value = STMemory_ReadLong(addr);
-			fprintf(stderr, "  value in RAM at ($%x).l = $%"PRIx64"\n",
-				addr, (uint64_t)value);
+			switch (width) {
+			case 'b':
+				value = STMemory_ReadByte(addr);
+				break;
+			case 'w':
+				value = STMemory_ReadWord(addr);
+				break;
+			case 'l':
+				value = STMemory_ReadLong(addr);
+				break;
+			default:
+				id.error = CLAC_PRG_ERR;
+			}
+			fprintf(stderr, "  value at ($%x).%c = $%"PRIx64"\n",
+				addr, width, (uint64_t)value);
 			/* restore state before parenthesis */
 			op.idx = par.opx[par.idx] - 1;
 			val.idx = par.vax[par.idx] - 1;
@@ -742,4 +759,23 @@ static long long close_bracket (long long value)
 		id.error = CLAC_GEN_ERR;
 
 	return value;
+}
+
+/* parse 'str' for '.[bwl]' pattern, set lower-case width char
+ * to 'width', or if there was no match, use 'l'.  Return number
+ * of parsed characters.
+ */
+static int get_width(const char *str, char *width)
+{
+	*width = 'l';
+	if (str[0] != '.')
+		return 0;
+
+	char lower = tolower(str[1]);
+	if (lower != 'b' || lower != 'w' || lower != 'l') {
+		id.error = CLAC_WDT_ERR;
+		return 1;
+	}
+	*width = lower;
+	return 2;
 }

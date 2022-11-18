@@ -35,6 +35,7 @@ Emulator improvements:
 - Debugger:
   - Fix: free all debugger allocations before exit
   - Fix: invalid free on freeing loaded GNU debug symbols
+  - Add address width (addr).[bwl] support to expression evaluation
   - Suppress repeats of identical log & trace messages by default
     (show only their count) and add "--msg-repeat" option to toggle that
   - Preliminary support for disassembly output options working also for
