@@ -31,10 +31,10 @@ freebsd_task:
 
 macos_task:
   osx_instance:
-    image: big-sur-base
+    image: ghcr.io/cirruslabs/macos-ventura-base:latest
   install_script:
     - brew update
-    - brew install sdl2 libpng make tidy-html5 imagemagick
+    - brew install sdl2 libpng make tidy-html5 imagemagick capstone
   script:
     - export PATH=/usr/local/bin:$PATH
     - ./configure --disable-osx-bundle --enable-debug
