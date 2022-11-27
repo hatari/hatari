@@ -277,7 +277,6 @@ Their main run-time dependencies are:
 
 * cmake/ -- extra CMake files for configuring Hatari to build environment
 * doc/ -- Hatari documentation
-* etc/ -- old Hatari versions config files for obsolete HW
 * python-ui/ -- external Python / Gtk UI for Hatari
 * share/ -- Hatari desktop integration; icons, mimetypes
 * src/ -- C-sources for Hatari emulator program
@@ -290,13 +289,26 @@ Their main run-time dependencies are:
   - gui-sdl/ -- builtin SDL GUI for Hatari
   - gui-win/ -- MS Windows console code + icon
 * tests/ -- shell/python scripts & programs for testing emulator functionality
+  - autostart/ -- tests for TOS issues with too fast Hatari startup
+  - blitter/ -- blitter emulation tests
+  - buserror/ -- IO memory range bus error tests
+  - cpu/ -- few CPU instruction emulation tests
+  - cycles/ -- few CPU cycles emulation tests
+  - debugger/ -- Hatari debugger functionality tests
+  - gemdos/ -- GEMDOS HD emulation tests
+  - mem_end/ -- emulation tests for screen at end of RAM
   - keymap/ -- programs showing keycodes to use in Hatari keymap files
-  - natfeats/ -- test and example Atari code for using Hatari features
-  - etc.
+  - natfeats/ -- tests + example Atari code for emulation Native Features
+  - screen/ -- overscan emulation tests
+  - serial/ -- serial output emulation tests
+  - tosboot/ -- TOS bootup + basic GEMDOS operation tests
+  - unit/ -- few unit tests for Hatari helper functions
+  - xbios/ -- tests for BIOS intercept features
 * tools/ -- shell/python scripts & programs useful with Hatari
   - debugger/ -- debug symbol conversion scripts & profile data tools
   - hconsole/ -- out-of-process Hatari control / automation tool
   - hmsa/ -- floppy image format conversion tool
+  - linux/ -- m68k Linux support files for running it under Hatari
 
 
  7) Contact

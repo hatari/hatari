@@ -55,11 +55,14 @@ natfeats/
 - "make test" test for Native Features emulator interface, and
    example code for different compilers / assemblers on how to use it
 
+mem_end/
+- "make test" tests handling of screen at end of RAM
+
 screen/
 - "make test" tests for a fullscreen demo
 
 serial/
-- "make test" tests for Hatari serial interfaces
+- "make test" tests for Hatari (MFP/SCC/MIDI) serial interfaces
 
 tosboot/
 - Tester for automatically running all (specified) TOS versions with
@@ -68,6 +71,9 @@ tosboot/
   one can manually verify that they all really booted up fine. There's
   also a script for comparing the screenshots against earlier
   reference screenshots
+
+unit/
+- Few unit tests for file.c functionality
 
 xbios/
 - "make test" tests for Hatari --bios-intercept facilities
