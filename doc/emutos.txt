@@ -1313,6 +1313,7 @@ Working demos (comments are for EmuTOS v1.0 or older):
 - Flu 4k (by New Beat), needs FPU
 - Fungle beats (by FUN)
 - Game of Life 4k (by Aggression)
+- Geotech (by Cybernetics)
 - Gourand triangles demos (by ray//.tSCc)
   - These have asm sources!
 - Gurkensalat (by Lazer)
@@ -1431,6 +1432,8 @@ Broken demos (with EmuTOS v1.2.x):
   - Crashes after first few screens
 - GEM demo (by DHS & AssemSoft):
   - Needs HiColor mode
+- Multitech (by Cybernetics)
+  - Part of Geotech demo, needs (DSP and) HiColor mode
 - Spin176 (256b intro by MKM / Lamers)
   - Needs FPU & 320x200 HiColor mode
 - Who Okayed This?
