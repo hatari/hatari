@@ -273,7 +273,7 @@ static bool GemDOS_SetFileInformation(int Handle, DATETIME *DateTime)
 /**
  * Convert from FindFirstFile/FindNextFile attribute to GemDOS format
  */
-static uint8_t GemDOS_ConvertAttribute(mode_t mode)
+static uint8_t GemDOS_ConvertAttribute(mode_t mode, const char *path)
 {
 	uint8_t Attrib = 0;
 
@@ -282,7 +282,7 @@ static uint8_t GemDOS_ConvertAttribute(mode_t mode)
 		Attrib |= GEMDOS_FILE_ATTRIB_SUBDIRECTORY;
 
 	/* Read-only attribute */
-	if (!(mode & S_IWUSR))
+	if (!(mode & S_IWUSR) || !access(path, W_OK))
 		Attrib |= GEMDOS_FILE_ATTRIB_READONLY;
 
 	/* TODO, Other attributes:
@@ -326,7 +326,7 @@ static dta_ret_t PopulateDTA(char *path, struct dirent *file, DTA *pDTA, uint32_
 		return DTA_ERR;   /* no DTA pointer set */
 
 	/* Check file attributes (check is done according to the Profibuch) */
-	nFileAttr = GemDOS_ConvertAttribute(filestat.st_mode);
+	nFileAttr = GemDOS_ConvertAttribute(filestat.st_mode, tempstr);
 	nAttrMask = nAttrSFirst|GEMDOS_FILE_ATTRIB_WRITECLOSE|GEMDOS_FILE_ATTRIB_READONLY;
 	if (nFileAttr != 0 && !(nAttrMask & nFileAttr))
 		return DTA_SKIP;
@@ -2139,7 +2139,6 @@ static bool GemDOS_Open(uint32_t Params)
 	}
 	else
 	{
-		struct stat FileStat;
 		if (bToTos)
 			return redirect_to_TOS();
 
@@ -2161,13 +2160,13 @@ static bool GemDOS_Open(uint32_t Params)
 		 *
 		 * Read-only status is used if:
 		 * - Hatari write protection is enabled
-		 * - File itself is read-only
+		 * - File itself is not writable
 		 * Latter is done to help cases where application
 		 * needlessly requests write access, but file is
 		 * on read-only media (like CD/DVD).
 		 */
 		if (ConfigureParams.HardDisk.nWriteProtection == WRITEPROT_ON ||
-		    (stat(szActualFileName, &FileStat) == 0 && !(FileStat.st_mode & S_IWUSR)))
+		    access(szActualFileName, W_OK) != 0)
 		{
 			ModeStr = "rb";
 			RealMode = "read-only";
@@ -2616,7 +2615,7 @@ static bool GemDOS_Fattrib(uint32_t Params)
 	if (nRwFlag == 0)
 	{
 		/* Read attributes */
-		Regs[REG_D0] = GemDOS_ConvertAttribute(FileStat.st_mode);
+		Regs[REG_D0] = GemDOS_ConvertAttribute(FileStat.st_mode, sActualFileName);
 		return true;
 	}
 
@@ -2646,7 +2645,7 @@ static bool GemDOS_Fattrib(uint32_t Params)
 			return true;
 		}
 	}
-	
+
 	if (nAttrib & GEMDOS_FILE_ATTRIB_READONLY)
 	{
 		/* set read-only (readable by all) */
