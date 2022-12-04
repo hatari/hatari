@@ -379,15 +379,15 @@ well tested.
 <li>A working CMake installation (version 3.3 or newer). See
 <a href="http://www.cmake.org/">http://www.cmake.org/</a> for details.
 </li>
-<li>The SDL library v1.2.10 or newer. You can get it from
+<li>The SDL library v2.0.6 or newer. You can get it from
 <a href="http://www.libsdl.org/">http://www.libsdl.org/</a>.
 </li>
 </ul>
 
 <p>Optional:</p>
 <ul>
-<li>The zLib compression library. You can get it from
-<a href="https://zlib.net/">https://zlib.net/</a>.
+<li>The zLib compression library for supporting compressed disk images. You
+can get it from <a href="https://zlib.net/">https://zlib.net/</a>.
 </li>
 <li>The PNG image library for PNG format screenshots and to
 decrease AVI video recording file sizes. You can get it from
@@ -405,7 +405,7 @@ on systems with the X window system (Linux and other unixes).</li>
 <p>
 The versions available in your Linux distribution will be sufficient
 in most cases, but make sure you have also the header files installed
-for the libraries as well! Typically they're in a corresponding -dev
+for the libraries as well! Typically they are in a corresponding -dev
 package.
 </p>
 
@@ -1366,7 +1366,7 @@ changes that you have made.
 <h4 class="gui">The CPU Dialog</h4>
 
 <div class="floatimage">
-  <img src="images/cpu.png" width="460" height="384"
+  <img src="images/cpu.png" width="440" height="384"
        alt="Hatari's GUI - the CPU dialog" />
 </div>
 
@@ -1448,7 +1448,7 @@ changes that you have made.
  differences compared to a real Motorala FPU.
 </p>
 <p>
- For higher precision, you can select the "Softfloat" emulation mode :
+ For higher precision, you can select the "Accurate FPU emulation" mode:
  this will emulate all the FPU operations using only the CPU and with
  the same rules as the Motorala's FPU. This emulation is bit-exact
  (except for the last few bits in trig/log functions), and a little
@@ -1772,7 +1772,7 @@ VDI mode is most useful with ST / STE emulation.
 <h4 class="gui">The Hatari Screen Dialog</h4>
 
 <div class="floatimage">
-  <img src="images/screen.png" width="520" height="320"
+  <img src="images/screen.png" width="520" height="400"
        alt="Hatari's GUI - the Hatari screen dialog" />
 </div>
 
