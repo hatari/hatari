@@ -1412,9 +1412,15 @@ changes that you have made.
 <p>
  The CPU clock option can be used to select the frequency that is used
  to clock the CPU. 8 MHz is the standard for ST and STE and the most
- compatible frequency for old software.
- Use 16 MHz for Mega STE and Falcon emulation.
- The CPU in the TT was clocked with 32 MHz.
+ compatible frequency for old software. The CPU in the TT was clocked
+ with 32 MHz. The original Mega STE and Falcon could be run in both,
+ 8 MHz and 16 MHz with the possibility to toggle between the two frequencies
+ during runtime via software. Hatari supports this feature, too, so it is
+ possible to switch between 8 and 16 MHz from the emulated side, e.g. with
+ certain accessories or CPX. However, if you select 32 MHz or a non-standard
+ CPU in the Hatari GUI, this feature is disabled, since Hatari assumes that
+ you rather want to emulate a system with an accelerator CPU board (which
+ don't implement this the software frequency switching).
 </p>
 
 <p>
