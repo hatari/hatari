@@ -12,10 +12,15 @@ Contents:
   - Debugging freezes
 - EmuTOS free/shareware compatibility lists
   - Working Atari ST demos and games
-  - Atari ST games with broken input handling
+    - Color ST demos and games
+    - GEM / monochrome ST demos and games
+  - Broken Atari ST demos and games
+    - Broken (floppy) demo classics
+    - ST games with broken input handling
   - Atari ST applications (including commercial)
-  - Working Atari STE programs
-  - Non-working Atari STE programs
+  - Atari STE programs
+    - Working STE programs
+    - Non-working STE programs
   - Atari TT programs
   - Falcon programs
     - Falcon demos
@@ -177,7 +182,7 @@ free/shareware games (ones done with GFA basic etc).  This isn't an
 issue with newer EmuTOS versions.
 
 Lists of known issues and incompatible applications are listed in
-bugs.txt & incompatible.txt files coming with EmuTOS:
+incompatible.txt file coming with EmuTOS:
 https://raw.githubusercontent.com/emutos/emutos/master/doc/incompatible.txt
 
 
@@ -359,8 +364,12 @@ Mostly the non-working games "Panic" EmuTOS during their startup,
 but it can happen also later on.
 
 
-Demos:
+Color ST demos and games
+........................
+
+Color demos:
 - 2011 (by Positivity & Sector One, 4kB intro)
+- 3D screen 3.5k (by Overlanders)
 - 44 (by Avena, 4KB intro)
 - 4getful (by gwEm, 4KB intro)
 - 4kker (by Checkpoint, 4KB intro)
@@ -409,6 +418,7 @@ Demos:
 - Hatari 2.2 intro (by Mr.Styckx)
 - If pigs could fly (by Syndicate)
 - Illusion (by Dune)
+- In Waves (by Exocet & Tomchi & Tom)
 - Infinity/Madstars (by Holocaust)
 - Just Jack (by Joker)
 - Let Go (by Dekadence)
@@ -450,13 +460,15 @@ Demos:
 - Save The Earth (by Defence Force)
 - Second Reality 2013 (by Checkpoint)
 - Serial (by Dekadence)
+- Shiraz 256b (with MIDI output, by Marquee Design)
 - SillyVenture 2k10 & 2k11 (invitros by Mystic Bytes & Aggression)
 - SillyVenture 2020 (invitro by Agenda, Hemoroids & Mystic Bytes)
 - Smag-FX 3 (by SMFX)
 - Sommar TTRAK (TTRAK v1.00 intro)
 - Sommarhack 1991 Best Of (by Pepe)
   - Glitches are intentional, not EmuTOS issue
-- Sommarhack 2011 (invite by DHS)
+- Sommarhack 2011 invite (by DHS)
+- Sommarhack 2022 reminder (by DHS)
 - Soundtracker (by Equinox)
 - Sowatt sprite record (rec16e, by Oxygene)
 - ST NICCC 2000 (by Oxygene)
@@ -570,13 +582,14 @@ Free/shareware/PD games:
 - 2048            (by Paradize)
 - A Day at the Races
 - Alterra
-- Archon 4KB
+- Archon 3.5k     (by Deltaforce)
 - Alien Blockade* (quixx)
 - Atax
 - Bellum*
 - Blaster
 - Blind labyrinth (line-A bitblits, mouse issues)
 - Bodyshop        (line-A bitblits)
+- Boinx 3.5k      (by Total Vision Inc)
 - Bold            (floppy only)
 - Bombs Away
 - Bombzai
@@ -598,7 +611,7 @@ Free/shareware/PD games:
 - Entombed
   - Does not show title, copyright, hiscore nor help after EmuTOS v0.8.6
   - TOS v2 shows title but not others and sound is wrong
-- Flip'em*       (4KB puzzle)
+- Flip'em* 4KB   (puzzle)
 - Fly Robin Fly
 - Fokker         (2-player biplanes, use joystick 0)
 - French adaptations of classic games:
@@ -610,7 +623,7 @@ Free/shareware/PD games:
 - Grav*
 - Grav2*
 - Hackman II*
-- Hang About     (4KB mountain climbing, use joystick 0)
+- Hang About 4KB (mountain climbing, use joystick 0)
 - Happy Worm
 - Hardcore preview
 - Haywire        (use joystick 0)
@@ -677,14 +690,26 @@ Free/shareware/PD games:
 - Warzone
 - Whip Snapper's race
 - Wolf3d*        (floppy version, Fread()s files opened as write-only)
-- Yak            (4KB gridrunner)
-- Xenon          (4KB shooter)
+- Yak 3.5k       (gridrunner by Jeff Minter)
+- Xenon 3.5k     (by Michael Bittner)
 - Zap
 - Zatacka        (multiplayer)
 
 Med-rez games:
 - Hangman v2.0
 - Poker solitaire
+
+
+GEM / monochrome ST demos and games
+...................................
+
+Monochrome demos:
+- Halftron      (by Ephidrena)
+- Monofillah    (by Tom)
+- Monoscreen    (by Dead Braincells)
+- Monotheist    (by SMFX)
+- No rights     (by Dekadence)
+- The Mono Tale (by The Cyclemasters)
 
 GEM games:
 - 2048          (by Rajah Lone)
@@ -811,8 +836,16 @@ Mono/GEM toys:
 - Worm farm
 
 
+Broken Atari ST demos and games
+-------------------------------
+
+Below are listed demos and games known not to work with EmuTOS. EmuTOS
+documents issues with a subset of them in more detail in:
+https://raw.githubusercontent.com/emutos/emutos/master/doc/incompatible.txt
+
+
 Broken (floppy) demo classics
------------------------------
+.............................
 
 - Amiga demo (by Exceptions)
   - bus errors before *any* OS calls
@@ -841,8 +874,8 @@ Broken (floppy) demo classics
   - Floprd(0x7000, 0, 2, 0, 0, 1)
 
 
-Atari ST games with broken input handling
------------------------------------------
+ST games with broken input handling
+...................................
 
 As expected, STOS games which use STOS routines for input don't work
 as STOS does that in TOS binary version specific manner (see EmuTOS
@@ -964,19 +997,24 @@ also with EmuTOS, most even with the 512k/1024k EmuTOS variants.
 See STE notes for more info on them.
 
 
-Working Atari STE programs
---------------------------
+Atari STE programs
+------------------
 
-There are not that many STE specific (or even STE enhanced) programs (see
-the "STE software compatibility list" section in compatibility.html).
-
-But following STE specific & enhanced demos, games and apps work
-fine with EmuTOS.
+There are not that many STE specific (or even STE enhanced) programs
+(see the "STE software compatibility list" section in compatibility.html),
+so this tries to cover status for all the games, and many of the demos.
 
 Note: STE emulation needs 256k variant of EmuTOS.  With US i.e. 60Hz
 image (etos256us.img), you may get screen flicker and music playback
 issues with demos and games.  Full STE support requires EmuTOS
 v0.9.4+.
+
+
+Working STE programs
+....................
+
+Following STE specific & enhanced demos, games and apps work fine with
+EmuTOS.
 
 Demos:
 - 1st Step (by Tobe/MJJ Prod)
@@ -1001,6 +1039,7 @@ Demos:
 - Beat Demo (by Frontline)
 - Bird Mad Girl Show (by Fraggle's)
 - Birdie (by Zeal)
+- Blitzwav v1 (by Cybernetics)
 - Blue Period (by Paradox)
 - BoingSTE
 - CD-player (by Light)
@@ -1014,6 +1053,7 @@ Demos:
 - E605 (by Light)
 - Ecstasy part A (by Inner Circuit Explorers)
 - Ecstasy part B (by Inner Circuit Explorers)
+- Fluffy Clouds (by Genesis Project)
 - French Kiss (by DHS)
 - Gobi Toons (by Dune)
 - Grimey (by Reservoir Gods)
@@ -1043,6 +1083,7 @@ Demos:
 - Monogatari (monochrome, by Cerebral Vortex)
 - More or Less Zero (by DHS)
 - MovieSTE (by Tony Barker)
+- MPC in Dalarna (by DHS + SMFX)
 - Muda (by Live!)
 - Necrosys (by Hemoroids)
 - New Year -94 Intro (by Extream)
@@ -1061,10 +1102,12 @@ Demos:
 - RGB Splitter (by Paradox)
 - SaboTagE (by Paradox)
 - Save the Earth (by Defence Force)
+- Scene? Ay Mamba! (by Spice Boys)
 - Sinfull Sinuses (by Chronicle)
 - Sierpinski overdose 4K (by GGN), med-rez+blitter only
-- Sommarhack (by DHS)
+- Sommarhack 2010 invite (by DHS)
 - Songs Of The Unexpected (by OUCH)
+- Speechless (by The Estate)
 - Steroid (Metroid remake demo)
 - STE slideshow (by DHS)
 - STE Wars (by Tony Barker)
@@ -1186,8 +1229,8 @@ STE (enhanced) music applications:
 - Sirius Player
 
 
-Non-working Atari STE programs
-------------------------------
+Non-working STE programs
+........................
 
 Some non-working demos:
 - Original Beat Maker (OG.PRG, SV2019, by CrazyQ)
@@ -1234,6 +1277,7 @@ Working demos:
 - CrY image viewer (by .tSCc)
 - Elegant Machinery (by Evolution)
 - Mandelbrot explorer (by .tSCc)
+- Monscape (by Escape)
 - TC fish (by .tSCc)
 - TT highres slideshow (by .tSCc)
 - Shiny Bubbles TT (by Xanth FX)
@@ -1347,6 +1391,7 @@ Working demos (comments are for EmuTOS v1.0 or older):
 - Warum (by Lazer)
 - Weltchmerz (by Avena)
 - Why (by Extream)
+- ZygyFem6 (by Extream)
 - ZZ 9 Plural Z Alpha (by tSCc)
 
 Demos working under EmuTOS >= v1.1 (with DSP support):
