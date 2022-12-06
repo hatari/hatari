@@ -704,8 +704,11 @@ GEM / monochrome ST demos and games
 ...................................
 
 Monochrome demos:
+- Demounstures  (by TOS-Crew, works also in color)
 - Halftron      (by Ephidrena)
+- Hi Alf        (by Echo Cray)
 - Monofillah    (by Tom)
+- Monomental    (by Senior Dads, crashes at end)
 - Monoscreen    (by Dead Braincells)
 - Monotheist    (by SMFX)
 - No rights     (by Dekadence)
@@ -832,6 +835,7 @@ Mono/GEM toys:
 - Pyro
 - Robugs*       (GEM UI, line-A fillrect + sprite draw)
 - ST life
+- ST tour       (from Atari corp, works also in color)
 - Wator         (slow)
 - Worm farm
 
@@ -1016,7 +1020,7 @@ Working STE programs
 Following STE specific & enhanced demos, games and apps work fine with
 EmuTOS.
 
-Demos:
+Color demos:
 - 1st Step (by Tobe/MJJ Prod)
 - 20 years megademo (by Atari scene collective)
 - 20 years Atari STE megademo (by Paradox)
@@ -1120,7 +1124,6 @@ Demos:
 - TalkTalk2 (by XiA)
 - Techno drugs (by NLC)
 - The Star Wars Demo (by The Arctic Land)
-- Time Slices (by Defence Force)
 - Tribute to Rainbow TOS (by 505 & Tobe)
 - Tyranny (by DHS)
 - UFO (by Dune & Sector1)
@@ -1135,6 +1138,12 @@ Demos:
 - Xmas 2004 (by Paradox)
 - Yanartas (by Checkpoint)
   - ST demo that works only on STE
+
+Monochrome demos:
+- Bad Apple!! (by Fenerinarsa)
+- MonogAtari  (by Cerebral Vortex)
+- Time Slices (by Defence Force)
+- Unbeatable  (by MEC)
 
 Color games:
 - 4K Pacman
