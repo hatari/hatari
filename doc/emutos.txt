@@ -1105,6 +1105,7 @@ Color demos:
 - RGBeast (by Aggression)
 - RGB Splitter (by Paradox)
 - SaboTagE (by Paradox)
+- Satan stole my Atari (by Lamers)
 - Save the Earth (by Defence Force)
 - Scene? Ay Mamba! (by Spice Boys)
 - Sinfull Sinuses (by Chronicle)
@@ -1456,6 +1457,8 @@ Demos working under EmuTOS >= v1.1 (with DSP support):
 - Tere Ra'I (by Cerebral Vortex / Dune / Sector One)
 - The mountains flight (by Cruor)
 - The Ultimate Seduction (Sommarhack 2020 invite)
+- Too Silly 2 (by Lamers)
+  - Works also with v1.0, but MP2 DSP music requires >v1.0
 - Tron2001 (by ICE)
 - Unexpected Fun (by Orion_)
 - Voxel (by DrTypo)
@@ -1467,7 +1470,11 @@ Demos working under EmuTOS >= v1.1 (with DSP support):
 - Yepyha (by Toons)
 - Zero Three Zero (by The Pixel Twins)
 
-Demos working partly under EmuTOS >= v1.1:
+Demos working under EmuTOS >= v1.2:
+- LCF (by Lamers)
+  - 060+FPU+VGA demo
+
+Demos working partly under EmuTOS >= v1.2:
 - 124 beers later (by Trio)
   - Works also with 1.0, but fighter screen DSP textures need v1.1
   - Ground texture missing in last screen
@@ -1691,6 +1698,7 @@ Applications working under EmuTOS >= v1.1 (with DSP support):
    - Due to program bugs, start from 320x200@256 resolution
 - DSPDebug (by Brainstorm)
 - DSPdit (by .tscc)
+- Falcon Sound CPX
 - FlaySID
 - Flextracker (use VGA)
 - GemGT2 v1.1, GemMOD v0.85, and GemPLAY v1.95
