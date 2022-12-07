@@ -282,7 +282,7 @@ static uint8_t GemDOS_ConvertAttribute(mode_t mode, const char *path)
 		Attrib |= GEMDOS_FILE_ATTRIB_SUBDIRECTORY;
 
 	/* Read-only attribute */
-	if (!(mode & S_IWUSR) || !access(path, W_OK))
+	if (!(mode & S_IWUSR) || access(path, W_OK) != 0)
 		Attrib |= GEMDOS_FILE_ATTRIB_READONLY;
 
 	/* TODO, Other attributes:
