@@ -2160,13 +2160,14 @@ static bool GemDOS_Open(uint32_t Params)
 		 *
 		 * Read-only status is used if:
 		 * - Hatari write protection is enabled
-		 * - File itself is not writable
+		 * - File exists, but is not writable
 		 * Latter is done to help cases where application
 		 * needlessly requests write access, but file is
 		 * on read-only media (like CD/DVD).
 		 */
 		if (ConfigureParams.HardDisk.nWriteProtection == WRITEPROT_ON ||
-		    access(szActualFileName, W_OK) != 0)
+		    (access(szActualFileName, F_OK) == 0 &&
+		     access(szActualFileName, W_OK) != 0))
 		{
 			ModeStr = "rb";
 			RealMode = "read-only";
