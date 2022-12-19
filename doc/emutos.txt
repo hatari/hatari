@@ -430,6 +430,7 @@ Color demos:
 - Music Box 128k (by Michael Lunn, in STOS)
 - My Galaxy (by Dune & Sector One & MJJ Prod)
 - Music Disc 1 (by G. Gaubatz)
+- New Year intro 1990 (by The Replicants)
 - No Cooper (by 1984)
 - No more froggies (by Sector1)
 - O-demo (by Oxygene)
@@ -483,17 +484,21 @@ Color demos:
 - Syntax Terror (by Delta Force)
 - Temptation aka Project "A" (by NoExtra)
 - The Puppet Show (by Fantasy & Dune)
+- Te Rise of Love (by Hemoroids)
+- The Snowman 2009 (by Checkpoint)
 - The Stupendous Demo (by Pixel Twins) - has couple of STE screen
 - The Union demo (by The Union)
 - The Truth (by Dekadence)
 - The twist (by Team "The twist")
 - The World According to Nordlicht
+- The XMAS '88 Demo (by Kenrick Productions)
 - Transbeauce II (by BushWacKers)
 - Tut! (by Wildfire)
 - Twelve (by Paulo Simoes)
 - TwiSTy (256b intro by Ultra / Cream)
 - Two in One (by DHS)
 - Unbelievable (by Masters Of Electric City)
+- Unextreme (by Masters Of Electric City)
 - Unreachable (by MoEC & Sector One)
 - Unstatic (by Cyprian, Dma-Sc & bob_er)
 - Virtual (by Equinox)
@@ -503,7 +508,7 @@ Color demos:
 - We do not rip or recycle anything (by Spice Boys)
 - X-files (by Martin Cubitt, in STOS)
   - Error #046 => run from desktop instead of auto/-folder
-- Xmas2000 (by Paranoid)
+- Xmas 2000 Intro (by Paranoid)
 - YmRockerz musicdisks from "Wave upon Wave" to "Seven"
 
 Color toys:
@@ -1284,6 +1289,7 @@ Working demos:
 - 256mbrot, Bragg, Glasstro, Orion-B, Yabt (TT/Falcon intros by ray//.tSCc)
 - 4getful (by gwEm, 4KB intro TT-version)
 - Adebug 3DTT demo (by Brainstorm)
+- Cube 256 (030 ST-low 256b intro by Thadoss / Dune)
 - CrY image viewer (by .tSCc)
 - Elegant Machinery (by Evolution)
 - Mandelbrot explorer (by .tSCc)
@@ -1409,7 +1415,8 @@ Demos working under EmuTOS >= v1.1 (with DSP support):
 - 96ktro (by Cruor)
 - Aggressive Party 2 4k (NoCrew)
 - Agony (by DNT crew)
-- Beams (by .tscc):
+- At Night They Come (by Bohemian Grove)
+- Beams (by .tscc)
 - Bird to be alive (by Dune etc)
 - Bound 3, Bound 5 (by Crac)
 - Bound 42 (by MMJ Prod)
@@ -1467,6 +1474,7 @@ Demos working under EmuTOS >= v1.1 (with DSP support):
 - Whirlpool 128k (by Extream)
 - Why (by Extream)
 - X-tasie (by Trio, requires MMU)
+- Xmas 1997 (by DHS)
 - Yepyha (by Toons)
 - Zero Three Zero (by The Pixel Twins)
 
@@ -1493,6 +1501,8 @@ Broken demos (with EmuTOS v1.2.x):
   - Crashes after first few screens
 - GEM demo (by DHS & AssemSoft):
   - Needs HiColor mode
+- mengerMarcherFC (256b intro by atariBDSM)
+  - Needs 320x200 HiColor mode
 - Multitech (by Cybernetics)
   - Part of Geotech demo, needs (DSP and) HiColor mode
 - Spin176 (256b intro by MKM / Lamers)
@@ -1588,6 +1598,8 @@ Games working under EmuTOS >= v1.1.1 (DSP support + fixes):
 - Les Dinosaures (v1.02 demo by PARX)
 - Men at War
 - Multibriques (by PARX)
+- Ninja Torappu (by Cerebral Vortex)
+  - Some sounds missing with EmuTOS v1.0
 - NoMess (GEM, requires color icon support)
 - Pong 2000 demo (use joypad)
 - Push It
@@ -1599,6 +1611,7 @@ Games working under EmuTOS >= v1.1.1 (DSP support + fixes):
   - For v1.0, disable DSP from Hatari
 - TsccTron
 - TeknoBalls (Arkanoid clone)
+- The 8 runes of Aerillion (demo version)
 - Towers II
 - Trionoids* (Columns clone)
 - Wotanoid (Asteroids clone)
