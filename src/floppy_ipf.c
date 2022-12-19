@@ -31,7 +31,7 @@ const char floppy_ipf_fileid[] = "Hatari floppy_ipf.c";
 #ifndef __cdecl
 #define __cdecl  /* CAPS headers need this, but do not define it on their own */
 #endif
-#include <caps/CapsLibAll.h>
+#include "CapsLibAll.h"
 #define CapsLong SDWORD
 #define CapsULong UDWORD
 /* Macro to check release and revision */
