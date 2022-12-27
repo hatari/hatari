@@ -3421,6 +3421,12 @@ static void Video_StoreResolution(int y , bool start)
  */
 static void Video_CopyScreenLineMono(void)
 {
+	uint32_t VideoMask;
+
+	/* We must keep the new video address in a 22 or 24 bit space depending on the machine type */
+	/* (for example in case it pointed to IO space and is now >= 0x1000000) */
+	VideoMask = ( DMA_MaskAddressHigh() << 16 ) | 0xffff;		/* 0x3fffff or 0xffffff */
+
 	/* Copy one line - 80 bytes in ST high resolution */
 	memcpy(pSTScreen, pVideoRaster, SCREENBYTES_MONOLINE);
 	pVideoRaster += SCREENBYTES_MONOLINE;
@@ -3487,9 +3493,10 @@ static void Video_CopyScreenLineMono(void)
 	/* Each screen line copied to buffer is always same length */
 	pSTScreen += SCREENBYTES_MONOLINE;
 
-	/* We must keep the new video address in a 24 bit space */
-	/* (in case it pointed to IO space and is now >= 0x1000000) */
-	pVideoRaster = ( ( pVideoRaster - STRam ) & 0xffffff ) + STRam;
+	/* We must keep the new video address in a 22 or 24 bit space depending on the machine type */
+	/* (for example in case it pointed to IO space and is now >= 0x1000000) */
+	pVideoRaster = ( ( pVideoRaster - STRam ) & VideoMask ) + STRam;
+//fprintf ( stderr , "video counter new=%x\n" , pVideoRaster-STRam );
 }
 
 
