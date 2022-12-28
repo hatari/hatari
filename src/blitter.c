@@ -363,8 +363,6 @@ static void Blitter_FlushCycles(void)
 #ifndef CYCINT_NEW
 	PendingInterruptCount -= op_cycles;
 #endif
-// 	while (PendingInterruptCount <= 0 && PendingInterruptFunction)
-// 		CALL_VAR(PendingInterruptFunction);
 	CycInt_Process();
 
 	/* Run DSP while blitter owns the bus */
