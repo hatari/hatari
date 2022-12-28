@@ -20,6 +20,8 @@ Emulation improvements:
     the MFP side if the IRQ is still set on the other ACIA
 - Blitter:
   - Ignore byte accesses to blitter registers defined as word only
+- CPU:
+  - Fix IACK timings
 
 Emulator improvements:
 - Command line options:
@@ -58,6 +60,10 @@ Programs with fixed MIDI (MFP IRQ clear) handling:
 - Midi Maze
 - Midi Maze II
 - Oxyd 2
+
+Fixed demos:
+- Little -ME- Demo end part : black screen after a while (IACK timing)
+
 
 
  Version 2.4.1 (2022-08-03)
