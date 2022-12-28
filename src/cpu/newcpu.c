@@ -2872,8 +2872,10 @@ static int iack_cycle(int nr)
 	}
 	else if ( ( nr == 26 ) || ( nr == 28 ) )				/* HBL / VBL */
 	{
+		/* Update cycles counter before the IACK sequence */
 		if (cycle_exact)
 		{
+			/* In CE mode, the cycles before reaching IACK are already counted, no need to call x_do_cycles() */
 			/* Flush all CE cycles so far before calling M68000_WaitEClock() */
 			M68000_AddCycles_CE ( currcycle * 2 / CYCLE_UNIT );
 			currcycle = 0;
@@ -2894,19 +2896,27 @@ static int iack_cycle(int nr)
 
 		if (cycle_exact)
 		{
-			x_do_cycles ( ( e_cycles + CPU_IACK_CYCLES_VIDEO_CE ) * cpucycleunit );
+			x_do_cycles ( e_cycles * cpucycleunit );
 			/* Flush all CE cycles so far to update PendingInterruptCount */
 			M68000_AddCycles_CE ( currcycle * 2 / CYCLE_UNIT );
 			currcycle = 0;
 		}
 		else
-			M68000_AddCycles ( e_cycles + CPU_IACK_CYCLES_VIDEO );
+			M68000_AddCycles ( e_cycles );
 
 		CPU_IACK = true;
+		/* Update pending interrupts just before doing the IACK sequence */
 		CycInt_Process();
 		if ( MFP_UpdateNeeded == true )
 			MFP_UpdateIRQ_All ( 0 );				/* update MFP's state if some internal timers related to MFP expired */
 		pendingInterrupts &= ~( 1 << ( nr - 24 ) );			/* clear HBL or VBL pending bit (even if an MFP timer occurred during IACK) */
+		CPU_IACK = false;
+
+		/* Add the cycles used by the IACK sequence (IACK to DTACK transition) */
+		if (cycle_exact)
+			x_do_cycles ( CPU_IACK_CYCLES_VIDEO_CE * cpucycleunit );
+		else
+			M68000_AddCycles ( CPU_IACK_CYCLES_VIDEO );
 		CPU_IACK = false;
 	}
 
