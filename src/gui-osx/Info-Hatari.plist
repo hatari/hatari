@@ -74,10 +74,12 @@
 	<key>Hatari</key>
 	<string>SDL Cocoa App</string>
 	<key>LSMinimumSystemVersion</key>
-	<string>10.6.0</string>
+	<string>10.9.0</string>
 	<key>NSMainNibFile</key>
 	<string>SDLMain</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Hatari needs access to your microphone for sound input.</string>
 </dict>
 </plist>
