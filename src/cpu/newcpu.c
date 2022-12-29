@@ -2505,8 +2505,11 @@ static void MakeFromSR_x(int t0trace)
 				regs.ipl[0] = 0;
 			}
 		} else {
-			if (regs.ipl_pin <= regs.intmask && regs.ipl_pin > newimask) {
-				set_special(SPCFLAG_INT);
+			if (!currprefs.cachesize && regs.ipl_pin <= regs.intmask && regs.ipl_pin > newimask) {
+				if (currprefs.cpu_compatible && currprefs.cpu_model < 68020)
+					set_special(SPCFLAG_INT);
+				else
+					set_special(SPCFLAG_DOINT);
 			}
 		}
 		regs.intmask = newimask;
@@ -4937,6 +4940,7 @@ void doint(void)
 
 		update_ipl(ipl);
 	}
+
 //fprintf ( stderr , "doint1 %d ipl=%x ipl_pin=%x intmask=%x spcflags=%x\n" , m68k_interrupt_delay,regs.ipl, regs.ipl_pin , regs.intmask, regs.spcflags );
 	if (m68k_interrupt_delay) {
 //fprintf ( stderr , "doint2 %d ipl=%x ipl_pin=%x intmask=%x spcflags=%x\n" , m68k_interrupt_delay,regs.ipl, regs.ipl_pin , regs.intmask, regs.spcflags );
@@ -4945,7 +4949,8 @@ void doint(void)
 		}
 		return;
 	}
-	if (regs.ipl_pin > regs.intmask) {
+
+	if (regs.ipl_pin > regs.intmask || currprefs.cachesize) {
 		if (currprefs.cpu_compatible && currprefs.cpu_model < 68020)
 			set_special(SPCFLAG_INT);
 		else
@@ -6347,6 +6352,7 @@ static void m68k_run_mmu040 (void)
 				cpu_cycles = (*cpufunctbl[regs.opcode])(regs.opcode);
 				cpu_cycles = adjust_cycles(cpu_cycles);
 				regs.instruction_cnt++;
+				regs.ce020extracycles++;
 
 #ifdef WINUAE_FOR_HATARI
 				M68000_AddCycles(cpu_cycles * 2 / CYCLE_UNIT);
