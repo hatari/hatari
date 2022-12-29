@@ -2342,6 +2342,9 @@ void init_m68k (void)
 		movem_next[i] = i & (~(1 << j));
 	}
 	cycles_mult &= ~0x7f;
+	if (cycles_mult < 0x80) {
+		cycles_mult = 0x80;
+	}
 
 #if COUNT_INSTRS
 	{
@@ -6662,6 +6665,7 @@ static void m68k_run_3ce (void)
 				}
 				currcycle = CYCLE_UNIT / 2;	/* Assume at least 1 cycle per instruction */
 #endif
+				evt_t c = get_cycles();
 				r->instruction_pc = m68k_getpc();
 				r->opcode = get_iword_cache_040(0);
 				// "prefetch"
@@ -6697,17 +6701,20 @@ static void m68k_run_3ce (void)
 						exit = true;
 				}
 
-				regs.instruction_cnt++;
 				// workaround for situation when all accesses are cached
-				extracycles++;
-				if (extracycles >= 8) {
-					extracycles = 0;
+				if (c == get_cycles()) {
+					extracycles++;
+					if (extracycles >= 4) {
+						extracycles = 0;
 #ifdef WINUAE_FOR_HATARI
-					x_do_cycles(CYCLE_UNIT);
+						x_do_cycles(CYCLE_UNIT);
 #else
-					M68000_AddCycles_CE ( 2 );
+						M68000_AddCycles_CE ( 2 );
 #endif
+					}
 				}
+
+				regs.instruction_cnt++;
 
 #ifdef WINUAE_FOR_HATARI
 				/* Run DSP 56k code if necessary */
@@ -6773,12 +6780,12 @@ static void m68k_run_3p(void)
 				(*cpufunctbl_noret[r->opcode])(r->opcode);
 
 #ifndef WINUAE_FOR_HATARI
-				cpu_cycles = 1 * CYCLE_UNIT;
+				cpu_cycles = 2 * CYCLE_UNIT;
 				cycles = adjust_cycles(cpu_cycles);
 				regs.instruction_cnt++;
-				do_cycles(cycles);
+				x_do_cycles(cycles);
 #else
-				cycles = cpu_cycles = CYCLE_UNIT / 2;
+				cycles = cpu_cycles = 2 * CYCLE_UNIT;
 				M68000_AddCycles_CE(cycles * 2 / CYCLE_UNIT);
 
 				if ( WaitStateCycles ) {
