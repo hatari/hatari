@@ -2141,24 +2141,24 @@ static uae_u32 cycles_mult;
 
 static void update_68k_cycles (void)
 {
-#ifdef WINUAE_FOR_HATARI
+#ifdef WINUAE_FOR_HATARI	/* Don't adjust cycles_mult in Hatari and ignore m68k_speed (forced to 0) */
 	Log_Printf(LOG_DEBUG, "update cyc speed %d throttle %f clock_mult %d\n", currprefs.m68k_speed, currprefs.m68k_speed_throttle, changed_prefs.cpu_clock_multiplier);
 	cycles_mult = CYCLES_DIV;
-#else	/* Don't adjust cycles_mult in Hatari and ignore m68k_speed (forced to 0) */
+#else
 	cycles_mult = 0;
 	if (currprefs.m68k_speed == 0) { // approximate
 		cycles_mult = CYCLES_DIV;
 		if (currprefs.cpu_model >= 68040) {
 			if (currprefs.mmu_model) {
-				cycles_mult = CYCLES_DIV / 20;
+				cycles_mult = CYCLES_DIV / 24;
 			} else {
-				cycles_mult = CYCLES_DIV / 12;
+				cycles_mult = CYCLES_DIV / 16;
 			}
 		} else if (currprefs.cpu_model >= 68020) {
 			if (currprefs.mmu_model) {
-				cycles_mult = CYCLES_DIV / 10;
+				cycles_mult = CYCLES_DIV / 12;
 			} else {
-				cycles_mult = CYCLES_DIV / 6;
+				cycles_mult = CYCLES_DIV / 8;
 			}
 		}
 
@@ -2170,7 +2170,7 @@ static void update_68k_cycles (void)
 			}
 		}
 	} else if (currprefs.m68k_speed < 0) {
-		cycles_mult = CYCLES_DIV / 20;
+		cycles_mult = CYCLES_DIV / 21;
 	} else {
 		if (currprefs.m68k_speed >= 0 && !currprefs.cpu_cycle_exact && !currprefs.cpu_compatible) {
 			if (currprefs.m68k_speed_throttle < 0) {
@@ -2341,6 +2341,7 @@ void init_m68k (void)
 		movem_index2[i] = 7 - j;
 		movem_next[i] = i & (~(1 << j));
 	}
+	cycles_mult &= ~0x7f;
 
 #if COUNT_INSTRS
 	{
@@ -2388,7 +2389,7 @@ STATIC_INLINE void wait_memory_cycles (void)
 	}
 	if (regs.ce020extracycles >= 16) {
 		regs.ce020extracycles = 0;
-		x_do_cycles(4 * CYCLE_UNIT);
+		x_do_cycles(2 * cpucycleunit);
 	}
 }
 
@@ -7140,13 +7141,13 @@ static void m68k_run_2p (void)
 
 				if (currprefs.cpu_memory_cycle_exact) {
 
+					evt_t c = get_cycles();
 					(*cpufunctbl[r->opcode])(r->opcode);
-					// 0% = no extra cycles
-					cpu_cycles = 4 * CYCLE_UNIT * cycles_mult;
-					cpu_cycles /= CYCLES_DIV;
-					cpu_cycles -= CYCLE_UNIT;
-					if (cpu_cycles <= 0)
+					c = get_cycles() - c;
+					cpu_cycles = 0;
+					if (c <= cpucycleunit) {
 						cpu_cycles = cpucycleunit;
+					}
 					regs.instruction_cnt++;
 
 				} else {
