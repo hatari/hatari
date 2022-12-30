@@ -8,8 +8,6 @@
 */
 const char MSA_fileid[] = "Hatari msa.c";
 
-#include <SDL_endian.h>
-
 #include "main.h"
 #include "file.h"
 #include "floppy.h"
@@ -129,11 +127,11 @@ uint8_t *MSA_UnCompress(uint8_t *pMSAFile, long *pImageSize, long nBytesLeft)
 
 	pMSAHeader = (MSAHEADERSTRUCT *)pMSAFile;
 	/* First swap 'header' words around to PC format - easier later on */
-	pMSAHeader->ID = SDL_SwapBE16(pMSAHeader->ID);
-	pMSAHeader->SectorsPerTrack = SDL_SwapBE16(pMSAHeader->SectorsPerTrack);
-	pMSAHeader->Sides = SDL_SwapBE16(pMSAHeader->Sides);
-	pMSAHeader->StartingTrack = SDL_SwapBE16(pMSAHeader->StartingTrack);
-	pMSAHeader->EndingTrack = SDL_SwapBE16(pMSAHeader->EndingTrack);
+	pMSAHeader->ID = be_swap16(pMSAHeader->ID);
+	pMSAHeader->SectorsPerTrack = be_swap16(pMSAHeader->SectorsPerTrack);
+	pMSAHeader->Sides = be_swap16(pMSAHeader->Sides);
+	pMSAHeader->StartingTrack = be_swap16(pMSAHeader->StartingTrack);
+	pMSAHeader->EndingTrack = be_swap16(pMSAHeader->EndingTrack);
 
 	/* Is it really an '.msa' file? Check header */
 	if (pMSAHeader->ID != 0x0E0F || pMSAHeader->EndingTrack > 86
@@ -339,13 +337,13 @@ bool MSA_WriteDisk(int Drive, const char *pszFileName, uint8_t *pBuffer, int Ima
 
 	/* Store header */
 	pMSAHeader = (MSAHEADERSTRUCT *)pMSAImageBuffer;
-	pMSAHeader->ID = SDL_SwapBE16(0x0E0F);
+	pMSAHeader->ID = be_swap16(0x0E0F);
 	Floppy_FindDiskDetails(pBuffer,ImageSize, &nSectorsPerTrack, &nSides);
-	pMSAHeader->SectorsPerTrack = SDL_SwapBE16(nSectorsPerTrack);
-	pMSAHeader->Sides = SDL_SwapBE16(nSides-1);
-	pMSAHeader->StartingTrack = SDL_SwapBE16(0);
+	pMSAHeader->SectorsPerTrack = be_swap16(nSectorsPerTrack);
+	pMSAHeader->Sides = be_swap16(nSides - 1);
+	pMSAHeader->StartingTrack = be_swap16(0);
 	nTracks = ((ImageSize / NUMBYTESPERSECTOR) / nSectorsPerTrack) / nSides;
-	pMSAHeader->EndingTrack = SDL_SwapBE16(nTracks-1);
+	pMSAHeader->EndingTrack = be_swap16(nTracks - 1);
 
 	/* Compress image */
 	pMSABuffer = pMSAImageBuffer + sizeof(MSAHEADERSTRUCT);

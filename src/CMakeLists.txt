@@ -17,7 +17,6 @@ endif()
 
 # Disk image code is shared with the hmsa tool, so we put it into a library:
 add_library(Floppy createBlankImage.c dim.c msa.c st.c zip.c)
-target_link_libraries(Floppy PRIVATE ${SDL2_LIBRARIES})
 
 # When building for macOS, define specific sources for gui and resources
 if(ENABLE_OSX_BUNDLE)
