@@ -120,9 +120,6 @@ FALCON :
 
 const char ClocksTimings_fileid[] = "Hatari clocks_timings.c";
 
-#include <SDL.h>
-#include <SDL_endian.h>
-
 #include "main.h"
 #include "configuration.h"
 #include "log.h"
@@ -570,5 +567,3 @@ void	ClocksTimings_ConvertCycles ( uint64_t CyclesIn , uint64_t ClockFreqIn , CL
 	CyclesStructOut->Cycles = CyclesOut;
 	CyclesStructOut->Remainder = CyclesOut_remainder;
 }
-
-
