@@ -1460,7 +1460,8 @@ static void write_memory_disasm(int space, uint16_t address, uint32_t value)
 	}
 
 	curvalue = read_memory_disasm(space, address);
-	sprintf(str_disasm_memory[disasm_memory_ptr],"Mem: %c:0x%04x  0x%06x -> 0x%06x", space_c, address, oldvalue, curvalue);
+	snprintf(str_disasm_memory[disasm_memory_ptr], sizeof(str_disasm_memory[0]),
+	         "Mem: %c:0x%04x  0x%06x -> 0x%06x", space_c, address, oldvalue, curvalue);
 	disasm_memory_ptr ++;
 }
 
