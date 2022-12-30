@@ -717,13 +717,14 @@ static void DmaSnd_Apply_LMC(int nMixBufIdx, int nSamplesToGenerate)
  * (eg the demo 'Mental Hangover' or the game 'Power Up Plus')
  * We first check if the FIFO needs to be refilled, then we call Sound_Update.
  * This function should be called from the HBL's handler (in video.c)
+ * We should call it also in the case of the TT which uses the same DMA sound
  */
 void DmaSnd_STE_HBL_Update(void)
 {
-	if (!Config_IsMachineSTE())
+	if ( !Config_IsMachineSTE() && !Config_IsMachineTT() )
 		return;
 
-	/* The DMA starts refilling the FIFO when display is OFF (eg cycle 376 in low res 50 Hz) */
+	/* The DMA starts refilling the FIFO when display is OFF (eg cycle 376 in STE low res 50 Hz) */
 	DmaSnd_FIFO_Refill ();
 
 	/* If DMA sound is ON or FIFO is not empty, update sound */

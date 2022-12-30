@@ -3000,7 +3000,7 @@ if ( CycInt_From_Opcode )		/* TEMP : to update CYCLES_COUNTER_VIDEO during an op
 		Video_EndHBL();				/* Check some borders removal and copy line to display buffer */
 	}
 
-	DmaSnd_STE_HBL_Update();			/* Update STE DMA sound if needed */
+	DmaSnd_STE_HBL_Update();			/* Update STE/TT DMA sound if needed */
 
 	/* TEMP IPF */
 	IPF_Emulate();
