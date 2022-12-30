@@ -20,6 +20,8 @@ Emulation improvements:
     the MFP side if the IRQ is still set on the other ACIA
 - Blitter:
   - Ignore byte accesses to blitter registers defined as word only
+- TT/DMA:
+  - Update sound FIFO on each HBL (like on STE)
 - CPU:
   - Fix IACK timings
 
@@ -63,6 +65,7 @@ Programs with fixed MIDI (MFP IRQ clear) handling:
 
 Fixed demos:
 - Little -ME- Demo end part : black screen after a while (IACK timing)
+- Monscape : bad sound (TT/DMA FIFO update)
 
 
 
