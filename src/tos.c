@@ -18,8 +18,6 @@
   to select any of these images we bring up an error. */
 const char TOS_fileid[] = "Hatari tos.c";
 
-#include <SDL_endian.h>
-
 #include "main.h"
 #include "configuration.h"
 #include "file.h"
@@ -957,14 +955,14 @@ static uint8_t *TOS_LoadImage(void)
 	TosSize = nFileSize;
 
 	/* Check for RAM TOS images first: */
-	if (SDL_SwapBE32(*(uint32_t *)pTosFile) == 0x46FC2700)
+	if (be_swap32(*(uint32_t *)pTosFile) == 0x46FC2700)
 	{
 		int nRamTosLoaderSize;
 		Log_Printf(LOG_WARN, "Detected a RAM TOS - this will probably not work very well!\n");
 		/* RAM TOS images have a 256 bytes loader function before the real image
 		 * starts (34 bytes for TOS 4.92). Since we directly copy the image to the right
 		 * location later, we simply skip this additional header here: */
-		if (SDL_SwapBE32(*(uint32_t *)(pTosFile+34)) == 0x602E0492)
+		if (be_swap32(*(uint32_t *)(pTosFile+34)) == 0x602E0492)
 			nRamTosLoaderSize = 0x22;
 		else
 			nRamTosLoaderSize = 0x100;
@@ -978,20 +976,20 @@ static uint8_t *TOS_LoadImage(void)
 	}
 
 	/* Check for EmuTOS ... (0x45544F53 = 'ETOS') */
-	bIsEmuTOS = (SDL_SwapBE32(*(uint32_t *)&pTosFile[0x2c]) == 0x45544F53);
+	bIsEmuTOS = (be_swap32(*(uint32_t *)&pTosFile[0x2c]) == 0x45544F53);
 	if (bIsEmuTOS)
 	{
 		/* The magic value 'OSXH' indicates an extended header */
-		if (SDL_SwapBE32(*(uint32_t *)&pTosFile[0x34]) == 0x4F535848)
-			EmuTosVersion = SDL_SwapBE32(*(uint32_t *)&pTosFile[0x3c]);
+		if (be_swap32(*(uint32_t *)&pTosFile[0x34]) == 0x4F535848)
+			EmuTosVersion = be_swap32(*(uint32_t *)&pTosFile[0x3c]);
 		else
 			EmuTosVersion = 0;	/* Older than 1.0 */
 	}
 
 	/* Now, look at start of image to find Version number and address */
-	TosVersion = SDL_SwapBE16(*(uint16_t *)&pTosFile[2]);
-	TosAddress = SDL_SwapBE32(*(uint32_t *)&pTosFile[8]);
-	if (TosVersion == 0x206 && SDL_SwapBE16(*(uint16_t *)&pTosFile[30]) == 0x186A)
+	TosVersion = be_swap16(*(uint16_t *)&pTosFile[2]);
+	TosAddress = be_swap32(*(uint32_t *)&pTosFile[8]);
+	if (TosVersion == 0x206 && be_swap16(*(uint16_t *)&pTosFile[30]) == 0x186A)
 		TosVersion = 0x208;
 
 	/* Check for reasonable TOS version: */
