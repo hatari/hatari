@@ -477,7 +477,7 @@ const char *Disasm_ParseOption(const char *arg)
 			{ doptOpcodesSmall, "opcodes in lower case" },
 			{ doptRegisterSmall, "register names in lower case" },
 			{ doptStackSP, "ext: stack pointer as 'SP', not 'A7'" },
-			{ doptNoWords, "do not show 16-bit words at this address" },
+			{ doptNoWords, "do not show hexa representation of instructions" },
 			{ doptShowValues, "uae: show EA + CC values after instruction" },
 			{ doptHexSmall, "uae: hex numbers in lower case" },
 			{ 0, NULL }
