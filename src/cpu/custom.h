@@ -172,7 +172,11 @@ struct customhack {
 void customhack_put (struct customhack *ch, uae_u16 v, int hpos);
 uae_u16 customhack_get (struct customhack *ch, int hpos);
 extern void alloc_cycle_ext (int, int);
+extern bool alloc_cycle_blitter(int hpos, uaecptr *ptr, int, int);
+extern uaecptr alloc_cycle_blitter_conflict_or(int, int, bool*);
 extern bool ispal (int *line);
+extern bool isvga(void);
+extern int current_maxvpos(void);
 extern int inprec_open(char *fname, int record);
 extern void sleep_millis (int ms);
 
