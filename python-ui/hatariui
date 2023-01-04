@@ -19,13 +19,17 @@ conf=${path%/*}/../etc
 # checked by hatari UI
 export HATARI_SYSTEM_CONFDIR=$conf
 
-# example for Hatari UI
-if [ -z "$WAYLAND_DISPLAY" ]; then
-	# embedding works only with X11
-	$path/$name.py --right "about,|,run,pause,forward,|,reset,|,quit" --embed $*
+# examples for Hatari UI options
+
+# Embedding does not work under Wayland, only under X11
+# Note: requesting Gtk & SDL to use "x11" backends does not help
+if [ -z "$WAYLAND_DISPLAY" ] && [ -n "$DISPLAY" ]; then
+	echo "$path/$name.py --right 'about,|,run,pause,forward,|,reset,|,quit' --embed $*"
+	$path/$name.py --right 'about,|,run,pause,forward,|,reset,|,quit' --embed $*
 else
-	# this looks nicer on Wayland
-	$path/$name.py --bottom "about,|,run,pause,forward,|,reset,|,quit" $*
+	# this looks nicer when Hatari window embedding cannot be used
+	echo "$path/$name.py --bottom 'about,|,run,pause,forward,|,reset,|,quit' $*"
+	$path/$name.py --bottom 'about,|,run,pause,forward,|,reset,|,quit' $*
 fi
 exit $?
 
