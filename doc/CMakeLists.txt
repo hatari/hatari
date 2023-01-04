@@ -28,4 +28,6 @@ if(TIDY)
 	         COMMAND tidy -q -e ${CMAKE_CURRENT_SOURCE_DIR}/compatibility.html)
 	add_test(NAME tidy-debugger
 	         COMMAND tidy -q -e ${CMAKE_CURRENT_SOURCE_DIR}/debugger.html)
+	add_test(NAME tidy-hatariui
+	         COMMAND tidy -q -e ${CMAKE_CURRENT_SOURCE_DIR}/hatari-ui.html)
 endif()
