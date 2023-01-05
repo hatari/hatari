@@ -8,37 +8,41 @@
   <meta name="keywords" content="hatari, documentation" />
   <meta name="viewport" content="width=device-width; initial-scale=1.0;" />
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <link href="manual.css" rel="stylesheet" type="text/css" />
+  <script src="toc.js"></script>
 </head>
 
 <body>
 
-<h1>Control and debugger UI for Hatari</h1>
+<h1 class="pageheader">Hatari Python / Gtk UI</h1>
 
-<b>Contents:</b>
-<ul>
-<li><a href="#intro">Introduction</a></li>
-<ul>
-  <li><a href="#why">Why another UI?</a></li>
-  <li><a href="#current">Current features</a></li>
-  <li><a href="#future">Potential future features</a></li>
-  <li><a href="#issues">Known issues</a></li>
-</ul>
-<li><a href="#getting">Getting Hatari UI</a></li>
-<ul>
-  <li><a href="#portability">Portability</a></li>
-</ul>
-<li><a href="#screenshots">Screenshots</a></li>
-<ul>
-  <li><a href="#latest">Current UI screenshot</a></li>
-  <li><a href="#older">Screenshots for older versions</a></li>
-</ul>
-<li><a href="#cli">Command line usage</a></li>
-<ul>
-  <li><a href="#keycodes">Keycodes</a></li>
-</ul>
-</ul>
+<p class="pageheader">
+Version 1.4, August 2022
+</p>
+<p class="pageheader">
+Written by: <strong>Eero Tamminen</strong>
+</p>
+<p class="pageheader">
+See also:
+<strong>
+<a href="manual.html">Hatari manual</a>
+</strong>
+</p>
+<p class="pageheader">
+Hatari on the WWW:
+<strong>
+<a href="http://hatari.tuxfamily.org/">http://hatari.tuxfamily.org/</a>
+</strong>
+</p>
 
-<h2 id="intro">Introduction</h2>
+<h2 class="no-TOC">Contents</h2>
+
+<div id="generated-toc">
+<!-- The TOC is generated automatically via JavaScript -->
+</div>
+
+
+<h2>Introduction</h2>
 
 <p>Hatari UI is an out-of-process user interface for the Hatari
 emulator and its built-in debugger which can (optionally) embed the
@@ -51,7 +55,7 @@ widget set.  it is an additional UI, the built-in Hatari SDL UI is not
 being replaced or going anywhere!</p>
 
 
-<h3 id="why">Why another UI?</h3>
+<h3>Why another UI?</h3>
 
 <p>While the built-in SDL UI for Hatari has its good points,
 it has also many minor shortcomings:
@@ -94,7 +98,7 @@ an inline control and one can easily add buttons for synthetizing
 specific key presses.</p>
 
 
-<h3 id="current">Current features</h3>
+<h3>Current features</h3>
 
 <ul>
 <li>Besides the UI menu, user can specify whether there are toolbars,
@@ -133,7 +137,7 @@ specific key presses.</p>
 <p>See <a href="#screenshots">screenshots</a> for more details.
 
 
-<h3 id="future">Potential future features</h3>
+<h3>Potential future features</h3>
 
 <p>There are several other features that would be nice in the new UI:
 <ul>
@@ -152,7 +156,7 @@ specific key presses.</p>
 </ul>
 
 
-<h3 id="issues">Known issues</h3>
+<h3>Known issues</h3>
 
 <p>There are some issues which cannot be handled in an external UI
 (without additional support from Hatari):
@@ -160,7 +164,7 @@ specific key presses.</p>
 <li>Hatari window embedding to the Hatari UI window is done by telling
     Hatari to reparent its SDL framebuffer X11 window under (given)
     Hatari UI window XID.  Therefore embedding will only work under
-    X11, not under Wayland, Mac or Windows
+    X11, not under Wayland (even Xwayland), Mac or Windows.
 </li>
 <li>Hatari UI does not notice nor adapt if user changes Hatari
     configuration options from within Hatari itself (as Hatari does not
@@ -176,7 +180,7 @@ specific key presses.</p>
 </ul>
 
 
-<h2 id="getting">Getting Hatari UI</h2>
+<h2>Getting Hatari UI</h2>
 
 <p>Hatari is available from major Linux distributions and Hatari UI
 is included with it.
@@ -185,7 +189,7 @@ The latest version can be found from the Hatari Git repository:
 <a href="https://git.tuxfamily.org/hatari/hatari.git/tree/python-ui">https://git.tuxfamily.org/hatari/hatari.git/tree/python-ui</a>
 
 
-<h3 id="portability">Portability</h3>
+<h3>Portability</h3>
 
 <p>Besides Linux, the UI could eventually be used even on Windows
 by first installing the PyGtk dependencies listed on (otherwise unrelated)
@@ -200,27 +204,32 @@ or have proper Cygwin build of Hatari with unix domain socket support).
 
 <h2 id="screenshots">Screenshots</h2>
 
-<h3 id="latest">Current UI screenshot</h3>
+<h3>Current UI screenshot</h3>
 
 <p>Current Hatari UI uses standard Gtk menu and toolbars
 instead of the button boxes used in older versions.  You can still
 configure the buttons included to the top / bottom / left / right
 of the Hatari screen though.</p>
 
-<p><img alt="Hatari UI" src="images/hatari-ui-0.9.png"><br>
-Hatari UI with the about dialog open and with options:<pre>
+<p>Hatari UI with the About dialog open:</p>
+<img alt="Hatari UI" src="images/hatari-ui-0.9.png">
+
+<p>Options:<pre>
 hatari-ui.py --embed --right "about,|,run,pause,forward,|,reset,|,quit"
 </pre>
 
 
-<h3 id="older">Screenshots for older versions</h3>
+<h3>Screenshots for older versions</h3>
 
-While the older UI is bit different, these option examples and their
+<p>While the older UI is bit different, these option examples and their
 screenshots show how to specify elements and their layout for the
 Hatari Python UI.
 
-<p><img alt="Hatari UI" src="images/hatari-ui-0.7.png"><br>
-Hatari UI with the about dialog open and with options:<pre>
+<p>Hatari UI with the About dialog open:</p>
+<img alt="Hatari UI" src="images/hatari-ui-0.7.png">
+
+<p>Options:</p>
+<pre>
 hatari-ui.py --embed
 --top "about,run,pause,reset,screenshot,setup,quit"
 --panel "Input,..."
@@ -229,8 +238,12 @@ hatari-ui.py --embed
 </pre>
 
 <hr>
-<p><img alt="No embedding" src="images/hatari-ui-noembed.png"><br>
-An example UI configuration without the embedding option:<pre>
+
+<p>An example UI configuration without the embedding option:</p>
+<img alt="No embedding" src="images/hatari-ui-noembed.png">
+
+<p>Options:</p>
+<pre>
 hatari-ui.py
 --top "about,run,pause,quit"
 --panel "Function keys,..."
@@ -240,34 +253,44 @@ hatari-ui.py
 </pre>
 
 <hr>
-<p><img alt="Speed panel example" src="images/hatari-ui-speed.png"><br>
-A panel with controls for configuring performance:<pre>
+
+<p>A panel with controls for configuring performance:</p>
+<img alt="Speed panel example" src="images/hatari-ui-speed.png">
+
+<p>Options:</p>
+<pre>
 --panel "Speed settings,frameskip,&gt;,fastforward,|,spec512,|,sound,&gt;,close"
 </pre>
 
 <hr>
-<p><img alt="Input panel example" src="images/hatari-ui-input.png"><br>
-Another panel, with buttons for keys and mouse button events</p>
+
+<p>Another panel, with buttons for keys and mouse button events:</p>
+<img alt="Input panel example" src="images/hatari-ui-input.png">
 
 <hr>
-<p><img alt="Peripherals settings" src="images/hatari-ui-peripherals.png"><br>
-Peripherals settings dialog</p>
+
+<p>Peripherals settings dialog:</p>
+<img alt="Peripherals settings" src="images/hatari-ui-peripherals.png">
 
 <hr>
-<p><img alt="Machine setup" src="images/hatari-ui-setup-edit.png"><br>
-Machine settings dialog</p>
+
+<p>Machine settings dialog:</p>
+<img alt="Machine setup" src="images/hatari-ui-setup-edit.png">
 
 <hr>
-<p><img alt="Debug UI" src="images/hatari-ui-debug.png"><br>
-Debug UI</p>
+
+<p>Debug UI:</p>
+<img alt="Debug UI" src="images/hatari-ui-debug.png">
 
 <hr>
-<p><img alt="Trace settings" src="images/hatari-ui-trace.png"><br>
-Trace settings dialog</p>
+
+<p>Trace settings dialog:</p>
+<img alt="Trace settings" src="images/hatari-ui-trace.png">
 
 <hr>
-<p><img alt="Unsaved options" src="images/hatari-ui-quit.png"><br>
-Quitting with unsaved options</p>
+
+<p>Quitting with unsaved options:</p>
+<img alt="Unsaved options" src="images/hatari-ui-quit.png">
 
 
 <h2 id="cli">Command line usage</h2>
