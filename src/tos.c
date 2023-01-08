@@ -1184,7 +1184,7 @@ int TOS_InitImage(void)
 	if (bIsEmuTOS && countrycode == TOS_LANG_ALL && !NvRam_Present() &&
 	    ConfigureParams.Keyboard.nCountryCode != TOS_LANG_UNKNOWN)
 	{
-		countrycode = ConfigureParams.Keyboard.nLanguage;
+		countrycode = ConfigureParams.Keyboard.nCountryCode;
 		/* low bit: us -> NTSC (0), any other -> PAL (1) */
 		osconf = (countrycode << 1) | (countrycode?1:0);
 		STMemory_WriteWord(TosAddress+0x1C, osconf);

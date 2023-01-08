@@ -26,7 +26,9 @@ Emulation improvements:
   - Fix IACK timings
 
 Emulator improvements:
-- Command line options:
+- TOS:
+  Fix: set TOS country code from CountryCode setting, not Language one
+- RTC:
   - CLI/config option to override NVRAM/RTC year, useful with
     applications that do not handle current dates
   - The "--bpp" command line option and related code (i.e. the rendering
