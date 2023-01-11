@@ -20,11 +20,7 @@ INSTALL(FILES hatari-icon.png hatari-logo.png
 
 # Hatari UI Help menu items are searched from docdir.
 # Changing their target dir would require change also in uihelpers.py
-INSTALL(FILES README TODO release-notes.txt hatari-ui.html
-	DESTINATION ${DOCDIR}/hatariui/)
-
-# images/ must be where hatari-ui.html is
-INSTALL(DIRECTORY images
+INSTALL(FILES README TODO release-notes.txt
 	DESTINATION ${DOCDIR}/hatariui/)
 
 INSTALL(FILES hatariui.desktop

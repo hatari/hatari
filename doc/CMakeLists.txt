@@ -5,7 +5,8 @@ INSTALL(FILES authors.txt bugs.txt emutos.txt keymap-sample.txt
 	video-recording.txt
 	DESTINATION ${DOCDIR})
 
-INSTALL(FILES compatibility.html manual.html debugger.html manual.css toc.js
+INSTALL(FILES compatibility.html manual.html debugger.html
+        hatari-ui.html manual.css toc.js
 	DESTINATION ${DOCDIR})
 
 INSTALL(DIRECTORY images

@@ -1,7 +1,7 @@
 #
 # Misc common helper classes and functions for the Hatari UI
 #
-# Copyright (C) 2008-2022 by Eero Tamminen
+# Copyright (C) 2008-2023 by Eero Tamminen
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -106,8 +106,8 @@ class UIHelp:
             docpath = "https://hatari.tuxfamily.org/doc/"
 
         uipath = path + "/share/doc/hatari/hatariui/"
-        if not os.path.exists(uipath + "hatari-ui.html"):
-            print("WARNING: Using Hatari UI Git URLs, Hatari UI 'hatari-ui.html' not found in: %s" % uipath)
+        if not os.path.exists(uipath + "README"):
+            print("WARNING: Using Hatari UI Git URLs, Hatari UI 'README' not found in: %s" % uipath)
             uipath = "https://git.tuxfamily.org/hatari/hatari.git/plain/python-ui/"
 
         return docpath, uipath
@@ -138,7 +138,7 @@ class UIHelp:
         self.view_url(self._path + "release-notes.txt", "Hatari release notes")
 
     def view_hatariui_page(self, dummy=None):
-        self.view_url(self._uipath + "hatari-ui.html", "Hatari UI information")
+        self.view_url(self._path + "hatari-ui.html", "Hatari UI information")
 
     def view_hatariui_releasenotes(self, dummy=None):
         self.view_url(self._uipath + "release-notes.txt", "Hatari UI release notes")
