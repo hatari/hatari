@@ -14,6 +14,11 @@ Following features are deprecated and will be removed in a future release:
  Development version
  -------------------
 
+Removed features:
+- The "--bpp" command line option and related code (i.e. the rendering
+  functions for 16 bits-per-pixel host screens) have been removed
+  since almost all recent hardware should support 32 bpp nowadays
+
 Emulation improvements:
 - MFP:
   - When IRQ is cleared on one of the 2 ACIAs, do not clear IRQ on
@@ -31,9 +36,6 @@ Emulator improvements:
 - RTC:
   - CLI/config option to override NVRAM/RTC year, useful with
     applications that do not handle current dates
-  - The "--bpp" command line option and related code (i.e. the rendering
-    functions for 16 bits-per-pixel host screens) have been removed since
-    almost all recent hardware should support 32 bpp nowadays.
 - GEMDOS HD:
   - Similarly to TOS, allow programs to write to a file they have opened
     as read-only (by opening all writable files as read/write).  As this
