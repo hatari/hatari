@@ -43,6 +43,7 @@ Emulator improvements:
 - Debugger:
   - Fix: free all debugger allocations before exit
   - Fix: invalid free on freeing loaded GNU debug symbols
+  - Fix: CPU core disassembler crashes with longer symbol names
   - Add address width (addr).[bwl] support to expression evaluation
   - Suppress repeats of identical log & trace messages by default
     (show only their count) and add "--msg-repeat" option to toggle that
@@ -227,6 +228,7 @@ Emulator improvements:
     and "midi_raw" (IRQ and register read/write access).  Trace
     logging added also for MIDI byte writes, not just reads
   - Trace options are listed in alphabetical order
+  - Show loaded symbols in CPU core disassembly
 - Windows:
   - Next/prev drive change buttons added to SDL GUI file select dialog
 
