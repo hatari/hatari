@@ -159,7 +159,9 @@ elseif(EMSCRIPTEN)
 -s USE_SDL=2 -s USE_ZLIB=1 -s INITIAL_MEMORY=262144000 -s ASYNCIFY -s -s ASSERTIONS=0 \
 -s EXPORTED_RUNTIME_METHODS='[\"ccall\",\"cwrap\"]' \
 -s EXPORTED_FUNCTIONS=\"['_main','_Reset_Warm','_Reset_Cold','_Statusbar_UpdateInfo','_Main_UnPauseEmulation','_Floppy_InsertDiskIntoDrive','_Floppy_SetDiskFileName','_Floppy_EjectDiskFromDrive','_Configuration_ChangeMemory','_Configuration_ChangeSystem','_Configuration_ChangeTos','_Configuration_ChangeUseHardDiskDirectories','_Configuration_ChangeFastForward','_Configuration_Apply','_IoMem_UnInit','_IoMem_Init']\" \
---preload-file ${CMAKE_BINARY_DIR}/files/@/share/hatari/ --pre-js ${CMAKE_SOURCE_DIR}/src/emscripten.js"
+--preload-file ${CMAKE_BINARY_DIR}/files/@/share/hatari/ \
+--pre-js ${CMAKE_SOURCE_DIR}/src/emscripten.js \
+--shell-file ${CMAKE_SOURCE_DIR}/src/emscripten_shell.html"
 	)
 # Other targets, use default sources
 else()
