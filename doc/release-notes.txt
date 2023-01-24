@@ -29,6 +29,9 @@ Emulation improvements:
   - Update sound FIFO on each HBL (like on STE)
 - CPU:
   - Fix IACK timings
+- Video:
+  - Add support for 4 pixel hardscroll on STF by stopping shifter with
+    $FF8260=3 (new technique by Troed/Sync)
 
 Emulator improvements:
 - TOS:
