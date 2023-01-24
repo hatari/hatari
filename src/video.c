@@ -1438,6 +1438,8 @@ static int Video_GetMMUStartCycle ( int DisplayStartCycle )
 /*-----------------------------------------------------------------------*/
 /**
  * Write to VideoShifter (0xff8260), resolution bits
+ * Special case : when writing 3 to the shifter's res, the shifter will stop processing incoming words sent by the MMU,
+ * on the GLUE side this will be seen as hi res being selected
  */
 static void Video_WriteToGlueShifterRes ( uint8_t Res )
 {
@@ -1448,6 +1450,10 @@ static void Video_WriteToGlueShifterRes ( uint8_t Res )
 
 	LOG_TRACE(TRACE_VIDEO_RES ,"shifter=0x%2.2X video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n",
 	               Res, FrameCycles, LineCycles, nHBL, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles );
+
+	if ( Res == 3 )
+		LOG_TRACE(TRACE_VIDEO_RES ,"shifter=0x%2.2X, shifter stopped video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n",
+			Res, FrameCycles, LineCycles, nHBL, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles );
 
 
 	/* Ignore consecutive writes of the same value */
@@ -1599,6 +1605,49 @@ static void Video_WriteToGlueShifterRes ( uint8_t Res )
 			ShifterFrame.ShifterLines[ i ].DisplayPixelShift = ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift;
 	}
 
+	/* Troed/Sync 4 pixel hardscroll on the whole screen, without removing border */
+	/* Switch to res=3 to stop the shifter, then switch back to low/med res */
+	/* All following lines will be shifted too, not just the one where the switch to res=3 is done */
+	/* The switch is supposed to last less than 20 cycles to get all 4 positions. If the switch last more */
+	/* then for every 16*n cycles we must compensante for 4*n MMU words that were not processed */
+	if ( ( ShifterFrame.Res == 0x03 ) && ( ShifterFrame.ResPosHi.LineCycles == 68 )		/* switched from stopped state at cycle 68 */
+		&& ( LineCycles >= 76 ) )				/* switch to res=3 during at least 8 cycles */
+	{
+		int	add_bytes;
+
+		add_bytes = ( ( LineCycles - 76 ) / 16 ) * 8;
+
+		if ( ( LineCycles - ShifterFrame.ResPosHi.LineCycles ) % 16 == 4 )		// 88 + 16n
+		{
+			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 12 pixels right scroll with stopped shifter\n" );
+			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = 12;
+			pVideoRaster += 2 + add_bytes;
+		}
+		else if ( ( LineCycles - ShifterFrame.ResPosHi.LineCycles ) % 16 == 0 )		// 84 + 16n
+		{
+			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 8 pixels right scroll with stopped shifter\n" );
+			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = 8;
+			pVideoRaster += 0 + add_bytes;
+		}
+		else if ( ( LineCycles - ShifterFrame.ResPosHi.LineCycles ) % 16 == 12 )	// 80 + 16n
+		{
+			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 4 pixels right scroll with stopped shifter\n" );
+			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = 4;
+			pVideoRaster += -2 + add_bytes;
+		}
+		else if ( ( LineCycles - ShifterFrame.ResPosHi.LineCycles ) % 16 == 8 )		// 76 + 16n
+		{
+			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 0 pixel right scroll with stopped shifter\n" );
+			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = 0;
+			pVideoRaster += -4 + add_bytes;
+		}
+
+		/* Mark all the following lines as shifted too */
+		int i;
+		for ( i=HblCounterVideo+1 ; i<MAX_SCANLINES_PER_FRAME ; i++ )
+			ShifterFrame.ShifterLines[ i ].DisplayPixelShift = ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift;
+	}
+
 	/* TEMP for 'closure' in WS2 */
 	/* -> stay in hi res for 16 cycles to do the stab (hi/50/lo at 4/12/20) */
 	if ( ( ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask & BORDERMASK_LEFT_OFF )
@@ -1647,7 +1696,7 @@ static void Video_WriteToGlueShifterRes ( uint8_t Res )
 
 	/* Store cycle position of this change of resolution */
 	ShifterFrame.Res = Res;
-	if ( Res == 0x02 )						/* high res */
+	if ( Res & 0x02 )						/* high res */
 	{
 		ShifterFrame.ResPosHi.VBL = nVBLs;
 		ShifterFrame.ResPosHi.FrameCycles = FrameCycles;
@@ -5233,6 +5282,10 @@ void Video_Color15_ReadWord(void)
  * - MMU connects the CPU data bus to the RAM data bus
  * - SHIFTER reads the value from the RAM data bus
  * - CPU finishes the bus cycle
+ * Also value "3" is different for GLUE and SHIFTER
+ * - GLUE will interpret "3" as high res (because bit 1 is set)
+ * - SHIFTER will go to a stopped state and not process input words from MMU anymore !
+ *   (this is used by Troed to create a 4 pixels hardscroll on STF)
  */
 void Video_Res_WriteByte(void)
 {
@@ -5248,12 +5301,6 @@ void Video_Res_WriteByte(void)
 	{
 		/* We only care for lower 2-bits */
 		VideoShifterByte = IoMem[0xff8260] & 3;
-		/* 3 is not a valid resolution, use high res instead */
-		if ( VideoShifterByte == 3 )
-		{
-			VideoShifterByte = 2;
-			IoMem_WriteByte(0xff8260,2);
-		}
 
 		Video_WriteToGlueShifterRes(VideoShifterByte);
 		Video_SetHBLPaletteMaskPointers();
