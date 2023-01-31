@@ -57,6 +57,11 @@ Emulator improvements:
     (to give more context than disassembling directly from PC)
   - The built-in "external" disassembler has been replaced by a
     disassembler provided by the Capstone library (version >= 4.0)
+
+GUI improvements:
+- SDL GUI:
+  - Fix: mouse not visible in floppy disk dialog when it is invoked
+    from a keyboard shortcut in fullscreen mode
 - Mac GUI:
   - Accept all file names as the used Mac file selector does not
     show list of the accepted file name extensions any more

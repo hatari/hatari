@@ -241,6 +241,8 @@ static void ShortCut_InsertDisk(int drive)
 	const char *tmpname;
 	char FileNameB[ FILENAME_MAX ];
 
+	bool bOldMouseMode = SDL_GetRelativeMouseMode();
+
 	if (SDLGui_SetScreen(sdlscrn))
 		return;
 
@@ -253,7 +255,11 @@ static void ShortCut_InsertDisk(int drive)
 		tmpname = ConfigureParams.DiskImage.szDiskImageDirectory;
 
 	Main_PauseEmulation(true);
+
+	SDL_SetRelativeMouseMode(SDL_FALSE);
 	selname = SDLGui_FileSelect("Floppy image:", tmpname, &zip_path, false);
+	SDL_SetRelativeMouseMode(bOldMouseMode);
+
 	if (selname)
 	{
 		if (File_Exists(selname))
