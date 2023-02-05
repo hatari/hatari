@@ -25,7 +25,6 @@ const char Floppy_fileid[] = "Hatari floppy.c";
 
 #include <sys/stat.h>
 #include <assert.h>
-#include <SDL_endian.h>
 
 #include "main.h"
 #include "configuration.h"
@@ -784,9 +783,9 @@ void Floppy_FindDiskDetails(const uint8_t *pBuffer, int nImageBytes,
 	uint16_t nSectorsPerTrack, nSides, nSectorsPerDisk;
 
 	/* First do check to find number of sectors and bytes per sector */
-	nSectorsPerTrack = SDL_SwapLE16(*(const uint16_t *)(pBuffer+24));   /* SPT */
-	nSides = SDL_SwapLE16(*(const uint16_t *)(pBuffer+26));             /* SIDE */
-	nSectorsPerDisk = pBuffer[19] | (pBuffer[20] << 8);               /* total sectors */
+	nSectorsPerTrack = pBuffer[24] | (pBuffer[25] << 8);   /* SPT */
+	nSides = pBuffer[26] | (pBuffer[27] << 8);             /* SIDE */
+	nSectorsPerDisk = pBuffer[19] | (pBuffer[20] << 8);    /* total sectors */
 
 	/* If the number of sectors announced is incorrect, the boot-sector may
 	 * contain incorrect information, eg the 'Eat.st' demo, or wrongly imaged
