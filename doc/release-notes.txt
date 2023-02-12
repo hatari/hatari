@@ -9,6 +9,12 @@ Following features are deprecated and will be removed in a future release:
 - Hatari XBios(255) API enabled with the "--bios-intercept" option
   (i.e. use "--natfeats" & "--cmd-fifo" options and "hconsole" instead)
 - The old ~/.hatari configuration file location (use ~/.config/hatari instead)
+- Less flexible command FIFO / remote socket API command variants:
+  - "hatari-shortcut screenshot" (use "hatari-debug screenshot <file>")
+  - "hatari-shortcut coldreset"  (use "hatari-debug reset soft")
+  - "hatari-shortcut warmreset"  (use "hatari-debug reset hard")
+  - "hatari-shortcut savemem"    (use "hatari-debug statesave <file>")
+  - "hatari-shortcut quit"       (use "hatari-debug quit [exit value]")
 
 
  Development version
