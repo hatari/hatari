@@ -243,7 +243,8 @@ static void SCC_serial_setData(int channel, uint8_t value)
 {
 	int nb;
 
-	LOG_TRACE(TRACE_SCC, "SCC: setData(%d, %d)\n", channel, value);
+	LOG_TRACE(TRACE_SCC, "scc serial set data channel=%c value=$%02x\n", 'A'+channel, value);
+
 	if (scc[channel].wr_handle >= 0)
 	{
 		do
@@ -280,7 +281,7 @@ static void SCC_serial_setBaud(int channel, int value)
 #if HAVE_TERMIOS_H
 	speed_t new_speed = B0;
 
-	LOG_TRACE(TRACE_SCC, "SCC: setBaud(%i, %i)\n", channel, value);
+	LOG_TRACE(TRACE_SCC, "scc serial set baud channel=%c value=$%02x\n", channel, value);
 
 	switch (value)
 	{
@@ -454,11 +455,15 @@ static uint8_t SCC_ReadControl(int chn)
 		else if (scc[0].regs[9] == 0x20)
 			RR3 |= 0x8;
 		value = scc[chn].regs[0];
+		LOG_TRACE(TRACE_SCC, "scc read channel=%c RR%d tx/rx buffer status value=$%02x\n" , 'A'+chn , active_reg , value );
 		break;
 	 case 2:	// not really useful (RR2 seems unaccessed...)
 		value = scc[0].regs[2];
 		if (chn == 0)	// vector base only for RR2A
+		{
+			LOG_TRACE(TRACE_SCC, "scc read channel=%c RR%d int vector value=$%02x\n" , 'A'+chn , active_reg , value );
 			break;
+		}
 		if ((scc[0].regs[9] & 1) == 0)	// no status bit added
 			break;
 		// status bit added to vector
@@ -529,6 +534,7 @@ static uint8_t SCC_ReadControl(int chn)
 		break;
 	 case 3:
 		value = chn ? 0 : RR3;     // access on A channel only
+		LOG_TRACE(TRACE_SCC, "scc read channel=%c RR%d interrupt pending value=$%02x\n" , 'A'+chn , active_reg , value );
 		break;
 	 case 4: // RR0
 		value = scc[chn].regs[0];
@@ -536,6 +542,7 @@ static uint8_t SCC_ReadControl(int chn)
 	 case 8: // DATA reg
 		scc[chn].regs[8] = SCC_serial_getData(chn);
 		value = scc[chn].regs[8];
+		LOG_TRACE(TRACE_SCC, "scc read channel=%c RR%d rx data value=$%02x\n" , 'A'+chn , active_reg , value );
 		break;
 	 case 9: // WR13
 		value = scc[chn].regs[13];
@@ -543,10 +550,15 @@ static uint8_t SCC_ReadControl(int chn)
 	 case 11: // WR15
 	 case 15: // EXT/STATUS IT Ctrl
 		value = scc[chn].regs[15] &= 0xFA; // mask out D2 and D0
+		LOG_TRACE(TRACE_SCC, "scc read channel=%c RR%d ext status IE value=$%02x\n" , 'A'+chn , active_reg , value );
 		break;
 	 case 12: // BRG LSB
+		value = scc[chn].regs[active_reg];
+		LOG_TRACE(TRACE_SCC, "scc read channel=%c RR%d baud rate time constant low value=$%02x\n" , 'A'+chn , active_reg , value );
+		break;
 	 case 13: // BRG MSB
 		value = scc[chn].regs[active_reg];
+		LOG_TRACE(TRACE_SCC, "scc read channel=%c RR%d baud rate time constant high value=$%02x\n" , 'A'+chn , active_reg , value );
 		break;
 
 	 default: // RR5,RR6,RR7,RR10,RR14 not processed
@@ -555,6 +567,7 @@ static uint8_t SCC_ReadControl(int chn)
 		break;
 	}
 
+	LOG_TRACE(TRACE_SCC, "scc read RR%d value=$%02x\n" , active_reg , value );
 	return value;
 }
 
@@ -565,6 +578,9 @@ static uint8_t SCC_handleRead(uint32_t addr)
 
 	addr &= 0x6;
 	channel = (addr >= 4) ? 1 : 0;  // 0 = channel A, 1 = channel B
+
+	LOG_TRACE(TRACE_SCC, "scc read addr=%d channel=%c\n" , addr , 'A'+channel );
+
 	switch (addr)
 	{
 	 case 0: // channel A
@@ -591,12 +607,14 @@ static void SCC_WriteControl(int chn, uint8_t value)
 	uint32_t BaudRate;
 	int i;
 
+
 	if (active_reg == 0)
 	{
 
 		if (value <= 15)
 		{
 			active_reg = value & 0x0f;
+			LOG_TRACE(TRACE_SCC, "scc set active reg=R%d\n" , active_reg );
 		}
 		else
 		{
@@ -646,18 +664,12 @@ static void SCC_WriteControl(int chn, uint8_t value)
 		return;
 	}
 
+	LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d value=$%02x\n" , 'A'+chn , active_reg , value );
 	// active_reg > 0:
 	scc[chn].regs[active_reg] = value;
-	if (active_reg == 2)
+	if (active_reg == 1) // Tx/Rx interrupt enable
 	{
-		scc[0].regs[active_reg] = value; // single WR2 on SCC
-	}
-	else if (active_reg == 8)
-	{
-		SCC_serial_setData(chn, value);
-	}
-	else if (active_reg == 1) // Tx/Rx interrupt enable
-	{
+		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set tx/rx int value=$%02x\n" , 'A'+chn , active_reg , value );
 		if (chn == 0)
 		{
 			// channel A
@@ -692,14 +704,49 @@ static void SCC_WriteControl(int chn, uint8_t value)
 			// set or clear SCC flag if necessary (see later)
 		}
 	}
+	else if (active_reg == 2)
+	{
+		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set int vector value=$%02x\n" , 'A'+chn , active_reg , value );
+		scc[0].regs[active_reg] = value; // single WR2 on SCC
+	}
+	else if (active_reg == 3) // Receive parameter and control
+	{
+		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set rx parameter and control value=$%02x\n" , 'A'+chn , active_reg , value );
+	}
+	else if (active_reg == 4) // Tx/Rx misc parameters and modes
+	{
+		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set tx/rx stop/parity value=$%02x\n" , 'A'+chn , active_reg , value );
+	}
 	else if (active_reg == 5) // Transmit parameter and control
 	{
+		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set tx parameter and control value=$%02x\n" , 'A'+chn , active_reg , value );
 		SCC_serial_setRTS(chn, value & 2);
 		SCC_serial_setDTR(chn, value & 128);
 		// Tx character format & Tx CRC would be selected also here (8 bits/char and no CRC assumed)
 	}
+	else if (active_reg == 6) // Sync characters high or SDLC Address Field
+	{
+		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set sync hi/sdlc addr value=$%02x\n" , 'A'+chn , active_reg , value );
+	}
+	else if (active_reg == 7) // Sync characters low or SDLC flag or WR7'
+	{
+		if ( scc[chn].regs[15] & 1 )
+		{
+			LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set WR7' value=$%02x\n" , 'A'+chn , active_reg , value );
+		}
+		else
+		{
+			LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set sync low/sdlc flag value=$%02x\n" , 'A'+chn , active_reg , value );
+		}
+	}
+	else if (active_reg == 8)
+	{
+		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set transmit buffer value=$%02x\n" , 'A'+chn , active_reg , value );
+		SCC_serial_setData(chn, value);
+	}
 	else if (active_reg == 9) // Master interrupt control (common for both channels)
 	{
+		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set master control value=$%02x\n" , 'A'+chn , active_reg , value );
 		scc[0].regs[9] = value; // single WR9 (accessible by both channels)
 		if (value & 0x40)
 		{
@@ -711,8 +758,21 @@ static void SCC_WriteControl(int chn, uint8_t value)
 		}
 		//  set or clear SCC flag accordingly (see later)
 	}
+	else if (active_reg == 10) // Tx/Rx misc control bits
+	{
+		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set tx/rx control bits value=$%02x\n" , 'A'+chn , active_reg , value );
+	}
+	else if (active_reg == 11) // Clock Mode Control
+	{
+		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set clock mode control value=$%02x\n" , 'A'+chn , active_reg , value );
+	}
+	else if (active_reg == 12) // Lower byte of baud rate
+	{
+		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set baud rate time constant low value=$%02x\n" , 'A'+chn , active_reg , value );
+	}
 	else if (active_reg == 13) // set baud rate according to WR13 and WR12
 	{
+		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set baud rate time constant high value=$%02x\n" , 'A'+chn , active_reg , value );
 		// Normally we have to set the baud rate according
 		// to clock source (WR11) and clock mode (WR4)
 		// In fact, we choose the baud rate from the value stored in WR12 & WR13
@@ -852,8 +912,13 @@ static void SCC_WriteControl(int chn, uint8_t value)
 		   15          50         76800               50          50
 		*/
 	}
+	else if (active_reg == 14) // Misc Control bits
+	{
+		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set misc control bits value=$%02x\n" , 'A'+chn , active_reg , value );
+	}
 	else if (active_reg == 15) // external status int control
 	{
+		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set ext status int control value=$%02x\n" , 'A'+chn , active_reg , value );
 		if (value & 1)
 		{
 			Log_Printf(LOG_DEBUG, "SCC: WR7 prime not yet processed\n");
@@ -873,6 +938,9 @@ static void SCC_handleWrite(uint32_t addr, uint8_t value)
 
 	addr &= 0x6;
 	channel = (addr >= 4) ? 1 : 0;  // 0 = channel A, 1 = channel B
+
+	LOG_TRACE(TRACE_SCC, "scc write addr=%d channel=%c value=$%02x\n" , addr , 'A'+channel , value );
+
 	switch (addr)
 	{
 	 case 0:
