@@ -514,9 +514,20 @@ class ProfileSymbols(Output):
             if addr == self.names[name]:
                 return name
             # symbol with same name already exists at another address
+            chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+            maxid = len(chars)
             idx = 1
             while True:
-                newname = "%s_%d" % (name, idx)
+                # One cannot just blindly add random suffix to a mangled C++ symbol,
+                # so use <len><idx chars> for most mangled symbols, and
+                # ".%d" suffix for ones already using vendor extension
+                if name.startswith("__Z") and '.' not in name:
+                    if idx >= maxid**2:
+                        self.warning("giving up on '%s' rename, at least %d duplicates" % (name, maxid))
+                        return name
+                    newname = "%s2%c%c" % (name, chars[idx//maxid], chars[idx%maxid])
+                else:
+                    newname = "%s.%d" % (name, idx)
                 if newname in self.names:
                     idx += 1
                     continue
