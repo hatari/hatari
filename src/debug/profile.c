@@ -1,7 +1,7 @@
 /*
  * Hatari - profile.c
  *
- * Copyright (C) 2010-2019 by Eero Tamminen
+ * Copyright (C) 2010-2023 by Eero Tamminen
  *
  * This file is distributed under the GNU General Public License, version 2
  * or at your option any later version. Read the file gpl.txt for details.
@@ -152,7 +152,15 @@ void Profile_ShowCallers(FILE *fp, int sites, callee_t *callsite, const char * (
 			total -= info->calls;
 			output_caller_info(fp, info, &typeaddr);
 		}
-		if (name) {
+		/* Symbol name output here is used only for debugging
+		 * profiler functionality, post-processor does not
+		 * need it.
+		 *
+		 * Skip mangled C++ names because they will mess up
+		 * post-processor profile data parsing if demangled,
+		 * and are not very informative in mangled format.
+		 */
+		if (name && strncmp(name, "__Z", 3) != 0) {
 			fprintf(fp, "%s", name);
 		}
 		fputs("\n", fp);
