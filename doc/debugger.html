@@ -1490,6 +1490,21 @@ $ gst2ascii -a -l -o program.prg | grep -v -e useless1 -e useless2 &gt; program.
 </pre>
 
 
+<h4>Demangling C++ symbols</h4>
+
+<p>C++ programs have their symbols in a "mangled" format used by tools
+like linkers, and symbol names need to be "demangled" (expanded) to a
+more readable / user-friendly format.  This needs to be done both for
+the program symbols, and its profile data, using a tool coming with
+the C++ compiler (in "binutils-m68k-atari-mint" package):</p>
+<pre>
+$ m68k-atari-mint-c++filt &lt; program.sym &gt; demangled.sym
+$ m68k-atari-mint-c++filt &lt; program-profile.txt &gt; profile-demangled.txt
+</pre>
+<p>Then just use the new symbol and profile data files instead of
+the original one (or replace the original ones with them).</p>
+
+
 <h4>Post-processor provided statistics</h4>
 
 <p>Above post-processor examples just parse + verify the given data

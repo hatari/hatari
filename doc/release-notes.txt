@@ -72,6 +72,11 @@ GUI improvements:
   - Accept all file names as the used Mac file selector does not
     show list of the accepted file name extensions any more
 
+Tools:
+- Profile data post-processor supports symbol files and profile data
+  containing demangled C++ symbols, when profile data is from new
+  Hatari version
+
 Build improvements:
 - Fix: CPU core compile warnings (WinUAE upstream)
 - Fix: groff/troff warnings for manual pages
