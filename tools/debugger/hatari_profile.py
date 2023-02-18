@@ -410,7 +410,8 @@ class ProfileSymbols(Output):
         self.r_area = re.compile("^([^:]+):[^0]*0x([0-9a-f]+)-0x([0-9a-f]+)$")
         # symbol file format:
         # [0x]<hex> [<type>] <symbol/objectfile name>
-        self.r_symbol = re.compile("^(0x)?([a-fA-F0-9]+) ([aAbBdDrRtTvVwW]) ([$]?[-_.a-zA-Z0-9]+)$")
+        # Note: C++ symbols contain almost any chars
+        self.r_symbol = re.compile("^(0x)?([a-fA-F0-9]+) ([aAbBdDrRtTvVwW]) ([$]?[._a-zA-Z(][^$?@;]*)$")
 
     def parse_areas(self, fobj, parsed):
         "parse memory area lines from data and post-process earlier read symbols data"
@@ -951,8 +952,8 @@ class EmulatorProfile(Output):
         #
         # this class parses symbols from disassembly itself:
         # <symbol/objectfile name>: (in disassembly)
-        # _biostrap:
-        self.r_function = re.compile("^([-_.a-zA-Z0-9]+):$")
+        # Note: C++ symbols contain almost any chars
+        self.r_function = re.compile("^([._a-zA-Z(][^$?@;]*):$")
 
         self.stats = None		# InstructionStats instance
         self.callgrind = None		# ProfileCallgrind instance
