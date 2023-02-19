@@ -28,6 +28,8 @@ const char Profile_fileid[] = "Hatari profile.c";
 
 profile_loop_t profile_loop;
 
+#define CALLER_SEPARATOR ','
+
 
 /* ------------------ CPU/DSP caller information handling ----------------- */
 
@@ -110,7 +112,7 @@ static void output_caller_info(FILE *fp, caller_t *info, uint32_t *typeaddr)
 			       info->addr, info->calls, info->own.calls);
 		}
 	}
-	fputs(", ", fp);
+	fprintf(fp, "%c ", CALLER_SEPARATOR);
 }
 
 /**
@@ -156,11 +158,15 @@ void Profile_ShowCallers(FILE *fp, int sites, callee_t *callsite, const char * (
 		 * profiler functionality, post-processor does not
 		 * need it.
 		 *
-		 * Skip mangled C++ names because they will mess up
-		 * post-processor profile data parsing if demangled,
-		 * and are not very informative in mangled format.
+		 * Output them only if they do not include caller
+		 * separator (','), because that would mess up
+		 * post-processor profile data parsing.
+		 *
+		 * Skip also all mangled (C++) symbols as they could
+		 * include that separator after demangling.
 		 */
-		if (name && strncmp(name, "__Z", 3) != 0) {
+		if (name && strchr(name, CALLER_SEPARATOR) == NULL
+		    && strncmp(name, "__Z", 3) != 0) {
 			fprintf(fp, "%s", name);
 		}
 		fputs("\n", fp);

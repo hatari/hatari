@@ -38,9 +38,12 @@ const char Symbols_fileid[] = "Hatari symbols.c";
 #include "symbols-common.c"
 
 /* how many characters the symbol name can have.
- * NOTE: change also sscanf width arg if you change this!!!
+ *
+ * While DRI/GST symbols are at max only couple of dozen
+ * chars long, C++/a.out symbols can be almost of any size.
  */
-#define MAX_SYM_SIZE 32
+#define MAX_SYM_SIZE 1024
+#define MAX_SYM_SIZE_S "1024"
 
 /* TODO: add symbol name/address file names to configuration? */
 static symbol_list_t *CpuSymbolsList;
@@ -62,7 +65,8 @@ static bool AutoLoadFailed;
 static symbol_list_t* symbols_load_ascii(FILE *fp, uint32_t *offsets, uint32_t maxaddr, symtype_t gettype)
 {
 	symbol_list_t *list;
-	char symchar, buffer[128], name[MAX_SYM_SIZE+1], *buf;
+	char symchar, name[MAX_SYM_SIZE+1];
+	char *buf, buffer[MAX_SYM_SIZE+64];
 	int count, line, symbols, weak, unknown, invalid;
 	uint32_t address, offset;
 	symtype_t symtype;
@@ -111,8 +115,10 @@ static symbol_list_t* symbols_load_ascii(FILE *fp, uint32_t *offsets, uint32_t m
 		if (!*buf) {
 			continue;
 		}
-		assert(count < symbols); /* file not modified in meanwhile? */
-		if (sscanf(buffer, "%x %c %32[0-9A-Za-z_.-]s", &address, &symchar, name) != 3) {
+		/* file not modified in meanwhile? */
+		assert(count < symbols);
+		/* C++ symbols can contain almost any characters */
+		if (sscanf(buffer, "%x %c %"MAX_SYM_SIZE_S"[^$?@;\n]\n", &address, &symchar, name) != 3) {
 			fprintf(stderr, "WARNING: syntax error on line %d, skipping.\n", line);
 			continue;
 		}
