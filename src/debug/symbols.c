@@ -1,7 +1,7 @@
 /*
  * Hatari - symbols.c
  * 
- * Copyright (C) 2010-2019 by Eero Tamminen
+ * Copyright (C) 2010-2023 by Eero Tamminen
  * 
  * This file is distributed under the GNU General Public License, version 2
  * or at your option any later version. Read the file gpl.txt for details.
@@ -272,7 +272,7 @@ static bool update_sections(prg_section_t *sections)
  * the given file and add given offsets to the addresses.
  * Return symbols list or NULL for failure.
  */
-static symbol_list_t* Symbols_Load(const char *filename, uint32_t *offsets, uint32_t maxaddr)
+static symbol_list_t* Symbols_Load(const char *filename, uint32_t *offsets, uint32_t maxaddr, symtype_t gettype)
 {
 	symbol_list_t *list;
 	FILE *fp;
@@ -300,7 +300,7 @@ static symbol_list_t* Symbols_Load(const char *filename, uint32_t *offsets, uint
 	} else {
 		fprintf(stderr, "Reading 'nm' style ASCII symbols from '%s'...\n", filename);
 		fp = fopen(filename, "r");
-		list = symbols_load_ascii(fp, offsets, maxaddr, SYMTYPE_ALL);
+		list = symbols_load_ascii(fp, offsets, maxaddr, gettype);
 		SymbolsAreForProgram = false;
 	}
 	fclose(fp);
@@ -751,6 +751,11 @@ void Symbols_ShowCurrentProgramPath(FILE *fp)
 
 /**
  * Load symbols for last opened program when symbol autoloading is enabled.
+ *
+ * If there's file with same name as the program, but with '.sym'
+ * extension, that overrides / is loaded instead of the symbol table
+ * in the program.
+ *
  * Called when debugger is invoked.
  */
 void Symbols_LoadCurrentProgram(void)
@@ -762,12 +767,38 @@ void Symbols_LoadCurrentProgram(void)
 	if (CpuSymbolsList || !CurrentProgramPath || AutoLoadFailed) {
 		return;
 	}
-	CpuSymbolsList = Symbols_Load(CurrentProgramPath, NULL, 0);
-	if (!CpuSymbolsList) {
+
+	symbol_list_t *symbols = NULL;
+	int len = strlen(CurrentProgramPath);
+	char *symfile = strdup(CurrentProgramPath);
+	assert(symfile);
+
+	/* if matching file with .sym extension exits, use
+	 * that for symbols, instead of the program itself
+	 */
+	if (len > 3 && symfile[len-4] == '.') {
+		strcpy(symfile + len - 3, "sym");
+		fprintf(stderr, "Checking: %s\n", symfile);
+		if (File_Exists(symfile)) {
+			fprintf(stderr, "Program symbols override file: %s\n", symfile);
+			uint32_t offsets[3];
+			offsets[2] = offsets[1] = 0;
+			offsets[0] = DebugInfo_GetTEXT();
+			const uint32_t maxaddr = DebugInfo_GetTEXTEnd();
+			symbols = Symbols_Load(symfile, offsets, maxaddr, SYMTYPE_TEXT);
+		}
+	}
+	free(symfile);
+	if (!symbols) {
+		symbols = Symbols_Load(CurrentProgramPath, NULL, 0, SYMTYPE_TEXT);
+	}
+	if (!symbols) {
 		AutoLoadFailed = true;
 	} else {
 		AutoLoadFailed = false;
 	}
+	SymbolsAreForProgram = true;
+	CpuSymbolsList = symbols;
 }
 
 /* ---------------- command parsing ------------------ */
@@ -925,7 +956,7 @@ int Symbols_Command(int nArgc, char *psArgs[])
 	}
 
 	/* do actual loading */
-	list = Symbols_Load(file, offsets, maxaddr);
+	list = Symbols_Load(file, offsets, maxaddr, SYMTYPE_ALL);
 	if (list) {
 		if (listtype == TYPE_CPU) {
 			Symbols_Free(CpuSymbolsList);
