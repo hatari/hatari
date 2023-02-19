@@ -441,13 +441,30 @@ dsp_symbols").
 </p>
 
 
-<h4>For a program under GEMDOS HD emulation</h4>
+<h4>Demangling (C++) symbols</h4>
+
+<p>C++ (and other similar languages) store symbols in binaries
+in a "mangled" format used by tools like linkers, and symbol names
+need to be "demangled" (expanded) to a more readable / user-friendly
+format.  This can be done using a tool coming with the C++ compiler
+(in "binutils-m68k-atari-mint" package):</p>
+<pre>
+$ m68k-atari-mint-c++filt &lt; mangled.sym &gt; demangled.sym
+</pre>
+<p>Then just load the new symbol file instead of the original one.</p>
+
+<p>Note: Because C++ symbols can contain (whitespace) characters which
+prevent them from being given as arguments e.g. to breakpoints,
+mangled symbol names may also be useful.</p>
+
+
+<h4>Symbols for a program under GEMDOS HD emulation</h4>
 
 <p>
 If currently running program contains debug symbol table,
 and it is started from GEMDOS HD emulated drive, its symbol names /
-addresses are automatically loaded when debugger is entered, and
-removed when program terminates.</p>
+addresses are automatically loaded when debugger is invoked, and
+removed when that program terminates.</p>
 
 <p>
 Above happens only if there are no symbols loaded when the program
@@ -471,7 +488,7 @@ depend on which toolchain you use to build it:
 <dd>"-g" and "-l" options for linking</dd>
 <dt><em>GCC</em>:</dt>
 <dd>"-g" for compilation, and no strip option for linking
-(with older Hatari versions that didn't support a.out format,
+(with older Hatari versions that did not support "a.out" format,
 also "-Wl,--traditional-format" option was needed for linking)</dd>
 <dt><em>VBCC</em>:</dt>
 <dd>"-g" (can only be used at linking phase), <em>when VBCC
@@ -484,7 +501,29 @@ ASCII format) with tool installed with Hatari:</p>
 <pre>
 $ gst2ascii -l -o program.tos &gt; program.sym
 </pre>
-(Options -l and -o are used to exclude useless symbols from the output.)
+<p>(Options -l and -o are used to exclude useless symbols from
+the output.)</p>
+
+<p>For C++ programs, pipe the that output through
+<em>m68k-atari-mint-c++filt</em> demangler (see above)
+before directing it to a file.</p>
+
+
+<h5>Overriding program symbols</h5>
+
+<p>Symbols in a program can be overridden by providing similarly
+named ".sym" file in the same directory.  If for example there is
+a file called "program.sym", debugger will try to load that instead
+of "program.prg" (when debugger is first invoked after that program
+started).</p>
+
+<p>There are few reasons why one might want to do that:</p><ul>
+<li>Provide debugger demangled versions of the C++ program symbols</li>
+<li>Stripped binary + ".sym" file take less space than providing
+    also a non-stripped binary</li>
+<li>Add (function) or remove (loop) symbols to improve profiling
+    results</li>
+</ul>
 
 
 <h4>For a program on a (disk) image</h4>
@@ -1489,20 +1528,8 @@ from the ASCII *.sym file, or filter them out with grep:
 $ gst2ascii -a -l -o program.prg | grep -v -e useless1 -e useless2 &gt; program.sym
 </pre>
 
-
-<h4>Demangling C++ symbols</h4>
-
-<p>C++ programs have their symbols in a "mangled" format used by tools
-like linkers, and symbol names need to be "demangled" (expanded) to a
-more readable / user-friendly format.  This needs to be done both for
-the program symbols, and its profile data, using a tool coming with
-the C++ compiler (in "binutils-m68k-atari-mint" package):</p>
-<pre>
-$ m68k-atari-mint-c++filt &lt; program.sym &gt; demangled.sym
-$ m68k-atari-mint-c++filt &lt; program-profile.txt &gt; profile-demangled.txt
-</pre>
-<p>Then just use the new symbol and profile data files instead of
-the original one (or replace the original ones with them).</p>
+<p>For C++ programs, see earlier section(s) on how to best
+provide symbols for them.</p>
 
 
 <h4>Post-processor provided statistics</h4>
