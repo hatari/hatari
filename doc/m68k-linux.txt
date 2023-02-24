@@ -167,7 +167,7 @@ Call Trace:
    $ sudo apt install gcc-m68k-linux-gnu
 
 2. Get latest upstream kernel release sources (without history):
-   $ git clone --depth 1 --branch v6.0 \
+   $ git clone --depth 1 --branch v6.2 \
      git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
    $ cd linux
 
@@ -334,8 +334,8 @@ Notes:
 1. Set suitable options in lilo.cfg, for example:
 -------------------------------------
 [LILO]
-Kernel = vmlinux-v6.0
-Symbols = System.map-v6.0
+Kernel = vmlinux-v6.2
+Symbols = System.map-v6.2
 Ramdisk =
 Args = video=atafb:sthigh console=tty
 KernelToFastRam = FALSE
@@ -398,13 +398,13 @@ shows easiest method to simulate that with Hatari.
 
 4. If you do not have a TOS ROM image, download latest EmuTOS release
    from:
-     https://sourceforge.net/projects/emutos/files/emutos/1.1.1/emutos-1024k-1.1.1.zip/download
+     https://sourceforge.net/projects/emutos/files/emutos/1.2.1/emutos-1024k-1.2.1.zip/download
    and extract it:
-   $ unzip emutos-1024k-1.1.1.zip
+   $ unzip emutos-1024k-1.2.1.zip
 
 5. Then run Hatari with them:
    $ hatari --trace os_base --log-level info \
-      --tos emutos-1024k-1.1.1/etos1024k.img \
+      --tos emutos-1024k-1.2.1/etos1024k.img \
       --fast-forward on --fastfdc on --timer-d on \
       --machine falcon --dsp none --fpu 68882 \
       --cpuclock 32 --cpu-exact off --compatible off \
