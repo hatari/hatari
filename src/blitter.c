@@ -961,7 +961,7 @@ static void Blitter_Stop_IgnoreLastCpuCycles(void)
 /*-----------------------------------------------------------------------*/
 /**
  * Check if some word or long word registers are accessed using byte
- * operations at addresse IoAccessCurrentAddress.
+ * operations at address IoAccessCurrentAddress.
  * The blitter doesn't allow reading/writing to word registers using bytes,
  * in such case we must ignore the read/write.
  * Return true if it's a byte access.
