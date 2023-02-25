@@ -245,15 +245,15 @@ void Spec512_StartFrame(void)
 		pCyclePalette->LineCycles = -1;          /* Term */
 	}
 
-       /* Copy first line palette, kept in 'HBLPalettes' and store to 'STRGBPalette' */
-       for (i = 0; i < 16; i++)
-       {
+	/* Copy first line palette, kept in 'HBLPalettes' and store to 'STRGBPalette' */
+	for (i = 0; i < 16; i++)
+	{
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
-               STRGBPalette[STRGBPalEndianTable[i]] = ST2RGB[pHBLPalettes[i]];
+		STRGBPalette[STRGBPalEndianTable[i]] = ST2RGB[pHBLPalettes[i]];
 #else
-               STRGBPalette[i] = ST2RGB[pHBLPalettes[i]];
+		STRGBPalette[i] = ST2RGB[pHBLPalettes[i]];
 #endif
-       }
+	}
 
 	/* Ready for first call to 'Spec512_ScanLine' */
 	nScanLine = 0;

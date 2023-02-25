@@ -206,7 +206,7 @@ static unsigned int LastStrobe=0; /* Falling edge of Strobe used for printer */
  */
 void PSG_Reset(void)
 {
-        int     i;
+	int i;
 
 	if (LOG_TRACE_LEVEL(TRACE_PSG_WRITE))
 	{
@@ -222,7 +222,7 @@ void PSG_Reset(void)
 	PSGRegisters[PSG_REG_IO_PORTA] = 0xff;			/* no drive selected + side 0 after a reset */
 
 	/* Update sound's emulation registers */
-        for ( i=0 ; i < NUM_PSG_SOUND_REGISTERS; i++ )
+	for (i = 0; i < NUM_PSG_SOUND_REGISTERS; i++)
 		Sound_WriteReg ( i , 0 );
 
 	LastStrobe=0;
