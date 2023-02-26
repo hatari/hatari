@@ -2418,11 +2418,11 @@ void m68k_cancel_idle(void)
 #endif
 }
 
-static void m68k_set_stop(void)
+static void m68k_set_stop(int stoptype)
 {
 	if (regs.stopped)
 		return;
-	regs.stopped = 1;
+	regs.stopped = stoptype;
 #ifndef WINUAE_FOR_HATARI
 	if (cpu_last_stop_vpos >= 0) {
 		cpu_last_stop_vpos = vpos;
@@ -4160,7 +4160,7 @@ uae_u32 REGPARAM2 op_illg (uae_u32 opcode)
 		if (get_long (0x10) == 0) {
 			notify_user (NUMSG_KS68020);
 			uae_restart (-1, NULL);
-			m68k_setstopped();
+			m68k_setstopped(1);
 			return 4;
 		}
 	}
@@ -4168,7 +4168,7 @@ uae_u32 REGPARAM2 op_illg (uae_u32 opcode)
 #ifdef AUTOCONFIG
 	if (opcode == 0xFF0D && inrt) {
 		/* User-mode STOP replacement */
-		m68k_setstopped ();
+		m68k_setstopped(1);
 		return 4;
 	}
 
@@ -7984,6 +7984,7 @@ void m68k_dumpcache (bool dc)
 
 #define CPUTYPE_EC 1
 #define CPUMODE_HALT 1
+#define CPUMODE_HALT2 2
 
 uae_u8 *restore_cpu (uae_u8 *src)
 {
@@ -8012,7 +8013,7 @@ uae_u8 *restore_cpu (uae_u8 *src)
 	regs.sr = restore_u16 ();
 	l = restore_u32 ();
 	if (l & CPUMODE_HALT) {
-		regs.stopped = 1;
+		regs.stopped = (l & CPUMODE_HALT2) ? 2 : 1;
 	} else {
 		regs.stopped = 0;
 	}
@@ -8391,11 +8392,11 @@ uae_u8 *restore_cpu_trace(uae_u8 *src)
 				cputrace.pipeline_r8[1] = restore_u16();
 				cputrace.pipeline_stop = restore_u16();
 			}
-			if (v & 64) {
-				cputrace.ird = restore_u16();
-				cputrace.read_buffer = restore_u16();
-				cputrace.write_buffer = restore_u16();
-			}
+		}
+		if (v & 64) {
+			cputrace.ird = restore_u16();
+			cputrace.read_buffer = restore_u16();
+			cputrace.write_buffer = restore_u16();
 		}
 
 		if (v & 128) {
@@ -8495,7 +8496,7 @@ uae_u8 *save_cpu(size_t *len, uae_u8 *dstptr)
 	save_u32 (!regs.s ? regs.regs[15] : regs.usp);	/* USP */
 	save_u32 (regs.s ? regs.regs[15] : regs.isp);	/* ISP */
 	save_u16 (regs.sr);								/* SR/CCR */
-	save_u32 (regs.stopped ? CPUMODE_HALT : 0); /* flags */
+	save_u32 (regs.stopped == 1 ? CPUMODE_HALT : (regs.stopped == 2 ? (CPUMODE_HALT | CPUMODE_HALT2) : 0)); /* flags */
 	if (model >= 68010) {
 		save_u32 (regs.dfc);			/* DFC */
 		save_u32 (regs.sfc);			/* SFC */
@@ -8994,16 +8995,23 @@ void do_cycles_stop(int c)
 
 }
 
-void m68k_setstopped (void)
+void m68k_setstopped(int stoptype)
 {
-	m68k_set_stop();
+	m68k_set_stop(stoptype);
 }
 
 void m68k_resumestopped(void)
 {
-	if (!regs.stopped)
+	if (!regs.stopped) {
 		return;
-	m68k_incpci(4);
+	}
+	if (regs.stopped == 1) {
+		// STOP
+		m68k_incpci(4);
+	} else if (regs.stopped == 2) {
+		// LPSTOP
+		m68k_incpci(6);
+	}
 	m68k_unset_stop();
 }
 
