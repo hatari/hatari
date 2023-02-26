@@ -326,16 +326,16 @@ bool	IPF_Init ( void )
 	Log_Printf ( LOG_DEBUG , "IPF : IPF_Init\n" );
 
 	if ( CAPSInit() != imgeOk )
-        {
+	{
 		Log_Printf ( LOG_ERROR , "IPF : Could not initialize the capsimage library\n" );
 		return false;
-        }
+	}
 
 	if ( CAPSGetVersionInfo ( &caps_vi , 0 ) != imgeOk )
-        {
+	{
 		Log_Printf ( LOG_ERROR , "IPF : CAPSVersionInfo failed\n" );
 		return false;
-        }
+	}
 	Log_Printf ( LOG_INFO , "IPF : capsimage library version release=%d revision=%d\n" , (int)caps_vi.release , (int)caps_vi.revision );
 	IPF_State.CapsLibRelease = caps_vi.release;
 	IPF_State.CapsLibRevision = caps_vi.revision;
@@ -496,9 +496,9 @@ bool	IPF_Insert ( int Drive , uint8_t *pImageBuffer , long ImageSize )
 
 			/* Some IPF disks are not correctly supported yet : display a warning */
 			if ( (int)cii.release == 3222 ) 				/* Sundog */
-                		Log_AlertDlg ( LOG_INFO , "'Sundog' is not correctly supported yet, it requires write access." );
+				Log_AlertDlg ( LOG_INFO , "'Sundog' is not correctly supported yet, it requires write access." );
 			else if ( (int)cii.release == 3058 ) 				/* Lethal Xcess */
-                		Log_AlertDlg ( LOG_INFO , "'Lethal Xcess' is not correctly supported yet, protection will fail" );
+				Log_AlertDlg ( LOG_INFO , "'Lethal Xcess' is not correctly supported yet, protection will fail" );
 		}
 	}
 	else
