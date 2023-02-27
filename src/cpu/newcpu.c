@@ -7792,6 +7792,13 @@ void m68k_go (int may_quit)
 		}
 #endif
 		run_func();
+
+		if (quit_program < 0) {
+			quit_program = -quit_program;
+		}
+		if (quit_program == UAE_QUIT)
+			break;
+
 		Log_Printf(LOG_DEBUG, "exit m68k_run\n");
 	}
 #ifndef WINUAE_FOR_HATARI
