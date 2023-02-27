@@ -18,7 +18,7 @@
 
 #define UAEMAJOR 4
 #define UAEMINOR 10
-#define UAESUBREV 1
+#define UAESUBREV 2
 
 #define MAX_AMIGADISPLAYS 4
 
@@ -101,12 +101,16 @@ struct inputdevconfig {
 	TCHAR configname[MAX_JPORT_CONFIG];
 	TCHAR shortid[16];
 };
-struct jport {
+struct jport_dev {
 	int id;
 	int mode; // 0=def,1=mouse,2=joy,3=anajoy,4=lightpen
 	int submode;
 	int autofire;
 	struct inputdevconfig idc;
+};
+#define MAX_JPORT_DEVS 10
+struct jport {
+	struct jport_dev jd[MAX_JPORT_DEVS];
 	bool nokeyboardoverride;
 	bool changed;
 };
@@ -116,6 +120,7 @@ struct jport {
 #define JPORT_AF_NORMAL 1
 #define JPORT_AF_TOGGLE 2
 #define JPORT_AF_ALWAYS 3
+#define JPORT_AF_TOGGLENOAF 4
 
 #define KBTYPE_AMIGA 0
 #define KBTYPE_PC1 1
@@ -596,6 +601,7 @@ struct uae_prefs {
 	bool gfx_windowed_resize;
 	int gfx_overscanmode;
 	int gfx_monitorblankdelay;
+	int gfx_rotation;
 
 	struct gfx_filterdata gf[3];
 
@@ -862,6 +868,7 @@ struct uae_prefs {
 	int win32_active_capture_priority;
 	bool win32_active_nocapture_pause;
 	bool win32_active_nocapture_nosound;
+	int win32_active_input;
 	int win32_inactive_priority;
 	bool win32_inactive_pause;
 	bool win32_inactive_nosound;
@@ -980,6 +987,7 @@ extern bool is_error_log (void);
 extern void default_prefs (struct uae_prefs *, bool, int);
 extern void discard_prefs (struct uae_prefs *, int);
 extern void copy_prefs(struct uae_prefs *src, struct uae_prefs *dst);
+extern void copy_inputdevice_prefs(struct uae_prefs *src, struct uae_prefs *dst);
 
 int parse_cmdline_option (struct uae_prefs *, TCHAR, const TCHAR*);
 
