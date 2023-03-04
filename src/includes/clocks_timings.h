@@ -49,6 +49,9 @@ typedef struct
   uint32_t        CODEC_Freq;
   uint32_t        DSP_Freq;
 
+  /* Mega STE, TT, Falcon specifig */
+  uint32_t        SCC_Freq;
+
   /* Common to all machines, runtime variables */
   uint32_t        CPU_Freq_Emul;			/* Freq in Hz at which the CPU is emulated (taking nCpuFreqShift and CPU_Freq into account) */
 

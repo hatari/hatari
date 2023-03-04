@@ -75,6 +75,7 @@ MEGA STE :
   YM2149	IN = 2 MHz (CLK2 = SCLK / 4)
   ACIA MC6850	IN = 500 kHz (KHZ500)
   IKBD HD6301	IN = 1 MHZ (local clock)
+  SCC Z85C30	IN = 8 MHz (CLK8)
 
 
 TT :
@@ -93,6 +94,7 @@ TT :
   YM2149	IN = 2 MHz (CLK2)
   ACIA MC6850	IN = 500 kHz (CLKX5)
   IKBD HD6301	IN = 1 MHZ (local clock)
+  SCC Z85C30	IN = 8 MHz (CLK8)
 
 
 FALCON :
@@ -114,6 +116,7 @@ FALCON :
   YM3439	IN = 2 MHz (CLK2)
   ACIA MC6850	IN = 500 kHz (KHZ500)
   IKBD HD6301	IN = 1 MHZ (local clock)
+  SCC Z85C30	IN = 8 MHz (CLK8)
 
 */
 
@@ -275,6 +278,7 @@ void	ClocksTimings_InitMachine ( MACHINETYPE MachineType )
 		MachineClocks.YM_Freq		= CLK2;					/* 2 MHz (CLK2) */
 		MachineClocks.ACIA_Freq		= KHZ500;				/* 500 kHz (KHZ500) */
 		MachineClocks.IKBD_Freq		= ATARI_IKBD_CLK;			/* 1 MHz */
+		MachineClocks.SCC_Freq		= CLK8;					/* 8 MHz (CLK8) */
 	}
 
 	else if ( MachineType == MACHINE_TT )
@@ -307,30 +311,36 @@ void	ClocksTimings_InitMachine ( MACHINETYPE MachineType )
 		MachineClocks.YM_Freq		= CLK2;					/* 2 MHz (CLK2) */
 		MachineClocks.ACIA_Freq		= CLKX5;				/* 500 kHz (CLKX5) */
 		MachineClocks.IKBD_Freq		= ATARI_IKBD_CLK;			/* 1 MHz */
+		MachineClocks.SCC_Freq		= CLK8;					/* 8 MHz (CLK8) */
 	}
 
 	else if ( MachineType == MACHINE_FALCON )
 	{
 		/* TODO : need more docs for Falcon's clocks */
-		int	CLK32, CLK25, CLK16, FCCLK, CLK4, CLK2, KHZ500;
+		/* Note : Some clocks are made from 32 MHz MCLK, but others are made from */
+		/* 32 MHz DSP's clock */
+		/* CLK32 and VID32MHZ are coming from the same clock 32MHZ (32.084988 MHz for PAL) */
+		int	CLK32, CLK25, CLK16, CLK8, FCCLK, CLK4, CLK2, KHZ500;
 
 		MachineClocks.MCLK_Freq		= ATARI_FALCON_PAL_MCLK;		/* 32.084988 MHz */
 		CLK32				= MachineClocks.MCLK_Freq;
 		CLK25				= ATARI_FALCON_25M_CLK;
 		CLK16				= CLK32 / 2;
-		CLK2				= CLK32 / 16;
-		FCCLK				= CLK16;
 
-		MachineClocks.VIDEL_Freq	= CLK32;				/* 32 MHz */
+		MachineClocks.DSP_Freq		= CLK32;				/* 32 MHz */
+		CLK8				= MachineClocks.DSP_Freq / 4;
+		CLK2				= MachineClocks.DSP_Freq / 16;
+		FCCLK				= MachineClocks.DSP_Freq / 2;
 
-		MachineClocks.COMBEL_Freq	= CLK32;				/* 16 MHz (CLK16A) */
+		MachineClocks.VIDEL_Freq	= CLK32;				/* 32 MHz (VID32MHZ) */
+
+		MachineClocks.COMBEL_Freq	= CLK32;				/* 32 MHz */
 		CLK4				= MachineClocks.COMBEL_Freq / 8;
 		KHZ500				= MachineClocks.COMBEL_Freq / 64;
 
 		MachineClocks.BUS_Freq		= CLK16;				/* 16 MHz (CPUCLK16A) */
 		MachineClocks.CPU_Freq		= CLK16;				/* 16 MHz (CPUCLK16B) */
 		MachineClocks.FPU_Freq		= CLK16;				/* 16 MHz (CLK32) */
-		MachineClocks.DSP_Freq		= CLK32;				/* 32 MHz */
 		MachineClocks.DMA_Freq		= CLK16;				/* 16 MHz (CLK16) ? */
 		MachineClocks.CODEC_Freq	= CLK25;				/* 25 MHz (CLK25) */
 		MachineClocks.MFP_Freq		= CLK4;					/* 4 MHz (CLK4) */
@@ -340,6 +350,7 @@ void	ClocksTimings_InitMachine ( MACHINETYPE MachineType )
 		MachineClocks.YM_Freq		= CLK2;					/* 2 MHz (CLK2) */
 		MachineClocks.ACIA_Freq		= KHZ500;				/* 500 kHz (KHZ500) */
 		MachineClocks.IKBD_Freq		= ATARI_IKBD_CLK;			/* 1 MHz */
+		MachineClocks.SCC_Freq		= CLK8;					/* 8 MHz (CLK8) */
 	}
 
 
