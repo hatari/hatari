@@ -465,6 +465,7 @@ Color demos:
 - SillyVenture 2k10 & 2k11 (invitros by Mystic Bytes & Aggression)
 - SillyVenture 2020 (invitro by Agenda, Hemoroids & Mystic Bytes)
 - Smag-FX 3 (by SMFX)
+- SNDH v4.8 update demo (PHF & KUA & DHS)
 - Sommar TTRAK (TTRAK v1.00 intro)
 - Sommarhack 1991 Best Of (by Pepe)
   - Glitches are intentional, not EmuTOS issue
@@ -608,6 +609,7 @@ Free/shareware/PD games:
 - Cybernetix
 - Dave Munsie games* (shareware released later as freeware)
   http://www.atarimania.com/list_games_atari-st-munsie-dave_team_950_S_G.html
+- Donkey         (GWBasic GFA port)
 - Donkey Island  (adventure)
 - Dot 2 Dots     (for kids)
 - Downfall       (2-player)
@@ -974,6 +976,7 @@ Working MIDI programs:
 - Fractal Music
 - Fractal Music Composer 2
 - FretCalc
+- G.I.S.T (sound synthesis with MIDI input)
 - Henry Cosh's Accompanist
 - Largo (MIDI playlist manager)
 - Ludwig
