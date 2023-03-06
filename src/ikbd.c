@@ -1711,21 +1711,16 @@ static void IKBD_SendAutoKeyboardCommands(void)
 	Keyboard.bOldRButtonDown = Keyboard.bRButtonDown;
 
 	/* Send joystick button '2' as 'Space bar' key - MUST do here so does not get mixed up in middle of joystick packets! */
-	if (JoystickSpaceBar)
+	if (JoystickSpaceBar==JOYSTICK_SPACE_DOWN)
 	{
-		/* As we simulating space bar? */
-		if (JoystickSpaceBar==JOYSTICK_SPACE_DOWN)
-		{
-			IKBD_PressSTKey(57, true);         /* Press */
-			JoystickSpaceBar = JOYSTICK_SPACE_UP;
-		}
-		else   //if (JoystickSpaceBar==JOYSTICK_SPACE_UP) {
-		{
-			IKBD_PressSTKey(57, false);       /* Release */
-			JoystickSpaceBar = false;         /* Complete */
-		}
+		IKBD_PressSTKey(57, true);                /* Press */
+		JoystickSpaceBar = JOYSTICK_SPACE_DOWNED; /* Pressed */
 	}
-
+	else if (JoystickSpaceBar==JOYSTICK_SPACE_UP)
+	{
+		IKBD_PressSTKey(57, false);               /* Release */
+		JoystickSpaceBar = JOYSTICK_SPACE_NULL;   /* Complete */
+	}
 
 	/* If we're executing a custom IKBD program, call it to process the key/mouse/joystick event */
 	if ( IKBD_ExeMode && pIKBD_CustomCodeHandler_Read )

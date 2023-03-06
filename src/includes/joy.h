@@ -12,6 +12,7 @@ enum
 {
 	JOYSTICK_SPACE_NULL,          /* Not up/down */
 	JOYSTICK_SPACE_DOWN,
+	JOYSTICK_SPACE_DOWNED,
 	JOYSTICK_SPACE_UP
 };
 

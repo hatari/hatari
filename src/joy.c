@@ -61,7 +61,7 @@ static bool bJoystickWorking[ JOYSTICK_COUNT ] =		/* Is joystick plugged in and 
 	false, false, false, false, false, false
 };
 
-int JoystickSpaceBar = false;           /* State of space-bar on joystick button 2 */
+int JoystickSpaceBar = JOYSTICK_SPACE_NULL;   /* State of space-bar on joystick button 2 */
 static uint8_t nJoyKeyEmu[ JOYSTICK_COUNT ];
 static uint16_t nSteJoySelect;
 
@@ -165,7 +165,7 @@ void Joy_Init(void)
 	for (i = 0; i < JOYSTICK_COUNT ; i++)
 		Joy_ValidateJoyId(i);
 
-	JoystickSpaceBar = false;
+	JoystickSpaceBar = JOYSTICK_SPACE_NULL;
 }
 
 
@@ -222,6 +222,44 @@ static bool Joy_ReadJoystick(int nSdlJoyID, JOYREADING *pJoyReading)
 	return true;
 }
 
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Enable PC Joystick button press to mimic space bar
+ * (For XenonII, Flying Shark etc...) or joystick up (jump)
+ *
+ * Return up bit or zero
+ */
+static uint8_t Joy_ButtonSpaceJump(int press, bool jump)
+{
+	/* If "Jump on Button" is enabled, button acts as "ST Joystick up" */
+	if (jump)
+	{
+		if (press)
+			return ATARIJOY_BITMASK_UP;
+		return 0;
+	}
+	/* Otherwise, it acts as pressing SPACE on the ST keyboard
+	 *
+	 * "JoystickSpaceBar" goes through following transitions:
+	 * - JOYSTICK_SPACE_NULL   (joy.c:  init)
+	 * - JOYSTICK_SPACE_DOWN   (joy.c:  button pressed)
+	 * - JOYSTICK_SPACE_DOWNED (ikbd.c: space  pressed)
+	 * - JOYSTICK_SPACE_UP     (joy.c:  button released)
+	 * - JOYSTICK_SPACE_NULL   (ikbd.c: space  released)
+	 */
+	if (press)
+	{
+		if (JoystickSpaceBar == JOYSTICK_SPACE_NULL)
+			JoystickSpaceBar = JOYSTICK_SPACE_DOWN;
+	}
+	else
+	{
+		if (JoystickSpaceBar == JOYSTICK_SPACE_DOWNED)
+			JoystickSpaceBar = JOYSTICK_SPACE_UP;
+	}
+	return 0;
+}
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -291,22 +329,12 @@ uint8_t Joy_GetStickData(int nStJoyId)
 		if (JoyReading.Buttons & JOYREADING_BUTTON1)
 			nData |= ATARIJOY_BITMASK_FIRE;
 
-		/* Enable PC Joystick button 2 to mimic space bar (For XenonII, Flying Shark etc...) */
-		if (nStJoyId == JOYID_JOYSTICK1 && (JoyReading.Buttons & JOYREADING_BUTTON2))
+		/* PC Joystick button 2 mimics space bar or jump */
+		if (nStJoyId == JOYID_JOYSTICK1)
 		{
-			if (ConfigureParams.Joysticks.Joy[nStJoyId].bEnableJumpOnFire2)
-			{
-				/* If "Jump on Button 2" is enabled, PC Joystick button 2 acts as "ST Joystick up" */
-				nData |= ATARIJOY_BITMASK_UP;
-			} else {
-				/* If "Jump on Button 2" is not enabled, PC Joystick button 2 acts as pressing SPACE on the ST keyboard */
-				/* Only press 'space bar' if not in NULL state */
-				if (!JoystickSpaceBar)
-				{
-					/* Press, ikbd will send packets and de-press */
-					JoystickSpaceBar = JOYSTICK_SPACE_DOWN;
-				}
-			}
+			const bool press = JoyReading.Buttons & JOYREADING_BUTTON2;
+			const bool jump = ConfigureParams.Joysticks.Joy[nStJoyId].bEnableJumpOnFire2;
+			nData |= Joy_ButtonSpaceJump(press, jump);
 		}
 
 		/* PC Joystick button 3 is autofire button for ST joystick button */
