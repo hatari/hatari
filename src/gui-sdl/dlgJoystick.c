@@ -23,7 +23,9 @@ const char DlgJoystick_fileid[] = "Hatari dlgJoystick.c";
 #define DLGJOY_PREVSDLJOY 13
 #define DLGJOY_NEXTSDLJOY 14
 #define DLGJOY_AUTOFIRE   15
-#define DLGJOY_EXIT       16
+#define DLGJOY_BUT2_SPACE 17
+#define DLGJOY_BUT2_JUMP  18
+#define DLGJOY_EXIT       19
 
 /* The joysticks dialog: */
 
@@ -31,7 +33,7 @@ static char sSdlStickName[20];
 
 static SGOBJ joydlg[] =
 {
-	{ SGBOX, 0, 0, 0,0, 32,18, NULL },
+	{ SGBOX, 0, 0, 0,0, 32,21, NULL },
 	{ SGTEXT, 0, 0, 8,1, 15,1, "Joysticks setup" },
 
 	{ SGBOX, 0, 0, 4,3, 24,1, NULL },
@@ -39,7 +41,7 @@ static SGOBJ joydlg[] =
 	{ SGBUTTON, 0, 0,  1,3, 3,1, "\x04", SG_SHORTCUT_LEFT },
 	{ SGBUTTON, 0, 0, 28,3, 3,1, "\x03", SG_SHORTCUT_RIGHT },
 
-	{ SGBOX, 0, 0, 1,4, 30,11, NULL },
+	{ SGBOX, 0, 0, 1,4, 30,14, NULL },
 	{ SGBUTTON,   0, 0, 19,7, 11,1, "D_efine keys" },
 
 	{ SGRADIOBUT, 0, 0, 2,5, 10,1, "_disabled" },
@@ -53,7 +55,11 @@ static SGOBJ joydlg[] =
 
 	{ SGCHECKBOX, 0, 0, 2,13, 17,1, "Enable _autofire" },
 
-	{ SGBUTTON, SG_DEFAULT, 0, 6,16, 20,1, "Back to main menu" },
+	{ SGTEXT, 0, 0, 4,15, 9,1, "Button 2:" },
+	{ SGRADIOBUT, 0, 0, 2,16, 10,1, "_space key" },
+	{ SGRADIOBUT, 0, 0, 15,16, 10,1, "_up / jump" },
+
+	{ SGBUTTON, SG_DEFAULT, 0, 6,19, 20,1, "Back to main menu" },
 	{ SGSTOP, 0, 0, 0,0, 0,0, NULL }
 };
 
@@ -184,6 +190,17 @@ static void DlgJoystick_ReadValuesFromConf(int nActJoy)
 		joydlg[DLGJOY_AUTOFIRE].state |= SG_SELECTED;
 	else
 		joydlg[DLGJOY_AUTOFIRE].state &= ~SG_SELECTED;
+
+	if (ConfigureParams.Joysticks.Joy[nActJoy].bEnableJumpOnFire2)
+	{
+		joydlg[DLGJOY_BUT2_JUMP].state |= SG_SELECTED;
+		joydlg[DLGJOY_BUT2_SPACE].state &= ~SG_SELECTED;
+	}
+	else
+	{
+		joydlg[DLGJOY_BUT2_SPACE].state |= SG_SELECTED;
+		joydlg[DLGJOY_BUT2_JUMP].state &= ~SG_SELECTED;
+	}
 }
 
 
@@ -201,6 +218,8 @@ static void DlgJoystick_WriteValuesToConf(int nActJoy)
 		ConfigureParams.Joysticks.Joy[nActJoy].nJoystickMode = JOYSTICK_REALSTICK;
 
 	ConfigureParams.Joysticks.Joy[nActJoy].bEnableAutoFire = (joydlg[DLGJOY_AUTOFIRE].state & SG_SELECTED);
+	ConfigureParams.Joysticks.Joy[nActJoy].bEnableJumpOnFire2 = (joydlg[DLGJOY_BUT2_JUMP].state & SG_SELECTED);
+
 	ConfigureParams.Joysticks.Joy[nActJoy].nJoyId = joydlg[DLGJOY_SDLJOYNAME].txt[0] - '0';
 }
 
