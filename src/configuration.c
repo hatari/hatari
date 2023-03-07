@@ -607,7 +607,7 @@ void Configuration_SetDefault(void)
 	{
 		ConfigureParams.Joysticks.Joy[i].nJoystickMode = JOYSTICK_DISABLED;
 		ConfigureParams.Joysticks.Joy[i].bEnableAutoFire = false;
-		ConfigureParams.Joysticks.Joy[i].bEnableJumpOnFire2 = false;
+		ConfigureParams.Joysticks.Joy[i].bEnableJumpOnFire2 = true;
 		ConfigureParams.Joysticks.Joy[i].nJoyId = (i > maxjoy ? maxjoy : i);
 		ConfigureParams.Joysticks.Joy[i].nKeyCodeUp = SDLK_UP;
 		ConfigureParams.Joysticks.Joy[i].nKeyCodeDown = SDLK_DOWN;
@@ -621,6 +621,7 @@ void Configuration_SetDefault(void)
 		ConfigureParams.Joysticks.Joy[1].nJoyId = 0;
 		ConfigureParams.Joysticks.Joy[0].nJoyId = (maxjoy ? 1 : 0);
 		ConfigureParams.Joysticks.Joy[1].nJoystickMode = JOYSTICK_REALSTICK;
+		ConfigureParams.Joysticks.Joy[1].bEnableJumpOnFire2 = false;
 	}
 
 	/* Set defaults for Keyboard */

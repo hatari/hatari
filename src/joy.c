@@ -330,12 +330,9 @@ uint8_t Joy_GetStickData(int nStJoyId)
 			nData |= ATARIJOY_BITMASK_FIRE;
 
 		/* PC Joystick button 2 mimics space bar or jump */
-		if (nStJoyId == JOYID_JOYSTICK1)
-		{
-			const bool press = JoyReading.Buttons & JOYREADING_BUTTON2;
-			const bool jump = ConfigureParams.Joysticks.Joy[nStJoyId].bEnableJumpOnFire2;
-			nData |= Joy_ButtonSpaceJump(press, jump);
-		}
+		const bool press = JoyReading.Buttons & JOYREADING_BUTTON2;
+		const bool jump = ConfigureParams.Joysticks.Joy[nStJoyId].bEnableJumpOnFire2;
+		nData |= Joy_ButtonSpaceJump(press, jump);
 
 		/* PC Joystick button 3 is autofire button for ST joystick button */
 		if (JoyReading.Buttons & JOYREADING_BUTTON3)
