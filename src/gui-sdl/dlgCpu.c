@@ -35,10 +35,10 @@ const char DlgCpu_fileid[] = "Hatari dlgCpu.c";
 static SGOBJ cpudlg[] =
 {
 	{ SGBOX, 0, 0, 0,0, 44,24, NULL },
-	{ SGTEXT, 0, 0, 17,1, 11,1, "CPU options" },
+	{ SGTEXT, 0, 0, 17,1, 12,1, "CPU options" },
 
 	{ SGBOX, 0, 0, 2,3, 12,8, NULL },
-	{ SGTEXT, 0, 0, 3,3, 8,1, "CPU type" },
+	{ SGTEXT, 0, 0, 3,3, 9,1, "CPU type:" },
 	{ SGRADIOBUT, 0, 0, 3, 5, 7,1, "680_00" },
 	{ SGRADIOBUT, 0, 0, 3, 6, 7,1, "680_10" },
 	{ SGRADIOBUT, 0, 0, 3, 7, 7,1, "680_20" },
@@ -47,20 +47,20 @@ static SGOBJ cpudlg[] =
 	{ SGRADIOBUT, 0, 0, 3,10, 7,1, "68060" },
 
 	{ SGBOX, 0, 0, 16,3, 12,8, NULL },
-	{ SGTEXT, 0, 0, 17,3, 15,1, "CPU clock" },
+	{ SGTEXT, 0, 0, 17,3, 10,1, "CPU clock:" },
 	{ SGRADIOBUT, 0, 0, 17,5, 8,1, " _8 Mhz" },
 	{ SGRADIOBUT, 0, 0, 17,6, 8,1, "1_6 Mhz" },
 	{ SGRADIOBUT, 0, 0, 17,7, 8,1, "32 Mh_z" },
 
 	{ SGBOX, 0, 0, 30,3, 12,8, NULL },
-	{ SGTEXT, 0, 0, 31,3, 11,1, "FPU" },
+	{ SGTEXT, 0, 0, 31,3, 4,1, "FPU:" },
 	{ SGRADIOBUT, 0, 0, 31,5, 6,1, "_None" },
 	{ SGRADIOBUT, 0, 0, 31,6, 7,1, "68881" },
 	{ SGRADIOBUT, 0, 0, 31,7, 7,1, "68882" },
 	{ SGRADIOBUT, 0, 0, 31,8, 10,1, "_Internal" },
 
 	{ SGBOX, 0, 0, 2,12, 40,9, NULL },
-	{ SGTEXT, 0, 0, 3,12, 25,1, "CPU emulation parameters" },
+	{ SGTEXT, 0, 0, 9,12, 24,1, "CPU emulation parameters" },
 	{ SGCHECKBOX, 0, 0, 3,14, 21,1, "_Prefetch emulation*" },
 	{ SGCHECKBOX, 0, 0, 3,15, 35,1, "_Cycle-exact with cache emulation*" },
 	{ SGCHECKBOX, 0, 0, 3,16, 16,1, "_MMU emulation*" },
