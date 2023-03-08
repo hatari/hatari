@@ -1675,7 +1675,7 @@ space for these emulations.
 <h4 class="gui">The Joystick Dialog</h4>
 
 <div class="floatimage">
-  <img src="images/joystick.png" width="320" height="288"
+  <img src="images/joystick.png" width="320" height="336"
        alt="Hatari's GUI - the joystick dialog" />
 </div>
 
@@ -1703,7 +1703,11 @@ the two lower arrows.</p>
 <p>Check the "Enable autofire" option if you are too lazy to pound
 on the fire button in shoot'em-up games. However, this option only works with
 certain games. In some other games, it gets worse if you enable this option.</p>
-<p>See "Emulated Joystick" section for details.</p>
+<p>"Button 2" options select whether fire button 2 emulates joystick
+up or a SPACE key press.  Latter makes sense to enable only for one of
+the enabled joysticks, and unless game explicitly queries also other
+joysticks, it works only for Joystick 1.
+<p>See <a href="#Emulated_joystick">Emulated joystick</a> section for details.</p>
 
 
 <h4 class="gui">The Atari Monitor Dialog</h4>
@@ -2221,10 +2225,11 @@ are used for the directions and <span class="key">right CTRL</span> key
 as the fire button. Otherwise they act as corresponding keys of the emulated
 Atari ST.</p>
 
-<p>NOTE: Problems with simultaneous keypresses most likely aren't an
-issue in Hatari as many modern keyboards report/support only three
-simultaneous key presses (or even just two depending on which keys
-are in question).  Expensive gaming keyboards support more.</p>
+<p>NOTE: Problems with simultaneous keypresses most likely are not an
+issue in Hatari, but with the keyboard itself. Many modern keyboards
+report/support only three simultaneous key presses (or even just two
+depending on which keys are in question).  Expensive gaming keyboards
+support more.</p>
 
 
 <h3>Emulated mouse</h3>
@@ -2257,13 +2262,14 @@ joystick that is supported by your kernel / SDL library. If your joystick works
 with other applications, it will likely work with Hatari as well. Make sure
 it is calibrated and then off you go. Move the stick to point into the
 desired direction. Please note that Hatari will not detect analogue
-movement as the Atari ST only had digital joysticks. The first
-firebutton will act as the normal firebutton on the Atari ST while the
-second
-firebutton will emulate a keypress of the <span class="key">SPACE</span>
-key on the ST as many ST
-games utilize the SPACE bar for secondary game functions. (Xenon for
-example)</p>
+movement as the Atari ST only had digital joysticks.<p>
+First firebutton will act as the normal firebutton on the Atari
+ST. Second firebutton will emulate either joystick up (jump), or
+a keypress of the <span class="key">SPACE</span> key on the ST.
+Many ST games utilize the SPACE bar for secondary game functions
+(for example Xenon), and jump functionality can be useful for
+platformers. Third firebutton has always autofire enabled,
+regardless of the (first firebutton) autofire option.</p>
 <p>If you do not have a PC joystick or joypad, then you do not need to
 desperate. You can emulate one of the two Atari ST joysticks via the
 cursor keys. Just activate it in the GUI. Then the cursor keys will act

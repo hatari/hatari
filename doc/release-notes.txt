@@ -41,10 +41,12 @@ Emulation improvements:
 
 Emulator improvements:
 - TOS:
-  Fix: set TOS country code from CountryCode setting, not Language one
+  - Fix: set TOS country code from CountryCode setting, not Language one
 - RTC:
   - CLI/config option to override NVRAM/RTC year, useful with
     applications that do not handle current dates
+- Joystick support:
+  - Fix: joystick button 2 space key emulation "autofiring"
 - GEMDOS HD:
   - Similarly to TOS, allow programs to write to a file they have opened
     as read-only (by opening all writable files as read/write).  As this
@@ -71,6 +73,7 @@ GUI improvements:
 - SDL GUI:
   - Fix: mouse not visible in floppy disk dialog when it is invoked
     from a keyboard shortcut in fullscreen mode
+  - Add support for the joystick button 2 space key vs. jump option
 - Mac GUI:
   - Accept all file names as the used Mac file selector does not
     show list of the accepted file name extensions any more
