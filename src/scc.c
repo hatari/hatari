@@ -25,6 +25,42 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+
+/*
+  The SCC is available in the Mega STE, the Falcon and the TT
+
+  Depending on the machine, the SCC can have several clock sources, which allows
+  to get closer to the requested baud rate by choosing the most appropriate base clock freq.
+
+  Mega STE :
+   SCC port A : 1 RS422 LAN port (MiniDIN, 8 pins) and 1 RS232C serial port A (DB-9P, 9 pins)
+   SCC port B : 1 RS232C serial port B (DP-9P, 9 pins)
+   - PCLK : connected to CLK8, 8021247 Hz for PAL
+   - RTxCA and RTxCB : connected to PCLK4, dedicated OSC running at 3.672 MHz
+   - TRxCA : connected to LCLK : SYNCI signal on pin 2 of the LAN connector or pin 6 of Serial port A
+   - TRxCB : connected to BCLK, dedicated OSC running at 2.4576 MHz for the MFP's XTAL1
+
+  TT :
+   SCC port A : 1 RS422 LAN port (MiniDIN, 8 pins) and 1 RS232C serial port A (DB-9P, 9 pins)
+   SCC port B : 1 RS232C serial port B (DP-9P, 9 pins)
+   - PCLK : connected to CLK8, 8021247 Hz for PAL
+   - RTxCA : connected to PCLK4, dedicated OSC running at 3.672 MHz
+   - TRxCA : connected to LCLK : SYNCI signal on pin 2 of the LAN connector or pin 6 of Serial port A
+   - RTxCB : connected to TCCLK on the TT-MFP (Timer C output)
+   - TRxCB : connected to BCLK, dedicated OSC running at 2.4576 MHz for the 2 MFPs' XTAL1
+
+  Falcon :
+   SCC port A : 1 RS422 LAN port (MiniDIN, 8 pins)
+   SCC port B : 1 RS232C serial port B (DP-9P, 9 pins)
+   - PCLK : connected to CLK8, 8021247 Hz for PAL
+   - RTxCA and RTxCB : connected to PCLK4, dedicated OSC running at 3.672 MHz
+   - TRxCA : connected to SYNCA on the SCC
+   - TRxCB : connected to BCLKA, dedicated OSC running at 2.4576 MHz for the MFP's XTAL1
+
+
+*/
+
+
 #include "main.h"
 
 #if HAVE_TERMIOS_H
@@ -44,6 +80,7 @@
 #include "log.h"
 #include "memorySnapShot.h"
 #include "scc.h"
+#include "clocks_timings.h"
 
 #ifndef O_NONBLOCK
 # ifdef O_NDELAY
@@ -58,7 +95,10 @@
 #define CTS 5
 
 struct SCC {
-	uint8_t regs[16];
+	/* NOTE : WR2 and WR9 are common to both channels, we store their content in channel A */
+	uint8_t WR[17];			/* 0-15 are for WR0-WR15, 16 is for WR7' */
+	uint8_t RR[16];			/* 0-15 are for RR0-RR15 */
+
 	int charcount;
 	int rd_handle, wr_handle;
 	uint16_t oldTBE;
@@ -66,10 +106,16 @@ struct SCC {
 	bool bFileHandleIsATTY;
 };
 
-static struct SCC scc[2];
+static struct SCC scc[2];		/* 0 is for channel A, 1 is for channel B */
 
 static int active_reg;
-static uint8_t RR3, RR3M;    // common to channel A & B
+
+/* TODO NP : replace RR3 by RR[3] and use WR[1] instead of RR3M */
+static uint8_t RR3, RR3M;		/* common to channel A and B */
+
+
+static int SCC_ClockMode[] = { 1 , 16 , 32 , 64 };	/* Clock multiplier from WR4 bits 6-7 */
+
 
 bool SCC_IsAvailable(CNF_PARAMS *cnf)
 {
@@ -171,46 +217,123 @@ void SCC_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&RR3M, sizeof(RR3M));
 	for (int c = 0; c < 2; c++)
 	{
-		MemorySnapShot_Store(scc[c].regs, sizeof(scc[c].regs));
+		MemorySnapShot_Store(scc[c].WR, sizeof(scc[c].WR));
 		MemorySnapShot_Store(&scc[c].charcount, sizeof(scc[c].charcount));
 		MemorySnapShot_Store(&scc[c].oldTBE, sizeof(scc[c].oldTBE));
 		MemorySnapShot_Store(&scc[c].oldStatus, sizeof(scc[c].oldStatus));
 	}
 }
 
+
+
+static void SCC_ResetChannel ( int Channel , bool HW_Reset )
+{
+	scc[Channel].WR[0] = 0x00;
+	scc[Channel].WR[1] &= 0x24;		/* keep bits 2 and 5, clear others */
+	scc[Channel].WR[3] &= 0xfe;		/* keep bits 1 to 7, clear bit 0 */
+	scc[Channel].WR[4] |= 0x04;		/* set bit 2, keep others */
+	scc[Channel].WR[5] &= 0x61;		/* keep bits 0,5 and 6, clear others */
+	scc[Channel].WR[15] = 0xf8;
+	scc[Channel].WR[16] = 0x20;		/* WR7' set bit5, clear others */
+
+	if ( HW_Reset )
+	{
+		/* WR9 is common to channel A and B, we store it in channel A */
+		scc[0].WR[9] &= 0x03;		/* keep bits 0 and 1, clear others */
+		scc[0].WR[9] |= 0xC0;		/* set bits 7 and 8 */
+
+		scc[Channel].WR[10] = 0x00;
+		scc[Channel].WR[11] = 0x08;
+		scc[Channel].WR[14] &= 0xC0;	/* keep bits 7 and 8, clear others */
+		scc[Channel].WR[14] |= 0x30;	/* set bits 4 and 5 */
+	}
+	else
+	{
+		/* WR9 is common to channel A and B, we store it in channel A */
+		scc[0].WR[9] &= 0xdf;		/* clear bit 6, keep others */
+
+		scc[Channel].WR[10] &= 0x60;	/* keep bits 5 and 6, clear others */
+		scc[Channel].WR[14] &= 0xC3;	/* keep bits 0,1,7 and 8, clear others */
+		scc[Channel].WR[14] |= 0x20;	/* set bit 5 */
+	}
+
+
+	scc[Channel].RR[0] &= 0xb8;		/* keep bits 3,4 and 5, clear others */
+	scc[Channel].RR[0] |= 0x44;		/* set bits 2 and 6 */
+	scc[Channel].RR[1] &= 0x01;		/* keep bits 0, clear others */
+	scc[Channel].RR[1] |= 0x06;		/* set bits 1 and 2 */
+	scc[Channel].RR[3] = 0x00;
+	scc[Channel].RR[10] &= 0x40;		/* keep bits 6, clear others */
+}
+
+
+
+/* On real hardware HW_Reset would be true when /RD and /WR are low at the same time (not supported in Mega STE / TT / Falcon)
+ *  - For our emulation, we also do HW_Reset=true when resetting the emulated machine
+ *  - When writing 0xC0 to WR9 a full reset will be done with HW_Reset=false
+ */
+static void SCC_ResetFull ( bool HW_Reset )
+{
+	uint8_t wr9_old;
+
+	wr9_old = scc[0].WR[9];
+
+	SCC_ResetChannel ( 0 , true );
+	SCC_ResetChannel ( 1 , true );
+
+	if ( !HW_Reset )			/* Reset through WR9, some bits are kept */
+	{
+		/* Keep bits 2,3,4 after software full reset */
+		scc[0].WR[9] = wr9_old & 0x1c;
+	}
+
+
+}
+
+
 static void SCC_channelAreset(void)
 {
 	LOG_TRACE(TRACE_SCC, "SCC: reset channel A\n");
-	scc[0].regs[15] = 0xF8;
-	scc[0].regs[14] = 0xA0;
-	scc[0].regs[11] = 0x08;
-	scc[0].regs[9] = 0;
-	RR3 &= ~0x38;
+	scc[0].WR[15] = 0xF8;
+	scc[0].WR[14] = 0xA0;
+	scc[0].WR[11] = 0x08;
+	scc[0].WR[9] = 0;
+
+/* TODO use RR[] for these 3 lines and put it in SCC_ResetChannel*/
+	RR3 &= ~0x38;		/* RR3 should be set to 0 on reset channel */
 	RR3M &= ~0x38;
-	scc[0].regs[0] = 1 << TBE;  // RR0A
+	scc[0].WR[0] = 1 << TBE;  // RR0A
 }
 
 static void SCC_channelBreset(void)
 {
 	LOG_TRACE(TRACE_SCC, "SCC: reset channel B\n");
-	scc[1].regs[15] = 0xF8;
-	scc[1].regs[14] = 0xA0;
-	scc[1].regs[11] = 0x08;
-	scc[0].regs[9] = 0;         // single WR9
-	RR3 &= ~7;
+	scc[1].WR[15] = 0xF8;
+	scc[1].WR[14] = 0xA0;
+	scc[1].WR[11] = 0x08;
+	scc[0].WR[9] = 0;         // single WR9
+
+/* TODO use RR[] for these 3 lines and put it in SCC_ResetChannel*/
+	RR3 &= ~7;		/* RR3 should be set to 0 on reset channel */
 	RR3M &= ~7;
-	scc[1].regs[0] = 1 << TBE;  // RR0B
+	scc[1].WR[0] = 1 << TBE;  // RR0B
 }
 
 void SCC_Reset(void)
 {
 	active_reg = 0;
-	memset(scc[0].regs, 0, sizeof(scc[0].regs));
-	memset(scc[1].regs, 0, sizeof(scc[1].regs));
-	SCC_channelAreset();
-	SCC_channelBreset();
+
+	memset(scc[0].WR, 0, sizeof(scc[0].WR));
+	memset(scc[0].RR, 0, sizeof(scc[0].RR));
+	memset(scc[1].WR, 0, sizeof(scc[1].WR));
+	memset(scc[1].RR, 0, sizeof(scc[1].RR));
+
+	SCC_ResetFull ( true );
+
+/* TODO use RR[] for these 2 lines */
 	RR3 = 0;
 	RR3M = 0;
+
 	scc[0].charcount = scc[1].charcount = 0;
 }
 
@@ -285,7 +408,7 @@ static void SCC_serial_setBaud(int channel, int value)
 #if HAVE_TERMIOS_H
 	speed_t new_speed = B0;
 
-	LOG_TRACE(TRACE_SCC, "scc serial set baud channel=%c value=$%02x\n", channel, value);
+	LOG_TRACE(TRACE_SCC, "scc serial set baud channel=%c value=$%02x\n", 'A'+channel, value);
 
 	switch (value)
 	{
@@ -444,6 +567,32 @@ static void SCC_serial_setDTR(int chn, bool value)
 #endif
 }
 
+
+static uint32_t SCC_Compute_BaudRate(int chn)
+{
+	int TimeConstant;
+	int ClockMult;
+	uint32_t BaudRate;
+
+	/* TODO : check WR11 for clock source */
+
+	if ( ( scc[chn].WR[4] & 0x0c ) == 0 )		/* bits 2-3 = 0, sync modes enabled, force x1 clock */
+		ClockMult = 1;
+	else
+		ClockMult = SCC_ClockMode[ scc[chn].WR[4] >> 6 ];
+
+
+	TimeConstant = ( scc[chn].WR[13]<<8 ) + scc[chn].WR[12];
+
+	BaudRate = ( (uint64_t)MachineClocks.SCC_Freq ) / ( 2 * ClockMult * ( TimeConstant + 2 ) );
+
+
+/* TODO : mult = 1 after reset ? */
+fprintf ( stderr , "SCC_Compute_BaudRate chn %d mult %d tc %d br=%d\n" , chn , ClockMult , TimeConstant , BaudRate );
+	return BaudRate;
+}
+
+
 static uint8_t SCC_ReadControl(int chn)
 {
 	uint8_t value = 0;
@@ -453,25 +602,25 @@ static uint8_t SCC_ReadControl(int chn)
 	{
 	 case 0:	// RR0
 		temp = SCC_serial_getStatus(chn);
-		scc[chn].regs[0] = temp & 0xFF;		// define CTS(5), TBE(2) and RBF=RCA(0)
+		scc[chn].WR[0] = temp & 0xFF;		// define CTS(5), TBE(2) and RBF=RCA(0)
 		if (chn)
 			RR3 = RR3M & (temp >> 8);	// define RxIP(2), TxIP(1) and ExtIP(0)
-		else if (scc[0].regs[9] == 0x20)
+		else if (scc[0].WR[9] == 0x20)
 			RR3 |= 0x8;
-		value = scc[chn].regs[0];
+		value = scc[chn].WR[0];
 		LOG_TRACE(TRACE_SCC, "scc read channel=%c RR%d tx/rx buffer status value=$%02x\n" , 'A'+chn , active_reg , value );
 		break;
 	 case 2:	// not really useful (RR2 seems unaccessed...)
-		value = scc[0].regs[2];
+		value = scc[0].WR[2];
 		if (chn == 0)	// vector base only for RR2A
 		{
 			LOG_TRACE(TRACE_SCC, "scc read channel=%c RR%d int vector value=$%02x\n" , 'A'+chn , active_reg , value );
 			break;
 		}
-		if ((scc[0].regs[9] & 1) == 0)	// no status bit added
+		if ((scc[0].WR[9] & 1) == 0)	// no status bit added
 			break;
 		// status bit added to vector
-		if (scc[0].regs[9] & 0x10) // modify high bits
+		if (scc[0].WR[9] & 0x10) // modify high bits
 		{
 			if (RR3 == 0)
 			{
@@ -541,27 +690,27 @@ static uint8_t SCC_ReadControl(int chn)
 		LOG_TRACE(TRACE_SCC, "scc read channel=%c RR%d interrupt pending value=$%02x\n" , 'A'+chn , active_reg , value );
 		break;
 	 case 4: // RR0
-		value = scc[chn].regs[0];
+		value = scc[chn].WR[0];
 		break;
 	 case 8: // DATA reg
-		scc[chn].regs[8] = SCC_serial_getData(chn);
-		value = scc[chn].regs[8];
+		scc[chn].WR[8] = SCC_serial_getData(chn);
+		value = scc[chn].WR[8];
 		LOG_TRACE(TRACE_SCC, "scc read channel=%c RR%d rx data value=$%02x\n" , 'A'+chn , active_reg , value );
 		break;
 	 case 9: // WR13
-		value = scc[chn].regs[13];
+		value = scc[chn].WR[13];
 		break;
 	 case 11: // WR15
 	 case 15: // EXT/STATUS IT Ctrl
-		value = scc[chn].regs[15] &= 0xFA; // mask out D2 and D0
+		value = scc[chn].WR[15] &= 0xFA; // mask out D2 and D0
 		LOG_TRACE(TRACE_SCC, "scc read channel=%c RR%d ext status IE value=$%02x\n" , 'A'+chn , active_reg , value );
 		break;
 	 case 12: // BRG LSB
-		value = scc[chn].regs[active_reg];
+		value = scc[chn].WR[active_reg];
 		LOG_TRACE(TRACE_SCC, "scc read channel=%c RR%d baud rate time constant low value=$%02x\n" , 'A'+chn , active_reg , value );
 		break;
 	 case 13: // BRG MSB
-		value = scc[chn].regs[active_reg];
+		value = scc[chn].WR[active_reg];
 		LOG_TRACE(TRACE_SCC, "scc read channel=%c RR%d baud rate time constant high value=$%02x\n" , 'A'+chn , active_reg , value );
 		break;
 
@@ -593,8 +742,8 @@ static uint8_t SCC_handleRead(uint32_t addr)
 		break;
 	 case 2: // channel A
 	 case 6: // channel B
-		scc[channel].regs[8] = SCC_serial_getData(channel);
-		value = scc[channel].regs[8];
+		scc[channel].WR[8] = SCC_serial_getData(channel);
+		value = scc[channel].WR[8];
 		break;
 	 default:
 		Log_Printf(LOG_DEBUG, "SCC: illegal read address=$%x\n", addr);
@@ -610,7 +759,7 @@ static void SCC_WriteControl(int chn, uint8_t value)
 {
 	uint32_t BaudRate;
 	int i;
-
+	int write_reg;
 
 	if (active_reg == 0)
 	{
@@ -663,14 +812,15 @@ static void SCC_WriteControl(int chn, uint8_t value)
 			// Clear SCC flag if no pending IT or no properly
 			// configured WR9. Must be done here to avoid
 			// scc_do_Interrupt call without pending IT
-			TriggerSCC((RR3 & RR3M) && ((0xB & scc[0].regs[9]) == 9));
+			TriggerSCC((RR3 & RR3M) && ((0xB & scc[0].WR[9]) == 9));
 		}
 		return;
 	}
 
 	LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d value=$%02x\n" , 'A'+chn , active_reg , value );
-	// active_reg > 0:
-	scc[chn].regs[active_reg] = value;
+
+	write_reg = active_reg;
+
 	if (active_reg == 1) // Tx/Rx interrupt enable
 	{
 		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set tx/rx int value=$%02x\n" , 'A'+chn , active_reg , value );
@@ -711,7 +861,7 @@ static void SCC_WriteControl(int chn, uint8_t value)
 	else if (active_reg == 2)
 	{
 		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set int vector value=$%02x\n" , 'A'+chn , active_reg , value );
-		scc[0].regs[active_reg] = value; // single WR2 on SCC
+		scc[0].WR[2] = value;		/* WR2 is common to channels A and B, store it in channel A  */
 	}
 	else if (active_reg == 3) // Receive parameter and control
 	{
@@ -734,9 +884,10 @@ static void SCC_WriteControl(int chn, uint8_t value)
 	}
 	else if (active_reg == 7) // Sync characters low or SDLC flag or WR7'
 	{
-		if ( scc[chn].regs[15] & 1 )
+		if ( scc[chn].WR[15] & 1 )
 		{
 			LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set WR7' value=$%02x\n" , 'A'+chn , active_reg , value );
+			write_reg = 16;			/* WR[16] stores the content of WR7' */
 		}
 		else
 		{
@@ -748,18 +899,24 @@ static void SCC_WriteControl(int chn, uint8_t value)
 		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set transmit buffer value=$%02x\n" , 'A'+chn , active_reg , value );
 		SCC_serial_setData(chn, value);
 	}
-	else if (active_reg == 9) // Master interrupt control (common for both channels)
+	else if (active_reg == 9) 		/* Master interrupt control (common for both channels) */
 	{
 		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set master control value=$%02x\n" , 'A'+chn , active_reg , value );
-		scc[0].regs[9] = value; // single WR9 (accessible by both channels)
-		if (value & 0x40)
+		scc[0].WR[9] = value;		/* WR9 is common to channels A and B, store it in channel A  */
+
+		if ( ( value & 0xc0 ) == 0xc0 )
 		{
-			SCC_channelBreset();
+			SCC_ResetFull ( false );		/* Force Hardware Reset */
+		}
+		else if (value & 0x40)
+		{
+			SCC_ResetChannel ( 0 , false );		/* Channel A */
 		}
 		if (value & 0x80)
 		{
-			SCC_channelAreset();
+			SCC_ResetChannel ( 1 , false );		/* Channel B */
 		}
+
 		//  set or clear SCC flag accordingly (see later)
 	}
 	else if (active_reg == 10) // Tx/Rx misc control bits
@@ -788,7 +945,7 @@ static void SCC_WriteControl(int chn, uint8_t value)
 		switch (value)
 		{
 		 case 0:
-			switch (scc[chn].regs[12])
+			switch (scc[chn].WR[12])
 			{
 			 case 0: // HSMODEM for 200 mapped to 230400
 				BaudRate = 230400;
@@ -841,7 +998,7 @@ static void SCC_WriteControl(int chn, uint8_t value)
 			}
 			break;
 		 case 1:
-			switch (scc[chn].regs[12])
+			switch (scc[chn].WR[12])
 			{
 			 case 0xa1: // normal for 600
 				BaudRate = 600;
@@ -852,39 +1009,39 @@ static void SCC_WriteControl(int chn, uint8_t value)
 			}
 			break;
 		 case 2:
-			if (scc[chn].regs[12] == 0xfe)
+			if (scc[chn].WR[12] == 0xfe)
 				BaudRate = 600; //HSMODEM
 			break;
 		 case 3:
-			if (scc[chn].regs[12] == 0x45)
+			if (scc[chn].WR[12] == 0x45)
 				BaudRate = 300; //normal
 			break;
 		 case 4:
-			if (scc[chn].regs[12] == 0xe8)
+			if (scc[chn].WR[12] == 0xe8)
 				BaudRate = 200; //normal
 			break;
 		 case 5:
-			if (scc[chn].regs[12] == 0xfe)
+			if (scc[chn].WR[12] == 0xfe)
 				BaudRate = 300; //HSMODEM
 			break;
 		 case 6:
-			if (scc[chn].regs[12] == 0x8c)
+			if (scc[chn].WR[12] == 0x8c)
 				BaudRate = 150; //normal
 			break;
 		 case 7:
-			if (scc[chn].regs[12] == 0x4d)
+			if (scc[chn].WR[12] == 0x4d)
 				BaudRate = 134; //normal
 			break;
 		 case 8:
-			if (scc[chn].regs[12] == 0xee)
+			if (scc[chn].WR[12] == 0xee)
 				BaudRate = 110; //normal
 			break;
 		 case 0xd:
-			if (scc[chn].regs[12] == 0x1a)
+			if (scc[chn].WR[12] == 0x1a)
 				BaudRate = 75; //normal
 			break;
 		 case 0x13:
-			if (scc[chn].regs[12] == 0xa8)
+			if (scc[chn].WR[12] == 0xa8)
 				BaudRate = 50; //normal
 			break;
 		 case 0xff: // HSMODEM dummy value->silently ignored
@@ -893,6 +1050,9 @@ static void SCC_WriteControl(int chn, uint8_t value)
 			Log_Printf(LOG_DEBUG, "SCC: unexpected MSB constant for baud rate\n");
 			break;
 		}
+
+		SCC_Compute_BaudRate(chn);
+
 		if (BaudRate)  // set only if defined
 			SCC_serial_setBaud(chn, BaudRate);
 
@@ -923,17 +1083,17 @@ static void SCC_WriteControl(int chn, uint8_t value)
 	else if (active_reg == 15) // external status int control
 	{
 		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set ext status int control value=$%02x\n" , 'A'+chn , active_reg , value );
-		if (value & 1)
-		{
-			Log_Printf(LOG_DEBUG, "SCC: WR7 prime not yet processed\n");
-		}
 	}
 
 	// set or clear SCC flag accordingly. Yes it's ugly but avoids unnecessary useless calls
 	if (active_reg == 1 || active_reg == 2 || active_reg == 9)
-		TriggerSCC((RR3 & RR3M) && ((0xB & scc[0].regs[9]) == 9));
+		TriggerSCC((RR3 & RR3M) && ((0xB & scc[0].WR[9]) == 9));
 
-	active_reg = 0; // next access for RR0 or WR0
+
+	/* write_reg can be different from active_reg when accessing WR7' */
+	scc[chn].WR[write_reg] = value;
+
+	active_reg = 0;			/* next access for RR0 or WR0 */
 }
 
 static void SCC_handleWrite(uint32_t addr, uint8_t value)
@@ -965,11 +1125,11 @@ void SCC_IRQ(void)
 {
 	uint16_t temp;
 	temp = SCC_serial_getStatus(0);
-	if (scc[0].regs[9] == 0x20)
+	if (scc[0].WR[9] == 0x20)
 		temp |= 0x800; // fake ExtStatusChange for HSMODEM install
-	scc[1].regs[0] = temp & 0xFF; // RR0B
+	scc[1].WR[0] = temp & 0xFF; // RR0B
 	RR3 = RR3M & (temp >> 8);
-	if (RR3 && (scc[0].regs[9] & 0xB) == 9)
+	if (RR3 && (scc[0].WR[9] & 0xB) == 9)
 		TriggerSCC(true);
 }
 
@@ -984,10 +1144,10 @@ int SCC_doInterrupt(void)
 		if (RR3 & i & RR3M)
 			break ;
 	}
-	vector = scc[0].regs[2]; // WR2 = base of vectored interrupts for SCC
-	if ((scc[0].regs[9] & 3) == 0)
+	vector = scc[0].WR[2]; // WR2 = base of vectored interrupts for SCC
+	if ((scc[0].WR[9] & 3) == 0)
 		return vector; // no status included in vector
-	if ((scc[0].regs[9] & 0x32) != 0)  // shouldn't happen with TOS, (to be completed if needed)
+	if ((scc[0].WR[9] & 0x32) != 0)  // shouldn't happen with TOS, (to be completed if needed)
 	{
 		Log_Printf(LOG_DEBUG, "SCC: unexpected WR9 contents\n");
 		// no Soft IACK, Status Low control bit expected, no NV
@@ -1063,12 +1223,12 @@ void SCC_Info(FILE *fp, uint32_t dummy)
 	{
 		fprintf(fp, "\nSCC %c:\n", 'A' + i);
 		fprintf(fp, "- Registers:\n");
-		for (reg = 0; reg < ARRAY_SIZE(scc[0].regs); reg++)
+		for (reg = 0; reg < ARRAY_SIZE(scc[0].WR); reg++)
 		{
 			sep = "";
 			if (unlikely(reg % 8 == 7))
 				sep = "\n";
-			fprintf(fp, "  %02x%s", scc[i].regs[reg], sep);
+			fprintf(fp, "  %02x%s", scc[i].WR[reg], sep);
 		}
 		fprintf(fp, "- Char count: %d\n", scc[i].charcount);
 		fprintf(fp, "- Old status: 0x%04x\n", scc[i].oldStatus);
