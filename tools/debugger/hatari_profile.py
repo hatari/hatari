@@ -113,6 +113,9 @@ Call information filtering options:
 <list> is a comma separate list of symbol names, like this:
 	--ignore-to _int_timerc,_int_vbl
 
+If (e.g. C++) symbol names contain commas, change list separator:
+	--separator ';'
+
 These options change which calls are reported for functions, and can
 affect the shape & complexity of the graph a lot.  If you e.g. want
 to see just nodes with costs specific to -p option, use "--no-calls
@@ -1333,8 +1336,9 @@ class ProfileStats(ProfileOutput):
         "output profile statistics"
         stats = profobj.stats
         time = stats.get_time(stats.totals)
-        self.write("\nTime spent in profile = %.5fs.\n\n" % time)
+        self.write("\nTime spent in profile = %.5fs.\n" % time)
 
+        self.write("\nProfile lines with highest costs + totals:\n")
         symbols = profobj.symbols
         items = len(stats.totals)
         for i in range(items):
@@ -1347,10 +1351,10 @@ class ProfileStats(ProfileOutput):
                     name = " in %s+%d" % (name, offset)
                 else:
                     name = " in %s" % name
-            self.write("%s:\n" % stats.names[i])
+            self.write("* %s:\n" % stats.names[i])
             info = (stats.max_val[i], name, addr, stats.max_line[i])
-            self.write("- max = %d,%s at 0x%x, on line %d\n" % info)
-            self.write("- %d in total\n" % stats.totals[i])
+            self.write("  - max = %d,%s at 0x%x, on line %d\n" % info)
+            self.write("  - %d in total\n" % stats.totals[i])
 
     def do_output(self, profobj):
         "output enabled lists"
@@ -1732,6 +1736,7 @@ class Main(Output):
         "output=",
         "propagate",
         "relative=",
+        "separator=",
         "stats",
         "top",
         "verbose"
@@ -1755,10 +1760,14 @@ class Main(Output):
         prof = EmulatorProfile()
         graph = ProfileGraph()
         stats = ProfileStats()
+
+        splitter = ','
         for opt, arg in opts:
             #self.message("%s: %s" % (opt, arg))
             # options for profile symbol parsing
-            if opt in ("-a", "--absolute"):
+            if opt == "--separator":
+                splitter = arg
+            elif opt in ("-a", "--absolute"):
                 self.message("\nParsing absolute symbol address information from %s..." % arg)
                 prof.parse_symbols(self.open_file(arg, "r"), False)
             elif opt in ("-r", "--relative"):
@@ -1770,7 +1779,7 @@ class Main(Output):
             elif opt == "--no-calls":
                 prof.remove_calls(arg)
             elif opt == "--ignore-to":
-                prof.set_ignore_to(arg.split(','))
+                prof.set_ignore_to(arg.split(splitter))
             # options for profile Callgraph info generation
             elif opt in ("-k", "--callgrind"):
                 prof.enable_callgrind()
@@ -1792,13 +1801,13 @@ class Main(Output):
             elif opt in ("-g", "--graph"):
                 graph.enable_output()
             elif opt == "--ignore":
-                graph.set_ignore(arg.split(','))
+                graph.set_ignore(arg.split(splitter))
             elif opt == "--ignore-from":
-                graph.set_ignore_from(arg.split(','))
+                graph.set_ignore_from(arg.split(splitter))
             elif opt == "--only":
-                graph.set_only(arg.split(','))
+                graph.set_only(arg.split(splitter))
             elif opt == "--mark":
-                graph.set_marked(arg.split(','))
+                graph.set_marked(arg.split(splitter))
             elif opt == "--no-intermediate":
                 graph.disable_intermediate()
             elif opt == "--no-leafs":
