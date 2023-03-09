@@ -290,5 +290,15 @@ void Dialog_JoyDlg(void)
 	while (but != DLGJOY_EXIT && but != SDLGUI_QUIT
 	       && but != SDLGUI_ERROR && !bQuitProgram);
 
+	/* Tell ikbd to release joystick button 2 emulated
+	 * space bar in the theoritical case it has gotten stuck
+	 * down, and to avoid that case, prevent it also going
+	 * down if user pressed the button when invoking GUI
+	 */
+	if (JoystickSpaceBar == JOYSTICK_SPACE_DOWNED)
+		JoystickSpaceBar = JOYSTICK_SPACE_UP;
+	else if (JoystickSpaceBar == JOYSTICK_SPACE_DOWN)
+		JoystickSpaceBar = JOYSTICK_SPACE_NULL;
+
 	DlgJoystick_WriteValuesToConf(nActJoy);
 }

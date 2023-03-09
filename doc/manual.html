@@ -1703,10 +1703,12 @@ the two lower arrows.</p>
 <p>Check the "Enable autofire" option if you are too lazy to pound
 on the fire button in shoot'em-up games. However, this option only works with
 certain games. In some other games, it gets worse if you enable this option.</p>
-<p>"Button 2" options select whether fire button 2 emulates joystick
-up or a SPACE key press.  Latter makes sense to enable only for one of
-the enabled joysticks, and unless game explicitly queries also other
-joysticks, it works only for Joystick 1.
+<p>"Button 2" options select whether (real joystick) fire button 2
+emulates joystick up or a SPACE key press. Unless game explicitly
+queries other joysticks, latter will work only for joystick 1 (queried
+also by TOS). If SPACE key gets stuck down (can happen if querying
+given joystick stops while button 2 is kept down), visiting Joystick
+setup dialog will fix that.</p>
 <p>See <a href="#Emulated_joystick">Emulated joystick</a> section for details.</p>
 
 
