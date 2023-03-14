@@ -193,10 +193,10 @@ MIDI-networking two Hatari emulators can be most easily done with socat.
 
 MIDI networking over normal TCP/IP network:
   @remote.site:
-    socat -b1 PTY,raw,echo=0,link=/tmp/midi1 TCP4-LISTEN:33333 &
+    socat -b1 PTY,rawer,link=/tmp/midi1 TCP4-LISTEN:33333 &
     hatari --midi-in /tmp/midi1 --midi-out /tmp/midi1 &
   @local.site:
-    socat -b1 PTY,raw,echo=0,link=/tmp/midi2 TCP4:remote.site:33333 &
+    socat -b1 PTY,rawer,link=/tmp/midi2 TCP4:remote.site:33333 &
     hatari --midi-in /tmp/midi2 --midi-out /tmp/midi2 &
 
 Buffer size (-b) is set to one just in case (by default socat buffer
@@ -209,7 +209,7 @@ the port, most likely you need to run "socat" as root.  To test this
 with a single machine, use "localhost" as the "remote.site".
 
 Local MIDI network:
-  socat -b1 PTY,raw,echo=0,link=/tmp/midi1 PTY,raw,echo=0,link=/tmp/midi2 &
+  socat -b1 PTY,rawer,link=/tmp/midi1 PTY,rawer,link=/tmp/midi2 &
   hatari --midi-in /tmp/midi1 --midi-out /tmp/midi1 &
   hatari --midi-in /tmp/midi2 --midi-out /tmp/midi2 &
 
