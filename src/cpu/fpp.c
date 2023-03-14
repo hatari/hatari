@@ -47,7 +47,9 @@
 extern void cputester_fault(void);
 #endif
 
+#ifdef WITH_SOFTFLOAT
 #include "softfloat/softfloat.h"
+#endif
 
 // global variable for JIT FPU
 #ifdef USE_LONG_DOUBLE
@@ -3649,7 +3651,9 @@ void fpu_modechange(void)
 		fpp_from_exten_fmovem(&regs.fp[i], &temp_ext[i][0], &temp_ext[i][1], &temp_ext[i][2]);
 	}
 	if (currprefs.fpu_mode > 0) {
+#ifdef WITH_SOFTFLOAT
 		fp_init_softfloat(currprefs.fpu_model);
+#endif
 #ifdef MSVC_LONG_DOUBLE
 		use_long_double = false;
 	} else if (currprefs.fpu_mode < 0) {
@@ -3692,7 +3696,9 @@ void fpu_reset (void)
 	currprefs.fpu_mode = changed_prefs.fpu_mode;
 //fprintf(stderr, "fpu_reset %d\n" , currprefs.fpu_mode );
 	if (currprefs.fpu_mode > 0) {
+#ifdef WITH_SOFTFLOAT
 		fp_init_softfloat(currprefs.fpu_model);
+#endif
 #ifdef MSVC_LONG_DOUBLE
 		use_long_double = false;
 	} else if (currprefs.fpu_mode < 0) {
