@@ -94,9 +94,27 @@
 #define TBE 2
 #define CTS 5
 
+
+#define SCC_CLOCK_PCLK		MachineClocks.SCC_Freq		/* 8021247 Hz */
+#define SCC_CLOCK_PCLK4		3672000				/* Dedicated OSC */
+#define SCC_CLOCK_BCLK		2457600				/* Connected to the MFP's XTAL clock */
+
+#define SCC_BAUDRATE_SOURCE_CLOCK_RTXC		0
+#define SCC_BAUDRATE_SOURCE_CLOCK_TRXC		1
+#define SCC_BAUDRATE_SOURCE_CLOCK_BRG		2
+#define SCC_BAUDRATE_SOURCE_CLOCK_DPLL		3
+
+#define SCC_BAUDRATE_SOURCE_CLOCK_PCLK		1
+#define SCC_BAUDRATE_SOURCE_CLOCK_PCLK4		2
+#define SCC_BAUDRATE_SOURCE_CLOCK_BCLK		3
+#define SCC_BAUDRATE_SOURCE_CLOCK_TCCLK		4
+
+
+
 struct SCC {
 	/* NOTE : WR2 and WR9 are common to both channels, we store their content in channel A */
-	uint8_t WR[17];			/* 0-15 are for WR0-WR15, 16 is for WR7' */
+	/* Also special case for WR7', we store it in reg 16 */
+	uint8_t WR[16+1];		/* 0-15 are for WR0-WR15, 16 is for WR7' */
 	uint8_t RR[16];			/* 0-15 are for RR0-RR15 */
 
 	int charcount;
@@ -115,6 +133,28 @@ static uint8_t RR3, RR3M;		/* common to channel A and B */
 
 
 static int SCC_ClockMode[] = { 1 , 16 , 32 , 64 };	/* Clock multiplier from WR4 bits 6-7 */
+
+
+static int SCC_Standard_Baudrate[] = {
+	50 ,
+	75,
+	110,
+	134,
+	200,
+	300,
+	600,
+	1200,
+	1800,
+	2400,
+	4800,
+	9600,
+	19200,
+	38400,
+	57600,
+	115200,
+	2303400
+};
+
 
 
 bool SCC_IsAvailable(CNF_PARAMS *cnf)
@@ -568,29 +608,257 @@ static void SCC_serial_setDTR(int chn, bool value)
 }
 
 
-static uint32_t SCC_Compute_BaudRate(int chn)
+/*
+ * Depending on the selected clock mode the baud rate might not match
+ * exactly the standard baud rates. For example with a 8 MHz clock and
+ * time constant=24 with x16 multiplier, we get an effective baud rate
+ * of 9641, instead of the standard 9600.
+ * To handle this we use a 1% margin to check if the computed baud rate
+ * match one of the standard baud rates. If so, we will use the standard
+ * baud rate to configure the serial port.
+ */
+
+static int SCC_Get_Standard_BaudRate ( int BaudRate )
 {
-	int TimeConstant;
-	int ClockMult;
-	uint32_t BaudRate;
+	float	margin , low , high;
+	int	i;
 
-	/* TODO : check WR11 for clock source */
 
-	if ( ( scc[chn].WR[4] & 0x0c ) == 0 )		/* bits 2-3 = 0, sync modes enabled, force x1 clock */
+	for ( i=0 ; i<(int)sizeof(SCC_Standard_Baudrate) ; i++ )
+	{
+		margin = SCC_Standard_Baudrate[ i ] * 0.01;	/* 1% */
+		if ( margin < 4 )
+			margin = 4;				/* increase margin for small bitrates < 600 */
+
+		low = SCC_Standard_Baudrate[ i ] - margin;
+		high = SCC_Standard_Baudrate[ i ] + margin;
+fprintf ( stderr , "check %d %d %f %f\n" , i , BaudRate , low , high );
+		if ( ( low < BaudRate ) && ( BaudRate < high ) )
+			return SCC_Standard_Baudrate[ i ];
+	}
+
+	return -1;
+}
+
+
+/*
+ * Get the frequency in Hz for RTxCA and RTxCB depending on the machine type
+ *  - RTxCA is connected to PCLK4 on all machines
+ *  - RTxCB is also connected to PCLK4 on MegaSTE and Falcon
+ *    On TT it's connected to TTCLK (Timer C output on the TT-MFP)
+ */
+
+static int SCC_Get_RTxC_Freq ( int chn )
+{
+	int ClockFreq;
+
+	if ( Config_IsMachineMegaSTE() || Config_IsMachineFalcon() )
+		ClockFreq = SCC_CLOCK_PCLK4;
+	else						/* TT */
+	{
+		if ( chn == 0 )
+			ClockFreq = SCC_CLOCK_PCLK4;
+		else
+		{
+			/* TODO : clock is connected to timer C output on TT-MFP */
+			ClockFreq = SCC_CLOCK_PCLK4;	/* TODO : use TCCLK */
+		}
+	}
+
+	return ClockFreq;
+}
+
+
+/*
+ * Get the frequency in Hz for TRxCA and TRxCB  depending on the machine type
+ *  - TRxCB is connected to BCLK on all machines (2.4576 MHz on the MFP's XTAL)
+ *  - TRxCA is connected to LCLK on MegaSTE and TT
+ *    On Falcon it's connected to SYNCA on the SCC
+ */
+
+static int SCC_Get_TRxC_Freq ( int chn )
+{
+	int ClockFreq;
+
+	if ( chn == 1 )
+		ClockFreq = SCC_CLOCK_BCLK;
+	else
+	{
+		if ( Config_IsMachineMegaSTE() || Config_IsMachineTT() )
+			/* TODO : clock is connected to LCLK */
+			ClockFreq = SCC_CLOCK_BCLK;	/* TODO : use LCLK */
+		else
+			/* TODO : clock is connected to SYNCA */
+			ClockFreq = SCC_CLOCK_BCLK;	/* TODO : use SYNCA */
+	}
+
+	return ClockFreq;
+}
+
+
+/*
+ * Return the generated baud rate depending on the value of WR4, WR11, WR12, WR13 and WR14
+ *
+ * The SCC doc gives the formula to compute time constant from a baud rate in the BRG :
+ *	TimeConstant = ( ClockFreq / ( 2 * BaudRate * ClockMult ) ) - 2
+ *
+ * when we know the time constant in the BRG, we can compute the baud rate for the BRG :
+ *	BaudRate = ClockFreq / ( 2 * ( TimeConstant + 2 ) * ClockMult )
+ */
+
+static int SCC_Compute_BaudRate ( int chn , bool *pStartBRG , uint32_t *pBaudRate_BRG )
+{
+	int	TimeConstant;
+	int	ClockFreq_BRG = 0;
+	int	ClockFreq = 0;
+	int	ClockMult;
+	int	TransmitClock , ReceiveClock;
+	int	BaudRate;
+	const char	*ClockName;
+
+
+	/* WR4 gives Clock Mode Multiplier */
+	if ( ( scc[chn].WR[4] & 0x0c ) == 0 )				/* bits 2-3 = 0, sync modes enabled, force x1 clock */
 		ClockMult = 1;
 	else
-		ClockMult = SCC_ClockMode[ scc[chn].WR[4] >> 6 ];
+		ClockMult = SCC_ClockMode[ scc[chn].WR[4] >> 6 ];	/* use bits 6-7 to get multiplier */
 
 
+	/* WR12 and WR13 give Low/High values of the 16 bit time constant for the BRG  */
 	TimeConstant = ( scc[chn].WR[13]<<8 ) + scc[chn].WR[12];
 
-	BaudRate = ( (uint64_t)MachineClocks.SCC_Freq ) / ( 2 * ClockMult * ( TimeConstant + 2 ) );
+
+	/* WR14 gives the clock source for the baud rate generator + enable the BRG */
+	/* NOTE : it's possible to start the BRG even we use a different clock mode later */
+	/* for the baud rate in WR11 */
+	if ( ( scc[chn].WR[14] & 1 ) == 0 )				/* BRG is disabled */
+		*pStartBRG = false;
+	else
+	{
+		*pStartBRG = true;
+
+		if ( scc[chn].WR[14] & 2 )				/* source is PCLK */
+			ClockFreq_BRG = SCC_CLOCK_PCLK;
+		else							/* source is RTxC */
+			ClockFreq_BRG = SCC_Get_RTxC_Freq ( chn );
+
+		*pBaudRate_BRG = round ( (float)ClockFreq_BRG / ( 2 * ClockMult * ( TimeConstant + 2 ) ) );
+
+		if ( *pBaudRate_BRG == 0 )				/* if we rounded to O, we use 1 instead */
+			*pBaudRate_BRG = 1;
+
+		LOG_TRACE(TRACE_SCC, "scc compute baud rate start BRG clock_freq=%d chn=%d mult=%d tc=%d br=%d\n" , ClockFreq_BRG , chn , ClockMult , TimeConstant , *pBaudRate_BRG );
+	}
 
 
-/* TODO : mult = 1 after reset ? */
-fprintf ( stderr , "SCC_Compute_BaudRate chn %d mult %d tc %d br=%d\n" , chn , ClockMult , TimeConstant , BaudRate );
+	/* WR11 clock mode */
+	/* In the case of our emulation we only support when "Receive Clock" mode is the same as "Transmit Clock" */
+	TransmitClock = ( scc[chn].WR[11] >> 3 ) & 3;
+	ReceiveClock = ( scc[chn].WR[11] >> 5 ) & 3;
+	if ( TransmitClock != ReceiveClock )
+	{
+		LOG_TRACE(TRACE_SCC, "scc compute baud rate %c, unsupported clock mode in WR11, transmit=%d != receive=%d\n" , 'A'+chn , TransmitClock , ReceiveClock );
+		return -1;
+	}
+
+
+	/* Compute the tx/rx baud rate depending on the clock mode in WR11 */
+	if ( TransmitClock == SCC_BAUDRATE_SOURCE_CLOCK_BRG )		/* source is BRG */
+	{
+		if ( !*pStartBRG )
+		{
+			LOG_TRACE(TRACE_SCC, "scc compute baud rate %c, clock mode set to BRG but BRG not enabled\n" , 'A'+chn );
+			return -1;
+		}
+
+		ClockName = "BRG";
+		BaudRate = *pBaudRate_BRG;
+	}
+	else
+	{
+		if ( TransmitClock == SCC_BAUDRATE_SOURCE_CLOCK_RTXC )		/* source is RTxC */
+		{
+			ClockName = "RTxC";
+			ClockFreq = SCC_Get_RTxC_Freq ( chn );
+		}
+		else if ( TransmitClock == SCC_BAUDRATE_SOURCE_CLOCK_TRXC )	/* source is TRxC */
+		{
+			ClockName = "TRxC";
+			ClockFreq = SCC_Get_TRxC_Freq ( chn );
+		}
+		else								/* source is DPLL, not supported */
+		{
+			ClockName = "DPLL";
+			LOG_TRACE(TRACE_SCC, "scc compute baud rate %c, unsupported clock mode dpll in WR11\n" , 'A'+chn );
+			return -1;
+		}
+
+		if ( ClockFreq == 0 )						/* this can happen when using RTxC=TCCLK */
+		{
+			LOG_TRACE(TRACE_SCC, "scc compute baud rate clock_source=%s clock_freq=%d chn=%d, clock is stopped\n" , ClockName , ClockFreq , chn );
+			return -1;
+		}
+
+		BaudRate = round ( (float)ClockFreq / ClockMult );
+	}
+
+	LOG_TRACE(TRACE_SCC, "scc compute baud rate clock_source=%s clock_freq=%d chn=%d clock_mode=%d mult=%d tc=%d br=%d\n" , ClockName , TransmitClock==SCC_BAUDRATE_SOURCE_CLOCK_BRG?ClockFreq_BRG:ClockFreq , chn , TransmitClock , ClockMult , TimeConstant , BaudRate );
+
 	return BaudRate;
 }
+
+
+/*
+ * This function groups all the actions when the corresponding WRx are modified
+ * to change the baud rate on a channel :
+ *  - compute new baud rate
+ *  - start BRG timer if needed
+ *  - check if baud rate is a standard one and configure host serial port
+ */
+
+static void SCC_Update_BaudRate ( int chn )
+{
+	bool		StartBRG;
+	uint32_t	BaudRate_BRG;
+	int		BaudRate;
+	int		BaudRate_Standard;
+	bool		Serial_ON;
+
+
+	BaudRate = SCC_Compute_BaudRate ( chn , &StartBRG , &BaudRate_BRG );
+	if ( StartBRG )
+	{
+		// start cycint
+	}
+	else
+	{
+		// stop cycint
+	}
+
+	if ( BaudRate == -1 )
+	{
+		Serial_ON = false;
+	}
+	else
+	{
+		BaudRate_Standard = SCC_Get_Standard_BaudRate ( BaudRate );
+		if ( BaudRate_Standard > 0 )
+			Serial_ON = true;
+		else
+			Serial_ON = false;
+	}
+
+	if ( Serial_ON )
+	{
+fprintf(stderr , "update br serial_on %d->%d\n" , BaudRate , BaudRate_Standard );
+//		SCC_serial_setBaud ( chn , BaudRate_Standard );
+	}
+	else
+	{
+		/* TODO : stop serial */
+	}
+
+  }
 
 
 static uint8_t SCC_ReadControl(int chn)
@@ -819,7 +1087,14 @@ static void SCC_WriteControl(int chn, uint8_t value)
 
 	LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d value=$%02x\n" , 'A'+chn , active_reg , value );
 
+	/* write_reg can be different from active_reg when accessing WR7' */
 	write_reg = active_reg;
+	if ( scc[chn].WR[15] & 1 )
+	{
+		write_reg = 16;			/* WR[16] stores the content of WR7' */
+	}
+	scc[chn].WR[write_reg] = value;
+
 
 	if (active_reg == 1) // Tx/Rx interrupt enable
 	{
@@ -870,6 +1145,7 @@ static void SCC_WriteControl(int chn, uint8_t value)
 	else if (active_reg == 4) // Tx/Rx misc parameters and modes
 	{
 		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set tx/rx stop/parity value=$%02x\n" , 'A'+chn , active_reg , value );
+		SCC_Update_BaudRate ( chn );
 	}
 	else if (active_reg == 5) // Transmit parameter and control
 	{
@@ -887,7 +1163,6 @@ static void SCC_WriteControl(int chn, uint8_t value)
 		if ( scc[chn].WR[15] & 1 )
 		{
 			LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set WR7' value=$%02x\n" , 'A'+chn , active_reg , value );
-			write_reg = 16;			/* WR[16] stores the content of WR7' */
 		}
 		else
 		{
@@ -926,10 +1201,12 @@ static void SCC_WriteControl(int chn, uint8_t value)
 	else if (active_reg == 11) // Clock Mode Control
 	{
 		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set clock mode control value=$%02x\n" , 'A'+chn , active_reg , value );
+		SCC_Update_BaudRate ( chn );
 	}
 	else if (active_reg == 12) // Lower byte of baud rate
 	{
 		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set baud rate time constant low value=$%02x\n" , 'A'+chn , active_reg , value );
+		SCC_Update_BaudRate ( chn );
 	}
 	else if (active_reg == 13) // set baud rate according to WR13 and WR12
 	{
@@ -1051,7 +1328,7 @@ static void SCC_WriteControl(int chn, uint8_t value)
 			break;
 		}
 
-		SCC_Compute_BaudRate(chn);
+		SCC_Update_BaudRate ( chn );
 
 		if (BaudRate)  // set only if defined
 			SCC_serial_setBaud(chn, BaudRate);
@@ -1079,6 +1356,7 @@ static void SCC_WriteControl(int chn, uint8_t value)
 	else if (active_reg == 14) // Misc Control bits
 	{
 		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set misc control bits value=$%02x\n" , 'A'+chn , active_reg , value );
+		SCC_Update_BaudRate ( chn );
 	}
 	else if (active_reg == 15) // external status int control
 	{
@@ -1089,9 +1367,6 @@ static void SCC_WriteControl(int chn, uint8_t value)
 	if (active_reg == 1 || active_reg == 2 || active_reg == 9)
 		TriggerSCC((RR3 & RR3M) && ((0xB & scc[0].WR[9]) == 9));
 
-
-	/* write_reg can be different from active_reg when accessing WR7' */
-	scc[chn].WR[write_reg] = value;
 
 	active_reg = 0;			/* next access for RR0 or WR0 */
 }
