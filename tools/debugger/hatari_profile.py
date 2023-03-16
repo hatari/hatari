@@ -2,7 +2,7 @@
 #
 # Hatari profile data processor
 #
-# 2013-2019 (C) Eero Tamminen, licensed under GPL v2+
+# 2013-2023 (C) Eero Tamminen, licensed under GPL v2+
 #
 """
 A tool for post-processing Hatari emulator HW profiling data with
@@ -121,8 +121,8 @@ affect the shape & complexity of the graph a lot.  If you e.g. want
 to see just nodes with costs specific to -p option, use "--no-calls
 berux" option.
 
-If default --no-calls type removal doesn't remove all interrupt
-handling switches [1], give handler names to --ignore-to option.
+If default "--no-calls" type removal doesn't remove all interrupt
+handling switches [1], give handler names to "--ignore-to" option.
 In callgraphs, one can then investigate them separately using
 "no-calls '' --only <name>" options.
 
@@ -130,7 +130,7 @@ In callgraphs, one can then investigate them separately using
     "a call" to that handler by the profiler, and because such "calls"
     can happen at any time, then can mess graphs badly
 
-NOTE: costs shown with -p option include costs of exception handling
+NOTE: costs shown with "-p" option include costs of exception handling
 code that interrupts the function calls.  Normally effect of this
 should be minimal, but by providing symbol addresses for interrupt
 handlers their costs will be visible in output.
@@ -143,14 +143,16 @@ Callgraph filtering options to remove nodes and edges from the graph:
 				- one child and no parents, or
 				- no children nor parents
         --no-limited		remove _all_ nodes below -l limit
+	--no-orphans            remove unconnected nodes
+				(regardless of their cost)
         --only-subroutines      remove non-subroutine nodes below -l limit
 	--ignore <list>         no nodes for these symbols
 	--ignore-from <list>	no arrows from these symbols
         --only <list>           only these symbols and their callers
 
-Leaf and intermediate node removal options remove only nodes which
-own costs fall below limit given with the -l option.  Remember to
-give -l option with them as -l defaults to 0.0 on callgraphs!
+NOTE: leaf and intermediate node removal options remove only nodes which
+own costs fall below limit given with the "--limit" option.  So remember
+specify limit with them, as it defaults to 0.0 on callgraphs!
 
 Functions which are called from everywhere (like malloc), may be good
 candidates for '--ignore' option when one wants a more readable graph.
@@ -1407,6 +1409,7 @@ label="%s";
         self.remove_leafs = False
         self.remove_limited = False
         self.remove_nonsubs = False
+        self.remove_orphans = False
         self.only = []
         self.mark = []
         self.ignore = []
@@ -1429,6 +1432,10 @@ label="%s";
     def disable_limited(self):
         "disable showing all nodes which are below limit"
         self.remove_limited = True
+
+    def disable_orphans(self):
+        "disable showing above-limit nodes which have no connections"
+        self.remove_orphans = True
 
     def only_subroutines(self):
         "disable showing nodes that aren't above limit or subroutines"
@@ -1510,6 +1517,14 @@ label="%s";
                 if self.remove_nonsubs and not function.is_subroutine():
                     to_remove[addr] = True
                     continue
+
+                parents = len(function.parent)
+                children = len(function.child)
+                # remove orphans regardless of their cost
+                if self.remove_orphans and (parents + children) == 0:
+                        to_remove[addr] = True
+                        continue
+
                 # don't remove symbols which own costs are over the limit
                 if self.show_subcosts and function.subcost and len(function.subcost) > field:
                     count = function.subcost[field]
@@ -1521,9 +1536,8 @@ label="%s";
                 if self.remove_limited:
                     to_remove[addr] = True
                     continue
+
                 # remove leafs & intermediates
-                parents = len(function.parent)
-                children = len(function.child)
                 if self.remove_leafs:
                     if (parents + children) <= 1:
                         to_remove[addr] = True
@@ -1731,6 +1745,7 @@ class Main(Output):
         "no-intermediate",
         "no-leafs",
         "no-limited",
+        "no-orphans",
         "only=",
         "only-subroutines",
         "output=",
@@ -1814,6 +1829,8 @@ class Main(Output):
                 graph.disable_leafs()
             elif opt == "--no-limited":
                 graph.disable_limited()
+            elif opt == "--no-orphans":
+                graph.disable_orphans()
             elif opt == "--only-subroutines":
                 graph.only_subroutines()
             # options specific to statistics
