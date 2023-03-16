@@ -165,8 +165,9 @@ if intermediate nodes have been removed with above options.
 
 
 Callgraph visualization options:
-	--mark <list>	  	  color nodes which names contain any
-        			  of the listed string(s) differently
+	--full-symbols		  do not shorten (C++) symbols
+	--mark <list>		  color nodes which names contain any
+				  of the listed string(s) differently
         -e, --emph-limit <limit>  percentage limit for highlighted nodes
 
 When -e limit is given, it is used for deciding which nodes to
@@ -1410,11 +1411,42 @@ label="%s";
         self.remove_limited = False
         self.remove_nonsubs = False
         self.remove_orphans = False
+        self.full_symbols = False
         self.only = []
         self.mark = []
         self.ignore = []
         self.ignore_from = []
         self.emph_limit = 0
+        # for demangled (C++ etc) symbols
+        self.re_thunk = re.compile("(non-)?virtual ") # thunk to
+        self.re_clone = re.compile(" \[clone[^]]+\]")
+        self.re_args = re.compile("[^(+]+::[^(+]+(\(.+\))")
+
+    def _get_short_name(self, name):
+        # not C++ or other demangled symbol
+        if self.full_symbols or " " not in name:
+            return name
+
+        # remove args from method signatures
+        m = self.re_args.search(name)
+        if m:
+            name = name[:m.start(1)] + "()" + name[m.end(1):]
+
+        # shorten namespaces and template args
+        name = name.replace("anonymous namespace", "anon ns")
+        name = name.replace("unsigned ", "u")
+
+        # remove virtual / clone infos from signatures
+        for r in (self.re_thunk, self.re_clone):
+            m = r.search(name)
+            if m:
+                name = name[:m.start()] + name[m.end():]
+
+        return name
+
+    def enable_full_symbols(self):
+        "do not shorten (C++) symbols"
+        self.full_symbols = True
 
     def enable_output(self):
         "enable output"
@@ -1625,9 +1657,8 @@ label="%s";
             ownpercentage = 100.0 * owncount / total
             if ownpercentage >= limit:
                 style = "%s style=filled fillcolor=lightgray" % style
-            name = function.name
             for substr in self.mark:
-                if substr in name:
+                if substr in function.name:
                     style = "%s style=filled fillcolor=green shape=square" % style
                     break
             if CALL_STARTUP in function.callflags:
@@ -1636,6 +1667,8 @@ label="%s";
                 coststr = "%.2f%%\\n(own: %.2f%%)" % (percentage, ownpercentage)
             else:
                 coststr = "%.2f%%" % percentage
+
+            name = self._get_short_name(function.name)
             if field == 0:
                 self.write("N_%X [label=\"%s\\n%s\\n%d calls\"%s%s];\n" % (addr, coststr, name, count, style, shape))
             elif field == stats.cycles_field:
@@ -1649,11 +1682,11 @@ label="%s";
         for linkage, info in self.edges.items():
             laddr, caddr = linkage
             paddr, calls, edge = info
-            pname = self.profile[paddr].name
             offset = laddr - paddr
             style = ""
             if caddr in self.highlight:
                 style = " color=red style=bold"
+
             # arrowhead/tail styles:
             #   none, normal, inv, dot, odot, invdot, invodot, tee, empty,
             #   invempty, open, halfopen, diamond, odiamond, box, obox, crow
@@ -1670,6 +1703,8 @@ label="%s";
                 style += " arrowhead=inv style=dashed"
             elif flags == CALL_UNKNOWN:
                 style += " arrowhead=diamond style=dotted"
+
+            pname = self._get_short_name(self.profile[paddr].name)
             if offset:
                 label = "%s+%d\\n($%x)" % (pname, offset, laddr)
             else:
@@ -1734,6 +1769,7 @@ class Main(Output):
         "compact",
         "emph-limit=",
         "first",
+        "full-symbols",
         "graph",
         "ignore=",
         "ignore-to=",
@@ -1813,6 +1849,8 @@ class Main(Output):
             # options specific to graphs
             elif opt in ("-e", "--emph-limit"):
                 graph.set_emph_limit(self.get_value(opt, arg, True))
+            elif opt == "--full-symbols":
+                graph.enable_full_symbols()
             elif opt in ("-g", "--graph"):
                 graph.enable_output()
             elif opt == "--ignore":
