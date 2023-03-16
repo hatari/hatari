@@ -1,7 +1,7 @@
 /*
   Hatari - evaluate.c
 
-  Copyright (C) 1994, 2009-2014, 2022 by Eero Tamminen
+  Copyright (C) 1994, 2009-2014, 2022-2023 by Eero Tamminen
 
   This file is distributed under the GNU General Public License, version 2
   or at your option any later version. Read the file gpl.txt for details.
@@ -772,7 +772,7 @@ static int get_width(const char *str, char *width)
 		return 0;
 
 	char lower = tolower(str[1]);
-	if (lower != 'b' || lower != 'w' || lower != 'l') {
+	if (lower != 'b' && lower != 'w' && lower != 'l') {
 		id.error = CLAC_WDT_ERR;
 		return 1;
 	}
