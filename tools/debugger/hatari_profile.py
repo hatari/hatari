@@ -4,6 +4,21 @@
 #
 # 2013-2023 (C) Eero Tamminen, licensed under GPL v2+
 #
+# TODO:
+#
+# Current way of handling symbol conflicts while they are being
+# read, causes unnecessary symbol/address conflict resolving /
+# renames, and as result outputs way too much noise about it.
+#
+# Instead, change that to work in multiple passes:
+# 1. load all symbols regardless of conflicts
+# 2. silently remove extra symbols for same address if they:
+#    - are object/library file names, or
+#    - look like weak symbols (e.g. extra _* prefix)
+# 3. remove rest of overlapping same-address symbols with warnings
+#    (need to try whether using shorter or longer name is better)
+# 4. rename identical symbols pointing to different addresses
+#
 """
 A tool for post-processing Hatari emulator HW profiling data with
 symbol information.
@@ -399,6 +414,7 @@ class ProfileSymbols(Output):
 
     def __init__(self):
         Output.__init__(self)
+        self.renames = 0	# total of significant renames
         self.names = None
         self.symbols = None	# (addr:symbol) dict for resolving
         self.absolute = {}	# (addr:symbol) dict of absolute symbols
@@ -464,13 +480,17 @@ class ProfileSymbols(Output):
             oldname = symbols[addr]
             lendiff = abs(len(name) - len(oldname))
             minlen = min(len(name), len(oldname))
-            # don't warn about object name replacements,
-            # or adding/removing short prefix or postfix
-            if not (oldname.endswith('.o') or
-                    (lendiff < 3 and minlen > 3 and
-                     (name.endswith(oldname) or oldname.endswith(name) or
-                     name.startswith(oldname) or oldname.startswith(name)))):
-                self.warning("replacing '%s' at 0x%x with '%s'" % (oldname, addr, name))
+            # do not mention:
+            # - object file name replaced with symbol starting that object
+            # - adding/removing short prefix/postfix (likely a weak ref)
+            if not (
+               oldname.endswith('.o') or
+               (lendiff < 3 and minlen > 3 and
+                (name.endswith(oldname) or oldname.endswith(name) or
+                 name.startswith(oldname) or oldname.startswith(name)))):
+                if self.verbose:
+                    self.message("Overriding '%s' at 0x%x with '%s'" % (oldname, addr, name))
+                self.renames += 1
             # add also previous name as alias for new name
             aliases[symbols[addr]] = addr
         return True
@@ -483,21 +503,26 @@ class ProfileSymbols(Output):
                 if addr == self.names[name]:
                     to_remove[name] = True
                     continue
+                if not self.verbose:
+                    continue
                 self.warning("multiple addresses (0x%x & 0x%x) for symbol '%s'" % (addr, self.names[name], name))
                 if addr in self.symbols:
-                    self.warning("- 0x%x is also address for symbol '%s'" % (addr, self.symbols[addr]))
+                    self.message("- 0x%x is also address for symbol '%s'" % (addr, self.symbols[addr]))
         for name in to_remove:
             del self.aliases[name]
 
     def parse_symbols(self, fobj, is_relative):
         "parse symbol file contents"
-        unknown = lines = 0
         if is_relative:
             symbols = self.relative
             aliases = self.rel_aliases
         else:
             symbols = self.absolute
             aliases = self.aliases
+        old_aliases = len(self.aliases)
+        old_renames = self.renames
+
+        unknown = lines = 0
         for line in fobj.readlines():
             lines += 1
             line = line.strip()
@@ -513,7 +538,11 @@ class ProfileSymbols(Output):
             else:
                 self.warning("unrecognized symbol line %d:\n\t'%s'" % (lines, line))
                 unknown += 1
-        self.message("%d lines with %d code symbols/addresses parsed, %d unknown." % (lines, len(symbols), unknown))
+
+        info = (lines, len(symbols), unknown)
+        self.message("%d lines with %d code symbols/addresses parsed, %d unknown." % info)
+        info = (len(aliases) - old_aliases, self.renames - old_renames)
+        self.message("%d (new) symbols were aliased, with %d significant renames." % info)
 
     def _rename_symbol(self, addr, name):
         "return symbol name, potentially renamed if there were conflicts"
@@ -538,7 +567,8 @@ class ProfileSymbols(Output):
                 if newname in self.names:
                     idx += 1
                     continue
-                self.warning("renaming '%s' at 0x%x as '%s' to avoid clash with same symbol at 0x%x" % (name, addr, newname, self.names[name]))
+                if self.verbose:
+                    self.message("renaming '%s' at 0x%x as '%s' to avoid clash with same symbol at 0x%x" % (name, addr, newname, self.names[name]))
                 name = newname
                 break
         self.names[name] = addr
@@ -579,8 +609,9 @@ class ProfileSymbols(Output):
             # -1 used because compiler can add TEXT symbol right after end of TEXT section
             if addr < area[0] or addr-1 > area[1]:
                 self.error_exit("relative symbol '%s' address 0x%x is outside of TEXT area: 0x%x-0x%x!\nDo symbols match the profiled binary?" % (name, addr, area[0], area[1]))
-            if name in self.aliases and self.aliases[name] != addr:
-                self.warning("conflicting addresses 0x%x & 0x%x for symbol '%s'" % (addr, self.aliases[name], name))
+            if self.verbose:
+                if name in self.aliases and self.aliases[name] != addr:
+                    self.message("conflicting addresses 0x%x & 0x%x for symbol '%s'" % (addr, self.aliases[name], name))
             self.aliases[name] = addr
 
     def add_profile_symbol(self, addr, name):
@@ -780,7 +811,8 @@ class ProfileCallers(Output):
                 continue
             parent = profile[paddr]
             if pname != parent.name:
-                self.warning("overriding parsed function 0x%x name '%s' with resolved caller 0x%x name '%s'" % (parent.addr, parent.name, paddr, pname))
+                if not parent.name.endswith('.o'):
+                    self.warning("overriding parsed function 0x%x name '%s' with resolved caller 0x%x name '%s'" % (parent.addr, parent.name, paddr, pname))
                 parent.name = pname
             # link parent and child function together
             if paddr in child.parent:
@@ -818,7 +850,8 @@ class ProfileCallers(Output):
             all_ignored += ignored
             # validate non-subroutine call counts
             if ignored:
-                self.message("Ignoring %d switches to %s" % (ignored, child.name))
+                if self.verbose:
+                    self.message("Ignoring %d switches to %s" % (ignored, child.name))
                 #switches += ignored
                 child.cost[0] -= ignored
             calls = child.cost[0]
