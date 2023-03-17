@@ -1,7 +1,7 @@
 /*
  * Hatari - history.c
  * 
- * Copyright (C) 2011-2014 by Eero Tamminen
+ * Copyright (C) 2011-2016,2020-2023 by Eero Tamminen
  *
  * This file is distributed under the GNU General Public License, version 2
  * or at your option any later version. Read the file gpl.txt for details.
@@ -44,6 +44,7 @@ static struct {
 	unsigned idx;      /* index to current history item */
 	unsigned count;    /* how many items of history are collected */
 	unsigned limit;    /* ring-buffer size */
+	unsigned repeats;  /* repeats for the last instruction */
 	hist_item_t *item; /* ring-buffer */
 } History;
 
@@ -131,6 +132,13 @@ void History_AddCpu(void)
 {
 	uint32_t pc = M68000_GetPC();
 
+	if (pc == History.item[History.idx].pc.cpu) {
+		History.repeats++;
+		return;
+	} else {
+		History.repeats = 0;
+	}
+
 	History_Advance();
 	History.item[History.idx].for_dsp = false;
 	History.item[History.idx].pc.cpu = pc;
@@ -142,6 +150,13 @@ void History_AddCpu(void)
 void History_AddDsp(void)
 {
 	uint16_t pc = DSP_GetPC();
+
+	if (pc == History.item[History.idx].pc.dsp) {
+		History.repeats++;
+		return;
+	} else {
+		History.repeats = 0;
+	}
 
 	History_Advance();
 	History.item[History.idx].for_dsp = true;
@@ -259,6 +274,9 @@ static uint32_t History_Output(uint32_t count, FILE *fp)
 		if (History.item[i].reason != REASON_NONE) {
 			fprintf(fp, "Debugger: *%s*\n", History_ReasonStr(History.item[i].reason));
 		}
+	}
+	if (History.repeats) {
+		fprintf(fp, "Last item repeated %d times.\n", History.repeats);
 	}
 	return retval;
 }

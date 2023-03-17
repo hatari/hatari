@@ -177,7 +177,7 @@ Generic commands:
            cd (  ) : change directory
      evaluate ( e) : evaluate an expression
          help ( h) : print help
-      history (hi) : show last CPU/DSP PC values &amp; executed instructions
+      history (hi) : show last CPU and/or DSP PC values + instructions
          info ( i) : show machine/OS information
          lock (  ) : specify information to show on entering the debugger
       logfile ( f) : open or close log file
@@ -383,7 +383,7 @@ after the previously shown data.
 "disasm" command default address will be reset to program counter (PC)
 address every time you re-enter the debugger.  If history is enabled
 and it includes addresses just before PC, disassembly will instead
-start from such an address to give more context.
+start from a slightly earlier address to give more context.
 </p>
 
 <p>
@@ -2055,7 +2055,7 @@ GEMDOS 0x3D Fopen("TEST.TXT", read-only)
 <dd>To see CPU instructions executed before debugger was entered,
 you need to enable history tracking <em>before</em> it. Whenever
 debugger is entered, you can then request given number (here 16) of
-past instructions to be shown:
+past PC addresses and their (current) instructions to be shown:
 <pre>
 history  cpu
 c

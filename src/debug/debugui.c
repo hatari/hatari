@@ -968,11 +968,11 @@ static const dbgcommand_t uicommand[] =
 	  false },
 	{ History_Parse, History_Match,
 	  "history", "hi",
-	  "show last CPU/DSP PC values & executed instructions",
+	  "show last CPU and/or DSP PC values + instructions",
 	  "cpu|dsp|on|off|<count> [limit]|save <file>\n"
-	  "\t'cpu' and 'dsp' enable instruction history tracking for just given\n"
+	  "\t'cpu' and 'dsp' enable program counter history tracking for given\n"
 	  "\tprocessor, 'on' tracks them both, 'off' will disable history.\n"
-	  "\tOptional 'limit' will set how many past instructions are tracked.\n"
+	  "\tOptional 'limit' will set how many past addresses are tracked.\n"
 	  "\tGiving just count will show (at max) given number of last saved PC\n"
 	  "\tvalues and instructions currently at corresponding RAM addresses.",
 	  false },

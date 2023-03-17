@@ -66,6 +66,7 @@ Emulator improvements:
   - When entering debugger with 'history' enabled, disassembly address
     defaults to an address in history preceeding the PC register value
     (to give more context than disassembling directly from PC)
+  - History skips repeats of previous address (e.g. with "stop")
   - The built-in "external" disassembler has been replaced by a
     disassembler provided by the Capstone library (version >= 4.0)
 
