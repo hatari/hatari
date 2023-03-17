@@ -444,9 +444,15 @@ static int read_pc_debug_names(FILE *fp, symbol_list_t *list, uint32_t offset)
 static bool is_file_name(const char *name)
 {
 	int len = strlen(name);
-	/* object (.a or .o) / file name? */
-	if (len > 2 && ((name[len-2] == '.' && (name[len-1] == 'a' || name[len-1] == 'o')) || strchr(name, '/'))) {
+	/* object (.a or .o) file name? */
+	if (len > 2 && ((name[len-2] == '.' && (name[len-1] == 'a' || name[len-1] == 'o')))) {
 		    return true;
+	}
+	/* some other file name? */
+	const char *slash = strchr(name, '/');
+	/* not just overloaded '/' operator? */
+	if (slash && slash[1] != '(') {
+		return true;
 	}
 	return false;
 }
