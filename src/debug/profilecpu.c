@@ -818,8 +818,9 @@ void Profile_CpuSave(FILE *out)
 	 * And for the external disassembler output:
 	 *   $<addr> :  <ASM>  <percentage>% (<count>, <cycles>, <i-misses>, <d-hits>)
 	 *   $e5af38 :   rts           0.00% (12, 0, 12, 0)
+	 * CPU core disassembly addresses can be lower or upper case.
 	 */
-	fputs("Field regexp:\t^\\$?([0-9a-f]+) .*% \\(([^)]*)\\)$\n", out);
+	fputs("Field regexp:\t^\\$?([0-9A-Fa-f]+) .*% \\(([^)]*)\\)$\n", out);
 
 	/* some information for interpreting the addresses */
 	fprintf(out, "ST_RAM:\t\t0x%06x-0x%06x\n", 0, STRamEnd);
