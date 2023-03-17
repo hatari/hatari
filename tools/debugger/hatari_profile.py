@@ -288,7 +288,7 @@ class FunctionStats:
     def has_cost(self):
         "return whether function has valid data yet"
         # other values are valid only if there are instructions
-        return (self.cost[1] != 0)
+        return self.cost[1] != 0
 
     def name_for_address(self, addr):
         "if name but no address, use given address and return name, otherwise None"
@@ -446,7 +446,7 @@ class ProfileSymbols(Output):
     def get_area(self, addr):
         "return memory area name + offset (used if no symbol matches)"
         for key, value in self.areas.items():
-            if value[1] and addr >= value[0] and addr <= value[1]:
+            if value[1] and value[0] <= addr <= value[1]:
                 return (key, addr - value[0])
         return (self.default_area, addr)
 
@@ -486,8 +486,8 @@ class ProfileSymbols(Output):
                 self.warning("multiple addresses (0x%x & 0x%x) for symbol '%s'" % (addr, self.names[name], name))
                 if addr in self.symbols:
                     self.warning("- 0x%x is also address for symbol '%s'" % (addr, self.symbols[addr]))
-        for name in to_remove.keys():
-            del(self.aliases[name])
+        for name in to_remove:
+            del self.aliases[name]
 
     def parse_symbols(self, fobj, is_relative):
         "parse symbol file contents"
@@ -883,7 +883,7 @@ class ProfileCallgrind(Output):
         # to the caller and use that as line number,
         # instead of caller function beginning line number
         parent = profile[paddr]
-        for caddr in parent.child.keys():
+        for caddr in parent.child:
             child = profile[caddr]
             if not child.subtotal:
                 # costs missing, no sense in adding dep
@@ -946,20 +946,20 @@ class EmulatorProfile(Output):
         # <Emulator> <processor name> profile [(info)]
         #
         self.emuinfo = None
-        self.r_info = re.compile("^.* profile \((.*)\)$")
+        self.r_info = re.compile(r"^.* profile \((.*)\)$")
         # processor clock speed
-        self.r_clock = re.compile("^Cycles/second:\t([0-9]+)$")
+        self.r_clock = re.compile(r"^Cycles/second:\t([0-9]+)$")
         # field names
-        self.r_fields = re.compile("^Field names:\t(.*)$")
+        self.r_fields = re.compile(r"^Field names:\t(.*)$")
         # processor disassembly format regexp is gotten from profile file
-        self.r_regexp = re.compile("Field regexp:\t(.*)$")
+        self.r_regexp = re.compile(r"Field regexp:\t(.*)$")
         self.r_address = None
         # memory address information is parsed by ProfileSymbols
         #
         # this class parses symbols from disassembly itself:
         # <symbol/objectfile name>: (in disassembly)
         # Note: C++ symbols contain almost any chars
-        self.r_function = re.compile("^([._a-zA-Z(][^$?@;]*):$")
+        self.r_function = re.compile(r"^([._a-zA-Z(][^$?@;]*):$")
 
         self.stats = None		# InstructionStats instance
         self.callgrind = None		# ProfileCallgrind instance
@@ -1041,7 +1041,7 @@ class EmulatorProfile(Output):
                 function.rename(name, offset)
             # addresses must increase in profile
             oldaddr = function.addr
-            assert(oldaddr not in self.profile)
+            assert oldaddr not in self.profile
             self.stats.add_callcount(function)
             self.profile[oldaddr] = function
             if self.verbose:
@@ -1053,12 +1053,11 @@ class EmulatorProfile(Output):
         name = self.symbols.get_symbol(addr)
         if name:
             return self._change_function(function, name, addr)
-        else:
-            # as no better symbol, name it according to area where it moved to?
-            name, offset = self.symbols.get_area(addr)
-            addr -= offset
-            if self.stats.change_area(function, name, addr):
-                return self._change_function(function, name, addr)
+        # as no better symbol, name it according to area where it moved to?
+        name, offset = self.symbols.get_area(addr)
+        addr -= offset
+        if self.stats.change_area(function, name, addr):
+            return self._change_function(function, name, addr)
         return function
 
     def _parse_line(self, function, addr, counts, discontinued):
@@ -1418,9 +1417,9 @@ label="%s";
         self.ignore_from = []
         self.emph_limit = 0
         # for demangled (C++ etc) symbols
-        self.re_thunk = re.compile("(non-)?virtual ") # thunk to
-        self.re_clone = re.compile(" \[clone[^]]+\]")
-        self.re_args = re.compile("[^(+]+::[^(+]+(\(.+\))")
+        self.re_thunk = re.compile(r"(non-)?virtual ") # thunk to
+        self.re_clone = re.compile(r" \[clone[^]]+\]")
+        self.re_args = re.compile(r"[^(+]+::[^(+]+(\(.+\))")
 
     def _get_short_name(self, name):
         # not C++ or other demangled symbol
@@ -1498,7 +1497,7 @@ label="%s";
         profile = self.profile
         function = profile[addr]
         if self.verbose:
-            self.message("removing leaf/intermediate node %s" % function)
+            self.message("removing node %s" % function)
         parents = list(function.parent.keys())
         children = list(function.child.keys())
        # remove it from items linking it
@@ -1534,13 +1533,13 @@ label="%s";
         self.profile = deepcopy(profobj.profile)
         total = totals[field]
         to_remove = {}
-        removed = 0
         if self.ignore:
             for addr, function in self.profile.items():
                 if function.name in self.ignore:
                     to_remove[addr] = True
+        removed = 0
         while True:
-            for addr in to_remove.keys():
+            for addr in to_remove:
                 self._remove_from_profile(addr)
             removed += len(to_remove)
             to_remove = {}
@@ -1552,10 +1551,10 @@ label="%s";
 
                 parents = len(function.parent)
                 children = len(function.child)
-                # remove orphans regardless of their cost
+                # remove orphans regardless of their cost?
                 if self.remove_orphans and (parents + children) == 0:
-                        to_remove[addr] = True
-                        continue
+                    to_remove[addr] = True
+                    continue
 
                 # don't remove symbols which own costs are over the limit
                 if self.show_subcosts and function.subcost and len(function.subcost) > field:
@@ -1587,12 +1586,12 @@ label="%s";
                         continue
                     # refers also to itself?
                     if children == 2:
-                        for caddr in function.child.keys():
+                        for caddr in function.child:
                             if caddr == addr:
                                 to_remove[addr] = True
                                 break
                     if parents == 2:
-                        for paddr in function.parent.keys():
+                        for paddr in function.parent:
                             if paddr == addr:
                                 to_remove[addr] = True
                                 break
@@ -1629,13 +1628,13 @@ label="%s";
                 # calls to child done from different locations in parent
                 for edge in info:
                     self.edges[(edge.addr, caddr)] = (paddr, all_calls, edge)
-        return (len(profile) - len(self.nodes))
+        return len(profile) - len(self.nodes)
 
     def _output_nodes(self, stats, field, limit):
         "output graph nodes from filtered nodes dict"
         self.highlight = {}
         total = stats.totals[field]
-        for addr in self.nodes.keys():
+        for addr in self.nodes:
             shape = style = ""
             function = self.profile[addr]
             calls = function.cost[0]
@@ -1691,7 +1690,7 @@ label="%s";
             #   none, normal, inv, dot, odot, invdot, invodot, tee, empty,
             #   invempty, open, halfopen, diamond, odiamond, box, obox, crow
             flags = edge.flags
-            if flags == CALL_NEXT or flags == CALL_BRANCH:
+            if flags in (CALL_NEXT, CALL_BRANCH):
                 style += " arrowhead=dot"
             elif flags == CALL_SUBROUTINE:
                 pass	# use default arrow
@@ -1903,17 +1902,16 @@ class Main(Output):
         try:
             return open(path, mode)
         except IOError as err:
-            self.usage("opening given '%s' file in mode '%s' failed:\n\t%s" % (path, mode, err))
+            return self.usage("opening given '%s' file in mode '%s' failed:\n\t%s" % (path, mode, err))
 
     def get_value(self, opt, arg, tofloat):
         "return numeric value for given string"
         try:
             if tofloat:
                 return float(arg)
-            else:
-                return int(arg)
+            return int(arg)
         except ValueError:
-            self.usage("invalid '%s' numeric value: '%s'" % (opt, arg))
+            return self.usage("invalid '%s' numeric value: '%s'" % (opt, arg))
 
     def usage(self, msg):
         "show program usage + error message"
