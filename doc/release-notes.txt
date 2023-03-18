@@ -79,9 +79,13 @@ GUI improvements:
     show list of the accepted file name extensions any more
 
 Tools:
-- Profile data post-processor supports symbol files and profile data
-  containing demangled C++ symbols, when profile data is from new
-  Hatari version
+- Profile data post-processor:
+  - Does not any more show (most) of symbol conflict messages
+    (unless '--verbose' option is given)
+  - Support for symbol files and Hatari profile data containing
+    demangled C++ symbols
+  - Overtly long C++ symbol names are shortened in callgraphs
+    (unless '--full-symbols' option is given)
 
 Build improvements:
 - Fix: CPU core compile warnings (WinUAE upstream)

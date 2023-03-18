@@ -4,6 +4,8 @@ import re
 
 # few of the symbols used by ScummVm 2.6
 funcs = [
+"famisras10",
+"_d_number.isra.111",
 "operator delete(void*)",
 "virtual thunk to OSystem_Atari::initBackend()",
 "Sci::Script::isValidOffset(unsigned int) const",
@@ -20,18 +22,28 @@ funcs = [
 "Common::sort<TwinE::Renderer::RenderCommand*, TwinE::Renderer::depthSortRenderCommands(int)::{lambda(TwinE::Renderer::RenderCommand const&, TwinE::Renderer::RenderCommand const&)#1}>(TwinE::Renderer::RenderCommand*, TwinE::Renderer::depthSortRenderCommands(int)::{lambda(TwinE::Renderer::RenderCommand const&, TwinE::Renderer::RenderCommand const&)#1}, TwinE::Renderer::depthSortRenderCommands(int)::{lambda(TwinE::Renderer::RenderCommand const&, TwinE::Renderer::RenderCommand const&)#1}) [clone .isra.26]",
 ]
 
-re_thunk = re.compile("(non-)?virtual ") # thunk to
-re_clone = re.compile(" \[clone[^]]+\]")
-re_args = re.compile("[^(+]+::[^(+]+(\(.+\))")
+# C symbols
+re_isra = re.compile(r"\.isra\.[0-9]+$")
+
+# C++ symbols
+re_thunk = re.compile(r"(non-)?virtual ") # ...thunk to
+re_clone = re.compile(r" \[clone[^]]+\]") # ...isra
+re_args = re.compile(r"[^(+]+::[^(+]+(\(.+\))")
 
 out = []
 for f in funcs:
-    if " " not in f:
-        print(f)
+    n = f
+
+    if " " not in n:
+        # C-symbols
+        for r in (re_isra,):
+            m = r.search(n)
+            if m:
+                n = n[:m.start()] + n[m.end():]
+        print("'%s' => '%s'" % (f, n))
         continue
 
     # remove args from method signatures
-    n = f
     m = re_args.search(n)
     if m:
         print(len(n), m.start(1), m.end(1))
