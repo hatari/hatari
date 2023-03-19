@@ -193,8 +193,9 @@ Nodes with costs that exceed the highlight limit have red outline.
 If node's own cost exceeds the limit, it has also gray background.
 
 
-To convert dot files e.g. to SVG, use:
+To convert dot files e.g. to SVG and PDF, use:
 	dot -Tsvg graph.dot > graph.svg
+	dot -Tpdf graph.dot > graph.pdf
 
 ('dot' tool is in Graphviz package.)
 """
@@ -291,8 +292,8 @@ class FunctionStats:
         self.subtotal = None
         self.callflags = ()
         # calltree linkage
-        self.parent = {}
-        self.child = {}
+        self.parent = {}   # addr: Callinfo tuple
+        self.child = {}    # addr: True
 
     def is_subroutine(self):
         for flag in (CALL_SUBROUTINE, CALL_STARTUP):
@@ -343,11 +344,11 @@ class FunctionStats:
 # ---------------------------------------------------------------------
 class InstructionStats:
     "statistics on all instructions"
-    # not changeable, these are expectatations about the data fields
+    # not changeable, these are expectations about the data fields
     # in this, FunctionStats, ProfileCallers and ProfileGraph classes
-    callcount_field = 0
-    instructions_field = 1
-    cycles_field = 2
+    CALLS_FIELD  = 0
+    INSTS_FIELD  = 1 # unused
+    CYCLES_FIELD = 2
 
     def __init__(self, processor, clock, fields):
         "processor name, its speed and profile field names"
@@ -388,11 +389,11 @@ class InstructionStats:
 
     def get_time(self, cost):
         "return time (in seconds) spent by given cost item"
-        return float(cost[self.cycles_field])/self.clock
+        return float(cost[self.CYCLES_FIELD])/self.clock
 
     def get_time_call(self, cost, callitem):
         "return time (in seconds) spent by given cost item per call"
-        return float(cost[self.cycles_field])/callitem[self.callcount_field]/self.clock
+        return float(cost[self.CYCLES_FIELD])/callitem[self.CALLS_FIELD]/self.clock
 
     def sum_values(self, functions):
         "calculate totals for given functions data"
@@ -1271,7 +1272,7 @@ class ProfileSorter:
                 totals = (function.cost,)
 
             showtime = False
-            if show_info and field == stats.cycles_field:
+            if show_info and field == stats.CYCLES_FIELD:
                 showtime = True
 
             for cost in totals:
@@ -1703,7 +1704,7 @@ label="%s";
             name = self._get_short_name(function.name)
             if field == 0:
                 self.write("N_%X [label=\"%s\\n%s\\n%d calls\"%s%s];\n" % (addr, coststr, name, count, style, shape))
-            elif field == stats.cycles_field:
+            elif field == stats.CYCLES_FIELD:
                 time = stats.get_time(cost)
                 self.write("N_%X [label=\"%s\\n%.5fs\\n%s\\n(%d calls)\"%s%s];\n" % (addr, coststr, time, name, calls, style, shape))
             else:
