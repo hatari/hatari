@@ -174,10 +174,6 @@ candidates for '--ignore' option when one wants a more readable graph.
 One can then investigate them separately with the '--only <function>'
 option.
 
-NOTE: Only directly connected symbols are compacted.  You can still
-see multiple arrows between nodes in callgraphs with --compact option
-if intermediate nodes have been removed with above options.
-
 
 Callgraph visualization options:
 	--full-symbols		  do not shorten (C++) symbols
@@ -1439,6 +1435,8 @@ label="%s";
         self.edges = None
         self.highlight = None
         self.output_enabled = False
+        # callgraph node filtering
+        self.compact = False
         self.remove_intermediate = False
         self.remove_leafs = False
         self.remove_limited = False
@@ -1485,8 +1483,12 @@ label="%s";
         "enable output"
         self.output_enabled = True
 
+    def enable_compact(self):
+        "show just single edge between nodes"
+        self.compact = True
+
     def disable_intermediate(self):
-        "disable showing nodes which have just single parent/child"
+        "disable showing nodes with just single parent & child, with single edge"
         # TODO: move leaf/intermediate handling to ProfileCallers class?
         self.remove_intermediate = True
 
@@ -1659,9 +1661,16 @@ label="%s";
                 self.nodes[paddr] = True
                 # total calls count for child
                 all_calls = profile[caddr].cost[0]
-                # calls to child done from different locations in parent
-                for edge in info:
-                    self.edges[(edge.addr, caddr)] = (paddr, all_calls, edge)
+                if self.compact:
+                    edge = Callinfo(paddr)
+                    # TODO: "pick first" not good enough?
+                    edge.flags = [x.flags for x in info][0]
+                    edge.calls = sum([x.calls for x in info])
+                    self.edges[(paddr, caddr)] = (paddr, all_calls, edge)
+                else:
+                    # calls to child done from different locations in parent
+                    for edge in info:
+                        self.edges[(edge.addr, caddr)] = (paddr, all_calls, edge)
         return len(profile) - len(self.nodes)
 
     def _output_nodes(self, stats, field, limit):
@@ -1858,8 +1867,6 @@ class Main(Output):
                 self.message("\nParsing TEXT relative symbol address information from %s..." % arg)
                 prof.parse_symbols(self.open_file(arg, "r"), True)
             # options for profile caller information parsing
-            elif opt == "--compact":
-                prof.enable_compact()
             elif opt == "--no-calls":
                 prof.remove_calls(arg)
             elif opt == "--ignore-to":
@@ -1879,6 +1886,9 @@ class Main(Output):
             elif opt in ("-p", "--propagate"):
                 graph.enable_subcosts()
                 stats.enable_subcosts()
+            elif opt == "--compact":
+                prof.enable_compact()
+                graph.enable_compact()
             # options specific to graphs
             elif opt in ("-e", "--emph-limit"):
                 graph.set_emph_limit(self.get_value(opt, arg, True))

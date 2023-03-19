@@ -87,6 +87,7 @@ Tools:
     demangled C++ symbols
   - Overtly long C++ symbol names are shortened in callgraphs
     (unless '--full-symbols' option is given)
+  - With "--compact" option only single arrow shown between nodes
 
 Build improvements:
 - Fix: CPU core compile warnings (WinUAE upstream)
