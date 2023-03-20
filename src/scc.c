@@ -81,6 +81,9 @@
 #include "memorySnapShot.h"
 #include "scc.h"
 #include "clocks_timings.h"
+#include "cycles.h"
+#include "cycInt.h"
+#include "video.h"
 
 #ifndef O_NONBLOCK
 # ifdef O_NDELAY
@@ -110,18 +113,66 @@
 #define SCC_BAUDRATE_SOURCE_CLOCK_TCCLK		4
 
 
+#define SCC_WR1_BIT_EXT_INT_ENABLE		0x01	/* Ext Int Enable */
+
+#define SCC_WR9_BIT_VIS				0x01	/* Vector Includes Status */
+#define SCC_WR9_BIT_NV				0x02	/* No Vector */
+#define SCC_WR9_BIT_DISABLE_LOWER_CHAIN		0x04	/* Disable Lower Chain */
+#define SCC_WR9_BIT_DISABLE_LOWER_CHAIN		0x04	/* Disable Lower Chain */
+#define SCC_WR9_BIT_MIE				0x08	/* Master Interrupt Enable */
+#define SCC_WR9_BIT_STATUS_HIGH_LOW		0x10	/* Master Interrupt Enable */
+#define SCC_WR9_BIT_SOFT_INTACK			0x20	/* Software INTACK Enable */
+/* Commands for the bits 7-8 of WR9 */
+#define SCC_WR9_COMMAND_RESET_NULL		0x00	/* Null Command */
+#define SCC_WR9_COMMAND_RESET_B			0x01	/* Channel B Reset */
+#define SCC_WR9_COMMAND_RESET_A			0x02	/* Channel A Reset */
+#define SCC_WR9_COMMAND_RESET_FORCE_HW		0x03	/* Force Hardware Reset */
+
+#define SCC_WR15_BIT_ZERO_COUNT_IE		0x02	/* Zero Count Interrupt Enable */
+
+
+/* CRC Reset codes 6-7 of RR0 */
+#define SCC_RR0_COMMAND_CRC_NULL		0x00	/* Null command */
+#define SCC_RR0_COMMAND_CRC_RESET_RX		0x01	/* Reset Receive CRC Checker */
+#define SCC_RR0_COMMAND_CRC_RESET_TX		0x02	/* Reset Transmit CRC Generator */
+#define SCC_RR0_COMMAND_CRC_RESET_TX_UNDERRUN	0x03	/* Reset Transmit Underrun/EOM Latch */
+
+/* Commands for the bits 3-5 of RR0 */
+#define SCC_RR0_COMMAND_NULL			0x00	/* Null Command */
+#define SCC_RR0_COMMAND_POINT_HIGH		0x01	/* Point High */
+#define SCC_RR0_COMMAND_RESET_EXT_STATUS_INT	0x02	/* Null Command */
+#define SCC_RR0_COMMAND_SEND_ABORT		0x03	/* Send Abort */
+#define SCC_RR0_COMMAND_INT_NEXT_RX		0x04	/* Enable Interrupt on Next Rx Char */
+#define SCC_RR0_COMMAND_RESET_TX_IP		0x05	/* Reset Tx Interrupt pending */
+#define SCC_RR0_COMMAND_ERROR_RESET		0x06	/* Error Reset */
+#define SCC_RR0_COMMAND_RESET_HIGHEST_IUS	0x07	/* Reset Highest IUS */
+
+#define SCC_RR3_BIT_EXT_STATUS_IP_B		0x01
+#define SCC_RR3_BIT_TX_IP_B			0x02
+#define SCC_RR3_BIT_RX_IP_B			0x04
+#define SCC_RR3_BIT_EXT_STATUS_IP_A		0x08
+#define SCC_RR3_BIT_TX_IP_A			0x10
+#define SCC_RR3_BIT_RX_IP_A			0x20
+
+
 
 struct SCC {
 	/* NOTE : WR2 and WR9 are common to both channels, we store their content in channel A */
+	/* RR2A stores the vector, RR2B stores the vector + status bits */
+	/* RR3 is only in channel, RR3B returns 0 */
 	/* Also special case for WR7', we store it in reg 16 */
-	uint8_t WR[16+1];		/* 0-15 are for WR0-WR15, 16 is for WR7' */
-	uint8_t RR[16];			/* 0-15 are for RR0-RR15 */
+	uint8_t	WR[16+1];		/* 0-15 are for WR0-WR15, 16 is for WR7' */
+	uint8_t	RR[16];			/* 0-15 are for RR0-RR15 */
 
-	int charcount;
-	int rd_handle, wr_handle;
+	uint8_t IUS;			/* Interrupt Under Service (same bits as RR3 bits 0-5) */
+
+	int	BaudRate_BRG;
+
+	int	charcount;
+	int	rd_handle, wr_handle;
 	uint16_t oldTBE;
 	uint16_t oldStatus;
-	bool bFileHandleIsATTY;
+	bool	bFileHandleIsATTY;
 };
 
 static struct SCC scc[2];		/* 0 is for channel A, 1 is for channel B */
@@ -155,6 +206,15 @@ static int SCC_Standard_Baudrate[] = {
 	2303400
 };
 
+
+/*--------------------------------------------------------------*/
+/* Local functions prototypes					*/
+/*--------------------------------------------------------------*/
+
+static void	SCC_Start_InterruptHandler ( int channel , int InternalCycleOffset );
+static void	SCC_Stop_InterruptHandler ( int channel );
+static void	SCC_InterruptHandler ( int channel );
+static void	SCC_Update_IRQ ( int channel );
 
 
 bool SCC_IsAvailable(CNF_PARAMS *cnf)
@@ -281,6 +341,7 @@ static void SCC_ResetChannel ( int Channel , bool HW_Reset )
 		/* WR9 is common to channel A and B, we store it in channel A */
 		scc[0].WR[9] &= 0x03;		/* keep bits 0 and 1, clear others */
 		scc[0].WR[9] |= 0xC0;		/* set bits 7 and 8 */
+		// TODO clear UIS		/* clearing MIE also clear IUS */
 
 		scc[Channel].WR[10] = 0x00;
 		scc[Channel].WR[11] = 0x08;
@@ -699,6 +760,10 @@ static int SCC_Get_TRxC_Freq ( int chn )
 /*
  * Return the generated baud rate depending on the value of WR4, WR11, WR12, WR13 and WR14
  *
+ * The baud rate can use RtxC or TRxC clocks (which depend on the machine type) with
+ * an additionnal clock multipier.
+ * Or the baud rate can use the baud rate generator and its time constant.
+ *
  * The SCC doc gives the formula to compute time constant from a baud rate in the BRG :
  *	TimeConstant = ( ClockFreq / ( 2 * BaudRate * ClockMult ) ) - 2
  *
@@ -828,11 +893,12 @@ static void SCC_Update_BaudRate ( int chn )
 	BaudRate = SCC_Compute_BaudRate ( chn , &StartBRG , &BaudRate_BRG );
 	if ( StartBRG )
 	{
-		// start cycint
+		scc[chn].BaudRate_BRG = BaudRate_BRG;
+		SCC_Start_InterruptHandler ( chn , 0 );
 	}
 	else
 	{
-		// stop cycint
+		SCC_Stop_InterruptHandler ( chn );
 	}
 
 	if ( BaudRate == -1 )
@@ -869,6 +935,7 @@ static uint8_t SCC_ReadControl(int chn)
 	switch (active_reg)
 	{
 	 case 0:	// RR0
+	 case 4:	// also returns RR0
 		temp = SCC_serial_getStatus(chn);
 		scc[chn].WR[0] = temp & 0xFF;		// define CTS(5), TBE(2) and RBF=RCA(0)
 		if (chn)
@@ -878,6 +945,12 @@ static uint8_t SCC_ReadControl(int chn)
 		value = scc[chn].WR[0];
 		LOG_TRACE(TRACE_SCC, "scc read channel=%c RR%d tx/rx buffer status value=$%02x\n" , 'A'+chn , active_reg , value );
 		break;
+
+	 case 1:	// RR1
+	 case 5:	// also returns RR1
+		// TODO
+		break;
+
 	 case 2:	// not really useful (RR2 seems unaccessed...)
 		value = scc[0].WR[2];
 		if (chn == 0)	// vector base only for RR2A
@@ -955,31 +1028,34 @@ static uint8_t SCC_ReadControl(int chn)
 		break;
 	 case 3:
 		value = chn ? 0 : RR3;     // access on A channel only
+//value = scc[chn].RR[3];		// TEMP hack for st mint
 		LOG_TRACE(TRACE_SCC, "scc read channel=%c RR%d interrupt pending value=$%02x\n" , 'A'+chn , active_reg , value );
-		break;
-	 case 4: // RR0
-		value = scc[chn].WR[0];
 		break;
 	 case 8: // DATA reg
 		scc[chn].WR[8] = SCC_serial_getData(chn);
 		value = scc[chn].WR[8];
 		LOG_TRACE(TRACE_SCC, "scc read channel=%c RR%d rx data value=$%02x\n" , 'A'+chn , active_reg , value );
 		break;
-	 case 9: // WR13
-		value = scc[chn].WR[13];
+
+	 case 10:	// Misc Status Bits
+	 case 14:	// also returns RR10
 		break;
-	 case 11: // WR15
-	 case 15: // EXT/STATUS IT Ctrl
-		value = scc[chn].WR[15] &= 0xFA; // mask out D2 and D0
-		LOG_TRACE(TRACE_SCC, "scc read channel=%c RR%d ext status IE value=$%02x\n" , 'A'+chn , active_reg , value );
-		break;
+
 	 case 12: // BRG LSB
 		value = scc[chn].WR[active_reg];
 		LOG_TRACE(TRACE_SCC, "scc read channel=%c RR%d baud rate time constant low value=$%02x\n" , 'A'+chn , active_reg , value );
 		break;
+
 	 case 13: // BRG MSB
+	 case 9:	// also returns RR13
 		value = scc[chn].WR[active_reg];
 		LOG_TRACE(TRACE_SCC, "scc read channel=%c RR%d baud rate time constant high value=$%02x\n" , 'A'+chn , active_reg , value );
+		break;
+
+	 case 15:	// EXT/STATUS IT Ctrl
+	 case 11:	// also returns RR15
+		value = scc[chn].WR[15] &= 0xFA; // mask out D2 and D0
+		LOG_TRACE(TRACE_SCC, "scc read channel=%c RR%d ext status IE value=$%02x\n" , 'A'+chn , active_reg , value );
 		break;
 
 	 default: // RR5,RR6,RR7,RR10,RR14 not processed
@@ -1179,15 +1255,23 @@ static void SCC_WriteControl(int chn, uint8_t value)
 		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set master control value=$%02x\n" , 'A'+chn , active_reg , value );
 		scc[0].WR[9] = value;		/* WR9 is common to channels A and B, store it in channel A  */
 
-		if ( ( value & 0xc0 ) == 0xc0 )
+		/* Bit 0 : VIS, Vector Includes Status */
+		/* Bit 1 : NV, No Vector during INTACK */
+		/* Bit 2 : Disable Lower Chain (not use in Hatari, there's only 1 SCC */
+		/* Bit 3 : Master Interrupt Enable */
+		// TODO clear IUS if MIE=0
+		/* Bit 4 : Status High / Low */
+		/* Bit 5 : Software INTACK Enable */
+		/* Bits 6-7 : reset command */
+		if ( ( value >> 6 ) == SCC_WR9_COMMAND_RESET_FORCE_HW )
 		{
 			SCC_ResetFull ( false );		/* Force Hardware Reset */
 		}
-		else if (value & 0x40)
+		else if ( ( value >> 6 ) == SCC_WR9_COMMAND_RESET_A )
 		{
 			SCC_ResetChannel ( 0 , false );		/* Channel A */
 		}
-		if (value & 0x80)
+		else if ( ( value >> 6 ) == SCC_WR9_COMMAND_RESET_B )
 		{
 			SCC_ResetChannel ( 1 , false );		/* Channel B */
 		}
@@ -1395,6 +1479,102 @@ static void SCC_handleWrite(uint32_t addr, uint8_t value)
 		break;
 	}
 }
+
+
+
+
+/*
+ * Start the internal interrupt handler for SCC A or B when the baud rate generator is enabled
+ */
+
+static void	SCC_Start_InterruptHandler ( int channel , int InternalCycleOffset )
+{
+	int	IntHandler;
+	int	Cycles;
+
+	if ( channel == 0 )
+		IntHandler = INTERRUPT_SCC_A;
+	else
+		IntHandler = INTERRUPT_SCC_B;
+
+	Cycles = MachineClocks.CPU_Freq / scc[channel].BaudRate_BRG;	/* Convert baud rate in CPU cycles */
+
+	LOG_TRACE ( TRACE_SCC, "scc start interrupt handler channel=%c baudrate=%d cpu_cycles=%d VBL=%d HBL=%d\n" ,
+		'A'+channel , scc[channel].BaudRate_BRG , Cycles , nVBLs , nHBL );
+
+	CycInt_AddRelativeInterruptWithOffset ( Cycles, INT_CPU_CYCLE, IntHandler, InternalCycleOffset );
+}
+
+
+/*
+ * Stop the internal interrupt handler for SCC A or B when the baud rate generator is disabled
+ */
+
+static void	SCC_Stop_InterruptHandler ( int channel )
+{
+	int	IntHandler;
+
+	if ( channel == 0 )
+		IntHandler = INTERRUPT_SCC_A;
+	else
+		IntHandler = INTERRUPT_SCC_B;
+
+	CycInt_RemovePendingInterrupt ( IntHandler );
+}
+
+
+/*
+ * Interrupt called each time the baud rate generator's counter reaches 0
+ * We continuously restart the interrupt, taking into account PendingCyclesOver.
+ */
+
+static void	SCC_InterruptHandler ( int channel )
+{
+	int	PendingCyclesOver;
+
+
+	/* Number of internal cycles we went over for this timer ( <= 0 ) */
+	/* Used to restart the next timer and keep a constant baud rate */
+	PendingCyclesOver = -PendingInterruptCount;			/* >= 0 */
+
+	LOG_TRACE ( TRACE_SCC, "scc interrupt handler channel=%c pending_cyc=%d VBL=%d HBL=%d\n" , 'A'+channel , PendingCyclesOver , nVBLs , nHBL );
+
+	/* Remove this interrupt from list and re-order */
+	CycInt_AcknowledgeInterrupt();
+
+	SCC_Start_InterruptHandler ( channel , -PendingCyclesOver );	/* Compensate for a != 0 value of PendingCyclesOver */
+
+	/* BRG counter reached 0, check if corresponding interrupt pending bit must be set in RR3 */
+	if ( ( scc[channel].WR[1] &  SCC_WR1_BIT_EXT_INT_ENABLE )
+		&& ( scc[channel].WR[15] &  SCC_WR15_BIT_ZERO_COUNT_IE ) )
+	{
+		/* IP bits are only set in RR3A */
+		if ( channel == 0 )
+			scc[0].RR[3] |= SCC_RR3_BIT_EXT_STATUS_IP_A;
+		else
+			scc[0].RR[3] |= SCC_RR3_BIT_EXT_STATUS_IP_B;
+
+		SCC_Update_IRQ ( channel );
+	}
+}
+
+
+void	SCC_InterruptHandler_A ( void )
+{
+	SCC_InterruptHandler ( 0 );
+}
+
+
+void	SCC_InterruptHandler_B ( void )
+{
+	SCC_InterruptHandler ( 1 );
+}
+
+
+static void	SCC_Update_IRQ ( int channel )
+{
+}
+
 
 void SCC_IRQ(void)
 {

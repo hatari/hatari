@@ -15,10 +15,15 @@ void SCC_Init(void);
 void SCC_UnInit(void);
 void SCC_MemorySnapShot_Capture(bool bSave);
 void SCC_Reset(void);
+
+void SCC_InterruptHandler_A(void);
+void SCC_InterruptHandler_B(void);
+
 void SCC_IRQ(void);
 int SCC_doInterrupt(void);
 void SCC_IoMem_ReadByte(void);
 void SCC_IoMem_WriteByte(void);
 void SCC_Info(FILE *fp, uint32_t dummy);
+
 
 #endif /* SCC_H */

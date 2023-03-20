@@ -67,6 +67,7 @@ const char CycInt_fileid[] = "Hatari cycInt.c";
 #include "sound.h"
 #include "video.h"
 #include "acia.h"
+#include "scc.h"
 #include "clocks_timings.h"
 
 
@@ -103,7 +104,8 @@ static void (* const pIntHandlerFunctions[MAX_INTERRUPTS])(void) =
 	FDC_InterruptHandler_Update,
 	Blitter_InterruptHandler,
 	Midi_InterruptHandler_Update,
-
+	SCC_InterruptHandler_A,
+	SCC_InterruptHandler_B
 };
 
 /* Event timer structure - keeps next timer to occur in structure so don't need
