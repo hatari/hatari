@@ -159,7 +159,8 @@
 struct SCC {
 	/* NOTE : WR2 and WR9 are common to both channels, we store their content in channel A */
 	/* RR2A stores the vector, RR2B stores the vector + status bits */
-	/* RR3 is only in channel, RR3B returns 0 */
+	/* RR3 is only in channel A, RR3B returns 0 */
+	/* IUS is common to both channels, we store it in channel A */
 	/* Also special case for WR7', we store it in reg 16 */
 	uint8_t	WR[16+1];		/* 0-15 are for WR0-WR15, 16 is for WR7' */
 	uint8_t	RR[16];			/* 0-15 are for RR0-RR15 */
@@ -176,11 +177,9 @@ struct SCC {
 };
 
 static struct SCC scc[2];		/* 0 is for channel A, 1 is for channel B */
+static uint8_t	SCC_IRQ_Line;
 
 static int active_reg;
-
-/* TODO NP : replace RR3 by RR[3] and use WR[1] instead of RR3M */
-static uint8_t RR3, RR3M;		/* common to channel A and B */
 
 
 static int SCC_ClockMode[] = { 1 , 16 , 32 , 64 };	/* Clock multiplier from WR4 bits 6-7 */
@@ -210,6 +209,9 @@ static int SCC_Standard_Baudrate[] = {
 /*--------------------------------------------------------------*/
 /* Local functions prototypes					*/
 /*--------------------------------------------------------------*/
+
+static void	SCC_ResetChannel ( int Channel , bool HW_Reset );
+static void	SCC_ResetFull ( bool HW_Reset );
 
 static void	SCC_Start_InterruptHandler ( int channel , int InternalCycleOffset );
 static void	SCC_Stop_InterruptHandler ( int channel );
@@ -313,11 +315,12 @@ void SCC_UnInit(void)
 void SCC_MemorySnapShot_Capture(bool bSave)
 {
 	MemorySnapShot_Store(&active_reg, sizeof(active_reg));
-	MemorySnapShot_Store(&RR3, sizeof(RR3));
-	MemorySnapShot_Store(&RR3M, sizeof(RR3M));
 	for (int c = 0; c < 2; c++)
 	{
 		MemorySnapShot_Store(scc[c].WR, sizeof(scc[c].WR));
+		MemorySnapShot_Store(scc[c].RR, sizeof(scc[c].RR));
+		MemorySnapShot_Store(&scc[c].IUS, sizeof(scc[c].IUS));
+		MemorySnapShot_Store(&scc[c].BaudRate_BRG, sizeof(scc[c].BaudRate_BRG));
 		MemorySnapShot_Store(&scc[c].charcount, sizeof(scc[c].charcount));
 		MemorySnapShot_Store(&scc[c].oldTBE, sizeof(scc[c].oldTBE));
 		MemorySnapShot_Store(&scc[c].oldStatus, sizeof(scc[c].oldStatus));
@@ -341,7 +344,7 @@ static void SCC_ResetChannel ( int Channel , bool HW_Reset )
 		/* WR9 is common to channel A and B, we store it in channel A */
 		scc[0].WR[9] &= 0x03;		/* keep bits 0 and 1, clear others */
 		scc[0].WR[9] |= 0xC0;		/* set bits 7 and 8 */
-		// TODO clear UIS		/* clearing MIE also clear IUS */
+		scc[0].IUS = 0x00;		/* clearing MIE also clear IUS */
 
 		scc[Channel].WR[10] = 0x00;
 		scc[Channel].WR[11] = 0x08;
@@ -400,10 +403,7 @@ static void SCC_channelAreset(void)
 	scc[0].WR[11] = 0x08;
 	scc[0].WR[9] = 0;
 
-/* TODO use RR[] for these 3 lines and put it in SCC_ResetChannel*/
-	RR3 &= ~0x38;		/* RR3 should be set to 0 on reset channel */
-	RR3M &= ~0x38;
-	scc[0].WR[0] = 1 << TBE;  // RR0A
+	scc[0].WR[0] = 1 << TBE;  // RR0A	// TODO NP
 }
 
 static void SCC_channelBreset(void)
@@ -414,10 +414,7 @@ static void SCC_channelBreset(void)
 	scc[1].WR[11] = 0x08;
 	scc[0].WR[9] = 0;         // single WR9
 
-/* TODO use RR[] for these 3 lines and put it in SCC_ResetChannel*/
-	RR3 &= ~7;		/* RR3 should be set to 0 on reset channel */
-	RR3M &= ~7;
-	scc[1].WR[0] = 1 << TBE;  // RR0B
+	scc[1].WR[0] = 1 << TBE;  // RR0B	// TODO NP
 }
 
 void SCC_Reset(void)
@@ -430,10 +427,6 @@ void SCC_Reset(void)
 	memset(scc[1].RR, 0, sizeof(scc[1].RR));
 
 	SCC_ResetFull ( true );
-
-/* TODO use RR[] for these 2 lines */
-	RR3 = 0;
-	RR3M = 0;
 
 	scc[0].charcount = scc[1].charcount = 0;
 }
@@ -939,9 +932,9 @@ static uint8_t SCC_ReadControl(int chn)
 		temp = SCC_serial_getStatus(chn);
 		scc[chn].WR[0] = temp & 0xFF;		// define CTS(5), TBE(2) and RBF=RCA(0)
 		if (chn)
-			RR3 = RR3M & (temp >> 8);	// define RxIP(2), TxIP(1) and ExtIP(0)
+			scc[0].RR[3] = scc[0].IUS & (temp >> 8);	// define RxIP(2), TxIP(1) and ExtIP(0)
 		else if (scc[0].WR[9] == 0x20)
-			RR3 |= 0x8;
+			scc[0].RR[3] |= 0x8;
 		value = scc[chn].WR[0];
 		LOG_TRACE(TRACE_SCC, "scc read channel=%c RR%d tx/rx buffer status value=$%02x\n" , 'A'+chn , active_reg , value );
 		break;
@@ -963,71 +956,71 @@ static uint8_t SCC_ReadControl(int chn)
 		// status bit added to vector
 		if (scc[0].WR[9] & 0x10) // modify high bits
 		{
-			if (RR3 == 0)
+			if (scc[0].RR[3] == 0)
 			{
 				value |= 0x60;
 				break;
 			}
-			if (RR3 & 32)
+			if (scc[0].RR[3] & 32)
 			{
 				value |= 0x30;        // A RxIP
 				break;
 			}
-			if (RR3 & 16)
+			if (scc[0].RR[3] & 16)
 			{
 				value |= 0x10;        // A TxIP
 				break;
 			}
-			if (RR3 & 8)
+			if (scc[0].RR[3] & 8)
 			{
 				value |= 0x50;        // A Ext IP
 				break;
 			}
-			if (RR3 & 4)
+			if (scc[0].RR[3] & 4)
 			{
 				value |= 0x20;        // B RBF
 				break;
 			}
-			if (RR3 & 2)
+			if (scc[0].RR[3] & 2)
 				break;                // B TBE
-			if (RR3 & 1)
+			if (scc[0].RR[3] & 1)
 				value |= 0x40;        // B Ext Status
 		}
 		else // modify low bits
 		{
-			if (RR3 == 0)
+			if (scc[0].RR[3] == 0)
 			{
 				value |= 6;           // no one
 				break;
 			}
-			if (RR3 & 32)
+			if (scc[0].RR[3] & 32)
 			{
 				value |= 0xC;         // A RxIP
 				break;
 			}
-			if (RR3 & 16)
+			if (scc[0].RR[3] & 16)
 			{
 				value |= 0x8;         // A TxIP
 				break;
 			}
-			if (RR3 & 8)
+			if (scc[0].RR[3] & 8)
 			{
 				value |= 0xA;         // A Ext IP
 				break;
 			}
-			if (RR3 & 4)
+			if (scc[0].RR[3] & 4)
 			{
 				value |= 4;           // B RBF
 				break;
 			}
-			if (RR3 & 2)
+			if (scc[0].RR[3] & 2)
 				break;                // B TBE
-			if (RR3 & 1)
+			if (scc[0].RR[3] & 1)
 				value |= 2;           // B Ext Status (CTS)
 		}
 		break;
 	 case 3:
-		value = chn ? 0 : RR3;     // access on A channel only
+		value = chn ? 0 : scc[0].RR[3];     // access on A channel only
 //value = scc[chn].RR[3];		// TEMP hack for st mint
 		LOG_TRACE(TRACE_SCC, "scc read channel=%c RR%d interrupt pending value=$%02x\n" , 'A'+chn , active_reg , value );
 		break;
@@ -1119,7 +1112,7 @@ static void SCC_WriteControl(int chn, uint8_t value)
 			{
 				for (i = 0x20; i; i >>= 1)
 				{
-					if (RR3 & i)
+					if (scc[0].RR[3] & i)
 						break;
 				}
 #define UGLY
@@ -1129,34 +1122,34 @@ static void SCC_WriteControl(int chn, uint8_t value)
 				{
 					scc[chn].charcount--;
 					if (scc[chn].charcount <= 0)
-						RR3 &= ~4; // optimize input; don't reset RxIP when chars are buffered
+						scc[0].RR[3] &= ~4; // optimize input; don't reset RxIP when chars are buffered
 				}
 				else
 				{
-					RR3 &= ~i;
+					scc[0].RR[3] &= ~i;
 				}
 #else
-				RR3 &= ~i;
+				scc[0].RR[3] &= ~i;
 #endif
 			}
 			else if ((value & 0x38) == 0x28) // Reset Tx int pending
 			{
 				if (chn)
-					RR3 &= ~2;       // channel B
+					scc[0].RR[3] &= ~2;       // channel B
 				else
-					RR3 &= ~0x10;    // channel A
+					scc[0].RR[3] &= ~0x10;    // channel A
 			}
 			else if ((value & 0x38) == 0x10) // Reset Ext/Status ints
 			{
 				if (chn)
-					RR3 &= ~1;       // channel B
+					scc[0].RR[3] &= ~1;       // channel B
 				else
-					RR3 &= ~8;       // channel A
+					scc[0].RR[3] &= ~8;       // channel A
 			}
 			// Clear SCC flag if no pending IT or no properly
 			// configured WR9. Must be done here to avoid
 			// scc_do_Interrupt call without pending IT
-			TriggerSCC((RR3 & RR3M) && ((0xB & scc[0].WR[9]) == 9));
+			TriggerSCC((scc[0].RR[3] & scc[0].IUS) && ((0xB & scc[0].WR[9]) == 9));
 		}
 		return;
 	}
@@ -1179,33 +1172,33 @@ static void SCC_WriteControl(int chn, uint8_t value)
 		{
 			// channel A
 			if (value & 1)
-				RR3M |= 8;
+				scc[0].IUS |= 8;
 			else
-				RR3 &= ~8; // no IP(RR3) if not enabled(RR3M)
+				scc[0].RR[3] &= ~8; // no IP(RR3) if not enabled(IUS)
 			if (value & 2)
-				RR3M |= 16;
+				scc[0].IUS |= 16;
 			else
-				RR3 &= ~16;
+				scc[0].RR[3] &= ~16;
 			if (value & 0x18)
-				RR3M |= 32;
+				scc[0].IUS |= 32;
 			else
-				RR3 &= ~32;
+				scc[0].RR[3] &= ~32;
 		}
 		else
 		{
 			// channel B
 			if (value & 1)
-				RR3M |= 1;
+				scc[0].IUS |= 1;
 			else
-				RR3 &= ~1;
+				scc[0].RR[3] &= ~1;
 			if (value & 2)
-				RR3M |= 2;
+				scc[0].IUS |= 2;
 			else
-				RR3 &= ~2;
+				scc[0].RR[3] &= ~2;
 			if (value & 0x18)
-				RR3M |= 4;
+				scc[0].IUS |= 4;
 			else
-				RR3 &= ~4;
+				scc[0].RR[3] &= ~4;
 			// set or clear SCC flag if necessary (see later)
 		}
 	}
@@ -1449,7 +1442,7 @@ static void SCC_WriteControl(int chn, uint8_t value)
 
 	// set or clear SCC flag accordingly. Yes it's ugly but avoids unnecessary useless calls
 	if (active_reg == 1 || active_reg == 2 || active_reg == 9)
-		TriggerSCC((RR3 & RR3M) && ((0xB & scc[0].WR[9]) == 9));
+		TriggerSCC((scc[0].RR[3] & scc[0].IUS) && ((0xB & scc[0].WR[9]) == 9));
 
 
 	active_reg = 0;			/* next access for RR0 or WR0 */
@@ -1571,6 +1564,33 @@ void	SCC_InterruptHandler_B ( void )
 }
 
 
+/*-----------------------------------------------------------------------*/
+/**
+ * Set or reset the SCC's IRQ signal.
+ * IRQ signal is inverted (0/low sets irq, 1/high clears irq)
+ * On Falcon, SCC's INT pin is connected to COMBEL EINT5
+ * On MegaSTE and TT, SCC's INT pin is connected to TTSCU XSCCIRQ/SIR5
+ */
+static void     SCC_Set_Line_IRQ ( int bit )
+{
+        LOG_TRACE ( TRACE_SCC, "scc set irq line val=%d VBL=%d HBL=%d\n" , bit , nVBLs , nHBL );
+
+	SCC_IRQ_Line = bit;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Return the value of the SCC's IRQ signal.
+ * IRQ signal is inverted (0/low sets irq, 1/high clears irq)
+ */
+int	SCC_Get_Line_IRQ ( void )
+{
+	return SCC_IRQ_Line;
+}
+
+
+
 static void	SCC_Update_IRQ ( int channel )
 {
 }
@@ -1583,8 +1603,8 @@ void SCC_IRQ(void)
 	if (scc[0].WR[9] == 0x20)
 		temp |= 0x800; // fake ExtStatusChange for HSMODEM install
 	scc[1].WR[0] = temp & 0xFF; // RR0B
-	RR3 = RR3M & (temp >> 8);
-	if (RR3 && (scc[0].WR[9] & 0xB) == 9)
+	scc[0].RR[3] = scc[0].IUS & (temp >> 8);
+	if (scc[0].RR[3] && (scc[0].WR[9] & 0xB) == 9)
 		TriggerSCC(true);
 }
 
@@ -1596,7 +1616,7 @@ int SCC_doInterrupt(void)
 	uint8_t i;
 	for (i = 0x20 ; i ; i >>= 1) // highest priority first
 	{
-		if (RR3 & i & RR3M)
+		if (scc[0].RR[3] & i & scc[0].IUS)
 			break ;
 	}
 	vector = scc[0].WR[2]; // WR2 = base of vectored interrupts for SCC
@@ -1667,24 +1687,24 @@ void SCC_IoMem_WriteByte(void)
 void SCC_Info(FILE *fp, uint32_t dummy)
 {
 	unsigned int i, reg;
-	const char *sep;
 
 	fprintf(fp, "SCC common:\n");
-	fprintf(fp, "- RR3:  %d\n", RR3);
-	fprintf(fp, "- RR3M: %d\n", RR3M);
+	fprintf(fp, "- IUS: %02x\n", scc[0].IUS);
 	fprintf(fp, "- Active register: %d\n", active_reg);
 
 	for (i = 0; i < 2; i++)
 	{
 		fprintf(fp, "\nSCC %c:\n", 'A' + i);
-		fprintf(fp, "- Registers:\n");
-		for (reg = 0; reg < ARRAY_SIZE(scc[0].WR); reg++)
-		{
-			sep = "";
-			if (unlikely(reg % 8 == 7))
-				sep = "\n";
-			fprintf(fp, "  %02x%s", scc[i].WR[reg], sep);
-		}
+		fprintf(fp, "- Write Registers:\n");
+		for (reg = 0; reg < ARRAY_SIZE(scc[i].WR); reg++)
+			fprintf(fp, "  %02x", scc[i].WR[reg]);
+		fprintf(fp, "\n");
+
+		fprintf(fp, "- Read Registers:\n");
+		for (reg = 0; reg < ARRAY_SIZE(scc[i].RR); reg++)
+			fprintf(fp, "  %02x", scc[i].RR[reg]);
+		fprintf(fp, "\n");
+
 		fprintf(fp, "- Char count: %d\n", scc[i].charcount);
 		fprintf(fp, "- Old status: 0x%04x\n", scc[i].oldStatus);
 		fprintf(fp, "- Old TBE:    0x%04x\n", scc[i].oldTBE);

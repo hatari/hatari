@@ -19,6 +19,7 @@ void SCC_Reset(void);
 void SCC_InterruptHandler_A(void);
 void SCC_InterruptHandler_B(void);
 
+int	SCC_Get_Line_IRQ ( void );
 void SCC_IRQ(void);
 int SCC_doInterrupt(void);
 void SCC_IoMem_ReadByte(void);
