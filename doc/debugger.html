@@ -1677,63 +1677,68 @@ generation, discussed below).</p>
 <p>In addition to accuracy issues mentioned in previous Profiling
 sections, function/symbol level costs have gotchas of their own.</p>
 
-<p>The first cost percentage and count columns are <em>sums for all
-the instructions</em> that were in profile data file <em>between
-the indicated symbol's address and the address of the next symbol</em>
-(= "between-symbols" cost).</p>
+<p>The first cost percentage and count column are sums for costs
+accounted for all the <em>adresses</em> that were in profile data file
+<em>between the indicated symbol's address and the address of the next
+symbol</em> (= "between-symbols" cost).</p>
 
-<p><strong>NOTE:</strong> If your symbol file doesn't contain addresses
-for all the relevant symbols, results from this can be misleading because
-instructions costs get assigned to <em>whatever</em> symbol's address
-happened to precede those instructions.  And you don't see which
-caller is causing it from caller info or callgraph either, as entry
-point for that time sink lacking a symbol means profiler hadn't
-tracked calls to it...</p>
+<p><strong>NOTE:</strong> If your symbols file does not contain addresses
+for all the relevant symbols, results from this can be misleading;
+instruction costs get assigned to <em>whatever</em> symbol's address
+happened to precede those instructions.  And you do not see which
+caller is causing it from caller info or callgraphs either, as entry
+point for that time sink missing a symbol means calls to it had not
+been tracked by profiler...</p>
 
-<p>The next two cost percentage and count columns are for <em>subroutine
-calls costs</em>, first one for exclusive and latter for inclusive cost
-i.e. including costs for further subroutine calls.  Values are based on
-caller information documented above.</p>
+<p>The next two percentages (and cost counts) are total cost of calls
+to given subroutine, based on profiler runtime branch tracking (see
+caller information documented above). First value is ("exclusive")
+cost for just that subroutine (from its entry, until execution returns
+to where it was called from), <em>without</em> costs for branches to
+further subroutines.  Latter value is ("inclusive") cost covering also
+costs for all the subroutines it calls.</p>
 
-<p>Reasons why between-symbol costs, and subroutine call costs can
-differ, are following:</p>
+<p>Reasons why "between-symbols" costs, and subroutine call costs
+can differ, are following:</p>
 <ul>
-<li>Subroutine terminates before next symbol address: exclusive
-    cost is smaller than in-between cost <em>because of missing
+<li>Subroutine terminates before next symbol address: "exclusive" cost
+    is smaller than "between-symbols" cost <em>because of missing
     symbol information</em>
     (these are indicated with '*' in statistics).</li>
 <li>Subroutine is called more through jumps/branches than through
-    subroutine calls: inclusive call count may be smaller than
-    in-between call count which includes branches/jumps.</li>
+    subroutine calls (JSR/BSR): "inclusive" call count may be smaller
+    than "between-symbols" call count which includes costs also for
+    function entries through branches/jumps.</li>
 <li>Subroutine jumps/branches to another function instead of
     using subroutine call, or function contains additional
-    (non-function) labels: exclusive cost is larger than
-    in-between cost.</li>
-<li>Exception happening during subroutine call: exclusive cost is
-    (slightly) larger than in-between cost.</li>
+    (non-function) labels: "exclusive" cost is larger than
+    "between-symbols" cost.</li>
+<li>Exception happening during subroutine call: "exclusive" cost
+    is (slightly) larger than "between-symbols" cost.</li>
 </ul>
 
-<p>In the first case, you should check the profile data to find out
-whether there are missing symbols for executed function entry points.
-You can notice function entry points as address gap and/or code
-retrieving arguments from stack. Exit points can be seen from RTS
-instructions.</p>
+<p>In the first case, you should check saved profile disassembly to
+find out whether there are missing symbols for executed function entry
+points. You can notice function entry points as address gaps and/or
+instructions retrieving arguments from stack. Exit points can be seen
+from RTS instructions.</p>
 
-<p>Second case can also be seen from the profile data.  Call count
-is same as count for how many times first instruction is executed
+<p>Second case can also be seen from the profile disassembly. Call
+count is same as count for how many times first instruction is executed
 (worst case: large loop on subroutine's first instruction).</p>
 
 <p>While subroutine costs should be more accurate and relevant, due to
-code optimizations many of the functions are not called as subroutines
+code optimizations, many of the functions are not called as subroutines
 (on m68k, using JSR/BSR), but just jumped or branched to.  Because of
-this, it is useful to compare both subroutine and between-symbols
+this, it is useful to compare both subroutine and "between-symbols"
 costs.  One should be able to see from the profile disassembly which
 of the above cases is cause for the discrepancy in the values.</p>
 
-<p><strong>NOTE:</strong> Before starting to do any serious source
-level optimizations, you should <em>always</em> verify from profile
-data (disassembly) where exactly the costs are in a function, to make
-sure your optimization efforts can actually help the performance.</p>
+<p><strong>NOTE:</strong> Before starting to do any serious
+optimizations based on profile information, you should <em>always</em>
+verify from profile disassembly where exactly the costs are in a
+function, to make sure your optimization efforts can actually have
+an impact on performance.</p>
 
 
 <h4>Generating and viewing callgraphs</h4>
