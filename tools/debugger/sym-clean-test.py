@@ -7,11 +7,24 @@ funcs = [
 "famisras10",
 "_d_number.isra.111",
 "operator delete(void*)",
+"operator new(unsigned long)",
+"operator new(unsigned long, std::nothrow_t const&)",
+"Common::operator+(int, Common::Rational const&)",
+"Common::operator-(int, Common::Rational const&)",
+"Common::operator*(int, Common::Rational const&)",
+"Common::operator/(int, Common::Rational const&)",
+"Common::operator==(int, Common::Rational const&)",
+"Common::operator!=(int, Common::Rational const&)",
+"Common::operator>(int, Common::Rational const&)",
+"Common::operator<(int, Common::Rational const&)",
+"Common::operator>=(int, Common::Rational const&)",
+"Common::operator<=(int, Common::Rational const&)",
 "virtual thunk to OSystem_Atari::initBackend()",
 "Sci::Script::isValidOffset(unsigned int) const",
 "(anonymous namespace)::pool::free(void*) [clone .constprop.4]",
 "Sci::MidiDriver_FMTowns::setTimerCallback(void*, void (*)(void*))",
 "non-virtual thunk to StdioStream::write(void const*, unsigned int)",
+"Scumm::AkosRenderer::byleRLEDecode(Scumm::BaseCostumeRenderer::ByleRLEData&)",
 "Common::setErrorOutputFormatter(void (*)(char*, char const*, unsigned long))",
 "Common::(anonymous namespace)::BufferedWriteStream::write(void const*, unsigned int)",
 "non-virtual thunk to Common::(anonymous namespace)::BufferedSeekableReadStream::seek(long long, int)",
@@ -28,13 +41,13 @@ re_isra = re.compile(r"\.isra\.[0-9]+$")
 # C++ symbols
 re_thunk = re.compile(r"(non-)?virtual ") # ...thunk to
 re_clone = re.compile(r" \[clone[^]]+\]") # ...isra
-re_args = re.compile(r"[^(+]+::[^(+]+(\(.+\))")
+re_args = re.compile(r"[^(+]+::[^(+]+(\(.+\))") # class::method(args)
 
 out = []
 for f in funcs:
     n = f
 
-    if " " not in n:
+    if not (" " in n or "::" in n):
         # C-symbols
         for r in (re_isra,):
             m = r.search(n)

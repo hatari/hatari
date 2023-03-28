@@ -1449,13 +1449,13 @@ label="%s";
         self.ignore_from = []
         self.emph_limit = 0
         # for demangled (C++ etc) symbols
-        self.re_thunk = re.compile(r"(non-)?virtual ") # thunk to
-        self.re_clone = re.compile(r" \[clone[^]]+\]")
-        self.re_args = re.compile(r"[^(+]+::[^(+]+(\(.+\))")
+        self.re_thunk = re.compile(r"(non-)?virtual ") # ...thunk to
+        self.re_clone = re.compile(r" \[clone[^]]+\]") # ...isra
+        self.re_args = re.compile(r"[^(+]+::[^(+]+(\(.+\))") # class::method(args)
 
     def _get_short_name(self, name):
         # not C++ or other demangled symbol
-        if self.full_symbols or " " not in name:
+        if self.full_symbols or not (" " in name or "::" in name):
             return name
 
         # remove args from method signatures
