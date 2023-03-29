@@ -425,7 +425,7 @@ static void Midi_Host_Close(void)
  * with given offset and direction.
  *
  * Offset interpretation:
- *   0: return matching device name
+ *   0: return matching device name, with prefix match as fallback
  *  <0: return name of device before matching one
  *  >0: return name of device after matching one
  *
@@ -436,8 +436,9 @@ const char* Midi_Host_GetPortName(const char *name, int offset, bool forInput)
 {
 	const PmDeviceInfo* info;
 	const char *prev = NULL;
+	const char *prefixmatch = NULL;
 	bool prev_matched = false;
-	int i, count;
+	int i, count, len = strlen(name);
 
 	// -- find port with given offset from named one
 	count = Pm_CountDevices();
@@ -456,6 +457,7 @@ const char* Midi_Host_GetPortName(const char *name, int offset, bool forInput)
 				return NULL;
 			return info->name;
 		}
+		/* matches */
 		if (!strcmp(info->name, name))
 		{
 			if (!offset)
@@ -468,7 +470,11 @@ const char* Midi_Host_GetPortName(const char *name, int offset, bool forInput)
 		if (prev_matched)
 			return info->name;
 		prev = info->name;
+		if (!strncmp(info->name, name, len))
+			prefixmatch = info->name;
 	}
+	if (!offset && prefixmatch)
+		return prefixmatch;
 	return NULL;
 }
 
