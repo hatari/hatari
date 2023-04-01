@@ -1141,31 +1141,22 @@ static uint8_t SCC_ReadControl(int chn)
 
 static uint8_t SCC_handleRead(uint32_t addr)
 {
-	uint8_t value = 0;
-	int channel;
+	uint8_t		value;
+	int		channel;
 
-	addr &= 0x6;
-	channel = (addr >= 4) ? 1 : 0;  // 0 = channel A, 1 = channel B
+	channel = ( addr >> 2 ) & 1;			/* bit 2 : 0 = channel A, 1 = channel B */
 
 	LOG_TRACE(TRACE_SCC, "scc read addr=%d channel=%c\n" , addr , 'A'+channel );
 
-	switch (addr)
+	if ( addr & 2 )					/* bit 1 */
 	{
-	 case 0: // channel A
-	 case 4: // channel B
-		value = SCC_ReadControl(channel);
-		break;
-	 case 2: // channel A
-	 case 6: // channel B
 		SCC.Chn[channel].WR[8] = SCC_serial_getData(channel);
 		value = SCC.Chn[channel].WR[8];
-		break;
-	 default:
-		Log_Printf(LOG_DEBUG, "SCC: illegal read address=$%x\n", addr);
-		break;
 	}
+	else
+		value = SCC_ReadControl(channel);
 
-	SCC.Chn[channel].Active_Reg = 0;		/* Next access for RR0 or WR0 */
+	SCC.Chn[channel].Active_Reg = 0;		/* Next access default to RR0 or WR0 */
 
 	return value;
 }
@@ -1446,27 +1437,16 @@ static void SCC_WriteControl(int chn, uint8_t value)
 
 static void SCC_handleWrite(uint32_t addr, uint8_t value)
 {
-	int channel;
+	int 		channel;
 
-	addr &= 0x6;
-	channel = (addr >= 4) ? 1 : 0;  // 0 = channel A, 1 = channel B
+	channel = ( addr >> 2 ) & 1;			/* bit 2 : 0 = channel A, 1 = channel B */
 
 	LOG_TRACE(TRACE_SCC, "scc write addr=%d channel=%c value=$%02x\n" , addr , 'A'+channel , value );
 
-	switch (addr)
-	{
-	 case 0:
-	 case 4:
-		SCC_WriteControl(channel, value);
-		break;
-	 case 2: // channel A
-	 case 6: // channel B
+	if ( addr & 2 )					/* bit 1 */
 		SCC_serial_setData(channel, value);
-		break;
-	 default:
-		Log_Printf(LOG_DEBUG, "SCC: illegal write address=$%x\n", addr);
-		break;
-	}
+	else
+		SCC_WriteControl(channel, value);
 }
 
 
