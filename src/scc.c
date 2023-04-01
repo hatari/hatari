@@ -529,6 +529,27 @@ static void SCC_serial_setBaudAttr(int handle, speed_t new_speed)
 }
 #endif
 
+
+/* summary of baud rates:
+    Rsconf   Falcon     Falcon(+HSMODEM)   Hatari    Hatari(+HSMODEM)
+    0        19200         19200            19200       19200
+    1         9600          9600             9600        9600
+    2         4800          4800             4800        4800
+    3         3600          3600            57600       57600
+    4         2400          2400             2400        2400
+    5         2000          2000            38400       38400
+    6         1800          1800             1800        1800
+    7         1200          1200             1200        1200
+    8          600           600              600         600
+    9          300           300              300         300
+    10         200        230400              200      230400
+    11         150        115200              150      115200
+    12         134         57600              134       57600
+    13         110         38400              110       38400
+    14          75        153600               75          75
+    15          50         76800               50          50
+*/
+
 static void SCC_serial_setBaud(int channel, int value)
 {
 #if HAVE_TERMIOS_H
@@ -723,7 +744,7 @@ static int SCC_Get_Standard_BaudRate ( int BaudRate )
 		low = SCC_Standard_Baudrate[ i ] - margin;
 		high = SCC_Standard_Baudrate[ i ] + margin;
 fprintf ( stderr , "check %d %d %f %f\n" , i , BaudRate , low , high );
-		if ( ( low < BaudRate ) && ( BaudRate < high ) )
+		if ( ( low <= BaudRate ) && ( BaudRate <= high ) )
 			return SCC_Standard_Baudrate[ i ];
 	}
 
@@ -946,7 +967,7 @@ static void SCC_Update_BaudRate ( int chn )
 	if ( Serial_ON )
 	{
 fprintf(stderr , "update br serial_on %d->%d\n" , BaudRate , BaudRate_Standard );
-//		SCC_serial_setBaud ( chn , BaudRate_Standard );
+		SCC_serial_setBaud ( chn , BaudRate_Standard );
 	}
 	else
 	{
@@ -1151,7 +1172,6 @@ static uint8_t SCC_handleRead(uint32_t addr)
 
 static void SCC_WriteControl(int chn, uint8_t value)
 {
-	uint32_t BaudRate;
 	int i;
 	int write_reg;
 	uint8_t command;
@@ -1392,147 +1412,7 @@ static void SCC_WriteControl(int chn, uint8_t value)
 	else if (SCC.Chn[chn].Active_Reg == 13) // set baud rate according to WR13 and WR12
 	{
 		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set baud rate time constant high value=$%02x\n" , 'A'+chn , SCC.Chn[chn].Active_Reg , value );
-		// Normally we have to set the baud rate according
-		// to clock source (WR11) and clock mode (WR4)
-		// In fact, we choose the baud rate from the value stored in WR12 & WR13
-		// Note: we assume that WR13 is always written last (after WR12)
-		// we tried to be more or less compatible with HSMODEM (see below)
-		// 75 and 50 bauds are preserved because 153600 and 76800 were not available
-		// 3600 and 2000 were also unavailable and are remapped to 57600 and 38400 respectively
-		BaudRate = 0;
-		switch (value)
-		{
-		 case 0:
-			switch (SCC.Chn[chn].WR[12])
-			{
-			 case 0: // HSMODEM for 200 mapped to 230400
-				BaudRate = 230400;
-				break;
-			 case 2: // HSMODEM for 150 mapped to 115200
-				BaudRate = 115200;
-				break;
-			 case 6:    // HSMODEM for 134 mapped to 57600
-			 case 0x7e: // HSMODEM for 3600 remapped to 57600
-			 case 0x44: // normal for 3600 remapped to 57600
-				BaudRate = 57600;
-				break;
-			 case 0xa:  // HSMODEM for 110 mapped to 38400
-			 case 0xe4: // HSMODEM for 2000 remapped to 38400
-			 case 0x7c: // normal for 2000 remapped to 38400
-				BaudRate = 38400;
-				break;
-			 case 0x16: // HSMODEM for 19200
-			 case 0xb:  // normal for 19200
-				BaudRate = 19200;
-				break;
-			 case 0x2e: // HSMODEM for 9600
-			 case 0x18: // normal for 9600
-				BaudRate = 9600;
-				break;
-			 case 0x5e: // HSMODEM for 4800
-			 case 0x32: // normal for 4800
-				BaudRate = 4800;
-				break;
-			 case 0xbe: // HSMODEM for 2400
-			 case 0x67: // normal
-				BaudRate = 2400;
-				break;
-			 case 0xfe: // HSMODEM for 1800
-			 case 0x8a: // normal for 1800
-				BaudRate = 1800;
-				break;
-			 case 0xd0: // normal for 1200
-				BaudRate = 1200;
-				break;
-			 case 1: // HSMODEM for 75 kept to 75
-				BaudRate = 75;
-				break;
-			 case 4: // HSMODEM for 50 kept to 50
-				BaudRate = 50;
-				break;
-			 default:
-				Log_Printf(LOG_DEBUG, "SCC: unexpected LSB constant for baud rate\n");
-				break;
-			}
-			break;
-		 case 1:
-			switch (SCC.Chn[chn].WR[12])
-			{
-			 case 0xa1: // normal for 600
-				BaudRate = 600;
-				break;
-			 case 0x7e: // HSMODEM for 1200
-				BaudRate = 1200;
-				break;
-			}
-			break;
-		 case 2:
-			if (SCC.Chn[chn].WR[12] == 0xfe)
-				BaudRate = 600; //HSMODEM
-			break;
-		 case 3:
-			if (SCC.Chn[chn].WR[12] == 0x45)
-				BaudRate = 300; //normal
-			break;
-		 case 4:
-			if (SCC.Chn[chn].WR[12] == 0xe8)
-				BaudRate = 200; //normal
-			break;
-		 case 5:
-			if (SCC.Chn[chn].WR[12] == 0xfe)
-				BaudRate = 300; //HSMODEM
-			break;
-		 case 6:
-			if (SCC.Chn[chn].WR[12] == 0x8c)
-				BaudRate = 150; //normal
-			break;
-		 case 7:
-			if (SCC.Chn[chn].WR[12] == 0x4d)
-				BaudRate = 134; //normal
-			break;
-		 case 8:
-			if (SCC.Chn[chn].WR[12] == 0xee)
-				BaudRate = 110; //normal
-			break;
-		 case 0xd:
-			if (SCC.Chn[chn].WR[12] == 0x1a)
-				BaudRate = 75; //normal
-			break;
-		 case 0x13:
-			if (SCC.Chn[chn].WR[12] == 0xa8)
-				BaudRate = 50; //normal
-			break;
-		 case 0xff: // HSMODEM dummy value->silently ignored
-			break;
-		 default:
-			Log_Printf(LOG_DEBUG, "SCC: unexpected MSB constant for baud rate\n");
-			break;
-		}
-
 		SCC_Update_BaudRate ( chn );
-
-		if (BaudRate)  // set only if defined
-			SCC_serial_setBaud(chn, BaudRate);
-
-		/* summary of baud rates:
-		   Rsconf   Falcon     Falcon(+HSMODEM)   Hatari    Hatari(+HSMODEM)
-		   0        19200         19200            19200       19200
-		   1         9600          9600             9600        9600
-		   2         4800          4800             4800        4800
-		   3         3600          3600            57600       57600
-		   4         2400          2400             2400        2400
-		   5         2000          2000            38400       38400
-		   6         1800          1800             1800        1800
-		   7         1200          1200             1200        1200
-		   8          600           600              600         600
-		   9          300           300              300         300
-		   10         200        230400              200      230400
-		   11         150        115200              150      115200
-		   12         134         57600              134       57600
-		   13         110         38400              110       38400
-		   14          75        153600               75          75
-		   15          50         76800               50          50
-		*/
 	}
 	else if (SCC.Chn[chn].Active_Reg == 14) // Misc Control bits
 	{
