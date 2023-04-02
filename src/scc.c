@@ -190,7 +190,6 @@ struct SCC_Channel {
 	uint8_t	WR[16+1];		/* 0-15 are for WR0-WR15, 16 is for WR7' */
 	uint8_t	RR[16];			/* 0-15 are for RR0-RR15 */
 
-	int	Active_Reg;
 	int	BaudRate_BRG;
 	bool	RR0_Latched;
 
@@ -206,6 +205,7 @@ typedef struct {
 
 	uint8_t		IRQ_Line;
 	uint8_t		IUS;		/* Interrupt Under Service (same bits as RR3 bits 0-5) */
+	int		Active_Reg;
 } SCC_STRUCT;
 
 static SCC_STRUCT SCC;
@@ -349,7 +349,6 @@ void SCC_MemorySnapShot_Capture(bool bSave)
 	{
 		MemorySnapShot_Store(SCC.Chn[c].WR, sizeof(SCC.Chn[c].WR));
 		MemorySnapShot_Store(SCC.Chn[c].RR, sizeof(SCC.Chn[c].RR));
-		MemorySnapShot_Store(&SCC.Chn[c].Active_Reg, sizeof(SCC.Chn[c].Active_Reg));
 		MemorySnapShot_Store(&SCC.Chn[c].BaudRate_BRG, sizeof(SCC.Chn[c].BaudRate_BRG));
 		MemorySnapShot_Store(&SCC.Chn[c].charcount, sizeof(SCC.Chn[c].charcount));
 		MemorySnapShot_Store(&SCC.Chn[c].oldTBE, sizeof(SCC.Chn[c].oldTBE));
@@ -358,6 +357,7 @@ void SCC_MemorySnapShot_Capture(bool bSave)
 
 	MemorySnapShot_Store(&SCC.IRQ_Line, sizeof(SCC.IRQ_Line));
 	MemorySnapShot_Store(&SCC.IUS, sizeof(SCC.IUS));
+	MemorySnapShot_Store(&SCC.Active_Reg, sizeof(SCC.Active_Reg));
 }
 
 
@@ -365,7 +365,7 @@ void SCC_MemorySnapShot_Capture(bool bSave)
 static void SCC_ResetChannel ( int Channel , bool HW_Reset )
 {
 	SCC.Chn[Channel].WR[0] = 0x00;
-	SCC.Chn[Channel].Active_Reg = 0x00;
+	SCC.Active_Reg = 0;
 	SCC.Chn[Channel].WR[1] &= 0x24;			/* keep bits 2 and 5, clear others */
 	SCC.Chn[Channel].WR[3] &= 0xfe;			/* keep bits 1 to 7, clear bit 0 */
 	SCC.Chn[Channel].WR[4] |= 0x04;			/* set bit 2, keep others */
@@ -1030,10 +1030,10 @@ static uint8_t SCC_ReadControl(int chn)
 {
 	uint8_t value = 0;
 	uint16_t temp;
-	int active_reg;
+	uint8_t active_reg;
 	uint8_t status;
 
-	active_reg = SCC.Chn[chn].Active_Reg;
+	active_reg = SCC.Active_Reg;
 
 	switch ( active_reg )
 	{
@@ -1156,7 +1156,7 @@ static uint8_t SCC_handleRead(uint32_t addr)
 	else
 		value = SCC_ReadControl(channel);
 
-	SCC.Chn[channel].Active_Reg = 0;		/* Next access default to RR0 or WR0 */
+	SCC.Active_Reg = 0;				/* Next access default to RR0 or WR0 */
 
 	return value;
 }
@@ -1167,7 +1167,7 @@ static void SCC_WriteControl(int chn, uint8_t value)
 	int write_reg;
 	uint8_t command;
 
-	if ( SCC.Chn[chn].Active_Reg == 0 )
+	if ( SCC.Active_Reg == 0 )
 	{
 		/* Bits 0-2 : register nbr */
 		/* Bits 3-5 : command */
@@ -1175,8 +1175,8 @@ static void SCC_WriteControl(int chn, uint8_t value)
 
 		if (value <= 15)
 		{
-			SCC.Chn[chn].Active_Reg = value & 0x0f;
-			LOG_TRACE(TRACE_SCC, "scc set active reg=R%d\n" , SCC.Chn[chn].Active_Reg );
+			SCC.Active_Reg = value & 0x0f;
+			LOG_TRACE(TRACE_SCC, "scc set active reg=R%d\n" , SCC.Active_Reg );
 		}
 		else
 		{
@@ -1263,10 +1263,10 @@ static void SCC_WriteControl(int chn, uint8_t value)
 		return;
 	}
 
-	LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d value=$%02x\n" , 'A'+chn , SCC.Chn[chn].Active_Reg , value );
+	LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d value=$%02x\n" , 'A'+chn , SCC.Active_Reg , value );
 
 	/* write_reg can be different from Active_Reg when accessing WR7' */
-	write_reg = SCC.Chn[chn].Active_Reg;
+	write_reg = SCC.Active_Reg;
 	if ( SCC.Chn[chn].WR[15] & 1 )
 	{
 		write_reg = 16;			/* WR[16] stores the content of WR7' */
@@ -1274,9 +1274,9 @@ static void SCC_WriteControl(int chn, uint8_t value)
 	SCC.Chn[chn].WR[write_reg] = value;
 
 
-	if (SCC.Chn[chn].Active_Reg == 1) // Tx/Rx interrupt enable
+	if (SCC.Active_Reg == 1)		 // Tx/Rx interrupt enable
 	{
-		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set tx/rx int value=$%02x\n" , 'A'+chn , SCC.Chn[chn].Active_Reg , value );
+		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set tx/rx int value=$%02x\n" , 'A'+chn , SCC.Active_Reg , value );
 		if (chn == 0)
 		{
 			// channel A
@@ -1311,50 +1311,50 @@ static void SCC_WriteControl(int chn, uint8_t value)
 			// set or clear SCC flag if necessary (see later)
 		}
 	}
-	else if (SCC.Chn[chn].Active_Reg == 2)
+	else if (SCC.Active_Reg == 2)
 	{
-		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set int vector value=$%02x\n" , 'A'+chn , SCC.Chn[chn].Active_Reg , value );
+		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set int vector value=$%02x\n" , 'A'+chn , SCC.Active_Reg , value );
 		SCC.Chn[0].WR[2] = value;		/* WR2 is common to channels A and B, store it in channel A  */
 	}
-	else if (SCC.Chn[chn].Active_Reg == 3) // Receive parameter and control
+	else if (SCC.Active_Reg == 3) // Receive parameter and control
 	{
-		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set rx parameter and control value=$%02x\n" , 'A'+chn , SCC.Chn[chn].Active_Reg , value );
+		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set rx parameter and control value=$%02x\n" , 'A'+chn , SCC.Active_Reg , value );
 	}
-	else if (SCC.Chn[chn].Active_Reg == 4) // Tx/Rx misc parameters and modes
+	else if (SCC.Active_Reg == 4) // Tx/Rx misc parameters and modes
 	{
-		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set tx/rx stop/parity value=$%02x\n" , 'A'+chn , SCC.Chn[chn].Active_Reg , value );
+		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set tx/rx stop/parity value=$%02x\n" , 'A'+chn , SCC.Active_Reg , value );
 		SCC_Update_BaudRate ( chn );
 	}
-	else if (SCC.Chn[chn].Active_Reg == 5) // Transmit parameter and control
+	else if (SCC.Active_Reg == 5) // Transmit parameter and control
 	{
-		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set tx parameter and control value=$%02x\n" , 'A'+chn , SCC.Chn[chn].Active_Reg , value );
+		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set tx parameter and control value=$%02x\n" , 'A'+chn , SCC.Active_Reg , value );
 		SCC_serial_setRTS(chn, value & 2);
 		SCC_serial_setDTR(chn, value & 128);
 		// Tx character format & Tx CRC would be selected also here (8 bits/char and no CRC assumed)
 	}
-	else if (SCC.Chn[chn].Active_Reg == 6) // Sync characters high or SDLC Address Field
+	else if (SCC.Active_Reg == 6) // Sync characters high or SDLC Address Field
 	{
-		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set sync hi/sdlc addr value=$%02x\n" , 'A'+chn , SCC.Chn[chn].Active_Reg , value );
+		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set sync hi/sdlc addr value=$%02x\n" , 'A'+chn , SCC.Active_Reg , value );
 	}
-	else if (SCC.Chn[chn].Active_Reg == 7) // Sync characters low or SDLC flag or WR7'
+	else if (SCC.Active_Reg == 7) // Sync characters low or SDLC flag or WR7'
 	{
 		if ( SCC.Chn[chn].WR[15] & 1 )
 		{
-			LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set WR7' value=$%02x\n" , 'A'+chn , SCC.Chn[chn].Active_Reg , value );
+			LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set WR7' value=$%02x\n" , 'A'+chn , SCC.Active_Reg , value );
 		}
 		else
 		{
-			LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set sync low/sdlc flag value=$%02x\n" , 'A'+chn , SCC.Chn[chn].Active_Reg , value );
+			LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set sync low/sdlc flag value=$%02x\n" , 'A'+chn , SCC.Active_Reg , value );
 		}
 	}
-	else if (SCC.Chn[chn].Active_Reg == 8)
+	else if (SCC.Active_Reg == 8)
 	{
-		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set transmit buffer value=$%02x\n" , 'A'+chn , SCC.Chn[chn].Active_Reg , value );
+		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set transmit buffer value=$%02x\n" , 'A'+chn , SCC.Active_Reg , value );
 		SCC_serial_setData(chn, value);
 	}
-	else if (SCC.Chn[chn].Active_Reg == 9) 		/* Master interrupt control (common for both channels) */
+	else if (SCC.Active_Reg == 9) 		/* Master interrupt control (common for both channels) */
 	{
-		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set master control value=$%02x\n" , 'A'+chn , SCC.Chn[chn].Active_Reg , value );
+		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set master control value=$%02x\n" , 'A'+chn , SCC.Active_Reg , value );
 		SCC.Chn[0].WR[9] = value;		/* WR9 is common to channels A and B, store it in channel A  */
 
 		/* Bit 0 : VIS, Vector Includes Status */
@@ -1386,33 +1386,33 @@ static void SCC_WriteControl(int chn, uint8_t value)
 
 		//  set or clear SCC flag accordingly (see later)
 	}
-	else if (SCC.Chn[chn].Active_Reg == 10) // Tx/Rx misc control bits
+	else if (SCC.Active_Reg == 10) // Tx/Rx misc control bits
 	{
-		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set tx/rx control bits value=$%02x\n" , 'A'+chn , SCC.Chn[chn].Active_Reg , value );
+		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set tx/rx control bits value=$%02x\n" , 'A'+chn , SCC.Active_Reg , value );
 	}
-	else if (SCC.Chn[chn].Active_Reg == 11) // Clock Mode Control
+	else if (SCC.Active_Reg == 11) // Clock Mode Control
 	{
-		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set clock mode control value=$%02x\n" , 'A'+chn , SCC.Chn[chn].Active_Reg , value );
+		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set clock mode control value=$%02x\n" , 'A'+chn , SCC.Active_Reg , value );
 		SCC_Update_BaudRate ( chn );
 	}
-	else if (SCC.Chn[chn].Active_Reg == 12) // Lower byte of baud rate
+	else if (SCC.Active_Reg == 12) // Lower byte of baud rate
 	{
-		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set baud rate time constant low value=$%02x\n" , 'A'+chn , SCC.Chn[chn].Active_Reg , value );
+		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set baud rate time constant low value=$%02x\n" , 'A'+chn , SCC.Active_Reg , value );
 		SCC_Update_BaudRate ( chn );
 	}
-	else if (SCC.Chn[chn].Active_Reg == 13) // set baud rate according to WR13 and WR12
+	else if (SCC.Active_Reg == 13) // set baud rate according to WR13 and WR12
 	{
-		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set baud rate time constant high value=$%02x\n" , 'A'+chn , SCC.Chn[chn].Active_Reg , value );
+		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set baud rate time constant high value=$%02x\n" , 'A'+chn , SCC.Active_Reg , value );
 		SCC_Update_BaudRate ( chn );
 	}
-	else if (SCC.Chn[chn].Active_Reg == 14) // Misc Control bits
+	else if (SCC.Active_Reg == 14) // Misc Control bits
 	{
-		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set misc control bits value=$%02x\n" , 'A'+chn , SCC.Chn[chn].Active_Reg , value );
+		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set misc control bits value=$%02x\n" , 'A'+chn , SCC.Active_Reg , value );
 		SCC_Update_BaudRate ( chn );
 	}
-	else if (SCC.Chn[chn].Active_Reg == 15) // external status int control
+	else if (SCC.Active_Reg == 15) // external status int control
 	{
-		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set ext status int control value=$%02x\n" , 'A'+chn , SCC.Chn[chn].Active_Reg , value );
+		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set ext status int control value=$%02x\n" , 'A'+chn , SCC.Active_Reg , value );
 
 		/* Bit 0 : Point to Write Registe WR7 Prime */
 		/* Bit 1 : Zero Count Interrupt Enable */
@@ -1428,11 +1428,11 @@ static void SCC_WriteControl(int chn, uint8_t value)
 	}
 
 	// set or clear SCC flag accordingly. Yes it's ugly but avoids unnecessary useless calls
-	if (SCC.Chn[chn].Active_Reg == 1 || SCC.Chn[chn].Active_Reg == 2 || SCC.Chn[chn].Active_Reg == 9)
+	if (SCC.Active_Reg == 1 || SCC.Active_Reg == 2 || SCC.Active_Reg == 9)
 		TriggerSCC((SCC.Chn[0].RR[3] & SCC.IUS) && ((0xB & SCC.Chn[0].WR[9]) == 9));
 
 
-	SCC.Chn[chn].Active_Reg = 0;			/* next access for RR0 or WR0 */
+	SCC.Active_Reg = 0;			/* next access for RR0 or WR0 */
 }
 
 static void SCC_handleWrite(uint32_t addr, uint8_t value)
@@ -1670,12 +1670,13 @@ void SCC_Info(FILE *fp, uint32_t dummy)
 	unsigned int i, reg;
 
 	fprintf(fp, "SCC common:\n");
+	fprintf(fp, "- IRQ_Line: %02x\n", SCC.IRQ_Line);
 	fprintf(fp, "- IUS: %02x\n", SCC.IUS);
+	fprintf(fp, "- Active register: %d\n", SCC.Active_Reg);
 
 	for (i = 0; i < 2; i++)
 	{
 		fprintf(fp, "\nSCC %c:\n", 'A' + i);
-		fprintf(fp, "- Active register: %d\n", SCC.Chn[i].Active_Reg);
 		fprintf(fp, "- Write Registers:\n");
 		for (reg = 0; reg < ARRAY_SIZE(SCC.Chn[i].WR); reg++)
 			fprintf(fp, "  %02x", SCC.Chn[i].WR[reg]);
