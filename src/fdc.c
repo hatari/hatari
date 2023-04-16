@@ -2180,14 +2180,14 @@ static int FDC_UpdateMotorStop ( void )
 	 case FDCEMU_RUN_MOTOR_STOP:
 		FDC.IndexPulse_Counter = 0;
 		FDC.CommandState = FDCEMU_RUN_MOTOR_STOP_WAIT;
-		/* Continue to next state */
+		/* Fall through to next state */
 	 case FDCEMU_RUN_MOTOR_STOP_WAIT:
 		if ( FDC.IndexPulse_Counter < FDC_DELAY_IP_MOTOR_OFF )
 		{
 			FdcCycles = FDC_DELAY_CYCLE_REFRESH_INDEX_PULSE;	/* Wait for the correct number of IP */
 			break;
 		}
-		/* If IndexPulse_Counter reached, we go directly to the _COMPLETE state */
+		/* If IndexPulse_Counter reached, we fall through directly to the _COMPLETE state */
 	 case FDCEMU_RUN_MOTOR_STOP_COMPLETE:
 		Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 		LOG_TRACE(TRACE_FDC, "fdc motor stopped VBL=%d video_cyc=%d %d@%d pc=%x\n",
@@ -2238,7 +2238,7 @@ static int FDC_UpdateRestoreCmd ( void )
 			FdcCycles = FDC_DELAY_CYCLE_REFRESH_INDEX_PULSE;	/* Wait for the correct number of IP */
 			break;
 		}
-		/* If IndexPulse_Counter reached, we go directly to the _MOTOR_ON state */
+		/* If IndexPulse_Counter reached, we fall through directly to the _MOTOR_ON state */
 	 case FDCEMU_RUN_RESTORE_SEEKTOTRACKZERO_MOTOR_ON:
 		FDC_Update_STR ( 0 , FDC_STR_BIT_SPIN_UP );		/* At this point, spin up sequence is ok */
 		FDC.ReplaceCommandPossible = false;
@@ -2252,7 +2252,7 @@ static int FDC_UpdateRestoreCmd ( void )
 		/* for other type I commands) */
 		FDC.TR = 0xff;				
 		FDC.CommandState = FDCEMU_RUN_RESTORE_SEEKTOTRACKZERO_LOOP;
-		/* Continue in the _LOOP state */
+		/* Fall through to the _LOOP state */
 	 case FDCEMU_RUN_RESTORE_SEEKTOTRACKZERO_LOOP:
 		if ( FDC.TR == 0 )					/* Track 0 not reached after 255 attempts ? */
 		{							/* (this can happen if the drive is disabled) */
@@ -2296,7 +2296,7 @@ static int FDC_UpdateRestoreCmd ( void )
 		break;
 	 case FDCEMU_RUN_RESTORE_VERIFY_HEAD_OK:
 		FDC.IndexPulse_Counter = 0;
-		/* Head OK, continue and look for sector header */
+		/* Head OK, fall through and look for sector header */
 	 case FDCEMU_RUN_RESTORE_VERIFY_NEXT_SECTOR_HEADER:
 		/* If 'verify' doesn't succeed after 5 revolutions, we abort with RNF */
 		if ( FDC.IndexPulse_Counter >= FDC_DELAY_IP_ADDRESS_ID )
@@ -2386,7 +2386,7 @@ static int FDC_UpdateSeekCmd ( void )
 			FdcCycles = FDC_DELAY_CYCLE_REFRESH_INDEX_PULSE;	/* Wait for the correct number of IP */
 			break;
 		}
-		/* If IndexPulse_Counter reached, we go directly to the _MOTOR_ON state */
+		/* If IndexPulse_Counter reached, we fall through directly to the _MOTOR_ON state */
 	 case FDCEMU_RUN_SEEK_TOTRACK_MOTOR_ON:
 		FDC_Update_STR ( 0 , FDC_STR_BIT_SPIN_UP );		/* At this point, spin up sequence is ok */
 		FDC.ReplaceCommandPossible = false;
@@ -2451,7 +2451,7 @@ static int FDC_UpdateSeekCmd ( void )
 		break;
 	 case FDCEMU_RUN_SEEK_VERIFY_HEAD_OK:
 		FDC.IndexPulse_Counter = 0;
-		/* Head OK, continue and look for sector header */
+		/* Head OK, fall through and look for sector header */
 	 case FDCEMU_RUN_SEEK_VERIFY_NEXT_SECTOR_HEADER:
 		/* If 'verify' doesn't succeed after 5 revolutions, we abort with RNF */
 		if ( FDC.IndexPulse_Counter >= FDC_DELAY_IP_ADDRESS_ID )
@@ -2541,7 +2541,7 @@ static int FDC_UpdateStepCmd ( void )
 			FdcCycles = FDC_DELAY_CYCLE_REFRESH_INDEX_PULSE;	/* Wait for the correct number of IP */
 			break;
 		}
-		/* If IndexPulse_Counter reached, we go directly to the _MOTOR_ON state */
+		/* If IndexPulse_Counter reached, we fall through directly to the _MOTOR_ON state */
 	 case FDCEMU_RUN_STEP_ONCE_MOTOR_ON:
 		FDC_Update_STR ( 0 , FDC_STR_BIT_SPIN_UP );		/* At this point, spin up sequence is ok */
 		FDC.ReplaceCommandPossible = false;
@@ -2588,7 +2588,7 @@ static int FDC_UpdateStepCmd ( void )
 		break;
 	 case FDCEMU_RUN_STEP_VERIFY_HEAD_OK:
 		FDC.IndexPulse_Counter = 0;
-		/* Head OK, continue and look for sector header */
+		/* Head OK, fall through and look for sector header */
 	 case FDCEMU_RUN_STEP_VERIFY_NEXT_SECTOR_HEADER:
 		/* If 'verify' doesn't succeed after 5 revolutions, we abort with RNF */
 		if ( FDC.IndexPulse_Counter >= FDC_DELAY_IP_ADDRESS_ID )
@@ -2683,7 +2683,7 @@ static int FDC_UpdateReadSectorsCmd ( void )
 			FdcCycles = FDC_DELAY_CYCLE_REFRESH_INDEX_PULSE;	/* Wait for the correct number of IP */
 			break;
 		}
-		/* If IndexPulse_Counter reached, we go directly to the _HEAD_LOAD state */
+		/* If IndexPulse_Counter reached, we fall through directly to the _HEAD_LOAD state */
 	 case FDCEMU_RUN_READSECTORS_READDATA_HEAD_LOAD:
 		if ( FDC.CR & FDC_COMMAND_BIT_HEAD_LOAD )
 		{
@@ -2691,7 +2691,7 @@ static int FDC_UpdateReadSectorsCmd ( void )
 			FdcCycles = FDC_DelayToFdcCycles ( FDC_DELAY_US_HEAD_LOAD );	/* Head settle delay */
 			break;
 		}
-		/* If there's no head settle, we go directly to the _MOTOR_ON state */
+		/* If there's no head settle, we fall through directly to the _MOTOR_ON state */
 	 case FDCEMU_RUN_READSECTORS_READDATA_MOTOR_ON:
 		FDC.ReplaceCommandPossible = false;
 		FDC.IndexPulse_Counter = 0;
@@ -2895,7 +2895,7 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 			FdcCycles = FDC_DELAY_CYCLE_REFRESH_INDEX_PULSE;	/* Wait for the correct number of IP */
 			break;
 		}
-		/* If IndexPulse_Counter reached, we go directly to the _HEAD_LOAD state */
+		/* If IndexPulse_Counter reached, we fall through directly to the _HEAD_LOAD state */
 	 case FDCEMU_RUN_WRITESECTORS_WRITEDATA_HEAD_LOAD:
 		if ( FDC.CR & FDC_COMMAND_BIT_HEAD_LOAD )
 		{
@@ -2903,7 +2903,7 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 			FdcCycles = FDC_DelayToFdcCycles ( FDC_DELAY_US_HEAD_LOAD );	/* Head settle delay */
 			break;
 		}
-		/* If there's no head settle, we go directly to the _MOTOR_ON state */
+		/* If there's no head settle, we fall through directly to the _MOTOR_ON state */
 	 case FDCEMU_RUN_WRITESECTORS_WRITEDATA_MOTOR_ON:
 		FDC.ReplaceCommandPossible = false;
 		FDC.IndexPulse_Counter = 0;
@@ -3080,7 +3080,7 @@ static int FDC_UpdateReadAddressCmd ( void )
 			FdcCycles = FDC_DELAY_CYCLE_REFRESH_INDEX_PULSE;	/* Wait for the correct number of IP */
 			break;
 		}
-		/* If IndexPulse_Counter reached, we go directly to the _HEAD_LOAD state */
+		/* If IndexPulse_Counter reached, we fall through directly to the _HEAD_LOAD state */
 	 case FDCEMU_RUN_READADDRESS_HEAD_LOAD:
 		FDC.ReplaceCommandPossible = false;
 		if ( FDC.CR & FDC_COMMAND_BIT_HEAD_LOAD )
@@ -3089,7 +3089,7 @@ static int FDC_UpdateReadAddressCmd ( void )
 			FdcCycles = FDC_DelayToFdcCycles ( FDC_DELAY_US_HEAD_LOAD );	/* Head settle delay */
 			break;
 		}
-		/* If there's no head settle, we go directly to the _MOTOR_ON state */
+		/* If there's no head settle, we fall through directly to the _MOTOR_ON state */
 	 case FDCEMU_RUN_READADDRESS_MOTOR_ON:
 		FDC.ReplaceCommandPossible = false;
 		FDC.IndexPulse_Counter = 0;
@@ -3202,7 +3202,7 @@ static int FDC_UpdateReadTrackCmd ( void )
 			FdcCycles = FDC_DELAY_CYCLE_REFRESH_INDEX_PULSE;	/* Wait for the correct number of IP */
 			break;
 		}
-		/* If IndexPulse_Counter reached, we go directly to the _HEAD_LOAD state */
+		/* If IndexPulse_Counter reached, we fall through directly to the _HEAD_LOAD state */
 	 case FDCEMU_RUN_READTRACK_HEAD_LOAD:
 		FDC.ReplaceCommandPossible = false;
 		if ( FDC.CR & FDC_COMMAND_BIT_HEAD_LOAD )
@@ -3211,7 +3211,7 @@ static int FDC_UpdateReadTrackCmd ( void )
 			FdcCycles = FDC_DelayToFdcCycles ( FDC_DELAY_US_HEAD_LOAD );	/* Head settle delay */
 			break;
 		}
-		/* If there's no head settle, we go directly to the _MOTOR_ON state */
+		/* If there's no head settle, we fall through directly to the _MOTOR_ON state */
 	 case FDCEMU_RUN_READTRACK_MOTOR_ON:
 		FdcCycles = FDC_NextIndexPulse_FdcCycles ();		/* Wait for the next index pulse */
 //fprintf ( stderr , "read tr idx=%d %d\n" , FDC_IndexPulse_GetState() , FdcCycles );
@@ -3308,7 +3308,7 @@ static int FDC_UpdateWriteTrackCmd ( void )
 			FdcCycles = FDC_DELAY_CYCLE_REFRESH_INDEX_PULSE;	/* Wait for the correct number of IP */
 			break;
 		}
-		/* If IndexPulse_Counter reached, we go directly to the _HEAD_LOAD state */
+		/* If IndexPulse_Counter reached, we fall through directly to the _HEAD_LOAD state */
 	 case FDCEMU_RUN_WRITETRACK_HEAD_LOAD:
 		FDC.ReplaceCommandPossible = false;
 		if ( FDC.CR & FDC_COMMAND_BIT_HEAD_LOAD )
@@ -3317,7 +3317,7 @@ static int FDC_UpdateWriteTrackCmd ( void )
 			FdcCycles = FDC_DelayToFdcCycles ( FDC_DELAY_US_HEAD_LOAD );	/* Head settle delay */
 			break;
 		}
-		/* If there's no head settle, we go directly to the _MOTOR_ON state */
+		/* If there's no head settle, we fall through directly to the _MOTOR_ON state */
 	 case FDCEMU_RUN_WRITETRACK_MOTOR_ON:
 		FdcCycles = FDC_NextIndexPulse_FdcCycles ();		/* Wait for the next index pulse */
 //fprintf ( stderr , "write tr idx=%d %d\n" , FDC_IndexPulse_GetState() , FdcCycles );
