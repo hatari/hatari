@@ -263,7 +263,11 @@ static void SCC_serial_setBaudAttr(int handle, speed_t new_speed)
 		return;
 
 	memset(&options, 0, sizeof(options));
-	tcgetattr(handle, &options);
+	if (tcgetattr(handle, &options) < 0)
+	{
+		LOG_TRACE(TRACE_SCC, "SCC: tcgetattr() failed\n");
+		return;
+	}
 
 	cfsetispeed(&options, new_speed);
 	cfsetospeed(&options, new_speed);
