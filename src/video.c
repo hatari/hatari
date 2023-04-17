@@ -720,7 +720,14 @@ static void	Video_ColorReg_ReadWord(void);
 static void	Video_TT_RasterHBL(void);
 
 
-/*-----------------------------------------------------------------------*/
+/**
+ * Calculate the mask for the video address
+ */
+static uint32_t Video_GetAddrMask(void)
+{
+	return (DMA_MaskAddressHigh() << 16) | 0xffff;
+}
+
 /**
  * Save/Restore snapshot of local variables('MemorySnapShot_Store' handles type)
  */
@@ -748,7 +755,7 @@ void Video_MemorySnapShot_Capture(bool bSave)
 	else
 	{
 		MemorySnapShot_Store(&addr, sizeof(addr));
-		pVideoRaster = &STRam[VideoBase];
+		pVideoRaster = &STRam[VideoBase & Video_GetAddrMask()];
 	}
 	MemorySnapShot_Store(&LineWidth, sizeof(LineWidth));
 	MemorySnapShot_Store(&HWScrollCount, sizeof(HWScrollCount));
@@ -3470,11 +3477,9 @@ static void Video_StoreResolution(int y , bool start)
  */
 static void Video_CopyScreenLineMono(void)
 {
-	uint32_t VideoMask;
-
 	/* We must keep the new video address in a 22 or 24 bit space depending on the machine type */
 	/* (for example in case it pointed to IO space and is now >= 0x1000000) */
-	VideoMask = ( DMA_MaskAddressHigh() << 16 ) | 0xffff;		/* 0x3fffff or 0xffffff */
+	uint32_t VideoMask = Video_GetAddrMask();
 
 	/* Copy one line - 80 bytes in ST high resolution */
 	memcpy(pSTScreen, pVideoRaster, SCREENBYTES_MONOLINE);
@@ -3569,7 +3574,7 @@ static void Video_CopyScreenLineColor(void)
 
 	/* We must keep the new video address in a 22 or 24 bit space depending on the machine type */
 	/* (for example in case it pointed to IO space and is now >= 0x1000000) */
-	VideoMask = ( DMA_MaskAddressHigh() << 16 ) | 0xffff;		/* 0x3fffff or 0xffffff */
+	VideoMask = Video_GetAddrMask();
 
 	/* Get resolution for this line (in case of mixed low/med screen) */
 	i = nHBL-nFirstVisibleHbl;
