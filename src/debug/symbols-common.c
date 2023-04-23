@@ -357,7 +357,8 @@ static int read_pc_debug_names(FILE *fp, symbol_list_t *list, uint32_t offset)
 	list->debug_strtab = (char *)malloc(pdb_h.size_stringtable);
 	if (list->debug_strtab == NULL)
 	{
-		perror("");
+		perror("mem alloc of debug string table");
+		free(buf);
 		return 0;
 	}
 
@@ -365,6 +366,8 @@ static int read_pc_debug_names(FILE *fp, symbol_list_t *list, uint32_t offset)
 	strtable_offset = varinfo_offset + pdb_h.size_varinfo + pdb_h.size_unknown + pdb_h.size_typeinfo + pdb_h.size_structinfo;
 	if (strtable_offset >= filesize || strtable_offset + pdb_h.size_stringtable > filesize)
 	{
+		free(list->debug_strtab);
+		list->debug_strtab = NULL;
 		free(buf);
 		return 0;
 	}
