@@ -508,10 +508,10 @@ void DSP_Info(FILE *fp, uint32_t dummy)
 	fprintf(stderr, "\nInterrupts:\n");
 	for (i = 0; i < 32; i++) {
 		fprintf(stderr, "  %s: ", dsp_interrupt_name[i]);
-		if ((1<<i) & dsp_core.interrupt_status & (dsp_core.interrupt_mask|DSP_INTER_NMI_MASK)) {
+		if ((1U << i) & dsp_core.interrupt_status & (dsp_core.interrupt_mask|DSP_INTER_NMI_MASK)) {
 			fprintf(stderr, "Pending ");
 		}
-		if ((1<<i) & DSP_INTER_NMI_MASK) {
+		if ((1U << i) & DSP_INTER_NMI_MASK) {
 			fprintf(stderr, "at level 3");
 		} else {
 			for (j = 2; j>=0; j--) {
