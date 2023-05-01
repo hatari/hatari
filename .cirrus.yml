@@ -29,7 +29,43 @@ freebsd_task:
     - gmake -j4
     - gmake test || { cat Testing/Temporary/LastTest.log; exit 1; }
 
-macos_task:
+macos12_task:
+  osx_instance:
+    image: ghcr.io/cirruslabs/macos-monterey-xcode:13
+  env:
+    SDLVERSION: 2.26.5
+  download_cache:
+    folder: dl_cache
+    populate_script:
+      - if [ ! -d dl_cache ]; then mkdir dl_cache ; fi
+      - if [ ! -f dl_cache/SDL2-$SDLVERSION.dmg ]; then
+          wget -O dl_cache/SDL2-$SDLVERSION.dmg
+            https://github.com/libsdl-org/SDL/releases/download/release-$SDLVERSION/SDL2-$SDLVERSION.dmg ;
+        fi
+  install_script:
+    - hdiutil attach dl_cache/SDL2-$SDLVERSION.dmg
+    - sudo cp -a /Volumes/SDL2/SDL2.framework /Library/Frameworks/
+  script:
+    - export PATH=/usr/local/bin:$PATH
+    - mkdir build
+    - cd build
+    - cmake -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING="10.9" ..
+      || { cat config.log; exit 1; }
+    - cmake --build . --verbose --config Release -j$(sysctl -n hw.ncpu) -t hatari
+    - cp -a /Volumes/SDL2/SDL2.framework src/hatari.app/Contents/Frameworks/
+    - codesign --force --deep --options=runtime -s -
+      --entitlements ../src/gui-osx/hatari.app.xcent src/hatari.app
+    - cd ..
+    - mkdir hatari-snapshot
+    - echo $(git rev-parse HEAD) > hatari-snapshot/version.txt
+    - date >> hatari-snapshot/version.txt
+    - cp -a build/src/hatari.app hatari-snapshot/
+    - cp -a doc gpl.txt readme.txt hatari-snapshot/
+    - zip -r hatari-snapshot.zip hatari-snapshot
+  hatari_artifacts:
+    path: "hatari-snapshot.zip"
+
+macos13_task:
   osx_instance:
     image: ghcr.io/cirruslabs/macos-ventura-base:latest
   install_script:
