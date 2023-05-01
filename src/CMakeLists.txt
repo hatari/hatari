@@ -94,6 +94,9 @@ if(ENABLE_OSX_BUNDLE)
 	add_executable(hatari MACOSX_BUNDLE ${GUIOSX_RSRCS} ${GUIOSX_DOCS} ${SOURCES} ${GUIOSX_SOURCES} ${FRAMEWORKS})
 	set_target_properties(hatari PROPERTIES MACOSX_BUNDLE_INFO_PLIST
 			      ${CMAKE_CURRENT_SOURCE_DIR}/gui-osx/Info-Hatari.plist)
+	set_target_properties(hatari PROPERTIES INSTALL_RPATH
+			      "@executable_path/../Frameworks")
+	set_target_properties(hatari PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
 	set(MACOSX_BUNDLE_ICON_FILE Hatari.icns)
 	if(CMAKE_GENERATOR MATCHES "Xcode")
 		set(BUNDLE_CONTENTS ${CMAKE_CURRENT_BINARY_DIR}/\${CONFIGURATION}/Hatari.app/Contents)
@@ -103,7 +106,7 @@ if(ENABLE_OSX_BUNDLE)
 	# Create Hatari.app bundle
 	add_custom_target(osx_bundle_dirs
 			COMMAND mkdir -p ${BUNDLE_CONTENTS}/Resources
-			#COMMAND mkdir -p ${BUNDLE_CONTENTS}/Frameworks
+			COMMAND mkdir -p ${BUNDLE_CONTENTS}/Frameworks
 			COMMAND mkdir -p ${BUNDLE_CONTENTS}/MacOS
 			COMMAND cp ${CMAKE_CURRENT_SOURCE_DIR}/gui-osx/${MACOSX_BUNDLE_ICON_FILE}
 				   ${BUNDLE_CONTENTS}/Resources/${MACOSX_BUNDLE_ICON_FILE}
