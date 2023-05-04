@@ -61,6 +61,8 @@ Emulator improvements:
   - Add address width (addr).[bwl] support to expression evaluation
   - Add optional argument for "symbols <name|code|data>" commands,
     to limit listed symbols to ones with the given substring
+  - "os_base" trace option outputs now also dir create/delete + file delete
+    calls (in addition to earlier pexec/pterm & file create/open calls)
   - Suppress repeats of identical log & trace messages by default
     (show only their count) and add "--msg-repeat" option to toggle that
   - Preliminary support for disassembly output options working also for

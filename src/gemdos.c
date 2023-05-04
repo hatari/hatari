@@ -1735,12 +1735,12 @@ static bool GemDOS_MkDir(uint32_t Params)
 	pDirName = STMemory_GetStringPointer(nStrAddr);
 	if (!pDirName || !pDirName[0])
 	{
-		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x39 bad Dcreate(0x%X) at PC 0x%X\n",
+		LOG_TRACE(TRACE_OS_GEMDOS|TRACE_OS_BASE, "GEMDOS 0x39 bad Dcreate(0x%X) at PC 0x%X\n",
 		          nStrAddr, CallingPC);
 		return false;
 	}
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x39 Dcreate(\"%s\") at PC 0x%X\n", pDirName,
+	LOG_TRACE(TRACE_OS_GEMDOS|TRACE_OS_BASE, "GEMDOS 0x39 Dcreate(\"%s\") at PC 0x%X\n", pDirName,
 		  CallingPC);
 
 	Drive = GemDOS_FileName2HardDriveID(pDirName);
@@ -1793,12 +1793,12 @@ static bool GemDOS_RmDir(uint32_t Params)
 	pDirName = STMemory_GetStringPointer(nStrAddr);
 	if (!pDirName || !pDirName[0])
 	{
-		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x3A bad Ddelete(0x%X) at PC 0x%X\n",
+		LOG_TRACE(TRACE_OS_GEMDOS|TRACE_OS_BASE, "GEMDOS 0x3A bad Ddelete(0x%X) at PC 0x%X\n",
 		          nStrAddr, CallingPC);
 		return false;
 	}
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x3A Ddelete(\"%s\") at PC 0x%X\n", pDirName,
+	LOG_TRACE(TRACE_OS_GEMDOS|TRACE_OS_BASE, "GEMDOS 0x3A Ddelete(\"%s\") at PC 0x%X\n", pDirName,
 		  CallingPC);
 
 	Drive = GemDOS_FileName2HardDriveID(pDirName);
@@ -2449,12 +2449,12 @@ static bool GemDOS_FDelete(uint32_t Params)
 	pszFileName = STMemory_GetStringPointer(nStrAddr);
 	if (!pszFileName || !pszFileName[0])
 	{
-		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x41 bad Fdelete(0x%X) at PC 0x%X\n",
+		LOG_TRACE(TRACE_OS_GEMDOS|TRACE_OS_BASE, "GEMDOS 0x41 bad Fdelete(0x%X) at PC 0x%X\n",
 		          nStrAddr, CallingPC);
 		return false;
 	}
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x41 Fdelete(\"%s\") at PC 0x%X\n", pszFileName,
+	LOG_TRACE(TRACE_OS_GEMDOS|TRACE_OS_BASE, "GEMDOS 0x41 Fdelete(\"%s\") at PC 0x%X\n", pszFileName,
 		  CallingPC);
 
 	Drive = GemDOS_FileName2HardDriveID(pszFileName);
