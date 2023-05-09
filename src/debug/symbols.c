@@ -649,13 +649,14 @@ int Symbols_DspCodeCount(void)
 /* ---------------- symbol showing ------------------ */
 
 /**
- * Show symbols from given list with paging.
+ * Show symbols matching (optional) 'find' string from given list,
+ * using paging.
  */
-static void Symbols_Show(symbol_list_t* list, const char *sortcmd)
+static void Symbols_Show(symbol_list_t* list, const char *sortcmd, const char *find)
 {
 	symbol_t *entry, *entries;
 	const char *symtype, *sorttype;
-	int i, rows, count;
+	int i, row, rows, count, matches;
 	char symchar;
 	char line[80];
 	
@@ -681,12 +682,21 @@ static void Symbols_Show(symbol_list_t* list, const char *sortcmd)
 		symtype = "";
 	}
 	rows = DebugUI_GetPageLines(ConfigureParams.Debugger.nSymbolLines, 20);
+	row = matches = 0;
 
 	for (entry = entries, i = 0; i < count; i++, entry++) {
+		if (find && !strstr(entry->name, find)) {
+			continue;
+		}
+		matches++;
+
 		symchar = symbol_char(entry->type);
 		fprintf(stderr, "0x%08x %c %s\n",
 			entry->address, symchar, entry->name);
-		if ((i + 1) % rows == 0) {
+
+		row++;
+		if (row >= rows) {
+			row = 0;
 			fprintf(stderr, "--- q to exit listing, just enter to continue --- ");
 			if (fgets(line, sizeof(line), stdin) == NULL ||
 				toupper(line[0]) == 'Q') {
@@ -694,8 +704,8 @@ static void Symbols_Show(symbol_list_t* list, const char *sortcmd)
 			}
 		}
 	}
-	fprintf(stderr, "%d %s%s symbols (of %d) sorted by %s.\n", i,
-		(list == CpuSymbolsList ? "CPU" : "DSP"),
+	fprintf(stderr, "%d %s%s symbols (of %d) sorted by %s.\n",
+		matches, (list == CpuSymbolsList ? "CPU" : "DSP"),
 		symtype, count, sorttype);
 }
 
@@ -813,18 +823,23 @@ char *Symbols_MatchCommand(const char *text, int state)
 	static const char* subs[] = {
 		"autoload", "code", "data", "free", "match", "name", "prg"
 	};
-	return DebugUI_MatchHelper(subs, ARRAY_SIZE(subs), text, state);
+	char *ret = DebugUI_MatchHelper(subs, ARRAY_SIZE(subs), text, state);
+	if (ret) {
+		return ret;
+	}
+	return Symbols_MatchCpuAddress(text, state);
 }
 
 const char Symbols_Description[] =
-	"<code|data|name> -- list symbols\n"
+	"<code|data|name> [find] -- list symbols containing 'find'\n"
 	"\tsymbols <prg|free> -- load/free symbols\n"
 	"\t        <filename> [<T offset> [<D offset> <B offset>]]\n"
 	"\tsymbols <autoload|match> -- toggle symbol options\n"
 	"\n"
 	"\t'name' command lists the currently loaded symbols, sorted by name.\n"
 	"\t'code' and 'data' commands list them sorted by address; 'code' lists\n"
-	"\tonly TEXT symbols, 'data' lists DATA/BSS/ABS symbols.\n"
+	"\tonly TEXT symbols, 'data' lists DATA/BSS/ABS symbols. If 'find' is\n"
+	"\tgiven, only symbols with that substring are listed.\n"
 	"\n"
 	"\tBy default, symbols are loaded from the currently executing program's\n"
 	"\tbinary when entering the debugger, IF program is started through\n"
@@ -917,8 +932,9 @@ int Symbols_Command(int nArgc, char *psArgs[])
 
 	/* show requested symbol types in requested order? */
 	if (strcmp(file, "name") == 0 || strcmp(file, "code") == 0 || strcmp(file, "data") == 0) {
+		const char *find = nArgc > 2 ? psArgs[2] : NULL;
 		list = (listtype == TYPE_DSP ? DspSymbolsList : CpuSymbolsList);
-		Symbols_Show(list, file);
+		Symbols_Show(list, file, find);
 		return DEBUGGER_CMDDONE;
 	}
 

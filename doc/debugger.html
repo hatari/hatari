@@ -453,9 +453,15 @@ $ m68k-atari-mint-c++filt &lt; mangled.sym &gt; demangled.sym
 </pre>
 <p>Then just load the new symbol file instead of the original one.</p>
 
-<p>Note: Because C++ symbols can contain (whitespace) characters which
-prevent them from being given as arguments e.g. to breakpoints,
-mangled symbol names may also be useful.</p>
+<p>Note: many demangled C++ symbols contain special characters
+which prevent them from being given as arguments to breakpoints and
+other debugger commands.  One should use (resolved) symbol address
+instead for those commands.</p>
+<p>Addresses for symbols that match user specified substring,
+can be listed like this:</p>
+<pre>
+symbols name XMLParser::parse
+</pre>
 
 
 <h4>Symbols for a program under GEMDOS HD emulation</h4>
