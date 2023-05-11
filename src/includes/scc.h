@@ -16,8 +16,12 @@ void SCC_UnInit(void);
 void SCC_MemorySnapShot_Capture(bool bSave);
 void SCC_Reset(void);
 
-void SCC_InterruptHandler_A(void);
-void SCC_InterruptHandler_B(void);
+void SCC_InterruptHandler_BRG_A(void);
+void SCC_InterruptHandler_BRG_B(void);
+void SCC_InterruptHandler_TX_RX_A(void);
+void SCC_InterruptHandler_TX_RX_B(void);
+void SCC_InterruptHandler_RX_A(void);
+void SCC_InterruptHandler_RX_B(void);
 
 int	SCC_Get_Line_IRQ ( void );
 void SCC_IRQ(void);
