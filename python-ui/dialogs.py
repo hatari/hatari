@@ -1,7 +1,7 @@
 #
 # Classes for the Hatari UI dialogs
 #
-# Copyright (C) 2008-2022 by Eero Tamminen
+# Copyright (C) 2008-2023 by Eero Tamminen
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -759,6 +759,7 @@ class TraceDialog(HatariUIDialog):
         "cpu_pairing",
         "cpu_regs",
         "cpu_symbols",
+        "cpu_video_cycles",
         "crossbar",
         "dmasound",
         "dsp_disasm",
