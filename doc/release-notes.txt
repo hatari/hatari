@@ -65,6 +65,7 @@ Emulator improvements:
     calls (in addition to earlier pexec/pterm & file create/open calls)
   - Suppress repeats of identical log & trace messages by default
     (show only their count) and add "--msg-repeat" option to toggle that
+  - Separate CPU video cycles under its own "cpu_video_cycles" trace flag
   - Preliminary support for disassembly output options working also for
     CPU core disassembler in addition to external disassember output
   - When entering debugger with 'history' enabled, disassembly address

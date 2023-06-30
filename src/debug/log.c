@@ -79,6 +79,7 @@ static flagname_t TraceFlags[] = {
 	{ TRACE_CPU_PAIRING	 , "cpu_pairing" },
 	{ TRACE_CPU_REGS	 , "cpu_regs" },
 	{ TRACE_CPU_SYMBOLS	 , "cpu_symbols" },
+	{ TRACE_CPU_VIDEO_CYCLES , "cpu_video_cycles" },
 
 	{ TRACE_CROSSBAR  	 , "crossbar" },
 
