@@ -3891,9 +3891,9 @@ static void do_interrupt (int nr)
 #endif
 	if (inputrecord_debug & 2) {
 		if (input_record > 0)
-			inprec_recorddebug_cpu (2);
+			inprec_recorddebug_cpu(2, 0);
 		else if (input_play > 0)
-			inprec_playdebug_cpu (2);
+			inprec_playdebug_cpu(2, 0);
 	}
 
 	assert (nr < 8 && nr >= 0);
@@ -5115,8 +5115,8 @@ static int do_specialties (int cycles)
 				x_do_cycles(8 * CYCLE_UNIT);
 				if (regs.spcflags & SPCFLAG_COPPER)
 					do_copper();
-				if (timeframes != vsyncstate) {
-					vsyncstate = timeframes;
+				if (vsync_counter != vsyncstate) {
+					vsyncstate = vsync_counter;
 					vsynccnt--;
 				}
 			}
@@ -5905,8 +5905,8 @@ static void run_cpu_thread(void (*f)(void *))
 				break;
 		}
 
-		if (framecnt != timeframes) {
-			framecnt = timeframes;
+		if (framecnt != vsync_counter) {
+			framecnt = vsync_counter;
 		}
 
 		if (cpu_thread_reset) {
@@ -7019,9 +7019,9 @@ fprintf ( stderr , "cache valid %d tag1 %x lws1 %x ctag %x data %x mem=%x\n" , c
 #ifndef WINUAE_FOR_HATARI
 				if (inputrecord_debug & 4) {
 					if (input_record > 0)
-						inprec_recorddebug_cpu (1);
+						inprec_recorddebug_cpu(1, r->opcode);
 					else if (input_play > 0)
-						inprec_playdebug_cpu (1);
+						inprec_playdebug_cpu(1, r->opcode);
 				}
 
 #ifdef DEBUGGER
@@ -7190,9 +7190,9 @@ static void m68k_run_2p (void)
 #ifndef WINUAE_FOR_HATARI
 				if (inputrecord_debug & 4) {
 					if (input_record > 0)
-						inprec_recorddebug_cpu (1);
+						inprec_recorddebug_cpu(1, r->opcode);
 					else if (input_play > 0)
-						inprec_playdebug_cpu (1);
+						inprec_playdebug_cpu(1, r->opcode);
 				}
 
 #ifdef DEBUGGER
@@ -7636,17 +7636,17 @@ void m68k_go (int may_quit)
 				memory_clear ();
 				write_log (_T("hardreset, memory cleared\n"));
 			}
+#ifdef DEBUGGER
+#ifndef WINUAE_FOR_HATARI
+			if (debug_dma) {
+				record_dma_reset(1);
+				record_dma_reset(1);
+			}
+#endif
+#endif
 #ifdef SAVESTATE
 			/* We may have been restoring state, but we're done now.  */
 			if (isrestore ()) {
-#ifndef WINUAE_FOR_HATARI
-#ifdef DEBUGGER
-				if (debug_dma) {
-					record_dma_reset(0);
-					record_dma_reset(0);
-				}
-#endif
-#endif
 				restored = savestate_restore_finish ();
 #ifndef WINUAE_FOR_HATARI
 				memory_map_dump ();

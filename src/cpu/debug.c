@@ -2157,7 +2157,7 @@ void record_dma_write(uae_u16 reg, uae_u32 dat, uae_u32 addr, int hpos, int vpos
 		return;
 
 	dr = &dma_record[dma_record_toggle][vpos * NR_DMA_REC_HPOS + hpos];
-	dma_record_frame[dma_record_toggle] = timeframes;
+	dma_record_frame[dma_record_toggle] = vsync_counter;
 	if (dr->reg != 0xffff) {
 		dr->cf_reg = reg;
 		dr->cf_dat = dat;
@@ -2241,7 +2241,7 @@ void record_cia_access(int r, int mask, uae_u16 value, bool rw, int hpos, int vp
 		return;
 
 	dr = &dma_record[dma_record_toggle][vpos * NR_DMA_REC_HPOS + hpos];
-	dma_record_frame[dma_record_toggle] = timeframes;
+	dma_record_frame[dma_record_toggle] = vsync_counter;
 
 	if (dr->ciaphase < 0) {
 		return;
@@ -2265,7 +2265,7 @@ void record_dma_read(uae_u16 reg, uae_u32 addr, int hpos, int vpos, int type, in
 		return;
 
 	dr = &dma_record[dma_record_toggle][vpos * NR_DMA_REC_HPOS + hpos];
-	dma_record_frame[dma_record_toggle] = timeframes;
+	dma_record_frame[dma_record_toggle] = vsync_counter;
 	if (dr->reg != 0xffff) {
 		if (dr->reg != reg) {
 			dma_conflict(vpos, hpos, dr, reg, false);
@@ -5999,7 +5999,7 @@ static void debug_sprite (TCHAR **inptr)
 	int ecs, sh10;
 	int y, i;
 	TCHAR tmp[80];
-	int max = 2;
+	int max = 14;
 
 	addr2 = 0;
 	ignore_ws(inptr);
@@ -6055,6 +6055,11 @@ static void debug_sprite (TCHAR **inptr)
 			sh10 = 1;
 		if (ypose < ypos)
 			ypose += 256;
+
+		if (ecs_agnus) {
+			ypos = ypos_ecs;
+			ypose = ypose_ecs;
+		}
 
 		for (y = ypos; y < ypose; y++) {
 			int x;
@@ -6124,8 +6129,10 @@ static void debug_sprite (TCHAR **inptr)
 		if (get_word_debug (addr) == 0 && get_word_debug (addr + size * 4) == 0)
 			break;
 		max--;
-		if (max <= 0)
+		if (max <= 0) {
+			console_out_f(_T("Max sprite count reached.\n"));
 			break;
+		}
 	}
 
 }
@@ -7384,7 +7391,7 @@ void debug (void)
 	debugmem_disable();
 
 	if (trace_cycles && last_frame >= 0) {
-		if (last_frame + 2 >= timeframes || trace_cycles > 1) {
+		if (last_frame + 2 >= vsync_counter || trace_cycles > 1) {
 			evt_t c = last_cycles2 - last_cycles1;
 			uae_u32 cc;
 			if (c >= 0x7fffffff) {
