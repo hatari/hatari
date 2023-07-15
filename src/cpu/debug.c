@@ -534,7 +534,7 @@ static bool iscancel (int counter)
 static bool isoperator(TCHAR **cp)
 {
 	TCHAR c = **cp;
-	return c == '+' || c == '-' || c == '/' || c == '*' || c == '(' || c == ')' || c == '|' || c == '&' || c == '^';
+	return c == '+' || c == '-' || c == '/' || c == '*' || c == '(' || c == ')' || c == '|' || c == '&' || c == '^' || c == '=' || c == '>' || c == '<';
 }
 
 static void ignore_ws (TCHAR **c)
@@ -925,8 +925,18 @@ static int checkvaltype (TCHAR **cp, uae_u32 *val, int *size, TCHAR def)
 	p = form;
 	for (;;) {
 		uae_u32 v;
-		if (!checkvaltype2 (cp, &v, def))
+		if (!checkvaltype2 (cp, &v, def)) {
+			if (isoperator(cp) || gotop) {
+				for (;;) {
+					*p = readchar(cp);
+					if (*p == 0) {
+						goto docalc;
+					}
+					p++;
+				}
+			}
 			return 0;
+		}
 		*val = v;
 		// stupid but works!
 		_stprintf(p, _T("%u"), v);
@@ -955,6 +965,7 @@ static int checkvaltype (TCHAR **cp, uae_u32 *val, int *size, TCHAR def)
 		}
 		return 1;
 	}
+docalc:
 	if (calc (form, &out)) {
 		*val = (uae_u32)out;
 		if (size && *size == 0) {
@@ -2108,6 +2119,8 @@ void record_dma_write(uae_u16 reg, uae_u32 dat, uae_u32 addr, int hpos, int vpos
 		dma_record_init();
 	}
 
+	last_dma_rec = NULL;
+	hpos += dma_record_hoffset;
 	if (hpos >= NR_DMA_REC_HPOS || vpos >= NR_DMA_REC_VPOS)
 		return;
 
@@ -2214,6 +2227,8 @@ void record_dma_read(uae_u16 reg, uae_u32 addr, int hpos, int vpos, int type, in
 
 	dma_record_init();
 
+	last_dma_rec = NULL;
+	hpos += dma_record_hoffset;
 	if (hpos >= NR_DMA_REC_HPOS || vpos >= NR_DMA_REC_VPOS)
 		return;
 

@@ -16,9 +16,9 @@
 
 
 
-#define UAEMAJOR 4
-#define UAEMINOR 10
-#define UAESUBREV 2
+#define UAEMAJOR 5
+#define UAEMINOR 0
+#define UAESUBREV 0
 
 #define MAX_AMIGADISPLAYS 4
 
@@ -388,6 +388,7 @@ struct gfx_filterdata
 	int gfx_filter_autoscale;
 	int gfx_filter_integerscalelimit;
 	int gfx_filter_keep_autoscale_aspect;
+	int gfx_filter_rotation;
 	bool changed;
 };
 
@@ -938,7 +939,9 @@ struct uae_prefs {
 	int input_mouse_untrap;
 	int input_magic_mouse_cursor;
 	int input_keyboard_type;
-	int input_autoswitch;
+	bool input_autoswitch;
+	bool input_autoswitchleftright;
+	bool input_advancedmultiinput;
 	struct uae_input_device joystick_settings[MAX_INPUT_SETTINGS][MAX_INPUT_DEVICES];
 	struct uae_input_device mouse_settings[MAX_INPUT_SETTINGS][MAX_INPUT_DEVICES];
 	struct uae_input_device keyboard_settings[MAX_INPUT_SETTINGS][MAX_INPUT_DEVICES];
