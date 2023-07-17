@@ -2561,7 +2561,7 @@ static void MakeFromSR_x(int t0trace)
 			}
 		} else {
 			if (regs.ipl_pin <= regs.intmask && regs.ipl_pin > newimask) {
-				if (currprefs.cpu_compatible && currprefs.cpu_model < 68020) {
+				if (!currprefs.cachesize) {
 					set_special(SPCFLAG_INT);
 				} else {
 					set_special(SPCFLAG_DOINT);
@@ -5024,7 +5024,7 @@ void doint(void)
 	}
 
 	if (regs.ipl_pin > regs.intmask || currprefs.cachesize) {
-		if (currprefs.cpu_compatible && currprefs.cpu_model < 68020)
+		if (!currprefs.cachesize)
 			set_special(SPCFLAG_INT);
 		else
 			set_special(SPCFLAG_DOINT);
