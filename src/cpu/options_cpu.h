@@ -723,6 +723,7 @@ struct uae_prefs {
 	int cs_eclocksync;
 	bool cs_memorypatternfill;
 	bool cs_ipldelay;
+	uae_u32 seed;
 
 	struct boardromconfig expansionboard[MAX_EXPANSION_BOARDS];
 
