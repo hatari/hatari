@@ -676,12 +676,6 @@ $ aranym-mmu -l linux.config
 
   Workaround: Hatari lilo.c gives ST-RAM before TT-RAM in bootinfo
 
-- Linux NULL pointer Oops with following, due to its bus_error030()
-  not respecting page faults being disabled in kernel_probe_read():
-	# echo t > /proc/sysrq-trigger
-
-  Workaround: kernel patch (see kernel build section)
-
 - Hatari debug output shows IDE and DSP reset messages on Falcon at
   2Hz (from floppy media change detection) if Linux is started with
   --lilo, instead of from TOS.  This is because TOS initializes PSG
