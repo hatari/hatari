@@ -456,6 +456,7 @@ Color demos:
 - Remote Entry #2 - 11110 Edition (by Spice Boys)
 - Remote Entry #2 - Delta Quadrant Edition (by Spice Boys)
 - Renegade Breakdown - Sommarhack 2021 invitro (by Spkr / SMFX)
+- Replay (by SMFX)
 - RGB plasma (by Omega)
 - Santa Claus Barbie Was Drunk As A Cochon (by MJJ Prod)
 - Save The Earth (by Defence Force)
@@ -485,7 +486,7 @@ Color demos:
 - Syntax Terror (by Delta Force)
 - Temptation aka Project "A" (by NoExtra)
 - The Puppet Show (by Fantasy & Dune)
-- Te Rise of Love (by Hemoroids)
+- The Rise of Love (by Hemoroids)
 - The Snowman 2009 (by Checkpoint)
 - The Stupendous Demo (by Pixel Twins) - has couple of STE screen
 - The Union demo (by The Union)
@@ -1048,6 +1049,7 @@ Color demos:
 - Armada is dead (by Aggression)
 - ATM 10 Years (by Checkpoint)
 - Azed/Jungle demo (by Atari)
+- BallsHmd (D-Bug intro + fixed Hemoroids "Square V2" demo)
 - Beat Demo (by Frontline)
 - Bird Mad Girl Show (by Fraggle's)
 - Birdie (by Zeal)
@@ -1132,6 +1134,7 @@ Color demos:
 - Takeover (by Lamers)
 - TalkTalk2 (by XiA)
 - Techno drugs (by NLC)
+- The Art of Profanity (by SMFX & DHS)
 - The Star Wars Demo (by The Arctic Land)
 - Tribute to Rainbow TOS (by 505 & Tobe)
 - Tyranny (by DHS)
@@ -1156,6 +1159,7 @@ Monochrome demos:
 
 Color games:
 - 4K Pacman
+- Adam is Me
 - Aerial Combat 3
 - Alien Blast (demo)
 - Alien Thing preview
@@ -1717,6 +1721,7 @@ Applications working under EmuTOS >= v1.1 (with DSP support):
 - Falcon Sound CPX
 - FlaySID
 - Flextracker (use VGA)
+- Fractals v2.2b (030 + DSP)
 - GemGT2 v1.1, GemMOD v0.85, and GemPLAY v1.95
   - http://yescrew.atari.org/eng/products.htm
 - Graoumf Tracker (v0.8890)

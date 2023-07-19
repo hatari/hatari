@@ -167,7 +167,7 @@ Call Trace:
    $ sudo apt install gcc-m68k-linux-gnu
 
 2. Get latest upstream kernel release sources (without history):
-   $ git clone --depth 1 --branch v6.2 \
+   $ git clone --depth 1 --branch v6.4 \
      git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
    $ cd linux
 
@@ -334,8 +334,8 @@ Notes:
 1. Set suitable options in lilo.cfg, for example:
 -------------------------------------
 [LILO]
-Kernel = vmlinux-v6.2
-Symbols = System.map-v6.2
+Kernel = vmlinux-v6.4
+Symbols = System.map-v6.4
 Ramdisk =
 Args = video=atafb:sthigh console=tty
 KernelToFastRam = FALSE
@@ -675,12 +675,6 @@ $ aranym-mmu -l linux.config
   seems to be a known Linux/Atari issue
 
   Workaround: Hatari lilo.c gives ST-RAM before TT-RAM in bootinfo
-
-- Linux NULL pointer Oops with following, due to its bus_error030()
-  not respecting page faults being disabled in kernel_probe_read():
-	# echo t > /proc/sysrq-trigger
-
-  Workaround: kernel patch (see kernel build section)
 
 - Hatari debug output shows IDE and DSP reset messages on Falcon at
   2Hz (from floppy media change detection) if Linux is started with
