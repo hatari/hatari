@@ -56,22 +56,22 @@ Emulator improvements:
   - Fix: invalid free on freeing loaded GNU debug symbols
   - Fix: CPU core disassembler crashes with longer symbol names
   - Add support for demangled C++/a.out symbols (which can be
-    very long and contain almost and characters)
+    very long and contain almost any characters)
   - ".sym" file beside a program file acts as its symbols override
   - Add address width (addr).[bwl] support to expression evaluation
   - Add optional argument for "symbols <name|code|data>" commands,
     to limit listed symbols to ones with the given substring
   - "os_base" trace option outputs now also dir create/delete + file delete
     calls (in addition to earlier pexec/pterm & file create/open calls)
+  - Separate CPU video cycles under its own "cpu_video_cycles" trace flag
   - Suppress repeats of identical log & trace messages by default
     (show only their count) and add "--msg-repeat" option to toggle that
-  - Separate CPU video cycles under its own "cpu_video_cycles" trace flag
-  - Preliminary support for disassembly output options working also for
-    CPU core disassembler in addition to external disassember output
+  - History skips address repeats (e.g. with "stop" instruction)
   - When entering debugger with 'history' enabled, disassembly address
     defaults to an address in history preceeding the PC register value
     (to give more context than disassembling directly from PC)
-  - History skips repeats of previous address (e.g. with "stop")
+  - Support for disassembly output options working also for CPU core
+    disassembler, in addition to external disassember output
   - The built-in "external" disassembler has been replaced by a
     disassembler provided by the Capstone library (version >= 4.0)
 
@@ -81,18 +81,19 @@ GUI improvements:
     from a keyboard shortcut in fullscreen mode
   - Add support for the joystick button 2 space key vs. jump option
 - Mac GUI:
-  - Accept all file names as the used Mac file selector does not
-    show list of the accepted file name extensions any more
+  - Accept all file names as Mac file selector does not show
+    a list of the accepted file name extensions any more
 
 Tools:
 - Profile data post-processor:
-  - Does not any more show (most) of symbol conflict messages
+  - Does not show (most) of symbol conflict messages any more
     (unless '--verbose' option is given)
-  - Support for symbol files and Hatari profile data containing
-    demangled C++ symbols
+  - Support for symbol files and Hatari profile data that
+    contain demangled C++ symbols
   - Overtly long C++ symbol names are shortened in callgraphs
     (unless '--full-symbols' option is given)
-  - With "--compact" option only single arrow shown between nodes
+  - Only single arrow shown between callgraph nodes when
+    "--compact" option is used
 
 Build improvements:
 - Fix: CPU core compile warnings (WinUAE upstream)
