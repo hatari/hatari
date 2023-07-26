@@ -139,7 +139,7 @@ berux" option.
 If default "--no-calls" type removal doesn't remove all interrupt
 handling switches [1], give handler names to "--ignore-to" option.
 In callgraphs, one can then investigate them separately using
-"no-calls '' --only <name>" options.
+"--no-calls '' --only <name>" options.
 
 [1] CPU being interrupted by an interrupt handler gets recorded as
     "a call" to that handler by the profiler, and because such "calls"
@@ -157,13 +157,16 @@ Callgraph filtering options to remove nodes and edges from the graph:
 				- one parent and no children,
 				- one child and no parents, or
 				- no children nor parents
-        --no-limited		remove _all_ nodes below -l limit
-	--no-orphans            remove unconnected nodes
+	--no-limited		remove _all_ nodes below -l limit
+	--no-orphans		remove unconnected nodes
 				(regardless of their cost)
-        --only-subroutines      remove non-subroutine nodes below -l limit
-	--ignore <list>         no nodes for these symbols
-	--ignore-from <list>	no arrows from these symbols
-        --only <list>           only these symbols and their callers
+	--only-subroutines	remove non-subroutine nodes below -l limit
+	--ignore <list>		no nodes for these symbols [2]
+	--ignore-from <list>	no arrows from these symbols [2]
+        --only <list>		only these symbols and their callers [2]
+
+[2] symbol matching uses shell patterns:
+    https://docs.python.org/3/library/fnmatch.html
 
 NOTE: leaf and intermediate node removal options remove only nodes which
 own costs fall below limit given with the "--limit" option.  So remember
@@ -197,6 +200,7 @@ To convert dot files e.g. to SVG and PDF, use:
 """
 from copy import deepcopy
 from bisect import bisect_right
+from fnmatch import fnmatchcase
 import getopt, os, re, sys
 
 # PC address that was undefined during profiling,
@@ -1400,6 +1404,15 @@ class ProfileStats(ProfileOutput):
 
 
 # ---------------------------------------------------------------------
+def name_fnmatch(matches, name):
+    "return True if 'name' fnmatch()es one of 'matches', False otherwise"
+    if name in matches:
+        return True
+    for pattern in matches:
+        if fnmatchcase(name, pattern):
+            return True
+    return False
+
 class ProfileGraph(ProfileOutput):
     "profile callgraph output"
 
@@ -1571,7 +1584,7 @@ label="%s";
         to_remove = {}
         if self.ignore:
             for addr, function in self.profile.items():
-                if function.name in self.ignore:
+                if name_fnmatch(self.ignore, function.name):
                     to_remove[addr] = True
         removed = 0
         while True:
@@ -1640,7 +1653,6 @@ label="%s";
         profile = self.profile
         self.nodes = {}
         self.edges = {}
-        ignore_from = self.ignore_from
         for caddr, child in profile.items():
             if not child.parent:
                 self.nodes[caddr] = True
@@ -1651,11 +1663,12 @@ label="%s";
                 # if caddr == paddr:
                 #    continue
                 if self.only:
-                    if not (child.name in self.only or parent.name in self.only):
+                    if not (name_fnmatch(self.only, child.name) or
+                            name_fnmatch(self.only, parent.name)):
                         continue
                 # child end for edges
                 self.nodes[caddr] = True
-                if parent.name in ignore_from:
+                if name_fnmatch(self.ignore_from, parent.name):
                     continue
                 # parent end for edges
                 self.nodes[paddr] = True

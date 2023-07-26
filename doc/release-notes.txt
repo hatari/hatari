@@ -92,6 +92,8 @@ Tools:
     contain demangled C++ symbols
   - Overtly long C++ symbol names are shortened in callgraphs
     (unless '--full-symbols' option is given)
+  - Symbols given for "--only", "--ignore" and "--ignore-from"
+    are interpreted as match patterns (with '*?[]' wildcards)
   - Only single arrow shown between callgraph nodes when
     "--compact" option is used
 
