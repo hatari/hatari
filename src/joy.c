@@ -28,9 +28,9 @@ const char Joy_fileid[] = "Hatari joy.c";
 #define Dprintf(a)
 #endif
 
-#define JOYREADING_BUTTON1  1		/* bit 0 */
-#define JOYREADING_BUTTON2  2		/* bit 1 */
-#define JOYREADING_BUTTON3  4		/* bit 2 */
+#define JOYREADING_BUTTON1  1		/* bit 0, regular fire button */
+#define JOYREADING_BUTTON2  2		/* bit 1, space / jump button */
+#define JOYREADING_BUTTON3  4		/* bit 2, autofire button */
 
 typedef struct
 {
