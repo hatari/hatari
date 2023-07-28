@@ -2126,6 +2126,8 @@ static bool GemDOS_Open(uint32_t Params)
 
 		/* No free handles, return error code */
 		Regs[REG_D0] = GEMDOS_ENHNDL;       /* No more handles */
+		Log_Printf(LOG_WARN, "no free GEMDOS HD file handles for Fopen()");
+		LOG_TRACE(TRACE_OS_GEMDOS|TRACE_OS_BASE, "-> ERROR %d\n", Regs[REG_D0]);
 		return true;
 	}
 
