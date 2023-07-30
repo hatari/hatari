@@ -12,20 +12,21 @@ const char DlgJoystick_fileid[] = "Hatari dlgJoystick.c";
 #include "sdlgui.h"
 #include "joy.h"
 
-#define DLGJOY_STJOYNAME   3
-#define DLGJOY_PREVSTJOY   4
-#define DLGJOY_NEXTSTJOY   5
-#define DLGJOY_DEFINEKEYS  7
-#define DLGJOY_DISABLED    8
-#define DLGJOY_USEKEYS     9
-#define DLGJOY_USEREALJOY 10
-#define DLGJOY_SDLJOYNAME 12
-#define DLGJOY_PREVSDLJOY 13
-#define DLGJOY_NEXTSDLJOY 14
-#define DLGJOY_AUTOFIRE   15
-#define DLGJOY_BUT2_SPACE 17
-#define DLGJOY_BUT2_JUMP  18
-#define DLGJOY_EXIT       19
+#define DLGJOY_STJOYNAME     3
+#define DLGJOY_PREVSTJOY     4
+#define DLGJOY_NEXTSTJOY     5
+#define DLGJOY_DEFINEKEYS    7
+#define DLGJOY_DISABLED      8
+#define DLGJOY_USEKEYS       9
+#define DLGJOY_USEREALJOY   10
+#define DLGJOY_SDLJOYNAME   12
+#define DLGJOY_PREVSDLJOY   13
+#define DLGJOY_NEXTSDLJOY   14
+#define DLGJOY_AUTOFIRE     15
+#define DLGJOY_BUT2_SPACE   17
+#define DLGJOY_BUT2_JUMP    18
+#define DLGJOY_REMAPBUTTONS 19
+#define DLGJOY_EXIT         20
 
 /* The joysticks dialog: */
 
@@ -33,7 +34,7 @@ static char sSdlStickName[20];
 
 static SGOBJ joydlg[] =
 {
-	{ SGBOX, 0, 0, 0,0, 32,21, NULL },
+	{ SGBOX, 0, 0, 0,0, 32,23, NULL },
 	{ SGTEXT, 0, 0, 8,1, 15,1, "Joysticks setup" },
 
 	{ SGBOX, 0, 0, 4,3, 24,1, NULL },
@@ -41,7 +42,7 @@ static SGOBJ joydlg[] =
 	{ SGBUTTON, 0, 0,  1,3, 3,1, "\x04", SG_SHORTCUT_LEFT },
 	{ SGBUTTON, 0, 0, 28,3, 3,1, "\x03", SG_SHORTCUT_RIGHT },
 
-	{ SGBOX, 0, 0, 1,4, 30,14, NULL },
+	{ SGBOX, 0, 0, 1,4, 30,16, NULL },
 	{ SGBUTTON,   0, 0, 19,7, 11,1, "D_efine keys" },
 
 	{ SGRADIOBUT, 0, 0, 2,5, 10,1, "_disabled" },
@@ -58,8 +59,9 @@ static SGOBJ joydlg[] =
 	{ SGTEXT, 0, 0, 4,15, 9,1, "Button 2:" },
 	{ SGRADIOBUT, 0, 0, 2,16, 10,1, "_space key" },
 	{ SGRADIOBUT, 0, 0, 15,16, 10,1, "_up / jump" },
+	{ SGBUTTON, 0, 0, 5,18, 22,1, "Re_map joystick buttons" },
 
-	{ SGBUTTON, SG_DEFAULT, 0, 6,19, 20,1, "Back to main menu" },
+	{ SGBUTTON, SG_DEFAULT, 0, 6,21, 20,1, "Back to main menu" },
 	{ SGSTOP, 0, 0, 0,0, 0,0, NULL }
 };
 
@@ -74,6 +76,17 @@ static SGOBJ joykeysdlg[] =
 	{ SGBOX, 0, 0, 0,0, 28,5, NULL },
 	{ SGTEXT, 0, 0, 2,1, 24,1, sKeyInstruction },
 	{ SGTEXT, 0, 0, 2,3, 24,1, sKeyName },
+	{ SGSTOP, 0, 0, 0,0, 0,0, NULL }
+};
+
+/* The joystick button remapping setup dialog: */
+
+static SGOBJ joybuttondlg[] =
+{
+	{ SGBOX, 0, 0, 0,0, 27,7, NULL },
+	{ SGTEXT, 0, 0, 2,1, 23,1, sKeyInstruction },
+	{ SGTEXT, 0, 0, 2,2, 23,1, "or ESC for none..." },
+	{ SGTEXT, 0, 0, 2,5, 15,1, sKeyName },
 	{ SGSTOP, 0, 0, 0,0, 0,0, NULL }
 };
 
@@ -145,6 +158,80 @@ static void DlgJoystick_DefineKeys(int nActJoy)
 	DlgJoystick_DefineOneKey("left", &ConfigureParams.Joysticks.Joy[nActJoy].nKeyCodeLeft);
 	DlgJoystick_DefineOneKey("right", &ConfigureParams.Joysticks.Joy[nActJoy].nKeyCodeRight);
 	DlgJoystick_DefineOneKey("fire", &ConfigureParams.Joysticks.Joy[nActJoy].nKeyCodeFire);
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Show dialogs for remapping joystick buttons and wait for a button press.
+ */
+static void DlgJoystick_MapOneButton(int button, int *pButton)
+{
+	SDL_Event sdlEvent;
+	bool bDone = false;
+
+	if (bQuitProgram)
+		return;
+
+	snprintf(sKeyInstruction, sizeof(sKeyInstruction), "Press joystick button %d", button);
+	if (*pButton >= 0)
+	{
+		snprintf(sKeyName, sizeof(sKeyName), "(was: id %d)", *pButton);
+	}
+	else
+	{
+		strcpy(sKeyName, "(was: none)");
+	}
+
+	SDLGui_DrawDialog(joybuttondlg);
+
+	do
+	{
+		SDL_WaitEvent(&sdlEvent);
+		switch (sdlEvent.type)
+		{
+			case SDL_JOYBUTTONDOWN:
+				*pButton = sdlEvent.jbutton.button;
+				snprintf(sKeyName, sizeof(sKeyName), "(now: id %d)", *pButton);
+				SDLGui_DrawDialog(joybuttondlg);
+				break;
+			case SDL_JOYBUTTONUP:
+				bDone = true;
+				break;
+			case SDL_KEYDOWN:
+				if (sdlEvent.key.keysym.sym == SDLK_ESCAPE)
+				{
+					*pButton = -1;
+					strcpy(sKeyName, "(now: none)");
+					SDLGui_DrawDialog(joybuttondlg);
+				}
+				break;
+			case SDL_KEYUP:
+				if (sdlEvent.key.keysym.sym == SDLK_ESCAPE)
+				{
+					bDone = true;
+				}
+				break;
+			case SDL_QUIT:
+				bQuitProgram = true;
+				bDone = true;
+				break;
+		}
+	} while (!bDone);
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Let the user remap joystick buttons.
+ */
+static void DlgJoystick_RemapButtons(int nActJoy)
+{
+
+	SDLGui_CenterDlg(joybuttondlg);
+	DlgJoystick_MapOneButton(1, &ConfigureParams.Joysticks.Joy[nActJoy].nJoyBut1Index);
+	DlgJoystick_MapOneButton(2, &ConfigureParams.Joysticks.Joy[nActJoy].nJoyBut2Index);
+	DlgJoystick_MapOneButton(3, &ConfigureParams.Joysticks.Joy[nActJoy].nJoyBut3Index);
 }
 
 
@@ -284,6 +371,9 @@ void Dialog_JoyDlg(void)
 				DlgJoystick_ReadValuesFromConf(nActJoy);
 				joydlg[DLGJOY_STJOYNAME].txt = sJoystickNames[nActJoy];
 			}
+			break;
+		 case DLGJOY_REMAPBUTTONS:        // Remap joystick buttons
+			DlgJoystick_RemapButtons(nActJoy);
 			break;
 		}
 	}
