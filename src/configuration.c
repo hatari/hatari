@@ -108,6 +108,9 @@ static const struct Config_Tag configs_Joystick0[] =
 	{ "bEnableAutoFire", Bool_Tag, &ConfigureParams.Joysticks.Joy[0].bEnableAutoFire },
 	{ "bEnableJumpOnFire2", Bool_Tag, &ConfigureParams.Joysticks.Joy[0].bEnableJumpOnFire2 },
 	{ "nJoyId", Int_Tag, &ConfigureParams.Joysticks.Joy[0].nJoyId },
+	{ "nJoyBut1Index", Int_Tag, &ConfigureParams.Joysticks.Joy[0].nJoyBut1Index },
+	{ "nJoyBut2Index", Int_Tag, &ConfigureParams.Joysticks.Joy[0].nJoyBut2Index },
+	{ "nJoyBut3Index", Int_Tag, &ConfigureParams.Joysticks.Joy[0].nJoyBut3Index },
 	{ "kUp", Key_Tag, &ConfigureParams.Joysticks.Joy[0].nKeyCodeUp },
 	{ "kDown", Key_Tag, &ConfigureParams.Joysticks.Joy[0].nKeyCodeDown },
 	{ "kLeft", Key_Tag, &ConfigureParams.Joysticks.Joy[0].nKeyCodeLeft },
@@ -123,6 +126,9 @@ static const struct Config_Tag configs_Joystick1[] =
 	{ "bEnableAutoFire", Bool_Tag, &ConfigureParams.Joysticks.Joy[1].bEnableAutoFire },
 	{ "bEnableJumpOnFire2", Bool_Tag, &ConfigureParams.Joysticks.Joy[1].bEnableJumpOnFire2 },
 	{ "nJoyId", Int_Tag, &ConfigureParams.Joysticks.Joy[1].nJoyId },
+	{ "nJoyBut1Index", Int_Tag, &ConfigureParams.Joysticks.Joy[1].nJoyBut1Index },
+	{ "nJoyBut2Index", Int_Tag, &ConfigureParams.Joysticks.Joy[1].nJoyBut2Index },
+	{ "nJoyBut3Index", Int_Tag, &ConfigureParams.Joysticks.Joy[1].nJoyBut3Index },
 	{ "kUp", Key_Tag, &ConfigureParams.Joysticks.Joy[1].nKeyCodeUp },
 	{ "kDown", Key_Tag, &ConfigureParams.Joysticks.Joy[1].nKeyCodeDown },
 	{ "kLeft", Key_Tag, &ConfigureParams.Joysticks.Joy[1].nKeyCodeLeft },
@@ -138,6 +144,9 @@ static const struct Config_Tag configs_Joystick2[] =
 	{ "bEnableAutoFire", Bool_Tag, &ConfigureParams.Joysticks.Joy[2].bEnableAutoFire },
 	{ "bEnableJumpOnFire2", Bool_Tag, &ConfigureParams.Joysticks.Joy[2].bEnableJumpOnFire2 },
 	{ "nJoyId", Int_Tag, &ConfigureParams.Joysticks.Joy[2].nJoyId },
+	{ "nJoyBut1Index", Int_Tag, &ConfigureParams.Joysticks.Joy[2].nJoyBut1Index },
+	{ "nJoyBut2Index", Int_Tag, &ConfigureParams.Joysticks.Joy[2].nJoyBut2Index },
+	{ "nJoyBut3Index", Int_Tag, &ConfigureParams.Joysticks.Joy[2].nJoyBut3Index },
 	{ "kUp", Key_Tag, &ConfigureParams.Joysticks.Joy[2].nKeyCodeUp },
 	{ "kDown", Key_Tag, &ConfigureParams.Joysticks.Joy[2].nKeyCodeDown },
 	{ "kLeft", Key_Tag, &ConfigureParams.Joysticks.Joy[2].nKeyCodeLeft },
@@ -153,6 +162,9 @@ static const struct Config_Tag configs_Joystick3[] =
 	{ "bEnableAutoFire", Bool_Tag, &ConfigureParams.Joysticks.Joy[3].bEnableAutoFire },
 	{ "bEnableJumpOnFire2", Bool_Tag, &ConfigureParams.Joysticks.Joy[3].bEnableJumpOnFire2 },
 	{ "nJoyId", Int_Tag, &ConfigureParams.Joysticks.Joy[3].nJoyId },
+	{ "nJoyBut1Index", Int_Tag, &ConfigureParams.Joysticks.Joy[3].nJoyBut1Index },
+	{ "nJoyBut2Index", Int_Tag, &ConfigureParams.Joysticks.Joy[3].nJoyBut2Index },
+	{ "nJoyBut3Index", Int_Tag, &ConfigureParams.Joysticks.Joy[3].nJoyBut3Index },
 	{ "kUp", Key_Tag, &ConfigureParams.Joysticks.Joy[3].nKeyCodeUp },
 	{ "kDown", Key_Tag, &ConfigureParams.Joysticks.Joy[3].nKeyCodeDown },
 	{ "kLeft", Key_Tag, &ConfigureParams.Joysticks.Joy[3].nKeyCodeLeft },
@@ -168,6 +180,9 @@ static const struct Config_Tag configs_Joystick4[] =
 	{ "bEnableAutoFire", Bool_Tag, &ConfigureParams.Joysticks.Joy[4].bEnableAutoFire },
 	{ "bEnableJumpOnFire2", Bool_Tag, &ConfigureParams.Joysticks.Joy[4].bEnableJumpOnFire2 },
 	{ "nJoyId", Int_Tag, &ConfigureParams.Joysticks.Joy[4].nJoyId },
+	{ "nJoyBut1Index", Int_Tag, &ConfigureParams.Joysticks.Joy[4].nJoyBut1Index },
+	{ "nJoyBut2Index", Int_Tag, &ConfigureParams.Joysticks.Joy[4].nJoyBut2Index },
+	{ "nJoyBut3Index", Int_Tag, &ConfigureParams.Joysticks.Joy[4].nJoyBut3Index },
 	{ "kUp", Key_Tag, &ConfigureParams.Joysticks.Joy[4].nKeyCodeUp },
 	{ "kDown", Key_Tag, &ConfigureParams.Joysticks.Joy[4].nKeyCodeDown },
 	{ "kLeft", Key_Tag, &ConfigureParams.Joysticks.Joy[4].nKeyCodeLeft },
@@ -183,6 +198,9 @@ static const struct Config_Tag configs_Joystick5[] =
 	{ "bEnableAutoFire", Bool_Tag, &ConfigureParams.Joysticks.Joy[5].bEnableAutoFire },
 	{ "bEnableJumpOnFire2", Bool_Tag, &ConfigureParams.Joysticks.Joy[5].bEnableJumpOnFire2 },
 	{ "nJoyId", Int_Tag, &ConfigureParams.Joysticks.Joy[5].nJoyId },
+	{ "nJoyBut1Index", Int_Tag, &ConfigureParams.Joysticks.Joy[5].nJoyBut1Index },
+	{ "nJoyBut2Index", Int_Tag, &ConfigureParams.Joysticks.Joy[5].nJoyBut2Index },
+	{ "nJoyBut3Index", Int_Tag, &ConfigureParams.Joysticks.Joy[5].nJoyBut3Index },
 	{ "kUp", Key_Tag, &ConfigureParams.Joysticks.Joy[5].nKeyCodeUp },
 	{ "kDown", Key_Tag, &ConfigureParams.Joysticks.Joy[5].nKeyCodeDown },
 	{ "kLeft", Key_Tag, &ConfigureParams.Joysticks.Joy[5].nKeyCodeLeft },
@@ -609,6 +627,9 @@ void Configuration_SetDefault(void)
 		ConfigureParams.Joysticks.Joy[i].bEnableAutoFire = false;
 		ConfigureParams.Joysticks.Joy[i].bEnableJumpOnFire2 = true;
 		ConfigureParams.Joysticks.Joy[i].nJoyId = (i > maxjoy ? maxjoy : i);
+		ConfigureParams.Joysticks.Joy[i].nJoyBut1Index = 0;
+		ConfigureParams.Joysticks.Joy[i].nJoyBut2Index = 1;
+		ConfigureParams.Joysticks.Joy[i].nJoyBut3Index = 2;
 		ConfigureParams.Joysticks.Joy[i].nKeyCodeUp = SDLK_UP;
 		ConfigureParams.Joysticks.Joy[i].nKeyCodeDown = SDLK_DOWN;
 		ConfigureParams.Joysticks.Joy[i].nKeyCodeLeft = SDLK_LEFT;
@@ -631,12 +652,12 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Keyboard.nKbdLayout = TOS_LANG_UNKNOWN;
 	ConfigureParams.Keyboard.nLanguage = TOS_LANG_UNKNOWN;
 	strcpy(ConfigureParams.Keyboard.szMappingFileName, "");
-  
+
 	/* Set defaults for Shortcuts */
 	ConfigureParams.Shortcut.withoutModifier[SHORTCUT_OPTIONS] = SDLK_F12;
 	ConfigureParams.Shortcut.withoutModifier[SHORTCUT_FULLSCREEN] = SDLK_F11;
 	ConfigureParams.Shortcut.withoutModifier[SHORTCUT_PAUSE] = SDLK_PAUSE;
-  
+
 	ConfigureParams.Shortcut.withModifier[SHORTCUT_DEBUG] = SDLK_PAUSE;
 	ConfigureParams.Shortcut.withModifier[SHORTCUT_OPTIONS] = SDLK_o;
 	ConfigureParams.Shortcut.withModifier[SHORTCUT_FULLSCREEN] = SDLK_f;

@@ -194,8 +194,12 @@ void Joy_UnInit(void)
  * Read details from joystick using SDL calls
  * NOTE ID is that of SDL
  */
-static bool Joy_ReadJoystick(int nSdlJoyID, JOYREADING *pJoyReading)
+static bool Joy_ReadJoystick(int nStJoyId, JOYREADING *pJoyReading)
 {
+	int nSdlJoyID = ConfigureParams.Joysticks.Joy[nStJoyId].nJoyId;
+	int button1 = ConfigureParams.Joysticks.Joy[nStJoyId].nJoyBut1Index;
+	int button2 = ConfigureParams.Joysticks.Joy[nStJoyId].nJoyBut2Index;
+	int button3 = ConfigureParams.Joysticks.Joy[nStJoyId].nJoyBut3Index;
 	unsigned hat = SDL_JoystickGetHat(sdlJoystick[nSdlJoyID], 0);
 
 	/* Joystick is OK, read position from the configured joystick axis */
@@ -211,12 +215,16 @@ static bool Joy_ReadJoystick(int nSdlJoyID, JOYREADING *pJoyReading)
 	if (hat & SDL_HAT_DOWN)
 		pJoyReading->YPos = 32767;
 	/* Sets bit #0 if button #1 is pressed: */
-	pJoyReading->Buttons = SDL_JoystickGetButton(sdlJoystick[nSdlJoyID], 0);
+	if (button1 >= 0)
+		pJoyReading->Buttons = SDL_JoystickGetButton(sdlJoystick[nSdlJoyID], button1);
+	else
+		pJoyReading->Buttons = 0;
+
 	/* Sets bit #1 if button #2 is pressed: */
-	if (SDL_JoystickGetButton(sdlJoystick[nSdlJoyID], 1))
+	if ((button2 >= 0) && SDL_JoystickGetButton(sdlJoystick[nSdlJoyID], button2))
 		pJoyReading->Buttons |= JOYREADING_BUTTON2;
 	/* Sets bit #2 if button #3 is pressed: */
-	if (SDL_JoystickGetButton(sdlJoystick[nSdlJoyID], 2))
+	if ((button3 >= 0) && SDL_JoystickGetButton(sdlJoystick[nSdlJoyID], button3))
 		pJoyReading->Buttons |= JOYREADING_BUTTON3;
 
 	return true;
@@ -308,7 +316,7 @@ uint8_t Joy_GetStickData(int nStJoyId)
 		}
 
 		/* Read real joystick and map to emulated ST joystick for emulation */
-		if (!Joy_ReadJoystick(nSdlJoyId, &JoyReading))
+		if (!Joy_ReadJoystick(nStJoyId, &JoyReading))
 		{
 			/* Something is wrong, we cannot read the joystick from SDL */
 			bJoystickWorking[nSdlJoyId] = false;

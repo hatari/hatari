@@ -169,6 +169,7 @@ typedef struct
   bool bEnableAutoFire;
   bool bEnableJumpOnFire2;
   int nJoyId;
+  int nJoyBut1Index, nJoyBut2Index, nJoyBut3Index;
   int nKeyCodeUp, nKeyCodeDown, nKeyCodeLeft, nKeyCodeRight, nKeyCodeFire;
 } JOYSTICK;
 
