@@ -487,7 +487,7 @@ static void DebugInfo_RegAddr(FILE *fp, uint32_t arg)
 	bool forDsp;
 	char regname[3];
 	uint32_t *reg32, regvalue, mask;
-	char cmdbuf[12], addrbuf[6];
+	char cmdbuf[6], addrbuf[12];
 	char *argv[] = { cmdbuf, addrbuf };
 
 	regname[0] = (arg>>24)&0xff;
