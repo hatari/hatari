@@ -48,6 +48,7 @@ Emulator improvements:
 - Joystick support:
   - Fix: joystick button 2 space key emulation "autofiring"
 - GEMDOS HD:
+  - Support up to 64 simultaneously open files (earlier limit was 32)
   - Similarly to TOS, allow programs to write to a file they have opened
     as read-only (by opening all writable files as read/write).  As this
     could fail with real HW under MiNT/MagiC, show warning about it

@@ -2533,9 +2533,14 @@ names are identical in TOS-format, you see only one of those.</li>
 <li>It is not possible to use a cartridge image at the same time
 with GEMDOS HD emulation (Hatari has its own cartridge code
 that is used for GEMDOS HD emulation).</li>
-<li>Anything that installs its own GEMDOS handler, like MiNT, doesn't work
-with GEMDOS HD emulation.  Such things need to be run from a real
-hard disk image.</li>
+<li>Anything that installs its own GEMDOS handler, like MiNT, does not work
+with GEMDOS HD emulation. Such things need to be run from a real hard disk
+image, or in case of MiNT, use OLDTOSFS for GEMDOS HD access.</li>
+<li>GEMDOS HD file handles start from index 64.  If programs have more
+files open on <i>non-GEMDOS HD drives</i>, i.e. their indexes increase
+over 64, acesses to those indexes could get routed (incorrectly) to
+GEMDOS HD drive instead</li>
+<li>GEMDOS HD supports up to 64 file handles (TOS supports slightly more).</li>
 <li>GEMDOS HD C: drive conflicts with the ACSI and IDE hard drives.
 If you want to use GEMDOS HD directory and ACSI/IDE disk images together,
 either use the GEMDOS HD option for skipping ACSI &amp; IDE partitions, or

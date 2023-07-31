@@ -113,7 +113,7 @@ typedef enum {
 #define DTA_CACHE_MAX     4096     /* max DTA cache size (multiple of DTA_CACHE_INC) */
 
 #define  BASE_FILEHANDLE     64    /* Our emulation handles - MUST not be valid TOS ones, but MUST be <256 */
-#define  MAX_FILE_HANDLES    32    /* We can allow 32 files open at once */
+#define  MAX_FILE_HANDLES    64    /* We can allow 64 files open at once */
 
 /*
    DateTime structure used by TOS call $57 f_dtatime
