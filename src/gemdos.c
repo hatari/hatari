@@ -15,11 +15,11 @@
   host names is slower and may match several such filenames (of which
   first one will be returned), so using them should be avoided.
 
-  Bugs/things to fix:
-  * Host filenames are in many places limited to 255 chars (same as
-    on TOS), FILENAME_MAX should be used if that's a problem.
-  * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
-  * Fix bugs, there are probably a few lurking around in here..
+  Known bugs / things to fix:
+  * Host file names are in many places limited to 255 chars (same as
+    on TOS). They should be dynamically allocated instead
+  * GEMDOS Ddelete() implementation uses rmdir() which cannot remove
+    a dir with files in it (a TOS/unix difference)
 */
 const char Gemdos_fileid[] = "Hatari gemdos.c";
 
