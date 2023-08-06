@@ -1248,6 +1248,36 @@ static uint8_t SCC_handleRead(uint32_t addr)
 	return value;
 }
 
+
+/*
+ * Write to data register
+ * This function is called either when writing to WR8 or when setting D//C signal to high
+ * to write directly to the data register
+ */
+static void SCC_WriteDataReg(int chn, uint8_t value)
+{
+	/* Clear TX Buffer Empty bit and reset TX Interrupt Pending for this channel */
+	SCC.Chn[chn].RR[0] &= ~SCC_RR0_BIT_TX_BUFFER_EMPTY;
+	SCC.Chn[chn].TxBuf_Write_Time = Cycles_GetClockCounterOnWriteAccess();
+
+	if ( chn )
+		SCC.Chn[0].RR[3] &= ~SCC_RR3_BIT_TX_IP_B;
+	else
+		SCC.Chn[0].RR[3] &= ~SCC_RR3_BIT_TX_IP_A;
+	// TODO : update irq
+
+	/* According to the SCC doc, transmit buffer will be copied to the */
+	/* transmit shift register TSR after the last bit is shifted out, in ~3 PCLKs */
+	/* This means that if transmitter is disabled we can consider TDR is copied */
+	/* almost immediately to TSR when writing to WR8 */
+	/* Else TDR will be copied during SCC_Process_TX when current transfer is completed */
+	if ( ( SCC.Chn[chn].RR[0] & SCC_WR5_BIT_TX_ENABLE ) == 0 )
+	{
+		SCC_Copy_TDR_TSR ( chn , value , true );
+	}
+}
+
+
 static void SCC_WriteControl(int chn, uint8_t value)
 {
 	int i;
@@ -1439,26 +1469,7 @@ static void SCC_WriteControl(int chn, uint8_t value)
 	else if (SCC.Active_Reg == 8)
 	{
 		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set transmit buffer value=$%02x\n" , 'A'+chn , SCC.Active_Reg , value );
-
-		/* Clear TX Buffer Empty bit and reset TX Interrupt Pending for this channel */
-		SCC.Chn[chn].RR[0] &= ~SCC_RR0_BIT_TX_BUFFER_EMPTY;
-		SCC.Chn[chn].TxBuf_Write_Time = Cycles_GetClockCounterOnWriteAccess();
-
-		if ( chn )
-			SCC.Chn[0].RR[3] &= ~SCC_RR3_BIT_TX_IP_B;
-		else
-			SCC.Chn[0].RR[3] &= ~SCC_RR3_BIT_TX_IP_A;
-		// TODO : update irq
-
-		/* According to the SCC doc, transmit buffer will be copied to the */
-		/* transmit shift register TSR after the last bit is shifted out, in ~3 PCLKs */
-		/* This means that if transmitter is disabled we can consider TDR is copied */
-		/* almost immediately to TSR when writing to WR8 */
-		/* Else TDR will be copied during SCC_Process_TX when current transfer is completed */
-		if ( ( SCC.Chn[chn].RR[0] & SCC_WR5_BIT_TX_ENABLE ) == 0 )
-		{
-			SCC_Copy_TDR_TSR ( chn , value , true );
-		}
+		SCC_WriteDataReg ( chn , value );
 	}
 	else if (SCC.Active_Reg == 9) 		/* Master interrupt control (common for both channels) */
 	{
@@ -1552,7 +1563,7 @@ static void SCC_handleWrite(uint32_t addr, uint8_t value)
 	LOG_TRACE(TRACE_SCC, "scc write addr=%d channel=%c value=$%02x\n" , addr , 'A'+Channel , value );
 
 	if ( addr & 2 )					/* bit 1 */
-		SCC_serial_setData ( Channel, value );
+		SCC_WriteDataReg ( Channel, value );
 	else
 		SCC_WriteControl ( Channel, value );
 }
