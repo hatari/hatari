@@ -169,6 +169,7 @@ static void DlgJoystick_MapOneButton(int button, int *pButton)
 {
 	SDL_Event sdlEvent;
 	bool bDone = false;
+	bool bSet = false;
 
 	if (bQuitProgram)
 		return;
@@ -192,16 +193,18 @@ static void DlgJoystick_MapOneButton(int button, int *pButton)
 		{
 			case SDL_JOYBUTTONDOWN:
 				*pButton = sdlEvent.jbutton.button;
+				bSet = true;
 				snprintf(sKeyName, sizeof(sKeyName), "(now: id %d)", *pButton);
 				SDLGui_DrawDialog(joybuttondlg);
 				break;
 			case SDL_JOYBUTTONUP:
-				bDone = true;
+				bDone = bSet;
 				break;
 			case SDL_KEYDOWN:
-				if (sdlEvent.key.keysym.sym == SDLK_ESCAPE)
+				if ((sdlEvent.key.keysym.sym == SDLK_ESCAPE) && (sdlEvent.key.repeat == 0))
 				{
 					*pButton = -1;
+					bSet = true;
 					strcpy(sKeyName, "(now: none)");
 					SDLGui_DrawDialog(joybuttondlg);
 				}
@@ -209,7 +212,7 @@ static void DlgJoystick_MapOneButton(int button, int *pButton)
 			case SDL_KEYUP:
 				if (sdlEvent.key.keysym.sym == SDLK_ESCAPE)
 				{
-					bDone = true;
+					bDone = bSet;
 				}
 				break;
 			case SDL_QUIT:
