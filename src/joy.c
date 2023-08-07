@@ -197,9 +197,6 @@ void Joy_UnInit(void)
 static bool Joy_ReadJoystick(int nStJoyId, JOYREADING *pJoyReading)
 {
 	int nSdlJoyID = ConfigureParams.Joysticks.Joy[nStJoyId].nJoyId;
-	int button1 = ConfigureParams.Joysticks.Joy[nStJoyId].nJoyBut1Index;
-	int button2 = ConfigureParams.Joysticks.Joy[nStJoyId].nJoyBut2Index;
-	int button3 = ConfigureParams.Joysticks.Joy[nStJoyId].nJoyBut3Index;
 	unsigned hat = SDL_JoystickGetHat(sdlJoystick[nSdlJoyID], 0);
 
 	/* Joystick is OK, read position from the configured joystick axis */
@@ -214,19 +211,15 @@ static bool Joy_ReadJoystick(int nStJoyId, JOYREADING *pJoyReading)
 		pJoyReading->YPos = -32768;
 	if (hat & SDL_HAT_DOWN)
 		pJoyReading->YPos = 32767;
-	/* Sets bit #0 if button #1 is pressed: */
-	if (button1 >= 0)
-		pJoyReading->Buttons = SDL_JoystickGetButton(sdlJoystick[nSdlJoyID], button1);
-	else
-		pJoyReading->Buttons = 0;
 
-	/* Sets bit #1 if button #2 is pressed: */
-	if ((button2 >= 0) && SDL_JoystickGetButton(sdlJoystick[nSdlJoyID], button2))
-		pJoyReading->Buttons |= JOYREADING_BUTTON2;
-	/* Sets bit #2 if button #3 is pressed: */
-	if ((button3 >= 0) && SDL_JoystickGetButton(sdlJoystick[nSdlJoyID], button3))
-		pJoyReading->Buttons |= JOYREADING_BUTTON3;
-
+	pJoyReading->Buttons = 0;
+	/* Sets bits based on pressed buttons */
+	for (int i = 0; i < JOYSTICK_BUTTONS; i++)
+	{
+		int button = ConfigureParams.Joysticks.Joy[nStJoyId].nJoyButMap[i];
+		if (button >= 0 && SDL_JoystickGetButton(sdlJoystick[nSdlJoyID], button))
+			pJoyReading->Buttons |= 1 << i;
+	}
 	return true;
 }
 

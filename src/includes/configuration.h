@@ -162,6 +162,7 @@ typedef enum
   JOYSTICK_KEYBOARD
 } JOYSTICKMODE;
 #define JOYSTICK_MODES 3
+#define JOYSTICK_BUTTONS 3
 
 typedef struct
 {
@@ -169,7 +170,7 @@ typedef struct
   bool bEnableAutoFire;
   bool bEnableJumpOnFire2;
   int nJoyId;
-  int nJoyBut1Index, nJoyBut2Index, nJoyBut3Index;
+  int nJoyButMap[JOYSTICK_BUTTONS];
   int nKeyCodeUp, nKeyCodeDown, nKeyCodeLeft, nKeyCodeRight, nKeyCodeFire;
 } JOYSTICK;
 

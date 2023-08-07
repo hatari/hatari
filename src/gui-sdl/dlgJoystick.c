@@ -11,6 +11,7 @@ const char DlgJoystick_fileid[] = "Hatari dlgJoystick.c";
 #include "dialog.h"
 #include "sdlgui.h"
 #include "joy.h"
+#include "str.h"
 
 #define DLGJOY_STJOYNAME     3
 #define DLGJOY_PREVSTJOY     4
@@ -83,9 +84,10 @@ static SGOBJ joykeysdlg[] =
 
 static SGOBJ joybuttondlg[] =
 {
-	{ SGBOX, 0, 0, 0,0, 27,7, NULL },
-	{ SGTEXT, 0, 0, 2,1, 23,1, sKeyInstruction },
-	{ SGTEXT, 0, 0, 2,2, 23,1, "or ESC for none..." },
+	{ SGBOX, 0, 0, 0,0, 25,7, NULL },
+	{ SGTEXT, 0, 0, 2,1, 21,1, "Press joystick button" },
+	{ SGTEXT, 0, 0, 5,2, 15,1, sKeyInstruction },
+	{ SGTEXT, 0, 0, 2,3, 18,1, "or ESC for none..." },
 	{ SGTEXT, 0, 0, 2,5, 15,1, sKeyName },
 	{ SGSTOP, 0, 0, 0,0, 0,0, NULL }
 };
@@ -165,7 +167,7 @@ static void DlgJoystick_DefineKeys(int nActJoy)
 /**
  * Show dialogs for remapping joystick buttons and wait for a button press.
  */
-static void DlgJoystick_MapOneButton(int button, int *pButton)
+static void DlgJoystick_MapOneButton(const char *name, int *pButton)
 {
 	SDL_Event sdlEvent;
 	bool bDone = false;
@@ -174,7 +176,7 @@ static void DlgJoystick_MapOneButton(int button, int *pButton)
 	if (bQuitProgram)
 		return;
 
-	snprintf(sKeyInstruction, sizeof(sKeyInstruction), "Press joystick button %d", button);
+	Str_Copy(sKeyInstruction, name, sizeof(sKeyInstruction));
 	if (*pButton >= 0)
 	{
 		snprintf(sKeyName, sizeof(sKeyName), "(was: id %d)", *pButton);
@@ -230,11 +232,17 @@ static void DlgJoystick_MapOneButton(int button, int *pButton)
  */
 static void DlgJoystick_RemapButtons(int nActJoy)
 {
+	int *map = ConfigureParams.Joysticks.Joy[nActJoy].nJoyButMap;
+	static const char *names[JOYSTICK_BUTTONS] =
+	{
+		"1: fire",
+		"2: space / jump",
+		"3: autofire"
+	};
 
 	SDLGui_CenterDlg(joybuttondlg);
-	DlgJoystick_MapOneButton(1, &ConfigureParams.Joysticks.Joy[nActJoy].nJoyBut1Index);
-	DlgJoystick_MapOneButton(2, &ConfigureParams.Joysticks.Joy[nActJoy].nJoyBut2Index);
-	DlgJoystick_MapOneButton(3, &ConfigureParams.Joysticks.Joy[nActJoy].nJoyBut3Index);
+	for (int i = 0; i < JOYSTICK_BUTTONS; i++)
+		DlgJoystick_MapOneButton(names[i], &map[i]);
 }
 
 
