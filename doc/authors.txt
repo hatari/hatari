@@ -171,6 +171,9 @@ random order - and if someone is missing here, please remind us!):
 - Chris Jenkins : patch to compile the macOS version when PortMidi is not 
   available.
 
+- Robin Sergeant <robin.sergeant at gmail.com> : support for remapping
+  joystick buttons
+
 See also "thanks.txt" for people who've helped Hatari development in
 other ways than code contributions.
 

@@ -47,6 +47,7 @@ Emulator improvements:
     applications that do not handle current dates
 - Joystick support:
   - Fix: joystick button 2 space key emulation "autofiring"
+  - Support for mapping joystick buttons
 - GEMDOS HD:
   - Fix: Frename() should fail when target exists
   - Support up to 64 simultaneously open files (earlier limit was 32)
@@ -81,7 +82,7 @@ GUI improvements:
 - SDL GUI:
   - Fix: mouse not visible in floppy disk dialog when it is invoked
     from a keyboard shortcut in fullscreen mode
-  - Add support for the joystick button 2 space key vs. jump option
+  - Support for joystick button mapping + space key vs. jump option
 - Mac GUI:
   - Accept all file names as Mac file selector does not show
     a list of the accepted file name extensions any more
