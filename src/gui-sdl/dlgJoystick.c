@@ -31,7 +31,7 @@ const char DlgJoystick_fileid[] = "Hatari dlgJoystick.c";
 
 /* The joysticks dialog: */
 
-static char sSdlStickName[20];
+static char sSdlStickName[23];
 
 static SGOBJ joydlg[] =
 {
@@ -44,23 +44,23 @@ static SGOBJ joydlg[] =
 	{ SGBUTTON, 0, 0, 28,3, 3,1, "\x03", SG_SHORTCUT_RIGHT },
 
 	{ SGBOX, 0, 0, 1,4, 30,16, NULL },
-	{ SGBUTTON,   0, 0, 19,7, 11,1, "D_efine keys" },
+	{ SGBUTTON,   0, 0, 17,7, 13,1, "D_efine keys" },
 
 	{ SGRADIOBUT, 0, 0, 2,5, 10,1, "_disabled" },
 	{ SGRADIOBUT, 0, 0, 2,7, 14,1, "use _keyboard" },
 	{ SGRADIOBUT, 0, 0, 2,9, 20,1, "use real _joystick:" },
 
-	{ SGBOX, 0, 0, 5,11, 22,1, NULL },
-	{ SGTEXT, 0, 0, 6,11, 20,1, sSdlStickName },
+	{ SGBOX, 0, 0, 5,11, 24,1, NULL },
+	{ SGTEXT, 0, 0, 6,11, 22,1, sSdlStickName },
 	{ SGBUTTON, 0, 0,  4,11, 1,1, "\x04", SG_SHORTCUT_UP },
-	{ SGBUTTON, 0, 0, 27,11, 1,1, "\x03", SG_SHORTCUT_DOWN },
+	{ SGBUTTON, 0, 0, 29,11, 1,1, "\x03", SG_SHORTCUT_DOWN },
 
 	{ SGCHECKBOX, 0, 0, 2,13, 17,1, "Enable _autofire" },
 
 	{ SGTEXT, 0, 0, 4,15, 9,1, "Button 2:" },
 	{ SGRADIOBUT, 0, 0, 2,16, 10,1, "_space key" },
 	{ SGRADIOBUT, 0, 0, 15,16, 10,1, "_up / jump" },
-	{ SGBUTTON, 0, 0, 5,18, 22,1, "Re_map joystick buttons" },
+	{ SGBUTTON, 0, 0, 4,18, 24,1, "Re_map joystick buttons" },
 
 	{ SGBUTTON, SG_DEFAULT, 0, 6,21, 20,1, "Back to main menu" },
 	{ SGSTOP, 0, 0, 0,0, 0,0, NULL }
@@ -183,7 +183,7 @@ static void DlgJoystick_MapOneButton(const char *name, int *pButton)
 	}
 	else
 	{
-		strcpy(sKeyName, "(was: none)");
+		Str_Copy(sKeyName, "(was: none)", sizeof(sKeyName));
 	}
 
 	SDLGui_DrawDialog(joybuttondlg);
@@ -207,7 +207,7 @@ static void DlgJoystick_MapOneButton(const char *name, int *pButton)
 				{
 					*pButton = -1;
 					bSet = true;
-					strcpy(sKeyName, "(now: none)");
+					Str_Copy(sKeyName, "(now: none)", sizeof(sKeyName));
 					SDLGui_DrawDialog(joybuttondlg);
 				}
 				break;
@@ -261,12 +261,14 @@ static void DlgJoystick_ReadValuesFromConf(int nActJoy)
 	}
 	else if (Joy_ValidateJoyId(nActJoy))
 	{
-		snprintf(sSdlStickName, 20, "%i: %s", ConfigureParams.Joysticks.Joy[nActJoy].nJoyId,
+		snprintf(sSdlStickName, sizeof(sSdlStickName), "%i: %s",
+			 ConfigureParams.Joysticks.Joy[nActJoy].nJoyId,
 		         Joy_GetName(ConfigureParams.Joysticks.Joy[nActJoy].nJoyId));
 	}
 	else
 	{
-		snprintf(sSdlStickName, 20, "0: %s", Joy_GetName(0));
+		snprintf(sSdlStickName, sizeof(sSdlStickName), "0: %s",
+			 Joy_GetName(0));
 	}
 
 	for (i = DLGJOY_DISABLED; i <= DLGJOY_USEREALJOY; i++)
@@ -350,7 +352,8 @@ void Dialog_JoyDlg(void)
 			if (ConfigureParams.Joysticks.Joy[nActJoy].nJoyId > 0)
 			{
 				ConfigureParams.Joysticks.Joy[nActJoy].nJoyId -= 1;
-				snprintf(sSdlStickName, 20, "%i: %s", ConfigureParams.Joysticks.Joy[nActJoy].nJoyId,
+				snprintf(sSdlStickName, sizeof(sSdlStickName), "%i: %s",
+					 ConfigureParams.Joysticks.Joy[nActJoy].nJoyId,
 				         Joy_GetName(ConfigureParams.Joysticks.Joy[nActJoy].nJoyId));
 			}
 			break;
@@ -358,7 +361,8 @@ void Dialog_JoyDlg(void)
 			if (ConfigureParams.Joysticks.Joy[nActJoy].nJoyId < nMaxId)
 			{
 				ConfigureParams.Joysticks.Joy[nActJoy].nJoyId += 1;
-				snprintf(sSdlStickName, 20, "%i: %s", ConfigureParams.Joysticks.Joy[nActJoy].nJoyId,
+				snprintf(sSdlStickName, sizeof(sSdlStickName), "%i: %s",
+					 ConfigureParams.Joysticks.Joy[nActJoy].nJoyId,
 				         Joy_GetName(ConfigureParams.Joysticks.Joy[nActJoy].nJoyId));
 			}
 			break;
