@@ -1846,7 +1846,6 @@ static bool GemDOS_RmDir(uint32_t Params)
 static bool GemDOS_ChDir(uint32_t Params)
 {
 	char *pDirName, *psTempDirPath;
-	struct stat buf;
 	int Drive;
 	uint32_t nStrAddr = STMemory_ReadLong(Params);
 
@@ -1891,7 +1890,7 @@ static bool GemDOS_ChDir(uint32_t Params)
 	/* Remove trailing slashes (stat on Windows does not like that) */
 	File_CleanFileName(psTempDirPath);
 
-	if (stat(psTempDirPath, &buf))
+	if (access(psTempDirPath, F_OK) != 0)
 	{
 		/* error */
 		free(psTempDirPath);
@@ -1918,7 +1917,6 @@ static bool GemDOS_ChDir(uint32_t Params)
 	free(psTempDirPath);
 
 	return true;
-
 }
 
 
@@ -3192,8 +3190,10 @@ static bool GemDOS_Rename(uint32_t Params)
 	GemDOS_CreateHardDriveFileName(OldDrive, pszOldFileName,
 		              szOldActualFileName, sizeof(szOldActualFileName));
 
-	/* Rename files */
-	if (rename(szOldActualFileName,szNewActualFileName) == 0)
+	/* TOS allows renaming only when target does not exist */
+	if (access(szOldActualFileName, F_OK) == 0 && access(szNewActualFileName, F_OK) == 0)
+		Regs[REG_D0] = GEMDOS_EACCDN;
+	else if (rename(szOldActualFileName, szNewActualFileName) == 0)
 		Regs[REG_D0] = GEMDOS_EOK;
 	else
 		Regs[REG_D0] = errno2gemdos(errno, ERROR_FILE);
