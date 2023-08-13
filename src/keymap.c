@@ -102,7 +102,7 @@ static uint8_t Keymap_SymbolicToStScanCode(const SDL_Keysym* pKeySym)
 	 case SDLK_RIGHTBRACKET: code = 0x1B; break;
 	 case SDLK_CARET: code = 0x2B; break;
 	 case SDLK_UNDERSCORE: code = 0x0C; break;
-	 case SDLK_BACKQUOTE: code = 0x52; break;
+	 case SDLK_BACKQUOTE: code = 0x29; break;
 	 case SDLK_a: code = 0x1E; break;
 	 case SDLK_b: code = 0x30; break;
 	 case SDLK_c: code = 0x2E; break;
