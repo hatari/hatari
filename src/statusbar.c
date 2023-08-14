@@ -273,10 +273,10 @@ static void Statusbar_OverlayInit(const SDL_Surface *surf)
 	OverlayLedRect.x = surf->w - 5*h/2;
 	OverlayLedRect.y = h/2;
 	/* free previous restore surface if it's incompatible */
-	if (OverlayUnderside &&
-	    OverlayUnderside->w == OverlayLedRect.w &&
-	    OverlayUnderside->h == OverlayLedRect.h &&
-	    OverlayUnderside->format->BitsPerPixel == surf->format->BitsPerPixel)
+	if (OverlayUnderside && (
+	    OverlayUnderside->w != OverlayLedRect.w &&
+	    OverlayUnderside->h != OverlayLedRect.h &&
+	    OverlayUnderside->format->BitsPerPixel != surf->format->BitsPerPixel))
 	{
 		SDL_FreeSurface(OverlayUnderside);
 		OverlayUnderside = NULL;
