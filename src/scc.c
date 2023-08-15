@@ -542,21 +542,27 @@ static void TriggerSCC(bool enable)
 	}
 }
 
-static uint8_t SCC_serial_getData(int channel)
+static bool SCC_serial_getData(int channel , uint8_t *pValue)
 {
-	uint8_t value = 0;
 	int nb;
 
 	if (SCC.Chn[channel].rd_handle >= 0)
 	{
-		nb = read(SCC.Chn[channel].rd_handle, &value, 1);
+		nb = read(SCC.Chn[channel].rd_handle, pValue, 1);
 		if (nb < 0)
+			Log_Printf(LOG_WARN, "SCC_serial_getData channel %c : read failed\n", 'A'+channel);
+		else if ( nb == 0 )
 		{
-			Log_Printf(LOG_WARN, "SCC: channel %d read failed\n", channel);
+			LOG_TRACE(TRACE_SCC, "SCC_serial_getData channel %c : no byte\n", 'A'+channel);
 		}
+		else
+		{
+			LOG_TRACE(TRACE_SCC, "SCC_serial_getData channel %c rx=$%02x\n", 'A'+channel, *pValue);
+		}
+		return ( nb > 0 );
 	}
-	LOG_TRACE(TRACE_SCC, "SCC: getData(%d) => %d\n", channel, value);
-	return value;
+
+	return false;
 }
 
 static void SCC_serial_setData(int channel, uint8_t value)
@@ -1027,7 +1033,7 @@ static void SCC_Update_BaudRate ( int Channel )
 	if ( BaudRate == -1 )
 	{
 		Serial_ON = false;
-		SCC_Stop_InterruptHandler_TX_RX ( Channel , true );			/* TX */
+		SCC_Stop_InterruptHandler_TX_RX ( Channel , true );		/* TX */
 		SCC_Stop_InterruptHandler_TX_RX ( Channel , false );		/* RX */
 	}
 	else
@@ -1040,9 +1046,11 @@ static void SCC_Update_BaudRate ( int Channel )
 
 		/* If baudrate is the same for TX and RX we start only one timer TX for both */
 		/* Else we start a timer for TX and a timer for RX */
-		SCC_Start_InterruptHandler_TX_RX ( Channel , true , 0 );		/* TX */
+		SCC_Start_InterruptHandler_TX_RX ( Channel , true , 0 );		/* start TX */
 		if ( SCC.Chn[Channel].BaudRate_TX != SCC.Chn[Channel].BaudRate_RX )
-			SCC_Start_InterruptHandler_TX_RX ( Channel , false , 0 );	/* RX */
+			SCC_Start_InterruptHandler_TX_RX ( Channel , false , 0 );	/* start RX */
+		else
+			SCC_Stop_InterruptHandler_TX_RX ( Channel , false );		/* stop RX */
 	}
 
 	if ( Serial_ON )
@@ -1109,6 +1117,24 @@ static uint8_t	SCC_Get_Vector_Status ( int Channel , int StatusHighLow )
 		status = ( ( status & 1 ) << 2 ) + ( status & 2 ) + ( ( status & 4 ) >> 2 );
 
 	return status;
+}
+
+
+/*
+ * Read from data register
+ * This function is called either when reading from RR8 or when setting D//C signal to high
+ * to read directly from the data register
+ */
+static uint8_t SCC_ReadDataReg(int chn)
+{
+	/* NOTE : when reading data reg we consider a 1 byte FIFO instead of the real 3 bytes FIFO */
+	/* to simplify processing (see SCC_Process_RX) */
+	/* So we clear SCC_RR0_BIT_RX_CHAR_AVAILABLE immediately after reading, but it should be cleared */
+	/* when the 3 bytes FIFO is completely empty */
+	SCC.Chn[chn].RR[0] &= ~SCC_RR0_BIT_RX_CHAR_AVAILABLE;
+	// TODO : update irq
+
+	return SCC.Chn[chn].RR[8];
 }
 
 
@@ -1184,9 +1210,8 @@ static uint8_t SCC_ReadControl(int chn)
 //	RR6/RR7 : Low/High bytes of the frame byte count if WR15 bit 2 is set. Else, return RR2/RR3
 
 	 case 8: // DATA reg
-		SCC.Chn[chn].WR[8] = SCC_serial_getData(chn);
-		value = SCC.Chn[chn].WR[8];
-		LOG_TRACE(TRACE_SCC, "scc read channel=%c RR%d rx data value=$%02x\n" , 'A'+chn , active_reg , value );
+		value = SCC_ReadDataReg ( chn );
+		LOG_TRACE(TRACE_SCC, "scc read channel=%c RR%d read rx buffer value=$%02x\n" , 'A'+chn , SCC.Active_Reg , value );
 		break;
 
 //	RR9 : See RR13
@@ -1236,10 +1261,7 @@ static uint8_t SCC_handleRead(uint32_t addr)
 	LOG_TRACE(TRACE_SCC, "scc read addr=%d channel=%c\n" , addr , 'A'+channel );
 
 	if ( addr & 2 )					/* bit 1 */
-	{
-		SCC.Chn[channel].WR[8] = SCC_serial_getData(channel);
-		value = SCC.Chn[channel].WR[8];
-	}
+		value = SCC_ReadDataReg(channel);
 	else
 		value = SCC_ReadControl(channel);
 
@@ -1410,6 +1432,7 @@ static void SCC_WriteControl(int chn, uint8_t value)
 		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set rx parameter and control value=$%02x\n" , 'A'+chn , SCC.Active_Reg , value );
 
 		/* Bit 0 : RX Enable */
+		// -> see SCC_Process_RX
 		/* Bit 6-7 : RX Bits/char */
 		bits = ( value >> 6 ) & 3;
 		if ( bits == SCC_WR3_RX_5_BITS )		SCC.Chn[chn].RX_bits = 5;
@@ -1603,7 +1626,7 @@ static void	SCC_Process_TX ( int Channel )
 	bool	Set_TBE;
 
 
-	if ( SCC.Chn[Channel].RR[0] & SCC_WR5_BIT_TX_ENABLE )
+	if ( SCC.Chn[Channel].WR[5] & SCC_WR5_BIT_TX_ENABLE )
 	{
 		/* Send byte to emulated serial device / file descriptor */
 		SCC_serial_setData(Channel, SCC.Chn[Channel].TSR);
@@ -1630,7 +1653,26 @@ static void	SCC_Process_RX ( int Channel )
 {
 	uint8_t	rx_byte;
 
-	SCC.Chn[Channel].RR[8] = rx_byte;
+	if ( SCC.Chn[Channel].WR[3] & SCC_WR3_BIT_RX_ENABLE )
+	{
+		/* Receive byte from emulated serial device / file descriptor */
+		if ( SCC_serial_getData ( Channel , &rx_byte ) )
+		{
+			SCC.Chn[Channel].RR[8] = rx_byte;
+			if ( SCC.Chn[Channel].RR[0] & SCC_RR0_BIT_RX_CHAR_AVAILABLE )
+			{
+				/* NOTE : The SCC has a 3 bytes deep FIFO, so we should have an overrun */
+				/* when we receive a new byte and all 3 bytes were not read so far */
+				/* In Hatari's case we simplify this condition by using a 1 byte FIFO, */
+				/* so any new char received when latest char was not read will set */
+				/* the overrun bit (this can be improved later if needed) */
+				SCC.Chn[Channel].RR[1] |= SCC_RR1_BIT_RX_OVERRUN_ERROR;
+			}
+			else
+				SCC.Chn[Channel].RR[0] |= SCC_RR0_BIT_RX_CHAR_AVAILABLE;
+			// TODO update irq
+		}
+	}
 }
 
 
