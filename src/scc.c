@@ -531,28 +531,6 @@ static void SCC_ResetFull ( bool HW_Reset )
 }
 
 
-static void SCC_channelAreset(void)
-{
-	LOG_TRACE(TRACE_SCC, "SCC: reset channel A\n");
-	SCC.Chn[0].WR[15] = 0xF8;
-	SCC.Chn[0].WR[14] = 0xA0;
-	SCC.Chn[0].WR[11] = 0x08;
-	SCC.Chn[0].WR[9] = 0;
-
-	SCC.Chn[0].WR[0] = 1 << TBE;  // RR0A	// TODO NP
-}
-
-static void SCC_channelBreset(void)
-{
-	LOG_TRACE(TRACE_SCC, "SCC: reset channel B\n");
-	SCC.Chn[1].WR[15] = 0xF8;
-	SCC.Chn[1].WR[14] = 0xA0;
-	SCC.Chn[1].WR[11] = 0x08;
-	SCC.Chn[0].WR[9] = 0;         // single WR9
-
-	SCC.Chn[1].WR[0] = 1 << TBE;  // RR0B	// TODO NP
-}
-
 void SCC_Reset(void)
 {
 	memset(SCC.Chn[0].WR, 0, sizeof(SCC.Chn[0].WR));
