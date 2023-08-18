@@ -130,6 +130,12 @@
 #define SCC_WR0_COMMAND_RESET_HIGHEST_IUS	0x07	/* Reset Highest IUS */
 
 
+/* RX Int mode for the bits 3-4 of WR1 */
+#define SCC_WR1_RX_MODE_INT_OFF			0x00
+#define SCC_WR1_RX_MODE_INT_FIRST_CHAR_SPECIAL	0x01
+#define SCC_WR1_RX_MODE_INT_ALL_CHAR_SPECIAL	0x02
+#define SCC_WR1_RX_MODE_INT_SPECIAL		0x03
+
 #define SCC_WR1_BIT_EXT_INT_ENABLE		0x01	/* Ext Int Enable */
 #define SCC_WR1_BIT_TX_INT_ENABLE		0x02	/* Tx Int Enable */
 #define SCC_WR1_BIT_PARITY_SPECIAL_COND		0x04	/* Parity is Special Condition */
@@ -242,6 +248,8 @@ struct SCC_Channel {
 	float	Stop_bits;		/* Stop bit can 0 bit (sync), 1 bit, 2 bits or 1.5 bit */
 	uint8_t	TSR;			/* Transfer Shift Register */
 
+	uint32_t IntSources;		/* Interrupt sources : 0=clear 1=set */
+
 	int	charcount;
 	int	rd_handle, wr_handle;
 	uint16_t oldTBE;
@@ -252,7 +260,7 @@ struct SCC_Channel {
 typedef struct {
 	struct SCC_Channel Chn[2];	/* 0 is for channel A, 1 is for channel B */
 
-	uint8_t		IRQ_Line;
+	uint8_t		IRQ_Line;	/* 0=IRQ set   1=IRQ cleared */
 	uint8_t		IUS;		/* Interrupt Under Service (same bits as RR3 bits 0-5) */
 	int		Active_Reg;
 } SCC_STRUCT;
@@ -285,6 +293,23 @@ static int SCC_Standard_Baudrate[] = {
 };
 
 
+/* Possible sources of interrupt for each channel */
+#define	SCC_INT_SOURCE_RX_CHAR_AVAILABLE	(1<<0)
+#define	SCC_INT_SOURCE_RX_OVERRUN		(1<<1)
+#define	SCC_INT_SOURCE_RX_FRAMING_ERROR		(1<<2)
+#define	SCC_INT_SOURCE_RX_EOF_SDLC		(1<<3)
+#define	SCC_INT_SOURCE_RX_PARITY_ERROR		(1<<4)
+#define	SCC_INT_SOURCE_TX_BUFFER_EMPTY		(1<<5)
+#define	SCC_INT_SOURCE_EXT_ZERO_COUNT		(1<<6)
+#define	SCC_INT_SOURCE_EXT_DCD			(1<<7)
+#define	SCC_INT_SOURCE_EXT_SYNC_HUNT		(1<<8)
+#define	SCC_INT_SOURCE_EXT_CTS			(1<<9)
+#define	SCC_INT_SOURCE_EXT_TX_UNDERRUN		(1<<10)
+#define	SCC_INT_SOURCE_EXT_BREAK_ABORT		(1<<11)
+
+#define	SCC_IRQ_ON				0	/* O/low sets IRQ line */
+#define	SCC_IRQ_OFF				1	/* 1/high clears IRQ line */
+
 /*--------------------------------------------------------------*/
 /* Local functions prototypes					*/
 /*--------------------------------------------------------------*/
@@ -310,7 +335,10 @@ static void	SCC_InterruptHandler_TX_RX ( int Channel );
 static void	SCC_InterruptHandler_RX ( int Channel );
 
 static void     SCC_Set_Line_IRQ ( int bit );
-static void	SCC_Update_IRQ ( int Channel );
+static void	SCC_Update_IRQ ( void );
+static void	SCC_IntSources_Change ( int Channel , uint32_t Source , bool Set );
+static void	SCC_IntSources_Set ( int Channel , uint32_t Source );
+static void	SCC_IntSources_Clear ( int Channel , uint32_t Source );
 
 
 bool SCC_IsAvailable(CNF_PARAMS *cnf)
@@ -421,6 +449,7 @@ void SCC_MemorySnapShot_Capture(bool bSave)
 		MemorySnapShot_Store(&SCC.Chn[c].Parity_bits, sizeof(SCC.Chn[c].Parity_bits));
 		MemorySnapShot_Store(&SCC.Chn[c].Stop_bits, sizeof(SCC.Chn[c].Stop_bits));
 		MemorySnapShot_Store(&SCC.Chn[c].TSR, sizeof(SCC.Chn[c].TSR));
+		MemorySnapShot_Store(&SCC.Chn[c].IntSources, sizeof(SCC.Chn[c].IntSources));
 		MemorySnapShot_Store(&SCC.Chn[c].charcount, sizeof(SCC.Chn[c].charcount));
 		MemorySnapShot_Store(&SCC.Chn[c].oldTBE, sizeof(SCC.Chn[c].oldTBE));
 		MemorySnapShot_Store(&SCC.Chn[c].oldStatus, sizeof(SCC.Chn[c].oldStatus));
@@ -496,7 +525,9 @@ static void SCC_ResetFull ( bool HW_Reset )
 		SCC.Chn[0].WR[9] = wr9_old & 0x1c;
 	}
 
-	SCC_Set_Line_IRQ ( 1 );			/* IRQ line goes high */
+	SCC.Chn[0].IntSources = 0;
+	SCC.Chn[1].IntSources = 0;
+	SCC_Set_Line_IRQ ( SCC_IRQ_OFF );	/* IRQ line goes high */
 }
 
 
@@ -744,6 +775,15 @@ static uint16_t SCC_serial_getStatus(int chn)
 		 * avoid that the program blocks while polling this bit */
 		value |= SCC_RR0_BIT_TX_BUFFER_EMPTY;
 	}
+
+	if ( value & SCC_RR0_BIT_TX_BUFFER_EMPTY )
+		SCC_IntSources_Set ( chn , SCC_INT_SOURCE_TX_BUFFER_EMPTY );
+	else
+		SCC_IntSources_Clear ( chn , SCC_INT_SOURCE_TX_BUFFER_EMPTY );
+	if ( value & SCC_RR0_BIT_CTS )
+		SCC_IntSources_Set ( chn , SCC_INT_SOURCE_EXT_CTS );
+	else
+		SCC_IntSources_Clear ( chn , SCC_INT_SOURCE_EXT_CTS );
 
 	diff = SCC.Chn[chn].oldStatus ^ value;
 	if (diff & (1 << CTS))
@@ -1065,6 +1105,100 @@ fprintf(stderr , "update br serial_on %d->%d\n" , BaudRate , BaudRate_Standard )
 }
 
 
+/*
+ * Update the content of RR3A depending on the 3 interrupts sources (RX, TX, Ext)
+ * and their corresponding IE bit
+ */
+static void	SCC_Update_RR3_Bit ( bool Set , uint8_t Bit )
+{
+	if ( Set )
+		SCC.Chn[0].RR[3] |= Bit;
+	else
+		SCC.Chn[0].RR[3] &= ~Bit;
+}
+
+
+static void	SCC_Update_RR3_RX ( int Channel )
+{
+	uint8_t		Set;
+	uint8_t		RX_Mode;
+	bool		Int_On_RX;
+	bool		Int_On_Special;
+
+	/* Check the possible conditions for RX int */
+	RX_Mode = ( SCC.Chn[ Channel ].WR[1] >> 3 ) & 0x03;
+	Int_On_RX = false;
+	Int_On_Special = false;
+	if ( RX_Mode != SCC_WR1_RX_MODE_INT_OFF )
+		Int_On_Special = true;
+	if (   ( RX_Mode == SCC_WR1_RX_MODE_INT_FIRST_CHAR_SPECIAL )
+	    || ( RX_Mode == SCC_WR1_RX_MODE_INT_ALL_CHAR_SPECIAL ) )
+		Int_On_RX = true;
+
+	if ( ( Int_On_RX && ( SCC.Chn[ Channel ].RR[0] & SCC_RR0_BIT_RX_CHAR_AVAILABLE ) )
+	  || ( Int_On_Special && (
+			   ( SCC.Chn[ Channel ].RR[1] & SCC_RR1_BIT_RX_OVERRUN_ERROR )
+			|| ( SCC.Chn[ Channel ].RR[1] & SCC_RR1_BIT_CRC_FRAMING_ERROR )
+			|| ( SCC.Chn[ Channel ].RR[1] & SCC_RR1_BIT_EOF_SDLC )
+			|| (   ( SCC.Chn[ Channel ].RR[1] & SCC_RR1_BIT_PARITY_ERROR )
+			    && ( SCC.Chn[ Channel ].WR[1] & SCC_WR1_BIT_PARITY_SPECIAL_COND ) )
+			) ) )
+	  Set = 1;
+	else
+	  Set = 0;
+
+	if ( Channel )
+		SCC_Update_RR3_Bit ( Set , SCC_RR3_BIT_RX_IP_B );
+	else
+		SCC_Update_RR3_Bit ( Set , SCC_RR3_BIT_RX_IP_A );
+}
+
+
+static void	SCC_Update_RR3_TX ( int Channel )
+{
+	uint8_t		Set;
+
+	if ( ( SCC.Chn[ Channel ].RR[0] & SCC_RR0_BIT_TX_BUFFER_EMPTY )
+	  && ( SCC.Chn[ Channel ].WR[1] & SCC_WR1_BIT_TX_INT_ENABLE ) )
+	  Set = 1;
+	else
+	  Set = 0;
+
+	if ( Channel )
+		SCC_Update_RR3_Bit ( Set , SCC_RR3_BIT_TX_IP_B );
+	else
+		SCC_Update_RR3_Bit ( Set , SCC_RR3_BIT_TX_IP_A );
+}
+
+
+static void	SCC_Update_RR3_EXT ( int Channel )
+{
+	uint8_t		Set;
+
+	if ( ( SCC.Chn[Channel].WR[1] & SCC_WR1_BIT_EXT_INT_ENABLE )
+	  && (   (   ( SCC.Chn[ Channel ].RR[0] & SCC_RR0_BIT_ZERO_COUNT )
+		  && ( SCC.Chn[Channel].WR[15] & SCC_WR15_BIT_ZERO_COUNT_INT_ENABLE ) )
+	      || (   ( SCC.Chn[ Channel ].RR[0] & SCC_RR0_BIT_DCD )
+		  && ( SCC.Chn[Channel].WR[15] & SCC_WR15_BIT_DCD_INT_ENABLE ) )
+	      || (   ( SCC.Chn[ Channel ].RR[0] & SCC_RR0_BIT_SYNC_HUNT )
+		  && ( SCC.Chn[Channel].WR[15] & SCC_WR15_BIT_SYNC_HUNT_INT_ENABLE ) )
+	      || (   ( SCC.Chn[ Channel ].RR[0] & SCC_RR0_BIT_CTS )
+		  && ( SCC.Chn[Channel].WR[15] & SCC_WR15_BIT_CTS_INT_ENABLE ) )
+	      || (   ( SCC.Chn[ Channel ].RR[0] & SCC_RR0_BIT_TX_UNDERRUN_EOM )
+		  && ( SCC.Chn[Channel].WR[15] & SCC_WR15_BIT_TX_UNDERRUN_EOM_INT_ENABLE ) )
+	      || (   ( SCC.Chn[ Channel ].RR[0] & SCC_RR0_BIT_BREAK_ABORT )
+		  && ( SCC.Chn[Channel].WR[15] & SCC_WR15_BIT_BREAK_ABORT_INT_ENABLE ) )
+	    ) )
+	  Set = 1;
+	else
+	  Set = 0;
+
+	if ( Channel )
+		SCC_Update_RR3_Bit ( Set , SCC_RR3_BIT_EXT_STATUS_IP_B );
+	else
+		SCC_Update_RR3_Bit ( Set , SCC_RR3_BIT_EXT_STATUS_IP_A );
+}
+
 
 /*
  * Return Status Informations bits, as included in RR2B / Vector register
@@ -1132,7 +1266,7 @@ static uint8_t SCC_ReadDataReg(int chn)
 	/* So we clear SCC_RR0_BIT_RX_CHAR_AVAILABLE immediately after reading, but it should be cleared */
 	/* when the 3 bytes FIFO is completely empty */
 	SCC.Chn[chn].RR[0] &= ~SCC_RR0_BIT_RX_CHAR_AVAILABLE;
-	// TODO : update irq
+	SCC_IntSources_Clear ( chn , SCC_INT_SOURCE_RX_CHAR_AVAILABLE );
 
 	return SCC.Chn[chn].RR[8];
 }
@@ -1152,7 +1286,7 @@ static uint8_t SCC_ReadControl(int chn)
 	 case 0:	// RR0
 	 case 4:	// also returns RR0
 		/* Reading RR0 returns the current status for each bit, except if one of these bits */
-		/* generated an interrupt, in which case RR0 and all its bit will be latched and not updated until latch is reset */
+		/* generated an interrupt, in which case RR0 and all its bits will be latched and not updated until latch is reset */
 		temp = SCC_serial_getStatus(chn);		/* Lower byte contains value of bits 0, 2 and 5 */
 		SCC.Chn[chn].RR[0] &= ~( SCC_RR0_BIT_RX_CHAR_AVAILABLE | SCC_RR0_BIT_TX_BUFFER_EMPTY | SCC_RR0_BIT_CTS );
 		SCC.Chn[chn].RR[0] |= ( temp & 0xff );		/* Set value for bits 0, 2 and 5 */
@@ -1282,11 +1416,7 @@ static void SCC_WriteDataReg(int chn, uint8_t value)
 	SCC.Chn[chn].RR[0] &= ~SCC_RR0_BIT_TX_BUFFER_EMPTY;
 	SCC.Chn[chn].TxBuf_Write_Time = Cycles_GetClockCounterOnWriteAccess();
 
-	if ( chn )
-		SCC.Chn[0].RR[3] &= ~SCC_RR3_BIT_TX_IP_B;
-	else
-		SCC.Chn[0].RR[3] &= ~SCC_RR3_BIT_TX_IP_A;
-	// TODO : update irq
+	SCC_IntSources_Clear ( chn , SCC_INT_SOURCE_TX_BUFFER_EMPTY );
 
 	/* According to the SCC doc, transmit buffer will be copied to the */
 	/* transmit shift register TSR after the last bit is shifted out, in ~3 PCLKs */
@@ -1353,6 +1483,7 @@ static void SCC_WriteControl(int chn, uint8_t value)
 			{
 				/* Reset error bits in RR1 */
 				SCC.Chn[chn].RR[1] &= ~( SCC_RR1_BIT_PARITY_ERROR | SCC_RR1_BIT_RX_OVERRUN_ERROR | SCC_RR1_BIT_CRC_FRAMING_ERROR );
+				SCC_IntSources_Clear ( chn , SCC_INT_SOURCE_RX_PARITY_ERROR | SCC_INT_SOURCE_RX_OVERRUN | SCC_INT_SOURCE_RX_FRAMING_ERROR );
 			}
 
 			else if ( command == SCC_WR0_COMMAND_RESET_HIGHEST_IUS )
@@ -1507,7 +1638,7 @@ static void SCC_WriteControl(int chn, uint8_t value)
 		{
 			/* Clearing MIE reset IUS and IRQ */
 			SCC.IUS = 0;
-			SCC_Set_Line_IRQ ( 1 );			/* IRQ line goes high */
+			SCC_Set_Line_IRQ ( SCC_IRQ_OFF );	/* IRQ line goes high */
 		}
 		/* Bit 4 : Status High / Low */
 		/* Bit 5 : Software INTACK Enable */
@@ -1557,7 +1688,7 @@ static void SCC_WriteControl(int chn, uint8_t value)
 		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set ext status int control value=$%02x\n" , 'A'+chn , SCC.Active_Reg , value );
 
 		/* Bit 0 : Point to Write Registe WR7 Prime */
-		/* Bit 1 : Zero Count Interrupt Enable */
+		/* Bit 1 : Zero Count Interrupt Enable ; if 0 then zero count bit must be cleared in RR0 */
 		if ( ( value & SCC_WR15_BIT_ZERO_COUNT_INT_ENABLE ) == 0 )
 			SCC.Chn[chn].RR[0] &= ~SCC_RR0_BIT_ZERO_COUNT;		/* Clear Zero Count bit */
 		/* Bit 2 : Status FIFO Enable */
@@ -1607,7 +1738,7 @@ static void	SCC_Copy_TDR_TSR ( int Channel , uint8_t TDR , bool Set_TBE )
 	if ( Set_TBE )
 	{
 		SCC.Chn[Channel].RR[0] |= SCC_RR0_BIT_TX_BUFFER_EMPTY;
-		// TODO : update irq
+		SCC_IntSources_Set ( Channel , SCC_INT_SOURCE_TX_BUFFER_EMPTY );
 	}
 }
 
@@ -1667,10 +1798,13 @@ static void	SCC_Process_RX ( int Channel )
 				/* so any new char received when latest char was not read will set */
 				/* the overrun bit (this can be improved later if needed) */
 				SCC.Chn[Channel].RR[1] |= SCC_RR1_BIT_RX_OVERRUN_ERROR;
+				SCC_IntSources_Set ( Channel , SCC_INT_SOURCE_RX_OVERRUN );
 			}
 			else
+			{
 				SCC.Chn[Channel].RR[0] |= SCC_RR0_BIT_RX_CHAR_AVAILABLE;
-			// TODO update irq
+				SCC_IntSources_Set ( Channel , SCC_INT_SOURCE_RX_CHAR_AVAILABLE );
+			}
 		}
 	}
 }
@@ -1742,18 +1876,7 @@ static void	SCC_InterruptHandler_BRG ( int Channel )
 	/* as this would require to emulate BRG on every count, which would slow down emulation too much */
 	/* So, we don't set ZERO_COUNT for the moment */
 //	SCC.Chn[Channel].RR[0] |= SCC_RR0_BIT_ZERO_COUNT;
-
-	if ( ( SCC.Chn[Channel].WR[1] & SCC_WR1_BIT_EXT_INT_ENABLE )
-		&& ( SCC.Chn[Channel].WR[15] & SCC_WR15_BIT_ZERO_COUNT_INT_ENABLE ) )
-	{
-		/* IP bits are only set in RR3A */
-		if ( Channel == 0 )
-			SCC.Chn[0].RR[3] |= SCC_RR3_BIT_EXT_STATUS_IP_A;
-		else
-			SCC.Chn[0].RR[3] |= SCC_RR3_BIT_EXT_STATUS_IP_B;
-
-		SCC_Update_IRQ ( Channel );
-	}
+//	SCC_IntSources_Set ( Channel , SCC_INT_SOURCE_EXT_ZERO_COUNT );
 }
 
 
@@ -1940,8 +2063,101 @@ int	SCC_Get_Line_IRQ ( void )
 
 
 
-static void	SCC_Update_IRQ ( int Channel )
+/*
+ * Check if Master Interrupt is enabled and if any IP bits are set in RR3A
+ * Update main IRQ line accordingly
+ */
+static void	SCC_Update_IRQ ( void )
 {
+	int		IRQ_new;
+
+	if ( SCC.Chn[0].WR[9] & SCC_WR9_BIT_MIE )	/* Master Interrupt enabled */
+	{
+		if ( SCC.Chn[0].RR[3] )			/* At least one IP is set */
+			IRQ_new = SCC_IRQ_ON;
+		else					/* No IP set at all */
+			IRQ_new = SCC_IRQ_OFF;
+	}
+	else
+		IRQ_new = SCC_IRQ_OFF;
+
+	/* Update IRQ line if needed */
+	if ( IRQ_new != SCC.IRQ_Line )
+		SCC_Set_Line_IRQ ( IRQ_new );
+}
+
+
+/*
+ * Set/Clear some interrupt sources for channel A or B
+ * Update RR3A and set IRQ Low/High depending on the result
+ */
+
+static void	SCC_IntSources_Change ( int Channel , uint32_t Sources , bool Set )
+{
+	if ( Set )
+	{
+		/* Don't do anything if all bits from Sources are already set */
+		if ( ( SCC.Chn[ Channel ].IntSources & Sources ) == Sources )
+			return;			/* No change */
+	}
+	else
+	{
+		/* Don't do anything if all bits from Sources are already cleared */
+		if ( ( SCC.Chn[ Channel ].IntSources & Sources ) == 0 )
+			return;			/* No change */
+	}
+
+	/* Update RR3A */
+	if ( Sources & ( SCC_INT_SOURCE_RX_CHAR_AVAILABLE
+			| SCC_INT_SOURCE_RX_OVERRUN
+			| SCC_INT_SOURCE_RX_FRAMING_ERROR
+			| SCC_INT_SOURCE_RX_EOF_SDLC
+			| SCC_INT_SOURCE_RX_PARITY_ERROR ) )
+	{
+		SCC_Update_RR3_RX ( Channel );
+	}
+
+	if ( Sources & SCC_INT_SOURCE_TX_BUFFER_EMPTY )
+	{
+		SCC_Update_RR3_TX ( Channel );
+	}
+
+	if ( Sources & ( SCC_INT_SOURCE_EXT_ZERO_COUNT
+			| SCC_INT_SOURCE_EXT_DCD
+			| SCC_INT_SOURCE_EXT_SYNC_HUNT
+			| SCC_INT_SOURCE_EXT_CTS
+			| SCC_INT_SOURCE_EXT_TX_UNDERRUN
+			| SCC_INT_SOURCE_EXT_BREAK_ABORT ) )
+	{
+		SCC_Update_RR3_EXT ( Channel );
+	}
+
+
+	if ( Set )
+		SCC.Chn[ Channel ].IntSources |= Sources;
+	else
+		SCC.Chn[ Channel ].IntSources &= ~Sources;
+
+
+	/* Set IRQ Low/high depending on RR3A */
+	SCC_Update_IRQ ();
+}
+
+
+/*
+ * Shortcut function to set an interrupt source
+ */
+static void	SCC_IntSources_Set ( int Channel , uint32_t Sources )
+{
+	SCC_IntSources_Change ( Channel , Sources , true );
+}
+
+/*
+ * Shortcut function to clear an interrupt source
+ */
+static void	SCC_IntSources_Clear ( int Channel , uint32_t Sources )
+{
+	SCC_IntSources_Change ( Channel , Sources , false );
 }
 
 
