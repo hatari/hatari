@@ -25,6 +25,7 @@ src/cpu/gencpu
 tests/debugger/test-breakcond
 tests/debugger/test-evaluate
 tests/debugger/test-symbols
+tests/unit/test-file
 
 tools/hmsa/hmsa
 tools/debugger/gst2ascii
