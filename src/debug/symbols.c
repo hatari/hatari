@@ -67,7 +67,7 @@ static symbol_list_t* symbols_load_ascii(FILE *fp, uint32_t *offsets, uint32_t m
 	symbol_list_t *list;
 	char symchar, name[MAX_SYM_SIZE+1];
 	char *buf, buffer[MAX_SYM_SIZE+64];
-	int count, line, symbols, weak, unknown, invalid;
+	int count, line, symbols, unknown, invalid;
 	uint32_t address, offset;
 	symtype_t symtype;
 
@@ -104,7 +104,7 @@ static symbol_list_t* symbols_load_ascii(FILE *fp, uint32_t *offsets, uint32_t m
 	}
 
 	/* read symbols */
-	invalid = unknown = weak = count = 0;
+	invalid = unknown = count = 0;
 	for (line = 1; fgets(buffer, sizeof(buffer), fp); line++) {
 		/* skip comments (AHCC SYM file comments start with '*') */
 		if (*buffer == '#' || *buffer == '*') {
@@ -127,8 +127,13 @@ static symbol_list_t* symbols_load_ascii(FILE *fp, uint32_t *offsets, uint32_t m
 			symtype = SYMTYPE_TEXT;
 			offset = offsets[0];
 			break;
+		case 'W':	/* ELF 'nm' code symbol type, weak */
+			symtype = SYMTYPE_WEAK;
+			offset = offsets[0];
+			break;
 		case 'O':	/* AHCC type for _StkSize etc */
-		case 'R':	/* ELF 'nm' symbol type, read only */
+		case 'V':	/* ELF 'nm' data symbol type, weak */
+		case 'R':	/* ELF 'nm' data symbol type, read only */
 		case 'D':
 			symtype = SYMTYPE_DATA;
 			offset = offsets[1];
@@ -141,10 +146,6 @@ static symbol_list_t* symbols_load_ascii(FILE *fp, uint32_t *offsets, uint32_t m
 			symtype = SYMTYPE_ABS;
 			offset = 0;
 			break;
-		case 'W':	/* ELF 'nm' symbol type, weak */
-		case 'V':
-			weak++;
-			continue;
 		default:
 			fprintf(stderr, "WARNING: unrecognized symbol type '%c' on line %d, skipping.\n", symchar, line);
 			unknown++;
@@ -170,10 +171,6 @@ static symbol_list_t* symbols_load_ascii(FILE *fp, uint32_t *offsets, uint32_t m
 	}
 	if (unknown) {
 		fprintf(stderr, "NOTE: ignored %d symbols with unknown types.\n", unknown);
-	}
-	if (weak) {
-		/* TODO: accept & mark them as weak and silently override them on address conflicts? */
-		fprintf(stderr, "NOTE: ignored %d weak symbols.\n", weak);
 	}
 	list->symbols = symbols;
 	list->namecount = count;
@@ -214,15 +211,23 @@ static void symbols_trim_names(symbol_list_t* list)
 }
 
 /**
- * Separate TEXT symbols from other symbols in address list.
+ * Separate code symbols from other symbols in address list.
  */
 static void symbols_trim_addresses(symbol_list_t* list)
 {
 	symbol_t *sym = list->addresses;
+	uint32_t prev = 0;
 	int i;
 
 	for (i = 0; i < list->namecount; i++) {
-		if (sym[i].type != SYMTYPE_TEXT) {
+		if (sym[i].address < prev) {
+			fprintf(stderr, "INTERNAL ERROR: symbol '%s' at 0x%x not sorted in address-order\n",
+				sym[i].name, sym[i].address);
+			exit(1);
+		}
+		prev = sym[i].address;
+
+		if (sym[i].type & ~SYMTYPE_CODE) {
 			break;
 		}
 	}
@@ -337,16 +342,16 @@ static symbol_list_t* Symbols_Load(const char *filename, uint32_t *offsets, uint
 		if (symbols_check_names(list->names, list->namecount)) {
 			fprintf(stderr, "-> Hatari symbol expansion can match only one of the addresses for name duplicates!\n");
 		}
-		/* check for duplicate TEXT & other addresses */
+		/* check for duplicate code & other addresses */
 		if (symbols_check_addresses(list->addresses, list->codecount)) {
-			fprintf(stderr, "-> Hatari profile/disassembly will show only one of the TEXT symbols for given address!\n");
+			fprintf(stderr, "-> Hatari profile/disassembly will show only one of the code symbols for given address!\n");
 		}
 		if (symbols_check_addresses(list->addresses + list->codecount, list->datacount)) {
 			fprintf(stderr, "-> Hatari disassembly will show only one of the symbols for given address!\n");
 		}
 	}
 
-	fprintf(stderr, "Loaded %d symbols (%d TEXT) from '%s'.\n",
+	fprintf(stderr, "Loaded %d symbols (%d for code) from '%s'.\n",
 		list->namecount, list->codecount, filename);
 	return list;
 }
@@ -410,7 +415,7 @@ char* Symbols_MatchCpuCodeAddress(const char *text, int state)
 	if (ConfigureParams.Debugger.bMatchAllSymbols) {
 		return Symbols_MatchByName(CpuSymbolsList, SYMTYPE_ALL, text, state);
 	} else {
-		return Symbols_MatchByName(CpuSymbolsList, SYMTYPE_TEXT, text, state);
+		return Symbols_MatchByName(CpuSymbolsList, SYMTYPE_CODE, text, state);
 	}
 }
 char* Symbols_MatchCpuDataAddress(const char *text, int state)
@@ -433,7 +438,7 @@ char* Symbols_MatchDspAddress(const char *text, int state)
 }
 char* Symbols_MatchDspCodeAddress(const char *text, int state)
 {
-	return Symbols_MatchByName(DspSymbolsList, SYMTYPE_TEXT, text, state);
+	return Symbols_MatchByName(DspSymbolsList, SYMTYPE_CODE, text, state);
 }
 char* Symbols_MatchDspDataAddress(const char *text, int state)
 {
@@ -500,7 +505,7 @@ bool Symbols_GetDspAddress(symtype_t symtype, const char *name, uint32_t *addr)
 /* ---------------- symbol address -> name search ------------------ */
 
 /**
- * Binary search TEXT symbol by address in given sorted list.
+ * Binary search code symbol by address in given sorted list.
  * Return index for symbol which address matches or precedes
  * the given one.
  */
@@ -583,7 +588,7 @@ static int Symbols_SearchByAddress(symbol_t* entries, int count, uint32_t addr)
 /**
  * Search symbol in given list by type & address.
  * Return symbol name if there's a match, NULL otherwise.
- * TEXT symbols will be matched before other symbol types.
+ * Code symbols will be matched before other symbol types.
  * Returned name is valid only until next Symbols_* function call.
  */
 static const char* Symbols_GetByAddress(symbol_list_t* list, uint32_t addr, symtype_t type)
@@ -591,13 +596,13 @@ static const char* Symbols_GetByAddress(symbol_list_t* list, uint32_t addr, symt
 	if (!(list && list->addresses)) {
 		return NULL;
 	}
-	if (type & SYMTYPE_TEXT) {
+	if (type & SYMTYPE_CODE) {
 		int i = Symbols_SearchByAddress(list->addresses, list->codecount, addr);
 		if (i >= 0) {
 			return list->addresses[i].name;
 		}
 	}
-	if (type & ~SYMTYPE_TEXT) {
+	if (type & ~SYMTYPE_CODE) {
 		int i = Symbols_SearchByAddress(list->addresses + list->codecount, list->datacount, addr);
 		if (i >= 0) {
 			return list->addresses[list->codecount + i].name;
@@ -615,7 +620,7 @@ const char* Symbols_GetByDspAddress(uint32_t addr, symtype_t type)
 }
 
 /**
- * Search given list for TEXT symbol by address.
+ * Search given list for code symbol by address.
  * Return symbol index if address matches, -1 otherwise.
  */
 static int Symbols_GetCodeIndex(symbol_list_t* list, uint32_t addr)
@@ -669,7 +674,7 @@ static void Symbols_Show(symbol_list_t* list, const char *sortcmd, const char *f
 		sorttype = "address";
 		entries = list->addresses;
 		count = list->codecount;
-		symtype = " TEXT";
+		symtype = " TEXT/WEAK";
 	} else if (strcmp("data", sortcmd) == 0) {
 		sorttype = "address";
 		entries = list->addresses + list->codecount;
@@ -795,12 +800,14 @@ void Symbols_LoadCurrentProgram(void)
 			offsets[2] = offsets[1] = 0;
 			offsets[0] = DebugInfo_GetTEXT();
 			const uint32_t maxaddr = DebugInfo_GetTEXTEnd();
-			symbols = Symbols_Load(symfile, offsets, maxaddr, SYMTYPE_TEXT);
+			symbols = Symbols_Load(symfile, offsets, maxaddr,
+					       SYMTYPE_CODE);
 		}
 	}
 	free(symfile);
 	if (!symbols) {
-		symbols = Symbols_Load(CurrentProgramPath, NULL, 0, SYMTYPE_TEXT);
+		symbols = Symbols_Load(CurrentProgramPath, NULL, 0,
+				       SYMTYPE_CODE);
 	}
 	if (!symbols) {
 		AutoLoadFailed = true;
@@ -838,8 +845,8 @@ const char Symbols_Description[] =
 	"\n"
 	"\t'name' command lists the currently loaded symbols, sorted by name.\n"
 	"\t'code' and 'data' commands list them sorted by address; 'code' lists\n"
-	"\tonly TEXT symbols, 'data' lists DATA/BSS/ABS symbols. If 'find' is\n"
-	"\tgiven, only symbols with that substring are listed.\n"
+	"\tonly TEXT/WEAK symbols, 'data' lists DATA/BSS/ABS symbols. If 'find'\n"
+	"\tis given, only symbols with that substring are listed.\n"
 	"\n"
 	"\tBy default, symbols are loaded from the currently executing program's\n"
 	"\tbinary when entering the debugger, IF program is started through\n"

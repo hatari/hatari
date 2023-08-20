@@ -1,7 +1,7 @@
 /*
  * Hatari - symbols-common.c
  *
- * Copyright (C) 2010-2022 by Eero Tamminen
+ * Copyright (C) 2010-2023 by Eero Tamminen
  * Copyright (C) 2017,2021 by Thorsten Otto
  *
  * This file is distributed under the GNU General Public License, version 2
@@ -19,9 +19,9 @@
 typedef struct {
 	int symbols;		/* initial symbol count */
 	int namecount;		/* final symbol count */
-	int codecount;		/* TEXT symbol address count */
+	int codecount;		/* TEXT/WEAK symbols address count */
 	int datacount;		/* DATA/BSS symbol address count */
-	symbol_t *addresses;	/* TEXT + DATA/BSS items sorted by address */
+	symbol_t *addresses;	/* all address items sorted by address */
 	symbol_t *names;	/* all items sorted by symbol name */
 	char *strtab;		/* from a.out only */
 	char *debug_strtab;	/* from pure-c debug information only */
@@ -44,9 +44,9 @@ typedef struct {
 	int locals;   /* unnamed / local symbols */
 	int gccint;   /* GCC internal symbols */
 	int files;    /* object file names */
-	int weak;     /* weak (undefined) symbols */
 	int invalid;  /* invalid symbol types for addresses */
-	int unwanted; /* explicitly disabed symbol types */
+	int undefined;/* undefined symbols */
+	int unwanted;  /* explicitly disabed symbol types */
 } ignore_counts_t;
 
 /* Magic used to denote different symbol table formats */
@@ -62,7 +62,7 @@ typedef struct {
 
 /**
  * compare function for qsort() to sort according to
- * symbol type & address.  Text section symbols will
+ * symbol type & address.  Code section symbols will
  * be sorted first.
  */
 static int symbols_by_address(const void *s1, const void *s2)
@@ -70,14 +70,12 @@ static int symbols_by_address(const void *s1, const void *s2)
 	const symbol_t *sym1 = (const symbol_t*)s1;
 	const symbol_t *sym2 = (const symbol_t*)s2;
 
-	/* separate TEXT type addresses from others */
-	if (sym1->type != sym2->type) {
-		if (sym1->type == SYMTYPE_TEXT) {
-			return -1;
-		}
-		if (sym2->type == SYMTYPE_TEXT) {
-			return 1;
-		}
+	/* separate code type addresses from others */
+	if ((sym1->type & SYMTYPE_CODE) && !(sym2->type & SYMTYPE_CODE)) {
+		return -1;
+	}
+	if (!(sym1->type & SYMTYPE_CODE) && (sym2->type & SYMTYPE_CODE)) {
+		return 1;
 	}
 	/* then sort by address */
 	if (sym1->address < sym2->address) {
@@ -110,7 +108,7 @@ static int symbols_by_name(const void *s1, const void *s2)
 
 /**
  * Check for duplicate addresses in symbol list
- * (called separately for TEXT & non-TEXT symbols)
+ * (called separately for code & data symbols)
  * Return number of duplicates
  */
 static int symbols_check_addresses(const symbol_t *syms, int count)
@@ -220,6 +218,7 @@ static char symbol_char(int type)
 {
 	switch (type) {
 	case SYMTYPE_TEXT: return 'T';
+	case SYMTYPE_WEAK: return 'W';
 	case SYMTYPE_DATA: return 'D';
 	case SYMTYPE_BSS:  return 'B';
 	case SYMTYPE_ABS:  return 'A';
@@ -530,11 +529,11 @@ static void show_ignored(const ignore_counts_t *counts)
 		 */
 		fprintf(stderr, "NOTE: ignored %d file symbols ('*.[ao]'|'*/*').\n", counts->files);
 	}
-	if (counts->weak) {
-		fprintf(stderr, "NOTE: ignored %d weak / undefined symbols.\n", counts->weak);
-	}
 	if (counts->invalid) {
 		fprintf(stderr, "NOTE: ignored %d invalid symbols.\n", counts->invalid);
+	}
+	if (counts->undefined) {
+		fprintf(stderr, "NOTE: ignored %d undefined symbols.\n", counts->undefined);
 	}
 	if (counts->unwanted) {
 		fprintf(stderr, "NOTE: ignored %d other unwanted symbol types.\n", counts->unwanted);
@@ -790,33 +789,44 @@ static symbol_list_t* symbols_load_gnu(FILE *fp, const prg_section_t *sections, 
 		{
 		case N_UNDF:
 		case N_UNDF|N_EXT:
+		case N_WEAKU:
 			/* shouldn't happen here */
-			ignore.weak++;
+			ignore.undefined++;
 			continue;
+
 		case N_ABS:
 		case N_ABS|N_EXT:
 			symtype = SYMTYPE_ABS;
 			break;
+
+		case N_FN: /* filename symbol */
 		case N_TEXT:
 		case N_TEXT|N_EXT:
 			symtype = SYMTYPE_TEXT;
 			section = &(sections[0]);
 			break;
+
+		case N_WEAKT:
+			symtype = SYMTYPE_WEAK;
+			section = &(sections[0]);
+			break;
+
 		case N_DATA:
 		case N_DATA|N_EXT:
+		case N_WEAKD:
 			symtype = SYMTYPE_DATA;
 			section = &(sections[1]);
 			break;
+
 		case N_BSS:
 		case N_BSS|N_EXT:
 		case N_COMM:
 		case N_COMM|N_EXT:
+		case N_WEAKB:
 			symtype = SYMTYPE_BSS;
 			section = &(sections[2]);
 			break;
-		case N_FN: /* filename symbol */
-			ignore.files++;
-			continue;
+
 		case N_SIZE:
 		case N_WARNING:
 		case N_SETA:
@@ -825,12 +835,6 @@ static symbol_list_t* symbols_load_gnu(FILE *fp, const prg_section_t *sections, 
 		case N_SETB:
 		case N_SETV:
 			ignore.debug++;
-			continue;
-		case N_WEAKU:
-		case N_WEAKT:
-		case N_WEAKD:
-		case N_WEAKB:
-			ignore.weak++;
 			continue;
 		default:
 			fprintf(stderr, "WARNING: ignoring symbol '%s' in slot %u of unknown type 0x%x.\n", name, (unsigned int)i, n_type);

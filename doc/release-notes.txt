@@ -64,6 +64,7 @@ Emulator improvements:
   - Add address width (addr).[bwl] support to expression evaluation
   - Add optional argument for "symbols <name|code|data>" commands,
     to limit listed symbols to ones with the given substring
+  - Improved support for weak symbols (important for C++ code)
   - "os_base" trace option outputs now also dir create/delete + file delete
     calls (in addition to earlier pexec/pterm & file create/open calls)
   - Separate CPU video cycles under its own "cpu_video_cycles" trace flag
@@ -93,6 +94,7 @@ Tools:
     (unless '--verbose' option is given)
   - Support for symbol files and Hatari profile data that
     contain demangled C++ symbols
+  - Support weak symbols to see C++ template methods in profiles
   - Overtly long C++ symbol names are shortened in callgraphs
     (unless '--full-symbols' option is given)
   - Symbols given for "--only", "--ignore" and "--ignore-from"

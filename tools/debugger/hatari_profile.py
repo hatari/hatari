@@ -532,7 +532,7 @@ class ProfileSymbols(Output):
             match = self.r_symbol.match(line)
             if match:
                 dummy, addr, kind, name = match.groups()
-                if kind in ('t', 'T'):
+                if kind in ('t', 'T', 'W'):
                     addr = int(addr, 16)
                     if self._check_symbol(addr, name, symbols, aliases):
                         symbols[addr] = name

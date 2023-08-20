@@ -144,7 +144,7 @@ static uint32_t PConSymbol(void)
 {
 	const char *sym;
 	uint32_t pc = M68000_GetPC();
-	sym = Symbols_GetByCpuAddress(pc, SYMTYPE_TEXT);
+	sym = Symbols_GetByCpuAddress(pc, SYMTYPE_CODE);
 	if (sym) {
 		return 1;
 	}

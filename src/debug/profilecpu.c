@@ -488,7 +488,7 @@ uint32_t Profile_CpuShowAddresses(uint32_t lower, uint32_t upper, FILE *out, pag
 			fprintf(out, "[...]\n");
 			shown++;
 		}
-		symbol = Symbols_GetByCpuAddress(addr, SYMTYPE_TEXT);
+		symbol = Symbols_GetByCpuAddress(addr, SYMTYPE_CODE);
 		if (symbol) {
 			fprintf(out, "%s:\n", symbol);
 			shown++;
@@ -765,7 +765,7 @@ void Profile_CpuShowCounts(int show, bool only_symbols)
 	for (end = sort_arr + active; sort_arr < end; sort_arr++) {
 
 		addr = index2address(*sort_arr);
-		name = Symbols_GetByCpuAddress(addr, SYMTYPE_TEXT);
+		name = Symbols_GetByCpuAddress(addr, SYMTYPE_CODE);
 		if (!name) {
 			continue;
 		}
@@ -791,7 +791,7 @@ static const char * addr2name(uint32_t addr, uint64_t *total)
 {
 	uint32_t idx = address2index(addr);
 	*total = cpu_profile.data[idx].count;
-	return Symbols_GetByCpuAddress(addr, SYMTYPE_TEXT);
+	return Symbols_GetByCpuAddress(addr, SYMTYPE_CODE);
 }
 
 /**

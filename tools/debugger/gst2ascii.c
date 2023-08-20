@@ -1,7 +1,7 @@
 /*
  * Hatari - gst2ascii.c
  * 
- * Copyright (C) 2013-2021 by Eero Tamminen
+ * Copyright (C) 2013-2023 by Eero Tamminen
  * 
  * This file is distributed under the GNU General Public License, version 2
  * or at your option any later version. Read the file gpl.txt for details.
@@ -54,6 +54,7 @@ static void usage(const char *msg)
 		{ 'b', "no BSS symbols" },
 		{ 'd', "no DATA symbols" },
 		{ 't', "no TEXT symbols" },
+		{ 'w', "no weak symbols" },
 		{ 'l', "no local (.L*) symbols" },
 		{ 'o', "no object symbols (filenames or GCC internals)" },
 		{ 'n', "sort by name (not address)" },
@@ -224,6 +225,9 @@ int main(int argc, const char *argv[])
 			break;
 		case 't':
 			opts.notypes |= SYMTYPE_TEXT;
+			break;
+		case 'w':
+			opts.notypes |= SYMTYPE_WEAK;
 			break;
 		case 'l':
 			opts.no_local = true;

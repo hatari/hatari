@@ -9,11 +9,14 @@
 #define HATARI_SYMBOLS_H
 
 typedef enum {
-	SYMTYPE_TEXT = 1,  /* Needs to be smallest number for sorting! */
-	SYMTYPE_DATA = 2,
-	SYMTYPE_BSS  = 4,
-	SYMTYPE_ABS  = 8,
-	SYMTYPE_ALL  = SYMTYPE_TEXT|SYMTYPE_DATA|SYMTYPE_BSS|SYMTYPE_ABS
+	SYMTYPE_TEXT = 1,
+	SYMTYPE_WEAK = 2,
+	SYMTYPE_CODE = (SYMTYPE_TEXT|SYMTYPE_WEAK),
+	/* other types get sorted after code types */
+	SYMTYPE_DATA = 4,
+	SYMTYPE_BSS  = 8,
+	SYMTYPE_ABS  = 16,
+	SYMTYPE_ALL  = 32-1
 } symtype_t;
 
 typedef struct {

@@ -476,7 +476,7 @@ void Profile_FinalizeCalls(uint32_t pc, callinfo_t *callinfo, counters_t *totalc
 			}
 		} else {
 			sym_addr = callinfo->stack[callinfo->depth].callee_addr;
-			sym = get_symbol(sym_addr, SYMTYPE_TEXT);
+			sym = get_symbol(sym_addr, SYMTYPE_CODE);
 
 			if (sym) {
 				offset = caller_addr - sym_addr;
@@ -538,7 +538,7 @@ static void Profile_ShowStack(bool forDsp)
 		sym_addr = callinfo->stack[depth].callee_addr;
 		offset = caller_addr - sym_addr;
 
-		sym = get_symbol(sym_addr, SYMTYPE_TEXT);
+		sym = get_symbol(sym_addr, SYMTYPE_CODE);
 		if (sym) {
 			char sign = offset >= 0 ? '+' : '-';
 			fprintf(stderr, "- %d. 0x%06x: %s %c0x%x",

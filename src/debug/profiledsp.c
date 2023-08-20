@@ -159,7 +159,7 @@ uint16_t Profile_DspShowAddresses(uint32_t addr, uint32_t upper, FILE *out, pagi
 			fputs("[...]\n", out);
 			shown++;
 		}
-		symbol = Symbols_GetByDspAddress(addr, SYMTYPE_TEXT);
+		symbol = Symbols_GetByDspAddress(addr, SYMTYPE_CODE);
 		if (symbol) {
 			fprintf(out, "%s:\n", symbol);
 			shown++;
@@ -296,7 +296,7 @@ void Profile_DspShowCounts(int show, bool only_symbols)
 	for (end = sort_arr + active; sort_arr < end; sort_arr++) {
 
 		addr = *sort_arr;
-		name = Symbols_GetByDspAddress(addr, SYMTYPE_TEXT);
+		name = Symbols_GetByDspAddress(addr, SYMTYPE_CODE);
 		if (!name) {
 			continue;
 		}
@@ -318,7 +318,7 @@ void Profile_DspShowCounts(int show, bool only_symbols)
 static const char * addr2name(uint32_t addr, uint64_t *total)
 {
 	*total = dsp_profile.data[addr].count;
-	return Symbols_GetByDspAddress(addr, SYMTYPE_TEXT);
+	return Symbols_GetByDspAddress(addr, SYMTYPE_CODE);
 }
 
 /**
