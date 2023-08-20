@@ -188,7 +188,7 @@
 #define SCC_WR9_COMMAND_RESET_FORCE_HW		0x03	/* Force Hardware Reset */
 
 
-#define SCC_WR15_BIT_WR7_PRIME			0x01	/* Point to Write Registe WR7 Prime */
+#define SCC_WR15_BIT_WR7_PRIME			0x01	/* Point to Write Register WR7 Prime */
 #define SCC_WR15_BIT_ZERO_COUNT_INT_ENABLE	0x02	/* Zero Count Interrupt Enable */
 #define SCC_WR15_BIT_STATUS_FIFO_ENABLE		0x04	/* Status FIFO Enable */
 #define SCC_WR15_BIT_DCD_INT_ENABLE		0x08	/* DCD Int Enable */
@@ -317,6 +317,13 @@ static int SCC_Standard_Baudrate[] = {
 static void	SCC_ResetChannel ( int Channel , bool HW_Reset );
 static void	SCC_ResetFull ( bool HW_Reset );
 
+static uint8_t	SCC_Get_Vector_Status ( int StatusHighLow );
+static void	SCC_Update_RR2 ( void );
+
+static void	SCC_Update_RR3_Bit ( bool Set , uint8_t Bit );
+static void	SCC_Update_RR3_RX ( int Channel );
+static void	SCC_Update_RR3_TX ( int Channel );
+static void	SCC_Update_RR3_EXT ( int Channel );
 
 static void	SCC_Copy_TDR_TSR ( int Channel , uint8_t TDR , bool Set_TBE );
 
@@ -339,6 +346,9 @@ static void	SCC_Update_IRQ ( void );
 static void	SCC_IntSources_Change ( int Channel , uint32_t Source , bool Set );
 static void	SCC_IntSources_Set ( int Channel , uint32_t Source );
 static void	SCC_IntSources_Clear ( int Channel , uint32_t Source );
+
+static int	SCC_Do_IACK ( bool Soft );
+static void	SCC_Soft_IACK ( void );
 
 
 bool SCC_IsAvailable(CNF_PARAMS *cnf)
@@ -906,7 +916,7 @@ static int SCC_Get_TRxC_Freq ( int chn )
  * Return the generated baud rate depending on the value of WR4, WR11, WR12, WR13 and WR14
  *
  * The baud rate can use RtxC or TRxC clocks (which depend on the machine type) with
- * an additionnal clock multipier.
+ * an additional clock multipier.
  * Or the baud rate can use the baud rate generator and its time constant.
  *
  * The SCC doc gives the formula to compute time constant from a baud rate in the BRG :
@@ -1084,6 +1094,96 @@ fprintf(stderr , "update br serial_on %d->%d\n" , BaudRate , BaudRate_Standard )
 
 
 /*
+ * Return Status Information bits, as included in RR2B / Vector register
+ * This status contains 3 bits to indicate the current highest IP
+ *  - This status is always included in the vector when reading RR2B
+ *  - During an INTACK this status will only be included in the vector if VIS bit is set in WR9
+ * If no interrupt are pending, return "Ch B Special Receive Condition"
+ *
+ * Note that depending on Status High/Low bit in WR9 these 3 bits will be in a different order
+ */
+
+static uint8_t	SCC_Get_Vector_Status ( int StatusHighLow )
+{
+	uint8_t status;
+	uint8_t special_cond_mask;
+
+
+	/* Check pending interrupts from highest to lowest ; if no IP, return Ch B Special Receive Condition */
+	if ( SCC.Chn[0].RR[3] & SCC_RR3_BIT_RX_IP_A )
+	{
+		special_cond_mask = SCC_RR1_BIT_RX_OVERRUN_ERROR | SCC_RR1_BIT_CRC_FRAMING_ERROR | SCC_RR1_BIT_EOF_SDLC;
+		if ( SCC.Chn[0].WR[1] & SCC_WR1_BIT_PARITY_SPECIAL_COND )
+			special_cond_mask |= SCC_RR1_BIT_PARITY_ERROR;
+		if ( SCC.Chn[0].RR[0] & special_cond_mask )
+			status = 7;			/* Ch. A Special Receive Condition */
+		else
+			status = 6;			/* Ch. A Receive Char Available */
+	}
+	else if ( SCC.Chn[0].RR[3] & SCC_RR3_BIT_TX_IP_A )
+		status = 4;
+	else if ( SCC.Chn[0].RR[3] & SCC_RR3_BIT_EXT_STATUS_IP_A )
+		status = 5;
+
+	else if ( SCC.Chn[0].RR[3] & SCC_RR3_BIT_RX_IP_B )
+	{
+		special_cond_mask = SCC_RR1_BIT_RX_OVERRUN_ERROR | SCC_RR1_BIT_CRC_FRAMING_ERROR | SCC_RR1_BIT_EOF_SDLC;
+		if ( SCC.Chn[1].WR[1] & SCC_WR1_BIT_PARITY_SPECIAL_COND )
+			special_cond_mask |= SCC_RR1_BIT_PARITY_ERROR;
+		if ( SCC.Chn[1].RR[0] & special_cond_mask )
+			status = 3;			/* Ch. B Special Receive Condition */
+		else
+			status = 2;			/* Ch. B Receive Char Available */
+	}
+	else if ( SCC.Chn[0].RR[3] & SCC_RR3_BIT_TX_IP_B )
+		status = 0;
+	else if ( SCC.Chn[0].RR[3] & SCC_RR3_BIT_EXT_STATUS_IP_B )
+		status = 1;
+
+	else
+		status = 3;				/* No IP : return Ch. B Special Receive Condition */
+
+	if ( StatusHighLow )				/* bits 2,1,0 become bits 0,1,2 */
+		status = ( ( status & 1 ) << 2 ) + ( status & 2 ) + ( ( status & 4 ) >> 2 );
+
+	return status;
+}
+
+
+/*
+ * Update the content of RR2A and RR2B.
+ * This is used when reading RR2A/RR2B or to send the vector during IACK
+ */
+static void	SCC_Update_RR2 ( void )
+{
+	uint8_t Vector;
+	uint8_t status;
+
+
+	Vector = SCC.Chn[0].WR[2];
+	/* RR2A is WR2 */
+	SCC.Chn[0].RR[2] = Vector;
+
+	/* RR2B is WR2 + status bits */
+	/* RR2B always include status bit even if SCC_WR9_BIT_VIS is not set */
+	status = SCC_Get_Vector_Status( SCC.Chn[0].WR[9] & SCC_WR9_BIT_STATUS_HIGH_LOW );
+
+	if ( SCC.Chn[0].WR[9] & SCC_WR9_BIT_STATUS_HIGH_LOW )	/* modify high bits */
+	{
+		Vector &= 0x8f;			/* clear bits 4,5,6 */
+		Vector |= ( status << 4 );	/* insert status in bits 4,5,6 */
+	}
+	else
+	{
+		Vector &= 0xf1;			/* clear bits 1,2,3 */
+		Vector |= ( status << 1 );	/* insert status in bits 1,2,3 */
+	}
+
+	SCC.Chn[1].RR[2] = Vector;
+}
+
+
+/*
  * Update the content of RR3A depending on the 3 interrupts sources (RX, TX, Ext)
  * and their corresponding IE bit
  */
@@ -1179,60 +1279,6 @@ static void	SCC_Update_RR3_EXT ( int Channel )
 
 
 /*
- * Return Status Informations bits, as included in RR2B / Vector register
- * This status contains 3 bits to indicate the current highest IP
- *  - This status is always included in the vector when reading RR2B
- *  - During an INTACK this status will only be included in the vector if VIS bit is set in WR9
- * If no interrupt are pending, return "Ch B Special Receive Condition"
- *
- * Note that depending on Status High/Low bit in WR9 these 3 bits will be in a different order
- */
-
-static uint8_t	SCC_Get_Vector_Status ( int Channel , int StatusHighLow )
-{
-	uint8_t status;
-	uint8_t special_cond_mask;
-
-	special_cond_mask = SCC_RR1_BIT_RX_OVERRUN_ERROR | SCC_RR1_BIT_CRC_FRAMING_ERROR | SCC_RR1_BIT_EOF_SDLC;
-	if ( SCC.Chn[Channel].WR[1] & SCC_WR1_BIT_PARITY_SPECIAL_COND )
-		special_cond_mask |= SCC_RR1_BIT_PARITY_ERROR;
-
-	/* Check pending interrupts from highest to lowest ; if no IP, return Ch B Special Receive Condition */
-	if ( SCC.Chn[0].RR[3] & SCC_RR3_BIT_RX_IP_A )
-	{
-		if ( SCC.Chn[Channel].RR[0] & special_cond_mask )
-			status = 7;			/* Ch. A Special Receive Condition */
-		else
-			status = 6;			/* Ch. A Receive Char Available */
-	}
-	else if ( SCC.Chn[0].RR[3] & SCC_RR3_BIT_TX_IP_A )
-		status = 4;
-	else if ( SCC.Chn[0].RR[3] & SCC_RR3_BIT_EXT_STATUS_IP_A )
-		status = 5;
-
-	else if ( SCC.Chn[0].RR[3] & SCC_RR3_BIT_RX_IP_B )
-	{
-		if ( SCC.Chn[Channel].RR[0] & special_cond_mask )
-			status = 3;			/* Ch. B Special Receive Condition */
-		else
-			status = 2;			/* Ch. B Receive Char Available */
-	}
-	else if ( SCC.Chn[0].RR[3] & SCC_RR3_BIT_TX_IP_B )
-		status = 0;
-	else if ( SCC.Chn[0].RR[3] & SCC_RR3_BIT_EXT_STATUS_IP_B )
-		status = 1;
-
-	else
-		status = 3;				/* No IP : return Ch. B Special Receive Condition */
-
-	if ( StatusHighLow )				/* bits 2,1,0 become bits 0,1,2 */
-		status = ( ( status & 1 ) << 2 ) + ( status & 2 ) + ( ( status & 4 ) >> 2 );
-
-	return status;
-}
-
-
-/*
  * Read from data register
  * This function is called either when reading from RR8 or when setting D//C signal to high
  * to read directly from the data register
@@ -1255,7 +1301,6 @@ static uint8_t SCC_ReadControl(int chn)
 	uint8_t value = 0;
 	uint16_t temp;
 	uint8_t active_reg;
-	uint8_t status;
 
 	active_reg = SCC.Active_Reg;
 
@@ -1285,31 +1330,15 @@ static uint8_t SCC_ReadControl(int chn)
 		break;
 
 	 case 2:			/* Return interrupt vector and perform INTACK when in software mode */
+		SCC_Update_RR2 ();
+
 		if ( SCC.Chn[0].WR[9] & SCC_WR9_BIT_SOFT_INTACK )
 		{
-			// TODO : intack + update irq
+			SCC_Soft_IACK ();
 		}
 
-		value = SCC.Chn[0].WR[2];
-		if ( chn == 0 )		/* vector base only for RR2A */
-		{
-			LOG_TRACE(TRACE_SCC, "scc read channel=%c RR%d int vector value=$%02x\n" , 'A'+chn , active_reg , value );
-			break;
-		}
-
-		/* Reading channel B always include status bit even if SCC_WR9_BIT_VIS is not set */
-		status = SCC_Get_Vector_Status( chn , SCC.Chn[0].WR[9] & SCC_WR9_BIT_STATUS_HIGH_LOW );
-
-		if ( SCC.Chn[0].WR[9] & SCC_WR9_BIT_STATUS_HIGH_LOW )	/* modify high bits */
-		{
-			value &= 0x8f;			/* clear bits 4,5,6 */
-			value |= ( status << 4 );	/* insert status in bits 4,5,6 */
-		}
-		else
-		{
-			value &= 0xf1;			/* clear bits 1,2,3 */
-			value |= ( status << 1 );	/* insert status in bits 1,2,3 */
-		}
+		value = SCC.Chn[chn].RR[2];		/* RR2A or RR2B with status bits */
+		LOG_TRACE(TRACE_SCC, "scc read channel=%c RR%d int vector value=$%02x\n" , 'A'+chn , active_reg , value );
 		break;
 
 	 case 3:
@@ -1472,7 +1501,7 @@ static void SCC_WriteControl(int chn, uint8_t value)
 						SCC.IUS &= ~( 1 << i );
 						break;
 					}
-				// TODO check IP + update irq
+				SCC_Update_IRQ ();
 			}
 
 			// Clear SCC flag if no pending IT or no properly
@@ -1665,7 +1694,7 @@ static void SCC_WriteControl(int chn, uint8_t value)
 	{
 		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set ext status int control value=$%02x\n" , 'A'+chn , SCC.Active_Reg , value );
 
-		/* Bit 0 : Point to Write Registe WR7 Prime */
+		/* Bit 0 : Point to Write Register WR7 Prime */
 		/* Bit 1 : Zero Count Interrupt Enable ; if 0 then zero count bit must be cleared in RR0 */
 		if ( ( value & SCC_WR15_BIT_ZERO_COUNT_INT_ENABLE ) == 0 )
 			SCC.Chn[chn].RR[0] &= ~SCC_RR0_BIT_ZERO_COUNT;		/* Clear Zero Count bit */
@@ -1874,7 +1903,7 @@ void	SCC_InterruptHandler_BRG_B ( void )
 /*
  * Start the TX or RX internal cycint timer
  * NOTE : instead of having a cycint interrupt on every bit, we trigger the cycint interrupt
- * only when 1 char has been sent/received, taking into acccount all start/parity/stop bits
+ * only when 1 char has been sent/received, taking into account all start/parity/stop bits
  * Although not fully accurate this will give a good timing to emulate when RX buffer is full
  * or when TX buffer is empty (and set the corresponding status bits in RRx) and this will
  * lower the cpu usage on the host running the emulation (as baudrate can be rather high with the SCC)
@@ -1979,7 +2008,7 @@ static void	SCC_InterruptHandler_TX_RX ( int Channel )
 	SCC_Process_TX ( Channel );
 
 	/* If TX and RX use the same baudrate, we process RX here too */
-	/* (avoid using an additionnal cycint timer for RX) */
+	/* (avoid using an additional cycint timer for RX) */
 	if ( SCC.Chn[Channel].BaudRate_TX == SCC.Chn[Channel].BaudRate_RX )
 		SCC_Process_RX ( Channel );
 }
@@ -2042,19 +2071,31 @@ int	SCC_Get_Line_IRQ ( void )
 
 
 /*
- * Check if Master Interrupt is enabled and if any IP bits are set in RR3A
+ * Check if Master Interrupt is enabled and if any IP bits are set in RR3A (and not lower than IUS
  * Update main IRQ line accordingly
  */
 static void	SCC_Update_IRQ ( void )
 {
-	int		IRQ_new;
+	int	IRQ_new;
+	int	i;
 
 	if ( SCC.Chn[0].WR[9] & SCC_WR9_BIT_MIE )	/* Master Interrupt enabled */
 	{
-		if ( SCC.Chn[0].RR[3] )			/* At least one IP is set */
-			IRQ_new = SCC_IRQ_ON;
-		else					/* No IP set at all */
-			IRQ_new = SCC_IRQ_OFF;
+		/* Check if there's an IP bit set and not lower than IUS */
+		IRQ_new = SCC_IRQ_OFF;
+		for ( i=5 ; i>=0 ; i-- )		/* Test from higher to lower IP */
+		{
+			if ( SCC.IUS & ( 1 << i ) )	/* IUS bit set */
+			{
+				IRQ_new = SCC_IRQ_OFF;
+				break;
+			}
+			else if ( SCC.Chn[0].RR[3] & ( 1 << i ) )	/* IP bit set and IUS bit not set */
+			{
+				IRQ_new = SCC_IRQ_ON;
+				break;
+			}
+		}
 	}
 	else
 		IRQ_new = SCC_IRQ_OFF;
@@ -2137,6 +2178,66 @@ static void	SCC_IntSources_Clear ( int Channel , uint32_t Sources )
 {
 	SCC_IntSources_Change ( Channel , Sources , false );
 }
+
+
+
+/*
+ * Do the IACK sequence (common to the software IACK or the hardware IACK) :
+ *  - clear IRQ
+ *  - set IUS bit for the pending interrupt
+ *  - return an interrupt vector (only used for hardware IACK)
+ */
+static int	SCC_Do_IACK ( bool Soft )
+{
+	int	Vector;
+	int	i;
+
+	SCC_Set_Line_IRQ ( SCC_IRQ_OFF );
+
+	/* Set IUS bit corresponding to highest IP */
+	for ( i=5 ; i>=0 ; i-- )		/* Test from higher to lower IP */
+	{
+		if ( SCC.Chn[0].RR[3] & ( 1 << i ) )
+		{
+			SCC.IUS |= ( 1 << i );
+			break;
+		}
+	}
+
+	SCC_Update_RR2 ();
+	if ( SCC.Chn[0].WR[9] & SCC_WR9_BIT_VIS )
+		Vector = SCC.Chn[1].RR[2];	/* RR2B including status bits */
+	else
+		Vector = SCC.Chn[0].RR[2];	/* RR2B without status bits */
+	return Vector;
+}
+
+
+/*
+ * Called when software IACK is enabled and reading from RR2
+ */
+
+static void	SCC_Soft_IACK ( void )
+{
+	SCC_Do_IACK ( true );
+}
+
+
+/*
+ * Called by the CPU when processing interrupts (see iack_cycle() in newcpu.c)
+ */
+int	SCC_Process_IACK ( void )
+{
+	int	Vector;
+
+	Vector = SCC_Do_IACK ( false );
+	if ( SCC.Chn[0].WR[9] & SCC_WR9_BIT_NV )
+		return -1;			/* IACK is disabled, no vector */
+
+	return Vector;
+}
+
+
 
 
 void SCC_IRQ(void)
