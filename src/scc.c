@@ -1313,20 +1313,14 @@ static uint8_t SCC_ReadControl(int chn)
 		temp = SCC_serial_getStatus(chn);		/* Lower byte contains value of bits 0, 2 and 5 */
 		SCC.Chn[chn].RR[0] &= ~( SCC_RR0_BIT_RX_CHAR_AVAILABLE | SCC_RR0_BIT_TX_BUFFER_EMPTY | SCC_RR0_BIT_CTS );
 		SCC.Chn[chn].RR[0] |= ( temp & 0xff );		/* Set value for bits 0, 2 and 5 */
-
-// TODO NP : don't modify RR3 here
-		if (chn)
-			SCC.Chn[0].RR[3] = SCC.IUS & (temp >> 8);	// define RxIP(2), TxIP(1) and ExtIP(0)
-		else if (SCC.Chn[0].RR[9] == 0x20)
-			SCC.Chn[0].RR[3] |= 0x8;
-
 		value = SCC.Chn[chn].RR[0];
 		LOG_TRACE(TRACE_SCC, "scc read channel=%c RR%d tx/rx buffer status value=$%02x\n" , 'A'+chn , active_reg , value );
 		break;
 
 	 case 1:	// RR1
 	 case 5:	// also returns RR1
-		// TODO
+		value = SCC.Chn[chn].RR[1];
+		LOG_TRACE(TRACE_SCC, "scc read channel=%c RR%d special cond status value=$%02x\n" , 'A'+chn , active_reg , value );
 		break;
 
 	 case 2:			/* Return interrupt vector and perform INTACK when in software mode */
@@ -1342,23 +1336,34 @@ static uint8_t SCC_ReadControl(int chn)
 		break;
 
 	 case 3:
-		value = chn ? 0 : SCC.Chn[0].RR[3];     // access on A channel only
+		value = chn ? 0 : SCC.Chn[0].RR[3];     /* access on A channel only, return 0 on channel B */
 		LOG_TRACE(TRACE_SCC, "scc read channel=%c RR%d interrupt pending value=$%02x\n" , 'A'+chn , active_reg , value );
 		break;
 
 //	RR4 : See RR0
 //	RR5 : See RR1
+
 //	RR6/RR7 : Low/High bytes of the frame byte count if WR15 bit 2 is set. Else, return RR2/RR3
+	 case 6:
+	 case 7:
+		if ( SCC.Chn[0].WR[15] & SCC_WR15_BIT_STATUS_FIFO_ENABLE )
+			value = SCC.Chn[chn].RR[active_reg];	/* for SDLC, not used in Hatari */
+		else
+			value = SCC.Chn[0].RR[active_reg-4];	/* return RR2 or RR3 */
+		LOG_TRACE(TRACE_SCC, "scc read channel=%c RR%d status fifo lsb/msb value=$%02x\n" , 'A'+chn , SCC.Active_Reg , value );
+		break;
 
 	 case 8: // DATA reg
 		value = SCC_ReadDataReg ( chn );
-		LOG_TRACE(TRACE_SCC, "scc read channel=%c RR%d read rx buffer value=$%02x\n" , 'A'+chn , SCC.Active_Reg , value );
+		LOG_TRACE(TRACE_SCC, "scc read channel=%c RR%d data reg value=$%02x\n" , 'A'+chn , SCC.Active_Reg , value );
 		break;
 
 //	RR9 : See RR13
 
 	 case 10:	// Misc Status Bits
 	 case 14:	// also returns RR10
+		value = SCC.Chn[chn].RR[10];		/* for DPLL/SDLC, not used in Hatari */
+		LOG_TRACE(TRACE_SCC, "scc read channel=%c RR%d dpll/sdlc status value=$%02x\n" , 'A'+chn , SCC.Active_Reg , value );
 		break;
 
 //	RR11 : See RR15
@@ -1382,8 +1387,8 @@ static uint8_t SCC_ReadControl(int chn)
 		LOG_TRACE(TRACE_SCC, "scc read channel=%c RR%d ext status IE value=$%02x\n" , 'A'+chn , active_reg , value );
 		break;
 
-	 default: // RR5,RR6,RR7,RR10,RR14 not processed
-		Log_Printf(LOG_DEBUG, "SCC: unprocessed read address=$%x\n", active_reg);
+	 default:		/* should not happen */
+		Log_Printf(LOG_DEBUG, "SCC read : unprocessed read address=$%x\n", active_reg);
 		value = 0;
 		break;
 	}
