@@ -2239,69 +2239,6 @@ int	SCC_Process_IACK ( void )
 
 
 
-
-void SCC_IRQ(void)
-{
-	uint16_t temp;
-	temp = SCC_serial_getStatus(0);
-	if (SCC.Chn[0].WR[9] == 0x20)
-		temp |= 0x800; // fake ExtStatusChange for HSMODEM install
-	SCC.Chn[1].WR[0] = temp & 0xFF; // RR0B
-	SCC.Chn[0].RR[3] = SCC.IUS & (temp >> 8);
-	if (SCC.Chn[0].RR[3] && (SCC.Chn[0].WR[9] & 0xB) == 9)
-		TriggerSCC(true);
-}
-
-
-// return : vector number, or zero if no interrupt
-int SCC_doInterrupt(void)
-{
-	int vector;
-	uint8_t i;
-	for (i = 0x20 ; i ; i >>= 1) // highest priority first
-	{
-		if (SCC.Chn[0].RR[3] & i & SCC.IUS)
-			break ;
-	}
-	vector = SCC.Chn[0].WR[2]; // WR2 = base of vectored interrupts for SCC
-	if ((SCC.Chn[0].WR[9] & 3) == 0)
-		return vector; // no status included in vector
-	if ((SCC.Chn[0].WR[9] & 0x32) != 0)  // shouldn't happen with TOS, (to be completed if needed)
-	{
-		Log_Printf(LOG_DEBUG, "SCC: unexpected WR9 contents\n");
-		// no Soft IACK, Status Low control bit expected, no NV
-		return 0;
-	}
-	switch (i)
-	{
-	 case 0: /* this shouldn't happen :-) */
-		Log_Printf(LOG_WARN, "SCC: doInterrupt() called with no pending interrupt\n");
-		vector = 0; // cancel
-		break;
-	 case 1:
-		vector |= 2; // Ch B Ext/status change
-		break;
-	 case 2:
-		break;// Ch B Transmit buffer Empty
-	 case 4:
-		vector |= 4; // Ch B Receive Char available
-		break;
-	 case 8:
-		vector |= 0xA; // Ch A Ext/status change
-		break;
-	 case 16:
-		vector |= 8; // Ch A Transmit Buffer Empty
-		break;
-	 case 32:
-		vector |= 0xC; // Ch A Receive Char available
-		break;
-		// special receive condition not yet processed
-	}
-	LOG_TRACE(TRACE_SCC, "SCC: SCC_doInterrupt : vector %d\n", vector);
-	return vector ;
-}
-
-
 void SCC_IoMem_ReadByte(void)
 {
 	int i;
