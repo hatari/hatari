@@ -554,13 +554,6 @@ void SCC_Reset(void)
 	SCC.Chn[0].charcount = SCC.Chn[1].charcount = 0;
 }
 
-static void TriggerSCC(bool enable)
-{
-	if (enable)
-	{
-		Log_Printf(LOG_TODO, "TriggerSCC\n");
-	}
-}
 
 static bool SCC_serial_getData(int channel , uint8_t *pValue)
 {
@@ -1509,11 +1502,6 @@ static void SCC_WriteControl(int chn, uint8_t value)
 					}
 				SCC_Update_IRQ ();
 			}
-
-			// Clear SCC flag if no pending IT or no properly
-			// configured WR9. Must be done here to avoid
-			// scc_do_Interrupt call without pending IT
-			TriggerSCC((SCC.Chn[0].RR[3] & SCC.IUS) && ((0xB & SCC.Chn[0].WR[9]) == 9));
 		}
 		return;
 	}
@@ -1669,8 +1657,6 @@ static void SCC_WriteControl(int chn, uint8_t value)
 		{
 			SCC_ResetChannel ( 1 , false );		/* Channel B */
 		}
-
-		//  set or clear SCC flag accordingly (see later)
 	}
 	else if (SCC.Active_Reg == 10) // Tx/Rx misc control bits
 	{
@@ -1710,13 +1696,8 @@ static void SCC_WriteControl(int chn, uint8_t value)
 		/* Bit 5 : CTS Int Enable */
 		/* Bit 6 : Transmit Underrun/EOM Int Enable */
 		/* Bit 7 : Break/Abort Int Enable */
-
+		SCC_Update_IRQ ();
 	}
-
-	// set or clear SCC flag accordingly. Yes it's ugly but avoids unnecessary useless calls
-	if (SCC.Active_Reg == 1 || SCC.Active_Reg == 2 || SCC.Active_Reg == 9)
-		TriggerSCC((SCC.Chn[0].RR[3] & SCC.IUS) && ((0xB & SCC.Chn[0].WR[9]) == 9));
-
 
 	SCC.Active_Reg = 0;			/* next access for RR0 or WR0 */
 }
