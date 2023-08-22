@@ -317,7 +317,7 @@ static int SCC_Standard_Baudrate[] = {
 static void	SCC_ResetChannel ( int Channel , bool HW_Reset );
 static void	SCC_ResetFull ( bool HW_Reset );
 
-static uint8_t	SCC_Get_Vector_Status ( int StatusHighLow );
+static uint8_t	SCC_Get_Vector_Status ( void );
 static void	SCC_Update_RR2 ( void );
 
 static void	SCC_Update_RR3_Bit ( bool Set , uint8_t Bit );
@@ -1097,7 +1097,7 @@ fprintf(stderr , "update br serial_on %d->%d\n" , BaudRate , BaudRate_Standard )
  * Note that depending on Status High/Low bit in WR9 these 3 bits will be in a different order
  */
 
-static uint8_t	SCC_Get_Vector_Status ( int StatusHighLow )
+static uint8_t	SCC_Get_Vector_Status ( void )
 {
 	uint8_t status;
 	uint8_t special_cond_mask;
@@ -1137,9 +1137,6 @@ static uint8_t	SCC_Get_Vector_Status ( int StatusHighLow )
 	else
 		status = 3;				/* No IP : return Ch. B Special Receive Condition */
 
-	if ( StatusHighLow )				/* bits 2,1,0 become bits 0,1,2 */
-		status = ( ( status & 1 ) << 2 ) + ( status & 2 ) + ( ( status & 4 ) >> 2 );
-
 	return status;
 }
 
@@ -1160,10 +1157,11 @@ static void	SCC_Update_RR2 ( void )
 
 	/* RR2B is WR2 + status bits */
 	/* RR2B always include status bit even if SCC_WR9_BIT_VIS is not set */
-	status = SCC_Get_Vector_Status( SCC.Chn[0].WR[9] & SCC_WR9_BIT_STATUS_HIGH_LOW );
+	status = SCC_Get_Vector_Status ();
 
 	if ( SCC.Chn[0].WR[9] & SCC_WR9_BIT_STATUS_HIGH_LOW )	/* modify high bits */
 	{
+		status = ( ( status & 1 ) << 2 ) + ( status & 2 ) + ( ( status & 4 ) >> 2 );	/* bits 2,1,0 become bits 0,1,2 */
 		Vector &= 0x8f;			/* clear bits 4,5,6 */
 		Vector |= ( status << 4 );	/* insert status in bits 4,5,6 */
 	}
@@ -1483,6 +1481,7 @@ static void SCC_WriteControl(int chn, uint8_t value)
 					SCC.Chn[0].RR[3] &= ~SCC_RR3_BIT_TX_IP_B;
 				else
 					SCC.Chn[0].RR[3] &= ~SCC_RR3_BIT_TX_IP_A;
+				SCC_Update_IRQ ();
 			}
 
 			else if ( command == SCC_WR0_COMMAND_ERROR_RESET )
