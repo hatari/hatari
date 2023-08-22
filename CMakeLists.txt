@@ -1,4 +1,10 @@
-cmake_minimum_required(VERSION 3.3 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
+
+if(POLICY CMP0148)
+	# Should be removed when we replaced FindPythonInterp with FindPython3
+	# and cmake_minimum_required has been bumped to 3.12
+	cmake_policy(SET CMP0148 OLD)
+endif(POLICY CMP0148)
 
 project(Hatari C)
 enable_testing()
