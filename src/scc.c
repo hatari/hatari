@@ -518,7 +518,7 @@ static void SCC_ResetChannel ( int Channel , bool HW_Reset )
 
 /* On real hardware HW_Reset would be true when /RD and /WR are low at the same time (not supported in Mega STE / TT / Falcon)
  *  - For our emulation, we also do HW_Reset=true when resetting the emulated machine
- *  - When writing 0xC0 to WR9 a full reset will be done with HW_Reset=false
+ *  - When writing 0xC0 to WR9 a full reset will be done with HW_Reset=true
  */
 static void SCC_ResetFull ( bool HW_Reset )
 {
@@ -532,7 +532,8 @@ static void SCC_ResetFull ( bool HW_Reset )
 	if ( !HW_Reset )			/* Reset through WR9, some bits are kept */
 	{
 		/* Restore bits 2,3,4 after software full reset */
-		SCC.Chn[0].WR[9] = wr9_old & 0x1c;
+		SCC.Chn[0].WR[9] &= ~0x1c;
+		SCC.Chn[0].WR[9] |= ( wr9_old & 0x1c );
 	}
 
 	SCC.Chn[0].IntSources = 0;
@@ -1255,17 +1256,17 @@ static void	SCC_Update_RR3_EXT ( int Channel )
 
 	if ( ( SCC.Chn[Channel].WR[1] & SCC_WR1_BIT_EXT_INT_ENABLE )
 	  && (   (   ( SCC.Chn[ Channel ].RR[0] & SCC_RR0_BIT_ZERO_COUNT )
-		  && ( SCC.Chn[Channel].WR[15] & SCC_WR15_BIT_ZERO_COUNT_INT_ENABLE ) )
+		  && ( SCC.Chn[ Channel ].WR[15] & SCC_WR15_BIT_ZERO_COUNT_INT_ENABLE ) )
 	      || (   ( SCC.Chn[ Channel ].RR[0] & SCC_RR0_BIT_DCD )
-		  && ( SCC.Chn[Channel].WR[15] & SCC_WR15_BIT_DCD_INT_ENABLE ) )
+		  && ( SCC.Chn[ Channel ].WR[15] & SCC_WR15_BIT_DCD_INT_ENABLE ) )
 	      || (   ( SCC.Chn[ Channel ].RR[0] & SCC_RR0_BIT_SYNC_HUNT )
-		  && ( SCC.Chn[Channel].WR[15] & SCC_WR15_BIT_SYNC_HUNT_INT_ENABLE ) )
+		  && ( SCC.Chn[ Channel ].WR[15] & SCC_WR15_BIT_SYNC_HUNT_INT_ENABLE ) )
 	      || (   ( SCC.Chn[ Channel ].RR[0] & SCC_RR0_BIT_CTS )
-		  && ( SCC.Chn[Channel].WR[15] & SCC_WR15_BIT_CTS_INT_ENABLE ) )
+		  && ( SCC.Chn[ Channel ].WR[15] & SCC_WR15_BIT_CTS_INT_ENABLE ) )
 	      || (   ( SCC.Chn[ Channel ].RR[0] & SCC_RR0_BIT_TX_UNDERRUN_EOM )
-		  && ( SCC.Chn[Channel].WR[15] & SCC_WR15_BIT_TX_UNDERRUN_EOM_INT_ENABLE ) )
+		  && ( SCC.Chn[ Channel ].WR[15] & SCC_WR15_BIT_TX_UNDERRUN_EOM_INT_ENABLE ) )
 	      || (   ( SCC.Chn[ Channel ].RR[0] & SCC_RR0_BIT_BREAK_ABORT )
-		  && ( SCC.Chn[Channel].WR[15] & SCC_WR15_BIT_BREAK_ABORT_INT_ENABLE ) )
+		  && ( SCC.Chn[ Channel ].WR[15] & SCC_WR15_BIT_BREAK_ABORT_INT_ENABLE ) )
 	    ) )
 	  Set = 1;
 	else
@@ -1404,7 +1405,7 @@ static uint8_t SCC_handleRead(uint32_t addr)
 
 	channel = ( addr >> 2 ) & 1;			/* bit 2 : 0 = channel A, 1 = channel B */
 
-	LOG_TRACE(TRACE_SCC, "scc read addr=%d channel=%c\n" , addr , 'A'+channel );
+	LOG_TRACE(TRACE_SCC, "scc read addr=$%x channel=%c\n" , addr , 'A'+channel );
 
 	if ( addr & 2 )					/* bit 1 */
 		value = SCC_ReadDataReg(channel);
@@ -1726,7 +1727,7 @@ static void SCC_handleWrite(uint32_t addr, uint8_t value)
 
 	Channel = ( addr >> 2 ) & 1;			/* bit 2 : 0 = channel A, 1 = channel B */
 
-	LOG_TRACE(TRACE_SCC, "scc write addr=%d channel=%c value=$%02x\n" , addr , 'A'+Channel , value );
+	LOG_TRACE(TRACE_SCC, "scc write addr=%x channel=%c value=$%02x\n" , addr , 'A'+Channel , value );
 
 	if ( addr & 2 )					/* bit 1 */
 		SCC_WriteDataReg ( Channel, value );
