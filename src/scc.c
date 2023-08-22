@@ -1886,9 +1886,11 @@ static void	SCC_InterruptHandler_BRG ( int Channel )
 	/* BRG counter reached 0, check if corresponding interrupt pending bit must be set in RR3 */
 	/* NOTE : we should set bit ZERO_COUNT in RR0 here, but we don't support resetting it later */
 	/* as this would require to emulate BRG on every count, which would slow down emulation too much */
-	/* So, we don't set ZERO_COUNT for the moment */
-//	SCC.Chn[Channel].RR[0] |= SCC_RR0_BIT_ZERO_COUNT;
-//	SCC_IntSources_Set ( Channel , SCC_INT_SOURCE_EXT_ZERO_COUNT );
+	/* Instead, we set ZC bit, update irq, then clear ZC bit just after, which should give */
+	/* a close enough result as real HW */
+	SCC.Chn[Channel].RR[0] |= SCC_RR0_BIT_ZERO_COUNT;
+	SCC_IntSources_Set ( Channel , SCC_INT_SOURCE_EXT_ZERO_COUNT );
+	SCC.Chn[Channel].RR[0] &= ~SCC_RR0_BIT_ZERO_COUNT;
 }
 
 
