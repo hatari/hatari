@@ -474,26 +474,46 @@ class ProfileSymbols(Output):
             # with same name?
             if name == symbols[addr]:
                 return False
-            # prefer function names over object names
-            if name.endswith('.o'):
+            # silently drop less accurate file path symbols
+            if '/' in name or name.endswith('.o') or name.endswith('.a'):
                 aliases[name] = addr
                 return False
             oldname = symbols[addr]
+            # silently override less accurate file path symbols
+            if '/' in oldname or oldname.endswith('.o') or oldname.endswith('.a'):
+                aliases[oldname] = addr
+                return True
+            # C/C++ or asm symbol?
+            if (name.startswith('_') or '::' in name or ' ' in name):
+                # prefer shorter names for C/C++ symbols
+                if len(name) > len(oldname):
+                    aliases[name] = addr
+                    retval = False
+                else:
+                    aliases[oldname] = addr
+                    retval = True
+            else:
+                # prefer longer names for asm symbols
+                if len(name) < len(oldname):
+                    aliases[name] = addr
+                    retval = False
+                else:
+                    aliases[oldname] = addr
+                    retval = True
+            # count and warn only of significant renames
             lendiff = abs(len(name) - len(oldname))
             minlen = min(len(name), len(oldname))
-            # do not mention:
-            # - object file name replaced with symbol starting that object
-            # - adding/removing short prefix/postfix (likely a weak ref)
             if not (
-               oldname.endswith('.o') or
                (lendiff < 3 and minlen > 3 and
                 (name.endswith(oldname) or oldname.endswith(name) or
                  name.startswith(oldname) or oldname.startswith(name)))):
                 if self.verbose:
-                    self.message("Overriding '%s' at 0x%x with '%s'" % (oldname, addr, name))
+                    if retval:
+                        self.message("0x%x: prefer '%s' over '%s'" % (addr, name, oldname))
+                    else:
+                        self.message("0x%x: prefer '%s' over '%s'" % (addr, oldname, name))
                 self.renames += 1
-            # add also previous name as alias for new name
-            aliases[symbols[addr]] = addr
+            return retval
         return True
 
     def _clean_aliases(self):
@@ -532,10 +552,15 @@ class ProfileSymbols(Output):
             match = self.r_symbol.match(line)
             if match:
                 dummy, addr, kind, name = match.groups()
-                if kind in ('t', 'T', 'W'):
-                    addr = int(addr, 16)
-                    if self._check_symbol(addr, name, symbols, aliases):
-                        symbols[addr] = name
+                if kind not in ('t', 'T', 'W'):
+                    continue
+                if kind == 'W':
+                    if name.startswith("vtable ") or name.startswith("typeinfo "):
+                        # data, not code (should have been 'V'?)
+                        continue
+                addr = int(addr, 16)
+                if self._check_symbol(addr, name, symbols, aliases):
+                    symbols[addr] = name
             else:
                 self.warning("unrecognized symbol line %d:\n\t'%s'" % (lines, line))
                 unknown += 1
@@ -578,7 +603,7 @@ class ProfileSymbols(Output):
     def _combine_symbols(self):
         "combine absolute and relative symbols to single lookup"
         # renaming is done only at this point (after parsing memory areas)
-        # to avoid addresses in names dict to be messed by relative symbols
+        # to avoid addresses in names dict being messed by relative symbols
         self.names = {}
         self.symbols = {}
         self.symbols_need_sort = True

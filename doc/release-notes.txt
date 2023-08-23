@@ -93,9 +93,11 @@ Tools:
 - Profile data post-processor:
   - Does not show (most) of symbol conflict messages any more
     (unless '--verbose' option is given)
-  - Support for symbol files and Hatari profile data that
-    contain demangled C++ symbols
-  - Support weak symbols to see C++ template methods in profiles
+  - When address has multiple symbols which names are thought
+    as C/C++ symbols, prefer shortest one
+  - Support for symbol files + Hatari profile data containing
+    demangled C++ symbols
+  - Support weak symbols (used for C++ template methods)
   - Overtly long C++ symbol names are shortened in callgraphs
     (unless '--full-symbols' option is given)
   - Symbols given for "--only", "--ignore" and "--ignore-from"
