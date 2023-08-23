@@ -1270,6 +1270,14 @@ static void	SCC_Update_RR3_EXT ( int Channel )
 }
 
 
+static void	SCC_Update_RR3 ( int Channel )
+{
+	SCC_Update_RR3_RX ( Channel );
+	SCC_Update_RR3_TX ( Channel );
+	SCC_Update_RR3_EXT ( Channel );
+}
+
+
 /*
  * Read from data register
  * This function is called either when reading from RR8 or when setting D//C signal to high
@@ -1339,10 +1347,15 @@ static uint8_t SCC_ReadControl(int chn)
 	 case 6:
 	 case 7:
 		if ( SCC.Chn[0].WR[15] & SCC_WR15_BIT_STATUS_FIFO_ENABLE )
+		{
 			value = SCC.Chn[chn].RR[active_reg];	/* for SDLC, not used in Hatari */
+			LOG_TRACE(TRACE_SCC, "scc read channel=%c RR%d status fifo lsb/msb value=$%02x\n" , 'A'+chn , SCC.Active_Reg , value );
+		}
 		else
+		{
 			value = SCC.Chn[0].RR[active_reg-4];	/* return RR2 or RR3 */
-		LOG_TRACE(TRACE_SCC, "scc read channel=%c RR%d status fifo lsb/msb value=$%02x\n" , 'A'+chn , SCC.Active_Reg , value );
+			LOG_TRACE(TRACE_SCC, "scc read channel=%c RR%d returns RR%d value=$%02x\n" , 'A'+chn , SCC.Active_Reg , active_reg-4 , value );
+		}
 		break;
 
 	 case 8: // DATA reg
@@ -1519,39 +1532,10 @@ static void SCC_WriteControl(int chn, uint8_t value)
 	if (SCC.Active_Reg == 1)		 // Tx/Rx interrupt enable
 	{
 		LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d set tx/rx int value=$%02x\n" , 'A'+chn , SCC.Active_Reg , value );
-		if (chn == 0)
-		{
-			// channel A
-			if (value & 1)
-				SCC.IUS |= 8;
-			else
-				SCC.Chn[0].RR[3] &= ~8; // no IP(RR3) if not enabled(IUS)
-			if (value & 2)
-				SCC.IUS |= 16;
-			else
-				SCC.Chn[0].RR[3] &= ~16;
-			if (value & 0x18)
-				SCC.IUS |= 32;
-			else
-				SCC.Chn[0].RR[3] &= ~32;
-		}
-		else
-		{
-			// channel B
-			if (value & 1)
-				SCC.IUS |= 1;
-			else
-				SCC.Chn[0].RR[3] &= ~1;
-			if (value & 2)
-				SCC.IUS |= 2;
-			else
-				SCC.Chn[0].RR[3] &= ~2;
-			if (value & 0x18)
-				SCC.IUS |= 4;
-			else
-				SCC.Chn[0].RR[3] &= ~4;
-			// set or clear SCC flag if necessary (see later)
-		}
+
+		/* Update RR3 depending on WR1 then update IRQ state */
+		SCC_Update_RR3 ( chn );
+		SCC_Update_IRQ ();
 	}
 	else if (SCC.Active_Reg == 2)		/* Interrupt Vector */
 	{
@@ -1638,7 +1622,6 @@ static void SCC_WriteControl(int chn, uint8_t value)
 		{
 			/* Clearing MIE reset IUS and IRQ */
 			SCC.IUS = 0;
-			SCC_Set_Line_IRQ ( SCC_IRQ_OFF );	/* IRQ line goes high */
 		}
 		/* Bit 4 : Status High / Low */
 		/* Bit 5 : Software INTACK Enable */
@@ -1656,6 +1639,8 @@ static void SCC_WriteControl(int chn, uint8_t value)
 		{
 			SCC_ResetChannel ( 1 , false );		/* Channel B */
 		}
+
+		SCC_Update_IRQ ();				/* Update IRQ depending on MIE bit */
 	}
 	else if (SCC.Active_Reg == 10) // Tx/Rx misc control bits
 	{
@@ -1695,6 +1680,9 @@ static void SCC_WriteControl(int chn, uint8_t value)
 		/* Bit 5 : CTS Int Enable */
 		/* Bit 6 : Transmit Underrun/EOM Int Enable */
 		/* Bit 7 : Break/Abort Int Enable */
+
+		/* Update RR3 depending on WR15 then update IRQ state */
+		SCC_Update_RR3 ( chn );
 		SCC_Update_IRQ ();
 	}
 
