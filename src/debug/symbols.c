@@ -62,13 +62,15 @@ static bool AutoLoadFailed;
  * the given ASCII file and add given offsets to the addresses.
  * Return symbols list or NULL for failure.
  */
-static symbol_list_t* symbols_load_ascii(FILE *fp, uint32_t *offsets, uint32_t maxaddr, symtype_t gettype)
+static symbol_list_t* symbols_load_ascii(FILE *fp, uint32_t *offsets, uint32_t maxaddr,
+					 symtype_t gettype, const symbol_opts_t *opts)
 {
 	symbol_list_t *list;
 	char symchar, name[MAX_SYM_SIZE+1];
 	char *buf, buffer[MAX_SYM_SIZE+64];
-	int count, line, symbols, unknown, invalid;
+	int count, line, symbols;
 	uint32_t address, offset;
+	ignore_counts_t ignore;
 	symtype_t symtype;
 
 	/* count content lines */
@@ -103,8 +105,10 @@ static symbol_list_t* symbols_load_ascii(FILE *fp, uint32_t *offsets, uint32_t m
 		return NULL;
 	}
 
+	count = 0;
+	memset(&ignore, 0, sizeof(ignore));
+
 	/* read symbols */
-	invalid = unknown = count = 0;
 	for (line = 1; fgets(buffer, sizeof(buffer), fp); line++) {
 		/* skip comments (AHCC SYM file comments start with '*') */
 		if (*buffer == '#' || *buffer == '*') {
@@ -148,7 +152,7 @@ static symbol_list_t* symbols_load_ascii(FILE *fp, uint32_t *offsets, uint32_t m
 			break;
 		default:
 			fprintf(stderr, "WARNING: unrecognized symbol type '%c' on line %d, skipping.\n", symchar, line);
-			unknown++;
+			ignore.invalid++;
 			continue;
 		}
 		if (!(gettype & symtype)) {
@@ -157,7 +161,11 @@ static symbol_list_t* symbols_load_ascii(FILE *fp, uint32_t *offsets, uint32_t m
 		address += offset;
 		if (address > maxaddr) {
 			fprintf(stderr, "WARNING: invalid address 0x%x on line %d, skipping.\n", address, line);
-			invalid++;
+			ignore.invalid++;
+			continue;
+		}
+		/* whether to ignore symbol based on options and its name & type */
+		if (ignore_symbol(name, symtype, opts, &ignore)) {
 			continue;
 		}
 		list->names[count].address = address;
@@ -166,12 +174,7 @@ static symbol_list_t* symbols_load_ascii(FILE *fp, uint32_t *offsets, uint32_t m
 		assert(list->names[count].name);
 		count++;
 	}
-	if (invalid) {
-		fprintf(stderr, "NOTE: ignored %d symbols with invalid addresses.\n", invalid);
-	}
-	if (unknown) {
-		fprintf(stderr, "NOTE: ignored %d symbols with unknown types.\n", unknown);
-	}
+	show_ignored(&ignore);
 	list->symbols = symbols;
 	list->namecount = count;
 	return list;
@@ -280,14 +283,19 @@ static bool update_sections(prg_section_t *sections)
 static symbol_list_t* Symbols_Load(const char *filename, uint32_t *offsets, uint32_t maxaddr, symtype_t gettype)
 {
 	symbol_list_t *list;
+	symbol_opts_t opts;
 	FILE *fp;
 
 	if (!File_Exists(filename)) {
 		fprintf(stderr, "ERROR: file '%s' doesn't exist or isn't readable!\n", filename);
 		return NULL;
 	}
+	memset(&opts, 0, sizeof(opts));
+	opts.no_files = true;
+	opts.no_gccint = true;
+	opts.no_local = true;
+
 	if (Opt_IsAtariProgram(filename)) {
-		symbol_opts_t opts;
 		const char *last = CurrentProgramPath;
 		if (!last) {
 			/* "pc=text" breakpoint used as point for loading program symbols gives false hits during bootup */
@@ -297,15 +305,12 @@ static symbol_list_t* Symbols_Load(const char *filename, uint32_t *offsets, uint
 		}
 		fprintf(stderr, "Reading symbols from program '%s' symbol table...\n", filename);
 		fp = fopen(filename, "rb");
-		opts.notypes = 0;
-		opts.no_obj = true;
-		opts.no_local = true;
 		list = symbols_load_binary(fp, &opts, update_sections);
 		SymbolsAreForProgram = true;
 	} else {
 		fprintf(stderr, "Reading 'nm' style ASCII symbols from '%s'...\n", filename);
 		fp = fopen(filename, "r");
-		list = symbols_load_ascii(fp, offsets, maxaddr, gettype);
+		list = symbols_load_ascii(fp, offsets, maxaddr, gettype, &opts);
 		SymbolsAreForProgram = false;
 	}
 	fclose(fp);

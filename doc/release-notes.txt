@@ -89,6 +89,7 @@ GUI improvements:
     a list of the accepted file name extensions any more
 
 Tools:
+- gst2ascii "-o" option split to "-f" and "-g" options
 - Profile data post-processor:
   - Does not show (most) of symbol conflict messages any more
     (unless '--verbose' option is given)

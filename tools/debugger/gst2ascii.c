@@ -53,11 +53,12 @@ static void usage(const char *msg)
 		{ 'a', "no absolute symbols (are values, not addresses)" },
 		{ 'b', "no BSS symbols" },
 		{ 'd', "no DATA symbols" },
+		{ 'f', "no file/path symbols" },
+		{ 'g', "no GCC internal (object) symbols" },
+		{ 'l', "no local (.L*) symbols" },
+		{ 'n', "sort by name (not address)" },
 		{ 't', "no TEXT symbols" },
 		{ 'w', "no weak symbols" },
-		{ 'l', "no local (.L*) symbols" },
-		{ 'o', "no object symbols (filenames or GCC internals)" },
-		{ 'n', "sort by name (not address)" },
 	};
 	const char *name;
 	int i;
@@ -83,6 +84,8 @@ static void usage(const char *msg)
 	for (i = 0; i < ARRAY_SIZE(OptInfo); i++) {
 		fprintf(stderr, "\t-%c\t%s\n", OptInfo[i].opt, OptInfo[i].desc);
 	}
+	fprintf(stderr, "\n(Normally one should use at least '-f -g -l' options.)\n");
+
 	if (msg) {
 		fprintf(stderr, "\nERROR: %s!\n", msg);
 	}
@@ -223,20 +226,23 @@ int main(int argc, const char *argv[])
 		case 'd':
 			opts.notypes |= SYMTYPE_DATA;
 			break;
+		case 'f':
+			opts.no_files = true;
+			break;
+		case 'g':
+			opts.no_gccint = true;
+			break;
+		case 'l':
+			opts.no_local = true;
+			break;
+		case 'n':
+			opts.sort_name = true;
+			break;
 		case 't':
 			opts.notypes |= SYMTYPE_TEXT;
 			break;
 		case 'w':
 			opts.notypes |= SYMTYPE_WEAK;
-			break;
-		case 'l':
-			opts.no_local = true;
-			break;
-		case 'o':
-			opts.no_obj = true;
-			break;
-		case 'n':
-			opts.sort_name = true;
 			break;
 		default:
 			usage("unknown option");

@@ -34,19 +34,20 @@ typedef struct {
 
 typedef struct {
 	symtype_t notypes;
+	bool no_files;
+	bool no_gccint;
 	bool no_local;
-	bool no_obj;
 	bool sort_name;
 } symbol_opts_t;
 
 typedef struct {
 	int debug;    /* debug symbols */
-	int locals;   /* unnamed / local symbols */
-	int gccint;   /* GCC internal symbols */
 	int files;    /* object file names */
+	int gccint;   /* GCC internal symbols */
 	int invalid;  /* invalid symbol types for addresses */
+	int locals;   /* unnamed / local symbols */
+	int notypes;  /* explicitly disabled symbol types */
 	int undefined;/* undefined symbols */
-	int unwanted;  /* explicitly disabed symbol types */
 } ignore_counts_t;
 
 /* Magic used to denote different symbol table formats */
@@ -485,7 +486,7 @@ static bool is_gcc_internal(const char *name)
 static bool ignore_symbol(const char *name, symtype_t symtype, const symbol_opts_t *opts, ignore_counts_t *counts)
 {
 	if (opts->notypes & symtype) {
-		counts->unwanted++;
+		counts->notypes++;
 		return true;
 	}
 	if (opts->no_local) {
@@ -494,11 +495,13 @@ static bool ignore_symbol(const char *name, symtype_t symtype, const symbol_opts
 			return true;
 		}
 	}
-	if (opts->no_obj) {
+	if (opts->no_gccint) {
 		if (is_gcc_internal(name)) {
 			counts->gccint++;
 			return true;
 		}
+	}
+	if (opts->no_files) {
 		if (is_file_name(name)) {
 			counts->files++;
 			return true;
@@ -515,12 +518,6 @@ static void show_ignored(const ignore_counts_t *counts)
 	if (counts->debug) {
 		fprintf(stderr, "NOTE: ignored %d debugging symbols.\n", counts->debug);
 	}
-	if (counts->locals) {
-		fprintf(stderr, "NOTE: ignored %d unnamed / local symbols ('.L*').\n", counts->locals);
-	}
-	if (counts->gccint) {
-		fprintf(stderr, "NOTE: ignored %d GCC internal symbols.\n", counts->gccint);
-	}
 	if (counts->files) {
 		/* object file path names most likely get truncated and
 		 * as result cause unnecessary symbol name conflicts
@@ -529,14 +526,20 @@ static void show_ignored(const ignore_counts_t *counts)
 		 */
 		fprintf(stderr, "NOTE: ignored %d file symbols ('*.[ao]'|'*/*').\n", counts->files);
 	}
+	if (counts->gccint) {
+		fprintf(stderr, "NOTE: ignored %d GCC internal symbols.\n", counts->gccint);
+	}
 	if (counts->invalid) {
 		fprintf(stderr, "NOTE: ignored %d invalid symbols.\n", counts->invalid);
 	}
+	if (counts->locals) {
+		fprintf(stderr, "NOTE: ignored %d unnamed / local symbols ('.L*').\n", counts->locals);
+	}
+	if (counts->notypes) {
+		fprintf(stderr, "NOTE: ignored %d symbols with unwanted types.\n", counts->notypes);
+	}
 	if (counts->undefined) {
 		fprintf(stderr, "NOTE: ignored %d undefined symbols.\n", counts->undefined);
-	}
-	if (counts->unwanted) {
-		fprintf(stderr, "NOTE: ignored %d other unwanted symbol types.\n", counts->unwanted);
 	}
 }
 
