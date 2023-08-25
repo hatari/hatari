@@ -1283,7 +1283,7 @@ Working applications:
 - Calamus SL/L/LE 20xx lite versions
   - Need either GDOS or older EmuTOS v0.9.5 - v0.9.12
 - Mandelbrot playtime (fracplay, uses FPU)
-- M_PLAYER v4.02 (app works also on Falcon, but not with EmuTOS)
+- M_PLAYER v4.02
   - https://gtello.pagesperso-orange.fr/mplayere.htm
 - PixArt4
   - http://www.1632systems.co.uk/www/html/Product/pixart.htm
@@ -1507,13 +1507,13 @@ Broken demos (with EmuTOS v1.2.x):
 - '_' (by Escape)
   - Crashes after first few screens
 - GEM demo (by DHS & AssemSoft):
-  - Needs HiColor mode
+  - Needs to be started from HiColor mode
 - mengerMarcherFC (256b intro by atariBDSM)
-  - Needs 320x200 HiColor mode
+  - Needs to be started from 320x200 HiColor mode
 - Multitech (by Cybernetics)
-  - Part of Geotech demo, needs (DSP and) HiColor mode
+  - Part of Geotech demo, needs (DSP and) HiColor mode (line-A 10)
 - Spin176 (256b intro by MKM / Lamers)
-  - Needs FPU & 320x200 HiColor mode
+  - Needs FPU & started from 320x200 HiColor mode
 - Who Okayed This?
   - Both the new and (fixed) old intros (epidemic.prg) do work,
     (fixed) music disk (zikdisk.prg) panics to bus error
@@ -1623,10 +1623,10 @@ Games working under EmuTOS >= v1.1.1 (DSP support + fixes):
 - Trionoids* (Columns clone)
 - Wotanoid (Asteroids clone)
 
-Games working with EmuTOS >1.1.1:
+Games working with EmuTOS >v1.1.1:
 - Tetrhex (1.41)
 
-Games working after patching EmuTOS to allow 16-bit v_planes value:
+Games working with EmuTOS Git version:
 - Confusion demo 1 & 2
 - Gravon (demo + full version)
 
@@ -1648,26 +1648,24 @@ Partly working games:
   - Fire button works only until game itself starts
   - Works only with 8MB RAM
 
-Broken games (with EmuTOS v1.1.x):
+Broken games (with EmuTOS Git version):
 - Columns by Deadheart* (demo)
   - Broken graphics (needs HiColor?)
 - Conquest of Elysium II v2.0 & 2.3:
-  - Freezes at start to black screen
+  - Broken graphics (needs HiColor?)
 - Downfall
-  - Complains about "Error while loading BLACKWHT.BGR", but actually
-    fails to Setscreen(0xDB4F00, 0xDB4F00, 0xFFFF) -> needs HiColor
+  - Dialog complaining "Error while loading BLACKWHT.BGR", but actually
+    it fails to Setscreen(0xDB4F00, 0xDB4F00, 0xFFFF) -> needs HiColor
 - It's Great (start from st-med rez)
   - Mouse doesn't work
 - "K" preview* (by EXA)
   - Bus error panic when game would start
-- Killing Impact
-  - Might work but Hatari does not emulate Videl correctly
 - Moongame
-  - Stuck at black screen or broken graphics (needs HiColor?)
+  - Broken graphics (needs HiColor?)
 - Moonspeeder (preview 2)
   - Broken graphics (needs HiColor?)
 - Mouse trap
-  - Broken graphics (needs HiColor?)
+  - Wrong screen size + broken graphics (needs HiColor?)
 - Neurobot
   - Both intro & game just exit immediately
 - Rave*
@@ -1678,15 +1676,17 @@ Broken games (with EmuTOS v1.1.x):
 - SBM v0.8 & v1.03* (Bomberman clone)
   - Bus error panic and wrong graphics
 - Sokoban By FUN
-  - Graphics partially wrong, actual game cannot be started
-- ScummVm (OL version)
-  - Broken graphics (needs HiColor?)
+  - input to start actual game does not work
 - Tron 2 (VGA only)
-  - Works but graphics are broken -> needs HiColor
-- Ufo War
-  - Might work but Hatari does not emulate Videl correctly
+  - Graphics broken, illegl instruction on during startup
 - Watership (VGA only)
   - Bus error reading $fffffffe on startup -> panic
+
+Hatari rendering issues:
+- Killing Impact
+  - Might work but Hatari does not emulate Videl correctly
+- Ufo War
+  - Might work but Hatari does not emulate Videl correctly
 
 
 Falcon applications
@@ -1752,6 +1752,15 @@ Applications working under EmuTOS >= v1.2:
 - Videl Inside (v1.2)
   - EmuTOS v1.2 provides Srealloc() support needed to avoid desktop
     crash with modes larger than earlier static screen alloc
+- M_PLAYER v4.x
+  - Sound did not work with EmuTOS v1.1
+  - https://gtello.pagesperso-orange.fr/mplayere.htm
+
+Applications working under EmuTOS Git (preliminary TC support):
+- ScummVm for Falcon + clones
+  - older TC versions from OL & Miro
+- Apex Animator 2.41
+  - Both the app itself and separate viewers
 
 Applications working with extra hacks:
 - Fractal Playground, Godleness, GodBoyX by Reservoir Gods
@@ -1760,24 +1769,22 @@ Applications working with extra hacks:
 
 Partly working applications:
 - Animator v0.20.4
-  - FLI and FLC viewing works
-  - Videos needing HiColor either refuse to run,
-    or program crashes on exit leaving desktop
-    with broken graphics
-- Apex Animator 2.10 (demo)
-  - Separate 256-color viewers programs work, HiColor ones don't
+  - Works as well as with TOS v4 (refuses to run with many videos
+    or crashes on exit leaving desktop with broken graphics)
 - Apex Alpha (demo)
   - Works with MMU + FPU + VGA
-  - Requires HiColor for RGB (TOS v4 works with RGB)?
+  - RGB 768x496(?) mode gfx are broken (works with TOS v4)
 - AVI030
-  - All videos do not work (HiColor support?)
+  - Works as well as with TOS v4 (= has issues)
 - Centview (GEM image viewer)
-  - Crashes to bus error when trying to view >256 color images
+  - Shows images, but crashes to bus error with >256 color ones
+  - After showing 256 color image, GUI is not refreshed
 
-Broken applications (with EmuTOS v1.2):
+Broken applications (with EmuTOS Git):
 - Indypaint
-  - Cursor moves, but screen is black, F1-F4 keys don't work
-  - Requires HiColor
+  - Cursor moves, but co-ordinate display and menus from F1-F5 keys
+    look broken
+  - Needs HiColor line-A (functions: 0, 9 & 10)
 
 
 	- Eero
