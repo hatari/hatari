@@ -72,7 +72,7 @@ static FILE *pMidiFhOut = NULL;    /* File handle used for Midi output */
 static PmStream* midiIn  = NULL;	 // current midi input port
 static PmStream* midiOut = NULL;	 // current midi output port
 
-static bool Midi_Host_SwitchPort(const char* portName, bool forInput);
+static bool Midi_Host_SwitchPort(const char* portName, midi_dir_t dir);
 static int Midi_GetDataLength(uint8_t status);
 static int Midi_SplitEvent(PmEvent* midiEvent, uint8_t* msg);
 static PmEvent* Midi_BuildEvent(uint8_t byte);
@@ -386,9 +386,9 @@ static bool Midi_Host_Open(void)
 	// -- open input and output ports according to configuration
 	// -- ignore errors to avoid MIDI being disabled
 	if (ConfigureParams.Midi.sMidiInPortName[0])
-		Midi_Host_SwitchPort(ConfigureParams.Midi.sMidiInPortName, true);
+		Midi_Host_SwitchPort(ConfigureParams.Midi.sMidiInPortName, MIDI_FOR_INPUT);
 	if (ConfigureParams.Midi.sMidiOutPortName[0])
-		Midi_Host_SwitchPort(ConfigureParams.Midi.sMidiOutPortName, false);
+		Midi_Host_SwitchPort(ConfigureParams.Midi.sMidiOutPortName, MIDI_FOR_OUTPUT);
 #endif
 
 	return true;
@@ -433,7 +433,7 @@ static void Midi_Host_Close(void)
  * (i.e. before any port has been selected for the first time),
  * name of the first port in that direction is returned.
  */
-const char* Midi_Host_GetPortName(const char *name, int offset, bool forInput)
+const char* Midi_Host_GetPortName(const char *name, midi_name_offset_t offset, midi_dir_t dir)
 {
 	const PmDeviceInfo* info;
 	const char *prev = NULL;
@@ -450,9 +450,9 @@ const char* Midi_Host_GetPortName(const char *name, int offset, bool forInput)
 		info = Pm_GetDeviceInfo(i);
 		if (!info)
 			continue;
-		if (forInput && !info->input)
+		if (dir == MIDI_FOR_INPUT && !info->input)
 			continue;
-		if (!forInput && info->input)
+		if (dir == MIDI_FOR_OUTPUT && info->input)
 			continue;
 		if (len == 0)
 		{
@@ -487,7 +487,7 @@ const char* Midi_Host_GetPortName(const char *name, int offset, bool forInput)
  * matches beginning of the device name, is used. Returns true for
  * success, false otherwise
  */
-static bool Midi_Host_SwitchPort(const char* portName, bool forInput)
+static bool Midi_Host_SwitchPort(const char* portName, midi_dir_t dir)
 {
 	int i, prefixmatch, len, count;
 	bool err;
@@ -509,9 +509,9 @@ static bool Midi_Host_SwitchPort(const char* portName, bool forInput)
 		const PmDeviceInfo* info = Pm_GetDeviceInfo(i);
 		if (!info)
 			continue;
-		if (forInput && !info->input)
+		if (dir == MIDI_FOR_INPUT && !info->input)
 			continue;
-		if (!forInput && info->input)
+		if (dir == MIDI_FOR_OUTPUT && info->input)
 			continue;
 		if (!strcmp(info->name, portName))
 			break;
@@ -524,12 +524,12 @@ static bool Midi_Host_SwitchPort(const char* portName, bool forInput)
 	if (i >= count)
 	{
 		LOG_TRACE(TRACE_MIDI, "MIDI: no %s ports matching '%s'\n",
-			  forInput ? "input" : "output", portName);
+			  dir == MIDI_FOR_INPUT ? "input" : "output", portName);
 		return false;
 	}
 
 	// -- close current port in any case, then try open new one
-	if (forInput == true)
+	if (dir == MIDI_FOR_INPUT)
 	{
 		if (midiIn) {
 			Pm_Close(midiIn);
