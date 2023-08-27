@@ -77,7 +77,7 @@ static uint8_t Keymap_SymbolicToStScanCode(const SDL_Keysym* pKeySym)
 	 case SDLK_ASTERISK: code = 0x66; break;
 	 case SDLK_PLUS: code = 0x1B; break;
 	 case SDLK_COMMA: code = 0x33; break;
-	 case SDLK_MINUS: code = 0x35; break;
+	 case SDLK_MINUS: code = 0x0C; break;
 	 case SDLK_PERIOD: code = 0x34; break;
 	 case SDLK_SLASH: code = 0x35; break;
 	 case SDLK_0: code = 0x0B; break;
