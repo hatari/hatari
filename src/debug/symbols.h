@@ -55,6 +55,7 @@ extern void Symbols_RemoveCurrentProgram(void);
 extern void Symbols_ChangeCurrentProgram(const char *path);
 extern void Symbols_ShowCurrentProgramPath(FILE *fp);
 extern void Symbols_LoadCurrentProgram(void);
+extern void Symbols_FreeAll(void);
 /* symbols/dspsymbols command parsing */
 extern char *Symbols_MatchCommand(const char *text, int state);
 extern int Symbols_Command(int nArgc, char *psArgs[]);

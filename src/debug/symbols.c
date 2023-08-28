@@ -171,6 +171,7 @@ static symbol_list_t* symbols_load_ascii(FILE *fp, uint32_t *offsets, uint32_t m
 		list->names[count].address = address;
 		list->names[count].type = symtype;
 		list->names[count].name = strdup(name);
+		list->names[count].name_allocated = true;
 		assert(list->names[count].name);
 		count++;
 	}
@@ -196,6 +197,9 @@ static void symbols_trim_names(symbol_list_t* list)
 		    sym[i].address == sym[next].address &&
 		    sym[i].type == sym[next].type) {
 			/* remove duplicate */
+			if (sym[i].name_allocated) {
+				free(sym[i].name);
+			}
 			memmove(sym+i, sym+next, (count-next) * sizeof(symbol_t));
 			count--;
 			dups++;
@@ -370,6 +374,14 @@ static void Symbols_Free(symbol_list_t* list)
 	symbol_list_free(list);
 }
 
+/**
+ * Free all symbols (at exit).
+ */
+void Symbols_FreeAll(void)
+{
+	symbol_list_free(CpuSymbolsList);
+	symbol_list_free(DspSymbolsList);
+}
 
 /* ---------------- symbol name completion support ------------------ */
 
