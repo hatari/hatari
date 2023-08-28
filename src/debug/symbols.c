@@ -220,23 +220,23 @@ static void symbols_trim_names(symbol_list_t* list)
 /**
  * Separate code symbols from other symbols in address list.
  */
-static void symbols_trim_addresses(symbol_list_t* list)
+static void symbols_split_addresses(symbol_list_t* list)
 {
 	symbol_t *sym = list->addresses;
 	uint32_t prev = 0;
 	int i;
 
 	for (i = 0; i < list->namecount; i++) {
-		if (sym[i].address < prev) {
-			fprintf(stderr, "INTERNAL ERROR: symbol '%s' at 0x%x not sorted in address-order\n",
-				sym[i].name, sym[i].address);
-			exit(1);
-		}
-		prev = sym[i].address;
-
 		if (sym[i].type & ~SYMTYPE_CODE) {
 			break;
 		}
+		if (sym[i].address < prev) {
+			char stype = symbol_char(sym[i].type);
+			fprintf(stderr, "INTERNAL ERROR: %c symbol %d/%d ('%s') at %x < %x (prev addr)\n",
+				stype, i, list->namecount, sym[i].name, sym[i].address, prev);
+			exit(1);
+		}
+		prev = sym[i].address;
 	}
 	list->codecount = i;
 	list->datacount = list->namecount - i;
@@ -339,9 +339,10 @@ static symbol_list_t* Symbols_Load(const char *filename, uint32_t *offsets, uint
 	assert(list->addresses);
 	memcpy(list->addresses, list->names, list->namecount * sizeof(symbol_t));
 
-	/* sort address list and trim to contain just TEXT symbols */
+	/* sort list by addresses, _with_ code symbols being first */
 	qsort(list->addresses, list->namecount, sizeof(symbol_t), symbols_by_address);
-	symbols_trim_addresses(list);
+	/* "split" list to code and other symbols */
+	symbols_split_addresses(list);
 
 	/* skip verbose output when symbols are auto-loaded */
 	if (ConfigureParams.Debugger.bSymbolsAutoLoad) {
