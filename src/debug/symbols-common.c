@@ -1220,7 +1220,7 @@ static symbol_list_t* symbols_load_binary(FILE *fp, const symbol_opts_t *opts,
 {
 	uint32_t textlen, datalen, bsslen, tablesize, tabletype, prgflags;
 	prg_section_t sections[3];
-	int offset, reads = 0;
+	int reads = 0;
 	uint16_t relocflag;
 	symbol_list_t* symbols;
 	uint32_t symoff = 0;
@@ -1420,7 +1420,11 @@ static symbol_list_t* symbols_load_binary(FILE *fp, const symbol_opts_t *opts,
 			free(headers);
 			return NULL;
 		}
+	} else {
+		/* DRI: symbol table offset */
+		symoff = 0x1C + textlen + datalen;
 	}
+
 	if (!symbols_print_prg_info(tabletype, prgflags, relocflag)) {
 		free(headers);
 		return NULL;
@@ -1442,34 +1446,24 @@ static symbol_list_t* symbols_load_binary(FILE *fp, const symbol_opts_t *opts,
 		return NULL;
 	}
 
+	/* go to start of symbol table */
+	if (fseek(fp, symoff, SEEK_SET) < 0) {
+		perror("ERROR: seeking to symbol table failed");
+		free(headers);
+		return NULL;
+	}
+
 	if (tabletype == SYMBOL_FORMAT_GNU) {
-		/* go to start of symbol table */
-		offset = symoff;
-		if (fseek(fp, offset, SEEK_SET) < 0) {
-			perror("ERROR: seeking to symbol table failed");
-			return NULL;
-		}
-		fprintf(stderr, "Trying to load a.out symbol table at offset 0x%x...\n", offset);
+		fprintf(stderr, "Trying to load a.out symbol table at offset 0x%x...\n", symoff);
 		symbols = symbols_load_gnu(fp, sections, tablesize, stroff, strsize, opts);
+
 	} else if (tabletype == SYMBOL_FORMAT_ELF) {
-		/* go to start of symbol table */
-		offset = symoff;
-		if (fseek(fp, offset, SEEK_SET) < 0) {
-			perror("ERROR: seeking to symbol table failed");
-			free(headers);
-			return NULL;
-		}
-		fprintf(stderr, "Trying to load ELF symbol table at offset 0x%x...\n", offset);
+		fprintf(stderr, "Trying to load ELF symbol table at offset 0x%x...\n", symoff);
 		symbols = symbols_load_elf(fp, sections, tablesize, stroff, strsize, opts, headers, e_shnum);
 		free(headers);
+
 	} else {
-		/* go to start of symbol table */
-		offset = 0x1C + textlen + datalen;
-		if (fseek(fp, offset, SEEK_SET) < 0) {
-			perror("ERROR: seeking to symbol table failed");
-			return NULL;
-		}
-		fprintf(stderr, "Trying to load DRI symbol table at offset 0x%x...\n", offset);
+		fprintf(stderr, "Trying to load DRI symbol table at offset 0x%x...\n", symoff);
 		symbols = symbols_load_dri(fp, sections, tablesize, opts);
 	}
 	return symbols;
