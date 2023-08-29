@@ -117,8 +117,7 @@ static int symbols_check_addresses(const symbol_t *syms, int count)
 {
 	int i, j, dups = 0;
 
-	for (i = 0; i < (count - 1); i++)
-	{
+	for (i = 0; i < (count - 1); i++) {
 		/* absolute symbols have values, not addresses */
 		if (syms[i].type == SYMTYPE_ABS) {
 			continue;
@@ -144,8 +143,7 @@ static int symbols_check_names(const symbol_t *syms, int count)
 {
 	int i, j, dups = 0;
 
-	for (i = 0; i < (count - 1); i++)
-	{
+	for (i = 0; i < (count - 1); i++) {
 		for (j = i + 1; j < count && strcmp(syms[i].name, syms[j].name) == 0; j++) {
 			fprintf(stderr, "WARNING: addresses 0x%x & 0x%x have the same '%s' name.\n",
 				syms[i].address, syms[j].address, syms[i].name);
@@ -302,15 +300,15 @@ static int read_pc_debug_names(FILE *fp, symbol_list_t *list, uint32_t offset)
 	fseek(fp, 0, SEEK_END);
 	filesize = ftell(fp);
 	fseek(fp, 0, SEEK_SET);
+
 	buf = malloc(filesize);
-	if (buf == NULL)
-	{
+	if (buf == NULL) {
 		perror("");
 		return 0;
 	}
+
 	nread = fread(buf, 1, filesize, fp);
-	if (nread != filesize)
-	{
+	if (nread != filesize){
 		perror("ERROR: reading failed");
 		free(buf);
 		return 0;
@@ -323,8 +321,8 @@ static int read_pc_debug_names(FILE *fp, symbol_list_t *list, uint32_t offset)
 	{
 		uint32_t first_reloc = get_be32(buf + reloc_offset);
 		reloc_offset += 4;
-		if (first_reloc != 0)
-		{
+
+		if (first_reloc != 0) {
 			while (reloc_offset < filesize && buf[reloc_offset] != 0)
 				reloc_offset++;
 			reloc_offset++;
@@ -334,30 +332,27 @@ static int read_pc_debug_names(FILE *fp, symbol_list_t *list, uint32_t offset)
 		debug_offset = reloc_offset;
 	}
 
-	if (debug_offset + SIZEOF_PDB_HEADER >= filesize)
-	{
+	if (debug_offset + SIZEOF_PDB_HEADER >= filesize) {
 		/* fprintf(stderr, "no debug information present\n"); */
 		/* this is not an error */
 		free(buf);
 		return 1;
 	}
 	read_pc_debug_header(buf + debug_offset, &pdb_h);
-	if (pdb_h.magic != 0x51444231UL) /* 'QDB1' (in executables) */
-	{
+	/* 'QDB1' (in executables) */
+	if (pdb_h.magic != 0x51444231UL) {
 		fprintf(stderr, "ERROR: unknown debug format 0x%08lx\n", (unsigned long)pdb_h.magic);
 		free(buf);
 		return 0;
 	}
-	if (pdb_h.size_stringtable == 0)
-	{
+	if (pdb_h.size_stringtable == 0) {
 		free(buf);
 		return 0;
 	}
 	fprintf(stderr, "Reading symbol names from Pure-C debug information.\n");
 
 	list->debug_strtab = (char *)malloc(pdb_h.size_stringtable);
-	if (list->debug_strtab == NULL)
-	{
+	if (list->debug_strtab == NULL) {
 		perror("mem alloc of debug string table");
 		free(buf);
 		return 0;
@@ -365,8 +360,8 @@ static int read_pc_debug_names(FILE *fp, symbol_list_t *list, uint32_t offset)
 
 	varinfo_offset = SIZEOF_PDB_HEADER + debug_offset + pdb_h.size_fileinfos + pdb_h.size_lineinfo;
 	strtable_offset = varinfo_offset + pdb_h.size_varinfo + pdb_h.size_unknown + pdb_h.size_typeinfo + pdb_h.size_structinfo;
-	if (strtable_offset >= filesize || strtable_offset + pdb_h.size_stringtable > filesize)
-	{
+
+	if (strtable_offset >= filesize || strtable_offset + pdb_h.size_stringtable > filesize) {
 		free(list->debug_strtab);
 		list->debug_strtab = NULL;
 		free(buf);
@@ -374,14 +369,12 @@ static int read_pc_debug_names(FILE *fp, symbol_list_t *list, uint32_t offset)
 	}
 	memcpy(list->debug_strtab, buf + strtable_offset, pdb_h.size_stringtable);
 
-	if (pdb_h.size_varinfo != 0)
-	{
+	if (pdb_h.size_varinfo != 0) {
 		int i;
-		for (i = 0; i < list->namecount; i++)
-		{
+		for (i = 0; i < list->namecount; i++) {
 			uint8_t storage;
-			switch (list->names[i].type)
-			{
+
+			switch (list->names[i].type) {
 			case SYMTYPE_TEXT:
 				storage = PDB_STORAGE_TEXT;
 				break;
@@ -395,32 +388,31 @@ static int read_pc_debug_names(FILE *fp, symbol_list_t *list, uint32_t offset)
 				storage = PDB_STORAGE_NONE;
 				break;
 			}
-			if (storage != PDB_STORAGE_NONE)
-			{
+			if (storage != PDB_STORAGE_NONE) {
 				uint8_t *p, *end;
 				int len = (int)strlen(list->names[i].name);
 				/*
 				 * only need to care about possibly truncated names
 				 */
-				if (len != 8 && len != 22)
+				if (len != 8 && len != 22) {
 					continue;
+				}
 				/*
 				 * Fixme: slurp the infos all in, and sort them so we can do a binary search
 				 */
 				p = buf + varinfo_offset;
 				end = p + pdb_h.size_varinfo;
-				while (p < end)
-				{
+				while (p < end) {
 					struct pdb_varinfo info;
 
 					read_varinfo(p, &info);
 					if (info.storage == storage && info.value == list->names[i].address &&
 					    ((storage == PDB_STORAGE_TEXT && (info.type == 7 || info.type == 8)) ||
-					     ((storage == PDB_STORAGE_DATA || storage == PDB_STORAGE_BSS) && (info.type == 4 || info.type == 5 || info.type == 6))))
-					{
+					     ((storage == PDB_STORAGE_DATA || storage == PDB_STORAGE_BSS) &&
+					      (info.type == 4 || info.type == 5 || info.type == 6)))) {
+
 						char *name = (char *)buf + strtable_offset + info.name_offset;
-						if (strcmp(list->names[i].name, name) != 0)
-						{
+						if (strcmp(list->names[i].name, name) != 0) {
 							if (list->names[i].name_allocated) {
 								free(list->names[i].name);
 								list->names[i].name_allocated = false;
@@ -741,15 +733,13 @@ static symbol_list_t* symbols_load_gnu(FILE *fp, const prg_section_t *sections, 
 
 	list->strtab = (char *)malloc(tablesize + strsize);
 
-	if (list->strtab == NULL)
-	{
+	if (list->strtab == NULL) {
 		symbol_list_free(list);
 		return NULL;
 	}
 
 	nread = fread(list->strtab, tablesize + strsize, 1, fp);
-	if (nread != 1)
-	{
+	if (nread != 1) {
 		perror("ERROR: reading symbols failed");
 		symbol_list_free(list);
 		return NULL;
@@ -761,8 +751,7 @@ static symbol_list_t* symbols_load_gnu(FILE *fp, const prg_section_t *sections, 
 	memset(&ignore, 0, sizeof(ignore));
 	count = 0;
 
-	for (i = 0; i < slots; i++)
-	{
+	for (i = 0; i < slots; i++) {
 		strx = get_be32(p);
 		p += 4;
 		n_type = *p++;
@@ -783,14 +772,13 @@ static symbol_list_t* symbols_load_gnu(FILE *fp, const prg_section_t *sections, 
 		}
 		name = list->strtab + strx + stroff;
 
-		if (n_type & N_STAB)
-		{
+		if (n_type & N_STAB) {
 			ignore.debug++;
 			continue;
 		}
+
 		section = NULL;
-		switch (n_type & (N_TYPE|N_EXT))
-		{
+		switch (n_type & (N_TYPE|N_EXT)) {
 		case N_UNDF:
 		case N_UNDF|N_EXT:
 		case N_WEAKU:
@@ -849,8 +837,7 @@ static symbol_list_t* symbols_load_gnu(FILE *fp, const prg_section_t *sections, 
 		 * the value of a common symbol is its size, not its address:
 		 */
 		if (((n_type & N_TYPE) == N_COMM) ||
-			(((n_type & N_EXT) && (n_type & N_TYPE) == N_UNDF && address != 0)))
-		{
+			(((n_type & N_EXT) && (n_type & N_TYPE) == N_UNDF && address != 0))) {
 			/* if we ever want to know a symbols size, get that here */
 			fprintf(stderr, "WARNING: ignoring common symbol '%s' in slot %u.\n", name, (unsigned int)i);
 			ignore.debug++;
@@ -897,47 +884,47 @@ static symbol_list_t* symbols_load_gnu(FILE *fp, const prg_section_t *sections, 
 #define ELF_ST_INFO(bind,type)		(((bind) << 4) + ((type) & 0xF))
 
 /* sh_type */
-#define SHT_NULL		  0 		  /* Section header table entry unused */
-#define SHT_PROGBITS	  1 		  /* Program specific (private) data */
-#define SHT_SYMTAB		  2 		  /* Link editing symbol table */
-#define SHT_STRTAB		  3 		  /* A string table */
-#define SHT_RELA		  4 		  /* Relocation entries with addends */
-#define SHT_HASH		  5 		  /* A symbol hash table */
-#define SHT_DYNAMIC 	  6 		  /* Information for dynamic linking */
-#define SHT_NOTE		  7 		  /* Information that marks file */
-#define SHT_NOBITS		  8 		  /* Section occupies no space in file */
-#define SHT_REL 		  9 		  /* Relocation entries, no addends */
-#define SHT_SHLIB		  10		  /* Reserved, unspecified semantics */
-#define SHT_DYNSYM		  11		  /* Dynamic linking symbol table */
-#define SHT_INIT_ARRAY	  14		  /* Array of constructors */
-#define SHT_FINI_ARRAY	  15		  /* Array of destructors */
-#define SHT_PREINIT_ARRAY 16		  /* Array of pre-constructors */
-#define SHT_GROUP		  17		  /* Section group */
-#define SHT_SYMTAB_SHNDX  18		  /* Extended section indices */
+#define SHT_NULL	  0 		/* Section header table entry unused */
+#define SHT_PROGBITS	  1 		/* Program specific (private) data */
+#define SHT_SYMTAB	  2 		/* Link editing symbol table */
+#define SHT_STRTAB	  3 		/* A string table */
+#define SHT_RELA	  4 		/* Relocation entries with addends */
+#define SHT_HASH	  5 		/* A symbol hash table */
+#define SHT_DYNAMIC 	  6 		/* Information for dynamic linking */
+#define SHT_NOTE	  7 		/* Information that marks file */
+#define SHT_NOBITS	  8 		/* Section occupies no space in file */
+#define SHT_REL 	  9 		/* Relocation entries, no addends */
+#define SHT_SHLIB	  10		/* Reserved, unspecified semantics */
+#define SHT_DYNSYM	  11		/* Dynamic linking symbol table */
+#define SHT_INIT_ARRAY	  14		/* Array of constructors */
+#define SHT_FINI_ARRAY	  15		/* Array of destructors */
+#define SHT_PREINIT_ARRAY 16		/* Array of pre-constructors */
+#define SHT_GROUP	  17		/* Section group */
+#define SHT_SYMTAB_SHNDX  18		/* Extended section indices */
 
 /* ST_BIND */
-#define STB_LOCAL  0				/* Symbol not visible outside obj */
-#define STB_GLOBAL 1				/* Symbol visible outside obj */
-#define STB_WEAK   2				/* Like globals, lower precedence */
-#define STB_LOOS   10				/* Start of OS-specific */
-#define STB_GNU_UNIQUE	10			/* Symbol is unique in namespace */
-#define STB_HIOS   12				/* End of OS-specific */
-#define STB_LOPROC 13				/* Application-specific semantics */
-#define STB_HIPROC 15				/* Application-specific semantics */
+#define STB_LOCAL  0			/* Symbol not visible outside obj */
+#define STB_GLOBAL 1			/* Symbol visible outside obj */
+#define STB_WEAK   2			/* Like globals, lower precedence */
+#define STB_LOOS   10			/* Start of OS-specific */
+#define STB_GNU_UNIQUE	10		/* Symbol is unique in namespace */
+#define STB_HIOS   12			/* End of OS-specific */
+#define STB_LOPROC 13			/* Application-specific semantics */
+#define STB_HIPROC 15			/* Application-specific semantics */
 
 /* ST_TYPE */
-#define STT_NOTYPE	0				/* Symbol type is unspecified */
-#define STT_OBJECT	1				/* Symbol is a data object */
-#define STT_FUNC	2				/* Symbol is a code object */
-#define STT_SECTION 3				/* Symbol associated with a section */
-#define STT_FILE	4				/* Symbol gives a file name */
-#define STT_COMMON	5				/* Symbol is a common data object */
-#define STT_TLS 	6				/* Symbol is thread-local data object*/
-#define STT_LOOS	10				/* Start of OS-specific */
-#define STT_GNU_IFUNC	10			/* Symbol is an indirect code object */
-#define STT_HIOS	12				/* End of OS-specific */
-#define STT_LOPROC	13				/* Application-specific semantics */
-#define STT_HIPROC	15				/* Application-specific semantics */
+#define STT_NOTYPE	0		/* Symbol type is unspecified */
+#define STT_OBJECT	1		/* Symbol is a data object */
+#define STT_FUNC	2		/* Symbol is a code object */
+#define STT_SECTION	3		/* Symbol associated with a section */
+#define STT_FILE	4		/* Symbol gives a file name */
+#define STT_COMMON	5		/* Symbol is a common data object */
+#define STT_TLS 	6		/* Symbol is thread-local data object*/
+#define STT_LOOS	10		/* Start of OS-specific */
+#define STT_GNU_IFUNC	10		/* Symbol is an indirect code object */
+#define STT_HIOS	12		/* End of OS-specific */
+#define STT_LOPROC	13		/* Application-specific semantics */
+#define STT_HIPROC	15		/* Application-specific semantics */
 
 /* special sections indexes */
 #define SHN_UNDEF 0
@@ -948,28 +935,25 @@ static symbol_list_t* symbols_load_gnu(FILE *fp, const prg_section_t *sections, 
 #define SHN_HIOS         0xFF3F         /* OS specific semantics, hi */
 #define SHN_ABS          0xfff1         /* Associated symbol is absolute */
 #define SHN_COMMON       0xfff2         /* Associated symbol is in common */
-#define SHN_XINDEX		 0xFFFF			/* Section index is held elsewhere */
+#define SHN_XINDEX	 0xFFFF		/* Section index is held elsewhere */
 #define SHN_HIRESERVE    0xFFFF         /* End range of reserved indices */
 
 /* Values for section header, sh_flags field. */
-#define SHF_WRITE			 ((uint32_t)1 << 0)   /* Writable data during execution */
-#define SHF_ALLOC			 ((uint32_t)1 << 1)   /* Occupies memory during execution */
+#define SHF_WRITE		 ((uint32_t)1 << 0)   /* Writable data during execution */
+#define SHF_ALLOC		 ((uint32_t)1 << 1)   /* Occupies memory during execution */
 #define SHF_EXECINSTR		 ((uint32_t)1 << 2)   /* Executable machine instructions */
-#define SHF_MERGE			 ((uint32_t)1 << 4)   /* Might be merged */
+#define SHF_MERGE		 ((uint32_t)1 << 4)   /* Might be merged */
 #define SHF_STRINGS 		 ((uint32_t)1 << 5)   /* Contains nul-terminated strings */
 #define SHF_INFO_LINK		 ((uint32_t)1 << 6)   /* `sh_info' contains SHT index */
 #define SHF_LINK_ORDER		 ((uint32_t)1 << 7)   /* Preserve order after combining */
-#define SHF_OS_NONCONFORMING ((uint32_t)1 << 8)   /* Non-standard OS specific handling
-										   required */
-#define SHF_GROUP			 ((uint32_t)1 << 9)   /* Section is member of a group. */
-#define SHF_TLS 			 ((uint32_t)1 << 10)  /* Section hold thread-local data. */
-#define SHF_COMPRESSED		 ((uint32_t)1 << 11)	/* Section with compressed data */
-#define SHF_MASKOS			 0x0ff00000 /* OS-specific. */
-#define SHF_MASKPROC		 0xf0000000 /* Processor-specific */
-#define SHF_ORDERED 		 ((uint32_t)1 << 30)  /* Special ordering requirement
-										   (Solaris). */
-#define SHF_EXCLUDE 		 ((uint32_t)1 << 31)  /* Section is excluded unless
-										   referenced or allocated (Solaris).*/
+#define SHF_OS_NONCONFORMING	 ((uint32_t)1 << 8)   /* Non-standard OS specific handling required */
+#define SHF_GROUP		 ((uint32_t)1 << 9)   /* Section is member of a group. */
+#define SHF_TLS 		 ((uint32_t)1 << 10)  /* Section hold thread-local data. */
+#define SHF_COMPRESSED		 ((uint32_t)1 << 11)  /* Section with compressed data */
+#define SHF_MASKOS		 0x0ff00000	/* OS-specific. */
+#define SHF_MASKPROC		 0xf0000000	/* Processor-specific */
+#define SHF_ORDERED 		 ((uint32_t)1 << 30)  /* Special ordering requirement (Solaris). */
+#define SHF_EXCLUDE 		 ((uint32_t)1 << 31)  /* Section is excluded unless referenced or allocated (Solaris).*/
 
 struct elf_shdr {
     uint32_t sh_name;           /* Section name */
@@ -984,7 +968,10 @@ struct elf_shdr {
     uint32_t sh_entsize;        /* Entry size if section holds table */
 };
 
-static symbol_list_t* symbols_load_elf(FILE *fp, const prg_section_t *sections, uint32_t tablesize, uint32_t stroff, uint32_t strsize, const symbol_opts_t *opts, struct elf_shdr *headers, unsigned short e_shnum)
+static symbol_list_t* symbols_load_elf(FILE *fp, const prg_section_t *sections,
+				       uint32_t tablesize, uint32_t stroff,
+				       uint32_t strsize, const symbol_opts_t *opts,
+				       struct elf_shdr *headers, unsigned short e_shnum)
 {
 	size_t slots = tablesize / SIZEOF_ELF32_SYM;
 	size_t i;
@@ -1105,15 +1092,16 @@ static symbol_list_t* symbols_load_elf(FILE *fp, const prg_section_t *sections, 
 					continue;
 				} else {
 					shdr = &headers[st_shndx];
+
 					if (shdr->sh_type == SHT_NOBITS) {
 						symtype = ELF_ST_BIND(st_info) == STB_WEAK ? SYMTYPE_WEAK : SYMTYPE_BSS;
 						section = &(sections[2]);
-					} else if (shdr->sh_flags & SHF_EXECINSTR)
-					{
+
+					} else if (shdr->sh_flags & SHF_EXECINSTR) {
 						symtype = ELF_ST_BIND(st_info) == STB_WEAK ? SYMTYPE_WEAK : SYMTYPE_TEXT;
 						section = &(sections[0]);
-					} else
-					{
+
+					} else {
 						symtype = ELF_ST_BIND(st_info) == STB_WEAK ? SYMTYPE_WEAK : SYMTYPE_DATA;
 						section = &(sections[1]);
 					}
@@ -1280,8 +1268,8 @@ static symbol_list_t* symbols_load_binary(FILE *fp, const symbol_opts_t *opts,
 		reads += fread(&magic2, sizeof(magic2), 1, fp);
 		magic2 = be_swap32(magic2);
 		if (reads == 2 &&
-			((magic1 == 0x283a001a && magic2 == 0x4efb48fa) || 	/* Original binutils: move.l 28(pc),d4; jmp 0(pc,d4.l) */
-			 (magic1 == 0x203a001a && magic2 == 0x4efb08fa))) {	/* binutils >= 2.18-mint-20080209: move.l 28(pc),d0; jmp 0(pc,d0.l) */
+		    ((magic1 == 0x283a001a && magic2 == 0x4efb48fa) || 	/* Original binutils: move.l 28(pc),d4; jmp 0(pc,d4.l) */
+		     (magic1 == 0x203a001a && magic2 == 0x4efb08fa))) {	/* binutils >= 2.18-mint-20080209: move.l 28(pc),d0; jmp 0(pc,d0.l) */
 			reads += fread(&dummy, sizeof(dummy), 1, fp);	/* skip a_info */
 			reads += fread(&a_text, sizeof(a_text), 1, fp);
 			a_text = be_swap32(a_text);
@@ -1305,22 +1293,23 @@ static symbol_list_t* symbols_load_binary(FILE *fp, const symbol_opts_t *opts,
 			g_stkpos = be_swap32(g_stkpos);
 			reads += fread(&g_symbol_format, sizeof(g_symbol_format), 1, fp);
 			g_symbol_format = be_swap32(g_symbol_format);
-			if (g_symbol_format == 0)
-			{
+			if (g_symbol_format == 0) {
 				tabletype = SYMBOL_FORMAT_GNU;
 			}
-			if ((a_text + (256 - 28)) != textlen)
+			if ((a_text + (256 - 28)) != textlen) {
 				fprintf(stderr, "warning: inconsistent text segment size %08x != %08x\n", textlen, a_text + (256 - 28));
-			if (a_data != datalen)
+			}
+			if (a_data != datalen) {
 				fprintf(stderr, "warning: inconsistent data segment size %08x != %08x\n", datalen, a_data);
-			if (a_bss != bsslen)
+			}
+			if (a_bss != bsslen) {
 				fprintf(stderr, "warning: inconsistent bss segment size %08x != %08x\n", bsslen, a_bss);
+			}
 			/*
 			 * the symbol table size in the GEMDOS header includes the string table,
 			 * the symbol table size in the exec header does not.
 			 */
-			if (tabletype == SYMBOL_FORMAT_GNU)
-			{
+			if (tabletype == SYMBOL_FORMAT_GNU) {
 				strsize = tablesize - a_syms;
 				tablesize = a_syms;
 				stroff = a_syms;
@@ -1360,11 +1349,11 @@ static symbol_list_t* symbols_load_binary(FILE *fp, const symbol_opts_t *opts,
 		reads += fread(&e_machine, sizeof(e_machine), 1, fp);
 		e_machine = be_swap16(e_machine);
 		if (reads == 4 &&
-			magic == 0x7f454c46 && /* '\177ELF' */
-			e_ident[0] == 1 && /* ELFCLASS32 */
-			e_ident[1] == 2 && /* ELFDATA2MSB */
-			e_type == 2 && /* ET_EXEC */
-			e_machine == 4) /* EM_68K */ {
+		    magic == 0x7f454c46 && /* '\177ELF' */
+		    e_ident[0] == 1 &&     /* ELFCLASS32 */
+		    e_ident[1] == 2 &&     /* ELFDATA2MSB */
+		    e_type == 2 &&         /* ET_EXEC */
+		    e_machine == 4) {      /* EM_68K */
 			reads  = fread(&dummy, sizeof(dummy), 1, fp);
 			reads += fread(&dummy, sizeof(dummy), 1, fp);
 			reads += fread(&e_phoff, sizeof(e_phoff), 1, fp);
@@ -1410,8 +1399,8 @@ static symbol_list_t* symbols_load_binary(FILE *fp, const symbol_opts_t *opts,
 				shdr->sh_addralign = be_swap32(shdr->sh_addralign);
 				reads += fread(&shdr->sh_entsize, 1, sizeof(shdr->sh_entsize), fp);
 				shdr->sh_entsize = be_swap32(shdr->sh_entsize);
-				if (shdr->sh_type == SHT_SYMTAB)
-				{
+
+				if (shdr->sh_type == SHT_SYMTAB) {
 					symoff = shdr->sh_offset;
 					tablesize = shdr->sh_size;
 					strtabidx = shdr->sh_link;
