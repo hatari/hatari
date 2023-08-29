@@ -1332,7 +1332,7 @@ static symbol_list_t* symbols_load_binary(FILE *fp, const symbol_opts_t *opts,
 		uint32_t e_phoff, e_shoff;
 		uint16_t e_type, e_machine, e_phnum, e_shentsize, e_shstrndx;
 		uint16_t i;
-		uint16_t strtabidx;
+		int strtabidx;
 
 		/* skip to ELF program header */
 		fseek(fp, (tabletype & 0xff) - 28, SEEK_CUR);
@@ -1369,13 +1369,15 @@ static symbol_list_t* symbols_load_binary(FILE *fp, const symbol_opts_t *opts,
 			e_shnum = be_swap16(e_shnum);
 			reads += fread(&e_shstrndx, sizeof(e_shstrndx), 1, fp);
 			e_shstrndx = be_swap16(e_shstrndx);
+
 			fseek(fp, e_shoff, SEEK_SET);
-			strtabidx = -1;
 			headers = (struct elf_shdr *)malloc(sizeof(*headers) * e_shnum);
 			if (headers == NULL) {
 				perror("");
 				return NULL;
 			}
+
+			strtabidx = -1;
 			for (i = 0; i < e_shnum; i++) {
 				struct elf_shdr *shdr = &headers[i];
 
@@ -1406,7 +1408,8 @@ static symbol_list_t* symbols_load_binary(FILE *fp, const symbol_opts_t *opts,
 					strtabidx = shdr->sh_link;
 				}
 			}
-			if (strtabidx == -1 || headers[strtabidx].sh_type != SHT_STRTAB) {
+			if (strtabidx < 0 || strtabidx >= e_shnum ||
+			    headers[strtabidx].sh_type != SHT_STRTAB) {
 				tabletype = 0;
 			} else {
 				stroff = headers[strtabidx].sh_offset;
