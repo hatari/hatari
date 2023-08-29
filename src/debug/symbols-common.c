@@ -2,7 +2,7 @@
  * Hatari - symbols-common.c
  *
  * Copyright (C) 2010-2023 by Eero Tamminen
- * Copyright (C) 2017,2021 by Thorsten Otto
+ * Copyright (C) 2017,2021,2023 by Thorsten Otto
  *
  * This file is distributed under the GNU General Public License, version 2
  * or at your option any later version. Read the file gpl.txt for details.

@@ -58,6 +58,7 @@ Emulator improvements:
   - Fix: free all debugger allocations before exit
   - Fix: invalid free on freeing loaded GNU debug symbols
   - Fix: CPU core disassembler crashes with longer symbol names
+  - Add support for reading symbols from new MINT+ELF binaries
   - Add support for demangled C++/a.out symbols (which can be
     very long and contain almost any characters)
   - ".sym" file beside a program file acts as its symbols override
