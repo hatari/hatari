@@ -1050,7 +1050,17 @@ static symbol_list_t* symbols_load_elf(FILE *fp, const prg_section_t *sections,
 		p += 2;
 		name = dummy;
 		if (!strx) {
-			ignore.invalid++;
+			switch (st_info) {
+			/* silently ignore no-name symbols
+			 * related to section names
+			 */
+			case ELF_ST_INFO(STB_LOCAL, STT_NOTYPE):
+			case ELF_ST_INFO(STB_LOCAL, STT_SECTION):
+				break;
+			default:
+				ignore.invalid++;
+				break;
+			}
 			continue;
 		}
 		if (strx >= strsize) {
