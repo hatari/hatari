@@ -655,7 +655,7 @@ Free/shareware/PD games:
 - Midi Maze II   (MIDI multiplayer)
 - Midi Maze 3    (MIDI multiplayer)
 - MidiWiz 1.1i   (MIDI / RS-232 multiplayer)
-  - Requires EmuTOS >v1.1.1 to work also on ST
+  - Requires EmuTOS >= v1.2 to work also on ST
 - Missile Alert
 - Monkeys and Balloons
 - Monopoly
@@ -967,10 +967,10 @@ Not working video / HD access programs:
 - STVidPlay (see EmuTOS incompatible.txt)
 
 Working MIDI programs:
-- A.C.T (EmuTOS >1.1.1 for screen update fixes)
+- A.C.T (EmuTOS >= 1.2 for screen update fixes)
 - AlterTune
 - Dave's Fabulous MIDI Music Box
-- Dr T's KCS v4 (EmuTOS >1.1.1 for menu / WF_FIRSTXYWH fix)
+- Dr T's KCS v4 (EmuTOS >= 1.2 for menu / WF_FIRSTXYWH fix)
 - Dr T's Tiger Cub 2.0
 - EditTrack
 - EZ-Score Plus
@@ -1496,17 +1496,11 @@ Demos working partly under EmuTOS >= v1.2:
   - Ground texture missing in last screen
 - Bound, Bound 2, Bound 4 (by Crac)
   - Bound works also with 1.0, but DSP sound effect needs v1.1
-  - Startup texts broken, need HiColor
+  - Startup texts broken, need TC terminal output
 - Doomino (by STAX)
-  - Info screen at start looks just garbage (HiColor?)
-- Symposium'96 (by Hydroxid)
-  - Cannot run to end due to Hatari issue
-- X-perience (by Abstract)
-  - Demo freezes, also with TOS v4
+  - Startup text broken, need TC terminal output
 
 Broken demos (with EmuTOS v1.2.x):
-- '_' (by Escape)
-  - Crashes after first few screens
 - GEM demo (by DHS & AssemSoft):
   - Needs to be started from HiColor mode
 - mengerMarcherFC (256b intro by atariBDSM)
@@ -1518,6 +1512,14 @@ Broken demos (with EmuTOS v1.2.x):
 - Who Okayed This?
   - Both the new and (fixed) old intros (epidemic.prg) do work,
     (fixed) music disk (zikdisk.prg) panics to bus error
+
+Hatari issues (happen also under TOS4):
+- '_' (by Escape)
+  - Crashes after first few screens
+- Symposium'96 (by Hydroxid)
+  - Cannot run to end
+- X-perience (by Abstract)
+  - Demo freezes
 
 
 Falcon games
@@ -1531,6 +1533,7 @@ Games working under EmuTOS >= v1.0:
 - Blum
 - Cavemania (demo version)
 - Chorensha (old, non-DSP version)
+- Columns by Deadheart* (Atarimania / 1st demo version)
 - Corsair
 - DB 4K
 - Dry Egg (needs >4MB RAM)
@@ -1624,12 +1627,16 @@ Games working under EmuTOS >= v1.1.1 (DSP support + fixes):
 - Trionoids* (Columns clone)
 - Wotanoid (Asteroids clone)
 
-Games working with EmuTOS >v1.1.1:
+Games working with EmuTOS >= v1.2:
 - Tetrhex (1.41)
 
 Games working with EmuTOS Git version:
-- Confusion demo 1 & 2
-- Gravon (demo + full version)
+- Setscreen(): support 16-bit modes
+  - Confusion demo 1 & 2
+  - Gravon (demo + full version)
+- Setscreen(): ignore reserved bits
+  - Moonspeeder (preview 2)
+  - Rave*
 
 Games working with extra hacks:
 - Bugger, Bunion, SkyFall, Sworm games by Resorvoir Gods:
@@ -1650,44 +1657,40 @@ Partly working games:
   - Works only with 8MB RAM
 
 Broken games (with EmuTOS Git version):
-- Columns by Deadheart* (demo)
-  - Broken graphics (needs HiColor?)
+- Columns by Deadheart* (demo, 2nd version)
+  - Broken graphics, does not use Vsetmode() for OS version <= $0402
 - Conquest of Elysium II v2.0 & 2.3:
-  - Broken graphics (needs HiColor?)
+  - Broken graphics, uses VDI calls
 - Downfall
-  - Dialog complaining "Error while loading BLACKWHT.BGR", but actually
-    it fails to Setscreen(0xDB4F00, 0xDB4F00, 0xFFFF) -> needs HiColor
+  - Dialog complains "Error while loading BLACKWHT.BGR".
+    It is already open, so issue may be Setscreen() following it
 - It's Great (start from st-med rez)
   - Mouse doesn't work
 - "K" preview* (by EXA)
   - Bus error panic when game would start
-- Moongame
-  - Broken graphics (needs HiColor?)
-- Moonspeeder (preview 2)
-  - Broken graphics (needs HiColor?)
 - Mouse trap
-  - Wrong screen size + broken graphics (needs HiColor?)
+  - Freezes in the menu screen, uses VDI draw calls
 - Neurobot
   - Both intro & game just exit immediately
-- Rave*
-  - Broken graphics (needs HiColor?)
-    - In v0.8.6, only at lower half during actual game
 - Reeking Rubber
-  - Broken graphics & termination on actual game start (HiColor?)
+  - Broken graphics & freeze on game start, uses VDI draw calls
 - SBM v0.8 & v1.03* (Bomberman clone)
-  - Bus error panic and wrong graphics
-- Sokoban By FUN
-  - input to start actual game does not work
+  - Bus error panic on reading $400000
+- Sokoban By FUN (VGA only)
+  - Input to start actual game does not work
+  - Uses VDI draw functions + line-A 7
 - Tron 2 (VGA only)
-  - Graphics broken, illegl instruction on during startup
+  - Startup ends in a black screen
 - Watership (VGA only)
   - Bus error reading $fffffffe on startup -> panic
 
-Hatari rendering issues:
+Hatari issues (happen also with TOS4):
 - Killing Impact
-  - Might work but Hatari does not emulate Videl correctly
+  - Gfx broken, Hatari Videl emulation is incomplete
+- Moongame
+  - Main menu mouse cursor cannot be moved
 - Ufo War
-  - Might work but Hatari does not emulate Videl correctly
+  - Gfx broken, Hatari Videl emulation is incomplete
 
 
 Falcon applications
@@ -1779,7 +1782,7 @@ Partly working applications:
   - Works as well as with TOS v4 (= has issues)
 - Centview (GEM image viewer)
   - Shows images, but crashes to bus error with >256 color ones
-  - After showing 256 color image, GUI is not refreshed
+  - After showing 256 color image, GUI may not be refreshed
 
 Broken applications (with EmuTOS Git):
 - Indypaint
