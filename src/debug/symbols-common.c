@@ -60,6 +60,55 @@ typedef struct {
 #define ATARI_PROGRAM_MAGIC 0x601A
 
 
+/* ------- heuristic helpers for name comparisons ------- */
+
+/**
+ * return true if given symbol name is (anonymous/numbered) local one
+ */
+static bool is_local_symbol(const char *name)
+{
+	return (name[0] == '.' && name[1] == 'L');
+}
+
+/**
+ * return true if given symbol name is object/library/file name
+ */
+static bool is_file_name(const char *name)
+{
+	int len = strlen(name);
+	/* object (.a or .o) file name? */
+	if (len > 2 && ((name[len-2] == '.' && (name[len-1] == 'a' || name[len-1] == 'o')))) {
+		    return true;
+	}
+	/* some other file name? */
+	const char *slash = strchr(name, '/');
+	/* not just overloaded '/' operator? */
+	if (slash && slash[1] != '(') {
+		return true;
+	}
+	return false;
+}
+
+/**
+ * Return true if symbol name matches internal GCC symbol name
+ */
+static bool is_gcc_internal(const char *name)
+{
+	static const char *gcc_sym[] = {
+		"___gnu_compiled_c",
+		"gcc2_compiled."
+	};
+	int i;
+	/* useless symbols GCC (v2) seems to add to every object? */
+	for (i = 0; i < ARRAY_SIZE(gcc_sym); i++) {
+		if (strcmp(name, gcc_sym[i]) == 0) {
+			return true;
+		}
+	}
+	return false;
+}
+
+
 /* ------------------ symbol comparisons ------------------ */
 
 /**
@@ -435,44 +484,6 @@ static int read_pc_debug_names(FILE *fp, symbol_list_t *list, uint32_t offset)
 /* ---------- symbol ignore count handling ------------- */
 
 /**
- * return true if given symbol name is object/library/file name
- */
-static bool is_file_name(const char *name)
-{
-	int len = strlen(name);
-	/* object (.a or .o) file name? */
-	if (len > 2 && ((name[len-2] == '.' && (name[len-1] == 'a' || name[len-1] == 'o')))) {
-		    return true;
-	}
-	/* some other file name? */
-	const char *slash = strchr(name, '/');
-	/* not just overloaded '/' operator? */
-	if (slash && slash[1] != '(') {
-		return true;
-	}
-	return false;
-}
-
-/**
- * Return true if symbol name matches internal GCC symbol name
- */
-static bool is_gcc_internal(const char *name)
-{
-	static const char *gcc_sym[] = {
-		"___gnu_compiled_c",
-		"gcc2_compiled."
-	};
-	int i;
-	/* useless symbols GCC (v2) seems to add to every object? */
-	for (i = 0; i < ARRAY_SIZE(gcc_sym); i++) {
-		if (strcmp(name, gcc_sym[i]) == 0) {
-			return true;
-		}
-	}
-	return false;
-}
-
-/**
  * Return true if symbol should be ignored based on its name & type
  * and given options, and increase appropriate ignore count
  */
@@ -483,7 +494,7 @@ static bool ignore_symbol(const char *name, symtype_t symtype, const symbol_opts
 		return true;
 	}
 	if (opts->no_local) {
-		if (name[0] == '.' && name[1] == 'L') {
+		if (is_local_symbol(name)) {
 			counts->locals++;
 			return true;
 		}
