@@ -33,10 +33,13 @@ typedef struct {
 } prg_section_t;
 
 typedef struct {
+	/* shared by debugger & gst2ascii */
 	symtype_t notypes;
 	bool no_files;
 	bool no_gccint;
 	bool no_local;
+	bool no_dups;
+	/* gst2ascii specific options */
 	bool sort_name;
 } symbol_opts_t;
 

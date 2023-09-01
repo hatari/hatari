@@ -182,39 +182,55 @@ static symbol_list_t* symbols_load_ascii(FILE *fp, uint32_t *offsets, uint32_t m
 }
 
 /**
- * Remove full duplicates from the sorted names list
- * and trim the allocation to remaining symbols
+ * Remove duplicate addresses from name list symbols, and trim its
+ * allocation to remaining symbols.
+ *
+ * NOTE: symbols list must be address-sorted when this is called,
+ * with the preferred symbol name being first, so this needs just to
+ * remove symbols with duplicate addresses that follow it!
+ *
+ * Return number of removed address duplicates.
  */
-static void symbols_trim_names(symbol_list_t* list)
+static int symbols_trim_names(symbol_list_t* list)
 {
 	symbol_t *sym = list->names;
-	int i, next, count, dups;
+	int i, next, count, skip, dups = 0;
 
 	count = list->namecount;
-	for (dups = i = 0; i < count - 1; ) {
-		next = i + 1;
-		if (strcmp(sym[i].name, sym[next].name) == 0 &&
-		    sym[i].address == sym[next].address &&
-		    sym[i].type == sym[next].type) {
-			/* remove duplicate */
-			if (sym[i].name_allocated) {
-				free(sym[i].name);
-			}
-			memmove(sym+i, sym+next, (count-next) * sizeof(symbol_t));
-			count--;
-			dups++;
-		} else {
-			i++;
+	for (i = 0; i < count - 1; i++) {
+		if (sym[i].type == SYMTYPE_ABS) {
+			/* value, not an address */
+			continue;
 		}
+
+		/* count duplicates */
+		for (next = i+1; next < count; next++) {
+			if (sym[i].address != sym[next].address ||
+			    sym[next].type == SYMTYPE_ABS) {
+				break;
+			}
+			/* free this duplicate's name */
+			if (sym[next].name_allocated) {
+				free(sym[next].name);
+			}
+		}
+		if (next == i+1) {
+			continue;
+		}
+
+		/* drop counted duplicates */
+		memmove(sym+i+1, sym+next, (count-next) * sizeof(symbol_t));
+		skip = next - i - 1;
+		count -= skip;
+		dups += skip;
 	}
+
 	if (dups || list->namecount < list->symbols) {
 		list->names = realloc(list->names, count * sizeof(symbol_t));
 		assert(list->names);
 		list->namecount = count;
 	}
-	if (dups) {
-		fprintf(stderr, "WARNING: removed %d complete symbol duplicates\n", dups);
-	}
+	return dups;
 }
 
 /**
@@ -289,15 +305,16 @@ static symbol_list_t* Symbols_Load(const char *filename, uint32_t *offsets, uint
 	symbol_list_t *list;
 	symbol_opts_t opts;
 	FILE *fp;
+	int dups;
 
 	if (!File_Exists(filename)) {
 		fprintf(stderr, "ERROR: file '%s' doesn't exist or isn't readable!\n", filename);
 		return NULL;
 	}
 	memset(&opts, 0, sizeof(opts));
-	opts.no_files = true;
 	opts.no_gccint = true;
 	opts.no_local = true;
+	opts.no_dups = true;
 
 	if (Opt_IsAtariProgram(filename)) {
 		const char *last = CurrentProgramPath;
@@ -330,34 +347,43 @@ static symbol_list_t* Symbols_Load(const char *filename, uint32_t *offsets, uint
 		return NULL;
 	}
 
-	/* sort and trim names list */
-	qsort(list->names, list->namecount, sizeof(symbol_t), symbols_by_name);
-	symbols_trim_names(list);
+	/* first sort symbols by address, _with_ code symbols being first */
+	qsort(list->names, list->namecount, sizeof(symbol_t), symbols_by_address);
+
+	/* remove symbols with duplicate addresses? */
+	if (opts.no_dups) {
+		if ((dups = symbols_trim_names(list))) {
+			fprintf(stderr, "Removed %d symbols in same addresses as other symbols.\n", dups);
+		}
+	}
 
 	/* copy name list to address list */
 	list->addresses = malloc(list->namecount * sizeof(symbol_t));
 	assert(list->addresses);
 	memcpy(list->addresses, list->names, list->namecount * sizeof(symbol_t));
 
-	/* sort list by addresses, _with_ code symbols being first */
-	qsort(list->addresses, list->namecount, sizeof(symbol_t), symbols_by_address);
-	/* "split" list to code and other symbols */
+	/* "split" address list to code and other symbols */
 	symbols_split_addresses(list);
 
-	/* skip verbose output when symbols are auto-loaded */
+	/* finally, sort name list by names */
+	qsort(list->names, list->namecount, sizeof(symbol_t), symbols_by_name);
+
+	/* skip more verbose output when symbols are auto-loaded */
 	if (ConfigureParams.Debugger.bSymbolsAutoLoad) {
-		fprintf(stderr, "Skipping duplicate address & symbol name checks when autoload is enabled.\n");
+		fprintf(stderr, "Skipping detailed duplicate symbols reporting when autoload is enabled.\n");
 	} else {
-		/* check for duplicate names */
-		if (symbols_check_names(list->names, list->namecount)) {
-			fprintf(stderr, "-> Hatari symbol expansion can match only one of the addresses for name duplicates!\n");
+		/* check for duplicate addresses? */
+		if (!opts.no_dups) {
+			if ((dups = symbols_check_addresses(list->addresses, list->namecount))) {
+			fprintf(stderr, "%d symbols in same addresses as other symbols.\n", dups);
+			}
 		}
-		/* check for duplicate code & other addresses */
-		if (symbols_check_addresses(list->addresses, list->codecount)) {
-			fprintf(stderr, "-> Hatari profile/disassembly will show only one of the code symbols for given address!\n");
-		}
-		if (symbols_check_addresses(list->addresses + list->codecount, list->datacount)) {
-			fprintf(stderr, "-> Hatari disassembly will show only one of the symbols for given address!\n");
+
+		/* report duplicate names */
+		if ((dups = symbols_check_names(list->names, list->namecount))) {
+			fprintf(stderr, "%d symbols having multiple addresses for the same name.\n"
+				"Symbol expansion will match only one of the addresses for them!\n",
+				dups);
 		}
 	}
 
