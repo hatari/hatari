@@ -108,13 +108,36 @@ static bool is_gcc_internal(const char *name)
 	return false;
 }
 
+/**
+ * Return true if symbol name seems to be C/C++ one,
+ * i.e. is unlikely to be assembly one
+ */
+static bool is_cpp_symbol(const char *name)
+{
+	/* normally C symbols start with underscore */
+	if (name[0] == '_') {
+		return true;
+	}
+	/* C++ method signatures can include '::' or spaces */
+	if (strchr(name, ' ') || strchr(name, ':')) {
+		return true;
+	}
+	return false;
+}
+
 
 /* ------------------ symbol comparisons ------------------ */
 
 /**
- * compare function for qsort() to sort according to
- * symbol type & address.  Code section symbols will
- * be sorted first.
+ * compare function for qsort(), to sort symbols by their
+ * type, address, and finally name.
+ *
+ * Code symbols are sorted first, so that later phase can
+ * split symbol table to separate code and data symbol lists.
+ *
+ * For symbols with same address, heuristics are used to sort
+ * most useful name first, so that later phase can filter
+ * the following, less useful names, out for that address.
  */
 static int symbols_by_address(const void *s1, const void *s2)
 {
@@ -135,7 +158,47 @@ static int symbols_by_address(const void *s1, const void *s2)
 	if (sym1->address > sym2->address) {
 		return 1;
 	}
-	return 0;
+
+	/* and by name when addresses are equal */
+	const char *name1 = sym1->name;
+	const char *name2 = sym2->name;
+
+	/* first check for less desirable symbol names,
+	 * from most useless, to somewhat useful
+	 */
+	bool (*sym_check[])(const char *) = {
+		is_gcc_internal,
+		is_local_symbol,
+		is_file_name,
+	};
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(sym_check); i++) {
+		bool unwanted1 = sym_check[i](name1);
+		bool unwanted2 = sym_check[i](name2);
+		if (!unwanted1 && unwanted2) {
+			return -1;
+		}
+		if (unwanted1 && !unwanted2) {
+			return 1;
+		}
+	}
+	/* => both symbol names look useful */
+
+	bool is_cpp1 = is_cpp_symbol(name1);
+	bool is_cpp2 = is_cpp_symbol(name2);
+	int len1 = strlen(name1);
+	int len2 = strlen(name2);
+
+	/* prefer shorter names for C/C++ symbols, as
+	 * this often avoid '___' C-function prefixes,
+	 * and C++ symbols can be *very* long
+	 */
+	if (is_cpp1 || is_cpp2) {
+		return len1 - len2;
+	}
+	/* otherwise prefer longer symbols (e.g. ASM) */
+	return len2 - len1;
 }
 
 /**
