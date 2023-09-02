@@ -2,7 +2,7 @@
 .\" First parameter, NAME, should be all caps
 .\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
 .\" other parameters are allowed: see man(7), man(1)
-.TH "GST2ASCII" "1" "2023-08-24" "Hatari" "Hatari utilities"
+.TH "GST2ASCII" "1" "2023-09-03" "Hatari" "Hatari utilities"
 .SH "NAME"
 gst2ascii \- Filter and output Atari program symbol table as ASCII
 .SH "SYNOPSIS"
@@ -10,10 +10,10 @@ gst2ascii \- Filter and output Atari program symbol table as ASCII
 .RI  [options]
 .RI  <program>
 .SH "DESCRIPTION"
-\fIgst2ascii\fP reads (GNU-style a.out or traditional DRI/GST) symbol
-table from given Atari program and outputs it in the ASCII format
-understood by Hatari debugger and its profiler data post-processor
-(latter does not accept any other format).
+\fIgst2ascii\fP reads symbol table from the given Atari program, and
+outputs it in the ASCII format understood by the Hatari debugger and
+its profiler data post-processor.  Symbol tables in the traditional
+DRI/GST, GNU a.out and new GCC PRGELF formats are supported.
 .PP
 All symbol addresses output by the tool are TEXT relative, so
 when loading them in Hatari debugger, one needs to give just TEXT
@@ -47,11 +47,19 @@ they do not have names, just numbers.
 \fB-n\fP
 Sort symbol output by symbol names, not by their addresses.
 .TP
+\fB-s\fP
+Filter out symbols with duplicate addresses from the output.
+.TP
 \fB-t\fP
 Filter TEXT symbols out from the output.
 .TP
 \fB-w\fP
 Filter weak symbols out from the output.
+.PP
+By default, same filter options are enabled as in Hatari debugger.
+Prefixing option letter with '+' instead of '-', keeps the indicated
+symbol type, if that type was disabled in the tool defaults
+(or by an option given earlier on the command line).
 .SH "NOTES"
 If you have problems, try with 'nm -n <program>' instead
 (Atari native or cross-compiler version). If \fInm\fP works,
