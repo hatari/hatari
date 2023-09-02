@@ -224,49 +224,67 @@ static int symbols_by_name(const void *s1, const void *s2)
 }
 
 /**
- * Check for duplicate addresses in symbol list
- * (called separately for code & data symbols)
+ * Check for duplicate addresses in address-sorted symbol list
+ * (called separately for code & data symbol parts)
  * Return number of duplicates
  */
 static int symbols_check_addresses(const symbol_t *syms, int count)
 {
-	int i, j, dups = 0;
+	int i, j, total = 0;
 
 	for (i = 0; i < (count - 1); i++) {
 		/* absolute symbols have values, not addresses */
 		if (syms[i].type == SYMTYPE_ABS) {
 			continue;
 		}
+		bool has_dup = false;
 		for (j = i + 1; j < count && syms[i].address == syms[j].address; j++) {
 			if (syms[j].type == SYMTYPE_ABS) {
 				continue;
 			}
-			fprintf(stderr, "WARNING: symbols '%s' & '%s' have the same 0x%x address.\n",
-				syms[i].name, syms[j].name, syms[i].address);
-			dups++;
+			if (!total) {
+				fprintf(stderr, "WARNING, following symbols have same address:\n");
+			}
+			if (!has_dup) {
+				fprintf(stderr, "- 0x%x: '%s'", syms[i].address, syms[i].name);
+				has_dup = true;
+			}
+			fprintf(stderr, ", '%s'", syms[j].name);
+			total++;
 			i = j;
 		}
+		if (has_dup) {
+			fprintf(stderr, "\n");
+		}
 	}
-	return dups;
+	return total;
 }
 
 /**
- * Check for duplicate names in symbol list
+ * Check for duplicate names in name-sorted symbol list
  * Return number of duplicates
  */
 static int symbols_check_names(const symbol_t *syms, int count)
 {
-	int i, j, dups = 0;
+	bool has_title = false;
+	int i, j, dtotal = 0;
 
 	for (i = 0; i < (count - 1); i++) {
+		int dcount = 1;
 		for (j = i + 1; j < count && strcmp(syms[i].name, syms[j].name) == 0; j++) {
-			fprintf(stderr, "WARNING: addresses 0x%x & 0x%x have the same '%s' name.\n",
-				syms[i].address, syms[j].address, syms[i].name);
-			dups++;
+			dtotal++;
+			dcount++;
 			i = j;
 		}
+		if (dcount > 1) {
+			if (!has_title) {
+				fprintf(stderr, "WARNING, following symbols have multiple addresses:\n");
+				has_title = true;
+			}
+			fprintf(stderr, "- %s: %d\n", syms[i].name, dcount);
+		}
 	}
-	return dups;
+	return dtotal;
 }
 
 
