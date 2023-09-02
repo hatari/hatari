@@ -10,6 +10,10 @@
 #ifndef SCC_H
 #define SCC_H
 
+#define	SCC_IRQ_ON				0	/* O/low sets IRQ line */
+#define	SCC_IRQ_OFF				1	/* 1/high clears IRQ line */
+
+
 bool SCC_IsAvailable(CNF_PARAMS *cnf);
 void SCC_Init(void);
 void SCC_UnInit(void);

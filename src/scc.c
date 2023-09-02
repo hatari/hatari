@@ -239,6 +239,7 @@ struct SCC_Channel {
 	int	BaudRate_RX;
 
 	bool	RR0_Latched;
+	bool	TX_Buffer_Written;	/* True if a write to data reg was made, needed for TBE int */
 
 	uint64_t TxBuf_Write_Time;	/* Clock value when writing to WR8 */
 
@@ -307,8 +308,6 @@ static int SCC_Standard_Baudrate[] = {
 #define	SCC_INT_SOURCE_EXT_TX_UNDERRUN		(1<<10)
 #define	SCC_INT_SOURCE_EXT_BREAK_ABORT		(1<<11)
 
-#define	SCC_IRQ_ON				0	/* O/low sets IRQ line */
-#define	SCC_IRQ_OFF				1	/* 1/high clears IRQ line */
 
 /*--------------------------------------------------------------*/
 /* Local functions prototypes					*/
@@ -454,6 +453,7 @@ void SCC_MemorySnapShot_Capture(bool bSave)
 		MemorySnapShot_Store(&SCC.Chn[c].BaudRate_TX, sizeof(SCC.Chn[c].BaudRate_TX));
 		MemorySnapShot_Store(&SCC.Chn[c].BaudRate_RX, sizeof(SCC.Chn[c].BaudRate_RX));
 		MemorySnapShot_Store(&SCC.Chn[c].RR0_Latched, sizeof(SCC.Chn[c].RR0_Latched));
+		MemorySnapShot_Store(&SCC.Chn[c].TX_Buffer_Written, sizeof(SCC.Chn[c].TX_Buffer_Written));
 		MemorySnapShot_Store(&SCC.Chn[c].TX_bits, sizeof(SCC.Chn[c].TX_bits));
 		MemorySnapShot_Store(&SCC.Chn[c].RX_bits, sizeof(SCC.Chn[c].RX_bits));
 		MemorySnapShot_Store(&SCC.Chn[c].Parity_bits, sizeof(SCC.Chn[c].Parity_bits));
@@ -508,6 +508,7 @@ static void SCC_ResetChannel ( int Channel , bool HW_Reset )
 
 	SCC.Chn[Channel].RR[0] &= 0xb8;			/* keep bits 3,4 and 5, clear others */
 	SCC.Chn[Channel].RR[0] |= 0x44;			/* set bits 2 and 6 */
+	SCC.Chn[Channel].TX_Buffer_Written = false;	/* no write made to TB for now */
 	SCC.Chn[Channel].RR[1] &= 0x01;			/* keep bits 0, clear others */
 	SCC.Chn[Channel].RR[1] |= 0x06;			/* set bits 1 and 2 */
 	SCC.Chn[Channel].RR[3] = 0x00;
@@ -1229,7 +1230,9 @@ static void	SCC_Update_RR3_TX ( int Channel )
 	uint8_t		Set;
 
 	if ( ( SCC.Chn[ Channel ].RR[0] & SCC_RR0_BIT_TX_BUFFER_EMPTY )
-	  && ( SCC.Chn[ Channel ].WR[1] & SCC_WR1_BIT_TX_INT_ENABLE ) )
+	  && ( SCC.Chn[ Channel ].WR[1] & SCC_WR1_BIT_TX_INT_ENABLE )
+	  && ( SCC.Chn[ Channel ].TX_Buffer_Written )
+	)
 	  Set = 1;
 	else
 	  Set = 0;
@@ -1432,6 +1435,8 @@ static void SCC_WriteDataReg(int chn, uint8_t value)
 	/* Clear TX Buffer Empty bit and reset TX Interrupt Pending for this channel */
 	SCC.Chn[chn].RR[0] &= ~SCC_RR0_BIT_TX_BUFFER_EMPTY;
 	SCC.Chn[chn].TxBuf_Write_Time = Cycles_GetClockCounterOnWriteAccess();
+	/* Set TX_Buffer_Written=true, allow TBE int later if enabled */
+	SCC.Chn[chn].TX_Buffer_Written = true;
 
 	SCC_IntSources_Clear ( chn , SCC_INT_SOURCE_TX_BUFFER_EMPTY );
 
@@ -1490,6 +1495,9 @@ static void SCC_WriteControl(int chn, uint8_t value)
 
 			else if ( command == SCC_WR0_COMMAND_RESET_TX_IP )
 			{
+				LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d value=$%02x command=reset tx ip RR3=$%02x IUS=$%02x\n" ,
+					'A'+chn , SCC.Active_Reg , value , SCC.Chn[0].RR[3] , SCC.IUS );
+				SCC.Chn[chn].TX_Buffer_Written = false;
 				if ( chn )
 					SCC.Chn[0].RR[3] &= ~SCC_RR3_BIT_TX_IP_B;
 				else
