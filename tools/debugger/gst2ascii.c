@@ -50,15 +50,14 @@ static void usage(const char *msg)
 		const char opt;
 		const char *desc;
 	} OptInfo[] = {
-		{ 'a', "no absolute symbols (are values, not addresses)" },
-		{ 'b', "no BSS symbols" },
-		{ 'd', "no DATA symbols" },
-		{ 'f', "no file/path symbols" },
-		{ 'g', "no GCC internal (object) symbols" },
-		{ 'l', "no local (.L*) symbols" },
-		{ 'n', "sort by name (not address)" },
-		{ 't', "no TEXT symbols" },
-		{ 'w', "no weak symbols" },
+		{ 'a', "absolute symbols (are values, not addresses)" },
+		{ 'b', "BSS symbols" },
+		{ 'd', "DATA symbols" },
+		{ 'f', "file/path symbols" },
+		{ 'g', "GCC internal (object) symbols" },
+		{ 'l', "local (.L*) symbols" },
+		{ 't', "TEXT symbols" },
+		{ 'w', "weak symbols" },
 	};
 	const char *name;
 	int i;
@@ -68,23 +67,35 @@ static void usage(const char *msg)
 	} else {
 		name = PrgPath;
 	}
+
 	fprintf(stderr,
 		"\n"
 		"Usage: %s [options] <Atari program>\n"
 		"\n"
-		"Outputs given program (DRI/GST or a.out format) symbol table\n"
-		"content in ASCII format accepted by Hatari debugger and its\n"
-		"profiler data post-processor.\n"
+		"Outputs given program symbol table content in ASCII format\n"
+		"accepted by Hatari debugger and its profiler post-processor.\n"
 		"\n"
 		"All symbol addresses are output as TEXT relative, i.e. you need\n"
 		"to give only that as section address for the Hatari debugger:\n"
 		"\tsymbols <filename> TEXT\n"
 		"\n"
-		"Options:\n", name);
+		"Symbol type options:\n", name);
+
 	for (i = 0; i < ARRAY_SIZE(OptInfo); i++) {
-		fprintf(stderr, "\t-%c\t%s\n", OptInfo[i].opt, OptInfo[i].desc);
+		fprintf(stderr, "\t-%c\tno %s\n", OptInfo[i].opt, OptInfo[i].desc);
 	}
-	fprintf(stderr, "\n(Normally one should use at least '-f -g -l' options.)\n");
+
+	fprintf(stderr,
+		"\n"
+		"Prefixing option letter with '+' instead of '-', keeps\n"
+		"the indicated symbol type instead of dropping it.\n"
+		"\n"
+		"Output options:\n"
+		"\t-n, +n\tSort by address (-n), or by name (+n)\n"
+		"\n"
+		"Defaults:\n"
+		"* drop local (-l) and GCC internal (-g) symbols\n"
+		"* sort symbols by address (-n)\n");
 
 	if (msg) {
 		fprintf(stderr, "\nERROR: %s!\n", msg);
@@ -207,36 +218,35 @@ static int symbols_show(symbol_list_t* list, const symbol_opts_t *opts)
 int main(int argc, const char *argv[])
 {
 	symbol_opts_t opts;
-	int i;
+	int i, notype;
+	bool disable;
 
 	PrgPath = *argv;
+
 	memset(&opts, 0, sizeof(opts));
+	opts.no_gccint = true;
+	opts.no_local = true;
 
 	for (i = 1; i+1 < argc; i++) {
-		if (argv[i][0] != '-') {
+		if (argv[i][0] == '-') {
+			disable = true;
+		} else if (argv[i][0] == '+') {
+			disable = false;
+		} else {
 			break;
 		}
+		notype = 0;
+
 		switch(tolower((unsigned char)argv[i][1])) {
+			/* symbol types */
 		case 'a':
-			opts.notypes |= SYMTYPE_ABS;
+			notype = SYMTYPE_ABS;
 			break;
 		case 'b':
-			opts.notypes |= SYMTYPE_BSS;
+			notype = SYMTYPE_BSS;
 			break;
 		case 'd':
-			opts.notypes |= SYMTYPE_DATA;
-			break;
-		case 'f':
-			opts.no_files = true;
-			break;
-		case 'g':
-			opts.no_gccint = true;
-			break;
-		case 'l':
-			opts.no_local = true;
-			break;
-		case 'n':
-			opts.sort_name = true;
+			notype = SYMTYPE_DATA;
 			break;
 		case 't':
 			opts.notypes |= SYMTYPE_TEXT;
@@ -244,8 +254,28 @@ int main(int argc, const char *argv[])
 		case 'w':
 			opts.notypes |= SYMTYPE_WEAK;
 			break;
+			/* symbol flags */
+		case 'f':
+			opts.no_files = disable;
+			break;
+		case 'g':
+			opts.no_gccint = disable;
+			break;
+		case 'l':
+			opts.no_local = disable;
+			break;
+			/* other options */
+		case 'n':
+			opts.sort_name = !disable;
+			break;
 		default:
 			usage("unknown option");
+		}
+
+		if (disable) {
+			opts.notypes |= notype;
+		} else {
+			opts.notypes &= ~notype;
 		}
 	}
 	if (i+1 != argc) {
