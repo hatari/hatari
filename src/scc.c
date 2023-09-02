@@ -1583,6 +1583,8 @@ static void SCC_WriteControl(int chn, uint8_t value)
 		else if ( stop_bits == SCC_WR4_STOP_1_BIT )	SCC.Chn[chn].Stop_bits = 1;
 		else if ( stop_bits == SCC_WR4_STOP_15_BIT )	SCC.Chn[chn].Stop_bits = 1.5;
 		else if ( stop_bits == SCC_WR4_STOP_1_BIT )	SCC.Chn[chn].Stop_bits = 2;
+		if ( stop_bits != SCC_WR4_STOP_SYNC )		/* asynchronous mode */
+			SCC.Chn[chn].RR[0] |= SCC_RR0_BIT_TX_UNDERRUN_EOM;	/* set bit */
 
 		SCC_Update_BaudRate ( chn );
 	}
