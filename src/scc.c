@@ -345,6 +345,7 @@ static void	SCC_Update_IRQ ( void );
 static void	SCC_IntSources_Change ( int Channel , uint32_t Source , bool Set );
 static void	SCC_IntSources_Set ( int Channel , uint32_t Source );
 static void	SCC_IntSources_Clear ( int Channel , uint32_t Source );
+static void	SCC_IntSources_Clear_NoUpdate ( int Channel , uint32_t Source );
 
 static int	SCC_Do_IACK ( bool Soft );
 static void	SCC_Soft_IACK ( void );
@@ -1868,6 +1869,7 @@ static void	SCC_InterruptHandler_BRG ( int Channel )
 	SCC.Chn[Channel].RR[0] |= SCC_RR0_BIT_ZERO_COUNT;
 	SCC_IntSources_Set ( Channel , SCC_INT_SOURCE_EXT_ZERO_COUNT );
 	SCC.Chn[Channel].RR[0] &= ~SCC_RR0_BIT_ZERO_COUNT;
+	SCC_IntSources_Clear_NoUpdate ( Channel , SCC_INT_SOURCE_EXT_ZERO_COUNT );
 }
 
 
@@ -2110,31 +2112,7 @@ static void	SCC_IntSources_Change ( int Channel , uint32_t Sources , bool Set )
 			return;			/* No change */
 	}
 
-	/* Update RR3A */
-	if ( Sources & ( SCC_INT_SOURCE_RX_CHAR_AVAILABLE
-			| SCC_INT_SOURCE_RX_OVERRUN
-			| SCC_INT_SOURCE_RX_FRAMING_ERROR
-			| SCC_INT_SOURCE_RX_EOF_SDLC
-			| SCC_INT_SOURCE_RX_PARITY_ERROR ) )
-	{
-		SCC_Update_RR3_RX ( Channel );
-	}
-
-	if ( Sources & SCC_INT_SOURCE_TX_BUFFER_EMPTY )
-	{
-		SCC_Update_RR3_TX ( Channel );
-	}
-
-	if ( Sources & ( SCC_INT_SOURCE_EXT_ZERO_COUNT
-			| SCC_INT_SOURCE_EXT_DCD
-			| SCC_INT_SOURCE_EXT_SYNC_HUNT
-			| SCC_INT_SOURCE_EXT_CTS
-			| SCC_INT_SOURCE_EXT_TX_UNDERRUN
-			| SCC_INT_SOURCE_EXT_BREAK_ABORT ) )
-	{
-		SCC_Update_RR3_EXT ( Channel );
-	}
-
+	SCC_Update_RR3 ( Channel );
 
 	if ( Set )
 		SCC.Chn[ Channel ].IntSources |= Sources;
@@ -2163,6 +2141,13 @@ static void	SCC_IntSources_Clear ( int Channel , uint32_t Sources )
 	SCC_IntSources_Change ( Channel , Sources , false );
 }
 
+/*
+ * Just clear bits in interrupts sources, don't update RR3 and IRQ
+ */
+static void	SCC_IntSources_Clear_NoUpdate ( int Channel , uint32_t Sources )
+{
+	SCC.Chn[ Channel ].IntSources &= ~Sources;
+}
 
 
 /*
