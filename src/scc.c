@@ -1483,6 +1483,8 @@ static void SCC_WriteControl(int chn, uint8_t value)
 
 			else if ( command == SCC_WR0_COMMAND_RESET_EXT_STATUS_INT )
 			{
+				LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d value=$%02x command=reset ext/status int RR3=$%02x IUS=$%02x\n" ,
+					'A'+chn , SCC.Active_Reg , value , SCC.Chn[0].RR[3] , SCC.IUS );
 				/* Remove latches on RR0 and allow interrupt to happen again */
 				SCC.Chn[chn].RR0_Latched = false;
 				// TODO check IP + update irq
@@ -1508,6 +1510,8 @@ static void SCC_WriteControl(int chn, uint8_t value)
 
 			else if ( command == SCC_WR0_COMMAND_ERROR_RESET )
 			{
+				LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d value=$%02x command=reset error RR1=$%02x RR3=$%02x IUS=$%02x\n" ,
+					'A'+chn , SCC.Active_Reg , value , SCC.Chn[chn].RR[1] , SCC.Chn[0].RR[3] , SCC.IUS );
 				/* Reset error bits in RR1 */
 				SCC.Chn[chn].RR[1] &= ~( SCC_RR1_BIT_PARITY_ERROR | SCC_RR1_BIT_RX_OVERRUN_ERROR | SCC_RR1_BIT_CRC_FRAMING_ERROR );
 				SCC_IntSources_Clear ( chn , SCC_INT_SOURCE_RX_PARITY_ERROR | SCC_INT_SOURCE_RX_OVERRUN | SCC_INT_SOURCE_RX_FRAMING_ERROR );
@@ -1515,6 +1519,8 @@ static void SCC_WriteControl(int chn, uint8_t value)
 
 			else if ( command == SCC_WR0_COMMAND_RESET_HIGHEST_IUS )
 			{
+				LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d value=$%02x command=reset highest ius RR3=$%02x IUS=$%02x\n" ,
+					'A'+chn , SCC.Active_Reg , value , SCC.Chn[0].RR[3] , SCC.IUS );
 				for ( i=5 ; i>=0 ; i-- )
 					if ( SCC.IUS & ( 1 << i ) )
 					{
