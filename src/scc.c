@@ -1328,11 +1328,11 @@ static void	SCC_Update_RR3_EXT ( int Channel )
 
 static void	SCC_Update_RR3 ( int Channel )
 {
-fprintf ( stderr , "update rr3 %c in=$%02x rr0=$%02x wr15=$%02x\n" , 'A'+Channel , SCC.Chn[0].RR[3] , SCC.Chn[Channel].RR[0] , SCC.Chn[Channel].WR[15] );
+//fprintf ( stderr , "update rr3 %c in=$%02x rr0=$%02x wr15=$%02x\n" , 'A'+Channel , SCC.Chn[0].RR[3] , SCC.Chn[Channel].RR[0] , SCC.Chn[Channel].WR[15] );
 	SCC_Update_RR3_RX ( Channel );
 	SCC_Update_RR3_TX ( Channel );
 	SCC_Update_RR3_EXT ( Channel );
-fprintf ( stderr , "update rr3 %c out=$%02x rr0=$%02x wr15=$%02x\n" , 'A'+Channel , SCC.Chn[0].RR[3] , SCC.Chn[Channel].RR[0] , SCC.Chn[Channel].WR[15] );
+//fprintf ( stderr , "update rr3 %c out=$%02x rr0=$%02x wr15=$%02x\n" , 'A'+Channel , SCC.Chn[0].RR[3] , SCC.Chn[Channel].RR[0] , SCC.Chn[Channel].WR[15] );
 }
 
 
@@ -2159,6 +2159,7 @@ static void	SCC_Update_IRQ ( void )
 
 static void	SCC_IntSources_Change ( int Channel , uint32_t Sources , bool Set )
 {
+//fprintf ( stderr,  "scc int source %d %x %d\n" , Channel , Sources , Set );
 	if ( Set )
 	{
 		/* Don't do anything if all bits from Sources are already set */
@@ -2263,6 +2264,7 @@ int	SCC_Process_IACK ( void )
 	if ( SCC.Chn[0].WR[9] & SCC_WR9_BIT_NV )
 		return -1;			/* IACK is disabled, no vector */
 
+//fprintf ( stderr , "scc iack %d\n" , Vector ); 
 	return Vector;
 }
 
