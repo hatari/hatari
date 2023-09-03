@@ -81,6 +81,7 @@
 #include "memorySnapShot.h"
 #include "scc.h"
 #include "clocks_timings.h"
+#include "m68000.h"
 #include "cycles.h"
 #include "cycInt.h"
 #include "video.h"
@@ -2101,6 +2102,8 @@ static void     SCC_Set_Line_IRQ ( int bit )
         LOG_TRACE ( TRACE_SCC, "scc set irq line val=%d VBL=%d HBL=%d\n" , bit , nVBLs , nHBL );
 
 	SCC.IRQ_Line = bit;
+
+        M68000_Update_intlev ();
 }
 
 

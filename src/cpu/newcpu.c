@@ -61,6 +61,7 @@
 #include "debugcpu.h"
 #include "stMemory.h"
 #include "blitter.h"
+#include "scc.h"
 #endif
 
 
@@ -2867,10 +2868,11 @@ static int iack_cycle(int nr)
 	 *
 	 * We need to handle MFP/DSP and HBL/VBL cases for this :
 	 * - Level 6 (MFP/DSP) use vectored interrupts
+	 * - Level 5 (SCC) use vectored interrupts
 	 * - Level 2 (HBL) and 4 (VBL) use auto-vectored interrupts and require sync with E-clock
 	 */
 	vector = nr;
-	if ( nr == 30 )								/* MFP or DSP */
+	if ( nr == 30 )								/* MFP or DSP (level 6) */
         {
 		vector = -1;
 		if (bDspEnabled)						/* Check DSP first */
@@ -2914,7 +2916,11 @@ static int iack_cycle(int nr)
 				pendingInterrupts &= ~( 1 << 6 );
 		}
 	}
-	else if ( ( nr == 26 ) || ( nr == 28 ) )				/* HBL / VBL */
+	if ( nr == 29 )								/* SCC (level 5) */
+        {
+		vector = SCC_Process_IACK ();
+	}
+	else if ( ( nr == 26 ) || ( nr == 28 ) )				/* HBL (level 2) or VBL (level 6) */
 	{
 		/* Update cycles counter before the IACK sequence */
 		if (cycle_exact)

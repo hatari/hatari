@@ -72,7 +72,7 @@ void customreset(void)
 
 
 /**
- * Return interrupt number (1 - 7), -1 means no interrupt.
+ * Return highest interrupt number (1 - 7), -1 means no interrupt.
  * Note that the interrupt stays pending if it can't be executed yet
  * due to the interrupt level field in the SR.
  */
@@ -80,6 +80,8 @@ int intlev(void)
 {
 	if ( pendingInterrupts & (1 << 6) )		/* MFP/DSP interrupt ? */
 		return 6;
+	else if ( pendingInterrupts & (1 << 5) )	/* SCC interrupt ? */
+		return 5;
 	else if ( pendingInterrupts & (1 << 4) )	/* VBL interrupt ? */
 		return 4;
 	else if ( pendingInterrupts & (1 << 2) )	/* HBL interrupt ? */

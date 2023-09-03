@@ -93,6 +93,7 @@ const char M68000_fileid[] = "Hatari m68000.c";
 #include "cart.h"
 #include "cpu/cpummu.h"
 #include "cpu/cpummu030.h"
+#include "scc.h"
 
 #if ENABLE_DSP_EMU
 #include "dsp.h"
@@ -612,6 +613,7 @@ void M68000_Exception(uint32_t ExceptionNr , int ExceptionSource)
  * before being processed.
  * So, we need to check which IRQ are set/cleared at the same time
  * and update level 6 accordingly : level 6 = MFP_IRQ OR DSP_IRQ
+ * Level 5 (SCC) is only used on Mega STE, TT and Falcon
  *
  * [NP] NOTE : temporary case for interrupts with WinUAE CPU in cycle exact mode
  * In CE mode, interrupt state should be updated on each subcycle of every opcode
@@ -632,6 +634,11 @@ void	M68000_Update_intlev ( void )
 		pendingInterrupts |= (1 << 6);
 	else
 		pendingInterrupts &= ~(1 << 6);
+
+	if ( SCC_Get_Line_IRQ() == SCC_IRQ_ON )
+		pendingInterrupts |= (1 << 5);
+	else
+		pendingInterrupts &= ~(1 << 5);
 
 	if ( pendingInterrupts )
 		doint();

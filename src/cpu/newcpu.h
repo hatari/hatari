@@ -27,6 +27,7 @@
 #define M68000_EXC_SRC_AUTOVEC	2	/* Auto-vector exception (e.g. VBL) */
 #define M68000_EXC_SRC_INT_MFP	3	/* MFP interrupt exception */
 #define M68000_EXC_SRC_INT_DSP	4	/* DSP interrupt exception */
+#define M68000_EXC_SRC_INT_SCC	5	/* SCC interrupt exception */
 
 
 /* Special flags (from custom.h) */
@@ -42,7 +43,7 @@
 #define SPCFLAG_MFP 0x200
 #define SPCFLAG_EXEC 0x400
 #define SPCFLAG_MODE_CHANGE 0x800
-#define SPCFLAG_DSP 0x1000
+#define SPCFLAG_DSP 0x1000			// TODO : remove with do_specialties_interrupt()
 #endif
 
 #ifndef SET_CFLG
