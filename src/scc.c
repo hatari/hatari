@@ -316,6 +316,8 @@ static int SCC_Standard_Baudrate[] = {
 static void	SCC_ResetChannel ( int Channel , bool HW_Reset );
 static void	SCC_ResetFull ( bool HW_Reset );
 
+static void	SCC_Update_RR0 ( int Channel );
+
 static uint8_t	SCC_Get_Vector_Status ( void );
 static void	SCC_Update_RR2 ( void );
 
@@ -510,6 +512,7 @@ static void SCC_ResetChannel ( int Channel , bool HW_Reset )
 	SCC.Chn[Channel].RR[0] &= 0xb8;			/* keep bits 3,4 and 5, clear others */
 	SCC.Chn[Channel].RR[0] |= 0x44;			/* set bits 2 and 6 */
 	SCC.Chn[Channel].TX_Buffer_Written = false;	/* no write made to TB for now */
+	SCC.Chn[Channel].RR0_Latched = false;		/* no pending int sources */
 	SCC.Chn[Channel].RR[1] &= 0x01;			/* keep bits 0, clear others */
 	SCC.Chn[Channel].RR[1] |= 0x06;			/* set bits 1 and 2 */
 	SCC.Chn[Channel].RR[3] = 0x00;
@@ -779,7 +782,7 @@ static uint16_t SCC_serial_getStatus(int chn)
 	return value;
 }
 
-static void SCC_serial_setRTS(int chn, bool value)
+static void SCC_serial_setRTS(int chn, uint8_t value)
 {
 #if defined(HAVE_SYS_IOCTL_H) && defined(TIOCMGET)
 	int status = 0;
@@ -799,7 +802,7 @@ static void SCC_serial_setRTS(int chn, bool value)
 #endif
 }
 
-static void SCC_serial_setDTR(int chn, bool value)
+static void SCC_serial_setDTR(int chn, uint8_t value)
 {
 #if defined(HAVE_SYS_IOCTL_H) && defined(TIOCMGET)
 	int status = 0;
@@ -1144,6 +1147,46 @@ static uint8_t	SCC_Get_Vector_Status ( void )
 
 
 /*
+ * Update the content of RRO (TX/RX status and External status)
+ * As a result of a pending interrupt, some bits in RR0 for external status can be latched.
+ *  - Bit should not be updated if corresponding IE bit in WR15 is set (bit is latched)
+ *  - If corresponding bit in WR15 is clear then RR0 will reflect the current status (bit is not latched)
+ * Latch will be reset when writing command RESET_EXT_STATUS_INT in WR0
+ */
+static void	SCC_Update_RR0 ( int Channel )
+{
+	uint8_t		RR0_New;
+	uint16_t	temp;
+	uint8_t		Latch_Mask;
+
+fprintf ( stderr , "update rr0 %c in=$%02x wr15=$%02x\n" , 'A'+Channel , SCC.Chn[Channel].RR[0] , SCC.Chn[Channel].WR[15] );
+	RR0_New = SCC.Chn[ Channel ].RR[0];
+
+	/* TODO : only change CTS (bit 5), not RX_CHAR and TBE */
+#if 1
+	temp = SCC_serial_getStatus( Channel );		/* Lower byte contains value of bits 0, 2 and 5 */
+	RR0_New &= ~( SCC_RR0_BIT_RX_CHAR_AVAILABLE | SCC_RR0_BIT_TX_BUFFER_EMPTY | SCC_RR0_BIT_CTS );
+	RR0_New |= ( temp & 0xff );			/* Set value for bits 0, 2 and 5 */
+#endif
+
+	/* If RRO has some bits latched because there's an interrupts pending */
+	/* then only bits with where corresponding IE is not enabled should be updated */
+	/* Other bits keep their current values (latched) in RR0 */
+	if ( SCC.Chn[ Channel ].RR0_Latched )
+	{
+		/* RR0 and WR15 have bits in the same order. Latched bits in RR0 will be the bits set in WR15 */
+		/* (ignoring bit 0 and 2 in WR15 which are not related to ext status bits) */
+		Latch_Mask = SCC.Chn[ Channel ].WR[15];
+		Latch_Mask &= ~( SCC_WR15_BIT_WR7_PRIME | SCC_WR15_BIT_STATUS_FIFO_ENABLE );
+		RR0_New = ( RR0_New & ~Latch_Mask ) | ( SCC.Chn[ Channel ].RR[0] & Latch_Mask );
+	}
+
+	SCC.Chn[ Channel ].RR[0] = RR0_New;
+fprintf ( stderr , "update rr0 %c out=$%02x wr15=$%02x\n" , 'A'+Channel , SCC.Chn[Channel].RR[0] , SCC.Chn[Channel].WR[15] );
+}
+
+
+/*
  * Update the content of RR2A and RR2B.
  * This is used when reading RR2A/RR2B or to send the vector during IACK
  */
@@ -1215,9 +1258,9 @@ static void	SCC_Update_RR3_RX ( int Channel )
 			|| (   ( SCC.Chn[ Channel ].RR[1] & SCC_RR1_BIT_PARITY_ERROR )
 			    && ( SCC.Chn[ Channel ].WR[1] & SCC_WR1_BIT_PARITY_SPECIAL_COND ) )
 			) ) )
-	  Set = 1;
+		Set = 1;
 	else
-	  Set = 0;
+		Set = 0;
 
 	if ( Channel )
 		SCC_Update_RR3_Bit ( Set , SCC_RR3_BIT_RX_IP_B );
@@ -1234,9 +1277,9 @@ static void	SCC_Update_RR3_TX ( int Channel )
 	  && ( SCC.Chn[ Channel ].WR[1] & SCC_WR1_BIT_TX_INT_ENABLE )
 	  && ( SCC.Chn[ Channel ].TX_Buffer_Written )
 	)
-	  Set = 1;
+		Set = 1;
 	else
-	  Set = 0;
+		Set = 0;
 
 	if ( Channel )
 		SCC_Update_RR3_Bit ( Set , SCC_RR3_BIT_TX_IP_B );
@@ -1245,12 +1288,18 @@ static void	SCC_Update_RR3_TX ( int Channel )
 }
 
 
+/*
+ * Update RR3 EXT bit depending on RR0's content
+ * If RRO is already latched it means an IP was already set for one of these
+ * ext status bit. In that case IP bit must remain set in RR3 (see WR0 for reset command)
+ */
 static void	SCC_Update_RR3_EXT ( int Channel )
 {
 	uint8_t		Set;
 
 	if ( ( SCC.Chn[Channel].WR[1] & SCC_WR1_BIT_EXT_INT_ENABLE )
-	  && (   (   ( SCC.Chn[ Channel ].RR[0] & SCC_RR0_BIT_ZERO_COUNT )
+	  && (         SCC.Chn[ Channel ].RR0_Latched
+	      || (   ( SCC.Chn[ Channel ].RR[0] & SCC_RR0_BIT_ZERO_COUNT )
 		  && ( SCC.Chn[ Channel ].WR[15] & SCC_WR15_BIT_ZERO_COUNT_INT_ENABLE ) )
 	      || (   ( SCC.Chn[ Channel ].RR[0] & SCC_RR0_BIT_DCD )
 		  && ( SCC.Chn[ Channel ].WR[15] & SCC_WR15_BIT_DCD_INT_ENABLE ) )
@@ -1263,9 +1312,12 @@ static void	SCC_Update_RR3_EXT ( int Channel )
 	      || (   ( SCC.Chn[ Channel ].RR[0] & SCC_RR0_BIT_BREAK_ABORT )
 		  && ( SCC.Chn[ Channel ].WR[15] & SCC_WR15_BIT_BREAK_ABORT_INT_ENABLE ) )
 	    ) )
-	  Set = 1;
+	{
+		Set = 1;
+		SCC.Chn[ Channel ].RR0_Latched = true;		/* Latch bits in RR0 */
+	}
 	else
-	  Set = 0;
+		Set = 0;
 
 	if ( Channel )
 		SCC_Update_RR3_Bit ( Set , SCC_RR3_BIT_EXT_STATUS_IP_B );
@@ -1276,9 +1328,11 @@ static void	SCC_Update_RR3_EXT ( int Channel )
 
 static void	SCC_Update_RR3 ( int Channel )
 {
+fprintf ( stderr , "update rr3 %c in=$%02x rr0=$%02x wr15=$%02x\n" , 'A'+Channel , SCC.Chn[0].RR[3] , SCC.Chn[Channel].RR[0] , SCC.Chn[Channel].WR[15] );
 	SCC_Update_RR3_RX ( Channel );
 	SCC_Update_RR3_TX ( Channel );
 	SCC_Update_RR3_EXT ( Channel );
+fprintf ( stderr , "update rr3 %c out=$%02x rr0=$%02x wr15=$%02x\n" , 'A'+Channel , SCC.Chn[0].RR[3] , SCC.Chn[Channel].RR[0] , SCC.Chn[Channel].WR[15] );
 }
 
 
@@ -1303,7 +1357,6 @@ static uint8_t SCC_ReadDataReg(int chn)
 static uint8_t SCC_ReadControl(int chn)
 {
 	uint8_t value = 0;
-	uint16_t temp;
 	uint8_t active_reg;
 
 	active_reg = SCC.Active_Reg;
@@ -1312,11 +1365,8 @@ static uint8_t SCC_ReadControl(int chn)
 	{
 	 case 0:	// RR0
 	 case 4:	// also returns RR0
-		/* Reading RR0 returns the current status for each bit, except if one of these bits */
-		/* generated an interrupt, in which case RR0 and all its bits will be latched and not updated until latch is reset */
-		temp = SCC_serial_getStatus(chn);		/* Lower byte contains value of bits 0, 2 and 5 */
-		SCC.Chn[chn].RR[0] &= ~( SCC_RR0_BIT_RX_CHAR_AVAILABLE | SCC_RR0_BIT_TX_BUFFER_EMPTY | SCC_RR0_BIT_CTS );
-		SCC.Chn[chn].RR[0] |= ( temp & 0xff );		/* Set value for bits 0, 2 and 5 */
+		SCC_Update_RR0 ( chn );
+
 		value = SCC.Chn[chn].RR[0];
 		LOG_TRACE(TRACE_SCC, "scc read channel=%c RR%d tx/rx buffer status value=$%02x\n" , 'A'+chn , active_reg , value );
 		break;
@@ -1487,7 +1537,9 @@ static void SCC_WriteControl(int chn, uint8_t value)
 					'A'+chn , SCC.Active_Reg , value , SCC.Chn[0].RR[3] , SCC.IUS );
 				/* Remove latches on RR0 and allow interrupt to happen again */
 				SCC.Chn[chn].RR0_Latched = false;
-				// TODO check IP + update irq
+				SCC_Update_RR0 ( chn );
+				SCC_Update_RR3 ( chn );
+				SCC_Update_IRQ ();
 			}
 
 			else if ( command == SCC_WR0_COMMAND_SEND_ABORT )	{}	/* Not emulated */
