@@ -1484,6 +1484,19 @@ static uint8_t SCC_handleRead(uint32_t addr)
  */
 static void SCC_WriteDataReg(int chn, uint8_t value)
 {
+	/* According to the SCC doc, transmit buffer will be copied to the */
+	/* transmit shift register TSR after the last bit is shifted out, in ~3 PCLKs */
+	/* This means that if transmitter is disabled we can consider TDR is copied */
+	/* almost immediately to TSR when writing to WR8 */
+	/* Else TDR will be copied during SCC_Process_TX when current transfer is completed */
+	/* If this is the first write to WR8 (TX_Buffer_Written==false) we should also consider */
+	/* that TDR is copied almost immediately to TSR */
+	if ( ( ( SCC.Chn[chn].WR[5] & SCC_WR5_BIT_TX_ENABLE ) == 0 )
+	    || ( SCC.Chn[chn].TX_Buffer_Written == false ) )
+	{
+		SCC_Copy_TDR_TSR ( chn , value , true );
+	}
+
 	/* Clear TX Buffer Empty bit and reset TX Interrupt Pending for this channel */
 	SCC.Chn[chn].RR[0] &= ~SCC_RR0_BIT_TX_BUFFER_EMPTY;
 	SCC.Chn[chn].TxBuf_Write_Time = Cycles_GetClockCounterOnWriteAccess();
@@ -1492,16 +1505,6 @@ static void SCC_WriteDataReg(int chn, uint8_t value)
 	SCC.Chn[chn].TX_Buffer_Written = true;
 
 	SCC_IntSources_Clear ( chn , SCC_INT_SOURCE_TX_BUFFER_EMPTY );
-
-	/* According to the SCC doc, transmit buffer will be copied to the */
-	/* transmit shift register TSR after the last bit is shifted out, in ~3 PCLKs */
-	/* This means that if transmitter is disabled we can consider TDR is copied */
-	/* almost immediately to TSR when writing to WR8 */
-	/* Else TDR will be copied during SCC_Process_TX when current transfer is completed */
-	if ( ( SCC.Chn[chn].RR[0] & SCC_WR5_BIT_TX_ENABLE ) == 0 )
-	{
-		SCC_Copy_TDR_TSR ( chn , value , true );
-	}
 }
 
 
