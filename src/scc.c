@@ -1811,6 +1811,10 @@ static void	SCC_Process_TX ( int Channel )
 	uint8_t	tx_byte;
 	bool	Set_TBE;
 
+	/* It's possible that SCC_Process_TX() is called before anything was written to WR8 / Data reg */
+	/* In that case we don't send anything as TDR/TSR contain non valid data */
+	if ( ! SCC.Chn[Channel].TX_Buffer_Written )
+		return;
 
 	if ( SCC.Chn[Channel].WR[5] & SCC_WR5_BIT_TX_ENABLE )
 	{
