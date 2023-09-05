@@ -1488,6 +1488,7 @@ static void SCC_WriteDataReg(int chn, uint8_t value)
 	SCC.Chn[chn].RR[0] &= ~SCC_RR0_BIT_TX_BUFFER_EMPTY;
 	SCC.Chn[chn].TxBuf_Write_Time = Cycles_GetClockCounterOnWriteAccess();
 	/* Set TX_Buffer_Written=true, allow TBE int later if enabled */
+	SCC.Chn[chn].WR[8] = value;
 	SCC.Chn[chn].TX_Buffer_Written = true;
 
 	SCC_IntSources_Clear ( chn , SCC_INT_SOURCE_TX_BUFFER_EMPTY );
