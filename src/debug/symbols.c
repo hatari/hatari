@@ -182,58 +182,6 @@ static symbol_list_t* symbols_load_ascii(FILE *fp, uint32_t *offsets, uint32_t m
 }
 
 /**
- * Remove duplicate addresses from name list symbols, and trim its
- * allocation to remaining symbols.
- *
- * NOTE: symbols list must be address-sorted when this is called,
- * with the preferred symbol name being first, so this needs just to
- * remove symbols with duplicate addresses that follow it!
- *
- * Return number of removed address duplicates.
- */
-static int symbols_trim_names(symbol_list_t* list)
-{
-	symbol_t *sym = list->names;
-	int i, next, count, skip, dups = 0;
-
-	count = list->namecount;
-	for (i = 0; i < count - 1; i++) {
-		if (sym[i].type == SYMTYPE_ABS) {
-			/* value, not an address */
-			continue;
-		}
-
-		/* count duplicates */
-		for (next = i+1; next < count; next++) {
-			if (sym[i].address != sym[next].address ||
-			    sym[next].type == SYMTYPE_ABS) {
-				break;
-			}
-			/* free this duplicate's name */
-			if (sym[next].name_allocated) {
-				free(sym[next].name);
-			}
-		}
-		if (next == i+1) {
-			continue;
-		}
-
-		/* drop counted duplicates */
-		memmove(sym+i+1, sym+next, (count-next) * sizeof(symbol_t));
-		skip = next - i - 1;
-		count -= skip;
-		dups += skip;
-	}
-
-	if (dups || list->namecount < list->symbols) {
-		list->names = realloc(list->names, count * sizeof(symbol_t));
-		assert(list->names);
-		list->namecount = count;
-	}
-	return dups;
-}
-
-/**
  * Separate code symbols from other symbols in address list.
  */
 static void symbols_split_addresses(symbol_list_t* list)

@@ -56,6 +56,7 @@ static void usage(const char *msg)
 		{ 'f', "file/path symbols" },
 		{ 'g', "GCC internal (object) symbols" },
 		{ 'l', "local (.L*) symbols" },
+		{ 's', "symbols with duplicate addresses" },
 		{ 't', "TEXT symbols" },
 		{ 'w', "weak symbols" },
 	};
@@ -94,7 +95,7 @@ static void usage(const char *msg)
 		"\t-n, +n\tSort by address (-n), or by name (+n)\n"
 		"\n"
 		"Defaults:\n"
-		"* drop local (-l) and GCC internal (-g) symbols\n"
+		"* drop local (-l), GCC internal (-g) and duplicate (-s) symbols\n"
 		"* sort symbols by address (-n)\n");
 
 	if (msg) {
@@ -134,6 +135,7 @@ static symbol_list_t* symbols_load(const char *filename, const symbol_opts_t *op
 	symbol_list_t *list;
 	uint16_t magic;
 	FILE *fp;
+	int dups;
 
 	fprintf(stderr, "Reading symbols from program '%s' symbol table...\n", filename);
 	if (!(fp = fopen(filename, "rb"))) {
@@ -149,17 +151,18 @@ static symbol_list_t* symbols_load(const char *filename, const symbol_opts_t *op
 	list = symbols_load_binary(fp, opts, update_sections);
 	fclose(fp);
 
-	if (!list) {
-		usage("no symbols, or reading them failed");
+	if (!list || !list->namecount) {
+		usage("no valid symbols in the program, or its symbol table loading failed");
 	}
 
-	if (list->namecount < list->symbols) {
-		if (!list->namecount) {
-			usage("no valid symbols in program, symbol table loading failed");
+	/* first sort symbols by address (with code symbols being first) */
+	qsort(list->names, list->namecount, sizeof(symbol_t), symbols_by_address);
+
+	/* remove symbols with duplicate addresses? */
+	if (opts->no_dups) {
+		if ((dups = symbols_trim_names(list))) {
+			fprintf(stderr, "Removed %d symbols in same addresses as other symbols.\n", dups);
 		}
-		/* parsed less than there were "content" lines */
-		list->names = realloc(list->names, list->namecount * sizeof(symbol_t));
-		assert(list->names);
 	}
 
 	/* copy name list to address list */
@@ -167,15 +170,20 @@ static symbol_list_t* symbols_load(const char *filename, const symbol_opts_t *op
 	assert(list->addresses);
 	memcpy(list->addresses, list->names, list->namecount * sizeof(symbol_t));
 
-	/* sort both lists, with different criteria */
-	qsort(list->addresses, list->namecount, sizeof(symbol_t), symbols_by_address);
+	/* finally, sort name list by names */
 	qsort(list->names, list->namecount, sizeof(symbol_t), symbols_by_name);
 
-	/* check for duplicate addresses */
-	symbols_check_addresses(list->addresses, list->namecount);
+	/* check for duplicate addresses? */
+	if (!opts->no_dups) {
+		if ((dups = symbols_check_addresses(list->addresses, list->namecount))) {
+			fprintf(stderr, "%d symbols in same addresses as other symbols.\n", dups);
+		}
+	}
 
 	/* check for duplicate names */
-	symbols_check_names(list->names, list->namecount);
+	if ((dups = symbols_check_names(list->names, list->namecount))) {
+		fprintf(stderr, "%d symbol names that have multiple addresses.\n", dups);
+	}
 
 	return list;
 }
@@ -226,6 +234,7 @@ int main(int argc, const char *argv[])
 	memset(&opts, 0, sizeof(opts));
 	opts.no_gccint = true;
 	opts.no_local = true;
+	opts.no_dups = true;
 
 	for (i = 1; i+1 < argc; i++) {
 		if (argv[i][0] == '-') {
@@ -263,6 +272,9 @@ int main(int argc, const char *argv[])
 			break;
 		case 'l':
 			opts.no_local = disable;
+			break;
+		case 's':
+			opts.no_dups = disable;
 			break;
 			/* other options */
 		case 'n':
