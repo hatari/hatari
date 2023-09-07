@@ -1340,11 +1340,8 @@ Falcon programs
 ---------------
 
 Falcon emulation requires 512k (or 1024k) variant of EmuTOS (the one
-shipped with Hatari).  Programs using DSP require EmuTOS v1.1.1+.
-
-Latest EmuTOS missing (16-bit) HiColor support probably explains
-partly why graphics in several demos & games look broken, or they
-crash / freeze at startup.
+shipped with Hatari).  Programs using DSP require EmuTOS v1.1.1+,
+programs using TC mode, require EmuTOS Git version.
 
 Following Falcon only demos, games and apps work (mostly) fine though.
 
@@ -1490,6 +1487,10 @@ Demos working under EmuTOS >= v1.2:
 - LCF (by Lamers)
   - 060+FPU+VGA demo
 
+Demos working under EmuTOS Git (preliminary TC support):
+- Multitech (by Cybernetics)
+  - Part of Geotech demo, needs DSP + TC mode
+
 Demos working partly under EmuTOS >= v1.2:
 - 124 beers later (by Trio)
   - Works also with 1.0, but fighter screen DSP textures need v1.1
@@ -1505,8 +1506,6 @@ Broken demos (with EmuTOS v1.2.x):
   - Needs to be started from HiColor mode
 - mengerMarcherFC (256b intro by atariBDSM)
   - Needs to be started from 320x200 HiColor mode
-- Multitech (by Cybernetics)
-  - Part of Geotech demo, needs (DSP and) HiColor mode (line-A 10)
 - Spin176 (256b intro by MKM / Lamers)
   - Needs FPU & started from 320x200 HiColor mode
 - Who Okayed This?
@@ -1627,16 +1626,16 @@ Games working under EmuTOS >= v1.1.1 (DSP support + fixes):
 - Trionoids* (Columns clone)
 - Wotanoid (Asteroids clone)
 
-Games working with EmuTOS >= v1.2:
+Games working under EmuTOS >= v1.2:
 - Tetrhex (1.41)
 
-Games working with EmuTOS Git version:
-- Setscreen(): support 16-bit modes
-  - Confusion demo 1 & 2
-  - Gravon (demo + full version)
-- Setscreen(): ignore reserved bits
-  - Moonspeeder (preview 2)
-  - Rave*
+Games working under EmuTOS Git (preliminary TC support):
+- Confusion demo 1 & 2
+- Gravon (demo + full version)
+- Moonspeeder (preview 2)
+- Rave*
+- Conquest of Elysium II v2.0 & 2.3 (uses VDI calls)
+- Tron 2 (VGA only)
 
 Games working with extra hacks:
 - Bugger, Bunion, SkyFall, Sworm games by Resorvoir Gods:
@@ -1657,30 +1656,32 @@ Partly working games:
   - Works only with 8MB RAM
 
 Broken games (with EmuTOS Git version):
+- Boulder Smash Falcon (Omikron Basic)
+  - Needs to be started from large TC mode
 - Columns by Deadheart* (demo, 2nd version)
   - Broken graphics, does not use Vsetmode() for OS version <= $0402
-- Conquest of Elysium II v2.0 & 2.3:
-  - Broken graphics, uses VDI calls
 - Downfall
   - Dialog complains "Error while loading BLACKWHT.BGR".
     It is already open, so issue may be Setscreen() following it
 - It's Great (start from st-med rez)
   - Mouse doesn't work
 - "K" preview* (by EXA)
-  - Bus error panic when game would start
+  - When actual game would start, bus error panic with 4MB, freeze with 14MB
 - Mouse trap
   - Freezes in the menu screen, uses VDI draw calls
 - Neurobot
   - Both intro & game just exit immediately
+- Pous-Pous
+  - GEM, needs to be started from TC mode
+- Q-Blue (VGA only, Omikron Basic)
+   Needs to be started from 320x240 TC mode
 - Reeking Rubber
   - Broken graphics & freeze on game start, uses VDI draw calls
 - SBM v0.8 & v1.03* (Bomberman clone)
   - Bus error panic on reading $400000
 - Sokoban By FUN (VGA only)
-  - Input to start actual game does not work
-  - Uses VDI draw functions + line-A 7
-- Tron 2 (VGA only)
-  - Startup ends in a black screen
+  - Screen updates work only partially
+  - Uses VDI draw functions + line-A area blit (7)
 - Watership (VGA only)
   - Bus error reading $fffffffe on startup -> panic
 
@@ -1713,8 +1714,6 @@ Applications working under EmuTOS >= v1.1 (with DSP support):
 - AceTracker v1 & v2
 - AFM (audio fun machine)
   - UI needs color mode
-- Apex Media v2.41
-  - Viewer TTPs won't work for >256 color images
 - Atari800 v4.2 emulator
 - Centurbo benchmark
   - DSP speed 2x, and bogus speeds for FPU & CPU as with normal TOS
@@ -1761,10 +1760,14 @@ Applications working under EmuTOS >= v1.2:
   - https://gtello.pagesperso-orange.fr/mplayere.htm
 
 Applications working under EmuTOS Git (preliminary TC support):
-- ScummVm for Falcon + clones
-  - older TC versions from OL & Miro
+- Apex Alpha (demo)
+  - Requires MMU + FPU, works both under VGA & RGB
 - Apex Animator 2.41
   - Both the app itself and separate viewers
+- Apex Media v2.41
+  - Both the app itself and all viewer TTPs work
+- ScummVm for Falcon + clones
+  - older TC versions from OL & Miro
 
 Applications working with extra hacks:
 - Fractal Playground, Godleness, GodBoyX by Reservoir Gods
@@ -1775,9 +1778,6 @@ Partly working applications:
 - Animator v0.20.4
   - Works as well as with TOS v4 (refuses to run with many videos
     or crashes on exit leaving desktop with broken graphics)
-- Apex Alpha (demo)
-  - Works with MMU + FPU + VGA
-  - RGB 768x496(?) mode gfx are broken (works with TOS v4)
 - AVI030
   - Works as well as with TOS v4 (= has issues)
 - Centview (GEM image viewer)
@@ -1788,7 +1788,7 @@ Broken applications (with EmuTOS Git):
 - Indypaint
   - Cursor moves, but co-ordinate display and menus from F1-F5 keys
     look broken
-  - Needs HiColor line-A (functions: 0, 9 & 10)
+  - Needs HiColor + line-A (init, hide/show mouse)
 
 
 	- Eero
