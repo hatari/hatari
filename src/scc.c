@@ -1485,6 +1485,9 @@ static uint8_t SCC_handleRead(uint32_t addr)
  */
 static void SCC_WriteDataReg(int chn, uint8_t value)
 {
+	SCC.Chn[chn].WR[8] = value;
+	SCC.Chn[chn].TxBuf_Write_Time = Cycles_GetClockCounterOnWriteAccess();
+
 	/* According to the SCC doc, transmit buffer will be copied to the */
 	/* transmit shift register TSR after the last bit is shifted out, in ~3 PCLKs */
 	/* This means that if transmitter is disabled we can consider TDR is copied */
@@ -1495,17 +1498,16 @@ static void SCC_WriteDataReg(int chn, uint8_t value)
 	if ( ( ( SCC.Chn[chn].WR[5] & SCC_WR5_BIT_TX_ENABLE ) == 0 )
 	    || ( SCC.Chn[chn].TX_Buffer_Written == false ) )
 	{
-		SCC_Copy_TDR_TSR ( chn , value , true );
+		SCC_Copy_TDR_TSR ( chn , SCC.Chn[chn].WR[8] , true );
+	}
+	else
+	{
+		/* Clear TX Buffer Empty bit and reset TX Interrupt Pending for this channel */
+		SCC.Chn[chn].RR[0] &= ~SCC_RR0_BIT_TX_BUFFER_EMPTY;
+		SCC_IntSources_Clear ( chn , SCC_INT_SOURCE_TX_BUFFER_EMPTY );
 	}
 
-	/* Clear TX Buffer Empty bit and reset TX Interrupt Pending for this channel */
-	SCC.Chn[chn].RR[0] &= ~SCC_RR0_BIT_TX_BUFFER_EMPTY;
-	SCC.Chn[chn].TxBuf_Write_Time = Cycles_GetClockCounterOnWriteAccess();
-	/* Set TX_Buffer_Written=true, allow TBE int later if enabled */
-	SCC.Chn[chn].WR[8] = value;
-	SCC.Chn[chn].TX_Buffer_Written = true;
-
-	SCC_IntSources_Clear ( chn , SCC_INT_SOURCE_TX_BUFFER_EMPTY );
+	SCC.Chn[chn].TX_Buffer_Written = true;		/* Allow TBE int later if enabled */
 }
 
 
