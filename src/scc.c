@@ -764,10 +764,12 @@ static uint16_t SCC_serial_getStatus(int chn)
 		value |= SCC_RR0_BIT_TX_BUFFER_EMPTY;
 	}
 
+#if 0
 	if ( value & SCC_RR0_BIT_TX_BUFFER_EMPTY )
 		SCC_IntSources_Set ( chn , SCC_INT_SOURCE_TX_BUFFER_EMPTY );
 	else
 		SCC_IntSources_Clear ( chn , SCC_INT_SOURCE_TX_BUFFER_EMPTY );
+#endif
 	if ( value & SCC_RR0_BIT_CTS )
 		SCC_IntSources_Set ( chn , SCC_INT_SOURCE_EXT_CTS );
 	else
@@ -1163,12 +1165,11 @@ static void	SCC_Update_RR0 ( int Channel )
 fprintf ( stderr , "update rr0 %c in=$%02x wr15=$%02x\n" , 'A'+Channel , SCC.Chn[Channel].RR[0] , SCC.Chn[Channel].WR[15] );
 	RR0_New = SCC.Chn[ Channel ].RR[0];
 
-	/* TODO : only change CTS (bit 5), not RX_CHAR and TBE */
-#if 1
+	/* Altough SCC_serial_getStatus returns bit 5, 2, and we only change CTS (bit 5), not RX_CHAR and TBE */
+	/* (we handle these bits ourselves internaly, we don't want to rely on the underlying OS for these bits) */
 	temp = SCC_serial_getStatus( Channel );		/* Lower byte contains value of bits 0, 2 and 5 */
-	RR0_New &= ~( SCC_RR0_BIT_RX_CHAR_AVAILABLE | SCC_RR0_BIT_TX_BUFFER_EMPTY | SCC_RR0_BIT_CTS );
-	RR0_New |= ( temp & 0xff );			/* Set value for bits 0, 2 and 5 */
-#endif
+	RR0_New &= ~( SCC_RR0_BIT_CTS );		/* Only keep bit 5 */
+	RR0_New |= ( temp & SCC_RR0_BIT_CTS );		/* Set value for bits 5 */
 
 	/* If RRO has some bits latched because there's an interrupts pending */
 	/* then only bits with where corresponding IE is not enabled should be updated */
