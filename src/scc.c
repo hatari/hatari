@@ -1787,6 +1787,7 @@ static void SCC_handleWrite(uint32_t addr, uint8_t value)
  * and set TX Buffer Empty (TBE) bit
  * According to the SCC doc, transmit buffer will be copied to the
  * transmit shift register TSR after the last bit is shifted out, in ~3 PCLKs
+ * and 'all sent' bit will be cleared in RR1
  */
 
 static void	SCC_Copy_TDR_TSR ( int Channel , uint8_t TDR , bool Set_TBE )
@@ -1794,7 +1795,7 @@ static void	SCC_Copy_TDR_TSR ( int Channel , uint8_t TDR , bool Set_TBE )
 	SCC.Chn[Channel].TSR = TDR;
 
 	/* Clear 'All Sent' bit in RR1 */
-	SCC.Chn[Channel].RR[1] &= ~SCC_RR1_BIT_ALL_SENT;
+	SCC.Chn[Channel].RR[1] &= ~SCC_RR1_BIT_ALL_SENT;	/* TSR is full */
 
 
 	if ( Set_TBE )
@@ -1807,23 +1808,25 @@ static void	SCC_Copy_TDR_TSR ( int Channel , uint8_t TDR , bool Set_TBE )
 
 
 /* Order of operations :
- *  - send current value of TSR to the underlying emulator's OS
- *  - load new value into TSR by copying TDR / WR8
- * NOTE [NP] : Although not clearly specified in the doc we send WR8 again if TX buffer is empty
- * at the time when we should copy TDR to TSR
+ *  - check there's no underrun
+ *  - send current value of TSR to the emulator's underlying OS
+ *  - set 'all sent' bit in RR1
+ *  - load new value into TSR by copying TDR / WR8 if transmit buffer is not empty (+clear 'all sent' in RR1)
+ * In case of underrun (tx buffer is empty and TSR is empty) then nothing is sent,
+ * the transmitter will remain in its latest 'stop bit' state, until a new byte is written in WR8
  */
 
 static void	SCC_Process_TX ( int Channel )
 {
-	uint8_t	tx_byte;
-	bool	Set_TBE;
-
-	/* Set 'All Sent' bit in RR1 */
-	SCC.Chn[Channel].RR[1] |= SCC_RR1_BIT_ALL_SENT;
-
 	/* It's possible that SCC_Process_TX() is called before anything was written to WR8 / Data reg */
 	/* In that case we don't send anything as TDR/TSR contain non valid data */
 	if ( ! SCC.Chn[Channel].TX_Buffer_Written )
+		return;
+
+	/* If no new byte was written to the tx buffer and TSR is empty then we have an underrun */
+	/* Don't do anything in that case, TxD pin will remain in its latest 'stop bit' state */
+	if ( ( SCC.Chn[Channel].RR[0] & SCC_RR0_BIT_TX_BUFFER_EMPTY )
+	  && ( SCC.Chn[Channel].RR[1] & SCC_RR1_BIT_ALL_SENT ) )
 		return;
 
 	if ( SCC.Chn[Channel].WR[5] & SCC_WR5_BIT_TX_ENABLE )
@@ -1832,19 +1835,12 @@ static void	SCC_Process_TX ( int Channel )
 		SCC_serial_setData(Channel, SCC.Chn[Channel].TSR);
 	}
 
-	/* Prepare TSR for the next call */
-	Set_TBE = true;
-	if ( SCC.Chn[Channel].RR[0] & SCC_RR0_BIT_TX_BUFFER_EMPTY )
-	{
-		/* SCC doc doesn't really describe what happens if no new byte was written */
-		/* to the tx buffer. We assume it sends again WR8 (but without setting TBE again) */
-		tx_byte = SCC.Chn[Channel].WR[8];	/* send WR8 content again ? */
-		Set_TBE = false;
-	}
-	else
-		tx_byte = SCC.Chn[Channel].WR[8];
+	/* Set 'All Sent' bit in RR1 */
+	SCC.Chn[Channel].RR[1] |= SCC_RR1_BIT_ALL_SENT;		/* TSR is empty */
 
-	SCC_Copy_TDR_TSR ( Channel , tx_byte , Set_TBE );
+	/* Prepare TSR for the next call if TX buffer is not empty */
+	if ( ( SCC.Chn[Channel].RR[0] & SCC_RR0_BIT_TX_BUFFER_EMPTY ) == 0 )
+		SCC_Copy_TDR_TSR ( Channel , SCC.Chn[Channel].WR[8] , true );
 }
 
 
