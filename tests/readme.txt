@@ -1,8 +1,36 @@
 Tests
 =====
 
-Here's code for testing Hatari.  Most tests are run automatically with
-"make test".
+Here's code for testing Hatari.
+
+Content:
+* Running tests
+* Building tests
+* Tests files
+* Test subdirectories
+
+
+Running tests
+-------------
+
+Most tests are run automatically with "make test".
+
+Individual tests can be run (with verbose output) like this:
+$ ctest -V -R command-fifo
+
+Or a group of test:
+$ ctest -V -R 'serial-scc-.*'
+
+To speed up test runs and avoid external dependencies, tests use
+"--tos none", which tells Hatari to use a "fake" TOS with no features.
+
+
+Building tests
+--------------
+
+Easiest way to re-build modified C-code test binaries
+(when the code and AHCC are in same directory):
+$ hatari-prg-args -m --cpulevel 3 --trace os_base -- ahcc_p.ttp mfp_ser.prj
 
 
 Test files
