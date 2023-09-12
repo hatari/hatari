@@ -1793,6 +1793,10 @@ static void	SCC_Copy_TDR_TSR ( int Channel , uint8_t TDR , bool Set_TBE )
 {
 	SCC.Chn[Channel].TSR = TDR;
 
+	/* Clear 'All Sent' bit in RR1 */
+	SCC.Chn[Channel].RR[1] &= ~SCC_RR1_BIT_ALL_SENT;
+
+
 	if ( Set_TBE )
 	{
 		SCC.Chn[Channel].RR[0] |= SCC_RR0_BIT_TX_BUFFER_EMPTY;
@@ -1813,6 +1817,9 @@ static void	SCC_Process_TX ( int Channel )
 {
 	uint8_t	tx_byte;
 	bool	Set_TBE;
+
+	/* Set 'All Sent' bit in RR1 */
+	SCC.Chn[Channel].RR[1] |= SCC_RR1_BIT_ALL_SENT;
 
 	/* It's possible that SCC_Process_TX() is called before anything was written to WR8 / Data reg */
 	/* In that case we don't send anything as TDR/TSR contain non valid data */
