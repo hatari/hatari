@@ -327,7 +327,7 @@ static void	SCC_Update_RR3_RX ( int Channel );
 static void	SCC_Update_RR3_TX ( int Channel );
 static void	SCC_Update_RR3_EXT ( int Channel );
 
-static void	SCC_Copy_TDR_TSR ( int Channel , uint8_t TDR , bool Set_TBE );
+static void	SCC_Copy_TDR_TSR ( int Channel , uint8_t TDR );
 
 static void	SCC_Process_TX ( int Channel );
 static void	SCC_Process_RX ( int Channel );
@@ -1498,7 +1498,7 @@ static void SCC_WriteDataReg(int chn, uint8_t value)
 	if ( ( ( SCC.Chn[chn].WR[5] & SCC_WR5_BIT_TX_ENABLE ) == 0 )
 	    || ( SCC.Chn[chn].TX_Buffer_Written == false ) )
 	{
-		SCC_Copy_TDR_TSR ( chn , SCC.Chn[chn].WR[8] , true );
+		SCC_Copy_TDR_TSR ( chn , SCC.Chn[chn].WR[8] );
 	}
 	else
 	{
@@ -1790,19 +1790,15 @@ static void SCC_handleWrite(uint32_t addr, uint8_t value)
  * and 'all sent' bit will be cleared in RR1
  */
 
-static void	SCC_Copy_TDR_TSR ( int Channel , uint8_t TDR , bool Set_TBE )
+static void	SCC_Copy_TDR_TSR ( int Channel , uint8_t TDR )
 {
 	SCC.Chn[Channel].TSR = TDR;
 
 	/* Clear 'All Sent' bit in RR1 */
 	SCC.Chn[Channel].RR[1] &= ~SCC_RR1_BIT_ALL_SENT;	/* TSR is full */
-
-
-	if ( Set_TBE )
-	{
-		SCC.Chn[Channel].RR[0] |= SCC_RR0_BIT_TX_BUFFER_EMPTY;
-		SCC_IntSources_Set ( Channel , SCC_INT_SOURCE_TX_BUFFER_EMPTY );
-	}
+	/* Set TX buffer is empty */
+	SCC.Chn[Channel].RR[0] |= SCC_RR0_BIT_TX_BUFFER_EMPTY;
+	SCC_IntSources_Set ( Channel , SCC_INT_SOURCE_TX_BUFFER_EMPTY );
 }
 
 
@@ -1840,7 +1836,7 @@ static void	SCC_Process_TX ( int Channel )
 
 	/* Prepare TSR for the next call if TX buffer is not empty */
 	if ( ( SCC.Chn[Channel].RR[0] & SCC_RR0_BIT_TX_BUFFER_EMPTY ) == 0 )
-		SCC_Copy_TDR_TSR ( Channel , SCC.Chn[Channel].WR[8] , true );
+		SCC_Copy_TDR_TSR ( Channel , SCC.Chn[Channel].WR[8] );
 }
 
 
