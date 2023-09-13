@@ -10,6 +10,16 @@
 
 #include <tos.h>
 
+void sleep_vbl ( int count )
+{
+	volatile long	vbl_nb;
+	vbl_nb = *(long *)0x462;
+
+	while ( *(long volatile *)0x462 < vbl_nb+count )
+		;
+}
+
+
 /* constants for the ACIA registers */
 
 /* baudrate selection and reset (Baudrate = clock/factor) */
@@ -108,6 +118,9 @@ int main(int argc, char *argv[])
 
 	for (i = 0; text[i] != 0; i++)
 		bconout3(text[i]);
+
+	// wait a few VBL's to be sure all the bytes were transfered/received
+	sleep_vbl(5);
 
 	Super(sp);
 
