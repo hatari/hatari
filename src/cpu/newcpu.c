@@ -2867,8 +2867,8 @@ static int iack_cycle(int nr)
 	 * To update pending interrupts, we call CycInt_Process() just before the IACK sequence
 	 *
 	 * We need to handle MFP/DSP and HBL/VBL cases for this :
-	 * - Level 6 (MFP/DSP) use vectored interrupts
-	 * - Level 5 (SCC) use vectored interrupts
+	 * - Level 6 (MFP/DSP) uses vectored interrupts
+	 * - Level 5 (SCC) uses vectored interrupts
 	 * - Level 2 (HBL) and 4 (VBL) use auto-vectored interrupts and require sync with E-clock
 	 */
 	vector = nr;
@@ -2970,10 +2970,11 @@ static int iack_cycle(int nr)
 		CPU_IACK = false;
 	}
 
-	/* TODO If there was no DSP and no MFP IRQ, then we have a spurious interrupt */
+	/* If none of DSP, MFP or SCC returned a vector during the IACK sequence, then we have a spurious interrupt */
 	/* In that case, we use vector 24 and we jump to $60 */
 	if ( vector < 0 )
 	{
+		vector = 24;
 	}
 
 	/* Add 4 idle cycles for CE mode. For non-CE mode, this will be counted in add_approximate_exception_cycles() */
