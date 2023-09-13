@@ -850,7 +850,7 @@ static int SCC_Get_Standard_BaudRate ( int BaudRate )
 
 		low = SCC_Standard_Baudrate[ i ] - margin;
 		high = SCC_Standard_Baudrate[ i ] + margin;
-fprintf ( stderr , "check %d %d %f %f\n" , i , BaudRate , low , high );
+//fprintf ( stderr , "check %d %d %f %f\n" , i , BaudRate , low , high );
 		if ( ( low <= BaudRate ) && ( BaudRate <= high ) )
 			return SCC_Standard_Baudrate[ i ];
 	}
@@ -1085,7 +1085,7 @@ static void SCC_Update_BaudRate ( int Channel )
 
 	if ( Serial_ON )
 	{
-fprintf(stderr , "update br serial_on %d->%d\n" , BaudRate , BaudRate_Standard );
+//fprintf(stderr , "update br serial_on %d->%d\n" , BaudRate , BaudRate_Standard );
 		SCC_serial_setBaud ( Channel , BaudRate_Standard );
 	}
 	else
@@ -1162,7 +1162,7 @@ static void	SCC_Update_RR0 ( int Channel )
 	uint16_t	temp;
 	uint8_t		Latch_Mask;
 
-fprintf ( stderr , "update rr0 %c in=$%02x wr15=$%02x\n" , 'A'+Channel , SCC.Chn[Channel].RR[0] , SCC.Chn[Channel].WR[15] );
+//fprintf ( stderr , "update rr0 %c in=$%02x wr15=$%02x\n" , 'A'+Channel , SCC.Chn[Channel].RR[0] , SCC.Chn[Channel].WR[15] );
 	RR0_New = SCC.Chn[ Channel ].RR[0];
 
 	/* Altough SCC_serial_getStatus returns bit 5, 2, and we only change CTS (bit 5), not RX_CHAR and TBE */
@@ -1184,7 +1184,7 @@ fprintf ( stderr , "update rr0 %c in=$%02x wr15=$%02x\n" , 'A'+Channel , SCC.Chn
 	}
 
 	SCC.Chn[ Channel ].RR[0] = RR0_New;
-fprintf ( stderr , "update rr0 %c out=$%02x wr15=$%02x\n" , 'A'+Channel , SCC.Chn[Channel].RR[0] , SCC.Chn[Channel].WR[15] );
+//fprintf ( stderr , "update rr0 %c out=$%02x wr15=$%02x\n" , 'A'+Channel , SCC.Chn[Channel].RR[0] , SCC.Chn[Channel].WR[15] );
 }
 
 
