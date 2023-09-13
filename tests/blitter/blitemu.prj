@@ -1,6 +1,6 @@
 BLITEMU.TTP
 .L	[-G -L -Y -V]
-.C	[-Y -K]
+.C	[-Y -K -iinclude]
 =
 ../startup.s
 BLITEMU.C

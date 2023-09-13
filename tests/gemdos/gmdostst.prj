@@ -1,6 +1,6 @@
 ; AHCC project file for GEMDOS tester
 gmdostst.tos
-.C
+.C [-iinclude]
 =
 ../startup.s
 gmdostst.c
