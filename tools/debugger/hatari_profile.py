@@ -435,6 +435,8 @@ class ProfileSymbols(Output):
         # [0x]<hex> [<type>] <symbol/objectfile name>
         # Note: C++ symbols contain almost any chars
         self.r_symbol = re.compile("^(0x)?([a-fA-F0-9]+) ([aAbBdDrRtTvVwW]) ([$]?[._a-zA-Z(][^$?@;]*)$")
+        # weak C++ symbols can be data members, match them to ignore
+        self.r_datasym = re.compile("^.*::[_a-zA-Z][_a-zA-Z0-9]*$")
 
     def parse_areas(self, fobj, parsed):
         "parse memory area lines from data and post-process earlier read symbols data"
@@ -543,7 +545,7 @@ class ProfileSymbols(Output):
         old_aliases = len(self.aliases)
         old_renames = self.renames
 
-        unknown = lines = 0
+        unknown = lines = cppdata = 0
         for line in fobj.readlines():
             lines += 1
             line = line.strip()
@@ -554,10 +556,17 @@ class ProfileSymbols(Output):
                 dummy, addr, kind, name = match.groups()
                 if kind not in ('t', 'T', 'W'):
                     continue
-                if kind == 'W':
-                    if name.startswith("vtable ") or name.startswith("typeinfo "):
-                        # data, not code (should have been 'V'?)
-                        continue
+                if (name.startswith("typeinfo ") or
+                    name.startswith("vtable ") or
+                    name.startswith("VTT ")):
+                    # C++ meta data, could be also in text section
+                    cppdata += 1
+                    continue
+                match = self.r_datasym.match(name)
+                if match:
+                    # C++ data members
+                    cppdata += 1
+                    continue
                 addr = int(addr, 16)
                 if self._check_symbol(addr, name, symbols, aliases):
                     symbols[addr] = name
@@ -569,6 +578,9 @@ class ProfileSymbols(Output):
         self.message("%d lines with %d code symbols/addresses parsed, %d unknown." % info)
         info = (len(aliases) - old_aliases, self.renames - old_renames)
         self.message("%d (new) symbols were aliased, with %d significant renames." % info)
+        if cppdata:
+            self.message("%d C++ data member symbols ignored." % cppdata)
+            
 
     def _rename_symbol(self, addr, name):
         "return symbol name, potentially renamed if there were conflicts"
