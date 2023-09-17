@@ -1510,7 +1510,7 @@ Broken demos (with EmuTOS v1.2.x):
   - Needs FPU & started from 320x200 HiColor mode
 - Who Okayed This?
   - Both the new and (fixed) old intros (epidemic.prg) do work,
-    (fixed) music disk (zikdisk.prg) panics to bus error
+    (fixed) music disk (zikdisk.prg) panics to bus error at -1
 
 Hatari issues (happen also under TOS4):
 - '_' (by Escape)
@@ -1667,8 +1667,6 @@ Broken games (with EmuTOS Git version):
   - Mouse doesn't work
 - "K" preview* (by EXA)
   - When actual game would start, bus error panic with 4MB, freeze with 14MB
-- Mouse trap
-  - Freezes in the menu screen, uses VDI draw calls
 - Neurobot
   - Both intro & game just exit immediately
 - Pous-Pous
@@ -1685,11 +1683,13 @@ Broken games (with EmuTOS Git version):
 - Watership (VGA only)
   - Bus error reading $fffffffe on startup -> panic
 
-Hatari issues (happen also with TOS4):
+Seem to work except for Hatari issues (happen also with TOS4):
 - Killing Impact
   - Gfx broken, Hatari Videl emulation is incomplete
 - Moongame
   - Main menu mouse cursor cannot be moved
+- Mouse trap
+  - Game play looks OK for one(?) frame, but then screen mode goes wrong
 - Ufo War
   - Gfx broken, Hatari Videl emulation is incomplete
 
@@ -1768,6 +1768,8 @@ Applications working under EmuTOS Git (preliminary TC support):
   - Both the app itself and all viewer TTPs work
 - ScummVm for Falcon + clones
   - older TC versions from OL & Miro
+- Centview (GEM image viewer)
+  - After showing an image, GUI is not always refreshed
 
 Applications working with extra hacks:
 - Fractal Playground, Godleness, GodBoyX by Reservoir Gods
@@ -1780,9 +1782,6 @@ Partly working applications:
     or crashes on exit leaving desktop with broken graphics)
 - AVI030
   - Works as well as with TOS v4 (= has issues)
-- Centview (GEM image viewer)
-  - Shows images, but crashes to bus error with >256 color ones
-  - After showing 256 color image, GUI may not be refreshed
 
 Broken applications (with EmuTOS Git):
 - Indypaint
