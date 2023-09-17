@@ -7519,6 +7519,7 @@ bool is_keyboardreset(void)
 	return  cpu_keyboardreset;
 }
 
+#ifndef WINUAE_FOR_HATARI
 static void warpmode_reset(void)
 {
 	if (currprefs.turbo_boot && currprefs.turbo_emulation < 2) {
@@ -7526,6 +7527,7 @@ static void warpmode_reset(void)
 		currprefs.turbo_emulation = changed_prefs.turbo_emulation = 2;
 	}
 }
+#endif
 
 void m68k_go (int may_quit)
 {
