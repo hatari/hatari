@@ -10,7 +10,7 @@
  * matching, TAB completion support etc.
  * 
  * Symbol/address information is read either from:
- * - A program file's DRI/GST or a.out format symbol table, or
+ * - A program file's symbol table (in DRI/GST, a.out, or ELF format), or
  * - ASCII file which contents are subset of "nm" output i.e. composed of
  *   a hexadecimal addresses followed by a space, letter indicating symbol
  *   type (T = text/code, D = data, B = BSS), space and the symbol name.
@@ -182,6 +182,54 @@ static symbol_list_t* symbols_load_ascii(FILE *fp, uint32_t *offsets, uint32_t m
 }
 
 /**
+ * Return true if symbol name has (C++) data symbol prefix
+ */
+static bool is_cpp_data_symbol(const char *name)
+{
+	static const char *cpp_data[] = {
+		"typeinfo ",
+		"vtable ",
+		"VTT "
+	};
+	int i;
+	for (i = 0; i < ARRAY_SIZE(cpp_data); i++) {
+		size_t len = strlen(cpp_data[i]);
+		if (strncmp(name, cpp_data[i], len) == 0) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
+ * (C++) compiler can put certain data members to text section, and
+ * some of the weak (C++) symbols are for data. For C++, these can be
+ * recognized by their name.  This changes their type to data, to
+ * speed up text symbol searches in profiler.
+ */
+static int fix_symbol_types(symbol_list_t* list)
+{
+	symbol_t *sym = list->names;
+	int i, count, changed = 0;
+
+	count = list->namecount;
+	for (i = 0; i < count; i++) {
+		if (!(sym[i].type & SYMTYPE_CODE)) {
+			continue;
+		}
+		if (is_cpp_data_symbol(sym[i].name)) {
+			sym[i].type = SYMTYPE_DATA;
+			changed++;
+		}
+		/* TODO: add check also for C++ data member
+		 * names, similar to profiler post-processor
+		 * (requires using regex)?
+		 */
+	}
+	return changed;
+}
+
+/**
  * Separate code symbols from other symbols in address list.
  */
 static void symbols_split_addresses(symbol_list_t* list)
@@ -252,8 +300,8 @@ static symbol_list_t* Symbols_Load(const char *filename, uint32_t *offsets, uint
 {
 	symbol_list_t *list;
 	symbol_opts_t opts;
+	int changed, dups;
 	FILE *fp;
-	int dups;
 
 	if (!File_Exists(filename)) {
 		fprintf(stderr, "ERROR: file '%s' doesn't exist or isn't readable!\n", filename);
@@ -293,6 +341,10 @@ static symbol_list_t* Symbols_Load(const char *filename, uint32_t *offsets, uint
 		fprintf(stderr, "ERROR: no valid symbols in '%s', loading failed!\n", filename);
 		symbol_list_free(list);
 		return NULL;
+	}
+
+	if ((changed = fix_symbol_types(list))) {
+		fprintf(stderr, "Corrected type for %d symbols (text->data).\n", changed);
 	}
 
 	/* first sort symbols by address, _with_ code symbols being first */
