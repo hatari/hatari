@@ -482,9 +482,11 @@ static int read_pc_debug_names(FILE *fp, symbol_list_t *list, uint32_t offset)
 	uint32_t strtable_offset;
 	struct pdb_h pdb_h;
 
-	fseek(fp, 0, SEEK_END);
+	if (fseek(fp, 0, SEEK_END) < 0)
+		return 0;
 	filesize = ftell(fp);
-	fseek(fp, 0, SEEK_SET);
+	if (filesize < 0 || fseek(fp, 0, SEEK_SET) < 0)
+		return 0;
 
 	buf = malloc(filesize);
 	if (buf == NULL) {
