@@ -2428,9 +2428,12 @@ static bool GemDOS_Write(uint32_t Params)
 		fflush(fp);
 		Regs[REG_D0] = nBytesWritten;      /* OK */
 	}
-	if (FileHandles[fh_idx].bReadOnly)
+	if (fh_idx >= 0 && FileHandles[fh_idx].bReadOnly)
+	{
 		Log_Printf(LOG_WARN, "GEMDOS Fwrite() to a read-only file '%s'\n",
 			   File_Basename(FileHandles[fh_idx].szActualName));
+	}
+
 	return true;
 }
 
