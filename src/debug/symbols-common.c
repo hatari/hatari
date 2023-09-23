@@ -484,8 +484,9 @@ static int read_pc_debug_names(FILE *fp, symbol_list_t *list, uint32_t offset)
 
 	if (fseek(fp, 0, SEEK_END) < 0)
 		return 0;
-	filesize = ftell(fp);
-	if (filesize < 0 || fseek(fp, 0, SEEK_SET) < 0)
+	if ((filesize = ftell(fp)) < 0)
+		return 0;
+	if (fseek(fp, 0, SEEK_SET) < 0)
 		return 0;
 
 	buf = malloc(filesize);
