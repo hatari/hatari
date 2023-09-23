@@ -1123,7 +1123,6 @@ void DebugUI_UnInit(void)
 	Profile_CpuFree();
 	Profile_DspFree();
 	Symbols_FreeAll();
-	Log_ResetMsgRepeat();
 	free(debugCommand);
 	debugCommands = 0;
 }
