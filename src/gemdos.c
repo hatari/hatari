@@ -4398,6 +4398,7 @@ void GemDOS_PexecBpCreated(void)
 	uint16_t sr = M68000_GetSR();
 	uint16_t mode;
 	uint32_t prgname;
+	int drive;
 
 	sr &= ~SR_OVERFLOW;
 
@@ -4408,9 +4409,18 @@ void GemDOS_PexecBpCreated(void)
 	LOG_TRACE(TRACE_OS_GEMDOS, "Basepage has been created - now loading '%s'\n",
 	          sStFileName);
 
-	GemDOS_CreateHardDriveFileName(GemDOS_FileName2HardDriveID(sStFileName),
-	                               sStFileName, sFileName, sizeof(sFileName));
-	errcode = GemDOS_LoadAndReloc(sFileName, Regs[REG_D0], false);
+	drive = GemDOS_FileName2HardDriveID(sStFileName);
+	if (drive >= 2)
+	{
+		GemDOS_CreateHardDriveFileName(drive, sStFileName, sFileName,
+		                               sizeof(sFileName));
+		errcode = GemDOS_LoadAndReloc(sFileName, Regs[REG_D0], false);
+	}
+	else
+	{
+		errcode = GEMDOS_EDRIVE;
+	}
+
 	if (errcode)
 	{
 		Regs[REG_A0] = Regs[REG_D0];
