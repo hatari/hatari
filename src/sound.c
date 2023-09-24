@@ -1670,7 +1670,6 @@ void Sound_Stats_Show ( void )
 	vbl_per_sec /= pow ( 2 , CLOCKS_TIMINGS_SHIFT_VBL );
 
 	freq_gen = sum * vbl_per_sec;
-	freq_diff = YM_REPLAY_FREQ-freq_gen;
 	freq_diff = freq_gen - YM_REPLAY_FREQ;
 
 	/* Update min/max values, ignore big changes */
