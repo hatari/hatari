@@ -887,7 +887,8 @@ static void restore_file_handle_info(int i, FILE_HANDLE *handle)
 		handle->bUsed = false;
 		Log_Printf(LOG_WARN, "GEMDOS '%s' handle %d cannot be restored, seek to saved offset %"PRId64" failed for: %s\n",
 			   handle->szMode, i, (int64_t)offset, handle->szActualName);
-		fclose(fp);
+		if (fp)
+			fclose(fp);
 		return;
 	}
 	/* used only for warnings, ignore those after restore */
