@@ -823,8 +823,8 @@ void GemDOS_UnInitDrives(void)
 static void save_file_handle_info(FILE_HANDLE *handle)
 {
 	struct stat fstat;
-	time_t mtime;
-	off_t offset;
+	time_t mtime = 0;
+	off_t offset = 0;
 
 	MemorySnapShot_Store(&handle->bUsed, sizeof(handle->bUsed));
 	MemorySnapShot_Store(&handle->szMode, sizeof(handle->szMode));
@@ -833,15 +833,8 @@ static void save_file_handle_info(FILE_HANDLE *handle)
 	if (handle->bUsed)
 	{
 		offset = ftello(handle->FileHandle);
-		stat(handle->szActualName, &fstat);
-		mtime = fstat.st_mtime; /* modification time */
-	}
-	else
-	{
-		/* avoid warnings about access to undefined data */
-		offset = 0;
-		stat("/", &fstat);
-		mtime = fstat.st_mtime;
+		if (stat(handle->szActualName, &fstat) == 0)
+			mtime = fstat.st_mtime; /* modification time */
 	}
 	MemorySnapShot_Store(&mtime, sizeof(mtime));
 	MemorySnapShot_Store(&offset, sizeof(offset));
