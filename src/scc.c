@@ -842,7 +842,7 @@ static int SCC_Get_Standard_BaudRate ( int BaudRate )
 	int	i;
 
 
-	for ( i=0 ; i<(int)sizeof(SCC_Standard_Baudrate) ; i++ )
+	for ( i=0 ; i<(int)ARRAY_SIZE(SCC_Standard_Baudrate) ; i++ )
 	{
 		margin = SCC_Standard_Baudrate[ i ] * 0.01;	/* 1% */
 		if ( margin < 4 )
