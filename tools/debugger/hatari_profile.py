@@ -485,8 +485,9 @@ class ProfileSymbols(Output):
             if '/' in oldname or oldname.endswith('.o') or oldname.endswith('.a'):
                 aliases[oldname] = addr
                 return True
-            # C/C++ or asm symbol?
-            if (name.startswith('_') or '::' in name or ' ' in name):
+            # either of the names is C/C++ symbol?
+            if (name.startswith('_') or '::' in name or ' ' in name or
+                oldname.startswith('_') or '::' in oldname or ' ' in oldname):
                 # prefer shorter names for C/C++ symbols
                 if len(name) > len(oldname):
                     aliases[name] = addr
