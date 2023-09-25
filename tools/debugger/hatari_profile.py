@@ -1422,7 +1422,7 @@ class ProfileStats(ProfileOutput):
             name, offset = symbols.get_preceeding_symbol(addr)
             if name:
                 if offset:
-                    name = " in %s+%d" % (name, offset)
+                    name = " in %s%+d" % (name, offset)
                 else:
                     name = " in %s" % name
             self.write("* %s:\n" % stats.names[i])
@@ -1799,7 +1799,7 @@ label="%s";
 
             pname = self._get_short_name(self.profile[paddr].name)
             if offset:
-                label = "%s+%d\\n($%x)" % (pname, offset, laddr)
+                label = "%s%+d\\n($%x)" % (pname, offset, laddr)
             else:
                 label = pname
             if edge.calls != calls:
