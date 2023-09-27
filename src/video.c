@@ -3663,7 +3663,7 @@ static void Video_CopyScreenLineColor(void)
 	/* but this should be improved to really display a black line (requires changes in screen.c convert functions) */
 	if ((nHBL < nStartHBL) || (nHBL >= nEndHBL + BlankLines)
 	    || (LineBorderMask & ( BORDERMASK_EMPTY_LINE|BORDERMASK_NO_DE ) )
-	    || ShifterFrame.VBlank_signal
+	    || ( ShifterFrame.VBlank_signal && ( nHBL >= ShifterFrame.VBlank_On_Line ) )
 	    || ( VerticalOverscan & V_OVERSCAN_NO_DE ) )
 	{
 		/* Clear line to color '0' */
