@@ -49,8 +49,6 @@ extern void File_MakeAbsoluteName(char *pszFileName);
 extern void File_MakeValidPathName(char *pPathName);
 extern void File_PathShorten(char *path, int dirs);
 extern void File_HandleDotDirs(char *path);
-#if defined(WIN32)
-extern char* WinTmpFile(void);
-#endif
+extern FILE *File_OpenTempFile(char **name);
 
 #endif /* HATARI_FILE_H */
