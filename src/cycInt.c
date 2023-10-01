@@ -526,9 +526,10 @@ static void CycInt_InsertInt ( interrupt_id IntId )
 	/* Search for the position to insert IntId in the linked list ; we insert just before interrupt 'n'  */
 	n = CycInt_ActiveInt;
 	prev = InterruptHandlers[ n ].IntList_Prev;
-	while ( ( n >= 0 ) && ( InterruptHandlers[ IntId ].Cycles > InterruptHandlers[ n ].Cycles ) )
+	while (InterruptHandlers[ IntId ].Cycles > InterruptHandlers[ n ].Cycles)
 	{
 		n = InterruptHandlers[ n ].IntList_Next;
+		assert (n >= 0);
 		prev = InterruptHandlers[ n ].IntList_Prev;
 	}
 
