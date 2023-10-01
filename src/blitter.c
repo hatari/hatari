@@ -348,10 +348,6 @@ static void Blitter_AddCycles(int cycles)
 
 static void Blitter_FlushCycles(void)
 {
-#ifndef CYCINT_NEW
-	int op_cycles = INT_CONVERT_TO_INTERNAL(BlitterVars.op_cycles, INT_CPU_CYCLE);
-#endif
-
 //fprintf ( stderr , "blitter flush_cyc cyc=%d pass=%d %d cur_cyc=%lu\n" , BlitterVars.op_cycles , BlitterVars.pass_cycles , nCyclesMainCounter , currcycle/cpucycleunit );
 
 	if ( BLITTER_RUN_CE )					/* In CE mode, flush cycles already counted in the current cpu instruction */
@@ -360,9 +356,6 @@ static void Blitter_FlushCycles(void)
  		currcycle = 0;
 	}
 
-#ifndef CYCINT_NEW
-	PendingInterruptCount -= op_cycles;
-#endif
 	CycInt_Process();
 
 	/* Run DSP while blitter owns the bus */
