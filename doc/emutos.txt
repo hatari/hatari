@@ -373,6 +373,8 @@ Color demos:
 - 44 (by Avena, 4KB intro)
 - 4getful (by gwEm, 4KB intro)
 - 4kker (by Checkpoint, 4KB intro)
+- Across the Borders (by Effect)
+- Algorift 256b (with MIDI output, by Marquee Design)
 - Ambience (by Chaos)
 - Anomaly (by MJJ Prod)
 - April Fools (by DNT Crew)
@@ -423,7 +425,9 @@ Color demos:
 - Just Jack (by Joker)
 - Let Go (by Dekadence)
 - Lichthaus (by Newline)
+- Lostmax (by Psycho Hacking Force)
 - Lots of Dots (by Acid Maker & Friends)
+- Make More Short Demos (by Dekadence)
 - MMoDA (Mini Museum of Digitized Arts) exhibitions (by Pepe)
 - MonaST (by GGN/tln, 256B intro)
 - Motus (by SMFX)
@@ -438,6 +442,7 @@ Color demos:
 - Oh no!! more froggies (by Sector One) - does not work with >2MB of RAM
 - Oldskool Rebirth (by MJJ Prod)
 - Ooh Crikey (by Lost Boys)
+- OVeRclocked Remix (by Overlanders)
 - Outline 2008 invite (by DHS)
 - Outline 2010 invite (by Checkpoint)
 - OutRun Music demo (by FedePede)
@@ -632,6 +637,7 @@ Free/shareware/PD games:
 - Grav2*
 - Hackman II*
 - Hang About 4KB (mountain climbing, use joystick 0)
+- Hangmad        (hangman)
 - Happy Worm
 - Hardcore preview
 - Haywire        (use joystick 0)
@@ -1351,6 +1357,7 @@ Falcon demos
 
 Working demos (comments are for EmuTOS v1.0 or older):
 - 1600x600 (by Archangel)
+- 256Water (256b intro by Extream)
 - 30l coke, needs DSP
 - 4getful (4k intro by gwEm, Falcon version)
   - Has way too low volume
@@ -1427,6 +1434,8 @@ Demos working under EmuTOS >= v1.1 (with DSP support):
 - Bound 42 (by MMJ Prod)
 - Built-in Obsolescence (by Digital Chaos)
 - Chaos A.D. (by DNT crew)
+- Chiaroscuro (060, by Evolution)
+- Circuitry of Desire (060, by DHS)
 - Codein (060, by DHS)
 - Cycedelic knockout (by Mugwumps)
 - Dan's Lustiges Kinderfest (by Lazer)
