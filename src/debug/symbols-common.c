@@ -881,7 +881,7 @@ static symbol_list_t* symbols_load_gnu(FILE *fp, const prg_section_t *sections, 
 		return NULL;
 	}
 
-	list->strtab = (char *)malloc(tablesize + strsize);
+	list->strtab = (char *)malloc(tablesize + strsize + 1);
 
 	if (list->strtab == NULL) {
 		symbol_list_free(list);
@@ -894,6 +894,7 @@ static symbol_list_t* symbols_load_gnu(FILE *fp, const prg_section_t *sections, 
 		symbol_list_free(list);
 		return NULL;
 	}
+	list->strtab[tablesize + strsize] = 0;
 
 	p = (unsigned char *)list->strtab;
 	sym = list->names;
@@ -1148,7 +1149,7 @@ static symbol_list_t* symbols_load_elf(FILE *fp, const prg_section_t *sections,
 		return NULL;
 	}
 
-	list->strtab = (char *)malloc(strsize);
+	list->strtab = (char *)malloc(strsize + 1);
 	symtab = (unsigned char *)malloc(tablesize);
 
 	if (list->strtab == NULL || symtab == NULL) {
@@ -1180,6 +1181,7 @@ static symbol_list_t* symbols_load_elf(FILE *fp, const prg_section_t *sections,
 		symbol_list_free(list);
 		return NULL;
 	}
+	list->strtab[strsize] = 0;
 
 	p = (unsigned char *)symtab;
 	sym = list->names;
