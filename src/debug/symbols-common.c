@@ -1410,7 +1410,7 @@ static symbol_list_t* symbols_load_binary(FILE *fp, const symbol_opts_t *opts,
 	reads += fread(&prgflags, sizeof(prgflags), 1, fp);
 	prgflags = be_swap32(prgflags);
 	reads += fread(&relocflag, sizeof(relocflag), 1, fp);
-	relocflag = be_swap32(relocflag);
+	relocflag = be_swap16(relocflag);
 
 	if (reads != 7) {
 		fprintf(stderr, "ERROR: program header reading failed!\n");
