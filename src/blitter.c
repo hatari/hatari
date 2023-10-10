@@ -98,6 +98,13 @@
   UPDATE : as of september 2020, this behaviour should be correctly emulated (based on reverse engineering and
   Verilog implementation made by Jorge Cwik (Ijor))
 
+
+  NOTE for Falcon using 32 bit TT RAM : standard Falcon can only address 24 bits of memory with the CPU,
+  the Falcon's blitter is also limited to 24 bits addresses.
+  Some extension boards such as Afterburner or CT2 could use extra "TT RAM" which required 32 bits addresses,
+  but as normal TOS was not designed to handle 32 bits addresses (because is was not possible hardwire-wise)
+  we need to "simulate" 32 bits source/dest address at $FF8A24 and $FF8A32 instead of masking 24 bits
+  (see Blitter_SourceAddr_WriteLong and Blitter_DestAddr_WriteLong)
 */
 
 
@@ -1240,7 +1247,10 @@ void Blitter_SourceAddr_WriteLong(void)
 	if ( Blitter_CheckAccess_Byte() )
 		return;						/* Ignore access */
 
-	BlitterRegs.src_addr = IoMem_ReadLong(REG_SRC_ADDR) & 0x00FFFFFE;	/* Only 24 bits + force even */
+	if ( ConfigureParams.System.bAddressSpace24 == true )
+		BlitterRegs.src_addr = IoMem_ReadLong(REG_SRC_ADDR) & 0x00FFFFFE;	/* Normal STF/STE */
+	else
+		BlitterRegs.src_addr = IoMem_ReadLong(REG_SRC_ADDR) & 0xFFFFFFFE;	/* Falcon with extra TT RAM */
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1312,7 +1322,10 @@ void Blitter_DestAddr_WriteLong(void)
 	if ( Blitter_CheckAccess_Byte() )
 		return;						/* Ignore access */
 
-	BlitterRegs.dst_addr = IoMem_ReadLong(REG_DST_ADDR) & 0x00FFFFFE;	/* Only 24 bits + force even */
+	if ( ConfigureParams.System.bAddressSpace24 == true )
+		BlitterRegs.dst_addr = IoMem_ReadLong(REG_DST_ADDR) & 0x00FFFFFE;	/* Normal STF/STE */
+	else
+		BlitterRegs.dst_addr = IoMem_ReadLong(REG_DST_ADDR) & 0xFFFFFFFE;	/* Falcon with extra TT RAM */
 }
 
 /*-----------------------------------------------------------------------*/
