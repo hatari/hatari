@@ -312,7 +312,6 @@ static void raw_scsi_set_signal_phase(struct raw_scsi *rs, bool busy, bool selec
 			}
 #if RAW_SCSI_DEBUG
 			if (rs->target_id < 0) {
-				int i;
 				for (i = 0; i < 8; i++) {
 					if (i == rs->initiator_id)
 						continue;
