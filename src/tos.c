@@ -913,6 +913,9 @@ static void TOS_CheckSysConfig(void)
 			ConfigureParams.System.bMMU = false;
 		}
 		M68000_CheckCpuSettings();
+
+		/* Ensure MMU has default values when changing machine's type before calling memory_init() later */
+		STMemory_Reset ( true );
 	}
 	else if (ConfigureParams.System.nCpuLevel != oldCpuLevel
 		 || ConfigureParams.System.n_FPUType != oldFpuType)

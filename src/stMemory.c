@@ -822,6 +822,7 @@ MMU configuration at $FF8001 :
 
 static void	STMemory_MMU_ConfToBank ( uint8_t MMU_conf , uint32_t *pBank0 , uint32_t *pBank1 )
 {
+//fprintf(stderr , "STMemory_MMU_ConfToBank %d %d %d\n" , MMU_conf, *pBank0, *pBank1 );
 	if ( Config_IsMachineTT() )
 	{
 		*pBank0 = STMemory_MMU_Size_TT ( ( MMU_conf >> 1 ) & 1  );
@@ -839,6 +840,7 @@ static void	STMemory_MMU_ConfToBank ( uint8_t MMU_conf , uint32_t *pBank0 , uint
 		else
 			*pBank1 = MMU_Bank0_Size;
 	}
+//fprintf(stderr , "STMemory_MMU_ConfToBank2 %d %d %d\n" , MMU_conf, *pBank0, *pBank1 );
 }
 
 
