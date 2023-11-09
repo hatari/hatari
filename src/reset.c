@@ -51,6 +51,9 @@ const char Reset_fileid[] = "Hatari reset.c";
  */
 static int Reset_ST(bool bCold)
 {
+	/* Ensure MMU has default values before calling memory_init() later */
+	STMemory_Reset ( bCold );
+
 	if (bCold)
 	{
 		int ret;
@@ -68,7 +71,6 @@ static int Reset_ST(bool bCold)
 		Video_SetTimings ( ConfigureParams.System.nMachineType , ConfigureParams.System.VideoTimingMode );
 	}
 
-	STMemory_Reset (bCold);
 	CycInt_Reset();               /* Reset interrupts */
 	MFP_Reset_All();              /* Setup MFPs */
 	Video_Reset();                /* Reset video */
