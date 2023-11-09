@@ -97,7 +97,7 @@ void	STMemory_Init ( int RAM_Size_Byte )
  * Reset the internal MMU/MCU used to configure address decoding for the RAM banks
  * 0xFF8001 is set to 0 on cold reset but keep its value on warm reset
  * This should be called early during the whole reset process to ensure MMU_Bank0_Size
- * and MMU_Bank1_Size have a consistent value (ie != 0) before calling ùeùory_init()
+ * and MMU_Bank1_Size have a consistent value (ie != 0) before calling memory_init()
  * (MMU_BankX_Size can be 0 in case Hatari was started with > 4 MB RAM, which is not standard
  * for STF/STE)
  * NOTE : as with STMemory_Init() when using SMALL_MEM, IoMem will not be allocated yet
