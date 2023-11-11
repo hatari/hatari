@@ -4342,13 +4342,24 @@ int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr, bool bFullBpSe
 		return 0;
 	}
 
-	nRelTabIdx = 0x1c + nTextLen + nDataLen + nSymLen;
+	nRelTabIdx = 0x1c + nTextLen + nDataLen;
 	if (nRelTabIdx > nFileSize - 3)
 	{
 		free(prg);
 		Log_Printf(LOG_ERROR, "Can not parse relocation table of '%s'.\n", psPrgName);
 		return GEMDOS_EPLFMT;
 	}
+	if (nRelTabIdx + nSymLen <= nFileSize - 3)
+	{
+		nRelTabIdx += nSymLen;
+	}
+	else
+	{
+		/* Original TOS ignores the error if the symbol table length
+		 * is too, big, so just log a warning here instead of failing */
+		Log_Printf(LOG_WARN, "Symbol table length of '%s' is too big!\n", psPrgName);
+	}
+
 	nRelOff = (prg[nRelTabIdx] << 24) | (prg[nRelTabIdx + 1] << 16)
 	          | (prg[nRelTabIdx + 2] << 8) | prg[nRelTabIdx + 3];
 
