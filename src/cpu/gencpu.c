@@ -7083,7 +7083,9 @@ static void gen_opcode (unsigned int opcode)
 				out("opcode |= 0x20000;\n");
 			}
 			if (using_debugmem) {
+				out("#ifdef DEBUGGER\n");
 				out("branch_stack_pop_rte(oldpc);\n");
+				out("#endif\n");
 			}
 		} else if (cpu_level == 1 && using_prefetch) {
 			// 68010
@@ -7131,7 +7133,9 @@ static void gen_opcode (unsigned int opcode)
 			out("newsr = sr; newpc = pc;\n");
 			setpc ("newpc");
 			if (using_debugmem) {
+				out("#ifdef DEBUGGER\n");
 				out("branch_stack_pop_rte(oldpc);\n");
+				out("#endif\n");
 			}
 		} else {
 			out("uaecptr oldpc = %s;\n", getpc);
@@ -7245,7 +7249,9 @@ static void gen_opcode (unsigned int opcode)
 			out("}\n");
 		    setpc ("newpc");
 			if (using_debugmem) {
+				out("#ifdef DEBUGGER\n");
 				out("branch_stack_pop_rte(oldpc);\n");
+				out("#endif\n");
 			}
 		}
 		/* PC is set and prefetch filled. */
@@ -7401,9 +7407,11 @@ static void gen_opcode (unsigned int opcode)
 			count_readl++;
 		}
 		if (using_debugmem) {
+			out("#ifdef DEBUGGER\n");
 			out("if (debugmem_trace) {\n");
 			out("branch_stack_pop_rts(oldpc);\n");
 			out("}\n");
+			out("#endif\n");
 		}
 	    out("if (%s & 1) {\n", getpc);
 		out("uaecptr faultpc = %s;\n", getpc);
@@ -7645,9 +7653,11 @@ static void gen_opcode (unsigned int opcode)
 				if (cpu_level >= 4)
 					out("m68k_areg(regs, 7) -= 4;\n");
 				if (using_debugmem) {
+					out("#ifdef DEBUGGER\n");
 					out("if (debugmem_trace) {\n");
 					out("branch_stack_push(oldpc, nextpc);\n");
 					out("}\n");
+					out("#endif\n");
 				}
 			}
 			fill_prefetch_full_020();
@@ -7810,9 +7820,11 @@ static void gen_opcode (unsigned int opcode)
 			out("}\n");
 		}
 		if (using_debugmem) {
+			out("#ifdef DEBUGGER\n");
 			out("if (debugmem_trace) {\n");
 			out("branch_stack_push(oldpc, nextpc);\n");
 			out("}\n");
+			out("#endif\n");
 		}
 		clear_m68k_offset();
 		if (using_prefetch || using_ce) {
