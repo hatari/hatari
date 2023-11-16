@@ -114,6 +114,8 @@ Tools:
     are interpreted as match patterns (with '*?[]' wildcards)
   - Only single arrow shown between callgraph nodes when
     "--compact" option is used
+- m68k-instructions: (new)
+  - Tool for printing m68k instruction breakpoints & opcode info
 
 Build improvements:
 - Fix: CPU core compile warnings (WinUAE upstream)
