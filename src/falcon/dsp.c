@@ -632,12 +632,13 @@ int DSP_GetRegisterAddress(const char *regname, uint32_t **addr, uint32_t *mask)
 		{ "R6",  &dsp_core.registers[DSP_REG_R6],  32, BITMASK(16) },
 		{ "R7",  &dsp_core.registers[DSP_REG_R7],  32, BITMASK(16) },
 
-		{ "SSH", &dsp_core.registers[DSP_REG_SSH], 32, BITMASK(16) },
-		{ "SSL", &dsp_core.registers[DSP_REG_SSL], 32, BITMASK(16) },
 		{ "SP",  &dsp_core.registers[DSP_REG_SP],  32, BITMASK(6) },
 
 		/* 16-bit status register */
 		{ "SR",  &dsp_core.registers[DSP_REG_SR],  32, 0xefff },
+
+		{ "SSH", &dsp_core.registers[DSP_REG_SSH], 32, BITMASK(16) },
+		{ "SSL", &dsp_core.registers[DSP_REG_SSL], 32, BITMASK(16) },
 
 		/* 48-bit X register */
 		{ "X0",  &dsp_core.registers[DSP_REG_X0],  32, BITMASK(24) },
