@@ -429,9 +429,9 @@ void Disasm_Init(void)
 			disasm_flags |= DISASM_FLAG_WORDS;
 
 		if (options & doptShowValues)
-			disasm_flags |= (DISASM_FLAG_CC | DISASM_FLAG_EA | DISASM_FLAG_VAL);
+			disasm_flags |= (DISASM_FLAG_CC | DISASM_FLAG_EA | DISASM_FLAG_VAL | DISASM_FLAG_VAL_FORCE);
 		else
-			disasm_flags &= ~(DISASM_FLAG_CC | DISASM_FLAG_EA | DISASM_FLAG_VAL);
+			disasm_flags &= ~(DISASM_FLAG_CC | DISASM_FLAG_EA | DISASM_FLAG_VAL | DISASM_FLAG_VAL_FORCE);
 
 		if (options & doptHexSmall)
 			disasm_flags |= DISASM_FLAG_LC_HEX;
