@@ -7716,6 +7716,7 @@ void m68k_go (int may_quit)
 
 #ifndef WINUAE_FOR_HATARI
 		if (!restored && hardboot) {
+			uaerandomizeseed();
 			uae_u32 s = uaerandgetseed();
 			uaesetrandseed(s);
 			write_log("rndseed = %08x (%u)\n", s, s);
