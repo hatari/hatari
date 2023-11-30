@@ -1311,9 +1311,11 @@ Working demos:
 - TC fish (by .tSCc)
 - TT highres slideshow (by .tSCc)
 - Shiny Bubbles TT (by Xanth FX)
+- Spear of Destiny (port by Gildor)
 - XiTEC demos (by Omega)
   - On exiting Swing EmuTOS panics with privilege violation
     (TOS bombs and continues)
+- Yeti3D (port by Gildor)
 
 Working games:
 - Capy (by YesCREW)
@@ -1527,7 +1529,7 @@ Hatari issues (happen also under TOS4):
 - Symposium'96 (by Hydroxid)
   - Cannot run to end
 - X-perience (by Abstract)
-  - Demo freezes
+  - NULL pointer bus error after while / demo freezes
 
 
 Falcon games
