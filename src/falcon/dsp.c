@@ -369,7 +369,7 @@ uint32_t DSP_ReadMemory(uint16_t address, char space_id, const char **mem_str)
 	static const char *spaces[3][4] = {
 		{ "X ram", "X rom", "X", "X periph" },
 		{ "Y ram", "Y rom", "Y", "Y periph" },
-		{ "P ram", "P ram", "P ext memory", "P ext memory" }
+		{ "P ram", "P rom", "P ext memory", "P ext memory" }
 	};
 	int idx, space;
 
