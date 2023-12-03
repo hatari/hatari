@@ -1206,13 +1206,14 @@ static void dsp_ccr_update_e_u_n_z(uint32_t reg0, uint32_t reg1, uint32_t reg2)
 
 static uint32_t read_memory_disasm(int space, uint16_t address)
 {
+	/* Program memory space ? */
+	if (space==DSP_SPACE_P) {
+		return read_memory_p(address);
+	}
+
 	/* Internal RAM ? */
 	if (address<0x100) {
 		return dsp_core.ramint[space][address] & BITMASK(24);
-	}
-
-	if (space==DSP_SPACE_P) {
-		return read_memory_p(address);
 	}
 
 	/* Internal ROM? */
@@ -1260,13 +1261,14 @@ static uint32_t read_memory(int space, uint16_t address)
 {
 	uint32_t value;
 
-		/* Internal RAM ? */
-	if (address < 0x100) {
-		return dsp_core.ramint[space][address] & BITMASK(24);
-	}
-
+	/* Program memory space ? */
 	if (space == DSP_SPACE_P) {
 		return read_memory_p(address);
+	}
+
+	/* Internal RAM ? */
+	if (address < 0x100) {
+		return dsp_core.ramint[space][address] & BITMASK(24);
 	}
 
 	/* Internal ROM ? */

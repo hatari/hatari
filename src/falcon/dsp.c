@@ -392,12 +392,6 @@ uint32_t DSP_ReadMemory(uint16_t address, char space_id, const char **mem_str)
 	}
 	address &= 0xFFFF;
 
-	/* Internal RAM ? */
-	if (address < 0x100) {
-		*mem_str = spaces[idx][0];
-		return dsp_core.ramint[space][address];
-	}
-
 	if (space == DSP_SPACE_P) {
 		/* Internal RAM ? */
 		if (address < 0x200) {
@@ -407,6 +401,12 @@ uint32_t DSP_ReadMemory(uint16_t address, char space_id, const char **mem_str)
 		/* External RAM, mask address to available ram size */
 		*mem_str = spaces[idx][2];
 		return dsp_core.ramext[address & (DSP_RAMSIZE-1)];
+	}
+
+	/* Internal RAM ? */
+	if (address < 0x100) {
+		*mem_str = spaces[idx][0];
+		return dsp_core.ramint[space][address];
 	}
 
 	/* Internal ROM ? */
