@@ -63,7 +63,7 @@ static uae_u8 * REGPARAM3 STmem_xlate (uaecptr addr) REGPARAM;
 
 
 #ifdef WINUAE_FOR_HATARI
-#undef NATMEM_OFFSET
+#undef NATMEM_OFFSET			/* Don't use shm in Hatari */
 #endif
 
 #ifdef NATMEM_OFFSET
@@ -1211,10 +1211,6 @@ static addrbank IOmem_bank =
     IoMem_lget, IoMem_wget, ABFLAG_IO
 };
 
-
-#ifdef WINUAE_FOR_HATARI
-#undef NATMEM_OFFSET			/* Don't use shm in Hatari */
-#endif
 
 static void set_direct_memory(addrbank *ab)
 {
