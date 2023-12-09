@@ -1576,7 +1576,7 @@ static inline void raw_pop_preserved_regs(void) {
  *************************************************************************/
 
 #ifdef UAE
-#include "exception_handler.cpp"
+#include "exception_handler.c"
 #endif
 
 #ifdef UAE

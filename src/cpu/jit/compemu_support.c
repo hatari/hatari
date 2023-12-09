@@ -65,9 +65,9 @@
 
 #ifdef UAE
 #define bug write_log
-#include "options.h"
+#include "options_cpu.h"
 #include "events.h"
-#include "uae/memory.h"
+#include "memory.h"
 #include "custom.h"
 #else
 #include "cpu_emulation.h"
@@ -207,10 +207,10 @@ void jit_abort(const char *format, ...)
 #endif
 #endif
 
-# include <csignal>
-# include <cstdlib>
-# include <cerrno>
-# include <cassert>
+#include <signal.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <assert.h>
 
 #if defined(CPU_x86_64) && 0
 #define RECORD_REGISTER_USAGE		1
@@ -1131,7 +1131,7 @@ static inline void reset_data_buffer(void)
 #include "codegen_arm.cpp"
 #endif
 #if defined(CPU_i386) || defined(CPU_x86_64)
-#include "codegen_x86.cpp"
+#include "codegen_x86.c"
 #endif
 
 
@@ -2637,7 +2637,7 @@ static void prepare_for_call_2(void)
 #endif
 
 #if defined(CPU_i386) || defined(CPU_x86_64)
-#include "compemu_midfunc_x86.cpp"
+#include "compemu_midfunc_x86.c"
 #endif
 
 

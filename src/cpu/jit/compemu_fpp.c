@@ -41,9 +41,9 @@
 
 #ifdef JIT
 
-#include <cmath>
-#include <cstdio>
-#include <cassert>
+#include <math.h>
+#include <stdio.h>
+#include <assert.h>
 
 #include "memory-uae.h"
 #include "readcpu.h"
