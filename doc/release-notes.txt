@@ -37,6 +37,9 @@ Emulation improvements:
   - Update sound FIFO on each HBL (like on STE)
 - CPU:
   - Fix IACK timings
+- DSP:
+  - Add host interface initialisation
+  - Add host received data interrupt
 - Video:
   - Add support for 4 pixel hardscroll on STF by stopping shifter with
     $FF8260=3 (new technique by Troed/Sync)
@@ -126,6 +129,8 @@ Programs with fixed MIDI (MFP IRQ clear) handling:
 - Midi Maze
 - Midi Maze II
 - Oxyd 2
+Other fixed programs:
+- FlaySID (DSP host handling)
 
 Fixed demos:
 - Little -ME- Demo end part : black screen after a while (IACK timing)
