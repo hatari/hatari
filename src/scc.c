@@ -1214,8 +1214,10 @@ static uint8_t	SCC_Get_Vector_Status ( void )
 static void	SCC_Update_RR0 ( int Channel )
 {
 	uint8_t		RR0_New;
+	uint8_t		RR0_Old;
 	bool		Update_CTS= false;
 	bool		Update_DCD= false;
+	bool		Set_RR3;
 
 
 //fprintf ( stderr , "update rr0 %c in=$%02x wr15=$%02x\n" , 'A'+Channel , SCC.Chn[Channel].RR[0] , SCC.Chn[Channel].WR[15] );
@@ -1282,7 +1284,48 @@ static void	SCC_Update_RR0 ( int Channel )
 			RR0_New |= SCC_RR0_BIT_DCD;
 	}
 
+	RR0_Old = SCC.Chn[ Channel ].RR[0];
 	SCC.Chn[ Channel ].RR[0] = RR0_New;
+
+	/* Changes in RR0 can set RR3 Ext IP bit */
+	/* This can be either for any transition, or only 0 to 1 transition */
+	if ( SCC.Chn[Channel].WR[1] & SCC_WR1_BIT_EXT_INT_ENABLE )
+	{
+		Set_RR3 = false;
+		/* Bit 1 ZC : 0->1 */
+		if ( ( ( ( RR0_Old & SCC_RR0_BIT_ZERO_COUNT ) == 0 ) && ( ( RR0_New & SCC_RR0_BIT_ZERO_COUNT ) != 0 ) )
+			&& ( SCC.Chn[ Channel ].WR[15] & SCC_WR15_BIT_ZERO_COUNT_INT_ENABLE ) )
+			Set_RR3 = true;
+		/* Bit 3 DCD : 0->1 or 1->0 */
+		else if ( ( ( RR0_Old & SCC_RR0_BIT_DCD ) != ( RR0_New & SCC_RR0_BIT_DCD ) )
+			&& ( SCC.Chn[ Channel ].WR[15] & SCC_WR15_BIT_DCD_INT_ENABLE ) )
+			Set_RR3 = true;
+		/* Bit 4 SYNC : 0->1 or 1->0 (in asynchronous mode) */
+		else if ( ( ( RR0_Old & SCC_RR0_BIT_SYNC_HUNT ) != ( RR0_New & SCC_RR0_BIT_SYNC_HUNT ) )
+			&& ( SCC.Chn[ Channel ].WR[15] & SCC_WR15_BIT_SYNC_HUNT_INT_ENABLE ) )
+			Set_RR3 = true;
+		/* Bit 5 CTS : 0->1 or 1->0 */
+		else if ( ( ( RR0_Old & SCC_RR0_BIT_CTS ) != ( RR0_New & SCC_RR0_BIT_CTS ) )
+			&& ( SCC.Chn[ Channel ].WR[15] & SCC_WR15_BIT_CTS_INT_ENABLE ) )
+			Set_RR3 = true;
+		/* Bit 6 TX underrun : 0->1 */
+		else if ( ( ( ( RR0_Old & SCC_RR0_BIT_TX_UNDERRUN_EOM ) == 0 ) && ( ( RR0_New & SCC_RR0_BIT_TX_UNDERRUN_EOM ) != 0 ) )
+			&& ( SCC.Chn[ Channel ].WR[15] & SCC_WR15_BIT_TX_UNDERRUN_EOM_INT_ENABLE ) )
+			Set_RR3 = true;
+		/* Bit 6 Break/Abord : 0->1 or 1->0 */
+		else if ( ( ( RR0_Old & SCC_RR0_BIT_BREAK_ABORT ) != ( RR0_New & SCC_RR0_BIT_BREAK_ABORT ) )
+			&& ( SCC.Chn[ Channel ].WR[15] & SCC_WR15_BIT_BREAK_ABORT_INT_ENABLE ) )
+			Set_RR3 = true;
+
+		if ( Set_RR3 )
+		{
+			if ( Channel )
+				SCC_Update_RR3_Bit ( 1 , SCC_RR3_BIT_EXT_STATUS_IP_B );
+			else
+				SCC_Update_RR3_Bit ( 1 , SCC_RR3_BIT_EXT_STATUS_IP_A );
+		}
+	}
+
 //fprintf ( stderr , "update rr0 %c out=$%02x wr15=$%02x\n" , 'A'+Channel , SCC.Chn[Channel].RR[0] , SCC.Chn[Channel].WR[15] );
 }
 
@@ -1463,7 +1506,7 @@ static void	SCC_Update_RR3 ( int Channel )
 //fprintf ( stderr , "update rr3 %c in=$%02x rr0=$%02x wr15=$%02x ius=$%02x\n" , 'A'+Channel , SCC.Chn[0].RR[3] , SCC.Chn[Channel].RR[0] , SCC.Chn[Channel].WR[15] , SCC.IUS );
 	SCC_Update_RR3_RX ( Channel );
 	SCC_Update_RR3_TX ( Channel );
-	SCC_Update_RR3_EXT ( Channel );
+//	SCC_Update_RR3_EXT ( Channel );
 //fprintf ( stderr , "update rr3 %c out=$%02x rr0=$%02x wr15=$%02x ius=$%02x\n" , 'A'+Channel , SCC.Chn[0].RR[3] , SCC.Chn[Channel].RR[0] , SCC.Chn[Channel].WR[15] , SCC.IUS );
 }
 
@@ -1674,6 +1717,10 @@ static void SCC_WriteControl(int chn, uint8_t value)
 				LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d value=$%02x command=reset ext/status int RR3=$%02x IUS=$%02x\n" ,
 					'A'+chn , SCC.Active_Reg , value , SCC.Chn[0].RR[3] , SCC.IUS );
 				/* Remove latches on RR0 and allow interrupt to happen again */
+				if ( chn )
+					SCC_Update_RR3_Bit ( 0 , SCC_RR3_BIT_EXT_STATUS_IP_B );
+				else
+					SCC_Update_RR3_Bit ( 0 , SCC_RR3_BIT_EXT_STATUS_IP_A );
 				SCC_Update_RR0_Latch_Off ( chn );
 				SCC_Update_RR3 ( chn );
 				SCC_Update_IRQ ();
