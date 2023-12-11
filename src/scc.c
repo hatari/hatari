@@ -35,16 +35,16 @@
   to get closer to the requested baud rate by choosing the most appropriate base clock freq.
 
   Mega STE :
-   SCC port A : 1 RS422 LAN port (MiniDIN, 8 pins) and 1 RS232C serial port A (DB-9P, 9 pins)
-   SCC port B : 1 RS232C serial port B (DP-9P, 9 pins)
+   SCC port A : 1 RS422 LAN port (MiniDIN, 8 pins) and 1 RS232C serial port A (DB-9P, 9 pins) "Modem 1"
+   SCC port B : 1 RS232C serial port B (DP-9P, 9 pins) "Modem 2"
    - PCLK : connected to CLK8, 8021247 Hz for PAL
    - RTxCA and RTxCB : connected to PCLK4, dedicated OSC running at 3.672 MHz
    - TRxCA : connected to LCLK : SYNCI signal on pin 2 of the LAN connector or pin 6 of Serial port A
    - TRxCB : connected to BCLK, dedicated OSC running at 2.4576 MHz for the MFP's XTAL1
 
   TT :
-   SCC port A : 1 RS422 LAN port (MiniDIN, 8 pins) and 1 RS232C serial port A (DB-9P, 9 pins)
-   SCC port B : 1 RS232C serial port B (DP-9P, 9 pins)
+   SCC port A : 1 RS422 LAN port (MiniDIN, 8 pins) and 1 RS232C serial port A (DB-9P, 9 pins) "Modem 1"
+   SCC port B : 1 RS232C serial port B (DP-9P, 9 pins) "Modem 2"
    - PCLK : connected to CLK8, 8021247 Hz for PAL
    - RTxCA : connected to PCLK4, dedicated OSC running at 3.672 MHz
    - TRxCA : connected to LCLK : SYNCI signal on pin 2 of the LAN connector or pin 6 of Serial port A
@@ -324,14 +324,13 @@ static void	SCC_ResetFull ( bool HW_Reset );
 static void	SCC_Update_RR0 ( int Channel );
 static void	SCC_Update_RR0_Clear ( int Channel , int bits );
 static void	SCC_Update_RR0_Set ( int Channel , int bits );
+static void	SCC_Update_RR0_Latch_Off ( int Channel );
 
 static uint8_t	SCC_Get_Vector_Status ( void );
 static void	SCC_Update_RR2 ( void );
 
 static void	SCC_Update_RR3_Bit ( bool Set , uint8_t Bit );
-static void	SCC_Update_RR3_RX ( int Channel );
-static void	SCC_Update_RR3_TX ( int Channel );
-static void	SCC_Update_RR3_EXT ( int Channel );
+static void	SCC_Update_RR3 ( int Channel );
 
 static void	SCC_Copy_TDR_TSR ( int Channel , uint8_t TDR );
 
@@ -1289,6 +1288,7 @@ static void	SCC_Update_RR0 ( int Channel )
 
 	/* Changes in RR0 can set RR3 Ext IP bit */
 	/* This can be either for any transition, or only 0 to 1 transition */
+	/* IP bits can be reset using "reset command" in WR0 */
 	if ( SCC.Chn[Channel].WR[1] & SCC_WR1_BIT_EXT_INT_ENABLE )
 	{
 		Set_RR3 = false;
@@ -1319,6 +1319,8 @@ static void	SCC_Update_RR0 ( int Channel )
 
 		if ( Set_RR3 )
 		{
+			SCC.Chn[ Channel ].RR0_Latched = true;		/* Latch bits in RR0 */
+
 			if ( Channel )
 				SCC_Update_RR3_Bit ( 1 , SCC_RR3_BIT_EXT_STATUS_IP_B );
 			else
@@ -1329,33 +1331,22 @@ static void	SCC_Update_RR0 ( int Channel )
 //fprintf ( stderr , "update rr0 %c out=$%02x wr15=$%02x\n" , 'A'+Channel , SCC.Chn[Channel].RR[0] , SCC.Chn[Channel].WR[15] );
 }
 
-
 static void	SCC_Update_RR0_Clear ( int Channel , int bits )
 {
 	SCC.Chn[ Channel ].RR0_No_Latch &= ~bits;
 }
-
-
 
 static void	SCC_Update_RR0_Set ( int Channel , int bits )
 {
 	SCC.Chn[ Channel ].RR0_No_Latch |= bits;
 }
 
-
-
-static void	SCC_Update_RR0_Latch_On ( int Channel )
-{
-	SCC_Update_RR0 ( Channel );
-	SCC.Chn[ Channel ].RR0_Latched = true;
-}
-
-
 static void	SCC_Update_RR0_Latch_Off ( int Channel )
 {
 	SCC.Chn[ Channel ].RR0_Latched = false;
 	SCC_Update_RR0 ( Channel );
 }
+
 
 
 /*
@@ -1404,15 +1395,21 @@ static void	SCC_Update_RR3_Bit ( bool Set , uint8_t Bit )
 		SCC.Chn[0].RR[3] &= ~Bit;
 }
 
-
-static void	SCC_Update_RR3_RX ( int Channel )
+static void	SCC_Update_RR3 ( int Channel )
 {
 	uint8_t		Set;
 	uint8_t		RX_Mode;
 	bool		Int_On_RX;
 	bool		Int_On_Special;
 
-	/* Check the possible conditions for RX int */
+	/* RR3 depends on some RR0 bits, so update RR0 first */
+	SCC_Update_RR0 ( Channel );
+
+//fprintf ( stderr , "update rr3 %c in=$%02x rr0=$%02x wr15=$%02x ius=$%02x\n" , 'A'+Channel , SCC.Chn[0].RR[3] , SCC.Chn[Channel].RR[0] , SCC.Chn[Channel].WR[15] , SCC.IUS );
+
+	/*
+	 * Update RR3 RX bits
+	 */
 	RX_Mode = ( SCC.Chn[ Channel ].WR[1] >> 3 ) & 0x03;
 	Int_On_RX = false;
 	Int_On_Special = false;
@@ -1438,13 +1435,11 @@ static void	SCC_Update_RR3_RX ( int Channel )
 		SCC_Update_RR3_Bit ( Set , SCC_RR3_BIT_RX_IP_B );
 	else
 		SCC_Update_RR3_Bit ( Set , SCC_RR3_BIT_RX_IP_A );
-}
 
 
-static void	SCC_Update_RR3_TX ( int Channel )
-{
-	uint8_t		Set;
-
+	/*
+	 * Update RR3 TX bits
+	 */
 	if ( ( SCC.Chn[ Channel ].RR[0] & SCC_RR0_BIT_TX_BUFFER_EMPTY )
 	  && ( SCC.Chn[ Channel ].WR[1] & SCC_WR1_BIT_TX_INT_ENABLE )
 	  && ( SCC.Chn[ Channel ].TX_Buffer_Written )
@@ -1457,56 +1452,7 @@ static void	SCC_Update_RR3_TX ( int Channel )
 		SCC_Update_RR3_Bit ( Set , SCC_RR3_BIT_TX_IP_B );
 	else
 		SCC_Update_RR3_Bit ( Set , SCC_RR3_BIT_TX_IP_A );
-}
 
-
-/*
- * Update RR3 EXT bit depending on RR0's content
- * If RRO is already latched it means an IP was already set for one of these
- * ext status bit. In that case IP bit must remain set in RR3 (see WR0 for reset command)
- */
-static void	SCC_Update_RR3_EXT ( int Channel )
-{
-	uint8_t		Set;
-
-	if ( ( SCC.Chn[Channel].WR[1] & SCC_WR1_BIT_EXT_INT_ENABLE )
-	  && (         SCC.Chn[ Channel ].RR0_Latched
-	      || (   ( SCC.Chn[ Channel ].RR[0] & SCC_RR0_BIT_ZERO_COUNT )
-		  && ( SCC.Chn[ Channel ].WR[15] & SCC_WR15_BIT_ZERO_COUNT_INT_ENABLE ) )
-	      || (   ( SCC.Chn[ Channel ].RR[0] & SCC_RR0_BIT_DCD )
-		  && ( SCC.Chn[ Channel ].WR[15] & SCC_WR15_BIT_DCD_INT_ENABLE ) )
-	      || (   ( SCC.Chn[ Channel ].RR[0] & SCC_RR0_BIT_SYNC_HUNT )
-		  && ( SCC.Chn[ Channel ].WR[15] & SCC_WR15_BIT_SYNC_HUNT_INT_ENABLE ) )
-	      || (   ( SCC.Chn[ Channel ].RR[0] & SCC_RR0_BIT_CTS )
-		  && ( SCC.Chn[ Channel ].WR[15] & SCC_WR15_BIT_CTS_INT_ENABLE ) )
-	      || (   ( SCC.Chn[ Channel ].RR[0] & SCC_RR0_BIT_TX_UNDERRUN_EOM )
-		  && ( SCC.Chn[ Channel ].WR[15] & SCC_WR15_BIT_TX_UNDERRUN_EOM_INT_ENABLE ) )
-	      || (   ( SCC.Chn[ Channel ].RR[0] & SCC_RR0_BIT_BREAK_ABORT )
-		  && ( SCC.Chn[ Channel ].WR[15] & SCC_WR15_BIT_BREAK_ABORT_INT_ENABLE ) )
-	    ) )
-	{
-		Set = 1;
-		SCC_Update_RR0_Latch_On ( Channel );		/* Latch bits in RR0 */
-	}
-	else
-		Set = 0;
-
-	if ( Channel )
-		SCC_Update_RR3_Bit ( Set , SCC_RR3_BIT_EXT_STATUS_IP_B );
-	else
-		SCC_Update_RR3_Bit ( Set , SCC_RR3_BIT_EXT_STATUS_IP_A );
-}
-
-
-static void	SCC_Update_RR3 ( int Channel )
-{
-	/* RR3 depends on some RR0 bits, so update RR0 first */
-	SCC_Update_RR0 ( Channel );
-
-//fprintf ( stderr , "update rr3 %c in=$%02x rr0=$%02x wr15=$%02x ius=$%02x\n" , 'A'+Channel , SCC.Chn[0].RR[3] , SCC.Chn[Channel].RR[0] , SCC.Chn[Channel].WR[15] , SCC.IUS );
-	SCC_Update_RR3_RX ( Channel );
-	SCC_Update_RR3_TX ( Channel );
-//	SCC_Update_RR3_EXT ( Channel );
 //fprintf ( stderr , "update rr3 %c out=$%02x rr0=$%02x wr15=$%02x ius=$%02x\n" , 'A'+Channel , SCC.Chn[0].RR[3] , SCC.Chn[Channel].RR[0] , SCC.Chn[Channel].WR[15] , SCC.IUS );
 }
 
