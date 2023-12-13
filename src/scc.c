@@ -35,16 +35,18 @@
   to get closer to the requested baud rate by choosing the most appropriate base clock freq.
 
   Mega STE :
-   SCC port A : 1 RS422 LAN port (MiniDIN, 8 pins) and 1 RS232C serial port A (DB-9P, 9 pins) "Modem 1"
-   SCC port B : 1 RS232C serial port B (DP-9P, 9 pins) "Modem 2"
+   SCC port A : 1 RS422 LAN port (MiniDIN, 8 pins) "Lan"
+		or 1 internal 10 pins cable connected to RS232C serial port in VME slot (DP-9P, 9 pins) "Serial 2"
+   SCC port B : 1 RS232C serial port (DP-9P, 9 pins) "Modem 2"
    - PCLK : connected to CLK8, 8021247 Hz for PAL
    - RTxCA and RTxCB : connected to PCLK4, dedicated OSC running at 3.672 MHz
    - TRxCA : connected to LCLK : SYNCI signal on pin 2 of the LAN connector or pin 6 of Serial port A
    - TRxCB : connected to BCLK, dedicated OSC running at 2.4576 MHz for the MFP's XTAL1
 
   TT :
-   SCC port A : 1 RS422 LAN port (MiniDIN, 8 pins) and 1 RS232C serial port A (DB-9P, 9 pins) "Modem 1"
-   SCC port B : 1 RS232C serial port B (DP-9P, 9 pins) "Modem 2"
+   SCC port A : 1 RS422 LAN port (MiniDIN, 8 pins) "Lan"
+		or 1 internal 10 pins cable connected to RS232C serial port in VME slot (DP-9P, 9 pins) "Serial 2"
+   SCC port B : 1 RS232C serial port (DP-9P, 9 pins) "Modem 2"
    - PCLK : connected to CLK8, 8021247 Hz for PAL
    - RTxCA : connected to PCLK4, dedicated OSC running at 3.672 MHz
    - TRxCA : connected to LCLK : SYNCI signal on pin 2 of the LAN connector or pin 6 of Serial port A
@@ -52,14 +54,18 @@
    - TRxCB : connected to BCLK, dedicated OSC running at 2.4576 MHz for the 2 MFPs' XTAL1
 
   Falcon :
-   SCC port A : 1 RS422 LAN port (MiniDIN, 8 pins)
-   SCC port B : 1 RS232C serial port B (DP-9P, 9 pins)
+   SCC port A : 1 RS422 LAN port (MiniDIN, 8 pins) "Lan"
+   SCC port B : 1 RS232C serial port B (DP-9P, 9 pins) "Modem"
    - PCLK : connected to CLK8, 8021247 Hz for PAL
    - RTxCA and RTxCB : connected to PCLK4, dedicated OSC running at 3.672 MHz
    - TRxCA : connected to SYNCA on the SCC
    - TRxCB : connected to BCLKA, dedicated OSC running at 2.4576 MHz for the MFP's XTAL1
 
-
+  Note on other serial ports :
+  MegaSTE and TT :
+   - "Modem 1" is a RS232C serial port (DP-9P, 9 pins) connected to the main MFP
+  TT :
+   - "Serial 1" is a 3-wire serial port in VME slot (DP-9P, 9 pins) connected to the TT MFP
 */
 
 
