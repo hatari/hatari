@@ -1578,6 +1578,7 @@ Games working under EmuTOS >= v1.0:
 - Risk 030 demo (VGA only)
   - Needs 640x480@16 mode
 - Spice* (Defender clone)
+- Spout
 - Steinbruch
 - Sweety Things
 - Switch
@@ -1622,6 +1623,8 @@ Games working under EmuTOS >= v1.1.1 (DSP support + fixes):
 - Ninja Torappu (by Cerebral Vortex)
   - Some sounds missing with EmuTOS v1.0
 - NoMess (GEM, requires color icon support)
+- OpenJazz (060 Atari port)
+- OpenTyrian (060 Atari port)
 - Pong 2000 demo (use joypad)
 - Push It
 - Racer (by Thadoss/Dune)
@@ -1635,6 +1638,7 @@ Games working under EmuTOS >= v1.1.1 (DSP support + fixes):
 - The 8 runes of Aerillion (demo version)
 - Towers II
 - Trionoids* (Columns clone)
+- Worms* (Team17 game 060 Atari port)
 - Wotanoid (Asteroids clone)
 
 Games working under EmuTOS >= v1.2:
