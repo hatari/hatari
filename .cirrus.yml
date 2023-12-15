@@ -39,24 +39,24 @@ macos12_task:
     folder: dl_cache
     populate_script:
       - if [ ! -d dl_cache ]; then mkdir dl_cache ; fi
-      - if [ ! -f dl_cache/SDL2-$SDLVERSION.dmg ]; then
-          wget -O dl_cache/SDL2-$SDLVERSION.dmg
-            https://github.com/libsdl-org/SDL/releases/download/release-$SDLVERSION/SDL2-$SDLVERSION.dmg ;
-        fi
-      - if [ ! -e dl_cache/png.framework ]; then
-          wget -O dl_cache/libpng-$PNGVERSION.tar.xz
-            "http://prdownloads.sourceforge.net/libpng/libpng-$PNGVERSION.tar.xz?download" ;
-          tar -xJf dl_cache/libpng-$PNGVERSION.tar.xz ;
-          cd libpng-$PNGVERSION ;
-          cmake -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING="10.9" -DPNG_FRAMEWORK=ON
-                -DPNG_HARDWARE_OPTIMIZATIONS=OFF . ;
-          cmake --build . --verbose --config Release -j$(sysctl -n hw.ncpu) ;
-          cd .. ;
-          mv libpng-$PNGVERSION/png.framework dl_cache/ ;
-        fi
   install_script:
+    - if [ ! -f dl_cache/SDL2-$SDLVERSION.dmg ]; then
+        wget -O dl_cache/SDL2-$SDLVERSION.dmg
+          https://github.com/libsdl-org/SDL/releases/download/release-$SDLVERSION/SDL2-$SDLVERSION.dmg ;
+      fi
     - hdiutil attach dl_cache/SDL2-$SDLVERSION.dmg
     - sudo cp -a /Volumes/SDL2/SDL2.framework /Library/Frameworks/
+    - if [ ! -e dl_cache/png.framework ]; then
+        wget -O dl_cache/libpng-$PNGVERSION.tar.xz
+          "http://prdownloads.sourceforge.net/libpng/libpng-$PNGVERSION.tar.xz?download" ;
+        tar -xJf dl_cache/libpng-$PNGVERSION.tar.xz ;
+        cd libpng-$PNGVERSION ;
+        cmake -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING="10.9" -DPNG_FRAMEWORK=ON
+              -DPNG_HARDWARE_OPTIMIZATIONS=OFF . ;
+        cmake --build . --verbose --config Release -j$(sysctl -n hw.ncpu) ;
+        cd .. ;
+        mv libpng-$PNGVERSION/png.framework dl_cache/ ;
+      fi
     - sudo cp -a dl_cache/png.framework /Library/Frameworks/
   script:
     - export PATH=/usr/local/bin:$PATH
