@@ -65,8 +65,6 @@ macos12_task:
     - cmake -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING="10.9" ..
       || { cat config.log; exit 1; }
     - cmake --build . --verbose --config Release -j$(sysctl -n hw.ncpu) -t hatari
-    - cp -a /Volumes/SDL2/SDL2.framework src/hatari.app/Contents/Frameworks/
-    - cp -a ../dl_cache/png.framework src/hatari.app/Contents/Frameworks/
     - codesign --force -s - --entitlements ../src/gui-osx/hatari.app.xcent src/hatari.app
     - cd ..
     - mkdir hatari-snapshot

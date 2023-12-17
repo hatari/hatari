@@ -88,8 +88,6 @@ add_subdirectory(cpu)
 
 # When building for macOS, add specific sources
 if(ENABLE_OSX_BUNDLE)
-	#find_library(SDL_FRAMEWORK SDL ${ADD_FRAMEWOK_PATH})
-	set(ADDITIONAL_INCLUDES ${FRAMEWORKS})
 	set_source_files_properties(${FRAMEWORKS} PROPERTIES MACOSX_PACKAGE_LOCATION Frameworks)
 	add_executable(hatari MACOSX_BUNDLE ${GUIOSX_RSRCS} ${GUIOSX_DOCS} ${SOURCES} ${GUIOSX_SOURCES} ${FRAMEWORKS})
 	set_target_properties(hatari PROPERTIES MACOSX_BUNDLE_INFO_PLIST
@@ -98,10 +96,14 @@ if(ENABLE_OSX_BUNDLE)
 			      "@executable_path/../Frameworks")
 	set_target_properties(hatari PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
 	set(MACOSX_BUNDLE_ICON_FILE Hatari.icns)
+	set(MACOSX_BUNDLE_GUI_IDENTIFIER org.tuxfamily.Hatari)
 	if(CMAKE_GENERATOR MATCHES "Xcode")
 		set(BUNDLE_CONTENTS ${CMAKE_CURRENT_BINARY_DIR}/\${CONFIGURATION}/Hatari.app/Contents)
 	else()
 		set(BUNDLE_CONTENTS ${CMAKE_CURRENT_BINARY_DIR}/Hatari.app/Contents)
+	endif()
+	if(PNG_FOUND)
+		set(COPY_PNG cp -R ${PNG_LIBRARY} ${BUNDLE_CONTENTS}/Frameworks/)
 	endif()
 	# Create Hatari.app bundle
 	add_custom_target(osx_bundle_dirs
@@ -116,6 +118,9 @@ if(ENABLE_OSX_BUNDLE)
 			COMMAND cp -R ${GUIOSX_DOCS} ${BUNDLE_CONTENTS}/Resources/HatariHelp/
 			#COMMAND mkdir -p ${BUNDLE_CONTENTS}/Resources/fr.lproj/HatariHelp
 			#COMMAND cp -R ${GUIOSX_DOCS} ${BUNDLE_CONTENTS}/Resources/fr.lproj/HatariHelp/
+			# Copy Frameworks to Bundle
+			COMMAND cp -R ${SDL2_LIBDIR} ${BUNDLE_CONTENTS}/Frameworks/
+			COMMAND ${COPY_PNG}
 	)
 	add_dependencies(hatari osx_bundle_dirs)
 	set_source_files_properties(${GUIOSX_RSRCS} PROPERTIES

@@ -6,6 +6,17 @@ if(POLICY CMP0148)
 	cmake_policy(SET CMP0148 OLD)
 endif(POLICY CMP0148)
 
+# Set build type to "Release" if user did not specify any build type yet
+# Other possible values: Debug, Release, RelWithDebInfo and MinSizeRel
+if(NOT CMAKE_BUILD_TYPE)
+	set(CMAKE_BUILD_TYPE Release)
+endif(NOT CMAKE_BUILD_TYPE)
+
+if(APPLE AND CMAKE_BUILD_TYPE STREQUAL "Release")
+	set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE STRING "Target architectures" FORCE)
+	set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13" CACHE STRING "Target Min 10.13" FORCE)
+endif(APPLE AND CMAKE_BUILD_TYPE STREQUAL "Release")
+
 project(Hatari C)
 enable_testing()
 
@@ -20,12 +31,6 @@ include(CheckSymbolExists)
 include(CheckCCompilerFlag)
 include(DistClean)
 include(CheckTypeSize)
-
-# Set build type to "Release" if user did not specify any build type yet
-# Other possible values: Debug, Release, RelWithDebInfo and MinSizeRel
-if(NOT CMAKE_BUILD_TYPE)
-	set(CMAKE_BUILD_TYPE Release)
-endif(NOT CMAKE_BUILD_TYPE)
 
 # set(CMAKE_VERBOSE_MAKEFILE 1)
 
@@ -93,8 +98,6 @@ endif()
 if(APPLE)
 	set(ENABLE_OSX_BUNDLE 1
 	    CACHE BOOL "Built Hatari as macOS application bundle")
-	set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE STRING "Target architectures")
-	# set(CMAKE_OSX_DEPLOYMENT_TARGET "10.9" CACHE STRING "Target minimum macOS version")
 	set(ADDITIONAL_INCLUDES ${FRAMEWORKS})
 	set_source_files_properties(${FRAMEWORKS} PROPERTIES MACOSX_PACKAGE_LOCATION Frameworks)
 	set(CMAKE_XCODE_ATTRIBUTE_LD_RUNPATH_SEARCH_PATHS "@loader_path/../Frameworks")
