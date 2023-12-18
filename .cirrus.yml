@@ -51,8 +51,9 @@ macos12_task:
           "http://prdownloads.sourceforge.net/libpng/libpng-$PNGVERSION.tar.xz?download" ;
         tar -xJf dl_cache/libpng-$PNGVERSION.tar.xz ;
         cd libpng-$PNGVERSION ;
-        cmake -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING="10.9" -DPNG_FRAMEWORK=ON
-              -DPNG_HARDWARE_OPTIMIZATIONS=OFF . ;
+        cmake -DPNG_FRAMEWORK=ON -DPNG_HARDWARE_OPTIMIZATIONS=OFF
+              -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING="11.0"
+              -DCMAKE_OSX_ARCHITECTURES:STRING="arm64" . ;
         cmake --build . --verbose --config Release -j$(sysctl -n hw.ncpu) ;
         cd .. ;
         mv libpng-$PNGVERSION/png.framework dl_cache/ ;
@@ -62,7 +63,8 @@ macos12_task:
     - export PATH=/usr/local/bin:$PATH
     - mkdir build
     - cd build
-    - cmake -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING="10.9" ..
+    - cmake -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING="11.0"
+            -DCMAKE_OSX_ARCHITECTURES:STRING="arm64" ..
       || { cat config.log; exit 1; }
     - cmake --build . --verbose --config Release -j$(sysctl -n hw.ncpu) -t Hatari
     - codesign --force -s - --entitlements ../src/gui-osx/hatari.app.xcent src/Hatari.app
