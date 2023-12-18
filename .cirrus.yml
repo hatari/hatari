@@ -64,13 +64,13 @@ macos12_task:
     - cd build
     - cmake -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING="10.9" ..
       || { cat config.log; exit 1; }
-    - cmake --build . --verbose --config Release -j$(sysctl -n hw.ncpu) -t hatari
-    - codesign --force -s - --entitlements ../src/gui-osx/hatari.app.xcent src/hatari.app
+    - cmake --build . --verbose --config Release -j$(sysctl -n hw.ncpu) -t Hatari
+    - codesign --force -s - --entitlements ../src/gui-osx/hatari.app.xcent src/Hatari.app
     - cd ..
     - mkdir hatari-snapshot
     - echo $(git rev-parse HEAD) > hatari-snapshot/version.txt
     - date >> hatari-snapshot/version.txt
-    - cp -a build/src/hatari.app hatari-snapshot/
+    - cp -a build/src/Hatari.app hatari-snapshot/
     - cp -a doc gpl.txt readme.txt hatari-snapshot/
     - zip -r hatari-snapshot.zip hatari-snapshot
   hatari_artifacts:

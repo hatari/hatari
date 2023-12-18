@@ -20,8 +20,6 @@ endif(APPLE AND CMAKE_BUILD_TYPE STREQUAL "Release")
 project(Hatari C)
 enable_testing()
 
-set(APP_NAME "Hatari")
-
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
 include(CheckIncludeFiles)
@@ -106,6 +104,12 @@ else()
 	set(ENABLE_OSX_BUNDLE 0
 	    CACHE BOOL "Built Hatari as macOS application bundle")
 endif(APPLE)
+
+if(ENABLE_OSX_BUNDLE OR WIN32)
+	set(APP_NAME "Hatari")
+else()
+	set(APP_NAME "hatari")
+endif(ENABLE_OSX_BUNDLE OR WIN32)
 
 # ####################
 # Check for libraries:
