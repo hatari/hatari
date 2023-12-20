@@ -55,6 +55,7 @@ macos12_task:
               -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING="11.0"
               -DCMAKE_OSX_ARCHITECTURES:STRING="arm64" . ;
         cmake --build . --verbose --config Release -j$(sysctl -n hw.ncpu) ;
+        codesign --force -s - png.framework ;
         cd .. ;
         mv libpng-$PNGVERSION/png.framework dl_cache/ ;
       fi
