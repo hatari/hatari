@@ -14,14 +14,12 @@ Version:      2.4.1
 Release:      1
 Summary:      An Atari ST/STE/TT/Falcon emulator
 Source:       %{name}-%{version}.tar.bz2
-#Patch:        %{name}-%{version}.dif
 BuildRoot:    %{_tmppath}/%{name}-%{version}-build
 Prefix:       /usr
 
-BuildRequires: cmake coreutils cpio cpp diffutils file filesystem findutils tar
-BuildRequires: grep gzip libgcc make man mktemp patch readline sed util-linux
+BuildRequires: binutils cmake coreutils cpio cpp diffutils file filesystem
+BuildRequires: findutils gcc grep gzip libgcc make man patch sed util-linux
 BuildRequires: glibc-devel zlib-devel SDL2-devel libpng-devel readline-devel
-BuildRequires: binutils gcc rpm
 
 # Required by zip2st and atari-hd-image
 Requires: unzip
@@ -46,10 +44,11 @@ emulators.
 #%patch
 
 %build
-# LDFLAGS="-static" LIBS=`sdl-config --static-libs` \
-CFLAGS="-O3 -fomit-frame-pointer" \
- ./configure --prefix=/usr
+./configure --enable-werror --prefix=/usr
 make %{?_smp_mflags}
+
+%check
+make test
 
 %install
 rm -rf $RPM_BUILD_ROOT
@@ -66,12 +65,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_datadir}/icons/hicolor/*/apps/%{name}.*
 %{_datadir}/icons/hicolor/*/mimetypes/*
 %{_datadir}/mime/packages/hatari.xml
-%doc %_mandir/man1/*.1*
-%dir %_docdir/%{name}
-%_docdir/%{name}/*.txt
-%_docdir/%{name}/*.html
-%dir %_docdir/%{name}/images
-%_docdir/%{name}/images/*
+%{_mandir}/man1/*
+%doc %{_pkgdocdir}
+%license gpl.txt
 
 %changelog -n hatari
 
@@ -84,7 +80,7 @@ rm -rf $RPM_BUILD_ROOT
 * Sun Dec 27 2020 - Nicolas Pomarede
 - Hatari version 2.3.1
 
-* Sat Nov 11 2020 - Nicolas Pomarede
+* Sat Nov 28 2020 - Nicolas Pomarede
 - Hatari version 2.3.0
 
 * Fri Feb 08 2019 - Nicolas Pomarede
