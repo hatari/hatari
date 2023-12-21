@@ -2,18 +2,21 @@ fedora_task:
   container:
     image: fedora:latest
     cpu: 4
-    memory: 2Gb
+    memory: 8G
   install_script:
     - dnf update -y
     - dnf install -y cmake make gcc diffutils python-unversioned-command
           capstone-devel GraphicsMagick SDL2-devel libpng-devel zlib-devel tidy
+          python3-gobject gtk3 readline-devel man git rpmdevtools
   script:
-    - mkdir build
-    - cd build
-    - ../configure --enable-small-mem --disable-dsp
-                  --enable-werror --enable-debug || { cat config.log; exit 1; }
-    - make -j4
-    - ctest -j4 || { cat Testing/Temporary/LastTest.log; exit 1; }
+    - rpmdev-setuptree
+    - cp hatari.spec ~/rpmbuild/SPECS/
+    - sed -i 's/^Version:.*/Version: devel/' ~/rpmbuild/SPECS/hatari.spec
+    - git archive --prefix=hatari-devel/ -o ~/rpmbuild/SOURCES/hatari-devel.tar.bz2 HEAD
+    - rpmbuild -ba ~/rpmbuild/SPECS/hatari.spec
+    - cp ~/rpmbuild/SRPMS/*.rpm ~/rpmbuild/RPMS/x86_64/hatari-devel*.rpm ./
+  hatari_artifacts:
+    path: ./*.rpm
 
 freebsd_task:
   freebsd_instance:
