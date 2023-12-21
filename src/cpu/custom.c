@@ -37,7 +37,7 @@ extern struct regstruct mmu_backup_regs;
 evt_t currcycle;
 /* declared in savestate.h */
 int savestate_state = 0;
-TCHAR *savestate_fname;
+TCHAR savestate_fname[MAX_DPATH];
 /* declared in custom.h */
 uae_u32 hsync_counter = 0, vsync_counter = 0;
 #endif
