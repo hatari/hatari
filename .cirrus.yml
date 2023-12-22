@@ -61,8 +61,17 @@ macos12_task:
         codesign --force -s - png.framework ;
         cd .. ;
         mv libpng-$PNGVERSION/png.framework dl_cache/ ;
+        rm -rf libpng-$PNGVERSION ;
       fi
     - sudo cp -a dl_cache/png.framework /Library/Frameworks/
+    - if [ ! -e dl_cache/portmidi.framework ]; then
+        cd dl_cache ;
+        wget "https://hatari.tuxfamily.org/ci/portmidi.framework.zip" ;
+        unzip portmidi.framework.zip ;
+        mv license.txt portmidi-license.txt ;
+        cd .. ;
+      fi
+    - sudo cp -a dl_cache/portmidi.framework /Library/Frameworks/
   script:
     - export PATH=/usr/local/bin:$PATH
     - mkdir build
@@ -71,6 +80,7 @@ macos12_task:
             -DCMAKE_OSX_ARCHITECTURES:STRING="arm64;x86_64" ..
       || { cat config.log; exit 1; }
     - cmake --build . --verbose --config Release -j$(sysctl -n hw.ncpu) -t Hatari
+    - cp -a ../dl_cache/portmidi.framework src/hatari.app/Contents/Frameworks/
     - codesign --force -s - --entitlements ../src/gui-osx/hatari.app.xcent src/Hatari.app
     - cd ..
     - mkdir hatari-snapshot
@@ -78,6 +88,7 @@ macos12_task:
     - date >> hatari-snapshot/version.txt
     - cp -a build/src/Hatari.app hatari-snapshot/
     - cp -a doc gpl.txt readme.txt hatari-snapshot/
+    - cp dl_cache/portmidi-license.txt hatari-snapshot/
     - zip -r hatari-snapshot.zip hatari-snapshot
   hatari_artifacts:
     path: "hatari-snapshot.zip"
