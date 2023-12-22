@@ -18,13 +18,9 @@
 #include "newcpu.h"
 #include "main.h"
 #include "cpummu.h"
-#include "m68000.h"
-#include "debugui.h"
-#include "debugcpu.h"
-#ifdef WINUAE_FOR_HATARI
-#include "debug.h"
 #include "blitter.h"
-#endif
+#include "debug.h"
+#include "savestate.h"
 
 #define WRITE_LOG_BUF_SIZE 4096
 
