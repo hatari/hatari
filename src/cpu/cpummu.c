@@ -143,7 +143,7 @@ void mmu_tt_modified (void)
 /* This dump output makes much more sense than old one */
 
 #ifdef WINUAE_FOR_HATARI
-#define	ULONG	uint32_t
+#define	ULONG	uae_u32
 #endif
 
 #define LEVELA_SIZE 7
