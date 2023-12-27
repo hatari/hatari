@@ -2498,7 +2498,7 @@ void MFP_TimerBData_ReadByte(void)
 			Video_GetPosition ( &FrameCycles , &HblCounterVideo , &pos_start );
 			pos_start >>= nCpuFreqShift;
 
-			/* Cycle position of the read for the current instruction (approximatively, we consider */
+			/* Cycle position of the read for the current instruction (approximately, we consider */
 			/* the read happens after 4 cycles (due to MFP wait states in that case)) */
 			/* This is quite a hack, but hard to do without proper 68000 read cycle emulation */
 			if ( CurrentInstrCycles <= 8 )			/* move.b (a0),d0 / cmp.b (a0),d0 ... */

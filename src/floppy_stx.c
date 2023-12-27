@@ -1464,7 +1464,7 @@ static STX_SECTOR_STRUCT	*STX_FindSector_By_Position ( uint8_t Drive , uint8_t T
  * for different protections)
  * NOTE : Although STX format was supposed to handle only DD floppies, some tools like HxC
  * allow to convert a HD floppy image to an STX equivalent. In that case
- * TrackSize will be approximatively 2 x FDC_TRACK_BYTES_STANDARD
+ * TrackSize will be approximately 2 x FDC_TRACK_BYTES_STANDARD
  */
 int	FDC_GetBytesPerTrack_STX ( uint8_t Drive , uint8_t Track , uint8_t Side )
 {

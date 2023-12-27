@@ -16,9 +16,9 @@
     instead of sending each bit one after the other.
     This way, we only need a timer every 2560 cycles (instead of 256 cycles per bit).
 
-    We handle a special case for the TX_EMPTY bit when reading SR : this bit should be set
-    after TDR was copied into TSR, which is approximatively when the next bit should
-    be transferred (256 cycles) (fix the program 'Notator')
+    We handle a special case for the TX_EMPTY bit when reading SR : this bit
+    should be set after TDR was copied into TSR, which is approximately when
+    the next bit should be transferred (256 cycles) (fix the program 'Notator')
 */
 const char Midi_fileid[] = "Hatari midi.c";
 
@@ -186,7 +186,7 @@ void Midi_Control_ReadByte(void)
 	ACIA_AddWaitCycles ();						/* Additional cycles when accessing the ACIA */
 
 	/* Special case : if we wrote a byte into TDR, TX_EMPTY bit should be */
-	/* set approximatively after the first bit was transferred using TSR */
+	/* set approximately after the first bit was transferred using TSR */
 	if ( ( ( MidiStatusRegister & ACIA_SR_TX_EMPTY ) == 0 )
 	  && ( CyclesGlobalClockCounter > TDR_Empty_Time ) )						// OK avec 11 bits et 1 bit
 	{

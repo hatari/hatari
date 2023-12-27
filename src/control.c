@@ -56,7 +56,7 @@ static bool bRemotePaused;
 
 /*-----------------------------------------------------------------------*/
 /**
- * Parse key command and synthetize key press/release
+ * Parse key command and synthesize key press/release
  * corresponding to given keycode or character.
  * Return false if parsing failed, true otherwise
  * 
@@ -121,7 +121,7 @@ static bool Control_InsertKey(const char *event)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Parse event name and synthetize corresponding event to emulation
+ * Parse event name and synthesize corresponding event to emulation
  * Return false if name parsing failed, true otherwise
  * 
  * This can be used by external Hatari UI(s) on devices which input
