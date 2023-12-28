@@ -29,21 +29,6 @@
 #define M68000_EXC_SRC_INT_DSP	4	/* DSP interrupt exception */
 #define M68000_EXC_SRC_INT_SCC	5	/* SCC interrupt exception */
 
-
-/* Special flags (from custom.h) */
-#define SPCFLAG_DEBUGGER 1
-#define SPCFLAG_STOP 2
-#define SPCFLAG_BUSERROR 4
-#define SPCFLAG_INT 8
-#define SPCFLAG_BRK 0x10
-#define SPCFLAG_EXTRA_CYCLES 0x20
-#define SPCFLAG_TRACE 0x40
-#define SPCFLAG_DOTRACE 0x80
-#define SPCFLAG_DOINT 0x100
-#define SPCFLAG_MFP 0x200
-#define SPCFLAG_EXEC 0x400
-#define SPCFLAG_MODE_CHANGE 0x800
-#define SPCFLAG_DSP 0x1000			// TODO : remove with do_specialties_interrupt()
 #endif
 
 #ifndef SET_CFLG
@@ -353,6 +338,35 @@ extern bool m68k_interrupt_delay;
 extern bool cpu_bus_rmw;			// WINUAE_FOR_HATARI
 
 extern void safe_interrupt_set(int, int, bool);
+
+#define SPCFLAG_CPUINRESET 2
+//#define SPCFLAG_COPPER 4
+#define SPCFLAG_INT 8
+#define SPCFLAG_BRK 16
+#define SPCFLAG_UAEINT 32
+#define SPCFLAG_TRACE 64
+#define SPCFLAG_DOTRACE 128
+#define SPCFLAG_DOINT 256 /* arg, JIT fails without this.. */
+//#define SPCFLAG_BLTNASTY 512
+#define SPCFLAG_EXEC 1024
+//#define SPCFLAG_ACTION_REPLAY 2048
+//#define SPCFLAG_TRAP 4096 /* enforcer-hack */
+#define SPCFLAG_MODE_CHANGE 8192
+#ifdef JIT
+#define SPCFLAG_END_COMPILE 16384
+#endif
+#define SPCFLAG_CHECK 32768
+#define SPCFLAG_MMURESTART 65536
+
+#ifdef WINUAE_FOR_HATARI
+// Hatari's specific flags
+#define SPCFLAG_DEBUGGER 0x1000000
+#define SPCFLAG_STOP 0x2000000
+#define SPCFLAG_BUSERROR 0x4000000
+#define SPCFLAG_EXTRA_CYCLES 0x8000000
+#define SPCFLAG_MFP 0x10000000
+#define SPCFLAG_DSP 0x20000000			// TODO : remove with do_specialties_interrupt()
+#endif
 
 #ifndef WINUAE_FOR_HATARI
 STATIC_INLINE void set_special_exter(uae_u32 x)
