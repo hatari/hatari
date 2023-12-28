@@ -73,6 +73,7 @@ STATIC_INLINE int dmaen(unsigned int dmamask)
 #define SPCFLAG_END_COMPILE 16384
 #endif
 #define SPCFLAG_CHECK 32768
+#define SPCFLAG_MMURESTART 65536
 
 extern uae_u16 adkcon;
 
