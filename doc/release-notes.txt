@@ -47,6 +47,7 @@ Emulation improvements:
 Emulator improvements:
 - TOS:
   - Fix: set TOS country code from CountryCode setting, not Language one
+  - Add "pl" (Poland) & "ro" (Romania) language options for EmuTOS
 - RTC:
   - CLI/config option to override NVRAM/RTC year, useful with
     applications that do not handle current dates
