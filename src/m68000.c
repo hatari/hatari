@@ -645,10 +645,17 @@ void	M68000_Update_intlev ( void )
 	else
 		M68000_UnsetSpecial ( SPCFLAG_INT | SPCFLAG_DOINT );
 
-	/* Temporary case for WinUAE CPU in CE mode */
+	/* Temporary case for WinUAE CPU hanlding IPL in CE mode */
 	/* doint() will update regs.ipl_pin, so copy it into regs.ipl[0] */
+	/* TODO : see ipl_fetch_next / update_ipl, we should not reset currcycle */
+	/* (when counting Hatari's internal cycles) to have correct value */
+	/* in regs.ipl_pin_change_evt. In the meantime we always copy regs.ipl_pin */
+	/* to regs.ipl_pin_p, else ipl_fetch_next can return an incorrect ipl */
 	if ( CpuRunCycleExact )
+	{
 		regs.ipl[0] = regs.ipl_pin;			/* See ipl_fetch() in cpu/cpu_prefetch.h */
+		regs.ipl_pin_p = regs.ipl_pin;			/* See ipl_fetch_next() */
+	}
 }
 
 
