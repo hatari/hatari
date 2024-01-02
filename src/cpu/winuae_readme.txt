@@ -1,5 +1,5 @@
 		The CPU core in this directory is based on
-			WinUAE 5.1.0+ (2023/12/28)
+			WinUAE 5.1.0+ (2024/01/01)
 
 
 To update to a newer WinUAE's version, a diff should be made between
