@@ -257,8 +257,9 @@ struct SCC_Channel {
 	uint8_t	TX_bits;		/* TX Bits/char (5 or less, 6, 7, 8) */
 	uint8_t	RX_bits;		/* RX Bits/char (5 or less, 6, 7, 8) */
 	uint8_t	Parity_bits;		/* 0 or 1 bit */
-	float	Stop_bits;		/* Stop bit can 0 bit (sync), 1 bit, 2 bits or 1.5 bit */
+	float	Stop_bits;		/* Stop bit can be 0 bit (sync), 1 bit, 2 bits or 1.5 bit */
 	uint8_t	TSR;			/* Transfer Shift Register */
+	bool	TSR_Full;		/* True if data reg was copied to TSR, false when all bits of TSR have been sent */
 
 	uint32_t IntSources;		/* Interrupt sources : 0=clear 1=set */
 
@@ -546,6 +547,7 @@ static void SCC_ResetChannel ( int Channel , bool HW_Reset )
 	SCC.Chn[Channel].RR[3] = 0x00;
 	SCC.Chn[Channel].RR[10] &= 0x40;		/* keep bits 6, clear others */
 	SCC.Chn[Channel].TX_Buffer_Written = false;	/* no write made to TB for now */
+	SCC.Chn[Channel].TSR_Full = false;		/* TSR is empty */
 }
 
 
@@ -1254,7 +1256,7 @@ static void	SCC_Update_RR0 ( int Channel )
 	bool		Set_RR3;
 
 
-//fprintf ( stderr , "update rr0 %c in=$%02x wr15=$%02x\n" , 'A'+Channel , SCC.Chn[Channel].RR[0] , SCC.Chn[Channel].WR[15] );
+//fprintf ( stderr , "update rr0 %c in=$%02x wr15=$%02x pc=%x\n" , 'A'+Channel , SCC.Chn[Channel].RR[0] , SCC.Chn[Channel].WR[15] , M68000_GetPC() );
 
 	if ( !SCC.Chn[ Channel ].RR0_Latched )
 	{
@@ -1363,7 +1365,7 @@ static void	SCC_Update_RR0 ( int Channel )
 		}
 	}
 
-//fprintf ( stderr , "update rr0 %c out=$%02x wr15=$%02x\n" , 'A'+Channel , SCC.Chn[Channel].RR[0] , SCC.Chn[Channel].WR[15] );
+//fprintf ( stderr , "update rr0 %c out=$%02x wr15=$%02x pc=%x\n" , 'A'+Channel , SCC.Chn[Channel].RR[0] , SCC.Chn[Channel].WR[15] , M68000_GetPC() );
 }
 
 static void	SCC_Update_RR0_Clear ( int Channel , int bits )
@@ -1440,7 +1442,7 @@ static void	SCC_Update_RR3 ( int Channel )
 	/* RR3 depends on some RR0 bits, so update RR0 first */
 	SCC_Update_RR0 ( Channel );
 
-//fprintf ( stderr , "update rr3 %c in=$%02x rr0=$%02x wr15=$%02x ius=$%02x\n" , 'A'+Channel , SCC.Chn[0].RR[3] , SCC.Chn[Channel].RR[0] , SCC.Chn[Channel].WR[15] , SCC.IUS );
+//printf ( stderr , "update rr3 %c in=$%02x rr0=$%02x wr15=$%02x ius=$%02x pc=%x\n" , 'A'+Channel , SCC.Chn[0].RR[3] , SCC.Chn[Channel].RR[0] , SCC.Chn[Channel].WR[15] , SCC.IUS , M68000_GetPC() );
 
 	/*
 	 * Update RR3 RX bits
@@ -1473,7 +1475,7 @@ static void	SCC_Update_RR3 ( int Channel )
 
 
 	/*
-	 * Update RR3 TX bits
+	 * Update RR3 TX bits (only if Tx buffer is empty but has previously been written to)
 	 */
 	if ( ( SCC.Chn[ Channel ].RR[0] & SCC_RR0_BIT_TX_BUFFER_EMPTY )
 	  && ( SCC.Chn[ Channel ].WR[1] & SCC_WR1_BIT_TX_INT_ENABLE )
@@ -1488,7 +1490,7 @@ static void	SCC_Update_RR3 ( int Channel )
 	else
 		SCC_Update_RR3_Bit ( Set , SCC_RR3_BIT_TX_IP_A );
 
-//fprintf ( stderr , "update rr3 %c out=$%02x rr0=$%02x wr15=$%02x ius=$%02x\n" , 'A'+Channel , SCC.Chn[0].RR[3] , SCC.Chn[Channel].RR[0] , SCC.Chn[Channel].WR[15] , SCC.IUS );
+//fprintf ( stderr , "update rr3 %c out=$%02x rr0=$%02x wr15=$%02x ius=$%02x pc=%x\n" , 'A'+Channel , SCC.Chn[0].RR[3] , SCC.Chn[Channel].RR[0] , SCC.Chn[Channel].WR[15] , SCC.IUS , M68000_GetPC() );
 }
 
 
@@ -1641,6 +1643,7 @@ static void SCC_WriteDataReg(int chn, uint8_t value)
 {
 	SCC.Chn[chn].WR[8] = value;
 	SCC.Chn[chn].TxBuf_Write_Time = Cycles_GetClockCounterOnWriteAccess();
+//fprintf(stderr , "scc write_data_reg1 rr0_nolatch=%x rr0=%x written=%d rr1=%x\n" , SCC.Chn[chn].RR0_No_Latch , SCC.Chn[chn].RR[0] , SCC.Chn[ chn ].TX_Buffer_Written , SCC.Chn[chn].RR[1] );
 
 	/* According to the SCC doc, transmit buffer will be copied to the */
 	/* transmit shift register TSR after the last bit is shifted out, in ~3 PCLKs */
@@ -1650,7 +1653,7 @@ static void SCC_WriteDataReg(int chn, uint8_t value)
 	/* If this is the first write to WR8 (TX_Buffer_Written==false) we should also consider */
 	/* that TDR is copied almost immediately to TSR */
 	if ( ( ( SCC.Chn[chn].WR[5] & SCC_WR5_BIT_TX_ENABLE ) == 0 )
-	    || ( SCC.Chn[chn].TX_Buffer_Written == false ) )
+	    || ( SCC.Chn[chn].TSR_Full == false ) )
 	{
 		SCC_Copy_TDR_TSR ( chn , SCC.Chn[chn].WR[8] );
 	}
@@ -1662,6 +1665,7 @@ static void SCC_WriteDataReg(int chn, uint8_t value)
 	}
 
 	SCC.Chn[chn].TX_Buffer_Written = true;		/* Allow TBE int later if enabled */
+//fprintf(stderr , "scc write_data_reg2 rr0_nolatch=%x rr0=%x written=%d rr1=%x\n" , SCC.Chn[chn].RR0_No_Latch , SCC.Chn[chn].RR[0] , SCC.Chn[ chn ].TX_Buffer_Written , SCC.Chn[chn].RR[1] );
 }
 
 
@@ -1929,7 +1933,7 @@ static void SCC_handleWrite(uint32_t addr, uint8_t value)
 
 	Channel = ( addr >> 2 ) & 1;			/* bit 2 : 0 = channel A, 1 = channel B */
 
-	LOG_TRACE(TRACE_SCC, "scc write addr=%x channel=%c value=$%02x\n" , addr , 'A'+Channel , value );
+	LOG_TRACE(TRACE_SCC, "scc write addr=%x channel=%c value=$%02x VBL=%d HBL=%d pc=%x\n" , addr , 'A'+Channel , value , nVBLs , nHBL , M68000_GetPC() );
 
 	if ( addr & 2 )					/* bit 1 */
 		SCC_WriteDataReg ( Channel, value );
@@ -1950,9 +1954,10 @@ static void SCC_handleWrite(uint32_t addr, uint8_t value)
 static void	SCC_Copy_TDR_TSR ( int Channel , uint8_t TDR )
 {
 	SCC.Chn[Channel].TSR = TDR;
+	SCC.Chn[Channel].TSR_Full = true;
 
 	/* Clear 'All Sent' bit in RR1 */
-	SCC.Chn[Channel].RR[1] &= ~SCC_RR1_BIT_ALL_SENT;	/* TSR is full */
+	SCC.Chn[Channel].RR[1] &= ~SCC_RR1_BIT_ALL_SENT;	/* new TSR to send */
 	/* Set 'TX buffer empty' */
 	SCC_Update_RR0_Set ( Channel , SCC_RR0_BIT_TX_BUFFER_EMPTY );
 	SCC_IntSources_Set ( Channel , SCC_INT_SOURCE_TX_BUFFER_EMPTY );
@@ -1971,29 +1976,28 @@ static void	SCC_Copy_TDR_TSR ( int Channel , uint8_t TDR )
 
 static void	SCC_Process_TX ( int Channel )
 {
-	/* It's possible that SCC_Process_TX() is called before anything was written to WR8 / Data reg */
-	/* In that case we don't send anything as TDR/TSR contain non valid data */
-	if ( ! SCC.Chn[Channel].TX_Buffer_Written )
-		return;
+//fprintf(stderr , "scc process1 tx rr0_nolatch=%x rr0=%x latched=%d rr1=%x\n" , SCC.Chn[Channel].RR0_No_Latch , SCC.Chn[Channel].RR[0] , SCC.Chn[ Channel ].RR0_Latched , SCC.Chn[Channel].RR[1] );
 
 	/* If no new byte was written to the tx buffer and TSR is empty then we have an underrun */
 	/* Don't do anything in that case, TxD pin will remain in its latest 'stop bit' state */
 	if ( ( SCC.Chn[Channel].RR[0] & SCC_RR0_BIT_TX_BUFFER_EMPTY )
-	  && ( SCC.Chn[Channel].RR[1] & SCC_RR1_BIT_ALL_SENT ) )
+	  && ( SCC.Chn[Channel].TSR_Full == false ) )
 		return;
 
-	if ( SCC.Chn[Channel].WR[5] & SCC_WR5_BIT_TX_ENABLE )
+	if ( ( SCC.Chn[Channel].TSR_Full && ( SCC.Chn[Channel].WR[5] & SCC_WR5_BIT_TX_ENABLE ) ) )
 	{
 		/* Send byte to emulated serial device / file descriptor */
-		SCC_serial_setData(Channel, SCC.Chn[Channel].TSR);
-	}
+		SCC_Serial_Write_Byte ( Channel, SCC.Chn[Channel].TSR );
 
-	/* Set 'All Sent' bit in RR1 */
-	SCC.Chn[Channel].RR[1] |= SCC_RR1_BIT_ALL_SENT;		/* TSR is empty */
+		/* All bits of TSR have been sent, TSR is empty */
+		SCC.Chn[Channel].TSR_Full = false;
+		SCC.Chn[Channel].RR[1] |= SCC_RR1_BIT_ALL_SENT;		/* Set 'All Sent' bit in RR1 */
+	}
 
 	/* Prepare TSR for the next call if TX buffer is not empty */
 	if ( ( SCC.Chn[Channel].RR[0] & SCC_RR0_BIT_TX_BUFFER_EMPTY ) == 0 )
 		SCC_Copy_TDR_TSR ( Channel , SCC.Chn[Channel].WR[8] );
+//fprintf(stderr , "scc process2 tx rr0_nolatch=%x rr0=%x latched=%d rr1=%x\n" , SCC.Chn[Channel].RR0_No_Latch , SCC.Chn[Channel].RR[0] , SCC.Chn[ Channel ].RR0_Latched , SCC.Chn[Channel].RR[1] );
 }
 
 
@@ -2005,7 +2009,7 @@ static void	SCC_Process_RX ( int Channel )
 	if ( SCC.Chn[Channel].WR[3] & SCC_WR3_BIT_RX_ENABLE )
 	{
 		/* Receive byte from emulated serial device / file descriptor */
-		if ( SCC_serial_getData ( Channel , &rx_byte ) )
+		if ( SCC_Serial_Read_Byte ( Channel , &rx_byte ) )
 		{
 			SCC.Chn[Channel].RR[8] = rx_byte;
 			if ( SCC.Chn[Channel].RR[0] & SCC_RR0_BIT_RX_CHAR_AVAILABLE )
@@ -2295,7 +2299,7 @@ static void	SCC_Update_IRQ ( void )
 	int	IRQ_new;
 	int	i;
 
-//fprintf ( stderr , "scc update irq wr9=$%02x ius=$%02x rr3=$%02x irq_in=%d\n" , SCC.Chn[0].WR[9] , SCC.IUS , SCC.Chn[0].RR[3] , SCC.IRQ_Line );
+//fprintf ( stderr , "scc update irq wr9=$%02x ius=$%02x rr3=$%02x irq_in=%d pc=%x\n" , SCC.Chn[0].WR[9] , SCC.IUS , SCC.Chn[0].RR[3] , SCC.IRQ_Line , M68000_GetPC() );
 	if ( SCC.Chn[0].WR[9] & SCC_WR9_BIT_MIE )	/* Master Interrupt enabled */
 	{
 		/* Check if there's an IP bit set and not lower than IUS */
@@ -2317,7 +2321,7 @@ static void	SCC_Update_IRQ ( void )
 	else
 		IRQ_new = SCC_IRQ_OFF;
 
-//fprintf ( stderr , "scc update irq wr9=$%02x ius=$%02x rr3=$%02x irq_out=%d\n" , SCC.Chn[0].WR[9] , SCC.IUS , SCC.Chn[0].RR[3] , IRQ_new );
+//fprintf ( stderr , "scc update irq wr9=$%02x ius=$%02x rr3=$%02x irq_out=%d pc=%x\n" , SCC.Chn[0].WR[9] , SCC.IUS , SCC.Chn[0].RR[3] , IRQ_new , M68000_GetPC() );
 	/* Update IRQ line if needed */
 	if ( IRQ_new != SCC.IRQ_Line )
 		SCC_Set_Line_IRQ ( IRQ_new );
@@ -2331,7 +2335,7 @@ static void	SCC_Update_IRQ ( void )
 
 static void	SCC_IntSources_Change ( int Channel , uint32_t Sources , bool Set )
 {
-//fprintf ( stderr,  "scc int source %d %x %d\n" , Channel , Sources , Set );
+//fprintf ( stderr,  "scc int source %d old=%x new=%x %d pc=%x\n" , Channel , SCC.Chn[ Channel ].IntSources , Sources , Set , M68000_GetPC() );
 	if ( Set )
 	{
 		/* Don't do anything if all bits from Sources are already set */
@@ -2436,7 +2440,7 @@ int	SCC_Process_IACK ( void )
 	if ( SCC.Chn[0].WR[9] & SCC_WR9_BIT_NV )
 		return -1;			/* IACK is disabled, no vector */
 
-//fprintf ( stderr , "scc iack %d\n" , Vector ); 
+//fprintf ( stderr , "scc iack %d\n" , Vector );
 	return Vector;
 }
 
