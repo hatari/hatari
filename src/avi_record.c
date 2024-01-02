@@ -95,6 +95,7 @@ const char AVIRecord_fileid[] = "Hatari avi_record.c";
 #include "sound.h"
 #include "statusbar.h"
 #include "avi_record.h"
+#include "video.h"
 
 /* after above that brings in config.h */
 #if HAVE_LIBPNG

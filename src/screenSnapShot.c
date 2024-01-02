@@ -122,6 +122,7 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
 	bool do_palette = true;
 	png_color png_pal[16];
 	Uint8 palbuf[3];
+	int palcount = 16;
 
 	if (!dw)
 		dw = sw;
@@ -206,8 +207,10 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
 
 	if (do_palette)
 	{
-		/* Convert STR palette */
-		for (y = 0; y < 16; y++)
+		/* Convert ST palette */
+		if (STRes == ST_MEDIUM_RES)
+			palcount = 4;
+		for (y = 0; y < palcount; y++)
 		{
 			switch (fmt->BytesPerPixel)
 			{
@@ -224,7 +227,7 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
 			png_pal[y].green = palbuf[1];
 			png_pal[y].blue  = palbuf[2];
 		}
-		png_set_PLTE(png_ptr, info_ptr, png_pal, 16);
+		png_set_PLTE(png_ptr, info_ptr, png_pal, palcount);
 	}
 
 	/* write the file header information */

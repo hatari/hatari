@@ -59,12 +59,15 @@ static inline bool PixelConvert_16to8Bits(Uint8 *dst, Uint16 *src, int dw, SDL_S
 	Uint8 dval;
 	int i,dx;
 	bool valid = true;
+	int count = 16;
+	if (STRes == ST_MEDIUM_RES)
+		count = 4;
 
 	for (dx = 0; dx < dw; dx++)
 	{
 		sval = src[(dx * surf->w + dw/2) / dw];
 		dval = 255;
-		for (i = 0; i < 16; i++)
+		for (i = 0; i < count; i++)
 		{
 			if (sval == STRGBPalette[i])
 			{
@@ -72,7 +75,7 @@ static inline bool PixelConvert_16to8Bits(Uint8 *dst, Uint16 *src, int dw, SDL_S
 				break;
 			}
 		}
-		if (dval >= 16)
+		if (dval >= count)
 		{
 			valid = false;
 			dval = 0;
@@ -92,12 +95,15 @@ static inline bool PixelConvert_32to8Bits(Uint8 *dst, Uint32 *src, int dw, SDL_S
 	Uint8 dval;
 	int i,dx;
 	bool valid = true;
+	int count = 16;
+	if (STRes == ST_MEDIUM_RES)
+		count = 4;
 
 	for (dx = 0; dx < dw; dx++)
 	{
 		sval = src[(dx * surf->w + dw/2) / dw];
 		dval = 255;
-		for (i = 0; i < 16; i++)
+		for (i = 0; i < count; i++)
 		{
 			if (sval == STRGBPalette[i])
 			{
@@ -105,7 +111,7 @@ static inline bool PixelConvert_32to8Bits(Uint8 *dst, Uint32 *src, int dw, SDL_S
 				break;
 			}
 		}
-		if (dval >= 16)
+		if (dval >= count)
 		{
 			valid = false;
 			dval = 0;
