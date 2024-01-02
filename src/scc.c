@@ -327,14 +327,26 @@ static int SCC_Standard_Baudrate[] = {
 static void	SCC_ResetChannel ( int Channel , bool HW_Reset );
 static void	SCC_ResetFull ( bool HW_Reset );
 
+static bool	SCC_Serial_Read_Byte ( int Channel , uint8_t *pValue );
+static void	SCC_Serial_Write_Byte ( int Channel, uint8_t value );
+static void	SCC_Serial_Set_BaudAttr ( int handle, speed_t new_speed );
+static void	SCC_Serial_Set_BaudRate ( int Channel, int value );
+static uint16_t	SCC_Serial_Get_CTS ( int Channel );
+static uint16_t	SCC_Serial_Get_DCD ( int Channel );
+
+static int	SCC_Get_Standard_BaudRate ( int BaudRate );
+static int	SCC_Get_RTxC_Freq ( int chn );
+static int	SCC_Get_TRxC_Freq ( int chn );
+static int	SCC_Compute_BaudRate ( int chn , bool *pStartBRG , uint32_t *pBaudRate_BRG );
+static void	SCC_Update_BaudRate ( int Channel );
+
+static uint8_t	SCC_Get_Vector_Status ( void );
+
 static void	SCC_Update_RR0 ( int Channel );
 static void	SCC_Update_RR0_Clear ( int Channel , int bits );
 static void	SCC_Update_RR0_Set ( int Channel , int bits );
 static void	SCC_Update_RR0_Latch_Off ( int Channel );
-
-static uint8_t	SCC_Get_Vector_Status ( void );
 static void	SCC_Update_RR2 ( void );
-
 static void	SCC_Update_RR3_Bit ( bool Set , uint8_t Bit );
 static void	SCC_Update_RR3 ( int Channel );
 
@@ -380,7 +392,9 @@ void SCC_Init(void)
 	SCC.Chn[0].oldStatus = SCC.Chn[1].oldStatus = 0;
 
 	SCC.Chn[0].rd_handle = SCC.Chn[0].wr_handle = -1;
+	SCC.Chn[0].bFileHandleIsATTY = false;
 	SCC.Chn[1].rd_handle = SCC.Chn[1].wr_handle = -1;
+	SCC.Chn[1].bFileHandleIsATTY = false;
 
 	if (!ConfigureParams.RS232.bEnableSccB || !SCC_IsAvailable(&ConfigureParams))
 		return;
@@ -395,6 +409,7 @@ void SCC_Init(void)
 			if (isatty(SCC.Chn[1].rd_handle))
 			{
 				SCC.Chn[1].wr_handle = SCC.Chn[1].rd_handle;
+				SCC.Chn[1].bFileHandleIsATTY = true;
 			}
 			else
 			{
@@ -574,22 +589,26 @@ void SCC_Reset(void)
 }
 
 
-static bool SCC_serial_getData(int channel , uint8_t *pValue)
+static bool SCC_Serial_Read_Byte ( int Channel , uint8_t *pValue )
 {
 	int nb;
 
-	if (SCC.Chn[channel].rd_handle >= 0)
+	if (SCC.Chn[Channel].rd_handle >= 0)
 	{
-		nb = read(SCC.Chn[channel].rd_handle, pValue, 1);
+		nb = read(SCC.Chn[Channel].rd_handle, pValue, 1);
 		if (nb < 0)
-			Log_Printf(LOG_WARN, "SCC_serial_getData channel %c : read failed\n", 'A'+channel);
+		{
+			if (errno == EAGAIN || errno == EINTR)	/* nothing yet, retry later */
+				return false;
+			Log_Printf(LOG_WARN, "scc serial read byte channel %c : read failed, errno=%d\n", 'A'+Channel, errno);
+		}
 		else if ( nb == 0 )
 		{
-			LOG_TRACE(TRACE_SCC, "SCC_serial_getData channel %c : no byte\n", 'A'+channel);
+			LOG_TRACE(TRACE_SCC, "scc serial read byte channel %c : no byte\n", 'A'+Channel);
 		}
 		else
 		{
-			LOG_TRACE(TRACE_SCC, "SCC_serial_getData channel %c rx=$%02x\n", 'A'+channel, *pValue);
+			LOG_TRACE(TRACE_SCC, "scc serial read byte channel %c rx=$%02x\n", 'A'+Channel, *pValue);
 		}
 		return ( nb > 0 );
 	}
@@ -597,23 +616,23 @@ static bool SCC_serial_getData(int channel , uint8_t *pValue)
 	return false;
 }
 
-static void SCC_serial_setData(int channel, uint8_t value)
+static void SCC_Serial_Write_Byte ( int Channel, uint8_t value )
 {
 	int nb;
 
-	LOG_TRACE(TRACE_SCC, "scc serial set data channel=%c value=$%02x\n", 'A'+channel, value);
+	LOG_TRACE(TRACE_SCC, "scc serial write byte channel=%c value=$%02x\n", 'A'+Channel, value);
 
-	if (SCC.Chn[channel].wr_handle >= 0)
+	if (SCC.Chn[Channel].wr_handle >= 0)
 	{
 		do
 		{
-			nb = write(SCC.Chn[channel].wr_handle, &value, 1);
+			nb = write(SCC.Chn[Channel].wr_handle, &value, 1);
 		} while (nb < 0 && (errno == EAGAIN || errno == EINTR));
 	}
 }
 
 #if HAVE_TERMIOS_H
-static void SCC_serial_setBaudAttr(int handle, speed_t new_speed)
+static void SCC_Serial_Set_BaudAttr ( int handle, speed_t new_speed )
 {
 	struct termios options;
 
@@ -659,12 +678,12 @@ static void SCC_serial_setBaudAttr(int handle, speed_t new_speed)
     15          50         76800               50          50
 */
 
-static void SCC_serial_setBaud(int channel, int value)
+static void SCC_Serial_Set_BaudRate ( int Channel, int value )
 {
 #if HAVE_TERMIOS_H
 	speed_t new_speed = B0;
 
-	LOG_TRACE(TRACE_SCC, "scc serial set baud channel=%c value=$%02x\n", 'A'+channel, value);
+	LOG_TRACE(TRACE_SCC, "scc serial set baud channel=%c value=$%02x\n", 'A'+Channel, value);
 
 	switch (value)
 	{
@@ -695,9 +714,9 @@ static void SCC_serial_setBaud(int channel, int value)
 	if (new_speed == B0)
 		return;
 
-	SCC_serial_setBaudAttr(SCC.Chn[channel].rd_handle, new_speed);
-	if (SCC.Chn[channel].rd_handle != SCC.Chn[channel].wr_handle)
-		SCC_serial_setBaudAttr(SCC.Chn[channel].wr_handle, new_speed);
+	SCC_Serial_Set_BaudAttr(SCC.Chn[Channel].rd_handle, new_speed);
+	if (SCC.Chn[Channel].rd_handle != SCC.Chn[Channel].wr_handle)
+		SCC_Serial_Set_BaudAttr(SCC.Chn[Channel].wr_handle, new_speed);
 #endif
 }
 
@@ -731,7 +750,8 @@ static uint16_t SCC_getTBE(int chn)
 
 static uint16_t SCC_Serial_Get_CTS ( int Channel )
 {
-	int	cts = 0;
+	int	cts = 1;
+	Log_Printf(LOG_DEBUG, "SCC: get status for CTS %d\n" , Channel);
 
 #if defined(HAVE_SYS_IOCTL_H) && defined(TIOCMGET)
 	int	status = 0;
@@ -739,12 +759,16 @@ static uint16_t SCC_Serial_Get_CTS ( int Channel )
 	{
 		if (ioctl(SCC.Chn[Channel].wr_handle, TIOCMGET, &status) < 0)
 		{
-			Log_Printf(LOG_DEBUG, "SCC: Can't get status for CTS\n");
+			Log_Printf(LOG_DEBUG, "SCC: Can't get status for CTS errno=%d\n", errno);
 		}
-		if ( status & TIOCM_CTS )
-			cts = 1;
 		else
-			cts = 0;
+		{
+	Log_Printf(LOG_DEBUG, "SCC: get status for CTS %d %x\n" , Channel , status);
+			if ( status & TIOCM_CTS )
+				cts = 1;
+			else
+				cts = 0;
+		}
 	}
 #endif
 	return cts;
@@ -753,20 +777,25 @@ static uint16_t SCC_Serial_Get_CTS ( int Channel )
 
 static uint16_t SCC_Serial_Get_DCD ( int Channel )
 {
-	int	dcd = 0;
+	int	dcd = 1;
+	Log_Printf(LOG_DEBUG, "SCC: get status for DCD %d\n" , Channel);
 
-#if defined(HAVE_SYS_IOCTL_H) && defined(TIOCMGET)
+	#if defined(HAVE_SYS_IOCTL_H) && defined(TIOCMGET)
 	int	status = 0;
 	if (SCC.Chn[Channel].wr_handle >= 0 && SCC.Chn[Channel].bFileHandleIsATTY)
 	{
 		if (ioctl(SCC.Chn[Channel].wr_handle, TIOCMGET, &status) < 0)
 		{
-			Log_Printf(LOG_DEBUG, "SCC: Can't get status for DCD\n");
+			Log_Printf(LOG_DEBUG, "SCC: Can't get status for DCD errno=%d\n" , errno);
 		}
-		if ( status & TIOCM_CAR )
-			dcd = 1;
 		else
-			dcd = 0;
+		{
+	Log_Printf(LOG_DEBUG, "SCC: get status for DCD %d %x\n" , Channel , status);
+			if ( status & TIOCM_CAR )
+				dcd = 1;
+			else
+				dcd = 0;
+		}
 	}
 #endif
 	return dcd;
@@ -1146,7 +1175,7 @@ static void SCC_Update_BaudRate ( int Channel )
 	if ( Serial_ON )
 	{
 //fprintf(stderr , "update br serial_on %d->%d\n" , BaudRate , BaudRate_Standard );
-		SCC_serial_setBaud ( Channel , BaudRate_Standard );
+		SCC_Serial_Set_BaudRate ( Channel , BaudRate_Standard );
 	}
 	else
 	{
@@ -1586,16 +1615,16 @@ static uint8_t SCC_ReadControl(int chn)
 static uint8_t SCC_handleRead(uint32_t addr)
 {
 	uint8_t		value;
-	int		channel;
+	int		Channel;
 
-	channel = ( addr >> 2 ) & 1;			/* bit 2 : 0 = channel A, 1 = channel B */
+	Channel = ( addr >> 2 ) & 1;			/* bit 2 : 0 = channel A, 1 = channel B */
 
-	LOG_TRACE(TRACE_SCC, "scc read addr=$%x channel=%c\n" , addr , 'A'+channel );
+	LOG_TRACE(TRACE_SCC, "scc read addr=%x channel=%c VBL=%d HBL=%d pc=%x\n" , addr , 'A'+Channel , nVBLs , nHBL , M68000_GetPC() );
 
 	if ( addr & 2 )					/* bit 1 */
-		value = SCC_ReadDataReg(channel);
+		value = SCC_ReadDataReg(Channel);
 	else
-		value = SCC_ReadControl(channel);
+		value = SCC_ReadControl(Channel);
 
 	SCC.Active_Reg = 0;				/* Next access default to RR0 or WR0 */
 
@@ -2053,7 +2082,7 @@ static void	SCC_InterruptHandler_BRG ( int Channel )
 	/* Used to restart the next timer and keep a constant baud rate */
 	PendingCyclesOver = -PendingInterruptCount;			/* >= 0 */
 
-	LOG_TRACE ( TRACE_SCC, "scc interrupt handler channel=%c pending_cyc=%d VBL=%d HBL=%d\n" , 'A'+Channel , PendingCyclesOver , nVBLs , nHBL );
+	LOG_TRACE ( TRACE_SCC, "scc interrupt handler brg channel=%c pending_cyc=%d VBL=%d HBL=%d\n" , 'A'+Channel , PendingCyclesOver , nVBLs , nHBL );
 
 	/* Remove this interrupt from list and re-order */
 	CycInt_AcknowledgeInterrupt();
