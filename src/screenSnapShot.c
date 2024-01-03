@@ -256,8 +256,12 @@ static int ScreenSnapShot_SaveNEO(const char *filename)
 
 	memset(NEOHeader, 0, sizeof(NEOHeader));
 	StoreU16NEO(res, 2);
-	for (i=0; i<16; i++) /* Use last line's palette for whole image. */
-		StoreU16NEO(pFrameBuffer->HBLPalettes[i+((OVERSCAN_TOP+sh-1)<<4)], 4+(2*i));
+	/* Use middle line's palette for whole image.
+	 * High resolution does not update HBLPalettes, so its palette data isn't available,
+	 * but access could be added via Video_CopyScreenLineMono or Video_ColorReg_WriteWord? (video.c) */
+	offset = (res > 1) ? 0 : OVERSCAN_TOP;
+	for (i=0; i<16; i++)
+		StoreU16NEO(pFrameBuffer->HBLPalettes[i+((offset+sh/2)<<4)], 4+(2*i));
 	memcpy(NEOHeader+36,"        .   ",12);
 	StoreU16NEO(sw, 58);
 	StoreU16NEO(sh, 60);
