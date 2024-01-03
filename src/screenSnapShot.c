@@ -120,9 +120,8 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
 	char text[] = "Hatari screenshot";
 	off_t start;
 	bool do_palette = true;
-	png_color png_pal[16];
-	Uint8 palbuf[3];
-	int palcount = 16;
+	static png_color png_pal[256];
+	static Uint8 palbuf[3];
 
 	if (!dw)
 		dw = sw;
@@ -131,7 +130,7 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
 
 	rowbuf = alloca(3 * dw);
 
-	/* Use current ST palette if all colours in the image belong to it. */
+	/* Use current ST palette if all colours in the image belong to it, otherwise RGB. */
 	do_lock = SDL_MUSTLOCK(surface);
 	if (do_lock)
 		SDL_LockSurface(surface);
@@ -207,18 +206,16 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
 
 	if (do_palette)
 	{
-		/* Convert ST palette */
-		if (STRes == ST_MEDIUM_RES)
-			palcount = 4;
-		for (y = 0; y < palcount; y++)
+		/* Generate palette for PNG. */
+		for (y = 0; y < ConvertPaletteSize; y++)
 		{
 			switch (fmt->BytesPerPixel)
 			{
 			 case 2:
-				PixelConvert_16to24Bits(palbuf, (Uint16*)(STRGBPalette+y), 1, surface);
+				PixelConvert_16to24Bits(palbuf, (Uint16*)(ConvertPalette+y), 1, surface);
 				break;
 			 case 4:
-				PixelConvert_32to24Bits(palbuf, (Uint32*)(STRGBPalette+y), 1, surface);
+				PixelConvert_32to24Bits(palbuf, (Uint32*)(ConvertPalette+y), 1, surface);
 				break;
 			 default:
 				abort();
@@ -227,7 +224,7 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
 			png_pal[y].green = palbuf[1];
 			png_pal[y].blue  = palbuf[2];
 		}
-		png_set_PLTE(png_ptr, info_ptr, png_pal, palcount);
+		png_set_PLTE(png_ptr, info_ptr, png_pal, ConvertPaletteSize);
 	}
 
 	/* write the file header information */
@@ -264,8 +261,8 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
 		}
 		else
 		{
-			/* Reindex back to ST palette. */
-			/* Note that this cannot disambiguate indices if the palette has duplicate colors. */
+			/* Reindex back to ST palette.
+			 * Note that this cannot disambiguate indices if the palette has duplicate colors. */
 			switch (fmt->BytesPerPixel)
 			{
 			 case 2:

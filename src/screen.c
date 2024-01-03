@@ -76,6 +76,10 @@ Uint32 ST2RGB[4096];          /* Table to convert ST 0x777 / STe 0xfff palette t
 Uint8 *pSTScreen;
 FRAMEBUFFER *pFrameBuffer;    /* Pointer into current 'FrameBuffer' */
 
+/* extern for screen snapshot palettes */
+Uint32* ConvertPalette = STRGBPalette;
+int ConvertPaletteSize = 0;
+
 uint16_t HBLPalettes[HBL_PALETTE_LINES];          /* 1x16 colour palette per screen line, +1 line just in case write after line 200 */
 uint16_t *pHBLPalettes;                           /* Pointer to current palette lists, one per HBL */
 uint32_t HBLPaletteMasks[HBL_PALETTE_MASKS];      /* Bit mask of palette colours changes, top bit set is resolution change */
@@ -1263,6 +1267,11 @@ static bool Screen_DrawFrame(bool bForceFlip)
 		Screen_SetFullUpdateMask();
 		bPrevFrameWasSpec512 = false;
 	}
+
+	/* store palette fore screenshots.
+	 * pDrawFunction may override this if it calls Screen_GenConvert */
+	ConvertPalette = STRGBPalette;
+	ConvertPaletteSize = (STRes == ST_MEDIUM_RES) ? 4 : 16;
 
 	if (pDrawFunction)
 		CALL_VAR(pDrawFunction);
