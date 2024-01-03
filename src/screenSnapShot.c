@@ -17,6 +17,7 @@ const char ScreenSnapShot_fileid[] = "Hatari screenSnapShot.c";
 #include "log.h"
 #include "paths.h"
 #include "screen.h"
+#include "screenConvert.h"
 #include "screenSnapShot.h"
 #include "statusbar.h"
 #include "video.h"
@@ -256,12 +257,16 @@ static int ScreenSnapShot_SaveNEO(const char *filename)
 
 	memset(NEOHeader, 0, sizeof(NEOHeader));
 	StoreU16NEO(res, 2);
-	/* Use middle line's palette for whole image.
-	 * High resolution does not update HBLPalettes, so its palette data isn't available,
-	 * but access could be added via Video_CopyScreenLineMono or Video_ColorReg_WriteWord? (video.c) */
-	offset = (res > 1) ? 0 : OVERSCAN_TOP;
-	for (i=0; i<16; i++)
-		StoreU16NEO(pFrameBuffer->HBLPalettes[i+((offset+sh/2)<<4)], 4+(2*i));
+	if (res != 2) /* Low/Medium resolution: use middle line's palette for whole image. */
+	{
+		for (i=0; i<16; i++)
+			StoreU16NEO(pFrameBuffer->HBLPalettes[i+((OVERSCAN_TOP+sh/2)<<4)], 4+(2*i));
+	}
+	else /* High resolution: use stored GenConvert RGB palette. */
+	{
+		for (i=0; i<2;i++)
+			StoreU16NEO((Screen_GetPaletteColor(i).r >= 128) ? 0x777 : 0x000, 4+(2*i));
+	}
 	memcpy(NEOHeader+36,"        .   ",12);
 	StoreU16NEO(sw, 58);
 	StoreU16NEO(sh, 60);
