@@ -1268,7 +1268,7 @@ static bool Screen_DrawFrame(bool bForceFlip)
 		bPrevFrameWasSpec512 = false;
 	}
 
-	/* store palette fore screenshots.
+	/* store palette for screenshots.
 	 * pDrawFunction may override this if it calls Screen_GenConvert */
 	ConvertPalette = STRGBPalette;
 	ConvertPaletteSize = (STRes == ST_MEDIUM_RES) ? 4 : 16;
