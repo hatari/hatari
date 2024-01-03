@@ -32,6 +32,14 @@ const char ScreenSnapShot_fileid[] = "Hatari screenSnapShot.c";
 static int nScreenShots = 0;                /* Number of screen shots saved */
 static Uint8 NEOHeader[128];
 
+/* From stMemory.h, but it seems to have some conflict with dirent.h? */
+#if ENABLE_SMALL_MEM
+extern uint8_t *STRam;
+#else
+extern uint8_t STRam[16*1024*1024];
+#endif  /* ENABLE_SMALL_MEM */
+extern uint32_t STRamEnd;
+
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -241,6 +249,7 @@ static int ScreenSnapShot_SaveNEO(const char *filename)
 	FILE *fp = NULL;
 	int i, res, sw, sh, stride, offset;
 	SDL_Color col;
+	uint32_t video_base;
 
 	if (pFrameBuffer == NULL || pFrameBuffer->pSTScreen == NULL)
 		return -1;
@@ -252,9 +261,18 @@ static int ScreenSnapShot_SaveNEO(const char *filename)
 	res = (STRes == ST_HIGH_RES) ? 2 :
 	      (STRes == ST_MEDIUM_RES) ? 1 :
 	      0;
+
+	if (Config_IsMachineFalcon() || Config_IsMachineTT())
+	{
+		/* Assume resolution based on GenConvert. */
+		if (ConvertW < ((640+320)/2))
+			res = 0;
+		else
+			res = (ConvertH < ((400+200)/2)) ? 1 : 2;
+	}
 	sw = (res > 0) ? 640 : 320;
-	sh = (res > 1) ? 400 : 200;
-	stride = (res > 1) ? 80 : 160;
+	sh = (res == 2) ? 400 : 200;
+	stride = (res == 2) ? 80 : 160;
 
 	memset(NEOHeader, 0, sizeof(NEOHeader));
 	StoreU16NEO(res, 2);
@@ -280,12 +298,29 @@ static int ScreenSnapShot_SaveNEO(const char *filename)
 	StoreU16NEO(sh, 60);
 
 	fwrite(NEOHeader, 1, 128, fp);
-	for (i = 0; i < sh; i++)
+	if (!Config_IsMachineFalcon() && !Config_IsMachineTT())
 	{
-		offset = (res > 1) ?
-			(SCREENBYTES_MONOLINE * i) :
-			(STScreenLineOffset[i+OVERSCAN_TOP] + SCREENBYTES_LEFT);
-		fwrite(pFrameBuffer->pSTScreen + offset, 1, stride, fp);
+		for (i = 0; i < sh; i++)
+		{
+			offset = (res == 2) ?
+				(SCREENBYTES_MONOLINE * i) :
+				(STScreenLineOffset[i+OVERSCAN_TOP] + SCREENBYTES_LEFT);
+			fwrite(pFrameBuffer->pSTScreen + offset, 1, stride, fp);
+		}
+	}
+	else /* TT/Falcon bypass Video_EndHBL which prepare the FrameBuffer,
+	      * so as a fallback we just try to copy the video data from ST RAM. */
+	{
+		video_base = Video_GetScreenBaseAddr();
+		if ((video_base + 32000) <= STRamEnd)
+		{
+			fwrite(STRam + video_base, 1, 32000, fp);
+		}
+		else
+		{
+			fclose(fp);
+			return -1;
+		}
 	}
 
 	fclose (fp);
