@@ -306,6 +306,7 @@ typedef struct
   bool bResizable;
   bool bUseVsync;
   bool bUseSdlRenderer;
+  bool bNEOScreenSnapShot;
   float nZoomFactor;
   int nSpec512Threshold;
   int nVdiColors;
