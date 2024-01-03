@@ -266,7 +266,7 @@ static void Screen_SetSTScreenOffsets(void)
  * Return true if Falcon/TT/VDI generic screen convert functions
  * need to be used instead of the ST/STE functions.
  */
-static bool Screen_UseGenConvScreen(void)
+bool Screen_UseGenConvScreen(void)
 {
 	return Config_IsMachineFalcon() || Config_IsMachineTT()
 		|| bUseHighRes || bUseVDIRes;

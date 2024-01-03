@@ -240,6 +240,7 @@ static int ScreenSnapShot_SaveNEO(const char *filename)
 {
 	FILE *fp = NULL;
 	int i, res, sw, sh, stride, offset;
+	SDL_Color col;
 
 	if (pFrameBuffer == NULL || pFrameBuffer->pSTScreen == NULL)
 		return -1;
@@ -257,15 +258,22 @@ static int ScreenSnapShot_SaveNEO(const char *filename)
 
 	memset(NEOHeader, 0, sizeof(NEOHeader));
 	StoreU16NEO(res, 2);
-	if (res != 2) /* Low/Medium resolution: use middle line's palette for whole image. */
+	if (!Screen_UseGenConvScreen()) /* Low/Medium resolution: use middle line's palette for whole image. */
 	{
 		for (i=0; i<16; i++)
 			StoreU16NEO(pFrameBuffer->HBLPalettes[i+((OVERSCAN_TOP+sh/2)<<4)], 4+(2*i));
 	}
-	else /* High resolution: use stored GenConvert RGB palette. */
+	else /* High resolution or GenConvert: use stored GenConvert RGB palette. */
 	{
-		for (i=0; i<2;i++)
-			StoreU16NEO((Screen_GetPaletteColor(i).r >= 128) ? 0x777 : 0x000, 4+(2*i));
+		for (i=0; i<16;i++)
+		{
+			col = Screen_GetPaletteColor(i);
+			StoreU16NEO(
+				((col.r >> 5) << 8) |
+				((col.g >> 5) << 4) |
+				((col.b >> 5) << 0),
+				4+(2*i));
+		}
 	}
 	memcpy(NEOHeader+36,"        .   ",12);
 	StoreU16NEO(sw, 58);
