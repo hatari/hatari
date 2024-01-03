@@ -304,8 +304,9 @@ static int ScreenSnapShot_SaveNEO(const char *filename)
 				4+(2*i));
 		}
 	}
-	memcpy(NEOHeader+36,"4BPP  HATARI",12);
-	NEOHeader[36+0] = '0' + bpp; /* Use internal filename to give a hint about bitplanes. */
+	memcpy(NEOHeader+36,"HATARI  4BPP",12); /* Use internal filename to give a hint about bitplanes. */
+	NEOHeader[36+8] = '0' + (bpp % 10);
+	if (bpp >= 10) NEOHeader[36+7] = '0' + (bpp / 10);
 	StoreU16NEO(sw, 58);
 	StoreU16NEO(sh, 60);
 
@@ -336,6 +337,19 @@ static int ScreenSnapShot_SaveNEO(const char *filename)
 		{
 			fclose(fp);
 			return -1;
+		}
+
+		/* Extended RGB palette added as a suffix, in case needed. */
+		if (bpp <= 8 && (bpp > 4 || !Config_IsMachineST()))
+		{
+			fwrite("RGB",1,3,fp);
+			for (i=0; i < (1 << bpp); i++)
+			{
+				col = Screen_GetPaletteColor(i);
+				fwrite(&col.r, 1, 1, fp);
+				fwrite(&col.g, 1, 1, fp);
+				fwrite(&col.b, 1, 1, fp);
+			}
 		}
 	}
 
