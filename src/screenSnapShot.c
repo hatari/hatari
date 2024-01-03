@@ -134,7 +134,7 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
 	do_lock = SDL_MUSTLOCK(surface);
 	if (do_lock)
 		SDL_LockSurface(surface);
-	for (y = 0; y < dh; y++)
+	for (y = 0; y < dh && do_palette; y++)
 	{
 		src_ptr = (Uint8 *)surface->pixels
 		          + (CropTop + (y * sh + dh/2) / dh) * surface->pitch
