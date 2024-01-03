@@ -115,6 +115,5 @@ extern void Screen_SetGenConvSize(int width, int height, bool bForceChange);
 extern void Screen_GenConvUpdate(SDL_Rect *extra, bool forced);
 extern Uint32 Screen_GetGenConvWidth(void);
 extern Uint32 Screen_GetGenConvHeight(void);
-extern bool Screen_UseGenConvScreen(void);
 
 #endif  /* ifndef HATARI_SCREEN_H */

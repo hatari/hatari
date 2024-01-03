@@ -21,6 +21,7 @@ const char ScreenSnapShot_fileid[] = "Hatari screenSnapShot.c";
 #include "screenSnapShot.h"
 #include "statusbar.h"
 #include "video.h"
+#include "vdi.h"
 /* after above that bring in config.h */
 #if HAVE_LIBPNG
 # include <png.h>
@@ -247,12 +248,12 @@ static void StoreU16NEO(Uint16 val, int offset)
 static int ScreenSnapShot_SaveNEO(const char *filename)
 {
 	FILE *fp = NULL;
-	int i, res, sw, sh, stride, offset;
+	int i, res, sw, sh, bpp, offset;
 	SDL_Color col;
-	uint32_t video_base;
-
-	if (pFrameBuffer == NULL || pFrameBuffer->pSTScreen == NULL)
-		return -1;
+	uint32_t video_base, video_size;
+	bool genconv = Config_IsMachineFalcon() || Config_IsMachineTT() || bUseVDIRes;
+	/* genconv here is almost the same as Screen_UseGenConvScreen, but omits bUseHighRes,
+	 * which is a hybrid GenConvert that also fills pFrameBuffer. */
 
 	fp = fopen(filename, "wb");
 	if (!fp)
@@ -261,29 +262,39 @@ static int ScreenSnapShot_SaveNEO(const char *filename)
 	res = (STRes == ST_HIGH_RES) ? 2 :
 	      (STRes == ST_MEDIUM_RES) ? 1 :
 	      0;
-
-	if (Config_IsMachineFalcon() || Config_IsMachineTT())
-	{
-		/* Assume resolution based on GenConvert. */
-		if (ConvertW < ((640+320)/2))
-			res = 0;
-		else
-			res = (ConvertH < ((400+200)/2)) ? 1 : 2;
-	}
 	sw = (res > 0) ? 640 : 320;
 	sh = (res == 2) ? 400 : 200;
-	stride = (res == 2) ? 80 : 160;
+	bpp = 4;
+	if      (res == 1) bpp = 2;
+	else if (res == 2) bpp = 1;
+
+	if (genconv)
+	{
+		/* Assume resolution based on GenConvert. */
+		bpp = ConvertBPP;
+		sw = ConvertW;
+		sh = ConvertH;
+		/* If BPP matches an ST resolution, use that.
+		 * otherwise just use the BPP itself instead of that number. */
+		res = bpp;
+		if      (bpp == 4) res = 0;
+		else if (bpp == 2) res = 1;
+		else if (bpp == 1) res = 2;
+	}
 
 	memset(NEOHeader, 0, sizeof(NEOHeader));
-	StoreU16NEO(res, 2);
-	if (!Screen_UseGenConvScreen()) /* Low/Medium resolution: use middle line's palette for whole image. */
+	StoreU16NEO(res, 2); /* Essentially treating the NEO resolution word as an indirect bpp indicator. */
+
+	/* ST Low/Medium resolution stores a palette for each line. Using the centre line's palette. */
+	if (!genconv && res != 2 && pFrameBuffer)
 	{
 		for (i=0; i<16; i++)
-			StoreU16NEO(pFrameBuffer->HBLPalettes[i+((OVERSCAN_TOP+sh/2)<<4)], 4+(2*i));
+			StoreU16NEO(pFrameBuffer->HBLPalettes[i+((OVERSCAN_TOP+200/2)<<4)], 4+(2*i));
 	}
-	else /* High resolution or GenConvert: use stored GenConvert RGB palette. */
+	/* High resolution or other GenConvert: use stored GenConvert RGB palette. */
+	else
 	{
-		for (i=0; i<16;i++)
+		for (i=0; i<16; i++)
 		{
 			col = Screen_GetPaletteColor(i);
 			StoreU16NEO(
@@ -293,28 +304,33 @@ static int ScreenSnapShot_SaveNEO(const char *filename)
 				4+(2*i));
 		}
 	}
-	memcpy(NEOHeader+36,"        .   ",12);
+	memcpy(NEOHeader+36,"4BPP  HATARI",12);
+	NEOHeader[36+0] = '0' + bpp; /* Use internal filename to give a hint about bitplanes. */
 	StoreU16NEO(sw, 58);
 	StoreU16NEO(sh, 60);
 
 	fwrite(NEOHeader, 1, 128, fp);
-	if (!Config_IsMachineFalcon() && !Config_IsMachineTT())
+	/* ST modes fill pFrameBuffer->pSTScreen from each scanline, during Video_EndHBL. */
+	if (!genconv && pFrameBuffer && pFrameBuffer->pSTScreen)
 	{
 		for (i = 0; i < sh; i++)
 		{
+			video_size = (uint32_t)(bpp * sw) / 8; /* size of line data in bytes */
 			offset = (res == 2) ?
 				(SCREENBYTES_MONOLINE * i) :
 				(STScreenLineOffset[i+OVERSCAN_TOP] + SCREENBYTES_LEFT);
-			fwrite(pFrameBuffer->pSTScreen + offset, 1, stride, fp);
+			fwrite(pFrameBuffer->pSTScreen + offset, 1, video_size, fp);
 		}
 	}
-	else /* TT/Falcon bypass Video_EndHBL which prepare the FrameBuffer,
-	      * so as a fallback we just try to copy the video data from ST RAM. */
+	/* TT/Falcon don't call Video_EndHBL, so pFrameBuffer is unused.
+	 * As a fallback we just copy the video data from ST RAM. */
+	else
 	{
 		video_base = Video_GetScreenBaseAddr();
-		if ((video_base + 32000) <= STRamEnd)
+		video_size = (uint32_t)(bpp * sw * sh) / 8;
+		if ((video_base + video_size) <= STRamEnd)
 		{
-			fwrite(STRam + video_base, 1, 32000, fp);
+			fwrite(STRam + video_base, 1, video_size, fp);
 		}
 		else
 		{
