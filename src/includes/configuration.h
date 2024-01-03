@@ -78,15 +78,18 @@ typedef struct
 
 
 
-/* RS232 configuration */
+/* RS232 / SCC configuration */
+#define CNF_SCC_CHANNELS_MAX	2
+#define CNF_SCC_CHANNELS_A	0
+#define CNF_SCC_CHANNELS_B	1
 typedef struct
 {
   bool bEnableRS232;
-  bool bEnableSccB;
   char szOutFileName[FILENAME_MAX];
   char szInFileName[FILENAME_MAX];
-  char sSccBInFileName[FILENAME_MAX];
-  char sSccBOutFileName[FILENAME_MAX];
+  bool EnableScc[CNF_SCC_CHANNELS_MAX];
+  char SccInFileName[CNF_SCC_CHANNELS_MAX][FILENAME_MAX];
+  char SccOutFileName[CNF_SCC_CHANNELS_MAX][FILENAME_MAX];
 } CNF_RS232;
 
 

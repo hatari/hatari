@@ -452,9 +452,12 @@ static const struct Config_Tag configs_Rs232[] =
 	{ "bEnableRS232", Bool_Tag, &ConfigureParams.RS232.bEnableRS232 },
 	{ "szOutFileName", String_Tag, ConfigureParams.RS232.szOutFileName },
 	{ "szInFileName", String_Tag, ConfigureParams.RS232.szInFileName },
-	{ "bEnableSccB", Bool_Tag, &ConfigureParams.RS232.bEnableSccB },
-	{ "sSccBOutFileName", String_Tag, ConfigureParams.RS232.sSccBOutFileName },
-	{ "sSccBInFileName", String_Tag, ConfigureParams.RS232.sSccBInFileName },
+	{ "EnableSccA", Bool_Tag, &ConfigureParams.RS232.EnableScc[CNF_SCC_CHANNELS_A] },
+	{ "SccAOutFileName", String_Tag, ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_A] },
+	{ "SccAInFileName", String_Tag, ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_A] },
+	{ "EnableSccB", Bool_Tag, &ConfigureParams.RS232.EnableScc[CNF_SCC_CHANNELS_B] },
+	{ "SccBOutFileName", String_Tag, ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_B] },
+	{ "SccBInFileName", String_Tag, ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_B] },
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -702,9 +705,12 @@ void Configuration_SetDefault(void)
 	strcpy(ConfigureParams.RS232.szOutFileName, "/dev/modem");
 	strcpy(ConfigureParams.RS232.szInFileName, "/dev/modem");
 	/* Set defaults for SCC RS232 ( MegaSTE/TT/Falcon) */
-	ConfigureParams.RS232.bEnableSccB = false;
-	strcpy(ConfigureParams.RS232.sSccBOutFileName, "/dev/modem");
-	strcpy(ConfigureParams.RS232.sSccBInFileName, "/dev/modem");
+	ConfigureParams.RS232.EnableScc[CNF_SCC_CHANNELS_A] = false;
+	strcpy(ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_A], "/dev/modem");
+	strcpy(ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_A], "/dev/modem");
+	ConfigureParams.RS232.EnableScc[CNF_SCC_CHANNELS_B] = false;
+	strcpy(ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_B], "/dev/modem");
+	strcpy(ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_B], "/dev/modem");
 
 	/* Set defaults for MIDI */
 	ConfigureParams.Midi.bEnableMidi = false;
@@ -931,8 +937,10 @@ void Configuration_Apply(bool bReset)
 	File_MakeAbsoluteSpecialName(ConfigureParams.Log.sTraceFileName);
 	File_MakeAbsoluteSpecialName(ConfigureParams.RS232.szInFileName);
 	File_MakeAbsoluteSpecialName(ConfigureParams.RS232.szOutFileName);
-	File_MakeAbsoluteSpecialName(ConfigureParams.RS232.sSccBInFileName);
-	File_MakeAbsoluteSpecialName(ConfigureParams.RS232.sSccBOutFileName);
+	File_MakeAbsoluteSpecialName(ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_A]);
+	File_MakeAbsoluteSpecialName(ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_A]);
+	File_MakeAbsoluteSpecialName(ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_B]);
+	File_MakeAbsoluteSpecialName(ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_B]);
 	File_MakeAbsoluteSpecialName(ConfigureParams.Midi.sMidiInFileName);
 	File_MakeAbsoluteSpecialName(ConfigureParams.Midi.sMidiOutFileName);
 	File_MakeAbsoluteSpecialName(ConfigureParams.Printer.szPrintToFileName);

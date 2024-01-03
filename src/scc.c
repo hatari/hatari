@@ -385,98 +385,118 @@ bool SCC_IsAvailable(CNF_PARAMS *cnf)
 	       || ConfigureParams.System.nMachineType == MACHINE_FALCON;
 }
 
-void SCC_Init(void)
+
+static void SCC_Init_Channel ( int Channel )
 {
-	SCC_Reset();
 
-	SCC.Chn[0].oldTBE = SCC.Chn[1].oldTBE = 0;
-	SCC.Chn[0].oldStatus = SCC.Chn[1].oldStatus = 0;
+	SCC.Chn[Channel].oldTBE = 0;
+	SCC.Chn[Channel].oldStatus = 0;
 
-	SCC.Chn[0].rd_handle = SCC.Chn[0].wr_handle = -1;
-	SCC.Chn[0].bFileHandleIsATTY = false;
-	SCC.Chn[1].rd_handle = SCC.Chn[1].wr_handle = -1;
-	SCC.Chn[1].bFileHandleIsATTY = false;
+	SCC.Chn[Channel].rd_handle = SCC.Chn[Channel].wr_handle = -1;
+	SCC.Chn[Channel].bFileHandleIsATTY = false;
 
-	if (!ConfigureParams.RS232.bEnableSccB || !SCC_IsAvailable(&ConfigureParams))
+	if (!ConfigureParams.RS232.EnableScc[Channel] || !SCC_IsAvailable(&ConfigureParams))
 		return;
 
-	if (ConfigureParams.RS232.sSccBInFileName[0] &&
-	    strcmp(ConfigureParams.RS232.sSccBInFileName, ConfigureParams.RS232.sSccBOutFileName) == 0)
+	if (ConfigureParams.RS232.SccInFileName[Channel][0] &&
+	    strcmp(ConfigureParams.RS232.SccInFileName[Channel], ConfigureParams.RS232.SccOutFileName[Channel]) == 0)
 	{
 #if HAVE_TERMIOS_H
-		SCC.Chn[1].rd_handle = open(ConfigureParams.RS232.sSccBInFileName, O_RDWR | O_NONBLOCK);
-		if (SCC.Chn[1].rd_handle >= 0)
+		SCC.Chn[Channel].rd_handle = open(ConfigureParams.RS232.SccInFileName[Channel], O_RDWR | O_NONBLOCK);
+		if (SCC.Chn[Channel].rd_handle >= 0)
 		{
-			if (isatty(SCC.Chn[1].rd_handle))
+			if (isatty(SCC.Chn[Channel].rd_handle))
 			{
-				SCC.Chn[1].wr_handle = SCC.Chn[1].rd_handle;
-				SCC.Chn[1].bFileHandleIsATTY = true;
+				SCC.Chn[Channel].wr_handle = SCC.Chn[Channel].rd_handle;
+				SCC.Chn[Channel].bFileHandleIsATTY = true;
 			}
 			else
 			{
-				Log_Printf(LOG_ERROR, "SCC_Init: Setting SCC-B input and output "
-				           "to the same file only works with tty devices.\n");
-				close(SCC.Chn[1].rd_handle);
-				SCC.Chn[1].rd_handle = -1;
+				Log_Printf(LOG_ERROR, "SCC_Init: Setting SCC %c input and output "
+				           "to the same file only works with tty devices.\n" , Channel+'A');
+				close(SCC.Chn[Channel].rd_handle);
+				SCC.Chn[Channel].rd_handle = -1;
 			}
 		}
 		else
 		{
 			Log_Printf(LOG_ERROR, "SCC_Init: Can not open device '%s'\n",
-			           ConfigureParams.RS232.sSccBInFileName);
+			           ConfigureParams.RS232.SccInFileName[Channel]);
 		}
 #else
-		Log_Printf(LOG_ERROR, "SCC_Init: Setting SCC-B input and output "
-		           "to the same file is not supported on this system.\n");
+		Log_Printf(LOG_ERROR, "SCC_Init: Setting SCC %c input and output "
+		           "to the same file is not supported on this system.\n" , Channel+'A');
 #endif
 	}
 	else
 	{
-		if (ConfigureParams.RS232.sSccBInFileName[0])
+		if (ConfigureParams.RS232.SccInFileName[Channel][0])
 		{
-			SCC.Chn[1].rd_handle = open(ConfigureParams.RS232.sSccBInFileName, O_RDONLY | O_NONBLOCK);
-			if (SCC.Chn[1].rd_handle < 0)
+			SCC.Chn[Channel].rd_handle = open(ConfigureParams.RS232.SccInFileName[Channel], O_RDONLY | O_NONBLOCK);
+			if (SCC.Chn[Channel].rd_handle < 0)
 			{
 				Log_Printf(LOG_ERROR, "SCC_Init: Can not open input file '%s'\n",
-					   ConfigureParams.RS232.sSccBInFileName);
+					   ConfigureParams.RS232.SccInFileName[Channel]);
 			}
 		}
-		if (ConfigureParams.RS232.sSccBOutFileName[0])
+		if (ConfigureParams.RS232.SccOutFileName[Channel][0])
 		{
-			SCC.Chn[1].wr_handle = open(ConfigureParams.RS232.sSccBOutFileName,
+			SCC.Chn[Channel].wr_handle = open(ConfigureParams.RS232.SccOutFileName[Channel],
 						O_CREAT | O_WRONLY | O_NONBLOCK, S_IRUSR | S_IWUSR);
-			if (SCC.Chn[1].wr_handle < 0)
+			if (SCC.Chn[Channel].wr_handle < 0)
 			{
 				Log_Printf(LOG_ERROR, "SCC_Init: Can not open output file '%s'\n",
-					   ConfigureParams.RS232.sSccBOutFileName);
+					   ConfigureParams.RS232.SccOutFileName[Channel]);
 			}
 		}
 	}
-	if (SCC.Chn[1].rd_handle == -1 && SCC.Chn[1].wr_handle == -1)
+
+	if (SCC.Chn[Channel].rd_handle == -1 && SCC.Chn[Channel].wr_handle == -1)
 	{
-		ConfigureParams.RS232.bEnableSccB = false;
+		ConfigureParams.RS232.EnableScc[Channel] = false;
 	}
+
 }
+
+
+void SCC_Init ( void )
+{
+	int	Channel;
+
+	SCC_Reset();
+
+	for ( Channel = 0; Channel < 2; Channel++ )
+		SCC_Init_Channel ( Channel );
+}
+
+
 
 void SCC_UnInit(void)
 {
-	if (SCC.Chn[1].rd_handle >= 0)
+	int Channel;
+
+	for ( Channel = 0; Channel < 2; Channel++ )
 	{
-		if (SCC.Chn[1].wr_handle == SCC.Chn[1].rd_handle)
-			SCC.Chn[1].wr_handle = -1;
-		close(SCC.Chn[1].rd_handle);
-		SCC.Chn[1].rd_handle = -1;
-	}
-	if (SCC.Chn[1].wr_handle >= 0)
-	{
-		close(SCC.Chn[1].wr_handle);
-		SCC.Chn[1].wr_handle = -1;
+		if (SCC.Chn[Channel].rd_handle >= 0)
+		{
+			if (SCC.Chn[Channel].wr_handle == SCC.Chn[Channel].rd_handle)
+				SCC.Chn[Channel].wr_handle = -1;
+			close(SCC.Chn[Channel].rd_handle);
+			SCC.Chn[Channel].rd_handle = -1;
+		}
+		if (SCC.Chn[Channel].wr_handle >= 0)
+		{
+			close(SCC.Chn[Channel].wr_handle);
+			SCC.Chn[Channel].wr_handle = -1;
+		}
 	}
 }
 
 void SCC_MemorySnapShot_Capture(bool bSave)
 {
-	for (int c = 0; c < 2; c++)
+	int c;
+
+	for (c = 0; c < 2; c++)
 	{
 		MemorySnapShot_Store(SCC.Chn[c].WR, sizeof(SCC.Chn[c].WR));
 		MemorySnapShot_Store(SCC.Chn[c].RR, sizeof(SCC.Chn[c].RR));
