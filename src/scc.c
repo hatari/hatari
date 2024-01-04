@@ -321,7 +321,9 @@ static void	SCC_ResetFull ( bool HW_Reset );
 
 static bool	SCC_Serial_Read_Byte ( int Channel , uint8_t *pValue );
 static void	SCC_Serial_Write_Byte ( int Channel, uint8_t value );
+#if HAVE_TERMIOS_H
 static void	SCC_Serial_Set_BaudAttr ( int handle, speed_t new_speed );
+#endif
 static void	SCC_Serial_Set_BaudRate ( int Channel, int value );
 static uint16_t	SCC_Serial_Get_CTS ( int Channel );
 static uint16_t	SCC_Serial_Get_DCD ( int Channel );
