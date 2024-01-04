@@ -3,7 +3,7 @@
  *
  * Adaptions to Hatari:
  *
- * Copyright 2023 Nicolas Pomarède, major rewrite of most of the code
+ * Copyright 2023-2024 Nicolas Pomarède, major rewrite of most of the code
  *
  * Copyright 2018 Thomas Huth
  *
@@ -102,14 +102,10 @@
 # endif
 #endif
 
-#define RCA 0
-#define TBE 2
-#define CTS 5
-
 
 #define SCC_CLOCK_PCLK		MachineClocks.SCC_Freq		/* 8021247 Hz */
 #define SCC_CLOCK_PCLK4		3672000				/* Dedicated OSC */
-#define SCC_CLOCK_BCLK		2457600				/* Connected to the MFP's XTAL clock */
+#define SCC_CLOCK_BCLK		MachineClocks.MFP_Timer_Freq	/* Connected to the MFP's XTAL clock 2.4576 MHz */
 
 #define SCC_BAUDRATE_SOURCE_CLOCK_RTXC		0
 #define SCC_BAUDRATE_SOURCE_CLOCK_TRXC		1
@@ -239,20 +235,18 @@ struct SCC_Channel {
 	/* NOTE : WR2 and WR9 are common to both channels, we store their content in channel A */
 	/* RR2A stores the vector, RR2B stores the vector + status bits */
 	/* RR3 is only in channel A, RR3B returns 0 */
-	/* Also special case for WR7', we store it in reg 16 */
-	uint8_t	WR[16+1];		/* 0-15 are for WR0-WR15, 16 is for WR7' */
+	uint8_t	WR[16];			/* 0-15 are for WR0-WR15 */
+	uint8_t	WR7p;			/* special case for WR7' */
 	uint8_t	RR[16];			/* 0-15 are for RR0-RR15 */
 
 	int	BaudRate_BRG;
 	int	BaudRate_TX;		/* TODO : tx and rx baud rate can be different */
 	int	BaudRate_RX;
 
-	bool	RR0_Latched;
+	bool	RR0_IsLatched;
 	uint8_t	RR0_No_Latch;		/* "real time" values of all bits, before being latched if necessary */
 
 	bool	TX_Buffer_Written;	/* True if a write to data reg was made, needed for TBE int */
-
-	uint64_t TxBuf_Write_Time;	/* Clock value when writing to WR8 */
 
 	uint8_t	TX_bits;		/* TX Bits/char (5 or less, 6, 7, 8) */
 	uint8_t	RX_bits;		/* RX Bits/char (5 or less, 6, 7, 8) */
@@ -263,10 +257,7 @@ struct SCC_Channel {
 
 	uint32_t IntSources;		/* Interrupt sources : 0=clear 1=set */
 
-	int	charcount;
 	int	rd_handle, wr_handle;
-	uint16_t oldTBE;
-	uint16_t oldStatus;
 	bool	bFileHandleIsATTY;
 };
 
@@ -378,6 +369,12 @@ static int	SCC_Do_IACK ( bool Soft );
 static void	SCC_Soft_IACK ( void );
 
 
+
+/*
+ * Return true if the current machine has a built-in SCC chip.
+ * Else return false.
+ */
+
 bool SCC_IsAvailable(CNF_PARAMS *cnf)
 {
 	return ConfigureParams.System.nMachineType == MACHINE_MEGA_STE
@@ -386,12 +383,9 @@ bool SCC_IsAvailable(CNF_PARAMS *cnf)
 }
 
 
+
 static void SCC_Init_Channel ( int Channel )
 {
-
-	SCC.Chn[Channel].oldTBE = 0;
-	SCC.Chn[Channel].oldStatus = 0;
-
 	SCC.Chn[Channel].rd_handle = SCC.Chn[Channel].wr_handle = -1;
 	SCC.Chn[Channel].bFileHandleIsATTY = false;
 
@@ -455,7 +449,6 @@ static void SCC_Init_Channel ( int Channel )
 	{
 		ConfigureParams.RS232.EnableScc[Channel] = false;
 	}
-
 }
 
 
@@ -492,6 +485,8 @@ void SCC_UnInit(void)
 	}
 }
 
+
+
 void SCC_MemorySnapShot_Capture(bool bSave)
 {
 	int c;
@@ -499,11 +494,12 @@ void SCC_MemorySnapShot_Capture(bool bSave)
 	for (c = 0; c < 2; c++)
 	{
 		MemorySnapShot_Store(SCC.Chn[c].WR, sizeof(SCC.Chn[c].WR));
+		MemorySnapShot_Store(&SCC.Chn[c].WR7p, sizeof(SCC.Chn[c].WR7p));
 		MemorySnapShot_Store(SCC.Chn[c].RR, sizeof(SCC.Chn[c].RR));
 		MemorySnapShot_Store(&SCC.Chn[c].BaudRate_BRG, sizeof(SCC.Chn[c].BaudRate_BRG));
 		MemorySnapShot_Store(&SCC.Chn[c].BaudRate_TX, sizeof(SCC.Chn[c].BaudRate_TX));
 		MemorySnapShot_Store(&SCC.Chn[c].BaudRate_RX, sizeof(SCC.Chn[c].BaudRate_RX));
-		MemorySnapShot_Store(&SCC.Chn[c].RR0_Latched, sizeof(SCC.Chn[c].RR0_Latched));
+		MemorySnapShot_Store(&SCC.Chn[c].RR0_IsLatched, sizeof(SCC.Chn[c].RR0_IsLatched));
 		MemorySnapShot_Store(&SCC.Chn[c].RR0_No_Latch, sizeof(SCC.Chn[c].RR0_No_Latch));
 		MemorySnapShot_Store(&SCC.Chn[c].TX_Buffer_Written, sizeof(SCC.Chn[c].TX_Buffer_Written));
 		MemorySnapShot_Store(&SCC.Chn[c].TX_bits, sizeof(SCC.Chn[c].TX_bits));
@@ -511,10 +507,8 @@ void SCC_MemorySnapShot_Capture(bool bSave)
 		MemorySnapShot_Store(&SCC.Chn[c].Parity_bits, sizeof(SCC.Chn[c].Parity_bits));
 		MemorySnapShot_Store(&SCC.Chn[c].Stop_bits, sizeof(SCC.Chn[c].Stop_bits));
 		MemorySnapShot_Store(&SCC.Chn[c].TSR, sizeof(SCC.Chn[c].TSR));
+		MemorySnapShot_Store(&SCC.Chn[c].TSR_Full, sizeof(SCC.Chn[c].TSR_Full));
 		MemorySnapShot_Store(&SCC.Chn[c].IntSources, sizeof(SCC.Chn[c].IntSources));
-		MemorySnapShot_Store(&SCC.Chn[c].charcount, sizeof(SCC.Chn[c].charcount));
-		MemorySnapShot_Store(&SCC.Chn[c].oldTBE, sizeof(SCC.Chn[c].oldTBE));
-		MemorySnapShot_Store(&SCC.Chn[c].oldStatus, sizeof(SCC.Chn[c].oldStatus));
 	}
 
 	MemorySnapShot_Store(&SCC.IRQ_Line, sizeof(SCC.IRQ_Line));
@@ -533,7 +527,7 @@ static void SCC_ResetChannel ( int Channel , bool HW_Reset )
 	SCC.Chn[Channel].WR[4] |= 0x04;			/* set bit 2, keep others */
 	SCC.Chn[Channel].WR[5] &= 0x61;			/* keep bits 0,5 and 6, clear others */
 	SCC.Chn[Channel].WR[15] = 0xf8;
-	SCC.Chn[Channel].WR[16] = 0x20;			/* WR7' set bit5, clear others */
+	SCC.Chn[Channel].WR7p = 0x20;			/* WR7' set bit5, clear others */
 
 	if ( HW_Reset )
 	{
@@ -561,7 +555,7 @@ static void SCC_ResetChannel ( int Channel , bool HW_Reset )
 	SCC.Chn[Channel].RR[0] &= 0xb8;			/* keep bits 3,4 and 5, clear others */
 	SCC.Chn[Channel].RR[0] |= 0x44;			/* set bits 2 and 6 */
 	SCC.Chn[Channel].RR0_No_Latch = SCC.Chn[Channel].RR[0];
-	SCC.Chn[Channel].RR0_Latched = false;		/* no pending int sources */
+	SCC.Chn[Channel].RR0_IsLatched = false;		/* no pending int sources */
 	SCC.Chn[Channel].RR[1] &= 0x01;			/* keep bits 0, clear others */
 	SCC.Chn[Channel].RR[1] |= 0x06;			/* set bits 1 and 2 */
 	SCC.Chn[Channel].RR[3] = 0x00;
@@ -607,7 +601,6 @@ void SCC_Reset(void)
 
 	SCC_ResetFull ( true );
 
-	SCC.Chn[0].charcount = SCC.Chn[1].charcount = 0;
 }
 
 
@@ -742,32 +735,6 @@ static void SCC_Serial_Set_BaudRate ( int Channel, int value )
 #endif
 }
 
-#if 0
-static uint16_t SCC_getTBE(int chn)
-{
-	uint16_t value = 0;
-
-#if defined(HAVE_SYS_IOCTL_H) && defined(TIOCSERGETLSR) && defined(TIOCSER_TEMT)
-	int status = 0;
-	if (ioctl(SCC.Chn[chn].wr_handle, TIOCSERGETLSR, &status) < 0)  // OK with ttyS0, not OK with ttyUSB0
-	{
-		// D(bug("SCC: Can't get LSR"));
-		value |= (1<<TBE);   // only for serial USB
-	}
-	else if (status & TIOCSER_TEMT)
-	{
-		value = (1 << TBE);  // this is a real TBE for ttyS0
-		if ((SCC.Chn[chn].oldTBE & (1 << TBE)) == 0)
-		{
-			value |= 0x200;
-		} // TBE rise=>TxIP (based on real TBE)
-	}
-#endif
-
-	SCC.Chn[chn].oldTBE = value;
-	return value;
-}
-#endif
 
 
 static uint16_t SCC_Serial_Get_CTS ( int Channel )
@@ -824,77 +791,6 @@ static uint16_t SCC_Serial_Get_DCD ( int Channel )
 }
 
 
-#if 0
-/* Return value of RR0 bits 0, 2 and 5 in lower byte */
-static uint16_t SCC_serial_getStatus(int chn)
-{
-	uint16_t value = 0;
-	uint16_t diff;
-
-#if defined(HAVE_SYS_IOCTL_H) && defined(FIONREAD)
-	if (SCC.Chn[chn].rd_handle >= 0)
-	{
-		int nbchar = 0;
-
-		if (ioctl(SCC.Chn[chn].rd_handle, FIONREAD, &nbchar) < 0)
-		{
-			Log_Printf(LOG_DEBUG, "SCC: Can't get input fifo count\n");
-		}
-		SCC.Chn[chn].charcount = nbchar; // to optimize input (see UGLY in handleWrite)
-		if (nbchar > 0)
-			value = 0x0400 + SCC_RR0_BIT_RX_CHAR_AVAILABLE;  // RxIC+RBF
-	}
-#endif
-	if (SCC.Chn[chn].wr_handle >= 0 && SCC.Chn[chn].bFileHandleIsATTY)
-	{
-		value |= SCC_getTBE(chn); // TxIC
-// TODO NP : remove next line ?
-		value |= SCC_RR0_BIT_TX_BUFFER_EMPTY;  // fake TBE to optimize output (for ttyS0)
-#if defined(HAVE_SYS_IOCTL_H) && defined(TIOCMGET)
-		int status = 0;
-		if (ioctl(SCC.Chn[chn].wr_handle, TIOCMGET, &status) < 0)
-		{
-			Log_Printf(LOG_DEBUG, "SCC: Can't get status\n");
-		}
-		if (status & TIOCM_CTS)
-			value |= SCC_RR0_BIT_CTS;
-#endif
-	}
-
-	if (SCC.Chn[chn].wr_handle >= 0 && !SCC.Chn[chn].bFileHandleIsATTY)
-	{
-		/* Output is a normal file, thus always set Clear-To-Send
-		 * and Transmit-Buffer-Empty: */
-		value |= SCC_RR0_BIT_CTS | SCC_RR0_BIT_TX_BUFFER_EMPTY;
-	}
-	else if (SCC.Chn[chn].wr_handle < 0)
-	{
-		/* If not connected, signal transmit-buffer-empty anyway to
-		 * avoid that the program blocks while polling this bit */
-		value |= SCC_RR0_BIT_TX_BUFFER_EMPTY;
-	}
-
-#if 0
-	if ( value & SCC_RR0_BIT_TX_BUFFER_EMPTY )
-		SCC_IntSources_Set ( chn , SCC_INT_SOURCE_TX_BUFFER_EMPTY );
-	else
-		SCC_IntSources_Clear ( chn , SCC_INT_SOURCE_TX_BUFFER_EMPTY );
-#endif
-	if ( value & SCC_RR0_BIT_CTS )
-		SCC_IntSources_Set ( chn , SCC_INT_SOURCE_EXT_CTS );
-	else
-		SCC_IntSources_Clear ( chn , SCC_INT_SOURCE_EXT_CTS );
-
-	diff = SCC.Chn[chn].oldStatus ^ value;
-	if (diff & (1 << CTS))
-		value |= 0x100;  // ext status IC on CTS change
-
-	LOG_TRACE(TRACE_SCC, "SCC: getStatus(%d) => 0x%04x\n", chn, value);
-
-	SCC.Chn[chn].oldStatus = value;
-	return value;
-}
-#endif
 
 static void SCC_serial_setRTS(int chn, uint8_t value)
 {
@@ -1278,7 +1174,7 @@ static void	SCC_Update_RR0 ( int Channel )
 
 //fprintf ( stderr , "update rr0 %c in=$%02x wr15=$%02x pc=%x\n" , 'A'+Channel , SCC.Chn[Channel].RR[0] , SCC.Chn[Channel].WR[15] , M68000_GetPC() );
 
-	if ( !SCC.Chn[ Channel ].RR0_Latched )
+	if ( !SCC.Chn[ Channel ].RR0_IsLatched )
 	{
 		/* Use all "non latched" bits for RR0 */
 		RR0_New = SCC.Chn[ Channel ].RR0_No_Latch;
@@ -1376,7 +1272,7 @@ static void	SCC_Update_RR0 ( int Channel )
 
 		if ( Set_RR3 )
 		{
-			SCC.Chn[ Channel ].RR0_Latched = true;		/* Latch bits in RR0 */
+			SCC.Chn[ Channel ].RR0_IsLatched = true;	/* Latch bits in RR0 */
 
 			if ( Channel )
 				SCC_Update_RR3_Bit ( 1 , SCC_RR3_BIT_EXT_STATUS_IP_B );
@@ -1400,7 +1296,7 @@ static void	SCC_Update_RR0_Set ( int Channel , int bits )
 
 static void	SCC_Update_RR0_Latch_Off ( int Channel )
 {
-	SCC.Chn[ Channel ].RR0_Latched = false;
+	SCC.Chn[ Channel ].RR0_IsLatched = false;
 	SCC_Update_RR0 ( Channel );
 }
 
@@ -1662,7 +1558,6 @@ static uint8_t SCC_handleRead(uint32_t addr)
 static void SCC_WriteDataReg(int chn, uint8_t value)
 {
 	SCC.Chn[chn].WR[8] = value;
-	SCC.Chn[chn].TxBuf_Write_Time = Cycles_GetClockCounterOnWriteAccess();
 //fprintf(stderr , "scc write_data_reg1 rr0_nolatch=%x rr0=%x written=%d rr1=%x\n" , SCC.Chn[chn].RR0_No_Latch , SCC.Chn[chn].RR[0] , SCC.Chn[ chn ].TX_Buffer_Written , SCC.Chn[chn].RR[1] );
 
 	/* According to the SCC doc, transmit buffer will be copied to the */
@@ -1692,7 +1587,6 @@ static void SCC_WriteDataReg(int chn, uint8_t value)
 static void SCC_WriteControl(int chn, uint8_t value)
 {
 	int i;
-	int write_reg;
 	uint8_t command;
 	uint8_t bits;
 
@@ -1776,13 +1670,11 @@ static void SCC_WriteControl(int chn, uint8_t value)
 
 	LOG_TRACE(TRACE_SCC, "scc write channel=%c WR%d value=$%02x\n" , 'A'+chn , SCC.Active_Reg , value );
 
-	/* write_reg can be different from Active_Reg when accessing WR7' */
-	write_reg = SCC.Active_Reg;
-	if ( SCC.Chn[chn].WR[15] & 1 )
-	{
-		write_reg = 16;			/* WR[16] stores the content of WR7' */
-	}
-	SCC.Chn[chn].WR[write_reg] = value;
+	/* Special case for WR7' (Active_Reg=7 and WR15 bit0=1) */
+	if ( ( SCC.Active_Reg == 7 ) && ( SCC.Chn[chn].WR[15] & 1 ) )
+		SCC.Chn[chn].WR7p = value;
+	else
+		SCC.Chn[chn].WR[SCC.Active_Reg] = value;
 
 
 	if (SCC.Active_Reg == 1)		 // Tx/Rx interrupt enable
@@ -1996,7 +1888,7 @@ static void	SCC_Copy_TDR_TSR ( int Channel , uint8_t TDR )
 
 static void	SCC_Process_TX ( int Channel )
 {
-//fprintf(stderr , "scc process1 tx rr0_nolatch=%x rr0=%x latched=%d rr1=%x\n" , SCC.Chn[Channel].RR0_No_Latch , SCC.Chn[Channel].RR[0] , SCC.Chn[ Channel ].RR0_Latched , SCC.Chn[Channel].RR[1] );
+//fprintf(stderr , "scc process1 tx rr0_nolatch=%x rr0=%x latched=%d rr1=%x\n" , SCC.Chn[Channel].RR0_No_Latch , SCC.Chn[Channel].RR[0] , SCC.Chn[ Channel ].RR0_IsLatched , SCC.Chn[Channel].RR[1] );
 
 	/* If no new byte was written to the tx buffer and TSR is empty then we have an underrun */
 	/* Don't do anything in that case, TxD pin will remain in its latest 'stop bit' state */
@@ -2017,7 +1909,7 @@ static void	SCC_Process_TX ( int Channel )
 	/* Prepare TSR for the next call if TX buffer is not empty */
 	if ( ( SCC.Chn[Channel].RR[0] & SCC_RR0_BIT_TX_BUFFER_EMPTY ) == 0 )
 		SCC_Copy_TDR_TSR ( Channel , SCC.Chn[Channel].WR[8] );
-//fprintf(stderr , "scc process2 tx rr0_nolatch=%x rr0=%x latched=%d rr1=%x\n" , SCC.Chn[Channel].RR0_No_Latch , SCC.Chn[Channel].RR[0] , SCC.Chn[ Channel ].RR0_Latched , SCC.Chn[Channel].RR[1] );
+//fprintf(stderr , "scc process2 tx rr0_nolatch=%x rr0=%x latched=%d rr1=%x\n" , SCC.Chn[Channel].RR0_No_Latch , SCC.Chn[Channel].RR[0] , SCC.Chn[ Channel ].RR0_IsLatched , SCC.Chn[Channel].RR[1] );
 }
 
 
@@ -2497,7 +2389,7 @@ void SCC_Info(FILE *fp, uint32_t dummy)
 	unsigned int i, reg;
 
 	fprintf(fp, "SCC common:\n");
-	fprintf(fp, "- IRQ_Line: %02x\n", SCC.IRQ_Line);
+	fprintf(fp, "- IRQ_Line: %d (%s)\n", SCC.IRQ_Line , SCC.IRQ_Line==SCC_IRQ_ON ? "ON" : "OFF" );
 	fprintf(fp, "- IUS: %02x\n", SCC.IUS);
 	fprintf(fp, "- Active register: %d\n", SCC.Active_Reg);
 
@@ -2507,16 +2399,13 @@ void SCC_Info(FILE *fp, uint32_t dummy)
 		fprintf(fp, "- Write Registers:\n");
 		for (reg = 0; reg < ARRAY_SIZE(SCC.Chn[i].WR); reg++)
 			fprintf(fp, "  %02x", SCC.Chn[i].WR[reg]);
-		fprintf(fp, "\n");
+		fprintf(fp, "  WR7'=%02x\n" , SCC.Chn[i].WR7p );
 
 		fprintf(fp, "- Read Registers:\n");
 		for (reg = 0; reg < ARRAY_SIZE(SCC.Chn[i].RR); reg++)
 			fprintf(fp, "  %02x", SCC.Chn[i].RR[reg]);
 		fprintf(fp, "\n");
 
-		fprintf(fp, "- Char count: %d\n", SCC.Chn[i].charcount);
-		fprintf(fp, "- Old status: 0x%04x\n", SCC.Chn[i].oldStatus);
-		fprintf(fp, "- Old TBE:    0x%04x\n", SCC.Chn[i].oldTBE);
-		fprintf(fp, "- %s TTY\n", SCC.Chn[i].bFileHandleIsATTY ? "A" : "Not a");
+		fprintf(fp, "- Device's file is %s TTY\n", SCC.Chn[i].bFileHandleIsATTY ? "a" : "not a");
 	}
 }
