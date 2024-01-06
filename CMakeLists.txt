@@ -105,7 +105,7 @@ else()
 	    CACHE BOOL "Built Hatari as macOS application bundle")
 endif(APPLE)
 
-if(ENABLE_OSX_BUNDLE OR WIN32)
+if(ENABLE_OSX_BUNDLE)
 	set(APP_NAME "Hatari")
 else()
 	set(APP_NAME "hatari")
