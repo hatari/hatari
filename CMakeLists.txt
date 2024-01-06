@@ -109,7 +109,7 @@ if(ENABLE_OSX_BUNDLE)
 	set(APP_NAME "Hatari")
 else()
 	set(APP_NAME "hatari")
-endif(ENABLE_OSX_BUNDLE OR WIN32)
+endif(ENABLE_OSX_BUNDLE)
 
 # ####################
 # Check for libraries:
