@@ -124,10 +124,8 @@ enum {
 #endif
 	OPT_RS232_IN,
 	OPT_RS232_OUT,
-	OPT_SCCA,
 	OPT_SCCA_IN,
 	OPT_SCCA_OUT,
-	OPT_SCCB,
 	OPT_SCCB_IN,
 	OPT_SCCB_OUT,
 
@@ -354,14 +352,10 @@ static const opt_t HatariOptions[] = {
 	  "<file>", "Enable serial port and use <file> as the input device" },
 	{ OPT_RS232_OUT, NULL, "--rs232-out",
 	  "<file>", "Enable serial port and use <file> as the output device" },
-	{ OPT_SCCA, NULL, "--scc-a",
-	  "<file>", "Enable SCC channel A and use <file> as the device" },
 	{ OPT_SCCA_IN, NULL, "--scc-a-in",
 	  "<file>", "Enable SCC channel A and use <file> as the input" },
 	{ OPT_SCCA_OUT, NULL, "--scc-a-out",
 	  "<file>", "Enable SCC channel A and use <file> as the output" },
-	{ OPT_SCCB, NULL, "--scc-b",
-	  "<file>", "Enable SCC channel B and use <file> as the device" },
 	{ OPT_SCCB_IN, NULL, "--scc-b-in",
 	  "<file>", "Enable SCC channel B and use <file> as the input" },
 	{ OPT_SCCB_OUT, NULL, "--scc-b-out",
@@ -1462,13 +1456,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 					&ConfigureParams.RS232.bEnableRS232);
 			break;
 
-		case OPT_SCCA:
-			i += 1;
-			ok = Opt_StrCpy(OPT_SCCA, true, ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_A],
-					argv[i], sizeof(ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_A]),
-					&ConfigureParams.RS232.EnableScc[CNF_SCC_CHANNELS_A]);
-			strcpy(ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_A], ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_A]);
-			break;
 		case OPT_SCCA_IN:
 			i += 1;
 			ok = Opt_StrCpy(OPT_SCCA_IN, true, ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_A],
@@ -1480,14 +1467,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			ok = Opt_StrCpy(OPT_SCCB_OUT, false, ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_A],
 					argv[i], sizeof(ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_A]),
 					&ConfigureParams.RS232.EnableScc[CNF_SCC_CHANNELS_A]);
-			break;
-
-		case OPT_SCCB:
-			i += 1;
-			ok = Opt_StrCpy(OPT_SCCB, true, ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_B],
-					argv[i], sizeof(ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_B]),
-					&ConfigureParams.RS232.EnableScc[CNF_SCC_CHANNELS_B]);
-			strcpy(ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_B], ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_B]);
 			break;
 		case OPT_SCCB_IN:
 			i += 1;
