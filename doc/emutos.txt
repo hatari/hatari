@@ -1210,7 +1210,7 @@ Color games:
   http://atari-forum.com/viewtopic.php?f=28&t=29047
 - Sardonic
   http://atari-forum.com/viewtopic.php?f=3&t=38121
-- ScummVM-lite (STE enhanced)
+- ScummST (STE enhanced)
   http://www.happydaze.se/scummvm-lite-atari/
 - Skulls (shareware "minesweeper")
 - Sporny's Wrecking Ball
@@ -1306,6 +1306,8 @@ Working demos:
 - Cube 256 (030 ST-low 256b intro by Thadoss / Dune)
 - CrY image viewer (by .tSCc)
 - Elegant Machinery (by Evolution)
+- Led Blur (by Miro)
+  - Much faster on Falcon/16-bit
 - Mandelbrot explorer (by .tSCc)
 - Monscape (by Escape)
 - TC fish (by .tSCc)
@@ -1337,6 +1339,8 @@ Working games:
 - OpenTTD (start from TT-low with 256MBs of TT-RAM)
 - Oxyd (Falcon version)
 - PM Doom, Heretic & Hexen v0.55 (ports by Patrice Mandin)
+- ScummVM 2.8 (lite build by Miro)
+ - Official upstream version (35 engines, 280+ game variants recognized)
 - The Ultimate Minesweeper (GEM)
 
 Most of above GEM games run even on ST, but only TT (and Falcon) have
@@ -1782,7 +1786,9 @@ Applications working under EmuTOS Git (preliminary TC support):
 - Apex Media v2.41
   - Both the app itself and all viewer TTPs work
 - ScummVm for Falcon + clones
-  - older TC versions from OL & Miro
+  - Older TC-only versions from OL & Miro
+- ScummVM 2.8 (full build by Miro)
+  - Official upstream version (54 engines, 370+ game variants recognized)
 - Centview (GEM image viewer)
   - After showing an image, GUI is not always refreshed
 
