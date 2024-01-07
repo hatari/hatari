@@ -794,6 +794,28 @@ static uint16_t SCC_Serial_Get_DCD ( int Channel )
 
 
 
+/* Send BREAK. If value!=0, set break on. If value=0, set break off */
+static void SCC_serial_Set_BRK(int chn, uint8_t value)
+{
+#if defined(HAVE_SYS_IOCTL_H) && defined(TIOCSBRK)
+	int cmd = 0;
+
+	if (SCC.Chn[chn].wr_handle >= 0 && SCC.Chn[chn].bFileHandleIsATTY)
+	{
+		if ( value )
+			cmd = TIOCSBRK;		/* set break */
+		else
+			cmd = TIOCCBRK;		/* clear break */
+
+		if (ioctl(SCC.Chn[chn].wr_handle, cmd) < 0)
+		{
+			Log_Printf(LOG_DEBUG, "SCC: Can't set BRK=%s errno=%d\n" , value?"ON":"OFF" , errno );
+		}
+	}
+#endif
+}
+
+
 static void SCC_serial_setRTS(int chn, uint8_t value)
 {
 #if defined(HAVE_SYS_IOCTL_H) && defined(TIOCMGET)
@@ -1731,7 +1753,7 @@ static void SCC_WriteControl(int chn, uint8_t value)
 		/* Bit 3 : TX Enable */
 		// -> see SCC_Process_TX
 		/* Bit 4 : Send Break */
-		// TODO : ioctl TIOCSBRK / TIOCCBRK
+		SCC_serial_Set_BRK(chn, value & SCC_WR5_BIT_SEND_BREAK);
 		/* Bit 5-6 : TX Bits/char */
 		bits = ( value >> 6 ) & 3;
 		if ( bits == SCC_WR5_TX_5_BITS )		SCC.Chn[chn].TX_bits = 5;
