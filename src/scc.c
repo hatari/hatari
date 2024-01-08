@@ -257,8 +257,15 @@ struct SCC_Channel {
 
 	uint32_t IntSources;		/* Interrupt sources : 0=clear 1=set */
 
-	int	rd_handle, wr_handle;
-	bool	bFileHandleIsATTY;
+	/* Channel A can have serial and lan filehandles, channel B will have only serial filehandle */
+	int	ReadHandle_Serial , WriteHandle_Serial;	/* For channels A and B on all machines */
+	bool	Handle_Serial_IsATTY;
+	int	ReadHandle_Lan , WriteHandle_Lan;	/* Only used on channel A for MegaSTE/TT */
+	bool	Handle_Lan_IsATTY;
+
+	/* Current values for filehandles */
+	int	ReadHandle , WriteHandle;
+	bool	FileHandle_IsATTY;
 };
 
 typedef struct {
@@ -386,38 +393,37 @@ bool SCC_IsAvailable(CNF_PARAMS *cnf)
 
 
 
-static void SCC_Init_Channel ( int Channel )
+static void SCC_Init_Channel ( int Channel , char *InFileName , char * OutFileName ,
+			       int *pReadHandle , int *pWriteHandle , bool *pIsATTY )
 {
-	SCC.Chn[Channel].rd_handle = SCC.Chn[Channel].wr_handle = -1;
-	SCC.Chn[Channel].bFileHandleIsATTY = false;
+	*pReadHandle = *pWriteHandle = -1;
+	*pIsATTY = false;
 
 	if (!ConfigureParams.RS232.EnableScc[Channel] || !SCC_IsAvailable(&ConfigureParams))
 		return;
 
-	if (ConfigureParams.RS232.SccInFileName[Channel][0] &&
-	    strcmp(ConfigureParams.RS232.SccInFileName[Channel], ConfigureParams.RS232.SccOutFileName[Channel]) == 0)
+	if ( InFileName && strcmp ( InFileName , OutFileName ) == 0 )
 	{
 #if HAVE_TERMIOS_H
-		SCC.Chn[Channel].rd_handle = open(ConfigureParams.RS232.SccInFileName[Channel], O_RDWR | O_NONBLOCK);
-		if (SCC.Chn[Channel].rd_handle >= 0)
+		*pReadHandle = open ( InFileName , O_RDWR | O_NONBLOCK);
+		if ( *pReadHandle >= 0 )
 		{
-			if (isatty(SCC.Chn[Channel].rd_handle))
+			if ( isatty(*pReadHandle) )
 			{
-				SCC.Chn[Channel].wr_handle = SCC.Chn[Channel].rd_handle;
-				SCC.Chn[Channel].bFileHandleIsATTY = true;
+				*pWriteHandle = *pReadHandle;
+				*pIsATTY = true;
 			}
 			else
 			{
 				Log_Printf(LOG_ERROR, "SCC_Init: Setting SCC %c input and output "
 				           "to the same file only works with tty devices.\n" , Channel+'A');
-				close(SCC.Chn[Channel].rd_handle);
-				SCC.Chn[Channel].rd_handle = -1;
+				close ( *pReadHandle );
+				 *pReadHandle = -1;
 			}
 		}
 		else
 		{
-			Log_Printf(LOG_ERROR, "SCC_Init: Can not open device '%s'\n",
-			           ConfigureParams.RS232.SccInFileName[Channel]);
+			Log_Printf(LOG_ERROR, "SCC_Init: Can not open device '%s'\n", InFileName);
 		}
 #else
 		Log_Printf(LOG_ERROR, "SCC_Init: Setting SCC %c input and output "
@@ -426,28 +432,25 @@ static void SCC_Init_Channel ( int Channel )
 	}
 	else
 	{
-		if (ConfigureParams.RS232.SccInFileName[Channel][0])
+		if ( InFileName )
 		{
-			SCC.Chn[Channel].rd_handle = open(ConfigureParams.RS232.SccInFileName[Channel], O_RDONLY | O_NONBLOCK);
-			if (SCC.Chn[Channel].rd_handle < 0)
+			*pReadHandle = open ( InFileName , O_RDONLY | O_NONBLOCK);
+			if ( *pReadHandle < 0)
 			{
-				Log_Printf(LOG_ERROR, "SCC_Init: Can not open input file '%s'\n",
-					   ConfigureParams.RS232.SccInFileName[Channel]);
+				Log_Printf(LOG_ERROR, "SCC_Init: Can not open input file '%s'\n", InFileName);
 			}
 		}
-		if (ConfigureParams.RS232.SccOutFileName[Channel][0])
+		if ( OutFileName )
 		{
-			SCC.Chn[Channel].wr_handle = open(ConfigureParams.RS232.SccOutFileName[Channel],
-						O_CREAT | O_WRONLY | O_NONBLOCK, S_IRUSR | S_IWUSR);
-			if (SCC.Chn[Channel].wr_handle < 0)
+			*pWriteHandle = open ( OutFileName , O_CREAT | O_WRONLY | O_NONBLOCK, S_IRUSR | S_IWUSR);
+			if ( *pWriteHandle < 0 )
 			{
-				Log_Printf(LOG_ERROR, "SCC_Init: Can not open output file '%s'\n",
-					   ConfigureParams.RS232.SccOutFileName[Channel]);
+				Log_Printf(LOG_ERROR, "SCC_Init: Can not open output file '%s'\n", OutFileName);
 			}
 		}
 	}
 
-	if (SCC.Chn[Channel].rd_handle == -1 && SCC.Chn[Channel].wr_handle == -1)
+	if ( *pReadHandle == -1 && *pWriteHandle == -1)
 	{
 		ConfigureParams.RS232.EnableScc[Channel] = false;
 	}
@@ -456,12 +459,19 @@ static void SCC_Init_Channel ( int Channel )
 
 void SCC_Init ( void )
 {
-	int	Channel;
-
 	SCC_Reset();
 
-	for ( Channel = 0; Channel < 2; Channel++ )
-		SCC_Init_Channel ( Channel );
+	/* Init filehandles for channel A */
+	SCC_Init_Channel ( 0 , ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_A] , ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_A] ,
+		&SCC.Chn[0].ReadHandle_Serial , &SCC.Chn[0].WriteHandle_Serial , &SCC.Chn[0].Handle_Serial_IsATTY );
+	SCC.Chn[0].ReadHandle = SCC.Chn[0].ReadHandle_Serial;
+	SCC.Chn[0].WriteHandle = SCC.Chn[0].WriteHandle_Serial;
+
+	/* Init filehandles for channel B */
+	SCC_Init_Channel ( 1 , ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_B] , ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_B] ,
+		&SCC.Chn[1].ReadHandle_Serial , &SCC.Chn[1].WriteHandle_Serial , &SCC.Chn[1].Handle_Serial_IsATTY );
+	SCC.Chn[1].ReadHandle = SCC.Chn[1].ReadHandle_Serial;
+	SCC.Chn[1].WriteHandle = SCC.Chn[1].WriteHandle_Serial;
 }
 
 
@@ -472,21 +482,23 @@ void SCC_UnInit(void)
 
 	for ( Channel = 0; Channel < 2; Channel++ )
 	{
-		if (SCC.Chn[Channel].rd_handle >= 0)
-		{
-			if (SCC.Chn[Channel].wr_handle == SCC.Chn[Channel].rd_handle)
-				SCC.Chn[Channel].wr_handle = -1;
-			close(SCC.Chn[Channel].rd_handle);
-			SCC.Chn[Channel].rd_handle = -1;
-		}
-		if (SCC.Chn[Channel].wr_handle >= 0)
-		{
-			close(SCC.Chn[Channel].wr_handle);
-			SCC.Chn[Channel].wr_handle = -1;
-		}
+		if ( SCC.Chn[Channel].ReadHandle_Serial >= 0 )
+			close(SCC.Chn[Channel].ReadHandle_Serial);
+		if ( ( SCC.Chn[Channel].WriteHandle_Serial != SCC.Chn[Channel].ReadHandle_Serial )
+		  && ( SCC.Chn[Channel].WriteHandle_Serial >= 0 ) )
+			close(SCC.Chn[Channel].WriteHandle_Serial);
+
+		if ( SCC.Chn[Channel].ReadHandle_Lan >= 0 )
+			close(SCC.Chn[Channel].ReadHandle_Lan);
+		if ( ( SCC.Chn[Channel].WriteHandle_Lan != SCC.Chn[Channel].ReadHandle_Lan )
+		  && ( SCC.Chn[Channel].WriteHandle_Lan >= 0 ) )
+			close(SCC.Chn[Channel].WriteHandle_Lan);
+
+		SCC.Chn[Channel].ReadHandle_Serial = SCC.Chn[Channel].WriteHandle_Serial = -1;
+		SCC.Chn[Channel].ReadHandle_Lan = SCC.Chn[Channel].WriteHandle_Lan = -1;
+		SCC.Chn[Channel].ReadHandle = SCC.Chn[Channel].WriteHandle = -1;
 	}
 }
-
 
 
 void SCC_MemorySnapShot_Capture(bool bSave)
@@ -610,9 +622,9 @@ static bool SCC_Serial_Read_Byte ( int Channel , uint8_t *pValue )
 {
 	int nb;
 
-	if (SCC.Chn[Channel].rd_handle >= 0)
+	if ( SCC.Chn[Channel].ReadHandle >= 0 )
 	{
-		nb = read(SCC.Chn[Channel].rd_handle, pValue, 1);
+		nb = read ( SCC.Chn[Channel].ReadHandle , pValue , 1 );
 		if (nb < 0)
 		{
 			if (errno == EAGAIN || errno == EINTR)	/* nothing yet, retry later */
@@ -639,11 +651,11 @@ static void SCC_Serial_Write_Byte ( int Channel, uint8_t value )
 
 	LOG_TRACE(TRACE_SCC, "scc serial write byte channel=%c value=$%02x\n", 'A'+Channel, value);
 
-	if (SCC.Chn[Channel].wr_handle >= 0)
+	if ( SCC.Chn[Channel].WriteHandle >= 0 )
 	{
 		do
 		{
-			nb = write(SCC.Chn[Channel].wr_handle, &value, 1);
+			nb = write ( SCC.Chn[Channel].WriteHandle , &value , 1 );
 		} while (nb < 0 && (errno == EAGAIN || errno == EINTR));
 	}
 }
@@ -731,9 +743,9 @@ static void SCC_Serial_Set_BaudRate ( int Channel, int value )
 	if (new_speed == B0)
 		return;
 
-	SCC_Serial_Set_BaudAttr(SCC.Chn[Channel].rd_handle, new_speed);
-	if (SCC.Chn[Channel].rd_handle != SCC.Chn[Channel].wr_handle)
-		SCC_Serial_Set_BaudAttr(SCC.Chn[Channel].wr_handle, new_speed);
+	SCC_Serial_Set_BaudAttr ( SCC.Chn[Channel].ReadHandle, new_speed );
+	if ( SCC.Chn[Channel].ReadHandle != SCC.Chn[Channel].WriteHandle )
+		SCC_Serial_Set_BaudAttr ( SCC.Chn[Channel].WriteHandle , new_speed );
 #endif
 }
 
@@ -746,15 +758,14 @@ static uint16_t SCC_Serial_Get_CTS ( int Channel )
 
 #if defined(HAVE_SYS_IOCTL_H) && defined(TIOCMGET)
 	int	status = 0;
-	if (SCC.Chn[Channel].wr_handle >= 0 && SCC.Chn[Channel].bFileHandleIsATTY)
+	if ( SCC.Chn[Channel].WriteHandle >= 0 && SCC.Chn[Channel].FileHandle_IsATTY )
 	{
-		if (ioctl(SCC.Chn[Channel].wr_handle, TIOCMGET, &status) < 0)
+		if ( ioctl ( SCC.Chn[Channel].WriteHandle , TIOCMGET , &status ) < 0 )
 		{
 			Log_Printf(LOG_DEBUG, "SCC: Can't get status for CTS errno=%d\n", errno);
 		}
 		else
 		{
-	Log_Printf(LOG_DEBUG, "SCC: get status for CTS %d %x\n" , Channel , status);
 			if ( status & TIOCM_CTS )
 				cts = 1;
 			else
@@ -773,15 +784,14 @@ static uint16_t SCC_Serial_Get_DCD ( int Channel )
 
 	#if defined(HAVE_SYS_IOCTL_H) && defined(TIOCMGET)
 	int	status = 0;
-	if (SCC.Chn[Channel].wr_handle >= 0 && SCC.Chn[Channel].bFileHandleIsATTY)
+	if ( SCC.Chn[Channel].WriteHandle >= 0 && SCC.Chn[Channel].FileHandle_IsATTY )
 	{
-		if (ioctl(SCC.Chn[Channel].wr_handle, TIOCMGET, &status) < 0)
+		if ( ioctl ( SCC.Chn[Channel].WriteHandle , TIOCMGET , &status ) < 0 )
 		{
 			Log_Printf(LOG_DEBUG, "SCC: Can't get status for DCD errno=%d\n" , errno);
 		}
 		else
 		{
-	Log_Printf(LOG_DEBUG, "SCC: get status for DCD %d %x\n" , Channel , status);
 			if ( status & TIOCM_CAR )
 				dcd = 1;
 			else
@@ -800,14 +810,14 @@ static void SCC_serial_Set_BRK(int chn, uint8_t value)
 #if defined(HAVE_SYS_IOCTL_H) && defined(TIOCSBRK)
 	int cmd = 0;
 
-	if (SCC.Chn[chn].wr_handle >= 0 && SCC.Chn[chn].bFileHandleIsATTY)
+	if ( SCC.Chn[chn].WriteHandle >= 0 && SCC.Chn[chn].FileHandle_IsATTY )
 	{
 		if ( value )
 			cmd = TIOCSBRK;		/* set break */
 		else
 			cmd = TIOCCBRK;		/* clear break */
 
-		if (ioctl(SCC.Chn[chn].wr_handle, cmd) < 0)
+		if ( ioctl ( SCC.Chn[chn].WriteHandle , cmd) < 0)
 		{
 			Log_Printf(LOG_DEBUG, "SCC: Can't set BRK=%s errno=%d\n" , value?"ON":"OFF" , errno );
 		}
@@ -821,9 +831,9 @@ static void SCC_serial_setRTS(int chn, uint8_t value)
 #if defined(HAVE_SYS_IOCTL_H) && defined(TIOCMGET)
 	int status = 0;
 
-	if (SCC.Chn[chn].wr_handle >= 0 && SCC.Chn[chn].bFileHandleIsATTY)
+	if ( SCC.Chn[chn].WriteHandle >= 0 && SCC.Chn[chn].FileHandle_IsATTY)
 	{
-		if (ioctl(SCC.Chn[chn].wr_handle, TIOCMGET, &status) < 0)
+		if ( ioctl ( SCC.Chn[chn].WriteHandle , TIOCMGET , &status ) < 0 )
 		{
 			Log_Printf(LOG_DEBUG, "SCC: Can't get status for RTS\n");
 		}
@@ -831,7 +841,7 @@ static void SCC_serial_setRTS(int chn, uint8_t value)
 			status |= TIOCM_RTS;
 		else
 			status &= ~TIOCM_RTS;
-		ioctl(SCC.Chn[chn].wr_handle, TIOCMSET, &status);
+		ioctl ( SCC.Chn[chn].WriteHandle , TIOCMSET , &status );
 	}
 #endif
 }
@@ -841,9 +851,9 @@ static void SCC_serial_setDTR(int chn, uint8_t value)
 #if defined(HAVE_SYS_IOCTL_H) && defined(TIOCMGET)
 	int status = 0;
 
-	if (SCC.Chn[chn].wr_handle >= 0 && SCC.Chn[chn].bFileHandleIsATTY)
+	if ( SCC.Chn[chn].WriteHandle >= 0 && SCC.Chn[chn].FileHandle_IsATTY )
 	{
-		if (ioctl(SCC.Chn[chn].wr_handle, TIOCMGET, &status) < 0)
+		if ( ioctl ( SCC.Chn[chn].WriteHandle , TIOCMGET , &status ) < 0 )
 		{
 			Log_Printf(LOG_DEBUG, "SCC: Can't get status for DTR\n");
 		}
@@ -851,7 +861,7 @@ static void SCC_serial_setDTR(int chn, uint8_t value)
 			status |= TIOCM_DTR;
 		else
 			status &= ~TIOCM_DTR;
-		ioctl(SCC.Chn[chn].wr_handle, TIOCMSET, &status);
+		ioctl ( SCC.Chn[chn].WriteHandle , TIOCMSET , &status );
 	}
 #endif
 }
@@ -2430,6 +2440,6 @@ void SCC_Info(FILE *fp, uint32_t dummy)
 			fprintf(fp, "  %02x", SCC.Chn[i].RR[reg]);
 		fprintf(fp, "\n");
 
-		fprintf(fp, "- Device's file is %s TTY\n", SCC.Chn[i].bFileHandleIsATTY ? "a" : "not a");
+		fprintf(fp, "- Device's file is %s TTY\n", SCC.Chn[i].FileHandle_IsATTY ? "a" : "not a");
 	}
 }
