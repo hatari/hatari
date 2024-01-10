@@ -235,9 +235,12 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	}
 
 	/* Did set new SCC parameters? */
-	if (changed->RS232.EnableScc[CNF_SCC_CHANNELS_A] != current->RS232.EnableScc[CNF_SCC_CHANNELS_A]
-	    || strcmp(changed->RS232.SccInFileName[CNF_SCC_CHANNELS_A], current->RS232.SccInFileName[CNF_SCC_CHANNELS_A])
-	    || strcmp(changed->RS232.SccOutFileName[CNF_SCC_CHANNELS_A], current->RS232.SccOutFileName[CNF_SCC_CHANNELS_A])
+	if (changed->RS232.EnableScc[CNF_SCC_CHANNELS_A_SERIAL] != current->RS232.EnableScc[CNF_SCC_CHANNELS_A_SERIAL]
+	    || strcmp(changed->RS232.SccInFileName[CNF_SCC_CHANNELS_A_SERIAL], current->RS232.SccInFileName[CNF_SCC_CHANNELS_A_SERIAL])
+	    || strcmp(changed->RS232.SccOutFileName[CNF_SCC_CHANNELS_A_SERIAL], current->RS232.SccOutFileName[CNF_SCC_CHANNELS_A_SERIAL])
+	    || changed->RS232.EnableScc[CNF_SCC_CHANNELS_A_LAN] != current->RS232.EnableScc[CNF_SCC_CHANNELS_A_LAN]
+	    || strcmp(changed->RS232.SccInFileName[CNF_SCC_CHANNELS_A_LAN], current->RS232.SccInFileName[CNF_SCC_CHANNELS_A_LAN])
+	    || strcmp(changed->RS232.SccOutFileName[CNF_SCC_CHANNELS_A_LAN], current->RS232.SccOutFileName[CNF_SCC_CHANNELS_A_LAN])
 	    || changed->RS232.EnableScc[CNF_SCC_CHANNELS_B] != current->RS232.EnableScc[CNF_SCC_CHANNELS_B]
 	    || strcmp(changed->RS232.SccInFileName[CNF_SCC_CHANNELS_B], current->RS232.SccInFileName[CNF_SCC_CHANNELS_B])
 	    || strcmp(changed->RS232.SccOutFileName[CNF_SCC_CHANNELS_B], current->RS232.SccOutFileName[CNF_SCC_CHANNELS_B])
@@ -461,7 +464,7 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	}
 
 	/* Re-initialize the SCC emulation: */
-	if ( ConfigureParams.RS232.EnableScc[CNF_SCC_CHANNELS_A] || ConfigureParams.RS232.EnableScc[CNF_SCC_CHANNELS_B] )
+	if ( ConfigureParams.RS232.EnableScc[CNF_SCC_CHANNELS_A_SERIAL] || ConfigureParams.RS232.EnableScc[CNF_SCC_CHANNELS_A_LAN] || ConfigureParams.RS232.EnableScc[CNF_SCC_CHANNELS_B] )
 	{
 		Dprintf("- SCC<\n");
 		SCC_Init();

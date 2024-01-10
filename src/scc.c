@@ -259,9 +259,9 @@ struct SCC_Channel {
 
 	/* Channel A can have serial and lan filehandles, channel B will have only serial filehandle */
 	int	ReadHandle_Serial , WriteHandle_Serial;	/* For channels A and B on all machines */
-	bool	Handle_Serial_IsATTY;
+	bool	FileHandle_Serial_IsATTY;
 	int	ReadHandle_Lan , WriteHandle_Lan;	/* Only used on channel A for MegaSTE/TT */
-	bool	Handle_Lan_IsATTY;
+	bool	FileHandle_Lan_IsATTY;
 
 	/* Current values for filehandles */
 	int	ReadHandle , WriteHandle;
@@ -383,7 +383,6 @@ static void	SCC_Soft_IACK ( void );
  * Return true if the current machine has a built-in SCC chip.
  * Else return false.
  */
-
 bool SCC_IsAvailable(CNF_PARAMS *cnf)
 {
 	return ConfigureParams.System.nMachineType == MACHINE_MEGA_STE
@@ -393,13 +392,13 @@ bool SCC_IsAvailable(CNF_PARAMS *cnf)
 
 
 
-static void SCC_Init_Channel ( int Channel , char *InFileName , char * OutFileName ,
+static void SCC_Init_Channel ( int Channel , bool *pConfEnableScc , char *InFileName , char *OutFileName ,
 			       int *pReadHandle , int *pWriteHandle , bool *pIsATTY )
 {
 	*pReadHandle = *pWriteHandle = -1;
 	*pIsATTY = false;
 
-	if (!ConfigureParams.RS232.EnableScc[Channel] || !SCC_IsAvailable(&ConfigureParams))
+	if (!*pConfEnableScc || !SCC_IsAvailable(&ConfigureParams))
 		return;
 
 	if ( InFileName && strcmp ( InFileName , OutFileName ) == 0 )
@@ -452,7 +451,7 @@ static void SCC_Init_Channel ( int Channel , char *InFileName , char * OutFileNa
 
 	if ( *pReadHandle == -1 && *pWriteHandle == -1)
 	{
-		ConfigureParams.RS232.EnableScc[Channel] = false;
+		*pConfEnableScc = false;
 	}
 }
 
@@ -461,17 +460,28 @@ void SCC_Init ( void )
 {
 	SCC_Reset();
 
-	/* Init filehandles for channel A */
-	SCC_Init_Channel ( 0 , ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_A] , ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_A] ,
-		&SCC.Chn[0].ReadHandle_Serial , &SCC.Chn[0].WriteHandle_Serial , &SCC.Chn[0].Handle_Serial_IsATTY );
+	/* Init filehandles for channel A Serial */
+	SCC_Init_Channel ( 0 , &ConfigureParams.RS232.EnableScc[CNF_SCC_CHANNELS_A_SERIAL] ,
+		ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_A_SERIAL] , ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_A_SERIAL] ,
+		&SCC.Chn[0].ReadHandle_Serial , &SCC.Chn[0].WriteHandle_Serial , &SCC.Chn[0].FileHandle_Serial_IsATTY );
+
+	/* Init filehandles for channel A LAN */
+	SCC_Init_Channel ( 0 , &ConfigureParams.RS232.EnableScc[CNF_SCC_CHANNELS_A_LAN] ,
+		ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_A_LAN] , ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_A_LAN] ,
+		&SCC.Chn[0].ReadHandle_Lan , &SCC.Chn[0].WriteHandle_Lan , &SCC.Chn[0].FileHandle_Lan_IsATTY );
+
+	/* Default to serial on channel A */
 	SCC.Chn[0].ReadHandle = SCC.Chn[0].ReadHandle_Serial;
 	SCC.Chn[0].WriteHandle = SCC.Chn[0].WriteHandle_Serial;
+	SCC.Chn[0].FileHandle_IsATTY = SCC.Chn[0].FileHandle_Serial_IsATTY;
 
 	/* Init filehandles for channel B */
-	SCC_Init_Channel ( 1 , ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_B] , ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_B] ,
-		&SCC.Chn[1].ReadHandle_Serial , &SCC.Chn[1].WriteHandle_Serial , &SCC.Chn[1].Handle_Serial_IsATTY );
+	SCC_Init_Channel ( 1 , &ConfigureParams.RS232.EnableScc[CNF_SCC_CHANNELS_B] ,
+		ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_B] , ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_B] ,
+		&SCC.Chn[1].ReadHandle_Serial , &SCC.Chn[1].WriteHandle_Serial , &SCC.Chn[1].FileHandle_Serial_IsATTY );
 	SCC.Chn[1].ReadHandle = SCC.Chn[1].ReadHandle_Serial;
 	SCC.Chn[1].WriteHandle = SCC.Chn[1].WriteHandle_Serial;
+	SCC.Chn[1].FileHandle_IsATTY = SCC.Chn[1].FileHandle_Serial_IsATTY;
 }
 
 

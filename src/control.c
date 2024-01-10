@@ -180,7 +180,8 @@ static bool Control_DeviceAction(const char *name, action_t action)
 	} item[] = {
 		{ "printer", &ConfigureParams.Printer.bEnablePrinting, Printer_Init, Printer_UnInit, NULL },
 		{ "rs232",   &ConfigureParams.RS232.bEnableRS232, RS232_Init, RS232_UnInit, NULL },
-		{ "scca",    &ConfigureParams.RS232.EnableScc[CNF_SCC_CHANNELS_A], SCC_Init, SCC_UnInit, NULL },
+		{ "scca",    &ConfigureParams.RS232.EnableScc[CNF_SCC_CHANNELS_A_SERIAL], SCC_Init, SCC_UnInit, NULL },
+		{ "sccalan", &ConfigureParams.RS232.EnableScc[CNF_SCC_CHANNELS_A_LAN], SCC_Init, SCC_UnInit, NULL },
 		{ "sccb",    &ConfigureParams.RS232.EnableScc[CNF_SCC_CHANNELS_B], SCC_Init, SCC_UnInit, NULL },
 		{ "midi",    &ConfigureParams.Midi.bEnableMidi, Midi_Init, Midi_UnInit, Midi_Reset },
 		{ NULL, NULL, NULL, NULL }
@@ -243,8 +244,10 @@ static bool Control_SetPath(char *name)
 		{ "soundout", ConfigureParams.Sound.szYMCaptureFileName },
 		{ "rs232in",  ConfigureParams.RS232.szInFileName },
 		{ "rs232out", ConfigureParams.RS232.szOutFileName },
-		{ "sccain",   ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_A] },
-		{ "sccaout",  ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_A] },
+		{ "sccain",   ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_A_SERIAL] },
+		{ "sccaout",  ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_A_SERIAL] },
+		{ "sccalanin",ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_A_LAN] },
+		{ "sccalanout",ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_A_LAN] },
 		{ "sccbin",   ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_B] },
 		{ "sccbout",  ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_B] },
 		{ NULL, NULL }

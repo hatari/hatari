@@ -126,6 +126,8 @@ enum {
 	OPT_RS232_OUT,
 	OPT_SCCA_IN,
 	OPT_SCCA_OUT,
+	OPT_SCCA_LAN_IN,
+	OPT_SCCA_LAN_OUT,
 	OPT_SCCB_IN,
 	OPT_SCCB_OUT,
 
@@ -356,6 +358,10 @@ static const opt_t HatariOptions[] = {
 	  "<file>", "Enable SCC channel A and use <file> as the input" },
 	{ OPT_SCCA_OUT, NULL, "--scc-a-out",
 	  "<file>", "Enable SCC channel A and use <file> as the output" },
+	{ OPT_SCCA_LAN_IN, NULL, "--scc-a-lan-in",
+	  "<file>", "Enable LAN on SCC channel A and use <file> as the input" },
+	{ OPT_SCCA_LAN_OUT, NULL, "--scc-a-lan-out",
+	  "<file>", "Enable LAN on SCC channel A and use <file> as the output" },
 	{ OPT_SCCB_IN, NULL, "--scc-b-in",
 	  "<file>", "Enable SCC channel B and use <file> as the input" },
 	{ OPT_SCCB_OUT, NULL, "--scc-b-out",
@@ -1458,15 +1464,27 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 		case OPT_SCCA_IN:
 			i += 1;
-			ok = Opt_StrCpy(OPT_SCCA_IN, true, ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_A],
-					argv[i], sizeof(ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_A]),
-					&ConfigureParams.RS232.EnableScc[CNF_SCC_CHANNELS_A]);
+			ok = Opt_StrCpy(OPT_SCCA_IN, true, ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_A_SERIAL],
+					argv[i], sizeof(ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_A_SERIAL]),
+					&ConfigureParams.RS232.EnableScc[CNF_SCC_CHANNELS_A_SERIAL]);
 			break;
 		case OPT_SCCA_OUT:
 			i += 1;
-			ok = Opt_StrCpy(OPT_SCCB_OUT, false, ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_A],
-					argv[i], sizeof(ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_A]),
-					&ConfigureParams.RS232.EnableScc[CNF_SCC_CHANNELS_A]);
+			ok = Opt_StrCpy(OPT_SCCA_OUT, false, ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_A_SERIAL],
+					argv[i], sizeof(ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_A_SERIAL]),
+					&ConfigureParams.RS232.EnableScc[CNF_SCC_CHANNELS_A_SERIAL]);
+			break;
+		case OPT_SCCA_LAN_IN:
+			i += 1;
+			ok = Opt_StrCpy(OPT_SCCA_LAN_IN, true, ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_A_LAN],
+					argv[i], sizeof(ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_A_LAN]),
+					&ConfigureParams.RS232.EnableScc[CNF_SCC_CHANNELS_A_LAN]);
+			break;
+		case OPT_SCCA_LAN_OUT:
+			i += 1;
+			ok = Opt_StrCpy(OPT_SCCA_LAN_OUT, false, ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_A_LAN],
+					argv[i], sizeof(ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_A_LAN]),
+					&ConfigureParams.RS232.EnableScc[CNF_SCC_CHANNELS_A_LAN]);
 			break;
 		case OPT_SCCB_IN:
 			i += 1;

@@ -79,9 +79,10 @@ typedef struct
 
 
 /* RS232 / SCC configuration */
-#define CNF_SCC_CHANNELS_MAX	2
-#define CNF_SCC_CHANNELS_A	0
-#define CNF_SCC_CHANNELS_B	1
+#define CNF_SCC_CHANNELS_MAX		3
+#define CNF_SCC_CHANNELS_A_SERIAL	0
+#define CNF_SCC_CHANNELS_A_LAN		1
+#define CNF_SCC_CHANNELS_B		2
 typedef struct
 {
   bool bEnableRS232;
