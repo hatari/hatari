@@ -93,6 +93,7 @@
 #include "cycles.h"
 #include "cycInt.h"
 #include "video.h"
+#include "psg.h"
 
 #ifndef O_NONBLOCK
 # ifdef O_NDELAY
@@ -392,6 +393,31 @@ bool SCC_IsAvailable(CNF_PARAMS *cnf)
 
 
 
+/*
+ * Return true if the LAN port is connected to SCC Channel A
+ * Return false if SCC Channel A is connected to the serial port
+ * The LAN port is only available on MegaSTE and TT and can be enabled
+ * using bit 7 in reg 14 of the YM2149 (0=Lan, 1=Serial)
+ */
+void	SCC_Check_Lan_IsEnabled ( void )
+{
+	if ( Config_IsMachineFalcon()			/* Falcon doesn't have a LAN port on SCC A */
+	    || ( PSGRegisters[ PSG_REG_IO_PORTA ] & 0x80 ) )	/* Bit7 = 1 : Serial port */
+	{
+		SCC.Chn[0].ReadHandle = SCC.Chn[0].ReadHandle_Serial;
+		SCC.Chn[0].WriteHandle = SCC.Chn[0].WriteHandle_Serial;
+		SCC.Chn[0].FileHandle_IsATTY = SCC.Chn[0].FileHandle_Serial_IsATTY;
+	}
+	else							/* Bit7 = 0 : LAN port */
+	{
+		SCC.Chn[0].ReadHandle = SCC.Chn[0].ReadHandle_Lan;
+		SCC.Chn[0].WriteHandle = SCC.Chn[0].WriteHandle_Lan;
+		SCC.Chn[0].FileHandle_IsATTY = SCC.Chn[0].FileHandle_Lan_IsATTY;
+	}
+}
+
+
+
 static void SCC_Init_Channel ( int Channel , bool *pConfEnableScc , char *InFileName , char *OutFileName ,
 			       int *pReadHandle , int *pWriteHandle , bool *pIsATTY )
 {
@@ -470,10 +496,8 @@ void SCC_Init ( void )
 		ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_A_LAN] , ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_A_LAN] ,
 		&SCC.Chn[0].ReadHandle_Lan , &SCC.Chn[0].WriteHandle_Lan , &SCC.Chn[0].FileHandle_Lan_IsATTY );
 
-	/* Default to serial on channel A */
-	SCC.Chn[0].ReadHandle = SCC.Chn[0].ReadHandle_Serial;
-	SCC.Chn[0].WriteHandle = SCC.Chn[0].WriteHandle_Serial;
-	SCC.Chn[0].FileHandle_IsATTY = SCC.Chn[0].FileHandle_Serial_IsATTY;
+	/* Connect Channel A to Serial or LAN port depending on the machine */
+	SCC_Check_Lan_IsEnabled();
 
 	/* Init filehandles for channel B */
 	SCC_Init_Channel ( 1 , &ConfigureParams.RS232.EnableScc[CNF_SCC_CHANNELS_B] ,

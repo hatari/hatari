@@ -191,6 +191,7 @@ const char PSG_fileid[] = "Hatari psg.c";
 #include "statusbar.h"
 #include "mfp.h"
 #include "fdc.h"
+#include "scc.h"
 
 
 static uint8_t PSGRegisterSelect;		/* Write to 0xff8800 sets the register number used in read/write accesses */
@@ -415,7 +416,13 @@ void PSG_Set_DataRegister(uint8_t val)
 		/* Report a possible drive/side change */
 		FDC_SetDriveSide ( val_old & 7 , PSGRegisters[PSG_REG_IO_PORTA] & 7 );
 
-		/* handle Falcon specific bits in PORTA of the PSG */
+		/* Handle MegaSTE / TT specific bit 7 in PORTA of the PSG */
+		if (Config_IsMachineMegaSTE() || Config_IsMachineTT())
+		{
+			SCC_Check_Lan_IsEnabled ();
+		}
+
+		/* Handle Falcon specific bits in PORTA of the PSG */
 		if (Config_IsMachineFalcon())
 		{
 			/* Bit 3 - centronics port SELIN line (pin 17) */
