@@ -43,6 +43,10 @@ Emulation improvements:
 - Video:
   - Add support for 4 pixel hardscroll on STF by stopping shifter with
     $FF8260=3 (new technique by Troed/Sync)
+- SCC 85C30 (for MegaSTE, TT and Falcon)
+  - Major rewrite of most of the code, should support all modes used by TOS
+    and EmuTOS or when accessing SCC's registers directly
+  - Support all serial ports as well as LAN port for MegaSTE and TT
 
 Emulator improvements:
 - TOS:
