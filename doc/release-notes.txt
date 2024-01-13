@@ -84,7 +84,7 @@ Emulator improvements:
     (show only their count) and add "--msg-repeat" option to toggle that
   - History skips address repeats (e.g. with "stop" instruction)
   - When entering debugger with 'history' enabled, disassembly address
-    defaults to an address in history preceeding the PC register value
+    defaults to an address in history preceding the PC register value
     (to give more context than disassembling directly from PC)
   - Support for disassembly output options working also for CPU core
     disassembler, in addition to external disassember output
@@ -141,6 +141,8 @@ Fixed demos:
 - Little -ME- Demo end part : black screen after a while (IACK timing)
 - Monscape : bad sound (TT/DMA FIFO update)
 
+Fixed programs:
+- FreeMiNT (use SCC counter at start to detect the SCC clock freq)
 
 
  Version 2.4.1 (2022-08-03)
@@ -1481,7 +1483,7 @@ Emulator:
   - Fix: tracking breakpoint values were updated only when all conditions
     matched, now they can be also used together with other conditions
   - Fix: info command crash (triggered on NetBSD)
-  - Fix: disassember output bug on NetBSD (usigned char < -1 test)
+  - Fix: disassember output bug on NetBSD (unsigned char < -1 test)
   - Fix: info osheader and basebase subcommands under MiNT
   - Fix: debugger history duplicates removal
   - Fix: expression expanding CPU "pc" for DSP shortcut commands
@@ -1848,7 +1850,7 @@ Emulator:
     accesses (instead of operator precedence like earlier)
   - DSP and CPU code profiling functionality.  Provides statistics about
     profiled code (executed code address ranges, max and total counts
-    and cycles), lists addresses/instructions taking most cyles and if
+    and cycles), lists addresses/instructions taking most cycles and if
     symbols are loaded, what were the most used symbol addresses.
   - Profiling information is also shown in disassembly output
 
@@ -2168,7 +2170,7 @@ Emulator:
  --------------------------
 
 - This release brings you basic Atari TT and Falcon emulation!
-  Please note that both new emulation modes are still highly experiemental,
+  Please note that both new emulation modes are still highly experimental,
   some few games and demos work, but most still have more or less big
   problems.
 - Basic emulation of Falcon video shifter (Videl), NVRAM and DMA sound is in

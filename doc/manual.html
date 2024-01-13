@@ -1444,7 +1444,7 @@ changes that you have made.
 <p>
  The &quot;Cycle exact&quot;, the &quot;MMU emulation&quot; and
  &quot;24-bit addressing&quot; options are considered as experimental and
- should only be changed iif you know what you are doing.
+ should only be changed if you know what you are doing.
 </p>
 
 <h5>FPU type</h5>
@@ -2349,6 +2349,140 @@ wired on the ST, STE and TT machines, but not on the Falcon. To use serial
 port emulation in Falcon mode, you have to use the &ldquo;SCC channel B&rdquo;
 emulation instead.</p>
 
+<p>There're several programs that can be used with RS232 and the various ports</p>
+<p>"CoNnect 95" is recommended as it supports all the ports of each machine
+(ST/STE, MegaSTE, TT and Falcon). Although this program was commercial and needed
+to be registered, his author released it later as freeware in 1998</p>
+
+<p>The following table shows all the available ports (serial or lan) depending
+on the machine type, as well as the corresponding options used to setup each port</p>
+
+<table class="keytable" style="border-collapse:collapse;" >
+  <thead>
+    <tr class="backdropped" style="text-align:center;">
+      <td class="hwfeat">Port Name</td>
+      <td style="width:6%;">HW</td>
+      <td style="width:6%;">Physical Port </td>
+      <td style="width:15%;">Corresponding Options</td>
+      <td class="hwnote">Notes</td>
+    </tr>
+  </thead>
+  <tbody>
+
+    <tr class="backdropped" style="text-align:center;">
+      <td colspan="5" class="hwsubdiv">ST / STE / MegaST</td>
+    </tr>
+    <tr>
+      <td class="hwfeat">Serial</td>
+      <td>MFP</td>
+      <td>RS232C DB-25</td>
+      <td>--rs232-in and --rs232-out</td>
+      <td class="hwnote"></td>
+    </tr>
+
+    <tr class="backdropped" style="text-align:center;">
+      <td colspan="5" class="hwsubdiv">MegaSTE</td>
+    </tr>
+    <tr>
+      <td class="hwfeat">Modem 1</td>
+      <td>MFP</td>
+      <td>RS232C DB-25</td>
+      <td>--rs232-in and --rs232-out</td>
+      <td class="hwnote"></td>
+    </tr>
+    <tr>
+      <td class="hwfeat">Serial 2</td>
+      <td>SCC A</td>
+      <td>RS232C DP-9P</td>
+      <td>--scc-a-in and --scc-a-out</td>
+      <td class="hwnote">Using daughter board in the VME slot</td>
+    </tr>
+    <tr>
+      <td class="hwfeat">Lan</td>
+      <td>SCC A</td>
+      <td>RS422 MiniDIN 8p</td>
+      <td>--scc-a-lan-in and --scc-a-lan-out</td>
+      <td class="hwnote"></td>
+    </tr>
+    <tr>
+      <td class="hwfeat">Modem 2</td>
+      <td>SCC B</td>
+      <td>RS232C DP-9P</td>
+      <td>--scc-b-in and --scc-b-out</td>
+      <td class="hwnote"></td>
+    </tr>
+
+    <tr class="backdropped" style="text-align:center;">
+      <td colspan="5" class="hwsubdiv">TT</td>
+    </tr>
+    <tr>
+      <td class="hwfeat">Modem 1</td>
+      <td>MFP</td>
+      <td>RS232C DB-25</td>
+      <td>--rs232-in and --rs232-out</td>
+      <td class="hwnote"></td>
+    </tr>
+    <tr>
+      <td class="hwfeat">Serial 1</td>
+      <td>TT MFP</td>
+      <td>RS232C DP-9P</td>
+      <td></td>
+      <td class="hwnote">Only 3 wires, not really usable (not emulated), using daughter board in the VME slot</td>
+    </tr>
+    <tr>
+      <td class="hwfeat">Serial 2</td>
+      <td>SCC A</td>
+      <td>RS232C DP-9P</td>
+      <td>--scc-a-in and --scc-a-out</td>
+      <td class="hwnote">Using daughter board in the VME slot</td>
+    </tr>
+    <tr>
+      <td class="hwfeat">Lan</td>
+      <td>SCC A</td>
+      <td>RS422 MiniDIN 8p</td>
+      <td>--scc-a-lan-in and --scc-a-lan-out</td>
+      <td class="hwnote"></td>
+    </tr>
+    <tr>
+      <td class="hwfeat">Modem 2</td>
+      <td>SCC B</td>
+      <td>RS232C DP-9P</td>
+      <td>--scc-b-in and --scc-b-out</td>
+      <td class="hwnote"></td>
+    </tr>
+
+    <tr class="backdropped" style="text-align:center;">
+      <td colspan="5" class="hwsubdiv">Falcon</td>
+    </tr>
+    <tr>
+      <td class="hwfeat">Lan</td>
+      <td>SCC A</td>
+      <td>RS422 MiniDIN 8p</td>
+      <td>--scc-a-lan-in and --scc-a-lan-out</td>
+      <td class="hwnote"></td>
+    </tr>
+    <tr>
+      <td class="hwfeat">Modem</td>
+      <td>SCC B</td>
+      <td>RS232C DP-9P</td>
+      <td>--scc-b-in and --scc-b-out</td>
+      <td class="hwnote"></td>
+    </tr>
+
+  </tbody>
+  <tfoot>
+    <tr class="backdropped" style="text-align:center;">
+      <td class="hwfeat">Port Name</td>
+      <td style="width:6%;">HW</td>
+      <td style="width:6%;">Physical Port </td>
+      <td style="width:6%;">Corresponding Options</td>
+      <td class="hwnote">Notes</td>
+    </tr>
+  </tfoot>
+</table>
+
+
+
 <h2 id="Floppy_disk_images">Floppy disk images</h2>
 
 <p>Hatari does not use floppy disks directly but disk images due to
@@ -2552,7 +2686,7 @@ with GEMDOS HD emulation. Such things need to be run from a real hard disk
 image, or in case of MiNT, use OLDTOSFS for GEMDOS HD access.</li>
 <li>GEMDOS HD file handles start from index 64.  If programs have more
 files open on <i>non-GEMDOS HD drives</i>, i.e. their indexes increase
-over 64, acesses to those indexes could get routed (incorrectly) to
+over 64, accesses to those indexes could get routed (incorrectly) to
 GEMDOS HD drive instead</li>
 <li>GEMDOS HD supports up to 64 file handles (TOS supports slightly more).</li>
 <li>GEMDOS HD drive assignment can conflict with the ACSI and IDE hard
