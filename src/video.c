@@ -668,6 +668,8 @@ static VIDEO_TIMING	VideoTimings[ VIDEO_TIMING_MAX_NB ];
 static VIDEO_TIMING	*pVideoTiming;
 static int		VideoTiming;
 
+static uint64_t		VBL_ClockCounter;
+
 
 /* Convert a horizontal video position measured at 8 MHz on STF/STE */
 /* to the equivalent number of cycles when CPU runs at 8/16/32 MHz */
@@ -768,6 +770,7 @@ void Video_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&VblJitterIndex, sizeof(VblJitterIndex));		/* TODO : remove before next release */
 	MemorySnapShot_Store(&ShifterFrame, sizeof(ShifterFrame));
 	MemorySnapShot_Store(&TTSpecialVideoMode, sizeof(TTSpecialVideoMode));
+	MemorySnapShot_Store(&VBL_ClockCounter, sizeof(VBL_ClockCounter));
 }
 
 
@@ -4581,7 +4584,6 @@ void Video_InterruptHandler_VBL ( void )
 {
 	int PendingCyclesOver;
 	int PendingInterruptCount_save;
-	static uint64_t VBL_ClockCounter;
 
 	PendingInterruptCount_save = PendingInterruptCount;
 
