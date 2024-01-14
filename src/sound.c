@@ -1621,13 +1621,9 @@ void Sound_MemorySnapShot_Capture(bool bSave)
 
 	MemorySnapShot_Store(&YmVolumeMixing, sizeof(YmVolumeMixing));
 
-	if ( !bSave )
-	{
-		/* Clear internal YM audio buffer at 250 kHz */
-		memset ( YM_Buffer_250 , 0 , sizeof(YM_Buffer_250) );
-		YM_Buffer_250_pos_write = 0;
-		YM_Buffer_250_pos_read = 0;
-	}
+	MemorySnapShot_Store(&YM_Buffer_250, sizeof(YM_Buffer_250));
+	MemorySnapShot_Store(&YM_Buffer_250_pos_write, sizeof(YM_Buffer_250_pos_write));
+	MemorySnapShot_Store(&YM_Buffer_250_pos_read, sizeof(YM_Buffer_250_pos_read));
 }
 
 
