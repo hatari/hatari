@@ -163,6 +163,7 @@ const char MFP_fileid[] = "Hatari mfp.c";
 #include "ncr5380.h"
 #include "clocks_timings.h"
 #include "acia.h"
+#include "utils.h"
 
 
 /*
