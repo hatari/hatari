@@ -93,6 +93,10 @@ void IoMem_MemorySnapShot_Capture(bool bSave)
 
 	/* Save/Restore details */
 	MemorySnapShot_Store(&mode, sizeof(mode));
+
+	MemorySnapShot_Store(&IoAccessInstrPrevClock,sizeof(IoAccessInstrPrevClock));
+	MemorySnapShot_Store(&IoAccessInstrCount,sizeof(IoAccessInstrCount));
+
 	if (!bSave)
 		IoMem_SetFalconBusMode(mode);
 }
