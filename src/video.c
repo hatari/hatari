@@ -533,9 +533,6 @@ static bool RestartVideoCounter = false;	/* true when reaching the HBL to restar
 int	LineTimerBPos = LINE_END_CYCLE_50 + TIMERB_VIDEO_CYCLE_OFFSET;	/* position of the Timer B interrupt on active lines */
 int	TimerBEventCountCycleStart = -1;	/* value of Cycles_GetCounterOnWriteAccess last time timer B was started for the current VBL */
 
-int HblJitterIndex = 0;				/* TODO : remove before next release */
-int VblJitterIndex = 0;				/* TODO : remove before next release */
-
 static int	BlankLines = 0;			/* Number of empty line with no signal (by switching hi/lo near cycles 500) */
 
 
@@ -767,8 +764,6 @@ void Video_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&nFirstVisibleHbl, sizeof(nFirstVisibleHbl));
 	MemorySnapShot_Store(&nLastVisibleHbl, sizeof(nLastVisibleHbl));
 	MemorySnapShot_Store(&bSteBorderFlag, sizeof(bSteBorderFlag));
-	MemorySnapShot_Store(&HblJitterIndex, sizeof(HblJitterIndex));		/* TODO : remove before next release */
-	MemorySnapShot_Store(&VblJitterIndex, sizeof(VblJitterIndex));		/* TODO : remove before next release */
 	MemorySnapShot_Store(&ShifterFrame, sizeof(ShifterFrame));
 	MemorySnapShot_Store(&TTSpecialVideoMode, sizeof(TTSpecialVideoMode));
 	MemorySnapShot_Store(&VBL_ClockCounter, sizeof(VBL_ClockCounter));
