@@ -1519,6 +1519,11 @@ void Blitter_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&BlitterState, sizeof(BlitterState));
 
 	MemorySnapShot_Store(&BlitterPhase, sizeof(BlitterPhase));
+	MemorySnapShot_Store(&Blitter_CyclesBeforeStart, sizeof(Blitter_CyclesBeforeStart));
+	MemorySnapShot_Store(&Blitter_HOG_CPU_FromBusAccess, sizeof(Blitter_HOG_CPU_FromBusAccess));
+	MemorySnapShot_Store(&Blitter_HOG_CPU_BlitterStartDuringBusAccess, sizeof(Blitter_HOG_CPU_BlitterStartDuringBusAccess));
+	MemorySnapShot_Store(&Blitter_HOG_CPU_BusCountError, sizeof(Blitter_HOG_CPU_BusCountError));
+	MemorySnapShot_Store(&Blitter_HOG_CPU_IgnoreMaxCpuCycles, sizeof(Blitter_HOG_CPU_IgnoreMaxCpuCycles));
 
 	if ( !bSave )
 	{
