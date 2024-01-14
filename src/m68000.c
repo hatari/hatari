@@ -102,7 +102,7 @@ const char M68000_fileid[] = "Hatari m68000.c";
 /* information about current CPU instruction */
 cpu_instruction_t CpuInstruction;
 
-uint32_t BusErrorAddress;		/* Stores the offending address for bus-/address errors */
+uint32_t BusErrorAddress;	/* Stores the offending address for bus-/address errors */
 bool bBusErrorReadWrite;	/* 0 for write error, 1 for read error */
 int nCpuFreqShift;		/* Used to emulate higher CPU frequencies: 0=8MHz, 1=16MHz, 2=32Mhz */
 int WaitStateCycles = 0;	/* Used to emulate the wait state cycles of certain IO registers */
@@ -488,6 +488,12 @@ void M68000_MemorySnapShot_Capture(bool bSave)
 		//printf ( "restore mmu done\n"  );
 		//m68k_dumpstate_file(stderr, NULL);
 	}
+
+	MemorySnapShot_Store(&WaitStateCycles,sizeof(WaitStateCycles));
+	MemorySnapShot_Store(&BusMode,sizeof(BusMode));
+	MemorySnapShot_Store(&CPU_IACK,sizeof(CPU_IACK));
+	MemorySnapShot_Store(&LastInstrCycles,sizeof(LastInstrCycles));
+	MemorySnapShot_Store(&Pairing,sizeof(Pairing));
 }
 
 
