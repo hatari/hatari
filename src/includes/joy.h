@@ -46,5 +46,9 @@ extern void Joy_StePadMulti_ReadWord(void);
 extern void Joy_StePadMulti_WriteWord(void);
 void Joy_SteLightpenX_ReadWord(void);
 void Joy_SteLightpenY_ReadWord(void);
+void Joy_StePadAnalog0X_ReadByte(void);
+void Joy_StePadAnalog0Y_ReadByte(void);
+void Joy_StePadAnalog1X_ReadByte(void);
+void Joy_StePadAnalog1Y_ReadByte(void);
 
 #endif /* ifndef HATARI_JOY_H */

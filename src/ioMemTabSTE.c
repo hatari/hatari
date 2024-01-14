@@ -205,10 +205,10 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_STE[] =
 	{ 0xff9000, SIZE_WORD, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xff9200, SIZE_WORD, Joy_StePadButtons_DIPSwitches_ReadWord, Joy_StePadButtons_DIPSwitches_WriteWord },    /* Joypad fire buttons + MegaSTE DIP Switches */
 	{ 0xff9202, SIZE_WORD, Joy_StePadMulti_ReadWord, Joy_StePadMulti_WriteWord },           /* Joypad directions/buttons/selection */
-	{ 0xff9211, SIZE_BYTE, IoMem_VoidRead, IoMem_WriteWithoutInterception }, /* Joypad 0 X position (?) */
-	{ 0xff9213, SIZE_BYTE, IoMem_VoidRead, IoMem_WriteWithoutInterception }, /* Joypad 0 Y position (?) */
-	{ 0xff9215, SIZE_BYTE, IoMem_VoidRead, IoMem_WriteWithoutInterception }, /* Joypad 1 X position (?) */
-	{ 0xff9217, SIZE_BYTE, IoMem_VoidRead, IoMem_WriteWithoutInterception }, /* Joypad 1 Y position (?) */
+	{ 0xff9211, SIZE_BYTE, Joy_StePadAnalog0X_ReadByte, IoMem_WriteWithoutInterception }, /* Joypad 0 Analog/Paddle X position */
+	{ 0xff9213, SIZE_BYTE, Joy_StePadAnalog0Y_ReadByte, IoMem_WriteWithoutInterception }, /* Joypad 0 Analog/Paddle Y position */
+	{ 0xff9215, SIZE_BYTE, Joy_StePadAnalog1X_ReadByte, IoMem_WriteWithoutInterception }, /* Joypad 1 Analog/Paddle X position */
+	{ 0xff9217, SIZE_BYTE, Joy_StePadAnalog1Y_ReadByte, IoMem_WriteWithoutInterception }, /* Joypad 1 Analog/Paddle Y position */
 	{ 0xff9220, SIZE_WORD, Joy_SteLightpenX_ReadWord, IoMem_WriteWithoutInterception },     /* Lightpen X position */
 	{ 0xff9222, SIZE_WORD, Joy_SteLightpenY_ReadWord, IoMem_WriteWithoutInterception },     /* Lightpen Y position */
 
