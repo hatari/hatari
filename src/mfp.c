@@ -358,7 +358,7 @@ MFP_STRUCT		*pMFP_TT;
 #define	PATCH_TIMER_TDDR_FAKE		0x64		/* TDDR value to slow down timer D */
 
 
-static int PendingCyclesOver = 0;   /* >= 0 value, used to "loop" a timer when data counter reaches 0 */
+static int PendingCyclesOver = 0;   			/* >= 0 value, used to "loop" a timer when data counter reaches 0 */
 
 
 bool		MFP_UpdateNeeded = false;		/* When set to true, main CPU loop should call MFP_UpdateIRQ() */
@@ -616,6 +616,7 @@ void	MFP_MemorySnapShot_Capture ( bool bSave )
 		MemorySnapShot_Store(&(pMFP->IRQ_CPU), sizeof(pMFP->IRQ_CPU));
 		MemorySnapShot_Store(&(pMFP->IRQ_Time), sizeof(pMFP->IRQ_Time));
 		MemorySnapShot_Store(&(pMFP->Pending_Time_Min), sizeof(pMFP->Pending_Time_Min));
+		MemorySnapShot_Store(&PendingCyclesOver, sizeof(PendingCyclesOver));
 		for ( i=0 ; i<=MFP_INT_MAX ; i++ )
 			MemorySnapShot_Store(&(pMFP->Pending_Time[ i ]), sizeof(pMFP->Pending_Time[ i ]));
 	}

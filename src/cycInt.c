@@ -239,6 +239,7 @@ void CycInt_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&CycInt_ActiveInt, sizeof(CycInt_ActiveInt));
 	MemorySnapShot_Store(&CycInt_ActiveInt_Cycles, sizeof(CycInt_ActiveInt_Cycles));
 	MemorySnapShot_Store(&PendingInterruptCount, sizeof(PendingInterruptCount));
+	MemorySnapShot_Store(&CycInt_From_Opcode, sizeof(CycInt_From_Opcode));
 	if (bSave)
 	{
 		/* Convert function to ID */
