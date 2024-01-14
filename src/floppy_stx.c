@@ -1711,7 +1711,7 @@ uint8_t	FDC_ReadSector_STX ( uint8_t Drive , uint8_t Track , uint8_t Sector , ui
 		{
 			Byte = pStxSector->pData[ i ];
 			if ( pStxSector->pFuzzyData )
-				Byte = ( Byte & pStxSector->pFuzzyData[ i ] ) | ( rand() & ~pStxSector->pFuzzyData[ i ] );
+				Byte = ( Byte & pStxSector->pFuzzyData[ i ] ) | ( Hatari_rand() & ~pStxSector->pFuzzyData[ i ] );
 		}
 
 		else							/* Use data from 'write sector' */
@@ -1944,7 +1944,7 @@ uint8_t	FDC_ReadTrack_STX ( uint8_t Drive , uint8_t Track , uint8_t Side )
 	{
 		Log_Printf ( LOG_WARN , "fdc stx : track info not found for read track drive=%d track=%d side=%d, returning random bytes\n" , Drive , Track , Side );
 		for ( i=0 ; i<FDC_GetBytesPerTrack_STX ( Drive , Track , Side ) ; i++ )
-			FDC_Buffer_Add ( rand() & 0xff );		/* Fill the track buffer with random bytes */
+			FDC_Buffer_Add ( Hatari_rand() & 0xff );	/* Fill the track buffer with random bytes */
 		return 0;
 	}
 
@@ -1982,7 +1982,7 @@ uint8_t	FDC_ReadTrack_STX ( uint8_t Drive , uint8_t Track , uint8_t Side )
 		{
 			Log_Printf ( LOG_WARN , "fdc stx : no track image and no sector for read track drive=%d track=%d side=%d, building an unformatted track\n" , Drive , Track , Side );
 			for ( i=0 ; i<TrackSize ; i++ )
-				FDC_Buffer_Add ( rand() & 0xff );	/* Fill the track buffer with random bytes */
+				FDC_Buffer_Add ( Hatari_rand() & 0xff ); /* Fill the track buffer with random bytes */
 			return 0;
 		}
 

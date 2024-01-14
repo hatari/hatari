@@ -18,6 +18,7 @@ const char CreateBlankImage_fileid[] = "Hatari createBlankImage.c";
 #include "st.h"
 #include "createBlankImage.h"
 #include "gemdos_defines.h"
+#include "utils.h"
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -102,8 +103,8 @@ bool CreateBlankImage_CreateFile(const char *pszFileName, int nTracks, int nSect
 	pDiskFile[0] = 0xE9;                                  /* Needed for MS-DOS compatibility */
 	memset(pDiskFile+2, 0x4e, 6);                         /* 2-7 'Loader' */
 
-	WriteShortLE(pDiskFile+8, rand());                    /* 8-10 24-bit serial number */
-	pDiskFile[10] = rand();
+	WriteShortLE(pDiskFile+8, Hatari_rand());             /* 8-10 24-bit serial number */
+	pDiskFile[10] = Hatari_rand();
 
 	WriteShortLE(pDiskFile+11, NUMBYTESPERSECTOR);        /* 11-12 BPS */
 

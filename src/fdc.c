@@ -1763,7 +1763,7 @@ static void	FDC_IndexPulse_Init ( int Drive )
 	uint64_t	IndexPulse_Time;
 
 	FdcCyclesPerRev = FDC_GetCyclesPerRev_FdcCycles ( Drive );
-	IndexPulse_Time = CyclesGlobalClockCounter - rand () % FDC_FdcCyclesToCpuCycles ( FdcCyclesPerRev );
+	IndexPulse_Time = CyclesGlobalClockCounter - Hatari_rand() % FDC_FdcCyclesToCpuCycles ( FdcCyclesPerRev );
 	if ( IndexPulse_Time <= 0 )					/* Should not happen (only if FDC_IndexPulse_Init is */
 		IndexPulse_Time = 1;					/* called just after emulation starts) */
 	FDC_DRIVES[ Drive ].IndexPulse_Time = IndexPulse_Time;
@@ -3238,7 +3238,7 @@ static int FDC_UpdateReadTrackCmd ( void )
 				  nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 			for ( i=0 ; i<FDC_GetBytesPerTrack ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal ) ; i++ )
-				FDC_Buffer_Add ( rand() & 0xff );	/* Fill the track buffer with random bytes */
+				FDC_Buffer_Add ( Hatari_rand() & 0xff ); /* Fill the track buffer with random bytes */
 		}
 		else if ( EmulationDrives[ FDC.DriveSelSignal ].ImageType == FLOPPY_IMAGE_TYPE_STX )
 		{
@@ -4794,7 +4794,7 @@ static uint8_t FDC_ReadTrack_ST ( uint8_t Drive , uint8_t Track , uint8_t Side )
 		fprintf ( stderr , "fdc : read track drive=%d track=%d side=%d, but maxtrack=%d, building an unformatted track\n" ,
 			Drive , Track , Side , FDC_GetTracksPerDisk ( Drive ) );
 		for ( i=0 ; i<FDC_GetBytesPerTrack ( Drive , Track , Side ) ; i++ )
-			FDC_Buffer_Add ( rand() & 0xff );		/* Fill the track buffer with random bytes */
+			FDC_Buffer_Add ( Hatari_rand() & 0xff );	/* Fill the track buffer with random bytes */
 		return 0;
 	}
 
