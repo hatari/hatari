@@ -41,7 +41,7 @@ uae_u32 hsync_counter = 0, vsync_counter = 0;
 
 uae_u16 dmacon;
 
-static uae_u32 extra_cycle;
+uae_u32 extra_cycle;
 
 #ifdef CPUEMU_13
 
