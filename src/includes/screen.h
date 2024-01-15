@@ -92,6 +92,9 @@ extern Uint8 *pSTScreen;
 extern SDL_Surface *sdlscrn;
 extern Uint32 STRGBPalette[16];
 extern Uint32 ST2RGB[4096];
+extern Uint32* ConvertPalette;
+extern int ConvertPaletteSize;
+
 
 extern uint16_t HBLPalettes[HBL_PALETTE_LINES];
 extern uint16_t *pHBLPalettes;

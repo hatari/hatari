@@ -682,6 +682,12 @@ void Screen_GenConvert(uint32_t vaddr, void *fvram, int vw, int vh,
 {
 	nScreenBaseAddr = vaddr;
 
+	/* Override drawing palette for screenshots */
+	ConvertPalette = palette.native;
+	ConvertPaletteSize = 1 << vbpp;
+	if (ConvertPaletteSize > 256)
+		ConvertPaletteSize = 256;
+
 	if (nScreenZoomX * nScreenZoomY != 1) {
 		Screen_ConvertWithZoom(fvram, vw, vh, vbpp, nextline, hscroll,
 		                       leftBorderSize, rightBorderSize,
