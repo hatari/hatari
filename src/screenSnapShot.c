@@ -17,6 +17,7 @@ const char ScreenSnapShot_fileid[] = "Hatari screenSnapShot.c";
 #include "log.h"
 #include "paths.h"
 #include "screen.h"
+#include "screenConvert.h"
 #include "screenSnapShot.h"
 #include "statusbar.h"
 #include "video.h"
@@ -29,6 +30,7 @@ const char ScreenSnapShot_fileid[] = "Hatari screenSnapShot.c";
 
 
 static int nScreenShots = 0;                /* Number of screen shots saved */
+static Uint8 NEOHeader[128];
 
 
 /*-----------------------------------------------------------------------*/
@@ -293,6 +295,66 @@ png_cleanup:
 }
 #endif
 
+/**
+ * Helper for writing NEO file header
+ */
+static void StoreU16NEO(Uint16 val, int offset)
+{
+	NEOHeader[offset+0] = (val >> 8) & 0xFF;
+	NEOHeader[offset+1] = (val >> 0) & 0xFF;
+}
+
+/**
+ * Save direct video memory dump to NEO file
+ */
+static int ScreenSnapShot_SaveNEO(const char *filename)
+{
+	FILE *fp = NULL;
+	int i, res, sw, sh, stride, offset;
+
+	if (pFrameBuffer == NULL || pFrameBuffer->pSTScreen == NULL)
+		return -1;
+
+	fp = fopen(filename, "wb");
+	if (!fp)
+		return -1;
+
+	res = (STRes == ST_HIGH_RES) ? 2 :
+	      (STRes == ST_MEDIUM_RES) ? 1 :
+	      0;
+	sw = (res > 0) ? 640 : 320;
+	sh = (res > 1) ? 400 : 200;
+	stride = (res > 1) ? 80 : 160;
+
+	memset(NEOHeader, 0, sizeof(NEOHeader));
+	StoreU16NEO(res, 2);
+	if (res != 2) /* Low/Medium resolution: use middle line's palette for whole image. */
+	{
+		for (i=0; i<16; i++)
+			StoreU16NEO(pFrameBuffer->HBLPalettes[i+((OVERSCAN_TOP+sh/2)<<4)], 4+(2*i));
+	}
+	else /* High resolution: use stored GenConvert RGB palette. */
+	{
+		for (i=0; i<2;i++)
+			StoreU16NEO((Screen_GetPaletteColor(i).r >= 128) ? 0x777 : 0x000, 4+(2*i));
+	}
+	memcpy(NEOHeader+36,"        .   ",12);
+	StoreU16NEO(sw, 58);
+	StoreU16NEO(sh, 60);
+
+	fwrite(NEOHeader, 1, 128, fp);
+	for (i = 0; i < sh; i++)
+	{
+		offset = (res > 1) ?
+			(SCREENBYTES_MONOLINE * i) :
+			(STScreenLineOffset[i+OVERSCAN_TOP] + SCREENBYTES_LEFT);
+		fwrite(pFrameBuffer->pSTScreen + offset, 1, stride, fp);
+	}
+
+	fclose (fp);
+	return 1; /* >0 if OK, -1 if error */
+}
+
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -309,6 +371,17 @@ void ScreenSnapShot_SaveScreen(void)
 	ScreenSnapShot_GetNum();
 	/* Create our filename */
 	nScreenShots++;
+	/* NEO memory dump */
+	if (ConfigureParams.Screen.bNEOScreenSnapShot)
+	{
+		sprintf(szFileName,"%s/grab%4.4d.neo", Paths_GetScreenShotDir(), nScreenShots);
+		if (ScreenSnapShot_SaveNEO(szFileName) > 0)
+			fprintf(stderr, "Screen dump saved to: %s\n", szFileName);
+		else
+			fprintf(stderr, "NEO screen dump failed!\n");
+		free(szFileName);
+		return;
+	}
 #if HAVE_LIBPNG
 	/* try first PNG */
 	sprintf(szFileName,"%s/grab%4.4d.png", Paths_GetScreenShotDir(), nScreenShots);
@@ -350,6 +423,11 @@ void ScreenSnapShot_SaveToFile(const char *szFileName)
 	if (File_DoesFileExtensionMatch(szFileName, ".bmp"))
 	{
 		success = SDL_SaveBMP(sdlscrn, szFileName) == 0;
+	}
+	else
+	if (File_DoesFileExtensionMatch(szFileName, ".neo"))
+	{
+		success = ScreenSnapShot_SaveNEO(szFileName) == 0;
 	}
 	else
 	{

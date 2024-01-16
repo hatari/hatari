@@ -96,7 +96,7 @@ static int PCScreenOffsetX;         /* how many pixels to skip from left when dr
 static int PCScreenOffsetY;         /* how many pixels to skip from top when drawing */
 static SDL_Rect STScreenRect;       /* screen size without statusbar */
 
-static int STScreenLineOffset[NUM_VISIBLE_LINES];  /* Offsets for ST screen lines eg, 0,160,320... */
+int STScreenLineOffset[NUM_VISIBLE_LINES];         /* Offsets for ST screen lines eg, 0,160,320... */
 static Uint16 HBLPalette[16], PrevHBLPalette[16];  /* Current palette for line, also copy of first line */
 
 static void (*ScreenDrawFunctionsNormal[3])(void); /* Screen draw functions */
@@ -752,6 +752,8 @@ void Screen_UnInit(void)
 	/* Free memory used for copies */
 	free(FrameBuffer.pSTScreen);
 	free(FrameBuffer.pSTScreenCopy);
+	FrameBuffer.pSTScreen = NULL;
+	FrameBuffer.pSTScreenCopy = NULL;
 
 	Screen_FreeSDL2Resources();
 	if (sdlWindow)

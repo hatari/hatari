@@ -50,6 +50,11 @@ void Screen_SetPaletteColor(Uint8 idx, Uint8 red, Uint8 green, Uint8 blue)
 	palette.native[idx] = SDL_MapRGB(sdlscrn->format, red, green, blue);
 }
 
+SDL_Color Screen_GetPaletteColor(Uint8 idx)
+{
+	return palette.standard[idx];
+}
+
 void Screen_RemapPalette(void)
 {
 	int i;

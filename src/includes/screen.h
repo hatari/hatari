@@ -100,6 +100,7 @@ extern uint16_t HBLPalettes[HBL_PALETTE_LINES];
 extern uint16_t *pHBLPalettes;
 extern uint32_t HBLPaletteMasks[HBL_PALETTE_MASKS];
 extern uint32_t *pHBLPaletteMasks;
+extern int STScreenLineOffset[NUM_VISIBLE_LINES];
 
 extern void Screen_Init(void);
 extern void Screen_UnInit(void);
