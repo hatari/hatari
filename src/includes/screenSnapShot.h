@@ -10,6 +10,11 @@
 
 #include <SDL_video.h>
 
+#define	SCREEN_SNAPSHOT_BMP	1
+#define	SCREEN_SNAPSHOT_PNG	2
+#define	SCREEN_SNAPSHOT_NEO	3
+
+
 extern int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int destw,
 		int desth, FILE *fp, int png_compression_level, int png_filter,
 		int CropLeft , int CropRight , int CropTop , int CropBottom );

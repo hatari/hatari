@@ -422,27 +422,46 @@ void ScreenSnapShot_SaveScreen(void)
 	ScreenSnapShot_GetNum();
 	/* Create our filename */
 	nScreenShots++;
-	/* NEO memory dump */
-	if (ConfigureParams.Screen.bNEOScreenSnapShot)
+
+
+	/* BMP format */
+	if (ConfigureParams.Screen.ScreenShotFormat == SCREEN_SNAPSHOT_BMP )
+	{
+		sprintf(szFileName,"%s/grab%4.4d.bmp", Paths_GetScreenShotDir(), nScreenShots);
+		if (SDL_SaveBMP(sdlscrn, szFileName))
+			fprintf(stderr, "BMP screen dump failed!\n");
+		else
+			fprintf(stderr, "BMP screen dump saved to: %s\n", szFileName);
+		free(szFileName);
+		return;
+	}
+
+#if HAVE_LIBPNG
+	/* PNG format */
+	else if (ConfigureParams.Screen.ScreenShotFormat == SCREEN_SNAPSHOT_PNG )
+	{
+		sprintf(szFileName,"%s/grab%4.4d.png", Paths_GetScreenShotDir(), nScreenShots);
+		if (ScreenSnapShot_SavePNG(sdlscrn, szFileName) > 0)
+			fprintf(stderr, "PNG screen dump saved to: %s\n", szFileName);
+		else
+			fprintf(stderr, "PNG screen dump failed!\n");
+		free(szFileName);
+		return;
+	}
+#endif
+
+	/* NEO format */
+	else if (ConfigureParams.Screen.ScreenShotFormat == SCREEN_SNAPSHOT_NEO )
 	{
 		sprintf(szFileName,"%s/grab%4.4d.neo", Paths_GetScreenShotDir(), nScreenShots);
 		if (ScreenSnapShot_SaveNEO(szFileName) > 0)
-			fprintf(stderr, "Screen dump saved to: %s\n", szFileName);
+			fprintf(stderr, "NEO screen dump saved to: %s\n", szFileName);
 		else
 			fprintf(stderr, "NEO screen dump failed!\n");
 		free(szFileName);
 		return;
 	}
-#if HAVE_LIBPNG
-	/* try first PNG */
-	sprintf(szFileName,"%s/grab%4.4d.png", Paths_GetScreenShotDir(), nScreenShots);
-	if (ScreenSnapShot_SavePNG(sdlscrn, szFileName) > 0)
-	{
-		fprintf(stderr, "Screen dump saved to: %s\n", szFileName);
-		free(szFileName);
-		return;
-	}
-#endif
+
 	sprintf(szFileName,"%s/grab%4.4d.bmp", Paths_GetScreenShotDir(), nScreenShots);
 	if (SDL_SaveBMP(sdlscrn, szFileName))
 		fprintf(stderr, "Screen dump failed!\n");

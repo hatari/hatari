@@ -45,6 +45,7 @@ const char Options_fileid[] = "Hatari options.c";
 #include "stMemory.h"
 #include "tos.h"
 #include "lilo.h"
+#include "screenSnapShot.h"
 
 
 bool bLoadAutoSave;        /* Load autosave memory snapshot at startup */
@@ -107,6 +108,7 @@ enum {
 	OPT_AVIRECORD_FPS,
 	OPT_AVIRECORD_FILE,
 	OPT_SCRSHOT_DIR,
+	OPT_SCRSHOT_FORMAT,
 
 	OPT_JOYSTICK,		/* device options */
 	OPT_JOYSTICK0,
@@ -318,6 +320,8 @@ static const opt_t HatariOptions[] = {
 	  "<file>", "Use <file> to record AVI" },
 	{ OPT_SCRSHOT_DIR, NULL, "--screenshot-dir",
 	  "<dir>", "Save screenshots in the directory <dir>" },
+	{ OPT_SCRSHOT_FORMAT, NULL, "--screenshot-format",
+	  "<x>", "Select file formatc (x = bmp/png/neo)" },
 
 	{ OPT_HEADER, NULL, NULL, NULL, "Devices" },
 	{ OPT_JOYSTICK,  "-j", "--joystick",
@@ -1337,6 +1341,26 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 		case OPT_SCRSHOT_DIR:
 			i += 1;
 			Paths_SetScreenShotDir(argv[i]);
+			break;
+
+		case OPT_SCRSHOT_FORMAT:
+			i += 1;
+			if (strcasecmp(argv[i], "bmp") == 0)
+			{
+				ConfigureParams.Screen.ScreenShotFormat = SCREEN_SNAPSHOT_BMP;
+			}
+			else if (strcasecmp(argv[i], "png") == 0)
+			{
+				ConfigureParams.Screen.ScreenShotFormat = SCREEN_SNAPSHOT_PNG;
+			}
+			else if (strcasecmp(argv[i], "neo") == 0)
+			{
+				ConfigureParams.Screen.ScreenShotFormat = SCREEN_SNAPSHOT_NEO;
+			}
+			else
+			{
+				return Opt_ShowError(OPT_SCRSHOT_FORMAT, argv[i], "Unknown screenshot format");
+			}
 			break;
 
 			/* VDI options */

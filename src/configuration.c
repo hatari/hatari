@@ -38,6 +38,7 @@ const char Configuration_fileid[] = "Hatari configuration.c";
 #include "falcon/crossbar.h"
 #include "stMemory.h"
 #include "tos.h"
+#include "screenSnapShot.h"
 
 
 CNF_PARAMS ConfigureParams;                 /* List of configuration for the emulator */
@@ -97,7 +98,7 @@ static const struct Config_Tag configs_Screen[] =
 	{ "nMaxHeight", Int_Tag, &ConfigureParams.Screen.nMaxHeight },
 	{ "nZoomFactor", Float_Tag, &ConfigureParams.Screen.nZoomFactor },
 	{ "bUseSdlRenderer", Bool_Tag, &ConfigureParams.Screen.bUseSdlRenderer },
-	{ "bNEOScreenSnapShot", Bool_Tag, &ConfigureParams.Screen.bNEOScreenSnapShot },
+	{ "ScreenShotFormat", Int_Tag, &ConfigureParams.Screen.ScreenShotFormat },
 	{ "bUseVsync", Bool_Tag, &ConfigureParams.Screen.bUseVsync },
 	{ NULL , Error_Tag, NULL }
 };
@@ -754,7 +755,11 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Screen.nZoomFactor = 1.0;
 	ConfigureParams.Screen.bUseSdlRenderer = true;
 	ConfigureParams.Screen.bUseVsync = false;
-	ConfigureParams.Screen.bNEOScreenSnapShot = false;
+#if HAVE_LIBPNG
+	ConfigureParams.Screen.ScreenShotFormat = SCREEN_SNAPSHOT_PNG;
+#else
+	ConfigureParams.Screen.ScreenShotFormat = SCREEN_SNAPSHOT_BMP;
+#endif
 
 	/* Set defaults for Sound */
 	ConfigureParams.Sound.bEnableMicrophone = true;

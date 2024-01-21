@@ -292,6 +292,7 @@ typedef enum
   MONITOR_TYPE_TV
 } MONITORTYPE;
 
+
 /* Screen configuration */
 typedef struct
 {
@@ -310,7 +311,7 @@ typedef struct
   bool bResizable;
   bool bUseVsync;
   bool bUseSdlRenderer;
-  bool bNEOScreenSnapShot;
+  int ScreenShotFormat;
   float nZoomFactor;
   int nSpec512Threshold;
   int nVdiColors;
