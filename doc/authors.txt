@@ -175,6 +175,11 @@ random order - and if someone is missing here, please remind us!):
 - Robin Sergeant <robin.sergeant at gmail.com> : support for remapping
   joystick buttons
 
+- Brad Smith <rainwarrior at gmail.com> : Ported Hatari 2.4 to the Libretro
+  emulation system as 'HatariB' and contributed several patches to Hatari :
+  missing variables in memory snapshot, keyboard/joystick fixes, saving
+  screen content as .neo file.
+
 See also "thanks.txt" for people who've helped Hatari development in
 other ways than code contributions.
 

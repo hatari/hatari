@@ -159,6 +159,16 @@ void VIDEL_MemorySnapShot_Capture(bool bSave)
 }
 
 /**
+ * Return the content of videl.bUseSTShifter.
+ * This tells if the current video mode is compatible with ST/STE
+ * video mode or not
+ */
+bool VIDEL_Use_STShifter(void)
+{
+	return videl.bUseSTShifter;
+}
+
+/**
  * Monitor write access to Falcon color palette registers
  */
 void VIDEL_FalconColorRegsWrite(void)

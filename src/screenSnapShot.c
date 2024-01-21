@@ -21,6 +21,8 @@ const char ScreenSnapShot_fileid[] = "Hatari screenSnapShot.c";
 #include "screenSnapShot.h"
 #include "statusbar.h"
 #include "video.h"
+#include "videl.h"
+#include "stMemory.h"
 /* after above that bring in config.h */
 #if HAVE_LIBPNG
 # include <png.h>
@@ -295,6 +297,8 @@ png_cleanup:
 }
 #endif
 
+
+
 /**
  * Helper for writing NEO file header
  */
@@ -311,44 +315,91 @@ static int ScreenSnapShot_SaveNEO(const char *filename)
 {
 	FILE *fp = NULL;
 	int i, res, sw, sh, stride, offset;
+	SDL_Color col;
+	uint32_t video_base;
 
 	if (pFrameBuffer == NULL || pFrameBuffer->pSTScreen == NULL)
 		return -1;
+
+	/* Return an error if using Falcon or TT with a video mode not compatible with ST/STE */
+	if ( ( Config_IsMachineFalcon() && !VIDEL_Use_STShifter() )
+	    || ( Config_IsMachineTT() && ( TTRes > 2 ) ) )
+	{
+		Log_AlertDlg(LOG_ERROR,"The current video mode is not compatible with the .NEO screenshot format");
+		return -1;
+	}
 
 	fp = fopen(filename, "wb");
 	if (!fp)
 		return -1;
 
-	res = (STRes == ST_HIGH_RES) ? 2 :
-	      (STRes == ST_MEDIUM_RES) ? 1 :
-	      0;
+	if (Config_IsMachineFalcon() || Config_IsMachineTT())	/* Compatible ST/STE video modes */
+	{
+		/* Assume resolution based on GenConvert. */
+		if (ConvertW < ((640+320)/2))
+			res = 0;
+		else
+			res = (ConvertH < ((400+200)/2)) ? 1 : 2;
+	}
+	else							/* Native ST/STE video modes */
+	{
+		res = (STRes == ST_HIGH_RES) ? 2 :
+		      (STRes == ST_MEDIUM_RES) ? 1 :
+		      0;
+	}
+
 	sw = (res > 0) ? 640 : 320;
-	sh = (res > 1) ? 400 : 200;
-	stride = (res > 1) ? 80 : 160;
+	sh = (res == 2) ? 400 : 200;
+	stride = (res == 2) ? 80 : 160;
 
 	memset(NEOHeader, 0, sizeof(NEOHeader));
 	StoreU16NEO(res, 2);
-	if (res != 2) /* Low/Medium resolution: use middle line's palette for whole image. */
+	if (!Screen_UseGenConvScreen())				 /* Low/Medium resolution: use middle line's palette for whole image */
 	{
 		for (i=0; i<16; i++)
 			StoreU16NEO(pFrameBuffer->HBLPalettes[i+((OVERSCAN_TOP+sh/2)<<4)], 4+(2*i));
 	}
-	else /* High resolution: use stored GenConvert RGB palette. */
+	else /* High resolution or GenConvert: use stored GenConvert RGB palette. */
 	{
-		for (i=0; i<2;i++)
-			StoreU16NEO((Screen_GetPaletteColor(i).r >= 128) ? 0x777 : 0x000, 4+(2*i));
+		for (i=0; i<16;i++)
+		{
+			col = Screen_GetPaletteColor(i);
+			StoreU16NEO(
+				((col.r >> 5) << 8) |
+				((col.g >> 5) << 4) |
+				((col.b >> 5) << 0),
+				4+(2*i));
+		}
 	}
 	memcpy(NEOHeader+36,"        .   ",12);
 	StoreU16NEO(sw, 58);
 	StoreU16NEO(sh, 60);
 
 	fwrite(NEOHeader, 1, 128, fp);
-	for (i = 0; i < sh; i++)
+
+	if (!Config_IsMachineFalcon() && !Config_IsMachineTT())
 	{
-		offset = (res > 1) ?
-			(SCREENBYTES_MONOLINE * i) :
-			(STScreenLineOffset[i+OVERSCAN_TOP] + SCREENBYTES_LEFT);
-		fwrite(pFrameBuffer->pSTScreen + offset, 1, stride, fp);
+		for (i = 0; i < sh; i++)
+		{
+			offset = (res == 2) ?
+				(SCREENBYTES_MONOLINE * i) :
+				(STScreenLineOffset[i+OVERSCAN_TOP] + SCREENBYTES_LEFT);
+			fwrite(pFrameBuffer->pSTScreen + offset, 1, stride, fp);
+		}
+	}
+	else /* TT/Falcon bypass Video_EndHBL which prepare the FrameBuffer,
+	      * so as a fallback we just try to copy the video data from ST RAM. */
+	{
+		video_base = Video_GetScreenBaseAddr();
+		if ((video_base + 32000) <= STRamEnd)
+		{
+			fwrite(STRam + video_base, 1, 32000, fp);
+		}
+		else
+		{
+			fclose(fp);
+			return -1;
+		}
 	}
 
 	fclose (fp);
@@ -424,8 +475,7 @@ void ScreenSnapShot_SaveToFile(const char *szFileName)
 	{
 		success = SDL_SaveBMP(sdlscrn, szFileName) == 0;
 	}
-	else
-	if (File_DoesFileExtensionMatch(szFileName, ".neo"))
+	else if (File_DoesFileExtensionMatch(szFileName, ".neo"))
 	{
 		success = ScreenSnapShot_SaveNEO(szFileName) == 0;
 	}
