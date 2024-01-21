@@ -90,6 +90,10 @@ Emulator improvements:
     disassembler, in addition to external disassember output
   - The built-in "external" disassembler has been replaced by a
     disassembler provided by the Capstone library (version >= 4.0)
+- Screen:
+  - Support for screenshot using .NEO format
+- Command line:
+  - Add option "--screenshot-format <x>" (<x> = png or bmp or neo)
 
 GUI improvements:
 - SDL GUI:
