@@ -22,7 +22,6 @@ const char ScreenSnapShot_fileid[] = "Hatari screenSnapShot.c";
 #include "statusbar.h"
 #include "vdi.h"
 #include "video.h"
-#include "videl.h"
 #include "stMemory.h"
 /* after above that bring in config.h */
 #if HAVE_LIBPNG
@@ -298,8 +297,10 @@ png_cleanup:
 }
 #endif
 
+
+
 /**
- * Helper for writing NEO file header.
+ * Helper for writing NEO file header
  */
 static void StoreU16NEO(Uint16 val, int offset)
 {
@@ -308,7 +309,7 @@ static void StoreU16NEO(Uint16 val, int offset)
 }
 
 /**
- * Save direct video memory dump to NEO file.
+ * Save direct video memory dump to NEO file
  */
 static int ScreenSnapShot_SaveNEO(const char *filename)
 {
@@ -356,8 +357,7 @@ static int ScreenSnapShot_SaveNEO(const char *filename)
 		for (i=0; i<16; i++)
 			StoreU16NEO(pFrameBuffer->HBLPalettes[i+((OVERSCAN_TOP+200/2)<<4)], 4+(2*i));
 	}
-	/* High resolution or other GenConvert: use stored GenConvert RGB palette. */
-	else
+	else /* High resolution or other GenConvert: use stored GenConvert RGB palette. */
 	{
 		for (i=0; i<16; i++)
 		{
@@ -388,9 +388,8 @@ static int ScreenSnapShot_SaveNEO(const char *filename)
 			fwrite(pFrameBuffer->pSTScreen + offset, 1, video_size, fp);
 		}
 	}
-	/* TT/Falcon don't call Video_EndHBL, so pFrameBuffer is unused.
-	 * As a fallback we just copy the video data from ST RAM. */
-	else
+	else /* TT/Falcon bypass Video_EndHBL, so pFrameBuffer is unused.
+	      * As a fallback we just copy the video data from ST RAM. */
 	{
 		video_base = Video_GetScreenBaseAddr();
 		video_size = (uint32_t)(bpp * sw * sh) / 8;
@@ -511,11 +510,6 @@ void ScreenSnapShot_SaveToFile(const char *szFileName)
 		success = SDL_SaveBMP(sdlscrn, szFileName) == 0;
 	}
 	else if (File_DoesFileExtensionMatch(szFileName, ".neo"))
-	{
-		success = ScreenSnapShot_SaveNEO(szFileName) == 0;
-	}
-	else
-	if (File_DoesFileExtensionMatch(szFileName, ".neo"))
 	{
 		success = ScreenSnapShot_SaveNEO(szFileName) == 0;
 	}
