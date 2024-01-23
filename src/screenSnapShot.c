@@ -371,7 +371,7 @@ static int ScreenSnapShot_SaveNEO(const char *filename)
 	if (!genconv && res != 2 && pFrameBuffer)
 	{
 		for (i=0; i<16; i++)
-			StoreU16NEO(pFrameBuffer->HBLPalettes[i+((OVERSCAN_TOP+200/2)<<4)], 4+(2*i));
+			StoreU16NEO(pFrameBuffer->HBLPalettes[i+((OVERSCAN_TOP+sh/2)<<4)], 4+(2*i));
 	}
 	else /* High resolution or other GenConvert: use stored GenConvert RGB palette. */
 	{
