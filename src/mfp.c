@@ -163,6 +163,7 @@ const char MFP_fileid[] = "Hatari mfp.c";
 #include "ncr5380.h"
 #include "clocks_timings.h"
 #include "acia.h"
+#include "utils.h"
 
 
 /*
@@ -358,7 +359,7 @@ MFP_STRUCT		*pMFP_TT;
 #define	PATCH_TIMER_TDDR_FAKE		0x64		/* TDDR value to slow down timer D */
 
 
-static int PendingCyclesOver = 0;   /* >= 0 value, used to "loop" a timer when data counter reaches 0 */
+static int PendingCyclesOver = 0;   			/* >= 0 value, used to "loop" a timer when data counter reaches 0 */
 
 
 bool		MFP_UpdateNeeded = false;		/* When set to true, main CPU loop should call MFP_UpdateIRQ() */
@@ -616,6 +617,7 @@ void	MFP_MemorySnapShot_Capture ( bool bSave )
 		MemorySnapShot_Store(&(pMFP->IRQ_CPU), sizeof(pMFP->IRQ_CPU));
 		MemorySnapShot_Store(&(pMFP->IRQ_Time), sizeof(pMFP->IRQ_Time));
 		MemorySnapShot_Store(&(pMFP->Pending_Time_Min), sizeof(pMFP->Pending_Time_Min));
+		MemorySnapShot_Store(&PendingCyclesOver, sizeof(PendingCyclesOver));
 		for ( i=0 ; i<=MFP_INT_MAX ; i++ )
 			MemorySnapShot_Store(&(pMFP->Pending_Time[ i ]), sizeof(pMFP->Pending_Time[ i ]));
 	}
@@ -1356,7 +1358,7 @@ static uint32_t MFP_StartTimer_AB ( MFP_STRUCT *pMFP , uint8_t TimerControl, uin
 		if ( ( M68000_GetPC() == 0x14d72 ) && ( STMemory_ReadLong ( 0x14d6c ) == 0x11faff75 ) )
 		{
 //			fprintf ( stderr , "mfp add jitter %d\n" , TimerClockCycles );
-			TimerClockCycles += rand()%5-2;		/* add jitter for wod2 */
+			TimerClockCycles += Hatari_rand()%5-2;	/* add jitter for wod2 */
 		}
 
 		if (LOG_TRACE_LEVEL(TRACE_MFP_START))
@@ -2498,7 +2500,7 @@ void MFP_TimerBData_ReadByte(void)
 			Video_GetPosition ( &FrameCycles , &HblCounterVideo , &pos_start );
 			pos_start >>= nCpuFreqShift;
 
-			/* Cycle position of the read for the current instruction (approximatively, we consider */
+			/* Cycle position of the read for the current instruction (approximately, we consider */
 			/* the read happens after 4 cycles (due to MFP wait states in that case)) */
 			/* This is quite a hack, but hard to do without proper 68000 read cycle emulation */
 			if ( CurrentInstrCycles <= 8 )			/* move.b (a0),d0 / cmp.b (a0),d0 ... */

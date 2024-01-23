@@ -40,8 +40,9 @@ Emulation improvements
 - Improve STE / Crossbar DMA data handling.  Mask addresses similarly to
   HW (instead of modulo ST-RAM size), and generate errors when needed
 
-- Improve TT and/or Falcon emulation, especially VIDEL, e.g:
+- Improve TT and/or Falcon emulation, especially VIDEL:
   - Palette switching during screen drawing
+  - Long writes to (word sized) color registers, see bugs.txt
   - Real Videl render offset and vertical frequency counters emulation
     (currently they're incremented so that programs checking them
     don't get stuck, but values aren't quite correct yet)

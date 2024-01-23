@@ -78,15 +78,19 @@ typedef struct
 
 
 
-/* RS232 configuration */
+/* RS232 / SCC configuration */
+#define CNF_SCC_CHANNELS_MAX		3
+#define CNF_SCC_CHANNELS_A_SERIAL	0
+#define CNF_SCC_CHANNELS_A_LAN		1
+#define CNF_SCC_CHANNELS_B		2
 typedef struct
 {
   bool bEnableRS232;
-  bool bEnableSccB;
   char szOutFileName[FILENAME_MAX];
   char szInFileName[FILENAME_MAX];
-  char sSccBInFileName[FILENAME_MAX];
-  char sSccBOutFileName[FILENAME_MAX];
+  bool EnableScc[CNF_SCC_CHANNELS_MAX];
+  char SccInFileName[CNF_SCC_CHANNELS_MAX][FILENAME_MAX];
+  char SccOutFileName[CNF_SCC_CHANNELS_MAX][FILENAME_MAX];
 } CNF_RS232;
 
 
@@ -288,6 +292,7 @@ typedef enum
   MONITOR_TYPE_TV
 } MONITORTYPE;
 
+
 /* Screen configuration */
 typedef struct
 {
@@ -306,7 +311,7 @@ typedef struct
   bool bResizable;
   bool bUseVsync;
   bool bUseSdlRenderer;
-  bool bNEOScreenSnapShot;
+  int ScreenShotFormat;
   float nZoomFactor;
   int nSpec512Threshold;
   int nVdiColors;

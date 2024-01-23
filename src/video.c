@@ -457,6 +457,7 @@ const char Video_fileid[] = "Hatari video.c";
 #include "floppy_ipf.h"
 #include "statusbar.h"
 #include "clocks_timings.h"
+#include "utils.h"
 
 
 /* The border's mask allows to keep track of all the border tricks		*/
@@ -531,9 +532,6 @@ static bool RestartVideoCounter = false;	/* true when reaching the HBL to restar
 
 int	LineTimerBPos = LINE_END_CYCLE_50 + TIMERB_VIDEO_CYCLE_OFFSET;	/* position of the Timer B interrupt on active lines */
 int	TimerBEventCountCycleStart = -1;	/* value of Cycles_GetCounterOnWriteAccess last time timer B was started for the current VBL */
-
-int HblJitterIndex = 0;				/* TODO : remove before next release */
-int VblJitterIndex = 0;				/* TODO : remove before next release */
 
 static int	BlankLines = 0;			/* Number of empty line with no signal (by switching hi/lo near cycles 500) */
 
@@ -668,6 +666,8 @@ static VIDEO_TIMING	VideoTimings[ VIDEO_TIMING_MAX_NB ];
 static VIDEO_TIMING	*pVideoTiming;
 static int		VideoTiming;
 
+static uint64_t		VBL_ClockCounter;
+
 
 /* Convert a horizontal video position measured at 8 MHz on STF/STE */
 /* to the equivalent number of cycles when CPU runs at 8/16/32 MHz */
@@ -764,10 +764,9 @@ void Video_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&nFirstVisibleHbl, sizeof(nFirstVisibleHbl));
 	MemorySnapShot_Store(&nLastVisibleHbl, sizeof(nLastVisibleHbl));
 	MemorySnapShot_Store(&bSteBorderFlag, sizeof(bSteBorderFlag));
-	MemorySnapShot_Store(&HblJitterIndex, sizeof(HblJitterIndex));		/* TODO : remove before next release */
-	MemorySnapShot_Store(&VblJitterIndex, sizeof(VblJitterIndex));		/* TODO : remove before next release */
 	MemorySnapShot_Store(&ShifterFrame, sizeof(ShifterFrame));
 	MemorySnapShot_Store(&TTSpecialVideoMode, sizeof(TTSpecialVideoMode));
+	MemorySnapShot_Store(&VBL_ClockCounter, sizeof(VBL_ClockCounter));
 }
 
 
@@ -1088,7 +1087,7 @@ void	Video_SetTimings( MACHINETYPE MachineType , VIDEOTIMINGMODE Mode )
 	else if ( ( MachineType == MACHINE_ST ) || ( MachineType == MACHINE_MEGA_ST ) )	/* 4 wakeup states are possible for STF */
 	{
 		if ( Mode == VIDEO_TIMING_MODE_RANDOM )
-			Mode = VIDEO_TIMING_MODE_WS1 + rand() % 4;	/* random between the 4 modes WS1, WS2, WS3, WS4 */
+			Mode = VIDEO_TIMING_MODE_WS1 + Hatari_rand() % 4;	/* random between the 4 modes WS1, WS2, WS3, WS4 */
 
 		if ( Mode == VIDEO_TIMING_MODE_WS1 )		VideoTiming = VIDEO_TIMING_STF_WS1;
 		else if ( Mode == VIDEO_TIMING_MODE_WS2 )	VideoTiming = VIDEO_TIMING_STF_WS2;
@@ -3663,7 +3662,7 @@ static void Video_CopyScreenLineColor(void)
 	/* but this should be improved to really display a black line (requires changes in screen.c convert functions) */
 	if ((nHBL < nStartHBL) || (nHBL >= nEndHBL + BlankLines)
 	    || (LineBorderMask & ( BORDERMASK_EMPTY_LINE|BORDERMASK_NO_DE ) )
-	    || ShifterFrame.VBlank_signal
+	    || ( ShifterFrame.VBlank_signal && ( nHBL >= ShifterFrame.VBlank_On_Line ) )
 	    || ( VerticalOverscan & V_OVERSCAN_NO_DE ) )
 	{
 		/* Clear line to color '0' */
@@ -4581,7 +4580,6 @@ void Video_InterruptHandler_VBL ( void )
 {
 	int PendingCyclesOver;
 	int PendingInterruptCount_save;
-	static uint64_t VBL_ClockCounter;
 
 	PendingInterruptCount_save = PendingInterruptCount;
 
@@ -5072,7 +5070,7 @@ static void Video_ColorReg_WriteWord(void)
  * we use random values for now.
  * NOTE [NP] : When executing code from the IO addresses between 0xff8240-0xff825e
  * the unused bits on STF are set to '0' (used in "The Union Demo" protection).
- * So we use rand() only if PC is located in RAM.
+ * So we use Hatari_rand() only if PC is located in RAM.
  */
 static void Video_ColorReg_ReadWord(void)
 {
@@ -5087,7 +5085,7 @@ static void Video_ColorReg_ReadWord(void)
 
 	if (Config_IsMachineST() && M68000_GetPC() < 0x400000)		/* PC in RAM < 4MB */
 	{
-		col = ( col & 0x777 ) | ( rand() & 0x888 );
+		col = ( col & 0x777 ) | ( Hatari_rand() & 0x888 );
 		IoMem_WriteWord ( addr , col );
 	}
 

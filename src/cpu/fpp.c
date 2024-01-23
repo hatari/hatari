@@ -3694,7 +3694,7 @@ void fpu_reset (void)
 {
 #ifndef CPU_TESTER
 	currprefs.fpu_mode = changed_prefs.fpu_mode;
-//fprintf(stderr, "fpu_reset %d\n" , currprefs.fpu_mode );
+//fprintf(stderr, "fpu_reset model=%d mode=%d\n" , currprefs.fpu_model , currprefs.fpu_mode );
 	if (currprefs.fpu_mode > 0) {
 #ifdef WITH_SOFTFLOAT
 		fp_init_softfloat(currprefs.fpu_model);
@@ -3754,8 +3754,8 @@ uae_u8 *restore_fpu (uae_u8 *src)
 	int i;
 	uae_u32 flags;
 
-	fpu_reset();
 	changed_prefs.fpu_model = currprefs.fpu_model = restore_u32 ();
+	fpu_reset();
 	flags = restore_u32 ();
 	for (i = 0; i < 8; i++) {
 		w1 = restore_u16 () << 16;

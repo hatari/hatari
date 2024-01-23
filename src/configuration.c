@@ -38,6 +38,7 @@ const char Configuration_fileid[] = "Hatari configuration.c";
 #include "falcon/crossbar.h"
 #include "stMemory.h"
 #include "tos.h"
+#include "screenSnapShot.h"
 
 
 CNF_PARAMS ConfigureParams;                 /* List of configuration for the emulator */
@@ -97,7 +98,7 @@ static const struct Config_Tag configs_Screen[] =
 	{ "nMaxHeight", Int_Tag, &ConfigureParams.Screen.nMaxHeight },
 	{ "nZoomFactor", Float_Tag, &ConfigureParams.Screen.nZoomFactor },
 	{ "bUseSdlRenderer", Bool_Tag, &ConfigureParams.Screen.bUseSdlRenderer },
-	{ "bNEOScreenSnapShot", Bool_Tag, &ConfigureParams.Screen.bNEOScreenSnapShot },
+	{ "ScreenShotFormat", Int_Tag, &ConfigureParams.Screen.ScreenShotFormat },
 	{ "bUseVsync", Bool_Tag, &ConfigureParams.Screen.bUseVsync },
 	{ NULL , Error_Tag, NULL }
 };
@@ -453,9 +454,15 @@ static const struct Config_Tag configs_Rs232[] =
 	{ "bEnableRS232", Bool_Tag, &ConfigureParams.RS232.bEnableRS232 },
 	{ "szOutFileName", String_Tag, ConfigureParams.RS232.szOutFileName },
 	{ "szInFileName", String_Tag, ConfigureParams.RS232.szInFileName },
-	{ "bEnableSccB", Bool_Tag, &ConfigureParams.RS232.bEnableSccB },
-	{ "sSccBOutFileName", String_Tag, ConfigureParams.RS232.sSccBOutFileName },
-//	{ "sSccBInFileName", String_Tag, ConfigureParams.RS232.sSccBInFileName },
+	{ "EnableSccA", Bool_Tag, &ConfigureParams.RS232.EnableScc[CNF_SCC_CHANNELS_A_SERIAL] },
+	{ "SccAOutFileName", String_Tag, ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_A_SERIAL] },
+	{ "SccAInFileName", String_Tag, ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_A_SERIAL] },
+	{ "EnableSccALan", Bool_Tag, &ConfigureParams.RS232.EnableScc[CNF_SCC_CHANNELS_A_LAN] },
+	{ "SccALanOutFileName", String_Tag, ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_A_LAN] },
+	{ "SccALanInFileName", String_Tag, ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_A_LAN] },
+	{ "EnableSccB", Bool_Tag, &ConfigureParams.RS232.EnableScc[CNF_SCC_CHANNELS_B] },
+	{ "SccBOutFileName", String_Tag, ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_B] },
+	{ "SccBInFileName", String_Tag, ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_B] },
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -703,9 +710,15 @@ void Configuration_SetDefault(void)
 	strcpy(ConfigureParams.RS232.szOutFileName, "/dev/modem");
 	strcpy(ConfigureParams.RS232.szInFileName, "/dev/modem");
 	/* Set defaults for SCC RS232 ( MegaSTE/TT/Falcon) */
-	ConfigureParams.RS232.bEnableSccB = false;
-	strcpy(ConfigureParams.RS232.sSccBOutFileName, "/dev/modem");
-//	strcpy(ConfigureParams.RS232.sSccBInFileName, "/dev/modem");
+	ConfigureParams.RS232.EnableScc[CNF_SCC_CHANNELS_A_SERIAL] = false;
+	strcpy(ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_A_SERIAL], "/dev/modem");
+	strcpy(ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_A_SERIAL], "/dev/modem");
+	ConfigureParams.RS232.EnableScc[CNF_SCC_CHANNELS_A_LAN] = false;
+	strcpy(ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_A_LAN], "/dev/modem");
+	strcpy(ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_A_LAN], "/dev/modem");
+	ConfigureParams.RS232.EnableScc[CNF_SCC_CHANNELS_B] = false;
+	strcpy(ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_B], "/dev/modem");
+	strcpy(ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_B], "/dev/modem");
 
 	/* Set defaults for MIDI */
 	ConfigureParams.Midi.bEnableMidi = false;
@@ -742,7 +755,11 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Screen.nZoomFactor = 1.0;
 	ConfigureParams.Screen.bUseSdlRenderer = true;
 	ConfigureParams.Screen.bUseVsync = false;
-	ConfigureParams.Screen.bNEOScreenSnapShot = false;
+#if HAVE_LIBPNG
+	ConfigureParams.Screen.ScreenShotFormat = SCREEN_SNAPSHOT_PNG;
+#else
+	ConfigureParams.Screen.ScreenShotFormat = SCREEN_SNAPSHOT_BMP;
+#endif
 
 	/* Set defaults for Sound */
 	ConfigureParams.Sound.bEnableMicrophone = true;
@@ -933,8 +950,12 @@ void Configuration_Apply(bool bReset)
 	File_MakeAbsoluteSpecialName(ConfigureParams.Log.sTraceFileName);
 	File_MakeAbsoluteSpecialName(ConfigureParams.RS232.szInFileName);
 	File_MakeAbsoluteSpecialName(ConfigureParams.RS232.szOutFileName);
-//	File_MakeAbsoluteSpecialName(ConfigureParams.RS232.sSccBInFileName);
-	File_MakeAbsoluteSpecialName(ConfigureParams.RS232.sSccBOutFileName);
+	File_MakeAbsoluteSpecialName(ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_A_SERIAL]);
+	File_MakeAbsoluteSpecialName(ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_A_SERIAL]);
+	File_MakeAbsoluteSpecialName(ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_A_LAN]);
+	File_MakeAbsoluteSpecialName(ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_A_LAN]);
+	File_MakeAbsoluteSpecialName(ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_B]);
+	File_MakeAbsoluteSpecialName(ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_B]);
 	File_MakeAbsoluteSpecialName(ConfigureParams.Midi.sMidiInFileName);
 	File_MakeAbsoluteSpecialName(ConfigureParams.Midi.sMidiOutFileName);
 	File_MakeAbsoluteSpecialName(ConfigureParams.Printer.szPrintToFileName);
@@ -1166,7 +1187,6 @@ void Configuration_MemorySnapShot_Capture(bool bSave)
 	/* TODO: enable after VME/SCU interrupt emulation is implemented
 	MemorySnapShot_Store(&ConfigureParams.System.nVMEType, sizeof(ConfigureParams.System.nVMEType));
 	 */
-	MemorySnapShot_Store(&bOldRealTimeClock, sizeof(bOldRealTimeClock));	/* TODO: Can be removed later */
 	MemorySnapShot_Store(&ConfigureParams.System.bPatchTimerD, sizeof(ConfigureParams.System.bPatchTimerD));
 	MemorySnapShot_Store(&ConfigureParams.System.bAddressSpace24, sizeof(ConfigureParams.System.bAddressSpace24));
 
@@ -1174,6 +1194,8 @@ void Configuration_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&ConfigureParams.System.n_FPUType, sizeof(ConfigureParams.System.n_FPUType));
 	MemorySnapShot_Store(&ConfigureParams.System.bCompatibleFPU, sizeof(ConfigureParams.System.bCompatibleFPU));
 	MemorySnapShot_Store(&ConfigureParams.System.bMMU, sizeof(ConfigureParams.System.bMMU));
+
+	MemorySnapShot_Store(&MachineClocks,sizeof(MachineClocks));
 
 	MemorySnapShot_Store(&ConfigureParams.DiskImage.FastFloppy, sizeof(ConfigureParams.DiskImage.FastFloppy));
 

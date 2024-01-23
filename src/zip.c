@@ -324,7 +324,8 @@ struct dirent **ZIP_GetFilesDir(const zip_dir *zip, const char *dir, int *entrie
 			ZIP_FreeZipDir(files);
 			return NULL;
 		}
-		strcpy(fentries[i]->d_name, files->names[i]);
+		strncpy(fentries[i]->d_name, files->names[i], sizeof(fentries[i]->d_name)-1);
+		fentries[i]->d_name[sizeof(fentries[i]->d_name) - 1] = 0;
 	}
 
 	ZIP_FreeZipDir(files);

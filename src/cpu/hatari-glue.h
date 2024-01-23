@@ -22,6 +22,8 @@ extern void UAE_Set_State_Restore ( void );
 extern int Init680x0(void);
 extern void Exit680x0(void);
 
+extern uae_u32 extra_cycle;				/* From cpu/custom.c */
+
 extern uae_u32 REGPARAM3 OpCode_GemDos(uae_u32 opcode);
 extern    void REGPARAM3 OpCode_GemDos_noret(uae_u32 opcode);
 extern uae_u32 REGPARAM3 OpCode_Pexec(uae_u32 opcode);

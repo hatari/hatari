@@ -98,3 +98,26 @@ void	crc16_add_byte ( uint16_t *crc , uint8_t c )
         }
 }
 
+
+
+
+/************************************************************************/
+/* Functions used to compute random numbers				*/
+/*									*/
+/* These can be simple wrappers around the OS calls or some customised	*/
+/* routines.								*/
+/************************************************************************/
+
+void	Hatari_srand ( unsigned int seed )
+{
+	return srand( seed );
+}
+
+
+int	Hatari_rand ( void )
+{
+	return rand();
+}
+
+
+

@@ -157,9 +157,9 @@ bMatchAllSymbols = FALSE
 </dl>
 
 <p>Settings on how many lines are shown can be changed only from the
-configuration file. You should need to change/set them only if you've
-built debugger without readline support, as it can't then determine
-terminal size ("-1" = use terminal height).</p>
+configuration file. You should need to change/set them only if you
+have built debugger without readline support, as it is then unable
+to determine terminal size ("-1" = use terminal height).</p>
 
 <p>Note that "--debug-except" and "--disasm" options can be given either
 on Hatari command line or, like all other Hatari command line options,
@@ -447,11 +447,12 @@ dsp_symbols").
 in a "mangled" format used by tools like linkers, and symbol names
 need to be "demangled" (expanded) to a more readable / user-friendly
 format.  This can be done using a tool coming with the C++ compiler
-(in "binutils-m68k-atari-mint" package):</p>
+(in "binutils-m68k-atari-mint" package).  ScummVM example:</p>
 <pre>
-$ m68k-atari-mint-c++filt &lt; mangled.sym &gt; demangled.sym
+$ gst2ascii scummvm.ttp | m68k-atari-mint-c++filt &gt; scummvm.sym
 </pre>
-<p>Then just load the new symbol file instead of the original one.</p>
+<p>(When symbols are in a file named as "&lt;prgname&gt;.sym", Hatari
+debugger will load symbols from it, not from the program file.)
 
 <p>Note: many demangled C++ symbols contain special characters
 which prevent them from being given as arguments to breakpoints and
@@ -505,10 +506,9 @@ also "-Wl,--traditional-format" option was needed for linking)</dd>
 <p>You can view the generated symbols (and convert them to debugger
 ASCII format) with tool installed with Hatari:</p>
 <pre>
-$ gst2ascii -l -o program.tos &gt; program.sym
+$ gst2ascii program.tos &gt; program.sym
 </pre>
-<p>(Options -l and -o are used to exclude useless symbols from
-the output.)</p>
+<p>(By default "gst2ascii" filters out same symbols as Hatari debugger does.)</p>
 
 <p>For C++ programs, pipe the that output through
 <em>m68k-atari-mint-c++filt</em> demangler (see above)
@@ -549,14 +549,13 @@ symbols /path/to/the/program.tos
 
 <p>
 If Hatari complains that your program doesn't have debug symbol table,
-or its symbols are in some unsupported format, and you cannot re-compile
-it to include a.out or GST/DRI symbols, you have two options:
+or its symbols are in some unsupported format, you have two options:
 </p>
 <ul>
 <li>Convert the symbols to ASCII format understood by the Hatari debugger.
     Writing converters for other ASCII formats is easy, and Hatari already
     contains converters for DSP LOD files, <span class="commandline">nm</span>
-    output for MiNT/a.out binaries and AHCC map files.</li>
+    output, and a few other formats.</li>
 <li>Create the ASCII symbols file by hand while you're debugging a program.</li>
 </ul>
 
@@ -677,7 +676,7 @@ conditions need to be true for a breakpoint to trigger.
 Normally when a breakpoint is triggered, emulation is stopped and you
 get to the debugger. Breakpoint options can be used to affect what
 happens when a breakpoint is triggered.  These options are given after
-the conditions and are prefixed with ':'.
+the conditions, and are prefixed with a (space and) ':' character.
 </p>
 
 <dl>
@@ -1522,8 +1521,10 @@ $ hatari_profile.py <b>-r</b> program.sym program-profile.txt
 extracted to <a href="#Debug_symbols">the ASCII format</a>
 understood by the post-processor:</p>
 <pre>
-$ gst2ascii -a -l -o program.prg &gt; program.sym
+$ gst2ascii -b -a -d program.prg &gt; program.sym
 </pre>
+<p>(Options given to "gst2ascii" filter out symbols for other
+things than what are in the program code section.)
 
 <p>If there are some extra symbols that you don't want to see
 separately in profiles, because they aren't real functions,
@@ -1531,7 +1532,7 @@ but e.g. loop labels, you can either remove them manually
 from the ASCII *.sym file, or filter them out with grep:
 </p>
 <pre>
-$ gst2ascii -a -l -o program.prg | grep -v -e useless1 -e useless2 &gt; program.sym
+$ gst2ascii -b -a -d program.prg | grep -v -e useless1 -e useless2 &gt; program.sym
 </pre>
 
 <p>For C++ programs, see earlier section(s) on how to best

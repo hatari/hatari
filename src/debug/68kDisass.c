@@ -8,22 +8,22 @@
 #include "main.h"
 #include <ctype.h>
 
-#if HAVE_CAPSTONE_M68K
-#include <capstone.h>
-#endif
-
 #include "sysdeps.h"
 #include "configuration.h"
 #include "m68000.h"
 #include "newcpu.h"
-#include "stMemory.h"
 #include "debug.h"
 #include "paths.h"
 #include "profile.h"
 #include "str.h"
-#include "tos.h"
 #include "68kDisass.h"
 #include "disasm.h"
+
+#if HAVE_CAPSTONE_M68K
+#include <capstone.h>
+#include "stMemory.h"
+#include "tos.h"
+#endif
 
 typedef enum {
 	doptNoSpace       = (1 << 0),	// ext: no space after a comma in the operands list
@@ -429,9 +429,9 @@ void Disasm_Init(void)
 			disasm_flags |= DISASM_FLAG_WORDS;
 
 		if (options & doptShowValues)
-			disasm_flags |= (DISASM_FLAG_CC | DISASM_FLAG_EA | DISASM_FLAG_VAL);
+			disasm_flags |= (DISASM_FLAG_CC | DISASM_FLAG_EA | DISASM_FLAG_VAL | DISASM_FLAG_VAL_FORCE);
 		else
-			disasm_flags &= ~(DISASM_FLAG_CC | DISASM_FLAG_EA | DISASM_FLAG_VAL);
+			disasm_flags &= ~(DISASM_FLAG_CC | DISASM_FLAG_EA | DISASM_FLAG_VAL | DISASM_FLAG_VAL_FORCE);
 
 		if (options & doptHexSmall)
 			disasm_flags |= DISASM_FLAG_LC_HEX;

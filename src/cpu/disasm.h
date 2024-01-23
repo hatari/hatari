@@ -27,3 +27,4 @@ extern TCHAR disasm_hexprefix[3];
 #define DISASM_FLAG_VAL 128
 #define DISASM_FLAG_WORDS 256
 #define DISASM_FLAG_ABSSHORTLONG 512
+#define DISASM_FLAG_VAL_FORCE 1024

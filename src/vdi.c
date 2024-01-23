@@ -826,7 +826,6 @@ void VDI_Info(FILE *fp, uint32_t bShowOpcodes)
 
 	if (bShowOpcodes)
 	{
-		uint16_t opcode;
 		for (opcode = 0; opcode <= 0x84; )
 		{
 			if (opcode == 0x28)

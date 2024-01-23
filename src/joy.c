@@ -31,6 +31,9 @@ const char Joy_fileid[] = "Hatari joy.c";
 #define JOYREADING_BUTTON1  1		/* bit 0, regular fire button */
 #define JOYREADING_BUTTON2  2		/* bit 1, space / jump button */
 #define JOYREADING_BUTTON3  4		/* bit 2, autofire button */
+#define STE_JOY_ANALOG_MIN_VALUE 0x04	/* minimum value for STE analog joystick/paddle axis */
+#define STE_JOY_ANALOG_MID_VALUE 0x24	/* neutral mid value for STE analog joystick/paddle axis */
+#define STE_JOY_ANALOG_MAX_VALUE 0x43	/* maximum value for STE analog joystick/paddle axis */
 
 typedef struct
 {
@@ -264,6 +267,37 @@ static uint8_t Joy_ButtonSpaceJump(int press, bool jump)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Read details from joystick using SDL calls.  Returns the SDL joystick ID or -1 if not found.
+ */
+static int Joy_ReadAxisConfig(int nStJoyId, JOYREADING *pJoyReading)
+{
+	int nSdlJoyId = ConfigureParams.Joysticks.Joy[nStJoyId].nJoyId;
+	if (nSdlJoyId < 0 || !bJoystickWorking[nSdlJoyId])
+		return -1;
+
+	/* How many axes are there on the corresponding SDL joystick? */
+	int nAxes = SDL_JoystickNumAxes(sdlJoystick[nSdlJoyId]);
+
+	/* get joystick axis from configuration settings and make them plausible */
+	pJoyReading->XAxisID = sdlJoystickMapping[nSdlJoyId]->XAxisID;
+	pJoyReading->YAxisID = sdlJoystickMapping[nSdlJoyId]->YAxisID;
+
+	/* make selected axis IDs plausible */
+	if(  (pJoyReading->XAxisID == pJoyReading->YAxisID) /* same joystick axis for two directions? */
+		||(pJoyReading->XAxisID > nAxes)                /* ID for x axis beyond nr of existing axes? */
+		||(pJoyReading->YAxisID > nAxes)                /* ID for y axis beyond nr of existing axes? */
+		)
+	{
+		/* define sane SDL joystick axis defaults and prepare them for saving back to the config file: */
+		pJoyReading->XAxisID = 0;
+		pJoyReading->YAxisID = 1;
+	}
+
+	return nSdlJoyId;
+}
+
+/*-----------------------------------------------------------------------*/
+/**
  * Read PC joystick and return ST format byte, i.e. lower 4 bits direction
  * and top bit fire.
  * NOTE : ID 0 is Joystick 0/Mouse and ID 1 is Joystick 1 (default),
@@ -285,27 +319,11 @@ uint8_t Joy_GetStickData(int nStJoyId)
 	}
 	else if (ConfigureParams.Joysticks.Joy[nStJoyId].nJoystickMode == JOYSTICK_REALSTICK)
 	{
-		int nSdlJoyId;
-		int nAxes;	/* How many axes are there on the corresponding SDL joystick? */
-
-		nSdlJoyId = ConfigureParams.Joysticks.Joy[nStJoyId].nJoyId;
-		if (nSdlJoyId < 0 || !bJoystickWorking[nSdlJoyId])
-			return 0;
-		nAxes = SDL_JoystickNumAxes(sdlJoystick[nSdlJoyId]);
-
-		/* get joystick axis from configuration settings and make them plausible */
-		JoyReading.XAxisID = sdlJoystickMapping[nSdlJoyId]->XAxisID;
-		JoyReading.YAxisID = sdlJoystickMapping[nSdlJoyId]->YAxisID;
-
-		/* make selected axis IDs plausible */
-		if(  (JoyReading.XAxisID == JoyReading.YAxisID) /* same joystick axis for two directions? */
-		   ||(JoyReading.XAxisID > nAxes)               /* ID for x axis beyond nr of existing axes? */
-		   ||(JoyReading.YAxisID > nAxes)               /* ID for y axis beyond nr of existing axes? */
-		  )
+		/* map to SDL stick and Axes */
+		int nSdlJoyId = Joy_ReadAxisConfig(nStJoyId, &JoyReading);
+		if (nSdlJoyId < 0)
 		{
-			/* define sane SDL joystick axis defaults and prepare them for saving back to the config file: */
-			JoyReading.XAxisID = 0;
-			JoyReading.YAxisID = 1;
+			return 0;
 		}
 
 		/* Read real joystick and map to emulated ST joystick for emulation */
@@ -779,3 +797,106 @@ void Joy_SteLightpenY_ReadWord(void)
 
 	IoMem_WriteWord(0xff9222, nData);
 }
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Read PC joystick and return ST format analoge value byte
+ */
+static uint8_t Joy_GetStickAnalogData(int nStJoyId, bool isXAxis)
+{
+	/* Only makes sense to call this for STE pads */
+	assert(nStJoyId == 2 || nStJoyId == 3);
+
+	/* Default to middle of Axis */
+	uint8_t nData = STE_JOY_ANALOG_MID_VALUE;
+
+	/* Are we emulating the joystick via the keyboard? */
+	if (ConfigureParams.Joysticks.Joy[nStJoyId].nJoystickMode == JOYSTICK_KEYBOARD)
+	{
+		/* If holding 'SHIFT' we actually want cursor key movement, so ignore any of this */
+		if ( !(SDL_GetModState()&(KMOD_LSHIFT|KMOD_RSHIFT)) )
+		{
+			uint8_t digiData = nJoyKeyEmu[nStJoyId];
+			uint8_t bitmaskMin = isXAxis ? ATARIJOY_BITMASK_LEFT : ATARIJOY_BITMASK_UP;
+			uint8_t bitmaskMax = isXAxis ? ATARIJOY_BITMASK_RIGHT : ATARIJOY_BITMASK_DOWN;
+
+			if (digiData & bitmaskMin)
+			{
+				nData = STE_JOY_ANALOG_MIN_VALUE;
+			}
+			else if (digiData & bitmaskMax)
+			{
+				nData = STE_JOY_ANALOG_MAX_VALUE;
+			}
+		}
+	}
+	else if (ConfigureParams.Joysticks.Joy[nStJoyId].nJoystickMode == JOYSTICK_REALSTICK)
+	{
+		JOYREADING JoyReading;
+
+		/* map to SDL stick and Axes */
+		int nSdlJoyId = Joy_ReadAxisConfig(nStJoyId, &JoyReading);
+		if (nSdlJoyId < 0)
+		{
+			return nData;
+		}
+
+		/* Read real joystick and map to emulated ST joystick for emulation */
+		if (!Joy_ReadJoystick(nStJoyId, &JoyReading))
+		{
+			/* Something is wrong, we cannot read the joystick from SDL */
+			bJoystickWorking[nSdlJoyId] = false;
+		}
+		else
+		{
+			int sdl_reading = isXAxis ? JoyReading.XPos : JoyReading.YPos;
+			if (sdl_reading < -32768)
+				sdl_reading = -32768;
+			unsigned int usdl_reading = 32768 + sdl_reading;
+			nData = STE_JOY_ANALOG_MIN_VALUE + ((usdl_reading & 0xff00) >> 8) / STE_JOY_ANALOG_MIN_VALUE;
+		}
+	}
+
+	return nData;
+}
+
+/**
+ * Read STE Pad 0 Analog X register (0xff9211)
+ */
+void Joy_StePadAnalog0X_ReadByte(void)
+{
+	uint8_t nData = Joy_GetStickAnalogData(2, true);
+	Dprintf(("0xff9211 -> 0x%02x\n", nData));
+	IoMem_WriteByte(0xff9211, nData);
+}
+
+/**
+ * Read STE Pad 0 Analog Y register (0xff9213)
+ */
+void Joy_StePadAnalog0Y_ReadByte(void)
+{
+	uint8_t nData = Joy_GetStickAnalogData(2, false);
+	Dprintf(("0xff9213 -> 0x%02x\n", nData));
+	IoMem_WriteByte(0xff9213, nData);
+}
+
+/**
+ * Read STE Pad 1 Analog X register (0xff9215)
+ */
+void Joy_StePadAnalog1X_ReadByte(void)
+{
+	uint8_t nData = Joy_GetStickAnalogData(3, true);
+	Dprintf(("0xff9215 -> 0x%02x\n", nData));
+	IoMem_WriteByte(0xff9215, nData);
+}
+
+/**
+ * Read STE Pad 1 Analog Y register (0xff9217)
+ */
+void Joy_StePadAnalog1Y_ReadByte(void)
+{
+	uint8_t nData = Joy_GetStickAnalogData(3, false);
+	Dprintf(("0xff9217 -> 0x%02x\n", nData));
+	IoMem_WriteByte(0xff9217, nData);
+}
+

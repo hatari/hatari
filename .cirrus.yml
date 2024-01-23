@@ -2,18 +2,21 @@ fedora_task:
   container:
     image: fedora:latest
     cpu: 4
-    memory: 2Gb
+    memory: 8G
   install_script:
     - dnf update -y
     - dnf install -y cmake make gcc diffutils python-unversioned-command
           capstone-devel GraphicsMagick SDL2-devel libpng-devel zlib-devel tidy
+          python3-gobject gtk3 readline-devel man git rpmdevtools
   script:
-    - mkdir build
-    - cd build
-    - ../configure --enable-small-mem --disable-dsp
-                  --enable-werror --enable-debug || { cat config.log; exit 1; }
-    - make -j4
-    - ctest -j4 || { cat Testing/Temporary/LastTest.log; exit 1; }
+    - rpmdev-setuptree
+    - cp hatari.spec ~/rpmbuild/SPECS/
+    - sed -i 's/^Version:.*/Version: devel/' ~/rpmbuild/SPECS/hatari.spec
+    - git archive --prefix=hatari-devel/ -o ~/rpmbuild/SOURCES/hatari-devel.tar.bz2 HEAD
+    - rpmbuild -ba ~/rpmbuild/SPECS/hatari.spec
+    - cp ~/rpmbuild/SRPMS/*.rpm ~/rpmbuild/RPMS/x86_64/hatari-devel*.rpm ./
+  hatari_artifacts:
+    path: ./*.rpm
 
 freebsd_task:
   freebsd_instance:
@@ -31,36 +34,61 @@ freebsd_task:
 
 macos12_task:
   osx_instance:
-    image: ghcr.io/cirruslabs/macos-monterey-xcode:13
+    image: ghcr.io/cirruslabs/macos-monterey-xcode:latest
   env:
     SDLVERSION: 2.26.5
+    PNGVERSION: 1.6.40
   download_cache:
     folder: dl_cache
     populate_script:
       - if [ ! -d dl_cache ]; then mkdir dl_cache ; fi
-      - if [ ! -f dl_cache/SDL2-$SDLVERSION.dmg ]; then
-          wget -O dl_cache/SDL2-$SDLVERSION.dmg
-            https://github.com/libsdl-org/SDL/releases/download/release-$SDLVERSION/SDL2-$SDLVERSION.dmg ;
-        fi
   install_script:
+    - if [ ! -f dl_cache/SDL2-$SDLVERSION.dmg ]; then
+        wget -O dl_cache/SDL2-$SDLVERSION.dmg
+          https://github.com/libsdl-org/SDL/releases/download/release-$SDLVERSION/SDL2-$SDLVERSION.dmg ;
+      fi
     - hdiutil attach dl_cache/SDL2-$SDLVERSION.dmg
     - sudo cp -a /Volumes/SDL2/SDL2.framework /Library/Frameworks/
+    - if [ ! -e dl_cache/png.framework ]; then
+        wget -O dl_cache/libpng-$PNGVERSION.tar.xz
+          "http://prdownloads.sourceforge.net/libpng/libpng-$PNGVERSION.tar.xz?download" ;
+        tar -xJf dl_cache/libpng-$PNGVERSION.tar.xz ;
+        cd libpng-$PNGVERSION ;
+        cmake -DPNG_FRAMEWORK=ON -DPNG_HARDWARE_OPTIMIZATIONS=OFF
+              -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING="10.13"
+              -DCMAKE_OSX_ARCHITECTURES:STRING="arm64;x86_64" . ;
+        cmake --build . --verbose --config Release -j$(sysctl -n hw.ncpu) ;
+        codesign --force -s - png.framework ;
+        cd .. ;
+        mv libpng-$PNGVERSION/png.framework dl_cache/ ;
+        rm -rf libpng-$PNGVERSION ;
+      fi
+    - sudo cp -a dl_cache/png.framework /Library/Frameworks/
+    - if [ ! -e dl_cache/portmidi.framework ]; then
+        cd dl_cache ;
+        wget "https://hatari.tuxfamily.org/ci/portmidi.framework.zip" ;
+        unzip portmidi.framework.zip ;
+        mv license.txt portmidi-license.txt ;
+        cd .. ;
+      fi
+    - sudo cp -a dl_cache/portmidi.framework /Library/Frameworks/
   script:
     - export PATH=/usr/local/bin:$PATH
     - mkdir build
     - cd build
-    - cmake -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING="10.9" ..
+    - cmake -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING="10.13"
+            -DCMAKE_OSX_ARCHITECTURES:STRING="arm64;x86_64" ..
       || { cat config.log; exit 1; }
-    - cmake --build . --verbose --config Release -j$(sysctl -n hw.ncpu) -t hatari
-    - cp -a /Volumes/SDL2/SDL2.framework src/hatari.app/Contents/Frameworks/
-    - codesign --force --deep --options=runtime -s -
-      --entitlements ../src/gui-osx/hatari.app.xcent src/hatari.app
+    - cmake --build . --verbose --config Release -j$(sysctl -n hw.ncpu) -t Hatari
+    - cp -a ../dl_cache/portmidi.framework src/hatari.app/Contents/Frameworks/
+    - codesign --force -s - --entitlements ../src/gui-osx/hatari.app.xcent src/Hatari.app
     - cd ..
     - mkdir hatari-snapshot
     - echo $(git rev-parse HEAD) > hatari-snapshot/version.txt
     - date >> hatari-snapshot/version.txt
-    - cp -a build/src/hatari.app hatari-snapshot/
+    - cp -a build/src/Hatari.app hatari-snapshot/
     - cp -a doc gpl.txt readme.txt hatari-snapshot/
+    - cp dl_cache/portmidi-license.txt hatari-snapshot/
     - zip -r hatari-snapshot.zip hatari-snapshot
   hatari_artifacts:
     path: "hatari-snapshot.zip"

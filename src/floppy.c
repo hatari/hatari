@@ -752,9 +752,22 @@ static void Floppy_DoubleCheckFormat(long nDiskSize, long nSectorsPerDisk, uint1
 	else if ( TotalSectors == 82*12*Sides_fixed )	{ SectorsPerTrack_fixed = 12; }
 	else if ( TotalSectors == 83*12*Sides_fixed )	{ SectorsPerTrack_fixed = 12; }
 	else if ( TotalSectors == 84*12*Sides_fixed )	{ SectorsPerTrack_fixed = 12; }
-
-	/* unknown combination, assume boot sector is correct */
-	else						{ SectorsPerTrack_fixed = *pnSectorsPerTrack; }
+	else	/* unknown combination */
+	{
+		if (*pnSectorsPerTrack <= 48)
+		{
+			/* ED floppies could have up to 48 sectors per track,
+			 * so assume boot sector is correct for such values */
+			SectorsPerTrack_fixed = *pnSectorsPerTrack;
+		}
+		else
+		{
+			/* Looks like the boot sector contains completely bad
+			 * values, so try to calculate it instead, assuming
+			 * the disk has 80 tracks */
+			SectorsPerTrack_fixed = TotalSectors / 80 / Sides_fixed;
+		}
+	}
 
 	/* Valid new values if necessary */
 	if ( ( *pnSides != Sides_fixed ) || ( *pnSectorsPerTrack != SectorsPerTrack_fixed ) )
@@ -787,10 +800,11 @@ void Floppy_FindDiskDetails(const uint8_t *pBuffer, int nImageBytes,
 	nSides = pBuffer[26] | (pBuffer[27] << 8);             /* SIDE */
 	nSectorsPerDisk = pBuffer[19] | (pBuffer[20] << 8);    /* total sectors */
 
-	/* If the number of sectors announced is incorrect, the boot-sector may
-	 * contain incorrect information, eg the 'Eat.st' demo, or wrongly imaged
+	/* If the boot sector information looks suspicious, it may contain
+	 * incorrect information, eg the 'Eat.st' demo, or wrongly imaged
 	 * single/double sided floppies... */
-	if (nSectorsPerDisk != nImageBytes/512)
+	if (nSectorsPerDisk != nImageBytes/512 || nSides == 0 || nSides > 2 ||
+	    nSectorsPerTrack == 0 || nSectorsPerTrack > 48)
 		Floppy_DoubleCheckFormat(nImageBytes, nSectorsPerDisk, &nSides, &nSectorsPerTrack);
 
 	/* And set values */

@@ -61,6 +61,7 @@ const char CfgOpts_fileid[] = "Hatari cfgopts.c";
 
 #include "main.h"
 #include "cfgopts.h"
+#include "file.h"
 #include "str.h"
 #include "keymap.h"
 #include "log.h"
@@ -299,8 +300,7 @@ int update_config(const char *filename, const struct Config_Tag configs[], const
 	FILE *cfgfile, *tempfile;
 	char *fptr, *tok;
 	char line[1024];
-	bool bUseTempCfg = false;
-	const char *sTempCfgName = "_temp_.cfg";
+	char *psTempCfgName;
 
 	cfgfile = fopen(filename, "r");
 
@@ -315,13 +315,7 @@ int update_config(const char *filename, const struct Config_Tag configs[], const
 		return count;
 	}
 
-	tempfile = tmpfile();                        /* Open a temporary file for output */
- 	if (tempfile == NULL)
- 	{
-		/* tmpfile() failed, let's try a normal open */
-		tempfile = fopen(sTempCfgName, "w+");
-		bUseTempCfg = true;
-	}
+	tempfile = File_OpenTempFile(&psTempCfgName);   /* Open a temporary file for output */
 	if (tempfile == NULL)
 	{
 		perror("update_config");
@@ -464,10 +458,9 @@ cleanup:
 	}
 	if (tempfile)
 	{
-		/* tmpfile() is removed automatically on close */
 		fclose(tempfile);
-		if (bUseTempCfg)
-			unlink(sTempCfgName);
+		if (psTempCfgName)
+			unlink(psTempCfgName);
 	}
 	return retval;
 }

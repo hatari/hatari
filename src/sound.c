@@ -294,6 +294,10 @@ int		YM2149_HPF_Filter = YM2149_HPF_FILTER_IIR;
 //int		YM2149_Resample_Method = YM2149_RESAMPLE_METHOD_WEIGHTED_AVERAGE_2;
 int		YM2149_Resample_Method = YM2149_RESAMPLE_METHOD_WEIGHTED_AVERAGE_N;
 
+static double	pos_fract_nearest;			/* For YM2149_Next_Resample_Nearest */
+static double	pos_fract_weighted_2;			/* For YM2149_Next_Resample_Weighted_Average_2 */
+static uint32_t	pos_fract_weighted_n;			/* YM2149_Next_Resample_Weighted_Average_N */
+
 
 bool		bEnvelopeFreqFlag;			/* Cleared each frame for YM saving */
 
@@ -319,6 +323,7 @@ static int	YM_Buffer_250_pos_read;			/* Current reading position into above buff
 
 static uint64_t	YM2149_Clock_250;			/* 250 kHz counter */
 static uint64_t	YM2149_Clock_250_CpuClock;		/* Corresponding value of CyclesGlobalClockCounter at the time YM2149_Clock_250 was updated */
+static ymu16	YM2149_Freq_div_2 = 0;			/* Used for noise's generator which uses half the main freq (125 KHz) */
 
 
 
@@ -1020,7 +1025,6 @@ static void	YM2149_DoSamples_250 ( int SamplesToGenerate_250 )
 	ymu32		bt;
 	ymu16		Env3Voices;			/* 0x00CCBBAA */
 	ymu16		Tone3Voices;			/* 0x00CCBBAA */
-	static ymu16	Freq_div_2 = 0;
 	int		pos;
 	int		n;
 
@@ -1042,8 +1046,8 @@ static void	YM2149_DoSamples_250 ( int SamplesToGenerate_250 )
 		/* which gives the same result when per=1 and when per=0 */
 
 		/* Special case for noise counter, it's increased at 125 KHz, not 250 KHz */
-		Freq_div_2 ^= 1;
-		if ( Freq_div_2 == 0 )
+		YM2149_Freq_div_2 ^= 1;
+		if ( YM2149_Freq_div_2 == 0 )
 			Noise_count++;
 		if ( Noise_count >= Noise_per )
 		{
@@ -1268,21 +1272,20 @@ static void	YM2149_Run ( uint64_t CPU_Clock )
  */
 static ymsample	YM2149_Next_Resample_Nearest ( void )
 {
-	static double	pos_fract = 0;
 	ymsample	sample;
 
 
 	/* Get the nearest sample at pos_read or pos_read+1 */
-	if ( pos_fract < 0.5 )
+	if ( pos_fract_nearest < 0.5 )
 		sample = YM_Buffer_250[ YM_Buffer_250_pos_read ];
 	else
 		sample = YM_Buffer_250[ ( YM_Buffer_250_pos_read + 1 ) & YM_BUFFER_250_SIZE_MASK ];
 
 	/* Increase fractional pos and integer pos */
-	pos_fract += ( (double)YM_ATARI_CLOCK_COUNTER ) / YM_REPLAY_FREQ;
+	pos_fract_nearest += ( (double)YM_ATARI_CLOCK_COUNTER ) / YM_REPLAY_FREQ;
 
-	YM_Buffer_250_pos_read = ( YM_Buffer_250_pos_read + (int)pos_fract ) & YM_BUFFER_250_SIZE_MASK;
-	pos_fract -= (int)pos_fract;			/* 0 <= pos_fract < 1 */
+	YM_Buffer_250_pos_read = ( YM_Buffer_250_pos_read + (int)pos_fract_nearest ) & YM_BUFFER_250_SIZE_MASK;
+	pos_fract_nearest -= (int)pos_fract_nearest;		/* 0 <= pos_fract_nearest < 1 */
 
 	return sample;
 }
@@ -1301,7 +1304,6 @@ static ymsample	YM2149_Next_Resample_Nearest ( void )
  */
 static ymsample	YM2149_Next_Resample_Weighted_Average_2 ( void )
 {
-	static double	pos_fract = 0;
 	ymsample	sample_before , sample_after;
 	ymsample	sample;
 
@@ -1309,14 +1311,14 @@ static ymsample	YM2149_Next_Resample_Weighted_Average_2 ( void )
 	/* Get the 2 samples that surround pos_read and do a weighted average */
 	sample_before = YM_Buffer_250[ YM_Buffer_250_pos_read ];
 	sample_after = YM_Buffer_250[ ( YM_Buffer_250_pos_read + 1 ) & YM_BUFFER_250_SIZE_MASK ];
-	sample = round ( ( 1.0 - pos_fract ) * sample_before + pos_fract * sample_after );
-//fprintf ( stderr , "b=%04x a=%04x frac=%f -> res=%04x\n" , sample_before , sample_after , pos_fract , sample );
+	sample = round ( ( 1.0 - pos_fract_weighted_2 ) * sample_before + pos_fract_weighted_2 * sample_after );
+//fprintf ( stderr , "b=%04x a=%04x frac=%f -> res=%04x\n" , sample_before , sample_after , pos_fract_weighted_2 , sample );
 
 	/* Increase fractional pos and integer pos */
-	pos_fract += ( (double)YM_ATARI_CLOCK_COUNTER ) / YM_REPLAY_FREQ;
+	pos_fract_weighted_2 += ( (double)YM_ATARI_CLOCK_COUNTER ) / YM_REPLAY_FREQ;
 
-	YM_Buffer_250_pos_read = ( YM_Buffer_250_pos_read + (int)pos_fract ) & YM_BUFFER_250_SIZE_MASK;
-	pos_fract -= (int)pos_fract;			/* 0 <= pos_fract < 1 */
+	YM_Buffer_250_pos_read = ( YM_Buffer_250_pos_read + (int)pos_fract_weighted_2 ) & YM_BUFFER_250_SIZE_MASK;
+	pos_fract_weighted_2 -= (int)pos_fract_weighted_2;	/* 0 <= pos_fract < 1 */
 
 	return sample;
 }
@@ -1344,8 +1346,7 @@ static ymsample	YM2149_Next_Resample_Weighted_Average_2 ( void )
  */
  static ymsample	YM2149_Next_Resample_Weighted_Average_N ( void )
 {
-	static uint32_t	pos_fract = 0;
-	uint32_t		interval_fract;
+	uint32_t	interval_fract;
 	int64_t		total;
 	ymsample	sample;
 
@@ -1355,25 +1356,25 @@ static ymsample	YM2149_Next_Resample_Weighted_Average_2 ( void )
 
 //fprintf ( stderr , "next 1 clock=%d freq=%d interval=%x  %d\n" , YM_ATARI_CLOCK_COUNTER , YM_REPLAY_FREQ , interval_fract , YM_Buffer_250_pos_read );
 
-	if ( pos_fract )				/* start position : 0xffff <= pos_fract <= 0 */
+	if ( pos_fract_weighted_n )			/* start position : 0xffff <= pos_fract_weighted_n <= 0 */
 	{
-		total += ((int64_t)YM_Buffer_250[ YM_Buffer_250_pos_read ]) * ( 0x10000 - pos_fract );
+		total += ((int64_t)YM_Buffer_250[ YM_Buffer_250_pos_read ]) * ( 0x10000 - pos_fract_weighted_n );
 		YM_Buffer_250_pos_read = ( YM_Buffer_250_pos_read + 1 ) & YM_BUFFER_250_SIZE_MASK;
-		pos_fract -= 0x10000;			/* next sample */
+		pos_fract_weighted_n -= 0x10000;	/* next sample */
 	}
 
-	pos_fract += interval_fract;			/* end position */
+	pos_fract_weighted_n += interval_fract;		/* end position */
 
-	while ( pos_fract & 0xffff0000 )		/* check integer part */
+	while ( pos_fract_weighted_n & 0xffff0000 )	/* check integer part */
 	{
 		total += ((int64_t)YM_Buffer_250[ YM_Buffer_250_pos_read ]) * 0x10000;
 		YM_Buffer_250_pos_read = ( YM_Buffer_250_pos_read + 1 ) & YM_BUFFER_250_SIZE_MASK;
-		pos_fract -= 0x10000;			/* next sample */
+		pos_fract_weighted_n -= 0x10000;	/* next sample */
 	}
 
-	if ( pos_fract )				/* partial end sample if 0xffff <= pos_fract < 0 */
+	if ( pos_fract_weighted_n )				/* partial end sample if 0xffff <= pos_fract_weighted_n < 0 */
 	{
-		total += ((int64_t)YM_Buffer_250[ YM_Buffer_250_pos_read ]) * pos_fract;
+		total += ((int64_t)YM_Buffer_250[ YM_Buffer_250_pos_read ]) * pos_fract_weighted_n;
 	}
 
 //fprintf ( stderr , "next 2 %d\n" , YM_Buffer_250_pos_read );
@@ -1621,13 +1622,14 @@ void Sound_MemorySnapShot_Capture(bool bSave)
 
 	MemorySnapShot_Store(&YmVolumeMixing, sizeof(YmVolumeMixing));
 
-	if ( !bSave )
-	{
-		/* Clear internal YM audio buffer at 250 kHz */
-		memset ( YM_Buffer_250 , 0 , sizeof(YM_Buffer_250) );
-		YM_Buffer_250_pos_write = 0;
-		YM_Buffer_250_pos_read = 0;
-	}
+	MemorySnapShot_Store(&YM_Buffer_250, sizeof(YM_Buffer_250));
+	MemorySnapShot_Store(&YM_Buffer_250_pos_write, sizeof(YM_Buffer_250_pos_write));
+	MemorySnapShot_Store(&YM_Buffer_250_pos_read, sizeof(YM_Buffer_250_pos_read));
+	MemorySnapShot_Store(&YM2149_ConvertCycles_250, sizeof(YM2149_ConvertCycles_250));
+
+	MemorySnapShot_Store(&pos_fract_nearest, sizeof(pos_fract_nearest));
+	MemorySnapShot_Store(&pos_fract_weighted_2, sizeof(pos_fract_weighted_2));
+	MemorySnapShot_Store(&pos_fract_weighted_n, sizeof(pos_fract_weighted_n));
 }
 
 
@@ -1670,7 +1672,6 @@ void Sound_Stats_Show ( void )
 	vbl_per_sec /= pow ( 2 , CLOCKS_TIMINGS_SHIFT_VBL );
 
 	freq_gen = sum * vbl_per_sec;
-	freq_diff = YM_REPLAY_FREQ-freq_gen;
 	freq_diff = freq_gen - YM_REPLAY_FREQ;
 
 	/* Update min/max values, ignore big changes */

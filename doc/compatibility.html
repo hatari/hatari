@@ -898,18 +898,26 @@ for border removal).</p>
     </tr>
     <tr>
       <td>Sync:
-      <a href="http://pouet.net/prod.php?which=61839">The LoSTE screens</a></td>
-      <td>2.0</td>
-      <td>Uses 2 cycle precision to create 0 byte lines on STF/STE and requires
-          wakeup states emulation for STF</td>
-    </tr>
-    <tr>
-      <td>Sync:
       <a href="http://pouet.net/prod.php?which=66787">{Closure}</a></td>
       <td>2.0</td>
       <td>Very technical demo requiring accurate emulation of many items :
           2 cycle precision, wakeup states emulation for STF, new overscan line
           with no stabiliser on the right. A real benchmark for emulators !</td>
+    </tr>
+    <tr>
+      <td>Sync:
+      <a href="https://demozoo.org/productions/325847/">Monism</a></td>
+      <td class="minor">2.4</td>
+      <td>Monochrome demo that requires starting with color monitor and
+          switching to mono one, to get 1280x200 monochrome mode. Can
+	  be viewed using 1280x200@2 VDI mode</td>
+    </tr>
+    <tr>
+      <td>Sync:
+      <a href="http://pouet.net/prod.php?which=61839">The LoSTE screens</a></td>
+      <td>2.0</td>
+      <td>Uses 2 cycle precision to create 0 byte lines on STF/STE and requires
+          wakeup states emulation for STF</td>
     </tr>
     <tr>
       <td>The CareBears:
@@ -2298,6 +2306,13 @@ this section lists only programs that have TT-specific features.</p>
       <td>Nice 3D demo, need 32 MB TT RAM to load the music</td>
     </tr>
     <tr>
+      <td>Gildor:
+      <a href="https://dhs.nu/news.php?t=add&amp;ID=1131">Yeti3D, Spear of Destiny</a></td>
+      <td>2.4.1</td>
+      <td>Atari ports of Yeti3D engine demo and ID's Spear of Destiny, both
+          unusably slow under TOS.  They work also on Falcon with FPU</td>
+    </tr>
+    <tr>
       <td>gwEm:
       <a href="http://www.pouet.net/prod.php?which=24961">4getful</a></td>
       <td>2.1</td>
@@ -2570,8 +2585,8 @@ VGA one are indicated separately.</p>
       <td>2.3.1</td>
       <td>yes</td>
       <td>-</td>
-      <td>Background music if DSP emu enabled.  Both demos 1 &amp; 2
-          work</td>
+      <td>Background music if DSP emu enabled.
+          Demo 1 works with 4MB, demo 2 needs 8MB</td>
     </tr>
     <tr>
       <td>Conquest of Elysium II</td>
@@ -3130,6 +3145,13 @@ VGA one are indicated separately.</p>
       <td>yes</td>
       <td>-</td>
       <td>Nice Defender clone</td>
+    </tr>
+    <tr>
+      <td><a href="https://insane.tscc.de/">Spout</a></td>
+      <td>2.5-dev</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>Atari port of the game</td>
     </tr>
     <tr>
       <td>Static</td>
@@ -4077,6 +4099,15 @@ FPU.</p>
       <td>Requires FPU + 8MB RAM</td>
     </tr>
     <tr>
+      <td>Miro Kropáček:
+      <a href="https://mikro.naprvyraz.sk/download.htm">Led Blur</a></td>
+      <td>2.5-dev</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>Atari port of demo. Nice but too slow even for 32Mhz.
+          Works also on TT, but is even slower on 8-bit</td>
+    </tr>
+    <tr>
       <td>MJJ Prod:
       <a href="http://pouet.net/prod.php?which=28764">Bound 42</a></td>
       <td>2.3</td>
@@ -4482,12 +4513,12 @@ and demo tools from the dhs.nu <a href="http://dhs.nu/">demoscene</a>
 site.</p>
 
 
-<h3>060 Falcon demos</h3>
+<h3>060 Falcon games and demos</h3>
 
 <p>
-Here are Falcon demos documented to be for a 060 CPU.  Issue with
+Here are Falcon programs documented to be for a 060 CPU.  Issue with
 several of them is them relying on CT TOS and its emulation for the
-030/040 CPU/FPU instructions missing in 060.  Some of the demos may
+030/040 CPU/FPU instructions missing in 060.  Some of the programs may
 even have worked with the oldUAE CPU core included to earlier Hatari
 versions, because it did not limit its instruction emulation only to
 instructions available on the actual selected CPU and FPU HW type.
@@ -4500,8 +4531,46 @@ listed as requiring it.  See:
 repository</a>.
 </p>
 
+<h4>060 Falcon games</h4>
+
 <table>
-  <caption>Falcon demos</caption>
+  <caption>060 Falcon games</caption>
+  <thead>
+    <tr class="backdropped">
+      <th>Title</th>
+      <th>Hatari version</th>
+      <th>Sound</th>
+      <th>DSP</th>
+      <th>Comment</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>tSCc:
+      <a href="https://insane.tscc.de/">OpenJazz, OpenTyrian</a>
+      </td>
+      <td>2.5-dev</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>8MB + (060 internal) FPU + FPSP060. Best with 32Mhz CPU</td>
+    </tr>
+    <tr>
+      <td>tSCc:
+      <a href="https://insane.tscc.de/">Worms</a>
+      </td>
+      <td>2.5-dev</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>8MB + (060 internal) FPU + FPSP060. Sound only with DSP.
+          Best with 32Mhz CPU.  Needs original data files</td>
+    </tr>
+  </tbody>
+</table>
+
+<h4>060 Falcon demos</h4>
+
+<table>
+  <caption>060 Falcon demos</caption>
   <thead>
     <tr class="backdropped">
       <th>Title</th>
@@ -4514,6 +4583,7 @@ repository</a>.
   <tbody>
     <tr>
       <td>DHS:
+      <a href="http://pouet.net/prod.php?which=94626">Circuitry of Desire</a>,
       <a href="http://pouet.net/prod.php?which=53186">Codein</a>,
       <a href="http://pouet.net/prod.php?which=25677">Derealization</a>
       </td>
@@ -4522,6 +4592,14 @@ repository</a>.
       <td>-</td>
       <td>4MB + 32MB TT-RAM (less for Codein) + FPU. Start
           with 030, or 060 + FPSP060. Music with DSP</td>
+    </tr>
+    <tr>
+      <td>Evolution:
+      <a href="http://www.pouet.net/prod.php?which=94624">Chiaroscuro</a></td>
+      <td>2.4</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>14MB + 060 + FPU.  Requires FPSP060. Music with DSP</td>
     </tr>
     <tr>
       <td>Fit:
@@ -4762,10 +4840,9 @@ repository</a>.
     </tr>
     <tr>
       <td><a href="http://deunstg.free.fr/sct1/flaysid/">FlaySID (v3.01)</a></td>
-      <td class="major">2.4</td>
+      <td>2.5-dev</td>
       <td>emu</td>
-      <td>Freezes when starting SID playback with DSP engine.
-          Worked fine with Hatari v2.3.1</td>
+      <td>(SID playback with DSP engine froze app in Hatari v2.4.x)</td>
     </tr>
     <tr>
       <td><a href="http://nb.atari.org/main.php?page=productions">FlexTrax</a></td>

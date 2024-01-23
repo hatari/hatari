@@ -4357,11 +4357,11 @@ static void movem_mmu060 (const char *code, int size, bool put, bool aipi, bool 
 			out("%cmask = movem_next[%cmask];\n", reg, reg);
 			out("}\n");
 		}
-		if (aipi || apdi)
-			out("m68k_areg(regs, dstreg) = srca;\n");
 		out("while (--idx >= 0) {\n");
 		out("regs.regs[tmpreg[idx]] = tmp[idx];\n");
 		out("}\n");
+		if (aipi || apdi)
+			out("m68k_areg(regs, dstreg) = srca;\n");
 	} else {
 		for (int i = 0; i < 2; i++) {
 			char reg;
@@ -4373,9 +4373,14 @@ static void movem_mmu060 (const char *code, int size, bool put, bool aipi, bool 
 			if (apdi)
 				out("srca -= %d;\n", size);
 			if (put) {
-				out("%s, m68k_%creg (regs, %s[%cmask]));\n", code, reg, index, reg);
+				if (apdi && !i) {
+					out("int predec = movem_index2[amask] != dstreg ? 0 : %d;\n", size);
+					out("%s, m68k_%creg(regs, %s[%cmask]) - predec);\n", code, reg, index, reg);
+				} else {
+					out("%s, m68k_%creg(regs, %s[%cmask]));\n", code, reg, index, reg);
+				}
 			} else {
-				out("m68k_%creg (regs, %s[%cmask]) = %s;\n", reg, index, reg, code);
+				out("m68k_%creg(regs, %s[%cmask]) = %s;\n", reg, index, reg, code);
 			}
 			if (!apdi)
 				out("srca += %d;\n", size);
@@ -4421,9 +4426,14 @@ static void movem_mmu040 (const char *code, int size, bool put, bool aipi, bool 
 		if (apdi)
 			out("srca -= %d;\n", size);
 		if (put) {
-			out("%s, m68k_%creg (regs, %s[%cmask]));\n", code, reg, index, reg);
+			if (apdi && !i) {
+				out("int predec = movem_index2[amask] != dstreg ? 0 : %d;\n", size);
+				out("%s, m68k_%creg(regs, %s[%cmask]) - predec);\n", code, reg, index, reg);
+			} else {
+				out("%s, m68k_%creg(regs, %s[%cmask]));\n", code, reg, index, reg);
+			}
 		} else {
-			out("m68k_%creg (regs, %s[%cmask]) = %s;\n", reg, index, reg, code);
+			out("m68k_%creg(regs, %s[%cmask]) = %s;\n", reg, index, reg, code);
 		}
 		if (!apdi)
 			out("srca += %d;\n", size);
@@ -4478,7 +4488,12 @@ static void movem_mmu030 (const char *code, int size, bool put, bool aipi, bool 
 			out("val = %smmu030_data_buffer_out;\n", size == 2 ? "(uae_s32)(uae_s16)" : "");
 		out("} else {\n");
 		if (put) {
-			out("mmu030_data_buffer_out = m68k_%creg(regs, %s[%cmask]);\n", reg, index, reg);
+			if (apdi && !i) {
+				out("int predec = movem_index2[amask] != dstreg ? 0 : %d;\n", size);
+			} else {
+				out("int predec = 0;\n");
+			}
+			out("mmu030_data_buffer_out = m68k_%creg(regs, %s[%cmask]) - predec;\n", reg, index, reg);
 			if (MMU68030_LAST_WRITE) {
 				// last write?
 				if (dphase == i)
@@ -4500,7 +4515,7 @@ static void movem_mmu030 (const char *code, int size, bool put, bool aipi, bool 
 		}
 		out("}\n");
 		if (!put) {
-			out("m68k_%creg (regs, %s[%cmask]) = val;\n", reg, index, reg);
+			out("m68k_%creg(regs, %s[%cmask]) = val;\n", reg, index, reg);
 		}
 		out("mmu030_state[0]++;\n");
 		out("}\n");
@@ -4773,9 +4788,7 @@ static void genmovemle(uae_u16 opcode)
 		if (table68k[opcode].dmode == Apdi) {
 			out("uae_u16 amask = mask & 0xff, dmask = (mask >> 8) & 0xff;\n");
 			movem_ex3(1);
-			if (!using_mmu) {
-				out("int type = %d;\n", cpu_level > 1);
-			}
+			out("int type = %d;\n", cpu_level > 1);
 			out("while (amask) {\n");
 			out("srca -= %d;\n", size);
 
@@ -7070,7 +7083,9 @@ static void gen_opcode (unsigned int opcode)
 				out("opcode |= 0x20000;\n");
 			}
 			if (using_debugmem) {
+				out("#ifdef DEBUGGER\n");
 				out("branch_stack_pop_rte(oldpc);\n");
+				out("#endif\n");
 			}
 		} else if (cpu_level == 1 && using_prefetch) {
 			// 68010
@@ -7118,7 +7133,9 @@ static void gen_opcode (unsigned int opcode)
 			out("newsr = sr; newpc = pc;\n");
 			setpc ("newpc");
 			if (using_debugmem) {
+				out("#ifdef DEBUGGER\n");
 				out("branch_stack_pop_rte(oldpc);\n");
+				out("#endif\n");
 			}
 		} else {
 			out("uaecptr oldpc = %s;\n", getpc);
@@ -7232,7 +7249,9 @@ static void gen_opcode (unsigned int opcode)
 			out("}\n");
 		    setpc ("newpc");
 			if (using_debugmem) {
+				out("#ifdef DEBUGGER\n");
 				out("branch_stack_pop_rte(oldpc);\n");
+				out("#endif\n");
 			}
 		}
 		/* PC is set and prefetch filled. */
@@ -7388,9 +7407,11 @@ static void gen_opcode (unsigned int opcode)
 			count_readl++;
 		}
 		if (using_debugmem) {
+			out("#ifdef DEBUGGER\n");
 			out("if (debugmem_trace) {\n");
 			out("branch_stack_pop_rts(oldpc);\n");
 			out("}\n");
+			out("#endif\n");
 		}
 	    out("if (%s & 1) {\n", getpc);
 		out("uaecptr faultpc = %s;\n", getpc);
@@ -7632,9 +7653,11 @@ static void gen_opcode (unsigned int opcode)
 				if (cpu_level >= 4)
 					out("m68k_areg(regs, 7) -= 4;\n");
 				if (using_debugmem) {
+					out("#ifdef DEBUGGER\n");
 					out("if (debugmem_trace) {\n");
 					out("branch_stack_push(oldpc, nextpc);\n");
 					out("}\n");
+					out("#endif\n");
 				}
 			}
 			fill_prefetch_full_020();
@@ -7797,9 +7820,11 @@ static void gen_opcode (unsigned int opcode)
 			out("}\n");
 		}
 		if (using_debugmem) {
+			out("#ifdef DEBUGGER\n");
 			out("if (debugmem_trace) {\n");
 			out("branch_stack_push(oldpc, nextpc);\n");
 			out("}\n");
+			out("#endif\n");
 		}
 		clear_m68k_offset();
 		if (using_prefetch || using_ce) {
@@ -8834,7 +8859,7 @@ bccl_not68020:
 		case sz_long: out("uae_u32 val = data;\n"); break;
 		default: term();
 		}
-		fill_prefetch_next_noopcodecopy("CLEAR_CZNV();\nSET_CFLG(val & 0x8000);\nSET_ZFLG(!((val & 0x7fff) | GET_XFLG()));\nSET_NFLG(val & 0x4000);\nSET_XFLG(GET_CFLG());\n", cmask(curi->size));
+		fill_prefetch_next_noopcodecopy("CLEAR_CZNV();\nSET_CFLG(val & 0x8000);\nSET_ZFLG(!((val & 0x7fff) | GET_XFLG()));\nSET_NFLG(val & 0x4000);\nSET_XFLG(GET_CFLG());\n");
 		out("uae_u32 carry = val & %s;\n", cmask (curi->size));
 		out("val <<= 1;\n");
 		out("if (GET_XFLG()) val |= 1;\n");
@@ -8852,7 +8877,7 @@ bccl_not68020:
 		case sz_long: out("uae_u32 val = data;\n"); break;
 		default: term();
 		}
-		fill_prefetch_next_noopcodecopy("CLEAR_CZNV();SET_CFLG(val & 1);\nSET_ZFLG(!((val &0x7ffe) | GET_XFLG()))\n;SET_NFLG(GET_XFLG())\n;SET_XFLG(GET_CFLG());\n", cmask(curi->size));
+		fill_prefetch_next_noopcodecopy("CLEAR_CZNV();SET_CFLG(val & 1);\nSET_ZFLG(!((val &0x7ffe) | GET_XFLG()))\n;SET_NFLG(GET_XFLG())\n;SET_XFLG(GET_CFLG());\n");
 		out("uae_u32 carry = val & 1;\n");
 		out("val >>= 1;\n");
 		out("if (GET_XFLG()) val |= %s;\n", cmask (curi->size));

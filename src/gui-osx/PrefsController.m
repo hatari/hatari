@@ -575,11 +575,11 @@ char szPath[FILENAME_MAX];
 #ifdef HAVE_PORTMIDI
 	int i = 0;
 	const char* portName = NULL;
-	while ((portName = Midi_Host_GetPortName(portName, +1, true)))
+	while ((portName = Midi_Host_GetPortName(portName, MIDI_NAME_NEXT, MIDI_FOR_INPUT)))
 		[midiInPort addItemWithTitle:[NSString stringWithCString:portName encoding:NSASCIIStringEncoding]];
 	i = 0;
 	portName = NULL;
-	while ((portName = Midi_Host_GetPortName(portName, +1, false)))
+	while ((portName = Midi_Host_GetPortName(portName, MIDI_NAME_NEXT, MIDI_FOR_OUTPUT)))
 		[midiOutPort addItemWithTitle:[NSString stringWithCString:portName encoding:NSASCIIStringEncoding]];
 #endif		// HAVE_PORTMIDI
 }

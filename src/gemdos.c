@@ -823,8 +823,8 @@ void GemDOS_UnInitDrives(void)
 static void save_file_handle_info(FILE_HANDLE *handle)
 {
 	struct stat fstat;
-	time_t mtime;
-	off_t offset;
+	time_t mtime = 0;
+	off_t offset = 0;
 
 	MemorySnapShot_Store(&handle->bUsed, sizeof(handle->bUsed));
 	MemorySnapShot_Store(&handle->szMode, sizeof(handle->szMode));
@@ -833,15 +833,8 @@ static void save_file_handle_info(FILE_HANDLE *handle)
 	if (handle->bUsed)
 	{
 		offset = ftello(handle->FileHandle);
-		stat(handle->szActualName, &fstat);
-		mtime = fstat.st_mtime; /* modification time */
-	}
-	else
-	{
-		/* avoid warnings about access to undefined data */
-		offset = 0;
-		stat("/", &fstat);
-		mtime = fstat.st_mtime;
+		if (stat(handle->szActualName, &fstat) == 0)
+			mtime = fstat.st_mtime; /* modification time */
 	}
 	MemorySnapShot_Store(&mtime, sizeof(mtime));
 	MemorySnapShot_Store(&offset, sizeof(offset));
@@ -894,7 +887,8 @@ static void restore_file_handle_info(int i, FILE_HANDLE *handle)
 		handle->bUsed = false;
 		Log_Printf(LOG_WARN, "GEMDOS '%s' handle %d cannot be restored, seek to saved offset %"PRId64" failed for: %s\n",
 			   handle->szMode, i, (int64_t)offset, handle->szActualName);
-		fclose(fp);
+		if (fp)
+			fclose(fp);
 		return;
 	}
 	/* used only for warnings, ignore those after restore */
@@ -2428,9 +2422,12 @@ static bool GemDOS_Write(uint32_t Params)
 		fflush(fp);
 		Regs[REG_D0] = nBytesWritten;      /* OK */
 	}
-	if (FileHandles[fh_idx].bReadOnly)
+	if (fh_idx >= 0 && FileHandles[fh_idx].bReadOnly)
+	{
 		Log_Printf(LOG_WARN, "GEMDOS Fwrite() to a read-only file '%s'\n",
 			   File_Basename(FileHandles[fh_idx].szActualName));
+	}
+
 	return true;
 }
 
@@ -4345,13 +4342,24 @@ int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr, bool bFullBpSe
 		return 0;
 	}
 
-	nRelTabIdx = 0x1c + nTextLen + nDataLen + nSymLen;
+	nRelTabIdx = 0x1c + nTextLen + nDataLen;
 	if (nRelTabIdx > nFileSize - 3)
 	{
 		free(prg);
 		Log_Printf(LOG_ERROR, "Can not parse relocation table of '%s'.\n", psPrgName);
 		return GEMDOS_EPLFMT;
 	}
+	if (nRelTabIdx + nSymLen <= nFileSize - 3U)
+	{
+		nRelTabIdx += nSymLen;
+	}
+	else
+	{
+		/* Original TOS ignores the error if the symbol table length
+		 * is too, big, so just log a warning here instead of failing */
+		Log_Printf(LOG_WARN, "Symbol table length of '%s' is too big!\n", psPrgName);
+	}
+
 	nRelOff = (prg[nRelTabIdx] << 24) | (prg[nRelTabIdx + 1] << 16)
 	          | (prg[nRelTabIdx + 2] << 8) | prg[nRelTabIdx + 3];
 
@@ -4401,6 +4409,7 @@ void GemDOS_PexecBpCreated(void)
 	uint16_t sr = M68000_GetSR();
 	uint16_t mode;
 	uint32_t prgname;
+	int drive;
 
 	sr &= ~SR_OVERFLOW;
 
@@ -4411,9 +4420,18 @@ void GemDOS_PexecBpCreated(void)
 	LOG_TRACE(TRACE_OS_GEMDOS, "Basepage has been created - now loading '%s'\n",
 	          sStFileName);
 
-	GemDOS_CreateHardDriveFileName(GemDOS_FileName2HardDriveID(sStFileName),
-	                               sStFileName, sFileName, sizeof(sFileName));
-	errcode = GemDOS_LoadAndReloc(sFileName, Regs[REG_D0], false);
+	drive = GemDOS_FileName2HardDriveID(sStFileName);
+	if (drive >= 2)
+	{
+		GemDOS_CreateHardDriveFileName(drive, sStFileName, sFileName,
+		                               sizeof(sFileName));
+		errcode = GemDOS_LoadAndReloc(sFileName, Regs[REG_D0], false);
+	}
+	else
+	{
+		errcode = GEMDOS_EDRIVE;
+	}
+
 	if (errcode)
 	{
 		Regs[REG_A0] = Regs[REG_D0];

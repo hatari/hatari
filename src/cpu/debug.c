@@ -162,6 +162,11 @@ void activate_debugger_new_pc(uaecptr pc, int len)
 	trace_param[1] = pc + len;
 }
 
+static void debug_continue(void)
+{
+	set_special(SPCFLAG_BRK);
+}
+
 bool debug_enforcer(void)
 {
 	if (!break_if_enforcer)
@@ -242,7 +247,8 @@ static const TCHAR help[] = {
 	_T("  dj [<level bitmask>]  Enable joystick/mouse input debugging.\n")
 	_T("  smc [<0-1>]           Enable self-modifying code detector. 1 = enable break.\n")
 	_T("  dm                    Dump current address space map.\n")
-	_T("  v <vpos> [<hpos>]     Show DMA data (accurate only in cycle-exact mode).\n")
+	_T("  v <vpos> [<hpos>] [<lines>]\n")
+	_T("                        Show DMA data (accurate only in cycle-exact mode).\n")
 	_T("                        v [-1 to -4] = enable visual DMA debugger.\n")
 	_T("  vh [<ratio> <lines>]  \"Heat map\"\n")
 	_T("  I <custom event>      Send custom event string\n")
@@ -373,6 +379,8 @@ uae_u32 get_byte_debug (uaecptr addr)
 					v = mmu_get_iword(addr, sz_byte);
 					if (!odd)
 						v >>= 8;
+					else
+						v &= 0xff;
 				} else {
 					v = mmu_get_user_byte (addr, regs.s != 0, false, sz_byte, false);
 				}
@@ -533,8 +541,11 @@ static bool iscancel (int counter)
 
 static bool isoperator(TCHAR **cp)
 {
-	TCHAR c = **cp;
-	return c == '+' || c == '-' || c == '/' || c == '*' || c == '(' || c == ')' || c == '|' || c == '&' || c == '^' || c == '=' || c == '>' || c == '<';
+	TCHAR c = _totupper(**cp);
+	TCHAR c1 = _totupper((*cp)[1]);
+	return c == '+' || c == '-' || c == '/' || c == '*' || c == '(' || c == ')' ||
+		c == '|' || c == '&' || c == '^' || c == '=' || c == '>' || c == '<' ||
+		(c == 'R' && (c1 == 'L' || c1 == 'W' || c1 == 'B'));
 }
 
 static void ignore_ws (TCHAR **c)
@@ -681,7 +692,7 @@ static const TCHAR *debugregs[] = {
 	NULL
 };
 
-static int getregidx(TCHAR **c)
+int getregidx(TCHAR **c)
 {
 	int i;
 	TCHAR *p = *c;
@@ -705,7 +716,7 @@ static int getregidx(TCHAR **c)
 	return -1;
 }
 
-static uae_u32 returnregx(int regid)
+uae_u32 returnregx(int regid)
 {
 	if (regid < BREAKPOINT_REG_PC)
 		return regs.regs[regid];
@@ -880,11 +891,11 @@ static int checkvaltype2 (TCHAR **c, uae_u32 *val, TCHAR def)
 	}
 	if (nc == '$') {
 		(*c)++;
-		return  readhexx (c, val) ? 1 : 0;
+		return readhexx (c, val) ? 1 : 0;
 	}
 	if (nc == '0' && _totupper ((*c)[1]) == 'X') {
 		(*c)+= 2;
-		return  readhexx (c, val) ? 1 : 0;
+		return readhexx (c, val) ? 1 : 0;
 	}
 	if (nc == '%') {
 		(*c)++;
@@ -2196,6 +2207,7 @@ void record_dma_read_value(uae_u32 v)
 		last_dma_rec->size = 2;
 	}
 }
+
 void record_dma_read_value_wide(uae_u64 v, bool quad)
 {
 	if (last_dma_rec) {
@@ -2207,6 +2219,7 @@ void record_dma_read_value_wide(uae_u64 v, bool quad)
 		last_dma_rec->size = quad ? 8 : 4;
 	}
 }
+
 bool record_dma_check(int hpos, int vpos)
 {
 	if (!dma_record[0]) {
@@ -2218,6 +2231,20 @@ bool record_dma_check(int hpos, int vpos)
 	struct dma_rec *dr = &dma_record[dma_record_toggle][vpos * NR_DMA_REC_HPOS + hpos];
 	return dr->reg != 0xffff;
 }
+
+void record_dma_denise(int hpos, int dhpos)
+{
+	if (!dma_record[0]) {
+		return;
+	}
+	hpos += dma_record_hoffset;
+	if (hpos >= NR_DMA_REC_HPOS || vpos >= NR_DMA_REC_VPOS) {
+		return;
+	}
+	struct dma_rec *dr = &dma_record[dma_record_toggle][vpos * NR_DMA_REC_HPOS + hpos];
+	dr->dhpos = dhpos;
+}
+
 void record_dma_clear(int hpos, int vpos)
 {
 	if (!dma_record[0]) {
@@ -2398,7 +2425,7 @@ static bool get_record_dma_info(struct dma_rec *dr, int hpos, int vpos, TCHAR *l
 		}
 	}
 	if (ipl >= 0) {
-		_stprintf(l1, _T("[%02X     %d]"), hpos, ipl);
+		_stprintf(l1, _T("[%02X %03X %d]"), hpos, dhpos, ipl);
 	} else if (ipl == -2) {
 		_stprintf(l1, _T("[%02X     -]"), hpos);
 	} else {
@@ -2602,7 +2629,7 @@ static bool get_record_dma_info(struct dma_rec *dr, int hpos, int vpos, TCHAR *l
 
 
 
-static void decode_dma_record(int hpos, int vpos, int toggle, bool logfile)
+static void decode_dma_record(int hpos, int vpos, int count, int toggle, bool logfile)
 {
 	struct dma_rec *dr, *dr_start;
 	int h, i, maxh = 0;
@@ -2715,6 +2742,12 @@ static void decode_dma_record(int hpos, int vpos, int toggle, bool logfile)
 			console_out_f(_T("%s\n"), l6);
 			console_out_f(_T("\n"));
 		}
+		if (count > 0) {
+			count--;
+			if (!count) {
+				break;
+			}
+		}
 	}
 	if (logfile)
 		flush_log();
@@ -2726,7 +2759,7 @@ void log_dma_record (void)
 		return;
 	if (!debug_dma)
 		return;
-	decode_dma_record (0, 0, 0, true);
+	decode_dma_record (0, 0, 0, 0, true);
 }
 
 static void init_record_copper(void)
@@ -6392,6 +6425,29 @@ static void dma_disasm(int frames, int vp, int hp, int frames_end, int vp_end, i
 static uaecptr nxdis, nxmem, asmaddr;
 static bool ppcmode, asmmode;
 
+static bool parsecmd(TCHAR *cmd, bool *out)
+{
+	if (!_tcsicmp(cmd, _T("reset"))) {
+		deactivate_debugger();
+		debug_continue();
+		uae_reset(0, 0);
+		return true;
+	}
+	if (!_tcsicmp(cmd, _T("reseth"))) {
+		deactivate_debugger();
+		debug_continue();
+		uae_reset(1, 0);
+		return true;
+	}
+	if (!_tcsicmp(cmd, _T("resetk"))) {
+		deactivate_debugger();
+		debug_continue();
+		uae_reset(0, 1);
+		return true;
+	}
+	return false;
+}
+
 static bool debug_line (TCHAR *input)
 {
 	TCHAR cmd, *inptr;
@@ -6423,6 +6479,10 @@ static bool debug_line (TCHAR *input)
 		}
 	}
 
+	ignore_ws(&inptr);
+	if (parsecmd(inptr, &err)) {
+		return err;
+	}
 	cmd = next_char (&inptr);
 
 	switch (cmd)
@@ -6856,7 +6916,7 @@ static bool debug_line (TCHAR *input)
 		case 'v':
 		case 'V':
 			{
-				int v1 = vpos, v2 = 0;
+				static int v1 = 0, v2 = 0, v3 = 0;
 				if (*inptr == 'h') {
 					inptr++;
 					if (more_params(&inptr) && *inptr == '?') {
@@ -6942,19 +7002,21 @@ static bool debug_line (TCHAR *input)
 						if (nextcmd == 'l') {
 							next_char(&inptr);
 						}
-						if (more_params (&inptr))
-							v1 = readint (&inptr, NULL);
-						if (more_params (&inptr))
-							v2 = readint (&inptr, NULL);
+						if (more_params(&inptr))
+							v1 = readint(&inptr, NULL);
+						if (more_params(&inptr))
+							v2 = readint(&inptr, NULL);
+						if (more_params(&inptr))
+							v3 = readint(&inptr, NULL);
 						if (debug_dma && v1 >= 0 && v2 >= 0) {
-							decode_dma_record (v2, v1, cmd == 'v', nextcmd == 'l');
+							decode_dma_record(v2, v1, v3, cmd == 'v', nextcmd == 'l');
 						} else {
 							if (debug_dma) {
 								record_dma_reset(0);
 								reset_drawing();
 							}
 							debug_dma = v1 < 0 ? -v1 : 1;
-							console_out_f (_T("DMA debugger enabled, mode=%d.\n"), debug_dma);
+							console_out_f(_T("DMA debugger enabled, mode=%d.\n"), debug_dma);
 						}
 					}
 				}
@@ -7088,11 +7150,6 @@ static void addhistory(void)
 			firsthist = 0;
 		}
 	}
-}
-
-static void debug_continue(void)
-{
-	set_special (SPCFLAG_BRK);
 }
 
 void debug_exception(int nr)

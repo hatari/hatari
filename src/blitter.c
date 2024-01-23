@@ -98,6 +98,13 @@
   UPDATE : as of september 2020, this behaviour should be correctly emulated (based on reverse engineering and
   Verilog implementation made by Jorge Cwik (Ijor))
 
+
+  NOTE for Falcon using 32 bit TT RAM : standard Falcon can only address 24 bits of memory with the CPU,
+  the Falcon's blitter is also limited to 24 bits addresses.
+  Some extension boards such as Afterburner or CT2 could use extra "TT RAM" which required 32 bits addresses,
+  but as normal TOS was not designed to handle 32 bits addresses (because is was not possible hardwire-wise)
+  we need to "simulate" 32 bits source/dest address at $FF8A24 and $FF8A32 instead of masking 24 bits
+  (see Blitter_SourceAddr_WriteLong and Blitter_DestAddr_WriteLong)
 */
 
 
@@ -348,10 +355,6 @@ static void Blitter_AddCycles(int cycles)
 
 static void Blitter_FlushCycles(void)
 {
-#ifndef CYCINT_NEW
-	int op_cycles = INT_CONVERT_TO_INTERNAL(BlitterVars.op_cycles, INT_CPU_CYCLE);
-#endif
-
 //fprintf ( stderr , "blitter flush_cyc cyc=%d pass=%d %d cur_cyc=%lu\n" , BlitterVars.op_cycles , BlitterVars.pass_cycles , nCyclesMainCounter , currcycle/cpucycleunit );
 
 	if ( BLITTER_RUN_CE )					/* In CE mode, flush cycles already counted in the current cpu instruction */
@@ -360,9 +363,6 @@ static void Blitter_FlushCycles(void)
  		currcycle = 0;
 	}
 
-#ifndef CYCINT_NEW
-	PendingInterruptCount -= op_cycles;
-#endif
 	CycInt_Process();
 
 	/* Run DSP while blitter owns the bus */
@@ -1519,6 +1519,11 @@ void Blitter_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&BlitterState, sizeof(BlitterState));
 
 	MemorySnapShot_Store(&BlitterPhase, sizeof(BlitterPhase));
+	MemorySnapShot_Store(&Blitter_CyclesBeforeStart, sizeof(Blitter_CyclesBeforeStart));
+	MemorySnapShot_Store(&Blitter_HOG_CPU_FromBusAccess, sizeof(Blitter_HOG_CPU_FromBusAccess));
+	MemorySnapShot_Store(&Blitter_HOG_CPU_BlitterStartDuringBusAccess, sizeof(Blitter_HOG_CPU_BlitterStartDuringBusAccess));
+	MemorySnapShot_Store(&Blitter_HOG_CPU_BusCountError, sizeof(Blitter_HOG_CPU_BusCountError));
+	MemorySnapShot_Store(&Blitter_HOG_CPU_IgnoreMaxCpuCycles, sizeof(Blitter_HOG_CPU_IgnoreMaxCpuCycles));
 
 	if ( !bSave )
 	{

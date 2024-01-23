@@ -1498,10 +1498,12 @@ static bool BreakCond_Options(char *str, bc_options_t *options, char marker)
 	}
 	for (next = option; option; option = next) {
 
+		char splitter[3] = {' ', marker, '\0'};
 		/* skip marker + end & trim this option */
 		option = next + 1;
-		next = strchr(option, marker);
+		next = strstr(option, splitter);
 		if (next) {
+			next++; /* skip space to next marker */
 			*next = 0;
 		}
 		option = Str_Trim(option);

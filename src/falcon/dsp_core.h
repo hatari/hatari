@@ -228,8 +228,8 @@ struct dsp_core_s {
 	/* External ram[] (mapped to p:) */
 	uint32_t ramext[DSP_RAMSIZE];
 
-	/* rom[0] is x:, rom[1] is y: */
-	uint32_t rom[2][512];
+	/* rom[0] is x:, rom[1] is y:, rom[2] is p: */
+	uint32_t rom[3][512];
 
 	/* Internal ram[0] is x:, ram[1] is y:, ram[2] is p: */
 	uint32_t ramint[3][512];

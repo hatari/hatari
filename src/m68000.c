@@ -93,6 +93,7 @@ const char M68000_fileid[] = "Hatari m68000.c";
 #include "cart.h"
 #include "cpu/cpummu.h"
 #include "cpu/cpummu030.h"
+#include "scc.h"
 
 #if ENABLE_DSP_EMU
 #include "dsp.h"
@@ -101,7 +102,7 @@ const char M68000_fileid[] = "Hatari m68000.c";
 /* information about current CPU instruction */
 cpu_instruction_t CpuInstruction;
 
-uint32_t BusErrorAddress;		/* Stores the offending address for bus-/address errors */
+uint32_t BusErrorAddress;	/* Stores the offending address for bus-/address errors */
 bool bBusErrorReadWrite;	/* 0 for write error, 1 for read error */
 int nCpuFreqShift;		/* Used to emulate higher CPU frequencies: 0=8MHz, 1=16MHz, 2=32Mhz */
 int WaitStateCycles = 0;	/* Used to emulate the wait state cycles of certain IO registers */
@@ -487,8 +488,20 @@ void M68000_MemorySnapShot_Capture(bool bSave)
 		//printf ( "restore mmu done\n"  );
 		//m68k_dumpstate_file(stderr, NULL);
 	}
-}
 
+	MemorySnapShot_Store(&WaitStateCycles,sizeof(WaitStateCycles));
+	MemorySnapShot_Store(&BusMode,sizeof(BusMode));
+	MemorySnapShot_Store(&CPU_IACK,sizeof(CPU_IACK));
+	MemorySnapShot_Store(&LastInstrCycles,sizeof(LastInstrCycles));
+	MemorySnapShot_Store(&Pairing,sizeof(Pairing));
+
+	/* From cpu/custom.c and cpu/events.c */
+	MemorySnapShot_Store(&currcycle,sizeof(currcycle));
+	MemorySnapShot_Store(&extra_cycle,sizeof(extra_cycle));
+
+	/* From cpu/newcpu.c */
+	MemorySnapShot_Store(&BusCyclePenalty,sizeof(BusCyclePenalty));
+}
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -612,6 +625,7 @@ void M68000_Exception(uint32_t ExceptionNr , int ExceptionSource)
  * before being processed.
  * So, we need to check which IRQ are set/cleared at the same time
  * and update level 6 accordingly : level 6 = MFP_IRQ OR DSP_IRQ
+ * Level 5 (SCC) is only used on Mega STE, TT and Falcon
  *
  * [NP] NOTE : temporary case for interrupts with WinUAE CPU in cycle exact mode
  * In CE mode, interrupt state should be updated on each subcycle of every opcode
@@ -633,15 +647,27 @@ void	M68000_Update_intlev ( void )
 	else
 		pendingInterrupts &= ~(1 << 6);
 
+	if ( SCC_Get_Line_IRQ() == SCC_IRQ_ON )
+		pendingInterrupts |= (1 << 5);
+	else
+		pendingInterrupts &= ~(1 << 5);
+
 	if ( pendingInterrupts )
 		doint();
 	else
 		M68000_UnsetSpecial ( SPCFLAG_INT | SPCFLAG_DOINT );
 
-	/* Temporary case for WinUAE CPU in CE mode */
+	/* Temporary case for WinUAE CPU hanlding IPL in CE mode */
 	/* doint() will update regs.ipl_pin, so copy it into regs.ipl[0] */
+	/* TODO : see ipl_fetch_next / update_ipl, we should not reset currcycle */
+	/* (when counting Hatari's internal cycles) to have correct value */
+	/* in regs.ipl_pin_change_evt. In the meantime we always copy regs.ipl_pin */
+	/* to regs.ipl_pin_p, else ipl_fetch_next can return an incorrect ipl */
 	if ( CpuRunCycleExact )
+	{
 		regs.ipl[0] = regs.ipl_pin;			/* See ipl_fetch() in cpu/cpu_prefetch.h */
+		regs.ipl_pin_p = regs.ipl_pin;			/* See ipl_fetch_next() */
+	}
 }
 
 

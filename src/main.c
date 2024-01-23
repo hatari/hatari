@@ -59,6 +59,7 @@ const char Main_fileid[] = "Hatari main.c";
 #include "avi_record.h"
 #include "debugui.h"
 #include "clocks_timings.h"
+#include "utils.h"
 
 #include "hatari-glue.h"
 
@@ -922,7 +923,7 @@ static void Main_StatusbarSetup(void)
 int main(int argc, char *argv[])
 {
 	/* Generate random seed */
-	srand(time(NULL));
+	Hatari_srand(time(NULL));
 
 	/* Logs default to stderr at start */
 	Log_Default();

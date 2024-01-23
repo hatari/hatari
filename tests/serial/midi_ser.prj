@@ -1,4 +1,5 @@
 ; AHCC project file for MIDI serial tester
+.C [-iinclude]
 midi_ser.tos
 =
 ../startup.s

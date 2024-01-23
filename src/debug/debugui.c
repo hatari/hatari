@@ -1122,7 +1122,7 @@ void DebugUI_UnInit(void)
 {
 	Profile_CpuFree();
 	Profile_DspFree();
-	Log_ResetMsgRepeat();
+	Symbols_FreeAll();
 	free(debugCommand);
 	debugCommands = 0;
 }

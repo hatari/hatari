@@ -913,6 +913,9 @@ static void TOS_CheckSysConfig(void)
 			ConfigureParams.System.bMMU = false;
 		}
 		M68000_CheckCpuSettings();
+
+		/* Ensure MMU has default values when changing machine's type before calling memory_init() later */
+		STMemory_Reset ( true );
 	}
 	else if (ConfigureParams.System.nCpuLevel != oldCpuLevel
 		 || ConfigureParams.System.n_FPUType != oldFpuType)
@@ -1259,8 +1262,10 @@ static const struct {
 	{ TOS_LANG_NL,    "nl",    "Holland" },
 	{ TOS_LANG_CS,    "cs",    "Czech Republic" },
 	{ TOS_LANG_HU,    "hu",    "Hungary" },
+	{ TOS_LANG_PL,    "pl",    "Poland" },
 	{ TOS_LANG_RU,    "ru",    "Russia" },
 	{ TOS_LANG_GR,    "gr",    "Greece" },
+	{ TOS_LANG_RO,    "ro",    "Romania" },
 };
 
 /**
@@ -1281,8 +1286,10 @@ void TOS_ShowCountryCodes(void)
 {
 	fprintf(stderr, "\nTOS v4 supports:\n");
 	for (int i = 0; i < ARRAY_SIZE(countries); i++) {
-		if (i == 7)
-			fprintf(stderr, "\nEmuTOS 1024k (v1.1.x) supports also:\n");
+		if (countries[i].value == TOS_LANG_CH_FR)
+			fprintf(stderr, "\nEmuTOS 1024k supports also:\n");
+		if (countries[i].value == TOS_LANG_RO)
+			fprintf(stderr, "\nEmuTOS 1024k >1.2.1 also:\n");
 		fprintf(stderr, "- %s : %s\n",
 			countries[i].code, countries[i].name);
 	}

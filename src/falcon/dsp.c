@@ -369,7 +369,7 @@ uint32_t DSP_ReadMemory(uint16_t address, char space_id, const char **mem_str)
 	static const char *spaces[3][4] = {
 		{ "X ram", "X rom", "X", "X periph" },
 		{ "Y ram", "Y rom", "Y", "Y periph" },
-		{ "P ram", "P ram", "P ext memory", "P ext memory" }
+		{ "P ram", "P rom", "P ext memory", "P ext memory" }
 	};
 	int idx, space;
 
@@ -392,12 +392,6 @@ uint32_t DSP_ReadMemory(uint16_t address, char space_id, const char **mem_str)
 	}
 	address &= 0xFFFF;
 
-	/* Internal RAM ? */
-	if (address < 0x100) {
-		*mem_str = spaces[idx][0];
-		return dsp_core.ramint[space][address];
-	}
-
 	if (space == DSP_SPACE_P) {
 		/* Internal RAM ? */
 		if (address < 0x200) {
@@ -407,6 +401,12 @@ uint32_t DSP_ReadMemory(uint16_t address, char space_id, const char **mem_str)
 		/* External RAM, mask address to available ram size */
 		*mem_str = spaces[idx][2];
 		return dsp_core.ramext[address & (DSP_RAMSIZE-1)];
+	}
+
+	/* Internal RAM ? */
+	if (address < 0x100) {
+		*mem_str = spaces[idx][0];
+		return dsp_core.ramint[space][address];
 	}
 
 	/* Internal ROM ? */
@@ -632,12 +632,13 @@ int DSP_GetRegisterAddress(const char *regname, uint32_t **addr, uint32_t *mask)
 		{ "R6",  &dsp_core.registers[DSP_REG_R6],  32, BITMASK(16) },
 		{ "R7",  &dsp_core.registers[DSP_REG_R7],  32, BITMASK(16) },
 
-		{ "SSH", &dsp_core.registers[DSP_REG_SSH], 32, BITMASK(16) },
-		{ "SSL", &dsp_core.registers[DSP_REG_SSL], 32, BITMASK(16) },
 		{ "SP",  &dsp_core.registers[DSP_REG_SP],  32, BITMASK(6) },
 
 		/* 16-bit status register */
 		{ "SR",  &dsp_core.registers[DSP_REG_SR],  32, 0xefff },
+
+		{ "SSH", &dsp_core.registers[DSP_REG_SSH], 32, BITMASK(16) },
+		{ "SSL", &dsp_core.registers[DSP_REG_SSL], 32, BITMASK(16) },
 
 		/* 48-bit X register */
 		{ "X0",  &dsp_core.registers[DSP_REG_X0],  32, BITMASK(24) },

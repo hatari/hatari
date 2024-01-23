@@ -94,7 +94,7 @@ typedef struct
 	uLong crc32_wait;           /* crc32 we must obtain after decompress all */
 	uLong rest_read_compressed; /* number of byte to be decompressed */
 	uLong rest_read_uncompressed;/*number of byte to be obtained after decomp*/
-	FILE* file;                 /* io structore of the zipfile */
+	FILE* file;                 /* io structure of the zipfile */
 	uLong compression_method;   /* compression method (0==store) */
 	uLong byte_before_the_zipfile;/* byte before the zipfile, (>0 for sfx)*/
 } file_in_zip_read_info_s;
@@ -104,8 +104,8 @@ typedef struct
 */
 typedef struct
 {
-	FILE* file;                 /* io structore of the zipfile */
-	unz_global_info gi;       /* public global information */
+	FILE* file;                 /* io structure of the zipfile */
+	unz_global_info gi;         /* public global information */
 	uLong byte_before_the_zipfile;/* byte before the zipfile, (>0 for sfx)*/
 	uLong num_file;             /* number of the current file in the zipfile*/
 	uLong pos_in_central_dir;   /* pos of the current file in the central dir*/
@@ -432,7 +432,7 @@ int ZEXPORT unzGetGlobalInfo (unzFile file, unz_global_info *pglobal_info)
 
 
 /**
- *  Translate date/time from Dos format to tm_unz (readable more easilty)
+ *  Translate date/time from Dos format to tm_unz (readable more easily)
  */
 local void unzlocal_DosDateToTmuDate (uLong ulDosDate, tm_unz* ptm)
 {

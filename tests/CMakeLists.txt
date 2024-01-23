@@ -4,9 +4,9 @@ add_subdirectory(unit)
 
 if(UNIX)
 	add_test(NAME command-fifo COMMAND
-	         ${CMAKE_CURRENT_SOURCE_DIR}/cmdfifo.sh $<TARGET_FILE:hatari>)
+	         ${CMAKE_CURRENT_SOURCE_DIR}/cmdfifo.sh $<TARGET_FILE:${APP_NAME}>)
 	add_test(NAME config-file COMMAND
-	         ${CMAKE_CURRENT_SOURCE_DIR}/configfile.sh $<TARGET_FILE:hatari>)
+	         ${CMAKE_CURRENT_SOURCE_DIR}/configfile.sh $<TARGET_FILE:${APP_NAME}>)
 	add_subdirectory(blitter)
 	add_subdirectory(buserror)
 	add_subdirectory(cpu)

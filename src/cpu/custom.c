@@ -18,13 +18,9 @@
 #include "newcpu.h"
 #include "main.h"
 #include "cpummu.h"
-#include "m68000.h"
-#include "debugui.h"
-#include "debugcpu.h"
-#ifdef WINUAE_FOR_HATARI
-#include "debug.h"
 #include "blitter.h"
-#endif
+#include "debug.h"
+#include "savestate.h"
 
 #define WRITE_LOG_BUF_SIZE 4096
 
@@ -37,7 +33,7 @@ extern struct regstruct mmu_backup_regs;
 evt_t currcycle;
 /* declared in savestate.h */
 int savestate_state = 0;
-TCHAR *savestate_fname;
+TCHAR savestate_fname[MAX_DPATH];
 /* declared in custom.h */
 uae_u32 hsync_counter = 0, vsync_counter = 0;
 #endif
@@ -45,7 +41,7 @@ uae_u32 hsync_counter = 0, vsync_counter = 0;
 
 uae_u16 dmacon;
 
-static uae_u32 extra_cycle;
+uae_u32 extra_cycle;
 
 #ifdef CPUEMU_13
 

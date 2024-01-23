@@ -10,6 +10,16 @@
 
 #include <tos.h>
 
+void sleep_vbl ( int count )
+{
+	volatile long	vbl_nb;
+	vbl_nb = *(long *)0x462;
+
+	while ( *(long volatile *)0x462 < vbl_nb+count )
+		;
+}
+
+
 typedef unsigned char UBYTE;
 
 /*==== MFP memory mapping =================================================*/
@@ -101,6 +111,9 @@ int main(int argc, char *argv[])
 
 	for (i = 0; text[i] != 0; i++)
 		conout(text[i]);
+
+	// wait a few VBL's to be sure all the bytes were transfered/received
+	sleep_vbl(5);
 
 	Super(sp);
 

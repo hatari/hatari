@@ -20,8 +20,10 @@ const char ScreenSnapShot_fileid[] = "Hatari screenSnapShot.c";
 #include "screenConvert.h"
 #include "screenSnapShot.h"
 #include "statusbar.h"
-#include "video.h"
 #include "vdi.h"
+#include "video.h"
+#include "videl.h"
+#include "stMemory.h"
 /* after above that bring in config.h */
 #if HAVE_LIBPNG
 # include <png.h>
@@ -32,14 +34,6 @@ const char ScreenSnapShot_fileid[] = "Hatari screenSnapShot.c";
 
 static int nScreenShots = 0;                /* Number of screen shots saved */
 static Uint8 NEOHeader[128];
-
-/* From stMemory.h, but it seems to have some conflict with dirent.h? */
-#if ENABLE_SMALL_MEM
-extern uint8_t *STRam;
-#else
-extern uint8_t STRam[16*1024*1024];
-#endif  /* ENABLE_SMALL_MEM */
-extern uint32_t STRamEnd;
 
 
 /*-----------------------------------------------------------------------*/
@@ -129,8 +123,10 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
 	png_text pngtext;
 	char key[] = "Title";
 	char text[] = "Hatari screenshot";
-	off_t start;;
-
+	off_t start;
+	bool do_palette = true;
+	static png_color png_pal[256];
+	static Uint8 palbuf[3];
 
 	if (!dw)
 		dw = sw;
@@ -138,6 +134,32 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
 		dh = sh;
 
 	rowbuf = alloca(3 * dw);
+
+	/* Use current ST palette if all colours in the image belong to it, otherwise RGB */
+	do_lock = SDL_MUSTLOCK(surface);
+	if (do_lock)
+		SDL_LockSurface(surface);
+	for (y = 0; y < dh && do_palette; y++)
+	{
+		src_ptr = (Uint8 *)surface->pixels
+		          + (CropTop + (y * sh + dh/2) / dh) * surface->pitch
+		          + CropLeft * surface->format->BytesPerPixel;
+		switch (fmt->BytesPerPixel)
+		{
+		 case 2:
+			if (!PixelConvert_16to8Bits(rowbuf, (Uint16*)src_ptr, dw, surface))
+				do_palette = false;
+			break;
+		 case 4:
+			if (!PixelConvert_32to8Bits(rowbuf, (Uint32*)src_ptr, dw, surface))
+				do_palette = false;
+			break;
+		 default:
+			abort();
+		}
+	}
+	if (do_lock)
+		SDL_UnlockSurface(surface);
 
 	/* Create and initialize the png_struct with error handler functions. */
 	png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
@@ -168,7 +190,8 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
 	png_init_io(png_ptr, fp);
 
 	/* image data properties */
-	png_set_IHDR(png_ptr, info_ptr, dw, dh, 8, PNG_COLOR_TYPE_RGB,
+	png_set_IHDR(png_ptr, info_ptr, dw, dh, 8,
+		     do_palette ? PNG_COLOR_TYPE_PALETTE : PNG_COLOR_TYPE_RGB,
 		     PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT,
 		     PNG_FILTER_TYPE_DEFAULT);
 
@@ -186,6 +209,29 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
 #endif
 	png_set_text(png_ptr, info_ptr, &pngtext, 1);
 
+	if (do_palette)
+	{
+		/* Generate palette for PNG */
+		for (y = 0; y < ConvertPaletteSize; y++)
+		{
+			switch (fmt->BytesPerPixel)
+			{
+			 case 2:
+				PixelConvert_16to24Bits(palbuf, (Uint16*)(ConvertPalette+y), 1, surface);
+				break;
+			 case 4:
+				PixelConvert_32to24Bits(palbuf, (Uint32*)(ConvertPalette+y), 1, surface);
+				break;
+			 default:
+				abort();
+			}
+			png_pal[y].red   = palbuf[0];
+			png_pal[y].green = palbuf[1];
+			png_pal[y].blue  = palbuf[2];
+		}
+		png_set_PLTE(png_ptr, info_ptr, png_pal, ConvertPaletteSize);
+	}
+
 	/* write the file header information */
 	png_write_info(png_ptr, info_ptr);
 
@@ -202,18 +248,37 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
 		          + (CropTop + (y * sh + dh/2) / dh) * surface->pitch
 		          + CropLeft * surface->format->BytesPerPixel;
 
-		switch (fmt->BytesPerPixel)
+		if (!do_palette)
 		{
-		 case 2:
-			/* unpack 16-bit RGB pixels */
-			PixelConvert_16to24Bits(rowbuf, (Uint16*)src_ptr, dw, surface);
-			break;
-		 case 4:
-			/* unpack 32-bit RGBA pixels */
-			PixelConvert_32to24Bits(rowbuf, (Uint32*)src_ptr, dw, surface);
-			break;
-		 default:
-			abort();
+			switch (fmt->BytesPerPixel)
+			{
+			 case 2:
+				/* unpack 16-bit RGB pixels */
+				PixelConvert_16to24Bits(rowbuf, (Uint16*)src_ptr, dw, surface);
+				break;
+			 case 4:
+				/* unpack 32-bit RGBA pixels */
+				PixelConvert_32to24Bits(rowbuf, (Uint32*)src_ptr, dw, surface);
+				break;
+			 default:
+				abort();
+			}
+		}
+		else
+		{
+			/* Reindex back to ST palette
+			 * Note that this cannot disambiguate indices if the palette has duplicate colors */
+			switch (fmt->BytesPerPixel)
+			{
+			 case 2:
+				PixelConvert_16to8Bits(rowbuf, (Uint16*)src_ptr, dw, surface);
+				break;
+			 case 4:
+				PixelConvert_32to8Bits(rowbuf, (Uint32*)src_ptr, dw, surface);
+				break;
+			 default:
+				abort();
+			}
 		}
 		/* and unlock surface before syscalls */
 		if (do_lock)
@@ -373,27 +438,46 @@ void ScreenSnapShot_SaveScreen(void)
 	ScreenSnapShot_GetNum();
 	/* Create our filename */
 	nScreenShots++;
-	/* NEO memory dump */
-	if (ConfigureParams.Screen.bNEOScreenSnapShot)
+
+
+	/* BMP format */
+	if (ConfigureParams.Screen.ScreenShotFormat == SCREEN_SNAPSHOT_BMP )
+	{
+		sprintf(szFileName,"%s/grab%4.4d.bmp", Paths_GetScreenShotDir(), nScreenShots);
+		if (SDL_SaveBMP(sdlscrn, szFileName))
+			fprintf(stderr, "BMP screen dump failed!\n");
+		else
+			fprintf(stderr, "BMP screen dump saved to: %s\n", szFileName);
+		free(szFileName);
+		return;
+	}
+
+#if HAVE_LIBPNG
+	/* PNG format */
+	else if (ConfigureParams.Screen.ScreenShotFormat == SCREEN_SNAPSHOT_PNG )
+	{
+		sprintf(szFileName,"%s/grab%4.4d.png", Paths_GetScreenShotDir(), nScreenShots);
+		if (ScreenSnapShot_SavePNG(sdlscrn, szFileName) > 0)
+			fprintf(stderr, "PNG screen dump saved to: %s\n", szFileName);
+		else
+			fprintf(stderr, "PNG screen dump failed!\n");
+		free(szFileName);
+		return;
+	}
+#endif
+
+	/* NEO format */
+	else if (ConfigureParams.Screen.ScreenShotFormat == SCREEN_SNAPSHOT_NEO )
 	{
 		sprintf(szFileName,"%s/grab%4.4d.neo", Paths_GetScreenShotDir(), nScreenShots);
 		if (ScreenSnapShot_SaveNEO(szFileName) > 0)
-			fprintf(stderr, "Screen dump saved to: %s\n", szFileName);
+			fprintf(stderr, "NEO screen dump saved to: %s\n", szFileName);
 		else
 			fprintf(stderr, "NEO screen dump failed!\n");
 		free(szFileName);
 		return;
 	}
-#if HAVE_LIBPNG
-	/* try first PNG */
-	sprintf(szFileName,"%s/grab%4.4d.png", Paths_GetScreenShotDir(), nScreenShots);
-	if (ScreenSnapShot_SavePNG(sdlscrn, szFileName) > 0)
-	{
-		fprintf(stderr, "Screen dump saved to: %s\n", szFileName);
-		free(szFileName);
-		return;
-	}
-#endif
+
 	sprintf(szFileName,"%s/grab%4.4d.bmp", Paths_GetScreenShotDir(), nScreenShots);
 	if (SDL_SaveBMP(sdlscrn, szFileName))
 		fprintf(stderr, "Screen dump failed!\n");
@@ -425,6 +509,10 @@ void ScreenSnapShot_SaveToFile(const char *szFileName)
 	if (File_DoesFileExtensionMatch(szFileName, ".bmp"))
 	{
 		success = SDL_SaveBMP(sdlscrn, szFileName) == 0;
+	}
+	else if (File_DoesFileExtensionMatch(szFileName, ".neo"))
+	{
+		success = ScreenSnapShot_SaveNEO(szFileName) == 0;
 	}
 	else
 	if (File_DoesFileExtensionMatch(szFileName, ".neo"))

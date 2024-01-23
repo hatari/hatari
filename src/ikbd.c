@@ -969,7 +969,7 @@ static bool	IKBD_OutputBuffer_CheckFreeCount ( int Nb )
  */
 static int	IKBD_Delay_Random ( int min , int max )
 {
-	return min + rand() % ( max - min );
+	return min + Hatari_rand() % ( max - min );
 }
 
 

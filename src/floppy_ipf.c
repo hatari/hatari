@@ -958,7 +958,7 @@ uint8_t	IPF_FDC_ReadReg ( uint8_t Reg )
 void	IPF_FDC_StatusBar ( uint8_t *pCommand , uint8_t *pHead , uint8_t *pTrack , uint8_t *pSector , uint8_t *pSide )
 {
 #ifndef HAVE_CAPSIMAGE
-	return;						/* This should not be reached (an IPF image can't be inserted without capsimage) */
+	abort();					/* This should not be reached (an IPF image can't be inserted without capsimage) */
 #else
 	int	Drive;
 

@@ -10,7 +10,7 @@
  * matching, TAB completion support etc.
  * 
  * Symbol/address information is read either from:
- * - A program file's DRI/GST or a.out format symbol table, or
+ * - A program file's symbol table (in DRI/GST, a.out, or ELF format), or
  * - ASCII file which contents are subset of "nm" output i.e. composed of
  *   a hexadecimal addresses followed by a space, letter indicating symbol
  *   type (T = text/code, D = data, B = BSS), space and the symbol name.
@@ -171,6 +171,7 @@ static symbol_list_t* symbols_load_ascii(FILE *fp, uint32_t *offsets, uint32_t m
 		list->names[count].address = address;
 		list->names[count].type = symtype;
 		list->names[count].name = strdup(name);
+		list->names[count].name_allocated = true;
 		assert(list->names[count].name);
 		count++;
 	}
@@ -181,58 +182,73 @@ static symbol_list_t* symbols_load_ascii(FILE *fp, uint32_t *offsets, uint32_t m
 }
 
 /**
- * Remove full duplicates from the sorted names list
- * and trim the allocation to remaining symbols
+ * Return true if symbol name has (C++) data symbol prefix
  */
-static void symbols_trim_names(symbol_list_t* list)
+static bool is_cpp_data_symbol(const char *name)
 {
-	symbol_t *sym = list->names;
-	int i, next, count, dups;
-
-	count = list->namecount;
-	for (dups = i = 0; i < count - 1; ) {
-		next = i + 1;
-		if (strcmp(sym[i].name, sym[next].name) == 0 &&
-		    sym[i].address == sym[next].address &&
-		    sym[i].type == sym[next].type) {
-			/* remove duplicate */
-			memmove(sym+i, sym+next, (count-next) * sizeof(symbol_t));
-			count--;
-			dups++;
-		} else {
-			i++;
+	static const char *cpp_data[] = {
+		"typeinfo ",
+		"vtable ",
+		"VTT "
+	};
+	int i;
+	for (i = 0; i < ARRAY_SIZE(cpp_data); i++) {
+		size_t len = strlen(cpp_data[i]);
+		if (strncmp(name, cpp_data[i], len) == 0) {
+			return true;
 		}
 	}
-	if (dups || list->namecount < list->symbols) {
-		list->names = realloc(list->names, count * sizeof(symbol_t));
-		assert(list->names);
-		list->namecount = count;
+	return false;
+}
+
+/**
+ * (C++) compiler can put certain data members to text section, and
+ * some of the weak (C++) symbols are for data. For C++, these can be
+ * recognized by their name.  This changes their type to data, to
+ * speed up text symbol searches in profiler.
+ */
+static int fix_symbol_types(symbol_list_t* list)
+{
+	symbol_t *sym = list->names;
+	int i, count, changed = 0;
+
+	count = list->namecount;
+	for (i = 0; i < count; i++) {
+		if (!(sym[i].type & SYMTYPE_CODE)) {
+			continue;
+		}
+		if (is_cpp_data_symbol(sym[i].name)) {
+			sym[i].type = SYMTYPE_DATA;
+			changed++;
+		}
+		/* TODO: add check also for C++ data member
+		 * names, similar to profiler post-processor
+		 * (requires using regex)?
+		 */
 	}
-	if (dups) {
-		fprintf(stderr, "WARNING: removed %d complete symbol duplicates\n", dups);
-	}
+	return changed;
 }
 
 /**
  * Separate code symbols from other symbols in address list.
  */
-static void symbols_trim_addresses(symbol_list_t* list)
+static void symbols_split_addresses(symbol_list_t* list)
 {
 	symbol_t *sym = list->addresses;
 	uint32_t prev = 0;
 	int i;
 
 	for (i = 0; i < list->namecount; i++) {
-		if (sym[i].address < prev) {
-			fprintf(stderr, "INTERNAL ERROR: symbol '%s' at 0x%x not sorted in address-order\n",
-				sym[i].name, sym[i].address);
-			exit(1);
-		}
-		prev = sym[i].address;
-
 		if (sym[i].type & ~SYMTYPE_CODE) {
 			break;
 		}
+		if (sym[i].address < prev) {
+			char stype = symbol_char(sym[i].type);
+			fprintf(stderr, "INTERNAL ERROR: %c symbol %d/%d ('%s') at %x < %x (prev addr)\n",
+				stype, i, list->namecount, sym[i].name, sym[i].address, prev);
+			exit(1);
+		}
+		prev = sym[i].address;
 	}
 	list->codecount = i;
 	list->datacount = list->namecount - i;
@@ -284,6 +300,7 @@ static symbol_list_t* Symbols_Load(const char *filename, uint32_t *offsets, uint
 {
 	symbol_list_t *list;
 	symbol_opts_t opts;
+	int changed, dups;
 	FILE *fp;
 
 	if (!File_Exists(filename)) {
@@ -291,9 +308,9 @@ static symbol_list_t* Symbols_Load(const char *filename, uint32_t *offsets, uint
 		return NULL;
 	}
 	memset(&opts, 0, sizeof(opts));
-	opts.no_files = true;
 	opts.no_gccint = true;
 	opts.no_local = true;
+	opts.no_dups = true;
 
 	if (Opt_IsAtariProgram(filename)) {
 		const char *last = CurrentProgramPath;
@@ -326,33 +343,47 @@ static symbol_list_t* Symbols_Load(const char *filename, uint32_t *offsets, uint
 		return NULL;
 	}
 
-	/* sort and trim names list */
-	qsort(list->names, list->namecount, sizeof(symbol_t), symbols_by_name);
-	symbols_trim_names(list);
+	if ((changed = fix_symbol_types(list))) {
+		fprintf(stderr, "Corrected type for %d symbols (text->data).\n", changed);
+	}
+
+	/* first sort symbols by address, _with_ code symbols being first */
+	qsort(list->names, list->namecount, sizeof(symbol_t), symbols_by_address);
+
+	/* remove symbols with duplicate addresses? */
+	if (opts.no_dups) {
+		if ((dups = symbols_trim_names(list))) {
+			fprintf(stderr, "Removed %d symbols in same addresses as other symbols.\n", dups);
+		}
+	}
 
 	/* copy name list to address list */
 	list->addresses = malloc(list->namecount * sizeof(symbol_t));
 	assert(list->addresses);
 	memcpy(list->addresses, list->names, list->namecount * sizeof(symbol_t));
 
-	/* sort address list and trim to contain just TEXT symbols */
-	qsort(list->addresses, list->namecount, sizeof(symbol_t), symbols_by_address);
-	symbols_trim_addresses(list);
+	/* "split" address list to code and other symbols */
+	symbols_split_addresses(list);
 
-	/* skip verbose output when symbols are auto-loaded */
+	/* finally, sort name list by names */
+	qsort(list->names, list->namecount, sizeof(symbol_t), symbols_by_name);
+
+	/* skip more verbose output when symbols are auto-loaded */
 	if (ConfigureParams.Debugger.bSymbolsAutoLoad) {
-		fprintf(stderr, "Skipping duplicate address & symbol name checks when autoload is enabled.\n");
+		fprintf(stderr, "Skipping detailed duplicate symbols reporting when autoload is enabled.\n");
 	} else {
-		/* check for duplicate names */
-		if (symbols_check_names(list->names, list->namecount)) {
-			fprintf(stderr, "-> Hatari symbol expansion can match only one of the addresses for name duplicates!\n");
+		/* check for duplicate addresses? */
+		if (!opts.no_dups) {
+			if ((dups = symbols_check_addresses(list->addresses, list->namecount))) {
+			fprintf(stderr, "%d symbols in same addresses as other symbols.\n", dups);
+			}
 		}
-		/* check for duplicate code & other addresses */
-		if (symbols_check_addresses(list->addresses, list->codecount)) {
-			fprintf(stderr, "-> Hatari profile/disassembly will show only one of the code symbols for given address!\n");
-		}
-		if (symbols_check_addresses(list->addresses + list->codecount, list->datacount)) {
-			fprintf(stderr, "-> Hatari disassembly will show only one of the symbols for given address!\n");
+
+		/* report duplicate names */
+		if ((dups = symbols_check_names(list->names, list->namecount))) {
+			fprintf(stderr, "%d symbols having multiple addresses for the same name.\n"
+				"Symbol expansion will match only one of the addresses for them!\n",
+				dups);
 		}
 	}
 
@@ -370,6 +401,14 @@ static void Symbols_Free(symbol_list_t* list)
 	symbol_list_free(list);
 }
 
+/**
+ * Free all symbols (at exit).
+ */
+void Symbols_FreeAll(void)
+{
+	symbol_list_free(CpuSymbolsList);
+	symbol_list_free(DspSymbolsList);
+}
 
 /* ---------------- symbol name completion support ------------------ */
 

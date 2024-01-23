@@ -326,6 +326,26 @@ Enable MFP serial port support and use <file> as the input device
 .B \-\-rs232\-out <filename>
 Enable MFP serial port support and use <file> as the output device
 .TP
+.B \-\-scc\-a\-in <filename>
+Enable SCC channel A serial port support and use <file> for the input
+(only for Mega-STE, TT and Falcon)
+.TP
+.B \-\-scc\-a\-out <filename>
+Enable SCC channel A serial port support and use <file> for the output
+(only for Mega-STE, TT and Falcon)
+.TP
+.B \-\-scc\-a\-lan\-in <filename>
+Enable SCC channel A LAN port support and use <file> for the input
+(only for Mega-STE and TT)
+.TP
+.B \-\-scc\-a\-lan\-out <filename>
+Enable SCC channel A LAN port support and use <file> for the output
+(only for Mega-STE and TT)
+.TP
+.B \-\-scc\-b\-in <filename>
+Enable SCC channel B serial port support and use <file> for the input
+(only for Mega-STE, TT and Falcon)
+.TP
 .B \-\-scc\-b\-out <filename>
 Enable SCC channel B serial port support and use <file> for the output
 (only for Mega-STE, TT and Falcon)
@@ -529,7 +549,7 @@ supports.
 .B \-\-sound\-buffer\-size <x>
 SDL's sound buffer size: 10-100, or 0 to use default buffer size.
 By default Hatari uses an SDL buffer size of 1024 samples, which
-gives approximatively 20-30 ms of sound depending on the chosen sound
+gives approximately 20-30 ms of sound depending on the chosen sound
 frequency. Under some OS or with not fully supported sound card, this
 default setting can cause a bigger delay at lower frequency (nearly 0.5 sec).
 In that case, you can use this option to force the size of the sound

@@ -6,25 +6,29 @@ if(POLICY CMP0148)
 	cmake_policy(SET CMP0148 OLD)
 endif(POLICY CMP0148)
 
+# Set build type to "Release" if user did not specify any build type yet
+# Other possible values: Debug, Release, RelWithDebInfo and MinSizeRel
+if(NOT CMAKE_BUILD_TYPE)
+	set(CMAKE_BUILD_TYPE Release)
+endif(NOT CMAKE_BUILD_TYPE)
+
+if(APPLE AND CMAKE_BUILD_TYPE STREQUAL "Release")
+	set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "Target architectures")
+	set(CMAKE_OSX_DEPLOYMENT_TARGET "10.9" CACHE STRING "Target minimum macOS version")
+endif(APPLE AND CMAKE_BUILD_TYPE STREQUAL "Release")
+
 project(Hatari C)
 enable_testing()
-
-set(APP_NAME "Hatari")
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
 include(CheckIncludeFiles)
 include(CheckFunctionExists)
 include(CheckStructHasMember)
+include(CheckSymbolExists)
 include(CheckCCompilerFlag)
 include(DistClean)
 include(CheckTypeSize)
-
-# Set build type to "Release" if user did not specify any build type yet
-# Other possible values: Debug, Release, RelWithDebInfo and MinSizeRel
-if(NOT CMAKE_BUILD_TYPE)
-	set(CMAKE_BUILD_TYPE Release)
-endif(NOT CMAKE_BUILD_TYPE)
 
 # set(CMAKE_VERBOSE_MAKEFILE 1)
 
@@ -92,8 +96,6 @@ endif()
 if(APPLE)
 	set(ENABLE_OSX_BUNDLE 1
 	    CACHE BOOL "Built Hatari as macOS application bundle")
-	set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE STRING "Target architectures")
-	# set(CMAKE_OSX_DEPLOYMENT_TARGET "10.9" CACHE STRING "Target minimum macOS version")
 	set(ADDITIONAL_INCLUDES ${FRAMEWORKS})
 	set_source_files_properties(${FRAMEWORKS} PROPERTIES MACOSX_PACKAGE_LOCATION Frameworks)
 	set(CMAKE_XCODE_ATTRIBUTE_LD_RUNPATH_SEARCH_PATHS "@loader_path/../Frameworks")
@@ -102,6 +104,12 @@ else()
 	set(ENABLE_OSX_BUNDLE 0
 	    CACHE BOOL "Built Hatari as macOS application bundle")
 endif(APPLE)
+
+if(ENABLE_OSX_BUNDLE)
+	set(APP_NAME "Hatari")
+else()
+	set(APP_NAME "hatari")
+endif(ENABLE_OSX_BUNDLE)
 
 # ####################
 # Check for libraries:
@@ -256,13 +264,20 @@ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wwrite-strings -Wsign-compare")
 	#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wextra -Wno-unused-parameter -Wno-empty-body")
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wformat-security")
-	#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wshadow -D_FORTIFY_SOURCE=2")
+	if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_FORTIFY_SOURCE=2")
+	endif()
 endif()
 
 CHECK_C_COMPILER_FLAG("-Wimplicit-fallthrough=2" WARN_FALLTRHOUGH_AVAILABLE)
 if(WARN_FALLTRHOUGH_AVAILABLE)
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wimplicit-fallthrough=2")
 endif(WARN_FALLTRHOUGH_AVAILABLE)
+
+CHECK_C_COMPILER_FLAG("-Wshadow=local" WARN_SHADOW_LOCAL_AVAILABLE)
+if(WARN_SHADOW_LOCAL_AVAILABLE)
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wshadow=local")
+endif(WARN_SHADOW_LOCAL_AVAILABLE)
 
 if(EMSCRIPTEN)
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-rtti -fno-exceptions -O3 -s USE_SDL=2 -s USE_ZLIB=1")

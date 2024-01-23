@@ -1066,7 +1066,7 @@ static TCHAR szTempFileName[MAX_PATH];
 /**
  * Get temporary filename for Windows
  */
-char* WinTmpFile(void)
+static char* WinTmpFile(void)
 {
 	DWORD dwRetVal = 0;
 	UINT uRetVal   = 0;
@@ -1094,3 +1094,33 @@ char* WinTmpFile(void)
 	return (char*)szTempFileName;
 }
 #endif
+
+/**
+ * Open a temporary file. This is a wrapper for tmpfile() that can be used
+ * on Windows, too. If *psFileName gets set by this function, the caller
+ * should delete the file manually when it is not needed anymore.
+ */
+FILE *File_OpenTempFile(char **psFileName)
+{
+	FILE *fh;
+	char *psTmpName = NULL;
+
+	fh = tmpfile();            /* Open temporary file */
+
+#if defined(WIN32)
+	if (!fh)
+	{
+		/* Unfortunately tmpfile() needs administrative privileges on
+		 * Windows, so if it failed, let's work around this issue. */
+		psTmpName = WinTmpFile();
+		fh = fopen(psTmpName, "w+b");
+	}
+#endif
+
+	if (psFileName)
+	{
+		*psFileName = psTmpName;
+	}
+
+	return fh;
+}

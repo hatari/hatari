@@ -15,6 +15,8 @@ Following features are deprecated and will be removed in a future release:
   - "hatari-shortcut warmreset"  (use "hatari-debug reset hard")
   - "hatari-shortcut savemem"    (use "hatari-debug statesave <file>")
   - "hatari-shortcut quit"       (use "hatari-debug quit [exit value]")
+- The "--disable-small-mem" configuration option (small mem is enabled
+  by default already and will be the only option soon)
 
 
  Development version
@@ -35,13 +37,21 @@ Emulation improvements:
   - Update sound FIFO on each HBL (like on STE)
 - CPU:
   - Fix IACK timings
+- DSP:
+  - Add host interface initialisation
+  - Add host received data interrupt
 - Video:
   - Add support for 4 pixel hardscroll on STF by stopping shifter with
     $FF8260=3 (new technique by Troed/Sync)
+- SCC 85C30 (for MegaSTE, TT and Falcon)
+  - Major rewrite of most of the code, should support all modes used by TOS
+    and EmuTOS or when accessing SCC's registers directly
+  - Support all serial ports as well as LAN port for MegaSTE and TT
 
 Emulator improvements:
 - TOS:
   - Fix: set TOS country code from CountryCode setting, not Language one
+  - Add "pl" (Poland) & "ro" (Romania) language options for EmuTOS
 - RTC:
   - CLI/config option to override NVRAM/RTC year, useful with
     applications that do not handle current dates
@@ -58,13 +68,15 @@ Emulator improvements:
   - Fix: free all debugger allocations before exit
   - Fix: invalid free on freeing loaded GNU debug symbols
   - Fix: CPU core disassembler crashes with longer symbol names
+  - Add support for reading symbols from new MINT+ELF binaries
   - Add support for demangled C++/a.out symbols (which can be
     very long and contain almost any characters)
-  - ".sym" file beside a program file acts as its symbols override
+  - "<name>.sym" file beside program file acts as its symbols override
   - Add address width (addr).[bwl] support to expression evaluation
   - Add optional argument for "symbols <name|code|data>" commands,
     to limit listed symbols to ones with the given substring
   - Improved support for weak symbols (important for C++ code)
+  - Symbols with duplicate addresses are skipped on symbols loading
   - "os_base" trace option outputs now also dir create/delete + file delete
     calls (in addition to earlier pexec/pterm & file create/open calls)
   - Separate CPU video cycles under its own "cpu_video_cycles" trace flag
@@ -72,12 +84,16 @@ Emulator improvements:
     (show only their count) and add "--msg-repeat" option to toggle that
   - History skips address repeats (e.g. with "stop" instruction)
   - When entering debugger with 'history' enabled, disassembly address
-    defaults to an address in history preceeding the PC register value
+    defaults to an address in history preceding the PC register value
     (to give more context than disassembling directly from PC)
   - Support for disassembly output options working also for CPU core
     disassembler, in addition to external disassember output
   - The built-in "external" disassembler has been replaced by a
     disassembler provided by the Capstone library (version >= 4.0)
+- Screen:
+  - Support for screenshot using .NEO format
+- Command line:
+  - Add option "--screenshot-format <x>" (<x> = png or bmp or neo)
 
 GUI improvements:
 - SDL GUI:
@@ -89,7 +105,13 @@ GUI improvements:
     a list of the accepted file name extensions any more
 
 Tools:
-- gst2ascii "-o" option split to "-f" and "-g" options
+- gst2ascii:
+  - Support for new MINT+ELF symbols
+  - "-o" option is split to "-f" and "-g" options
+  - "-s" option to skip symbols with duplicate addresses
+  - By default filters same symbols out as Hatari debugger
+  - This can be reverted with new '+' option variants (+l +g +s)
+  - More concise listing of the duplicate symbols
 - Profile data post-processor:
   - Does not show (most) of symbol conflict messages any more
     (unless '--verbose' option is given)
@@ -104,6 +126,8 @@ Tools:
     are interpreted as match patterns (with '*?[]' wildcards)
   - Only single arrow shown between callgraph nodes when
     "--compact" option is used
+- m68k-instructions: (new)
+  - Tool for printing m68k instruction breakpoints & opcode info
 
 Build improvements:
 - Fix: CPU core compile warnings (WinUAE upstream)
@@ -114,11 +138,15 @@ Programs with fixed MIDI (MFP IRQ clear) handling:
 - Midi Maze
 - Midi Maze II
 - Oxyd 2
+Other fixed programs:
+- FlaySID (DSP host handling)
 
 Fixed demos:
 - Little -ME- Demo end part : black screen after a while (IACK timing)
 - Monscape : bad sound (TT/DMA FIFO update)
 
+Fixed programs:
+- FreeMiNT (use SCC counter at start to detect the SCC clock freq)
 
 
  Version 2.4.1 (2022-08-03)
@@ -1459,7 +1487,7 @@ Emulator:
   - Fix: tracking breakpoint values were updated only when all conditions
     matched, now they can be also used together with other conditions
   - Fix: info command crash (triggered on NetBSD)
-  - Fix: disassember output bug on NetBSD (usigned char < -1 test)
+  - Fix: disassember output bug on NetBSD (unsigned char < -1 test)
   - Fix: info osheader and basebase subcommands under MiNT
   - Fix: debugger history duplicates removal
   - Fix: expression expanding CPU "pc" for DSP shortcut commands
@@ -1826,7 +1854,7 @@ Emulator:
     accesses (instead of operator precedence like earlier)
   - DSP and CPU code profiling functionality.  Provides statistics about
     profiled code (executed code address ranges, max and total counts
-    and cycles), lists addresses/instructions taking most cyles and if
+    and cycles), lists addresses/instructions taking most cycles and if
     symbols are loaded, what were the most used symbol addresses.
   - Profiling information is also shown in disassembly output
 
@@ -2146,7 +2174,7 @@ Emulator:
  --------------------------
 
 - This release brings you basic Atari TT and Falcon emulation!
-  Please note that both new emulation modes are still highly experiemental,
+  Please note that both new emulation modes are still highly experimental,
   some few games and demos work, but most still have more or less big
   problems.
 - Basic emulation of Falcon video shifter (Videl), NVRAM and DMA sound is in

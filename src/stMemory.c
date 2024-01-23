@@ -96,14 +96,25 @@ void	STMemory_Init ( int RAM_Size_Byte )
 /*
  * Reset the internal MMU/MCU used to configure address decoding for the RAM banks
  * 0xFF8001 is set to 0 on cold reset but keep its value on warm reset
+ * This should be called early during the whole reset process to ensure MMU_Bank0_Size
+ * and MMU_Bank1_Size have a consistent value (ie != 0) before calling memory_init()
+ * (MMU_BankX_Size can be 0 in case Hatari was started with > 4 MB RAM, which is not standard
+ * for STF/STE)
+ * NOTE : as with STMemory_Init() when using SMALL_MEM, IoMem will not be allocated yet
+ * on the first call
  */
 void	STMemory_Reset ( bool bCold )
 {
 	if ( bCold )
 	{
 //fprintf ( stderr , "STMemory_Reset\n" );
+#if ENABLE_SMALL_MEM
+		if ( IOmemory != NULL )
+			IoMem[ 0xff8001 ] = 0x0;
+#else
 		IoMem[ 0xff8001 ] = 0x0;
-		STMemory_MMU_ConfToBank ( IoMem[ 0xff8001 ] , &MMU_Bank0_Size , &MMU_Bank1_Size );
+#endif
+		STMemory_MMU_ConfToBank ( 0 , &MMU_Bank0_Size , &MMU_Bank1_Size );
 	}
 }
 
@@ -822,6 +833,7 @@ MMU configuration at $FF8001 :
 
 static void	STMemory_MMU_ConfToBank ( uint8_t MMU_conf , uint32_t *pBank0 , uint32_t *pBank1 )
 {
+//fprintf(stderr , "STMemory_MMU_ConfToBank %d %d %d\n" , MMU_conf, *pBank0, *pBank1 );
 	if ( Config_IsMachineTT() )
 	{
 		*pBank0 = STMemory_MMU_Size_TT ( ( MMU_conf >> 1 ) & 1  );
@@ -839,6 +851,7 @@ static void	STMemory_MMU_ConfToBank ( uint8_t MMU_conf , uint32_t *pBank0 , uint
 		else
 			*pBank1 = MMU_Bank0_Size;
 	}
+//fprintf(stderr , "STMemory_MMU_ConfToBank2 %d %d %d\n" , MMU_conf, *pBank0, *pBank1 );
 }
 
 
