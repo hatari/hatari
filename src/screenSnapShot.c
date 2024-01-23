@@ -321,10 +321,6 @@ static int ScreenSnapShot_SaveNEO(const char *filename)
 	/* genconv here is almost the same as Screen_UseGenConvScreen, but omits bUseHighRes,
 	 * which is a hybrid GenConvert that also fills pFrameBuffer. */
 
-	fp = fopen(filename, "wb");
-	if (!fp)
-		return -1;
-
 	res = (STRes == ST_HIGH_RES) ? 2 :
 	      (STRes == ST_MEDIUM_RES) ? 1 :
 	      0;
@@ -347,6 +343,21 @@ static int ScreenSnapShot_SaveNEO(const char *filename)
 		else if (bpp == 2) res = 1;
 		else if (bpp == 1) res = 2;
 	}
+
+	if (res > 2)
+	{
+		Log_AlertDlg(LOG_ERROR,"The current video mode has too many colors for the .NEO screenshot format");
+		return -1;
+	}
+	if ((res == 0 && sw != 320) || (res < 2 && sh != 200) || (res == 2 && sh != 400))
+	{
+		Log_AlertDlg(LOG_ERROR,"The current video mode non-standard resolution dimension, unable to save in .NEO screenshot format");
+		return -1;
+	}
+
+	fp = fopen(filename, "wb");
+	if (!fp)
+		return -1;
 
 	memset(NEOHeader, 0, sizeof(NEOHeader));
 	StoreU16NEO(res, 2); /* Essentially treating the NEO resolution word as an indirect bpp indicator. */
@@ -401,19 +412,6 @@ static int ScreenSnapShot_SaveNEO(const char *filename)
 		{
 			fclose(fp);
 			return -1;
-		}
-
-		/* Extended RGB palette added as a suffix, in case needed. */
-		if (bpp <= 8 && (bpp > 4 || !Config_IsMachineST()))
-		{
-			fwrite("RGB",1,3,fp);
-			for (i=0; i < (1 << bpp); i++)
-			{
-				col = Screen_GetPaletteColor(i);
-				fwrite(&col.r, 1, 1, fp);
-				fwrite(&col.g, 1, 1, fp);
-				fwrite(&col.b, 1, 1, fp);
-			}
 		}
 	}
 
