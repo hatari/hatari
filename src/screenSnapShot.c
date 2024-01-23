@@ -344,14 +344,19 @@ static int ScreenSnapShot_SaveNEO(const char *filename)
 		else if (bpp == 1) res = 2;
 	}
 
+	/* Preventing NEO screenshots with unexpected BPP or dimensions. */
 	if (res > 2)
 	{
+		/* The NEO header contains only 16 palette entries, so 8bpp would need extra palette information,
+		 * and 16bpp true color mode is not supported by existing NEO tools. */
 		Log_AlertDlg(LOG_ERROR,"The current video mode has too many colors for the .NEO screenshot format");
 		return -1;
 	}
-	if ((res == 0 && sw != 320) || (res < 2 && sh != 200) || (res == 2 && sh != 400))
+	if ((res == 0 && sw != 320) || (res < 2 && sh != 200) || (res > 0 && sw != 640) || (res == 2 && sh != 400))
 	{
-		Log_AlertDlg(LOG_ERROR,"The current video mode non-standard resolution dimension, unable to save in .NEO screenshot format");
+		/* The NEO header contains dimension info, and any width that is a multiple of 16 pixels should be theoretically valid,
+		 * but existing NEO tools mostly ignore the dimension fields. */
+		Log_AlertDlg(LOG_ERROR,"The current video mode has non-standard resolution dimensions, unable to save in .NEO screenshot format");
 		return -1;
 	}
 
@@ -360,7 +365,7 @@ static int ScreenSnapShot_SaveNEO(const char *filename)
 		return -1;
 
 	memset(NEOHeader, 0, sizeof(NEOHeader));
-	StoreU16NEO(res, 2); /* Essentially treating the NEO resolution word as an indirect bpp indicator. */
+	StoreU16NEO(res, 2); /* NEO resolution word is the primary indicator of BPP. */
 
 	/* ST Low/Medium resolution stores a palette for each line. Using the centre line's palette. */
 	if (!genconv && res != 2 && pFrameBuffer)
@@ -379,6 +384,8 @@ static int ScreenSnapShot_SaveNEO(const char *filename)
 				((col.b >> 5) << 0),
 				4+(2*i));
 		}
+		/* Note that this 24-bit palette is being approximated as a 9-bit ST color palette,
+		 * and 256 colors needed for 8bpp cannot be expressed in this header. */
 	}
 	memcpy(NEOHeader+36,"HATARI  4BPP",12); /* Use internal filename to give a hint about bitplanes. */
 	NEOHeader[36+8] = '0' + (bpp % 10);
