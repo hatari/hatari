@@ -300,6 +300,24 @@ void Dialog_MonitorDlg(void)
 }
 
 
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Set ScreenShotFormat depending on which button is selected
+ */
+static void	DlgScreen_SetScreenShot_Format ( void )
+{
+	if ( windowdlg[DLGSCRN_FORMAT_NEO].state & SG_SELECTED )
+		ConfigureParams.Screen.ScreenShotFormat = SCREEN_SNAPSHOT_NEO;
+#if HAVE_LIBPNG
+	else if ( windowdlg[DLGSCRN_FORMAT_PNG].state & SG_SELECTED )
+		ConfigureParams.Screen.ScreenShotFormat = SCREEN_SNAPSHOT_PNG;
+#endif
+	else
+		ConfigureParams.Screen.ScreenShotFormat = SCREEN_SNAPSHOT_BMP;
+}
+
+
 /*-----------------------------------------------------------------------*/
 /**
  * Show and process the window dialog.
@@ -411,6 +429,7 @@ void Dialog_WindowDlg(void)
 			break;
 
 		 case DLGSCRN_CAPTURE:
+			DlgScreen_SetScreenShot_Format();		/* Take latest choice into account */
 			Screen_UpdateRect(sdlscrn, 0,0,0,0);
 			ConfigureParams.Screen.bCrop = (windowdlg[DLGSCRN_CROP].state & SG_SELECTED);
 			ScreenSnapShot_SaveScreen();
@@ -468,14 +487,7 @@ void Dialog_WindowDlg(void)
 		}
 	}
 
-	if ( windowdlg[DLGSCRN_FORMAT_NEO].state & SG_SELECTED )
-		ConfigureParams.Screen.ScreenShotFormat = SCREEN_SNAPSHOT_NEO;
-#if HAVE_LIBPNG
-	else if ( windowdlg[DLGSCRN_FORMAT_PNG].state & SG_SELECTED )
-		ConfigureParams.Screen.ScreenShotFormat = SCREEN_SNAPSHOT_PNG;
-#endif
-	else
-		ConfigureParams.Screen.ScreenShotFormat = SCREEN_SNAPSHOT_BMP;
+	DlgScreen_SetScreenShot_Format();
 
 	ConfigureParams.Screen.bCrop = (windowdlg[DLGSCRN_CROP].state & SG_SELECTED);
 
