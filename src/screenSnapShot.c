@@ -410,7 +410,7 @@ static int ScreenSnapShot_SaveNEO(const char *filename)
 	      * As a fallback we just copy the video data from ST RAM. */
 	{
 		video_base = Video_GetScreenBaseAddr();
-		video_size = (uint32_t)(bpp * sw * sh) / 8;
+		video_size = (uint32_t)(bpp * ((sw + 15) & ~15) * sh) / 8;
 		if ((video_base + video_size) <= STRamEnd)
 		{
 			fwrite(STRam + video_base, 1, video_size, fp);
