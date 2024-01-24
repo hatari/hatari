@@ -316,7 +316,7 @@ static int ScreenSnapShot_SaveNEO(const char *filename)
 	FILE *fp = NULL;
 	int i, res, sw, sh, bpp, offset;
 	SDL_Color col;
-	uint32_t video_base, video_size;
+	uint32_t video_base, line_size;
 	bool genconv = Config_IsMachineFalcon() || Config_IsMachineTT() || bUseVDIRes;
 	/* genconv here is almost the same as Screen_UseGenConvScreen, but omits bUseHighRes,
 	 * which is a hybrid GenConvert that also fills pFrameBuffer. */
@@ -396,30 +396,34 @@ static int ScreenSnapShot_SaveNEO(const char *filename)
 	fwrite(NEOHeader, 1, 128, fp);
 	
 	/* ST modes fill pFrameBuffer->pSTScreen from each scanline, during Video_EndHBL. */
+	line_size = (uint32_t)(bpp * ((sw + 15) & 15)) / 8; /* size of line data in bytes */
 	if (!genconv && pFrameBuffer && pFrameBuffer->pSTScreen)
 	{
 		for (i = 0; i < sh; i++)
 		{
-			video_size = (uint32_t)(bpp * sw) / 8; /* size of line data in bytes */
 			offset = (res == 2) ?
 				(SCREENBYTES_MONOLINE * i) :
 				(STScreenLineOffset[i+OVERSCAN_TOP] + SCREENBYTES_LEFT);
-			fwrite(pFrameBuffer->pSTScreen + offset, 1, video_size, fp);
+			fwrite(pFrameBuffer->pSTScreen + offset, 1, line_size, fp);
 		}
 	}
 	else /* TT/Falcon bypass Video_EndHBL, so pFrameBuffer is unused.
 	      * As a fallback we just copy the video data from ST RAM. */
 	{
 		video_base = Video_GetScreenBaseAddr();
-		video_size = (uint32_t)(bpp * ((sw + 15) & ~15) * sh) / 8;
-		if ((video_base + video_size) <= STRamEnd)
+		
+		for (i = 0; i < sh; i++)
 		{
-			fwrite(STRam + video_base, 1, video_size, fp);
-		}
-		else
-		{
-			fclose(fp);
-			return -1;
+			if ((video_base + line_size) <= STRamEnd)
+			{
+				fwrite(STRam + video_base, 1, line_size, fp);
+				video_base += ConvertNextLine;
+			}
+			else
+			{
+				fclose(fp);
+				return -1;
+			}
 		}
 	}
 
@@ -437,7 +441,7 @@ static int ScreenSnapShot_SaveXIMG(const char *filename)
 	int i, j, k, sw, sh, bpp, offset;
 	SDL_Color col;
 	uint16_t colst, colr, colg, colb;
-	uint32_t video_base, video_size;
+	uint32_t video_base, line_size;
 	uint16_t header_size;
 	uint8_t *scanline;
 	bool genconv = Config_IsMachineFalcon() || Config_IsMachineTT() || bUseVDIRes;
@@ -510,10 +514,9 @@ static int ScreenSnapShot_SaveXIMG(const char *filename)
 	}
 
 	/* Image data, no compression is attempted */
+	line_size = (uint32_t)(bpp * ((sw + 15) & 15)) / 8; /* size of line data in bytes */
 	for (i = 0; i < sh; i++)
 	{
-		video_size = (uint32_t)(bpp * ((sw + 15) & ~15)) / 8; /* size of line data in bytes */
-
 		/* Find line of scanline data */
 		if (!genconv && pFrameBuffer && pFrameBuffer->pSTScreen)
 		{
@@ -523,8 +526,8 @@ static int ScreenSnapShot_SaveXIMG(const char *filename)
 		}
 		else
 		{
-			video_base = Video_GetScreenBaseAddr() + (i * video_size);
-			if ((video_base + video_size) <= STRamEnd)
+			video_base = Video_GetScreenBaseAddr() + (i * ConvertNextLine);
+			if ((video_base + line_size) <= STRamEnd)
 			{
 				scanline = STRam + video_base;
 			}
@@ -552,15 +555,15 @@ static int ScreenSnapShot_SaveXIMG(const char *filename)
 		else if (bpp == 16)
 		{
 			/* Falcon native chunky 5:6:5 format */
-			video_size = sw * 2; /* bytes in line */
-			while (video_size > 0) /* break into <= 254 byte packets */
+			j = (sw * 2); /* bytes per line */
+			while (j > 0) /* break into <= 254 byte packets */
 			{
-				offset = (video_size > 254) ? 254 : video_size;
+				k = (j > 254) ? 254 : j; /* bytes in packet */
 				fputc(0x80,fp);
-				fputc(offset,fp);
-				fwrite(scanline,1,offset,fp);
-				video_size -= offset;
-				scanline += offset;
+				fputc(k,fp);
+				fwrite(scanline,1,k,fp);
+				j -= k;
+				scanline += k;
 			}
 		}
 		else

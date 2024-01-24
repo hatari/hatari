@@ -6,7 +6,7 @@
 */
 
 /* Last used vw/vh/vbpp for Screen_GenConvert */
-extern int ConvertW, ConvertH, ConvertBPP;
+extern int ConvertW, ConvertH, ConvertBPP, ConvertNextLine;
 
 void Screen_RemapPalette(void);
 void Screen_SetPaletteColor(Uint8 idx, Uint8 red, Uint8 green, Uint8 blue);
