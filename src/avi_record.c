@@ -918,9 +918,6 @@ static bool	Avi_RecordVideoStream_BMP ( RECORD_AVI_PARAMS *pAviParams )
 
 		pBitmapOut = LineBuf;
 		switch ( pAviParams->Surface->format->BytesPerPixel ) {
-		 case 2:
-			PixelConvert_16to24Bits_BGR(LineBuf, (uint16_t *)pBitmapIn, pAviParams->Width, pAviParams->Surface);
-			break;
 		 case 4:
 			PixelConvert_32to24Bits_BGR(LineBuf, (uint32_t *)pBitmapIn, pAviParams->Width, pAviParams->Surface);
 			break;
