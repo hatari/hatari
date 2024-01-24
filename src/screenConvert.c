@@ -360,6 +360,7 @@ static void Screen_ConvertWithoutZoom(Uint16 *fvram, int vw, int vh, int vbpp, i
 	if (hscrolloffset) {
 		/* Yes, so we need to adjust offset to next line: */
 		nextline += vbpp;
+		ConvertNextLine = nextline * 2;
 	}
 
 	/* The sample-hold feature exists only on the TT */
@@ -618,6 +619,7 @@ static void Screen_ConvertWithZoom(Uint16 *fvram, int vw, int vh, int vbpp, int 
 	if (hscrolloffset) {
 		/* Yes, so we need to adjust offset to next line: */
 		nextline += vbpp;
+		ConvertNextLine = nextline * 2;
 	}
 
 	/* Integer zoom coef ? */
