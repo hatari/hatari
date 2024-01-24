@@ -394,6 +394,7 @@ static int ScreenSnapShot_SaveNEO(const char *filename)
 	StoreU16NEO(sh, 60);
 
 	fwrite(NEOHeader, 1, 128, fp);
+
 	/* ST modes fill pFrameBuffer->pSTScreen from each scanline, during Video_EndHBL. */
 	if (!genconv && pFrameBuffer && pFrameBuffer->pSTScreen)
 	{
