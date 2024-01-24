@@ -396,7 +396,7 @@ static int ScreenSnapShot_SaveNEO(const char *filename)
 	fwrite(NEOHeader, 1, 128, fp);
 	
 	/* ST modes fill pFrameBuffer->pSTScreen from each scanline, during Video_EndHBL. */
-	line_size = (uint32_t)(bpp * ((sw + 15) & 15)) / 8; /* size of line data in bytes */
+	line_size = (uint32_t)(bpp * ((sw + 15) & ~15)) / 8; /* size of line data in bytes */
 	if (!genconv && pFrameBuffer && pFrameBuffer->pSTScreen)
 	{
 		for (i = 0; i < sh; i++)
@@ -514,7 +514,7 @@ static int ScreenSnapShot_SaveXIMG(const char *filename)
 	}
 
 	/* Image data, no compression is attempted */
-	line_size = (uint32_t)(bpp * ((sw + 15) & 15)) / 8; /* size of line data in bytes */
+	line_size = (uint32_t)(bpp * ((sw + 15) & ~15)) / 8; /* size of line data in bytes */
 	for (i = 0; i < sh; i++)
 	{
 		/* Find line of scanline data */
