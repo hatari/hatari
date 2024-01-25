@@ -481,8 +481,8 @@ static int ScreenSnapShot_SaveXIMG(const char *filename)
 	StoreU16NEO(2,6); /* pattern length (unused) */
 	StoreU16NEO(0x55,8); /* pixel width (microns) */
 	StoreU16NEO(0x55,10); /* pixel height (microns) */
-	StoreU16NEO(sw,12); /* pixel width */
-	StoreU16NEO(sh,14); /* pixel height */
+	StoreU16NEO(sw,12); /* screen width */
+	StoreU16NEO(sh,14); /* screen height */
 	memcpy(NEOHeader+16,"XIMG",4);
 	StoreU16NEO(0,20); /* XIMG RGB palette format */
 	fwrite(NEOHeader, 1, 16 + 6, fp);
@@ -547,7 +547,7 @@ static int ScreenSnapShot_SaveXIMG(const char *filename)
 				fputc((sw+7)/8,fp); /* one plane of line per packet */
 				for (k=0; k<sw; k+=8)
 				{
-					offset = ((((k / 16) * bpp) + j) * 2) + ((k / 8) & 1); /* interleaved word + byte pair*/
+					offset = ((((k / 16) * bpp) + j) * 2) + ((k / 8) & 1); /* interleaved word + byte pair */
 					fputc(scanline[offset],fp);
 				}
 			}
