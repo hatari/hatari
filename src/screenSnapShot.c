@@ -320,19 +320,12 @@ static int ScreenSnapShot_SaveNEO(const char *filename)
 	uint32_t video_base, line_size;
 	uint16_t header[64];
 
-	res = (STRes == ST_HIGH_RES) ? 2 :
-	      (STRes == ST_MEDIUM_RES) ? 1 :
-	      0;
 	ScreenSnapShot_GetInternalFormat(&genconv, &sw, &sh, &bpp);
-	if (genconv)
-	{
-		/* If BPP matches an ST resolution, use that.
-		 * otherwise just use the BPP itself instead of that number. */
-		res = bpp;
-		if      (bpp == 4) res = 0;
-		else if (bpp == 2) res = 1;
-		else if (bpp == 1) res = 2;
-	}
+	/* If BPP matches an ST resolution, use that, otherwise just use the BPP itself instead of that number. */
+	res = bpp;
+	if      (bpp == 4) res = 0;
+	else if (bpp == 2) res = 1;
+	else if (bpp == 1) res = 2;
 
 	/* Preventing NEO screenshots with unexpected BPP or dimensions. */
 	if (res > 2)
@@ -355,7 +348,7 @@ static int ScreenSnapShot_SaveNEO(const char *filename)
 		return -1;
 
 	memset(header, 0, sizeof(header));
-	header[2] = be_swap16(res); /* NEO resolution word is the primary indicator of BPP. */
+	header[1] = be_swap16(res); /* NEO resolution word is the primary indicator of BPP. */
 
 	/* ST Low/Medium resolution stores a palette for each line. Using the centre line's palette. */
 	if (!genconv && res != 2 && pFrameBuffer)
