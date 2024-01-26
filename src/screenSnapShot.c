@@ -32,7 +32,6 @@ const char ScreenSnapShot_fileid[] = "Hatari screenSnapShot.c";
 
 
 static int nScreenShots = 0;                /* Number of screen shots saved */
-static Uint8 NEOHeader[128];
 
 
 /*-----------------------------------------------------------------------*/
@@ -124,8 +123,8 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
 	char text[] = "Hatari screenshot";
 	off_t start;
 	bool do_palette = true;
-	static png_color png_pal[256];
-	static Uint8 palbuf[3];
+	png_color png_pal[256];
+	Uint8 palbuf[3];
 
 	if (!dw)
 		dw = sw;
@@ -300,15 +299,6 @@ png_cleanup:
 
 
 /**
- * Helper for writing NEO file header
- */
-static void StoreU16NEO(Uint16 val, int offset)
-{
-	NEOHeader[offset+0] = (val >> 8) & 0xFF;
-	NEOHeader[offset+1] = (val >> 0) & 0xFF;
-}
-
-/**
  * Save direct video memory dump to NEO file
  */
 static int ScreenSnapShot_SaveNEO(const char *filename)
@@ -317,6 +307,7 @@ static int ScreenSnapShot_SaveNEO(const char *filename)
 	int i, res, sw, sh, bpp, offset;
 	SDL_Color col;
 	uint32_t video_base, line_size;
+	uint16_t header[64];
 	bool genconv = Config_IsMachineFalcon() || Config_IsMachineTT() || bUseVDIRes;
 	/* genconv here is almost the same as Screen_UseGenConvScreen, but omits bUseHighRes,
 	 * which is a hybrid GenConvert that also fills pFrameBuffer. */
@@ -329,7 +320,6 @@ static int ScreenSnapShot_SaveNEO(const char *filename)
 	bpp = 4;
 	if      (res == 1) bpp = 2;
 	else if (res == 2) bpp = 1;
-
 	if (genconv)
 	{
 		/* Assume resolution based on GenConvert. */
@@ -364,36 +354,36 @@ static int ScreenSnapShot_SaveNEO(const char *filename)
 	if (!fp)
 		return -1;
 
-	memset(NEOHeader, 0, sizeof(NEOHeader));
-	StoreU16NEO(res, 2); /* NEO resolution word is the primary indicator of BPP. */
+	memset(header, 0, sizeof(header));
+	header[2] = be_swap16(res); /* NEO resolution word is the primary indicator of BPP. */
 
 	/* ST Low/Medium resolution stores a palette for each line. Using the centre line's palette. */
 	if (!genconv && res != 2 && pFrameBuffer)
 	{
 		for (i=0; i<16; i++)
-			StoreU16NEO(pFrameBuffer->HBLPalettes[i+((OVERSCAN_TOP+sh/2)<<4)], 4+(2*i));
+			header[2+i] = be_swap16(pFrameBuffer->HBLPalettes[i+((OVERSCAN_TOP+sh/2)<<4)]);
 	}
 	else /* High resolution or other GenConvert: use stored GenConvert RGB palette. */
 	{
 		for (i=0; i<16; i++)
 		{
 			col = Screen_GetPaletteColor(i);
-			StoreU16NEO(
+			header[2+i] = be_swap16(
 				((col.r >> 5) << 8) |
 				((col.g >> 5) << 4) |
-				((col.b >> 5) << 0),
-				4+(2*i));
+				((col.b >> 5) << 0));
 		}
 		/* Note that this 24-bit palette is being approximated as a 9-bit ST color palette,
 		 * and 256 colors needed for 8bpp cannot be expressed in this header. */
 	}
-	memcpy(NEOHeader+36,"HATARI  4BPP",12); /* Use internal filename to give a hint about bitplanes. */
-	NEOHeader[36+8] = '0' + (bpp % 10);
-	if (bpp >= 10) NEOHeader[36+7] = '0' + (bpp / 10);
-	StoreU16NEO(sw, 58);
-	StoreU16NEO(sh, 60);
+	memcpy(header+18,"HATARI  4BPP",12); /* Use internal filename to give a hint about bitplanes. */
+	((uint8_t*)(header+18))[8] = '0' + (bpp % 10);
+	if (bpp >= 10)
+		((uint8_t*)(header+18))[7] = '0' + (bpp / 10);
+	header[29] = be_swap16(sw);
+	header[30] = be_swap16(sh);
 
-	fwrite(NEOHeader, 1, 128, fp);
+	fwrite(header, 1, 128, fp);
 	
 	/* ST modes fill pFrameBuffer->pSTScreen from each scanline, during Video_EndHBL. */
 	line_size = (uint32_t)(bpp * ((sw + 15) & ~15)) / 8; /* size of line data in bytes */
@@ -444,6 +434,7 @@ static int ScreenSnapShot_SaveXIMG(const char *filename)
 	uint32_t video_base, line_size;
 	uint16_t header_size;
 	uint8_t *scanline;
+	uint16_t header[11];
 	bool genconv = Config_IsMachineFalcon() || Config_IsMachineTT() || bUseVDIRes;
 
 	sw = (STRes == ST_LOW_RES) ? 320 : 640;
@@ -451,7 +442,6 @@ static int ScreenSnapShot_SaveXIMG(const char *filename)
 	bpp = 4;
 	if (STRes == ST_MEDIUM_RES) bpp = 2;
 	if (STRes == ST_HIGH_RES) bpp = 1;
-
 	if (genconv)
 	{
 		bpp = ConvertBPP;
@@ -471,21 +461,21 @@ static int ScreenSnapShot_SaveXIMG(const char *filename)
 		return -1;
 
 	/* XIMG header */
-	header_size = 16 + 6; /* IMG + XIMG */
+	header_size = (8 + 3) * 2; /* IMG + XIMG */
 	if (bpp <= 8) /* palette */
 		header_size += (3 * 2) * (1 << bpp);
-	memset(NEOHeader, 0, sizeof(NEOHeader));
-	StoreU16NEO(1,0); /* version */
-	StoreU16NEO(header_size/2,2);
-	StoreU16NEO(bpp,4); /* bitplanes */
-	StoreU16NEO(2,6); /* pattern length (unused) */
-	StoreU16NEO(0x55,8); /* pixel width (microns) */
-	StoreU16NEO(0x55,10); /* pixel height (microns) */
-	StoreU16NEO(sw,12); /* screen width */
-	StoreU16NEO(sh,14); /* screen height */
-	memcpy(NEOHeader+16,"XIMG",4);
-	StoreU16NEO(0,20); /* XIMG RGB palette format */
-	fwrite(NEOHeader, 1, 16 + 6, fp);
+	memset(header, 0, sizeof(header));
+	header[0] = be_swap16(1); /* version */
+	header[1] = be_swap16(header_size/2);
+	header[2] = be_swap16(bpp); /* bitplanes */
+	header[3] = be_swap16(2); /* pattern length (unused) */
+	header[4] = be_swap16(0x55); /* pixel width (microns) */
+	header[5] = be_swap16(0x55); /* pixel height (microns) */
+	header[6] = be_swap16(sw); /* screen width */
+	header[7] = be_swap16(sh); /* screen height */
+	memcpy(header+8,"XIMG",4);
+	header[10] = be_swap16(0); /* XIMG RGB palette format */
+	fwrite(header, 1, (8 + 3) * 2, fp);
 	
 	/* XIMG RGB format, word triples each 0-1000 */
 	if (bpp <= 8)
@@ -506,10 +496,10 @@ static int ScreenSnapShot_SaveXIMG(const char *filename)
 				colg = (uint16_t)((col.g * 1000) / 255);
 				colb = (uint16_t)((col.b * 1000) / 255);
 			}
-			StoreU16NEO(colr,0);
-			StoreU16NEO(colg,2);
-			StoreU16NEO(colb,4);
-			fwrite(NEOHeader,1,(3*2),fp);
+			header[0] = be_swap16(colr);
+			header[1] = be_swap16(colg);
+			header[2] = be_swap16(colb);
+			fwrite(header, 1, 3 * 2, fp);
 		}
 	}
 
