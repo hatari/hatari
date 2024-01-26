@@ -321,7 +321,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_SCRSHOT_DIR, NULL, "--screenshot-dir",
 	  "<dir>", "Save screenshots in the directory <dir>" },
 	{ OPT_SCRSHOT_FORMAT, NULL, "--screenshot-format",
-	  "<x>", "Select file formatc (x = bmp/png/neo)" },
+	  "<x>", "Select file format (x = bmp/png/neo/ximg)" },
 
 	{ OPT_HEADER, NULL, NULL, NULL, "Devices" },
 	{ OPT_JOYSTICK,  "-j", "--joystick",
@@ -1356,6 +1356,10 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			else if (strcasecmp(argv[i], "neo") == 0)
 			{
 				ConfigureParams.Screen.ScreenShotFormat = SCREEN_SNAPSHOT_NEO;
+			}
+			else if (strcasecmp(argv[i], "ximg") == 0)
+			{
+				ConfigureParams.Screen.ScreenShotFormat = SCREEN_SNAPSHOT_XIMG;
 			}
 			else
 			{
