@@ -115,7 +115,6 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
 	int sh = surface->h - CropTop - CropBottom;
 	Uint8 *src_ptr;
 	Uint8 *rowbuf;
-	SDL_PixelFormat *fmt = surface->format;
 	png_infop info_ptr = NULL;
 	png_structp png_ptr;
 	png_text pngtext;
