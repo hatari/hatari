@@ -137,19 +137,15 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
 	do_lock = SDL_MUSTLOCK(surface);
 	if (do_lock)
 		SDL_LockSurface(surface);
-	for (y = 0; y < dh && do_palette; y++)
+	for (y = 0; y < dh; y++)
 	{
 		src_ptr = (Uint8 *)surface->pixels
 		          + (CropTop + (y * sh + dh/2) / dh) * surface->pitch
 		          + CropLeft * surface->format->BytesPerPixel;
-		switch (fmt->BytesPerPixel)
+		if (!PixelConvert_32to8Bits(rowbuf, (Uint32*)src_ptr, dw, surface))
 		{
-		 case 4:
-			if (!PixelConvert_32to8Bits(rowbuf, (Uint32*)src_ptr, dw, surface))
-				do_palette = false;
+			do_palette = false;
 			break;
-		 default:
-			abort();
 		}
 	}
 	if (do_lock)
@@ -208,14 +204,7 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
 		/* Generate palette for PNG */
 		for (y = 0; y < ConvertPaletteSize; y++)
 		{
-			switch (fmt->BytesPerPixel)
-			{
-			 case 4:
-				PixelConvert_32to24Bits(palbuf, (Uint32*)(ConvertPalette+y), 1, surface);
-				break;
-			 default:
-				abort();
-			}
+			PixelConvert_32to24Bits(palbuf, (Uint32*)(ConvertPalette+y), 1, surface);
 			png_pal[y].red   = palbuf[0];
 			png_pal[y].green = palbuf[1];
 			png_pal[y].blue  = palbuf[2];
@@ -233,37 +222,18 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
 		/* need to lock the surface while accessing it directly */
 		if (do_lock)
 			SDL_LockSurface(surface);
-
-
 		src_ptr = (Uint8 *)surface->pixels
 		          + (CropTop + (y * sh + dh/2) / dh) * surface->pitch
 		          + CropLeft * surface->format->BytesPerPixel;
 
 		if (!do_palette)
-		{
-			switch (fmt->BytesPerPixel)
-			{
-			 case 4:
-				/* unpack 32-bit RGBA pixels */
-				PixelConvert_32to24Bits(rowbuf, (Uint32*)src_ptr, dw, surface);
-				break;
-			 default:
-				abort();
-			}
-		}
+			/* unpack 32-bit RGBA pixels */
+			PixelConvert_32to24Bits(rowbuf, (Uint32*)src_ptr, dw, surface);
 		else
-		{
 			/* Reindex back to ST palette
 			 * Note that this cannot disambiguate indices if the palette has duplicate colors */
-			switch (fmt->BytesPerPixel)
-			{
-			 case 4:
-				PixelConvert_32to8Bits(rowbuf, (Uint32*)src_ptr, dw, surface);
-				break;
-			 default:
-				abort();
-			}
-		}
+			PixelConvert_32to8Bits(rowbuf, (Uint32*)src_ptr, dw, surface);
+
 		/* and unlock surface before syscalls */
 		if (do_lock)
 			SDL_UnlockSurface(surface);
