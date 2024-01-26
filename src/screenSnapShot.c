@@ -285,33 +285,47 @@ png_cleanup:
 
 
 /**
+ * Determine the internally used screen dimensions, bits per pixel, and whether GenConv is used.
+ */
+static void ScreenSnapShot_GetInternalFormat(bool *genconv, int *sw, int *sh, int *bpp)
+{
+	*genconv = Config_IsMachineFalcon() || Config_IsMachineTT() || bUseVDIRes;
+	/* genconv here is almost the same as Screen_UseGenConvScreen, but omits bUseHighRes,
+	 * which is a hybrid GenConvert that also fills pFrameBuffer. */
+	
+	*sw = (STRes == ST_LOW_RES) ? 320 : 640;
+	*sh = (STRes == ST_HIGH_RES) ? 400 : 200;
+	*bpp = 4;
+	if (STRes == ST_MEDIUM_RES) *bpp = 2;
+	if (STRes == ST_HIGH_RES) *bpp = 1;
+	if (*genconv)
+	{
+		/* Assume resolution based on GenConvert. */
+		*bpp = ConvertBPP;
+		*sw = ConvertW;
+		*sh = ConvertH;
+	}
+}
+
+
+/**
  * Save direct video memory dump to NEO file
  */
 static int ScreenSnapShot_SaveNEO(const char *filename)
 {
 	FILE *fp = NULL;
 	int i, res, sw, sh, bpp, offset;
+	bool genconv;
 	SDL_Color col;
 	uint32_t video_base, line_size;
 	uint16_t header[64];
-	bool genconv = Config_IsMachineFalcon() || Config_IsMachineTT() || bUseVDIRes;
-	/* genconv here is almost the same as Screen_UseGenConvScreen, but omits bUseHighRes,
-	 * which is a hybrid GenConvert that also fills pFrameBuffer. */
 
 	res = (STRes == ST_HIGH_RES) ? 2 :
 	      (STRes == ST_MEDIUM_RES) ? 1 :
 	      0;
-	sw = (res > 0) ? 640 : 320;
-	sh = (res == 2) ? 400 : 200;
-	bpp = 4;
-	if      (res == 1) bpp = 2;
-	else if (res == 2) bpp = 1;
+	ScreenSnapShot_GetInternalFormat(&genconv, &sw, &sh, &bpp);
 	if (genconv)
 	{
-		/* Assume resolution based on GenConvert. */
-		bpp = ConvertBPP;
-		sw = ConvertW;
-		sh = ConvertH;
 		/* If BPP matches an ST resolution, use that.
 		 * otherwise just use the BPP itself instead of that number. */
 		res = bpp;
@@ -415,25 +429,15 @@ static int ScreenSnapShot_SaveXIMG(const char *filename)
 {
 	FILE *fp = NULL;
 	int i, j, k, sw, sh, bpp, offset;
+	bool genconv;
 	SDL_Color col;
 	uint16_t colst, colr, colg, colb;
 	uint32_t video_base, line_size;
 	uint16_t header_size;
 	uint8_t *scanline;
 	uint16_t header[11];
-	bool genconv = Config_IsMachineFalcon() || Config_IsMachineTT() || bUseVDIRes;
 
-	sw = (STRes == ST_LOW_RES) ? 320 : 640;
-	sh = (STRes == ST_HIGH_RES) ? 400 : 200;
-	bpp = 4;
-	if (STRes == ST_MEDIUM_RES) bpp = 2;
-	if (STRes == ST_HIGH_RES) bpp = 1;
-	if (genconv)
-	{
-		bpp = ConvertBPP;
-		sw = ConvertW;
-		sh = ConvertH;
-	}
+	ScreenSnapShot_GetInternalFormat(&genconv, &sw, &sh, &bpp);
 
 	if (bpp > 8 && bpp != 16)
 	{
