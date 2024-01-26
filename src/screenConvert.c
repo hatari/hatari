@@ -34,6 +34,7 @@ static uint32_t nScreenBaseAddr;		/* address of screen in STRam */
 int ConvertW = 0;
 int ConvertH = 0;
 int ConvertBPP = 1;
+int ConvertNextLine = 0;
 
 /* TOS palette (bpp < 16) to SDL color mapping */
 static struct
@@ -359,6 +360,7 @@ static void Screen_ConvertWithoutZoom(Uint16 *fvram, int vw, int vh, int vbpp, i
 	if (hscrolloffset) {
 		/* Yes, so we need to adjust offset to next line: */
 		nextline += vbpp;
+		ConvertNextLine = nextline * 2;
 	}
 
 	/* The sample-hold feature exists only on the TT */
@@ -617,6 +619,7 @@ static void Screen_ConvertWithZoom(Uint16 *fvram, int vw, int vh, int vbpp, int 
 	if (hscrolloffset) {
 		/* Yes, so we need to adjust offset to next line: */
 		nextline += vbpp;
+		ConvertNextLine = nextline * 2;
 	}
 
 	/* Integer zoom coef ? */
@@ -691,6 +694,7 @@ void Screen_GenConvert(uint32_t vaddr, void *fvram, int vw, int vh,
 	ConvertW = vw;
 	ConvertH = vh;
 	ConvertBPP = vbpp;
+	ConvertNextLine = nextline * 2;	/* bytes per line */
 
 	/* Override drawing palette for screenshots */
 	ConvertPalette = palette.native;

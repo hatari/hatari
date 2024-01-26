@@ -20,8 +20,8 @@ const char ScreenSnapShot_fileid[] = "Hatari screenSnapShot.c";
 #include "screenConvert.h"
 #include "screenSnapShot.h"
 #include "statusbar.h"
+#include "vdi.h"
 #include "video.h"
-#include "videl.h"
 #include "stMemory.h"
 /* after above that bring in config.h */
 #if HAVE_LIBPNG
@@ -300,18 +300,49 @@ static void StoreU16NEO(Uint16 val, int offset)
 static int ScreenSnapShot_SaveNEO(const char *filename)
 {
 	FILE *fp = NULL;
-	int i, res, sw, sh, stride, offset;
+	int i, res, sw, sh, bpp, offset;
 	SDL_Color col;
-	uint32_t video_base;
+	uint32_t video_base, line_size;
+	bool genconv = Config_IsMachineFalcon() || Config_IsMachineTT() || bUseVDIRes;
+	/* genconv here is almost the same as Screen_UseGenConvScreen, but omits bUseHighRes,
+	 * which is a hybrid GenConvert that also fills pFrameBuffer. */
 
-	if (pFrameBuffer == NULL || pFrameBuffer->pSTScreen == NULL)
-		return -1;
+	res = (STRes == ST_HIGH_RES) ? 2 :
+	      (STRes == ST_MEDIUM_RES) ? 1 :
+	      0;
+	sw = (res > 0) ? 640 : 320;
+	sh = (res == 2) ? 400 : 200;
+	bpp = 4;
+	if      (res == 1) bpp = 2;
+	else if (res == 2) bpp = 1;
 
-	/* Return an error if using Falcon or TT with a video mode not compatible with ST/STE */
-	if ( ( Config_IsMachineFalcon() && !VIDEL_Use_STShifter() )
-	    || ( Config_IsMachineTT() && ( TTRes > 2 ) ) )
+	if (genconv)
 	{
-		Log_AlertDlg(LOG_ERROR,"The current video mode is not compatible with the .NEO screenshot format");
+		/* Assume resolution based on GenConvert. */
+		bpp = ConvertBPP;
+		sw = ConvertW;
+		sh = ConvertH;
+		/* If BPP matches an ST resolution, use that.
+		 * otherwise just use the BPP itself instead of that number. */
+		res = bpp;
+		if      (bpp == 4) res = 0;
+		else if (bpp == 2) res = 1;
+		else if (bpp == 1) res = 2;
+	}
+
+	/* Preventing NEO screenshots with unexpected BPP or dimensions. */
+	if (res > 2)
+	{
+		/* The NEO header contains only 16 palette entries, so 8bpp would need extra palette information,
+		 * and 16bpp true color mode is not supported by existing NEO tools. */
+		Log_AlertDlg(LOG_ERROR,"The current video mode has too many colors for the .NEO screenshot format");
+		return -1;
+	}
+	if ((res == 0 && sw != 320) || (res < 2 && sh != 200) || (res > 0 && sw != 640) || (res == 2 && sh != 400))
+	{
+		/* The NEO header contains dimension info, and any width that is a multiple of 16 pixels should be theoretically valid,
+		 * but existing NEO tools mostly ignore the dimension fields. */
+		Log_AlertDlg(LOG_ERROR,"The current video mode has non-standard resolution dimensions, unable to save in .NEO screenshot format");
 		return -1;
 	}
 
@@ -319,35 +350,18 @@ static int ScreenSnapShot_SaveNEO(const char *filename)
 	if (!fp)
 		return -1;
 
-	if (Config_IsMachineFalcon() || Config_IsMachineTT())	/* Compatible ST/STE video modes */
-	{
-		/* Assume resolution based on GenConvert. */
-		if (ConvertW < ((640+320)/2))
-			res = 0;
-		else
-			res = (ConvertH < ((400+200)/2)) ? 1 : 2;
-	}
-	else							/* Native ST/STE video modes */
-	{
-		res = (STRes == ST_HIGH_RES) ? 2 :
-		      (STRes == ST_MEDIUM_RES) ? 1 :
-		      0;
-	}
-
-	sw = (res > 0) ? 640 : 320;
-	sh = (res == 2) ? 400 : 200;
-	stride = (res == 2) ? 80 : 160;
-
 	memset(NEOHeader, 0, sizeof(NEOHeader));
-	StoreU16NEO(res, 2);
-	if (!Screen_UseGenConvScreen())				 /* Low/Medium resolution: use middle line's palette for whole image */
+	StoreU16NEO(res, 2); /* NEO resolution word is the primary indicator of BPP. */
+
+	/* ST Low/Medium resolution stores a palette for each line. Using the centre line's palette. */
+	if (!genconv && res != 2 && pFrameBuffer)
 	{
 		for (i=0; i<16; i++)
 			StoreU16NEO(pFrameBuffer->HBLPalettes[i+((OVERSCAN_TOP+sh/2)<<4)], 4+(2*i));
 	}
-	else /* High resolution or GenConvert: use stored GenConvert RGB palette. */
+	else /* High resolution or other GenConvert: use stored GenConvert RGB palette. */
 	{
-		for (i=0; i<16;i++)
+		for (i=0; i<16; i++)
 		{
 			col = Screen_GetPaletteColor(i);
 			StoreU16NEO(
@@ -356,35 +370,46 @@ static int ScreenSnapShot_SaveNEO(const char *filename)
 				((col.b >> 5) << 0),
 				4+(2*i));
 		}
+		/* Note that this 24-bit palette is being approximated as a 9-bit ST color palette,
+		 * and 256 colors needed for 8bpp cannot be expressed in this header. */
 	}
-	memcpy(NEOHeader+36,"        .   ",12);
+	memcpy(NEOHeader+36,"HATARI  4BPP",12); /* Use internal filename to give a hint about bitplanes. */
+	NEOHeader[36+8] = '0' + (bpp % 10);
+	if (bpp >= 10) NEOHeader[36+7] = '0' + (bpp / 10);
 	StoreU16NEO(sw, 58);
 	StoreU16NEO(sh, 60);
 
 	fwrite(NEOHeader, 1, 128, fp);
 
-	if (!Config_IsMachineFalcon() && !Config_IsMachineTT())
+	/* ST modes fill pFrameBuffer->pSTScreen from each scanline, during Video_EndHBL. */
+	line_size = (uint32_t)(bpp * ((sw + 15) & ~15)) / 8; /* size of line data in bytes */
+	if (!genconv && pFrameBuffer && pFrameBuffer->pSTScreen)
 	{
 		for (i = 0; i < sh; i++)
 		{
 			offset = (res == 2) ?
 				(SCREENBYTES_MONOLINE * i) :
 				(STScreenLineOffset[i+OVERSCAN_TOP] + SCREENBYTES_LEFT);
-			fwrite(pFrameBuffer->pSTScreen + offset, 1, stride, fp);
+			fwrite(pFrameBuffer->pSTScreen + offset, 1, line_size, fp);
 		}
 	}
-	else /* TT/Falcon bypass Video_EndHBL which prepare the FrameBuffer,
-	      * so as a fallback we just try to copy the video data from ST RAM. */
+	else /* TT/Falcon bypass Video_EndHBL, so pFrameBuffer is unused.
+	      * As a fallback we just copy the video data from ST RAM. */
 	{
-		video_base = Video_GetScreenBaseAddr();
-		if ((video_base + 32000) <= STRamEnd)
-		{
-			fwrite(STRam + video_base, 1, 32000, fp);
-		}
-		else
-		{
-			fclose(fp);
-			return -1;
+	        video_base = Video_GetScreenBaseAddr();
+
+	        for (i = 0; i < sh; i++)
+	        {
+			if ((video_base + line_size) <= STRamEnd)
+			{
+				fwrite(STRam + video_base, 1, line_size, fp);
+				video_base += ConvertNextLine;
+			}
+			else
+			{
+				fclose(fp);
+				return -1;
+			}
 		}
 	}
 
