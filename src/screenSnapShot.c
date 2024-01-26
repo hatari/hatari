@@ -144,10 +144,6 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
 		          + CropLeft * surface->format->BytesPerPixel;
 		switch (fmt->BytesPerPixel)
 		{
-		 case 2:
-			if (!PixelConvert_16to8Bits(rowbuf, (Uint16*)src_ptr, dw, surface))
-				do_palette = false;
-			break;
 		 case 4:
 			if (!PixelConvert_32to8Bits(rowbuf, (Uint32*)src_ptr, dw, surface))
 				do_palette = false;
@@ -214,9 +210,6 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
 		{
 			switch (fmt->BytesPerPixel)
 			{
-			 case 2:
-				PixelConvert_16to24Bits(palbuf, (Uint16*)(ConvertPalette+y), 1, surface);
-				break;
 			 case 4:
 				PixelConvert_32to24Bits(palbuf, (Uint32*)(ConvertPalette+y), 1, surface);
 				break;
@@ -250,10 +243,6 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
 		{
 			switch (fmt->BytesPerPixel)
 			{
-			 case 2:
-				/* unpack 16-bit RGB pixels */
-				PixelConvert_16to24Bits(rowbuf, (Uint16*)src_ptr, dw, surface);
-				break;
 			 case 4:
 				/* unpack 32-bit RGBA pixels */
 				PixelConvert_32to24Bits(rowbuf, (Uint32*)src_ptr, dw, surface);
@@ -268,9 +257,6 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
 			 * Note that this cannot disambiguate indices if the palette has duplicate colors */
 			switch (fmt->BytesPerPixel)
 			{
-			 case 2:
-				PixelConvert_16to8Bits(rowbuf, (Uint16*)src_ptr, dw, surface);
-				break;
 			 case 4:
 				PixelConvert_32to8Bits(rowbuf, (Uint32*)src_ptr, dw, surface);
 				break;
