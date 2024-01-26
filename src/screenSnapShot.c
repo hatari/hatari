@@ -418,6 +418,155 @@ static int ScreenSnapShot_SaveNEO(const char *filename)
 }
 
 
+
+/**
+ * Save direct video memory dump to XIMG file
+ */
+static int ScreenSnapShot_SaveXIMG(const char *filename)
+{
+	FILE *fp = NULL;
+	int i, j, k, sw, sh, bpp, offset;
+	SDL_Color col;
+	uint16_t colst, colr, colg, colb;
+	uint32_t video_base, video_size;
+	uint16_t header_size;
+	uint8_t *scanline;
+	bool genconv = Config_IsMachineFalcon() || Config_IsMachineTT() || bUseVDIRes;
+
+	sw = (STRes == ST_LOW_RES) ? 320 : 640;
+	sh = (STRes == ST_HIGH_RES) ? 400 : 200;
+	bpp = 4;
+	if (STRes == ST_MEDIUM_RES) bpp = 2;
+	if (STRes == ST_HIGH_RES) bpp = 1;
+
+	if (genconv)
+	{
+		bpp = ConvertBPP;
+		sw = ConvertW;
+		sh = ConvertH;
+	}
+
+	if (bpp > 8 && bpp != 16)
+	{
+		/* bpp = 24 is a possible format for XIMG but Hatari's screenConvert only supports 16-bit true color.*/
+		Log_AlertDlg(LOG_ERROR,"XIMG screenshot only supports up to 8-bit palette, or 16-bit true color.");
+		return -1;
+	}
+
+	fp = fopen(filename, "wb");
+	if (!fp)
+		return -1;
+
+	/* XIMG header */
+	header_size = 16 + 6;				/* IMG + XIMG */
+	if (bpp <= 8)					/* palette */
+		header_size += (3 * 2) * (1 << bpp);
+	memset(NEOHeader, 0, sizeof(NEOHeader));
+	StoreU16NEO(1,0);				/* version */
+	StoreU16NEO(header_size/2,2);
+	StoreU16NEO(bpp,4);				/* bitplanes */
+	StoreU16NEO(2,6);				/* pattern length (unused) */
+	StoreU16NEO(0x55,8);				/* pixel width (microns) */
+	StoreU16NEO(0x55,10);				/* pixel height (microns) */
+	StoreU16NEO(sw,12);				/* screen width */
+	StoreU16NEO(sh,14);				/* screen height */
+	memcpy(NEOHeader+16,"XIMG",4);
+	StoreU16NEO(0,20);				/* XIMG RGB palette format */
+	fwrite(NEOHeader, 1, 16 + 6, fp);
+
+	/* XIMG RGB format, word triples each 0-1000 */
+	if (bpp <= 8)
+	{
+		for (i=0; i<(1<<bpp); i++)
+		{
+			if (!genconv && (sh < 300) && (bpp <= 4) && pFrameBuffer) /* ST palette, use centre line */
+			{
+				colst = pFrameBuffer->HBLPalettes[i+((OVERSCAN_TOP+sh/2)<<4)];
+				colr = (uint16_t)((((colst >> 8) & 7) * 1000) / 7);
+				colg = (uint16_t)((((colst >> 4) & 7) * 1000) / 7);
+				colb = (uint16_t)((((colst >> 0) & 7) * 1000) / 7);
+			}
+			else /* High resolution or GenConvert palette */
+			{
+				col = Screen_GetPaletteColor(i);
+				colr = (uint16_t)((col.r * 1000) / 255);
+				colg = (uint16_t)((col.g * 1000) / 255);
+				colb = (uint16_t)((col.b * 1000) / 255);
+			}
+			StoreU16NEO(colr,0);
+			StoreU16NEO(colg,2);
+			StoreU16NEO(colb,4);
+			fwrite(NEOHeader,1,(3*2),fp);
+		}
+	}
+
+	/* Image data, no compression is attempted */
+	for (i = 0; i < sh; i++)
+	{
+		video_size = (uint32_t)(bpp * ((sw + 15) & ~15)) / 8; /* size of line data in bytes */
+
+		/* Find line of scanline data */
+		if (!genconv && pFrameBuffer && pFrameBuffer->pSTScreen)
+		{
+			scanline = pFrameBuffer->pSTScreen + (
+				(sh >= 300) ? (SCREENBYTES_MONOLINE * i) :
+				(STScreenLineOffset[i+OVERSCAN_TOP] + SCREENBYTES_LEFT) );
+		}
+		else
+		{
+			video_base = Video_GetScreenBaseAddr() + (i * video_size);
+			if ((video_base + video_size) <= STRamEnd)
+			{
+				scanline = STRam + video_base;
+			}
+			else
+			{
+				fclose(fp);
+				return -1;
+			}
+		}
+
+		if (bpp <= 8)
+		{
+			/* de-interleave scanline into XIMG format */
+			for (j=0; j<bpp; ++j)
+			{
+				fputc(0x80,fp);			/* uncompressed data packet */
+				fputc((sw+7)/8,fp);		/* one plane of line per packet */
+				for (k=0; k<sw; k+=8)
+				{
+					offset = ((((k / 16) * bpp) + j) * 2) + ((k / 8) & 1); /* interleaved word + byte pair*/
+					fputc(scanline[offset],fp);
+				}
+			}
+		}
+		else if (bpp == 16)
+		{
+			/* Falcon native chunky 5:6:5 format */
+			video_size = sw * 2;			/* bytes in line */
+			while (video_size > 0)			/* break into <= 254 byte packets */
+			{
+				offset = (video_size > 254) ? 254 : video_size;
+				fputc(0x80,fp);
+				fputc(offset,fp);
+				fwrite(scanline,1,offset,fp);
+				video_size -= offset;
+				scanline += offset;
+			}
+		}
+		else
+		{
+			fclose(fp);
+			return -1;
+		}
+	}
+
+	fclose (fp);
+	return 1; /* >0 if OK, -1 if error */
+}
+
+
+
 /*-----------------------------------------------------------------------*/
 /**
  * Save screen shot file with filename like 'grab0000.[png|bmp]',
@@ -472,6 +621,17 @@ void ScreenSnapShot_SaveScreen(void)
 		free(szFileName);
 		return;
 	}
+	/* XIMG format */
+	else if (ConfigureParams.Screen.ScreenShotFormat == SCREEN_SNAPSHOT_XIMG )
+	{
+		sprintf(szFileName,"%s/grab%4.4d.ximg", Paths_GetScreenShotDir(), nScreenShots);
+		if (ScreenSnapShot_SaveXIMG(szFileName) > 0)
+			fprintf(stderr, "XMIG screen dump saved to: %s\n", szFileName);
+		else
+			fprintf(stderr, "XIMG screen dump failed!\n");
+		free(szFileName);
+		return;
+	}
 
 	sprintf(szFileName,"%s/grab%4.4d.bmp", Paths_GetScreenShotDir(), nScreenShots);
 	if (SDL_SaveBMP(sdlscrn, szFileName))
@@ -508,6 +668,10 @@ void ScreenSnapShot_SaveToFile(const char *szFileName)
 	else if (File_DoesFileExtensionMatch(szFileName, ".neo"))
 	{
 		success = ScreenSnapShot_SaveNEO(szFileName) == 0;
+	}
+	else if (File_DoesFileExtensionMatch(szFileName, ".ximg") || File_DoesFileExtensionMatch(szFileName, ".img"))
+	{
+		success = ScreenSnapShot_SaveXIMG(szFileName) == 0;
 	}
 	else
 	{

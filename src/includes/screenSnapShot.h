@@ -13,6 +13,7 @@
 #define	SCREEN_SNAPSHOT_BMP	1
 #define	SCREEN_SNAPSHOT_PNG	2
 #define	SCREEN_SNAPSHOT_NEO	3
+#define SCREEN_SNAPSHOT_XIMG	4
 
 
 extern int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int destw,
