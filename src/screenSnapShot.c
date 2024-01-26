@@ -287,7 +287,7 @@ png_cleanup:
 /**
  * Determine the internally used screen dimensions, bits per pixel, and whether GenConv is used.
  */
-static void ScreenSnapShot_GetInternalFormat(bool *genconv, int *sw, int *sh, int *bpp)
+static void ScreenSnapShot_GetInternalFormat(bool *genconv, int *sw, int *sh, int *bpp, uint32_t* line_size)
 {
 	*genconv = Config_IsMachineFalcon() || Config_IsMachineTT() || bUseVDIRes;
 	/* genconv here is almost the same as Screen_UseGenConvScreen, but omits bUseHighRes,
@@ -305,6 +305,7 @@ static void ScreenSnapShot_GetInternalFormat(bool *genconv, int *sw, int *sh, in
 		*sw = ConvertW;
 		*sh = ConvertH;
 	}
+	*line_size = (uint32_t)(*bpp * ((*sw + 15) & ~15)) / 8; /* size of line data in bytes, rounded up to 16 pixels */
 }
 
 
@@ -320,7 +321,7 @@ static int ScreenSnapShot_SaveNEO(const char *filename)
 	uint32_t video_base, line_size;
 	uint16_t header[64];
 
-	ScreenSnapShot_GetInternalFormat(&genconv, &sw, &sh, &bpp);
+	ScreenSnapShot_GetInternalFormat(&genconv, &sw, &sh, &bpp, &line_size);
 	/* If BPP matches an ST resolution, use that, otherwise just use the BPP itself instead of that number. */
 	res = bpp;
 	if      (bpp == 4) res = 0;
@@ -348,6 +349,7 @@ static int ScreenSnapShot_SaveNEO(const char *filename)
 		return -1;
 
 	memset(header, 0, sizeof(header));
+	header[0] = be_swap16(0); /* Flags field (always 0). */
 	header[1] = be_swap16(res); /* NEO resolution word is the primary indicator of BPP. */
 
 	/* ST Low/Medium resolution stores a palette for each line. Using the centre line's palette. */
@@ -369,17 +371,17 @@ static int ScreenSnapShot_SaveNEO(const char *filename)
 		/* Note that this 24-bit palette is being approximated as a 9-bit ST color palette,
 		 * and 256 colors needed for 8bpp cannot be expressed in this header. */
 	}
-	memcpy(header+18,"HATARI  4BPP",12); /* Use internal filename to give a hint about bitplanes. */
+
+	memcpy(header+18,"HATARI  4BPP",12); /* Use filename field indicate Hatari source and format. */
 	((uint8_t*)(header+18))[8] = '0' + (bpp % 10);
 	if (bpp >= 10)
 		((uint8_t*)(header+18))[7] = '0' + (bpp / 10);
-	header[29] = be_swap16(sw);
-	header[30] = be_swap16(sh);
+	header[29] = be_swap16(sw); /* screen width */
+	header[30] = be_swap16(sh); /* screen height */
 
 	fwrite(header, 1, 128, fp);
-	
+
 	/* ST modes fill pFrameBuffer->pSTScreen from each scanline, during Video_EndHBL. */
-	line_size = (uint32_t)(bpp * ((sw + 15) & ~15)) / 8; /* size of line data in bytes */
 	if (!genconv && pFrameBuffer && pFrameBuffer->pSTScreen)
 	{
 		for (i = 0; i < sh; i++)
@@ -430,11 +432,11 @@ static int ScreenSnapShot_SaveXIMG(const char *filename)
 	uint8_t *scanline;
 	uint16_t header[11];
 
-	ScreenSnapShot_GetInternalFormat(&genconv, &sw, &sh, &bpp);
+	ScreenSnapShot_GetInternalFormat(&genconv, &sw, &sh, &bpp, &line_size);
 
 	if (bpp > 8 && bpp != 16)
 	{
-		/* bpp = 24 is a possible format for XIMG but Hatari's screenConvert only supports 16-bit true color.*/
+		/* bpp = 24 is a possible format for XIMG but Hatari's screenConvert only supports 16-bit true color. */
 		Log_AlertDlg(LOG_ERROR,"XIMG screenshot only supports up to 8-bit palette, or 16-bit true color.");
 		return -1;
 	}
@@ -459,7 +461,7 @@ static int ScreenSnapShot_SaveXIMG(const char *filename)
 	memcpy(header+8,"XIMG",4);
 	header[10] = be_swap16(0); /* XIMG RGB palette format */
 	fwrite(header, 1, (8 + 3) * 2, fp);
-	
+
 	/* XIMG RGB format, word triples each 0-1000 */
 	if (bpp <= 8)
 	{
@@ -487,7 +489,6 @@ static int ScreenSnapShot_SaveXIMG(const char *filename)
 	}
 
 	/* Image data, no compression is attempted */
-	line_size = (uint32_t)(bpp * ((sw + 15) & ~15)) / 8; /* size of line data in bytes */
 	for (i = 0; i < sh; i++)
 	{
 		/* Find line of scanline data */
