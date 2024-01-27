@@ -274,16 +274,20 @@ class Hatari:
 # it needs actual method for (each) setting.
 class HatariConfigMapping(ConfigStore):
     _paths = {
-        "memauto": ("[Memory]", "szAutoSaveFileName", "Automatic memory snapshot"),
-        "memsave": ("[Memory]", "szMemoryCaptureFileName", "Manual memory snapshot"),
-        "midiin":  ("[Midi]", "sMidiInFileName", "Midi input"),
-        "midiout": ("[Midi]", "sMidiOutFileName", "Midi output"),
-        "rs232in": ("[RS232]", "szInFileName", "RS232 (MFP) I/O input"),
-        "rs232out":("[RS232]", "szOutFileName", "RS232 (MFP) I/O output"),
-#        "sccbin":  ("[RS232]", "sSccBInFileName", "RS232 (SCC-B) I/O input"),
-        "sccbout": ("[RS232]", "sSccBOutFileName", "RS232 (SCC-B) I/O output"),
-        "printout":("[Printer]", "szPrintToFileName", "Printer output"),
-        "soundout":("[Sound]", "szYMCaptureFileName", "Sound output")
+        "memauto":    ("[Memory]", "szAutoSaveFileName", "Automatic memory snapshot"),
+        "memsave":    ("[Memory]", "szMemoryCaptureFileName", "Manual memory snapshot"),
+        "midiin":     ("[Midi]", "sMidiInFileName", "Midi input"),
+        "midiout":    ("[Midi]", "sMidiOutFileName", "Midi output"),
+        "rs232in":    ("[RS232]", "szInFileName", "RS232 (MFP) I/O input"),
+        "rs232out":   ("[RS232]", "szOutFileName", "RS232 (MFP) I/O output"),
+        "sccain":     ("[RS232]", "SccAInFileName", "RS232 (SCC-A) I/O input"),
+        "sccaout":    ("[RS232]", "SccAOutFileName", "RS232 (SCC-A) I/O output"),
+        "sccalanin":  ("[RS232]", "SccAInFileName", "RS232 (SCC-A Lan) I/O input"),
+        "sccalanout": ("[RS232]", "SccAOutFileName", "RS232 (SCC-A Lan) I/O output"),
+        "sccbin":     ("[RS232]", "SccBInFileName", "RS232 (SCC-B) I/O input"),
+        "sccbout":    ("[RS232]", "SccBOutFileName", "RS232 (SCC-B) I/O output"),
+        "printout":   ("[Printer]", "szPrintToFileName", "Printer output"),
+        "soundout":   ("[Sound]", "szYMCaptureFileName", "Sound output")
     }
     has_hd_sections = True # from v2.2 onwards separate ACSI/SCSI/IDE sections
     has_modeltype = True   # from v2.0 onwards
@@ -396,11 +400,25 @@ class HatariConfigMapping(ConfigStore):
         self.set("[RS232]", "bEnableRS232", value)
         self._hatari.set_device("rs232", value)
 
+    def get_scca(self):
+        return self.get("[RS232]", "EnableSccA")
+
+    def set_scca(self, value):
+        self.set("[RS232]", "EnableSccA", value)
+        self._hatari.set_device("scca", value)
+
+    def get_scca_lan(self):
+        return self.get("[RS232]", "EnableSccALan")
+
+    def set_scca_lan(self, value):
+        self.set("[RS232]", "EnableSccALan", value)
+        self._hatari.set_device("scca lan", value)
+
     def get_sccb(self):
-        return self.get("[RS232]", "bEnableSccB")
+        return self.get("[RS232]", "EnableSccB")
 
     def set_sccb(self, value):
-        self.set("[RS232]", "bEnableSccB", value)
+        self.set("[RS232]", "EnableSccB", value)
         self._hatari.set_device("sccb", value)
 
     # ------------ machine ---------------
