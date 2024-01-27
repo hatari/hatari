@@ -180,6 +180,8 @@ random order - and if someone is missing here, please remind us!):
   missing variables in memory snapshot, keyboard/joystick fixes, saving
   screen content as .neo and .ximg file.
 
+- Alex Hornby : Patch to add analog/paddle support to the joypad emulation
+
 See also "thanks.txt" for people who've helped Hatari development in
 other ways than code contributions.
 
