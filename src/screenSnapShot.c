@@ -115,7 +115,6 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
 	int sh = surface->h - CropTop - CropBottom;
 	Uint8 *src_ptr;
 	Uint8 *rowbuf;
-	SDL_PixelFormat *fmt = surface->format;
 	png_infop info_ptr = NULL;
 	png_structp png_ptr;
 	png_text pngtext;
@@ -139,7 +138,7 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
 	do_lock = SDL_MUSTLOCK(surface);
 	if (do_lock)
 		SDL_LockSurface(surface);
-	for (y = 0; y < dh && do_palette; y++)
+	for (y = 0; y < dh; y++)
 	{
 		src_ptr = (Uint8 *)surface->pixels
 		          + (CropTop + (y * sh + dh/2) / dh) * surface->pitch
@@ -261,7 +260,7 @@ png_cleanup:
 /**
  * Determine the internally used screen dimensions, bits per pixel, and whether GenConv is used.
  */
-static void ScreenSnapShot_GetInternalFormat(bool *genconv, int *sw, int *sh, int *bpp)
+static void ScreenSnapShot_GetInternalFormat(bool *genconv, int *sw, int *sh, int *bpp, uint32_t* line_size)
 {
 	*genconv = Config_IsMachineFalcon() || Config_IsMachineTT() || bUseVDIRes;
 	/* genconv here is almost the same as Screen_UseGenConvScreen, but omits bUseHighRes,
@@ -279,6 +278,7 @@ static void ScreenSnapShot_GetInternalFormat(bool *genconv, int *sw, int *sh, in
 		*sw = ConvertW;
 		*sh = ConvertH;
 	}
+	*line_size = (uint32_t)(*bpp * ((*sw + 15) & ~15)) / 8; /* size of line data in bytes, rounded up to 16 pixels */
 }
 
 
@@ -294,7 +294,7 @@ static int ScreenSnapShot_SaveNEO(const char *filename)
 	uint32_t video_base, line_size;
 	uint16_t header[64];
 
-	ScreenSnapShot_GetInternalFormat(&genconv, &sw, &sh, &bpp);
+	ScreenSnapShot_GetInternalFormat(&genconv, &sw, &sh, &bpp, &line_size);
 	/* If BPP matches an ST resolution, use that, otherwise just use the BPP itself instead of that number. */
 	res = bpp;
 	if      (bpp == 4) res = 0;
@@ -322,6 +322,7 @@ static int ScreenSnapShot_SaveNEO(const char *filename)
 		return -1;
 
 	memset(header, 0, sizeof(header));
+	header[0] = be_swap16(0); /* Flags field (always 0). */
 	header[1] = be_swap16(res); /* NEO resolution word is the primary indicator of BPP. */
 
 	/* ST Low/Medium resolution stores a palette for each line. Using the centre line's palette. */
@@ -343,17 +344,17 @@ static int ScreenSnapShot_SaveNEO(const char *filename)
 		/* Note that this 24-bit palette is being approximated as a 9-bit ST color palette,
 		 * and 256 colors needed for 8bpp cannot be expressed in this header. */
 	}
-	memcpy(header+18,"HATARI  4BPP",12); /* Use internal filename to give a hint about bitplanes. */
+
+	memcpy(header+18,"HATARI  4BPP",12); /* Use filename field indicate Hatari source and format. */
 	((uint8_t*)(header+18))[8] = '0' + (bpp % 10);
 	if (bpp >= 10)
 		((uint8_t*)(header+18))[7] = '0' + (bpp / 10);
-	header[29] = be_swap16(sw);
-	header[30] = be_swap16(sh);
+	header[29] = be_swap16(sw); /* screen width */
+	header[30] = be_swap16(sh); /* screen height */
 
 	fwrite(header, 1, 128, fp);
 
 	/* ST modes fill pFrameBuffer->pSTScreen from each scanline, during Video_EndHBL. */
-	line_size = (uint32_t)(bpp * ((sw + 15) & ~15)) / 8; /* size of line data in bytes */
 	if (!genconv && pFrameBuffer && pFrameBuffer->pSTScreen)
 	{
 		for (i = 0; i < sh; i++)
@@ -400,16 +401,16 @@ static int ScreenSnapShot_SaveXIMG(const char *filename)
 	bool genconv;
 	SDL_Color col;
 	uint16_t colst, colr, colg, colb;
-	uint32_t video_base, video_size;
+	uint32_t video_base, line_size;
 	uint16_t header_size;
 	uint8_t *scanline;
 	uint16_t header[11];
 
-	ScreenSnapShot_GetInternalFormat(&genconv, &sw, &sh, &bpp);
+	ScreenSnapShot_GetInternalFormat(&genconv, &sw, &sh, &bpp, &line_size);
 
 	if (bpp > 8 && bpp != 16)
 	{
-		/* bpp = 24 is a possible format for XIMG but Hatari's screenConvert only supports 16-bit true color.*/
+		/* bpp = 24 is a possible format for XIMG but Hatari's screenConvert only supports 16-bit true color. */
 		Log_AlertDlg(LOG_ERROR,"XIMG screenshot only supports up to 8-bit palette, or 16-bit true color.");
 		return -1;
 	}
@@ -464,8 +465,6 @@ static int ScreenSnapShot_SaveXIMG(const char *filename)
 	/* Image data, no compression is attempted */
 	for (i = 0; i < sh; i++)
 	{
-		video_size = (uint32_t)(bpp * ((sw + 15) & ~15)) / 8; /* size of line data in bytes */
-
 		/* Find line of scanline data */
 		if (!genconv && pFrameBuffer && pFrameBuffer->pSTScreen)
 		{
@@ -475,8 +474,8 @@ static int ScreenSnapShot_SaveXIMG(const char *filename)
 		}
 		else
 		{
-			video_base = Video_GetScreenBaseAddr() + (i * video_size);
-			if ((video_base + video_size) <= STRamEnd)
+			video_base = Video_GetScreenBaseAddr() + (i * ConvertNextLine);
+			if ((video_base + line_size) <= STRamEnd)
 			{
 				scanline = STRam + video_base;
 			}
@@ -504,15 +503,15 @@ static int ScreenSnapShot_SaveXIMG(const char *filename)
 		else if (bpp == 16)
 		{
 			/* Falcon native chunky 5:6:5 format */
-			video_size = sw * 2;			/* bytes in line */
-			while (video_size > 0)			/* break into <= 254 byte packets */
+			j = (sw * 2);				/* bytes per line */
+			while (j > 0)				/* break into <= 254 byte packets */
 			{
-				offset = (video_size > 254) ? 254 : video_size;
+				k = (j > 254) ? 254 : j;	/* bytes in packet */
 				fputc(0x80,fp);
-				fputc(offset,fp);
-				fwrite(scanline,1,offset,fp);
-				video_size -= offset;
-				scanline += offset;
+				fputc(k,fp);
+				fwrite(scanline,1,k,fp);
+				j -= k;
+				scanline += k;
 			}
 		}
 		else
