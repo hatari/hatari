@@ -126,6 +126,8 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
 	png_color png_pal[256];
 	Uint8 palbuf[3];
 
+	assert(fmt->BytesPerPixel == 4);
+
 	if (!dw)
 		dw = sw;
 	if (!dh)
@@ -142,15 +144,8 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
 		src_ptr = (Uint8 *)surface->pixels
 		          + (CropTop + (y * sh + dh/2) / dh) * surface->pitch
 		          + CropLeft * surface->format->BytesPerPixel;
-		switch (fmt->BytesPerPixel)
-		{
-		 case 4:
-			if (!PixelConvert_32to8Bits(rowbuf, (Uint32*)src_ptr, dw, surface))
-				do_palette = false;
-			break;
-		 default:
-			abort();
-		}
+		if (!PixelConvert_32to8Bits(rowbuf, (Uint32*)src_ptr, dw, surface))
+			do_palette = false;
 	}
 	if (do_lock)
 		SDL_UnlockSurface(surface);
@@ -208,14 +203,7 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
 		/* Generate palette for PNG */
 		for (y = 0; y < ConvertPaletteSize; y++)
 		{
-			switch (fmt->BytesPerPixel)
-			{
-			 case 4:
-				PixelConvert_32to24Bits(palbuf, (Uint32*)(ConvertPalette+y), 1, surface);
-				break;
-			 default:
-				abort();
-			}
+			PixelConvert_32to24Bits(palbuf, (Uint32*)(ConvertPalette+y), 1, surface);
 			png_pal[y].red   = palbuf[0];
 			png_pal[y].green = palbuf[1];
 			png_pal[y].blue  = palbuf[2];
@@ -241,28 +229,14 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
 
 		if (!do_palette)
 		{
-			switch (fmt->BytesPerPixel)
-			{
-			 case 4:
-				/* unpack 32-bit RGBA pixels */
-				PixelConvert_32to24Bits(rowbuf, (Uint32*)src_ptr, dw, surface);
-				break;
-			 default:
-				abort();
-			}
+			/* unpack 32-bit RGBA pixels */
+			PixelConvert_32to24Bits(rowbuf, (Uint32*)src_ptr, dw, surface);
 		}
 		else
 		{
 			/* Reindex back to ST palette
 			 * Note that this cannot disambiguate indices if the palette has duplicate colors */
-			switch (fmt->BytesPerPixel)
-			{
-			 case 4:
-				PixelConvert_32to8Bits(rowbuf, (Uint32*)src_ptr, dw, surface);
-				break;
-			 default:
-				abort();
-			}
+			PixelConvert_32to8Bits(rowbuf, (Uint32*)src_ptr, dw, surface);
 		}
 		/* and unlock surface before syscalls */
 		if (do_lock)

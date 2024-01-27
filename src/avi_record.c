@@ -82,6 +82,7 @@ const char AVIRecord_fileid[] = "Hatari avi_record.c";
 
 #include <SDL.h>
 #include <SDL_endian.h>
+#include <assert.h>
 #include <sys/types.h>  /* For off_t */
 
 #include "main.h"
@@ -886,6 +887,8 @@ static bool	Avi_RecordVideoStream_BMP ( RECORD_AVI_PARAMS *pAviParams )
 	int		NeedLock;
 	uint8_t		*LineBuf = alloca(3 * pAviParams->Width);		/* temp buffer to convert to 24-bit BGR format */
 
+	assert(pAviParams->Surface->format->BytesPerPixel == 4);
+
 	SizeImage = Avi_GetBmpSize ( pAviParams->Width , pAviParams->Height , pAviParams->BitCount );
 
 	/* Write the video frame header */
@@ -917,13 +920,7 @@ static bool	Avi_RecordVideoStream_BMP ( RECORD_AVI_PARAMS *pAviParams )
 			+ pAviParams->CropLeft * pAviParams->Surface->format->BytesPerPixel;
 
 		pBitmapOut = LineBuf;
-		switch ( pAviParams->Surface->format->BytesPerPixel ) {
-		 case 4:
-			PixelConvert_32to24Bits_BGR(LineBuf, (uint32_t *)pBitmapIn, pAviParams->Width, pAviParams->Surface);
-			break;
-		 default:
-			abort();
-		}
+		PixelConvert_32to24Bits_BGR(LineBuf, (uint32_t *)pBitmapIn, pAviParams->Width, pAviParams->Surface);
 
 		if ( NeedLock )
 			SDL_UnlockSurface ( pAviParams->Surface );
