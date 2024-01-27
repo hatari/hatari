@@ -125,7 +125,7 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
 	png_color png_pal[256];
 	Uint8 palbuf[3];
 
-	assert(fmt->BytesPerPixel == 4);
+	assert(surface->format->BytesPerPixel == 4);
 
 	if (!dw)
 		dw = sw;
