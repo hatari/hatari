@@ -600,10 +600,10 @@ void Joy_StePadButtons_DIPSwitches_ReadWord(void)
 		return;
 	}
 
-	if (ConfigureParams.Joysticks.Joy[JOYID_STEPADA].nJoystickMode != JOYSTICK_DISABLED
+	if (ConfigureParams.Joysticks.Joy[JOYID_JOYPADA].nJoystickMode != JOYSTICK_DISABLED
 	    && (nSteJoySelect & 0x0f) != 0x0f)
 	{
-		int nButtons = Joy_GetFireButtons(JOYID_STEPADA);
+		int nButtons = Joy_GetFireButtons(JOYID_JOYPADA);
 		if (!(nSteJoySelect & 0x1))
 		{
 			if (nButtons & 0x01)  /* Fire button A pressed? */
@@ -628,10 +628,10 @@ void Joy_StePadButtons_DIPSwitches_ReadWord(void)
 		}
 	}
 
-	if (ConfigureParams.Joysticks.Joy[JOYID_STEPADB].nJoystickMode != JOYSTICK_DISABLED
+	if (ConfigureParams.Joysticks.Joy[JOYID_JOYPADB].nJoystickMode != JOYSTICK_DISABLED
 	    && (nSteJoySelect & 0xf0) != 0xf0)
 	{
-		int nButtons = Joy_GetFireButtons(JOYID_STEPADB);
+		int nButtons = Joy_GetFireButtons(JOYID_JOYPADB);
 		if (!(nSteJoySelect & 0x10))
 		{
 			if (nButtons & 0x01)  /* Fire button A pressed? */
@@ -698,47 +698,47 @@ void Joy_StePadMulti_ReadWord(void)
 {
 	uint16_t nData = 0xff;
 
-	if (ConfigureParams.Joysticks.Joy[JOYID_STEPADA].nJoystickMode != JOYSTICK_DISABLED
+	if (ConfigureParams.Joysticks.Joy[JOYID_JOYPADA].nJoystickMode != JOYSTICK_DISABLED
 	    && (nSteJoySelect & 0x0f) != 0x0f)
 	{
 		nData &= 0xf0;
 		if (!(nSteJoySelect & 0x1))
 		{
-			nData |= ~Joy_GetStickData(JOYID_STEPADA) & 0x0f;
+			nData |= ~Joy_GetStickData(JOYID_JOYPADA) & 0x0f;
 		}
 		else if (!(nSteJoySelect & 0x2))
 		{
-			nData |= ~(Joy_GetFireButtons(JOYID_STEPADA) >> 13) & 0x0f;
+			nData |= ~(Joy_GetFireButtons(JOYID_JOYPADA) >> 13) & 0x0f;
 		}
 		else if (!(nSteJoySelect & 0x4))
 		{
-			nData |= ~(Joy_GetFireButtons(JOYID_STEPADA) >> 9) & 0x0f;
+			nData |= ~(Joy_GetFireButtons(JOYID_JOYPADA) >> 9) & 0x0f;
 		}
 		else if (!(nSteJoySelect & 0x8))
 		{
-			nData |= ~(Joy_GetFireButtons(JOYID_STEPADA) >> 5) & 0x0f;
+			nData |= ~(Joy_GetFireButtons(JOYID_JOYPADA) >> 5) & 0x0f;
 		}
 	}
 
-	if (ConfigureParams.Joysticks.Joy[JOYID_STEPADB].nJoystickMode != JOYSTICK_DISABLED
+	if (ConfigureParams.Joysticks.Joy[JOYID_JOYPADB].nJoystickMode != JOYSTICK_DISABLED
 	    && (nSteJoySelect & 0xf0) != 0xf0)
 	{
 		nData &= 0x0f;
 		if (!(nSteJoySelect & 0x10))
 		{
-			nData |= ~Joy_GetStickData(JOYID_STEPADB) << 4;
+			nData |= ~Joy_GetStickData(JOYID_JOYPADB) << 4;
 		}
 		else if (!(nSteJoySelect & 0x20))
 		{
-			nData |= ~(Joy_GetFireButtons(JOYID_STEPADB) >> (13-4)) & 0xf0;
+			nData |= ~(Joy_GetFireButtons(JOYID_JOYPADB) >> (13-4)) & 0xf0;
 		}
 		else if (!(nSteJoySelect & 0x40))
 		{
-			nData |= ~(Joy_GetFireButtons(JOYID_STEPADB) >> (9-4)) & 0xf0;
+			nData |= ~(Joy_GetFireButtons(JOYID_JOYPADB) >> (9-4)) & 0xf0;
 		}
 		else if (!(nSteJoySelect & 0x80))
 		{
-			nData |= ~(Joy_GetFireButtons(JOYID_STEPADB) >> (5-4)) & 0xf0;
+			nData |= ~(Joy_GetFireButtons(JOYID_JOYPADB) >> (5-4)) & 0xf0;
 		}
 	}
 
