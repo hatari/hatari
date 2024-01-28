@@ -244,7 +244,7 @@ def create_table_dialog(parent, title, rows, cols, oktext = Gtk.STOCK_APPLY):
     return (table, dialog)
 
 def table_add_entry_row(table, row, col, label, size = None):
-    "table_add_entry_row(table,row,col,label,[entry size]) -> entry"
+    "table_add_entry_row(table,row,col,label[,entry size]) -> entry"
     # add given label to given row in given table
     # return entry for that line
     label = Gtk.Label(label=label, halign=Gtk.Align.END)
@@ -259,7 +259,7 @@ def table_add_entry_row(table, row, col, label, size = None):
     return entry
 
 def table_add_widget_row(table, row, col, label, widget, fullspan = False):
-    "table_add_widget_row(table,row,col,label,widget) -> widget"
+    "table_add_widget_row(table,row,col,label,widget[,fullspan]) -> widget"
     # add given label right aligned to given row in given table
     # add given widget to the right column and return it
     if label:
