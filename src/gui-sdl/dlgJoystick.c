@@ -69,14 +69,14 @@ static SGOBJ joydlg[] =
 
 /* The joystick keys setup dialog: */
 
-static char sKeyInstruction[24];
-static char sKeyName[24];
+static char sKeyInstruction[27];
+static char sKeyName[27];
 
 static SGOBJ joykeysdlg[] =
 {
-	{ SGBOX, 0, 0, 0,0, 28,5, NULL },
-	{ SGTEXT, 0, 0, 2,1, 24,1, sKeyInstruction },
-	{ SGTEXT, 0, 0, 2,3, 24,1, sKeyName },
+	{ SGBOX, 0, 0, 0,0, 30,5, NULL },
+	{ SGTEXT, 0, 0, 2,1, 26,1, sKeyInstruction },
+	{ SGTEXT, 0, 0, 2,3, 26,1, sKeyName },
 	{ SGSTOP, 0, 0, 0,0, 0,0, NULL }
 };
 
@@ -153,13 +153,43 @@ static void DlgJoystick_DefineOneKey(char *pType, int *pKey)
  */
 static void DlgJoystick_DefineKeys(int nActJoy)
 {
+	JOYSTICK *joycnf = &ConfigureParams.Joysticks.Joy[nActJoy];
 
 	SDLGui_CenterDlg(joykeysdlg);
-	DlgJoystick_DefineOneKey("up", &ConfigureParams.Joysticks.Joy[nActJoy].nKeyCodeUp);
-	DlgJoystick_DefineOneKey("down", &ConfigureParams.Joysticks.Joy[nActJoy].nKeyCodeDown);
-	DlgJoystick_DefineOneKey("left", &ConfigureParams.Joysticks.Joy[nActJoy].nKeyCodeLeft);
-	DlgJoystick_DefineOneKey("right", &ConfigureParams.Joysticks.Joy[nActJoy].nKeyCodeRight);
-	DlgJoystick_DefineOneKey("fire", &ConfigureParams.Joysticks.Joy[nActJoy].nKeyCodeFire);
+	DlgJoystick_DefineOneKey("up", &joycnf->nKeyCodeUp);
+	DlgJoystick_DefineOneKey("down", &joycnf->nKeyCodeDown);
+	DlgJoystick_DefineOneKey("left", &joycnf->nKeyCodeLeft);
+	DlgJoystick_DefineOneKey("right", &joycnf->nKeyCodeRight);
+
+	if (nActJoy != JOYID_JOYPADA && nActJoy != JOYID_JOYPADB)
+	{
+		DlgJoystick_DefineOneKey("fire", &joycnf->nKeyCodeFire);
+	}
+	else
+	{
+		/* Handle the joypad buttons */
+		DlgJoystick_DefineOneKey("A", &joycnf->nKeyCodeFire);
+		DlgJoystick_DefineOneKey("B", &joycnf->nKeyCodeB);
+		DlgJoystick_DefineOneKey("C", &joycnf->nKeyCodeC);
+		DlgJoystick_DefineOneKey("option", &joycnf->nKeyCodeOption);
+		DlgJoystick_DefineOneKey("pause", &joycnf->nKeyCodePause);
+
+		if (DlgAlert_Query("Do you also want to set up the number pad?"))
+		{
+			DlgJoystick_DefineOneKey("0", &joycnf->nKeyCodeNum[0]);
+			DlgJoystick_DefineOneKey("1", &joycnf->nKeyCodeNum[1]);
+			DlgJoystick_DefineOneKey("2", &joycnf->nKeyCodeNum[2]);
+			DlgJoystick_DefineOneKey("3", &joycnf->nKeyCodeNum[3]);
+			DlgJoystick_DefineOneKey("4", &joycnf->nKeyCodeNum[4]);
+			DlgJoystick_DefineOneKey("5", &joycnf->nKeyCodeNum[5]);
+			DlgJoystick_DefineOneKey("6", &joycnf->nKeyCodeNum[6]);
+			DlgJoystick_DefineOneKey("7", &joycnf->nKeyCodeNum[7]);
+			DlgJoystick_DefineOneKey("8", &joycnf->nKeyCodeNum[8]);
+			DlgJoystick_DefineOneKey("9", &joycnf->nKeyCodeNum[9]);
+			DlgJoystick_DefineOneKey("*", &joycnf->nKeyCodeStar);
+			DlgJoystick_DefineOneKey("#", &joycnf->nKeyCodeHash);
+		}
+	}
 }
 
 
