@@ -274,18 +274,18 @@ class Hatari:
 # it needs actual method for (each) setting.
 class HatariConfigMapping(ConfigStore):
     _paths = {
-        "memauto":    ("[Memory]", "szAutoSaveFileName", "Automatic memory snapshot"),
-        "memsave":    ("[Memory]", "szMemoryCaptureFileName", "Manual memory snapshot"),
+        "memauto":    ("[Memory]", "szAutoSaveFileName", "Memory snapshot, automatic"),
+        "memsave":    ("[Memory]", "szMemoryCaptureFileName", "Memory snapshot, manual"),
         "midiin":     ("[Midi]", "sMidiInFileName", "Midi input"),
         "midiout":    ("[Midi]", "sMidiOutFileName", "Midi output"),
-        "rs232in":    ("[RS232]", "szInFileName", "RS232 (MFP) I/O input"),
-        "rs232out":   ("[RS232]", "szOutFileName", "RS232 (MFP) I/O output"),
-        "sccain":     ("[RS232]", "SccAInFileName", "RS232 (SCC-A) I/O input"),
-        "sccaout":    ("[RS232]", "SccAOutFileName", "RS232 (SCC-A) I/O output"),
-        "sccalanin":  ("[RS232]", "SccAInFileName", "RS232 (SCC-A Lan) I/O input"),
-        "sccalanout": ("[RS232]", "SccAOutFileName", "RS232 (SCC-A Lan) I/O output"),
-        "sccbin":     ("[RS232]", "SccBInFileName", "RS232 (SCC-B) I/O input"),
-        "sccbout":    ("[RS232]", "SccBOutFileName", "RS232 (SCC-B) I/O output"),
+        "rs232in":    ("[RS232]", "szInFileName", "RS232: MFP IO input"),
+        "rs232out":   ("[RS232]", "szOutFileName", "RS232: MFP IO output"),
+        "sccain":     ("[RS232]", "SccAInFileName", "RS232: SCC-A IO input"),
+        "sccaout":    ("[RS232]", "SccAOutFileName", "RS232: SCC-A IO output"),
+        "sccalanin":  ("[RS232]", "SccAInFileName", "RS232: SCC-A Lan IO input"),
+        "sccalanout": ("[RS232]", "SccAOutFileName", "RS232: SCC-A Lan IO output"),
+        "sccbin":     ("[RS232]", "SccBInFileName", "RS232: SCC-B IO input"),
+        "sccbout":    ("[RS232]", "SccBOutFileName", "RS232: SCC-B IO output"),
         "printout":   ("[Printer]", "szPrintToFileName", "Printer output"),
         "soundout":   ("[Sound]", "szYMCaptureFileName", "Sound output")
     }
@@ -412,7 +412,7 @@ class HatariConfigMapping(ConfigStore):
 
     def set_scca_lan(self, value):
         self.set("[RS232]", "EnableSccALan", value)
-        self._hatari.set_device("scca lan", value)
+        self._hatari.set_device("sccalan", value)
 
     def get_sccb(self):
         return self.get("[RS232]", "EnableSccB")

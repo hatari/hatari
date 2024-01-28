@@ -1,7 +1,7 @@
 #
 # Classes for the Hatari UI dialogs
 #
-# Copyright (C) 2008-2023 by Eero Tamminen
+# Copyright (C) 2008-2024 by Eero Tamminen
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -587,10 +587,16 @@ class PeripheralDialog(HatariUIDialog):
         printer = Gtk.CheckButton("Enable printer output")
         printer.set_active(config.get_printer())
 
-        rs232 = Gtk.CheckButton("Enable MFP RS232 (ST/MegaST/STE/MegaSTE/TT)")
+        rs232 = Gtk.CheckButton("Enable RS232/MFP (!Falcon)")
         rs232.set_active(config.get_rs232())
 
-        sccb = Gtk.CheckButton("Enable SCC-B RS232 output (MegaSTE/TT/Falcon")
+        scca = Gtk.CheckButton("Enable RS232/SCC-A output (MegaSTE/TT/Falcon")
+        scca.set_active(config.get_scca())
+
+        scca_lan = Gtk.CheckButton("Enable RS232/SCC-A Lan output (MegaSTE/TT/Falcon")
+        scca_lan.set_active(config.get_scca_lan())
+
+        sccb = Gtk.CheckButton("Enable RS232/SCC-B output (MegaSTE/TT/Falcon")
         sccb.set_active(config.get_sccb())
 
         dialog = Gtk.Dialog("Peripherals", self.parent,
@@ -600,12 +606,16 @@ class PeripheralDialog(HatariUIDialog):
         dialog.vbox.add(midi)
         dialog.vbox.add(printer)
         dialog.vbox.add(rs232)
+        dialog.vbox.add(scca)
+        dialog.vbox.add(scca_lan)
         dialog.vbox.add(sccb)
         dialog.vbox.show_all()
 
         self.dialog = dialog
         self.printer = printer
         self.rs232 = rs232
+        self.scca = scca
+        self.scca_lan = scca_lan
         self.sccb = sccb
         self.midi = midi
 
@@ -621,6 +631,8 @@ class PeripheralDialog(HatariUIDialog):
             config.set_midi(self.midi.get_active())
             config.set_printer(self.printer.get_active())
             config.set_rs232(self.rs232.get_active())
+            config.set_scca(self.scca.get_active())
+            config.set_scca_lan(self.scca_lan.get_active())
             config.set_sccb(self.sccb.get_active())
             config.flush_updates()
 
@@ -632,9 +644,10 @@ class PathDialog(HatariUIDialog):
     def _create_dialog(self, config):
         paths = config.get_paths()
         table, self.dialog = create_table_dialog(self.parent, "File path settings", len(paths), 2)
-        paths.sort()
         row = 0
         self.paths = []
+        # sort by path label
+        paths.sort(key=lambda info: info[2])
         for (key, path, label) in paths:
             label = "%s:" % label
             fsel = FselEntry(self.dialog, title=label, validate=self._validate_fname, data=key)
