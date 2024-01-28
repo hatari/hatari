@@ -176,6 +176,8 @@ typedef struct
   int nJoyId;
   int nJoyButMap[JOYSTICK_BUTTONS];
   int nKeyCodeUp, nKeyCodeDown, nKeyCodeLeft, nKeyCodeRight, nKeyCodeFire;
+  int nKeyCodeB, nKeyCodeC, nKeyCodeOption, nKeyCodePause;
+  int nKeyCodeStar, nKeyCodeHash, nKeyCodeNum[10];
 } JOYSTICK;
 
 enum

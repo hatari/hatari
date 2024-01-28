@@ -139,7 +139,7 @@ static const struct Config_Tag configs_Joystick1[] =
 	{ NULL , Error_Tag, NULL }
 };
 
-/* Used to load/save joystick 2 options */
+/* Used to load/save joystick 2 options (joypad A) */
 static const struct Config_Tag configs_Joystick2[] =
 {
 	{ "nJoystickMode", Int_Tag, &ConfigureParams.Joysticks.Joy[2].nJoystickMode },
@@ -154,10 +154,26 @@ static const struct Config_Tag configs_Joystick2[] =
 	{ "kLeft", Key_Tag, &ConfigureParams.Joysticks.Joy[2].nKeyCodeLeft },
 	{ "kRight", Key_Tag, &ConfigureParams.Joysticks.Joy[2].nKeyCodeRight },
 	{ "kFire", Key_Tag, &ConfigureParams.Joysticks.Joy[2].nKeyCodeFire },
+	{ "kButtonB", Key_Tag, &ConfigureParams.Joysticks.Joy[2].nKeyCodeB },
+	{ "kButtonC", Key_Tag, &ConfigureParams.Joysticks.Joy[2].nKeyCodeC },
+	{ "kButtonOption", Key_Tag, &ConfigureParams.Joysticks.Joy[2].nKeyCodeOption },
+	{ "kButtonPause", Key_Tag, &ConfigureParams.Joysticks.Joy[2].nKeyCodePause },
+	{ "kButtonStar", Key_Tag, &ConfigureParams.Joysticks.Joy[2].nKeyCodeStar },
+	{ "kButtonHash", Key_Tag, &ConfigureParams.Joysticks.Joy[2].nKeyCodeHash },
+	{ "kButton0", Key_Tag, &ConfigureParams.Joysticks.Joy[2].nKeyCodeNum[0] },
+	{ "kButton1", Key_Tag, &ConfigureParams.Joysticks.Joy[2].nKeyCodeNum[1] },
+	{ "kButton2", Key_Tag, &ConfigureParams.Joysticks.Joy[2].nKeyCodeNum[2] },
+	{ "kButton3", Key_Tag, &ConfigureParams.Joysticks.Joy[2].nKeyCodeNum[3] },
+	{ "kButton4", Key_Tag, &ConfigureParams.Joysticks.Joy[2].nKeyCodeNum[4] },
+	{ "kButton5", Key_Tag, &ConfigureParams.Joysticks.Joy[2].nKeyCodeNum[5] },
+	{ "kButton6", Key_Tag, &ConfigureParams.Joysticks.Joy[2].nKeyCodeNum[6] },
+	{ "kButton7", Key_Tag, &ConfigureParams.Joysticks.Joy[2].nKeyCodeNum[7] },
+	{ "kButton8", Key_Tag, &ConfigureParams.Joysticks.Joy[2].nKeyCodeNum[8] },
+	{ "kButton9", Key_Tag, &ConfigureParams.Joysticks.Joy[2].nKeyCodeNum[9] },
 	{ NULL , Error_Tag, NULL }
 };
 
-/* Used to load/save joystick 3 options */
+/* Used to load/save joystick 3 options (joypad B) */
 static const struct Config_Tag configs_Joystick3[] =
 {
 	{ "nJoystickMode", Int_Tag, &ConfigureParams.Joysticks.Joy[3].nJoystickMode },
@@ -172,6 +188,22 @@ static const struct Config_Tag configs_Joystick3[] =
 	{ "kLeft", Key_Tag, &ConfigureParams.Joysticks.Joy[3].nKeyCodeLeft },
 	{ "kRight", Key_Tag, &ConfigureParams.Joysticks.Joy[3].nKeyCodeRight },
 	{ "kFire", Key_Tag, &ConfigureParams.Joysticks.Joy[3].nKeyCodeFire },
+	{ "kButtonB", Key_Tag, &ConfigureParams.Joysticks.Joy[3].nKeyCodeB },
+	{ "kButtonC", Key_Tag, &ConfigureParams.Joysticks.Joy[3].nKeyCodeC },
+	{ "kButtonOption", Key_Tag, &ConfigureParams.Joysticks.Joy[3].nKeyCodeOption },
+	{ "kButtonPause", Key_Tag, &ConfigureParams.Joysticks.Joy[3].nKeyCodePause },
+	{ "kButtonStar", Key_Tag, &ConfigureParams.Joysticks.Joy[3].nKeyCodeStar },
+	{ "kButtonHash", Key_Tag, &ConfigureParams.Joysticks.Joy[3].nKeyCodeHash },
+	{ "kButton0", Key_Tag, &ConfigureParams.Joysticks.Joy[3].nKeyCodeNum[0] },
+	{ "kButton1", Key_Tag, &ConfigureParams.Joysticks.Joy[3].nKeyCodeNum[1] },
+	{ "kButton2", Key_Tag, &ConfigureParams.Joysticks.Joy[3].nKeyCodeNum[2] },
+	{ "kButton3", Key_Tag, &ConfigureParams.Joysticks.Joy[3].nKeyCodeNum[3] },
+	{ "kButton4", Key_Tag, &ConfigureParams.Joysticks.Joy[3].nKeyCodeNum[4] },
+	{ "kButton5", Key_Tag, &ConfigureParams.Joysticks.Joy[3].nKeyCodeNum[5] },
+	{ "kButton6", Key_Tag, &ConfigureParams.Joysticks.Joy[3].nKeyCodeNum[6] },
+	{ "kButton7", Key_Tag, &ConfigureParams.Joysticks.Joy[3].nKeyCodeNum[7] },
+	{ "kButton8", Key_Tag, &ConfigureParams.Joysticks.Joy[3].nKeyCodeNum[8] },
+	{ "kButton9", Key_Tag, &ConfigureParams.Joysticks.Joy[3].nKeyCodeNum[9] },
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -643,6 +675,16 @@ void Configuration_SetDefault(void)
 		ConfigureParams.Joysticks.Joy[i].nKeyCodeRight = SDLK_RIGHT;
 		ConfigureParams.Joysticks.Joy[i].nKeyCodeFire = SDLK_RCTRL;
 	}
+
+	for (i = 0; i <= 9; i++)
+		ConfigureParams.Joysticks.Joy[JOYID_JOYPADA].nKeyCodeNum[i] = SDLK_0 + i;
+	ConfigureParams.Joysticks.Joy[JOYID_JOYPADA].nKeyCodeB = SDLK_b;
+	ConfigureParams.Joysticks.Joy[JOYID_JOYPADA].nKeyCodeC = SDLK_c;
+	ConfigureParams.Joysticks.Joy[JOYID_JOYPADA].nKeyCodeOption = SDLK_o;
+	ConfigureParams.Joysticks.Joy[JOYID_JOYPADA].nKeyCodePause = SDLK_p;
+	ConfigureParams.Joysticks.Joy[JOYID_JOYPADA].nKeyCodeHash = SDLK_HASH;
+	ConfigureParams.Joysticks.Joy[JOYID_JOYPADA].nKeyCodeStar = SDLK_PLUS;
+
 	if (SDL_NumJoysticks() > 0)
 	{
 		/* ST Joystick #1 is default joystick */

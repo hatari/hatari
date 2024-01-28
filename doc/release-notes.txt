@@ -49,6 +49,8 @@ Emulation improvements:
   - Support all serial ports as well as LAN port for MegaSTE and TT
 - Joypads:
   - STE joypad emulation now supports analog / paddle input, too
+  - All STE joypad buttons can now be configured and used with joypad
+    emulation via keyboard, too
 
 Emulator improvements:
 - TOS:
