@@ -687,11 +687,28 @@ return true;						/* This function is not used for now, always return true */
 
 /*
  * Reset FDC state when a reset signal was received
+ *  - On cold reset, TR and DR should be reset
+ *  - On warm reset, TR and DR value should be kept
+ * Keeping TR and DR content is not supported in Caps library (bug), we handle it ourselves
  */
-void IPF_Reset ( void )
+void IPF_Reset ( bool bCold )
 {
 #ifdef HAVE_CAPSIMAGE
-	CAPSFdcReset ( &IPF_State.Fdc );
+	CapsULong	TR , DR;
+
+	if ( !bCold )					/* Save TR and DR if warm reset */
+	{
+		TR = IPF_State.Fdc.r_track;
+		DR = IPF_State.Fdc.r_data;
+	}
+
+	CAPSFdcReset ( &IPF_State.Fdc );		/* This always clear TR and DR, which is wrong */
+
+	if ( !bCold )					/* Restore TR and DR if warm reset */
+	{
+		IPF_State.Fdc.r_track = TR;
+		IPF_State.Fdc.r_data = DR;
+	}
 
 	IPF_State.FdcClock = CyclesGlobalClockCounter;
 #endif

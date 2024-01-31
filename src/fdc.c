@@ -937,7 +937,7 @@ void FDC_Reset ( bool bCold )
 	FDC_Buffer_Reset();
 
 	/* Also reset IPF emulation */
-	IPF_Reset();
+	IPF_Reset( bCold );
 }
 
 

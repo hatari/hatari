@@ -15,7 +15,7 @@ extern void	IPF_Exit ( void );
 extern bool	IPF_Insert ( int Drive , uint8_t *pImageBuffer , long ImageSize );
 extern bool	IPF_Eject ( int Drive );
 
-extern void	IPF_Reset ( void );
+extern void	IPF_Reset ( bool bCold );
 extern void	IPF_Drive_Set_Enable ( int Drive , bool value );
 extern void	IPF_Drive_Set_DoubleSided ( int Drive , bool value );
 extern void	IPF_SetDriveSide ( uint8_t io_porta_old , uint8_t io_porta_new );

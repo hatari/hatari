@@ -51,6 +51,9 @@ Emulation improvements:
   - STE joypad emulation now supports analog / paddle input, too
   - All STE joypad buttons can now be configured and used with joypad
     emulation via keyboard, too
+- FDC:
+  - For IPF/CTR support, caps library has a bug that resets FDC's TR and DR
+    on warm reset (68000's reset command). We keep/restore the value ourselves
 
 Emulator improvements:
 - TOS:
@@ -151,6 +154,9 @@ Fixed demos:
 
 Fixed programs:
 - FreeMiNT (use SCC counter at start to detect the SCC clock freq)
+
+Fixed games:
+- F29 Retaliator using CTR/IPF format (handle FDC's TR reset bug in caps library)
 
 
  Version 2.4.1 (2022-08-03)
