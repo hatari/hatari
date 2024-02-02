@@ -1473,8 +1473,7 @@ are just STE enhanced.  These are marked with '*' (for more info, see
     <tr>
       <td><a href="http://www.atarimania.com/game-atari-st-dynabusters_28670.html">Dynabusters+</a></td>
       <td class="minor">2.4</td>
-      <td>Hi-score ("Table") screen flickers.
-          Supports JagPad / Power Pad</td>
+      <td>Hi-score ("Table") screen flickers. Supports joypad.</td>
     </tr>
     <tr>
       <td>Frantick</td>
@@ -1510,7 +1509,7 @@ are just STE enhanced.  These are marked with '*' (for more info, see
       <td>Obsession (demo)</td>
       <td>before 1.0</td>
       <td>Opens top, left (with STE shifter bug) and bottom borders.
-          Supports JagPad / Power Pad</td>
+          Supports joypad.</td>
     </tr>
     <tr>
       <td>Operation Garfield</td>
@@ -1598,13 +1597,13 @@ are just STE enhanced.  These are marked with '*' (for more info, see
     <tr>
       <td>Substation (demo)</td>
       <td>before 1.0</td>
-      <td>Supports JagPad / Power Pad</td>
+      <td>Supports joypad</td>
     </tr>
     <tr>
       <td>Team</td>
       <td>1.0</td>
       <td>HW scrolling, DMA sound, overscan.
-          Supports JagPad / Power Pad</td>
+          Supports joypad</td>
     </tr>
     <tr>
       <td>TomTar</td>
@@ -2393,7 +2392,7 @@ v4.x.</p>
 to work. <em>Unless otherwise indicated, programs work with MMU
 emulation disabled</em>.</p>
 
-<p>Due to incomplete VIDEL emulation, missing JagPad support and some
+<p>Due to incomplete VIDEL emulation and some
 remaining emulation cycle accuracy issues, some Falcon programs aren't
 usable yet.  Most games and demos work with RGB monitor, those requiring
 VGA one are indicated separately.</p>
@@ -2451,7 +2450,7 @@ VGA one are indicated separately.</p>
       <td>emu</td>
       <td>Enhanced Doom I/II game port and engine rewrite (v0.35-v0.37 from 2017 + v1.0 from 2022):<ul>
       <li>Requires DSP and 14 MB RAM</li>
-      <li>Supports JagPad / Power Pad</li>
+      <li>Supports joypad</li>
       <li>Hatari v2.4.1 and earlier trigger random IKBD input events
           when game plays MIDI music</li>
       <li>WAD cache creation crashes/freezes, so one needs to get pre-built WAD cache</li>
@@ -2480,7 +2479,7 @@ VGA one are indicated separately.</p>
       <td>2.3.1</td>
       <td>yes</td>
       <td>-</td>
-      <td>Music with DSP. Supports JagPad / Power Pad. Due to game bug
+      <td>Music with DSP. Supports joypad. Due to game bug
           (data file corruption), it can freeze if user doesn't start
 	  game before it shows hall-of-fame screen</td>
     </tr>
@@ -2510,7 +2509,7 @@ VGA one are indicated separately.</p>
       <td>1.0</td>
       <td>yes</td>
       <td>-</td>
-      <td>Supports JagPad / Power Pad</td>
+      <td>Supports joypad</td>
     </tr>
     <tr>
       <td><a href="http://pouet.net/prod.php?which=28910">Boom preview</a></td>
@@ -2622,7 +2621,7 @@ VGA one are indicated separately.</p>
       <td>1.9</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Supports JagPad / Power Pad</td>
+      <td>Supports joypad</td>
     </tr>
     <tr>
       <td><a href="https://web.archive.org/web/20160904010309/http://reboot.atari.org:80/new-reboot/downfallfalcon.html">DownFall</a></td>
@@ -2656,13 +2655,13 @@ VGA one are indicated separately.</p>
     </tr>
    <tr>
       <td>Evolution: Dino Dudes<br />(aka. Humans)</td>
-      <td class="major">2.3</td>
+      <td class="major">2.5-dev</td>
       <td>yes</td>
       <td>-</td>
-      <td>One of the Falcon launch games. Requires JagPad / Power Pad.
-          Sound with DSP. Intro and menu work, but graphics are
-	  distorted in game itself (writes twice to the $ff820e
-	  register during one VBL!)</td>
+      <td>One of the Falcon launch games. Requires joypad emulation
+          (including the 1-9 keypad buttons). Sound with DSP. Intro and menu
+          work, but graphics are distorted in game itself (writes twice to
+          the $ff820e register during one VBL!)</td>
     </tr>
     <tr>
       <td>Falcon Fighter II</td>
@@ -2778,7 +2777,7 @@ VGA one are indicated separately.</p>
       <td>yes</td>
       <td>-</td>
       <td>Modern version of Joust, up to 4 players.  Sound with DSP.
-          Supports JagPad / Power Pad.  Game screen colors etc are all
+          Supports joypad.  Game screen colors etc are all
 	  wrong.  Doesn't start with MMU enabled</td>
     </tr>
     <tr>
@@ -2827,14 +2826,13 @@ VGA one are indicated separately.</p>
     </tr>
     <tr>
       <td><a href="http://www.llamasoft.co.uk/lc-16bit.php">Llamazap</a></td>
-      <td>1.6</td>
+      <td>2.5-dev</td>
       <td>-</td>
       <td>-</td>
       <td>One of the Falcon launch games. Linked version does not have
-          (DSP) music, some others have. Somewhat playable also with
-	  STE joypad, but proper play would require emulation also of
-	  JagPad / Power Pad 1-9 keys (to select power-ups, ships and
-	  other functions)</td>
+          (DSP) music, some others have. Needs STE joypad emulation,
+          including the 1-9 keypad buttons (to select power-ups, ships and
+          other functions)</td>
     </tr>
     <tr>
       <td>Madtris</td>
@@ -2855,7 +2853,7 @@ VGA one are indicated separately.</p>
       <td>2.3.1</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Supports JagPad / Power Pad. Separate intro program requires
+      <td>Supports joypad. Separate intro program requires
           14MB, and double bus errors at end with TOS4. Bullets show
 	  only close to opponent</td>
     </tr>
@@ -2880,7 +2878,7 @@ VGA one are indicated separately.</p>
       <td class="minor">2.4</td>
       <td>Yes</td>
       <td>emu</td>
-      <td>Supports JagPad / Power Pad. lst*.* files need to be renamed
+      <td>Supports joypad. lst*.* files need to be renamed
           with GEMDOS HD emulation as game searches them with different
 	  name (space before dot). Game freezes if left to menu for
 	  longer time
@@ -3027,15 +3025,15 @@ VGA one are indicated separately.</p>
       <td>1.0</td>
       <td>-</td>
       <td>-</td>
-      <td>Supports JagPad / Power Pad. Nice</td>
+      <td>Supports joypad. Nice</td>
     </tr>
     <tr>
       <td>Raiden</td>
-      <td>1.0</td>
+      <td>2.5-dev</td>
       <td>yes</td>
       <td>-</td>
-      <td>One of the Falcon launch games. Needs over 4MB and joypad.
-          Proper play would require JagPad / Power Pad emulation</td>
+      <td>One of the Falcon launch games. Needs over 4MB and joypad emulation
+          (including the 1-9 keypad buttons)</td>
     </tr>
     <tr>
       <td><a href="http://www.pouet.net/prod.php?which=32093">Rave</a></td>
@@ -3063,14 +3061,14 @@ VGA one are indicated separately.</p>
       <td>?</td>
       <td>?</td>
       <td>?</td>
-      <td>TODO. One of the Falcon launch games.  Supports JagPad / Power Pad</td>
+      <td>TODO. One of the Falcon launch games.  Supports joypad</td>
     </tr>
     <tr>
       <td>Robinson's Requiem</td>
       <td>?</td>
       <td>?</td>
       <td>?</td>
-      <td>TODO. Supports JagPad / Power Pad</td>
+      <td>TODO. Supports joypad</td>
     </tr>
     <tr>
       <td>Running</td>
@@ -3165,7 +3163,7 @@ VGA one are indicated separately.</p>
       <td>?</td>
       <td>?</td>
       <td>?</td>
-      <td>TODO. One of the Falcon launch games.  Requires JagPad / Power Pad</td>
+      <td>TODO. One of the Falcon launch games. Requires joypad</td>
     </tr>
     <tr>
       <td><a href="http://paradize.final-memory.org/games.shtml">Sweety Thingies</a></td>
