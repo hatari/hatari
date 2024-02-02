@@ -36,13 +36,28 @@ Emulation improvements:
 - TT/DMA:
   - Update sound FIFO on each HBL (like on STE)
 - CPU:
+  - Sync CPU core with WinUAE CPU core 5.2 beta
+  - Improved 68000 cycle accuracy (IPL, STOP, TRACE)
   - Fix IACK timings
+  - Return vector=24 if a spurious interrupt happens during the IACK sequence
+  - 68010 DIV overflow undefined flags update
+  - NMI handling
+  - MMU/generic CPU mode autovectored interrupt support
+  - Fix 68060 MMU MOVEM.L (An)+,<regs> if regs contain An
+  - 68040/060 MMU fault handler bug fix for MOVEM
+  - Fix FSINCOS and FMOVE.L/FMOVEM.L register in disasm
+  - Some softfloat fixes
 - DSP:
   - Add host interface initialisation
   - Add host received data interrupt
+  - Improve bootstrap support
 - Video:
   - Add support for 4 pixel hardscroll on STF by stopping shifter with
     $FF8260=3 (new technique by Troed/Sync)
+  - In monochrome mode correctly mask the video address to 22 or 24 bit
+    space depending on the machine type. Prevent crash in some cases when
+    Hatari is compiled with "small mem" option
+  - Fix VBLANK location, should be line 308 on 50 Hz (was 307 before)
 - SCC 85C30 (for MegaSTE, TT and Falcon)
   - Major rewrite of most of the code, should support all modes used by TOS
     and EmuTOS or when accessing SCC's registers directly
@@ -95,12 +110,18 @@ Emulator improvements:
     (to give more context than disassembling directly from PC)
   - Support for disassembly output options working also for CPU core
     disassembler, in addition to external disassember output
+  - More flags to change the disassembly output for CPU core
+    (upper/lower case, show memory content, show EA, ...)
   - The built-in "external" disassembler has been replaced by a
     disassembler provided by the Capstone library (version >= 4.0)
 - Screen:
   - Support for screenshot using .NEO format
+- Memory Snapshot:
+  - Add some missing variables to the savestate
 - Command line:
   - Add option "--screenshot-format <x>" (<x> = png or bmp or neo)
+- Config options changes:
+  - In hatari.cfg, section [RS232], rename sSccBOutFileName to SccBOutFileName
 
 GUI improvements:
 - SDL GUI:
@@ -149,8 +170,11 @@ Other fixed programs:
 - FlaySID (DSP host handling)
 
 Fixed demos:
-- Little -ME- Demo end part : black screen after a while (IACK timing)
+- What If by Troed/Sync : 4 pixel hardscroll on STF by stopping shifter
+- Little -ME- Demo end part by Overlanders : black screen after a while (IACK timing)
 - Monscape : bad sound (TT/DMA FIFO update)
+- Time Slice by Defence Force : monochrome demo (crash when Hatari
+  is compiled with "small mem" option)
 
 Fixed programs:
 - FreeMiNT (use SCC counter at start to detect the SCC clock freq)
