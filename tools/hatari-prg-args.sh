@@ -108,7 +108,7 @@ for arg in "$@"; do
 		# prefix with separator & drive letter & remove host path,
 		# upper-case, convert path separators
 		#
-		# it gets 3 things wrong no same line:
+		# it gets 3 things wrong on same line:
 		# shellcheck disable=SC2018
 		# shellcheck disable=SC2019
 		# shellcheck disable=SC1003
