@@ -27,6 +27,9 @@ Removed features:
   functions for 16 bits-per-pixel host screens) have been removed
   since almost all recent hardware should support 32 bpp nowadays
 
+Configuration changes:
+- In hatari.cfg, section [RS232], rename sSccBOutFileName to SccBOutFileName
+
 Emulation improvements:
 - MFP:
   - When IRQ is cleared on one of the 2 ACIAs, do not clear IRQ on
@@ -86,6 +89,11 @@ Emulator improvements:
   - Similarly to TOS, allow programs to write to a file they have opened
     as read-only (by opening all writable files as read/write).  As this
     could fail with real HW under MiNT/MagiC, show warning about it
+- Screen:
+  - Support for screenshot using .NEO format
+  - Add option "--screenshot-format <x>" (<x> = png or bmp or neo)
+- Memory Snapshot:
+  - Add some missing variables to the savestate
 - Debugger:
   - Fix: free all debugger allocations before exit
   - Fix: invalid free on freeing loaded GNU debug symbols
@@ -114,14 +122,6 @@ Emulator improvements:
     (upper/lower case, show memory content, show EA, ...)
   - The built-in "external" disassembler has been replaced by a
     disassembler provided by the Capstone library (version >= 4.0)
-- Screen:
-  - Support for screenshot using .NEO format
-- Memory Snapshot:
-  - Add some missing variables to the savestate
-- Command line:
-  - Add option "--screenshot-format <x>" (<x> = png or bmp or neo)
-- Config options changes:
-  - In hatari.cfg, section [RS232], rename sSccBOutFileName to SccBOutFileName
 
 GUI improvements:
 - SDL GUI:
@@ -161,14 +161,6 @@ Build improvements:
 - Fix: CPU core compile warnings (WinUAE upstream)
 - Fix: groff/troff warnings for manual pages
 
-Programs with fixed MIDI (MFP IRQ clear) handling:
-- Bad Mood
-- Midi Maze
-- Midi Maze II
-- Oxyd 2
-Other fixed programs:
-- FlaySID (DSP host handling)
-
 Fixed demos:
 - What If by Troed/Sync : 4 pixel hardscroll on STF by stopping shifter
 - Little -ME- Demo end part by Overlanders : black screen after a while (IACK timing)
@@ -178,9 +170,15 @@ Fixed demos:
 
 Fixed programs:
 - FreeMiNT (use SCC counter at start to detect the SCC clock freq)
+- FlaySID (DSP host handling)
 
 Fixed games:
 - F29 Retaliator using CTR/IPF format (handle FDC's TR reset bug in caps library)
+- MIDI (MFP IRQ clear) handling:
+  - Bad Mood
+  - Midi Maze
+  - Midi Maze II
+  - Oxyd 2
 
 
  Version 2.4.1 (2022-08-03)
