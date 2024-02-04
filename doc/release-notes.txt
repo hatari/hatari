@@ -90,8 +90,8 @@ Emulator improvements:
     as read-only (by opening all writable files as read/write).  As this
     could fail with real HW under MiNT/MagiC, show warning about it
 - Screen:
-  - Support for screenshot using .NEO format
-  - Add option "--screenshot-format <x>" (<x> = png or bmp or neo)
+  - Support for screenshot using .NEO or .XIMG format
+  - Add option "--screenshot-format <x>" (<x> = png or bmp or neo or ximg)
 - Memory Snapshot:
   - Add some missing variables to the savestate
 - Debugger:
