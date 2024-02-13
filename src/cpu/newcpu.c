@@ -4643,6 +4643,23 @@ static void do_trace(void)
 }
 
 #ifndef WINUAE_FOR_HATARI
+static void int_request_do(bool i6)
+{
+	if (i6) {
+		if (currprefs.cs_compatible == CP_DRACO || currprefs.cs_compatible == CP_CASABLANCA) {
+			draco_ext_interrupt(true);
+		} else {
+			INTREQ_f(0x8000 | 0x2000);
+		}
+	} else {
+		if (currprefs.cs_compatible == CP_DRACO || currprefs.cs_compatible == CP_CASABLANCA) {
+			draco_ext_interrupt(false);
+		} else {
+			INTREQ_f(0x8000 | 0x0008);
+		}
+	}
+}
+
 static void check_uae_int_request(void)
 {
 	bool irq2 = false;
@@ -4652,14 +4669,14 @@ static void check_uae_int_request(void)
 			if (!irq2 && uae_interrupts2[i]) {
 				uae_atomic v = atomic_and(&uae_interrupts2[i], 0);
 				if (v) {
-					INTREQ_f(0x8000 | 0x0008);
+					int_request_do(false);
 					irq2 = true;
 				}
 			}
 			if (!irq6 && uae_interrupts6[i]) {
 				uae_atomic v = atomic_and(&uae_interrupts6[i], 0);
 				if (v) {
-					INTREQ_f(0x8000 | 0x2000);
+					int_request_do(true);
 					irq6 = true;
 				}
 			}
@@ -4667,11 +4684,11 @@ static void check_uae_int_request(void)
 	}
 	if (uae_int_requested) {
 		if (!irq2 && (uae_int_requested & 0x00ff)) {
-			INTREQ_f(0x8000 | 0x0008);
+			int_request_do(false);
 			irq2 = true;
 		}
 		if (!irq6 && (uae_int_requested & 0xff00)) {
-			INTREQ_f(0x8000 | 0x2000);
+			int_request_do(true);
 			irq6 = true;
 		}
 		if (uae_int_requested & 0xff0000) {
@@ -4701,12 +4718,16 @@ void safe_interrupt_set(int num, int id, bool i6)
 		atomic_or(p, 1 << id);
 		atomic_or(&uae_interrupt, 1);
 	} else {
-		int inum = i6 ? 13 : 3;
-		uae_u16 v = 1 << inum;
-		if (currprefs.cpu_cycle_exact || currprefs.cpu_compatible) {
-			INTREQ_INT(inum, 0);
-		} else if (!(intreq & v)) {
-			INTREQ_0(0x8000 | v);
+		if (currprefs.cs_compatible == CP_DRACO || currprefs.cs_compatible == CP_CASABLANCA) {
+ 			draco_ext_interrupt(i6);
+ 		} else {
+ 			int inum = i6 ? 13 : 3;
+			uae_u16 v = 1 << inum;
+			if (currprefs.cpu_cycle_exact || currprefs.cpu_compatible) {
+				INTREQ_INT(inum, 0);
+			} else if (!(intreq & v)) {
+				INTREQ_0(0x8000 | v);
+			}
 		}
 	}
 }
