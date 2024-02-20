@@ -296,6 +296,12 @@ void DmaSnd_MemorySnapShot_Capture(bool bSave)
  * Depending on the transition, this can trigger MFP interrupt for Timer A or for GPIP7
  *  - Bit is set to 0/LOW when dma sound is idle
  *  - Bit is set to 1/HIGH when dma sound is playing
+ *
+ * Timer A input is associated to GPIP4. Under default TOS behaviour AER bit for GPIP4 is set to 0
+ * (because it's also shared with ACIA's interrupt lines which are active low).
+ * This means that each time XSINT goes to idle/0 (when reaching end of frame in single or repeat mode)
+ * an interrupt will trigger on Timer A and Timer A event count mode can be used to count
+ * the number of "end of frame" events
  */
 static void DmaSnd_Update_XSINT_Line ( uint8_t Bit )
 {
