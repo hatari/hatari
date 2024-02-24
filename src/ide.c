@@ -702,6 +702,7 @@ static void bdrv_eject(BlockDriverState *bs, int eject_flag)
 #define TAG_MASK		0xf8
 
 /* Bits of Device Control register */
+#define IDE_CTRL_HOB		0x80
 #define IDE_CTRL_RESET		0x04
 #define IDE_CTRL_DISABLE_IRQ	0x02
 
@@ -1965,8 +1966,7 @@ static void ide_cmd_lba48_transform(IDEState *s, int lba48)
 static void ide_clear_hob(IDEState *ide_if)
 {
 	/* any write clears HOB high bit of device control register */
-	ide_if[0].select &= ~(1 << 7);
-	ide_if[1].select &= ~(1 << 7);
+	ide_if[0].cmd &= ~IDE_CTRL_HOB;
 }
 
 /* IOport [W]rite [R]egisters */
@@ -2003,13 +2003,15 @@ static void ide_ioport_write(IDEState *ide_if, uint32_t addr, uint32_t val)
 	LOG_TRACE(TRACE_IDE, "IDE: write addr=0x%x reg='%s' val=0x%02x\n",
 	          addr, ATA_IOPORT_WR_lookup[reg_num], val);
 
+	/* NOTE: Device0 and Device1 both receive incoming register writes.
+	 * (They're on the same bus! They have to!) */
+
 	switch (reg_num)
 	{
 	case 0:
 		break;
 	case ATA_IOPORT_WR_FEATURES:
 		ide_clear_hob(ide_if);
-		/* NOTE: data is written to the two drives */
 		ide_if[0].hob_feature = ide_if[0].feature;
 		ide_if[1].hob_feature = ide_if[1].feature;
 		ide_if[0].feature = val;
@@ -2044,7 +2046,7 @@ static void ide_ioport_write(IDEState *ide_if, uint32_t addr, uint32_t val)
 		ide_if[1].hcyl = val;
 		break;
 	case ATA_IOPORT_WR_DEVICE_HEAD:
-		/* FIXME: HOB readback uses bit 7 */
+		ide_clear_hob(ide_if);
 		ide_if[0].select = val | 0xa0;
 		ide_if[1].select = val | 0xa0;
 		/* select drive */
@@ -2054,7 +2056,7 @@ static void ide_ioport_write(IDEState *ide_if, uint32_t addr, uint32_t val)
 		break;
 	default:
 	case ATA_IOPORT_WR_COMMAND:
-		/* command */
+		ide_clear_hob(ide_if);
 		LOG_TRACE(TRACE_IDE, "IDE: CMD=%02x\n", val);
 
 		s = ide_if->cur_drive;
@@ -2365,12 +2367,10 @@ static uint32_t ide_ioport_read(IDEState *ide_if, uint32_t addr)
 {
 	IDEState *s = ide_if->cur_drive;
 	uint32_t reg_num;
-	int ret;
+	int ret, hob;
 
 	reg_num = addr & 7;
-	/* FIXME: HOB readback uses bit 7, but it's always set right now */
-	//int hob = s->select & (1 << 7);
-	const int hob = 0;
+	hob = ide_if[0].cmd & IDE_CTRL_HOB;
 
 	switch (reg_num)
 	{
