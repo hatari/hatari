@@ -1968,20 +1968,45 @@ static void ide_clear_hob(IDEState *ide_if)
 	ide_if[1].select &= ~(1 << 7);
 }
 
+/* IOport [W]rite [R]egisters */
+enum ATA_IOPORT_WR {
+	ATA_IOPORT_WR_DATA = 0,
+	ATA_IOPORT_WR_FEATURES = 1,
+	ATA_IOPORT_WR_SECTOR_COUNT = 2,
+	ATA_IOPORT_WR_SECTOR_NUMBER = 3,
+	ATA_IOPORT_WR_CYLINDER_LOW = 4,
+	ATA_IOPORT_WR_CYLINDER_HIGH = 5,
+	ATA_IOPORT_WR_DEVICE_HEAD = 6,
+	ATA_IOPORT_WR_COMMAND = 7,
+	ATA_IOPORT_WR_NUM_REGISTERS,
+};
+
+const char *ATA_IOPORT_WR_lookup[ATA_IOPORT_WR_NUM_REGISTERS] = {
+	[ATA_IOPORT_WR_DATA] = "Data",
+	[ATA_IOPORT_WR_FEATURES] = "Features",
+	[ATA_IOPORT_WR_SECTOR_COUNT] = "Sector Count",
+	[ATA_IOPORT_WR_SECTOR_NUMBER] = "Sector Number",
+	[ATA_IOPORT_WR_CYLINDER_LOW] = "Cylinder Low",
+	[ATA_IOPORT_WR_CYLINDER_HIGH] = "Cylinder High",
+	[ATA_IOPORT_WR_DEVICE_HEAD] = "Device/Head",
+	[ATA_IOPORT_WR_COMMAND] = "Command"
+};
+
 static void ide_ioport_write(IDEState *ide_if, uint32_t addr, uint32_t val)
 {
 	IDEState *s;
 	int unit, n;
 	int lba48 = 0;
+	int reg_num = addr & 7;
 
-	LOG_TRACE(TRACE_IDE, "IDE: write addr=0x%x val=0x%02x\n", addr, val);
+	LOG_TRACE(TRACE_IDE, "IDE: write addr=0x%x reg='%s' val=0x%02x\n",
+	          addr, ATA_IOPORT_WR_lookup[reg_num], val);
 
-	addr &= 7;
-	switch (addr)
+	switch (reg_num)
 	{
 	case 0:
 		break;
-	case 1:
+	case ATA_IOPORT_WR_FEATURES:
 		ide_clear_hob(ide_if);
 		/* NOTE: data is written to the two drives */
 		ide_if[0].hob_feature = ide_if[0].feature;
@@ -1989,35 +2014,35 @@ static void ide_ioport_write(IDEState *ide_if, uint32_t addr, uint32_t val)
 		ide_if[0].feature = val;
 		ide_if[1].feature = val;
 		break;
-	case 2:
+	case ATA_IOPORT_WR_SECTOR_COUNT:
 		ide_clear_hob(ide_if);
 		ide_if[0].hob_nsector = ide_if[0].nsector;
 		ide_if[1].hob_nsector = ide_if[1].nsector;
 		ide_if[0].nsector = val;
 		ide_if[1].nsector = val;
 		break;
-	case 3:
+	case ATA_IOPORT_WR_SECTOR_NUMBER:
 		ide_clear_hob(ide_if);
 		ide_if[0].hob_sector = ide_if[0].sector;
 		ide_if[1].hob_sector = ide_if[1].sector;
 		ide_if[0].sector = val;
 		ide_if[1].sector = val;
 		break;
-	case 4:
+	case ATA_IOPORT_WR_CYLINDER_LOW:
 		ide_clear_hob(ide_if);
 		ide_if[0].hob_lcyl = ide_if[0].lcyl;
 		ide_if[1].hob_lcyl = ide_if[1].lcyl;
 		ide_if[0].lcyl = val;
 		ide_if[1].lcyl = val;
 		break;
-	case 5:
+	case ATA_IOPORT_WR_CYLINDER_HIGH:
 		ide_clear_hob(ide_if);
 		ide_if[0].hob_hcyl = ide_if[0].hcyl;
 		ide_if[1].hob_hcyl = ide_if[1].hcyl;
 		ide_if[0].hcyl = val;
 		ide_if[1].hcyl = val;
 		break;
-	case 6:
+	case ATA_IOPORT_WR_DEVICE_HEAD:
 		/* FIXME: HOB readback uses bit 7 */
 		ide_if[0].select = val | 0xa0;
 		ide_if[1].select = val | 0xa0;
@@ -2027,7 +2052,7 @@ static void ide_ioport_write(IDEState *ide_if, uint32_t addr, uint32_t val)
 		ide_if->cur_drive = s;
 		break;
 	default:
-	case 7:
+	case ATA_IOPORT_WR_COMMAND:
 		/* command */
 		LOG_TRACE(TRACE_IDE, "IDE: CMD=%02x\n", val);
 
@@ -2311,23 +2336,47 @@ static void ide_ioport_write(IDEState *ide_if, uint32_t addr, uint32_t val)
 	}
 }
 
-static uint32_t ide_ioport_read(IDEState *ide_if, uint32_t addr1)
+/* IOport [R]ead [R]egisters */
+enum ATA_IOPORT_RR {
+	ATA_IOPORT_RR_DATA = 0,
+	ATA_IOPORT_RR_ERROR = 1,
+	ATA_IOPORT_RR_SECTOR_COUNT = 2,
+	ATA_IOPORT_RR_SECTOR_NUMBER = 3,
+	ATA_IOPORT_RR_CYLINDER_LOW = 4,
+	ATA_IOPORT_RR_CYLINDER_HIGH = 5,
+	ATA_IOPORT_RR_DEVICE_HEAD = 6,
+	ATA_IOPORT_RR_STATUS = 7,
+	ATA_IOPORT_RR_NUM_REGISTERS,
+};
+
+const char *ATA_IOPORT_RR_lookup[ATA_IOPORT_RR_NUM_REGISTERS] = {
+	[ATA_IOPORT_RR_DATA] = "Data",
+	[ATA_IOPORT_RR_ERROR] = "Error",
+	[ATA_IOPORT_RR_SECTOR_COUNT] = "Sector Count",
+	[ATA_IOPORT_RR_SECTOR_NUMBER] = "Sector Number",
+	[ATA_IOPORT_RR_CYLINDER_LOW] = "Cylinder Low",
+	[ATA_IOPORT_RR_CYLINDER_HIGH] = "Cylinder High",
+	[ATA_IOPORT_RR_DEVICE_HEAD] = "Device/Head",
+	[ATA_IOPORT_RR_STATUS] = "Status"
+};
+
+static uint32_t ide_ioport_read(IDEState *ide_if, uint32_t addr)
 {
 	IDEState *s = ide_if->cur_drive;
-	uint32_t addr;
+	uint32_t reg_num;
 	int ret;
 
+	reg_num = addr & 7;
 	/* FIXME: HOB readback uses bit 7, but it's always set right now */
 	//int hob = s->select & (1 << 7);
 	const int hob = 0;
 
-	addr = addr1 & 7;
-	switch (addr)
+	switch (reg_num)
 	{
-	case 0:
+	case ATA_IOPORT_RR_DATA:
 		ret = 0xff;
 		break;
-	case 1:
+	case ATA_IOPORT_RR_ERROR:
 		if (!ide_if[0].bs && !ide_if[1].bs)
 			ret = 0;
 		else if (!hob)
@@ -2335,7 +2384,7 @@ static uint32_t ide_ioport_read(IDEState *ide_if, uint32_t addr1)
 		else
 			ret = s->hob_feature;
 		break;
-	case 2:
+	case ATA_IOPORT_RR_SECTOR_COUNT:
 		if (!ide_if[0].bs && !ide_if[1].bs)
 			ret = 0;
 		else if (!hob)
@@ -2343,7 +2392,7 @@ static uint32_t ide_ioport_read(IDEState *ide_if, uint32_t addr1)
 		else
 			ret = s->hob_nsector;
 		break;
-	case 3:
+	case ATA_IOPORT_RR_SECTOR_NUMBER:
 		if (!ide_if[0].bs && !ide_if[1].bs)
 			ret = 0;
 		else if (!hob)
@@ -2351,7 +2400,7 @@ static uint32_t ide_ioport_read(IDEState *ide_if, uint32_t addr1)
 		else
 			ret = s->hob_sector;
 		break;
-	case 4:
+	case ATA_IOPORT_RR_CYLINDER_LOW:
 		if (!ide_if[0].bs && !ide_if[1].bs)
 			ret = 0;
 		else if (!hob)
@@ -2359,7 +2408,7 @@ static uint32_t ide_ioport_read(IDEState *ide_if, uint32_t addr1)
 		else
 			ret = s->hob_lcyl;
 		break;
-	case 5:
+	case ATA_IOPORT_RR_CYLINDER_HIGH:
 		if (!ide_if[0].bs && !ide_if[1].bs)
 			ret = 0;
 		else if (!hob)
@@ -2367,14 +2416,14 @@ static uint32_t ide_ioport_read(IDEState *ide_if, uint32_t addr1)
 		else
 			ret = s->hob_hcyl;
 		break;
-	case 6:
+	case ATA_IOPORT_RR_DEVICE_HEAD:
 		if (!ide_if[0].bs && !ide_if[1].bs)
 			ret = 0;
 		else
 			ret = s->select;
 		break;
 	default:
-	case 7:
+	case ATA_IOPORT_RR_STATUS:
 		if ((!ide_if[0].bs && !ide_if[1].bs) ||
 		        (s != ide_if && !s->bs))
 			ret = 0;
@@ -2385,7 +2434,8 @@ static uint32_t ide_ioport_read(IDEState *ide_if, uint32_t addr1)
 		MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE_FDC_HDC , MFP_GPIP_STATE_HIGH );
 		break;
 	}
-	LOG_TRACE(TRACE_IDE, "IDE: read addr=0x%x val=%02x\n", addr1, ret);
+	LOG_TRACE(TRACE_IDE, "IDE: read addr=0x%x reg='%s' val=%02x\n",
+	          addr, ATA_IOPORT_RR_lookup[reg_num], ret);
 	return ret;
 }
 
