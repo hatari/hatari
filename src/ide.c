@@ -90,7 +90,7 @@ static IDEState ide_state[2];
 static void ide_ioport_write(IDEState *ide_if, uint32_t addr, uint32_t val);
 static uint32_t ide_ioport_read(IDEState *ide_if, uint32_t addr1);
 static uint32_t ide_status_read(IDEState *ide_if, uint32_t addr);
-static void ide_cmd_write(IDEState *ide_if, uint32_t addr, uint32_t val);
+static void ide_ctrl_write(IDEState *ide_if, uint32_t addr, uint32_t val);
 static void ide_data_writew(IDEState *ide_if, uint32_t addr, uint32_t val);
 static uint32_t ide_data_readw(IDEState *ide_if, uint32_t addr);
 static void ide_data_writel(IDEState *ide_if, uint32_t addr, uint32_t val);
@@ -278,7 +278,7 @@ void REGPARAM3 Ide_Mem_bput(uaecptr addr, uae_u32 val)
 	}
 	else if (ideport == 8 || ideport == 22)
 	{
-		ide_cmd_write(ide_state, 0, val);
+		ide_ctrl_write(ide_state, 0, val);
 	}
 }
 
@@ -701,8 +701,9 @@ static void bdrv_eject(BlockDriverState *bs, int eject_flag)
 #define REL			0x04
 #define TAG_MASK		0xf8
 
-#define IDE_CMD_RESET           0x04
-#define IDE_CMD_DISABLE_IRQ     0x02
+/* Bits of Device Control register */
+#define IDE_CTRL_RESET		0x04
+#define IDE_CTRL_DISABLE_IRQ	0x02
 
 /* ATA/ATAPI Commands pre T13 Spec */
 #define WIN_NOP				0x00
@@ -1133,7 +1134,7 @@ static inline void ide_abort_command(IDEState *s)
 
 static inline void ide_set_irq(IDEState *s)
 {
-	if (!(s->cmd & IDE_CMD_DISABLE_IRQ))
+	if (!(s->cmd & IDE_CTRL_DISABLE_IRQ))
 	{
 		/* Set IRQ (set line to low) */
 		MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE_FDC_HDC , MFP_GPIP_STATE_LOW );
@@ -2454,7 +2455,7 @@ static uint32_t ide_status_read(IDEState *ide_if, uint32_t addr)
 	return ret;
 }
 
-static void ide_cmd_write(IDEState *ide_if, uint32_t addr, uint32_t val)
+static void ide_ctrl_write(IDEState *ide_if, uint32_t addr, uint32_t val)
 {
 	IDEState *s;
 	int i;
@@ -2462,8 +2463,8 @@ static void ide_cmd_write(IDEState *ide_if, uint32_t addr, uint32_t val)
 	LOG_TRACE(TRACE_IDE, "IDE: write control addr=0x%x val=%02x\n", addr, val);
 
 	/* common for both drives */
-	if (!(ide_if[0].cmd & IDE_CMD_RESET) &&
-	        (val & IDE_CMD_RESET))
+	if (!(ide_if[0].cmd & IDE_CTRL_RESET) &&
+	        (val & IDE_CTRL_RESET))
 	{
 		/* reset low to high */
 		for (i = 0;i < 2; i++)
@@ -2473,8 +2474,8 @@ static void ide_cmd_write(IDEState *ide_if, uint32_t addr, uint32_t val)
 			s->error = 0x01;
 		}
 	}
-	else if ((ide_if[0].cmd & IDE_CMD_RESET) &&
-	         !(val & IDE_CMD_RESET))
+	else if ((ide_if[0].cmd & IDE_CTRL_RESET) &&
+	         !(val & IDE_CTRL_RESET))
 	{
 		/* high to low */
 		for (i = 0;i < 2; i++)
