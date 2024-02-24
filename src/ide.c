@@ -2019,8 +2019,8 @@ static void ide_ioport_write(IDEState *ide_if, uint32_t addr, uint32_t val)
 		break;
 	case 6:
 		/* FIXME: HOB readback uses bit 7 */
-		ide_if[0].select = (val & ~0x10) | 0xa0;
-		ide_if[1].select = (val | 0x10) | 0xa0;
+		ide_if[0].select = val | 0xa0;
+		ide_if[1].select = val | 0xa0;
 		/* select drive */
 		unit = (val >> 4) & 1;
 		s = ide_if + unit;
