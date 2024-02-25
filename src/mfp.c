@@ -1221,6 +1221,7 @@ void	MFP_GPIP_Set_Line_Input ( MFP_STRUCT *pMFP , uint8_t LineNr , uint8_t Bit )
 void	MFP_TimerA_Set_Line_Input ( MFP_STRUCT *pMFP , uint8_t Bit )
 {
 	uint8_t	AER_bit;
+//fprintf ( stderr , "MFP_TimerA_Set_Line_Input bit=%d TAI=%d TACR=%d AER=%d\n" , Bit , pMFP->TAI, pMFP->TACR, ( pMFP->AER >> 4 ) & 1 );
 
 	if ( pMFP->TAI == Bit )
 		return;					/* No change */
