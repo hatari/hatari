@@ -19,6 +19,7 @@ extern void VIDEL_UpdateColors(void);
 extern void VIDEL_RestartVideoCounter(void);
 extern void VIDEL_VideoRasterHBL(void);
 
+extern int VIDEL_Get_MonitorType(void);
 extern bool VIDEL_Use_STShifter(void);
 
 /* Called from ioMemTabFalcon.c */

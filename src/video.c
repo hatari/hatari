@@ -4132,9 +4132,26 @@ static void Video_ResetShifterTimings(void)
 {
 	uint8_t nSyncByte;
 	int RefreshRate_prev;
+	int RefreshRate_new;
 
 	nSyncByte = IoMem_ReadByte(0xff820a);
 	RefreshRate_prev = nScreenRefreshRate;
+
+	if ( Config_IsMachineFalcon() )
+	{
+		if ( VIDEL_Get_MonitorType() == FALCON_MONITOR_VGA )
+			RefreshRate_new = VIDEO_60HZ;
+		else
+			RefreshRate_new = VIDEO_50HZ;
+	}
+	else
+	{
+		if ( nSyncByte & 2 )
+			RefreshRate_new = VIDEO_50HZ;
+		else
+			RefreshRate_new = VIDEO_60HZ;
+	}
+
 
 	if ((IoMem_ReadByte(0xff8260) & 3) == 2)
 	{
@@ -4154,7 +4171,7 @@ static void Video_ResetShifterTimings(void)
 		ShifterFrame.VBLank_On_60_CheckFreq = VIDEO_71HZ;
 		ShifterFrame.VBLank_On_50_CheckFreq = VIDEO_71HZ;
 	}
-	else if (nSyncByte & 2)  /* Check if running in 50 Hz or in 60 Hz */
+	else if ( RefreshRate_new == VIDEO_50HZ )		/* ST/STE 50 Hz or Falcon RGB/TV is set to 50 Hz */
 	{
 		/* 50 Hz */
 		nScreenRefreshRate = VIDEO_50HZ;
@@ -4172,9 +4189,8 @@ static void Video_ResetShifterTimings(void)
 		ShifterFrame.VBLank_On_60_CheckFreq = VIDEO_50HZ;
 		ShifterFrame.VBLank_On_50_CheckFreq = VIDEO_50HZ;
 	}
-	else
+	else							/* 60 Hz for ST/STE or Falcon VGA */
 	{
-		/* 60 Hz */
 		nScreenRefreshRate = VIDEO_60HZ;
 		nScanlinesPerFrame = SCANLINES_PER_FRAME_60HZ;
 		nCyclesPerLine = CYCLES_PER_LINE_60HZ;

@@ -159,6 +159,15 @@ void VIDEL_MemorySnapShot_Capture(bool bSave)
 }
 
 /**
+ * Return the content of videl.monitor_type.
+ * This can be FALCON_MONITOR_MONO, FALCON_MONITOR_RGB, FALCON_MONITOR_VGA or FALCON_MONITOR_TV
+ */
+int VIDEL_Get_MonitorType(void)
+{
+	return videl.monitor_type;
+}
+
+/**
  * Return the content of videl.bUseSTShifter.
  * This tells if the current video mode is compatible with ST/STE
  * video mode or not
