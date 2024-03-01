@@ -4139,21 +4139,35 @@ static void Video_ResetShifterTimings(void)
 
 	if ( Config_IsMachineFalcon() )
 	{
-		if ( VIDEL_Get_MonitorType() == FALCON_MONITOR_VGA )
+		RefreshRate_new = VIDEL_Get_VFreq();
+
+		/* Due to rounding RefreshRate_new might not exactly 50, 60 or 71, so we add a small margin */
+		if ( ( RefreshRate_new >= VIDEO_60HZ-2 ) && ( RefreshRate_new <= VIDEO_60HZ+2 ) )
 			RefreshRate_new = VIDEO_60HZ;
+
+		/* Not sure monochrome is set 71 Hz with Falcon, but we can check it anyway */
+		else if ( ( RefreshRate_new >= VIDEO_71HZ-2 ) && ( RefreshRate_new <= VIDEO_71HZ+2 ) )
+			RefreshRate_new = VIDEO_71HZ;
+
+		/* 50 Hz or other freqs : we use 50 Hz by default */
 		else
 			RefreshRate_new = VIDEO_50HZ;
 	}
 	else
 	{
-		if ( nSyncByte & 2 )
-			RefreshRate_new = VIDEO_50HZ;
-		else
-			RefreshRate_new = VIDEO_60HZ;
+		if ( (IoMem_ReadByte(0xff8260) & 3) == 2 )		/* High res */
+			RefreshRate_new = VIDEO_71HZ;
+		else							/* Low or Medium res */
+		{
+			if ( nSyncByte & 2 )
+				RefreshRate_new = VIDEO_50HZ;
+			else
+				RefreshRate_new = VIDEO_60HZ;
+		}
 	}
 
 
-	if ((IoMem_ReadByte(0xff8260) & 3) == 2)
+	if ( RefreshRate_new == VIDEO_71HZ )
 	{
 		/* 71 Hz, monochrome */
 		nScreenRefreshRate = VIDEO_71HZ;
