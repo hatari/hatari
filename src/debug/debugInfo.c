@@ -592,7 +592,7 @@ static char *parse_filename;
 static void DebugInfo_FileParse(FILE *fp, uint32_t dummy)
 {
 	if (parse_filename) {
-		DebugUI_ParseFile(parse_filename, true);
+		DebugUI_ParseFile(parse_filename, true, true);
 	} else {
 		fputs("ERROR: debugger input file name to parse isn't set!\n", stderr);
 	}

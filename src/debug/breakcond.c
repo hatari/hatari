@@ -1,7 +1,7 @@
 /*
   Hatari - breakcond.c
 
-  Copyright (c) 2009-2016 by Eero Tamminen
+  Copyright (c) 2009-2024 by Eero Tamminen
 
   This file is distributed under the GNU General Public License, version 2
   or at your option any later version. Read the file gpl.txt for details.
@@ -72,7 +72,7 @@ typedef struct {
 	char *filename;	/* file where to read commands to do on hit */
 	int skip;	/* how many times to hit before breaking */
 	bool once;	/* remove after hit&break */
-	bool quiet;	/* no output from setting & hitting */
+	bool quiet;	/* set / hit breakpoint quietly */
 	bool trace;	/* trace mode, don't break */
 	bool noinit;	/* prevent debugger inits on break */
 	bool lock;	/* tracing + show locked info */
@@ -350,7 +350,8 @@ static bool BreakCond_MatchBreakPoints(bc_breakpoints_t *bps)
 					DebugInfo_ShowSessionInfo();
 				}
 				if (bp->options.filename) {
-					DebugUI_ParseFile(bp->options.filename, reinit);
+					bool verbose = !bp->options.quiet;
+					DebugUI_ParseFile(bp->options.filename, reinit, verbose);
 					changes = true;
 				}
 			}
@@ -1477,7 +1478,7 @@ const char BreakCond_Description[] =
 	"\t- 'noinit', no debugger inits on hit, useful for stack tracing\n"
 	"\t- 'file <file>', execute debugger commands from given <file>\n"
 	"\t- 'once', delete the breakpoint after it's hit\n"
-	"\t- 'quiet', no output from setting & hitting breakpoint\n"
+	"\t- 'quiet', set / hit breakpoint quietly\n"
 	"\t- '<count>', break only on every <count> hit";
 
 /**
@@ -1624,7 +1625,7 @@ const char BreakAddr_Description[] =
 	"\t- 'trace', print the breakpoint match without stopping\n"
 	"\t- 'lock', print the debugger entry info without stopping\n"
 	"\t- 'once', delete the breakpoint after it's hit\n"
-	"\t- 'quiet', no output from setting & hitting breakpoint\n"
+	"\t- 'quiet', set / hit breakpoint quietly\n"
 	"\t- '<count>', break only on every <count> hit\n"
 	"\n"
 	"\tUse conditional breakpoint commands to manage the created\n"

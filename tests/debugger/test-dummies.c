@@ -196,7 +196,7 @@ bool File_Exists(const char *filename)
 
 /* fake debugger file parsing */
 #include "debugui.h"
-bool DebugUI_ParseFile(const char *path, bool reinit)
+bool DebugUI_ParseFile(const char *path, bool reinit, bool verbose)
 {
 	return File_Exists(path);
 }

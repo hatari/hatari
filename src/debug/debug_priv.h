@@ -32,7 +32,7 @@ extern char *DebugUI_MatchHelper(const char **strings, int items, const char *te
 extern int DebugCpu_Init(const dbgcommand_t **table);
 extern void DebugCpu_InitSession(void);
 
-extern bool DebugUI_ParseFile(const char *path, bool reinit);
+extern bool DebugUI_ParseFile(const char *path, bool reinit, bool verbose);
 
 #ifdef ENABLE_DSP_EMU
 extern int DebugDsp_Init(const dbgcommand_t **table);

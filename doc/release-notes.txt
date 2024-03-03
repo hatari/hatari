@@ -122,6 +122,8 @@ Emulator improvements:
     (upper/lower case, show memory content, show EA, ...)
   - The built-in "external" disassembler has been replaced by a
     disassembler provided by the Capstone library (version >= 4.0)
+  - Breakpoint ":quiet" option inhibits also extra output when
+    ":file" option debugger command file is parsed
 
 GUI improvements:
 - SDL GUI:
