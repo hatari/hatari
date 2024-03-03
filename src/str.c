@@ -14,6 +14,7 @@ const char Str_fileid[] = "Hatari str.c";
 #include <stdbool.h>
 #include <stdlib.h>
 #include <locale.h>
+#include <assert.h>
 #include "configuration.h"
 #include "str.h"
 
@@ -203,6 +204,44 @@ bool Str_IsHex(const char *str)
 	return true;
 }
 #endif
+
+/**
+ * Convert \e, \n, \t, \\ backslash escapes in given string to
+ * corresponding byte values, anything else as left as-is.
+ */
+void Str_UnEscape(char *s1)
+{
+	char *s2 = s1;
+	for (; *s1; s1++)
+	{
+		if (*s1 != '\\')
+		{
+			*s2++ = *s1;
+			continue;
+		}
+		s1++;
+		switch(*s1)
+		{
+		case 'e':
+			*s2++ = '\e';
+			break;
+		case 'n':
+			*s2++ = '\n';
+			break;
+		case 't':
+			*s2++ = '\t';
+			break;
+		case '\\':
+			*s2++ = '\\';
+			break;
+		default:
+			s1--;
+			*s2++ = '\\';
+		}
+	}
+	assert(s2 < s1);
+	*s2 = '\0';
+}
 
 /**
  * Convert potentially too long host filenames to 8.3 TOS filenames

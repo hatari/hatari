@@ -434,6 +434,21 @@ static int DebugUI_ChangeDir(int argc, char *argv[])
 }
 
 /**
+ * Command: Print strings to debug log output, with escape handling.
+ */
+static int DebugUI_Echo(int argc, char *argv[])
+{
+	if (argc < 2)
+		return DebugUI_PrintCmdHelp(argv[0]);
+	for (int i = 1; i < argc; i++)
+	{
+		Str_UnEscape(argv[i]);
+		fputs(argv[i], debugOutput);
+	}
+	return DEBUGGER_CMDDONE;
+}
+
+/**
  * Command: Rename file
  */
 static int DebugUI_Rename(int argc, char *argv[])
@@ -942,6 +957,11 @@ static const dbgcommand_t uicommand[] =
 	  "<directory> [-f]\n"
 	  "\tChange Hatari work directory. With '-f', directory is\n"
 	  "\tchanged only after all script files have been parsed.",
+	  false },
+	{ DebugUI_Echo, NULL,
+	  "echo", "",
+	  "output given string(s)",
+	  "<strings>\n",
 	  false },
 	{ DebugUI_Evaluate, Vars_MatchCpuVariable,
 	  "evaluate", "e",
