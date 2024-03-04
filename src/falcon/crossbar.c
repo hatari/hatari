@@ -263,7 +263,7 @@ struct crossbar_s {
 	uint32_t dmaPlay_CurrentFrameStart;   /* current DmaPlay Frame start ($ff8903 $ff8905 $ff8907) */
 	uint32_t dmaPlay_CurrentFrameCount;   /* current DmaRecord Frame start ($ff8903 $ff8905 $ff8907) */
 	uint32_t dmaPlay_CurrentFrameEnd;     /* current DmaRecord Frame start ($ff8903 $ff8905 $ff8907) */
-	uint32_t dmaRecord_CurrentFrameStart; /* current DmaPlay Frame end ($ff890f $ff8911 $ff8913) */
+	uint32_t dmaRecord_CurrentFrameStart; /* current DmaRecord Frame end ($ff890f $ff8911 $ff8913) */
 	uint32_t dmaRecord_CurrentFrameCount; /* current DmaRecord Frame start ($ff8903 $ff8905 $ff8907) */
 	uint32_t dmaRecord_CurrentFrameEnd;   /* current DmaRecord Frame end ($ff890f $ff8911 $ff8913) */
 	uint32_t adc2dac_readBufferPosition;  /* read position for direct adc->dac transfer */
@@ -326,9 +326,9 @@ void Crossbar_Reset(bool bCold)
 	dmaRecord.handshakeMode_Frame = 0;
 	dmaRecord.handshakeMode_masterClk = 0;
 
-	/* DMA stopped, force SNDINT/SOUNDINT to 0/LOW */
-	crossbar.SNDINT_Signal = MFP_GPIP_STATE_LOW;
-	crossbar.SOUNDINT_Signal = MFP_GPIP_STATE_LOW;
+	/* DMA stopped, force SNDINT/SOUNDINT to 1/HIGH (idle) */
+	crossbar.SNDINT_Signal = MFP_GPIP_STATE_HIGH;
+	crossbar.SOUNDINT_Signal = MFP_GPIP_STATE_HIGH;
 	MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE7 , crossbar.SNDINT_Signal );
 	MFP_TimerA_Set_Line_Input ( pMFP_Main , crossbar.SOUNDINT_Signal );
 
@@ -433,45 +433,77 @@ void Crossbar_MemorySnapShot_Capture(bool bSave)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Update the value of the SNDINT/SOUNDINT lines ; these line are connected to TAI and to GPIP7
- * Depending on the transition, this can trigger MFP interrupt for Timer A or for GPIP7
- *  - Bit is set to 0/LOW when dma sound is idle
- *  - Bit is set to 1/HIGH when dma sound is playing / recording
+ * Update the value of the SNDINT/SOUNDINT lines
+ *  - SNDINT is the same line as SINT on the DMA chip and is connected to TAI
+ *  - SOUNDINT is the same line as SCNT on the DMA chip and is connected to GPIP7
+ *
+ * Description from the "Falcon030 Service Guide, Oct 1992" :
+ *  - SINT/SNDINT : This output is low when sound DMA is active and high otherwise.
+ *    It will make a high to low transition at the beginning of a frame of sound data
+ *    and a low to high transition at the end of frame. This signal can be programmed
+ *    to come from either the record or play channels
+ *  - SCNT/SOUNDINT : This output is similar to SINT/SNDINT but wider.
+ *
+ * Depending on the transition and MFP's AER , this can trigger MFP interrupt for Timer A or for GPIP7
+ *  - Bit is set to 0/LOW when dma sound is playing / recording
+ *  - Bit is set to 1/HIGH when dma sound is idle
+ *
+ * Under default TOS configuration, AER bit will be set in such a way that an interrupt
+ * will trigger on Timer A input at the start of a frame.
+ *
+ * This is different (opposite) from the STE/TT, where bit is set to 1/HIGH when playing
+ * and 0/LOW when idle. So, under default TOS configuration STE/TT will trigger
+ * Timer A or GPIP7 interrupt at the end of a frame.
+ *
+ * To also get an interrupt at the end of a frame, the Falcon has a specific register
+ * at FF8900, where bits 0-3 can be used to trigger an interrupt on TAI and/or GPIP7
+ * for playing and/or recording modes
  */
-static void Crossbar_Update_SNDINT_Line ( bool RecordMode , uint8_t Bit )
+static void Crossbar_Update_DMA_Sound_Line ( bool SetGPIP7 , bool SetTAI , uint8_t Bit )
 {
+	if ( SetGPIP7 )
+	{
+		LOG_TRACE(TRACE_CROSSBAR, "Crossbar : MFP GPIP7 set bit=%d\n", Bit);
+		MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE7 , Bit );
+	}
+
+	if ( SetTAI )
+	{
+		LOG_TRACE(TRACE_CROSSBAR, "Crossbar : MFP TAI set bit=%d\n", Bit);
+		MFP_TimerA_Set_Line_Input ( pMFP_Main , Bit );			/* Update events count / interrupt for timer A if needed */
+	}
+}
+
+
+static void Crossbar_Update_DMA_Sound_Line_Active ( void )
+{
+	Crossbar_Update_DMA_Sound_Line ( true , true , MFP_GPIP_STATE_LOW );
+}
+
+
+static void Crossbar_Update_DMA_Sound_Line_Idle ( void )
+{
+	Crossbar_Update_DMA_Sound_Line ( true , true , MFP_GPIP_STATE_HIGH );
+}
+
+
+static void Crossbar_Update_DMA_Sound_Line_EndOfFrame ( bool RecordMode )
+{
+
 	if ( !RecordMode )
 	{
-		/* Send a MFP15_Int (I7) at end of replay buffer if enabled */
-		if (dmaPlay.mfp15_int) {
-			crossbar.SNDINT_Signal = Bit;
-			MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE7 , Bit );
-			LOG_TRACE(TRACE_CROSSBAR, "Crossbar : MFP15 (IT7) interrupt from DMA play\n");
-		}
-
-		/* Send a TimerA_Int at end of replay buffer if enabled */
-		if (dmaPlay.timerA_int) {
-			crossbar.SOUNDINT_Signal = Bit;
-			MFP_TimerA_Set_Line_Input ( pMFP_Main , Bit );			/* Update events count / interrupt for timer A if needed */
-			LOG_TRACE(TRACE_CROSSBAR, "Crossbar : MFP Timer A interrupt from DMA play\n");
-		}
+		LOG_TRACE(TRACE_CROSSBAR, "Crossbar : end of frame for play\n");
+		/* We're in HIGH state (idle), add a quick HIGH -> LOW -> HIGH transition to trigger an interrupt in LOW state */
+		Crossbar_Update_DMA_Sound_Line ( dmaPlay.mfp15_int , dmaPlay.timerA_int , MFP_GPIP_STATE_LOW );	/* active */
+		Crossbar_Update_DMA_Sound_Line ( dmaPlay.mfp15_int , dmaPlay.timerA_int , MFP_GPIP_STATE_HIGH );	/* idle */
 	}
 
 	else
 	{
-		/* Send a MFP15_Int (I7) at end of record buffer if enabled */
-		if (dmaRecord.mfp15_int) {
-			crossbar.SNDINT_Signal = Bit;
-			MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE7 , Bit );
-			LOG_TRACE(TRACE_CROSSBAR, "Crossbar : MFP15 (IT7) interrupt from DMA record\n");
-		}
-
-		/* Send a TimerA_Int at end of record buffer if enabled */
-		if (dmaRecord.timerA_int) {
-			crossbar.SOUNDINT_Signal = Bit;
-			MFP_TimerA_Set_Line_Input ( pMFP_Main , Bit );			/* Update events count / interrupt for timer A if needed */
-			LOG_TRACE(TRACE_CROSSBAR, "Crossbar : MFP Timer A interrupt from DMA record\n");
-		}
+		LOG_TRACE(TRACE_CROSSBAR, "Crossbar : end of frame for record\n");
+		/* We're in HIGH state (idle), add a quick HIGH -> LOW -> HIGH transition to trigger an interrupt in LOW state */
+		Crossbar_Update_DMA_Sound_Line ( dmaRecord.mfp15_int , dmaRecord.timerA_int , MFP_GPIP_STATE_LOW );	/* active */
+		Crossbar_Update_DMA_Sound_Line ( dmaRecord.mfp15_int , dmaRecord.timerA_int , MFP_GPIP_STATE_HIGH );	/* idle */
 	}
 }
 
@@ -568,7 +600,7 @@ void Crossbar_DmaCtrlReg_WriteByte(void)
 		dmaPlay.isRunning = 0;
 		dmaPlay.loopMode = 0;
 		nCbar_DmaSoundControl = sndCtrl;
-		Crossbar_Update_SNDINT_Line ( false , MFP_GPIP_STATE_LOW );	/* O/LOW=dma sound idle */
+		Crossbar_Update_DMA_Sound_Line_Idle ();				/* 1/HIGH=dma sound play idle */
 	}
 
 	/* DMA Record mode */
@@ -586,7 +618,7 @@ void Crossbar_DmaCtrlReg_WriteByte(void)
 		dmaRecord.isRunning = 0;
 		dmaRecord.loopMode = 0;
 		nCbar_DmaSoundControl = sndCtrl;
-		Crossbar_Update_SNDINT_Line ( true , MFP_GPIP_STATE_LOW );	/* O/LOW=dma sound idle */
+		Crossbar_Update_DMA_Sound_Line_Idle ();				/* O/LOW=dma sound record idle */
 	}
 }
 
@@ -1512,7 +1544,7 @@ static void Crossbar_setDmaPlay_Settings(void)
 	}
 
 	/* DMA sound play : update SNDINT */
-	Crossbar_Update_SNDINT_Line ( false , MFP_GPIP_STATE_HIGH );	/* 1/HIGH=dma sound play */
+	Crossbar_Update_DMA_Sound_Line_Active ();				/* 0/LOW=dma sound play ON */
 }
 
 /**
@@ -1612,10 +1644,10 @@ static void Crossbar_Process_DMAPlay_Transfer(void)
 	if (dmaPlay.frameStartAddr + dmaPlay.frameCounter >= dmaPlay.frameEndAddr)
 	{
 		/* DMA sound idle : update SNDINT */
-		Crossbar_Update_SNDINT_Line ( false , MFP_GPIP_STATE_LOW );	/* O/LOW=dma sound idle */
+		Crossbar_Update_DMA_Sound_Line_Idle ();				/* 1/HIGH=dma sound play idle */
 
 		if (dmaPlay.loopMode) {
-			Crossbar_setDmaPlay_Settings();
+			Crossbar_setDmaPlay_Settings();				/* start a new frame */
 		}
 		else {
 			/* Create samples up until this point with current values */
@@ -1623,6 +1655,9 @@ static void Crossbar_Process_DMAPlay_Transfer(void)
 
 			dmaCtrlReg = IoMem_ReadByte(0xff8901) & 0xfe;
 			IoMem_WriteByte(0xff8901, dmaCtrlReg);
+
+			/* DMA sound idle at end of frame : update SNDINT depending on content of FF8900 bits 0 and 2 */
+			Crossbar_Update_DMA_Sound_Line_EndOfFrame ( false );	/* End of frame for play mode */
 
 			/* Turning off DMA play sound emulation */
 			dmaPlay.isRunning = 0;
@@ -1662,7 +1697,7 @@ static void Crossbar_setDmaRecord_Settings(void)
 	}
 
 	/* DMA sound record : update SNDINT */
-	Crossbar_Update_SNDINT_Line ( true , MFP_GPIP_STATE_HIGH );	/* 1/HIGH=dma sound record */
+	Crossbar_Update_DMA_Sound_Line_Active ();				/* 0/LOW=dma sound record ON */
 }
 
 /**
@@ -1701,12 +1736,15 @@ void Crossbar_SendDataToDmaRecord(int16_t value)
 	if (dmaRecord.frameStartAddr + dmaRecord.frameCounter >= dmaRecord.frameEndAddr)
 	{
 		/* DMA sound idle : update SNDINT */
-		Crossbar_Update_SNDINT_Line ( true , MFP_GPIP_STATE_LOW );	/* O/LOW=dma sound idle */
+		Crossbar_Update_DMA_Sound_Line_Idle ();				/* 1/HIGH=dma sound record idle */
 
 		if (dmaRecord.loopMode) {
-			Crossbar_setDmaRecord_Settings();
+			Crossbar_setDmaRecord_Settings();			/* start a new frame */
 		}
 		else {
+			/* DMA sound idle at end of frame : update SNDINT depending on content of FF8900 bits 1 and 3 */
+			Crossbar_Update_DMA_Sound_Line_EndOfFrame ( true );	/* End of frame for record mode */
+
 			dmaCtrlReg = IoMem_ReadByte(0xff8901) & 0xef;
 			IoMem_WriteByte(0xff8901, dmaCtrlReg);
 
