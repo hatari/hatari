@@ -434,12 +434,9 @@ uint32_t	ClocksTimings_GetCyclesPerVBL ( MACHINETYPE MachineType , int ScreenRef
 
 	else if (MachineType == MACHINE_FALCON)
 	{
-		/* TODO : for now we assume all Falcon video modes are based on the same number */
-		/* of cycles per VBL as an STF/STE at 50 Hz, taking nCpuFreqShift into account, */
-		/* which gives 50.053 VBL/sec */
-		/* This should be changed when Videl emulation gets improved */
-		CyclesPerVBL = ATARI_STF_CYCLES_PER_VBL_PAL;
-		CyclesPerVBL <<= nCpuFreqShift;
+		/* Although our Videl emulation is not complete, it already supports 50, 60 or 71 Hz */
+		/* for ScreenRefreshRate. We use this value to get the number of cycles per VBL */
+		CyclesPerVBL = MachineClocks.CPU_Freq_Emul / ScreenRefreshRate;
 	}
 
 	/* For machines where cpu freq can be changed, the number of cycles per VBL is not constant */
