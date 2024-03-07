@@ -673,7 +673,8 @@ sMidiOutFileName = %s
             signal.alarm(0)
             return fifo
         except IOError:
-            print("ERROR: FIFO open IOError!")
+            print("ERROR: FIFO file open('%s') failed" % self.fifofile)
+            print("(Hatari PortMidi support not disabled?)")
             return None
 
     def test(self, identity, testargs, memwait, testwait):

@@ -76,9 +76,10 @@ supports:
 
 * ST, MegaST, STE, MegaSTE, TT and Falcon machine types
 
-  EmuTOS 512k is tested for all the machine types.  EmuTOS 256k and
-  TOS v2.x are tested with all machine types except TT / Falcon.
-  Rest of TOSes are tested only with a single machine type.
+  - EmuTOS 512k & 1024k are tested for all the machine types
+  - EmuTOS 256k & TOS v2.x are tested with all machine types,
+    except TT / Falcon
+  - Rest of TOSes are tested only with a single machine type
 
 * TV, VGA, RGB and monochrome monitors and 1, 2 & 4 plane VDI modes
 
@@ -165,7 +166,7 @@ without partition table at all.  That's why it can be already tested.)
 
 -
 
-Testing a HD disk having also MiNT (= WinUAE / MMU testing at the same time).
+Testing a HD disk having also MiNT, with and without MMU
 
 -
 
