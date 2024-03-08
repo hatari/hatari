@@ -72,6 +72,11 @@ Emulation improvements:
 - FDC:
   - For IPF/CTR support, caps library has a bug that resets FDC's TR and DR
     on warm reset (68000's reset command). We keep/restore the value ourselves
+- Falcon:
+  - DMA sound : fix SNDINT/SOUNDINT values (0=playing, 1=idle) and
+    interrrupts on TAI / GPIP7 for start of frame / end of frame
+  - Preliminary support for more vertical refresh rates (50,60 or 71 Hz)
+    based on Videl's registers $FF82C0 (VCO) and $FF82A2 (VFT) (was only 50 Hz before)
 
 Emulator improvements:
 - TOS:
