@@ -577,10 +577,11 @@ szPrintToFileName = %s
 
 [RS232]
 bEnableRS232 = TRUE
-bEnableSccB = TRUE
 szInFileName =
 szOutFileName = %s
-sSccBOutFileName = %s
+EnableSccB = TRUE
+SccBInFileName =
+SccBOutFileName = %s
 
 [Midi]
 bEnableMidi = TRUE
