@@ -427,7 +427,7 @@ static void SCC_Init_Channel ( int Channel , bool *pConfEnableScc , char *InFile
 	if (!*pConfEnableScc || !SCC_IsAvailable(&ConfigureParams))
 		return;
 
-	if ( InFileName && strcmp ( InFileName , OutFileName ) == 0 )
+	if ( InFileName[0] && strcmp ( InFileName , OutFileName ) == 0 )
 	{
 #if HAVE_TERMIOS_H
 		*pReadHandle = open ( InFileName , O_RDWR | O_NONBLOCK);
@@ -457,7 +457,7 @@ static void SCC_Init_Channel ( int Channel , bool *pConfEnableScc , char *InFile
 	}
 	else
 	{
-		if ( InFileName )
+		if ( InFileName[0] )
 		{
 			*pReadHandle = open ( InFileName , O_RDONLY | O_NONBLOCK);
 			if ( *pReadHandle < 0)
@@ -465,7 +465,7 @@ static void SCC_Init_Channel ( int Channel , bool *pConfEnableScc , char *InFile
 				Log_Printf(LOG_ERROR, "SCC_Init: Can not open input file '%s'\n", InFileName);
 			}
 		}
-		if ( OutFileName )
+		if ( OutFileName[0] )
 		{
 			*pWriteHandle = open ( OutFileName , O_CREAT | O_WRONLY | O_NONBLOCK, S_IRUSR | S_IWUSR);
 			if ( *pWriteHandle < 0 )
