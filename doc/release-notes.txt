@@ -72,9 +72,13 @@ Emulation improvements:
 - FDC:
   - For IPF/CTR support, caps library has a bug that resets FDC's TR and DR
     on warm reset (68000's reset command). We keep/restore the value ourselves
+- IDE:
+  - Fixed emulation of the HOB (High Order Byte) of the last LBA48 value
+  - LBA28 capacity announcement is now correctly limited to 2^28-1
+
 - Falcon:
   - DMA sound : fix SNDINT/SOUNDINT values (0=playing, 1=idle) and
-    interrrupts on TAI / GPIP7 for start of frame / end of frame
+    interrupts on TAI / GPIP7 for start of frame / end of frame
   - Preliminary support for more vertical refresh rates (50,60 or 71 Hz)
     based on Videl's registers $FF82C0 (VCO) and $FF82A2 (VFT) (was only 50 Hz before)
 
@@ -170,6 +174,10 @@ Tools:
 Build improvements:
 - Fix: CPU core compile warnings (WinUAE upstream)
 - Fix: groff/troff warnings for manual pages
+- Use cmake config file provided by the SDL2 library instead of trying
+  to detect the SDL2 library ourselves (fixes compilation on macOS)
+- Removed unused sources for HD6301 emulation
+- Hatari can now be compiled with emscripten, too
 
 Fixed demos:
 - What If by Troed/Sync : 4 pixel hardscroll on STF by stopping shifter
