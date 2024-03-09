@@ -93,9 +93,9 @@ macos12_task:
   hatari_artifacts:
     path: "hatari-snapshot.zip"
 
-macos13_task:
+macos14_task:
   osx_instance:
-    image: ghcr.io/cirruslabs/macos-ventura-base:latest
+    image: ghcr.io/cirruslabs/macos-sonoma-base:latest
   install_script:
     - brew update
     - brew install sdl2 libpng make tidy-html5 imagemagick capstone
