@@ -461,6 +461,9 @@ void Crossbar_MemorySnapShot_Capture(bool bSave)
  */
 static void Crossbar_Update_DMA_Sound_Line ( bool SetGPIP7 , bool SetTAI , uint8_t Bit )
 {
+	crossbar.SNDINT_Signal = Bit;
+	crossbar.SOUNDINT_Signal = Bit;
+
 	if ( SetGPIP7 )
 	{
 		LOG_TRACE(TRACE_CROSSBAR, "Crossbar : MFP GPIP7 set bit=%d\n", Bit);
@@ -494,7 +497,7 @@ static void Crossbar_Update_DMA_Sound_Line_EndOfFrame ( bool RecordMode )
 	{
 		LOG_TRACE(TRACE_CROSSBAR, "Crossbar : end of frame for play\n");
 		/* We're in HIGH state (idle), add a quick HIGH -> LOW -> HIGH transition to trigger an interrupt in LOW state */
-		Crossbar_Update_DMA_Sound_Line ( dmaPlay.mfp15_int , dmaPlay.timerA_int , MFP_GPIP_STATE_LOW );	/* active */
+		Crossbar_Update_DMA_Sound_Line ( dmaPlay.mfp15_int , dmaPlay.timerA_int , MFP_GPIP_STATE_LOW );		/* active */
 		Crossbar_Update_DMA_Sound_Line ( dmaPlay.mfp15_int , dmaPlay.timerA_int , MFP_GPIP_STATE_HIGH );	/* idle */
 	}
 
@@ -511,6 +514,7 @@ static void Crossbar_Update_DMA_Sound_Line_EndOfFrame ( bool RecordMode )
 /*-----------------------------------------------------------------------*/
 /**
  * Return the value of the SNDINT line, used to update MFP's GPIP7
+ * (this is the same value as SOUNDINT_Signal)
  */
 uint8_t Crossbar_Get_SNDINT_Line (void)
 {
