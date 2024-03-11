@@ -30,6 +30,9 @@ Emulation improvements
   This requires calculating offset to host time on write, and
   using that offset on further reads.
 
+- Support RTC timer interrupts needed by ASV (Atari System-V Unix):
+  https://www.atari-forum.com/viewtopic.php?p=425726#p425726
+
 - Get the games/demos working that are marked as non-working in the manual.
 
 - Emulate different memory access timings on different memory areas.
