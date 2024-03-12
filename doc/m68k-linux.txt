@@ -167,7 +167,7 @@ Call Trace:
    $ sudo apt install gcc-m68k-linux-gnu
 
 2. Get latest upstream kernel release sources (without history):
-   $ git clone --depth 1 --branch v6.4 \
+   $ git clone --depth 1 --branch v6.8 \
      git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
    $ cd linux
 
@@ -334,8 +334,8 @@ Notes:
 1. Set suitable options in lilo.cfg, for example:
 -------------------------------------
 [LILO]
-Kernel = vmlinux-v6.4
-Symbols = System.map-v6.4
+Kernel = vmlinux-v6.8
+Symbols = System.map-v6.8
 Ramdisk =
 Args = video=atafb:sthigh console=tty
 KernelToFastRam = FALSE

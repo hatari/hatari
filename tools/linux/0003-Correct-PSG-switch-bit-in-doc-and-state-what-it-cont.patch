@@ -4,13 +4,13 @@ Date: Tue, 31 Mar 2020 23:57:31 +0300
 Subject: [PATCH 3/3] Correct PSG switch bit in doc and state what it controls
 
 ---
- Documentation/m68k/kernel-options.rst | 3 ++-
+ Documentation/arch/m68k/kernel-options.rst | 3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/Documentation/m68k/kernel-options.rst b/Documentation/m68k/kernel-options.rst
+diff --git a/Documentation/arch/m68k/kernel-options.rst b/Documentation/arch/m68k/kernel-options.rst
 index cabd94197..c5d23b4a5 100644
---- a/Documentation/m68k/kernel-options.rst
-+++ b/Documentation/m68k/kernel-options.rst
+--- a/Documentation/arch/m68k/kernel-options.rst
++++ b/Documentation/arch/m68k/kernel-options.rst
 @@ -675,7 +675,8 @@ items:
    snd6:
  	set bit 6 of the PSG port A
