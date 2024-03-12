@@ -79,6 +79,7 @@ version available in the given remote directory!
 
   Rootfs mount from SCSI device fails after following debug output:
 ------------------------------------------------------------
+...
 DEBUG: raw_scsi: selected id 0
 DEBUG: raw_scsi_put_data got message c0 (1/1)
 DEBUG: raw_scsi_put_data got message c0 (1 bytes)
@@ -106,19 +107,13 @@ DEBUG: raw_scsi: got command byte 00 (6/6)
 WARN : HDC: *** Strange REQUEST SENSE ***!
 DEBUG: raw_scsi: data in 22 bytes waiting
 DEBUG: raw_scsi: data in finished, 22 bytes: status phase
-DEBUG: DMA initiator recv PC=001839da
+DEBUG: DMA initiator recv PC=001ba66a
 DEBUG: SCSI BUS reset
 sd 0:0:0:0: Device offlined - not ready after error recovery
-sd 0:0:0:0: rejecting I/O to offline device
-sd 0:0:0:0: [sda] Write Protect is off
-sd 0:0:0:0: [sda] Mode Sense: 00 00 1f ff
-sd 0:0:0:0: rejecting I/O to offline device
 sd 0:0:0:0: [sda] Asking for cache data failed
 sd 0:0:0:0: [sda] Assuming drive cache: write through
-sd 0:0:0:0: rejecting I/O to offline device
-sd 0:0:0:0: rejecting I/O to offline device
 sd 0:0:0:0: [sda] Attached SCSI disk
-VFS: Cannot open root device "sda" or unknown-block(8,0): error -6
+VFS: Cannot open root device "/dev/sda" or unknown-block(8,0): error -6
 ------------------------------------------------------------
 
 - Oops on kernel boot in init (Busybox shell) when either 030 CPU
@@ -135,25 +130,28 @@ VFS: Cannot open root device "sda" or unknown-block(8,0): error -6
 ------------------------------------------------------------
 Kernel panic - not syncing: Attempted to kill init! exitcode=0x0000000b
 CPU: 0 PID: 1 Comm: sh Not tainted
-5.18.0hatari-00003-g7ca5f4b0eda3-dirty #7
-Stack from 0081dddc:
+6.8.0hatari-00003-g796a570c38d7 #1
+Stack from 01029dd0:
         ...
 Call Trace:
- [<00275c20>] panic+0xc4/0x230
- [<00027584>] arch_local_irq_enable+0x0/0x22
- [<0002f37a>] do_signal_stop+0x0/0x14a
- [<00028534>] do_exit+0x108/0x616
- [<0002f37a>] do_signal_stop+0x0/0x14a
- [<00028b2e>] do_group_exit+0x22/0x6e
- [<0002fec6>] get_signal+0xee/0x4b4
- [<00003e9e>] do_notify_resume+0x3c/0x47a
- [<0000561c>] send_fault_sig+0x28/0x8c
- [<000057fe>] do_page_fault+0x17e/0x200
- [<00002810>] do_signal_return+0x10/0x1a
- [<00020007>] _I_CALL_TOP+0xedf/0x1900
- [<0000b280>] p_moven+0x2/0xc
- [<00007201>] atari_irq_startup+0x31/0x46
- [<000066f6>] atari_get_model+0x9a/0xf0
+ [<00027700>] __cpuhp_state_add_instance_cpuslocked+0x7e/0x9a
+ [<002a9d58>] dump_stack+0x10/0x16
+ [<002a3f18>] panic+0xba/0x226
+ [<000277b0>] arch_local_irq_enable+0x0/0x22
+ [<000284fe>] do_exit+0x16e/0x634
+ [<00028afc>] do_group_exit+0x22/0x62
+ [<00030810>] get_signal+0x3f2/0x4e2
+ [<000031b8>] test_ti_thread_flag+0x0/0x1a
+ [<00003c50>] do_notify_resume+0x36/0x49a
+ [<0002fe12>] force_sig_fault+0x18/0x1c
+ [<000053f8>] send_fault_sig+0x2c/0x90
+ [<000055b0>] do_page_fault+0x154/0x204
+ [<00002488>] do_signal_return+0x10/0x1a
+ [<002a3782>] memset+0x6e/0x9c
+ [<00020007>] _I_CALL_TOP+0x10b7/0x1900
+ [<0000b280>] d0_less+0x8/0x20
+ [<00007201>] stdma_lock+0x77/0x7a
+ [<000066f6>] atari_mste_hwclk+0x52/0x2de
 ------------------------------------------------------------
 
 
@@ -690,8 +688,14 @@ $ aranym-mmu -l linux.config
 - Kernel does not recognize ACSI drives at all, although kernel
   reports finding Atari ACSI HW:
 ------------------------------------------------------------
-Atari hardware found: STND_SHIFTER ST_MFP YM2149 MSTE_CLK ACSI
+Atari hardware found: TT_SHIFTER ST_MFP TT_MFP TT_SCSI_DMA TT_SCSI YM2149 PCM SCC_DMA SCC MICROWIRE TT_CLK FDC_SPEED ACSI
 ...
+scsi host0: Atari native SCSI, irq 39, io_port 0x0, base 0x0, can_queue 16, cmd_per_lun 2, sg_tablesize 128, this_id 7, flags { }
+...
+Core driver edition 01.06 : TT driver edition 00.03
+Write will use    4 fragments of   32768 bytes as default
+NET: Registered PF_PACKET protocol family
+VFS: Cannot open root device "/dev/sda" or unknown-block(0,0): error -6
 Please append a correct "root=" boot option; here are the available
 partitions:
 0200            3280 fd0
@@ -704,69 +708,45 @@ Kernel panic - not syncing: VFS: Unable to mount root fs on unknown-block(0,0)
 ------------------------------------------------------------
   Only SCSI & IDE drives are recognized
 
-- Kernel double bus errors right at start when 040/060 is used with
-  CPU cache/prefetch enabled.  It is possible that compiling 040 (or
-  060) specific kernel would help:
+- When CPU cache/prefetch are enabled with 040/060, kernel freezes
+  at boot, after showing illegal instruction warnings:
+------------------------------------------------------------
+DEBUG: 68040 MMU: TC=8000 enabled=1 page8k=0 PC=003a367e
+DEBUG: SCC: get status for CTS 0
+DEBUG: SCC: get status for DCD 0
+DEBUG: Illegal instruction: 00e0 at 00000004 -> 0000233C
+8 repeats of: DEBUG: Illegal instruction: 00e0 at 00000004 -> 0000233C
+11 repeats of: DEBUG: Illegal instruction: 00e0 at 00000004 -> 0000233C
+------------------------------------------------------------
+  With 060 there are also warnings about unimplemented opcodes:
+------------------------------------------------------------
+DEBUG: 68060 MMU: TC=8000 enabled=1 page8k=0 PC=003a367e
+DEBUG: 68060 unimplemented opcode 4C00, PC=00045fd4 SP=00367ef4
+...
+DEBUG: 68060 unimplemented opcode 4C01, PC=003a7a7e SP=00367f74
+...
+DEBUG: 68060 unimplemented opcode 4C3C, PC=0029dc88 SP=00367cc8
+...
+SLUB: HWalign=16, Order=0-1, MinObjects=0, CPUs=1, Nodes=1
+DEBUG: 68060 unimplemented opcode 4C43, PC=00157d2a SP=00367ec4
+------------------------------------------------------------
+  Compiling 040 (or 060) specific kernel might help:
 	http://www.linux-m68k.org/faq/afterburner.html
 
-- Hatari v.2.3.x regression to above: With 040/060 CPU cache /
-  prefetch emulation disabled, kernel dies to NULL pointer in
-  mfp_timer_c_handler() when first user-space process is started:
----------------------- 040 -------------------------------
-Unable to handle kernel access at virtual address (ptrval)
-Oops: 00000000
-PC: [<00006860>] mfp_timer_c_handler+0xc/0x3c
-...
----------------------- 060 -------------------------------
-pc=0x6860, fa=0xfffa23
-68060 access error, fslw=1210000
-*** BUS ERROR ***   FORMAT=4
-Current process id is 1
-BAD KERNEL TRAP: 00000000
-PC: [<00006860>] mfp_timer_c_handler+0xc/0x3c
-SR: 2700  SP: (ptrval)  a2: 00816aa0
-d0: 00000000    d1: 0000000d    d2: 00002d04    d3: 00000000
-d4: 0000000d    d5: 00049a88    a0: 00006854    a1: 00334324
-Process init (pid: 1, task=(ptrval))
-Frame format=4 fault addr=00fffa23 fslw=01210000
-Stack from 00819b98:
-...
-Call Trace:
- [<00049b10>] __handle_irq_event_percpu+0x42/0xc4
- [<00112cca>] wake_up_sem_queue_prepare+0x2e/0x3a
- [<00049ba6>] handle_irq_event_percpu+0x14/0x44
- [<00049bf8>] handle_irq_event+0x22/0x36
- [<0004c74a>] handle_simple_irq+0x5a/0x5e
- [<0004951e>] handle_irq_desc+0x22/0x2e
- [<00049540>] generic_handle_irq+0x16/0x1a
- [<0000298c>] do_IRQ+0x24/0x3a
- [<00002898>] user_irqvec_fixup+0xc/0x14
- [<00112cca>] wake_up_sem_queue_prepare+0x2e/0x3a
- [<000648f4>] filemap_add_folio+0x0/0xa0
- [<0006afac>] page_cache_ra_unbounded+0xea/0x124
- [<00112cca>] wake_up_sem_queue_prepare+0x2e/0x3a
- [<0006b03e>] do_page_cache_ra+0x58/0x66
- [<0006b0e6>] page_cache_ra_order+0x18/0x20
- [<00065838>] filemap_fault+0x29c/0x3cc
- [<00084d80>] find_vma+0x0/0x64
- [<0007f788>] __do_fault+0x22/0x60
- [<00081e4a>] handle_mm_fault+0x3f4/0x5bc
- [<00100cca>] ext2_direct_IO+0x3a/0x7a
- [<00001e14>] kernel_pg_dir+0xe14/0x1000
- [<00001b00>] kernel_pg_dir+0xb00/0x1000
- [<00005730>] do_page_fault+0xb0/0x200
- [<00085aa0>] do_brk_flags+0x166/0x188
- [<00004ef4>] buserr_c+0x182/0x4a6
- [<000026cc>] buserr+0x20/0x28
- [<000e4150>] padzero+0x34/0x3e
- [<000e483e>] load_elf_binary+0x532/0xb3a
-...
-------------------------------------------------------------
+- In Hatari v.2.3, when 040/060 CPU cache / prefetch emulation are
+  disabled, kernel dies to NULL pointer in mfp_timer_c_handler() when
+  first user-space process is started.
 
   This did not happen with 2019 v2.3-dev Git version, and Linux
   boots fine on real 060 Falcon:
 	https://www.youtube.com/watch?v=8Sriz45Z4oM
 
+  Whereas in Hatari 2.5-dev, there's constant printing of:
+------------------------------------------------------------
+unexpected interrupt from 120
+------------------------------------------------------------
+  And with 060, also lot of opcode warnings (similarly to
+  when cache/prefetch are enabled).
 
 11. User-space issues with cache/prefetch enabled
 --------------------------------------------------
