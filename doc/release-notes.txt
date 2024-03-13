@@ -28,7 +28,9 @@ Removed features:
   since almost all recent hardware should support 32 bpp nowadays
 
 Configuration changes:
-- In hatari.cfg, section [RS232], rename sSccBOutFileName to SccBOutFileName
+- In hatari.cfg, section [RS232], rename:
+  - sSccBOutFileName => SccBOutFileName
+  - bEnableSccB => EnableSccB
 
 Emulation improvements:
 - MFP:
@@ -180,15 +182,16 @@ Build improvements:
 - Hatari can now be compiled with emscripten, too
 
 Fixed demos:
-- What If by Troed/Sync : 4 pixel hardscroll on STF by stopping shifter
+- Chaos A.D. : bad sound (Falcon DMA sound interrupts)
 - Little -ME- Demo end part by Overlanders : black screen after a while (IACK timing)
 - Monscape : bad sound (TT/DMA FIFO update)
 - Time Slice by Defence Force : monochrome demo (crash when Hatari
   is compiled with "small mem" option)
+- What If by Troed/Sync : 4 pixel hardscroll on STF by stopping shifter
 
 Fixed programs:
-- FreeMiNT (use SCC counter at start to detect the SCC clock freq)
 - FlaySID (DSP host handling)
+- FreeMiNT (use SCC counter at start to detect the SCC clock freq)
 
 Fixed games:
 - F29 Retaliator using CTR/IPF format (handle FDC's TR reset bug in caps library)
