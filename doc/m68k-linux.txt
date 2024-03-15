@@ -708,62 +708,13 @@ Kernel panic - not syncing: VFS: Unable to mount root fs on unknown-block(0,0)
 ------------------------------------------------------------
   Only SCSI & IDE drives are recognized
 
-- With 040, when either CPU cache or prefetch, or both are enabled,
-  there are illegal instruction warnings, and things end with double
-  bus error:
-------------------------------------------------------------
-DEBUG: 68040 MMU: TC=8000 enabled=1 page8k=0 PC=003a367e
-DEBUG: SCC: get status for CTS 0
-DEBUG: SCC: get status for DCD 0
-DEBUG: Illegal instruction: 00e0 at 00000004 -> 0000233C
-8 repeats of: DEBUG: Illegal instruction: 00e0 at 00000004 -> 0000233C
-11 repeats of: DEBUG: Illegal instruction: 00e0 at 00000004 -> 0000233C
-------------------------------------------------------------
-  Whereas with both CPU cache & prefetch disabled, there are
-  unexpected interrupts, and boot never finishes:
-------------------------------------------------------------
-SLUB: HWalign=16, Order=0-1, MinObjects=0, CPUs=1, Nodes=1
-NR_IRQS: 141
-clocksource: mfp: mask: 0xffffffff max_cycles: 0xffffffff,
-max_idle_ns: 77769386670404 ns
-unexpected interrupt from 120
-unexpected interrupt from 120
-------------------------------------------------------------
+- with Hatari 2.5, Linux works again on 040 & 060, when both CPU cache
+  & prefetch are disabled (with few previous Hatari versions, there
+  was panic on reaching user-space).
 
-- Although Linux is compiled with 060 support, it uses instructions
-  that do not exist on 060. Therefore LILO cannot be used with 060
-  (Falcon) as FPSP060.PRG needs to be run before booting Linux, with
-  the TOS bootstrap program.
-
-  (Bootstrap cannot be used with 040, as it tells Linux that it's
-  running on Afterburner, which Hatari does not emulate.)
-
-  If CPU cache/prefetch are enabled, Linux will then crash to double
-  bus error.  When they're disabled, there's NULL pointer access
-  bus error / OOPS when user-space is reached:
-------------------------------------------------------------
-Run /init as init process
-  with arguments:
-    /init
-  with environment:
-    HOME=/
-    TERM=linux
-    BOOT_IMAGE=vmlinux
-pc=0x662c, fa=0xfffa23
-68060 access error, fslw=1210000
-*** BUS ERROR ***   FORMAT=4
-Current process id is 1
-BAD KERNEL TRAP: 00000000
-PC: [<0000662c>] atari_read_clk+0xc/0x48
-SR: 2700  SP: (ptrval)  a2: 01020000
-...
-Call Trace:
- [<00055dca>] random_get_entropy_fallback+0x1c/0x28
- [<00192e4c>] random_get_entropy+0x1a/0x1c
- [<001930c2>] add_interrupt_randomness+0xa/0x94
- [<0004cc92>] handle_irq_event_percpu+0x20/0x44
- ...
-------------------------------------------------------------
+  If CPU cache or prefetch are enabled, 060 boot crashes to double bus
+  error, and 040 boot freezes early on.  Although screen is black, CPU
+  trace indicates latter being a panic.
 
   This did not happen with 2019 v2.3-dev Git version (and Linux
   version of that time). Linux also boots fine on real 060 Falcon:
