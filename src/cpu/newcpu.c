@@ -3465,7 +3465,7 @@ static void Exception_normal (int nr)
 		vector_nr = iack_cycle(nr);
 #endif
 
-	exception_debug (nr);
+	exception_debug (vector_nr);
 	MakeSR ();
 
 	if (!regs.s) {
