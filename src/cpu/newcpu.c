@@ -3237,7 +3237,7 @@ static void Exception_mmu030 (int nr, uaecptr oldpc)
 	LOG_TRACE(TRACE_CPU_EXCEPTION, "cpu exception %d currpc %x buspc %x newpc %x fault_e3 %x op_e3 %x addr_e3 %x SR %x\n",
 		nr, currpc, regs.instruction_pc, STMemory_ReadLong (regs.vbr + 4*vector_nr), last_fault_for_exception_3, last_op_for_exception_3, last_addr_for_exception_3, regs.sr);
 #endif
-	exception_debug (nr);
+	exception_debug (vector_nr);
 	MakeSR ();
     
 	if (!regs.s) {
@@ -3304,7 +3304,7 @@ static void Exception_mmu (int nr, uaecptr oldpc)
 	LOG_TRACE(TRACE_CPU_EXCEPTION, "cpu exception %d currpc %x buspc %x newpc %x fault_e3 %x op_e3 %x addr_e3 %x SR %x\n",
 		nr, currpc, regs.instruction_pc, STMemory_ReadLong (regs.vbr + 4*vector_nr), last_fault_for_exception_3, last_op_for_exception_3, last_addr_for_exception_3, regs.sr);
 #endif
-	exception_debug (nr);
+	exception_debug (vector_nr);
 	MakeSR ();
 
 	if (!regs.s) {
