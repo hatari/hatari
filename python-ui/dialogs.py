@@ -981,7 +981,7 @@ class MachineDialog(HatariUIDialog):
 
         ttram = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, 1024, 4)
         ttram.set_digits(0)
-        ttram.set_tooltip_text("TT-RAM needs Falcon/TT and requires 32-bit addressing.  0 = disabled, 24-bit addressing.")
+        ttram.set_tooltip_text("TT-RAM requires Falcon/TT and its use disables 24-bit addressing.")
         self.ttram = table_add_widget_row(table, row, col, "TT-RAM:", ttram, fullspan)
         row += 1
 
@@ -1041,7 +1041,8 @@ class MachineDialog(HatariUIDialog):
         config.set_dsp(self.dsp.get_active())
         config.set_monitor(self.monitors.get_active())
         config.set_memory(self.memory.get_active())
-        config.set_ttram(self.ttram.get_value())
+        # changes 24/32-bit addressing based on TT-RAM & machine type
+        config.set_ttram(self.ttram.get_value(), self.machine.get_active())
         config.set_tos(self.tos.get_filename())
         config.flush_updates()
 

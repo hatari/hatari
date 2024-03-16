@@ -17,9 +17,6 @@ its sources).
   and other dialog texts to UI for showing, and waits until user has
   acknowledged them (two-way communication)
 
-* WinUAE CPU core specific configuration options: 32-bit addressing,
-  MMU, FPU softfloat etc
-
 * Support all 8 ACSI and SCSI drives
 
 * Use file selector widget instead of text widget for specifying input

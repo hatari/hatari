@@ -2,7 +2,7 @@
 #
 # A Debug UI for the Hatari, part of Python Gtk Hatari UI
 #
-# Copyright (C) 2008-2022 by Eero Tamminen
+# Copyright (C) 2008-2024 by Eero Tamminen
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -278,12 +278,9 @@ class MemoryAddress:
         output = self.hatari.get_lines(self.debug_output)
         if not self.first:
             # 2nd last line has first PC in 1st column, last line next PC in 2nd column
-            self.second = int(output[-1][output[-1].find(":")+2:], 16)
-            # OldUAE CPU core has ':' in both
-            offset = output[-2].find(":")
-            if offset < 0:
-                # WinUAE CPU core only in one
-                offset = output[-2].find(" ")
+            offset = output[-1].find(":")
+            self.second = int(output[-1][offset+2:], 16)
+            offset = output[-2].find(" ")
             if offset < 0:
                 print("ERROR: unable to parse register dump line:\n\t'%s'", output[-2])
                 return output

@@ -1,13 +1,12 @@
-Deprecations
-------------
-
-Following is deprecated and will be removed in a future release:
-- Support for older Hatari versions built with the oldAUE CPU core
-  (Hatari removed oldUAE build support in v2.4 release)
-
-
 User visible changes in Hatari (Python Gtk) UI
 ----------------------------------------------
+
+2024-03:
+- Add backwards compatibility support for Hatari v2.4 options
+- Remove compatibility support for <2.4.0 Hatari versions
+
+2024-01:
+- Add support for Hatari SCC-A options
 
 2022-06:
 - Add support for setting CPU compatibility + cycle-accuracy,
