@@ -57,9 +57,13 @@ class UICallbacks:
             ErrorDialog(None).run(error)
             sys.exit(1)
 
+        # Compatibility to older versions is enabled before validation
+        # only after current Hatari version config has been saved,
+        # otherwise UI could be using old options with new version.
         self.config = HatariConfigMapping(self.hatari)
         try:
             self.config.validate()
+            self.config.init_compat()
         except (KeyError, AttributeError):
             NoteDialog(None).run("Hatari configuration validation failed!\nRetrying after saving Hatari configuration.")
             error = self.hatari.save_config()
@@ -67,12 +71,12 @@ class UICallbacks:
                 ErrorDialog(None).run("Hatari configuration saving failed (code: %d), quitting!" % error)
                 sys.exit(error)
             self.config = HatariConfigMapping(self.hatari)
+            self.config.init_compat()
             try:
                 self.config.validate()
             except (KeyError, AttributeError):
                 ErrorDialog(None).run("Invalid Hatari configuration, quitting!")
                 sys.exit(1)
-        self.config.init_compat()
 
         # windows are created when needed
         self.mainwin = None

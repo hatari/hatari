@@ -289,8 +289,8 @@ class HatariConfigMapping(ConfigStore):
         "printout":   ("[Printer]", "szPrintToFileName", "Printer output"),
         "soundout":   ("[Sound]", "szYMCaptureFileName", "Sound output")
     }
-    has_hd_sections = True # from v2.2 onwards separate ACSI/SCSI/IDE sections
-    has_modeltype = True   # from v2.0 onwards
+    # enable Hatari v2.5+ options
+    has_opts_2_5 = True
 
     "access methods to Hatari configuration file variables and command line options"
     def __init__(self, hatari):
@@ -313,10 +313,20 @@ class HatariConfigMapping(ConfigStore):
 
     def init_compat(self):
         "do config mapping initializations needing config loading to have succeeded"
-        # initialize has_* attribs for things that may not be anymore
-        # valid on Hatari config file and/or command line
-        self.get_machine()
-        self.get_acsi_image()
+        # initialize has_opts_<version> attribs for things that may not
+        # be anymore valid on Hatari config file and/or command line
+        try:
+            # added for Hatari v2.5
+            self.get("[RS232]", "EnableSccA")
+            return
+        except KeyError:
+            pass
+        self.has_opts_2_5 = False
+        # drop v2.5 keys and use v2.4 option names
+        print("Hatari v2.5 option(s) missing, reverting to v2.4 ones")
+        for key in ("sccain","sccaout","sccalanin","sccalanout","sccbin"):
+            del(self._paths[key])
+        self._paths["sccbout"] = ("[RS232]", "sSccBOutFileName", "RS232: SCC-B IO output")
 
     def validate(self):
         "exception is thrown if the loaded configuration isn't compatible"
@@ -401,53 +411,52 @@ class HatariConfigMapping(ConfigStore):
         self._hatari.set_device("rs232", value)
 
     def get_scca(self):
+        if not self.has_opts_2_5:
+            return False
         return self.get("[RS232]", "EnableSccA")
 
     def set_scca(self, value):
+        if not self.has_opts_2_5:
+            return
         self.set("[RS232]", "EnableSccA", value)
         self._hatari.set_device("scca", value)
 
     def get_scca_lan(self):
+        if not self.has_opts_2_5:
+            return False
         return self.get("[RS232]", "EnableSccALan")
 
     def set_scca_lan(self, value):
+        if not self.has_opts_2_5:
+            return
         self.set("[RS232]", "EnableSccALan", value)
         self._hatari.set_device("sccalan", value)
 
     def get_sccb(self):
+        if not self.has_opts_2_5:
+            return self.get("[RS232]", "bEnableSccB")
         return self.get("[RS232]", "EnableSccB")
 
     def set_sccb(self, value):
-        self.set("[RS232]", "EnableSccB", value)
+        if not self.has_opts_2_5:
+            self.set("[RS232]", "bEnableSccB", value)
+        else:
+            self.set("[RS232]", "EnableSccB", value)
         self._hatari.set_device("sccb", value)
 
     # ------------ machine ---------------
     def get_machine_types(self):
-        if self.has_modeltype:
-            return ("ST", "MegaST", "STE", "MegaSTE", "TT", "Falcon")
-        else:
-            return ("ST", "STE", "TT", "Falcon")
+        return ("ST", "MegaST", "STE", "MegaSTE", "TT", "Falcon")
 
     def get_machine(self):
-        try:
-            return self.get("[System]", "nModelType")
-        except KeyError:
-            self.has_modeltype = False
-            return self.get("[System]", "nMachineType")
+        return self.get("[System]", "nModelType")
 
     def has_accurate_winsize(self):
-        if self.has_modeltype:
-            return (self.get_machine() < 4)
-        else:
-            return (self.get_machine() < 2)
+        return (self.get_machine() < 4)
 
     def set_machine(self, value):
-        if self.has_modeltype:
-            self.set("[System]", "nModelType", value)
-            self._change_option("--machine %s" % ("st", "megast", "ste", "megaste", "tt", "falcon")[value])
-        else:
-            self.set("[System]", "nMachineType", value)
-            self._change_option("--machine %s" % ("st", "ste", "tt", "falcon")[value])
+        self.set("[System]", "nModelType", value)
+        self._change_option("--machine %s" % ("st", "megast", "ste", "megaste", "tt", "falcon")[value])
 
     # ------------ CPU level ---------------
     def get_cpulevel_types(self):
@@ -754,62 +763,33 @@ class HatariConfigMapping(ConfigStore):
 
     # ------------ ACSI HD (file) ---------------
     def get_acsi_image(self):
-        # v2.2 of config file or older?
-        try:
-            self.get("[ACSI]", "bUseDevice0")
-        except KeyError:
-            self.get("[HardDisk]", "bUseHardDiskImage")
-            self.has_hd_sections = False
-        if self.has_hd_sections:
-            return self.get("[ACSI]", "sDeviceFile0")
-        else:
-            return self.get("[HardDisk]", "szHardDiskImage")
+        self.get("[ACSI]", "bUseDevice0")
+        return self.get("[ACSI]", "sDeviceFile0")
 
     def set_acsi_image(self, filename):
-        if self.has_hd_sections:
-            if filename and os.path.isfile(filename):
-                self.set("[ACSI]", "bUseDevice0", True)
-            self.set("[ACSI]", "sDeviceFile0", filename)
-        else:
-            if filename and os.path.isfile(filename):
-                self.set("[HardDisk]", "bUseHardDiskImage", True)
-            self.set("[HardDisk]", "szHardDiskImage", filename)
+        if filename and os.path.isfile(filename):
+            self.set("[ACSI]", "bUseDevice0", True)
+        self.set("[ACSI]", "sDeviceFile0", filename)
         self._change_option("--acsi", filename)
 
     # ------------ IDE master (file) ---------------
     def get_idemaster_image(self):
-        if self.has_hd_sections:
-            return self.get("[IDE]", "sDeviceFile0")
-        else:
-            return self.get("[HardDisk]", "szIdeMasterHardDiskImage")
+        return self.get("[IDE]", "sDeviceFile0")
 
     def set_idemaster_image(self, filename):
-        if self.has_hd_sections:
-            if filename and os.path.isfile(filename):
-                self.set("[IDE]", "bUseDevice0", True)
-            self.set("[IDE]", "sDeviceFile0", filename)
-        else:
-            if filename and os.path.isfile(filename):
-                self.set("[HardDisk]", "bUseIdeMasterHardDiskImage", True)
-            self.set("[HardDisk]", "szIdeMasterHardDiskImage", filename)
+        if filename and os.path.isfile(filename):
+            self.set("[IDE]", "bUseDevice0", True)
+        self.set("[IDE]", "sDeviceFile0", filename)
         self._change_option("--ide-master", filename)
 
     # ------------ IDE slave (file) ---------------
     def get_ideslave_image(self):
-        if self.has_hd_sections:
-            return self.get("[IDE]", "sDeviceFile1")
-        else:
-            return self.get("[HardDisk]", "szIdeSlaveHardDiskImage")
+        return self.get("[IDE]", "sDeviceFile1")
 
     def set_ideslave_image(self, filename):
-        if self.has_hd_sections:
-            if filename and os.path.isfile(filename):
-                self.set("[IDE]", "bUseDevice1", True)
-            self.set("[IDE]", "sDeviceFile1", filename)
-        else:
-            if filename and os.path.isfile(filename):
-                self.set("[HardDisk]", "bUseIdeSlaveHardDiskImage", True)
-            self.set("[HardDisk]", "szIdeSlaveHardDiskImage", filename)
+        if filename and os.path.isfile(filename):
+            self.set("[IDE]", "bUseDevice1", True)
+        self.set("[IDE]", "sDeviceFile1", filename)
         self._change_option("--ide-slave", filename)
 
     # ------------ TOS ROM ---------------
