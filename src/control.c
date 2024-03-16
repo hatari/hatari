@@ -403,8 +403,8 @@ static int Control_GetUISocket(void);
  */
 bool Control_CheckUpdates(void)
 {
-	/* just using all trace options with +/- are about 300 chars */
-	char buffer[400];
+	/* setting all trace options, or paths takes a lot of space */
+	char buffer[4096];
 	struct timeval tv;
 	fd_set readfds;
 	ssize_t bytes;
