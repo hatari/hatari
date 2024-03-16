@@ -165,6 +165,7 @@ enum {
 	OPT_CPULEVEL,		/* CPU options */
 	OPT_CPUCLOCK,
 	OPT_COMPATIBLE,
+	OPT_CPU_DATA_CACHE,
 	OPT_CPU_CYCLE_EXACT,
 	OPT_CPU_ADDR24,
 	OPT_FPU_TYPE,
@@ -435,7 +436,9 @@ static const opt_t HatariOptions[] = {
 	{ OPT_CPUCLOCK,  NULL, "--cpuclock",
 	  "<x>", "Set the CPU clock (x = 8/16/32)" },
 	{ OPT_COMPATIBLE, NULL, "--compatible",
-	  "<bool>", "Use a more compatible (but slower) prefetch mode for CPU" },
+	  "<bool>", "Use (more compatible) prefetch mode for CPU" },
+	{ OPT_CPU_DATA_CACHE, NULL, "--data-cache",
+	  "<bool>", "Emulate (>=030) CPU data cache" },
 	{ OPT_CPU_CYCLE_EXACT, NULL, "--cpu-exact",
 	  "<bool>", "Use cycle exact CPU emulation" },
 	{ OPT_CPU_ADDR24, NULL, "--addr24",
@@ -1845,6 +1848,11 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 		case OPT_CPU_ADDR24:
 			ok = Opt_Bool(argv[++i], OPT_CPU_ADDR24, &ConfigureParams.System.bAddressSpace24);
+			bLoadAutoSave = false;
+			break;
+
+		case OPT_CPU_DATA_CACHE:
+			ok = Opt_Bool(argv[++i], OPT_CPU_DATA_CACHE, &ConfigureParams.System.bCpuDataCache);
 			bLoadAutoSave = false;
 			break;
 

@@ -501,10 +501,10 @@ void Statusbar_AddMessage(const char *msg, Uint32 msecs)
  */
 static char *Statusbar_AddString(char *buffer, const char *more)
 {
+	if (!more)
+		return buffer;
 	while (*more)
-	{
 		*buffer++ = *more++;
-	}
 	return buffer;
 }
 
@@ -540,11 +540,16 @@ void Statusbar_UpdateInfo(void)
 		*end++ = '0';
 	}
 
-	/* Prefetch mode or cycle exact mode ? */
+	const char *mode = NULL;
+	bool cache = ConfigureParams.System.bCpuDataCache && ConfigureParams.System.nCpuLevel > 2;
+	/* Prefetch / cycle exact mode and data cache? */
 	if ( ConfigureParams.System.bCycleExactCpu )
-		end = Statusbar_AddString(end, "(CE)");
+		mode = cache ? "(CED)" : "(CE)";
 	else if ( ConfigureParams.System.bCompatibleCpu )
-		end = Statusbar_AddString(end, "(PF)");
+		mode = cache ? "(PFD)" : "(PF)";
+	else if (cache)
+		mode = "(D)";
+	end = Statusbar_AddString(end, mode);
 
 	/* additional WinUAE CPU/FPU info */
 	*end++ = '/';

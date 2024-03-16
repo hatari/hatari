@@ -542,6 +542,7 @@ static const struct Config_Tag configs_System[] =
 	{ "bFastForward", Bool_Tag, &ConfigureParams.System.bFastForward },
 	{ "bAddressSpace24", Bool_Tag, &ConfigureParams.System.bAddressSpace24 },
 	{ "bCycleExactCpu", Bool_Tag, &ConfigureParams.System.bCycleExactCpu },
+	{ "bCpuDataCache", Bool_Tag, &ConfigureParams.System.bCpuDataCache },
 	{ "n_FPUType", Int_Tag, &ConfigureParams.System.n_FPUType },
 /* JIT	{ "bCompatibleFPU", Bool_Tag, &ConfigureParams.System.bCompatibleFPU }, */
 	{ "bSoftFloatFPU", Bool_Tag, &ConfigureParams.System.bSoftFloatFPU },
@@ -847,6 +848,7 @@ void Configuration_SetDefault(void)
 	ConfigureParams.System.bCompatibleFPU = true; /* JIT */
 	ConfigureParams.System.bSoftFloatFPU = false;
 	ConfigureParams.System.bMMU = false;
+	ConfigureParams.System.bCpuDataCache = true;
 	ConfigureParams.System.bCycleExactCpu = true;
 	ConfigureParams.System.VideoTimingMode = VIDEO_TIMING_MODE_WS3;
 	ConfigureParams.System.bCompatibleCpu = true;
@@ -1232,6 +1234,7 @@ void Configuration_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&ConfigureParams.System.bPatchTimerD, sizeof(ConfigureParams.System.bPatchTimerD));
 	MemorySnapShot_Store(&ConfigureParams.System.bAddressSpace24, sizeof(ConfigureParams.System.bAddressSpace24));
 
+	MemorySnapShot_Store(&ConfigureParams.System.bCpuDataCache, sizeof(ConfigureParams.System.bCpuDataCache));
 	MemorySnapShot_Store(&ConfigureParams.System.bCycleExactCpu, sizeof(ConfigureParams.System.bCycleExactCpu));
 	MemorySnapShot_Store(&ConfigureParams.System.n_FPUType, sizeof(ConfigureParams.System.n_FPUType));
 	MemorySnapShot_Store(&ConfigureParams.System.bCompatibleFPU, sizeof(ConfigureParams.System.bCompatibleFPU));

@@ -403,6 +403,7 @@ typedef struct
   VIDEOTIMINGMODE VideoTimingMode;
 
   bool bCycleExactCpu;
+  bool bCpuDataCache;
   FPUTYPE n_FPUType;
   bool bCompatibleFPU;            /* More compatible FPU */
   bool bSoftFloatFPU;

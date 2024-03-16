@@ -28,13 +28,14 @@ const char DlgCpu_fileid[] = "Hatari dlgCpu.c";
 #define DLGCPU_FPU_CPU_IN 20
 #define DLGCPU_PREFETCH   23
 #define DLGCPU_CYC_EXACT  24
-#define DLGCPU_MMU_EMUL   25
-#define DLGCPU_24BITS     26
-#define DLGCPU_SOFTFLOAT  27
+#define DLGCPU_DATA_CACHE 25
+#define DLGCPU_MMU_EMUL   26
+#define DLGCPU_24BITS     27
+#define DLGCPU_SOFTFLOAT  28
 
 static SGOBJ cpudlg[] =
 {
-	{ SGBOX, 0, 0, 0,0, 44,24, NULL },
+	{ SGBOX, 0, 0, 0,0, 44,25, NULL },
 	{ SGTEXT, 0, 0, 17,1, 12,1, "CPU options" },
 
 	{ SGBOX, 0, 0, 2,3, 12,8, NULL },
@@ -49,26 +50,27 @@ static SGOBJ cpudlg[] =
 	{ SGBOX, 0, 0, 16,3, 12,8, NULL },
 	{ SGTEXT, 0, 0, 17,3, 10,1, "CPU clock:" },
 	{ SGRADIOBUT, 0, 0, 17,5, 8,1, " _8 Mhz" },
-	{ SGRADIOBUT, 0, 0, 17,6, 8,1, "1_6 Mhz" },
+	{ SGRADIOBUT, 0, 0, 17,6, 8,1, "16 M_hz" },
 	{ SGRADIOBUT, 0, 0, 17,7, 8,1, "32 Mh_z" },
 
 	{ SGBOX, 0, 0, 30,3, 12,8, NULL },
 	{ SGTEXT, 0, 0, 31,3, 4,1, "FPU:" },
 	{ SGRADIOBUT, 0, 0, 31,5, 6,1, "_None" },
 	{ SGRADIOBUT, 0, 0, 31,6, 7,1, "68881" },
-	{ SGRADIOBUT, 0, 0, 31,7, 7,1, "68882" },
+	{ SGRADIOBUT, 0, 0, 31,7, 7,1, "_68882" },
 	{ SGRADIOBUT, 0, 0, 31,8, 10,1, "_Internal" },
 
-	{ SGBOX, 0, 0, 2,12, 40,9, NULL },
+	{ SGBOX, 0, 0, 2,12, 40,10, NULL },
 	{ SGTEXT, 0, 0, 9,12, 24,1, "CPU emulation parameters" },
 	{ SGCHECKBOX, 0, 0, 3,14, 21,1, "_Prefetch emulation*" },
-	{ SGCHECKBOX, 0, 0, 3,15, 35,1, "_Cycle-exact with cache emulation*" },
-	{ SGCHECKBOX, 0, 0, 3,16, 16,1, "_MMU emulation*" },
-	{ SGCHECKBOX, 0, 0, 3,17, 20,1, "24-bit _addressing" },
-	{ SGCHECKBOX, 0, 0, 3,18, 26,1, "Accurate _FPU emulation*" },
-	{ SGTEXT, 0, 0, 3,20, 20,1, "* Uses more host CPU" },
+	{ SGCHECKBOX, 0, 0, 3,15, 35,1, "_Cycle-exact emulation*" },
+	{ SGCHECKBOX, 0, 0, 3,16, 35,1, "_Data cache emulation* (>=030)" },
+	{ SGCHECKBOX, 0, 0, 3,17, 16,1, "_MMU emulation*" },
+	{ SGCHECKBOX, 0, 0, 3,18, 20,1, "24-bit _addressing" },
+	{ SGCHECKBOX, 0, 0, 3,19, 26,1, "Accurate _FPU emulation*" },
+	{ SGTEXT, 0, 0, 3,21, 20,1, "* Uses more host CPU" },
 
-	{ SGBUTTON, SG_DEFAULT, 0, 13,22, 19,1, "Back to main menu" },
+	{ SGBUTTON, SG_DEFAULT, 0, 13,23, 19,1, "Back to main menu" },
 	{ SGSTOP, 0, 0, 0,0, 0,0, NULL }
 };
 
@@ -113,12 +115,18 @@ void DlgCpu_Main(void)
 		cpudlg[DLGCPU_24BITS].state |= SG_SELECTED;
 	else
 		cpudlg[DLGCPU_24BITS].state &= ~SG_SELECTED;
-		
+
 	/* Cycle exact CPU */
 	if (ConfigureParams.System.bCycleExactCpu)
 		cpudlg[DLGCPU_CYC_EXACT].state |= SG_SELECTED;
 	else
 		cpudlg[DLGCPU_CYC_EXACT].state &= ~SG_SELECTED;
+
+	/* CPU data cache */
+	if (ConfigureParams.System.bCpuDataCache)
+		cpudlg[DLGCPU_DATA_CACHE].state |= SG_SELECTED;
+	else
+		cpudlg[DLGCPU_DATA_CACHE].state &= ~SG_SELECTED;
 
 	/* FPU emulation */
 	for (i = DLGCPU_FPU_NONE; i <= DLGCPU_FPU_CPU_IN; i++)
@@ -168,8 +176,9 @@ void DlgCpu_Main(void)
 		Configuration_ChangeCpuFreq ( 8 );
 
 	ConfigureParams.System.bCompatibleCpu = (cpudlg[DLGCPU_PREFETCH].state & SG_SELECTED);
-
 	ConfigureParams.System.bCycleExactCpu = (cpudlg[DLGCPU_CYC_EXACT].state & SG_SELECTED);
+	ConfigureParams.System.bCpuDataCache = (cpudlg[DLGCPU_DATA_CACHE].state & SG_SELECTED);
+
 	ConfigureParams.System.bMMU = (cpudlg[DLGCPU_MMU_EMUL].state & SG_SELECTED);
 	ConfigureParams.System.bAddressSpace24 = (cpudlg[DLGCPU_24BITS].state & SG_SELECTED);
 	ConfigureParams.System.bSoftFloatFPU = (cpudlg[DLGCPU_SOFTFLOAT].state & SG_SELECTED);

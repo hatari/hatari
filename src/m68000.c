@@ -316,7 +316,7 @@ void M68000_Start(void)
  *	cpu_compatible : 0/false (no prefetch for 68000/20/30)  1/true (prefetch opcode for 68000/20/30)
  *	cpu_cycle_exact : 0/false   1/true (most accurate, implies cpu_compatible)
  *	cpu_memory_cycle_exact : 0/false   1/true (less accurate than cpu_cycle_exact)
- *	cpu_data_cache : 0/false (don't emulate caches)   1/true (emulate instr/data caches for 68020/30/40/60)
+ *	cpu_data_cache : 0/false (don't emulate data cache)   1/true (emulate data cache for 30/40/60)
  *	address_space_24 : 1 (68000/10 and 68030 LC for Falcon), 0 (68020/30/40/60)
  *	fpu_model : 0, 68881 (external), 68882 (external), 68040 (cpu) , 68060 (cpu)
  *	fpu_strict : true/false (more accurate rounding)
@@ -364,6 +364,7 @@ void M68000_CheckCpuSettings(void)
 
 	changed_prefs.int_no_unimplemented = true;
 	changed_prefs.fpu_no_unimplemented = true;
+	changed_prefs.cpu_data_cache = ConfigureParams.System.bCpuDataCache;
 	changed_prefs.cpu_compatible = ConfigureParams.System.bCompatibleCpu;
 	changed_prefs.cpu_cycle_exact = ConfigureParams.System.bCycleExactCpu;
 	changed_prefs.cpu_memory_cycle_exact = ConfigureParams.System.bCycleExactCpu;
@@ -386,10 +387,10 @@ void M68000_CheckCpuSettings(void)
 	/* We don't use JIT */
 	changed_prefs.cachesize = 0;
 
-	/* Always emulate instr/data caches for cpu >= 68020 */
-	/* Cache emulation requires cpu_compatible or cpu_cycle_exact mode */
-	if ( ( changed_prefs.cpu_model < 68020 ) ||
-	     ( ( changed_prefs.cpu_compatible == false ) && ( changed_prefs.cpu_cycle_exact == false ) ) )
+	/* while 020 had i-cache, only 030+ had also d-cache */
+	if (changed_prefs.cpu_model < 68030 ||
+	    !ConfigureParams.System.bCpuDataCache ||
+	    !(changed_prefs.cpu_compatible || changed_prefs.cpu_cycle_exact))
 		changed_prefs.cpu_data_cache = false;
 	else
 		changed_prefs.cpu_data_cache = true;
