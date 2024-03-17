@@ -311,9 +311,8 @@ static void DlgFileSelect_ManageScrollbar(void)
 			mouseIsOut = 0;
 			oldMouseY = y;
 		}
-	}
-	/* Mouse button is up on the scrollbar */
-	else {
+	} else {
+		/* Mouse button is up on the scrollbar */
 		mouseClicked = 0;
 		oldMouseY = y;
 		mouseIsOut = 0;
@@ -414,13 +413,13 @@ static void DlgFileSelect_HandleSdlEvents(SDL_Event *pEvent)
 			DlgFileSelect_Convert_ypos_to_scrollbar_Ypos();
 			break;
 		 case SDLK_END:
-		    ypos = entries-SGFS_NUMENTRIES;
+			ypos = entries-SGFS_NUMENTRIES;
 			DlgFileSelect_Convert_ypos_to_scrollbar_Ypos();
-		    break;
+			break;
 		 case SDLK_PAGEUP:
-		    ypos -= SGFS_NUMENTRIES;
+			ypos -= SGFS_NUMENTRIES;
 			DlgFileSelect_Convert_ypos_to_scrollbar_Ypos();
-		    break;
+			break;
 		 case SDLK_PAGEDOWN:
 			if (ypos+2*SGFS_NUMENTRIES < entries)
 				ypos += SGFS_NUMENTRIES;
