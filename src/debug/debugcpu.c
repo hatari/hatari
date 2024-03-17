@@ -506,7 +506,7 @@ int DebugCpu_MemDump(int nArgc, char *psArgs[])
 		if (nArgc > arg)
 		{
 			int count = atoi(psArgs[arg]);
-			if (!count)
+			if (count < 1)
 			{
 				fprintf(stderr, "Invalid count %d!\n", count);
 				return DEBUGGER_CMDDONE;
@@ -523,10 +523,13 @@ int DebugCpu_MemDump(int nArgc, char *psArgs[])
 
 	while (memdump_addr < memdump_upper)
 	{
-		fprintf(debugOutput, "%08X: ", memdump_addr);
+		int cols;
+		uint32_t memdump_line = memdump_addr;
+		fprintf(debugOutput, "%08X: ", memdump_line);
 		
 		/* print HEX data */
-		for (i = 0; i < MEMDUMP_COLS/size; i++)
+		cols = MEMDUMP_COLS/size;
+		for (i = 0; i < cols && memdump_addr < memdump_upper; i++)
 		{
 			switch (mode)
 			{
@@ -547,9 +550,11 @@ int DebugCpu_MemDump(int nArgc, char *psArgs[])
 
 		/* print ASCII data */
 		fprintf(debugOutput, "  ");
-		for (i = 0; i < MEMDUMP_COLS; i++)
+
+		cols = i*size;
+		for (i = 0; i < cols; i++)
 		{
-			c = STMemory_ReadByte(memdump_addr-MEMDUMP_COLS+i);
+			c = STMemory_ReadByte(memdump_line + i);
 			if(!isprint((unsigned)c))
 				c = NON_PRINT_CHAR;             /* non-printable as dots */
 			fprintf(debugOutput,"%c", c);

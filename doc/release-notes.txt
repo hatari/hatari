@@ -109,6 +109,7 @@ Emulator improvements:
   - Fix: free all debugger allocations before exit
   - Fix: invalid free on freeing loaded GNU debug symbols
   - Fix: CPU core disassembler crashes with longer symbol names
+  - Fix: memdump command always outputs only requested number of items
   - Add support for reading symbols from new MINT+ELF binaries
   - Add support for demangled C++/a.out symbols (which can be
     very long and contain almost any characters)
