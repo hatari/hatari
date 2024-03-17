@@ -1057,18 +1057,40 @@ static int SDLGui_HandleShortcut(SGOBJ *dlg, int key)
 }
 
 /**
- * Scale mouse coordinates in case we've got a re-sized SDL2 window
+ * Scale mouse state coordinates in case we've got a re-sized SDL2 window
+ *
+ * NOTE: while scaling done here fixes SDL2 reported mouse coords to
+ * match Hatari framebuffer coords in scaled SDL2 windows, there's
+ * another issue with (mouse _state_) coords in _fullscreen_.
+ *
+ * SDL2 deducts fullscreen letterboxing borders from those coords,
+ * but not from the values returns by SDL2 window size functions
+ * (and there's no function providing the letterbox border size).
+ *
+ * Atari resolutions are more narrow than today's widescreen monitor
+ * resolutions, so typically fullscreen letterboxing borders are on
+ * the sides => y-coord gets scaled OK, x-coord will be too small.
+ */
+void SDLGui_ScaleMouseStateCoordinates(int *x, int *y)
+{
+	int win_width, win_height;
+	SDL_GetWindowSize(sdlWindow, &win_width, &win_height);
+
+	*x = *x * pSdlGuiScrn->w / win_width;
+	*y = *y * pSdlGuiScrn->h / win_height;
+}
+
+/**
+ * Scale mouse event coordinates in case we've got a re-sized SDL2 window
  */
 static void SDLGui_ScaleMouseButtonCoordinates(SDL_MouseButtonEvent *bev)
 {
-	int win_width, win_height;
-
 	if (bInFullScreen)
 		return;
 
-	SDL_GetWindowSize(sdlWindow, &win_width, &win_height);
-	bev->x = bev->x * pSdlGuiScrn->w / win_width;
-	bev->y = bev->y * pSdlGuiScrn->h / win_height;
+	int x = bev->x, y = bev->y;
+	SDLGui_ScaleMouseStateCoordinates(&x, &y);
+	bev->x = x; bev->y = y;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1093,7 +1115,7 @@ int SDLGui_DoDialogExt(SGOBJ *dlg, bool (*isEventOut)(SDL_EventType), SDL_Event 
 {
 	int oldbutton = SDLGUI_NOTFOUND;
 	int retbutton = SDLGUI_NOTFOUND;
-	int i, j, b, value, obj;
+	int b, x, y, value, obj;
 	SDL_Keycode key;
 	int focused;
 	SDL_Event sdlEvent;
@@ -1156,7 +1178,7 @@ int SDLGui_DoDialogExt(SGOBJ *dlg, bool (*isEventOut)(SDL_EventType), SDL_Event 
 
 	/* Is the left mouse button still pressed? Yes -> Handle TOUCHEXIT objects here */
 	SDL_PumpEvents();
-	b = SDL_GetMouseState(&i, &j);
+	b = SDL_GetMouseState(&x, &y);
 
 	/* If current object is the scrollbar, and mouse is still down, we can scroll it */
 	/* also if the mouse pointer has left the scrollbar */
@@ -1172,9 +1194,10 @@ int SDLGui_DoDialogExt(SGOBJ *dlg, bool (*isEventOut)(SDL_EventType), SDL_Event 
 		{
 			dlg[obj].state &= ~SG_MOUSEDOWN;
 		}
-	}
-	else {
-		obj = SDLGui_FindObj(dlg, i, j);
+	} else {
+		SDLGui_ScaleMouseStateCoordinates(&x, &y);
+		obj = SDLGui_FindObj(dlg, x, y);
+
 		current_object = obj;
 		if (obj != SDLGUI_NOTFOUND && (dlg[obj].flags&SG_TOUCHEXIT) )
 		{

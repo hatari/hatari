@@ -80,6 +80,7 @@ extern int SDLGui_SetScreen(SDL_Surface *pScrn);
 extern void SDLGui_GetFontSize(int *width, int *height);
 extern void SDLGui_Text(int x, int y, const char *txt);
 extern void SDLGui_DrawDialog(const SGOBJ *dlg);
+extern void SDLGui_ScaleMouseStateCoordinates(int *x, int *y);
 extern int SDLGui_DoDialogExt(SGOBJ *dlg, bool (*isEventOut)(SDL_EventType), SDL_Event *pEventOut, int current_object);
 extern int SDLGui_DoDialog(SGOBJ *dlg);
 extern void SDLGui_CenterDlg(SGOBJ *dlg);

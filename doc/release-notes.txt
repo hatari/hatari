@@ -144,6 +144,8 @@ GUI improvements:
 - SDL GUI:
   - Fix: mouse not visible in floppy disk dialog when it is invoked
     from a keyboard shortcut in fullscreen mode
+  - Fix: fileselector scrollbar works with mouse also in SDL2
+    scaled / fullscreen window
   - Support for joystick button mapping + space key vs. jump option
 - Mac GUI:
   - Accept all file names as Mac file selector does not show

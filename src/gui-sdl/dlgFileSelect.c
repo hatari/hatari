@@ -303,6 +303,7 @@ static void DlgFileSelect_ManageScrollbar(void)
 	float scrollMove;
 
 	SDL_GetMouseState(&x, &y);
+	SDLGui_ScaleMouseStateCoordinates(&x, &y);
 
 	/* If mouse is down on the scrollbar for the first time */
 	if (fsdlg[SGFSDLG_SCROLLBAR].state & SG_MOUSEDOWN) {
