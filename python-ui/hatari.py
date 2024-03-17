@@ -284,6 +284,7 @@ class HatariConfigMapping(ConfigStore):
         "soundout":   ("[Sound]", "szYMCaptureFileName", "Sound output")
     }
     # enable Hatari v2.5+ options
+    has_opts_2_6 = True
     has_opts_2_5 = True
 
     "access methods to Hatari configuration file variables and command line options"
@@ -308,6 +309,13 @@ class HatariConfigMapping(ConfigStore):
         "do config mapping initializations needing config loading to have succeeded"
         # initialize has_opts_<version> attribs for things that may not
         # be anymore valid on Hatari config file and/or command line
+        try:
+            # added for Hatari >v2.5
+            self.get("[RS232]", "bCpuDataCache")
+            return
+        except KeyError:
+            pass
+        self.has_opts_2_6 = False
         try:
             # added for Hatari v2.5
             self.get("[RS232]", "EnableSccA")
@@ -471,6 +479,18 @@ class HatariConfigMapping(ConfigStore):
     def set_compatible(self, value):
         self.set("[System]", "bCompatibleCpu", value)
         self._change_option("--compatible %s" % value)
+
+    # ------------ CPU caches ---------------
+    def get_data_cache(self):
+        if not self.has_opts_2_6:
+            return True
+        return self.get("[System]", "bCpuDataCache")
+
+    def set_cpu_caches(self, value):
+        if not self.has_opts_2_6:
+            return
+        self.set("[System]", "bCpuDataCache", value)
+        self._change_option("--data-cache %s" % value)
 
     # ------------ CPU exact ---------------
     def get_cycle_exact(self):

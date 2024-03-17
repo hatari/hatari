@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright (C) 2012-2022 by Eero Tamminen <oak at helsinkinet fi>
+# Copyright (C) 2012-2024 by Eero Tamminen <oak at helsinkinet fi>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -413,7 +413,8 @@ For example:
         opts = (
             "--compatible", "--timer-d", "--fast-boot",
             "--natfeats", "--fastfdc", "--drive-b",
-            "--cpu-exact", "--mmu", "--addr24", "--fpu-softfloat"
+            "--cpu-exact", "--mmu", "--addr24", "--fpu-softfloat",
+            "--data-cache"
         )
         for option in self.bools:
             if option not in opts:
@@ -538,6 +539,7 @@ bFastBoot = FALSE
 bPatchTimerD = FALSE
 bFastForward = TRUE
 bCompatibleCpu = TRUE
+bCpuDataCache = TRUE
 bCycleExactCpu = TRUE
 bAddressSpace24 = TRUE
 bBlitter = FALSE

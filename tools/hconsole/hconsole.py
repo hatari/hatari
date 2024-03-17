@@ -381,6 +381,7 @@ class Tokens:
     "--cpulevel",
     "--cpuclock",
     "--compatible",
+    "--data-cache",
     "--cpu-exact",
     "--addr24",
     "--fpu",
