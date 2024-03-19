@@ -86,7 +86,7 @@ allocations. The allocations and ways to make them smaller are:
     uncompressed image data, i.e. there we cannot save memory.
 
 * Check whether the m86k instruction table could be made smaller:
-        #include "uae-cpu/readcpu.h"
+        #include "cpu/readcpu.h"
         printf("%d -> %d\n", sizeof(struct instr), sizeof(struct instr) * 65536);
   On x86 it's slightly over 1MB.
 

@@ -18,7 +18,7 @@ const char Cart_fileid[] = "Hatari cart.c";
 
 /* 2007/12/09	[NP]	Change the function associated to opcodes $8, $a and $c only if hard drive	*/
 /*			emulation is ON. Else, these opcodes should give illegal instructions (also	*/
-/*			see uae-cpu/newcpu.c).								*/
+/*			see cpu/newcpu.c).								*/
 
 
 #include "main.h"

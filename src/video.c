@@ -197,7 +197,7 @@
 /* 2008/11/29	[NP]	Increment jitter's index for HBL and VBL each time a possible interrupt	*/
 /*			occurs. Each interrupt can have a jitter between 0, 4 and 8 cycles ; the*/
 /*			jitter follows a predefined pattern of 5 values. The HBL and the VBL	*/
-/*			have their own pattern. See InterruptAddJitter() in uae-cpu/newcpu.c	*/
+/*			have their own pattern. See InterruptAddJitter() in cpu/newcpu.c	*/
 /*			(fix Fullscreen tunnel in Suretrip 49% by Checkpoint and digi sound in	*/
 /*			Swedish New Year's TCB screen).						*/
 /* 2008/12/10	[NP]	Enhance support for 0 byte line. The 60/50 Hz switch can happen at	*/

@@ -50,7 +50,7 @@
 /*			(fixes lsr.w #4,d4 + add.b $f0(a4,d4),d7 used in Zoolook part of ULM New Year).	*/
 /* 2008/07/08	[NP]	Add pairing between bit shift instr and ADDX/SUBX/ABCD/SBCD (fixes lsl.l #1,d0	*/
 /*			+ abcd d1,d1 used in Dragonnels - Rainbow Wall).				*/
-/* 2008/10/05	[NP]	Pass the 'ExceptionSource' parameter to Exception() in uae-cpu/newcpu.c		*/
+/* 2008/10/05	[NP]	Pass the 'ExceptionSource' parameter to Exception() in cpu/newcpu.c		*/
 /* 2010/05/07	[NP]	Add pairing for ADD/MOVE ; such pairing should only be possible when combined	*/
 /*			with d8(an,ix) address mode (eg: add.l (a5,d1.w),d0 + move.b 7(a5,d1.w),d5)	*/
 /*			(fixes Sommarhack 2010 Invitation by DHS).					*/
