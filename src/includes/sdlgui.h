@@ -32,6 +32,7 @@ enum
 #define SG_EXIT        2   /* Exit when mouse button has been pressed (and released) */
 #define SG_DEFAULT     4   /* Marks a default button, selectable with Enter & Return keys */
 #define SG_CANCEL      8   /* Marks a cancel button, selectable with ESC key */
+#define SG_REPEAT     16   /* (Scrollbar) buttons which repeat regardless of mouse position */
 
 /* Object states: */
 #define SG_SELECTED    1

@@ -1097,10 +1097,11 @@ static void SDLGui_ScaleMouseButtonCoordinates(SDL_MouseButtonEvent *bev)
 /**
  * Show and process a dialog.
  *
- * Dialogs using a scrollbar, must return the previous return value
- * in 'current_object' arg, as the same dialog is displayed in a loop
- * to handle scrolling. Other dialogs should give zero as 'current_object'
- * (ie no object selected at start when displaying the dialog)
+ * Dialogs using a scrollbar, or other objects with SG_REPEAT flag,
+ * must return the previous return value in 'current_object' arg, as
+ * the same dialog is displayed in a loop to handle scrolling. Other
+ * dialogs should give zero as 'current_object' (ie no object
+ * selected at start when displaying the dialog)
  *
  * Returns either:
  * - index of the GUI item that was invoked
@@ -1180,9 +1181,10 @@ int SDLGui_DoDialogExt(SGOBJ *dlg, bool (*isEventOut)(SDL_EventType), SDL_Event 
 	SDL_PumpEvents();
 	b = SDL_GetMouseState(&x, &y);
 
-	/* If current object is the scrollbar, and mouse is still down, we can scroll it */
-	/* also if the mouse pointer has left the scrollbar */
-	if (current_object >= 0 && dlg[current_object].type == SGSCROLLBAR) {
+	/* Report repeat objects until mouse button is released,
+	 * regardless of mouse position.  Used for scrollbar
+	 * object interactions */
+	if (current_object >= 0 && (dlg[current_object].flags & SG_REPEAT)) {
 		obj = current_object;
 		oldbutton = obj;
 		if (b & SDL_BUTTON(1))
@@ -1198,7 +1200,6 @@ int SDLGui_DoDialogExt(SGOBJ *dlg, bool (*isEventOut)(SDL_EventType), SDL_Event 
 		SDLGui_ScaleMouseStateCoordinates(&x, &y);
 		obj = SDLGui_FindObj(dlg, x, y);
 
-		current_object = obj;
 		if (obj != SDLGUI_NOTFOUND && (dlg[obj].flags&SG_TOUCHEXIT) )
 		{
 			oldbutton = obj;
