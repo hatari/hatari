@@ -27,6 +27,9 @@ Emulator improvements:
   - Add separate option for enabling/disabling >=030 CPU data cache
 - GEMDOS HD:
   - Fix: Fattrib() call on a directory
+Debugger:
+  - Similarly to Atari program symbols override, load TOS symbols on
+    TOS load, if autoloading is enabled and <tos>.sym file is present
 
 Fixed games:
 - Ready Steady Bang! (GEMDOS HD Fattrib())

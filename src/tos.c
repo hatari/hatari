@@ -31,6 +31,7 @@ const char TOS_fileid[] = "Hatari tos.c";
 #include "nvram.h"
 #include "stMemory.h"
 #include "str.h"
+#include "symbols.h"
 #include "tos.h"
 #include "lilo.h"
 #include "vdi.h"
@@ -1055,6 +1056,9 @@ static uint8_t *TOS_LoadImage(void)
 			break;
 		}
 	}
+
+	/* try to load (Emu)TOS symbols from <tos>.sym */
+	Symbols_LoadTOS(ConfigureParams.Rom.szTosImageFileName, TosAddress+TosSize);
 
 	return pTosFile;
 }

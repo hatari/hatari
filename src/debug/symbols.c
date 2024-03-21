@@ -1,7 +1,7 @@
 /*
  * Hatari - symbols.c
  * 
- * Copyright (C) 2010-2023 by Eero Tamminen
+ * Copyright (C) 2010-2024 by Eero Tamminen
  * 
  * This file is distributed under the GNU General Public License, version 2
  * or at your option any later version. Read the file gpl.txt for details.
@@ -51,10 +51,18 @@ static symbol_list_t *DspSymbolsList;
 
 /* path for last loaded program (through GEMDOS HD emulation) */
 static char *CurrentProgramPath;
-/* whether current symbols were loaded from a program file */
-static bool SymbolsAreForProgram;
 /* prevent repeated failing on every debugger invocation */
 static bool AutoLoadFailed;
+
+typedef enum {
+	SYMBOLS_FOR_NONE,
+	SYMBOLS_FOR_USER,
+	/* autoload facilities */
+	SYMBOLS_FOR_TOS,
+	SYMBOLS_FOR_PROGRAM,
+} symbols_for_t;
+/* what triggered current symbols to be loaded */
+static symbols_for_t SymbolsAreFor = SYMBOLS_FOR_NONE;
 
 
 /**
@@ -324,14 +332,15 @@ static symbol_list_t* Symbols_Load(const char *filename, uint32_t *offsets, uint
 		fprintf(stderr, "Reading symbols from program '%s' symbol table...\n", filename);
 		fp = fopen(filename, "rb");
 		list = symbols_load_binary(fp, &opts, update_sections);
-		SymbolsAreForProgram = true;
 	} else {
 		fprintf(stderr, "Reading 'nm' style ASCII symbols from '%s'...\n", filename);
 		fp = fopen(filename, "r");
 		list = symbols_load_ascii(fp, offsets, maxaddr, gettype, &opts);
-		SymbolsAreForProgram = false;
 	}
 	fclose(fp);
+
+	/* overridden by autoload functions */
+	SymbolsAreFor = SYMBOLS_FOR_USER;
 
 	if (!list) {
 		fprintf(stderr, "ERROR: reading symbols from '%s' failed!\n", filename);
@@ -774,7 +783,8 @@ void Symbols_RemoveCurrentProgram(void)
 		free(CurrentProgramPath);
 		CurrentProgramPath = NULL;
 
-		if (CpuSymbolsList && SymbolsAreForProgram && ConfigureParams.Debugger.bSymbolsAutoLoad) {
+		if (CpuSymbolsList && SymbolsAreFor == SYMBOLS_FOR_PROGRAM &&
+		    ConfigureParams.Debugger.bSymbolsAutoLoad) {
 			Symbols_Free(CpuSymbolsList);
 			fprintf(stderr, "Program exit, removing its symbols.\n");
 			CpuSymbolsList = NULL;
@@ -810,6 +820,33 @@ void Symbols_ShowCurrentProgramPath(FILE *fp)
 }
 
 /**
+ * Given the base file name with .XXX extension, if there's another
+ * file with .sym extension, load symbols from it, and return them.
+ *
+ * Assumes all (relevant) sections use the same load address.
+ */
+static symbol_list_t *loadSymFile(const char *path, symtype_t symtype,
+				  uint32_t loadaddr, uint32_t maxaddr)
+{
+	int len = strlen(path);
+	char symfile[len+1];
+
+	if (len <= 3 || path[len-4] != '.') {
+		return NULL;
+	}
+	strcpy(symfile, path);
+	strcpy(symfile + len - 3, "sym");
+
+	fprintf(stderr, "Checking: %s\n", symfile);
+	if (!File_Exists(symfile)) {
+		return NULL;
+	}
+
+	uint32_t offsets[3] = { loadaddr, loadaddr, loadaddr };
+	return Symbols_Load(symfile, offsets, maxaddr, symtype);
+}
+
+/**
  * Load symbols for last opened program when symbol autoloading is enabled.
  *
  * If there's file with same name as the program, but with '.sym'
@@ -823,34 +860,25 @@ void Symbols_LoadCurrentProgram(void)
 	if (!ConfigureParams.Debugger.bSymbolsAutoLoad) {
 		return;
 	}
-	/* symbols already loaded, program path missing or previous load failed? */
-	if (CpuSymbolsList || !CurrentProgramPath || AutoLoadFailed) {
+	/* program path missing or previous load failed? */
+	if (!CurrentProgramPath || AutoLoadFailed) {
+		return;
+	}
+	/* do not override manually loaded symbols, or
+	 * load new symbols if previous program did not terminate
+	 */
+	if (CpuSymbolsList && SymbolsAreFor != SYMBOLS_FOR_TOS) {
 		return;
 	}
 
-	symbol_list_t *symbols = NULL;
-	int len = strlen(CurrentProgramPath);
-	char *symfile = strdup(CurrentProgramPath);
-	assert(symfile);
+	uint32_t loadaddr = DebugInfo_GetTEXT();
+	uint32_t maxaddr = DebugInfo_GetTEXTEnd();
+	symbol_list_t *symbols;
 
-	/* if matching file with .sym extension exits, use
-	 * that for symbols, instead of the program itself
-	 */
-	if (len > 3 && symfile[len-4] == '.') {
-		strcpy(symfile + len - 3, "sym");
-		fprintf(stderr, "Checking: %s\n", symfile);
-		if (File_Exists(symfile)) {
-			fprintf(stderr, "Program symbols override file: %s\n", symfile);
-			uint32_t offsets[3];
-			offsets[2] = offsets[1] = 0;
-			offsets[0] = DebugInfo_GetTEXT();
-			const uint32_t maxaddr = DebugInfo_GetTEXTEnd();
-			symbols = Symbols_Load(symfile, offsets, maxaddr,
-					       SYMTYPE_CODE);
-		}
-	}
-	free(symfile);
-	if (!symbols) {
+	symbols = loadSymFile(CurrentProgramPath, SYMTYPE_CODE, loadaddr, maxaddr);
+	if (symbols) {
+		fprintf(stderr, "Symbols override loaded for: %s\n", CurrentProgramPath);
+	} else {
 		symbols = Symbols_Load(CurrentProgramPath, NULL, 0,
 				       SYMTYPE_CODE);
 	}
@@ -859,8 +887,29 @@ void Symbols_LoadCurrentProgram(void)
 	} else {
 		AutoLoadFailed = false;
 	}
-	SymbolsAreForProgram = true;
+	SymbolsAreFor = SYMBOLS_FOR_PROGRAM;
 	CpuSymbolsList = symbols;
+}
+
+/**
+ * If autoloading enabled and no symbols are present, load symbols
+ * for <tos>.img file from <tos>.sym file, if one exists.
+ *
+ * Called whenever TOS is loaded.
+ */
+void Symbols_LoadTOS(const char *path, uint32_t maxaddr)
+{
+	if (!ConfigureParams.Debugger.bSymbolsAutoLoad) {
+		return;
+	}
+	if (CpuSymbolsList) {
+		return;
+	}
+	CpuSymbolsList = loadSymFile(path, SYMTYPE_ALL, 0, maxaddr);
+	if (CpuSymbolsList) {
+		fprintf(stderr, "Loaded symbols for TOS: %s\n", path);
+		SymbolsAreFor = SYMBOLS_FOR_TOS;
+	}
 }
 
 /* ---------------- command parsing ------------------ */
