@@ -147,6 +147,7 @@ static symbol_list_t* symbols_load_ascii(FILE *fp, uint32_t *offsets, uint32_t m
 			offset = offsets[2];
 			break;
 		case 'A':
+			/* absolute address or arbitrary constant value */
 			symtype = SYMTYPE_ABS;
 			offset = 0;
 			break;
@@ -159,7 +160,7 @@ static symbol_list_t* symbols_load_ascii(FILE *fp, uint32_t *offsets, uint32_t m
 			continue;
 		}
 		address += offset;
-		if (address > maxaddr) {
+		if (address > maxaddr && symtype != SYMTYPE_ABS) {
 			fprintf(stderr, "WARNING: invalid address 0x%x on line %d, skipping.\n", address, line);
 			ignore.invalid++;
 			continue;
