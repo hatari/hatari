@@ -108,6 +108,7 @@ const char crossbar_fileid[] = "Hatari Crossbar.c";
 #include "stMemory.h"
 #include "dsp.h"
 #include "clocks_timings.h"
+#include "video.h"
 
 
 
@@ -466,13 +467,13 @@ static void Crossbar_Update_DMA_Sound_Line ( bool SetGPIP7 , bool SetTAI , uint8
 
 	if ( SetGPIP7 )
 	{
-		LOG_TRACE(TRACE_CROSSBAR, "Crossbar : MFP GPIP7 set bit=%d\n", Bit);
+		LOG_TRACE(TRACE_CROSSBAR, "Crossbar : MFP GPIP7 set bit=%d VBL=%d HBL=%d\n", Bit , nVBLs , nHBL);
 		MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE7 , Bit );
 	}
 
 	if ( SetTAI )
 	{
-		LOG_TRACE(TRACE_CROSSBAR, "Crossbar : MFP TAI set bit=%d\n", Bit);
+		LOG_TRACE(TRACE_CROSSBAR, "Crossbar : MFP TAI set bit=%d VBL=%d HBL=%d\n", Bit , nVBLs , nHBL);
 		MFP_TimerA_Set_Line_Input ( pMFP_Main , Bit );			/* Update events count / interrupt for timer A if needed */
 	}
 }
@@ -495,7 +496,7 @@ static void Crossbar_Update_DMA_Sound_Line_EndOfFrame ( bool RecordMode )
 
 	if ( !RecordMode )
 	{
-		LOG_TRACE(TRACE_CROSSBAR, "Crossbar : end of frame for play\n");
+		LOG_TRACE(TRACE_CROSSBAR, "Crossbar : end of frame for play VBL=%d HBL=%d\n" , nVBLs , nHBL);
 		/* We're in HIGH state (idle), add a quick HIGH -> LOW -> HIGH transition to trigger an interrupt in LOW state */
 		Crossbar_Update_DMA_Sound_Line ( dmaPlay.mfp15_int , dmaPlay.timerA_int , MFP_GPIP_STATE_LOW );		/* active */
 		Crossbar_Update_DMA_Sound_Line ( dmaPlay.mfp15_int , dmaPlay.timerA_int , MFP_GPIP_STATE_HIGH );	/* idle */
@@ -503,7 +504,7 @@ static void Crossbar_Update_DMA_Sound_Line_EndOfFrame ( bool RecordMode )
 
 	else
 	{
-		LOG_TRACE(TRACE_CROSSBAR, "Crossbar : end of frame for record\n");
+		LOG_TRACE(TRACE_CROSSBAR, "Crossbar : end of frame for record VBL=%d HBL=%d\n" , nVBLs , nHBL);
 		/* We're in HIGH state (idle), add a quick HIGH -> LOW -> HIGH transition to trigger an interrupt in LOW state */
 		Crossbar_Update_DMA_Sound_Line ( dmaRecord.mfp15_int , dmaRecord.timerA_int , MFP_GPIP_STATE_LOW );	/* active */
 		Crossbar_Update_DMA_Sound_Line ( dmaRecord.mfp15_int , dmaRecord.timerA_int , MFP_GPIP_STATE_HIGH );	/* idle */
@@ -582,7 +583,7 @@ void Crossbar_DmaCtrlReg_WriteByte(void)
 {
 	uint8_t sndCtrl = IoMem_ReadByte(0xff8901);
 
-	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8901 (additional Sound DMA control) write: 0x%02x\n", sndCtrl);
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8901 (additional Sound DMA control) write: 0x%02x VBL=%d HBL=%d\n", sndCtrl, nVBLs , nHBL );
 
 	crossbar.dmaSelected = (sndCtrl & 0x80) >> 7;
 
@@ -649,7 +650,7 @@ void Crossbar_FrameStartHigh_WriteByte(void)
 {
 	uint32_t addr;
 
-	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8903 (Sound frame start high) write: 0x%02x\n", IoMem_ReadByte(0xff8903));
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8903 (Sound frame start high) write: 0x%02x VBL=%d HBL=%d\n", IoMem_ReadByte(0xff8903) , nVBLs , nHBL);
 
 	addr = (IoMem_ReadByte(0xff8903) << 16) + (IoMem_ReadByte(0xff8905) << 8) + IoMem_ReadByte(0xff8907);
 
@@ -685,7 +686,7 @@ void Crossbar_FrameStartMed_WriteByte(void)
 {
 	uint32_t addr;
 
-	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8905 (Sound frame start med) write: 0x%02x\n", IoMem_ReadByte(0xff8905));
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8905 (Sound frame start med) write: 0x%02x VBL=%d HBL=%d\n", IoMem_ReadByte(0xff8905) , nVBLs , nHBL);
 
 	addr = (IoMem_ReadByte(0xff8903) << 16) + (IoMem_ReadByte(0xff8905) << 8) + IoMem_ReadByte(0xff8907);
 
@@ -721,7 +722,7 @@ void Crossbar_FrameStartLow_WriteByte(void)
 {
 	uint32_t addr;
 
-	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8907 (Sound frame start low) write: 0x%02x\n", IoMem_ReadByte(0xff8907));
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8907 (Sound frame start low) write: 0x%02x VBL=%d HBL=%d\n", IoMem_ReadByte(0xff8907) , nVBLs , nHBL);
 
 	addr = (IoMem_ReadByte(0xff8903) << 16) + (IoMem_ReadByte(0xff8905) << 8) + IoMem_ReadByte(0xff8907);
 
@@ -759,7 +760,7 @@ void Crossbar_FrameCountHigh_WriteByte(void)
 {
 	uint32_t addr;
 
-	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8909 (Sound frame count high) write: 0x%02x\n", IoMem_ReadByte(0xff8909));
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8909 (Sound frame count high) write: 0x%02x VBL=%d HBL=%d\n", IoMem_ReadByte(0xff8909) , nVBLs , nHBL);
 
 	/* Compute frameCounter current address */
 	addr = (IoMem_ReadByte(0xff8909) << 16) + (IoMem_ReadByte(0xff890b) << 8) + IoMem_ReadByte(0xff890d);
@@ -796,7 +797,7 @@ void Crossbar_FrameCountMed_WriteByte(void)
 {
 	uint32_t addr;
 
-	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff890b (Sound frame count med) write: 0x%02x\n", IoMem_ReadByte(0xff890b));
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff890b (Sound frame count med) write: 0x%02x VBL=%d HBL=%d\n", IoMem_ReadByte(0xff890b) , nVBLs , nHBL);
 
 	/* Compute frameCounter current address */
 	addr = (IoMem_ReadByte(0xff8909) << 16) + (IoMem_ReadByte(0xff890b) << 8) + IoMem_ReadByte(0xff890d);
@@ -833,7 +834,7 @@ void Crossbar_FrameCountLow_WriteByte(void)
 {
 	uint32_t addr;
 
-	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff890d (Sound frame count low) write: 0x%02x\n", IoMem_ReadByte(0xff890d));
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff890d (Sound frame count low) write: 0x%02x VBL=%d HBL=%d\n", IoMem_ReadByte(0xff890d) , nVBLs , nHBL);
 
 	/* Compute frameCounter current address */
 	addr = (IoMem_ReadByte(0xff8909) << 16) + (IoMem_ReadByte(0xff890b) << 8) + IoMem_ReadByte(0xff890d);
@@ -872,7 +873,7 @@ void Crossbar_FrameEndHigh_WriteByte(void)
 {
 	uint32_t addr;
 
-	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff890f (Sound frame end high) write: 0x%02x\n", IoMem_ReadByte(0xff890f));
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff890f (Sound frame end high) write: 0x%02x VBL=%d HBL=%d\n", IoMem_ReadByte(0xff890f) , nVBLs , nHBL);
 
 	addr = (IoMem_ReadByte(0xff890f) << 16) + (IoMem_ReadByte(0xff8911) << 8) + IoMem_ReadByte(0xff8913);
 
@@ -908,7 +909,7 @@ void Crossbar_FrameEndMed_WriteByte(void)
 {
 	uint32_t addr;
 
-	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8911 (Sound frame end med) write: 0x%02x\n", IoMem_ReadByte(0xff8911));
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8911 (Sound frame end med) write: 0x%02x VBL=%d HBL=%d\n", IoMem_ReadByte(0xff8911) , nVBLs , nHBL);
 
 	addr = (IoMem_ReadByte(0xff890f) << 16) + (IoMem_ReadByte(0xff8911) << 8) + IoMem_ReadByte(0xff8913);
 
@@ -944,7 +945,7 @@ void Crossbar_FrameEndLow_WriteByte(void)
 {
 	uint32_t addr;
 
-	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8913 (Sound frame end low) write: 0x%02x\n", IoMem_ReadByte(0xff8913));
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8913 (Sound frame end low) write: 0x%02x VBL=%d HBL=%d\n", IoMem_ReadByte(0xff8913) , nVBLs , nHBL);
 
 	addr = (IoMem_ReadByte(0xff890f) << 16) + (IoMem_ReadByte(0xff8911) << 8) + IoMem_ReadByte(0xff8913);
 
