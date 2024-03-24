@@ -1355,7 +1355,7 @@ Falcon programs
 
 Falcon emulation requires 512k (or 1024k) variant of EmuTOS (the one
 shipped with Hatari).  Programs using DSP require EmuTOS v1.1.1+,
-programs using TC mode, require EmuTOS Git version.
+programs using TC mode, require EmuTOS v1.3+.
 
 Following Falcon only demos, games and apps work (mostly) fine though.
 
@@ -1438,6 +1438,8 @@ Demos working under EmuTOS >= v1.1 (with DSP support):
 - At Night They Come (by Bohemian Grove)
 - Beams (by .tscc)
 - Bird to be alive (by Dune etc)
+- Bound, Bound 2 (by Crac)
+  - Startup texts broken, need TC terminal output
 - Bound 3, Bound 5 (by Crac)
 - Bound 42 (by MMJ Prod)
 - Built-in Obsolescence (by Digital Chaos)
@@ -1448,6 +1450,8 @@ Demos working under EmuTOS >= v1.1 (with DSP support):
 - Cycedelic knockout (by Mugwumps)
 - Dan's Lustiges Kinderfest (by Lazer)
 - Derealization (060, by DHS)
+- Doomino (by STAX)
+  - Startup text broken, need TC terminal output
 - Enraged (by Avena)
 - Ex Illusion (by Aura)
 - F22.0 (060, by Lamers)
@@ -1504,21 +1508,20 @@ Demos working under EmuTOS >= v1.2:
 - LCF (by Lamers)
   - 060+FPU+VGA demo
 
-Demos working under EmuTOS Git (preliminary TC support):
+Demos working under EmuTOS >= v1.3 (XBios TC support):
 - Multitech (by Cybernetics)
   - Part of Geotech demo, needs DSP + TC mode
 
-Demos working partly under EmuTOS >= v1.2:
+Demos working partly under EmuTOS >= v1.3:
 - 124 beers later (by Trio)
   - Works also with 1.0, but fighter screen DSP textures need v1.1
   - Ground texture missing in last screen
-- Bound, Bound 2, Bound 4 (by Crac)
-  - Bound works also with 1.0, but DSP sound effect needs v1.1
+- Bound 4 (by Crac)
   - Startup texts broken, need TC terminal output
-- Doomino (by STAX)
-  - Startup text broken, need TC terminal output
 
-Broken demos (with EmuTOS v1.2.x):
+Broken demos (with EmuTOS v1.3):
+- Bound & Bound2 (Crac) and Doomino (STAX) demos regressed
+  - panic at startup TC-mode text output
 - GEM demo (by DHS & AssemSoft):
   - Needs to be started from HiColor mode
 - mengerMarcherFC (256b intro by atariBDSM)
@@ -1650,7 +1653,7 @@ Games working under EmuTOS >= v1.1.1 (DSP support + fixes):
 Games working under EmuTOS >= v1.2:
 - Tetrhex (1.41)
 
-Games working under EmuTOS Git (preliminary TC support):
+Games working under EmuTOS >= 1.3 (XBios TC support):
 - Confusion demo 1 & 2
 - Gravon (demo + full version)
 - Moonspeeder (preview 2)
@@ -1676,7 +1679,7 @@ Partly working games:
   - Fire button works only until game itself starts
   - Works only with 8MB RAM
 
-Broken games (with EmuTOS Git version):
+Broken games (with EmuTOS v1.3):
 - Boulder Smash Falcon (Omikron Basic)
   - Needs to be started from large TC mode
 - Columns by Deadheart* (demo, 2nd version)
@@ -1688,6 +1691,8 @@ Broken games (with EmuTOS Git version):
   - Mouse doesn't work
 - "K" preview* (by EXA)
   - When actual game would start, bus error panic with 4MB, freeze with 14MB
+- Mouse trap
+  - TC mode game main menu freezes, uses VDI calls
 - Neurobot
   - Both intro & game just exit immediately
 - Pous-Pous
@@ -1709,8 +1714,6 @@ Seem to work except for Hatari issues (happen also with TOS4):
   - Gfx broken, Hatari Videl emulation is incomplete
 - Moongame
   - Main menu mouse cursor cannot be moved
-- Mouse trap
-  - Game play looks OK for one(?) frame, but then screen mode goes wrong
 - Ufo War
   - Gfx broken, Hatari Videl emulation is incomplete
 
@@ -1780,7 +1783,7 @@ Applications working under EmuTOS >= v1.2:
   - Sound did not work with EmuTOS v1.1
   - https://gtello.pagesperso-orange.fr/mplayere.htm
 
-Applications working under EmuTOS Git (preliminary TC support):
+Applications working under EmuTOS >= v1.3 (XBios TC support):
 - Apex Alpha (demo)
   - Requires MMU + FPU, works both under VGA & RGB
 - Apex Animator 2.41
@@ -1806,7 +1809,7 @@ Partly working applications:
 - AVI030
   - Works as well as with TOS v4 (= has issues)
 
-Broken applications (with EmuTOS Git):
+Broken applications (with EmuTOS v1.3):
 - Indypaint
   - Cursor moves, but co-ordinate display and menus from F1-F5 keys
     look broken
