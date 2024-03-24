@@ -2255,6 +2255,11 @@ this section lists only programs that have TT-specific features.</p>
           2-player mode via MIDI does not work in Hatari v2.4.1 or earlier</td>
     </tr>
     <tr>
+      <td><a href="https://scummvm.org/downloads/">ScummVm</a> (2.8)</td>
+      <td>2.5-dev</td>
+      <td>Lite 030-only version.  Needs at least 4 + 32 MB RAM</td>
+    </tr>
+    <tr>
       <td><a href="http://pagesperso-orange.fr/patrice.mandin/en/port-jeux.html">PM Doom, Heretic and Hexen</a></td>
       <td>1.0</td>
       <td>Heretic v0.24 is playable, Doom and Hexen v0.55 are very slow</td>
@@ -2454,7 +2459,7 @@ VGA one are indicated separately.</p>
       <li>Hatari v2.4.1 and earlier trigger random IKBD input events
           when game plays MIDI music</li>
       <li>WAD cache creation crashes/freezes, so one needs to get pre-built WAD cache</li>
-      <li>Uses MMU if it is available, but crashes with Hatari 030 MMU emulation</li>
+      <li>Uses MMU if it is available, but rendering freezes with Hatari 030 MMU emulation</li>
       <li>32-bit addressing / TT-RAM works only with Hatari specific "bmhat.ttp" version</li>
       <li>Game statusbar shows only in Hatari specific version due to Videl emulation omissions</li>
       <li>Some parts have clear speed differences to real Falcon due to CPU, FPU
@@ -2565,7 +2570,7 @@ VGA one are indicated separately.</p>
     </tr>
     <tr>
       <td><a href="http://demozoo.org/productions/55648/">Color runner</a></td>
-      <td class="major">2.4</td>
+      <td class="major">2.5-dev</td>
       <td>yes</td>
       <td>-</td>
       <td>14MB + VGA, joypad only. Music with DSP.  Game proceeds to main
@@ -2773,12 +2778,11 @@ VGA one are indicated separately.</p>
     </tr>
     <tr>
       <td><a href="http://christophe.bray.free.fr/informatique/falcon/falcon_jeux2.htm">Killing Impact</a></td>
-      <td class="major">2.4</td>
+      <td class="major">2.5-dev</td>
       <td>yes</td>
       <td>-</td>
       <td>Modern version of Joust, up to 4 players.  Sound with DSP.
-          Supports joypad.  Game screen colors etc are all
-	  wrong.  Doesn't start with MMU enabled</td>
+          Supports joypad.  Game screen colors etc are all wrong</td>
     </tr>
     <tr>
       <td>King Solitaire</td>
@@ -2859,7 +2863,7 @@ VGA one are indicated separately.</p>
     </tr>
     <tr>
       <td>Mini F1 (demo)</td>
-      <td class="major">2.4</td>
+      <td class="major">2.5-dev</td>
       <td>-</td>
       <td>-</td>
       <td>Freezes when the game would start (until VideoAddressCounter == $2A?).
@@ -2868,25 +2872,24 @@ VGA one are indicated separately.</p>
     </tr>
     <tr>
       <td>Moongame</td>
-      <td class="major">2.4</td>
+      <td class="major">2.5-dev</td>
       <td>-</td>
       <td>emu</td>
-      <td>Pointer cannot be moved in the game menu. Double bus error with MMU</td>
+      <td>Pointer cannot be moved in the game menu</td>
     </tr>
     <tr>
       <td>Moonspeeder (preview 2)</td>
-      <td class="minor">2.4</td>
+      <td>2.5-dev</td>
       <td>Yes</td>
       <td>emu</td>
       <td>Supports joypad. lst*.* files need to be renamed
           with GEMDOS HD emulation as game searches them with different
-	  name (space before dot). Game freezes if left to menu for
-	  longer time
+	  name (space before dot)
       </td>
     </tr>
     <tr>
       <td>Mouse trap</td>
-      <td class="major">2.4</td>
+      <td class="major">2.5-dev</td>
       <td>yes</td>
       <td>-</td>
       <td>Initial game screen looks OK, then suddenly screen mode gets wrong</td>
@@ -2957,14 +2960,14 @@ VGA one are indicated separately.</p>
     </tr>
     <tr>
       <td><a href="http://www.fatal-design.com/pinball/">Pinball Dreams</a></td>
-      <td class="major">2.3</td>
+      <td class="major">2.5-dev</td>
       <td>yes</td>
       <td>-</td>
       <td>Actual game screen is scrambled / doesn't work</td>
     </tr>
     <tr>
       <td>Pingo98</td>
-      <td class="minor">2.4</td>
+      <td class="minor">2.5-dev</td>
       <td>yes</td>
       <td>emu</td>
       <td>Colors wrong in classic version. TC version just exits, but
@@ -3261,7 +3264,7 @@ VGA one are indicated separately.</p>
     </tr>
     <tr>
       <td>TsccTron (preview)</td>
-      <td class="minor">2.4</td>
+      <td class="minor">2.5-dev</td>
       <td>yes</td>
       <td>-</td>
       <td>Screen bottom is just black (palette tricks?).
@@ -3269,7 +3272,7 @@ VGA one are indicated separately.</p>
     </tr>
     <tr>
       <td>Ufo War</td>
-      <td class="major">2.4</td>
+      <td class="major">2.5-dev</td>
       <td>yes</td>
       <td>-</td>
       <td>256-color, 80-column, no interlace video mode only.
@@ -3353,7 +3356,7 @@ FPU.</p>
     <tr>
       <td>Abstract:
       <a href="https://www.pouet.net/prod.php?which=8582">X-perience</a></td>
-      <td class="major">2.4</td>
+      <td class="major">2.5-dev</td>
       <td>yes</td>
       <td>emu</td>
       <td>Dots do not show in the "4096 dots" screen, and
@@ -3372,7 +3375,7 @@ FPU.</p>
     <tr>
       <td>Aggression:
       <a href="http://pouet.net/prod.php?which=15723">Motion</a></td>
-      <td class="minor">2.4</td>
+      <td class="minor">2.5-dev</td>
       <td>-</td>
       <td>emu</td>
       <td>Unfinished Aggression demo with 030 and DSP source code.
@@ -3425,7 +3428,7 @@ FPU.</p>
     <tr>
       <td>Avena &amp; Digital Chaos:
       <a href="http://www.pouet.net/prod.php?which=11224">Enraged</a></td>
-      <td class="major">2.4</td>
+      <td class="major">2.5-dev</td>
       <td>yes</td>
       <td>emu</td>
       <td>Display update is wrong in first and many following screens
@@ -3435,13 +3438,12 @@ FPU.</p>
     <tr>
       <td>Avena:
       <a href="http://pouet.net/prod.php?which=1177">Sonolumineszenz</a></td>
-      <td class="minor">2.4</td>
+      <td class="minor">2.5-dev</td>
       <td>yes</td>
       <td>emu</td>
       <td>There are a lot of "Dsp: Modulo addressing result unpredictable"
 	  warnings in the "whale" screen. Start runs too fast, and
-	  white period after whale screen takes too long.  Freezes 4 mins
-	  into demo when bouncing head should turn into a spikeball</td>
+	  white period after whale screen takes too long</td>
     </tr>
     <tr>
       <td>Avena:
@@ -3536,7 +3538,7 @@ FPU.</p>
     <tr>
       <td>Crac:
       <a href="http://www.pouet.net/prod.php?which=23589">Bound 4</a></td>
-      <td class="major">2.4</td>
+      <td class="major">2.5-dev</td>
       <td>yes</td>
       <td>emu</td>
       <td>Freezes waiting on DSP interrupt (or Video Address Counter?)</td>
@@ -3545,10 +3547,10 @@ FPU.</p>
       <td>Crac:
       <a href="http://www.pouet.net/prod.php?which=25559">Bound 5</a>
       </td>
-      <td class="major">2.4</td>
+      <td class="major">2.5-dev</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Freezes in tiger screen</td>
+      <td>Freezes in tiger screen, with music playing</td>
     </tr>
     <tr>
       <td>Cruor:
@@ -3722,7 +3724,7 @@ FPU.</p>
     <tr>
       <td>DNT Crew:
       <a href="http://pouet.net/prod.php?which=16806">Agony</a></td>
-      <td class="minor">2.3</td>
+      <td class="minor">2.5-dev</td>
       <td>yes</td>
       <td>emu</td>
       <td>Type "spread.ntk" to prompt.  After bouncing ball fades to black,
@@ -3808,7 +3810,7 @@ FPU.</p>
     <tr>
       <td>EKO:
       <a href="https://www.pouet.net/prod.php?which=25917">Mars DSP</a></td>
-      <td class="major">2.4</td>
+      <td class="major">2.5-dev</td>
       <td>-</td>
       <td>emu</td>
       <td>Freezes at start waiting DSP (btst #1,$ffffa202.w)</td>
@@ -3825,7 +3827,7 @@ FPU.</p>
     <tr>
       <td>Escape:
       <a href="http://pouet.net/prod.php?which=15676">_</a></td>
-      <td class="major">2.4</td>
+      <td class="major">2.5-dev</td>
       <td>yes</td>
       <td>emu</td>
       <td>Freezes after few screens to illegal DSP instructions</td>
@@ -3849,7 +3851,7 @@ FPU.</p>
     <tr>
       <td>EXA:
       <a href="http://www.pouet.net/prod.php?which=17784">Entracte</a></td>
-      <td class="major">2.4</td>
+      <td class="major">2.5-dev</td>
       <td>-</td>
       <td>-</td>
       <td>Counts CPU cycles at start and exits because Hatari is not accurate enough</td>
@@ -3857,7 +3859,7 @@ FPU.</p>
     <tr>
       <td>EXA:
       <a href="http://www.pouet.net/prod.php?which=17778">Evolution</a></td>
-      <td class="major">2.4</td>
+      <td class="major">2.5-dev</td>
       <td>-</td>
       <td>-</td>
       <td>Counts CPU cycles at start and exits because Hatari is not accurate enough</td>
@@ -3938,7 +3940,7 @@ FPU.</p>
     <tr>
       <td>Hydroxid:
       <a href="http://www.pouet.net/prod.php?which=16805">Symposium'96</a></td>
-      <td class="major">2.4</td>
+      <td class="major">2.5-dev</td>
       <td>yes</td>
       <td>emu</td>
       <td>Double bus error (NULL pointer) when fullscreen face texture
@@ -4134,7 +4136,7 @@ FPU.</p>
     <tr>
       <td>Mystic bytes:
       <a href="http://www.pouet.net/prod.php?which=78884">Lockup</a></td>
-      <td class="minor">2.4</td>
+      <td class="minor">2.5-dev</td>
       <td>-</td>
       <td>emu</td>
       <td>14MB RAM. Requires at least Hatari v2.3.1. Music missing</td>
@@ -4150,7 +4152,7 @@ FPU.</p>
     <tr>
       <td>Mystic bytes:
       <a href="http://www.pouet.net/prod.php?which=82676">Silly Venture 2k19 invitro</a></td>
-      <td class="minor">2.3</td>
+      <td class="minor">2.5-dev</td>
       <td>yes</td>
       <td>emu</td>
       <td>14MB RAM. Plasma screen doesn't look correct at all</td>
@@ -4233,12 +4235,11 @@ FPU.</p>
     <tr>
       <td>Opium:
       <a href="http://www.pouet.net/prod.php?which=17822">Chrome Dragon</a></td>
-      <td class="minor">2.4</td>
+      <td class="minor">2.5-dev</td>
       <td>yes</td>
       <td>-</td>
-      <td>Requires RGB. At least since v1.8, music is missing and
-          freezes late in demo, when textured donut zooms out
-	  (waiting $2581c content to change)</td>
+      <td>Requires RGB. At least since v1.8, music is missing.
+          Restarts after textured donut zooms out</td>
     </tr>
     <tr>
       <td>Opium:
@@ -4251,11 +4252,10 @@ FPU.</p>
     <tr>
       <td>Orion_:
       <a href="http://www.pouet.net/prod.php?which=64508">Unexpected Fun</a></td>
-      <td class="minor">2.3</td>
+      <td>2.5-dev</td>
       <td>yes</td>
       <td>-</td>
-      <td>needs 8 MB TT ram, music with DSP.
-          Colors in 3D screens not bright enough, or washed out</td>
+      <td>needs 8 MB TT ram, music with DSP</td>
     </tr>
     <tr>
       <td>Paradox:
@@ -4376,7 +4376,7 @@ FPU.</p>
     <tr>
       <td>Trio:
       <a href="http://www.pouet.net/prod.php?which=15974">X-tasie</a></td>
-      <td class="minor">2.4</td>
+      <td class="minor">2.5-dev</td>
       <td>yes</td>
       <td>emu</td>
       <td>Requires MMU. There's a Videl emulation problem left when
@@ -4425,16 +4425,16 @@ FPU.</p>
     <tr>
       <td>tSCc:
       <a href="http://pouet.net/prod.php?which=1013">Terrorize your soul</a></td>
-      <td class="minor">2.3</td>
+      <td class="minor">2.5-dev</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Music is silent / noise in
-          last screens. Z-buffer screen (before Rubik's cube) uses
-	  68-pixel width, Videl should repeat the pattern instead of
-	  stretching (same as when it is later roto-zoomed). Last 4
-	  screens + greets execute constantly illegal DSP instructions,
-	  but they still work (last "firecube" screen before greets
-	  isn't show in demo's Youtube video)</td>
+      <td>There are constant illegal DSP instructions for last 4 screens
+         + greets, and unless MMU is enabled, music in them is silent
+	 / noise (but screens still otherwise work). Z-buffer screen
+	 (before Rubik's cube) uses 68-pixel width, but Videl should
+	 repeat the pattern instead of stretching (same as when it is
+	 later roto-zoomed). Note: last ("firecube") screen before
+	 greets, is missing from demo's Youtube video</td>
     </tr>
     <tr>
       <td>Tony Benett:
@@ -4695,11 +4695,10 @@ repository</a>.
     <tr>
       <td>XI / Satantronic:
       <a href="http://www.pouet.net/prod.php?which=81758">Imperfect</a></td>
-      <td class="minor">2.4</td>
+      <td class="minor">2.5-dev</td>
       <td>yes</td>
       <td>-</td>
-      <td>512b intro, requires FPU. Starts with 030 or 060 + FPSP060,
-      but renders wrong</td>
+      <td>512b intro, requires 060 + MMU + FPU + FPSP060</td>
     </tr>
   </tbody>
 </table>
@@ -4724,8 +4723,7 @@ repository</a>.
           (demo)</td>
       <td>1.6</td>
       <td>emu</td>
-      <td>DSP generated softsynth sounds need Hatari at least v1.6 to
-          sound OKish, and v2.0+ to sound good</td>
+      <td>DSP generated softsynth sounds need Hatari v2.0+ to sound good</td>
     </tr>
     <tr>
       <td><a href="http://nb.atari.org/main.php?page=productions">AceTracker v2</a></td>
@@ -4735,9 +4733,10 @@ repository</a>.
     </tr>
     <tr>
       <td>AFM (audio fun machine) v1.03</td>
-      <td class="minor">2.4</td>
+      <td class="minor">2.5-dev</td>
       <td>emu</td>
-      <td>Broken sound / noise when equaliser is enabled.
+      <td>Popup menu focus moves neither with TOS4 nor EmuTOS.
+          Broken sound / noise when equaliser is enabled.
           Sound is fine when equaliser is disabled</td>
     </tr>
     <tr>
@@ -4749,7 +4748,7 @@ repository</a>.
     </tr>
     <tr>
       <td><a href="http://pagesperso-orange.fr/didierm/index-e.htm">Aniplayer v2.22</a></td>
-      <td class="minor">2.4</td>
+      <td class="minor">2.5-dev</td>
       <td>emu</td>
       <td>On first MP2/MP3 file play, complains about DSP sync. After
           that, MP2/MP3 files play, but not correctly, bits of songs
@@ -4759,7 +4758,7 @@ repository</a>.
     </tr>
     <tr>
       <td><a href="http://www.leonik.net/dml/sec_apex3.py">Apex Alpha (demo)</a></td>
-      <td class="minor">2.4</td>
+      <td class="minor">2.5-dev</td>
       <td>-</td>
       <td>Requires MMU + FPU.  Screen isn't drawn properly, but
           dragging scorpion image over top + bottom left screen
@@ -4768,7 +4767,7 @@ repository</a>.
     </tr>
     <tr>
       <td><a href="http://umich.edu/~archive/atari/Falcon/Graphics/">Apex demo v2.10</a></td>
-      <td class="major">2.4</td>
+      <td class="major">2.5-dev</td>
       <td>emu</td>
       <td>apex210d.prg crashes on startup. Separate image viewer programs work fine.
           On real Falcon, application (its bus error detection for Expose digitizer)
@@ -4798,9 +4797,10 @@ repository</a>.
     </tr>
     <tr>
       <td><a href="http://centek.free.fr/atari/softs/s_centbe.htm">Centurbo bench</a></td>
-      <td class="minor">2.4</td>
+      <td class="minor">2.5-dev</td>
       <td>emu</td>
-      <td>New (v2.4) WinUAE CPU core: FPU 500-800 Mhz, DSP 64 Mhz, CPU 90-120 Mhz<br>
+      <td>New (v2.5) WinUAE CPU core: FPU 700-900 Mhz, DSP 62 Mhz, CPU 120-130 Mhz<br>
+          New (v2.5), MMU enabled:    FPU 273 Mhz, DSP 64 Mhz, CPU 115 Mhz<br>
           Old (v1.8) WinUAE CPU core: FPU 221 Mhz, DSP 32 Mhz, CPU 15 Mhz<br>
 	  SW FPU emu shows slightly higher Mhz than HW FPU emu.
 	  Moving mouse drops FPU and CPU numbers up to 20%</td>
@@ -4825,7 +4825,7 @@ repository</a>.
     </tr>
     <tr>
       <td><a href="http://deunstg.free.fr/sct1/falcamp/">FalcAMP</a></td>
-      <td class="minor">2.4</td>
+      <td class="minor">2.5-dev</td>
       <td>emu</td>
       <td>MOD playing works fine, MP3s have no sound / complain about DSP timeout
           (v1.20b, v1.09 just does not do anything with MP3 files)</td>
@@ -4844,7 +4844,7 @@ repository</a>.
     </tr>
     <tr>
       <td><a href="http://nb.atari.org/main.php?page=productions">FlexTrax</a></td>
-      <td class="minor">2.4</td>
+      <td class="minor">2.5-dev</td>
       <td>emu</td>
       <td>Heavy to emulate, sound is very noisy.
           Startup graphics look OK only in VGA mode</td>
@@ -4926,22 +4926,21 @@ repository</a>.
 	  area unless mouse grab or fullscreen mode is used</td>
     </tr>
     <tr>
-      <td><a href="http://atari-forum.com/viewtopic.php?f=26&amp;t=27728&amp;start=25">ScummVm</a></td>
-      <td>1.9</td>
+      <td><a href="https://scummvm.org/downloads/">ScummVm</a> (2.8)</td>
+      <td>2.5-dev</td>
       <td>-</td>
-      <td>Very slow, needs FPU, a lot of TT-RAM and user-specified config file name
-          ("hatari-prg-args.sh -s 14 --ttram 256 --machine falcon --tos tos404.img
-          --dsp none --addr24 off --fpu internal -- ./scummvm-m68020-olivier.ttp
-          -c scummvm.cfg")</td>
+      <td>Full version, needs FPU and 4 + 64 MB RAM</td>
     </tr>
     <tr>
       <td><a href="http://www.axxim.de/r3dias/R3_Vocoder3.htm">Voxx</a></td>
-      <td class="major">2.4</td>
+      <td class="major">2.5-dev</td>
       <td>emu</td>
-      <td>Demo version runs, but does not accept any input.
-          Free v1.00 version freezes after showing startup logo,
-          and DSP underflow (no user-space instructions are executed, only TOS
-	  interrupts).  Requires VGA with 640x480@16 resolution at minimum</td>
+      <td>UI freezes after "Dsd: Stack underflow" error.
+          In demo one may be able to interact few secs before this,
+	  but with free v1.00 version freeze happens right after
+	  showing startup logo (no user-space instructions are
+	  executed, only TOS interrupts).  Requires VGA with
+	  640x480@16 resolution at minimum</td>
     </tr>
     <tr>
       <td>Whip</td>
