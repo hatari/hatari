@@ -295,18 +295,18 @@ static int ScreenSnapShot_SaveNEO(const char *filename)
 	uint16_t header[64];
 
 	ScreenSnapShot_GetInternalFormat(&genconv, &sw, &sh, &bpp, &line_size);
-	/* If BPP matches an ST resolution, use that, otherwise just use the BPP itself instead of that number. */
-	res = bpp;
-	if      (bpp == 4) res = 0;
-	else if (bpp == 2) res = 1;
-	else if (bpp == 1) res = 2;
-
-	/* Preventing NEO screenshots with unexpected BPP or dimensions. */
-	if (res > 2)
+	/* Convert BPP to ST resolution number */
+	if (bpp == 4)
+		res = 0;
+	else if (bpp == 2)
+		res = 1;
+	else if (bpp == 1)
+		res = 2;
+	else	/* Preventing NEO screenshots with unexpected BPP or dimensions. */
 	{
 		/* The NEO header contains only 16 palette entries, so 8bpp would need extra palette information,
 		 * and 16bpp true color mode is not supported by existing NEO tools. */
-		Log_AlertDlg(LOG_ERROR,"The current video mode has too many colors for the .NEO screenshot format");
+		Log_AlertDlg(LOG_ERROR, "The .NEO screenshot format does not support the color depth of the current video mode.");
 		return -1;
 	}
 	if ((res == 0 && sw != 320) || (res < 2 && sh != 200) || (res > 0 && sw != 640) || (res == 2 && sh != 400))
@@ -345,10 +345,10 @@ static int ScreenSnapShot_SaveNEO(const char *filename)
 		 * and 256 colors needed for 8bpp cannot be expressed in this header. */
 	}
 
-	memcpy(header+18,"HATARI  4BPP",12); /* Use filename field indicate Hatari source and format. */
-	((uint8_t*)(header+18))[8] = '0' + (bpp % 10);
-	if (bpp >= 10)
-		((uint8_t*)(header+18))[7] = '0' + (bpp / 10);
+	/* Use filename field to indicate Hatari source and format. */
+	memcpy(header + 18, "HATARI  0BPP", 12);
+	((uint8_t*)(header+18))[8] = '0' + bpp;
+
 	header[29] = be_swap16(sw); /* screen width */
 	header[30] = be_swap16(sh); /* screen height */
 
@@ -368,10 +368,10 @@ static int ScreenSnapShot_SaveNEO(const char *filename)
 	else /* TT/Falcon bypass Video_EndHBL, so pFrameBuffer is unused.
 	      * As a fallback we just copy the video data from ST RAM. */
 	{
-	        video_base = Video_GetScreenBaseAddr();
+		video_base = Video_GetScreenBaseAddr();
 
-	        for (i = 0; i < sh; i++)
-	        {
+		for (i = 0; i < sh; i++)
+		{
 			if ((video_base + line_size) <= STRamEnd)
 			{
 				fwrite(STRam + video_base, 1, line_size, fp);
