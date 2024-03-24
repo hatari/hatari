@@ -2012,7 +2012,7 @@ static void dsp_pm(void)
 static void dsp_pm_0(void)
 {
 	char addr_name[16];
-	static char parallal_instr1[32], parallal_instr2[32];
+	static char parallel_instr1[32], parallel_instr2[32];
 
 	uint32_t memspace, numreg;
 /*
@@ -2024,14 +2024,14 @@ static void dsp_pm_0(void)
 	dsp_calc_ea((cur_inst>>8) & BITMASK(6), addr_name, sizeof(addr_name));
 
 	if (memspace) {
-		snprintf(parallal_instr1, sizeof(parallal_instr1), "y0,%s", registers_name[numreg]);
-		snprintf(parallal_instr2, sizeof(parallal_instr2), "%s,y:%s", registers_name[numreg], addr_name);
+		snprintf(parallel_instr1, sizeof(parallel_instr1), "y0,%s", registers_name[numreg]);
+		snprintf(parallel_instr2, sizeof(parallel_instr2), "%s,y:%s", registers_name[numreg], addr_name);
 	} else {
-		snprintf(parallal_instr1, sizeof(parallal_instr1), "%s,x:%s", registers_name[numreg], addr_name);
-		snprintf(parallal_instr2, sizeof(parallal_instr2), "x0,%s", registers_name[numreg]);
+		snprintf(parallel_instr1, sizeof(parallel_instr1), "%s,x:%s", registers_name[numreg], addr_name);
+		snprintf(parallel_instr2, sizeof(parallel_instr2), "x0,%s", registers_name[numreg]);
 	}
 
-	snprintf(parallelmove_name, sizeof(parallelmove_name), "%-16s %s", parallal_instr1, parallal_instr2);
+	snprintf(parallelmove_name, sizeof(parallelmove_name), "%-16s %s", parallel_instr1, parallel_instr2);
 }
 
 static void dsp_pm_1(void)
@@ -2046,7 +2046,7 @@ static void dsp_pm_1(void)
 */
 
 	char addr_name[16];
-	static char parallal_instr1[32], parallal_instr2[32];
+	static char parallel_instr1[32], parallel_instr2[32];
 
 	uint32_t memspace, write_flag, retour, s1reg, s2reg, d1reg, d2reg;
 
@@ -2070,16 +2070,16 @@ static void dsp_pm_1(void)
 			/* Write D2 */
 
 			if (retour) {
-				snprintf(parallal_instr1, sizeof(parallal_instr1), "%s,%s", registers_name[s1reg], registers_name[d1reg]);
-				snprintf(parallal_instr2, sizeof(parallal_instr2), "#%s,%s", addr_name, registers_name[d2reg]);
+				snprintf(parallel_instr1, sizeof(parallel_instr1), "%s,%s", registers_name[s1reg], registers_name[d1reg]);
+				snprintf(parallel_instr2, sizeof(parallel_instr2), "#%s,%s", addr_name, registers_name[d2reg]);
 			} else {
-				snprintf(parallal_instr1, sizeof(parallal_instr1), "%s,%s", registers_name[s1reg], registers_name[d1reg]);
-				snprintf(parallal_instr2, sizeof(parallal_instr2), "y:%s,%s", addr_name, registers_name[d2reg]);
+				snprintf(parallel_instr1, sizeof(parallel_instr1), "%s,%s", registers_name[s1reg], registers_name[d1reg]);
+				snprintf(parallel_instr2, sizeof(parallel_instr2), "y:%s,%s", addr_name, registers_name[d2reg]);
 			}
 		} else {
 			/* Read S2 */
-			snprintf(parallal_instr1, sizeof(parallal_instr1), "%s,%s", registers_name[s1reg], registers_name[d1reg]);
-			snprintf(parallal_instr2, sizeof(parallal_instr2), "%s,y:%s", registers_name[s2reg], addr_name);
+			snprintf(parallel_instr1, sizeof(parallel_instr1), "%s,%s", registers_name[s1reg], registers_name[d1reg]);
+			snprintf(parallel_instr2, sizeof(parallel_instr2), "%s,y:%s", registers_name[s2reg], addr_name);
 		}
 
 	} else {
@@ -2098,21 +2098,21 @@ static void dsp_pm_1(void)
 			/* Write D1 */
 
 			if (retour) {
-				snprintf(parallal_instr1, sizeof(parallal_instr1), "#%s,%s", addr_name, registers_name[d1reg]);
-				snprintf(parallal_instr2, sizeof(parallal_instr2), "%s,%s", registers_name[s2reg], registers_name[d2reg]);
+				snprintf(parallel_instr1, sizeof(parallel_instr1), "#%s,%s", addr_name, registers_name[d1reg]);
+				snprintf(parallel_instr2, sizeof(parallel_instr2), "%s,%s", registers_name[s2reg], registers_name[d2reg]);
 			} else {
-				snprintf(parallal_instr1, sizeof(parallal_instr1), "x:%s,%s", addr_name, registers_name[d1reg]);
-				snprintf(parallal_instr2, sizeof(parallal_instr2), "%s,%s", registers_name[s2reg], registers_name[d2reg]);
+				snprintf(parallel_instr1, sizeof(parallel_instr1), "x:%s,%s", addr_name, registers_name[d1reg]);
+				snprintf(parallel_instr2, sizeof(parallel_instr2), "%s,%s", registers_name[s2reg], registers_name[d2reg]);
 			}
 		} else {
 			/* Read S1 */
-			snprintf(parallal_instr1, sizeof(parallal_instr1), "%s,x:%s", registers_name[s1reg], addr_name);
-			snprintf(parallal_instr2, sizeof(parallal_instr2), "%s,%s", registers_name[s2reg], registers_name[d2reg]);
+			snprintf(parallel_instr1, sizeof(parallel_instr1), "%s,x:%s", registers_name[s1reg], addr_name);
+			snprintf(parallel_instr2, sizeof(parallel_instr2), "%s,%s", registers_name[s2reg], registers_name[d2reg]);
 		}
 
 	}
 
-	snprintf(parallelmove_name, sizeof(parallelmove_name), "%-16s %s", parallal_instr1, parallal_instr2);
+	snprintf(parallelmove_name, sizeof(parallelmove_name), "%-16s %s", parallel_instr1, parallel_instr2);
 }
 
 static void dsp_pm_2(void)
@@ -2244,7 +2244,7 @@ static void dsp_pm_4(void)
 static void dsp_pm_8(void)
 {
 	static char addr1_name[16], addr2_name[16];
-	static char parallal_instr1[32], parallal_instr2[32];
+	static char parallel_instr1[32], parallel_instr2[32];
 
 	uint32_t ea_mode1, ea_mode2, numreg1, numreg2;
 /*
@@ -2287,21 +2287,21 @@ static void dsp_pm_8(void)
 
 	if (cur_inst & (1<<15)) {
 		if (cur_inst & (1<<22)) {
-			snprintf(parallal_instr1, sizeof(parallal_instr1), "x:%s,%s", addr1_name, registers_name[numreg1]);
-			snprintf(parallal_instr2, sizeof(parallal_instr2), "y:%s,%s", addr2_name, registers_name[numreg2]);
+			snprintf(parallel_instr1, sizeof(parallel_instr1), "x:%s,%s", addr1_name, registers_name[numreg1]);
+			snprintf(parallel_instr2, sizeof(parallel_instr2), "y:%s,%s", addr2_name, registers_name[numreg2]);
 		} else {
-			snprintf(parallal_instr1, sizeof(parallal_instr1), "x:%s,%s", addr1_name, registers_name[numreg1]);
-			snprintf(parallal_instr2, sizeof(parallal_instr2), "%s,y:%s", registers_name[numreg2], addr2_name);
+			snprintf(parallel_instr1, sizeof(parallel_instr1), "x:%s,%s", addr1_name, registers_name[numreg1]);
+			snprintf(parallel_instr2, sizeof(parallel_instr2), "%s,y:%s", registers_name[numreg2], addr2_name);
 		}
 	} else {
 		if (cur_inst & (1<<22)) {
-			snprintf(parallal_instr1, sizeof(parallal_instr1), "%s,x:%s", registers_name[numreg1], addr1_name);
-			snprintf(parallal_instr2, sizeof(parallal_instr2), "y:%s,%s", addr2_name, registers_name[numreg2]);
+			snprintf(parallel_instr1, sizeof(parallel_instr1), "%s,x:%s", registers_name[numreg1], addr1_name);
+			snprintf(parallel_instr2, sizeof(parallel_instr2), "y:%s,%s", addr2_name, registers_name[numreg2]);
 		} else {
-			snprintf(parallal_instr1, sizeof(parallal_instr1), "%s,x:%s", registers_name[numreg1], addr1_name);
-			snprintf(parallal_instr2, sizeof(parallal_instr2), "%s,y:%s", registers_name[numreg2], addr2_name);
+			snprintf(parallel_instr1, sizeof(parallel_instr1), "%s,x:%s", registers_name[numreg1], addr1_name);
+			snprintf(parallel_instr2, sizeof(parallel_instr2), "%s,y:%s", registers_name[numreg2], addr2_name);
 		}
 	}
 
-	snprintf(parallelmove_name, sizeof(parallelmove_name), "%-16s %s", parallal_instr1, parallal_instr2);
+	snprintf(parallelmove_name, sizeof(parallelmove_name), "%-16s %s", parallel_instr1, parallel_instr2);
 }
