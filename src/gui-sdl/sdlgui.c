@@ -490,7 +490,7 @@ static void SDLGui_DrawRadioButton(const SGOBJ *rdlg, int objnum)
 	else
 		str[0]=SGRADIOBUTTON_NORMAL;
 	str[1]=' ';
-	strcpy(&str[2], rdlg[objnum].txt);
+	Str_Copy(&str[2], rdlg[objnum].txt, sizeof(str) - 2);
 
 	SDLGui_TextInt(x, y, str, true);
 }
@@ -514,7 +514,7 @@ static void SDLGui_DrawCheckBox(const SGOBJ *cdlg, int objnum)
 	else
 		str[0]=SGCHECKBOX_NORMAL;
 	str[1]=' ';
-	strcpy(&str[2], cdlg[objnum].txt);
+	Str_Copy(&str[2], cdlg[objnum].txt, sizeof(str) - 2);
 
 	SDLGui_TextInt(x, y, str, true);
 }
