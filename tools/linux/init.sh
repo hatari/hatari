@@ -16,13 +16,13 @@ mount -t tmpfs tmpfs /tmp
 mkdir /dev/pts
 mount -t devpts devpts /dev/pts
 
-if [ -x /bin/busybox ]; then
+if [ -x /usr/bin/busybox ]; then
 	echo "Boot took $(cut -d' ' -f1 /proc/uptime) seconds"
 	# hack for running shell so that job control is enabled, see:
 	# https://git.busybox.net/busybox/plain/shell/cttyhack.c
 	#
-	# without -c option, dies to illegal instruction
-	# and BAD KERNEL TRAP *if* 030 caches are enabled
+	# without -c (controlling terminal) option,
+	# hangs *if* 030 caches are enabled
 	setsid -c cttyhack sh
 else
 	# minimal klibc tools
