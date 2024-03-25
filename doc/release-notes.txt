@@ -52,6 +52,7 @@ Emulation improvements:
   - 68040/060 MMU fault handler bug fix for MOVEM
   - Fix FSINCOS and FMOVE.L/FMOVEM.L register in disasm
   - Some softfloat fixes
+  - Fix stacked PC for branch/jump instructions doing a bus error
 - DSP:
   - Add host interface initialisation
   - Add host received data interrupt
@@ -196,6 +197,7 @@ Fixed demos:
 Fixed programs:
 - FlaySID (DSP host handling)
 - FreeMiNT (use SCC counter at start to detect the SCC clock freq)
+- Spectre 3.0 Macintosh emulator (stacked PC in case of bus error)
 
 Fixed games:
 - F29 Retaliator using CTR/IPF format (handle FDC's TR reset bug in caps library)
