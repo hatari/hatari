@@ -259,13 +259,13 @@ void Console_Check(void)
 				/* skipping return addresses not enough,
 				 * try skipping potential local args too
 				 */
-				fprintf(stderr, "WARNING: xconout stack args not found by skipping return addresses, trying short skipping.\n");
+				Log_Printf(LOG_WARN, "xconout stack args not found by skipping return addresses, trying short skipping.\n");
 				increment = SIZE_WORD;
 				stack = stackbeg;
 				continue;
 			}
 			/* failed */
-			fprintf(stderr, "WARNING: xconout args not found from stack.\n");
+			Log_Printf(LOG_WARN, "xconout args not found from stack.\n");
 			return;
 		}
 	}
@@ -273,7 +273,7 @@ void Console_Check(void)
 	if (chr & 0xff00) {
 		/* allow 0xff high byte (sign extension?) */
 		if ((chr & 0xff00) != 0xff00) {
-			fprintf(stderr, "WARNING: xconout character has unknown high byte bits: 0x%x '%c'.\n", chr, chr&0xff);
+			Log_Printf(LOG_WARN, "xconout character '%c' has unknown high byte bits: 0x%x.\n", chr&0xff, chr&0xff00);
 			/* higher bits, assume not correct arg */
 			return;
 		}
