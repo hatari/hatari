@@ -1355,7 +1355,7 @@ Falcon programs
 
 Falcon emulation requires 512k (or 1024k) variant of EmuTOS (the one
 shipped with Hatari).  Programs using DSP require EmuTOS v1.1.1+,
-programs using TC mode, require EmuTOS v1.3+.
+programs using TrueColor (TC) mode, require EmuTOS v1.3+.
 
 Following Falcon only demos, games and apps work (mostly) fine though.
 
@@ -1438,8 +1438,6 @@ Demos working under EmuTOS >= v1.1 (with DSP support):
 - At Night They Come (by Bohemian Grove)
 - Beams (by .tscc)
 - Bird to be alive (by Dune etc)
-- Bound, Bound 2 (by Crac)
-  - Startup texts broken, need TC terminal output
 - Bound 3, Bound 5 (by Crac)
 - Bound 42 (by MMJ Prod)
 - Built-in Obsolescence (by Digital Chaos)
@@ -1512,16 +1510,18 @@ Demos working under EmuTOS >= v1.3 (XBios TC support):
 - Multitech (by Cybernetics)
   - Part of Geotech demo, needs DSP + TC mode
 
+Demos working under EmuTOS Git version (TC terminal output):
+- Bound & Bound2 (Crac)
+- Doomino (STAX)
+
 Demos working partly under EmuTOS >= v1.3:
 - 124 beers later (by Trio)
   - Works also with 1.0, but fighter screen DSP textures need v1.1
   - Ground texture missing in last screen
 - Bound 4 (by Crac)
-  - Startup texts broken, need TC terminal output
+  - Startup text renders correctly only if started from TC mode
 
 Broken demos (with EmuTOS v1.3):
-- Bound & Bound2 (Crac) and Doomino (STAX) demos regressed
-  - panic at startup TC-mode text output
 - GEM demo (by DHS & AssemSoft):
   - Needs to be started from HiColor mode
 - mengerMarcherFC (256b intro by atariBDSM)
