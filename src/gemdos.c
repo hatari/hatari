@@ -2408,6 +2408,7 @@ static bool GemDOS_Write(uint32_t Params)
 	}
 
 	pBuffer = (char *)STMemory_STAddrToPointer(Addr);
+	fseek(fp, 0, SEEK_CUR);
 	nBytesWritten = fwrite(pBuffer, 1, Size, fp);
 	if (fh_idx >= 0 && ferror(fp))
 	{
