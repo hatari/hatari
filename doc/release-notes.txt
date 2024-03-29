@@ -96,6 +96,7 @@ Emulator improvements:
   - Fix: joystick button 2 space key emulation "autofiring"
   - Support for mapping joystick buttons
 - GEMDOS HD:
+  - Fix: Fread/Fwrite combination on Windows
   - Fix: Frename() should fail when target exists
   - Support up to 64 simultaneously open files (earlier limit was 32)
   - Similarly to TOS, allow programs to write to a file they have opened
@@ -106,6 +107,12 @@ Emulator improvements:
   - Add option "--screenshot-format <x>" (<x> = png or bmp or neo or ximg)
 - Memory Snapshot:
   - Add some missing variables to the savestate
+- Logging/tracing:
+  - "os_base" trace option outputs now also dir create/delete + file delete
+    calls (in addition to earlier pexec/pterm & file create/open calls)
+  - Separate CPU video cycles under its own "cpu_video_cycles" trace flag
+  - Suppress repeats of identical log & trace messages by default
+    (show only their count) and add "--msg-repeat" option to toggle that
 - Debugger:
   - Fix: free all debugger allocations before exit
   - Fix: invalid free on freeing loaded GNU debug symbols
@@ -121,11 +128,6 @@ Emulator improvements:
     to limit listed symbols to ones with the given substring
   - Improved support for weak symbols (important for C++ code)
   - Symbols with duplicate addresses are skipped on symbols loading
-  - "os_base" trace option outputs now also dir create/delete + file delete
-    calls (in addition to earlier pexec/pterm & file create/open calls)
-  - Separate CPU video cycles under its own "cpu_video_cycles" trace flag
-  - Suppress repeats of identical log & trace messages by default
-    (show only their count) and add "--msg-repeat" option to toggle that
   - History skips address repeats (e.g. with "stop" instruction)
   - When entering debugger with 'history' enabled, disassembly address
     defaults to an address in history preceding the PC register value
