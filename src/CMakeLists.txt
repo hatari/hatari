@@ -25,7 +25,7 @@ if(ENABLE_OSX_BUNDLE)
 	    gui-osx/CreateFloppyController.m gui-osx/SDLMain.m gui-osx/paths.m)
 	set_source_files_properties(${GUIOSX_SOURCES} PROPERTIES LANGUAGE C)
 	set(GUIOSX_RSRCS
-	    gui-osx/Hatari.icns gui-osx/stdisk.png gui-osx/en.lproj gui-osx/fr.lproj)
+	    Hatari.icns gui-osx/stdisk.png gui-osx/en.lproj gui-osx/fr.lproj)
 	set(GUIOSX_DOCS
 	    ${CMAKE_SOURCE_DIR}/doc/manual.html ${CMAKE_SOURCE_DIR}/doc/images
 	    ${CMAKE_SOURCE_DIR}/doc/compatibility.html ${CMAKE_SOURCE_DIR}/doc/toc.js )
@@ -105,12 +105,39 @@ if(ENABLE_OSX_BUNDLE)
 	if(PNG_FOUND)
 		set(COPY_PNG cp -R ${PNG_LIBRARY} ${BUNDLE_CONTENTS}/Frameworks/)
 	endif()
+	# Create the Hatari.icns file
+	set(ICONSDIR ${CMAKE_SOURCE_DIR}/share/icons/hicolor/)
+	add_custom_command(OUTPUT ${MACOSX_BUNDLE_ICON_FILE}
+		COMMAND mkdir -p ${CMAKE_BINARY_DIR}/Hatari.iconset
+		COMMAND sips -Z 16 ${ICONSDIR}/32x32/apps/hatari.png
+		          --out ${CMAKE_BINARY_DIR}/Hatari.iconset/icon_16x16.png
+		COMMAND sips -Z 32 ${ICONSDIR}/32x32/apps/hatari.png
+		          --out ${CMAKE_BINARY_DIR}/Hatari.iconset/icon_16x16@2x.png
+		COMMAND sips -Z 32 ${ICONSDIR}/32x32/apps/hatari.png
+		          --out ${CMAKE_BINARY_DIR}/Hatari.iconset/icon_32x32.png
+		COMMAND sips -Z 64 ${ICONSDIR}/64x64/apps/hatari.png
+		          --out ${CMAKE_BINARY_DIR}/Hatari.iconset/icon_32x32@2x.png
+		COMMAND sips -Z 128 ${ICONSDIR}/128x128/apps/hatari.png
+		          --out ${CMAKE_BINARY_DIR}/Hatari.iconset/icon_128x128.png
+		COMMAND sips -Z 256 ${ICONSDIR}/256x256/apps/hatari.png
+		          --out ${CMAKE_BINARY_DIR}/Hatari.iconset/icon_128x128@2x.png
+		COMMAND sips -Z 256 ${ICONSDIR}/256x256/apps/hatari.png
+		          --out ${CMAKE_BINARY_DIR}/Hatari.iconset/icon_256x256.png
+		COMMAND sips -Z 512 ${ICONSDIR}/256x256/apps/hatari.png
+		          --out ${CMAKE_BINARY_DIR}/Hatari.iconset/icon_256x256@2x.png
+		COMMAND sips -Z 512 ${ICONSDIR}/256x256/apps/hatari.png
+		          --out ${CMAKE_BINARY_DIR}/Hatari.iconset/icon_512x512.png
+		COMMAND sips -Z 1024 ${ICONSDIR}/256x256/apps/hatari.png
+		          --out ${CMAKE_BINARY_DIR}/Hatari.iconset/icon_512x512@2x.png
+		COMMAND iconutil -c icns -o ${MACOSX_BUNDLE_ICON_FILE}
+		          ${CMAKE_BINARY_DIR}/Hatari.iconset
+	)
 	# Create Hatari.app bundle
 	add_custom_target(osx_bundle_dirs
 			COMMAND mkdir -p ${BUNDLE_CONTENTS}/Resources
 			COMMAND mkdir -p ${BUNDLE_CONTENTS}/Frameworks
 			COMMAND mkdir -p ${BUNDLE_CONTENTS}/MacOS
-			COMMAND cp ${CMAKE_CURRENT_SOURCE_DIR}/gui-osx/${MACOSX_BUNDLE_ICON_FILE}
+			COMMAND cp ${MACOSX_BUNDLE_ICON_FILE}
 				   ${BUNDLE_CONTENTS}/Resources/${MACOSX_BUNDLE_ICON_FILE}
 			# Copy Localized .nib and help to Bundle
 			COMMAND cp -R ${CMAKE_CURRENT_SOURCE_DIR}/gui-osx/*.lproj ${BUNDLE_CONTENTS}/Resources/
@@ -121,6 +148,7 @@ if(ENABLE_OSX_BUNDLE)
 			# Copy Frameworks to Bundle
 			COMMAND cp -R ${SDL2_LIBDIR} ${BUNDLE_CONTENTS}/Frameworks/
 			COMMAND ${COPY_PNG}
+			DEPENDS ${MACOSX_BUNDLE_ICON_FILE}
 	)
 	add_dependencies(${APP_NAME} osx_bundle_dirs)
 	set_source_files_properties(${GUIOSX_RSRCS} PROPERTIES
