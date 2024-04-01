@@ -195,11 +195,14 @@ Fixed demos:
 - Time Slice by Defence Force : monochrome demo (crash when Hatari
   is compiled with "small mem" option)
 - What If by Troed/Sync : 4 pixel hardscroll on STF by stopping shifter
+- Oergs, Terrorize your soul, Zero Three Zero demos work now also
+  when MMU is enabled
 
 Fixed programs:
 - FlaySID (DSP host handling)
 - FreeMiNT (use SCC counter at start to detect the SCC clock freq)
 - Spectre 3.0 Macintosh emulator (stacked PC in case of bus error)
+- m68k-Linux works (again) with 040/060 emulation
 
 Fixed games:
 - F29 Retaliator using CTR/IPF format (handle FDC's TR reset bug in caps library)
@@ -208,6 +211,10 @@ Fixed games:
   - Midi Maze
   - Midi Maze II
   - Oxyd 2
+- Work now also when MMU is enabled:
+  - Gravon (demo)
+  - Killing Impact
+  - Moongame
 
 
  Version 2.4.1 (2022-08-03)

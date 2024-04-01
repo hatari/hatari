@@ -2388,14 +2388,8 @@ the column contains "-". The column for whether the program works and
 for whether it has (working) sound have "yes" when this is true and
 otherwise "-".</p>
 
-<p>Note that because EmuTOS (tos.img included with the Hatari binary
-downloads) doesn't yet support OS calls for controlling the DSP, none
-of the programs using DSP work with it, they need a real Falcon TOS
-v4.x.</p>
-
-<p>Only few Falcon programs require MMU emulation to be enabled
-to work. <em>Unless otherwise indicated, programs work with MMU
-emulation disabled</em>.</p>
+<p>If program requires FPU or MMU to be enabled, or does not work with
+MMU, that is indicated in the program description.</p>
 
 <p>Due to incomplete VIDEL emulation and some
 remaining emulation cycle accuracy issues, some Falcon programs aren't
@@ -2469,7 +2463,7 @@ VGA one are indicated separately.</p>
     </tr>
     <tr>
       <td><a href="http://www.klockars.net/bad_mood.html">Bad Mood (demo)</a></td>
-      <td>2.4</td>
+      <td>2.5-dev</td>
       <td>-</td>
       <td>emu</td>
       <td>Old Doom level viewer (from 90's). All tested versions
@@ -2714,10 +2708,10 @@ VGA one are indicated separately.</p>
     </tr>
     <tr>
       <td>Gravon (demo)</td>
-      <td>1.4</td>
+      <td>2.5-dev</td>
       <td>yes</td>
       <td>emu</td>
-      <td>3D hovercraft. Does not work with MMU</td>
+      <td>3D hovercraft</td>
     </tr>
     <tr>
       <td>Great</td>
@@ -3825,7 +3819,7 @@ FPU.</p>
     <tr>
       <td>EKO:
       <a href="http://www.pouet.net/prod.php?which=1179">Papa was a Blade Runner</a></td>
-      <td>2.3.1</td>
+      <td>2.5-dev</td>
       <td>yes</td>
       <td>emu</td>
       <td>Texture mapping uses DSP, but otherwise works fine also without DSP.
@@ -4044,10 +4038,10 @@ FPU.</p>
     <tr>
       <td>Lazer:
       <a href="http://pouet.net/prod.php?which=28749">Oergs</a></td>
-      <td>2.3.1</td>
+      <td>2.5-dev</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Freezes at start with "Dsp: Stack Overflow" if MMU is enabled</td>
+      <td></td>
     </tr>
     <tr>
       <td>Lazer:
@@ -4358,11 +4352,10 @@ FPU.</p>
     <tr>
       <td>The Pixel Twins:
       <a href="http://www.pouet.net/prod.php?which=66698">Zero Three Zero</a></td>
-      <td>2.3.1</td>
+      <td>2.5-dev</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Needs FPU. Real time ray-tracing with DSP.
-          Double bus errors before demo title if MMU is enabled</td>
+      <td>Needs FPU. Real time ray-tracing with DSP</td>
     </tr>
     <tr>
       <td>The Respectables:
@@ -4997,7 +4990,7 @@ support or work only on them.</p>
 	  </ul></dd>
 	  <dt>Calamus SL2000, SL2003 R3, L2006 R7, <a href="https://calamus.net/download/lite_tos.php">LE2015 R1</a> (lite versions):</dt>
 	  <dd><ul>
-	  <li>Require either GDOS to be installed, or an older EmuTOS
+	  <li>Require either GDOS to be installed, or ancient EmuTOS
 	      version (v0.9.5-v0.9.12) which did not have GDOS stubs</li>
 	  <li>Require at minimum 8MB RAM and 800x600 resolution
 	      (e.g. TT-high or 800x600@16 VDI mode)</li>
