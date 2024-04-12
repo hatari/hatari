@@ -43,32 +43,33 @@ NetBSD releases of interest:
               crypto removed, remove XFree86 completely, GCC 5.5
 * 2020: v9.0, GCC 7.4, LLVM 7.0, reworked SATA & USB3 support, shadow FB
               + anti-aliasing support
+* 2024: v10.0, GCC 10, Linux compat disabled by default
 
-NetBSD v7.x and earlier releases are in archive:
+NetBSD v8.x and earlier releases are in archive:
 	https://cdn.netbsd.org/pub/NetBSD/NetBSD-archive/
 
-Newer releases are still supported.
+(Only releases newer than those are still supported.)
 
 
 2. Fetching NetBSD binaries
 ---------------------------
 
-Fetching NetBSD v8.2 binaries (which work better than latest v9.x):
+Fetching latest NetBSD binaries:
 
 * Get TOS kernel loader "loadbsd.ttp":
-	wget https://cdn.netbsd.org/pub/NetBSD/NetBSD-8.2/atari/installation/misc/loadbsd.ttp
+	wget https://cdn.netbsd.org/pub/NetBSD/NetBSD-10.0/atari/installation/misc/loadbsd.ttp
 
 * Get Hatari compatible kernel:
-	wget https://cdn.netbsd.org/pub/NetBSD/NetBSD-8.2/atari/binary/kernel/netbsd-SMALL030.gz
+	wget https://cdn.netbsd.org/pub/NetBSD/NetBSD-10.0/atari/binary/kernel/netbsd-SMALL030.gz
 	gunzip -c netbsd-SMALL030.gz > small030.bsd
 
 * Get minimal install sets (base & config files, base is tens of MBs):
-	wget https://cdn.netbsd.org/pub/NetBSD/NetBSD-8.2/atari/binary/sets/base.tgz
-	wget https://cdn.netbsd.org/pub/NetBSD/NetBSD-8.2/atari/binary/sets/etc.tgz
+	wget https://cdn.netbsd.org/pub/NetBSD/NetBSD-10.0/atari/binary/sets/base.tgz
+	wget https://cdn.netbsd.org/pub/NetBSD/NetBSD-10.0/atari/binary/sets/etc.tgz
   (what the other sets are, is listed in the install manual.)
 
 * Get installer floppy image:
-	wget https://cdn.netbsd.org/pub/NetBSD/NetBSD-8.2/atari/installation/miniroot/sysinst.fs.gz
+	wget https://cdn.netbsd.org/pub/NetBSD/NetBSD-10.0/atari/installation/miniroot/sysinst.fs.gz
 	gunzip sysinst.fs.gz
 
 
@@ -76,15 +77,12 @@ Fetching NetBSD v8.2 binaries (which work better than latest v9.x):
 ------------------------
 
 1. Start Hatari with the directory having the downloaded files:
-	hatari --monitor vga --machine falcon --dsp none --mmu on -s 14 .
+	hatari --machine falcon --dsp none --mmu on -s 14 .
 
-   Note: BSD seems to render correctly only with VGA monitor, and it
-   doesn't work at all without MMU.
+2. Drag "small030.bsd" to "loadbsd.ttp" to run kernel.
 
-2. Run "loadbsd.ttp" and give "-b small030.bsd" as an argument
-
-   Note: You need "-b" option if you want kernel to ask for root
-   drive, otherwise you can just drag the kernel file to TTP.
+(You need "-b" option instead of just dropping desired kernel
+on TTP, if you want kernel to ask for root drive upfront.)
 
 
 4. Kernel issues
@@ -92,30 +90,28 @@ Fetching NetBSD v8.2 binaries (which work better than latest v9.x):
 
 * 030 (Mega)ST(e) / netbsd-SMALL030 kernel:
 
-  - double address/bus error immediately on boot => no ST models supported?
+  - double address/bus error immediately on boot
+    => no ST models supported?
 
 * TT / netbsd-ATARITT kernel:
 
   - freezes very early at boot, in loop checking bits in a non-IO
     address, which remains zero with Hatari.  It could be due to
-    missing SCU & VME emulation, but changing SCU/VME register access
-    to error out, doesn't help like it does with Linux.  Maybe SCC
-    issue?
+    missing VME emulation, but changing VME register access to
+    error out (--vme off), does not help like it does with Linux.
+    Maybe VME autovector issue?
 
 * Falcon / netbsd-FALCON kernel:
 
-  - Freezes at SCSI bus scanning unless there's IDE device
-    => Same as with Linux, Hatari SCSI emulation isn't good enough
+  - NetBSD v9.x or newer output initially garbage to VGA screen,
+    output will become correctly visible only later in boot.
+    With RGB screen, output is correct from the start.
 
-  - NetBSD v1.6.2, v2.1 and v8.1 all fail at boot, after recognizing
-    floppy and IDE, to "MMU fault" panic or trap 2 (Without '-b'
-    option, you end up in BSD kernel debugger).
-
-  - NetBSD v9.x outputs garbage to Atari screen, output will become
-    correctly visible only when boot fails.
+  - Startup fails to floppy timeout and kernel not being able to
+    mount "sysinst.fs" contents from Hatari floppy drive.
 
 Unlike with Linux, 030 cache and prefetch emulation doesn't have
-impact on these.  Neither does 32-bit addressing / TT-RAM.
+impact on NetBSD boot.  Neither does 32-bit addressing / TT-RAM.
 
 
 5. Installing NetBSD
@@ -125,4 +121,4 @@ Building (modified) kernel from sources:
 	http://www.netbsd.org/docs/guide/en/chap-kernel.html
 
 Full installation instructions:
-	https://cdn.netbsd.org/pub/NetBSD/NetBSD-9.3/atari/INSTALL.html
+	https://cdn.netbsd.org/pub/NetBSD/NetBSD-10.0/atari/INSTALL.html
