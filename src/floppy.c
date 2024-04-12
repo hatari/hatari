@@ -754,7 +754,7 @@ static void Floppy_DoubleCheckFormat(long nDiskSize, long nSectorsPerDisk, uint1
 	else if ( TotalSectors == 84*12*Sides_fixed )	{ SectorsPerTrack_fixed = 12; }
 	else	/* unknown combination */
 	{
-		if (*pnSectorsPerTrack <= 48)
+		if (*pnSectorsPerTrack >= 5 && *pnSectorsPerTrack <= 48)
 		{
 			/* ED floppies could have up to 48 sectors per track,
 			 * so assume boot sector is correct for such values */
