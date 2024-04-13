@@ -78,10 +78,12 @@ ENUMDECL {
 #endif
 } ENUMNAME (cflow_t);
 
+#ifndef HATARI_NO_ENUM_BITVALS
 ENUMDECL {
     bit0, bit1, bitc, bitC, bitf, biti, bitI, bitj, bitJ, bitk, bitK,
     bits, bitS, bitd, bitD, bitr, bitR, bitz, bitE, bitp, lastbit
 } ENUMNAME (bitvals);
+#endif
 
 struct instr_def {
     unsigned int bits;

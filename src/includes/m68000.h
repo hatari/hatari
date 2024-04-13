@@ -22,6 +22,7 @@
 #include "cycles.h"     /* for nCyclesMainCounter */
 #include "sysdeps.h"
 #include "memory.h"
+#define	HATARI_NO_ENUM_BITVALS	/* Don't define 'bitvals' and 'bits' in newcpu.h / readcpu.h */
 #include "newcpu.h"     /* for regs */
 #include "cycInt.h"
 #include "log.h"
