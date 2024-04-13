@@ -24,7 +24,7 @@
 
 #include "main.h"
 #include "sysdeps.h"
-#include "newcpu.h"
+//#include "newcpu.h"
 #include "memorySnapShot.h"
 #include "ioMem.h"
 #include "dsp.h"
