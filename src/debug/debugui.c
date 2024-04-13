@@ -1403,7 +1403,7 @@ void DebugUI_Exceptions(int nr, long pc)
 		{ EXCEPT_ILLEGAL,   "Illegal instruction" },	/* 4 */
 		{ EXCEPT_ZERODIV,   "Div by zero" },		/* 5 */
 		{ EXCEPT_CHK,       "CHK" },			/* 6 */
-		{ EXCEPT_TRAPV,     "TRAPV" },			/* 7 */
+		{ EXCEPT_TRAPV,     "TRAPCc/TRAPV" },		/* 7 */
 		{ EXCEPT_PRIVILEGE, "Privilege violation" },	/* 8 */
 		{ EXCEPT_TRACE,     "Trace" },			/* 9 */
 		{ EXCEPT_LINEA,     "Line-A" },			/* 10 */

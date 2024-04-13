@@ -140,6 +140,8 @@ Emulator improvements:
     disassembler provided by the Capstone library (version >= 4.0)
   - Breakpoint ":quiet" option inhibits also extra output when
     ":file" option debugger command file is parsed
+  - Line-A and line-F exceptions can be caught with "--debug-except"
+    option (in addition to breakpoints)
   - Add "echo" command with escape handling, so that one can e.g.
     use "echo \ec" to clear (ANSI) terminal before outputting
     information from a breapoint files
