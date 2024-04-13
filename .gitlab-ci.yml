@@ -5,7 +5,8 @@ build-minimal:
  script:
  - apt-get install -y -qq cmake libsdl2-dev tidy
  - rm -rf /usr/include/zlib.h /usr/include/png.h /usr/include/readline*
- - ./configure --disable-small-mem --disable-dsp --enable-debug
+ - CFLAGS="-D_FORTIFY_SOURCE=3"
+   ./configure --disable-small-mem --disable-dsp --enable-debug
                --disable-tracing --enable-werror
  - make
  - make test
@@ -17,7 +18,8 @@ build-32bit:
  - apt-get install -y cmake clang gcc-multilib libgcc1:i386 libportmidi-dev:i386
                       libpng-dev:i386 libglib2.0-dev:i386 zlib1g-dev:i386
                       libsdl2-dev:i386 libudev-dev:i386 libreadline-dev:i386
- - CC="clang" CFLAGS="-m32 -O3 -Werror" ./configure --enable-debug
+ - CC="clang" CFLAGS="-m32 -O3 -Werror -D_FORTIFY_SOURCE=3"
+   ./configure --enable-debug
  - make
  - file src/hatari | grep 32.bit
  - make test
