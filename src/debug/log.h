@@ -26,6 +26,8 @@
 #define	EXCEPT_PRIVILEGE (1<<6)
 #define	EXCEPT_TRACE     (1<<7)
 #define	EXCEPT_NOHANDLER (1<<8)
+#define	EXCEPT_LINEA     (1<<11)
+#define	EXCEPT_LINEF     (1<<12)
 
 /* DSP exception flags */
 #define EXCEPT_DSP	 (1<<9)

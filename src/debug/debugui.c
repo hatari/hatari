@@ -1405,7 +1405,9 @@ void DebugUI_Exceptions(int nr, long pc)
 		{ EXCEPT_CHK,       "CHK" },			/* 6 */
 		{ EXCEPT_TRAPV,     "TRAPV" },			/* 7 */
 		{ EXCEPT_PRIVILEGE, "Privilege violation" },	/* 8 */
-		{ EXCEPT_TRACE,     "Trace" }			/* 9 */
+		{ EXCEPT_TRACE,     "Trace" },			/* 9 */
+		{ EXCEPT_LINEA,     "Line-A" },			/* 10 */
+		{ EXCEPT_LINEF,     "Line-F" }			/* 11 */
 	};
 	nr -= 2;
 	if (nr < 0  || nr >= ARRAY_SIZE(ex))
