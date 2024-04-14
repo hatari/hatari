@@ -128,11 +128,10 @@ TOS ROM images:
   see what kind of software the Atari machines had.  EmuTOS gives
   them a legal way to test Hatari with free demos, games etc.
 
-* Performance.  Latest EmuTOS versions boot significantly faster
-  than Atari TOS versions.
+* Performance.  EmuTOS boots faster to desktop than Atari TOS versions.
 
-* Convenience.  EmuTOS doesn't need HD driver to access hard disk
-  images, and same 512 (or 1024k) image supports all the hardware that
+* Convenience.  EmuTOS does not need a HD driver to access hard disk
+  images, and same 1024k (or 512k) image supports all the hardware that
   different Atari TOS versions support.
 
 * Continuity.  Users who want to continue using Atari compatible
@@ -163,10 +162,10 @@ blindly overwrite EmuTOS memory. They also often rely on (undocumented)
 TOS internal variables & functions being at specific memory locations,
 and will crash when they call these bogus addresses, use bogus values,
 or call OS functions which internal state they had overwritten with
-garbage. For example Omikron Basic and many programs done with it have
-this problem.
+garbage. For example (older) Omikron Basic and many programs done with
+it have this problem.
 
-As a special case of this problem, input (e.g. joystick) doesn't work
+As a special case of this problem, input (e.g. joystick) does not work
 in unpatched STOS Basic games as they access it through other means
 than XBIOS function Kbdvbase() or by hooking into the IKBD interrupt
 vector. They use unofficial system variables which location depends on
@@ -175,8 +174,9 @@ the TOS version.
 However, ST/STE games that work from HD and/or have been fixed to work
 with newer TOS versions, should usually be fine.
 
-Support for Falcon 16-bit resolution is missing and Falcon DSP support
-was added only after EmuTOS v1.0.
+Support for Falcon 16-bit resolution is still missing from EmuTOS v1.3
+AES/VDI, and Falcon DSP support was added only after EmuTOS v1.0
+release.
 
 Additionally, very old EmuTOS versions (up to v0.9.1) lacked support
 for the (deprecated) line-A graphics functions which are used in many
@@ -194,8 +194,8 @@ Debugging issues with EmuTOS
 EmuTOS debug symbols
 --------------------
 
-After loading EmuTOS debug symbols from the file coming with the 512k
-(or 1024k) EmuTOS image, using debugger "symbols etos1024k.sym" command,
+After loading EmuTOS debug symbols from the file coming with the 1024k
+(or 512k) EmuTOS image, using debugger "symbols etos1024k.sym" command,
 you can ask debugger to "trace cpu_symbols", to get trace of all the
 (non-static) function calls EmuTOS does.
 
@@ -243,10 +243,10 @@ shortcomings of each option are following:
     as PortMidi interprets only real MIDI events
 
 * RS232_DEBUG_PRINT: "--rs232-in /dev/null --rs232-out debug.txt"
-  - Mac (BSD libc) is incompatible with Hatari RS232 / SDL2 threading
 
 * SCC_DEBUG_PRINT: "--scc-b-out debug.txt"
   - SCC port is available only on MegaSTE/TT/Falcon
+
 
 Notes:
 
@@ -256,7 +256,7 @@ Notes:
   in messed up console and output from Hatari
 
 * Both input & output files need to be specified for RS232 & MIDI,
-  otherwise Hatari doesn't enable them
+  otherwise Hatari does not enable them
 
 
 Debugging OS calls, Line-A usage and panics
@@ -282,15 +282,10 @@ with:
 -----------
 > history on
 > setopt -D
-Exception debugging enabled.
 > symbols etos1024k.sym
 > profile on
 > trace os_all
-> b LineAOpcode ! LineAOpcode :trace
-CPU condition breakpoint 2 with 1 condition(s) added:
-LineAOpcode ! LineAOpcode
--> Track value changes, show value(s) when matched.
--> Trace instead of breaking, but show still hits.
+> b LineAOpcode ! LineAOpcode && lineAopcode ! 0xffff :trace
 > c
 Returning to emulation...
 -----------
@@ -903,7 +898,7 @@ Broken (floppy) demo classics
 ST games with broken input handling
 ...................................
 
-As expected, STOS games which use STOS routines for input don't work
+As expected, STOS games which use STOS routines for input do not work
 as STOS does that in TOS binary version specific manner (see EmuTOS
 incompatible.txt).
 
@@ -1323,7 +1318,7 @@ Working demos:
 - Shiny Bubbles TT (by Xanth FX)
 - Spear of Destiny (port by Gildor)
 - XiTEC demos (by Omega)
-  - On exiting Swing EmuTOS panics with privilege violation
+  - On exiting Swing, EmuTOS panics with privilege violation
     (TOS bombs and continues)
 - Yeti3D (port by Gildor)
 
