@@ -70,8 +70,6 @@ Emulation improvements:
   - Support all serial ports as well as LAN port for MegaSTE and TT
 - Joypads:
   - STE joypad emulation now supports analog / paddle input, too
-  - All STE joypad buttons can now be configured and used with joypad
-    emulation via keyboard, too
 - FDC:
   - For IPF/CTR support, caps library has a bug that resets FDC's TR and DR
     on warm reset (68000's reset command). We keep/restore the value ourselves
@@ -92,9 +90,10 @@ Emulator improvements:
 - RTC:
   - CLI/config option to override NVRAM/RTC year, useful with
     applications that do not handle current dates
-- Joystick support:
+- Joystick/Joypad support:
   - Fix: joystick button 2 space key emulation "autofiring"
-  - Support for mapping joystick buttons
+  - Keyboard emulation support for all STE joypad buttons/keys
+  - Support for re-mapping joystick buttons
 - GEMDOS HD:
   - Fix: Fread/Fwrite combination on Windows
   - Fix: Frename() should fail when target exists
@@ -143,8 +142,8 @@ Emulator improvements:
   - Line-A and line-F exceptions can be caught with "--debug-except"
     option (in addition to breakpoints)
   - Add "echo" command with escape handling, so that one can e.g.
-    use "echo \ec" to clear (ANSI) terminal before outputting
-    information from a breapoint files
+    use "echo \ec" to clear (ANSI) terminal before breakpoint
+    output from a debugger command file
 
 GUI improvements:
 - SDL GUI:
@@ -204,7 +203,8 @@ Fixed programs:
 - FlaySID (DSP host handling)
 - FreeMiNT (use SCC counter at start to detect the SCC clock freq)
 - Spectre 3.0 Macintosh emulator (stacked PC in case of bus error)
-- m68k-Linux works (again) with 040/060 emulation
+- m68k-Linux works (again) with 040/060 emulation (MMU)
+- m68k-NetBSD does not crash on boot any more (MMU)
 
 Fixed games:
 - F29 Retaliator using CTR/IPF format (handle FDC's TR reset bug in caps library)
