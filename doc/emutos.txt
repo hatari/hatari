@@ -1692,6 +1692,8 @@ Broken games (with EmuTOS v1.3):
   - Mouse doesn't work
 - "K" preview* (by EXA)
   - When actual game would start, bus error panic with 4MB, freeze with 14MB
+- Moongame
+  - Bus error panic at start after pressing Joypad button 3
 - Mouse trap
   - TC mode game main menu freezes, uses VDI calls
 - Neurobot
@@ -1713,8 +1715,6 @@ Broken games (with EmuTOS v1.3):
 Seem to work except for Hatari issues (happen also with TOS4):
 - Killing Impact
   - Gfx broken, Hatari Videl emulation is incomplete
-- Moongame
-  - Main menu mouse cursor cannot be moved
 - Ufo War
   - Gfx broken, Hatari Videl emulation is incomplete
 
