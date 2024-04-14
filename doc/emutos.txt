@@ -415,6 +415,7 @@ Color demos:
 - Frenchies (by Frenchies, 96KB intro)
 - Fruit is Great! (256b 50Hz overscan by Effect)
 - Glokzilla (by MJJ Prod)
+- Going (by Spice Boys)
 - Grafik -und Sounddemo (by Eckhard Kruse)
 - Hallucinations (by Reservoir Gods)
 - Helvetin Hyttysiä (by Spice Boys)
@@ -442,6 +443,7 @@ Color demos:
 - O-demo (by Oxygene)
 - Odd Stuff (by Dune & Sector One)
 - Oh no!! more froggies (by Sector One) - does not work with >2MB of RAM
+- Old (by Tom & Dubmood)
 - Oldskool Rebirth (by MJJ Prod)
 - Ooh Crikey (by Lost Boys)
 - OVeRclocked Remix (by Overlanders)
@@ -501,6 +503,7 @@ Color demos:
 - The twist (by Team "The twist")
 - The World According to Nordlicht
 - The XMAS '88 Demo (by Kenrick Productions)
+- TomTechTronic (by Effect)
 - Transbeauce II (by BushWacKers)
 - Tut! (by Wildfire)
 - Twelve (by Paulo Simoes)
@@ -515,6 +518,7 @@ Color demos:
 - Vodka demo (by Equinox) - does not work with >1MB of RAM
 - We Accidentally Your Oculus (by Sector One)
 - We do not rip or recycle anything (by Spice Boys)
+- Wedtro (by Avena & Effect & D-Bug)
 - X-files (by Martin Cubitt, in STOS)
   - Error #046 => run from desktop instead of auto/-folder
 - Xmas 2000 Intro (by Paranoid)
@@ -687,6 +691,7 @@ Free/shareware/PD games:
 - Sideways
 - Sinister development games (shareware)
 - Snowball Fight (2-player)
+- Spacebar
 - Spacewar
 - Starball*      (shareware)
 - Super Pac-Man* (use joystick 0)
@@ -1086,6 +1091,7 @@ Color demos:
 - Heal Old Geek (by Hemoroids, only endpart.prg needs STE)
 - High Fidelity Dreams (by Aura)
 - HighResMode 1 & 2 (by Paradox)
+- I got invited to Psycho Hack (by Modula)
 - Illusion (by Next)
 - It's A Girl (by Paradox)
 - It's A Girl 2 (by Paradox)
