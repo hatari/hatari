@@ -705,7 +705,7 @@ static void SCC_Serial_Set_BaudAttr ( int handle, speed_t new_speed )
 	memset(&options, 0, sizeof(options));
 	if (tcgetattr(handle, &options) < 0)
 	{
-		LOG_TRACE(TRACE_SCC, "SCC: tcgetattr() failed\n");
+		LOG_TRACE(TRACE_SCC, "scc tcgetattr() failed\n");
 		return;
 	}
 
@@ -1589,7 +1589,7 @@ static uint8_t SCC_ReadControl(int chn)
 		break;
 
 	 default:		/* should not happen */
-		Log_Printf(LOG_DEBUG, "SCC read : unprocessed read address=$%x\n", active_reg);
+		Log_Printf(LOG_DEBUG, "SCC: unprocessed read, address=$%x\n", active_reg);
 		value = 0;
 		break;
 	}
