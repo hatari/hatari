@@ -1691,21 +1691,20 @@ static void dsp_update_rn_modulo(uint32_t numreg, int16_t modifier)
 	}
 
 
-	if (abs_modifier>=modulo) {
-		if (abs_modifier&bufmask) {
+	if (abs_modifier&bufmask) {
+		if (abs_modifier>modulo) {
 			Log_Printf(LOG_WARN, "Dsp: Modulo addressing result unpredictable\n");
 		} else {
 			r_reg += modifier;
+
+			if (r_reg>hibound) {
+				r_reg -= modulo;
+			} else if (r_reg<lobound) {
+				r_reg += modulo;
+			}
 		}
 	} else {
 		r_reg += modifier;
-
-
-		if (r_reg>hibound) {
-			r_reg -= modulo;
-		} else if (r_reg<lobound) {
-			r_reg += modulo;
-		}
 	}
 
 	dsp_core.registers[DSP_REG_R0+numreg] = r_reg & BITMASK(16);
