@@ -54,6 +54,7 @@ Emulation improvements:
   - Some softfloat fixes
   - Fix stacked PC for branch/jump instructions doing a bus error
 - DSP:
+  - Fix: effective address with modifier=modulo
   - Add host interface initialisation
   - Add host received data interrupt
   - Improve bootstrap support
@@ -203,6 +204,7 @@ Fixed demos:
 
 Fixed programs:
 - FlaySID (DSP host handling)
+- AFM sound with equalizer enabled (DSP modulo)
 - FreeMiNT (use SCC counter at start to detect the SCC clock freq)
 - Spectre 3.0 Macintosh emulator (stacked PC in case of bus error)
 - m68k-Linux works (again) with 040/060 emulation (MMU)
