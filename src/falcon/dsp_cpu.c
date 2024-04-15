@@ -1691,7 +1691,7 @@ static void dsp_update_rn_modulo(uint32_t numreg, int16_t modifier)
 	}
 
 
-	if (abs_modifier>modulo) {
+	if (abs_modifier>=modulo) {
 		if (abs_modifier&bufmask) {
 			Log_Printf(LOG_WARN, "Dsp: Modulo addressing result unpredictable\n");
 		} else {
