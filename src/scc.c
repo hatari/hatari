@@ -788,7 +788,7 @@ static void SCC_Serial_Set_BaudRate ( int Channel, int value )
 static uint16_t SCC_Serial_Get_CTS ( int Channel )
 {
 	int	cts = 1;
-	Log_Printf(LOG_DEBUG, "SCC: get status for CTS %d\n" , Channel);
+	LOG_TRACE(TRACE_SCC, "scc get status for CTS %d\n" , Channel);
 
 #if defined(HAVE_SYS_IOCTL_H) && defined(TIOCMGET)
 	int	status = 0;
@@ -814,7 +814,7 @@ static uint16_t SCC_Serial_Get_CTS ( int Channel )
 static uint16_t SCC_Serial_Get_DCD ( int Channel )
 {
 	int	dcd = 1;
-	Log_Printf(LOG_DEBUG, "SCC: get status for DCD %d\n" , Channel);
+	LOG_TRACE(TRACE_SCC, "scc get status for DCD %d\n" , Channel);
 
 	#if defined(HAVE_SYS_IOCTL_H) && defined(TIOCMGET)
 	int	status = 0;
