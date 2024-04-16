@@ -1,6 +1,4 @@
 /* Localized versions of Info.plist keys */
 
 CFBundleName = "Hatari";
-CFBundleShortVersionString = "2.4.1";
-CFBundleGetInfoString = "Hatari version 2.4.1 , Copyright © 2022, T. Huth.";
 NSHumanReadableCopyright = "Copyright © 2022, T. Huth.";﻿
