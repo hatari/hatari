@@ -19,8 +19,8 @@ Following features are deprecated and will be removed in a future release:
   by default already and will be the only option soon)
 
 
- Development version
- -------------------
+ Version 2.5.0 (2024-04-18)
+ --------------------------
 
 Removed features:
 - The "--bpp" command line option and related code (i.e. the rendering
