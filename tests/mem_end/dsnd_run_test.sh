@@ -36,7 +36,7 @@ if [ $exitstat -ne 0 ]; then
 fi
 
 if ! grep -q "SUCCESS!" "$testdir/out.txt" ; then
-	echo "Test FAILED: Programm did not report SUCCESS!"
+	echo "Test FAILED: Program did not report SUCCESS!"
 	cat "$testdir/out.txt"
 	rm -rf "$testdir"
 	exit 1

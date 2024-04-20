@@ -119,7 +119,7 @@ int main(int argc, char *argv[])
 	for (i = 0; text[i] != 0; i++)
 		bconout3(text[i]);
 
-	// wait a few VBL's to be sure all the bytes were transfered/received
+	// wait a few VBL's to be sure all the bytes were transferred/received
 	sleep_vbl(5);
 
 	Super(sp);

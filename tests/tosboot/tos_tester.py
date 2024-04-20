@@ -172,7 +172,7 @@ class TOS:
                 return False
             return True
         # As ACSI (big endian) and IDE (little endian) images would require
-        # diffent binary drivers on them and it's not possible to generate
+        # different binary drivers on them and it's not possible to generate
         # such images automatically, testing ACSI & IDE images for normal
         # TOS isn't support.
         #

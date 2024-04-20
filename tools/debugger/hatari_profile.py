@@ -716,7 +716,7 @@ class Callinfo:
             self.flags = flags.strip()
         # cost of these calls including further function calls
         self._parse_totals(0, intotal)
-        # costs exclusing further function calls
+        # costs excluding further function calls
         self._parse_totals(1, extotal)
 
     def _parse_totals(self, idx, totalstr):

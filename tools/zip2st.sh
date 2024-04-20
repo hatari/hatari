@@ -164,7 +164,7 @@ if [ $disksize -gt 0 ]; then
 	esac
 	echo "mformat -a $format -i $STFILE ::"
 	# https://www.shellcheck.net/wiki/SC2086
-	# format options are suppposed to be separate
+	# format options are supposed to be separate
 	# shellcheck disable=SC2086
 	mformat -a $format -i "$STFILE" ::
 
