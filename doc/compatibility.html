@@ -4432,13 +4432,12 @@ FPU.</p>
       <td class="minor">2.5</td>
       <td>yes</td>
       <td>emu</td>
-      <td>There are constant illegal DSP instructions for last 4 screens
-         + greets, and unless MMU is enabled, music in them is silent
-	 / noise (but screens still otherwise work). Z-buffer screen
-	 (before Rubik's cube) uses 68-pixel width, but Videl should
-	 repeat the pattern instead of stretching (same as when it is
-	 later roto-zoomed). Note: last ("firecube") screen before
-	 greets, is missing from demo's Youtube video</td>
+      <td>Works correctly only with MMU (without it, music is missing from
+	  last screens and there are illegal DSP instruction warnings).
+	  Z-buffer screen (before Rubik's cube) uses 68-pixel width, but
+	  Videl should repeat the pattern instead of stretching (same as
+	  when it is later roto-zoomed).  Note: last ("firecube") screen
+	  before greets, is missing from demo's Youtube video</td>
     </tr>
     <tr>
       <td>Tony Benett:
