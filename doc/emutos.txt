@@ -454,6 +454,7 @@ Color demos:
 - Phaleon Gigademo (by Next) - select "fast loader"
 - Posh (by Checkpoint)
 - POV disk 165 (except for EiL 99 invite)
+- Princess of Doom (by Brainheadsinteractive)
 - Prix (by Ephidrena)
 - Punish your machine (by Delta Force)
 - Recycles (by SMFX)
@@ -469,6 +470,7 @@ Color demos:
 - Shiraz 256b (with MIDI output, by Marquee Design)
 - SillyVenture 2k10 & 2k11 (invitros by Mystic Bytes & Aggression)
 - SillyVenture 2020 (invitro by Agenda, Hemoroids & Mystic Bytes)
+- Silly Invaders (158b intro by Sedma)
 - Smag-FX 3 (by SMFX)
 - SNDH v4.8 update demo (PHF & KUA & DHS)
 - Sommar TTRAK (TTRAK v1.00 intro)
@@ -605,6 +607,7 @@ Free/shareware/PD games:
 - Boinx 3.5k      (by Total Vision Inc)
 - Bold            (floppy only)
 - Bombs Away
+- Bombwatch
 - Bombzai
 - Boom
 - Bugs*          (line-A bitblits)
@@ -614,6 +617,7 @@ Free/shareware/PD games:
 - Cops and Robbers Too! (line-A bitblits)
 - Crapman*
 - Cybernetix
+- Dark Fortress*
 - Dave Munsie games* (shareware released later as freeware)
   http://www.atarimania.com/list_games_atari-st-munsie-dave_team_950_S_G.html
 - Donkey         (GWBasic GFA port)
@@ -663,10 +667,12 @@ Free/shareware/PD games:
 - Midi Maze 3    (MIDI multiplayer)
 - MidiWiz 1.1i   (MIDI / RS-232 multiplayer)
   - Requires EmuTOS >= v1.2 to work also on ST
+- Miracle Boy in Dragon Land
 - Missile Alert
 - Monkeys and Balloons
 - Monopoly
 - Nibe 2
+- Nightline MC
 - Nova
 - Out of this Word* (typing game)
 - Panic
@@ -834,7 +840,7 @@ Monochrome games:
 - Space war     (bug: score missing)
 - Take2*        (line-A bitblit)
 - Wallball
-- Whack a Virus (Sommarhack 2020)
+- Whack a Virus (SillyVenture 2022 edition)
 
 Text games:
 - Advent        (Colossal Cave)
@@ -1184,6 +1190,7 @@ Color games:
 - Catch Me If You Can*
 - ChuChu Rocket* (RG's full version)
 - Crash Time Plumber
+- Detonator
 - Dread* (playable Wolf3D clone demo v1905)
 - Droid STE rewrite
 - Dynabusters+*
@@ -1196,6 +1203,7 @@ Color games:
 - Metal Slug STE (mission 1)
 - Micromachines preview (by .tscc)
 - Mr Boomer (line-A bitblit)
+- Nano Cave*
 - No Limit II (shareware pinball)
 - Obsession* (demo of commercial pinball)
 - Operation Garfield
@@ -1208,6 +1216,8 @@ Color games:
 - R0x (line-A bitblit)
 - R0x Zero (line-A bitblit, overscan screen needs 50Hz version of Emutos)
 - Randomazer 1.x & SV2020 editions
+- Ready Steady Bang!
+- Rodney vs. KFC
 - Roger (line-A bitblit)
 - R-Type Deluxe (arcade conversion)
   http://atari-forum.com/viewtopic.php?f=28&t=29047
@@ -1216,6 +1226,7 @@ Color games:
 - ScummST (STE enhanced)
   http://www.happydaze.se/scummvm-lite-atari/
 - Skulls (shareware "minesweeper")
+- Space Zot
 - Sporny's Wrecking Ball
 - Spy 4k
 - Stardust* (tunnel sequence demo)
@@ -1230,6 +1241,7 @@ Color games:
 - Treasure in Cave (by Freedom)
 - Ultimate Arena v1.3 light (slow with EmuTOS)
 - Utopos* (demo)
+- Warriors of Light v0.63e
 - Wolfenstein3D v0.8a* (a bit unstable)
 - Zaptastic
 - Zero-5 (demo)
@@ -1241,6 +1253,9 @@ PokerSquare, Pooz, Znax, SpaceBattle), and they all use
 line-A bitblits:
 	http://paradize.final-memory.org/games.shtml
 
+Monochrome games:
+- Whack a Virus (SommarHack 2020 edition)
+  - Does not work on ST with newer EmuTOS versions
 
 STE drawing programs:
 - Art for Kids / demo
