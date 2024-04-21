@@ -23,6 +23,8 @@ Following features are deprecated and will be removed in a future release:
  -------------------
 
 Emulator improvements:
+- Config options / SDL-GUI:
+  - Add separate option for enabling/disabling >=030 CPU data cache
 - GEMDOS HD:
   - Fix: Fattrib() call on a directory
 

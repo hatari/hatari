@@ -990,7 +990,9 @@ disabled)</p>
 <p class="paramdesc">Use a more compatible 68000 CPU mode
 with better prefetch accuracy and cycle counting</p>
 <p class="parameter">--cpu-exact &lt;bool&gt;</p>
-<p class="paramdesc">Use cycle exact CPU emulation (cache emulation)</p>
+<p class="paramdesc">Use cycle exact CPU emulation</p>
+<p class="parameter">--data-cache &lt;bool&gt;</p>
+<p class="paramdesc">Emulate &gt;=030 CPU data cache</p>
 <p class="parameter">--addr24 &lt;bool&gt;</p>
 <p class="paramdesc">Use 24-bit instead of 32-bit addressing mode (24-bit is enabled by default)</p>
 <p class="parameter">--fpu &lt;x&gt;</p>
@@ -1382,7 +1384,7 @@ changes that you have made.
 <h4 class="gui">The CPU Dialog</h4>
 
 <div class="floatimage">
-  <img src="images/cpu.png" width="439" height="384"
+  <img src="images/cpu.png" width="440" height="399"
        alt="Hatari's GUI - the CPU dialog" />
 </div>
 
@@ -1404,7 +1406,7 @@ changes that you have made.
   If you are going to use TOS 1.0x, you also have to select the 68000 CPU,
   since these TOS versions are not aware of the higher CPU levels yet.
   If you want to use a higher CPU level with the ST or STE machine type,
-  you have to use TOS 2.0x instead.
+  you have to use TOS 2.0x (or EmuTOS) instead.
  </li>
  <li>
   Atari TT and Falcon computers were using the 68030 CPU, so you should select
@@ -1446,8 +1448,8 @@ changes that you have made.
  if you don't need it and if you have a slow host system.
 </p>
 <p>
- The &quot;Cycle exact&quot;, the &quot;MMU emulation&quot; and
- &quot;24-bit addressing&quot; options are considered as experimental and
+ The &quot;Cycle exact&quot;, &quot;Data cache&quot;, &quot;MMU emulation&quot;
+ and &quot;24-bit addressing&quot; options are considered as experimental and
  should only be changed if you know what you are doing.
 </p>
 
@@ -3041,13 +3043,22 @@ that do use DSP, many use it only for background music and work
 fine without the real DSP emulation.
 </p>
 
-<h4>CPU: cycle exact (030/TT/Falcon)</h4>
+<h4>CPU: data cache emulation (030/TT/Falcon)</h4>
 
 <p>
-CPU core supports 030 cache emulation for cycle accuracy. This
-is very heavy.  Unless program needs cycle accuracy to work correctly,
-you can disable it.  Many Falcon demos need it, applications and games
-normally don't.
+CPU core supports &gt;=030 data cache emulation for better m68k
+performance and cycle accuracy. This is very heavy.  Unless program
+needs cycle accuracy to work correctly, you can disable it.  Many
+Falcon demos need it, applications and games normally don't.
+</p>
+
+<h4>CPU: cycle exact</h4>
+
+<p>
+CPU core cycle supports CPU instruction cache emulation for cycle
+accuracy. This is heavy for &gt;= 020 m68k CPUs.  Unless program needs
+cycle accuracy to work correctly, you can disable it.  Many Falcon
+demos need it, applications and games normally don't.
 </p>
 
 <h4>Timer-D</h4>
