@@ -2572,6 +2572,8 @@ static bool GemDOS_Fattrib(uint32_t Params)
 	char *psFileName;
 	int nDrive;
 	struct stat FileStat;
+	mode_t mode;
+
 	uint32_t nStrAddr = STMemory_ReadLong(Params);
 	int nRwFlag = STMemory_ReadWord(Params + SIZE_LONG);
 	int nAttrib = STMemory_ReadWord(Params + SIZE_LONG + SIZE_WORD);
@@ -2611,10 +2613,12 @@ static bool GemDOS_Fattrib(uint32_t Params)
 		Regs[REG_D0] = GEMDOS_EFILNF;         /* File not found */
 		return true;
 	}
+	mode = FileStat.st_mode;
+
 	if (nRwFlag == 0)
 	{
 		/* Read attributes */
-		Regs[REG_D0] = GemDOS_ConvertAttribute(FileStat.st_mode, sActualFileName);
+		Regs[REG_D0] = GemDOS_ConvertAttribute(mode, sActualFileName);
 		return true;
 	}
 
@@ -2628,7 +2632,7 @@ static bool GemDOS_Fattrib(uint32_t Params)
 
 	if (nAttrib & GEMDOS_FILE_ATTRIB_SUBDIRECTORY)
 	{
-		if (!S_ISDIR(FileStat.st_mode))
+		if (!S_ISDIR(mode))
 		{
 			/* file, not dir -> path not found */
 			Regs[REG_D0] = GEMDOS_EPTHNF;
@@ -2637,31 +2641,31 @@ static bool GemDOS_Fattrib(uint32_t Params)
 	}
 	else
 	{
-		if (S_ISDIR(FileStat.st_mode))
+		if (S_ISDIR(mode))
 		{
 			/* dir, not file -> file not found */
 			Regs[REG_D0] = GEMDOS_EFILNF;
 			return true;
 		}
 	}
+	/* type checks done, mask other than mode info away */
+	mode &= S_IRWXU|S_IRWXG|S_IRWXO;
 
+	/* set suitable mode */
 	if (nAttrib & GEMDOS_FILE_ATTRIB_READONLY)
 	{
-		/* set read-only (readable by all) */
-		if (chmod(sActualFileName, S_IRUSR|S_IRGRP|S_IROTH) == 0)
-		{
-			Regs[REG_D0] = nAttrib;
-			return true;
-		}
+		/* mask write bits away */
+		mode &= ~(S_IWUSR|S_IWGRP|S_IWOTH);
 	}
 	else
 	{
-		/* set writable (by user, readable by all) */
-		if (chmod(sActualFileName, S_IWUSR|S_IRUSR|S_IRGRP|S_IROTH) == 0)
-		{
-			Regs[REG_D0] = nAttrib;
-			return true;
-		}
+		/* add user write bit */
+		mode |= S_IWUSR;
+	}
+	if (chmod(sActualFileName, mode) == 0)
+	{
+		Regs[REG_D0] = nAttrib;
+		return true;
 	}
 	
 	/* FIXME: support hidden/system/archive flags?

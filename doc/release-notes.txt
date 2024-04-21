@@ -19,6 +19,17 @@ Following features are deprecated and will be removed in a future release:
   by default already and will be the only option soon)
 
 
+ Development version
+ -------------------
+
+Emulator improvements:
+- GEMDOS HD:
+  - Fix: Fattrib() call on a directory
+
+Fixed games:
+- Ready Steady Bang! (GEMDOS HD Fattrib())
+
+
  Version 2.5.0 (2024-04-18)
  --------------------------
 
