@@ -262,7 +262,7 @@ static bool Control_SetPath(char *name)
 		*arg = '\0';
 		value = Str_Trim(arg+1);
 	} else {
-		return false;
+		value = "";
 	}
 	
 	for (i = 0; item[i].name; i++)
@@ -289,7 +289,7 @@ static bool Control_SetPath(char *name)
  */
 static bool Control_Usage(const char *cmd)
 {
-	fprintf(stderr, "ERROR: unrecognized hatari command: '%s'!\n", cmd);
+	fprintf(stderr, "ERROR: missing arg or unrecognized command: '%s'!\n", cmd);
 	fprintf(stderr,
 		"Supported commands are:\n"
 		"- hatari-debug <Debug UI command>\n"

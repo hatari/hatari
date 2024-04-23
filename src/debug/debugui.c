@@ -644,7 +644,7 @@ static int DebugUI_ParseCommand(const char *input_orig)
 	if (cmd == -1)
 	{
 		fprintf(stderr, "Command '%s' not found.\n"
-			"Use 'help' to view a list of available commands.\n",
+			"Use 'help' to view a list of available debugger commands.\n",
 			psArgs[0]);
 		free(input);
 		return DEBUGGER_CMDDONE;
