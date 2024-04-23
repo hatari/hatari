@@ -61,8 +61,9 @@ typedef enum {
 	SYMBOLS_FOR_TOS,
 	SYMBOLS_FOR_PROGRAM,
 } symbols_for_t;
-/* what triggered current symbols to be loaded */
-static symbols_for_t SymbolsAreFor = SYMBOLS_FOR_NONE;
+
+/* what triggered current CPU symbols to be loaded */
+static symbols_for_t CpuSymbolsAreFor = SYMBOLS_FOR_NONE;
 
 
 /**
@@ -338,9 +339,6 @@ static symbol_list_t* Symbols_Load(const char *filename, uint32_t *offsets, uint
 		list = symbols_load_ascii(fp, offsets, maxaddr, gettype, &opts);
 	}
 	fclose(fp);
-
-	/* overridden by autoload functions */
-	SymbolsAreFor = SYMBOLS_FOR_USER;
 
 	if (!list) {
 		fprintf(stderr, "ERROR: reading symbols from '%s' failed!\n", filename);
@@ -783,10 +781,11 @@ void Symbols_RemoveCurrentProgram(void)
 		free(CurrentProgramPath);
 		CurrentProgramPath = NULL;
 
-		if (CpuSymbolsList && SymbolsAreFor == SYMBOLS_FOR_PROGRAM &&
+		if (CpuSymbolsList && CpuSymbolsAreFor == SYMBOLS_FOR_PROGRAM &&
 		    ConfigureParams.Debugger.bSymbolsAutoLoad) {
 			Symbols_Free(CpuSymbolsList);
 			fprintf(stderr, "Program exit, removing its symbols.\n");
+			CpuSymbolsAreFor = SYMBOLS_FOR_NONE;
 			CpuSymbolsList = NULL;
 		}
 	}
@@ -820,8 +819,9 @@ void Symbols_ShowCurrentProgramPath(FILE *fp)
 }
 
 /**
- * Given the base file name with .XXX extension, if there's another
- * file with .sym extension, load symbols from it, and return them.
+ * Autoload helper.  Given the base file name with .XXX extension,
+ * if there's another file with .sym extension, load symbols from it,
+ * and return them.
  *
  * Assumes all (relevant) sections use the same load address.
  */
@@ -865,9 +865,10 @@ void Symbols_LoadCurrentProgram(void)
 		return;
 	}
 	/* do not override manually loaded symbols, or
-	 * load new symbols if previous program did not terminate
+	 * load new symbols if previous program did not terminate.
+	 * Autoloaded TOS symbols could be overridden though
 	 */
-	if (CpuSymbolsList && SymbolsAreFor != SYMBOLS_FOR_TOS) {
+	if (CpuSymbolsList && CpuSymbolsAreFor != SYMBOLS_FOR_TOS) {
 		return;
 	}
 
@@ -884,10 +885,11 @@ void Symbols_LoadCurrentProgram(void)
 	}
 	if (!symbols) {
 		AutoLoadFailed = true;
-	} else {
-		AutoLoadFailed = false;
+		return;
 	}
-	SymbolsAreFor = SYMBOLS_FOR_PROGRAM;
+
+	AutoLoadFailed = false;
+	CpuSymbolsAreFor = SYMBOLS_FOR_PROGRAM;
 	CpuSymbolsList = symbols;
 }
 
@@ -902,13 +904,14 @@ void Symbols_LoadTOS(const char *path, uint32_t maxaddr)
 	if (!ConfigureParams.Debugger.bSymbolsAutoLoad) {
 		return;
 	}
-	if (CpuSymbolsList) {
+	/* do not override manually loaded symbols */
+	if (CpuSymbolsList && CpuSymbolsAreFor == SYMBOLS_FOR_USER) {
 		return;
 	}
 	CpuSymbolsList = loadSymFile(path, SYMTYPE_ALL, 0, maxaddr);
 	if (CpuSymbolsList) {
 		fprintf(stderr, "Loaded symbols for TOS: %s\n", path);
-		SymbolsAreFor = SYMBOLS_FOR_TOS;
+		CpuSymbolsAreFor = SYMBOLS_FOR_TOS;
 	}
 }
 
@@ -1077,6 +1080,7 @@ int Symbols_Command(int nArgc, char *psArgs[])
 	if (list) {
 		if (listtype == TYPE_CPU) {
 			Symbols_Free(CpuSymbolsList);
+			CpuSymbolsAreFor = SYMBOLS_FOR_USER;
 			CpuSymbolsList = list;
 		} else {
 			Symbols_Free(DspSymbolsList);
