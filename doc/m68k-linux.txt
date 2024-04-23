@@ -18,7 +18,7 @@ Contents:
 10. Linux kernel issues
 10.1 Known issues
 10.2 TODO / investigate more
-11 User-space issues with cache/prefetch enabled
+11 User-space issues with 030 emulation
 
 
 1. Introduction
@@ -57,7 +57,7 @@ version available in the given remote directory!
 
 - LILO reset code has not yet been updated from Aranym's Falcon
   AfterBurner behavior to normal Falcon (they use different reset
-  addresses), so resets fail with LILO
+  addresses), so "reboot" command fails with LILO
 
 - PC address points to ST-RAM in debugger even for emulated Linux
   code running in TT-RAM, because it is not MMU-translated
@@ -671,23 +671,26 @@ Kernel panic - not syncing: VFS: Unable to mount root fs on unknown-block(0,0)
 ------------------------------------------------------------
   Only SCSI & IDE drives are recognized
 
-- with Hatari 2.5, Linux works again on 040 & 060, when both CPU cache
-  & prefetch are disabled (with few previous Hatari versions, there
+- with Hatari 2.5, Linux works again on 040 & 060, when CPU data cache
+  emulation is disabled (with few previous Hatari versions, there
   was panic on reaching user-space).
 
-  If CPU cache or prefetch are enabled, 060 boot crashes to double bus
-  error, and 040 boot freezes early on.  Although screen is black, CPU
-  trace indicates latter being a panic.
+  With data cache emulation, 060 boot crashes to double bus error, and
+  040 boot freezes early on.  Although screen is black, CPU trace
+  indicates latter being a panic.
 
   This did not happen with 2019 v2.3-dev Git version (and Linux
   version of that time). Linux also boots fine on real 060 Falcon:
 	https://www.youtube.com/watch?v=8Sriz45Z4oM
 
+- Busybox "halt" & "reboot" do nothing, although klibc versions work fine
 
-11. User-space issues with cache/prefetch enabled
---------------------------------------------------
 
-These problems happen only when CPU caching is enabled.
+11. User-space issues with 030 emulation
+----------------------------------------
+
+These problems happen when CPU cache, cycle-exact or prefetch is
+enabled for 030 (with MMU).
 
 On quick testing, klibc based (dynamically linked) tools do not have
 problems, but tools in (statically linked) BusyBox do have a lot of
