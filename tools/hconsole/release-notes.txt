@@ -1,6 +1,12 @@
 User visible changes in Hatari (Python) console
 -----------------------------------------------
 
+2024-04:
+- Support new Hatari v2.5 options
+
+2021-09:
+- Remove SDL1 specific options
+
 2021-01:
 - Python v2 support removed
 

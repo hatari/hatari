@@ -5,7 +5,7 @@
 # devices and changing Hatari command line options (even for things you
 # cannot change from the UI) from the console while Hatari is running.
 #
-# Copyright (C) 2008-2021 by Eero Tamminen
+# Copyright (C) 2008-2024 by Eero Tamminen
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -295,6 +295,9 @@ class Tokens:
     "--confirm-quit",
     "--configfile",
     "--keymap",
+    "--country",
+    "--layout",
+    "--language",
     "--fast-forward",
     "--auto",
     "--mono",
@@ -312,7 +315,6 @@ class Tokens:
     "--max-width",
     "--max-height",
     "--zoom",
-    "--bpp",
     "--disable-video",
     "--borders",
     "--spec512",
@@ -331,18 +333,25 @@ class Tokens:
     "--avi-fps",
     "--avi-file",
     "--screenshot-dir",
+    "--screenshot-format",
+    "--joystick",
     "--joy0",
     "--joy1",
     "--joy2",
     "--joy3",
     "--joy4",
     "--joy5",
-    "--joystick",
     "--printer",
     "--midi-in",
     "--midi-out",
+    "--midi",
     "--rs232-in",
     "--rs232-out",
+    "--scc-a-in",
+    "--scc-a-out",
+    "--scc-a-lan-in",
+    "--scc-a-lan-out",
+    "--scc-b-in",
     "--scc-b-out",
     "--drive-a",
     "--drive-b",
@@ -380,6 +389,8 @@ class Tokens:
     "--machine",
     "--blitter",
     "--dsp",
+    "--vme",
+    "--rtc-year",
     "--timer-d",
     "--fast-boot",
     "--mic",
@@ -396,6 +407,7 @@ class Tokens:
     "--natfeats",
     "--trace",
     "--trace-file",
+    "--msg-repeat",
     "--parse",
     "--saveconfig",
     "--cmd-fifo",
@@ -427,17 +439,25 @@ class Tokens:
     device_tokens = [
     "printer",
     "rs232",
+    "scca",
+    "sccalan",
+    "sccb",
     "midi",
     ]
     path_tokens = [
     "memauto",
     "memsave",
+    "midiin",
     "midiout",
     "printout",
     "soundout",
     "rs232in",
     "rs232out",
-#    "sccbin",
+    "sccain",
+    "sccaout",
+    "sccalanin",
+    "sccalanout",
+    "sccbin",
     "sccbout"
     ]
     # use the long variants of the commands for clarity
