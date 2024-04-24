@@ -828,10 +828,10 @@ void Symbols_ShowCurrentProgramPath(FILE *fp)
 static symbol_list_t *loadSymFile(const char *path, symtype_t symtype,
 				  uint32_t loadaddr, uint32_t maxaddr)
 {
-	int len = strlen(path);
-	char symfile[len+1];
+	char symfile[PATH_MAX];
+	size_t len = strlen(path);
 
-	if (len <= 3 || path[len-4] != '.') {
+	if (len <= 3 || path[len-4] != '.' || len >= sizeof(symfile)) {
 		return NULL;
 	}
 	strcpy(symfile, path);
