@@ -867,7 +867,7 @@ static symbol_list_t* symbols_load_gnu(FILE *fp, const prg_section_t *sections, 
 	symbol_t *sym;
 	symtype_t symtype;
 	uint32_t address;
-	uint32_t nread;
+	size_t nread;
 	symbol_list_t *list;
 	unsigned char n_type;
 	unsigned char n_other;
@@ -1132,7 +1132,7 @@ static symbol_list_t* symbols_load_elf(FILE *fp, const prg_section_t *sections,
 	symbol_t *sym;
 	symtype_t symtype;
 	uint32_t address;
-	uint32_t nread;
+	size_t nread;
 	symbol_list_t *list;
 	uint32_t st_size;
 	unsigned char st_info;
@@ -1382,7 +1382,7 @@ static symbol_list_t* symbols_load_binary(FILE *fp, const symbol_opts_t *opts,
 {
 	uint32_t textlen, datalen, bsslen, tablesize, tabletype, prgflags;
 	prg_section_t sections[3];
-	int reads = 0;
+	size_t reads = 0;
 	uint16_t relocflag;
 	symbol_list_t* symbols;
 	uint32_t symoff = 0;
