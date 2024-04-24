@@ -44,7 +44,7 @@ char szPath[FILENAME_MAX] ;
 		// Create the image
 		cRet=CreateBlankImage_CreateFile(szPath, cTracks, cSectors, cSides, NULL);
 		if(cRet==TRUE)
-		 {	ret = [NSApp myAlerte:NSInformationalAlertStyle Txt:nil firstB:localize(@"Ignore") alternateB:@"  A:  "
+		 {	ret = [NSApp myAlerte:NSAlertStyleInformational Txt:nil firstB:localize(@"Ignore") alternateB:@"  A:  "
 				otherB:@"  B:  " informativeTxt:@""] ;
 			if (ret == NSAlertFirstButtonReturn)
 				return ;

@@ -166,14 +166,14 @@ char szPath[FILENAME_MAX] ;											// for general use
 /*----------------------------------------------------------------------*/
 - (IBAction)warmReset:(id)sender
 {
-	if ([NSApp myAlerte:NSInformationalAlertStyle Txt:localize(@"Warm reset!") firstB:localize(@"OK") alternateB:localize(@"Cancel")
+	if ([NSApp myAlerte:NSAlertStyleInformational Txt:localize(@"Warm reset!") firstB:localize(@"OK") alternateB:localize(@"Cancel")
 			otherB:nil informativeTxt:localize(@"Really reset the emulator?")] == NSAlertFirstButtonReturn )
 		Reset_Warm();
 } 
 /*----------------------------------------------------------------------*/
 - (IBAction)coldReset:(id)sender
 {
-	if ([NSApp myAlerte:NSInformationalAlertStyle Txt:localize(@"Cold reset") firstB:localize(@"OK") alternateB:localize(@"Cancel")
+	if ([NSApp myAlerte:NSAlertStyleInformational Txt:localize(@"Cold reset") firstB:localize(@"OK") alternateB:localize(@"Cancel")
 			otherB:nil informativeTxt:localize(@"Really reset the emulator?")] == NSAlertFirstButtonReturn )
 		Reset_Cold();
 }
@@ -438,7 +438,7 @@ char szPath[FILENAME_MAX] ;											// for general use
 
 		// Refresh all the controls to match ConfigureParams
 		if (Change_DoNeedReset(&CurrentParams, &ConfigureParams))
-		 	applyChanges = [NSApp myAlerte:NSInformationalAlertStyle Txt:localize(@"Reset the emulator") firstB:localize(@"Don't reset")
+			applyChanges = [NSApp myAlerte:NSAlertStyleInformational Txt:localize(@"Reset the emulator") firstB:localize(@"Don't reset")
 				alternateB:localize(@"Reset") otherB:nil informativeTxt:@"" ] == NSAlertSecondButtonReturn ;
 		if (applyChanges)
 			Change_CopyChangedParamsToConfiguration(&CurrentParams, &ConfigureParams, true); 	// Ok with Reset

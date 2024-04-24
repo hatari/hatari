@@ -53,7 +53,7 @@ void GuiOsx_Resume(void);
 - (NSString *)localpath:(NSString *)thepath ;		// Full
 - (NSString *)pathUser:(NSString *)thepath ;		// Partial if possible.
 
-// Alert available 10.4 to 10.9 (styles: NSWarningAlertStyle, NSInformationalAlertStyle, NSCriticalAlertStyle)
+// Alert available 10.4 to 10.9 (styles: NSAlertStyleWarning, NSAlertStyleInformational, NSAlertStyleCritical)
 //  return:   NSAlertDefaultReturn, NSAlertAlternateReturn, and NSAlertOtherReturn.
 - (NSInteger)myAlerte:(NSUInteger)style Txt:(NSString *)Txt firstB:(NSString *)firstB alternateB:(NSString *)alternateB
 										otherB:(NSString *)otherB informativeTxt:(NSString *)informativeT ;
