@@ -134,6 +134,9 @@ if(ENABLE_OSX_BUNDLE)
 	)
 	# Create Hatari.app bundle
 	add_custom_target(osx_bundle_dirs
+			COMMAND rm -rf ${BUNDLE_CONTENTS}/Resources
+			COMMAND rm -rf ${BUNDLE_CONTENTS}/Frameworks
+			COMMAND rm -rf ${BUNDLE_CONTENTS}/MacOS
 			COMMAND mkdir -p ${BUNDLE_CONTENTS}/Resources
 			COMMAND mkdir -p ${BUNDLE_CONTENTS}/Frameworks
 			COMMAND mkdir -p ${BUNDLE_CONTENTS}/MacOS
