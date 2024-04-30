@@ -499,13 +499,16 @@ void SCC_Init ( void )
 	/* Connect Channel A to Serial or LAN port depending on the machine */
 	SCC_Check_Lan_IsEnabled();
 
-	/* Init filehandles for channel B */
+	/* Init filehandles for channel B Serial */
 	SCC_Init_Channel ( 1 , &ConfigureParams.RS232.EnableScc[CNF_SCC_CHANNELS_B] ,
 		ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_B] , ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_B] ,
 		&SCC.Chn[1].ReadHandle_Serial , &SCC.Chn[1].WriteHandle_Serial , &SCC.Chn[1].FileHandle_Serial_IsATTY );
+
+	/* Channel B has only serial filehandle */
 	SCC.Chn[1].ReadHandle = SCC.Chn[1].ReadHandle_Serial;
 	SCC.Chn[1].WriteHandle = SCC.Chn[1].WriteHandle_Serial;
 	SCC.Chn[1].FileHandle_IsATTY = SCC.Chn[1].FileHandle_Serial_IsATTY;
+	SCC.Chn[1].ReadHandle_Lan = SCC.Chn[1].WriteHandle_Lan = -1;
 }
 
 
