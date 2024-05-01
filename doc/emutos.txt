@@ -400,7 +400,7 @@ Color demos:
 - Delusion (by MJJ Prod)
 - Dimensio (by Condemned)
 - Done & Dusted (by Genesis Project)
-- DragonST (256b intro by atariBDSM)
+- DragonST (256-Bytro by atariBDSM)
 - Eat my bollocks (by Equinox)
 - Execution (by SMFX)
 - Fantasia (by Dune & Sector One)
@@ -408,7 +408,7 @@ Color demos:
 - Flexiscroll 2021 (64k by Effect)
 - Flipo (by Oxygene)
 - Frenchies (by Frenchies, 96KB intro)
-- Fruit is Great! (256b 50Hz overscan by Effect)
+- Fruit is Great! (256-Bytro 50Hz overscan by Effect)
 - Glokzilla (by MJJ Prod)
 - Going (by Spice Boys)
 - Grafik -und Sounddemo (by Eckhard Kruse)
@@ -427,7 +427,7 @@ Color demos:
 - Lots of Dots (by Acid Maker & Friends)
 - Make More Short Demos (by Dekadence)
 - MMoDA (Mini Museum of Digitized Arts) exhibitions (by Pepe)
-- MonaST (by GGN/tln, 256B intro)
+- MonaST (by GGN/tln, 256-Bytro)
 - Motus (by SMFX)
 - Music Box 128k (by Michael Lunn, in STOS)
 - My Galaxy (by Dune & Sector One & MJJ Prod)
@@ -470,7 +470,7 @@ Color demos:
 - Shiraz 256b (with MIDI output, by Marquee Design)
 - SillyVenture 2k10 & 2k11 (invitros by Mystic Bytes & Aggression)
 - SillyVenture 2020 (invitro by Agenda, Hemoroids & Mystic Bytes)
-- Silly Invaders (158b intro by Sedma)
+- Silly Invaders (158-Bytro by Sedma)
 - Smag-FX 3 (by SMFX)
 - SNDH v4.8 update demo (PHF & KUA & DHS)
 - Sommar TTRAK (TTRAK v1.00 intro)
@@ -504,7 +504,7 @@ Color demos:
 - Transbeauce II (by BushWacKers)
 - Tut! (by Wildfire)
 - Twelve (by Paulo Simoes)
-- TwiSTy (256b intro by Ultra / Cream)
+- TwiSTy (256-Bytro by Ultra / Cream)
 - Two in One (by DHS)
 - Unbelievable (by Masters Of Electric City)
 - Unextreme (by Masters Of Electric City)
@@ -1321,7 +1321,7 @@ Working demos:
 - 256mbrot, Bragg, Glasstro, Orion-B, Yabt (TT/Falcon intros by ray//.tSCc)
 - 4getful (by gwEm, 4KB intro TT-version)
 - Adebug 3DTT demo (by Brainstorm)
-- Cube 256 (030 ST-low 256b intro by Thadoss / Dune)
+- Cube 256 (030 ST-low 256-Bytro by Thadoss / Dune)
 - CrY image viewer (by .tSCc)
 - Elegant Machinery (by Evolution)
 - Led Blur (by Miro)
@@ -1381,7 +1381,7 @@ Falcon demos
 
 Working demos (comments are for EmuTOS v1.0 or older):
 - 1600x600 (by Archangel)
-- 256Water (256b intro by Extream)
+- 256Water (256-Bytro by Extream)
 - 30l coke, needs DSP
 - 4getful (4k intro by gwEm, Falcon version)
   - Has way too low volume
@@ -1526,27 +1526,34 @@ Demos working under EmuTOS >= v1.3 (XBios TC support):
 - Multitech (by Cybernetics)
   - Part of Geotech demo, needs DSP + TC mode
 
-Demos working under EmuTOS Git version (TC terminal output):
+Demos working under EmuTOS Git version (full TC support):
+- 128dist (128-Bytro by DHS)
+  - Needs FPU + started from 320-wide TC mode
 - Bound & Bound2 (Crac)
+- Bound 4 (by Crac)
+  - Startup text renders correctly only if started from TC mode
+- Burnin Bee (128-Bytro by Thothy)
+  - Needs to be started from 320x200 TC mode
+- Cider, CryWolf, Grapes, Hobnobs, HongTron, Hot, Ketchup,
+  Lettuce, Pasta, Wormhole (128-Bytros by Reservoir Gods)
+  - Need to be started from 320-wide TC mode, some with FPU
 - Doomino (STAX)
+- GemDemo (by DHS & AssemSoft):
+  - Needs to be started from TC mode
+- MengerMarcherFC (256-Bytro by atariBDSM)
+  - Needs to be started from 320x200 TC mode
+- Spin176 (256-Bytro by MKM / Lamers)
+  - Needs FPU + started from 320x200 TC mode
 
 Demos working partly under EmuTOS >= v1.3:
 - 124 beers later (by Trio)
-  - Works also with 1.0, but fighter screen DSP textures need v1.1
+  - Works already with v1.0, but fighter screen DSP textures need v1.1
   - Ground texture missing in last screen
-- Bound 4 (by Crac)
-  - Startup text renders correctly only if started from TC mode
 
 Broken demos (with EmuTOS v1.3):
-- GEM demo (by DHS & AssemSoft):
-  - Needs to be started from HiColor mode
-- mengerMarcherFC (256b intro by atariBDSM)
-  - Needs to be started from 320x200 HiColor mode
-- Spin176 (256b intro by MKM / Lamers)
-  - Needs FPU & started from 320x200 HiColor mode
 - Who Okayed This?
   - Both the new and (fixed) old intros (epidemic.prg) do work,
-    (fixed) music disk (zikdisk.prg) panics to bus error at -1
+    (fixed) music disk (zikdisk.tos) panics to bus error at -1
 
 Hatari issues (happen also under TOS4):
 - '_' (by Escape)
@@ -1677,6 +1684,16 @@ Games working under EmuTOS >= 1.3 (XBios TC support):
 - Conquest of Elysium II v2.0 & 2.3 (uses VDI calls)
 - Tron 2 (VGA only)
 
+Games working under EmuTOS Git version (full TC support):
+- Boulder Smash Falcon (Omikron Basic)
+  - Needs to be started from 480x400 or larger TC mode
+- Hong Tron (128b game by Reservoir Gods)
+  - Needs to be started from 320x400 TC mode
+- Pous-Pous (GEM puzzle)
+  - Needs to be started from TC mode
+- Q-Blue (VGA only, Omikron Basic)
+   Needs to be started from 320x240 TC mode
+
 Games working with extra hacks:
 - Bugger, Bunion, SkyFall, Sworm games by Resorvoir Gods:
   - use an undocumented TOS4 vector for keyboard input instead of accessing
@@ -1696,8 +1713,6 @@ Partly working games:
   - Works only with 8MB RAM
 
 Broken games (with EmuTOS v1.3):
-- Boulder Smash Falcon (Omikron Basic)
-  - Needs to be started from large TC mode
 - Columns by Deadheart* (demo, 2nd version)
   - Broken graphics, does not use Vsetmode() for OS version <= $0402
 - Downfall
@@ -1706,23 +1721,23 @@ Broken games (with EmuTOS v1.3):
 - It's Great (start from st-med rez)
   - Mouse doesn't work
 - "K" preview* (by EXA)
-  - When actual game would start, bus error panic with 4MB, freeze with 14MB
+  - Bus error panic when actual game would start
 - Moongame
-  - Bus error panic at start after pressing Joypad button 3
+  - "Classic Falcon" (A) option bus errors to $59f1fffe read,
+    when the actual game would start
+  - "fast Falcon" (B) option gets inifite illegal DSP instruction
+    errors afer pressing joypad button 3 in main menu
 - Mouse trap
   - TC mode game main menu freezes, uses VDI calls
 - Neurobot
-  - Both intro & game just exit immediately
-- Pous-Pous
-  - GEM, needs to be started from TC mode
-- Q-Blue (VGA only, Omikron Basic)
-   Needs to be started from 320x240 TC mode
+  - Both intro & game just exit immediately (TOS version?)
 - Reeking Rubber
   - Broken graphics & freeze on game start, uses VDI draw calls
 - SBM v0.8 & v1.03* (Bomberman clone)
-  - Bus error panic on reading $400000
+  - Bus error panic with 8MB, illegal instruction one with 14MB
 - Sokoban By FUN (VGA only)
-  - Screen updates work only partially
+  - Text, blits and line drawing happens at 1/4 of expected size,
+    and if started from TC mode, line drawing is broken
   - Uses VDI draw functions + line-A area blit (7)
 - Watership (VGA only)
   - Bus error reading $fffffffe on startup -> panic
@@ -1813,6 +1828,11 @@ Applications working under EmuTOS >= v1.3 (XBios TC support):
 - Centview (GEM image viewer)
   - After showing an image, GUI is not always refreshed
 
+Applications working under EmuTOS Git version (full TC support):
+- Indypaint
+  - Crashes if not started from TC mode (line-A init, hide/show mouse)
+  - Interact with mouse & keys; F1-F5: popup menus, Space: palette
+
 Applications working with extra hacks:
 - Fractal Playground, Godleness, GodBoyX by Reservoir Gods
   - Like RG games, these require "hack.prg", otherwise
@@ -1824,12 +1844,6 @@ Partly working applications:
     or crashes on exit leaving desktop with broken graphics)
 - AVI030
   - Works as well as with TOS v4 (= has issues)
-
-Broken applications (with EmuTOS v1.3):
-- Indypaint
-  - Cursor moves, but co-ordinate display and menus from F1-F5 keys
-    look broken
-  - Needs HiColor + line-A (init, hide/show mouse)
 
 
 	- Eero
