@@ -1619,6 +1619,7 @@ void Sound_MemorySnapShot_Capture(bool bSave)
 
 	MemorySnapShot_Store(&YM2149_Clock_250, sizeof(YM2149_Clock_250));
 	MemorySnapShot_Store(&YM2149_Clock_250_CpuClock, sizeof(YM2149_Clock_250_CpuClock));
+	MemorySnapShot_Store(&YM2149_Freq_div_2, sizeof(YM2149_Freq_div_2));
 
 	MemorySnapShot_Store(&YmVolumeMixing, sizeof(YmVolumeMixing));
 
