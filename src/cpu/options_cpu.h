@@ -453,6 +453,7 @@ struct ramboard
 	bool nodma;
 	bool force16bit;
 	bool chipramtiming;
+	int fault;
 	struct boardloadfile lf;
 };
 struct expansion_params
