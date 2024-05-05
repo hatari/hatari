@@ -34,6 +34,7 @@ Debugger:
     TOS load, if autoloading is enabled and <tos>.sym file is present
   - Variable & debug symbol names can be given directly also to load,
     save, memwrite and register commands in addition to numeric values
+  - Align memdump ASCII columns also when line is not full
     
 
 Fixed games:

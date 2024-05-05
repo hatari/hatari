@@ -574,7 +574,7 @@ int DebugCpu_MemDump(int nArgc, char *psArgs[])
 
 	while (memdump_addr < memdump_upper)
 	{
-		uint8_t all, cols;
+		uint8_t all, cols, align;
 		uint32_t memdump_line = memdump_addr;
 
 		/* how many colums to print */
@@ -589,7 +589,8 @@ int DebugCpu_MemDump(int nArgc, char *psArgs[])
 		print_mem_hex(memdump_addr, cols, size);
 
 		/* print ASCII data */
-		fprintf(debugOutput, " ");
+		align = (all-cols)*(2*size+1);
+		fprintf(debugOutput, "%*c", align + 2, ' ');
 		print_mem_ascii(memdump_line, cols*size);
 		fprintf(debugOutput, "\n");
 
