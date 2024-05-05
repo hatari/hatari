@@ -65,7 +65,7 @@ static int DebugCpu_LoadBin(int nArgc, char *psArgs[])
 		return DebugUI_PrintCmdHelp(psArgs[0]);
 	}
 
-	if (!Eval_Number(psArgs[2], &address))
+	if (!Eval_Number(psArgs[2], &address, NUM_TYPE_CPU))
 	{
 		fprintf(stderr, "Invalid address!\n");
 		return DEBUGGER_CMDDONE;
@@ -112,13 +112,13 @@ static int DebugCpu_SaveBin(int nArgc, char *psArgs[])
 		return DebugUI_PrintCmdHelp(psArgs[0]);
 	}
 
-	if (!Eval_Number(psArgs[2], &address))
+	if (!Eval_Number(psArgs[2], &address, NUM_TYPE_CPU))
 	{
 		fprintf(stderr, "  Invalid address!\n");
 		return DEBUGGER_CMDDONE;
 	}
 
-	if (!Eval_Number(psArgs[3], &bytes))
+	if (!Eval_Number(psArgs[3], &bytes, NUM_TYPE_NORMAL))
 	{
 		fprintf(stderr, "  Invalid length!\n");
 		return DEBUGGER_CMDDONE;
@@ -376,7 +376,7 @@ int DebugCpu_Register(int nArgc, char *psArgs[])
 	}
 
 	*assign++ = '\0';
-	if (!Eval_Number(Str_Trim(assign), &value))
+	if (!Eval_Number(Str_Trim(assign), &value, NUM_TYPE_CPU))
 	{
 		goto error_msg;
 	}
@@ -526,7 +526,7 @@ int DebugCpu_MemDump(int nArgc, char *psArgs[])
 		int cols;
 		uint32_t memdump_line = memdump_addr;
 		fprintf(debugOutput, "%08X: ", memdump_line);
-		
+
 		/* print HEX data */
 		cols = MEMDUMP_COLS/size;
 		for (i = 0; i < cols && memdump_addr < memdump_upper; i++)
@@ -616,7 +616,7 @@ static int DebugCpu_MemWrite(int nArgc, char *psArgs[])
 		return DEBUGGER_CMDDONE;
 	}
 	/* Read address */
-	if (!Eval_Number(psArgs[arg++], &write_addr))
+	if (!Eval_Number(psArgs[arg++], &write_addr, NUM_TYPE_CPU))
 	{
 		fprintf(stderr, "Bad address!\n");
 		return DEBUGGER_CMDDONE;
@@ -633,7 +633,7 @@ static int DebugCpu_MemWrite(int nArgc, char *psArgs[])
 	values = 0;
 	for (i = arg; i < nArgc; i++)
 	{
-		if (!Eval_Number(psArgs[i], &d))
+		if (!Eval_Number(psArgs[i], &d, NUM_TYPE_NORMAL))
 		{
 			fprintf(stderr, "Bad value '%s'!\n", psArgs[i]);
 			return DEBUGGER_CMDDONE;

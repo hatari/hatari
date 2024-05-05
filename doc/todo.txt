@@ -147,9 +147,6 @@ Other potential Hatari functionality improvements
   contain GST symbol tables, so checking that isn't enough.
 
 - Preliminary debugger work for the other features + cleanup:
-	- Eval_Number() could take DSP/CPU flag like Eval_Range()
-	  does so that all commands taking numeric args can accept
-	  also symbol, variable & register names
 	- Skip & tell user to rename any of the loaded symbols that
 	  have same name as internal Hatari variables
 	- Change "" for expressions to {} so that quotes can

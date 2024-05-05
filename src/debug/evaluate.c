@@ -310,14 +310,14 @@ static bool isNumberOK(const char *str, int offset, int base)
  * default number base unless it has a suitable prefix.
  * Return true for success and false for failure.
  */
-bool Eval_Number(const char *str, uint32_t *number)
+bool Eval_Number(const char *str, uint32_t *number, num_type_t type)
 {
 	int offset, base;
-	/* TODO: add CPU/DSP flag and use getValue() instead of getNumber()
-	 * like getRange() does, so that user can use variable names in
-	 * addition to numbers.
-	 */
-	offset = getNumber(str, number, &base);
+	if (type == NUM_TYPE_NORMAL) {
+		offset = getNumber(str, number, &base);
+	} else {
+		offset = getValue(str, number, &base, type);
+	}
 	if (!offset)
 		return false;
 	else
@@ -334,7 +334,7 @@ bool Eval_Number(const char *str, uint32_t *number)
  *  0 if single address,
  * +1 if a range.
  */
-int Eval_Range(char *str1, uint32_t *lower, uint32_t *upper, bool fordsp)
+int Eval_Range(char *str1, uint32_t *lower, uint32_t *upper, bool bForDsp)
 {
 	int offset, base, ret;
 	bool fDash = false;
@@ -349,7 +349,7 @@ int Eval_Range(char *str1, uint32_t *lower, uint32_t *upper, bool fordsp)
 		str2++;
 	}
 
-	offset = getValue(str1, lower, &base, fordsp);
+	offset = getValue(str1, lower, &base, bForDsp);
 	if (offset == 0 || !isNumberOK(str1, offset, base)) {
 		/* first number not OK */
 		fprintf(stderr,"Invalid address value '%s'!\n", str1);
@@ -359,7 +359,7 @@ int Eval_Range(char *str1, uint32_t *lower, uint32_t *upper, bool fordsp)
 		ret = 0;
 	}
 	if (fDash) {
-		offset = getValue(str2, upper, &base, fordsp);
+		offset = getValue(str2, upper, &base, bForDsp);
 		if (offset == 0 || !isNumberOK(str2, offset, base)) {
 			/* second number not OK */
 			fprintf(stderr, "Invalid address value '%s'!\n", str2);

@@ -472,7 +472,7 @@ static uint32_t DebugInfo_DspMemArgs(int argc, char *argv[])
 		fprintf(stderr, "ERROR: invalid DSP address space '%s'!\n", argv[0]);
 		return 0;
 	}
-	if (!Eval_Number(argv[1], &value) || value > 0xffff) {
+	if (!Eval_Number(argv[1], &value, NUM_TYPE_DSP) || value > 0xffff) {
 		fprintf(stderr, "ERROR: invalid DSP address '%s'!\n", argv[1]);
 		return 0;
 	}
@@ -780,7 +780,7 @@ int DebugInfo_Command(int nArgc, char *psArgs[])
 	} else {
 		if (nArgc > 2) {
 			/* value is normal number */
-			ok = Eval_Number(psArgs[2], &value);
+			ok = Eval_Number(psArgs[2], &value, NUM_TYPE_NORMAL);
 		} else {
 			value = 0;
 			ok = true;

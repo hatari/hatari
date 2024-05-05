@@ -8,7 +8,13 @@
 #ifndef HATARI_EVALUATE_H
 #define HATARI_EVALUATE_H
 
-extern bool Eval_Number(const char *value, uint32_t *number);
+typedef enum {
+	NUM_TYPE_CPU,
+	NUM_TYPE_DSP,
+	NUM_TYPE_NORMAL // neither CPU nor DSP memory address, just number
+} num_type_t;
+
+extern bool Eval_Number(const char *value, uint32_t *number, num_type_t type);
 extern int Eval_Range(char *str, uint32_t *lower, uint32_t *upper, bool bForDsp);
 extern const char* Eval_Expression(const char *expression, uint32_t *result, int *offset, bool bForDsp);
 

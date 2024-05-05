@@ -86,7 +86,7 @@ int DebugDsp_Register(int nArgc, char *psArgs[])
 		goto error_msg;
 
 	*assign++ = '\0';
-	if (!Eval_Number(Str_Trim(assign), &value))
+	if (!Eval_Number(Str_Trim(assign), &value, NUM_TYPE_DSP))
 		goto error_msg;
 
 	if (DSP_Disasm_SetRegister(Str_Trim(arg), value))

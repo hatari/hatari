@@ -679,7 +679,7 @@ static bool BreakCond_ParseMaskModifier(parser_state_t *pstate, bc_value_t *bc_v
 		fprintf(stderr, "WARNING: plain numbers shouldn't need masks.\n");
 	}
 	pstate->arg++;
-	if (!Eval_Number(pstate->argv[pstate->arg], &(bc_value->mask))) {
+	if (!Eval_Number(pstate->argv[pstate->arg], &(bc_value->mask), NUM_TYPE_NORMAL)) {
 		pstate->error = "invalid dec/hex/bin value";
 		EXITFUNC(("arg:%d -> false\n", pstate->arg));
 		return false;
@@ -748,7 +748,7 @@ static bool BreakCond_ParseValue(parser_state_t *pstate, bc_value_t *bc_value)
 		}
 	} else {
 		/* a number */
-		if (!Eval_Number(str, &(bc_value->value.number))) {
+		if (!Eval_Number(str, &(bc_value->value.number), NUM_TYPE_NORMAL)) {
 			pstate->error = "invalid dec/hex/bin value";
 			EXITFUNC(("arg:%d -> false\n", pstate->arg));
 			return false;
