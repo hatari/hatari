@@ -446,19 +446,79 @@ static int DebugCpu_Profile(int nArgc, char *psArgs[])
 	return Profile_Command(nArgc, psArgs, false);
 }
 
+/**
+ * helper: return type width (b=1, w=2, l=4)
+ */
+static uint8_t get_type_width(char mode)
+{
+	switch(mode)
+	{
+	case 'b':	/* byte */
+		return 1;
+	case 'w':	/* word */
+		return 2;
+	case 'l':	/* long */
+		return 4;
+	default:
+		return 0;
+	}
+}
+
+/**
+ * helper: print <count> <size> sized items from <addr> in hex
+ */
+static void print_mem_hex(uint32_t addr, uint8_t count, uint8_t size)
+{
+	const char *prefix = "";
+	for (int i = 0; i < count; i++)
+	{
+		uint32_t value;
+		switch (size)
+		{
+		case 4:
+			value = STMemory_ReadLong(addr);
+			break;
+		case 2:
+			value = STMemory_ReadWord(addr);
+			break;
+		case 1:
+		default:
+			value = STMemory_ReadByte(addr);
+			break;
+		}
+		fprintf(debugOutput, "%s%0*x", prefix, 2*size, value);
+		addr += size;
+		prefix = " ";
+	}
+}
+
+/**
+ * helper: print <count> bytes from <addr> as ascii chars
+ */
+static void print_mem_ascii(uint32_t addr, uint8_t count)
+{
+	for (int i = 0; i < count; i++)
+	{
+		char c = STMemory_ReadByte(addr + i);
+		if(!isprint((unsigned)c))
+		{
+			/* non-printable as dots */
+			c = NON_PRINT_CHAR;
+		}
+		fprintf(debugOutput,"%c", c);
+	}
+}
 
 /**
  * Do a memory dump, args = starting address.
  */
 int DebugCpu_MemDump(int nArgc, char *psArgs[])
 {
-	char c, mode;
-	int i, arg, size;
-	uint32_t value, memdump_upper = 0;
+	uint8_t size;
+	int arg = 1;
+	char mode = 0;
+	uint32_t memdump_upper = 0;
 
-	arg = 1;
-	mode = 0;
-	size = 1;
 	if (nArgc > 1)
 		mode = tolower(psArgs[arg][0]);
 
@@ -466,20 +526,11 @@ int DebugCpu_MemDump(int nArgc, char *psArgs[])
 	{
 		/* no args, single digit or multiple chars -> default mode */
 		mode = 'b';
+		size = 1;
 	}
-	else if (mode == 'b')
+	else if ((size = get_type_width(mode)))
 	{
 		arg += 1;
-	}
-	else if (mode == 'w')
-	{
-		arg += 1;
-		size = 2;
-	}
-	else if (mode == 'l')
-	{
-		arg += 1;
-		size = 4;
 	}
 	else
 	{
@@ -523,43 +574,26 @@ int DebugCpu_MemDump(int nArgc, char *psArgs[])
 
 	while (memdump_addr < memdump_upper)
 	{
-		int cols;
+		uint8_t all, cols;
 		uint32_t memdump_line = memdump_addr;
-		fprintf(debugOutput, "%08X: ", memdump_line);
 
-		/* print HEX data */
-		cols = MEMDUMP_COLS/size;
-		for (i = 0; i < cols && memdump_addr < memdump_upper; i++)
-		{
-			switch (mode)
-			{
-			case 'l':
-				value = STMemory_ReadLong(memdump_addr);
-				break;
-			case 'w':
-				value = STMemory_ReadWord(memdump_addr);
-				break;
-			case 'b':
-			default:
-				value = STMemory_ReadByte(memdump_addr);
-				break;
-			}
-			fprintf(debugOutput, "%0*x ", 2*size, value);
-			memdump_addr += size;
-		}
+		/* how many colums to print */
+		all = MEMDUMP_COLS/size;
+		if (all*size > memdump_upper-memdump_addr)
+			cols = (memdump_upper - memdump_addr)/size;
+		else
+			cols = all;
+
+		/* print addr: HEX */
+		fprintf(debugOutput, "%08X: ", memdump_addr);
+		print_mem_hex(memdump_addr, cols, size);
 
 		/* print ASCII data */
-		fprintf(debugOutput, "  ");
-
-		cols = i*size;
-		for (i = 0; i < cols; i++)
-		{
-			c = STMemory_ReadByte(memdump_line + i);
-			if(!isprint((unsigned)c))
-				c = NON_PRINT_CHAR;             /* non-printable as dots */
-			fprintf(debugOutput,"%c", c);
-		}
+		fprintf(debugOutput, " ");
+		print_mem_ascii(memdump_line, cols*size);
 		fprintf(debugOutput, "\n");
+
+		memdump_addr += cols*size;
 	}
 	fflush(debugOutput);
 
