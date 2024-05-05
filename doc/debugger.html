@@ -200,6 +200,7 @@ CPU commands:
       profile (  ) : profile CPU code
        cpureg ( r) : dump register values or set register to value
       memdump ( m) : dump memory
+       struct (  ) : structured memory output for breakpoints
      memwrite ( w) : write bytes to memory
       loadbin ( l) : load a file into memory
       savebin (  ) : save memory to a file
@@ -396,6 +397,32 @@ the disassembly output.
 You can use the "info" command to see state of specific sets of HW
 registers (e.g. "info videl") and Atari OS structures (e.g. "info gemdos").
 </p>
+
+<p>
+One can also show contents of arbitrary program structs with the
+"struct" command.  Following shows info similar to Hatari's builtin
+"info basepage" command:
+<pre>
+&gt; struct BASEPAGE basepage TPA:l -end+1:l CODE:l -len:l DATA:l -len:l BSS:l -len:l DTA:l Parent:l :s:4 ENV:l :s:80 cmdlen:b :a:20
+BASEPAGE: $15704
++ TPA    : 00015704
++ -end+1 : 009da700
++ CODE   : 00015804
++ -len   : 00078334
++ DATA   : 0008db38
++ -len   : 0001eed8
++ BSS    : 000aca10
++ -len   : 00030f78
++ DTA    : 00015784
++ Parent : 000155f8
++ ENV    : 000156f8
++ cmdlen : 16
++ $81    : --fullscreen doom1.wad....
+</pre>
+
+By saving such command to a file, it can be used with
+<a href="#Breakpoint_options">breakpoint</a> ":file" option, to
+show contents of a given structure, whenever breakpoint matches.
 
 
 <h4>Selecting what information is shown on entering the debugger</h4>

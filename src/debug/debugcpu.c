@@ -603,6 +603,132 @@ int DebugCpu_MemDump(int nArgc, char *psArgs[])
 
 
 /**
+ * Sructured memory output
+ */
+static int DebugCpu_Struct(int nArgc, char *psArgs[])
+{
+	uint32_t start, addr, count;
+	int maxlen, offlen;
+
+	if (nArgc < 4)
+	{
+		fprintf(stderr, "Not enough arguments!\n");
+		return DEBUGGER_CMDDONE;
+	}
+
+	if (!Eval_Number(psArgs[2], &start, NUM_TYPE_CPU)) {
+		fprintf(stderr, "Invalid structure address!\n");
+		return DEBUGGER_CMDDONE;
+	}
+
+	/* determine max header len for aligning and validate
+	 * argument content before it's split up.
+	 */
+	maxlen = 0;
+	addr = start;
+	for (int i = 3; i < nArgc; i++)
+	{
+		/* [name]:<type-char>[:count] */
+		const char *arg, *str;
+		uint8_t size, type;
+
+		arg = psArgs[i];
+		str = strchr(arg, ':');
+		if (!str)
+		{
+			fprintf(stderr, "':' missing from arg: '%s'!\n", arg);
+			return DEBUGGER_CMDDONE;
+		}
+		/* lenght of longest title */
+		if (maxlen < str - arg)
+			maxlen = str - arg;
+
+		type = tolower(str[1]);
+		size = get_type_width(type);
+		if (!size && (type == 'a' || type == 's'))
+		    size = 1;
+
+		/* recognized type char, followed by separator or string end? */
+		if (!size || (str[2] != ':' && str [2] != '\0'))
+		{
+			fprintf(stderr, "invalid type for arg: '%s'!\n", arg);
+			return DEBUGGER_CMDDONE;
+		}
+
+		if (!str[2])
+		{
+			addr += size;
+			continue;
+		}
+		str += 3;
+
+		if (!Eval_Number(str, &count, NUM_TYPE_NORMAL) || count > 255)
+		{
+			fprintf(stderr, "Invalid count for arg: '%s'!\n", arg);
+			return DEBUGGER_CMDDONE;
+		}
+		addr += count*size;
+	}
+
+	/* count of hex digits for last printed address */
+	offlen = 1;
+	count = addr - start;
+	while (count >>= 4)
+		offlen++;
+	if (offlen >= maxlen)
+		maxlen = offlen + 1; /* '$' prefix for numbers */
+
+	fprintf(debugOutput, "%s: $%x\n", psArgs[1], start);
+
+	addr = start;
+	for (int i = 3; i < nArgc; i++)
+	{
+		char *name, *str;
+		uint8_t size, type;
+
+		name = psArgs[i];
+		str = strchr(name, ':');
+		*str++ = '\0';
+
+		type = tolower(*str);
+		size = get_type_width(type);
+
+		if (*++str)  /* ':' separator? */
+			Eval_Number(++str, &count, NUM_TYPE_NORMAL);
+		else
+			count = 1;
+
+		if (type == 's') /* skip */
+		{
+			addr += count;
+			continue;
+		}
+
+		if (*name)
+			fprintf(debugOutput, "+ %-*s: ",
+				maxlen+1, name);
+		else
+			fprintf(debugOutput, "+ $%0*x%*c: ",
+				offlen, addr-start, maxlen-offlen, ' ');
+
+		if (type == 'a')
+		{
+			print_mem_ascii(addr, count);
+			addr += count * size;
+		}
+		else
+		{
+			print_mem_hex(addr, count, size);
+			addr += count * size;
+		}
+		fprintf(debugOutput, "\n");
+	}
+
+	return DEBUGGER_CMDCONT;
+}
+
+
+/**
  * Command: Write to memory, optional arg for value lengths,
  * followed by starting address and the values.
  */
@@ -1030,6 +1156,17 @@ static const dbgcommand_t cpucommands[] =
 	  "\tBy default memory output is done as bytes, with 'w' or 'l'\n"
 	  "\toption, it will be done as words/longs instead.  Output amount\n"
 	  "\tcan be given either as a count or an address range.",
+	  false },
+	{ DebugCpu_Struct, Symbols_MatchCpuDataAddress,
+	  "struct", "",
+	  "structured memory output for breakpoints",
+	  "<name> <address> [name]:<type>[:<count>]  [[name]:<type>[:<count>] ...]\n"
+	  "\tShow <name>d structure content at given <address>, with each\n"
+	  "\t<name>:<type>:<count> item shown on its own line, prefixed with\n"
+	  "\toffset from struct start address, or name, if given.  Supported\n"
+	  "\t<type>s are 'b' (byte), 'w' (word), 'l' (long), 'a' (ASCII) or\n"
+	  "\t's' (skip).  'b'|'w'|'l' types are output as hexadecimals.\n"
+	  "\t<count> defaults to 1.\n",
 	  false },
 	{ DebugCpu_MemWrite, Symbols_MatchCpuAddress,
 	  "memwrite", "w",

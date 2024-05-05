@@ -32,6 +32,7 @@ Emulator improvements:
 Debugger:
   - Similarly to Atari program symbols override, load TOS symbols on
     TOS load, if autoloading is enabled and <tos>.sym file is present
+  - Add "struct" command to better show contents of program's structures
   - Variable & debug symbol names can be given directly also to load,
     save, memwrite and register commands in addition to numeric values
   - Align memdump ASCII columns also when line is not full
