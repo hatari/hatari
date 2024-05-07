@@ -99,6 +99,7 @@ void m68k_dumpstate_file (FILE *f, uaecptr *nextpc, uaecptr prevpc) { }
 #include "debugui.h"
 FILE *debugOutput;
 void DebugUI(debug_reason_t reason) { }
+void DebugUI_PrintBinary(FILE *fp, int minwidth, uint32_t value) { }
 int DebugUI_PrintCmdHelp(const char *psCmd) { return DEBUGGER_CMDDONE; }
 int DebugUI_GetPageLines(int config, int defvalue) { return 25; }
 char *DebugUI_MatchHelper(const char **strings, int items, const char *text, int state)

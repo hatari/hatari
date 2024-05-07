@@ -141,28 +141,36 @@ static int DebugUI_SetLogFile(int nArgc, char *psArgs[])
 	return DEBUGGER_CMDDONE;
 }
 
+/**
+ * Helper to output given value as binary number
+ */
+void DebugUI_PrintBinary(FILE *fp, int minwidth, uint32_t value)
+{
+	bool one, ones;
+	int bit;
+
+	ones = false;
+	for (bit = 31; bit >= 0; bit--)
+	{
+		one = value & (1U << bit);
+		if (ones || bit < minwidth || one)
+		{
+			fputc(one ? '1':'0', fp);
+			ones = true;
+		}
+	}
+	if (!ones)
+		fputc('0', fp);
+}
 
 /**
  * Helper to print given value in all supported number bases
  */
 static void DebugUI_PrintValue(uint32_t value)
 {
-	bool one, ones;
-	int bit;
-
 	fputs("= %", stderr);
-	ones = false;
-	for (bit = 31; bit >= 0; bit--)
-	{
-		one = value & (1U << bit);
-		if (one || ones)
-		{
-			fputc(one ? '1':'0', stderr);
-			ones = true;
-		}
-	}
-	if (!ones)
-		fputc('0', stderr);
+	DebugUI_PrintBinary(stderr, 0, value);
+
 	if (value & 0x80000000)
 		fprintf(stderr, " (bin), #%u/%d (dec), $%x (hex)\n", value, (int)value, value);
 	else
