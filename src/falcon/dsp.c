@@ -577,8 +577,6 @@ void DSP_DisasmRegisters(FILE *fp)
 
 	fprintf(fp, "\n");
 #endif
-
-
 }
 
 
