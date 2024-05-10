@@ -1609,6 +1609,8 @@ Games working under EmuTOS >= v1.0:
 - Raiden
 - Risk 030 demo (VGA only)
   - Needs 640x480@16 mode
+- Sokoban By FUN (VGA only, VDI draws + line-A area blits)
+  - Start from 640x480@16
 - Spice* (Defender clone)
 - Spout
 - Steinbruch
@@ -1694,6 +1696,11 @@ Games working under EmuTOS Git version (full TC support):
 - Q-Blue (VGA only, Omikron Basic)
    Needs to be started from 320x240 TC mode
 
+Seem to work except for Hatari Videl emulation issues breaking
+graphics (which happens also with TOS4):
+- Killing Impact
+- Ufo War
+
 Games working with extra hacks:
 - Bugger, Bunion, SkyFall, Sworm games by Resorvoir Gods:
   - use an undocumented TOS4 vector for keyboard input instead of accessing
@@ -1708,13 +1715,18 @@ Partly working games:
   - Game is 4x slower than with TOS4 (see EmuTOS incompatible.txt)
 - Color Runner
   - Game cannot be started from main menu (same as with TOS v4)
+- Columns by Deadheart* (demo, 2nd version)
+  - Unlike with TOS4, broken gfx if started under RGB instead of VGA
+    - Does not use Vsetmode() for OS version <= $0402
+    - EmuTOS >= v1.0
+- Mouse Trap
+  - Unlike with TOS4, freezes if started under RGB instead of VGA
+  - Requires TC XBios support (EmuTOS v1.3)
 - Painium
   - Fire button works only until game itself starts
   - Works only with 8MB RAM
 
 Broken games (with EmuTOS v1.3):
-- Columns by Deadheart* (demo, 2nd version)
-  - Broken graphics, does not use Vsetmode() for OS version <= $0402
 - Downfall
   - Dialog complains "Error while loading BLACKWHT.BGR".
     It is already open, so issue may be Setscreen() following it
@@ -1727,26 +1739,14 @@ Broken games (with EmuTOS v1.3):
     when the actual game would start
   - "fast Falcon" (B) option gets inifite illegal DSP instruction
     errors afer pressing joypad button 3 in main menu
-- Mouse trap
-  - TC mode game main menu freezes, uses VDI calls
 - Neurobot
   - Both intro & game just exit immediately (TOS version?)
 - Reeking Rubber
   - Broken graphics & freeze on game start, uses VDI draw calls
 - SBM v0.8 & v1.03* (Bomberman clone)
   - Bus error panic with 8MB, illegal instruction one with 14MB
-- Sokoban By FUN (VGA only)
-  - Text, blits and line drawing happens at 1/4 of expected size,
-    and if started from TC mode, line drawing is broken
-  - Uses VDI draw functions + line-A area blit (7)
 - Watership (VGA only)
   - Bus error reading $fffffffe on startup -> panic
-
-Seem to work except for Hatari issues (happen also with TOS4):
-- Killing Impact
-  - Gfx broken, Hatari Videl emulation is incomplete
-- Ufo War
-  - Gfx broken, Hatari Videl emulation is incomplete
 
 
 Falcon applications
