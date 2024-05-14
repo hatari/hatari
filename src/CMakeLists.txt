@@ -105,6 +105,9 @@ if(ENABLE_OSX_BUNDLE)
 	if(PNG_FOUND)
 		set(COPY_PNG cp -R ${PNG_LIBRARY} ${BUNDLE_CONTENTS}/Frameworks/)
 	endif()
+	if(CapsImage_FOUND)
+		set(COPY_CAPSIMAGE cp -R ${CAPSIMAGE_LIBRARY} ${BUNDLE_CONTENTS}/Frameworks/)
+	endif()
 	# Create the Hatari.icns file
 	set(ICONSDIR ${CMAKE_SOURCE_DIR}/share/icons/hicolor/)
 	add_custom_command(OUTPUT ${MACOSX_BUNDLE_ICON_FILE}
@@ -151,6 +154,7 @@ if(ENABLE_OSX_BUNDLE)
 			# Copy Frameworks to Bundle
 			COMMAND cp -R ${SDL2_LIBDIR} ${BUNDLE_CONTENTS}/Frameworks/
 			COMMAND ${COPY_PNG}
+			COMMAND ${COPY_CAPSIMAGE}
 			DEPENDS ${MACOSX_BUNDLE_ICON_FILE}
 	)
 	add_dependencies(${APP_NAME} osx_bundle_dirs)
