@@ -496,62 +496,45 @@ actually *is* writable and try again.
 9.1 Debian installer
 --------------------
 
-Note: this section is out of date.
-
 These are setup instructions for testing Debian installer in Hatari.
-You need matching kernel, initrd and installation ISO image files for
-this.
 
 0. Work directory:
    $ mkdir -p debian/installer
    $ cd debian/installer
 
-1. Get latest Debian installer initrd:
-   $ wget https://cdimage.debian.org/cdimage/ports/debian-installer/2022-03-17/m68k/debian-installer-images_2021XXXX_m68k.tar.gz
+1. Get latest Debian installer (kernel + initrd images):
+   $ wget https://cdimage.debian.org/cdimage/ports/debian-installer/2024-02-25/m68k/debian-installer-images_202306XX_m68k.tar.gz
    $ tar xvf debian-installer-images*.gz
-   $ cp installer-m68k/current/images/nativehd/initrd.gz ..
 
-2. get kernel files for version matching above tar output
-   (if it is still available):
-   $ wget http://ftp.ports.debian.org/debian-ports/pool-m68k/main/l/linux/linux-image-5.18.0-2-m68k_5.18.5-1_m68k.deb
-   $ ar x linux-image-*_m68k.deb
-   $ tar xvf data.tar.xz
-   $ cp -av boot/* ..
-
-3. get kernel debug symbols (from the huge debug package):
-   $ wget http://ftp.ports.debian.org/debian-ports/pool-m68k/main/l/linux/linux-image-5.18.0-2-m68k-dbg_5.18.5-1_m68k.deb
-   $ tar xvf data.tar.xz --wildcards '*/System.map-*'
-   $ cp -av cp -av usr/lib/debug/boot/System.map-* ..
-
-4. Set up lilo.cfg with a framebuffer mode supported by Debian installer
+2. Set up lilo.cfg with a framebuffer mode supported by Debian installer
    (it needs at least 16 colors to be usable):
-   $ cd ..
    $ cat > lilo.cfg
 [LILO]
-Kernel = vmlinux-5.18.5-1-m68k
-Symbols = System.map-5.18.5-1-m68k
+Kernel = installer-m68k/current/images/kernels/vmlinux
 Args = video=atafb:vga16 console=tty
-Ramdisk = initrd.gz
+Ramdisk = installer-m68k/current/images/nativehd/initrd.gz
 KernelToFastRam = FALSE
 RamdiskToFastRam = TRUE
 ^D
 
-5. Get ISO image release matching installer & kernel (checksum files are in same directory):
-   $ wget https://cdimage.debian.org/cdimage/ports/snapshots/2022-03-28/debian-11.0.0-m68k-NETINST-1.iso
+3. Get ISO image release matching installer & kernel (checksum files are in same directory):
+   $ wget https://cdimage.debian.org/cdimage/ports/snapshots/2024-02-25/debian-12.0.0-m68k-NETINST-1.iso
 
-6. Try running Hatari with them:
+4. Try running Hatari with them:
     $ hatari --log-level debug \
       --fast-forward on --fastfdc on --timer-d on \
       --machine falcon --dsp off --fpu 68882 \
       --cpuclock 32 --data-cache off \
       --mmu on -s 14 --ttram 128 --addr24 off \
       --monitor vga -c lilo.cfg --natfeats on \
-      --ide-master debian-11.0.0-m68k-NETINST-1.iso \
+      --ide-master debian-12.0.0-m68k-NETINST-1.iso \
       --lilo "debug=nfcon root=/dev/ram init=/init"
 
 NOTE: Hatari does not support networking so network install obviously
 wo not work.  There are not any ready made images of pre-installed and
 up to date m68k Debian installs either.
+
+TODO: kernel panics when init crashes.
 
 
 9.2 Running initrd as normal disk
@@ -566,10 +549,17 @@ fakeroot session to retain file properties requiring root rights:
    $ mkdir initrd
    $ fakeroot /bin/bash
    # cd initrd
-   # zcat ../initrd.gz | cpio -i
+   # zcat ../installer-m68k/current/images/nativehd/initrd.gz | cpio -i
    # cd ..
-   # /sbin/mkfs.ext2 -t ext2 -L INITRD -d initrd rootfs.img 32M
+   # /sbin/mkfs.ext2 -t ext2 -L INITRD -d initrd initrd.img 32M
    # exit
+
+TODO: init is dynamically linked Busybox and crashes immediately.
+If it's replaced with statically linked one, that crashes to first
+"mkdir" (or "ls") call on just mounted "/run":
+------------------------
+tmpfs	/run	tmpfs	nosuid,size=10%,mode=755	0	0
+------------------------
 
 
 9.3 Bootstrapping Debian installation on PC
