@@ -43,12 +43,14 @@ macos12_task:
     populate_script:
       - if [ ! -d dl_cache ]; then mkdir dl_cache ; fi
   install_script:
+    # Download and install precompiled SDL2 Framework
     - if [ ! -f dl_cache/SDL2-$SDLVERSION.dmg ]; then
         wget -O dl_cache/SDL2-$SDLVERSION.dmg
           https://github.com/libsdl-org/SDL/releases/download/release-$SDLVERSION/SDL2-$SDLVERSION.dmg ;
       fi
     - hdiutil attach dl_cache/SDL2-$SDLVERSION.dmg
     - sudo cp -a /Volumes/SDL2/SDL2.framework /Library/Frameworks/
+    # Download, compile and install libpng Framework
     - if [ ! -e dl_cache/png.framework ]; then
         wget -O dl_cache/libpng-$PNGVERSION.tar.xz
           "http://prdownloads.sourceforge.net/libpng/libpng-$PNGVERSION.tar.xz?download" ;
@@ -64,6 +66,7 @@ macos12_task:
         rm -rf libpng-$PNGVERSION ;
       fi
     - sudo cp -a dl_cache/png.framework /Library/Frameworks/
+    # Download and install precompiled portmidi Framework
     - if [ ! -e dl_cache/portmidi.framework ]; then
         cd dl_cache ;
         wget "https://hatari.tuxfamily.org/ci/portmidi.framework.zip" ;
@@ -72,7 +75,17 @@ macos12_task:
         cd .. ;
       fi
     - sudo cp -a dl_cache/portmidi.framework /Library/Frameworks/
-  script:
+    # Download and install precompiled capsimage Framework
+    - if [ ! -e dl_cache/capsimage_5.1_macos-x86_64-arm64 ]; then
+        cd dl_cache ;
+        wget "https://hatari.tuxfamily.org/ci/capsimage_5.1_macos-x86_64-arm64.zip" ;
+        unzip capsimage_5.1_macos-x86_64-arm64.zip ;
+        cd capsimage_5.1_macos-x86_64-arm64 ;
+        mv LICENCE.txt DONATIONS.txt README.txt HISTORY.txt CAPSImage.framework ;
+        cd ../.. ;
+      fi
+    - sudo cp -a dl_cache/capsimage_5.1_macos-x86_64-arm64/CAPSImage.framework /Library/Frameworks/
+   script:
     - export PATH=/usr/local/bin:$PATH
     - mkdir build
     - cd build
