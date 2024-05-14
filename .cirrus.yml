@@ -85,7 +85,7 @@ macos12_task:
         cd ../.. ;
       fi
     - sudo cp -a dl_cache/capsimage_5.1_macos-x86_64-arm64/CAPSImage.framework /Library/Frameworks/
-   script:
+  script:
     - export PATH=/usr/local/bin:$PATH
     - mkdir build
     - cd build
