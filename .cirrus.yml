@@ -94,6 +94,7 @@ macos12_task:
       || { cat config.log; exit 1; }
     - cmake --build . --verbose --config Release -j$(sysctl -n hw.ncpu) -t Hatari
     - cp -a ../dl_cache/portmidi.framework src/hatari.app/Contents/Frameworks/
+    - cp -a ../dl_cache/capsimage_5.1_macos-x86_64-arm64/CAPSImage.framework src/hatari.app/Contents/Frameworks/
     - codesign --force -s - --entitlements ../src/gui-osx/hatari.app.xcent src/Hatari.app
     - cd ..
     - mkdir hatari-snapshot
