@@ -127,7 +127,7 @@ VFS: Cannot open root device "/dev/sda" or unknown-block(8,0): error -6
    $ sudo apt install gcc-m68k-linux-gnu
 
 2. Get latest upstream kernel release sources (without history):
-   $ git clone --depth 1 --branch v6.8 \
+   $ git clone --depth 1 --branch v6.9 \
      git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
    $ cd linux
 
@@ -294,8 +294,8 @@ Notes:
 1. Set suitable options in lilo.cfg, for example:
 -------------------------------------
 [LILO]
-Kernel = vmlinux-v6.8
-Symbols = System.map-v6.8
+Kernel = vmlinux-v6.9
+Symbols = System.map-v6.9
 Ramdisk =
 Args = video=atafb:sthigh console=tty
 KernelToFastRam = FALSE
@@ -305,8 +305,8 @@ KernelToFastRam = FALSE
 2. Start Hatari:
     $ hatari --log-level info \
       --fast-forward on --fastfdc on --timer-d on \
-      --machine falcon --dsp none --fpu 68882 \
-      --cpuclock 32 --cpu-exact off --compatible off \
+      --machine falcon --dsp off --fpu 68882 \
+      --cpuclock 32 --data-cache off \
       --mmu on -s 14 --ttram 64 --addr24 off \
       -c lilo.cfg --natfeats on \
 
@@ -333,7 +333,7 @@ Other notes:
 - Keep "init=" last on "--lilo" option kernel command line,
   otherwise kernel may give arguments after it also to init!
 - Kernel does not need DSP, and avoiding it is emulation with
-  "--dsp none" at least doubles "--fast-forward on" speed
+  "--dsp off" at least doubles "--fast-forward on" speed
 
 
 7. Native bootstrap
@@ -365,8 +365,8 @@ shows easiest method to simulate that with Hatari.
    $ hatari --trace os_base --log-level info \
       --tos emutos-1024k-1.3/etos1024k.img \
       --fast-forward on --fastfdc on --timer-d on \
-      --machine falcon --dsp none --fpu 68882 \
-      --cpuclock 32 --cpu-exact off --compatible off \
+      --machine falcon --dsp off --fpu 68882 \
+      --cpuclock 32 --data-cache off \
       --mmu on -s 14 --ttram 64 --addr24 off \
       --natfeats on --ide-master rootfs.img \
       gemdos-hd/bootstra.tos
@@ -542,8 +542,8 @@ RamdiskToFastRam = TRUE
 6. Try running Hatari with them:
     $ hatari --log-level debug \
       --fast-forward on --fastfdc on --timer-d on \
-      --machine falcon --dsp none --fpu 68882 \
-      --cpuclock 32 --cpu-exact off --compatible off \
+      --machine falcon --dsp off --fpu 68882 \
+      --cpuclock 32 --data-cache off \
       --mmu on -s 14 --ttram 128 --addr24 off \
       --monitor vga -c lilo.cfg --natfeats on \
       --ide-master debian-11.0.0-m68k-NETINST-1.iso \
