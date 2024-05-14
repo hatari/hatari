@@ -197,9 +197,9 @@ host).
    $ ar x busybox-static_*_m68k.deb
    $ tar xvf data.tar.xz --wildcards *bin/busybox
 
-6. Install host BusyBox and add symlinks for the m68k one to bin/
-   directory, based on what tools host one lists to be included:
-   $ sudo apt install busybox
+6. Install qemu user space emulation to query m68k busybox, so
+   that symlinks can be added for the tools it lists:
+   $ sudo apt install qemu-user
    $ /path/to/hatari/tools/linux/symlink-busybox.sh
 
 7. Cleanup directory content:
@@ -208,11 +208,6 @@ host).
 
 8. Make 4MB EXT2 HD image out of it:
    $ /sbin/mkfs.ext2 -t ext2 -L BUSYBOX -d disk/ rootfs.img 4M
-
-TODO:
-- After qemu-m68k user-space emulation is good enough, installation of
-  host BusyBox can be skipped and m68k BusyBox can itself be queried
-  for list of tools to symlink
 
 
 4.2 As EXT2 HD image, from klibc utils
@@ -584,8 +579,8 @@ TODO: test again whether there are improvements to last status:
   debootstrap fails to kernel oops
 - m68k system-qemu:
   does not support required HW
-- m68k user-qemu (from Debian Stretch):
-  fails completely on any m68k Debian binary
+- m68k user-qemu (from Debian Bookworm):
+  does support m68k binaries
 - Aranym:
 ------------------------------------------------------------
 $ cat > linux.config
