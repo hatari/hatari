@@ -78,7 +78,7 @@ macos12_task:
     # Download and install precompiled capsimage Framework
     - if [ ! -e dl_cache/capsimage_5.1_macos-x86_64-arm64 ]; then
         cd dl_cache ;
-        wget "https://hatari.tuxfamily.org/ci/capsimage_5.1_macos-x86_64-arm64.zip" ;
+        wget "https://hatari.tuxfamily.org/ci/capsimage_5.1_macos-x86_64-arm64_selfsigned.zip" ;
         unzip capsimage_5.1_macos-x86_64-arm64.zip ;
         cd capsimage_5.1_macos-x86_64-arm64 ;
         mv LICENCE.txt DONATIONS.txt README.txt HISTORY.txt CAPSImage.framework ;
