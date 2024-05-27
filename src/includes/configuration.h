@@ -74,6 +74,8 @@ typedef struct
   int SdlAudioBufferSize;
   char szYMCaptureFileName[FILENAME_MAX];
   int YmVolumeMixing;
+  int YmLpf;
+  int YmHpf;
 } CNF_SOUND;
 
 
