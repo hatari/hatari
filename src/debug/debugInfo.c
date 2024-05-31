@@ -684,7 +684,7 @@ static const struct {
 	{ false,"vdi",       VDI_Info,             NULL, "Show VDI vector contents (with <value>, show opcodes)" },
 	{ false,"videl",     Videl_Info,           NULL, "Show Falcon Videl register contents" },
 	{ false,"video",     Video_Info,           NULL, "Show Video information" },
-	{ false,"vme",       VME_Info,             NULL, "Show VME/SCU register information" },
+	{ false,"vme",       SCU_Info,             NULL, "Show SCU/VME register information" },
 	{ false,"xbios",     XBios_Info,           NULL, "Show XBIOS opcodes" },
 	{ false,"ym",        PSG_Info,             NULL, "Show YM-2149 register contents" },
 };

@@ -32,8 +32,39 @@ const char vme_fileid[] = "Hatari vme.c";
 #include "ioMem.h"
 #include "log.h"
 #include "vme.h"
+#include "m68000.h"
+#include "memorySnapShot.h"
+
+
 
 #define IOTAB_OFFSET 0xff8000
+
+
+typedef struct {
+	bool		Enabled;			/* 1 for MegaSTE/TT if SCU/VME is enabled, else 0 */
+
+	uint8_t		SysIntMask;			/* FF8E01 */
+	uint8_t		SysIntState;			/* FF8E03 */
+	uint8_t		SysInterrupter;			/* FF8E05 */
+
+	uint8_t		VmeIntMask;			/* FF8E0D */
+	uint8_t		VmeIntState;			/* FF8E0F */
+	uint8_t		VmeInterrupter;			/* FF8E07 */
+
+	uint8_t		GPR1;				/* FF8E09 */
+	uint8_t		GPR2;				/* FF8E0B */
+} SCU_REGS;
+
+
+static SCU_REGS		SCU;
+
+
+
+
+
+
+
+
 
 /**
  * SCU trace logging
@@ -42,7 +73,7 @@ const char vme_fileid[] = "Hatari vme.c";
 static void SCU_Trace(const char *access, const char *info)
 {
 	int addr = IoAccessCurrentAddress;
-	LOG_TRACE(TRACE_VME, "VME: SCU %s (0x%x): 0x%02x %s\n", access, addr, IoMem[addr], info);
+	LOG_TRACE(TRACE_VME, "VME: SCU %s (0x%x): 0x%02x pc %x, %s\n", access, addr, IoMem[addr], M68000_GetPC(), info);
 }
 #else
 # define SCU_Trace(a,b)
@@ -55,6 +86,76 @@ static void SCU_TraceRead(void)
 {
 	SCU_Trace("read ", "");
 }
+
+
+
+
+void	SCU_SetEnabled ( bool on_off )
+{
+	SCU.Enabled = on_off;
+}
+
+
+
+/**
+ * Reset SCU/VME registers and interrupts
+ */
+void	SCU_Reset ( void )
+{
+	int addr;
+
+	if ( !SCU.Enabled )
+		return;
+
+	/* docs say that all SCU regs are cleared on reset... */
+	for (addr = 0xff8e01; addr <= 0xff8e0f; addr += 2)
+		IoMem[addr] = 0;
+	/* TODO: ...but TOS v2 / v3 crash on MegaSTE / TT
+	 * unless gen reg 1 has this value, why?
+	 */
+	IoMem[0xff8e09] = 0x1;
+
+	/* All the SCU regs are cleared on reset */
+	SCU.SysIntMask = 0x00;
+	SCU.SysIntState = 0x00;
+	SCU.SysInterrupter = 0x00;
+	SCU.VmeIntMask = 0x00;
+	SCU.VmeIntState = 0x00;
+	SCU.VmeInterrupter = 0x00;
+	SCU.GPR1 = 0x00;
+	SCU.GPR2 = 0x00;
+
+	/* TODO: ...but TOS v2 / v3 crash on MegaSTE / TT
+	 * unless gen reg 1 has this value, why?
+	 */
+	SCU.GPR1 = 0x01;
+
+	/* TODO: clear all SCU interrupts */
+}
+
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Save/Restore snapshot of SCU/VME variables.
+ */
+void	SCU_MemorySnapShot_Capture ( bool bSave )
+{
+	/* Save/Restore details */
+	MemorySnapShot_Store(&SCU.Enabled, sizeof(SCU.Enabled));
+	MemorySnapShot_Store(&SCU.SysIntMask, sizeof(SCU.SysIntMask));
+	MemorySnapShot_Store(&SCU.SysIntState, sizeof(SCU.SysIntState));
+	MemorySnapShot_Store(&SCU.SysInterrupter, sizeof(SCU.SysInterrupter));
+	MemorySnapShot_Store(&SCU.VmeIntMask, sizeof(SCU.VmeIntMask));
+	MemorySnapShot_Store(&SCU.VmeIntState, sizeof(SCU.VmeIntState));
+	MemorySnapShot_Store(&SCU.VmeInterrupter, sizeof(SCU.VmeInterrupter));
+	MemorySnapShot_Store(&SCU.GPR1, sizeof(SCU.GPR1));
+	MemorySnapShot_Store(&SCU.GPR2, sizeof(SCU.GPR2));
+}
+
+
+
 
 /**
  * 0xff8e01 - masks interrupts generated on the system (board)
@@ -69,7 +170,7 @@ static void SCU_SysIntMask_WriteByte(void)
 	SCU_Trace("write", "(system interrupt mask)");
 	/* TODO: implement interrupt masking */
 }
-/**
+/**TT030_HW_Ref_Jun-1990.pdf
  * 0xff8e03 - system interrupt status before they are masked with above
  */
 static void SCU_SysIntState_ReadByte(void)
@@ -168,7 +269,7 @@ static void SCU_VmeIntState_WriteByte(void)
 }
 
 /**
- * Allow VME SCU register access and set up tracing
+ * Allow SCU/VME register access and set up tracing
  */
 static void SCUSetupTracing(void (**reads)(void), void (**writes)(void))
 {
@@ -192,51 +293,37 @@ static void SCUSetupTracing(void (**reads)(void), void (**writes)(void))
 }
 
 /**
- * Show VME/SCU register values
+ * Show SCU/VME register values
  */
-void VME_Info(FILE *fp, uint32_t arg)
+void SCU_Info(FILE *fp, uint32_t arg)
 {
 	if (!(Config_IsMachineTT() || Config_IsMachineMegaSTE()))
 	{
-		fprintf(fp, "No MegaSTE/TT -> no VME\n\n");
+		fprintf(fp, "No MegaSTE/TT -> no SCU/VME\n\n");
 		return;
 	}
 	static const char *modes[] = { "none", "dummy" };
-	fprintf(fp, "VME/SCU registers ('%s' access mode):\n", modes[ConfigureParams.System.nVMEType]);
-	fprintf(fp, "$FF8E01.b : system interrupt mask  : 0x%02x\n",      IoMem[0xff8e01]);
-	fprintf(fp, "$FF8E03.b : system interrupt state : 0x%02x (RO)\n", IoMem[0xff8e03]);
-	fprintf(fp, "$FF8E05.b : system interrupter     : 0x%02x\n",      IoMem[0xff8e05]);
-	fprintf(fp, "$FF8E07.b : VME interrupter        : 0x%02x\n",      IoMem[0xff8e07]);
-	fprintf(fp, "$FF8E09.b : general register 1     : 0x%02x\n",      IoMem[0xff8e09]);
-	fprintf(fp, "$FF8E0B.b : general register 2     : 0x%02x\n",      IoMem[0xff8e0b]);
-	fprintf(fp, "$FF8E0D.b : VME interrupt mask     : 0x%02x\n",      IoMem[0xff8e0d]);
-	fprintf(fp, "$FF8E0F.b : VME interrupt state    : 0x%02x (RO)\n", IoMem[0xff8e0f]);
+	fprintf(fp, "SCU/VME registers ('%s' access mode):\n", modes[ConfigureParams.System.nVMEType]);
+	fprintf(fp, "$FF8E01.b : system interrupt mask  : 0x%02x\n",      SCU.SysIntMask);
+	fprintf(fp, "$FF8E03.b : system interrupt state : 0x%02x (RO)\n", SCU.SysIntState);
+	fprintf(fp, "$FF8E05.b : system interrupter     : 0x%02x\n",      SCU.SysInterrupter);
+	fprintf(fp, "$FF8E07.b : VME interrupter        : 0x%02x\n",      SCU.VmeInterrupter);
+	fprintf(fp, "$FF8E09.b : general register 1     : 0x%02x\n",      SCU.GPR1);
+	fprintf(fp, "$FF8E0B.b : general register 2     : 0x%02x\n",      SCU.GPR2);
+	fprintf(fp, "$FF8E0D.b : VME interrupt mask     : 0x%02x\n",      SCU.VmeIntMask);
+	fprintf(fp, "$FF8E0F.b : VME interrupt state    : 0x%02x (RO)\n", SCU.VmeIntState);
 }
 
 /**
- * Set VME (SCU) register accessors based on Hatari configuration
+ * Set SCU/VME register accessors based on Hatari configuration
  * VME type setting
  */
-void VME_SetAccess(void (**readtab)(void), void (**writetab)(void))
+void SCU_SetAccess(void (**readtab)(void), void (**writetab)(void))
 {
+	SCU_SetEnabled ( true );
+
 	/* Allow SCU reg access and support tracing in "dummy" mode */
 	if (ConfigureParams.System.nVMEType == VME_TYPE_DUMMY)
 		SCUSetupTracing(readtab, writetab);
 }
 
-/**
- * Reset VME / SCU registers and interrupts
- */
-void VME_Reset(void)
-{
-	int addr;
-	/* docs say that all SCU regs are cleared on reset... */
-	for (addr = 0xff8e01; addr <= 0xff8e0f; addr += 2)
-		IoMem[addr] = 0;
-	/* TODO: ...but TOS v2 / v3 crash on MegaSTE / TT
-	 * unless gen reg 1 has this value, why?
-	 */
-	IoMem[0xff8e09] = 0x1;
-
-	/* TODO: clear all SCU interrupts */
-}

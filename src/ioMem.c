@@ -330,7 +330,9 @@ void IoMem_Init(void)
 
 	/* Whether to support VME / SCU register access */
 	if (Config_IsMachineTT() || Config_IsMachineMegaSTE())
-		VME_SetAccess(pInterceptReadTable, pInterceptWriteTable);
+		SCU_SetAccess(pInterceptReadTable, pInterceptWriteTable);
+	else
+		SCU_SetEnabled ( false );
 
 	/* Set registers for Falcon */
 	if (Config_IsMachineFalcon())
