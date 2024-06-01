@@ -86,6 +86,8 @@ int intlev(void)
 		return 4;
 	else if ( pendingInterrupts & (1 << 2) )	/* HBL interrupt ? */
 		return 2;
+	else if ( pendingInterrupts & (1 << 1) )	/* SCU soft interrupt on MegaSTE/TT ? */
+		return 1;
 
 	return 0;
 }

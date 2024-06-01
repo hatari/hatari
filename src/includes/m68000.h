@@ -75,8 +75,10 @@ enum {
 #define  EXCEPTION_NR_TRACE      	9
 #define  EXCEPTION_NR_LINE_A		10
 #define  EXCEPTION_NR_LINE_F		11
+#define  EXCEPTION_NR_SCU_SOFT_INT	25		/* Level 1 interrupt */
 #define  EXCEPTION_NR_HBLANK		26		/* Level 2 interrupt */
 #define  EXCEPTION_NR_VBLANK		28		/* Level 4 interrupt */
+#define  EXCEPTION_NR_SCC		29		/* Level 5 interrupt */
 #define  EXCEPTION_NR_MFP_DSP		30		/* Level 6 interrupt */
 #define  EXCEPTION_NR_TRAP0		32
 #define  EXCEPTION_NR_TRAP1		33
