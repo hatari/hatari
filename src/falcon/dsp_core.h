@@ -101,6 +101,13 @@ extern "C" {
 #define DSP_HOST_HSR_HF1	0x04
 #define DSP_HOST_HSR_DMA	0x07
 
+#define DSP_SCI_SCR_TMIE	0xd	/* Timer interrupt enabled */
+
+#define DSP_SCI_SCCR_COD	0xc	/* Clock output divider */
+#define DSP_SCI_SCCR_SCP	0xd	/* Clock prescaler */
+#define DSP_SCI_SCCR_RCM	0xe	/* Receive clock source bit */
+#define DSP_SCI_SCCR_TCM	0xf	/* Transmit clock source bit */
+
 #define DSP_SSI_CRA_DC0		0x8
 #define DSP_SSI_CRA_DC1		0x9
 #define DSP_SSI_CRA_DC2		0xa
