@@ -647,6 +647,12 @@ void dsp_core_reset(void)
 	dsp_core.periph[DSP_SPACE_X][DSP_IPR]=0;
 	dsp_core.periph[DSP_SPACE_X][DSP_BCR]=0xffff;
 
+	/* AGU pipeline reset */
+	for (i=0; i<2; i++) {
+		dsp_core.agu_pipeline_reg[i] = 0;
+		dsp_core.agu_pipeline_val[i] = 0;
+	}
+
 	/* Misc */
 	dsp_core.loop_rep = 0;
 

@@ -275,8 +275,15 @@ struct dsp_core_s {
 	uint32_t interrupt_mask_level[3];
 	uint32_t interrupt_edgetriggered_mask;
 
-	/* AGU pipeline simulation for indirect move ea instructions */
-	uint16_t agu_move_indirect_instr;	/* is the current instruction an indirect move ? (LUA, MOVE, MOVEC, MOVEM, TCC) (0=no ; 1 = yes)*/
+	/* AGU pipeline for indirect move ea instructions
+	   Indirect move instructions are : LUA, MOVEC, MOVEP, Tcc, parallel MOVE
+	   Registers concerned are Rx, Nx, Mx
+	   [LS] The motorola documentation includes MOVEM as an indirect move, but all my tests
+	   seem to conclude that MOVEM is not affected by the 1 instruction delay of the AGU
+	*/
+	uint16_t agu_move_indirect_instr;	/* is the current instruction an indirect move ? (0=no ; 1 = yes)*/
+	uint16_t agu_pipeline_reg[2];		/* pipeline index description : 0 = current delayed register ; 1 = new register to delay */
+	uint16_t agu_pipeline_val[2];		/* register value */
 };
 
 
