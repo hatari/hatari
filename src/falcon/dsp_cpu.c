@@ -114,9 +114,9 @@ static uint16_t access_to_ext_memory;
 /* If yes, stack overflow, underflow and illegal instructions messages are not displayed */
 static bool isDsp_in_disasm_mode;
 
-/* Buffer for memory change text in disasm mode */
-/* 10 slots are needed when tracing RESET instruction (it changes many memory addresses at once) */
-static char   str_disasm_memory[10][50];
+/* Disasm mode : buffer for memory change */
+/* 12 slots are needed when tracing RESET instruction (it can change up to 12 addresses at once) */
+static char   str_disasm_memory[12][50];
 
 static uint16_t disasm_memory_ptr;		/* Pointer for memory change in disasm mode */
 
