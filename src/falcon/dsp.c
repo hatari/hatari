@@ -541,7 +541,7 @@ void DSP_DisasmRegisters(FILE *fp)
 
 	/* Prepare the stack disasm */
 	for (i=0; i<16; i++) {
-		if (dsp_core.registers[DSP_REG_SP] == i)
+               if ((dsp_core.registers[DSP_REG_SP] & BITMASK(4)) == i)
 			sprintf(stack_disasm[i], " >%02d:  %04x   %04x\n", i, dsp_core.stack[0][i], dsp_core.stack[1][i]);
 		else
 			sprintf(stack_disasm[i], "  %02d:  %04x   %04x\n", i, dsp_core.stack[0][i], dsp_core.stack[1][i]);
