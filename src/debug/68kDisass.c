@@ -36,7 +36,7 @@ typedef enum {
 } Diss68kOptions;
 
 // Note: doptNoBrackets is not implemented anymore
-static Diss68kOptions	options = doptOpcodesSmall | doptRegisterSmall | doptNoSpace;
+static Diss68kOptions	options = doptOpcodesSmall | doptRegisterSmall | doptNoSpace | doptShowValues | doptHexSmall;
 
 /* all options for 'ext' and 'uae' disassemblers */
 #define COMMON_OPTS (doptOpcodesSmall | doptRegisterSmall | doptNoWords)
