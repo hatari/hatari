@@ -52,6 +52,7 @@ Debugger:
   - Variable & debug symbol names can be given directly also to load,
     save, memwrite and register commands in addition to numeric values
   - Align memdump ASCII columns also when line is not full
+  - Add 'a' (ASCII) argument type support for "memwrite" command
   - CPU disassembly shows resulting relative branch addresses
   - "dspreg" command shows also stack contents
   - PC value added to more traces

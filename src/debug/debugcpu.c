@@ -34,6 +34,7 @@ const char DebugCpu_fileid[] = "Hatari debugcpu.c";
 #include "68kDisass.h"
 #include "console.h"
 #include "options.h"
+#include "str.h"
 #include "vars.h"
 
 
@@ -775,6 +776,28 @@ static int DebugCpu_Struct(int nArgc, char *psArgs[])
 }
 
 
+/* helper to convert argument from host to Atari encoding.
+ * returns false if argument could not be mapped completely,
+ * or it maps to more than one Atari character.
+ *
+ * dst size 3 should be enough.
+ */
+static bool hostCharToAtari(const char *src, char *dst, size_t size)
+{
+	/* atari string is smaller or same size as host enconded string */
+	if (strlen(src) > size-1)
+	{
+		fprintf(stderr, "'%s' is not a single char!\n", src);
+		return false;
+	}
+	if (!Str_HostToAtari(src, dst, '.') || strlen(dst) != 1)
+	{
+		fprintf(stderr, "Unable to map '%s' to a single Atari char => use 'b' type instead\n", src);
+		return false;
+	}
+	return true;
+}
+
 /**
  * Command: Write to memory, optional arg for value lengths,
  * followed by starting address and the values.
@@ -804,7 +827,7 @@ static int DebugCpu_MemWrite(int nArgc, char *psArgs[])
 		/* no args, single digit or multiple chars -> default mode */
 		mode = 'b';
 	}
-	else if (mode == 'b')
+	else if (mode == 'b' || mode == 'a')
 	{
 		arg += 1;
 	}
@@ -841,6 +864,16 @@ static int DebugCpu_MemWrite(int nArgc, char *psArgs[])
 	values = 0;
 	for (i = arg; i < nArgc; i++)
 	{
+		if (mode == 'a')
+		{
+			char str[3];
+			if (!hostCharToAtari(psArgs[i], str, sizeof(str)))
+				return DEBUGGER_CMDDONE;
+			store.bytes[values] = str[0];
+			values++;
+			continue;
+		}
+
 		if (!Eval_Number(psArgs[i], &d, NUM_TYPE_NORMAL))
 		{
 			fprintf(stderr, "Bad value '%s'!\n", psArgs[i]);
@@ -876,6 +909,7 @@ static int DebugCpu_MemWrite(int nArgc, char *psArgs[])
 	{
 		switch(mode)
 		{
+		case 'a':
 		case 'b':
 			STMemory_WriteByte(write_addr + i, store.bytes[i]);
 			break;
@@ -1218,10 +1252,11 @@ static const dbgcommand_t cpucommands[] =
 	{ DebugCpu_MemWrite, Symbols_MatchCpuAddress,
 	  "memwrite", "w",
 	  "write bytes/words/longs to memory",
-	  "[b|w|l] address value1 [value2 ...]\n"
+	  "[b|w|l|a] <address> <values>\n"
 	  "\tWrite space separate values (in current number base) to given\n"
-	  "\tmemory address. By default writes are done as bytes, with\n"
-	  "\t'w' or 'l' option they will be done as words/longs instead",
+	  "\tmemory address. By default they are written as bytes, with\n"
+	  "\t'w' or 'l' they will be done as words/longs instead.\n"
+	  "\t'a' can be used to provide byte values as chars.",
 	  false },
 	{ DebugCpu_LoadBin, NULL,
 	  "loadbin", "l",
