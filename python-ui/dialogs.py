@@ -590,13 +590,13 @@ class PeripheralDialog(HatariUIDialog):
         rs232 = Gtk.CheckButton("Enable RS232/MFP (!Falcon)")
         rs232.set_active(config.get_rs232())
 
-        scca = Gtk.CheckButton("Enable RS232/SCC-A output (MegaSTE/TT/Falcon")
+        scca = Gtk.CheckButton("Enable RS232/SCC-A output (MegaSTE/TT/Falcon)")
         scca.set_active(config.get_scca())
 
-        scca_lan = Gtk.CheckButton("Enable RS232/SCC-A Lan output (MegaSTE/TT/Falcon")
+        scca_lan = Gtk.CheckButton("Enable RS232/sCC-A Lan output (MegaSTE/TT/Falcon)")
         scca_lan.set_active(config.get_scca_lan())
 
-        sccb = Gtk.CheckButton("Enable RS232/SCC-B output (MegaSTE/TT/Falcon")
+        sccb = Gtk.CheckButton("Enable RS232/SCC-B output (MegaSTE/TT/Falcon)")
         sccb.set_active(config.get_sccb())
 
         dialog = Gtk.Dialog("Peripherals", self.parent,
