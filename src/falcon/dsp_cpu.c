@@ -1627,8 +1627,8 @@ static void dsp_update_rn(uint32_t numreg, int16_t reg_value, int16_t reg_mofifi
 {
 	uint32_t value;
 
-	if (reg_modulo == 65535) {
-		/* Linear addressing mode */
+	if (reg_modulo == -1) {
+		/* Linear addressing mode (ie Mx=$ffff)  */
 		value = reg_value|0x10000;
 		value += reg_mofifier;
 		dsp_core.registers[DSP_REG_R0+numreg] = value & BITMASK(16);
