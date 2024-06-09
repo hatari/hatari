@@ -149,9 +149,9 @@ static void dsp_compute_ssh_ssl(void);
 
 static void opcode8h_0(void);
 
-static void dsp_update_rn(uint32_t numreg, int16_t reg_value, int16_t reg_mofifier, int16_t reg_modulo);
-static void dsp_update_rn_bitreverse(uint32_t numreg, int16_t reg_value, int16_t reg_mofifier);
-static void dsp_update_rn_modulo(uint32_t numreg, int16_t reg_value, int16_t reg_mofifier, int16_t reg_modulo);
+static void dsp_update_rn(uint32_t numreg, uint32_t reg_value, int16_t reg_mofifier, uint16_t reg_modulo);
+static void dsp_update_rn_bitreverse(uint32_t numreg, uint32_t reg_value, int16_t reg_mofifier);
+static void dsp_update_rn_modulo(uint32_t numreg, uint32_t reg_value, int16_t reg_mofifier, uint16_t reg_modulo);
 static int dsp_calc_ea(uint32_t ea_mode, uint32_t *dst_addr);
 static int dsp_calc_cc(uint32_t cc_code);
 
@@ -1623,11 +1623,11 @@ static void dsp_compute_ssh_ssl(void)
  *	Effective address calculation
  **********************************/
 
-static void dsp_update_rn(uint32_t numreg, int16_t reg_value, int16_t reg_mofifier, int16_t reg_modulo)
+static void dsp_update_rn(uint32_t numreg, uint32_t reg_value, int16_t reg_mofifier, uint16_t reg_modulo)
 {
 	uint32_t value;
 
-	if (reg_modulo == -1) {
+	if (reg_modulo == 0xffff) {
 		/* Linear addressing mode (ie Mx=$ffff)  */
 		value = reg_value|0x10000;
 		value += reg_mofifier;
@@ -1637,7 +1637,7 @@ static void dsp_update_rn(uint32_t numreg, int16_t reg_value, int16_t reg_mofifi
 		/* Bit reversed carry update */
 		dsp_update_rn_bitreverse(numreg, reg_value, reg_mofifier);
 	}
-	else if (reg_modulo<=32767) {
+	else if (reg_modulo <= 32767) {
 		/* Modulo update */
 		dsp_update_rn_modulo(numreg, reg_value, reg_mofifier, reg_modulo);
 	}
@@ -1646,7 +1646,7 @@ static void dsp_update_rn(uint32_t numreg, int16_t reg_value, int16_t reg_mofifi
 	}
 }
 
-static void dsp_update_rn_bitreverse(uint32_t numreg, int16_t reg_value, int16_t reg_mofifier)
+static void dsp_update_rn_bitreverse(uint32_t numreg, uint32_t reg_value, int16_t reg_mofifier)
 {
 	int revbits, i;
 	uint32_t value, r_reg;
@@ -1687,7 +1687,7 @@ static void dsp_update_rn_bitreverse(uint32_t numreg, int16_t reg_value, int16_t
 	dsp_core.registers[DSP_REG_R0+numreg] = value;
 }
 
-static void dsp_update_rn_modulo(uint32_t numreg, int16_t reg_value, int16_t reg_mofifier, int16_t reg_modulo)
+static void dsp_update_rn_modulo(uint32_t numreg, uint32_t reg_value, int16_t reg_mofifier, uint16_t reg_modulo)
 {
 	uint16_t bufsize, bufmask, modulo, abs_modifier;
 	uint32_t r_reg, lobound, hibound;
@@ -3124,6 +3124,10 @@ static void dsp_movem_aa(void)
 	if  (cur_inst & (1<<15)) {
 		/* Write D */
 		value = read_memory_p(addr);
+		/* [LS] According to Motorola doc, MOVEM is said to be a parralel move instruction.
+		   But tests seems to contradict this.
+		   Next line should stay commented for now.
+		*/
 		//dsp_core.agu_move_indirect_instr = 1;
 		dsp_write_reg(numreg, value);
 	} else {
@@ -3154,6 +3158,10 @@ static void dsp_movem_ea(void)
 	if  (cur_inst & (1<<15)) {
 		/* Write D */
 		value = read_memory_p(addr);
+		/* [LS] According to Motorola doc, MOVEM is said to be a parralel move instruction.
+		   But tests seems to contradict this.
+		   Next line should stay commented for now.
+		*/
 		//dsp_core.agu_move_indirect_instr = 1;
 		dsp_write_reg(numreg, value);
 	} else {
