@@ -10,7 +10,7 @@
 
 extern void SCU_SetAccess(void (**readtab)(void), void (**writetab)(void));
 extern void SCU_SetEnabled ( bool on_off );
-extern void SCU_Reset ( void );
+extern void	SCU_Reset ( bool bCold );
 
 extern void SCU_MemorySnapShot_Capture ( bool bSave );
 extern void SCU_Info ( FILE *fp, uint32_t arg ) ;

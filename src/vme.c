@@ -4,7 +4,12 @@
   This file is distributed under the GNU General Public License, version 2
   or at your option any later version. Read the file gpl.txt for details.
 
-  VMEbus / SCU (System Control Unit) interrupt handling.
+  SCU (System Control Unit) interrupt handling, used only in MegaSTE and TT
+
+  References :
+    - Atari TT030 Hardware reference Manual - June 1990
+    - Atari Profibuch ST-STE-TT, chapter 9 (german edition) - 1991
+
 
   TODO: Non-cacheable TT VME card address mapping (word based data transfer):
   - FE000000-FEFEFFFF VMEbus A24:D16
@@ -100,7 +105,7 @@ void	SCU_SetEnabled ( bool on_off )
 /**
  * Reset SCU/VME registers and interrupts
  */
-void	SCU_Reset ( void )
+void	SCU_Reset ( bool bCold )
 {
 	int addr;
 

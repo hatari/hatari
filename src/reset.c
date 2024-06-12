@@ -90,7 +90,7 @@ static int Reset_ST(bool bCold)
 	}
 	if (Config_IsMachineTT() || Config_IsMachineMegaSTE())
 	{
-		SCU_Reset();
+		SCU_Reset( bCold );
 	}
 	if (Config_IsMachineFalcon())
 	{
