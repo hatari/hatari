@@ -1,7 +1,7 @@
-From 3bdc621e0cce9d917f45b8974909c3495cb46a4b Mon Sep 17 00:00:00 2001
+From 192d9488d7adfe6a26237c0611b125a1e0b9bda6 Mon Sep 17 00:00:00 2001
 From: Eero Tamminen <oak@helsinkinet.fi>
 Date: Tue, 31 Mar 2020 22:41:40 +0300
-Subject: [PATCH 2/3] Set reasonable PSG port-A default value
+Subject: [PATCH 2/4] Set reasonable PSG port-A default value
 
 Fixes continuous IDE & DSP reset requests on Atari Falcon from 2Hz
 floppy media change detection when those bits happen to be set before
@@ -15,10 +15,10 @@ change detection, being also Falcon DSP & IDE reset request.
  1 file changed, 6 insertions(+), 4 deletions(-)
 
 diff --git a/arch/m68k/atari/config.c b/arch/m68k/atari/config.c
-index 7ec3161e8..91dcd0e6e 100644
+index b48a0606a..0e4bd90fe 100644
 --- a/arch/m68k/atari/config.c
 +++ b/arch/m68k/atari/config.c
-@@ -194,6 +194,7 @@ early_param("switches", atari_switches_setup);
+@@ -188,6 +188,7 @@ early_param("switches", atari_switches_setup);
  void __init config_atari(void)
  {
  	unsigned short tos_version;
@@ -26,7 +26,7 @@ index 7ec3161e8..91dcd0e6e 100644
  
  	memset(&atari_hw_present, 0, sizeof(atari_hw_present));
  
-@@ -219,11 +220,12 @@ void __init config_atari(void)
+@@ -212,11 +213,12 @@ void __init config_atari(void)
  	if (atari_switches & ATARI_SWITCH_MIDI)
  		acia.mid_ctrl = ACIA_DIV16 | ACIA_D8N1S | ACIA_RHTID;
  	if (atari_switches & (ATARI_SWITCH_SND6|ATARI_SWITCH_SND7)) {
@@ -44,5 +44,5 @@ index 7ec3161e8..91dcd0e6e 100644
  	/* ++bjoern:
  	 * Determine hardware present
 -- 
-2.20.1
+2.39.2
 
