@@ -8,11 +8,16 @@
 #ifndef HATARI_VME_H
 #define HATARI_VME_H
 
-extern void SCU_SetAccess(void (**readtab)(void), void (**writetab)(void));
-extern void SCU_SetEnabled ( bool on_off );
+extern void	SCU_SetAccess(void (**readtab)(void), void (**writetab)(void));
+extern void	SCU_SetEnabled ( bool on_off );
+extern bool	SCU_IsEnabled ( void );
 extern void	SCU_Reset ( bool bCold );
 
-extern void SCU_MemorySnapShot_Capture ( bool bSave );
-extern void SCU_Info ( FILE *fp, uint32_t arg ) ;
+extern void 	SCU_UpdatePendingInts_CPU ( void );
+extern void	SCU_SetIRQ_CPU ( int IntNr );
+extern void	SCU_ClearIRQ_CPU ( int IntNr );
+
+extern void	SCU_MemorySnapShot_Capture ( bool bSave );
+extern void	SCU_Info ( FILE *fp, uint32_t arg ) ;
 
 #endif
