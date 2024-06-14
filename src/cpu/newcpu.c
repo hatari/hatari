@@ -2919,7 +2919,7 @@ static int iack_cycle(int nr)
 			/* will never be processed. If there's no DSP IRQ, we clear level 6 pending bit now */
 			/* and if there's a lower MFP pending int, level 6 will be set again at the next instruction */
 			if ( DSP_GetHREQ() == 0 )
-				pendingInterrupts &= ~( 1 << 6 );
+				M68000_ClearIRQ ( 6 );
 		}
 	}
 	if ( nr == 29 )								/* SCC (level 5) */
@@ -2965,7 +2965,7 @@ static int iack_cycle(int nr)
 		CycInt_Process();
 		if ( MFP_UpdateNeeded == true )
 			MFP_UpdateIRQ_All ( 0 );				/* update MFP's state if some internal timers related to MFP expired */
-		pendingInterrupts &= ~( 1 << ( nr - 24 ) );			/* clear HBL or VBL pending bit (even if an MFP timer occurred during IACK) */
+		M68000_ClearIRQ ( nr - 24 );					/* clear HBL or VBL pending bit (even if an MFP timer occurred during IACK) */
 		CPU_IACK = false;
 
 		/* Add the cycles used by the IACK sequence (IACK to DTACK transition) */

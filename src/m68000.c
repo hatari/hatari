@@ -94,6 +94,7 @@ const char M68000_fileid[] = "Hatari m68000.c";
 #include "cpu/cpummu.h"
 #include "cpu/cpummu030.h"
 #include "scc.h"
+#include "vme.h"
 
 #if ENABLE_DSP_EMU
 #include "dsp.h"
@@ -593,11 +594,37 @@ void M68000_BusError ( uint32_t addr , int ReadWrite , int Size , int AccessType
 }
 
 
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Set/clear interrupt request for IntNr (between 1 and 7)
+ *  - For STF/STE/Falcon : we update the corresponding bits in "pendingInterrupts", which is
+ *    directly "connected" to the CPU core
+ *  - For MegaSTE/TT : interrupts are first handled by the SCU chip which include a dedicated mask
+ *    for every interrupt source. The masked result is then copied to "pendingInterrupts" and
+ *    only masked interrupts will be visible to the CPU core
+ */
+
+void	M68000_SetIRQ ( int IntNr )
+{
+	pendingInterrupts |= ( 1 << IntNr );
+}
+
+
+void	M68000_ClearIRQ ( int IntNr )
+{
+	pendingInterrupts &= ~( 1 << IntNr );
+}
+
+
 /*-----------------------------------------------------------------------*/
 /**
  * Exception handler
+ * If ExceptionNr matches level 1-7 interrupts then we call M68000_SetIRQ
+ * Else we call Exception() in the CPU core in newcpu.c
  */
-void M68000_Exception(uint32_t ExceptionNr , int ExceptionSource)
+
+void	M68000_Exception(uint32_t ExceptionNr , int ExceptionSource)
 {
 	if ( ExceptionNr > 24 && ExceptionNr < 32 )		/* Level 1-7 interrupts */
 	{
@@ -605,7 +632,7 @@ void M68000_Exception(uint32_t ExceptionNr , int ExceptionSource)
 		/* For WinUAE CPU, we must call M68000_Update_intlev after changing pendingInterrupts */
 		/* (in order to call doint() and to update regs.ipl with regs.ipl_pin, else */
 		/* the exception might be delayed by one instruction in do_specialties()) */
-		pendingInterrupts |= (1 << ( ExceptionNr - 24 ));
+		M68000_SetIRQ ( ExceptionNr - 24 );
 		M68000_Update_intlev();
 	}
 
@@ -644,14 +671,14 @@ void	M68000_Update_intlev ( void )
 	Level6_IRQ = MFP_GetIRQ_CPU();
 #endif
 	if ( Level6_IRQ == 1 )
-		pendingInterrupts |= (1 << 6);
+		M68000_SetIRQ ( 6 );
 	else
-		pendingInterrupts &= ~(1 << 6);
+		M68000_ClearIRQ ( 6 );
 
 	if ( SCC_Get_Line_IRQ() == SCC_IRQ_ON )
-		pendingInterrupts |= (1 << 5);
+		M68000_SetIRQ ( 5 );
 	else
-		pendingInterrupts &= ~(1 << 5);
+		M68000_ClearIRQ ( 5 );
 
 	if ( pendingInterrupts )
 		doint();
