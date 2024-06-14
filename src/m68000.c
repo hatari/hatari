@@ -607,13 +607,19 @@ void M68000_BusError ( uint32_t addr , int ReadWrite , int Size , int AccessType
 
 void	M68000_SetIRQ ( int IntNr )
 {
-	pendingInterrupts |= ( 1 << IntNr );
+	if ( !SCU_IsEnabled() )
+		pendingInterrupts |= ( 1 << IntNr );
+	else
+		SCU_SetIRQ_CPU ( IntNr );			/* MegaSTE / TT */
 }
 
 
 void	M68000_ClearIRQ ( int IntNr )
 {
-	pendingInterrupts &= ~( 1 << IntNr );
+	if ( !SCU_IsEnabled() )
+		pendingInterrupts &= ~( 1 << IntNr );
+	else
+		SCU_ClearIRQ_CPU ( IntNr );			/* MegaSTE / TT */
 }
 
 
