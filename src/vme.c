@@ -431,8 +431,6 @@ void SCU_Info ( FILE *fp, uint32_t arg )
 		fprintf(fp, "No MegaSTE/TT -> no SCU/VME\n\n");
 		return;
 	}
-	static const char *modes[] = { "none", "dummy" };
-	fprintf(fp, "SCU/VME registers ('%s' access mode):\n", modes[ConfigureParams.System.nVMEType]);
 	fprintf(fp, "$FF8E01.b : system interrupt mask  : 0x%02x\n",      SCU.SysIntMask);
 	fprintf(fp, "$FF8E03.b : system interrupt state : 0x%02x (RO)\n", SCU.SysIntState);
 	fprintf(fp, "$FF8E05.b : system interrupter     : 0x%02x\n",      SCU.SysInterrupter);

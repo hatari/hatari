@@ -365,12 +365,6 @@ typedef enum
 
 typedef enum
 {
-  VME_TYPE_NONE,
-  VME_TYPE_DUMMY
-} VMETYPE;
-
-typedef enum
-{
   FPU_NONE = 0,
   FPU_68881 = 68881,
   FPU_68882 = 68882,
@@ -394,7 +388,6 @@ typedef struct
   MACHINETYPE nMachineType;
   bool bBlitter;                  /* TRUE if Blitter is enabled */
   DSPTYPE nDSPType;               /* how to "emulate" DSP */
-  VMETYPE nVMEType;               /* how to "emulate" SCU/VME */
   int nRtcYear;
   bool bPatchTimerD;
   bool bFastBoot;                 /* Enable to patch TOS for fast boot */

@@ -535,7 +535,6 @@ static const struct Config_Tag configs_System[] =
 	{ "nModelType", Int_Tag, &ConfigureParams.System.nMachineType },
 	{ "bBlitter", Bool_Tag, &ConfigureParams.System.bBlitter },
 	{ "nDSPType", Int_Tag, &ConfigureParams.System.nDSPType },
-	{ "nVMEType", Int_Tag, &ConfigureParams.System.nVMEType },
 	{ "nRtcYear", Int_Tag, &ConfigureParams.System.nRtcYear },
 	{ "bPatchTimerD", Bool_Tag, &ConfigureParams.System.bPatchTimerD },
 	{ "bFastBoot", Bool_Tag, &ConfigureParams.System.bFastBoot },
@@ -841,7 +840,6 @@ void Configuration_SetDefault(void)
 	ConfigureParams.System.nCpuLevel = 0;
 	ConfigureParams.System.nCpuFreq = 8;	nCpuFreqShift = 0;
 	ConfigureParams.System.nDSPType = DSP_TYPE_NONE;
-	ConfigureParams.System.nVMEType = VME_TYPE_DUMMY; /* for TOS MegaSTE detection */
 	ConfigureParams.System.nRtcYear = 0;
 	ConfigureParams.System.bAddressSpace24 = true;
 	ConfigureParams.System.n_FPUType = FPU_NONE;
@@ -1228,9 +1226,6 @@ void Configuration_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&ConfigureParams.System.nMachineType, sizeof(ConfigureParams.System.nMachineType));
 	MemorySnapShot_Store(&ConfigureParams.System.bBlitter, sizeof(ConfigureParams.System.bBlitter));
 	MemorySnapShot_Store(&ConfigureParams.System.nDSPType, sizeof(ConfigureParams.System.nDSPType));
-	/* TODO: enable after VME/SCU interrupt emulation is implemented
-	MemorySnapShot_Store(&ConfigureParams.System.nVMEType, sizeof(ConfigureParams.System.nVMEType));
-	 */
 	MemorySnapShot_Store(&ConfigureParams.System.bPatchTimerD, sizeof(ConfigureParams.System.bPatchTimerD));
 	MemorySnapShot_Store(&ConfigureParams.System.bAddressSpace24, sizeof(ConfigureParams.System.bAddressSpace24));
 
