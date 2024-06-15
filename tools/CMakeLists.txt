@@ -1,11 +1,11 @@
 
 add_subdirectory(hmsa)
 
-include(FindPythonInterp)
-if(PYTHONINTERP_FOUND)
+include(FindPython)
+if(Python_Interpreter_FOUND)
 	add_subdirectory(hconsole)
 	add_subdirectory(debugger)
-endif(PYTHONINTERP_FOUND)
+endif(Python_Interpreter_FOUND)
 
 install(PROGRAMS atari-convert-dir.py DESTINATION ${BINDIR} RENAME atari-convert-dir)
 install(PROGRAMS hatari-prg-args.sh DESTINATION ${BINDIR} RENAME hatari-prg-args)

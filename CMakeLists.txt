@@ -1,10 +1,4 @@
-cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
-
-if(POLICY CMP0148)
-	# Should be removed when we replaced FindPythonInterp with FindPython3
-	# and cmake_minimum_required has been bumped to 3.12
-	cmake_policy(SET CMP0148 OLD)
-endif(POLICY CMP0148)
+cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 
 # Set build type to "Release" if user did not specify any build type yet
 # Other possible values: Debug, Release, RelWithDebInfo and MinSizeRel
@@ -372,14 +366,14 @@ if(NOT CMAKE_CROSSCOMPILING)
 	add_subdirectory(tests)
 endif(NOT CMAKE_CROSSCOMPILING)
 
-include(FindPythonInterp)
-if(PYTHONINTERP_FOUND AND PYTHON_VERSION_MAJOR LESS 3)
+include(FindPython)
+if(Python_Interpreter_FOUND AND Python_VERSION_MAJOR LESS 3)
 	message("Note: Hatari needs at least Python 3 ... ignoring older version")
-	unset(PYTHONINTERP_FOUND)
+	unset(Python_Interpreter_FOUND)
 endif()
 set(PYTHON_GTK_FOUND 0)
-if(PYTHONINTERP_FOUND)
-	execute_process(COMMAND ${PYTHON_EXECUTABLE} -c "\
+if(Python_Interpreter_FOUND)
+	execute_process(COMMAND ${Python_EXECUTABLE} -c "\
 import gi\n\
 gi.require_version('Gtk', '3.0')\n\
 from gi.repository import Gtk\n\
@@ -392,7 +386,7 @@ from gi.repository import GLib"
 		set(PYTHON_GTK_FOUND 1)
 		add_subdirectory(python-ui)
 	endif()
-endif(PYTHONINTERP_FOUND)
+endif(Python_Interpreter_FOUND)
 
 if(UNIX AND NOT ENABLE_OSX_BUNDLE)
 	add_subdirectory(share)
