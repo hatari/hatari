@@ -189,15 +189,15 @@ static void IoMem_FixVoidAccessForMegaST(void)
 
 
 /**
- * Fix up the IO memory access table for the Mega STE.
+ * Fix up the IO memory access table for the MegaSTE compared to the STE
  */
 static void IoMem_FixAccessForMegaSTE(void)
 {
 	int addr;
 
-	/* Mega-STE has an additional Cache/CPU control register compared to
+	/* MegaSTE has an additional Cache/CPU control register compared to
 	 * the normal STE. The addresses before and after 0xff8e21 also do not
-	 * produce a bus error on the Mega-STE. */
+	 * produce a bus error on the MegaSTE. */
 	pInterceptReadTable[0xff8e20 - 0xff8000] = IoMem_VoidRead;
 	pInterceptWriteTable[0xff8e20 - 0xff8000] = IoMem_VoidWrite;
 	pInterceptReadTable[0xff8e21 - 0xff8000] = IoMem_ReadWithoutInterception;
@@ -207,16 +207,32 @@ static void IoMem_FixAccessForMegaSTE(void)
 	pInterceptReadTable[0xff8e23 - 0xff8000] = IoMem_VoidRead;
 	pInterceptWriteTable[0xff8e23 - 0xff8000] = IoMem_VoidWrite;
 
-	/* VME/SCU 0xff8e01-0xff8e0f registers set at run-time in ioMem.c/vme.c for MegaSTE */
+	/* The MegaSTE has a SCU at 0xff8e01-0xff8e0f (like on TT) */
+	pInterceptReadTable[0xff8e01 - 0xff8000]	= SCU_SysIntMask_ReadByte;
+	pInterceptWriteTable[0xff8e01 - 0xff8000]	= SCU_SysIntMask_WriteByte;
+	pInterceptReadTable[0xff8e03 - 0xff8000]	= SCU_SysIntState_ReadByte;
+	pInterceptWriteTable[0xff8e03 - 0xff8000]	= SCU_SysIntState_WriteByte;
+	pInterceptReadTable[0xff8e05 - 0xff8000]	= SCU_SysInterrupter_ReadByte;
+	pInterceptWriteTable[0xff8e05 - 0xff8000]	= SCU_SysInterrupter_WriteByte;
+	pInterceptReadTable[0xff8e07 - 0xff8000]	= SCU_VmeInterrupter_ReadByte;
+	pInterceptWriteTable[0xff8e07 - 0xff8000]	= SCU_VmeInterrupter_WriteByte;
+	pInterceptReadTable[0xff8e09 - 0xff8000]	= SCU_GPR1_ReadByte;
+	pInterceptWriteTable[0xff8e09 - 0xff8000]	= SCU_GPR1_WriteByte;
+	pInterceptReadTable[0xff8e0b - 0xff8000]	= SCU_GPR2_ReadByte;
+	pInterceptWriteTable[0xff8e0b - 0xff8000]	= SCU_GPR2_WriteByte;
+	pInterceptReadTable[0xff8e0d - 0xff8000]	= SCU_VmeIntMask_Readyte;
+	pInterceptWriteTable[0xff8e0d - 0xff8000]	= SCU_VmeIntMask_WriteByte;
+	pInterceptReadTable[0xff8e0f - 0xff8000]	= SCU_VmeIntState_ReadByte;
+	pInterceptWriteTable[0xff8e0f - 0xff8000]	= SCU_VmeIntState_WriteByte;
 
-	/* The Mega-STE has a Z85C30 SCC serial port, too: */
+	/* The MegaSTE has a Z85C30 SCC serial port, too: */
 	for (addr = 0xff8c80; addr <= 0xff8c87; addr++)
 	{
 		pInterceptReadTable[addr - 0xff8000] = SCC_IoMem_ReadByte;
 		pInterceptWriteTable[addr - 0xff8000] = SCC_IoMem_WriteByte;
 	}
 
-	/* The Mega-STE can choose between DD and HD mode when reading floppy */
+	/* The MegaSTE can choose between DD and HD mode when reading floppy */
 	/* This uses word register at 0xff860e */
 	for (addr = 0xff860e; addr <= 0xff860f; addr++)
 	{
@@ -328,9 +344,9 @@ void IoMem_Init(void)
 	else if ( ConfigureParams.System.nMachineType == MACHINE_MEGA_STE )
 		IoMem_FixAccessForMegaSTE();
 
-	/* Whether to support VME / SCU register access */
+	/* Whether to support SCU registers / VME */
 	if (Config_IsMachineTT() || Config_IsMachineMegaSTE())
-		SCU_SetAccess(pInterceptReadTable, pInterceptWriteTable);
+		SCU_SetEnabled ( true );
 	else
 		SCU_SetEnabled ( false );
 

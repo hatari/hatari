@@ -23,6 +23,7 @@ const char IoMemTabSTE_fileid[] = "Hatari ioMemTabSTE.c";
 #include "rs232.h"
 #include "rtc.h"
 #include "video.h"
+#include "vme.h"
 #include "blitter.h"
 #include "statusbar.h"
 #include "stMemory.h"
@@ -201,6 +202,8 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_STE[] =
 	{ 0xff8a3c, SIZE_BYTE, Blitter_Control_ReadByte, Blitter_Control_WriteByte },
 	{ 0xff8a3d, SIZE_BYTE, Blitter_Skew_ReadByte, Blitter_Skew_WriteByte },
 	{ 0xff8a3e, SIZE_WORD, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
+
+	/* SCU 0xff8e01-0xff8e0f registers set at run-time in ioMem.c for MegaSTE */
 
 	{ 0xff9000, SIZE_WORD, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xff9200, SIZE_WORD, Joy_StePadButtons_DIPSwitches_ReadWord, Joy_StePadButtons_DIPSwitches_WriteWord },    /* Joypad fire buttons + MegaSTE DIP Switches */

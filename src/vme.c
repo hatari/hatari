@@ -214,7 +214,7 @@ void	SCU_ClearIRQ_CPU ( int IntNr )
  * so they cannot be masked independently by VME & system masks,
  * they will be masked using VmeIntMask and not SysIntMask.
  */
-static void SCU_SysIntMask_ReadByte ( void )
+void SCU_SysIntMask_ReadByte ( void )
 {
 	IoMem[IoAccessCurrentAddress] = SCU.SysIntMask;
 	SCU_TraceRead ( "sys_int mask" );
@@ -224,7 +224,7 @@ static void SCU_SysIntMask_ReadByte ( void )
 	M68000_Update_intlev ();
 }
 
-static void SCU_SysIntMask_WriteByte ( void )
+void SCU_SysIntMask_WriteByte ( void )
 {
 	SCU_TraceWrite ( "sys_int mask" );
 	SCU.SysIntMask = IoMem[IoAccessCurrentAddress];
@@ -240,13 +240,13 @@ static void SCU_SysIntMask_WriteByte ( void )
 /**
  * 0xff8e03 - system interrupt status (pending bits before they are masked with SysIntMask above)
  */
-static void SCU_SysIntState_ReadByte ( void )
+void SCU_SysIntState_ReadByte ( void )
 {
 	IoMem[IoAccessCurrentAddress] = SCU.SysIntState;
 	SCU_TraceRead ( "sys_int state" );
 }
 
-static void SCU_SysIntState_WriteByte ( void )
+void SCU_SysIntState_WriteByte ( void )
 {
 	SCU_TraceWrite ( "sys_int state (read only)" );
 }
@@ -260,13 +260,13 @@ static void SCU_SysIntState_WriteByte ( void )
  * If bit 0 is clear, the level 1 interrupt request is removed
  * Other bits are not used
  */
-static void SCU_SysInterrupter_ReadByte ( void )
+void SCU_SysInterrupter_ReadByte ( void )
 {
 	IoMem[IoAccessCurrentAddress] = SCU.SysInterrupter;
 	SCU_TraceRead ( "sys interrupter" );
 }
 
-static void SCU_SysInterrupter_WriteByte ( void )
+void SCU_SysInterrupter_WriteByte ( void )
 {
 	SCU.SysInterrupter = IoMem[IoAccessCurrentAddress];
 
@@ -294,13 +294,13 @@ static void SCU_SysInterrupter_WriteByte ( void )
  *
  * NOTE : not implemented at the moment as Hatari doesn't emulate the VME bus itself
  */
-static void SCU_VmeInterrupter_ReadByte ( void )
+void SCU_VmeInterrupter_ReadByte ( void )
 {
 	IoMem[IoAccessCurrentAddress] = SCU.SysInterrupter;
 	SCU_TraceRead ( "vme interrupter" );
 }
 
-static void SCU_VmeInterrupter_WriteByte ( void )
+void SCU_VmeInterrupter_WriteByte ( void )
 {
 	if (IoMem[0xff8e07] & 0x1)
 	{
@@ -327,13 +327,13 @@ static void SCU_VmeInterrupter_WriteByte ( void )
 /**
  * 0xff8e09 - SCU general purpose reg 1
  */
-static void SCU_GPR1_ReadByte ( void )
+void SCU_GPR1_ReadByte ( void )
 {
 	IoMem[IoAccessCurrentAddress] = SCU.GPR1;
 	SCU_TraceRead ( "gpr1" );
 }
 
-static void SCU_GPR1_WriteByte ( void )
+void SCU_GPR1_WriteByte ( void )
 {
 	SCU_TraceWrite ( "gpr1" );
 	SCU.GPR1 = IoMem[IoAccessCurrentAddress];
@@ -344,13 +344,13 @@ static void SCU_GPR1_WriteByte ( void )
 /**
  * 0xff8e0b - SCU general purpose reg 2
  */
-static void SCU_GPR2_ReadByte ( void )
+void SCU_GPR2_ReadByte ( void )
 {
 	IoMem[IoAccessCurrentAddress] = SCU.GPR2;
 	SCU_TraceRead ( "gpr2" );
 }
 
-static void SCU_GPR2_WriteByte ( void )
+void SCU_GPR2_WriteByte ( void )
 {
 	SCU_TraceWrite ( "gpr2" );
 	SCU.GPR2 = IoMem[IoAccessCurrentAddress];
@@ -363,7 +363,7 @@ static void SCU_GPR2_WriteByte ( void )
  *
  * Bits 1-7 -> IRQ 1-7, Bit 0 unused
  */
-static void SCU_VmeIntMask_Readyte ( void )
+void SCU_VmeIntMask_Readyte ( void )
 {
 	IoMem[IoAccessCurrentAddress] = SCU.VmeIntMask;
 	SCU_TraceRead ( "vme_int mask" );
@@ -373,7 +373,7 @@ static void SCU_VmeIntMask_Readyte ( void )
 	M68000_Update_intlev ();
 }
 
-static void SCU_VmeIntMask_WriteByte ( void )
+void SCU_VmeIntMask_WriteByte ( void )
 {
 	SCU_TraceWrite ( "vme_int mask" );
 	SCU.VmeIntMask = IoMem[IoAccessCurrentAddress];
@@ -388,41 +388,15 @@ static void SCU_VmeIntMask_WriteByte ( void )
 /**
  * 0xff8e0f - VME interrupt status (pending bits before they are masked with VmeIntMask above)
  */
-static void SCU_VmeIntState_ReadByte ( void )
+void SCU_VmeIntState_ReadByte ( void )
 {
 	IoMem[IoAccessCurrentAddress] = SCU.VmeIntState;
 	SCU_TraceRead ( "vme_int state" );
 }
 
-static void SCU_VmeIntState_WriteByte ( void )
+void SCU_VmeIntState_WriteByte ( void )
 {
 	SCU_TraceWrite ( "vme_int state (read only)" );
-}
-
-
-
-/**
- * Allow SCU/VME register access and set up tracing
- */
-static void SCU_SetupTracing ( void (**reads)(void), void (**writes)(void) )
-{
-	reads[0xff8e01 - IOTAB_OFFSET] = SCU_SysIntMask_ReadByte;
-	reads[0xff8e03 - IOTAB_OFFSET] = SCU_SysIntState_ReadByte;
-	reads[0xff8e05 - IOTAB_OFFSET] = SCU_SysInterrupter_ReadByte;
-	reads[0xff8e07 - IOTAB_OFFSET] = SCU_VmeInterrupter_ReadByte;
-	reads[0xff8e09 - IOTAB_OFFSET] = SCU_GPR1_ReadByte;
-	reads[0xff8e0b - IOTAB_OFFSET] = SCU_GPR2_ReadByte;
-	reads[0xff8e0d - IOTAB_OFFSET] = SCU_VmeIntMask_Readyte;
-	reads[0xff8e0f - IOTAB_OFFSET] = SCU_VmeIntState_ReadByte;
-
-	writes[0xff8e01 - IOTAB_OFFSET] = SCU_SysIntMask_WriteByte;	/* SCU system interrupt mask */
-	writes[0xff8e03 - IOTAB_OFFSET] = SCU_SysIntState_WriteByte;	/* SCU system interrupt state (RO) */
-	writes[0xff8e05 - IOTAB_OFFSET] = SCU_SysInterrupter_WriteByte;	/* SCU system interrupter */
-	writes[0xff8e07 - IOTAB_OFFSET] = SCU_VmeInterrupter_WriteByte;	/* SCU VME interrupter */
-	writes[0xff8e09 - IOTAB_OFFSET] = SCU_GPR1_WriteByte;		/* SCU general purpose 1 */
-	writes[0xff8e0b - IOTAB_OFFSET] = SCU_GPR2_WriteByte;		/* SCU general purpose 2 */
-	writes[0xff8e0d - IOTAB_OFFSET] = SCU_VmeIntMask_WriteByte;	/* SCU VME interrupt mask */
-	writes[0xff8e0f - IOTAB_OFFSET] = SCU_VmeIntState_WriteByte;	/* SCU VME interrupt state (RO) */
 }
 
 
@@ -467,20 +441,5 @@ void SCU_Info ( FILE *fp, uint32_t arg )
 	fprintf(fp, "$FF8E0B.b : general register 2     : 0x%02x\n",      SCU.GPR2);
 	fprintf(fp, "$FF8E0D.b : VME interrupt mask     : 0x%02x\n",      SCU.VmeIntMask);
 	fprintf(fp, "$FF8E0F.b : VME interrupt state    : 0x%02x (RO)\n", SCU.VmeIntState);
-}
-
-
-
-/**
- * Set SCU/VME register accessors based on Hatari configuration
- * VME type setting
- */
-void SCU_SetAccess(void (**readtab)(void), void (**writetab)(void))
-{
-	SCU_SetEnabled ( true );
-
-	/* Allow SCU reg access and support tracing in "dummy" mode */
-	if (ConfigureParams.System.nVMEType == VME_TYPE_DUMMY)
-		SCU_SetupTracing(readtab, writetab);
 }
 

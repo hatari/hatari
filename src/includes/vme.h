@@ -8,14 +8,31 @@
 #ifndef HATARI_VME_H
 #define HATARI_VME_H
 
-extern void	SCU_SetAccess(void (**readtab)(void), void (**writetab)(void));
 extern void	SCU_SetEnabled ( bool on_off );
 extern bool	SCU_IsEnabled ( void );
+
 extern void	SCU_Reset ( bool bCold );
 
-extern void 	SCU_UpdatePendingInts_CPU ( void );
+extern void	SCU_UpdatePendingInts_CPU ( void );
 extern void	SCU_SetIRQ_CPU ( int IntNr );
 extern void	SCU_ClearIRQ_CPU ( int IntNr );
+
+extern void	SCU_SysIntMask_ReadByte ( void );
+extern void	SCU_SysIntMask_WriteByte ( void );
+extern void	SCU_SysIntState_ReadByte ( void );
+extern void	SCU_SysIntState_WriteByte ( void );
+extern void	SCU_SysInterrupter_ReadByte ( void );
+extern void	SCU_SysInterrupter_WriteByte ( void );
+extern void	SCU_VmeInterrupter_ReadByte ( void );
+extern void	SCU_VmeInterrupter_WriteByte ( void );
+extern void	SCU_GPR1_ReadByte ( void );
+extern void	SCU_GPR1_WriteByte ( void );
+extern void	SCU_GPR2_ReadByte ( void );
+extern void	SCU_GPR2_WriteByte ( void );
+extern void	SCU_VmeIntMask_Readyte ( void );
+extern void	SCU_VmeIntMask_WriteByte ( void );
+extern void	SCU_VmeIntState_ReadByte ( void );
+extern void	SCU_VmeIntState_WriteByte ( void );
 
 extern void	SCU_MemorySnapShot_Capture ( bool bSave );
 extern void	SCU_Info ( FILE *fp, uint32_t arg ) ;
