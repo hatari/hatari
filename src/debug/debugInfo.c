@@ -38,12 +38,12 @@ const char DebugInfo_fileid[] = "Hatari debuginfo.c";
 #include "psg.h"
 #include "rtc.h"
 #include "stMemory.h"
+#include "scu_vme.h"
 #include "tos.h"
 #include "scc.h"
 #include "vdi.h"
 #include "video.h"
 #include "videl.h"
-#include "vme.h"
 #include "xbios.h"
 #include "newcpu.h"
 #include "68kDisass.h"
@@ -681,10 +681,10 @@ static const struct {
 	{ true, "registers", DebugInfo_CpuRegister,NULL, "Show CPU register contents" },
 	{ false,"rtc",       Rtc_Info,             NULL, "Show (Mega ST/STE) RTC register contents" },
 	{ false,"scc",       SCC_Info,             NULL, "Show SCC register contents" },
+	{ false,"scu",       SCU_Info,             NULL, "Show SCU/VME register information" },
 	{ false,"vdi",       VDI_Info,             NULL, "Show VDI vector contents (with <value>, show opcodes)" },
 	{ false,"videl",     Videl_Info,           NULL, "Show Falcon Videl register contents" },
 	{ false,"video",     Video_Info,           NULL, "Show Video information" },
-	{ false,"vme",       SCU_Info,             NULL, "Show SCU/VME register information" },
 	{ false,"xbios",     XBios_Info,           NULL, "Show XBIOS opcodes" },
 	{ false,"ym",        PSG_Info,             NULL, "Show YM-2149 register contents" },
 };

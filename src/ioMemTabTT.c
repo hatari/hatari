@@ -33,8 +33,8 @@ const char IoMemTabTT_fileid[] = "Hatari ioMemTabTT.c";
 #include "rs232.h"
 #include "rtc.h"
 #include "scc.h"
+#include "scu_vme.h"
 #include "video.h"
-#include "vme.h"
 #include "stMemory.h"
 
 

@@ -41,7 +41,7 @@ const char IoMem_fileid[] = "Hatari ioMem.c";
 #include "log.h"
 #include "scc.h"
 #include "fdc.h"
-#include "vme.h"
+#include "scu_vme.h"
 
 
 static void (*pInterceptReadTable[0x8000])(void);	/* Table with read access handlers */

@@ -1,12 +1,12 @@
 /*
-  Hatari - vme.h
+  Hatari - scu_vme.h
 
   This file is distributed under the GNU General Public License, version 2
   or at your option any later version. Read the file gpl.txt for details.
 */
 
-#ifndef HATARI_VME_H
-#define HATARI_VME_H
+#ifndef HATARI_SCU_VME_H
+#define HATARI_SCU_VME_H
 
 extern void	SCU_SetEnabled ( bool on_off );
 extern bool	SCU_IsEnabled ( void );

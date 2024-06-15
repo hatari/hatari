@@ -94,7 +94,7 @@ const char M68000_fileid[] = "Hatari m68000.c";
 #include "cpu/cpummu.h"
 #include "cpu/cpummu030.h"
 #include "scc.h"
-#include "vme.h"
+#include "scu_vme.h"
 
 #if ENABLE_DSP_EMU
 #include "dsp.h"

@@ -1,5 +1,5 @@
 /*
-  Hatari - vme.c
+  Hatari - scu_vme.c
 
   This file is distributed under the GNU General Public License, version 2
   or at your option any later version. Read the file gpl.txt for details.
@@ -39,13 +39,13 @@
               (code was "empty" before, only displaying traces)
 
 */
-const char vme_fileid[] = "Hatari vme.c";
+const char vme_fileid[] = "Hatari scu_vme.c";
 
 #include "main.h"
 #include "configuration.h"
 #include "ioMem.h"
 #include "log.h"
-#include "vme.h"
+#include "scu_vme.h"
 #include "m68000.h"
 #include "hatari-glue.h"
 #include "memorySnapShot.h"
