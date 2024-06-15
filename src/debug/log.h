@@ -178,6 +178,8 @@ enum {
 
 	TRACE_BIT_SCSIDRV,
 
+	TRACE_BIT_SCU,
+
 	TRACE_BIT_VIDEL,
 
 	TRACE_BIT_VIDEO_ADDR,
@@ -188,9 +190,7 @@ enum {
 	TRACE_BIT_VIDEO_RES,
 	TRACE_BIT_VIDEO_STE,
 	TRACE_BIT_VIDEO_SYNC,
-	TRACE_BIT_VIDEO_VBL,
-
-	TRACE_BIT_VME
+	TRACE_BIT_VIDEO_VBL
 };
 
 #define TRACE_ACIA               (1ll<<TRACE_BIT_ACIA)
@@ -263,6 +263,8 @@ enum {
 
 #define TRACE_SCSIDRV            (1ll<<TRACE_BIT_SCSIDRV)
 
+#define TRACE_SCU                (1ll<<TRACE_BIT_SCU)
+
 #define TRACE_VIDEL              (1ll<<TRACE_BIT_VIDEL)
 
 #define TRACE_VIDEO_ADDR         (1ll<<TRACE_BIT_VIDEO_ADDR)
@@ -274,8 +276,6 @@ enum {
 #define TRACE_VIDEO_STE          (1ll<<TRACE_BIT_VIDEO_STE)
 #define TRACE_VIDEO_SYNC         (1ll<<TRACE_BIT_VIDEO_SYNC)
 #define TRACE_VIDEO_VBL          (1ll<<TRACE_BIT_VIDEO_VBL)
-
-#define TRACE_VME                (1ll<<TRACE_BIT_VME)
 
 #define	TRACE_NONE		 (0)
 #define	TRACE_ALL		 (~0ll)
