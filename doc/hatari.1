@@ -509,17 +509,6 @@ Enable blitter emulation (ST only)
 .B \-\-dsp <x>
 Falcon DSP emulation (x = none, dummy or emu, Falcon only)
 .TP
-.B \-\-vme <x>
-Hatari doesn't have proper MegaSTE/TT VME emulation yet, but this
-controls access to related SCU registers (MegaSTE/TT only).
-
-With "dummy", (no-op) access is allowed (=VME HW), otherwise TOS v2
-and v3 crash on bootup on MegaSTE and TT.  Supports VME tracing.
-
-With "none", register access causes errors (=no VME HW), which is
-needed for Linux to boot with TT emulation until there's full SCU
-interrupt support.  No VME tracing support.
-.TP
 .B \-\-rtc\-year <x>
 With the default value 0, RTC date and time are taken from the host.
 If application does not handle current dates, this can be used to

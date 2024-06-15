@@ -96,9 +96,7 @@ on TTP, if you want kernel to ask for root drive upfront.)
 * TT / netbsd-ATARITT kernel:
 
   - freezes very early at boot, in loop checking bits in a non-IO
-    address, which remains zero with Hatari.  It could be due to
-    missing VME emulation, but changing VME register access to
-    error out (--vme off), does not help like it does with Linux.
+    address, which remains zero with Hatari.
     Maybe VME autovector issue?
 
 * Falcon / netbsd-FALCON kernel:
