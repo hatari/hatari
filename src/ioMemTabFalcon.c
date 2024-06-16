@@ -38,18 +38,17 @@ const char IoMemTabFalc_fileid[] = "Hatari ioMemTabFalcon.c";
  */
 void IoMemTabFalcon_DSPnone(void (**readtab)(void), void (**writetab)(void))
 {
-	int i, offset;
+	IoMem_Intercept ( 0xffa200 , IoMem_ReadWithoutInterception , IoMem_WriteWithoutInterception );
+	IoMem_Intercept ( 0xffa201 , IoMem_ReadWithoutInterception , IoMem_WriteWithoutInterception );
+	IoMem_Intercept ( 0xffa202 , IoMem_ReadWithoutInterception , IoMem_WriteWithoutInterception );
+	IoMem_Intercept ( 0xffa203 , IoMem_ReadWithoutInterception , IoMem_WriteWithoutInterception );
+	IoMem_Intercept ( 0xffa204 , IoMem_ReadWithoutInterception , IoMem_WriteWithoutInterception );
+	IoMem_Intercept ( 0xffa205 , IoMem_ReadWithoutInterception , IoMem_WriteWithoutInterception );
+	IoMem_Intercept ( 0xffa206 , IoMem_ReadWithoutInterception , IoMem_WriteWithoutInterception );
+	IoMem_Intercept ( 0xffa207 , IoMem_ReadWithoutInterception , IoMem_WriteWithoutInterception );
 
-	offset = 0xffa200 - 0xff8000;
-	for (i = 0; i < 8; i++)
-	{
-		readtab[offset+i] = IoMem_ReadWithoutInterception;
-	}
-	readtab[offset+2] = IoMem_VoidRead;	/* TODO: why this is needed */
-	for (i = 0; i < 8; i++)
-	{
-		writetab[offset+i] = IoMem_WriteWithoutInterception;
-	}
+	/* TODO: why is this needed ? */
+	IoMem_Intercept ( 0xffa202 , IoMem_VoidRead , IoMem_WriteWithoutInterception );
 }
 
 /**
@@ -75,20 +74,14 @@ static void DSP_DummyInterruptStatus_ReadByte(void)
  */
 void IoMemTabFalcon_DSPdummy(void (**readtab)(void), void (**writetab)(void))
 {
-	int i, offset;
-
-	offset = 0xffa200 - 0xff8000;
-	readtab[offset+0] = IoMem_ReadWithoutInterception;
-	readtab[offset+1] = DSP_DummyHostCommand_ReadByte;
-	readtab[offset+2] = DSP_DummyInterruptStatus_ReadByte;
-	for (i = 3; i < 8; i++)
-	{
-		readtab[offset+i] = IoMem_ReadWithoutInterception;
-	}
-	for (i = 0; i < 8; i++)
-	{
-		writetab[offset+i] = IoMem_WriteWithoutInterception;
-	}
+	IoMem_Intercept ( 0xffa200 , IoMem_ReadWithoutInterception , IoMem_WriteWithoutInterception );
+	IoMem_Intercept ( 0xffa201 , DSP_DummyHostCommand_ReadByte , IoMem_WriteWithoutInterception );
+	IoMem_Intercept ( 0xffa202 , DSP_DummyInterruptStatus_ReadByte , IoMem_WriteWithoutInterception );
+	IoMem_Intercept ( 0xffa203 , IoMem_ReadWithoutInterception , IoMem_WriteWithoutInterception );
+	IoMem_Intercept ( 0xffa204 , IoMem_ReadWithoutInterception , IoMem_WriteWithoutInterception );
+	IoMem_Intercept ( 0xffa205 , IoMem_ReadWithoutInterception , IoMem_WriteWithoutInterception );
+	IoMem_Intercept ( 0xffa206 , IoMem_ReadWithoutInterception , IoMem_WriteWithoutInterception );
+	IoMem_Intercept ( 0xffa207 , IoMem_ReadWithoutInterception , IoMem_WriteWithoutInterception );
 }
 
 #if ENABLE_DSP_EMU
@@ -97,13 +90,11 @@ void IoMemTabFalcon_DSPdummy(void (**readtab)(void), void (**writetab)(void))
  */
 void IoMemTabFalcon_DSPemulation(void (**readtab)(void), void (**writetab)(void))
 {
-	int i, offset;
+	int i;
 
-	offset = 0xffa200 - 0xff8000;
 	for (i = 0; i < 8; i++)
 	{
-		readtab[offset+i]  = DSP_HandleReadAccess;
-		writetab[offset+i] = DSP_HandleWriteAccess;
+		IoMem_Intercept ( 0xffa200+i , DSP_HandleReadAccess , DSP_HandleWriteAccess );
 	}
 }
 #endif
