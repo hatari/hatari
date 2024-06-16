@@ -44,8 +44,11 @@ const char IoMem_fileid[] = "Hatari ioMem.c";
 #include "scu_vme.h"
 
 
-static void (*pInterceptReadTable[0x8000])(void);	/* Table with read access handlers */
-static void (*pInterceptWriteTable[0x8000])(void);	/* Table with write access handlers */
+#define	IO_MEM_INTERCEPT_START		0xff8000
+#define	IO_MEM_INTERCEPT_END		0xffffff
+
+static void (*pInterceptReadTable[0x8000])(void);	/* Table with read access handlers for IO regs FF8000 - FFFFFF */
+static void (*pInterceptWriteTable[0x8000])(void);	/* Table with write access handlers for IO regs FF8000 - FFFFFF */
 
 int nIoMemAccessSize;					/* Set to 1, 2 or 4 according to byte, word or long word access */
 uint32_t IoAccessFullAddress;				/* Store the complete 32 bit address received in the IoMem_xxx() handler */
@@ -108,8 +111,8 @@ void IoMem_MemorySnapShot_Capture(bool bSave)
  */
 void IoMem_Intercept ( uint32_t addr , void (*read_f)(void) , void (*write_f)(void) )
 {
-	pInterceptReadTable[addr - 0xff8000] = read_f;
-	pInterceptWriteTable[addr - 0xff8000] = write_f;
+	pInterceptReadTable[addr - IO_MEM_INTERCEPT_START] = read_f;
+	pInterceptWriteTable[addr - IO_MEM_INTERCEPT_START] = write_f;
 }
 
 
@@ -277,8 +280,8 @@ void IoMem_Init(void)
 	int i;
 	const INTERCEPT_ACCESS_FUNC *pInterceptAccessFuncs = NULL;
 
-	/* Set default IO access handler (-> bus error) */
-	IoMem_SetBusErrorRegion(0xff8000, 0xffffff);
+	/* Set default IO access handler (-> bus error) between 0xff8000 and 0xffffff */
+	IoMem_SetBusErrorRegion(IO_MEM_INTERCEPT_START, IO_MEM_INTERCEPT_END);
 
 	switch (ConfigureParams.System.nMachineType)
 	{
@@ -305,7 +308,7 @@ void IoMem_Init(void)
 	}
 
 	/* Now set the correct handlers */
-	for (addr=0xff8000; addr <= 0xffffff; addr++)
+	for (addr=IO_MEM_INTERCEPT_START; addr <= IO_MEM_INTERCEPT_END; addr++)
 	{
 		/* Does this hardware location/span appear in our list of possible intercepted functions? */
 		for (i=0; pInterceptAccessFuncs[i].Address != 0; i++)
@@ -314,9 +317,9 @@ void IoMem_Init(void)
 			    && addr < pInterceptAccessFuncs[i].Address+pInterceptAccessFuncs[i].SpanInBytes)
 			{
 				/* Security checks... */
-				if (pInterceptReadTable[addr-0xff8000] != IoMem_BusErrorEvenReadAccess && pInterceptReadTable[addr-0xff8000] != IoMem_BusErrorOddReadAccess)
+				if (pInterceptReadTable[addr-IO_MEM_INTERCEPT_START] != IoMem_BusErrorEvenReadAccess && pInterceptReadTable[addr-IO_MEM_INTERCEPT_START] != IoMem_BusErrorOddReadAccess)
 					Log_Printf(LOG_WARN, "IoMem_Init: $%x (R) already defined\n", addr);
-				if (pInterceptWriteTable[addr-0xff8000] != IoMem_BusErrorEvenWriteAccess && pInterceptWriteTable[addr-0xff8000] != IoMem_BusErrorOddWriteAccess)
+				if (pInterceptWriteTable[addr-IO_MEM_INTERCEPT_START] != IoMem_BusErrorEvenWriteAccess && pInterceptWriteTable[addr-IO_MEM_INTERCEPT_START] != IoMem_BusErrorOddWriteAccess)
 					Log_Printf(LOG_WARN, "IoMem_Init: $%x (W) already defined\n", addr);
 
 				/* This location needs to be intercepted, so add entry to list */
@@ -391,7 +394,7 @@ void IoMem_Init(void)
 		/* Initialize PSG shadow registers for ST, STe, TT machines */
 		for (addr = 0xff8804; addr < 0xff8900; addr++)
 		{
-			IoMem_Intercept ( addr , pInterceptReadTable[(addr & 0xfff803) - 0xff8000] , pInterceptWriteTable[(addr & 0xfff803) - 0xff8000] );
+			IoMem_Intercept ( addr , pInterceptReadTable[(addr & 0xfff803) - IO_MEM_INTERCEPT_START] , pInterceptWriteTable[(addr & 0xfff803) - IO_MEM_INTERCEPT_START] );
 		}
 	}
 }
@@ -460,7 +463,7 @@ uae_u32 REGPARAM3 IoMem_bget(uaecptr addr)
 
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
-	if (addr < 0xff8000 || !is_super_access(true))
+	if (addr < IO_MEM_INTERCEPT_START || !is_super_access(true))
 	{
 		/* invalid memory addressing --> bus error */
 		M68000_BusError(IoAccessFullAddress, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, 0);
@@ -472,7 +475,7 @@ uae_u32 REGPARAM3 IoMem_bget(uaecptr addr)
 	nBusErrorAccesses = 0;
 
 	IoAccessCurrentAddress = addr;
-	pInterceptReadTable[addr-0xff8000]();         /* Call handler */
+	pInterceptReadTable[addr-IO_MEM_INTERCEPT_START]();	/* Call handler */
 
 	/* Check if we read from a bus-error region */
 	if (nBusErrorAccesses == 1)
@@ -515,7 +518,7 @@ uae_u32 REGPARAM3 IoMem_wget(uaecptr addr)
 
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
-	if (addr < 0xff8000 || !is_super_access(true))
+	if (addr < IO_MEM_INTERCEPT_START || !is_super_access(true))
 	{
 		/* invalid memory addressing --> bus error */
 		M68000_BusError(IoAccessFullAddress, BUS_ERROR_READ, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA, 0);
@@ -530,7 +533,7 @@ uae_u32 REGPARAM3 IoMem_wget(uaecptr addr)
 	IoAccessBaseAddress = addr;                   /* Store for exception frame */
 	nIoMemAccessSize = SIZE_WORD;
 	nBusErrorAccesses = 0;
-	idx = addr - 0xff8000;
+	idx = addr - IO_MEM_INTERCEPT_START;
 
 	IoAccessCurrentAddress = addr;
 	pInterceptReadTable[idx]();                   /* Call 1st handler */
@@ -582,7 +585,7 @@ uae_u32 REGPARAM3 IoMem_lget(uaecptr addr)
 
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
-	if (addr < 0xff8000 || !is_super_access(true))
+	if (addr < IO_MEM_INTERCEPT_START || !is_super_access(true))
 	{
 		/* invalid memory addressing --> bus error */
 		M68000_BusError(IoAccessFullAddress, BUS_ERROR_READ, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA, 0);
@@ -597,7 +600,7 @@ uae_u32 REGPARAM3 IoMem_lget(uaecptr addr)
 	IoAccessBaseAddress = addr;                   /* Store for exception frame */
 	nIoMemAccessSize = SIZE_LONG;
 	nBusErrorAccesses = 0;
-	idx = addr - 0xff8000;
+	idx = addr - IO_MEM_INTERCEPT_START;
 
 	IoAccessCurrentAddress = addr;
 	pInterceptReadTable[idx]();                   /* Call 1st handler */
@@ -650,7 +653,7 @@ void REGPARAM3 IoMem_bput(uaecptr addr, uae_u32 val)
 
 	LOG_TRACE(TRACE_IOMEM_WR, "IO write.b $%08x = $%02x pc=%x\n", IoAccessFullAddress, val&0xff, M68000_GetPC());
 
-	if (addr < 0xff8000 || !is_super_access(false))
+	if (addr < IO_MEM_INTERCEPT_START || !is_super_access(false))
 	{
 		/* invalid memory addressing --> bus error */
 		M68000_BusError(IoAccessFullAddress, BUS_ERROR_WRITE, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, val);
@@ -664,7 +667,7 @@ void REGPARAM3 IoMem_bput(uaecptr addr, uae_u32 val)
 	IoMem[addr] = val;
 
 	IoAccessCurrentAddress = addr;
-	pInterceptWriteTable[addr-0xff8000]();        /* Call handler */
+	pInterceptWriteTable[addr-IO_MEM_INTERCEPT_START]();	/* Call handler */
 
 	/* Check if we wrote to a bus-error region */
 	if (nBusErrorAccesses == 1)
@@ -718,7 +721,7 @@ void REGPARAM3 IoMem_wput(uaecptr addr, uae_u32 val)
 	nBusErrorAccesses = 0;
 
 	IoMem_WriteWord(addr, val);
-	idx = addr - 0xff8000;
+	idx = addr - IO_MEM_INTERCEPT_START;
 
 	IoAccessCurrentAddress = addr;
 	pInterceptWriteTable[idx]();                  /* Call 1st handler */
@@ -764,7 +767,7 @@ void REGPARAM3 IoMem_lput(uaecptr addr, uae_u32 val)
 
 	LOG_TRACE(TRACE_IOMEM_WR, "IO write.l $%08x = $%08x pc=%x\n", IoAccessFullAddress, val, M68000_GetPC());
 
-	if (addr < 0xff8000 || !is_super_access(false))
+	if (addr < IO_MEM_INTERCEPT_START || !is_super_access(false))
 	{
 		/* invalid memory addressing --> bus error */
 		M68000_BusError(IoAccessFullAddress, BUS_ERROR_WRITE, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA, val);
@@ -781,7 +784,7 @@ void REGPARAM3 IoMem_lput(uaecptr addr, uae_u32 val)
 	nBusErrorAccesses = 0;
 
 	IoMem_WriteLong(addr, val);
-	idx = addr - 0xff8000;
+	idx = addr - IO_MEM_INTERCEPT_START;
 
 	IoAccessCurrentAddress = addr;
 	pInterceptWriteTable[idx]();                  /* Call first handler */
@@ -881,7 +884,7 @@ void IoMem_VoidRead(void)
 	/* handler is probably called only once, so we have to take care of the neighbour "void IO registers" */
 	for (a = IoAccessBaseAddress; a < IoAccessBaseAddress + nIoMemAccessSize; a++)
 	{
-		if (pInterceptReadTable[a - 0xff8000] == IoMem_VoidRead)
+		if (pInterceptReadTable[a - IO_MEM_INTERCEPT_START] == IoMem_VoidRead)
 		{
 			IoMem[a] = 0xff;
 		}
@@ -901,7 +904,7 @@ void IoMem_VoidRead_00(void)
 	/* handler is probably called only once, so we have to take care of the neighbour "void IO registers" */
 	for (a = IoAccessBaseAddress; a < IoAccessBaseAddress + nIoMemAccessSize; a++)
 	{
-		if (pInterceptReadTable[a - 0xff8000] == IoMem_VoidRead_00)
+		if (pInterceptReadTable[a - IO_MEM_INTERCEPT_START] == IoMem_VoidRead_00)
 		{
 			IoMem[a] = 0x00;
 		}

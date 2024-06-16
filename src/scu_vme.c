@@ -52,9 +52,6 @@ const char vme_fileid[] = "Hatari scu_vme.c";
 
 
 
-#define IOTAB_OFFSET 0xff8000
-
-
 /* Possible interrupt level for SysIntMask at $FF8E01 */
 #define	SCU_SYS_INT_LEVEL_VME_SYSFAIL		7
 #define	SCU_SYS_INT_LEVEL_MFP			6
