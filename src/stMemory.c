@@ -886,7 +886,7 @@ static int	STMemory_MMU_Size_TT ( uint8_t MMU_conf )
 
 
 /**
- * Read the MMU banks configuration at $FF80001
+ * Read the MMU banks configuration at $FF8001
  */
 void	STMemory_MMU_Config_ReadByte ( void )
 {
@@ -903,7 +903,7 @@ void	STMemory_MMU_Config_ReadByte ( void )
 
 
 /**
- * Write to the MMU banks configuration at $FF80001
+ * Write to the MMU banks configuration at $FF8001
  * When value is changed, we remap the RAM bank into our STRam[] buffer
  * and enable addresses translation if necessary
  */
