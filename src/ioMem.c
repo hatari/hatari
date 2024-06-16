@@ -101,6 +101,18 @@ void IoMem_MemorySnapShot_Capture(bool bSave)
 		IoMem_SetFalconBusMode(mode);
 }
 
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Set the read and write functions associated with a given 'addr' in IO mem
+ */
+void IoMem_Intercept ( uint32_t addr , void (*read_f)(void) , void (*write_f)(void) )
+{
+	pInterceptReadTable[addr - 0xff8000] = read_f;
+	pInterceptWriteTable[addr - 0xff8000] = write_f;
+}
+
+
 /*-----------------------------------------------------------------------*/
 /**
  * Fill a region with bus error handlers.
@@ -112,15 +124,9 @@ static void IoMem_SetBusErrorRegion(uint32_t startaddr, uint32_t endaddr)
 	for (a = startaddr; a <= endaddr; a++)
 	{
 		if (a & 1)
-		{
-			pInterceptReadTable[a - 0xff8000] = IoMem_BusErrorOddReadAccess;     /* For 'read' */
-			pInterceptWriteTable[a - 0xff8000] = IoMem_BusErrorOddWriteAccess;   /* and 'write' */
-		}
+			IoMem_Intercept ( a , IoMem_BusErrorOddReadAccess , IoMem_BusErrorOddWriteAccess );
 		else
-		{
-			pInterceptReadTable[a - 0xff8000] = IoMem_BusErrorEvenReadAccess;    /* For 'read' */
-			pInterceptWriteTable[a - 0xff8000] = IoMem_BusErrorEvenWriteAccess;  /* and 'write' */
-		}
+			IoMem_Intercept ( a , IoMem_BusErrorEvenReadAccess , IoMem_BusErrorEvenWriteAccess );
 	}
 }
 
@@ -134,8 +140,7 @@ static void IoMem_SetVoidRegion(uint32_t startaddr, uint32_t endaddr)
 
 	for (addr = startaddr; addr <= endaddr; addr++)
 	{
-		pInterceptReadTable[addr - 0xff8000] = IoMem_VoidRead;
-		pInterceptWriteTable[addr - 0xff8000] = IoMem_VoidWrite;
+		IoMem_Intercept ( addr , IoMem_VoidRead , IoMem_VoidWrite );
 	}
 }
 
@@ -198,46 +203,32 @@ static void IoMem_FixAccessForMegaSTE(void)
 	/* MegaSTE has an additional Cache/CPU control register compared to
 	 * the normal STE. The addresses before and after 0xff8e21 also do not
 	 * produce a bus error on the MegaSTE. */
-	pInterceptReadTable[0xff8e20 - 0xff8000] = IoMem_VoidRead;
-	pInterceptWriteTable[0xff8e20 - 0xff8000] = IoMem_VoidWrite;
-	pInterceptReadTable[0xff8e21 - 0xff8000] = IoMem_ReadWithoutInterception;
-	pInterceptWriteTable[0xff8e21 - 0xff8000] = IoMemTabMegaSTE_CacheCpuCtrl_WriteByte;
-	pInterceptReadTable[0xff8e22 - 0xff8000] = IoMem_VoidRead;
-	pInterceptWriteTable[0xff8e22 - 0xff8000] = IoMem_VoidWrite;
-	pInterceptReadTable[0xff8e23 - 0xff8000] = IoMem_VoidRead;
-	pInterceptWriteTable[0xff8e23 - 0xff8000] = IoMem_VoidWrite;
+	IoMem_Intercept ( 0xff8e20 , IoMem_VoidRead , IoMem_VoidWrite );
+	IoMem_Intercept ( 0xff8e21 , IoMem_ReadWithoutInterception , IoMemTabMegaSTE_CacheCpuCtrl_WriteByte );
+	IoMem_Intercept ( 0xff8e22 , IoMem_VoidRead , IoMem_VoidWrite );
+	IoMem_Intercept ( 0xff8e23 , IoMem_VoidRead , IoMem_VoidWrite );
 
-	/* The MegaSTE has a SCU at 0xff8e01-0xff8e0f (like on TT) */
-	pInterceptReadTable[0xff8e01 - 0xff8000]	= SCU_SysIntMask_ReadByte;
-	pInterceptWriteTable[0xff8e01 - 0xff8000]	= SCU_SysIntMask_WriteByte;
-	pInterceptReadTable[0xff8e03 - 0xff8000]	= SCU_SysIntState_ReadByte;
-	pInterceptWriteTable[0xff8e03 - 0xff8000]	= SCU_SysIntState_WriteByte;
-	pInterceptReadTable[0xff8e05 - 0xff8000]	= SCU_SysInterrupter_ReadByte;
-	pInterceptWriteTable[0xff8e05 - 0xff8000]	= SCU_SysInterrupter_WriteByte;
-	pInterceptReadTable[0xff8e07 - 0xff8000]	= SCU_VmeInterrupter_ReadByte;
-	pInterceptWriteTable[0xff8e07 - 0xff8000]	= SCU_VmeInterrupter_WriteByte;
-	pInterceptReadTable[0xff8e09 - 0xff8000]	= SCU_GPR1_ReadByte;
-	pInterceptWriteTable[0xff8e09 - 0xff8000]	= SCU_GPR1_WriteByte;
-	pInterceptReadTable[0xff8e0b - 0xff8000]	= SCU_GPR2_ReadByte;
-	pInterceptWriteTable[0xff8e0b - 0xff8000]	= SCU_GPR2_WriteByte;
-	pInterceptReadTable[0xff8e0d - 0xff8000]	= SCU_VmeIntMask_Readyte;
-	pInterceptWriteTable[0xff8e0d - 0xff8000]	= SCU_VmeIntMask_WriteByte;
-	pInterceptReadTable[0xff8e0f - 0xff8000]	= SCU_VmeIntState_ReadByte;
-	pInterceptWriteTable[0xff8e0f - 0xff8000]	= SCU_VmeIntState_WriteByte;
+	/* The MegaSTE has a SCU at 0xff8e01-0xff8e0f (like the TT) */
+	IoMem_Intercept ( 0xff8e01 , SCU_SysIntMask_ReadByte , SCU_SysIntMask_WriteByte );
+	IoMem_Intercept ( 0xff8e03 , SCU_SysIntState_ReadByte , SCU_SysIntState_WriteByte );
+	IoMem_Intercept ( 0xff8e05 , SCU_SysInterrupter_ReadByte , SCU_SysInterrupter_WriteByte );
+	IoMem_Intercept ( 0xff8e07 , SCU_VmeInterrupter_ReadByte , SCU_VmeInterrupter_WriteByte );
+	IoMem_Intercept ( 0xff8e09 , SCU_GPR1_ReadByte , SCU_GPR1_WriteByte );
+	IoMem_Intercept ( 0xff8e0b , SCU_GPR2_ReadByte , SCU_GPR2_WriteByte );
+	IoMem_Intercept ( 0xff8e0d , SCU_VmeIntMask_Readyte , SCU_VmeIntMask_WriteByte );
+	IoMem_Intercept ( 0xff8e0f , SCU_VmeIntState_ReadByte , SCU_VmeIntState_WriteByte );
 
 	/* The MegaSTE has a Z85C30 SCC serial port, too: */
 	for (addr = 0xff8c80; addr <= 0xff8c87; addr++)
 	{
-		pInterceptReadTable[addr - 0xff8000] = SCC_IoMem_ReadByte;
-		pInterceptWriteTable[addr - 0xff8000] = SCC_IoMem_WriteByte;
+		IoMem_Intercept ( addr , SCC_IoMem_ReadByte , SCC_IoMem_WriteByte );
 	}
 
 	/* The MegaSTE can choose between DD and HD mode when reading floppy */
 	/* This uses word register at 0xff860e */
 	for (addr = 0xff860e; addr <= 0xff860f; addr++)
 	{
-		pInterceptReadTable[addr - 0xff8000] = FDC_DensityMode_ReadWord;
-		pInterceptWriteTable[addr - 0xff8000] = FDC_DensityMode_WriteWord;
+		IoMem_Intercept ( addr , FDC_DensityMode_ReadWord , FDC_DensityMode_WriteWord );
 	}
 }
 
@@ -329,8 +320,7 @@ void IoMem_Init(void)
 					Log_Printf(LOG_WARN, "IoMem_Init: $%x (W) already defined\n", addr);
 
 				/* This location needs to be intercepted, so add entry to list */
-				pInterceptReadTable[addr-0xff8000] = pInterceptAccessFuncs[i].ReadFunc;
-				pInterceptWriteTable[addr-0xff8000] = pInterceptAccessFuncs[i].WriteFunc;
+				IoMem_Intercept ( addr , pInterceptAccessFuncs[i].ReadFunc , pInterceptAccessFuncs[i].WriteFunc );
 			}
 		}
 	}
@@ -388,8 +378,7 @@ void IoMem_Init(void)
 	{
 		for (addr = 0xfffc21; addr <= 0xfffc3f; addr++)
 		{
-			pInterceptReadTable[addr - 0xff8000] = IoMem_VoidRead;     /* For 'read' */
-			pInterceptWriteTable[addr - 0xff8000] = IoMem_VoidWrite;   /* and 'write' */
+			IoMem_Intercept ( addr , IoMem_VoidRead , IoMem_VoidWrite );
 		}
 	}
 
@@ -402,8 +391,7 @@ void IoMem_Init(void)
 		/* Initialize PSG shadow registers for ST, STe, TT machines */
 		for (addr = 0xff8804; addr < 0xff8900; addr++)
 		{
-			pInterceptReadTable[addr - 0xff8000] = pInterceptReadTable[(addr & 0xfff803) - 0xff8000];
-			pInterceptWriteTable[addr - 0xff8000] = pInterceptWriteTable[(addr & 0xfff803) - 0xff8000];
+			IoMem_Intercept ( addr , pInterceptReadTable[(addr & 0xfff803) - 0xff8000] , pInterceptWriteTable[(addr & 0xfff803) - 0xff8000] );
 		}
 	}
 }
