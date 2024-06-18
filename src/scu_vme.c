@@ -133,8 +133,8 @@ void	SCU_Reset ( bool bCold )
 	/* All the SCU regs are cleared on reset */
 	SCU.SysIntMask = 0x00;					/* TOS will set 0x14 : hsync and vsync */
 	SCU.SysIntState = 0x00;
-	SCU.SysInterrupter = 0x00;				/* TOS will set 0x60 : MFP and SCC */
-	SCU.VmeIntMask = 0x00;
+	SCU.SysInterrupter = 0x00;
+	SCU.VmeIntMask = 0x00;					/* TOS will set 0x60 : MFP and SCC */
 	SCU.VmeIntState = 0x00;
 	SCU.VmeInterrupter = 0x00;
 
