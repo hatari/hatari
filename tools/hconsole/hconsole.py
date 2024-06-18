@@ -390,7 +390,6 @@ class Tokens:
     "--machine",
     "--blitter",
     "--dsp",
-    "--vme",
     "--rtc-year",
     "--timer-d",
     "--fast-boot",
@@ -476,6 +475,7 @@ class Tokens:
     "dspmemdump",
     "dspreg",
     "dspsymbols",
+    "echo",
     "evaluate",
     "help",
     "history",
@@ -492,6 +492,7 @@ class Tokens:
     "setopt",
     "stateload",
     "statesave",
+    "struct",
     "symbols",
     "trace"
     ]

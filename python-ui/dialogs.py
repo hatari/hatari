@@ -809,6 +809,7 @@ class TraceDialog(HatariUIDialog):
         "scc",
         "scsi_cmd",
         "scsidrv",
+        "scu",
         "vdi",
         "videl",
         "video_addr",
@@ -820,7 +821,6 @@ class TraceDialog(HatariUIDialog):
         "video_ste",
         "video_sync",
         "video_vbl",
-        "vme",
         "xbios"
     ]
     def __init__(self, parent):
