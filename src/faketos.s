@@ -4,6 +4,9 @@
 ; except VBL at $70 which will update a counter at $462 (similar to real TOS)
 ; SR will be set to $0300 to allow VBL interrupt and its counter
 ;
+; In case an SCU is detected at $FF8E01 - $FF8E0D (on MegaSTE / TT), we enable
+; interrupts for hsync, vsync, scc and mfp as normal TOS does (if not, "stop $2300" won't work anymore)
+;
 ; Assemble faketos.s as a binary only using vasm, and include it in faketosData.c
 ;   vasmm68k_mot -nosym -devpac -showopt -o fakeTos.bin -Fbin faketos.s
 
@@ -33,6 +36,9 @@ start:
 	move.b	#5,$ffff8001.w		; Fake memory config
 	lea	$20000,sp		; Set up SSP
 
+	;-- Config SCU interrupts on MegaSTE / TT
+	bsr	config_scu
+
 	;-- Set all exception vectors to "unhandled_error"
 	lea	unhandled_error(pc),a1
 	movea.w	#8,a0			; Start with bus error handler
@@ -51,8 +57,8 @@ start:
 
 	;-- Set a minimal VBL interrupt to update a fake TOS VBL counter at $462
 	lea	vbl_mini(pc),a1
-	move.l	a1,$70			; Minimal VBL
-	clr	$462			; clear fake TOS vbl counter
+	move.l	a1,$70.w		; Minimal VBL
+	clr.l	$462			; clear fake TOS vbl counter
 
 	lea	$fffffa00.w,a0
 	move.b	#$48,17(a0)		; Configure MFP vector base
@@ -105,3 +111,21 @@ vbl_mini:
 	addq.l	#1,$462			; TOS vbl counter
 	rte
 
+
+;-- Check if the SCU is present (only on MegaSTE and TT)
+;-- If writing to $FF8E01 and $FF8E0D doesn't cause a bus error, then we have an SCU
+;-- If so, we enable the following interrupts in SCU's sys_mask and vme_mask :
+;--   hsync (level 2), vsync (level 4), scc (level 5) and mfp (level 6)
+;-- This is similar to what normal TOS does on boot
+config_scu:
+	move.l	$8.w,a0			; save bus error handler
+	move.l	a7,a6			; save A7/SSP in case of bus error changing the stack
+	lea	config_scu_error(pc),a1
+	move.l	a1,$8.w
+	move.b	#$14,$ffff8e01.w	; enable hsync and vsync
+	move.b	#$60,$ffff8e0d.w	; enable scc and mfp
+
+config_scu_error:
+	move.l	a0,$8.w			; restore bus error handler
+	move.l	a6,a7			; restore A7/SSP
+	rts
