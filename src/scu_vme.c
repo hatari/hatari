@@ -65,8 +65,6 @@ const char vme_fileid[] = "Hatari scu_vme.c";
 
 
 typedef struct {
-	bool		Enabled;			/* 1 for MegaSTE/TT if SCU/VME is enabled, else 0 */
-
 	uint8_t		SysIntMask;			/* FF8E01 */
 	uint8_t		SysIntState;			/* FF8E03 */
 	uint8_t		SysInterrupter;			/* FF8E05 */
@@ -103,22 +101,12 @@ static void SCU_TraceWrite ( const char *info )
 }
 
 
-
 /**
- * Turn SCU on/off, depending on the emulated machine
- */
-void	SCU_SetEnabled ( bool on_off )
-{
-	SCU.Enabled = on_off;
-}
-
-
-/**
- * Return 'true' if SCU is enabled, else 'false'
+ * Return 'true' if SCU is enabled (MegaSTE or TT), else 'false'
  */
 bool	SCU_IsEnabled ( void )
 {
-	return SCU.Enabled;
+	return ( Config_IsMachineTT() || Config_IsMachineMegaSTE() );
 }
 
 
@@ -127,7 +115,7 @@ bool	SCU_IsEnabled ( void )
  */
 void	SCU_Reset ( bool bCold )
 {
-	if ( !SCU.Enabled )
+	if ( !SCU_IsEnabled() )
 		return;
 
 	/* All the SCU regs are cleared on reset */
@@ -405,7 +393,6 @@ void SCU_VmeIntState_WriteByte ( void )
 void	SCU_MemorySnapShot_Capture ( bool bSave )
 {
 	/* Save/Restore details */
-	MemorySnapShot_Store(&SCU.Enabled, sizeof(SCU.Enabled));
 	MemorySnapShot_Store(&SCU.SysIntMask, sizeof(SCU.SysIntMask));
 	MemorySnapShot_Store(&SCU.SysIntState, sizeof(SCU.SysIntState));
 	MemorySnapShot_Store(&SCU.SysInterrupter, sizeof(SCU.SysInterrupter));

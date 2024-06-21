@@ -337,12 +337,6 @@ void IoMem_Init(void)
 	else if ( ConfigureParams.System.nMachineType == MACHINE_MEGA_STE )
 		IoMem_FixAccessForMegaSTE();
 
-	/* Whether to support SCU registers / VME */
-	if (Config_IsMachineTT() || Config_IsMachineMegaSTE())
-		SCU_SetEnabled ( true );
-	else
-		SCU_SetEnabled ( false );
-
 	/* Set registers for Falcon */
 	if (Config_IsMachineFalcon())
 	{

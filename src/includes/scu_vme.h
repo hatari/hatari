@@ -8,7 +8,6 @@
 #ifndef HATARI_SCU_VME_H
 #define HATARI_SCU_VME_H
 
-extern void	SCU_SetEnabled ( bool on_off );
 extern bool	SCU_IsEnabled ( void );
 
 extern void	SCU_Reset ( bool bCold );
