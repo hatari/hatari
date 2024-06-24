@@ -1023,8 +1023,19 @@ static void dsp_postexecute_interrupts(void)
 				dsp_core.pc = dsp_core.interrupt_instr_fetch;
 
 				/* is it a LONG interrupt ? */
+
+				/* Extract from Motorola doc
+				   A long interrupt is formed if one of the interrupt instructions fetched is a JSR instruction.
+				   The PC is immediately released, the SR and the PC are saved in the stack, and the jump instruction
+				   controls where the next instruction is fetched from. While either an unconditional jump or
+				   conditional jump can be used to form a long interrupt, they do not store the PC on the stack;
+				   therefore, there is no return path.
+				*/
+
 				instr = read_memory_p(dsp_core.interrupt_instr_fetch);
-				if ( ((instr & 0xfff000) == 0x0d0000) || ((instr & 0xffc0ff) == 0x0bc080) ) {
+				// JSR or JMP ?
+				if ( ((instr & 0xfff000) == 0x0d0000) || ((instr & 0xffc0ff) == 0x0bc080) ||		/* JSR pattern */
+				     ((instr & 0xfff000) == 0x0c0000) || ((instr & 0xffc0ff) == 0x0ac080) ) {		/* JMP pattern */
 					dsp_core.interrupt_state = DSP_INTERRUPT_LONG;
 					dsp_stack_push(dsp_core.interrupt_save_pc, dsp_core.registers[DSP_REG_SR], 0);
 					dsp_core.registers[DSP_REG_SR] &= BITMASK(16)-((1<<DSP_SR_LF)|(1<<DSP_SR_T)  |
@@ -1038,7 +1049,8 @@ static void dsp_postexecute_interrupts(void)
 				/* Prefetch interrupt instruction 2, if first one was single word */
 				if (dsp_core.pc == dsp_core.interrupt_instr_fetch+1) {
 					instr = read_memory_p(dsp_core.pc);
-					if ( ((instr & 0xfff000) == 0x0d0000) || ((instr & 0xffc0ff) == 0x0bc080) ) {
+					if ( ((instr & 0xfff000) == 0x0d0000) || ((instr & 0xffc0ff) == 0x0bc080) ||		/* JSR pattern */
+					     ((instr & 0xfff000) == 0x0c0000) || ((instr & 0xffc0ff) == 0x0ac080) ) {		/* JMP pattern */
 						dsp_core.interrupt_state = DSP_INTERRUPT_LONG;
 						dsp_stack_push(dsp_core.interrupt_save_pc, dsp_core.registers[DSP_REG_SR], 0);
 						dsp_core.registers[DSP_REG_SR] &= BITMASK(16)-((1<<DSP_SR_LF)|(1<<DSP_SR_T)  |
