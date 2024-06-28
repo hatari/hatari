@@ -3568,3 +3568,12 @@ void m68k_do_rte_mmu030c (uaecptr a7)
 		}
 	}
 }
+
+
+void restore_mmu030_finish ( void )
+{
+	mmu030.transparent.tt0 = mmu030_decode_tt(tt0_030);
+	mmu030.transparent.tt1 = mmu030_decode_tt(tt1_030);
+	tt_enabled = (tt0_030 & TT_ENABLE) || (tt1_030 & TT_ENABLE);
+}
+

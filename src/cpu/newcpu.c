@@ -8763,6 +8763,8 @@ uae_u8 *restore_mmu(uae_u8 *src)
 
 	changed_prefs.mmu_model = model = restore_u32 ();
 	flags = restore_u32 ();
+	if ( model == 68030 )
+		restore_mmu030_finish();
 	write_log (_T("MMU: %d\n"), model);
 	return src;
 }

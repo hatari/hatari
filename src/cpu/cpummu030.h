@@ -908,4 +908,6 @@ extern void m68k_do_rts_mmu030c(void);
 extern void m68k_do_rte_mmu030c(uaecptr a7);
 extern void m68k_do_bsr_mmu030c(uaecptr oldpc, uae_s32 offset);
 
+extern void restore_mmu030_finish(void);
+
 #endif /* UAE_CPUMMU030_H */
