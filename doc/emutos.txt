@@ -1787,7 +1787,6 @@ Applications working under EmuTOS >= v1.1 (with DSP support):
 - MegaPlayer v1.15 (MegaTracker Player v1.1)
 - Iphigenie v1.4b (sound system monitor and manager / DSP LOD loader)
 - Voxx (vocoder), demo and free version
-  - GUI looks OK, does not yet fully work with Hatari to test rest
   - Needs at minimum 640x480x16 color VGA resolution
 - Whip! (virtual light machine)
 - WinRec (direct to disk GEM audio recorder/effects)

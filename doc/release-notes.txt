@@ -22,21 +22,43 @@ Following features are deprecated and will be removed in a future release:
  Development version
  -------------------
 
+Option changes:
+- "--trace" option "vme" item renamed to "scu"
+- "--vme none/dummy" option removed as (now) redundant
+
+Emulation improvements:
+- DSP:
+  - Fix: JMP can also form a long interrupt instruction
+- VME/SCU:
+  - TT / MegaSTE SCU registers and interrupts implemented
+
 Emulator improvements:
 - Config options / SDL-GUI:
   - Add separate option for enabling/disabling >=030 CPU data cache
+- Memory snapshots:
+  - Fix: re/store all relevant YM2149 & MMU state variables
 - GEMDOS HD:
   - Fix: Fattrib() call on a directory
 - SCC:
   - Fix: invalid channel B file close on uninit
 Debugger:
+  - Fix: DSP RESET instruction tracing
   - Similarly to Atari program symbols override, load TOS symbols on
     TOS load, if autoloading is enabled and <tos>.sym file is present
   - Add "struct" command to better show contents of program's structures
   - Variable & debug symbol names can be given directly also to load,
     save, memwrite and register commands in addition to numeric values
   - Align memdump ASCII columns also when line is not full
-    
+  - CPU disassembly shows resulting relative branch addresses
+  - "dspreg" command shows also stack contents
+  - PC value added to more traces
+
+Build changes:
+- Get rid of and warn about VLAs (variable length arrays), as
+  VisualStudio does not support them
+
+Fixed programs:
+- Voxx, both demo & free full version (DSP JMP instruction)
 
 Fixed games:
 - Ready Steady Bang! (GEMDOS HD Fattrib())
