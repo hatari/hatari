@@ -32,13 +32,26 @@ const char IoMemTabSTE_fileid[] = "Hatari ioMemTabSTE.c";
  * Take into account Mega STe Cache/Processor Control register $ff8e21.b
 	$FFFF8E21 Mega STe Cache/Processor Control
 		BIT 0 : Cache (0 - disabled, 1 - enabled)
-		BIT 1 : CPU Speed (0 - 8mhz, 1 - 16mhz)
+		BIT 1 : CPU Speed (0 - 8MHz, 1 - 16MHz)
 
-   We handle only bit 1, bit 0 is ignored (cache is not emulated)
+   Cache can only be enabled if CPU speed is 16 MHz. If CPU is set to 8 MHz then cache bit will be forced to 0 :
+     if we write $FD at $FF8E21 (8 MHz with cache) then reading $FF8E21 will return $FC (8 MHz no cache)
+
+   NOTE : we handle only bit 1, bit 0 is ignored (cache is not emulated yet)
 */
 void IoMemTabMegaSTE_CacheCpuCtrl_WriteByte(void)
 {
 	uint8_t busCtrl = IoMem_ReadByte(0xff8e21);
+
+	/* If cache is enabled at 8 MHz then disable cache */
+	if ( ( ( busCtrl & 0x2 ) == 0 ) && ( busCtrl & 0x1 ) )
+	{
+	      LOG_TRACE ( TRACE_MEM, "cache : megaste cache can't be enabled at 8 MHz $ff8e21=0x%02x pc=%x\n" , busCtrl , M68000_GetPC() );
+	      busCtrl &= 0xFE;					/* clear bit 0 */
+	      IoMem_WriteByte ( 0xff8e21 , busCtrl );
+	}
+
+	/* TODO : enable / disable cache depending on bit 0 */
 
 	/* 68000 Frequency changed ? We change freq only in 68000 mode for a
 	 * normal MegaSTE, if the user did not request a faster one manually */
@@ -53,6 +66,7 @@ void IoMemTabMegaSTE_CacheCpuCtrl_WriteByte(void)
 			Configuration_ChangeCpuFreq ( 8 );
 		}
 	}
+
 	Statusbar_UpdateInfo();			/* Update clock speed in the status bar */
 }
 
