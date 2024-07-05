@@ -78,14 +78,17 @@ const char *Joy_GetName(int id)
 }
 
 /**
- * Return maximum available real joystick ID
+ * Return maximum available real joystick ID, or
+ * zero on error or no joystick (to avoid invalid array accesses)
  */
 int Joy_GetMaxId(void)
 {
 	int count = SDL_NumJoysticks();
 	if (count > JOYSTICK_COUNT)
 		count = JOYSTICK_COUNT;
-	return count - 1;
+	if (count > 0)
+		return count - 1;
+	return 0;
 }
 
 /**
@@ -93,11 +96,13 @@ int Joy_GetMaxId(void)
  */
 bool Joy_ValidateJoyId(int i)
 {
+	int joyid = ConfigureParams.Joysticks.Joy[i].nJoyId;
+
 	/* Unavailable joystick ID -> disable it if necessary */
 	if (ConfigureParams.Joysticks.Joy[i].nJoystickMode == JOYSTICK_REALSTICK &&
-	    !bJoystickWorking[ConfigureParams.Joysticks.Joy[i].nJoyId])
+	    !bJoystickWorking[joyid])
 	{
-		Log_Printf(LOG_WARN, "Selected real Joystick %d unavailable, disabling ST joystick %d\n", ConfigureParams.Joysticks.Joy[i].nJoyId, i);
+		Log_Printf(LOG_WARN, "Selected real Joystick %d unavailable, disabling ST joystick %d\n", joyid, i);
 		ConfigureParams.Joysticks.Joy[i].nJoystickMode = JOYSTICK_DISABLED;
 		ConfigureParams.Joysticks.Joy[i].nJoyId = 0;
 		return false;
@@ -186,8 +191,11 @@ void Joy_UnInit(void)
 	{
 		if (bJoystickWorking[i] == true)
 		{
+			bJoystickWorking[i] = false;
 			SDL_JoystickClose(sdlJoystick[i]);
 		}
+		sdlJoystick[i] = NULL;
+		sdlJoystickMapping[i] = NULL;
 	}
 }
 

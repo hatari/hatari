@@ -957,6 +957,22 @@ void Configuration_Apply(bool bReset)
 	M68000_CheckCpuSettings();
 //fprintf (stderr,"M68000_CheckCpuSettings conf 2\n" );
 
+	/* Disable invalid joystick mappings */
+	for (i = 0; i < JOYSTICK_COUNT; i++)
+	{
+		int joyid = ConfigureParams.Joysticks.Joy[i].nJoyId;
+		if (joyid < 0 || joyid >= JOYSTICK_COUNT)
+		{
+			if (ConfigureParams.Joysticks.Joy[i].nJoystickMode == JOYSTICK_REALSTICK)
+			{
+				Log_Printf(LOG_WARN, "Selected real Joystick %d unavailable, disabling ST joystick %d\n", joyid, i);
+				ConfigureParams.Joysticks.Joy[i].nJoystickMode = JOYSTICK_DISABLED;
+			}
+			/* otherwise it may result in invalid array access */
+			ConfigureParams.Joysticks.Joy[i].nJoyId = 0;
+		}
+	}
+
 	/* Clean file and directory names */
 	File_MakeAbsoluteName(ConfigureParams.Rom.szTosImageFileName);
 	if (strlen(ConfigureParams.Rom.szCartridgeImageFileName) > 0)

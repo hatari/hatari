@@ -285,7 +285,7 @@ static void DlgJoystick_ReadValuesFromConf(int nActJoy)
 	int i;
 
 	/* Check if joystick ID is available */
-	if (SDL_NumJoysticks() == 0)
+	if (SDL_NumJoysticks() <= 0)
 	{
 		strcpy(sSdlStickName, "0: (none available)");
 	}

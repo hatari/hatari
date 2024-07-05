@@ -37,6 +37,8 @@ Emulator improvements:
   - Add separate option for enabling/disabling >=030 CPU data cache
 - Memory snapshots:
   - Fix: re/store all relevant YM2149 & MMU state variables
+- Joysticks:
+  - Fix: segfault with negative joystick indexes
 - GEMDOS HD:
   - Fix: Fattrib() call on a directory
 - SCC:
