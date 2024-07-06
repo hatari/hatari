@@ -1123,6 +1123,8 @@ int SDLGui_DoDialogExt(SGOBJ *dlg, bool (*isEventOut)(SDL_EventType), SDL_Event 
 	SDL_Surface *pBgSurface;
 	SDL_Rect dlgrect, bgrect;
 	SDL_Joystick *joy = NULL;
+	const Uint8 *keystates;
+	bool ignore_first_keyup;
 
 	/* either both, or neither of these should be present */
 	assert((isEventOut && pEventOut) || (!isEventOut && !pEventOut));
@@ -1176,6 +1178,16 @@ int SDLGui_DoDialogExt(SGOBJ *dlg, bool (*isEventOut)(SDL_EventType), SDL_Event 
 
 	/* (Re-)draw the dialog */
 	SDLGui_DrawDialog(dlg);
+
+	/* If one of the keys that could exit the dialog is already held
+	 * before we start, then ignore the first keyup event since the
+	 * key press does not belong to the dialog, but rather to whatever
+	 * happened before the dialog */
+	keystates = SDL_GetKeyboardState(NULL);
+	ignore_first_keyup = keystates[SDL_SCANCODE_RETURN]
+	                     || keystates[SDL_SCANCODE_KP_ENTER]
+	                     || keystates[SDL_SCANCODE_SPACE]
+	                     || keystates[SDL_SCANCODE_ESCAPE];
 
 	/* Is the left mouse button still pressed? Yes -> Handle TOUCHEXIT objects here */
 	SDL_PumpEvents();
@@ -1401,9 +1413,19 @@ int SDLGui_DoDialogExt(SGOBJ *dlg, bool (*isEventOut)(SDL_EventType), SDL_Event 
 				 case SDLK_SPACE:
 				 case SDLK_RETURN:
 				 case SDLK_KP_ENTER:
+					if (ignore_first_keyup)
+					{
+						ignore_first_keyup = false;
+						break;
+					}
 					retbutton = SDLGui_HandleSelection(dlg, focused, focused);
 					break;
 				 case SDLK_ESCAPE:
+					if (ignore_first_keyup)
+					{
+						ignore_first_keyup = false;
+						break;
+					}
 					retbutton = SDLGui_SearchFlags(dlg, SG_CANCEL);
 					break;
 				 default:
