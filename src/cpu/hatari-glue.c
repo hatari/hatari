@@ -27,6 +27,7 @@ const char HatariGlue_fileid[] = "Hatari hatari-glue.c";
 #include "psg.h"
 #include "mfp.h"
 #include "fdc.h"
+#include "nf_scsidrv.h"
 #include "memorySnapShot.h"
 
 #include "sysdeps.h"
@@ -68,6 +69,11 @@ void customreset(void)
 
 	/* Reset the FDC */
 	FDC_Reset ( false );
+
+#if defined(__linux__)
+	/* Reset the native SCSI Driver */
+	nf_scsidrv_reset();
+#endif
 }
 
 
