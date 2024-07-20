@@ -4808,7 +4808,7 @@ void Video_ScreenCounter_WriteByte(void)
 	uint32_t addr_cur;
 	uint32_t addr_new = 0;
 	int FrameCycles, HblCounterVideo, LineCycles;
-	int Delayed;
+	LOG_TRACE_VAR int Delayed;
 	int MMUStartCycle;
 
 	Video_GetPosition_OnWriteAccess ( &FrameCycles , &HblCounterVideo , &LineCycles );
@@ -4974,7 +4974,7 @@ void Video_LineWidth_WriteByte(void)
 {
 	uint8_t NewWidth;
 	int FrameCycles, HblCounterVideo, LineCycles;
-	int Delayed;
+	LOG_TRACE_VAR int Delayed;
 
 	Video_GetPosition_OnWriteAccess ( &FrameCycles , &HblCounterVideo , &LineCycles );
 	LineCycles = VIDEO_CYCLE_TO_HPOS ( LineCycles );
@@ -5433,7 +5433,7 @@ void Video_HorScroll_Write(void)
 	int FrameCycles, HblCounterVideo, LineCycles;
 	bool Add16px = false;
 	static uint8_t LastVal8265 = 0;
-	int Delayed;
+	LOG_TRACE_VAR int Delayed;
 
 	Video_GetPosition_OnWriteAccess ( &FrameCycles , &HblCounterVideo , &LineCycles );
 	LineCycles = VIDEO_CYCLE_TO_HPOS ( LineCycles );

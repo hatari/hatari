@@ -2076,7 +2076,8 @@ static bool GemDOS_Open(uint32_t Params)
 	/* TODO: host filenames might not fit into this */
 	char szActualFileName[MAX_GEMDOS_PATH];
 	char *pszFileName;
-	const char *ModeStr, *RealMode;
+	const char *ModeStr;
+	LOG_TRACE_VAR const char *RealMode;
 	const char *Modes[] = {
 		"read-only", "write-only", "read/write", "read/write"
 	};

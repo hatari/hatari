@@ -310,11 +310,19 @@ extern uint64_t LogTraceFlags;
 #define	LOG_TRACE(level, ...) \
 	if (LOG_TRACE_LEVEL(level))	{ Log_Trace(__VA_ARGS__); }
 
+#define LOG_TRACE_VAR
+
 #else		/* ENABLE_TRACING */
 
 #define LOG_TRACE(level, ...)	{}
 
 #define LOG_TRACE_LEVEL( level )	(0)
+
+#ifdef __GNUC__
+#define LOG_TRACE_VAR __attribute__((unused))
+#else
+#define LOG_TRACE_VAR
+#endif
 
 #endif		/* ENABLE_TRACING */
 

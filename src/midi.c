@@ -342,7 +342,7 @@ void Midi_InterruptHandler_Update(void)
 static bool Midi_Host_Open(void)
 {
 #ifndef HAVE_PORTMIDI
-	int ok;
+	LOG_TRACE_VAR int ok;
 	if (ConfigureParams.Midi.sMidiOutFileName[0])
 	{
 		/* Open MIDI output file */

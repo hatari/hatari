@@ -1014,7 +1014,7 @@ static int SCC_Compute_BaudRate ( int chn , bool *pStartBRG , uint32_t *pBaudRat
 	int	ClockMult;
 	int	TransmitClock , ReceiveClock;
 	int	BaudRate;
-	const char	*ClockName;
+	LOG_TRACE_VAR const char *ClockName;
 
 
 	/* WR4 gives Clock Mode Multiplier */

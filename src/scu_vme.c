@@ -90,13 +90,13 @@ static SCU_REGS		SCU;
  */
 static void SCU_TraceRead ( const char *info )
 {
-	int addr = IoAccessCurrentAddress;
+	LOG_TRACE_VAR int addr = IoAccessCurrentAddress;
 	LOG_TRACE(TRACE_SCU, "scu read %s %x=0x%x pc=%x\n", info , addr, IoMem[addr], M68000_GetPC());
 }
 
 static void SCU_TraceWrite ( const char *info )
 {
-	int addr = IoAccessCurrentAddress;
+	LOG_TRACE_VAR int addr = IoAccessCurrentAddress;
 	LOG_TRACE(TRACE_SCU, "scu write %s %x=0x%x pc=%x\n", info , addr, IoMem[addr], M68000_GetPC());
 }
 
