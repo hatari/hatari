@@ -1348,6 +1348,7 @@ int SDLGui_DoDialogExt(SGOBJ *dlg, bool (*isEventOut)(SDL_EventType), SDL_Event 
 
 			 case SDL_JOYBALLMOTION:
 			 case SDL_MOUSEMOTION:
+			 case SDL_KEYMAPCHANGED:
 				break;
 
 			 case SDL_KEYDOWN:                     /* Key pressed */
