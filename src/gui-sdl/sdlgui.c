@@ -1184,10 +1184,10 @@ int SDLGui_DoDialogExt(SGOBJ *dlg, bool (*isEventOut)(SDL_EventType), SDL_Event 
 	 * key press does not belong to the dialog, but rather to whatever
 	 * happened before the dialog */
 	keystates = SDL_GetKeyboardState(NULL);
-	ignore_first_keyup = keystates[SDL_SCANCODE_RETURN]
-	                     || keystates[SDL_SCANCODE_KP_ENTER]
-	                     || keystates[SDL_SCANCODE_SPACE]
-	                     || keystates[SDL_SCANCODE_ESCAPE];
+	ignore_first_keyup = keystates[SDL_GetScancodeFromKey(SDLK_RETURN)] ||
+	                     keystates[SDL_GetScancodeFromKey(SDLK_KP_ENTER)] ||
+	                     keystates[SDL_GetScancodeFromKey(SDLK_SPACE)] ||
+	                     keystates[SDL_GetScancodeFromKey(SDLK_ESCAPE)];
 
 	/* Is the left mouse button still pressed? Yes -> Handle TOUCHEXIT objects here */
 	SDL_PumpEvents();
