@@ -164,13 +164,12 @@ static bool DlgAlert_ShowDlg(const char *text)
 	bWasEmuActive = Main_PauseEmulation(true);
 
 	SDL_GetMouseState(&nOldMouseX, &nOldMouseY);
-	bOldMouseVisibility = SDL_ShowCursor(SDL_QUERY);
-	SDL_ShowCursor(SDL_ENABLE);
+	bOldMouseVisibility = Main_ShowCursor(true);
 
 	i = SDLGui_DoDialog(alertdlg);
 
 	Screen_UpdateRect(sdlscrn, 0,0, 0,0);
-	SDL_ShowCursor(bOldMouseVisibility);
+	Main_ShowCursor(bOldMouseVisibility);
 	Main_WarpMouse(nOldMouseX, nOldMouseY, true);
 
 	SDL_SetRelativeMouseMode(bOldMouseMode);

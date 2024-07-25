@@ -65,6 +65,7 @@ extern uint32_t Main_SetRunVBLs(uint32_t vbls);
 extern const char* Main_SetVBLSlowdown(int factor);
 extern void Main_WaitOnVbl(void);
 extern void Main_WarpMouse(int x, int y, bool restore);
+extern bool Main_ShowCursor(bool show);
 extern void Main_EventHandler(void);
 extern void Main_SetTitle(const char *title);
 

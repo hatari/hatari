@@ -472,6 +472,30 @@ void Main_WarpMouse(int x, int y, bool restore)
 
 /* ----------------------------------------------------------------------- */
 /**
+ * Set mouse cursor visibility and return if it was visible before.
+ */
+bool Main_ShowCursor(bool show)
+{
+	bool bOldVisibility;
+
+	bOldVisibility = SDL_ShowCursor(SDL_QUERY) == SDL_ENABLE;
+	if (bOldVisibility != show)
+	{
+		if (show)
+		{
+			SDL_ShowCursor(SDL_ENABLE);
+		}
+		else
+		{
+			SDL_ShowCursor(SDL_DISABLE);
+		}
+	}
+	return bOldVisibility;
+}
+
+
+/* ----------------------------------------------------------------------- */
+/**
  * Handle mouse motion event.
  */
 static void Main_HandleMouseMotion(SDL_Event *pEvent)

@@ -737,7 +737,7 @@ void Screen_Init(void)
 	}
 
 	/* Configure some SDL stuff: */
-	SDL_ShowCursor(SDL_DISABLE);
+	Main_ShowCursor(false);
 }
 
 
