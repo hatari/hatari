@@ -41,6 +41,7 @@ Emulator improvements:
   - Fix: segfault with negative joystick indexes
 - GEMDOS HD:
   - Fix: Fattrib() call on a directory
+  - Fix: Handle additional '*' chars at end of file mask
 - SCC:
   - Fix: invalid channel B file close on uninit
 Debugger:
@@ -61,6 +62,7 @@ Build changes:
 
 Fixed programs:
 - Voxx, both demo & free full version (DSP JMP instruction)
+- Ultimate Virus Killer (GEMDOS HD, "***.***" file mask)
 
 Fixed games:
 - Ready Steady Bang! (GEMDOS HD Fattrib())

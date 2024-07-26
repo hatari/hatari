@@ -446,16 +446,19 @@ static bool fsfirst_match(const char *pat, const char *name)
 
 	/* printf("'%s': '%s' -> '%s' : '%s' -> %d\n", name, pat, n, p); */
 
-	/* The traversed name matches the pattern, if pattern also
-	 * ends here, or with '*'. '*' for extension matches also
-	 * filenames without extension, so pattern ending with
-	 * '.*' will also be a match.
-	 */
-	return (
-		(p[0] == 0) ||
-		(p[0] == '*' && p[1] == 0) ||
-		(p[0] == '.' && p[1] == '*' && p[2] == 0)
-	       );
+	/* whole name consumed, what about pattern? */
+
+	/* '*' match any number of chars, so skip them all */
+	while (p[0] == '*')
+		p++;
+	/* '*' for extension matches also filenames without extension */
+	if (p[0] == '.' && p[1] == '*')
+		p += 2;
+	/* skip rest of extension '*' chars */
+	while (p[0] == '*')
+		p++;
+	/* ends here = match? */
+	return (p[0] == 0);
 }
 
 
