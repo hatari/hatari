@@ -498,9 +498,8 @@ bool Main_ShowCursor(bool show)
 /**
  * Handle mouse motion event.
  */
-static void Main_HandleMouseMotion(SDL_Event *pEvent)
+static void Main_HandleMouseMotion(int dx, int dy)
 {
-	int dx, dy;
 	static int ax = 0, ay = 0;
 
 	/* Ignore motion when position has changed right after a reset or TOS
@@ -510,9 +509,6 @@ static void Main_HandleMouseMotion(SDL_Event *pEvent)
 		bIgnoreNextMouseMotion = false;
 		return;
 	}
-
-	dx = pEvent->motion.xrel;
-	dy = pEvent->motion.yrel;
 
 	/* In zoomed low res mode, we divide dx and dy by the zoom factor so that
 	 * the ST mouse cursor stays in sync with the host mouse. However, we have
@@ -549,6 +545,7 @@ void Main_EventHandler(void)
 	SDL_Event event;
 	int events;
 	int remotepause;
+	static int mleave_x = -1, mleave_y = -1;
 
 	do
 	{
@@ -595,7 +592,7 @@ void Main_EventHandler(void)
 			break;
 
 		 case SDL_MOUSEMOTION:               /* Read/Update internal mouse position */
-			Main_HandleMouseMotion(&event);
+			Main_HandleMouseMotion(event.motion.xrel, event.motion.yrel);
 			bContinueProcessing = true;
 			break;
 
@@ -679,10 +676,21 @@ void Main_EventHandler(void)
 				break;
 				/* mouse & keyboard focus */
 			case SDL_WINDOWEVENT_ENTER:
+				if (mleave_x != -1)
+				{
+					int new_x, new_y;
+					SDL_GetMouseState(&new_x, &new_y);
+					Main_HandleMouseMotion(new_x - mleave_x,
+					                       new_y - mleave_y);
+					mleave_x = mleave_y = -1;
+				}
+				/* fall through */
 			case SDL_WINDOWEVENT_FOCUS_GAINED:
 				bAllowMouseWarp = true;
 				break;
 			case SDL_WINDOWEVENT_LEAVE:
+				SDL_GetMouseState(&mleave_x, &mleave_y);
+				/* fall through */
 			case SDL_WINDOWEVENT_FOCUS_LOST:
 				bAllowMouseWarp = false;
 				break;
