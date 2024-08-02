@@ -528,6 +528,27 @@ static void Main_HandleMouseMotion(int dx, int dy)
 		dy /= nScreenZoomY;
 	}
 
+	if (!bInFullScreen)			/* Consider window scaling? */
+	{
+		static int wx, wy;
+		int win_width, win_height, ndx, ndy;
+
+		SDL_GetWindowSize(sdlWindow, &win_width, &win_height);
+
+		if (sdlscrn->w != win_width)
+		{
+			ndx = dx * sdlscrn->w;
+			dx = (ndx + wx) / win_width;
+			wx = (ndx + wx) % win_width;
+		}
+		if (sdlscrn->h != win_height)
+		{
+			ndy = dy * sdlscrn->h;
+			dy = (ndy + wy) / win_height;
+			wy = (ndy + wy) % win_height;
+		}
+	}
+
 	KeyboardProcessor.Mouse.dx += dx;
 	KeyboardProcessor.Mouse.dy += dy;
 }
