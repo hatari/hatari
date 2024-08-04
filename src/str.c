@@ -19,10 +19,10 @@ const char Str_fileid[] = "Hatari str.c";
 #include "str.h"
 
 /* Used only by Str_Filename_Atari2Host() */
-static void Str_AtariToHost(const char *source, char *dest, int destLen, char replacementChar);
+static bool Str_AtariToHost(const char *source, char *dest, int destLen, char replacementChar);
 
 /* Used only by Str_Filename_Host2Atari() */
-static void Str_HostToAtari(const char *source, char *dest, char replacementChar);
+static bool Str_HostToAtari(const char *source, char *dest, char replacementChar);
 
 
 /**
@@ -375,10 +375,13 @@ static void initCharacterMappings(void)
  * Convert a 0-terminated string in the AtariST character set to a 0-terminated
  * UTF-8 encoded string. destLen is the number of available bytes in dest[].
  * A single character of the AtariST charset can consume up to 3 bytes in UTF-8.
+ * Returns true if any chars were mapped to UTF-8.
  */
-static void Str_AtariToUtf8(const char *source, char *dest, int destLen)
+static bool Str_AtariToUtf8(const char *source, char *dest, int destLen)
 {
+	bool mapped = false;
 	int c;
+
 	while (*source)
 	{
 		c = *source++ & 255;
@@ -404,20 +407,23 @@ static void Str_AtariToUtf8(const char *source, char *dest, int destLen)
 			*dest++ = (c & 63) | 128;           /* 10xxxxxx */
 			destLen -= 3;
 		}
+		mapped = true;
 	}
 	*dest = 0;
+	return mapped;
 }
 
 /**
  * Convert a 0-terminated utf-8 encoded string to a 0-terminated string
  * in the AtariST character set.
- * replacementChar is inserted when there is no mapping.
+ * when char has no mapping, replacementChar is used, and false returned.
  */
-static void Str_Utf8ToAtari(const char *source, char *dest, char replacementChar)
+static bool Str_Utf8ToAtari(const char *source, char *dest, char replacementChar)
 {
 	int c, c2, c3, i;
 	if (!characterMappingsInitialized) { initCharacterMappings(); }
 
+	bool mapped = (*source != 0);
 	while (*source)
 	{
 		c = *source++ & 255;
@@ -428,6 +434,7 @@ static void Str_Utf8ToAtari(const char *source, char *dest, char replacementChar
 		else if (c < 192)       /* invalid utf-8 encoding (10xxxxxx) */
 		{
 			*dest++ = replacementChar;
+			mapped = false;
 		}
 		else                    /* multi-byte utf-8 code */
 		{
@@ -445,24 +452,35 @@ static void Str_Utf8ToAtari(const char *source, char *dest, char replacementChar
 
 			/* find AtariST character code for unicode code point c */
 			i = mapUnicodeToAtari[c & 511];
-			*dest++ = (mapAtariToUnicode[i] == c ? i + 128 : replacementChar);
+			if (mapAtariToUnicode[i] == c)
+			{
+				*dest++ = i + 128;
+			}
+			else
+			{
+				*dest++ = replacementChar;
+				mapped = false;
+			}
 		}
 	}
 	*dest = 0;
+	return mapped;
 }
 
 #else
 
 /**
  * Convert a string from the AtariST character set into the host representation as
- * defined by the current locale. Characters which do not exist in character set
- * of the host as defined by the locale will be replaced by replacementChar.
+ * defined by the current locale. If characters do not exist in character set
+ * of the host as defined by the locale, they're replaced by replacementChar,
+ * and false returned.
  */
-static void Str_AtariToLocal(const char *source, char *dest, int destLen, char replacementChar)
+static bool Str_AtariToLocal(const char *source, char *dest, int destLen, char replacementChar)
 {
 	int c, i;
 	if (!characterMappingsInitialized) { initCharacterMappings(); }
 
+	bool mapped = (*source != 0);
 	while (*source && destLen > (int)MB_CUR_MAX)
 	{
 		c = *source++ & 255;
@@ -473,25 +491,28 @@ static void Str_AtariToLocal(const char *source, char *dest, int destLen, char r
 		if (i < 0)
 		{
 			*dest = replacementChar;
+			mapped = false;
 			i = 1;
 		}
 		dest += i;
 		destLen -= i;
 	}
 	*dest = 0;
+	return mapped;
 }
 
 /**
  * Convert a string from the character set defined by current host locale into the
  * AtariST character set. Characters which do not exist in the AtariST character set
- * will be replaced by replacementChar.
+ * will be replaced by replacementChar, and false returned.
  */
-static void Str_LocalToAtari(const char *source, char *dest, char replacementChar)
+static bool Str_LocalToAtari(const char *source, char *dest, char replacementChar)
 {
 	int i;
 	wchar_t c;
 	if (!characterMappingsInitialized) { initCharacterMappings(); }
 
+	bool mapped = (*source != 0);
 	while (*source)
 	{
 		/* convert a character from the current locale into an unicode code point */
@@ -499,6 +520,7 @@ static void Str_LocalToAtari(const char *source, char *dest, char replacementCha
 		if (i < 0)
 		{
 			c = replacementChar;
+			mapped = false;
 			i = 1;
 		}
 		source += i;
@@ -506,11 +528,20 @@ static void Str_LocalToAtari(const char *source, char *dest, char replacementCha
 		{
 			/* find AtariST character code for unicode code point c */
 			i = mapUnicodeToAtari[c & 511];
-			c = (mapAtariToUnicode[i] == c ? i + 128 : replacementChar);
+			if (mapAtariToUnicode[i] == c)
+			{
+				c = i + 128;
+			}
+			else
+			{
+				c = replacementChar;
+				mapped = false;
+			}
 		}
 		*dest++ = c;
 	}
 	*dest = 0;
+	return mapped;
 }
 #endif
 
@@ -528,21 +559,21 @@ void Str_Filename_Atari2Host(const char *source, char *dest, int destLen, char r
 	Str_AtariToHost(source, dest, destLen, replacementChar);
 }
 
-static void Str_AtariToHost(const char *source, char *dest, int destLen, char replacementChar)
+static bool Str_AtariToHost(const char *source, char *dest, int destLen, char replacementChar)
 {
 #if defined(WIN32) || defined(USE_LOCALE_CHARSET)
-	Str_AtariToLocal(source, dest, destLen, replacementChar);
+	return Str_AtariToLocal(source, dest, destLen, replacementChar);
 #else
-	Str_AtariToUtf8(source, dest, destLen);
+	return Str_AtariToUtf8(source, dest, destLen);
 #endif
 }
 
-static void Str_HostToAtari(const char *source, char *dest, char replacementChar)
+static bool Str_HostToAtari(const char *source, char *dest, char replacementChar)
 {
 #if defined(WIN32) || defined(USE_LOCALE_CHARSET)
-	Str_LocalToAtari(source, dest, replacementChar);
+	return Str_LocalToAtari(source, dest, replacementChar);
 #else
-	Str_Utf8ToAtari(source, dest, replacementChar);
+	return Str_Utf8ToAtari(source, dest, replacementChar);
 #endif
 }
 
