@@ -337,7 +337,7 @@ static dta_ret_t PopulateDTA(char *path, struct dirent *file, DTA *pDTA, uint32_
 	M68000_Flush_Data_Cache(DTA_Gemdos, sizeof(DTA));
 
 	/* convert to atari-style uppercase */
-	Str_Filename2TOSname(file->d_name, pDTA->dta_name);
+	Str_Filename_Host2Atari(file->d_name, pDTA->dta_name);
 #if DEBUG_PATTERN_MATCH
 	fprintf(stderr, "DEBUG: GEMDOS: host: %s -> GEMDOS: %s\n",
 		file->d_name, pDTA->dta_name);
@@ -1140,7 +1140,7 @@ static char* match_host_dir_entry(const char *path, const char *name, bool patte
 	DIR *dir;
 	char nameHost[MAX_UTF8_NAME_LEN];
 
-	Str_AtariToHost(name, nameHost, MAX_UTF8_NAME_LEN, INVALID_CHAR);
+	Str_Filename_Atari2Host(name, nameHost, MAX_UTF8_NAME_LEN, INVALID_CHAR);
 	name = nameHost;
 	
 	dir = opendir(path);
@@ -1352,7 +1352,7 @@ static bool add_path_component(char *path, int maxlen, const char *origname, boo
 		*tmp++ = chr_conv(*origname++);
 	*tmp = '\0';
 	/* strncat(path+pathlen, name, maxlen-pathlen); */
-	Str_AtariToHost(name, path+pathlen, maxlen-pathlen, INVALID_CHAR);
+	Str_Filename_Atari2Host(name, path+pathlen, maxlen-pathlen, INVALID_CHAR);
 	return false;
 }
 
@@ -1373,7 +1373,7 @@ static void add_remaining_path(const char *src, char *dstpath, int dstlen)
 	char *dst;
 	int i = strlen(dstpath);
 
-	Str_AtariToHost(src, dstpath+i, dstlen-i, INVALID_CHAR);
+	Str_Filename_Atari2Host(src, dstpath+i, dstlen-i, INVALID_CHAR);
 
 	for (dst = dstpath + i; *dst; dst++)
 		if (*dst == '\\')
@@ -1528,7 +1528,7 @@ void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName,
 			}
 			/* use strncat so that string is always nul terminated */
 			/* strncat(pszDestName+len, filename, nDestNameLen-len); */
-			Str_AtariToHost(filename, pszDestName+len, nDestNameLen-len, INVALID_CHAR);
+			Str_Filename_Atari2Host(filename, pszDestName+len, nDestNameLen-len, INVALID_CHAR);
 		}
 		else if (!add_path_component(pszDestName, nDestNameLen, filename, false))
 		{

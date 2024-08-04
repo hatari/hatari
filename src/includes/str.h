@@ -45,11 +45,11 @@ extern long Str_Copy(char *pDest, const char *pSrc, long nBufLen);
 extern char *Str_Trunc(char *str);
 extern bool Str_IsHex(const char *str);
 extern void Str_UnEscape(char *str);
-extern void Str_Filename2TOSname(const char *src, char *dst);
 extern void Str_Dump_Hex_Ascii ( char *p , int Len , int Width , const char *Suffix , FILE *pFile );
 
 /* Interface of character set conversions */
-extern void Str_AtariToHost(const char *source, char *dest, int destLen, char replacementChar);
+extern void Str_Filename_Host2Atari(const char *source, char *dest);
+extern void Str_Filename_Atari2Host(const char *source, char *dest, int destLen, char replacementChar);
 extern void Str_DecomposedToPrecomposedUtf8(const char *source, char *dest);
 
 

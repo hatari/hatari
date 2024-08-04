@@ -211,10 +211,10 @@ bool INF_SetAutoStart(const char *name, int opt_id)
 			/* A:NAME.PRG -> A:\NAME.PRG */
 			prgname[offset] = '\\';
 			/* copy/upcase file part */
-			Str_Filename2TOSname(name+offset, prgname+offset+1);
+			Str_Filename_Host2Atari(name+offset, prgname+offset+1);
 		} else {
 			/* copy/upcase file part */
-			Str_Filename2TOSname(name+offset, prgname+offset);
+			Str_Filename_Host2Atari(name+offset, prgname+offset);
 		}
 	}
 	else if (strchr(name, '\\'))
@@ -228,7 +228,7 @@ bool INF_SetAutoStart(const char *name, int opt_id)
 		/* just program -> add path */
 		prgname = Str_Alloc(3 + len);
 		strcpy(prgname, "C:\\");
-		Str_Filename2TOSname(name, prgname+3);
+		Str_Filename_Host2Atari(name, prgname+3);
 	}
 	if (TosOverride.prgname)
 		free(TosOverride.prgname);

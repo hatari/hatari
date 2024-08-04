@@ -18,7 +18,10 @@ const char Str_fileid[] = "Hatari str.c";
 #include "configuration.h"
 #include "str.h"
 
-/* Used only by Str_Filename2TOSname() */
+/* Used only by Str_Filename_Atari2Host() */
+static void Str_AtariToHost(const char *source, char *dest, int destLen, char replacementChar);
+
+/* Used only by Str_Filename_Host2Atari() */
 static void Str_HostToAtari(const char *source, char *dest, char replacementChar);
 
 
@@ -245,14 +248,15 @@ void Str_UnEscape(char *s1)
 
 /**
  * Convert potentially too long host filenames to 8.3 TOS filenames
- * by truncating extension and part before it, replacing invalid
- * GEMDOS file name characters with INVALID_CHAR + upcasing the result.
+ * by first converting host encoding to Atari one, truncating extension
+ * and part before it, replacing invalid GEMDOS file name characters
+ * with INVALID_CHAR + upcasing the result.
  * 
  * Matching them from the host file system should first try exact
  * case-insensitive match, and then with a pattern that takes into
  * account the conversion done in here.
  */
-void Str_Filename2TOSname(const char *source, char *dst)
+void Str_Filename_Host2Atari(const char *source, char *dst)
 {
 	char *dot, *tmp, *src;
 	int len;
@@ -260,7 +264,8 @@ void Str_Filename2TOSname(const char *source, char *dst)
 	src = strdup(source); /* dup so that it can be modified */
 
 	/* convert host string encoding to AtariST character set */
-	Str_HostToAtari(source, src, INVALID_CHAR);
+	if (ConfigureParams.HardDisk.bFilenameConversion)
+		Str_HostToAtari(source, src, INVALID_CHAR);
 	len = strlen(src);
 
 	/* does filename have an extension? */
@@ -509,14 +514,22 @@ static void Str_LocalToAtari(const char *source, char *dest, char replacementCha
 }
 #endif
 
-
-void Str_AtariToHost(const char *source, char *dest, int destLen, char replacementChar)
+/**
+ * Convert given host 'source' file name to 'destLen' sized 'dest',
+ * in Atari encoding, if GEMDOS HD filename conversion is enabled.
+ */
+void Str_Filename_Atari2Host(const char *source, char *dest, int destLen, char replacementChar)
 {
 	if (!ConfigureParams.HardDisk.bFilenameConversion)
 	{
 		Str_Copy(dest, source, destLen);
 		return;
 	}
+	Str_AtariToHost(source, dest, destLen, replacementChar);
+}
+
+static void Str_AtariToHost(const char *source, char *dest, int destLen, char replacementChar)
+{
 #if defined(WIN32) || defined(USE_LOCALE_CHARSET)
 	Str_AtariToLocal(source, dest, destLen, replacementChar);
 #else
@@ -526,11 +539,6 @@ void Str_AtariToHost(const char *source, char *dest, int destLen, char replaceme
 
 static void Str_HostToAtari(const char *source, char *dest, char replacementChar)
 {
-	if (!ConfigureParams.HardDisk.bFilenameConversion)
-	{
-		strcpy(dest, source);
-		return;
-	}
 #if defined(WIN32) || defined(USE_LOCALE_CHARSET)
 	Str_LocalToAtari(source, dest, replacementChar);
 #else
