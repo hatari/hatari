@@ -286,7 +286,7 @@ static void ScreenConv_BitplaneTo32bppNoZoom(Uint16 *fvram_line, Uint8 *hvram,
 static void ScreenConv_HiColorTo32bppNoZoom(Uint16 *fvram_line, Uint8 *hvram,
                                             int scrwidth, int scrheight,
                                             int vw, int vh, int vbpp,
-                                            int nextline, int hscrolloffset,
+                                            int nextline,
                                             int leftBorder, int rightBorder,
                                             int upperBorder, int lowBorder)
 {
@@ -423,7 +423,7 @@ static void Screen_ConvertWithoutZoom(Uint16 *fvram, int vw, int vh, int vbpp, i
 		/* Falcon TC (High Color) */
 		ScreenConv_HiColorTo32bppNoZoom(fvram, hvram,
 		                                scrwidth, scrheight, vw, vh,
-		                                vbpp, nextline, hscrolloffset,
+		                                vbpp, nextline,
 		                                leftBorder, rightBorderSize,
 		                                upperBorder, lowBorderSize);
 	}
@@ -513,7 +513,7 @@ static void ScreenConv_BitplaneTo32bppZoomed(Uint16 *fvram, Uint8 *hvram,
 static void ScreenConv_HiColorTo32bppZoomed(Uint16 *fvram, Uint8 *hvram,
                                             int scrwidth, int scrheight,
                                             int vw, int vh, int vbpp,
-                                            int nextline, int hscrolloffset,
+                                            int nextline,
                                             int leftBorder, int rightBorder,
                                             int upperBorder, int lowerBorder,
                                             int coefx, int coefy)
@@ -679,7 +679,7 @@ static void Screen_ConvertWithZoom(Uint16 *fvram, int vw, int vh, int vbpp, int 
 	} else {
 		/* Falcon high-color (16-bit) mode */
 		ScreenConv_HiColorTo32bppZoomed(fvram, hvram, scrwidth, scrheight,
-		                                vw, vh, vbpp, nextline, hscrolloffset,
+		                                vw, vh, vbpp, nextline,
 		                                leftBorder, rightBorder, upperBorder,
 		                                lowerBorder, coefx, coefy);
 	}
