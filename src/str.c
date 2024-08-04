@@ -18,9 +18,6 @@ const char Str_fileid[] = "Hatari str.c";
 #include "configuration.h"
 #include "str.h"
 
-/* Used only by Str_Filename_Atari2Host() */
-static bool Str_AtariToHost(const char *source, char *dest, int destLen, char replacementChar);
-
 
 /**
  * Remove whitespace from beginning and end of a string.
@@ -556,7 +553,7 @@ void Str_Filename_Atari2Host(const char *source, char *dest, int destLen, char r
 	Str_AtariToHost(source, dest, destLen, replacementChar);
 }
 
-static bool Str_AtariToHost(const char *source, char *dest, int destLen, char replacementChar)
+bool Str_AtariToHost(const char *source, char *dest, int destLen, char replacementChar)
 {
 #if defined(WIN32) || defined(USE_LOCALE_CHARSET)
 	return Str_AtariToLocal(source, dest, destLen, replacementChar);
