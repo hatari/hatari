@@ -30,11 +30,8 @@ const char Profilecpu_fileid[] = "Hatari profilecpu.c";
 
 
 /* cartridge area */
-#define CART_START	0xFA0000
-#define CART_END	0xFC0000
 #define CART_SIZE	(CART_END - CART_START)
 
-#define TTRAM_START	0x01000000
 
 /* if non-zero, output (more) warnings on suspicious:
  * - cycle/instruction counts

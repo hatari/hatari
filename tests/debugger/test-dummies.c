@@ -31,8 +31,12 @@ int Cycles_GetCounter(int nId) { return 0; }
 /* bring in gemdos defines (EMULATEDDRIVES) */
 #include "gemdos.h"
 
+/* fake TOS variables */
+uint32_t TosAddress = 0xe00000, TosSize = 256*1024;
+
 /* fake ST RAM, only 24-bit support */
 #include "stMemory.h"
+uae_u8 *TTmemory = NULL;
 #if ENABLE_SMALL_MEM
 static uint8_t _STRam[16*1024*1024];
 uint8_t *STRam = _STRam;

@@ -30,6 +30,7 @@ typedef struct
   int nNumberBase;
   int nSymbolLines;
   int nMemdumpLines;
+  int nFindLines;
   int nDisasmLines;
   int nBacktraceLines;
   int nExceptionDebugMask;

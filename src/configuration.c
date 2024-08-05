@@ -64,6 +64,7 @@ static const struct Config_Tag configs_Debugger[] =
 	{ "nNumberBase", Int_Tag, &ConfigureParams.Debugger.nNumberBase },
 	{ "nSymbolLines", Int_Tag, &ConfigureParams.Debugger.nSymbolLines },
 	{ "nMemdumpLines", Int_Tag, &ConfigureParams.Debugger.nMemdumpLines },
+	{ "nFindLines", Int_Tag, &ConfigureParams.Debugger.nFindLines },
 	{ "nDisasmLines", Int_Tag, &ConfigureParams.Debugger.nDisasmLines },
 	{ "nBacktraceLines", Int_Tag, &ConfigureParams.Debugger.nBacktraceLines },
 	{ "nExceptionDebugMask", Int_Tag, &ConfigureParams.Debugger.nExceptionDebugMask },
@@ -589,6 +590,7 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Debugger.nNumberBase = 10;
 	ConfigureParams.Debugger.nSymbolLines = -1; /* <0: use terminal size */
 	ConfigureParams.Debugger.nMemdumpLines = -1; /* <0: use terminal size */
+	ConfigureParams.Debugger.nFindLines = -1; /* <0: use terminal size */
 	ConfigureParams.Debugger.nDisasmLines = -1; /* <0: use terminal size */
 	ConfigureParams.Debugger.nBacktraceLines = 0; /* <=0: show all */
 	ConfigureParams.Debugger.nExceptionDebugMask = DEFAULT_EXCEPTIONS;

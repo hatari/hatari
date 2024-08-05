@@ -34,6 +34,7 @@ const char DebugCpu_fileid[] = "Hatari debugcpu.c";
 #include "68kDisass.h"
 #include "console.h"
 #include "options.h"
+#include "tos.h"
 #include "str.h"
 #include "vars.h"
 
@@ -930,6 +931,206 @@ static int DebugCpu_MemWrite(int nArgc, char *psArgs[])
 }
 
 
+/* return end of memory area where given address is,
+ * or zero if address is invalid
+ */
+static uint32_t mem_end_for(uint32_t addr)
+{
+	if (addr < STRamEnd)
+		return STRamEnd;
+
+	uint32_t TosEnd = TosAddress + TosSize;
+	if (addr >= TosAddress && addr < TosEnd)
+		return TosEnd;
+
+	if (addr >= CART_START && addr < CART_END)
+		return CART_END;
+
+	uint32_t TTmemEnd = TTRAM_START + 1024*ConfigureParams.Memory.TTRamSize_KB;
+	if (TTmemory && addr >= TTRAM_START && addr < TTmemEnd)
+		return TTmemEnd;
+
+	return 0;
+}
+
+/**
+ * Do a memory find, args = mode, start-end, values
+ * (most of code is identical to MemWrite)
+ */
+static int DebugCpu_MemFind(int nArgc, char *psArgs[])
+{
+	int arg, max_values;
+	union {
+		uint8_t  bytes[256];
+		uint16_t words[128];
+		uint32_t longs[64];
+	} store;
+	char mode;
+
+	if (nArgc < 3)
+	{
+		return DebugUI_PrintCmdHelp(psArgs[0]);
+	}
+
+	arg = 1;
+	mode = tolower(psArgs[arg][0]);
+	max_values = ARRAY_SIZE(store.bytes);
+
+	if (!mode || isdigit((unsigned char)psArgs[arg][0]) || psArgs[arg][1])
+	{
+		/* no args, single digit or multiple chars -> default mode */
+		mode = 'b';
+	}
+	else if (mode == 'b' || mode == 'a')
+	{
+		arg += 1;
+	}
+	else if (mode == 'w')
+	{
+		max_values = ARRAY_SIZE(store.words);
+		arg += 1;
+	}
+	else if (mode == 'l')
+	{
+		max_values = ARRAY_SIZE(store.longs);
+		arg += 1;
+	}
+	else
+	{
+		fprintf(stderr, "Invalid width mode (not a|b|w|l)!\n");
+		return DEBUGGER_CMDDONE;
+	}
+
+	/* parse address range */
+
+	uint32_t find_addr, find_upper = 0;
+
+	switch (Eval_Range(psArgs[arg++], &find_addr, &find_upper, false))
+	{
+	case -1:
+		/* invalid value(s) */
+		return DEBUGGER_CMDDONE;
+	case 0:
+		/* single value */
+		break;
+	case 1:
+		/* range */
+		break;
+	}
+
+	if ((find_upper && find_upper <= find_addr) ||
+	    !(mem_end_for(find_addr) && mem_end_for(find_upper)))
+	{
+		fprintf(stderr, "Invalid address range: 0x%x[-0x%x]\n", find_addr, find_upper);
+		return DEBUGGER_CMDDONE;
+	}
+
+	if (!find_upper)
+		find_upper = mem_end_for(find_addr);
+
+	const int size = get_type_width(mode);
+
+	if (find_addr & (size-1)) {
+		fprintf(stderr, "Start address 0x%x not '%c' type aligned\n", find_addr, mode);
+		return DEBUGGER_CMDDONE;
+	}
+
+	/* parse values */
+
+	if (nArgc - arg > max_values)
+	{
+		fprintf(stderr, "Too many values (%d) given for mode '%c' (max %d)!\n",
+		       nArgc - arg, mode, max_values);
+		return DEBUGGER_CMDDONE;
+	}
+
+	uint32_t d;
+	int i, values;
+
+	for (values = 0, i = arg; i < nArgc; i++, values++)
+	{
+		if (mode == 'a')
+		{
+			char str[3];
+			if (!hostCharToAtari(psArgs[i], str, sizeof(str)))
+				return DEBUGGER_CMDDONE;
+			store.bytes[values] = str[0];
+			continue;
+		}
+
+		if (!Eval_Number(psArgs[i], &d, NUM_TYPE_NORMAL))
+		{
+			fprintf(stderr, "Bad value '%s'!\n", psArgs[i]);
+			return DEBUGGER_CMDDONE;
+		}
+
+		switch(mode)
+		{
+		case 'b':
+			if (d > 0xff)
+			{
+				fprintf(stderr, "Illegal byte argument: 0x%x!\n", d);
+				return DEBUGGER_CMDDONE;
+			}
+			store.bytes[values] = (uint8_t)d;
+			break;
+		case 'w':
+			if (d > 0xffff)
+			{
+				fprintf(stderr, "Illegal word argument: 0x%x!\n", d);
+				return DEBUGGER_CMDDONE;
+			}
+			store.words[values] = be_swap16(d);
+			break;
+		case 'l':
+			store.longs[values] = be_swap32(d);
+			break;
+		}
+	}
+
+	/* search given range for specified values & show them */
+
+	const int rows = DebugUI_GetPageLines(ConfigureParams.Debugger.nFindLines, 20);
+	const int count = nArgc - arg;
+	const int bytes = count*size;
+
+	int row = 0, matches = 0;
+	while (find_addr < find_upper - bytes)
+	{
+		for (i = 0; i < bytes; i++)
+		{
+			if (STMemory_ReadByte(find_addr+i) != store.bytes[i])
+				break;
+		}
+		if (i < bytes)
+		{
+			find_addr += size;
+			continue;
+		}
+
+		/* print <addr>: <hex> <ascii> */
+		fprintf(debugOutput, "%08X: ", find_addr);
+		print_mem_values(find_addr, count, size, 16);
+		fprintf(debugOutput, "  ");
+		print_mem_ascii(find_addr, count*size);
+		fprintf(debugOutput, "\n");
+
+		matches++;
+		if (++row >= rows) {
+			row = 0;
+			if (DebugUI_DoQuitQuery("find results"))
+				break;
+		}
+		find_addr += bytes;
+	}
+
+	fprintf(debugOutput, "%d matches.\n", matches);
+	fflush(debugOutput);
+
+	return DEBUGGER_CMDCONT;
+}
+
+
 /**
  * Command: Continue CPU emulation / single-stepping
  */
@@ -1216,6 +1417,14 @@ static const dbgcommand_t cpucommands[] =
 	  "[<start address>[-<end address>]]\n"
 	  "\tWhen no address is given, disassemble from the last disasm\n"
 	  "\taddress, or from current PC when debugger is (re-)entered.",
+	  false },
+	{ DebugCpu_MemFind, Symbols_MatchCpuAddress,
+	  "find", "",
+	  "find given value sequence from memory",
+	  "[b|w|l|a] <start address>[-<end address>] <values>\n"
+	  "\tBy default values are interpreted as bytes, with 'w', 'l'\n"
+	  "\tor 'a', they're interpreted as words/longs/chars instead,\n"
+	  "\tand find is done for suitable aligned addresses.",
 	  false },
 	{ DebugCpu_Profile, Profile_Match,
 	  "profile", "",

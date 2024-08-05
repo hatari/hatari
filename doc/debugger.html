@@ -107,21 +107,7 @@ Hatari command line is <em>autostarted</em>.
 <h3>Debugger configuration options</h3>
 
 <p>When you save Hatari configuration, your current debugger
-settings are also saved to the Hatari configuration file.
-These are their defaults:</p>
-<pre>
-[Debugger]
-nNumberBase = 10
-nSymbolLines = -1
-nMemdumpLines = -1
-nDisasmLines = -1
-nBacktraceLines = 0
-nExceptionDebugMask = 515
-nDisasmOptions = 15
-bDisasmUAE = TRUE
-bSymbolsAutoLoad = TRUE
-bMatchAllSymbols = FALSE
-</pre>
+settings are also saved to the Hatari configuration file.</p>
 
 <p>Settings are following:</p>
 <dl>
@@ -132,6 +118,8 @@ bMatchAllSymbols = FALSE
 <dd>Number of lines to show when listing debug symbols</dd>
 <dt>nMemdumpLines</dt>
 <dd>Number of memory dump lines to show</dd>
+<dt>nFindLines</dt>
+<dd>Number of find (search) lines to show</dd>
 <dt>nDisasmLines</dt>
 <dd>Number of disassembly lines to show</dd>
 <dt>nBacktraceLines</dt>
@@ -155,6 +143,22 @@ bMatchAllSymbols = FALSE
     a relevant code section, or all of them.  Toggled with the
     "symbols match" command</dd>
 </dl>
+
+<p>These are their defaults:</p>
+<pre>
+[Debugger]
+nNumberBase = 10
+nSymbolLines = -1
+nMemdumpLines = -1
+nFindLines = -1
+nDisasmLines = -1
+nBacktraceLines = 0
+nExceptionDebugMask = 515
+nDisasmOptions = 15
+bDisasmUAE = TRUE
+bSymbolsAutoLoad = TRUE
+bMatchAllSymbols = FALSE
+</pre>
 
 <p>Settings on how many lines are shown can be changed only from the
 configuration file. You should need to change/set them only if you
@@ -197,6 +201,7 @@ CPU commands:
       address ( a) : set CPU PC address breakpoints
    breakpoint ( b) : set/remove/list conditional CPU breakpoints
        disasm ( d) : disassemble from PC, or given address
+         find (  ) : find given value sequence from memory
       profile (  ) : profile CPU code
        cpureg ( r) : dump register values or set register to value
       memdump ( m) : dump memory
@@ -2018,6 +2023,17 @@ b  ($ff820a).b &amp; 2 ! ($ff820a).b &amp; 2
 the ":trace" breakpoint option:
 <pre>
 b  ($ff820a).b &amp; 2 ! ($ff820a).b &amp; 2  :trace
+</pre>
+</dd>
+
+<dt><em>Finding specific data from memory</em></dt>
+<dd>Find "ETOS" ASCII string matches from ROM:
+<pre>
+find a 0xe00000 E T O S
+</pre>
+Find all potential (word aligned) RTS instructions from RAM:
+<pre>
+find w 0x0 0x4e75
 </pre>
 </dd>
 
