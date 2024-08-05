@@ -162,17 +162,15 @@ Other potential Hatari functionality improvements
 	  and showing the value as long/word/byte requires ANDing it)
 	- All register values being shown with above info
           (= Steem Register monitor)
-	- info commands for PSG, MFP, FDC and IKBD register values
+	- info commands for PSG and FDC register values
 	  (= Steem monitors for these)
 	- Info command for "timings" i.e. cycles since HBL/VBL,
 	  timer values, video address & scanline
 	  (= Steem Timings view)
-	- memory dump in text format
+	- memory dump with just text format
 	  (= Steem Text monitor)
         - Stack content display: m "a7-$40"-"a7"
 	  (= Steem Stack display)
-	- Text string and binary values (hex) search
-	  (= widgets in Steem monitor windows)
 	- Run for N cycles
 	  (Hatari 'continue' command accepts only instructions, not cycles)
 
@@ -200,7 +198,6 @@ Other potential Hatari functionality improvements
 	- A stop/run button and a debugger "step" button
 	- Possibility to click to an address on dump window to define
 	  a simple PC breakpoint (or monitor memory on B/W/L accesses)
-	- A way to search for hex/text in Hatari's RAM.
 
 (See "Steem debugger features not in Hatari debugger"
 on BerliOS hatari-devel mail thread for more info.)
@@ -224,7 +221,6 @@ on BerliOS hatari-devel mail thread for more info.)
 	- Fill and copy memory command
 	- Search for an address which disassembly output matches
 	  given instruction substring
-	- User variables which values can be set & used in expressions
 
 - Improved screen handling:
 	- Line based screen change detection/checks:
