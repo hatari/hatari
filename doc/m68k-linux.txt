@@ -69,8 +69,8 @@ version available in the given remote directory!
   missing MMU-translation within Hatari?
   DEBUG: Your Atari program just did something terribly stupid: dummy_xlate($c00123ee)
 
-- Incomplete TT / SCSI / 2nd MFP emulation:
-  => workaround: have TT root file system on IDE master or slave
+- Incomplete SCSI emulation:
+  => workaround: have root file system on IDE master or slave
 
   Rootfs mount from SCSI device fails after following debug output:
 ------------------------------------------------------------
@@ -122,7 +122,7 @@ VFS: Cannot open root device "/dev/sda" or unknown-block(8,0): error -6
    $ sudo apt install gcc-m68k-linux-gnu
 
 2. Get latest upstream kernel release sources (without history):
-   $ git clone --depth 1 --branch v6.9 \
+   $ git clone --depth 1 --branch v6.10 \
      git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
    $ cd linux
 
@@ -199,9 +199,9 @@ host).
 
 7. Cleanup directory content:
    $ rm *.tar.* debian-binary
-   $ cd ..
 
 8. Make 4MB EXT2 HD image out of it:
+   $ cd ..
    $ /sbin/mkfs.ext2 -t ext2 -L BUSYBOX -d disk/ rootfs.img 4M
 
 
@@ -284,8 +284,8 @@ Notes:
 1. Set suitable options in lilo.cfg, for example:
 -------------------------------------
 [LILO]
-Kernel = vmlinux-v6.9
-Symbols = System.map-v6.9
+Kernel = vmlinux-v6.10
+Symbols = System.map-v6.10
 Ramdisk =
 Args = video=atafb:sthigh console=tty
 KernelToFastRam = FALSE
@@ -296,7 +296,7 @@ KernelToFastRam = FALSE
     $ hatari --log-level info \
       --fast-forward on --fastfdc on --timer-d on \
       --machine falcon --dsp off --fpu 68882 \
-      --cpuclock 32 --data-cache off \
+      --cpuclock 32 --cpu-exact off --compatible off \
       --mmu on -s 14 --ttram 64 --addr24 off \
       -c lilo.cfg --natfeats on \
 
@@ -318,12 +318,12 @@ Options explanation (these can also be set in lilo.cfg):
 - init=<path> -- run given executable / script as first process
 
 Other notes:
-- Hatari CPU data cache emulation is disabled as otherwise
+- Hatari CPU cache & prefetch emulation is disabled as otherwise
   there are random bus errors & failures on Linux system calls
 - Keep "init=" last on "--lilo" option kernel command line,
   otherwise kernel may give arguments after it also to init!
-- Kernel does not need DSP, and avoiding it is emulation with
-  "--dsp off" at least doubles "--fast-forward on" speed
+- Kernel does not need DSP, and avoiding its emulation with
+  "--dsp off" (about) doubles "--fast-forward on" speed
 
 
 7. Native bootstrap
@@ -521,7 +521,7 @@ RamdiskToFastRam = TRUE
       --lilo "debug=nfcon root=/dev/ram init=/init"
 
 NOTE: Hatari does not support networking so network install obviously
-wo not work.  There are not any ready made images of pre-installed and
+does not work.  There are no ready made images of pre-installed and
 up to date m68k Debian installs either.
 
 TODO: kernel panics when init crashes.
@@ -674,13 +674,16 @@ Kernel panic - not syncing: VFS: Unable to mount root fs on unknown-block(0,0)
 11. User-space issues with 030 emulation
 ----------------------------------------
 
-These problems happen when CPU data cache and/or cycle-exact/prefetch
+These problems happen when either (or both) cycle-exact or prefetch
 emulation is enabled for 030 (with MMU).
+
+(If both cycle-exact and prefetch emulation are disabled, Hatari
+will disable also CPU data cache emulation.)
 
 On quick testing, klibc based (dynamically linked) tools do not have
 problems, but tools in (statically linked) BusyBox do have a lot of
 problems:
-http://ftp.ports.debian.org/debian-ports/pool-m68k/main/b/busybox/busybox-static_1.36.1-6_m68k.deb
+http://ftp.ports.debian.org/debian-ports/pool-m68k/main/b/busybox/busybox-static_1.36.1-9_m68k.deb
 
 - following BusyBox commands segfault before outputting anything:
 
