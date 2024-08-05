@@ -1157,6 +1157,21 @@ void DebugUI_UnInit(void)
 
 
 /**
+ * Return true if user wants to quit current command
+ */
+bool DebugUI_DoQuitQuery(const char *info)
+{
+	char input[8];
+	fprintf(stderr, "--- q to exit %s, enter to continue --- ", info);
+	if (fgets(input, sizeof(input), stdin) == NULL ||
+	    toupper(input[0]) == 'Q') {
+		return true;
+	}
+	return false;
+}
+
+
+/**
  * Add debugger command files during Hatari startup before things
  * needed by the debugger are initialized so that it can be parsed
  * when debugger itself gets initialized.

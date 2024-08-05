@@ -102,6 +102,7 @@ void DebugUI(debug_reason_t reason) { }
 void DebugUI_PrintBinary(FILE *fp, int minwidth, uint32_t value) { }
 int DebugUI_PrintCmdHelp(const char *psCmd) { return DEBUGGER_CMDDONE; }
 int DebugUI_GetPageLines(int config, int defvalue) { return 25; }
+bool DebugUI_DoQuitQuery(const char *info) { return false; }
 char *DebugUI_MatchHelper(const char **strings, int items, const char *text, int state)
 {
 	return NULL;

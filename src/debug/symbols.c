@@ -715,7 +715,6 @@ static void Symbols_Show(symbol_list_t* list, const char *sortcmd, const char *f
 	const char *symtype, *sorttype;
 	int i, row, rows, count, matches;
 	char symchar;
-	char line[80];
 	
 	if (!list) {
 		fprintf(stderr, "No symbols!\n");
@@ -754,11 +753,8 @@ static void Symbols_Show(symbol_list_t* list, const char *sortcmd, const char *f
 		row++;
 		if (row >= rows) {
 			row = 0;
-			fprintf(stderr, "--- q to exit listing, just enter to continue --- ");
-			if (fgets(line, sizeof(line), stdin) == NULL ||
-				toupper(line[0]) == 'Q') {
+			if (DebugUI_DoQuitQuery("symbol list"))
 				break;
-			}
 		}
 	}
 	fprintf(stderr, "%d %s%s symbols (of %d) sorted by %s.\n",

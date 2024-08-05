@@ -27,13 +27,12 @@ extern FILE *debugOutput;
 extern int DebugUI_PrintCmdHelp(const char *psCmd);
 extern int DebugUI_GetPageLines(int config, int defvalue);
 extern void DebugUI_PrintBinary(FILE *fp, int minwidth, uint32_t value);
-
 extern char *DebugUI_MatchHelper(const char **strings, int items, const char *text, int state);
+extern bool DebugUI_ParseFile(const char *path, bool reinit, bool verbose);
+extern bool DebugUI_DoQuitQuery(const char *info);
 
 extern int DebugCpu_Init(const dbgcommand_t **table);
 extern void DebugCpu_InitSession(void);
-
-extern bool DebugUI_ParseFile(const char *path, bool reinit, bool verbose);
 
 #ifdef ENABLE_DSP_EMU
 extern int DebugDsp_Init(const dbgcommand_t **table);
