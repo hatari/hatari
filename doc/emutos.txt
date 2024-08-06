@@ -365,11 +365,13 @@ Color ST demos and games
 ........................
 
 Color demos:
+- 0 Pixels 0 Regrets (0-bitplane by DHS)
 - 2011 (by Positivity & Sector One, 4kB intro)
 - 3D screen 3.5k (by Overlanders)
 - 44 (by Avena, 4KB intro)
 - 4getful (by gwEm, 4KB intro)
 - 4kker (by Checkpoint, 4KB intro)
+- A Series of Raster Effects (0-bitplane by SMFX)
 - Across the Borders (by Effect)
 - Algorift 256b (with MIDI output, by Marquee Design)
 - Ambience (by Chaos)
@@ -381,6 +383,7 @@ Color demos:
 - Beast Scroll (by Joefish)
 - Beefect (by Effect)
 - Beyond Imagination (by NLC), in GFA basic
+- Bp0d (0-bitplane by Extreme)
 - Bread and Circuses (by Effect)
 - Breath (by Mystic Bytes)
 - Calimer-o-demo (by Oxygene)
@@ -404,6 +407,7 @@ Color demos:
 - Eat my bollocks (by Equinox)
 - Execution (by SMFX)
 - Fantasia (by Dune & Sector One)
+- FF8240.w (0-bitplane by Defence Force)
 - Flashback (by Carebears)
 - Flexiscroll 2021 (64k by Effect)
 - Flipo (by Oxygene)
@@ -417,6 +421,7 @@ Color demos:
 - Hiatus (by SMFX)
 - Hatari 2.2 intro (by Mr.Styckx)
 - If pigs could fly (by Syndicate)
+- Ika I Compofylla (by Newline)
 - Illusion (by Dune)
 - In Waves (by Exocet & Tomchi & Tom)
 - Infinity/Madstars (by Holocaust)
@@ -440,6 +445,7 @@ Color demos:
 - Oh no!! more froggies (by Sector One) - does not work with >2MB of RAM
 - Old (by Tom & Dubmood)
 - Oldskool Rebirth (by MJJ Prod)
+- Omega boot (bootsector by Omega)
 - Ooh Crikey (by Lost Boys)
 - OVeRclocked Remix (by Overlanders)
 - Outline 2008 invite (by DHS)
@@ -520,6 +526,7 @@ Color demos:
   - Error #046 => run from desktop instead of auto/-folder
 - Xmas 2000 Intro (by Paranoid)
 - YmRockerz musicdisks from "Wave upon Wave" to "Seven"
+- Zero Bitplane Picture (256b by Dyno / Hemoroids)
 
 Color toys:
 - Fplanet
@@ -678,6 +685,7 @@ Free/shareware/PD games:
 - Panic
 - Paradize games (line-A bitblits):
   http://paradize.final-memory.org/games.shtml
+- PHF Rally 2    (0-bitplane / overscan, needs 50Hz)
 - Picross ST*    (floppy only)
 - Punt II
 - Rayoid*
@@ -1188,6 +1196,7 @@ Color games:
 - Boom (screen flashes during scrolling messages)
 - Breakdance (scene game, STOS)
 - Catch Me If You Can*
+- Chroma Grid (including D-BUG intro+trainer)
 - ChuChu Rocket* (RG's full version)
 - Crash Time Plumber
 - Detonator
