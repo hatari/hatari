@@ -1284,6 +1284,7 @@ STE (enhanced) music applications:
 - E.P.S.S (both v0.54b demo & v1.0.1 full version)
 - DeskTracker MT
 - Hextracker
+- Jam (with CPU plugins)
 - MaxYMizer
 - MusicPlayer
 - Octalyzer
@@ -1775,6 +1776,7 @@ Applications working under EmuTOS >= v1.0:
 - Cecile hard disk (image) driver
 - Godpaint (by Reservoir Gods)
 - ICDraw, .ICO and .IB3 GEM viewer
+- Jam (with DSP music playback plugins)
 - Kronos v1.91 benchmark
 - Rainbow 2 multimedia, needs MMU
 - Smurf (GEM image viewer)
