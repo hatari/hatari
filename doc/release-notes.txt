@@ -44,7 +44,7 @@ Emulator improvements:
   - Fix: Handle additional '*' chars at end of file mask
 - SCC:
   - Fix: invalid channel B file close on uninit
-Debugger:
+- Debugger:
   - Fix: DSP RESET instruction tracing
   - Similarly to Atari program symbols override, load TOS symbols on
     TOS load, if autoloading is enabled and <tos>.sym file is present
@@ -57,6 +57,8 @@ Debugger:
   - Add 'c' (character) argument type support for "memwrite" command
   - CPU disassembly shows resulting relative branch addresses
   - "dspreg" command shows also stack contents
+- Tracing:
+  - GEMDOS Dsetpath() + Frename() calls included to "os_base" traces
   - PC value added to more traces
 
 Build changes:

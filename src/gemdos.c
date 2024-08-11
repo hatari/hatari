@@ -1849,14 +1849,14 @@ static bool GemDOS_ChDir(uint32_t Params)
 	pDirName = STMemory_GetStringPointer(nStrAddr);
 	if (!pDirName)
 	{
-		LOG_TRACE(TRACE_OS_GEMDOS,
+		LOG_TRACE(TRACE_OS_GEMDOS|TRACE_OS_BASE,
 		          "GEMDOS 0x3B Dsetpath with illegal file name (0x%x) at PC 0x%X\n",
 		          nStrAddr, CallingPC);
 		Regs[REG_D0] = GEMDOS_EPTHNF;
 		return true;
 	}
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x3B Dsetpath(\"%s\") at PC 0x%X\n", pDirName,
+	LOG_TRACE(TRACE_OS_GEMDOS|TRACE_OS_BASE, "GEMDOS 0x3B Dsetpath(\"%s\") at PC 0x%X\n", pDirName,
 		  CallingPC);
 
 	Drive = GemDOS_FileName2HardDriveID(pDirName);
@@ -3166,12 +3166,12 @@ static bool GemDOS_Rename(uint32_t Params)
 	pszNewFileName = STMemory_GetStringPointer(nNewStrAddr);
 	if (!pszOldFileName || !pszOldFileName[0] || !pszNewFileName || !pszNewFileName[0])
 	{
-		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x56 bad Frename(0x%X, 0x%X) at PC 0x%X\n",
+		LOG_TRACE(TRACE_OS_GEMDOS|TRACE_OS_BASE, "GEMDOS 0x56 bad Frename(0x%X, 0x%X) at PC 0x%X\n",
 		          nOldStrAddr, nNewStrAddr, CallingPC);
 		return false;
 	}
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x56 Frename(\"%s\", \"%s\") at PC 0x%X\n", pszOldFileName, pszNewFileName,
+	LOG_TRACE(TRACE_OS_GEMDOS|TRACE_OS_BASE, "GEMDOS 0x56 Frename(\"%s\", \"%s\") at PC 0x%X\n", pszOldFileName, pszNewFileName,
 		  CallingPC);
 
 	NewDrive = GemDOS_FileName2HardDriveID(pszNewFileName);
