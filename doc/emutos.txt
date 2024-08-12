@@ -367,6 +367,7 @@ Color ST demos and games
 Color demos:
 - 0 Pixels 0 Regrets (0-bitplane by DHS)
 - 2011 (by Positivity & Sector One, 4kB intro)
+- 300 days to go (by SMFX)
 - 3D screen 3.5k (by Overlanders)
 - 44 (by Avena, 4KB intro)
 - 4getful (by gwEm, 4KB intro)
@@ -400,6 +401,7 @@ Color demos:
 - Darwin's Dilemma (by Cerebral Vortex, DHS and SMFX)
 - DataSTorm Invite (by Genesis Project)
 - Death of the Clock Cycles (by Aggression)
+- Definitely Number One (by Spice Boys)
 - Delusion (by MJJ Prod)
 - Dimensio (by Condemned)
 - Done & Dusted (by Genesis Project)
@@ -424,6 +426,7 @@ Color demos:
 - Ika I Compofylla (by Newline)
 - Illusion (by Dune)
 - In Waves (by Exocet & Tomchi & Tom)
+- Inbjudan (by Helsingfors Svenska Demoscensklubben rf)
 - Infinity/Madstars (by Holocaust)
 - Just Jack (by Joker)
 - Let Go (by Dekadence)
@@ -484,13 +487,16 @@ Color demos:
   - Glitches are intentional, not EmuTOS issue
 - Sommarhack 2011 invite (by DHS)
 - Sommarhack 2022 reminder (by DHS)
+- Sommarhack 2024 reminder (by DHS & others)
 - Soundtracker (by Equinox)
 - Sowatt sprite record (rec16e, by Oxygene)
 - ST NICCC 2000 (by Oxygene)
 - ST NICCC 2015 (by Checkpoint)
 - ST soccer (intro by Exceptions)
 - Starfield Humppa (by Dekadence)
+- STay4Evr (by Cream)
 - Stone tower (by FUN)
+- STresSTeST (by Cream)
 - Superstar! (intro by Positivity/Dma-Sc/Ukko)
 - Suretrip 49% (by Checkpoint)
 - Sweety (by DHS)
@@ -1146,6 +1152,7 @@ Color demos:
 - Sierpinski overdose 4K (by GGN), med-rez+blitter only
 - Sommarhack 2010 invite (by DHS)
 - Songs Of The Unexpected (by OUCH)
+- SpaSTiba 2024 (by SpaSTiba), needs >= 2MB RAM
 - Speechless (by The Estate)
 - Steroid (Metroid remake demo)
 - STE slideshow (by DHS)
