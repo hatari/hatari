@@ -33,7 +33,8 @@ Emulation improvements:
   - TT / MegaSTE SCU registers and interrupts implemented
 
 Emulator improvements:
-- Config options / SDL-GUI:
+- SDL-GUI (and config options):
+  - Improvements to GUI font characters
   - Add separate option for enabling/disabling >=030 CPU data cache
 - Memory snapshots:
   - Fix: re/store all relevant YM2149 & MMU state variables
