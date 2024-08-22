@@ -24,7 +24,6 @@ const char IoMemTabSTE_fileid[] = "Hatari ioMemTabSTE.c";
 #include "rtc.h"
 #include "video.h"
 #include "blitter.h"
-#include "statusbar.h"
 #include "stMemory.h"
 
 
@@ -41,33 +40,17 @@ const char IoMemTabSTE_fileid[] = "Hatari ioMemTabSTE.c";
 */
 void IoMemTabMegaSTE_CacheCpuCtrl_WriteByte(void)
 {
-	uint8_t busCtrl = IoMem_ReadByte(0xff8e21);
+	uint8_t Ctrl = IoMem_ReadByte(0xff8e21);
 
 	/* If cache is enabled at 8 MHz then disable cache */
-	if ( ( ( busCtrl & 0x2 ) == 0 ) && ( busCtrl & 0x1 ) )
+	if ( ( ( Ctrl & 0x2 ) == 0 ) && ( Ctrl & 0x1 ) )
 	{
-	      LOG_TRACE ( TRACE_MEM, "cache : megaste cache can't be enabled at 8 MHz $ff8e21=0x%02x pc=%x\n" , busCtrl , M68000_GetPC() );
-	      busCtrl &= 0xFE;					/* clear bit 0 */
-	      IoMem_WriteByte ( 0xff8e21 , busCtrl );
+	      LOG_TRACE ( TRACE_MEM, "cache : megaste cache can't be enabled at 8 MHz $ff8e21=0x%02x pc=%x\n" , Ctrl , M68000_GetPC() );
+	      Ctrl &= 0xFE;					/* clear bit 0 */
+	      IoMem_WriteByte ( 0xff8e21 , Ctrl );
 	}
 
-	/* TODO : enable / disable cache depending on bit 0 */
-
-	/* 68000 Frequency changed ? We change freq only in 68000 mode for a
-	 * normal MegaSTE, if the user did not request a faster one manually */
-	if (ConfigureParams.System.nCpuLevel == 0 && ConfigureParams.System.nCpuFreq <= 16)
-	{
-		if ((busCtrl & 0x2) != 0) {
-			/* 16 Mhz bus for 68000 */
-			Configuration_ChangeCpuFreq ( 16 );
-		}
-		else {
-			/* 8 Mhz bus for 68000 */
-			Configuration_ChangeCpuFreq ( 8 );
-		}
-	}
-
-	Statusbar_UpdateInfo();			/* Update clock speed in the status bar */
+	MegaSTE_CPU_Cache_Update ( Ctrl );
 }
 
 

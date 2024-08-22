@@ -88,6 +88,7 @@ const char M68000_fileid[] = "Hatari m68000.c";
 #include "options.h"
 #include "savestate.h"
 #include "stMemory.h"
+#include "statusbar.h"
 #include "tos.h"
 #include "falcon/crossbar.h"
 #include "cart.h"
@@ -95,6 +96,8 @@ const char M68000_fileid[] = "Hatari m68000.c";
 #include "cpu/cpummu030.h"
 #include "scc.h"
 #include "scu_vme.h"
+#include "blitter.h"
+#include "ioMem.h"
 
 #if ENABLE_DSP_EMU
 #include "dsp.h"
@@ -146,6 +149,26 @@ const char *OpcodeName[] = { "ILLG",
 	"CINVL","CINVP","CINVA","CPUSHL","CPUSHP","CPUSHA","MOVE16",
 	"MMUOP"
 };
+
+
+
+
+uae_u32 (*x_get_iword_megaste_save)(int);
+uae_u32 (*x_get_long_megaste_save)(uaecptr);
+uae_u32 (*x_get_word_megaste_save)(uaecptr);
+uae_u32 (*x_get_byte_megaste_save)(uaecptr);
+void (*x_put_long_megaste_save)(uaecptr,uae_u32);
+void (*x_put_word_megaste_save)(uaecptr,uae_u32);
+void (*x_put_byte_megaste_save)(uaecptr,uae_u32);
+
+
+uae_u32	mem_access_delay_word_read_megaste_16 (uaecptr addr);
+uae_u32	mem_access_delay_wordi_read_megaste_16 (uaecptr addr);
+uae_u32	mem_access_delay_byte_read_megaste_16 (uaecptr addr);
+void	mem_access_delay_byte_write_megaste_16 (uaecptr addr, uae_u32 v);
+void	mem_access_delay_word_write_megaste_16 (uaecptr addr, uae_u32 v);
+uae_u32	wait_cpu_cycle_read_megaste_16 (uaecptr addr, int mode);
+void	wait_cpu_cycle_write_megaste_16 (uaecptr addr, int mode, uae_u32 v);
 
 
 /*-----------------------------------------------------------------------*/
@@ -971,3 +994,361 @@ void M68000_MMU_Info(FILE *fp, uint32_t flags)
 		/* TODO: Also call mmu_dump_tables() here? */
 	}
 }
+
+
+
+
+
+/*------------------------------------------------------------------------------*/
+/*										*/
+/*			MegaSTE 16MHz and cache					*/
+/*										*/
+/* Based on MegaSTE schematic as well as documentation by Christian Zietz	*/
+/*
+
+ram : CA400960
+
+u004,u005 : c302017-001-ic	sram 8k x 8 85 ns	HM6265L
+u008,u009 : c301846-001-ic	ctram 8k x 8 35 ns	MK48S74N-25
+
+u701,u702,u703,u704 : ram simm
+
+ */
+/*------------------------------------------------------------------------------*/
+
+
+void	MegaSTE_CPU_Cache_Update ( uint8_t val )
+{
+fprintf ( stderr , "MegaSTE_CPU_Cache_Update 0x%x\n" , val );
+
+	/* TODO : enable / disable cache depending on bit 0 */
+
+	/* 68000 Frequency changed ? We change freq only in 68000 mode for a
+	 * normal MegaSTE, if the user did not request a faster one manually */
+	if (ConfigureParams.System.nCpuLevel == 0 && ConfigureParams.System.nCpuFreq <= 16)
+	{
+		if ((val & 0x2) != 0) {
+			LOG_TRACE ( TRACE_MEM, "cpu : megaste set to 16 MHz pc=%x\n" , M68000_GetPC() );
+			/* 16 Mhz bus for 68000 */
+			Configuration_ChangeCpuFreq ( 16 );
+			MegaSTE_CPU_Set_16Mhz ( true );
+		}
+		else {
+			/* 8 Mhz bus for 68000 */
+			LOG_TRACE ( TRACE_MEM, "cpu : megaste set to 8 MHz pc=%x\n" , M68000_GetPC() );
+			Configuration_ChangeCpuFreq ( 8 );
+			MegaSTE_CPU_Set_16Mhz ( false );
+		}
+	}
+
+	Statusbar_UpdateInfo();			/* Update clock speed in the status bar */
+}
+
+
+void	MegaSTE_CPU_Cache_Reset ( void )
+{
+	IoMem_WriteByte ( 0xff8e21 , 0 );	/* 8 MHz, no cache */
+	MegaSTE_CPU_Cache_Update ( 0 );
+}
+
+
+void	MegaSTE_CPU_Set_16Mhz ( bool set_16 )
+{
+	if ( !currprefs.cpu_cycle_exact || ( currprefs.cpu_model != 68000 ) )
+		return;
+
+fprintf ( stderr , "MegaSTE_CPU_Set_16Mhz %d\n" , set_16);
+
+	/* Enable 16 MHz mode for 68000 CE */
+	if ( set_16 && ( x_get_iword != get_wordi_ce000_megaste_16 ) )
+	{
+		/* save current functions */
+		x_get_iword_megaste_save = x_get_iword;
+		x_put_long_megaste_save = x_put_long;
+		x_put_word_megaste_save = x_put_word;
+		x_put_byte_megaste_save = x_put_byte;
+		x_get_long_megaste_save = x_get_long;
+		x_get_word_megaste_save = x_get_word;
+		x_get_byte_megaste_save = x_get_byte;
+
+		/* set mega ste specific functions */
+		x_get_iword = get_wordi_ce000_megaste_16;
+		x_put_long = put_long_ce000_megaste_16;
+		x_put_word = put_word_ce000_megaste_16;
+		x_put_byte = put_byte_ce000_megaste_16;
+		x_get_long = get_long_ce000_megaste_16;
+		x_get_word = get_word_ce000_megaste_16;
+		x_get_byte = get_byte_ce000_megaste_16;
+	}
+
+
+	/* Disable 16 MHz mode, restore functions if needed */
+	if ( !set_16 && ( x_get_iword == get_wordi_ce000_megaste_16 ) )
+	{
+		/* save current functions */
+		x_get_iword = x_get_iword_megaste_save;
+		x_put_long = x_put_long_megaste_save;
+		x_put_word = x_put_word_megaste_save;
+		x_put_byte = x_put_byte_megaste_save;
+		x_get_long = x_get_long_megaste_save;
+		x_get_word = x_get_word_megaste_save;
+		x_get_byte = x_get_byte_megaste_save;
+	}
+}
+
+
+
+
+/*
+ * Similar to mem_access_delay_xxx functions for 68000 CE in cpu/newcpu.c
+ * but we handle a faster CPU speed of 16 MHz instead of 8 MHz (compared to the RAM speed)
+ * as well as an external cache.
+ *
+ * When the CPU is set to 16 MHz other components are still running as if the CPU was at 8 MHz.
+ * - At 8 MHz the GSTMCU shares every 4 cycles between the CPU and the shifter
+ *   (2 cycles for the CPU and 2 cycles for the shifter). If the CPU requires an access
+ *   during the shifter's slot then the CPU will have to wait until its own slot.
+ *   At 8 MHz every word access to standard RAM takes a total of 4 cycles from the point of view
+ *   of the CPU.
+ * - At 16 MHz, the CPU runs faster but all other components are still running at the same speed.
+ *   This means that RAM accesses still require 4 cycles from the point of view of the GSTMCU,
+ *   which means 8 cycles from the point of view of the 16 MHz CPU.
+ *   The slots between CPU and shifter will last 4 cycles each (instead of 2) from the point
+ *   of view of the CPU. If the CPU tries to access memory outside of its slot then it will
+ *   have to wait.
+ *   At 16 MHz every word access to standard RAM takes a total of 8 cycles from the point of view
+ *   of the CPU.
+ *
+ * As can be seen from above, a CPU running at 16 MHz in this case will have nearly no benefit
+ * compared to 8 MHz because most of the time the CPU will be slown down by memory wait states.
+ * This is why an external cache was added to the MegaSTE, with faster RAM that allows to take
+ * advantage of the CPU 16 MHz speed.
+ *
+ */
+
+uae_u32	mem_access_delay_word_read_megaste_16 (uaecptr addr)
+{
+	uae_u32 v;
+	if ( BlitterPhase )	Blitter_HOG_CPU_mem_access_before ( 1 );
+
+	switch (ce_banktype[addr >> 16])
+	{
+	case CE_MEMBANK_CHIP16:
+	case CE_MEMBANK_CHIP32:
+		v = wait_cpu_cycle_read_megaste_16 (addr, 1);
+		break;
+	case CE_MEMBANK_FAST16:
+	case CE_MEMBANK_FAST32:
+		v = get_word (addr);
+		x_do_cycles_post (4 * cpucycleunit, v);
+		break;
+	default:
+		v = get_word (addr);
+		break;
+	}
+
+	regs.db = v;
+	regs.read_buffer = v;
+	if ( BlitterPhase )	Blitter_HOG_CPU_mem_access_after ( 1 );
+	return v;
+}
+
+
+uae_u32	mem_access_delay_wordi_read_megaste_16 (uaecptr addr)
+{
+	uae_u32 v;
+	if ( BlitterPhase )	Blitter_HOG_CPU_mem_access_before ( 1 );
+
+	switch (ce_banktype[addr >> 16])
+	{
+	case CE_MEMBANK_CHIP16:
+	case CE_MEMBANK_CHIP32:
+		v = wait_cpu_cycle_read_megaste_16 (addr, 2);
+		break;
+	case CE_MEMBANK_FAST16:
+	case CE_MEMBANK_FAST32:
+		v = get_wordi (addr);
+		x_do_cycles_post (4 * cpucycleunit, v);
+		break;
+	default:
+		v = get_wordi (addr);
+		break;
+	}
+
+	regs.db = v;
+	regs.read_buffer = v;
+	if ( BlitterPhase )	Blitter_HOG_CPU_mem_access_after ( 1 );
+	return v;
+}
+
+
+uae_u32	mem_access_delay_byte_read_megaste_16 (uaecptr addr)
+{
+	uae_u32  v;
+	if ( BlitterPhase )	Blitter_HOG_CPU_mem_access_before ( 1 );
+
+	switch (ce_banktype[addr >> 16])
+	{
+	case CE_MEMBANK_CHIP16:
+	case CE_MEMBANK_CHIP32:
+		v = wait_cpu_cycle_read_megaste_16 (addr, 0);
+		break;
+	case CE_MEMBANK_FAST16:
+	case CE_MEMBANK_FAST32:
+		v = get_byte (addr);
+		x_do_cycles_post (4 * cpucycleunit, v);
+		break;
+	default:
+		v = get_byte (addr);
+		break;
+	}
+
+	regs.db = (v << 8) | v;
+	regs.read_buffer = v;
+	if ( BlitterPhase )	Blitter_HOG_CPU_mem_access_after ( 1 );
+	return v;
+}
+
+
+void	mem_access_delay_byte_write_megaste_16 (uaecptr addr, uae_u32 v)
+{
+	regs.db = (v << 8)  | v;
+	regs.write_buffer = v;
+	if ( BlitterPhase )	Blitter_HOG_CPU_mem_access_before ( 1 );
+
+	switch (ce_banktype[addr >> 16])
+	{
+	case CE_MEMBANK_CHIP16:
+	case CE_MEMBANK_CHIP32:
+		wait_cpu_cycle_write_megaste_16 (addr, 0, v);
+		if ( BlitterPhase )	Blitter_HOG_CPU_mem_access_after ( 1 );
+		return;
+	case CE_MEMBANK_FAST16:
+	case CE_MEMBANK_FAST32:
+		put_byte (addr, v);
+		x_do_cycles_post (4 * cpucycleunit, v);
+		if ( BlitterPhase )	Blitter_HOG_CPU_mem_access_after ( 1 );
+		return;
+	}
+	put_byte (addr, v);
+}
+
+
+void	mem_access_delay_word_write_megaste_16 (uaecptr addr, uae_u32 v)
+{
+	if ( BlitterPhase )	Blitter_HOG_CPU_mem_access_before ( 1 );
+
+	regs.db = v;
+	regs.write_buffer = v;
+	switch (ce_banktype[addr >> 16])
+	{
+	case CE_MEMBANK_CHIP16:
+	case CE_MEMBANK_CHIP32:
+		wait_cpu_cycle_write_megaste_16 (addr, 1, v);
+		if ( BlitterPhase )	Blitter_HOG_CPU_mem_access_after ( 1 );
+		return;
+	case CE_MEMBANK_FAST16:
+	case CE_MEMBANK_FAST32:
+		put_word (addr, v);
+		x_do_cycles_post (4 * cpucycleunit, v);
+		if ( BlitterPhase )	Blitter_HOG_CPU_mem_access_after ( 1 );
+		return;
+	}
+	put_word (addr, v);
+}
+
+
+
+
+/*
+ * Similar to wait_cpu_cycle_read / _write functions for 68000 CE in cpu/custom.c
+ * but we handle a faster CPU speed of 16 MHz instead of 8 MHz (compared to the RAM speed)
+ */
+
+uae_u32	wait_cpu_cycle_read_megaste_16 (uaecptr addr, int mode)
+{
+	uae_u32 v = 0;
+	int ipl = regs.ipl[0];
+	evt_t now = get_cycles();
+	uint64_t cycle_slot;
+
+	cycle_slot = ( CyclesGlobalClockCounter + currcycle*2/CYCLE_UNIT ) & 7;
+//	fprintf ( stderr , "mem read ce %x %d %lu %lu\n" , addr , mode ,currcycle / cpucycleunit , currcycle );
+	if ( cycle_slot != 0 )
+	{
+//		fprintf ( stderr , "mem wait read %x %d %lu %lu\n" , addr , mode , currcycle / cpucycleunit , currcycle );
+		x_do_cycles ( ( 8 - cycle_slot ) * cpucycleunit);
+//		fprintf ( stderr , "mem wait read after %x %d %lu %lu\n" , addr , mode , currcycle / cpucycleunit , currcycle );
+	}
+
+	switch(mode)
+	{
+		case -1:
+		v = get_long(addr);
+		break;
+		case -2:
+		v = get_longi(addr);
+		break;
+		case 1:
+		v = get_word(addr);
+		break;
+		case 2:
+		v = get_wordi(addr);
+		break;
+		case 0:
+		v = get_byte(addr);
+		break;
+	}
+
+	x_do_cycles_post (4*CYCLE_UNIT, v);
+
+	// if IPL fetch was pending and CPU had wait states
+	// Use ipl_pin value from previous cycle
+	if (now == regs.ipl_evt && regs.ipl_pin_change_evt > now + cpuipldelay2) {
+		regs.ipl[0] = ipl;
+	}
+	return v;
+}
+
+
+void	wait_cpu_cycle_write_megaste_16 (uaecptr addr, int mode, uae_u32 v)
+{
+	int ipl = regs.ipl[0];
+	evt_t now = get_cycles();
+	uint64_t cycle_slot;
+
+	cycle_slot = ( CyclesGlobalClockCounter + currcycle*2/CYCLE_UNIT ) & 7;
+//	fprintf ( stderr , "mem write ce %x %d %lu %lu\n" , addr , mode ,currcycle / cpucycleunit , currcycle );
+	if ( cycle_slot != 0 )
+	{
+//		fprintf ( stderr , "mem wait write %x %d %lu %lu\n" , addr , mode , currcycle / cpucycleunit , currcycle );
+		x_do_cycles ( ( 8 - cycle_slot ) * cpucycleunit);
+//		fprintf ( stderr , "mem wait write after %x %d %lu %lu\n" , addr , mode , currcycle / cpucycleunit , currcycle );
+	}
+
+	if (mode > -2) {
+		if (mode < 0) {
+			put_long(addr, v);
+		} else if (mode > 0) {
+			put_word(addr, v);
+		} else if (mode == 0) {
+			put_byte(addr, v);
+		}
+	}
+
+	x_do_cycles_post (4*CYCLE_UNIT, v);
+
+	// if IPL fetch was pending and CPU had wait states:
+	// Use ipl_pin value from previous cycle
+	if (now == regs.ipl_evt) {
+		regs.ipl[0] = ipl;
+	}
+}
+
+
+
+/*----------------------------------------------------------------------*/
+/*			MegaSTE 16MHz and  cache			*/
+/*----------------------------------------------------------------------*/
+
+

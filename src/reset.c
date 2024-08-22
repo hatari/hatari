@@ -99,6 +99,9 @@ static int Reset_ST(bool bCold)
 	else
 		DmaSnd_Reset(bCold);          /* Reset DMA sound */
 
+	if (Config_IsMachineMegaSTE())
+		MegaSTE_CPU_Cache_Reset();
+
 	Blitter_Reset();			/* Reset Blitter */
 	PSG_Reset();                  /* Reset PSG */
 	Sound_Reset();                /* Reset Sound */

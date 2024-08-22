@@ -399,6 +399,8 @@ void IoMem_Init(void)
  */
 void IoMem_UnInit(int MachineType)
 {
+	if ( MachineType == MACHINE_MEGA_STE )
+		MegaSTE_CPU_Set_16Mhz ( false );
 }
 
 

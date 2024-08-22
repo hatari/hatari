@@ -349,6 +349,73 @@ static inline void M68000_AddCycles_CE(int cycles)
 
 
 
+
+
+/*-----------------------------------------------------------------------*/
+/*			Mega STE at 16 MHz and external cache		*/
+/*-----------------------------------------------------------------------*/
+
+extern void	MegaSTE_CPU_Cache_Update ( uint8_t val );
+extern void	MegaSTE_CPU_Cache_Reset ( void );
+extern void	MegaSTE_CPU_Set_16Mhz ( bool set_16 );
+
+
+/*
+ * High level memory access functions for Mega STE when 68000 in cycle exact mode
+ * is running at 16 MHz instead of 8 MHz, with external cache enabled or disabled
+ *
+ * Similar to _ce000 functions in cpu/cpu_prefetch.h
+ */
+
+
+uae_u32		mem_access_delay_word_read_megaste_16 (uaecptr addr);
+uae_u32		mem_access_delay_wordi_read_megaste_16 (uaecptr addr);
+uae_u32		mem_access_delay_byte_read_megaste_16 (uaecptr addr);
+void		mem_access_delay_byte_write_megaste_16 (uaecptr addr, uae_u32 v);
+void		mem_access_delay_word_write_megaste_16 (uaecptr addr, uae_u32 v);
+
+STATIC_INLINE uae_u32 get_long_ce000_megaste_16 (uaecptr addr)
+{
+	uae_u32 v = mem_access_delay_word_read_megaste_16 (addr) << 16;
+	v |= mem_access_delay_word_read_megaste_16 (addr + 2);
+	return v;
+}
+STATIC_INLINE uae_u32 get_word_ce000_megaste_16 (uaecptr addr)
+{
+	return mem_access_delay_word_read_megaste_16 (addr);
+}
+STATIC_INLINE uae_u32 get_wordi_ce000_megaste_16 (int offset)
+{
+	return mem_access_delay_wordi_read_megaste_16 (m68k_getpci () + offset);
+}
+STATIC_INLINE uae_u32 get_byte_ce000_megaste_16 (uaecptr addr)
+{
+	return mem_access_delay_byte_read_megaste_16 (addr);
+}
+
+STATIC_INLINE void put_long_ce000_megaste_16 (uaecptr addr, uae_u32 v)
+{
+	mem_access_delay_word_write_megaste_16 (addr, v >> 16);
+	mem_access_delay_word_write_megaste_16 (addr + 2, v);
+}
+STATIC_INLINE void put_word_ce000_megaste_16 (uaecptr addr, uae_u32 v)
+{
+	mem_access_delay_word_write_megaste_16 (addr, v);
+}
+STATIC_INLINE void put_byte_ce000_megaste_16 (uaecptr addr, uae_u32 v)
+{
+	mem_access_delay_byte_write_megaste_16 (addr, v);
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*			Mega STE at 16 MHz and external cache		*/
+/*-----------------------------------------------------------------------*/
+
+
+
+
+
 extern void M68000_Init(void);
 extern void M68000_Reset(bool bCold);
 extern void M68000_SetDebugger(bool debug);
