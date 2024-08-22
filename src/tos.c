@@ -815,7 +815,7 @@ static void TOS_CheckSysConfig(void)
 	{
 		Log_AlertDlg(LOG_ERROR, "TOS versions 1.06 and 1.62 are for Atari STE only.\n"
 		             " ==> Switching to STE mode now.\n");
-		IoMem_UnInit();
+		IoMem_UnInit(ConfigureParams.System.nMachineType);
 		ConfigureParams.System.nMachineType = MACHINE_STE;
 		ClocksTimings_InitMachine ( ConfigureParams.System.nMachineType );
 		Video_SetTimings ( ConfigureParams.System.nMachineType , ConfigureParams.System.VideoTimingMode );
@@ -827,7 +827,7 @@ static void TOS_CheckSysConfig(void)
 	{
 		Log_AlertDlg(LOG_ERROR, "TOS versions 3.0x are for Atari TT only.\n"
 		             " ==> Switching to TT mode now.\n");
-		IoMem_UnInit();
+		IoMem_UnInit(ConfigureParams.System.nMachineType);
 		ConfigureParams.System.nMachineType = MACHINE_TT;
 		ClocksTimings_InitMachine ( ConfigureParams.System.nMachineType );
 		Video_SetTimings ( ConfigureParams.System.nMachineType , ConfigureParams.System.VideoTimingMode );
@@ -842,7 +842,7 @@ static void TOS_CheckSysConfig(void)
 		             " ==> Switching to Falcon mode now.\n",
 		             TosVersion >> 8, TosVersion & 0xff);
 		Ide_UnInit();
-		IoMem_UnInit();
+		IoMem_UnInit(ConfigureParams.System.nMachineType);
 		ConfigureParams.System.nMachineType = MACHINE_FALCON;
 		ClocksTimings_InitMachine ( ConfigureParams.System.nMachineType );
 		Video_SetTimings ( ConfigureParams.System.nMachineType , ConfigureParams.System.VideoTimingMode );
@@ -861,7 +861,7 @@ static void TOS_CheckSysConfig(void)
 		Log_AlertDlg(LOG_ERROR, "TOS versions <= 1.4 work only in\n"
 		             "ST mode and with a 68000 CPU.\n"
 		             " ==> Switching to ST mode with 68000 now.\n");
-		IoMem_UnInit();
+		IoMem_UnInit(ConfigureParams.System.nMachineType);
 		ConfigureParams.System.nMachineType = MACHINE_ST;
 		ClocksTimings_InitMachine ( ConfigureParams.System.nMachineType );
 		Video_SetTimings ( ConfigureParams.System.nMachineType , ConfigureParams.System.VideoTimingMode );
@@ -875,7 +875,7 @@ static void TOS_CheckSysConfig(void)
 	{
 		Log_AlertDlg(LOG_ERROR, "This TOS version does not work in TT/Falcon mode.\n"
 		             " ==> Switching to STE mode now.\n");
-		IoMem_UnInit();
+		IoMem_UnInit(ConfigureParams.System.nMachineType);
 		ConfigureParams.System.nMachineType = MACHINE_STE;
 		ClocksTimings_InitMachine ( ConfigureParams.System.nMachineType );
 		Video_SetTimings ( ConfigureParams.System.nMachineType , ConfigureParams.System.VideoTimingMode );

@@ -395,9 +395,9 @@ void IoMem_Init(void)
 
 
 /**
- * Uninitialize the IoMem code (currently unused).
+ * Uninitialize the IoMem code for the current machine
  */
-void IoMem_UnInit(void)
+void IoMem_UnInit(int MachineType)
 {
 }
 
@@ -411,7 +411,7 @@ void IoMem_SetFalconBusMode(enum FALCON_BUS_MODE mode)
 	if (mode != falconBusMode)
 	{
 		falconBusMode = mode;
-		IoMem_UnInit();
+		IoMem_UnInit(MACHINE_FALCON);
 		IoMem_Init();
 	}
 }

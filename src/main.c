@@ -858,7 +858,7 @@ static void Main_UnInit(void)
 	SCC_UnInit();
 	RS232_UnInit();
 	Printer_UnInit();
-	IoMem_UnInit();
+	IoMem_UnInit(ConfigureParams.System.nMachineType);
 	NvRam_UnInit();
 	GemDOS_UnInitDrives();
 	Ide_UnInit();

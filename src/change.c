@@ -360,7 +360,7 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	    || changed->System.nMachineType != current->System.nMachineType)
 	{
 		Dprintf("- blitter/dsp/machine>\n");
-		IoMem_UnInit();
+		IoMem_UnInit(current->System.nMachineType);
 		bReInitIoMem = true;
 	}
 	

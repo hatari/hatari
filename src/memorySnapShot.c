@@ -431,7 +431,7 @@ void MemorySnapShot_Restore_Do(void)
 		currprefs.address_space_24 = ConfigureParams.System.bAddressSpace24;
 
 		/* Reset emulator to get things running */
-		IoMem_UnInit();  IoMem_Init();
+		IoMem_UnInit(ConfigureParams.System.nMachineType);  IoMem_Init();
 		Reset_Cold();
 
 		/* Capture each files details */

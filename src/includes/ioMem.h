@@ -94,7 +94,7 @@ static inline void IoMem_WriteByte(uint32_t Address, uint8_t Var)
 extern void IoMem_Intercept ( uint32_t addr , void (*read_f)(void) , void (*write_f)(void) );
 
 extern void IoMem_Init(void);
-extern void IoMem_UnInit(void);
+extern void IoMem_UnInit (int MachineType);
 extern void IoMem_Reset(void);
 
 extern uint8_t IoMemTabMegaSTE_DIPSwitches_Read(void);
