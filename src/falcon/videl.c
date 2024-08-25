@@ -159,6 +159,36 @@ void VIDEL_MemorySnapShot_Capture(bool bSave)
 }
 
 
+static bool Videl_GetPixelCyclesAndDivider(int *cyc_per_pixel, int *divider)
+{
+	Uint16 vdm = IoMem_ReadWord(0xff82c2) & 0xc;
+
+	/* Compute cycles per pixel */
+	if (vdm == 0)
+		*cyc_per_pixel = 4;
+	else if (vdm == 4)
+		*cyc_per_pixel = 2;
+	else
+		*cyc_per_pixel = 1;
+
+	/* Compute the divider */
+	if (videl.monitor_type == FALCON_MONITOR_VGA) {
+		if (vdm == 0)
+			*divider = 4;
+		else
+			*divider = 2;
+	}
+	else if (videl.bUseSTShifter == true) {
+		*divider = 16;
+	}
+	else {
+		*divider = *cyc_per_pixel;
+	}
+
+	return vdm != 0xc;	/* Return whether it is a valid setting */
+}
+
+
 /**
  * Return the vertical refresh rate for the current video mode
  * We use the following formula :
@@ -171,21 +201,41 @@ void VIDEL_MemorySnapShot_Capture(bool bSave)
  */
 int VIDEL_Get_VFreq(void)
 {
-	int	HFreq;
-	int	VFT;
-	int	VFreq;
+	static int prev_hfreq, prev_vfreq;
+	int baseclock, hfreq, vfreq;
+	int cyc_per_pixel, divider;
+	int hht, vft;
+
+	Videl_GetPixelCyclesAndDivider(&cyc_per_pixel, &divider);
 
 	if ( IoMem_ReadWord(0xff82c0) & 4 )		/* VC0 : bit2=0 32 MHz   bit2=1 25 MHz */
-		HFreq = 31250;				/* 25 MHz, VGA */
+	{
+		baseclock = 25175000;
+	}
 	else
-		HFreq = 15625;				/* 32 MHz, RGB */
+	{
+		/* 32.084988 MHz for PAL and 32.215905 for NTSC systems? */
+		baseclock = 32084988;
+	}
 
-	VFT = IoMem_ReadWord(0xff82a2);
+	vft = IoMem_ReadWord(0xff82a2);
+	if (vft < 2)			/* Avoid bad value */
+		return 60;
 
+	hht = IoMem_ReadWord(0xff8282);
+	hfreq = baseclock / (2 * divider * (hht + 2));
+	vfreq = round(2.0 * hfreq / (vft - !(IoMem_ReadWord(0xff82C2) & 2)));
 
-	VFreq = round ( ( (double)HFreq / ( VFT+1 ) ) * 2 );
+	if (prev_hfreq != hfreq || prev_vfreq != vfreq)
+	{
+		Log_Printf(LOG_DEBUG, "Videl refresh rate changed: "
+		                      "baseclock=%i hfreq=%i vfreq=%i\n",
+		           baseclock, hfreq, vfreq);
+		prev_hfreq = hfreq;
+		prev_vfreq = vfreq;
+	}
 
-	return VFreq;
+	return vfreq;
 }
 
 
@@ -704,11 +754,11 @@ static Uint16 VIDEL_getScreenBpp(void)
  */
 static int VIDEL_getScreenWidth(void)
 {
-	Uint16 hbb, hbe, hdb, hde, vdm, hht;
-	Uint16 cycPerPixel, divider;
+	Uint16 hbb, hbe, hdb, hde, hht;
 	Sint16 hdb_offset, hde_offset;
 	Sint16 leftBorder, rightBorder;
 	Uint16 bpp = VIDEL_getScreenBpp();
+	int cycPerPixel, divider;
 
 	/* X Size of the Display area */
 	videl.XSize = (IoMem_ReadWord(0xff8210) & 0x03ff) * 16 / bpp;
@@ -740,30 +790,9 @@ static int VIDEL_getScreenWidth(void)
 	hbe = IoMem_ReadWord(0xff8286) & 0x01ff;
 	hdb = IoMem_ReadWord(0xff8288) & 0x01ff;
 	hde = IoMem_ReadWord(0xff828a) & 0x01ff;
-	vdm = IoMem_ReadWord(0xff82c2) & 0xc;
 	hht = IoMem_ReadWord(0xff8282) & 0x1ff;
 
-	/* Compute cycles per pixel */
-	if (vdm == 0)
-		cycPerPixel = 4;
-	else if (vdm == 4)
-		cycPerPixel = 2;
-	else
-		cycPerPixel = 1;
-
-	/* Compute the divider */
-	if (videl.monitor_type == FALCON_MONITOR_VGA) {
-		if (cycPerPixel == 4)
-			divider = 4;
-		else
-			divider = 2;
-	}
-	else if (videl.bUseSTShifter == true) {
-		divider = 16;
-	}
-	else {
-		divider = cycPerPixel;
-	}
+	Videl_GetPixelCyclesAndDivider(&cycPerPixel, &divider);
 
 	/* Compute hdb_offset and hde_offset */
 	if (videl.bUseSTShifter == false) {
