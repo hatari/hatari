@@ -358,6 +358,7 @@ static inline void M68000_AddCycles_CE(int cycles)
 extern void	MegaSTE_CPU_Cache_Update ( uint8_t val );
 extern void	MegaSTE_CPU_Cache_Reset ( void );
 extern void	MegaSTE_CPU_Set_16Mhz ( bool set_16 );
+extern void	MegaSTE_Cache_Flush ( void );
 
 
 /*
