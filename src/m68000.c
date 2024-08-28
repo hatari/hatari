@@ -1060,6 +1060,12 @@ void M68000_MMU_Info(FILE *fp, uint32_t flags)
 /*------------------------------------------------------------------------------*/
 
 
+/* Uncomment the next line to check all entries after every cache update */
+//#define MEGA_STE_CACHE_DEBUG_CHECK_ENTRIES
+
+
+
+
 /* Update the CPU freq and cache status, depending on content of $ff8e21
  *	$ff8e21 Mega STe Cache/Processor Control
  *		BIT 0 : Cache (0 - disabled, 1 - enabled)
@@ -1161,10 +1167,56 @@ bool	MegaSTE_Cache_Is_Enabled ( void )
 }
 
 
+
+/*
+ * Check cache consistancy, useful to debug error in the cache
+ * For each valid cache entry, we compare the stored value with
+ * the content of the RAM for the same physical address.
+ * If there's a difference then something went wrong in the cache
+ * NOTE : this check will work only when RAM is cached, not ROM.
+ * This is because an address uses 24 bits but the cache will map
+ * only 22 bits to Line/Tag, making it impossible to get back the
+ * original physical address from just Line/Tag.
+ * So when this check is enabled, ROM caching will be disabled.
+ */
+
+#ifdef MEGA_STE_CACHE_DEBUG_CHECK_ENTRIES
+void	MegaSTE_Cache_Check_Entries ( const char *txt );
+
+void	MegaSTE_Cache_Check_Entries ( const char *txt )
+{
+	uint16_t	Line;
+	uint8_t	Tag;
+	uint32_t	Addr;
+
+	for ( Line=0 ; Line < MEGA_STE_CACHE_SIZE ; Line++ )
+		if ( MegaSTE_Cache.Valid[ Line ] )
+		{
+			Tag = MegaSTE_Cache.Tag[ Line ];
+			Addr = ( Line << 1 ) | ( Tag << 14 );
+			if ( MegaSTE_Cache.Value[ Line ] != get_word(Addr) )
+				fprintf ( stderr , "mega ste cache bad %s : Line=0x%x Tag=0x%x Addr=%x Val=0x%x != 0x%x pc=%x\n" ,
+					txt , Line , Tag , Addr , MegaSTE_Cache.Value[ Line ] , get_word(Addr) , M68000_GetPC() );
+		}
+}
+
+#else
+static inline void	MegaSTE_Cache_Check_Entries ( const char *txt );
+
+static inline void	MegaSTE_Cache_Check_Entries ( const char *txt )
+{
+}
+#endif
+
+
+
 /*
  * Return true if addr is part of a cacheable region, else false
  *   - RAM (up to 4MB) and ROM regions can be cached
  *   - IO or cartridge regions can't be cached
+ *
+ * NOTE : when debugging cache consistancy using MegaSTE_Cache_Check_Entries()
+ * we should allow only RAM to be cached
  */
 
 bool	MegaSTE_Cache_Addr_Cacheable ( uint32_t addr )
@@ -1173,9 +1225,11 @@ bool	MegaSTE_Cache_Addr_Cacheable ( uint32_t addr )
 	if ( ( addr < STRamEnd ) && ( addr < 0x400000 ) )
 		return true;
 
+#ifndef MEGA_STE_CACHE_DEBUG_CHECK_ENTRIES
 	/* TOS in ROM region can be cached */
 	if ( ( addr >= 0xE00000 ) && ( addr < 0xF00000 ) )
 		return true;
+#endif
 
 	/* Other regions can't be cached */
 	return false;
@@ -1246,7 +1300,8 @@ bool	MegaSTE_Cache_Update ( uint32_t Addr , int Size , uint16_t Val )
 		MegaSTE_Cache.Valid[ Line ] = 1;
 		MegaSTE_Cache.Tag[ Line ] = Tag;
 		MegaSTE_Cache.Value[ Line ] = Val;
-//fprintf ( stderr , "update w %x %x %d : %x\n" , Addr , Line, Tag, Val );
+//fprintf ( stderr , "update w %x %x %x : %x\n" , Addr , Line, Tag, Val );
+		MegaSTE_Cache_Check_Entries ( "update w out" );
 		return true;					/* cache updated */
 	}
 
@@ -1260,6 +1315,7 @@ bool	MegaSTE_Cache_Update ( uint32_t Addr , int Size , uint16_t Val )
 				MegaSTE_Cache.Value[ Line ] = ( MegaSTE_Cache.Value[ Line ] & 0xff00 ) | Val;
 			else					/* update upper byte of cached value */
 				MegaSTE_Cache.Value[ Line ] = ( MegaSTE_Cache.Value[ Line ] & 0xff ) | ( Val << 8 );
+			MegaSTE_Cache_Check_Entries ( "update b out" );
 			return true;				/* cache updated */
 		}
 	}
@@ -1296,6 +1352,7 @@ bool	MegaSTE_Cache_Read ( uint32_t Addr , int Size , uint16_t *pVal )
 			else
 				*pVal = ( *pVal >> 8 ) & 0xff;	/* get upper byte of word */
 		}
+		MegaSTE_Cache_Check_Entries ( "read out" );
 		return true;					/* cache hit */
 	}
 
@@ -1465,7 +1522,6 @@ uae_u32	mem_access_delay_byte_read_megaste_16 (uaecptr addr)
 		{
 			if ( MegaSTE_Cache_Read ( addr , 1 , &v ) )
 			{
-//fprintf ( stderr , "byte hit %x %x\n", addr , v );
 				// cache_hit++
 				x_do_cycles_post (4 * cpucycleunit, v);
 			}
