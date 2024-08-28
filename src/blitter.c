@@ -400,7 +400,10 @@ static void Blitter_BusArbitration ( int RequestBusMode )
 	{
 		cycles = 4;				/* Default case : take 4 cycles when going from cpu to blitter */
 		if ( ConfigureParams.System.nMachineType == MACHINE_MEGA_STE )
+		{
 			cycles = 8;			/* MegaSTE blitter needs 4 extra cycles when requesting the bus */
+			MegaSTE_Cache_Flush ();		/* Flush the MegaSTE's external cache when blitter request the bus */
+		}
 // fprintf ( stderr , "blitter bus start pc %x %x cyc=%d cur_cyc=%lu\n" , M68000_GetPC() , M68000_InstrPC , cycles , currcycle/cpucycleunit );
 	}
 

@@ -613,6 +613,11 @@ void M68000_BusError ( uint32_t addr , int ReadWrite , int Size , int AccessType
 	LOG_TRACE(TRACE_CPU_EXCEPTION, "Bus error %s at address $%x PC=$%x.\n",
 	          ReadWrite ? "reading" : "writing", addr, M68000_InstrPC);
 
+	/* For the MegaSTE, a bus error will flush the external cache */
+	if ( ConfigureParams.System.nMachineType == MACHINE_MEGA_STE )
+		MegaSTE_Cache_Flush ();
+
+
 #define WINUAE_HANDLE_BUS_ERROR
 #ifdef WINUAE_HANDLE_BUS_ERROR
 
