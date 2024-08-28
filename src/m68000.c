@@ -1207,15 +1207,15 @@ void	MegaSTE_Cache_Flush ( void )
 /*
  * Convert a cacheable address into a Line number in the cache and a Tag value
  * Addr lowest 22 bits are split into :
- *   - bits 15-22 : tag (8 bits)
- *   - bits 1-14 : line (0 to 8191)
+ *   - bits 14-21 : tag (8 bits)
+ *   - bits 1-13 : line (0 to 8191)
  *   - bit 0 : ignored (because the cache stores 16 bit words)
  */
 
 void	MegaSTE_Cache_Addr_Convert ( uint32_t Addr , uint16_t *pLineNbr , uint8_t *pTag )
 {
 	*pLineNbr = ( Addr >> 1 ) & 0x1fff;
-	*pTag = ( Addr >> 15 ) & 0xff;
+	*pTag = ( Addr >> 14 ) & 0xff;
 }
 
 
