@@ -162,7 +162,7 @@ struct {
 
 
 bool	MegaSTE_Cache_Is_Enabled ( void );
-bool	MegaSTE_Cache_Addr_Cachable ( uint32_t addr );
+bool	MegaSTE_Cache_Addr_Cacheable ( uint32_t addr );
 void	MegaSTE_Cache_Addr_Convert ( uint32_t Addr , uint16_t *pLineNbr , uint8_t *pTag );
 bool	MegaSTE_Cache_Update ( uint32_t Addr , int Size , uint16_t Val );
 bool	MegaSTE_Cache_Write ( uint32_t Addr , int Size , uint16_t Val );
@@ -1167,7 +1167,7 @@ bool	MegaSTE_Cache_Is_Enabled ( void )
  *   - IO or cartridge regions can't be cached
  */
 
-bool	MegaSTE_Cache_Addr_Cachable ( uint32_t addr )
+bool	MegaSTE_Cache_Addr_Cacheable ( uint32_t addr )
 {
 	/* Available RAM can be cached (up to 4MB) */
 	if ( ( addr < STRamEnd ) && ( addr < 0x400000 ) )
@@ -1235,7 +1235,9 @@ bool	MegaSTE_Cache_Update ( uint32_t Addr , int Size , uint16_t Val )
 {
 	uint16_t	Line;
 	uint8_t		Tag;
-//return false;
+
+	if ( !MegaSTE_Cache_Addr_Cacheable ( Addr ) )
+		return false;					/* data not cacheable */
 
 	MegaSTE_Cache_Addr_Convert ( Addr , &Line , &Tag );
 
@@ -1269,9 +1271,6 @@ bool	MegaSTE_Cache_Update ( uint32_t Addr , int Size , uint16_t Val )
 
 bool	MegaSTE_Cache_Write ( uint32_t Addr , int Size , uint16_t Val )
 {
-	if ( !MegaSTE_Cache_Addr_Cachable ( Addr ) )
-		return false;					/* data not cacheable */
-
 	return MegaSTE_Cache_Update ( Addr , Size , Val );
 }
 
@@ -1281,9 +1280,8 @@ bool	MegaSTE_Cache_Read ( uint32_t Addr , int Size , uint16_t *pVal )
 {
 	uint16_t	Line;
 	uint8_t		Tag;
-//return false;
 
-	if ( !MegaSTE_Cache_Addr_Cachable ( Addr ) )
+	if ( !MegaSTE_Cache_Addr_Cacheable ( Addr ) )
 		return false;					/* cache miss, data not cacheable */
 
 	MegaSTE_Cache_Addr_Convert ( Addr , &Line , &Tag );
