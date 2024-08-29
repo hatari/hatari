@@ -19,6 +19,7 @@ const char HDC_fileid[] = "Hatari hdc.c";
 #include "hdc.h"
 #include "ioMem.h"
 #include "log.h"
+#include "m68000.h"
 #include "memorySnapShot.h"
 #include "mfp.h"
 #include "ncr5380.h"
@@ -1128,6 +1129,10 @@ static void Acsi_DmaTransfer(void)
 
 	FDC_SetDMAStatus(AcsiBus.bDmaError);	/* Mark DMA error */
 	FDC_SetIRQ(FDC_IRQ_SOURCE_HDC);
+
+	/* For the MegaSTE, using the HDC DMA will flush the external cache */
+	if ( ConfigureParams.System.nMachineType == MACHINE_MEGA_STE )
+		MegaSTE_Cache_Flush ();
 }
 
 static void Acsi_WriteCommandByte(int addr, uint8_t byte)

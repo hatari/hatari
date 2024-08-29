@@ -1056,6 +1056,9 @@ void	FDC_DMA_FIFO_Push ( uint8_t Byte )
 	FDC_DMA.FIFO_Size = 0;						/* FIFO is now empty again */
 	/* When the FIFO transfers data to RAM it takes 4 cycles per word and the CPU is stalled during this time */
 	M68000_AddCycles_CE ( 4 * FDC_DMA_FIFO_SIZE / 2 );		/* 32 cycles */
+	/* For the MegaSTE, using the FDC DMA will flush the external cache */
+	if ( ConfigureParams.System.nMachineType == MACHINE_MEGA_STE )
+		MegaSTE_Cache_Flush ();
 
 	/* Store the last word that was just transferred by the DMA */
 	FDC_DMA.ff8604_recent_val = ( FDC_DMA.FIFO [ FDC_DMA_FIFO_SIZE-2 ] << 8 ) | FDC_DMA.FIFO [ FDC_DMA_FIFO_SIZE-1 ];
@@ -1109,6 +1112,9 @@ uint8_t	FDC_DMA_FIFO_Pull ( void )
 		FDC_DMA.FIFO_Size = FDC_DMA_FIFO_SIZE - 1;			/* FIFO is now full again (minus the byte we will return below) */
 		/* When the FIFO reads data from RAM it takes 4 cycles per word and the CPU is stalled during this time */
 		M68000_AddCycles_CE ( 4 * FDC_DMA_FIFO_SIZE / 2 );		/* 32 cycles */
+		/* For the MegaSTE, using the FDC DMA will flush the external cache */
+		if ( ConfigureParams.System.nMachineType == MACHINE_MEGA_STE )
+			MegaSTE_Cache_Flush ();
 
 		/* Store the last word that was just transferred by the DMA */
 		FDC_DMA.ff8604_recent_val = ( FDC_DMA.FIFO [ FDC_DMA_FIFO_SIZE-2 ] << 8 ) | FDC_DMA.FIFO [ FDC_DMA_FIFO_SIZE-1 ];
