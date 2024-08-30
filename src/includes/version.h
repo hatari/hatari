@@ -5,7 +5,7 @@
 */
 
 /* devel */
-//#define PROG_NAME "Hatari v2.5.0-devel (" __DATE__ ")"
+#define PROG_NAME "Hatari v2.6.0-devel (" __DATE__ ")"
 
 /* release */
-#define PROG_NAME "Hatari v2.5.0"
+//#define PROG_NAME "Hatari v2.6.0"
