@@ -500,6 +500,7 @@ void M68000_MemorySnapShot_Capture(bool bSave)
 {
 	size_t len;
 	uae_u8 chunk[ 1000 ];
+	int i;
 
 	MemorySnapShot_Store(&pendingInterrupts, sizeof(pendingInterrupts));	/* for intlev() */
 
@@ -542,7 +543,16 @@ void M68000_MemorySnapShot_Capture(bool bSave)
 
 	/* From cpu/newcpu.c */
 	MemorySnapShot_Store(&BusCyclePenalty,sizeof(BusCyclePenalty));
+
+	/* Save/Restore MegaSTE's cache */
+	for ( i=0 ; i < MEGA_STE_CACHE_SIZE ; i++ )
+	{
+		MemorySnapShot_Store(&MegaSTE_Cache.Valid[ i ] , sizeof(MegaSTE_Cache.Valid[ i ]) );
+		MemorySnapShot_Store(&MegaSTE_Cache.Tag[ i ] , sizeof(MegaSTE_Cache.Tag[ i ]) );
+		MemorySnapShot_Store(&MegaSTE_Cache.Value[ i ] , sizeof(MegaSTE_Cache.Value[ i ]) );
+	}
 }
+
 
 /*-----------------------------------------------------------------------*/
 /**

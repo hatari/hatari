@@ -481,6 +481,18 @@ void MemorySnapShot_Restore_Do(void)
 			Log_AlertDlg(LOG_ERROR, "Full memory state restore failed!\nPlease reboot emulation.");
 			return;
 		}
+
+
+		/*
+		 * Apply some specific changes after everything is restored
+		 */
+		if ( ConfigureParams.System.nMachineType == MACHINE_MEGA_STE )
+		{
+			/* Restore CPU Freq and cache */
+			MegaSTE_CPU_Cache_Update ( IoMem_ReadByte(0xff8e21) );
+		}
+
+
 	}
 
 //fprintf ( stderr , "MemorySnapShot_Restore_Do out\n" );
