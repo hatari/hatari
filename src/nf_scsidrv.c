@@ -407,6 +407,10 @@ static int scsidrv_inout(uint32_t stack)
 
 		status = ioctl(handle_meta_data[handle].fd,
 		               SG_IO, &io_hdr) < 0 ? -1 : io_hdr.status;
+		if (!status && sense_buffer && sense_buffer[2] & 0x0f)
+		{
+			status = sense_buffer[2] & 0x0f;
+		}
 	}
 
 	if (status > 0 && sense_buffer)
