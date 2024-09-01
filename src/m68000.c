@@ -869,6 +869,10 @@ void	M68000_Flush_All_Caches ( uaecptr addr , int size )
 //fprintf ( stderr , "M68000_Flush_All_Caches\n" );
 	flush_cpu_caches(true);
 	invalidate_cpu_data_caches();
+
+	/* For the MegaSTE, we also flush the external cache */
+	if ( ConfigureParams.System.nMachineType == MACHINE_MEGA_STE )
+		MegaSTE_Cache_Flush ();
 }
 
 
@@ -877,6 +881,10 @@ void	M68000_Flush_Instr_Cache ( uaecptr addr , int size )
 //fprintf ( stderr , "M68000_Flush_Instr_Cache\n" );
 	/* Instruction cache for cpu >= 68020 */
 	flush_cpu_caches(true);
+
+	/* For the MegaSTE, we also flush the external cache */
+	if ( ConfigureParams.System.nMachineType == MACHINE_MEGA_STE )
+		MegaSTE_Cache_Flush ();
 }
 
 
@@ -885,6 +893,10 @@ void	M68000_Flush_Data_Cache ( uaecptr addr , int size )
 //fprintf ( stderr , "M68000_Flush_Data_Cache\n" );
 	/* Data cache for cpu >= 68030 */
 	invalidate_cpu_data_caches();
+
+	/* For the MegaSTE, we also flush the external cache */
+	if ( ConfigureParams.System.nMachineType == MACHINE_MEGA_STE )
+		MegaSTE_Cache_Flush ();
 }
 
 
