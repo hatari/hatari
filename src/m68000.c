@@ -1065,7 +1065,7 @@ void M68000_MMU_Info(FILE *fp, uint32_t flags)
 /* - When bytes are read, the cache will also be updated as a word / 2 bytes,	*/
 /*   this is because in	the case of 8 bit accesses in RAM/ROM the bus will	*/
 /*   carry the 16 bits at this RAM/ROM address (not just the 8 bits of the byte)*/
-/* - When bytes are written, the cache will be updated only if italready stores	*/
+/* - When bytes are written, the cache will be updated only if it already stores*/
 /*   an entry with the same tag. In that case, upper or lower byte will be	*/
 /*   updated in the previously cached word.					*/
 /*										*/
@@ -1216,6 +1216,7 @@ void	MegaSTE_Cache_Check_Entries ( const char *txt )
 }
 
 #else
+/* Debugging OFF : use an empty inline function */
 static inline void	MegaSTE_Cache_Check_Entries ( const char *txt );
 
 static inline void	MegaSTE_Cache_Check_Entries ( const char *txt )
@@ -1291,11 +1292,16 @@ void	MegaSTE_Cache_Addr_Convert ( uint32_t Addr , uint16_t *pLineNbr , uint8_t *
 
 /*
  * Update the cache for a word or byte access
- *  - if Size==2 (word access) the corresponding cache entry is replaced
- *  - If Size==1 (byte access) the corresponding cache entry is updated
+ *  - if Size==2 (read/write word access) the corresponding cache entry is replaced
+ *  - If Size==1 (write byte access) the corresponding cache entry is updated
  *    only if it was already associated to the same Tag value. In that case
  *    we update the lower or upper byte of the cached value depending
  *    on Addr being even or odd.
+ *  - If Size==1 (read byte access) the corresponding cache entry is replaced by the
+ *    corresponding word at the same address (forced to even). This is because when RAM/ROM
+ *    is accessed as byte, the bus will in fact carry the whole word (16 bits) at this
+ *    address and the cpu will keep only the upper or lower byte (8 bits). The word
+ *    on the bus can be used to update the cache.
  *
  * Return true if value was added to the cache, else return false
  */
@@ -1543,7 +1549,7 @@ uae_u32	mem_access_delay_byte_read_megaste_16 (uaecptr addr)
 			else
 			{
 				v = wait_cpu_cycle_read_megaste_16 (addr, 0);
-				MegaSTE_Cache_Update ( addr , 1 , v );
+				MegaSTE_Cache_Update ( addr , 2 , get_word(addr & ~1) );
 			}
 		}
 		break;
