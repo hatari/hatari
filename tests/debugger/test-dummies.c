@@ -37,13 +37,10 @@ uint32_t TosAddress = 0xe00000, TosSize = 256*1024;
 /* fake ST RAM, only 24-bit support */
 #include "stMemory.h"
 uae_u8 *TTmemory = NULL;
-#if ENABLE_SMALL_MEM
 static uint8_t _STRam[16*1024*1024];
 uint8_t *STRam = _STRam;
-#else
-uint8_t STRam[16*1024*1024];
-#endif
 uint32_t STRamEnd = 4*1024*1024;
+
 uint32_t STMemory_ReadLong(uint32_t addr) {
 	uint32_t val;
 	if (addr >= STRamEnd) return 0;

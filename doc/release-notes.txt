@@ -15,8 +15,6 @@ Following features are deprecated and will be removed in a future release:
   - "hatari-shortcut warmreset"  (use "hatari-debug reset hard")
   - "hatari-shortcut savemem"    (use "hatari-debug statesave <file>")
   - "hatari-shortcut quit"       (use "hatari-debug quit [exit value]")
-- The "--disable-small-mem" configuration option (small mem is enabled
-  by default already and will be the only option soon)
 
 
  Development version
@@ -67,6 +65,9 @@ Emulator improvements:
 Build changes:
 - Get rid of and warn about VLAs (variable length arrays), as
   VisualStudio does not support them
+- Removed the "--disable-small-mem" configure option (the small mem mode
+  is stable now, uses less memory and even still seems to be at least as
+  fast as the other mode, so it is the one and only default mode now)
 
 Fixed programs:
 - Voxx, both demo & free full version (DSP JMP instruction)

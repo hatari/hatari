@@ -10,17 +10,11 @@
 
 #include "config.h"
 
-#if ENABLE_SMALL_MEM
-# include "sysdeps.h"
-# include "maccess.h"
-# include "main.h"
+#include "sysdeps.h"
+#include "maccess.h"
+#include "main.h"
 extern uae_u8 *IOmemory;
-# define IoMem (IOmemory-0xff0000)
-#else
-# include "stMemory.h"
-# define IoMem STRam
-#endif  /* ENABLE_SMALL_MEM */
-
+#define IoMem (IOmemory-0xff0000)
 
 extern int nIoMemAccessSize;
 extern uint32_t IoAccessFullAddress;

@@ -15,7 +15,6 @@ print_help()
   echo "Parameters are:"
   echo "  --prefix=<path>            Set the install prefix to path"
   echo "  --enable-debug             Enable debug (non-optimized) build"
-  echo "  --disable-small-mem        Use more memory (slightly increases emulation speed)"
   echo "  --disable-dsp              Disable DSP emulation for Falcon mode."
   echo "  --disable-tracing          Disable tracing messages for debugging"
   echo "  --disable-osx-bundle       Disable application bundling on macOS"
@@ -62,12 +61,6 @@ do
     ;;
     --disable-tracing)
       cmake_args="$cmake_args -DENABLE_TRACING:BOOL=0"
-    ;;
-    --enable-small-mem)
-      cmake_args="$cmake_args -DENABLE_SMALL_MEM:BOOL=1"
-    ;;
-    --disable-small-mem)
-      cmake_args="$cmake_args -DENABLE_SMALL_MEM:BOOL=0"
     ;;
     --enable-osx-bundle)
       cmake_args="$cmake_args -DENABLE_OSX_BUNDLE:BOOL=1"

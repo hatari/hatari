@@ -1650,8 +1650,6 @@ void memory_init(uae_u32 NewSTMemSize, uae_u32 NewTTMemSize, uae_u32 NewRomMemSt
 	/*write_log("memory_init: STmem_size=$%x, TTmem_size=$%x, ROM-Start=$%x,\n",
 	            STmem_size, TTmem_size, NewRomMemStart);*/
 
-#if ENABLE_SMALL_MEM
-
 	/* Allocate memory for normal ST RAM. Note that we always allocate
 	 * either 4 MiB, 8 MiB or the full 16 MiB, since the functions that
 	 * might access the memory directly (via "DMA" like the shifter, see
@@ -1697,16 +1695,6 @@ void memory_init(uae_u32 NewSTMemSize, uae_u32 NewTTMemSize, uae_u32 NewRomMemSt
 
 	IdeMemory = ROMmemory + 0x100000;
 	IOmemory  = ROMmemory + 0x1f0000;
-
-#else
-
-	/* STmemory points to the 16 MiB STRam array, we just have to set up
-	* the remaining pointers here: */
-	ROMmemory = STRam + ROMmem_start;
-	IdeMemory = STRam + IdeMem_start;
-	IOmemory = STRam + IOmem_start;
-
-#endif
 
 	init_mem_banks();
 	init_ce_banks();
@@ -1857,8 +1845,6 @@ void memory_uninit (void)
 		TTmemory = NULL;
 	}
 
-#if ENABLE_SMALL_MEM
-
 	if (STmemory) {
 		free(STmemory);
 		STmemory = NULL;
@@ -1868,8 +1854,6 @@ void memory_uninit (void)
 		free(ROMmemory);
 	}
 	ROMmemory = NULL;
-
-#endif  /* ENABLE_SMALL_MEM */
 }
 
 

@@ -21,19 +21,11 @@ const char STMemory_fileid[] = "Hatari stMemory.c";
 #include "m68000.h"
 #include "video.h"
 
-/* STRam points to our ST Ram. Unless the user enabled SMALL_MEM where we have
- * to save memory, this includes all TOS ROM and IO hardware areas for ease
- * and emulation speed - so we create a 16 MiB array directly here.
- * But when the user turned on ENABLE_SMALL_MEM, this only points to a malloc'ed
- * buffer with the ST RAM; the ROM and IO memory will be handled separately. */
-#if ENABLE_SMALL_MEM
+/* STRam points to our malloc'ed buffer with the ST RAM.
+ * Note that the ROM and IO memory will be handled separately. */
 uint8_t *STRam;
-#else
-uint8_t STRam[16*1024*1024];
-#endif
 
 uint32_t STRamEnd;		/* End of ST Ram, above this address is no-mans-land and ROM/IO memory */
-
 
 
 uint32_t RAM_Bank0_Size;	/* Physical RAM on board in bank0 (in bytes) : 128, 512 or 2048 KB */
@@ -62,8 +54,7 @@ static uint32_t	STMemory_MMU_Translate_Addr_STE ( uint32_t addr_logical , int RA
 
 /**
  * Set default value for MMU bank size and RAM bank size
- * NOTE : when using SMALL_MEM, IoMem will not be allocated yet on the first call
- * so we default to 0x0.
+ * NOTE : IoMem will not be allocated yet on the first call so we default to 0.
  * TODO [NP] : don't call STMemory_MMU_ConfToBank from here ? Better ensure STMemory_Reset()
  * is called early enough.
  */
@@ -72,15 +63,12 @@ void	STMemory_Init ( int RAM_Size_Byte )
 	uint8_t val;
 
 	/* Set default MMU bank size values */
-#if ENABLE_SMALL_MEM
 	if ( IOmemory == NULL )
-		val = 0x0;	
+		val = 0x0;
 	else
 		val = IoMem[ 0xff8001 ];
-#else
-	val = IoMem[ 0xff8001 ];
-#endif
-//fprintf ( stderr , "STMemory_Init %d %x\n" , RAM_Size_Byte , val );
+
+	// fprintf ( stderr , "STMemory_Init %d %x\n" , RAM_Size_Byte , val );
 	STMemory_MMU_ConfToBank ( val, &MMU_Bank0_Size, &MMU_Bank1_Size );
 
 	if ( RAM_Size_Byte <= 0x400000 )
@@ -100,20 +88,15 @@ void	STMemory_Init ( int RAM_Size_Byte )
  * and MMU_Bank1_Size have a consistent value (ie != 0) before calling memory_init()
  * (MMU_BankX_Size can be 0 in case Hatari was started with > 4 MB RAM, which is not standard
  * for STF/STE)
- * NOTE : as with STMemory_Init() when using SMALL_MEM, IoMem will not be allocated yet
- * on the first call
+ * NOTE: as with STMemory_Init(), IoMem will not be allocated yet on the first call
  */
 void	STMemory_Reset ( bool bCold )
 {
 	if ( bCold )
 	{
-//fprintf ( stderr , "STMemory_Reset\n" );
-#if ENABLE_SMALL_MEM
+		// fprintf ( stderr , "STMemory_Reset\n" );
 		if ( IOmemory != NULL )
 			IoMem[ 0xff8001 ] = 0x0;
-#else
-		IoMem[ 0xff8001 ] = 0x0;
-#endif
 		STMemory_MMU_ConfToBank ( 0 , &MMU_Bank0_Size , &MMU_Bank1_Size );
 	}
 }

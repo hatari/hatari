@@ -14,14 +14,9 @@
 #include "memory.h"
 
 
-#if ENABLE_SMALL_MEM
 extern uint8_t *STRam;
 extern uae_u8 *ROMmemory;
-# define RomMem (ROMmemory-0xe00000)
-#else
-extern uint8_t STRam[16*1024*1024];
-#define RomMem STRam
-#endif  /* ENABLE_SMALL_MEM */
+#define RomMem (ROMmemory-0xe00000)
 
 extern uae_u8 *TTmemory;
 extern uae_u32 TTmem_size;

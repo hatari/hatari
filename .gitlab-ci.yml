@@ -6,8 +6,7 @@ build-minimal:
  - apt-get install -y -qq cmake libsdl2-dev tidy
  - rm -rf /usr/include/zlib.h /usr/include/png.h /usr/include/readline*
  - CFLAGS="-D_FORTIFY_SOURCE=3"
-   ./configure --disable-small-mem --disable-dsp --enable-debug
-               --disable-tracing --enable-werror
+   ./configure --disable-dsp --enable-debug --disable-tracing --enable-werror
  - make
  - make test
 

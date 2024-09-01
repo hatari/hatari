@@ -55,8 +55,6 @@ set(ENABLE_DSP_EMU 1
     CACHE BOOL "Enable DSP 56k emulator for Falcon mode")
 set(ENABLE_TRACING 1
     CACHE BOOL "Enable tracing messages for debugging")
-set(ENABLE_SMALL_MEM 1
-    CACHE BOOL "Enable to use less memory - at the expense of emulation speed")
 
 # Run-time checks with GCC / LLVM (Clang) AddressSanitizer:
 # - stack protection
