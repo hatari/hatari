@@ -30,7 +30,7 @@ Emulation improvements:
 - VME/SCU:
   - TT / MegaSTE SCU registers and interrupts implemented
 - Falcon Videl:
-  - Refresh rate of monochrom monitor is now correctly detected with 71 Hz
+  - Refresh rate of monochrome monitor is now correctly detected with 71 Hz
 
 Emulator improvements:
 - SDL-GUI (and config options):
