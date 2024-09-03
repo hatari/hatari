@@ -31,6 +31,10 @@ Emulation improvements:
   - TT / MegaSTE SCU registers and interrupts implemented
 - Falcon Videl:
   - Refresh rate of monochrome monitor is now correctly detected with 71 Hz
+- MegaSTE:
+  - Add support for CPU Freq / Cache control at $FF8E21 when running
+    in cycle accurate mode. This gives cycle exact memory accesses
+    when running at 16 MHz, as well as emulation of the external 16 KB cache
 
 Emulator improvements:
 - SDL-GUI (and config options):
@@ -68,6 +72,10 @@ Build changes:
 - Removed the "--disable-small-mem" configure option (the small mem mode
   is stable now, uses less memory and even still seems to be at least as
   fast as the other mode, so it is the one and only default mode now)
+
+Fixed demos:
+- Little -ME- Demo by Overlanders : when running in MegaSTE mode the 3D parts
+  will switch to 16 MHz and use the MegaSTE's 16 KB external cache
 
 Fixed programs:
 - Voxx, both demo & free full version (DSP JMP instruction)
