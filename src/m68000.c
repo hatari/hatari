@@ -1101,7 +1101,7 @@ void M68000_MMU_Info(FILE *fp, uint32_t flags)
 
 void	MegaSTE_CPU_Cache_Update ( uint8_t val )
 {
-fprintf ( stderr , "MegaSTE_CPU_Cache_Update 0x%x\n" , val );
+//fprintf ( stderr , "MegaSTE_CPU_Cache_Update 0x%x\n" , val );
 
 	/* If cache is disabled, flush all entries */
 	if ( ( val & 1 ) == 0 )
@@ -1142,7 +1142,7 @@ void	MegaSTE_CPU_Set_16Mhz ( bool set_16 )
 	if ( !currprefs.cpu_cycle_exact || ( currprefs.cpu_model != 68000 ) )
 		return;
 
-fprintf ( stderr , "MegaSTE_CPU_Set_16Mhz %d\n" , set_16);
+//fprintf ( stderr , "MegaSTE_CPU_Set_16Mhz %d\n" , set_16);
 
 	/* Enable 16 MHz mode for 68000 CE */
 	if ( set_16 && ( x_get_iword != get_wordi_ce000_megaste_16 ) )

@@ -163,6 +163,9 @@ bool STMemory_SafeCopy(uint32_t addr, uint8_t *src, unsigned int len, const char
 			assert(TTmemory && addr + len <= TTmem_size + 0x1000000);
 			memcpy(&TTmemory[addr - 0x1000000], src, len);
 		}
+		/* We modify the memory, so we flush the instr/data caches if needed */
+		M68000_Flush_All_Caches ( addr , 1 );
+
 		return true;
 	}
 	Log_Printf(LOG_WARN, "Invalid '%s' RAM range 0x%x+%i!\n", name, addr, len);
@@ -171,6 +174,8 @@ bool STMemory_SafeCopy(uint32_t addr, uint8_t *src, unsigned int len, const char
 	{
 		if ( STMemory_CheckAreaType ( addr, 1, ABFLAG_RAM ) )
 			put_byte(addr, *src++);
+		/* We modify the memory, so we flush the instr/data caches if needed */
+		M68000_Flush_All_Caches ( addr , 1 );
 	}
 	return false;
 }
