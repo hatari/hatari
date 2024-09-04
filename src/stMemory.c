@@ -124,6 +124,9 @@ bool STMemory_SafeClear(uint32_t addr, unsigned int len)
 			assert(TTmemory && addr + len <= TTmem_size + 0x1000000);
 			memset(&TTmemory[addr - 0x1000000], 0, len);
 		}
+		/* We modify the memory, so we flush the instr/data caches if needed */
+		M68000_Flush_All_Caches ( addr , len );
+
 		return true;
 	}
 	Log_Printf(LOG_WARN, "Invalid RAM clear range 0x%x+%i!\n", addr, len);
@@ -131,7 +134,11 @@ bool STMemory_SafeClear(uint32_t addr, unsigned int len)
 	for (end = addr + len; addr < end; addr++)
 	{
 		if (STMemory_CheckAreaType(addr, 1, ABFLAG_RAM))
+		{
 			put_byte(addr, 0);
+			/* We modify the memory, so we flush the instr/data caches if needed */
+			M68000_Flush_All_Caches ( addr , 1 );
+		}
 	}
 	return false;
 }
@@ -164,7 +171,7 @@ bool STMemory_SafeCopy(uint32_t addr, uint8_t *src, unsigned int len, const char
 			memcpy(&TTmemory[addr - 0x1000000], src, len);
 		}
 		/* We modify the memory, so we flush the instr/data caches if needed */
-		M68000_Flush_All_Caches ( addr , 1 );
+		M68000_Flush_All_Caches ( addr , len );
 
 		return true;
 	}
@@ -173,9 +180,11 @@ bool STMemory_SafeCopy(uint32_t addr, uint8_t *src, unsigned int len, const char
 	for (end = addr + len; addr < end; addr++)
 	{
 		if ( STMemory_CheckAreaType ( addr, 1, ABFLAG_RAM ) )
+		{
 			put_byte(addr, *src++);
-		/* We modify the memory, so we flush the instr/data caches if needed */
-		M68000_Flush_All_Caches ( addr , 1 );
+			/* We modify the memory, so we flush the instr/data caches if needed */
+			M68000_Flush_All_Caches ( addr , 1 );
+		}
 	}
 	return false;
 }
