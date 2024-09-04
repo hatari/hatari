@@ -1436,14 +1436,14 @@ uae_u32	mem_access_delay_word_read_megaste_16 (uaecptr addr)
 		{
 			if ( MegaSTE_Cache_Read ( addr , 2 , &v ) )
 			{
-//fprintf ( stderr , "word hit %x\n", addr );
-				// cache_hit++
 				x_do_cycles_post (4 * cpucycleunit, v);
+				CpuInstruction.D_Cache_hit++;
 			}
 			else
 			{
 				v = wait_cpu_cycle_read_megaste_16 (addr, 1);
 				MegaSTE_Cache_Update ( addr , 2 , v );
+				CpuInstruction.D_Cache_miss++;
 			}
 		}
 		break;
@@ -1458,14 +1458,15 @@ uae_u32	mem_access_delay_word_read_megaste_16 (uaecptr addr)
 		{
 			if ( MegaSTE_Cache_Read ( addr , 2 , &v ) )
 			{
-				// cache_hit++
 				x_do_cycles_post (4 * cpucycleunit, v);
+				CpuInstruction.D_Cache_hit++;
 			}
 			else
 			{
 				v = get_word (addr);
 				x_do_cycles_post (4 * cpucycleunit, v);
 				MegaSTE_Cache_Update ( addr , 2 , v );
+				CpuInstruction.D_Cache_miss++;
 			}
 		}
 		break;
@@ -1496,13 +1497,14 @@ uae_u32	mem_access_delay_wordi_read_megaste_16 (uaecptr addr)
 		{
 			if ( MegaSTE_Cache_Read ( addr , 2 , &v ) )
 			{
-				// cache_hit++
 				x_do_cycles_post (4 * cpucycleunit, v);
+				CpuInstruction.I_Cache_hit++;
 			}
 			else
 			{
 				v = wait_cpu_cycle_read_megaste_16 (addr, 2);
 				MegaSTE_Cache_Update ( addr , 2 , v );
+				CpuInstruction.I_Cache_miss++;
 			}
 		}
 		break;
@@ -1517,14 +1519,15 @@ uae_u32	mem_access_delay_wordi_read_megaste_16 (uaecptr addr)
 		{
 			if ( MegaSTE_Cache_Read ( addr , 2 , &v ) )
 			{
-				// cache_hit++
 				x_do_cycles_post (4 * cpucycleunit, v);
+				CpuInstruction.I_Cache_hit++;
 			}
 			else
 			{
 				v = get_wordi (addr);
 				x_do_cycles_post (4 * cpucycleunit, v);
 				MegaSTE_Cache_Update ( addr , 2 , v );
+				CpuInstruction.I_Cache_miss++;
 			}
 		}
 		break;
@@ -1555,13 +1558,14 @@ uae_u32	mem_access_delay_byte_read_megaste_16 (uaecptr addr)
 		{
 			if ( MegaSTE_Cache_Read ( addr , 1 , &v ) )
 			{
-				// cache_hit++
 				x_do_cycles_post (4 * cpucycleunit, v);
+				CpuInstruction.D_Cache_hit++;
 			}
 			else
 			{
 				v = wait_cpu_cycle_read_megaste_16 (addr, 0);
 				MegaSTE_Cache_Update ( addr , 2 , get_word(addr & ~1) );
+				CpuInstruction.D_Cache_miss++;
 			}
 		}
 		break;
@@ -1576,14 +1580,15 @@ uae_u32	mem_access_delay_byte_read_megaste_16 (uaecptr addr)
 		{
 			if ( MegaSTE_Cache_Read ( addr , 1 , &v ) )
 			{
-				// cache_hit++
 				x_do_cycles_post (4 * cpucycleunit, v);
+				CpuInstruction.D_Cache_hit++;
 			}
 			else
 			{
 				v = get_byte (addr);
 				x_do_cycles_post (4 * cpucycleunit, v);
 				MegaSTE_Cache_Update ( addr , 1 , v );
+				CpuInstruction.D_Cache_miss++;
 			}
 		}
 		break;
