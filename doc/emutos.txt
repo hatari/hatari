@@ -250,7 +250,7 @@ shortcomings of each option are following:
 
 Notes:
 
-* Don't use Hatari stdout/stder ("/dev/stdout", "/dev/stderr") as
+* Don't use Hatari stdout/stderr ("/dev/stdout", "/dev/stderr") as
   debug output files, unless you absolutely need to get ordering right
   between the extra debug messages and other output, as that results
   in messed up console and output from Hatari
@@ -413,6 +413,7 @@ Color demos:
 - Flashback (by Carebears)
 - Flexiscroll 2021 (64k by Effect)
 - Flipo (by Oxygene)
+- Flux-AI slides (Spec512/50Hz slideshow by Anima)
 - Frenchies (by Frenchies, 96KB intro)
 - Fruit is Great! (256-Bytro 50Hz overscan by Effect)
 - Glokzilla (by MJJ Prod)
@@ -719,6 +720,7 @@ Free/shareware/PD games:
 - Teserae*
 - The errand boy (text adventure)
 - The lost world (line-A bitblits)
+- Toogle*        (works an any machine)
 - Trace
 - Unheart
 - Video poker    (shareware)
@@ -1706,6 +1708,9 @@ Games working under EmuTOS >= 1.3 (XBios TC support):
 Games working under EmuTOS Git version (full TC support):
 - Boulder Smash Falcon (Omikron Basic)
   - Needs to be started from 480x400 or larger TC mode
+- DangerZone
+  - Needs 8MB + started from 640x480@16-color VGA mode
+  - Without palette<->VDI index compatiblity fix, errors on start
 - Hong Tron (128b game by Reservoir Gods)
   - Needs to be started from 320x400 TC mode
 - Pous-Pous (GEM puzzle)
