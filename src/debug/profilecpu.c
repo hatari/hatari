@@ -1177,7 +1177,7 @@ void Profile_CpuUpdate(void)
 		prev->cycles = MAX_CPU_PROFILE_VALUE;
 	}
 
-	/* only WinUAE CPU core provides cache information */
+	/* Cache informations are available for CPU>=68020 or for MegaSTE with 68000 in CE mode */
 	i_hits = CpuInstruction.I_Cache_hit;
 	d_hits = CpuInstruction.D_Cache_hit;
 	i_misses = CpuInstruction.I_Cache_miss;
