@@ -46,6 +46,9 @@ Emulator improvements:
   - Fix: segfault with negative joystick indexes
 - GEMDOS HD:
   - Fix: Fattrib() call on a directory
+  - Fix: Return correct attrib for volume labels in FsFirst()
+  - Fix: Fsnext() calls with DTAs having different attribs,
+    when DTA is not from preceeding Fsfirst() but earlier one
   - Fix: Handle additional '*' chars at end of file mask
 - SCC:
   - Fix: invalid channel B file close on uninit

@@ -2707,6 +2707,8 @@ have no files.</li>
 handles used with GEMDOS <em>file</em> functions, such as Fwrite() to standard
 output that is redirected to a file.  File redirection is NOT supported
 e.g. for GEMDOS Ccon* console functions.</li>
+<li>Only FsFirst() / FsNext() calls support drive volume labels, other
+GEMDOS calls return errors when volume label attribute is specified
 <li>Host and emulation have their own clocks, which will drift apart
 after emulation is started, especially when emulation is
 fast-forwarded or paused.  Because of this, anything inside emulation
