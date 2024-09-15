@@ -102,7 +102,7 @@ static uint8_t Keymap_SymbolicToStScanCode_default(const SDL_Keysym* pKeySym)
 	 case SDLK_QUESTION: code = 0x35; break;
 	 case SDLK_AT: code = 0x28; break;
 	 case SDLK_LEFTBRACKET: code = 0x1A; break;
-	 case SDLK_BACKSLASH: code = 0x2B; break;     /* Might be 0x60 for UK keyboards */
+	 case SDLK_BACKSLASH: code = 0x2B; break;
 	 case SDLK_RIGHTBRACKET: code = 0x1B; break;
 	 case SDLK_CARET: code = 0x2B; break;
 	 case SDLK_UNDERSCORE: code = 0x0C; break;
@@ -245,6 +245,16 @@ static uint8_t Keymap_SymbolicToStScanCode_FR(const SDL_Keysym* keysym)
 	 case SDLK_q: return 0x1E;
 	 case SDLK_w: return 0x2C;
 	 case SDLK_z: return 0x11;
+	 default: return Keymap_SymbolicToStScanCode_default(keysym);
+	}
+}
+
+static uint8_t Keymap_SymbolicToStScanCode_UK(const SDL_Keysym* keysym)
+{
+	switch (keysym->sym)
+	{
+	 case SDLK_HASH: return 0x2B;
+	 case SDLK_BACKSLASH: return 0x60;
 	 default: return Keymap_SymbolicToStScanCode_default(keysym);
 	}
 }
@@ -810,6 +820,7 @@ void Keymap_SetCountry(int countrycode)
 	{
 	 case 1:  func = Keymap_SymbolicToStScanCode_DE; break;
 	 case 2:  func = Keymap_SymbolicToStScanCode_FR; break;
+	 case 3:  func = Keymap_SymbolicToStScanCode_UK; break;
 	 default: func = Keymap_SymbolicToStScanCode_default; break;
 	}
 
