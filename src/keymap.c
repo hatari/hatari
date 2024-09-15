@@ -79,7 +79,7 @@ static uint8_t Keymap_SymbolicToStScanCode_default(const SDL_Keysym* pKeySym)
 	 case SDLK_LEFTPAREN: code = 0x63; break;
 	 case SDLK_RIGHTPAREN: code = 0x64; break;
 	 case SDLK_ASTERISK: code = 0x66; break;
-	 case SDLK_PLUS: code = 0x1B; break;
+	 case SDLK_PLUS: code = 0x4e; break;
 	 case SDLK_COMMA: code = 0x33; break;
 	 case SDLK_MINUS: code = 0x0C; break;
 	 case SDLK_PERIOD: code = 0x34; break;
@@ -135,11 +135,11 @@ static uint8_t Keymap_SymbolicToStScanCode_default(const SDL_Keysym* pKeySym)
 	 case SDLK_z: code = 0x2C; break;
 	 case SDLK_DELETE: code = 0x53; break;
 	 /* End of ASCII mapped keysyms */
-	 case 180: code = 0x0D; break;
-	 case 223: code = 0x0C; break;
-	 case 228: code = 0x28; break;
-	 case 246: code = 0x27; break;
-	 case 252: code = 0x1A; break;
+	 case 180: code = 0x0D; break;		/* German ' */
+	 case 223: code = 0x0C; break;		/* German ß */
+	 case 228: code = 0x28; break;		/* German ä */
+	 case 246: code = 0x27; break;		/* German ö */
+	 case 252: code = 0x1A; break;		/* German ü */
 	 /* Numeric keypad: */
 	 case SDLK_KP_0: code = 0x70; break;
 	 case SDLK_KP_1: code = 0x6D; break;
@@ -205,6 +205,20 @@ static uint8_t Keymap_SymbolicToStScanCode_default(const SDL_Keysym* pKeySym)
 
 static uint8_t (*Keymap_SymbolicToStScanCode)(const SDL_Keysym* pKeySym) =
 		Keymap_SymbolicToStScanCode_default;
+
+static uint8_t Keymap_SymbolicToStScanCode_DE(const SDL_Keysym* keysym)
+{
+	switch (keysym->sym)
+	{
+	 case SDLK_HASH: return 0x29;
+	 case SDLK_PLUS: return 0x1B;
+	 case SDLK_MINUS: return 0x35;
+	 case SDLK_SLASH: return 0x65;
+	 case SDLK_y: return 0x2C;
+	 case SDLK_z: return 0x15;
+	 default: return Keymap_SymbolicToStScanCode_default(keysym);
+	}
+}
 
 /**
  * Remap SDL scancode key to ST Scan code
@@ -765,6 +779,7 @@ void Keymap_SetCountry(int countrycode)
 
 	switch (countrycode)
 	{
+	 case 1:  func = Keymap_SymbolicToStScanCode_DE; break;
 	 default: func = Keymap_SymbolicToStScanCode_default; break;
 	}
 
