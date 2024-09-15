@@ -38,6 +38,7 @@ const char TOS_fileid[] = "Hatari tos.c";
 #include "falcon/dsp.h"
 #include "clocks_timings.h"
 #include "video.h"
+#include "keymap.h"
 
 #include "faketosData.c"
 
@@ -1199,6 +1200,7 @@ int TOS_InitImage(void)
 			   countrycode, TOS_LanguageName(countrycode),
 			   (osconf & 1) ? "PAL" : "NTSC");
 	}
+	Keymap_SetCountry(countrycode);
 
 	/*
 	 * patch some values into the "Draw logo" patch.

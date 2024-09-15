@@ -18,5 +18,6 @@ extern void Keymap_KeyUp(const SDL_Keysym *sdlkey);
 extern void Keymap_SimulateCharacter(char asckey, bool press);
 extern int Keymap_GetKeyFromName(const char *name);
 extern const char *Keymap_GetKeyName(int keycode);
+extern void Keymap_SetCountry(int countrycode);
 
 #endif

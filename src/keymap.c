@@ -7,6 +7,8 @@
   Map SDL key events to ST scancodes and send them to IKBD as
   pressed/released keys.  Based on Hatari configuration options,
   several different ways can be used to map SDL key events.
+
+  See https://tho-otto.de/keyboards/ for the Atari ST keyboard layouts.
 */
 const char Keymap_fileid[] = "Hatari keymap.c";
 
@@ -19,6 +21,7 @@ const char Keymap_fileid[] = "Hatari keymap.c";
 #include "joy.h"
 #include "shortcut.h"
 #include "str.h"
+#include "tos.h"
 #include "debugui.h"
 #include "log.h"
 
@@ -51,10 +54,11 @@ void Keymap_Init(void)
 }
 
 /**
- * Map SDL symbolic key to ST scan code.
- * This assumes a QWERTY ST keyboard.
+ * Default function for mapping SDL symbolic key to ST scan code.
+ * This is basically the US QWERTY ST keyboard with some additional
+ * international key fallbacks.
  */
-static uint8_t Keymap_SymbolicToStScanCode(const SDL_Keysym* pKeySym)
+static uint8_t Keymap_SymbolicToStScanCode_default(const SDL_Keysym* pKeySym)
 {
 	uint8_t code;
 
@@ -199,6 +203,8 @@ static uint8_t Keymap_SymbolicToStScanCode(const SDL_Keysym* pKeySym)
 	return code;
 }
 
+static uint8_t (*Keymap_SymbolicToStScanCode)(const SDL_Keysym* pKeySym) =
+		Keymap_SymbolicToStScanCode_default;
 
 /**
  * Remap SDL scancode key to ST Scan code
@@ -714,15 +720,53 @@ void Keymap_SimulateCharacter(char asckey, bool press)
 }
 
 
+/**
+ * Maps a key name to its SDL keycode
+ */
 int Keymap_GetKeyFromName(const char *name)
 {
 	return SDL_GetKeyFromName(name);
 }
 
+
+/**
+ * Maps an SDL keycode to a name
+ */
 const char *Keymap_GetKeyName(int keycode)
 {
 	if (!keycode)
 		return "";
 
 	return SDL_GetKeyName(keycode);
+}
+
+
+/**
+ * Informs symbolic keymap of loaded TOS country.
+ */
+void Keymap_SetCountry(int countrycode)
+{
+	uint8_t (*func)(const SDL_Keysym* pKeySym);
+
+	/* Prefer keyboard layout selected by user */
+	if (ConfigureParams.Keyboard.nKbdLayout >= 0 &&
+	    ConfigureParams.Keyboard.nKbdLayout <= 31)
+	{
+		countrycode = ConfigureParams.Keyboard.nKbdLayout;
+	}
+	else if (countrycode == TOS_LANG_ALL)
+	{
+		if (ConfigureParams.Keyboard.nCountryCode >= 0 &&
+		    ConfigureParams.Keyboard.nCountryCode <= 31)
+		{
+			countrycode = ConfigureParams.Keyboard.nCountryCode;
+		}
+	}
+
+	switch (countrycode)
+	{
+	 default: func = Keymap_SymbolicToStScanCode_default; break;
+	}
+
+	Keymap_SymbolicToStScanCode = func;
 }
