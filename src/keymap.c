@@ -135,10 +135,17 @@ static uint8_t Keymap_SymbolicToStScanCode_default(const SDL_Keysym* pKeySym)
 	 case SDLK_z: code = 0x2C; break;
 	 case SDLK_DELETE: code = 0x53; break;
 	 /* End of ASCII mapped keysyms */
+	 case 167: code = 0x07; break;		/* French § */
+	 case 178: code = 0x29; break;		/* French ² */
 	 case 180: code = 0x0D; break;		/* German ' */
 	 case 223: code = 0x0C; break;		/* German ß */
+	 case 224: code = 0x0B; break;		/* French à */
 	 case 228: code = 0x28; break;		/* German ä */
+	 case 231: code = 0x0A; break;		/* French ç */
+	 case 232: code = 0x08; break;		/* French è */
+	 case 233: code = 0x03; break;		/* French é */
 	 case 246: code = 0x27; break;		/* German ö */
+	 case 249: code = 0x28; break;		/* French ù */
 	 case 252: code = 0x1A; break;		/* German ü */
 	 /* Numeric keypad: */
 	 case SDLK_KP_0: code = 0x70; break;
@@ -216,6 +223,28 @@ static uint8_t Keymap_SymbolicToStScanCode_DE(const SDL_Keysym* keysym)
 	 case SDLK_SLASH: return 0x65;
 	 case SDLK_y: return 0x2C;
 	 case SDLK_z: return 0x15;
+	 default: return Keymap_SymbolicToStScanCode_default(keysym);
+	}
+}
+
+static uint8_t Keymap_SymbolicToStScanCode_FR(const SDL_Keysym* keysym)
+{
+	switch (keysym->sym)
+	{
+	 case SDLK_HASH: return 0x2B;
+	 case SDLK_QUOTE: return 0x05;
+	 case SDLK_LEFTPAREN: return 0x06;
+	 case SDLK_RIGHTPAREN: return 0x0c;
+	 case SDLK_COMMA: return 0x32;
+	 case SDLK_MINUS: return 0x0D;
+	 case SDLK_SEMICOLON: return 0x33;
+	 case SDLK_EQUALS: return 0x35;
+	 case SDLK_CARET: return 0x1A;
+	 case SDLK_a: return 0x10;
+	 case SDLK_m: return 0x27;
+	 case SDLK_q: return 0x1E;
+	 case SDLK_w: return 0x2C;
+	 case SDLK_z: return 0x11;
 	 default: return Keymap_SymbolicToStScanCode_default(keysym);
 	}
 }
@@ -780,6 +809,7 @@ void Keymap_SetCountry(int countrycode)
 	switch (countrycode)
 	{
 	 case 1:  func = Keymap_SymbolicToStScanCode_DE; break;
+	 case 2:  func = Keymap_SymbolicToStScanCode_FR; break;
 	 default: func = Keymap_SymbolicToStScanCode_default; break;
 	}
 
