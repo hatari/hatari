@@ -2890,7 +2890,7 @@ static int GemDOS_Pexec(uint32_t Params)
  * GEMDOS Search Next
  * Call 0x4F
  */
-static bool GemDOS_SNext(void)
+static bool GemDOS_SNext(bool trace)
 {
 	struct dirent **temp;
 	int ret;
@@ -2898,7 +2898,9 @@ static bool GemDOS_SNext(void)
 	uint32_t DTA_Gemdos;
 	uint16_t Index;
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x4F Fsnext() at PC 0x%X\n" , CallingPC);
+	/* real OS call, not part of SFirst()? */
+	if (trace)
+		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x4F Fsnext() at PC 0x%X\n" , CallingPC);
 
 	/* Refresh pDTA pointer (from the current basepage) */
 	DTA_Gemdos = STMemory_ReadLong(STMemory_ReadLong(act_pd) + BASEPAGE_OFFSET_DTA);
@@ -3120,7 +3122,7 @@ static bool GemDOS_SFirst(uint32_t Params)
 	}
 
 	/* Scan for first file (SNext uses no parameters) */
-	GemDOS_SNext();
+	GemDOS_SNext(false);
 
 	/* increment DTA buffer index unless earlier one was reused */
 	if (useidx != DTAIndex)
@@ -4085,7 +4087,7 @@ int GemDOS_Trap(void)
 		Finished = GemDOS_SFirst(Params);
 		break;
 	 case 0x4f:
-		Finished = GemDOS_SNext();
+		Finished = GemDOS_SNext(true);
 		break;
 	 case 0x56:
 		Finished = GemDOS_Rename(Params);
