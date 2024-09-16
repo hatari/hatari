@@ -2918,13 +2918,6 @@ static bool GemDOS_SNext(void)
 		return false;
 	}
 
-	if (IS_VOLUME_LABEL(pDTA->dta_attrib))
-	{
-		/* Volume label was given already in Sfirst() */
-		Regs[REG_D0] = GEMDOS_ENMFIL;
-		return true;
-	}
-
 	/* Find index into our list of structures */
 	Index = do_get_mem_word(pDTA->index);
 
@@ -2934,6 +2927,13 @@ static bool GemDOS_SNext(void)
 		 * (if Fsetdta() has been used by any process)
 		 */
 		Log_Printf(LOG_WARN, "GEMDOS Fsnext(): Invalid DTA\n");
+		Regs[REG_D0] = GEMDOS_ENMFIL;
+		return true;
+	}
+
+	if (IS_VOLUME_LABEL(InternalDTAs[Index].dta_attrib))
+	{
+		/* Volume label was given already in Sfirst() */
 		Regs[REG_D0] = GEMDOS_ENMFIL;
 		return true;
 	}
