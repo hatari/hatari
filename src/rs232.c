@@ -42,11 +42,26 @@ const char RS232_fileid[] = "Hatari rs232.c";
 #endif
 
 
-static FILE *hComIn = NULL;        /* Handle to file for reading */
-static FILE *hComOut = NULL;       /* Handle to file for writing */
 
-static bool bByteReceived = false; /* Is a received byte pending? */
-static uint8_t nRxByte;
+
+
+struct RS232_s {
+
+	FILE	*ReadFile;		/* Handle to file for reading */
+	int	Read_fd;		/* Corresponding file descriptor */
+	bool	Read_fd_IsATTY;		/* true if fd is a tty */
+	FILE	*WriteFile;		/* Same for writing */
+	int	Write_fd;
+	bool	Write_fd_IsATTY;
+
+	bool	ByteReceived;
+	uint8_t RxByte;
+};
+
+
+static struct RS232_s RS232_MFP;
+
+
 
 
 #if HAVE_TERMIOS_H
@@ -67,15 +82,13 @@ static inline void cfmakeraw(struct termios *termios_p)
 /**
  * Set serial line parameters to "raw" mode.
  */
-static bool RS232_SetRawMode(FILE *fhndl)
+static bool RS232_SetRawMode ( int fd , bool IsATTY )
 {
 	struct termios termmode;
-	int fd;
 
 	memset (&termmode, 0, sizeof(termmode));    /* Init with zeroes */
-	fd = fileno(fhndl);                         /* Get file descriptor */
 
-	if (isatty(fd))
+	if ( IsATTY )
 	{
 		if (tcgetattr(fd, &termmode) != 0)
 			return false;
@@ -98,15 +111,13 @@ static bool RS232_SetRawMode(FILE *fhndl)
  * - Parity
  * - Start/stop bits
  */
-static bool RS232_SetBitsConfig(FILE *fhndl, int nCharSize, int nStopBits, bool bUseParity, bool bEvenParity)
+static bool RS232_SetBitsConfig ( int fd, bool IsATTY, int nCharSize, int nStopBits, bool bUseParity, bool bEvenParity )
 {
 	struct termios termmode;
-	int fd;
 
 	memset (&termmode, 0, sizeof(termmode));    /* Init with zeroes */
-	fd = fileno(fhndl);
 
-	if (isatty(fd))
+	if ( IsATTY )
 	{
 		if (tcgetattr(fd, &termmode) != 0)
 		{
@@ -163,16 +174,24 @@ static bool RS232_OpenCOMPort(void)
 {
 	bool ok = true;
 
-	if (!hComOut && ConfigureParams.RS232.szOutFileName[0])
+	RS232_MFP.ByteReceived = false;
+
+	if (!RS232_MFP.WriteFile && ConfigureParams.RS232.szOutFileName[0])
 	{
-		/* Create our COM file for output */
-		hComOut = File_Open(ConfigureParams.RS232.szOutFileName, "wb");
-		if (hComOut)
+		/* Create our serial file for output */
+		RS232_MFP.WriteFile = File_Open(ConfigureParams.RS232.szOutFileName, "wb");
+		if ( RS232_MFP.WriteFile )
 		{
-			setvbuf(hComOut, NULL, _IONBF, 0);
+			setvbuf(RS232_MFP.WriteFile, NULL, _IONBF, 0);
+
+			RS232_MFP.Write_fd = fileno ( RS232_MFP.WriteFile );
+			if ( isatty ( RS232_MFP.Write_fd ) )
+				RS232_MFP.Write_fd_IsATTY = true;
+			else
+				RS232_MFP.Write_fd_IsATTY = false;
 #if HAVE_TERMIOS_H
 			/* First set the output parameters to "raw" mode */
-			if (!RS232_SetRawMode(hComOut))
+			if (!RS232_SetRawMode ( RS232_MFP.Write_fd , RS232_MFP.Write_fd_IsATTY ))
 			{
 				Log_Printf(LOG_WARN, "Can't set raw mode for %s\n",
 					   ConfigureParams.RS232.szOutFileName);
@@ -182,22 +201,29 @@ static bool RS232_OpenCOMPort(void)
 		}
 		else
 		{
+			RS232_MFP.Write_fd = -1;
 			Log_Printf(LOG_WARN, "RS232: Failed to open output file %s\n",
 				   ConfigureParams.RS232.szOutFileName);
 			ok = false;
 		}
 	}
 
-	if (!hComIn && ConfigureParams.RS232.szInFileName[0])
+	if (!RS232_MFP.ReadFile && ConfigureParams.RS232.szInFileName[0])
 	{
-		/* Create our COM file for input */
-		hComIn = File_Open(ConfigureParams.RS232.szInFileName, "rb");
-		if (hComIn)
+		/* Create our serial file for output */
+		RS232_MFP.ReadFile = File_Open(ConfigureParams.RS232.szInFileName, "rb");
+		if ( RS232_MFP.ReadFile )
 		{
-			setvbuf(hComIn, NULL, _IONBF, 0);
+			setvbuf(RS232_MFP.ReadFile, NULL, _IONBF, 0);
+
+			RS232_MFP.Read_fd = fileno ( RS232_MFP.ReadFile );
+			if ( isatty ( RS232_MFP.Read_fd ) )
+				RS232_MFP.Read_fd_IsATTY = true;
+			else
+				RS232_MFP.Read_fd_IsATTY = false;
 #if HAVE_TERMIOS_H
 			/* Now set the input parameters to "raw" mode */
-			if (!RS232_SetRawMode(hComIn))
+			if (!RS232_SetRawMode ( RS232_MFP.Read_fd, RS232_MFP.Read_fd_IsATTY ))
 			{
 				Log_Printf(LOG_WARN, "Can't set raw mode for %s\n",
 					   ConfigureParams.RS232.szInFileName);
@@ -207,11 +233,13 @@ static bool RS232_OpenCOMPort(void)
 		}
 		else
 		{
+			RS232_MFP.Read_fd = -1;
 			Log_Printf(LOG_WARN, "RS232: Failed to open input file %s\n",
 				   ConfigureParams.RS232.szInFileName);
 			ok = false;
 		}
 	}
+
 	return ok;
 }
 
@@ -228,15 +256,15 @@ static void RS232_CloseCOMPort(void)
 	 * (with this, only one of them freezes until other
 	 * end of a FIFO also closes the "device" file(s)).
 	 */
-	if (hComOut)
+	if ( RS232_MFP.WriteFile )
 	{
-		File_Close(hComOut);
-		hComOut = NULL;
+		File_Close ( RS232_MFP.WriteFile );
+		RS232_MFP.WriteFile = NULL;
 	}
-	if (hComIn)
+	if ( RS232_MFP.ReadFile )
 	{
-		File_Close(hComIn);
-		hComIn = NULL;
+		File_Close( RS232_MFP.ReadFile );
+		RS232_MFP.ReadFile = NULL;
 	}
 	Dprintf(("Closed RS232 files.\n"));
 }
@@ -245,19 +273,19 @@ static void RS232_CloseCOMPort(void)
 /*-----------------------------------------------------------------------*/
 void RS232_Update(void)
 {
-	if (!bByteReceived && hComIn && File_InputAvailable(hComIn))
+	if (!RS232_MFP.ByteReceived && RS232_MFP.ReadFile && File_InputAvailable(RS232_MFP.ReadFile))
 	{
-		int ch = fgetc(hComIn);
+		int ch = fgetc(RS232_MFP.ReadFile);
 
 		if (ch != EOF)
 		{
-			nRxByte = ch;
-			bByteReceived = true;
+			RS232_MFP.RxByte = ch;
+			RS232_MFP.ByteReceived = true;
 			MFP_InputOnChannel(pMFP_Main, MFP_INT_RCV_BUF_FULL, 0);
 		}
 		else
 		{
-			nRxByte = 0xff;
+			RS232_MFP.RxByte = 0xff;
 		}
 	}
 }
@@ -324,15 +352,15 @@ static void RS232_HandleUCR(int16_t ucr)
 	Dprintf(("RS232_HandleUCR(%i) : character size=%i , stop bits=%i\n",
 	         ucr, nCharSize, nStopBits));
 
-	if (hComOut != NULL)
+	if ( RS232_MFP.WriteFile )
 	{
-		if (!RS232_SetBitsConfig(hComOut, nCharSize, nStopBits, ucr&4, ucr&2))
+		if ( !RS232_SetBitsConfig ( RS232_MFP.Write_fd, RS232_MFP.Write_fd_IsATTY, nCharSize, nStopBits, ucr&4, ucr&2 ) )
 			Log_Printf(LOG_WARN, "RS232_HandleUCR: failed to set bits configuration for %s\n", ConfigureParams.RS232.szOutFileName);
 	}
 
-	if (hComIn != NULL)
+	if ( RS232_MFP.ReadFile )
 	{
-		if (!RS232_SetBitsConfig(hComIn, nCharSize, nStopBits, ucr&4, ucr&2))
+		if ( !RS232_SetBitsConfig ( RS232_MFP.Read_fd, RS232_MFP.Read_fd_IsATTY, nCharSize, nStopBits, ucr&4, ucr&2 ) )
 			Log_Printf(LOG_WARN, "RS232_HandleUCR: failed to set bits configuration for %s\n", ConfigureParams.RS232.szInFileName);
 	}
 #endif /* HAVE_TERMIOS_H */
@@ -347,7 +375,6 @@ static bool RS232_SetBaudRate(int nBaud)
 {
 #if HAVE_TERMIOS_H
 	int i;
-	int fd;
 	speed_t baudtype;
 	struct termios termmode;
 	static const int baudtable[][2] =
@@ -395,35 +422,33 @@ static bool RS232_SetBaudRate(int nBaud)
 	}
 
 	/* Set output speed: */
-	if (hComOut != NULL)
+	if ( RS232_MFP.WriteFile )
 	{
 		memset (&termmode, 0, sizeof(termmode));    /* Init with zeroes */
-		fd = fileno(hComOut);
-		if (isatty(fd))
+		if ( RS232_MFP.Write_fd_IsATTY )
 		{
-			if (tcgetattr(fd, &termmode) != 0)
+			if (tcgetattr ( RS232_MFP.Write_fd, &termmode ) != 0)
 				return false;
 
 			cfsetospeed(&termmode, baudtype);
 
-			if (tcsetattr(fd, TCSADRAIN, &termmode) != 0)
+			if (tcsetattr( RS232_MFP.Write_fd, TCSADRAIN, &termmode ) != 0)
 				return false;
 		}
 	}
 
 	/* Set input speed: */
-	if (hComIn != NULL)
+	if ( RS232_MFP.ReadFile )
 	{
 		memset (&termmode, 0, sizeof(termmode));    /* Init with zeroes */
-		fd = fileno(hComIn);
-		if (isatty(fd))
+		if ( RS232_MFP.Read_fd_IsATTY )
 		{
-			if (tcgetattr(fd, &termmode) != 0)
+			if (tcgetattr ( RS232_MFP.Read_fd, &termmode ) != 0)
 				return false;
 
 			cfsetispeed(&termmode, baudtype);
 
-			if (tcsetattr(fd, TCSADRAIN, &termmode) != 0)
+			if (tcsetattr ( RS232_MFP.Read_fd, TCSADRAIN, &termmode ) != 0)
 				return false;
 		}
 	}
@@ -492,11 +517,11 @@ static bool RS232_TransferBytesTo(uint8_t *pBytes, int nBytes)
 	if (ConfigureParams.RS232.bEnableRS232)
 		RS232_OpenCOMPort();
 
-	/* Have we connected to the RS232? */
-	if (hComOut)
+	/* Have we connected to the RS232 ? */
+	if ( RS232_MFP.WriteFile )
 	{
-		/* Send bytes directly to the COM file */
-		if (fwrite(pBytes, 1, nBytes, hComOut))
+		/* Send bytes directly to the serial file */
+		if (fwrite(pBytes, 1, nBytes, RS232_MFP.WriteFile))
 		{
 			Dprintf(("RS232: Sent %i bytes ($%x ...)\n", nBytes, *pBytes));
 			MFP_InputOnChannel ( pMFP_Main , MFP_INT_TRN_BUF_EMPTY , 0 );
@@ -565,7 +590,7 @@ void RS232_RSR_ReadByte(void)
 {
 	M68000_WaitState(4);
 
-	if (bByteReceived)
+	if ( RS232_MFP.ByteReceived )
 		IoMem[0xfffa2b] |= 0x80;        /* Buffer full */
 	else
 		IoMem[0xfffa2b] &= ~0x80;       /* Buffer not full */
@@ -621,8 +646,8 @@ void RS232_UDR_ReadByte(void)
 {
 	M68000_WaitState(4);
 
-	IoMem[0xfffa2f] = nRxByte;
-	bByteReceived = false;
+	IoMem[0xfffa2f] = RS232_MFP.RxByte;
+	RS232_MFP.ByteReceived = false;
 	Dprintf(("RS232: Read from UDR: $%x\n", (int)IoMem[0xfffa2f]));
 }
 
