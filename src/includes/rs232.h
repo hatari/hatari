@@ -12,6 +12,7 @@ extern void RS232_Init(void);
 extern void RS232_UnInit(void);
 extern void RS232_Update(void);
 extern void RS232_SetBaudRateFromTimerD(void);
+extern void RS232_Get_DCD_CTS ( uint8_t *pDCD , uint8_t *pCTS );
 extern void RS232_SCR_ReadByte(void);
 extern void RS232_SCR_WriteByte(void);
 extern void RS232_UCR_ReadByte(void);

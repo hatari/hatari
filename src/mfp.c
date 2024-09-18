@@ -1912,12 +1912,17 @@ uint8_t    MFP_Main_Compute_GPIP_LINE_ACIA ( void )
  */
 void	MFP_GPIP_ReadByte_Main ( MFP_STRUCT *pMFP )
 {
-	uint8_t	gpip_new;
+	uint8_t		gpip_new;
+	uint8_t		dcd,cts;
 
 	M68000_WaitState(4);
 
 	/* Update timers' state before reading the register */
 	MFP_UpdateTimers ( pMFP , Cycles_GetClockCounterImmediate() );
+
+	/* Get value of DCD/CTS signals in case RS232 emulation is enabled */
+	if (ConfigureParams.RS232.bEnableRS232)
+		RS232_Get_DCD_CTS ( &dcd , &cts );
 
 	gpip_new = pMFP->GPIP;
 
@@ -1932,6 +1937,18 @@ void	MFP_GPIP_ReadByte_Main ( MFP_STRUCT *pMFP )
 		gpip_new |= 0x10;		/* set bit 4 */
 	else
 		gpip_new &= ~0x10;		/* clear bit 4 */
+
+	/* Bit 2 : CTS */
+	if ( cts )
+		gpip_new |= 0x04;		/* set bit 2 */
+	else
+		gpip_new &= ~0x04;		/* clear bit 2 */
+
+	/* Bit 1 : DCD */
+	if ( dcd )
+		gpip_new |= 0x02;		/* set bit 1 */
+	else
+		gpip_new &= ~0x02;		/* clear bit 1 */
 
 	/* Bit 0 */
 	if (ConfigureParams.Printer.bEnablePrinting)

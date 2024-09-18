@@ -819,7 +819,7 @@ static uint16_t SCC_Serial_Get_DCD ( int Channel )
 	int	dcd = 1;
 	LOG_TRACE(TRACE_SCC, "scc get status for DCD %d\n" , Channel);
 
-	#if defined(HAVE_SYS_IOCTL_H) && defined(TIOCMGET)
+#if defined(HAVE_SYS_IOCTL_H) && defined(TIOCMGET)
 	int	status = 0;
 	if ( SCC.Chn[Channel].WriteHandle >= 0 && SCC.Chn[Channel].FileHandle_IsATTY )
 	{

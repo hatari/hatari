@@ -509,6 +509,42 @@ void RS232_SetBaudRateFromTimerD(void)
 
 /*----------------------------------------------------------------------- */
 /**
+ * Get value of DCD and CTS input signals, as returned by the underlying OS
+ */
+void	RS232_Get_DCD_CTS ( uint8_t *pDCD , uint8_t *pCTS )
+{
+	/* Set default value for DCD and CTS in case ioctl() fails */
+	*pDCD = 1;
+	*pCTS = 1;
+
+#if defined(HAVE_SYS_IOCTL_H) && defined(TIOCMGET)
+	int	status = 0;
+	if ( ( RS232_MFP.Read_fd >= 0 ) && RS232_MFP.Read_fd_IsATTY )
+	{
+		if ( ioctl ( fd , TIOCMGET , &status ) < 0 )
+		{
+			Log_Printf(LOG_DEBUG, "RS232_Get_DCD_CTS: Can't get status for DCD/CTS errno=%d\n" , errno);
+		}
+		else
+		{
+			if ( status & TIOCM_CAR )
+				*pDCD = 1;
+			else
+				*pDCD = 0;
+
+			if ( status & TIOCM_CTS )
+				*pCTS = 1;
+			else
+				*pCTS = 0;
+
+		}
+	}
+#endif
+}
+
+
+/*----------------------------------------------------------------------- */
+/**
  * Pass bytes from emulator to RS-232
  */
 static bool RS232_TransferBytesTo(uint8_t *pBytes, int nBytes)
