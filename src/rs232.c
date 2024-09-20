@@ -32,7 +32,9 @@ const char RS232_fileid[] = "Hatari rs232.c";
 # include <termios.h>
 # include <unistd.h>
 #endif
-
+#if HAVE_SYS_IOCTL_H
+# include <sys/ioctl.h>
+#endif
 #define RS232_DEBUG 0
 
 #if RS232_DEBUG
@@ -521,7 +523,7 @@ void	RS232_Get_DCD_CTS ( uint8_t *pDCD , uint8_t *pCTS )
 	int	status = 0;
 	if ( ( RS232_MFP.Read_fd >= 0 ) && RS232_MFP.Read_fd_IsATTY )
 	{
-		if ( ioctl ( fd , TIOCMGET , &status ) < 0 )
+		if ( ioctl ( RS232_MFP.Read_fd , TIOCMGET , &status ) < 0 )
 		{
 			Log_Printf(LOG_DEBUG, "RS232_Get_DCD_CTS: Can't get status for DCD/CTS errno=%d\n" , errno);
 		}
@@ -539,6 +541,7 @@ void	RS232_Get_DCD_CTS ( uint8_t *pDCD , uint8_t *pCTS )
 
 		}
 	}
+//fprintf ( stderr , "RS232_Get_DCD_CTS dcd=%d cts=%d\n" , *pDCD, *pCTS );
 #endif
 }
 
