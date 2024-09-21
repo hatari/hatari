@@ -421,6 +421,9 @@
 /* 2020/05/08	[NP]	Handle screen with no vertical DE activated when switching to 60 Hz	*/
 /*			between lines 34 and 62 on a 50 Hz screen (fix fullscreen part in demo	*/
 /*			'Hard As Ice' by ICE)							*/
+/* 2024/09/21	[NP]	Add Video_Set_Memcpy() to handle the case where physical RAM size	*/
+/*			doesn't match the MMU configuration at $FF8001 (fix intro part in demo	*/
+/*			'Ika I Compofylla' by Newline when running in MegaST mode with 4MB RAM)	*/
 
 
 const char Video_fileid[] = "Hatari video.c";
@@ -718,6 +721,19 @@ static void	Video_ColorReg_WriteWord(void);
 static void	Video_ColorReg_ReadWord(void);
 
 static void	Video_TT_RasterHBL(void);
+
+
+
+/*
+ * Special memcpy functions used by Video_CopyScreenLineColor and Video_CopyScreenLineMono
+ * On STF/STE when the physical RAM size doesn't match the configuration in the MMU at $FF8001,
+ * we must use some more complex memcpy function to get the correct address translation
+ * See Video_Set_Memcpy() to set the correct memcpy function
+ */
+
+static void*	video_memcpy_mmu ( uint8_t *dest , uint8_t *src , int n );
+static void*	video_memcpy_direct ( uint8_t *dest , uint8_t *src , int n );
+static void*	(*video_memcpy)( uint8_t *dest , uint8_t *src , int n ) = video_memcpy_direct;
 
 
 /**
@@ -3470,6 +3486,56 @@ static void Video_StoreResolution(int y , bool start)
 }
 
 
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * To copy shifter data to the emulated screen, some cases require
+ * to use a more complex version than a simple memcpy.
+ *
+ * For example when the MMU configuration at $FF8001 doesn't match
+ * the physical RAM size on STF/STE we need to copy 1 word at a time
+ * after applying a translation on the address
+ *
+ * NOTE : these functions expect the number of bytes 'n' to copy to be even
+ * NOTE : very few programs require to use video_memcpy_mmu(), so the performance impact
+ *        on emulation will be minimal in most cases. So far, only demo known to need this
+ *        mode is 'Ika I Compofylla' by Newline
+ */
+
+void	Video_Set_Memcpy ( bool Force_MMU_Translation )
+{
+//fprintf ( stderr , "Video_Set_Memcpy Force_MMU_Translation=%d\n" , Force_MMU_Translation );
+
+	if ( Force_MMU_Translation )
+		video_memcpy = video_memcpy_mmu;
+	else
+		video_memcpy = video_memcpy_direct;
+}
+
+
+/* Use a slower/more accurate rendering where each word is dynamically read from memory */
+/* (this is used to apply MMU translation and when video address points after end of RAM) */
+static void*	video_memcpy_mmu ( uint8_t *dest , uint8_t *src , int n )
+{
+	int	i;
+
+	/* We must keep the src video address in a 22 or 24 bit space depending on the machine type */
+	uint32_t VideoMask = Video_GetAddrMask();
+
+	for ( i=0 ; i<n/2 ; i++ )
+		do_put_mem_word ( dest+i*2 , (uint16_t)get_word ( ( src-STRam+i*2 ) & VideoMask ) );
+	return dest;
+}
+
+
+static void*	video_memcpy_direct ( uint8_t *dest , uint8_t *src , int n )
+{
+	return memcpy ( dest , src, n );
+}
+
+
+
 /*-----------------------------------------------------------------------*/
 /**
  * Copy one line of monochrome screen into buffer for conversion later.
@@ -3481,7 +3547,7 @@ static void Video_CopyScreenLineMono(void)
 	uint32_t VideoMask = Video_GetAddrMask();
 
 	/* Copy one line - 80 bytes in ST high resolution */
-	memcpy(pSTScreen, pVideoRaster, SCREENBYTES_MONOLINE);
+	video_memcpy ( pSTScreen, pVideoRaster, SCREENBYTES_MONOLINE );
 	pVideoRaster += SCREENBYTES_MONOLINE;
 
 	/* Handle STE fine scrolling (HWScrollCount is zero on ST). */
@@ -3674,7 +3740,7 @@ static void Video_CopyScreenLineColor(void)
 		if ( LineBorderMask & ( BORDERMASK_LEFT_OFF | BORDERMASK_LEFT_OFF_MED ) )	/* bigger line by 26 bytes on the left */
 		{
 			pVideoRaster += BORDERBYTES_LEFT-SCREENBYTES_LEFT+VideoOffset;
-			memcpy(pSTScreen, pVideoRaster, SCREENBYTES_LEFT);
+			video_memcpy ( pSTScreen, pVideoRaster, SCREENBYTES_LEFT );
 			pVideoRaster += SCREENBYTES_LEFT;
 		}
 		else if ( LineBorderMask & BORDERMASK_LEFT_OFF_2_STE )	/* bigger line by 20 bytes on the left (STE specific) */
@@ -3682,10 +3748,10 @@ static void Video_CopyScreenLineColor(void)
 			if ( SCREENBYTES_LEFT > BORDERBYTES_LEFT_2_STE )
 			{
 				memset ( pSTScreen, 0, SCREENBYTES_LEFT-BORDERBYTES_LEFT_2_STE+4 );	/* clear unused pixels + bytes 0-3 */
-				memcpy ( pSTScreen+SCREENBYTES_LEFT-BORDERBYTES_LEFT_2_STE+4, pVideoRaster+VideoOffset+4, BORDERBYTES_LEFT_2_STE-4 );
+				video_memcpy ( pSTScreen+SCREENBYTES_LEFT-BORDERBYTES_LEFT_2_STE+4, pVideoRaster+VideoOffset+4, BORDERBYTES_LEFT_2_STE-4 );
 			}
 			else
-				memcpy ( pSTScreen, pVideoRaster+BORDERBYTES_LEFT_2_STE-SCREENBYTES_LEFT+VideoOffset, SCREENBYTES_LEFT );
+				video_memcpy ( pSTScreen, pVideoRaster+BORDERBYTES_LEFT_2_STE-SCREENBYTES_LEFT+VideoOffset, SCREENBYTES_LEFT );
 
 			pVideoRaster += BORDERBYTES_LEFT_2_STE+VideoOffset;
 		}
@@ -3693,8 +3759,8 @@ static void Video_CopyScreenLineColor(void)
 		{
 			if ( SCREENBYTES_LEFT > 2 )
 			{
-				memset(pSTScreen,0,SCREENBYTES_LEFT-2);		/* clear unused pixels */
-				memcpy(pSTScreen+SCREENBYTES_LEFT-2, pVideoRaster, 2);
+				memset ( pSTScreen,0,SCREENBYTES_LEFT-2 );	/* clear unused pixels */
+				video_memcpy ( pSTScreen+SCREENBYTES_LEFT-2, pVideoRaster, 2 );
 			}
 			else
 			{						/* nothing to copy, left border is not large enough */
@@ -3706,8 +3772,8 @@ static void Video_CopyScreenLineColor(void)
 		{
 			if ( SCREENBYTES_LEFT > 4*2 )
 			{
-				memset(pSTScreen,0,SCREENBYTES_LEFT-4*2);	/* clear unused pixels */
-				memcpy(pSTScreen+SCREENBYTES_LEFT-4*2, pVideoRaster, 4*2);
+				memset ( pSTScreen,0,SCREENBYTES_LEFT-4*2 );	/* clear unused pixels */
+				video_memcpy ( pSTScreen+SCREENBYTES_LEFT-4*2, pVideoRaster, 4*2 );
 			}
 			else
 			{						/* nothing to copy, left border is not large enough */
@@ -3722,29 +3788,21 @@ static void Video_CopyScreenLineColor(void)
 		if (LineBorderMask & BORDERMASK_STOP_MIDDLE)
 		{
 			/* 106 bytes less in the line */
-			memcpy(pSTScreen+SCREENBYTES_LEFT, pVideoRaster, SCREENBYTES_MIDDLE-106);
-			memset(pSTScreen+SCREENBYTES_LEFT+SCREENBYTES_MIDDLE-106, 0, 106);	/* clear unused pixels */
+			video_memcpy ( pSTScreen+SCREENBYTES_LEFT, pVideoRaster, SCREENBYTES_MIDDLE-106 );
+			memset ( pSTScreen+SCREENBYTES_LEFT+SCREENBYTES_MIDDLE-106, 0, 106 );	/* clear unused pixels */
 			pVideoRaster += (SCREENBYTES_MIDDLE-106);
 		}
 		else
 		{
 			/* normal middle part (160 bytes) */
-//#define MMU_TEST
-#ifndef MMU_TEST
-			memcpy(pSTScreen+SCREENBYTES_LEFT, pVideoRaster, SCREENBYTES_MIDDLE);
-#else
-			/* Use a slower/more accurate rendering where each word is dynamically read from memory */
-			/* (this is used to test MMU translation and when video address points after end of RAM) */
-			for ( i=0 ; i<80 ; i++ )
-				do_put_mem_word ( pSTScreen+SCREENBYTES_LEFT+i*2 , (uint16_t)get_word ( ( pVideoRaster-STRam+i*2 ) & VideoMask ) );
-#endif
+			video_memcpy ( pSTScreen+SCREENBYTES_LEFT, pVideoRaster, SCREENBYTES_MIDDLE );
 			pVideoRaster += SCREENBYTES_MIDDLE;
 		}
 
 		/* Does have right border ? */
 		if (LineBorderMask & BORDERMASK_RIGHT_OFF)
 		{
-			memcpy(pSTScreen+SCREENBYTES_LEFT+SCREENBYTES_MIDDLE, pVideoRaster, SCREENBYTES_RIGHT);
+			video_memcpy ( pSTScreen+SCREENBYTES_LEFT+SCREENBYTES_MIDDLE, pVideoRaster, SCREENBYTES_RIGHT );
 			pVideoRasterEndLine = pVideoRaster + SCREENBYTES_RIGHT;
 			pVideoRaster += BORDERBYTES_RIGHT;
 		}

@@ -27,6 +27,7 @@ const char Memory_fileid[] = "Hatari memory.c";
 #include "stMemory.h"
 #include "m68000.h"
 #include "configuration.h"
+#include "video.h"
 
 #include "newcpu.h"
 
@@ -1623,12 +1624,20 @@ void memory_map_Standard_RAM ( uint32_t MMU_Bank0_Size , uint32_t MMU_Bank1_Size
 		{
 			map_banks_ce(&VoidMem_bank, 0x40000 >> 16, 0x40000 >> 16, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
 		}
+
+		/* When enabling MMU address translation in the memory banks for the CPU, we must */
+		/* also enable MMU address translation for the shifter, as fetching data words to display */
+		/* will depend on how the MMU is configured */
+		Video_Set_Memcpy ( true );
 	}
 	else
 	{
 		/* Don't enable MMU address translation */
 		map_banks_ce(&SysMem_bank, 0x00, 0x10000 >> 16, 0, CE_MEMBANK_CHIP16, CACHE_ENABLE_BOTH);
 		map_banks_ce(&STmem_bank, 0x10000 >> 16, ( STmem_size - 0x10000 ) >> 16, 0, CE_MEMBANK_CHIP16, CACHE_ENABLE_BOTH);
+
+		/* Use normal memcpy functions for video rendering */
+		Video_Set_Memcpy ( false );
 	}
 }
 

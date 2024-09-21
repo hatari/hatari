@@ -196,6 +196,8 @@ extern int	Video_TimerB_GetPos( int LineNumber );
 extern void	Video_InterruptHandler_HBL(void);
 extern void	Video_InterruptHandler_EndLine(void);
 
+extern void	Video_Set_Memcpy ( bool Force_MMU_Translation );
+
 extern void	Video_SetScreenRasters(void);
 extern void	Video_GetTTRes(int *width, int *height, int *bpp);
 extern bool	Video_RenderTTScreen(void);
