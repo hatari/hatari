@@ -515,9 +515,12 @@ void RS232_SetBaudRateFromTimerD(void)
  */
 void	RS232_Get_DCD_CTS ( uint8_t *pDCD , uint8_t *pCTS )
 {
-	/* Set default value for DCD and CTS in case ioctl() fails */
+	/* Set default value for DCD and CTS in case ioctl() fails or RS232 emulation is not enabled */
 	*pDCD = 1;
 	*pCTS = 1;
+
+	if (!ConfigureParams.RS232.bEnableRS232)
+		return;
 
 #if defined(HAVE_SYS_IOCTL_H) && defined(TIOCMGET)
 	int	status = 0;

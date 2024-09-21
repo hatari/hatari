@@ -1921,8 +1921,7 @@ void	MFP_GPIP_ReadByte_Main ( MFP_STRUCT *pMFP )
 	MFP_UpdateTimers ( pMFP , Cycles_GetClockCounterImmediate() );
 
 	/* Get value of DCD/CTS signals in case RS232 emulation is enabled */
-	if (ConfigureParams.RS232.bEnableRS232)
-		RS232_Get_DCD_CTS ( &dcd , &cts );
+	RS232_Get_DCD_CTS ( &dcd , &cts );
 
 	gpip_new = pMFP->GPIP;
 
