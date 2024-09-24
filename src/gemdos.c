@@ -110,8 +110,11 @@ typedef enum {
 } dta_ret_t;
 
 #define DTA_MAGIC_NUMBER  0x12983476
-#define DTA_CACHE_INC     256      /* DTA cache initial and increment size (grows on demand) */
-#define DTA_CACHE_MAX     4096     /* max DTA cache size (multiple of DTA_CACHE_INC) */
+
+/* these are intended to be multiplies of each other */
+#define DTA_CACHE_MIN_INC  256     /* DTA cache initial size */
+#define DTA_CACHE_MAX_INC  4096    /* DTA cache size doubles until this size, after which increases are warned */
+#define DTA_CACHE_MAX_SIZE 16*1024 /* max DTA cache size */
 
 #define  BASE_FILEHANDLE     64    /* Our emulation handles - MUST not be valid TOS ones, but MUST be <256 */
 #define  MAX_FILE_HANDLES    64    /* We can allow 64 files open at once */
@@ -388,7 +391,7 @@ static void GemDOS_ClearAllInternalDTAs(void)
 	int i;
 	if (!InternalDTAs)
 	{
-		DTACount = DTA_CACHE_INC;
+		DTACount = DTA_CACHE_MIN_INC;
 		InternalDTAs = calloc(DTACount, sizeof(*InternalDTAs));
 		assert(InternalDTAs);
 	}
@@ -3158,20 +3161,27 @@ static bool GemDOS_SFirst(uint32_t Params)
 
 	if (++DTAIndex >= DTACount)
 	{
-		if (DTACount < DTA_CACHE_MAX)
+		if (DTACount < DTA_CACHE_MAX_SIZE)
 		{
 			INTERNAL_DTA *pNewIntDTAs;
+			/* double size until max increcement */
+			int DTAInc = DTACount > DTA_CACHE_MAX_INC ? DTA_CACHE_MAX_INC : DTACount;
 			/* increase DTA cache size */
-			pNewIntDTAs = realloc(InternalDTAs, (DTACount + DTA_CACHE_INC) * sizeof(*InternalDTAs));
+			pNewIntDTAs = realloc(InternalDTAs, (DTACount + DTAInc) * sizeof(*InternalDTAs));
 			if (pNewIntDTAs)
 			{
 				InternalDTAs = pNewIntDTAs;
-				memset(InternalDTAs + DTACount, 0, DTA_CACHE_INC * sizeof(*InternalDTAs));
-				DTACount += DTA_CACHE_INC;
+				memset(InternalDTAs + DTACount, 0, DTAInc * sizeof(*InternalDTAs));
+				DTACount += DTAInc;
+				if (DTACount > DTA_CACHE_MAX_INC)
+				{
+					/* show warnings before max size is reached */
+					Log_Printf(LOG_WARN, "Increased GEMDOS HD DTA cache to %d/%d entries\n", DTACount, DTA_CACHE_MAX_SIZE);
+				}
 			}
 			else
 			{
-				Log_Printf(LOG_WARN, "Failed to alloc GEMDOS HD DTA entries, wrapping DTA index\n");
+				Log_Printf(LOG_WARN, "Failed to alloc %d GEMDOS HD DTA entries, wrapping DTA index\n", DTACount + DTAInc);
 				DTAIndex = 0;
 			}
 		}
