@@ -450,14 +450,6 @@ void do_cycles_ce_hatari_blitter (int cycles)
 {
 	cycles += extra_cycle;
 	while (cycles >= CYCLE_UNIT) {
-#ifndef WINUAE_FOR_HATARI
-		int hpos = current_hpos () + 1;
-		decide_line (hpos);
-		sync_copper (hpos);
-		decide_fetch_ce (hpos);
-		if (bltstate != BLT_done)
-			decide_blitter (hpos);
-#endif						/* WINUAE_FOR_HATARI */
 		if ( Blitter_Check_Simultaneous_CPU() == 0 )
 			do_cycles (1 * CYCLE_UNIT);
 		Blitter_HOG_CPU_do_cycles_after ( 2 );
