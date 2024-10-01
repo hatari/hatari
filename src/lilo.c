@@ -256,7 +256,7 @@ static uint32_t bi_size;
 
 static bool lilo_load(void);
 static void *load_file(const char *filename, uint32_t *length);
-static bool check_kernel(void *kernel, Elf32_Addr *offset,
+static bool setup_kernel(void *kernel, Elf32_Addr *offset,
 			 void *ramdisk, uint32_t ramdisk_len);
 static bool create_bootinfo(void);
 static bool set_machine_type(void);
@@ -274,11 +274,12 @@ bool lilo_init(void)
 		Log_AlertDlg(LOG_FATAL, "Linux requires MMU and at least 8MB of RAM!");
 		return false;
 	}
-	/* RESET + Linux/m68k boot */
+	/* RESET + jmp to Linux/m68k boot */
 	ROMBaseHost[0x0000] = 0x4e;		/* reset */
 	ROMBaseHost[0x0001] = 0x70;
 	ROMBaseHost[0x0002] = 0x4e;		/* jmp <abs.addr> */
 	ROMBaseHost[0x0003] = 0xf9;
+	/* jmp address is set after loading kernel, in setup_kernel() */
 
 	/* TODO: ROM + 0x30 is Linux reset address on AB40, 0x4 on Falcon/TT */
 #if 0
@@ -355,8 +356,8 @@ static bool lilo_load(void)
 		}
 	}
 
-	/* Check the kernel */
-	loaded = check_kernel(kernel, &kernel_offset, ramdisk, ramdisk_length);
+	/* set up the kernel + ramdisk */
+	loaded = setup_kernel(kernel, &kernel_offset, ramdisk, ramdisk_length);
 
 	/* Kernel and ramdisk copied in Atari RAM, we can free them */
 	if (ramdisk != NULL) {
@@ -416,11 +417,11 @@ static void add_chunk(uint32_t start, uint32_t size)
 }
 
 /**
- * Load given kernel code and ramdisk to suitable memory area,
+ * Set up loaded kernel code and ramdisk to suitable memory area,
  * and update bootinfo accordingly.
  * Return true for success
  */
-static bool check_kernel(void *kernel, Elf32_Addr *kernel_offset,
+static bool setup_kernel(void *kernel, Elf32_Addr *kernel_offset,
 			 void *ramdisk, uint32_t ramdisk_len)
 {
 	/* map Hatari variables to Aranym code */
@@ -667,11 +668,13 @@ static bool check_kernel(void *kernel, Elf32_Addr *kernel_offset,
 	}
 #endif
 
-	/*--- Init SP & PC ---*/
+	/*--- Init SP & PC for reset ---*/
 	tmp = (uint32_t *)RAMBaseHost;
 	tmp[0] = be_swap32(*kernel_offset + KERNEL_START);	/* SP */
 	tmp[1] = be_swap32(TosAddress);		/* PC = ROMBase */
+
 	uint8_t *ROMBaseHost = &RomMem[TosAddress];
+	/* lilo_init() sets reset + jmp instructions to earlier addresses */
 	ROMBaseHost[4] = (*kernel_offset + KERNEL_START) >> 24;
 	ROMBaseHost[5] = (*kernel_offset + KERNEL_START) >> 16;
 	ROMBaseHost[6] = (*kernel_offset + KERNEL_START) >>  8;
