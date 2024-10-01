@@ -262,6 +262,7 @@ static bool nf_command(uint32_t stack, uint32_t subid, uint32_t *retval)
 	}
 	ptr = STMemory_ReadLong(stack);
 	if (mem_string_ok(ptr) < 0) {
+		LOG_TRACE(TRACE_NATFEATS, "NF_COMMAND(0x%x) => BUS ERROR (invalid address)\n", ptr);
 		return false;
 	}
 	buffer = (const char *)STMemory_STAddrToPointer(ptr);
@@ -318,6 +319,7 @@ bool NatFeat_ID(uint32_t stack, uint32_t *retval)
 	ptr = STMemory_ReadLong(stack);
 	if ( !STMemory_CheckAreaType ( ptr, FEATNAME_MAX, ABFLAG_RAM | ABFLAG_ROM ) ) {
 		M68000_BusError(ptr, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, 0);
+		LOG_TRACE(TRACE_NATFEATS, "NF ID(0x%x) => BUS ERROR (invalid address)\n", ptr);
 		return false;
 	}
 
