@@ -610,24 +610,22 @@ $ aranym-mmu -l linux.config
 10.1 Known issues
 -----------------
 
-- Linux barfs at ST-RAM memory range given after TT-RAM.  However,
-  if kernel is loaded to TT-RAM and ST-RAM range is given before
-  TT-RAM range, kernel crashes.  Based on mails from 2013, this
-  seems to be a known Linux/Atari issue
+- Old (4.x?) Linux versions do not work if kernel is loaded to TT-RAM
 
-  Workaround: Hatari lilo.c gives ST-RAM before TT-RAM in bootinfo
+  Workaround: Load kernel to ST-RAM or use more recent kernel version
 
 - Hatari debug output shows IDE and DSP reset messages on Falcon at
   2Hz (from floppy media change detection) if Linux is started with
   --lilo, instead of from TOS.  This is because TOS initializes PSG
   port-A register bits to sensible values and Linux does not.
 
-  Workaround: kernel patch
+  Workaround: included kernel patch
 
 - Atari TT boot freezes with constant "unexpected interrupt from 112"
   messages, due to Linux SCU register setup regression.
 
-  Workaround: kernel patch
+  Workaround: use >=6.11 kernel, or kernel patch:
+  https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit?id=f70065a9fd988983b2c693631b801f25a615fc04
 
 
 10.2 TODO / investigate more

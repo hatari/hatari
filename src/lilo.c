@@ -634,11 +634,8 @@ static bool setup_kernel(void *kernel, Elf32_Addr *kernel_offset,
 
 	/* Memory banks */
 	bi.num_memory = 0;
-	/* If kernel is loaded to FastRAM, switch the order of ST-RAM
-	 * and FastRAM, otherwise kernel panics.
-	 *
-	 * However, when ST-RAM comes after FastRAM, kernel tells that
-	 * it ignores the area and tells to fix the bootloader...
+	/* RAM must be listed in bootinfo with the chunk holding the kernel first,
+	 * NOT in ascending address order.
 	 */
 	if (!kernel_to_fastram) {
 		add_chunk(0, RAMSize);
