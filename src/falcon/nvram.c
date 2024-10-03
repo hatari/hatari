@@ -566,3 +566,8 @@ void NvRam_Info(FILE *fp, uint32_t dummy)
 	fprintf(fp, "- SCSI ID: %d, bus arbitration: %s (30)\n",
 		nvram[30] & 0x7, nvram[30] & 128 ? "off" : "on");
 }
+
+int NvRam_GetKbdLayoutCode(void)
+{
+	return nvram[NVRAM_KEYBOARDLAYOUT];
+}

@@ -18,6 +18,7 @@ const char Keymap_fileid[] = "Hatari keymap.c";
 #include "configuration.h"
 #include "file.h"
 #include "ikbd.h"
+#include "nvram.h"
 #include "joy.h"
 #include "shortcut.h"
 #include "str.h"
@@ -906,8 +907,12 @@ void Keymap_SetCountry(int countrycode)
 	}
 	else if (countrycode == TOS_LANG_ALL)
 	{
-		if (ConfigureParams.Keyboard.nCountryCode >= 0 &&
-		    ConfigureParams.Keyboard.nCountryCode <= 31)
+		if (NvRam_Present())
+		{
+			countrycode = NvRam_GetKbdLayoutCode();
+		}
+		else if (ConfigureParams.Keyboard.nCountryCode >= 0 &&
+		         ConfigureParams.Keyboard.nCountryCode <= 31)
 		{
 			countrycode = ConfigureParams.Keyboard.nCountryCode;
 		}
