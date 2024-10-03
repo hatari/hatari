@@ -135,7 +135,8 @@ static uint8_t Keymap_SymbolicToStScanCode_default(const SDL_Keysym* pKeySym)
 	 case SDLK_z: code = 0x2C; break;
 	 case SDLK_DELETE: code = 0x53; break;
 	 /* End of ASCII mapped keysyms */
-	 case 167: code = 0x07; break;		/* French § */
+	 case 167: code = 0x29; break;		/* Swiss § */
+	 case 168: code = 0x1B; break;		/* Swiss ¨ */
 	 case 176: code = 0x35; break;		/* Spanish ° */
 	 case 178: code = 0x29; break;		/* French ² */
 	 case 180: code = 0x0D; break;		/* German ' */
@@ -250,6 +251,7 @@ static uint8_t Keymap_SymbolicToStScanCode_FR(const SDL_Keysym* keysym)
 	 case SDLK_q: return 0x1E;
 	 case SDLK_w: return 0x2C;
 	 case SDLK_z: return 0x11;
+	 case 167: return 0x07;		/* French § */
 	 default: return Keymap_SymbolicToStScanCode_default(keysym);
 	}
 }
@@ -297,6 +299,19 @@ static uint8_t Keymap_SymbolicToStScanCode_SE(const SDL_Keysym* keysym)
 	 case SDLK_PLUS: return 0x0C;
 	 case SDLK_MINUS: return 0x35;
 	 case 252: return 0x1b;		/* ü */
+	 default: return Keymap_SymbolicToStScanCode_default(keysym);
+	}
+}
+
+/* Mapping for both, French and German variant of Swiss keyboard */
+static uint8_t Keymap_SymbolicToStScanCode_CH(const SDL_Keysym* keysym)
+{
+	switch (keysym->sym)
+	{
+	 case SDLK_CARET: return 0x0D;
+	 case 224: return 0x28;		/* à */
+	 case 232: return 0x1A;		/* è */
+	 case 233: return 0x27;		/* é */
 	 default: return Keymap_SymbolicToStScanCode_default(keysym);
 	}
 }
@@ -867,6 +882,8 @@ void Keymap_SetCountry(int countrycode)
 	 case 5:  func = Keymap_SymbolicToStScanCode_IT; break;
 	 case 10: /* Finish seems to be the same as Swedish */
 	 case 6:  func = Keymap_SymbolicToStScanCode_SE; break;
+	 case 7:
+	 case 8:  func = Keymap_SymbolicToStScanCode_CH; break;
 	 default: func = Keymap_SymbolicToStScanCode_default; break;
 	}
 
