@@ -331,6 +331,21 @@ static uint8_t Keymap_SymbolicToStScanCode_NO(const SDL_Keysym* keysym)
 	}
 }
 
+static uint8_t Keymap_SymbolicToStScanCode_DK(const SDL_Keysym* keysym)
+{
+	switch (keysym->sym)
+	{
+	 case SDLK_QUOTE: return 0x0D;
+	 case SDLK_PLUS: return 0x0C;
+	 case SDLK_MINUS: return 0x35;
+	 case SDLK_ASTERISK: return 0x1B;
+	 case 230: return 0x27;		/* æ */
+	 case 233: return 0x29;		/* é */
+	 case 248: return 0x28;		/* ø */
+	 default: return Keymap_SymbolicToStScanCode_default(keysym);
+	}
+}
+
 /**
  * Remap SDL scancode key to ST Scan code
  */
@@ -900,6 +915,7 @@ void Keymap_SetCountry(int countrycode)
 	 case 7:
 	 case 8:  func = Keymap_SymbolicToStScanCode_CH; break;
 	 case 11: func = Keymap_SymbolicToStScanCode_NO; break;
+	 case 12: func = Keymap_SymbolicToStScanCode_DK; break;
 	 default: func = Keymap_SymbolicToStScanCode_default; break;
 	}
 
