@@ -142,6 +142,7 @@ static uint8_t Keymap_SymbolicToStScanCode_default(const SDL_Keysym* pKeySym)
 	 case 223: code = 0x0C; break;		/* German ß */
 	 case 224: code = 0x0B; break;		/* French à */
 	 case 228: code = 0x28; break;		/* German ä */
+	 case 229: code = 0x1A; break;		/* Swedish å */
 	 case 231: code = 0x0A; break;		/* French ç */
 	 case 232: code = 0x08; break;		/* French è */
 	 case 233: code = 0x03; break;		/* French é */
@@ -284,6 +285,18 @@ static uint8_t Keymap_SymbolicToStScanCode_IT(const SDL_Keysym* keysym)
 	 case 224: return 0x28;		/* Italian à */
 	 case 232: return 0x1A;		/* Italian è */
 	 case 249: return 0x29;		/* Italian ù */
+	 default: return Keymap_SymbolicToStScanCode_default(keysym);
+	}
+}
+
+static uint8_t Keymap_SymbolicToStScanCode_SE(const SDL_Keysym* keysym)
+{
+	switch (keysym->sym)
+	{
+	 case SDLK_QUOTE: return 0x29;
+	 case SDLK_PLUS: return 0x0C;
+	 case SDLK_MINUS: return 0x35;
+	 case 252: return 0x1b;		/* ü */
 	 default: return Keymap_SymbolicToStScanCode_default(keysym);
 	}
 }
@@ -852,6 +865,8 @@ void Keymap_SetCountry(int countrycode)
 	 case 3:  func = Keymap_SymbolicToStScanCode_UK; break;
 	 case 4:  func = Keymap_SymbolicToStScanCode_ES; break;
 	 case 5:  func = Keymap_SymbolicToStScanCode_IT; break;
+	 case 10: /* Finish seems to be the same as Swedish */
+	 case 6:  func = Keymap_SymbolicToStScanCode_SE; break;
 	 default: func = Keymap_SymbolicToStScanCode_default; break;
 	}
 
