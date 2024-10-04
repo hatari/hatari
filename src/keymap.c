@@ -160,7 +160,7 @@ static uint8_t Keymap_SymbolicToStScanCode_default(const SDL_Keysym* pKeySym)
 	 case 241: code = 0x27; break; /* Ñ ES */
 	 case 242: code = 0x27; break; /* ò IT */
 	 case 246: code = 0x27; break; /* Ö DE/SE/CHDE */
-	 case 249: code = 0x28; break; /* ù FR/IT */
+	 case 249: code = 0x28; break; /* ù FR (ù IT -> 29) */
 	 case 252: code = 0x1A; break; /* Ü DE/CHDE */
 	 /* Numeric keypad: */
 	 case SDLK_KP_0: code = 0x70; break;
@@ -379,7 +379,7 @@ static uint8_t Keymap_SymbolicToStScanCode_IT(const SDL_Keysym* keysym)
 	 /* case 232: code = 0x1A; break;  è */
 	 /* case 236: code = 0x0D; break;  ì */
 	 /* case 242: code = 0x27; break;  ò */
-	 /* case 249: code = 0x29; break;  ù */
+	 case 249: code = 0x29; break; /* ù */
 	 default: code = Keymap_SymbolicToStScanCode_default(keysym);
 	}
 	return code;
