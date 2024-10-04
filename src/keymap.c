@@ -445,9 +445,24 @@ static uint8_t (* const Keymap_SymbolicToStScanCode_FI)(const SDL_Keysym* keysym
 
 static uint8_t Keymap_SymbolicToStScanCode_NO(const SDL_Keysym* keysym)
 {
-	/* TODO not yet reviewed. -- Brad Smith */
 	switch (keysym->sym)
 	{
+	 case SDLK_EXCLAIM: return 0x09;
+	 case SDLK_QUOTEDBL: return 0x04;
+	 case SDLK_HASH: return 0x29;
+	 case SDLK_DOLLAR: return 0x1B;
+	 case SDLK_AMPERSAND: return 0x02;
+	 /*case SDLK_QUOTE: return 0x28;*/
+	 /*case SDLK_PLUS: return 0x4E;*/
+	 /*case SDLK_MINUS: return 0x0C;*/
+	 case SDLK_SLASH: return 0x35;
+	 case SDLK_SEMICOLON: return 0x27;
+	 case SDLK_EQUALS: return 0x0D;
+	 case SDLK_GREATER: return 0x34;
+	 case SDLK_QUESTION: return 0x35;
+	 case SDLK_AT: return 0x28;
+	 case SDLK_CARET: return 0x2B;
+	 /* TODO not yet reviewed. The cases above ensure no changes from Thomas Huth's default map and should be re-evaluated on review. -- Brad Smith */
 	 case SDLK_QUOTE: return 0x29;
 	 case SDLK_PLUS: return 0x0C;
 	 case SDLK_MINUS: return 0x35;
@@ -461,9 +476,24 @@ static uint8_t Keymap_SymbolicToStScanCode_NO(const SDL_Keysym* keysym)
 
 static uint8_t Keymap_SymbolicToStScanCode_DK(const SDL_Keysym* keysym)
 {
-	/* TODO not yet reviewed. -- Brad Smith */
 	switch (keysym->sym)
 	{
+	 case SDLK_EXCLAIM: return 0x09;
+	 case SDLK_QUOTEDBL: return 0x04;
+	 case SDLK_HASH: return 0x29;
+	 case SDLK_DOLLAR: return 0x1B;
+	 case SDLK_AMPERSAND: return 0x02;
+	 /*case SDLK_QUOTE: return 0x28;*/
+	 /*case SDLK_PLUS: return 0x4E;*/
+	 /*case SDLK_MINUS: return 0x0C;*/
+	 case SDLK_SLASH: return 0x35;
+	 case SDLK_SEMICOLON: return 0x27;
+	 case SDLK_EQUALS: return 0x0D;
+	 case SDLK_GREATER: return 0x34;
+	 case SDLK_QUESTION: return 0x35;
+	 case SDLK_AT: return 0x28;
+	 case SDLK_CARET: return 0x2B;
+	 /* TODO not yet reviewed. The cases above ensure no changes from Thomas Huth's default map and should be re-evaluated on review. -- Brad Smith */
 	 case SDLK_QUOTE: return 0x0D;
 	 case SDLK_PLUS: return 0x0C;
 	 case SDLK_MINUS: return 0x35;
@@ -477,9 +507,24 @@ static uint8_t Keymap_SymbolicToStScanCode_DK(const SDL_Keysym* keysym)
 
 static uint8_t Keymap_SymbolicToStScanCode_NL(const SDL_Keysym* keysym)
 {
-	/* TODO not yet reviewed. -- Brad Smith */
 	switch (keysym->sym)
 	{
+	 case SDLK_EXCLAIM: return 0x09;
+	 case SDLK_QUOTEDBL: return 0x04;
+	 /*case SDLK_HASH: return 0x29;*/
+	 case SDLK_DOLLAR: return 0x1B;
+	 case SDLK_AMPERSAND: return 0x02;
+	 case SDLK_QUOTE: return 0x28;
+	 case SDLK_PLUS: return 0x4E;
+	 case SDLK_MINUS: return 0x0C;
+	 case SDLK_SLASH: return 0x35;
+	 case SDLK_SEMICOLON: return 0x27;
+	 case SDLK_EQUALS: return 0x0D;
+	 case SDLK_GREATER: return 0x34;
+	 case SDLK_QUESTION: return 0x35;
+	 case SDLK_AT: return 0x28;
+	 case SDLK_CARET: return 0x2B;
+	 /* TODO not yet reviewed. The cases above ensure no changes from Thomas Huth's default map and should be re-evaluated on review. -- Brad Smith */
 	 case SDLK_HASH: return 0x2B;
 	 case SDLK_BACKSLASH: return 0x60;
 	 default: return Keymap_SymbolicToStScanCode_default(keysym);
