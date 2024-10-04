@@ -439,6 +439,10 @@ static uint8_t Keymap_SymbolicToStScanCode_CH(const SDL_Keysym* keysym)
 	return code;
 }
 
+/* Maping for Finnish is identical to Swedish */
+static uint8_t (* const Keymap_SymbolicToStScanCode_FI)(const SDL_Keysym* keysym) =
+		Keymap_SymbolicToStScanCode_SE;
+
 static uint8_t Keymap_SymbolicToStScanCode_NO(const SDL_Keysym* keysym)
 {
 	/* TODO not yet reviewed. -- Brad Smith */
@@ -1048,19 +1052,29 @@ void Keymap_SetCountry(int countrycode)
 
 	switch (countrycode)
 	{
-	 case 1:  func = Keymap_SymbolicToStScanCode_DE; break;
-	 case 2:  func = Keymap_SymbolicToStScanCode_FR; break;
-	 case 3:  func = Keymap_SymbolicToStScanCode_UK; break;
-	 case 4:  func = Keymap_SymbolicToStScanCode_ES; break;
-	 case 5:  func = Keymap_SymbolicToStScanCode_IT; break;
-	 case 6:  func = Keymap_SymbolicToStScanCode_SE; break;
-	 case 7:  /* CHFR/CHDE share the same implementation. */
-	 case 8:  func = Keymap_SymbolicToStScanCode_CH; break;
-	 case 10: func = Keymap_SymbolicToStScanCode_SE; break; /* FI mapping is identical to SE*/
-	 case 11: func = Keymap_SymbolicToStScanCode_NO; break;
-	 case 12: func = Keymap_SymbolicToStScanCode_DK; break;
-	 case 14: func = Keymap_SymbolicToStScanCode_NL; break;
-	 default: func = Keymap_SymbolicToStScanCode_US; break; /* US default for unknown. */
+	 case TOS_LANG_US:    func = Keymap_SymbolicToStScanCode_US; break;
+	 case TOS_LANG_DE:    func = Keymap_SymbolicToStScanCode_DE; break;
+	 case TOS_LANG_FR:    func = Keymap_SymbolicToStScanCode_FR; break;
+	 case TOS_LANG_UK:    func = Keymap_SymbolicToStScanCode_UK; break;
+	 case TOS_LANG_ES:    func = Keymap_SymbolicToStScanCode_ES; break;
+	 case TOS_LANG_IT:    func = Keymap_SymbolicToStScanCode_IT; break;
+	 case TOS_LANG_SE:    func = Keymap_SymbolicToStScanCode_SE; break;
+	 case TOS_LANG_CH_FR: func = Keymap_SymbolicToStScanCode_CH; break;
+	 case TOS_LANG_CH_DE: func = Keymap_SymbolicToStScanCode_CH; break;
+	 /* case TOS_LANG_TR unimplemented */
+	 case TOS_LANG_FI:    func = Keymap_SymbolicToStScanCode_FI; break;
+	 case TOS_LANG_NO:    func = Keymap_SymbolicToStScanCode_NO; break;
+	 case TOS_LANG_DK:    func = Keymap_SymbolicToStScanCode_DK; break;
+	 /* case TOS_LANG_SA unimplemented */
+	 case TOS_LANG_NL:    func = Keymap_SymbolicToStScanCode_NL; break;
+	 /* case TOS_LANG_CS unimplemented */
+	 /* case TOS_LANG_HU unimplemented */
+	 /* case TOS_LANG_PL unimplemented */
+	 /* case TOS_LANG_RU unimplemented */
+	 /* case TOS_LANG_RO unimplemented */
+	 /* case TOS_LANG_GR unimplemented */
+	 /* US fallback for unknown. */
+	 default:             func = Keymap_SymbolicToStScanCode_US; break;
 	}
 
 	Keymap_SymbolicToStScanCode = func;
