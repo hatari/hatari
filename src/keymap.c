@@ -305,10 +305,10 @@ static uint8_t Keymap_SymbolicToStScanCode_FR(const SDL_Keysym* keysym)
 	 case SDLK_z: code = 0x11; break;
 	 case 167: code = 0x07; break; /* § CHFR/CHDE/SE to ST §6 */
 	 /* case 178: code = 0x29; break;  ² as ST `£ (no natural mapping) */
-	 case 224: code = 0x0B; break; /* à BÉPO FR as ST à0 */
-	 case 231: code = 0x0A; break; /* ç BÉPO FR as ST ç9 */
-	 case 232: code = 0x08; break; /* è BÉPO FR as ST è7 */
-	 case 233: code = 0x03; break; /* é BÉPO FR as ST é2 */
+	 case 224: code = 0x0B; break; /* à IT/CHFR or BÉPO FR as ST à0 */
+	 case 231: code = 0x0A; break; /* ç ES or BÉPO FR as ST ç9 */
+	 case 232: code = 0x08; break; /* è IT/CHFR or BÉPO FR as ST è7 */
+	 case 233: code = 0x03; break; /* é CHFR or BÉPO FR as ST é2 */
 	 /* case 249: code = 0x28; break;  ù */
 	 default: code = Keymap_SymbolicToStScanCode_default(keysym);
 	}
