@@ -181,9 +181,9 @@ static uint8_t Keymap_SymbolicToStScanCode_default(const SDL_Keysym* pKeySym)
 	 case SDLK_LEFT: code = 0x4B; break;
 	 case SDLK_INSERT: code = 0x52; break;
 	 case SDLK_HOME: code = 0x47; break;
-	 case SDLK_END: code = 0x61; break;
-	 case SDLK_PAGEUP: code = 0x63; break;
-	 case SDLK_PAGEDOWN: code = 0x64; break;
+	 case SDLK_END: code = 0x61; break;         /* ST Undo */
+	 case SDLK_PAGEUP: code = 0x63; break;      /* ST ( */
+	 case SDLK_PAGEDOWN: code = 0x64; break;    /* ST ) */
 	 /* Function keys */
 	 case SDLK_F1: code = 0x3B; break;
 	 case SDLK_F2: code = 0x3C; break;
@@ -195,12 +195,12 @@ static uint8_t Keymap_SymbolicToStScanCode_default(const SDL_Keysym* pKeySym)
 	 case SDLK_F8: code = 0x42; break;
 	 case SDLK_F9: code = 0x43; break;
 	 case SDLK_F10: code = 0x44; break;
-	 case SDLK_F11: code = 0x62; break;
-	 case SDLK_F12: code = 0x61; break;
-	 case SDLK_F13: code = 0x62; break;
+	 case SDLK_F11: code = 0x62; break;         /* ST Help */
+	 case SDLK_F12: code = 0x61; break;         /* ST Undo */
+	 case SDLK_F13: code = 0x62; break;         /* ST Help */
 	 /* Key state modifier keys */
 	 case SDLK_CAPSLOCK: code = 0x3A; break;
-	 case SDLK_SCROLLLOCK: code = 0x61; break;
+	 case SDLK_SCROLLLOCK: code = 0x61; break;  /* ST Undo */
 	 case SDLK_RSHIFT: code = 0x36; break;
 	 case SDLK_LSHIFT: code = 0x2A; break;
 	 case SDLK_RCTRL: code = 0x1D; break;
@@ -209,7 +209,7 @@ static uint8_t Keymap_SymbolicToStScanCode_default(const SDL_Keysym* pKeySym)
 	 case SDLK_LALT: code = 0x38; break;
 	 /* Miscellaneous function keys */
 	 case SDLK_HELP: code = 0x62; break;
-	 case SDLK_PRINTSCREEN: code = 0x62; break;
+	 case SDLK_PRINTSCREEN: code = 0x62; break; /* ST Help */
 	 case SDLK_UNDO: code = 0x61; break;
 	 default: code = ST_NO_SCANCODE;
 	}
