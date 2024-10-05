@@ -920,18 +920,18 @@ void Keymap_SetCountry(int countrycode)
 
 	switch (countrycode)
 	{
-	 case 1:  func = Keymap_SymbolicToStScanCode_DE; break;
-	 case 2:  func = Keymap_SymbolicToStScanCode_FR; break;
-	 case 3:  func = Keymap_SymbolicToStScanCode_UK; break;
-	 case 4:  func = Keymap_SymbolicToStScanCode_ES; break;
-	 case 5:  func = Keymap_SymbolicToStScanCode_IT; break;
-	 case 10: /* Finish seems to be the same as Swedish */
-	 case 6:  func = Keymap_SymbolicToStScanCode_SE; break;
-	 case 7:
-	 case 8:  func = Keymap_SymbolicToStScanCode_CH; break;
-	 case 11: func = Keymap_SymbolicToStScanCode_NO; break;
-	 case 12: func = Keymap_SymbolicToStScanCode_DK; break;
-	 case 14: func = Keymap_SymbolicToStScanCode_NL; break;
+	 case TOS_LANG_DE:    func = Keymap_SymbolicToStScanCode_DE; break;
+	 case TOS_LANG_FR:    func = Keymap_SymbolicToStScanCode_FR; break;
+	 case TOS_LANG_UK:    func = Keymap_SymbolicToStScanCode_UK; break;
+	 case TOS_LANG_ES:    func = Keymap_SymbolicToStScanCode_ES; break;
+	 case TOS_LANG_IT:    func = Keymap_SymbolicToStScanCode_IT; break;
+	 case TOS_LANG_FI:    /* Finish seems to be the same as Swedish */
+	 case TOS_LANG_SE:    func = Keymap_SymbolicToStScanCode_SE; break;
+	 case TOS_LANG_CH_FR:
+	 case TOS_LANG_CH_DE: func = Keymap_SymbolicToStScanCode_CH; break;
+	 case TOS_LANG_NO:    func = Keymap_SymbolicToStScanCode_NO; break;
+	 case TOS_LANG_DK:    func = Keymap_SymbolicToStScanCode_DK; break;
+	 case TOS_LANG_NL:    func = Keymap_SymbolicToStScanCode_NL; break;
 	 default: func = Keymap_SymbolicToStScanCode_default; break;
 	}
 

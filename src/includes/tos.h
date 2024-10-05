@@ -13,7 +13,8 @@
  * by currently available TOS versions.  Subset of:
  * https://freemint.github.io/tos.hyp/en/bios_cookiejar.html#Cookie_2C_20_AKP
  */
-enum {
+enum
+{
       TOS_LANG_US = 0,
       TOS_LANG_DE = 1,
       TOS_LANG_FR = 2,
