@@ -1010,9 +1010,6 @@ int main(int argc, char *argv[])
 	/* Needed on maemo but useful also with normal X11 window managers for
 	 * window grouping when you have multiple Hatari SDL windows open */
 	setenv("SDL_VIDEO_X11_WMCLASS", "hatari", 1);
-
-	/* Needed for proper behavior of Caps Lock on some systems */
-	setenv("SDL_DISABLE_LOCK_KEYS", "1", 1);
 #endif
 
 	/* Init emulator system */
