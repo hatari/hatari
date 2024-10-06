@@ -143,17 +143,31 @@ static uint8_t Keymap_SymbolicToStScanCode_default(const SDL_Keysym* pKeySym)
 	 case 180: code = 0x0D; break;		/* German ' */
 	 case 223: code = 0x0C; break;		/* German ß */
 	 case 224: code = 0x0B; break;		/* French à */
+	 case 225: code = 0x09; break;		/* Czech á */
 	 case 228: code = 0x28; break;		/* German ä */
 	 case 229: code = 0x1A; break;		/* Swedish å */
 	 case 231: code = 0x0A; break;		/* French ç */
 	 case 232: code = 0x08; break;		/* French è */
 	 case 233: code = 0x03; break;		/* French é */
 	 case 236: code = 0x0D; break;		/* Italian ì */
+	 case 237: code = 0x0A; break;		/* Czech í */
 	 case 241: code = 0x27; break;		/* Spanish ñ */
 	 case 242: code = 0x27; break;		/* Italian ò */
+	 case 243: code = 0x02; break;		/* Czech ó */
 	 case 246: code = 0x27; break;		/* German ö */
 	 case 249: code = 0x28; break;		/* French ù */
+	 case 250: code = 0x1A; break;		/* Czech ú */
 	 case 252: code = 0x1A; break;		/* German ü */
+	 case 253: code = 0x08; break;		/* Czech ý */
+	 case 269: code = 0x05; break;		/* Czech č */
+	 case 271: code = 0x1B; break;		/* Czech ď */
+	 case 283: code = 0x03; break;		/* Czech ě */
+	 case 328: code = 0x2B; break;		/* Czech ň */
+	 case 345: code = 0x06; break;		/* Czech ř */
+	 case 353: code = 0x04; break;		/* Czech š */
+	 case 357: code = 0x28; break;		/* Czech ť */
+	 case 367: code = 0x27; break;		/* Czech ů */
+	 case 382: code = 0x07; break;		/* Czech ž */
 	 /* Numeric keypad: */
 	 case SDLK_KP_0: code = 0x70; break;
 	 case SDLK_KP_1: code = 0x6D; break;
@@ -360,6 +374,21 @@ static uint8_t Keymap_SymbolicToStScanCode_NL(const SDL_Keysym* keysym)
 	 default: return Keymap_SymbolicToStScanCode_default(keysym);
 	}
 }
+
+static uint8_t Keymap_SymbolicToStScanCode_CZ(const SDL_Keysym* keysym)
+{
+	switch (keysym->sym)
+	{
+	 case SDLK_HASH: return 0x29;
+	 case SDLK_QUOTE: return 0x0D;
+	 case SDLK_EQUALS: return 0x0C;
+	 case SDLK_y: return 0x2C;
+	 case SDLK_z: return 0x15;
+	 case 233: return 0x0B;		/* é */
+	 default: return Keymap_SymbolicToStScanCode_default(keysym);
+	}
+}
+
 
 /**
  * Remap SDL scancode key to ST Scan code
@@ -937,6 +966,7 @@ void Keymap_SetCountry(int countrycode)
 	 case TOS_LANG_NO:    func = Keymap_SymbolicToStScanCode_NO; break;
 	 case TOS_LANG_DK:    func = Keymap_SymbolicToStScanCode_DK; break;
 	 case TOS_LANG_NL:    func = Keymap_SymbolicToStScanCode_NL; break;
+	 case TOS_LANG_CS:    func = Keymap_SymbolicToStScanCode_CZ; break;
 	 default: func = Keymap_SymbolicToStScanCode_default; break;
 	}
 
