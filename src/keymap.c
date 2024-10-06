@@ -56,8 +56,8 @@ void Keymap_Init(void)
 
 /**
  * Default function for mapping SDL symbolic key to ST scan code.
- * This is basically the US QWERTY ST keyboard with some additional
- * international key fallbacks.
+ * This contains the ST keycode used by the majority of TOS regions for
+ * that semantic symbol.
  */
 static uint8_t Keymap_SymbolicToStScanCode_default(const SDL_Keysym* pKeySym)
 {
@@ -82,7 +82,7 @@ static uint8_t Keymap_SymbolicToStScanCode_default(const SDL_Keysym* pKeySym)
 	 case SDLK_ASTERISK: code = 0x66; break;
 	 case SDLK_PLUS: code = 0x4e; break;
 	 case SDLK_COMMA: code = 0x33; break;
-	 case SDLK_MINUS: code = 0x0C; break;
+	 case SDLK_MINUS: code = 0x35; break;       /* default for DE/IT/SE/CH/FI/NO/DK/CZ */
 	 case SDLK_PERIOD: code = 0x34; break;
 	 case SDLK_SLASH: code = 0x35; break;
 	 case SDLK_0: code = 0x0B; break;
@@ -220,13 +220,21 @@ static uint8_t Keymap_SymbolicToStScanCode_default(const SDL_Keysym* pKeySym)
 static uint8_t (*Keymap_SymbolicToStScanCode)(const SDL_Keysym* pKeySym) =
 		Keymap_SymbolicToStScanCode_default;
 
+static uint8_t Keymap_SymbolicToStScanCode_US(const SDL_Keysym* keysym)
+{
+	switch (keysym->sym)
+	{
+	 case SDLK_MINUS: return 0x0C;
+	 default: return Keymap_SymbolicToStScanCode_default(keysym);
+	}
+}
+
 static uint8_t Keymap_SymbolicToStScanCode_DE(const SDL_Keysym* keysym)
 {
 	switch (keysym->sym)
 	{
 	 case SDLK_HASH: return 0x29;
 	 case SDLK_PLUS: return 0x1B;
-	 case SDLK_MINUS: return 0x35;
 	 case SDLK_SLASH: return 0x65;
 	 case SDLK_y: return 0x2C;
 	 case SDLK_z: return 0x15;
@@ -260,6 +268,7 @@ static uint8_t Keymap_SymbolicToStScanCode_UK(const SDL_Keysym* keysym)
 {
 	switch (keysym->sym)
 	{
+	 case SDLK_MINUS: return 0x0C;
 	 case SDLK_BACKSLASH: return 0x60;
 	 default: return Keymap_SymbolicToStScanCode_default(keysym);
 	}
@@ -269,6 +278,7 @@ static uint8_t Keymap_SymbolicToStScanCode_ES(const SDL_Keysym* keysym)
 {
 	switch (keysym->sym)
 	{
+	 case SDLK_MINUS: return 0x0C;
 	 case SDLK_SEMICOLON: return 0x28;
 	 case SDLK_BACKQUOTE: return 0x1B;
 	 case 231: return 0x29;		/* Spanish ç */
@@ -282,7 +292,6 @@ static uint8_t Keymap_SymbolicToStScanCode_IT(const SDL_Keysym* keysym)
 	{
 	 case SDLK_QUOTE: return 0x0C;
 	 case SDLK_PLUS: return 0x1B;
-	 case SDLK_MINUS: return 0x35;
 	 case 224: return 0x28;		/* Italian à */
 	 case 232: return 0x1A;		/* Italian è */
 	 case 249: return 0x29;		/* Italian ù */
@@ -296,7 +305,6 @@ static uint8_t Keymap_SymbolicToStScanCode_SE(const SDL_Keysym* keysym)
 	{
 	 case SDLK_QUOTE: return 0x29;
 	 case SDLK_PLUS: return 0x0C;
-	 case SDLK_MINUS: return 0x35;
 	 case 252: return 0x1b;		/* ü */
 	 default: return Keymap_SymbolicToStScanCode_default(keysym);
 	}
@@ -321,7 +329,6 @@ static uint8_t Keymap_SymbolicToStScanCode_NO(const SDL_Keysym* keysym)
 	{
 	 case SDLK_QUOTE: return 0x29;
 	 case SDLK_PLUS: return 0x0C;
-	 case SDLK_MINUS: return 0x35;
 	 case 230: return 0x28;		/* æ */
 	 case 233: return 0x0D;		/* é */
 	 case 248: return 0x27;		/* ø */
@@ -336,7 +343,6 @@ static uint8_t Keymap_SymbolicToStScanCode_DK(const SDL_Keysym* keysym)
 	{
 	 case SDLK_QUOTE: return 0x0D;
 	 case SDLK_PLUS: return 0x0C;
-	 case SDLK_MINUS: return 0x35;
 	 case SDLK_ASTERISK: return 0x1B;
 	 case 230: return 0x27;		/* æ */
 	 case 233: return 0x29;		/* é */
@@ -349,6 +355,7 @@ static uint8_t Keymap_SymbolicToStScanCode_NL(const SDL_Keysym* keysym)
 {
 	switch (keysym->sym)
 	{
+	 case SDLK_MINUS: return 0x0C;
 	 case SDLK_BACKSLASH: return 0x60;
 	 default: return Keymap_SymbolicToStScanCode_default(keysym);
 	}
@@ -917,6 +924,7 @@ void Keymap_SetCountry(int countrycode)
 
 	switch (countrycode)
 	{
+	 case TOS_LANG_US:    func = Keymap_SymbolicToStScanCode_US; break;
 	 case TOS_LANG_DE:    func = Keymap_SymbolicToStScanCode_DE; break;
 	 case TOS_LANG_FR:    func = Keymap_SymbolicToStScanCode_FR; break;
 	 case TOS_LANG_UK:    func = Keymap_SymbolicToStScanCode_UK; break;
