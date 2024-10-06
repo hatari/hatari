@@ -73,7 +73,7 @@ static uint8_t Keymap_SymbolicToStScanCode_default(const SDL_Keysym* pKeySym)
 	 case SDLK_SPACE: code = 0x39; break;
 	 case SDLK_EXCLAIM: code = 0x09; break;     /* on azerty? */
 	 case SDLK_QUOTEDBL: code = 0x04; break;    /* on azerty? */
-	 case SDLK_HASH: code = 0x29; break;
+	 case SDLK_HASH: code = 0x2B; break;        /* DE, UK host only, for FR/UK/DK/NL TOS */
 	 case SDLK_DOLLAR: code = 0x1b; break;      /* on azerty */
 	 case SDLK_AMPERSAND: code = 0x02; break;   /* on azerty? */
 	 case SDLK_QUOTE: code = 0x28; break;
@@ -238,7 +238,6 @@ static uint8_t Keymap_SymbolicToStScanCode_FR(const SDL_Keysym* keysym)
 {
 	switch (keysym->sym)
 	{
-	 case SDLK_HASH: return 0x2B;
 	 case SDLK_QUOTE: return 0x05;
 	 case SDLK_LEFTPAREN: return 0x06;
 	 case SDLK_RIGHTPAREN: return 0x0c;
@@ -261,7 +260,6 @@ static uint8_t Keymap_SymbolicToStScanCode_UK(const SDL_Keysym* keysym)
 {
 	switch (keysym->sym)
 	{
-	 case SDLK_HASH: return 0x2B;
 	 case SDLK_BACKSLASH: return 0x60;
 	 default: return Keymap_SymbolicToStScanCode_default(keysym);
 	}
@@ -351,7 +349,6 @@ static uint8_t Keymap_SymbolicToStScanCode_NL(const SDL_Keysym* keysym)
 {
 	switch (keysym->sym)
 	{
-	 case SDLK_HASH: return 0x2B;
 	 case SDLK_BACKSLASH: return 0x60;
 	 default: return Keymap_SymbolicToStScanCode_default(keysym);
 	}
