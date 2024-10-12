@@ -833,10 +833,10 @@ static symbol_list_t *loadSymFile(const char *path, symtype_t symtype,
 	strcpy(symfile, path);
 	strcpy(symfile + len - 3, "sym");
 
-	fprintf(stderr, "Checking: %s\n", symfile);
 	if (!File_Exists(symfile)) {
 		return NULL;
 	}
+	fprintf(stderr, "Loading sym file: %s\n", symfile);
 
 	uint32_t offsets[3] = { loadaddr, loadaddr, loadaddr };
 	return Symbols_Load(symfile, offsets, maxaddr, symtype);
