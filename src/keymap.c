@@ -613,16 +613,68 @@ static uint8_t Keymap_RemapKeyToSTScanCode(const SDL_Keysym* pKeySym)
 }
 
 
-/*-----------------------------------------------------------------------*/
+/**
+ * Fill host (PC) key based on host "spec" string.
+ * Return true on success
+ */
+static bool Keymap_ParseHostSpec(const char *spec, int *scancode)
+{
+	int key;
+	if (!spec)
+		return false;
+
+	key = atoi(spec);    /* Direct key code? */
+	if (key < 10)
+	{
+		/* If it's not a valid number >= 10, then
+		 * assume we've got a symbolic key name
+		 */
+		int offset = 0;
+		/* quoted character (e.g. comment line char)? */
+		if (*spec == '\\' && strlen(spec) == 2)
+			offset = 1;
+		key = Keymap_GetKeyFromName(spec+offset);
+	}
+	if (key < 8)
+	{
+		Log_Printf(LOG_WARN, "Invalid PC key: '%s' (%d >= 8)\n",
+			   spec, key);
+		return false;
+	}
+	*scancode = key;
+	return true;
+}
+
+
+/**
+ * Fill guest (ST) key based on guest "spec" string.
+ * Return true on success
+ */
+static bool Keymap_ParseGuestSpec(const char *spec, int *scancode)
+{
+	int key;
+	if (!spec)
+		return false;
+
+	key = atoi(spec);
+	if (key <= 0 || key > KBD_MAX_SCANCODE)
+	{
+		Log_Printf(LOG_WARN, "Invalid ST scancode: '%s' (0 > %d < %d)\n",
+			   spec, key, KBD_MAX_SCANCODE);
+		return false;
+	}
+	*scancode = key;
+	return true;
+}
+
+
 /**
  * Load keyboard remap file
  */
 void Keymap_LoadRemapFile(const char *pszFileName)
 {
-	char szString[1024];
-	int STScanCode, PCKeyCode;
 	FILE *in;
-	int idx = 0;
+	int idx, linenro, fails;
 
 	/* Initialize table with default values */
 	memset(LoadedKeymap, 0, sizeof(LoadedKeymap));
@@ -633,72 +685,72 @@ void Keymap_LoadRemapFile(const char *pszFileName)
 	/* Attempt to load file */
 	if (!File_Exists(pszFileName))
 	{
-		Log_Printf(LOG_DEBUG, "Keymap_LoadRemapFile: '%s' not a file\n", pszFileName);
+		Log_Printf(LOG_WARN, "The keymap file '%s' does not exist\n",
+		           pszFileName);
 		return;
 	}
 	in = fopen(pszFileName, "r");
 	if (!in)
 	{
-		Log_Printf(LOG_ERROR, "Keymap_LoadRemapFile: failed to "
-			   " open keymap file '%s'\n", pszFileName);
+		Log_Printf(LOG_ERROR, "Failed to open keymap file '%s'\n", pszFileName);
 		return;
 	}
 
-	while (!feof(in) && idx < KBD_MAX_SCANCODE)
+	idx = linenro = fails = 0;
+	while (!feof(in))
 	{
-		/* Read line from file */
-		if (fgets(szString, sizeof(szString), in) == NULL)
-			break;
-		/* Remove white-space from start of line */
-		Str_Trim(szString);
-		if (strlen(szString)>0)
-		{
-			char *p;
-			/* Is a comment? */
-			if (szString[0] == ';' || szString[0] == '#')
-				continue;
-			/* Cut out the values */
-			p = strtok(szString, ",");
-			if (!p)
-				continue;
-			Str_Trim(szString);
-			PCKeyCode = atoi(szString);    /* Direct key code? */
-			if (PCKeyCode < 10)
-			{
-				/* If it's not a valid number >= 10, then
-				 * assume we've got a symbolic key name
-				 */
-				int offset = 0;
-				/* quoted character (e.g. comment line char)? */
-				if (*szString == '\\' && strlen(szString) == 2)
-					offset = 1;
-				PCKeyCode = Keymap_GetKeyFromName(szString+offset);
-			}
-			p = strtok(NULL, "\n");
-			if (!p)
-				continue;
-			STScanCode = atoi(p);
-			/* Store into remap table, check both value within range */
-			if (STScanCode > 0 && STScanCode <= KBD_MAX_SCANCODE
-			    && PCKeyCode >= 8)
-			{
-				LOG_TRACE(TRACE_KEYMAP,
-				          "keymap from file: sym=%i --> scan=%i\n",
-				          PCKeyCode, STScanCode);
-				LoadedKeymap[idx][0] = PCKeyCode;
-				LoadedKeymap[idx][1] = STScanCode;
-				idx += 1;
-			}
-			else
-			{
-				Log_Printf(LOG_WARN, "Could not parse keymap file:"
-				           " '%s' (%d >= 8), '%s' (0 > %d <= %d)\n",
-					   szString, PCKeyCode, p, STScanCode, KBD_MAX_SCANCODE);
-			}
-		}
-	}
+		char *line, *saveptr, buf[1024];
+		const char *host, *guest;
 
+		if (idx >= ARRAY_SIZE(LoadedKeymap))
+		{
+			Log_Printf(LOG_WARN, "Mappings specified already for"
+				   "supported number (%d) of keys, skipping"
+				   "rest of '%s' at line %d\n",
+				   ARRAY_SIZE(LoadedKeymap), pszFileName, linenro);
+			fails++;
+			break;
+		}
+
+		/* Read line from file */
+		if (fgets(buf, sizeof(buf), in) == NULL)
+			break;
+		linenro++;
+
+		/* Remove white-space from start of line */
+		line = Str_Trim(buf);
+
+		/* Ignore empty line and comments */
+		if (strlen(line) == 0 || line[0] == ';' || line[0] == '#')
+			continue;
+
+		/* get the host (PC) key spec */
+		host = Str_Trim(strtok_r(line, ",", &saveptr));
+		if (!Keymap_ParseHostSpec(host, &LoadedKeymap[idx][0]))
+		{
+			Log_Printf(LOG_WARN, "Failed to parse host (PC/SDL) part '%s' of line %d in: %s\n",
+				   host, linenro, pszFileName);
+			fails++;
+			continue;
+		}
+
+		/* Get the guest (ST) key spec */
+		guest = Str_Trim(strtok_r(NULL, "\n", &saveptr));
+		if (!Keymap_ParseGuestSpec(guest, &LoadedKeymap[idx][1]))
+		{
+			Log_Printf(LOG_WARN, "Failed to parse guest (ST) part '%s' of line %d in: %s\n",
+				   guest, linenro, pszFileName);
+			fails++;
+			continue;
+		}
+		LOG_TRACE(TRACE_KEYMAP, "key mapping from file: host %s => guest %s\n",
+			  host, guest);
+		idx += 1;
+	}
 	fclose(in);
+
+	if (fails)
+		Log_AlertDlg(LOG_ERROR, "%d keymap file parsing failures\n(see console log for details)", fails);
 }
 
 
