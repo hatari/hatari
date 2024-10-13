@@ -951,6 +951,24 @@ static void trace_cpu_disasm(void)
 	m68k_disasm_file(TraceFile, m68k_getpc (), NULL, m68k_getpc (), 1);
 }
 
+static void trace_cpu_disasm_mmu030(void)
+{
+	uaecptr new_addr = mmu030_translate(m68k_getpc(), regs.s != 0, false, false);
+
+	if (LOG_TRACE_LEVEL(TRACE_CPU_VIDEO_CYCLES)) {
+		int FrameCycles, HblCounterVideo, LineCycles;
+		Video_GetPosition ( &FrameCycles, &HblCounterVideo, &LineCycles );
+		LOG_TRACE_DIRECT_INIT ();
+		LOG_TRACE_DIRECT ( "cpu video_cyc=%6d %3d@%3d %"PRIu64" : ",
+				   FrameCycles, LineCycles, HblCounterVideo,
+				   CyclesGlobalClockCounter );
+	}
+
+	if ( new_addr != m68k_getpc() )
+		f_out(TraceFile , "(%08x) " , m68k_getpc() );
+	m68k_disasm_file(TraceFile, new_addr, NULL, new_addr, 1);
+}
+
 void (*x_do_cycles_hatari_blitter_save)(int);
 void (*x_do_cycles_pre_hatari_blitter_save)(int);
 void (*x_do_cycles_post_hatari_blitter_save)(int, uae_u32);
@@ -6549,7 +6567,7 @@ insretry:
 					//m68k_dumpstate_file(stderr, NULL, 0xffffffff);
 					if ((LOG_TRACE_LEVEL(TRACE_CPU_DISASM)) && (!regs.stopped))
 					{
-						trace_cpu_disasm();
+						trace_cpu_disasm_mmu030();
 					}
 #endif
 					regs.opcode = regs.irc = mmu030_opcode;
