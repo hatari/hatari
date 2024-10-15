@@ -1326,6 +1326,7 @@ Working applications:
 - Calamus SL demo (1991 demo version)
 - Calamus SL/L/LE 20xx lite versions
   - Need either GDOS or older EmuTOS v0.9.5 - v0.9.12
+- Hardware 2.0 (works also on Falcon)
 - Mandelbrot playtime (fracplay, uses FPU)
 - M_PLAYER v4.02
   - https://gtello.pagesperso-orange.fr/mplayere.htm
@@ -1372,6 +1373,7 @@ Working games:
 - GEM NetHack v3.4.3
 - GEM Santarun
 - GEM Slashem v3.3.1
+- "Hacked" Heretic & Hexen (SDL ports by Miro)
 - OpenDUNE
 - OpenTTD (start from TT-low with 256MBs of TT-RAM)
 - Oxyd (Falcon version)
