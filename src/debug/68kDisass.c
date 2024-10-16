@@ -315,7 +315,7 @@ void Disasm (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
 	}
 #endif
 
-	m68k_disasm_file (f, addr, nextpc, addr, cnt);
+	m68k_disasm_file_wrapper (f, addr, nextpc, addr, cnt);
 }
 
 /**
