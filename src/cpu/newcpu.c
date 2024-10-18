@@ -10496,7 +10496,24 @@ uae_u32 get_word_ce030_prefetch_opcode (int o)
 	return get_word_ce030_prefetch_2(o);
 }
 
+// [HATARI] Define next line to check for 68030 prefetch mismatch
+//#define WINUAE_FOR_HATARI_DEBUG_PREFETCH_030
+#ifdef WINUAE_FOR_HATARI_DEBUG_PREFETCH_030
+uae_u32 get_word_030_prefetch_real (int o);
 uae_u32 get_word_030_prefetch (int o)
+{
+	uae_u32 v;
+
+	v = get_word_030_prefetch_real(o);
+	if ( ( v & 0xffff ) != ( get_iword_mmu030(o) & 0xffff ) )
+		fprintf ( stderr , "prefetch mismatch m68k_getpc=%x o=%d prefetch=%04x != mem=%04x, i-cache error ?\n" , m68k_getpc() , o , v&0xffff , get_iword_mmu030(o)&0xffff );
+
+	return v;
+}
+uae_u32 get_word_030_prefetch_real (int o)
+#else
+uae_u32 get_word_030_prefetch (int o)
+#endif
 {
 	uae_u32 pc = m68k_getpc () + o;
 	uae_u32 v;
