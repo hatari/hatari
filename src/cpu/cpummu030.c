@@ -3567,6 +3567,18 @@ void m68k_do_rte_mmu030c (uaecptr a7)
 			fill_prefetch_030_ntx();
 		}
 	}
+
+#ifdef WINUAE_FOR_HATARI
+	/*
+	 * [NP] NOTE : there's a bug when restoring cpu state after a "frame B" bus error,
+	 * the prefetch values in regs.prefetch020[] are not correct (they match PC+2 or PC+4, not PC)
+	 * As a temporary fix we force a full reload of prefetch registers for the current PC
+	 */
+	if (frame == 0xb) {
+		mmu030_opcode = -1;
+		fill_prefetch_030_ntx();
+	}
+#endif
 }
 
 
