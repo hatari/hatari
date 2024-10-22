@@ -25,6 +25,8 @@ Option changes:
 - "--vme none/dummy" option removed as (now) redundant
 
 Emulation improvements:
+- 030+MMU:
+  - Workaround to correct prefetch data after bus errors
 - DSP:
   - Fix: JMP can also form a long interrupt instruction
 - VME/SCU:
@@ -43,6 +45,8 @@ Emulator improvements:
 - SDL-GUI (and config options):
   - Improvements to GUI font characters
   - Add separate option for enabling/disabling >=030 CPU data cache
+- Keyboard:
+  - Symbolic key mapping improved for different TOS language versions
 - Memory snapshots:
   - Fix: re/store all relevant YM2149 & MMU state variables
 - Joysticks:
@@ -87,6 +91,7 @@ Fixed programs:
 - Voxx, both demo & free full version (DSP JMP instruction)
 - Ultimate Virus Killer (GEMDOS HD, "***.***" file mask)
 - JAM (stuttering sound with monochrome monitor in Falcon mode)
+- Linux, user-space program crashes (prefetch with 030 MMU)
 
 Fixed games:
 - Ready Steady Bang! (GEMDOS HD Fattrib())
