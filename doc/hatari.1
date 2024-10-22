@@ -654,15 +654,16 @@ Log output level (x=debug/todo/info/warn/error/fatal)
 Show dialog for log messages above given level
 .TP
 .B \-\-run\-vbls <x>
-Exit after X VBLs.  Often used with --benchmark option
+Exit after X VBLs.  Used with --benchmark mode
 .TP
 .B \-\-benchmark
-Start in benchmark mode.  Currently same as --fast-forward mode,
-except it can't be disabled at run-time. Allows better measuring for
-the speed of the emulation in frames per second.  Unless you're
-specifically measuring emulator audio and screen processing speed,
-disable them (--sound off/--disable-video on) to have as little OS
-overhead as possible
+Start in benchmark mode (use with --run-vbls). Same as --fast-forward
+mode, except it cannot be disabled at run-time, and FPS will be
+printed on emulation exit (and pausing) regardless of log level.
+Allows better measuring of emulation speed, in frames per second.
+Unless you're specifically measuring emulator audio and screen
+processing speed, disable them (--sound off/--disable-video on) to
+have as little OS overhead as possible
 
 .SH "INPUT HANDLING"
 Hatari provides special input handling for different purposes.

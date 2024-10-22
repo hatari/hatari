@@ -179,6 +179,32 @@ static void Time_Delay(int64_t ticks_micro)
 #endif
 }
 
+/*-----------------------------------------------------------------------*/
+/**
+ * Always print speeds in Benchmark mode, otherwise only
+ * if loglevel is "info" or higher (when time is recorded).
+ */
+static void Main_PrintSpeed(void)
+{
+	if (!nFirstMilliTick)
+		return;
+
+	int interval = Main_GetTicks() - nFirstMilliTick;
+	static float previous;
+	float current;
+	int level = LOG_INFO;
+
+	if (BenchmarkMode && ConfigureParams.Log.nTextLogLevel < level)
+		level = ConfigureParams.Log.nTextLogLevel;
+
+	current = (1000.0 * nVBLCount) / interval;
+	Log_Printf(level, "SPEED: %.1f VBL/s (%d/%.1fs), diff=%.1f%%\n",
+		   current, nVBLCount, interval/1000.0,
+		   previous>0.0 ? 100*(current-previous)/previous : 0.0);
+	nVBLCount = nFirstMilliTick = 0;
+	previous = current;
+}
+
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -196,20 +222,8 @@ bool Main_PauseEmulation(bool visualize)
 	bEmulationActive = false;
 	if (visualize)
 	{
-		if (nFirstMilliTick)
-		{
-			int interval = Main_GetTicks() - nFirstMilliTick;
-			static float previous;
-			float current;
+		Main_PrintSpeed();
 
-			current = (1000.0 * nVBLCount) / interval;
-			Log_Printf(LOG_INFO, "SPEED: %.1f VBL/s (%d/%.1fs), diff=%.1f%%\n",
-			       current, nVBLCount, interval/1000.0,
-			       previous>0.0 ? 100*(current-previous)/previous : 0.0);
-			nVBLCount = nFirstMilliTick = 0;
-			previous = current;
-		}
-		
 		Statusbar_AddMessage("Emulation paused", 100);
 		/* make sure msg gets shown */
 		Statusbar_Update(sdlscrn, true);

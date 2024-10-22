@@ -1152,12 +1152,15 @@ socket. Hatari outputs help for unrecognized commands and subcommands
 given level</p>
 <p class="parameter">--run-vbls
 &lt;x&gt;</p>
-<p class="paramdesc">Exit after X VBLs</p>
+<p class="paramdesc">Exit after X VBLs. Used with --benchmark mode</p>
 <p class="parameter">--benchmark</p>
 <p class="paramdesc">Start in benchmark mode (use with --run-vbls).
-This allows to measure the speed of the emulation in frames per second
-by running at maximum speed (don't wait for VBL). Disable audio/video
-output to have as little OS overhead as possible</p>
+Same as --fast-forward mode, except it cannot be disabled at run-time,
+and FPS will be printed on emulation exit (and pausing) regardless of
+log level. Allows better measuring of emulation speed, in frames per
+second.  Unless you're specifically measuring emulator audio and
+screen processing speed, disable them (--sound off/--disable-video on)
+to have as little OS overhead as possible</p>
 
 <p>Type <span class="commandline">hatari --help</span> to list all
 the command line options supported by a given version of Hatari.</p>
