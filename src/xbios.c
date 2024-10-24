@@ -585,6 +585,16 @@ bool XBios(void)
 			  M68000_GetPC());
 		return false;
 
+	case 131:	/* Setbuffer */
+		/* ones taking word and two longs/pointers */
+		LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x%02hX %s(0x%hX, 0x%X, 0x%X) at PC 0x%X\n",
+			  XBiosCall, XBios_Call2Name(XBiosCall),
+			  STMemory_ReadWord(Params),
+			  STMemory_ReadLong(Params+SIZE_WORD),
+			  STMemory_ReadLong(Params+SIZE_WORD+SIZE_LONG),
+			  M68000_GetPC());
+		return false;
+
 	case 106:	/* Dsp_Available */
 	case 107:	/* Dsp_Reserve */
 	case 111:	/* Dsp_LodToBinary */
