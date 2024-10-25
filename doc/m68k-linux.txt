@@ -9,8 +9,10 @@ Contents:
 4.2 As EXT2 HD image, from klibc utils
 5. Building initrd
 6. Running Hatari
-7. Debugging and profiling
-8. Native bootstrap
+7. Native bootstrap
+8. Debugging and profiling
+8.1 Kernel debugging
+8.2 User-space debugging
 9. Debian m68k install
 9.1 Debian installer
 9.2 Running initrd as normal disk
@@ -75,16 +77,20 @@ version available in the given remote directory!
   Rootfs mount from SCSI device fails after following debug output:
 ------------------------------------------------------------
 ...
+sd 0:0:0:0: [sda] Write Protect is off
+sd 0:0:0:0: [sda] Mode Sense: 2b 00 00 00
+DEBUG: raw_scsi: arbitration initiator id 7 (80)
+DEBUG: raw_scsi: arbitration
 DEBUG: raw_scsi: selected id 0
 DEBUG: raw_scsi_put_data got message c0 (1/1)
 DEBUG: raw_scsi_put_data got message c0 (1 bytes)
 DEBUG: raw_scsi: got command byte 1a (1/6)
 DEBUG: raw_scsi: got command byte 00 (2/6)
-DEBUG: raw_scsi: got command byte 3f (3/6)
+DEBUG: raw_scsi: got command byte 08 (3/6)
 DEBUG: raw_scsi: got command byte 00 (4/6)
 DEBUG: raw_scsi: got command byte 04 (5/6)
 DEBUG: raw_scsi: got command byte 00 (6/6)
-TODO : HDC: Unsupported MODE SENSE command
+TODO : HDC: Unsupported MODE SENSE mode page
 DEBUG: raw_scsi: no data, status = 2
 DEBUG: raw_scsi: status byte read 02. Next=1
 DEBUG: raw_scsi: message byte read 00. Next=1
@@ -102,11 +108,12 @@ DEBUG: raw_scsi: got command byte 00 (6/6)
 WARN : HDC: *** Strange REQUEST SENSE ***!
 DEBUG: raw_scsi: data in 22 bytes waiting
 DEBUG: raw_scsi: data in finished, 22 bytes: status phase
-DEBUG: DMA initiator recv PC=001ba66a
+DEBUG: DMA initiator recv PC=001c40ee
 DEBUG: SCSI BUS reset
 sd 0:0:0:0: Device offlined - not ready after error recovery
 sd 0:0:0:0: [sda] Asking for cache data failed
 sd 0:0:0:0: [sda] Assuming drive cache: write through
+sd 0:0:0:0: rejecting I/O to offline device
 sd 0:0:0:0: [sda] Attached SCSI disk
 VFS: Cannot open root device "/dev/sda" or unknown-block(8,0): error -6
 ------------------------------------------------------------
@@ -372,6 +379,9 @@ On real HW:
 8. Debugging and profiling
 --------------------------
 
+8.1 Kernel debugging
+--------------------
+
 There are few ways to investigate what happens at boot:
 - Asking kernel to give debug output for module initializations
   with "initcall_debug" kernel command line option
@@ -474,6 +484,31 @@ If you see errors like these on Linux console:
 
 Those are IDE write command opcodes.  Make sure your IDE image
 actually *is* writable and try again.
+
+
+8.1 User-space debugging
+------------------------
+
+Linux user-space is best debugged with Linux user-space tools.
+
+To see what syscall and their arguments graphical program does,
+install "strace" and forward its output to Hatari NatFeats output
+device:
+  $ strace -f -e execve -o /dev/nfcon0 wserver
+
+To see what library calls programs dynamically linked to Glibc do,
+use "latrace".
+
+More indepth debugging is likely to require Gdb. Install "gdbserver"
+to emulated system:
+https://sourceware.org/gdb/current/onlinedocs/gdb.html/Server.html
+
+TODO (test): Tell server to communicate over one of the serial ports
+supported by Hatari, tell Gdb on host to attach to corresponding
+Hatari device file, and point it to matching m68k ELF binary and
+its debug symbols.
+
+(There are several UIs that can be used with Gdb.)
 
 
 9. Debian m68k install
@@ -622,6 +657,16 @@ $ aranym-mmu -l linux.config
   Workaround: use >=6.11 kernel, or kernel patch:
   https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit?id=f70065a9fd988983b2c693631b801f25a615fc04
 
+- Hatari prefetch was earlier working incorrectly on bus errors.  This
+  caused user-space program crashes if either (or both) cycle-exact or
+  prefetch emulation is enabled for 030 (with MMU).
+
+  This problem was very visible with the tools included to statically
+  linked Busybox, but those issues cannot be reproduced any more.
+
+  Fix: Use latest Hatari Git version, commit 06fc93b021c38 (Oct 20 2024),
+  or newer.
+
 
 10.2 TODO / investigate more
 ----------------------------
@@ -663,69 +708,3 @@ Kernel panic - not syncing: VFS: Unable to mount root fs on unknown-block(0,0)
 	https://www.youtube.com/watch?v=8Sriz45Z4oM
 
 - Busybox "halt" & "reboot" do nothing, although klibc versions work fine
-
-
-11. User-space issues with 030 emulation
-----------------------------------------
-
-Before Hatari commit 06fc93b021c38 (Oct 20 2024), Hatari prefetch was
-working incorrectly on bus errors.  This caused user-space program
-crashes if either (or both) cycle-exact or prefetch emulation is
-enabled for 030 (with MMU).
-
-This problem was very visible with the tools included to statically
-linked Busybox, but those issues cannot be reproduced any more.
-
-
-TODO: check whether tracing is still problematic:
-
-- Tracing (just "strace -f -e execve") WWS window server
-  seems to fail every time:
-------------------------------------------------------------
-*** LINE 1111 ***   FORMAT=0
-Current process id is 37
-BAD KERNEL TRAP: 00000000
-PC: [<000029a0>] user_inthandler+0x4/0x20
-SR: 2c08  SP: 660bea93  a2: 00020370
-d0: c003dbec    d1: 00004b6c    d2: 00000649    d3: c003d2d8
-d4: c0035000    d5: c001ed3c    a0: c0035000    a1: c003c978
-Process wserver (pid: 37, task=8ce40330)
-Frame format=0
-Stack from 0098dff8:
-...
-Disabling lock debugging due to kernel taint
-Data read fault at 0xc09ca958 in Super Data (pc=0x2ecc)
-BAD KERNEL BUSERR
-Oops: 00000000
-PC: [<00002ecc>] user_disable_single_step+0x16/0x2a
-SR: 2200  SP: a4351113  a2: 00925590
-d0: 00000018    d1: 00000018    d2: 00000007    d3: 00000000
-d4: 00010000    d5: 00000018    a0: c09ca958    a1: 0098faa0
-Process strace (pid: 34, task=be6fd4ba)
-Frame format=B ssw=0365 isc=0004 isb=5c88 daddr=c09ca958 dobuf=0098faa0
-baddr=c09ca958 dibuf=c09ca958 ver=0
-Stack from 00977ee8:
-...
-Call Trace: [<0002cef2>] ptrace_resume+0x34/0xb6
- [<0002d830>] ptrace_request+0x76/0x4ce
- [<0025534c>] radix_tree_lookup+0x16/0x1c
- [<00002f9c>] arch_ptrace+0xa8/0x30a
- [<0002d638>] sys_ptrace+0x228/0x334
- [<000028c4>] syscall+0x8/0xc
-------------------------------------------------------------
-
-Whereas tracing a simpler program like "echo" fails only
-randomly:
-------------------------------------------------------------
-*** LINE 1111 ***   FORMAT=0
-Current process id is 50
-BAD KERNEL TRAP: 00000000
-PC: [<00002988>] user_inthandler+0x4/0x20
-SR: 2d08  SP: 2612bd53  a2: 000bc004
-d0: d0097d7a    d1: 00029db4    d2: 000037cf    d3: d002cac0
-d4: d0000000    d5: c001ed3c    a0: d0000000    a1: d001c104
-Process strace (pid: 50, task=80e4cce9)
-Frame format=0
-Stack from 00955ff8:
-...
-------------------------------------------------------------
