@@ -402,6 +402,13 @@ static void HDC_Cmd_ModeSense(SCSI_CTRLR *ctr)
 
 	dev->bSetLastBlockAddr = false;
 
+	// Subpages are not supported
+	if(ctr->command[3]) {
+		ctr->status = HD_STATUS_ERROR;
+		dev->nLastError = HD_REQSENS_INVARG;
+		return;
+	}
+
 	switch(ctr->command[2])
 	{
 	 case 0x00:
