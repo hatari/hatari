@@ -422,7 +422,7 @@ static void HDC_Cmd_ModeSense(SCSI_CTRLR *ctr)
 		buf = HDC_PrepRespBuf(ctr, 44);
 		HDC_CmdModeSense0x04(dev, ctr, buf + 4);
 		HDC_CmdModeSense0x00(dev, ctr, buf + 28);
-		buf[0] = 44;
+		buf[0] = 43;
 		buf[1] = 0;
 		buf[2] = 0;
 		buf[3] = 0;
