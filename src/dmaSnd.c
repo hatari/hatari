@@ -1416,8 +1416,8 @@ void DmaSnd_Init_Bass_and_Treble_Tables(void)
 	float  dB_adjusted, dB, g, fc_bt, fc_tt, Fs;
 	int    n;
 
-	fc_bt = 118.2763;
-	fc_tt = 8438.756;
+	fc_bt = 118.2763f;
+	fc_tt = 8438.756f;
 	Fs = (float)nAudioFrequency;
 
 	if ((Fs < 8000.0) || (Fs > 96000.0))
