@@ -32,9 +32,9 @@ freebsd_task:
     - gmake -j4
     - gmake test || { cat Testing/Temporary/LastTest.log; exit 1; }
 
-macos12_task:
+xcode_task:
   osx_instance:
-    image: ghcr.io/cirruslabs/macos-monterey-xcode:latest
+    image: ghcr.io/cirruslabs/macos-runner:sonoma
   env:
     SDLVERSION: 2.26.5
     PNGVERSION: 1.6.40
@@ -109,7 +109,7 @@ macos12_task:
 
 macos14_task:
   osx_instance:
-    image: ghcr.io/cirruslabs/macos-sonoma-base:latest
+    image: ghcr.io/cirruslabs/macos-runner:sonoma
   install_script:
     - brew update
     - brew install sdl2 libpng make tidy-html5 imagemagick capstone
