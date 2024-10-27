@@ -30,5 +30,6 @@ typedef unsigned short mode_t;
 
 #define	strncasecmp	_strnicmp
 #define	strcasecmp	_stricmp
+#define strtok_r	strtok_s
 
 #endif
