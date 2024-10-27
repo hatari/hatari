@@ -1212,7 +1212,10 @@ void	Video_GetPosition ( int *pFrameCycles , int *pHBL , int *pLineCycles )
 static void	Video_GetPosition_CE ( int *pFrameCycles , int *pHBL , int *pLineCycles )
 {
 	if ( !CpuRunCycleExact )
-		return Video_GetPosition ( pFrameCycles , pHBL , pLineCycles );
+	{
+		Video_GetPosition ( pFrameCycles , pHBL , pLineCycles );
+		return;
+	}
 
 	*pFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 	*pFrameCycles += currcycle / 256;		/* TEMP : to update CYCLES_COUNTER_VIDEO with new cycInt code */

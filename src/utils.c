@@ -110,7 +110,7 @@ void	crc16_add_byte ( uint16_t *crc , uint8_t c )
 
 void	Hatari_srand ( unsigned int seed )
 {
-	return srand( seed );
+	srand(seed);
 }
 
 
