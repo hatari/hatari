@@ -1753,7 +1753,7 @@ Partly working games:
 Broken games (with EmuTOS v1.3):
 - Downfall
   - Dialog complains "Error while loading BLACKWHT.BGR".
-    It is already open, so issue may be Setscreen() following it
+    It is already opened, so issue may be Setscreen() following it
 - It's Great (start from st-med rez)
   - Mouse doesn't work
 - "K" preview* (by EXA)
@@ -1761,8 +1761,8 @@ Broken games (with EmuTOS v1.3):
 - Moongame
   - "Classic Falcon" (A) option bus errors to $59f1fffe read,
     when the actual game would start
-  - "fast Falcon" (B) option gets inifite illegal DSP instruction
-    errors afer pressing joypad button 3 in main menu
+  - "fast Falcon" (B) option gets infinite illegal DSP instruction
+    errors after pressing joypad button 3 in main menu
 - Neurobot
   - Both intro & game just exit immediately (TOS version?)
 - Reeking Rubber
