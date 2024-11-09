@@ -41,7 +41,6 @@ emulators.
 
 %prep
 %setup
-#%patch
 
 %build
 ./configure --enable-werror --prefix=/usr
