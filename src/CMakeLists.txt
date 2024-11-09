@@ -157,6 +157,7 @@ if(ENABLE_OSX_BUNDLE)
 			COMMAND cp -R ${SDL2_LIBDIR} ${BUNDLE_CONTENTS}/Frameworks/
 			COMMAND ${COPY_PNG}
 			COMMAND ${COPY_CAPSIMAGE}
+			DEPENDS ${MACOSX_BUNDLE_ICON_FILE}
 	)
 	add_dependencies(${APP_NAME} osx_bundle_dirs)
 	set_source_files_properties(${GUIOSX_RSRCS} PROPERTIES
