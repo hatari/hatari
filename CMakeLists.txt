@@ -88,10 +88,7 @@ endif()
 if(APPLE)
 	set(ENABLE_OSX_BUNDLE 1
 	    CACHE BOOL "Built Hatari as macOS application bundle")
-	set(ADDITIONAL_INCLUDES ${FRAMEWORKS})
-	set_source_files_properties(${FRAMEWORKS} PROPERTIES MACOSX_PACKAGE_LOCATION Frameworks)
 	set(CMAKE_XCODE_ATTRIBUTE_LD_RUNPATH_SEARCH_PATHS "@loader_path/../Frameworks")
-	# set(CMAKE_XCODE_ATTRIBUTE_OTHER_CODE_SIGN_FLAGS "--deep")
 else()
 	set(ENABLE_OSX_BUNDLE 0
 	    CACHE BOOL "Built Hatari as macOS application bundle")

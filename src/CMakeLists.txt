@@ -88,8 +88,7 @@ add_subdirectory(cpu)
 
 # When building for macOS, add specific sources
 if(ENABLE_OSX_BUNDLE)
-	set_source_files_properties(${FRAMEWORKS} PROPERTIES MACOSX_PACKAGE_LOCATION Frameworks)
-	add_executable(${APP_NAME} MACOSX_BUNDLE ${GUIOSX_RSRCS} ${GUIOSX_DOCS} ${SOURCES} ${GUIOSX_SOURCES} ${FRAMEWORKS})
+	add_executable(${APP_NAME} MACOSX_BUNDLE ${GUIOSX_RSRCS} ${GUIOSX_DOCS} ${SOURCES} ${GUIOSX_SOURCES})
 	set_target_properties(${APP_NAME} PROPERTIES MACOSX_BUNDLE_INFO_PLIST
 			      ${CMAKE_CURRENT_SOURCE_DIR}/gui-osx/Info-Hatari.plist)
 	set_target_properties(${APP_NAME} PROPERTIES INSTALL_RPATH
