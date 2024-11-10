@@ -419,27 +419,35 @@ static const struct Config_Tag configs_Scsi[] =
 	{ "bUseDevice0", Bool_Tag, &ConfigureParams.Scsi[0].bUseDevice },
 	{ "sDeviceFile0", String_Tag, ConfigureParams.Scsi[0].sDeviceFile },
 	{ "nBlockSize0", Int_Tag, &ConfigureParams.Scsi[0].nBlockSize },
+	{ "nScsiVersion0", Int_Tag, &ConfigureParams.Scsi[0].nScsiVersion },
 	{ "bUseDevice1", Bool_Tag, &ConfigureParams.Scsi[1].bUseDevice },
 	{ "sDeviceFile1", String_Tag, ConfigureParams.Scsi[1].sDeviceFile },
 	{ "nBlockSize1", Int_Tag, &ConfigureParams.Scsi[1].nBlockSize },
+	{ "nScsiVersion1", Int_Tag, &ConfigureParams.Scsi[1].nScsiVersion },
 	{ "bUseDevice2", Bool_Tag, &ConfigureParams.Scsi[2].bUseDevice },
 	{ "sDeviceFile2", String_Tag, ConfigureParams.Scsi[2].sDeviceFile },
 	{ "nBlockSize2", Int_Tag, &ConfigureParams.Scsi[2].nBlockSize },
+	{ "nScsiVersion2", Int_Tag, &ConfigureParams.Scsi[2].nScsiVersion },
 	{ "bUseDevice3", Bool_Tag, &ConfigureParams.Scsi[3].bUseDevice },
 	{ "sDeviceFile3", String_Tag, ConfigureParams.Scsi[3].sDeviceFile },
 	{ "nBlockSize3", Int_Tag, &ConfigureParams.Scsi[3].nBlockSize },
+	{ "nScsiVersion3", Int_Tag, &ConfigureParams.Scsi[3].nScsiVersion },
 	{ "bUseDevice4", Bool_Tag, &ConfigureParams.Scsi[4].bUseDevice },
 	{ "sDeviceFile4", String_Tag, ConfigureParams.Scsi[4].sDeviceFile },
 	{ "nBlockSize4", Int_Tag, &ConfigureParams.Scsi[4].nBlockSize },
+	{ "nScsiVersion4", Int_Tag, &ConfigureParams.Scsi[4].nScsiVersion },
 	{ "bUseDevice5", Bool_Tag, &ConfigureParams.Scsi[5].bUseDevice },
 	{ "sDeviceFile5", String_Tag, ConfigureParams.Scsi[5].sDeviceFile },
 	{ "nBlockSize5", Int_Tag, &ConfigureParams.Scsi[5].nBlockSize },
+	{ "nScsiVersion5", Int_Tag, &ConfigureParams.Scsi[5].nScsiVersion },
 	{ "bUseDevice6", Bool_Tag, &ConfigureParams.Scsi[6].bUseDevice },
 	{ "sDeviceFile6", String_Tag, ConfigureParams.Scsi[6].sDeviceFile },
 	{ "nBlockSize6", Int_Tag, &ConfigureParams.Scsi[6].nBlockSize },
+	{ "nScsiVersion6", Int_Tag, &ConfigureParams.Scsi[6].nScsiVersion },
 	{ "bUseDevice7", Bool_Tag, &ConfigureParams.Scsi[7].bUseDevice },
 	{ "sDeviceFile7", String_Tag, ConfigureParams.Scsi[7].sDeviceFile },
 	{ "nBlockSize7", Int_Tag, &ConfigureParams.Scsi[7].nBlockSize },
+	{ "nScsiVersion7", Int_Tag, &ConfigureParams.Scsi[7].nScsiVersion },
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -651,6 +659,7 @@ void Configuration_SetDefault(void)
 		ConfigureParams.Scsi[i].bUseDevice = false;
 		strcpy(ConfigureParams.Scsi[i].sDeviceFile, psWorkingDir);
 		ConfigureParams.Scsi[i].nBlockSize = 512;
+		ConfigureParams.Scsi[i].nScsiVersion = 1;
 	}
 	/* IDE */
 	for (i = 0; i < MAX_IDE_DEVS; i++)

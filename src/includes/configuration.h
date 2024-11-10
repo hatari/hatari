@@ -258,6 +258,7 @@ typedef struct
   bool bUseDevice;
   char sDeviceFile[FILENAME_MAX];
   int nBlockSize;
+  int nScsiVersion;
 } CNF_SCSIDEV;
 
 typedef enum

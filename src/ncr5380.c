@@ -1036,7 +1036,7 @@ bool Ncr5380_Init(void)
 	{
 		if (!ConfigureParams.Scsi[i].bUseDevice)
 			continue;
-		if (HDC_InitDevice("SCSI", &ScsiBus.devs[i], ConfigureParams.Scsi[i].sDeviceFile, ConfigureParams.Scsi[i].nBlockSize) == 0)
+		if (HDC_InitDevice("SCSI", &ScsiBus.devs[i], &ConfigureParams.Scsi[i]) == 0)
 		{
 			nScsiPartitions += HDC_PartitionCount(ScsiBus.devs[i].image_file, TRACE_SCSI_CMD, NULL);
 			bScsiEmuOn = true;

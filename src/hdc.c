@@ -230,6 +230,7 @@ static void HDC_Cmd_Inquiry(SCSI_CTRLR *ctr)
 	 * Peripheral Device Type according to the SCSI standard */
 	buf[0] = HDC_GetLUN(ctr) == 0 ? 0 : 0x7F;
 
+	buf[2] = dev->scsi_version;
 	buf[4] = count - 5;
 
 	ctr->status = HD_STATUS_OK;
@@ -893,8 +894,9 @@ off_t HDC_CheckAndGetSize(const char *hdtype, const char *filename, unsigned lon
 /**
  * Open a disk image file
  */
-int HDC_InitDevice(const char *hdtype, SCSI_DEV *dev, char *filename, unsigned long blockSize)
+int HDC_InitDevice(const char *hdtype, SCSI_DEV *dev, CNF_SCSIDEV *conf)
 {
+	const char *filename = conf->sDeviceFile;
 	off_t filesize;
 	FILE *fp;
 
@@ -902,7 +904,7 @@ int HDC_InitDevice(const char *hdtype, SCSI_DEV *dev, char *filename, unsigned l
 	Log_Printf(LOG_INFO, "Mounting %s HD image '%s'\n", hdtype, filename);
 
 	/* Check size for sanity */
-	filesize = HDC_CheckAndGetSize(hdtype, filename, blockSize);
+	filesize = HDC_CheckAndGetSize(hdtype, filename, conf->nBlockSize);
 	if (filesize < 0)
 		return filesize;
 
@@ -925,7 +927,8 @@ int HDC_InitDevice(const char *hdtype, SCSI_DEV *dev, char *filename, unsigned l
 		return -ENOLCK;
 	}
 
-	dev->blockSize = blockSize;
+	dev->scsi_version = conf->nScsiVersion;
+	dev->blockSize = conf->nBlockSize;
 	dev->hdSize = filesize / dev->blockSize;
 	dev->image_file = fp;
 	dev->enabled = true;
@@ -956,7 +959,7 @@ bool HDC_Init(void)
 	{
 		if (!ConfigureParams.Acsi[i].bUseDevice)
 			continue;
-		if (HDC_InitDevice("ACSI", &AcsiBus.devs[i], ConfigureParams.Acsi[i].sDeviceFile, ConfigureParams.Acsi[i].nBlockSize) == 0)
+		if (HDC_InitDevice("ACSI", &AcsiBus.devs[i], &ConfigureParams.Acsi[i]) == 0)
 		{
 			nAcsiPartitions += HDC_PartitionCount(AcsiBus.devs[i].image_file, TRACE_SCSI_CMD, NULL);
 			bAcsiEmuOn = true;
