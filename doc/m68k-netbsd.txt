@@ -43,7 +43,8 @@ NetBSD releases of interest:
               crypto removed, remove XFree86 completely, GCC 5.5
 * 2020: v9.0, GCC 7.4, LLVM 7.0, reworked SATA & USB3 support, shadow FB
               + anti-aliasing support
-* 2024: v10.0, GCC 10, Linux compat disabled by default
+* 2024: v10.0, GCC 10, Linux compat disabled by default, Atari box drawing
+               character support for the framebuffer driver
 
 NetBSD v8.x and earlier releases are in archive:
 	https://cdn.netbsd.org/pub/NetBSD/NetBSD-archive/
@@ -93,12 +94,6 @@ on TTP, if you want kernel to ask for root drive upfront.)
   - double address/bus error immediately on boot
     => no ST models supported?
 
-* TT / netbsd-ATARITT kernel:
-
-  - freezes very early at boot, in loop checking bits in a non-IO
-    address, which remains zero with Hatari.
-    Maybe VME autovector issue?
-
 * Falcon / netbsd-FALCON kernel:
 
   - NetBSD v9.x or newer output initially garbage to VGA screen,
@@ -107,9 +102,6 @@ on TTP, if you want kernel to ask for root drive upfront.)
 
   - Startup fails to floppy timeout and kernel not being able to
     mount "sysinst.fs" contents from Hatari floppy drive.
-
-Unlike with Linux, 030 cache and prefetch emulation doesn't have
-impact on NetBSD boot.  Neither does 32-bit addressing / TT-RAM.
 
 
 5. Installing NetBSD
