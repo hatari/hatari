@@ -253,13 +253,13 @@ static void HDC_Cmd_RequestSense(SCSI_CTRLR *ctr)
 
 	LOG_TRACE(TRACE_SCSI_CMD, "HDC: REQUEST SENSE (%s).\n", HDC_CmdInfoStr(ctr));
 
-	if ((nRetLen < 4 && nRetLen != 0) || nRetLen > 22)
+	if ((nRetLen < 4 && nRetLen != 0) || nRetLen > 252)
 	{
 		Log_Printf(LOG_WARN, "HDC: *** Strange REQUEST SENSE ***!\n");
 	}
 
 	/* Limit to sane length */
-	if (nRetLen <= 0)
+	if (nRetLen == 0 && dev->scsi_version == 1)
 	{
 		nRetLen = 4;
 	}
