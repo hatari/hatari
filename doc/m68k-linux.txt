@@ -18,9 +18,8 @@ Contents:
 9.2 Running initrd as normal disk
 9.3 Bootstrapping Debian installation on PC
 10. Linux kernel issues
-10.1 Known issues
+10.1 Known issues with workarounds
 10.2 TODO / investigate more
-11 User-space issues with 030 emulation
 
 
 1. Introduction
@@ -129,7 +128,7 @@ VFS: Cannot open root device "/dev/sda" or unknown-block(8,0): error -6
    $ sudo apt install gcc-m68k-linux-gnu
 
 2. Get latest upstream kernel release sources (without history):
-   $ git clone --depth 1 --branch v6.11 \
+   $ git clone --depth 1 --branch v6.12 \
      git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
    $ cd linux
 
@@ -291,8 +290,8 @@ Notes:
 1. Set suitable options in lilo.cfg, for example:
 -------------------------------------
 [LILO]
-Kernel = vmlinux-v6.11
-Symbols = System.map-v6.11
+Kernel = vmlinux-v6.12
+Symbols = System.map-v6.12
 Ramdisk =
 Args = video=atafb:sthigh console=tty
 KernelToFastRam = FALSE
@@ -491,6 +490,9 @@ actually *is* writable and try again.
 
 Linux user-space is best debugged with Linux user-space tools.
 
+Some actions can be done with "Magic SysRq", for help, see:
+	echo h > /proc/sysrq-trigger
+
 To see what syscall and their arguments graphical program does,
 install "strace" and forward its output to Hatari NatFeats output
 device:
@@ -637,8 +639,8 @@ $ aranym-mmu -l linux.config
 10. Linux kernel issues
 -----------------------
 
-10.1 Known issues
------------------
+10.1 Known issues with workarounds
+----------------------------------
 
 - Old (4.x?) Linux versions do not work if kernel is loaded to TT-RAM
 
@@ -697,9 +699,9 @@ Kernel panic - not syncing: VFS: Unable to mount root fs on unknown-block(0,0)
 - with Hatari 2.5, Linux works again[1] on 040 & 060, when CPU data
   cache emulation is disabled (--data-cache off).
 
-  When data cache is enabled, 060 boot crashes to double bus error,
-  and 040 boot freezes early on.  Although screen is black, CPU trace
-  indicates latter being a panic.
+  However, when data cache is enabled, 060 boot crashes to double bus
+  error, and 040 boot freezes early on.  Although screen is black, CPU
+  trace indicates latter being a panic.
 
   [1] In previous Hatari versions, there was panic on reaching user-space.
 
