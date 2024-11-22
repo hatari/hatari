@@ -1633,38 +1633,55 @@ static void Video_WriteToGlueShifterRes ( uint8_t Res )
 	/* Troed/Sync 4 pixel hardscroll on the whole screen, without removing border */
 	/* Switch to res=3 to stop the shifter, then switch back to low/med res */
 	/* All following lines will be shifted too, not just the one where the switch to res=3 is done */
-	/* The switch is supposed to last less than 20 cycles to get all 4 positions. If the switch last more */
-	/* then for every 16*n cycles we must compensante for 4*n MMU words that were not processed */
-	if ( ( ShifterFrame.Res == 0x03 ) && ( ShifterFrame.ResPosHi.LineCycles == 68 )		/* switched from stopped state at cycle 68 */
-		&& ( LineCycles >= 76 ) )				/* switch to res=3 during at least 8 cycles */
+	/* The switch is supposed to last less than 20 cycles to get all 4 positions */
+	/* Switch to res=3 is usually made at pos 68 to limit artifacts (all pixels will be black */
+	/* during the time when shifter is stopped), but it could be made anywhere on the line when DE is ON */
+
+	/* TODO : we shift the screen but we don't show the black pixels during stopped state */
+	/* TODO : shift should remain on all subsequent vbl's, not just the current one */
+
+	if ( ( ShifterFrame.Res == 0x03 )
+		&& ( ShifterFrame.ResPosHi.LineCycles >= 64 )		/* switched to stopped state when DE ON */
+		&& ( LineCycles >= 64+8 )				/* switch to res=3 during at least 8 cycles */
+		&& ( LineCycles - ShifterFrame.ResPosHi.LineCycles <= 32 ) ) /* stopped for max 32 cycles */
+
 	{
-		int	add_bytes;
+		int	shifter_res_pos_old;
+		int	shifter_res_pos_new;
+		int	shifter_stopped_cycles;
 
-		add_bytes = ( ( LineCycles - 76 ) / 16 ) * 8;
+		/* Changes of resolution in the shifter are done on the next rounding to 4 cycles */
+		/* (also depending on the current opcode) */
+		/* TODO : use a common function like M68000_SyncCpuBus() */
+		shifter_res_pos_old = ( ShifterFrame.ResPosHi.LineCycles + 3 ) & ~3;
+		shifter_res_pos_new = ( LineCycles + 3 ) & ~3;
 
-		if ( ( LineCycles - ShifterFrame.ResPosHi.LineCycles ) % 16 == 4 )		// 88 + 16n
+		shifter_stopped_cycles = shifter_res_pos_new - shifter_res_pos_old;
+
+
+		if ( shifter_stopped_cycles % 16 == 4 )			// 88 + 16n
 		{
-			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 12 pixels right scroll with stopped shifter\n" );
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = 12;
-			pVideoRaster += 2 + add_bytes;
+			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 12 pixels left scroll with stopped shifter\n" );
+			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = -12;
+			pVideoRaster += -6;
 		}
-		else if ( ( LineCycles - ShifterFrame.ResPosHi.LineCycles ) % 16 == 0 )		// 84 + 16n
+		else if ( shifter_stopped_cycles % 16 == 0 )		// 84 + 16n
 		{
-			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 8 pixels right scroll with stopped shifter\n" );
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = 8;
-			pVideoRaster += 0 + add_bytes;
-		}
-		else if ( ( LineCycles - ShifterFrame.ResPosHi.LineCycles ) % 16 == 12 )	// 80 + 16n
-		{
-			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 4 pixels right scroll with stopped shifter\n" );
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = 4;
-			pVideoRaster += -2 + add_bytes;
-		}
-		else if ( ( LineCycles - ShifterFrame.ResPosHi.LineCycles ) % 16 == 8 )		// 76 + 16n
-		{
-			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 0 pixel right scroll with stopped shifter\n" );
+			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 0 pixels left scroll with stopped shifter\n" );
+			pVideoRaster += 0;
 			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = 0;
-			pVideoRaster += -4 + add_bytes;
+		}
+		else if ( shifter_stopped_cycles % 16 == 12 )		// 80 + 16n
+		{
+			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 4 pixels left scroll with stopped shifter\n" );
+			pVideoRaster += -2;
+			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = -4;
+		}
+		else if ( shifter_stopped_cycles % 16 == 8 )		// 76 + 16n
+		{
+			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 8 pixel left scroll with stopped shifter\n" );
+			pVideoRaster += -4;
+			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = -8;
 		}
 
 		/* Mark all the following lines as shifted too */
