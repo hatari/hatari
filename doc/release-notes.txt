@@ -37,6 +37,8 @@ Emulation improvements:
   - Add support for CPU Freq / Cache control at $FF8E21 when running
     in cycle accurate mode. This gives cycle exact memory accesses
     when running at 16 MHz, as well as emulation of the external 16 KB cache
+- SCSI:
+  - Fix REQUEST SENSE for SCSI v2
 - Serial Ports:
   - Update values of DCD and CTS signals for the RS232 port connected
     to the MFP (as reported by the underlying OS)
@@ -59,6 +61,8 @@ Emulator improvements:
   - Fix: Handle additional '*' chars at end of file mask
 - SCC:
   - Fix: invalid channel B file close on uninit
+- SCSI:
+  - Add CLI + config file option for (per ID) SCSI version
 - Debugger:
   - Fix: DSP RESET instruction tracing
   - Similarly to Atari program symbols override, load TOS symbols on

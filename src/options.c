@@ -150,6 +150,7 @@ enum {
 	OPT_GEMDOS_DRIVE,
 	OPT_ACSIHDIMAGE,
 	OPT_SCSIHDIMAGE,
+	OPT_SCSIVERSION,
 	OPT_IDEMASTERHDIMAGE,
 	OPT_IDESLAVEHDIMAGE,
 	OPT_IDEBYTESWAP,
@@ -406,6 +407,8 @@ static const opt_t HatariOptions[] = {
 	  "<id>=<file>", "Emulate an ACSI harddrive (0-7) with an image <file>" },
 	{ OPT_SCSIHDIMAGE,   NULL, "--scsi",
 	  "<id>=<file>", "Emulate a SCSI harddrive (0-7) with an image <file>" },
+	{ OPT_SCSIVERSION,   NULL, "--scsi-ver",
+	  "<id>=<version>", "Which SCSI version (1-2) to emulate for given drive ID" },
 	{ OPT_IDEMASTERHDIMAGE,   NULL, "--ide-master",
 	  "<file>", "Emulate an IDE 0 (master) harddrive with an image <file>" },
 	{ OPT_IDESLAVEHDIMAGE,   NULL, "--ide-slave",
@@ -792,6 +795,23 @@ static bool Opt_CountryCode(const char *arg, int optid, int *conf)
 	return false;
 
 }
+
+/**
+ * Parse <drive>=<value>. If single digit <drive> and/or '=' missing,
+ * assume drive ID 0, and interpret whole arg as <value>.
+ * Return parsed <value>, and set <drive>.
+ */
+static const char *Opt_DriveValue(const char *arg, int *drive)
+{
+	if (strlen(arg) > 2 && isdigit((unsigned char)arg[0]) && arg[1] == '=')
+	{
+		*drive = arg[0] - '0';
+		return arg + 2;
+	}
+	*drive = 0;
+	return arg;
+}
+
 
 /**
  * checks str argument against options of type "--option<digit>".
@@ -1666,18 +1686,10 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 		case OPT_ACSIHDIMAGE:
 			i += 1;
-			str = argv[i];
-			if (strlen(str) > 2 && isdigit((unsigned char)str[0]) && str[1] == '=')
-			{
-				drive = str[0] - '0';
-				if (drive < 0 || drive >= MAX_ACSI_DEVS)
-					return Opt_ShowError(OPT_ACSIHDIMAGE, str, "Invalid ACSI drive <id>, must be 0-7");
-				str += 2;
-			}
-			else
-			{
-				drive = 0;
-			}
+			str = Opt_DriveValue(argv[i], &drive);
+			if (drive < 0 || drive >= MAX_ACSI_DEVS)
+				return Opt_ShowError(OPT_ACSIHDIMAGE, str, "Invalid ACSI drive <id>, must be 0-7");
+
 			ok = Opt_StrCpy(OPT_ACSIHDIMAGE, true, ConfigureParams.Acsi[drive].sDeviceFile,
 					str, sizeof(ConfigureParams.Acsi[drive].sDeviceFile),
 					&ConfigureParams.Acsi[drive].bUseDevice);
@@ -1689,18 +1701,10 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 		case OPT_SCSIHDIMAGE:
 			i += 1;
-			str = argv[i];
-			if (strlen(str) > 2 && isdigit((unsigned char)str[0]) && str[1] == '=')
-			{
-				drive = str[0] - '0';
-				if (drive < 0 || drive >= MAX_SCSI_DEVS)
-					return Opt_ShowError(OPT_SCSIHDIMAGE, str, "Invalid SCSI drive <id>, must be 0-7");
-				str += 2;
-			}
-			else
-			{
-				drive = 0;
-			}
+			str = Opt_DriveValue(argv[i], &drive);
+			if (drive < 0 || drive >= MAX_SCSI_DEVS)
+				return Opt_ShowError(OPT_SCSIHDIMAGE, str, "Invalid SCSI drive <id>, must be 0-7");
+
 			ok = Opt_StrCpy(OPT_SCSIHDIMAGE, true, ConfigureParams.Scsi[drive].sDeviceFile,
 					str, sizeof(ConfigureParams.Scsi[drive].sDeviceFile),
 					&ConfigureParams.Scsi[drive].bUseDevice);
@@ -1708,6 +1712,20 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			{
 				bLoadAutoSave = false;
 			}
+			break;
+
+		case OPT_SCSIVERSION:
+			i += 1;
+			str = Opt_DriveValue(argv[i], &drive);
+			if (drive < 0 || drive >= MAX_SCSI_DEVS)
+				return Opt_ShowError(OPT_SCSIVERSION, str, "Invalid SCSI drive <id>, must be 0-7");
+
+			if (strcmp(str, "1") == 0)
+				ConfigureParams.Scsi[drive].nScsiVersion = 1;
+			else if (strcmp(str, "2") == 0)
+				ConfigureParams.Scsi[drive].nScsiVersion = 2;
+			else
+				return Opt_ShowError(OPT_SCSIVERSION, argv[i], "Invalid SCSI version");
 			break;
 
 		case OPT_IDEMASTERHDIMAGE:
@@ -1734,18 +1752,10 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 		case OPT_IDEBYTESWAP:
 			i += 1;
-			str = argv[i];
-			if (strlen(str) > 2 && isdigit((unsigned char)str[0]) && str[1] == '=')
-			{
-				drive = str[0] - '0';
-				if (drive < 0 || drive > 1)
-					return Opt_ShowError(OPT_IDEBYTESWAP, str, "Invalid IDE drive <id>, must be 0/1");
-				str += 2;
-			}
-			else
-			{
-				drive = 0;
-			}
+			str = Opt_DriveValue(argv[i], &drive);
+			if (drive < 0 || drive > 1)
+				return Opt_ShowError(OPT_IDEBYTESWAP, str, "Invalid IDE drive <id>, must be 0/1");
+
 			if (strcasecmp(str, "off") == 0)
 				ConfigureParams.Ide[drive].nByteSwap = BYTESWAP_OFF;
 			else if (strcasecmp(str, "on") == 0)

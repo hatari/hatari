@@ -156,7 +156,7 @@ common to all (FDC, IKBD, MFP, MIDI, PSG, RS-232...).</p>
     <tr>
       <td class="hwfeat">SCSI</td>
       <td></td><td></td><td></td><td></td><td>X</td><td>X</td>
-      <td class="hwnote">Hatari support is incomplete</td>
+      <td class="hwnote">Hatari support is incomplete, defaults to SCSI v1</td>
     </tr>
     <tr>
       <td colspan="7" class="hwsubdiv">Other HW features:</td><td></td>
@@ -934,6 +934,9 @@ bus ID 0</p>
 <p class="paramdesc">Emulate a SCSI hard drive with given bus ID (0-7)
 using image &lt;file&gt;. If just a filename is given, it is assigned to
 bus ID 0</p>
+<p class="parameter">--scsi-ver &lt;id&gt;=&lt;version&gt;</p>
+<p class="paramdesc">Emulate specified SCSI version (1-2) for given
+BUS ID (0-7). If just a version is given, it is applied to BUS ID 0</p>
 <p class="parameter">--ide-master
 &lt;file&gt;</p>
 <p class="paramdesc">Emulate an IDE 0 (master) hard drive with an
