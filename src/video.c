@@ -524,6 +524,7 @@ static uint8_t *pVideoRaster;			/* Pointer to Video raster, after VideoBase in P
 static bool bSteBorderFlag;			/* true when screen width has been switched to 336 (e.g. in Obsession) */
 static int NewSteBorderFlag = -1;		/* New value for next line */
 static bool bTTColorsSync;			/* whether TT colors need conversion to SDL */
+static int VideoRasterDelayedInc;		/* Number of bytes to add at the end of the current video line */
 
 int TTSpecialVideoMode;				/* TT special video mode */
 static int nPrevTTSpecialVideoMode;		/* TT special video mode */
@@ -1630,9 +1631,9 @@ static void Video_WriteToGlueShifterRes ( uint8_t Res )
 			ShifterFrame.ShifterLines[ i ].DisplayPixelShift = ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift;
 	}
 
-	/* Troed/Sync 4 pixel hardscroll on the whole screen, without removing border */
+	/* Troed/Sync 4 pixels left hardscroll on the whole screen, without removing border */
 	/* Switch to res=3 to stop the shifter, then switch back to low/med res */
-	/* All following lines will be shifted too, not just the one where the switch to res=3 is done */
+	/* All following lines will be shifted but not the one where the switch to res=3 is done */
 	/* The switch is supposed to last less than 20 cycles to get all 4 positions */
 	/* Switch to res=3 is usually made at pos 68 to limit artifacts (all pixels will be black */
 	/* during the time when shifter is stopped), but it could be made anywhere on the line when DE is ON */
@@ -1649,45 +1650,53 @@ static void Video_WriteToGlueShifterRes ( uint8_t Res )
 		int	shifter_res_pos_old;
 		int	shifter_res_pos_new;
 		int	shifter_stopped_cycles;
+		int	Shift , AddressInc;
+
 
 		/* Changes of resolution in the shifter are done on the next rounding to 4 cycles */
-		/* (also depending on the current opcode) */
+		/* (also depending on the current bus access) */
 		/* TODO : use a common function like M68000_SyncCpuBus() */
 		shifter_res_pos_old = ( ShifterFrame.ResPosHi.LineCycles + 3 ) & ~3;
 		shifter_res_pos_new = ( LineCycles + 3 ) & ~3;
 
 		shifter_stopped_cycles = shifter_res_pos_new - shifter_res_pos_old;
 
+		Shift = 0;
+		AddressInc = 0;
 
 		if ( shifter_stopped_cycles % 16 == 4 )			// 88 + 16n
 		{
 			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 12 pixels left scroll with stopped shifter\n" );
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = -12;
-			pVideoRaster += -6;
+			AddressInc = -6;
+			Shift = -12;
 		}
 		else if ( shifter_stopped_cycles % 16 == 0 )		// 84 + 16n
 		{
 			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 0 pixels left scroll with stopped shifter\n" );
-			pVideoRaster += 0;
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = 0;
+			AddressInc = 0;
+			Shift = 0;
 		}
 		else if ( shifter_stopped_cycles % 16 == 12 )		// 80 + 16n
 		{
 			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 4 pixels left scroll with stopped shifter\n" );
-			pVideoRaster += -2;
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = -4;
+			AddressInc = -2;
+			Shift = -4;
 		}
 		else if ( shifter_stopped_cycles % 16 == 8 )		// 76 + 16n
 		{
 			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 8 pixel left scroll with stopped shifter\n" );
-			pVideoRaster += -4;
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = -8;
+			AddressInc = -4;
+			Shift = -8;
 		}
 
-		/* Mark all the following lines as shifted too */
+		/* Offset to be added at the end of the current line */
+		if ( AddressInc != 0 )
+			VideoRasterDelayedInc = AddressInc;
+
+		/* Mark all the following lines as shifted */
 		int i;
 		for ( i=HblCounterVideo+1 ; i<MAX_SCANLINES_PER_FRAME ; i++ )
-			ShifterFrame.ShifterLines[ i ].DisplayPixelShift = ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift;
+			ShifterFrame.ShifterLines[ i ].DisplayPixelShift = Shift;
 	}
 
 	/* TEMP for 'closure' in WS2 */
@@ -4135,6 +4144,13 @@ static void Video_CopyScreenLineColor(void)
 		NewLineWidth = -1;
 	}
 
+	/* When stopping shifter for 4 pixel hardscroll the video address needs to be */
+	/* adjusted on the next line */
+	if ( VideoRasterDelayedInc != 0 )
+	{
+		pVideoRaster += VideoRasterDelayedInc;
+		VideoRasterDelayedInc = 0;
+	}
 
 	/* Each screen line copied to buffer is always same length */
 	pSTScreen += SCREENBYTES_LINE;
