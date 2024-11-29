@@ -409,7 +409,7 @@ static int scsidrv_inout(uint32_t stack)
 		               SG_IO, &io_hdr) < 0 ? -1 : io_hdr.status;
 		if(status == -1)
 		{
-			Log_Printf(LOG_ERROR, "Can't transfer %d byte(s)\n", transfer_len);
+			Log_Printf(LOG_ERROR, "\nCan't transfer %d byte(s)\n", transfer_len);
 		}
 
 		if (!status && sense_buffer && sense_buffer[2] & 0x0f)
