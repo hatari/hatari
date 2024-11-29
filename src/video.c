@@ -500,23 +500,23 @@ int nFrameSkips;                                /* speed up by skipping video fr
 bool bUseHighRes;                               /* Use hi-res (ie Mono monitor) */
 int VerticalOverscan;				/* V_OVERSCAN_xxxx for current display frame */
 int nScreenRefreshRate = VIDEO_50HZ;		/* 50 or 60 Hz in color, 71 Hz in mono */
-uint32_t VideoBase;                               /* Base address in ST Ram for screen (read on each VBL) */
+uint32_t VideoBase;				/* Base address in ST Ram for screen (read on each VBL) */
 
-int nVBLs;                                      /* VBL Counter */
-int nHBL;                                       /* HBL line */
-int nStartHBL;                                  /* Start HBL for visible screen */
-int nEndHBL;                                    /* End HBL for visible screen */
-int nScanlinesPerFrame = 313;                   /* Number of scan lines per frame */
-int nCyclesPerLine = 512;                       /* Cycles per horizontal line scan */
+int nVBLs;					/* VBL Counter */
+int nHBL;					/* HBL line */
+int nStartHBL;					/* Start HBL for visible screen */
+int nEndHBL;					/* End HBL for visible screen */
+int nScanlinesPerFrame = 313;			/* Number of scan lines per frame */
+int nCyclesPerLine = 512;			/* Cycles per horizontal line scan */
 static int nFirstVisibleHbl = FIRST_VISIBLE_HBL_50HZ;			/* The first line of the ST screen that is copied to the PC screen buffer */
 static int nLastVisibleHbl = FIRST_VISIBLE_HBL_50HZ+NUM_VISIBLE_LINES;	/* The last line of the ST screen that is copied to the PC screen buffer */
 static int CyclesPerVBL = 313*512;		/* Number of cycles per VBL */
 
 static uint8_t HWScrollCount;			/* HW scroll pixel offset, STE only (0...15) */
 static int NewHWScrollCount = -1;		/* Used in STE mode when writing to the scrolling registers $ff8264/65 */
-static uint8_t HWScrollPrefetch;			/* 0 when scrolling with $ff8264, 1 when scrolling with $ff8265 */
+static uint8_t HWScrollPrefetch;		/* 0 when scrolling with $ff8264, 1 when scrolling with $ff8265 */
 static int NewHWScrollPrefetch = -1;		/* Used in STE mode when writing to the scrolling registers $ff8264/65 */
-static uint8_t LineWidth;				/* Scan line width add, STe only (words, minus 1) */
+static uint8_t LineWidth;			/* Scan line width add, STe only (words, minus 1) */
 static int NewLineWidth = -1;			/* Used in STE mode when writing to the line width register $ff820f */
 static int VideoCounterDelayedOffset = 0;	/* Used in STE mode when changing video counter while display is on */
 static uint8_t *pVideoRasterDelayed = NULL;	/* Used in STE mode when changing video counter while display is off in the right border */
@@ -542,25 +542,25 @@ static int	BlankLines = 0;			/* Number of empty line with no signal (by switchin
 
 typedef struct
 {
-	int	VBL;				/* VBL for this Pos (or -1 if Pos not defined for now) */
-	int	FrameCycles;			/* Number of cycles since this VBL */
-	int	HBL;				/* HBL in the VBL */
-	int	LineCycles;			/* cycles in the HBL */
+	int		VBL;			/* VBL for this Pos (or -1 if Pos not defined for now) */
+	int		FrameCycles;		/* Number of cycles since this VBL */
+	int		HBL;			/* HBL in the VBL */
+	int		LineCycles;		/* cycles in the HBL */
 } SHIFTER_POS;
 
 
 typedef struct 
 {
-	int	StartCycle;			/* first cycle of this line, as returned by Cycles_GetCounter */
+	int		StartCycle;		/* first cycle of this line, as returned by Cycles_GetCounter */
 
-	uint32_t	BorderMask;			/* borders' states for this line */
-	int	DisplayPixelShift;		/* number of pixels to shift the whole line (<0 shift to the left, >0 shift to the right) */
+	uint32_t 	BorderMask;		/* borders' states for this line */
+	int		DisplayPixelShift;	/* number of pixels to shift the whole line (<0 shift to the left, >0 shift to the right) */
 						/* On STF, this is obtained when switching hi/med for a variable number of cycles, */
 						/* but just removing left border will shift the line too. */
 
-	int	DisplayStartCycle;		/* cycle where display starts for this line (0-512) : 0, 52 or 56 */
-	int	DisplayEndCycle;		/* cycle where display ends for this line (0-512) : 0, 160, 372, 376, 460 or 512 */
-	int	DisplayBytes;			/* how many bytes to display for this line */
+	int		DisplayStartCycle;	/* cycle where display starts for this line (0-512) : 0, 52 or 56 */
+	int		DisplayEndCycle;	/* cycle where display ends for this line (0-512) : 0, 160, 372, 376, 460 or 512 */
+	int		DisplayBytes;		/* how many bytes to display for this line */
 
 } SHIFTER_LINE;
 
