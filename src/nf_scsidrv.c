@@ -1,7 +1,7 @@
 /*
  * Hatari - nf_scsidrv.c
  *
- * Copyright (C) 2015-2016, 2018 by Uwe Seimet
+ * Copyright (C) 2015-2016, 2018, 2024 by Uwe Seimet
  *
  * This file is distributed under the GNU General Public License, version 2
  * or at your option any later version. Read the file gpl.txt for details.
@@ -25,6 +25,7 @@ const char NfScsiDrv_fileid[] = "Hatari nf_scsidrv.c";
 #endif
 #include <sys/ioctl.h>
 #include <scsi/sg.h>
+#include <scsi/scsi.h>
 #include "stMemory.h"
 #include "log.h"
 #include "gemdos_defines.h"
@@ -43,6 +44,9 @@ const char NfScsiDrv_fileid[] = "Hatari nf_scsidrv.c";
 // The maximum number of SCSI Driver handles, must be the same as in the stub
 #define SCSI_MAX_HANDLES 32
 
+// The number of sense data bytes
+#define SENSE_LENGTH 18
+
 
 typedef struct
 {
@@ -52,6 +56,13 @@ typedef struct
 } HANDLE_META_DATA;
 
 static HANDLE_META_DATA handle_meta_data[SCSI_MAX_HANDLES];
+
+// The current sense data
+static uint8_t sense_data[SENSE_LENGTH];
+
+// The deferred sense data for 16 devices
+static uint8_t deferred_sense_data[16][SENSE_LENGTH];
+static bool deferred_sense_data_valid[16];
 
 #if HAVE_UDEV
 static struct udev *udev;
@@ -339,26 +350,59 @@ static int scsidrv_inout(uint32_t stack)
 
 	if (sense_buffer)
 	{
-		memset(sense_buffer, 0, 18);
+		memset(sense_buffer, 0, SENSE_LENGTH);
 	}
 
-	// No explicit LUN support, the SG driver maps LUNs to device files
-	if (cmd[1] & 0xe0)
-	{
-		if (sense_buffer)
+        // There is no explicit LUN support, the SG driver maps each LUN to a device file
+        if ((cmd[1] & 0b11100000) && cmd[0] != INQUIRY)
+        {
+		// REQUEST SENSE has a special handling for non-existing LUNs
+		if (cmd[0] == REQUEST_SENSE)
 		{
-			// Sense Key and ASC
-			sense_buffer[2] = 0x05;
-			sense_buffer[12] = 0x25;
-			M68000_Flush_Data_Cache(st_sense_buffer, 18);
+			memset(buffer, 0, SENSE_LENGTH);
 
-			LOG_TRACE(TRACE_SCSIDRV,
-			          "\n               Sense Key=$%02X, ASC=$%02X, ASCQ=$00",
-			          sense_buffer[2], sense_buffer[12]);
+			// LOGICAL UNIT NOT SUPPORTED
+			buffer[0] = 0x70;
+			buffer[2] = ILLEGAL_REQUEST;
+			buffer[7] = 10;
+			buffer[12] = 0x25;
+			M68000_Flush_Data_Cache(st_buffer, SENSE_LENGTH);
+
+			// When signalling an invalid LUN, for REQUEST SENSE the status must be GOOD
+			return 0;
+		}
+		else if (sense_buffer)
+		{
+			// LOGICAL UNIT NOT SUPPORTED
+			sense_buffer[0] = 0x70;
+			sense_buffer[2] = ILLEGAL_REQUEST;
+			sense_buffer[7] = 10;
+			sense_buffer[12] = 0x25;
+			M68000_Flush_Data_Cache(st_sense_buffer, SENSE_LENGTH);
+
+			LOG_TRACE(TRACE_SCSIDRV, "\n               Sense Key=$05, ASC=$25, ASCQ=$00");
 		}
 
 		return 2;
 	}
+
+	const int id = handle_meta_data[handle].id_lo;
+
+	// Return deferred sense data, if any
+	if (cmd[0] == REQUEST_SENSE && deferred_sense_data_valid[id])
+	{
+		memcpy(buffer, deferred_sense_data[id], SENSE_LENGTH);
+		deferred_sense_data_valid[id] = false;
+		M68000_Flush_Data_Cache(st_buffer, SENSE_LENGTH);
+
+		LOG_TRACE(TRACE_SCSIDRV,
+			  "\n               Deferred Sense Key=$%02X, ASC=$%02X, ASCQ=$%02X",
+			  buffer[2], buffer[12], buffer[13]);
+
+		return 0;
+	}
+
+	deferred_sense_data_valid[id] = false;
 
 	if (check_mchg_udev())
 	{
@@ -374,8 +418,10 @@ static int scsidrv_inout(uint32_t stack)
 
 		if (sense_buffer)
 		{
-			// Sense Key and ASC
-			sense_buffer[2] = 0x06;
+			// NOT READY TO READY CHANGE
+			sense_buffer[0] = 0x70;
+			sense_buffer[2] = UNIT_ATTENTION;
+			sense_buffer[7] = 10;
 			sense_buffer[12] = 0x28;
 		}
 
@@ -397,8 +443,9 @@ static int scsidrv_inout(uint32_t stack)
 		io_hdr.dxferp = buffer;
 		io_hdr.dxfer_len = transfer_len;
 
-		io_hdr.sbp = sense_buffer;
-		io_hdr.mx_sb_len = 18;
+		memset(sense_data, 0, SENSE_LENGTH);
+		io_hdr.sbp = sense_data;
+		io_hdr.mx_sb_len = SENSE_LENGTH;
 
 		io_hdr.cmdp = cmd;
 		io_hdr.cmd_len = cmd_len;
@@ -407,44 +454,72 @@ static int scsidrv_inout(uint32_t stack)
 
 		status = ioctl(handle_meta_data[handle].fd,
 		               SG_IO, &io_hdr) < 0 ? -1 : io_hdr.status;
-		if(status == -1)
+		if (status == -1)
 		{
-			Log_Printf(LOG_ERROR, "\nCan't transfer %d byte(s)\n", transfer_len);
+			Log_Printf(LOG_ERROR, "\nscsidrv_inout: Can't transfer %d byte(s)\n", transfer_len);
+		}
+		// Do not treat CONDITION MET as en error
+		else if (status == 4)
+		{
+			status = 0;
 		}
 
-		if (!status && sense_buffer && sense_buffer[2] & 0x0f)
+		// If the command was successful, use the sense key as status
+		if (!status)
 		{
-			status = sense_buffer[2] & 0x0f;
+			status = sense_data[2] & 0x0f;
+
+			if (cmd[0] == INQUIRY && (cmd[1] & 0b11100000))
+			{
+				// SCSI-2 section 8.2.5.1: Incorrect logical unit handling
+				buffer[0] = 0x7f;
+			}
 		}
 	}
 
-	if (status > 0 && sense_buffer)
+	// If a sense buffer was passed, return the current sense data
+	if (sense_buffer)
 	{
-		LOG_TRACE(TRACE_SCSIDRV,
-		          "\n               Sense Key=$%02X, ASC=$%02X, ASCQ=$%02X",
-		          sense_buffer[2], sense_buffer[12], sense_buffer[13]);
+		memcpy(sense_buffer, sense_data, SENSE_LENGTH);
+
+		if (status) {
+			LOG_TRACE(TRACE_SCSIDRV,
+				  "\n               Sense Key=$%02X, ASC=$%02X, ASCQ=$%02X",
+				  sense_data[2], sense_data[12], sense_data[13]);
+		}
 
 		if (status == 2)
 		{
 			// Automatic media change and reset handling for
 			// SCSI Driver version 1.0.1
-			if ((sense_buffer[2] & 0x0f) && !sense_buffer[13])
+			if ((sense_data[2] & 0x0f) && !sense_data[13])
 			{
-				if (sense_buffer[12] == 0x28)
+				if (sense_data[12] == 0x28)
 				{
 					// cErrMediach
 					set_error(handle, 1);
 				}
-				else if (sense_buffer[12] == 0x29)
+				else if (sense_data[12] == 0x29)
 				{
 					// cErrReset
 					set_error(handle, 2);
 				}
 			}
 		}
+
+	}
+	// Remember sense data for a subsequent REQUEST SENSE
+	else
+	{
+		LOG_TRACE(TRACE_SCSIDRV,
+			  "\n               Defer Sense Key=$%02X, ASC=$%02X, ASCQ=$%02X",
+			  sense_data[2], sense_data[12], sense_data[13]);
+
+		memcpy(deferred_sense_data[id], sense_data, SENSE_LENGTH);
+		deferred_sense_data_valid[id] = true;
 	}
 
-	M68000_Flush_Data_Cache(st_sense_buffer, 18);
+	M68000_Flush_Data_Cache(st_sense_buffer, SENSE_LENGTH);
 	if (!dir)
 	{
 		M68000_Flush_All_Caches(st_buffer, transfer_len);
