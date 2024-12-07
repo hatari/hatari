@@ -189,6 +189,7 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	bool bReInitHdcEmu = false;
 	bool bReInitIDEEmu = false;
 	bool bReInitIoMem = false;
+	bool bReInitKeymap = false;
 	bool bScreenModeChange = false;
 	bool bReInitMidi = false;
 	bool bReInitPrinter = false;
@@ -390,6 +391,9 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 		bReInitMidi = true;
 	}
 
+	bReInitKeymap = strcmp(changed->Keyboard.szMappingFileName,
+	                       current->Keyboard.szMappingFileName);
+
 	/* Copy details to configuration,
 	 * so it can be saved out or set on reset
 	 */
@@ -411,7 +415,7 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 #endif
 
 	/* Set keyboard remap file */
-	if (ConfigureParams.Keyboard.nKeymapType == KEYMAP_LOADED)
+	if (bReInitKeymap)
 	{
 		Dprintf("- keymap<\n");
 		Keymap_LoadRemapFile(ConfigureParams.Keyboard.szMappingFileName);

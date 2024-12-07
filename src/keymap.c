@@ -39,6 +39,7 @@ const char Keymap_fileid[] = "Hatari keymap.c";
 
 /* Table for loaded keys: */
 static int LoadedKeymap[KBD_MAX_SCANCODE][2];
+static bool keymap_loaded;
 
 /* List of ST scan codes to NOT de-bounce when running in maximum speed */
 static const uint8_t DebounceExtendedKeys[] =
@@ -590,23 +591,8 @@ static uint8_t Keymap_GetKeyPadScanCode(const SDL_Keysym* pKeySym)
  */
 static uint8_t Keymap_RemapKeyToSTScanCode(const SDL_Keysym* pKeySym)
 {
-	/* Check for keypad first so we can handle numlock */
-	if (ConfigureParams.Keyboard.nKeymapType != KEYMAP_LOADED)
-	{
-		if (pKeySym->sym >= SDLK_KP_1 && pKeySym->sym <= SDLK_KP_9)
-		{
-			return Keymap_GetKeyPadScanCode(pKeySym);
-		}
-	}
-
-	/* Remap from PC scancodes? */
-	if (ConfigureParams.Keyboard.nKeymapType == KEYMAP_SCANCODE)
-	{
-		return Keymap_PcToStScanCode(pKeySym);
-	}
-
 	/* Use loaded keymap? */
-	if (ConfigureParams.Keyboard.nKeymapType == KEYMAP_LOADED)
+	if (keymap_loaded)
 	{
 		int i;
 		for (i = 0; i < KBD_MAX_SCANCODE && LoadedKeymap[i][1] != 0; i++)
@@ -614,6 +600,18 @@ static uint8_t Keymap_RemapKeyToSTScanCode(const SDL_Keysym* pKeySym)
 			if (pKeySym->sym == (SDL_Keycode)LoadedKeymap[i][0])
 				return LoadedKeymap[i][1];
 		}
+	}
+
+	/* Check for keypad first so we can handle numlock */
+	if (pKeySym->sym >= SDLK_KP_1 && pKeySym->sym <= SDLK_KP_9)
+	{
+		return Keymap_GetKeyPadScanCode(pKeySym);
+	}
+
+	/* Remap from PC scancodes? */
+	if (ConfigureParams.Keyboard.nKeymapType == KEYMAP_SCANCODE)
+	{
+		return Keymap_PcToStScanCode(pKeySym);
 	}
 
 	/* Use symbolic mapping */
@@ -686,6 +684,7 @@ void Keymap_LoadRemapFile(const char *pszFileName)
 
 	/* Initialize table with default values */
 	memset(LoadedKeymap, 0, sizeof(LoadedKeymap));
+	keymap_loaded = false;
 
 	if (!*pszFileName)
 		return;
@@ -756,6 +755,9 @@ void Keymap_LoadRemapFile(const char *pszFileName)
 		idx += 1;
 	}
 	fclose(in);
+
+	if (idx > 0)
+		keymap_loaded = true;
 
 	if (fails)
 		Log_AlertDlg(LOG_ERROR, "%d keymap file parsing failures\n(see console log for details)", fails);

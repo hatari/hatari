@@ -18,7 +18,7 @@ const char DlgKeyboard_fileid[] = "Hatari dlgKeyboard.c";
 
 #define DLGKEY_SYMBOLIC  4
 #define DLGKEY_SCANCODE  5
-#define DLGKEY_FROMFILE  6
+#define DLGKEY_CLEARFILE 6
 #define DLGKEY_MAPNAME   8
 #define DLGKEY_MAPBROWSE 9
 #define DLGKEY_SCPREV    13
@@ -44,7 +44,7 @@ static SGOBJ keyboarddlg[] =
 	{ SGTEXT, 0, 0, 2,3, 17,1, "Keyboard mapping:" },
 	{ SGRADIOBUT, 0, 0,  4,5, 10,1, "_Symbolic" },
 	{ SGRADIOBUT, 0, 0, 17,5, 10,1, "S_cancode" },
-	{ SGRADIOBUT, 0, 0, 30,5, 11,1, "_From file" },
+	{ SGBUTTON, 0, 0, 36,5, 8,1, "Cle_ar" },
 	{ SGTEXT, 0, 0, 2,7, 13,1, "Mapping file:" },
 	{ SGTEXT, 0, 0, 2,8, 42,1, NULL },
 	{ SGBUTTON,   0, 0, 36, 7,  8,1, "_Browse" },
@@ -217,17 +217,15 @@ static void DlgKbd_RefreshShortcuts(int sc)
  */
 void Dialog_KeyboardDlg(void)
 {
-	int i, but;
+	int but;
 	char dlgmapfile[44];
 	int cur_sc = 0;
 
 	SDLGui_CenterDlg(keyboarddlg);
 
 	/* Set up dialog from actual values: */
-	for (i = DLGKEY_SYMBOLIC; i <= DLGKEY_FROMFILE; i++)
-	{
-		keyboarddlg[i].state &= ~SG_SELECTED;
-	}
+	keyboarddlg[DLGKEY_SYMBOLIC].state &= ~SG_SELECTED;
+	keyboarddlg[DLGKEY_SCANCODE].state &= ~SG_SELECTED;
 	keyboarddlg[DLGKEY_SYMBOLIC+ConfigureParams.Keyboard.nKeymapType].state |= SG_SELECTED;
 
 	File_ShrinkName(dlgmapfile, ConfigureParams.Keyboard.szMappingFileName,
@@ -253,6 +251,10 @@ void Dialog_KeyboardDlg(void)
 			                      ConfigureParams.Keyboard.szMappingFileName,
 			                      keyboarddlg[DLGKEY_MAPNAME].w, false);
 			break;
+		 case DLGKEY_CLEARFILE:
+			 ConfigureParams.Keyboard.szMappingFileName[0] = 0;
+			 dlgmapfile[0] = 0;
+			 break;
 		 case DLGKEY_SCPREV:
 			if (cur_sc > 0)
 			{
@@ -283,10 +285,8 @@ void Dialog_KeyboardDlg(void)
 	/* Read values from dialog: */
 	if (keyboarddlg[DLGKEY_SYMBOLIC].state & SG_SELECTED)
 		ConfigureParams.Keyboard.nKeymapType = KEYMAP_SYMBOLIC;
-	else if (keyboarddlg[DLGKEY_SCANCODE].state & SG_SELECTED)
-		ConfigureParams.Keyboard.nKeymapType = KEYMAP_SCANCODE;
 	else
-		ConfigureParams.Keyboard.nKeymapType = KEYMAP_LOADED;
+		ConfigureParams.Keyboard.nKeymapType = KEYMAP_SCANCODE;
 
 	ConfigureParams.Keyboard.bDisableKeyRepeat = (keyboarddlg[DLGKEY_DISREPEAT].state & SG_SELECTED);
 }

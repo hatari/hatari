@@ -49,6 +49,7 @@ Emulator improvements:
   - Add separate option for enabling/disabling >=030 CPU data cache
 - Keyboard:
   - Symbolic key mapping improved for different TOS language versions
+  - Made it possible to use a mapping file with fallback to scancode mapping
 - Memory snapshots:
   - Fix: re/store all relevant YM2149 & MMU state variables
 - Joysticks:

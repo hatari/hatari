@@ -1090,6 +1090,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 	int i, ok = true;
 	float zoom;
 	int val;
+	bool valid;
 
 	/* Defaults for loading initial memory snap-shots */
 	bLoadMemorySave = false;
@@ -2098,10 +2099,10 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			i += 1;
 			ok = Opt_StrCpy(OPT_KEYMAPFILE, true, ConfigureParams.Keyboard.szMappingFileName,
 					argv[i], sizeof(ConfigureParams.Keyboard.szMappingFileName),
-					NULL);
-			if (ok)
+					&valid);
+			if (ok && !valid)
 			{
-				ConfigureParams.Keyboard.nKeymapType = KEYMAP_LOADED;
+				ConfigureParams.Keyboard.szMappingFileName[0] = 0;
 			}
 			break;
 
