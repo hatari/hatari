@@ -420,6 +420,7 @@ Color demos:
 - Going (by Spice Boys)
 - Grafik -und Sounddemo (by Eckhard Kruse)
 - Hallucinations (by Reservoir Gods)
+- Harstad Vito (by Dekadence)
 - Helvetin Hyttysiä (by Spice Boys)
 - Hiatus (by SMFX)
 - Hatari 2.2 intro (by Mr.Styckx)
@@ -488,7 +489,7 @@ Color demos:
   - Glitches are intentional, not EmuTOS issue
 - Sommarhack 2011 invite (by DHS)
 - Sommarhack 2022 reminder (by DHS)
-- Sommarhack 2024 reminder (by DHS & others)
+- Sommarhack 2024 reminder (by DHS & others)*
 - Soundtracker (by Equinox)
 - Sowatt sprite record (rec16e, by Oxygene)
 - ST NICCC 2000 (by Oxygene)
@@ -525,6 +526,7 @@ Color demos:
 - Unstatic (by Cyprian, Dma-Sc & bob_er)
 - Virtual (by Equinox)
 - Visualize (by Checkpoint)
+- Vitsit Dottuun (by Extreme, 50Hz only)
 - Vodka demo (by Equinox) - does not work with >1MB of RAM
 - We Accidentally Your Oculus (by Sector One)
 - We do not rip or recycle anything (by Spice Boys)
