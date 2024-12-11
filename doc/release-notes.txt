@@ -72,6 +72,8 @@ Emulator improvements:
   - Add "struct" command to better show contents of program's structures
   - Variable & debug symbol names can be given directly also to load,
     save, memwrite and register commands in addition to numeric values
+  - File name completion for commands having optional file name args
+  - Symbol name completion for "loadbin", "savebin" & "dspsymbols" commands
   - Align "memdump" character representation also when line is not full
   - Show also non-ASCII Atari chars in debugger memory content output
   - Add 'c' (character) argument type support for "memwrite" command

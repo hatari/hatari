@@ -13,6 +13,15 @@ const char Profile_fileid[] = "Hatari profile.c";
 #include <stdio.h>
 #include <assert.h>
 #include <inttypes.h>
+
+#include "config.h"
+
+#if HAVE_LIBREADLINE
+# include <readline/readline.h>
+#else
+# define rl_filename_completion_function(x,y) NULL
+#endif
+
 #include "main.h"
 #include "version.h"
 #include "debugui.h"
@@ -611,11 +620,16 @@ void Profile_FreeCallinfo(callinfo_t *callinfo)
  */
 char *Profile_Match(const char *text, int state)
 {
-	static const char *names[] = {
+	static const char *subs[] = {
 		"addresses", "callers", "caches", "counts", "cycles", "d-hits", "i-misses",
 		"loops", "off", "on", "save", "stack", "stats", "symbols"
 	};
-	return DebugUI_MatchHelper(names, ARRAY_SIZE(names), text, state);
+
+	char *ret = DebugUI_MatchHelper(subs, ARRAY_SIZE(subs), text, state);
+	if (ret) {
+		return ret;
+	}
+	return rl_filename_completion_function(text, state);
 }
 
 const char Profile_Description[] =

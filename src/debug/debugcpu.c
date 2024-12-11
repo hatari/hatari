@@ -1472,20 +1472,20 @@ static const dbgcommand_t cpucommands[] =
 	  "\t'w' or 'l' they will be done as words/longs instead.\n"
 	  "\t'c' can be used to provide byte values as chars.",
 	  false },
-	{ DebugCpu_LoadBin, NULL,
+	{ DebugCpu_LoadBin, Symbols_MatchCpuAddrFile,
 	  "loadbin", "l",
 	  "load a file into memory",
 	  "<filename> <address>\n"
 	  "\tLoad the file <filename> into memory starting at <address>.",
 	  false },
-	{ DebugCpu_SaveBin, NULL,
+	{ DebugCpu_SaveBin, Symbols_MatchCpuAddrFile,
 	  "savebin", "",
 	  "save memory to a file",
 	  "<filename> <address> <length>\n"
 	  "\tSave the memory block at <address> with given <length> to\n"
 	  "\tthe file <filename>.",
 	  false },
-	{ Symbols_Command, Symbols_MatchCommand,
+	{ Symbols_Command, Symbols_MatchCpuCommand,
 	  "symbols", "",
 	  "load CPU symbols & their addresses",
 	  Symbols_Description,

@@ -32,6 +32,7 @@ extern const char Symbols_Description[];
 extern char* Symbols_MatchCpuAddress(const char *text, int state);
 extern char* Symbols_MatchCpuCodeAddress(const char *text, int state);
 extern char* Symbols_MatchCpuDataAddress(const char *text, int state);
+extern char *Symbols_MatchCpuAddrFile(const char *text, int state);
 /* readline completion support functions for DSP */
 extern char* Symbols_MatchDspAddress(const char *text, int state);
 extern char* Symbols_MatchDspCodeAddress(const char *text, int state);
@@ -58,7 +59,8 @@ extern void Symbols_LoadCurrentProgram(void);
 extern void Symbols_LoadTOS(const char *path, uint32_t maxaddr);
 extern void Symbols_FreeAll(void);
 /* symbols/dspsymbols command parsing */
-extern char *Symbols_MatchCommand(const char *text, int state);
+extern char *Symbols_MatchCpuCommand(const char *text, int state);
+extern char *Symbols_MatchDspCommand(const char *text, int state);
 extern int Symbols_Command(int nArgc, char *psArgs[]);
 
 #endif

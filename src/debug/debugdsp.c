@@ -595,7 +595,7 @@ static const dbgcommand_t dspcommands[] =
 	  "\tdump DSP memory from given memory space and address, or\n"
 	  "\tcontinue from previous address if none specified.",
 	  false },
-	{ Symbols_Command, NULL,
+	{ Symbols_Command, Symbols_MatchDspCommand,
 	  "dspsymbols", "",
 	  "load DSP symbols & their addresses",
 	  Symbols_Description,

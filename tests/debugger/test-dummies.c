@@ -2,8 +2,16 @@
  * Dummy stuff needed to compile debugger related test code
  */
 
-/* fake tracing flags */
 #include <stdio.h>
+
+#include "config.h"
+#if HAVE_LIBREADLINE
+/* fake readline function */
+#include <readline/readline.h>
+char *rl_filename_completion_function(const char *text, int state) { return NULL; }
+#endif
+
+/* fake tracing flags */
 #include "log.h"
 
 uint64_t LogTraceFlags = 0;

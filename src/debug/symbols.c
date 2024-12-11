@@ -23,6 +23,15 @@ const char Symbols_fileid[] = "Hatari symbols.c";
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+
+#include "config.h"
+
+#if HAVE_LIBREADLINE
+# include <readline/readline.h>
+#else
+# define rl_filename_completion_function(x,y) NULL
+#endif
+
 #include "main.h"
 #include "file.h"
 #include "options.h"
@@ -480,6 +489,20 @@ char* Symbols_MatchCpuDataAddress(const char *text, int state)
 }
 
 /**
+ * Readline match callback to list matching CPU symbols & file names.
+ * STATE = 0 -> different text from previous one.
+ * Return next match or NULL if no matches.
+ */
+char *Symbols_MatchCpuAddrFile(const char *text, int state)
+{
+	char *ret = Symbols_MatchCpuAddress(text, state);
+	if (ret) {
+		return ret;
+	}
+	return rl_filename_completion_function(text, state);
+}
+
+/**
  * Readline match callback for DSP symbol name completion.
  * STATE = 0 -> different text from previous one.
  * Return next match or NULL if no matches.
@@ -914,11 +937,11 @@ void Symbols_LoadTOS(const char *path, uint32_t maxaddr)
 /* ---------------- command parsing ------------------ */
 
 /**
- * Readline match callback to list symbols subcommands.
+ * Readline match callback for CPU symbols command.
  * STATE = 0 -> different text from previous one.
  * Return next match or NULL if no matches.
  */
-char *Symbols_MatchCommand(const char *text, int state)
+char *Symbols_MatchCpuCommand(const char *text, int state)
 {
 	static const char* subs[] = {
 		"autoload", "code", "data", "free", "match", "name", "prg"
@@ -927,7 +950,30 @@ char *Symbols_MatchCommand(const char *text, int state)
 	if (ret) {
 		return ret;
 	}
-	return Symbols_MatchCpuAddress(text, state);
+	if ((ret = Symbols_MatchCpuAddress(text, state))) {
+		return ret;
+	}
+	return rl_filename_completion_function(text, state);
+}
+
+/**
+ * Readline match callback to list DSP symbols command.
+ * STATE = 0 -> different text from previous one.
+ * Return next match or NULL if no matches.
+ */
+char *Symbols_MatchDspCommand(const char *text, int state)
+{
+	static const char* subs[] = {
+		"code", "data", "free", "match", "name"
+	};
+	char *ret = DebugUI_MatchHelper(subs, ARRAY_SIZE(subs), text, state);
+	if (ret) {
+		return ret;
+	}
+	if ((ret = Symbols_MatchDspAddress(text, state))) {
+		return ret;
+	}
+	return rl_filename_completion_function(text, state);
 }
 
 const char Symbols_Description[] =
@@ -1001,7 +1047,7 @@ int Symbols_Command(int nArgc, char *psArgs[])
 	 * discard them when program terminates with GEMDOS HD,
 	 * or whether they need to be loaded manually.
 	 */
-	if (strcmp(file, "autoload") == 0) {
+	if (listtype == TYPE_CPU && strcmp(file, "autoload") == 0) {
 		bool value;
 		if (nArgc < 3) {
 			value = !ConfigureParams.Debugger.bSymbolsAutoLoad;
@@ -1063,7 +1109,7 @@ int Symbols_Command(int nArgc, char *psArgs[])
 	}
 
 	/* load symbols from GEMDOS HD program? */
-	if (strcmp(file, "prg") == 0) {
+	if (listtype == TYPE_CPU && strcmp(file, "prg") == 0) {
 		file = CurrentProgramPath;
 		if (!file) {
 			fprintf(stderr, "ERROR: no program loaded (through GEMDOS HD emu)!\n");
