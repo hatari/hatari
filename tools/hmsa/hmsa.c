@@ -161,13 +161,13 @@ or at your option any later version. Please read the file gpl.txt for details.\n
 int main(int argc, char *argv[])
 {
 	bool isMsa;
-	int retval;
 	long disksize;
 	unsigned char *diskbuf;
 	const char *srcfile, *srcdot;
 	char *dstfile, *dstdot;
 	int ImageType;
 	int drive;
+	int retval = 0;
 
 	if(argc < 2 || argv[1][0] == '-') {
 		usage(argv[0]);
@@ -240,7 +240,8 @@ int main(int argc, char *argv[])
 			retval = -1;
 		} else {
 			printf("Converting %s to %s (%li Bytes).\n", srcfile, dstfile, disksize);
-			retval = File_Save(dstfile, diskbuf, disksize, false);
+			if (!File_Save(dstfile, diskbuf, disksize, false))
+				retval = -1;
 		}
 	} else {
 		/* Just read disk image directly into buffer */
@@ -251,7 +252,8 @@ int main(int argc, char *argv[])
 			retval = -1;
 		} else {
 			printf("Converting %s to %s (%li Bytes).\n", srcfile, dstfile, disksize);
-			retval = MSA_WriteDisk(drive, dstfile, diskbuf, disksize);
+			if (!MSA_WriteDisk(drive, dstfile, diskbuf, disksize))
+				retval = -1;
 		}
 	}
 
