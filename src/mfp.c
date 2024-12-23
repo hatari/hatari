@@ -1419,7 +1419,7 @@ static uint32_t MFP_StartTimer_AB ( MFP_STRUCT *pMFP , uint8_t TimerControl, uin
 		  || ( Handler == INTERRUPT_MFP_TT_TIMERB ) )
 		{
 			/* Store start cycle for handling interrupt in video.c */
-			TimerBEventCountCycleStart = Cycles_GetCounterOnWriteAccess(CYCLES_COUNTER_VIDEO);
+			TimerBEventCountCycleStart = Video_GetCyclesSinceVbl_OnWriteAccess();
 		}
 
 		if (LOG_TRACE_LEVEL(TRACE_MFP_START))

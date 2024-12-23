@@ -163,7 +163,7 @@ void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr)
 	CycleColourIndex = (addr-0xff8240)>>1;
 
 	/* Find number of cycles into frame */
-	FrameCycles = Cycles_GetCounterOnWriteAccess(CYCLES_COUNTER_VIDEO);
+	FrameCycles = Video_GetCyclesSinceVbl_OnWriteAccess();
 
 	/* Find scan line we are currently on and get index into cycle-palette table */
 	Video_ConvertPosition ( FrameCycles , &ScanLine , &nHorPos );	

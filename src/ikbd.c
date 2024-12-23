@@ -635,7 +635,7 @@ static void	IKBD_Boot_ROM ( bool ClearAllRAM )
 void IKBD_InterruptHandler_ResetTimer(void)
 {
 	LOG_TRACE(TRACE_IKBD_ALL, "ikbd reset timer completed, resuming ikbd processing VBLs=%i framecyc=%i\n",
-	          nVBLs, Cycles_GetCounter(CYCLES_COUNTER_VIDEO));
+	          nVBLs, Video_GetCyclesSinceVbl());
 
 	/* Remove this interrupt from list and re-order */
 	CycInt_AcknowledgeInterrupt();
@@ -1908,7 +1908,7 @@ static void IKBD_RunKeyboardCommand(uint8_t aciabyte)
 static void IKBD_Cmd_Reset(void)
 {
 	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_Reset VBLs=%i framecyc=%i\n",
-	          nVBLs, Cycles_GetCounter(CYCLES_COUNTER_VIDEO));
+	          nVBLs, Video_GetCyclesSinceVbl());
 
 	/* Check that 0x01 was received after 0x80 */
 	if (Keyboard.InputBuffer[1] == 0x01)
