@@ -185,6 +185,9 @@ extern const char* Video_GetTimings_Name ( void );
 extern uint8_t	Video_Get_MONO_Line ( void );
 
 extern void	Video_ConvertPosition( int FrameCycles , int *pHBL , int *pLineCycles );
+extern int	Video_GetCyclesSinceVbl ( void );
+extern int	Video_GetCyclesSinceVbl_OnWriteAccess ( void );
+extern int	Video_GetCyclesSinceVbl_OnReadAccess ( void );
 extern void	Video_GetPosition( int *pFrameCycles , int *pHBL , int *pLineCycles );
 extern void	Video_GetPosition_OnWriteAccess( int *pFrameCycles , int *pHBL , int *pLineCycles );
 extern void	Video_GetPosition_OnReadAccess( int *pFrameCycles , int *pHBL , int *pLineCycles );

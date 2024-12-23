@@ -683,7 +683,6 @@ static uint64_t		VBL_ClockCounter;
 int	Video_GetPosition_ForceInc = 0;
 /* TEMP : to update CYCLES_COUNTER_VIDEO during an opcode */
 
-
 /*--------------------------------------------------------------*/
 /* Local functions prototypes                                   */
 /*--------------------------------------------------------------*/
@@ -1198,10 +1197,90 @@ if ( *pLineCycles < 0 )
 }
 
 
+/*-----------------------------------------------------------------------*/
+/**
+ * Video_GetCyclesSinceVbl() is used to convert the global cycles counter
+ * into another cycle counter relative to the current VBL as a "frame cycles" counter.
+ * This frame cycles counter can then be used by Video_ConvertPosition()
+ * to get a position inside the VBL, consisting of an HBL number and a number
+ * of elapsed cycles into this HBL.
+ *
+ * For example, for a standard 50 Hz low resolution on STF/STE, a frame contains
+ * 160256 cycles, giving 313 HBL and 512 cycles per HBL
+ *
+ * As a convention we consider that when global cycles counters is 0 (or after a reset),
+ * then VBL 0 will also start at cycle 0.
+ * All following VBL will considered to start at cycle VblVideoCycleOffset
+ */
+
+#undef OLD_GET_POS
+//#define OLD_GET_POS
+#define OLD_GET_POS_FORCE_INC
+
+int	Video_GetCyclesSinceVbl ( void )
+{
+	int cycles_since_vbl;
+	int cycles_old;
+
+	cycles_old = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
+
+	cycles_since_vbl = CyclesGlobalClockCounter - VBL_ClockCounter;
+
+	/* The VBL interrupt starts at "VblVideoCycleOffset" cycles since the start of the VBL */
+	/* (except for VBL=0 after a reset to have cycles_since_vbl=0 when CyclesGlobalClockCounter=0 */
+	if ( nVBLs > 0 )
+		cycles_since_vbl += pVideoTiming->VblVideoCycleOffset << nCpuFreqShift;
+
+if ( cycles_since_vbl != cycles_old )
+  fprintf ( stderr , "cyc since vbl old %d != new %d\n" , cycles_old , cycles_since_vbl );
+
+	return cycles_since_vbl;
+}
+
+
+int	Video_GetCyclesSinceVbl_OnWriteAccess ( void )
+{
+	int cycles_since_vbl;
+	int cycles_old;
+
+	cycles_old = Cycles_GetCounterOnWriteAccess(CYCLES_COUNTER_VIDEO);
+
+	cycles_since_vbl = Video_GetCyclesSinceVbl() + Cycles_GetInternalCycleOnWriteAccess();
+
+if ( cycles_since_vbl != cycles_old )
+  fprintf ( stderr , "cyc since vbl write old %d != new %d\n" , cycles_old , cycles_since_vbl );
+
+	return cycles_since_vbl;
+}
+
+
+int	Video_GetCyclesSinceVbl_OnReadAccess ( void )
+{
+	int cycles_since_vbl;
+	int cycles_old;
+
+	cycles_old = Cycles_GetCounterOnReadAccess(CYCLES_COUNTER_VIDEO);
+
+	cycles_since_vbl = Video_GetCyclesSinceVbl() + Cycles_GetInternalCycleOnReadAccess();
+
+if ( cycles_since_vbl != cycles_old )
+  fprintf ( stderr , "cyc since vbl read old %d != new %d\n" , cycles_old , cycles_since_vbl );
+
+	return cycles_since_vbl;
+}
+
+
 void	Video_GetPosition ( int *pFrameCycles , int *pHBL , int *pLineCycles )
 {
+#ifdef OLD_GET_POS
 	*pFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
+#else
+	*pFrameCycles = Video_GetCyclesSinceVbl();
+#endif
+
+#ifdef OLD_GET_POS_FORCE_INC
 *pFrameCycles += Video_GetPosition_ForceInc;	/* TEMP : to update CYCLES_COUNTER_VIDEO during an opcode */
+#endif
 	Video_ConvertPosition ( *pFrameCycles , pHBL , pLineCycles );
 }
 
@@ -1218,22 +1297,35 @@ static void	Video_GetPosition_CE ( int *pFrameCycles , int *pHBL , int *pLineCyc
 		return;
 	}
 
+#ifdef OLD_GET_POS
 	*pFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 	*pFrameCycles += currcycle / 256;		/* TEMP : to update CYCLES_COUNTER_VIDEO with new cycInt code */
+#else
+	*pFrameCycles = Video_GetCyclesSinceVbl();
+	*pFrameCycles += currcycle / 256;		/* TEMP : to update CYCLES_COUNTER_VIDEO with new cycInt code */
+#endif
 	Video_ConvertPosition ( *pFrameCycles , pHBL , pLineCycles );
 }
 
 
 void	Video_GetPosition_OnWriteAccess ( int *pFrameCycles , int *pHBL , int *pLineCycles )
 {
+#ifdef OLD_GET_POS
 	*pFrameCycles = Cycles_GetCounterOnWriteAccess(CYCLES_COUNTER_VIDEO);
+#else
+	*pFrameCycles = Video_GetCyclesSinceVbl_OnWriteAccess();
+#endif
 	Video_ConvertPosition ( *pFrameCycles , pHBL , pLineCycles );
 }
 
 
 void	Video_GetPosition_OnReadAccess ( int *pFrameCycles , int *pHBL , int *pLineCycles )
 {
+#ifdef OLD_GET_POS
 	*pFrameCycles = Cycles_GetCounterOnReadAccess(CYCLES_COUNTER_VIDEO);
+#else
+	*pFrameCycles = Video_GetCyclesSinceVbl_OnReadAccess();
+#endif
 	Video_ConvertPosition ( *pFrameCycles , pHBL , pLineCycles );
 }
 
@@ -1256,7 +1348,11 @@ static uint32_t Video_CalculateAddress ( void )
 
 	/* Find number of cycles passed during frame */
 	/* We need to subtract '8' for correct video address calculation */
+#ifdef OLD_GET_POS
 	FrameCycles = Cycles_GetCounterOnReadAccess(CYCLES_COUNTER_VIDEO) - 8;
+#else
+	FrameCycles = Video_GetCyclesSinceVbl_OnReadAccess() - 8;
+#endif
 
 	/* Now find which pixel we are on (ignore left/right borders) */
 	Video_ConvertPosition ( FrameCycles , &HblCounterVideo , &LineCycles );
@@ -1429,11 +1525,19 @@ static uint32_t Video_CalculateAddress ( void )
 			VideoAddress += PrevSize + NbBytes;
 	}
 
+#ifdef OLD_GET_POS
 	LOG_TRACE(TRACE_VIDEO_ADDR , "video base=%x raster=%x addr=%x video_cyc=%d "
 	          "line_cyc=%d/X=%d @ nHBL=%d/video_hbl=%d %d<->%d pc=%x instr_cyc=%d\n",
 	          VideoBase, (int)(pVideoRaster - STRam), VideoAddress,
 	          Cycles_GetCounter(CYCLES_COUNTER_VIDEO), LineCycles, X, nHBL,
 	          HblCounterVideo, LineStartCycle, LineEndCycle, M68000_GetPC(), CurrentInstrCycles);
+#else
+	LOG_TRACE(TRACE_VIDEO_ADDR , "video base=%x raster=%x addr=%x video_cyc=%d "
+	          "line_cyc=%d/X=%d @ nHBL=%d/video_hbl=%d %d<->%d pc=%x instr_cyc=%d\n",
+	          VideoBase, (int)(pVideoRaster - STRam), VideoAddress,
+	          Video_GetCyclesSinceVbl(), LineCycles, X, nHBL,
+	          HblCounterVideo, LineStartCycle, LineEndCycle, M68000_GetPC(), CurrentInstrCycles);
+#endif
 
 	return VideoAddress;
 }
@@ -3025,11 +3129,13 @@ void Video_InterruptHandler_HBL ( void )
 	int NewHBLPos;
 
 
+#ifdef OLD_GET_POS_FORCE_INC
 if ( CycInt_From_Opcode )		/* TEMP : to update CYCLES_COUNTER_VIDEO during an opcode */
 {
   Video_GetPosition_ForceInc = currcycle / 256;
 //  fprintf ( stderr , "Video_InterruptHandler_HBL from opcode currcycle=%d add=%d\n" , currcycle , Video_GetPosition_ForceInc );
 }
+#endif
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
 	/* How many cycle was this HBL delayed (>= 0) */
@@ -3162,7 +3268,9 @@ if ( CycInt_From_Opcode )		/* TEMP : to update CYCLES_COUNTER_VIDEO during an op
 			Video_AddInterruptHBL ( nHBL , pVideoTiming->RestartVideoCounter_Pos );
 		}
 	}
+#ifdef OLD_GET_POS_FORCE_INC
 Video_GetPosition_ForceInc = 0;		/* TEMP : to update CYCLES_COUNTER_VIDEO during an opcode */
+#endif
 }
 
 
@@ -3376,11 +3484,13 @@ void Video_InterruptHandler_EndLine(void)
 	int FrameCycles, HblCounterVideo, LineCycles;
 	int PendingCycles = -INT_CONVERT_FROM_INTERNAL ( PendingInterruptCount , INT_CPU_CYCLE );
 
+#ifdef OLD_GET_POS_FORCE_INC
 if ( CycInt_From_Opcode )		/* TEMP : to update CYCLES_COUNTER_VIDEO during an opcode */
 {
   Video_GetPosition_ForceInc = currcycle / 256;
 //  fprintf ( stderr , "Video_InterruptHandler_EndLine from opcode currcycle=%d add=%d\n" , currcycle , Video_GetPosition_ForceInc );
 }
+#endif
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
 	LOG_TRACE ( TRACE_VIDEO_HBL , "EndLine TB %d video_cyc=%d line_cyc=%d pending_int_cnt=%d\n" ,
@@ -3438,7 +3548,9 @@ if ( CycInt_From_Opcode )		/* TEMP : to update CYCLES_COUNTER_VIDEO during an op
 				MFP_TimerB_EventCount ( pMFP_TT , PendingCycles );	/* DE signal is also connected to timer B on the TT MFP */
 		}
 	}
+#ifdef OLD_GET_POS_FORCE_INC
 Video_GetPosition_ForceInc = 0;		/* TEMP : to update CYCLES_COUNTER_VIDEO during an opcode */
+#endif
 }
 
 
@@ -4189,7 +4301,11 @@ static void Video_SetHBLPaletteMaskPointers(void)
 	/* To correct this, we assume a delay of 8 cycles (should give a good approximation */
 	/* of a move.w or movem.l for example) */
 	//  FrameCycles = Cycles_GetCounterOnWriteAccess(CYCLES_COUNTER_VIDEO);
+#ifdef OLD_GET_POS
 	FrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO) + 8;
+#else
+	FrameCycles = Video_GetCyclesSinceVbl() + 8;
+#endif
 
 	/* Find 'line' into palette - screen starts 63 lines down, less 29 for top overscan */
 	Video_ConvertPosition ( FrameCycles , &HblCounterVideo , &LineCycles );
@@ -4704,6 +4820,7 @@ void Video_InterruptHandler_VBL ( void )
 {
 	int PendingCyclesOver;
 	int PendingInterruptCount_save;
+	uint64_t VBL_ClockCounter_prev;
 
 	PendingInterruptCount_save = PendingInterruptCount;
 
@@ -4725,6 +4842,10 @@ void Video_InterruptHandler_VBL ( void )
 
 	/* Set frame cycles, used for Video Address */
 	Cycles_SetCounter(CYCLES_COUNTER_VIDEO, PendingCyclesOver + ( pVideoTiming->VblVideoCycleOffset << nCpuFreqShift ) );
+
+	VBL_ClockCounter_prev = VBL_ClockCounter;
+	VBL_ClockCounter = CyclesGlobalClockCounter - PendingCyclesOver;
+
 
 	/* Clear any key presses which are due to be de-bounced (held for one ST frame) */
 	Keymap_DebounceAllKeys();
@@ -4764,26 +4885,42 @@ void Video_InterruptHandler_VBL ( void )
 	Sound_Update_VBL();
 
 	/* Update the blitter's stats for the previous VBL */
-	Blitter_StatsUpdateRate ( (int)( CyclesGlobalClockCounter - PendingCyclesOver - VBL_ClockCounter ) );
+	Blitter_StatsUpdateRate ( (int)( VBL_ClockCounter - VBL_ClockCounter_prev ) );
 
+#ifdef OLD_GET_POS
 	LOG_TRACE(TRACE_VIDEO_VBL , "VBL %d video_cyc=%d pending_cyc=%d vbl_cycles=%d\n" ,
 			nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) , PendingCyclesOver ,
 			(int)( CyclesGlobalClockCounter - PendingCyclesOver - VBL_ClockCounter ) );
+#else
+	LOG_TRACE(TRACE_VIDEO_VBL , "VBL %d video_cyc=%d pending_cyc=%d vbl_cycles=%d\n" ,
+			nVBLs , Video_GetCyclesSinceVbl() , PendingCyclesOver ,
+			(int)( CyclesGlobalClockCounter - PendingCyclesOver - VBL_ClockCounter ) );
+#endif
 
-	VBL_ClockCounter = CyclesGlobalClockCounter - PendingCyclesOver;
+//	VBL_ClockCounter = CyclesGlobalClockCounter - PendingCyclesOver;
 
 	/* Print traces if pending VBL bit changed just before IACK when VBL interrupt is allowed */
 	if ( ( CPU_IACK == true ) && ( regs.intmask < 4 ) )
 	{
 		if ( pendingInterrupts & ( 1 << 4 ) )
 		{
+#ifdef OLD_GET_POS
 			LOG_TRACE ( TRACE_VIDEO_VBL , "VBL %d, pending set again just before iack, skip one VBL interrupt video_cyc=%d pending_cyc=%d\n" ,
 				nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) , PendingCyclesOver );
+#else
+			LOG_TRACE ( TRACE_VIDEO_VBL , "VBL %d, pending set again just before iack, skip one VBL interrupt video_cyc=%d pending_cyc=%d\n" ,
+				nVBLs , Video_GetCyclesSinceVbl() , PendingCyclesOver );
+#endif
 		}
 		else
 		{
+#ifdef OLD_GET_POS
 			LOG_TRACE ( TRACE_VIDEO_VBL , "VBL %d, new pending VBL set just before iack video_cyc=%d pending_cyc=%d\n" ,
 				nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) , PendingCyclesOver );
+#else
+			LOG_TRACE ( TRACE_VIDEO_VBL , "VBL %d, new pending VBL set just before iack video_cyc=%d pending_cyc=%d\n" ,
+				nVBLs , Video_GetCyclesSinceVbl() , PendingCyclesOver );
+#endif
 		}
 	}
 
