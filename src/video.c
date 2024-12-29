@@ -841,7 +841,30 @@ void Video_Reset(void)
 		Cycles_SetCounter(CYCLES_COUNTER_VIDEO, 2);
 	}
 	else
+	{
 		Cycles_SetCounter(CYCLES_COUNTER_VIDEO, 0);
+	}
+
+	VBL_ClockCounter = CyclesGlobalClockCounter;
+
+	/* shortcut keys are handled from Video_InterruptHandler_VBL, which can call
+	 * Video_Reset() from Video_InterruptHandler_VBL although the next VBL internal interrupt
+	 * is already set. This can create a 2 cycles desync that remains over all VBL,
+	 * which can break spec512 like images or overscan.
+	 * We compensate this desync if needed
+	 * TODO : shortcut keys should be handled in the main cpu loop, not directly in
+	 * Video_InterruptHandler_VBL. This should allow to remove this "resync"
+	 */
+	if ( ( CyclesGlobalClockCounter & 3 ) == 2 )
+	{
+//		fprintf ( stderr , "video reset cycle counter desync %lu\n" , CyclesGlobalClockCounter );
+		VBL_ClockCounter -= 2;
+	}
+	else
+	{
+//		fprintf ( stderr , "video reset cycle counter in sync %lu\n" , CyclesGlobalClockCounter );
+	}
+
 
 	/* Clear ready for new VBL */
 	Video_ClearOnVBL();
