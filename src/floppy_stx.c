@@ -362,7 +362,7 @@ uint8_t *STX_ReadDisk(int Drive, const char *pszFileName, long *pImageSize, int 
 /**
  * Save .STX file from memory buffer. Returns true if all OK.
  * We create a file based on the initial filename by replacing the ".stx" extension
- * with ".wd1172".
+ * with ".wd1772".
  * We save all sectors, then all tracks.
  * If there're no sector and no track to save, return true and don't create
  * the save file
@@ -822,7 +822,7 @@ bool	STX_Insert ( int Drive , const char *FilenameSTX , uint8_t *pImageBuffer , 
 	if ( ( STX_FileNameToSave ( FilenameSTX , FilenameSave ) )
 	  && ( File_Exists ( FilenameSave ) ) )
 	{
-		Log_Printf ( LOG_INFO , "STX : STX_Insert drive=%d file=%s buf=%p size=%ld load wd1172 %s\n" , Drive , FilenameSTX , pImageBuffer , ImageSize , FilenameSave );
+		Log_Printf ( LOG_INFO , "STX : STX_Insert drive=%d file=%s buf=%p size=%ld load wd1772 %s\n" , Drive , FilenameSTX , pImageBuffer , ImageSize , FilenameSave );
 		if ( STX_LoadSaveFile ( Drive , FilenameSave ) == false )
 		{
 			Log_AlertDlg ( LOG_ERROR , "Can't read the STX save file '%s'. Ignore it" , FilenameSave );
