@@ -252,7 +252,7 @@ static void BreakCond_UpdateTracked(bc_condition_t *condition, uint32_t value)
 		addr = condition->lvalue.value.number;
 		fprintf(stderr, "  $%x = $%x\n", addr, value);
 	} else {
-		/* register tms. */
+		/* register etc. */
 		fprintf(stderr, "  $%x\n", value);
 	}
 }
