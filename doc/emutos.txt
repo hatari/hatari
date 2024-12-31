@@ -668,6 +668,7 @@ Free/shareware/PD games:
 - Hexmines*
 - Iceblox Plus*  (works on all Atari machines)
 - In nihilum reverteris (interactive color novel)
+- Insectroid*
 - Japlish        (line-A polygon lines)
 - Jetpac
 - Jitterbugs     (MIDI multiplayer, GFA, slow)
@@ -933,6 +934,7 @@ incompatible.txt).
 
 Floppy-only (color) STOS games:
 - Diamond Ice       (joystick input doesn't work)
+- Insecticide       (joystick input doesn't work)
 - Islandstrike      (mouse input doesn't work)
 - Ozone             (fire at start doesn't work)
 - Vidigrid v2       (mouse input doesn't work)
@@ -1142,6 +1144,8 @@ Color demos:
 - New Year -94 Intro (by Extream)
 - No Monkey (by Tomchi)
 - No Signal (ADPCM musicdisk by DHS)
+- Noname intro (by Baky, DemoBit 1995)
+- Out A Time (1st at Silly Venture 2024)
 - Pacemaker (by Paradox), end part works only from floppy image
 - Paracon 6 & 7 remindtros (by Paradox)
 - Parallax Distorter 2 (by Solomon)
