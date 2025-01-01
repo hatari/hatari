@@ -442,11 +442,26 @@ void do_cycles_ce (uae_u32 cycles)
 /* [NP] Unlike Amiga, for Hatari in 68000 CE mode, we don't need to update other components */
 /* on every sub cycle, so we can do all cycles in one single call to speed up */
 /* emulation (this gains approx 7%) */
+/* Also, for Amiga emulation, do_cycles will be called only on multiples of CYCLE_UNIT (=512), */
+/* which is 2 CPU cycles and save the remaining part in extra_cycle. */
+/* This is not required for Atari emulation which can be on odd number of cpu cycles too */
+/* and we don't need to keep a remaining part in extra_cycle */
+
+#undef HATARI_ROUND_CYCLES_TO_2			/* don't round to multiple of 2 cpu cycles */
+
 void do_cycles_ce (int cycles)
 {
+//fprintf(stderr,"do cyc in %d %d\n" , cycles, extra_cycle);
+#ifdef HATARI_ROUND_CYCLES_TO_2
 	cycles += extra_cycle;
 	extra_cycle = cycles & ( CYCLE_UNIT-1 );
 	do_cycles ( cycles - extra_cycle );
+#else
+	cycles += extra_cycle;
+	extra_cycle = 0;
+	do_cycles ( cycles );
+#endif
+//fprintf(stderr,"do cyc out %d %d\n" , cycles -extra_cycle , extra_cycle);
 }
 #endif
 
