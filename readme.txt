@@ -208,17 +208,6 @@ Alternatively one could add a mime type for TOS binaries with xdg-mime:
 But registering handlers for mime-types seems desktop specific.
 
 
- 3.4.1) Known distro problems
-
-Old RHEL 5 and the derived CentOS v5.x Linux distributions ship
-with a broken readline library:
-	https://bugzilla.redhat.com/show_bug.cgi?id=499837
-
-To get CMake readline detection and linking working on them,
-you need to give these as extra arguments to the "cmake" command:
-   -DCMAKE_C_FLAGS=-lncurses -DCMAKE_EXE_LINKER_FLAGS=-lncurses
-
-
  4) Running Hatari
  -----------------
 
