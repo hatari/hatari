@@ -39,7 +39,7 @@
 #endif
 
 /* If the CPU can access unaligned memory, use these accelerated functions: */
-#if CPU_CAN_ACCESS_UNALIGNED
+#if CPU_CAN_ACCESS_UNALIGNED && !defined(ENABLE_UBSAN)
 
 static inline uae_u32 do_get_mem_long(void *a)
 {

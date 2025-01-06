@@ -14,10 +14,12 @@ print_help()
   echo "This is a simple configure script wrapper around cmake build system."
   echo "Parameters are:"
   echo "  --prefix=<path>            Set the install prefix to path"
+  echo "  --enable-asan              Enable address sanitizer debug build"
   echo "  --enable-debug             Enable debug (non-optimized) build"
   echo "  --disable-dsp              Disable DSP emulation for Falcon mode."
   echo "  --disable-tracing          Disable tracing messages for debugging"
   echo "  --disable-osx-bundle       Disable application bundling on macOS"
+  echo "  --enable-ubsan             Enable undefined behavior sanitizer debug build"
   echo "  --enable-werror            Use -Werror flag to stop on compiler warnings"
   echo "  --cross-compile-win64_32   Build the 32 bit Windows version using mingw-w64"
   echo "  --cross-compile-win64_64   Build the 64 bit Windows version using mingw-w64"
@@ -41,6 +43,12 @@ do
     --prefix)
       prefix=${1##*=}		# get part after =
       cmake_args="$cmake_args -DCMAKE_INSTALL_PREFIX:PATH=$prefix"
+    ;;
+    --enable-asan)
+      cmake_args="$cmake_args -DENABLE_ASAN:BOOL=1"
+    ;;
+    --disable-asan)
+      cmake_args="$cmake_args -DENABLE_ASAN:BOOL=0"
     ;;
     --enable-debug)
       build_type="Debug"
@@ -67,6 +75,12 @@ do
     ;;
     --disable-osx-bundle)
       cmake_args="$cmake_args -DENABLE_OSX_BUNDLE:BOOL=0"
+    ;;
+    --enable-ubsan)
+      cmake_args="$cmake_args -DENABLE_UBSAN:BOOL=1"
+    ;;
+    --disable-ubsan)
+      cmake_args="$cmake_args -DENABLE_UBSAN:BOOL=0"
     ;;
     --enable-werror)
       cmake_args="$cmake_args -DENABLE_WERROR:BOOL=1"

@@ -78,6 +78,12 @@ if(ASAN_AVAILABLE)
 	    CACHE BOOL "Enable GCC/LLVM run-time stack/pointer debugging (~2x slowdown)")
 endif(ASAN_AVAILABLE)
 
+CHECK_C_COMPILER_FLAG("-fsanitize=undefined" UBSAN_AVAILABLE)
+if(UBSAN_AVAILABLE)
+	set(ENABLE_UBSAN 0
+	    CACHE BOOL "Enable GCC/LLVM run-time undefined behavior debugging")
+endif(UBSAN_AVAILABLE)
+
 find_program(GZIP gzip)
 if(UNIX AND GZIP)
 	set(ENABLE_MAN_PAGES 1 CACHE BOOL "Built and install man pages")
@@ -242,6 +248,15 @@ if(ENABLE_ASAN)
 	# enable AddressSanitizer with global variable tracking
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address -fno-common")
 endif(ENABLE_ASAN)
+
+# GCC/Clang undefined behavior debugging
+if(ENABLE_UBSAN)
+	# We assume twos-complement of modern CPUs, so use -fwrapv to
+	# silence related ubsan warnings:
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=undefined -fwrapv")
+	add_definitions(-DENABLE_UBSAN=1)
+endif(ENABLE_UBSAN)
+
 
 # GCC/Clang specific flags:
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
