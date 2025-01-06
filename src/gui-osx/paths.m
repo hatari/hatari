@@ -31,7 +31,7 @@ char *Paths_GetMacScreenShotDir(void) {
 	}
 
 	NSString *keyValue = nil;
-	NSUserDefaults *defaults = [[NSUserDefaults alloc] init];
+	NSUserDefaults *defaults = [[[NSUserDefaults alloc] init] autorelease];
 	if(defaults != nil) {
 		[defaults addSuiteNamed:@"com.apple.screencapture.plist"];
 		keyValue = [defaults stringForKey:@"location"];
