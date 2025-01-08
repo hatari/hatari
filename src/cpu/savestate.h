@@ -19,10 +19,12 @@ extern void save_u64(uae_u64 data);
 extern void save_u32(uae_u32 data);
 extern void save_u16(uae_u16 data);
 extern void save_u8(uae_u8 data);
+extern void save_s8(uae_s8 data);
 extern uae_u64 restore_u64(void);
 extern uae_u32 restore_u32(void);
 extern uae_u16 restore_u16(void);
 extern uae_u8 restore_u8(void);
+extern uae_s8 restore_s8(void);
 
 #else
 
@@ -69,7 +71,7 @@ extern TCHAR *restore_path_full_func(uae_u8 **);
 #define save_u32t(x) save_u32t_func(&dst, (x))
 #define save_u16(x) save_u16_func(&dst, (x))
 #define save_u8(x) save_u8_func(&dst, (x))
-#define save_s8(x) save_u8_func(&dst, (uae_s8)(x))
+#define save_s8(x) save_u8_func(&dst, (uae_u8)(x))
 
 #define restore_u64() restore_u64_func(&src)
 #define restore_u64to32() (uae_u32)restore_u64_func(&src)

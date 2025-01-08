@@ -8282,10 +8282,10 @@ uae_u8 *restore_cpu (uae_u8 *src)
 		regs.read_buffer = restore_u16();
 		regs.write_buffer = restore_u16();
 		if (v & 1) {
-			regs.ipl[0] = restore_u8();
-			regs.ipl[1] = restore_u8();
-			regs.ipl_pin = (uae_s32)restore_u8();
-			regs.ipl_pin_p = (uae_s32)restore_u8();
+			regs.ipl[0] = restore_s8();
+			regs.ipl[1] = restore_s8();
+			regs.ipl_pin = restore_s8();
+			regs.ipl_pin_p = restore_s8();
 			regs.ipl_evt = restore_u64();
 			regs.ipl_evt_pre = restore_u64();
 			regs.ipl_pin_change_evt = restore_u64();
@@ -8733,10 +8733,10 @@ uae_u8 *save_cpu(size_t *len, uae_u8 *dstptr)
 		save_u16(regs.ird);
 		save_u16(regs.read_buffer);
 		save_u16(regs.write_buffer);
-		save_u8(regs.ipl[0]);
-		save_u8(regs.ipl[1]);
-		save_u8(regs.ipl_pin);
-		save_u8(regs.ipl_pin_p);
+		save_s8(regs.ipl[0]);
+		save_s8(regs.ipl[1]);
+		save_s8(regs.ipl_pin);
+		save_s8(regs.ipl_pin_p);
 		save_u64(regs.ipl_evt);
 		save_u64(regs.ipl_evt_pre);
 		save_u64(regs.ipl_pin_change_evt);
@@ -9036,7 +9036,7 @@ bool cpureset (void)
 		m68k_reset();
 		return true;
 	}
-	if ((currprefs.cpu_compatible || currprefs.cpu_memory_cycle_exact) && currprefs.cpu_model <= 68020) {
+	if (currprefs.cpu_compatible || currprefs.cpu_memory_cycle_exact) {
 		custom_reset_cpu(false, false);
 		return false;
 	}

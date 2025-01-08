@@ -537,6 +537,12 @@ void save_u8(uae_u8 data)
 //printf ("s8 %x\n", data);
 }
 
+void save_s8(uae_s8 data)
+{
+	MemorySnapShot_Store(&data, 1);
+//printf ("s8s %x\n", data);
+}
+
 uae_u64 restore_u64(void)
 {
 	uae_u64 data;
@@ -572,3 +578,11 @@ uae_u8 restore_u8(void)
 	return data;
 }
 
+uae_s8 restore_s8(void)
+{
+	uae_s8 data;
+	bCaptureSave=false;
+	MemorySnapShot_Store(&data, 1);
+//printf ("r8s %x\n", data);
+	return data;
+}
