@@ -45,7 +45,6 @@ extern uae_u32 hsync_counter, vsync_counter;
 extern uae_u16 dmacon;
 extern uae_u16 intena, intreq, intreqr;
 
-extern int current_hpos (void);
 extern int vpos;
 
 extern int n_frames;

@@ -38,6 +38,8 @@ extern void do_cycles_ce_hatari_blitter (int cycles);
 extern void do_cycles_ce020(int cycles);
 extern void events_schedule(void);
 extern void do_cycles_slow(int cycles_to_add);
+extern void do_cycles_normal(int cycles_to_add);
+
 extern void events_reset_syncline(void);
 extern void modify_eventcounter(int diff);
 extern void clear_events(void);
@@ -45,6 +47,7 @@ extern void clear_events(void);
 extern bool is_cycle_ce(uaecptr);
 
 extern evt_t currcycle, nextevent;
+extern uae_u32 currcycle_cck;
 extern int is_syncline;
 extern evt_t is_syncline_end;
 typedef void (*evfunc)(void);
@@ -66,22 +69,27 @@ struct ev2
 };
 
 enum {
-    ev_cia, ev_audio, ev_misc, ev_hsync, ev_hsynch,
-    ev_max
+	ev_sync,
+	ev_cia,
+	ev_misc,
+	ev_audio,
+	ev_max
 };
 
 enum {
     ev2_blitter, ev2_misc,
-    ev2_max = 12
+    ev2_max = 8
 };
+
+extern int do_cycles_cck(int);
 
 #define do_cycles do_cycles_slow
 
 extern struct ev eventtab[ev_max];
 extern struct ev2 eventtab2[ev2_max];
 
-extern int hpos_offset;
 extern int maxhpos;
+extern int custom_fastmode;
 
 STATIC_INLINE void cycles_do_special (void)
 {
@@ -98,25 +106,32 @@ STATIC_INLINE evt_t get_cycles(void)
 {
 	return currcycle;
 }
+STATIC_INLINE uae_u32 get_cck_cycles(void)
+{
+	return currcycle_cck;
+}
 
 STATIC_INLINE void set_cycles (evt_t x)
 {
 	currcycle = x;
-	eventtab[ev_hsync].oldcycles = x;
-	eventtab[ev_hsynch].active = 0;
 #ifdef EVT_DEBUG
 	if (currcycle & (CYCLE_UNIT - 1))
 		write_log (_T("%x\n"), currcycle);
 #endif
 }
 
-STATIC_INLINE int current_hpos_safe(void)
+STATIC_INLINE uae_u8 current_hpos_safe(void)
 {
-    int hp = (int)((get_cycles () - eventtab[ev_hsync].oldcycles)) / CYCLE_UNIT;
+	extern uae_u8 agnus_hpos;
+	return agnus_hpos;
+}
+STATIC_INLINE uae_u8 current_hpos(void)
+{
+	uae_u8 hp = current_hpos_safe();
 	return hp;
 }
 
-extern int current_hpos(void);
+extern uae_u8 current_hpos(void);
 
 STATIC_INLINE bool cycles_in_range(evt_t endcycles)
 {

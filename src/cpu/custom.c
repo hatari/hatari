@@ -683,12 +683,4 @@ int inprec_open(char *fname, int record)
 	return 0;
 }
 
-// TODO NP remove ?
-#ifndef WINUAE_FOR_HATARI
-int current_hpos (void)
-{
-    return (get_cycles () - eventtab[ev_hsync].oldcycles) / CYCLE_UNIT;
-}
-#endif
-
 
