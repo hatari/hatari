@@ -251,12 +251,9 @@ endif(ENABLE_ASAN)
 
 # GCC/Clang undefined behavior debugging
 if(ENABLE_UBSAN)
-	# We assume twos-complement of modern CPUs, so use -fwrapv to
-	# silence related ubsan warnings:
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=undefined -fwrapv")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=undefined")
 	add_definitions(-DENABLE_UBSAN=1)
 endif(ENABLE_UBSAN)
-
 
 # GCC/Clang specific flags:
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
