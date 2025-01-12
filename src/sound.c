@@ -401,8 +401,8 @@ ymsample	Subsonic_IIR_HPF_Right(ymsample x0)
 	if ( YM2149_HPF_Filter == YM2149_HPF_FILTER_NONE )
 		return x0;
 
-	y1 += ((x0 - x1)<<15) - (y0<<6);  /*  64*y0  */
-	y0 = y1>>15;
+	y1 += ((x0 - x1) * 32768) - (y0 * 64);
+	y0 = y1 / 32768;
 	x1 = x0;
 
 	return y0;
