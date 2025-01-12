@@ -90,6 +90,10 @@ Build changes:
   is stable now, uses less memory and even still seems to be at least as
   fast as the other mode, so it is the one and only default mode now)
 
+Tools:
+- Profile data post-processor:
+  - Fix: first costs assigned wrong when profile does not start on symbol
+
 Fixed demos:
 - Little -ME- Demo by Overlanders : when running in MegaSTE mode the 3D parts
   will switch to 16 MHz and use the MegaSTE's 16 KB external cache

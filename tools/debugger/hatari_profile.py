@@ -2,7 +2,7 @@
 #
 # Hatari profile data processor
 #
-# 2013-2023 (C) Eero Tamminen, licensed under GPL v2+
+# 2013-2025 (C) Eero Tamminen, licensed under GPL v2+
 #
 # TODO:
 #
@@ -411,7 +411,7 @@ class ProfileSymbols(Output):
     # profile file field name for program text/code address range
     text_area = "PROGRAM_TEXT"
     # default emulation memory address range name
-    default_area = "RAM"
+    default_area = "RAM?"
 
     def __init__(self):
         Output.__init__(self)
@@ -424,7 +424,7 @@ class ProfileSymbols(Output):
         self.rel_aliases = {}   # (name:addr) dict of replaced relative symbols
         self.symbols_need_sort = False
         self.symbols_sorted = None	# sorted list of symbol addresses
-        # Non-overlapping memory areas that may be specified in profile file
+        # memory areas that may be specified in profile file
         # (checked if instruction is before any of the symbol addresses)
         self.areas = {}		# (name:(start,end))
         # memory area format:
@@ -464,9 +464,11 @@ class ProfileSymbols(Output):
 
     def get_area(self, addr):
         "return memory area name + offset (used if no symbol matches)"
-        for key, value in self.areas.items():
+        # PROGRAM_TEXT may overlap with ST_RAM / TT_RAM, check it first
+        for name in sorted(self.areas.keys()):
+            value = self.areas[name]
             if value[1] and value[0] <= addr <= value[1]:
-                return (key, addr - value[0])
+                return (name, addr - value[0])
         return (self.default_area, addr)
 
     def _check_symbol(self, addr, name, symbols, aliases):
@@ -1164,7 +1166,7 @@ class EmulatorProfile(Output):
         "parse profile disassembly"
         self.message("parsing disassembly...")
         prev_addr = 0
-        discontinued = False
+        discontinued = True
         function = FunctionStats(None, -1, 0, self.stats.items)
         while True:
             if not line:

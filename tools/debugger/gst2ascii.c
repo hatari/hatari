@@ -126,7 +126,7 @@ static bool update_sections(prg_section_t *sections)
 }
 
 /**
- * Load symbols of given type and the symbol address addresses from
+ * Load symbols of given type and the symbol addresses from
  * the given file and add given offsets to the addresses.
  * Return symbols list or NULL for failure.
  */
