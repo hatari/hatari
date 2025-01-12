@@ -92,6 +92,7 @@ Build changes:
 
 Tools:
 - gst2ascii:
+  - Fix: ignore configured types also with MINT+ELF symbols
   - Fix: weak ELF BSS/DATA symbols were handled as weak TEXT symbols
 - Profile data post-processor:
   - Fix: first costs assigned wrong when profile does not start on symbol

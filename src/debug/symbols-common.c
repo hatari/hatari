@@ -1,7 +1,7 @@
 /*
  * Hatari - symbols-common.c
  *
- * Copyright (C) 2010-2023 by Eero Tamminen
+ * Copyright (C) 2010-2025 by Eero Tamminen
  * Copyright (C) 2017,2021,2023 by Thorsten Otto
  *
  * This file is distributed under the GNU General Public License, version 2
@@ -1284,6 +1284,11 @@ static symbol_list_t* symbols_load_elf(FILE *fp, const prg_section_t *sections,
 		default:
 			fprintf(stderr, "WARNING: ignoring symbol '%s' in slot %u of unknown type 0x%x.\n", name, (unsigned int)i, st_info);
 			ignore.invalid++;
+			continue;
+		}
+
+		/* whether to ignore symbol based on options and its name & type */
+		if (ignore_symbol(name, symtype, opts, &ignore)) {
 			continue;
 		}
 
