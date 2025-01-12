@@ -10,7 +10,7 @@
 
 typedef enum {
 	SYMTYPE_TEXT = 1,
-	SYMTYPE_WEAK = 2,
+	SYMTYPE_WEAK = 2, /* weakly aliased _code_ symbols */
 	SYMTYPE_CODE = (SYMTYPE_TEXT|SYMTYPE_WEAK),
 	/* other types get sorted after code types */
 	SYMTYPE_DATA = 4,

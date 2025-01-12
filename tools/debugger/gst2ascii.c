@@ -57,8 +57,8 @@ static void usage(const char *msg)
 		{ 'g', "GCC internal (object) symbols" },
 		{ 'l', "local (.L*) symbols" },
 		{ 's', "symbols with duplicate addresses" },
-		{ 't', "TEXT symbols" },
-		{ 'w', "weak symbols" },
+		{ 't', "TEXT (code) symbols" },
+		{ 'w', "weak (code) symbols" },
 	};
 	const char *name;
 	int i;

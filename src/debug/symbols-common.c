@@ -1256,15 +1256,18 @@ static symbol_list_t* symbols_load_elf(FILE *fp, const prg_section_t *sections,
 					shdr = &headers[st_shndx];
 
 					if (shdr->sh_type == SHT_NOBITS) {
-						symtype = ELF_ST_BIND(st_info) == STB_WEAK ? SYMTYPE_WEAK : SYMTYPE_BSS;
+						symtype = SYMTYPE_BSS;
 						section = &(sections[2]);
 
 					} else if (shdr->sh_flags & SHF_EXECINSTR) {
+						/* symbol post-processing requirement:
+						 * only code symbols differentiated weak aliasing
+						 */
 						symtype = ELF_ST_BIND(st_info) == STB_WEAK ? SYMTYPE_WEAK : SYMTYPE_TEXT;
 						section = &(sections[0]);
 
 					} else {
-						symtype = ELF_ST_BIND(st_info) == STB_WEAK ? SYMTYPE_WEAK : SYMTYPE_DATA;
+						symtype = SYMTYPE_DATA;
 						section = &(sections[1]);
 					}
 				}

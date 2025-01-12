@@ -91,6 +91,8 @@ Build changes:
   fast as the other mode, so it is the one and only default mode now)
 
 Tools:
+- gst2ascii:
+  - Fix: weak ELF BSS/DATA symbols were handled as weak TEXT symbols
 - Profile data post-processor:
   - Fix: first costs assigned wrong when profile does not start on symbol
 
