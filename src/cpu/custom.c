@@ -63,9 +63,8 @@ static void sync_cycles(void)
 
 uae_u32 wait_cpu_cycle_read (uaecptr addr, int mode)
 {
-	uae_u32 v = 0;
 #ifndef WINUAE_FOR_HATARI
-	int hpos;
+	uae_u32 v = 0, vd = 0;
 	int ipl = regs.ipl[0];
 	evt_t now = get_cycles();
 
@@ -73,7 +72,7 @@ uae_u32 wait_cpu_cycle_read (uaecptr addr, int mode)
 
 	x_do_cycles_pre(CYCLE_UNIT);
 
-	hpos = dma_cycle(addr, 0xffffffff, &mode, &ipl);
+	dma_cycle(&mode, &ipl);
 
 #ifdef DEBUGGER
 	if (debug_dma) {
@@ -88,47 +87,52 @@ uae_u32 wait_cpu_cycle_read (uaecptr addr, int mode)
 		} else {
 			reg |= 1;
 		}
-		record_dma_read(reg, addr, hpos, vpos, DMARECORD_CPU, mode == -2 || mode == 2 ? 0 : 1);
+		record_dma_read(reg, addr, DMARECORD_CPU, mode == -2 || mode == 2 ? 0 : 1);
 	}
 	peekdma_data.mask = 0;
+#else
+	if (mode == -3) {
+		v = regs.chipset_latch_rw;
+	}
 #endif
 
 	switch(mode)
 	{
 		case -1:
-		v = get_long(addr);
+		v = vd = get_long(addr);
 		break;
 		case -2:
-		v = get_longi(addr);
+		v = vd = get_longi(addr);
 		break;
 		case 1:
-		v = get_word(addr);
+		v = vd = get_word(addr);
 		break;
 		case 2:
-		v = get_wordi(addr);
+		v = vd = get_wordi(addr);
 		break;
 		case 0:
-		v = get_byte(addr);
+		v = vd = get_word(addr & ~1);
+		v >>= (addr & 1) ? 0 : 8;
 		break;
 	}
 
 #ifdef DEBUGGER
 	if (debug_dma) {
-		record_dma_read_value(v);
+		record_dma_read_value_pos(vd);
 	}
 #endif
 
+	x_do_cycles_post(CYCLE_UNIT, 0);
+
 	regs.chipset_latch_rw = regs.chipset_latch_read = v;
-		
-	x_do_cycles_post(CYCLE_UNIT, v);
 
 	// if IPL fetch was pending and CPU had wait states
 	// Use ipl_pin value from previous cycle
 	if (now == regs.ipl_evt) {
 		regs.ipl[0] = ipl;
 	}
-
 #else						/* WINUAE_FOR_HATARI */
+	uae_u32 v = 0;
 	int ipl = regs.ipl[0];
 	evt_t now = get_cycles();
 	uint64_t cycle_slot;
@@ -177,7 +181,6 @@ uae_u32 wait_cpu_cycle_read (uaecptr addr, int mode)
 void wait_cpu_cycle_write (uaecptr addr, int mode, uae_u32 v)
 {
 #ifndef WINUAE_FOR_HATARI
-	int hpos;
 	int ipl = regs.ipl[0];
 	evt_t now = get_cycles();
 
@@ -185,7 +188,7 @@ void wait_cpu_cycle_write (uaecptr addr, int mode, uae_u32 v)
 
 	x_do_cycles_pre(CYCLE_UNIT);
 
-	hpos = dma_cycle(addr, v, &mode, &ipl);
+	dma_cycle(&mode, &ipl);
 
 #ifdef DEBUGGER
 	if (debug_dma) {
@@ -199,7 +202,7 @@ void wait_cpu_cycle_write (uaecptr addr, int mode, uae_u32 v)
 		} else {
 			reg |= 1;
 		}
-		record_dma_write(reg, v, addr, hpos, vpos, DMARECORD_CPU, 1);
+		record_dma_write(reg, v, addr, DMARECORD_CPU, 1);
 	}
 	peekdma_data.mask = 0;
 #endif
@@ -214,9 +217,9 @@ void wait_cpu_cycle_write (uaecptr addr, int mode, uae_u32 v)
 		}
 	}
 
-	regs.chipset_latch_rw = regs.chipset_latch_write = v;
-
 	x_do_cycles_post(CYCLE_UNIT, v);
+
+	regs.chipset_latch_rw = regs.chipset_latch_write = v;
 
 	// if IPL fetch was pending and CPU had wait states:
 	// Use ipl_pin value from previous cycle
@@ -264,13 +267,13 @@ uae_u32 wait_cpu_cycle_read_ce020 (uaecptr addr, int mode)
 {
 	uae_u32 v = 0;
 #ifndef WINUAE_FOR_HATARI
-	int hpos, ipl;
+	int ipl;
 
 	sync_cycles();
 
 	x_do_cycles_pre(CYCLE_UNIT);
 
-	hpos = dma_cycle(0xffffffff, 0xffff, NULL, &ipl);
+	dma_cycle(NULL, &ipl);
 
 #ifdef DEBUGGER
 	if (debug_dma) {
@@ -282,39 +285,38 @@ uae_u32 wait_cpu_cycle_read_ce020 (uaecptr addr, int mode)
 		} else {
 			reg |= 1;
 		}
-		record_dma_read(reg, addr, hpos, vpos, DMARECORD_CPU, mode == -2 || mode == 2 ? 0 : 1);
+		record_dma_read(reg, addr, DMARECORD_CPU, mode == -2 || mode == 2 ? 0 : 1);
 	}
 	peekdma_data.mask = 0;
 #endif
 
 	switch (mode) {
 		case -1:
-		v = get_long(addr);
-		break;
+			v = get_long(addr);
+			break;
 		case -2:
-		v = get_longi(addr);
-		break;
+			v = get_longi(addr);
+			break;
 		case 1:
-		v = get_word(addr);
-		break;
+			v = get_word(addr);
+			break;
 		case 2:
-		v = get_wordi(addr);
-		break;
+			v = get_wordi(addr);
+			break;
 		case 0:
-		v = get_byte(addr);
-		break;
+			v = get_byte(addr);
+			break;
 	}
 
 #ifdef DEBUGGER
 	if (debug_dma) {
-		record_dma_read_value(v);
+		record_dma_read_value_pos(v);
 	}
 #endif
 
 	regs.chipset_latch_rw = regs.chipset_latch_read = v;
-		
-	x_do_cycles_post(CYCLE_UNIT, v);
 
+	x_do_cycles_post(CYCLE_UNIT, v);
 #else						/* WINUAE_FOR_HATARI */
 
 //fprintf ( stderr , "wait read ce020 glob %lu\n" , CyclesGlobalClockCounter );
@@ -360,13 +362,13 @@ uae_u32 wait_cpu_cycle_read_ce020 (uaecptr addr, int mode)
 void wait_cpu_cycle_write_ce020 (uaecptr addr, int mode, uae_u32 v)
 {
 #ifndef WINUAE_FOR_HATARI
-	int hpos, ipl;
+	int ipl;
 
 	sync_cycles();
 
- 	x_do_cycles_pre(CYCLE_UNIT);
+	x_do_cycles_pre(CYCLE_UNIT);
 
-	hpos = dma_cycle(0xffffffff, 0xffff, NULL, &ipl);
+	dma_cycle(NULL, &ipl);
 
 #ifdef DEBUGGER
 	if (debug_dma) {
@@ -377,7 +379,7 @@ void wait_cpu_cycle_write_ce020 (uaecptr addr, int mode, uae_u32 v)
 			reg |= 2;
 		else
 			reg |= 1;
-		record_dma_write(reg, v, addr, hpos, vpos, DMARECORD_CPU, 1);
+		record_dma_write(reg, v, addr, DMARECORD_CPU, 1);
 	}
 	peekdma_data.mask = 0;
 #endif
@@ -391,7 +393,7 @@ void wait_cpu_cycle_write_ce020 (uaecptr addr, int mode, uae_u32 v)
 	}
 
 	regs.chipset_latch_rw = regs.chipset_latch_write = v;
-		
+
 	x_do_cycles_post(CYCLE_UNIT, v);
 
 #else						/* WINUAE_FOR_HATARI */
@@ -427,13 +429,7 @@ void do_cycles_ce (uae_u32 cycles)
 {
 	cycles += extra_cycle;
 	while (cycles >= CYCLE_UNIT) {
-		int hpos = current_hpos () + 1;
-		decide_line (hpos);
-		sync_copper (hpos);
-		decide_fetch_ce (hpos);
-		if (bltstate != BLT_done)
-			decide_blitter (hpos);
-		do_cycles (1 * CYCLE_UNIT);
+		do_cck(true);
 		cycles -= CYCLE_UNIT;
 	}
 	extra_cycle = cycles;
@@ -484,41 +480,45 @@ void do_cycles_ce_hatari_blitter (int cycles)
 
 void do_cycles_ce020 (int cycles)
 {
-	int c;
-	evt_t cc;
-	int extra;
-
-	if (!cycles)
-		return;
-	cc = get_cycles ();
-	extra = cc & (CYCLE_UNIT - 1);
-//fprintf ( stderr , "do_cycles_ce020 %d %d %d\n" , cycles , c , extra );
-	if (extra) {
-		extra = CYCLE_UNIT - extra;
-		if (extra >= cycles) {
-			do_cycles (cycles);
-			return;
-		}
-		do_cycles (extra);
-		cycles -= extra;
-	}
-	c = cycles;
-	while (c) {
 #ifndef WINUAE_FOR_HATARI
-		int hpos = current_hpos () + 1;
-		decide_line (hpos);
-		sync_copper (hpos);
-		decide_fetch_ce (hpos);
-		if (bltstate != BLT_done)
-			decide_blitter (hpos);
-#endif						/* WINUAE_FOR_HATARI */
-		if (c < CYCLE_UNIT)
-			break;
-		do_cycles (1 * CYCLE_UNIT);
-		c -= CYCLE_UNIT;
+	evt_t cc;
+	static int extra;
+
+	cycles += extra;
+	extra = 0;
+	if (!cycles) {
+		return;
 	}
-	if (c)
-		do_cycles (c);
+	cc = get_cycles();
+	while (cycles >= CYCLE_UNIT) {
+		do_cck(true);
+		cycles -= CYCLE_UNIT;
+	}
+	extra += cycles;
+#if 0
+	if (cycles > 0) {
+		cc = get_cycles();
+		evt_t cc2 = cc + cycles;
+		if ((cc & ~(CYCLE_UNIT - 1)) != (cc2 & ~(CYCLE_UNIT - 1))) {
+			do_cck();
+		}
+	}
+#endif
+
+#else						/* WINUAE_FOR_HATARI */
+	static int extra;
+
+	cycles += extra;
+	extra = 0;
+	if (!cycles) {
+		return;
+	}
+	while (cycles >= CYCLE_UNIT) {
+		do_cycles(1 * CYCLE_UNIT);
+		cycles -= CYCLE_UNIT;
+	}
+	extra += cycles;
+#endif
 }
 
 bool is_cycle_ce(uaecptr addr)
@@ -526,10 +526,15 @@ bool is_cycle_ce(uaecptr addr)
 #ifndef WINUAE_FOR_HATARI
 	addrbank *ab = get_mem_bank_real(addr);
 	if (!ab || (ab->flags & ABFLAG_CHIPRAM) || ab == &custom_bank) {
-		int hpos = current_hpos();
-		return (cycle_line[hpos] & CYCLE_MASK) != 0;
+		struct rgabuf *r = read_rga_out();
+		if (r->alloc <= 0) {
+			return false;
+		}
+		return true;
+	}
+	return false;
 #else						/* WINUAE_FOR_HATARI */
-	return 0;
+	return false;
 #endif						/* WINUAE_FOR_HATARI */
 }
 
