@@ -33,3 +33,18 @@ build-mingw:
  - cmake -DCMAKE_TOOLCHAIN_FILE=cmake/Toolchain-mingw32-win64_32.cmake
          -DENABLE_WERROR:BOOL=1 .
  - make -j$(nproc)
+
+pages:
+  stage: deploy
+  script:
+    - mkdir -p public/doc
+    - cp doc/*.html doc/*.css doc/*.js doc/*.txt public/doc/
+    - cp -r doc/images public/doc/
+    - apt-get install -y -qq doxygen
+    - cd doc/doxygen/ ; doxygen ; cd ../..
+    - cp -r doc/doxygen/html public/doxygen/
+  artifacts:
+    paths:
+      - public
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
