@@ -164,6 +164,7 @@ const char MFP_fileid[] = "Hatari mfp.c";
 #include "clocks_timings.h"
 #include "acia.h"
 #include "utils.h"
+#include "scc.h"
 
 
 /*
@@ -1315,6 +1316,29 @@ void	MFP_TimerB_EventCount ( MFP_STRUCT *pMFP , int Delayed_Cycles )
 }
 
 
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Return the Timer C's frequency on the TT MFP
+ * This is used as "TCCLK" input signal in the Atari TT to provide the RTxCB clock
+ * on the SCC.
+ *
+ * Return the frequency in MHz or 0 if Timer C is disabled
+ */
+uint32_t	MFP_TT_TimerC_Get_Freq ( void )
+{
+	uint32_t	ClockCycles;
+
+	ClockCycles = pMFP_TT->TimerCClockCycles;
+
+	if ( ClockCycles == 0 )
+		return 0;
+
+	else
+		return MachineClocks.MFP_Timer_Freq / ClockCycles;
+}
+
+
 /*-----------------------------------------------------------------------*/
 /**
  * Start Timer A or B - EventCount mode is done in HBL handler to time correctly
@@ -1503,6 +1527,13 @@ static uint32_t MFP_StartTimer_CD (  MFP_STRUCT *pMFP , uint8_t TimerControl, ui
 		/* Make sure no outstanding interrupts in list if channel is disabled */
 		CycInt_RemovePendingInterrupt(Handler);
 	}
+
+
+	/* If Timer C is changed on the MFP TT we must forward this to the TT SCC */
+	/* because Timer C output is connected to RTxCB input on the SCC */
+	if ( Handler == INTERRUPT_MFP_TT_TIMERC )
+		SCC_Update_TimerC_Clock ();
+
 
 	return TimerClockCycles;
 }

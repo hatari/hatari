@@ -16,6 +16,8 @@
 
 bool SCC_IsAvailable(CNF_PARAMS *cnf);
 void SCC_Check_Lan_IsEnabled ( void );
+void SCC_Update_TimerC_Clock ( void );
+
 void SCC_Init(void);
 void SCC_UnInit(void);
 void SCC_MemorySnapShot_Capture(bool bSave);

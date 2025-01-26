@@ -3,7 +3,7 @@
  *
  * Adaptions to Hatari:
  *
- * Copyright 2023-2024 Nicolas Pomarède, major rewrite of most of the code
+ * Copyright 2023-2025 Nicolas Pomarède, major rewrite of most of the code
  *
  * Copyright 2018 Thomas Huth
  *
@@ -94,6 +94,7 @@
 #include "cycInt.h"
 #include "video.h"
 #include "psg.h"
+#include "mfp.h"
 
 #ifndef O_NONBLOCK
 # ifdef O_NDELAY
@@ -413,6 +414,23 @@ void	SCC_Check_Lan_IsEnabled ( void )
 		SCC.Chn[0].ReadHandle = SCC.Chn[0].ReadHandle_Lan;
 		SCC.Chn[0].WriteHandle = SCC.Chn[0].WriteHandle_Lan;
 		SCC.Chn[0].FileHandle_IsATTY = SCC.Chn[0].FileHandle_Lan_IsATTY;
+	}
+}
+
+
+
+/*
+ * This function is called from mfp.c whenever Timer C frequency (TCCLK) is changed on the TT MFP
+ * TCCLK can be used as the main clock source for the RTxCB clock on channel B
+ *
+ * If RTxCB is enabled, we must update the SCC's baudrate
+ */
+void	SCC_Update_TimerC_Clock ( void )
+{
+	if ( Config_IsMachineTT() )
+	{
+		LOG_TRACE(TRACE_SCC, "scc update tcclk from tt mfp\n" );
+		SCC_Update_BaudRate ( 1 );		/* Update channel B baudrate if needed */
 	}
 }
 
@@ -956,8 +974,8 @@ static int SCC_Get_RTxC_Freq ( int chn )
 			ClockFreq = SCC_CLOCK_PCLK4;
 		else
 		{
-			/* TODO : clock is connected to timer C output on TT-MFP */
-			ClockFreq = SCC_CLOCK_PCLK4;	/* TODO : use TCCLK */
+			/* Clock is connected to timer C output on TT-MFP */
+			ClockFreq = MFP_TT_TimerC_Get_Freq();
 		}
 	}
 

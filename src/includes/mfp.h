@@ -164,6 +164,8 @@ extern void	MFP_TimerA_Set_Line_Input ( MFP_STRUCT *pMFP , uint8_t Bit );
 extern void	MFP_TimerA_EventCount( MFP_STRUCT *pMFP );
 extern void	MFP_TimerB_EventCount( MFP_STRUCT *pMFP , int Delayed_Cycles );
 
+extern uint32_t	MFP_TT_TimerC_Get_Freq ( void );
+
 extern void	MFP_Main_InterruptHandler_TimerA(void);
 extern void	MFP_Main_InterruptHandler_TimerB(void);
 extern void	MFP_Main_InterruptHandler_TimerC(void);
