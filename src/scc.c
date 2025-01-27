@@ -1058,7 +1058,15 @@ static int SCC_Compute_BaudRate ( int chn , bool *pStartBRG , uint32_t *pBaudRat
 		if ( SCC.Chn[chn].WR[14] & 2 )				/* source is PCLK */
 			ClockFreq_BRG = SCC_CLOCK_PCLK;
 		else							/* source is RTxC */
+		{
 			ClockFreq_BRG = SCC_Get_RTxC_Freq ( chn );
+			if ( ClockFreq_BRG == 0 )			/* If SCC_Get_RTxC_Freq() returns 0 then we consider serial interface is OFF */
+			{
+				LOG_TRACE(TRACE_SCC, "scc compute baud rate chn=%d, rtxc freq is 0 : disable serial\n" , chn );
+				*pStartBRG = false;
+				return -1;
+			}
+		}
 
 		*pBaudRate_BRG = round ( (float)ClockFreq_BRG / ( 2 * ClockMult * ( TimeConstant + 2 ) ) );
 
