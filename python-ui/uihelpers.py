@@ -103,12 +103,12 @@ class UIHelp:
         docpath = path + "/share/doc/hatari/"
         if not os.path.exists(docpath + "manual.html"):
             print("WARNING: using Hatari website URLs, Hatari 'manual.html' not found in: %s" % docpath)
-            docpath = "https://hatari.tuxfamily.org/doc/"
+            docpath = "https://www.hatari-emu.org/doc/"
 
         uipath = path + "/share/doc/hatari/hatariui/"
         if not os.path.exists(uipath + "README"):
             print("WARNING: Using Hatari UI Git URLs, Hatari UI 'README' not found in: %s" % uipath)
-            uipath = "https://git.tuxfamily.org/hatari/hatari.git/plain/python-ui/"
+            uipath = "https://framagit.org/hatari/hatari/-/raw/main/python-ui/"
 
         return docpath, uipath
 
@@ -153,13 +153,13 @@ class UIHelp:
         self.view_url(self._path + "authors.txt", "Hatari authors")
 
     def view_hatari_mails(self, dummy=None):
-        self.view_url("http://hatari.tuxfamily.org/contact.html", "Hatari mailing lists")
+        self.view_url("https://www.hatari-emu.org/contact.html", "Hatari mailing lists")
 
     def view_hatari_repository(self, dummy=None):
-        self.view_url("https://git.tuxfamily.org/hatari/hatari.git/", "latest Hatari changes")
+        self.view_url("https://framagit.org/hatari/hatari/-/commits/main", "latest Hatari changes")
 
     def view_hatari_page(self, dummy=None):
-        self.view_url("http://hatari.tuxfamily.org/", "Hatari home page")
+        self.view_url("https://www.hatari-emu.org/", "Hatari home page")
 
 
 # --------------------------------------------------------

@@ -4,7 +4,7 @@
 
                              Version 2.5.0, April 2024
 
-                            http://hatari.tuxfamily.org/
+                            https://www.hatari-emu.org/
 
 
 Contents:
@@ -306,6 +306,6 @@ Their main run-time dependencies are:
 If you want to contact the authors of Hatari, please have a look at the file
 doc/authors.txt for the e-mail addresses or use the Hatari mailing list.
 
-Visit the website of Hatari on Tuxfamily.org for more details:
+Visit the website of Hatari for more details:
 
- http://hatari.tuxfamily.org/contact.html
+ https://www.hatari-emu.org/contact.html

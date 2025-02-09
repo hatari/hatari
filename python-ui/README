@@ -26,7 +26,7 @@ Requirements
 - Gtk >= v3.22 and its gir bindings (gir1.2-gtk-3.0)
 
 Hatari UI is included with the Hatari sources:
-	https://git.tuxfamily.org/hatari/hatari.git/tree/python-ui
+	https://framagit.org/hatari/hatari/-/tree/main/python-ui
 
 Hatari UI has been tested on several Linux versions.  I would assume
 it to work also on other unix systems such as Apple OSX. It may work

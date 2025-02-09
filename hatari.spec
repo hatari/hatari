@@ -6,7 +6,7 @@
 #
 
 Name:         hatari
-URL:          http://hatari.tuxfamily.org/
+URL:          https://www.hatari-emu.org/
 License:      GPLv2+
 Group:        System/Emulators/Other
 Autoreqprov:  on
