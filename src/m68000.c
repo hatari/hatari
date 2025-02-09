@@ -1196,7 +1196,7 @@ bool	MegaSTE_Cache_Is_Enabled ( void )
 
 
 /*
- * Check cache consistancy, useful to debug error in the cache
+ * Check cache consistency, useful to debug error in the cache
  * For each valid cache entry, we compare the stored value with
  * the content of the RAM for the same physical address.
  * If there's a difference then something went wrong in the cache
@@ -1243,7 +1243,7 @@ static inline void	MegaSTE_Cache_Check_Entries ( const char *txt )
  *   - RAM (up to 4MB) and ROM regions can be cached
  *   - IO or cartridge regions can't be cached
  *
- * NOTE : when debugging cache consistancy using MegaSTE_Cache_Check_Entries()
+ * NOTE : when debugging cache consistency using MegaSTE_Cache_Check_Entries()
  * we should allow only RAM to be cached
  */
 

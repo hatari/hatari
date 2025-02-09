@@ -183,7 +183,7 @@ static void DlgKbd_DefineShortcutKey(int sc, bool withMod)
 
 
 /**
- * Set name for given sortcut, or show it's unset
+ * Set name for given shortcut, or show it's unset
  */
 static void DlgKbd_SetName(char *str, size_t maxlen, int keysym)
 {

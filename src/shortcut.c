@@ -185,9 +185,8 @@ static void ShortCut_FastForward(void)
 }
 
 
-/*-----------------------------------------------------------------------*/
 /**
- * Shortcut to 'Boss' key, ie minmize Window and switch to another application
+ * Shortcut to 'Boss' key, ie minimize Window and switch to another application
  */
 static void ShortCut_BossKey(void)
 {
@@ -206,9 +205,8 @@ static void ShortCut_BossKey(void)
 }
 
 
-/*-----------------------------------------------------------------------*/
 /**
- * Shorcut to debug interface
+ * Shortcut to debug interface
  */
 static void ShortCut_Debug(void)
 {
@@ -222,9 +220,8 @@ static void ShortCut_Debug(void)
 }
 
 
-/*-----------------------------------------------------------------------*/
 /**
- * Shorcut to pausing
+ * Shortcut to pausing
  */
 static void ShortCut_Pause(void)
 {
@@ -232,8 +229,9 @@ static void ShortCut_Pause(void)
 		Main_PauseEmulation(true);
 }
 
+
 /**
- * Shorcut to load a disk image
+ * Shortcut to load a disk image
  */
 static void ShortCut_InsertDisk(int drive)
 {

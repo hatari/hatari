@@ -3136,7 +3136,7 @@ static void dsp_movem_aa(void)
 	if  (cur_inst & (1<<15)) {
 		/* Write D */
 		value = read_memory_p(addr);
-		/* [LS] According to Motorola doc, MOVEM is said to be a parralel move instruction.
+		/* [LS] According to Motorola doc, MOVEM is said to be a parallel move instruction.
 		   But tests seems to contradict this.
 		   Next line should stay commented for now.
 		*/
@@ -3170,7 +3170,7 @@ static void dsp_movem_ea(void)
 	if  (cur_inst & (1<<15)) {
 		/* Write D */
 		value = read_memory_p(addr);
-		/* [LS] According to Motorola doc, MOVEM is said to be a parralel move instruction.
+		/* [LS] According to Motorola doc, MOVEM is said to be a parallel move instruction.
 		   But tests seems to contradict this.
 		   Next line should stay commented for now.
 		*/

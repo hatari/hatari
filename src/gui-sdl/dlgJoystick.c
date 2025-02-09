@@ -426,7 +426,7 @@ void Dialog_JoyDlg(void)
 	       && but != SDLGUI_ERROR && !bQuitProgram);
 
 	/* Tell ikbd to release joystick button 2 emulated
-	 * space bar in the theoritical case it has gotten stuck
+	 * space bar in the theoretical case it has gotten stuck
 	 * down, and to avoid that case, prevent it also going
 	 * down if user pressed the button when invoking GUI
 	 */

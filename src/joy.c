@@ -881,7 +881,7 @@ void Joy_SteLightpenY_ReadWord(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Read PC joystick and return ST format analoge value byte
+ * Read PC joystick and return ST format analog value byte
  */
 static uint8_t Joy_GetStickAnalogData(int nStJoyId, bool isXAxis)
 {

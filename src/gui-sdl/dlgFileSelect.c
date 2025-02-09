@@ -798,7 +798,7 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 		}
 		fsdlg[SGFSDLG_SCROLLBAR].w = yScrollbar_size;
 
-		/* Refresh scrolbar pos */
+		/* Refresh scrollbar pos */
 		ypos = (int) (scrollbar_Ypos * ((float)entries/(float)(SGFS_NUMENTRIES-2)) + 0.5);
 
 		if (ypos+SGFS_NUMENTRIES >= entries) {			/* Ensure Y pos is in the correct boundaries */

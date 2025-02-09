@@ -49,7 +49,7 @@ typedef struct
   uint32_t        CODEC_Freq;
   uint32_t        DSP_Freq;
 
-  /* Mega STE, TT, Falcon specifig */
+  /* Mega STE, TT, Falcon specific */
   uint32_t        SCC_Freq;
 
   /* Common to all machines, runtime variables */
