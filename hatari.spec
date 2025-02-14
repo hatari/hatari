@@ -40,7 +40,7 @@ and demos.  Because of this, it may be somewhat slower than less accurate
 emulators.
 
 %prep
-%setup
+%autosetup -p1
 
 %build
 ./configure --enable-werror --prefix=/usr

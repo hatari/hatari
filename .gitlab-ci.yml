@@ -34,6 +34,31 @@ build-mingw:
          -DENABLE_WERROR:BOOL=1 .
  - make -j$(nproc)
 
+build-fedora:
+  image: fedora:latest
+  variables:
+    GIT_DEPTH: 1000
+  before_script:
+    - dnf update -y
+    - dnf install -y cmake make gcc diffutils python-unversioned-command
+          capstone-devel GraphicsMagick SDL2-devel libpng-devel zlib-devel tidy
+          python3-gobject gtk3 readline-devel man git rpmdevtools
+  script:
+    - rpmdev-setuptree
+    - VERSION=$(git describe | sed -e s,-,^, -e s,-,.,)
+    - sed -i s/^\#define\ PROG_NAME\ .*/\#define\ PROG_NAME\ \"Hatari\ $VERSION\"/
+        src/includes/version.h
+    - git diff > ~/rpmbuild/SOURCES/hatari-version.patch
+    - echo Patch1\:\ hatari-version.patch > ~/rpmbuild/SPECS/hatari.spec
+    - sed s/^Version:.*/Version:\ $VERSION/ < hatari.spec >> ~/rpmbuild/SPECS/hatari.spec
+    - git archive --prefix=hatari-$VERSION/ -o
+        ~/rpmbuild/SOURCES/hatari-$VERSION.tar.bz2 HEAD
+    - rpmbuild -ba ~/rpmbuild/SPECS/hatari.spec
+    - cp ~/rpmbuild/SRPMS/hatari-v*.rpm ~/rpmbuild/RPMS/x86_64/hatari-v*.rpm .
+  artifacts:
+    paths:
+      - ./*.rpm
+
 pages:
   stage: deploy
   script:
