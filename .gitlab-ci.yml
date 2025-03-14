@@ -59,14 +59,16 @@ build-mingw:
     - cp portmidi/libportmidi.dll.a $MINGW_PREFIX/lib/
     - cp -v portmidi/pm_common/*.h $MINGW_PREFIX/include/
     # Now build Hatari
-    - cd ..
+    - mkdir ../build
+    - cd ../build
     - VERSION=$(git describe)
     - cmake -DCMAKE_TOOLCHAIN_FILE=cmake/Toolchain-mingw32-win64_64.cmake
-            -DENABLE_WERROR:BOOL=1 .
+            -DENABLE_WERROR:BOOL=1 ..
     - make -j$(nproc)
+    - cd ..
     # And finally create the package
     - mkdir hatari-$VERSION
-    - mv src/hatari.exe gpl.txt readme.txt hatari-$VERSION/
+    - mv build/src/hatari.exe gpl.txt readme.txt hatari-$VERSION/
     - cp -r doc hatari-$VERSION/
     - cd hatari-$VERSION/doc
     - rm CMakeLists.txt hatari.1 hatari-ui.html release-checklist.txt
