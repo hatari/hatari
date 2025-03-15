@@ -110,8 +110,31 @@ build-fedora:
     paths:
       - ./*.rpm
 
+build-emscripten:
+  image: emscripten/emsdk:4.0.4
+  cache:
+    paths:
+      - files
+  script:
+    - if [ ! -d files ]; then
+        wget -O emutos.zip https://sourceforge.net/projects/emutos/files/emutos/1.3/emutos-256k-1.3.zip/download ;
+        unzip emutos.zip ;
+        mkdir files ;
+        mv emutos-256k-1.3/etos256us.img files/tos.img ;
+      fi
+    - emcmake cmake .
+    - cmake --build . -j $(nproc)
+  artifacts:
+    when: on_success
+    expire_in: 2 days
+    paths:
+      - src/hatari.*
+
 pages:
   stage: deploy
+  needs:
+    - job: build-emscripten
+      artifacts: true
   script:
     - mkdir -p public/doc
     - cp doc/*.html doc/*.css doc/*.js doc/*.txt public/doc/
@@ -119,6 +142,8 @@ pages:
     - apt-get install -y -qq doxygen
     - cd doc/doxygen/ ; doxygen ; cd ../..
     - cp -r doc/doxygen/html public/doxygen/
+    - mkdir public/online
+    - cp src/hatari/hatari.* public/online/
   artifacts:
     paths:
       - public
