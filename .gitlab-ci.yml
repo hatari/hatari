@@ -119,8 +119,13 @@ build-emscripten:
     - if [ ! -d files ]; then
         wget -O emutos.zip https://sourceforge.net/projects/emutos/files/emutos/1.3/emutos-256k-1.3.zip/download ;
         unzip emutos.zip ;
-        mkdir files ;
+        mkdir -p files/fs ;
         mv emutos-256k-1.3/etos256us.img files/tos.img ;
+        cd files/fs ;
+        wget https://framagit.org/hatari/releases/-/raw/main/v1.9/hatari19.prg ;
+        wget https://framagit.org/hatari/releases/-/raw/main/v2.1/hatari21.prg ;
+        wget https://framagit.org/hatari/releases/-/raw/main/v2.2/hatari22.prg ;
+        cd ../.. ;
       fi
     - emcmake cmake .
     - cmake --build . -j $(nproc)
