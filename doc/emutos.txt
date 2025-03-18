@@ -379,6 +379,7 @@ Color demos:
 - Anomaly (by MJJ Prod)
 - April Fools (by DNT Crew)
 - Arsenite (by Dekadence)
+- Atom (128b by Acid Team)
 - Audiopacdemo (by X-Troll)
 - Bad Remix (by Dekadence)
 - Beast Scroll (by Joefish)
@@ -392,6 +393,7 @@ Color demos:
 - Closure (by Sync)
 - Coast II Coast (by Sector One, 4kB intro)
 - Coolism (music disk, by Effect)
+- Cracking On (by Exocet & Tom & Adam Gilmore)
 - Crisis (by Joska)
 - Cross the Deserts (by Chronicle) - one screen gfx is partly corrupted
 - Crowd Teaser (by SMFX)
@@ -414,10 +416,14 @@ Color demos:
 - Flexiscroll 2021 (64k by Effect)
 - Flipo (by Oxygene)
 - Flux-AI slides (Spec512/50Hz slideshow by Anima)
+- Forever (great demo by 505 & Tom & modMate)
 - Frenchies (by Frenchies, 96KB intro)
 - Fruit is Great! (256-Bytro 50Hz overscan by Effect)
+- Fuckings To Nightbours (by Donald Trump Cracking Crew)
 - Glokzilla (by MJJ Prod)
+- Gnoël (by Flush)
 - Going (by Spice Boys)
+- Grand Theft Auto VI Cracktro (by Vectronix)
 - Grafik -und Sounddemo (by Eckhard Kruse)
 - Hallucinations (by Reservoir Gods)
 - Harstad Vito (by Dekadence)
@@ -445,7 +451,9 @@ Color demos:
 - New Year intro 1990 (by The Replicants)
 - No Cooper (by 1984)
 - No more froggies (by Sector1)
+- NYAN zeST (by DHS)
 - O-demo (by Oxygene)
+- Octogenarian (by Vlad)
 - Odd Stuff (by Dune & Sector One)
 - Oh no!! more froggies (by Sector One) - does not work with >2MB of RAM
 - Old (by Tom & Dubmood)
@@ -463,6 +471,7 @@ Color demos:
 - Paradise (by Dune Design)
 - Pause (by Cerebral Vortex / Dekadence / SMFX)
 - Phaleon Gigademo (by Next) - select "fast loader"
+- PONG_CRK (fake cracktro by Overlanders)
 - Posh (by Checkpoint)
 - POV disk 165 (except for EiL 99 invite)
 - Princess of Doom (by Brainheadsinteractive)
@@ -484,6 +493,7 @@ Color demos:
 - Silly Invaders (158-Bytro by Sedma)
 - Smag-FX 3 (by SMFX)
 - SNDH v4.8 update demo (PHF & KUA & DHS)
+- Somebody Has Owned Someone (by Spice Boys)
 - Sommar TTRAK (TTRAK v1.00 intro)
 - Sommarhack 1991 Best Of (by Pepe)
   - Glitches are intentional, not EmuTOS issue
@@ -1077,6 +1087,7 @@ Color demos:
 - 21 bobs (by Anima, needs 50Hz)
 - 32768 colors showdown (by Tronic of Effect)
 - 3D full (by Oxygene)
+- 68k Inside 2025 (by Dekadence)
 - 96 Shades of Gray (by Paradox, >1MB, panics at end/exit)
 - Again (by Paradox)
 - AltParty 2008 intro (by Paradox)
@@ -1119,6 +1130,7 @@ Color demos:
 - HighResMode 1 & 2 (by Paradox)
 - I got invited to Psycho Hack (by Modula)
 - Illusion (by Next)
+- Inscape To Fractalus (4k overscan by Acid Team)
 - It's A Girl (by Paradox)
 - It's A Girl 2 (by Paradox)
 - Jam-Cols (by ICE)
@@ -1133,6 +1145,7 @@ Color demos:
 - Massacre (by DHS)
 - Mathematica (by Aura)
 - Maxymizer compo 2006 (by gwEm)
+- Mea Culpa (by NoExtra)
 - Meshake (by Spice Boys)
 - Mind Rewind (by Reservoir Gods)
 - Monogatari (monochrome, by Cerebral Vortex)
@@ -1149,9 +1162,11 @@ Color demos:
 - Pacemaker (by Paradox), end part works only from floppy image
 - Paracon 6 & 7 remindtros (by Paradox)
 - Parallax Distorter 2 (by Solomon)
+- Pixel Dreams (by Bohemian Grove)
 - Power Rise (by Light)
 - Realtime (by MJJ Prod)
 - Reanimation (by Syntax)
+- Relapse HD (by Cybernetics)
 - Revise and Revisit (by DHS)
 - Rise of the blackstorm (by Mystic Bytes)
 - Riverside (by DHS)
@@ -1224,7 +1239,7 @@ Color games:
 - Droid STE rewrite
 - Dynabusters+*
 - Exchange Puzzle (SV20 edition, optional STe palette support)
-- FASTER*
+- Faster*
 - Frantick
 - Frogs (optional STE audio/blitter support, MIDI multiplayer)
 - Giana Sisters STE rewrite:
@@ -1488,6 +1503,7 @@ Demos working under EmuTOS >= v1.1 (with DSP support):
 - Aggressive Party 2 4k (NoCrew)
 - Agony (by DNT crew)
 - At Night They Come (by Bohemian Grove)
+- Back To The ST (by Bohemian Grove)
 - Beams (by .tscc)
 - Bird to be alive (by Dune etc)
 - Bound 3, Bound 5 (by Crac)
