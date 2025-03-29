@@ -556,7 +556,27 @@ NOTE: Hatari does not support networking so network install obviously
 does not work.  There are no ready made images of pre-installed and
 up to date m68k Debian installs either.
 
-TODO: kernel panics when init crashes.
+TODO: kernel panics when init crashes:
+------------------------
+[   42.310000] Freeing initrd memory: 26768K
+[   42.370000] Instruction fault at 0x00222a40
+[   42.380000] BAD KERNEL BUSERR
+[   42.390000] Oops: 00000000
+[   42.400000] Modules linked in:
+[   42.420000] PC: [<00222a40>] strnlen_user+0x38/0xd0
+...
+[   42.590000] Call Trace: [<001623a0>] load_elf_binary+0x9ca/0xb0a
+[   42.610000]  [<00020000>] _FP_CALL_TOP+0x9596/0xd512
+[   42.620000]  [<0005fc02>] module_put+0x0/0x50
+[   42.630000]  [<0011f086>] bprm_execve+0x196/0x39c
+[   42.640000]  [<0011e7fe>] copy_strings_kernel+0x0/0x54
+[   42.660000]  [<0011e502>] count_strings_kernel+0x0/0x3c
+[   42.670000]  [<0011f63a>] kernel_execve+0x148/0x150
+[   42.680000]  [<0003920c>] call_usermodehelper_exec_async+0xec/0x100
+[   42.700000]  [<00039120>] call_usermodehelper_exec_async+0x0/0x100
+[   42.730000]  [<00002568>] ret_from_kernel_thread+0xc/0x14
+------------------------
+
 
 
 9.2 Running initrd as normal disk
@@ -576,12 +596,14 @@ fakeroot session to retain file properties requiring root rights:
    # /sbin/mkfs.ext2 -t ext2 -L INITRD -d initrd initrd.img 32M
    # exit
 
-TODO: init is dynamically linked Busybox and crashes immediately.
-If it's replaced with statically linked one, that crashes to first
-"mkdir" (or "ls") call on just mounted "/run":
-------------------------
-tmpfs	/run	tmpfs	nosuid,size=10%,mode=755	0	0
-------------------------
+Notes:
+* Before creating image image, move "proc" mount before "mount" call
+  in initrd "init" file. Otherwise "mount" warns "no /proc/mounts",
+  returns an error and init script fails, resulting in kernel panic
+* Use normal monolithic kernel because Debian's modular installer
+  kernel does not have built-in IDE supports
+
+TODO: freeze when "init" script calls "/bin/busybox init" at end.
 
 
 9.3 Bootstrapping Debian installation on PC
@@ -702,6 +724,9 @@ Kernel panic - not syncing: VFS: Unable to mount root fs on unknown-block(0,0)
   However, when data cache is enabled, 060 boot crashes to double bus
   error, and 040 boot freezes early on.  Although screen is black, CPU
   trace indicates latter being a panic.
+
+  Note: when booting Linux with "bootstra.prg" instead directly with
+  LILO, kernel panics immediately even with cache emulation disabled.
 
   [1] In previous Hatari versions, there was panic on reaching user-space.
 
