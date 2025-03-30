@@ -1,6 +1,6 @@
 freebsd_task:
   freebsd_instance:
-    image_family: freebsd-13-3
+    image_family: freebsd-14-2
     cpu: 4
     memory: 4G
   install_script:
