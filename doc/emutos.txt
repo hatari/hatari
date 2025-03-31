@@ -1234,6 +1234,7 @@ Color games:
 - Chroma Grid (including D-BUG intro+trainer)
 - ChuChu Rocket* (RG's full version)
 - Crash Time Plumber
+- Defender* (Williams version port, works also on ST & Falcon)
 - Detonator
 - Dread* (playable Wolf3D clone demo v1905)
 - Droid STE rewrite
