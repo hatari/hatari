@@ -469,7 +469,12 @@ static unsigned get_type_width(char mode)
 
 
 /**
- * helper: print <count> <size> sized memory items from <addr> in <base>
+ * This is a helper function that prints `count` `size` sized memory items
+ * from `addr` in `base`.
+ * @param addr    the start address
+ * @param count   the amount of items that should be printed
+ * @param size    the size of one item
+ * @param base    the number base
  */
 static void print_mem_values(uint32_t addr, int count, int size, int base)
 {
@@ -513,7 +518,10 @@ static void print_mem_values(uint32_t addr, int count, int size, int base)
 }
 
 /**
- * helper: print <count> bytes from Atari <addr> as host encoded chars
+ * This is a helper function that prints `count` bytes from Atari `addr`
+ * as host encoded chars.
+ * @param addr   The ST RAM start address
+ * @param count  the amount of bytes that should get printed
  */
 static void print_mem_chars(uint32_t addr, uint8_t count)
 {

@@ -5262,11 +5262,14 @@ void Video_LineWidth_WriteByte(void)
  * of the color reg (instead of writing 16 bits at once with .W/.L).
  * In that case, the byte written to address x is automatically written
  * to address x+1 too (but we shouldn't copy x in x+1 after masking x ; we apply the mask at the end)
- * Similarly, when writing a byte to address x+1, it's also written to address x
- * So :	move.w #0,$ff8240	-> color 0 is now $000
+ * Similarly, when writing a byte to address x+1, it's also written to address x.
+ * So :
+ * <pre>
+ *	move.w #0,$ff8240	-> color 0 is now $000
  *	move.b #7,$ff8240	-> color 0 is now $707 !
  *	move.b #$55,$ff8241	-> color 0 is now $555 !
  *	move.b #$71,$ff8240	-> color 0 is now $171 (bytes are first copied, then masked)
+ * </pre>
  */
 static void Video_ColorReg_WriteWord(void)
 {
@@ -5601,8 +5604,7 @@ void Video_Res_WriteByte(void)
 	M68000_SyncCpuBus_OnWriteAccess();
 }
 
-/*-----------------------------------------------------------------------*/
-/**
+/*
  * Handle horizontal scrolling to the left.
  * On STE, there're 2 registers that can scroll the line :
  *  - $ff8264 : scroll without prefetch

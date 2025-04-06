@@ -797,9 +797,9 @@ static bool Opt_CountryCode(const char *arg, int optid, int *conf)
 }
 
 /**
- * Parse <drive>=<value>. If single digit <drive> and/or '=' missing,
- * assume drive ID 0, and interpret whole arg as <value>.
- * Return parsed <value>, and set <drive>.
+ * Parse "<drive>=<value>". If single digit "<drive>" and/or '=' missing,
+ * assume drive ID 0, and interpret whole arg as "<value>".
+ * Return parsed "<value>", and set "<drive>".
  */
 static const char *Opt_DriveValue(const char *arg, int *drive)
 {

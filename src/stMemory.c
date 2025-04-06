@@ -104,10 +104,10 @@ void	STMemory_Reset ( bool bCold )
 
 /**
  * Clear section of ST's memory space.
- * @addr  Destination Atari RAM address
- * @len   Number of bytes to clear
+ * @param addr  Destination Atari RAM address
+ * @param len   Number of bytes to clear
  *
- * Return true if whole clear was safe / valid.
+ * @return true if whole clear was safe / valid.
  */
 bool STMemory_SafeClear(uint32_t addr, unsigned int len)
 {

@@ -188,7 +188,7 @@ int DebugDsp_DisAsm(int nArgc, char *psArgs[])
 
 /**
  * Do a DSP memory dump, args = starting address or range.
- * <x|y|p> <address>: dump from X, Y or P, starting from given address,
+ * `x|y|p` `address`: dump from X, Y or P, starting from given address,
  * e.g. "x 200" or "p 200-300"
  */
 int DebugDsp_MemDump(int nArgc, char *psArgs[])

@@ -436,12 +436,14 @@ uint32_t Profile_CallEnd(callinfo_t *callinfo, counters_t *totalcost)
  *
  * Diagram of variables involved in 2 functions deep call stack:
  *
+ * <pre>
  *   (caller_addr 1)  bsr symbol1  -1->  symbol1     (callee_addr 1)
  *      (ret_addr 1)  <instr>     <-.    ...
  *                                  |    bsr symbol2 (caller_addr 2)  -2->  symbol2 (callee_addr 2)
  *                                  1    <instr>     (ret_addr 2)    <-.    ...
  *                                  |    ...                           2    ... (PC)
  *                                  '-   rts                           '-   rts
+ * </pre>
  *
  * When one wants to match callee_addr (= symbol) to caller_addr (= which
  * place in that function called further functions), it's best to traverse

@@ -914,7 +914,7 @@ void Symbols_LoadCurrentProgram(void)
 
 /**
  * If autoloading enabled and no symbols are present, load symbols
- * for <tos>.img file from <tos>.sym file, if one exists.
+ * for "<tos>.img" file from "<tos>.sym" file, if one exists.
  *
  * Called whenever TOS is loaded.
  */
