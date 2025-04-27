@@ -1272,6 +1272,7 @@ static const struct {
 	{ TOS_LANG_RU,    "ru",    "Russia" },
 	{ TOS_LANG_GR,    "gr",    "Greece" },
 	{ TOS_LANG_RO,    "ro",    "Romania" },
+	{ TOS_LANG_CA,    "ca",    "Catalan" },
 };
 
 /**
@@ -1296,6 +1297,8 @@ void TOS_ShowCountryCodes(void)
 			fprintf(stderr, "\nEmuTOS 1024k supports also:\n");
 		if (countries[i].value == TOS_LANG_RO)
 			fprintf(stderr, "\nEmuTOS 1024k >1.2.1 also:\n");
+		if (countries[i].value == TOS_LANG_CA)
+			fprintf(stderr, "\nEmuTOS 1024k >1.3.0 also:\n");
 		fprintf(stderr, "- %s : %s\n",
 			countries[i].code, countries[i].name);
 	}
