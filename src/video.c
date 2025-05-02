@@ -1617,7 +1617,7 @@ static void Video_WriteToGlueRes ( uint8_t Res )
 	Video_GetPosition_OnWriteAccess ( &FrameCycles , &HblCounterVideo , &LineCycles );
 	LineCycles = VIDEO_CYCLE_TO_HPOS ( LineCycles );
 
-	LOG_TRACE(TRACE_VIDEO_RES ,"shifter=0x%2.2X video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n",
+	LOG_TRACE(TRACE_VIDEO_RES ,"res_glue=0x%2.2X video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n",
 	               Res, FrameCycles, LineCycles, nHBL, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles );
 
 
@@ -1770,77 +1770,6 @@ static void Video_WriteToGlueRes ( uint8_t Res )
 			ShifterFrame.ShifterLines[ i ].DisplayPixelShift = ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift;
 	}
 
-#if 0
-	/* Troed/Sync 4 pixels left hardscroll on the whole screen, without removing border */
-	/* Switch to res=3 to stop the shifter, then switch back to low/med res */
-	/* All following lines will be shifted but not the one where the switch to res=3 is done */
-	/* The switch is supposed to last less than 20 cycles to get all 4 positions */
-	/* Switch to res=3 is usually made at pos 68 to limit artifacts (all pixels will be black */
-	/* during the time when shifter is stopped), but it could be made anywhere on the line when DE is ON */
-
-	/* TODO : we shift the screen but we don't show the black pixels during stopped state */
-	/* TODO : shift should remain on all subsequent vbl's, not just the current one */
-
-	if ( ( ShifterFrame.Res_Shifter == 0x03 )
-		&& ( ShifterFrame.ResPosStop_Shifter.LineCycles >= 64 )		/* switched to stopped state when DE ON */
-		&& ( LineCycles >= 64+8 )					/* switch to res=3 during at least 8 cycles */
-		&& ( LineCycles - ShifterFrame.ResPosStop_Shifter.LineCycles <= 32 ) ) /* stopped for max 32 cycles */
-
-	{
-		int	shifter_res_pos_old;
-		int	shifter_res_pos_new;
-		int	shifter_stopped_cycles;
-		int	Shift , AddressInc;
-
-
-		/* Changes of resolution in the shifter are done on the next rounding to 4 cycles */
-		/* (also depending on the current bus access) */
-		/* TODO : use a common function like M68000_SyncCpuBus() */
-		shifter_res_pos_old = ( ShifterFrame.ResPosHi_Shifter.LineCycles + 3 ) & ~3;
-		shifter_res_pos_new = ( LineCycles + 3 ) & ~3;
-
-		shifter_stopped_cycles = shifter_res_pos_new - shifter_res_pos_old;
-
-		Shift = 0;
-		AddressInc = 0;
-
-		if ( shifter_stopped_cycles % 16 == 4 )			// 88 + 16n
-		{
-			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 12 pixels left scroll with stopped shifter\n" );
-			AddressInc = -6;
-			Shift = -12;
-		}
-		else if ( shifter_stopped_cycles % 16 == 0 )		// 84 + 16n
-		{
-			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 0 pixels left scroll with stopped shifter\n" );
-			AddressInc = 0;
-			Shift = 0;
-		}
-		else if ( shifter_stopped_cycles % 16 == 12 )		// 80 + 16n
-		{
-			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 4 pixels left scroll with stopped shifter\n" );
-			AddressInc = -2;
-			Shift = -4;
-		}
-		else if ( shifter_stopped_cycles % 16 == 8 )		// 76 + 16n
-		{
-			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 8 pixel left scroll with stopped shifter\n" );
-			AddressInc = -4;
-			Shift = -8;
-		}
-
-		/* Offset to be added at the end of the current line */
-		if ( AddressInc != 0 )
-			VideoRasterDelayedInc = AddressInc;
-
-		/* Mark all the following lines as shifted */
-		int i;
-		for ( i=HblCounterVideo+1 ; i<MAX_SCANLINES_PER_FRAME ; i++ )
-			ShifterFrame.ShifterLines[ i ].DisplayPixelShift = Shift;
-	}
-#endif
-
-
 	/* TEMP for 'closure' in WS2 */
 	/* -> stay in hi res for 16 cycles to do the stab (hi/50/lo at 4/12/20) */
 	if ( ( ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask & BORDERMASK_LEFT_OFF )
@@ -1887,7 +1816,7 @@ static void Video_WriteToGlueRes ( uint8_t Res )
 	/* TEMP for 'death of the left border' by TNT */
 
 
-	/* Store cycle position of this change of resolution */
+	/* Store cycle position for this change of resolution */
 	ShifterFrame.Res = Res;
 	if ( Res & 0x02 )						/* high res */
 	{
@@ -1928,11 +1857,11 @@ static void Video_WriteToShifterRes ( uint8_t Res )
 	Video_GetPosition_OnWriteAccess ( &FrameCycles , &HblCounterVideo , &LineCycles );
 	LineCycles = VIDEO_CYCLE_TO_HPOS ( LineCycles );
 
-	LOG_TRACE(TRACE_VIDEO_RES ,"shifter=0x%2.2X video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n",
+	LOG_TRACE(TRACE_VIDEO_RES ,"res_shifter=0x%2.2X video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n",
 	               Res, FrameCycles, LineCycles, nHBL, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles );
 
 	if ( Res == 3 )
-		LOG_TRACE(TRACE_VIDEO_RES ,"shifter=0x%2.2X, shifter stopped video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n",
+		LOG_TRACE(TRACE_VIDEO_RES ,"res_shifter=0x%2.2X, shifter stopped video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n",
 			Res, FrameCycles, LineCycles, nHBL, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles );
 
 
@@ -2009,7 +1938,7 @@ static void Video_WriteToShifterRes ( uint8_t Res )
 	}
 
 
-	/* Store cycle position of this change of resolution */
+	/* Store cycle position for this change of resolution */
 	ShifterFrame.Res_Shifter = Res;
 	if ( Res == 0x03 )						/* stopped state */
 	{
