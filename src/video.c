@@ -571,12 +571,20 @@ typedef struct
 	int	TimerB_CyclePos;		/* cycle position for the Timer B int (depends on freq/res) */
 
 	int	Freq;				/* value of ff820a & 2, or -1 if not set */
-	int	Res;				/* value of ff8260 & 3, or -1 if not set */
+	int	Res;				/* value of ff8260 & 3 (as seen by GLUE), or -1 if not set */
+	int	Res_Shifter;			/* value of ff8260/61 & 3 (as seen by Shifter), or -1 if not set */
+
 	SHIFTER_POS	FreqPos50;		/* position of latest freq change to 50 Hz*/
 	SHIFTER_POS	FreqPos60;		/* position of latest freq change to 60 Hz*/
-	SHIFTER_POS	ResPosLo;		/* position of latest change to low res */
-	SHIFTER_POS	ResPosMed;		/* position of latest change to med res */
-	SHIFTER_POS	ResPosHi;		/* position of latest change to high res */
+
+	SHIFTER_POS	ResPosLo;		/* position of latest change to low res in GLUE */
+	SHIFTER_POS	ResPosMed;		/* position of latest change to med res in GLUE */
+	SHIFTER_POS	ResPosHi;		/* position of latest change to high res in GLUE */
+
+	SHIFTER_POS	ResPosLo_Shifter;	/* position of latest change to low res in Shifter */
+	SHIFTER_POS	ResPosMed_Shifter;	/* position of latest change to med res in Shifter */
+	SHIFTER_POS	ResPosHi_Shifter;	/* position of latest change to high res in Shifter */
+	SHIFTER_POS	ResPosStop_Shifter;	/* position of latest change to stopped state in Shifter */
 
 	SHIFTER_POS	Scroll8264Pos;		/* position of latest write to $ff8264 */
 	SHIFTER_POS	Scroll8265Pos;		/* position of latest write to $ff8265 */
@@ -691,7 +699,8 @@ static void	Video_InitTimings_Copy ( VIDEO_TIMING *pSrc , VIDEO_TIMING *pDest , 
 
 static uint32_t	Video_CalculateAddress ( void );
 static int	Video_GetMMUStartCycle ( int DisplayStartCycle );
-static void	Video_WriteToGlueShifterRes ( uint8_t Res );
+static void	Video_WriteToGlueRes ( uint8_t Res );
+static void	Video_WriteToShifterRes ( uint8_t Res );
 static void	Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , int LineCycles , bool WriteToRes );
 
 static int	Video_HBL_GetDefaultPos ( void );
@@ -806,11 +815,18 @@ void Video_Reset(void)
 	/* Reset shifter's state variables */
 	ShifterFrame.Freq = -1;
 	ShifterFrame.Res = -1;
+	ShifterFrame.Res_Shifter = -1;
 	ShifterFrame.FreqPos50.VBL = -1;
 	ShifterFrame.FreqPos60.VBL = -1;
+
 	ShifterFrame.ResPosLo.VBL = -1;
 	ShifterFrame.ResPosMed.VBL = -1;
 	ShifterFrame.ResPosHi.VBL = -1;
+	ShifterFrame.ResPosLo_Shifter.VBL = -1;
+	ShifterFrame.ResPosMed_Shifter.VBL = -1;
+	ShifterFrame.ResPosHi_Shifter.VBL = -1;
+	ShifterFrame.ResPosStop_Shifter.VBL = -1;
+
 	ShifterFrame.Scroll8264Pos.VBL = -1;
 	ShifterFrame.Scroll8265Pos.VBL = -1;
 	ShifterFrame.VBlank_signal = VBLANK_SIGNAL_OFF;
@@ -1590,11 +1606,11 @@ static int Video_GetMMUStartCycle ( int DisplayStartCycle )
 
 /*-----------------------------------------------------------------------*/
 /**
- * Write to VideoShifter (0xff8260), resolution bits
- * Special case : when writing 3 to the shifter's res, the shifter will stop processing incoming words sent by the MMU,
- * on the GLUE side this will be seen as hi res being selected
+ * Write to resolution register in the GLUE (0xff8260)
+ * Depending on when the write is made, this will affect various video signals
+ * and allow to change borders' position (see Video_Update_Glue_State() )
  */
-static void Video_WriteToGlueShifterRes ( uint8_t Res )
+static void Video_WriteToGlueRes ( uint8_t Res )
 {
 	int FrameCycles, HblCounterVideo, LineCycles;
 
@@ -1603,10 +1619,6 @@ static void Video_WriteToGlueShifterRes ( uint8_t Res )
 
 	LOG_TRACE(TRACE_VIDEO_RES ,"shifter=0x%2.2X video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n",
 	               Res, FrameCycles, LineCycles, nHBL, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles );
-
-	if ( Res == 3 )
-		LOG_TRACE(TRACE_VIDEO_RES ,"shifter=0x%2.2X, shifter stopped video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n",
-			Res, FrameCycles, LineCycles, nHBL, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles );
 
 
 	/* Ignore consecutive writes of the same value */
@@ -1758,6 +1770,7 @@ static void Video_WriteToGlueShifterRes ( uint8_t Res )
 			ShifterFrame.ShifterLines[ i ].DisplayPixelShift = ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift;
 	}
 
+#if 0
 	/* Troed/Sync 4 pixels left hardscroll on the whole screen, without removing border */
 	/* Switch to res=3 to stop the shifter, then switch back to low/med res */
 	/* All following lines will be shifted but not the one where the switch to res=3 is done */
@@ -1768,10 +1781,10 @@ static void Video_WriteToGlueShifterRes ( uint8_t Res )
 	/* TODO : we shift the screen but we don't show the black pixels during stopped state */
 	/* TODO : shift should remain on all subsequent vbl's, not just the current one */
 
-	if ( ( ShifterFrame.Res == 0x03 )
-		&& ( ShifterFrame.ResPosHi.LineCycles >= 64 )		/* switched to stopped state when DE ON */
-		&& ( LineCycles >= 64+8 )				/* switch to res=3 during at least 8 cycles */
-		&& ( LineCycles - ShifterFrame.ResPosHi.LineCycles <= 32 ) ) /* stopped for max 32 cycles */
+	if ( ( ShifterFrame.Res_Shifter == 0x03 )
+		&& ( ShifterFrame.ResPosStop_Shifter.LineCycles >= 64 )		/* switched to stopped state when DE ON */
+		&& ( LineCycles >= 64+8 )					/* switch to res=3 during at least 8 cycles */
+		&& ( LineCycles - ShifterFrame.ResPosStop_Shifter.LineCycles <= 32 ) ) /* stopped for max 32 cycles */
 
 	{
 		int	shifter_res_pos_old;
@@ -1783,7 +1796,7 @@ static void Video_WriteToGlueShifterRes ( uint8_t Res )
 		/* Changes of resolution in the shifter are done on the next rounding to 4 cycles */
 		/* (also depending on the current bus access) */
 		/* TODO : use a common function like M68000_SyncCpuBus() */
-		shifter_res_pos_old = ( ShifterFrame.ResPosHi.LineCycles + 3 ) & ~3;
+		shifter_res_pos_old = ( ShifterFrame.ResPosHi_Shifter.LineCycles + 3 ) & ~3;
 		shifter_res_pos_new = ( LineCycles + 3 ) & ~3;
 
 		shifter_stopped_cycles = shifter_res_pos_new - shifter_res_pos_old;
@@ -1825,6 +1838,8 @@ static void Video_WriteToGlueShifterRes ( uint8_t Res )
 		for ( i=HblCounterVideo+1 ; i<MAX_SCANLINES_PER_FRAME ; i++ )
 			ShifterFrame.ShifterLines[ i ].DisplayPixelShift = Shift;
 	}
+#endif
+
 
 	/* TEMP for 'closure' in WS2 */
 	/* -> stay in hi res for 16 cycles to do the stab (hi/50/lo at 4/12/20) */
@@ -1897,6 +1912,134 @@ static void Video_WriteToGlueShifterRes ( uint8_t Res )
 	}
 }
 
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Write to resolution register in the Shifter (0xff8260 or 0xff8261)
+ * Special case : when writing 3 to the Shifter's res, the shifter will stop processing incoming words sent by the MMU,
+ * on the GLUE side this will be seen as hi res being selected
+ */
+static void Video_WriteToShifterRes ( uint8_t Res )
+{
+	int FrameCycles, HblCounterVideo, LineCycles;
+
+	Video_GetPosition_OnWriteAccess ( &FrameCycles , &HblCounterVideo , &LineCycles );
+	LineCycles = VIDEO_CYCLE_TO_HPOS ( LineCycles );
+
+	LOG_TRACE(TRACE_VIDEO_RES ,"shifter=0x%2.2X video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n",
+	               Res, FrameCycles, LineCycles, nHBL, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles );
+
+	if ( Res == 3 )
+		LOG_TRACE(TRACE_VIDEO_RES ,"shifter=0x%2.2X, shifter stopped video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n",
+			Res, FrameCycles, LineCycles, nHBL, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles );
+
+
+	/* Ignore consecutive writes of the same value */
+	if ( Res == ShifterFrame.Res_Shifter )
+		return;						/* do nothing */
+
+	/* Troed/Sync 4 pixels left hardscroll on the whole screen, without removing border */
+	/* Switch to res=3 to stop the shifter, then switch back to low/med res */
+	/* All following lines will be shifted but not the one where the switch to res=3 is done */
+	/* The switch is supposed to last less than 20 cycles to get all 4 positions */
+	/* Switch to res=3 is usually made at pos 68 to limit artifacts (all pixels will be black */
+	/* during the time when shifter is stopped), but it could be made anywhere on the line when DE is ON */
+
+	/* TODO : we shift the screen but we don't show the black pixels during stopped state */
+	/* TODO : shift should remain on all subsequent vbl's, not just the current one */
+
+	if ( ( ShifterFrame.Res_Shifter == 0x03 )
+		&& ( ShifterFrame.ResPosStop_Shifter.LineCycles >= 64 )		/* switched to stopped state when DE ON */
+		&& ( LineCycles >= 64+8 )					/* switch to res=3 during at least 8 cycles */
+		&& ( LineCycles - ShifterFrame.ResPosStop_Shifter.LineCycles <= 32 ) ) /* stopped for max 32 cycles */
+
+	{
+		int	shifter_res_pos_old;
+		int	shifter_res_pos_new;
+		int	shifter_stopped_cycles;
+		int	Shift , AddressInc;
+
+
+		/* Changes of resolution in the shifter are done on the next rounding to 4 cycles */
+		/* (also depending on the current bus access) */
+		/* TODO : use a common function like M68000_SyncCpuBus() */
+		shifter_res_pos_old = ( ShifterFrame.ResPosStop_Shifter.LineCycles + 3 ) & ~3;
+		shifter_res_pos_new = ( LineCycles + 3 ) & ~3;
+
+		shifter_stopped_cycles = shifter_res_pos_new - shifter_res_pos_old;
+
+		Shift = 0;
+		AddressInc = 0;
+
+		if ( shifter_stopped_cycles % 16 == 4 )			// 88 + 16n
+		{
+			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 12 pixels left scroll with stopped shifter\n" );
+			AddressInc = -6;
+			Shift = -12;
+		}
+		else if ( shifter_stopped_cycles % 16 == 0 )		// 84 + 16n
+		{
+			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 0 pixels left scroll with stopped shifter\n" );
+			AddressInc = 0;
+			Shift = 0;
+		}
+		else if ( shifter_stopped_cycles % 16 == 12 )		// 80 + 16n
+		{
+			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 4 pixels left scroll with stopped shifter\n" );
+			AddressInc = -2;
+			Shift = -4;
+		}
+		else if ( shifter_stopped_cycles % 16 == 8 )		// 76 + 16n
+		{
+			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 8 pixel left scroll with stopped shifter\n" );
+			AddressInc = -4;
+			Shift = -8;
+		}
+
+		/* Offset to be added at the end of the current line */
+		if ( AddressInc != 0 )
+			VideoRasterDelayedInc = AddressInc;
+
+		/* Mark all the following lines as shifted */
+		int i;
+		for ( i=HblCounterVideo+1 ; i<MAX_SCANLINES_PER_FRAME ; i++ )
+			ShifterFrame.ShifterLines[ i ].DisplayPixelShift = Shift;
+	}
+
+
+	/* Store cycle position of this change of resolution */
+	ShifterFrame.Res_Shifter = Res;
+	if ( Res == 0x03 )						/* stopped state */
+	{
+		ShifterFrame.ResPosStop_Shifter.VBL = nVBLs;
+		ShifterFrame.ResPosStop_Shifter.FrameCycles = FrameCycles;
+		ShifterFrame.ResPosStop_Shifter.HBL = HblCounterVideo;
+		ShifterFrame.ResPosStop_Shifter.LineCycles = LineCycles;
+	}
+	else if ( Res == 0x02 )						/* high res */
+	{
+		ShifterFrame.ResPosStop_Shifter.VBL = nVBLs;
+		ShifterFrame.ResPosStop_Shifter.FrameCycles = FrameCycles;
+		ShifterFrame.ResPosStop_Shifter.HBL = HblCounterVideo;
+		ShifterFrame.ResPosStop_Shifter.LineCycles = LineCycles;
+	}
+	else if ( Res == 0x01 )						/* med res */
+	{
+		ShifterFrame.ResPosStop_Shifter.VBL = nVBLs;
+		ShifterFrame.ResPosStop_Shifter.FrameCycles = FrameCycles;
+		ShifterFrame.ResPosStop_Shifter.HBL = HblCounterVideo;
+		ShifterFrame.ResPosStop_Shifter.LineCycles = LineCycles;
+	}
+	else								/* low res */
+	{
+		ShifterFrame.ResPosStop_Shifter.VBL = nVBLs;
+		ShifterFrame.ResPosStop_Shifter.FrameCycles = FrameCycles;
+		ShifterFrame.ResPosStop_Shifter.HBL = HblCounterVideo;
+		ShifterFrame.ResPosStop_Shifter.LineCycles = LineCycles;
+	}
+}
 
 
 
@@ -5579,7 +5722,7 @@ void Video_Color15_ReadWord(void)
  */
 void Video_Res_WriteByte(void)
 {
-	uint8_t VideoShifterByte;
+	uint8_t Res;
 
 	if (Config_IsMachineTT())
 	{
@@ -5590,13 +5733,16 @@ void Video_Res_WriteByte(void)
 	else if (!bUseVDIRes)	/* ST and STE mode */
 	{
 		/* We only care for lower 2-bits */
-		VideoShifterByte = IoMem[0xff8260] & 3;
+		Res = IoMem[0xff8260] & 3;
 
-		Video_WriteToGlueShifterRes(VideoShifterByte);
+		Video_WriteToGlueRes ( Res );
+
+		Video_WriteToShifterRes ( Res );
+
 		Video_SetHBLPaletteMaskPointers();
 		*pHBLPaletteMasks &= 0xff00ffff;
 		/* Store resolution after palette mask and set resolution write bit: */
-		*pHBLPaletteMasks |= (((uint32_t)VideoShifterByte|0x04)<<16);
+		*pHBLPaletteMasks |= (((uint32_t)Res|0x04)<<16);
 	}
 
 	/* Access to shifter regs are on a 4 cycle boundary */
