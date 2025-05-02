@@ -92,7 +92,7 @@ char *Str_ToLower(char *pString)
  * program in that case, since there is likely nothing we can do if we even
  * can not allocate small strings anymore).
  *
- * @len  Length of the string (without the trailing NUL character)
+ * @param len  Length of the string (without the trailing NUL character)
  */
 char *Str_Alloc(int len)
 {
@@ -165,10 +165,10 @@ long Str_Copy(char *pDest, const char *pSrc, long nBufLen)
 	return -E2BIG;
 }
 
+#if 0
 /**
  * truncate string at first unprintable char (e.g. newline).
  */
-#if 0
 char *Str_Trunc(char *pString)
 {
 	int i = 0;
@@ -186,10 +186,10 @@ char *Str_Trunc(char *pString)
 }
 #endif
 
+#if 0
 /**
  * check if string is valid hex number.
  */
-#if 0
 bool Str_IsHex(const char *str)
 {
 	int i = 0;
@@ -204,7 +204,7 @@ bool Str_IsHex(const char *str)
 #endif
 
 /**
- * Convert \e, \n, \t, \\ backslash escapes in given string to
+ * Convert "\e", "\n", "\t", "\\" backslash escapes in given string to
  * corresponding byte values, anything else as left as-is.
  */
 void Str_UnEscape(char *s1)
