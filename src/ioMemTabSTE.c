@@ -118,8 +118,9 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_STE[] =
 	{ 0xff825a, SIZE_WORD, Video_Color13_ReadWord, Video_Color13_WriteWord },		/* COLOR 13 */
 	{ 0xff825c, SIZE_WORD, Video_Color14_ReadWord, Video_Color14_WriteWord },		/* COLOR 14 */
 	{ 0xff825e, SIZE_WORD, Video_Color15_ReadWord, Video_Color15_WriteWord },		/* COLOR 15 */
-	{ 0xff8260, SIZE_BYTE, Video_Res_ReadByte, Video_Res_WriteByte },
-	{ 0xff8261, 3,         IoMem_VoidRead_00, IoMem_VoidWrite },                            /* No bus errors here : return 0 not ff */
+	{ 0xff8260, SIZE_BYTE, Video_ResGlueShifter_ReadByte, Video_ResGlueShifter_WriteByte },	/* Resolution in GLUE-GSTMCU/Shifter */
+	{ 0xff8261, SIZE_BYTE, Video_ResShifter_ReadByte, Video_ResShifter_WriteByte },		/* Resolution in Shifter only */
+	{ 0xff8262, 2,         IoMem_VoidRead_00, IoMem_VoidWrite },                            /* No bus errors here : return 0 not ff */
 	{ 0xff8264, SIZE_BYTE, Video_HorScroll_Read_8264, Video_HorScroll_Write_8264 },		/* STE horizontal fine scrolling (no prefetch) */
 	{ 0xff8265, SIZE_BYTE, Video_HorScroll_Read_8265, Video_HorScroll_Write_8265 },		/* STE horizontal fine scrolling */
 	{ 0xff8266, 26,        IoMem_VoidRead_00, IoMem_VoidWrite },                            /* No bus errors here : return 0 not ff */

@@ -726,6 +726,8 @@ static void	Video_ClearOnVBL(void);
 static void	Video_AddInterrupt ( int Line , int PosCycles , interrupt_id Handler );
 static void	Video_AddInterruptHBL ( int Line , int Pos );
 
+static void	Video_Res_WriteByte(void);
+static void	Video_Res_ReadByte(void);
 static void	Video_ColorReg_WriteWord(void);
 static void	Video_ColorReg_ReadWord(void);
 
@@ -5261,25 +5263,39 @@ void Video_LineWidth_ReadByte(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Read video resolution register (0xff8260)
+ * Read video resolution register (0xff8260 or 0xff8261)
  * NOTE : resolution register is stored in both the GLUE and the SHIFTER
  * As the value is read from the SHIFTER, we need to round memory access to 4 cycle
  */
 void Video_Res_ReadByte(void)
 {
+	uint32_t addr;
+	addr = IoAccessCurrentAddress;
+
 	/* Access to shifter regs are on a 4 cycle boundary */
 	M68000_SyncCpuBus_OnReadAccess();
 
 	if (bUseHighRes)
-		IoMem[0xff8260] = 2;			/* If mono monitor, force to high resolution */
+		IoMem[addr] = 2;			/* If mono monitor, force to high resolution */
 
 	if (Config_IsMachineST())
-		IoMem[0xff8260] |= 0xfc;		/* On STF, set unused bits 2-7 to 1 */
+		IoMem[addr] |= 0xfc;			/* On STF, set unused bits 2-7 to 1 */
 	else if (Config_IsMachineTT())
-		IoMem[0xff8260] &= 0x07;		/* Only use bits 0, 1 and 2 */
+		IoMem[addr] &= 0x07;			/* Only use bits 0, 1 and 2 */
 	else
-		IoMem[0xff8260] &= 0x03;		/* Only use bits 0 and 1, unused bits 2-7 are set to 0 */
+		IoMem[addr] &= 0x03;			/* Only use bits 0 and 1, unused bits 2-7 are set to 0 */
 }
+
+void Video_ResGlueShifter_ReadByte(void)		/* Read from 0xff8260 */
+{
+	Video_Res_ReadByte();
+}
+
+void Video_ResShifter_ReadByte(void)			/* Read from 0xff8261 */
+{
+	Video_Res_ReadByte();
+}
+
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -5632,8 +5648,14 @@ void Video_Color15_ReadWord(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Write to video resolution register (0xff8260)
+ * Write to video resolution register (0xff8260 or 0xff8261)
  * NOTE : resolution register is stored in both the GLUE and the SHIFTER
+ *  - writing to 0xff8260 will write to the GLUE and the Shifter
+ *  - writing to 0xff8261 will write only to the Shifter
+ *
+ * Depending on the emulated machine, this function can be called
+ * for 0xff8260 only or also for 0xff8261
+ *
  * When writing to ff8260, the GLUE gets the new value immediately, before
  * rounding to 4 cycles. The rounding happens later, when the SHIFTER reads
  * the data from the bus, as explained by Ijor on atari-forum.com :
@@ -5652,6 +5674,7 @@ void Video_Color15_ReadWord(void)
 void Video_Res_WriteByte(void)
 {
 	uint8_t Res;
+	uint32_t addr;
 
 	if (Config_IsMachineTT())
 	{
@@ -5659,12 +5682,17 @@ void Video_Res_WriteByte(void)
 		/* Copy to TT shifter mode register: */
 		IoMem_WriteByte(0xff8262, TTRes);
 	}
-	else if (!bUseVDIRes)	/* ST and STE mode */
+	else if (!bUseVDIRes)				/* ST and STE mode */
 	{
+		/* Acces through 0xff8260 or 0xff8261 */
+		addr = IoAccessCurrentAddress;
 		/* We only care for lower 2-bits */
-		Res = IoMem[0xff8260] & 3;
+		Res = IoMem[addr] & 3;
 
-		Video_WriteToGlueRes ( Res );
+		if ( addr == 0xff8260 )			/* Write to GLUE first and then to Shifter */
+			Video_WriteToGlueRes ( Res );
+
+		/* TODO : possible rounding to 4 cycles should be added here */
 
 		Video_WriteToShifterRes ( Res );
 
@@ -5676,8 +5704,20 @@ void Video_Res_WriteByte(void)
 
 	/* Access to shifter regs are on a 4 cycle boundary */
 	/* Rounding is added here, after the value was processed by Video_Update_Glue_State() */
+	/* TODO : this call should be made above */
 	M68000_SyncCpuBus_OnWriteAccess();
 }
+
+void Video_ResGlueShifter_WriteByte(void)		/* Write to 0xff8260 */
+{
+	Video_Res_WriteByte();
+}
+
+void Video_ResShifter_WriteByte(void)			/* Write to 0xff8261 */
+{
+	Video_Res_WriteByte();
+}
+
 
 /*
  * Handle horizontal scrolling to the left.
