@@ -1544,8 +1544,7 @@ void Sound_Reset(void)
 	/* Clear sound mixing buffer: */
 	memset(AudioMixBuffer, 0, sizeof(AudioMixBuffer));
 
-	/* Clear cycle counts, buffer index and register '13' flags */
-	Cycles_SetCounter(CYCLES_COUNTER_SOUND, 0);
+	/* Clear buffer index and register '13' flags */
 	bEnvelopeFreqFlag = false;
 
 	AudioMixBuffer_pos_read = 0;
