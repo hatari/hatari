@@ -33,7 +33,7 @@ build-mingw:
       - libs
   before_script:
     - dnf update -y
-    - dnf install -y autoconf cmake git make gcc mingw64-gcc mingw64-gcc-c++
+    - dnf install -y autoconf cmake git make gawk gcc mingw64-gcc mingw64-gcc-c++
                      mingw64-libstdc++ mingw64-SDL2 mingw64-zlib mingw64-libpng
   script:
     - if [ ! -d libs ]; then mkdir libs ; fi
