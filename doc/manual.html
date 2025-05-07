@@ -1833,11 +1833,12 @@ especially on LCD monitors (they're slow).  If this isn't enabled,
 values from the "Max zoomed win" option are used in selecting
 a suitable resolution.
 <p>
-"Max zoomed win" option controls up to which size Hatari tries to scale
-the Atari resolutions and how much of the borders (enabled in Atari
-Monitor dialog) will be shown.  Note that there are several limitations
-in this and the "Keep desktop resolution" option, partly because Hatari
-has different implementations for different video modes:
+"Max zoomed win" option controls up to which size Hatari tries to
+scale the Atari resolutions and how much of the borders (enabled in
+Atari Monitor dialog) will be shown, within Hatari SDL framebuffer.
+Note that there are several limitations in this and the "Keep desktop
+resolution" option, partly because Hatari has different
+implementations for different video modes:
 </p>
 <ul>
 <li>VDI resolutions (selectable in Atari Monitor dialog) aren't scaled.</li>
@@ -1854,16 +1855,17 @@ has different implementations for different video modes:
 </ul>
 <p>
 You should set these values to a size that suits best your monitor
-resolution. It is intended to help in getting Hatari to best use your
-monitor space on a windowed mode and in fullscreen avoiding "fuzzy"
-scaling done by your LCD monitor.
+resolution (or video recording). It is intended to help in getting
+Hatari to best use your monitor space on a windowed mode and in
+fullscreen avoiding "fuzzy" scaling done either by SDL, or by your
+LCD monitor.
 </p>
 <p>
-Giving "-z 2" option on command line will reset max zoomed size to
-default values and "-z 1" will disable all zooming.
-Note that zooming takes additional CPU computing time and should
-not be enabled on very slow computers.
+Command line "--zoom" option can be used to tell SDL how much it
+should scale the resulting Hatari window framebuffer, when presenting
+it on screen.  Non-integer scaling values will cause "fuzzy" output.
 </p>
+
 <p>Click the <span class="button">Screenshot</span> button to create
 a screenshot in the selected format to the current working directory.
 PNG and BMP formats will match the visual output of Hatari.
@@ -1878,6 +1880,16 @@ record an AVI format video of Hatari screen (and audio) output.
 Selecting "Crop statusbar" option will leave statusbar out from
 the screenshots and recorded videos.
 </p>
+
+<p>"SDL2 options" impact following:</p>
+<ul>
+<li>GPU scaling: Hatari window scaling is HW accelerated</li>
+<li>Resizable: User can resize Hatari window</li>
+<li>Vsync: Hatari window updates are limited to host monitor refresh
+rate. This avoids tearing, but will impact emulation speed, if host
+monitor refresh rate does not match Atari monitor refresh (VBL) rate!</li>
+</ul>
+
 
 <h4 class="gui">The Keyboard Dialog</h4>
 
