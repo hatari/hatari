@@ -584,6 +584,7 @@ Commercial game demos/previews (many of these are pretty good):
 - Killing Game Show demo
 - Knightmare demo       (needs <4MB RAM)
 - Leander demo
+- Legends of Valour demo (50Hz, STF47)
 - LLamasoft games
   http://minotaurproject.co.uk/lc-16bit.php
 - Lotus III demo        (floppy only, non-interactive)
@@ -623,6 +624,7 @@ Commercial game demos/previews (many of these are pretty good):
 Free/shareware/PD games:
 - 2048            (by Paradize)
 - A Day at the Races
+- Abombinaball    (STF47)
 - Alterra
 - Archon 3.5k     (by Deltaforce)
 - Alien Blockade* (quixx)
@@ -663,6 +665,7 @@ Free/shareware/PD games:
   Boulderdash, Demineur, Jewel, Qbert, Sokoban
 - Frogger*
 - Fuzzball*
+- Galaxian       (STF47)
 - GodPey         (floppy only, by Reservoir Gods)
 - Golgafrincham  (mod compile with 2-player minigame)
 - Grav*
@@ -725,6 +728,7 @@ Free/shareware/PD games:
 - Spacebar
 - Spacewar
 - Starball*      (shareware)
+- Stomp*         (STF47)
 - Super Pac-Man* (use joystick 0)
 - Superfly       (floppy only)
 - Sweeper
