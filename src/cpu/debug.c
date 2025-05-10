@@ -122,6 +122,7 @@ void deactivate_debugger (void)
 	debugmem_enable();
 	debug_pc = 0xffffffff;
 	keybuf_ignore_next_release();
+	deactivate_console();
 }
 
 void activate_debugger (void)
@@ -7763,6 +7764,7 @@ void debug (void)
 	uae_ppc_pause(0);
 #endif
 	setmouseactive(0, wasactive ? 2 : 0);
+	target_inputdevice_acquire();
 
 	last_cycles1 = get_cycles();
 	last_vpos1 = vpos;
