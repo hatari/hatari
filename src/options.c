@@ -70,7 +70,7 @@ enum {
 	OPT_LANGUAGE,
 	OPT_FASTFORWARD,
 	OPT_AUTOSTART,
-	OPT_KEY_DISABLE_AUTO_REPEAT,
+	OPT_FF_KEY_REPEAT,
 
 	OPT_MONO,		/* common display options */
 	OPT_MONITOR,
@@ -246,8 +246,8 @@ static const opt_t HatariOptions[] = {
 	  "<bool>", "Help skipping stuff on fast machine" },
 	{ OPT_AUTOSTART, NULL, "--auto",
 	  "<x>", "Atari program autostarting with Atari path" },
-	{ OPT_KEY_DISABLE_AUTO_REPEAT, NULL, "--disable-key-repeat-fast-forward",
-	  "<bool>", "Disable keyboard auto repeat in fast forward mode" },
+	{ OPT_FF_KEY_REPEAT, NULL, "--fast-forward-key-repeat",
+	  "<bool>", "Use keyboard auto repeat in fast forward mode" },
 
 	{ OPT_HEADER, NULL, NULL, NULL, "Common display" },
 	{ OPT_MONO,      "-m", "--mono",
@@ -1135,8 +1135,8 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			}
 			break;
 
-		case OPT_KEY_DISABLE_AUTO_REPEAT:
-			ok = Opt_Bool(argv[++i], OPT_KEY_DISABLE_AUTO_REPEAT, &ConfigureParams.Keyboard.bDisableKeyRepeat);
+		case OPT_FF_KEY_REPEAT:
+			ok = Opt_Bool(argv[++i], OPT_FF_KEY_REPEAT, &ConfigureParams.Keyboard.bFastForwardKeyRepeat);
 			break;
 
 		case OPT_CONFIGFILE:

@@ -247,12 +247,19 @@ static const struct Config_Tag configs_Joystick5[] =
 /* Used to load/save keyboard options */
 static const struct Config_Tag configs_Keyboard[] =
 {
-	{ "bDisableKeyRepeat", Bool_Tag, &ConfigureParams.Keyboard.bDisableKeyRepeat },
+	{ "bFastForwardKeyRepeat", Bool_Tag, &ConfigureParams.Keyboard.bFastForwardKeyRepeat },
 	{ "nKeymapType", Int_Tag, &ConfigureParams.Keyboard.nKeymapType },
 	{ "nCountryCode", Int_Tag, &ConfigureParams.Keyboard.nCountryCode },
 	{ "nKbdLayout", Int_Tag, &ConfigureParams.Keyboard.nKbdLayout },
 	{ "nLanguage", Int_Tag, &ConfigureParams.Keyboard.nLanguage },
 	{ "szMappingFileName", String_Tag, ConfigureParams.Keyboard.szMappingFileName },
+	{ NULL , Error_Tag, NULL }
+};
+
+static bool bDisableKeyRepeat;
+static const struct Config_Tag configs_keyboard_old[] =
+{
+	{ "bDisableKeyRepeat", Bool_Tag, &bDisableKeyRepeat },
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -706,7 +713,7 @@ void Configuration_SetDefault(void)
 	}
 
 	/* Set defaults for Keyboard */
-	ConfigureParams.Keyboard.bDisableKeyRepeat = false;
+	ConfigureParams.Keyboard.bFastForwardKeyRepeat = true;
 	ConfigureParams.Keyboard.nKeymapType = KEYMAP_SYMBOLIC;
 	ConfigureParams.Keyboard.nCountryCode = TOS_LANG_UNKNOWN;
 	ConfigureParams.Keyboard.nKbdLayout = TOS_LANG_UNKNOWN;
@@ -1104,6 +1111,10 @@ void Configuration_Load(const char *psFileName)
 		break;
 	}
 	Configuration_LoadSection(psFileName, configs_HardDisk_Old, "[HardDisk]");
+
+	Configuration_LoadSection(psFileName, configs_keyboard_old, "[Keyboard]");
+	if (bDisableKeyRepeat)
+		ConfigureParams.Keyboard.bFastForwardKeyRepeat = false;
 
 	/* Now the regular loading of the sections:
 	 * Start with Log so that logging works as early as possible */

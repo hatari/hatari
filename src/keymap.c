@@ -774,8 +774,8 @@ static bool Keymap_DebounceSTKey(uint8_t STScanCode)
 	int i=0;
 
 	/* Are we in fast forward, and have disabled key repeat? */
-	if ((ConfigureParams.System.bFastForward == true)
-	    && (ConfigureParams.Keyboard.bDisableKeyRepeat))
+	if (ConfigureParams.System.bFastForward
+	    && !ConfigureParams.Keyboard.bFastForwardKeyRepeat)
 	{
 		/* We should de-bounce all non extended keys,
 		 * e.g. leave ALT, SHIFT, CTRL etc... held */
@@ -806,8 +806,8 @@ void Keymap_DebounceAllKeys(void)
 	uint8_t nScanCode;
 
 	/* Return if we aren't in fast forward or have not disabled key repeat */
-	if ((ConfigureParams.System.bFastForward == false)
-	        || (!ConfigureParams.Keyboard.bDisableKeyRepeat))
+	if (!ConfigureParams.System.bFastForward
+	    || ConfigureParams.Keyboard.bFastForwardKeyRepeat)
 	{
 		return;
 	}

@@ -28,7 +28,7 @@ const char DlgKeyboard_fileid[] = "Hatari dlgKeyboard.c";
 #define DLGKEY_SCMODDEF  18
 #define DLGKEY_SCNOMODVAL 20
 #define DLGKEY_SCNOMODDEF 21
-#define DLGKEY_DISREPEAT 22
+#define DLGKEY_KEYREPEAT 22
 #define DLGKEY_EXIT      23
 
 static char sc_modval[16];
@@ -62,7 +62,7 @@ static SGOBJ keyboarddlg[] =
 	{ SGTEXT, 0, 0, 20,17, 12,1, sc_nomodval },
 	{ SGBUTTON, 0, 0, 36,17, 8,1, "D_efine" },
 
-	{ SGCHECKBOX, 0, 0,  2,20, 41,1, "Disable key _repeat in fast forward mode" },
+	{ SGCHECKBOX, 0, 0,  2,20, 41,1, "Use key _repeat in fast forward mode" },
 	{ SGBUTTON, SG_DEFAULT, 0, 13,22, 20,1, "Back to main menu" },
 	{ SGSTOP, 0, 0, 0,0, 0,0, NULL }
 };
@@ -234,10 +234,10 @@ void Dialog_KeyboardDlg(void)
 
 	DlgKbd_RefreshShortcuts(cur_sc);
 
-	if (ConfigureParams.Keyboard.bDisableKeyRepeat)
-		keyboarddlg[DLGKEY_DISREPEAT].state |= SG_SELECTED;
+	if (ConfigureParams.Keyboard.bFastForwardKeyRepeat)
+		keyboarddlg[DLGKEY_KEYREPEAT].state |= SG_SELECTED;
 	else
-		keyboarddlg[DLGKEY_DISREPEAT].state &= ~SG_SELECTED;
+		keyboarddlg[DLGKEY_KEYREPEAT].state &= ~SG_SELECTED;
 
 	/* Show the dialog: */
 	do
@@ -288,5 +288,5 @@ void Dialog_KeyboardDlg(void)
 	else
 		ConfigureParams.Keyboard.nKeymapType = KEYMAP_SCANCODE;
 
-	ConfigureParams.Keyboard.bDisableKeyRepeat = (keyboarddlg[DLGKEY_DISREPEAT].state & SG_SELECTED);
+	ConfigureParams.Keyboard.bFastForwardKeyRepeat = (keyboarddlg[DLGKEY_KEYREPEAT].state & SG_SELECTED);
 }

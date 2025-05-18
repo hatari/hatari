@@ -105,7 +105,7 @@ typedef enum
 
 typedef struct
 {
-  bool bDisableKeyRepeat;
+  bool bFastForwardKeyRepeat;
   KEYMAPTYPE nKeymapType;
   int nCountryCode;
   int nKbdLayout;
