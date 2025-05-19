@@ -2,7 +2,7 @@
 # Classes for Hatari emulator instance and mapping its congfiguration
 # variables with its command line option.
 #
-# Copyright (C) 2008-2024 by Eero Tamminen
+# Copyright (C) 2008-2025 by Eero Tamminen
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -486,7 +486,7 @@ class HatariConfigMapping(ConfigStore):
             return True
         return self.get("[System]", "bCpuDataCache")
 
-    def set_cpu_caches(self, value):
+    def set_data_cache(self, value):
         if not self.has_opts_2_6:
             return
         self.set("[System]", "bCpuDataCache", value)

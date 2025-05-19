@@ -1,6 +1,9 @@
 User visible changes in Hatari (Python Gtk) UI
 ----------------------------------------------
 
+2025-05:
+- Fix data cache option setting
+
 2024-04:
 - Add support for Hatari v2.5+ >=030 data cache option
 
