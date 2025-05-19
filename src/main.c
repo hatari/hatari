@@ -807,7 +807,6 @@ static void Main_Init(void)
 	RS232_Init();
 	SCC_Init();
 	Midi_Init();
-	Control_CheckUpdates();       /* enable window embedding? */
 	Videl_Init();
 	Screen_Init();
 	Main_SetTitle(NULL);
