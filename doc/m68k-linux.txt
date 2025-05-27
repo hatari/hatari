@@ -128,7 +128,7 @@ VFS: Cannot open root device "/dev/sda" or unknown-block(8,0): error -6
    $ sudo apt install gcc-m68k-linux-gnu
 
 2. Get latest upstream kernel release sources (without history):
-   $ git clone --depth 1 --branch v6.14 \
+   $ git clone --depth 1 --branch v6.15 \
      git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
    $ cd linux
 
@@ -146,8 +146,9 @@ Notes:
 - You can fine-tune kernel config for your requirements with:
    $ ARCH=m68k CROSS_COMPILE=m68k-linux-gnu- make -j4 menuconfig
 
-- Using "optimize for size" instead of "optimize for performance"
-  reduced (stripped) kernel image by ~15%
+- Use "optimize for size" instead of "optimize for performance".
+  Latter is 1/4th (1MB) larger, and does not currently work
+  properly, although it boots much faster
 
 - Normal Linux builds require 030 (or better) with MMU and FPU
   (only uCLinux would work on 68000 without MMU)
@@ -290,8 +291,8 @@ Notes:
 1. Set suitable options in lilo.cfg, for example:
 -------------------------------------
 [LILO]
-Kernel = vmlinux-v6.14
-Symbols = System.map-v6.14
+Kernel = vmlinux-v6.15
+Symbols = System.map-v6.15
 Ramdisk =
 Args = video=atafb:sthigh console=tty
 KernelToFastRam = FALSE
@@ -664,6 +665,12 @@ $ aranym-mmu -l linux.config
 10.1 Known issues with workarounds
 ----------------------------------
 
+- Builds configured for performance (-O2) instead of size (-Os),
+  and built with current Debian stable (cross) m68k GCC (12.2),
+  will Oops once boot reaches user-space
+
+  Workaround: kernel configured for size (in included kernel.config)
+
 - Old (4.x?) Linux versions do not work if kernel is loaded to TT-RAM
 
   Workaround: Load kernel to ST-RAM or use more recent kernel version
@@ -721,9 +728,8 @@ Kernel panic - not syncing: VFS: Unable to mount root fs on unknown-block(0,0)
 - with Hatari 2.5, Linux works again[1] on 040 & 060, when CPU data
   cache emulation is disabled (--data-cache off).
 
-  However, when data cache is enabled, 060 boot crashes to double bus
-  error, and 040 boot freezes early on.  Although screen is black, CPU
-  trace indicates latter being a panic.
+  However, when data cache is enabled, boots crash to double bus
+  error.  Although screen is black, CPU trace indicates a panic.
 
   Note: when booting Linux with "bootstra.prg" instead directly with
   LILO, kernel panics immediately even with cache emulation disabled.
