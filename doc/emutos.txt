@@ -754,9 +754,9 @@ Free/shareware/PD games:
 - Zatacka        (multiplayer)
 
 Med-rez games:
+- Doom8088ST     (dithered BW graphics)
 - Hangman v2.0
 - Poker solitaire
-
 
 GEM / monochrome ST demos and games
 ...................................
@@ -1413,8 +1413,9 @@ Working games:
 - OpenTTD (start from TT-low with 256MBs of TT-RAM)
 - Oxyd (Falcon version)
 - PM Doom, Heretic & Hexen v0.55 (ports by Patrice Mandin)
-- ScummVM 2.8 (lite build by Miro)
- - Official upstream version (35 engines, 280+ game variants recognized)
+- ScummVM 2.8, 2.9 (lite build by Miro)
+ - Official upstream version (37 engines, 300+ game variants recognized)
+- STDOOM, first 020+ version
 - The Ultimate Minesweeper (GEM)
 
 Most of above GEM games run even on ST, but only TT (and Falcon) have
@@ -1883,8 +1884,8 @@ Applications working under EmuTOS >= v1.3 (XBios TC support):
   - Both the app itself and all viewer TTPs work
 - ScummVm for Falcon + clones
   - Older TC-only versions from OL & Miro
-- ScummVM 2.8 (full build by Miro)
-  - Official upstream version (54 engines, 370+ game variants recognized)
+- ScummVM 2.8, 2.9 (full build by Miro)
+  - Official upstream version (56 engines, 390+ game variants recognized)
 - Centview (GEM image viewer)
   - After showing an image, GUI is not always refreshed
 
