@@ -18,6 +18,7 @@ const char INFFILE_fileid[] = "Hatari inffile.c";
 #include "main.h"
 #include "configuration.h"
 #include "conv_st.h"
+#include "event.h"
 #include "inffile.h"
 #include "options.h"
 #include "gemdos.h"
@@ -1069,19 +1070,17 @@ bool INF_Overriding(autostart_t t)
 
 /*-----------------------------------------------------------------------*/
 /**
- * If given name matches virtual INF file name, return its handle, NULL otherwise
+ * INF file (resolution/autostart) overriding; if given name matches
+ * virtual INF file name, return its handle, NULL otherwise.
+ *
+ * Runs also user-configured actions for this event.
  */
 FILE *INF_OpenOverride(const char *filename)
 {
 	if (TosOverride.file && strcmp(filename, TosOverride.infname) == 0)
 	{
-		/* whether to "autostart" also exception debugging? */
-		if (ConfigureParams.Debugger.nExceptionDebugMask & EXCEPT_AUTOSTART)
-		{
-			ExceptionDebugMask = ConfigureParams.Debugger.nExceptionDebugMask & ~EXCEPT_AUTOSTART;
-			Log_Printf(LOG_INFO, "Exception debugging enabled (0x%x).\n", ExceptionDebugMask);
-		}
 		Log_Printf(LOG_DEBUG, "Virtual INF file '%s' matched.\n", filename);
+		Event_DoInfLoadActions();
 		return TosOverride.file;
 	}
 	return NULL;

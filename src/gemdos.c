@@ -45,6 +45,7 @@ const char Gemdos_fileid[] = "Hatari gemdos.c";
 #include "main.h"
 #include "cart.h"
 #include "configuration.h"
+#include "event.h"
 #include "file.h"
 #include "floppy.h"
 #include "ide.h"
@@ -4567,6 +4568,9 @@ void GemDOS_PexecBpCreated(void)
 		STMemory_WriteWord(nSavedPexecParams, TosVersion >= 0x104 ? 6 : 4);
 		STMemory_WriteLong(nSavedPexecParams + 6, Regs[REG_D0]);
 		sr |= SR_OVERFLOW;
+
+		/* do user-configured program exec "event" actions */
+		Event_DoPrgExecActions();
 	}
 	else
 	{

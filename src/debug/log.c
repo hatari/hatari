@@ -592,6 +592,16 @@ Log_ParseOptionFlags (const char *FlagsStr, flagname_t *Flags, int MaxFlags, uin
 }
 
 /**
+ * Parse/check specified exception flags.
+ * Return error string or NULL for success.
+ */
+const char* Log_CheckExceptionDebugMask (const char *FlagsStr)
+{
+	uint64_t mask = ConfigureParams.Debugger.nExceptionDebugMask;
+	return Log_ParseOptionFlags(FlagsStr, ExceptionFlags, ARRAY_SIZE(ExceptionFlags), &mask);
+}
+
+/**
  * Parse exception flags and store results in ExceptionDebugMask.
  * Return error string or NULL for success.
  * 
@@ -607,6 +617,15 @@ const char* Log_SetExceptionDebugMask (const char *FlagsStr)
 	return errstr;
 }
 
+/**
+ * Parse/check specified trace flags.
+ * Return error string or NULL for success.
+ */
+const char* Log_CheckTraceOptions (const char *FlagsStr)
+{
+	uint64_t flags = LogTraceFlags;
+	return Log_ParseOptionFlags(FlagsStr, TraceFlags, ARRAY_SIZE(TraceFlags), &flags);
+}
 
 #if ENABLE_TRACING
 

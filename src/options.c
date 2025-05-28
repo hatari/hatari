@@ -27,6 +27,7 @@ const char Options_fileid[] = "Hatari options.c";
 #include "console.h"
 #include "control.h"
 #include "debugui.h"
+#include "event.h"
 #include "file.h"
 #include "floppy.h"
 #include "fdc.h"
@@ -691,7 +692,8 @@ static void Opt_ShowHelp(void)
 	       "\tEnable by using 'y', 'yes', 'on', 'true' or '1'\n"
 	       "<file>\tDevices accept also special 'stdout' and 'stderr' file names\n"
 	       "\t(if you use stdout for midi or printer, set log to stderr).\n"
-	       "<dir>/<file>\t'none' or '' disables given device / disk.\n");
+	       "<dir>/<file>\t'none' or '' disables given device / disk.\n"
+	       "'<boot|inf|prg>:' event prefix delays option value setting.\n");
 }
 
 
@@ -942,7 +944,11 @@ static opt_id_t Opt_WhichOption(int argc, const char * const argv[], int *idx)
 			/* early check for bools */
 			if (strcmp(opt->arg, "<bool>") == 0)
 			{
-				if (!Opt_Bool(argv[argi], opt->id, NULL))
+				const char *value = argv[argi];
+
+				/* skip event prefix for all bools */
+				Event_GetPrefixActions(&value);
+				if (!Opt_Bool(value, opt->id, NULL))
 				{
 					return OPT_ERROR;
 				}
@@ -1148,10 +1154,11 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 {
 	/* variables used only by a single option */
 	int ncpu, skips, planes, cpuclock, threshold, memsize;
-	int dev, port, freq, drive, year;
+	int dev, port, freq, drive, year, level;
 
 	/* common variables */
 	const char *errstr, *str, *opt, *arg;
+	event_actions_t *event;
 	bool valid, ok = true;
 	opt_id_t optid;
 	float zoom;
@@ -2157,8 +2164,8 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_EXCEPTIONS:
-			/* sets ConfigureParams.Debugger.nExceptionDebugMask */
-			errstr = Log_SetExceptionDebugMask(arg);
+			event = Event_GetPrefixActions(&arg);
+			errstr = Log_CheckExceptionDebugMask(arg);
 			if (errstr)
 			{
 				if (!errstr[0])
@@ -2168,6 +2175,13 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				}
 				return Opt_ShowError(OPT_EXCEPTIONS, arg, errstr);
 			}
+			if (event)
+			{
+				event->exceptionMask = arg;
+				break;
+			}
+
+			Log_SetExceptionDebugMask(arg);
 			if (ExceptionDebugMask)
 			{
 				/* already enabled, change run-time config */
@@ -2236,7 +2250,8 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_TRACE:
-			errstr = Log_SetTraceOptions(arg);
+			event = Event_GetPrefixActions(&arg);
+			errstr = Log_CheckTraceOptions(arg);
 			if (errstr)
 			{
 				if (!errstr[0])
@@ -2246,6 +2261,12 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				}
 				return Opt_ShowError(OPT_TRACE, arg, errstr);
 			}
+			if (event)
+			{
+				event->traceFlags = arg;
+				break;
+			}
+			Log_SetTraceOptions(arg);
 			break;
 
 		case OPT_TRACEFILE:
@@ -2281,6 +2302,11 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_PARSE:
+			if ((event = Event_GetPrefixActions(&arg)))
+			{
+				event->parseFile = arg;
+				break;
+			}
 			ok = DebugUI_AddParseFile(arg);
 			break;
 
@@ -2291,11 +2317,18 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_LOGLEVEL:
-			ConfigureParams.Log.nTextLogLevel = Log_ParseOptions(arg);
-			if (ConfigureParams.Log.nTextLogLevel == LOG_NONE)
+			event = Event_GetPrefixActions(&arg);
+			level = Log_ParseOptions(arg);
+			if (level == LOG_NONE)
 			{
 				return Opt_ShowError(OPT_LOGLEVEL, arg, "Unknown log level!");
 			}
+			if (event)
+			{
+				event->logLevel = arg;
+				break;
+			}
+			ConfigureParams.Log.nTextLogLevel = level;
 			Log_SetLevels();
 			break;
 

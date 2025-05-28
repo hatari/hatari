@@ -25,6 +25,7 @@ const char Main_fileid[] = "Hatari main.c";
 #include "conv_st.h"
 #include "options.h"
 #include "dialog.h"
+#include "event.h"
 #include "audio.h"
 #include "joy_ui.h"
 #include "file.h"

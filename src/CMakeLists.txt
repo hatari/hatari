@@ -2,7 +2,7 @@
 set(SOURCES
 	acia.c avi_record.c bios.c blitter.c cart.c cfgopts.c
 	clocks_timings.c configuration.c options.c change.c control.c
-	conv_gen.c conv_st.c cycInt.c cycles.c dialog.c dmaSnd.c fdc.c file.c
+	conv_gen.c conv_st.c cycInt.c cycles.c dialog.c dmaSnd.c event.c fdc.c file.c
 	floppy.c floppy_ipf.c floppy_stx.c gemdos.c hdc.c ide.c ikbd.c ioMem.c
 	ioMemTabST.c ioMemTabSTE.c ioMemTabTT.c ioMemTabFalcon.c joy.c
 	m68000.c main.c midi.c memorySnapShot.c mfp.c nf_scsidrv.c

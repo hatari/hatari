@@ -14,6 +14,7 @@ const char Reset_fileid[] = "Hatari reset.c";
 #include "conv_st.h"
 #include "dmaSnd.h"
 #include "crossbar.h"
+#include "event.h"
 #include "fdc.h"
 #include "floppy.h"
 #include "gemdos.h"
@@ -123,6 +124,9 @@ static int Reset_ST(bool bCold)
 
 	/* Start HBL, Timer B and VBL interrupts with a 0 cycle delay */
 	Video_StartInterrupts( 0 );
+
+	/* do user-configured boot/reset "event" actions */
+	Event_DoResetActions();
 
 	return 0;
 }
