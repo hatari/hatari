@@ -35,8 +35,6 @@ const char IoMemTabSTE_fileid[] = "Hatari ioMemTabSTE.c";
 
    Cache can only be enabled if CPU speed is 16 MHz. If CPU is set to 8 MHz then cache bit will be forced to 0 :
      if we write $FD at $FF8E21 (8 MHz with cache) then reading $FF8E21 will return $FC (8 MHz no cache)
-
-   NOTE : we handle only bit 1, bit 0 is ignored (cache is not emulated yet)
 */
 void IoMemTabMegaSTE_CacheCpuCtrl_WriteByte(void)
 {
