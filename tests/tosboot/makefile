@@ -2,11 +2,11 @@
 # for the TOS tester and to run it with minimal or fairly full
 # set of options.
 
-# default target is 'test', everything else gets build as its deps
+# default target is minimal 'test', everything else gets build as its deps
 all: test
 
 # targets without corresponding file
-.PHONY: clean test test-all
+.PHONY: clean pylint test test-all toolcheck
 
 
 # tos/ subdir should be either symlink to where you have your TOS
@@ -28,8 +28,6 @@ DIR = disk
 # AHCC related files expected for building by disk/ahcc-* hconsole scripts
 AHCC_FILES  = $(DIR)/ahcc_p.ttp $(DIR)/include $(DIR)/lib
 BUILD_TOOLS = $(AHCC_FILES) $(BUILD_TOS)
-
-.PHONY: toolcheck
 
 
 # Building test programs requires:
@@ -133,3 +131,6 @@ test: blank-a.st.gz bootauto.st.gz bootdesk.st.gz $(GEMDOS_TEST)
 # run all default tests
 test-full: blank-a.st.gz bootauto.st.gz bootdesk.st.gz
 	./tos_tester.py $(TOSDIR)/*.img
+
+pylint:
+	PYTHONPATH=../../tools/hconsole/ pylint tos_tester.py
