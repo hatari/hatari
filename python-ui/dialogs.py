@@ -97,7 +97,7 @@ class AboutDialog(HatariUIDialog):
 This software is licensed under GPL v2 or later.
 
 You can see the whole license at:
-    http://www.gnu.org/licenses/info/GPLv2.html""")
+    https://spdx.org/licenses/GPL-2.0-or-later.html""")
         self.dialog = dialog
 
 

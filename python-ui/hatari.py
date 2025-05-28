@@ -236,7 +236,7 @@ class Hatari:
         # it for some reason doesn't listen to any events delivered to that
         # window nor implements XEMBED protocol to get them in a way most
         # friendly to embedder:
-        #   http://standards.freedesktop.org/xembed-spec/latest/
+        #   https://specifications.freedesktop.org/xembed-spec/latest/
         #
         # Instead we tell hatari to reparent itself after creating
         # its own window into this program widget window

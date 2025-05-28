@@ -2,7 +2,7 @@
 .\" First parameter, NAME, should be all caps
 .\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
 .\" other parameters are allowed: see man(7), man(1)
-.TH "hatariui" "1" "2020-12-15" "Hatari" "Hatari UI"
+.TH "hatariui" "1" "2025-05-28" "Hatari" "Hatari UI"
 .SH "NAME"
 hatariui \- Python/Gtk UI for Hatari
 .SH "SYNOPSIS"
@@ -16,20 +16,21 @@ is a Python/Gtk UI for Hatari which can either embed the Hatari window
 normal application menus and some extra buttons for faster access to
 fast\-forward and other functionality, but these are fully configurable
 with the command line options. While it lacks support for some of
-the Hatari configuration options that Hatari's SDL GUI has, it also
-supports some options that the Hatari's built\-in SDL UI doesn't.
+the Hatari configuration options that Hatari SDL GUI has, it also
+supports some options that the Hatari built\-in SDL GUI doesn't.
 .PP
-Besides the UI configurability, some of the other advantages hatariui has
-over the SDL interface included with Hatari itself are use of a normal
+Besides the UI configurability, some of the other advantages
+.I hatariui
+has over the SDL GUI included with Hatari itself, are use of a normal
 Gtk file selector with all of its features (directory shortcuts etc),
 support for UTF\-8 (in file names) and in general blending better to
 the user's desktop environment.
 .PP
 Additionally, Hatari can run while one uses UI configuration dialogs,
 and it can stop Hatari completely to better save the battery on mobile
-computers.  For devices without a keyboard, it offers a a text input
-dialog and one can configure (from command line) buttons for often used
-strings.
+computers.  For devices without a keyboard, it offers a text input
+dialog and one can configure buttons for often used strings (with
+command line options).
 .SH "HATARIUI / HATARIUI.PY"
 .I hatariui
 is a shell script wrapper for the hatariui.py Python script.
@@ -38,8 +39,9 @@ usage, and to set up the correct installation directory for rest
 of the Hatari UI Python scripts and data files.
 .PP
 Options below are actually for the hatariui.py script.  If you want
-to change options given for it, modify the hatariui shell script or
-make your own based on the installed one.
+to change options given for it, modify the
+.I hatariui
+shell script or make your own based on the installed one.
 .\" following command line helps in updating the options:
 .\" hatariui.py --help|sed -e 's/^\t\+/.TP\n.B /' -e 's/\t\+/\n/g' -e 's/-/\\-/g' >> hatariui.1
 .SH "OPTIONS"
@@ -84,38 +86,77 @@ Separator between action buttons
 .B >
 Start next toolbar row in panel windows
 .TP
-.B compatibility
-Hatari compatibility list
-.TP
-.B harddisk
-Hard disk config dialog
-.TP
-.B reset
-Warm or cold reset Hatari
-.TP
-.B sconfig
-Save configuration
-.TP
-.B bugs
-Report a bug
-.TP
-.B display
-Display settings dialog
+.B about
+Hatari UI information
 .TP
 .B authors
 Hatari authors
 .TP
-.B forward
-Toggle Hatari fast-forward
+.B bugs
+Report a bug
+.TP
+.B changes
+Latest Hatari changes
+.TP
+.B compatibility
+Hatari compatibility list
 .TP
 .B debug
 Activate Hatari debugger
 .TP
-.B quit
-Quit Hatari UI
+.B device
+Midi / Printer / RS232 enabling dialog
+.TP
+.B display
+Display settings dialog
+.TP
+.B floppy
+Floppy image dialog
+.TP
+.B forward
+Toggle Hatari fast-forward
+.TP
+.B full
+Toggle whether Hatari is fullscreen
+.TP
+.B harddisk
+Hard disk config dialog
 .TP
 .B hatari
 Hatari home page
+.TP
+.B hatariui
+Hatari UI home page
+.TP
+.B input
+Text / mouse click injection dialog
+.TP
+.B joystick
+Joystick settings dialog
+.TP
+.B lconfig
+Load configuration
+.TP
+.B load
+Load emulation snapshot
+.TP
+.B machine
+Hatari machine config dialog
+.TP
+.B mails
+Hatari mailing lists
+.TP
+.B manual
+Hatari manual
+.TP
+.B path
+Path config dialog
+.TP
+.B pause
+Pause Hatari to save battery
+.TP
+.B quit
+Quit Hatari UI
 .TP
 .B recanim
 Record animation
@@ -123,71 +164,35 @@ Record animation
 .B recsound
 Record YM/Wav
 .TP
-.B mails
-Hatari mailing lists
-.TP
-.B floppy
-Floppy image dialog
-.TP
-.B device
-Midi / Printer / RS232 enabling dialog
-.TP
-.B load
-Load emulation snapshot
-.TP
-.B lconfig
-Load configuration
-.TP
-.B path
-Path config dialog
-.TP
-.B machine
-Hatari machine config dialog
-.TP
-.B todo
-Hatari TODO
-.TP
-.B hatariui
-Hatari UI home page
-.TP
-.B save
-Save emulation snapshot
-.TP
-.B joystick
-Joystick settings dialog
-.TP
-.B trace
-Hatari tracing dialog
-.TP
-.B pause
-Pause Hatari to save battery
-.TP
-.B about
-Hatari UI information
-.TP
 .B release
 Hatari release notes
 .TP
-.B full
-Toggle whether Hatari is fullscreen
-.TP
-.B manual
-Hatari manual
-.TP
-.B input
-Text / mouse click injection dialog
-.TP
-.B sound
-Sound settings dialog
-.TP
-.B changes
-Latest Hatari changes
+.B reset
+Warm or cold reset Hatari
 .TP
 .B run
 (Re\-)run Hatari
 .TP
+.B save
+Save emulation snapshot
+.TP
+.B sconfig
+Save configuration
+.TP
 .B shot
 Grab a screenshot
+.TP
+.B sound
+Sound settings dialog
+.TP
+.B todo
+Hatari TODO
+.TP
+.B trace
+Hatari tracing dialog
+.TP
+.B uirelease
+Hatari UI release notes
 .TP
 .B <panel name>
 Button for the specified panel window
@@ -208,11 +213,11 @@ Example on how to add top, right and bottom toolbars and a separate
 	\-b "sound,|,forward,|,full"
 .fi
 .PP
-For more examples on Hatari UI options usage, see the hatariui shell
-script.
+For more examples on Hatari UI options usage, see the
+.I hatariui
+shell script.
 .SH "SEE ALSO"
 .IR hmsa (1),
-.IR hatariui (1),
 .IR hconsole (1)
 .SH "COPYRIGHT"
 Hatari UI is written by Eero Tamminen <oak at helsinkinet fi>.

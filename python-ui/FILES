@@ -10,6 +10,10 @@ Other code:
 - hatariui	- Wrapper script for hatariui.py with suitable default options
 - Makefile	- Rules for installing
 
+Type information:
+- conftypes.py  - Info about conf variable types for config.py
+- gentypes.py   - Generator for that info
+
 Data files:
 - hatari-icon.png	- Window icon
 - hatari.png		- About dialog image
