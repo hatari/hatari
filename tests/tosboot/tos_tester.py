@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright (C) 2012-2024 by Eero Tamminen <oak at helsinkinet fi>
+# Copyright (C) 2012-2025 by Eero Tamminen <oak at helsinkinet fi>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -151,9 +151,9 @@ class TOS:
             raise AssertionError("Unknown '%s' TOS version 0x%x" % (name, version))
 
         if self.etos:
-            print("%s is %dkB EmuTOS declaring itself TOS v%x (wait startup: %ds, rest: %ds)" % (name, size, version, info[0], info[1]))
+            print("'%s' is %dkB EmuTOS declaring itself TOS v%x (wait startup: %ds, rest: %ds)" % (name, size, version, info[0], info[1]))
         else:
-            print("%s is normal TOS v%x (wait memcheck: %ds, rest: %ds)" % (name, version, info[0], info[1]))
+            print("'%s' is normal TOS v%x (wait memcheck: %ds, rest: %ds)" % (name, version, info[0], info[1]))
         # 0: whether / how long to wait to dismiss memory test
         # 1: how long to wait until concluding test failed
         # 2: list of machines supported by this TOS version
@@ -225,9 +225,12 @@ class Config:
     all_machines = ("st", "megast", "ste", "megaste", "tt", "falcon")
     all_memsizes = (0, 1, 2, 4, 8, 10, 14)
 
+    # bool options enabled by self.fast
+    fast_opts = ("--fast-boot", "--fastfdc", "--timer-d")
+
     # defaults
     fast = False
-    opts = []
+    fixed = []
     bools = []
     disks = ("floppy", "gemdos", "scsi")
     graphics = ("mono", "rgb", "vga", "vdi1", "vdi4")
@@ -236,7 +239,7 @@ class Config:
     ttrams = (0, 32)
 
     def __init__(self, argv):
-        longopts = ["bool=", "disks=", "fast", "graphics=", "help", "machines=", "memsizes=", "opts=", "ttrams="]
+        longopts = ["bool=", "disks=", "fast", "graphics=", "help", "machines=", "memsizes=", "fixed=", "ttrams="]
         try:
             opts, paths = getopt.gnu_getopt(argv[1:], "b:d:fg:hm:s:o:t:", longopts)
         except getopt.GetoptError as error:
@@ -250,7 +253,7 @@ class Config:
         print("- RAM = %s" % (self.memsizes,))
         print("- TTRAM = %s" % (self.ttrams,))
         print("- bools = %s" % (self.bools,))
-        print("- fixed = '%s'\n" % ' '.join(self.opts))
+        print("- fixed = '%s'\n" % ' '.join(self.fixed))
 
 
     def check_images(self, paths):
@@ -277,8 +280,8 @@ class Config:
                 self.fast = True
             elif opt in ("-b", "--bool"):
                 self.bools = args
-            elif opt in ("-o", "--opts"):
-                self.opts = arg.split()
+            elif opt in ("-o", "--fixed"):
+                self.fixed = arg.split()
             elif opt in ("-d", "--disks"):
                 unknown, self.disks = validate(args, self.all_disks)
             elif opt in ("-g", "--graphics"):
@@ -318,14 +321,14 @@ Usage: %s [options] <TOS image files>
 Options:
 \t-h, --help\tthis help
 \t-f, --fast\tspeed up boot with less accurate emulation:
-\t\t\t"--fast-forward yes --fast-boot yes --fastfdc yes --timer-d yes"
+\t\t\t%s
 \t-d, --disks\t(%s)
 \t-g, --graphics\t(%s)
 \t-m, --machines\t(%s)
 \t-s, --memsizes\t(%s)
 \t-t, --ttrams\t(0-1024, in 4MiB steps)
-\t-b, --bool\t(extra boolean Hatari options to test)
-\t-o, --opts\t(hatari options to pass as-is)
+\t-b, --bool\t(boolean Hatari options to toggle in tests)
+\t-o, --fixed\t(hatari options to pass as-is)
 
 Multiple values for an option need to be comma separated. If option
 is given multiple times, last given value(s) are used. If some
@@ -334,13 +337,13 @@ option isn't given, default list of values will be used for that.
 For example:
   %s \\
 \t--disks gemdos \\
-\t--machines st,tt \\
+\t--machines st,falcon \\
 \t--memsizes 0,4,14 \\
 \t--ttrams 0,32 \\
 \t--graphics mono,rgb \\
-\t--bool --compatible,--drive-b \\
-\t--opts "--mmu on"
-""" % (name, disks, graphics, machines, memsizes, name))
+\t--bool --data-cache,--cpu-exact,--compatible,--mmu \\
+\t--fixed "--cpulevel 4"
+""" % (name, self.fast_opts, disks, graphics, machines, memsizes, name))
         if msg:
             print("ERROR: %s\n" % msg)
         sys.exit(1)
@@ -405,25 +408,55 @@ For example:
     def validate_bools(self):
         "exit with error if given bool option is invalid"
         # Several bool options are left out of these lists, either because
-        # they can be problematic for running of the tests themselves, or
-        # they should have no impact on emulation, only emulator.
+        # they can be problematic for running of the tests themselves [1],
+        # they should have no impact on emulation, only emulator [2],
+        # or they are already part of other test options [3].
         #
-        # Below ones should be potentially relevant ones to test
-        # (EmuTOS supports NatFeats so it can have impact too)
-        opts = (
-            "--compatible", "--timer-d", "--fast-boot",
-            "--natfeats", "--fastfdc", "--drive-b",
-            "--cpu-exact", "--mmu", "--addr24", "--fpu-softfloat",
-            "--data-cache"
+        # [1] --patch-tos, --midi
+        # [2] --aspect, --borders, confirm-quit, --crop, --desktop,
+        #     --disable-video, --drive-led, --force-max,
+        #     --mousewarp, --resizable, --sound-sync
+        # [3] --fast-forward, --vdi
+        valid_opts = (
+            "--addr24",
+            "--bios-intercept",
+            "--blitter",
+            "--compatible",
+            "--cpu-exact",
+            "--data-cache",
+            "--drive-a",
+            "--drive-b",
+            "--fast-boot",
+            "--fastfdc",
+            "--fpu-softfloat",
+            "--gemdos-conv",
+            "--natfeats",
+            "--mic",
+            "--mmu",
+            "--timer-d",
         )
         for option in self.bools:
-            if option not in opts:
-                error_exit("bool option '%s' not in relevant options set:\n\t%s" % (option, opts))
+            if option not in valid_opts:
+                error_exit("bool option '%s' not in relevant options set:\n\t%s" % (option, valid_opts))
+            if self.fast and option in self.fast_opts:
+                error_exit("bool option '%s' part of already enabled --fast options set:\n\t%s" % (option, self.fast_opts))
 
-    def valid_bool(self, machine, option):
+
+    def valid_bool(self, machine, disk, option):
         "return True if given bool option is relevant to test"
-        if option in ("--mmu", "--addr24") and machine not in ("tt", "falcon"):
-            # MMU & 32-bit addressing are relevant only for 030
+        opts_030 = ("--addr24", "--data-cache", "--mmu")
+        if option in opts_030 and machine not in ("tt", "falcon"):
+            # 32-bit addressing, caches & MMU are relevant only for 030+
+            return False
+        # invalid machine options
+        if option == "--blitter" and machine != "st":
+            return False
+        if option == "--mic" and machine != "falcon":
+            return False
+        # invalid disk options
+        if option == "--gemdos-conv" and disk != "gemdos":
+            return False
+        if option == "--drive-a" and disk == "floppy":
             return False
         return True
 
@@ -718,6 +751,7 @@ sMidiOutFileName = %s
         "compose test ID and Hatari command line args, then call .test()"
         identity = "%s-%s-%s-%s-%dM-%dM" % (tos.name, machine, monitor, disk, memory, ttram)
         testargs = ["--tos", tos.path, "--machine", machine, "--memsize", str(memory)]
+
         if ttram:
             testargs += ["--addr24", "off", "--ttram", str(ttram)]
         else:
@@ -743,19 +777,19 @@ sMidiOutFileName = %s
                 mmu = True
             identity += "-%s%s" % (bool_opt[0].replace('-', ''), bool_opt[1])
             testargs += bool_opt
-        if config.opts:
-            if "--mmu" in config.opts:
-                mmu = True
-            # pass-through Hatari options
-            testargs += config.opts
         if mmu and machine in ("tt", "falcon"):
             # MMU doubles memory wait
             testwait += memwait
             memwait *= 2
 
+        if config.fixed:
+            # pass-through Hatari options
+            testargs += config.fixed
+
         if config.fast:
-            testargs += ["--fast-forward", "yes", "--fast-boot", "yes",
-                         "--fastfdc", "yes", "--timer-d", "yes"]
+            for opt in config.fast_opts:
+                testargs += [opt, "yes"]
+
         elif machine == "falcon" and disk != "ide":
             # Falcon IDE interface scanning when there's no IDE takes long
             testwait += 8
@@ -824,7 +858,7 @@ sMidiOutFileName = %s
                                     continue
                                 no_bools = True
                                 for opt in config.bools:
-                                    if not config.valid_bool(machine, opt):
+                                    if not config.valid_bool(machine, disk, opt):
                                         continue
                                     no_bools = False
                                     for val in ('on', 'off'):
