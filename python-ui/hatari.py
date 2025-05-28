@@ -15,7 +15,6 @@
 # GNU General Public License for more details.
 
 import os
-import sys
 import time
 import signal
 import socket

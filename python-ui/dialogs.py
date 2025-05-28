@@ -1,7 +1,7 @@
 #
 # Classes for the Hatari UI dialogs
 #
-# Copyright (C) 2008-2024 by Eero Tamminen
+# Copyright (C) 2008-2025 by Eero Tamminen
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -13,18 +13,14 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-import os
 import gi
 # use correct version of gtk
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
-from gi.repository import Gdk
 from gi.repository import GdkPixbuf
-from gi.repository import Pango
 
 from uihelpers import UInfo, HatariTextInsert, create_table_dialog, \
-     table_add_entry_row, table_add_widget_row, table_add_separator, \
-     table_add_combo_row, table_add_radio_rows, create_button, \
+     table_add_widget_row, table_add_combo_row, create_button, \
      FselEntry, FselAndEjectFactory
 
 
@@ -37,9 +33,9 @@ class HatariUIDialog:
         self.parent = parent
         self.dialog = None
 
-    def run(self):
+    def run(self, _dummy = None):
         """run() -> response. Shows dialog and returns response,
-subclasses overriding run() require also an argument."""
+subclasses overriding run() require also argument(s)."""
         response = self.dialog.run()
         self.dialog.hide()
         return response
@@ -85,17 +81,18 @@ class AskDialog(HatariUIDialog):
 
 class AboutDialog(HatariUIDialog):
     def __init__(self, parent):
+        info = UInfo()
         dialog = Gtk.AboutDialog()
         dialog.set_transient_for(parent)
-        dialog.set_name(UInfo.name)
-        dialog.set_version(UInfo.version)
+        dialog.set_name(info.name)
+        dialog.set_version(info.version)
         dialog.set_website("https://www.hatari-emu.org")
         dialog.set_website_label("Hatari emulator website")
         dialog.set_authors(["Eero Tamminen"])
         dialog.set_artists(["The logo is from Hatari"])
-        dialog.set_logo(GdkPixbuf.Pixbuf.new_from_file(UInfo.logo))
+        dialog.set_logo(GdkPixbuf.Pixbuf.new_from_file(info.logo))
         dialog.set_translator_credits("translator-credits")
-        dialog.set_copyright(UInfo.copyright)
+        dialog.set_copyright(info.copyright)
         dialog.set_license("""
 This software is licensed under GPL v2 or later.
 
@@ -1022,13 +1019,6 @@ class MachineDialog(HatariUIDialog):
         tos = config.get_tos()
         if tos:
             self.tos.set_filename(tos)
-
-    def _get_active_radio(self, radios):
-        idx = 0
-        for radio in radios:
-            if radio.get_active():
-                return idx
-            idx += 1
 
     def _set_config(self, config):
         config.lock_updates()

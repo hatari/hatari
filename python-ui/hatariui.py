@@ -4,7 +4,7 @@
 #
 # Requires Gtk 3.x and Python GLib Introspection libraries.
 #
-# Copyright (C) 2008-2022 by Eero Tamminen
+# Copyright (C) 2008-2025 by Eero Tamminen
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -50,6 +50,7 @@ def window_hide_cb(window, arg):
 class UICallbacks:
     tmpconfpath = os.path.expanduser("~/.hatari/.tmp.cfg")
     def __init__(self):
+        self.info = UInfo()
         # Hatari and configuration
         self.hatari = Hatari()
         error = self.hatari.is_compatible()
@@ -142,8 +143,8 @@ class UICallbacks:
             vbox.pack_start(toolbars["bottom"], False, True, 0)
         # put them to main window
         mainwin = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
-        mainwin.set_title("%s %s" % (UInfo.name, UInfo.version))
-        mainwin.set_icon_from_file(UInfo.icon)
+        mainwin.set_title("%s %s" % (self.info.name, self.info.version))
+        mainwin.set_icon_from_file(self.info.icon)
         if accelgroup:
             mainwin.add_accel_group(accelgroup)
         if fullscreen:
@@ -160,7 +161,7 @@ class UICallbacks:
         display = Gdk.Display.get_default()
         if not display.get_n_monitors():
             print("ERROR: no monitors supported by Gdk")
-            sys.exit(error)
+            sys.exit(1)
         monitor  = display.get_monitor(0)
         geometry = monitor.get_geometry()
         scale    = monitor.get_scale_factor()
@@ -399,7 +400,7 @@ class UICallbacks:
         if title not in self.panels:
             window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
             window.set_transient_for(self.mainwin)
-            window.set_icon_from_file(UInfo.icon)
+            window.set_icon_from_file(self.info.icon)
             window.set_title(title)
             window.add(box)
             window.set_type_hint(Gdk.WindowTypeHint.DIALOG)
@@ -733,7 +734,6 @@ if no options are given, the UI uses basic controls.
 
 
 def main():
-    info = UInfo()
     actions = UIActions()
     try:
         longopts = ["embed", "fullscreen", "nomenu", "help",
