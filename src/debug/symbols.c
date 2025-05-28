@@ -427,6 +427,30 @@ void Symbols_FreeAll(void)
 	symbol_list_free(DspSymbolsList);
 }
 
+/**
+ * Change current CPU symbols to new ones with given type,
+ * free old ones
+ */
+static void Symbols_UpdateCpu(symbol_list_t* list, symbols_for_t symfor)
+{
+	if (CpuSymbolsList) {
+		symbol_list_free(CpuSymbolsList);
+	}
+	CpuSymbolsList = list;
+	CpuSymbolsAreFor = symfor;
+}
+
+/**
+ * Change current DSP symbols to new ones, free old ones
+ */
+static void Symbols_UpdateDsp(symbol_list_t* list)
+{
+	if (DspSymbolsList) {
+		symbol_list_free(DspSymbolsList);
+	}
+	DspSymbolsList = list;
+}
+
 /* ---------------- symbol name completion support ------------------ */
 
 /**
@@ -907,9 +931,8 @@ void Symbols_LoadCurrentProgram(void)
 		return;
 	}
 
+	Symbols_UpdateCpu(symbols, SYMBOLS_FOR_PROGRAM);
 	AutoLoadFailed = false;
-	CpuSymbolsAreFor = SYMBOLS_FOR_PROGRAM;
-	CpuSymbolsList = symbols;
 }
 
 /**
@@ -927,10 +950,11 @@ void Symbols_LoadTOS(const char *path, uint32_t maxaddr)
 	if (CpuSymbolsList && CpuSymbolsAreFor == SYMBOLS_FOR_USER) {
 		return;
 	}
-	CpuSymbolsList = loadSymFile(path, SYMTYPE_ALL, 0, maxaddr);
-	if (CpuSymbolsList) {
+	symbol_list_t *symbols;
+	symbols = loadSymFile(path, SYMTYPE_ALL, 0, maxaddr);
+	if (symbols) {
 		fprintf(stderr, "Loaded symbols for TOS: %s\n", path);
-		CpuSymbolsAreFor = SYMBOLS_FOR_TOS;
+		Symbols_UpdateCpu(symbols, SYMBOLS_FOR_TOS);
 	}
 }
 
@@ -1121,12 +1145,9 @@ int Symbols_Command(int nArgc, char *psArgs[])
 	list = Symbols_Load(file, offsets, maxaddr, SYMTYPE_ALL);
 	if (list) {
 		if (listtype == TYPE_CPU) {
-			Symbols_Free(CpuSymbolsList);
-			CpuSymbolsAreFor = SYMBOLS_FOR_USER;
-			CpuSymbolsList = list;
+			Symbols_UpdateCpu(list, SYMBOLS_FOR_USER);
 		} else {
-			Symbols_Free(DspSymbolsList);
-			DspSymbolsList = list;
+			Symbols_UpdateDsp(list);
 		}
 	} else {
 		DebugUI_PrintCmdHelp(psArgs[0]);
