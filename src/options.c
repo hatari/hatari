@@ -538,8 +538,8 @@ static const opt_t HatariOptions[] = {
 static void Opt_ShowVersion(void)
 {
 	printf("\n" PROG_NAME
-	       " - the Atari ST, STE, TT and Falcon emulator.\n\n");
-	printf("Hatari is free software licensed under the GNU General"
+	       " - the Atari ST, STE, TT and Falcon emulator.\n\n"
+	       "Hatari is free software licensed under the GNU General"
 	       " Public License.\n\n");
 }
 
@@ -657,12 +657,12 @@ static void Opt_ShowHelp(void)
 		}
 		opt = Opt_ShowHelpSection(opt);
 	}
-	printf("\nSpecial option values:\n");
-	printf("<bool>\tDisable by using 'n', 'no', 'off', 'false', or '0'\n");
-	printf("\tEnable by using 'y', 'yes', 'on', 'true' or '1'\n");
-	printf("<file>\tDevices accept also special 'stdout' and 'stderr' file names\n");
-	printf("\t(if you use stdout for midi or printer, set log to stderr).\n");
-	printf("\tSetting the file to 'none', disables given device or disk\n");
+	printf("\nSpecial option values:\n"
+	       "<bool>\tDisable by using 'n', 'no', 'off', 'false', or '0'\n"
+	       "\tEnable by using 'y', 'yes', 'on', 'true' or '1'\n"
+	       "<file>\tDevices accept also special 'stdout' and 'stderr' file names\n"
+	       "\t(if you use stdout for midi or printer, set log to stderr).\n"
+	       "\tSetting the file to 'none', disables given device or disk\n");
 }
 
 
