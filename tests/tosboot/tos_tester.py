@@ -418,21 +418,21 @@ For example:
         #     --mousewarp, --resizable, --sound-sync
         # [3] --fast-forward, --vdi
         valid_opts = (
-            "--addr24",
+            "--addr24", # TT/Falcon (or --cpulevel 3+)
             "--bios-intercept",
-            "--blitter",
+            "--blitter", # ST
             "--compatible",
             "--cpu-exact",
-            "--data-cache",
+            "--data-cache", # TT/Falcon
             "--drive-a",
             "--drive-b",
             "--fast-boot",
             "--fastfdc",
-            "--fpu-softfloat",
-            "--gemdos-conv",
+            "--fpu-softfloat", # TT (or --fpu)
+            "--gemdos-conv", # GEMDOS HD
             "--natfeats",
-            "--mic",
-            "--mmu",
+            "--mic", # Falcon
+            "--mmu", # TT/Falcon (or --cpulevel 3+)
             "--timer-d",
         )
         for option in self.bools:
@@ -442,22 +442,32 @@ For example:
                 error_exit("bool option '%s' part of already enabled --fast options set:\n\t%s" % (option, self.fast_opts))
 
 
-    def valid_bool(self, machine, disk, option):
-        "return True if given bool option is relevant to test"
-        opts_030 = ("--addr24", "--data-cache", "--mmu")
-        if option in opts_030 and machine not in ("tt", "falcon"):
+    def valid_bool(self, machine, disk, ttram, option):
+        "return True if given bool option is relevant for specified config"
+
+        # assume "--cpulevel" would be used to raise ST/STE CPU to 030+
+        if machine in ("tt", "falcon") or "--cpulevel" in self.fixed:
+            # TT-ram needs 32-bit addressing
+            if ttram and option == "--addr24":
+                return False
+        elif option in ("--addr24", "--data-cache", "--mmu"):
             # 32-bit addressing, caches & MMU are relevant only for 030+
             return False
+
         # invalid machine options
+        if option == "--fpu-softfloat" and machine != "tt" and "--fpu" not in self.fixed:
+            return False
         if option == "--blitter" and machine != "st":
             return False
         if option == "--mic" and machine != "falcon":
             return False
+
         # invalid disk options
         if option == "--gemdos-conv" and disk != "gemdos":
             return False
         if option == "--drive-a" and disk == "floppy":
             return False
+
         return True
 
 # -----------------------------------------------
@@ -858,7 +868,7 @@ sMidiOutFileName = %s
                                     continue
                                 no_bools = True
                                 for opt in config.bools:
-                                    if not config.valid_bool(machine, disk, opt):
+                                    if not config.valid_bool(machine, disk, ttram, opt):
                                         continue
                                     no_bools = False
                                     for val in ('on', 'off'):
