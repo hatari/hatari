@@ -743,15 +743,17 @@ sMidiOutFileName = %s
 
         # wait until test program has been run and outputs something to fifo
         prog_ok, tests_ok = self.wait_fifo(fifo, testwait)
+
+        # small extra wait to guarantee all test program output has
+        # reached disk and screen (e.g. with frameskip)
+        time.sleep(0.2)
+
+        self.get_screenshot(instance, identity)
         if tests_ok:
             output_ok = self.verify_output(identity)
         else:
             output_ok = False
 
-        # get screenshot after a small wait (to guarantee all
-        # test program output got to screen even with frameskip)
-        time.sleep(0.2)
-        self.get_screenshot(instance, identity)
         # get rid of this Hatari instance
         instance.run("kill")
         return (init_ok, prog_ok, tests_ok, output_ok)
