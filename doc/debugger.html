@@ -205,7 +205,7 @@ CPU commands:
       profile (  ) : profile CPU code
        cpureg ( r) : dump register values or set register to value
       memdump ( m) : dump memory
-       struct (  ) : structured memory output for breakpoints
+       struct (  ) : structured memory output, e.g. for breakpoints
      memwrite ( w) : write bytes to memory
       loadbin ( l) : load a file into memory
       savebin (  ) : save memory to a file
@@ -406,8 +406,22 @@ registers (e.g. "info videl") and Atari OS structures (e.g. "info gemdos").
 <p>
 One can also show contents of arbitrary program structs with the
 "struct" command.  Parts of the structure can be skipped (with 's')
-and they can be shown in different number bases (e.g. 'wb' = word in
-binary):
+and they can be shown in different number bases:</p>
+<pre>
+&gt; help struct
+'struct' - structured memory output, e.g. for breakpoints
+Usage:  struct &lt;name&gt; &lt;address&gt;[name]:&lt;type&gt;[base][:&lt;count&gt;[/&lt;split&gt;]] ...]
+
+        Show &lt;name&gt;d structure content at given &lt;address&gt;, with each
+	[name]:&lt;type&gt;[base][:&lt;count&gt;] arg output on its own line, prefixed
+	with offset from struct start address, if [name] is not given.
+	Output uses multiple lines when type count &lt;split&gt; is given.
+	Supported &lt;type&gt;s are 'b|c|w|l|s' (byte|char|word|long|skip).
+	Optional [base] can be 'b|o|d|h' (bin|oct|dec|hex).
+	Defaults are hex [base], and [count] of 1.
+</pre>
+
+<p>For example:</p>
 <pre>
 &gt; struct TOS 0xe00000 :s:2 version:wh:1 :s:20 os_date:lh os_conf:wb :s:14 :a:4
 TOS: $e00000
@@ -417,9 +431,14 @@ TOS: $e00000
 + $2c     : ETOS
 </pre>
 
-By saving such command to a file, it can be used with
+<p>By saving such command to a file, it can be used with
 <a href="#Breakpoint_options">breakpoint</a> ":file" option, to
-show contents of a given structure, whenever that breakpoint matches.
+show contents of a given structure, whenever that breakpoint
+matches.</p>
+
+<p>Prefixing "info" and "struct" commands with "echo \ec" command
+would clear screen before their output. This could help noticing
+changes in real-time output.</p>
 
 
 <h4>Selecting what information is shown on entering the debugger</h4>

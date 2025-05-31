@@ -1475,7 +1475,7 @@ static const dbgcommand_t cpucommands[] =
 	  "[b|c|w|l] <start address>[-<end address>] <values>\n"
 	  "\tBy default values are interpreted as bytes, with 'c', 'w'\n"
 	  "\tor 'l', they're interpreted as chars/words/longs instead,\n"
-	  "\tand find is done for suitable aligned addresses.",
+	  "\tand find is done for correspondingly aligned addresses.",
 	  false },
 	{ DebugCpu_Profile, Profile_Match,
 	  "profile", "",

@@ -969,7 +969,8 @@ static const dbgcommand_t uicommand[] =
 	{ DebugUI_Echo, NULL,
 	  "echo", "",
 	  "output given string(s)",
-	  "<strings>\n",
+	  "<string(s)>\n"
+	  "\tUse e.g. 'echo \\ec' to clear screen in a breakpoint.",
 	  false },
 	{ DebugUI_Evaluate, Vars_MatchCpuVariable,
 	  "evaluate", "e",
