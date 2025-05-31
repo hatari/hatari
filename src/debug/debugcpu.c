@@ -657,7 +657,7 @@ static unsigned get_type_base(char mode)
  */
 static int DebugCpu_Struct(int nArgc, char *psArgs[])
 {
-	uint32_t start, addr, count;
+	uint32_t start, addr, count, split;
 	int maxlen, offlen;
 
 	if (nArgc < 4)
@@ -678,9 +678,10 @@ static int DebugCpu_Struct(int nArgc, char *psArgs[])
 	addr = start;
 	for (int i = 3; i < nArgc; i++)
 	{
-		/* [name]:<type-char>[:count] */
-		const char *arg, *str;
+		/* [name]:<type-char>[:count[/split]] */
+		const char *arg, *str, *str2;
 		int size, type;
+		char buf[5];
 
 		arg = psArgs[i];
 		str = strchr(arg, ':');
@@ -719,9 +720,30 @@ static int DebugCpu_Struct(int nArgc, char *psArgs[])
 			return DEBUGGER_CMDDONE;
 		}
 
+		/* check split value that comes after count */
+		split = 0;
+		str2 = strchr(str, '/');
+		if (str2)
+		{
+			if (!Eval_Number(str2+1, &split, NUM_TYPE_NORMAL) || split > 127)
+			{
+				fprintf(stderr, "Invalid or too large split value for arg: '%s'!\n", arg);
+				return DEBUGGER_CMDDONE;
+			}
+			memcpy(buf, str, 3);
+			/* terminate count */
+			buf[str2-str] = '\0';
+			str = buf;
+		}
+
 		if (!Eval_Number(str, &count, NUM_TYPE_NORMAL) || count > 255)
 		{
-			fprintf(stderr, "Invalid count for arg: '%s'!\n", arg);
+			fprintf(stderr, "Invalid or too large count for arg: '%s'!\n", arg);
+			return DEBUGGER_CMDDONE;
+		}
+		if (split >= count)
+		{
+			fprintf(stderr, "Invalid count/split, count<=split: '%s'!\n", arg);
 			return DEBUGGER_CMDDONE;
 		}
 		addr += count*size;
@@ -755,10 +777,18 @@ static int DebugCpu_Struct(int nArgc, char *psArgs[])
 		else
 			str++;
 
-		if (*str)  /* ':' separator? */
-			Eval_Number(++str, &count, NUM_TYPE_NORMAL);
-		else
-			count = 1;
+		count = 1;
+		split = 0;
+		if (*str++)  /* ':' count separator? */
+		{
+			char *str2 = strchr(str, '/');
+			if (str2)
+			{
+				*str2++ = '\0';
+				Eval_Number(str2, &split, NUM_TYPE_NORMAL);
+			}
+			Eval_Number(str, &count, NUM_TYPE_NORMAL);
+		}
 
 		if (type == 's') /* skip */
 		{
@@ -773,17 +803,25 @@ static int DebugCpu_Struct(int nArgc, char *psArgs[])
 			fprintf(debugOutput, "+ $%0*x%*c: ",
 				offlen, addr-start, maxlen-offlen, ' ');
 
-		if (type == 'c')
+		if (split)
+			fprintf(debugOutput, "\n");
+
+		while (count > 0)
 		{
-			print_mem_chars(addr, count);
-			addr += count * size;
+			unsigned int cols = split;
+			if (!split || cols > count)
+				cols = count;
+			if (split)
+				fprintf(debugOutput, "  ");
+			if (type == 'c')
+				print_mem_chars(addr, cols);
+			else
+				print_mem_values(addr, cols, size, base);
+			fprintf(debugOutput, "\n");
+
+			addr += cols * size;
+			count -= cols;
 		}
-		else
-		{
-			print_mem_values(addr, count, size, base);
-			addr += count * size;
-		}
-		fprintf(debugOutput, "\n");
 	}
 
 	return DEBUGGER_CMDCONT;
@@ -1462,11 +1500,12 @@ static const dbgcommand_t cpucommands[] =
 	  false },
 	{ DebugCpu_Struct, Symbols_MatchCpuDataAddress,
 	  "struct", "",
-	  "structured memory output for breakpoints",
-	  "<name> <address> [name]:<type>[base][:<count>] ...]\n\n"
+	  "structured memory output, e.g. for breakpoints",
+	  "<name> <address> [name]:<type>[base][:<count>[/<split>] ...]\n\n"
 	  "\tShow <name>d structure content at given <address>, with each\n"
-	  "\t[name]:<type>[base][:<count>] item shown on its own line, prefixed\n"
-	  "\twith offset from struct start address if [name] is not given.\n"
+	  "\t[name]:<type>[base][:<count>] arg output on its own line, prefixed\n"
+	  "\twith offset from struct start address, if [name] is not given.\n"
+	  "\tOutput uses multiple lines when type count <split> is given.\n"
 	  "\tSupported <type>s are 'b|c|w|l|s' (byte|char|word|long|skip).\n"
 	  "\tOptional [base] can be 'b|o|d|h' (bin|oct|dec|hex).\n"
 	  "\tDefaults are hex [base], and [count] of 1.\n",
