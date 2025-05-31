@@ -759,7 +759,7 @@ sMidiOutFileName = %s
         return (init_ok, prog_ok, tests_ok, output_ok)
 
 
-    def prepare_test(self, config, tos, machine, monitor, disk, memory, ttram, bool_opt):
+    def prepare_test(self, config, tos, machine, monitor, disk, memory, ttram, bools):
         "compose test ID and Hatari command line args, then call .test()"
         identity = "%s-%s-%s-%s-%dM-%dM" % (tos.name, machine, monitor, disk, memory, ttram)
         testargs = ["--tos", tos.path, "--machine", machine, "--memsize", str(memory)]
@@ -784,11 +784,11 @@ sMidiOutFileName = %s
         memwait = tos.memwait
         testwait = tos.fullwait
         mmu = False
-        if bool_opt:
-            if bool_opt[0] == '--mmu' and bool_opt[1] == 'on':
+        for opt in bools:
+            if opt[0] == '--mmu' and opt[1] == 'on':
                 mmu = True
-            identity += "-%s%s" % (bool_opt[0].replace('-', ''), bool_opt[1])
-            testargs += bool_opt
+            identity += "-%s%s" % (opt[0].replace('-', ''), opt[1])
+            testargs += opt
         if mmu and machine in ("tt", "falcon"):
             # MMU doubles memory wait
             testwait += memwait
@@ -868,17 +868,17 @@ sMidiOutFileName = %s
                             for ttram in config.ttrams:
                                 if not config.valid_ttram(machine, tos, ttram, disk):
                                     continue
-                                no_bools = True
-                                for opt in config.bools:
-                                    if not config.valid_bool(machine, disk, ttram, opt):
-                                        continue
-                                    no_bools = False
-                                    for val in ('on', 'off'):
-                                        self.prepare_test(config, tos, machine, monitor, disk, memory, ttram, [opt, val])
-                                        count += 1
-                                if no_bools:
-                                    self.prepare_test(config, tos, machine, monitor, disk, memory, ttram, None)
+                                bools = [b for b in config.bools if config.valid_bool(machine, disk, ttram, b)]
+                                bcount = len(bools)
+                                # from all bools off, to increasing bool enabling...
+                                for i in range(bcount):
+                                    bool_mix = list(zip(bools, ("on",)*i + ("off",)*(bcount-i)))
+                                    self.prepare_test(config, tos, machine, monitor, disk, memory, ttram, bool_mix)
                                     count += 1
+                                # ...and finally all bools enabled (if any)
+                                bool_mix = list(zip(bools, ("on",)*bcount))
+                                self.prepare_test(config, tos, machine, monitor, disk, memory, ttram, bool_mix)
+                                count += 1
             if not count:
                 warning("no matching configuration for TOS '%s'" % tos.name)
         self.cleanup_all_files()
