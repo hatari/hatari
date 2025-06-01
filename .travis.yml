@@ -1,14 +1,16 @@
-dist: focal
+dist: jammy
 language: c
 compiler:
   - gcc
 addons:
   apt:
     packages:
+      - libcapstone-dev
       - libpng-dev
+      - libreadline-dev
       - libsdl2-dev
-      - portaudio19-dev
       - imagemagick
+      - tidy
 
 before_script:
   - ./configure ${CONFIG}
