@@ -17,7 +17,7 @@ xcode_task:
     image: ghcr.io/cirruslabs/macos-runner:sonoma
   env:
     SDLVERSION: 2.26.5
-    PNGVERSION: 1.6.40
+    PNGVERSION: 1.6.48
   download_cache:
     folder: dl_cache
     populate_script:
