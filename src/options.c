@@ -1277,6 +1277,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_FRAMESKIPS:
+			event = Event_GetPrefixActions(&arg);
 			skips = atoi(arg);
 			if (skips < 0)
 			{
@@ -1287,11 +1288,23 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			{
 				Log_Printf(LOG_WARN, "Extravagant frame skip value %d!\n", skips);
 			}
+			if (event)
+			{
+				event->frameSkips = skips;
+				break;
+			}
+			Log_Printf(LOG_DEBUG, "Frame skip = %d.\n", skips);
 			ConfigureParams.Screen.nFrameSkips = skips;
 			break;
 
 		case OPT_SLOWDOWN:
+			event = Event_GetPrefixActions(&arg);
 			val = atoi(arg);
+			if (event)
+			{
+				event->slowDown = val;
+				break;
+			}
 			errstr = Timing_SetVBLSlowdown(val);
 			if (errstr)
 			{
@@ -2342,7 +2355,13 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_RUNVBLS:
+			event = Event_GetPrefixActions(&arg);
 			val = atoi(arg);
+			if (event)
+			{
+				event->runVBLs = val;
+				break;
+			}
 			Log_Printf(LOG_DEBUG, "Exit after %d VBLs.\n", val);
 			Timing_SetRunVBLs(val);
 			break;

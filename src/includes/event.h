@@ -14,6 +14,9 @@ typedef struct {
 	const char *logLevel;
 	const char *traceFlags;
 	const char *exceptionMask;
+	int slowDown;
+	int frameSkips;
+	int runVBLs;
 } event_actions_t;
 
 extern event_actions_t *Event_GetPrefixActions(const char **str);

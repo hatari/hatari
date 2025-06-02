@@ -15,6 +15,7 @@ const char Event_fileid[] = "Hatari event.c";
 #include "debugui.h"
 #include "event.h"
 #include "log.h"
+#include "timing.h"
 
 static event_actions_t resetActions;
 static event_actions_t infLoadActions;
@@ -56,6 +57,24 @@ event_actions_t *Event_GetPrefixActions(const char **str)
  */
 static void Event_PerformActions(event_actions_t *act)
 {
+	/* set frame skip? */
+	if (act->frameSkips) {
+		ConfigureParams.Screen.nFrameSkips = act->frameSkips;
+		Log_Printf(LOG_WARN, "Frame skips: %d\n", act->frameSkips);
+	}
+
+	/* set slowdown? */
+	if (act->slowDown) {
+		Timing_SetVBLSlowdown(act->slowDown);
+		Log_Printf(LOG_WARN, "Slow down: %dx\n", act->slowDown);
+	}
+
+	/* set runVBLs? */
+	if (act->runVBLs) {
+		Timing_SetRunVBLs(act->runVBLs);
+		Log_Printf(LOG_WARN, "Exit after %d VBLs.\n", act->runVBLs);
+	}
+
 	/* parse debugger commands? */
 	if (act->parseFile) {
 		Log_Printf(LOG_WARN, "Debugger file: '%s'\n", act->parseFile);
