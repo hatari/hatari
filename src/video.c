@@ -1267,11 +1267,6 @@ int	Video_GetCyclesSinceVbl ( void )
 
 	cycles_since_vbl = CyclesGlobalClockCounter - VBL_ClockCounter;
 
-	/* The VBL interrupt starts at "VblVideoCycleOffset" cycles since the start of the VBL */
-	/* (except for VBL=0 after a reset to have cycles_since_vbl=0 when CyclesGlobalClockCounter=0 */
-	if ( nVBLs > 0 )
-		cycles_since_vbl += pVideoTiming->VblVideoCycleOffset << nCpuFreqShift;
-
 if ( cycles_since_vbl != cycles_old )
   fprintf ( stderr , "cyc since vbl old %d != new %d\n" , cycles_old , cycles_since_vbl );
 
@@ -4942,7 +4937,8 @@ void Video_InterruptHandler_VBL ( void )
 
 	VBL_ClockCounter_prev = VBL_ClockCounter;
 	VBL_ClockCounter = CyclesGlobalClockCounter - PendingCyclesOver;
-
+	/* The VBL interrupt starts at "VblVideoCycleOffset" cycles since the start of the VBL */
+	VBL_ClockCounter -= pVideoTiming->VblVideoCycleOffset << nCpuFreqShift;
 
 	/* Clear any key presses which are due to be de-bounced (held for one ST frame) */
 	Keymap_DebounceAllKeys();
