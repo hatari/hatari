@@ -9,7 +9,7 @@
 
 extern bool bLoadAutoSave;
 extern bool bLoadMemorySave;
-extern bool AviRecordOnStartup;
+extern bool AviRecordEnabled;
 extern bool BenchmarkMode;
 
 extern bool Opt_IsAtariProgram(const char *path);

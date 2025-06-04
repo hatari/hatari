@@ -822,7 +822,7 @@ int main(int argc, char *argv[])
 	Timing_CheckForAccurateDelays();
 
 	/* Immediately start AVI recording ? */
-	if ( AviRecordOnStartup )
+	if ( AviRecordEnabled )
 		Avi_StartRecording_WithConfig();
 
 	/* Run emulation */

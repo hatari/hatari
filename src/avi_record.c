@@ -1410,6 +1410,13 @@ stoprec_error:
 	return false;
 }
 
+void Avi_ToggleRecording(void)
+{
+	if (Avi_AreWeRecording())
+		Avi_StopRecording_WithMsg();
+	else
+		Avi_StartRecording_WithConfig();
+}
 
 /*-----------------------------------------------------------------------*/
 /**

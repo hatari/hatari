@@ -112,17 +112,7 @@ static void ShortCut_RecordSound(void)
  */
 static void ShortCut_RecordAnimation(void)
 {
-	/* Are we currently recording? If so stop */
-	if (Avi_AreWeRecording())
-	{
-		/* Stop */
-		Avi_StopRecording_WithMsg();
-	}
-	else
-	{
-		/* Start recording */
-		Avi_StartRecording_WithConfig();
-	}
+	Avi_ToggleRecording();
 }
 
 

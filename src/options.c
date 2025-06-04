@@ -56,7 +56,7 @@ const char Options_fileid[] = "Hatari options.c";
 
 bool bLoadAutoSave;        /* Load autosave memory snapshot at startup */
 bool bLoadMemorySave;      /* Load memory snapshot provided via option at startup */
-bool AviRecordOnStartup;   /* Start avi recording at startup */
+bool AviRecordEnabled;     /* Whether AVI recording should be active or not */
 bool BenchmarkMode;	   /* Start in benchmark mode (try to run at maximum emulation */
 			   /* speed allowed by the CPU). Disable audio/video for best results */
 
@@ -334,7 +334,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_SCREEN_CROP, NULL, "--crop",
 	  "<bool>", "Remove statusbar from screen capture" },
 	{ OPT_AVIRECORD, NULL, "--avirecord",
-	  NULL, "Start AVI recording" },
+	  "<bool>", "Enable/disable AVI recording" },
 	{ OPT_AVIRECORD_VCODEC, NULL, "--avi-vcodec",
 	  "<x>", "Select AVI video codec (x = bmp/png)" },
 	{ OPT_AVI_PNG_LEVEL, NULL, "--png-level",
@@ -1405,7 +1405,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_AVIRECORD:
-			AviRecordOnStartup = true;
+			ok = Opt_Bool(arg, OPT_AVIRECORD, &AviRecordEnabled))
 			break;
 
 		case OPT_AVIRECORD_VCODEC:
