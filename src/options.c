@@ -537,6 +537,13 @@ static const opt_t HatariOptions[] = {
  */
 static void Opt_ShowVersion(void)
 {
+#ifdef WIN32
+	/* Opt_ShowVersion() is called for all info exit paths,
+	 * so having this here should enable console for everything
+	 * relevant on Windows.
+	 */
+	Win_ForceCon();
+#endif
 	printf("\n" PROG_NAME
 	       " - the Atari ST, STE, TT and Falcon emulator.\n\n"
 	       "Hatari is free software licensed under the GNU General"
@@ -1040,7 +1047,7 @@ static bool Opt_HandleArgument(const char *path)
 		path = dir;
 	}
 
-	/* GEMDOS HDD directory (as argument, or for the Atari program)? */
+	/* GEMDOS HDD directory (as path arg, or dir for the Atari program)? */
 	if (File_DirExists(path))
 	{
 		Log_Printf(LOG_DEBUG, "ARG = GEMDOS HD dir: %s\n", path);
@@ -1058,16 +1065,8 @@ static bool Opt_HandleArgument(const char *path)
 		}
 		return true;
 	}
-	else
-	{
-		if (dir)
-		{
-			/* if dir is set, it should be valid... */
-			Log_Printf(LOG_ERROR, "Given atari program path '%s' doesn't exist (anymore?)!\n", dir);
-			free(dir);
-			exit(1);
-		}
-	}
+	/* something wrong if path to an existing prg has no valid dir */
+	assert(!dir);
 
 	/* disk image? */
 	if (Floppy_SetDiskFileName(0, path, NULL))

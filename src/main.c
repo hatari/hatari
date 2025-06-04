@@ -778,8 +778,7 @@ static void Main_Init(void)
 	/* Open debug log file */
 	if (!Log_Init())
 	{
-		fprintf(stderr, "ERROR: logging/tracing initialization failed\n");
-		exit(-1);
+		Main_ErrorExit("logging/tracing initialization failed", NULL, -1);
 	}
 	Log_Printf(LOG_INFO, PROG_NAME ", compiled on:  " __DATE__ ", " __TIME__ "\n");
 
@@ -787,14 +786,12 @@ static void Main_Init(void)
 	   will be initialized later (failure not fatal). */
 	if (SDL_Init(SDL_INIT_VIDEO) < 0)
 	{
-		fprintf(stderr, "ERROR: could not initialize the SDL library:\n %s\n", SDL_GetError() );
-		exit(-1);
+		Main_ErrorExit("could not initialize the SDL library:", SDL_GetError(), -1);
 	}
 
 	if ( IPF_Init() != true )
 	{
-		fprintf(stderr, "ERROR: could not initialize the IPF support\n" );
-		exit(-1);
+		Main_ErrorExit("could not initialize the IPF support", NULL, -1);
 	}
 
 	ClocksTimings_InitMachine ( ConfigureParams.System.nMachineType );
@@ -841,10 +838,11 @@ static void Main_Init(void)
 	}
 	if (!bTosImageLoaded || bQuitProgram)
 	{
-		if (!bTosImageLoaded)
-			fprintf(stderr, "ERROR: failed to load TOS image!\n");
 		SDL_Quit();
-		exit(-2);
+		if (!bTosImageLoaded)
+			Main_ErrorExit("failed to load TOS image", NULL, -2);
+		else
+			exit(-2);
 	}
 
 	IoMem_Init();
@@ -980,6 +978,37 @@ static void Main_StatusbarSetup(void)
 	Statusbar_UpdateInfo();
 }
 
+/**
+ * Error exit wrapper, to make sure user sees the error messages
+ * also on Windows.
+ *
+ * If message is given, Windows console is opened to show it,
+ * otherwise it's assumed to be already open and relevant
+ * messages shown before calling this.
+ *
+ * User input is waited on Windows, to make sure user sees
+ * the message before console closes.
+ *
+ * Value overrides nQuitValue as process exit/return value.
+ */
+void Main_ErrorExit(const char *msg1, const char *msg2, int errval)
+{
+	if (msg1)
+	{
+#ifdef WIN32
+		Win_ForceCon();
+#endif
+		if (msg2)
+			fprintf(stderr, "ERROR: %s\n\t%s\n", msg1, msg2);
+		else
+			fprintf(stderr, "ERROR: %s!\n", msg1);
+	}
+#ifdef WIN32
+	fputs("<press a key to exit>\n", stderr);
+	(void)fgetc(stdin);
+#endif
+	exit(errval);
+}
 
 /**
  * Main
@@ -1010,7 +1039,7 @@ int main(int argc, char *argv[])
 	if (!Opt_ParseParameters(argc, (const char * const *)argv))
 	{
 		Control_RemoveFifo();
-		return 1;
+		Main_ErrorExit(NULL, NULL, 1);
 	}
 	/* monitor type option might require "reset" -> true */
 	Configuration_Apply(true);

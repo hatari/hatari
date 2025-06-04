@@ -17,14 +17,26 @@
 #include "opencon.h"
 #include "../includes/configuration.h"
 
+static void Win_OpenInternal(void)
+{
+	static bool opened;
+	if (opened)
+		return;
+	opened = true;
+
+	AllocConsole();
+	freopen("CON", "w", stdout);
+	freopen("CON", "r", stdin);
+	freopen("CON", "w", stderr);
+}
 
 void Win_OpenCon(void)
 {
 	if (ConfigureParams.Log.bConsoleWindow)
-	{
-		AllocConsole();
-		freopen("CON", "w", stdout);
-		freopen("CON", "r", stdin);
-		freopen("CON", "w", stderr);
-	}
+		Win_OpenInternal();
+}
+
+void Win_ForceCon(void)
+{
+	Win_OpenInternal();
 }
