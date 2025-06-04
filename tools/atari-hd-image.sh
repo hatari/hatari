@@ -148,7 +148,7 @@ echo "$step) Create DOS Master Boot Record / partition table..."
 # For DOS MBR, the values are little endian.
 # -----------
 python3 << EOF
-#!/usr/bin/env python3
+#!/usr/bin/python3
 mbr = bytearray(512)
 
 def set_long(idx, value):

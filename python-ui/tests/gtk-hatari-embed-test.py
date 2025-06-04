@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
 #
 # To test Git version of Hatari, use something like:
 #   PATH=../../build/src:$PATH ./gtk-hatari-embed-test.py ...

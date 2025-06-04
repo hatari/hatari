@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
 """
 Script to copy Atari files with (potentially) too long names from
 source directory into target directory, using in latter file names

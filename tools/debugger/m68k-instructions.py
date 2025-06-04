@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
 #
 # code to generate m68k instruction opcode mask & value lookup table as C format
 # and a readline enabled console to get Hatari debugger breakpoint statements

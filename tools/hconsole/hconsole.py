@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
 #
 # Hatari console:
 # Allows using Hatari shortcuts & debugger, changing paths, toggling
