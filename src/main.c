@@ -1067,26 +1067,17 @@ int main(int argc, char *argv[])
 	/* Check if SDL_Delay is accurate */
 	Main_CheckForAccurateDelays();
 
-	if ( AviRecordOnStartup )	/* Immediately starts avi recording ? */
-		Avi_StartRecording ( ConfigureParams.Video.AviRecordFile , ConfigureParams.Screen.bCrop ,
-			ConfigureParams.Video.AviRecordFps == 0 ?
-				ClocksTimings_GetVBLPerSec ( ConfigureParams.System.nMachineType , nScreenRefreshRate ) :
-				ClocksTimings_GetVBLPerSec ( ConfigureParams.System.nMachineType , ConfigureParams.Video.AviRecordFps ) ,
-			1 << CLOCKS_TIMINGS_SHIFT_VBL ,
-			ConfigureParams.Video.AviRecordVcodec );
+	/* Immediately start AVI recording ? */
+	if ( AviRecordOnStartup )
+		Avi_StartRecording_WithConfig();
 
 	/* Run emulation */
 	Main_UnPauseEmulation();
 	M68000_Start();                 /* Start emulation */
 
 	Control_RemoveFifo();
-	if (bRecordingAvi)
-	{
-		/* cleanly close the avi file */
-		Statusbar_AddMessage("Finishing AVI file...", 100);
-		Statusbar_Update(sdlscrn, true);
-		Avi_StopRecording();
-	}
+	/* cleanly close the AVI file, if needed */
+	Avi_StopRecording_WithMsg();
 	/* Un-init emulation system */
 	Main_UnInit();
 

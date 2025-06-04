@@ -21,7 +21,6 @@ const char DlgScreen_fileid[] = "Hatari dlgScreen.c";
 #include "video.h"
 #include "avi_record.h"
 #include "statusbar.h"
-#include "clocks_timings.h"
 
 /* how many pixels to increment VDI mode
  * width/height on each click
@@ -456,12 +455,7 @@ void Dialog_WindowDlg(void)
 			else
 			{
 				ConfigureParams.Screen.bCrop = (windowdlg[DLGSCRN_CROP].state & SG_SELECTED);
-				Avi_StartRecording ( ConfigureParams.Video.AviRecordFile , ConfigureParams.Screen.bCrop ,
-					ConfigureParams.Video.AviRecordFps == 0 ?
-						ClocksTimings_GetVBLPerSec ( ConfigureParams.System.nMachineType , nScreenRefreshRate ) :
-						ClocksTimings_GetVBLPerSec ( ConfigureParams.System.nMachineType , ConfigureParams.Video.AviRecordFps ) ,
-					1 << CLOCKS_TIMINGS_SHIFT_VBL ,
-					ConfigureParams.Video.AviRecordVcodec );
+				Avi_StartRecording_WithConfig ();
 				windowdlg[DLGSCRN_RECANIM].txt = RECORD_STOP;
 			}
 			break;

@@ -31,7 +31,6 @@
 #import "video.h"
 #import "avi_record.h"
 #import "debugui.h"
-#import "clocks_timings.h"
 #import "change.h"
 
 extern void Main_RequestQuit(int exitval) ;
@@ -283,12 +282,7 @@ char szPath[FILENAME_MAX] ;											// for general use
 
 		if(path) {
 			GuiOsx_ExportPathString(path, ConfigureParams.Video.AviRecordFile, sizeof(ConfigureParams.Video.AviRecordFile));
-			Avi_StartRecording ( ConfigureParams.Video.AviRecordFile , ConfigureParams.Screen.bCrop ,
-					ConfigureParams.Video.AviRecordFps == 0 ?
-					ClocksTimings_GetVBLPerSec ( ConfigureParams.System.nMachineType , nScreenRefreshRate ) :
-					ClocksTimings_GetVBLPerSec ( ConfigureParams.System.nMachineType , ConfigureParams.Video.AviRecordFps ) ,
-				1 << CLOCKS_TIMINGS_SHIFT_VBL ,
-				ConfigureParams.Video.AviRecordVcodec );
+			Avi_StartRecording_WithConfig ();
 		}
 	} else {
 		Avi_StopRecording();
