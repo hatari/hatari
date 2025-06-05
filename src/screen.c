@@ -371,9 +371,9 @@ void Screen_SetTextureScale(int width, int height, int win_width, int win_height
 					       width, height);
 		if (!sdlTexture)
 		{
-			fprintf(stderr, "ERROR: Failed to create %dx%d@%d texture!\n",
-			       width, height, sdlscrn->format->BitsPerPixel);
-			exit(-3);
+			fprintf(stderr, "%dx%d@%d texture\n",
+				width, height, sdlscrn->format->BitsPerPixel);
+			Main_ErrorExit("Failed to create texture:", SDL_GetError(), -3);
 		}
 	}
 }
@@ -481,12 +481,11 @@ static bool Screen_SetSDLVideoSize(int width, int height, bool bForceChange)
 		sdlWindow = SDL_CreateWindow("Hatari", SDL_WINDOWPOS_UNDEFINED,
 		                             SDL_WINDOWPOS_UNDEFINED,
 		                             win_width, win_height, sdlVideoFlags);
-	}
-	if (!sdlWindow)
-	{
-		fprintf(stderr, "ERROR: Failed to create %dx%d window!\n",
-		        win_width, win_height);
-		exit(-1);
+		if (!sdlWindow)
+		{
+			fprintf(stderr, "%dx%d window\n", win_width, win_height);
+			Main_ErrorExit("Failed to create window:", SDL_GetError(), -1);
+		}
 	}
 	if (bUseSdlRenderer)
 	{
@@ -496,9 +495,8 @@ static bool Screen_SetSDLVideoSize(int width, int height, bool bForceChange)
 		sdlRenderer = SDL_CreateRenderer(sdlWindow, -1, 0);
 		if (!sdlRenderer)
 		{
-			fprintf(stderr, "ERROR: Failed to create %dx%d renderer!\n",
-			        win_width, win_height);
-			exit(1);
+			fprintf(stderr, "%dx%d renderer\n", win_width, win_height);
+			Main_ErrorExit("Failed to create renderer:", SDL_GetError(), 1);
 		}
 
 		if (bInFullScreen)
@@ -530,9 +528,8 @@ static bool Screen_SetSDLVideoSize(int width, int height, bool bForceChange)
 	/* Exit if we can not open a screen */
 	if (!sdlscrn)
 	{
-		fprintf(stderr, "ERROR: Could not set video mode:\n %s\n", SDL_GetError() );
 		SDL_Quit();
-		exit(-2);
+		Main_ErrorExit("Could not set video mode:", SDL_GetError(), -2);
 	}
 
 	DEBUGPRINT(("SDL screen granted: %d x %d @ %d\n", sdlscrn->w, sdlscrn->h,
@@ -713,8 +710,7 @@ void Screen_Init(void)
 	FrameBuffer.pSTScreenCopy = malloc(MAX_VDI_BYTES);
 	if (!FrameBuffer.pSTScreen || !FrameBuffer.pSTScreenCopy)
 	{
-		fprintf(stderr, "ERROR: Failed to allocate frame buffer memory.\n");
-		exit(-1);
+		Main_ErrorExit("Failed to allocate frame buffer memory", NULL, -1);
 	}
 	pFrameBuffer = &FrameBuffer;  /* TODO: Replace pFrameBuffer with FrameBuffer everywhere */
 

@@ -1231,8 +1231,7 @@ int TOS_InitImage(void)
 			           psTestPrg, TEST_PRG_START);
 			if (GemDOS_LoadAndReloc(psTestPrg, TEST_PRG_BASEPAGE, true))
 			{
-				fprintf(stderr, "Failed to load '%s'\n", psTestPrg);
-				exit(1);
+				Main_ErrorExit("Failed to load:", psTestPrg, 1);
 			}
 		}
 		else

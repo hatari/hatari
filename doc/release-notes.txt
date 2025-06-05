@@ -47,6 +47,9 @@ Emulator improvements:
 - SDL-GUI (and config options):
   - Improvements to GUI font characters
   - Add separate option for enabling/disabling >=030 CPU data cache
+- Windows:
+  - Open console window for error and help output, so that Windows
+    users can actually see them
 - Keyboard:
   - Symbolic key mapping improved for different TOS language versions
   - Made it possible to use a mapping file with fallback to scancode mapping
