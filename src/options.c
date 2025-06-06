@@ -46,6 +46,9 @@ const char Options_fileid[] = "Hatari options.c";
 #include "tos.h"
 #include "lilo.h"
 #include "screenSnapShot.h"
+#ifdef WIN32
+#include "gui-win/opencon.h"
+#endif
 
 
 bool bLoadAutoSave;        /* Load autosave memory snapshot at startup */

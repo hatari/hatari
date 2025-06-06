@@ -1004,7 +1004,7 @@ void Main_ErrorExit(const char *msg1, const char *msg2, int errval)
 			fprintf(stderr, "ERROR: %s!\n", msg1);
 	}
 #ifdef WIN32
-	fputs("<press a key to exit>\n", stderr);
+	fputs("<press Enter to exit>\n", stderr);
 	(void)fgetc(stdin);
 #endif
 	exit(errval);
