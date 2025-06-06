@@ -1804,7 +1804,7 @@ Broken games (with EmuTOS v1.3):
 - Neurobot
   - Both intro & game just exit immediately (TOS version?)
 - Reeking Rubber
-  - Broken graphics & freeze on game start, uses VDI draw calls
+  - Broken graphics & pterm0() on game start, uses VDI draw calls
 - SBM v0.8 & v1.03* (Bomberman clone)
   - Bus error panic with 8MB, illegal instruction one with 14MB
 - Watership (VGA only)
