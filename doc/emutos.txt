@@ -1585,7 +1585,7 @@ Demos working under EmuTOS >= v1.3 (XBios TC support):
 - Multitech (by Cybernetics)
   - Part of Geotech demo, needs DSP + TC mode
 
-Demos working under EmuTOS Git version (full TC support):
+Demos working under EmuTOS >= v1.4 (full TC support):
 - 128dist (128-Bytro by DHS)
   - Needs FPU + started from 320-wide TC mode
 - Bound & Bound2 (Crac)
@@ -1604,12 +1604,12 @@ Demos working under EmuTOS Git version (full TC support):
 - Spin176 (256-Bytro by MKM / Lamers)
   - Needs FPU + started from 320x200 TC mode
 
-Demos working partly under EmuTOS >= v1.3:
+Demos working partly under EmuTOS >= v1.4:
 - 124 beers later (by Trio)
   - Works already with v1.0, but fighter screen DSP textures need v1.1
   - Ground texture missing in last screen
 
-Broken demos (with EmuTOS v1.3):
+Broken demos (with EmuTOS v1.4):
 - Who Okayed This?
   - Both the new and (fixed) old intros (epidemic.prg) do work,
     (fixed) music disk (zikdisk.tos) panics to bus error at -1
@@ -1737,7 +1737,7 @@ Games working under EmuTOS >= v1.1.1 (DSP support + fixes):
 Games working under EmuTOS >= v1.2:
 - Tetrhex (1.41)
 
-Games working under EmuTOS >= 1.3 (XBios TC support):
+Games working under EmuTOS >= v1.3 (XBios TC support):
 - Confusion demo 1 & 2
 - Gravon (demo + full version)
 - Moonspeeder (preview 2)
@@ -1745,7 +1745,7 @@ Games working under EmuTOS >= 1.3 (XBios TC support):
 - Conquest of Elysium II v2.0 & 2.3 (uses VDI calls)
 - Tron 2 (VGA only)
 
-Games working under EmuTOS Git version (full TC support):
+Games working under EmuTOS >= v1.4 (full TC support):
 - Boulder Smash Falcon (Omikron Basic)
   - Needs to be started from 480x400 or larger TC mode
 - DangerZone
@@ -1788,7 +1788,7 @@ Partly working games:
   - Fire button works only until game itself starts
   - Works only with 8MB RAM
 
-Broken games (with EmuTOS v1.3):
+Broken games (with EmuTOS v1.4):
 - Downfall
   - Dialog complains "Error while loading BLACKWHT.BGR".
     It is already opened, so issue may be Setscreen() following it
@@ -1890,7 +1890,7 @@ Applications working under EmuTOS >= v1.3 (XBios TC support):
 - Centview (GEM image viewer)
   - After showing an image, GUI is not always refreshed
 
-Applications working under EmuTOS Git version (full TC support):
+Applications working under EmuTOS >= v1.4 (full TC support):
 - Indypaint
   - Crashes if not started from TC mode (line-A init, hide/show mouse)
   - Interact with mouse & keys; F1-F5: popup menus, Space: palette
