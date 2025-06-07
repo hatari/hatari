@@ -25,7 +25,7 @@ build-32bit:
  - ctest -j$(nproc)
 
 build-mingw:
-  image: fedora:latest
+  image: fedora:41
   variables:
     GIT_DEPTH: 1000
   cache:
