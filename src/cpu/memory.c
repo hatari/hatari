@@ -1680,8 +1680,7 @@ void memory_init(uae_u32 NewSTMemSize, uae_u32 NewTTMemSize, uae_u32 NewRomMemSt
 	STmemory = malloc(alloc_size);
 	if (!STmemory)
 	{
-		SDL_Quit();
-		Main_ErrorExit("virtual memory exhausted (STmemory)", NULL, 1);
+		Main_ErrorExit("Virtual memory exhausted (STmemory)", NULL, 1);
 	}
 	memset(STmemory, 0, alloc_size);
 
@@ -1695,7 +1694,6 @@ void memory_init(uae_u32 NewSTMemSize, uae_u32 NewTTMemSize, uae_u32 NewRomMemSt
 		ROMmemory = malloc(2*1024*1024);
 		if (!ROMmemory)
 		{
-			SDL_Quit();
 			Main_ErrorExit("Out of memory (ROM/IO mem)", NULL, 1);
 		}
 	}

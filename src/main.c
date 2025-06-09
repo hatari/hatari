@@ -778,7 +778,7 @@ static void Main_Init(void)
 	/* Open debug log file */
 	if (!Log_Init())
 	{
-		Main_ErrorExit("logging/tracing initialization failed", NULL, -1);
+		Main_ErrorExit("Logging/tracing initialization failed", NULL, -1);
 	}
 	Log_Printf(LOG_INFO, PROG_NAME ", compiled on:  " __DATE__ ", " __TIME__ "\n");
 
@@ -786,12 +786,12 @@ static void Main_Init(void)
 	   will be initialized later (failure not fatal). */
 	if (SDL_Init(SDL_INIT_VIDEO) < 0)
 	{
-		Main_ErrorExit("could not initialize the SDL library:", SDL_GetError(), -1);
+		Main_ErrorExit("Could not initialize the SDL library:", SDL_GetError(), -1);
 	}
 
 	if ( IPF_Init() != true )
 	{
-		Main_ErrorExit("could not initialize the IPF support", NULL, -1);
+		Main_ErrorExit("Could not initialize the IPF support", NULL, -1);
 	}
 
 	ClocksTimings_InitMachine ( ConfigureParams.System.nMachineType );
@@ -838,11 +838,12 @@ static void Main_Init(void)
 	}
 	if (!bTosImageLoaded || bQuitProgram)
 	{
-		SDL_Quit();
 		if (!bTosImageLoaded)
-			Main_ErrorExit("failed to load TOS image", NULL, -2);
-		else
-			exit(-2);
+		{
+			Main_ErrorExit("Failed to load TOS image", NULL, -2);
+		}
+		SDL_Quit();
+		exit(-2);
 	}
 
 	IoMem_Init();
@@ -993,6 +994,8 @@ static void Main_StatusbarSetup(void)
  */
 void Main_ErrorExit(const char *msg1, const char *msg2, int errval)
 {
+	SDL_Quit();
+
 	if (msg1)
 	{
 #ifdef WIN32
@@ -1003,6 +1006,7 @@ void Main_ErrorExit(const char *msg1, const char *msg2, int errval)
 		else
 			fprintf(stderr, "ERROR: %s!\n", msg1);
 	}
+
 #ifdef WIN32
 	fputs("<press Enter to exit>\n", stderr);
 	(void)fgetc(stdin);

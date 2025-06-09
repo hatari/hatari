@@ -528,7 +528,6 @@ static bool Screen_SetSDLVideoSize(int width, int height, bool bForceChange)
 	/* Exit if we can not open a screen */
 	if (!sdlscrn)
 	{
-		SDL_Quit();
 		Main_ErrorExit("Could not set video mode:", SDL_GetError(), -2);
 	}
 
