@@ -1641,10 +1641,11 @@ static bool GemDOS_DFree(uint32_t Params)
 	}
 
 #ifdef HAVE_STATVFS
+	memset(&buf, 0, sizeof(buf));
 	if (statvfs(emudrives[Drive-2]->hd_emulation_dir, &buf) == 0)
 	{
 		Total = buf.f_blocks/1024 * buf.f_frsize;
-		if (buf.f_bavail)
+		if (buf.f_bavail > 0)
 			Free = buf.f_bavail;	/* free for unprivileged user */
 		else
 			Free = buf.f_bfree;
