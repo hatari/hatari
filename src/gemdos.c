@@ -1612,7 +1612,8 @@ static bool GemDOS_DFree(uint32_t Params)
 #ifdef HAVE_STATVFS
 	struct statvfs buf;
 #endif
-	int Drive, Total, Free;
+	int Drive;
+	uint64_t Total, Free;
 	uint32_t Address;
 
 	Address = STMemory_ReadLong(Params);
