@@ -748,8 +748,9 @@ Free/shareware/PD games:
 - Warzone
 - Whip Snapper's race
 - Wolf3d*        (floppy version, Fread()s files opened as write-only)
-- Yak 3.5k       (gridrunner by Jeff Minter)
 - Xenon 3.5k     (by Michael Bittner)
+- Yak 3.5k       (gridrunner by Jeff Minter)
+- Yoomp*         (by Dekadence)
 - Zap
 - Zatacka        (multiplayer)
 
@@ -1251,6 +1252,7 @@ Color games:
 - Giana Sisters STE rewrite:
   http://atari-forum.com/viewtopic.php?f=3&t=26360
 - H Mec 2 (line-A bitblit)
+- Invasion of the Emerald Saucers
 - Metal Slug STE (mission 1)
 - Micromachines preview (by .tscc)
 - Mr Boomer (line-A bitblit)
