@@ -1645,36 +1645,49 @@ static bool GemDOS_DFree(uint32_t Params)
 	memset(&buf, 0, sizeof(buf));
 	if (statvfs(emudrives[Drive-2]->hd_emulation_dir, &buf) == 0)
 	{
-		Total = buf.f_blocks/1024 * buf.f_frsize;
-		if (buf.f_bavail > 0)
-			Free = buf.f_bavail;	/* free for unprivileged user */
-		else
-			Free = buf.f_bfree;
-		Free = Free/1024 * buf.f_bsize;
+		unsigned tosMax;
+		long bsize;
+
+		/* According to Linux manpage, f_frsize should be used for
+		 * total, and according to NetBSD manpage, also for free.
+		 *
+		 * According to GNU coreutils code, f_frsize might not
+		 * be set (according to kernel code, it's set to
+		 * f_bsize when zero, so that might be old info).
+		 *
+		 * => use frsize if it's set
+		 */
+		bsize = buf.f_frsize > 0 ? buf.f_frsize : buf.f_blocks;
+		Total = buf.f_blocks * bsize / 1024;
+
+		/* use unprivileged user free, if available */
+		Free = buf.f_bavail > 0 ? buf.f_bavail : buf.f_bfree;
+		Free = Free * bsize / 1024;
 
 		/* TOS version limits based on:
 		 *   http://hddriver.seimet.de/en/faq.html
 		 */
 		if (TosVersion >= 0x0400)
 		{
-			if (Total > 1024*1024)
-				Total = 1024*1024;
+			tosMax = 1024*1024;
 		}
 		else
 		{
 			if (TosVersion >= 0x0106)
-			{
-				if (Total > 512*1024)
-					Total = 512*1024;
-			}
+				tosMax = 512*1024;
 			else
-			{
-				if (Total > 256*1024)
-					Total = 256*1024;
-			}
+				tosMax = 256*1024;
 		}
+
+		/* free cannot be larger than total, and
+		 * total should not be zero, but free can
+		 */
+		if (Total > tosMax)
+			Total = tosMax;
 		if (Free > Total)
 			Free = Total;
+		if (Total == 0)
+			Total = tosMax;
 	}
 	else
 #endif
