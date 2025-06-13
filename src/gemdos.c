@@ -1657,7 +1657,7 @@ static bool GemDOS_DFree(uint32_t Params)
 		 *
 		 * => use frsize if it's set
 		 */
-		bsize = buf.f_frsize > 0 ? buf.f_frsize : buf.f_blocks;
+		bsize = buf.f_frsize > 0 ? buf.f_frsize : buf.f_bsize;
 		Total = buf.f_blocks * bsize / 1024;
 
 		/* use unprivileged user free, if available */
