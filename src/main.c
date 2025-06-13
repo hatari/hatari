@@ -994,8 +994,6 @@ static void Main_StatusbarSetup(void)
  */
 void Main_ErrorExit(const char *msg1, const char *msg2, int errval)
 {
-	SDL_Quit();
-
 	if (msg1)
 	{
 #ifdef WIN32
@@ -1006,6 +1004,8 @@ void Main_ErrorExit(const char *msg1, const char *msg2, int errval)
 		else
 			fprintf(stderr, "ERROR: %s!\n", msg1);
 	}
+
+	SDL_Quit();
 
 #ifdef WIN32
 	fputs("<press Enter to exit>\n", stderr);
