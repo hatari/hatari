@@ -47,12 +47,15 @@ Emulator improvements:
 - SDL-GUI (and config options):
   - Improvements to GUI font characters
   - Add separate option for enabling/disabling >=030 CPU data cache
+  - Fix: file selector exit with keyboard
 - Windows:
   - Open console window for error and help output, so that Windows
     users can actually see them
-- Keyboard:
+- Keyboard / TOS localization:
   - Symbolic key mapping improved for different TOS language versions
   - Made it possible to use a mapping file with fallback to scancode mapping
+  - New "--fast-forward-key-repeat" option for key repeat
+  - (EmuTOS v1.4) Catalan country code support
 - Memory snapshots:
   - Fix: re/store all relevant YM2149 & MMU state variables
 - Joysticks:
@@ -63,10 +66,13 @@ Emulator improvements:
   - Fix: Fsnext() calls with DTAs having different attribs,
     when DTA is not from preceeding Fsfirst() but earlier one
   - Fix: Handle additional '*' chars at end of file mask
+  - Fix: Dfree() total/free on really large disk, free on Mac/BSD
 - SCC:
   - Fix: invalid channel B file close on uninit
 - SCSI:
   - Add CLI + config file option for (per ID) SCSI version
+- Command FIFO:
+  - Fix crash when FIFO gets command right at Hatari start
 - Debugger:
   - Fix: DSP RESET instruction tracing
   - Similarly to Atari program symbols override, load TOS symbols on
@@ -99,6 +105,8 @@ Tools:
   - Fix: weak ELF BSS/DATA symbols were handled as weak TEXT symbols
 - Profile data post-processor:
   - Fix: first costs assigned wrong when profile does not start on symbol
+- tos-tester:
+  - Improved support for testing Hatari bool options
 
 Fixed demos:
 - Little -ME- Demo by Overlanders : when running in MegaSTE mode the 3D parts
@@ -112,6 +120,7 @@ Fixed programs:
 
 Fixed games:
 - Ready Steady Bang! (GEMDOS HD Fattrib())
+- STDOOM (MegaSTE 16Mhz cache tag bug)
 
 
  Version 2.5.0 (2024-04-18)
