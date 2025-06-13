@@ -156,14 +156,14 @@ const char *OpcodeName[] = { "ILLG",
 
 struct {
 	uint8_t		Valid[ MEGA_STE_CACHE_SIZE ];
-	uint8_t		Tag[ MEGA_STE_CACHE_SIZE ];
+	uint16_t	Tag[ MEGA_STE_CACHE_SIZE ];
 	uint16_t	Value[ MEGA_STE_CACHE_SIZE ];
 } MegaSTE_Cache;
 
 
 bool	MegaSTE_Cache_Is_Enabled ( void );
 bool	MegaSTE_Cache_Addr_Cacheable ( uint32_t addr );
-void	MegaSTE_Cache_Addr_Convert ( uint32_t Addr , uint16_t *pLineNbr , uint8_t *pTag );
+void	MegaSTE_Cache_Addr_Convert ( uint32_t Addr , uint16_t *pLineNbr , uint16_t *pTag );
 bool	MegaSTE_Cache_Update ( uint32_t Addr , int Size , uint16_t Val );
 bool	MegaSTE_Cache_Write ( uint32_t Addr , int Size , uint16_t Val );
 bool	MegaSTE_Cache_Read ( uint32_t Addr , int Size , uint16_t *pVal );
@@ -1068,7 +1068,7 @@ void M68000_MMU_Info(FILE *fp, uint32_t flags)
 /* The cache is made of 8192 lines, each line is 1 word (2 bytes)		*/
 /* When a physical address is accessed, the following bits are used to select	*/
 /* an entry in the TAG RAM :							*/
-/*  - bits 15-22 : tag (8 bits)							*/
+/*  - bits 15-24 : tag (10 bits)						*/
 /*  - bits 1-14 : line (0 to 8191)						*/
 /*  - bit 0 : ignored (because the cache stores 16 bit words)			*/
 /*										*/
@@ -1200,11 +1200,6 @@ bool	MegaSTE_Cache_Is_Enabled ( void )
  * For each valid cache entry, we compare the stored value with
  * the content of the RAM for the same physical address.
  * If there's a difference then something went wrong in the cache
- * NOTE : this check will work only when RAM is cached, not ROM.
- * This is because an address uses 24 bits but the cache will map
- * only 22 bits to Line/Tag, making it impossible to get back the
- * original physical address from just Line/Tag.
- * So when this check is enabled, ROM caching will be disabled.
  */
 
 #ifdef MEGA_STE_CACHE_DEBUG_CHECK_ENTRIES
@@ -1213,7 +1208,7 @@ void	MegaSTE_Cache_Check_Entries ( const char *txt );
 void	MegaSTE_Cache_Check_Entries ( const char *txt )
 {
 	uint16_t	Line;
-	uint8_t	Tag;
+	uint16_t	Tag;
 	uint32_t	Addr;
 
 	for ( Line=0 ; Line < MEGA_STE_CACHE_SIZE ; Line++ )
@@ -1242,9 +1237,6 @@ static inline void	MegaSTE_Cache_Check_Entries ( const char *txt )
  * Return true if addr is part of a cacheable region, else false
  *   - RAM (up to 4MB) and ROM regions can be cached
  *   - IO or cartridge regions can't be cached
- *
- * NOTE : when debugging cache consistency using MegaSTE_Cache_Check_Entries()
- * we should allow only RAM to be cached
  */
 
 bool	MegaSTE_Cache_Addr_Cacheable ( uint32_t addr )
@@ -1253,11 +1245,9 @@ bool	MegaSTE_Cache_Addr_Cacheable ( uint32_t addr )
 	if ( ( addr < STRamEnd ) && ( addr < 0x400000 ) )
 		return true;
 
-#ifndef MEGA_STE_CACHE_DEBUG_CHECK_ENTRIES
 	/* TOS in ROM region can be cached */
 	if ( ( addr >= 0xE00000 ) && ( addr < 0xF00000 ) )
 		return true;
-#endif
 
 	/* Other regions can't be cached */
 	return false;
@@ -1288,16 +1278,16 @@ void	MegaSTE_Cache_Flush ( void )
 
 /*
  * Convert a cacheable address into a Line number in the cache and a Tag value
- * Addr lowest 22 bits are split into :
- *   - bits 14-21 : tag (8 bits)
+ * Addr lowest 24 bits are split into :
+ *   - bits 14-23 : tag (10 bits)
  *   - bits 1-13 : line (0 to 8191)
  *   - bit 0 : ignored (because the cache stores 16 bit words)
  */
 
-void	MegaSTE_Cache_Addr_Convert ( uint32_t Addr , uint16_t *pLineNbr , uint8_t *pTag )
+void	MegaSTE_Cache_Addr_Convert ( uint32_t Addr , uint16_t *pLineNbr , uint16_t *pTag )
 {
 	*pLineNbr = ( Addr >> 1 ) & 0x1fff;
-	*pTag = ( Addr >> 14 ) & 0xff;
+	*pTag = ( Addr >> 14 ) & 0x3ff;
 }
 
 
@@ -1321,7 +1311,7 @@ void	MegaSTE_Cache_Addr_Convert ( uint32_t Addr , uint16_t *pLineNbr , uint8_t *
 bool	MegaSTE_Cache_Update ( uint32_t Addr , int Size , uint16_t Val )
 {
 	uint16_t	Line;
-	uint8_t		Tag;
+	uint16_t	Tag;
 
 	if ( !MegaSTE_Cache_Addr_Cacheable ( Addr ) )
 		return false;					/* data not cacheable */
@@ -1368,7 +1358,7 @@ bool	MegaSTE_Cache_Write ( uint32_t Addr , int Size , uint16_t Val )
 bool	MegaSTE_Cache_Read ( uint32_t Addr , int Size , uint16_t *pVal )
 {
 	uint16_t	Line;
-	uint8_t		Tag;
+	uint16_t	Tag;
 
 	if ( !MegaSTE_Cache_Addr_Cacheable ( Addr ) )
 		return false;					/* cache miss, data not cacheable */
