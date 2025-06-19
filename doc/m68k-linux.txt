@@ -351,13 +351,13 @@ shows easiest method to simulate that with Hatari.
    $ cp /path/to/m68k-kernel/vmlinux gemdos-hd/
 
 4. If you do not have a TOS ROM image, download latest EmuTOS release from:
-     https://sourceforge.net/projects/emutos/files/emutos/1.3/emutos-1024k-1.3.zip/download
+     https://sourceforge.net/projects/emutos/files/emutos/1.4/emutos-1024k-1.4.zip/download
    and extract it:
-   $ unzip emutos-1024k-1.3.zip
+   $ unzip emutos-1024k-1.4.zip
 
 5. Then run Hatari with them:
    $ hatari --trace os_base --log-level info \
-      --tos emutos-1024k-1.3/etos1024k.img \
+      --tos emutos-1024k-1.4/etos1024k.img \
       --fast-forward on --fastfdc on --timer-d on \
       --machine falcon --dsp off --fpu 68882 --cpuclock 32 \
       --mmu on -s 14 --ttram 64 --addr24 off \
