@@ -63,4 +63,8 @@ is missing here, please remind me!):
 - Andrea Musuruane (Hatari Fedora package maintainer) :
   Hatari bug reports
 
+- RATI / Overlanders : wrote an exhaustive test program to check various
+  combinations of 4 pixel hardscroll when Shifter is stopped. This was
+  used as a reference to compare real STF and emulation
+
 See "authors.txt" for people who've contributed also code to Hatari.

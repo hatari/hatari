@@ -42,6 +42,12 @@ Emulation improvements:
 - Serial Ports:
   - Update values of DCD and CTS signals for the RS232 port connected
     to the MFP (as reported by the underlying OS)
+  - Add support for using TCCLK as RTxCB clock for the Atari TT's SCC
+- Video:
+  - Improve support for 4 pixel hardscroll by stopping shifter with
+    $FF8260=3. Also handle $FF8261.
+- MFP:
+  - Fix counter when timer is stopped/restarted while counting from 1 to 0
 
 Emulator improvements:
 - SDL-GUI (and config options):
@@ -88,6 +94,8 @@ Emulator improvements:
   - Add 'c' (character) argument type support for "memwrite" command
   - CPU disassembly shows resulting relative branch addresses
   - "dspreg" command shows also stack contents
+  - When disassembling, translate logical addresses to physical ones if MMU
+    is enabled
 - Tracing:
   - GEMDOS Dsetpath() + Frename() calls included to "os_base" traces
   - PC value added to more traces
