@@ -87,7 +87,7 @@ int main(int argc, const char *argv[])
 		NULL
 	};
 	const char *parser_pass[] = {
-		/* comparisons with normal numbers + indrect addressing */
+		/* comparisons with normal numbers + indirect addressing */
 		" ($200).w > 200 ",
 		" ($200).w < 200 ",
 		" (200).w = $200 ",

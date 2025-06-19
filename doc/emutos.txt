@@ -1753,7 +1753,7 @@ Games working under EmuTOS >= v1.4 (full TC support):
   - Needs to be started from 480x400 or larger TC mode
 - DangerZone
   - Needs 8MB + started from 640x480@16-color VGA mode
-  - Without palette<->VDI index compatiblity fix, errors on start
+  - Without palette<->VDI index compatibility fix, errors on start
 - Hong Tron (128b game by Reservoir Gods)
   - Needs to be started from 320x400 TC mode
 - Pous-Pous (GEM puzzle)

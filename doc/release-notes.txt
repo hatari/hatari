@@ -64,7 +64,7 @@ Emulator improvements:
   - Fix: Fattrib() call on a directory
   - Fix: Return correct attrib for volume labels in FsFirst()
   - Fix: Fsnext() calls with DTAs having different attribs,
-    when DTA is not from preceeding Fsfirst() but earlier one
+    when DTA is not from preceding Fsfirst() but earlier one
   - Fix: Handle additional '*' chars at end of file mask
   - Fix: Dfree() total/free on really large disk, free on Mac/BSD
 - SCC:
