@@ -62,8 +62,6 @@ Emulation improvements
 
 - Improve experimental SCSI hard disk emulation for Falcon/TT mode.
 
-- Improve experimental SCC serial port emulation for Falcon/TT mode.
-
 - Last DSP emulation / Falcon sound matrix items:
 	- Dsp SSI internal clock (is it used on falcon ?)
 	- Verify DSP instructions cycle count, especially with external RAM
