@@ -10,7 +10,7 @@ URL:          https://www.hatari-emu.org/
 License:      GPLv2+
 Group:        System/Emulators/Other
 Autoreqprov:  on
-Version:      2.5.0
+Version:      2.6.0
 Release:      1
 Summary:      An Atari ST/STE/TT/Falcon emulator
 Source:       %{name}-%{version}.tar.bz2
@@ -69,6 +69,9 @@ rm -rf $RPM_BUILD_ROOT
 %license gpl.txt
 
 %changelog -n hatari
+
+* Sun Jun 22 2025 - Nicolas Pomarede
+- Hatari version 2.6.0
 
 * Thu Apr 18 2024 - Nicolas Pomarede
 - Hatari version 2.5.0

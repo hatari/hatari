@@ -2,7 +2,7 @@
 
                                     Hatari
 
-                             Version 2.5.0, April 2024
+                             Version 2.6.0, June 2025
 
                             https://www.hatari-emu.org/
 
