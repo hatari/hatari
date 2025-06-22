@@ -531,7 +531,7 @@ static void print_mem_chars(uint32_t addr, uint8_t count)
 	for (int i = 0; i < count; i++)
 	{
 		st[0] = STMemory_ReadByte(addr + i);
-		if ((unsigned)st[0] >= 32 &&
+		if ((unsigned)st[0] >= 32 && st[0] != 127 &&
 		    Str_AtariToHost(st, host, sizeof(host), NON_PRINT_CHAR))
 			fprintf(debugOutput,"%s", host);
 		else

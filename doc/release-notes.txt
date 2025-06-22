@@ -17,6 +17,14 @@ Following features are deprecated and will be removed in a future release:
   - "hatari-shortcut quit"       (use "hatari-debug quit [exit value]")
 
 
+ Development version
+ -------------------
+
+Emulator improvements:
+- Debugger:
+  Fix: show DEL character as non-printable in memdumps
+
+
  Version 2.6.0 (2025-06-22)
  --------------------------
 
