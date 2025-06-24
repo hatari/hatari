@@ -834,7 +834,7 @@ static SDL_Rect* Statusbar_OverlayDraw(SDL_Surface *surf)
 	Uint32 currentticks = SDL_GetTicks();
 	int i;
 
-	if (bRecordingYM || bRecordingWav || bRecordingAvi)
+	if (bRecordingYM || bRecordingWav || Avi_AreWeRecording())
 	{
 		Statusbar_OverlayDrawLed(surf, RecColorOn);
 	}
@@ -1019,7 +1019,7 @@ SDL_Rect* Statusbar_Update(SDL_Surface *surf, bool do_update)
 		}
 	}
 
-	if ((bRecordingYM || bRecordingWav || bRecordingAvi) != bOldRecording)
+	if ((bRecordingYM || bRecordingWav || Avi_AreWeRecording()) != bOldRecording)
 	{
 		bOldRecording = !bOldRecording;
 		if (bOldRecording)

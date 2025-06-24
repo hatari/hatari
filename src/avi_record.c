@@ -423,7 +423,7 @@ typedef struct {
 
 
 
-bool		bRecordingAvi = false;
+static bool bRecordingAvi = false;
 
 
 static RECORD_AVI_PARAMS	AviParams;

@@ -1825,7 +1825,7 @@ void Sound_Update_VBL(void)
 	}
 	
 	/* Record AVI audio frame is necessary */
-	if ( bRecordingAvi )
+	if ( Avi_AreWeRecording() )
 	{
 		int Len;
 

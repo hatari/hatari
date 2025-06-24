@@ -15,10 +15,6 @@
 #define	AVI_RECORD_AUDIO_CODEC_PCM	1
 
 
-extern bool	bRecordingAvi;
-extern int	AviRecordDefaultVcodec;
-extern bool	AviRecordDefaultCrop;
-extern int	AviRecordDefaultFps;
 extern char	AviRecordFile[FILENAME_MAX];
 
 extern bool	Avi_RecordVideoStream ( void );

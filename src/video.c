@@ -4969,7 +4969,7 @@ void Video_InterruptHandler_VBL ( void )
 	IKBD_UpdateClockOnVBL ();
 
 	/* Record video frame is necessary */
-	if ( bRecordingAvi )
+	if ( Avi_AreWeRecording() )
 		Avi_RecordVideoStream ();
 
 	/* Store off PSG registers for YM file, is enabled */
