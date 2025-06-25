@@ -35,23 +35,20 @@ To run the emulator, a TOS ROM image is needed.  EmuTOS, a free
 implementation of TOS, is shipped with the official binary releases
 of Hatari.
 
-This tos.img ROM image is identical to the official binary package of
+This "tos.img" ROM image is identical to the official binary package of
 EmuTOS, which is available at the SourceForge website of EmuTOS.  For
 downloading other versions or the source code of EmuTOS, please visit
 the EmuTOS website.
 
-The tos.img file included with the latest Hatari releases is
-the etos1024k.img[1] from a preceding EmuTOS release:
+Starting from Hatari 2.5.0, the "tos.img" file included with the given
+Hatari release is the etos1024k.img[1] from a preceding EmuTOS release:
 - Hatari v2.6.0:
   https://sourceforge.net/projects/emutos/files/emutos/1.4/
-
-Since Hatari 2.5.0, the tos.img file included with earlier
-Hatari releases is the etos1024k.img[1] from a preceding EmuTOS release:
 - Hatari v2.5.0:
   https://sourceforge.net/projects/emutos/files/emutos/1.3/
 
-Before Hatari 2.5.0, the tos.img file included with earlier
-Hatari releases was the etos512k.img[1] from a preceding EmuTOS release:
+Before Hatari 2.5.0, the "tos.img" file included with the given
+Hatari release was the etos512k.img[1] from a preceding EmuTOS release:
 - Hatari v2.4.0, v2.4.1:
   https://sourceforge.net/projects/emutos/files/emutos/1.1.1/
 - Hatari v2.3.0, v2.3.1:
@@ -81,13 +78,16 @@ Hatari releases was the etos512k.img[1] from a preceding EmuTOS release:
 - Hatari v0.95:
   http://sourceforge.net/projects/emutos/files/emutos/0.8.2/
 
-[1] This is the "all languages" version, intended mainly for TT & Falcon:
+[1] 1024k EmuTOS image is the "all languages" version, intended mainly
+    for TT & Falcon.
 
-    While 192k and 256k EmuTOS variants work better for ST and STE
-    programs in some cases, only the larger image variants contain
-    support for all the hardware.  Older 512k EmuTOS variants support
-    also all the EmuTOS languages, but nowadays only the new EmuTOS
-    1024k variant does (has space for all of them).
+    Older 512k EmuTOS variants support also all the EmuTOS languages,
+    but nowadays only the new EmuTOS 1024k variant has space for all
+    of them.
+
+    While 192k and 256k EmuTOS variants work better for some ST and
+    STE programs, only the larger image variants contain support for
+    all the hardware emulated by Hatari.
 
 Notes for older EmuTOS versions:
 
