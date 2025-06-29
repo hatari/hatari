@@ -1237,10 +1237,17 @@ static inline void	MegaSTE_Cache_Check_Entries ( const char *txt )
  * Return true if addr is part of a cacheable region, else false
  *   - RAM (up to 4MB) and ROM regions can be cached
  *   - IO or cartridge regions can't be cached
+ * On a 68000 MegaSTE, only the lowest 24 bits of the address should be used
+ * (except if the user forces a 32 bit setting)
  */
 
 bool	MegaSTE_Cache_Addr_Cacheable ( uint32_t addr )
 {
+	/* The MegaSTE uses a 68000 with only 24 bits of address, upper 8 bits */
+	/* should be ignored (except if user explicitely forces 32 bits addressing) */
+	if ( ConfigureParams.System.bAddressSpace24 )
+		addr &= 0xFFFFFF;
+
 	/* Available RAM can be cached (up to 4MB) */
 	if ( ( addr < STRamEnd ) && ( addr < 0x400000 ) )
 		return true;
