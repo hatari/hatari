@@ -1696,6 +1696,9 @@ static bool GemDOS_DFree(uint32_t Params)
 		Total = 32*1024;
 		Free = 16*1024;
 	}
+
+	M68000_Flush_Data_Cache(Address, 4*SIZE_LONG);
+
 	STMemory_WriteLong(Address,  Free);             /* free clusters */
 	STMemory_WriteLong(Address+SIZE_LONG, Total);   /* total clusters */
 
@@ -2781,7 +2784,7 @@ static bool GemDOS_GetDir(uint32_t Params)
 			/* Root directory is represented by empty string */
 			path[0] = '\0';
 		}
-		len = strlen(path);
+		len = strlen(path) + 1;
 		/* Check that write is requested to valid memory area */
 		if ( !STMemory_CheckAreaType ( Address, len, ABFLAG_RAM ) )
 		{
@@ -2789,7 +2792,10 @@ static bool GemDOS_GetDir(uint32_t Params)
 			Regs[REG_D0] = GEMDOS_ERANGE;
 			return true;
 		}
-		for (i = 0; i <= len; i++)
+
+		M68000_Flush_Data_Cache(Address, len);
+
+		for (i = 0; i < len; i++)
 		{
 			c = path[i];
 			STMemory_WriteByte(Address+i, (c==PATHSEP ? '\\' : c) );
@@ -2887,6 +2893,9 @@ static int GemDOS_Pexec(uint32_t Params)
 
 	/* Prepare stack to run "create basepage": */
 	Regs[REG_A7] -= 16;
+
+	M68000_Flush_Data_Cache(Regs[REG_A7], 2*SIZE_WORD+3*SIZE_LONG);
+
 	STMemory_WriteWord(Regs[REG_A7], 0x4b);	/* Pexec number */
 	STMemory_WriteWord(Regs[REG_A7] + 2, TosVersion >= 0x200 ? 7 : 5);
 	STMemory_WriteLong(Regs[REG_A7] + 4, prgh[22] << 24 | prgh[23] << 16 
@@ -2962,7 +2971,10 @@ static bool GemDOS_SNext(bool trace)
 		{
 			/* older TOS versions zero file name if there are no (further) matches */
 			if (TosVersion < 0x0400)
+			{
+				M68000_Flush_Data_Cache(DTA_Gemdos+offsetof(DTA,dta_name), 1);
 				pDTA->dta_name[0] = 0;
+			}
 			Regs[REG_D0] = GEMDOS_ENMFIL;    /* No more files */
 			return true;
 		}
@@ -3283,6 +3295,8 @@ static bool GemDOS_GSDToF(uint32_t Params)
 		/* Check that write is requested to valid memory area */
 		if ( STMemory_CheckAreaType ( pBuffer, 4, ABFLAG_RAM ) )
 		{
+			M68000_Flush_Data_Cache(pBuffer, 2*SIZE_WORD);
+
 			STMemory_WriteWord(pBuffer, DateTime.timeword);
 			STMemory_WriteWord(pBuffer+SIZE_WORD, DateTime.dateword);
 			Regs[REG_D0] = GEMDOS_EOK;
@@ -3434,6 +3448,8 @@ static bool GemDOS_Super(uint32_t Params)
 	Regs[REG_A7] = nParam - nExcFrameSize;
 
 	nSR ^= SR_SUPERMODE;
+
+	M68000_Flush_Data_Cache(Regs[REG_A7], SIZE_LONG+2*SIZE_WORD);
 
 	STMemory_WriteWord(Regs[REG_A7], nSR);
 	STMemory_WriteLong(Regs[REG_A7] + SIZE_WORD, nRetAddr);
@@ -4277,8 +4293,11 @@ void GemDOS_Boot(void)
 	}
 
 	/* Save old GEMDOS handler address */
+	M68000_Flush_Instr_Cache(CART_OLDGEMDOS, SIZE_LONG);
 	STMemory_WriteLong(CART_OLDGEMDOS, STMemory_ReadLong(0x0084));
+
 	/* Setup new GEMDOS handler, see "cart_asm.s" */
+	M68000_Flush_Instr_Cache(0x0084, SIZE_LONG);
 	STMemory_WriteLong(0x0084, CART_GEMDOS);
 }
 
@@ -4325,6 +4344,9 @@ int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr, bool bFullBpSe
 		return GEMDOS_ENSMEM;
 	}
 
+	/* relocation info is also written to this area */
+	M68000_Flush_All_Caches(baseaddr, 0x100 + nTextLen + nDataLen + nBssLen);
+
 	if (!STMemory_SafeCopy(baseaddr + 0x100, prg + 28, nTextLen + nDataLen, psPrgName))
 	{
 		free(prg);
@@ -4361,8 +4383,13 @@ int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr, bool bFullBpSe
 	/* If FASTLOAD flag is not set, then also clear the heap */
 	if (!(prg[25] & 1))
 	{
+		uint32_t nAddrLen;
 		nCurrAddr = baseaddr + 0x100 + nTextLen + nDataLen + nBssLen;
-		if (!STMemory_SafeClear(nCurrAddr, STMemory_ReadLong(baseaddr + 4) - nCurrAddr))
+		nAddrLen = STMemory_ReadLong(baseaddr + 4) - nCurrAddr;
+
+		M68000_Flush_All_Caches(baseaddr, nAddrLen);
+
+		if (!STMemory_SafeClear(nCurrAddr, nAddrLen))
 		{
 			free(prg);
 			Log_Printf(LOG_ERROR, "Failed to clear heap for '%s'.\n",
@@ -4474,6 +4501,8 @@ void GemDOS_PexecBpCreated(void)
 		sr &= ~SR_ZERO;
 	} else if (mode == 0)
 	{
+		M68000_Flush_Data_Cache(nSavedPexecParams, 6+4);
+
 		/* Run another "just-go" Pexec call to start the program */
 		STMemory_WriteWord(nSavedPexecParams, TosVersion >= 0x104 ? 6 : 4);
 		STMemory_WriteLong(nSavedPexecParams + 6, Regs[REG_D0]);
