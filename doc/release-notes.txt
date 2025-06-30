@@ -20,9 +20,18 @@ Following features are deprecated and will be removed in a future release:
  Development version
  -------------------
 
+Emulation improvements:
+- MegaSTE:
+  - Fix: ignore upper cache address bits unless 32-bit mode enforced
+
 Emulator improvements:
+- GEMDOS HD:
+  - Fix: caches were no always flushed on writing to emulated memory
 - Debugger:
-  Fix: show DEL character as non-printable in memdumps
+  - Fix: show DEL character as non-printable in memdumps
+
+Fixed programs:
+- Spectre 3.0 (Hatari v2.6 regression, MegaSTE cache)
 
 
  Version 2.6.0 (2025-06-22)
