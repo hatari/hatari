@@ -386,7 +386,7 @@ Color demos:
 - Beast Scroll (by Joefish)
 - Beefect (by Effect)
 - Beyond Imagination (by NLC), in GFA basic
-- Bp0d (0-bitplane by Extreme)
+- Bp0d (0-bitplane by Extream)
 - Bread and Circuses (by Effect)
 - Breath (by Mystic Bytes)
 - Calimer-o-demo (by Oxygene)
@@ -537,7 +537,7 @@ Color demos:
 - Unstatic (by Cyprian, Dma-Sc & bob_er)
 - Virtual (by Equinox)
 - Visualize (by Checkpoint)
-- Vitsit Dottuun (by Extreme, 50Hz only)
+- Vitsit Dottuun (by Extream, 50Hz only)
 - Vodka demo (by Equinox) - does not work with >1MB of RAM
 - We Accidentally Your Oculus (by Sector One)
 - We do not rip or recycle anything (by Spice Boys)
