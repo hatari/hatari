@@ -161,12 +161,12 @@ struct {
 } MegaSTE_Cache;
 
 
-bool	MegaSTE_Cache_Is_Enabled ( void );
-bool	MegaSTE_Cache_Addr_Cacheable ( uint32_t addr , int Size , int DoWrite );
-void	MegaSTE_Cache_Addr_Convert ( uint32_t Addr , uint16_t *pLineNbr , uint16_t *pTag );
-bool	MegaSTE_Cache_Update ( uint32_t Addr , int Size , uint16_t Val , int DoWrite );
-bool	MegaSTE_Cache_Write ( uint32_t Addr , int Size , uint16_t Val );
-bool	MegaSTE_Cache_Read ( uint32_t Addr , int Size , uint16_t *pVal );
+static bool	MegaSTE_Cache_Is_Enabled ( void );
+static bool	MegaSTE_Cache_Addr_Cacheable ( uint32_t addr , int Size , int DoWrite );
+static void	MegaSTE_Cache_Addr_Convert ( uint32_t Addr , uint16_t *pLineNbr , uint16_t *pTag );
+static bool	MegaSTE_Cache_Update ( uint32_t Addr , int Size , uint16_t Val , int DoWrite );
+static bool	MegaSTE_Cache_Write ( uint32_t Addr , int Size , uint16_t Val );
+static bool	MegaSTE_Cache_Read ( uint32_t Addr , int Size , uint16_t *pVal );
 
 
 uae_u32 (*x_get_iword_megaste_save)(int);
@@ -1186,7 +1186,7 @@ void	MegaSTE_CPU_Set_16Mhz ( bool set_16 )
  * Return true if the cache is enabled, else return false
  */
 
-bool	MegaSTE_Cache_Is_Enabled ( void )
+static bool	MegaSTE_Cache_Is_Enabled ( void )
 {
 	if ( IoMem_ReadByte(0xff8e21) & 0x1 )
 		return true;
@@ -1203,9 +1203,9 @@ bool	MegaSTE_Cache_Is_Enabled ( void )
  */
 
 #ifdef MEGA_STE_CACHE_DEBUG_CHECK_ENTRIES
-void	MegaSTE_Cache_Check_Entries ( const char *txt );
+static void	MegaSTE_Cache_Check_Entries ( const char *txt );
 
-void	MegaSTE_Cache_Check_Entries ( const char *txt )
+static void	MegaSTE_Cache_Check_Entries ( const char *txt )
 {
 	uint16_t	Line;
 	uint16_t	Tag;
@@ -1243,7 +1243,7 @@ static inline void	MegaSTE_Cache_Check_Entries ( const char *txt )
  * Accesses that would cause a bus error or an address error should not be cached
  */
 
-bool	MegaSTE_Cache_Addr_Cacheable ( uint32_t addr , int Size , int DoWrite )
+static bool	MegaSTE_Cache_Addr_Cacheable ( uint32_t addr , int Size , int DoWrite )
 {
 	/* The MegaSTE uses a 68000 with only 24 bits of address, upper 8 bits */
 	/* should be ignored (except if user explicitely forces 32 bits addressing) */
@@ -1305,7 +1305,7 @@ void	MegaSTE_Cache_Flush ( void )
  *   - bit 0 : ignored (because the cache stores 16 bit words)
  */
 
-void	MegaSTE_Cache_Addr_Convert ( uint32_t Addr , uint16_t *pLineNbr , uint16_t *pTag )
+static void	MegaSTE_Cache_Addr_Convert ( uint32_t Addr , uint16_t *pLineNbr , uint16_t *pTag )
 {
 	*pLineNbr = ( Addr >> 1 ) & 0x1fff;
 	*pTag = ( Addr >> 14 ) & 0x3ff;
@@ -1329,7 +1329,7 @@ void	MegaSTE_Cache_Addr_Convert ( uint32_t Addr , uint16_t *pLineNbr , uint16_t 
  * Return true if value was added to the cache, else return false
  */
 
-bool	MegaSTE_Cache_Update ( uint32_t Addr , int Size , uint16_t Val , int DoWrite )
+static bool	MegaSTE_Cache_Update ( uint32_t Addr , int Size , uint16_t Val , int DoWrite )
 {
 	uint16_t	Line;
 	uint16_t	Tag;
@@ -1369,14 +1369,14 @@ bool	MegaSTE_Cache_Update ( uint32_t Addr , int Size , uint16_t Val , int DoWrit
 
 
 
-bool	MegaSTE_Cache_Write ( uint32_t Addr , int Size , uint16_t Val )
+static bool	MegaSTE_Cache_Write ( uint32_t Addr , int Size , uint16_t Val )
 {
 	return MegaSTE_Cache_Update ( Addr , Size , Val , 1 );
 }
 
 
 
-bool	MegaSTE_Cache_Read ( uint32_t Addr , int Size , uint16_t *pVal )
+static bool	MegaSTE_Cache_Read ( uint32_t Addr , int Size , uint16_t *pVal )
 {
 	uint16_t	Line;
 	uint16_t	Tag;
