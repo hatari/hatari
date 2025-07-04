@@ -1266,8 +1266,8 @@ static bool	MegaSTE_Cache_Addr_Cacheable ( uint32_t addr , int Size , int DoWrit
 	if ( ( addr < STRamEnd ) && ( addr < 0x400000 ) )
 		return true;
 
-	/* TOS in ROM region can be cached */
-	if ( ( addr >= 0xE00000 ) && ( addr < 0xF00000 ) )
+	/* TOS in ROM region can be cached only when reading (writing would cause a bus error) */
+	if ( ( addr >= 0xE00000 ) && ( addr < 0xF00000 ) && !DoWrite )
 		return true;
 
 	/* Other regions can't be cached */
