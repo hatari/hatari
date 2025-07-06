@@ -18,6 +18,8 @@ endif()
 # Disk image code is shared with the hmsa tool, so we put it into a library:
 add_library(Floppy createBlankImage.c dim.c msa.c st.c zip.c utils.c)
 
+file(GLOB TOS_IMG_FILE tos.img LIST_DIRECTORIES false)
+
 # When building for macOS, define specific sources for gui and resources
 if(ENABLE_OSX_BUNDLE)
 	set(GUIOSX_SOURCES
@@ -25,7 +27,8 @@ if(ENABLE_OSX_BUNDLE)
 	    gui-osx/CreateFloppyController.m gui-osx/SDLMain.m gui-osx/paths.m)
 	set_source_files_properties(${GUIOSX_SOURCES} PROPERTIES LANGUAGE C)
 	set(GUIOSX_RSRCS
-	    Hatari.icns gui-osx/stdisk.png gui-osx/en.lproj gui-osx/fr.lproj)
+	    Hatari.icns gui-osx/stdisk.png gui-osx/en.lproj gui-osx/fr.lproj
+	    ${TOS_IMG_FILE})
 	set(GUIOSX_DOCS
 	    ${CMAKE_SOURCE_DIR}/doc/manual.html ${CMAKE_SOURCE_DIR}/doc/images
 	    ${CMAKE_SOURCE_DIR}/doc/compatibility.html ${CMAKE_SOURCE_DIR}/doc/toc.js )
@@ -271,8 +274,7 @@ if(ENABLE_OSX_BUNDLE)
 else()
 	install(TARGETS ${APP_NAME} RUNTIME DESTINATION ${BINDIR})
 	install(FILES hatari-icon.bmp DESTINATION ${DATADIR})
-	file(GLOB TOS_IMG_FILE tos.img)
 	if(TOS_IMG_FILE)
-		install(FILES tos.img DESTINATION ${DATADIR})
+		install(FILES ${TOS_IMG_FILE} DESTINATION ${DATADIR})
 	endif(TOS_IMG_FILE)
 endif(ENABLE_OSX_BUNDLE)
