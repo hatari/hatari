@@ -34,8 +34,8 @@
  */
 #define INVALID_CHAR '+'
 
+/* String processing helper macros/functions */
 #define Str_Free(s) { free(s); s = NULL; }
-
 extern char *Str_Trim(char *buffer);
 extern char *Str_ToUpper(char *pString);
 extern char *Str_ToLower(char *pString);
@@ -54,5 +54,7 @@ extern bool Str_AtariToHost(const char *source, char *dest, int destLen, char re
 extern bool Str_HostToAtari(const char *source, char *dest, char replacementChar);
 extern void Str_DecomposedToPrecomposedUtf8(const char *source, char *dest);
 
+/* Setup for string conversions */
+extern void Str_Init(void);
 
 #endif  /* HATARI_STR_H */

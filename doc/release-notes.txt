@@ -25,6 +25,8 @@ Emulation improvements:
   - Fix: ignore upper cache address bits unless 32-bit mode enforced
 
 Emulator improvements:
+- Windows:
+  - Fix: late locale init messes debugger readline history handling
 - GEMDOS HD:
   - Fix: caches were no always flushed on writing to emulated memory
 - Debugger:

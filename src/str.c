@@ -346,21 +346,24 @@ static int mapAtariToUnicode[128] =
  * without collisions.
  */
 static char mapUnicodeToAtari[512];
-static bool characterMappingsInitialized = false;
 
 /**
- * This function initializes the mapUnicodeToAtari[] hashtable.
+ * Initializations needed for string conversions
  */
-static void initCharacterMappings(void)
+void Str_Init(void)
 {
 	int i;
 	for (i = 0; i < 128; i++)
 	{
 		mapUnicodeToAtari[mapAtariToUnicode[i] & 511] = i;
 	}
-	characterMappingsInitialized = true;
 
 #if defined(WIN32) || defined(USE_LOCALE_CHARSET)
+	/* Change libc from default "C" locale to one
+	 * specified by the program environment. Needed
+	 * only for Windows, as Unix based OSes (are
+	 * assumed to) use UTF-8 based locales nowadays.
+	 */
 	setlocale(LC_ALL, "");
 #endif
 }
@@ -416,7 +419,6 @@ static bool Str_AtariToUtf8(const char *source, char *dest, int destLen)
 static bool Str_Utf8ToAtari(const char *source, char *dest, char replacementChar)
 {
 	int c, c2, c3, i;
-	if (!characterMappingsInitialized) { initCharacterMappings(); }
 
 	bool mapped = (*source != 0);
 	while (*source)
@@ -462,7 +464,7 @@ static bool Str_Utf8ToAtari(const char *source, char *dest, char replacementChar
 	return mapped;
 }
 
-#else
+#else /* WIN32 || USE_LOCALE_CHARSET */
 
 /**
  * Convert a string from the AtariST character set into the host representation as
@@ -473,7 +475,6 @@ static bool Str_Utf8ToAtari(const char *source, char *dest, char replacementChar
 static bool Str_AtariToLocal(const char *source, char *dest, int destLen, char replacementChar)
 {
 	int c, i;
-	if (!characterMappingsInitialized) { initCharacterMappings(); }
 
 	bool mapped = (*source != 0);
 	while (*source && destLen > (int)MB_CUR_MAX)
@@ -505,7 +506,6 @@ static bool Str_LocalToAtari(const char *source, char *dest, char replacementCha
 {
 	int i;
 	wchar_t c;
-	if (!characterMappingsInitialized) { initCharacterMappings(); }
 
 	bool mapped = (*source != 0);
 	while (*source)

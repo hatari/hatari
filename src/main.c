@@ -1024,6 +1024,9 @@ int main(int argc, char *argv[])
 	/* Generate random seed */
 	Hatari_srand(time(NULL));
 
+	/* Setup for string conversions */
+	Str_Init();
+
 	/* Logs default to stderr at start */
 	Log_Default();
 
