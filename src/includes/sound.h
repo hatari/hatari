@@ -51,6 +51,7 @@ extern int	YmVolumeMixing;
 #define		YM2149_LPF_FILTER_NONE			0
 #define		YM2149_LPF_FILTER_LPF_STF		1
 #define		YM2149_LPF_FILTER_PWM			2
+#define		YM2149_LPF_FILTER_IIR			3
 extern int	YM2149_LPF_Filter;
 
 #define		YM2149_HPF_FILTER_NONE			0

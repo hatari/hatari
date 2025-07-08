@@ -117,7 +117,7 @@
 /* 2008/10/26	[NP]	Correctly save/restore all necessary variables in		*/
 /*			Sound_MemorySnapShot_Capture.					*/
 /* 2008/11/23	[NP]	Clean source, remove old sound core.				*/
-/* 2011/11/03	[DS]	Stereo DC filtering which accounts for DMA sound.               */
+/* 2011/11/03	[DS]	Stereo DC filtering which accounts for DMA sound.		*/
 /* 2017/06/xx	[NP]	New cycle exact emulation method, all counters are incremented	*/
 /*			using a simulated freq of 250 kHz. Some undocumented cases	*/
 /*			where also measured on real STF to improve accuracy.		*/
@@ -125,6 +125,8 @@
 /*			downsampling of the internal 250 kHz sound buffer.		*/
 /* 2021/07/23	[NP]	Default to 250 kHz cycle accurate emulation and remove older	*/
 /*			rendering and associated functions/variables.			*/
+/* 2023/08/06	[BS]	Restore lowpass filter to audio samplerate, had been at 250 khz */
+/*			incorrectly. Add cleaner IIR lowpass filter default.		*/
 
 
 const char Sound_fileid[] = "Hatari sound.c";
@@ -285,7 +287,7 @@ uint8_t		SoundRegs[ 14 ];
 
 int		YmVolumeMixing = YM_TABLE_MIXING;
 
-int		YM2149_LPF_Filter = YM2149_LPF_FILTER_PWM;
+int		YM2149_LPF_Filter = YM2149_LPF_FILTER_IIR;
 // int		YM2149_LPF_Filter = YM2149_LPF_FILTER_NONE;	/* For debug */
 int		YM2149_HPF_Filter = YM2149_HPF_FILTER_IIR;
 // int		YM2149_HPF_Filter = YM2149_HPF_FILTER_NONE;	/* For debug */
@@ -343,6 +345,7 @@ static CLOCKS_CYCLES_STRUCT	YM2149_ConvertCycles_250;
 
 static ymsample	LowPassFilter		(ymsample x0);
 static ymsample	PWMaliasFilter		(ymsample x0);
+static ymsample	IIRLowPassFilter	(ymsample x0);
 
 static void	interpolate_volumetable	(ymu16 volumetable[32][32][32]);
 
@@ -491,7 +494,20 @@ static ymsample	PWMaliasFilter(ymsample x0)
 	return y0;
 }
 
-
+/**
+ * A simpler IIR LPF filter which doesn't have the asymmterical
+ * push-pull distortion of the filters above, making it much cleaner sounding.
+ * Cutoff frequency is the same as the pull up of LowPassFilter above.
+ * fc = 7586.1 Hz (44.1 KHz), fc = 8257.0 Hz (48 KHz)
+ * 2023/08/06 Brad Smith.
+ */
+static ymsample	IIRLowPassFilter(ymsample x0)
+{
+	static	yms32 y0 = 0, x1 = 0;
+	y0 = (3*(x0 + x1) + (y0<<1)) >> 3;
+	x1 = x0;
+	return y0;
+}
 
 /*--------------------------------------------------------------*/
 /* Build the volume conversion table used to simulate the	*/
@@ -1110,12 +1126,6 @@ static void	YM2149_DoSamples_250 ( int SamplesToGenerate_250 )
 
 		sample = ymout5[ Tone3Voices ];			/* 16 bits signed value */
 
-		/* Apply low pass filter ? */
-		if ( YM2149_LPF_Filter == YM2149_LPF_FILTER_LPF_STF )
-			sample = LowPassFilter ( sample );
-		else if ( YM2149_LPF_Filter == YM2149_LPF_FILTER_PWM )
-			sample = PWMaliasFilter ( sample );
-
 		/* Store sample */
 		YM_Buffer_250[ pos ] = sample;
 		pos = ( pos + 1 ) & YM_BUFFER_250_SIZE_MASK;
@@ -1386,17 +1396,23 @@ static ymsample	YM2149_Next_Resample_Weighted_Average_2 ( void )
 
 static ymsample	YM2149_NextSample_250 ( void )
 {
-	if ( YM2149_Resample_Method == YM2149_RESAMPLE_METHOD_WEIGHTED_AVERAGE_2 )
-		return YM2149_Next_Resample_Weighted_Average_2 ();
-
-	else if ( YM2149_Resample_Method == YM2149_RESAMPLE_METHOD_NEAREST )
-		return YM2149_Next_Resample_Nearest ();
-
-	else if ( YM2149_Resample_Method == YM2149_RESAMPLE_METHOD_WEIGHTED_AVERAGE_N )
-		return YM2149_Next_Resample_Weighted_Average_N ();
-
-	else
-		return 0;
+	ymsample sample = 0;
+	switch (YM2149_Resample_Method)
+	{
+		case YM2149_RESAMPLE_METHOD_NEAREST:            sample = YM2149_Next_Resample_Nearest();            break;
+		case YM2149_RESAMPLE_METHOD_WEIGHTED_AVERAGE_2: sample = YM2149_Next_Resample_Weighted_Average_2(); break;
+		case YM2149_RESAMPLE_METHOD_WEIGHTED_AVERAGE_N: sample = YM2149_Next_Resample_Weighted_Average_N(); break;
+		default: break;
+	}
+	switch (YM2149_LPF_Filter)
+	{
+		default:
+		case YM2149_LPF_FILTER_NONE:                                          break;
+		case YM2149_LPF_FILTER_LPF_STF: sample = LowPassFilter ( sample );    break;
+		case YM2149_LPF_FILTER_PWM:     sample = PWMaliasFilter ( sample );   break;
+		case YM2149_LPF_FILTER_IIR:     sample = IIRLowPassFilter ( sample ); break;
+	}
+	return sample;
 }
 
 
