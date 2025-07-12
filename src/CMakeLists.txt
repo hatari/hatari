@@ -98,11 +98,11 @@ if(ENABLE_OSX_BUNDLE)
 			      "@executable_path/../Frameworks")
 	set_target_properties(${APP_NAME} PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
 	set(MACOSX_BUNDLE_ICON_FILE Hatari.icns)
-	set(MACOSX_BUNDLE_GUI_IDENTIFIER org.tuxfamily.Hatari)
+	set(MACOSX_BUNDLE_GUI_IDENTIFIER org.hatari-emu.Hatari)
 	if(CMAKE_GENERATOR MATCHES "Xcode")
 		set_target_properties(${APP_NAME} PROPERTIES
 				      XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER
-				      "org.tuxfamily.Hatari")
+				      "org.hatari-emu.Hatari")
 		set(BUNDLE_CONTENTS ${CMAKE_CURRENT_BINARY_DIR}/\${CONFIGURATION}/${APP_NAME}.app/Contents)
 	else()
 		set(BUNDLE_CONTENTS ${CMAKE_CURRENT_BINARY_DIR}/${APP_NAME}.app/Contents)

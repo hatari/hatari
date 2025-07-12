@@ -58,7 +58,7 @@
 	<key>CFBundleIconFile</key>
 	<string>Hatari.icns</string>
 	<key>CFBundleIdentifier</key>
-	<string>org.tuxfamily.Hatari</string>
+	<string>org.hatari-emu.Hatari</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
