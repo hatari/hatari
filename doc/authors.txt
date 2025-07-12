@@ -10,8 +10,7 @@ Contents:
 - Nicolas Pomarede <npomarede at corp.free.fr> : Project admin,
   improving CPU, video, sound, blitter, IKBD and floppy emulation.
 
-- Thomas Huth <huth at tuxfamily.org> : Project initiator and
-  admin, currently more or less in hibernation mode.
+- Thomas Huth <th.huth at posteo.eu> : Project initiator and backup admin.
 
 - Eero Tamminen <oak at helsinkinet fi> : Speedups, small parts of the
   STE, TT & Falcon emulation, Python CLI & GUI, TOS tester + Hatari
