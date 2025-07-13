@@ -50,7 +50,7 @@ Emulation improvements
     (currently they're incremented so that programs checking them
     don't get stuck, but values aren't quite correct yet)
   - Video timings for the Falcon Videl chip (60Hz support):
-    https://listengine.tuxfamily.org/lists.tuxfamily.org/hatari-devel/2016/07/msg00013.html
+    https://hatari.frama.io/archive/mailing-lists/tuxfamily-devel/2016/07/msg00013.html
   - ST screen modes centering when Videl borders are enabled
   - Some demos (like Yepyha) use odd (e.g. 384x1) Videl resolutions
     for transitions between screens. Size of Hatari window shouldn't
@@ -79,7 +79,7 @@ Emulation improvements
 	https://github.com/tonioni/WinUAE/issues/133
 
 - Properly emulate the DMA sector count register for ACSI transfers
-  https://listengine.tuxfamily.org/lists.tuxfamily.org/hatari-devel/2021/09/msg00006.html
+  https://hatari.frama.io/archive/mailing-lists/tuxfamily-devel/2021/09/msg00006.html
 
 
 Programs known as not fully functional (not an exhaustive list)
