@@ -44,12 +44,12 @@ export HOME="$testdir"
 unset TERM
 
 $hatari --log-level fatal --sound off --tos none --confirm-quit false \
-	--machine tt --cpulevel 4 --cpuclock 16 --vdi 1 --drive-led 0 \
+	--machine tt --cpulevel 4 --fpu internal --cpuclock 16 --drive-led 0 \
 	--monitor tv --frameskips 3 --mousewarp off --statusbar FALSE \
 	--disasm uae --joy0 keys --keymap "$keymap" --crop 1 --fast-boot 1 \
 	--protect-floppy auto --gemdos-case upper --acsi 3="$acsifile" \
 	--scsi 5="$scsifile" --ide-master "$idefile" --patch-tos off \
-	--rs232-out "$testdir"/serial-out.txt --rs232-in /dev/null \
+	--vdi 1 --rs232-out "$testdir"/serial-out.txt --rs232-in /dev/null \
 	--printer /dev/zero --avi-fps 60 --memsize 0 --alert-level fatal \
 	--saveconfig >"$testdir/out.txt" 2>&1
 exitstat=$?
