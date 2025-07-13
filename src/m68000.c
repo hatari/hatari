@@ -389,17 +389,26 @@ void M68000_CheckCpuSettings(void)
 		default: fprintf (stderr, "M68000_CheckCpuSettings() : Error, cpu_level %d unknown\n" , ConfigureParams.System.nCpuLevel);
 	}
 
-	/* Only 68040/60 can have 'internal' FPU */
-	if ( ( ConfigureParams.System.n_FPUType == FPU_CPU ) && ( changed_prefs.cpu_model < 68040 ) )
-	{
-		Log_Printf(LOG_WARN, "Internal FPU is supported only for 040/060, disabling FPU\n");
-		ConfigureParams.System.n_FPUType = FPU_NONE;
-	}
-	/* 68000/10 can't have an FPU */
-	if ( ( ConfigureParams.System.n_FPUType != FPU_NONE ) && ( changed_prefs.cpu_model < 68020 ) )
+	/* 68000/010 can't have any FPU */
+	if (changed_prefs.cpu_model < 68020 && ConfigureParams.System.n_FPUType != FPU_NONE)
 	{
 		Log_Printf(LOG_WARN, "FPU is not supported in 68000/010 configurations, disabling FPU\n");
 		ConfigureParams.System.n_FPUType = FPU_NONE;
+	}
+	/* 68020/030 can't have 'internal' FPU */
+	else if (changed_prefs.cpu_model < 68040 && ConfigureParams.System.n_FPUType == FPU_CPU)
+	{
+		Log_Printf(LOG_WARN, "Internal FPU is supported only for 040/060, "
+		                     "using 68882 FPU instead\n");
+		ConfigureParams.System.n_FPUType = FPU_68882;
+	}
+	/* 68040/060 can't have an external FPU */
+	else if (changed_prefs.cpu_model >= 68040 &&
+	         (ConfigureParams.System.n_FPUType == FPU_68881 || ConfigureParams.System.n_FPUType == FPU_68882))
+	{
+		Log_Printf(LOG_WARN, "68881/68882 FPU is only supported for 020/030 CPUs, "
+		                     "using internal FPU instead\n");
+		ConfigureParams.System.n_FPUType = FPU_CPU;
 	}
 
 	changed_prefs.int_no_unimplemented = true;
