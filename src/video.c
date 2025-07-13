@@ -5660,16 +5660,34 @@ void Video_Color15_ReadWord(void)
  * - GLUE reads the value from the CPU data bus
  * - Possible wait states inserted here by MMU
  * - MMU connects the CPU data bus to the RAM data bus
- * - SHIFTER reads the value from the RAM data bus
+ * - SHIFTER reads the value from the RAM data bus using bits 8-9
  * - CPU finishes the bus cycle
+ *
  * Also value "3" is different for GLUE and SHIFTER
  * - GLUE will interpret "3" as high res (because bit 1 is set)
  * - SHIFTER will go to a stopped state and not process input words from MMU anymore !
  *   (this is used by Troed to create a 4 pixels hardscroll on STF)
+ *
+ * Data bus and writing to 0xff8261 (resolution in Shifter) :
+ *   As seen above, a write to 0xff8261 will write only to the Shifter
+ *   In that case the shifter always gets its value from data bus bits 8-9, whether
+ *   the access is byte or word (that's because shifter has no access to UDS and LDS signals)
+ *
+ * byte access :
+ *   move.b #xy,$ff8261
+ *   the CPU will put #xyxy on the 16 bit databus, as shifter reads bits 8-9 we get the correct
+ *   value in Shifter res
+ *
+ * word access :
+ *   move.w #xyab,$ff8260
+ *   the CPU will put #xyab on the 16 bit databus, as shifter reads bits 8-9 (and not 0-1 as with
+ *   normal RAM) we get the correct value in Shifter res. Value #xy is copied into GLUE and Shifter
+ *   and lower byte #ab is ignored
  */
+
 void Video_Res_WriteByte(void)
 {
-	uint8_t Res;
+	uint8_t Res, Res_Shifter;
 	uint32_t addr;
 
 	if (Config_IsMachineTT())
@@ -5690,12 +5708,27 @@ void Video_Res_WriteByte(void)
 
 		/* TODO : possible rounding to 4 cycles should be added here */
 
-		Video_WriteToShifterRes ( Res );
+		/* Special case : shifter always reads resolution from bits 8-9 on the databus */
+		/*  - regs.db requires to run cpu in cycle exact mode */
+		/*  - for non-CE mode and non-byte access we use the value of ff8260 for shifter res */
+		if ( CpuRunCycleExact )
+			Res_Shifter = ( regs.db >> 8 ) & 3;
+		else if ( nIoMemAccessSize == SIZE_BYTE )
+			Res_Shifter = Res;
+		else
+			Res_Shifter = IoMem[0xff8260] & 3;
 
-		Video_SetHBLPaletteMaskPointers();
-		*pHBLPaletteMasks &= 0xff00ffff;
-		/* Store resolution after palette mask and set resolution write bit: */
-		*pHBLPaletteMasks |= (((uint32_t)Res|0x04)<<16);
+		Video_WriteToShifterRes ( Res_Shifter );
+
+		/* We update resolution for the current line only when writing to ff8260, */
+		/* not when writing to ff8261 */
+		if ( addr == 0xff8260 )
+		{
+			Video_SetHBLPaletteMaskPointers();
+			*pHBLPaletteMasks &= 0xff00ffff;
+			/* Store resolution after palette mask and set resolution write bit: */
+			*pHBLPaletteMasks |= (((uint32_t)Res|0x04)<<16);
+		}
 	}
 
 	/* Access to shifter regs are on a 4 cycle boundary */
