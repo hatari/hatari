@@ -121,7 +121,8 @@ static const int skip_frames[] = { 0, 1, 2, 4, AUTO_FRAMESKIP_LIMIT };
 /* Strings for doubled resolution max width and height */
 static char sMaxWidth[5];
 static char sMaxHeight[5];
-static char sScreenShotDir[32];
+#define DLG_SCREENSHOTDIR_SIZE 32
+static char sScreenShotDir[DLG_SCREENSHOTDIR_SIZE+1];    /* Path name in the dialog */
 
 #define MAX_SIZE_STEP 8
 
@@ -379,7 +380,7 @@ void Dialog_WindowDlg(void)
 
 	/* Initialize window capture options: */
 	File_CleanFileName(ConfigureParams.Screen.szScreenShotDir);
-	File_ShrinkName(sScreenShotDir, ConfigureParams.Screen.szScreenShotDir, 32);
+	File_ShrinkName(sScreenShotDir, ConfigureParams.Screen.szScreenShotDir, DLG_SCREENSHOTDIR_SIZE);
 
 	windowdlg[DLGSCRN_FORMAT_PNG].state &= ~SG_SELECTED;
 	windowdlg[DLGSCRN_FORMAT_BMP].state &= ~SG_SELECTED;
@@ -451,7 +452,7 @@ void Dialog_WindowDlg(void)
 			{
 				strcpy(ConfigureParams.Screen.szScreenShotDir, selname);
 				File_CleanFileName(ConfigureParams.Screen.szScreenShotDir);
-				File_ShrinkName(sScreenShotDir, ConfigureParams.Screen.szScreenShotDir, 32);
+				File_ShrinkName(sScreenShotDir, ConfigureParams.Screen.szScreenShotDir, DLG_SCREENSHOTDIR_SIZE);
 				Paths_SetScreenShotDir(ConfigureParams.Screen.szScreenShotDir);
 				free(selname);
 			}
