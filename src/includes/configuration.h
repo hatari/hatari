@@ -316,6 +316,7 @@ typedef struct
   bool bUseVsync;
   bool bUseSdlRenderer;
   int ScreenShotFormat;
+  char szScreenShotDir[FILENAME_MAX];
   float nZoomFactor;
   int nSpec512Threshold;
   int nVdiColors;

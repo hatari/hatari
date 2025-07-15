@@ -100,6 +100,7 @@ static const struct Config_Tag configs_Screen[] =
 	{ "nZoomFactor", Float_Tag, &ConfigureParams.Screen.nZoomFactor },
 	{ "bUseSdlRenderer", Bool_Tag, &ConfigureParams.Screen.bUseSdlRenderer },
 	{ "ScreenShotFormat", Int_Tag, &ConfigureParams.Screen.ScreenShotFormat },
+	{ "szScreenShotDir", String_Tag, ConfigureParams.Screen.szScreenShotDir },
 	{ "bUseVsync", Bool_Tag, &ConfigureParams.Screen.bUseVsync },
 	{ NULL , Error_Tag, NULL }
 };
@@ -820,6 +821,7 @@ void Configuration_SetDefault(void)
 #else
 	ConfigureParams.Screen.ScreenShotFormat = SCREEN_SNAPSHOT_BMP;
 #endif
+	ConfigureParams.Screen.szScreenShotDir[0] = '\0';
 
 	/* Set defaults for Sound */
 	ConfigureParams.Sound.bEnableMicrophone = true;
@@ -1004,6 +1006,8 @@ void Configuration_Apply(bool bReset)
 	File_CleanFileName(ConfigureParams.HardDisk.szHardDiskDirectories[0]);
 	File_MakeAbsoluteName(ConfigureParams.HardDisk.szHardDiskDirectories[0]);
 	File_MakeAbsoluteName(ConfigureParams.Memory.szMemoryCaptureFileName);
+	if (strlen(ConfigureParams.Screen.szScreenShotDir) > 0)
+		File_MakeAbsoluteName(ConfigureParams.Screen.szScreenShotDir);
 	File_MakeAbsoluteName(ConfigureParams.Sound.szYMCaptureFileName);
 	if (strlen(ConfigureParams.Keyboard.szMappingFileName) > 0)
 		File_MakeAbsoluteName(ConfigureParams.Keyboard.szMappingFileName);
@@ -1052,6 +1056,12 @@ void Configuration_Apply(bool bReset)
 	else
 		DSP_Disable ();
 #endif
+
+	/* Update screenshot path if user specified one */
+	if (ConfigureParams.Screen.szScreenShotDir[0])
+	{
+		Paths_SetScreenShotDir(ConfigureParams.Screen.szScreenShotDir);
+	}
 }
 
 
