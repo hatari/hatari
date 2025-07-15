@@ -379,6 +379,7 @@ void Dialog_WindowDlg(void)
 	sprintf(sMaxHeight, "%4i", maxh);
 
 	/* Initialize window capture options: */
+	File_MakeValidPathName(ConfigureParams.Screen.szScreenShotDir);
 	File_CleanFileName(ConfigureParams.Screen.szScreenShotDir);
 	File_ShrinkName(sScreenShotDir, ConfigureParams.Screen.szScreenShotDir, DLG_SCREENSHOTDIR_SIZE);
 
@@ -451,6 +452,7 @@ void Dialog_WindowDlg(void)
 			if (selname)
 			{
 				strcpy(ConfigureParams.Screen.szScreenShotDir, selname);
+				File_MakeValidPathName(ConfigureParams.Screen.szScreenShotDir);
 				File_CleanFileName(ConfigureParams.Screen.szScreenShotDir);
 				File_ShrinkName(sScreenShotDir, ConfigureParams.Screen.szScreenShotDir, DLG_SCREENSHOTDIR_SIZE);
 				Paths_SetScreenShotDir(ConfigureParams.Screen.szScreenShotDir);
