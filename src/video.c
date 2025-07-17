@@ -424,6 +424,8 @@
 /* 2024/09/21	[NP]	Add Video_Set_Memcpy() to handle the case where physical RAM size	*/
 /*			doesn't match the MMU configuration at $FF8001 (fix intro part in demo	*/
 /*			'Ika I Compofylla' by Newline when running in MegaST mode with 4MB RAM)	*/
+/* 2025/07/17	[NP]	Add support for STE 224 bytes overscan in med res (fix some parts of	*/
+/*			Double Rez Trouble by DHS)						*/
 
 
 const char Video_fileid[] = "Hatari video.c";
@@ -466,7 +468,7 @@ const char Video_fileid[] = "Hatari video.c";
 /* The border's mask allows to keep track of all the border tricks		*/
 /* applied to one video line. The masks for all lines are stored in the array	*/
 /* ScreenBorderMask[].								*/
-/* - bits 0-15 are used to describe the border tricks.				*/
+/* - bits 0-19 are used to describe the border tricks.				*/
 /* - bits 20-23 are used to store the bytes offset to apply for some particular	*/
 /*   tricks (for example med res overscan can shift display by 0 or 2 bytes	*/
 /*   depending on when the switch to med res is done after removing the left	*/
@@ -490,6 +492,9 @@ const char Video_fileid[] = "Hatari video.c";
 #define BORDERMASK_NO_COUNT		0x2000
 #define BORDERMASK_NO_SYNC		0x4000
 #define BORDERMASK_SYNC_HIGH		0x8000
+
+#define BORDERMASK_LEFT_OFF_2_STE_MED	(1<<16)	/* Same as BORDERMASK_LEFT_OFF_2_STE with line in med res */
+
 
 //#define STF_SHORT_TOP
 
@@ -1507,6 +1512,8 @@ static uint32_t Video_CalculateAddress ( void )
 			CurSize += BORDERBYTES_LEFT;
 		else if (LineBorderMask & BORDERMASK_LEFT_OFF_2_STE)
 			CurSize += BORDERBYTES_LEFT_2_STE;
+		else if (LineBorderMask & BORDERMASK_LEFT_OFF_2_STE_MED)
+			CurSize += BORDERBYTES_LEFT_2_STE;
 		else if (LineBorderMask & BORDERMASK_LEFT_PLUS_2)
 			CurSize += 2;
 		else if (bSteBorderFlag)			/* bigger line by 8 bytes on the left (STE specific) */
@@ -1658,6 +1665,19 @@ static void Video_WriteToGlueRes ( uint8_t Res )
 			LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect med res overscan offset 2 bytes\n" );
 			ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_OVERSCAN_MED_RES | ( 2 << 20 );
 		}
+	}
+
+	if ( ( ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask & BORDERMASK_LEFT_OFF_2_STE )
+	        && ( Res == 0x01 )
+		&& ( LineCycles == pVideoTiming->HDE_On_Hi ) )
+	{
+		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask &= (~BORDERMASK_LEFT_OFF_2_STE);
+		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_LEFT_OFF_2_STE_MED;
+		/* TODO : we use DisplayPixelShift=-16 here to get the exepected result */
+		/* but it's more likely to be a 0 pixel shift and a 4 bytes compensation */
+		/* elsewhere when rendering line on screen */
+		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = -16;		/* screen is shifted 16 pixels to the left */
+		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect remove left 2 med ste\n" );
 	}
 
 	/* If left border was opened with a hi/med res switch we need to check */
@@ -3705,7 +3725,8 @@ static void Video_StoreResolution(int y , bool start)
 			res = ( HBLPaletteMasks[y] >> 16 ) & 0x3;
 			Mask = ShifterFrame.ShifterLines[ y+nFirstVisibleHbl ].BorderMask;
 
-			if ( Mask & BORDERMASK_OVERSCAN_MED_RES )	/* special case for med res to render the overscan line */
+			if ( ( Mask & BORDERMASK_OVERSCAN_MED_RES )	/* special case for med res to render the overscan line */
+			  || ( Mask & BORDERMASK_LEFT_OFF_2_STE_MED ) )
 				res = 1;				/* med res instead of low res */
 			else if ( Mask != BORDERMASK_NONE )		/* border removal : assume low res for the whole line */
 				res = 0;
@@ -3924,7 +3945,8 @@ static void Video_CopyScreenLineColor(void)
 		STF_PixelScroll -= ShiftPixels;
 	}
 
-	else if ( LineBorderMask & BORDERMASK_LEFT_OFF_2_STE )
+	else if ( ( LineBorderMask & BORDERMASK_LEFT_OFF_2_STE )
+	      || ( LineBorderMask & BORDERMASK_LEFT_OFF_2_STE_MED ) )
 		VideoOffset = -4;						/* 4 first bytes of the line are not shown */
 
 	/* Handle 4 pixels hardware scrolling ('ST Cnx' demo in 'Punish Your Machine') */
@@ -3976,7 +3998,8 @@ static void Video_CopyScreenLineColor(void)
 			video_memcpy ( pSTScreen, pVideoRaster, SCREENBYTES_LEFT );
 			pVideoRaster += SCREENBYTES_LEFT;
 		}
-		else if ( LineBorderMask & BORDERMASK_LEFT_OFF_2_STE )	/* bigger line by 20 bytes on the left (STE specific) */
+		else if ( ( LineBorderMask & BORDERMASK_LEFT_OFF_2_STE )	/* bigger line by 20 bytes on the left (STE specific) */
+			|| ( LineBorderMask & BORDERMASK_LEFT_OFF_2_STE_MED ) )
 		{							/* bytes 0-3 are not shown, only next 16 bytes (32 pixels, 4 bitplanes) */
 			if ( SCREENBYTES_LEFT > BORDERBYTES_LEFT_2_STE )
 			{
@@ -4075,7 +4098,8 @@ static void Video_CopyScreenLineColor(void)
 			nNegScrollCnt = 16 - HWScrollCount;
 			if (LineBorderMask & BORDERMASK_LEFT_OFF)
 				pScrollAdj = (uint16_t *)pSTScreen;
-			else if (LineBorderMask & BORDERMASK_LEFT_OFF_2_STE)
+			else if ( (LineBorderMask & BORDERMASK_LEFT_OFF_2_STE)
+				|| (LineBorderMask & BORDERMASK_LEFT_OFF_2_STE_MED) )
 			{
 				if ( SCREENBYTES_LEFT > BORDERBYTES_LEFT_2_STE )
 					pScrollAdj = (uint16_t *)(pSTScreen+8);	/* don't scroll the 8 first bytes (keep color 0)*/
@@ -4275,7 +4299,8 @@ static void Video_CopyScreenLineColor(void)
 						| ( do_get_mem_word ( pScreenLineStart + 2 ) >> (16-STF_PixelScroll) ) ) );
 
 				/* Handle the last 16 pixels of the line */
-				if (LineBorderMask & BORDERMASK_LEFT_OFF_2_STE)
+				if ( (LineBorderMask & BORDERMASK_LEFT_OFF_2_STE)
+				    || (LineBorderMask & BORDERMASK_LEFT_OFF_2_STE_MED) )
 				{
 					for ( i=0 ; i<2 ; i++ )
 					{
