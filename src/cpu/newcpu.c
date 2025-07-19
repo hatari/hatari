@@ -11488,9 +11488,7 @@ void fill_prefetch (void)
 	}
 }
 
-#ifndef WINUAE_FOR_HATARI
-extern bool cpuboard_fc_check(uaecptr addr, uae_u32 *v, int size, bool write);
-#else
+#ifdef WINUAE_FOR_HATARI
 STATIC_INLINE bool cpuboard_fc_check(uaecptr addr, uae_u32 *v, int size, bool write)
 {
 	return false;
