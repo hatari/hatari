@@ -64,7 +64,6 @@ extern int debug_read_memory_8 (uaecptr addr);
 extern int debug_write_memory_16 (uaecptr addr, uae_u16 v);
 extern int debug_write_memory_8 (uaecptr addr, uae_u8 v);
 extern bool debug_enforcer(void);
-extern uae_u8 *get_real_address_debug(uaecptr addr);		// WINUAE_FOR_HATARI
 extern int debug_safe_addr(uaecptr addr, int size);
 extern void debug_invalid_reg(int reg, int size, uae_u16 val);
 extern void debug_check_reg(uae_u32 addr, int write, uae_u16 v);
