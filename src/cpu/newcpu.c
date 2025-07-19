@@ -5295,13 +5295,6 @@ static int do_specialties (int cycles)
 }
 
 
-#ifndef WINUAE_FOR_HATARI
-uaecptr m68kpc(void)
-{
-	return m68k_getpc();
-}
-#endif
-
 //static uae_u32 pcs[1000];
 
 #if DEBUG_CD32CDTVIO
@@ -5974,7 +5967,7 @@ static void run_cpu_thread(void (*f)(void *))
 #endif
 
 #ifndef WINUAE_FOR_HATARI
-void custom_reset_cpu(bool hardreset, bool keyboardreset)
+static void custom_reset_cpu(bool hardreset, bool keyboardreset)
 {
 #ifdef WITH_THREADED_CPU
 	if (cpu_thread_tid != uae_thread_get_id()) {
