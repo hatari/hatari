@@ -22,7 +22,14 @@ Following features are deprecated and will be removed in a future release:
 
 Emulation improvements:
 - MegaSTE:
-  - Fix: ignore upper cache address bits unless 32-bit mode enforced
+  - When using cache, only compare 24 lowest bits of address
+  - Don't update cache after a bus/address error
+- Video:
+  - Add support for STE 224 bytes overscan in medium resolution
+  - Set correct resolution in Shifter when accessing $FF8260 as word
+    (fix regression in Hatari 2.6.0)
+- VME for MegaSTE / TT:
+  - VME memory regions should return bus error when no VME board is present
 
 Emulator improvements:
 - Windows:
@@ -31,6 +38,12 @@ Emulator improvements:
   - Fix: caches were no always flushed on writing to emulated memory
 - Debugger:
   - Fix: show DEL character as non-printable in memdumps
+- CPU/FPU settings:
+  - Disallow 68881/68882 FPU in 040/060 mode
+
+Fixed demos:
+ - A Letter To Sommarhack by Effect (write word at $FF8260)
+ - Partial fix for Double Rez Trouble by DHS (med res overscan lines)
 
 Fixed programs:
 - Spectre 3.0 (Hatari v2.6 regression, MegaSTE cache)
