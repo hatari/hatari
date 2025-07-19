@@ -420,6 +420,7 @@ struct rtgboardconfig
 	uae_u32 rtgmem_size;
 	int device_order;
 	int monitor_id;
+	bool autoswitch;
 };
 struct boardloadfile
 {

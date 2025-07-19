@@ -3937,6 +3937,17 @@ void NMI (void)
 	do_interrupt (7);
 }
 
+static void cpu_halt_clear(void)
+{
+	regs.halted = 0;
+#ifndef WINUAE_FOR_HATARI
+	if (gui_data.cpu_halted) {
+		gui_data.cpu_halted = 0;
+		gui_led(LED_CPU, 0, -1);
+	}
+#endif
+}
+
 static void maybe_disable_fpu(void)
 {
 #ifndef WINUAE_FOR_HATARI
@@ -3974,11 +3985,7 @@ static void m68k_reset2(bool hardreset)
 	uae_u32 v;
 
 //fprintf ( stderr,"m68k_reset2 hard=%d in pc=%x\n" , hardreset , regs.pc );
-	regs.halted = 0;
-#ifndef WINUAE_FOR_HATARI
-	gui_data.cpu_halted = 0;
-	gui_led(LED_CPU, 0, -1);
-#endif
+	cpu_halt_clear();
 
 	regs.spcflags = 0;
 	m68k_reset_delay = 0;
@@ -5096,7 +5103,7 @@ static int do_specialties (int cycles)
 		return 1;
 	
 	while (spcflags & SPCFLAG_CPUINRESET) {
-		regs.halted = 0;
+		cpu_halt_clear();
 		x_do_cycles(4 * CYCLE_UNIT);
 		spcflags = regs.spcflags;
 		if (!(spcflags & SPCFLAG_CPUINRESET) || (spcflags & SPCFLAG_BRK) || (spcflags & SPCFLAG_MODE_CHANGE)) {
@@ -7597,7 +7604,7 @@ void m68k_go (int may_quit)
 
 #ifndef WINUAE_FOR_HATARI
 		if (regs.halted == CPU_HALT_ACCELERATOR_CPU_FALLBACK) {
-			regs.halted = 0;
+			cpu_halt_clear();
 			cpu_do_fallback();
 		}
 
