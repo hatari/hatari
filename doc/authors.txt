@@ -181,6 +181,9 @@ random order - and if someone is missing here, please remind us!):
 
 - Alex Hornby : Patch to add analog/paddle support to the joypad emulation
 
+- Frederic Poeydomenge <fpoeydo64100 at gmail.com> : add support to specify
+  a directory to save screenshots and AVI files
+
 See also "thanks.txt" for people who've helped Hatari development in
 other ways than code contributions.
 
