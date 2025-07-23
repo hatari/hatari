@@ -549,9 +549,9 @@ void ScreenSnapShot_SaveScreen(void)
 	{
 		sprintf(szFileName,"%s/grab%4.4d.bmp", Paths_GetScreenShotDir(), nScreenShots);
 		if (SDL_SaveBMP(sdlscrn, szFileName))
-			fprintf(stderr, "BMP screen dump failed!\n");
+			Log_Printf(LOG_WARN, "BMP screen dump failed!");
 		else
-			fprintf(stderr, "BMP screen dump saved to: %s\n", szFileName);
+			Log_Printf(LOG_INFO, "BMP screen dump saved to: %s", szFileName);
 		free(szFileName);
 		return;
 	}
@@ -562,9 +562,9 @@ void ScreenSnapShot_SaveScreen(void)
 	{
 		sprintf(szFileName,"%s/grab%4.4d.png", Paths_GetScreenShotDir(), nScreenShots);
 		if (ScreenSnapShot_SavePNG(sdlscrn, szFileName) > 0)
-			fprintf(stderr, "PNG screen dump saved to: %s\n", szFileName);
+			Log_Printf(LOG_INFO, "PNG screen dump saved to: %s", szFileName);
 		else
-			fprintf(stderr, "PNG screen dump failed!\n");
+			Log_Printf(LOG_WARN, "PNG screen dump failed!");
 		free(szFileName);
 		return;
 	}
@@ -575,9 +575,9 @@ void ScreenSnapShot_SaveScreen(void)
 	{
 		sprintf(szFileName,"%s/grab%4.4d.neo", Paths_GetScreenShotDir(), nScreenShots);
 		if (ScreenSnapShot_SaveNEO(szFileName) > 0)
-			fprintf(stderr, "NEO screen dump saved to: %s\n", szFileName);
+			Log_Printf(LOG_INFO, "NEO screen dump saved to: %s", szFileName);
 		else
-			fprintf(stderr, "NEO screen dump failed!\n");
+			Log_Printf(LOG_WARN, "NEO screen dump failed!");
 		free(szFileName);
 		return;
 	}
@@ -586,18 +586,18 @@ void ScreenSnapShot_SaveScreen(void)
 	{
 		sprintf(szFileName,"%s/grab%4.4d.ximg", Paths_GetScreenShotDir(), nScreenShots);
 		if (ScreenSnapShot_SaveXIMG(szFileName) > 0)
-			fprintf(stderr, "XMIG screen dump saved to: %s\n", szFileName);
+			Log_Printf(LOG_INFO, "XIMG screen dump saved to: %s", szFileName);
 		else
-			fprintf(stderr, "XIMG screen dump failed!\n");
+			Log_Printf(LOG_WARN, "XIMG screen dump failed!");
 		free(szFileName);
 		return;
 	}
 
 	sprintf(szFileName,"%s/grab%4.4d.bmp", Paths_GetScreenShotDir(), nScreenShots);
 	if (SDL_SaveBMP(sdlscrn, szFileName))
-		fprintf(stderr, "Screen dump failed!\n");
+		Log_Printf(LOG_WARN, "Screen dump failed!");
 	else
-		fprintf(stderr, "Screen dump saved to: %s\n", szFileName);
+		Log_Printf(LOG_INFO, "Screen dump saved to: %s", szFileName);
 
 	free(szFileName);
 }

@@ -226,16 +226,5 @@ on BerliOS hatari-devel mail thread for more info.)
 		- simpler / faster (LED) overlay handling
 	- Include some fancy zooming routines like 2xSaI or Super-Eagle
 
-- Improve directory handling:
-	- Currently screenshots & anim go always to current dir,
-	  whereas memsave, sound recording, printer & midi & serial &
-	  output and log output go to file specified in config file.
-	  There should be support for setting also anim/screenshot
-	  directory / file name from config file (needs change also
-	  in screenSnapShot.c).
-	- By default the directory config values should be empty in
-	  which case the code will at run-time decide to use current
-	  directory, but not modify the path config setting.
-
 - Add Hatari "fileid" to more files (to ease locating "stolen" code)
   and Git hook to remove trailing whitespace (sed -i 's/[\t ]*$//')?

@@ -1382,7 +1382,7 @@ static bool	Avi_StartRecording_WithParams ( RECORD_AVI_PARAMS *pAviParams , char
 
 
 	/* We're ok to record */
-	Log_AlertDlg ( LOG_INFO, "AVI recording has been started");
+	Log_AlertDlg ( LOG_INFO, "AVI recording has been started in %s", AviFileName );
 	bRecordingAvi = true;
 
 	return true;
@@ -1501,7 +1501,19 @@ void Avi_SetSurface(SDL_Surface *surf)
 
 bool	Avi_StartRecording_WithConfig ( void )
 {
-	return Avi_StartRecording( ConfigureParams.Video.AviRecordFile ,
+	char aviPath[FILENAME_MAX + 1];
+	if (ConfigureParams.Screen.szScreenShotDir[0])
+	{
+		snprintf(aviPath, sizeof(aviPath), "%s%c%s",
+				ConfigureParams.Screen.szScreenShotDir,
+				PATHSEP,
+				File_Basename(ConfigureParams.Video.AviRecordFile));
+	}
+	else
+	{
+		strcpy(aviPath, ConfigureParams.Video.AviRecordFile);
+	}
+	return Avi_StartRecording( aviPath ,
 				   ConfigureParams.Screen.bCrop ,
 				   ConfigureParams.Video.AviRecordFps == 0 ?
 				     ClocksTimings_GetVBLPerSec ( ConfigureParams.System.nMachineType , nScreenRefreshRate ) :
