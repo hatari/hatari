@@ -41,12 +41,16 @@ static uae_u32 STmem_size;
 uae_u32 TTmem_size = 0;
 static uae_u32 TTmem_mask;
 
-#define STmem_start  0x00000000
-#define ROMmem_start 0x00E00000
-#define IdeMem_start 0x00F00000
-#define IOmem_start  0x00FF0000
-#define TTmem_start  0x01000000			/* TOS 3 and TOS 4 always expect extra RAM at this address */
-#define TTmem_end    0x80000000			/* Max value for end of TT ram, which gives 2047 MB */
+#define STmem_start		0x00000000
+#define ROMmem_start		0x00E00000
+#define IdeMem_start		0x00F00000
+#define IOmem_start		0x00FF0000
+#define TTmem_start		0x01000000			/* TOS 3 and TOS 4 always expect extra RAM at this address */
+#define TTmem_end		0x80000000			/* Max value for end of TT ram, which gives 2047 MB */
+#define VMEmem_start_TT		0xFE000000			/* MegaSTE and TT support a VME bus. This returns a bus error */
+#define VMEmem_end_TT		0xFF000000			/* when no board is plugged. Regions are different between MegaSTE and TT */
+#define VMEmem_start_MegaSTE	0x00A00000
+#define VMEmem_end_MegaSTE	0x00E00000
 
 #define IdeMem_size  65536
 #define IOmem_size  65536
@@ -1810,6 +1814,18 @@ void memory_init(uae_u32 NewSTMemSize, uae_u32 NewTTMemSize, uae_u32 NewRomMemSt
 	else
 	{
 		map_banks_ce(&BusErrMem_bank, IdeMem_start >> 16, 0x1, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
+	}
+
+	/* VME regions on TT :      0xFE000000 to 0xFEFEFFFF (A24/D16) and 0xFEFF0000 to 0xFEFFFFFF (A16/D16) : total is 16 MB */
+	/* VME regions on MegaSTE : 0x00A00000 to 0x00DEFFFF (A24/D16) and 0x00DF0000 to 0x00DFFFFF (A16/D16) : total is 4 MB */
+	/* Hatari doesn't emulate VME for now, so these regions should return bus errors */
+	if ( Config_IsMachineTT() )
+	{
+		map_banks_ce(&BusErrMem_bank, VMEmem_start_TT >> 16, ( VMEmem_end_TT - VMEmem_start_TT ) >> 16 , 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
+	}
+	else if ( Config_IsMachineMegaSTE() )
+	{
+		map_banks_ce(&BusErrMem_bank, VMEmem_start_MegaSTE >> 16, ( VMEmem_end_MegaSTE - VMEmem_start_MegaSTE ) >> 16 , 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
 	}
 
 	/* Illegal memory regions cause a bus error on the ST: */
