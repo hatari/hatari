@@ -102,18 +102,18 @@ static SGOBJ monitordlg[] =
 #define DLGSCRN_MAX_HLESS   23
 #define DLGSCRN_MAX_HTEXT   24
 #define DLGSCRN_MAX_HMORE   25
-#define DLGSCRN_FORMAT_PNG  27
-#define DLGSCRN_FORMAT_BMP  28
-#define DLGSCRN_FORMAT_NEO  29
-#define DLGSCRN_FORMAT_XIMG 30
-#define DLGSCRN_CROP        31
-#define DLGSCRN_CAPTURE_DIR 34
-#define DLGSCRN_CAPTURE     35
-#define DLGSCRN_RECANIM     36
-#define DLGSCRN_GPUSCALE    39
-#define DLGSCRN_RESIZABLE   40
-#define DLGSCRN_VSYNC       41
-#define DLGSCRN_EXIT_WINDOW 42
+#define DLGSCRN_CAPTURE     27
+#define DLGSCRN_FORMAT_PNG  28
+#define DLGSCRN_FORMAT_BMP  29
+#define DLGSCRN_FORMAT_NEO  30
+#define DLGSCRN_FORMAT_XIMG 31
+#define DLGSCRN_CAPTURE_DIR 32
+#define DLGSCRN_RECANIM     34
+#define DLGSCRN_CROP        35
+#define DLGSCRN_GPUSCALE    38
+#define DLGSCRN_RESIZABLE   39
+#define DLGSCRN_VSYNC       40
+#define DLGSCRN_EXIT_WINDOW 41
 
 /* needs to match Frame skip values in windowdlg[]! */
 static const int skip_frames[] = { 0, 1, 2, 4, AUTO_FRAMESKIP_LIMIT };
@@ -129,7 +129,7 @@ static char sScreenShotDir[DLG_SCREENSHOTDIR_SIZE+1];    /* Path name in the dia
 /* The window dialog: */
 static SGOBJ windowdlg[] =
 {
-	{ SGBOX, 0, 0, 0,0, 52,28, NULL },
+	{ SGBOX, 0, 0, 0,0, 52,27, NULL },
 	{ SGBOX,      0, 0,  1,1, 50,10, NULL },
 	{ SGTEXT,     0, 0,  4,2, 20,1, "Hatari screen options" },
 	{ SGCHECKBOX, 0, 0,  4,4, 12,1, "_Fullscreen" },
@@ -156,24 +156,23 @@ static SGOBJ windowdlg[] =
 	{ SGTEXT,     0, 0, 37,9,  4,1, sMaxHeight },
 	{ SGBUTTON,   0, 0, 43,9,  1,1, "\x03", SG_SHORTCUT_DOWN },
 
-	{ SGBOX,      0, 0,  1,12, 50,8, NULL },
-	{ SGRADIOBUT, 0, 0,  5,13, 5,1, "PNG" },
-	{ SGRADIOBUT, 0, 0, 11,13, 5,1, "BMP" },
-	{ SGRADIOBUT, 0, 0, 17,13, 5,1, "NEO" },
-	{ SGRADIOBUT, 0, 0, 23,13, 5,1, "XIMG" },
-	{ SGCHECKBOX, 0, 0,  5,15, 16,1, "_Crop statusbar" },
-	{ SGTEXT,     0, 0,  5,17, 31,1, "Default screenshot directory:" },
-	{ SGTEXT,     0, 0,  5,18, 34,1, sScreenShotDir },
-	{ SGBUTTON,   0, 0, 38,17,  8,1, "Browse" },
-	{ SGBUTTON,   0, 0, 32,13, 14,1, " _Screenshot " },
-	{ SGBUTTON,   0, 0, 32,15, 14,1, NULL },      /* Record text set later */
+	{ SGBOX,      0, 0,  1,12, 50,7, NULL },
+	{ SGBUTTON,   0, 0,  4,13, 14,1, "_Screenshot" },
+	{ SGRADIOBUT, 0, 0, 21,13,  5,1, "PNG" },
+	{ SGRADIOBUT, 0, 0, 27,13,  5,1, "BMP" },
+	{ SGRADIOBUT, 0, 0, 33,13,  5,1, "NEO" },
+	{ SGRADIOBUT, 0, 0, 39,13,  5,1, "XIMG" },
+	{ SGBUTTON,   0, 0,  4,15, 14,1, "Directory:" },
+	{ SGTEXT,     0, 0, 21,15, 34,1, sScreenShotDir },
+	{ SGBUTTON,   0, 0,  4,17, 14,1, NULL },      /* Record text set later */
+	{ SGCHECKBOX, 0, 0, 21,17, 16,1, "_Crop statusbar" },
 
-	{ SGBOX,      0, 0,  1,21, 50,4, NULL },
-	{ SGTEXT,     0, 0, 20,21, 12,1, "SDL2 options" },
-	{ SGCHECKBOX, 0, 0,  8,23, 20,1, "GPU scal_ing" },
-	{ SGCHECKBOX, 0, 0, 23,23, 20,1, "Resi_zable" },
-	{ SGCHECKBOX, 0, 0, 36,23, 11,1, "_VSync" },
-	{ SGBUTTON, SG_DEFAULT, 0, 17,26, 20,1, "Back to main menu" },
+	{ SGBOX,      0, 0,  1,20, 50,4, NULL },
+	{ SGTEXT,     0, 0, 20,20, 12,1, "SDL2 options" },
+	{ SGCHECKBOX, 0, 0,  8,22, 20,1, "GPU scal_ing" },
+	{ SGCHECKBOX, 0, 0, 23,22, 20,1, "Resi_zable" },
+	{ SGCHECKBOX, 0, 0, 36,22, 11,1, "_VSync" },
+	{ SGBUTTON, SG_DEFAULT, 0, 17,25, 20,1, "Back to main menu" },
 
 	{ SGSTOP, 0, 0, 0,0, 0,0, NULL }
 };
