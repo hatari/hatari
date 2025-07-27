@@ -1231,6 +1231,10 @@ void DebugUI(debug_reason_t reason)
 
 	if (welcome)
 	{
+#ifdef WIN32
+		/* in case user forgot -W option */
+		Win_ForceCon();
+#endif
 		fputs(welcome, stderr);
 		welcome = NULL;
 	}

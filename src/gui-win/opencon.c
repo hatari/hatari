@@ -24,10 +24,15 @@ static void Win_OpenInternal(void)
 		return;
 	opened = true;
 
-	AllocConsole();
-	freopen("CON", "w", stdout);
-	freopen("CON", "r", stdin);
-	freopen("CON", "w", stderr);
+	/* Fails if process already has a console, returns true on success:
+	 * https://learn.microsoft.com/en-us/windows/console/allocconsole
+	 */
+	if (AllocConsole())
+	{
+		freopen("CON", "w", stdout);
+		freopen("CON", "r", stdin);
+		freopen("CON", "w", stderr);
+	}
 }
 
 void Win_OpenCon(void)
