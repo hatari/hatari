@@ -227,6 +227,8 @@ static bool is_cart_pc(void)
  */
 uae_u32 REGPARAM3 OpCode_SysInit(uae_u32 opcode)
 {
+	uint16_t sr = M68000_GetSR();
+
 	if (is_cart_pc())
 	{
 		/* Add any drives mapped by TOS in the interim */
@@ -257,6 +259,13 @@ uae_u32 REGPARAM3 OpCode_SysInit(uae_u32 opcode)
 		op_illg(opcode);
 		fill_prefetch();
 	}
+
+	if (Config_IsMachineFalcon() && TTmemory && !bIsEmuTOS)
+		sr |= SR_ZERO;
+	else
+		sr &= ~SR_ZERO;
+
+	M68000_SetSR(sr);
 
 	return 4 * CYCLE_UNIT / 2;
 }

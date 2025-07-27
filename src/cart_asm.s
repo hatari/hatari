@@ -74,6 +74,32 @@ pexec:
 sys_init:
 	dc.w	$A000			; Line-A init (needed for VDI resolutions)
 	dc.w	SYSINIT_OPCODE	; Illegal opcode to call OpCode_SysInit()
+	bne.s	sys_init_done
+	; If we provide TT RAM in Falcon mode, we have to install a _FRB
+	; cookie, too. Reserve some RAM with Mxalloc() for this.
+	clr.w	-(sp)			; ST-RAM only
+	move.l	#65536 + 512,-(sp)	; Size
+	move.w	#68,-(sp)
+	trap	#1			; Mxalloc
+	addq.l	#8,sp
+	tst.l	d0
+	beq.s	sys_init_done
+	add.l	#511,d0
+	and.l	#$fffffe00,d0		; Align buffer to 512 byte boundary
+	move.l	$5a0.s,a0		; Get cookie jar pointer
+	; Since we run this with TOS 4.x only, we can assume that the jar is
+	; available and that there is at least one entry in the jar already
+cj_loop:
+	addq.l	#8,a0
+	tst.l	(a0)
+	bne.s	cj_loop
+	move.l	4(a0),d1		; Jar size
+	beq.s	sys_init_done
+	move.l	#'_FRB',(a0)+		; Install the _FRB cookie
+	move.l	d0,(a0)+
+	clr.l	(a0)+			; New cookie jar end marker
+	move.l	d1,(a0)+
+sys_init_done:
 	rts
 
 
