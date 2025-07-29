@@ -315,7 +315,7 @@ void Dialog_MonitorDlg(void)
 /**
  * Set ScreenShotFormat depending on which button is selected
  */
-static void	DlgScreen_SetScreenShot_Format ( void )
+static void DlgWindow_SetScreenShotFormat(void)
 {
 	if ( windowdlg[DLGSCRN_FORMAT_NEO].state & SG_SELECTED )
 		ConfigureParams.Screen.ScreenShotFormat = SCREEN_SNAPSHOT_NEO;
@@ -478,7 +478,7 @@ void Dialog_WindowDlg(void)
 			break;
 
 		 case DLGSCRN_CAPTURE:
-			DlgScreen_SetScreenShot_Format();		/* Take latest choice into account */
+			DlgWindow_SetScreenShotFormat();	/* Take latest choice into account */
 			Screen_UpdateRect(sdlscrn, 0,0,0,0);
 			ConfigureParams.Screen.bCrop = (windowdlg[DLGSCRN_CROP].state & SG_SELECTED);
 			ScreenSnapShot_SaveScreen();
@@ -537,7 +537,7 @@ void Dialog_WindowDlg(void)
 		}
 	}
 
-	DlgScreen_SetScreenShot_Format();
+	DlgWindow_SetScreenShotFormat();
 
 	ConfigureParams.Screen.bCrop = (windowdlg[DLGSCRN_CROP].state & SG_SELECTED);
 
