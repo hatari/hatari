@@ -1501,19 +1501,7 @@ void Avi_SetSurface(SDL_Surface *surf)
 
 bool	Avi_StartRecording_WithConfig ( void )
 {
-	char aviPath[FILENAME_MAX + 1];
-	if (ConfigureParams.Screen.szScreenShotDir[0])
-	{
-		snprintf(aviPath, sizeof(aviPath), "%s%c%s",
-				ConfigureParams.Screen.szScreenShotDir,
-				PATHSEP,
-				File_Basename(ConfigureParams.Video.AviRecordFile));
-	}
-	else
-	{
-		strcpy(aviPath, ConfigureParams.Video.AviRecordFile);
-	}
-	return Avi_StartRecording( aviPath ,
+	return Avi_StartRecording( ConfigureParams.Video.AviRecordFile ,
 				   ConfigureParams.Screen.bCrop ,
 				   ConfigureParams.Video.AviRecordFps == 0 ?
 				     ClocksTimings_GetVBLPerSec ( ConfigureParams.System.nMachineType , nScreenRefreshRate ) :

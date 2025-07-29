@@ -498,6 +498,12 @@ void Dialog_WindowDlg(void)
 			else
 			{
 				ConfigureParams.Screen.bCrop = (windowdlg[DLGSCRN_CROP].state & SG_SELECTED);
+				selname = SDLGui_FileSelect("Record to AVI file...", ConfigureParams.Video.AviRecordFile, NULL, true);
+				if (!selname || File_DoesFileNameEndWithSlash(selname))
+					break;
+				if (!File_QueryOverwrite(selname))
+					break;
+				Str_Copy(ConfigureParams.Video.AviRecordFile, selname, sizeof(ConfigureParams.Video.AviRecordFile));
 				Avi_StartRecording_WithConfig ();
 				windowdlg[DLGSCRN_RECANIM].txt = RECORD_STOP;
 			}
