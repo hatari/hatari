@@ -199,9 +199,14 @@ common to all (FDC, IKBD, MFP, MIDI, PSG, RS-232...).</p>
       <td class="hwnote">[x] = Hatari patches TT-RAM support to TOS v4.04</td>
     </tr>
     <tr>
+      <td class="hwfeat">SCU</td>
+      <td></td><td></td><td></td><td>X</td><td>X</td><td></td>
+      <td class="hwnote">System IRQ are correctly masked and forwarded to the CPU/IPL</td>
+    </tr>
+    <tr>
       <td class="hwfeat">VME bus</td>
       <td></td><td></td><td></td><td>X</td><td>X</td><td></td>
-      <td class="hwnote">This expansion bus is not supported by Hatari</td>
+      <td class="hwnote">Although SCU registers are emulated, this expansion bus is not supported by Hatari</td>
     </tr>
   </tbody>
   <tfoot>
@@ -309,7 +314,7 @@ and later HW:</p>
 <ul>
   <li>Builtin real time clock (RTC)</li>
   <li>DD/HD mode and DIP switch registers</li>
-  <li>Experimental Mega STE/TT/Falcon SCC channel B serial port support (incomplete)</li>
+  <li>Full support for SCC (LAN, Serial and Modem)</li>
   <li>TOS versions 2.05 and 2.06 (and EmuTOS) can be used in Mega STE mode.</li>
 </ul>
 
@@ -320,6 +325,7 @@ and later HW:</p>
   <li>Second (TT) MFP chip</li>
   <li>ST/TT palette switching and video shifter</li>
   <li>Up to 1024 MiB of TT-RAM and 32-bit memory addressing</li>
+  <li>Full support for SCC (LAN, Serial and Modem)</li>
   <li>Only TOS version 3.05 and 3.06 (and 512k/1024k EmuTOS) can be used in TT mode.</li>
 </ul>
 
@@ -337,6 +343,7 @@ and later HW:</p>
       sample rates</li>
   <li>Experimental IDE master and slave emulation for hard drive support</li>
   <li>Experimental NCR5380 SCSI emulation for hard drive support (incomplete)</li>
+  <li>Full support for SCC (Lan and Modem)</li>
   <li>TOS versions 4.00, 4.02, 4.04 and 4.92 (and 512k/1024k EmuTOS) can be used in Falcon
       mode. There is also experimental support for TOS 2.07 (the "Sparrow"-TOS),
       and for <a href="m68k-linux.txt">Linux</a>, but they are not recommended
