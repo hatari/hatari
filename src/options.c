@@ -59,6 +59,13 @@ bool BenchmarkMode;	   /* Start in benchmark mode (try to run at maximum emulati
 
 static bool bBiosIntercept;
 
+typedef enum {
+	CHECK_NONE,
+	CHECK_FILE,
+	CHECK_DIR
+} fs_check_t;
+
+
 /*  List of supported options. */
 enum {
 	OPT_HEADER,	/* options section header */
@@ -931,15 +938,14 @@ static int Opt_WhichOption(int argc, const char * const argv[], int idx)
 
 
 /**
- * If 'checkexits' is true, assume 'src' is a file and check whether it
- * exists before copying 'src' to 'dst'. Otherwise just copy option src
- * string to dst.
+ * When 'check' is set, check whether given 'src' exists before copying
+ * 'src' to 'dst'. Otherwise just copy option 'src' string to 'dst'.
  * If a pointer to (bool) 'option' is given, set that option to true.
  * - However, if src is "none", leave dst unmodified & set option to false.
  *   ("none" is used to disable options related to file arguments)
  * Return false if there were errors, otherwise true
  */
-static bool Opt_StrCpy(int optid, bool checkexist, char *dst, const char *src, size_t dstlen, bool *option)
+static bool Opt_StrCpy(int optid, fs_check_t check, char *dst, const char *src, size_t dstlen, bool *option)
 {
 	if (option)
 	{
@@ -951,12 +957,27 @@ static bool Opt_StrCpy(int optid, bool checkexist, char *dst, const char *src, s
 	}
 	if (strlen(src) >= dstlen)
 	{
-		return Opt_ShowError(optid, src, "File name too long!");
+		return Opt_ShowError(optid, src, "Path too long!");
 	}
-	if (checkexist && !File_Exists(src))
+
+	switch (check)
 	{
-		return Opt_ShowError(optid, src, "Given file doesn't exist or permissions prevent access to it!");
+	case CHECK_NONE:
+		break;
+	case CHECK_FILE:
+		if (!File_Exists(src))
+		{
+			return Opt_ShowError(optid, src, "Given file doesn't exist or permissions prevent access to it!");
+		}
+		break;
+	case CHECK_DIR:
+		if (!File_DirExists(src))
+		{
+			return Opt_ShowError(optid, src, "Given directory doesn't exist or permissions prevent access to it!");
+		}
+		break;
 	}
+
 	if (option)
 	{
 		*option = true;
@@ -1054,7 +1075,7 @@ static bool Opt_HandleArgument(const char *path)
 	if (File_DirExists(path))
 	{
 		Log_Printf(LOG_DEBUG, "ARG = GEMDOS HD dir: %s\n", path);
-		if (Opt_StrCpy(OPT_HARDDRIVE, false, ConfigureParams.HardDisk.szHardDiskDirectories[0],
+		if (Opt_StrCpy(OPT_HARDDRIVE, CHECK_NONE, ConfigureParams.HardDisk.szHardDiskDirectories[0],
 			       path, sizeof(ConfigureParams.HardDisk.szHardDiskDirectories[0]),
 			       &ConfigureParams.HardDisk.bUseHardDiskDirectories)
 		    && ConfigureParams.HardDisk.bUseHardDiskDirectories)
@@ -1144,7 +1165,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 		case OPT_CONFIGFILE:
 			i += 1;
 			/* true -> file needs to exist */
-			ok = Opt_StrCpy(OPT_CONFIGFILE, true, sConfigFileName,
+			ok = Opt_StrCpy(OPT_CONFIGFILE, CHECK_FILE, sConfigFileName,
 					argv[i], sizeof(sConfigFileName), NULL);
 			if (ok)
 			{
@@ -1364,7 +1385,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 		case OPT_AVIRECORD_FILE:
 			i += 1;
 			/* false -> file is created if it doesn't exist */
-			ok = Opt_StrCpy(OPT_AVIRECORD_FILE, false, ConfigureParams.Video.AviRecordFile,
+			ok = Opt_StrCpy(OPT_AVIRECORD_FILE, CHECK_NONE, ConfigureParams.Video.AviRecordFile,
 					argv[i], sizeof(ConfigureParams.Video.AviRecordFile), NULL);
 			break;
 
@@ -1481,7 +1502,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 		case OPT_PRINTER:
 			i += 1;
 			/* "none" can be used to disable printer */
-			ok = Opt_StrCpy(OPT_PRINTER, false, ConfigureParams.Printer.szPrintToFileName,
+			ok = Opt_StrCpy(OPT_PRINTER, CHECK_NONE, ConfigureParams.Printer.szPrintToFileName,
 					argv[i], sizeof(ConfigureParams.Printer.szPrintToFileName),
 					&ConfigureParams.Printer.bEnablePrinting);
 			break;
@@ -1493,14 +1514,14 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 #else
 		case OPT_MIDI_IN:
 			i += 1;
-			ok = Opt_StrCpy(OPT_MIDI_IN, true, ConfigureParams.Midi.sMidiInFileName,
+			ok = Opt_StrCpy(OPT_MIDI_IN, CHECK_FILE, ConfigureParams.Midi.sMidiInFileName,
 					argv[i], sizeof(ConfigureParams.Midi.sMidiInFileName),
 					&ConfigureParams.Midi.bEnableMidi);
 			break;
 
 		case OPT_MIDI_OUT:
 			i += 1;
-			ok = Opt_StrCpy(OPT_MIDI_OUT, false, ConfigureParams.Midi.sMidiOutFileName,
+			ok = Opt_StrCpy(OPT_MIDI_OUT, CHECK_NONE, ConfigureParams.Midi.sMidiOutFileName,
 					argv[i], sizeof(ConfigureParams.Midi.sMidiOutFileName),
 					&ConfigureParams.Midi.bEnableMidi);
 			break;
@@ -1508,51 +1529,51 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 		case OPT_RS232_IN:
 			i += 1;
-			ok = Opt_StrCpy(OPT_RS232_IN, true, ConfigureParams.RS232.szInFileName,
+			ok = Opt_StrCpy(OPT_RS232_IN, CHECK_FILE, ConfigureParams.RS232.szInFileName,
 					argv[i], sizeof(ConfigureParams.RS232.szInFileName),
 					&ConfigureParams.RS232.bEnableRS232);
 			break;
 
 		case OPT_RS232_OUT:
 			i += 1;
-			ok = Opt_StrCpy(OPT_RS232_OUT, false, ConfigureParams.RS232.szOutFileName,
+			ok = Opt_StrCpy(OPT_RS232_OUT, CHECK_NONE, ConfigureParams.RS232.szOutFileName,
 					argv[i], sizeof(ConfigureParams.RS232.szOutFileName),
 					&ConfigureParams.RS232.bEnableRS232);
 			break;
 
 		case OPT_SCCA_IN:
 			i += 1;
-			ok = Opt_StrCpy(OPT_SCCA_IN, true, ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_A_SERIAL],
+			ok = Opt_StrCpy(OPT_SCCA_IN, CHECK_FILE, ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_A_SERIAL],
 					argv[i], sizeof(ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_A_SERIAL]),
 					&ConfigureParams.RS232.EnableScc[CNF_SCC_CHANNELS_A_SERIAL]);
 			break;
 		case OPT_SCCA_OUT:
 			i += 1;
-			ok = Opt_StrCpy(OPT_SCCA_OUT, false, ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_A_SERIAL],
+			ok = Opt_StrCpy(OPT_SCCA_OUT, CHECK_NONE, ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_A_SERIAL],
 					argv[i], sizeof(ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_A_SERIAL]),
 					&ConfigureParams.RS232.EnableScc[CNF_SCC_CHANNELS_A_SERIAL]);
 			break;
 		case OPT_SCCA_LAN_IN:
 			i += 1;
-			ok = Opt_StrCpy(OPT_SCCA_LAN_IN, true, ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_A_LAN],
+			ok = Opt_StrCpy(OPT_SCCA_LAN_IN, CHECK_FILE, ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_A_LAN],
 					argv[i], sizeof(ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_A_LAN]),
 					&ConfigureParams.RS232.EnableScc[CNF_SCC_CHANNELS_A_LAN]);
 			break;
 		case OPT_SCCA_LAN_OUT:
 			i += 1;
-			ok = Opt_StrCpy(OPT_SCCA_LAN_OUT, false, ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_A_LAN],
+			ok = Opt_StrCpy(OPT_SCCA_LAN_OUT, CHECK_NONE, ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_A_LAN],
 					argv[i], sizeof(ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_A_LAN]),
 					&ConfigureParams.RS232.EnableScc[CNF_SCC_CHANNELS_A_LAN]);
 			break;
 		case OPT_SCCB_IN:
 			i += 1;
-			ok = Opt_StrCpy(OPT_SCCB_IN, true, ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_B],
+			ok = Opt_StrCpy(OPT_SCCB_IN, CHECK_FILE, ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_B],
 					argv[i], sizeof(ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_B]),
 					&ConfigureParams.RS232.EnableScc[CNF_SCC_CHANNELS_B]);
 			break;
 		case OPT_SCCB_OUT:
 			i += 1;
-			ok = Opt_StrCpy(OPT_SCCB_OUT, false, ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_B],
+			ok = Opt_StrCpy(OPT_SCCB_OUT, CHECK_NONE, ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_B],
 					argv[i], sizeof(ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_B]),
 					&ConfigureParams.RS232.EnableScc[CNF_SCC_CHANNELS_B]);
 			break;
@@ -1678,7 +1699,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 		case OPT_HARDDRIVE:
 			i += 1;
-			ok = Opt_StrCpy(OPT_HARDDRIVE, false, ConfigureParams.HardDisk.szHardDiskDirectories[0],
+			ok = Opt_StrCpy(OPT_HARDDRIVE, CHECK_DIR, ConfigureParams.HardDisk.szHardDiskDirectories[0],
 					argv[i], sizeof(ConfigureParams.HardDisk.szHardDiskDirectories[0]),
 					&ConfigureParams.HardDisk.bUseHardDiskDirectories);
 			if (ok && ConfigureParams.HardDisk.bUseHardDiskDirectories &&
@@ -1700,7 +1721,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			if (drive < 0 || drive >= MAX_ACSI_DEVS)
 				return Opt_ShowError(OPT_ACSIHDIMAGE, str, "Invalid ACSI drive <id>, must be 0-7");
 
-			ok = Opt_StrCpy(OPT_ACSIHDIMAGE, true, ConfigureParams.Acsi[drive].sDeviceFile,
+			ok = Opt_StrCpy(OPT_ACSIHDIMAGE, CHECK_FILE, ConfigureParams.Acsi[drive].sDeviceFile,
 					str, sizeof(ConfigureParams.Acsi[drive].sDeviceFile),
 					&ConfigureParams.Acsi[drive].bUseDevice);
 			if (ok)
@@ -1715,7 +1736,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			if (drive < 0 || drive >= MAX_SCSI_DEVS)
 				return Opt_ShowError(OPT_SCSIHDIMAGE, str, "Invalid SCSI drive <id>, must be 0-7");
 
-			ok = Opt_StrCpy(OPT_SCSIHDIMAGE, true, ConfigureParams.Scsi[drive].sDeviceFile,
+			ok = Opt_StrCpy(OPT_SCSIHDIMAGE, CHECK_FILE, ConfigureParams.Scsi[drive].sDeviceFile,
 					str, sizeof(ConfigureParams.Scsi[drive].sDeviceFile),
 					&ConfigureParams.Scsi[drive].bUseDevice);
 			if (ok)
@@ -1740,7 +1761,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 		case OPT_IDEMASTERHDIMAGE:
 			i += 1;
-			ok = Opt_StrCpy(OPT_IDEMASTERHDIMAGE, true, ConfigureParams.Ide[0].sDeviceFile,
+			ok = Opt_StrCpy(OPT_IDEMASTERHDIMAGE, CHECK_FILE, ConfigureParams.Ide[0].sDeviceFile,
 					argv[i], sizeof(ConfigureParams.Ide[0].sDeviceFile),
 					&ConfigureParams.Ide[0].bUseDevice);
 			if (ok)
@@ -1751,7 +1772,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 		case OPT_IDESLAVEHDIMAGE:
 			i += 1;
-			ok = Opt_StrCpy(OPT_IDESLAVEHDIMAGE, true, ConfigureParams.Ide[1].sDeviceFile,
+			ok = Opt_StrCpy(OPT_IDESLAVEHDIMAGE, CHECK_FILE, ConfigureParams.Ide[1].sDeviceFile,
 					argv[i], sizeof(ConfigureParams.Ide[1].sDeviceFile),
 					&ConfigureParams.Ide[1].bUseDevice);
 			if (ok)
@@ -1796,7 +1817,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 		case OPT_TOS:
 			i += 1;
-			ok = Opt_StrCpy(OPT_TOS, true, ConfigureParams.Rom.szTosImageFileName,
+			ok = Opt_StrCpy(OPT_TOS, CHECK_FILE, ConfigureParams.Rom.szTosImageFileName,
 					argv[i], sizeof(ConfigureParams.Rom.szTosImageFileName),
 					&bUseTos);
 			if (ok || !bUseTos)
@@ -1811,7 +1832,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 		case OPT_CARTRIDGE:
 			i += 1;
-			ok = Opt_StrCpy(OPT_CARTRIDGE, true, ConfigureParams.Rom.szCartridgeImageFileName,
+			ok = Opt_StrCpy(OPT_CARTRIDGE, CHECK_FILE, ConfigureParams.Rom.szCartridgeImageFileName,
 					argv[i], sizeof(ConfigureParams.Rom.szCartridgeImageFileName),
 					NULL);
 			if (ok)
@@ -1822,7 +1843,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 		case OPT_MEMSTATE:
 			i += 1;
-			ok = Opt_StrCpy(OPT_MEMSTATE, true, ConfigureParams.Memory.szMemoryCaptureFileName,
+			ok = Opt_StrCpy(OPT_MEMSTATE, CHECK_FILE, ConfigureParams.Memory.szMemoryCaptureFileName,
 					argv[i], sizeof(ConfigureParams.Memory.szMemoryCaptureFileName),
 					NULL);
 			if (ok)
@@ -2106,7 +2127,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 		case OPT_KEYMAPFILE:
 			i += 1;
-			ok = Opt_StrCpy(OPT_KEYMAPFILE, true, ConfigureParams.Keyboard.szMappingFileName,
+			ok = Opt_StrCpy(OPT_KEYMAPFILE, CHECK_FILE, ConfigureParams.Keyboard.szMappingFileName,
 					argv[i], sizeof(ConfigureParams.Keyboard.szMappingFileName),
 					&valid);
 			if (ok && !valid)
@@ -2229,7 +2250,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 		case OPT_TRACEFILE:
 			i += 1;
-			ok = Opt_StrCpy(OPT_TRACEFILE, false, ConfigureParams.Log.sTraceFileName,
+			ok = Opt_StrCpy(OPT_TRACEFILE, CHECK_NONE, ConfigureParams.Log.sTraceFileName,
 					argv[i], sizeof(ConfigureParams.Log.sTraceFileName),
 					NULL);
 			break;
@@ -2258,7 +2279,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 		case OPT_LOGFILE:
 			i += 1;
-			ok = Opt_StrCpy(OPT_LOGFILE, false, ConfigureParams.Log.sLogFileName,
+			ok = Opt_StrCpy(OPT_LOGFILE, CHECK_NONE, ConfigureParams.Log.sLogFileName,
 					argv[i], sizeof(ConfigureParams.Log.sLogFileName),
 					NULL);
 			break;
