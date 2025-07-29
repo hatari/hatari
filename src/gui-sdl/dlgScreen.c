@@ -468,7 +468,7 @@ void Dialog_WindowDlg(void)
 			break;
 
 		 case DLGSCRN_CAPTURE_DIR:
-			selname = SDLGui_FileSelect("Screenshot Directory", Paths_GetScreenShotDir(), NULL, true);
+			selname = SDLGui_FileSelect("Screenshot Directory", Paths_GetScreenShotDir(), NULL, false);
 			if (selname)
 			{
 				Str_Copy(ConfigureParams.Screen.szScreenShotDir, selname, sizeof(ConfigureParams.Screen.szScreenShotDir));
