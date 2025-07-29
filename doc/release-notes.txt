@@ -43,8 +43,11 @@ Emulator improvements:
   - Fix: show DEL character as non-printable in memdumps
 - CPU/FPU settings:
   - Disallow 68881/68882 FPU in 040/060 mode
-- Screenshot/AVI:
-  - Add a specific directory setting to store screenshots and video files
+- Config / SDL GUI:
+  - Default screenshot save directory override option
+  - SDL GUI asks for file name when starting AVI recording
+- CLI options:
+  - GEMDOS HD & screenshot dir options accept only existing directories
 
 Fixed demos:
  - A Letter To Sommarhack by Effect (write word at $FF8260)
