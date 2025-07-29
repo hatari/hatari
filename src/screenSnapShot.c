@@ -76,9 +76,10 @@ static void ScreenSnapShot_GetNum(void)
 
 #if HAVE_LIBPNG
 /**
- * Save given SDL surface as PNG. Return png file size > 0 for success.
+ * Save given SDL surface as PNG.
+ * Return PNG file size for success, -1 for fail
  */
-static int ScreenSnapShot_SavePNG(SDL_Surface *surface, const char *filename)
+static int ScreenSnapShot_SavePNG(const char *filename)
 {
 	FILE *fp = NULL;
 	int ret, bottom;
@@ -93,7 +94,7 @@ static int ScreenSnapShot_SavePNG(SDL_Surface *surface, const char *filename)
 		bottom = 0;
 
 	/* default compression/filter and configured cropping */
-	ret = ScreenSnapShot_SavePNG_ToFile(surface, 0, 0, fp, -1, -1, 0, 0, 0, bottom);
+	ret = ScreenSnapShot_SavePNG_ToFile(sdlscrn, 0, 0, fp, -1, -1, 0, 0, 0, bottom);
 
 	fclose (fp);
 	return ret;					/* >0 if OK, -1 if error */
@@ -284,6 +285,7 @@ static void ScreenSnapShot_GetInternalFormat(bool *genconv, int *sw, int *sh, in
 
 /**
  * Save direct video memory dump to NEO file
+ * return 1 for success, -1 for fail
  */
 static int ScreenSnapShot_SaveNEO(const char *filename)
 {
@@ -393,6 +395,7 @@ static int ScreenSnapShot_SaveNEO(const char *filename)
 
 /**
  * Save direct video memory dump to XIMG file
+ * return 1 for success, -1 for fail
  */
 static int ScreenSnapShot_SaveXIMG(const char *filename)
 {
@@ -526,6 +529,21 @@ static int ScreenSnapShot_SaveXIMG(const char *filename)
 }
 
 
+/*-----------------------------------------------------------------------*/
+/**
+ * Wrapper for SDL BPM save function
+ * return 1 for success, -1 for fail
+ */
+static int ScreenSnapShot_SaveBMP(const char *filename)
+{
+	if(SDL_SaveBMP_RW(sdlscrn, SDL_RWFromFile(filename, "wb"), 1) < 0)
+	{
+		Log_Printf(LOG_WARN, "SDL_SaveBMP_RW failed: %s", SDL_GetError());
+		return -1;
+	}
+	return 1;
+}
+
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -536,68 +554,54 @@ static int ScreenSnapShot_SaveXIMG(const char *filename)
 void ScreenSnapShot_SaveScreen(void)
 {
 	char *szFileName = malloc(FILENAME_MAX);
+	const char *ext, *name, *path;
+	int (*savefn)(const char *);
 
 	if (!szFileName)  return;
 
-	ScreenSnapShot_GetNum();
 	/* Create our filename */
+	path = Paths_GetScreenShotDir();
+	ScreenSnapShot_GetNum();
 	nScreenShots++;
 
-
-	/* BMP format */
-	if (ConfigureParams.Screen.ScreenShotFormat == SCREEN_SNAPSHOT_BMP )
+	switch(ConfigureParams.Screen.ScreenShotFormat)
 	{
-		sprintf(szFileName,"%s/grab%4.4d.bmp", Paths_GetScreenShotDir(), nScreenShots);
-		if (SDL_SaveBMP(sdlscrn, szFileName))
-			Log_Printf(LOG_WARN, "BMP screen dump failed!");
-		else
-			Log_Printf(LOG_INFO, "BMP screen dump saved to: %s", szFileName);
-		free(szFileName);
-		return;
-	}
-
 #if HAVE_LIBPNG
-	/* PNG format */
-	else if (ConfigureParams.Screen.ScreenShotFormat == SCREEN_SNAPSHOT_PNG )
-	{
-		sprintf(szFileName,"%s/grab%4.4d.png", Paths_GetScreenShotDir(), nScreenShots);
-		if (ScreenSnapShot_SavePNG(sdlscrn, szFileName) > 0)
-			Log_Printf(LOG_INFO, "PNG screen dump saved to: %s", szFileName);
-		else
-			Log_Printf(LOG_WARN, "PNG screen dump failed!");
-		free(szFileName);
-		return;
-	}
+	case SCREEN_SNAPSHOT_PNG:
+		savefn = ScreenSnapShot_SavePNG;
+		name = "PNG";
+		ext = "png";
+		break;
 #endif
-
-	/* NEO format */
-	else if (ConfigureParams.Screen.ScreenShotFormat == SCREEN_SNAPSHOT_NEO )
-	{
-		sprintf(szFileName,"%s/grab%4.4d.neo", Paths_GetScreenShotDir(), nScreenShots);
-		if (ScreenSnapShot_SaveNEO(szFileName) > 0)
-			Log_Printf(LOG_INFO, "NEO screen dump saved to: %s", szFileName);
-		else
-			Log_Printf(LOG_WARN, "NEO screen dump failed!");
-		free(szFileName);
-		return;
-	}
-	/* XIMG format */
-	else if (ConfigureParams.Screen.ScreenShotFormat == SCREEN_SNAPSHOT_XIMG )
-	{
-		sprintf(szFileName,"%s/grab%4.4d.ximg", Paths_GetScreenShotDir(), nScreenShots);
-		if (ScreenSnapShot_SaveXIMG(szFileName) > 0)
-			Log_Printf(LOG_INFO, "XIMG screen dump saved to: %s", szFileName);
-		else
-			Log_Printf(LOG_WARN, "XIMG screen dump failed!");
-		free(szFileName);
-		return;
+	case SCREEN_SNAPSHOT_NEO:
+		savefn = ScreenSnapShot_SaveNEO;
+		name = "NEO";
+		ext = "neo";
+		break;
+	case SCREEN_SNAPSHOT_XIMG:
+		savefn = ScreenSnapShot_SaveXIMG;
+		name = "XIMG";
+		ext = "ximg";
+		break;
+	case SCREEN_SNAPSHOT_BMP:
+	default:
+		savefn = ScreenSnapShot_SaveBMP;
+		name = "BMP";
+		ext = "bmp";
+		break;
 	}
 
-	sprintf(szFileName,"%s/grab%4.4d.bmp", Paths_GetScreenShotDir(), nScreenShots);
-	if (SDL_SaveBMP(sdlscrn, szFileName))
-		Log_Printf(LOG_WARN, "Screen dump failed!");
+	sprintf(szFileName, "%s/grab%4.4d.%s", path, nScreenShots, ext);
+
+	if (savefn(szFileName) > 0)
+	{
+		/* use LOG_WARN also for success as users want to see the path */
+		Log_Printf(LOG_WARN, "%s screen dump saved to: %s", name, szFileName);
+	}
 	else
-		Log_Printf(LOG_INFO, "Screen dump saved to: %s", szFileName);
+	{
+		Log_Printf(LOG_WARN, "Failed to save %s screen dump to: %s!", name, szFileName);
+	}
 
 	free(szFileName);
 }
@@ -607,7 +611,7 @@ void ScreenSnapShot_SaveScreen(void)
  */
 void ScreenSnapShot_SaveToFile(const char *szFileName)
 {
-	bool success = false;
+	int ret;
 
 	if (!szFileName)
 	{
@@ -617,21 +621,21 @@ void ScreenSnapShot_SaveToFile(const char *szFileName)
 #if HAVE_LIBPNG
 	if (File_DoesFileExtensionMatch(szFileName, ".png"))
 	{
-		success = ScreenSnapShot_SavePNG(sdlscrn, szFileName) > 0;
+		ret = ScreenSnapShot_SavePNG(szFileName);
 	}
 	else
 #endif
 	if (File_DoesFileExtensionMatch(szFileName, ".bmp"))
 	{
-		success = SDL_SaveBMP(sdlscrn, szFileName) == 0;
+		ret = ScreenSnapShot_SaveBMP(szFileName);
 	}
 	else if (File_DoesFileExtensionMatch(szFileName, ".neo"))
 	{
-		success = ScreenSnapShot_SaveNEO(szFileName) == 0;
+		ret = ScreenSnapShot_SaveNEO(szFileName);
 	}
 	else if (File_DoesFileExtensionMatch(szFileName, ".ximg") || File_DoesFileExtensionMatch(szFileName, ".img"))
 	{
-		success = ScreenSnapShot_SaveXIMG(szFileName) == 0;
+		ret = ScreenSnapShot_SaveXIMG(szFileName);
 	}
 	else
 	{
@@ -639,5 +643,5 @@ void ScreenSnapShot_SaveToFile(const char *szFileName)
 		return;
 	}
 	fprintf(stderr, "Screen dump to '%s' %s\n", szFileName,
-		success ? "succeeded" : "failed");
+		ret > 0 ? "succeeded" : "failed");
 }

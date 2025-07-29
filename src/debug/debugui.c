@@ -1049,7 +1049,7 @@ static const dbgcommand_t uicommand[] =
 	{ DebugUI_Screenshot, NULL,
 	  "screenshot", "",
 	  "save screenshot to given file",
-	  "<filename>\n",
+	  "<path/filename>\n",
 	  false },
 	{ DebugUI_SetOptions, Opt_MatchOption,
 	  "setopt", "o",
