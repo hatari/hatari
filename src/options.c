@@ -1391,7 +1391,8 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 		case OPT_SCRSHOT_DIR:
 			i += 1;
-			Paths_SetScreenShotDir(argv[i]);
+			ok = Opt_StrCpy(OPT_SCRSHOT_DIR, CHECK_DIR, ConfigureParams.Screen.szScreenShotDir,
+					argv[i], sizeof(ConfigureParams.Screen.szScreenShotDir), NULL);
 			break;
 
 		case OPT_SCRSHOT_FORMAT:

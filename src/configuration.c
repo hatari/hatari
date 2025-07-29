@@ -1007,7 +1007,10 @@ void Configuration_Apply(bool bReset)
 	File_MakeAbsoluteName(ConfigureParams.HardDisk.szHardDiskDirectories[0]);
 	File_MakeAbsoluteName(ConfigureParams.Memory.szMemoryCaptureFileName);
 	if (strlen(ConfigureParams.Screen.szScreenShotDir) > 0)
+	{
+		File_CleanFileName(ConfigureParams.Screen.szScreenShotDir);
 		File_MakeAbsoluteName(ConfigureParams.Screen.szScreenShotDir);
+	}
 	File_MakeAbsoluteName(ConfigureParams.Sound.szYMCaptureFileName);
 	if (strlen(ConfigureParams.Keyboard.szMappingFileName) > 0)
 		File_MakeAbsoluteName(ConfigureParams.Keyboard.szMappingFileName);
@@ -1056,12 +1059,6 @@ void Configuration_Apply(bool bReset)
 	else
 		DSP_Disable ();
 #endif
-
-	/* Update screenshot path if user specified one */
-	if (ConfigureParams.Screen.szScreenShotDir[0])
-	{
-		Paths_SetScreenShotDir(ConfigureParams.Screen.szScreenShotDir);
-	}
 }
 
 
