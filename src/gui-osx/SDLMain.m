@@ -59,8 +59,6 @@ static BOOL		gCalledAppMainline = NO ;
 //
 @implementation HatariAppDelegate
 
-char szPath[FILENAME_MAX] ;											// for general use
-
 // Set the working directory to the .app's parent directory
 - (void) setupWorkingDirectory:(BOOL)shouldChdir
 {
@@ -189,6 +187,7 @@ char szPath[FILENAME_MAX] ;											// for general use
 /*----------------------------------------------------------------------*/
 - (void)insertDisk:(int)disque 
 {
+	char		szPath[FILENAME_MAX] ;
 	NSString	*aDisk ;
 
 	aDisk = [NSApp hopenfile:NO defoDir:nil defoFile:@""] ;
@@ -410,6 +409,7 @@ char szPath[FILENAME_MAX] ;											// for general use
 - (IBAction)openConfig:(id)sender
 {
 	BOOL		applyChanges ;
+	char		szPath[FILENAME_MAX] ;
 	NSString	*ConfigFile, *newCfg ;
 	CNF_PARAMS	CurrentParams;
 

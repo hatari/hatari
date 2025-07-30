@@ -267,6 +267,11 @@ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wformat-security")
 endif()
 
+if(APPLE AND CMAKE_C_COMPILER_ID MATCHES "Clang")
+	# Silence linker warning with AppleClang 17
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-common")
+endif()
+
 CHECK_C_COMPILER_FLAG("-Wimplicit-fallthrough=2" WARN_FALLTRHOUGH_AVAILABLE)
 if(WARN_FALLTRHOUGH_AVAILABLE)
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wimplicit-fallthrough=2")

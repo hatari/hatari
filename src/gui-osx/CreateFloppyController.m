@@ -19,12 +19,11 @@
 
 @implementation CreateFloppyController
 
-char szPath[FILENAME_MAX] ;
-
 - (IBAction)createFloppyImage:(id)sender
 {
 	BOOL		cRet;
 	int			ret, cTracks, cSectors, cSides ;
+	char		szPath[FILENAME_MAX] ;
 	NSString	*defaultDir ;
 	NSString	*newCnf ;
 

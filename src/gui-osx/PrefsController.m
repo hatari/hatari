@@ -222,8 +222,6 @@ static const int nSoundFreqs[] =
 
 @implementation PrefsController
 
-char szPath[FILENAME_MAX];
-
 // not used
 - (IBAction)finished:(id)sender
 {
