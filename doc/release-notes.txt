@@ -24,9 +24,6 @@ Emulation improvements:
 - MegaSTE:
   - When using cache, only compare 24 lowest bits of address
   - Don't update cache after a bus/address error
-- Falcon:
-  - Create a fast ram buffer (_FRB) cookie when running with TT RAM
-    to fix a problem with floppy disk access
 - Video:
   - Add support for STE 224 bytes overscan in medium resolution
   - Set correct resolution in Shifter when accessing $FF8260 as word
