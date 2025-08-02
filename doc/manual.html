@@ -327,8 +327,14 @@ and later HW:</p>
   <li>ST/TT palette switching and video shifter</li>
   <li>Up to 1024 MiB of TT-RAM and 32-bit memory addressing</li>
   <li>Full support for SCC (LAN, Serial and Modem)</li>
+  <li>NVRAM for persistent OS configuration and RTC (real time clock)</li>
   <li>Only TOS version 3.05 and 3.06 (and 512k/1024k EmuTOS) can be used in TT mode.</li>
 </ul>
+
+<p>
+Note: For supporting the 68060 CPU in Falcon mode, Hatari patches TOS with
+code specific to this CPU.
+</p>
 
 <h4>Falcon hardware emulation</h4>
 <p>There is support for following additional Falcon features:</p>
@@ -345,14 +351,19 @@ and later HW:</p>
   <li>Experimental IDE master and slave emulation for hard drive support</li>
   <li>Experimental NCR5380 SCSI emulation for hard drive support (incomplete)</li>
   <li>Full support for SCC (Lan and Modem)</li>
+  <li>NVRAM for persistent OS configuration and RTC (real time clock)</li>
   <li>TOS versions 4.00, 4.02, 4.04 and 4.92 (and 512k/1024k EmuTOS) can be used in Falcon
       mode. There is also experimental support for TOS 2.07 (the "Sparrow"-TOS),
       and for <a href="m68k-linux.txt">Linux</a>, but they are not recommended
       for use yet</li>
 </ul>
+
 <p>
-Both TT and Falcon emulation support NVRAM for persistent OS configuration
-and RTC (real time clock).
+Note: For using TT-RAM in Falcon mode, Hatari patches TOS 4.04 with the right
+&quot;Maddalt()&quot; call and code to add a &quot;_FRB&quot; cookie. It also
+alters the system variables accordingly, since the original Falcon TOS does
+not support TT-RAM otherwise. For supporting the 68040 and 68060 CPUs in
+Falcon mode, Hatari patches TOS with code specific to these CPUs.
 </p>
 
 <p>See the developers' <span class="file">doc/todo.txt</span> file
