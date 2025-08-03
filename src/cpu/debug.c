@@ -4023,6 +4023,7 @@ static int memwatch_func (uaecptr addr, int rwi, int size, uae_u32 *valp, uae_u3
 		uae_u32 oldval = 0;
 		int isoldval = 0;
 		int brk = 0;
+		uae_u32 newval = 0;
 
 		if (m->size == 0)
 			continue;
@@ -4050,12 +4051,16 @@ static int memwatch_func (uaecptr addr, int rwi, int size, uae_u32 *valp, uae_u3
 
 		if (mem_banks[addr >> 16]->check (addr, size)) {
 			uae_u8 *p = mem_banks[addr >> 16]->xlateaddr (addr);
-			if (size == 1)
+			if (size == 1) {
 				oldval = p[0];
-			else if (size == 2)
+				newval = (*valp) & 0xff;
+			} else if (size == 2) {
 				oldval = (p[0] << 8) | p[1];
-			else
+				newval = (*valp) & 0xffff;
+			} else {
 				oldval = (p[0] << 24) | (p[1] << 16) | (p[2] << 8) | (p[3] << 0);
+				newval = *valp;
+			}
 			isoldval = 1;
 		}
 
@@ -4093,7 +4098,7 @@ static int memwatch_func (uaecptr addr, int rwi, int size, uae_u32 *valp, uae_u3
 		}
 
 		if (m->mustchange && rwi == 2 && isoldval) {
-			if (oldval == *valp)
+			if (oldval == newval)
 				continue;
 		}
 
