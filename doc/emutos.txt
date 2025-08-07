@@ -451,6 +451,7 @@ Color demos:
 - Music Disc 1 (by G. Gaubatz)
 - New Year intro 1990 (by The Replicants)
 - No Cooper (by 1984)
+- No Grtz To SPKR (by Spice Boys)
 - No more froggies (by Sector1)
 - NYAN zeST (by DHS)
 - O-demo (by Oxygene)
@@ -629,6 +630,7 @@ Free/shareware/PD games:
 - Alterra
 - Archon 3.5k     (by Deltaforce)
 - Alien Blockade* (quixx)
+- Atari Dash
 - Atax
 - Bellum*
 - Blaster
@@ -773,6 +775,7 @@ Monochrome demos:
 - Monoscreen    (by Dead Braincells)
 - Monotheist    (by SMFX)
 - No rights     (by Dekadence)
+- Roland W-30 Editor Cracktro (by DHS)
 - The Mono Tale (by The Cyclemasters)
 
 GEM games:
@@ -1086,6 +1089,7 @@ Following STE specific & enhanced demos, games and apps work fine with
 EmuTOS.
 
 Color demos:
+- !cube vs. YM2149 (by Aggression)
 - 1st Step (by Tobe/MJJ Prod)
 - 20 years megademo (by Atari scene collective)
 - 20 years Atari STE megademo (by Paradox)
@@ -1095,13 +1099,14 @@ Color demos:
 - 3D full (by Oxygene)
 - 68k Inside 2025 (by Dekadence)
 - 96 Shades of Gray (by Paradox, >1MB, panics at end/exit)
+- A Letter to Sommarhack (by Effect)
 - Again (by Paradox)
 - AltParty 2008 intro (by Paradox)
 - Ambermoon Music demo (by Psycho Hacking Force)
 - Amiga Demo 2 (by Oxygene), music disk
-- Antiques (by Dune & Sector One)
 - An Cool on STE
 - Another kid story (MJJ prod 2009)
+- Antiques (by Dune & Sector One)
 - Appendix (by DHS)
 - Armada is dead (by Aggression)
 - ATM 10 Years (by Checkpoint)
@@ -1120,6 +1125,8 @@ Color demos:
 - City Frames (by DHS)
 - Core Flakes (by New Core)
 - Devotion (by Excellence in Art)
+- DMA Bliss (by Effect & Ephidrena & SMFX)
+- Double Rez Trouble (by DHS)
 - Dynamite (by Unit 17)
 - E605 (by Light)
 - Ecstasy part A (by Inner Circuit Explorers)
@@ -1182,6 +1189,7 @@ Color demos:
 - Satan stole my Atari (by Lamers)
 - Save the Earth (by Defence Force)
 - Scene? Ay Mamba! (by Spice Boys)
+- Short and Curly (by Avena + RG)
 - Sinfull Sinuses (by Chronicle)
 - Sierpinski overdose 4K (by GGN), med-rez+blitter only
 - Sommarhack 2010 invite (by DHS)
@@ -1206,6 +1214,7 @@ Color demos:
 - Tyranny (by DHS)
 - UFO (by Dune & Sector1)
 - Unbeatable (by Masters of Electric City)
+- VibeCoding (by Defence Force)
 - Vision (by POV)
 - Vulgar Display of Power (by Extream)
 - We Accidentally Released (by SMFX & KÜA)
@@ -1338,6 +1347,8 @@ Non-working STE programs
 Some non-working demos:
 - Original Beat Maker (OG.PRG, SV2019, by CrazyQ)
   - STE recognization fails with TOS 2.x / EmuTOS -> bus error
+- YMSE (by Ephidrena)
+  - Musicdisk dentro works only under Falcon, or original STE TOS
 - VGA slideshow (by Light)
 
 Non-working games and music programs:
@@ -1526,8 +1537,6 @@ Demos working under EmuTOS >= v1.1 (with DSP support):
 - Cycedelic knockout (by Mugwumps)
 - Dan's Lustiges Kinderfest (by Lazer)
 - Derealization (060, by DHS)
-- Doomino (by STAX)
-  - Startup text broken, need TC terminal output
 - Enraged (by Avena)
 - Ex Illusion (by Aura)
 - F22.0 (060, by Lamers)
@@ -1542,6 +1551,8 @@ Demos working under EmuTOS >= v1.1 (with DSP support):
 - JESTERday (by POV), musicdemo
 - Joy (by New Beat)
   - Works also with v1.0, but MP2 DSP music requires >v1.0
+- Kusipäät Kaljanpöllijät (by Dekadence)
+  - Monochrome, with DSP music
 - Lamer than Lamers (060, by Lamers)
 - Laser Days E.P. (by .tSCc)
   - Works also with v1.0, but MP2 DSP music requires >v1.0
@@ -1600,6 +1611,7 @@ Demos working under EmuTOS >= v1.4 (full TC support):
   Lettuce, Pasta, Wormhole (128-Bytros by Reservoir Gods)
   - Need to be started from 320-wide TC mode, some with FPU
 - Doomino (STAX)
+  - Startup text needs TC terminal output, otherwise OK with v1.1
 - GemDemo (by DHS & AssemSoft):
   - Needs to be started from TC mode
 - MengerMarcherFC (256-Bytro by atariBDSM)
