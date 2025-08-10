@@ -240,7 +240,8 @@ common to all (FDC, IKBD, MFP, MIDI, PSG, RS-232...).</p>
   <li>support for (MSA, GZip and Zip) compressed floppy disk images
       (with optional write-protection)</li>
   <li>support for whole system state snapshot save/restore</li>
-  <li>driver for extended VDI resolutions</li>
+  <li>driver for extended VDI resolutions (this patches TOS, the system
+      variables and the so-called line-A variables for bigger resolutions)</li>
   <li>sound recording as .WAV or .YM files</li>
   <li>screenshots in PNG, BMP, NEO or XIMG format</li>
   <li>AVI video capture with sound</li>
@@ -287,6 +288,13 @@ common to all (FDC, IKBD, MFP, MIDI, PSG, RS-232...).</p>
   <li>TOS versions 1.00, 1.02, 1.04 and 2.06 (and EmuTOS) can be used in ST mode.</li>
 </ul>
 
+<p>
+Note: The real ST/STE hardware only can deal with RAM sizes up to 4 MiB. If you
+configure more than 4 MiB for your emulated system, Hatari will patch the
+system variables to make TOS aware of the extended memory, and it will fake
+DMA support for more than 4 MiB (which does not exist on real hardware).
+</p>
+
 <h4>Mega ST hardware emulation</h4>
 <ul>
   <li>Builtin real time clock (RTC)</li>
@@ -332,8 +340,8 @@ and later HW:</p>
 </ul>
 
 <p>
-Note: For supporting the 68060 CPU in Falcon mode, Hatari patches TOS with
-code specific to this CPU.
+Note: Only the 68030 CPU and the 68040 CPU can be used in TT mode when using
+the original TOS.
 </p>
 
 <h4>Falcon hardware emulation</h4>
