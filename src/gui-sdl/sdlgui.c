@@ -30,6 +30,15 @@ const char SDLGui_fileid[] = "Hatari sdlgui.c";
 # define Dprintf(a)
 #endif
 
+/* sanity check for minimum size */
+#define MIN_DIALOG_WIDTH  12
+#define MIN_DIALOG_HEIGHT  5
+/* Dialogs need to fit into Hatari window.  These are max sizes
+ * (with the current font) when both borders & statusbar are disabled.
+ */
+#define MAX_DIALOG_WIDTH  64
+#define MAX_DIALOG_HEIGHT 25
+
 static SDL_Surface *pSdlGuiScrn;            /* Pointer to the actual main SDL screen surface */
 static SDL_Surface *pSmallFontGfx = NULL;   /* The small font graphics */
 static SDL_Surface *pBigFontGfx = NULL;     /* The big font graphics */
@@ -215,8 +224,19 @@ void SDLGui_GetFontSize(int *width, int *height)
  */
 void SDLGui_CenterDlg(SGOBJ *dlg)
 {
-	dlg[0].x = (pSdlGuiScrn->w/sdlgui_fontwidth-dlg[0].w)/2;
-	dlg[0].y = (pSdlGuiScrn->h/sdlgui_fontheight-dlg[0].h)/2;
+	int w = dlg[0].w, h = dlg[0].h;
+	/* catch invalid changes to SDL GUI dialogs */
+	if (w < MIN_DIALOG_WIDTH || h < MIN_DIALOG_HEIGHT)
+	{
+		Log_Printf(LOG_ERROR, "invalid (too small) dialog size (%dx%d)!", w, h);
+	}
+	if (w > MAX_DIALOG_WIDTH || h > MAX_DIALOG_HEIGHT)
+	{
+		Log_Printf(LOG_ERROR, "dialog too large (%dx%d), max working size is %dx%d!",
+			w, h, MAX_DIALOG_WIDTH, MAX_DIALOG_HEIGHT);
+	}
+	dlg[0].x = (pSdlGuiScrn->w / sdlgui_fontwidth - w) / 2;
+	dlg[0].y = (pSdlGuiScrn->h / sdlgui_fontheight - h) / 2;
 }
 
 /*-----------------------------------------------------------------------*/
