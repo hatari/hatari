@@ -111,10 +111,10 @@ static SGOBJ monitordlg[] =
 #define DLGSCRN_CAPTURE_DIR 32
 #define DLGSCRN_RECANIM     34
 #define DLGSCRN_CROP        35
-#define DLGSCRN_GPUSCALE    38
-#define DLGSCRN_RESIZABLE   39
-#define DLGSCRN_VSYNC       40
-#define DLGSCRN_EXIT_WINDOW 41
+#define DLGSCRN_GPUSCALE    37
+#define DLGSCRN_RESIZABLE   38
+#define DLGSCRN_VSYNC       39
+#define DLGSCRN_EXIT_WINDOW 40
 
 /* needs to match Frame skip values in windowdlg[]! */
 static const int skip_frames[] = { 0, 1, 2, 4, AUTO_FRAMESKIP_LIMIT };
@@ -130,7 +130,7 @@ static char sScreenShotDir[29];
 /* The window dialog: */
 static SGOBJ windowdlg[] =
 {
-	{ SGBOX, 0, 0, 0,0, 52,27, NULL },
+	{ SGBOX, 0, 0, 0,0, 52,24, NULL },
 	{ SGBOX,      0, 0,  1,1, 50,10, NULL },
 	{ SGTEXT,     0, 0,  4,2, 20,1, "Hatari screen options" },
 	{ SGCHECKBOX, 0, 0,  4,4, 12,1, "_Fullscreen" },
@@ -168,13 +168,12 @@ static SGOBJ windowdlg[] =
 	{ SGBUTTON,   0, 0,  4,17, 14,1, NULL },      /* Record text set later */
 	{ SGCHECKBOX, 0, 0, 21,17, 16,1, "_Crop statusbar" },
 
-	{ SGBOX,      0, 0,  1,20, 50,4, NULL },
-	{ SGTEXT,     0, 0, 20,20, 12,1, "SDL2 options" },
-	{ SGCHECKBOX, 0, 0,  8,22, 20,1, "GPU scal_ing" },
-	{ SGCHECKBOX, 0, 0, 23,22, 20,1, "Resi_zable" },
-	{ SGCHECKBOX, 0, 0, 36,22, 11,1, "_VSync" },
-	{ SGBUTTON, SG_DEFAULT, 0, 17,25, 20,1, "Back to main menu" },
+	{ SGTEXT,     0, 0,  4,20, 12,1, "SDL2:" },
+	{ SGCHECKBOX, 0, 0, 12,20, 20,1, "GPU scal_ing" },
+	{ SGCHECKBOX, 0, 0, 27,20, 20,1, "Resi_zable" },
+	{ SGCHECKBOX, 0, 0, 40,20, 11,1, "_VSync" },
 
+	{ SGBUTTON, SG_DEFAULT, 0, 17,22, 20,1, "Back to main menu" },
 	{ SGSTOP, 0, 0, 0,0, 0,0, NULL }
 };
 
