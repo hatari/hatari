@@ -22,13 +22,13 @@ extern void	crc16_add_byte		( uint16_t *crc , uint8_t c );
 void		Hatari_srand		( unsigned int seed );
 extern int	Hatari_rand		( void );
 
-extern Uint16	Mem_ReadU16_LE ( Uint8 *p );
-extern Uint32	Mem_ReadU32_LE ( Uint8 *p );
-extern Uint16	Mem_ReadU16_BE ( Uint8 *p );
-extern Uint32	Mem_ReadU32_BE ( Uint8 *p );
-extern void	Mem_WriteU16_LE ( Uint8 *p , Uint16 val );
-extern void	Mem_WriteU32_LE ( Uint8 *p , Uint32 val );
-extern void	Mem_WriteU16_BE ( Uint8 *p , Uint16 val );
-extern void	Mem_WriteU32_BE ( Uint8 *p , Uint32 val );
+extern uint16_t	Mem_ReadU16_LE ( uint8_t *p );
+extern uint32_t	Mem_ReadU32_LE ( uint8_t *p );
+extern uint16_t	Mem_ReadU16_BE ( uint8_t *p );
+extern uint32_t	Mem_ReadU32_BE ( uint8_t *p );
+extern void	Mem_WriteU16_LE ( uint8_t *p , uint16_t val );
+extern void	Mem_WriteU32_LE ( uint8_t *p , uint32_t val );
+extern void	Mem_WriteU16_BE ( uint8_t *p , uint16_t val );
+extern void	Mem_WriteU32_BE ( uint8_t *p , uint32_t val );
 
 #endif		/* HATARI_UTILS_H */

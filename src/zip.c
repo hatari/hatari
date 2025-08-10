@@ -18,6 +18,7 @@ const char ZIP_fileid[] = "Hatari zip.c";
 
 #include "dim.h"
 #include "file.h"
+#include "fdc.h"
 #include "floppy.h"
 #include "floppy_ipf.h"
 #include "floppy_stx.h"

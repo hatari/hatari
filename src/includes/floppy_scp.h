@@ -14,9 +14,9 @@
 #define	SCP_TRACK_HEADER_ID_LEN		3			/* Header ID has 3 bytes */
 
 typedef struct {
-	Uint32		Duration_ns;				/* +0 : Duration for 1st revolution (in nanosecs) */
-	Uint32		FluxNbr;				/* +4 : Number of sampled flux transition in this track */
-	Uint32		DataOffset;				/* +8 : Offset for the flux data (in bytes, from track header) */
+	uint32_t	Duration_ns;				/* +0 : Duration for 1st revolution (in nanosecs) */
+	uint32_t	FluxNbr;				/* +4 : Number of sampled flux transition in this track */
+	uint32_t	DataOffset;				/* +8 : Offset for the flux data (in bytes, from track header) */
 } SCP_TRACK_REV_STRUCT;
 
 
@@ -24,13 +24,13 @@ typedef struct {
 
 	/* Content of the SCP track header (16 bytes) */
 	char		TrackId[ SCP_TRACK_HEADER_ID_LEN ];	/* +0 : Should be "TRK" */
-	Uint8		TrackNumber;				/* +3 : Track Number (0-167) */
+	uint8_t		TrackNumber;				/* +3 : Track Number (0-167) */
 
 	SCP_TRACK_REV_STRUCT	*pTrackRevs;			/* Contains as many entries as set in RevolutionsNbr */
 
-	Uint32		TrackHeaderOffset;			/* Offset for this track header (in bytes, from start of the scp file) */
+	uint32_t	TrackHeaderOffset;			/* Offset for this track header (in bytes, from start of the scp file) */
 								/* 0=no flux data for this track */
-	Uint8		*pTrackHeader;				/* Pointer to this track header in memory */
+	uint8_t		*pTrackHeader;				/* Pointer to this track header in memory */
 } SCP_TRACK_STRUCT;
 
 
@@ -40,16 +40,16 @@ typedef struct {
 typedef struct {
 	/* Content of the SCP main header (16 bytes) */
 	char		FileID[ SCP_HEADER_ID_LEN ];		/* +0 : Should be "SCP" */
-	Uint8		Version;				/* +3 : Upper 4 bits are version, lower 4 bits are revision */
-	Uint8		DiskType;				/* +4 : Disk Type */
-	Uint8		RevolutionsNbr;				/* +5 : Number of revolutions used to image the floppy */
-	Uint8		StartTrack;				/* +6 : Start Track (0-167) */
-	Uint8		EndTrack;				/* +7 : End Track (0-167) */
-	Uint8		Flags;					/* +8 :  */
-	Uint8		CellTimeWidth;				/* +9 : Number of bits to encode a cell time ; should be 0 = 16 bits */
-	Uint8		HeadsNbr;				/* +10 : Number of heads in the file ; 0=both 1=bottom 2=top */
-	Uint8		CaptureRes;				/* +11 : Resolution of the capture ; should be 0 = 25 nanosecs */
-	Uint32		CRC;					/* +12 : CRC  */
+	uint8_t		Version;				/* +3 : Upper 4 bits are version, lower 4 bits are revision */
+	uint8_t		DiskType;				/* +4 : Disk Type */
+	uint8_t		RevolutionsNbr;				/* +5 : Number of revolutions used to image the floppy */
+	uint8_t		StartTrack;				/* +6 : Start Track (0-167) */
+	uint8_t		EndTrack;				/* +7 : End Track (0-167) */
+	uint8_t		Flags;					/* +8 :  */
+	uint8_t		CellTimeWidth;				/* +9 : Number of bits to encode a cell time ; should be 0 = 16 bits */
+	uint8_t		HeadsNbr;				/* +10 : Number of heads in the file ; 0=both 1=bottom 2=top */
+	uint8_t		CaptureRes;				/* +11 : Resolution of the capture ; should be 0 = 25 nanosecs */
+	uint32_t	CRC;					/* +12 : CRC  */
 
 	/* Other internal variables */
 	SCP_TRACK_STRUCT	*pTracks;			/* Array of all tracks */
@@ -73,29 +73,29 @@ typedef struct {
 
 extern void	SCP_MemorySnapShot_Capture(bool bSave);
 extern bool	SCP_FileNameIsSCP(const char *pszFileName, bool bAllowGZ);
-extern Uint8	*SCP_ReadDisk(int Drive, const char *pszFileName, long *pImageSize, int *pImageType);
-extern bool	SCP_WriteDisk(int Drive, const char *pszFileName, Uint8 *pBuffer, int ImageSize);
+extern uint8_t	*SCP_ReadDisk(int Drive, const char *pszFileName, long *pImageSize, int *pImageType);
+extern bool	SCP_WriteDisk(int Drive, const char *pszFileName, uint8_t *pBuffer, int ImageSize);
 
 extern bool	SCP_Init ( void );
-extern bool	SCP_Insert ( int Drive , const char *FilenameSTX , Uint8 *pImageBuffer , long ImageSize );
+extern bool	SCP_Insert ( int Drive , const char *FilenameSTX , uint8_t *pImageBuffer , long ImageSize );
 extern bool	SCP_Eject ( int Drive );
 
-extern SCP_MAIN_STRUCT *SCP_BuildStruct ( Uint8 *pFileBuffer , int Debug );
+extern SCP_MAIN_STRUCT *SCP_BuildStruct ( uint8_t *pFileBuffer , int Debug );
 
 extern int	SCP_LoadTrack ( int Drive , int Track , int Side );
 
-extern int	FDC_GetBytesPerTrack_STX ( Uint8 Drive , Uint8 Track , Uint8 Side );
-extern Uint32	FDC_GetCyclesPerRev_FdcCycles_STX ( Uint8 Drive , Uint8 Track , Uint8 Side );
-extern int	FDC_NextSectorID_FdcCycles_STX ( Uint8 Drive , Uint8 NumberOfHeads , Uint8 Track , Uint8 Side );
-extern Uint8	FDC_NextSectorID_TR_STX ( void );
-extern Uint8	FDC_NextSectorID_SR_STX ( void );
-extern Uint8	FDC_NextSectorID_LEN_STX ( void );
-extern Uint8	FDC_NextSectorID_CRC_OK_STX ( void );
-extern Uint8	FDC_ReadSector_STX ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side , int *pSectorSize );
-extern Uint8	FDC_WriteSector_STX ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side , int SectorSize );
-extern Uint8	FDC_ReadAddress_STX ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side );
-extern Uint8	FDC_ReadTrack_STX ( Uint8 Drive , Uint8 Track , Uint8 Side );
-extern Uint8	FDC_WriteTrack_STX ( Uint8 Drive , Uint8 Track , Uint8 Side , int TrackSize );
+extern int	FDC_GetBytesPerTrack_STX ( uint8_t Drive , uint8_t Track , uint8_t Side );
+extern uint32_t	FDC_GetCyclesPerRev_FdcCycles_STX ( uint8_t Drive , uint8_t Track , uint8_t Side );
+extern int	FDC_NextSectorID_FdcCycles_STX ( uint8_t Drive , uint8_t NumberOfHeads , uint8_t Track , uint8_t Side );
+extern uint8_t	FDC_NextSectorID_TR_STX ( void );
+extern uint8_t	FDC_NextSectorID_SR_STX ( void );
+extern uint8_t	FDC_NextSectorID_LEN_STX ( void );
+extern uint8_t	FDC_NextSectorID_CRC_OK_STX ( void );
+extern uint8_t	FDC_ReadSector_STX ( uint8_t Drive , uint8_t Track , uint8_t Sector , uint8_t Side , int *pSectorSize );
+extern uint8_t	FDC_WriteSector_STX ( uint8_t Drive , uint8_t Track , uint8_t Sector , uint8_t Side , int SectorSize );
+extern uint8_t	FDC_ReadAddress_STX ( uint8_t Drive , uint8_t Track , uint8_t Sector , uint8_t Side );
+extern uint8_t	FDC_ReadTrack_STX ( uint8_t Drive , uint8_t Track , uint8_t Side );
+extern uint8_t	FDC_WriteTrack_STX ( uint8_t Drive , uint8_t Track , uint8_t Side , int TrackSize );
 
 
 

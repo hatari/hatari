@@ -102,7 +102,7 @@ bool STX_FileNameIsSTX(const char *pszFileName, bool bAllowGZ)
 extern bool SCP_FileNameIsSCP(const char *pszFileName, bool bAllowGZ);		/* function prototype */
 bool SCP_FileNameIsSCP(const char *pszFileName, bool bAllowGZ)
 {
-	return FALSE;
+	return false;
 }
 
 

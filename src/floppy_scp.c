@@ -61,7 +61,7 @@ static SCP_STRUCT	SCP_State;			/* All variables related to the SCP support */
 /* Local functions prototypes					*/
 /*--------------------------------------------------------------*/
 
-static bool	SCP_Insert_internal ( int Drive , const char *FilenameSTX , Uint8 *pImageBuffer , long ImageSize );
+static bool	SCP_Insert_internal ( int Drive , const char *FilenameSTX , uint8_t *pImageBuffer , long ImageSize );
 static void	SCP_FreeStruct ( SCP_MAIN_STRUCT *pScpMain );
 
 static int	scp_select_track (struct fd_stream *s, unsigned int tracknr);
@@ -81,7 +81,7 @@ void SCP_MemorySnapShot_Capture(bool bSave)
 	int	Drive;
 	int	Track , Side;
 	int	TrackSize;
-	Uint8	*p;
+	uint8_t	*p;
 
 	if ( bSave )					/* Saving snapshot */
 	{
@@ -211,9 +211,9 @@ bool SCP_FileNameIsSCP(const char *pszFileName, bool bAllowGZ)
  * Load .SCP file into memory, set number of bytes loaded and return a pointer
  * to the buffer.
  */
-Uint8 *SCP_ReadDisk(int Drive, const char *pszFileName, long *pImageSize, int *pImageType)
+uint8_t *SCP_ReadDisk(int Drive, const char *pszFileName, long *pImageSize, int *pImageType)
 {
-	Uint8 *pFile;
+	uint8_t *pFile;
 
 	*pImageSize = 0;
 
@@ -234,7 +234,7 @@ Uint8 *SCP_ReadDisk(int Drive, const char *pszFileName, long *pImageSize, int *p
 /**
  * Save .SCP file from memory buffer. Returns true is all OK.
  */
-bool SCP_WriteDisk(int Drive, const char *pszFileName, Uint8 *pBuffer, int ImageSize)
+bool SCP_WriteDisk(int Drive, const char *pszFileName, uint8_t *pBuffer, int ImageSize)
 {
 	/* saving is not supported for SCP files */
 	return false;
@@ -265,12 +265,13 @@ bool	SCP_Init ( void )
 /*
  * Init the resources to handle the SCP image inserted into a drive (0=A: 1=B:)
  */
-bool	SCP_Insert ( int Drive , const char *FilenameSTX , Uint8 *pImageBuffer , long ImageSize )
+bool	SCP_Insert ( int Drive , const char *FilenameSTX , uint8_t *pImageBuffer , long ImageSize )
 {
 	/* Process the current SCP image */
 	if ( SCP_Insert_internal ( Drive , FilenameSTX , pImageBuffer , ImageSize ) == false )
 		return false;
 
+//SCP_LoadTrack ( 0,2,0);
 
 	return true;
 }
@@ -280,7 +281,7 @@ bool	SCP_Insert ( int Drive , const char *FilenameSTX , Uint8 *pImageBuffer , lo
 /*
  * Init the resources to handle the SCP image inserted into a drive (0=A: 1=B:)
  */
-static bool	SCP_Insert_internal ( int Drive , const char *FilenameSCP , Uint8 *pImageBuffer , long ImageSize )
+static bool	SCP_Insert_internal ( int Drive , const char *FilenameSCP , uint8_t *pImageBuffer , long ImageSize )
 {
 	Log_Printf ( LOG_DEBUG , "SCP : SCP_Insert_internal drive=%d file=%s buf=%p size=%ld\n" , Drive , FilenameSCP , pImageBuffer , ImageSize );
 
@@ -380,17 +381,17 @@ static void	SCP_FreeStruct ( SCP_MAIN_STRUCT *pScpMain )
  * Some internal variables/pointers are also computed, to speed up
  * data access when the FDC emulates an SCP file.
  */
-SCP_MAIN_STRUCT	*SCP_BuildStruct ( Uint8 *pFileBuffer , int Debug )
+SCP_MAIN_STRUCT	*SCP_BuildStruct ( uint8_t *pFileBuffer , int Debug )
 {
 	SCP_MAIN_STRUCT		*pScpMain;
 	SCP_TRACK_STRUCT	*pScpTracks;
 	SCP_TRACK_REV_STRUCT	*pScpTrackRevs;
 
 
-	Uint8			*p;
+	uint8_t			*p;
 	int			Track;
-	Uint8			*pTrack;
-	Uint32			Track_offset;
+	uint8_t			*pTrack;
+	uint32_t		Track_offset;
 	int			Rev;
 	bool			error;
 
