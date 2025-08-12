@@ -126,9 +126,9 @@ static const char desktop_inf[] =
 "#W 00 00 02 0B 26 09 00 @\r\n"
 "#W 00 00 0A 0F 1A 09 00 @\r\n"
 "#W 00 00 0E 01 1A 09 00 @\r\n"
-"#M 01 00 00 FF C HARD DISK@ @ \r\n"
 "#M 00 00 00 FF A FLOPPY DISK@ @ \r\n"
-"#M 00 01 00 FF B FLOPPY DISK@ @ \r\n"
+"#M 01 00 00 FF B FLOPPY DISK@ @ \r\n"
+"#M 02 00 00 FF C HARD DISK@ @ \r\n"
 "#T 00 03 02 FF   TRASH@ @ \r\n"
 "#F FF 04   @ *.*@ \r\n"
 "#D FF 01   @ *.*@ \r\n"
@@ -163,9 +163,9 @@ static const char newdesk_inf[] =
 "#Y 03 FF 000 *.GTP@ @ @ \r\n"
 "#P 03 FF 000 *.TTP@ @ @ \r\n"
 "#F 03 04 000 *.TOS@ @ @ \r\n"
-"#M 00 01 00 FF C HARD DISK@ @ \r\n"
 "#M 00 00 00 FF A FLOPPY DISK@ @ \r\n"
 "#M 01 00 00 FF B FLOPPY DISK@ @ \r\n"
+"#M 02 00 00 FF C HARD DISK@ @ \r\n"
 "#T 00 03 02 FF   TRASH@ @ \r\n";
 
 /* TODO: when support for Falcon resolutions is added,
@@ -534,8 +534,8 @@ static int INF_ValidateResolution(int *set_res, const char **val, const char **e
 
 /*-----------------------------------------------------------------------*/
 /**
- * Get builtin INF file contents which open window for the boot drive,
- * if any.
+ * Get builtin INF file contents, with line added for opening
+ * a window for a boot drive (if any).
  *
  * TODO: this won't work for EmuTOS because it opens INF file second
  * time to read window info, at which point the temporary virtual INF
@@ -545,12 +545,19 @@ static int INF_ValidateResolution(int *set_res, const char **val, const char **e
 static char *get_builtin_inf(const char *contents)
 {
 	/* line to open window (for boot drive) */
-	static const char drivewin[] = "#W 00 00 02 06 26 0C 00 X:\\*.*@\r\n";
+	static const char *drivewin;
 	int winlen, inflen, winoffset1, winoffset2, driveoffset;
 	const char *winline;
 	char *inf;
 
 	assert(contents);
+
+	if (TosVersion >= 0x200 && TosVersion != 0x300)
+		/* NEWDESK.INF / EMUDESK.INF */
+		drivewin = "#W 00 00 00 07 28 10 00 X:\\*.*@\r\n";
+	else
+		/* DESKTOP.INF */
+		drivewin = "#W 00 00 00 07 28 10 09 X:\\*.*@\r\n";
 
 	inflen = strlen(contents);
 	winlen = strlen(drivewin);
