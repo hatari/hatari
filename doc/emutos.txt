@@ -1009,6 +1009,9 @@ Working debuggers (support also e.g. TT):
 - Peacebug v1.30
 - Templmon 2.01
 
+Working utilities:
+- Shifer Inside ST (expands GEM desktop to top & bottom borders)
+
 Working drawing / image viewing programs:
 - Degas Elite, see http://www.youtube.com/watch?v=G4st-x4-BJg (at 16:30)
 - Iffcnv, IFF converter/viewer
@@ -1339,6 +1342,9 @@ STE (enhanced) music applications:
 - Paula
 - Protracker 2 STE
 - Sirius Player
+
+STE (enhanced) utilities:
+- Shifer Inside STE (expands GEM desktop to top & bottom borders)
 
 
 Non-working STE programs
