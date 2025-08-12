@@ -58,16 +58,17 @@ static struct {
 } TosOverride;
 
 
-/* autostarted program name will be added before the first
- * '@' character in the INF files #Z line
- * (first value is 00: TOS, 01: GEM).
+/* Autostarted program name is given on #Z line (added or
+ * updated in the INF file), before its first '@' character.
+ * First value on that line is 00 (TOS) or 01 (GEM).
  *
  * #E line content differs between TOS versions:
  * + Atari TOS:
  *   - Resolution is specified in the 2nd hex value
  *   - Blitter enabling is 0x10 bit for that
  * + EmuTOS v0.9.7 or newer:
- *   - Resolution is specified in the 4th hex value
+ *   - Resolution is specified in the 3rd & 4th hex values.
+ *     For other machines than Falcon, 3rd value is always "FF"
  *   - Blitter enabling is 0x80 bit in the 2nd hex value
  * + Older EmuTOS versions (not supported!):
  *   - Resolution is in the 2nd hex value
@@ -82,6 +83,10 @@ static struct {
  * EmuTOS INF file content is documented only in the sources:
  * https://github.com/emutos/emutos/blob/master/desk/deskapp.c
  */
+
+/* resolution info offsets for the #E line (2nd and 3rd hex values) */
+#define ATARI_TOS_RES_COLUMN 6
+#define EMUTOS_RES_COLUMN    9
 
 /* EmuDesk INF file format and values differ from normal TOS */
 static const char emudesk_inf[] =
@@ -418,7 +423,7 @@ extern void INF_SetVdiMode(int vdi_res)
 static int INF_ValidateResolution(int *set_res, const char **val, const char **err)
 {
 #define MONO_WARN_STR "Correcting virtual INF file resolution to mono on mono monitor\n"
-	res_value_t res = TosOverride.reso;
+	int res = TosOverride.reso;
 	*set_res = 0;
 
 	/* VDI resolution overrides TOS resolution setting */
@@ -591,16 +596,13 @@ static char *get_builtin_inf(const char *contents)
  *
  * Return INF file contents and set its name & size to args.
  */
-static char *get_inf_file(const char **set_infname, int *set_size, int *res_col)
+static char *get_inf_file(const char **set_infname, int *set_size)
 {
 	char *hostname;
 	const char *contents, *infname;
 	uint8_t *host_content;
 	long host_size;
 	int size;
-
-	/* default position of the 2 digit hex code for resolution on #E line */
-	*res_col = 6;
 
 	/* infname needs to be exactly the same string that given
 	 * TOS version gives for GEMDOS to find.
@@ -613,8 +615,8 @@ static char *get_inf_file(const char **set_infname, int *set_size, int *res_col)
 			infname = "A:\\EMUDESK.INF";
 		size = sizeof(emudesk_inf);
 		contents = emudesk_inf;
-		*res_col = 12;
 	}
+
 	/* need to match file TOS searches first */
 	else if (TosVersion >= 0x0200 && TosVersion != 0x300)
 	{
@@ -716,10 +718,10 @@ static const char *prg_format(const char *prgname)
  *
  * Return FILE* pointer to it.
  */
-static FILE* write_inf_file(const char *contents, int size, int res, int res_col)
+static FILE* write_inf_file(const char *contents, int size, int res)
 {
 	const char *infname, *prgname, *format = NULL;
-	int offset, off_prg, off_rez, endcheck;
+	int offset, off_prg, off_rez, res_col, res_len, endcheck;
 	FILE *fp;
 
 #if INF_DEBUG
@@ -746,8 +748,22 @@ static FILE* write_inf_file(const char *contents, int size, int res, int res_col
 	if (prgname)
 		format = prg_format(prgname);
 
-	/* need to fit at least 2 res digits + \r\n */
-	endcheck = size-res_col-2-2;
+	if (bIsEmuTOS)
+	{
+		/* first 2-digit hex code offset for resolution on #E line */
+		res_col = EMUTOS_RES_COLUMN;
+		/* need to fit at least 2x hex digits + \r\n */
+		res_len = 2+1+2;
+		endcheck = size - res_col - res_len - 2;
+	}
+	else {
+		/* 2 digit hex code offset for resolution on #E line */
+		res_col = ATARI_TOS_RES_COLUMN;
+		/* need to fit at least 2 res digits + \r\n */
+		res_len = 2;
+		endcheck = size - res_col - res_len - 2;
+	}
+
 	/* positions after prog info & resolution info */
 	off_prg = off_rez = 0;
 	/* find where to insert the program name and resolution */
@@ -775,7 +791,7 @@ static FILE* write_inf_file(const char *contents, int size, int res, int res_col
 			/* INF file with autostart line missing?
 			 *
 			 * It's assumed that #Z is always before #E,
-			 * if it exits. So write one when requested,
+			 * if it exists. So write one when requested,
 			 * if it hasn't been written yet.
 			 */
 			if (prgname && !off_prg)
@@ -791,11 +807,16 @@ static FILE* write_inf_file(const char *contents, int size, int res, int res_col
 			 * 'res' tells the actual value to use)
 			 */
 			if (TosOverride.reso)
-				fprintf(fp, "%02x", res);
+			{
+				if (bIsEmuTOS)
+					fprintf(fp, "FF %02x", res);
+				else
+					fprintf(fp, "%02x", res);
+			}
 			else
-				fwrite(contents+offset+res_col, 2, 1, fp);
+				fwrite(contents+offset+res_col, res_len, 1, fp);
 			/* set point to rest of #E */
-			offset += res_col + 2;
+			offset += res_col + res_len;
 			off_rez = offset;
 			break;
 		}
@@ -834,7 +855,7 @@ void INF_CreateOverride(void)
 {
 	char *contents;
 	const char *err, *val;
-	int size, res, res_col, opt_id;
+	int size, res, opt_id;
 
 	if ((opt_id = INF_ValidateResolution(&res, &val, &err)))
 	{
@@ -857,10 +878,10 @@ void INF_CreateOverride(void)
 		return;
 	}
 
-	contents = get_inf_file(&TosOverride.infname, &size, &res_col);
+	contents = get_inf_file(&TosOverride.infname, &size);
 	if (contents)
 	{
-		TosOverride.file = write_inf_file(contents, size, res, res_col);
+		TosOverride.file = write_inf_file(contents, size, res);
 		free(contents);
 	}
 }
