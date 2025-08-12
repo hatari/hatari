@@ -25,6 +25,8 @@ Emulation improvements:
 Emulator improvements:
 - Virtual INF file (used with autostart/TOS-resolution options):
   - Fix: resolution setting for EmuTOS with saved Falcon EMUDESK.INF
+  - Fix: Boot drive window specified in the virtual INF file when
+    GEMDOS HD has no existing INF file, works now also with EmuTOS
 - Debugger:
   - Open Windows console automatically for debugger
   - Debugger input file commands can be split to multiple lines

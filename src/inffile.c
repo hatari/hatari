@@ -51,6 +51,7 @@ static struct {
 	char *prgname;       /* TOS name of the program to auto start */
 	const char *infname; /* name of the INF file TOS will try to match */
 	res_value_t reso;    /* resolution setting value request for #E line */
+	int closes;          /* how many times closed i.e. when to remove */
 /* for validation */
 	int reso_id;
 	const char *reso_str;
@@ -535,12 +536,8 @@ static int INF_ValidateResolution(int *set_res, const char **val, const char **e
 /*-----------------------------------------------------------------------*/
 /**
  * Get builtin INF file contents, with line added for opening
- * a window for a boot drive (if any).
- *
- * TODO: this won't work for EmuTOS because it opens INF file second
- * time to read window info, at which point the temporary virtual INF
- * file has already disappeared.  Real TOS versions read INF file
- * only once and work fine.
+ * a window for a boot drive (if any).  Return allocated
+ * (virtual) INF file content string.
  */
 static char *get_builtin_inf(const char *contents)
 {
@@ -856,7 +853,7 @@ static FILE* write_inf_file(const char *contents, int size, int res)
  * File has TOS version specific differences, so it needs to be re-created
  * on each boot in case user changed TOS version.
  *
- * Called at end of TOS ROM loading.
+ * Called at end of TOS ROM loading (at GEMDOS reset).
  */
 void INF_CreateOverride(void)
 {
@@ -891,6 +888,8 @@ void INF_CreateOverride(void)
 		TosOverride.file = write_inf_file(contents, size, res);
 		free(contents);
 	}
+
+	TosOverride.closes = 0;
 }
 
 
@@ -933,17 +932,27 @@ FILE *INF_OpenOverride(const char *filename)
  */
 bool INF_CloseOverride(FILE *fp)
 {
-	if (fp && fp == TosOverride.file)
+	if (!(fp && fp == TosOverride.file))
+		return false;
+
+	/* Remove virtual INF file after TOS has
+	 * read it enough times to do autostarting etc.
+	 * Otherwise user may try change desktop settings
+	 * and save them, but they would be lost.
+	 *
+	 * EmuTOS reads INF file twice on startup, real TOS once.
+	 */
+	TosOverride.closes++;
+	if (bIsEmuTOS && TosOverride.closes < 2)
 	{
-		/* Remove virtual INF file after TOS has
-		 * read it enough times to do autostarting etc.
-		 * Otherwise user may try change desktop settings
-		 * and save them, but they would be lost.
-		 */
-		fclose(TosOverride.file);
-		TosOverride.file = NULL;
-		Log_Printf(LOG_DEBUG, "Virtual INF file removed.\n");
+		/* on first time just rewind file to beginning */
+		fseek(TosOverride.file, 0L, SEEK_SET);
 		return true;
 	}
-	return false;
+
+	fclose(TosOverride.file);
+	Log_Printf(LOG_DEBUG, "Virtual INF file removed.\n");
+	TosOverride.file = NULL;
+	TosOverride.closes = 0;
+	return true;
 }
