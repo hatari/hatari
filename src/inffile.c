@@ -83,6 +83,14 @@ static struct {
  *
  * EmuTOS INF file content is documented only in the sources:
  * https://github.com/emutos/emutos/blob/master/desk/deskapp.c
+ *
+ * Rev 2 did some changes to icon handling, which are not relevant
+ * here, so this uses rev 1 of the INF file format:
+ * https://github.com/emutos/emutos/commit/7a09651070ec7f7efc157d67166eef0f0c371695
+ *
+ * While 512k/1024k TOS images will update found drives (+trash/printer)
+ * to desktop configuration, 192k/256k TOS images use what's in INF file,
+ * so default INF file needs still to specify them.
  */
 
 /* resolution info offsets for the #E line (2nd and 3rd hex values) */
@@ -92,13 +100,13 @@ static struct {
 /* EmuDesk INF file format and values differ from normal TOS */
 static const char emudesk_inf[] =
 "#R 01\r\n"
-"#E 1A E1 FF 00 00\r\n"
+"#E 1A E0 FF 00 60\r\n"
 "#W 00 00 02 08 26 0C 00 @\r\n"
 "#W 00 00 02 0A 26 0C 00 @\r\n"
 "#W 00 00 02 0D 26 0C 00 @\r\n"
-"#W 00 00 00 00 14 0B 00 @\r\n"
-"#W 00 00 00 00 14 0B 00 @\r\n"
-"#W 00 00 00 00 14 0B 00 @\r\n"
+"#W 00 00 00 00 28 17 00 @\r\n"
+"#W 00 00 00 00 28 17 00 @\r\n"
+"#W 00 00 00 00 28 17 00 @\r\n"
 "#M 00 00 01 FF A DISK A@ @\r\n"
 "#M 01 00 01 FF B DISK B@ @\r\n"
 "#M 02 00 00 FF C DISK C@ @\r\n"
@@ -110,7 +118,8 @@ static const char emudesk_inf[] =
 "#G 06 FF *.PRG@ @ 000 @\r\n"
 "#P 06 FF *.TTP@ @ 000 @\r\n"
 "#F 06 FF *.TOS@ @ 000 @\r\n"
-"#T 00 03 03 FF   TRASH@ @\r\n";
+"#T 00 03 03 FF   TRASH@ @\r\n"
+"#O 03 03 04 FF   PRINTER@ @\r\n";
 
 /* TOS v1.04 works only with DESKTOP.INF from that version
  * (it crashes with newer INF after autobooted program exits),
@@ -169,9 +178,36 @@ static const char newdesk_inf[] =
 "#M 02 00 00 FF C HARD DISK@ @ \r\n"
 "#T 00 03 02 FF   TRASH@ @ \r\n";
 
-/* TODO: when support for Falcon resolutions is added,
- * builtin TOS v4 NEWDESK.INF file contents are needed too
+/* TOS v4.x has longer #E line, so need separate content for it.
  */
+static const char tos4desk_inf[] =
+"#a000000\r\n"
+"#b000000\r\n"
+"#c7770007000600070055200505552220770557075055507703111103\r\n"
+"#d                                             \r\n"
+"#K 4F 53 4C 00 46 42 43 57 45 58 00 00 00 00 00 00 00 00 00 00 00 00 00 52 00 00 4D 56 00 00 00 @\r\n"
+"#E 18 01 00 06 00 82 00 00 00 00 \r\n"
+"#Q 41 70 73 70 7D 70 \r\n"
+"#W 00 00 00 07 26 0C 00 @\r\n"
+"#W 00 00 02 0B 26 09 00 @\r\n"
+"#W 00 00 0A 0F 1A 09 00 @\r\n"
+"#W 00 00 0E 01 1A 09 00 @\r\n"
+"#W 00 00 04 07 26 0C 00 @\r\n"
+"#W 00 00 0C 0B 26 09 00 @\r\n"
+"#W 00 00 08 0F 1A 09 00 @\r\n"
+"#W 00 00 06 01 1A 09 00 @\r\n"
+"#N FF 04 000 @ *.*@ @ \r\n"
+"#D FF 01 000 @ *.*@ @ \r\n"
+"#G 03 FF 000 *.APP@ @ @ \r\n"
+"#G 03 FF 000 *.PRG@ @ @ \r\n"
+"#Y 03 FF 000 *.GTP@ @ @ \r\n"
+"#P 03 FF 000 *.TTP@ @ @ \r\n"
+"#F 03 04 000 *.TOS@ @ @ \r\n"
+"#M 00 00 00 FF A FLOPPY DISK@ @ \r\n"
+"#M 01 00 00 FF B FLOPPY DISK@ @ \r\n"
+"#M 02 00 00 FF C HARD DISK@ @ \r\n"
+"#C 00 01 00 FF c CARTRIDGE@ @ \r\n"
+"#T 00 03 02 FF   TRASH@ @ \r\n";
 
 
 /*-----------------------------------------------------------------------*/
@@ -622,7 +658,13 @@ static char *get_inf_file(const char **set_infname, int *set_size)
 	}
 
 	/* need to match file TOS searches first */
-	else if (TosVersion >= 0x0200 && TosVersion != 0x300)
+	else if (TosVersion >= 0x400)
+	{
+		infname = "NEWDESK.INF";
+		size = sizeof(tos4desk_inf);
+		contents = tos4desk_inf;
+	}
+	else if (TosVersion >= 0x200 && TosVersion != 0x300)
 	{
 		infname = "NEWDESK.INF";
 		size = sizeof(newdesk_inf);
