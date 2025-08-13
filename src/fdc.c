@@ -470,7 +470,7 @@ typedef struct {
 	int		DriveSelSignal;				/* 0 or 1 for drive A or B ; or -1 if no drive selected */
 	uint8_t		IRQ_Signal;				/* 0 if IRQ is not set, else value depends on the source of the IRQ */
 
-	uint16_t		DensityMode;				/* bits 0 and 1 of $ff860e */
+	uint16_t	DensityMode;				/* bits 0 and 1 of $ff860e */
 								/* 0x00 : FDC operates in DD mode */
 								/* 0x03 : FDC operates in HD mode */
 
@@ -495,17 +495,17 @@ typedef struct {
 
 typedef struct {
 	/* DMA internal registers */
-	uint16_t		Status;
-	uint16_t		Mode;
-	uint16_t		SectorCount;
+	uint16_t	Status;
+	uint16_t	Mode;
+	uint16_t	SectorCount;
 	int16_t		BytesInSector;
 
 	uint8_t		FIFO[ FDC_DMA_FIFO_SIZE ];
 	int		FIFO_Size;				/* Between 0 and FDC_DMA_FIFO_SIZE */
 
-	uint32_t		Address;
+	uint32_t	Address;
 
-	uint16_t		ff8604_recent_val;			/* Most recent value read/written at $ff8604 in fdc/hdc mode (bit4=0 in $ff8606) */
+	uint16_t	ff8604_recent_val;			/* Most recent value read/written at $ff8604 in fdc/hdc mode (bit4=0 in $ff8606) */
 
 	/* Variables to handle our DMA buffer */
 	int		PosInBuffer;
@@ -527,7 +527,7 @@ typedef struct {
 								/* This signal is available on pin 34 of compatible drives */
 								/* and connected to the 2nd MFP of the TT */
 
-	uint64_t		IndexPulse_Time;			/* CyclesGlobalClockCounter value last time we had an index pulse with motor ON */
+	uint64_t	IndexPulse_Time;			/* CyclesGlobalClockCounter value last time we had an index pulse with motor ON */
 } FDC_DRIVE_STRUCT;
 
 
@@ -543,7 +543,7 @@ typedef struct {
 
 	struct {
 		uint8_t		Byte;
-		uint16_t		Timing;
+		uint16_t	Timing;
 	} Data [ FDC_TRACK_BYTES_STANDARD*4+1000 ];
 } FDC_BUFFER_STRUCT;
 
