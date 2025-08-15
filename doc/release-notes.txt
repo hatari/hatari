@@ -46,6 +46,8 @@ Emulator improvements:
 - Config / SDL GUI:
   - Default screenshot save directory override option
   - SDL GUI asks for file name when starting AVI recording
+  - Fit Hatari screen dialog to smallest required size and
+    log errors on invalid dialog sizes
 - CLI options:
   - GEMDOS HD & screenshot dir options accept only existing directories
 
