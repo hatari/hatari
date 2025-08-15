@@ -2,7 +2,9 @@
 #
 # Hatari profile data processor
 #
-# 2013-2025 (C) Eero Tamminen, licensed under GPL v2+
+# 2013-2025 (C) Eero Tamminen
+#
+# SPDX-License-Identifier: GPL-2.0-or-later
 #
 # TODO:
 #

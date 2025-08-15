@@ -2,7 +2,9 @@
 #
 # script to convert DSP LOD file table for Hatari debugger.
 #
-# 2013 (C) Eero Tamminen, licensed under GPL v2+
+# 2013 (C) Eero Tamminen
+#
+# SPDX-License-Identifier: GPL-2.0-or-later
 
 usage ()
 {
