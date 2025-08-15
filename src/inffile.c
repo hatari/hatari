@@ -5,6 +5,9 @@
   or at your option any later version. Read the file gpl.txt for details.
 
   TOS *.INF file overloading for autostarting & TOS resolution overriding.
+
+  Most of the functions here rely on accurate TOS+machine setup info,
+  so they should be called only after emulation startup has fixed those.
 */
 const char INFFILE_fileid[] = "Hatari inffile.c";
 
@@ -29,22 +32,24 @@ const char INFFILE_fileid[] = "Hatari inffile.c";
 
 /* TOS resolution numbers used in Atari TOS INF files.
  *
- * Note: EmuTOS uses different numbers, so these are re-mapped.
+ * ST & TT values are used as-is for older Atari TOS versions,
+ * but resolution values for TOS4 and EmuTOS need to go through
+ * a mapping table, as those use multiple INF file fields.
  */
 typedef enum {
 	RES_UNSET,	/* 0 */
 	RES_ST_LOW,	/* 1 */
 	RES_ST_MED,	/* 2 */
 	RES_ST_HIGH,	/* 3 */
-	RES_TT_MED,	/* 4, also Falcon 80 cols mode */
+	RES_TT_MED,	/* 4, 640x400 / 640x480 @16 */
 	RES_TT_HIGH,	/* 5 */
-	RES_TT_LOW,	/* 6, also Falcon 40 cols mode */
+	RES_TT_LOW,	/* 6, 320x400 / 320x480 @256 */
+	/* no TOS IDs, Falcon only */
+	RES_TC_MED,	/* 7, 320x400 / 320x480 @ TC */
+	RES_TC_HIGH,	/* 8, 640x400 @ TC */
+	RES_TC_LOW,	/* 9, 320x200 / 320x240 @ TC */
 	RES_COUNT
 } res_value_t;
-
-/* map values 0-6 to EmuTOS: N/A, ST low, med, high, TT med, high, low */
-static const res_value_t emutos_map[] = { 0, 0, 1, 2, 4, 6, 7 };
-
 
 static struct {
 	FILE *file;          /* file pointer to contents of INF file */
@@ -57,7 +62,6 @@ static struct {
 	const char *reso_str;
 	int prgname_id;
 } TosOverride;
-
 
 /* Autostarted program name is given on #Z line (added or
  * updated in the INF file), before its first '@' character.
@@ -93,9 +97,22 @@ static struct {
  * so default INF file needs still to specify them.
  */
 
-/* resolution info offsets for the #E line (2nd and 3rd hex values) */
-#define ATARI_TOS_RES_COLUMN 6
-#define EMUTOS_RES_COLUMN    9
+/* (space-separated) 2-digit hex value resolution info locations on #E line
+ *
+ * EmuTOS: 3rd & 4th 2-digit hex values
+ */
+#define ETOS_RES_OFFSET 9
+#define ETOS_RES_LEN (2*2+1)
+
+/* TOS v4: 2nd, 5th and 6th 2-digit hex values, matching to VsetMode:
+ * https://freemint.github.io/tos.hyp/en/Screen_functions.html#VsetMode
+ */
+#define TOS4_RES_OFFSET 6
+#define TOS4_RES_LEN (5*2+4)
+
+/* Older Atari TOS version: 2nd 2-digit hex value */
+#define TOS_RES_OFFSET  6
+#define TOS_RES_LEN     2
 
 /* EmuDesk INF file format and values differ from normal TOS */
 static const char emudesk_inf[] =
@@ -282,41 +299,48 @@ bool INF_SetAutoStart(const char *name, int opt_id)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Set specified TOS resolution override.
+ * Parse given string and set specified TOS resolution override.
  *
  * Return true for success, false otherwise.
  */
 bool INF_SetResolution(const char *str, int opt_id)
 {
-	int reso;
+	struct {
+		const char *name;
+		res_value_t reso;
+	} resolutions[] = {
+		{ "low",   RES_ST_LOW },
+		{ "stlow", RES_ST_LOW },
+		{ "med",   RES_ST_MED },
+		{ "stmed", RES_ST_MED },
+		{ "high",  RES_ST_HIGH },
+		{ "sthigh",RES_ST_HIGH },
+		{ "ttlow", RES_TT_LOW },
+		{ "ttmed", RES_TT_MED },
+		{ "tthigh",RES_TT_HIGH },
+		{ "tclow", RES_TC_LOW },
+		{ "tcmed", RES_TC_MED },
+		{ "tchigh",RES_TC_HIGH },
+	};
+	int i;
 
-	/* map to values used by real TOS INF files */
-	if (strcmp(str, "low") == 0)
-		reso = RES_ST_LOW;
-	else if (strcmp(str, "med") == 0)
-		reso = RES_ST_MED;
-	else if (strcmp(str, "high") == 0)
-		reso = RES_ST_HIGH;
-	else if (strcmp(str, "ttmed") == 0)
-		reso = RES_TT_MED;
-	else if (strcmp(str, "ttlow") == 0)
-		reso = RES_TT_LOW;
-	else
+	for (i = 0; i < ARRAY_SIZE(resolutions); i++)
 	{
-		reso = atoi(str);
-		if (reso <= RES_UNSET || reso >= RES_COUNT)
-			return false;
+		if (strcmp(str, resolutions[i].name) == 0)
+		{
+			TosOverride.reso = resolutions[i].reso;
+			TosOverride.reso_id = opt_id;
+			TosOverride.reso_str = str;
+			return true;
+		}
 	}
-	TosOverride.reso = reso;
-	TosOverride.reso_id = opt_id;
-	TosOverride.reso_str = str;
-	return true;
+	return false;
 }
 
 
 /*-----------------------------------------------------------------------*/
 /**
- * Validate autostart options against Hatari settings:
+ * Validate autostart options against current Hatari settings:
  * - program drive
  *
  * If there's a problem, return problematic option ID
@@ -452,8 +476,12 @@ extern void INF_SetVdiMode(int vdi_res)
  *      - ST low, med, high
  * 4-6: TT/Falcon resolutions:
  *      - TT med, high, low
- *      - Falcon 80 cols, N/A, 40 cols
+ * 7-8: Falcon HiColor (Truecolor)
+ *      - low and "medium" TC resolution
  *
+ * For older TOS versions, update resolution ID is as-is, but for
+ * EmuTOS & Falcon they need to be mapped to multiple INF file fields.
+ * 
  * If there's a problem, return problematic option ID
  * and set val & err strings, otherwise just return zero.
  */
@@ -466,6 +494,7 @@ static int INF_ValidateResolution(int *set_res, const char **val, const char **e
 	/* VDI resolution overrides TOS resolution setting */
 	if (bUseVDIRes)
 	{
+		Log_Printf(LOG_WARN, "Specified VDI resolution overrides specified TOS resolution\n");
 		res = vdi2inf(VDIRes);
 	}
 	else
@@ -513,6 +542,12 @@ static int INF_ValidateResolution(int *set_res, const char **val, const char **e
 				*err = "invalid TOS resolution for TT color monitor";
 				return TosOverride.reso_id;
 			}
+			else if (res == RES_TC_LOW || res == RES_TC_MED || res == RES_TC_HIGH)
+			{
+				*err = "TT does not support TrueColor mode";
+				return TosOverride.reso_id;
+
+			}
 			break;
 
 		case MACHINE_FALCON:
@@ -526,39 +561,11 @@ static int INF_ValidateResolution(int *set_res, const char **val, const char **e
 				*err = "TT-mono is invalid TOS resolution for Falcon";
 				return TosOverride.reso_id;
 			}
-			else
+			if (monitor == MONITOR_TYPE_VGA && res == RES_TC_HIGH)
 			{
-				Log_Printf(LOG_WARN, "TOS resolution setting doesn't work with Falcon (yet)\n");
+				*err = "TOS does not support TC high mode on VGA monitor";
+				return TosOverride.reso_id;
 			}
-			/* TODO:
-			 * Falcon resolution setting doesn't have effect,
-			 * seems that #E Falcon settings in columns 6 & 7
-			 * (5th & 6th hex values) are also needed:
-			 * - line doubling / interlace
-			 * - ST compat, RGB/VGA, columns & #colors
-			 * These should be same as for VsetMode:
-			 *   http://toshyp.atari.org/en/Screen_functions.html#Vsetmode
-			 */
-			break;
-		}
-	}
-
-	if (bIsEmuTOS)
-	{
-		res = emutos_map[res];
-		Log_Printf(LOG_DEBUG, "Remapped INF file TOS resolution for EmuTOS\n");
-	}
-	else if (TosVersion >= 0x0160)
-	{
-		switch(ConfigureParams.System.nMachineType)
-		{
-		case MACHINE_STE:
-		case MACHINE_MEGA_STE:
-		case MACHINE_FALCON:
-			/* enable blitter */
-			res |= 0x10;
-			break;
-		default:
 			break;
 		}
 	}
@@ -568,6 +575,29 @@ static int INF_ValidateResolution(int *set_res, const char **val, const char **e
 	return 0;
 }
 
+/*-----------------------------------------------------------------------*/
+/**
+ * Return resolution value blitter flag for appropriate platforms.
+ * Ones that actually have blitter HW, OS support for it, and
+ * do not set it themselves (in some other INF file value).
+ */
+static int get_blitter_bit(void)
+{
+	if (TosVersion >= 0x0160 && !bIsEmuTOS)
+	{
+		switch(ConfigureParams.System.nMachineType)
+		{
+		case MACHINE_STE:
+		case MACHINE_MEGA_STE:
+		case MACHINE_FALCON:
+			/* enable blitter */
+			return 0x10;
+		default:
+			break;
+		}
+	}
+	return 0;
+}
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -759,22 +789,96 @@ static const char *prg_format(const char *prgname)
 }
 
 /**
+ * Write specified resolution to INF FILE*,
+ * mapped to suitable TOS4 INF file values.
+ * Return number of written characters.
+ */
+static int write_reso_tos4(FILE *fp, int res)
+{
+	/* map res_value_t to TOS4 values */
+	static const uint8_t falcon[RES_COUNT][2][3] = {
+		/* RGB */          /* VGA */
+		{{0x0, 0x0, 0x00}, {0x0, 0x0, 0x00}}, /* N/A */
+		{{0x1, 0x0, 0x82}, {0x1, 0x1, 0x92}}, /* ST-low */
+		{{0x2, 0x0, 0x89}, {0x2, 0x1, 0x99}}, /* ST-med */
+		{{0x3, 0x1, 0x88}, {0x3, 0x0, 0x98}}, /* ST-high */
+		{{0x3, 0x1, 0x0A}, {0x4, 0x0, 0x1A}}, /* TT-med:  640x400 / 640x480 @16 */
+		{{0x0, 0x0, 0x00}, {0x0, 0x0, 0x00}}, /* TT-high: N/A on Falcon */
+		{{0x6, 0x1, 0x03}, {0x6, 0x0, 0x13}}, /* TT-low:  320x400 / 320x480 @256 */
+		{{0x6, 0x1, 0x04}, {0x6, 0x0, 0x14}}, /* TC-med:  320x400 / 320x480 @TC */
+		{{0x3, 0x1, 0x0C}, {0x0, 0x0, 0x00}}, /* TC-high: 640x400 / N/A @TC */
+		{{0x1, 0x0, 0x04}, {0x6, 0x1, 0x14}}, /* TC-low:  320x200 / 320x240 @TC */
+	};
+
+	int idx = 0;
+	if (ConfigureParams.Screen.nMonitorType == MONITOR_TYPE_VGA)
+	       idx = 1;
+
+	/* 2nd, 5th and 6th hex values on #E line */
+	return fprintf(fp, "%02X 00 06 %02X %02X",
+		       falcon[res][idx][0],
+		       falcon[res][idx][1],
+		       falcon[res][idx][2]);
+}
+
+/**
+ * Write specified resolution to INF FILE*,
+ * mapped to suitable EmuTOS INF file values.
+ * Return number of written characters.
+ */
+static int write_reso_etos(FILE *fp, int res)
+{
+	/* map TOS resolution values to EmuTOS values:
+	 * N/A, ST - low, med, high, TT - med, high, low, TC - N/A, N/A
+	 */
+	static const uint8_t remap[RES_COUNT] = { 0, 0, 1, 2, 4, 6, 7 };
+
+	/* map res_value_t to EmuTOS on Falcon */
+	static const uint8_t falcon[RES_COUNT][2][2] = {
+		/* RGB */     /* VGA */
+		{{0x0, 0x00}, {0x0, 0x00}}, /* N/A */
+		{{0x0, 0x82}, {0x1, 0x92}}, /* ST-low */
+		{{0x0, 0x89}, {0x1, 0x99}}, /* ST-med */
+		{{0x1, 0x88}, {0x0, 0x98}}, /* ST-high */
+		{{0x1, 0x0A}, {0x0, 0x1A}}, /* TT-med:  640x400 / 640x480 @16 */
+		{{0x0, 0x00}, {0x0, 0x00}}, /* TT-high: N/A on Falcon */
+		{{0x1, 0x03}, {0x0, 0x13}}, /* TT-low:  320x400 / 320x480 @256 */
+		{{0x1, 0x04}, {0x0, 0x14}}, /* TC-med:  320x400 / 320x480 @TC */
+		{{0x1, 0x0C}, {0x0, 0x00}}, /* TC-high: 640x400 / N/A @TC */
+		{{0x0, 0x04}, {0x1, 0x14}}, /* TC-low:  320x200 / 320x240 @TC */
+	};
+	int idx = 0;
+
+	if (!Config_IsMachineFalcon())
+		return fprintf(fp, "FF %02X", remap[res]);
+
+	if (ConfigureParams.Screen.nMonitorType == MONITOR_TYPE_VGA)
+		idx = 1;
+
+	/* 3rd and 4th hex values on #E line */
+	return fprintf(fp, "%02X %02X",
+		       falcon[res][idx][0],
+		       falcon[res][idx][1]);
+}
+
+/**
  * Create modified, temporary INF file that contains the required
  * autostart and resolution information.
  *
- * Return FILE* pointer to it.
+ * Return FILE* pointer to virtual INF file.
  */
 static FILE* write_inf_file(const char *contents, int size, int res)
 {
 	const char *infname, *prgname, *format = NULL;
-	int offset, off_prg, off_rez, res_col, res_len, endcheck;
+	int out, offset, off_prg, off_rez, res_col, res_len, endcheck;
 	FILE *fp;
 
 #if INF_DEBUG
 	{
 		/* insecure file path + leaving it behind for debugging */
 		const char *debugfile = "/tmp/hatari-desktop-inf.txt";
-		fprintf(stderr, "Virtual INF file: '%s'\n", debugfile);
+		fprintf(stderr, "Virtual INF file: '%s' = '%s' (TOS: 0x%04x)\n",
+			debugfile, TosOverride.infname, TosVersion);
 		fp = fopen(debugfile, "w+b");
 	}
 #else
@@ -794,21 +898,25 @@ static FILE* write_inf_file(const char *contents, int size, int res)
 	if (prgname)
 		format = prg_format(prgname);
 
+	assert(res > 0 && res < RES_COUNT);
+
 	if (bIsEmuTOS)
 	{
-		/* first 2-digit hex code offset for resolution on #E line */
-		res_col = EMUTOS_RES_COLUMN;
-		/* need to fit at least 2x hex digits + \r\n */
-		res_len = 2+1+2;
-		endcheck = size - res_col - res_len - 2;
+		res_col = ETOS_RES_OFFSET;
+		res_len = ETOS_RES_LEN;
 	}
-	else {
-		/* 2 digit hex code offset for resolution on #E line */
-		res_col = ATARI_TOS_RES_COLUMN;
-		/* need to fit at least 2 res digits + \r\n */
-		res_len = 2;
-		endcheck = size - res_col - res_len - 2;
+	else if (TosVersion >= 0x400)
+	{
+		res_col = TOS4_RES_OFFSET;
+		res_len = TOS4_RES_LEN;
 	}
+	else /* older Atari TOS version */
+	{
+		res_col = TOS_RES_OFFSET;
+		res_len = TOS_RES_LEN;
+	}
+	/* need to fit at least resource info + \r\n */
+	endcheck = size - res_col - res_len - 2;
 
 	/* positions after prog info & resolution info */
 	off_prg = off_rez = 0;
@@ -850,17 +958,18 @@ static FILE* write_inf_file(const char *contents, int size, int res)
 			/* write requested resolution, or default?
 			 * 
 			 * (TosOverride.reso tells if there's request,
-			 * 'res' tells the actual value to use)
+			 * 'res' is the actual resolution ID)
 			 */
-			if (TosOverride.reso)
-			{
-				if (bIsEmuTOS)
-					fprintf(fp, "FF %02x", res);
-				else
-					fprintf(fp, "%02x", res);
-			}
+			if (!TosOverride.reso)
+				out = fwrite(contents+offset+res_col, 1, res_len, fp);
+			else if (bIsEmuTOS)
+				out = write_reso_etos(fp, res);
+			else if (TosVersion >= 0x400)
+				out = write_reso_tos4(fp, res);
 			else
-				fwrite(contents+offset+res_col, res_len, 1, fp);
+				out = fprintf(fp, "%02X", res|get_blitter_bit());
+			if (out != res_len)
+				Log_Printf(LOG_ERROR, "invalid resolution write size for virtual INF file (%d!=%d)!\n", out, res_len);
 			/* set point to rest of #E */
 			offset += res_col + res_len;
 			off_rez = offset;

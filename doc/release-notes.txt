@@ -27,6 +27,8 @@ Emulator improvements:
   - Fix: resolution setting for EmuTOS with saved Falcon EMUDESK.INF
   - Fix: Boot drive window specified in the virtual INF file when
     GEMDOS HD has no existing INF file, works now also with EmuTOS
+  - Support (--tos-res) resolution setting also for Falcon machines,
+    and new tclow/tcmed/tchigh values for Falcon TC modes
 - Debugger:
   - Open Windows console automatically for debugger
   - Debugger input file commands can be split to multiple lines

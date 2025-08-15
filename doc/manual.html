@@ -647,8 +647,13 @@ color</p>
 <p class="paramdesc">Select monitor type (x =
 mono/rgb/vga/tv)</p>
 <p class="parameter">--tos-res &lt;x&gt;</p>
-<p class="paramdesc">Select TOS resolution for color monitors
-(x = low/med/high/ttlow/ttmed)</p>
+<p class="paramdesc">
+Select TOS resolution for color monitors, x = "low" / "med" / "high" /
+"ttlow" / "ttmed" / "tclow" / "tcmed" / "tchigh". Which correspond to
+standard 320x200@16 + 640x200@4 + 640x400@2 ST resolutions, 320x480@256
++ 640x480@16 TT resolutions, Falcon specific 320x240@TC + 320x480@TC
+resolutions on VGA monitors, and 320x200@TC + 320x400@TC + 640x400@TC
+resolutions on RGB monitors</p>
 <p class="parameter">-f,
 --fullscreen</p>
 <p class="paramdesc">Start the emulator in fullscreen

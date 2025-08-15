@@ -265,7 +265,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_MONITOR,      NULL, "--monitor",
 	  "<x>", "Select monitor type (x = mono/rgb/vga/tv)" },
 	{ OPT_TOS_RESOLUTION,   NULL, "--tos-res",
-	  "<x>", "TOS resolution (x = low/med/high/ttlow/ttmed)" },
+	  "<x>", "TOS resolution (x = {st,tt,tc}{low,med,high})" },
 	{ OPT_FULLSCREEN,"-f", "--fullscreen",
 	  NULL, "Start emulator in fullscreen mode" },
 	{ OPT_WINDOW,    "-w", "--window",

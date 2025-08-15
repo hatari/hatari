@@ -119,7 +119,12 @@ Start in monochrome mode instead of color
 Select monitor type (x = mono/rgb/vga/tv)
 .TP
 .B \-\-tos-res <x>
-Select TOS resolution for color monitors (x = low/med/high/ttlow/ttmed)
+Select TOS resolution for color monitors, x = "low" / "med" / "high" /
+"ttlow" / "ttmed" / "tclow" / "tcmed" / "tchigh". Which correspond to
+standard 320x200@16 + 640x200@4 + 640x400@2 ST resolutions, 320x480@256
++ 640x480@16 TT resolutions, Falcon specific 320x240@TC + 320x480@TC
+resolutions on VGA monitors, and 320x200@TC + 320x400@TC + 640x400@TC
+resolutions on RGB monitors.
 .TP
 .B \-f, \-\-fullscreen
 Start the emulator in fullscreen mode
