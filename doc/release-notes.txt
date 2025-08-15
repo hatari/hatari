@@ -17,8 +17,8 @@ Following features are deprecated and will be removed in a future release:
   - "hatari-shortcut quit"       (use "hatari-debug quit [exit value]")
 
 
- Development version
- -------------------
+ Version 2.6.1 (2025-08-15)
+ --------------------------
 
 Emulation improvements:
 - MegaSTE:
