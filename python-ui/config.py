@@ -1,19 +1,10 @@
-#
 # Class and helper functions for handling (Hatari) INI style
 # configuration files: loading, saving, setting/getting variables,
 # mapping them to sections, listing changes
 #
 # Copyright (C) 2008-2012,2016-2020 by Eero Tamminen
 #
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
+# SPDX-License-Identifier: GPL-2.0-or-later
 
 import os
 # mapping from Hatari config variable name to type id (Bool, Int, String)
