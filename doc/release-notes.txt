@@ -24,6 +24,8 @@ Emulation improvements:
 
 Emulator improvements:
 - Debugger:
+  - Debugger input file commands can be split to multiple lines
+    by adding '\' to end of line to continue it
   - Increase max lenght of accepted debugger file commands to 4k
 
 

@@ -1288,8 +1288,8 @@ void DebugUI(debug_reason_t reason)
  */
 bool DebugUI_ParseFile(const char *path, bool reinit, bool verbose)
 {
-	int recurse;
 	static int recursing;
+	int recurse, offset, len;
 	char *olddir, *dir, *cmd, *expanded, *slash;
 	char input[MAX_DEBUG_CMD_LEN];
 	FILE *fp;
@@ -1331,15 +1331,40 @@ bool DebugUI_ParseFile(const char *path, bool reinit, bool verbose)
 	recurse = recursing;
 	recursing = true;
 
-	while (fgets(input, sizeof(input), fp) != NULL)
+	offset = 0;
+	while (fgets(input+offset, sizeof(input)-offset, fp) != NULL)
 	{
+		/* trim (potentially appended) line */
+		cmd = Str_Trim(input+offset);
+		/* ignore empty lines */
+		if (!offset && !*cmd)
+			continue;
+
+		/* line ends in '\\'? */
+		len = strlen(cmd);
+		if (cmd[len-1] == '\\')
+		{
+			/* => continued line */
+			const char *next;
+
+			/* comment lines are not added to input */
+			if (*cmd == '#')
+				continue;
+
+			/* add next line from '\' char onwards */
+			next = strrchr(input+offset, '\\');
+			offset += next - input - offset;
+			continue;
+		}
+		offset = 0;
+
 		/* ignore empty and comment lines */
 		cmd = Str_Trim(input);
 		if (!*cmd || *cmd == '#')
 			continue;
 
 		/* returns new string if input needed expanding! */
-		expanded = DebugUI_EvaluateExpressions(input);
+		expanded = DebugUI_EvaluateExpressions(cmd);
 		if (!expanded)
 			continue;
 
