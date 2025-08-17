@@ -916,12 +916,12 @@ static char *DebugUI_GetCommand(char *input)
 	fprintf(stderr, "> ");
 	if (!input)
 	{
-		input = malloc(256);
+		input = malloc(MAX_DEBUG_CMD_LEN);
 		if (!input)
 			return NULL;
 	}
 	input[0] = '\0';
-	if (fgets(input, 256, stdin) == NULL)
+	if (fgets(input, MAX_DEBUG_CMD_LEN, stdin) == NULL)
 	{
 		free(input);
 		return NULL;
@@ -1291,7 +1291,7 @@ bool DebugUI_ParseFile(const char *path, bool reinit, bool verbose)
 	int recurse;
 	static int recursing;
 	char *olddir, *dir, *cmd, *expanded, *slash;
-	char input[256];
+	char input[MAX_DEBUG_CMD_LEN];
 	FILE *fp;
 
 	if (verbose)

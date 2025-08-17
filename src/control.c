@@ -424,7 +424,7 @@ static int Control_GetUISocket(void);
 bool Control_CheckUpdates(void)
 {
 	/* setting all trace options, or paths takes a lot of space */
-	char buffer[4096];
+	char buffer[MAX_DEBUG_CMD_LEN];
 	struct timeval tv;
 	fd_set readfds;
 	ssize_t bytes;

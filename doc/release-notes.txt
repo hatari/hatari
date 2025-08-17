@@ -17,6 +17,16 @@ Following features are deprecated and will be removed in a future release:
   - "hatari-shortcut quit"       (use "hatari-debug quit [exit value]")
 
 
+ Development version
+ -------------------
+
+Emulation improvements:
+
+Emulator improvements:
+- Debugger:
+  - Increase max lenght of accepted debugger file commands to 4k
+
+
  Version 2.6.1 (2025-08-15)
  --------------------------
 
