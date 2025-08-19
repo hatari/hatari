@@ -961,8 +961,8 @@ static void TOS_CheckSysConfig(void)
 	}
 	if (Config_IsMachineFalcon() && bUseVDIRes && !bIsEmuTOS)
 	{
-		Log_AlertDlg(LOG_ERROR, "Please use 512k EmuTOS instead of TOS v4 "
-			     "for proper extended VDI resolutions support on Falcon.");
+		Log_AlertDlg(LOG_ERROR, "TOS v4 does not work with the VDI mode.\n"
+			     "Please use 512k/1024k EmuTOS for that on Falcon.");
 	}
 }
 
@@ -1050,7 +1050,7 @@ static uint8_t *TOS_LoadImage(void)
 	}
 
 	/* Assert that machine type matches the TOS version.
-	 * 512k EmuTOS declares itself as TOS 2.x, but it can handle
+	 * 512k/1024k EmuTOS declares itself as TOS 2.x, but it can handle
 	 * all machine types, so it can & needs to be skipped here
 	 */
 	if (!bIsEmuTOS || TosSize < 512 * 1024)
