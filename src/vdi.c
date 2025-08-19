@@ -130,8 +130,12 @@ void VDI_SetResolution(int GEMColor, int WidthRequest, int HeightRequest)
 		VDIRes = ST_LOW_RES;
 		VDIPlanes = 4;
 		break;
+	 case GEMCOLOR_256:
+		VDIRes = TT_LOW_RES;
+		VDIPlanes = 8;
+		break;
 	default:
-		Main_ErrorExit("Invalid VDI planes mode request (not 2/4/16)", NULL, 1);
+		Main_ErrorExit("Invalid VDI planes mode request (not 1/2/4/8)", NULL, 1);
 	}
 #if DEBUG
 	printf("%s v0x%04x, RAM=%dkB\n", bIsEmuTOS ? "EmuTOS" : "TOS", TosVersion,  ConfigureParams.Memory.STRamSize_KB);

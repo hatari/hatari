@@ -313,7 +313,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_VDI,	NULL, "--vdi",
 	  "<bool>", "Whether to use VDI screen mode" },
 	{ OPT_VDI_PLANES,NULL, "--vdi-planes",
-	  "<x>", "VDI mode bit-depth (x = 1/2/4)" },
+	  "<x>", "VDI mode bit-depth (x = 1/2/4/8)" },
 	{ OPT_VDI_WIDTH,     NULL, "--vdi-width",
 	  "<w>", "VDI mode width (320 < w <= 2048)" },
 	{ OPT_VDI_HEIGHT,     NULL, "--vdi-height",
@@ -1440,6 +1440,9 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				break;
 			 case 4:
 				ConfigureParams.Screen.nVdiColors = GEMCOLOR_16;
+				break;
+			 case 8:
+				ConfigureParams.Screen.nVdiColors = GEMCOLOR_256;
 				break;
 			 default:
 				return Opt_ShowError(OPT_VDI_PLANES, argv[i], "Unsupported VDI bit-depth");

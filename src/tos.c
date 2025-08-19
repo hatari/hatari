@@ -961,8 +961,9 @@ static void TOS_CheckSysConfig(void)
 	}
 	if (Config_IsMachineFalcon() && bUseVDIRes && !bIsEmuTOS)
 	{
-		Log_AlertDlg(LOG_ERROR, "TOS v4 does not work with the VDI mode.\n"
-			     "Please use 512k/1024k EmuTOS for that on Falcon.");
+		Log_AlertDlg(LOG_ERROR, "VDI mode does not work with TOS v4 => disabled.\n"
+			     "Use 512k/1024k EmuTOS for VDI mode on Falcon.");
+		bUseVDIRes = false;
 	}
 }
 
@@ -1197,6 +1198,14 @@ int TOS_InitImage(void)
 		}
 		else
 		{
+			/* use VDI type supported by current machine */
+			if (ConfigureParams.Screen.nVdiColors > GEMCOLOR_16 &&
+			    !(Config_IsMachineFalcon() || Config_IsMachineTT()))
+			{
+				Log_AlertDlg(LOG_ERROR, "Only Falcon + TT support better than 16-color modes."
+					     " Switching to 16-color VDI mode.");
+				ConfigureParams.Screen.nVdiColors = GEMCOLOR_16;
+			}
 			/* needs to be called after TosVersion is set, but
 			 * before STMemory_SetDefaultConfig() is called
 			 */

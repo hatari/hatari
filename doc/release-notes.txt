@@ -23,6 +23,8 @@ Following features are deprecated and will be removed in a future release:
 Emulation improvements:
 
 Emulator improvements:
+- VDI mode:
+  - Support 8-bit mode (up to 640x480@256) on TT & Falcon
 - Virtual INF file (used with autostart/TOS-resolution options):
   - Fix: resolution setting for EmuTOS with saved Falcon EMUDESK.INF
   - Fix: Boot drive window specified in the virtual INF file when

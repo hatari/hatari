@@ -42,9 +42,10 @@
 
 enum
 {
-  GEMCOLOR_2,
-  GEMCOLOR_4,
-  GEMCOLOR_16
+	GEMCOLOR_2,
+	GEMCOLOR_4,
+	GEMCOLOR_16,
+	GEMCOLOR_256,
 };
 
 extern uint32_t VDI_OldPC;

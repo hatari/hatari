@@ -47,7 +47,8 @@ const char DlgScreen_fileid[] = "Hatari dlgScreen.c";
 #define DLGSCRN_BPP1         18
 #define DLGSCRN_BPP2         19
 #define DLGSCRN_BPP4         20
-#define DLGSCRN_EXIT_MONITOR 21
+#define DLGSCRN_BPP8         21
+#define DLGSCRN_EXIT_MONITOR 22
 
 /* Strings for VDI resolution width and height */
 static char sVdiWidth[5];
@@ -55,7 +56,7 @@ static char sVdiHeight[5];
 
 static SGOBJ monitordlg[] =
 {
-	{ SGBOX, 0, 0, 0,0, 34,18, NULL },
+	{ SGBOX, 0, 0, 0,0, 34,19, NULL },
 
 	{ SGBOX,      0, 0,  1,1, 32,6, NULL },
 	{ SGTEXT,     0, 0, 10,1, 14,1, "Atari monitor" },
@@ -65,7 +66,7 @@ static SGOBJ monitordlg[] =
 	{ SGRADIOBUT, 0, 0, 26,3,  4,1, "_TV" },
 	{ SGCHECKBOX, 0, 0, 12,5, 14,1, "Show _borders" },
 
-	{ SGBOX,      0, 0,  1,8, 32,7, NULL },
+	{ SGBOX,      0, 0,  1,8, 32,8, NULL },
 	{ SGCHECKBOX, 0, 0,  4,9, 25,1, "Use _extended VDI screen" },
 	{ SGTEXT,     0, 0,  4,11, 5,1, "Size:" },
 	{ SGBUTTON,   0, 0,  6,12, 1,1, "\x04", SG_SHORTCUT_LEFT },
@@ -76,11 +77,12 @@ static SGOBJ monitordlg[] =
 	{ SGTEXT,     0, 0,  8,13, 4,1, sVdiHeight },
 	{ SGBUTTON,   0, 0, 13,13, 1,1, "\x03", SG_SHORTCUT_DOWN },
 
-	{ SGRADIOBUT, SG_EXIT, 0, 18,11, 11,1, " _2 colors" },
-	{ SGRADIOBUT, SG_EXIT, 0, 18,12, 11,1, " _4 colors" },
-	{ SGRADIOBUT, SG_EXIT, 0, 18,13, 11,1, "1_6 colors" },
+	{ SGRADIOBUT, SG_EXIT, 0, 18,11, 11,1, "  _2 colors" },
+	{ SGRADIOBUT, SG_EXIT, 0, 18,12, 11,1, "  _4 colors" },
+	{ SGRADIOBUT, SG_EXIT, 0, 18,13, 11,1, " 1_6 colors" },
+	{ SGRADIOBUT, SG_EXIT, 0, 18,14, 11,1, "2_56 colors" },
 
-	{ SGBUTTON, SG_DEFAULT, 0, 7,16, 20,1, "Back to main menu" },
+	{ SGBUTTON, SG_DEFAULT, 0, 7,17, 20,1, "Back to main menu" },
 	{ SGSTOP, 0, 0, 0,0, 0,0, NULL }
 };
 
@@ -195,8 +197,10 @@ static int DlgMonitor_SetVdiStepping(int *stepx, int *stepy)
 		planes = 1;
 	else if (monitordlg[DLGSCRN_BPP2].state & SG_SELECTED)
 		planes = 2;
-	else
+	else if (monitordlg[DLGSCRN_BPP4].state & SG_SELECTED)
 		planes = 4;
+	else
+		planes = 8;
 	*stepx = VDI_ALIGN_WIDTH;
 	*stepy = VDI_ALIGN_HEIGHT;
 	return planes;
@@ -231,7 +235,7 @@ void Dialog_MonitorDlg(void)
 		monitordlg[DLGSCRN_USEVDIRES].state |= SG_SELECTED;
 	else
 		monitordlg[DLGSCRN_USEVDIRES].state &= ~SG_SELECTED;
-	for (i=0; i<3; i++)
+	for (i=0; i < 4; i++)
 		monitordlg[DLGSCRN_BPP1 + i].state &= ~SG_SELECTED;
 	monitordlg[DLGSCRN_BPP1 + ConfigureParams.Screen.nVdiColors - GEMCOLOR_2].state |= SG_SELECTED;
 
@@ -266,6 +270,7 @@ void Dialog_MonitorDlg(void)
 		 case DLGSCRN_BPP1:
 		 case DLGSCRN_BPP2:
 		 case DLGSCRN_BPP4:
+		 case DLGSCRN_BPP8:
 			planes = DlgMonitor_SetVdiStepping(&stepx, &stepy);
 			break;
 
@@ -301,7 +306,7 @@ void Dialog_MonitorDlg(void)
 	ConfigureParams.Screen.nVdiHeight = vdih;
 
 	ConfigureParams.Screen.bUseExtVdiResolutions = (monitordlg[DLGSCRN_USEVDIRES].state & SG_SELECTED);
-	for (i=0; i<3; i++)
+	for (i=0; i < 4; i++)
 	{
 		if (monitordlg[DLGSCRN_BPP1 + i].state & SG_SELECTED)
 			ConfigureParams.Screen.nVdiColors = GEMCOLOR_2 + i;

@@ -489,13 +489,26 @@ static int INF_ValidateResolution(int *set_res, const char **val, const char **e
 {
 #define MONO_WARN_STR "Correcting virtual INF file resolution to mono on mono monitor\n"
 	int res = TosOverride.reso;
+	*val = TosOverride.reso_str;
 	*set_res = 0;
 
-	/* VDI resolution overrides TOS resolution setting */
 	if (bUseVDIRes)
 	{
-		Log_Printf(LOG_WARN, "Specified VDI resolution overrides specified TOS resolution\n");
+		/* VDI resolution overrides any TOS resolution setting */
 		res = vdi2inf(VDIRes);
+
+		switch(ConfigureParams.System.nMachineType)
+		{
+		case MACHINE_TT:
+		case MACHINE_FALCON:
+			break;
+		default:
+			if (res >= TT_LOW_RES)
+			{
+				*err = "Invalid VDI mode, only TT + Falcon support more than 4-plane modes";
+				return TosOverride.reso_id;
+			}
+		}
 	}
 	else
 	{
@@ -504,8 +517,6 @@ static int INF_ValidateResolution(int *set_res, const char **val, const char **e
 		/* validate given TOS resolution */
 		if (!res)
 			return 0;
-
-		*val = TosOverride.reso_str;
 
 		switch(ConfigureParams.System.nMachineType)
 		{
