@@ -48,6 +48,9 @@ const char DebugUI_fileid[] = "Hatari debugui.c";
 #include "profile.h"
 #include "symbols.h"
 #include "vars.h"
+#ifdef WIN32
+#include "gui-win/opencon.h"
+#endif
 
 FILE *debugOutput;
 
