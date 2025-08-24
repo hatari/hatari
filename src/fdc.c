@@ -5195,6 +5195,8 @@ static int flux_next_bit(struct fd_stream *s)
 
 
 
+
+
 #define	FDC_AM_DET_STATUS_SYNC_A1	(1<<0)
 #define	FDC_AM_DET_STATUS_SYNC_C2	(1<<1)
 #define	FDC_AM_DET_STATUS_SYNC_A1_X3	(1<<2)
@@ -5205,6 +5207,10 @@ static int flux_next_bit(struct fd_stream *s)
 #define	FDC_AM_DET_MODE_AUTO_OFF	2		/* AM Det is ON and goes OFF when AM is found */
 
 
+
+// "simple" MFM decoder ; does a resync after 0x4489 / 0x5224
+// but DSR value is not correctly updated as real HW does
+// in the case of overlapping syncs
 
 int	FDC_MFM_Process_Bit ( struct fd_stream *s , bool Skip_Bit );
 
@@ -5327,3 +5333,263 @@ int	FDC_MFM_Process_Bit ( struct fd_stream *s , bool Skip_Bit )
 
 
 
+
+/* Dump the content of a track : display decoded data bytes, CRC values and timing
+ * for each byte
+ */
+
+void	FD_Stream_DumpTrack_test_overlap ( struct fd_stream *s , int InitialShift );
+void	FD_Stream_DumpTrack_new ( struct fd_stream *s , int InitialShift );
+
+
+void	FD_Stream_DumpTrack ( struct fd_stream *s , int InitialShift )
+{
+//	FD_Stream_DumpTrack_test_overlap ( s , InitialShift );
+	FD_Stream_DumpTrack_new ( s , InitialShift );
+}
+
+
+
+/*
+ * Test version based on code from caps library by Istvan Fabian (IFW)
+ * This version handles the special case of overlapping syncs (as used in the
+ * game Jupiter Masterdrive for example)
+ */
+void	FD_Stream_DumpTrack_test_overlap ( struct fd_stream *s , int InitialShift )
+{
+	int	bit;
+	Uint8	DSR , DR;
+	int	DSR_count;
+	bool	Copy_DSR_DR;
+	Uint16	Sync , Sync_prev;
+	int	Sync_Dist;
+	int	Data_Delay;
+	int	Data_Skip;
+
+	int	nb;
+	int	DR_time;
+	char	buf_dr[1000];
+	char	buf_asc[1000];
+	char	buf_time[1000];
+	uint64_t prev_latency;
+	Uint16	Sync_Print;
+
+
+	DSR = 0;
+	DSR_count = 0;
+	Copy_DSR_DR = false;
+	Sync_Dist = 0;
+	Sync = 0;
+	Sync_prev = 0;
+	Data_Delay = 0;
+	Data_Skip = 0;
+
+	prev_latency = 0;
+	Sync_Print = 0;
+
+	nb = 0;
+	*buf_dr = *buf_asc = *buf_time = '\0';
+	fprintf ( stdout , "%04x : " , nb );
+
+	while ( 1 )
+	{
+		bit = fd_stream_next_bit ( s );
+//fprintf ( stdout , "bit %d %d %0x\n" , nb , bit , s->word  );
+		if ( bit == -1 )				/* index -> end of track */
+			break;
+
+		if ( InitialShift )
+		{
+			InitialShift--;				/* Ignore this bit */
+			continue;
+		}
+
+		if ( Sync_Dist )
+			Sync_Dist--;
+
+		Sync = 0;
+		if ( (uint16_t)s->word == 0x4489 )
+		{
+//fprintf ( stdout , "sync a1 %02x %d\n" , DSR , DSR_count );
+			if ( !Sync_Dist || Sync_prev != 0x4489 )
+				Sync = 0x4489;
+		}
+		else if ( (uint16_t)s->word == 0x5224 )
+		{
+//fprintf ( stdout , "sync c2 %02x %d\n" , DSR , DSR_count );
+			Sync = 0x5224;
+		}
+
+		if ( Sync )
+		{
+                        // we just read the last data bit of a mark, delay by a clock bit to read from decoder#1
+			Data_Delay = 1;
+
+			// if overlapped with a different mark
+			if ( Sync_Dist && Sync_prev != Sync ) {
+				// dsr value is invalid
+				Data_Skip++;
+
+				// delay by an additional data bit (data, clock)
+				Data_Delay += 2;
+			}
+
+			// if dsr is empty dsr shouldn't be flushed, dsr value is invalid
+			if ( DSR_count == 0 )
+				Data_Skip++;
+
+			// force dsr to flush its current value, since data values start from next data bit
+			DSR_count = 7;
+
+			// 16 bitcells must be read before next mark, otherwise marks are overlapped (8 clock+data bits)
+			Sync_Dist = 16;
+
+			// save last mark type; only used when marks overlap
+			Sync_prev = Sync;
+
+			Sync_Print = Sync;
+		}
+
+		// wait for data clock cycle plus bitcell delay
+		if ( Data_Delay == 0 )
+		{
+			// set next delay
+			// just read a clock bit here, next cell is data, that gets processed at the clock bit after that
+			Data_Delay = 1;
+
+			// shift data bit into dsr, this is a clock bit, data bit is at decoder#1
+			DSR = DSR<<1;
+			if ( s->word & 2 )
+				DSR |= 1;
+//fprintf ( stdout , "dsr %02x cnt %d\n" , DSR , DSR_count );
+
+			// process data if 8 bits are dsr now, otherwise just increase dsr counter
+			if ( ++DSR_count == 8 )
+			{
+				// reset dsr counter
+				DSR_count = 0;
+
+				// set dsr ready signal, unless data is invalid
+				if ( Data_Skip == 0 )
+					Copy_DSR_DR = true;
+				else
+					Data_Skip--;
+			}
+		}
+		else
+			Data_Delay--;
+
+		if ( Copy_DSR_DR )
+		{
+			DR = DSR;
+			Copy_DSR_DR = false;
+
+			DR_time = s->latency - prev_latency;
+			prev_latency = s->latency;
+
+			nb++;
+			sprintf ( buf_dr+strlen(buf_dr) , "%02X%c" , DR , Sync_Print==0x4489?'*':Sync_Print==0x5224?'+':' ' );
+			sprintf ( buf_time+strlen(buf_time) , " %04X" , DR_time );
+			if ( DR < 32 || DR > 126 )
+				sprintf ( buf_asc+strlen(buf_asc) , "." );
+			else
+				sprintf ( buf_asc+strlen(buf_asc) , "%c" , DR );
+			if ( nb % 16 == 0 )
+			{
+				fprintf ( stdout , "%s  %s  %s\n" , buf_dr , buf_asc , buf_time );
+				fprintf ( stdout , "%04x : " , nb );
+				*buf_dr = *buf_asc = *buf_time = '\0';
+			}
+			Sync_Print = 0;
+		}
+
+	}
+
+	fprintf ( stdout , "\n" );
+
+exit(0);
+}
+
+
+
+/* Dump a track by calling FDC_MFM_Process_Bit() until a byte is available */
+
+void	FD_Stream_DumpTrack_new ( struct fd_stream *s , int InitialShift )
+{
+	int	bit;
+	int	nb;
+	bool	EndTrack;
+	char	Flag;
+	char	buf_dr[1000];
+	char	buf_asc[1000];
+	char	buf_time[1000];
+	char	buf_crc[1000];
+
+
+	FDC.AM_Detector_Mode = FDC_AM_DET_MODE_ALWAYS_ON;
+	FDC.DSR = 0;
+	FDC.DSR_count = 0;
+	FDC.Bit_Is_Data = true;						/* 1st bit will be data, next will be clock */
+	FDC.FD_Latency_prev = 0;
+	FDC.Enable_CRC = false;
+	FDC.CRC = 0xffff;
+	FDC.Prev_Sync = 0;
+	FDC.Sync_A1_Count = 0;
+
+	nb = 0;
+	*buf_dr = *buf_asc = *buf_time = *buf_crc = '\0';
+	fprintf ( stdout , "%04x : " , nb );
+
+	EndTrack = false;
+	while ( 1 )
+	{
+		/* Wait for DR */
+		do
+		{
+			bit = FDC_MFM_Process_Bit ( s , InitialShift > 0 );
+
+//fprintf ( stdout , "bit %d %d %0x\n" , nb , bit , s->word  );
+			if ( bit == -1 )				/* index -> end of track */
+			{
+				EndTrack = true;
+				break;
+			}
+
+			if ( InitialShift )
+			{
+				InitialShift--;				/* Ignore this bit */
+				continue;
+			}
+		}
+		while ( ! ( FDC.AM_Detector_Status & FDC_AM_DET_STATUS_DR_READY ) );
+
+		if ( EndTrack )
+			break;
+
+		nb++;
+
+		if ( FDC.AM_Detector_Status & FDC_AM_DET_STATUS_SYNC_A1_X3 )		{ Flag = '@'; }
+		else if ( FDC.AM_Detector_Status & FDC_AM_DET_STATUS_SYNC_A1 )		{ Flag = '*'; }
+		else if ( FDC.AM_Detector_Status & FDC_AM_DET_STATUS_SYNC_C2 )		{ Flag = '+'; }
+		else									{ Flag = ' '; }
+
+		sprintf ( buf_dr+strlen(buf_dr) , "%02X%c" , FDC.DR , Flag );
+		sprintf ( buf_time+strlen(buf_time) , " %04X" , (uint32_t)FDC.FD_DR_time );
+		sprintf ( buf_crc+strlen(buf_crc) , "%04X%c" , FDC.CRC , FDC.CRC==0?'*':' ' );
+		if ( FDC.DR < 32 || FDC.DR > 126 )
+			sprintf ( buf_asc+strlen(buf_asc) , "." );
+		else
+			sprintf ( buf_asc+strlen(buf_asc) , "%c" , FDC.DR );
+		if ( nb % 16 == 0 )
+		{
+			fprintf ( stdout , "%s  %s  %s %s\n" , buf_dr , buf_asc , buf_crc , buf_time );
+			fprintf ( stdout , "%04x : " , nb );
+			*buf_dr = *buf_asc = *buf_time = *buf_crc = '\0';
+		}
+
+	}
+
+	fprintf ( stdout , "\n" );
+
+exit(0);
+}
