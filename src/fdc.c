@@ -395,7 +395,7 @@ enum
 #define	FDC_BITRATE_STANDARD			250000		/* read/write speed of the WD1772 in bits per sec */
 #define	FDC_RPM_STANDARD			300		/* 300 RPM or 5 spins per sec */
 //#define	FDC_TRACK_BYTES_STANDARD		( ( FDC_BITRATE_STANDARD / 8 ) / ( FDC_RPM_STANDARD / 60 ) )	/* 6250 bytes */
-#define FDC_TRACK_BYTES_STANDARD	6268
+#define FDC_TRACK_BYTES_STANDARD		6268
 
 #define FDC_TRANSFER_BYTES_US( n )		(  ( n ) * 8 * 1000000.L / FDC_BITRATE_STANDARD )	/* micro sec to read/write 'n' bytes in the WD1772 */
 
@@ -464,6 +464,9 @@ typedef struct {
 	uint8_t		SR;					/* Sector Register */
 	uint8_t		CR;					/* Command Register */
 	uint8_t		STR;					/* Status Register */
+	uint8_t		DSR;					/* Data Shift Register */
+	int		DSR_count;				/* Number of valid bits in DSR (0-8) */
+
 	int		StepDirection;				/* +1 (Step In) or -1 (Step Out) */
 
 	uint8_t		SideSignal;				/* Side 0 or 1 */
@@ -473,6 +476,22 @@ typedef struct {
 	uint16_t	DensityMode;				/* bits 0 and 1 of $ff860e */
 								/* 0x00 : FDC operates in DD mode */
 								/* 0x03 : FDC operates in HD mode */
+
+	/* AM detector */
+	uint16_t	AM_Detector_Mode;
+	uint16_t	AM_Detector_Status;
+	bool		Bit_Is_Data;
+	bool		Enable_CRC;
+	uint16_t	CRC;
+	uint16_t	Prev_Sync;
+	int		Bits_Since_Prev_Sync;
+	int		Sync_A1_Count;
+
+
+	/* Flux decoding */
+	uint64_t	FD_Latency_prev;
+	uint64_t	FD_DR_time;
+
 
 	/* Other variables */
 	int		Command;				/* FDC emulation command currently being executed */
@@ -5172,4 +5191,139 @@ static int flux_next_bit(struct fd_stream *s)
 /*
  * Flux to MFM bit decoding - END
  */
+
+
+
+
+#define	FDC_AM_DET_STATUS_SYNC_A1	(1<<0)
+#define	FDC_AM_DET_STATUS_SYNC_C2	(1<<1)
+#define	FDC_AM_DET_STATUS_SYNC_A1_X3	(1<<2)
+#define	FDC_AM_DET_STATUS_DR_READY	(1<<3)
+
+#define	FDC_AM_DET_MODE_OFF		0		/* AM Det is OFF */
+#define	FDC_AM_DET_MODE_ALWAYS_ON	1		/* AM Det is always ON (eg "read track") */
+#define	FDC_AM_DET_MODE_AUTO_OFF	2		/* AM Det is ON and goes OFF when AM is found */
+
+
+
+int	FDC_MFM_Process_Bit ( struct fd_stream *s , bool Skip_Bit );
+
+int	FDC_MFM_Process_Bit ( struct fd_stream *s , bool Skip_Bit )
+{
+	int			bit;
+	bool			Copy_DSR_DR;
+	Uint16			Sync;
+
+
+	/* Reset some status before processing a new bit */
+	FDC.AM_Detector_Status &= ~( FDC_AM_DET_STATUS_SYNC_A1 | FDC_AM_DET_STATUS_SYNC_C2 | FDC_AM_DET_STATUS_DR_READY
+		| FDC_AM_DET_STATUS_SYNC_A1_X3 );
+
+	Copy_DSR_DR = false;
+
+	/* Get a new bit from the flux (clock or data) */
+	bit = fd_stream_next_bit ( s );
+//fprintf ( stdout , "bit %d %d %0x\n" , nb , bit , s->word  );
+	if ( bit == -1 )					/* index -> end of track */
+		return -1;
+
+	/* Stop processing now if we want to skip a bit */
+	if ( Skip_Bit )
+		return bit;
+
+	/* If the bit is a data bit, we update DSR and CRC (if enabled) */
+	if ( FDC.Bit_Is_Data )
+	{
+		FDC.DSR = FDC.DSR<<1 | bit;			/* add data bit */
+		FDC.DSR_count++;
+
+		if ( FDC.Enable_CRC )
+		{
+			if ( bit )
+				FDC.CRC ^= 0x8000;
+			if ( FDC.CRC & 0x8000 )
+				FDC.CRC = ( FDC.CRC << 1 ) ^ 0x1021;
+			else
+				FDC.CRC = FDC.CRC << 1;
+		}
+//fprintf ( stdout , "dsr %d %02x %d %x\n" , nb , DSR , DSR_count , CRC  );
+	}
+
+	/* TODO : handle syncs overlapping */
+	if ( FDC.AM_Detector_Mode != FDC_AM_DET_MODE_OFF )
+	{
+		FDC.Bits_Since_Prev_Sync++;
+
+		Sync = 0;
+		if ( (uint16_t)s->word == 0x4489 )		/* 0xA1 */
+		{
+//fprintf ( stdout , "sync a1 %02x %d\n" , DSR , DSR_count  );
+			Sync = 0x4489;
+			FDC.AM_Detector_Status |= FDC_AM_DET_STATUS_SYNC_A1;
+		}
+		else if ( (uint16_t)s->word == 0x5224 )		/* 0xC2 */
+		{
+//fprintf ( stdout , "sync c2 %02x %d\n" , DSR , DSR_count  );
+			Sync = 0x5224;
+			FDC.AM_Detector_Status |= FDC_AM_DET_STATUS_SYNC_C2;
+		}
+
+		if ( Sync )
+		{
+			/* Force a flush of DSR to DR (only if DSR has at least 1 bit) */
+			if ( FDC.DSR_count > 0 )
+				Copy_DSR_DR = true;
+
+			/* If SYNC is detected, last read bit was a data and next one will be a clock */
+			FDC.Bit_Is_Data = true;
+
+			/* Sync = 0x4489 enables the CRC and preset CRC to 0xCDB4 */
+			if ( Sync == 0x4489 )
+			{
+				FDC.Enable_CRC = true;
+				FDC.CRC = 0xCDB4;
+
+				/* Count consecutive 4489/A1 for address mark detector */
+				if ( ( FDC.Prev_Sync == 0x4489 ) && ( FDC.Bits_Since_Prev_Sync == 16 ) )
+					FDC.Sync_A1_Count++;
+				else
+					FDC.Sync_A1_Count = 1;
+			}
+
+			FDC.Prev_Sync = Sync;
+			FDC.Bits_Since_Prev_Sync = 0;
+
+			/* When 3 4489/A1 are found we can look for an address mark (ID or DATA) */
+			/* Do to so, Sync detector must be turned off to read the next bytes from the flux */
+			/* It's only during "Read Track" command that Sync detector remains always ON */
+			if ( FDC.Sync_A1_Count == 3 )
+			{
+				FDC.Sync_A1_Count = 0;
+				FDC.AM_Detector_Status |= FDC_AM_DET_STATUS_SYNC_A1_X3;
+				/* Turn off sync detector for next bits ? */
+				if ( FDC.AM_Detector_Mode == FDC_AM_DET_MODE_AUTO_OFF )
+					FDC.AM_Detector_Mode = FDC_AM_DET_MODE_OFF;
+			}
+		}
+	}
+
+	if ( FDC.DSR_count == 8 )				/* 8 bits = 1 byte is complete */
+		Copy_DSR_DR = true;
+
+	if ( Copy_DSR_DR )
+	{
+		Copy_DSR_DR = false;
+		FDC.DR = FDC.DSR;
+		FDC.DSR_count = 0;
+		FDC.AM_Detector_Status |= FDC_AM_DET_STATUS_DR_READY;
+
+		FDC.FD_DR_time = s->latency - FDC.FD_Latency_prev;
+		FDC.FD_Latency_prev = s->latency;
+	}
+
+	FDC.Bit_Is_Data = !FDC.Bit_Is_Data;			/* toggle between data or clock bit */
+	return bit;
+}
+
+
 
