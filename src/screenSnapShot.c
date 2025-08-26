@@ -15,7 +15,6 @@ const char ScreenSnapShot_fileid[] = "Hatari screenSnapShot.c";
 #include "configuration.h"
 #include "file.h"
 #include "log.h"
-#include "paths.h"
 #include "screen.h"
 #include "screenConvert.h"
 #include "screenSnapShot.h"
@@ -42,7 +41,7 @@ static void ScreenSnapShot_GetNum(void)
 {
 	char dummy[5];
 	int i, num;
-	DIR *workingdir = opendir(Paths_GetScreenShotDir());
+	DIR *workingdir = opendir(Configuration_GetScreenShotDir());
 	struct dirent *file;
 
 	nScreenShots = 0;
@@ -560,7 +559,7 @@ void ScreenSnapShot_SaveScreen(void)
 	if (!szFileName)  return;
 
 	/* Create our filename */
-	path = Paths_GetScreenShotDir();
+	path = Configuration_GetScreenShotDir();
 	ScreenSnapShot_GetNum();
 	nScreenShots++;
 

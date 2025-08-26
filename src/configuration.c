@@ -1298,6 +1298,20 @@ void Configuration_MemorySnapShot_Capture(bool bSave)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Return pointer to screenshot directory string, either a user configured
+ * override directory, or the default (Hatari/OS) screenshot directory.
+ */
+const char* Configuration_GetScreenShotDir(void)
+{
+	if (ConfigureParams.Screen.szScreenShotDir[0])
+		return ConfigureParams.Screen.szScreenShotDir;
+	/* use default */
+	return Paths_GetDefaultScreenShotDir();
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * This function should be called each time the CPU freq is changed.
  * It will update the main configuration, as well as the corresponding
  * value for nCpuFreqShift

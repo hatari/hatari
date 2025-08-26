@@ -13,7 +13,6 @@ const char Paths_fileid[] = "Hatari paths.c";
 #include <sys/types.h>
 
 #include "main.h"
-#include "configuration.h"
 #include "file.h"
 #include "paths.h"
 #include "str.h"
@@ -69,14 +68,13 @@ const char *Paths_GetHatariHome(void)
 }
 
 /**
- * Return pointer to screenshot directory string
+ * Return pointer to default screenshot directory string.
+ * Hatari code should use Configuration_GetScreenShotDir()
+ * instead (which calls this).
  */
-const char *Paths_GetScreenShotDir(void)
+const char *Paths_GetDefaultScreenShotDir(void)
 {
-	if (!ConfigureParams.Screen.szScreenShotDir[0])
-		return sScreenShotDir;
-	/* user override */
-	return ConfigureParams.Screen.szScreenShotDir;
+	return sScreenShotDir;
 }
 
 /**

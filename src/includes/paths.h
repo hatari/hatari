@@ -14,7 +14,7 @@ extern const char *Paths_GetWorkingDir(void);
 extern const char *Paths_GetDataDir(void);
 extern const char *Paths_GetUserHome(void);
 extern const char *Paths_GetHatariHome(void);
-extern const char *Paths_GetScreenShotDir(void);
+extern const char *Paths_GetDefaultScreenShotDir(void);
 #if defined(__APPLE__)
 extern char *Paths_GetMacScreenShotDir(void);
 #endif

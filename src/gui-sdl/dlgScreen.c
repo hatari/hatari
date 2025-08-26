@@ -23,7 +23,6 @@ const char DlgScreen_fileid[] = "Hatari dlgScreen.c";
 #include "statusbar.h"
 #include "clocks_timings.h"
 #include "file.h"
-#include "paths.h"
 #include "str.h"
 
 /* how many pixels to increment VDI mode
@@ -352,7 +351,7 @@ static void DlgWindow_UpdateScreenShotDir(void)
 		const int len = sizeof(base) - 1;
 		assert(len < sizeof(sScreenShotDir));
 		Str_Copy(sScreenShotDir, base, sizeof(sScreenShotDir));
-		File_ShrinkName(sScreenShotDir + len, Paths_GetScreenShotDir(), sizeof(sScreenShotDir)-len-1);
+		File_ShrinkName(sScreenShotDir + len, Configuration_GetScreenShotDir(), sizeof(sScreenShotDir)-len-1);
 	}
 }
 
@@ -472,7 +471,7 @@ void Dialog_WindowDlg(void)
 			break;
 
 		 case DLGSCRN_CAPTURE_DIR:
-			selname = SDLGui_FileSelect("Screenshot Directory", Paths_GetScreenShotDir(), NULL, false);
+			selname = SDLGui_FileSelect("Screenshot Directory", Configuration_GetScreenShotDir(), NULL, false);
 			if (selname)
 			{
 				Str_Copy(ConfigureParams.Screen.szScreenShotDir, selname, sizeof(ConfigureParams.Screen.szScreenShotDir));
