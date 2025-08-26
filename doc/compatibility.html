@@ -2308,7 +2308,8 @@ href="http://www.umich.edu/~archive/atari/Games/Space/zero_5.zip">Zero-5</a><br 
 
 <p>Most programs that work on TT work also in the Falcon emulation.
 As all 1-8 bit GEM programs work without problems under TT emulation
-this section lists only programs that have TT-specific features.</p>
+this section lists only programs that have TT-specific features or
+e.g. require specific resolution.</p>
 
 <h3>TT applications and games</h3>
 
@@ -2327,6 +2328,13 @@ this section lists only programs that have TT-specific features.</p>
       <td>2.3</td>
       <td>Requires TT-RAM and 256-color VGA mode. Really slow. Sound
           works on Falcon as-is, on TT it requires XBIOS sound emulator</td>
+    </tr>
+    <tr>
+      <td>Blackhole</td>
+      <td>2.7-dev</td>
+      <td>Dice game, requires 640x480@256-color resolution,
+          i.e. either 8-bit VDI mode on TT, or VGA on Falcon.
+	  Sound with EmuTOS</td>
     </tr>
     <tr>
       <td><a href="http://yescrew.atari.org/eng/products.htm#capy">Capy</a></td>
@@ -2355,11 +2363,24 @@ this section lists only programs that have TT-specific features.</p>
       <td>"Hacked" (fixed) SDL versions of original open source versions</td>
     </tr>
     <tr>
+      <td>Kniff</td>
+      <td>2.7-dev</td>
+      <td>Dice game, requires 640x480@256-color resolution,
+          i.e. either 8-bit VDI mode on TT, or VGA on Falcon.
+	  Sound with EmuTOS</td>
+    </tr>
+    <tr>
       <td><a href="https://gtello.pagesperso-orange.fr/mplayere.htm">M_PLAYER</a></td>
       <td>2.3</td>
       <td>Movie player and creator. v4.02 added TT microwire support
           for audio. Whether M_PLAYER actually uses sound, depends on
 	  there being enough RAM for it to cache video audio</td>
+    </tr>
+    <tr>
+      <td>Mau Mau de luxe</td>
+      <td>2.7-dev</td>
+      <td>Card game, requires 800x600@256-color resolution, i.e. either
+          8-bit VDI mode on TT, or e.g. Videl Inside on Falcon</td>
     </tr>
     <tr>
       <td>Milanopoly</td>
@@ -2617,13 +2638,6 @@ VGA one are indicated separately.</p>
       <td>Music with DSP. Supports joypad. Due to game bug
           (data file corruption), it can freeze if user doesn't start
 	  game before it shows hall-of-fame screen</td>
-    </tr>
-    <tr>
-      <td>Blackhole</td>
-      <td>1.0</td>
-      <td>yes</td>
-      <td>-</td>
-      <td>640x400@256 mode only</td>
     </tr>
     <tr>
       <td>Block Blizzard (preview)</td>

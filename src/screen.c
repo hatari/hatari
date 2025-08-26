@@ -705,8 +705,9 @@ void Screen_Init(void)
 	memset(&FrameBuffer, 0, sizeof(FRAMEBUFFER));
 
 	/* Allocate screen check workspace. */
-	FrameBuffer.pSTScreen = malloc(MAX_VDI_BYTES);
-	FrameBuffer.pSTScreenCopy = malloc(MAX_VDI_BYTES);
+	assert(MAX_VDI8_BYTES >= MAX_VDI_BYTES);
+	FrameBuffer.pSTScreen = malloc(MAX_VDI8_BYTES);
+	FrameBuffer.pSTScreenCopy = malloc(MAX_VDI8_BYTES);
 	if (!FrameBuffer.pSTScreen || !FrameBuffer.pSTScreenCopy)
 	{
 		Main_ErrorExit("Failed to allocate frame buffer memory", NULL, -1);

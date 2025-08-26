@@ -1425,11 +1425,17 @@ Working games:
 - GEM Manga Puzzle (needs 256 color mode)
 - GEM Milanopoly
 - GEM NetHack v3.4.3
+- GEM Panic 0.90
+  - Needs at least 460x400@256 mode for full glory (= VDI mode on TT)
 - GEM Santarun
 - GEM Shapes
   - Sounds do not work on ST + needs at least 480x400 mode
 - GEM Slashem v3.3.1
 - "Hacked" Heretic & Hexen (SDL ports by Miro)
+- Kniff (Omikron Basic v3.60)
+  - Needs 640x480@256 mode (VDI mode on TT, VGA monitor on Falcon)
+- Mau Mau de luxe (Omikron Basic v3.60)
+  - Needs 800x600@256 mode (8-bit VDI mode)
 - OpenDUNE
 - OpenTTD (start from TT-low with 256MBs of TT-RAM)
 - Oxyd (Falcon version)
@@ -1669,8 +1675,6 @@ Games working under EmuTOS >= v1.0:
 - Jeu de Poker (VGA only)
   - Needs 640x480@256 mode
 - King Solitaire
-- Kniff (VGA only, Omikron Basic v3.60)
-  - needs 640x480@256 mode
 - Lamemine
 - L'Abbaye Des Morts
 - Let's play Shanghai

@@ -85,13 +85,18 @@ void VDI_Reset(void)
 bool VDI_ByteLimit(int *width, int *height, int planes)
 {
 	double ratio;
-	int size;
+	int max, size;
+
+	if (planes >= 8)
+		max = MAX_VDI8_BYTES;
+	else
+		max = MAX_VDI_BYTES;
 
 	size = (*width)*(*height)*planes/8;
-	if (size <= MAX_VDI_BYTES)
+	if (size <= max)
 		return false;
 
-	ratio = sqrt(MAX_VDI_BYTES) / sqrt(size);
+	ratio = sqrt(max) / sqrt(size);
 	*width = (*width) * ratio;
 	*height = (*height) * ratio;
 	if (*width < MIN_VDI_WIDTH || *height < MIN_VDI_HEIGHT)
@@ -101,7 +106,7 @@ bool VDI_ByteLimit(int *width, int *height, int planes)
 		Log_Printf(LOG_WARN, "Bad VDI screen ratio / too small size -> use smallest valid size.\n");
 	}
 	else
-		Log_Printf(LOG_WARN, "VDI screen size limited to <= %dKB\n", MAX_VDI_BYTES/1024);
+		Log_Printf(LOG_WARN, "VDI screen size limited to <= %dKB\n", max/1024);
 	return true;
 }
 
