@@ -21,14 +21,12 @@
 #include "memory.h"
 #include "custom.h"
 #include "newcpu.h"
-#include "cpu_prefetch.h"
 #include "debug.h"
 #include "disasm.h"
 #include "debugmem.h"
 //#include "cia.h"
 //#include "xwin.h"
 //#include "identify.h"
-//#include "audio.h"
 //#include "sounddep/sound.h"
 //#include "disk.h"
 #include "savestate.h"
@@ -52,7 +50,6 @@
 //#include "blitter.h"
 //#include "ini.h"
 #include "readcpu.h"
-#include "cputbl.h"
 //#include "keybuf.h"
 
 static int trace_mode;
