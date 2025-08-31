@@ -10,23 +10,23 @@
 
 typedef struct {
 	/* Content of the STX sector block (16 bytes) */
-	uint32_t		DataOffset;				/* Offset of sector data in the track data */
-	uint16_t		BitPosition;				/* Position in bits from the start of the track */
+	uint32_t	DataOffset;				/* Offset of sector data in the track data */
+	uint16_t	BitPosition;				/* Position in bits from the start of the track */
 								/* (this seems to be the position of the start of the ID field, */
 								/* just after the IDAM, but it's not always precise) */
-	uint16_t		ReadTime;				/* in ms */
+	uint16_t	ReadTime;				/* in ms */
 
 	uint8_t		ID_Track;				/* Content of the Address Field */
 	uint8_t		ID_Head;
 	uint8_t		ID_Sector;
 	uint8_t		ID_Size;
-	uint16_t		ID_CRC;
+	uint16_t	ID_CRC;
 
 	uint8_t		FDC_Status;				/* FDC status and flags for this sector */
 	uint8_t		Reserved;				/* Unused, always 0 */
 
 	/* Other internal variables */
-	uint16_t		SectorSize;				/* In bytes, depends on ID_Size */
+	uint16_t	SectorSize;				/* In bytes, depends on ID_Size */
 	uint8_t		*pData;					/* Bytes for this sector or null if RNF */
 	uint8_t		*pFuzzyData;				/* Fuzzy mask for this sector or null if no fuzzy bits */
 	uint8_t		*pTimingData;				/* Data for variable bit width or null */
@@ -49,11 +49,11 @@ typedef struct {
 
 typedef struct {
 	/* Content of the STX track block (16 bytes) */
-	uint32_t		BlockSize;				/* Number of bytes in this track block */
-	uint32_t		FuzzySize;				/* Number of bytes in fuzzy mask */
-	uint16_t		SectorsCount;				/* Number of sector blocks in this track */
-	uint16_t		Flags;					/* Flags for this track */
-	uint16_t		MFMSize;				/* Number of MFM bytes in this track */
+	uint32_t	BlockSize;				/* Number of bytes in this track block */
+	uint32_t	FuzzySize;				/* Number of bytes in fuzzy mask */
+	uint16_t	SectorsCount;				/* Number of sector blocks in this track */
+	uint16_t	Flags;					/* Flags for this track */
+	uint16_t	MFMSize;				/* Number of MFM bytes in this track */
 	uint8_t		TrackNumber;				/* bits 0-6 = track number   bit 7 = side */
 	uint8_t		RecordType;				/* Unused */
 
@@ -63,15 +63,15 @@ typedef struct {
 	uint8_t			*pFuzzyData;			/* Fuzzy mask data for all the fuzzy sectors of the track */
 
 	uint8_t			*pTrackData;			/* Track data (after sectors data and fuzzy data) */
-	uint16_t			TrackImageSyncPosition;
-	uint16_t			TrackImageSize;			/* Number of bytes in pTrackImageData */
+	uint16_t		TrackImageSyncPosition;
+	uint16_t		TrackImageSize;			/* Number of bytes in pTrackImageData */
 	uint8_t			*pTrackImageData;		/* Optional data as returned by the read track command */
 
 	uint8_t			*pSectorsImageData;		/* Optional data for the sectors of this track */
 
 	uint8_t			*pTiming;
-	uint16_t			TimingFlags;			/* always '5' ? */
-	uint16_t			TimingSize;
+	uint16_t		TimingFlags;			/* always '5' ? */
+	uint16_t		TimingSize;
 	uint8_t			*pTimingData;			/* Timing data for all the sectors of the track ; each timing */
 								/* consists of 2 bytes per 16 FDC bytes */
 
@@ -91,12 +91,12 @@ typedef struct {
 typedef struct {
 	/* Content of the STX header block (16 bytes) */
 	char		FileID[ 4 ];				/* Should be "RSY\0" */
-	uint16_t		Version;				/* Only version 3 is supported */
-	uint16_t		ImagingTool;				/* 0x01 (Atari Tool) or 0xCC (Discovery Cartridge) */
-	uint16_t		Reserved_1;				/* Unused */
+	uint16_t	Version;				/* Only version 3 is supported */
+	uint16_t	ImagingTool;				/* 0x01 (Atari Tool) or 0xCC (Discovery Cartridge) */
+	uint16_t	Reserved_1;				/* Unused */
 	uint8_t		TracksCount;				/* Number of track blocks in this file */
 	uint8_t		Revision;				/* 0x00 (old Pasti file)   0x02 (new Pasti file) */
-	uint32_t		Reserved_2;				/* Unused */
+	uint32_t	Reserved_2;				/* Unused */
 
 	/* Other internal variables */
 	STX_TRACK_STRUCT	*pTracksStruct;
@@ -116,14 +116,14 @@ typedef struct {
 	/* Copy track/side + ID field + BitPosition to uniquely identify each sector */
 	uint8_t		Track;
 	uint8_t		Side;
-	uint16_t		BitPosition;
+	uint16_t	BitPosition;
 	uint8_t		ID_Track;				/* Content of the Address Field */
 	uint8_t		ID_Head;
 	uint8_t		ID_Sector;
 	uint8_t		ID_Size;
-	uint16_t		ID_CRC;
+	uint16_t	ID_CRC;
 	
-	uint16_t		SectorSize;				/* Number of bytes in this sector */
+	uint16_t	SectorSize;				/* Number of bytes in this sector */
 	uint8_t		*pData;					/* Data written for this sector */
 
 	uint8_t		StructIsUsed;				/* >0 : this structure contains info (and must be saved) */

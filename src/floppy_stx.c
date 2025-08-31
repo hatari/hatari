@@ -55,7 +55,7 @@ typedef struct
 {
 	STX_MAIN_STRUCT		*ImageBuffer[ MAX_FLOPPYDRIVES ];	/* For the STX disk images */
 
-	uint32_t			NextSectorStruct_Nbr;		/* Sector Number in pSectorsStruct after a call to FDC_NextSectorID_FdcCycles_STX() */
+	uint32_t		NextSectorStruct_Nbr;		/* Sector Number in pSectorsStruct after a call to FDC_NextSectorID_FdcCycles_STX() */
 	uint8_t			NextSector_ID_Field_TR;		/* Track value in the next ID Field after a call to FDC_NextSectorID_FdcCycles_STX() */
 	uint8_t			NextSector_ID_Field_SR;		/* Sector value in the next ID Field after a call to FDC_NextSectorID_FdcCycles_STX() */
 	uint8_t			NextSector_ID_Field_LEN;	/* Sector's length in the next ID Field after a call to FDC_NextSectorID_FdcCycles_STX() */
