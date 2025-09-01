@@ -1001,3 +1001,30 @@ bool Floppy_WriteSectors(int Drive, uint8_t *pBuffer, uint16_t Sector,
 
 	return false;
 }
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * For a given image type, return TRUE if the image is internaly converted
+ * to MFM (eg SCP). Else return false
+ */
+bool	Floppy_ImageIsMFM ( int ImageType )
+{
+	if ( ImageType == FLOPPY_IMAGE_TYPE_SCP )
+		return true;
+
+	return false;
+}
+
+/*
+ * Same for STX
+ */
+
+bool	Floppy_ImageIsSTX ( int ImageType )
+{
+	if ( ImageType == FLOPPY_IMAGE_TYPE_STX )
+		return true;
+
+	return false;
+}

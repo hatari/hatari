@@ -1575,9 +1575,11 @@ int	FDC_GetBytesPerTrack ( uint8_t Drive , uint8_t Track , uint8_t Side )
 
 	if ( EmulationDrives[ Drive ].bDiskInserted )
 	{
-		/* If the inserted disk is an STX, we use the supplied track length */
+		/* If the inserted disk is an STX or SCP, we use the supplied track length */
 		if ( EmulationDrives[Drive].ImageType == FLOPPY_IMAGE_TYPE_STX )
 			return FDC_GetBytesPerTrack_STX ( Drive , Track , Side );
+		else if ( EmulationDrives[Drive].ImageType == FLOPPY_IMAGE_TYPE_SCP )
+			return FDC_GetBytesPerTrack_SCP ( Drive , Track , Side );
 
 		SectorsPerTrack = FDC_GetSectorsPerTrack ( Drive , FDC_DRIVES[ Drive ].HeadTrack , FDC.SideSignal );
 		if ( SectorsPerTrack >= 36 )
@@ -1704,9 +1706,11 @@ static uint32_t	FDC_GetCyclesPerRev_FdcCycles ( int Drive )
 
 	assert(Drive == 0 || Drive == 1);
 
-	/* If the inserted disk is an STX, we use the supplied track length to compute cycles per rev */
+	/* If the inserted disk is an STX or SCP, we use the supplied track length to compute cycles per rev */
 	if ( EmulationDrives[Drive].ImageType == FLOPPY_IMAGE_TYPE_STX )
 		return FDC_GetCyclesPerRev_FdcCycles_STX ( Drive , FDC_DRIVES[ Drive ].HeadTrack , FDC.SideSignal );
+	else if ( EmulationDrives[Drive].ImageType == FLOPPY_IMAGE_TYPE_SCP )
+		return FDC_GetCyclesPerRev_FdcCycles_SCP ( Drive , FDC_DRIVES[ Drive ].HeadTrack , FDC.SideSignal );
 
 	/* Assume a standard length for all tracks for ST/MSA images */
 	FdcCyclesPerRev = (uint64_t)(MachineClocks.FDC_Freq * 1000.L) / ( FDC_DRIVES[ Drive ].RPM / 60 );
@@ -2131,7 +2135,7 @@ static int FDC_CmdCompleteCommon ( bool DoInt )
  * NOTE [NP] : in the case of Hatari when using ST/MSA images, the track is always the correct one,
  * so the verify will always be good (except if no disk is inserted or the physical head is
  * not on the same track as FDC.TR)
- * For STX images, verify track might fail on purpose with some protection
+ * For STX or MFM images, verify track might fail on purpose with some protections
  */
 static bool FDC_VerifyTrack ( void )
 {
@@ -2151,10 +2155,15 @@ static bool FDC_VerifyTrack ( void )
 	}
 
 	/* Check if the current ID Field is the one we're looking for (same track and correct CRC) */
-	if ( EmulationDrives[ FDC.DriveSelSignal ].ImageType == FLOPPY_IMAGE_TYPE_STX )
+	if ( Floppy_ImageIsSTX ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
 	{
 		Next_TR = FDC_NextSectorID_TR_STX ();
 		Next_CRC_OK = FDC_NextSectorID_CRC_OK_STX ();
+	}
+	else if ( Floppy_ImageIsMFM ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
+	{
+		Next_TR = FDC_NextSectorID_TR_MFM ();
+		Next_CRC_OK = FDC_NextSectorID_CRC_OK_MFM ();
 	}
 	else
 	{
@@ -2162,7 +2171,7 @@ static bool FDC_VerifyTrack ( void )
 		Next_CRC_OK = FDC_NextSectorID_CRC_OK_ST ();
 	}
 
-	/* ST/MSA image will always be correct, only STX can fail depending on some protections */
+	/* ST/MSA image will always be correct, only STX or MFM can fail depending on some protections */
 	if ( ( Next_TR != FDC.TR ) || ( Next_CRC_OK == 0 ) )
 	{
 		LOG_TRACE(TRACE_FDC, "fdc type I verify track failed ID_TR=0x%x TR=0x%x crc_ok=%d head=0x%x drive=%d VBL=%d video_cyc=%d %d@%d pc=%x\n",
@@ -2338,8 +2347,11 @@ static int FDC_UpdateRestoreCmd ( void )
 
 		if ( FDC.DriveSelSignal < 0 )					/* No drive selected */
 			FdcCycles = -1;
-		else if ( EmulationDrives[ FDC.DriveSelSignal ].ImageType == FLOPPY_IMAGE_TYPE_STX )
+		else if ( Floppy_ImageIsSTX ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
 			FdcCycles = FDC_NextSectorID_FdcCycles_STX ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
+					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
+		else if ( Floppy_ImageIsMFM ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
+			FdcCycles = FDC_NextSectorID_FdcCycles_MFM ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
 					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
 		else
 			FdcCycles = FDC_NextSectorID_FdcCycles_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
@@ -2493,8 +2505,11 @@ static int FDC_UpdateSeekCmd ( void )
 
 		if ( FDC.DriveSelSignal < 0 )					/* No drive selected */
 			FdcCycles = -1;
-		else if ( EmulationDrives[ FDC.DriveSelSignal ].ImageType == FLOPPY_IMAGE_TYPE_STX )
+		else if ( Floppy_ImageIsSTX ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
 			FdcCycles = FDC_NextSectorID_FdcCycles_STX ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
+					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
+		else if ( Floppy_ImageIsMFM ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
+			FdcCycles = FDC_NextSectorID_FdcCycles_MFM ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
 					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
 		else
 			FdcCycles = FDC_NextSectorID_FdcCycles_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
@@ -2630,8 +2645,11 @@ static int FDC_UpdateStepCmd ( void )
 
 		if ( FDC.DriveSelSignal < 0 )					/* No drive selected */
 			FdcCycles = -1;
-		else if ( EmulationDrives[ FDC.DriveSelSignal ].ImageType == FLOPPY_IMAGE_TYPE_STX )
+		else if ( Floppy_ImageIsSTX ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
 			FdcCycles = FDC_NextSectorID_FdcCycles_STX ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
+					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
+		else if ( Floppy_ImageIsMFM ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
+			FdcCycles = FDC_NextSectorID_FdcCycles_MFM ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
 					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
 		else
 			FdcCycles = FDC_NextSectorID_FdcCycles_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
@@ -2735,8 +2753,11 @@ static int FDC_UpdateReadSectorsCmd ( void )
 
 		if ( FDC.DriveSelSignal < 0 )					/* No drive selected */
 			FdcCycles = -1;
-		else if ( EmulationDrives[ FDC.DriveSelSignal ].ImageType == FLOPPY_IMAGE_TYPE_STX )
+		else if ( Floppy_ImageIsSTX ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
 			FdcCycles = FDC_NextSectorID_FdcCycles_STX ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
+					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
+		else if ( Floppy_ImageIsMFM ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
+			FdcCycles = FDC_NextSectorID_FdcCycles_MFM ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
 					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
 		else
 			FdcCycles = FDC_NextSectorID_FdcCycles_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
@@ -2754,11 +2775,17 @@ static int FDC_UpdateReadSectorsCmd ( void )
 		break;
 	 case FDCEMU_RUN_READSECTORS_READDATA_CHECK_SECTOR_HEADER:
 		/* Check if the current ID Field is the one we're looking for (same track/sector and correct CRC) */
-		if ( EmulationDrives[ FDC.DriveSelSignal ].ImageType == FLOPPY_IMAGE_TYPE_STX )
+		if ( Floppy_ImageIsSTX ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
 		{
 			Next_TR = FDC_NextSectorID_TR_STX ();
 			Next_SR = FDC_NextSectorID_SR_STX ();
 			Next_CRC_OK = FDC_NextSectorID_CRC_OK_STX ();
+		}
+		else if ( Floppy_ImageIsMFM ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
+		{
+			Next_TR = FDC_NextSectorID_TR_MFM ();
+			Next_SR = FDC_NextSectorID_SR_MFM ();
+			Next_CRC_OK = FDC_NextSectorID_CRC_OK_MFM ();
 		}
 		else
 		{
@@ -2783,8 +2810,11 @@ static int FDC_UpdateReadSectorsCmd ( void )
 		/* Read a single sector into temporary buffer (512 bytes for ST/MSA) */
 		FDC_Buffer_Reset();
 
-		if ( EmulationDrives[ FDC.DriveSelSignal ].ImageType == FLOPPY_IMAGE_TYPE_STX )
+		if ( Floppy_ImageIsSTX ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
 			FDC.Status_Temp = FDC_ReadSector_STX ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ,
+				FDC.SR , FDC.SideSignal , &SectorSize );
+		else if ( Floppy_ImageIsMFM ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
+			FDC.Status_Temp = FDC_ReadSector_MFM ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ,
 				FDC.SR , FDC.SideSignal , &SectorSize );
 		else
 			FDC.Status_Temp = FDC_ReadSector_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ,
@@ -2820,7 +2850,7 @@ static int FDC_UpdateReadSectorsCmd ( void )
 		}
 		break;
 	 case FDCEMU_RUN_READSECTORS_CRC:
-		/* Sector completely transferred, CRC is always good for ST/MSA, but not always for STX */
+		/* Sector completely transferred, CRC is always good for ST/MSA, but not always for STX/MFM */
 		if ( FDC.Status_Temp & FDC_STR_BIT_CRC_ERROR )
 		{
 			LOG_TRACE(TRACE_FDC, "fdc type II read sector=%d track=0x%x side=%d drive=%d CRC VBL=%d video_cyc=%d %d@%d pc=%x\n",
@@ -2947,8 +2977,11 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 
 		if ( FDC.DriveSelSignal < 0 )					/* No drive selected */
 			FdcCycles = -1;
-		else if ( EmulationDrives[ FDC.DriveSelSignal ].ImageType == FLOPPY_IMAGE_TYPE_STX )
+		else if ( Floppy_ImageIsSTX ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
 			FdcCycles = FDC_NextSectorID_FdcCycles_STX ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
+					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
+		else if ( Floppy_ImageIsMFM ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
+			FdcCycles = FDC_NextSectorID_FdcCycles_MFM ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
 					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
 		else
 			FdcCycles = FDC_NextSectorID_FdcCycles_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
@@ -2966,11 +2999,17 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 		break;
 	 case FDCEMU_RUN_WRITESECTORS_WRITEDATA_CHECK_SECTOR_HEADER:
 		/* Check if the current ID Field is the one we're looking for (same track/sector and correct CRC) */
-		if ( EmulationDrives[ FDC.DriveSelSignal ].ImageType == FLOPPY_IMAGE_TYPE_STX )
+		if ( Floppy_ImageIsSTX ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
 		{
 			Next_TR = FDC_NextSectorID_TR_STX ();
 			Next_SR = FDC_NextSectorID_SR_STX ();
 			Next_CRC_OK = FDC_NextSectorID_CRC_OK_STX ();
+		}
+		else if ( Floppy_ImageIsMFM ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
+		{
+			Next_TR = FDC_NextSectorID_TR_MFM ();
+			Next_SR = FDC_NextSectorID_SR_MFM ();
+			Next_CRC_OK = FDC_NextSectorID_CRC_OK_MFM ();
 		}
 		else
 		{
@@ -2993,8 +3032,10 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 		break;
 	 case FDCEMU_RUN_WRITESECTORS_WRITEDATA_TRANSFER_START:
 		/* Write a single sector from RAM (512 bytes for ST/MSA) */
-		if ( EmulationDrives[ FDC.DriveSelSignal ].ImageType == FLOPPY_IMAGE_TYPE_STX )
+		if ( Floppy_ImageIsSTX ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
 			Next_LEN = FDC_NextSectorID_LEN_STX ();
+		else if ( Floppy_ImageIsMFM ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
+			Next_LEN = FDC_NextSectorID_LEN_MFM ();
 		else
 			Next_LEN = FDC_NextSectorID_LEN_ST ();
 
@@ -3023,8 +3064,11 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 		/* Sector completely transferred, CRC is always good for ST/MSA */
 		/* This is where we save the buffer to the disk image */
 
-		if ( EmulationDrives[ FDC.DriveSelSignal ].ImageType == FLOPPY_IMAGE_TYPE_STX )
+		if ( Floppy_ImageIsSTX ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
 			Status = FDC_WriteSector_STX ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ,
+				FDC.SR , FDC.SideSignal , FDC_Buffer_Get_Size () );
+		else if ( Floppy_ImageIsMFM ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
+			Status = FDC_WriteSector_MFM ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ,
 				FDC.SR , FDC.SideSignal , FDC_Buffer_Get_Size () );
 		else
 			Status = FDC_WriteSector_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ,
@@ -3133,8 +3177,11 @@ static int FDC_UpdateReadAddressCmd ( void )
 
 		if ( FDC.DriveSelSignal < 0 )					/* No drive selected */
 			FdcCycles = -1;
-		else if ( EmulationDrives[ FDC.DriveSelSignal ].ImageType == FLOPPY_IMAGE_TYPE_STX )
+		else if ( Floppy_ImageIsSTX ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
 			FdcCycles = FDC_NextSectorID_FdcCycles_STX ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
+					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
+		else if ( Floppy_ImageIsMFM ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
+			FdcCycles = FDC_NextSectorID_FdcCycles_MFM ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
 					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
 		else
 			FdcCycles = FDC_NextSectorID_FdcCycles_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
@@ -3154,9 +3201,12 @@ static int FDC_UpdateReadAddressCmd ( void )
 		/* Read the ID field into buffer */
 		FDC_Buffer_Reset();
 
-		if ( EmulationDrives[ FDC.DriveSelSignal ].ImageType == FLOPPY_IMAGE_TYPE_STX )
+		if ( Floppy_ImageIsSTX ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
 			FDC.Status_Temp = FDC_ReadAddress_STX ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ,
 				     FDC_NextSectorID_SR_STX () , FDC.SideSignal );
+		else if ( Floppy_ImageIsMFM ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
+			FDC.Status_Temp = FDC_ReadAddress_MFM ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ,
+				     FDC_NextSectorID_SR_MFM () , FDC.SideSignal );
 		else
 			FDC.Status_Temp = FDC_ReadAddress_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ,
 				     FDC_NextSectorID_SR_ST () , FDC.SideSignal );
@@ -3266,9 +3316,13 @@ static int FDC_UpdateReadTrackCmd ( void )
 			for ( i=0 ; i<FDC_GetBytesPerTrack ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal ) ; i++ )
 				FDC_Buffer_Add ( Hatari_rand() & 0xff ); /* Fill the track buffer with random bytes */
 		}
-		else if ( EmulationDrives[ FDC.DriveSelSignal ].ImageType == FLOPPY_IMAGE_TYPE_STX )
+		else if ( Floppy_ImageIsSTX ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
 		{
 			FDC.Status_Temp = FDC_ReadTrack_STX ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
+		}
+		else if ( Floppy_ImageIsMFM ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
+		{
+			FDC.Status_Temp = FDC_ReadTrack_MFM ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
 		}
 		else							/* Track/side available in the disk image */
 		{
@@ -3404,8 +3458,11 @@ static int FDC_UpdateWriteTrackCmd ( void )
 	 case FDCEMU_RUN_WRITETRACK_COMPLETE:
 		/* Track completely transferred */
 		/* This is where we save the buffer to the disk image */
-		if ( EmulationDrives[ FDC.DriveSelSignal ].ImageType == FLOPPY_IMAGE_TYPE_STX )
+		if ( Floppy_ImageIsSTX ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
 			Status = FDC_WriteTrack_STX ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ,
+				FDC.SideSignal , FDC_Buffer_Get_Size () );
+		else if ( Floppy_ImageIsMFM ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
+			Status = FDC_WriteTrack_MFM ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ,
 				FDC.SideSignal , FDC_Buffer_Get_Size () );
 		else
 			Status = FDC_WriteTrack_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ,
@@ -4746,7 +4803,7 @@ static uint8_t FDC_WriteSector_ST ( uint8_t Drive , uint8_t Track , uint8_t Sect
 static uint8_t FDC_ReadAddress_ST ( uint8_t Drive , uint8_t Track , uint8_t Sector , uint8_t Side )
 {
 	int	FrameCycles, HblCounterVideo, LineCycles;
-	uint8_t	buf_id[ 10 ];						/* 3 SYNC + IAM + TR + SIDE + SECTOR + SIZE + CRC1 + CRC2 */
+	uint8_t	buf_id[ 10 ];						/* 3 SYNC + IDAM + TR + SIDE + SECTOR + SIZE + CRC1 + CRC2 */
 	uint8_t	*p;
 	uint16_t	CRC;
 	int	i;
@@ -4758,12 +4815,12 @@ static uint8_t FDC_ReadAddress_ST ( uint8_t Drive , uint8_t Track , uint8_t Sect
 	{
 		fprintf ( stderr , "fdc : read address drive=%d track=%d side=%d, but maxtrack=%d, return RNF\n" ,
 			Drive , Track , Side , FDC_GetTracksPerDisk ( Drive ) );
-		return STX_SECTOR_FLAG_RNF;				/* Should not happen if FDC_NextSectorID_FdcCycles_ST succeeded before */
+		return FDC_STR_BIT_RNF;					/* Should not happen if FDC_NextSectorID_FdcCycles_ST succeeded before */
 	}
 
 	p = buf_id;
 
-	*p++ = 0xa1;							/* SYNC bytes and IAM byte are included in the CRC */
+	*p++ = 0xa1;							/* SYNC bytes and IDAM byte are included in the CRC */
 	*p++ = 0xa1;
 	*p++ = 0xa1;
 	*p++ = 0xfe;
@@ -4801,7 +4858,7 @@ static uint8_t FDC_ReadAddress_ST ( uint8_t Drive , uint8_t Track , uint8_t Sect
 static uint8_t FDC_ReadTrack_ST ( uint8_t Drive , uint8_t Track , uint8_t Side )
 {
 	int	FrameCycles, HblCounterVideo, LineCycles;
-	uint8_t	buf_id[ 10 ];						/* 3 SYNC + IAM + TR + SIDE + SECTOR + SIZE + CRC1 + CRC2 */
+	uint8_t	buf_id[ 10 ];						/* 3 SYNC + IDAM + TR + SIDE + SECTOR + SIZE + CRC1 + CRC2 */
 	uint8_t	*p;
 	uint16_t	CRC;
 	int	Sector;
@@ -5332,6 +5389,178 @@ int	FDC_MFM_Process_Bit ( struct fd_stream *s , bool Skip_Bit )
 }
 
 
+
+
+
+/*
+ * Higher level WD1772 functions used by type I, II, III commands
+ * Use MFM bytes returned by FDC_MFM_Process_Bit()
+q *
+ * TODO : we use a similar model as ST/STX where a while IDAM is supposed to be read
+ * entirely in one go ; this should be replaced later by a more accurate method that reads
+ * bytes one by one, as real HW does.
+ */
+
+int	FDC_NextSectorID_FdcCycles_MFM ( uint8_t Drive , uint8_t NumberOfHeads , uint8_t Track , uint8_t Side )
+{
+	int			Delay_FdcCycles;
+
+	Delay_FdcCycles = FDC_DELAY_CYCLE_MFM_BYTE;		// TODO
+
+	return Delay_FdcCycles;
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Return the value of the track number in the next ID field set by
+ * FDC_NextSectorID_FdcCycles_MFM.
+ */
+uint8_t	FDC_NextSectorID_TR_MFM ( void )
+{
+	return FDC.NextSector_ID_Field_TR;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Return the value of the sector number in the next ID field set by
+ * FDC_NextSectorID_FdcCycles_MFM.
+ */
+uint8_t	FDC_NextSectorID_SR_MFM ( void )
+{
+	return FDC.NextSector_ID_Field_SR;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Return the value of the sector's length in the next ID field set by
+ * FDC_NextSectorID_FdcCycles_MFM.
+ */
+uint8_t	FDC_NextSectorID_LEN_MFM ( void )
+{
+	return FDC.NextSector_ID_Field_LEN;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Return the status of the CRC in the next ID field set by
+ * FDC_NextSectorID_FdcCycles_MFM.
+ * If '0', CRC is bad, else CRC is OK
+ */
+uint8_t	FDC_NextSectorID_CRC_OK_MFM ( void )
+{
+	return FDC.NextSector_ID_Field_CRC_OK;
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Read a sector from a floppy image in MFM format (used in type II command)
+ * We return the sector NextSectorStruct_Nbr, whose value was set
+ * by the latest call to FDC_NextSectorID_FdcCycles_STX
+ * Each byte of the sector is added to the FDC buffer with a default timing
+ * (32 microsec) or a variable timing, depending on the sector's flags.
+ * Some sectors can also contains "fuzzy" bits.
+ * Special care must be taken to compute the timing of each byte, which can
+ * be a decimal value and must be rounded to the best possible integer.
+ *
+ * If the sector's data were changed by a 'write sector' command, then we assume
+ * a sector with no fuzzy byte and standard timings.
+ *
+ * Return RNF if sector was not found, else return CRC and RECORD_TYPE values
+ * for the status register.
+ */
+uint8_t	FDC_ReadSector_MFM ( uint8_t Drive , uint8_t Track , uint8_t Sector , uint8_t Side , int *pSectorSize )
+{
+
+	return FDC_STR_BIT_RNF;
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Write a sector to a floppy image in STX format (used in type II command)
+ *
+ * TODO
+ *
+ * Return RNF if sector was not found or CRC if ID field has a CRC error.
+ * Return 0 if OK.
+ */
+uint8_t	FDC_WriteSector_MFM ( uint8_t Drive , uint8_t Track , uint8_t Sector , uint8_t Side , int SectorSize )
+{
+	return FDC_STR_BIT_RNF;
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Read an address field from a floppy image in MFM format (used in type III command)
+ * We process the first address field that appears after the current position
+ *
+ * Each byte of the ID field is added to the FDC buffer with a default timing
+ * (32 microsec)
+ * Return 0 if OK or RNF or a CRC error
+ */
+uint8_t	FDC_ReadAddress_MFM ( uint8_t Drive , uint8_t Track , uint8_t Sector , uint8_t Side )
+{
+	return FDC_STR_BIT_RNF;
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Read a track from a floppy image in STX format (used in type III command)
+ * This function is called after an index pulse was encountered, and it will
+ * always succeeds and fill the track buffer.
+ * If the Track/Side infos exist in the MFM image, then the corresponding
+ * bytes from the track's image are returned.
+ * If these Track/Side infos don't exist, we return some random bytes
+ * (empty / not formatted track).
+ *
+ * Return 0 if OK
+ */
+uint8_t	FDC_ReadTrack_MFM ( uint8_t Drive , uint8_t Track , uint8_t Side )
+{
+	return 0;
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Write a track to a floppy image in MFM format (used in type III command)
+ *
+ * TODO
+ *
+ * NOTE : data will saved in memory snapshot, as well as in an additional
+ * file with the extension .wd1772.
+ *
+ * Return 0 if track was written without error, or LOST_DATA if an error occurred
+ */
+uint8_t	FDC_WriteTrack_MFM ( uint8_t Drive , uint8_t Track , uint8_t Side , int TrackSize )
+{
+	return FDC_STR_BIT_LOST_DATA;
+}
+
+
+
+
+
+/*-----------------------------------------------------------------------*/
+
+/*
+ *
+ * DEBUG
+ *
+ */
 
 
 /* Dump the content of a track : display decoded data bytes, CRC values and timing

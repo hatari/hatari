@@ -188,6 +188,19 @@ int	fd_stream_next_bytes ( struct fd_stream *s , void *p , unsigned int bytes );
  */
 
 
+
+extern int	FDC_NextSectorID_FdcCycles_MFM ( uint8_t Drive , uint8_t NumberOfHeads , uint8_t Track , uint8_t Side );
+extern uint8_t	FDC_NextSectorID_TR_MFM ( void );
+extern uint8_t	FDC_NextSectorID_SR_MFM ( void );
+extern uint8_t	FDC_NextSectorID_LEN_MFM ( void );
+extern uint8_t	FDC_NextSectorID_CRC_OK_MFM ( void );
+extern uint8_t	FDC_ReadSector_MFM ( uint8_t Drive , uint8_t Track , uint8_t Sector , uint8_t Side , int *pSectorSize );
+extern uint8_t	FDC_WriteSector_MFM ( uint8_t Drive , uint8_t Track , uint8_t Sector , uint8_t Side , int SectorSize );
+extern uint8_t	FDC_ReadAddress_MFM ( uint8_t Drive , uint8_t Track , uint8_t Sector , uint8_t Side );
+extern uint8_t	FDC_ReadTrack_MFM ( uint8_t Drive , uint8_t Track , uint8_t Side );
+extern uint8_t	FDC_WriteTrack_MFM ( uint8_t Drive , uint8_t Track , uint8_t Side , int TrackSize );
+
+
 void	FD_Stream_DumpTrack ( struct fd_stream *s , int InitialShift );
 
 

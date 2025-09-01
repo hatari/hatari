@@ -271,7 +271,8 @@ bool	SCP_Insert ( int Drive , const char *FilenameSTX , uint8_t *pImageBuffer , 
 	if ( SCP_Insert_internal ( Drive , FilenameSTX , pImageBuffer , ImageSize ) == false )
 		return false;
 
-//SCP_LoadTrack ( 0,2,0);
+//SCP_LoadTrack ( 0,0,0);	// boot
+SCP_LoadTrack ( 0,2,0);		// overlapping syncs
 
 	return true;
 }
@@ -689,4 +690,28 @@ static int scp_next_flux (struct fd_stream *s)
 /*
  * Flux to MFM bit decoding - Support for SCP disk image - END
  */
+
+
+
+
+
+int	FDC_GetBytesPerTrack_SCP ( uint8_t Drive , uint8_t Track , uint8_t Side )
+{
+	return 6268;			// TODO see FDC_TRACK_BYTES_STANDARD
+}
+
+
+
+uint32_t	FDC_GetCyclesPerRev_FdcCycles_SCP ( uint8_t Drive , uint8_t Track , uint8_t Side )
+{
+	int			TrackSize;
+
+	TrackSize = FDC_GetBytesPerTrack_SCP ( Drive , Track , Side );
+
+	// TODO : use a common function FDC_GetCyclesPerRev_FdcCycles ( ... , tracksize )
+//	return TrackSize * FDC_DELAY_CYCLE_MFM_BYTE / FDC_GetFloppyDensity ( Drive );	/* Take density into account for HD/ED floppies */;
+	return TrackSize * 256 / FDC_GetFloppyDensity ( Drive );	/* Take density into account for HD/ED floppies */;
+}
+
+
 
