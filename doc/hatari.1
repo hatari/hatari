@@ -394,8 +394,8 @@ If directory contains only single letter (C-Z) subdirectories, each of these
 subdirectories will be treated as a separate partition, otherwise the
 given directory itself will be assigned to drive "C:". In the multiple
 partition case, the letters used as the subdirectory names will
-determine to which drives/partitions they are assigned. If <dir> is
-an empty string, then harddrive's emulation is disabled
+determine to which drives/partitions they are assigned to. If <dir> is
+an empty string (or "none"), then GEMDOS HD emulation is disabled
 .TP
 .B \-\-protect\-hd <x>
 Write protect harddrive <dir> contents (on/off/auto). With "auto" option

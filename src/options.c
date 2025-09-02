@@ -59,10 +59,15 @@ bool BenchmarkMode;	   /* Start in benchmark mode (try to run at maximum emulati
 
 static bool bBiosIntercept;
 
+/* Opt_StrCpy() option types.
+ *
+ * If both a dir/file string and a bool enabling given device are
+ * provided, "" / "none" as dir/file string disables given device
+ */
 typedef enum {
-	CHECK_NONE,
-	CHECK_FILE,
-	CHECK_DIR
+	CHECK_NONE,	/* create file if it does not exist */
+	CHECK_FILE,	/* given file needs to exist */
+	CHECK_DIR	/* given dir needs to exist */
 } fs_check_t;
 
 
@@ -679,7 +684,7 @@ static void Opt_ShowHelp(void)
 	       "\tEnable by using 'y', 'yes', 'on', 'true' or '1'\n"
 	       "<file>\tDevices accept also special 'stdout' and 'stderr' file names\n"
 	       "\t(if you use stdout for midi or printer, set log to stderr).\n"
-	       "\tSetting the file to 'none', disables given device or disk\n");
+	       "<dir>/<file>\t'none' or '' disables given device / disk.\n");
 }
 
 
@@ -938,27 +943,18 @@ static int Opt_WhichOption(int argc, const char * const argv[], int idx)
 
 
 /**
- * When 'check' is set, check whether given 'src' exists before copying
- * 'src' to 'dst'. Otherwise just copy option 'src' string to 'dst'.
- * If a pointer to (bool) 'option' is given, set that option to true.
- * - However, if src is "none", leave dst unmodified & set option to false.
- *   ("none" is used to disable options related to file arguments)
+ * Copy option 'src' value to 'dst' string, unless 'check' is requested
+ * and given item does not exist.
+ *
+ * If a pointer to (bool) 'option' is given, set that option to true,
+ * unless 'src' is "" (or "none"), in which case 'dst' is left unmodified,
+ * and  'option' is set to false (= disable bool enabling given device).
+ *
  * Return false if there were errors, otherwise true
  */
 static bool Opt_StrCpy(int optid, fs_check_t check, char *dst, const char *src, size_t dstlen, bool *option)
 {
-	if (option)
-	{
-		*option = false;
-		if(strcasecmp(src, "none") == 0)
-		{
-			return true;
-		}
-	}
-	if (strlen(src) >= dstlen)
-	{
-		return Opt_ShowError(optid, src, "Path too long!");
-	}
+	const char *error = NULL;
 
 	switch (check)
 	{
@@ -967,20 +963,40 @@ static bool Opt_StrCpy(int optid, fs_check_t check, char *dst, const char *src, 
 	case CHECK_FILE:
 		if (!File_Exists(src))
 		{
-			return Opt_ShowError(optid, src, "Given file doesn't exist or permissions prevent access to it!");
+			error = "Given file does not exist, or permissions prevent access to it!";
 		}
 		break;
 	case CHECK_DIR:
 		if (!File_DirExists(src))
 		{
-			return Opt_ShowError(optid, src, "Given directory doesn't exist or permissions prevent access to it!");
+			error = "Given directory does not exist, or permissions prevent access to it!";
 		}
 		break;
 	}
 
 	if (option)
 	{
+		*option = false;
+		if(!*src)
+		{
+			/* "" disables unconditionally */
+			return true;
+		}
+		if (error)
+		{
+			/* "none" disables when item does not exist */
+			if (strcasecmp(src, "none") == 0)
+			{
+				return true;
+			}
+			return Opt_ShowError(optid, src, error);
+		}
 		*option = true;
+	}
+
+	if (strlen(src) >= dstlen)
+	{
+		return Opt_ShowError(optid, src, "Path too long!");
 	}
 	strcpy(dst, src);
 	return true;
@@ -1164,7 +1180,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 		case OPT_CONFIGFILE:
 			i += 1;
-			/* true -> file needs to exist */
 			ok = Opt_StrCpy(OPT_CONFIGFILE, CHECK_FILE, sConfigFileName,
 					argv[i], sizeof(sConfigFileName), NULL);
 			if (ok)
@@ -1384,7 +1399,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 		case OPT_AVIRECORD_FILE:
 			i += 1;
-			/* false -> file is created if it doesn't exist */
 			ok = Opt_StrCpy(OPT_AVIRECORD_FILE, CHECK_NONE, ConfigureParams.Video.AviRecordFile,
 					argv[i], sizeof(ConfigureParams.Video.AviRecordFile), NULL);
 			break;
@@ -1505,7 +1519,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 		case OPT_PRINTER:
 			i += 1;
-			/* "none" can be used to disable printer */
 			ok = Opt_StrCpy(OPT_PRINTER, CHECK_NONE, ConfigureParams.Printer.szPrintToFileName,
 					argv[i], sizeof(ConfigureParams.Printer.szPrintToFileName),
 					&ConfigureParams.Printer.bEnablePrinting);
