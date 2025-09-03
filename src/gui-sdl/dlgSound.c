@@ -13,7 +13,6 @@ const char DlgSound_fileid[] = "Hatari dlgSound.c";
 #include "file.h"
 #include "sound.h"
 
-
 #define DLGSOUND_ENABLE     3
 #define DLGSOUND_SYNC       4
 #define DLGSOUND_11KHZ      6
@@ -28,19 +27,12 @@ const char DlgSound_fileid[] = "Hatari dlgSound.c";
 #define DLGSOUND_MODEL      16
 #define DLGSOUND_TABLE      17
 #define DLGSOUND_LINEAR     18
-#define DLGSOUND_RECNAME    22
-#define DLGSOUND_RECBROWSE  23
-#define DLGSOUND_RECORD     24
-#define DLGSOUND_EXIT       25
-
-
-static char dlgRecordName[35];
-
+#define DLGSOUND_EXIT       19
 
 /* The sound dialog: */
 static SGOBJ sounddlg[] =
 {
-	{ SGBOX,      0,0,  0, 0, 40,25, NULL },
+	{ SGBOX,      0,0,  0, 0, 40,17, NULL },
 	{ SGBOX,      0,0,  1, 1, 38,13, NULL },
 	{ SGTEXT,     0,0,  4, 2,  5,1, "SOUND" },
 	{ SGCHECKBOX, 0,0, 13, 2,  9,1, "_Enabled" },
@@ -62,19 +54,9 @@ static SGOBJ sounddlg[] =
 	{ SGRADIOBUT, 0,0, 15,12, 10,1, "_ST table" },
 	{ SGRADIOBUT, 0,0, 28,12,  8,1, "_Linear" },
 
-	{ SGBOX,      0,0,  1,15, 38,7, NULL },
-	{ SGTEXT,     0,0, 13,16, 14,1, "Capture YM/WAV" },
-	{ SGTEXT,     0,0,  2,17, 26,1, "File name (*.wav / *.ym):" },
-	{ SGTEXT,     0,0,  2,18, 34,1, dlgRecordName },
-	{ SGBUTTON,   0,0, 28,17,  8,1, " _Browse " },
-	{ SGBUTTON,   0,0, 12,20, 16,1, NULL }, /* text set later, see below */
-
-	{ SGBUTTON, SG_DEFAULT, 0, 10,23, 20,1, "Back to main menu" },
+	{ SGBUTTON, SG_DEFAULT, 0, 10,15, 20,1, "Back to main menu" },
 	{ SGSTOP, 0, 0, 0,0, 0,0, NULL }
 };
-
-#define RECORD_START "_Record sound"
-#define RECORD_STOP  "Stop _recording"
 
 static const int nSoundFreqs[] =
 {
@@ -136,43 +118,10 @@ void Dialog_SoundDlg(void)
 	else
 		sounddlg[DLGSOUND_LINEAR].state |= SG_SELECTED;
 
-	File_ShrinkName(dlgRecordName, ConfigureParams.Sound.szYMCaptureFileName, sounddlg[DLGSOUND_RECNAME].w);
-
-	if ( Sound_AreWeRecording() )
-		sounddlg[DLGSOUND_RECORD].txt = RECORD_STOP;
-	else
-		sounddlg[DLGSOUND_RECORD].txt = RECORD_START;
-
 	/* The sound dialog main loop */
 	do
 	{
 		but = SDLGui_DoDialog(sounddlg);
-		switch (but)
-		{
-		 case DLGSOUND_RECBROWSE:                    /* Choose a new record file */
-			SDLGui_FileConfSelect("Capture file:", dlgRecordName,
-			                      ConfigureParams.Sound.szYMCaptureFileName,
-			                      sounddlg[DLGSOUND_RECNAME].w,
-			                      true);
-			break;
-		 case  DLGSOUND_RECORD:
-			if (Sound_AreWeRecording())
-			{
-				sounddlg[DLGSOUND_RECORD].txt = RECORD_START;
-				Sound_EndRecording();
-			}
-			else
-			{
-				/* make sure that we have a valid file name... */
-				if (strlen(ConfigureParams.Sound.szYMCaptureFileName) < 4)
-				{
-					strcpy(ConfigureParams.Sound.szYMCaptureFileName, "./hatari.wav");
-				}
-				sounddlg[DLGSOUND_RECORD].txt =  RECORD_STOP;
-				Sound_BeginRecording(ConfigureParams.Sound.szYMCaptureFileName);
-			}
-			break;
-		}
 	}
 	while (but != DLGSOUND_EXIT && but != SDLGUI_QUIT
 	        && but != SDLGUI_ERROR && !bQuitProgram );
