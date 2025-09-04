@@ -585,6 +585,7 @@ static uint8_t DMADiskWorkSpace[ FDC_TRACK_BYTES_STANDARD*4+1000 ];/* Workspace 
 static uint32_t	FDC_DelayToFdcCycles ( uint32_t Delay_micro );
 static uint32_t	FDC_FdcCyclesToCpuCycles ( uint32_t FdcCycles );
 static uint32_t	FDC_CpuCyclesToFdcCycles ( uint32_t CpuCycles );
+static uint32_t	FDC_NsToCpuCycles ( uint32_t Time_ns );
 static void	FDC_StartTimer_FdcCycles ( int FdcCycles , int InternalCycleOffset );
 static int	FDC_TransferByte_FdcCycles ( int NbBytes );
 static void	FDC_CRC16 ( uint8_t *buf , int nb , uint16_t *pCRC );
@@ -811,6 +812,25 @@ static uint32_t	FDC_CpuCyclesToFdcCycles ( uint32_t CpuCycles )
 
 //fprintf ( stderr , "fdc state %d delay %d cpu cycles %d fdc cycles\n" , FDC.Command , CpuCycles , FdcCycles );
 	return FdcCycles;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+ * Convert a duration in nanosec into a number of cpu cycles
+ *
+ * duration of 1 cpu cycle in nanosec = 1000000000 / cpu_freq
+ * at 8 MHz : 1 CPU cycle = 125 ns
+ *
+ * number of cycles for a duration in ns = duration_ns * cpu_freq / 1000000000
+ * at 8 MHz : 32000 ns = 256 cpu cycles
+ */
+uint32_t	FDC_NsToCpuCycles ( uint32_t Time_ns )
+{
+	uint32_t	Cycles;
+
+	Cycles = rint ( (uint64_t)Time_ns * MachineClocks.CPU_Freq / 1000000000 );
+	return Cycles;
 }
 
 
@@ -5569,12 +5589,14 @@ uint8_t	FDC_WriteTrack_MFM ( uint8_t Drive , uint8_t Track , uint8_t Side , int 
 
 void	FD_Stream_DumpTrack_test_overlap ( struct fd_stream *s , int InitialShift );
 void	FD_Stream_DumpTrack_new ( struct fd_stream *s , int InitialShift );
+void	FD_Stream_DumpTrack_new_color ( struct fd_stream *s , int InitialShift , bool UseAnsiColor );
 
 
 void	FD_Stream_DumpTrack ( struct fd_stream *s , int InitialShift )
 {
 //	FD_Stream_DumpTrack_test_overlap ( s , InitialShift );
-	FD_Stream_DumpTrack_new ( s , InitialShift );
+//	FD_Stream_DumpTrack_new_color ( s , InitialShift , false );
+	FD_Stream_DumpTrack_new_color ( s , InitialShift , true );
 }
 
 
@@ -5741,9 +5763,67 @@ exit(0);
 
 
 
-/* Dump a track by calling FDC_MFM_Process_Bit() until a byte is available */
 
-void	FD_Stream_DumpTrack_new ( struct fd_stream *s , int InitialShift )
+/*
+ * Dump a track by calling FDC_MFM_Process_Bit() until a byte is available
+ * If UseAnsiColor = true the output will use ansi color escape codes for some
+ * specific states (sync found, crc=0, slow/fast byte timings)
+ */
+
+
+#define	FD_DUMP_COLOR_SYNC_A1_X3	1
+#define	FD_DUMP_COLOR_SYNC_A1		2
+#define	FD_DUMP_COLOR_SYNC_C2		3
+#define	FD_DUMP_COLOR_CRC_0		4
+#define	FD_DUMP_COLOR_DR_TIME_SLOW	5
+#define	FD_DUMP_COLOR_DR_TIME_FAST	6
+
+
+
+#define BLK "\e[0;40m"
+#define RED "\e[0;41m"
+#define GRN "\e[0;42m"
+#define YEL "\e[0;43m"
+#define BLU "\e[0;44m"
+#define MAG "\e[0;45m"
+#define CYN "\e[0;46m"
+#define WHT "\e[0;47m"
+#define BRED "\e[0;101m"
+#define BGRN "\e[0;102m"
+#define BYEL "\e[0;103m"
+#define BBLU "\e[0;104m"
+#define BMAG "\e[0;105m"
+#define BCYN "\e[0;106m"
+#define BWHT "\e[0;107m"
+
+#define	PRINT_COLOR_ON	PrintColorOn ( Color )
+#define	PRINT_COLOR_OFF	PrintColorOff ( Color )
+
+static const char	*PrintColorOn ( int Color )
+{
+	if ( Color < 0 )
+		return "";
+
+	if ( Color == FD_DUMP_COLOR_SYNC_A1_X3 )	return BMAG;
+	else if ( Color == FD_DUMP_COLOR_SYNC_A1 )	return MAG;
+	else if ( Color == FD_DUMP_COLOR_SYNC_C2 )	return YEL;
+	else if ( Color == FD_DUMP_COLOR_CRC_0 )	return YEL;
+	else if ( Color == FD_DUMP_COLOR_DR_TIME_SLOW )	return YEL;
+	else if ( Color == FD_DUMP_COLOR_DR_TIME_FAST )	return RED;
+
+	return "";
+}
+
+static const char	*PrintColorOff ( int Color )
+{
+	if ( Color < 0 )
+		return "";
+
+	return "\x1b[0m";
+}
+
+
+void	FD_Stream_DumpTrack_new_color ( struct fd_stream *s , int InitialShift , bool UseAnsiColor )
 {
 	int	bit;
 	int	nb;
@@ -5753,6 +5833,9 @@ void	FD_Stream_DumpTrack_new ( struct fd_stream *s , int InitialShift )
 	char	buf_asc[1000];
 	char	buf_time[1000];
 	char	buf_crc[1000];
+	int	Color;
+	char	print_dr;
+	int	time;
 
 
 	FDC.AM_Detector_Mode = FDC_AM_DET_MODE_ALWAYS_ON;
@@ -5797,23 +5880,48 @@ void	FD_Stream_DumpTrack_new ( struct fd_stream *s , int InitialShift )
 
 		nb++;
 
-		if ( FDC.AM_Detector_Status & FDC_AM_DET_STATUS_SYNC_A1_X3 )		{ Flag = '@'; }
-		else if ( FDC.AM_Detector_Status & FDC_AM_DET_STATUS_SYNC_A1 )		{ Flag = '*'; }
-		else if ( FDC.AM_Detector_Status & FDC_AM_DET_STATUS_SYNC_C2 )		{ Flag = '+'; }
+		Color = -1;
+
+		if ( FDC.AM_Detector_Status & FDC_AM_DET_STATUS_SYNC_A1_X3 )		{ Flag = '@'; Color = FD_DUMP_COLOR_SYNC_A1_X3; }
+		else if ( FDC.AM_Detector_Status & FDC_AM_DET_STATUS_SYNC_A1 )		{ Flag = '*'; Color = FD_DUMP_COLOR_SYNC_A1; }
+		else if ( FDC.AM_Detector_Status & FDC_AM_DET_STATUS_SYNC_C2 )		{ Flag = '+'; Color = FD_DUMP_COLOR_SYNC_C2; }
 		else									{ Flag = ' '; }
 
-		sprintf ( buf_dr+strlen(buf_dr) , "%02X%c" , FDC.DR , Flag );
-		sprintf ( buf_time+strlen(buf_time) , " %04X" , (uint32_t)FDC.FD_DR_time );
-		sprintf ( buf_crc+strlen(buf_crc) , "%04X%c" , FDC.CRC , FDC.CRC==0?'*':' ' );
+		print_dr = FDC.DR;
 		if ( FDC.DR < 32 || FDC.DR > 126 )
-			sprintf ( buf_asc+strlen(buf_asc) , "." );
+			print_dr = '.';
+
+		time = FDC_NsToCpuCycles ( (uint32_t)FDC.FD_DR_time );
+
+		if ( !UseAnsiColor )
+		{
+			sprintf ( buf_dr+strlen(buf_dr) , "%02X%c" , FDC.DR , Flag );
+			sprintf ( buf_asc+strlen(buf_asc) , "%c" , print_dr );
+			sprintf ( buf_time+strlen(buf_time) , " %04X" , time );
+			sprintf ( buf_crc+strlen(buf_crc) , "%04X%c" , FDC.CRC , FDC.CRC==0?'*':' ' );
+		}
 		else
-			sprintf ( buf_asc+strlen(buf_asc) , "%c" , FDC.DR );
+		{
+			sprintf ( buf_dr+strlen(buf_dr) , "%s%02X%s " , PRINT_COLOR_ON , FDC.DR , PRINT_COLOR_OFF );
+			sprintf ( buf_asc+strlen(buf_asc) , "%s%c%s" , PRINT_COLOR_ON , print_dr , PRINT_COLOR_OFF );
+
+			Color = -1;
+			if ( time < 256 * 0.95 )			Color = FD_DUMP_COLOR_DR_TIME_FAST;
+			else if ( time > 256 * 1.05 )			Color = FD_DUMP_COLOR_DR_TIME_SLOW;
+			sprintf ( buf_time+strlen(buf_time) , "%s%04X%s " , PRINT_COLOR_ON , time , PRINT_COLOR_OFF );
+
+			Color = -1;
+			if ( FDC.CRC == 0 )				Color = FD_DUMP_COLOR_CRC_0;
+			sprintf ( buf_crc+strlen(buf_crc) , "%s%04X%s " , PRINT_COLOR_ON , FDC.CRC , PRINT_COLOR_OFF );
+		}
+
+
+		/* go to next line after 16 values */
 		if ( nb % 16 == 0 )
 		{
 			fprintf ( stdout , "%s  %s  %s %s\n" , buf_dr , buf_asc , buf_crc , buf_time );
-			fprintf ( stdout , "%04x : " , nb );
 			*buf_dr = *buf_asc = *buf_time = *buf_crc = '\0';
+			fprintf ( stdout , "%04x : " , nb );
 		}
 
 	}
