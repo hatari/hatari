@@ -204,7 +204,8 @@ void Dialog_RecordingDlg(void)
 				if (!File_QueryOverwrite(selname))
 					break;
 				Str_Copy(ConfigureParams.Video.AviRecordFile, selname, sizeof(ConfigureParams.Video.AviRecordFile));
-				Avi_StartRecording_WithConfig ();
+				if (!Avi_StartRecording_WithConfig ())
+					break;
 				recorddlg[DLGRECORD_RECVIDEO].txt = VIDEO_STOP;
 			}
 			break;
@@ -227,8 +228,10 @@ void Dialog_RecordingDlg(void)
 				{
 					strcpy(ConfigureParams.Sound.szYMCaptureFileName, DEFAULT_AUDIO_FILE);
 				}
-				recorddlg[DLGRECORD_RECAUDIO].txt =  AUDIO_STOP;
-				Sound_BeginRecording(ConfigureParams.Sound.szYMCaptureFileName);
+				if (Sound_BeginRecording(ConfigureParams.Sound.szYMCaptureFileName))
+				{
+					recorddlg[DLGRECORD_RECAUDIO].txt =  AUDIO_STOP;
+				}
 			}
 			break;
 		}
