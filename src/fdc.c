@@ -585,7 +585,7 @@ static uint8_t DMADiskWorkSpace[ FDC_TRACK_BYTES_STANDARD*4+1000 ];/* Workspace 
 static uint32_t	FDC_DelayToFdcCycles ( uint32_t Delay_micro );
 static uint32_t	FDC_FdcCyclesToCpuCycles ( uint32_t FdcCycles );
 static uint32_t	FDC_CpuCyclesToFdcCycles ( uint32_t CpuCycles );
-static uint32_t	FDC_NsToCpuCycles ( uint32_t Time_ns );
+static uint32_t	FDC_NsToFdcCycles ( uint32_t Time_ns );
 static void	FDC_StartTimer_FdcCycles ( int FdcCycles , int InternalCycleOffset );
 static int	FDC_TransferByte_FdcCycles ( int NbBytes );
 static void	FDC_CRC16 ( uint8_t *buf , int nb , uint16_t *pCRC );
@@ -817,19 +817,19 @@ static uint32_t	FDC_CpuCyclesToFdcCycles ( uint32_t CpuCycles )
 
 /*-----------------------------------------------------------------------*/
 /*
- * Convert a duration in nanosec into a number of cpu cycles
+ * Convert a duration in nanosec into a number of fdc cycles
  *
- * duration of 1 cpu cycle in nanosec = 1000000000 / cpu_freq
- * at 8 MHz : 1 CPU cycle = 125 ns
+ * duration of 1 fdc cycle in nanosec = 1000000000 / fdc_freq
+ * at 8 MHz : 1 FDC cycle = 125 ns
  *
- * number of cycles for a duration in ns = duration_ns * cpu_freq / 1000000000
- * at 8 MHz : 32000 ns = 256 cpu cycles
+ * number of cycles for a duration in ns = duration_ns * fdc_freq / 1000000000
+ * at 8 MHz : 32000 ns = 256 fdc cycles
  */
-uint32_t	FDC_NsToCpuCycles ( uint32_t Time_ns )
+uint32_t	FDC_NsToFdcCycles ( uint32_t Time_ns )
 {
 	uint32_t	Cycles;
 
-	Cycles = rint ( (uint64_t)Time_ns * MachineClocks.CPU_Freq / 1000000000 );
+	Cycles = rint ( (uint64_t)Time_ns * MachineClocks.FDC_Freq / 1000000000 );
 	return Cycles;
 }
 
@@ -5891,7 +5891,7 @@ void	FD_Stream_DumpTrack_new_color ( struct fd_stream *s , int InitialShift , bo
 		if ( FDC.DR < 32 || FDC.DR > 126 )
 			print_dr = '.';
 
-		time = FDC_NsToCpuCycles ( (uint32_t)FDC.FD_DR_time );
+		time = FDC_NsToFdcCycles ( (uint32_t)FDC.FD_DR_time );
 
 		if ( !UseAnsiColor )
 		{
