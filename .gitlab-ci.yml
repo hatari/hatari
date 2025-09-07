@@ -63,7 +63,7 @@ build-mingw:
     - cd ../build
     - VERSION=$(git describe)
     - cmake -DCMAKE_TOOLCHAIN_FILE=cmake/Toolchain-mingw32-win64_64.cmake
-            -DENABLE_WERROR:BOOL=1 ..
+            -DENABLE_WERROR:BOOL=1 -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo ..
     - make -j$(nproc)
     - cd ..
     # And finally create the package

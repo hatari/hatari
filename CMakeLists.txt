@@ -174,6 +174,10 @@ check_large_file()
 # CPP Definitions:
 # ################
 
+# We still want to have assert() in RelWithDebInfo builds:
+string(REPLACE " -DNDEBUG" ""
+       CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO}")
+
 # Test for large file support:
 execute_process(COMMAND getconf LFS_CFLAGS
                 OUTPUT_VARIABLE DETECTED_LFS_CFLAGS
