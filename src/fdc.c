@@ -5278,6 +5278,7 @@ static int flux_next_bit(struct fd_stream *s)
 #define	FDC_AM_DET_STATUS_SYNC_C2	(1<<1)
 #define	FDC_AM_DET_STATUS_SYNC_A1_X3	(1<<2)
 #define	FDC_AM_DET_STATUS_DR_READY	(1<<3)
+#define	FDC_AM_DET_STATUS_INDEX_PULSE	(1<<4)
 
 #define	FDC_AM_DET_MODE_OFF		0		/* AM Det is OFF */
 #define	FDC_AM_DET_MODE_ALWAYS_ON	1		/* AM Det is always ON (eg "read track") */
@@ -5296,18 +5297,23 @@ int	FDC_MFM_Process_Bit ( struct fd_stream *s , bool Skip_Bit )
 	int			bit;
 	bool			Copy_DSR_DR;
 	Uint16			Sync;
-
+	uint32_t		nr_index_prev;
 
 	/* Reset some status before processing a new bit */
 	FDC.AM_Detector_Status &= ~( FDC_AM_DET_STATUS_SYNC_A1 | FDC_AM_DET_STATUS_SYNC_C2 | FDC_AM_DET_STATUS_DR_READY
-		| FDC_AM_DET_STATUS_SYNC_A1_X3 );
+		| FDC_AM_DET_STATUS_SYNC_A1_X3 | FDC_AM_DET_STATUS_INDEX_PULSE );
 
 	Copy_DSR_DR = false;
 
-	/* Get a new bit from the flux (clock or data) */
+	/* Get a new bit from the flux (clock or data) and check if we got an index pulse at the same time */
+	nr_index_prev = s->nr_index;
 	bit = fd_stream_next_bit ( s );
-//fprintf ( stdout , "bit %d %d %0x\n" , nb , bit , s->word  );
-	if ( bit == -1 )					/* index -> end of track */
+//fprintf ( stdout , "bit %d %0x\n" , bit , s->word  );
+
+	if ( ( nr_index_prev > 0 ) && ( nr_index_prev != s->nr_index ) )
+		FDC.AM_Detector_Status |= FDC_AM_DET_STATUS_INDEX_PULSE;
+
+	if ( bit == -1 )				/* end of all revolutions for this track */
 		return -1;
 
 	/* Stop processing now if we want to skip a bit */
@@ -5646,7 +5652,7 @@ void	FD_Stream_DumpTrack_test_overlap ( struct fd_stream *s , int InitialShift )
 	{
 		bit = fd_stream_next_bit ( s );
 //fprintf ( stdout , "bit %d %d %0x\n" , nb , bit , s->word  );
-		if ( bit == -1 )				/* index -> end of track */
+		if ( bit == -1 )				/* end of all revolutions for this track */
 			break;
 
 		if ( InitialShift )
@@ -5766,6 +5772,9 @@ exit(0);
 
 /*
  * Dump a track by calling FDC_MFM_Process_Bit() until a byte is available
+ * or end of track is reached
+ * If the floppy image has several revolutions we also display when index pulse
+ * is received between each revolution
  * If UseAnsiColor = true the output will use ansi color escape codes for some
  * specific states (sync found, crc=0, slow/fast byte timings)
  */
@@ -5777,6 +5786,7 @@ exit(0);
 #define	FD_DUMP_COLOR_CRC_0		4
 #define	FD_DUMP_COLOR_DR_TIME_SLOW	5
 #define	FD_DUMP_COLOR_DR_TIME_FAST	6
+#define	FD_DUMP_COLOR_INDEX_PULSE	7
 
 
 
@@ -5810,6 +5820,7 @@ static const char	*PrintColorOn ( int Color )
 	else if ( Color == FD_DUMP_COLOR_CRC_0 )	return YEL;
 	else if ( Color == FD_DUMP_COLOR_DR_TIME_SLOW )	return YEL;
 	else if ( Color == FD_DUMP_COLOR_DR_TIME_FAST )	return RED;
+	else if ( Color == FD_DUMP_COLOR_INDEX_PULSE )	return BLU;
 
 	return "";
 }
@@ -5828,6 +5839,7 @@ void	FD_Stream_DumpTrack_new_color ( struct fd_stream *s , int InitialShift , bo
 	int	bit;
 	int	nb;
 	bool	EndTrack;
+	bool	IndexPulse;
 	char	Flag;
 	char	buf_dr[1000];
 	char	buf_asc[1000];
@@ -5836,6 +5848,7 @@ void	FD_Stream_DumpTrack_new_color ( struct fd_stream *s , int InitialShift , bo
 	int	Color;
 	char	print_dr;
 	int	time;
+	int	Column;
 
 
 	FDC.AM_Detector_Mode = FDC_AM_DET_MODE_ALWAYS_ON;
@@ -5849,6 +5862,8 @@ void	FD_Stream_DumpTrack_new_color ( struct fd_stream *s , int InitialShift , bo
 	FDC.Sync_A1_Count = 0;
 
 	nb = 0;
+	Column = 0;
+	IndexPulse = false;
 	*buf_dr = *buf_asc = *buf_time = *buf_crc = '\0';
 	fprintf ( stdout , "%04x : " , nb );
 
@@ -5861,10 +5876,15 @@ void	FD_Stream_DumpTrack_new_color ( struct fd_stream *s , int InitialShift , bo
 			bit = FDC_MFM_Process_Bit ( s , InitialShift > 0 );
 
 //fprintf ( stdout , "bit %d %d %0x\n" , nb , bit , s->word  );
-			if ( bit == -1 )				/* index -> end of track */
+			if ( bit == -1 )				/* end of all revolutions for this track */
 			{
 				EndTrack = true;
 				break;
+			}
+
+			if ( FDC.AM_Detector_Status & FDC_AM_DET_STATUS_INDEX_PULSE )
+			{
+				IndexPulse = true;
 			}
 
 			if ( InitialShift )
@@ -5906,22 +5926,33 @@ void	FD_Stream_DumpTrack_new_color ( struct fd_stream *s , int InitialShift , bo
 			sprintf ( buf_asc+strlen(buf_asc) , "%s%c%s" , PRINT_COLOR_ON , print_dr , PRINT_COLOR_OFF );
 
 			Color = -1;
+			if ( FDC.CRC == 0 )				Color = FD_DUMP_COLOR_CRC_0;
+			sprintf ( buf_crc+strlen(buf_crc) , "%s%04X%s " , PRINT_COLOR_ON , FDC.CRC , PRINT_COLOR_OFF );
+
+			Color = -1;
 			if ( time < 256 * 0.95 )			Color = FD_DUMP_COLOR_DR_TIME_FAST;
 			else if ( time > 256 * 1.05 )			Color = FD_DUMP_COLOR_DR_TIME_SLOW;
 			sprintf ( buf_time+strlen(buf_time) , "%s%04X%s " , PRINT_COLOR_ON , time , PRINT_COLOR_OFF );
-
-			Color = -1;
-			if ( FDC.CRC == 0 )				Color = FD_DUMP_COLOR_CRC_0;
-			sprintf ( buf_crc+strlen(buf_crc) , "%s%04X%s " , PRINT_COLOR_ON , FDC.CRC , PRINT_COLOR_OFF );
 		}
 
 
 		/* go to next line after 16 values */
-		if ( nb % 16 == 0 )
+		/* line can have less than 16 values if index pulse triggers */
+		Column++;
+		if ( ( Column == 16 ) || IndexPulse )
 		{
-			fprintf ( stdout , "%s  %s  %s %s\n" , buf_dr , buf_asc , buf_crc , buf_time );
+			fprintf ( stdout , "%-*s   %-*s  %-*s %s\n" , 16*3 , buf_dr ,
+				  16 , buf_asc , 16*5 , buf_crc , buf_time );
 			*buf_dr = *buf_asc = *buf_time = *buf_crc = '\0';
+			if ( IndexPulse )
+			{
+				IndexPulse = false;
+				Color = FD_DUMP_COLOR_INDEX_PULSE;
+				fprintf ( stdout , "\n%sINDEX%s\n" , PRINT_COLOR_ON , PRINT_COLOR_OFF );
+			}
+
 			fprintf ( stdout , "%04x : " , nb );
+			Column = 0;
 		}
 
 	}
