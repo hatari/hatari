@@ -1021,18 +1021,6 @@ bool	Avi_RecordVideoStream ( void )
 	if ( Avi_FrameIndex_Add ( &AviParams , &AviFileHeader , 0 , Pos_Start , (uint32_t)( Pos_End - Pos_Start ) ) == false )
 		return false;
 
-	if (AviParams.TotalVideoFrames % ( AviParams.Fps / AviParams.Fps_scale ) == 0)
-	{
-		char str[20];
-		int secs , hours , mins;
-
-		secs = AviParams.TotalVideoFrames / ( AviParams.Fps / AviParams.Fps_scale );
-		hours = secs / 3600;
-		mins = ( secs % 3600 ) / 60;
-		secs = secs % 60;
-		snprintf ( str , 20 , "%d:%02d:%02d" , hours , mins , secs );
-		Main_SetTitle(str);
-	}
 	return true;
 }
 
@@ -1487,10 +1475,8 @@ static bool	Avi_StartRecording ( char *FileName , bool CropGui , uint32_t Fps , 
 	
 	
 	if (Avi_StartRecording_WithParams ( &AviParams , FileName ))
-	{
-		Main_SetTitle("00:00");
 		return true;
-	}
+
 	return false;
 }
 
@@ -1513,10 +1499,8 @@ bool	Avi_StartRecording_WithConfig ( void )
 bool	Avi_StopRecording ( void )
 {
 	if (Avi_StopRecording_WithParams ( &AviParams ))
-	{
-		Main_SetTitle(NULL);
 		return true;
-	}
+
 	return false;
 }
 

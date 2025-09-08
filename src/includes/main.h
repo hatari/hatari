@@ -67,7 +67,6 @@ extern void Main_WaitOnVbl(void);
 extern void Main_WarpMouse(int x, int y, bool restore);
 extern bool Main_ShowCursor(bool show);
 extern void Main_EventHandler(void);
-extern void Main_SetTitle(const char *title);
 extern void Main_ErrorExit(const char *msg1, const char *msg2, int errval);
 
 #endif /* ifndef HATARI_MAIN_H */

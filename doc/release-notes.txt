@@ -26,6 +26,8 @@ Emulator improvements:
 - CLI options:
   - Both "" and "none" can be used to disable devices that are enabled
     by providing a <file> or <dir name> (revert v2.6.1 API change)
+- Recording:
+  - Also sound recording shows recording time in Hatari titlebar
 - VDI mode:
   - Support 8-bit VDI mode (up to 800x600@256) on TT & Falcon
 - Virtual INF file (used with autostart/TOS-resolution options):

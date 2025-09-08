@@ -298,6 +298,63 @@ void Main_SetQuitValue(int exitval)
 	nQuitValue = exitval;
 }
 
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Set Hatari window title. Use NULL for default
+ */
+static void Main_SetTitle(const char *title)
+{
+	if (title)
+		SDL_SetWindowTitle(sdlWindow, title);
+	else
+		SDL_SetWindowTitle(sdlWindow, PROG_NAME);
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * When recording, show time in titlebar.
+ */
+static void Main_UpdateTitle(int currentVbl)
+{
+	static int startVbl;
+	int vbls, secs, mins, hours;
+	char info[16];
+
+	/* recording started since previous VBL? */
+	if (!startVbl)
+	{
+		if (Sound_AreWeRecording() || Avi_AreWeRecording())
+		{
+			Main_SetTitle("00:00:00");
+			startVbl = currentVbl;
+		}
+		return;
+	}
+
+	/* recording stopped since previous VBL? */
+	if (!(Sound_AreWeRecording() || Avi_AreWeRecording()))
+	{
+		Main_SetTitle(NULL);
+		startVbl = 0;
+		return;
+	}
+
+	vbls = currentVbl - startVbl;
+	/* no need to update titlebar/secs? */
+	if (vbls % nScreenRefreshRate != 0)
+		return;
+
+	secs = vbls / nScreenRefreshRate;
+	hours = secs / 3600;
+	mins = (secs % 3600) / 60;
+	secs = secs % 60;
+
+	/* update recording time to titlebar */
+	snprintf(info, sizeof(info), "%02d:%02d:%02d", hours, mins, secs);
+	Main_SetTitle(info);
+}
+
 /*-----------------------------------------------------------------------*/
 /**
  * Set how many VBLs Hatari should run, from the moment this function
@@ -354,6 +411,8 @@ void Main_WaitOnVbl(void)
 		Main_PauseEmulation(true);
 		exit(0);
 	}
+
+	Main_UpdateTitle(nVBLCount);
 
 //	FrameDuration_micro = (int64_t) ( 1000000.0 / nScreenRefreshRate + 0.5 );	/* round to closest integer */
 	FrameDuration_micro = ClocksTimings_GetVBLDuration_micro ( ConfigureParams.System.nMachineType , nScreenRefreshRate );
@@ -741,18 +800,6 @@ void Main_EventHandler(void)
 	} while (bContinueProcessing || !(bEmulationActive || bQuitProgram));
 }
 
-
-/*-----------------------------------------------------------------------*/
-/**
- * Set Hatari window title. Use NULL for default
- */
-void Main_SetTitle(const char *title)
-{
-	if (title)
-		SDL_SetWindowTitle(sdlWindow, title);
-	else
-		SDL_SetWindowTitle(sdlWindow, PROG_NAME);
-}
 
 /*-----------------------------------------------------------------------*/
 /**
