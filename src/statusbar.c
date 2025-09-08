@@ -43,8 +43,7 @@ const char Statusbar_fileid[] = "Hatari statusbar.c";
 #include "tos.h"
 #include "screen.h"
 #include "video.h"
-#include "wavFormat.h"
-#include "ymFormat.h"
+#include "sound.h"
 #include "avi_record.h"
 #include "vdi.h"
 #include "fdc.h"
@@ -834,7 +833,7 @@ static SDL_Rect* Statusbar_OverlayDraw(SDL_Surface *surf)
 	Uint32 currentticks = SDL_GetTicks();
 	int i;
 
-	if (bRecordingYM || bRecordingWav || Avi_AreWeRecording())
+	if (Sound_AreWeRecording() || Avi_AreWeRecording())
 	{
 		Statusbar_OverlayDrawLed(surf, RecColorOn);
 	}
@@ -1019,7 +1018,7 @@ SDL_Rect* Statusbar_Update(SDL_Surface *surf, bool do_update)
 		}
 	}
 
-	if ((bRecordingYM || bRecordingWav || Avi_AreWeRecording()) != bOldRecording)
+	if ((Sound_AreWeRecording() || Avi_AreWeRecording()) != bOldRecording)
 	{
 		bOldRecording = !bOldRecording;
 		if (bOldRecording)
