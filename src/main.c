@@ -389,9 +389,9 @@ void Main_WaitOnVbl(void)
 		}
 		/* Only update DestTicks for next VBL */
 		DestTicks = CurrentTicks + FrameDuration_micro;
-		#ifdef EMSCRIPTEN
+#ifdef EMSCRIPTEN
 		emscripten_sleep(0);
-		#endif
+#endif
 		return;
 	}
 
