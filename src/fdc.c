@@ -5834,6 +5834,14 @@ static const char	*PrintColorOff ( int Color )
 }
 
 
+static void	FD_Stream_Dumptrack_PrintIndex ( int Rev )
+{
+	int	Color = FD_DUMP_COLOR_INDEX_PULSE;
+	fprintf ( stdout , "\n%sINDEX rev=%d%s\n" , PRINT_COLOR_ON , Rev , PRINT_COLOR_OFF );
+}
+
+
+
 void	FD_Stream_DumpTrack_new_color ( struct fd_stream *s , int InitialShift , bool UseAnsiColor )
 {
 	int	bit;
@@ -5849,6 +5857,8 @@ void	FD_Stream_DumpTrack_new_color ( struct fd_stream *s , int InitialShift , bo
 	char	print_dr;
 	int	time;
 	int	Column;
+	int	IndexToRead;
+	int	Rev;
 
 
 	FDC.AM_Detector_Mode = FDC_AM_DET_MODE_ALWAYS_ON;
@@ -5864,8 +5874,14 @@ void	FD_Stream_DumpTrack_new_color ( struct fd_stream *s , int InitialShift , bo
 	nb = 0;
 	Column = 0;
 	IndexPulse = false;
-	*buf_dr = *buf_asc = *buf_time = *buf_crc = '\0';
+	Rev = 0;
+	/* Dump at least 4 times if the track has less than 4 recorded revolutions */
+	IndexToRead = max_int ( s->RevolutionsNbr , 4 );
+
+	FD_Stream_Dumptrack_PrintIndex ( Rev );
 	fprintf ( stdout , "%04x : " , nb );
+
+	*buf_dr = *buf_asc = *buf_time = *buf_crc = '\0';
 
 	EndTrack = false;
 	while ( 1 )
@@ -5876,15 +5892,16 @@ void	FD_Stream_DumpTrack_new_color ( struct fd_stream *s , int InitialShift , bo
 			bit = FDC_MFM_Process_Bit ( s , InitialShift > 0 );
 
 //fprintf ( stdout , "bit %d %d %0x\n" , nb , bit , s->word  );
-			if ( bit == -1 )				/* end of all revolutions for this track */
-			{
-				EndTrack = true;
-				break;
-			}
-
 			if ( FDC.AM_Detector_Status & FDC_AM_DET_STATUS_INDEX_PULSE )
 			{
 				IndexPulse = true;
+				Rev++;
+			}
+
+			if ( ( bit == -1 ) || ( Rev == IndexToRead ) )	/* end of all revolutions for this track or enough indexes dumped */
+			{
+				EndTrack = true;
+				break;
 			}
 
 			if ( InitialShift )
@@ -5947,8 +5964,7 @@ void	FD_Stream_DumpTrack_new_color ( struct fd_stream *s , int InitialShift , bo
 			if ( IndexPulse )
 			{
 				IndexPulse = false;
-				Color = FD_DUMP_COLOR_INDEX_PULSE;
-				fprintf ( stdout , "\n%sINDEX%s\n" , PRINT_COLOR_ON , PRINT_COLOR_OFF );
+				FD_Stream_Dumptrack_PrintIndex ( Rev );
 			}
 
 			fprintf ( stdout , "%04x : " , nb );
