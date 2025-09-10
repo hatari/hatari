@@ -162,6 +162,9 @@ struct fd_stream {
 	int ns_to_index;         /* Distance to next index pulse */
 
 	uint32_t prng_seed;
+
+	/* Hatari specific */
+	uint32_t RevolutionsNbr;	/* number of revolutions to image selected track */
 };
 
 
