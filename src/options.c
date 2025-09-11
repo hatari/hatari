@@ -991,7 +991,12 @@ static bool Opt_StrCpy(int optid, fs_check_t check, char *dst, const char *src, 
 			}
 			return Opt_ShowError(optid, src, error);
 		}
+		/* no error => enable device option */
 		*option = true;
+	}
+	else if (error)
+	{
+		return Opt_ShowError(optid, src, error);
 	}
 
 	if (strlen(src) >= dstlen)
