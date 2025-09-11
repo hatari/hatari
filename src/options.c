@@ -943,16 +943,16 @@ static int Opt_WhichOption(int argc, const char * const argv[], int idx)
 
 
 /**
- * Copy option 'src' value to 'dst' string, unless 'check' is requested
+ * Copy option 'path' value to 'dst' string, unless 'check' is requested
  * and given item does not exist.
  *
- * If a pointer to (bool) 'option' is given, set that option to true,
- * unless 'src' is "" (or "none"), in which case 'dst' is left unmodified,
- * and  'option' is set to false (= disable bool enabling given device).
+ * If a pointer to (bool) 'enabled' variable is given, set that true,
+ * unless 'path' is "" (or "none"), in which case 'dst' is left unmodified,
+ * and  'enabled' (= bool enabling given device) is set to false.
  *
  * Return false if there were errors, otherwise true
  */
-static bool Opt_StrCpy(int optid, fs_check_t check, char *dst, const char *src, size_t dstlen, bool *option)
+static bool Opt_StrCpy(int optid, fs_check_t check, char *dst, const char *path, size_t dstlen, bool *enabled)
 {
 	const char *error = NULL;
 
@@ -961,23 +961,23 @@ static bool Opt_StrCpy(int optid, fs_check_t check, char *dst, const char *src, 
 	case CHECK_NONE:
 		break;
 	case CHECK_FILE:
-		if (!File_Exists(src))
+		if (!File_Exists(path))
 		{
 			error = "Given file does not exist, or permissions prevent access to it!";
 		}
 		break;
 	case CHECK_DIR:
-		if (!File_DirExists(src))
+		if (!File_DirExists(path))
 		{
 			error = "Given directory does not exist, or permissions prevent access to it!";
 		}
 		break;
 	}
 
-	if (option)
+	if (enabled)
 	{
-		*option = false;
-		if(!*src)
+		*enabled = false;
+		if(!*path)
 		{
 			/* "" disables unconditionally */
 			return true;
@@ -985,25 +985,25 @@ static bool Opt_StrCpy(int optid, fs_check_t check, char *dst, const char *src, 
 		if (error)
 		{
 			/* "none" disables when item does not exist */
-			if (strcasecmp(src, "none") == 0)
+			if (strcasecmp(path, "none") == 0)
 			{
 				return true;
 			}
-			return Opt_ShowError(optid, src, error);
+			return Opt_ShowError(optid, path, error);
 		}
 		/* no error => enable device option */
-		*option = true;
+		*enabled = true;
 	}
 	else if (error)
 	{
-		return Opt_ShowError(optid, src, error);
+		return Opt_ShowError(optid, path, error);
 	}
 
-	if (strlen(src) >= dstlen)
+	if (strlen(path) >= dstlen)
 	{
-		return Opt_ShowError(optid, src, "Path too long!");
+		return Opt_ShowError(optid, path, "Path too long!");
 	}
-	strcpy(dst, src);
+	strcpy(dst, path);
 	return true;
 }
 
