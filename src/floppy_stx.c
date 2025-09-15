@@ -1460,9 +1460,9 @@ uint32_t	FDC_GetCyclesPerRev_FdcCycles_STX ( uint8_t Drive , uint8_t Track , uin
  * NextSector_ID_Field_LEN and if the CRC is correct or not into NextSector_ID_Field_CRC_OK.
  * This function assumes the sectors of each track are sorted in ascending order
  * using BitPosition.
- * If there's no available drive/floppy or no ID field in the track, we return -1
+ * If there's no available drive/floppy or no ID field in the track, we return FDCEMU_RETURN_NO_DRIVE_FLOPPY
  */
-int	FDC_NextSectorID_FdcCycles_STX ( uint8_t Drive , uint8_t NumberOfHeads , uint8_t Track , uint8_t Side )
+int	FDC_NextSectorID_FdcCycles_STX ( uint8_t Drive , uint8_t NumberOfHeads , uint8_t Track , uint8_t Side , int *pFdcCycles )
 {
 	STX_TRACK_STRUCT	*pStxTrack;
 	int			CurrentPos_FdcCycles;
@@ -1472,20 +1472,20 @@ int	FDC_NextSectorID_FdcCycles_STX ( uint8_t Drive , uint8_t NumberOfHeads , uin
 
 	CurrentPos_FdcCycles = FDC_IndexPulse_GetCurrentPos_FdcCycles ( NULL );
 	if ( CurrentPos_FdcCycles < 0 )					/* No drive/floppy available at the moment */
-		return -1;
+		return FDCEMU_RETURN_NO_DRIVE_FLOPPY;
 
 	if ( ( Side == 1 ) && ( NumberOfHeads == 1 ) )			/* Can't read side 1 on a single sided drive */
-		return -1;
+		return FDCEMU_RETURN_NO_DRIVE_FLOPPY;
 
 	pStxTrack = STX_FindTrack ( Drive , Track , Side );
 	if ( pStxTrack == NULL )					/* Track/Side don't exist in this STX image */
-		return -1;
+		return FDCEMU_RETURN_NO_DRIVE_FLOPPY;
 
 	if ( pStxTrack->SectorsCount == 0 )				/* No sector (track image only, or empty / non formatted track) */
-		return -1;
+		return FDCEMU_RETURN_NO_DRIVE_FLOPPY;
 
 	if ( FDC_MachineHandleDensity ( Drive ) == false )		/* Can't handle the floppy's density */
-		return -1;
+		return FDCEMU_RETURN_NO_DRIVE_FLOPPY;
 
 	/* Compare CurrentPos_FdcCycles with each sector's position in ascending order */
 	/* (minus 4 bytes, see below) */
@@ -1534,7 +1534,8 @@ int	FDC_NextSectorID_FdcCycles_STX ( uint8_t Drive , uint8_t NumberOfHeads , uin
 	Delay_FdcCycles -= 4 * FDC_DELAY_CYCLE_MFM_BYTE;		/* Correct delay to point to $A1 $A1 $A1 $FE */
 	
 //fprintf ( stderr , "fdc bytes next sector pos=%d delay=%d maxsr=%d nextsr=%d\n" , CurrentPos_FdcCycles, Delay_FdcCycles, pStxTrack->SectorsCount, STX_State.NextSectorStruct_Nbr );
-	return Delay_FdcCycles;
+	*pFdcCycles = Delay_FdcCycles;
+	return FDCEMU_RETURN_OK;
 }
 
 

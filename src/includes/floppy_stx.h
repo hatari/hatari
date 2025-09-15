@@ -171,7 +171,7 @@ extern STX_MAIN_STRUCT *STX_BuildStruct ( uint8_t *pFileBuffer , int Debug );
 
 extern int	FDC_GetBytesPerTrack_STX ( uint8_t Drive , uint8_t Track , uint8_t Side );
 extern uint32_t	FDC_GetCyclesPerRev_FdcCycles_STX ( uint8_t Drive , uint8_t Track , uint8_t Side );
-extern int	FDC_NextSectorID_FdcCycles_STX ( uint8_t Drive , uint8_t NumberOfHeads , uint8_t Track , uint8_t Side );
+extern int	FDC_NextSectorID_FdcCycles_STX ( uint8_t Drive , uint8_t NumberOfHeads , uint8_t Track , uint8_t Side , int *pFdcCycles );
 extern uint8_t	FDC_NextSectorID_TR_STX ( void );
 extern uint8_t	FDC_NextSectorID_SR_STX ( void );
 extern uint8_t	FDC_NextSectorID_LEN_STX ( void );

@@ -61,6 +61,14 @@
 #define	FDC_DC_SIGNAL_INSERTED			1
 
 
+/* FDC emulation return codes for the commands' sub-states */
+#define	FDCEMU_RETURN_OK		0
+#define	FDCEMU_RETURN_NO_DRIVE_FLOPPY	(-1)
+//#define	FDCEMU_RETURN_INDEX_PULSE	(-2)
+
+
+
+
 extern int	FDC_StepRate_ms[];
 
 
@@ -192,7 +200,7 @@ int	fd_stream_next_bytes ( struct fd_stream *s , void *p , unsigned int bytes );
 
 
 
-extern int	FDC_NextSectorID_FdcCycles_MFM ( uint8_t Drive , uint8_t NumberOfHeads , uint8_t Track , uint8_t Side );
+extern int	FDC_NextSectorID_FdcCycles_MFM ( uint8_t Drive , uint8_t NumberOfHeads , uint8_t Track , uint8_t Side , int *pFdcCycles );
 extern uint8_t	FDC_NextSectorID_TR_MFM ( void );
 extern uint8_t	FDC_NextSectorID_SR_MFM ( void );
 extern uint8_t	FDC_NextSectorID_LEN_MFM ( void );

@@ -365,6 +365,7 @@ enum
 
 
 
+
 /*
  * Standard hardware values for the FDC. This should allow to get very good timings' emulation
  * when dealing with non protected disks that still require a correct speed (MSA or ST images)
@@ -643,7 +644,7 @@ static void	FDC_WriteTrackRegister ( void );
 static void	FDC_WriteSectorRegister ( void );
 static void	FDC_WriteDataRegister ( void );
 
-static int	FDC_NextSectorID_FdcCycles_ST ( uint8_t Drive , uint8_t NumberOfHeads , uint8_t Track , uint8_t Side );
+static int	FDC_NextSectorID_FdcCycles_ST ( uint8_t Drive , uint8_t NumberOfHeads , uint8_t Track , uint8_t Side , int *pFdccycles );
 static uint8_t	FDC_NextSectorID_TR_ST ( void );
 static uint8_t	FDC_NextSectorID_SR_ST ( void );
 static uint8_t	FDC_NextSectorID_LEN_ST ( void );
@@ -2269,6 +2270,7 @@ static int FDC_UpdateRestoreCmd ( void )
 {
 	int	FdcCycles = 0;
 	int	FrameCycles, HblCounterVideo, LineCycles;
+	int	Res;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
@@ -2366,27 +2368,30 @@ static int FDC_UpdateRestoreCmd ( void )
 		}
 
 		if ( FDC.DriveSelSignal < 0 )					/* No drive selected */
-			FdcCycles = -1;
+			Res = FDCEMU_RETURN_NO_DRIVE_FLOPPY;
+
 		else if ( Floppy_ImageIsSTX ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
-			FdcCycles = FDC_NextSectorID_FdcCycles_STX ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
-					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
+			Res = FDC_NextSectorID_FdcCycles_STX ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
+					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal , &FdcCycles );
 		else if ( Floppy_ImageIsMFM ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
-			FdcCycles = FDC_NextSectorID_FdcCycles_MFM ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
-					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
+			Res = FDC_NextSectorID_FdcCycles_MFM ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
+					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal , &FdcCycles );
 		else
-			FdcCycles = FDC_NextSectorID_FdcCycles_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
-					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
-		if ( FdcCycles < 0 )
-		{
-			FDC.CommandState = FDCEMU_RUN_RESTORE_VERIFY_NEXT_SECTOR_HEADER;
-			FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;	/* Wait for a valid drive/floppy */
-		}
-		else
+			Res = FDC_NextSectorID_FdcCycles_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
+					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal , &FdcCycles );
+
+		if ( Res == FDCEMU_RETURN_OK )
 		{
 			/* Read bytes to reach the next sector's ID field and skip 10 more bytes to read the whole ID field */
 			FdcCycles += FDC_TransferByte_FdcCycles ( 10 );		/* Add delay to read 3xA1, FE, ID field */
 			FDC.CommandState = FDCEMU_RUN_RESTORE_VERIFY_CHECK_SECTOR_HEADER;
+			break;
 		}
+
+		if ( Res == FDCEMU_RETURN_NO_DRIVE_FLOPPY )
+			FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;	/* Wait for a valid drive/floppy */
+
+		/* Stay in same state */
 		break;
 	 case FDCEMU_RUN_RESTORE_VERIFY_CHECK_SECTOR_HEADER:
 		/* Check if the current ID Field matches the track number */
@@ -2420,6 +2425,7 @@ static int FDC_UpdateSeekCmd ( void )
 {
 	int	FdcCycles = 0;
 	int	FrameCycles, HblCounterVideo, LineCycles;
+	int	Res;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
@@ -2524,27 +2530,30 @@ static int FDC_UpdateSeekCmd ( void )
 		}
 
 		if ( FDC.DriveSelSignal < 0 )					/* No drive selected */
-			FdcCycles = -1;
+			Res = FDCEMU_RETURN_NO_DRIVE_FLOPPY;
+
 		else if ( Floppy_ImageIsSTX ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
-			FdcCycles = FDC_NextSectorID_FdcCycles_STX ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
-					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
+			Res = FDC_NextSectorID_FdcCycles_STX ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
+					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal , &FdcCycles );
 		else if ( Floppy_ImageIsMFM ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
-			FdcCycles = FDC_NextSectorID_FdcCycles_MFM ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
-					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
+			Res = FDC_NextSectorID_FdcCycles_MFM ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
+					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal , &FdcCycles );
 		else
-			FdcCycles = FDC_NextSectorID_FdcCycles_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
-					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
-		if ( FdcCycles < 0 )
-		{
-			FDC.CommandState = FDCEMU_RUN_SEEK_VERIFY_NEXT_SECTOR_HEADER;
-			FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;	/* Wait for a valid drive/floppy */
-		}
-		else
+			Res = FDC_NextSectorID_FdcCycles_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
+					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal , &FdcCycles );
+
+		if ( Res == FDCEMU_RETURN_OK )
 		{
 			/* Read bytes to reach the next sector's ID field and skip 10 more bytes to read the whole ID field */
 			FdcCycles += FDC_TransferByte_FdcCycles ( 10 );		/* Add delay to read 3xA1, FE, ID field */
 			FDC.CommandState = FDCEMU_RUN_SEEK_VERIFY_CHECK_SECTOR_HEADER;
+			break;
 		}
+
+		if ( Res == FDCEMU_RETURN_NO_DRIVE_FLOPPY )
+			FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;	/* Wait for a valid drive/floppy */
+
+		/* Stay in same state */
 		break;
 	 case FDCEMU_RUN_SEEK_VERIFY_CHECK_SECTOR_HEADER:
 		/* Check if the current ID Field matches the track number */
@@ -2578,6 +2587,7 @@ static int FDC_UpdateStepCmd ( void )
 {
 	int	FdcCycles = 0;
 	int	FrameCycles, HblCounterVideo, LineCycles;
+	int	Res;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
@@ -2664,27 +2674,30 @@ static int FDC_UpdateStepCmd ( void )
 		}
 
 		if ( FDC.DriveSelSignal < 0 )					/* No drive selected */
-			FdcCycles = -1;
+			Res = FDCEMU_RETURN_NO_DRIVE_FLOPPY;
+
 		else if ( Floppy_ImageIsSTX ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
-			FdcCycles = FDC_NextSectorID_FdcCycles_STX ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
-					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
+			Res = FDC_NextSectorID_FdcCycles_STX ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
+					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal , &FdcCycles );
 		else if ( Floppy_ImageIsMFM ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
-			FdcCycles = FDC_NextSectorID_FdcCycles_MFM ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
-					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
+			Res = FDC_NextSectorID_FdcCycles_MFM ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
+					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal , &FdcCycles );
 		else
-			FdcCycles = FDC_NextSectorID_FdcCycles_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
-					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
-		if ( FdcCycles < 0 )
-		{
-			FDC.CommandState = FDCEMU_RUN_STEP_VERIFY_NEXT_SECTOR_HEADER;
-			FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;	/* Wait for a valid drive/floppy */
-		}
-		else
+			Res = FDC_NextSectorID_FdcCycles_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
+					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal , &FdcCycles );
+
+		if ( Res == FDCEMU_RETURN_OK )
 		{
 			/* Read bytes to reach the next sector's ID field and skip 10 more bytes to read the whole ID field */
 			FdcCycles += FDC_TransferByte_FdcCycles ( 10 );		/* Add delay to read 3xA1, FE, ID field */
 			FDC.CommandState = FDCEMU_RUN_STEP_VERIFY_CHECK_SECTOR_HEADER;
+			break;
 		}
+
+		if ( Res == FDCEMU_RETURN_NO_DRIVE_FLOPPY )
+			FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;	/* Wait for a valid drive/floppy */
+
+		/* Stay in same state */
 		break;
 	 case FDCEMU_RUN_STEP_VERIFY_CHECK_SECTOR_HEADER:
 		/* Check if the current ID Field matches the track number */
@@ -2722,6 +2735,7 @@ static int FDC_UpdateReadSectorsCmd ( void )
 	uint8_t	Next_TR;
 	uint8_t	Next_SR;
 	uint8_t	Next_CRC_OK;
+	int	Res;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
@@ -2772,26 +2786,30 @@ static int FDC_UpdateReadSectorsCmd ( void )
 		}
 
 		if ( FDC.DriveSelSignal < 0 )					/* No drive selected */
-			FdcCycles = -1;
+			Res = FDCEMU_RETURN_NO_DRIVE_FLOPPY;
+
 		else if ( Floppy_ImageIsSTX ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
-			FdcCycles = FDC_NextSectorID_FdcCycles_STX ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
-					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
+			Res = FDC_NextSectorID_FdcCycles_STX ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
+					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal , &FdcCycles );
 		else if ( Floppy_ImageIsMFM ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
-			FdcCycles = FDC_NextSectorID_FdcCycles_MFM ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
-					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
+			Res = FDC_NextSectorID_FdcCycles_MFM ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
+					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal , &FdcCycles );
 		else
-			FdcCycles = FDC_NextSectorID_FdcCycles_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
-					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
-		if ( FdcCycles < 0 )
-		{
-			FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;	/* Wait for a valid drive/floppy */
-		}
-		else
+			Res = FDC_NextSectorID_FdcCycles_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
+					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal , &FdcCycles );
+
+		if ( Res == FDCEMU_RETURN_OK )
 		{
 			/* Read bytes to reach the next sector's ID field and skip 10 more bytes to read the whole ID field */
 			FdcCycles += FDC_TransferByte_FdcCycles ( 10 );		/* Add delay to read 3xA1, FE, TR, SIDE, SR, LEN, CRC1, CRC2 */
 			FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_CHECK_SECTOR_HEADER;
+			break;
 		}
+
+		if ( Res == FDCEMU_RETURN_NO_DRIVE_FLOPPY )
+			FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;	/* Wait for a valid drive/floppy */
+
+		/* Stay in same state */
 		break;
 	 case FDCEMU_RUN_READSECTORS_READDATA_CHECK_SECTOR_HEADER:
 		/* Check if the current ID Field is the one we're looking for (same track/sector and correct CRC) */
@@ -2932,6 +2950,7 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 	uint8_t	Next_CRC_OK;
 	uint8_t	Byte;
 	uint8_t	Status;
+	int	Res;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
@@ -2996,26 +3015,30 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 		}
 
 		if ( FDC.DriveSelSignal < 0 )					/* No drive selected */
-			FdcCycles = -1;
+			Res = FDCEMU_RETURN_NO_DRIVE_FLOPPY;
+
 		else if ( Floppy_ImageIsSTX ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
-			FdcCycles = FDC_NextSectorID_FdcCycles_STX ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
-					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
+			Res = FDC_NextSectorID_FdcCycles_STX ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
+					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal , &FdcCycles );
 		else if ( Floppy_ImageIsMFM ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
-			FdcCycles = FDC_NextSectorID_FdcCycles_MFM ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
-					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
+			Res = FDC_NextSectorID_FdcCycles_MFM ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
+					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal , &FdcCycles );
 		else
-			FdcCycles = FDC_NextSectorID_FdcCycles_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
-					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
-		if ( FdcCycles < 0 )
-		{
-			FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;	/* Wait for a valid drive/floppy */
-		}
-		else
+			Res = FDC_NextSectorID_FdcCycles_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
+					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal , &FdcCycles );
+
+		if ( Res == FDCEMU_RETURN_OK )
 		{
 			/* Read bytes to reach the next sector's ID field and skip 10 more bytes to read the whole ID field */
 			FdcCycles += FDC_TransferByte_FdcCycles ( 10 );		/* Add delay to read 3xA1, FE, TR, SIDE, SR, LEN, CRC1, CRC2 */
 			FDC.CommandState = FDCEMU_RUN_WRITESECTORS_WRITEDATA_CHECK_SECTOR_HEADER;
+			break;
 		}
+
+		if ( Res == FDCEMU_RETURN_NO_DRIVE_FLOPPY )
+			FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;	/* Wait for a valid drive/floppy */
+
+		/* Stay in same state */
 		break;
 	 case FDCEMU_RUN_WRITESECTORS_WRITEDATA_CHECK_SECTOR_HEADER:
 		/* Check if the current ID Field is the one we're looking for (same track/sector and correct CRC) */
@@ -3146,6 +3169,7 @@ static int FDC_UpdateReadAddressCmd ( void )
 {
 	int	FdcCycles = 0;
 	int	FrameCycles, HblCounterVideo, LineCycles;
+	int	Res;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
@@ -3196,26 +3220,30 @@ static int FDC_UpdateReadAddressCmd ( void )
 		}
 
 		if ( FDC.DriveSelSignal < 0 )					/* No drive selected */
-			FdcCycles = -1;
+			Res = FDCEMU_RETURN_NO_DRIVE_FLOPPY;
+
 		else if ( Floppy_ImageIsSTX ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
-			FdcCycles = FDC_NextSectorID_FdcCycles_STX ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
-					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
+			Res = FDC_NextSectorID_FdcCycles_STX ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
+					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal , &FdcCycles );
 		else if ( Floppy_ImageIsMFM ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
-			FdcCycles = FDC_NextSectorID_FdcCycles_MFM ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
-					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
+			Res = FDC_NextSectorID_FdcCycles_MFM ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
+					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal , &FdcCycles );
 		else
-			FdcCycles = FDC_NextSectorID_FdcCycles_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
-					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
-		if ( FdcCycles < 0 )
-		{
-			FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;	/* Wait for a valid drive/floppy */
-		}
-		else
+			Res = FDC_NextSectorID_FdcCycles_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads ,
+					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal , &FdcCycles );
+
+		if ( Res == FDCEMU_RETURN_OK )
 		{
 			/* Read bytes to reach the next sector's ID field */
 			FdcCycles += FDC_TransferByte_FdcCycles ( 4 );		/* Add delay to read 3xA1, FE */
 			FDC.CommandState = FDCEMU_RUN_READADDRESS_TRANSFER_START;
+			break;
 		}
+
+		if ( Res == FDCEMU_RETURN_NO_DRIVE_FLOPPY )
+			FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;	/* Wait for a valid drive/floppy */
+
+		/* Stay in same state */
 		break;
 	 case FDCEMU_RUN_READADDRESS_TRANSFER_START:
 		/* Read the ID field into buffer */
@@ -4634,9 +4662,9 @@ void FDC_WriteDMAAddress ( uint32_t Address )
  * NextSector_ID_Field_CRC_OK.
  * This function assumes some 512 byte sectors stored in ascending
  * order (for ST/MSA)
- * If there's no available drive/floppy, we return -1
+ * If there's no available drive/floppy, we return FDCEMU_RETURN_NO_DRIVE_FLOPPY
  */
-static int	FDC_NextSectorID_FdcCycles_ST ( uint8_t Drive , uint8_t NumberOfHeads , uint8_t Track , uint8_t Side )
+static int	FDC_NextSectorID_FdcCycles_ST ( uint8_t Drive , uint8_t NumberOfHeads , uint8_t Track , uint8_t Side , int *pFdcCycles )
 {
 	int	CurrentPos;
 	int	MaxSector;
@@ -4647,16 +4675,16 @@ static int	FDC_NextSectorID_FdcCycles_ST ( uint8_t Drive , uint8_t NumberOfHeads
 
 	CurrentPos = FDC_IndexPulse_GetCurrentPos_NbBytes ();
 	if ( CurrentPos < 0 )						/* No drive/floppy available at the moment */
-		return -1;
+		return FDCEMU_RETURN_NO_DRIVE_FLOPPY;
 
 	if ( ( Side == 1 ) && ( NumberOfHeads == 1 ) )			/* Can't read side 1 on a single sided drive */
-		return -1;
+		return FDCEMU_RETURN_NO_DRIVE_FLOPPY;
 
 	if ( Track >= FDC_GetTracksPerDisk ( Drive ) )			/* Try to access a non existing track */
-		return -1;
+		return FDCEMU_RETURN_NO_DRIVE_FLOPPY;
 
 	if ( FDC_MachineHandleDensity ( Drive ) == false )		/* Can't handle the floppy's density */
-		return -1;
+		return FDCEMU_RETURN_NO_DRIVE_FLOPPY;
 
 	MaxSector = FDC_GetSectorsPerTrack ( Drive , Track , Side );
 	TrackPos = FDC_TRACK_LAYOUT_STANDARD_GAP1;			/* Position of 1st raw sector */
@@ -4689,7 +4717,8 @@ static int	FDC_NextSectorID_FdcCycles_ST ( uint8_t Drive , uint8_t NumberOfHeads
 	FDC.NextSector_ID_Field_LEN = FDC_SECTOR_SIZE_512;		/* ST/MSA have 512 bytes per sector */
 	FDC.NextSector_ID_Field_CRC_OK = 1;				/* CRC is always correct for ST/MSA */
 
-	return FDC_TransferByte_FdcCycles ( NbBytes );
+	*pFdcCycles = FDC_TransferByte_FdcCycles ( NbBytes );
+	return FDCEMU_RETURN_OK;
 }
 
 
@@ -5421,19 +5450,18 @@ int	FDC_MFM_Process_Bit ( struct fd_stream *s , bool Skip_Bit )
 /*
  * Higher level WD1772 functions used by type I, II, III commands
  * Use MFM bytes returned by FDC_MFM_Process_Bit()
-q *
+ *
  * TODO : we use a similar model as ST/STX where a while IDAM is supposed to be read
  * entirely in one go ; this should be replaced later by a more accurate method that reads
  * bytes one by one, as real HW does.
  */
 
-int	FDC_NextSectorID_FdcCycles_MFM ( uint8_t Drive , uint8_t NumberOfHeads , uint8_t Track , uint8_t Side )
+int	FDC_NextSectorID_FdcCycles_MFM ( uint8_t Drive , uint8_t NumberOfHeads , uint8_t Track , uint8_t Side , int *pFdcCycles )
 {
-	int			Delay_FdcCycles;
+	int		Delay_FdcCycles = 0;
 
-	Delay_FdcCycles = FDC_DELAY_CYCLE_MFM_BYTE;		// TODO
-
-	return Delay_FdcCycles;
+	*pFdcCycles = Delay_FdcCycles;
+	return FDCEMU_RETURN_OK;
 }
 
 
@@ -5864,7 +5892,7 @@ void	FD_Stream_DumpTrack_new_color ( struct fd_stream *s , int InitialShift , bo
 	FDC.AM_Detector_Mode = FDC_AM_DET_MODE_ALWAYS_ON;
 	FDC.DSR = 0;
 	FDC.DSR_count = 0;
-	FDC.Bit_Is_Data = true;						/* 1st bit will be data, next will be clock */
+	FDC.Bit_Is_Data = true;
 	FDC.FD_Latency_prev = 0;
 	FDC.Enable_CRC = false;
 	FDC.CRC = 0xffff;
