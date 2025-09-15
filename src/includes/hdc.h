@@ -97,6 +97,7 @@ extern bool bAcsiEmuOn;
 extern bool HDC_Init(void);
 extern void HDC_UnInit(void);
 extern int HDC_InitDevice(const char *hdtype, SCSI_DEV *dev, CNF_SCSIDEV *conf);
+extern void HDC_UnInitDevice(SCSI_DEV *dev);
 extern void HDC_ResetCommandStatus(void);
 extern short int HDC_ReadCommandByte(int addr);
 extern void HDC_WriteCommandByte(int addr, uint8_t byte);

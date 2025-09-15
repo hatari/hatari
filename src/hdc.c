@@ -936,6 +936,21 @@ int HDC_InitDevice(const char *hdtype, SCSI_DEV *dev, CNF_SCSIDEV *conf)
 	return 0;
 }
 
+/*---------------------------------------------------------------------*/
+/**
+ * HDC_UnInitDevice - close image file
+ */
+void HDC_UnInitDevice(SCSI_DEV *dev)
+{
+	if (dev->enabled)
+	{
+		File_UnLock(dev->image_file);
+		fclose(dev->image_file);
+		dev->image_file = NULL;
+		dev->enabled = false;
+	}
+}
+
 /**
  * Open the disk image files, set partitions.
  */
@@ -984,12 +999,7 @@ void HDC_UnInit(void)
 
 	for (i = 0; bAcsiEmuOn && i < MAX_ACSI_DEVS; i++)
 	{
-		if (!AcsiBus.devs[i].enabled)
-			continue;
-		File_UnLock(AcsiBus.devs[i].image_file);
-		fclose(AcsiBus.devs[i].image_file);
-		AcsiBus.devs[i].image_file = NULL;
-		AcsiBus.devs[i].enabled = false;
+		HDC_UnInitDevice(&AcsiBus.devs[i]);
 	}
 	free(AcsiBus.buffer);
 	AcsiBus.buffer = NULL;
