@@ -603,8 +603,10 @@ static int	FDC_ComputeFloppyDensity ( uint8_t Drive , uint8_t Track , uint8_t Si
 static void	FDC_UpdateFloppyDensity ( uint8_t Drive , uint8_t Track , uint8_t Side );
 
 static uint32_t	FDC_GetCyclesPerRev_FdcCycles ( int Drive );
-static void	FDC_IndexPulse_Update ( void );
+static void	FDC_IndexPulse_CheckUpdate ( void );
 static void	FDC_IndexPulse_Init ( int Drive );
+static void	FDC_IndexPulse_Increase ( uint64_t IP_Time );
+static void	FDC_IndexPulse_Increase_Now ( void );
 
 static void	FDC_Update_STR ( uint8_t DisableBits , uint8_t EnableBits );
 static int	FDC_CmdCompleteCommon ( bool DoInt );
@@ -1327,7 +1329,7 @@ static int FDC_GetEmulationMode ( void )
  */
 static void FDC_UpdateAll(void)
 {
-	FDC_IndexPulse_Update ();
+	FDC_IndexPulse_CheckUpdate ();
 }
 
 
@@ -1759,12 +1761,9 @@ static uint32_t	FDC_GetCyclesPerRev_FdcCycles ( int Drive )
  * [NP] TODO : should we have 2 different Index Pulses for each side or do they
  * happen at the same time ?
  */
-static void FDC_IndexPulse_Update(void)
+static void FDC_IndexPulse_CheckUpdate(void)
 {
 	uint32_t	FdcCyclesPerRev;
-	int	FrameCycles, HblCounterVideo, LineCycles;
-
-	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
 //fprintf ( stderr , "update index drive=%d side=%d counter=%d VBL=%d HBL=%d\n" , FDC.DriveSelSignal , FDC.SideSignal , FDC.IndexPulse_Counter , nVBLs , nHBL );
 
@@ -1782,19 +1781,8 @@ static void FDC_IndexPulse_Update(void)
 
 	if ( CyclesGlobalClockCounter - FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Time >= FDC_FdcCyclesToCpuCycles ( FdcCyclesPerRev ) )
 	{
-		/* Store new position of the most recent Index Pulse */
-		FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Time += FDC_FdcCyclesToCpuCycles ( FdcCyclesPerRev );
-		FDC.IndexPulse_Counter++;
-		LOG_TRACE(TRACE_FDC, "fdc update index drive=%d side=%d counter=%d ip_time=%"PRIu64" VBL=%d HBL=%d\n" ,
-			FDC.DriveSelSignal , FDC.SideSignal , FDC.IndexPulse_Counter ,
-			FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Time , nVBLs , nHBL );
-
-		if ( FDC.InterruptCond & FDC_INTERRUPT_COND_IP )	/* Do we have a "force int on index pulse" command running ? */
-		{
-			LOG_TRACE(TRACE_FDC, "fdc type IV force int on index, set irq VBL=%d video_cyc=%d %d@%d pc=%x\n" ,
-				nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
-			FDC_SetIRQ ( FDC_IRQ_SOURCE_INDEX );
-		}
+		/* Increase IP counter and update IP time */
+		FDC_IndexPulse_Increase ( FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Time + FDC_FdcCyclesToCpuCycles ( FdcCyclesPerRev ) );
 	}
 }
 
@@ -1806,7 +1794,6 @@ static void FDC_IndexPulse_Update(void)
  * the floppy was inserted.
  * We compute a random position in the "past" (less than one revolution)
  * and use it as a reference to detect the next index pulse.
- *
  */
 static void	FDC_IndexPulse_Init ( int Drive )
 {
@@ -1822,6 +1809,46 @@ static void	FDC_IndexPulse_Init ( int Drive )
 	LOG_TRACE(TRACE_FDC, "fdc init index drive=%d side=%d counter=%d ip_time=%"PRIu64" VBL=%d HBL=%d\n" ,
 		  Drive , FDC.SideSignal , FDC.IndexPulse_Counter ,
 		  FDC_DRIVES[ Drive ].IndexPulse_Time , nVBLs , nHBL );
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * When an index pulse is detected, increase the index pulse counter
+ * and update the time when this index pulse was received
+ * This can also trigger a type IV condition "force int on index"
+ */
+static void	FDC_IndexPulse_Increase ( uint64_t IP_Time )
+{
+	int	FrameCycles, HblCounterVideo, LineCycles;
+
+	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+
+	/* Increase Index Pulse counter and store new position of the most recent Index Pulse */
+	FDC.IndexPulse_Counter++;
+	FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Time = IP_Time;
+
+	LOG_TRACE(TRACE_FDC, "fdc update index drive=%d side=%d counter=%d ip_time=%"PRIu64" VBL=%d HBL=%d\n" ,
+		FDC.DriveSelSignal , FDC.SideSignal , FDC.IndexPulse_Counter ,
+		FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Time , nVBLs , nHBL );
+
+	if ( FDC.InterruptCond & FDC_INTERRUPT_COND_IP )	/* Do we have a "force int on index pulse" command running ? */
+	{
+		LOG_TRACE(TRACE_FDC, "fdc type IV force int on index, set irq VBL=%d video_cyc=%d %d@%d pc=%x\n" ,
+			nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+		FDC_SetIRQ ( FDC_IRQ_SOURCE_INDEX );
+	}
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Same as FDC_IndexPulse_Increase using CyclesGlobalClockCounter
+ */
+static void	FDC_IndexPulse_Increase_Now ( void )
+{
+	FDC_IndexPulse_Increase ( CyclesGlobalClockCounter );
 }
 
 
