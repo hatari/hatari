@@ -91,7 +91,7 @@ extern void	FDC_EjectFloppy ( int Drive );
 extern void	FDC_SetDriveSide ( uint8_t io_porta_old , uint8_t io_porta_new );
 extern int	FDC_GetBytesPerTrack ( uint8_t Drive , uint8_t Track , uint8_t Side );
 extern int	FDC_GetFloppyDensity ( uint8_t Drive );
-extern int	FDC_MachineHandleDensity ( uint8_t Drive );
+extern bool	FDC_CanMachineHandleDensity ( uint8_t Drive );
 
 extern int	FDC_IndexPulse_GetCurrentPos_FdcCycles ( uint32_t *pFdcCyclesPerRev );
 extern int	FDC_IndexPulse_GetCurrentPos_NbBytes ( void );

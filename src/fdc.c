@@ -1680,7 +1680,7 @@ int	FDC_GetFloppyDensity ( uint8_t Drive )
  *
  * Return true if the floppy in Drive can be accessed, else false
  */
-int	FDC_MachineHandleDensity ( uint8_t Drive )
+bool	FDC_CanMachineHandleDensity ( uint8_t Drive )
 {
 	bool		res;
 
@@ -3355,7 +3355,7 @@ static int FDC_UpdateReadTrackCmd ( void )
 		if ( ( ( FDC.SideSignal == 1 )				/* Try to read side 1 on a disk that doesn't have 2 sides or drive is single sided */
 			&& ( ( FDC_GetSidesPerDisk ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ) != 2 )
 			  || ( FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads == 1 ) ) )
-		    || ( FDC_MachineHandleDensity ( FDC.DriveSelSignal ) == false ) ) 	/* Can't handle the floppy's density */
+		    || ( FDC_CanMachineHandleDensity ( FDC.DriveSelSignal ) == false ) ) 	/* Can't handle the floppy's density */
 		{
 			LOG_TRACE(TRACE_FDC, "fdc type III read track drive=%d track=%d side=%d, side not found or wrong density VBL=%d video_cyc=%d %d@%d pc=%x\n",
 				  FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal ,
@@ -3459,7 +3459,7 @@ static int FDC_UpdateWriteTrackCmd ( void )
 		}
 		break;
 	 case FDCEMU_RUN_WRITETRACK_INDEX:
-		if ( FDC_MachineHandleDensity ( FDC.DriveSelSignal ) == false )	/* Can't handle the floppy's density */
+		if ( FDC_CanMachineHandleDensity ( FDC.DriveSelSignal ) == false )	/* Can't handle the floppy's density */
 		{
 			LOG_TRACE(TRACE_FDC, "fdc type III write track drive=%d track=0x%x side=%d wrong density VBL=%d video_cyc=%d %d@%d pc=%x\n",
 				  FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
@@ -4683,7 +4683,7 @@ static int	FDC_NextSectorID_FdcCycles_ST ( uint8_t Drive , uint8_t NumberOfHeads
 	if ( Track >= FDC_GetTracksPerDisk ( Drive ) )			/* Try to access a non existing track */
 		return FDCEMU_RETURN_NO_DRIVE_FLOPPY;
 
-	if ( FDC_MachineHandleDensity ( Drive ) == false )		/* Can't handle the floppy's density */
+	if ( FDC_CanMachineHandleDensity ( Drive ) == false )		/* Can't handle the floppy's density */
 		return FDCEMU_RETURN_NO_DRIVE_FLOPPY;
 
 	MaxSector = FDC_GetSectorsPerTrack ( Drive , Track , Side );

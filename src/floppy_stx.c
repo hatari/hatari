@@ -1484,7 +1484,7 @@ int	FDC_NextSectorID_FdcCycles_STX ( uint8_t Drive , uint8_t NumberOfHeads , uin
 	if ( pStxTrack->SectorsCount == 0 )				/* No sector (track image only, or empty / non formatted track) */
 		return FDCEMU_RETURN_NO_DRIVE_FLOPPY;
 
-	if ( FDC_MachineHandleDensity ( Drive ) == false )		/* Can't handle the floppy's density */
+	if ( FDC_CanMachineHandleDensity ( Drive ) == false )		/* Can't handle the floppy's density */
 		return FDCEMU_RETURN_NO_DRIVE_FLOPPY;
 
 	/* Compare CurrentPos_FdcCycles with each sector's position in ascending order */
