@@ -117,7 +117,7 @@ cygwin_task:
        CFLAGS='-Werror -Wno-error=char-subscripts' cmake -G 'Unix Makefiles' ."
     - C:\tools\cygwin\bin\bash.exe -lc "cd '%cd%' ; make -j4"
   test_script:
-    - C:\tools\cygwin\bin\bash.exe -lc "cd '%cd%' ; ctest -j4"
+    - C:\tools\cygwin\bin\bash.exe -lc "cd '%cd%' ; ctest -j4 --output-on-failure"
 
 msys2_task:
   windows_container:
@@ -148,7 +148,7 @@ msys2_task:
     - C:\tools\msys64\usr\bin\bash -lc "cmake -G 'MSYS Makefiles' ."
     - C:\tools\msys64\usr\bin\bash -lc "make -j4"
   test_script:
-    - C:\tools\msys64\usr\bin\bash -lc "ctest"
+    - C:\tools\msys64\usr\bin\bash -lc "ctest -j4 --output-on-failure"
 
 visualstudio_task:
   windows_container:
