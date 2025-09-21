@@ -49,7 +49,7 @@ xcode_task:
     # Download and install precompiled portmidi Framework
     - if [ ! -e dl_cache/portmidi.framework ]; then
         cd dl_cache ;
-        wget "https://hatari.tuxfamily.org/ci/portmidi.framework.zip" ;
+        wget "https://hatari.frama.io/ci-files/macos/portmidi.framework.zip" ;
         unzip portmidi.framework.zip ;
         mv license.txt portmidi-license.txt ;
         cd .. ;
@@ -58,7 +58,7 @@ xcode_task:
     # Download and install precompiled capsimage Framework
     - if [ ! -e dl_cache/capsimage_5.1_macos-x86_64-arm64 ]; then
         cd dl_cache ;
-        wget "https://hatari.tuxfamily.org/ci/capsimage_5.1_macos-x86_64-arm64_selfsigned.zip" ;
+        wget "https://hatari.frama.io/ci-files/macos/capsimage_5.1_macos-x86_64-arm64_selfsigned.zip" ;
         unzip capsimage_5.1_macos-x86_64-arm64_selfsigned.zip ;
         cd capsimage_5.1_macos-x86_64-arm64 ;
         mv LICENCE.txt DONATIONS.txt README.txt HISTORY.txt CAPSImage.framework ;
