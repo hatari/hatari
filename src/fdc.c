@@ -504,8 +504,11 @@ typedef struct {
 	bool		StatusTypeI;				/* When true, STR will report the status of a type I command */
 	int		IndexPulse_Counter;			/* To count the number of rotations when motor is ON */
 	uint8_t		NextSector_ID_Field_TR;			/* Track value in the next ID Field after a call to FDC_NextSectorID_FdcCycles_ST() */
+	uint8_t		NextSector_ID_Field_SIDE;		/* Side value in the next ID Field after a call to FDC_NextSectorID_FdcCycles_ST() */
 	uint8_t		NextSector_ID_Field_SR;			/* Sector value in the next ID Field after a call to FDC_NextSectorID_FdcCycles_ST() */
 	uint8_t		NextSector_ID_Field_LEN;		/* Sector's length in the next ID Field after a call to FDC_NextSectorID_FdcCycles_ST() */
+	uint8_t		NextSector_ID_Field_CRC1;		/* Upper 8 bits of the CRC */
+	uint8_t		NextSector_ID_Field_CRC2;		/* Lower 8 bits of the CRC */
 	uint8_t		NextSector_ID_Field_CRC_OK;		/* CRC OK or not in the next ID Field after a call to FDC_NextSectorID_FdcCycles_ST() */
 	uint8_t		InterruptCond;				/* For a type IV force interrupt, contains the condition on the lower 4 bits */
 
@@ -5534,16 +5537,111 @@ int	FDC_MFM_Process_MultiBits_Index ( struct fd_stream *s , uint16_t AM_Detector
  * Higher level WD1772 functions used by type I, II, III commands
  * Use MFM bytes returned by FDC_MFM_Process_Bit()
  *
- * TODO : we use a similar model as ST/STX where a while IDAM is supposed to be read
+ * TODO : we use a similar model as ST/STX where an IDAM is supposed to be read
  * entirely in one go ; this should be replaced later by a more accurate method that reads
  * bytes one by one, as real HW does.
  */
 
 int	FDC_NextSectorID_FdcCycles_MFM ( uint8_t Drive , uint8_t NumberOfHeads , uint8_t Track , uint8_t Side , int *pFdcCycles )
 {
-	int		Delay_FdcCycles = 0;
+	struct fd_stream *s;
+	uint64_t	Time_ns;
+	uint16_t	StatusMask;
+	int		Res;
 
-	*pFdcCycles = Delay_FdcCycles;
+SCP_LoadTrack ( Drive , Track , Side );
+s = SCP_Get_Fd_Stream ( Drive );
+
+	if ( ( Side == 1 ) && ( NumberOfHeads == 1 ) )			/* Can't read side 1 on a single sided drive */
+		return FDCEMU_RETURN_NO_DRIVE_FLOPPY;
+
+	if ( Track >= FDC_GetTracksPerDisk ( Drive ) )			/* Try to access a non existing track */
+		return FDCEMU_RETURN_NO_DRIVE_FLOPPY;
+
+	if ( FDC_CanMachineHandleDensity ( Drive ) == false )		/* Can't handle the floppy's density */
+		return FDCEMU_RETURN_NO_DRIVE_FLOPPY;
+
+
+	FDC.AM_Detector_Mode = FDC_AM_DET_MODE_AUTO_OFF;
+	FDC.DSR = 0;
+	FDC.DSR_count = 0;
+	FDC.Bit_Is_Data = true;						/* 1st bit will be data, next will be clock */
+	FDC.FD_Latency_prev = 0;
+	FDC.Enable_CRC = false;
+//	FDC.CRC = 0xffff;
+	FDC.Prev_Sync = 0;
+	FDC.Sync_A1_Count = 0;
+
+	Time_ns = 0;
+
+	/* Search 3 A1 sync marks, return on index pulse */
+	StatusMask = FDC_AM_DET_STATUS_SYNC_A1_X3;
+	Res = FDC_MFM_Process_MultiBits_Index ( s , StatusMask , &Time_ns , pFdcCycles , true );
+	if ( Res != FDCEMU_RETURN_OK )
+		return Res;
+
+	/* IDAM : Header, should be 0xFE, don't return on index pulse */
+	StatusMask = FDC_AM_DET_STATUS_DR_READY;
+	Res = FDC_MFM_Process_MultiBits_Index ( s , StatusMask , &Time_ns , pFdcCycles , false );
+	if ( Res != FDCEMU_RETURN_OK )
+		return Res;
+
+	if ( ( FDC.DR & 0xFE ) != 0xFE )
+	{
+		*pFdcCycles = FDC_NsToFdcCycles ( Time_ns );
+		return FDCEMU_RETURN_BAD_ID;
+	}
+
+	/* IDAM : Track */
+	StatusMask = FDC_AM_DET_STATUS_DR_READY;
+	Res = FDC_MFM_Process_MultiBits_Index ( s , StatusMask , &Time_ns , pFdcCycles , false );
+	if ( Res != FDCEMU_RETURN_OK )
+		return Res;
+	FDC.NextSector_ID_Field_TR = FDC.DR;
+
+	/* IDAM : Side */
+	StatusMask = FDC_AM_DET_STATUS_DR_READY;
+	Res = FDC_MFM_Process_MultiBits_Index ( s , StatusMask , &Time_ns , pFdcCycles , false );
+	if ( Res != FDCEMU_RETURN_OK )
+		return Res;
+	FDC.NextSector_ID_Field_SIDE = FDC.DR;
+
+	/* IDAM : Sector */
+	StatusMask = FDC_AM_DET_STATUS_DR_READY;
+	Res = FDC_MFM_Process_MultiBits_Index ( s , StatusMask , &Time_ns , pFdcCycles , false );
+	if ( Res != FDCEMU_RETURN_OK )
+		return Res;
+	FDC.NextSector_ID_Field_SR = FDC.DR;
+
+	/* IDAM : Len */
+	StatusMask = FDC_AM_DET_STATUS_DR_READY;
+	Res = FDC_MFM_Process_MultiBits_Index ( s , StatusMask , &Time_ns , pFdcCycles , false );
+	if ( Res != FDCEMU_RETURN_OK )
+		return Res;
+	FDC.NextSector_ID_Field_LEN = FDC.DR;
+
+	/* IDAM : CRC using 2 bytes */
+	StatusMask = FDC_AM_DET_STATUS_DR_READY;
+	Res = FDC_MFM_Process_MultiBits_Index ( s , StatusMask , &Time_ns , pFdcCycles , false );
+	if ( Res != FDCEMU_RETURN_OK )
+		return Res;
+	FDC.NextSector_ID_Field_CRC1 = FDC.DR;
+
+	StatusMask = FDC_AM_DET_STATUS_DR_READY;
+	Res = FDC_MFM_Process_MultiBits_Index ( s , StatusMask , &Time_ns , pFdcCycles  ,false );
+	if ( Res != FDCEMU_RETURN_OK )
+		return Res;
+	FDC.NextSector_ID_Field_CRC2 = FDC.DR;
+
+	/* If FDC.CRC==0 then CRC is correct for IDAM */
+	FDC.NextSector_ID_Field_CRC_OK = ( FDC.CRC == 0 ) ? 1 : 0;
+
+
+fprintf ( stderr , "A1 FE %x %x %x %x %x %x - %x\n" , FDC.NextSector_ID_Field_TR , FDC.NextSector_ID_Field_SIDE ,
+	FDC.NextSector_ID_Field_SR , FDC.NextSector_ID_Field_LEN , FDC.NextSector_ID_Field_CRC1 , FDC.NextSector_ID_Field_CRC2  , FDC.CRC );
+
+	/* Total numer of FDC cycles */
+	*pFdcCycles = FDC_NsToFdcCycles ( Time_ns );
 	return FDCEMU_RETURN_OK;
 }
 

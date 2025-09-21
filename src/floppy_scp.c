@@ -272,7 +272,7 @@ bool	SCP_Insert ( int Drive , const char *FilenameSTX , uint8_t *pImageBuffer , 
 		return false;
 
 //SCP_LoadTrack ( 0,0,0);	// boot
-SCP_LoadTrack ( 0,2,0);		// overlapping syncs
+//SCP_LoadTrack ( 0,2,0);		// overlapping syncs
 
 	return true;
 }
@@ -321,6 +321,13 @@ static bool	SCP_Insert_internal ( int Drive , const char *FilenameSCP , uint8_t 
 
 
 	return true;
+}
+
+
+
+struct fd_stream	*SCP_Get_Fd_Stream ( uint8_t Drive )
+{
+	return &(SCP_State.SCP_Stream[ Drive ].s);
 }
 
 
@@ -527,7 +534,7 @@ int	SCP_LoadTrack ( int Drive , int Track , int Side )
 		return -1;			// TODO set error code for FDC
 
 	/* Uncomment next line to dump the track's content */
-	FD_Stream_DumpTrack ( &(SCP_State.SCP_Stream[ Drive ].s) , 0 );
+//	FD_Stream_DumpTrack ( &(SCP_State.SCP_Stream[ Drive ].s) , 0 );
 
 	return 0;
 }
