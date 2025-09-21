@@ -5473,6 +5473,62 @@ int	FDC_MFM_Process_Bit ( struct fd_stream *s , bool Skip_Bit )
 
 
 
+int	FDC_MFM_Process_MultiBits ( struct fd_stream *s , uint16_t AM_Detector_Status_Mask , uint64_t *pTime_ns )
+{
+	int	bit;
+
+	do
+	{
+		bit = FDC_MFM_Process_Bit ( s , false );
+
+		if ( FDC.AM_Detector_Status & FDC_AM_DET_STATUS_DR_READY )
+			*pTime_ns += FDC.FD_DR_time;
+
+		if ( FDC.AM_Detector_Status & FDC_AM_DET_STATUS_INDEX_PULSE )
+		{
+			FDC_IndexPulse_Increase_Now();
+			return bit;
+		}
+
+		if ( bit == -1 )
+			return -1;
+	}
+	while ( ( FDC.AM_Detector_Status & AM_Detector_Status_Mask ) != AM_Detector_Status_Mask );
+
+	return bit;
+}
+
+
+
+int	FDC_MFM_Process_MultiBits_Index ( struct fd_stream *s , uint16_t AM_Detector_Status_Mask , uint64_t *pTime_ns ,  int *pFdcCycles , bool ReturnOnIndex )
+{
+	int	bit;
+
+	do
+	{
+		bit = FDC_MFM_Process_MultiBits ( s , AM_Detector_Status_Mask , pTime_ns );
+
+		if ( bit == -1 )
+		{
+			*pFdcCycles = FDC_NsToFdcCycles ( *pTime_ns );
+			return FDCEMU_RETURN_NO_MORE_MFM_DATA;
+		}
+
+		/* If we got an index pulse alone, we return */
+		if ( ( FDC.AM_Detector_Status & FDC_AM_DET_STATUS_INDEX_PULSE )
+		  && ( ( FDC.AM_Detector_Status & AM_Detector_Status_Mask ) != AM_Detector_Status_Mask )
+		  && ReturnOnIndex )
+		{
+			*pFdcCycles = FDC_NsToFdcCycles ( *pTime_ns );
+			return FDCEMU_RETURN_INDEX_PULSE;
+		}
+	}
+	while ( ( FDC.AM_Detector_Status & AM_Detector_Status_Mask ) != AM_Detector_Status_Mask );
+
+	return FDCEMU_RETURN_OK;
+}
+
+
 
 /*
  * Higher level WD1772 functions used by type I, II, III commands

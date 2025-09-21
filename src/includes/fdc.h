@@ -64,7 +64,9 @@
 /* FDC emulation return codes for the commands' sub-states */
 #define	FDCEMU_RETURN_OK		0
 #define	FDCEMU_RETURN_NO_DRIVE_FLOPPY	(-1)
-//#define	FDCEMU_RETURN_INDEX_PULSE	(-2)
+#define	FDCEMU_RETURN_INDEX_PULSE	(-2)
+#define	FDCEMU_RETURN_NO_MORE_MFM_DATA	(-3)
+#define	FDCEMU_RETURN_BAD_ID		(-4)
 
 
 
