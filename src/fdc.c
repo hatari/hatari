@@ -1761,6 +1761,9 @@ static uint32_t	FDC_GetCyclesPerRev_FdcCycles ( int Drive )
  * This function should be called at least every 500 FDC cycles when motor
  * is ON to get good accuracy.
  *
+ * - Index Pulse counter should be increased every "FdcCyclesPerRev" cycles for ST/MSA/STX disk images
+ * - For MFM disk images the Index Pulse will be recorded in the image and updated during decoding of MFM stream
+ *
  * [NP] TODO : should we have 2 different Index Pulses for each side or do they
  * happen at the same time ?
  */
@@ -1769,6 +1772,10 @@ static void FDC_IndexPulse_CheckUpdate(void)
 	uint32_t	FdcCyclesPerRev;
 
 //fprintf ( stderr , "update index drive=%d side=%d counter=%d VBL=%d HBL=%d\n" , FDC.DriveSelSignal , FDC.SideSignal , FDC.IndexPulse_Counter , nVBLs , nHBL );
+
+	/* Don't handle index pulse for MFM images */
+	if ( Floppy_ImageIsMFM ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
+		return;
 
 	if ( ( FDC.STR & FDC_STR_BIT_MOTOR_ON ) == 0 )
 		return;							/* Motor is OFF, nothing to update */
