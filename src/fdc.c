@@ -2858,6 +2858,15 @@ static int FDC_UpdateReadSectorsCmd ( void )
 	 case FDCEMU_RUN_READSECTORS_READDATA_MOTOR_ON:
 		FDC.ReplaceCommandPossible = false;
 		FDC.IndexPulse_Counter = 0;
+		if ( Floppy_ImageIsMFM ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
+		{
+			if ( FDC_LoadTrack_MFM ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal ) != 0 )
+			{
+				FDC.CommandState = FDCEMU_RUN_READSECTORS_RNF;
+				FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
+				break;
+			}
+		}
 		FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_NEXT_SECTOR_HEADER;
 		FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
 		break;
@@ -5781,24 +5790,97 @@ static uint8_t	FDC_NextSectorID_CRC_OK_MFM ( void )
 /*-----------------------------------------------------------------------*/
 /**
  * Read a sector from a floppy image in MFM format (used in type II command)
- * We return the sector NextSectorStruct_Nbr, whose value was set
- * by the latest call to FDC_NextSectorID_FdcCycles_STX
- * Each byte of the sector is added to the FDC buffer with a default timing
- * (32 microsec) or a variable timing, depending on the sector's flags.
- * Some sectors can also contains "fuzzy" bits.
- * Special care must be taken to compute the timing of each byte, which can
- * be a decimal value and must be rounded to the best possible integer.
  *
- * If the sector's data were changed by a 'write sector' command, then we assume
- * a sector with no fuzzy byte and standard timings.
+ * Return the content of the status register
  *
- * Return RNF if sector was not found, else return CRC and RECORD_TYPE values
- * for the status register.
+ * TODO : handle case where valid DAM is not found after 5 revolutions
+ * TODO : handle CRC
  */
-uint8_t	FDC_ReadSector_MFM ( uint8_t Drive , uint8_t Track , uint8_t Sector , uint8_t Side , int *pSectorSize )
+static uint8_t	FDC_ReadSector_MFM ( uint8_t Drive , uint8_t Track , uint8_t Sector , uint8_t Side , int *pSectorSize )
 {
+	struct fd_stream *s;
+	uint64_t	Time_ns;
+	uint16_t	StatusMask;
+	int		Res;
+	uint8_t		Status;
+	bool		Deleted_DAM;
+	int		i;
+	int		FdcCycles;
 
-	return FDC_STR_BIT_RNF;
+s = SCP_Get_Fd_Stream ( Drive );
+
+	FDC.AM_Detector_Mode = FDC_AM_DET_MODE_AUTO_OFF;
+#if 0
+	FDC.DSR = 0;
+	FDC.DSR_count = 0;
+	FDC.Bit_Is_Data = true;						/* 1st bit will be data, next will be clock */
+	FDC.FD_Latency_prev = 0;
+	FDC.Enable_CRC = false;
+//	FDC.CRC = 0xffff;
+	FDC.Prev_Sync = 0;
+	FDC.Sync_A1_Count = 0;
+#endif
+
+	Time_ns = 0;
+
+	/* Search 3 A1 sync marks, return on index pulse */
+	StatusMask = FDC_AM_DET_STATUS_SYNC_A1_X3;
+	Res = FDC_MFM_Process_MultiBits_Index ( s , StatusMask , &Time_ns , &FdcCycles , false );
+	if ( Res != FDCEMU_RETURN_OK )
+		return FDC_STR_BIT_RNF;
+
+	/* DAM : Header, should be 0xFB or 0xF8, don't return on index pulse */
+	StatusMask = FDC_AM_DET_STATUS_DR_READY;
+	Res = FDC_MFM_Process_MultiBits_Index ( s , StatusMask , &Time_ns , &FdcCycles , false );
+	if ( Res != FDCEMU_RETURN_OK )
+		return FDC_STR_BIT_RNF;
+
+	if ( FDC.DR == 0xFB )						/* normal DAM */
+		Deleted_DAM = false;
+	else if ( FDC.DR == 0xF8 )					/* deleted DAM */
+		Deleted_DAM = true;
+	else
+	{
+		FdcCycles = FDC_NsToFdcCycles ( Time_ns );
+		return FDC_STR_BIT_RNF;
+	}
+
+	*pSectorSize = 128 << ( FDC_NextSectorID_LEN_MFM() & FDC_SECTOR_SIZE_MASK );
+
+	/* Read all the data bytes */
+	for ( i=0 ; i<*pSectorSize ; i++ )
+	{
+		StatusMask = FDC_AM_DET_STATUS_DR_READY;
+		Res = FDC_MFM_Process_MultiBits_Index ( s , StatusMask , &Time_ns , &FdcCycles , false );
+		if ( Res != FDCEMU_RETURN_OK )
+			return FDC_STR_BIT_RNF;
+
+		/* Total numer of FDC cycles for this byte */
+		FdcCycles = FDC_NsToFdcCycles ( Time_ns );
+		Time_ns = 0;
+
+		/* Add the Byte to the buffer with its timing */
+		FDC_Buffer_Add_Timing ( FDC.DR , FdcCycles );
+	}
+
+	/* Read 2 extra bytes for the CRC */
+	StatusMask = FDC_AM_DET_STATUS_DR_READY;
+	Res = FDC_MFM_Process_MultiBits_Index ( s , StatusMask , &Time_ns , &FdcCycles , false );
+	if ( Res != FDCEMU_RETURN_OK )
+		return FDC_STR_BIT_RNF;
+
+	StatusMask = FDC_AM_DET_STATUS_DR_READY;
+	Res = FDC_MFM_Process_MultiBits_Index ( s , StatusMask , &Time_ns , &FdcCycles , false );
+	if ( Res != FDCEMU_RETURN_OK )
+		return FDC_STR_BIT_RNF;
+
+	Status = 0;
+	if ( Deleted_DAM )
+		Status |= FDC_STR_BIT_RECORD_TYPE;
+	if ( FDC.CRC != 0 )
+		Status |= FDC_STR_BIT_CRC_ERROR;
+
+	return Status;
 }
 
 
