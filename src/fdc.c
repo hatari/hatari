@@ -660,6 +660,24 @@ static uint8_t	FDC_ReadAddress_ST ( uint8_t Drive , uint8_t Track , uint8_t Sect
 static uint8_t	FDC_ReadTrack_ST ( uint8_t Drive , uint8_t Track , uint8_t Side );
 static uint8_t	FDC_WriteTrack_ST ( uint8_t Drive , uint8_t Track , uint8_t Side , int TrackSize );
 
+static int	FDC_LoadTrack_MFM ( int Drive , int Track , int Side );
+static void	FDC_AM_Detector_Reset ( void );
+static int	FDC_MFM_Process_Bit ( struct fd_stream *s , bool Skip_Bit );
+static int	FDC_MFM_Process_MultiBits ( struct fd_stream *s , uint16_t AM_Detector_Status_Mask , uint64_t *pTime_ns );
+static int	FDC_MFM_Process_MultiBits_Index ( struct fd_stream *s , uint16_t AM_Detector_Status_Mask , uint64_t *pTime_ns ,  int *pFdcCycles , bool ReturnOnIndex );
+static int	FDC_NextSectorID_FdcCycles_MFM ( uint8_t Drive , uint8_t NumberOfHeads , uint8_t Track , uint8_t Side , int *pFdcCycles );
+static uint8_t	FDC_NextSectorID_TR_MFM ( void );
+static uint8_t	FDC_NextSectorID_SR_MFM ( void );
+static uint8_t	FDC_NextSectorID_LEN_MFM ( void );
+static uint8_t	FDC_NextSectorID_CRC_OK_MFM ( void );
+static uint8_t	FDC_ReadSector_MFM ( uint8_t Drive , uint8_t Track , uint8_t Sector , uint8_t Side , int *pSectorSize );
+static uint8_t	FDC_WriteSector_MFM ( uint8_t Drive , uint8_t Track , uint8_t Sector , uint8_t Side , int SectorSize );
+static uint8_t	FDC_ReadAddress_MFM ( uint8_t Drive , uint8_t Track , uint8_t Sector , uint8_t Side );
+static uint8_t	FDC_ReadTrack_MFM ( uint8_t Drive , uint8_t Track , uint8_t Side );
+static uint8_t	FDC_WriteTrack_MFM ( uint8_t Drive , uint8_t Track , uint8_t Side , int TrackSize );
+
+
+
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -2390,6 +2408,16 @@ static int FDC_UpdateRestoreCmd ( void )
 		break;
 	 case FDCEMU_RUN_RESTORE_VERIFY_HEAD_OK:
 		FDC.IndexPulse_Counter = 0;
+		if ( Floppy_ImageIsMFM ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
+		{
+			if ( FDC_LoadTrack_MFM ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal ) != 0 )
+			{
+				FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );		/* Set RNF bit */
+				FDC.CommandState = FDCEMU_RUN_RESTORE_COMPLETE;
+				FdcCycles = FDC_DELAY_CYCLE_COMMAND_COMPLETE;
+				break;
+			}
+		}
 		/* Head OK, fall through and look for sector header */
 	 case FDCEMU_RUN_RESTORE_VERIFY_NEXT_SECTOR_HEADER:
 		/* If 'verify' doesn't succeed after 5 revolutions, we abort with RNF */
@@ -2552,6 +2580,16 @@ static int FDC_UpdateSeekCmd ( void )
 		break;
 	 case FDCEMU_RUN_SEEK_VERIFY_HEAD_OK:
 		FDC.IndexPulse_Counter = 0;
+		if ( Floppy_ImageIsMFM ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
+		{
+			if ( FDC_LoadTrack_MFM ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal ) != 0 )
+			{
+				FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );		/* Set RNF bit */
+				FDC.CommandState = FDCEMU_RUN_SEEK_COMPLETE;
+				FdcCycles = FDC_DELAY_CYCLE_COMMAND_COMPLETE;
+				break;
+			}
+		}
 		/* Head OK, fall through and look for sector header */
 	 case FDCEMU_RUN_SEEK_VERIFY_NEXT_SECTOR_HEADER:
 		/* If 'verify' doesn't succeed after 5 revolutions, we abort with RNF */
@@ -2696,6 +2734,16 @@ static int FDC_UpdateStepCmd ( void )
 		break;
 	 case FDCEMU_RUN_STEP_VERIFY_HEAD_OK:
 		FDC.IndexPulse_Counter = 0;
+		if ( Floppy_ImageIsMFM ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
+		{
+			if ( FDC_LoadTrack_MFM ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal ) != 0 )
+			{
+				FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );		/* Set RNF bit */
+				FDC.CommandState = FDCEMU_RUN_STEP_COMPLETE;
+				FdcCycles = FDC_DELAY_CYCLE_COMMAND_COMPLETE;
+				break;
+			}
+		}
 		/* Head OK, fall through and look for sector header */
 	 case FDCEMU_RUN_STEP_VERIFY_NEXT_SECTOR_HEADER:
 		/* If 'verify' doesn't succeed after 5 revolutions, we abort with RNF */
@@ -5339,6 +5387,37 @@ static int flux_next_bit(struct fd_stream *s)
 
 
 
+int	FDC_LoadTrack_MFM ( int Drive , int Track , int Side )
+{
+	int		res;
+
+	res = fd_stream_select_track ( &(SCP_State.SCP_Stream[ Drive ].s) , Track*2+Side );
+	if ( res )
+		return -1;			// TODO set error code for FDC
+
+	/* Reset AM detector when changing track */
+	FDC_AM_Detector_Reset ();
+
+	/* Uncomment next line to dump the track's content */
+//	FD_Stream_DumpTrack ( &(SCP_State.SCP_Stream[ Drive ].s) , 0 );
+
+	return 0;
+}
+
+
+static void	FDC_AM_Detector_Reset ( void )
+{
+	FDC.DSR = 0;
+	FDC.DSR_count = 0;
+	FDC.Bit_Is_Data = true;				/* 1st bit will be data, next will be clock */
+	FDC.Prev_Sync = 0;
+	FDC.Sync_A1_Count = 0;
+	FDC.Enable_CRC = false;
+	FDC.FD_Latency_prev = 0;
+}
+
+
+
 
 #define	FDC_AM_DET_STATUS_SYNC_A1	(1<<0)
 #define	FDC_AM_DET_STATUS_SYNC_C2	(1<<1)
@@ -5356,9 +5435,7 @@ static int flux_next_bit(struct fd_stream *s)
 // but DSR value is not correctly updated as real HW does
 // in the case of overlapping syncs
 
-int	FDC_MFM_Process_Bit ( struct fd_stream *s , bool Skip_Bit );
-
-int	FDC_MFM_Process_Bit ( struct fd_stream *s , bool Skip_Bit )
+static int	FDC_MFM_Process_Bit ( struct fd_stream *s , bool Skip_Bit )
 {
 	int			bit;
 	bool			Copy_DSR_DR;
@@ -5483,7 +5560,7 @@ int	FDC_MFM_Process_Bit ( struct fd_stream *s , bool Skip_Bit )
 
 
 
-int	FDC_MFM_Process_MultiBits ( struct fd_stream *s , uint16_t AM_Detector_Status_Mask , uint64_t *pTime_ns )
+static int	FDC_MFM_Process_MultiBits ( struct fd_stream *s , uint16_t AM_Detector_Status_Mask , uint64_t *pTime_ns )
 {
 	int	bit;
 
@@ -5510,7 +5587,7 @@ int	FDC_MFM_Process_MultiBits ( struct fd_stream *s , uint16_t AM_Detector_Statu
 
 
 
-int	FDC_MFM_Process_MultiBits_Index ( struct fd_stream *s , uint16_t AM_Detector_Status_Mask , uint64_t *pTime_ns ,  int *pFdcCycles , bool ReturnOnIndex )
+static int	FDC_MFM_Process_MultiBits_Index ( struct fd_stream *s , uint16_t AM_Detector_Status_Mask , uint64_t *pTime_ns ,  int *pFdcCycles , bool ReturnOnIndex )
 {
 	int	bit;
 
@@ -5549,14 +5626,14 @@ int	FDC_MFM_Process_MultiBits_Index ( struct fd_stream *s , uint16_t AM_Detector
  * bytes one by one, as real HW does.
  */
 
-int	FDC_NextSectorID_FdcCycles_MFM ( uint8_t Drive , uint8_t NumberOfHeads , uint8_t Track , uint8_t Side , int *pFdcCycles )
+static int	FDC_NextSectorID_FdcCycles_MFM ( uint8_t Drive , uint8_t NumberOfHeads , uint8_t Track , uint8_t Side , int *pFdcCycles )
 {
 	struct fd_stream *s;
 	uint64_t	Time_ns;
 	uint16_t	StatusMask;
 	int		Res;
 
-SCP_LoadTrack ( Drive , Track , Side );
+//FDC_LoadTrack_MFM ( Drive , Track , Side );
 s = SCP_Get_Fd_Stream ( Drive );
 
 	if ( ( Side == 1 ) && ( NumberOfHeads == 1 ) )			/* Can't read side 1 on a single sided drive */
@@ -5570,6 +5647,7 @@ s = SCP_Get_Fd_Stream ( Drive );
 
 
 	FDC.AM_Detector_Mode = FDC_AM_DET_MODE_AUTO_OFF;
+#if 0
 	FDC.DSR = 0;
 	FDC.DSR_count = 0;
 	FDC.Bit_Is_Data = true;						/* 1st bit will be data, next will be clock */
@@ -5578,7 +5656,7 @@ s = SCP_Get_Fd_Stream ( Drive );
 //	FDC.CRC = 0xffff;
 	FDC.Prev_Sync = 0;
 	FDC.Sync_A1_Count = 0;
-
+#endif
 	Time_ns = 0;
 
 	/* Search 3 A1 sync marks, return on index pulse */
@@ -5644,8 +5722,8 @@ s = SCP_Get_Fd_Stream ( Drive );
 	FDC.NextSector_ID_Field_CRC_OK = ( FDC.CRC == 0 ) ? 1 : 0;
 
 
-fprintf ( stderr , "A1 FE %x %x %x %x %x %x - %x\n" , FDC.NextSector_ID_Field_TR , FDC.NextSector_ID_Field_SIDE ,
-	FDC.NextSector_ID_Field_SR , FDC.NextSector_ID_Field_LEN , FDC.NextSector_ID_Field_CRC1 , FDC.NextSector_ID_Field_CRC2  , FDC.CRC );
+fprintf ( stderr , "A1 FE %x %x %x %x %x %x - %x %ld\n" , FDC.NextSector_ID_Field_TR , FDC.NextSector_ID_Field_SIDE ,
+	FDC.NextSector_ID_Field_SR , FDC.NextSector_ID_Field_LEN , FDC.NextSector_ID_Field_CRC1 , FDC.NextSector_ID_Field_CRC2  , FDC.CRC , CyclesGlobalClockCounter );
 
 	/* Total numer of FDC cycles */
 	*pFdcCycles = FDC_NsToFdcCycles ( Time_ns );
@@ -5659,7 +5737,7 @@ fprintf ( stderr , "A1 FE %x %x %x %x %x %x - %x\n" , FDC.NextSector_ID_Field_TR
  * Return the value of the track number in the next ID field set by
  * FDC_NextSectorID_FdcCycles_MFM.
  */
-uint8_t	FDC_NextSectorID_TR_MFM ( void )
+static uint8_t	FDC_NextSectorID_TR_MFM ( void )
 {
 	return FDC.NextSector_ID_Field_TR;
 }
@@ -5670,7 +5748,7 @@ uint8_t	FDC_NextSectorID_TR_MFM ( void )
  * Return the value of the sector number in the next ID field set by
  * FDC_NextSectorID_FdcCycles_MFM.
  */
-uint8_t	FDC_NextSectorID_SR_MFM ( void )
+static uint8_t	FDC_NextSectorID_SR_MFM ( void )
 {
 	return FDC.NextSector_ID_Field_SR;
 }
@@ -5681,7 +5759,7 @@ uint8_t	FDC_NextSectorID_SR_MFM ( void )
  * Return the value of the sector's length in the next ID field set by
  * FDC_NextSectorID_FdcCycles_MFM.
  */
-uint8_t	FDC_NextSectorID_LEN_MFM ( void )
+static uint8_t	FDC_NextSectorID_LEN_MFM ( void )
 {
 	return FDC.NextSector_ID_Field_LEN;
 }
@@ -5693,7 +5771,7 @@ uint8_t	FDC_NextSectorID_LEN_MFM ( void )
  * FDC_NextSectorID_FdcCycles_MFM.
  * If '0', CRC is bad, else CRC is OK
  */
-uint8_t	FDC_NextSectorID_CRC_OK_MFM ( void )
+static uint8_t	FDC_NextSectorID_CRC_OK_MFM ( void )
 {
 	return FDC.NextSector_ID_Field_CRC_OK;
 }
@@ -5734,7 +5812,7 @@ uint8_t	FDC_ReadSector_MFM ( uint8_t Drive , uint8_t Track , uint8_t Sector , ui
  * Return RNF if sector was not found or CRC if ID field has a CRC error.
  * Return 0 if OK.
  */
-uint8_t	FDC_WriteSector_MFM ( uint8_t Drive , uint8_t Track , uint8_t Sector , uint8_t Side , int SectorSize )
+static uint8_t	FDC_WriteSector_MFM ( uint8_t Drive , uint8_t Track , uint8_t Sector , uint8_t Side , int SectorSize )
 {
 	return FDC_STR_BIT_RNF;
 }
@@ -5750,7 +5828,7 @@ uint8_t	FDC_WriteSector_MFM ( uint8_t Drive , uint8_t Track , uint8_t Sector , u
  * (32 microsec)
  * Return 0 if OK or RNF or a CRC error
  */
-uint8_t	FDC_ReadAddress_MFM ( uint8_t Drive , uint8_t Track , uint8_t Sector , uint8_t Side )
+static uint8_t	FDC_ReadAddress_MFM ( uint8_t Drive , uint8_t Track , uint8_t Sector , uint8_t Side )
 {
 	return FDC_STR_BIT_RNF;
 }
@@ -5769,7 +5847,7 @@ uint8_t	FDC_ReadAddress_MFM ( uint8_t Drive , uint8_t Track , uint8_t Sector , u
  *
  * Return 0 if OK
  */
-uint8_t	FDC_ReadTrack_MFM ( uint8_t Drive , uint8_t Track , uint8_t Side )
+static uint8_t	FDC_ReadTrack_MFM ( uint8_t Drive , uint8_t Track , uint8_t Side )
 {
 	return 0;
 }
@@ -5787,7 +5865,7 @@ uint8_t	FDC_ReadTrack_MFM ( uint8_t Drive , uint8_t Track , uint8_t Side )
  *
  * Return 0 if track was written without error, or LOST_DATA if an error occurred
  */
-uint8_t	FDC_WriteTrack_MFM ( uint8_t Drive , uint8_t Track , uint8_t Side , int TrackSize )
+static uint8_t	FDC_WriteTrack_MFM ( uint8_t Drive , uint8_t Track , uint8_t Side , int TrackSize )
 {
 	return FDC_STR_BIT_LOST_DATA;
 }

@@ -84,8 +84,6 @@ extern struct fd_stream	*SCP_Get_Fd_Stream ( uint8_t Drive );
 
 extern SCP_MAIN_STRUCT *SCP_BuildStruct ( uint8_t *pFileBuffer , int Debug );
 
-extern int	SCP_LoadTrack ( int Drive , int Track , int Side );
-
 extern int	FDC_GetBytesPerTrack_SCP ( uint8_t Drive , uint8_t Track , uint8_t Side );
 extern uint32_t	FDC_GetCyclesPerRev_FdcCycles_SCP ( uint8_t Drive , uint8_t Track , uint8_t Side );
 
@@ -126,6 +124,19 @@ struct scp_stream {
 /*
  * Flux to MFM bit decoding - Support for SCP disk image - END
  */
+
+
+typedef struct
+{
+	SCP_MAIN_STRUCT		*ImageStruct[ MAX_FLOPPYDRIVES ];	/* For the SCP disk images */
+
+	struct scp_stream	SCP_Stream[ MAX_FLOPPYDRIVES ];
+	struct fd_stream_type	SCP_Stream_Type[ MAX_FLOPPYDRIVES ];
+
+} SCP_STRUCT;
+
+
+extern SCP_STRUCT	SCP_State;			/* All variables related to the SCP support */
 
 
 

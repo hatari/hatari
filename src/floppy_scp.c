@@ -40,17 +40,8 @@ const char floppy_scp_fileid[] = "Hatari floppy_scp.c";
 
 
 
-typedef struct
-{
-	SCP_MAIN_STRUCT		*ImageStruct[ MAX_FLOPPYDRIVES ];	/* For the SCP disk images */
 
-	struct scp_stream	SCP_Stream[ MAX_FLOPPYDRIVES ];
-	struct fd_stream_type	SCP_Stream_Type[ MAX_FLOPPYDRIVES ];
-
-} SCP_STRUCT;
-
-
-static SCP_STRUCT	SCP_State;			/* All variables related to the SCP support */
+SCP_STRUCT	SCP_State;			/* All variables related to the SCP support */
 
 
 
@@ -522,22 +513,6 @@ SCP_MAIN_STRUCT	*SCP_BuildStruct ( uint8_t *pFileBuffer , int Debug )
 	return pScpMain;
 }
 
-
-
-
-int	SCP_LoadTrack ( int Drive , int Track , int Side )
-{
-	int		res;
-
-	res = fd_stream_select_track ( &(SCP_State.SCP_Stream[ Drive ].s) , Track*2+Side );
-	if ( res )
-		return -1;			// TODO set error code for FDC
-
-	/* Uncomment next line to dump the track's content */
-//	FD_Stream_DumpTrack ( &(SCP_State.SCP_Stream[ Drive ].s) , 0 );
-
-	return 0;
-}
 
 
 
