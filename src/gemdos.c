@@ -1247,7 +1247,8 @@ static bool add_path_component(char *path, int maxlen, const char *origname, boo
 	char *tmp, *match;
 	int dot, namelen, pathlen;
 	int (*chr_conv)(int);
-	bool modified;
+	bool use_pattern = false;
+
 	char *name = alloca(strlen(origname) + 3);
 
 	/* append separator */
@@ -1262,7 +1263,7 @@ static bool add_path_component(char *path, int maxlen, const char *origname, boo
 	namelen = clip_to_83(name);
 
 	/* first try exact (case insensitive) match */
-	match = match_host_dir_entry(path, name, false);
+	match = match_host_dir_entry(path, name, use_pattern);
 	if (match)
 	{
 		/* use strncat so that string is always nul terminated */
@@ -1278,7 +1279,7 @@ static bool add_path_component(char *path, int maxlen, const char *origname, boo
 	if (is_dir && namelen == 9 && name[8] == '.')
 	{
 		name[8] = '\0';
-		match = match_host_dir_entry(path, name, false);
+		match = match_host_dir_entry(path, name, use_pattern);
 		if (match)
 		{
 			strncat(path+pathlen, match, maxlen-pathlen);
@@ -1287,22 +1288,11 @@ static bool add_path_component(char *path, int maxlen, const char *origname, boo
 		}
 	}
 
-	/* Assume there were invalid characters or that the host file
-	 * was too long to fit into GEMDOS 8+3 filename limits.
-	 * If that's the case, modify the name to a pattern that
-	 * will match such host files and try again.
+	/* Next check whether Atari file name could have been
+	 * truncated, or invalid chars in it replaced. If that's
+	 * the case, modify the name to a pattern that will match
+	 * such host files and try again...
 	 */
-	modified = false;
-
-	/* catch potentially invalid characters */
-	for (tmp = name; *tmp; tmp++)
-	{
-		if (*tmp == INVALID_CHAR)
-		{
-			*tmp = '?';
-			modified = true;
-		}
-	}
 
 	/* catch potentially too long extension */
 	for (dot = 0; name[dot] && name[dot] != '.'; dot++);
@@ -1312,7 +1302,7 @@ static bool add_path_component(char *path, int maxlen, const char *origname, boo
 		/* "emulated.too" -> "emulated.too*" */
 		name[namelen++] = '*';
 		name[namelen] = '\0';
-		modified = true;
+		use_pattern = true;
 	}
 	/* catch potentially too long part before extension */
 	if (namelen > 8 && name[8] == '.')
@@ -1322,7 +1312,7 @@ static bool add_path_component(char *path, int maxlen, const char *origname, boo
 		memmove(name+9, name+8, namelen-7);
 		namelen++;
 		name[8] = '*';
-		modified = true;
+		use_pattern = true;
 	}
 	/* catch potentially too long part without extension */
 	else if (namelen == 8 && !name[dot])
@@ -1331,12 +1321,34 @@ static bool add_path_component(char *path, int maxlen, const char *origname, boo
 		name[8] = '*';
 		name[9] = '\0';
 		namelen++;
-		modified = true;
+		use_pattern = true;
 	}
 
-	if (modified)
+	if (use_pattern)
 	{
-		match = match_host_dir_entry(path, name, true);
+		match = match_host_dir_entry(path, name, use_pattern);
+		if (match)
+		{
+			strncat(path+pathlen, match, maxlen-pathlen);
+			free(match);
+			return true;
+		}
+	}
+
+	/* catch potentially invalid characters */
+	use_pattern = false;
+	for (tmp = name; *tmp; tmp++)
+	{
+		if (*tmp == INVALID_CHAR)
+		{
+			*tmp = '?';
+			use_pattern = true;
+		}
+	}
+
+	if (use_pattern)
+	{
+		match = match_host_dir_entry(path, name, use_pattern);
 		if (match)
 		{
 			strncat(path+pathlen, match, maxlen-pathlen);

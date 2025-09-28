@@ -32,6 +32,9 @@ Emulator improvements:
   - Audio + video recording functionality moved to its own dialog
   - Number field values can now also be typed in
 - GEMDOS HD:
+  - When Atari file name matches multiple host files, prefer
+    (potentially) truncated file name matches over ones where
+    invalid chars have (potentially) been replaced
   - Increase max DTA cache size + warn on larger increases
 - Recording:
   - Also sound recording shows recording time in Hatari titlebar
