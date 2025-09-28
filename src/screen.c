@@ -159,7 +159,6 @@ void Screen_UpdateRect(SDL_Surface *screen, Sint32 x, Sint32 y, Sint32 w, Sint32
 static void Screen_SetupRGBTable(void)
 {
 	Uint16 STColor;
-	Uint32 RGBColor;
 	int r, g, b;
 	int rr, gg, bb;
 
@@ -178,16 +177,8 @@ static void Screen_SetupRGBTable(void)
 				gg |= gg << 4;
 				bb = ((b & 0x7) << 1) | ((b & 0x8) >> 3);
 				bb |= bb << 4;
-				RGBColor = SDL_MapRGB(sdlscrn->format, rr, gg, bb);
-				if (sdlscrn->format->BitsPerPixel <= 16)
-				{
-					/* As longs, for speed (write two pixels at once) */
-					ST2RGB[STColor] = (RGBColor<<16) | RGBColor;
-				}
-				else
-				{
-					ST2RGB[STColor] = RGBColor;
-				}
+				ST2RGB[STColor] = SDL_MapRGB(sdlscrn->format,
+				                             rr, gg, bb);
 			}
 		}
 	}
@@ -208,7 +199,7 @@ static void Screen_ConvertHighRes(void)
 /**
  * Set screen draw functions.
  */
-static void Screen_SetDrawFunctions(int nBitCount, bool bDoubleLowRes)
+static void Screen_SetDrawFunctions(bool bDoubleLowRes)
 {
 	if (bDoubleLowRes)
 		ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_640x32Bit;
@@ -319,7 +310,6 @@ void Screen_SetTextureScale(int width, int height, int win_width, int win_height
 	static char prev_quality;
 	float scale_w, scale_h, scale;
 	char quality;
-	int pfmt;
 
 	if (!(bUseSdlRenderer && sdlRenderer))
 		return;
@@ -361,12 +351,7 @@ void Screen_SetTextureScale(int width, int height, int win_width, int win_height
 			sdlTexture = NULL;
 		}
 
-		if (sdlscrn->format->BitsPerPixel == 16)
-			pfmt = SDL_PIXELFORMAT_RGB565;
-		else
-			pfmt = SDL_PIXELFORMAT_RGB888;
-
-		sdlTexture = SDL_CreateTexture(sdlRenderer, pfmt,
+		sdlTexture = SDL_CreateTexture(sdlRenderer, SDL_PIXELFORMAT_RGB888,
 					       SDL_TEXTUREACCESS_STREAMING,
 					       width, height);
 		if (!sdlTexture)
@@ -641,7 +626,7 @@ static void Screen_SetSTResolution(bool bForceChange)
 	}
 
 	/* Set drawing functions */
-	Screen_SetDrawFunctions(sdlscrn->format->BitsPerPixel, bDoubleLowRes);
+	Screen_SetDrawFunctions(bDoubleLowRes);
 
 	Screen_SetFullUpdate();           /* Cause full update of screen */
 }
