@@ -109,7 +109,6 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
 		FILE *fp, int png_compression_level, int png_filter,
 		int CropLeft , int CropRight , int CropTop , int CropBottom )
 {
-	bool do_lock;
 	int y, ret;
 	int sw = surface->w - CropLeft - CropRight;
 	int sh = surface->h - CropTop - CropBottom;
@@ -134,10 +133,8 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
 
 	rowbuf = alloca(3 * dw);
 
+	Screen_Lock();
 	/* Use current ST palette if all colours in the image belong to it, otherwise RGB */
-	do_lock = SDL_MUSTLOCK(surface);
-	if (do_lock)
-		SDL_LockSurface(surface);
 	for (y = 0; y < dh; y++)
 	{
 		src_ptr = (Uint8 *)surface->pixels
@@ -146,8 +143,7 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
 		if (!PixelConvert_32to8Bits(rowbuf, (Uint32*)src_ptr, dw, surface))
 			do_palette = false;
 	}
-	if (do_lock)
-		SDL_UnlockSurface(surface);
+	Screen_UnLock();
 
 	/* Create and initialize the png_struct with error handler functions. */
 	png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
@@ -214,13 +210,10 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
 	png_write_info(png_ptr, info_ptr);
 
 	/* write surface data rows one at a time (after cropping if necessary) */
-	do_lock = SDL_MUSTLOCK(surface);
 	for (y = 0; y < dh; y++)
 	{
 		/* need to lock the surface while accessing it directly */
-		if (do_lock)
-			SDL_LockSurface(surface);
-
+		Screen_Lock();
 
 		src_ptr = (Uint8 *)surface->pixels
 		          + (CropTop + (y * sh + dh/2) / dh) * surface->pitch
@@ -238,8 +231,7 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
 			PixelConvert_32to8Bits(rowbuf, (Uint32*)src_ptr, dw, surface);
 		}
 		/* and unlock surface before syscalls */
-		if (do_lock)
-			SDL_UnlockSurface(surface);
+		Screen_UnLock();
 		png_write_row(png_ptr, rowbuf);
 	}
 
