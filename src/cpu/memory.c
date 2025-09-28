@@ -12,7 +12,6 @@
   */
 const char Memory_fileid[] = "Hatari memory.c";
 
-#include <SDL.h>
 #include "main.h"
 #include "sysdeps.h"
 #include "hatari-glue.h"
