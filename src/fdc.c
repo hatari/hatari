@@ -5680,16 +5680,6 @@ s = SCP_Get_Fd_Stream ( Drive );
 
 
 	FDC.AM_Detector_Mode = FDC_AM_DET_MODE_AUTO_OFF;
-#if 0
-	FDC.DSR = 0;
-	FDC.DSR_count = 0;
-	FDC.Bit_Is_Data = true;						/* 1st bit will be data, next will be clock */
-	FDC.FD_Latency_prev = 0;
-	FDC.Enable_CRC = false;
-//	FDC.CRC = 0xffff;
-	FDC.Prev_Sync = 0;
-	FDC.Sync_A1_Count = 0;
-#endif
 	Time_ns = 0;
 
 	/* Search 3 A1 sync marks, return on index pulse */
@@ -5834,17 +5824,6 @@ static uint8_t	FDC_ReadSector_MFM ( uint8_t Drive , uint8_t Track , uint8_t Sect
 s = SCP_Get_Fd_Stream ( Drive );
 
 	FDC.AM_Detector_Mode = FDC_AM_DET_MODE_AUTO_OFF;
-#if 0
-	FDC.DSR = 0;
-	FDC.DSR_count = 0;
-	FDC.Bit_Is_Data = true;						/* 1st bit will be data, next will be clock */
-	FDC.FD_Latency_prev = 0;
-	FDC.Enable_CRC = false;
-//	FDC.CRC = 0xffff;
-	FDC.Prev_Sync = 0;
-	FDC.Sync_A1_Count = 0;
-#endif
-
 	Time_ns = 0;
 
 	/* Search 3 A1 sync marks, return on index pulse */
@@ -5859,9 +5838,9 @@ s = SCP_Get_Fd_Stream ( Drive );
 	if ( Res != FDCEMU_RETURN_OK )
 		return FDC_STR_BIT_RNF;
 
-	if ( FDC.DR == 0xFB )						/* normal DAM */
+	if ( ( FDC.DR & 0xFE ) == 0xFA )				/* normal DAM 0xFB or 0xFA */
 		Deleted_DAM = false;
-	else if ( FDC.DR == 0xF8 )					/* deleted DAM */
+	else if ( ( FDC.DR & 0xFE ) == 0xF8 )				/* deleted DAM 0xF8 or 0xF9 */
 		Deleted_DAM = true;
 	else
 	{
