@@ -3304,6 +3304,15 @@ static int FDC_UpdateReadAddressCmd ( void )
 	 case FDCEMU_RUN_READADDRESS_MOTOR_ON:
 		FDC.ReplaceCommandPossible = false;
 		FDC.IndexPulse_Counter = 0;
+		if ( Floppy_ImageIsMFM ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
+		{
+			if ( FDC_LoadTrack_MFM ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal ) != 0 )
+			{
+				FDC.CommandState = FDCEMU_RUN_READADDRESS_RNF;
+				FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
+				break;
+			}
+		}
 		FDC.CommandState = FDCEMU_RUN_READADDRESS_NEXT_SECTOR_HEADER;
 		FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
 		break;
@@ -5906,15 +5915,31 @@ static uint8_t	FDC_WriteSector_MFM ( uint8_t Drive , uint8_t Track , uint8_t Sec
 /*-----------------------------------------------------------------------*/
 /**
  * Read an address field from a floppy image in MFM format (used in type III command)
- * We process the first address field that appears after the current position
+ * We process the first address field that appears after the latest call to FDC_NextSectorID_FdcCycles_MFM
  *
  * Each byte of the ID field is added to the FDC buffer with a default timing
  * (32 microsec)
- * Return 0 if OK or RNF or a CRC error
+ * Return 0 if OK or a CRC error
  */
 static uint8_t	FDC_ReadAddress_MFM ( uint8_t Drive , uint8_t Track , uint8_t Sector , uint8_t Side )
 {
-	return FDC_STR_BIT_RNF;
+	uint8_t		Status;
+
+	// TODO : bytes are added with default timing, we should use the MFM timing, although
+	// it's unlikely to alter emulation
+	FDC_Buffer_Add ( FDC.NextSector_ID_Field_TR );
+	FDC_Buffer_Add ( FDC.NextSector_ID_Field_SIDE );
+	FDC_Buffer_Add ( FDC.NextSector_ID_Field_SR );
+	FDC_Buffer_Add ( FDC.NextSector_ID_Field_LEN );
+	FDC_Buffer_Add ( FDC.NextSector_ID_Field_CRC1 );
+	FDC_Buffer_Add ( FDC.NextSector_ID_Field_CRC2 );
+
+	Status = 0;
+	if ( ! FDC.NextSector_ID_Field_CRC_OK )
+		Status |= FDC_STR_BIT_CRC_ERROR;
+
+	return Status;
+
 }
 
 
