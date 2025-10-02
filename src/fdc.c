@@ -5645,7 +5645,6 @@ static int	FDC_NextSectorID_FdcCycles_MFM ( uint8_t Drive , uint8_t NumberOfHead
 	uint16_t	StatusMask;
 	int		Res;
 
-//FDC_LoadTrack_MFM ( Drive , Track , Side );
 s = SCP_Get_Fd_Stream ( Drive );
 
 	if ( ( Side == 1 ) && ( NumberOfHeads == 1 ) )			/* Can't read side 1 on a single sided drive */
@@ -5683,7 +5682,7 @@ s = SCP_Get_Fd_Stream ( Drive );
 	if ( Res != FDCEMU_RETURN_OK )
 		return Res;
 
-	if ( ( FDC.DR & 0xFE ) != 0xFE )
+	if ( ( FDC.DR & 0xFC ) != 0xFC )				/* 0xFE, but also 0xFC, 0xFD, 0xFF */
 	{
 		*pFdcCycles = FDC_NsToFdcCycles ( Time_ns );
 		return FDCEMU_RETURN_BAD_ID;
