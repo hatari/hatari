@@ -2423,7 +2423,7 @@ static int FDC_UpdateRestoreCmd ( void )
 		/* If 'verify' doesn't succeed after 5 revolutions, we abort with RNF */
 		if ( FDC.IndexPulse_Counter >= FDC_DELAY_IP_ADDRESS_ID )
 		{
-			LOG_TRACE(TRACE_FDC, "fdc type I restore track=%d drive=%d verify RNF VBL=%d video_cyc=%d %d@%d pc=%x\n",
+			LOG_TRACE(TRACE_FDC, "fdc type I restore track=0x%x drive=%d verify RNF VBL=%d video_cyc=%d %d@%d pc=%x\n",
 				FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.DriveSelSignal , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 			FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );			/* Set RNF bit */
@@ -2457,6 +2457,7 @@ static int FDC_UpdateRestoreCmd ( void )
 			FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;	/* Wait for a valid drive/floppy */
 
 		/* Stay in same state */
+		FDC.CommandState = FDCEMU_RUN_RESTORE_VERIFY_NEXT_SECTOR_HEADER;
 		break;
 	 case FDCEMU_RUN_RESTORE_VERIFY_CHECK_SECTOR_HEADER:
 		/* Check if the current ID Field matches the track number */
@@ -2595,7 +2596,7 @@ static int FDC_UpdateSeekCmd ( void )
 		/* If 'verify' doesn't succeed after 5 revolutions, we abort with RNF */
 		if ( FDC.IndexPulse_Counter >= FDC_DELAY_IP_ADDRESS_ID )
 		{
-			LOG_TRACE(TRACE_FDC, "fdc type I seek track=%d drive=%d verify RNF VBL=%d video_cyc=%d %d@%d pc=%x\n",
+			LOG_TRACE(TRACE_FDC, "fdc type I seek track=0x%x drive=%d verify RNF VBL=%d video_cyc=%d %d@%d pc=%x\n",
 				FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.DriveSelSignal , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 			FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );			/* Set RNF bit */
@@ -2629,6 +2630,7 @@ static int FDC_UpdateSeekCmd ( void )
 			FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;	/* Wait for a valid drive/floppy */
 
 		/* Stay in same state */
+		FDC.CommandState = FDCEMU_RUN_SEEK_VERIFY_NEXT_SECTOR_HEADER;
 		break;
 	 case FDCEMU_RUN_SEEK_VERIFY_CHECK_SECTOR_HEADER:
 		/* Check if the current ID Field matches the track number */
@@ -2749,7 +2751,7 @@ static int FDC_UpdateStepCmd ( void )
 		/* If 'verify' doesn't succeed after 5 revolutions, we abort with RNF */
 		if ( FDC.IndexPulse_Counter >= FDC_DELAY_IP_ADDRESS_ID )
 		{
-			LOG_TRACE(TRACE_FDC, "fdc type I step track=%d drive=%d verify RNF VBL=%d video_cyc=%d %d@%d pc=%x\n",
+			LOG_TRACE(TRACE_FDC, "fdc type I step track=0x%x drive=%d verify RNF VBL=%d video_cyc=%d %d@%d pc=%x\n",
 				FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.DriveSelSignal , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 			FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );			/* Set RNF bit */
@@ -2783,6 +2785,7 @@ static int FDC_UpdateStepCmd ( void )
 			FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;	/* Wait for a valid drive/floppy */
 
 		/* Stay in same state */
+		FDC.CommandState = FDCEMU_RUN_STEP_VERIFY_NEXT_SECTOR_HEADER;
 		break;
 	 case FDCEMU_RUN_STEP_VERIFY_CHECK_SECTOR_HEADER:
 		/* Check if the current ID Field matches the track number */
