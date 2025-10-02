@@ -1958,6 +1958,9 @@ int	FDC_IndexPulse_GetState ( void )
  * Return the number of FDC cycles before reaching the next index pulse signal.
  * If there's no available drive/floppy and no index, we return -1
  */
+
+// TODO : handle MFM/SCP case where index pulse is in the image
+
 int	FDC_NextIndexPulse_FdcCycles ( void )
 {
 	uint32_t	FdcCyclesPerRev;
@@ -3443,7 +3446,7 @@ static int FDC_UpdateReadTrackCmd ( void )
 		}
 		/* If there's no head settle, we fall through directly to the _MOTOR_ON state */
 	 case FDCEMU_RUN_READTRACK_MOTOR_ON:
-		FdcCycles = FDC_NextIndexPulse_FdcCycles ();		/* Wait for the next index pulse */
+		FdcCycles = FDC_NextIndexPulse_FdcCycles ();			/* Wait for the next index pulse */
 //fprintf ( stderr , "read tr idx=%d %d\n" , FDC_IndexPulse_GetState() , FdcCycles );
 		if ( FdcCycles < 0 )
 		{
@@ -3451,6 +3454,16 @@ static int FDC_UpdateReadTrackCmd ( void )
 		}
 		else
 		{
+			if ( Floppy_ImageIsMFM ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
+			{
+				if ( FDC_LoadTrack_MFM ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal ) != 0 )
+				{
+					FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );		/* Set RNF bit */
+					FDC.CommandState = FDCEMU_RUN_READTRACK_COMPLETE;
+					FdcCycles = FDC_DELAY_CYCLE_COMMAND_COMPLETE;
+					break;
+				}
+			}
 			FDC.CommandState = FDCEMU_RUN_READTRACK_INDEX;
 		}
 		break;
@@ -5946,7 +5959,7 @@ static uint8_t	FDC_ReadAddress_MFM ( uint8_t Drive , uint8_t Track , uint8_t Sec
 
 /*-----------------------------------------------------------------------*/
 /**
- * Read a track from a floppy image in STX format (used in type III command)
+ * Read a track from a floppy image in MFM/SCP format (used in type III command)
  * This function is called after an index pulse was encountered, and it will
  * always succeeds and fill the track buffer.
  * If the Track/Side infos exist in the MFM image, then the corresponding
@@ -5958,6 +5971,43 @@ static uint8_t	FDC_ReadAddress_MFM ( uint8_t Drive , uint8_t Track , uint8_t Sec
  */
 static uint8_t	FDC_ReadTrack_MFM ( uint8_t Drive , uint8_t Track , uint8_t Side )
 {
+	struct fd_stream *s;
+	uint64_t	Time_ns;
+	uint16_t	StatusMask;
+	int		Res;
+	int		FdcCycles;
+	int		i = 0;
+
+s = SCP_Get_Fd_Stream ( Drive );
+
+	FDC.AM_Detector_Mode = FDC_AM_DET_MODE_ALWAYS_ON;
+
+	Time_ns = 0;
+
+	while ( 1 )
+	{
+		StatusMask = FDC_AM_DET_STATUS_DR_READY;
+		Res = FDC_MFM_Process_MultiBits_Index ( s , StatusMask , &Time_ns , &FdcCycles , true );
+
+		/* Index pulse received alone : current byte in DSR is incomplete and we ignore it */
+		if ( Res == FDCEMU_RETURN_INDEX_PULSE )
+			break;
+
+		else if ( Res != FDCEMU_RETURN_OK )
+			return FDC_STR_BIT_RNF;
+
+		/* Total numer of FDC cycles for this byte */
+		FdcCycles = FDC_NsToFdcCycles ( Time_ns );
+		Time_ns = 0;
+
+		/* Add the Byte to the buffer with its timing */
+		FDC_Buffer_Add_Timing ( FDC.DR , FdcCycles );
+
+		/* If an Index pulse was received at the same time as this byte then we exit */
+		if ( FDC.AM_Detector_Status & FDC_AM_DET_STATUS_INDEX_PULSE )
+			break;
+	}
+
 	return 0;
 }
 
