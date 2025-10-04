@@ -1463,6 +1463,20 @@ Uint32 Screen_GetGenConvHeight(void)
 	return STScreenRect.h;
 }
 
+/**
+ * Wrapper for SDL BPM save function
+ * return 1 for success, -1 for fail
+ */
+int Screen_SaveBMP(const char *filename)
+{
+	if(SDL_SaveBMP_RW(sdlscrn, SDL_RWFromFile(filename, "wb"), 1) < 0)
+	{
+		Log_Printf(LOG_WARN, "SDL_SaveBMP_RW failed: %s", SDL_GetError());
+		return -1;
+	}
+	return 1;
+}
+
 
 /* -------------- screen conversion routines --------------------------------
   Screen conversion routines. We have a number of routines to convert ST screen

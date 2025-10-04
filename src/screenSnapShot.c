@@ -8,7 +8,6 @@
 */
 const char ScreenSnapShot_fileid[] = "Hatari screenSnapShot.c";
 
-#include <SDL.h>
 #include <dirent.h>
 #include <string.h>
 #include "main.h"
@@ -523,23 +522,6 @@ static int ScreenSnapShot_SaveXIMG(const char *filename)
 }
 
 
-/*-----------------------------------------------------------------------*/
-/**
- * Wrapper for SDL BPM save function
- * return 1 for success, -1 for fail
- */
-static int ScreenSnapShot_SaveBMP(const char *filename)
-{
-	if(SDL_SaveBMP_RW(sdlscrn, SDL_RWFromFile(filename, "wb"), 1) < 0)
-	{
-		Log_Printf(LOG_WARN, "SDL_SaveBMP_RW failed: %s", SDL_GetError());
-		return -1;
-	}
-	return 1;
-}
-
-
-/*-----------------------------------------------------------------------*/
 /**
  * Save screen shot file with filename like 'grab0000.[png|bmp]',
  * 'grab0001.[png|bmp]', etc... Whether screen shots are saved as BMP
@@ -579,7 +561,7 @@ void ScreenSnapShot_SaveScreen(void)
 		break;
 	case SCREEN_SNAPSHOT_BMP:
 	default:
-		savefn = ScreenSnapShot_SaveBMP;
+		savefn = Screen_SaveBMP;
 		name = "BMP";
 		ext = "bmp";
 		break;
@@ -621,7 +603,7 @@ void ScreenSnapShot_SaveToFile(const char *szFileName)
 #endif
 	if (File_DoesFileExtensionMatch(szFileName, ".bmp"))
 	{
-		ret = ScreenSnapShot_SaveBMP(szFileName);
+		ret = Screen_SaveBMP(szFileName);
 	}
 	else if (File_DoesFileExtensionMatch(szFileName, ".neo"))
 	{
