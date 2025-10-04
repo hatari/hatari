@@ -112,6 +112,8 @@ extern void Screen_EnterFullScreen(void);
 extern void Screen_ReturnFromFullScreen(void);
 extern void Screen_ModeChanged(bool bForceChange);
 extern bool Screen_Draw(void);
+extern void Screen_GetPixelFormat(uint32_t *rmask, uint32_t *gmask, uint32_t *bmask,
+                                  int *rshift, int *gshift, int *bshift);
 extern void Screen_SetTextureScale(int width, int height, int win_width,
                                    int win_height, bool bForceCreation);
 extern void Screen_SetGenConvSize(int width, int height, bool bForceChange);

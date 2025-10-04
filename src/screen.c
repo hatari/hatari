@@ -287,6 +287,29 @@ static void Screen_FreeSDL2Resources(void)
 	}
 }
 
+
+/**
+ * Get pixel format information (mask and shift values)
+ */
+void Screen_GetPixelFormat(uint32_t *rmask, uint32_t *gmask, uint32_t *bmask,
+                           int *rshift, int *gshift, int *bshift)
+{
+	if (rmask)
+		*rmask = sdlscrn->format->Rmask;
+	if (gmask)
+		*gmask = sdlscrn->format->Gmask;
+	if (bmask)
+		*bmask = sdlscrn->format->Bmask;
+
+	if (rshift)
+		*rshift = sdlscrn->format->Rshift;
+	if (gshift)
+		*gshift = sdlscrn->format->Gshift;
+	if (bshift)
+		*bshift = sdlscrn->format->Bshift;
+}
+
+
 /*
  * Create window backing texture when needed, with suitable scaling
  * quality.

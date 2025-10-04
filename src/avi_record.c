@@ -923,7 +923,7 @@ static bool	Avi_RecordVideoStream_BMP ( RECORD_AVI_PARAMS *pAviParams )
 			+ pAviParams->CropLeft * pAviParams->Surface->format->BytesPerPixel;
 
 		pBitmapOut = LineBuf;
-		PixelConvert_32to24Bits_BGR(LineBuf, (uint32_t *)pBitmapIn, pAviParams->Width, pAviParams->Surface);
+		PixelConvert_32to24Bits_BGR(LineBuf, (uint32_t *)pBitmapIn, pAviParams->Width, pAviParams->Surface->w);
 
 		if ( NeedLock )
 			SDL_UnlockSurface ( pAviParams->Surface );

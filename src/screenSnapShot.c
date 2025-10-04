@@ -140,7 +140,7 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
 		src_ptr = (Uint8 *)surface->pixels
 		          + (CropTop + (y * sh + dh/2) / dh) * surface->pitch
 		          + CropLeft * surface->format->BytesPerPixel;
-		if (!PixelConvert_32to8Bits(rowbuf, (Uint32*)src_ptr, dw, surface))
+		if (!PixelConvert_32to8Bits(rowbuf, (uint32_t *)src_ptr, dw, surface->w))
 			do_palette = false;
 	}
 	Screen_UnLock();
@@ -198,7 +198,7 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
 		/* Generate palette for PNG */
 		for (y = 0; y < ConvertPaletteSize; y++)
 		{
-			PixelConvert_32to24Bits(palbuf, (Uint32*)(ConvertPalette+y), 1, surface);
+			PixelConvert_32to24Bits(palbuf, (uint32_t *)(ConvertPalette+y), 1, surface->w);
 			png_pal[y].red   = palbuf[0];
 			png_pal[y].green = palbuf[1];
 			png_pal[y].blue  = palbuf[2];
@@ -222,13 +222,13 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
 		if (!do_palette)
 		{
 			/* unpack 32-bit RGBA pixels */
-			PixelConvert_32to24Bits(rowbuf, (Uint32*)src_ptr, dw, surface);
+			PixelConvert_32to24Bits(rowbuf, (uint32_t *)src_ptr, dw, surface->w);
 		}
 		else
 		{
 			/* Reindex back to ST palette
 			 * Note that this cannot disambiguate indices if the palette has duplicate colors */
-			PixelConvert_32to8Bits(rowbuf, (Uint32*)src_ptr, dw, surface);
+			PixelConvert_32to8Bits(rowbuf, (uint32_t *)src_ptr, dw, surface->w);
 		}
 		/* and unlock surface before syscalls */
 		Screen_UnLock();

@@ -16,18 +16,20 @@
 /**
  *  unpack 32-bit RGBA pixels to 24-bit RGB pixels
  */
-static inline void PixelConvert_32to24Bits(Uint8 *dst, Uint32 *src, int dw, SDL_Surface *surf)
+static inline void PixelConvert_32to24Bits(uint8_t *dst, uint32_t *src, int dw, int sw)
 {
-	SDL_PixelFormat *fmt = surf->format;
-	Uint32 sval;
+	uint32_t rmask, gmask, bmask, sval;
+	int rshift, gshift, bshift;
 	int dx;
+
+	Screen_GetPixelFormat(&rmask, &gmask, &bmask, &rshift, &gshift, &bshift);
 
 	for (dx = 0; dx < dw; dx++)
 	{
-		sval = src[(dx * surf->w + dw/2) / dw];
-		*dst++ = (((sval & fmt->Rmask) >> fmt->Rshift) << fmt->Rloss);
-		*dst++ = (((sval & fmt->Gmask) >> fmt->Gshift) << fmt->Gloss);
-		*dst++ = (((sval & fmt->Bmask) >> fmt->Bshift) << fmt->Bloss);
+		sval = src[(dx * sw + dw/2) / dw];
+		*dst++ = (sval & rmask) >> rshift;
+		*dst++ = (sval & gmask) >> gshift;
+		*dst++ = (sval & bmask) >> bshift;
 	}
 }
 
@@ -35,7 +37,7 @@ static inline void PixelConvert_32to24Bits(Uint8 *dst, Uint32 *src, int dw, SDL_
  * Remap 32-bit RGBA pixels back to 16-color ST palette if possible, false if failed.
  * Note that this cannot disambiguate indices if the palette has duplicate colors.
  */
-static inline bool PixelConvert_32to8Bits(Uint8 *dst, Uint32 *src, int dw, SDL_Surface *surf)
+static inline bool PixelConvert_32to8Bits(uint8_t *dst, uint32_t *src, int dw, int sw)
 {
 	Uint32 sval;
 	int dval;
@@ -44,7 +46,7 @@ static inline bool PixelConvert_32to8Bits(Uint8 *dst, Uint32 *src, int dw, SDL_S
 
 	for (dx = 0; dx < dw; dx++)
 	{
-		sval = src[(dx * surf->w + dw/2) / dw];
+		sval = src[(dx * sw + dw/2) / dw];
 		dval = ConvertPaletteSize;
 		for (i = 0; i < ConvertPaletteSize; i++)
 		{
@@ -72,17 +74,19 @@ static inline bool PixelConvert_32to8Bits(Uint8 *dst, Uint32 *src, int dw, SDL_S
 /**
  *  unpack 32-bit RGBA pixels to 24-bit BGR pixels
  */
-static inline void PixelConvert_32to24Bits_BGR(Uint8 *dst, Uint32 *src, int dw, SDL_Surface *surf)
+static inline void PixelConvert_32to24Bits_BGR(uint8_t *dst, uint32_t *src, int dw, int sw)
 {
-	SDL_PixelFormat *fmt = surf->format;
-	Uint32 sval;
+	uint32_t rmask, gmask, bmask, sval;
+	int rshift, gshift, bshift;
 	int dx;
+
+	Screen_GetPixelFormat(&rmask, &gmask, &bmask, &rshift, &gshift, &bshift);
 
 	for (dx = 0; dx < dw; dx++)
 	{
-		sval = src[(dx * surf->w + dw/2) / dw];
-		*dst++ = (((sval & fmt->Bmask) >> fmt->Bshift) << fmt->Bloss);
-		*dst++ = (((sval & fmt->Gmask) >> fmt->Gshift) << fmt->Gloss);
-		*dst++ = (((sval & fmt->Rmask) >> fmt->Rshift) << fmt->Rloss);
+		sval = src[(dx * sw + dw/2) / dw];
+		*dst++ = (sval & bmask) >> bshift;
+		*dst++ = (sval & gmask) >> gshift;
+		*dst++ = (sval & rmask) >> rshift;
 	}
 }
