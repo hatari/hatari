@@ -571,11 +571,7 @@ static int scp_select_track (struct fd_stream *s, unsigned int tracknr)
 
 	scss->track = tracknr;
 
-	/* [NP] Original libdisk limits to revs + 1. Why ? This will not work if the same track */
-	/* is read more than "revs+1" times. */
-	/* We use ~0u instead (UINT_MAX) to allow "unlimited" reads of the same track */
-//	s->max_revolutions = scss->revs + 1;
-	s->max_revolutions = ~0u;
+	s->max_revolutions = scss->revs + 1;
 	s->RevolutionsNbr = SCP_State.ImageStruct[ scss->Drive ]->RevolutionsNbr;
 	return 0;
 }

@@ -5264,7 +5264,12 @@ int fd_stream_select_track(struct fd_stream *s, unsigned int tracknr)
 	rc = s->type->select_track(s, tracknr);
 	if (rc)
 	    return rc;
-	s->max_revolutions = max_int(s->max_revolutions, 4);
+
+	/* [NP] Original libdisk limits to 4 revs. Why ? This will not work if the same track */
+	/* is read more than 4 times (error FDCEMU_RETURN_NO_MORE_MFM_DATA) */
+	/* We use ~0u instead (UINT_MAX) to allow "unlimited" reads of the same track */
+//	s->max_revolutions = max_int(s->max_revolutions, 4);
+	s->max_revolutions = ~0u;
 
 	fd_stream_reset(s);
 	return 0;
