@@ -2456,7 +2456,7 @@ static int FDC_UpdateRestoreCmd ( void )
 			break;
 		}
 
-		if ( Res == FDCEMU_RETURN_NO_DRIVE_FLOPPY )
+		if ( ( Res == FDCEMU_RETURN_NO_DRIVE_FLOPPY ) || ( Res == FDCEMU_RETURN_NO_MORE_MFM_DATA ) )
 			FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;	/* Wait for a valid drive/floppy */
 
 		/* Stay in same state */
@@ -2629,7 +2629,7 @@ static int FDC_UpdateSeekCmd ( void )
 			break;
 		}
 
-		if ( Res == FDCEMU_RETURN_NO_DRIVE_FLOPPY )
+		if ( ( Res == FDCEMU_RETURN_NO_DRIVE_FLOPPY ) || ( Res == FDCEMU_RETURN_NO_MORE_MFM_DATA ) )
 			FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;	/* Wait for a valid drive/floppy */
 
 		/* Stay in same state */
@@ -2784,7 +2784,7 @@ static int FDC_UpdateStepCmd ( void )
 			break;
 		}
 
-		if ( Res == FDCEMU_RETURN_NO_DRIVE_FLOPPY )
+		if ( ( Res == FDCEMU_RETURN_NO_DRIVE_FLOPPY ) || ( Res == FDCEMU_RETURN_NO_MORE_MFM_DATA ) )
 			FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;	/* Wait for a valid drive/floppy */
 
 		/* Stay in same state */
@@ -2906,7 +2906,7 @@ static int FDC_UpdateReadSectorsCmd ( void )
 			break;
 		}
 
-		if ( Res == FDCEMU_RETURN_NO_DRIVE_FLOPPY )
+		if ( ( Res == FDCEMU_RETURN_NO_DRIVE_FLOPPY ) || ( Res == FDCEMU_RETURN_NO_MORE_MFM_DATA ) )
 			FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;	/* Wait for a valid drive/floppy */
 
 		/* Stay in same state */
@@ -3135,7 +3135,7 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 			break;
 		}
 
-		if ( Res == FDCEMU_RETURN_NO_DRIVE_FLOPPY )
+		if ( ( Res == FDCEMU_RETURN_NO_DRIVE_FLOPPY ) || ( Res == FDCEMU_RETURN_NO_MORE_MFM_DATA ) )
 			FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;	/* Wait for a valid drive/floppy */
 
 		/* Stay in same state */
@@ -3349,7 +3349,7 @@ static int FDC_UpdateReadAddressCmd ( void )
 			break;
 		}
 
-		if ( Res == FDCEMU_RETURN_NO_DRIVE_FLOPPY )
+		if ( ( Res == FDCEMU_RETURN_NO_DRIVE_FLOPPY ) || ( Res == FDCEMU_RETURN_NO_MORE_MFM_DATA ) )
 			FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;	/* Wait for a valid drive/floppy */
 
 		/* Stay in same state */
