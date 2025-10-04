@@ -310,6 +310,22 @@ void Screen_GetPixelFormat(uint32_t *rmask, uint32_t *gmask, uint32_t *bmask,
 }
 
 
+/**
+ * Get the dimension and start address of the SDL screen.
+ */
+void Screen_GetDimension(uint32_t **pixels, int *width, int *height, int *pitch)
+{
+	if (pixels)
+		*pixels = sdlscrn->pixels;
+	if (width)
+		*width = sdlscrn->w;
+	if (height)
+		*height = sdlscrn->h;
+	if (pitch)
+		*pitch = sdlscrn->pitch;
+}
+
+
 /*
  * Create window backing texture when needed, with suitable scaling
  * quality.

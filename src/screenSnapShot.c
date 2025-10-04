@@ -75,13 +75,15 @@ static void ScreenSnapShot_GetNum(void)
 
 #if HAVE_LIBPNG
 /**
- * Save given SDL surface as PNG.
+ * Save current screen surface as PNG.
  * Return PNG file size for success, -1 for fail
  */
 static int ScreenSnapShot_SavePNG(const char *filename)
 {
 	FILE *fp = NULL;
 	int ret, bottom;
+	uint32_t *pixels;
+	int sw, sh, pitch;
   
 	fp = fopen(filename, "wb");
 	if (!fp)
@@ -92,8 +94,11 @@ static int ScreenSnapShot_SavePNG(const char *filename)
 	else
 		bottom = 0;
 
+	Screen_GetDimension(&pixels, &sw, &sh, &pitch);
+
 	/* default compression/filter and configured cropping */
-	ret = ScreenSnapShot_SavePNG_ToFile(sdlscrn, 0, 0, fp, -1, -1, 0, 0, 0, bottom);
+	ret = ScreenSnapShot_SavePNG_ToFile(pixels, pitch, sw, sh, 0, 0,
+	                                    fp, -1, -1, 0, 0, 0, bottom);
 
 	fclose (fp);
 	return ret;					/* >0 if OK, -1 if error */
@@ -101,19 +106,19 @@ static int ScreenSnapShot_SavePNG(const char *filename)
 
 
 /**
- * Save given SDL surface as PNG in an already opened FILE, eventually cropping some borders.
+ * Save given frame as PNG in an already opened FILE, eventually cropping some borders.
  * Return png file size > 0 for success.
  * This function is also used by avi_record.c to save individual frames as png images.
  */
-int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
-		FILE *fp, int png_compression_level, int png_filter,
-		int CropLeft , int CropRight , int CropTop , int CropBottom )
+int ScreenSnapShot_SavePNG_ToFile(uint32_t *pixels, int pitch, int src_w, int src_h,
+		int dw, int dh, FILE *fp, int png_compression_level, int png_filter,
+		int CropLeft , int CropRight , int CropTop , int CropBottom)
 {
 	int y, ret;
-	int sw = surface->w - CropLeft - CropRight;
-	int sh = surface->h - CropTop - CropBottom;
-	Uint8 *src_ptr;
-	Uint8 *rowbuf;
+	int sw = src_w - CropLeft - CropRight;
+	int sh = src_h - CropTop - CropBottom;
+	uint32_t *src_ptr;
+	uint8_t *rowbuf;
 	png_infop info_ptr = NULL;
 	png_structp png_ptr;
 	png_text pngtext;
@@ -122,9 +127,7 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
 	off_t start;
 	bool do_palette = true;
 	png_color png_pal[256];
-	Uint8 palbuf[3];
-
-	assert(surface->format->BytesPerPixel == 4);
+	uint8_t palbuf[3];
 
 	if (!dw)
 		dw = sw;
@@ -137,10 +140,9 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
 	/* Use current ST palette if all colours in the image belong to it, otherwise RGB */
 	for (y = 0; y < dh; y++)
 	{
-		src_ptr = (Uint8 *)surface->pixels
-		          + (CropTop + (y * sh + dh/2) / dh) * surface->pitch
-		          + CropLeft * surface->format->BytesPerPixel;
-		if (!PixelConvert_32to8Bits(rowbuf, (uint32_t *)src_ptr, dw, surface->w))
+		src_ptr = pixels + (CropTop + (y * sh + dh/2) / dh) * (pitch / 4)
+		          + CropLeft;
+		if (!PixelConvert_32to8Bits(rowbuf, src_ptr, dw, src_w))
 			do_palette = false;
 	}
 	Screen_UnLock();
@@ -198,7 +200,7 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
 		/* Generate palette for PNG */
 		for (y = 0; y < ConvertPaletteSize; y++)
 		{
-			PixelConvert_32to24Bits(palbuf, (uint32_t *)(ConvertPalette+y), 1, surface->w);
+			PixelConvert_32to24Bits(palbuf, (uint32_t *)(ConvertPalette+y), 1, src_w);
 			png_pal[y].red   = palbuf[0];
 			png_pal[y].green = palbuf[1];
 			png_pal[y].blue  = palbuf[2];
@@ -215,20 +217,19 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, int dw, int dh,
 		/* need to lock the surface while accessing it directly */
 		Screen_Lock();
 
-		src_ptr = (Uint8 *)surface->pixels
-		          + (CropTop + (y * sh + dh/2) / dh) * surface->pitch
-		          + CropLeft * surface->format->BytesPerPixel;
+		src_ptr = pixels + (CropTop + (y * sh + dh/2) / dh) * (pitch / 4)
+		          + CropLeft;
 
 		if (!do_palette)
 		{
 			/* unpack 32-bit RGBA pixels */
-			PixelConvert_32to24Bits(rowbuf, (uint32_t *)src_ptr, dw, surface->w);
+			PixelConvert_32to24Bits(rowbuf, src_ptr, dw, src_w);
 		}
 		else
 		{
 			/* Reindex back to ST palette
 			 * Note that this cannot disambiguate indices if the palette has duplicate colors */
-			PixelConvert_32to8Bits(rowbuf, (uint32_t *)src_ptr, dw, surface->w);
+			PixelConvert_32to8Bits(rowbuf, src_ptr, dw, src_w);
 		}
 		/* and unlock surface before syscalls */
 		Screen_UnLock();
