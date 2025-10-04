@@ -284,7 +284,6 @@ static int ScreenSnapShot_SaveNEO(const char *filename)
 	FILE *fp = NULL;
 	int i, res, sw, sh, bpp, offset;
 	bool genconv;
-	SDL_Color col;
 	uint32_t video_base, line_size;
 	uint16_t header[64];
 
@@ -327,13 +326,15 @@ static int ScreenSnapShot_SaveNEO(const char *filename)
 	}
 	else /* High resolution or other GenConvert: use stored GenConvert RGB palette. */
 	{
+		uint8_t r, g, b;
+
 		for (i=0; i<16; i++)
 		{
-			col = Screen_GetPaletteColor(i);
+			Screen_GetPaletteColor(i, &r, &g, &b);
 			header[2+i] = be_swap16(
-				((col.r >> 5) << 8) |
-				((col.g >> 5) << 4) |
-				((col.b >> 5) << 0));
+				((r >> 5) << 8) |
+				((g >> 5) << 4) |
+				((b >> 5) << 0));
 		}
 		/* Note that this 24-bit palette is being approximated as a 9-bit ST color palette,
 		 * and 256 colors needed for 8bpp cannot be expressed in this header. */
@@ -394,7 +395,6 @@ static int ScreenSnapShot_SaveXIMG(const char *filename)
 	FILE *fp = NULL;
 	int i, j, k, sw, sh, bpp, offset;
 	bool genconv;
-	SDL_Color col;
 	uint16_t colst, colr, colg, colb;
 	uint32_t video_base, line_size;
 	uint16_t header_size;
@@ -434,6 +434,8 @@ static int ScreenSnapShot_SaveXIMG(const char *filename)
 	/* XIMG RGB format, word triples each 0-1000 */
 	if (bpp <= 8)
 	{
+		uint8_t r, g, b;
+
 		for (i=0; i<(1<<bpp); i++)
 		{
 			if (!genconv && (sh < 300) && (bpp <= 4) && pFrameBuffer) /* ST palette, use centre line */
@@ -445,10 +447,10 @@ static int ScreenSnapShot_SaveXIMG(const char *filename)
 			}
 			else /* High resolution or GenConvert palette */
 			{
-				col = Screen_GetPaletteColor(i);
-				colr = (uint16_t)((col.r * 1000) / 255);
-				colg = (uint16_t)((col.g * 1000) / 255);
-				colb = (uint16_t)((col.b * 1000) / 255);
+				Screen_GetPaletteColor(i, &r, &g, &b);
+				colr = (uint16_t)((1000 * r) / 255);
+				colg = (uint16_t)((1000 * g) / 255);
+				colb = (uint16_t)((1000 * b) / 255);
 			}
 			header[0] = be_swap16(colr);
 			header[1] = be_swap16(colg);
