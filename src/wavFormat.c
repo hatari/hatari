@@ -35,11 +35,10 @@
 */
 const char WAVFormat_fileid[] = "Hatari wavFormat.c";
 
-#include <SDL_endian.h>
-
 #include "main.h"
 #include "audio.h"
 #include "configuration.h"
+#include "endianswap.h"
 #include "file.h"
 #include "log.h"
 #include "sound.h"
@@ -139,7 +138,7 @@ void WAVFormat_CloseFile(void)
 		bRecordingWav = false;
 
 		/* Update headers with sizes */
-		nWavFileBytes = SDL_SwapLE32((12+24+8+nWavOutputBytes)-8);  /* File length, less 8 bytes for 'RIFF' and length */
+		nWavFileBytes = le_swap32((12+24+8+nWavOutputBytes)-8);  /* File length, less 8 bytes for 'RIFF' and length */
 		/* Seek to 'Total Length Of Package' element and
 		 * write total length of package in 'RIFF' chunk */
 		if (fseek(WavFileHndl, 4, SEEK_SET) != 0 ||
@@ -151,7 +150,7 @@ void WAVFormat_CloseFile(void)
 			return;
 		}
 
-		nWavLEOutBytes = SDL_SwapLE32(nWavOutputBytes);
+		nWavLEOutBytes = le_swap32(nWavOutputBytes);
 		/* Seek to 'Length' element and write length of data in 'DATA' chunk */
 		if (fseek(WavFileHndl, 12+24+4, SEEK_SET) != 0
 		    || fwrite(&nWavLEOutBytes, sizeof(uint32_t), 1, WavFileHndl) != 1)
@@ -185,8 +184,8 @@ void WAVFormat_Update(int16_t pSamples[][2], int Index, int Length)
 		for(i = 0; i < Length; i++)
 		{
 			/* Convert sample to little endian */
-			sample[0] = SDL_SwapLE16(pSamples[idx][0]);
-			sample[1] = SDL_SwapLE16(pSamples[idx][1]);
+			sample[0] = le_swap16(pSamples[idx][0]);
+			sample[1] = le_swap16(pSamples[idx][1]);
 			idx = ( idx+1 ) & AUDIOMIXBUFFER_SIZE_MASK;
 			/* And store */
 			if (fwrite(&sample, sizeof(sample), 1, WavFileHndl) != 1)

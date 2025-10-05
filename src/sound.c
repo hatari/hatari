@@ -1198,7 +1198,7 @@ static void	YM2149_DoSamples_250_Debug ( int SamplesToGenerate , int pos )
 
 	for ( n=0 ; n<SamplesToGenerate ; n++ )
 	{
-		sample = SDL_SwapLE16 ( YM_Buffer_250[ pos ] );
+		sample = le_swap16(YM_Buffer_250[pos]);
 		fwrite ( &sample , sizeof(sample) , 1 , file_ptr );
 		pos = ( pos + 1 ) & YM_BUFFER_250_SIZE_MASK;
 		wav_size += 2;

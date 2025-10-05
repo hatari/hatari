@@ -9,11 +9,11 @@
 const char HDC_fileid[] = "Hatari hdc.c";
 
 #include <errno.h>
-#include <SDL_endian.h>
 
 #include "main.h"
 #include "configuration.h"
 #include "debugui.h"
+#include "endianswap.h"
 #include "file.h"
 #include "fdc.h"
 #include "hdc.h"
@@ -788,8 +788,8 @@ int HDC_PartitionCount(FILE *fp, const uint64_t tracelevel, int *pIsByteSwapped)
 		{
 			boot = pinfo[0];
 			ptype = pinfo[4];
-			start = SDL_SwapLE32(*(uint32_t*)(pinfo+8));
-			sectors = SDL_SwapLE32(*(uint32_t*)(pinfo+12));
+			start = le_swap32(*(uint32_t*)(pinfo+8));
+			sectors = le_swap32(*(uint32_t*)(pinfo+12));
 			total += sectors;
 			LOG_TRACE_DIRECT_LEVEL(tracelevel,
 				"- Partition %d: type=0x%02x, start=0x%08x, size=%.1f MB %s%s\n",

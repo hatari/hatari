@@ -7,7 +7,6 @@
   This is where we intercept read/writes to/from the IDE controller hardware.
 */
 
-#include <SDL_endian.h>
 #include <errno.h>
 
 #include <sys/types.h>
@@ -428,10 +427,10 @@ static inline void cpu_to_be16wu(uint16_t *p, uint16_t v)
 }
 
 
-#define le32_to_cpu SDL_SwapLE32
-#define le16_to_cpu SDL_SwapLE16
-#define cpu_to_le32 SDL_SwapLE32
-#define cpu_to_le16 SDL_SwapLE16
+#define le32_to_cpu le_swap32
+#define le16_to_cpu le_swap16
+#define cpu_to_le32 le_swap32
+#define cpu_to_le16 le_swap16
 
 
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
@@ -545,7 +544,7 @@ static int bdrv_read(BlockDriverState *bs, int64_t sector_num,
 	{
 		uint16_t *buf16 = (uint16_t *)buf;
 		while (len > 0) {
-			*buf16 = SDL_Swap16(*buf16);
+			*buf16 = bswap_16(*buf16);
 			buf16++;
 			len -= 2;
 		}
@@ -591,7 +590,7 @@ static int bdrv_write(BlockDriverState *bs, int64_t sector_num,
 			return -ENOMEM;
 		for (idx = 0; idx < len; idx += 2)
 		{
-			buf16[idx / 2] = SDL_Swap16(*(const uint16_t *)&buf[idx]);
+			buf16[idx / 2] = bswap_16(*(const uint16_t *)&buf[idx]);
 		}
 		ret = fwrite(buf16, 1, len, bs->fhndl);
 		free(buf16);
@@ -976,7 +975,7 @@ static void padstr8(uint8_t *buf, int buf_size, const char *src)
 
 static void put_le16(uint16_t *p, unsigned int v)
 {
-	*p = SDL_SwapLE16(v);
+	*p = le_swap16(v);
 }
 
 static void ide_identify(IDEState *s)
