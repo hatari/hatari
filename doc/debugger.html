@@ -732,33 +732,14 @@ a $1234 :2
 </pre>
 </dd>
 
-<dt><em>once</em></dt>
+<dt><em>file &lt;file&gt;</em></dt>
 <dd>
-Delete the breakpoint when it is hit, i.e. trigger it only once. It may
-be useful if you just want to get a specific address. Or if you're on
-an instruction that jumps back to a start of the loop and you want to
-finish the loop, you could use:
-<pre>
-b pc &gt; "pc" :once
-continue
-</pre>
-</dd>
-
-<dt><em>trace</em></dt>
-<dd>
-Continue emulation without stopping after printing the value that
-triggered the breakpoint and doing other possible option actions.
-This is most useful when investigating memory or register value
-changes (explained below).
-</dd>
-
-<dt><em>lock</em></dt>
-<dd>
-Show the same information on breakpoint hit as you see when entering
-the debugger (see the "lock" command in
-<a href="#Inspecting_emulation_state">Inspecting emulation state</a>
-above).  This enables also trace option as you would anyway see this
-information if debugger would be entered.
+Execute debugger commands from given &lt;file&gt; when this breakpoint
+is hit.  With this you have complete control over what information is
+show when the debugger is hit, you can even chain breakpoints (as
+explained in
+<a href="#Chaining_breakpoints">Chaining breakpoints</a> later on).
+Use this when "info" and "lock" options are not enough.
 </dd>
 
 <dt><em>info &lt;name&gt;</em></dt>
@@ -772,14 +753,13 @@ change what's shown on entering the debugger.  This option also
 enables trace option.
 </dd>
 
-<dt><em>file &lt;file&gt;</em></dt>
+<dt><em>lock</em></dt>
 <dd>
-Execute debugger commands from given &lt;file&gt; when this breakpoint
-is hit.  With this you have complete control over what information is
-show when the debugger is hit, you can even chain breakpoints (as
-explained in
-<a href="#Chaining_breakpoints">Chaining breakpoints</a> later on).
-Use this when "info" and "lock" options are not enough.
+Show the same information on breakpoint hit as you see when entering
+the debugger (see the "lock" command in
+<a href="#Inspecting_emulation_state">Inspecting emulation state</a>
+above).  This enables also trace option as you would anyway see this
+information if debugger would be entered.
 </dd>
 
 <dt><em>noinit</em></dt>
@@ -793,17 +773,44 @@ command during <a href="#Profiling">profiling</a>.  See
 <a href="#Usage_examples">Usage examples</a> section for an example.
 </dd>
 
+<dt><em>once</em></dt>
+<dd>
+Delete the breakpoint when it is hit, i.e. trigger it only once. It may
+be useful if you just want to get a specific address. Or if you're on
+an instruction that jumps back to a start of the loop and you want to
+finish the loop, you could use:
+<pre>
+b pc &gt; "pc" :once
+continue
+</pre>
+</dd>
+
+<dt><em>print &lt;string&gt;</em></dt>
+<dd>
+Print given string when breakpoint is hit. When many breakpoints can
+hit in succession, this helps in differentiating between them.
+</dd>
+
 <dt><em>quiet</em></dt>
 <dd>
 Inhibit showing of extra information when breakpoint is either set or
 hit i.e. show only the information that breakpoint itself outputs.
 </dd>
+
+<dt><em>trace</em></dt>
+<dd>
+Continue emulation without stopping after printing the value that
+triggered the breakpoint and doing other possible option actions.
+This is most useful when investigating memory or register value
+changes (explained below).
+</dd>
 </dl>
 
 <p>
 Note: you can give multiple options for conditional breakpoints, but
-for address breakpoints you can give only one these options. "file"
-and "info" options are supported only for conditional breakpoints.
+for address breakpoints you can give only <em>one</em> option (one that
+has no argument). Arguments to "file", "info" and "print" options are
+terminated by the next option (to ':' character), or end of input.
 </p>
 
 

@@ -70,6 +70,7 @@ typedef struct {
 typedef struct {
 	info_func_t info;  /* pointer to specified ":info" function */
 	char *filename;	/* file where to read commands to do on hit */
+	char *print;	/* string to print when breakpoint is hit */
 	int skip;	/* how many times to hit before breaking */
 	bool once;	/* remove after hit&break */
 	bool quiet;	/* set / hit breakpoint quietly */
@@ -354,6 +355,9 @@ static bool BreakCond_MatchBreakPoints(bc_breakpoints_t *bps)
 					DebugUI_ParseFile(bp->options.filename, reinit, verbose);
 					changes = true;
 				}
+			}
+			if (bp->options.print) {
+				fprintf(stderr, "%s\n", bp->options.print);
 			}
 			if (bp->options.once) {
 				BreakCond_Remove(bps, i+1);
@@ -1234,6 +1238,9 @@ static bool BreakCond_Parse(const char *expression, bc_options_t *options, bool 
 			if (options->filename) {
 				fprintf(stderr, "-> Execute debugger commands from '%s' file on hit.\n", options->filename);
 			}
+			if (options->print) {
+				fprintf(stderr, "-> On hit, print '%s'.\n", options->print);
+			}
 		}
 		BreakCond_CheckTracking(bp);
 
@@ -1246,6 +1253,9 @@ static bool BreakCond_Parse(const char *expression, bc_options_t *options, bool 
 		bp->options.noinit = options->noinit;
 		if (options->filename) {
 			bp->options.filename = strdup(options->filename);
+		}
+		if (options->print) {
+			bp->options.print = strdup(options->print);
 		}
 	} else {
 		if (normalized) {
@@ -1305,6 +1315,9 @@ static void BreakCond_Print(bc_breakpoint_t *bp)
 	if (bp->options.filename) {
 		fprintf(stderr, " :file %s", bp->options.filename);
 	}
+	if (bp->options.print) {
+		fprintf(stderr, " :print %s", bp->options.print);
+	}
 	if (bp->options.deleted) {
 		fprintf(stderr, " (deleted)");
 	}
@@ -1363,6 +1376,9 @@ static bool BreakCond_Remove(bc_breakpoints_t *bps, int position)
 
 	if (bp->options.filename) {
 		free(bp->options.filename);
+	}
+	if (bp->options.print) {
+		free(bp->options.print);
 	}
 
 	if (position < bps->count) {
@@ -1472,14 +1488,15 @@ const char BreakCond_Description[] =
 	"\n"
 	"\tMultiple breakpoint action options can be specified after\n"
 	"\tthe breakpoint condition(s):\n"
-	"\t- 'trace', print the breakpoint match without stopping\n"
+	"\t- '<count>', break only on every <count> hit\n"
+	"\t- 'file <file>', execute debugger commands from given <file>\n"
 	"\t- 'info <name>', call indicated info functionality (enables 'trace')\n"
 	"\t- 'lock', print the locked debugger entry info (enables 'trace')\n"
 	"\t- 'noinit', no debugger inits on hit, useful for stack tracing\n"
-	"\t- 'file <file>', execute debugger commands from given <file>\n"
 	"\t- 'once', delete the breakpoint after it's hit\n"
+	"\t- 'print <string>', print given string on hit\n"
 	"\t- 'quiet', set / hit breakpoint quietly\n"
-	"\t- '<count>', break only on every <count> hit";
+	"\t- 'trace', print the breakpoint match without stopping";
 
 /**
  * Parse options for the given breakpoint command.
@@ -1537,6 +1554,8 @@ static bool BreakCond_Options(char *str, bc_options_t *options, char marker)
 				return false;
 			}
 			options->filename = filename;
+		} else if (strncmp(option, "print ", 6) == 0) {
+			options->print = Str_Trim(option+5);
 		} else if (isdigit((unsigned char)*option)) {
 			/* :<value> */
 			skip = atoi(option);
@@ -1622,11 +1641,11 @@ const char BreakAddr_Description[] =
 	"\tCreate conditional breakpoint for given PC <address>.\n"
 	"\n"
 	"\tBreakpoint action option alternatives:\n"
-	"\t- 'trace', print the breakpoint match without stopping\n"
+	"\t- '<count>', break only on every <count> hit\n"
 	"\t- 'lock', print the debugger entry info without stopping\n"
 	"\t- 'once', delete the breakpoint after it's hit\n"
 	"\t- 'quiet', set / hit breakpoint quietly\n"
-	"\t- '<count>', break only on every <count> hit\n"
+	"\t- 'trace', print the breakpoint match without stopping\n"
 	"\n"
 	"\tUse conditional breakpoint commands to manage the created\n"
 	"\tbreakpoints.";
