@@ -449,12 +449,18 @@ static int DebugUI_ChangeDir(int argc, char *argv[])
  */
 static int DebugUI_Echo(int argc, char *argv[])
 {
+	bool delimiter = false;
+
 	if (argc < 2)
 		return DebugUI_PrintCmdHelp(argv[0]);
+
 	for (int i = 1; i < argc; i++)
 	{
 		Str_UnEscape(argv[i]);
+		if (delimiter)
+			fputc(' ', debugOutput);
 		fputs(argv[i], debugOutput);
+		delimiter = true;
 	}
 	return DEBUGGER_CMDDONE;
 }

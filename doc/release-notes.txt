@@ -37,6 +37,7 @@ Emulator improvements:
   - Support (--tos-res) resolution setting also for Falcon machines,
     and new tclow/tcmed/tchigh values for Falcon TC modes
 - Debugger:
+  - Fix: separate arguments output by "echo" command with a space
   - Open Windows console automatically for debugger
   - Debugger input file commands can be split to multiple lines
     by adding '\' to end of line to continue it
