@@ -17,6 +17,8 @@ typedef struct {
 	int slowDown;
 	int frameSkips;
 	int runVBLs;
+	bool aviRecord;
+	bool fastForward;
 } event_actions_t;
 
 extern event_actions_t *Event_GetPrefixActions(const char **str);

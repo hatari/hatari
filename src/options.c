@@ -1158,8 +1158,8 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 	/* common variables */
 	const char *errstr, *str, *opt, *arg;
+	bool valid, enabled, ok = true;
 	event_actions_t *event;
-	bool valid, ok = true;
 	opt_id_t optid;
 	float zoom;
 	size_t len;
@@ -1199,7 +1199,18 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_FASTFORWARD:
-			ok = Opt_Bool(arg, OPT_FASTFORWARD, &ConfigureParams.System.bFastForward);
+			event = Event_GetPrefixActions(&arg);
+			if (!Opt_Bool(arg, OPT_FASTFORWARD, &enabled))
+			{
+				return false;
+			}
+			if (event)
+			{
+				event->fastForward = enabled;
+				break;
+			}
+			Log_Printf(LOG_DEBUG, "Fast forward = %s.\n", arg);
+			ConfigureParams.System.bFastForward = enabled;
 			break;
 
 		case OPT_AUTOSTART:
@@ -1405,7 +1416,26 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_AVIRECORD:
-			ok = Opt_Bool(arg, OPT_AVIRECORD, &AviRecordEnabled))
+			event = Event_GetPrefixActions(&arg);
+			if (!Opt_Bool(arg, OPT_AVIRECORD, &enabled))
+			{
+				return false;
+			}
+			if (event)
+			{
+				event->aviRecord = enabled;
+				break;
+			}
+			Log_Printf(LOG_DEBUG, "AVI Recording = %s.\n", arg);
+			if (!enabled && Avi_AreWeRecording())
+			{
+				Avi_ToggleRecording();
+			}
+			else
+			{
+				/* must assume it's Hatari startup */
+				AviRecordEnabled = enabled;
+			}
 			break;
 
 		case OPT_AVIRECORD_VCODEC:

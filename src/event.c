@@ -11,6 +11,7 @@
 const char Event_fileid[] = "Hatari event.c";
 
 #include "main.h"
+#include "avi_record.h"
 #include "configuration.h"
 #include "debugui.h"
 #include "event.h"
@@ -57,6 +58,18 @@ event_actions_t *Event_GetPrefixActions(const char **str)
  */
 static void Event_PerformActions(event_actions_t *act)
 {
+	/* change AVI recording? */
+	if (act->aviRecord != Avi_AreWeRecording()) {
+		Avi_ToggleRecording();
+		Log_Printf(LOG_WARN, "AVI recording: %s\n", act->aviRecord ? "true" : "false");
+	}
+
+	/* change fast forwarding? */
+	if (act->fastForward != ConfigureParams.System.bFastForward) {
+		ConfigureParams.System.bFastForward = act->fastForward;
+		Log_Printf(LOG_WARN, "Fast forward: %s\n", act->fastForward ? "true" : "false");
+	}
+
 	/* set frame skip? */
 	if (act->frameSkips) {
 		ConfigureParams.Screen.nFrameSkips = act->frameSkips;
