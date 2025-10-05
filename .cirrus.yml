@@ -111,7 +111,7 @@ cygwin_task:
   install_script:
     - choco install -y --no-progress cygwin
     - C:\tools\cygwin\cygwinsetup.exe -q -P
-        make,cmake,gcc-core,pkg-config,zlib-devel,libSDL2-devel,libpng-devel
+        make,cmake,gcc-core,pkg-config,zlib-devel,libpng-devel,libSDL2_2.0_0=2.32.8-1,libSDL2-devel=2.32.8-1
   script:
     - C:\tools\cygwin\bin\bash.exe -lc "cd '%cd%' ;
        CFLAGS='-Werror -Wno-error=char-subscripts' cmake -G 'Unix Makefiles' ."
