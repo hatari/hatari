@@ -27,6 +27,9 @@ API changes:
 - Configuration file "Debugger" section "bSymbolsAutoLoad" (boolean)
   option changed to a "nSymbolsAutoLoad" (integer) one.  Default is
   the same (program symbols loaded on debugger invocation)
+- Debugger accepts only single quotes ('') as expression (e.g. symbol
+  or register name) markers, due to double quotes ("") having other
+  meaning from now on
 
 
 Emulation improvements:

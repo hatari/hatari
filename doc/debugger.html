@@ -256,30 +256,40 @@ conditional breakpoints can be unexpected.
 <h4>Calculations and immediate evaluation</h4>
 
 <p>
-Instead of a number, one can also use an arithmetic expression, by
-surrounding it with quotes ("").  An expression can contain
-calculations with CPU and DSP registers, symbols and Hatari variables
-in addition to numbers. For example to give a sum of A0 and D0
-register values to a command, use "a0+d0".
+Instead of giving plain values, one can also use (arithmetic)
+expressions.  Such expression can contain calculations with values of
+CPU and DSP registers, symbols and Hatari variables, in addition to
+plain numbers.
 </p>
 
 <p>
-Also within arithmetic expressions, parenthesis are used to indicate
-indirect addressing, <em>not</em> to change the order of precedence.
-Unlike with conditional breakpoint expressions (explained below),
-size cannot be given with the indirect addressing, a long value is always
-read from the RAM address given within parenthesis.  For example to
-get a long value pointed by stack pointer + 2, use "(a7+2)".
+Most commands evaluate those by default, but for some of them (e.g.
+conditional breakpoints) such expressions need to be indicated by
+surrounding them with single quotes.  For example to give a sum
+of A0 and D0 register values to a command, use <em>'a0+d0'</em>.
 </p>
 
 <p>
-Values of arithmetic expressions are always evaluated before being
-given to a command.  Except for "evaluate" and "address" commands,
-they always need to be marked with quotes (""). Besides arithmetic,
-this can be used also to give symbol/address/register/variable values
-to commands that don't otherwise interpret them.  If command complains
-that it didn't recognize e.g. a register name, just put it to quotes
-and it will be "evaluated" before being given to the command.
+Within expressions, parenthesis are used to indicate indirect
+addressing, <em>not</em> to change the order of precedence.
+Width of the addressing can be specified after the parenthesis.
+For example to get a long value pointed by stack pointer + 2,
+use <em>'(a7+2).l'</em>.
+</p>
+
+<p>
+Values of expressions are always evaluated before being given to a
+command.  Besides arithmetic, they can be used also to give symbol /
+address / register / variable values to commands that do not otherwise
+interpret them.  If command complains that it did not recognize e.g. a
+register name, just surround it with single quotes and it will be
+"evaluated" before being given to the command.
+</p>
+
+<p>
+(To support single quotes within string arguments, orphan single quotes
+are passed as-is, and empty single quote pairs are collapsed to a
+single ' character.)
 </p>
 
 <p>

@@ -219,10 +219,13 @@ static bool DebugUI_IsForDsp(const char *cmd)
 }
 
 /**
- * Evaluate everything include within single or double quotes ("" or '')
- * and replace them with the result.
+ * Evaluate string(s) within single quotes, and replace them with the
+ * evaluation result.  Orphan (=last) single quote is left as-is, and
+ * empty pair(s) are collapsed to a single character, so that they
+ * can be included into string arguments.
+ *
  * Caller needs to free the returned string separately.
- * 
+ *
  * Return new string with expressions (potentially) expanded, or
  * NULL when there's an error in the expression.
  */
@@ -246,21 +249,21 @@ static char *DebugUI_EvaluateExpressions(const char *initial)
 	inputlen = strlen(input);
 	start = input;
 
-	while ((count = strcspn(start, "\"'")) && *(start+count))
+	while ((count = strcspn(start, "'")) && *(start+count))
 	{
 		start += count;
+		/* matching pair? */
 		end = strchr(start+1, *start);
+
+		/* no matching pair remains => done */
 		if (!end)
-		{
-			fprintf(stderr, "ERROR: matching '%c' missing from '%s'!\n", *start, start);
-			free(input);
-			return NULL;
-		}
-		
+			break;
+
+		/* no expression inside, '' => ' */
 		if (end == start+1)
 		{
-			/* empty expression */
-			memmove(start, start+2, strlen(start+2)+1);
+			memmove(start, end, strlen(end) + 1);
+			start = end;
 			continue;
 		}
 
@@ -609,9 +612,9 @@ static int DebugUI_Help(int nArgc, char *psArgs[])
 		"a normal decimal, if with '%%', it's a binary decimal. Prefix can\n"
 		"be skipped for numbers in the default number base (currently %d).\n"
 		"\n"
-		"Any expression given in quotes (within \"\"), will be evaluated\n"
-		"before given to the debugger command.  Any register and symbol\n"
-		"names in the expression are replaced by their values.\n"
+		"Expressions given between single quotes (''), will be evaluated\n"
+		"before given to the debugger command.  Register, symbol and\n"
+		"variable names in such expression are replaced by their values.\n"
 		"\n"
 		"Note that address ranges like '$fc0000-$fc0100' should have no\n"
 		"spaces between the range numbers.\n"
