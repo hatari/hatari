@@ -102,6 +102,7 @@ extern uint32_t HBLPaletteMasks[HBL_PALETTE_MASKS];
 extern uint32_t *pHBLPaletteMasks;
 extern int STScreenLineOffset[NUM_VISIBLE_LINES];
 
+extern uint32_t Screen_MapRGB(uint8_t red, uint8_t green, uint8_t blue);
 extern void Screen_Init(void);
 extern void Screen_UnInit(void);
 extern void Screen_Reset(void);

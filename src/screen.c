@@ -151,6 +151,12 @@ void Screen_UpdateRect(SDL_Surface *screen, Sint32 x, Sint32 y, Sint32 w, Sint32
 }
 
 
+uint32_t Screen_MapRGB(uint8_t red, uint8_t green, uint8_t blue)
+{
+	return SDL_MapRGB(sdlscrn->format, red, green, blue);
+}
+
+
 /**
  * Create ST 0x777 / STe 0xfff color format to 16 or 32 bits per pixel
  * conversion table. Called each time when changed resolution or to/from
@@ -177,8 +183,7 @@ static void Screen_SetupRGBTable(void)
 				gg |= gg << 4;
 				bb = ((b & 0x7) << 1) | ((b & 0x8) >> 3);
 				bb |= bb << 4;
-				ST2RGB[STColor] = SDL_MapRGB(sdlscrn->format,
-				                             rr, gg, bb);
+				ST2RGB[STColor] = Screen_MapRGB(rr, gg, bb);
 			}
 		}
 	}
@@ -829,7 +834,7 @@ void Screen_SetFullUpdate(void)
  */
 static void Screen_ClearScreen(void)
 {
-	SDL_FillRect(sdlscrn, &STScreenRect, SDL_MapRGB(sdlscrn->format, 0, 0, 0));
+	SDL_FillRect(sdlscrn, &STScreenRect, Screen_MapRGB(0, 0, 0));
 }
 
 
