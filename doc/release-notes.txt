@@ -28,8 +28,8 @@ API changes:
   option changed to a "nSymbolsAutoLoad" (integer) one.  Default is
   the same (program symbols loaded on debugger invocation)
 - Debugger accepts only single quotes ('') as expression (e.g. symbol
-  or register name) markers, due to double quotes ("") having other
-  meaning from now on
+  or register name) markers, due to double quotes ("") being used
+  now as string argument markers
 
 
 Emulation improvements:
@@ -78,6 +78,8 @@ Emulator improvements:
   - Fix: dysfunctional WinUAE CPU core disasm wrapper
   - Fix: separate arguments output by "echo" command with a space
   - Fix: breakpoint options missing from Hatari debugger state save
+  - String arguments (e.g. to echo/struct commands) can be quoted
+    with double quotes ("")
   - Add ':print' option for annotating conditional breakpoints
   - Open Windows console automatically for debugger
   - Debugger input file commands can be split to multiple lines
