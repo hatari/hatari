@@ -71,8 +71,8 @@ Note that when debugger scripts are run, current directory is set to
 the currently running script's directory i.e. all file operations are
 relative to it.  After script finishes, earlier current directory is
 restored.  To set current directory from a setup script, e.g. for
-scripts run at breakpoints, '-f' option needs to be give for the
-'cd' command.
+scripts run at breakpoints, "-f" option needs to be give for the
+"cd" command.
 </p>
 
 
@@ -289,19 +289,19 @@ address contents one could use following in suitable breakpoint:
 </p>
 <pre>
 # store counter sum to V0 virtual register
-r v0=(_counter)
+r v0='(_counter)'
 # store count of how many values are added
-r v1="v1+1"
+r v1='v1+1'
 </pre>
 <p>And then later on, calculate the average:</p>
 <pre>
 # round the counter sum (add half count to sum)
-r v2="v0 + v1/2"
+r v2='v0 + v1/2'
 # and calculate the rounded average (rounded sum / count)
 e v2/v1
 </pre>
 <p>(Another virtual register was used for rounding here, in case one
-wants to continue summing the _counter values with the original
+wants to continue summing the "_counter" values with the original
 value.)
 </p>
 
@@ -589,7 +589,7 @@ started).</p>
 <h4>For a program on a (disk) image</h4>
 
 <p>
-If the program isn't run from a GEMDOS HD emulated drive, but from a
+If the program is not run from a GEMDOS HD emulated drive, but from a
 cartridge, floppy or HD image, corresponding program is needed also as
 a normal host file which location can be given to the debugger:
 </p>
@@ -601,7 +601,7 @@ symbols /path/to/the/program.tos
 <h4>ASCII debug symbol files</h4>
 
 <p>
-If Hatari complains that program doesn't have debug symbol table,
+If Hatari complains that program does not have debug symbol table,
 or its symbols are in some unsupported format, there are two options:
 </p>
 <ul>
@@ -711,7 +711,7 @@ lists currently active breakpoints.
 
 <p>
 Unless "breakpoint" command is given one of the pre-defined
-subcommands ('all', 'help'), an index for a breakpoint to remove, or
+subcommands ("all", "help"), an index for a breakpoint to remove, or
 no arguments (to list breakpoints), its arguments are interpreted as a
 new breakpoint definition.
 </p>
@@ -757,8 +757,8 @@ Show on breakpoint hits the same information as "info" command would
 show (see <a href="#Inspecting_emulation_state">Inspecting emulation
 state</a> above).  With "lock" option and command there is more control
 over what information is shown, whereas with "info" option, every
-breakpoint can show different information, and one doesn't need to
-change what's shown on entering the debugger.  This option also
+breakpoint can show different information, and one does not need to
+change what is shown on entering the debugger.  This option also
 enables trace option.
 </dd>
 
@@ -852,10 +852,10 @@ db (r0).x = 1 &amp;&amp; (r0).y = 2
 </pre>
 
 <p>
-If the value is in parenthesis like in '($ff820)' or '(a0)', then the
+If the value is in parenthesis like in "($ff820)" or "(a0)", then the
 used value will be read from the memory address pointed by it.  Note
 that this conditional breakpoint expression value is checked at
-run-time whereas quoted arithmetic expressions (mentioned in
+run-time whereas evaluated arithmetic expressions (mentioned in
 <a href="#Entering_arguments_to_debugger_commands">Entering arguments
 to debugger commands</a> above) are evaluated already when
 adding a breakpoint.  For example, to break when a value in an address
@@ -863,7 +863,7 @@ adding a breakpoint.  For example, to break when a value in an address
 would use:
 </p>
 <pre>
-b (a0) = "d0"
+b (a0) = 'd0'
 </pre>
 
 <p>
@@ -900,7 +900,7 @@ b pc &gt; pc
 </pre>
 
 <p>
-That in itself isn't so useful, but for inequality ('!') comparison,
+That in itself is not so useful, but for inequality ('!') comparison,
 conditional breakpoint will additionally track and output all further
 changes for the given address/register expression. This can be used
 for example to find out all value changes in a given memory address,
@@ -942,7 +942,7 @@ expected.
 <br>
 However, a breakpoint that tracks multiple I/O registers where some of
 them are updated by Hatari (for example one checking that other Blitter
-registers aren't updated while control register indicates Blitter to
+registers are not updated while control register indicates Blitter to
 be active/busy), will not work as expected!
 </li>
 </ul>
@@ -997,7 +997,7 @@ m  BSS
     specific "VBL", "FrameCycles", "HBL" and "LineCycles" variable
     values.  For example, to break after 20 HBLs, use:
 <pre>
-b  HBL = "HBL+20"
+b  HBL = 'HBL+20'
 </pre>
 </li>
 <li>To stop on every symbol, break on:
@@ -1046,7 +1046,7 @@ b pc = TEXT :trace :once :file trace.ini
 symbols prg
 trace gemdos,cpu_symbols
 # continue to "disable.ini" after 4 VBLs
-b VBL = "VBL+4" :trace :once :file disable.ini
+b VBL = 'VBL+4' :trace :once :file disable.ini
 </pre>
 </li>
 <li>"disable.ini":
@@ -1071,7 +1071,7 @@ hatari --parse pexec.ini /path/to/your/program.tos
     (it is first Pexec(0) after boot)</li>
 <li>"program.ini" sets a breakpoint to parse debugger commands from
     "trace.ini" when program code begins executing.  These two steps
-    are needed because TEXT variable isn't valid until TOS has booted</li>
+    are needed because TEXT variable is not valid until TOS has booted</li>
 <li>"trace.ini" input file loads symbols for the run program, sets Hatari
     to trace several things (see <a href="#Tracing">Tracing</a> section
     below) in the emulated system for few VBLs until breakpoint runs
@@ -1087,7 +1087,7 @@ emulation, ":trace" option needs to be used for the breakpoint(s)
 when emulation should continue after the breakpoint action(s).</li>
 <li>In simpler breakpoint chain (like above), where new breakpoint
 just replaces the previous one, ":once" option tells debugger that
-breakpoint isn't needed after it is hit.
+breakpoint is not needed after it is hit.
 </li>
 </ul>
 
@@ -1113,7 +1113,7 @@ triggers) if the nstruction count is omitted.
 To continue just to the next instruction, use "s" (step) command to
 execute just one instruction, or "n" (next), to skip subroutine +
 exception calls and DBCC branching backwards (i.e. loops).  "ds" and
-"dn" commands do the same for DSP (except that "dn" doesn't skip
+"dn" commands do the same for DSP (except that "dn" does not skip
 loops).
 </p>
 
@@ -1152,15 +1152,15 @@ or "dn subreturn".
 <li>"next subreturn" works only for real subroutines i.e. code called
     with BSR/JSR and returning with RT[DRS]. In (GCC) optimized compiled
     C-code, calls to functions in same C / object file may get inlined
-    or just called with JMP.  If that's the case, and making the
-    function non-static doesn't help, move it to another C-file</li>
+    or just called with JMP.  If that is the case, and making the
+    function non-static does not help, move it to another C-file</li>
 <li>"exreturn" and "return" run only until first instruction of given
     type is encountered.  They cannot implement similar functionality
-    as "subreturn", because it's not possible for "next" command to
+    as "subreturn", because it is not possible for "next" command to
     track CPU / DSP exception invocations, and therefore it cannot
     do call depth tracking required for this either</li>
 <li>Tracking CPU CHK2 and FPU FBCC, FDBCC &amp; FTRAPCC exception /
-    branch instructions isn't supported currently</li>
+    branch instructions is not supported currently</li>
 </ul>
 
 
@@ -1198,7 +1198,7 @@ Notes:
 </p>
 <ul>
 <li>
-If GEMDOS HD emulation isn't enabled, GEMDOS call tracing needs to be
+If GEMDOS HD emulation is not enabled, GEMDOS call tracing needs to be
 enabled at Hatari command line, it is not possible to enable it after
 TOS has initialized GEMDOS.
 </li>
@@ -1218,7 +1218,7 @@ it cannot be changed from within the debugger (or emulation).
 </li>
 </ul>
 <p>
-If there isn't a trace option for something one would like to track,
+If there is not a trace option for something one would like to track,
 it should be possible do that with tracing breakpoints, as explained above.
 For example, following tracks Line-A calls:
 </p>
@@ -1469,7 +1469,7 @@ option to show backtraces during caller profiling.)</p>
 
 <p>Note: rest of this subsection is about caller information format
 which is mainly of interest for people writing profiling
-post-processing tools.  Come back here if there's
+post-processing tools.  Come back here if there is
 some problem with callgraphs produced by those tools.</p>
 
 <p>Other information collected during profiling is shown with
@@ -1491,7 +1491,7 @@ following command:</p>
 </pre>
 
 <p>
-For example, when one doesn't know all the places from which a certain
+For example, when one does not know all the places from which a certain
 function is called, or in what context a certain interrupt handler can
 be called during the period being profiled, profile caller
 information will tell that:
@@ -1532,7 +1532,7 @@ profiler cannot determine when exceptions are being handled:</p>
 <ul>
 <li>If there are exception(s) during a subroutine call, costs for
     the exception handling will also be accounted for that subroutine.
-    This shouldn't be a problem unless those costs are very large,
+    This should not be a problem unless those costs are very large,
     i.e. check how much CPU those exception handlers take.</li>
 <li>Indicated exception handler call type can be incorrect.</li>
 <li>Profiled code doing return address related stack manipulations
@@ -1588,9 +1588,10 @@ installed by Hatari, to:</p>
 
 <p>When the data is post-processed, one should <em>always</em> provide
 the post-processor symbols for the profile code!  Relying just on the
-symbol in the profile data can cause costs to be assigned to wrong
-symbol, if symbol's code wasn't called through symbol's own address,
-but by jumping inside its code.</p>
+symbols in the profile disassembly can cause costs to be assigned to
+wrong symbol, if code within a function was not called through its
+symbol address, but by jumping directly somewhere inside the function.
+</p>
 
 <p>If code is at a fixed location, one should tell
 post-processor to handle symbol addresses as absolute (-a):</p>
@@ -1614,7 +1615,7 @@ $ gst2ascii -b -a -d program.prg &gt; program.sym
 things than what are in the program code section.)
 
 <p>If there are some extra symbols that one does not want to see
-separately in profiles, because they aren't real functions,
+separately in profiles, because they are not real functions,
 but e.g. loop labels, one can either remove them manually
 from the ASCII *.sym file, or filter them out with "grep":
 </p>
@@ -1867,7 +1868,7 @@ Generating 'program-profile-2.dot' DOT callgraph file...
 $ dot -Tsvg program-profile-1.dot &gt; program-profile-1.svg
 </pre>
     (problem with most PS/PDF and SVG viewers is that either they
-    don't allow zooming large callgraphs enough or they use huge
+    do not allow zooming large callgraphs enough or they use huge
     amounts of memory and get very slow)
     </li>
 </ul>
@@ -1924,11 +1925,11 @@ calls, give interrupt handler names to "--ignore-to" option:</p>
 $ hatari_profile.py -p -g <b>--ignore-to handler1,handler2</b> -r program.sym program-profile.txt
 </pre>
 
-<p>In large callgraph most of the functions aren't really interesting,
+<p>In large callgraph most of the functions are not really interesting,
 because their contribution to the cost is insignificant. One can
 remove large number of them with "--no-leafs" and "--no-intermediate"
 options, those options act <em>only</em> on nodes which costs are below
-given threshold.  Leaf nodes are ones which don't have any parents
+given threshold.  Leaf nodes are ones which do not have any parents
 and/or children. Intermediate ones have only single parent and
 children (node calling itself is not taken into account).
 
@@ -1948,7 +1949,7 @@ from the callgraph after "--compact" option was applied:</p>
 $ hatari_profile.py -p -g -l 1.0 -e 2.0 <b>--no-leafs --no-intermediate --compact</b> -r program.sym program-profile.txt
 </pre>
 
-<p>If even this doesn't help, all nodes below the given cost threshold
+<p>If even this does not help, all nodes below the given cost threshold
 limit can be removed with the "--no-limited" option, but this
 often does not leave much of a call hierarchy.  Instead you may
 consider removing all nodes except for subroutine call ones, with the
@@ -1984,7 +1985,7 @@ $ kcachegrind program-profile.cg
 <h3>Usage examples</h3>
 
 <p>
-Here's a list of some common debugging tasks and how to do them
+Here is a list of some common debugging tasks and how to do them
 with the Hatari debugger:
 </p>
 
@@ -2006,7 +2007,7 @@ $ hatari --symload exec --parse prg:break.ini ...
 trace  gemdos,io_all
 </pre>
 Please see <a href="#Tracing">Tracing</a> section for more information
-on tracing, what's possible with it and what are its limitations.
+on tracing, what is possible with it and what are its limitations.
 </dd>
 
 <dt><em>Stopping when certain PC address is passed Nth time</em></dt>
@@ -2027,7 +2028,7 @@ one can use following:
 history  on
 b  pc=($8)
 </pre>
-After bus error invokes debugger, 'history' command can then be used
+After bus error invokes debugger, "history" command can then be used
 to see (executed memory addresses with their current) instructions
 leading to the error.  The most interesting vector addresses are:
 $8 (Bus error), $C (Address error), $10 (Illegal instruction),
@@ -2143,12 +2144,12 @@ b  VBL = 100  &amp;&amp;  HBL = 40  &amp;&amp;  LineCycles = 5
 <dt><em>Stopping after value increases/decreases by certain amount</em></dt>
 <dd>To stop e.g. after D0 value has increased by 10, set breakpoint on:
 <pre>
-b  d0 = "d0 + 10"
+b  d0 = 'd0 + 10'
 </pre>
 </dd>
 
 <dt><em>Examining specific system call return value</em></dt>
-<dd>To check e.g. what's the Fopen() GEMDOS call return value,
+<dd>To check e.g. what is the Fopen() GEMDOS call return value,
 check with "info gemdos 1" its opcode, set a breakpoint for that
 and step to next (n) instruction from the trap call when breakpoint
 is hit. GEMDOS call return value is then in register D0:
@@ -2205,7 +2206,7 @@ s
 <dt><em>Showing current stack contents</em></dt>
 <dd>To see first 64 bytes on top of the stack, use:
 <pre>
-m  "a7-64"-a7
+m  'a7-64'-a7
 </pre>
 </dd>
 
@@ -2274,9 +2275,9 @@ profile  on
 symbols  prg
 b  pc = _my_function  :quiet :noinit :file showstack.ini
 </pre>
-I.e. whenever 'my_function' address is called, quietly trigger a
+I.e. whenever "my_function" address is called, quietly trigger a
 breakpoint without resetting profiling (callstack) information and run
-debugger command(s) from the 'showstack.ini' debugger script file,
+debugger command(s) from the "showstack.ini" debugger script file,
 which contains following command:
 <pre>
 profile  stack
