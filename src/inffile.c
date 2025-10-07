@@ -909,7 +909,7 @@ static FILE* write_inf_file(const char *contents, int size, int res)
 	if (prgname)
 		format = prg_format(prgname);
 
-	assert(res > 0 && res < RES_COUNT);
+	assert((res > 0 && res < RES_COUNT) || !TosOverride.reso);
 
 	if (bIsEmuTOS)
 	{
