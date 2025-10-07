@@ -458,6 +458,10 @@ int FDC_StepRate_ms[] = { 6 , 12 , 2 , 3 };			/* Controlled by bits 1 and 0 (r1/
 #define	FDC_EMULATION_MODE_IPF			2		/* Use floppy_ipf.c to handle emulation (IPF, CTR images) */
 
 
+#define FDC_INDEX_PULSE_MODE_TIMER		1		/* Index pulse is updated using a timer */
+#define FDC_INDEX_PULSE_MODE_BIT_STREAM		2		/* Index pulse is updated using the MFM bit stream */
+
+
 typedef struct {
 	/* WD1772 internal registers */
 	uint8_t		DR;					/* Data Register */
@@ -550,6 +554,7 @@ typedef struct {
 								/* This signal is available on pin 34 of compatible drives */
 								/* and connected to the 2nd MFP of the TT */
 
+	int		IndexPulse_Mode;			/* How to update index pulse counter */
 	uint64_t	IndexPulse_Time;			/* CyclesGlobalClockCounter value last time we had an index pulse with motor ON */
 } FDC_DRIVE_STRUCT;
 
@@ -935,6 +940,7 @@ void FDC_Init ( void )
 		FDC_DRIVES[ i ].FloppyDensity = FDC_DENSITY_FACTOR_DD;
 		FDC_DRIVES[ i ].HeadTrack = 0;			/* Set all drives to track 0 */
 		FDC_DRIVES[ i ].NumberOfHeads = 2;		/* Double sided drive */
+		FDC_DRIVES[ i ].IndexPulse_Mode = FDC_INDEX_PULSE_MODE_TIMER;
 		FDC_DRIVES[ i ].IndexPulse_Time = 0;
 		FDC_Drive_Set_DC_signal ( i , 0 );
 	}
@@ -989,6 +995,7 @@ void FDC_Reset ( bool bCold )
 	FDC.IndexPulse_Counter = 0;
 	for ( i=0 ; i<MAX_FLOPPYDRIVES ; i++ )
 	{
+		FDC_DRIVES[ i ].IndexPulse_Mode = FDC_INDEX_PULSE_MODE_TIMER;
 		FDC_DRIVES[ i ].IndexPulse_Time = 0;	/* Current IP's locations are lost after a reset (motor is now OFF) */
 		FDC_Drive_Set_DC_signal ( i , 0 );
 	}
@@ -1471,6 +1478,7 @@ void	FDC_EjectFloppy ( int Drive )
 	if ( ( Drive >= 0 ) && ( Drive < MAX_FLOPPYDRIVES ) )
 	{
 		FDC_DRIVES[ Drive ].DiskInserted = false;
+		FDC_DRIVES[ Drive ].IndexPulse_Mode = FDC_INDEX_PULSE_MODE_TIMER;
 		FDC_DRIVES[ Drive ].IndexPulse_Time = 0;		/* Stop counting index pulses on an empty drive */
 
 		/* Set the Disk Change signal to "ejected" */
@@ -1791,16 +1799,16 @@ static void FDC_IndexPulse_CheckUpdate(void)
 
 //fprintf ( stderr , "update index drive=%d side=%d counter=%d VBL=%d HBL=%d\n" , FDC.DriveSelSignal , FDC.SideSignal , FDC.IndexPulse_Counter , nVBLs , nHBL );
 
-	/* Don't handle index pulse for MFM images */
-	if ( Floppy_ImageIsMFM ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
-		return;
-
 	if ( ( FDC.STR & FDC_STR_BIT_MOTOR_ON ) == 0 )
 		return;							/* Motor is OFF, nothing to update */
 
 	if ( ( FDC.DriveSelSignal < 0 ) || ( !FDC_DRIVES[ FDC.DriveSelSignal ].Enabled )
 		|| ( !FDC_DRIVES[ FDC.DriveSelSignal ].DiskInserted ) )
 		return;							/* No valid drive/floppy, nothing to update */
+
+	/* Don't handle index pulse with a timer when using the MFM bit stream */
+	if ( FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Mode == FDC_INDEX_PULSE_MODE_BIT_STREAM )
+		return;
 
 	if ( FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Time == 0 )	/* No reference Index Pulse for this drive */
 		FDC_IndexPulse_Init ( FDC.DriveSelSignal );		/* (could be the case after a 'reset') */
@@ -2282,6 +2290,11 @@ static bool FDC_VerifyTrack ( void )
  * Run the 'motor stop' sequence : wait for 9 revolutions (1.8 sec)
  * and stop the motor.
  * We clear motor bit, but spinup bit remains to 1 (verified on a real STF)
+ *
+ * During the motor stop sequence we use a timer to update the index pulse counter
+ * instead of using the MFM bit stream including index pulses because the drive can be empty.
+ * Using a timer for motor stop should be accurate enough, without requiring the cycle
+ * accurate position that can be obtained with the MFM bit stream.
  */
 static int FDC_UpdateMotorStop ( void )
 {
@@ -2292,6 +2305,8 @@ static int FDC_UpdateMotorStop ( void )
 	switch (FDC.CommandState)
 	{
 	 case FDCEMU_RUN_MOTOR_STOP:
+		if ( FDC.DriveSelSignal >= 0 )
+			FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Mode = FDC_INDEX_PULSE_MODE_TIMER;
 		FDC.IndexPulse_Counter = 0;
 		FDC.CommandState = FDCEMU_RUN_MOTOR_STOP_WAIT;
 		/* Fall through to next state */
@@ -2864,6 +2879,7 @@ static int FDC_UpdateReadSectorsCmd ( void )
 	 case FDCEMU_RUN_READSECTORS_READDATA_MOTOR_ON:
 		FDC.ReplaceCommandPossible = false;
 		FDC.IndexPulse_Counter = 0;
+		FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Mode = FDC_INDEX_PULSE_MODE_TIMER;
 		if ( Floppy_ImageIsMFM ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
 		{
 			if ( FDC_LoadTrack_MFM ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal ) != 0 )
@@ -2872,6 +2888,7 @@ static int FDC_UpdateReadSectorsCmd ( void )
 				FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
 				break;
 			}
+			FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Mode = FDC_INDEX_PULSE_MODE_BIT_STREAM;
 		}
 		FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_NEXT_SECTOR_HEADER;
 		FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
@@ -3102,6 +3119,10 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 	 case FDCEMU_RUN_WRITESECTORS_WRITEDATA_MOTOR_ON:
 		FDC.ReplaceCommandPossible = false;
 		FDC.IndexPulse_Counter = 0;
+		FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Mode = FDC_INDEX_PULSE_MODE_TIMER;
+		if ( Floppy_ImageIsMFM ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
+			FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Mode = FDC_INDEX_PULSE_MODE_BIT_STREAM;
+
 		FDC.CommandState = FDCEMU_RUN_WRITESECTORS_WRITEDATA_NEXT_SECTOR_HEADER;
 		FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
 		break;
@@ -3307,6 +3328,7 @@ static int FDC_UpdateReadAddressCmd ( void )
 	 case FDCEMU_RUN_READADDRESS_MOTOR_ON:
 		FDC.ReplaceCommandPossible = false;
 		FDC.IndexPulse_Counter = 0;
+		FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Mode = FDC_INDEX_PULSE_MODE_TIMER;
 		if ( Floppy_ImageIsMFM ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
 		{
 			if ( FDC_LoadTrack_MFM ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal ) != 0 )
@@ -3315,6 +3337,7 @@ static int FDC_UpdateReadAddressCmd ( void )
 				FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
 				break;
 			}
+			FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Mode = FDC_INDEX_PULSE_MODE_BIT_STREAM;
 		}
 		FDC.CommandState = FDCEMU_RUN_READADDRESS_NEXT_SECTOR_HEADER;
 		FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
@@ -3454,6 +3477,7 @@ static int FDC_UpdateReadTrackCmd ( void )
 		}
 		else
 		{
+			FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Mode = FDC_INDEX_PULSE_MODE_TIMER;
 			if ( Floppy_ImageIsMFM ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
 			{
 				if ( FDC_LoadTrack_MFM ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal ) != 0 )
@@ -3463,6 +3487,7 @@ static int FDC_UpdateReadTrackCmd ( void )
 					FdcCycles = FDC_DELAY_CYCLE_COMMAND_COMPLETE;
 					break;
 				}
+				FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Mode = FDC_INDEX_PULSE_MODE_BIT_STREAM;
 			}
 			FDC.CommandState = FDCEMU_RUN_READTRACK_INDEX;
 		}
