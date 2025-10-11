@@ -69,15 +69,15 @@ bool bInFullScreen = false;   /* true if in full screen */
 /* extern for spec512.c */
 int STScreenLeftSkipBytes;
 int STScreenStartHorizLine;   /* Start lines to be converted */
-Uint32 STRGBPalette[16];      /* Palette buffer used in conversion routines */
-Uint32 ST2RGB[4096];          /* Table to convert ST 0x777 / STe 0xfff palette to PC format RGB551 (2 pixels each entry) */
+uint32_t STRGBPalette[16];    /* Palette buffer used in conversion routines */
+uint32_t ST2RGB[4096];        /* Table to convert ST 0x777 / STe 0xfff palette to PC format RGB551 (2 pixels each entry) */
 
 /* extern for video.c */
-Uint8 *pSTScreen;
+uint8_t *pSTScreen;
 FRAMEBUFFER *pFrameBuffer;    /* Pointer into current 'FrameBuffer' */
 
 /* extern for screen snapshot palettes */
-Uint32* ConvertPalette = STRGBPalette;
+uint32_t *ConvertPalette = STRGBPalette;
 int ConvertPaletteSize = 0;
 
 uint16_t HBLPalettes[HBL_PALETTE_LINES];          /* 1x16 colour palette per screen line, +1 line just in case write after line 200 */
@@ -1461,12 +1461,12 @@ void Screen_GenConvUpdate(bool update_statusbar)
 	Screen_UpdateRects(sdlscrn, count, rects);
 }
 
-Uint32 Screen_GetGenConvWidth(void)
+uint32_t Screen_GetGenConvWidth(void)
 {
 	return STScreenRect.w;
 }
 
-Uint32 Screen_GetGenConvHeight(void)
+uint32_t Screen_GetGenConvHeight(void)
 {
 	return STScreenRect.h;
 }

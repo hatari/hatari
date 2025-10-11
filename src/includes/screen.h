@@ -50,11 +50,11 @@ void Screen_UpdateRect(SDL_Surface *screen, Sint32 x, Sint32 y, Sint32 w, Sint32
 /* Frame buffer, used to store details in screen conversion */
 typedef struct
 {
-  Uint16 HBLPalettes[HBL_PALETTE_LINES];
-  Uint32 HBLPaletteMasks[HBL_PALETTE_MASKS];
-  Uint8 *pSTScreen;             /* Copy of screen built up during frame (copy each line on HBL to simulate monitor raster) */
-  Uint8 *pSTScreenCopy;         /* Previous frames copy of above  */
-  int VerticalOverscanCopy;	/* Previous screen overscan mode */
+  uint16_t HBLPalettes[HBL_PALETTE_LINES];
+  uint32_t HBLPaletteMasks[HBL_PALETTE_MASKS];
+  uint8_t *pSTScreen;           /* Copy of screen built up during frame (copy each line on HBL to simulate monitor raster) */
+  uint8_t *pSTScreenCopy;       /* Previous frames copy of above  */
+  int VerticalOverscanCopy;     /* Previous screen overscan mode */
   bool bFullUpdate;             /* Set TRUE to cause full update on next draw */
 } FRAMEBUFFER;
 
@@ -88,11 +88,11 @@ extern int nBorderPixelsLeft, nBorderPixelsRight;
 extern int STScreenStartHorizLine;
 extern int STScreenLeftSkipBytes;
 extern FRAMEBUFFER *pFrameBuffer;
-extern Uint8 *pSTScreen;
+extern uint8_t *pSTScreen;
 extern SDL_Surface *sdlscrn;
-extern Uint32 STRGBPalette[16];
-extern Uint32 ST2RGB[4096];
-extern Uint32* ConvertPalette;
+extern uint32_t STRGBPalette[16];
+extern uint32_t ST2RGB[4096];
+extern uint32_t *ConvertPalette;
 extern int ConvertPaletteSize;
 
 
@@ -120,8 +120,8 @@ extern void Screen_SetTextureScale(int width, int height, int win_width,
                                    int win_height, bool bForceCreation);
 extern void Screen_SetGenConvSize(int width, int height, bool bForceChange);
 extern void Screen_GenConvUpdate(bool update_statusbar);
-extern Uint32 Screen_GetGenConvWidth(void);
-extern Uint32 Screen_GetGenConvHeight(void);
+extern uint32_t Screen_GetGenConvWidth(void);
+extern uint32_t Screen_GetGenConvHeight(void);
 extern bool Screen_UseGenConvScreen(void);
 extern int Screen_SaveBMP(const char *filename);
 
