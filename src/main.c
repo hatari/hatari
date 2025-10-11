@@ -224,9 +224,7 @@ bool Main_PauseEmulation(bool visualize)
 	{
 		Main_PrintSpeed();
 
-		Statusbar_AddMessage("Emulation paused", 100);
-		/* make sure msg gets shown */
-		Statusbar_Update(sdlscrn, true);
+		Screen_StatusbarMessage("Emulation paused", 100);
 
 		if (bGrabMouse && !bInFullScreen)
 			/* Un-grab mouse pointer in windowed mode */

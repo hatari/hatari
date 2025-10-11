@@ -1511,7 +1511,6 @@ bool Avi_StopRecording_WithMsg(void)
 	if (!bRecordingAvi)
 		return true;
 	/* cleanly close the AVI file */
-	Statusbar_AddMessage("Finishing AVI file...", 100);
-	Statusbar_Update(sdlscrn, true);
+	Screen_StatusbarMessage("Finishing AVI file...", 100);
 	return Avi_StopRecording();
 }
