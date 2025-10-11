@@ -68,8 +68,6 @@
 
 const char Spec512_fileid[] = "Hatari spec512.c";
 
-#include <SDL_endian.h>
-
 #include "main.h"
 #include "configuration.h"
 #include "cycles.h"
@@ -88,8 +86,8 @@ const char Spec512_fileid[] = "Hatari spec512.c";
 typedef struct
 {
 	int LineCycles;       /* Number of cycles into line (MUST be div by 4) */
-	Uint16 Colour;        /* ST Colour value */
-	Uint16 Index;         /* Index into ST palette (0...15) */
+	uint16_t Colour;      /* ST Colour value */
+	uint16_t Index;       /* Index into ST palette (0...15) */
 }
 CYCLEPALETTE;
 
@@ -98,12 +96,12 @@ static CYCLEPALETTE CyclePalettes[(MAX_SCANLINES_PER_FRAME+1)*MAX_CYCLEPALETTES_
 static CYCLEPALETTE *pCyclePalette;
 static int nCyclePalettes[(MAX_SCANLINES_PER_FRAME+1)];  /* Number of entries in above table for each scanline */
 static int nPalettesAccesses;   /* Number of times accessed palette registers */
-static Uint16 CycleColour;
+static uint16_t CycleColour;
 static int CycleColourIndex;
 static int nScanLine, ScanLineCycleCount;
 static bool bIsSpec512Display;
 
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+#if defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
 static const int STRGBPalEndianTable[16] =
 {
 	0,2,1,3,8,10,9,11,4,6,5,7,12,14,13,15
@@ -150,7 +148,7 @@ void Spec512_StartVBL(void)
  * Store color into table 'CyclePalettes[]' for screen conversion according
  * to cycles into frame.
  */
-void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr)
+void Spec512_StoreCyclePalette(uint16_t col, uint32_t addr)
 {
 	CYCLEPALETTE *pTmpCyclePalette;
 	int FrameCycles, ScanLine, nHorPos;
@@ -248,7 +246,7 @@ void Spec512_StartFrame(void)
 	/* Copy first line palette, kept in 'HBLPalettes' and store to 'STRGBPalette' */
 	for (i = 0; i < 16; i++)
 	{
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+#if defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
 		STRGBPalette[STRGBPalEndianTable[i]] = ST2RGB[pHBLPalettes[i]];
 #else
 		STRGBPalette[i] = ST2RGB[pHBLPalettes[i]];
@@ -338,7 +336,7 @@ void Spec512_UpdatePaletteSpan(void)
 	if (pCyclePalette->LineCycles == ScanLineCycleCount)
 	{
 		/* Need to update palette with new entry */
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+#if defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
 		STRGBPalette[STRGBPalEndianTable[pCyclePalette->Index]] = ST2RGB[pCyclePalette->Colour];
 #else
 		STRGBPalette[pCyclePalette->Index] = ST2RGB[pCyclePalette->Colour];
