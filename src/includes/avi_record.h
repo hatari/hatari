@@ -25,7 +25,6 @@ extern bool	Avi_SetCompressionLevel(const char *str);
 extern bool	Avi_StartRecording_WithConfig ( void );
 extern bool	Avi_StopRecording ( void );
 extern bool	Avi_StopRecording_WithMsg ( void );
-extern void	Avi_SetSurface(SDL_Surface *surf);
-
+extern void Avi_SetSurface(uint32_t *pixels, int w, int h, int pitch);
 
 #endif /* ifndef HATARI_AVI_RECORD_H */

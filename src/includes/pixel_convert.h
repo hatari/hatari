@@ -39,7 +39,7 @@ static inline void PixelConvert_32to24Bits(uint8_t *dst, uint32_t *src, int dw, 
  */
 static inline bool PixelConvert_32to8Bits(uint8_t *dst, uint32_t *src, int dw, int sw)
 {
-	Uint32 sval;
+	uint32_t sval;
 	int dval;
 	int i,dx;
 	bool valid = true;
@@ -61,7 +61,7 @@ static inline bool PixelConvert_32to8Bits(uint8_t *dst, uint32_t *src, int dw, i
 			valid = false;
 			dval = 0;
 		}
-		*dst++ = (Uint8)dval;
+		*dst++ = (uint8_t)dval;
 	}
 	return valid;
 }

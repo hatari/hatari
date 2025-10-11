@@ -569,7 +569,7 @@ static bool Screen_SetSDLVideoSize(int width, int height, bool bForceChange)
 		Control_ReparentWindow(width, height, bInFullScreen);
 	}
 
-	Avi_SetSurface(sdlscrn);
+	Avi_SetSurface(sdlscrn->pixels, sdlscrn->w, sdlscrn->h, sdlscrn->pitch);
 
 	bRGBTableInSync = false;
 
