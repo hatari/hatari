@@ -72,7 +72,6 @@ const char VIDEL_fileid[] = "Hatari videl.c";
 #include "log.h"
 #include "screen.h"
 #include "screenConvert.h"
-#include "avi_record.h"
 #include "statusbar.h"
 #include "stMemory.h"
 #include "tos.h"
