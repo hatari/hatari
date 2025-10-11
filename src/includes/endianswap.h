@@ -22,10 +22,19 @@
 #else
 /* Otherwise, we'll roll our own. */
 #  ifndef bswap_16
-#    define bswap_16(x) (((x) >> 8) | (((x) & 0xFF) << 8))
+static inline uint16_t bswap_16(uint16_t x)
+{
+	return (((x) >> 8) | (((x) & 0xFF) << 8));
+}
+#    define bswap_16 bswap_16
 #  endif
 #  ifndef bswap_32
-#    define bswap_32(x) (((x) << 24) | (((x) << 8) & 0x00FF0000) | (((x) >> 8) & 0x0000FF00) | ((x) >> 24))
+static inline uint32_t bswap_32(uint32_t x)
+{
+	return (((x) << 24) | (((x) << 8) & 0x00FF0000) |
+	       (((x) >> 8) & 0x0000FF00) | ((x) >> 24));
+}
+#    define bswap_32 bswap_32
 #  endif
 #endif
 
