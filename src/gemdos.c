@@ -35,6 +35,7 @@ const char Gemdos_fileid[] = "Hatari gemdos.c";
 #elif HAVE_SYS_UTIME_H
 #include <sys/utime.h>
 #endif
+#include <stddef.h>
 #include <time.h>
 #include <ctype.h>
 #include <unistd.h>
