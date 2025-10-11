@@ -84,22 +84,22 @@ const char VIDEL_fileid[] = "Hatari videl.c";
 
 
 struct videl_s {
-	Uint8  reg_ffff8006_save;		/* save reg_ffff8006 as it's a read only register */
-	Uint8  monitor_type;			/* 00 Monochrome (SM124) / 01 Color (SC1224) / 10 VGA Color / 11 Television ($FFFF8006) */
+	uint8_t  reg_ffff8006_save;		/* save reg_ffff8006 as it's a read only register */
+	uint8_t  monitor_type;			/* 00 Monochrome (SM124) / 01 Color (SC1224) / 10 VGA Color / 11 Television ($FFFF8006) */
 
-	Uint16 vertFreqCounter;			/* Counter for VFC register $ff82a0, restarted on each VBL */
-	Uint32 videoRaster;			/* Video raster offset, restarted on each VBL */
+	uint16_t vertFreqCounter;		/* Counter for VFC register $ff82a0, restarted on each VBL */
+	uint32_t videoRaster;			/* Video raster offset, restarted on each VBL */
 
-	Sint16 leftBorderSize;			/* Size of the left border */
-	Sint16 rightBorderSize;			/* Size of the right border */
-	Sint16 upperBorderSize;			/* Size of the upper border */
-	Sint16 lowerBorderSize;			/* Size of the lower border */
-	Uint16 XSize;				/* X size of the graphical area */
-	Uint16 YSize;				/* Y size of the graphical area */
+	int16_t leftBorderSize;			/* Size of the left border */
+	int16_t rightBorderSize;		/* Size of the right border */
+	int16_t upperBorderSize;		/* Size of the upper border */
+	int16_t lowerBorderSize;		/* Size of the lower border */
+	uint16_t XSize;				/* X size of the graphical area */
+	uint16_t YSize;				/* Y size of the graphical area */
 
-	Uint16 save_scrWidth;			/* save screen width to detect a change of X resolution */
-	Uint16 save_scrHeight;			/* save screen height to detect a change of Y resolution */
-	Uint16 save_scrBpp;			/* save screen Bpp to detect a change of bitplan mode */
+	uint16_t save_scrWidth;			/* save screen width to detect a change of X resolution */
+	uint16_t save_scrHeight;		/* save screen height to detect a change of Y resolution */
+	uint16_t save_scrBpp;			/* save screen Bpp to detect a change of bitplan mode */
 
 	bool hostColorsSync;			/* Sync palette with host's */
 	bool bUseSTShifter;			/* whether to use ST or Falcon palette */
@@ -161,7 +161,7 @@ void VIDEL_MemorySnapShot_Capture(bool bSave)
 
 static bool Videl_GetPixelCyclesAndDivider(int *cyc_per_pixel, int *divider)
 {
-	Uint16 vdm = IoMem_ReadWord(0xff82c2) & 0xc;
+	uint16_t vdm = IoMem_ReadWord(0xff82c2) & 0xc;
 
 	/* Compute cycles per pixel */
 	if (vdm == 0)
@@ -283,7 +283,7 @@ void VIDEL_Monitor_WriteByte(void)
  */
 void VIDEL_SyncMode_WriteByte(void)
 {
-	Uint8 syncMode = IoMem_ReadByte(0xff820a);
+	uint8_t syncMode = IoMem_ReadByte(0xff820a);
 	LOG_TRACE(TRACE_VIDEL, "Videl : $ff820a Sync Mode write: 0x%02x\n", syncMode);
 
 	syncMode &= 0x03;	/* Upper bits are hard-wired to 0 */
@@ -296,7 +296,7 @@ void VIDEL_SyncMode_WriteByte(void)
  */
 void VIDEL_ScreenCounter_ReadByte(void)
 {
-	Uint32 addr = videl.videoRaster;
+	uint32_t addr = videl.videoRaster;
 	IoMem[0xff8205] = ( addr >> 16 ) & 0xff;
 	IoMem[0xff8207] = ( addr >> 8 ) & 0xff;
 	IoMem[0xff8209] = addr & 0xff;
@@ -309,8 +309,8 @@ void VIDEL_ScreenCounter_ReadByte(void)
  */
 void VIDEL_ScreenCounter_WriteByte(void)
 {
-	Uint32 addr_new = videl.videoRaster;
-	Uint8 AddrByte = IoMem[ IoAccessCurrentAddress ];
+	uint32_t addr_new = videl.videoRaster;
+	uint8_t AddrByte = IoMem[ IoAccessCurrentAddress ];
 
 	/* Compute the new video address with one modified byte */
 	if ( IoAccessCurrentAddress == 0xff8205 )
@@ -392,8 +392,8 @@ void VIDEL_ScreenBase_WriteByte(void)
  */
 void VIDEL_ST_ShiftModeWriteByte(void)
 {
-	Uint16 line_width, video_mode;
-	Uint8 st_shiftMode;
+	uint16_t line_width, video_mode;
+	uint8_t st_shiftMode;
 
 	st_shiftMode = IoMem_ReadByte(0xff8260);
 	LOG_TRACE(TRACE_VIDEL, "Videl : $ff8260 ST Shift Mode (STSHIFT) write: 0x%02x\n", st_shiftMode);
@@ -711,11 +711,11 @@ void VIDEL_VideoRasterHBL(void)
 }
 
 
-static Uint16 VIDEL_getScreenBpp(void)
+static uint16_t VIDEL_getScreenBpp(void)
 {
-	Uint16 f_shift = IoMem_ReadWord(0xff8266);
-	Uint16 bits_per_pixel;
-	Uint8  st_shift = IoMem_ReadByte(0xff8260);
+	uint16_t f_shift = IoMem_ReadWord(0xff8266);
+	uint16_t bits_per_pixel;
+	uint8_t  st_shift = IoMem_ReadByte(0xff8260);
 
 	/* to get bpp, we must examine f_shift and st_shift.
 	 * f_shift is valid if any of bits no. 10, 8 or 4 is set.
@@ -754,10 +754,10 @@ static Uint16 VIDEL_getScreenBpp(void)
  */
 static int VIDEL_getScreenWidth(void)
 {
-	Uint16 hbb, hbe, hdb, hde, hht;
-	Sint16 hdb_offset, hde_offset;
-	Sint16 leftBorder, rightBorder;
-	Uint16 bpp = VIDEL_getScreenBpp();
+	uint16_t hbb, hbe, hdb, hde, hht;
+	int16_t hdb_offset, hde_offset;
+	int16_t leftBorder, rightBorder;
+	uint16_t bpp = VIDEL_getScreenBpp();
 	int cycPerPixel, divider;
 
 	/* X Size of the Display area */
@@ -850,11 +850,11 @@ static int VIDEL_getScreenWidth(void)
  */
 static int VIDEL_getScreenHeight(void)
 {
-	Uint16 vbb = IoMem_ReadWord(0xff82a4) & 0x07ff;
-	Uint16 vbe = IoMem_ReadWord(0xff82a6) & 0x07ff;
-	Uint16 vdb = IoMem_ReadWord(0xff82a8) & 0x07ff;
-	Uint16 vde = IoMem_ReadWord(0xff82aa) & 0x07ff;
-	Uint16 vmode = IoMem_ReadWord(0xff82c2);
+	uint16_t vbb = IoMem_ReadWord(0xff82a4) & 0x07ff;
+	uint16_t vbe = IoMem_ReadWord(0xff82a6) & 0x07ff;
+	uint16_t vdb = IoMem_ReadWord(0xff82a8) & 0x07ff;
+	uint16_t vde = IoMem_ReadWord(0xff82aa) & 0x07ff;
+	uint16_t vmode = IoMem_ReadWord(0xff82c2);
 
 	/* According to Aura and Animal Mine doc about Videl, if a monochrome monitor is connected,
 	 * VDB and VDE have no significance and no border is displayed.
@@ -981,7 +981,7 @@ bool VIDEL_renderScreen(void)
 
 	bool change = false;
 
-	Uint32 videoBase = Video_GetScreenBaseAddr();
+	uint32_t videoBase = Video_GetScreenBaseAddr();
 
 	if (vw > 0 && vw != videl.save_scrWidth) {
 		LOG_TRACE(TRACE_VIDEL, "Videl : width change from %d to %d\n", videl.save_scrWidth, vw);
@@ -1057,8 +1057,8 @@ bool VIDEL_renderScreen(void)
  */
 static void Videl_ColorReg_WriteWord(void)
 {
-	Uint16 col;
-	Uint32 addr = IoAccessCurrentAddress;
+	uint16_t col;
+	uint32_t addr = IoAccessCurrentAddress;
 
 	videl.hostColorsSync = false;
 
