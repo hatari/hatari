@@ -119,7 +119,7 @@ extern void Screen_GetDimension(uint32_t **pixels, int *width, int *height, int 
 extern void Screen_SetTextureScale(int width, int height, int win_width,
                                    int win_height, bool bForceCreation);
 extern void Screen_SetGenConvSize(int width, int height, bool bForceChange);
-extern void Screen_GenConvUpdate(SDL_Rect *extra, bool forced);
+extern void Screen_GenConvUpdate(bool update_statusbar);
 extern Uint32 Screen_GetGenConvWidth(void);
 extern Uint32 Screen_GetGenConvHeight(void);
 extern bool Screen_UseGenConvScreen(void);

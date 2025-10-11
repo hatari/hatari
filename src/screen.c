@@ -884,7 +884,7 @@ void Screen_EnterFullScreen(void)
 		{
 			Screen_SetGenConvSize(genconv_width_req, genconv_height_req, true);
 			/* force screen redraw */
-			Screen_GenConvUpdate(NULL, true);
+			Screen_GenConvUpdate(false);
 		}
 		else
 		{
@@ -930,7 +930,7 @@ void Screen_ReturnFromFullScreen(void)
 		{
 			Screen_SetGenConvSize(genconv_width_req, genconv_height_req, true);
 			/* force screen redraw */
-			Screen_GenConvUpdate(NULL, true);
+			Screen_GenConvUpdate(false);
 		}
 		else
 		{
@@ -1441,14 +1441,17 @@ void Screen_SetGenConvSize(int width, int height, bool bForceChange)
 	Main_WarpMouse(sdlscrn->w/2,sdlscrn->h/2, false);
 }
 
-void Screen_GenConvUpdate(SDL_Rect *extra, bool forced)
+void Screen_GenConvUpdate(bool update_statusbar)
 {
-	SDL_Rect rects[2];
+	SDL_Rect rects[2], *extra = NULL;
 	int count = 1;
 
 	/* Don't update anything on screen if video output is disabled */
 	if ( ConfigureParams.Screen.DisableVideo )
 		return;
+
+	if (update_statusbar)
+		extra = Statusbar_Update(sdlscrn, false);
 
 	rects[0] = STScreenRect;
 	if (extra) {

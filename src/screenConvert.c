@@ -5,11 +5,11 @@
   or at your option any later version. Read the file gpl.txt for details.
 */
 
-#include <SDL_endian.h>
 #include "main.h"
 #include "configuration.h"
-#include "log.h"
+#include "endianswap.h"
 #include "ioMem.h"
+#include "log.h"
 #include "memorySnapShot.h"
 #include "screen.h"
 #include "screenConvert.h"
@@ -18,11 +18,12 @@
 #include "video.h"
 
 
-struct screen_zoom_s {
-	Uint16 zoomwidth;
-	Uint16 prev_scrwidth;
-	Uint16 zoomheight;
-	Uint16 prev_scrheight;
+struct screen_zoom_s
+{
+	uint16_t zoomwidth;
+	uint16_t prev_scrwidth;
+	uint16_t zoomheight;
+	uint16_t prev_scrheight;
 	int *zoomxtable;
 	int *zoomytable;
 };
@@ -36,21 +37,29 @@ int ConvertH = 0;
 int ConvertBPP = 1;
 int ConvertNextLine = 0;
 
-/* TOS palette (bpp < 16) to SDL color mapping */
+struct rgba
+{
+	uint8_t r;
+	uint8_t g;
+	uint8_t b;
+	uint8_t a;
+};
+
+/* TOS palette (bpp < 16) to host color mapping */
 static struct
 {
-	SDL_Color	standard[256];
-	Uint32		native[256];
+	struct rgba standard[256];
+	uint32_t native[256];
 } palette;
 
-void Screen_SetPaletteColor(Uint8 idx, Uint8 red, Uint8 green, Uint8 blue)
+void Screen_SetPaletteColor(uint8_t idx, uint8_t red, uint8_t green, uint8_t blue)
 {
-	// set the SDL standard RGB palette settings
+	// set the standard RGB palette settings
 	palette.standard[idx].r = red;
 	palette.standard[idx].g = green;
 	palette.standard[idx].b = blue;
 	// convert the color to native
-	palette.native[idx] = SDL_MapRGB(sdlscrn->format, red, green, blue);
+	palette.native[idx] = Screen_MapRGB(red, green, blue);
 }
 
 void Screen_GetPaletteColor(int idx, uint8_t *r, uint8_t *g, uint8_t *b)
@@ -63,12 +72,11 @@ void Screen_GetPaletteColor(int idx, uint8_t *r, uint8_t *g, uint8_t *b)
 void Screen_RemapPalette(void)
 {
 	int i;
-	Uint32 *native = palette.native;
-	SDL_Color *standard = palette.standard;
-	SDL_PixelFormat *fmt = sdlscrn->format;
+	uint32_t *native = palette.native;
+	struct rgba *standard = palette.standard;
 
 	for(i = 0; i < 256; i++, native++, standard++) {
-		*native = SDL_MapRGB(fmt, standard->r, standard->g, standard->b);
+		*native = Screen_MapRGB(standard->r, standard->g, standard->b);
 	}
 }
 
@@ -79,14 +87,14 @@ void ScreenConv_MemorySnapShot_Capture(bool bSave)
 		Screen_RemapPalette();
 }
 
-static void Screen_memset_uint32(Uint32 *addr, Uint32 color, int count)
+static void Screen_memset_uint32(uint32_t *addr, uint32_t color, int count)
 {
 	while (count-- > 0) {
 		*addr++ = color;
 	}
 }
 
-static inline Uint32 idx2pal(Uint8 idx)
+static inline uint32_t idx2pal(uint8_t idx)
 {
 	if (unlikely(bTTSampleHold))
 	{
@@ -102,19 +110,19 @@ static inline Uint32 idx2pal(Uint8 idx)
  * Performs conversion from the TOS's bitplane word order (big endian) data
  * into the native 32-bit chunky pixels.
  */
-static void Screen_BitplaneToChunky32(Uint16 *atariBitplaneData, Uint16 bpp,
-                                      Uint32 *hvram)
+static void Screen_BitplaneToChunky32(uint16_t *atariBitplaneData, uint16_t bpp,
+                                      uint32_t *hvram)
 {
-	Uint32 a, b, c, d, x;
+	uint32_t a, b, c, d, x;
 
 	if (bpp >= 4) {
-		d = *(Uint32 *)&atariBitplaneData[0];
-		c = *(Uint32 *)&atariBitplaneData[2];
+		d = *(uint32_t *)&atariBitplaneData[0];
+		c = *(uint32_t *)&atariBitplaneData[2];
 		if (bpp == 4) {
 			a = b = 0;
 		} else {
-			b = *(Uint32 *)&atariBitplaneData[4];
-			a = *(Uint32 *)&atariBitplaneData[6];
+			b = *(uint32_t *)&atariBitplaneData[4];
+			a = *(uint32_t *)&atariBitplaneData[6];
 		}
 
 		x = a;
@@ -123,9 +131,9 @@ static void Screen_BitplaneToChunky32(Uint16 *atariBitplaneData, Uint16 bpp,
 	} else {
 		a = b = c = 0;
 		if (bpp == 2) {
-			d = *(Uint32 *)&atariBitplaneData[0];
+			d = *(uint32_t *)&atariBitplaneData[0];
 		} else {
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+#if defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
 			d = atariBitplaneData[0]<<16;
 #else
 			d = atariBitplaneData[0];
@@ -144,7 +152,7 @@ static void Screen_BitplaneToChunky32(Uint16 *atariBitplaneData, Uint16 bpp,
 	c =  (c & 0xcccccccc)       | ((d & 0xcccccccc) >> 2);
 	d = ((x & 0x33333333) << 2) |  (d & 0x33333333);
 
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+#if defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
 	a = (a & 0x5555aaaa) | ((a & 0x00005555) << 17) | ((a & 0xaaaa0000) >> 17);
 	b = (b & 0x5555aaaa) | ((b & 0x00005555) << 17) | ((b & 0xaaaa0000) >> 17);
 	c = (c & 0x5555aaaa) | ((c & 0x00005555) << 17) | ((c & 0xaaaa0000) >> 17);
@@ -192,11 +200,11 @@ static void Screen_BitplaneToChunky32(Uint16 *atariBitplaneData, Uint16 bpp,
 }
 
 
-static inline Uint32 *ScreenConv_BitplaneLineTo32bpp(Uint16 *fvram_column,
-                                                     Uint32 *hvram_column, int vw,
-                                                     int vbpp, int hscrolloffset)
+static inline uint32_t *ScreenConv_BitplaneLineTo32bpp(uint16_t *fvram_column,
+                                                       uint32_t *hvram_column, int vw,
+                                                       int vbpp, int hscrolloffset)
 {
-	Uint32 hvram_buf[16];
+	uint32_t hvram_buf[16];
 	int i;
 
 	/* First 16 pixels */
@@ -229,16 +237,16 @@ static inline Uint32 *ScreenConv_BitplaneLineTo32bpp(Uint16 *fvram_column,
 }
 
 
-static void ScreenConv_BitplaneTo32bppNoZoom(Uint16 *fvram_line, Uint8 *hvram,
+static void ScreenConv_BitplaneTo32bppNoZoom(uint16_t *fvram_line,
+                                             uint32_t *hvram, int pitch,
                                              int scrwidth, int scrheight,
                                              int vw, int vh, int vbpp,
                                              int nextline, int hscrolloffset,
                                              int leftBorder, int rightBorder,
                                              int upperBorder, int lowBorder)
 {
-	Uint32 *hvram_line = (Uint32 *)hvram;
+	uint32_t *hvram_line = hvram;
 	uint32_t nLineEndAddr = nScreenBaseAddr + nextline * 2;
-	int pitch = sdlscrn->pitch >> 2;
 	int h;
 
 	/* Render the upper border */
@@ -251,7 +259,7 @@ static void ScreenConv_BitplaneTo32bppNoZoom(Uint16 *fvram_line, Uint8 *hvram,
 	/* Render the graphical area */
 	for (h = 0; h < vh; h++)
 	{
-		Uint32 *hvram_column = hvram_line;
+		uint32_t *hvram_column = hvram_line;
 
 		if (nLineEndAddr > STRamEnd)
 		{
@@ -285,16 +293,16 @@ static void ScreenConv_BitplaneTo32bppNoZoom(Uint16 *fvram_line, Uint8 *hvram,
 	}
 }
 
-static void ScreenConv_HiColorTo32bppNoZoom(Uint16 *fvram_line, Uint8 *hvram,
+static void ScreenConv_HiColorTo32bppNoZoom(uint16_t *fvram_line,
+                                            uint32_t *hvram, int pitch,
                                             int scrwidth, int scrheight,
                                             int vw, int vh, int vbpp,
                                             int nextline,
                                             int leftBorder, int rightBorder,
                                             int upperBorder, int lowBorder)
 {
-	Uint32 *hvram_line = (Uint32 *)hvram;
+	uint32_t *hvram_line = hvram;
 	uint32_t nLineEndAddr = nScreenBaseAddr + nextline * 2;
-	int pitch = sdlscrn->pitch >> 2;
 	int h, w;
 
 	/* Render the upper border */
@@ -307,8 +315,8 @@ static void ScreenConv_HiColorTo32bppNoZoom(Uint16 *fvram_line, Uint8 *hvram,
 	/* Render the graphical area */
 	for (h = 0; h < vh; h++)
 	{
-		Uint16 *fvram_column = fvram_line;
-		Uint32 *hvram_column = hvram_line;
+		uint16_t *fvram_column = fvram_line;
+		uint32_t *hvram_column = hvram_line;
 
 		if (nLineEndAddr > STRamEnd)
 		{
@@ -324,11 +332,11 @@ static void ScreenConv_HiColorTo32bppNoZoom(Uint16 *fvram_line, Uint8 *hvram,
 		/* Graphical area */
 		for (w = 0; w < vw; w++)
 		{
-			Uint16 srcword = SDL_SwapBE16(*fvram_column++);
-			Uint8 r = ((srcword >> 8) & 0xf8) | (srcword >> 13);
-			Uint8 g = ((srcword >> 3) & 0xfc) | ((srcword >> 9) & 0x3);
-			Uint8 b = (srcword << 3) | ((srcword >> 2) & 0x07);
-			*hvram_column ++ = SDL_MapRGB(sdlscrn->format, r, g, b);
+			uint16_t srcword = be_swap16(*fvram_column++);
+			uint8_t r = ((srcword >> 8) & 0xf8) | (srcword >> 13);
+			uint8_t g = ((srcword >> 3) & 0xfc) | ((srcword >> 9) & 0x3);
+			uint8_t b = (srcword << 3) | ((srcword >> 2) & 0x07);
+			*hvram_column ++ = Screen_MapRGB(r, g, b);
 		}
 
 		/* Right border */
@@ -347,16 +355,15 @@ static void ScreenConv_HiColorTo32bppNoZoom(Uint16 *fvram_line, Uint8 *hvram,
 	}
 }
 
-static void Screen_ConvertWithoutZoom(Uint16 *fvram, int vw, int vh, int vbpp, int nextline,
+static void Screen_ConvertWithoutZoom(uint16_t *fvram, int vw, int vh, int vbpp, int nextline,
                                       int hscrolloffset, int leftBorder, int rightBorder,
                                       int upperBorder, int lowerBorder)
 {
-	Uint8 *hvram = sdlscrn->pixels;
-
-	Uint16 lowBorderSize, rightBorderSize;
+	uint32_t *hvram;
+	uint16_t lowBorderSize, rightBorderSize;
 	int scrwidth, scrheight;
-	unsigned int nBytesPerPixel = sdlscrn->format->BytesPerPixel;
 	int vw_clip, vh_clip;
+	int pitch;
 
 	/* Horizontal scroll register set? */
 	if (hscrolloffset) {
@@ -368,9 +375,10 @@ static void Screen_ConvertWithoutZoom(Uint16 *fvram, int vw, int vh, int vbpp, i
 	/* The sample-hold feature exists only on the TT */
 	bTTSampleHold = (TTSpecialVideoMode & 0x80) != 0;
 
-	/* Clip to SDL_Surface dimensions */
-	scrwidth = Screen_GetGenConvWidth();
+	/* Clip to screen dimension */
+	Screen_GetDimension(&hvram, &scrwidth, NULL, &pitch);
 	scrheight = Screen_GetGenConvHeight();
+	pitch = pitch / sizeof(uint32_t);
 	vw_clip = vw + rightBorder + leftBorder;
 	vh_clip = vh + upperBorder + lowerBorder;
 	if (vw_clip > scrwidth)
@@ -408,22 +416,22 @@ static void Screen_ConvertWithoutZoom(Uint16 *fvram, int vw, int vh, int vbpp, i
 		lowBorderSize = lowerBorder;
 
 	/* Center screen */
-	hvram += ((scrheight-vh_clip)>>1) * sdlscrn->pitch;
-	hvram += ((scrwidth-vw_clip)>>1) * nBytesPerPixel;
+	hvram += ((scrheight-vh_clip)>>1) * pitch;
+	hvram += ((scrwidth-vw_clip)>>1);
 
 	scrwidth = leftBorder + vw + rightBorder;
 
 	/* render the graphic area */
 	if (vbpp < 16) {
 		/* Bitplanes modes */
-		ScreenConv_BitplaneTo32bppNoZoom(fvram, hvram,
+		ScreenConv_BitplaneTo32bppNoZoom(fvram, hvram, pitch,
 		                                 scrwidth, scrheight, vw, vh,
 		                                 vbpp, nextline, hscrolloffset,
 		                                 leftBorder, rightBorderSize,
 		                                 upperBorder, lowBorderSize);
 	} else {
 		/* Falcon TC (High Color) */
-		ScreenConv_HiColorTo32bppNoZoom(fvram, hvram,
+		ScreenConv_HiColorTo32bppNoZoom(fvram, hvram, pitch,
 		                                scrwidth, scrheight, vw, vh,
 		                                vbpp, nextline,
 		                                leftBorder, rightBorderSize,
@@ -432,7 +440,8 @@ static void Screen_ConvertWithoutZoom(Uint16 *fvram, int vw, int vh, int vbpp, i
 }
 
 
-static void ScreenConv_BitplaneTo32bppZoomed(Uint16 *fvram, Uint8 *hvram,
+static void ScreenConv_BitplaneTo32bppZoomed(uint16_t *fvram,
+                                             uint32_t *hvram, int pitch,
                                              int scrwidth, int scrheight,
                                              int vw, int vh, int vbpp,
                                              int nextline, int hscrolloffset,
@@ -441,13 +450,11 @@ static void ScreenConv_BitplaneTo32bppZoomed(Uint16 *fvram, Uint8 *hvram,
                                              int coefx, int coefy)
 {
 	/* One complete 16-pixel aligned planar 2 chunky line */
-	Uint32 *p2cline = malloc(sizeof(Uint32) * ((vw+15) & ~15));
-	Uint32 *hvram_line = (Uint32 *)hvram;
-	Uint32 *hvram_column = p2cline;
-	Uint16 *fvram_line;
+	uint32_t *p2cline = malloc(sizeof(uint32_t) * ((vw+15) & ~15));
+	uint32_t *hvram_line = hvram;
+	uint32_t *hvram_column = p2cline;
+	uint16_t *fvram_line;
 	uint32_t nLineEndAddr = nScreenBaseAddr + nextline * 2;
-	unsigned int nBytesPerPixel = sdlscrn->format->BytesPerPixel;
-	int pitch = sdlscrn->pitch >> 2;
 	int cursrcline = -1;
 	int scrIdx = 0;
 	int w, h;
@@ -469,7 +476,7 @@ static void ScreenConv_BitplaneTo32bppZoomed(Uint16 *fvram, Uint8 *hvram,
 		/* Recopy the same line ? */
 		if (screen_zoom.zoomytable[h] == cursrcline)
 		{
-			memcpy(hvram_line, hvram_line - pitch, scrwidth * nBytesPerPixel);
+			memcpy(hvram_line, hvram_line - pitch, scrwidth * sizeof(uint32_t));
 		}
 		else if (nLineEndAddr > STRamEnd)
 		{
@@ -512,7 +519,8 @@ static void ScreenConv_BitplaneTo32bppZoomed(Uint16 *fvram, Uint8 *hvram,
 	free(p2cline);
 }
 
-static void ScreenConv_HiColorTo32bppZoomed(Uint16 *fvram, Uint8 *hvram,
+static void ScreenConv_HiColorTo32bppZoomed(uint16_t *fvram,
+                                            uint32_t *hvram, int pitch,
                                             int scrwidth, int scrheight,
                                             int vw, int vh, int vbpp,
                                             int nextline,
@@ -520,12 +528,10 @@ static void ScreenConv_HiColorTo32bppZoomed(Uint16 *fvram, Uint8 *hvram,
                                             int upperBorder, int lowerBorder,
                                             int coefx, int coefy)
 {
-	Uint32 *hvram_line = (Uint32 *)hvram;
-	Uint32 *hvram_column = hvram_line;
-	Uint16 *fvram_line;
+	uint32_t *hvram_line = hvram;
+	uint32_t *hvram_column = hvram_line;
+	uint16_t *fvram_line;
 	uint32_t nLineEndAddr = nScreenBaseAddr + nextline * 2;
-	unsigned int nBytesPerPixel = sdlscrn->format->BytesPerPixel;
-	int pitch = sdlscrn->pitch >> 2;
 	int cursrcline = -1;
 	int scrIdx = 0;
 	int w, h;
@@ -540,7 +546,7 @@ static void ScreenConv_HiColorTo32bppZoomed(Uint16 *fvram, Uint8 *hvram,
 	/* Render the graphical area */
 	for (h = 0; h < scrheight; h++)
 	{
-		Uint16 *fvram_column;
+		uint16_t *fvram_column;
 
 		fvram_line = fvram + (screen_zoom.zoomytable[scrIdx] * nextline);
 		scrIdx ++;
@@ -549,7 +555,7 @@ static void ScreenConv_HiColorTo32bppZoomed(Uint16 *fvram, Uint8 *hvram,
 		/* Recopy the same line ? */
 		if (screen_zoom.zoomytable[h] == cursrcline)
 		{
-			memcpy(hvram_line, hvram_line - pitch, scrwidth * nBytesPerPixel);
+			memcpy(hvram_line, hvram_line - pitch, scrwidth * sizeof(uint32_t));
 		}
 		else if (nLineEndAddr > STRamEnd)
 		{
@@ -566,13 +572,13 @@ static void ScreenConv_HiColorTo32bppZoomed(Uint16 *fvram, Uint8 *hvram,
 			/* Display the Graphical area */
 			for (w = 0; w < vw * coefx; w++)
 			{
-				Uint16 srcword;
-				Uint8 r, g, b;
-				srcword = SDL_SwapBE16(fvram_column[screen_zoom.zoomxtable[w]]);
+				uint16_t srcword;
+				uint8_t r, g, b;
+				srcword = be_swap16(fvram_column[screen_zoom.zoomxtable[w]]);
 				r = ((srcword >> 8) & 0xf8) | (srcword >> 13);
 				g = ((srcword >> 3) & 0xfc) | ((srcword >> 9) & 0x3);
 				b = (srcword << 3) | ((srcword >> 2) & 0x07);
-				*hvram_column ++ = SDL_MapRGB(sdlscrn->format, r, g, b);
+				*hvram_column ++ = Screen_MapRGB(r, g, b);
 			}
 
 			/* Display the Right border */
@@ -593,14 +599,14 @@ static void ScreenConv_HiColorTo32bppZoomed(Uint16 *fvram, Uint8 *hvram,
 	}
 }
 
-static void Screen_ConvertWithZoom(Uint16 *fvram, int vw, int vh, int vbpp, int nextline,
+static void Screen_ConvertWithZoom(uint16_t *fvram, int vw, int vh, int vbpp, int nextline,
                                    int hscrolloffset, int leftBorder, int rightBorder,
                                    int upperBorder, int lowerBorder)
 {
 	int coefx = 1;
 	int coefy = 1;
-	int scrpitch, scrwidth, scrheight, scrbpp;
-	Uint8 *hvram;
+	int scrpitch, scrwidth, scrheight;
+	uint32_t *hvram;
 	int vw_b, vh_b;
 	int i;
 
@@ -611,11 +617,9 @@ static void Screen_ConvertWithZoom(Uint16 *fvram, int vw, int vh, int vbpp, int 
 	vh_b = vh + upperBorder + lowerBorder;
 
 	/* Host screen infos */
-	scrpitch = sdlscrn->pitch;
-	scrwidth = Screen_GetGenConvWidth();
+	Screen_GetDimension(&hvram, &scrwidth, NULL, &scrpitch);
+	scrpitch = scrpitch / sizeof(uint32_t);
 	scrheight = Screen_GetGenConvHeight();
-	scrbpp = sdlscrn->format->BytesPerPixel;
-	hvram = sdlscrn->pixels;
 
 	/* Horizontal scroll register set? */
 	if (hscrolloffset) {
@@ -633,8 +637,8 @@ static void Screen_ConvertWithZoom(Uint16 *fvram, int vw, int vh, int vbpp, int 
 		scrheight = vh_b * coefy;
 
 		/* Center screen */
-		hvram += ((Screen_GetGenConvHeight()-scrheight)>>1)*scrpitch;
-		hvram += ((Screen_GetGenConvWidth()-scrwidth)>>1)*scrbpp;
+		hvram += ((Screen_GetGenConvHeight() - scrheight) >> 1) * scrpitch;
+		hvram += ((Screen_GetGenConvWidth() - scrwidth) >> 1);
 	}
 
 	/* New zoom ? */
@@ -674,13 +678,15 @@ static void Screen_ConvertWithZoom(Uint16 *fvram, int vw, int vh, int vbpp, int 
 
 	if (vbpp<16) {
 		/* Bitplanes modes */
-		ScreenConv_BitplaneTo32bppZoomed(fvram, hvram, scrwidth, scrheight,
+		ScreenConv_BitplaneTo32bppZoomed(fvram, hvram, scrpitch,
+		                                 scrwidth, scrheight,
 		                                 vw, vh, vbpp, nextline, hscrolloffset,
 		                                 leftBorder, rightBorder, upperBorder,
 		                                 lowerBorder, coefx, coefy);
 	} else {
 		/* Falcon high-color (16-bit) mode */
-		ScreenConv_HiColorTo32bppZoomed(fvram, hvram, scrwidth, scrheight,
+		ScreenConv_HiColorTo32bppZoomed(fvram, hvram, scrpitch,
+		                                scrwidth, scrheight,
 		                                vw, vh, vbpp, nextline,
 		                                leftBorder, rightBorder, upperBorder,
 		                                lowerBorder, coefx, coefy);
@@ -733,6 +739,7 @@ bool Screen_GenDraw(uint32_t vaddr, int vw, int vh, int vbpp, int nextline,
 	                  leftBorder, rightBorder, upperBorder, lowerBorder);
 
 	Screen_UnLock();
-	Screen_GenConvUpdate(Statusbar_Update(sdlscrn, false), false);
+	Screen_GenConvUpdate(true);
+
 	return true;
 }

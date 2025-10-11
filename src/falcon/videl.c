@@ -1036,7 +1036,7 @@ bool VIDEL_renderScreen(void)
 	                  videl.upperBorderSize, videl.lowerBorderSize);
 
 	Screen_UnLock();
-	Screen_GenConvUpdate(Statusbar_Update(sdlscrn, false), false);
+	Screen_GenConvUpdate(true);
 
 	return true;
 }
