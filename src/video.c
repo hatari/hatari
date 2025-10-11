@@ -430,11 +430,10 @@
 
 const char Video_fileid[] = "Hatari video.c";
 
-#include <SDL_endian.h>
-
 #include "main.h"
 #include "configuration.h"
 #include "cycles.h"
+#include "endianswap.h"
 #include "fdc.h"
 #include "cycInt.h"
 #include "ioMem.h"
@@ -528,7 +527,7 @@ static uint8_t *pVideoRasterDelayed = NULL;	/* Used in STE mode when changing vi
 static uint8_t *pVideoRaster;			/* Pointer to Video raster, after VideoBase in PC address space. Use to copy data on HBL */
 static bool bSteBorderFlag;			/* true when screen width has been switched to 336 (e.g. in Obsession) */
 static int NewSteBorderFlag = -1;		/* New value for next line */
-static bool bTTColorsSync;			/* whether TT colors need conversion to SDL */
+static bool bTTColorsSync;			/* whether TT colors need conversion */
 static int VideoRasterDelayedInc;		/* Number of bytes to add at the end of the current video line */
 
 int TTSpecialVideoMode;				/* TT special video mode */
@@ -3680,7 +3679,7 @@ static void Video_StoreFirstLinePalette(void)
 	pp2 = (uint16_t *)&IoMem[0xff8240];
 	for (i = 0; i < 16; i++)
 	{
-		HBLPalettes[i] = SDL_SwapBE16(*pp2++);
+		HBLPalettes[i] = be_swap16(*pp2++);
 		if (Config_IsMachineST())
 			HBLPalettes[i] &= 0x777;			/* Force unused "random" bits to 0 */
 	}
@@ -4697,7 +4696,7 @@ static int TTPaletteSTBank(void)
 }
 
 /**
- * Convert TT palette to SDL palette
+ * Convert TT palette to host palette
  */
 static void Video_UpdateTTPalette(int bpp)
 {
