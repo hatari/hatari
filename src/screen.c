@@ -321,14 +321,124 @@ void Screen_GetPixelFormat(uint32_t *rmask, uint32_t *gmask, uint32_t *bmask,
 void Screen_GetDimension(uint32_t **pixels, int *width, int *height, int *pitch)
 {
 	if (pixels)
-		*pixels = sdlscrn->pixels;
+		*pixels = sdlscrn ? sdlscrn->pixels : NULL;
 	if (width)
-		*width = sdlscrn->w;
+		*width = sdlscrn ? sdlscrn->w : 0;
 	if (height)
-		*height = sdlscrn->h;
+		*height = sdlscrn ? sdlscrn->h : 0;
 	if (pitch)
-		*pitch = sdlscrn->pitch;
+		*pitch = sdlscrn ? sdlscrn->pitch : 0;
 }
+
+
+/*-----------------------------------------------------------------------
+ * Window reparenting - Currently works only on X11.
+ *
+ * SDL_syswm.h automatically includes everything else needed.
+ */
+
+/* X11 available and SDL_config.h states that SDL supports X11 */
+#if HAVE_X11 && SDL_VIDEO_DRIVER_X11
+#include <SDL_syswm.h>
+
+/**
+ * Reparent Hatari window if so requested.  Needs to be done inside
+ * Hatari because if SDL itself is requested to reparent itself,
+ * SDL window stops accepting any input (specifically done like
+ * this in SDL backends for some reason).
+ *
+ * 'noembed' argument tells whether the SDL window should be embedded
+ * or not.
+ *
+ * If the window is embedded (which means that SDL WM window needs
+ * to be hidden) when SDL is asked to fullscreen, Hatari window just
+ * disappears when returning back from fullscreen.  I.e. call this
+ * with noembed=true _before_ fullscreening and any other time with
+ * noembed=false after changing window size.  You can do this by
+ * giving bInFullscreen as the noembed value.
+ */
+static void Screen_ReparentWindow(int width, int height, bool noembed)
+{
+	Display *display;
+	Window parent_win, sdl_win;
+	const char *parent_win_id;
+	SDL_SysWMinfo info;
+	Window wm_win;
+	Window dw1, *dw2;
+	unsigned int nwin;
+
+	parent_win_id = getenv("PARENT_WIN_ID");
+	if (!parent_win_id) {
+		return;
+	}
+	parent_win = strtol(parent_win_id, NULL, 0);
+	if (!parent_win) {
+		Log_Printf(LOG_WARN, "Invalid PARENT_WIN_ID value '%s'\n", parent_win_id);
+		return;
+	}
+
+	SDL_VERSION(&info.version);
+	if (!SDL_GetWindowWMInfo(sdlWindow, &info)) {
+		Log_Printf(LOG_WARN, "Failed to get SDL_GetWMInfo()\n");
+		return;
+	}
+
+	display = info.info.x11.display;
+	sdl_win = info.info.x11.window;
+	XQueryTree(display, sdl_win, &dw1, &wm_win, &dw2, &nwin);
+
+	if (noembed)
+	{
+		/* show WM window again */
+		XMapWindow(display, wm_win);
+	}
+	else
+	{
+		if (parent_win != wm_win) {
+			/* hide WM window for Hatari */
+			XUnmapWindow(display, wm_win);
+
+			/* reparent main Hatari window to given parent */
+			XReparentWindow(display, sdl_win, parent_win, 0, 0);
+		}
+
+		Log_Printf(LOG_INFO, "New %dx%d SDL window with ID: %lx\n",
+			   width, height, sdl_win);
+
+		/* inform remote end of new window size if requested */
+		Control_SendEmbedSize(width, height);
+	}
+
+	XSync(display, false);
+}
+
+/**
+ * Return the X connection socket or zero
+ */
+int Screen_GetUISocket(void)
+{
+	SDL_SysWMinfo info;
+	SDL_VERSION(&info.version);
+	if (!SDL_GetWindowWMInfo(sdlWindow, &info)) {
+		Log_Printf(LOG_WARN, "Failed to get SDL_GetWMInfo()\n");
+		return 0;
+	}
+	return ConnectionNumber(info.info.x11.display);
+}
+
+#else	/* HAVE_X11 */
+
+void Screen_ReparentWindow(int width, int height, bool noembed)
+{
+	/* TODO: implement the Windows part.  SDL sources offer example */
+	Log_Printf(LOG_TODO, "Support for Hatari window reparenting not built in\n");
+}
+int Screen_GetUISocket(void)
+{
+	return 0;
+}
+
+#endif /* HAVE_X11 */
 
 
 /*
@@ -432,7 +542,7 @@ static bool Screen_SetSDLVideoSize(int width, int height, bool bForceChange)
 	if (bInFullScreen)
 	{
 		/* unhide the Hatari WM window for fullscreen */
-		Control_ReparentWindow(width, height, bInFullScreen);
+		Screen_ReparentWindow(width, height, bInFullScreen);
 	}
 
 	bUseSdlRenderer = ConfigureParams.Screen.bUseSdlRenderer && !bUseDummyMode;
@@ -566,7 +676,7 @@ static bool Screen_SetSDLVideoSize(int width, int height, bool bForceChange)
 	if (!bInFullScreen)
 	{
 		/* re-embed the new Hatari SDL window */
-		Control_ReparentWindow(width, height, bInFullScreen);
+		Screen_ReparentWindow(width, height, bInFullScreen);
 	}
 
 	Avi_SetSurface(sdlscrn->pixels, sdlscrn->w, sdlscrn->h, sdlscrn->pitch);

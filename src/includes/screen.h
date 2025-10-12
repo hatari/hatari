@@ -126,5 +126,6 @@ extern uint32_t Screen_GetGenConvHeight(void);
 extern bool Screen_UseGenConvScreen(void);
 extern int Screen_SaveBMP(const char *filename);
 extern void Screen_StatusbarMessage(const char *msg, uint32_t msecs);
+extern int Screen_GetUISocket(void);
 
 #endif  /* ifndef HATARI_SCREEN_H */
