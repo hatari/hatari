@@ -10,10 +10,10 @@
 #include "main.h"
 
 extern void Control_ProcessBuffer(const char *buffer);
+extern void Control_SendEmbedSize(int width, int height);
 
 /* supported only on BSD compatible / POSIX compliant systems */
 #if HAVE_UNIX_DOMAIN_SOCKETS
-extern void Control_SendEmbedSize(int width, int height);
 extern bool Control_CheckUpdates(void);
 extern void Control_RemoveFifo(void);
 extern const char* Control_SetFifo(const char *fifopath);
