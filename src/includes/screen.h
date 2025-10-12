@@ -111,6 +111,7 @@ extern void Screen_UnLock(void);
 extern void Screen_SetFullUpdate(void);
 extern void Screen_EnterFullScreen(void);
 extern void Screen_ReturnFromFullScreen(void);
+extern void Screen_UngrabMouse(void);
 extern void Screen_ModeChanged(bool bForceChange);
 extern bool Screen_Draw(void);
 extern void Screen_GetPixelFormat(uint32_t *rmask, uint32_t *gmask, uint32_t *bmask,

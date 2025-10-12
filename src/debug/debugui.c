@@ -13,7 +13,6 @@ const char DebugUI_fileid[] = "Hatari debugui.c";
 #include <ctype.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <SDL.h>
 
 #include "config.h"
 
@@ -1234,7 +1233,7 @@ void DebugUI(debug_reason_t reason)
 	 * this is invoked from.  E.g. returning from fullscreen
 	 * enables grab if that was enabled on windowed mode.
 	 */
-	SDL_SetRelativeMouseMode(false);
+	Screen_UngrabMouse();
 
 	DebugUI_Init();
 

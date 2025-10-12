@@ -962,6 +962,13 @@ void Screen_ReturnFromFullScreen(void)
 }
 
 
+void Screen_UngrabMouse(void)
+{
+	SDL_SetRelativeMouseMode(false);
+	bGrabMouse = false;
+}
+
+
 /*-----------------------------------------------------------------------*/
 /**
  * Have we changed between low/med/high res?
