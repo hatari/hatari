@@ -27,7 +27,6 @@ const char Log_fileid[] = "Hatari log.c";
 #include "console.h"
 #include "dialog.h"
 #include "log.h"
-#include "screen.h"
 #include "file.h"
 #include "vdi.h"
 #include "options.h"
@@ -450,7 +449,7 @@ void Log_AlertDlg(LOGTYPE nType, const char *psFormat, ...)
 	}
 
 	/* Show alert dialog box: */
-	if (sdlscrn && nType <= AlertDlgLogLevel)
+	if (nType <= AlertDlgLogLevel)
 	{
 		char buf[MAX_MSG_LEN];
 		va_start(argptr, psFormat);

@@ -166,6 +166,9 @@ int SDLGui_SetScreen(SDL_Surface *pScrn)
 {
 	pSdlGuiScrn = pScrn;
 
+	if (pScrn == NULL)
+		return -1;
+
 	/* Decide which font to use - small or big one: */
 	if (pSdlGuiScrn->w >= 640 && pSdlGuiScrn->h >= 400 && pBigFontGfx != NULL)
 	{
