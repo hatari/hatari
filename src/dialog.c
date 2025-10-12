@@ -35,9 +35,6 @@ bool Dialog_DoProperty(void)
 	bool bLoadedSnapshot;
 	CNF_PARAMS current;
 
-	bool bOldMouseMode = SDL_GetRelativeMouseMode();
-	SDL_SetRelativeMouseMode(SDL_FALSE);
-
 	Main_PauseEmulation(true);
 	bForceReset = false;
 
@@ -45,8 +42,6 @@ bool Dialog_DoProperty(void)
 	current = ConfigureParams;
 	ConfigureParams.Screen.bFullScreen = bInFullScreen;
 	bOKDialog = Dialog_MainDlg(&bForceReset, &bLoadedSnapshot);
-
-	SDL_SetRelativeMouseMode(bOldMouseMode);
 
 	/* If a memory snapshot has been loaded, no further changes are required */
 	if (bLoadedSnapshot)
