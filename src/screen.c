@@ -428,7 +428,7 @@ int Screen_GetUISocket(void)
 
 #else	/* HAVE_X11 */
 
-void Screen_ReparentWindow(int width, int height, bool noembed)
+static void Screen_ReparentWindow(int width, int height, bool noembed)
 {
 	/* TODO: implement the Windows part.  SDL sources offer example */
 	Log_Printf(LOG_TODO, "Support for Hatari window reparenting not built in\n");
