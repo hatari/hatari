@@ -110,8 +110,6 @@ static bool bRGBTableInSync;            /* Is RGB table up to date? */
 static int genconv_width_req, genconv_height_req;
 
 
-static bool Screen_DrawFrame(bool bForceFlip);
-
 SDL_Window *sdlWindow;
 static SDL_Renderer *sdlRenderer;
 static SDL_Texture *sdlTexture;
@@ -971,7 +969,7 @@ static void Screen_Refresh(void)
 	}
 	else
 	{
-		Screen_DrawFrame(true);
+		Screen_Draw(true);
 	}
 }
 
@@ -1347,15 +1345,13 @@ static void Screen_Blit(SDL_Rect *sbar_rect)
 /*-----------------------------------------------------------------------*/
 /**
  * Draw ST screen to window/full-screen framebuffer
- * @param  bForceFlip  Force screen update, even if contents did not change
  * @return  true if screen contents changed
  */
-static bool Screen_DrawFrame(bool bForceFlip)
+static bool Screen_DrawFrame(void)
 {
 	int new_res;
 	void (*pDrawFunction)(void);
 	static bool bPrevFrameWasSpec512 = false;
-	SDL_Rect *sbar_rect;
 
 	assert(!bUseVDIRes);
 
@@ -1366,11 +1362,6 @@ static bool Screen_DrawFrame(bool bForceFlip)
 	/* Is need full-update, tag as such */
 	if (pFrameBuffer->bFullUpdate)
 		Screen_SetFullUpdateMask();
-
-	/* restore area potentially left under overlay led
-	 * and saved by Statusbar_OverlayBackup()
-	 */
-	Statusbar_OverlayRestore(sdlscrn);
 
 	/* Lock screen for direct screen surface format writes */
 	if (ConfigureParams.Screen.DisableVideo || !Screen_Lock())
@@ -1421,19 +1412,9 @@ static bool Screen_DrawFrame(bool bForceFlip)
 	/* Unlock screen */
 	Screen_UnLock();
 
-	/* draw overlay led(s) or statusbar after unlock */
-	Statusbar_OverlayBackup(sdlscrn);
-	sbar_rect = Statusbar_Update(sdlscrn, false);
-
 	/* Clear flags, remember type of overscan as if change need screen full update */
 	pFrameBuffer->bFullUpdate = false;
 	pFrameBuffer->VerticalOverscanCopy = VerticalOverscan;
-
-	/* And show to user */
-	if (bScreenContentsChanged || bForceFlip || sbar_rect)
-	{
-		Screen_Blit(sbar_rect);
-	}
 
 	return bScreenContentsChanged;
 }
@@ -1442,16 +1423,36 @@ static bool Screen_DrawFrame(bool bForceFlip)
 /*-----------------------------------------------------------------------*/
 /**
  * Draw ST screen to window/full-screen
+ * @param  bForceFlip  Force screen update, even if contents did not change
  */
-bool Screen_Draw(void)
+bool Screen_Draw(bool bForceFlip)
 {
+	SDL_Rect *sbar_rect;
+	bool screen_changed;
+
 	if (bQuitProgram)
 	{
 		return false;
 	}
 
+	/* restore area potentially left under overlay led
+	 * and saved by Statusbar_OverlayBackup() */
+	Statusbar_OverlayRestore(sdlscrn);
+
 	/* And draw (if screen contents changed) */
-	return Screen_DrawFrame(false);
+	screen_changed = Screen_DrawFrame();
+
+	/* draw overlay led(s) or statusbar after unlock */
+	Statusbar_OverlayBackup(sdlscrn);
+	sbar_rect = Statusbar_Update(sdlscrn, false);
+
+	/* And show to user */
+	if (screen_changed || bForceFlip || sbar_rect)
+	{
+		Screen_Blit(sbar_rect);
+	}
+
+	return screen_changed;
 }
 
 /**

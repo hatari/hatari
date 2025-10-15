@@ -4807,7 +4807,7 @@ static void Video_DrawScreen(void)
 		if (nHBL < nLastVisibleHbl)
 			memset(pSTScreen, 0, SCREENBYTES_LINE * ( nLastVisibleHbl - nHBL ) );
 
-		Screen_Draw();
+		Screen_Draw(false);
 	}
 }
 
