@@ -13,7 +13,7 @@
 /* Remap tables to convert from plane format to byte-per-pixel
  * (Upper is for 4-Planes so if shifted by 2)
  */
-static const Uint32 Remap_2_Planes[256] = {
+static const uint32_t Remap_2_Planes[256] = {
   0x00000000,  0x01000000,  0x00010000,  0x01010000,  0x00000100,  0x01000100,  0x00010100,  0x01010100,
   0x00000001,  0x01000001,  0x00010001,  0x01010001,  0x00000101,  0x01000101,  0x00010101,  0x01010101,
   0x02000000,  0x03000000,  0x02010000,  0x03010000,  0x02000100,  0x03000100,  0x02010100,  0x03010100,
@@ -48,7 +48,7 @@ static const Uint32 Remap_2_Planes[256] = {
   0x02020203,  0x03020203,  0x02030203,  0x03030203,  0x02020303,  0x03020303,  0x02030303,  0x03030303,
 };
 
-static const Uint32 Remap_2_Planes_Upper[256] = {
+static const uint32_t Remap_2_Planes_Upper[256] = {
   0x00000000,  0x04000000,  0x00040000,  0x04040000,  0x00000400,  0x04000400,  0x00040400,  0x04040400,
   0x00000004,  0x04000004,  0x00040004,  0x04040004,  0x00000404,  0x04000404,  0x00040404,  0x04040404,
   0x08000000,  0x0C000000,  0x08040000,  0x0C040000,  0x08000400,  0x0C000400,  0x08040400,  0x0C040400,
@@ -162,10 +162,10 @@ static const Uint32 Remap_2_Planes_Upper[256] = {
 /* Plot Low Resolution (320xH) 32-Bit pixels */
 #define PLOT_LOW_320_32BIT(offset)  \
 { \
-	esi[offset+0] = (Uint32)STRGBPalette[ecx & 0x00ff]; \
-	esi[offset+1] = (Uint32)STRGBPalette[(ecx >> 8) & 0x00ff]; \
-	esi[offset+2] = (Uint32)STRGBPalette[(ecx >> 16) & 0x00ff]; \
-	esi[offset+3] = (Uint32)STRGBPalette[(ecx >> 24) & 0x00ff]; \
+	esi[offset+0] = (uint32_t)STRGBPalette[ecx & 0x00ff]; \
+	esi[offset+1] = (uint32_t)STRGBPalette[(ecx >> 8) & 0x00ff]; \
+	esi[offset+2] = (uint32_t)STRGBPalette[(ecx >> 16) & 0x00ff]; \
+	esi[offset+3] = (uint32_t)STRGBPalette[(ecx >> 24) & 0x00ff]; \
 }
 
 /* Plot Low Resolution (640xH) 32-Bit pixels */
@@ -238,10 +238,10 @@ static const Uint32 Remap_2_Planes_Upper[256] = {
 /* Plot Low Resolution (320xH) 16-Bit pixels */
 #define PLOT_LOW_320_16BIT(offset)  \
 { \
- esi[offset]   = (Uint16)STRGBPalette[ecx & 0x00ff]; \
- esi[offset+1] = (Uint16)STRGBPalette[(ecx >> 8) & 0x00ff]; \
- esi[offset+2] = (Uint16)STRGBPalette[(ecx >> 16) & 0x00ff]; \
- esi[offset+3] = (Uint16)STRGBPalette[(ecx >> 24) & 0x00ff]; \
+ esi[offset]   = (uint16_t)STRGBPalette[ecx & 0x00ff]; \
+ esi[offset+1] = (uint16_t)STRGBPalette[(ecx >> 8) & 0x00ff]; \
+ esi[offset+2] = (uint16_t)STRGBPalette[(ecx >> 16) & 0x00ff]; \
+ esi[offset+3] = (uint16_t)STRGBPalette[(ecx >> 24) & 0x00ff]; \
 }
 
 /* Plot Low Resolution (640xH) 16-Bit pixels */
@@ -257,17 +257,17 @@ static const Uint32 Remap_2_Planes_Upper[256] = {
 /* Plot Medium Resolution(640xH) 16-Bit pixels */
 #define PLOT_MED_640_16BIT(offset) \
 { \
- esi[offset]   = (Uint16)STRGBPalette[ecx & 0x000000ff]; \
- esi[offset+1] = (Uint16)STRGBPalette[(ecx >> 8) & 0x000000ff]; \
- esi[offset+2] = (Uint16)STRGBPalette[(ecx >> 16) & 0x000000ff]; \
- esi[offset+3] = (Uint16)STRGBPalette[(ecx >> 24) & 0x000000ff]; \
+ esi[offset]   = (uint16_t)STRGBPalette[ecx & 0x000000ff]; \
+ esi[offset+1] = (uint16_t)STRGBPalette[(ecx >> 8) & 0x000000ff]; \
+ esi[offset+2] = (uint16_t)STRGBPalette[(ecx >> 16) & 0x000000ff]; \
+ esi[offset+3] = (uint16_t)STRGBPalette[(ecx >> 24) & 0x000000ff]; \
 }
 
 
 /* Plot Spectrum512 Resolution(320xH) 16-Bit pixels */
 #define PLOT_SPEC512_LEFT_LOW_320_16BIT(offset)	\
 { \
- esi[offset] = (Uint16)STRGBPalette[ecx & 0x000000ff]; \
+ esi[offset] = (uint16_t)STRGBPalette[ecx & 0x000000ff]; \
 }
 
 /* Plot Spectrum512 Resolution(320xH) 16-Bit pixels */
@@ -276,9 +276,9 @@ static const Uint32 Remap_2_Planes_Upper[256] = {
 /* Plot Spectrum512 Resolution(320xH) 16-Bit pixels */
 #define PLOT_SPEC512_END_LOW_320_16BIT(offset) \
 { \
- esi[offset]   = (Uint16)STRGBPalette[ecx & 0x000000ff]; \
- esi[offset+1] = (Uint16)STRGBPalette[(ecx >> 8) & 0x000000ff]; \
- esi[offset+2] = (Uint16)STRGBPalette[(ecx >> 16) & 0x000000ff]; \
+ esi[offset]   = (uint16_t)STRGBPalette[ecx & 0x000000ff]; \
+ esi[offset+1] = (uint16_t)STRGBPalette[(ecx >> 8) & 0x000000ff]; \
+ esi[offset+2] = (uint16_t)STRGBPalette[(ecx >> 16) & 0x000000ff]; \
 }
 
 
@@ -315,17 +315,17 @@ static const Uint32 Remap_2_Planes_Upper[256] = {
  * final pixels access ~15% faster than aligned operation below
  */
 # define GET_SPEC512_OFFSET_PIXELS(pixels, x)  \
-            (*(Uint32 *)(((Uint8 *)pixels) + x))
+            (*(uint32_t *)(((uint8_t *)pixels) + x))
 # define GET_SPEC512_OFFSET_FINAL_PIXELS(pixels) \
-            (*(Uint32 *)(((Uint8 *)pixels) + 13))
+            (*(uint32_t *)(((uint8_t *)pixels) + 13))
 
 #else
 
 # define GET_SPEC512_OFFSET_PIXELS(pixels, x)  \
-            (((*(Uint32 *)(((Uint8 *)pixels) + x-1)) >> 8) \
-	     | ((*(Uint32 *)(((Uint8 *)pixels) + x+3)) << 24))
+            (((*(uint32_t *)(((uint8_t *)pixels) + x-1)) >> 8) \
+	     | ((*(uint32_t *)(((uint8_t *)pixels) + x+3)) << 24))
 # define GET_SPEC512_OFFSET_FINAL_PIXELS(pixels)  \
-            ((*(Uint32 *)(((Uint8 *)pixels) + 12)) >> 8)
+            ((*(uint32_t *)(((uint8_t *)pixels) + 12)) >> 8)
 
 #endif /* __i386__ */
 

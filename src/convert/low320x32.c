@@ -9,10 +9,10 @@
 
 static void ConvertLowRes_320x32Bit(void)
 {
-	Uint32 *edi, *ebp;
-	Uint32 *esi;
-	Uint32 eax, edx;
-	Uint32 ebx, ecx;
+	uint32_t *edi, *ebp;
+	uint32_t *esi;
+	uint32_t eax, edx;
+	uint32_t ebx, ecx;
 	int y, x, update;
 
 	Convert_StartFrame();            /* Start frame, track palettes */
@@ -21,9 +21,9 @@ static void ConvertLowRes_320x32Bit(void)
 	{
 
 		eax = STScreenLineOffset[y] + STScreenLeftSkipBytes;  /* Offset for this line + Amount to skip on left hand side */
-		edi = (Uint32 *)((Uint8 *)pSTScreen + eax);       /* ST format screen 4-plane 16 colors */
-		ebp = (Uint32 *)((Uint8 *)pSTScreenCopy + eax);   /* Previous ST format screen */
-		esi = (Uint32 *)pPCScreenDest;                    /* PC format screen */
+		edi = (uint32_t *)((uint8_t *)pSTScreen + eax);       /* ST format screen 4-plane 16 colors */
+		ebp = (uint32_t *)((uint8_t *)pSTScreenCopy + eax);   /* Previous ST format screen */
+		esi = (uint32_t *)pPCScreenDest;                      /* PC format screen */
 
 		update = AdjustLinePaletteRemap(y) & PALETTEMASK_UPDATEMASK;
 
@@ -71,6 +71,6 @@ static void ConvertLowRes_320x32Bit(void)
 		while (--x);                      /* Loop on X */
 
 		/* Offset to next line: */
-		pPCScreenDest = (((Uint8 *)pPCScreenDest)+PCScreenBytesPerLine);
+		pPCScreenDest = (((uint8_t *)pPCScreenDest)+PCScreenBytesPerLine);
 	}
 }

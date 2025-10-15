@@ -9,10 +9,10 @@
 
 static void ConvertLowRes_320x32Bit_Spec(void)
 {
-	Uint32 *edi;
-	Uint32 *esi;
-	Uint32 eax, ebx, ecx, edx;
-	Uint32 pixelspace[5]; /* Workspace to store pixels to so can print in right order for Spec512 */
+	uint32_t *edi;
+	uint32_t *esi;
+	uint32_t eax, ebx, ecx, edx;
+	uint32_t pixelspace[5]; /* Workspace to store pixels to so can print in right order for Spec512 */
 	int y, x;
 
 	/* on x86, unaligned access macro touches also
@@ -29,8 +29,8 @@ static void ConvertLowRes_320x32Bit_Spec(void)
 
 		/* Get screen addresses, 'edi'-ST screen, 'esi'-PC screen */
 		eax = STScreenLineOffset[y] + STScreenLeftSkipBytes;  /* Offset for this line + Amount to skip on left hand side */
-		edi = (Uint32 *)((Uint8 *)pSTScreen + eax);       /* ST format screen 4-plane 16 colors */
-		esi = (Uint32 *)pPCScreenDest;                    /* PC format screen */
+		edi = (uint32_t *)((uint8_t *)pSTScreen + eax);       /* ST format screen 4-plane 16 colors */
+		esi = (uint32_t *)pPCScreenDest;                      /* PC format screen */
 
 		x = STScreenWidthBytes >> 3;    /* Amount to draw across in 16-pixels (8 bytes) */
 
@@ -89,7 +89,7 @@ static void ConvertLowRes_320x32Bit_Spec(void)
 		Spec512_EndScanLine();
 
 		/* Offset to next line */
-		pPCScreenDest = (((Uint8 *)pPCScreenDest) + PCScreenBytesPerLine);
+		pPCScreenDest = (((uint8_t *)pPCScreenDest) + PCScreenBytesPerLine);
 	}
 
 	bScreenContentsChanged = true;

@@ -9,10 +9,10 @@
 
 static void ConvertLowRes_640x32Bit_Spec(void)
 {
-	Uint32 *PCScreen = (Uint32 *)pPCScreenDest;
-	Uint32 *edi, *ebp;
-	Uint32 *esi;
-	Uint32 eax;
+	uint32_t *PCScreen = (uint32_t *)pPCScreenDest;
+	uint32_t *edi, *ebp;
+	uint32_t *esi;
+	uint32_t eax;
 	int y;
 
 	Spec512_StartFrame();            /* Start frame, track palettes */
@@ -20,8 +20,8 @@ static void ConvertLowRes_640x32Bit_Spec(void)
 	for (y = STScreenStartHorizLine; y < STScreenEndHorizLine; y++)
 	{
 		eax = STScreenLineOffset[y] + STScreenLeftSkipBytes;  /* Offset for this line + Amount to skip on left hand side */
-		edi = (Uint32 *)((Uint8 *)pSTScreen + eax);        /* ST format screen 4-plane 16 colors */
-		ebp = (Uint32 *)((Uint8 *)pSTScreenCopy + eax);    /* Previous ST format screen */
+		edi = (uint32_t *)((uint8_t *)pSTScreen + eax);       /* ST format screen 4-plane 16 colors */
+		ebp = (uint32_t *)((uint8_t *)pSTScreenCopy + eax);   /* Previous ST format screen */
 		esi = PCScreen;                                    /* PC format screen */
 
 		Line_ConvertLowRes_640x32Bit_Spec(edi, ebp, esi, eax);
@@ -33,11 +33,11 @@ static void ConvertLowRes_640x32Bit_Spec(void)
 }
 
 
-static void Line_ConvertLowRes_640x32Bit_Spec(Uint32 *edi, Uint32 *ebp, Uint32 *esi, Uint32 eax)
+static void Line_ConvertLowRes_640x32Bit_Spec(uint32_t *edi, uint32_t *ebp, uint32_t *esi, uint32_t eax)
 {
 	int x;
-	Uint32 ebx, ecx, edx;
-	Uint32 pixelspace[5]; /* Workspace to store pixels to so can print in right order for Spec512 */
+	uint32_t ebx, ecx, edx;
+	uint32_t pixelspace[5]; /* Workspace to store pixels to so can print in right order for Spec512 */
 
 	/* on x86, unaligned access macro touches also
 	 * next byte, zero it for code checkers

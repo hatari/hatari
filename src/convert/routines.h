@@ -13,11 +13,11 @@
 static void ConvertLowRes_320x32Bit(void);
 static void ConvertLowRes_640x32Bit(void);
 static void ConvertLowRes_320x32Bit_Spec(void);
-static void Line_ConvertLowRes_640x32Bit_Spec(Uint32 *edi, Uint32 *ebp, Uint32 *esi, Uint32 eax);
+static void Line_ConvertLowRes_640x32Bit_Spec(uint32_t *edi, uint32_t *ebp, uint32_t *esi, uint32_t eax);
 static void ConvertLowRes_640x32Bit_Spec(void);
-static void Line_ConvertMediumRes_640x32Bit(Uint32 *edi, Uint32 *ebp, Uint32 *esi, Uint32 eax);
+static void Line_ConvertMediumRes_640x32Bit(uint32_t *edi, uint32_t *ebp, uint32_t *esi, uint32_t eax);
 static void ConvertMediumRes_640x32Bit(void);
-static void Line_ConvertMediumRes_640x32Bit_Spec(Uint32 *edi, Uint32 *ebp, Uint32 *esi, Uint32 eax);
+static void Line_ConvertMediumRes_640x32Bit_Spec(uint32_t *edi, uint32_t *ebp, uint32_t *esi, uint32_t eax);
 static void ConvertMediumRes_640x32Bit_Spec(void);
 
 #endif /* HATARI_CONVERTROUTINES_H */
