@@ -272,9 +272,12 @@ void Str_Filename_Host2Atari(const char *source, char *dst)
 			dot[4] = '\0';
 
 		/* if there are extra dots, convert them */
-		for (tmp = src; tmp < dot; tmp++)
-			if (*tmp == '.')
-				*tmp = INVALID_CHAR;
+		if (len != 2 || strcmp(src, "..") != 0)
+		{
+			for (tmp = src; tmp < dot; tmp++)
+				if (*tmp == '.')
+					*tmp = INVALID_CHAR;
+		}
 
 		/* limit part before extension to 8 chars */
 		if (dot - src > 8)

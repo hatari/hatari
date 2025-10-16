@@ -32,6 +32,7 @@ Emulator improvements:
   - Audio + video recording functionality moved to its own dialog
   - Number field values can now also be typed in
 - GEMDOS HD:
+  - Fix: "Show parent" items missing from TeraDesk folder windows
   - When Atari file name matches multiple host files, prefer
     (potentially) truncated file name matches over ones where
     invalid chars have (potentially) been replaced

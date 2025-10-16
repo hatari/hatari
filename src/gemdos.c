@@ -425,12 +425,12 @@ static void GemDOS_FreeAllInternalDTAs(void)
 /**
  * Match a TOS file name to a dir mask.
  */
-static bool fsfirst_match(const char *pat, const char *name)
+static bool fsfirst_match(const char *pat, const char *name, bool dots)
 {
 	const char *dot, *p=pat, *n=name;
 
-	if (name[0] == '.')
-		return false;           /* skip .* files */
+	if (name[0] == '.' && !dots)
+		return false;           /* skip .* entries for drive root */
 
 	dot = strrchr(name, '.');	/* '*' matches everything except last dot in name */
 	if (dot && p[0] == '*' && p[1] == 0)
@@ -473,12 +473,13 @@ static bool fsfirst_match(const char *pat, const char *name)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Parse directory from sfirst mask
+ * Parse directory from sfirst mask 'string' to 'newstr'
  * - e.g.: input:  "hdemudir/auto/mask*.*" outputs: "hdemudir/auto"
+ * Return true if it matches drive 'rootdir'
  */
-static void fsfirst_dirname(const char *string, char *newstr)
+static bool fsfirst_dirname(const char *rootdir, const char *string, char *newstr)
 {
-	int i=0;
+	int i = 0, rootlen = strlen(rootdir);
 
 	strcpy(newstr, string);
 
@@ -489,10 +490,24 @@ static void fsfirst_dirname(const char *string, char *newstr)
 			newstr[i] = PATHSEP;
 		i++;
 	}
+	if (i <= rootlen)
+	{
+		assert(strcmp(rootdir, newstr) == 0);
+		return true;
+	}
+
 	/* find last slash and terminate string */
 	while (i && newstr[i] != PATHSEP)
 		i--;
 	newstr[i] = '\0';
+
+	if (i <= rootlen)
+	{
+		assert(strcmp(rootdir, newstr) == 0);
+		return true;
+	}
+
+	return false;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1165,7 +1180,7 @@ static char* match_host_dir_entry(const char *path, const char *name, bool patte
 		{
 			char *d_name = entry->d_name;
 			Str_DecomposedToPrecomposedUtf8(d_name, d_name);   /* for OSX */
-			if (fsfirst_match(name, d_name))
+			if (fsfirst_match(name, d_name, false))
 			{
 				match = strdup(d_name);
 				break;
@@ -3031,6 +3046,7 @@ static bool GemDOS_SFirst(uint32_t Params)
 	uint32_t DTA_Gemdos;
 	uint16_t useidx;
 	uint16_t attrib;
+	bool isRoot;
 
 	attrib = STMemory_ReadWord(Params+SIZE_LONG);
 	pszFileName = STMemory_GetStringPointer(STMemory_ReadLong(Params));
@@ -3113,7 +3129,8 @@ static bool GemDOS_SFirst(uint32_t Params)
 	/* open directory
 	 * TODO: host path may not fit into InternalDTA
 	 */
-	fsfirst_dirname(szActualFileName, InternalDTAs[useidx].path);
+	const char *rootdir = emudrives[Drive-2]->hd_emulation_dir;
+	isRoot = fsfirst_dirname(rootdir, szActualFileName, InternalDTAs[useidx].path);
 	fsdir = opendir(InternalDTAs[useidx].path);
 
 	if (fsdir == NULL)
@@ -3140,9 +3157,12 @@ static bool GemDOS_SFirst(uint32_t Params)
 	j = 0;
 	for (i=0; i < count; i++)
 	{
+		/* root dir does not include "." & ".." entries, others do */
+		const bool dots = !isRoot;
 		char *d_name = files[i]->d_name;
+
 		Str_DecomposedToPrecomposedUtf8(d_name, d_name);   /* for OSX */
-		if (fsfirst_match(dirmask, d_name))
+		if (fsfirst_match(dirmask, d_name, dots))
 		{
 			InternalDTAs[useidx].found[j] = files[i];
 			j++;
