@@ -2426,7 +2426,7 @@ static int FDC_UpdateRestoreCmd ( void )
 		break;
 	 case FDCEMU_RUN_RESTORE_VERIFY_HEAD_OK:
 		FDC.IndexPulse_Counter = 0;
-		if ( Floppy_ImageIsMFM ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
+		if ( ( FDC.DriveSelSignal >= 0 ) && Floppy_ImageIsMFM ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
 		{
 			if ( FDC_LoadTrack_MFM ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal ) != 0 )
 			{
@@ -2599,7 +2599,7 @@ static int FDC_UpdateSeekCmd ( void )
 		break;
 	 case FDCEMU_RUN_SEEK_VERIFY_HEAD_OK:
 		FDC.IndexPulse_Counter = 0;
-		if ( Floppy_ImageIsMFM ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
+		if ( ( FDC.DriveSelSignal >= 0 ) && Floppy_ImageIsMFM ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
 		{
 			if ( FDC_LoadTrack_MFM ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal ) != 0 )
 			{
@@ -2754,7 +2754,7 @@ static int FDC_UpdateStepCmd ( void )
 		break;
 	 case FDCEMU_RUN_STEP_VERIFY_HEAD_OK:
 		FDC.IndexPulse_Counter = 0;
-		if ( Floppy_ImageIsMFM ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
+		if ( ( FDC.DriveSelSignal >= 0 ) && Floppy_ImageIsMFM ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
 		{
 			if ( FDC_LoadTrack_MFM ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal ) != 0 )
 			{
@@ -2879,7 +2879,15 @@ static int FDC_UpdateReadSectorsCmd ( void )
 	 case FDCEMU_RUN_READSECTORS_READDATA_MOTOR_ON:
 		FDC.ReplaceCommandPossible = false;
 		FDC.IndexPulse_Counter = 0;
-		FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Mode = FDC_INDEX_PULSE_MODE_TIMER;
+
+		if ( FDC.DriveSelSignal < 0 )					/* No drive selected */
+		{
+			FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;	/* Wait for a valid drive/floppy */
+			break;							/* Stay in same state */
+		}
+
+		FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Mode = FDC_INDEX_PULSE_MODE_TIMER;	/* Default value */
+
 		if ( Floppy_ImageIsMFM ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
 		{
 			if ( FDC_LoadTrack_MFM ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal ) != 0 )
@@ -2929,6 +2937,12 @@ static int FDC_UpdateReadSectorsCmd ( void )
 		/* Stay in same state */
 		break;
 	 case FDCEMU_RUN_READSECTORS_READDATA_CHECK_SECTOR_HEADER:
+		if ( FDC.DriveSelSignal < 0 )					/* No drive selected */
+		{
+			FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;	/* Wait for a valid drive/floppy */
+			break;							/* Stay in same state */
+		}
+
 		/* Check if the current ID Field is the one we're looking for (same track/sector and correct CRC) */
 		if ( Floppy_ImageIsSTX ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
 		{
@@ -2962,6 +2976,12 @@ static int FDC_UpdateReadSectorsCmd ( void )
 		}
 		break;
 	 case FDCEMU_RUN_READSECTORS_READDATA_TRANSFER_START:
+		if ( FDC.DriveSelSignal < 0 )					/* No drive selected */
+		{
+			FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;	/* Wait for a valid drive/floppy */
+			break;							/* Stay in same state */
+		}
+
 		/* Read a single sector into temporary buffer (512 bytes for ST/MSA) */
 		FDC_Buffer_Reset();
 
@@ -3119,7 +3139,15 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 	 case FDCEMU_RUN_WRITESECTORS_WRITEDATA_MOTOR_ON:
 		FDC.ReplaceCommandPossible = false;
 		FDC.IndexPulse_Counter = 0;
-		FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Mode = FDC_INDEX_PULSE_MODE_TIMER;
+
+		if ( FDC.DriveSelSignal < 0 )					/* No drive selected */
+		{
+			FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;	/* Wait for a valid drive/floppy */
+			break;							/* Stay in same state */
+		}
+
+		FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Mode = FDC_INDEX_PULSE_MODE_TIMER;	/* Default value */
+
 		if ( Floppy_ImageIsMFM ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
 			FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Mode = FDC_INDEX_PULSE_MODE_BIT_STREAM;
 
@@ -3162,6 +3190,12 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 		/* Stay in same state */
 		break;
 	 case FDCEMU_RUN_WRITESECTORS_WRITEDATA_CHECK_SECTOR_HEADER:
+		if ( FDC.DriveSelSignal < 0 )					/* No drive selected */
+		{
+			FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;	/* Wait for a valid drive/floppy */
+			break;							/* Stay in same state */
+		}
+
 		/* Check if the current ID Field is the one we're looking for (same track/sector and correct CRC) */
 		if ( Floppy_ImageIsSTX ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
 		{
@@ -3195,6 +3229,12 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 		}
 		break;
 	 case FDCEMU_RUN_WRITESECTORS_WRITEDATA_TRANSFER_START:
+		if ( FDC.DriveSelSignal < 0 )					/* No drive selected */
+		{
+			FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;	/* Wait for a valid drive/floppy */
+			break;							/* Stay in same state */
+		}
+
 		/* Write a single sector from RAM (512 bytes for ST/MSA) */
 		if ( Floppy_ImageIsSTX ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
 			Next_LEN = FDC_NextSectorID_LEN_STX ();
@@ -3328,7 +3368,15 @@ static int FDC_UpdateReadAddressCmd ( void )
 	 case FDCEMU_RUN_READADDRESS_MOTOR_ON:
 		FDC.ReplaceCommandPossible = false;
 		FDC.IndexPulse_Counter = 0;
-		FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Mode = FDC_INDEX_PULSE_MODE_TIMER;
+
+		if ( FDC.DriveSelSignal < 0 )					/* No drive selected */
+		{
+			FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;	/* Wait for a valid drive/floppy */
+			break;							/* Stay in same state */
+		}
+
+		FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Mode = FDC_INDEX_PULSE_MODE_TIMER;	/* Default value */
+
 		if ( Floppy_ImageIsMFM ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
 		{
 			if ( FDC_LoadTrack_MFM ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal ) != 0 )
@@ -3378,6 +3426,12 @@ static int FDC_UpdateReadAddressCmd ( void )
 		/* Stay in same state */
 		break;
 	 case FDCEMU_RUN_READADDRESS_TRANSFER_START:
+		if ( FDC.DriveSelSignal < 0 )					/* No drive selected */
+		{
+			FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;	/* Wait for a valid drive/floppy */
+			break;							/* Stay in same state */
+		}
+
 		/* Read the ID field into buffer */
 		FDC_Buffer_Reset();
 
@@ -3477,7 +3531,14 @@ static int FDC_UpdateReadTrackCmd ( void )
 		}
 		else
 		{
-			FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Mode = FDC_INDEX_PULSE_MODE_TIMER;
+			if ( FDC.DriveSelSignal < 0 )					/* No drive selected */
+			{
+				FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;	/* Wait for a valid drive/floppy */
+				break;							/* Stay in same state */
+			}
+
+			FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Mode = FDC_INDEX_PULSE_MODE_TIMER;	/* Default value */
+
 			if ( Floppy_ImageIsMFM ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
 			{
 				if ( FDC_LoadTrack_MFM ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal ) != 0 )
@@ -3493,9 +3554,14 @@ static int FDC_UpdateReadTrackCmd ( void )
 		}
 		break;
 	 case FDCEMU_RUN_READTRACK_INDEX:
+		if ( FDC.DriveSelSignal < 0 )					/* No drive selected */
+		{
+			FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;	/* Wait for a valid drive/floppy */
+			break;							/* Stay in same state */
+		}
+
 		/* At this point, we have a valid drive/floppy, build the track data */
 		FDC_Buffer_Reset();
-
 		if ( ( ( FDC.SideSignal == 1 )				/* Try to read side 1 on a disk that doesn't have 2 sides or drive is single sided */
 			&& ( ( FDC_GetSidesPerDisk ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ) != 2 )
 			  || ( FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads == 1 ) ) )
@@ -3603,6 +3669,12 @@ static int FDC_UpdateWriteTrackCmd ( void )
 		}
 		break;
 	 case FDCEMU_RUN_WRITETRACK_INDEX:
+		if ( FDC.DriveSelSignal < 0 )					/* No drive selected */
+		{
+			FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;	/* Wait for a valid drive/floppy */
+			break;							/* Stay in same state */
+		}
+
 		if ( FDC_CanMachineHandleDensity ( FDC.DriveSelSignal ) == false )	/* Can't handle the floppy's density */
 		{
 			LOG_TRACE(TRACE_FDC, "fdc type III write track drive=%d track=0x%x side=%d wrong density VBL=%d video_cyc=%d %d@%d pc=%x\n",
