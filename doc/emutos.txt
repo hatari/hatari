@@ -681,6 +681,7 @@ Free/shareware/PD games:
 - Haywire        (use joystick 0)
 - Hector*
 - Hero           (RPG)
+- Hero Fantasy: The King's Sword
 - Hexmines*
 - Iceblox Plus*  (works on all Atari machines)
 - In nihilum reverteris (interactive color novel)
@@ -1749,6 +1750,7 @@ Games working under EmuTOS >= v1.1.1 (DSP support + fixes):
 - Racer 2* (by Thadoss/Dune)
 - Running* (shareware version)
 - Slippery Sam
+- SVO 30 v1.0 (Falcon "Minecraft" by d.m.l)
 - Static (Patience by Reservoir Gods)
   - For v1.0, disable DSP from Hatari
 - TsccTron
