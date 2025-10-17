@@ -1455,6 +1455,7 @@ void	FDC_InsertFloppy ( int Drive )
 	if ( ( Drive >= 0 ) && ( Drive < MAX_FLOPPYDRIVES ) )
 	{
 		FDC_DRIVES[ Drive ].DiskInserted = true;
+		FDC_DRIVES[ Drive ].IndexPulse_Mode = FDC_INDEX_PULSE_MODE_TIMER;
 		if ( ( FDC.STR & FDC_STR_BIT_MOTOR_ON ) != 0 )		/* If we insert a floppy while motor is already on, we must */
 			FDC_IndexPulse_Init ( Drive );			/* init the index pulse's position */
 		else
@@ -3748,6 +3749,9 @@ static int FDC_UpdateWriteTrackCmd ( void )
  * Common to types I, II and III
  *
  * Start motor / spin up sequence if needed
+ * We use a timer to increase the index pulses (as MFM bit accuracy is not needed
+ * during this sequence)
+ *
  * Return true if spin up sequence is needed, else false
  */
 
@@ -3784,9 +3788,14 @@ static bool FDC_Set_MotorON ( uint8_t FDC_CR )
 		LOG_TRACE(TRACE_FDC, "fdc start motor : no disk/drive VBL=%d video_cyc=%d %d@%d pc=%x\n",
 			nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 	}
-	else if ( FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Time == 0 )
-		FDC_IndexPulse_Init ( FDC.DriveSelSignal );		/* Index Pulse's position is random when motor starts */
-	
+	else
+	{
+		FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Mode = FDC_INDEX_PULSE_MODE_TIMER;
+
+		if ( FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Time == 0 )
+			FDC_IndexPulse_Init ( FDC.DriveSelSignal );	/* Index Pulse's position is random when motor starts */
+	}
+
 	return SpinUp;
 }
 
