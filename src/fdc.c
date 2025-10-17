@@ -2427,6 +2427,8 @@ static int FDC_UpdateRestoreCmd ( void )
 		break;
 	 case FDCEMU_RUN_RESTORE_VERIFY_HEAD_OK:
 		FDC.IndexPulse_Counter = 0;
+		FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Mode = FDC_INDEX_PULSE_MODE_TIMER;	/* Default value */
+
 		if ( ( FDC.DriveSelSignal >= 0 ) && Floppy_ImageIsMFM ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
 		{
 			if ( FDC_LoadTrack_MFM ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal ) != 0 )
@@ -2436,6 +2438,7 @@ static int FDC_UpdateRestoreCmd ( void )
 				FdcCycles = FDC_DELAY_CYCLE_COMMAND_COMPLETE;
 				break;
 			}
+			FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Mode = FDC_INDEX_PULSE_MODE_BIT_STREAM;
 		}
 		/* Head OK, fall through and look for sector header */
 	 case FDCEMU_RUN_RESTORE_VERIFY_NEXT_SECTOR_HEADER:
@@ -2600,6 +2603,8 @@ static int FDC_UpdateSeekCmd ( void )
 		break;
 	 case FDCEMU_RUN_SEEK_VERIFY_HEAD_OK:
 		FDC.IndexPulse_Counter = 0;
+		FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Mode = FDC_INDEX_PULSE_MODE_TIMER;	/* Default value */
+
 		if ( ( FDC.DriveSelSignal >= 0 ) && Floppy_ImageIsMFM ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
 		{
 			if ( FDC_LoadTrack_MFM ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal ) != 0 )
@@ -2609,6 +2614,7 @@ static int FDC_UpdateSeekCmd ( void )
 				FdcCycles = FDC_DELAY_CYCLE_COMMAND_COMPLETE;
 				break;
 			}
+			FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Mode = FDC_INDEX_PULSE_MODE_BIT_STREAM;
 		}
 		/* Head OK, fall through and look for sector header */
 	 case FDCEMU_RUN_SEEK_VERIFY_NEXT_SECTOR_HEADER:
@@ -2755,6 +2761,8 @@ static int FDC_UpdateStepCmd ( void )
 		break;
 	 case FDCEMU_RUN_STEP_VERIFY_HEAD_OK:
 		FDC.IndexPulse_Counter = 0;
+		FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Mode = FDC_INDEX_PULSE_MODE_TIMER;	/* Default value */
+
 		if ( ( FDC.DriveSelSignal >= 0 ) && Floppy_ImageIsMFM ( EmulationDrives[ FDC.DriveSelSignal ].ImageType ) )
 		{
 			if ( FDC_LoadTrack_MFM ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal ) != 0 )
@@ -2764,6 +2772,7 @@ static int FDC_UpdateStepCmd ( void )
 				FdcCycles = FDC_DELAY_CYCLE_COMMAND_COMPLETE;
 				break;
 			}
+			FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Mode = FDC_INDEX_PULSE_MODE_BIT_STREAM;
 		}
 		/* Head OK, fall through and look for sector header */
 	 case FDCEMU_RUN_STEP_VERIFY_NEXT_SECTOR_HEADER:
@@ -3528,7 +3537,7 @@ static int FDC_UpdateReadTrackCmd ( void )
 //fprintf ( stderr , "read tr idx=%d %d\n" , FDC_IndexPulse_GetState() , FdcCycles );
 		if ( FdcCycles < 0 )
 		{
-			FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;	/* Wait for a valid drive/floppy */
+			FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;		/* Wait for a valid drive/floppy */
 		}
 		else
 		{
