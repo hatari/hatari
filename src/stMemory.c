@@ -251,6 +251,21 @@ void STMemory_SetDefaultConfig(void)
 	STMemory_WriteLong(0x00, STMemory_ReadLong(TosAddress));
 	STMemory_WriteLong(0x04, STMemory_ReadLong(TosAddress+4));
 
+	if (!ConfigureParams.Rom.bPatchTos)
+	{
+		/* If the user wants a rather unmodified TOS environment,
+		 * we skip the patching of the system variables here.
+		 * But just in case, warn for invalid configs! */
+		if (bUseVDIRes)
+			Log_Printf(LOG_WARN,
+			           "Extended VDI resolution needs TOS patching!");
+		if (!bIsEmuTOS && TosVersion < 0x300 &&
+		    ConfigureParams.Memory.STRamSize_KB > 4*1024)
+			Log_Printf(LOG_WARN,
+			           "Need TOS patching for memory sizes > 4 MiB on ST/STE");
+		return;
+	}
+
 	/* Fill in magic numbers to bypass TOS' memory tests for faster boot or
 	 * if VDI resolution is enabled or if more than 4 MB of ram are used
 	 * or if TT RAM added in Falcon mode.
