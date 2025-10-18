@@ -11,11 +11,13 @@
 #include "ioMem.h"
 #include "log.h"
 #include "memorySnapShot.h"
+#include "resolution.h"
 #include "screen.h"
 #include "screenConvert.h"
 #include "statusbar.h"
 #include "stMemory.h"
 #include "video.h"
+#include "vdi.h"
 
 
 struct screen_zoom_s
@@ -742,4 +744,112 @@ bool Screen_GenDraw(uint32_t vaddr, int vw, int vh, int vbpp, int nextline,
 	Screen_GenConvUpdate(true);
 
 	return true;
+}
+
+
+/**
+ * This is used to set the size of the screen
+ * when we're using the generic conversion functions.
+ */
+void Screen_SetGenConvSize(int width, int height, bool bForceChange)
+{
+	static int genconv_width_req, genconv_height_req;
+	const bool keep = ConfigureParams.Screen.bKeepResolution;
+	int screenwidth, screenheight, maxw, maxh;
+	int scalex, scaley, sbarheight;
+
+	if (width == -1)
+		width = genconv_width_req;
+	else
+		genconv_width_req = width;
+
+	if (height == -1)
+		height = genconv_height_req;
+	else
+		genconv_height_req = height;
+
+	/* constrain size request to user's desktop size */
+	Resolution_GetLimits(&maxw, &maxh, keep);
+
+	nScreenZoomX = nScreenZoomY = 1;
+
+	if (ConfigureParams.Screen.bAspectCorrect)
+	{
+		/* Falcon (and TT) pixel scaling factors seem to 2^x
+		 * (quarter/half pixel, interlace/double line), so
+		 * do aspect correction as 2's exponent. */
+		while (nScreenZoomX*width < height &&
+		       2 * nScreenZoomX * width < maxw)
+		{
+			nScreenZoomX *= 2;
+		}
+		while (2 * nScreenZoomY * height < width &&
+		       2 * nScreenZoomY * height < maxh)
+		{
+			nScreenZoomY *= 2;
+		}
+		if (nScreenZoomX*nScreenZoomY > 2)
+		{
+			Log_Printf(LOG_INFO, "Strange screen size %dx%d -> aspect corrected by %dx%d!\n",
+				width, height, nScreenZoomX, nScreenZoomY);
+		}
+	}
+
+	/* then select scale as close to target size as possible
+	 * without having larger size than it */
+	scalex = maxw/(nScreenZoomX*width);
+	scaley = maxh/(nScreenZoomY*height);
+	if (scalex > 1 && scaley > 1)
+	{
+		/* keep aspect ratio */
+		if (scalex < scaley)
+		{
+			nScreenZoomX *= scalex;
+			nScreenZoomY *= scalex;
+		}
+		else
+		{
+			nScreenZoomX *= scaley;
+			nScreenZoomY *= scaley;
+		}
+	}
+
+	width *= nScreenZoomX;
+	height *= nScreenZoomY;
+
+	/* get statusbar size for this screen size */
+	sbarheight = Statusbar_GetHeightForSize(width, height);
+	screenheight = height + sbarheight;
+	screenwidth = width;
+
+	/* re-calculate statusbar height for this resolution */
+	sbarheight = Statusbar_SetHeight(screenwidth, screenheight-sbarheight);
+
+	if (!Screen_SetVideoSize(screenwidth, screenheight, bForceChange))
+	{
+		/* same host screen size despite Atari resolution change,
+		 * -> no time consuming host video mode change needed */
+		if (screenwidth > width || screenheight > height+sbarheight)
+		{
+			/* Atari screen smaller than host -> clear screen */
+			Screen_ClearScreen();
+		}
+		return;
+	}
+
+	/* In case surface format changed, remap the native palette */
+	Screen_RemapPalette();
+
+	Main_WarpMouse(screenwidth / 2, screenheight / 2, false);
+}
+
+
+/**
+ * Return true if Falcon/TT/VDI generic screen convert functions
+ * need to be used instead of the ST/STE functions.
+ */
+bool Screen_UseGenConvScreen(void)
+{
+	return Config_IsMachineFalcon() || Config_IsMachineTT()
+		|| bUseHighRes || bUseVDIRes;
 }

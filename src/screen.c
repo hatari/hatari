@@ -106,10 +106,6 @@ static bool bScrDoubleY;                /* true if double on Y */
 static int ScrUpdateFlag;               /* Bit mask of how to update screen */
 static bool bRGBTableInSync;            /* Is RGB table up to date? */
 
-/* These are used for the generic screen conversion functions */
-static int genconv_width_req, genconv_height_req;
-
-
 SDL_Window *sdlWindow;
 static SDL_Renderer *sdlRenderer;
 static SDL_Texture *sdlTexture;
@@ -260,15 +256,6 @@ static void Screen_SetSTScreenOffsets(void)
 	}
 }
 
-/**
- * Return true if Falcon/TT/VDI generic screen convert functions
- * need to be used instead of the ST/STE functions.
- */
-bool Screen_UseGenConvScreen(void)
-{
-	return Config_IsMachineFalcon() || Config_IsMachineTT()
-		|| bUseHighRes || bUseVDIRes;
-}
 
 static void Screen_FreeSDL2Resources(void)
 {
@@ -520,7 +507,7 @@ void Screen_SetTextureScale(int width, int height, int win_width, int win_height
  * Change the SDL video mode.
  * @return true if mode has been changed, false if change was not necessary
  */
-static bool Screen_SetVideoSize(int width, int height, bool bForceChange)
+bool Screen_SetVideoSize(int width, int height, bool bForceChange)
 {
 	Uint32 sdlVideoFlags;
 	char *psSdlVideoDriver;
@@ -951,7 +938,7 @@ void Screen_SetFullUpdate(void)
 /**
  * Clear Window display memory
  */
-static void Screen_ClearScreen(void)
+void Screen_ClearScreen(void)
 {
 	SDL_FillRect(sdlscrn, &STScreenRect, Screen_MapRGB(0, 0, 0));
 }
@@ -1001,7 +988,7 @@ void Screen_EnterFullScreen(void)
 
 		if (Screen_UseGenConvScreen())
 		{
-			Screen_SetGenConvSize(genconv_width_req, genconv_height_req, true);
+			Screen_SetGenConvSize(-1, -1, true);
 			/* force screen redraw */
 			Screen_GenConvUpdate(false);
 		}
@@ -1047,7 +1034,7 @@ void Screen_ReturnFromFullScreen(void)
 
 		if (Screen_UseGenConvScreen())
 		{
-			Screen_SetGenConvSize(genconv_width_req, genconv_height_req, true);
+			Screen_SetGenConvSize(-1, -1, true);
 			/* force screen redraw */
 			Screen_GenConvUpdate(false);
 		}
@@ -1466,86 +1453,6 @@ bool Screen_Draw(bool bForceFlip)
 	return screen_changed;
 }
 
-/**
- * This is used to set the size of the SDL screen
- * when we're using the generic conversion functions.
- */
-void Screen_SetGenConvSize(int width, int height, bool bForceChange)
-{
-	const bool keep = ConfigureParams.Screen.bKeepResolution;
-	int screenwidth, screenheight, maxw, maxh;
-	int scalex, scaley, sbarheight;
-
-	/* constrain size request to user's desktop size */
-	Resolution_GetLimits(&maxw, &maxh, keep);
-
-	nScreenZoomX = nScreenZoomY = 1;
-
-	if (ConfigureParams.Screen.bAspectCorrect) {
-		/* Falcon (and TT) pixel scaling factors seem to 2^x
-		 * (quarter/half pixel, interlace/double line), so
-		 * do aspect correction as 2's exponent.
-		 */
-		while (nScreenZoomX*width < height &&
-		       2*nScreenZoomX*width < maxw) {
-			nScreenZoomX *= 2;
-		}
-		while (2*nScreenZoomY*height < width &&
-		       2*nScreenZoomY*height < maxh) {
-			nScreenZoomY *= 2;
-		}
-		if (nScreenZoomX*nScreenZoomY > 2) {
-			Log_Printf(LOG_INFO, "Strange screen size %dx%d -> aspect corrected by %dx%d!\n",
-				width, height, nScreenZoomX, nScreenZoomY);
-		}
-	}
-
-	/* then select scale as close to target size as possible
-	 * without having larger size than it
-	 */
-	scalex = maxw/(nScreenZoomX*width);
-	scaley = maxh/(nScreenZoomY*height);
-	if (scalex > 1 && scaley > 1) {
-		/* keep aspect ratio */
-		if (scalex < scaley) {
-			nScreenZoomX *= scalex;
-			nScreenZoomY *= scalex;
-		} else {
-			nScreenZoomX *= scaley;
-			nScreenZoomY *= scaley;
-		}
-	}
-
-	genconv_width_req = width;
-	genconv_height_req = height;
-	width *= nScreenZoomX;
-	height *= nScreenZoomY;
-
-	/* get statusbar size for this screen size */
-	sbarheight = Statusbar_GetHeightForSize(width, height);
-	screenheight = height + sbarheight;
-	screenwidth = width;
-
-	/* re-calculate statusbar height for this resolution */
-	sbarheight = Statusbar_SetHeight(screenwidth, screenheight-sbarheight);
-
-	if (!Screen_SetVideoSize(screenwidth, screenheight, bForceChange))
-	{
-		/* same host screen size despite Atari resolution change,
-		 * -> no time consuming host video mode change needed
-		 */
-		if (screenwidth > width || screenheight > height+sbarheight) {
-			/* Atari screen smaller than host -> clear screen */
-			Screen_ClearScreen();
-		}
-		return;
-	}
-
-	// In case surface format changed, remap the native palette
-	Screen_RemapPalette();
-
-	Main_WarpMouse(screenwidth / 2, screenheight / 2, false);
-}
 
 void Screen_GenConvUpdate(bool update_statusbar)
 {

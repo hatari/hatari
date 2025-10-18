@@ -21,3 +21,5 @@ void Screen_GenConvert(uint32_t vaddr, void *fvram, int vw, int vh,
 bool Screen_GenDraw(uint32_t vaddr, int vw, int vh, int vbpp, int nextline,
                     int leftBorderSize, int rightBorderSize,
                     int upperBorderSize, int lowerBorderSize);
+void Screen_SetGenConvSize(int width, int height, bool bForceChange);
+bool Screen_UseGenConvScreen(void);

@@ -108,6 +108,7 @@ extern void Screen_UnInit(void);
 extern void Screen_Reset(void);
 extern bool Screen_Lock(void);
 extern void Screen_UnLock(void);
+extern void Screen_ClearScreen(void);
 extern void Screen_SetFullUpdate(void);
 extern void Screen_EnterFullScreen(void);
 extern void Screen_ReturnFromFullScreen(void);
@@ -119,11 +120,10 @@ extern void Screen_GetPixelFormat(uint32_t *rmask, uint32_t *gmask, uint32_t *bm
 extern void Screen_GetDimension(uint32_t **pixels, int *width, int *height, int *pitch);
 extern void Screen_SetTextureScale(int width, int height, int win_width,
                                    int win_height, bool bForceCreation);
-extern void Screen_SetGenConvSize(int width, int height, bool bForceChange);
+extern bool Screen_SetVideoSize(int width, int height, bool bForceChange);
 extern void Screen_GenConvUpdate(bool update_statusbar);
 extern uint32_t Screen_GetGenConvWidth(void);
 extern uint32_t Screen_GetGenConvHeight(void);
-extern bool Screen_UseGenConvScreen(void);
 extern int Screen_SaveBMP(const char *filename);
 extern void Screen_StatusbarMessage(const char *msg, uint32_t msecs);
 extern int Screen_GetUISocket(void);
