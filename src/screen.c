@@ -520,7 +520,7 @@ void Screen_SetTextureScale(int width, int height, int win_width, int win_height
  * Change the SDL video mode.
  * @return true if mode has been changed, false if change was not necessary
  */
-static bool Screen_SetSDLVideoSize(int width, int height, bool bForceChange)
+static bool Screen_SetVideoSize(int width, int height, bool bForceChange)
 {
 	Uint32 sdlVideoFlags;
 	char *psSdlVideoDriver;
@@ -532,7 +532,13 @@ static bool Screen_SetSDLVideoSize(int width, int height, bool bForceChange)
 
 	/* Check if we really have to change the video mode: */
 	if (sdlscrn != NULL && sdlscrn->w == width && sdlscrn->h == height && !bForceChange)
+	{
+		/* re-calculate variables in case height + statusbar height
+		 * don't anymore match SDL surface size (there's an assert
+		 * for that) */
+		Statusbar_Init(sdlscrn);
 		return false;
+	}
 
 	psSdlVideoDriver = SDL_getenv("SDL_VIDEODRIVER");
 	bUseDummyMode = psSdlVideoDriver && !strcmp(psSdlVideoDriver, "dummy");
@@ -668,14 +674,28 @@ static bool Screen_SetSDLVideoSize(int width, int height, bool bForceChange)
 		Main_ErrorExit("Could not set video mode:", SDL_GetError(), -2);
 	}
 
-	DEBUGPRINT(("SDL screen granted: %d x %d @ %d\n", sdlscrn->w, sdlscrn->h,
-	            sdlscrn->format->BitsPerPixel));
+	DEBUGPRINT(("SDL screen granted: %dx%d @ %d, pitch=%d, locking required=%s\n",
+	            sdlscrn->w, sdlscrn->h, sdlscrn->format->BitsPerPixel,
+	            sdlscrn->pitch, SDL_MUSTLOCK(sdlscrn) ? "YES" : "NO"));
+	DEBUGPRINT(("Pixel format: masks r=%04x g=%04x b=%04x, "
+	            "shifts r=%d g=%d b=%d, losses r=%d g=%d b=%d\n",
+	            sdlscrn->format->Rmask, sdlscrn->format->Gmask, sdlscrn->format->Bmask,
+	            sdlscrn->format->Rshift, sdlscrn->format->Gshift, sdlscrn->format->Bshift,
+	            sdlscrn->format->Rloss, sdlscrn->format->Gloss, sdlscrn->format->Bloss));
 
 	if (!bInFullScreen)
 	{
 		/* re-embed the new Hatari SDL window */
 		Screen_ReparentWindow(width, height, bInFullScreen);
 	}
+
+	Statusbar_Init(sdlscrn);
+
+	/* screen area without the statusbar */
+	STScreenRect.x = 0;
+	STScreenRect.y = 0;
+	STScreenRect.w = sdlscrn->w;
+	STScreenRect.h = sdlscrn->h - Statusbar_GetHeight();
 
 	Avi_SetSurface(sdlscrn->pixels, sdlscrn->w, sdlscrn->h, sdlscrn->pitch);
 
@@ -760,16 +780,7 @@ static void Screen_SetSTResolution(bool bForceChange)
 
 	PCScreenOffsetX = PCScreenOffsetY = 0;
 
-	if (Screen_SetSDLVideoSize(Width, Height, bForceChange))
-	{
-		Statusbar_Init(sdlscrn);
-
-		/* screen area without the statusbar */
-		STScreenRect.x = 0;
-		STScreenRect.y = 0;
-		STScreenRect.w = sdlscrn->w;
-		STScreenRect.h = sdlscrn->h - Statusbar_GetHeight();
-	}
+	Screen_SetVideoSize(Width, Height, bForceChange);
 
 	if (!bRGBTableInSync)
 	{
@@ -1518,12 +1529,7 @@ void Screen_SetGenConvSize(int width, int height, bool bForceChange)
 	/* re-calculate statusbar height for this resolution */
 	sbarheight = Statusbar_SetHeight(screenwidth, screenheight-sbarheight);
 
-	/* screen area without the statusbar */
-	STScreenRect.x = STScreenRect.y = 0;
-	STScreenRect.w = screenwidth;
-	STScreenRect.h = screenheight - sbarheight;
-
-	if (!Screen_SetSDLVideoSize(screenwidth, screenheight, bForceChange))
+	if (!Screen_SetVideoSize(screenwidth, screenheight, bForceChange))
 	{
 		/* same host screen size despite Atari resolution change,
 		 * -> no time consuming host video mode change needed
@@ -1531,11 +1537,6 @@ void Screen_SetGenConvSize(int width, int height, bool bForceChange)
 		if (screenwidth > width || screenheight > height+sbarheight) {
 			/* Atari screen smaller than host -> clear screen */
 			Screen_ClearScreen();
-			/* re-calculate variables in case height + statusbar height
-			 * don't anymore match SDL surface size (there's an assert
-			 * for that)
-			 */
-			Statusbar_Init(sdlscrn);
 		}
 		return;
 	}
@@ -1543,20 +1544,7 @@ void Screen_SetGenConvSize(int width, int height, bool bForceChange)
 	// In case surface format changed, remap the native palette
 	Screen_RemapPalette();
 
-	// redraw statusbar
-	Statusbar_Init(sdlscrn);
-
-	DEBUGPRINT(("Surface Pitch = %d, width = %d, height = %d\n", sdlscrn->pitch, sdlscrn->w, sdlscrn->h));
-	DEBUGPRINT(("Must Lock? %s\n", SDL_MUSTLOCK(sdlscrn) ? "YES" : "NO"));
-	DEBUGPRINT(("Pixel format:bitspp=%d, tmasks r=%04x g=%04x b=%04x"
-			", tshifts r=%d g=%d b=%d"
-			", tlosses r=%d g=%d b=%d\n",
-			sdlscrn->format->BitsPerPixel,
-			sdlscrn->format->Rmask, sdlscrn->format->Gmask, sdlscrn->format->Bmask,
-			sdlscrn->format->Rshift, sdlscrn->format->Gshift, sdlscrn->format->Bshift,
-			sdlscrn->format->Rloss, sdlscrn->format->Gloss, sdlscrn->format->Bloss));
-
-	Main_WarpMouse(sdlscrn->w/2,sdlscrn->h/2, false);
+	Main_WarpMouse(screenwidth / 2, screenheight / 2, false);
 }
 
 void Screen_GenConvUpdate(bool update_statusbar)
