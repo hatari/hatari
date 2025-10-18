@@ -356,9 +356,9 @@ void STMemory_SetDefaultConfig(void)
 	/* If possible we don't override memory detection, TOS will do it
 	 * (in that case MMU/MCU can be correctly emulated, and we do nothing
 	 * and let TOS do its own memory tests using $FF8001) */
-	if (!(Config_IsMachineST() || Config_IsMachineSTE())
-	    || ConfigureParams.System.bFastBoot || bUseVDIRes
-	    || ConfigureParams.Memory.STRamSize_KB > 4*1024)
+	if ((Config_IsMachineST() || Config_IsMachineSTE())
+	    && (ConfigureParams.System.bFastBoot || bUseVDIRes
+	        || ConfigureParams.Memory.STRamSize_KB > 4*1024))
 	{
 		/* Set memory controller byte according to different memory sizes */
 		/* Setting per bank : %00=128k %01=512k %10=2Mb %11=reserved. - e.g. %1010 means 4Mb */
