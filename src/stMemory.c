@@ -259,7 +259,7 @@ void STMemory_SetDefaultConfig(void)
 	 *  the RAM content after those tests) */
 	if ( ConfigureParams.System.bFastBoot
 	  || bUseVDIRes
-	  || ( ConfigureParams.Memory.STRamSize_KB > (4*1024) && !bIsEmuTOS )
+	  || ( ConfigureParams.Memory.STRamSize_KB > 4*1024 && !bIsEmuTOS && TosVersion < 0x300)
 	  || ( Config_IsMachineTT() && ConfigureParams.System.bAddressSpace24 && !bIsEmuTOS )
 	  || ( Config_IsMachineFalcon() && TTmemory && !bIsEmuTOS) )
 	{
