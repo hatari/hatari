@@ -102,30 +102,30 @@ extern uint32_t HBLPaletteMasks[HBL_PALETTE_MASKS];
 extern uint32_t *pHBLPaletteMasks;
 extern int STScreenLineOffset[NUM_VISIBLE_LINES];
 
-extern uint32_t Screen_MapRGB(uint8_t red, uint8_t green, uint8_t blue);
-extern void Screen_Init(void);
-extern void Screen_UnInit(void);
-extern void Screen_Reset(void);
-extern bool Screen_Lock(void);
-extern void Screen_UnLock(void);
-extern void Screen_ClearScreen(void);
-extern void Screen_SetFullUpdate(void);
-extern void Screen_EnterFullScreen(void);
-extern void Screen_ReturnFromFullScreen(void);
-extern void Screen_UngrabMouse(void);
-extern void Screen_ModeChanged(bool bForceChange);
-extern bool Screen_Draw(bool bForceFlip);
-extern void Screen_GetPixelFormat(uint32_t *rmask, uint32_t *gmask, uint32_t *bmask,
-                                  int *rshift, int *gshift, int *bshift);
-extern void Screen_GetDimension(uint32_t **pixels, int *width, int *height, int *pitch);
-extern void Screen_SetTextureScale(int width, int height, int win_width,
-                                   int win_height, bool bForceCreation);
-extern bool Screen_SetVideoSize(int width, int height, bool bForceChange);
-extern void Screen_GenConvUpdate(bool update_statusbar);
-extern uint32_t Screen_GetGenConvWidth(void);
-extern uint32_t Screen_GetGenConvHeight(void);
-extern int Screen_SaveBMP(const char *filename);
-extern void Screen_StatusbarMessage(const char *msg, uint32_t msecs);
-extern int Screen_GetUISocket(void);
+uint32_t Screen_MapRGB(uint8_t red, uint8_t green, uint8_t blue);
+void Screen_Init(void);
+void Screen_UnInit(void);
+void Screen_Reset(void);
+bool Screen_Lock(void);
+void Screen_UnLock(void);
+void Screen_ClearScreen(void);
+void Screen_SetFullUpdate(void);
+void Screen_EnterFullScreen(void);
+void Screen_ReturnFromFullScreen(void);
+void Screen_UngrabMouse(void);
+void Screen_ModeChanged(bool bForceChange);
+bool Screen_Draw(bool bForceFlip);
+void Screen_GetPixelFormat(uint32_t *rmask, uint32_t *gmask, uint32_t *bmask,
+                           int *rshift, int *gshift, int *bshift);
+void Screen_GetDimension(uint32_t **pixels, int *width, int *height, int *pitch);
+void Screen_SetTextureScale(int width, int height, int win_width,
+                            int win_height, bool bForceCreation);
+bool Screen_SetVideoSize(int width, int height, bool bForceChange);
+void Screen_GenConvUpdate(bool update_statusbar);
+uint32_t Screen_GetGenConvWidth(void);
+uint32_t Screen_GetGenConvHeight(void);
+int Screen_SaveBMP(const char *filename);
+void Screen_StatusbarMessage(const char *msg, uint32_t msecs);
+int Screen_GetUISocket(void);
 
 #endif  /* ifndef HATARI_SCREEN_H */
