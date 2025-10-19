@@ -9,8 +9,9 @@ freebsd_task:
           devel/sdl20 devel/libedit
   script:
     - ./configure --enable-debug || { cat config.log; exit 1; }
-    - gmake -j4
-    - gmake test || { cat Testing/Temporary/LastTest.log; exit 1; }
+    - gmake -j$(sysctl -n hw.ncpu)
+    - ctest -j$(sysctl -n hw.ncpu) test
+      || { cat Testing/Temporary/LastTest.log; exit 1; }
 
 xcode_task:
   osx_instance:
@@ -98,7 +99,8 @@ macos14_task:
     - ./configure --disable-osx-bundle --enable-debug
       || { cat config.log; exit 1; }
     - gmake -j$(sysctl -n hw.ncpu)
-    - gmake test || { cat Testing/Temporary/LastTest.log; exit 1; }
+    - ctest -j$(sysctl -n hw.ncpu) test
+      || { cat Testing/Temporary/LastTest.log; exit 1; }
 
 cygwin_task:
   windows_container:
