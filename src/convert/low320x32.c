@@ -41,7 +41,7 @@ static void ConvertLowRes_320x32Bit(void)
 
 				bScreenContentsChanged = true;
 
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+#if defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
 				/* Plot pixels */
 				LOW_BUILD_PIXELS_0 ;      /* Generate 'ecx' as pixels [12,13,14,15] */
 				PLOT_LOW_320_32BIT(12) ;

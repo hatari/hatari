@@ -53,7 +53,7 @@ static void Line_ConvertLowRes_640x32Bit_Spec(uint32_t *edi, uint32_t *ebp, uint
 		ebx = *edi;                 /* Do 16 pixels at one time */
 		ecx = *(edi+1);
 
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+#if defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
 		/* Convert planes to byte indices - as works in wrong order store to workspace so can read back in order! */
 		LOW_BUILD_PIXELS_0 ;        /* Generate 'ecx' as pixels [12,13,14,15] */
 		pixelspace[3] = ecx;

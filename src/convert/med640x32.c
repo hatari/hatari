@@ -54,7 +54,7 @@ static void Line_ConvertMediumRes_640x32Bit(uint32_t *edi, uint32_t *ebp, uint32
 
 			bScreenContentsChanged = true;
 
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+#if defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
 			/* Plot in 'right-order' on big endian systems */
 			MED_BUILD_PIXELS_0 ;              /* Generate 'ecx' as pixels [12,13,14,15] */
 			PLOT_MED_640_32BIT(12) ;
