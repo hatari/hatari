@@ -103,7 +103,7 @@ static int ScrUpdateFlag;               /* Bit mask of how to update screen */
  * conversion table. Called each time when changed resolution or to/from
  * fullscreen mode.
  */
-static void Screen_SetupRGBTable(void)
+static void ScrConvSt_SetupRGBTable(void)
 {
 	uint16_t STColor;
 	int r, g, b;
@@ -134,7 +134,7 @@ static void Screen_SetupRGBTable(void)
 /**
  * Convert 640x400 monochrome screen
  */
-static void Screen_ConvertHighRes(void)
+static void ScrConvSt_ConvertHighRes(void)
 {
 	int linewidth = 640 / 16;
 
@@ -145,7 +145,7 @@ static void Screen_ConvertHighRes(void)
 /**
  * Set screen draw functions.
  */
-static void Screen_SetDrawFunctions(bool bDoubleLowRes)
+static void ScrConvSt_SetDrawFunctions(bool bDoubleLowRes)
 {
 	if (bDoubleLowRes)
 		ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_640x32Bit;
@@ -158,7 +158,7 @@ static void Screen_SetDrawFunctions(bool bDoubleLowRes)
 /**
  * Set amount of border pixels
  */
-static void Screen_SetBorderPixels(int leftX, int leftY)
+static void ScrConvSt_SetBorderPixels(int leftX, int leftY)
 {
 	/* All screen widths need to be aligned to 16-bits */
 	nBorderPixelsLeft = Opt_ValueAlignMinMax(leftX/2, 16, 0, 48);
@@ -189,7 +189,7 @@ static void Screen_SetBorderPixels(int leftX, int leftY)
  * store Y offset for each horizontal line in our source ST screen for
  * reference in the convert functions.
  */
-static void Screen_SetSTScreenOffsets(void)
+static void ScrConvSt_SetSTScreenOffsets(void)
 {
 	int i;
 
@@ -263,7 +263,7 @@ void ScrConvSt_SetSTResolution(bool bForceChange)
 		int leftX = maxW - Width;
 		int leftY = maxH - (Height + Statusbar_GetHeightForSize(Width, Height));
 
-		Screen_SetBorderPixels(leftX/nZoom, leftY/nZoom);
+		ScrConvSt_SetBorderPixels(leftX/nZoom, leftY/nZoom);
 		DEBUGPRINT(("resolution limit:\n\t%d x %d\nlimited resolution:\n\t", maxW, maxH));
 		DEBUGPRINT(("%d * (%d + %d + %d) x (%d + %d + %d)\n", nZoom,
 			    nBorderPixelsLeft, Width/nZoom, nBorderPixelsRight,
@@ -273,18 +273,18 @@ void ScrConvSt_SetSTResolution(bool bForceChange)
 		DEBUGPRINT(("\t= %d x %d (+ statusbar)\n", Width, Height));
 	}
 
-	Screen_SetSTScreenOffsets();  
+	ScrConvSt_SetSTScreenOffsets();
 	Height += Statusbar_SetHeight(Width, Height);
 
 	PCScreenOffsetX = PCScreenOffsetY = 0;
 
 	if (Screen_SetVideoSize(Width, Height, bForceChange))
 	{
-		Screen_SetupRGBTable();   /* Create color conversion table */
+		ScrConvSt_SetupRGBTable();   /* Create color conversion table */
 	}
 
 	/* Set drawing functions */
-	Screen_SetDrawFunctions(bDoubleLowRes);
+	ScrConvSt_SetDrawFunctions(bDoubleLowRes);
 
 	ScrConvSt_SetFullUpdate();           /* Cause full update of screen */
 }
@@ -341,7 +341,7 @@ void ScrConvSt_Init(void)
 	}
 	pFrameBuffer = &FrameBuffer;  /* TODO: Replace pFrameBuffer with FrameBuffer everywhere */
 
-	ScreenDrawFunctionsNormal[ST_HIGH_RES] = Screen_ConvertHighRes;
+	ScreenDrawFunctionsNormal[ST_HIGH_RES] = ScrConvSt_ConvertHighRes;
 
 	Video_SetScreenRasters();                       /* Set rasters ready for first screen */
 }
@@ -429,7 +429,7 @@ void ScrConvSt_Refresh(void)
 /**
  * Have we changed between low/med/high res?
  */
-static void Screen_DidResolutionChange(int new_res)
+static void ScrConvSt_DidResolutionChange(int new_res)
 {
 	if (new_res != STRes)
 	{
@@ -449,7 +449,7 @@ static void Screen_DidResolutionChange(int new_res)
  * Compare current resolution on line with previous, and set 'UpdateLine' accordingly
  * Return if swap between low/medium resolution
  */
-static bool Screen_CompareResolution(int y, int *pUpdateLine, int oldres)
+static bool ScrConvSt_CompareResolution(int y, int *pUpdateLine, int oldres)
 {
 	/* Check if wrote to resolution register */
 	if (HBLPaletteMasks[y]&PALETTEMASK_RESOLUTION)  /* See 'Intercept_ShifterMode_WriteByte' */
@@ -470,7 +470,7 @@ static bool Screen_CompareResolution(int y, int *pUpdateLine, int oldres)
 /**
  * Check to see if palette changes cause screen update and keep 'HBLPalette[]' up-to-date
  */
-static void Screen_ComparePalette(int y, int *pUpdateLine)
+static void ScrConvSt_ComparePalette(int y, int *pUpdateLine)
 {
 	bool bPaletteChanged = false;
 	int i;
@@ -505,7 +505,7 @@ static void Screen_ComparePalette(int y, int *pUpdateLine)
  * the previous screen so only the very minimum parts are updated).
  * Return new STRes value.
  */
-static int Screen_ComparePaletteMask(int res)
+static int ScrConvSt_ComparePaletteMask(int res)
 {
 	bool bLowMedMix = false;
 	int LineUpdate = 0;
@@ -553,8 +553,8 @@ static int Screen_ComparePaletteMask(int res)
 		{
 			/* Find any resolution/palette change and update palette/mask buffer */
 			/* ( LineUpdate has top two bits set to say if line needs updating due to palette or resolution change ) */
-			bLowMedMix |= Screen_CompareResolution(y, &LineUpdate, res);
-			Screen_ComparePalette(y,&LineUpdate);
+			bLowMedMix |= ScrConvSt_CompareResolution(y, &LineUpdate, res);
+			ScrConvSt_ComparePalette(y,&LineUpdate);
 			HBLPaletteMasks[y] = (HBLPaletteMasks[y]&(~PALETTEMASK_UPDATEMASK)) | LineUpdate;
 			/* Copy palette and mask for next frame */
 			memcpy(&pFrameBuffer->HBLPalettes[y*16],HBLPalette,sizeof(short int)*16);
@@ -576,7 +576,7 @@ static int Screen_ComparePaletteMask(int res)
  * Update Palette Mask to show 'full-update' required. This is usually done after a resolution change
  * or when going between a Window and full-screen display
  */
-static void Screen_SetFullUpdateMask(void)
+static void ScrConvSt_SetFullUpdateMask(void)
 {
 	int y;
 
@@ -588,7 +588,7 @@ static void Screen_SetFullUpdateMask(void)
 /**
  * Set details for ST screen conversion.
  */
-static void Screen_SetConvertDetails(void)
+static void ScrConvSt_SetConvertDetails(void)
 {
 	Screen_GetDimension(&pPCScreenDest, NULL, NULL, &PCScreenBytesPerLine);
 
@@ -644,12 +644,12 @@ bool ScrConvSt_DrawFrame(void)
 	assert(!bUseVDIRes);
 
 	/* Scan palette/resolution masks for each line and build up palette/difference tables */
-	new_res = Screen_ComparePaletteMask(STRes);
+	new_res = ScrConvSt_ComparePaletteMask(STRes);
 	/* Did we change resolution this frame - allocate new screen if did so */
-	Screen_DidResolutionChange(new_res);
+	ScrConvSt_DidResolutionChange(new_res);
 	/* Is need full-update, tag as such */
 	if (pFrameBuffer->bFullUpdate)
-		Screen_SetFullUpdateMask();
+		ScrConvSt_SetFullUpdateMask();
 
 	/* Lock screen for direct screen surface format writes */
 	if (ConfigureParams.Screen.DisableVideo || !Screen_Lock())
@@ -660,7 +660,7 @@ bool ScrConvSt_DrawFrame(void)
 	bScreenContentsChanged = false;      /* Did change (ie needs blit?) */
 
 	/* Set details */
-	Screen_SetConvertDetails();
+	ScrConvSt_SetConvertDetails();
 
 	/* Clear screen on full update to clear out borders and also interleaved lines */
 	if (pFrameBuffer->bFullUpdate)
@@ -685,7 +685,7 @@ bool ScrConvSt_DrawFrame(void)
 		/* If we switch back from Spec512 mode to normal
 		 * screen rendering, we have to make sure to do
 		 * a full update of the screen. */
-		Screen_SetFullUpdateMask();
+		ScrConvSt_SetFullUpdateMask();
 		bPrevFrameWasSpec512 = false;
 	}
 
