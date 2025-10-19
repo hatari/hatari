@@ -1583,12 +1583,11 @@ static void Convert_StartFrame(void)
  *
  * Return address to next line after the copy
  */
-static Uint32* Double_ScreenLine32(Uint32 *line, int size)
+static uint32_t *Double_ScreenLine32(uint32_t *line, int size)
 {
-	SDL_PixelFormat *fmt;
 	int fmt_size = size/4;
-	Uint32 *next;
-	Uint32 mask;
+	uint32_t *next;
+	uint32_t mask, rmask, gmask, bmask;
 
 	next = line + fmt_size;
 	/* copy as-is */
@@ -1597,11 +1596,13 @@ static Uint32* Double_ScreenLine32(Uint32 *line, int size)
 		memcpy(next, line, size);
 		return next + fmt_size;
 	}
+
+	Screen_GetPixelFormat(&rmask, &gmask, &bmask, NULL, NULL, NULL);
+
 	/* TV-mode -- halve the intensity while copying */
-	fmt = sdlscrn->format;
-	mask = ((fmt->Rmask >> 1) & fmt->Rmask)
-	     | ((fmt->Gmask >> 1) & fmt->Gmask)
-	     | ((fmt->Bmask >> 1) & fmt->Bmask);
+	mask = ((rmask >> 1) & rmask)
+	     | ((gmask >> 1) & gmask)
+	     | ((bmask >> 1) & bmask);
 	do {
 		*next++ = (*line++ >> 1) & mask;
 	}
