@@ -4,9 +4,10 @@
   This file is distributed under the GNU General Public License, version 2
   or at your option any later version. Read the file gpl.txt for details.
 
-  This code converts a 1/2/4 plane ST format screen to either 8, 16 or 32-bit PC
+  This code converts a low/medium resolution ST format screen to 32-bit PC
   format. An awful lot of processing is needed to do this conversion - we
-  cannot simply change palettes on  interrupts as it is possible with DOS.
+  cannot simply change palettes on  interrupts as it is possible with old
+  systems from the 1980s / early 1990s.
   The main code processes the palette/resolution mask tables to find exactly
   which lines need to updating and the conversion routines themselves only
   update 16-pixel blocks which differ from the previous frame - this gives a
