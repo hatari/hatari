@@ -30,7 +30,7 @@ static void ConvertLowRes_320x32Bit_Spec(void)
 		/* Get screen addresses, 'edi'-ST screen, 'esi'-PC screen */
 		eax = STScreenLineOffset[y] + STScreenLeftSkipBytes;  /* Offset for this line + Amount to skip on left hand side */
 		edi = (uint32_t *)((uint8_t *)pSTScreen + eax);       /* ST format screen 4-plane 16 colors */
-		esi = (uint32_t *)pPCScreenDest;                      /* PC format screen */
+		esi = pPCScreenDest;                                  /* PC format screen */
 
 		x = STScreenWidthBytes >> 3;    /* Amount to draw across in 16-pixels (8 bytes) */
 
@@ -89,7 +89,7 @@ static void ConvertLowRes_320x32Bit_Spec(void)
 		Spec512_EndScanLine();
 
 		/* Offset to next line */
-		pPCScreenDest = (((uint8_t *)pPCScreenDest) + PCScreenBytesPerLine);
+		pPCScreenDest = pPCScreenDest + PCScreenBytesPerLine / sizeof(*pPCScreenDest);
 	}
 
 	bScreenContentsChanged = true;

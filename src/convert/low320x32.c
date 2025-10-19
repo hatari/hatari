@@ -23,7 +23,7 @@ static void ConvertLowRes_320x32Bit(void)
 		eax = STScreenLineOffset[y] + STScreenLeftSkipBytes;  /* Offset for this line + Amount to skip on left hand side */
 		edi = (uint32_t *)((uint8_t *)pSTScreen + eax);       /* ST format screen 4-plane 16 colors */
 		ebp = (uint32_t *)((uint8_t *)pSTScreenCopy + eax);   /* Previous ST format screen */
-		esi = (uint32_t *)pPCScreenDest;                      /* PC format screen */
+		esi = pPCScreenDest;                                  /* PC format screen */
 
 		update = AdjustLinePaletteRemap(y) & PALETTEMASK_UPDATEMASK;
 
@@ -71,6 +71,6 @@ static void ConvertLowRes_320x32Bit(void)
 		while (--x);                      /* Loop on X */
 
 		/* Offset to next line: */
-		pPCScreenDest = (((uint8_t *)pPCScreenDest)+PCScreenBytesPerLine);
+		pPCScreenDest = pPCScreenDest + PCScreenBytesPerLine / sizeof(*pPCScreenDest);
 	}
 }

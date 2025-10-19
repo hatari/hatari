@@ -60,7 +60,7 @@ static void Line_ConvertLowRes_640x32Bit(uint32_t *edi, uint32_t *ebp, uint32_t 
 
 static void ConvertLowRes_640x32Bit(void)
 {
-	uint32_t *PCScreen = (uint32_t *)pPCScreenDest;
+	uint32_t *PCScreen = pPCScreenDest;
 	uint32_t *edi, *ebp;
 	uint32_t *esi;
 	uint32_t eax;

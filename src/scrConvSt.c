@@ -80,7 +80,7 @@ uint32_t *pHBLPaletteMasks;
 
 static FRAMEBUFFER FrameBuffer;     /* Store frame buffer details to tell how to update */
 static uint8_t *pSTScreenCopy;      /* Keep track of current and previous ST screen data */
-static uint8_t *pPCScreenDest;      /* Destination PC buffer */
+static uint32_t *pPCScreenDest;     /* Destination PC buffer */
 static int STScreenEndHorizLine;    /* End lines to be converted */
 static int PCScreenBytesPerLine;
 static int STScreenWidthBytes;
@@ -589,14 +589,13 @@ static void Screen_SetFullUpdateMask(void)
  */
 static void Screen_SetConvertDetails(void)
 {
+	Screen_GetDimension(&pPCScreenDest, NULL, NULL, &PCScreenBytesPerLine);
+
 	pSTScreen = pFrameBuffer->pSTScreen;          /* Source in ST memory */
 	pSTScreenCopy = pFrameBuffer->pSTScreenCopy;  /* Previous ST screen */
-	pPCScreenDest = sdlscrn->pixels;              /* Destination PC screen */
-
-	PCScreenBytesPerLine = sdlscrn->pitch;        /* Bytes per line */
 
 	/* Center to available framebuffer */
-	pPCScreenDest += PCScreenOffsetY * PCScreenBytesPerLine + PCScreenOffsetX * (sdlscrn->format->BitsPerPixel/8);
+	pPCScreenDest += PCScreenOffsetY * PCScreenBytesPerLine / sizeof(*pPCScreenDest) + PCScreenOffsetX;
 
 	pHBLPalettes = pFrameBuffer->HBLPalettes;     /* HBL palettes pointer */
 	/* Not in TV-Mode? Then double up on Y: */

@@ -9,7 +9,7 @@
 
 static void ConvertMediumRes_640x32Bit_Spec(void)
 {
-	uint32_t *PCScreen = (uint32_t *)pPCScreenDest;
+	uint32_t *PCScreen = pPCScreenDest;
 	uint32_t *edi, *ebp;
 	uint32_t *esi;
 	uint32_t eax;
