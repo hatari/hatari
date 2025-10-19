@@ -113,6 +113,7 @@ void Screen_SetFullUpdate(void);
 void Screen_EnterFullScreen(void);
 void Screen_ReturnFromFullScreen(void);
 void Screen_UngrabMouse(void);
+void Screen_GrabMouseIfNecessary(void);
 void Screen_ModeChanged(bool bForceChange);
 bool Screen_Draw(bool bForceFlip);
 void Screen_GetPixelFormat(uint32_t *rmask, uint32_t *gmask, uint32_t *bmask,

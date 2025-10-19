@@ -811,7 +811,7 @@ static void Screen_ChangeResolution(bool bForceChange)
 		Screen_SetSTResolution(bForceChange);
 	}
 
-	SDL_SetRelativeMouseMode(bInFullScreen || bGrabMouse);
+	Screen_GrabMouseIfNecessary();
 }
 
 
@@ -1075,7 +1075,12 @@ void Screen_UngrabMouse(void)
 }
 
 
-/*-----------------------------------------------------------------------*/
+void Screen_GrabMouseIfNecessary(void)
+{
+	SDL_SetRelativeMouseMode(bInFullScreen || bGrabMouse);
+}
+
+
 /**
  * Have we changed between low/med/high res?
  */
