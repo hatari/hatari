@@ -14,6 +14,7 @@ const char Resolution_fileid[] = "Hatari resolution.c";
 #include "log.h"
 #include "resolution.h"
 #include "statusbar.h"
+#include "scrConvSt.h"
 #include "screen.h"
 
 #define DEBUG 0

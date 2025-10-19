@@ -443,6 +443,7 @@ const char Video_fileid[] = "Hatari video.c";
 #include "memorySnapShot.h"
 #include "mfp.h"
 #include "printer.h"
+#include "scrConvSt.h"
 #include "screen.h"
 #include "screenConvert.h"
 #include "screenSnapShot.h"

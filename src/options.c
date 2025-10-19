@@ -29,6 +29,7 @@ const char Options_fileid[] = "Hatari options.c";
 #include "file.h"
 #include "floppy.h"
 #include "fdc.h"
+#include "scrConvSt.h"
 #include "screen.h"
 #include "statusbar.h"
 #include "sound.h"

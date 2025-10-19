@@ -23,7 +23,7 @@ const char INFFILE_fileid[] = "Hatari inffile.c";
 #include "file.h"
 #include "log.h"
 #include "str.h"
-#include "screen.h"
+#include "scrConvSt.h"
 #include "tos.h"
 #include "vdi.h"
 

@@ -12,6 +12,7 @@
 #include "log.h"
 #include "memorySnapShot.h"
 #include "resolution.h"
+#include "scrConvSt.h"
 #include "screen.h"
 #include "screenConvert.h"
 #include "statusbar.h"

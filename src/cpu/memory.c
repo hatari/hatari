@@ -22,7 +22,7 @@ const char Memory_fileid[] = "Hatari memory.c";
 #include "ide.h"
 #include "ioMem.h"
 #include "reset.h"
-#include "screen.h"
+#include "scrConvSt.h"
 #include "stMemory.h"
 #include "m68000.h"
 #include "configuration.h"

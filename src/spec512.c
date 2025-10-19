@@ -74,6 +74,7 @@ const char Spec512_fileid[] = "Hatari spec512.c";
 #include "cycInt.h"
 #include "m68000.h"
 #include "ioMem.h"
+#include "scrConvSt.h"
 #include "screen.h"
 #include "spec512.h"
 #include "video.h"
@@ -234,7 +235,7 @@ void Spec512_StartFrame(void)
 	int i;
 
 	/* Set so screen gets full-update when returns from Spectrum 512 display */
-	Screen_SetFullUpdate();
+	ScrConvSt_SetFullUpdate();
 
 	/* Set terminators on each line, so when scan during conversion we know when to stop */
 	for (i = 0; i < (nScanlinesPerFrame+1); i++)

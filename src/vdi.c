@@ -20,7 +20,7 @@ const char VDI_fileid[] = "Hatari vdi.c";
 #include "inffile.h"
 #include "m68000.h"
 #include "options.h"
-#include "screen.h"
+#include "scrConvSt.h"
 #include "stMemory.h"
 #include "tos.h"
 #include "vars.h"

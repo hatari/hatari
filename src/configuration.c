@@ -24,7 +24,7 @@ const char Configuration_fileid[] = "Hatari configuration.c";
 #include "m68000.h"
 #include "memorySnapShot.h"
 #include "paths.h"
-#include "screen.h"
+#include "scrConvSt.h"
 #include "statusbar.h"
 #include "vdi.h"
 #include "video.h"
