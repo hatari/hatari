@@ -79,18 +79,18 @@ uint32_t *pHBLPaletteMasks;
 
 
 static FRAMEBUFFER FrameBuffer;     /* Store frame buffer details to tell how to update */
-static Uint8 *pSTScreenCopy;        /* Keep track of current and previous ST screen data */
-static Uint8 *pPCScreenDest;        /* Destination PC buffer */
+static uint8_t *pSTScreenCopy;      /* Keep track of current and previous ST screen data */
+static uint8_t *pPCScreenDest;      /* Destination PC buffer */
 static int STScreenEndHorizLine;    /* End lines to be converted */
 static int PCScreenBytesPerLine;
 static int STScreenWidthBytes;
 static int PCScreenOffsetX;         /* how many pixels to skip from left when drawing */
 static int PCScreenOffsetY;         /* how many pixels to skip from top when drawing */
 
-int STScreenLineOffset[NUM_VISIBLE_LINES];         /* Offsets for ST screen lines eg, 0,160,320... */
-static Uint16 HBLPalette[16], PrevHBLPalette[16];  /* Current palette for line, also copy of first line */
+int STScreenLineOffset[NUM_VISIBLE_LINES];          /* Offsets for ST screen lines eg, 0,160,320... */
+static uint16_t HBLPalette[16], PrevHBLPalette[16]; /* Current palette for line, also copy of first line */
 
-static void (*ScreenDrawFunctionsNormal[3])(void); /* Screen draw functions */
+static void (*ScreenDrawFunctionsNormal[3])(void);  /* Screen draw functions */
 
 static bool bScreenContentsChanged;     /* true if buffer changed and requires blitting */
 static bool bScrDoubleY;                /* true if double on Y */
@@ -104,7 +104,7 @@ static int ScrUpdateFlag;               /* Bit mask of how to update screen */
  */
 static void Screen_SetupRGBTable(void)
 {
-	Uint16 STColor;
+	uint16_t STColor;
 	int r, g, b;
 	int rr, gg, bb;
 
@@ -565,7 +565,7 @@ static int Screen_ComparePaletteMask(int res)
 	}
 
 	/* Copy old palette for compare */
-	memcpy(PrevHBLPalette, HBLPalettes, sizeof(Uint16)*16);
+	memcpy(PrevHBLPalette, HBLPalettes, sizeof(uint16_t) * 16);
 
 	return res;
 }
@@ -731,17 +731,17 @@ bool ScrConvSt_DrawFrame(void)
  */
 static int AdjustLinePaletteRemap(int y)
 {
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+#if defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
 	static const int endiantable[16] = {0,2,1,3,8,10,9,11,4,6,5,7,12,14,13,15};
 #endif
-	Uint16 *actHBLPal;
+	uint16_t *actHBLPal;
 	int i;
 
 	/* Copy palette and convert to RGB in display format */
 	actHBLPal = pHBLPalettes + (y<<4);    /* offset in palette */
 	for (i=0; i<16; i++)
 	{
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+#if defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
 		STRGBPalette[endiantable[i]] = ST2RGB[*actHBLPal++];
 #else
 		STRGBPalette[i] = ST2RGB[*actHBLPal++];
