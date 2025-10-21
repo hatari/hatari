@@ -5585,11 +5585,15 @@ static void	FDC_AM_Detector_Reset ( void )
 
 
 
-// "simple" MFM decoder ; does a resync after 0x4489 / 0x5224
-// but DSR value is not correctly updated as real HW does
-// in the case of overlapping syncs
+/*
+ * MFM decoding as done by the WD1172
+ * Data bits are inserted into DSR, DSR is copied to DR when 8 bits are available
+ * A resync is made after 0x4489 / 0x5224 is detected
+ * - In case of a SYNC the latest read bit will be a data bit and should be inserted
+ *   into DSR bit 0 (this means the meaning of the latest read bit can "change" from clock to data)
+ */
 
-static int	FDC_MFM_Process_Bit ( struct fd_stream *s , bool Skip_Bit )
+static int	FDC_MFM_Process_Bit_delay_clock ( struct fd_stream *s , bool Skip_Bit )
 {
 	int			bit;
 	bool			Copy_DSR_DR;
@@ -5602,7 +5606,7 @@ static int	FDC_MFM_Process_Bit ( struct fd_stream *s , bool Skip_Bit )
 
 	Copy_DSR_DR = false;
 
-	/* Get a new bit from the flux (clock or data) and check if we got an index pulse at the same time */
+	/* Get a new MFM bit from the flux (clock or data) and check if we got an index pulse at the same time */
 	nr_index_prev = s->nr_index;
 	bit = fd_stream_next_bit ( s );
 //fprintf ( stdout , "bit %d %0x\n" , bit , s->word  );
@@ -5656,14 +5660,22 @@ static int	FDC_MFM_Process_Bit ( struct fd_stream *s , bool Skip_Bit )
 
 		if ( Sync )
 		{
-			/* Force a flush of DSR to DR (only if DSR has at least 1 bit) */
-			if ( FDC.DSR_count > 0 )
-				Copy_DSR_DR = true;
-
 			/* If SYNC is detected, last read bit was a data and next one will be a clock */
+			/* Important : this means that a bit that was considered as a clock bit can become */
+			/* a data bit when the SYNC is detected and DSR bit 0 must be updated */
 			FDC.Bit_Is_Data = true;
 
-			/* Sync = 0x4489 enables the CRC and preset CRC to 0xCDB4 */
+			/* Copy bit to DSR and force a flush of DSR to DR (only if DSR has at least 1 bit) */
+			if ( FDC.DSR_count > 0 )
+			{
+				/* Insert data bit into DSR bit 0 */
+				if ( bit )	FDC.DSR |= 1;			/* set bit 0 */
+				else		FDC.DSR &= 0xFE;		/* clear bit 0 */
+
+				Copy_DSR_DR = true;
+			}
+
+			/* Sync = 0x4489 enables the CRC and presets CRC to 0xCDB4 */
 			if ( Sync == 0x4489 )
 			{
 				FDC.Enable_CRC = true;
@@ -5693,7 +5705,10 @@ static int	FDC_MFM_Process_Bit ( struct fd_stream *s , bool Skip_Bit )
 		}
 	}
 
-	if ( FDC.DSR_count == 8 )				/* 8 bits = 1 byte is complete */
+	/* If DSR is full it will be copied on the next "clock" bit */
+	/* This means DSR is copied after a delay of 1 MFM bit, this is necessary */
+	/* to allow the latest data bit to be inserted as bit 0 into DSR when a SYNC is detected */
+	if ( ( FDC.DSR_count == 8 ) && !FDC.Bit_Is_Data )	/* 8 bits = 1 byte is complete */
 		Copy_DSR_DR = true;
 
 	if ( Copy_DSR_DR )
@@ -5711,6 +5726,12 @@ static int	FDC_MFM_Process_Bit ( struct fd_stream *s , bool Skip_Bit )
 	return bit;
 }
 
+
+
+static int	FDC_MFM_Process_Bit ( struct fd_stream *s , bool Skip_Bit )
+{
+	return FDC_MFM_Process_Bit_delay_clock ( s , Skip_Bit );
+}
 
 
 
