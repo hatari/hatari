@@ -4966,7 +4966,7 @@ void Video_InterruptHandler_VBL ( void )
 	VBL_ClockCounter -= pVideoTiming->VblVideoCycleOffset << nCpuFreqShift;
 
 	/* Clear any key presses which are due to be de-bounced (held for one ST frame) */
-	Keymap_DebounceAllKeys();
+	IKBD_DebounceAllKeys();
 
 	Video_DrawScreen();
 

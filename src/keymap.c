@@ -29,32 +29,11 @@ const char Keymap_fileid[] = "Hatari keymap.c";
 /* if not able to map */
 #define ST_NO_SCANCODE 0xff
 
-/* Some ST keyboard scancodes */
-#define ST_ESC		0x01
-#define ST_CONTROL	0x1d
-#define ST_LSHIFT	0x2a
-#define ST_RSHIFT	0x36
-#define ST_ALTERNATE	0x38
-#define ST_CAPSLOCK	0x3a
-
 /* Table for loaded keys: */
 static int LoadedKeymap[KBD_MAX_SCANCODE][2];
 static bool keymap_loaded;
 
-/* List of ST scan codes to NOT de-bounce when running in maximum speed */
-static const uint8_t DebounceExtendedKeys[] =
-{
-	ST_CONTROL,
-	ST_LSHIFT,
-	ST_ESC,
-	ST_ALTERNATE,
-	ST_RSHIFT,
-	0  /* End of list */
-};
 
-
-
-/*-----------------------------------------------------------------------*/
 /**
  * Initialization.
  */
@@ -764,74 +743,8 @@ void Keymap_LoadRemapFile(const char *pszFileName)
 }
 
 
-/*-----------------------------------------------------------------------*/
 /**
- * Scan list of keys to NOT de-bounce when running in maximum speed, eg ALT,SHIFT,CTRL etc...
- * @return true if key requires de-bouncing
- */
-static bool Keymap_DebounceSTKey(uint8_t STScanCode)
-{
-	int i=0;
-
-	/* Are we in fast forward, and have disabled key repeat? */
-	if (ConfigureParams.System.bFastForward
-	    && !ConfigureParams.Keyboard.bFastForwardKeyRepeat)
-	{
-		/* We should de-bounce all non extended keys,
-		 * e.g. leave ALT, SHIFT, CTRL etc... held */
-		while (DebounceExtendedKeys[i])
-		{
-			if (STScanCode == DebounceExtendedKeys[i])
-				return false;
-			i++;
-		}
-
-		/* De-bounce key */
-		return true;
-	}
-
-	/* Do not de-bounce key */
-	return false;
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Debounce any PC key held down if running with key repeat disabled.
- * This is called each ST frame, so keys get held down for one VBL which
- * is enough for 68000 code to scan.
- */
-void Keymap_DebounceAllKeys(void)
-{
-	uint8_t nScanCode;
-
-	/* Return if we aren't in fast forward or have not disabled key repeat */
-	if (!ConfigureParams.System.bFastForward
-	    || ConfigureParams.Keyboard.bFastForwardKeyRepeat)
-	{
-		return;
-	}
-
-	/* Now run through each key looking for ones held down */
-	for (nScanCode = 1; nScanCode < ARRAY_SIZE(Keyboard.KeyStates); nScanCode++)
-	{
-		/* Is key held? */
-		if (Keyboard.KeyStates[nScanCode])
-		{
-			/* Does this require de-bouncing? */
-			if (Keymap_DebounceSTKey(nScanCode))
-			{
-				IKBD_PressSTKey(nScanCode, false);
-				Keyboard.KeyStates[nScanCode] = false;
-			}
-		}
-	}
-
-}
-
-
-/*-----------------------------------------------------------------------*/
-/* Returns false if SDL_Keycode is for modifier key that
+ * Returns false if SDL_Keycode is for modifier key that
  * won't be converted to ST scancode, true otherwise
  */
 static bool IsKeyTranslatable(SDL_Keycode symkey)
