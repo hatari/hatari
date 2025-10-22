@@ -649,7 +649,8 @@ static void SDLGui_EditField(SGOBJ *dlg, int objnum)
 					bQuitProgram = true;
 					bStopEditing = true;
 					break;
-				 case SDL_MOUSEBUTTONDOWN:          /* Mouse pressed -> stop editing */
+				 case SDL_JOYBUTTONDOWN:
+				 case SDL_MOUSEBUTTONDOWN:          /* Button press -> stop editing */
 					bStopEditing = true;
 					break;
 				 case SDL_TEXTINPUT:
