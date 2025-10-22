@@ -45,8 +45,9 @@ const char DlgScreen_fileid[] = "Hatari dlgScreen.c";
 #define DLGSCRN_EXIT_MONITOR 22
 
 /* Strings for VDI resolution width and height */
-static char sVdiWidth[5];
-static char sVdiHeight[5];
+#define NUM_FIELD_LEN 4
+static char sVdiWidth[NUM_FIELD_LEN+1];
+static char sVdiHeight[NUM_FIELD_LEN+1];
 
 static SGOBJ monitordlg[] =
 {
@@ -64,11 +65,11 @@ static SGOBJ monitordlg[] =
 	{ SGCHECKBOX, 0, 0,  4,9, 25,1, "Use _extended VDI screen" },
 	{ SGTEXT,     0, 0,  4,11, 5,1, "Size:" },
 	{ SGBUTTON,   0, 0,  6,12, 1,1, "\x04", SG_SHORTCUT_LEFT },
-	{ SGTEXT,     0, 0,  8,12, 4,1, sVdiWidth },
+	{ SGEDITFIELD,SG_EXIT, 0,  8,12, NUM_FIELD_LEN,1, sVdiWidth },
 	{ SGBUTTON,   0, 0, 13,12, 1,1, "\x03", SG_SHORTCUT_RIGHT },
 	{ SGTEXT,     0, 0,  4,13, 1,1, "x" },
 	{ SGBUTTON,   0, 0,  6,13, 1,1, "\x04", SG_SHORTCUT_UP },
-	{ SGTEXT,     0, 0,  8,13, 4,1, sVdiHeight },
+	{ SGEDITFIELD,SG_EXIT, 0,  8,13, NUM_FIELD_LEN,1, sVdiHeight },
 	{ SGBUTTON,   0, 0, 13,13, 1,1, "\x03", SG_SHORTCUT_DOWN },
 
 	{ SGRADIOBUT, SG_EXIT, 0, 18,11, 11,1, "  _2 colors" },
@@ -108,8 +109,8 @@ static SGOBJ monitordlg[] =
 static const int skip_frames[] = { 0, 1, 2, 4, AUTO_FRAMESKIP_LIMIT };
 
 /* Strings for doubled resolution max width and height */
-static char sMaxWidth[5];
-static char sMaxHeight[5];
+static char sMaxWidth[NUM_FIELD_LEN+1];
+static char sMaxHeight[NUM_FIELD_LEN+1];
 
 #define MAX_SIZE_STEP 8
 
@@ -136,11 +137,11 @@ static SGOBJ windowdlg[] =
 	{ SGCHECKBOX, 0, 0, 33,3, 14,1, "_Keep desktop" },
 	{ SGTEXT,     0, 0, 33,7, 15,1, "Max zoomed win:" },
 	{ SGBUTTON,   0, 0, 35,8,  1,1, "\x04", SG_SHORTCUT_LEFT },
-	{ SGTEXT,     0, 0, 37,8,  4,1, sMaxWidth },
+	{ SGEDITFIELD,SG_EXIT, 0, 37,8, NUM_FIELD_LEN,1, sMaxWidth },
 	{ SGBUTTON,   0, 0, 43,8,  1,1, "\x03", SG_SHORTCUT_RIGHT },
 	{ SGTEXT,     0, 0, 33,9,  1,1, "x" },
 	{ SGBUTTON,   0, 0, 35,9,  1,1, "\x04", SG_SHORTCUT_UP },
-	{ SGTEXT,     0, 0, 37,9,  4,1, sMaxHeight },
+	{ SGEDITFIELD,SG_EXIT, 0, 37,9, NUM_FIELD_LEN,1, sMaxHeight },
 	{ SGBUTTON,   0, 0, 43,9,  1,1, "\x03", SG_SHORTCUT_DOWN },
 
 	{ SGBOX,      0, 0,  1,12, 50,3, NULL },
@@ -225,12 +226,18 @@ void Dialog_MonitorDlg(void)
 		 case DLGSCRN_VDI_WLESS:
 			vdiw -= VDI_SIZE_INC;
 			break;
+		 case DLGSCRN_VDI_WTEXT:
+			vdiw = atoi(sVdiWidth);
+			break;
 		 case DLGSCRN_VDI_WMORE:
 			vdiw += VDI_SIZE_INC;
 			break;
 
 		 case DLGSCRN_VDI_HLESS:
 			vdih -= VDI_SIZE_INC;
+			break;
+		 case DLGSCRN_VDI_HTEXT:
+			vdih = atoi(sVdiHeight);
 			break;
 		 case DLGSCRN_VDI_HMORE:
 			vdih += VDI_SIZE_INC;
@@ -348,26 +355,40 @@ void Dialog_WindowDlg(void)
 	/* The window dialog main loop */
 	do
 	{
+		bool update = true;
 		but = SDLGui_DoDialog(windowdlg);
 		switch (but)
 		{
 		 case DLGSCRN_MAX_WLESS:
-			maxw = Opt_ValueAlignMinMax(maxw - MAX_SIZE_STEP, MAX_SIZE_STEP, MIN_VDI_WIDTH, deskw);
-			sprintf(sMaxWidth, "%4i", maxw);
+			maxw -= MAX_SIZE_STEP;
+			break;
+		 case DLGSCRN_MAX_WTEXT:
+			maxw = atoi(sMaxWidth);
 			break;
 		 case DLGSCRN_MAX_WMORE:
-			maxw = Opt_ValueAlignMinMax(maxw + MAX_SIZE_STEP, MAX_SIZE_STEP, MIN_VDI_WIDTH, deskw);
-			sprintf(sMaxWidth, "%4i", maxw);
+			maxw += MAX_SIZE_STEP;
 			break;
 
 		 case DLGSCRN_MAX_HLESS:
-			maxh = Opt_ValueAlignMinMax(maxh - MAX_SIZE_STEP, MAX_SIZE_STEP, MIN_VDI_HEIGHT, deskh);
-			sprintf(sMaxHeight, "%4i", maxh);
+			maxh -= MAX_SIZE_STEP;
+			break;
+		 case DLGSCRN_MAX_HTEXT:
+			maxh = atoi(sMaxHeight);
 			break;
 		 case DLGSCRN_MAX_HMORE:
-			maxh = Opt_ValueAlignMinMax(maxh + MAX_SIZE_STEP, MAX_SIZE_STEP, MIN_VDI_HEIGHT, deskh);
-			sprintf(sMaxHeight, "%4i", maxh);
+			maxh += MAX_SIZE_STEP;
 			break;
+
+		default:
+			update = false;
+		}
+		if (update)
+		{
+			/* clamp & align */
+			maxw = Opt_ValueAlignMinMax(maxw, MAX_SIZE_STEP, MIN_VDI_WIDTH, deskw);
+			maxh = Opt_ValueAlignMinMax(maxh, MAX_SIZE_STEP, MIN_VDI_HEIGHT, deskh);
+			sprintf(sMaxHeight, "%4i", maxh);
+			sprintf(sMaxWidth, "%4i", maxw);
 		}
 	}
 	while (but != DLGSCRN_EXIT_WINDOW && but != SDLGUI_QUIT

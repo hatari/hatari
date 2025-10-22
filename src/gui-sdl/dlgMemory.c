@@ -62,7 +62,7 @@ static SGOBJ memorydlg[] =
 	{ SGRADIOBUT, 0, 0, 29,6, 9,1, "14 _MiB" },
 	{ SGTEXT,     0, 0,  4,9,12,1, "TT-RAM size:" },
 	{ SGBUTTON,   0, 0, 18,9, 1,1, "\x04", SG_SHORTCUT_LEFT },
-	{ SGTEXT,     0, 0, 20,9, 4,1, sTTRamSize },
+	{ SGEDITFIELD, SG_EXIT,0, 20,9, sizeof(sTTRamSize)-1,1, sTTRamSize },
 	{ SGBUTTON,   0, 0, 25,9, 1,1, "\x03", SG_SHORTCUT_RIGHT },
 	{ SGTEXT,     0, 0, 27,9,12,1, "MiB" },
 
@@ -148,6 +148,10 @@ bool Dialog_MemDlg(void)
 		{
 		 case DLGMEM_TTRAM_LESS:
 			memsize = Opt_ValueAlignMinMax(memsize - DLG_TTRAM_STEP, DLG_TTRAM_STEP, DLG_TTRAM_MIN, DLG_TTRAM_MAX);
+			sprintf(sTTRamSize, "%4i", memsize);
+			break;
+		 case DLGMEM_TTRAM_TEXT:
+			memsize = Opt_ValueAlignMinMax(atoi(sTTRamSize), DLG_TTRAM_STEP, DLG_TTRAM_MIN, DLG_TTRAM_MAX);
 			sprintf(sTTRamSize, "%4i", memsize);
 			break;
 		 case DLGMEM_TTRAM_MORE:
