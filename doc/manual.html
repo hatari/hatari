@@ -1220,7 +1220,7 @@ The GUI is rather self explanatory.</p>
 <h4 class="gui">The Main Menu</h4>
 
 <div class="floatimage">
-  <img src="images/main.png" width="500" height="304"
+  <img src="images/main.png" width="500" height="338"
        alt="Hatari's GUI - the main menu" />
 </div>
 
@@ -1825,7 +1825,7 @@ VDI mode is most useful with ST / STE emulation.
 <h4 class="gui">The Hatari Screen Dialog</h4>
 
 <div class="floatimage">
-  <img src="images/screen.png" width="518" height="378"
+  <img src="images/screen.png" width="519" height="288"
        alt="Hatari's GUI - the Hatari screen dialog" />
 </div>
 
@@ -1900,6 +1900,23 @@ should scale the resulting Hatari window framebuffer, when presenting
 it on screen.  Non-integer scaling values will cause "fuzzy" output.
 </p>
 
+<p>"SDL2" options impact following:</p>
+<ul>
+<li>GPU scaling: Hatari window scaling is HW accelerated</li>
+<li>Resizable: User can resize Hatari window</li>
+<li>Vsync: Hatari window updates are limited to host monitor refresh
+rate. This avoids tearing, but will impact emulation speed, if host
+monitor refresh rate does not match Atari monitor refresh (VBL) rate!</li>
+</ul>
+
+
+<h4 class="gui">The Recording Dialog</h4>
+
+<div class="floatimage">
+  <img src="images/recording.png" width="517" height="333"
+       alt="Hatari's GUI - the recording dialog" />
+</div>
+
 <p>Click the <span class="button">Screenshot</span> button to create
 a screenshot in the selected format. PNG and BMP formats will match
 the visual output of Hatari. NEO and XIMG formats will produce Atari
@@ -1917,14 +1934,14 @@ Selecting "Crop statusbar" option will leave statusbar out from
 the screenshots and recorded videos.
 </p>
 
-<p>"SDL2" options impact following:</p>
-<ul>
-<li>GPU scaling: Hatari window scaling is HW accelerated</li>
-<li>Resizable: User can resize Hatari window</li>
-<li>Vsync: Hatari window updates are limited to host monitor refresh
-rate. This avoids tearing, but will impact emulation speed, if host
-monitor refresh rate does not match Atari monitor refresh (VBL) rate!</li>
-</ul>
+<p>
+To record a piece of sound, click <span class="button">File name:</span>
+button to choose a file. The file name extension that you use (.WAV or
+.YM) determines in which format the sound will be recorded in. The
+<span class="button">Record&nbsp;YM/WAV</span> button is a toggle so
+you will need to return to the GUI to switch sound recording off
+again (or to use the keyboard shortcut for that).
+</p>
 
 
 <h4 class="gui">The Keyboard Dialog</h4>
@@ -1977,7 +1994,7 @@ monitor refresh rate does not match Atari monitor refresh (VBL) rate!</li>
 <h4 class="gui">The Sound Dialog</h4>
 
 <div class="floatimage">
-  <img src="images/sound.png" width="400" height="400"
+  <img src="images/sound.png" width="400" height="272"
        alt="Hatari's GUI - the sound dialog" />
 </div>
 
@@ -2002,12 +2019,7 @@ voltage values measured on STF, "Math model" uses a complex model to mix the
 for accurate sound's emulation.
 </p>
 <p>
- You can select to record a piece of sound here.
- Use the <span class="button">Browse</span> button to choose a file.
- The file name extension that you use (.WAV or .YM) determines in which format
- the sound is recorded in. The <span class="button">Record&nbsp;sound</span> button
- is a toggle so you will need to return to the GUI to switch sound recording off
- again (or to use the keyboard shortcut for that).
+Audio can be recorded with the "Recording" dialog.
 </p>
 
 
