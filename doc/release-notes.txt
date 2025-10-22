@@ -26,6 +26,11 @@ Emulator improvements:
 - CLI options:
   - Both "" and "none" can be used to disable devices that are enabled
     by providing a <file> or <dir name> (revert v2.6.1 API change)
+- SDL GUI:
+  - Fix: allow exit from text edit mode when using just joystick
+  - Fix: do not show recording in progress, if starting it failed
+  - Audio + video recording functionality moved to its own dialog
+  - Number field values can now also be typed in
 - Recording:
   - Also sound recording shows recording time in Hatari titlebar
 - VDI mode:
