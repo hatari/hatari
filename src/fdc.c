@@ -5583,6 +5583,7 @@ static void	FDC_AM_Detector_Reset ( void )
 #define	FDC_AM_DET_MODE_ALWAYS_ON	1		/* AM Det is always ON (eg "read track") */
 #define	FDC_AM_DET_MODE_AUTO_OFF	2		/* AM Det is ON and goes OFF when AM is found */
 
+#define	FDC_DEBUG_MFM_BIT		0		/* 0 or 1 */
 
 
 /*
@@ -5609,7 +5610,7 @@ static int	FDC_MFM_Process_Bit_delay_clock ( struct fd_stream *s , bool Skip_Bit
 	/* Get a new MFM bit from the flux (clock or data) and check if we got an index pulse at the same time */
 	nr_index_prev = s->nr_index;
 	bit = fd_stream_next_bit ( s );
-//fprintf ( stdout , "bit %d %0x\n" , bit , s->word  );
+	if ( FDC_DEBUG_MFM_BIT ) fprintf ( stdout , "bit %d %s %0x\n" , bit , FDC.Bit_Is_Data ? "data" : "clck" , s->word  );
 
 	if ( ( nr_index_prev > 0 ) && ( nr_index_prev != s->nr_index ) )
 		FDC.AM_Detector_Status |= FDC_AM_DET_STATUS_INDEX_PULSE;
@@ -5636,7 +5637,7 @@ static int	FDC_MFM_Process_Bit_delay_clock ( struct fd_stream *s , bool Skip_Bit
 			else
 				FDC.CRC = FDC.CRC << 1;
 		}
-//fprintf ( stdout , "dsr %d %02x %d %x\n" , nb , DSR , DSR_count , CRC  );
+		if ( FDC_DEBUG_MFM_BIT ) fprintf ( stdout , "dsr %02x %d %x\n" , FDC.DSR , FDC.DSR_count , FDC.CRC  );
 	}
 
 	/* TODO : handle syncs overlapping */
@@ -5647,13 +5648,13 @@ static int	FDC_MFM_Process_Bit_delay_clock ( struct fd_stream *s , bool Skip_Bit
 		Sync = 0;
 		if ( (uint16_t)s->word == 0x4489 )		/* 0xA1 */
 		{
-//fprintf ( stdout , "sync a1 %02x %d\n" , DSR , DSR_count  );
+			if ( FDC_DEBUG_MFM_BIT ) fprintf ( stdout , "sync a1 %02x %d\n" , FDC.DSR , FDC.DSR_count  );
 			Sync = 0x4489;
 			FDC.AM_Detector_Status |= FDC_AM_DET_STATUS_SYNC_A1;
 		}
 		else if ( (uint16_t)s->word == 0x5224 )		/* 0xC2 */
 		{
-//fprintf ( stdout , "sync c2 %02x %d\n" , DSR , DSR_count  );
+			if ( FDC_DEBUG_MFM_BIT ) fprintf ( stdout , "sync c2 %02x %d\n" , FDC.DSR , FDC.DSR_count  );
 			Sync = 0x5224;
 			FDC.AM_Detector_Status |= FDC_AM_DET_STATUS_SYNC_C2;
 		}
@@ -5713,6 +5714,7 @@ static int	FDC_MFM_Process_Bit_delay_clock ( struct fd_stream *s , bool Skip_Bit
 
 	if ( Copy_DSR_DR )
 	{
+		if ( FDC_DEBUG_MFM_BIT ) fprintf ( stdout , "copy dsr_dr %02x %d\n" , FDC.DSR , FDC.DSR_count  );
 		Copy_DSR_DR = false;
 		FDC.DR = FDC.DSR;
 		FDC.DSR_count = 0;
