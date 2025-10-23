@@ -10,6 +10,10 @@
 
 #include "config.h"
 
+#if defined(_MSC_VER)
+#include "vs-fix.h"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -17,10 +21,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <math.h>
-
-#if defined(_MSC_VER)
-#include "vs-fix.h"
-#endif
 
 #if __GNUC__ >= 3
 # define likely(x)      __builtin_expect (!!(x), 1)

@@ -33,4 +33,6 @@ typedef unsigned short mode_t;
 #define	strcasecmp	_stricmp
 #define strtok_r	strtok_s
 
+#define _USE_MATH_DEFINES	/* Required for M_PI from math.h */
+
 #endif
