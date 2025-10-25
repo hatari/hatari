@@ -12,11 +12,11 @@ const char ScreenSnapShot_fileid[] = "Hatari screenSnapShot.c";
 #include <string.h>
 #include "main.h"
 #include "configuration.h"
+#include "conv_gen.h"
 #include "conv_st.h"
 #include "file.h"
 #include "log.h"
 #include "screen.h"
-#include "screenConvert.h"
 #include "screenSnapShot.h"
 #include "statusbar.h"
 #include "vdi.h"
@@ -330,7 +330,7 @@ static int ScreenSnapShot_SaveNEO(const char *filename)
 
 		for (i=0; i<16; i++)
 		{
-			Screen_GetPaletteColor(i, &r, &g, &b);
+			ConvGen_GetPaletteColor(i, &r, &g, &b);
 			header[2+i] = be_swap16(
 				((r >> 5) << 8) |
 				((g >> 5) << 4) |
@@ -405,7 +405,7 @@ static int ScreenSnapShot_SaveXIMG(const char *filename)
 
 	if (bpp > 8 && bpp != 16)
 	{
-		/* bpp = 24 is a possible format for XIMG but Hatari's screenConvert only supports 16-bit true color. */
+		/* bpp = 24 is a possible format for XIMG but Hatari's conversion functions only supports 16-bit true color. */
 		Log_AlertDlg(LOG_ERROR,"XIMG screenshot only supports up to 8-bit palette, or 16-bit true color.");
 		return -1;
 	}
@@ -447,7 +447,7 @@ static int ScreenSnapShot_SaveXIMG(const char *filename)
 			}
 			else /* High resolution or GenConvert palette */
 			{
-				Screen_GetPaletteColor(i, &r, &g, &b);
+				ConvGen_GetPaletteColor(i, &r, &g, &b);
 				colr = (uint16_t)((1000 * r) / 255);
 				colg = (uint16_t)((1000 * g) / 255);
 				colb = (uint16_t)((1000 * b) / 255);

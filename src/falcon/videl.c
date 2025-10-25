@@ -67,11 +67,11 @@ const char VIDEL_fileid[] = "Hatari videl.c";
 
 #include "main.h"
 #include "configuration.h"
+#include "conv_gen.h"
 #include "memorySnapShot.h"
 #include "ioMem.h"
 #include "log.h"
 #include "screen.h"
-#include "screenConvert.h"
 #include "statusbar.h"
 #include "stMemory.h"
 #include "tos.h"
@@ -129,7 +129,7 @@ void Videl_Init(void)
 void VIDEL_reset(void)
 {
 	Videl_Init();
-	Screen_SetGenConvSize(videl.save_scrWidth, videl.save_scrHeight, false);
+	ConvGen_SetSize(videl.save_scrWidth, videl.save_scrHeight, false);
 
 	videl.bUseSTShifter = false;				/* Use Falcon color palette by default */
 	videl.reg_ffff8006_save = IoMem_ReadByte(0xff8006);
@@ -922,7 +922,7 @@ void VIDEL_UpdateColors(void)
 		g |= g>>6;
 		b = F_COLORS(0 + 3) & 0xfc;
 		b |= b>>6;
-		Screen_SetPaletteColor(0, r,g,b);
+		ConvGen_SetPaletteColor(0, r,g,b);
 		return;
 	}
 
@@ -935,7 +935,7 @@ void VIDEL_UpdateColors(void)
 			g |= g>>6;
 			b = F_COLORS(offset + 3) & 0xfc;
 			b |= b>>6;
-			Screen_SetPaletteColor(i, r,g,b);
+			ConvGen_SetPaletteColor(i, r,g,b);
 		}
 	} else {
 		for (i = 0; i < colors; i++) {
@@ -949,7 +949,7 @@ void VIDEL_UpdateColors(void)
 			b = STE_COLORS(offset + 1) & 0x0f;
 			b = ((b & 7)<<1)|(b>>3);
 			b |= b<<4;
-			Screen_SetPaletteColor(i, r,g,b);
+			ConvGen_SetPaletteColor(i, r,g,b);
 		}
 	}
 
@@ -962,7 +962,7 @@ void Videl_ScreenModeChanged(bool bForceChange)
 	LOG_TRACE(TRACE_VIDEL, "Videl : video mode change to %dx%d@%d\n",
 	          videl.save_scrWidth, videl.save_scrHeight, videl.save_scrBpp);
 
-	Screen_SetGenConvSize(videl.save_scrWidth, videl.save_scrHeight, bForceChange);
+	ConvGen_SetSize(videl.save_scrWidth, videl.save_scrHeight, bForceChange);
 }
 
 
@@ -1029,10 +1029,10 @@ bool VIDEL_renderScreen(void)
 
 	VIDEL_UpdateColors();
 
-	Screen_GenConvert(videoBase, &STRam[videoBase], videl.XSize, videl.YSize,
-	                  videl.save_scrBpp, nextline, hscrolloffset,
-	                  videl.leftBorderSize, videl.rightBorderSize,
-	                  videl.upperBorderSize, videl.lowerBorderSize);
+	ConvGen_Convert(videoBase, &STRam[videoBase], videl.XSize, videl.YSize,
+	                videl.save_scrBpp, nextline, hscrolloffset,
+	                videl.leftBorderSize, videl.rightBorderSize,
+	                videl.upperBorderSize, videl.lowerBorderSize);
 
 	Screen_UnLock();
 	Screen_GenConvUpdate(true);

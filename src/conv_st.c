@@ -29,6 +29,7 @@
 
 #include "main.h"
 #include "configuration.h"
+#include "conv_gen.h"
 #include "conv_st.h"
 #include "avi_record.h"
 #include "file.h"
@@ -36,7 +37,6 @@
 #include "paths.h"
 #include "options.h"
 #include "screen.h"
-#include "screenConvert.h"
 #include "control.h"
 #include "convert/routines.h"
 #include "resolution.h"
@@ -138,7 +138,7 @@ static void ConvST_ConvertHighRes(void)
 {
 	int linewidth = 640 / 16;
 
-	Screen_GenConvert(VideoBase, pSTScreen, 640, 400, 1, linewidth, 0, 0, 0, 0, 0);
+	ConvGen_Convert(VideoBase, pSTScreen, 640, 400, 1, linewidth, 0, 0, 0, 0, 0);
 	bScreenContentsChanged = true;
 }
 
@@ -298,7 +298,7 @@ void ConvST_ChangeResolution(bool bForceChange)
 {
 	if (bUseVDIRes)
 	{
-		Screen_SetGenConvSize(VDIWidth, VDIHeight, bForceChange);
+		ConvGen_SetSize(VDIWidth, VDIHeight, bForceChange);
 	}
 	else if (Config_IsMachineFalcon())
 	{
@@ -308,11 +308,11 @@ void ConvST_ChangeResolution(bool bForceChange)
 	{
 		int width, height, bpp;
 		Video_GetTTRes(&width, &height, &bpp);
-		Screen_SetGenConvSize(width, height, bForceChange);
+		ConvGen_SetSize(width, height, bForceChange);
 	}
 	else if (bUseHighRes)
 	{
-		Screen_SetGenConvSize(640, 400, bForceChange);
+		ConvGen_SetSize(640, 400, bForceChange);
 	}
 	else
 	{
@@ -408,8 +408,8 @@ void ConvST_Refresh(void)
 {
 	if (bUseVDIRes)
 	{
-		Screen_GenDraw(VideoBase, VDIWidth, VDIHeight, VDIPlanes,
-		               VDIWidth * VDIPlanes / 16, 0, 0, 0, 0);
+		ConvGen_Draw(VideoBase, VDIWidth, VDIHeight, VDIPlanes,
+		             VDIWidth * VDIPlanes / 16, 0, 0, 0, 0);
 	}
 	else if (Config_IsMachineFalcon())
 	{
@@ -690,7 +690,7 @@ bool ConvST_DrawFrame(void)
 	}
 
 	/* Store palette for screenshots
-	 * pDrawFunction may override this if it calls Screen_GenConvert */
+	 * pDrawFunction may override this if it calls ConvGen_Convert */
 	ConvertPalette = STRGBPalette;
 	ConvertPaletteSize = (STRes == ST_MEDIUM_RES) ? 4 : 16;
 

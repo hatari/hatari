@@ -1,5 +1,7 @@
 /*
-  Hatari - screenConvert.c
+  Hatari - conv_get.c
+
+  Generic screen conversion functions.
 
   This file is distributed under the GNU General Public License, version 2
   or at your option any later version. Read the file gpl.txt for details.
@@ -7,6 +9,7 @@
 
 #include "main.h"
 #include "configuration.h"
+#include "conv_gen.h"
 #include "conv_st.h"
 #include "endianswap.h"
 #include "ioMem.h"
@@ -14,7 +17,6 @@
 #include "memorySnapShot.h"
 #include "resolution.h"
 #include "screen.h"
-#include "screenConvert.h"
 #include "statusbar.h"
 #include "stMemory.h"
 #include "video.h"
@@ -55,7 +57,7 @@ static struct
 	uint32_t native[256];
 } palette;
 
-void Screen_SetPaletteColor(uint8_t idx, uint8_t red, uint8_t green, uint8_t blue)
+void ConvGen_SetPaletteColor(uint8_t idx, uint8_t red, uint8_t green, uint8_t blue)
 {
 	// set the standard RGB palette settings
 	palette.standard[idx].r = red;
@@ -65,14 +67,14 @@ void Screen_SetPaletteColor(uint8_t idx, uint8_t red, uint8_t green, uint8_t blu
 	palette.native[idx] = Screen_MapRGB(red, green, blue);
 }
 
-void Screen_GetPaletteColor(int idx, uint8_t *r, uint8_t *g, uint8_t *b)
+void ConvGen_GetPaletteColor(int idx, uint8_t *r, uint8_t *g, uint8_t *b)
 {
 	*r = palette.standard[idx].r;
 	*g = palette.standard[idx].g;
 	*b = palette.standard[idx].b;
 }
 
-void Screen_RemapPalette(void)
+void ConvGen_RemapPalette(void)
 {
 	int i;
 	uint32_t *native = palette.native;
@@ -83,14 +85,14 @@ void Screen_RemapPalette(void)
 	}
 }
 
-void ScreenConv_MemorySnapShot_Capture(bool bSave)
+void ConvGen_MemorySnapShot_Capture(bool bSave)
 {
 	MemorySnapShot_Store(palette.standard, sizeof(palette.standard));
 	if (!bSave)
-		Screen_RemapPalette();
+		ConvGen_RemapPalette();
 }
 
-static void Screen_memset_uint32(uint32_t *addr, uint32_t color, int count)
+static void ConvGen_memset_uint32(uint32_t *addr, uint32_t color, int count)
 {
 	while (count-- > 0) {
 		*addr++ = color;
@@ -113,8 +115,8 @@ static inline uint32_t idx2pal(uint8_t idx)
  * Performs conversion from the TOS's bitplane word order (big endian) data
  * into the native 32-bit chunky pixels.
  */
-static void Screen_BitplaneToChunky32(uint16_t *atariBitplaneData, uint16_t bpp,
-                                      uint32_t *hvram)
+static void ConvGen_BitplaneToChunky32(uint16_t *atariBitplaneData,
+                                       uint16_t bpp, uint32_t *hvram)
 {
 	uint32_t a, b, c, d, x;
 
@@ -203,15 +205,15 @@ static void Screen_BitplaneToChunky32(uint16_t *atariBitplaneData, uint16_t bpp,
 }
 
 
-static inline uint32_t *ScreenConv_BitplaneLineTo32bpp(uint16_t *fvram_column,
-                                                       uint32_t *hvram_column, int vw,
-                                                       int vbpp, int hscrolloffset)
+static inline uint32_t *ConvGen_BitplaneLineTo32bpp(uint16_t *fvram_column,
+                                                    uint32_t *hvram_column, int vw,
+                                                    int vbpp, int hscrolloffset)
 {
 	uint32_t hvram_buf[16];
 	int i;
 
 	/* First 16 pixels */
-	Screen_BitplaneToChunky32(fvram_column, vbpp, hvram_buf);
+	ConvGen_BitplaneToChunky32(fvram_column, vbpp, hvram_buf);
 	for (i = hscrolloffset; i < 16; i++)
 	{
 		*hvram_column++ = hvram_buf[i];
@@ -221,7 +223,7 @@ static inline uint32_t *ScreenConv_BitplaneLineTo32bpp(uint16_t *fvram_column,
 	/* Now the main part of the line */
 	for (i = 1; i < (vw + 15) >> 4; i++)
 	{
-		Screen_BitplaneToChunky32(fvram_column, vbpp, hvram_column);
+		ConvGen_BitplaneToChunky32(fvram_column, vbpp, hvram_column);
 		hvram_column += 16;
 		fvram_column += vbpp;
 	}
@@ -229,7 +231,7 @@ static inline uint32_t *ScreenConv_BitplaneLineTo32bpp(uint16_t *fvram_column,
 	/* Last pixels of the line for fine scrolling */
 	if (hscrolloffset)
 	{
-		Screen_BitplaneToChunky32(fvram_column, vbpp, hvram_buf);
+		ConvGen_BitplaneToChunky32(fvram_column, vbpp, hvram_buf);
 		for (i = 0; i < hscrolloffset; i++)
 		{
 			*hvram_column++ = hvram_buf[i];
@@ -240,13 +242,13 @@ static inline uint32_t *ScreenConv_BitplaneLineTo32bpp(uint16_t *fvram_column,
 }
 
 
-static void ScreenConv_BitplaneTo32bppNoZoom(uint16_t *fvram_line,
-                                             uint32_t *hvram, int pitch,
-                                             int scrwidth, int scrheight,
-                                             int vw, int vh, int vbpp,
-                                             int nextline, int hscrolloffset,
-                                             int leftBorder, int rightBorder,
-                                             int upperBorder, int lowBorder)
+static void ConvGen_BitplaneTo32bppNoZoom(uint16_t *fvram_line,
+                                          uint32_t *hvram, int pitch,
+                                          int scrwidth, int scrheight,
+                                          int vw, int vh, int vbpp,
+                                          int nextline, int hscrolloffset,
+                                          int leftBorder, int rightBorder,
+                                          int upperBorder, int lowBorder)
 {
 	uint32_t *hvram_line = hvram;
 	uint32_t nLineEndAddr = nScreenBaseAddr + nextline * 2;
@@ -255,7 +257,7 @@ static void ScreenConv_BitplaneTo32bppNoZoom(uint16_t *fvram_line,
 	/* Render the upper border */
 	for (h = 0; h < upperBorder; h++)
 	{
-		Screen_memset_uint32(hvram_line, palette.native[0], scrwidth);
+		ConvGen_memset_uint32(hvram_line, palette.native[0], scrwidth);
 		hvram_line += pitch;
 	}
 
@@ -266,7 +268,7 @@ static void ScreenConv_BitplaneTo32bppNoZoom(uint16_t *fvram_line,
 
 		if (nLineEndAddr > STRamEnd)
 		{
-			Screen_memset_uint32(hvram_line, palette.native[0], pitch);
+			ConvGen_memset_uint32(hvram_line, palette.native[0], pitch);
 			hvram_line += pitch;
 			continue;
 		}
@@ -274,14 +276,14 @@ static void ScreenConv_BitplaneTo32bppNoZoom(uint16_t *fvram_line,
 		nSampleHoldIdx = 0;
 
 		/* Left border first */
-		Screen_memset_uint32(hvram_column, palette.native[0], leftBorder);
+		ConvGen_memset_uint32(hvram_column, palette.native[0], leftBorder);
 		hvram_column += leftBorder;
 
-		hvram_column = ScreenConv_BitplaneLineTo32bpp(fvram_line, hvram_column,
+		hvram_column = ConvGen_BitplaneLineTo32bpp(fvram_line, hvram_column,
 		                                              vw, vbpp, hscrolloffset);
 
 		/* Right border */
-		Screen_memset_uint32(hvram_column, palette.native[0], rightBorder);
+		ConvGen_memset_uint32(hvram_column, palette.native[0], rightBorder);
 
 		nLineEndAddr += nextline * 2;
 		fvram_line += nextline;
@@ -291,18 +293,18 @@ static void ScreenConv_BitplaneTo32bppNoZoom(uint16_t *fvram_line,
 	/* Render the lower border */
 	for (h = 0; h < lowBorder; h++)
 	{
-		Screen_memset_uint32(hvram_line, palette.native[0], scrwidth);
+		ConvGen_memset_uint32(hvram_line, palette.native[0], scrwidth);
 		hvram_line += pitch;
 	}
 }
 
-static void ScreenConv_HiColorTo32bppNoZoom(uint16_t *fvram_line,
-                                            uint32_t *hvram, int pitch,
-                                            int scrwidth, int scrheight,
-                                            int vw, int vh, int vbpp,
-                                            int nextline,
-                                            int leftBorder, int rightBorder,
-                                            int upperBorder, int lowBorder)
+static void ConvGen_HiColorTo32bppNoZoom(uint16_t *fvram_line,
+                                         uint32_t *hvram, int pitch,
+                                         int scrwidth, int scrheight,
+                                         int vw, int vh, int vbpp,
+                                         int nextline,
+                                         int leftBorder, int rightBorder,
+                                         int upperBorder, int lowBorder)
 {
 	uint32_t *hvram_line = hvram;
 	uint32_t nLineEndAddr = nScreenBaseAddr + nextline * 2;
@@ -311,7 +313,7 @@ static void ScreenConv_HiColorTo32bppNoZoom(uint16_t *fvram_line,
 	/* Render the upper border */
 	for (h = 0; h < upperBorder; h++)
 	{
-		Screen_memset_uint32(hvram_line, palette.native[0], scrwidth);
+		ConvGen_memset_uint32(hvram_line, palette.native[0], scrwidth);
 		hvram_line += pitch;
 	}
 
@@ -323,13 +325,13 @@ static void ScreenConv_HiColorTo32bppNoZoom(uint16_t *fvram_line,
 
 		if (nLineEndAddr > STRamEnd)
 		{
-			Screen_memset_uint32(hvram_line, palette.native[0], pitch);
+			ConvGen_memset_uint32(hvram_line, palette.native[0], pitch);
 			hvram_line += pitch;
 			continue;
 		}
 
 		/* Left border first */
-		Screen_memset_uint32(hvram_column, palette.native[0], leftBorder);
+		ConvGen_memset_uint32(hvram_column, palette.native[0], leftBorder);
 		hvram_column += leftBorder;
 
 		/* Graphical area */
@@ -343,7 +345,7 @@ static void ScreenConv_HiColorTo32bppNoZoom(uint16_t *fvram_line,
 		}
 
 		/* Right border */
-		Screen_memset_uint32(hvram_column, palette.native[0], rightBorder);
+		ConvGen_memset_uint32(hvram_column, palette.native[0], rightBorder);
 
 		nLineEndAddr += nextline * 2;
 		fvram_line += nextline;
@@ -353,12 +355,12 @@ static void ScreenConv_HiColorTo32bppNoZoom(uint16_t *fvram_line,
 	/* Render the bottom border */
 	for (h = 0; h < lowBorder; h++)
 	{
-		Screen_memset_uint32(hvram_line, palette.native[0], scrwidth);
+		ConvGen_memset_uint32(hvram_line, palette.native[0], scrwidth);
 		hvram_line += pitch;
 	}
 }
 
-static void Screen_ConvertWithoutZoom(uint16_t *fvram, int vw, int vh, int vbpp, int nextline,
+static void ConvGen_ConvertWithoutZoom(uint16_t *fvram, int vw, int vh, int vbpp, int nextline,
                                       int hscrolloffset, int leftBorder, int rightBorder,
                                       int upperBorder, int lowerBorder)
 {
@@ -427,30 +429,30 @@ static void Screen_ConvertWithoutZoom(uint16_t *fvram, int vw, int vh, int vbpp,
 	/* render the graphic area */
 	if (vbpp < 16) {
 		/* Bitplanes modes */
-		ScreenConv_BitplaneTo32bppNoZoom(fvram, hvram, pitch,
-		                                 scrwidth, scrheight, vw, vh,
-		                                 vbpp, nextline, hscrolloffset,
-		                                 leftBorder, rightBorderSize,
-		                                 upperBorder, lowBorderSize);
+		ConvGen_BitplaneTo32bppNoZoom(fvram, hvram, pitch,
+		                              scrwidth, scrheight, vw, vh,
+		                              vbpp, nextline, hscrolloffset,
+		                              leftBorder, rightBorderSize,
+		                              upperBorder, lowBorderSize);
 	} else {
 		/* Falcon TC (High Color) */
-		ScreenConv_HiColorTo32bppNoZoom(fvram, hvram, pitch,
-		                                scrwidth, scrheight, vw, vh,
-		                                vbpp, nextline,
-		                                leftBorder, rightBorderSize,
-		                                upperBorder, lowBorderSize);
+		ConvGen_HiColorTo32bppNoZoom(fvram, hvram, pitch,
+		                             scrwidth, scrheight, vw, vh,
+		                             vbpp, nextline,
+		                             leftBorder, rightBorderSize,
+		                             upperBorder, lowBorderSize);
 	}
 }
 
 
-static void ScreenConv_BitplaneTo32bppZoomed(uint16_t *fvram,
-                                             uint32_t *hvram, int pitch,
-                                             int scrwidth, int scrheight,
-                                             int vw, int vh, int vbpp,
-                                             int nextline, int hscrolloffset,
-                                             int leftBorder, int rightBorder,
-                                             int upperBorder, int lowerBorder,
-                                             int coefx, int coefy)
+static void ConvGen_BitplaneTo32bppZoomed(uint16_t *fvram,
+                                          uint32_t *hvram, int pitch,
+                                          int scrwidth, int scrheight,
+                                          int vw, int vh, int vbpp,
+                                          int nextline, int hscrolloffset,
+                                          int leftBorder, int rightBorder,
+                                          int upperBorder, int lowerBorder,
+                                          int coefx, int coefy)
 {
 	/* One complete 16-pixel aligned planar 2 chunky line */
 	uint32_t *p2cline = malloc(sizeof(uint32_t) * ((vw+15) & ~15));
@@ -465,7 +467,7 @@ static void ScreenConv_BitplaneTo32bppZoomed(uint16_t *fvram,
 	/* Render the upper border */
 	for (h = 0; h < upperBorder * coefy; h++)
 	{
-		Screen_memset_uint32(hvram_line, palette.native[0], scrwidth);
+		ConvGen_memset_uint32(hvram_line, palette.native[0], scrwidth);
 		hvram_line += pitch;
 	}
 
@@ -483,16 +485,16 @@ static void ScreenConv_BitplaneTo32bppZoomed(uint16_t *fvram,
 		}
 		else if (nLineEndAddr > STRamEnd)
 		{
-			Screen_memset_uint32(hvram_line, palette.native[0], pitch);
+			ConvGen_memset_uint32(hvram_line, palette.native[0], pitch);
 		}
 		else
 		{
-			ScreenConv_BitplaneLineTo32bpp(fvram_line, p2cline,
-			                               vw, vbpp, hscrolloffset);
+			ConvGen_BitplaneLineTo32bpp(fvram_line, p2cline,
+			                            vw, vbpp, hscrolloffset);
 
 			hvram_column = hvram_line;
 			/* Display the Left border */
-			Screen_memset_uint32(hvram_column, palette.native[0], leftBorder * coefx);
+			ConvGen_memset_uint32(hvram_column, palette.native[0], leftBorder * coefx);
 			hvram_column += leftBorder * coefx;
 
 			/* Display the Graphical area */
@@ -503,7 +505,7 @@ static void ScreenConv_BitplaneTo32bppZoomed(uint16_t *fvram,
 			hvram_column += vw * coefx;
 
 			/* Display the Right border */
-			Screen_memset_uint32(hvram_column, palette.native[0], rightBorder * coefx);
+			ConvGen_memset_uint32(hvram_column, palette.native[0], rightBorder * coefx);
 
 			nLineEndAddr += nextline * 2;
 		}
@@ -515,21 +517,21 @@ static void ScreenConv_BitplaneTo32bppZoomed(uint16_t *fvram,
 	/* Render the lower border */
 	for (h = 0; h < lowerBorder * coefy; h++)
 	{
-		Screen_memset_uint32(hvram_line, palette.native[0], scrwidth);
+		ConvGen_memset_uint32(hvram_line, palette.native[0], scrwidth);
 		hvram_line += pitch;
 	}
 
 	free(p2cline);
 }
 
-static void ScreenConv_HiColorTo32bppZoomed(uint16_t *fvram,
-                                            uint32_t *hvram, int pitch,
-                                            int scrwidth, int scrheight,
-                                            int vw, int vh, int vbpp,
-                                            int nextline,
-                                            int leftBorder, int rightBorder,
-                                            int upperBorder, int lowerBorder,
-                                            int coefx, int coefy)
+static void ConvGen_HiColorTo32bppZoomed(uint16_t *fvram,
+                                         uint32_t *hvram, int pitch,
+                                         int scrwidth, int scrheight,
+                                         int vw, int vh, int vbpp,
+                                         int nextline,
+                                         int leftBorder, int rightBorder,
+                                         int upperBorder, int lowerBorder,
+                                         int coefx, int coefy)
 {
 	uint32_t *hvram_line = hvram;
 	uint32_t *hvram_column = hvram_line;
@@ -542,7 +544,7 @@ static void ScreenConv_HiColorTo32bppZoomed(uint16_t *fvram,
 	/* Render the upper border */
 	for (h = 0; h < upperBorder * coefy; h++)
 	{
-		Screen_memset_uint32(hvram_line, palette.native[0], scrwidth);
+		ConvGen_memset_uint32(hvram_line, palette.native[0], scrwidth);
 		hvram_line += pitch;
 	}
 
@@ -562,14 +564,14 @@ static void ScreenConv_HiColorTo32bppZoomed(uint16_t *fvram,
 		}
 		else if (nLineEndAddr > STRamEnd)
 		{
-			Screen_memset_uint32(hvram_line, palette.native[0], pitch);
+			ConvGen_memset_uint32(hvram_line, palette.native[0], pitch);
 		}
 		else
 		{
 			hvram_column = hvram_line;
 
 			/* Display the Left border */
-			Screen_memset_uint32(hvram_column, palette.native[0], leftBorder * coefx);
+			ConvGen_memset_uint32(hvram_column, palette.native[0], leftBorder * coefx);
 			hvram_column += leftBorder * coefx;
 
 			/* Display the Graphical area */
@@ -585,7 +587,7 @@ static void ScreenConv_HiColorTo32bppZoomed(uint16_t *fvram,
 			}
 
 			/* Display the Right border */
-			Screen_memset_uint32(hvram_column, palette.native[0], rightBorder * coefx);
+			ConvGen_memset_uint32(hvram_column, palette.native[0], rightBorder * coefx);
 
 			nLineEndAddr += nextline * 2;
 		}
@@ -597,14 +599,14 @@ static void ScreenConv_HiColorTo32bppZoomed(uint16_t *fvram,
 	/* Render the lower border */
 	for (h = 0; h < lowerBorder * coefy; h++)
 	{
-		Screen_memset_uint32(hvram_line, palette.native[0], scrwidth);
+		ConvGen_memset_uint32(hvram_line, palette.native[0], scrwidth);
 		hvram_line += pitch;
 	}
 }
 
-static void Screen_ConvertWithZoom(uint16_t *fvram, int vw, int vh, int vbpp, int nextline,
-                                   int hscrolloffset, int leftBorder, int rightBorder,
-                                   int upperBorder, int lowerBorder)
+static void ConvGen_ConvertWithZoom(uint16_t *fvram, int vw, int vh, int vbpp, int nextline,
+                                    int hscrolloffset, int leftBorder, int rightBorder,
+                                    int upperBorder, int lowerBorder)
 {
 	int coefx = 1;
 	int coefy = 1;
@@ -681,25 +683,25 @@ static void Screen_ConvertWithZoom(uint16_t *fvram, int vw, int vh, int vbpp, in
 
 	if (vbpp<16) {
 		/* Bitplanes modes */
-		ScreenConv_BitplaneTo32bppZoomed(fvram, hvram, scrpitch,
-		                                 scrwidth, scrheight,
-		                                 vw, vh, vbpp, nextline, hscrolloffset,
-		                                 leftBorder, rightBorder, upperBorder,
-		                                 lowerBorder, coefx, coefy);
+		ConvGen_BitplaneTo32bppZoomed(fvram, hvram, scrpitch,
+		                              scrwidth, scrheight,
+		                              vw, vh, vbpp, nextline, hscrolloffset,
+		                              leftBorder, rightBorder, upperBorder,
+		                              lowerBorder, coefx, coefy);
 	} else {
 		/* Falcon high-color (16-bit) mode */
-		ScreenConv_HiColorTo32bppZoomed(fvram, hvram, scrpitch,
-		                                scrwidth, scrheight,
-		                                vw, vh, vbpp, nextline,
-		                                leftBorder, rightBorder, upperBorder,
-		                                lowerBorder, coefx, coefy);
+		ConvGen_HiColorTo32bppZoomed(fvram, hvram, scrpitch,
+		                             scrwidth, scrheight,
+		                             vw, vh, vbpp, nextline,
+		                             leftBorder, rightBorder, upperBorder,
+		                             lowerBorder, coefx, coefy);
 	}
 }
 
-void Screen_GenConvert(uint32_t vaddr, void *fvram, int vw, int vh,
-                       int vbpp, int nextline, int hscroll,
-                       int leftBorderSize, int rightBorderSize,
-                       int upperBorderSize, int lowerBorderSize)
+void ConvGen_Convert(uint32_t vaddr, void *fvram, int vw, int vh,
+                     int vbpp, int nextline, int hscroll,
+                     int leftBorderSize, int rightBorderSize,
+                     int upperBorderSize, int lowerBorderSize)
 {
 	nScreenBaseAddr = vaddr;
 	ConvertW = vw;
@@ -714,19 +716,19 @@ void Screen_GenConvert(uint32_t vaddr, void *fvram, int vw, int vh,
 		ConvertPaletteSize = 256;
 
 	if (nScreenZoomX * nScreenZoomY != 1) {
-		Screen_ConvertWithZoom(fvram, vw, vh, vbpp, nextline, hscroll,
-		                       leftBorderSize, rightBorderSize,
-		                       upperBorderSize, lowerBorderSize);
+		ConvGen_ConvertWithZoom(fvram, vw, vh, vbpp, nextline, hscroll,
+		                        leftBorderSize, rightBorderSize,
+		                        upperBorderSize, lowerBorderSize);
 	} else {
-		Screen_ConvertWithoutZoom(fvram, vw, vh, vbpp, nextline, hscroll,
-		                          leftBorderSize, rightBorderSize,
-		                          upperBorderSize, lowerBorderSize);
+		ConvGen_ConvertWithoutZoom(fvram, vw, vh, vbpp, nextline, hscroll,
+		                           leftBorderSize, rightBorderSize,
+		                           upperBorderSize, lowerBorderSize);
 	}
 }
 
-bool Screen_GenDraw(uint32_t vaddr, int vw, int vh, int vbpp, int nextline,
-                    int leftBorder, int rightBorder,
-                    int upperBorder, int lowerBorder)
+bool ConvGen_Draw(uint32_t vaddr, int vw, int vh, int vbpp, int nextline,
+                  int leftBorder, int rightBorder,
+                  int upperBorder, int lowerBorder)
 {
 	int hscrolloffset;
 
@@ -738,8 +740,8 @@ bool Screen_GenDraw(uint32_t vaddr, int vw, int vh, int vbpp, int nextline,
 	else
 		hscrolloffset = IoMem_ReadByte(0xff8265) & 0x0f;
 
-	Screen_GenConvert(vaddr, &STRam[vaddr], vw, vh, vbpp, nextline, hscrolloffset,
-	                  leftBorder, rightBorder, upperBorder, lowerBorder);
+	ConvGen_Convert(vaddr, &STRam[vaddr], vw, vh, vbpp, nextline, hscrolloffset,
+	                leftBorder, rightBorder, upperBorder, lowerBorder);
 
 	Screen_UnLock();
 	Screen_GenConvUpdate(true);
@@ -752,7 +754,7 @@ bool Screen_GenDraw(uint32_t vaddr, int vw, int vh, int vbpp, int nextline,
  * This is used to set the size of the screen
  * when we're using the generic conversion functions.
  */
-void Screen_SetGenConvSize(int width, int height, bool bForceChange)
+void ConvGen_SetSize(int width, int height, bool bForceChange)
 {
 	static int genconv_width_req, genconv_height_req;
 	const bool keep = ConfigureParams.Screen.bKeepResolution;
@@ -839,7 +841,7 @@ void Screen_SetGenConvSize(int width, int height, bool bForceChange)
 	}
 
 	/* In case surface format changed, remap the native palette */
-	Screen_RemapPalette();
+	ConvGen_RemapPalette();
 
 	Main_WarpMouse(screenwidth / 2, screenheight / 2, false);
 }
@@ -849,7 +851,7 @@ void Screen_SetGenConvSize(int width, int height, bool bForceChange)
  * Return true if Falcon/TT/VDI generic screen convert functions
  * need to be used instead of the ST/STE functions.
  */
-bool Screen_UseGenConvScreen(void)
+bool ConvGen_UseGenConvScreen(void)
 {
 	return Config_IsMachineFalcon() || Config_IsMachineTT()
 		|| bUseHighRes || bUseVDIRes;

@@ -15,6 +15,7 @@ const char Screen_fileid[] = "Hatari screen.c";
 
 #include "main.h"
 #include "configuration.h"
+#include "conv_gen.h"
 #include "conv_st.h"
 #include "avi_record.h"
 #include "file.h"
@@ -22,7 +23,6 @@ const char Screen_fileid[] = "Hatari screen.c";
 #include "paths.h"
 #include "options.h"
 #include "screen.h"
-#include "screenConvert.h"
 #include "control.h"
 #include "resolution.h"
 #include "spec512.h"
@@ -602,9 +602,9 @@ void Screen_EnterFullScreen(void)
 		bWasRunning = Main_PauseEmulation(false);
 		bInFullScreen = true;
 
-		if (Screen_UseGenConvScreen())
+		if (ConvGen_UseGenConvScreen())
 		{
-			Screen_SetGenConvSize(-1, -1, true);
+			ConvGen_SetSize(-1, -1, true);
 			/* force screen redraw */
 			Screen_GenConvUpdate(false);
 		}
@@ -647,9 +647,9 @@ void Screen_ReturnFromFullScreen(void)
 		bWasRunning = Main_PauseEmulation(false);
 		bInFullScreen = false;
 
-		if (Screen_UseGenConvScreen())
+		if (ConvGen_UseGenConvScreen())
 		{
-			Screen_SetGenConvSize(-1, -1, true);
+			ConvGen_SetSize(-1, -1, true);
 			/* force screen redraw */
 			Screen_GenConvUpdate(false);
 		}

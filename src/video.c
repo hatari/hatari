@@ -432,6 +432,7 @@ const char Video_fileid[] = "Hatari video.c";
 
 #include "main.h"
 #include "configuration.h"
+#include "conv_gen.h"
 #include "conv_st.h"
 #include "cycles.h"
 #include "endianswap.h"
@@ -445,7 +446,6 @@ const char Video_fileid[] = "Hatari video.c";
 #include "mfp.h"
 #include "printer.h"
 #include "screen.h"
-#include "screenConvert.h"
 #include "screenSnapShot.h"
 #include "shortcut.h"
 #include "sound.h"
@@ -4685,7 +4685,7 @@ static void Video_SetTTPaletteColor(int idx, uint32_t addr)
 	}
 
 	//printf("%d (%x): (%d,%d,%d)\n", idx, addr, r,g,b);
-	Screen_SetPaletteColor(idx, r,g,b);
+	ConvGen_SetPaletteColor(idx, r,g,b);
 }
 
 /**
@@ -4704,8 +4704,8 @@ static void Video_UpdateTTPalette(int bpp)
 	if (TTRes == TT_HIGH_RES || (bUseVDIRes && bpp == 1))
 	{
 		/* Monochrome mode... palette is hardwired (?) */
-		Screen_SetPaletteColor(0, 255, 255, 255);
-		Screen_SetPaletteColor(1, 0, 0, 0);
+		ConvGen_SetPaletteColor(0, 255, 255, 255);
+		ConvGen_SetPaletteColor(1, 0, 0, 0);
 	}
 	else if (bpp == 1)
 	{
@@ -4749,7 +4749,7 @@ bool Video_RenderTTScreen(void)
 	Video_GetTTRes(&width, &height, &bpp);
 	if (TTRes != nPrevTTRes)
 	{
-		Screen_SetGenConvSize(width, height, false);
+		ConvGen_SetSize(width, height, false);
 		nPrevTTRes = TTRes;
 		if (bpp == 1)   /* Assert that mono palette will be used in mono mode */
 			bTTColorsSync = false;
@@ -4762,8 +4762,8 @@ bool Video_RenderTTScreen(void)
 		nPrevTTSpecialVideoMode = TTSpecialVideoMode;
 	}
 
-	return Screen_GenDraw(VideoBase, width, height, bpp, width * bpp / 16,
-	                      0, 0, 0, 0);
+	return ConvGen_Draw(VideoBase, width, height, bpp, width * bpp / 16,
+	                    0, 0, 0, 0);
 }
 
 
@@ -4789,8 +4789,8 @@ static void Video_DrawScreen(void)
 		{
 			VIDEL_UpdateColors();
 		}
-		Screen_GenDraw(VideoBase, VDIWidth, VDIHeight, VDIPlanes,
-		               VDIWidth * VDIPlanes / 16, 0, 0, 0, 0);
+		ConvGen_Draw(VideoBase, VDIWidth, VDIHeight, VDIPlanes,
+		             VDIWidth * VDIPlanes / 16, 0, 0, 0, 0);
 	}
 	else if (Config_IsMachineFalcon())
 	{
@@ -5415,8 +5415,8 @@ static void Video_ColorReg_WriteWord(void)
 	{
 		if (idx == 0)
 		{
-			Screen_SetPaletteColor(col & 1, 0, 0, 0);
-			Screen_SetPaletteColor(!(col & 1), 255, 255, 255);
+			ConvGen_SetPaletteColor(col & 1, 0, 0, 0);
+			ConvGen_SetPaletteColor(!(col & 1), 255, 255, 255);
 		}
 	}
 	else if (bUseVDIRes)
@@ -5431,7 +5431,7 @@ static void Video_ColorReg_WriteWord(void)
 		b = col & 0x0f;
 		b = ((b & 7) << 1) | (b >> 3);
 		b |= b << 4;
-		Screen_SetPaletteColor(idx, r, g, b);
+		ConvGen_SetPaletteColor(idx, r, g, b);
 	}
 	else    /* Don't store if hi-res or VDI resolution */
 	{
