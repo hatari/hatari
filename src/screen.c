@@ -15,12 +15,12 @@ const char Screen_fileid[] = "Hatari screen.c";
 
 #include "main.h"
 #include "configuration.h"
+#include "conv_st.h"
 #include "avi_record.h"
 #include "file.h"
 #include "log.h"
 #include "paths.h"
 #include "options.h"
-#include "scrConvSt.h"
 #include "screen.h"
 #include "screenConvert.h"
 #include "control.h"
@@ -533,7 +533,7 @@ void Screen_ModeChanged(bool bForceChange)
 {
 	if (sdlscrn)	/* Do it only if we're already up and running */
 	{
-		ScrConvSt_ChangeResolution(bForceChange);
+		ConvST_ChangeResolution(bForceChange);
 	}
 }
 
@@ -548,7 +548,7 @@ void Screen_Init(void)
 
 	/* Set initial window resolution */
 	bInFullScreen = ConfigureParams.Screen.bFullScreen;
-	ScrConvSt_ChangeResolution(false);
+	ConvST_ChangeResolution(false);
 
 	/* Load and set icon */
 	File_MakePathBuf(sIconFileName, sizeof(sIconFileName), Paths_GetDataDir(),
@@ -610,7 +610,7 @@ void Screen_EnterFullScreen(void)
 		}
 		else
 		{
-			ScrConvSt_SetSTResolution(true);
+			ConvST_SetSTResolution(true);
 			Screen_ClearScreen();       /* Black out screen bitmap as will be invalid when return */
 		}
 
@@ -627,7 +627,7 @@ void Screen_EnterFullScreen(void)
 		}
 		else
 		{
-			ScrConvSt_Refresh();
+			ConvST_Refresh();
 		}
 		SDL_SetRelativeMouseMode(true);  /* Grab mouse pointer in fullscreen */
 	}
@@ -655,7 +655,7 @@ void Screen_ReturnFromFullScreen(void)
 		}
 		else
 		{
-			ScrConvSt_SetSTResolution(true);
+			ConvST_SetSTResolution(true);
 		}
 
 		if (!ConfigureParams.Screen.bKeepResolution)
@@ -671,7 +671,7 @@ void Screen_ReturnFromFullScreen(void)
 		}
 		else
 		{
-			ScrConvSt_Refresh();
+			ConvST_Refresh();
 		}
 
 		if (!bGrabMouse)
@@ -766,7 +766,7 @@ bool Screen_Draw(bool bForceFlip)
 	Statusbar_OverlayRestore(sdlscrn);
 
 	/* And draw (if screen contents changed) */
-	screen_changed = ScrConvSt_DrawFrame();
+	screen_changed = ConvST_DrawFrame();
 
 	/* draw overlay led(s) or statusbar after unlock */
 	Statusbar_OverlayBackup(sdlscrn);

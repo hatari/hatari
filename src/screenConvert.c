@@ -7,12 +7,12 @@
 
 #include "main.h"
 #include "configuration.h"
+#include "conv_st.h"
 #include "endianswap.h"
 #include "ioMem.h"
 #include "log.h"
 #include "memorySnapShot.h"
 #include "resolution.h"
-#include "scrConvSt.h"
 #include "screen.h"
 #include "screenConvert.h"
 #include "statusbar.h"

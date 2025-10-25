@@ -16,6 +16,7 @@ const char Main_fileid[] = "Hatari main.c";
 #include "version.h"
 #include "configuration.h"
 #include "control.h"
+#include "conv_st.h"
 #include "options.h"
 #include "dialog.h"
 #include "audio.h"
@@ -46,7 +47,6 @@ const char Main_fileid[] = "Hatari main.c";
 #include "rs232.h"
 #include "rtc.h"
 #include "scc.h"
-#include "scrConvSt.h"
 #include "screen.h"
 #include "sdlgui.h"
 #include "shortcut.h"
@@ -250,7 +250,7 @@ bool Main_UnPauseEmulation(void)
 	bEmulationActive = true;
 
 	/* Cause full screen update (to clear all) */
-	ScrConvSt_SetFullUpdate();
+	ConvST_SetFullUpdate();
 
 	if (bGrabMouse)
 		/* Grab mouse pointer again */
@@ -750,7 +750,7 @@ void Main_EventHandler(void)
 					/* Hack: Redraw screen here when going into
 					 * fullscreen mode without SDL renderer */
 					sdlscrn = SDL_GetWindowSurface(sdlWindow);
-					ScrConvSt_SetFullUpdate();
+					ConvST_SetFullUpdate();
 					Statusbar_Init(sdlscrn);
 				}
 				/* fall through */
@@ -851,7 +851,7 @@ static void Main_Init(void)
 	SCC_Init();
 	Midi_Init();
 	Videl_Init();
-	ScrConvSt_Init();
+	ConvST_Init();
 	Screen_Init();
 	Main_SetTitle(NULL);
 
@@ -928,7 +928,7 @@ static void Main_UnInit(void)
 	SDLGui_UnInit();
 	DSP_UnInit();
 	Screen_UnInit();
-	ScrConvSt_UnInit();
+	ConvST_UnInit();
 	Exit680x0();
 
 	IPF_Exit();

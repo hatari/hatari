@@ -11,10 +11,10 @@ const char Resolution_fileid[] = "Hatari resolution.c";
 #include <SDL.h>
 #include "main.h"
 #include "configuration.h"
+#include "conv_st.h"
 #include "log.h"
 #include "resolution.h"
 #include "statusbar.h"
-#include "scrConvSt.h"
 #include "screen.h"
 
 #define DEBUG 0

@@ -2,12 +2,12 @@
 set(SOURCES
 	acia.c audio.c avi_record.c bios.c blitter.c cart.c cfgopts.c
 	clocks_timings.c configuration.c options.c change.c control.c
-	cycInt.c cycles.c dialog.c dmaSnd.c fdc.c file.c floppy.c
+	conv_st.c cycInt.c cycles.c dialog.c dmaSnd.c fdc.c file.c floppy.c
 	floppy_ipf.c floppy_stx.c gemdos.c hdc.c ide.c ikbd.c
 	ioMem.c ioMemTabST.c ioMemTabSTE.c ioMemTabTT.c ioMemTabFalcon.c joy.c
 	keymap.c m68000.c main.c midi.c memorySnapShot.c mfp.c nf_scsidrv.c
 	ncr5380.c paths.c  psg.c printer.c resolution.c rs232.c reset.c rtc.c
-	scandir.c scc.c scu_vme.c stMemory.c scrConvSt.c screen.c screenConvert.c
+	scandir.c scc.c scu_vme.c stMemory.c screen.c screenConvert.c
 	screenSnapShot.c shortcut.c sound.c spec512.c statusbar.c str.c tos.c
 	utils.c vdi.c inffile.c video.c wavFormat.c xbios.c ymFormat.c lilo.c)
 

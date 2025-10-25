@@ -432,6 +432,7 @@ const char Video_fileid[] = "Hatari video.c";
 
 #include "main.h"
 #include "configuration.h"
+#include "conv_st.h"
 #include "cycles.h"
 #include "endianswap.h"
 #include "fdc.h"
@@ -443,7 +444,6 @@ const char Video_fileid[] = "Hatari video.c";
 #include "memorySnapShot.h"
 #include "mfp.h"
 #include "printer.h"
-#include "scrConvSt.h"
 #include "screen.h"
 #include "screenConvert.h"
 #include "screenSnapShot.h"

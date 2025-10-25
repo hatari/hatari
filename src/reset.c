@@ -11,6 +11,7 @@ const char Reset_fileid[] = "Hatari reset.c";
 #include "main.h"
 #include "configuration.h"
 #include "cart.h"
+#include "conv_st.h"
 #include "dmaSnd.h"
 #include "crossbar.h"
 #include "fdc.h"
@@ -30,7 +31,6 @@ const char Reset_fileid[] = "Hatari reset.c";
 #include "psg.h"
 #include "reset.h"
 #include "scc.h"
-#include "scrConvSt.h"
 #include "screen.h"
 #include "scu_vme.h"
 #include "sound.h"
@@ -112,7 +112,7 @@ static int Reset_ST(bool bCold)
 	if (Config_IsMachineFalcon() && !bUseVDIRes)
 		VIDEL_reset();
 	else
-		ScrConvSt_Reset();    /* Reset screen */
+		ConvST_Reset();    /* Reset screen */
 
 	M68000_Reset(bCold);		/* Reset CPU */
 

@@ -91,13 +91,13 @@ extern uint32_t HBLPaletteMasks[HBL_PALETTE_MASKS];
 extern uint32_t *pHBLPaletteMasks;
 extern int STScreenLineOffset[NUM_VISIBLE_LINES];
 
-void ScrConvSt_Init(void);
-void ScrConvSt_UnInit(void);
-void ScrConvSt_Reset(void);
-void ScrConvSt_SetSTResolution(bool bForceChange);
-void ScrConvSt_ChangeResolution(bool bForceChange);
-void ScrConvSt_SetFullUpdate(void);
-void ScrConvSt_Refresh(void);
-bool ScrConvSt_DrawFrame(void);
+void ConvST_Init(void);
+void ConvST_UnInit(void);
+void ConvST_Reset(void);
+void ConvST_SetSTResolution(bool bForceChange);
+void ConvST_ChangeResolution(bool bForceChange);
+void ConvST_SetFullUpdate(void);
+void ConvST_Refresh(void);
+bool ConvST_DrawFrame(void);
 
 #endif  /* ifndef HATARI_SCRCONVST_H */

@@ -18,11 +18,11 @@ const char Memory_fileid[] = "Hatari memory.c";
 #include "maccess.h"
 #include "memory.h"
 
+#include "conv_st.h"
 #include "tos.h"
 #include "ide.h"
 #include "ioMem.h"
 #include "reset.h"
-#include "scrConvSt.h"
 #include "stMemory.h"
 #include "m68000.h"
 #include "configuration.h"

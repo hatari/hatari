@@ -15,12 +15,12 @@ const char VDI_fileid[] = "Hatari vdi.c";
 
 #include "main.h"
 #include "configuration.h"
+#include "conv_st.h"
 #include "file.h"
 #include "gemdos.h"
 #include "inffile.h"
 #include "m68000.h"
 #include "options.h"
-#include "scrConvSt.h"
 #include "stMemory.h"
 #include "tos.h"
 #include "vars.h"

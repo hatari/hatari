@@ -12,9 +12,9 @@ const char ScreenSnapShot_fileid[] = "Hatari screenSnapShot.c";
 #include <string.h>
 #include "main.h"
 #include "configuration.h"
+#include "conv_st.h"
 #include "file.h"
 #include "log.h"
-#include "scrConvSt.h"
 #include "screen.h"
 #include "screenConvert.h"
 #include "screenSnapShot.h"

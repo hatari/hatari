@@ -17,13 +17,13 @@ const char INFFILE_fileid[] = "Hatari inffile.c";
 
 #include "main.h"
 #include "configuration.h"
+#include "conv_st.h"
 #include "inffile.h"
 #include "options.h"
 #include "gemdos.h"
 #include "file.h"
 #include "log.h"
 #include "str.h"
-#include "scrConvSt.h"
 #include "tos.h"
 #include "vdi.h"
 
