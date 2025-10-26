@@ -18,7 +18,9 @@ void JoyUI_Init(void);
 void JoyUI_UnInit(void);
 const char *JoyUI_GetName(int id);
 int JoyUI_GetMaxId(void);
+int JoyUI_NumJoysticks(void);
 bool JoyUI_ValidateJoyId(int i);
+void JoyUI_SetDefaultKeys(int stjoy_id);
 bool JoyUI_ReadJoystick(int nStJoyId, JOYREADING *pJoyReading);
 int JoyUI_GetRealFireButtons(int nStJoyId);
 

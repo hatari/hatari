@@ -12,7 +12,6 @@
 const char Configuration_fileid[] = "Hatari configuration.c";
 
 #include <SDL_keyboard.h>
-#include <SDL_joystick.h>
 
 #include "main.h"
 #include "configuration.h"
@@ -688,23 +687,10 @@ void Configuration_SetDefault(void)
 		ConfigureParams.Joysticks.Joy[i].nJoyId = (i > maxjoy ? maxjoy : i);
 		for (int j = 0; j < JOYSTICK_BUTTONS; j++)
 			ConfigureParams.Joysticks.Joy[i].nJoyButMap[j] = j;
-		ConfigureParams.Joysticks.Joy[i].nKeyCodeUp = SDLK_UP;
-		ConfigureParams.Joysticks.Joy[i].nKeyCodeDown = SDLK_DOWN;
-		ConfigureParams.Joysticks.Joy[i].nKeyCodeLeft = SDLK_LEFT;
-		ConfigureParams.Joysticks.Joy[i].nKeyCodeRight = SDLK_RIGHT;
-		ConfigureParams.Joysticks.Joy[i].nKeyCodeFire = SDLK_RCTRL;
+		JoyUI_SetDefaultKeys(i);
 	}
 
-	for (i = 0; i <= 9; i++)
-		ConfigureParams.Joysticks.Joy[JOYID_JOYPADA].nKeyCodeNum[i] = SDLK_0 + i;
-	ConfigureParams.Joysticks.Joy[JOYID_JOYPADA].nKeyCodeB = SDLK_b;
-	ConfigureParams.Joysticks.Joy[JOYID_JOYPADA].nKeyCodeC = SDLK_c;
-	ConfigureParams.Joysticks.Joy[JOYID_JOYPADA].nKeyCodeOption = SDLK_o;
-	ConfigureParams.Joysticks.Joy[JOYID_JOYPADA].nKeyCodePause = SDLK_p;
-	ConfigureParams.Joysticks.Joy[JOYID_JOYPADA].nKeyCodeHash = SDLK_HASH;
-	ConfigureParams.Joysticks.Joy[JOYID_JOYPADA].nKeyCodeStar = SDLK_PLUS;
-
-	if (SDL_NumJoysticks() > 0)
+	if (JoyUI_NumJoysticks() > 0)
 	{
 		/* ST Joystick #1 is default joystick */
 		ConfigureParams.Joysticks.Joy[1].nJoyId = 0;

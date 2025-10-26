@@ -65,6 +65,12 @@ int JoyUI_GetMaxId(void)
 	return 0;
 }
 
+int JoyUI_NumJoysticks(void)
+{
+	return SDL_NumJoysticks();
+}
+
+
 /**
  * Make sure real Joystick ID is valid, and if not, disable it & return false
  */
@@ -138,6 +144,33 @@ void JoyUI_UnInit(void)
 			SDL_JoystickClose(sdlJoystick[i]);
 		}
 		sdlJoystick[i] = NULL;
+	}
+}
+
+
+/**
+ * Set default keys for joystick emulation
+ */
+void JoyUI_SetDefaultKeys(int stjoy_id)
+{
+	int i;
+
+	ConfigureParams.Joysticks.Joy[stjoy_id].nKeyCodeUp = SDLK_UP;
+	ConfigureParams.Joysticks.Joy[stjoy_id].nKeyCodeDown = SDLK_DOWN;
+	ConfigureParams.Joysticks.Joy[stjoy_id].nKeyCodeLeft = SDLK_LEFT;
+	ConfigureParams.Joysticks.Joy[stjoy_id].nKeyCodeRight = SDLK_RIGHT;
+	ConfigureParams.Joysticks.Joy[stjoy_id].nKeyCodeFire = SDLK_RCTRL;
+
+	if (stjoy_id == JOYID_JOYPADA)
+	{
+		for (i = 0; i <= 9; i++)
+			ConfigureParams.Joysticks.Joy[stjoy_id].nKeyCodeNum[i] = SDLK_0 + i;
+		ConfigureParams.Joysticks.Joy[stjoy_id].nKeyCodeB = SDLK_b;
+		ConfigureParams.Joysticks.Joy[stjoy_id].nKeyCodeC = SDLK_c;
+		ConfigureParams.Joysticks.Joy[stjoy_id].nKeyCodeOption = SDLK_o;
+		ConfigureParams.Joysticks.Joy[stjoy_id].nKeyCodePause = SDLK_p;
+		ConfigureParams.Joysticks.Joy[stjoy_id].nKeyCodeHash = SDLK_HASH;
+		ConfigureParams.Joysticks.Joy[stjoy_id].nKeyCodeStar = SDLK_PLUS;
 	}
 }
 
