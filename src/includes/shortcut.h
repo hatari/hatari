@@ -8,7 +8,7 @@
 /* If pressed short-cut key modifier or standalone short-cut key,
  * retain keypress until safe to execute (start of VBL). Returns
  * true if key was shortcut, false otherwise */
-extern bool ShortCut_CheckKeys(int modkey, int symkey, bool press);
+extern bool ShortCut_CheckKeys(int symkey, bool with_mod, bool press);
 /* Invoke shortcut identified by name */
 extern bool Shortcut_Invoke(const char *shortcut);
 /* Act on the stored keypress (in VBL) */

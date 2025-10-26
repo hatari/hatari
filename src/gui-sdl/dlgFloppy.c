@@ -10,6 +10,7 @@ const char DlgFloppy_fileid[] = "Hatari dlgFloppy.c";
 #include "main.h"
 #include "configuration.h"
 #include "dialog.h"
+#include "screen.h"
 #include "sdlgui.h"
 #include "file.h"
 #include "floppy.h"
@@ -288,4 +289,16 @@ void DlgFloppy_Main(void)
 	ConfigureParams.DiskImage.EnableDriveB = (floppydlg[FLOPPYDLG_ENABLE_B].state & SG_SELECTED);
 	ConfigureParams.DiskImage.DriveA_NumberOfHeads = ( (floppydlg[FLOPPYDLG_HEADS_DS_A].state & SG_SELECTED) ? 2 : 1 );
 	ConfigureParams.DiskImage.DriveB_NumberOfHeads = ( (floppydlg[FLOPPYDLG_HEADS_DS_B].state & SG_SELECTED) ? 2 : 1 );
+}
+
+
+/**
+ * This function is used via a shortcut to select a floppy image directly
+ */
+char* DlgFloppy_ShortCutSel(const char *path_and_name, char **zip_path)
+{
+	if (SDLGui_SetScreen(sdlscrn))
+		return NULL;
+
+	return SDLGui_FileSelect("Floppy image:", path_and_name, zip_path, false);
 }

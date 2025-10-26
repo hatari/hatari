@@ -797,7 +797,15 @@ static bool IsKeyTranslatable(SDL_Keycode symkey)
 }
 
 
-/*-----------------------------------------------------------------------*/
+/**
+ * Is a shortcut modifier key pressed?
+ */
+static bool Keymap_IsShortCutMod(int modkey)
+{
+	return (modkey & (KMOD_RALT|KMOD_LGUI|KMOD_RGUI|KMOD_MODE)) != 0;
+}
+
+
 /**
  * User pressed a key down
  */
@@ -810,8 +818,11 @@ void Keymap_KeyDown(const SDL_Keysym *sdlkey)
 	LOG_TRACE(TRACE_KEYMAP, "key down: sym=%i scan=%i mod=0x%x name='%s'\n",
 	          symkey, sdlkey->scancode, modkey, Keymap_GetKeyName(symkey));
 
-	if (ShortCut_CheckKeys(modkey, symkey, true))
-		return;
+	if (symkey != SDLK_UNKNOWN)
+	{
+		if (ShortCut_CheckKeys(symkey, Keymap_IsShortCutMod(modkey), true))
+			return;
+	}
 
 	if (!(modkey & KMOD_SHIFT))
 	{
@@ -853,8 +864,11 @@ void Keymap_KeyUp(const SDL_Keysym *sdlkey)
 	          symkey, sdlkey->scancode, modkey, Keymap_GetKeyName(symkey));
 
 	/* Ignore short-cut keys here */
-	if (ShortCut_CheckKeys(modkey, symkey, false))
-		return;
+	if (symkey != SDLK_UNKNOWN)
+	{
+		if (ShortCut_CheckKeys(symkey, Keymap_IsShortCutMod(modkey), false))
+			return;
+	}
 
 	if (!(modkey & KMOD_SHIFT))
 	{

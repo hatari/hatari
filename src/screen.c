@@ -883,3 +883,12 @@ void Screen_StatusbarMessage(const char *msg, uint32_t msecs)
 	Statusbar_AddMessage(msg, msecs);
 	Statusbar_Update(sdlscrn, true);
 }
+
+
+/**
+ * Minimize window
+ */
+void Screen_MinimizeWindow(void)
+{
+	SDL_MinimizeWindow(sdlWindow);
+}

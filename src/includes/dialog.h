@@ -18,6 +18,7 @@ extern bool DlgAlert_Notice(const char *text);
 extern bool DlgAlert_Query(const char *text);
 extern void Dialog_DeviceDlg(void);
 extern void DlgFloppy_Main(void);
+extern char* DlgFloppy_ShortCutSel(const char *path_and_name, char **zip_path);
 extern void Dialog_HaltDlg(void);
 extern void DlgHardDisk_Main(void);
 extern void Dialog_JoyDlg(void);

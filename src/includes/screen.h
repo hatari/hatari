@@ -44,5 +44,6 @@ int Screen_SaveBMP(const char *filename);
 void Screen_StatusbarMessage(const char *msg, uint32_t msecs);
 int Screen_GetUISocket(void);
 void Screen_SetTitle(const char *title);
+void Screen_MinimizeWindow(void);
 
 #endif  /* ifndef HATARI_SCREEN_H */
