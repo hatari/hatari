@@ -39,23 +39,10 @@ const char Joy_fileid[] = "Hatari joy.c";
 typedef struct
 {
 	int XPos,YPos;                /* the actually read axis values in range of -32768...0...32767 */
-	int XAxisID,YAxisID;          /* the IDs of the physical PC joystick's axis to be used to gain ST joystick axis input */
 	int Buttons;                  /* JOYREADING_BUTTON1 */
 } JOYREADING;
 
-typedef struct
-{
-    const char *SDLJoystickName;
-    int XAxisID,YAxisID;           /* the IDs associated with a certain SDL joystick */
-} JOYAXISMAPPING;
-
 static SDL_Joystick *sdlJoystick[ JOYSTICK_COUNT ] =		/* SDL's joystick structures */
-{
-	NULL, NULL, NULL, NULL, NULL, NULL
-};
-
-/* Further explanation see JoyInit() */
-static JOYAXISMAPPING const *sdlJoystickMapping[ JOYSTICK_COUNT ] =	/* references which axis are actually in use by the selected SDL joystick */
 {
 	NULL, NULL, NULL, NULL, NULL, NULL
 };
@@ -117,27 +104,7 @@ bool Joy_ValidateJoyId(int i)
  */
 void Joy_Init(void)
 {
-	/* Joystick axis mapping table				*/
-	/* Matthias Arndt <marndt@asmsoftware.de>		*/
-	/* Somehow, not all SDL joysticks are created equal.	*/
-	/* Not all pads or sticks use axis 0 for x and axis 1	*/
-	/* for y information.					*/
-	/* This table allows to remap the axis to used.		*/
-	/* A joystick is identified by its SDL name and 	*/
-	/* followed by the X axis to use and the Y axis.	*/
-	/* Find out the axis number with the tool jstest.	*/
-
-	/* FIXME: Read those settings from a configuration file and make them tunable from the GUI. */
-	static const JOYAXISMAPPING AxisMappingTable [] =
-	{
-		/* Example entry for mapping joystick axis for a certain device: */
-		/* USB game pad with ID ID 0079:0011, sold by Speedlink with axis 3 and 4 used */
-		/*{"USB Gamepad" , 3, 4}, */
-		/* Default entry used if no other SDL joystick name does match (should be last of this list) */
-		{"*DEFAULT*" , 0, 1},
-	};
-
-	int i, j, nPadsConnected;
+	int i, nPadsConnected;
 
 	/* Initialise SDL's joystick subsystem: */
 	if (SDL_InitSubSystem(SDL_INIT_JOYSTICK) < 0)
@@ -158,16 +125,6 @@ void Joy_Init(void)
 			/* Set as working */
 			bJoystickWorking[i] = true;
 			Log_Printf(LOG_DEBUG, "Joystick %i: %s\n", i, Joy_GetName(i));
-			/* determine joystick axis mapping for given SDL joystick name, last is default: */
-			for (j = 0; j < ARRAY_SIZE(AxisMappingTable)-1; j++) {
-				/* check if ID string matches the one reported by SDL: */
-				if(strncmp(AxisMappingTable[j].SDLJoystickName, Joy_GetName(i), strlen(AxisMappingTable[j].SDLJoystickName)) == 0)
-					break;
-			}
-
-			sdlJoystickMapping[i] = &(AxisMappingTable[j]);
-			Log_Printf(LOG_DEBUG, "Joystick %i maps axis %d and %d (%s)\n", i, sdlJoystickMapping[i]->XAxisID, sdlJoystickMapping[i]->YAxisID,
-					sdlJoystickMapping[i]->SDLJoystickName );
 		}
 	}
 
@@ -196,7 +153,6 @@ void Joy_UnInit(void)
 			SDL_JoystickClose(sdlJoystick[i]);
 		}
 		sdlJoystick[i] = NULL;
-		sdlJoystickMapping[i] = NULL;
 	}
 }
 
@@ -204,16 +160,21 @@ void Joy_UnInit(void)
 /*-----------------------------------------------------------------------*/
 /**
  * Read details from joystick using SDL calls
- * NOTE ID is that of SDL
  */
 static bool Joy_ReadJoystick(int nStJoyId, JOYREADING *pJoyReading)
 {
 	int nSdlJoyID = ConfigureParams.Joysticks.Joy[nStJoyId].nJoyId;
-	unsigned hat = SDL_JoystickGetHat(sdlJoystick[nSdlJoyID], 0);
+	unsigned hat;
 
-	/* Joystick is OK, read position from the configured joystick axis */
-	pJoyReading->XPos = SDL_JoystickGetAxis(sdlJoystick[nSdlJoyID], pJoyReading->XAxisID);
-	pJoyReading->YPos = SDL_JoystickGetAxis(sdlJoystick[nSdlJoyID], pJoyReading->YAxisID);
+	if (nSdlJoyID < 0 || !bJoystickWorking[nSdlJoyID])
+		return false;
+
+	hat = SDL_JoystickGetHat(sdlJoystick[nSdlJoyID], 0);
+
+	/* Joystick is OK, read position from the configured joystick axis. */
+	/* TODO: Make axis IDs configurable in the config file! */
+	pJoyReading->XPos = SDL_JoystickGetAxis(sdlJoystick[nSdlJoyID], 0);
+	pJoyReading->YPos = SDL_JoystickGetAxis(sdlJoystick[nSdlJoyID], 1);
 	/* Similarly to other emulators that support hats, override axis readings with hats */
 	if (hat & SDL_HAT_LEFT)
 		pJoyReading->XPos = -32768;
@@ -274,36 +235,6 @@ static uint8_t Joy_ButtonSpaceJump(int press, bool jump)
 	return 0;
 }
 
-/*-----------------------------------------------------------------------*/
-/**
- * Read details from joystick using SDL calls.  Returns the SDL joystick ID or -1 if not found.
- */
-static int Joy_ReadAxisConfig(int nStJoyId, JOYREADING *pJoyReading)
-{
-	int nSdlJoyId = ConfigureParams.Joysticks.Joy[nStJoyId].nJoyId;
-	if (nSdlJoyId < 0 || !bJoystickWorking[nSdlJoyId])
-		return -1;
-
-	/* How many axes are there on the corresponding SDL joystick? */
-	int nAxes = SDL_JoystickNumAxes(sdlJoystick[nSdlJoyId]);
-
-	/* get joystick axis from configuration settings and make them plausible */
-	pJoyReading->XAxisID = sdlJoystickMapping[nSdlJoyId]->XAxisID;
-	pJoyReading->YAxisID = sdlJoystickMapping[nSdlJoyId]->YAxisID;
-
-	/* make selected axis IDs plausible */
-	if(  (pJoyReading->XAxisID == pJoyReading->YAxisID) /* same joystick axis for two directions? */
-		||(pJoyReading->XAxisID > nAxes)                /* ID for x axis beyond nr of existing axes? */
-		||(pJoyReading->YAxisID > nAxes)                /* ID for y axis beyond nr of existing axes? */
-		)
-	{
-		/* define sane SDL joystick axis defaults and prepare them for saving back to the config file: */
-		pJoyReading->XAxisID = 0;
-		pJoyReading->YAxisID = 1;
-	}
-
-	return nSdlJoyId;
-}
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -328,18 +259,10 @@ uint8_t Joy_GetStickData(int nStJoyId)
 	}
 	else if (ConfigureParams.Joysticks.Joy[nStJoyId].nJoystickMode == JOYSTICK_REALSTICK)
 	{
-		/* map to SDL stick and Axes */
-		int nSdlJoyId = Joy_ReadAxisConfig(nStJoyId, &JoyReading);
-		if (nSdlJoyId < 0)
-		{
-			return 0;
-		}
-
 		/* Read real joystick and map to emulated ST joystick for emulation */
 		if (!Joy_ReadJoystick(nStJoyId, &JoyReading))
 		{
-			/* Something is wrong, we cannot read the joystick from SDL */
-			bJoystickWorking[nSdlJoyId] = false;
+			/* Something is wrong, we cannot read the real joystick data */
 			return 0;
 		}
 
@@ -910,20 +833,8 @@ static uint8_t Joy_GetStickAnalogData(int nStJoyId, bool isXAxis)
 	{
 		JOYREADING JoyReading;
 
-		/* map to SDL stick and Axes */
-		int nSdlJoyId = Joy_ReadAxisConfig(nStJoyId, &JoyReading);
-		if (nSdlJoyId < 0)
-		{
-			return nData;
-		}
-
 		/* Read real joystick and map to emulated ST joystick for emulation */
-		if (!Joy_ReadJoystick(nStJoyId, &JoyReading))
-		{
-			/* Something is wrong, we cannot read the joystick from SDL */
-			bJoystickWorking[nSdlJoyId] = false;
-		}
-		else
+		if (Joy_ReadJoystick(nStJoyId, &JoyReading))
 		{
 			int sdl_reading = isXAxis ? JoyReading.XPos : JoyReading.YPos;
 			if (sdl_reading < -32768)
