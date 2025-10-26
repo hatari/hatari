@@ -4,6 +4,7 @@ Contents:
 1.1 Notation
 2. Hatari issues
 3. Building m68k kernel
+3.1 Kernel config notes
 4. Building root file system
 4.1 As EXT2 HD image, from BusyBox
 4.2 As EXT2 HD image, from klibc utils
@@ -128,7 +129,7 @@ VFS: Cannot open root device "/dev/sda" or unknown-block(8,0): error -6
    $ sudo apt install gcc-m68k-linux-gnu
 
 2. Get latest upstream kernel sources:
-     $ release=v6.16
+     $ release=v6.17
      $ repo=git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
    Either just the latest release (= faster):
      $ git clone --depth 1 --branch $release $repo
@@ -146,7 +147,9 @@ VFS: Cannot open root device "/dev/sda" or unknown-block(8,0): error -6
 5. Compile configured kernel:
    $ ARCH=m68k CROSS_COMPILE=m68k-linux-gnu- make -j4 vmlinux
 
-Notes:
+
+3.1 Kernel config notes
+-----------------------
 
 - You can fine-tune kernel config for your requirements with:
    $ ARCH=m68k CROSS_COMPILE=m68k-linux-gnu- make -j4 menuconfig
@@ -154,6 +157,9 @@ Notes:
 - Use "optimize for size" instead of "optimize for performance".
   Latter is 1/4th (1MB) larger, and does not currently work
   properly, although it boots much faster
+
+- With v6.17 or newer, "dead code elimination" option can be
+  used to get 1/2MB smaller kernel image
 
 - Normal Linux builds require 030 (or better) with MMU and FPU
   (only uCLinux would work on 68000 without MMU)
@@ -296,8 +302,8 @@ Notes:
 1. Set suitable options in lilo.cfg, for example:
 -------------------------------------
 [LILO]
-Kernel = vmlinux-v6.16
-Symbols = System.map-v6.16
+Kernel = vmlinux-v6.17
+Symbols = System.map-v6.17
 Ramdisk =
 Args = video=atafb:sthigh console=tty
 KernelToFastRam = FALSE
@@ -691,7 +697,7 @@ $ aranym-mmu -l linux.config
   messages, due to Linux SCU register setup regression.
 
   Workaround: use >=6.11 kernel, or kernel patch:
-  https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit?id=f70065a9fd988983b2c693631b801f25a615fc04
+  https://github.com/torvalds/linux/commit/f70065a9fd988983b2c693631b801f25a615fc04
 
 - Hatari prefetch was earlier working incorrectly on bus errors.  This
   caused user-space program crashes if either (or both) cycle-exact or
@@ -702,6 +708,12 @@ $ aranym-mmu -l linux.config
 
   Fix: Use latest Hatari Git version, commit 06fc93b021c38 (Oct 20 2024),
   or newer.
+
+- Kernel versions 6.16-6.17 include regression to lock alignment checks
+  that can cause kernel warnings and (eventually) a non-working console.
+
+  Fix: Use some other kernel version, or kernel patch:
+  https://github.com/torvalds/linux/commit/c97513cddcfc235f2522617980838e500af21d01
 
 
 10.2 TODO / investigate more
