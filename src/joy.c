@@ -305,6 +305,37 @@ uint8_t Joy_GetStickData(int nStJoyId)
 }
 
 
+/**
+ * Get the fire button states from a real joystick on the host.
+ */
+static int Joy_GetRealFireButtons(int nStJoyId)
+{
+	int nSdlJoyId;
+	int i, nMaxButtons;
+	int buttons = 0;
+
+	nSdlJoyId = ConfigureParams.Joysticks.Joy[nStJoyId].nJoyId;
+
+	if (!bJoystickWorking[nSdlJoyId])
+		return 0;
+
+	nMaxButtons = SDL_JoystickNumButtons(sdlJoystick[nSdlJoyId]);
+	if (nMaxButtons > 17)
+		nMaxButtons = 17;
+
+	/* Now read all fire buttons and set a bit for each pressed button: */
+	for (i = 0; i < nMaxButtons; i++)
+	{
+		if (SDL_JoystickGetButton(sdlJoystick[nSdlJoyId], i))
+		{
+			buttons |= (1 << i);
+		}
+	}
+
+	return buttons;
+}
+
+
 /*-----------------------------------------------------------------------*/
 /**
  * Get the fire button states.
@@ -314,30 +345,15 @@ uint8_t Joy_GetStickData(int nStJoyId)
 static int Joy_GetFireButtons(int nStJoyId)
 {
 	int nButtons = 0;
-	int nSdlJoyId;
-	int i, nMaxButtons;
-
-	nSdlJoyId = ConfigureParams.Joysticks.Joy[nStJoyId].nJoyId;
 
 	/* Are we emulating the joystick via the keyboard? */
 	if (ConfigureParams.Joysticks.Joy[nStJoyId].nJoystickMode == JOYSTICK_KEYBOARD)
 	{
 		nButtons |= nJoyKeyEmu[nStJoyId] >> 7;
 	}
-	else if (ConfigureParams.Joysticks.Joy[nStJoyId].nJoystickMode == JOYSTICK_REALSTICK
-	         && bJoystickWorking[nSdlJoyId])
+	else if (ConfigureParams.Joysticks.Joy[nStJoyId].nJoystickMode == JOYSTICK_REALSTICK)
 	{
-		nMaxButtons = SDL_JoystickNumButtons(sdlJoystick[nSdlJoyId]);
-		if (nMaxButtons > 17)
-			nMaxButtons = 17;
-		/* Now read all fire buttons and set a bit for each pressed button: */
-		for (i = 0; i < nMaxButtons; i++)
-		{
-			if (SDL_JoystickGetButton(sdlJoystick[nSdlJoyId], i))
-			{
-				nButtons |= (1 << i);
-			}
-		}
+		nButtons = Joy_GetRealFireButtons(nStJoyId);
 	}
 
 	return nButtons;
