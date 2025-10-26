@@ -16,6 +16,7 @@ const char Joy_fileid[] = "Hatari joy.c";
 #include "configuration.h"
 #include "ioMem.h"
 #include "joy.h"
+#include "keymap.h"
 #include "log.h"
 #include "m68000.h"
 #include "video.h"
@@ -320,7 +321,7 @@ uint8_t Joy_GetStickData(int nStJoyId)
 	if (ConfigureParams.Joysticks.Joy[nStJoyId].nJoystickMode == JOYSTICK_KEYBOARD)
 	{
 		/* If holding 'SHIFT' we actually want cursor key movement, so ignore any of this */
-		if ( !(SDL_GetModState()&(KMOD_LSHIFT|KMOD_RSHIFT)) )
+		if (!Keymap_IsShiftPressed())
 		{
 			nData = nJoyKeyEmu[nStJoyId] & 0xff;
 		}
@@ -558,12 +559,9 @@ static uint32_t Joy_KeyToButton(int joyid, int symkey)
  * A key has been pressed down, check if we use it for joystick emulation
  * via keyboard.
  */
-bool Joy_KeyDown(int symkey, int modkey)
+bool Joy_KeyDown(int symkey)
 {
 	int i;
-
-	if (modkey & KMOD_SHIFT)
-		return false;
 
 	for (i = 0; i < JOYSTICK_COUNT; i++)
 	{
@@ -613,12 +611,9 @@ bool Joy_KeyDown(int symkey, int modkey)
  * A key has been released, check if we use it for joystick emulation
  * via keyboard.
  */
-bool Joy_KeyUp(int symkey, int modkey)
+bool Joy_KeyUp(int symkey)
 {
 	int i;
-
-	if (modkey & KMOD_SHIFT)
-		return false;
 
 	for (i = 0; i < JOYSTICK_COUNT; i++)
 	{
@@ -895,7 +890,7 @@ static uint8_t Joy_GetStickAnalogData(int nStJoyId, bool isXAxis)
 	if (ConfigureParams.Joysticks.Joy[nStJoyId].nJoystickMode == JOYSTICK_KEYBOARD)
 	{
 		/* If holding 'SHIFT' we actually want cursor key movement, so ignore any of this */
-		if ( !(SDL_GetModState()&(KMOD_LSHIFT|KMOD_RSHIFT)) )
+		if (!Keymap_IsShiftPressed())
 		{
 			uint8_t digiData = nJoyKeyEmu[nStJoyId];
 			uint8_t bitmaskMin = isXAxis ? ATARIJOY_BITMASK_LEFT : ATARIJOY_BITMASK_UP;

@@ -778,10 +778,13 @@ void Keymap_KeyDown(const SDL_Keysym *sdlkey)
 	if (ShortCut_CheckKeys(modkey, symkey, true))
 		return;
 
-	/* If using joystick emulation via keyboard, DON'T send keys to keyboard processor!!!
-	 * Some games use keyboard as pause! */
-	if (Joy_KeyDown(symkey, modkey))
-		return;
+	if (!(modkey & KMOD_SHIFT))
+	{
+		/* If using joystick emulation via keyboard, DON'T send keys to
+		 * keyboard processor - some games use keyboard as pause! */
+		if (Joy_KeyDown(symkey))
+			return;
+	}
 
 	/* Ignore modifier keys that are not passed to the ST */
 	if (!IsKeyTranslatable(symkey))
@@ -818,10 +821,13 @@ void Keymap_KeyUp(const SDL_Keysym *sdlkey)
 	if (ShortCut_CheckKeys(modkey, symkey, false))
 		return;
 
-	/* If using keyboard emulation, DON'T send keys to keyboard processor!!!
-	 * Some games use keyboard as pause! */
-	if (Joy_KeyUp(symkey, modkey))
-		return;
+	if (!(modkey & KMOD_SHIFT))
+	{
+		/* If using keyboard emulation, DON'T send keys to keyboard
+		 * processor - some games use keyboard as pause! */
+		if (Joy_KeyUp(symkey))
+			return;
+	}
 
 	/* Ignore modifier keys that are not passed to the ST */
 	if (!IsKeyTranslatable(symkey))
@@ -946,4 +952,13 @@ void Keymap_SetCountry(int countrycode)
 	}
 
 	Keymap_SymbolicToStScanCode = func;
+}
+
+
+/**
+ * Check whether one of the shift keys is hold down
+ */
+bool Keymap_IsShiftPressed(void)
+{
+	return (SDL_GetModState() & KMOD_SHIFT) != 0;
 }
