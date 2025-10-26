@@ -809,7 +809,7 @@ void Main_EventHandler(void)
  */
 static void Main_Init_HW(void)
 {
-	Joy_Init();
+	JoyUI_Init();
 	FDC_Init();
 	STX_Init();
 	Video_InitTimings();
@@ -921,7 +921,7 @@ static void Main_UnInit(void)
 	NvRam_UnInit();
 	GemDOS_UnInitDrives();
 	Ide_UnInit();
-	Joy_UnInit();
+	JoyUI_UnInit();
 	if (Sound_AreWeRecording())
 		Sound_EndRecording();
 	Audio_UnInit();

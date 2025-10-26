@@ -290,16 +290,16 @@ static void DlgJoystick_ReadValuesFromConf(int nActJoy)
 	{
 		strcpy(sSdlStickName, "0: (none available)");
 	}
-	else if (Joy_ValidateJoyId(nActJoy))
+	else if (JoyUI_ValidateJoyId(nActJoy))
 	{
 		snprintf(sSdlStickName, sizeof(sSdlStickName), "%i: %s",
 			 ConfigureParams.Joysticks.Joy[nActJoy].nJoyId,
-		         Joy_GetName(ConfigureParams.Joysticks.Joy[nActJoy].nJoyId));
+		         JoyUI_GetName(ConfigureParams.Joysticks.Joy[nActJoy].nJoyId));
 	}
 	else
 	{
 		snprintf(sSdlStickName, sizeof(sSdlStickName), "0: %s",
-			 Joy_GetName(0));
+			 JoyUI_GetName(0));
 	}
 
 	for (i = DLGJOY_DISABLED; i <= DLGJOY_USEREALJOY; i++)
@@ -369,7 +369,7 @@ void Dialog_JoyDlg(void)
 
 	joydlg[DLGJOY_STJOYNAME].txt = sJoystickNames[nActJoy];
 
-	nMaxId = Joy_GetMaxId();
+	nMaxId = JoyUI_GetMaxId();
 
 	/* Set up dialog from actual values: */
 	DlgJoystick_ReadValuesFromConf(nActJoy);
@@ -385,7 +385,7 @@ void Dialog_JoyDlg(void)
 				ConfigureParams.Joysticks.Joy[nActJoy].nJoyId -= 1;
 				snprintf(sSdlStickName, sizeof(sSdlStickName), "%i: %s",
 					 ConfigureParams.Joysticks.Joy[nActJoy].nJoyId,
-				         Joy_GetName(ConfigureParams.Joysticks.Joy[nActJoy].nJoyId));
+				         JoyUI_GetName(ConfigureParams.Joysticks.Joy[nActJoy].nJoyId));
 			}
 			break;
 		 case DLGJOY_NEXTSDLJOY:        // Select the next SDL joystick
@@ -394,7 +394,7 @@ void Dialog_JoyDlg(void)
 				ConfigureParams.Joysticks.Joy[nActJoy].nJoyId += 1;
 				snprintf(sSdlStickName, sizeof(sSdlStickName), "%i: %s",
 					 ConfigureParams.Joysticks.Joy[nActJoy].nJoyId,
-				         Joy_GetName(ConfigureParams.Joysticks.Joy[nActJoy].nJoyId));
+				         JoyUI_GetName(ConfigureParams.Joysticks.Joy[nActJoy].nJoyId));
 			}
 			break;
 		 case DLGJOY_DEFINEKEYS:        // Define new keys for keyboard emulation

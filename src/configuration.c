@@ -679,7 +679,7 @@ void Configuration_SetDefault(void)
 	}
 
 	/* Set defaults for Joysticks */
-	maxjoy = Joy_GetMaxId();
+	maxjoy = JoyUI_GetMaxId();
 	for (i = 0; i < JOYSTICK_COUNT; i++)
 	{
 		ConfigureParams.Joysticks.Joy[i].nJoystickMode = JOYSTICK_DISABLED;

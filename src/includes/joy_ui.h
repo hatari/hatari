@@ -14,12 +14,12 @@ typedef struct
 	int Buttons;          /* JOYREADING_BUTTON1 */
 } JOYREADING;
 
-void Joy_Init(void);
-void Joy_UnInit(void);
-const char *Joy_GetName(int id);
-int Joy_GetMaxId(void);
-bool Joy_ValidateJoyId(int i);
-bool Joy_ReadJoystick(int nStJoyId, JOYREADING *pJoyReading);
-int Joy_GetRealFireButtons(int nStJoyId);
+void JoyUI_Init(void);
+void JoyUI_UnInit(void);
+const char *JoyUI_GetName(int id);
+int JoyUI_GetMaxId(void);
+bool JoyUI_ValidateJoyId(int i);
+bool JoyUI_ReadJoystick(int nStJoyId, JOYREADING *pJoyReading);
+int JoyUI_GetRealFireButtons(int nStJoyId);
 
 #endif

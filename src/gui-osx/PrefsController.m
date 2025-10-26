@@ -31,7 +31,7 @@
 #include "sdlgui.h"
 #include "paths.h"
 #include "keymap.h"
-#include "joy.h"
+#include "joy_ui.h"
 #include "midi.h"
 
 // Macros to transfer data between Cocoa controls and Hatari data structures
@@ -632,7 +632,7 @@ static const int nSoundFreqs[] =
 			int i;
 			for (i = 0; i < cRealJoysticks; i++)
 			{
-				const char* szJoystickName = Joy_GetName(i);
+				const char* szJoystickName = JoyUI_GetName(i);
 				[realJoystick addItemWithTitle:[[NSString stringWithCString:szJoystickName encoding:NSASCIIStringEncoding] capitalizedString]];
 				realJoystick.lastItem.tag = i ;
 			}

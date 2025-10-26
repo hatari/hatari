@@ -46,7 +46,7 @@ static bool bJoystickWorking[ JOYSTICK_COUNT ] =		/* Is joystick plugged in and 
 /**
  * Get joystick name
  */
-const char *Joy_GetName(int id)
+const char *JoyUI_GetName(int id)
 {
 	return SDL_JoystickName(sdlJoystick[id]);
 }
@@ -55,7 +55,7 @@ const char *Joy_GetName(int id)
  * Return maximum available real joystick ID, or
  * zero on error or no joystick (to avoid invalid array accesses)
  */
-int Joy_GetMaxId(void)
+int JoyUI_GetMaxId(void)
 {
 	int count = SDL_NumJoysticks();
 	if (count > JOYSTICK_COUNT)
@@ -68,7 +68,7 @@ int Joy_GetMaxId(void)
 /**
  * Make sure real Joystick ID is valid, and if not, disable it & return false
  */
-bool Joy_ValidateJoyId(int i)
+bool JoyUI_ValidateJoyId(int i)
 {
 	int joyid = ConfigureParams.Joysticks.Joy[i].nJoyId;
 
@@ -88,7 +88,7 @@ bool Joy_ValidateJoyId(int i)
 /**
  * This function initialises the (real) joysticks.
  */
-void Joy_Init(void)
+void JoyUI_Init(void)
 {
 	int i, nPadsConnected;
 
@@ -110,12 +110,12 @@ void Joy_Init(void)
 		{
 			/* Set as working */
 			bJoystickWorking[i] = true;
-			Log_Printf(LOG_DEBUG, "Joystick %i: %s\n", i, Joy_GetName(i));
+			Log_Printf(LOG_DEBUG, "Joystick %i: %s\n", i, JoyUI_GetName(i));
 		}
 	}
 
 	for (i = 0; i < JOYSTICK_COUNT ; i++)
-		Joy_ValidateJoyId(i);
+		JoyUI_ValidateJoyId(i);
 
 	JoystickSpaceBar = JOYSTICK_SPACE_NULL;
 }
@@ -124,7 +124,7 @@ void Joy_Init(void)
 /**
  * Close the (real) joysticks.
  */
-void Joy_UnInit(void)
+void JoyUI_UnInit(void)
 {
 	int i, nPadsConnected;
 
@@ -145,7 +145,7 @@ void Joy_UnInit(void)
 /**
  * Read details from joystick using SDL calls
  */
-bool Joy_ReadJoystick(int nStJoyId, JOYREADING *pJoyReading)
+bool JoyUI_ReadJoystick(int nStJoyId, JOYREADING *pJoyReading)
 {
 	int nSdlJoyID = ConfigureParams.Joysticks.Joy[nStJoyId].nJoyId;
 	unsigned hat;
@@ -184,7 +184,7 @@ bool Joy_ReadJoystick(int nStJoyId, JOYREADING *pJoyReading)
 /**
  * Get the fire button states from a real joystick on the host.
  */
-int Joy_GetRealFireButtons(int nStJoyId)
+int JoyUI_GetRealFireButtons(int nStJoyId)
 {
 	int nSdlJoyId;
 	int i, nMaxButtons;

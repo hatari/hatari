@@ -101,7 +101,7 @@ uint8_t Joy_GetStickData(int nStJoyId)
 	else if (ConfigureParams.Joysticks.Joy[nStJoyId].nJoystickMode == JOYSTICK_REALSTICK)
 	{
 		/* Read real joystick and map to emulated ST joystick for emulation */
-		if (!Joy_ReadJoystick(nStJoyId, &JoyReading))
+		if (!JoyUI_ReadJoystick(nStJoyId, &JoyReading))
 		{
 			/* Something is wrong, we cannot read the real joystick data */
 			return 0;
@@ -162,7 +162,7 @@ static int Joy_GetFireButtons(int nStJoyId)
 	}
 	else if (ConfigureParams.Joysticks.Joy[nStJoyId].nJoystickMode == JOYSTICK_REALSTICK)
 	{
-		nButtons = Joy_GetRealFireButtons(nStJoyId);
+		nButtons = JoyUI_GetRealFireButtons(nStJoyId);
 	}
 
 	return nButtons;
@@ -659,7 +659,7 @@ static uint8_t Joy_GetStickAnalogData(int nStJoyId, bool isXAxis)
 		JOYREADING JoyReading;
 
 		/* Read real joystick and map to emulated ST joystick for emulation */
-		if (Joy_ReadJoystick(nStJoyId, &JoyReading))
+		if (JoyUI_ReadJoystick(nStJoyId, &JoyReading))
 		{
 			int pos = isXAxis ? JoyReading.XPos : JoyReading.YPos;
 			if (pos < -32768)
