@@ -11,8 +11,6 @@
 */
 const char Configuration_fileid[] = "Hatari configuration.c";
 
-#include <SDL_keyboard.h>
-
 #include "main.h"
 #include "configuration.h"
 #include "conv_st.h"
@@ -21,6 +19,7 @@ const char Configuration_fileid[] = "Hatari configuration.c";
 #include "sound.h"
 #include "file.h"
 #include "joy_ui.h"
+#include "keymap.h"
 #include "log.h"
 #include "m68000.h"
 #include "memorySnapShot.h"
@@ -708,32 +707,7 @@ void Configuration_SetDefault(void)
 	strcpy(ConfigureParams.Keyboard.szMappingFileName, "");
 
 	/* Set defaults for Shortcuts */
-	ConfigureParams.Shortcut.withoutModifier[SHORTCUT_OPTIONS] = SDLK_F12;
-	ConfigureParams.Shortcut.withoutModifier[SHORTCUT_FULLSCREEN] = SDLK_F11;
-	ConfigureParams.Shortcut.withoutModifier[SHORTCUT_PAUSE] = SDLK_PAUSE;
-
-	ConfigureParams.Shortcut.withModifier[SHORTCUT_DEBUG] = SDLK_PAUSE;
-	ConfigureParams.Shortcut.withModifier[SHORTCUT_OPTIONS] = SDLK_o;
-	ConfigureParams.Shortcut.withModifier[SHORTCUT_FULLSCREEN] = SDLK_f;
-	ConfigureParams.Shortcut.withModifier[SHORTCUT_BORDERS] = SDLK_b;
-	ConfigureParams.Shortcut.withModifier[SHORTCUT_MOUSEGRAB] = SDLK_m;
-	ConfigureParams.Shortcut.withModifier[SHORTCUT_COLDRESET] = SDLK_c;
-	ConfigureParams.Shortcut.withModifier[SHORTCUT_WARMRESET] = SDLK_r;
-	ConfigureParams.Shortcut.withModifier[SHORTCUT_SCREENSHOT] = SDLK_g;
-	ConfigureParams.Shortcut.withModifier[SHORTCUT_BOSSKEY] = SDLK_i;
-	ConfigureParams.Shortcut.withModifier[SHORTCUT_CURSOREMU] = SDLK_j;
-	ConfigureParams.Shortcut.withModifier[SHORTCUT_FASTFORWARD] = SDLK_x;
-	ConfigureParams.Shortcut.withModifier[SHORTCUT_RECANIM] = SDLK_a;
-	ConfigureParams.Shortcut.withModifier[SHORTCUT_RECSOUND] = SDLK_y;
-	ConfigureParams.Shortcut.withModifier[SHORTCUT_SOUND] = SDLK_s;
-	ConfigureParams.Shortcut.withModifier[SHORTCUT_QUIT] = SDLK_q;
-	ConfigureParams.Shortcut.withModifier[SHORTCUT_LOADMEM] = SDLK_l;
-	ConfigureParams.Shortcut.withModifier[SHORTCUT_SAVEMEM] = SDLK_k;
-	ConfigureParams.Shortcut.withModifier[SHORTCUT_INSERTDISKA] = SDLK_d;
-	ConfigureParams.Shortcut.withModifier[SHORTCUT_JOY_0] = SDLK_F1;
-	ConfigureParams.Shortcut.withModifier[SHORTCUT_JOY_1] = SDLK_F2;
-	ConfigureParams.Shortcut.withModifier[SHORTCUT_PAD_A] = SDLK_F3;
-	ConfigureParams.Shortcut.withModifier[SHORTCUT_PAD_B] = SDLK_F4;
+	Keymap_InitShortcutDefaultKeys();
 
 	/* Set defaults for Memory */
 	ConfigureParams.Memory.STRamSize_KB = 1024;	/* 1 MiB */

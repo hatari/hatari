@@ -11,6 +11,7 @@
 #include <SDL_keyboard.h>
 
 extern void Keymap_Init(void);
+extern void Keymap_InitShortcutDefaultKeys(void);
 extern void Keymap_LoadRemapFile(const char *pszFileName);
 extern void Keymap_KeyDown(const SDL_Keysym *sdlkey);
 extern void Keymap_KeyUp(const SDL_Keysym *sdlkey);
