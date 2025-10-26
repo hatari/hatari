@@ -29,11 +29,6 @@ enum
 
 extern int JoystickSpaceBar;
 
-extern void Joy_Init(void);
-extern void Joy_UnInit(void);
-extern const char *Joy_GetName(int id);
-extern int Joy_GetMaxId(void);
-extern bool Joy_ValidateJoyId(int i);
 extern uint8_t Joy_GetStickData(int nStJoyId);
 extern bool Joy_SetCursorEmulation(int port);
 extern void Joy_ToggleCursorEmulation(void);

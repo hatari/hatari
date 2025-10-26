@@ -4,18 +4,17 @@
   This file is distributed under the GNU General Public License, version 2
   or at your option any later version. Read the file gpl.txt for details.
 
-  Joystick routines.
+  Handling of the ST joysticks and STE/Falcon enhanced joypads.
 
   NOTE: The ST uses the joystick port 1 as the default controller.
 */
 const char Joy_fileid[] = "Hatari joy.c";
 
-#include <SDL.h>
-
 #include "main.h"
 #include "configuration.h"
 #include "ioMem.h"
 #include "joy.h"
+#include "joy_ui.h"
 #include "keymap.h"
 #include "log.h"
 #include "m68000.h"
@@ -36,168 +35,11 @@ const char Joy_fileid[] = "Hatari joy.c";
 #define STE_JOY_ANALOG_MID_VALUE 0x24	/* neutral mid value for STE analog joystick/paddle axis */
 #define STE_JOY_ANALOG_MAX_VALUE 0x43	/* maximum value for STE analog joystick/paddle axis */
 
-typedef struct
-{
-	int XPos,YPos;                /* the actually read axis values in range of -32768...0...32767 */
-	int Buttons;                  /* JOYREADING_BUTTON1 */
-} JOYREADING;
-
-static SDL_Joystick *sdlJoystick[ JOYSTICK_COUNT ] =		/* SDL's joystick structures */
-{
-	NULL, NULL, NULL, NULL, NULL, NULL
-};
-
-static bool bJoystickWorking[ JOYSTICK_COUNT ] =		/* Is joystick plugged in and working? */
-{
-	false, false, false, false, false, false
-};
-
 int JoystickSpaceBar = JOYSTICK_SPACE_NULL;   /* State of space-bar on joystick button 2 */
 static uint32_t nJoyKeyEmu[JOYSTICK_COUNT];
 static uint16_t nSteJoySelect;
 
 
-/**
- * Get joystick name
- */
-const char *Joy_GetName(int id)
-{
-	return SDL_JoystickName(sdlJoystick[id]);
-}
-
-/**
- * Return maximum available real joystick ID, or
- * zero on error or no joystick (to avoid invalid array accesses)
- */
-int Joy_GetMaxId(void)
-{
-	int count = SDL_NumJoysticks();
-	if (count > JOYSTICK_COUNT)
-		count = JOYSTICK_COUNT;
-	if (count > 0)
-		return count - 1;
-	return 0;
-}
-
-/**
- * Make sure real Joystick ID is valid, and if not, disable it & return false
- */
-bool Joy_ValidateJoyId(int i)
-{
-	int joyid = ConfigureParams.Joysticks.Joy[i].nJoyId;
-
-	/* Unavailable joystick ID -> disable it if necessary */
-	if (ConfigureParams.Joysticks.Joy[i].nJoystickMode == JOYSTICK_REALSTICK &&
-	    !bJoystickWorking[joyid])
-	{
-		Log_Printf(LOG_WARN, "Selected real Joystick %d unavailable, disabling ST joystick %d\n", joyid, i);
-		ConfigureParams.Joysticks.Joy[i].nJoystickMode = JOYSTICK_DISABLED;
-		ConfigureParams.Joysticks.Joy[i].nJoyId = 0;
-		return false;
-	}
-	return true;
-}
-
-/*-----------------------------------------------------------------------*/
-/**
- * This function initialises the (real) joysticks.
- */
-void Joy_Init(void)
-{
-	int i, nPadsConnected;
-
-	/* Initialise SDL's joystick subsystem: */
-	if (SDL_InitSubSystem(SDL_INIT_JOYSTICK) < 0)
-	{
-		Log_Printf(LOG_ERROR, "Could not init joysticks: %s\n", SDL_GetError());
-		return;
-	}
-
-	/* Scan joystick connection array for working joysticks */
-	nPadsConnected = SDL_NumJoysticks();
-	for (i = 0; i < nPadsConnected && i < JOYSTICK_COUNT ; i++)
-	{
-		/* Open the joystick for use */
-		sdlJoystick[i] = SDL_JoystickOpen(i);
-		/* Is joystick ok? */
-		if (sdlJoystick[i] != NULL)
-		{
-			/* Set as working */
-			bJoystickWorking[i] = true;
-			Log_Printf(LOG_DEBUG, "Joystick %i: %s\n", i, Joy_GetName(i));
-		}
-	}
-
-	for (i = 0; i < JOYSTICK_COUNT ; i++)
-		Joy_ValidateJoyId(i);
-
-	JoystickSpaceBar = JOYSTICK_SPACE_NULL;
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Close the (real) joysticks.
- */
-void Joy_UnInit(void)
-{
-	int i, nPadsConnected;
-
-	nPadsConnected = SDL_NumJoysticks();
-
-	for (i = 0; i < nPadsConnected && i < JOYSTICK_COUNT ; i++)
-	{
-		if (bJoystickWorking[i] == true)
-		{
-			bJoystickWorking[i] = false;
-			SDL_JoystickClose(sdlJoystick[i]);
-		}
-		sdlJoystick[i] = NULL;
-	}
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Read details from joystick using SDL calls
- */
-static bool Joy_ReadJoystick(int nStJoyId, JOYREADING *pJoyReading)
-{
-	int nSdlJoyID = ConfigureParams.Joysticks.Joy[nStJoyId].nJoyId;
-	unsigned hat;
-
-	if (nSdlJoyID < 0 || !bJoystickWorking[nSdlJoyID])
-		return false;
-
-	hat = SDL_JoystickGetHat(sdlJoystick[nSdlJoyID], 0);
-
-	/* Joystick is OK, read position from the configured joystick axis. */
-	/* TODO: Make axis IDs configurable in the config file! */
-	pJoyReading->XPos = SDL_JoystickGetAxis(sdlJoystick[nSdlJoyID], 0);
-	pJoyReading->YPos = SDL_JoystickGetAxis(sdlJoystick[nSdlJoyID], 1);
-	/* Similarly to other emulators that support hats, override axis readings with hats */
-	if (hat & SDL_HAT_LEFT)
-		pJoyReading->XPos = -32768;
-	if (hat & SDL_HAT_RIGHT)
-		pJoyReading->XPos = 32767;
-	if (hat & SDL_HAT_UP)
-		pJoyReading->YPos = -32768;
-	if (hat & SDL_HAT_DOWN)
-		pJoyReading->YPos = 32767;
-
-	pJoyReading->Buttons = 0;
-	/* Sets bits based on pressed buttons */
-	for (int i = 0; i < JOYSTICK_BUTTONS; i++)
-	{
-		int button = ConfigureParams.Joysticks.Joy[nStJoyId].nJoyButMap[i];
-		if (button >= 0 && SDL_JoystickGetButton(sdlJoystick[nSdlJoyID], button))
-			pJoyReading->Buttons |= 1 << i;
-	}
-	return true;
-}
-
-
-/*-----------------------------------------------------------------------*/
 /**
  * Enable PC Joystick button press to mimic space bar
  * (For XenonII, Flying Shark etc...) or joystick up (jump)
@@ -236,7 +78,6 @@ static uint8_t Joy_ButtonSpaceJump(int press, bool jump)
 }
 
 
-/*-----------------------------------------------------------------------*/
 /**
  * Read PC joystick and return ST format byte, i.e. lower 4 bits direction
  * and top bit fire.
@@ -305,38 +146,6 @@ uint8_t Joy_GetStickData(int nStJoyId)
 }
 
 
-/**
- * Get the fire button states from a real joystick on the host.
- */
-static int Joy_GetRealFireButtons(int nStJoyId)
-{
-	int nSdlJoyId;
-	int i, nMaxButtons;
-	int buttons = 0;
-
-	nSdlJoyId = ConfigureParams.Joysticks.Joy[nStJoyId].nJoyId;
-
-	if (!bJoystickWorking[nSdlJoyId])
-		return 0;
-
-	nMaxButtons = SDL_JoystickNumButtons(sdlJoystick[nSdlJoyId]);
-	if (nMaxButtons > 17)
-		nMaxButtons = 17;
-
-	/* Now read all fire buttons and set a bit for each pressed button: */
-	for (i = 0; i < nMaxButtons; i++)
-	{
-		if (SDL_JoystickGetButton(sdlJoystick[nSdlJoyId], i))
-		{
-			buttons |= (1 << i);
-		}
-	}
-
-	return buttons;
-}
-
-
-/*-----------------------------------------------------------------------*/
 /**
  * Get the fire button states.
  * Note: More than one fire buttons are only supported for real joystick,
@@ -852,11 +661,11 @@ static uint8_t Joy_GetStickAnalogData(int nStJoyId, bool isXAxis)
 		/* Read real joystick and map to emulated ST joystick for emulation */
 		if (Joy_ReadJoystick(nStJoyId, &JoyReading))
 		{
-			int sdl_reading = isXAxis ? JoyReading.XPos : JoyReading.YPos;
-			if (sdl_reading < -32768)
-				sdl_reading = -32768;
-			unsigned int usdl_reading = 32768 + sdl_reading;
-			nData = STE_JOY_ANALOG_MIN_VALUE + ((usdl_reading & 0xff00) >> 8) / STE_JOY_ANALOG_MIN_VALUE;
+			int pos = isXAxis ? JoyReading.XPos : JoyReading.YPos;
+			if (pos < -32768)
+				pos = -32768;
+			unsigned int upos = 32768 + pos;
+			nData = STE_JOY_ANALOG_MIN_VALUE + ((upos & 0xff00) >> 8) / STE_JOY_ANALOG_MIN_VALUE;
 		}
 	}
 

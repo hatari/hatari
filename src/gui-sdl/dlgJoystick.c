@@ -11,6 +11,7 @@ const char DlgJoystick_fileid[] = "Hatari dlgJoystick.c";
 #include "dialog.h"
 #include "sdlgui.h"
 #include "joy.h"
+#include "joy_ui.h"
 #include "str.h"
 
 #define DLGJOY_STJOYNAME     3

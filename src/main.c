@@ -20,7 +20,7 @@ const char Main_fileid[] = "Hatari main.c";
 #include "options.h"
 #include "dialog.h"
 #include "audio.h"
-#include "joy.h"
+#include "joy_ui.h"
 #include "file.h"
 #include "floppy.h"
 #include "floppy_ipf.h"
