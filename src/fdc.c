@@ -5666,8 +5666,14 @@ static int	FDC_MFM_Process_Bit_delay_clock ( struct fd_stream *s , bool Skip_Bit
 			/* a data bit when the SYNC is detected and DSR bit 0 must be updated */
 			FDC.Bit_Is_Data = true;
 
+			if ( FDC.Bits_Since_Prev_Sync < 16 )			/* overlapping sync */
+			{
+				if ( FDC_DEBUG_MFM_BIT ) fprintf ( stdout , "sync %04x sync_bit_prev=%d overlaps sync_prev %04x drop dsr %02x %d\n" , Sync , FDC.Bits_Since_Prev_Sync, FDC.Prev_Sync , FDC.DSR , FDC.DSR_count );
+				FDC.DSR_count = 0;				/* discard current content of DSR */
+			}
+
 			/* Copy bit to DSR and force a flush of DSR to DR (only if DSR has at least 1 bit) */
-			if ( FDC.DSR_count > 0 )
+			else if ( FDC.DSR_count > 0 )
 			{
 				/* Insert data bit into DSR bit 0 */
 				if ( bit )	FDC.DSR |= 1;			/* set bit 0 */
