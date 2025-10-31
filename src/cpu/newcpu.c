@@ -7925,7 +7925,7 @@ void m68k_disasm_file_wrapper (FILE *f, uaecptr addr, uaecptr *nextpc, uaecptr l
 	if ( currprefs.cpu_model == 68030 && currprefs.mmu_model )		/* 68030 with MMU */
 		new_addr = mmu030_translate(addr, regs.s != 0, false, false);
 
-	m68k_disasm_file(TraceFile, new_addr, nextpc, lastpc, cnt);
+	m68k_disasm_file(f, new_addr, nextpc, new_addr, cnt);
 }
 #endif
 

@@ -42,6 +42,7 @@ Emulator improvements:
   - Support (--tos-res) resolution setting also for Falcon machines,
     and new tclow/tcmed/tchigh values for Falcon TC modes
 - Debugger:
+  - Fix: dysfunctional WinUAE CPU core disasm wrapper
   - Fix: separate arguments output by "echo" command with a space
   - Add ':print' option for annotating conditional breakpoints
   - Open Windows console automatically for debugger
