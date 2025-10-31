@@ -51,6 +51,10 @@ Emulator improvements:
   - Increase max lenght of accepted debugger file commands to 4k
   - Always ignore unnamed symbols (= note instead of warnings)
 
+Other changes:
+- Automated test for verifying profiling & breakpoint chaining
+  functionality and "uae" + "ext" disassembly engines output
+
 
  Version 2.6.1 (2025-08-15)
  --------------------------

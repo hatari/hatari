@@ -86,6 +86,10 @@ natfeats/
 - "make test" test for Native Features emulator interface, and
    example code for different compilers / assemblers on how to use it
 
+profile/
+- "make test" test for debugger profile features and related
+  breakpoint chaining + disassembling functionality
+
 screen/
 - "make test" tests for a fullscreen demo
 
