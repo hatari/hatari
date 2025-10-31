@@ -134,12 +134,18 @@ void Profile_ShowCallers(FILE *fp, int sites, callee_t *callsite, const char * (
 	caller_t *info;
 	uint64_t total;
 	uint32_t addr, typeaddr;
+	bool next;
 
 	/* legend */
 	fputs("# <callee>: <caller1> = <calls> <types>[ <inclusive/totals>[ <exclusive/totals>]], <caller2> ..., <callee name>", fp);
 	fputs("\n# types: ", fp);
+	next = false;
 	for (i = 0; i < ARRAY_SIZE(flaginfo); i++) {
-		fprintf(fp, "%c = %s, ", flaginfo[i].chr, flaginfo[i].info);
+		if (next) {
+			fputs(", ", fp);
+		}
+		fprintf(fp, "%c = %s", flaginfo[i].chr, flaginfo[i].info);
+		next = true;
 	}
 	fputs("\n# totals: calls/instructions/cycles/i-misses/d-hits\n", fp);
 
