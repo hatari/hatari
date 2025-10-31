@@ -8,4 +8,9 @@ add_test(NAME profile-disasm-ext
          COMMAND ${testrunner} $<TARGET_FILE:${APP_NAME}> --disasm ext)
 endif()
 
-# TODO: MMU variants of the test
+add_test(NAME profile-disasm-uae-mmu030
+         COMMAND ${testrunner} $<TARGET_FILE:${APP_NAME}> --disasm uae --mmu on --cpulevel 3)
+if(HAVE_CAPSTONE_M68K)
+add_test(NAME profile-disasm-ext-mmu030
+         COMMAND ${testrunner} $<TARGET_FILE:${APP_NAME}> --disasm ext --mmu on --cpulevel 3)
+endif()

@@ -2,7 +2,7 @@
 
 usage () 
 {
-	echo "Usage: $0 <hatari> --disasm <ext|uae> [more hatari args]"
+	echo "Usage: $0 <hatari> --disasm <ext|uae> [--mmu on] [other args]"
 	echo "ERROR: $1!"
 	exit 1
 }
@@ -23,6 +23,7 @@ case $disasm in
 	ext|uae) ;;
 	*) usage "valid '--disasm' argument missing"
 esac
+echo "$@" | grep -q -e " --mmu " && mmu="-mmu"
 
 basedir=$(dirname "$0")
 testdir=$(mktemp -d)
@@ -59,7 +60,7 @@ if [ $exitstat -ne 0 ]; then
 	exit 1
 fi
 
-compare="disasm-$disasm.txt"
+compare="disasm-$disasm$mmu.txt"
 cp "$basedir/$compare"    "$testdir/$compare.old"
 cp "$testdir/profile.txt" "$testdir/$compare.new"
 
@@ -67,6 +68,12 @@ cp "$testdir/profile.txt" "$testdir/$compare.new"
 for f in "$testdir/$compare".*; do
 	# remove Hatari version
 	sed -i 's/^\(Hatari CPU profile\).*$/\1/' "$f"
+	# for 030 MMU profile, replace cycle counts with instruction counts
+	# as 030 emulation cycle-accuracy has not stabilized yet (changes
+	# to i-cache misses & d-cache hits rates are assumed to be rare)
+	if [ -n "$mmu" ]; then
+		sed -i 's/% (\([0-9]\+\), [0-9]\+,/% (\1, \1,/' "$f"
+	fi
 done
 
 # TODO: compare also hatari_profile post-processing output?
