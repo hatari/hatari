@@ -7918,14 +7918,15 @@ void m68k_disasm_file (FILE *f, uaecptr addr, uaecptr *nextpc, uaecptr lastpc, i
  * Functions called from debug/68Disass.c, we need to check if MMU is enabled to do some address
  * translations on 'addr' if needed, depending on the CPU/MMU family
  */
-void m68k_disasm_file_wrapper (FILE *f, uaecptr addr, uaecptr *nextpc, uaecptr lastpc, int cnt)
+void m68k_disasm_file_wrapper (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
 {
-	uaecptr new_addr = addr;
-
-	if ( currprefs.cpu_model == 68030 && currprefs.mmu_model )		/* 68030 with MMU */
-		new_addr = mmu030_translate(addr, regs.s != 0, false, false);
-
-	m68k_disasm_file(f, new_addr, nextpc, new_addr, cnt);
+	if (currprefs.mmu_model) {
+		/* 68030 with MMU */
+		if (currprefs.cpu_model == 68030)
+			addr = mmu030_translate(addr, regs.s != 0, false, false);
+		/* TODO: 040 / 060 */
+	}
+	m68k_disasm_file(f, addr, nextpc, addr, cnt);
 }
 #endif
 
