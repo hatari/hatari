@@ -1134,6 +1134,11 @@ screenshots. XBios(11) Dbmsg call can be used to invoke the debugger.
 redirection for given &lt;device&gt; to host terminal.  Device 2 is for
 the (CON:) VT52 console, which vector function catches also EmuTOS panic
 messages and MiNT console output, not just normal BIOS console output.</p>
+<p class="parameter">--memconv &lt;bool&gt;</p>
+<p class="paramdesc">Instead of showing non-ASCII (8-bit) Atari
+characters as dots in the memory output from the debugger commands
+(and for "--conout" option), enable their "locale" conversion to host
+characters.</p>
 <p class="parameter">--disasm &lt;x&gt;</p>
 <p class="paramdesc">Set disassembly options.  'uae' and 'ext' select
 the disassembly engine to use, bitmask sets disassembly output options

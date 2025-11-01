@@ -540,6 +540,15 @@ static bool Str_LocalToAtari(const char *source, char *dest, char replacementCha
 }
 #endif
 
+static bool Str_AtariToHost(const char *source, char *dest, int destLen, char replacementChar)
+{
+#if defined(WIN32) || defined(USE_LOCALE_CHARSET)
+	return Str_AtariToLocal(source, dest, destLen, replacementChar);
+#else
+	return Str_AtariToUtf8(source, dest, destLen);
+#endif
+}
+
 /**
  * Convert given host 'source' file name to 'destLen' sized 'dest',
  * in Atari encoding, if GEMDOS HD filename conversion is enabled.
@@ -552,15 +561,6 @@ void Str_Filename_Atari2Host(const char *source, char *dest, int destLen, char r
 		return;
 	}
 	Str_AtariToHost(source, dest, destLen, replacementChar);
-}
-
-bool Str_AtariToHost(const char *source, char *dest, int destLen, char replacementChar)
-{
-#if defined(WIN32) || defined(USE_LOCALE_CHARSET)
-	return Str_AtariToLocal(source, dest, destLen, replacementChar);
-#else
-	return Str_AtariToUtf8(source, dest, destLen);
-#endif
 }
 
 /* 'dest' buffer should be same size as 'source' one */
@@ -679,7 +679,29 @@ void Str_DecomposedToPrecomposedUtf8(const char *source, char *dest)
 
 /* ---------------------------------------------------------------------- */
 
+/**
+ * Convert given Atari char with the configured conversion,
+ * and print it to given FILE*.
+ */
+void Str_PrintMemChar(FILE *fp, uint8_t c)
+{
+	/* 8-bit Atari char + locale conversion? */
+	if (c > 0x7F && ConfigureParams.Debugger.bMemConvLocale)
+	{
+		/* multi-byte conversion */
+		char host[5], st[2] = { c, 0 };
+		Str_AtariToHost(st, host, sizeof(host), '.');
+		fprintf(fp,"%s", host);
+		return;
+	}
 
+	/* non-ASCII conversion? */
+	if (c < 0x20 || c >= 0x7f)
+		c = '.';
+	fputc(c, fp);
+}
+
+/* ---------------------------------------------------------------------- */
 
 /**
  * Print an Hex/Ascii dump of Len bytes located at *p

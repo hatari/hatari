@@ -23,7 +23,6 @@ typedef struct
   bool bConsoleWindow;	/* for now, used just for Windows */
 } CNF_LOG;
 
-
 /* debugger */
 typedef struct
 {
@@ -35,6 +34,7 @@ typedef struct
   int nBacktraceLines;
   int nExceptionDebugMask;
   int nDisasmOptions;
+  bool bMemConvLocale;
   bool bDisasmUAE;
   /* load and free symbols for GEMDOS HD loaded programs automatically */
   bool bSymbolsAutoLoad;

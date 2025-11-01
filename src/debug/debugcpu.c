@@ -40,7 +40,6 @@ const char DebugCpu_fileid[] = "Hatari debugcpu.c";
 
 
 #define MEMDUMP_COLS   16      /* memdump, number of bytes per row */
-#define NON_PRINT_CHAR '.'     /* character to display for non-printables */
 
 static uint32_t disasm_addr;     /* disasm address */
 static uint32_t memdump_addr;    /* memdump address */
@@ -518,24 +517,16 @@ static void print_mem_values(uint32_t addr, int count, int size, int base)
 }
 
 /**
- * This is a helper function that prints `count` bytes from Atari `addr`
- * as host encoded chars.
+ * Helper: print `count` bytes from Atari `addr` using
+ * user-configured conversion for host character conversion.
  * @param addr   The ST RAM start address
  * @param count  the amount of bytes that should get printed
  */
 static void print_mem_chars(uint32_t addr, uint8_t count)
 {
-	char host[4], st[2];
-	st[1] = '\0';
-
 	for (int i = 0; i < count; i++)
 	{
-		st[0] = STMemory_ReadByte(addr + i);
-		if ((unsigned)st[0] >= 32 && st[0] != 127 &&
-		    Str_AtariToHost(st, host, sizeof(host), NON_PRINT_CHAR))
-			fprintf(debugOutput,"%s", host);
-		else
-			fputc(NON_PRINT_CHAR, debugOutput);
+		Str_PrintMemChar(debugOutput, STMemory_ReadByte(addr + i));
 	}
 }
 

@@ -617,6 +617,11 @@ Enable console (xconout vector functions) output redirection for given
 which vector function catches also EmuTOS panic messages and MiNT
 console output, not just normal BIOS console output.
 .TP
+.B \-\-memconv <bool>
+Instead of showing non-ASCII (8-bit) Atari characters as dots in the
+memory output from the debugger commands (and for "\-\-conout" option),
+enable their "locale" conversion to host characters.
+.TP
 .B \-\-disasm <x>
 Set disassembly options.  'uae' and 'ext' select the disassembly engine
 to use, bitmask sets disassembly output options and 'help' lists them.

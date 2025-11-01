@@ -19,6 +19,7 @@ const char Console_fileid[] = "Hatari console.c";
 #include "hatari-glue.h"
 #include "console.h"
 #include "options.h"
+#include "str.h"
 
 /* number of xconout devices to track */
 int ConOutDevices;
@@ -61,44 +62,20 @@ void Console_SetTrace(bool enable)
 }
 
 /**
- * Maps Atari characters to their closest ASCII equivalents.
+ * Print white-space control chars as-is, and rest
+ * through user-configured "str.c" conversion.
  */
 static void map_character(uint8_t value)
 {
-	static const uint8_t map_0_31[32] = {
-		'.', '.', '.', '.', '.', '.', '.', '.',	/* 0x00 */
-		/* white space */
-		'\b','\t','\n','.','.','\r', '.', '.',	/* 0x08 */
-		/* LED numbers */
-		'0', '1', '2', '3', '4', '5', '6', '7',	/* 0x10 */
-		'8', '9', '.', '.', '.', '.', '.', '.' 	/* 0x18 */
-	};
-	static const uint8_t map_128_255[128] = {
-		/* accented characters */
-		'C', 'U', 'e', 'a', 'a', 'a', 'a', 'c',	/* 0x80 */
-		'e', 'e', 'e', 'i', 'i', 'i', 'A', 'A',	/* 0x88 */
-		'E', 'a', 'A', 'o', 'o', 'o', 'u', 'u',	/* 0x90 */
-		'y', 'o', 'u', 'c', '.', 'Y', 'B', 'f',	/* 0x98 */
-		'a', 'i', 'o', 'u', 'n', 'N', 'a', 'o',	/* 0xA0 */
-		'?', '.', '.', '.', '.', 'i', '<', '>',	/* 0xA8 */
-		'a', 'o', 'O', 'o', 'o', 'O', 'A', 'A',	/* 0xB0 */
-		'O', '"','\'', '.', '.', 'C', 'R', '.',	/* 0xB8 */
-		'j', 'J', '.', '.', '.', '.', '.', '.',	/* 0xC0 */
-		'.', '.', '.', '.', '.', '.', '.', '.',	/* 0xC8 */
-		'.', '.', '.', '.', '.', '.', '.', '.',	/* 0xD0 */
-		'.', '.', '.', '.', '.', '.', '^', '.',	/* 0xD8 */
-		'.', '.', '.', '.', '.', '.', '.', '.',	/* 0xE0 */
-		'.', '.', '.', '.', '.', '.', '.', '.',	/* 0xE8 */
-		'.', '.', '.', '.', '.', '.', '.', '.',	/* 0xF0 */
-		'.', '.', '.', '.', '.', '.', '.', '.'	/* 0xF8 */
-	};
-	/* map normal characters to host console */
-	if (value < 32) {
-		fputc(map_0_31[value], stdout);
-	} else if (value > 127) {
-		fputc(map_128_255[value-128], stdout);
-	} else {
+	switch(value) {
+	case '\b':
+	case '\t':
+	case '\n':
+	case '\r':
 		fputc(value, stdout);
+		break;
+	default:
+		Str_PrintMemChar(stdout, value);
 	}
 }
 

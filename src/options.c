@@ -214,6 +214,7 @@ enum {
 	OPT_BIOSINTERCEPT,
 	OPT_CONOUT,
 	OPT_DISASM,
+	OPT_MEMCONV,
 	OPT_NATFEATS,
 	OPT_TRACE,
 	OPT_TRACEFILE,
@@ -516,6 +517,8 @@ static const opt_t HatariOptions[] = {
 	  "<device>", "Show console output (0-7, 2=VT-52 terminal)" },
 	{ OPT_DISASM,   NULL, "--disasm",
 	  "<x>", "Set disassembly options (help/uae/ext/<bitmask>)" },
+	{ OPT_MEMCONV,   NULL, "--memconv",
+	  "<bool>", "Enable locale conversion for non-ASCII Atari chars" },
 	{ OPT_NATFEATS, NULL, "--natfeats",
 	  "<bool>", "Whether Native Features support is enabled" },
 	{ OPT_TRACE,   NULL, "--trace",
@@ -2237,6 +2240,11 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				return Opt_ShowError(OPT_CONOUT, argv[i], "Invalid console device vector number");
 			}
 			Log_Printf(LOG_DEBUG, "Xcounout device %d vector redirection enabled.\n", dev);
+			break;
+
+		case OPT_MEMCONV:
+			ok = Opt_Bool(argv[++i], OPT_MEMCONV, &ConfigureParams.Debugger.bMemConvLocale);
+			Log_Printf(LOG_DEBUG, "Memory output locale conversion %s.\n", ConfigureParams.Debugger.bMemConvLocale ? "enabled" : "disabled");
 			break;
 
 		case OPT_NATFEATS:
