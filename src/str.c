@@ -563,6 +563,7 @@ bool Str_AtariToHost(const char *source, char *dest, int destLen, char replaceme
 #endif
 }
 
+/* 'dest' buffer should be same size as 'source' one */
 bool Str_HostToAtari(const char *source, char *dest, char replacementChar)
 {
 #if defined(WIN32) || defined(USE_LOCALE_CHARSET)
@@ -642,6 +643,10 @@ static int mapDecomposedPrecomposed[] =
  * and a combining character) in an UTF-8 encoded string into
  * the precomposed UTF-8 encoded form. Only characters which
  * exist in the AtariST character set are converted.
+ *
+ * Source and destination can point to same string.
+ * Converted string does not expand.
+ *
  * This is needed for OSX which returns filesystem paths in the
  * decomposed form (NFD).
  */
