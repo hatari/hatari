@@ -9,7 +9,6 @@
 
 #include <time.h>
 #include <errno.h>
-#include <SDL.h>
 
 #include "main.h"
 #include "audio.h"
@@ -29,6 +28,10 @@
 
 #ifdef EMSCRIPTEN
 #include "emscripten.h"
+#endif
+
+#if !defined(HAVE_GETTIMEOFDAY) || !defined(HAVE_SYS_TIMES_H)
+#include <SDL.h>
 #endif
 
 static uint32_t nRunVBLs;           /* Whether and how many VBLS to run before exit */
@@ -334,20 +337,22 @@ void Timing_WaitOnVbl(void)
  */
 void Timing_CheckForAccurateDelays(void)
 {
-	int nStartTicks, nEndTicks;
+	int64_t nStartTicks, nEndTicks;
 
 	/* Force a task switch now, so we have a longer timeslice afterwards */
-	SDL_Delay(10);
+	Timing_Delay(10000);
 
-	nStartTicks = SDL_GetTicks();
-	SDL_Delay(1);
-	nEndTicks = SDL_GetTicks();
+	nStartTicks = Timing_GetTicks() / 1000;
+	Timing_Delay(1000);
+	nEndTicks = Timing_GetTicks() / 1000;
 
-	/* If the delay took longer than 10ms, we are on an inaccurate system! */
+	/* If the delay took 10ms or more, we are on an inaccurate system! */
 	bAccurateDelays = ((nEndTicks - nStartTicks) < 9);
 
 	if (bAccurateDelays)
-		Log_Printf(LOG_DEBUG, "Host system has accurate delays. (%d)\n", nEndTicks - nStartTicks);
+		Log_Printf(LOG_DEBUG, "Host system has accurate delays. (%d)\n",
+		           (int)(nEndTicks - nStartTicks));
 	else
-		Log_Printf(LOG_WARN, "Host system does not have accurate delays. (%d)\n", nEndTicks - nStartTicks);
+		Log_Printf(LOG_WARN, "Host system does not have accurate delays. (%d)\n",
+		           (int)(nEndTicks - nStartTicks));
 }
