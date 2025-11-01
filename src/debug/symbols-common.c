@@ -49,6 +49,7 @@ typedef struct {
 	int gccint;   /* GCC internal symbols */
 	int invalid;  /* invalid symbol types for addresses */
 	int locals;   /* unnamed / local symbols */
+	int noname;   /* symbols without a name */
 	int notypes;  /* explicitly disabled symbol types */
 	int undefined;/* undefined symbols */
 } ignore_counts_t;
@@ -650,6 +651,11 @@ static bool ignore_symbol(const char *name, symtype_t symtype, const symbol_opts
 			return true;
 		}
 	}
+	if (!name[0]) {
+		counts->noname++;
+		return true;
+	}
+
 	return false;
 }
 
@@ -677,6 +683,9 @@ static void show_ignored(const ignore_counts_t *counts)
 	}
 	if (counts->locals) {
 		fprintf(stderr, "NOTE: ignored %d unnamed / local symbols ('.L*').\n", counts->locals);
+	}
+	if (counts->noname) {
+		fprintf(stderr, "NOTE: ignored %d unnamed symbols.\n", counts->noname);
 	}
 	if (counts->notypes) {
 		fprintf(stderr, "NOTE: ignored %d symbols with unwanted types.\n", counts->notypes);
