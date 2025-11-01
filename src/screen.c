@@ -27,6 +27,7 @@ const char Screen_fileid[] = "Hatari screen.c";
 #include "spec512.h"
 #include "statusbar.h"
 #include "vdi.h"
+#include "version.h"
 #include "video.h"
 #include "falcon/videl.h"
 
@@ -548,6 +549,18 @@ void Screen_ModeChanged(bool bForceChange)
 
 
 /**
+ * Set Hatari window title. Use NULL for default
+ */
+void Screen_SetTitle(const char *title)
+{
+	if (title)
+		SDL_SetWindowTitle(sdlWindow, title);
+	else
+		SDL_SetWindowTitle(sdlWindow, PROG_NAME);
+}
+
+
+/**
  * Init screen-related things of the SDL
  */
 void Screen_Init(void)
@@ -598,6 +611,7 @@ void Screen_Init(void)
 
 	/* Configure some SDL stuff: */
 	Main_ShowCursor(false);
+	Screen_SetTitle(NULL);
 }
 
 

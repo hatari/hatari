@@ -299,18 +299,6 @@ void Main_SetQuitValue(int exitval)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Set Hatari window title. Use NULL for default
- */
-static void Main_SetTitle(const char *title)
-{
-	if (title)
-		SDL_SetWindowTitle(sdlWindow, title);
-	else
-		SDL_SetWindowTitle(sdlWindow, PROG_NAME);
-}
-
-/*-----------------------------------------------------------------------*/
-/**
  * When recording, show time in titlebar.
  */
 static void Main_UpdateTitle(int currentVbl)
@@ -324,7 +312,7 @@ static void Main_UpdateTitle(int currentVbl)
 	{
 		if (Sound_AreWeRecording() || Avi_AreWeRecording())
 		{
-			Main_SetTitle("00:00:00");
+			Screen_SetTitle("00:00:00");
 			startVbl = currentVbl;
 		}
 		return;
@@ -333,7 +321,7 @@ static void Main_UpdateTitle(int currentVbl)
 	/* recording stopped since previous VBL? */
 	if (!(Sound_AreWeRecording() || Avi_AreWeRecording()))
 	{
-		Main_SetTitle(NULL);
+		Screen_SetTitle(NULL);
 		startVbl = 0;
 		return;
 	}
@@ -350,7 +338,7 @@ static void Main_UpdateTitle(int currentVbl)
 
 	/* update recording time to titlebar */
 	snprintf(info, sizeof(info), "%02d:%02d:%02d", hours, mins, secs);
-	Main_SetTitle(info);
+	Screen_SetTitle(info);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -851,7 +839,6 @@ static void Main_Init(void)
 	Videl_Init();
 	ConvST_Init();
 	Screen_Init();
-	Main_SetTitle(NULL);
 
 	STMemory_Init ( ConfigureParams.Memory.STRamSize_KB * 1024 );
 

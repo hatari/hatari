@@ -43,5 +43,6 @@ uint32_t Screen_GetGenConvHeight(void);
 int Screen_SaveBMP(const char *filename);
 void Screen_StatusbarMessage(const char *msg, uint32_t msecs);
 int Screen_GetUISocket(void);
+void Screen_SetTitle(const char *title);
 
 #endif  /* ifndef HATARI_SCREEN_H */
