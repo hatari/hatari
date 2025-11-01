@@ -461,6 +461,7 @@ const char Video_fileid[] = "Hatari video.c";
 #include "ikbd.h"
 #include "floppy_ipf.h"
 #include "statusbar.h"
+#include "timing.h"
 #include "clocks_timings.h"
 #include "utils.h"
 
@@ -5050,7 +5051,7 @@ void Video_InterruptHandler_VBL ( void )
 	if ( quit_program == 0 )
 		M68000_Exception(EXCEPTION_NR_VBLANK, M68000_EXC_SRC_AUTOVEC);	/* Vertical blank interrupt, level 4 */
 
-	Main_WaitOnVbl();
+	Timing_WaitOnVbl();
 }
 
 

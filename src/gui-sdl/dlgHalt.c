@@ -16,6 +16,7 @@ const char DlgHalt_fileid[] = "Hatari dlgHalt.c";
 #include "dialog.h"
 #include "screen.h"
 #include "sdlgui.h"
+#include "timing.h"
 #include "m68000.h"
 
 #define DLGHALT_WARM	2
@@ -62,7 +63,7 @@ void Dialog_HaltDlg(void)
 	SDL_SetRelativeMouseMode(SDL_FALSE);
 
 	/* if we get halt with --run-vbls, just quit right away */
-	if (Main_SetRunVBLs(0))
+	if (Timing_SetRunVBLs(0))
 	{
 		Log_Printf(LOG_ERROR, DLGHALT_MSG);
 		do_quit(1);

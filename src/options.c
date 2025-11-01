@@ -44,6 +44,7 @@ const char Options_fileid[] = "Hatari options.c";
 #include "68kDisass.h"
 #include "xbios.h"
 #include "stMemory.h"
+#include "timing.h"
 #include "tos.h"
 #include "lilo.h"
 #include "screenSnapShot.h"
@@ -1266,7 +1267,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 		case OPT_SLOWDOWN:
 			val = atoi(argv[++i]);
-			errstr = Main_SetVBLSlowdown(val);
+			errstr = Timing_SetVBLSlowdown(val);
 			if (errstr)
 			{
 				return Opt_ShowError(OPT_SLOWDOWN, argv[i], errstr);
@@ -2341,7 +2342,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 		case OPT_RUNVBLS:
 			val = atoi(argv[++i]);
 			Log_Printf(LOG_DEBUG, "Exit after %d VBLs.\n", val);
-			Main_SetRunVBLs(val);
+			Timing_SetRunVBLs(val);
 			break;
 
 		case OPT_BENCHMARK:
