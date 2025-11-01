@@ -33,6 +33,7 @@ bool Screen_Draw(bool bForceFlip);
 void Screen_GetPixelFormat(uint32_t *rmask, uint32_t *gmask, uint32_t *bmask,
                            int *rshift, int *gshift, int *bshift);
 void Screen_GetDimension(uint32_t **pixels, int *width, int *height, int *pitch);
+void Screen_GetDesktopSize(int *width, int *height);
 void Screen_SetTextureScale(int width, int height, int win_width,
                             int win_height, bool bForceCreation);
 bool Screen_SetVideoSize(int width, int height, bool bForceChange);

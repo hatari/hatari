@@ -43,7 +43,6 @@ const char Main_fileid[] = "Hatari main.c";
 #include "paths.h"
 #include "printer.h"
 #include "reset.h"
-#include "resolution.h"
 #include "rs232.h"
 #include "rtc.h"
 #include "scc.h"
@@ -843,7 +842,6 @@ static void Main_Init(void)
 	ClocksTimings_InitMachine ( ConfigureParams.System.nMachineType );
 	Video_SetTimings ( ConfigureParams.System.nMachineType , ConfigureParams.System.VideoTimingMode );
 
-	Resolution_Init();
 	SDLGui_Init();
 	Printer_Init();
 	MFP_Init(MFP_Array);

@@ -24,7 +24,6 @@ const char Screen_fileid[] = "Hatari screen.c";
 #include "options.h"
 #include "screen.h"
 #include "control.h"
-#include "resolution.h"
 #include "spec512.h"
 #include "statusbar.h"
 #include "vdi.h"
@@ -53,6 +52,8 @@ static SDL_Renderer *sdlRenderer;
 static SDL_Texture *sdlTexture;
 static bool bUseSdlRenderer;            /* true when using SDL2 renderer */
 static bool bIsSoftwareRenderer;
+static int desktop_width, desktop_height;
+
 
 void Screen_UpdateRects(SDL_Surface *screen, int numrects, SDL_Rect *rects)
 {
@@ -262,6 +263,16 @@ int Screen_GetUISocket(void)
 #endif /* HAVE_X11 */
 
 
+/**
+ * Get current desktop resolution
+ */
+void Screen_GetDesktopSize(int *width, int *height)
+{
+	*width = desktop_width;
+	*height = desktop_height;
+}
+
+
 /*
  * Create window backing texture when needed, with suitable scaling
  * quality.
@@ -393,7 +404,6 @@ bool Screen_SetVideoSize(int width, int height, bool bForceChange)
 	}
 	else
 	{
-		int deskw, deskh;
 		if (getenv("PARENT_WIN_ID") != NULL)	/* Embedded window? */
 			sdlVideoFlags = SDL_WINDOW_BORDERLESS|SDL_WINDOW_HIDDEN;
 		else if (ConfigureParams.Screen.bResizable && bUseSdlRenderer)
@@ -403,11 +413,10 @@ bool Screen_SetVideoSize(int width, int height, bool bForceChange)
 		/* Make sure that window is not bigger than current desktop */
 		if (bUseSdlRenderer)
 		{
-			Resolution_GetDesktopSize(&deskw, &deskh);
-			if (win_width > deskw)
-				win_width = deskw;
-			if (win_height > deskh)
-				win_height = deskh;
+			if (win_width > desktop_width)
+				win_width = desktop_width;
+			if (win_height > desktop_height)
+				win_height = desktop_height;
 		}
 	}
 
@@ -545,6 +554,32 @@ void Screen_Init(void)
 {
 	SDL_Surface *pIconSurf;
 	char sIconFileName[FILENAME_MAX];
+	SDL_DisplayMode dm;
+
+	/* Get information about desktop resolution */
+	if (SDL_GetDesktopDisplayMode(0, &dm) == 0)
+	{
+		desktop_width = dm.w;
+		desktop_height = dm.h;
+	}
+	else
+	{
+		Log_Printf(LOG_ERROR, "SDL_GetDesktopDisplayMode failed: %s",
+		           SDL_GetError());
+		desktop_width = 2 * NUM_VISIBLE_LINE_PIXELS;
+		desktop_height = 2 * NUM_VISIBLE_LINES + STATUSBAR_MAX_HEIGHT;
+	}
+
+	/* If user hasn't set own max zoom size, use desktop size */
+	if (!(ConfigureParams.Screen.nMaxWidth && ConfigureParams.Screen.nMaxHeight))
+	{
+		ConfigureParams.Screen.nMaxWidth = desktop_width;
+		ConfigureParams.Screen.nMaxHeight = desktop_height;
+	}
+	DEBUGPRINT(("Desktop resolution: %dx%d\n",DesktopWidth, DesktopHeight));
+	Log_Printf(LOG_DEBUG, "Configured max Hatari resolution = %dx%d, optimal for ST = %dx%d(+%d)\n",
+		ConfigureParams.Screen.nMaxWidth, ConfigureParams.Screen.nMaxHeight,
+		2*NUM_VISIBLE_LINE_PIXELS, 2*NUM_VISIBLE_LINES, STATUSBAR_MAX_HEIGHT);
 
 	/* Set initial window resolution */
 	bInFullScreen = ConfigureParams.Screen.bFullScreen;

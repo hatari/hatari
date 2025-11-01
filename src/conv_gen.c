@@ -15,7 +15,6 @@
 #include "ioMem.h"
 #include "log.h"
 #include "memorySnapShot.h"
-#include "resolution.h"
 #include "screen.h"
 #include "statusbar.h"
 #include "stMemory.h"
@@ -751,13 +750,40 @@ bool ConvGen_Draw(uint32_t vaddr, int vw, int vh, int vbpp, int nextline,
 
 
 /**
+ * Set given width & height arguments to maximum size allowed in the
+ * configuration.
+ */
+void ConvGen_GetLimits(int *width, int *height)
+{
+	*width = *height = 0;
+
+	if (bInFullScreen)
+	{
+		/* resolution change not allowed? */
+		if (ConfigureParams.Screen.bKeepResolution)
+		{
+			Screen_GetDesktopSize(width, height);
+		}
+	}
+
+	if (!(*width && *height) ||
+	    ConfigureParams.Screen.bForceMax ||
+	    (ConfigureParams.Screen.nMaxWidth < *width &&
+	     ConfigureParams.Screen.nMaxHeight < *height))
+	{
+		*width = ConfigureParams.Screen.nMaxWidth;
+		*height = ConfigureParams.Screen.nMaxHeight;
+	}
+}
+
+
+/**
  * This is used to set the size of the screen
  * when we're using the generic conversion functions.
  */
 void ConvGen_SetSize(int width, int height, bool bForceChange)
 {
 	static int genconv_width_req, genconv_height_req;
-	const bool keep = ConfigureParams.Screen.bKeepResolution;
 	int screenwidth, screenheight, maxw, maxh;
 	int scalex, scaley, sbarheight;
 
@@ -772,7 +798,7 @@ void ConvGen_SetSize(int width, int height, bool bForceChange)
 		genconv_height_req = height;
 
 	/* constrain size request to user's desktop size */
-	Resolution_GetLimits(&maxw, &maxh, keep);
+	ConvGen_GetLimits(&maxw, &maxh);
 
 	nScreenZoomX = nScreenZoomY = 1;
 

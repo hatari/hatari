@@ -39,7 +39,6 @@
 #include "screen.h"
 #include "control.h"
 #include "convert/routines.h"
-#include "resolution.h"
 #include "spec512.h"
 #include "statusbar.h"
 #include "vdi.h"
@@ -233,7 +232,7 @@ void ConvST_SetSTResolution(bool bForceChange)
 	/* Statusbar height for doubled screen size */
 	SBarHeight = Statusbar_GetHeightForSize(640, 400);
 
-	Resolution_GetLimits(&maxW, &maxH, ConfigureParams.Screen.bKeepResolution);
+	ConvGen_GetLimits(&maxW, &maxH);
 
 	/* Zoom if necessary, factors used for scaling mouse motions */
 	if (STRes == ST_LOW_RES &&

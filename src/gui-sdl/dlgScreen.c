@@ -15,7 +15,6 @@ const char DlgScreen_fileid[] = "Hatari dlgScreen.c";
 #include "sdlgui.h"
 #include "options.h"
 #include "screen.h"
-#include "resolution.h"
 #include "vdi.h"
 #include "video.h"
 
@@ -331,7 +330,7 @@ void Dialog_WindowDlg(void)
 	}
 	windowdlg[DLGSCRN_SKIP0+skip].state |= SG_SELECTED;
 
-	Resolution_GetDesktopSize(&deskw, &deskh);
+	Screen_GetDesktopSize(&deskw, &deskh);
 	maxw = ConfigureParams.Screen.nMaxWidth;
 	maxh = ConfigureParams.Screen.nMaxHeight;
 	sprintf(sMaxWidth, "%4i", maxw);

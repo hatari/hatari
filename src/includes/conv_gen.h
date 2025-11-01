@@ -21,5 +21,6 @@ void ConvGen_Convert(uint32_t vaddr, void *fvram, int vw, int vh,
 bool ConvGen_Draw(uint32_t vaddr, int vw, int vh, int vbpp, int nextline,
                   int leftBorderSize, int rightBorderSize,
                   int upperBorderSize, int lowerBorderSize);
+void ConvGen_GetLimits(int *width, int *height);
 void ConvGen_SetSize(int width, int height, bool bForceChange);
 bool ConvGen_UseGenConvScreen(void);
