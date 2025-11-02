@@ -16,7 +16,7 @@ const char Audio_fileid[] = "Hatari audio.c";
 #include "log.h"
 #include "sound.h"
 #include "dmaSnd.h"
-#include "falcon/crossbar.h"
+#include "crossbar.h"
 #include "video.h"
 
 

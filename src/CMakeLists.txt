@@ -1,14 +1,14 @@
 
 set(SOURCES
-	acia.c audio.c avi_record.c bios.c blitter.c cart.c cfgopts.c
+	acia.c avi_record.c bios.c blitter.c cart.c cfgopts.c
 	clocks_timings.c configuration.c options.c change.c control.c
 	conv_gen.c conv_st.c cycInt.c cycles.c dialog.c dmaSnd.c fdc.c file.c
 	floppy.c floppy_ipf.c floppy_stx.c gemdos.c hdc.c ide.c ikbd.c ioMem.c
-	ioMemTabST.c ioMemTabSTE.c ioMemTabTT.c ioMemTabFalcon.c joy.c joy_ui.c
-	keymap.c m68000.c main.c midi.c memorySnapShot.c mfp.c nf_scsidrv.c
+	ioMemTabST.c ioMemTabSTE.c ioMemTabTT.c ioMemTabFalcon.c joy.c
+	m68000.c main.c midi.c memorySnapShot.c mfp.c nf_scsidrv.c
 	ncr5380.c paths.c  psg.c printer.c rs232.c reset.c rtc.c
-	scandir.c scc.c scu_vme.c stMemory.c screen.c screenSnapShot.c
-	shortcut.c sound.c spec512.c statusbar.c str.c timing.c tos.c
+	scandir.c scc.c scu_vme.c stMemory.c screenSnapShot.c
+	shortcut.c sound.c spec512.c str.c timing.c tos.c
 	utils.c vdi.c inffile.c video.c wavFormat.c xbios.c ymFormat.c lilo.c)
 
 if(EMSCRIPTEN)
@@ -51,8 +51,7 @@ if(WIN32)
 	endif(CMAKE_COMPILER_IS_GNUCC)
 endif(WIN32)
 
-include_directories(includes debug falcon
-		    ${CMAKE_BINARY_DIR} ${SDL2_INCLUDE_DIRS} cpu)
+include_directories(includes debug falcon cpu ${CMAKE_BINARY_DIR})
 
 if(ZLIB_FOUND)
 	include_directories(${ZLIB_INCLUDE_DIR})
@@ -82,12 +81,14 @@ endif(Capstone_FOUND)
 link_directories(${CMAKE_CURRENT_BINARY_DIR}/debug
 		 ${CMAKE_CURRENT_BINARY_DIR}/falcon
 		 ${CMAKE_CURRENT_BINARY_DIR}/gui-sdl
-		 ${CMAKE_CURRENT_BINARY_DIR}/cpu)
+		 ${CMAKE_CURRENT_BINARY_DIR}/cpu
+		 ${CMAKE_CURRENT_BINARY_DIR}/sdl)
 
+add_subdirectory(cpu)
 add_subdirectory(debug)
 add_subdirectory(falcon)
 add_subdirectory(gui-sdl)
-add_subdirectory(cpu)
+add_subdirectory(sdl)
 
 # When building for macOS, add specific sources
 if(ENABLE_OSX_BUNDLE)
@@ -221,7 +222,8 @@ if(SDL2_OTHER_CFLAGS)
 	# message(STATUS "Additional CFLAGS of SDL: ${SDL2_OTHER_CFLAGS}")
 endif(SDL2_OTHER_CFLAGS)
 
-target_link_libraries(${APP_NAME} Falcon UaeCpu GuiSdl Floppy Debug ${SDL2_LIBRARIES})
+target_link_libraries(${APP_NAME} Falcon UaeCpu GuiSdl Floppy Debug Ui
+                      ${SDL2_LIBRARIES})
 
 if(Math_FOUND AND NOT APPLE)
 	target_link_libraries(${APP_NAME} ${MATH_LIBRARY})

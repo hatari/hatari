@@ -29,7 +29,7 @@ const char Screen_fileid[] = "Hatari screen.c";
 #include "vdi.h"
 #include "version.h"
 #include "video.h"
-#include "falcon/videl.h"
+#include "videl.h"
 
 #define DEBUG 0
 
