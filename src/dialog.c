@@ -13,7 +13,6 @@ const char Dialog_fileid[] = "Hatari dialog.c";
 #include "change.h"
 #include "dialog.h"
 #include "log.h"
-#include "sdlgui.h"
 #include "screen.h"
 
 

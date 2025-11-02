@@ -23,7 +23,6 @@ const char ShortCut_fileid[] = "Hatari shortcut.c";
 #include "shortcut.h"
 #include "debugui.h"
 #include "sound.h"
-#include "sdlgui.h"
 #include "timing.h"
 #include "avi_record.h"
 #include "statusbar.h"
