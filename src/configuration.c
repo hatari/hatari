@@ -331,6 +331,8 @@ static const struct Config_Tag configs_Sound[] =
 	{ "nSdlAudioBufferSize", Int_Tag, &ConfigureParams.Sound.SdlAudioBufferSize },
 	{ "szYMCaptureFileName", String_Tag, ConfigureParams.Sound.szYMCaptureFileName },
 	{ "YmVolumeMixing", Int_Tag, &ConfigureParams.Sound.YmVolumeMixing },
+	{ "YmLpf", Int_Tag, &ConfigureParams.Sound.YmLpf },
+	{ "YmHpf", Int_Tag, &ConfigureParams.Sound.YmHpf },
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -793,6 +795,8 @@ void Configuration_SetDefault(void)
 	                 psWorkingDir, "hatari", "wav");
 	ConfigureParams.Sound.SdlAudioBufferSize = 0;
 	ConfigureParams.Sound.YmVolumeMixing = YM_TABLE_MIXING;
+	ConfigureParams.Sound.YmLpf = YM2149_LPF_FILTER_IIR;
+	ConfigureParams.Sound.YmHpf = YM2149_HPF_FILTER_IIR;
 
 	/* Set defaults for Rom */
 	File_MakePathBuf(ConfigureParams.Rom.szTosImageFileName,
@@ -924,6 +928,8 @@ void Configuration_Apply(bool bReset)
 		ConfigureParams.Sound.YmVolumeMixing = YM_TABLE_MIXING;
 
 	YmVolumeMixing = ConfigureParams.Sound.YmVolumeMixing;
+	YM2149_LPF_Filter = ConfigureParams.Sound.YmLpf;
+	YM2149_HPF_Filter = ConfigureParams.Sound.YmHpf;
 	Sound_SetYmVolumeMixing();
 
 	/* Falcon : update clocks values if sound freq changed  */
