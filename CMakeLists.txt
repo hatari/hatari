@@ -55,6 +55,8 @@ set(ENABLE_DSP_EMU 1
     CACHE BOOL "Enable DSP 56k emulator for Falcon mode")
 set(ENABLE_TRACING 1
     CACHE BOOL "Enable tracing messages for debugging")
+set(ENABLE_SDL3 0
+    CACHE BOOL "Use SDL3 instead of SDL2")
 
 # Run-time checks with GCC / LLVM (Clang) AddressSanitizer:
 # - stack protection
@@ -110,10 +112,20 @@ endif(ENABLE_OSX_BUNDLE)
 # Check for libraries:
 # ####################
 
-find_package(SDL2)
-if(NOT SDL2_FOUND)
-	message(FATAL_ERROR "SDL2 library not found!")
-endif(NOT SDL2_FOUND)
+if(ENABLE_SDL3)
+	find_package(SDL3)
+	if(NOT SDL3_FOUND)
+		message(FATAL_ERROR "SDL3 library not found!")
+	endif(NOT SDL3_FOUND)
+	# Yes, we're cheating by re-using the SDL2_* variables:
+	set(SDL2_INCLUDE_DIRS ${SDL2_INCLUDE_DIRS})
+	set(SDL2_LIBRARIES ${SDL3_LIBRARIES})
+else()
+	find_package(SDL2)
+	if(NOT SDL2_FOUND)
+		message(FATAL_ERROR "SDL2 library not found!")
+	endif(NOT SDL2_FOUND)
+endif()
 
 find_package(Math)
 
@@ -188,11 +200,13 @@ if(DETECTED_LFS_CFLAGS)
 endif(DETECTED_LFS_CFLAGS)
 
 # Additional CFLAGS suggested by the SDL library:
-if(PKG_CONFIG_FOUND)
+if(NOT ENABLE_SDL3)
+    if(PKG_CONFIG_FOUND)
 	execute_process(COMMAND ${PKG_CONFIG_EXECUTABLE} --cflags-only-other sdl2
 			OUTPUT_VARIABLE SDL2_OTHER_CFLAGS
 			ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
-endif(PKG_CONFIG_FOUND)
+    endif(PKG_CONFIG_FOUND)
+endif()
 
 if(ENABLE_OSX_BUNDLE)
 	# Use OSX native alert windows
@@ -421,7 +435,11 @@ Libraries summary :
 -------------------
 ")
 
-message("  - sdl :\tusing SDL2 ${SDL2_VERSION}")
+if(ENABLE_SDL3)
+	message("  - sdl :\tusing SDL3 ${SDL3_VERSION}")
+else()
+	message("  - sdl :\tusing SDL2 ${SDL2_VERSION}")
+endif()
 
 if(Readline_FOUND)
   message( "  - readline :\tfound, enables history/completion in the debugger" )
