@@ -10,7 +10,7 @@ const char DlgFloppy_fileid[] = "Hatari dlgFloppy.c";
 #include "main.h"
 #include "configuration.h"
 #include "dialog.h"
-#include "screen.h"
+#include "screen_sdl.h"
 #include "sdlgui.h"
 #include "file.h"
 #include "floppy.h"

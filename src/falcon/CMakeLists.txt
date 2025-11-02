@@ -4,5 +4,3 @@ if(ENABLE_DSP_EMU)
 endif(ENABLE_DSP_EMU)
 
 add_library(Falcon crossbar.c nvram.c videl.c dsp.c ${DSP_SOURCES})
-
-target_link_libraries(Falcon PRIVATE ${SDL2_LIBRARIES})

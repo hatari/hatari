@@ -66,6 +66,10 @@ const char Main_fileid[] = "Hatari main.c";
 #include "falcon/dsp.h"
 #include "falcon/videl.h"
 
+#include "sdl/screen_sdl.h"
+#include "sdl/statusbar_sdl.h"
+#include "sdl/keymap_sdl.h"
+
 #ifdef WIN32
 #include "gui-win/opencon.h"
 #endif

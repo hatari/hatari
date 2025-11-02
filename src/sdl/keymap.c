@@ -15,6 +15,7 @@ const char Keymap_fileid[] = "Hatari keymap.c";
 #include <ctype.h>
 #include "main.h"
 #include "keymap.h"
+#include "keymap_sdl.h"
 #include "configuration.h"
 #include "file.h"
 #include "ikbd.h"

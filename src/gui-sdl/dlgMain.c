@@ -12,7 +12,7 @@ const char DlgMain_fileid[] = "Hatari dlgMain.c";
 #include "configuration.h"
 #include "dialog.h"
 #include "sdlgui.h"
-#include "screen.h"
+#include "screen_sdl.h"
 
 
 #define MAINDLG_SYSTEM   2

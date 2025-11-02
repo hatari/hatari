@@ -7,8 +7,6 @@
 #ifndef HATARI_STATUSBAR_H
 #define HATARI_STATUSBAR_H
 
-#include <SDL_video.h>
-
 /* must correspond to max value returned by Statusbar_GetHeightForSize() */
 #define STATUSBAR_MAX_HEIGHT (2*(2*8+2))
 
@@ -32,11 +30,7 @@ extern int Statusbar_GetHeight(void);
 extern void Statusbar_EnableHDLed(drive_led_t state);
 extern void Statusbar_SetFloppyLed(drive_index_t drive, drive_led_t state);
 
-extern void Statusbar_Init(SDL_Surface *screen);
 extern void Statusbar_UpdateInfo(void);
-extern void Statusbar_AddMessage(const char *msg, Uint32 msecs);
-extern void Statusbar_OverlayBackup(SDL_Surface *screen);
-extern SDL_Rect* Statusbar_Update(SDL_Surface *screen, bool do_update);
-extern void Statusbar_OverlayRestore(SDL_Surface *screen);
+extern void Statusbar_AddMessage(const char *msg, uint32_t msecs);
 
 #endif /* HATARI_STATUSBAR_H */

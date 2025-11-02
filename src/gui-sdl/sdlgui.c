@@ -16,6 +16,7 @@ const char SDLGui_fileid[] = "Hatari sdlgui.c";
 
 #include "main.h"
 #include "screen.h"
+#include "screen_sdl.h"
 #include "sdlgui.h"
 #include "str.h"
 #include "log.h"

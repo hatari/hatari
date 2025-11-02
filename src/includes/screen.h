@@ -8,15 +8,8 @@
 #ifndef HATARI_SCREEN_H
 #define HATARI_SCREEN_H
 
-#include <SDL_video.h>    /* for SDL_Surface */
-
 extern bool bGrabMouse;
 extern bool bInFullScreen;
-extern SDL_Surface *sdlscrn;
-extern SDL_Window *sdlWindow;
-
-void Screen_UpdateRects(SDL_Surface *screen, int numrects, SDL_Rect *rects);
-void Screen_UpdateRect(SDL_Surface *screen, Sint32 x, Sint32 y, Sint32 w, Sint32 h);
 
 uint32_t Screen_MapRGB(uint8_t red, uint8_t green, uint8_t blue);
 void Screen_Init(void);

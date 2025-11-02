@@ -22,7 +22,7 @@ const char DlgAlert_fileid[] = "Hatari dlgAlert.c";
 
 #include "main.h"
 #include "dialog.h"
-#include "screen.h"
+#include "screen_sdl.h"
 #include "sdlgui.h"
 #include "str.h"
 

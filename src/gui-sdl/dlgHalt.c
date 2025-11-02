@@ -14,7 +14,7 @@ const char DlgHalt_fileid[] = "Hatari dlgHalt.c";
 #include "reset.h"
 #include "debugui.h"
 #include "dialog.h"
-#include "screen.h"
+#include "screen_sdl.h"
 #include "sdlgui.h"
 #include "timing.h"
 #include "m68000.h"

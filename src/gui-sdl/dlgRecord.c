@@ -14,6 +14,7 @@ const char DlgRecord_fileid[] = "Hatari dlgRecord.c";
 #include "dialog.h"
 #include "sdlgui.h"
 #include "screen.h"
+#include "screen_sdl.h"
 #include "statusbar.h"
 #include "screenSnapShot.h"
 #include "avi_record.h"
