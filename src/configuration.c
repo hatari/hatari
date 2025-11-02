@@ -915,7 +915,7 @@ void Configuration_Apply(bool bReset)
 		SdlAudioBufferSize = 100;		/* max of 100 ms */
 
 	/* Set playback frequency */
-	Audio_SetOutputAudioFreq(ConfigureParams.Sound.nPlaybackFreq);
+	Sound_SetOutputAudioFreq(ConfigureParams.Sound.nPlaybackFreq);
 
 	/* YM Mixing */
 	if ( ( ConfigureParams.Sound.YmVolumeMixing != YM_LINEAR_MIXING )
