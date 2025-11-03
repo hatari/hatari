@@ -41,6 +41,8 @@ Emulator improvements:
     GEMDOS HD has no existing INF file, works now also with EmuTOS
   - Support (--tos-res) resolution setting also for Falcon machines,
     and new tclow/tcmed/tchigh values for Falcon TC modes
+- NatFeats:
+  - New NF_CYCLES call to retrieve (unsigned) 32-bit cycle counter
 - Debugger:
   - Fix: dysfunctional WinUAE CPU core disasm wrapper
   - Fix: separate arguments output by "echo" command with a space

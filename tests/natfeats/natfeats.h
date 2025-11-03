@@ -45,6 +45,13 @@ extern int nf_init(void);
 extern long nf_version(void);
 
 /**
+ * returns lower 32-bits of Hatari cycles counter
+ * (value wraps every few minutes, so caller needs to
+ * handle that: if(old>new) diff=(0xffffffff-old)+new+1)
+ */
+extern unsigned long nf_cycles(void);
+
+/**
  * get emulator name
  * returns name length
  */
