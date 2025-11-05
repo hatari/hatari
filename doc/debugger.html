@@ -322,7 +322,7 @@ want to store emulator output for more detailed inspection later.</p>
 <li><a href="#Tracing">Tracing</a>, controlled by "--trace" and
     "--trace-file" options</li>
 <li>Logging, controlled by "--log-level" and "--log-file" options</li>
-<li>Debugger CPU+DSP <a href="Inspecting_emulation_state">disassembly /
+<li>Debugger CPU+DSP <a href="#Inspecting_emulation_state">disassembly /
     memdump / register</a> commands output, controlled by "logfile" command</li>
 <li>Xconout redirection [1] + Hatari command line help,
     hard-coded to "stdout"</li>
@@ -662,7 +662,7 @@ add some symbols (e.g. for profiling)</li>
 </ul>
 
 
-<h3>Breakpoints</h3>
+<h3 id="Breakpoints">Breakpoints</h3>
 
 <p>
 There are two ways to specify breakpoints for Hatari. First, there are
@@ -1216,16 +1216,35 @@ b  LineAOpcode ! LineAOpcode  &amp;&amp;  LineAOpcode &lt; 0xffff  :trace
 </pre>
 
 
-
 <h3>Profiling</h3>
 
+<p>Hatari supports both Atari programs profiling themselves, and
+its debugger includes powerful profiling functionality, especially
+when its use is automated with <a href="#Breakpoints">conditional
+breakpoints</a>.</p>
+
 <p>
-Profiling tells where the emulated code spends most of its (emulated)
+Profiling tells where the running code spends most of its (emulated)
 time.  It can be used to find out where a program is (apparently)
 stuck, or what are the largest performance bottlenecks for a program.
 </p>
 
-<h4>Collecting the profile data</h4>
+<h4>NF_CYCLES NatFeat for Atari programs</h4>
+
+<p>Motorola CPUs do not have CPU cycle counter instruction, but Atari
+programs can query (lower 32-bits of) Hatari's internal cycles counter
+value.  Returned counter value differences tell how much time (cycles)
+elapsed between successive queries.</p>
+
+<p>NF_CYCLES "Native Feature" can be enabled with the "--natfeats on"
+option.  Examples of using Hatari Native Features are included to
+Hatari "tests/natfeats" directory.</p>
+
+<p>Note: 32-bit cycle counter will wrap in few minutes even on
+8-32Mhz CPUs, so caller needs to handle counter wrapping.</p>
+
+
+<h4>Collecting profile data in the debugger</h4>
 
 <p>
 Profiling is used by first enabling the profiler (use "dp" for DSP):
@@ -1268,6 +1287,13 @@ Cartridge ROM (0xFA0000-0xFC0000):
 <p>
 (DSP RAM will be shown only as single area in profile information.)
 </p>
+
+<p>If program symbols were loaded, profiler will also show a program
+backtrace (covering the profiled part).  This is especially useful
+with EmuTOS, because EmuTOS does not immediately terminate programs on
+crashes, but first waits for a key. By invoking debugger at that
+point, one will see profiler backtrace for the crash.
+<p>
 
 
 <h4>Investigating the profile data</h4>
