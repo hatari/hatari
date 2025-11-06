@@ -406,7 +406,7 @@ static void DebugInfo_Cookiejar(FILE *fp, uint32_t dummy)
  */
 
 /**
- * Helper to call debugcpu.c and debugdsp.c debugger commands
+ * Helper: call debugcpu.c and debugdsp.c debugger commands
  */
 static void DebugInfo_CallCommand(int (*func)(int, char* []), const char *command, uint32_t arg)
 {

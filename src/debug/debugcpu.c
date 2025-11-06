@@ -448,7 +448,7 @@ static int DebugCpu_Profile(int nArgc, char *psArgs[])
 }
 
 /**
- * helper: return type width (b/c=1, w=2, l=4)
+ * Helper: return type width (b/c=1, w=2, l=4)
  */
 static unsigned get_type_width(char mode)
 {
@@ -468,8 +468,7 @@ static unsigned get_type_width(char mode)
 
 
 /**
- * This is a helper function that prints `count` `size` sized memory items
- * from `addr` in `base`.
+ * Helper: print `count` `size` sized memory items from `addr` in `base`.
  * @param addr    the start address
  * @param count   the amount of items that should be printed
  * @param size    the size of one item
@@ -624,7 +623,7 @@ int DebugCpu_MemDump(int nArgc, char *psArgs[])
 
 
 /**
- * helper: return type base (b=1, o=8, d=10, h=16)
+ * Helper: return type base (b=1, o=8, d=10, h=16)
  */
 static unsigned get_type_base(char mode)
 {
@@ -819,7 +818,8 @@ static int DebugCpu_Struct(int nArgc, char *psArgs[])
 }
 
 
-/* helper to convert argument from host to Atari encoding.
+/**
+ * Helper: convert argument from host to Atari encoding.
  * returns false if argument could not be mapped completely,
  * or it maps to more than one Atari character.
  *
@@ -1311,7 +1311,9 @@ static int DebugCpu_Next(int nArgc, char *psArgv[])
 	return DEBUGGER_CMDDONE;
 }
 
-/* helper to get instruction type */
+/**
+ * Helper: get instruction type
+ */
 uint32_t DebugCpu_OpcodeType(void)
 {
 	/* cannot use OpcodeFamily like profiler does,

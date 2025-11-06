@@ -404,8 +404,9 @@ static int DebugDsp_Next(int nArgc, char *psArgv[])
 	return DEBUGGER_CMDDONE;
 }
 
-/* helper to get instruction type, slightly simpler
- * version from one in profiledsp.c
+/**
+ * Helper: get instruction type
+ * (slightly simpler version from one in profiledsp.c)
  */
 uint32_t DebugDsp_OpcodeType(void)
 {

@@ -144,7 +144,7 @@ static int DebugUI_SetLogFile(int nArgc, char *psArgs[])
 }
 
 /**
- * Helper to output given value as binary number
+ * Helper: output given value as binary number
  */
 void DebugUI_PrintBinary(FILE *fp, int minwidth, uint32_t value)
 {
@@ -166,7 +166,7 @@ void DebugUI_PrintBinary(FILE *fp, int minwidth, uint32_t value)
 }
 
 /**
- * Helper to print given value in all supported number bases
+ * Helper: print given value in all supported number bases
  */
 static void DebugUI_PrintValue(uint32_t value)
 {
