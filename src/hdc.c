@@ -17,6 +17,8 @@ const char HDC_fileid[] = "Hatari hdc.c";
 #include "file.h"
 #include "fdc.h"
 #include "hdc.h"
+#include "cycles.h"
+#include "cycInt.h"
 #include "ioMem.h"
 #include "log.h"
 #include "m68000.h"
@@ -73,6 +75,11 @@ static unsigned char inquiry_bytes[] =
 	'H','a','r','d','d','i','s','k',    /* Product ID 2 */
 	'0','1','8','0',                    /* Revision */
 };
+
+
+/* Delay before setting IRQ after a tansfer is made with Acsi_DmaTransfer() */
+#define	ACSI_TRANSFER_MIN_CYCLES	1000			/* in CPU cycles */
+
 
 
 /*---------------------------------------------------------------------*/
@@ -1148,7 +1155,13 @@ static void Acsi_DmaTransfer(void)
 	AcsiBus.data_len = 0;
 
 	FDC_SetDMAStatus(AcsiBus.bDmaError);	/* Mark DMA error */
-	FDC_SetIRQ(FDC_IRQ_SOURCE_HDC);
+
+	/* Although data transfer is made instantly above, some programsexpect the transfer to take */
+	/* a minimum delay before setting Hdc's IRQ (eg "Idris OS" in ACSI mode) */
+	/* For now we simulate this with a timer and a fixed delay, but this should be measured */
+	/* on real HW (depending on the read/write operation and the size of the transfer) */
+	FDC_ClearHdcIRQ();
+	CycInt_AddRelativeInterrupt(ACSI_TRANSFER_MIN_CYCLES, INT_CPU_CYCLE, INTERRUPT_HDC_ACSI);
 
 	/* For the MegaSTE, using the HDC DMA will flush the external cache */
 	if ( ConfigureParams.System.nMachineType == MACHINE_MEGA_STE )
@@ -1234,4 +1247,12 @@ void HDC_DmaTransfer(void)
 		Ncr5380_DmaTransfer_Falcon();
 	else if (bAcsiEmuOn)
 		Acsi_DmaTransfer();
+}
+
+
+
+void HDC_ACSI_InterruptHandler_Update ( void )
+{
+	CycInt_AcknowledgeInterrupt();
+	FDC_SetIRQ(FDC_IRQ_SOURCE_HDC);
 }

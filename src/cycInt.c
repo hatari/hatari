@@ -57,6 +57,7 @@ const char CycInt_fileid[] = "Hatari cycInt.c";
 #include "dmaSnd.h"
 #include "crossbar.h"
 #include "fdc.h"
+#include "hdc.h"
 #include "ikbd.h"
 #include "cycles.h"
 #include "cycInt.h"
@@ -109,7 +110,8 @@ static void (* const pIntHandlerFunctions[MAX_INTERRUPTS])(void) =
 	SCC_InterruptHandler_RX_A,
 	SCC_InterruptHandler_BRG_B,
 	SCC_InterruptHandler_TX_RX_B,
-	SCC_InterruptHandler_RX_B
+	SCC_InterruptHandler_RX_B,
+	HDC_ACSI_InterruptHandler_Update
 };
 
 /* Event timer structure - keeps next timer to occur in structure so don't need

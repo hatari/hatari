@@ -106,4 +106,6 @@ extern off_t HDC_CheckAndGetSize(const char *hdtype, const char *filename, unsig
 extern bool HDC_WriteCommandPacket(SCSI_CTRLR *ctr, uint8_t b);
 extern void HDC_DmaTransfer(void);
 
+extern void	HDC_ACSI_InterruptHandler_Update ( void );
+
 #endif /* HATARI_HDC_H */
