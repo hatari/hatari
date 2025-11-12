@@ -3055,7 +3055,8 @@ static int FDC_UpdateReadSectorsCmd ( void )
 		if ( FDC.CR & FDC_COMMAND_BIT_MULTIPLE_SECTOR  )
 		{
 			FDC.SR++;					/* Try to read next sector and set RNF if not possible */
-			FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_MOTOR_ON;
+			FDC.IndexPulse_Counter = 0;
+			FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_NEXT_SECTOR_HEADER;
 			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
 			LOG_TRACE(TRACE_FDC, "fdc type II read sector with multi sector=0x%x track=0x%x side=%d drive=%d addr=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
 				FDC.SR, FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal , FDC.DriveSelSignal ,
