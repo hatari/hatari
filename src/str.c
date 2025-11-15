@@ -242,6 +242,51 @@ void Str_UnEscape(char *s1)
 }
 
 /**
+ * Return true if character at given offset in given name is invalid
+ * for a GEMDOS file name, false otherwise.
+ *
+ * GEMDOS HD needs to identify characters in host files that could
+ * have been set as INVALID_CHAR after Str_Filename_Host2Atari()
+ * conversion, to avoid matching host file names with valid chars at
+ * those positions (as INVALID_CHAR replacement is itself a valid
+ * char).
+ *
+ * Assumes all >127 codepoints to be valid. I.e. does not take into
+ * account potential invalid host name corner-case (INVALID_CHAR
+ * replacements due to host file name UTF-8 / UCS-2 conversion
+ * encountering invalid character sequences).
+ */
+bool Str_Filename_Invalid_Char(const char *name, int offset)
+{
+	char c = name[offset];
+	if (c < 32 || c == 127)
+		return true;
+
+	switch (c)
+	{
+	case '*':
+	case '/':
+	case ':':
+	case '?':
+	case '\\':
+	case '{':
+	case '}':
+		/* invalid GEMDOS file name char */
+		return true;
+	case '.':
+		/* last dot */
+		const char *dot = strrchr(name, '.');
+		/* extra dots are invalid chars, except for ".." */
+		if (dot != name + offset && strlen(name) > 2)
+			return true;
+		/* fall through */
+	default:
+		/* assumed to be valid GEMDOS file name char */
+		return false;
+	}
+}
+
+/**
  * Convert potentially too long host filenames to 8.3 TOS filenames
  * by first converting host encoding to Atari one, truncating extension
  * and part before it, replacing invalid GEMDOS file name characters
@@ -553,8 +598,9 @@ static bool Str_AtariToHost(const char *source, char *dest, int destLen, char re
 }
 
 /**
- * Convert given host 'source' file name to 'destLen' sized 'dest',
- * in Atari encoding, if GEMDOS HD filename conversion is enabled.
+ * Convert given Atari encoding 'source' file name to 'destLen'
+ * sized 'dest' in host encoding, if GEMDOS HD file name conversion
+ * is enabled, otherwise just copy it.
  */
 void Str_Filename_Atari2Host(const char *source, char *dest, int destLen, char replacementChar)
 {

@@ -48,6 +48,7 @@ extern void Str_UnEscape(char *str);
 extern void Str_Dump_Hex_Ascii ( char *p , int Len , int Width , const char *Suffix , FILE *pFile );
 
 /* Interface of character set conversions */
+extern bool Str_Filename_Invalid_Char(const char *name, int offset);
 extern void Str_Filename_Host2Atari(const char *source, char *dest);
 extern void Str_Filename_Atari2Host(const char *source, char *dest, int destLen, char replacementChar);
 extern bool Str_HostToAtari(const char *source, char *dest, char replacementChar);

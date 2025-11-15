@@ -33,9 +33,10 @@ Emulator improvements:
   - Number field values can now also be typed in
 - GEMDOS HD:
   - Fix: "Show parent" items missing from TeraDesk folder windows
+  - Fix: Incorrect file match when (valid) file name contains '+'
   - When Atari file name matches multiple host files, prefer
     (potentially) truncated file name matches over ones where
-    invalid chars have (potentially) been replaced
+    invalid chars have (potentially) been replaced with '+'
   - Increase max DTA cache size + warn on larger increases
 - Recording:
   - Also sound recording shows recording time in Hatari titlebar

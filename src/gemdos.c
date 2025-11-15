@@ -424,8 +424,12 @@ static void GemDOS_FreeAllInternalDTAs(void)
 /*-----------------------------------------------------------------------*/
 /**
  * Match a TOS file name to a dir mask.
+ *
+ * Set 'dots' if dotfiles are acccepted, and 'only_invalid'
+ * when '?' in (host file) name pattern should match only
+ * characters that are invalid for Atari GEMDOS file names.
  */
-static bool fsfirst_match(const char *pat, const char *name, bool dots)
+static bool fsfirst_match(const char *pat, const char *name, bool dots, bool only_invalid)
 {
 	const char *dot, *p=pat, *n=name;
 
@@ -444,7 +448,8 @@ static bool fsfirst_match(const char *pat, const char *name, bool dots)
 				n++;
 			p++;
 		}
-		else if (*p=='?' && *n)
+		else if (*p=='?' && *n &&
+			 (!only_invalid || Str_Filename_Invalid_Char(name, n-name)))
 		{
 			n++;
 			p++;
@@ -1153,10 +1158,13 @@ static int GemDOS_FileName2HardDriveID(char *pszFileName)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Check whether a file in given path matches given case-insensitive pattern.
- * Return first matched name which caller needs to free, or NULL for no match.
+ * Does host file in given path match given Atari name (case-insensitively)?
+ * If 'pattern' is set, do pattern match, otherwise exact match.
+ * is 'only_invalid' is set, '?' in pattern should match only invalid chars.
+ * Return first matched name (which caller needs to free), or NULL for no match.
  */
-static char* match_host_dir_entry(const char *path, const char *name, bool pattern)
+static char* match_host_dir_entry(const char *path, const char *name,
+				  bool pattern, bool only_invalid)
 {
 #define MAX_UTF8_NAME_LEN (3*(8+1+3)+1) /* UTF-8 can have up to 3 bytes per character */
 	struct dirent *entry;
@@ -1176,11 +1184,14 @@ static char* match_host_dir_entry(const char *path, const char *name, bool patte
 #endif
 	if (pattern)
 	{
+		/* TOS handles "." / ".." */
+		const bool dots = false;
+
 		while ((entry = readdir(dir)))
 		{
 			char *d_name = entry->d_name;
 			Str_DecomposedToPrecomposedUtf8(d_name, d_name);   /* for OSX */
-			if (fsfirst_match(name, d_name, false))
+			if (fsfirst_match(name, d_name, dots, only_invalid))
 			{
 				match = strdup(d_name);
 				break;
@@ -1262,7 +1273,10 @@ static bool add_path_component(char *path, int maxlen, const char *origname, boo
 	char *tmp, *match;
 	int dot, namelen, pathlen;
 	int (*chr_conv)(int);
+	/* start with exact matches */
 	bool use_pattern = false;
+	/* whether '?' should match only invalid chars */
+	bool only_invalid = false;
 
 	char *name = alloca(strlen(origname) + 3);
 
@@ -1278,7 +1292,7 @@ static bool add_path_component(char *path, int maxlen, const char *origname, boo
 	namelen = clip_to_83(name);
 
 	/* first try exact (case insensitive) match */
-	match = match_host_dir_entry(path, name, use_pattern);
+	match = match_host_dir_entry(path, name, use_pattern, only_invalid);
 	if (match)
 	{
 		/* use strncat so that string is always nul terminated */
@@ -1294,7 +1308,7 @@ static bool add_path_component(char *path, int maxlen, const char *origname, boo
 	if (is_dir && namelen == 9 && name[8] == '.')
 	{
 		name[8] = '\0';
-		match = match_host_dir_entry(path, name, use_pattern);
+		match = match_host_dir_entry(path, name, use_pattern, only_invalid);
 		if (match)
 		{
 			strncat(path+pathlen, match, maxlen-pathlen);
@@ -1341,7 +1355,7 @@ static bool add_path_component(char *path, int maxlen, const char *origname, boo
 
 	if (use_pattern)
 	{
-		match = match_host_dir_entry(path, name, use_pattern);
+		match = match_host_dir_entry(path, name, use_pattern, only_invalid);
 		if (match)
 		{
 			strncat(path+pathlen, match, maxlen-pathlen);
@@ -1350,8 +1364,8 @@ static bool add_path_component(char *path, int maxlen, const char *origname, boo
 		}
 	}
 
-	/* catch potentially invalid characters */
 	use_pattern = false;
+	/* need pattern to catch (potentially) invalid characters? */
 	for (tmp = name; *tmp; tmp++)
 	{
 		if (*tmp == INVALID_CHAR)
@@ -1363,7 +1377,9 @@ static bool add_path_component(char *path, int maxlen, const char *origname, boo
 
 	if (use_pattern)
 	{
-		match = match_host_dir_entry(path, name, use_pattern);
+		/* '?' should match only invalid chars */
+		only_invalid = true;
+		match = match_host_dir_entry(path, name, use_pattern, only_invalid);
 		if (match)
 		{
 			strncat(path+pathlen, match, maxlen-pathlen);
@@ -3159,10 +3175,11 @@ static bool GemDOS_SFirst(uint32_t Params)
 	{
 		/* root dir does not include "." & ".." entries, others do */
 		const bool dots = !isRoot;
+		const bool only_invalid = false;
 		char *d_name = files[i]->d_name;
 
 		Str_DecomposedToPrecomposedUtf8(d_name, d_name);   /* for OSX */
-		if (fsfirst_match(dirmask, d_name, dots))
+		if (fsfirst_match(dirmask, d_name, dots, only_invalid))
 		{
 			InternalDTAs[useidx].found[j] = files[i];
 			j++;
