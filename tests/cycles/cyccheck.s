@@ -69,14 +69,14 @@ out:
 
 text_nop:
 	dc.b	"one nop",0
-	even
+	.even
 test_nop:
 	nop		; 4 cycles
 	rts
 
 text_2nop:
 	dc.b	"two nops",0
-	even
+	.even
 test_2nop:
 	nop		; 4 cycles
 	nop		; 4 cycles
@@ -84,7 +84,7 @@ test_2nop:
 
 text_lsl1:
 	dc.b	"lsl #0",0
-	even
+	.even
 test_lsl1:
 	moveq	#0,d0	; 4 cycles
 	lsl.l	d0,d1	; 8 + 2 * 0 = 8 cycles
@@ -92,7 +92,7 @@ test_lsl1:
 
 text_lsl2:
 	dc.b	"lsl #6",0
-	even
+	.even
 test_lsl2:
 	moveq	#6,d0	; 4 cycles
 	lsl.l	d0,d1	; 8 + 2 * 6 = 20 cycles
@@ -100,7 +100,7 @@ test_lsl2:
 
 text_exg_dbra1:
 	dc.b	"nop+exg+dbra",0
-	even
+	.even
 test_exg_dbra1:
 	moveq	#0,d2	 ; 4 cycles
 	nop		 ; 4 cycles
@@ -110,7 +110,7 @@ test_exg_dbra1:
 
 text_exg_dbra2:
 	dc.b	"exg+nop+dbra",0
-	even
+	.even
 test_exg_dbra2:
 	moveq	#0,d2	 ; 4 cycles
 	exg	d0,d1	 ; 6 cycles, rounded to 8 (no pairing!)
@@ -120,7 +120,7 @@ test_exg_dbra2:
 
 text_exg_move1:
 	dc.b	"nop+exg+move",0
-	even
+	.even
 test_exg_move1:
 	nop		 ; 4 cycles
 	exg	d0,d1	 ; 6 cycles (pairing with the following instruction!)
@@ -129,7 +129,7 @@ test_exg_move1:
 
 text_exg_move2:
 	dc.b	"exg+nop+move",0
-	even
+	.even
 test_exg_move2:
 	exg	d0,d1	 ; 6 cycles, will be rounded to 8 cycles (no pairing)
 	nop		 ; 4 cycles
@@ -138,7 +138,7 @@ test_exg_move2:
 
 text_asr_add1:
 	dc.b	"nop+asr+add",0
-	even
+	.even
 test_asr_add1:
 	moveq	#2,d0	 ; 4 cycles
 	nop		 ; 4 cycles
@@ -148,7 +148,7 @@ test_asr_add1:
 
 text_asr_add2:
 	dc.b	"asr+nop+add",0
-	even
+	.even
 test_asr_add2:
 	moveq	#2,d0	 ; 4 cycles
 	asr.w	d0,d1	 ; 6 + 2 * 2 = 10 cycles, rounded to 12
@@ -158,7 +158,7 @@ test_asr_add2:
 
 text_cmp_beq1:
 	dc.b	"nop+cmp+beq",0
-	even
+	.even
 test_cmp_beq1:
 	nop		; 4 cycles
 	cmp.l	d0,d0	; 6 cycles
@@ -166,7 +166,7 @@ test_cmp_beq1:
 
 text_cmp_beq2:
 	dc.b	"cmp+nop+beq",0
-	even
+	.even
 test_cmp_beq2:
 	cmp.l	d0,d0	; 6 cycles, rounded to 8
 	nop		; 4 cycles
@@ -174,7 +174,7 @@ test_cmp_beq2:
 
 text_sub_move1:
 	dc.b	"clr+sub+move",0
-	even
+	.even
 test_sub_move1:
 	clr.w	d2		; 4 cycles
 	sub.l	(a0),d0		; 10 cycles
@@ -183,7 +183,7 @@ test_sub_move1:
 
 text_sub_move2:
 	dc.b	"sub+clr+move",0
-	even
+	.even
 test_sub_move2:
 	sub.l	(a0),d0		; 10 cycles, rounded to 12
 	clr.w	d2		; 4 cycles
@@ -192,14 +192,14 @@ test_sub_move2:
 
 text_move_820a:
 	dc.b	"move ff820a",0
-	even
+	.even
 test_move_820a:
 	move.b	$ffff820a.w,d0	; 12 cycles
 	rts
 
 text_move_8800:
 	dc.b	"move ff8800",0
-	even
+	.even
 test_move_8800:
 	move.b	$ffff8800.w,d0	; 12 cycles + wait state = 16 cycles
 	rts
@@ -275,9 +275,9 @@ loop:
 	add.w   d0,d0
 	jmp     .jmpbase(pc,d0.w)
 .jmpbase:
-	REPT	128
+	.REPT	128
 	nop
-	ENDR
+	.ENDR
 
 	move.w  (sp)+,d0
 	movea.l (sp)+,a0
@@ -339,7 +339,7 @@ getouttahere:
 .decoutloop:
 	divu    #10,d0
 	swap    d0
-	add.w   #"0",d0
+	add.w   #'0',d0
 	move.b  d0,-(a0)
 	clr.w   d0
 	swap    d0
@@ -360,15 +360,15 @@ vblhandler:
 	move.w	#1,got_vbl
 	rte
 
-	data
+	.data
 
 filename:	dc.b "RESULTS.TXT",0
 
 septext:	dc.b " :",9,0
 numbertext:	dc.b "      cycles",13,10,0
-	even
+	.even
 
-	bss
+	.bss
 old_ssp:	ds.l 1
 saveillegal:	ds.l 1
 old_vbl:	ds.l 1
@@ -378,5 +378,3 @@ fhndl:		ds.w 1
 	ds.l	16
 scratch:
 	ds.l	16
-
-	end
