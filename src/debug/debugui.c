@@ -1248,7 +1248,7 @@ void DebugUI(debug_reason_t reason)
 	}
 	DebugCpu_InitSession();
 	DebugDsp_InitSession();
-	Symbols_LoadCurrentProgram();
+	Symbols_LoadCurrentProgram(0, 0);
 	DebugInfo_ShowSessionInfo();
 
 	/* override paused message so that user knows to look into console

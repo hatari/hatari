@@ -40,6 +40,7 @@ const char Symbols_fileid[] = "Hatari symbols.c";
 #include "debug_priv.h"
 #include "debugInfo.h"
 #include "evaluate.h"
+#include "profile.h"
 #include "configuration.h"
 #include "a.out.h"
 #include "maccess.h"
@@ -386,7 +387,7 @@ static symbol_list_t* Symbols_Load(const char *filename, uint32_t *offsets, uint
 	qsort(list->names, list->namecount, sizeof(symbol_t), symbols_by_name);
 
 	/* skip more verbose output when symbols are auto-loaded */
-	if (ConfigureParams.Debugger.bSymbolsAutoLoad) {
+	if (ConfigureParams.Debugger.nSymbolsAutoLoad) {
 		fprintf(stderr, "Skipping detailed duplicate symbols reporting when autoload is enabled.\n");
 	} else {
 		/* check for duplicate addresses? */
@@ -825,7 +826,7 @@ void Symbols_RemoveCurrentProgram(void)
 		CurrentProgramPath = NULL;
 
 		if (CpuSymbolsList && CpuSymbolsAreFor == SYMBOLS_FOR_PROGRAM &&
-		    ConfigureParams.Debugger.bSymbolsAutoLoad) {
+		    ConfigureParams.Debugger.nSymbolsAutoLoad) {
 			Symbols_Free(CpuSymbolsList);
 			fprintf(stderr, "Program exit, removing its symbols.\n");
 			CpuSymbolsAreFor = SYMBOLS_FOR_NONE;
@@ -892,15 +893,17 @@ static symbol_list_t *loadSymFile(const char *path, symtype_t symtype,
 /**
  * Load symbols for last opened program when symbol autoloading is enabled.
  *
+ * When either textAddr or textEnd is zero, basepage values are used instead.
+ *
  * If there's file with same name as the program, but with '.sym'
  * extension, that overrides / is loaded instead of the symbol table
  * in the program.
  *
  * Called when debugger is invoked.
  */
-void Symbols_LoadCurrentProgram(void)
+void Symbols_LoadCurrentProgram(uint32_t textAddr, uint32_t textEnd)
 {
-	if (!ConfigureParams.Debugger.bSymbolsAutoLoad) {
+	if (!ConfigureParams.Debugger.nSymbolsAutoLoad) {
 		return;
 	}
 	/* program path missing or previous load failed? */
@@ -915,8 +918,14 @@ void Symbols_LoadCurrentProgram(void)
 		return;
 	}
 
-	uint32_t loadaddr = DebugInfo_GetTEXT();
-	uint32_t maxaddr = DebugInfo_GetTEXTEnd();
+	uint32_t loadaddr, maxaddr;
+	if (textAddr & textEnd) {
+		loadaddr = textAddr;
+		maxaddr = textEnd;
+	} else {
+		loadaddr = DebugInfo_GetTEXT();
+		maxaddr = DebugInfo_GetTEXTEnd();
+	}
 	symbol_list_t *symbols;
 
 	symbols = loadSymFile(CurrentProgramPath, SYMTYPE_CODE, loadaddr, maxaddr);
@@ -931,8 +940,14 @@ void Symbols_LoadCurrentProgram(void)
 		return;
 	}
 
+	/* profiler reset avoids (per-instruction) complaints
+	 * about (symbol) callsites count having changed,
+	 * no-op when profiling is disabled.
+	 */
+	Profile_CpuStop();
 	Symbols_UpdateCpu(symbols, SYMBOLS_FOR_PROGRAM);
 	AutoLoadFailed = false;
+	Profile_CpuStart();
 }
 
 /**
@@ -943,7 +958,7 @@ void Symbols_LoadCurrentProgram(void)
  */
 void Symbols_LoadTOS(const char *path, uint32_t maxaddr)
 {
-	if (!ConfigureParams.Debugger.bSymbolsAutoLoad) {
+	if (!ConfigureParams.Debugger.nSymbolsAutoLoad) {
 		return;
 	}
 	/* do not override manually loaded symbols */
@@ -1006,7 +1021,7 @@ const char Symbols_Description[] =
 	"\tSubcommands:\n"
 	"\t- prg -- load symbols from current GEMDOS HD program\n"
 	"\t- <file> [<T offset> [<D offset> <B offset>]] -- load symbols from <file>\n"
-	"\t- autoload [on|off] -- toggle/set program symbols autoload mode\n"
+	"\t- autoload <exec|debugger|off> -- program symbols autoload mode\n"
 	"\t- <code|data|name> [find] -- list symbols containing 'find'\n"
 	"\t- match -- toggle what symbols TAB completion matches\n"
 	"\t- free -- free symbols\n"
@@ -1027,9 +1042,10 @@ const char Symbols_Description[] =
 	"\tthe text (T), data (D) and BSS (B) symbols.  Typically one uses\n"
 	"\tTEXT variable, sometimes also DATA & BSS, variables for this.\n"
 	"\n"
-	"\t'autoload' command toggles GEMDOS HD program symbols autoloading\n"
-	"\tmode, or enables/disables it with 'on'/'off' (disabling may be\n"
-	"\tneeded to debug memory-resident programs / TOS).\n"
+	"\t'autoload' command sets the GEMDOS HD program symbols autoloading\n"
+	"\tmode: 'exec' loads symbols when program is executed, 'debugger' when\n"
+	"\tdebugger is invoked after that, and 'off' disables autoloading\n"
+	"\t(disabling may be needed to debug memory-resident programs / TOS).\n"
 	"\n"
 	"\t'name' command lists the currently loaded symbols, sorted by name.\n"
 	"\t'code' and 'data' commands list them sorted by address; 'code' lists\n"
@@ -1073,21 +1089,22 @@ int Symbols_Command(int nArgc, char *psArgs[])
 	 * discard them when program terminates with GEMDOS HD,
 	 * or whether they need to be loaded manually.
 	 */
-	if (listtype == TYPE_CPU && strcmp(file, "autoload") == 0) {
-		bool value;
-		if (nArgc < 3) {
-			value = !ConfigureParams.Debugger.bSymbolsAutoLoad;
-		} else if (strcmp(psArgs[2], "on") == 0) {
-			value = true;
+	if (nArgc == 3 && listtype == TYPE_CPU &&
+	    strcmp(file, "autoload") == 0) {
+		sym_autoload_t value;
+		if (strcmp(psArgs[2], "exec") == 0) {
+			value = SYM_AUTOLOAD_EXEC;
+		} else if (strcmp(psArgs[2], "debugger") == 0) {
+			value = SYM_AUTOLOAD_DEBUGGER;
 		} else if (strcmp(psArgs[2], "off") == 0) {
-			value = false;
+			value = SYM_AUTOLOAD_OFF;
 		} else {
 			DebugUI_PrintCmdHelp(psArgs[0]);
 			return DEBUGGER_CMDDONE;
 		}
 		fprintf(stderr, "Program symbols auto-loading AND freeing (with GEMDOS HD) is %s\n",
-		        value ? "ENABLED." : "DISABLED!");
-		ConfigureParams.Debugger.bSymbolsAutoLoad = value;
+		        value == SYM_AUTOLOAD_OFF ? "DISABLED!" : "ENABLED.");
+		ConfigureParams.Debugger.nSymbolsAutoLoad = value;
 		return DEBUGGER_CMDDONE;
 	}
 

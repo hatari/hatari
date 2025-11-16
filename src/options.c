@@ -211,6 +211,7 @@ typedef enum {
 #endif
 	OPT_DEBUG,
 	OPT_EXCEPTIONS,
+	OPT_SYMLOAD,
 	OPT_LILO,
 	OPT_BIOSINTERCEPT,
 	OPT_CONOUT,
@@ -518,6 +519,8 @@ static const opt_t HatariOptions[] = {
 	  NULL, "Toggle whether CPU exceptions invoke debugger" },
 	{ OPT_EXCEPTIONS, NULL, "--debug-except",
 	  "<flags>", "Exceptions invoking debugger, see '--debug-except help'" },
+	{ OPT_SYMLOAD, NULL, "--symload",
+	  "<mode>", "Program symbols autoloading mode (exec/debugger/off)" },
 	{ OPT_LILO, NULL, "--lilo", "<x>", "Boot Linux (see manual page)" },
 	{ OPT_BIOSINTERCEPT, NULL, "--bios-intercept",
 	  "<bool>", "Enable/disable XBIOS command parsing support" },
@@ -2250,6 +2253,21 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				        oldmask, ExceptionDebugMask);
 			}
 			break;
+
+		case OPT_SYMLOAD:
+		{
+			static const opt_keyval_t keyval[] = {
+				{"off",      SYM_AUTOLOAD_OFF},
+				{"debugger", SYM_AUTOLOAD_DEBUGGER},
+				{"exec",     SYM_AUTOLOAD_EXEC},
+			};
+			if (!Opt_SetKeyVal(arg, keyval, ARRAY_SIZE(keyval), &val))
+			{
+				return Opt_ShowError(OPT_SYMLOAD, arg, "Unknown option value");
+			}
+			ConfigureParams.Debugger.nSymbolsAutoLoad = val;
+			break;
+		}
 
 		case OPT_LILO:
 			len = strlen(arg);

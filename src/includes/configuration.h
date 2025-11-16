@@ -23,6 +23,14 @@ typedef struct
   bool bConsoleWindow;	/* for now, used just for Windows */
 } CNF_LOG;
 
+/* when to autoload program symbols */
+typedef enum
+{
+  SYM_AUTOLOAD_OFF = 0,
+  SYM_AUTOLOAD_DEBUGGER, /* When debugger invoked */
+  SYM_AUTOLOAD_EXEC,     /* When program loaded/relocated */
+} sym_autoload_t;
+
 /* debugger */
 typedef struct
 {
@@ -34,12 +42,12 @@ typedef struct
   int nBacktraceLines;
   int nExceptionDebugMask;
   int nDisasmOptions;
-  bool bMemConvLocale;
-  bool bDisasmUAE;
-  /* load and free symbols for GEMDOS HD loaded programs automatically */
-  bool bSymbolsAutoLoad;
+  /* symbols autoloading for GEMDOS HD loaded programs */
+  sym_autoload_t nSymbolsAutoLoad;
   /* whether to match all symbols or just types relevant for given command */
   bool bMatchAllSymbols;
+  bool bMemConvLocale;
+  bool bDisasmUAE;
 } CNF_DEBUGGER;
 
 

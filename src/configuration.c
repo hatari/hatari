@@ -69,7 +69,7 @@ static const struct Config_Tag configs_Debugger[] =
 	{ "nDisasmOptions", Int_Tag, &ConfigureParams.Debugger.nDisasmOptions },
 	{ "nMemConvLocale", Bool_Tag, &ConfigureParams.Debugger.bMemConvLocale },
 	{ "bDisasmUAE", Bool_Tag, &ConfigureParams.Debugger.bDisasmUAE },
-	{ "bSymbolsAutoLoad", Bool_Tag, &ConfigureParams.Debugger.bSymbolsAutoLoad },
+	{ "nSymbolsAutoLoad", Int_Tag, &ConfigureParams.Debugger.nSymbolsAutoLoad },
 	{ "bMatchAllSymbols", Bool_Tag, &ConfigureParams.Debugger.bMatchAllSymbols },
 	{ NULL , Error_Tag, NULL }
 };
@@ -609,10 +609,10 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Debugger.nDisasmLines = -1; /* <0: use terminal size */
 	ConfigureParams.Debugger.nBacktraceLines = 0; /* <=0: show all */
 	ConfigureParams.Debugger.nExceptionDebugMask = DEFAULT_EXCEPTIONS;
+	ConfigureParams.Debugger.nSymbolsAutoLoad = SYM_AUTOLOAD_DEBUGGER;
+	ConfigureParams.Debugger.bMatchAllSymbols = false;
 	/* external one has nicer output, but isn't as complete as UAE one */
 	ConfigureParams.Debugger.bDisasmUAE = true;
-	ConfigureParams.Debugger.bSymbolsAutoLoad = true;
-	ConfigureParams.Debugger.bMatchAllSymbols = false;
 	ConfigureParams.Debugger.bMemConvLocale = false;
 	ConfigureParams.Debugger.nDisasmOptions = Disasm_GetOptions();
 	Disasm_Init();

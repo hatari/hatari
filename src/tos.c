@@ -1266,9 +1266,10 @@ int TOS_InitImage(void)
 		/* Load test program (has to be done after memory has been cleared) */
 		if (psTestPrg)
 		{
+			uint32_t dummy1, dummy2;
 			Log_Printf(LOG_DEBUG, "Loading '%s' to 0x%x.\n",
 			           psTestPrg, TEST_PRG_START);
-			if (GemDOS_LoadAndReloc(psTestPrg, TEST_PRG_BASEPAGE, true))
+			if (GemDOS_LoadAndReloc(psTestPrg, TEST_PRG_BASEPAGE, &dummy1, &dummy2, true))
 			{
 				Main_ErrorExit("Failed to load:", psTestPrg, 1);
 			}
