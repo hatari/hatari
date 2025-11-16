@@ -33,6 +33,7 @@ Emulator improvements:
   - Number field values can now also be typed in
 - GEMDOS HD:
   - Fix: "Show parent" items missing from TeraDesk folder windows
+  - Fix: Curly braces are valid GEMDOS file name characters
   - Fix: Incorrect file match when (valid) file name contains '+'
   - When Atari file name matches multiple host files, prefer
     (potentially) truncated file name matches over ones where

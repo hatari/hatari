@@ -242,7 +242,7 @@ void Str_UnEscape(char *s1)
 }
 
 /**
- * Return true if character at given offset in given name is invalid
+ * Return true if character at given offset in a given name is invalid
  * for a GEMDOS file name, false otherwise.
  *
  * GEMDOS HD needs to identify characters in host files that could
@@ -251,10 +251,15 @@ void Str_UnEscape(char *s1)
  * those positions (as INVALID_CHAR replacement is itself a valid
  * char).
  *
- * Assumes all >127 codepoints to be valid. I.e. does not take into
- * account potential invalid host name corner-case (INVALID_CHAR
- * replacements due to host file name UTF-8 / UCS-2 conversion
- * encountering invalid character sequences).
+ * All >127 codepoints are assume to be valid. I.e. this does not
+ * take into account potential invalid host name corner-case
+ * (INVALID_CHAR replacements due to host file name UTF-8 / UCS-2
+ * conversion encountering invalid character sequences).
+ *
+ * Invalid char info is based on based on info in Compedium +
+ * Profibuch. While some of these chars could appear in Unix file
+ * names, Windows file names have similar restrictions to GEMDOS:
+ * https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file
  */
 bool Str_Filename_Invalid_Char(const char *name, int offset)
 {
@@ -266,13 +271,16 @@ bool Str_Filename_Invalid_Char(const char *name, int offset)
 
 	switch (c)
 	{
+		/* used in patterns */
 	case '*':
-	case '/':
+		/* used in drives & special device names */
 	case ':':
+		/* used in patterns */
 	case '?':
+		/* used in paths */
 	case '\\':
-	case '{':
-	case '}':
+		/* otherwise not valid for file names */
+	case '/':
 		/* invalid GEMDOS file name char */
 		return true;
 	case '.':
@@ -347,12 +355,10 @@ void Str_Filename_Host2Atari(const char *source, char *dst)
 			switch (*tmp)
 			{
 				case '*':
-				case '/':
 				case ':':
 				case '?':
 				case '\\':
-				case '{':
-				case '}':
+				case '/':
 					*tmp = INVALID_CHAR;
 					break;
 				default:
