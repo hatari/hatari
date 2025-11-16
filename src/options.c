@@ -897,13 +897,13 @@ static int Opt_CheckBracketValue(const opt_t *opt, const char *str)
  * short and long options. If match is found, returns ID for that,
  * otherwise shows help and returns OPT_ERROR.
  *
- * Checks also that if option is supposed to have argument,
- * whether there's one.
+ * If option is supposed to have argument, checks that there's one,
+ * and increments index accordingly on success.
  */
-static int Opt_WhichOption(int argc, const char * const argv[], int idx)
+static int Opt_WhichOption(int argc, const char * const argv[], int *idx)
 {
 	const opt_t *opt;
-	const char *str = argv[idx];
+	const char *str = argv[*idx];
 	int id;
 
 	for (opt = HatariOptions; opt->id != OPT_ERROR; opt++)
@@ -926,7 +926,8 @@ static int Opt_WhichOption(int argc, const char * const argv[], int idx)
 		/* matched, check args */
 		if (opt->arg)
 		{
-			if (idx+1 >= argc)
+			int argi = *idx + 1;
+			if (argi >= argc)
 			{
 				Opt_ShowError(opt->id, NULL, "Missing argument");
 				return OPT_ERROR;
@@ -934,15 +935,16 @@ static int Opt_WhichOption(int argc, const char * const argv[], int idx)
 			/* early check for bools */
 			if (strcmp(opt->arg, "<bool>") == 0)
 			{
-				if (!Opt_Bool(argv[idx+1], opt->id, NULL))
+				if (!Opt_Bool(argv[argi], opt->id, NULL))
 				{
 					return OPT_ERROR;
 				}
 			}
+			*idx = argi;
 		}
 		return opt->id;
 	}
-	Opt_ShowError(OPT_ERROR, argv[idx], "Unrecognized option");
+	Opt_ShowError(OPT_ERROR, argv[*idx], "Unrecognized option");
 	return OPT_ERROR;
 }
 
@@ -1138,9 +1140,10 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 {
 	int ncpu, skips, planes, cpuclock, threshold, memsize;
 	int dev, port, freq, temp, drive, year;
-	const char *errstr, *str;
+	const char *errstr, *str, *opt;
 	int i, ok = true;
 	float zoom;
+	size_t len;
 	int val;
 	bool valid;
 
@@ -1155,11 +1158,11 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			return Opt_HandleArgument(argv[i]) && Opt_ValidateOptions();
 
 		/* WhichOption() checks also that there is an argument,
-		 * so we don't need to check that below
+		 * for options that need one, so we don't need to check
+		 * that below.  It also increments it automatically.
 		 */
-		switch(Opt_WhichOption(argc, argv, i))
+		switch(Opt_WhichOption(argc, argv, &i))
 		{
-
 			/* general options */
 		case OPT_HELP:
 			Opt_ShowHelp();
@@ -1170,26 +1173,25 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			return false;
 
 		case OPT_CONFIRMQUIT:
-			ok = Opt_Bool(argv[++i], OPT_CONFIRMQUIT, &ConfigureParams.Log.bConfirmQuit);
+			ok = Opt_Bool(argv[i], OPT_CONFIRMQUIT, &ConfigureParams.Log.bConfirmQuit);
 			break;
 
 		case OPT_FASTFORWARD:
-			ok = Opt_Bool(argv[++i], OPT_FASTFORWARD, &ConfigureParams.System.bFastForward);
+			ok = Opt_Bool(argv[i], OPT_FASTFORWARD, &ConfigureParams.System.bFastForward);
 			break;
 
 		case OPT_AUTOSTART:
-			if (!(ok = INF_SetAutoStart(argv[++i], OPT_AUTOSTART)))
+			if (!(ok = INF_SetAutoStart(argv[i], OPT_AUTOSTART)))
 			{
 				return Opt_ShowError(OPT_AUTOSTART, argv[i], "Invalid drive and/or path specified for autostart program");
 			}
 			break;
 
 		case OPT_FF_KEY_REPEAT:
-			ok = Opt_Bool(argv[++i], OPT_FF_KEY_REPEAT, &ConfigureParams.Keyboard.bFastForwardKeyRepeat);
+			ok = Opt_Bool(argv[i], OPT_FF_KEY_REPEAT, &ConfigureParams.Keyboard.bFastForwardKeyRepeat);
 			break;
 
 		case OPT_CONFIGFILE:
-			i += 1;
 			ok = Opt_StrCpy(OPT_CONFIGFILE, CHECK_FILE, sConfigFileName,
 					argv[i], sizeof(sConfigFileName), NULL);
 			if (ok)
@@ -1206,7 +1208,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_MONITOR:
-			i += 1;
 			if (strcasecmp(argv[i], "mono") == 0)
 			{
 				ConfigureParams.Screen.nMonitorType = MONITOR_TYPE_MONO;
@@ -1231,7 +1232,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_TOS_RESOLUTION:
-			i += 1;
 			if (!INF_SetResolution(argv[i], OPT_TOS_RESOLUTION))
 			{
 				return Opt_ShowError(OPT_TOS_RESOLUTION, argv[i], "Invalid resolution");
@@ -1251,11 +1251,11 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_RESIZABLE:
-			ok = Opt_Bool(argv[++i], OPT_RESIZABLE, &ConfigureParams.Screen.bResizable);
+			ok = Opt_Bool(argv[i], OPT_RESIZABLE, &ConfigureParams.Screen.bResizable);
 			break;
 
 		case OPT_FRAMESKIPS:
-			skips = atoi(argv[++i]);
+			skips = atoi(argv[i]);
 			if (skips < 0)
 			{
 				return Opt_ShowError(OPT_FRAMESKIPS, argv[i],
@@ -1269,7 +1269,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_SLOWDOWN:
-			val = atoi(argv[++i]);
+			val = atoi(argv[i]);
 			errstr = Timing_SetVBLSlowdown(val);
 			if (errstr)
 			{
@@ -1279,28 +1279,28 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_MOUSE_WARP:
-			ok = Opt_Bool(argv[++i], OPT_MOUSE_WARP, &ConfigureParams.Screen.bMouseWarp);
+			ok = Opt_Bool(argv[i], OPT_MOUSE_WARP, &ConfigureParams.Screen.bMouseWarp);
 			break;
 
 		case OPT_STATUSBAR:
-			ok = Opt_Bool(argv[++i], OPT_STATUSBAR, &ConfigureParams.Screen.bShowStatusbar);
+			ok = Opt_Bool(argv[i], OPT_STATUSBAR, &ConfigureParams.Screen.bShowStatusbar);
 			break;
 
 		case OPT_DRIVE_LED:
-			ok = Opt_Bool(argv[++i], OPT_DRIVE_LED, &ConfigureParams.Screen.bShowDriveLed);
+			ok = Opt_Bool(argv[i], OPT_DRIVE_LED, &ConfigureParams.Screen.bShowDriveLed);
 			break;
 
 		case OPT_DISABLE_VIDEO:
-			ok = Opt_Bool(argv[++i], OPT_DISABLE_VIDEO, &ConfigureParams.Screen.DisableVideo);
+			ok = Opt_Bool(argv[i], OPT_DISABLE_VIDEO, &ConfigureParams.Screen.DisableVideo);
 			break;
 
 			/* ST/STE display options */
 		case OPT_BORDERS:
-			ok = Opt_Bool(argv[++i], OPT_BORDERS, &ConfigureParams.Screen.bAllowOverscan);
+			ok = Opt_Bool(argv[i], OPT_BORDERS, &ConfigureParams.Screen.bAllowOverscan);
 			break;
 
 		case OPT_SPEC512:
-			threshold = atoi(argv[++i]);
+			threshold = atoi(argv[i]);
 			if (threshold < 0 || threshold > 512)
 			{
 				return Opt_ShowError(OPT_SPEC512, argv[i],
@@ -1311,7 +1311,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_ZOOM:
-			zoom = atof(argv[++i]);
+			zoom = atof(argv[i]);
 			if (zoom < 1.0 || zoom > 8.0)
 			{
 				return Opt_ShowError(OPT_ZOOM, argv[i], "Invalid zoom value");
@@ -1329,7 +1329,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_VIDEO_TIMING:
-			i += 1;
 			if (strcasecmp(argv[i], "random") == 0)
 				ConfigureParams.System.VideoTimingMode = VIDEO_TIMING_MODE_RANDOM;
 			else if (strcasecmp(argv[i], "ws1") == 0)
@@ -1346,28 +1345,28 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 			/* Falcon/TT display options */
 		case OPT_RESOLUTION:
-			ok = Opt_Bool(argv[++i], OPT_RESOLUTION, &ConfigureParams.Screen.bKeepResolution);
+			ok = Opt_Bool(argv[i], OPT_RESOLUTION, &ConfigureParams.Screen.bKeepResolution);
 			break;
 
 		case OPT_MAXWIDTH:
-			ConfigureParams.Screen.nMaxWidth = atoi(argv[++i]);
+			ConfigureParams.Screen.nMaxWidth = atoi(argv[i]);
 			break;
 
 		case OPT_MAXHEIGHT:
-			ConfigureParams.Screen.nMaxHeight = atoi(argv[++i]);
+			ConfigureParams.Screen.nMaxHeight = atoi(argv[i]);
 			break;
 
 		case OPT_FORCE_MAX:
-			ok = Opt_Bool(argv[++i], OPT_FORCE_MAX, &ConfigureParams.Screen.bForceMax);
+			ok = Opt_Bool(argv[i], OPT_FORCE_MAX, &ConfigureParams.Screen.bForceMax);
 			break;
 
 		case OPT_ASPECT:
-			ok = Opt_Bool(argv[++i], OPT_ASPECT, &ConfigureParams.Screen.bAspectCorrect);
+			ok = Opt_Bool(argv[i], OPT_ASPECT, &ConfigureParams.Screen.bAspectCorrect);
 			break;
 
 			/* screen capture options */
 		case OPT_SCREEN_CROP:
-			ok = Opt_Bool(argv[++i], OPT_SCREEN_CROP, &ConfigureParams.Screen.bCrop);
+			ok = Opt_Bool(argv[i], OPT_SCREEN_CROP, &ConfigureParams.Screen.bCrop);
 			break;
 
 		case OPT_AVIRECORD:
@@ -1375,7 +1374,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_AVIRECORD_VCODEC:
-			i += 1;
 			if (strcasecmp(argv[i], "bmp") == 0)
 			{
 				ConfigureParams.Video.AviRecordVcodec = AVI_RECORD_VIDEO_CODEC_BMP;
@@ -1391,13 +1389,12 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_AVI_PNG_LEVEL:
-			i += 1;
 			if (!Avi_SetCompressionLevel(argv[i]))
 				return Opt_ShowError(OPT_AVI_PNG_LEVEL, argv[i], "Invalid compression level");
 			break;
 
 		case OPT_AVIRECORD_FPS:
-			val = atoi(argv[++i]);
+			val = atoi(argv[i]);
 			if (val < 0 || val > 100)
 			{
 				return Opt_ShowError(OPT_AVIRECORD_FPS, argv[i],
@@ -1408,19 +1405,16 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_AVIRECORD_FILE:
-			i += 1;
 			ok = Opt_StrCpy(OPT_AVIRECORD_FILE, CHECK_NONE, ConfigureParams.Video.AviRecordFile,
 					argv[i], sizeof(ConfigureParams.Video.AviRecordFile), NULL);
 			break;
 
 		case OPT_SCRSHOT_DIR:
-			i += 1;
 			ok = Opt_StrCpy(OPT_SCRSHOT_DIR, CHECK_DIR, ConfigureParams.Screen.szScreenShotDir,
 					argv[i], sizeof(ConfigureParams.Screen.szScreenShotDir), NULL);
 			break;
 
 		case OPT_SCRSHOT_FORMAT:
-			i += 1;
 			if (strcasecmp(argv[i], "bmp") == 0)
 			{
 				ConfigureParams.Screen.ScreenShotFormat = SCREEN_SNAPSHOT_BMP;
@@ -1445,7 +1439,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 			/* VDI options */
 		case OPT_VDI:
-			ok = Opt_Bool(argv[++i], OPT_VDI, &ConfigureParams.Screen.bUseExtVdiResolutions);
+			ok = Opt_Bool(argv[i], OPT_VDI, &ConfigureParams.Screen.bUseExtVdiResolutions);
 			if (ok)
 			{
 				bLoadAutoSave = false;
@@ -1453,7 +1447,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_VDI_PLANES:
-			planes = atoi(argv[++i]);
+			planes = atoi(argv[i]);
 			switch(planes)
 			{
 			 case 1:
@@ -1476,20 +1470,19 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_VDI_WIDTH:
-			ConfigureParams.Screen.nVdiWidth = atoi(argv[++i]);
+			ConfigureParams.Screen.nVdiWidth = atoi(argv[i]);
 			ConfigureParams.Screen.bUseExtVdiResolutions = true;
 			bLoadAutoSave = false;
 			break;
 
 		case OPT_VDI_HEIGHT:
-			ConfigureParams.Screen.nVdiHeight = atoi(argv[++i]);
+			ConfigureParams.Screen.nVdiHeight = atoi(argv[i]);
 			ConfigureParams.Screen.bUseExtVdiResolutions = true;
 			bLoadAutoSave = false;
 			break;
 
 			/* devices options */
 		case OPT_JOYSTICK:
-			i++;
 			if (strlen(argv[i]) != 1 ||
 			    !Joy_SetCursorEmulation(argv[i][0] - '0'))
 			{
@@ -1503,12 +1496,12 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 		case OPT_JOYSTICK3:
 		case OPT_JOYSTICK4:
 		case OPT_JOYSTICK5:
-			port = argv[i][strlen(argv[i])-1] - '0';
+			opt = argv[i-1];
+			port = opt[strlen(opt)-1] - '0';
 			if (port < 0 || port >= JOYSTICK_COUNT)
 			{
 				return Opt_ShowError(OPT_JOYSTICK0, argv[i], "Invalid joystick port");
 			}
-			i += 1;
 			if (strcasecmp(argv[i], "none") == 0 || strcasecmp(argv[i], "off") == 0)
 			{
 				ConfigureParams.Joysticks.Joy[port].nJoystickMode = JOYSTICK_DISABLED;
@@ -1528,7 +1521,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_PRINTER:
-			i += 1;
 			ok = Opt_StrCpy(OPT_PRINTER, CHECK_NONE, ConfigureParams.Printer.szPrintToFileName,
 					argv[i], sizeof(ConfigureParams.Printer.szPrintToFileName),
 					&ConfigureParams.Printer.bEnablePrinting);
@@ -1536,18 +1528,16 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 #ifdef HAVE_PORTMIDI
 		case OPT_MIDI:
-			ok = Opt_Bool(argv[++i], OPT_MIDI, &ConfigureParams.Midi.bEnableMidi);
+			ok = Opt_Bool(argv[i], OPT_MIDI, &ConfigureParams.Midi.bEnableMidi);
 			break;
 #else
 		case OPT_MIDI_IN:
-			i += 1;
 			ok = Opt_StrCpy(OPT_MIDI_IN, CHECK_FILE, ConfigureParams.Midi.sMidiInFileName,
 					argv[i], sizeof(ConfigureParams.Midi.sMidiInFileName),
 					&ConfigureParams.Midi.bEnableMidi);
 			break;
 
 		case OPT_MIDI_OUT:
-			i += 1;
 			ok = Opt_StrCpy(OPT_MIDI_OUT, CHECK_NONE, ConfigureParams.Midi.sMidiOutFileName,
 					argv[i], sizeof(ConfigureParams.Midi.sMidiOutFileName),
 					&ConfigureParams.Midi.bEnableMidi);
@@ -1555,51 +1545,43 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 #endif
 
 		case OPT_RS232_IN:
-			i += 1;
 			ok = Opt_StrCpy(OPT_RS232_IN, CHECK_FILE, ConfigureParams.RS232.szInFileName,
 					argv[i], sizeof(ConfigureParams.RS232.szInFileName),
 					&ConfigureParams.RS232.bEnableRS232);
 			break;
 
 		case OPT_RS232_OUT:
-			i += 1;
 			ok = Opt_StrCpy(OPT_RS232_OUT, CHECK_NONE, ConfigureParams.RS232.szOutFileName,
 					argv[i], sizeof(ConfigureParams.RS232.szOutFileName),
 					&ConfigureParams.RS232.bEnableRS232);
 			break;
 
 		case OPT_SCCA_IN:
-			i += 1;
 			ok = Opt_StrCpy(OPT_SCCA_IN, CHECK_FILE, ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_A_SERIAL],
 					argv[i], sizeof(ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_A_SERIAL]),
 					&ConfigureParams.RS232.EnableScc[CNF_SCC_CHANNELS_A_SERIAL]);
 			break;
 		case OPT_SCCA_OUT:
-			i += 1;
 			ok = Opt_StrCpy(OPT_SCCA_OUT, CHECK_NONE, ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_A_SERIAL],
 					argv[i], sizeof(ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_A_SERIAL]),
 					&ConfigureParams.RS232.EnableScc[CNF_SCC_CHANNELS_A_SERIAL]);
 			break;
 		case OPT_SCCA_LAN_IN:
-			i += 1;
 			ok = Opt_StrCpy(OPT_SCCA_LAN_IN, CHECK_FILE, ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_A_LAN],
 					argv[i], sizeof(ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_A_LAN]),
 					&ConfigureParams.RS232.EnableScc[CNF_SCC_CHANNELS_A_LAN]);
 			break;
 		case OPT_SCCA_LAN_OUT:
-			i += 1;
 			ok = Opt_StrCpy(OPT_SCCA_LAN_OUT, CHECK_NONE, ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_A_LAN],
 					argv[i], sizeof(ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_A_LAN]),
 					&ConfigureParams.RS232.EnableScc[CNF_SCC_CHANNELS_A_LAN]);
 			break;
 		case OPT_SCCB_IN:
-			i += 1;
 			ok = Opt_StrCpy(OPT_SCCB_IN, CHECK_FILE, ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_B],
 					argv[i], sizeof(ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_B]),
 					&ConfigureParams.RS232.EnableScc[CNF_SCC_CHANNELS_B]);
 			break;
 		case OPT_SCCB_OUT:
-			i += 1;
 			ok = Opt_StrCpy(OPT_SCCB_OUT, CHECK_NONE, ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_B],
 					argv[i], sizeof(ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_B]),
 					&ConfigureParams.RS232.EnableScc[CNF_SCC_CHANNELS_B]);
@@ -1607,15 +1589,15 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 			/* disk options */
 		case OPT_DRIVEA:
-			ok = Opt_Bool(argv[++i], OPT_DRIVEA, &ConfigureParams.DiskImage.EnableDriveA);
+			ok = Opt_Bool(argv[i], OPT_DRIVEA, &ConfigureParams.DiskImage.EnableDriveA);
 			break;
 
 		case OPT_DRIVEB:
-			ok = Opt_Bool(argv[++i], OPT_DRIVEB, &ConfigureParams.DiskImage.EnableDriveB);
+			ok = Opt_Bool(argv[i], OPT_DRIVEB, &ConfigureParams.DiskImage.EnableDriveB);
 			break;
 
 		case OPT_DRIVEA_HEADS:
-			val = atoi(argv[++i]);
+			val = atoi(argv[i]);
 			if(val != 1 && val != 2)
 			{
 				return Opt_ShowError(OPT_DRIVEA_HEADS, argv[i], "Invalid number of heads");
@@ -1624,7 +1606,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_DRIVEB_HEADS:
-			val = atoi(argv[++i]);
+			val = atoi(argv[i]);
 			if(val != 1 && val != 2)
 			{
 				return Opt_ShowError(OPT_DRIVEB_HEADS, argv[i], "Invalid number of heads");
@@ -1633,7 +1615,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_DISKA:
-			i += 1;
 			if (Floppy_SetDiskFileName(0, argv[i], NULL))
 			{
 				ConfigureParams.HardDisk.bBootFromHardDisk = false;
@@ -1644,7 +1625,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_DISKB:
-			i += 1;
 			if (Floppy_SetDiskFileName(1, argv[i], NULL))
 				bLoadAutoSave = false;
 			else
@@ -1652,11 +1632,10 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_FASTFLOPPY:
-			ok = Opt_Bool(argv[++i], OPT_FASTFLOPPY, &ConfigureParams.DiskImage.FastFloppy);
+			ok = Opt_Bool(argv[i], OPT_FASTFLOPPY, &ConfigureParams.DiskImage.FastFloppy);
 			break;
 
 		case OPT_WRITEPROT_FLOPPY:
-			i += 1;
 			if (strcasecmp(argv[i], "off") == 0)
 				ConfigureParams.DiskImage.nWriteProtection = WRITEPROT_OFF;
 			else if (strcasecmp(argv[i], "on") == 0)
@@ -1668,7 +1647,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_WRITEPROT_HD:
-			i += 1;
 			if (strcasecmp(argv[i], "off") == 0)
 				ConfigureParams.HardDisk.nWriteProtection = WRITEPROT_OFF;
 			else if (strcasecmp(argv[i], "on") == 0)
@@ -1680,7 +1658,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_GEMDOS_CASE:
-			i += 1;
 			if (strcasecmp(argv[i], "off") == 0)
 				ConfigureParams.HardDisk.nGemdosCase = GEMDOS_NOP;
 			else if (strcasecmp(argv[i], "upper") == 0)
@@ -1692,7 +1669,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_GEMDOS_HOSTTIME:
-			i += 1;
 			if (strcasecmp(argv[i], "atari") == 0)
 				ConfigureParams.HardDisk.bGemdosHostTime = false;
 			else if (strcasecmp(argv[i], "host") == 0)
@@ -1702,11 +1678,10 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_GEMDOS_CONVERT:
-			ok = Opt_Bool(argv[++i], OPT_GEMDOS_CONVERT, &ConfigureParams.HardDisk.bFilenameConversion);
+			ok = Opt_Bool(argv[i], OPT_GEMDOS_CONVERT, &ConfigureParams.HardDisk.bFilenameConversion);
 			break;
 
 		case OPT_GEMDOS_DRIVE:
-			i += 1;
 			if (strcasecmp(argv[i], "skip") == 0)
 			{
 				ConfigureParams.HardDisk.nGemdosDrive = DRIVE_SKIP;
@@ -1725,7 +1700,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			return Opt_ShowError(OPT_GEMDOS_DRIVE, argv[i], "Invalid <drive>");
 
 		case OPT_HARDDRIVE:
-			i += 1;
 			ok = Opt_StrCpy(OPT_HARDDRIVE, CHECK_DIR, ConfigureParams.HardDisk.szHardDiskDirectories[0],
 					argv[i], sizeof(ConfigureParams.HardDisk.szHardDiskDirectories[0]),
 					&ConfigureParams.HardDisk.bUseHardDiskDirectories);
@@ -1743,7 +1717,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_ACSIHDIMAGE:
-			i += 1;
 			str = Opt_DriveValue(argv[i], &drive);
 			if (drive < 0 || drive >= MAX_ACSI_DEVS)
 				return Opt_ShowError(OPT_ACSIHDIMAGE, str, "Invalid ACSI drive <id>, must be 0-7");
@@ -1758,7 +1731,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_SCSIHDIMAGE:
-			i += 1;
 			str = Opt_DriveValue(argv[i], &drive);
 			if (drive < 0 || drive >= MAX_SCSI_DEVS)
 				return Opt_ShowError(OPT_SCSIHDIMAGE, str, "Invalid SCSI drive <id>, must be 0-7");
@@ -1773,7 +1745,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_SCSIVERSION:
-			i += 1;
 			str = Opt_DriveValue(argv[i], &drive);
 			if (drive < 0 || drive >= MAX_SCSI_DEVS)
 				return Opt_ShowError(OPT_SCSIVERSION, str, "Invalid SCSI drive <id>, must be 0-7");
@@ -1787,7 +1758,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_IDEMASTERHDIMAGE:
-			i += 1;
 			ok = Opt_StrCpy(OPT_IDEMASTERHDIMAGE, CHECK_FILE, ConfigureParams.Ide[0].sDeviceFile,
 					argv[i], sizeof(ConfigureParams.Ide[0].sDeviceFile),
 					&ConfigureParams.Ide[0].bUseDevice);
@@ -1798,7 +1768,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_IDESLAVEHDIMAGE:
-			i += 1;
 			ok = Opt_StrCpy(OPT_IDESLAVEHDIMAGE, CHECK_FILE, ConfigureParams.Ide[1].sDeviceFile,
 					argv[i], sizeof(ConfigureParams.Ide[1].sDeviceFile),
 					&ConfigureParams.Ide[1].bUseDevice);
@@ -1809,7 +1778,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_IDEBYTESWAP:
-			i += 1;
 			str = Opt_DriveValue(argv[i], &drive);
 			if (drive < 0 || drive > 1)
 				return Opt_ShowError(OPT_IDEBYTESWAP, str, "Invalid IDE drive <id>, must be 0/1");
@@ -1826,7 +1794,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 			/* Memory options */
 		case OPT_MEMSIZE:
-			memsize = atoi(argv[++i]);
+			memsize = atoi(argv[i]);
 			memsize = STMemory_RAM_Validate_Size_KB ( memsize );
 			if (memsize < 0)
 			{
@@ -1837,13 +1805,12 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_TT_RAM:
-			memsize = atoi(argv[++i]);
+			memsize = atoi(argv[i]);
 			ConfigureParams.Memory.TTRamSize_KB = Opt_ValueAlignMinMax(memsize+3, 4, 0, 1024) * 1024;
 			bLoadAutoSave = false;
 			break;
 
 		case OPT_TOS:
-			i += 1;
 			ok = Opt_StrCpy(OPT_TOS, CHECK_FILE, ConfigureParams.Rom.szTosImageFileName,
 					argv[i], sizeof(ConfigureParams.Rom.szTosImageFileName),
 					&bUseTos);
@@ -1854,11 +1821,10 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_PATCHTOS:
-			ok = Opt_Bool(argv[++i], OPT_PATCHTOS, &ConfigureParams.Rom.bPatchTos);
+			ok = Opt_Bool(argv[i], OPT_PATCHTOS, &ConfigureParams.Rom.bPatchTos);
 			break;
 
 		case OPT_CARTRIDGE:
-			i += 1;
 			ok = Opt_StrCpy(OPT_CARTRIDGE, CHECK_FILE, ConfigureParams.Rom.szCartridgeImageFileName,
 					argv[i], sizeof(ConfigureParams.Rom.szCartridgeImageFileName),
 					NULL);
@@ -1869,7 +1835,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_MEMSTATE:
-			i += 1;
 			ok = Opt_StrCpy(OPT_MEMSTATE, CHECK_FILE, ConfigureParams.Memory.szMemoryCaptureFileName,
 					argv[i], sizeof(ConfigureParams.Memory.szMemoryCaptureFileName),
 					NULL);
@@ -1883,7 +1848,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			/* CPU options */
 		case OPT_CPULEVEL:
 			/* UAE core uses cpu_level variable */
-			ncpu = atoi(argv[++i]);
+			ncpu = atoi(argv[i]);
 			if(ncpu < 0 || ncpu == 5 || ncpu > 6)
 			{
 				return Opt_ShowError(OPT_CPULEVEL, argv[i], "Invalid CPU level");
@@ -1895,7 +1860,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_CPUCLOCK:
-			cpuclock = atoi(argv[++i]);
+			cpuclock = atoi(argv[i]);
 			if(cpuclock != 8 && cpuclock != 16 && cpuclock != 32)
 			{
 				return Opt_ShowError(OPT_CPUCLOCK, argv[i], "Invalid CPU clock");
@@ -1905,29 +1870,28 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_COMPATIBLE:
-			ok = Opt_Bool(argv[++i], OPT_COMPATIBLE, &ConfigureParams.System.bCompatibleCpu);
+			ok = Opt_Bool(argv[i], OPT_COMPATIBLE, &ConfigureParams.System.bCompatibleCpu);
 			if (ok)
 			{
 				bLoadAutoSave = false;
 			}
 			break;
 		case OPT_CPU_ADDR24:
-			ok = Opt_Bool(argv[++i], OPT_CPU_ADDR24, &ConfigureParams.System.bAddressSpace24);
+			ok = Opt_Bool(argv[i], OPT_CPU_ADDR24, &ConfigureParams.System.bAddressSpace24);
 			bLoadAutoSave = false;
 			break;
 
 		case OPT_CPU_DATA_CACHE:
-			ok = Opt_Bool(argv[++i], OPT_CPU_DATA_CACHE, &ConfigureParams.System.bCpuDataCache);
+			ok = Opt_Bool(argv[i], OPT_CPU_DATA_CACHE, &ConfigureParams.System.bCpuDataCache);
 			bLoadAutoSave = false;
 			break;
 
 		case OPT_CPU_CYCLE_EXACT:
-			ok = Opt_Bool(argv[++i], OPT_CPU_CYCLE_EXACT, &ConfigureParams.System.bCycleExactCpu);
+			ok = Opt_Bool(argv[i], OPT_CPU_CYCLE_EXACT, &ConfigureParams.System.bCycleExactCpu);
 			bLoadAutoSave = false;
 			break;
 
 		case OPT_FPU_TYPE:
-			i += 1;
 			if (strcasecmp(argv[i], "none") == 0 || strcasecmp(argv[i], "off") == 0)
 			{
 				ConfigureParams.System.n_FPUType = FPU_NONE;
@@ -1952,21 +1916,20 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 /*
 		case OPT_FPU_JIT_COMPAT:
-			ok = Opt_Bool(argv[++i], OPT_FPU_COMPATIBLE, &ConfigureParams.System.bCompatibleFPU);
+			ok = Opt_Bool(argv[i], OPT_FPU_COMPATIBLE, &ConfigureParams.System.bCompatibleFPU);
 			break;
 */
 		case OPT_FPU_SOFTFLOAT:
-			ok = Opt_Bool(argv[++i], OPT_FPU_SOFTFLOAT, &ConfigureParams.System.bSoftFloatFPU);
+			ok = Opt_Bool(argv[i], OPT_FPU_SOFTFLOAT, &ConfigureParams.System.bSoftFloatFPU);
 			break;
 
 		case OPT_MMU:
-			ok = Opt_Bool(argv[++i], OPT_MMU, &ConfigureParams.System.bMMU);
+			ok = Opt_Bool(argv[i], OPT_MMU, &ConfigureParams.System.bMMU);
 			bLoadAutoSave = false;
 			break;
 
 			/* system options */
 		case OPT_MACHINE:
-			i += 1;
 			if (strcasecmp(argv[i], "st") == 0)
 			{
 				ConfigureParams.System.nMachineType = MACHINE_ST;
@@ -2028,7 +1991,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_BLITTER:
-			ok = Opt_Bool(argv[++i], OPT_BLITTER, &ConfigureParams.System.bBlitter);
+			ok = Opt_Bool(argv[i], OPT_BLITTER, &ConfigureParams.System.bBlitter);
 			if (ok)
 			{
 				bLoadAutoSave = false;
@@ -2036,15 +1999,14 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_TIMERD:
-			ok = Opt_Bool(argv[++i], OPT_TIMERD, &ConfigureParams.System.bPatchTimerD);
+			ok = Opt_Bool(argv[i], OPT_TIMERD, &ConfigureParams.System.bPatchTimerD);
 			break;
 
 		case OPT_FASTBOOT:
-			ok = Opt_Bool(argv[++i], OPT_FASTBOOT, &ConfigureParams.System.bFastBoot);
+			ok = Opt_Bool(argv[i], OPT_FASTBOOT, &ConfigureParams.System.bFastBoot);
 			break;
 
 		case OPT_DSP:
-			i += 1;
 			if (strcasecmp(argv[i], "none") == 0 || strcasecmp(argv[i], "off") == 0)
 			{
 				ConfigureParams.System.nDSPType = DSP_TYPE_NONE;
@@ -2069,7 +2031,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_RTC_YEAR:
-			year = atoi(argv[++i]);
+			year = atoi(argv[i]);
 			if(year && (year < 1980 || year >= 2080))
 			{
 				return Opt_ShowError(OPT_RTC_YEAR, argv[i], "Invalid RTC year");
@@ -2079,7 +2041,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 			/* sound options */
 		case OPT_YM_MIXING:
-			i += 1;
 			if (strcasecmp(argv[i], "linear") == 0)
 			{
 				ConfigureParams.Sound.YmVolumeMixing = YM_LINEAR_MIXING;
@@ -2099,7 +2060,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_SOUND:
-			i += 1;
 			if (strcasecmp(argv[i], "off") == 0)
 			{
 				ConfigureParams.Sound.bEnableSound = false;
@@ -2120,7 +2080,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_SOUNDBUFFERSIZE:
-			i += 1;
 			temp = atoi(argv[i]);
 			if ( temp == 0 )			/* use default setting for SDL */
 				;
@@ -2133,27 +2092,26 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_SOUNDSYNC:
-			ok = Opt_Bool(argv[++i], OPT_SOUNDSYNC, &ConfigureParams.Sound.bEnableSoundSync);
+			ok = Opt_Bool(argv[i], OPT_SOUNDSYNC, &ConfigureParams.Sound.bEnableSoundSync);
 			break;
 
 		case OPT_MICROPHONE:
-			ok = Opt_Bool(argv[++i], OPT_MICROPHONE, &ConfigureParams.Sound.bEnableMicrophone);
+			ok = Opt_Bool(argv[i], OPT_MICROPHONE, &ConfigureParams.Sound.bEnableMicrophone);
 			break;
 
 		case OPT_COUNTRY_CODE:
-			ok = Opt_CountryCode(argv[++i], OPT_COUNTRY_CODE, &ConfigureParams.Keyboard.nCountryCode);
+			ok = Opt_CountryCode(argv[i], OPT_COUNTRY_CODE, &ConfigureParams.Keyboard.nCountryCode);
 			break;
 
 		case OPT_LANGUAGE:
-			ok = Opt_CountryCode(argv[++i], OPT_LANGUAGE, &ConfigureParams.Keyboard.nLanguage);
+			ok = Opt_CountryCode(argv[i], OPT_LANGUAGE, &ConfigureParams.Keyboard.nLanguage);
 			break;
 
 		case OPT_KBD_LAYOUT:
-			ok = Opt_CountryCode(argv[++i], OPT_KBD_LAYOUT, &ConfigureParams.Keyboard.nKbdLayout);
+			ok = Opt_CountryCode(argv[i], OPT_KBD_LAYOUT, &ConfigureParams.Keyboard.nKbdLayout);
 			break;
 
 		case OPT_KEYMAPFILE:
-			i += 1;
 			ok = Opt_StrCpy(OPT_KEYMAPFILE, CHECK_FILE, ConfigureParams.Keyboard.szMappingFileName,
 					argv[i], sizeof(ConfigureParams.Keyboard.szMappingFileName),
 					&valid);
@@ -2183,7 +2141,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_EXCEPTIONS:
-			i += 1;
 			/* sets ConfigureParams.Debugger.nExceptionDebugMask */
 			errstr = Log_SetExceptionDebugMask(argv[i]);
 			if (errstr)
@@ -2206,8 +2163,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_LILO: {
-			size_t len;
-			len = strlen(argv[++i]);
+			len = strlen(argv[i]);
 			len += strlen(ConfigureParams.Lilo.szCommandLine);
 			if (argv[i][0] && len+2 < sizeof(ConfigureParams.Lilo.szCommandLine))
 			{
@@ -2225,7 +2181,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 		}
 
 		case OPT_BIOSINTERCEPT:
-			ok = Opt_Bool(argv[++i], OPT_BIOSINTERCEPT, &bBiosIntercept);
+			ok = Opt_Bool(argv[i], OPT_BIOSINTERCEPT, &bBiosIntercept);
 			Log_Printf(LOG_DEBUG, "XBIOS 11/20/255 Hatari versions %sabled: "
 			        "Dbmsg(), Scrdmp(), HatariControl().\n",
 			        bBiosIntercept ? "en" : "dis");
@@ -2233,7 +2189,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_CONOUT:
-			i += 1;
 			dev = atoi(argv[i]);
 			if (!Console_SetDevice(dev))
 			{
@@ -2243,17 +2198,16 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_MEMCONV:
-			ok = Opt_Bool(argv[++i], OPT_MEMCONV, &ConfigureParams.Debugger.bMemConvLocale);
+			ok = Opt_Bool(argv[i], OPT_MEMCONV, &ConfigureParams.Debugger.bMemConvLocale);
 			Log_Printf(LOG_DEBUG, "Memory output locale conversion %s.\n", ConfigureParams.Debugger.bMemConvLocale ? "enabled" : "disabled");
 			break;
 
 		case OPT_NATFEATS:
-			ok = Opt_Bool(argv[++i], OPT_NATFEATS, &ConfigureParams.Log.bNatFeats);
+			ok = Opt_Bool(argv[i], OPT_NATFEATS, &ConfigureParams.Log.bNatFeats);
 			Log_Printf(LOG_DEBUG, "Native Features %s.\n", ConfigureParams.Log.bNatFeats ? "enabled" : "disabled");
 			break;
 
 		case OPT_DISASM:
-			i += 1;
 			errstr = Disasm_ParseOption(argv[i]);
 			if (errstr)
 			{
@@ -2267,7 +2221,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_TRACE:
-			i += 1;
 			errstr = Log_SetTraceOptions(argv[i]);
 			if (errstr)
 			{
@@ -2281,7 +2234,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_TRACEFILE:
-			i += 1;
 			ok = Opt_StrCpy(OPT_TRACEFILE, CHECK_NONE, ConfigureParams.Log.sTraceFileName,
 					argv[i], sizeof(ConfigureParams.Log.sTraceFileName),
 					NULL);
@@ -2292,7 +2244,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_CONTROLSOCKET:
-			i += 1;
 			errstr = Control_SetSocket(argv[i]);
 			if (errstr)
 			{
@@ -2301,7 +2252,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_CMDFIFO:
-			i += 1;
 			errstr = Control_SetFifo(argv[i]);
 			if (errstr)
 			{
@@ -2310,14 +2260,12 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_LOGFILE:
-			i += 1;
 			ok = Opt_StrCpy(OPT_LOGFILE, CHECK_NONE, ConfigureParams.Log.sLogFileName,
 					argv[i], sizeof(ConfigureParams.Log.sLogFileName),
 					NULL);
 			break;
 
 		case OPT_PARSE:
-			i += 1;
 			ok = DebugUI_AddParseFile(argv[i]);
 			break;
 
@@ -2328,7 +2276,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_LOGLEVEL:
-			i += 1;
 			ConfigureParams.Log.nTextLogLevel = Log_ParseOptions(argv[i]);
 			if (ConfigureParams.Log.nTextLogLevel == LOG_NONE)
 			{
@@ -2338,7 +2285,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_ALERTLEVEL:
-			i += 1;
 			ConfigureParams.Log.nAlertDlgLogLevel = Log_ParseOptions(argv[i]);
 			if (ConfigureParams.Log.nAlertDlgLogLevel == LOG_NONE)
 			{
@@ -2348,7 +2294,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_RUNVBLS:
-			val = atoi(argv[++i]);
+			val = atoi(argv[i]);
 			Log_Printf(LOG_DEBUG, "Exit after %d VBLs.\n", val);
 			Timing_SetRunVBLs(val);
 			break;
