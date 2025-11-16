@@ -119,7 +119,7 @@ bool File_ChangeFileExtension(const char *Filename_old, const char *Extension_ol
 
 /*-----------------------------------------------------------------------*/
 /**
- * Check if filename is from root
+ * Check if host filename is from root
  *
  * Return TRUE if filename is '/', else give FALSE
  */

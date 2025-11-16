@@ -375,7 +375,6 @@ static void symbol_list_free(symbol_list_t *list)
 	if (!list) {
 		return;
 	}
-	assert(list->namecount);
 	for (i = 0; i < list->namecount; i++) {
 		if (list->names[i].name_allocated) {
 			free(list->names[i].name);

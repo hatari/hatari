@@ -1,7 +1,7 @@
 /*
  * Hatari - symbols.c
  * 
- * Copyright (C) 2010-2024 by Eero Tamminen
+ * Copyright (C) 2010-2025 by Eero Tamminen
  * 
  * This file is distributed under the GNU General Public License, version 2
  * or at your option any later version. Read the file gpl.txt for details.
@@ -1001,43 +1001,45 @@ char *Symbols_MatchDspCommand(const char *text, int state)
 }
 
 const char Symbols_Description[] =
-	"<code|data|name> [find] -- list symbols containing 'find'\n"
-	"\tsymbols <prg|free> -- load/free symbols\n"
-	"\t        <filename> [<T offset> [<D offset> <B offset>]]\n"
-	"\tsymbols <autoload|match> -- toggle symbol options\n"
+	"<subcommand> [parameters]\n"
+	"\n"
+	"\tSubcommands:\n"
+	"\t- prg -- load symbols from current GEMDOS HD program\n"
+	"\t- <file> [<T offset> [<D offset> <B offset>]] -- load symbols from <file>\n"
+	"\t- autoload [on|off] -- toggle/set program symbols autoload mode\n"
+	"\t- <code|data|name> [find] -- list symbols containing 'find'\n"
+	"\t- match -- toggle what symbols TAB completion matches\n"
+	"\t- free -- free symbols\n"
+	"\n"
+	"\tBy default, symbols are loaded from the currently executing program's\n"
+	"\tbinary when entering the debugger, IF program is started through\n"
+	"\tGEMDOS HD, and they're freed when that program terminates.\n"
+	"\n"
+	"\tThat corresponds to 'prg' command which loads symbol table from\n"
+	"\tthe last program executed through the GEMDOS HD emulation.\n"
+	"\n"
+	"\tIf program lacks symbols, or it's not run through the GEMDOS HD\n"
+	"\temulation, user can ask symbols to be loaded from a <file> that's\n"
+	"\tan unstripped version of the binary. Or from an ASCII symbols\n"
+	"\t<file> produced by the 'nm' and (Hatari) 'gst2ascii' tools.\n"
+	"\n"
+	"\tWith ASCII symbols files, given non-zero offset(s) are added to\n"
+	"\tthe text (T), data (D) and BSS (B) symbols.  Typically one uses\n"
+	"\tTEXT variable, sometimes also DATA & BSS, variables for this.\n"
+	"\n"
+	"\t'autoload' command toggles GEMDOS HD program symbols autoloading\n"
+	"\tmode, or enables/disables it with 'on'/'off' (disabling may be\n"
+	"\tneeded to debug memory-resident programs / TOS).\n"
 	"\n"
 	"\t'name' command lists the currently loaded symbols, sorted by name.\n"
 	"\t'code' and 'data' commands list them sorted by address; 'code' lists\n"
 	"\tonly TEXT/WEAK symbols, 'data' lists DATA/BSS/ABS symbols. If 'find'\n"
 	"\tis given, only symbols with that substring are listed.\n"
 	"\n"
-	"\tBy default, symbols are loaded from the currently executing program's\n"
-	"\tbinary when entering the debugger, IF program is started through\n"
-	"\tGEMDOS HD, and they're freed when that program terminates.\n"
-	"\n"
-	"\tThat corresponds to 'prg' command which loads (DRI/GST or a.out\n"
-	"\tformat) symbol table from the last program executed through\n"
-	"\tthe GEMDOS HD emulation.\n"
-	"\n"
-	"\t'free' command removes the loaded symbols.\n"
-	"\n"
-	"\tIf program lacks symbols, or it's not run through the GEMDOS HD\n"
-	"\temulation, user can ask symbols to be loaded from a file that's\n"
-	"\tan unstripped version of the binary. Or from an ASCII symbols file\n"
-	"\tproduced by the 'nm' and (Hatari) 'gst2ascii' tools.\n"
-	"\n"
-	"\tWith ASCII symbols files, given non-zero offset(s) are added to\n"
-	"\tthe text (T), data (D) and BSS (B) symbols.  Typically one uses\n"
-	"\tTEXT variable, sometimes also DATA & BSS, variables for this.\n"
-	"\n"
-	"\t'autoload [on|off]' command toggle/set whether debugger will load\n"
-	"\tsymbols for currently executing (GEMDOS HD) program automatically\n"
-	"\ton entering the debugger (i.e. replace earlier loaded symbols),\n"
-	"\tand free them when program terminates.  It needs to be disabled\n"
-	"\tto debug memory-resident programs used by other programs.\n"
-	"\n"
 	"\t'match' command toggles whether TAB completion matches all symbols,\n"
-	"\tor only symbol types that should be relevant for given command.";
+	"\tor only symbol types that should be relevant for given command.\n"
+	"\n"
+	"\t'free' command removes the loaded symbols.";
 
 
 /**
