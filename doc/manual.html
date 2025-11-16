@@ -1122,6 +1122,12 @@ the debugger</p>
 <p class="paramdesc">Specify which exceptions invoke debugger, see
 "--debug-except help" for available (comma separated) exception
 flags.</p>
+<p class="parameter">--symload &lt;mode&gt;</p>
+<p class="paramdesc">Set the GEMDOS HD program symbols autoloading
+mode. "exec" loads symbols when program is executed, "debugger" when
+debugger is first invoked after program startup (default), and "off"
+disables autoloading (may be needed to debug memory-resident programs
+/ TOS).</p>
 <p class="parameter">--bios-intercept &lt;bool&gt;</p>
 <p class="paramdesc">
 Enable/disable XBios command parsing. Allows Atari programs to use all Hatari

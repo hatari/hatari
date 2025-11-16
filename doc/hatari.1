@@ -596,6 +596,12 @@ Specify which exceptions invoke debugger, see
 .B \-\-debug\-except help
 for available (comma separated) exception flags.
 .TP
+.B \-\-symload <mode>
+Set the GEMDOS HD program symbols autoloading mode. "exec" loads
+symbols when program is executed, "debugger" when debugger is first
+invoked after program startup (default), and "off" disables
+autoloading (may be needed to debug memory-resident programs / TOS).
+.TP
 .B \-\-lilo <string>
 Boot m68k Linux using kernel, ramdisk, and kernel arguments specified
 in the Hatari configuration file [LILO] section. Hatari documentation

@@ -24,6 +24,10 @@ API changes:
 - "--avirecord" option requires now bool argument to enable AVI
   recording. This is to support skipping recording of the TOS boot
   (using option "event" prefix to enable it later)
+- Configuration file "Debugger" section "bSymbolsAutoLoad" (boolean)
+  option changed to a "nSymbolsAutoLoad" (integer) one.  Default is
+  the same (program symbols loaded on debugger invocation)
+
 
 Emulation improvements:
 
@@ -35,6 +39,7 @@ Emulator improvements:
     They delay applying specified option until given emulation event.
     E.g. to fast-forward until program starts (from GEMDOS HD),
     use: "--fast-forward boot:on --fast-forward prg:off"
+  - New "--symload" option for specifying when program symbols are loaded
 - SDL GUI:
   - Fix: allow exit from text edit mode when using just joystick
   - Fix: do not show recording in progress, if starting it failed

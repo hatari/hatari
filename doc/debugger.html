@@ -97,16 +97,16 @@ command.
 </p>
 
 <p>
-Alternatively, you can give "--debug-except" option "autostart" flag
-(e.g. "--debug-except all,autostart").  This will enable catching of
-(specified) exceptions after TOS boot, when Atari program given on
-Hatari command line is <em>autostarted</em>.
+Alternatively, "--debug-except" option can be prefixed with "prg:"
+(e.g. "--debug-except prg:all") to enable catching of (specified)
+exceptions when Atari program given on Hatari command line gets
+<em>autostarted</em>.
 </p>
 
 
 <h3>Debugger configuration options</h3>
 
-<p>When you save Hatari configuration, your current debugger
+<p>When saving Hatari configuration, current debugger
 settings are also saved to the Hatari configuration file.</p>
 
 <p>Settings are following:</p>
@@ -133,11 +133,11 @@ settings are also saved to the Hatari configuration file.</p>
 <dd>Whether disassembly uses CPU core internal disassembler ("uae"),
     or the external disassembler ("ext" one with output options).
     Set with the "--disasm" option</dd>
-<dt>bSymbolsAutoLoad</dt>
-<dd>Whether debug symbols are automatically loaded when debugger is invoked,
-    and freed when program exits, for Atari programs run though GEMDOS HD.
-    Set with the "symbols autoload [on|off]" command
-    </dd>
+<dt>nSymbolsAutoLoad</dt>
+<dd>Specifies whether (GEMDOS HD) program symbols are autoloaded when
+    program is executed, when debugger is invoked after that, or whether
+    symbol autoloading is disabled. Set with the "--symload" option and
+    the "symbols autoload [on|off]" command</dd>
 <dt>bMatchAllSymbols</dt>
 <dd>Whether symbol name TAB-completion matches just symbols from
     a relevant code section, or all of them.  Toggled with the
@@ -156,17 +156,17 @@ nBacktraceLines = 0
 nExceptionDebugMask = 515
 nDisasmOptions = 15
 bDisasmUAE = TRUE
-bSymbolsAutoLoad = TRUE
+nSymbolsAutoLoad = 1
 bMatchAllSymbols = FALSE
 </pre>
 
 <p>Settings on how many lines are shown can be changed only from the
-configuration file. You should need to change/set them only if you
-have built debugger without readline support, as it is then unable
+configuration file. This needs to changed/set only when Hatari
+debugger is built without readline support, as it is then unable
 to determine terminal size ("-1" = use terminal height).</p>
 
 <p>Note that "--debug-except" and "--disasm" options can be given either
-on Hatari command line or, like all other Hatari command line options,
+on Hatari command line, or (like all other Hatari command line options),
 with the debugger "setopt" command.</p>
 
 
@@ -476,12 +476,22 @@ Without arguments "lock" command will show the available options
 <h3>Debug symbols</h3>
 
 <p>
-You can load debugging symbols to the debugger with the "symbols"
-command (and with "dspsymbols" for DSP). These symbolic names can be
-used in arithmetic expressions and conditional breakpoint expressions.
-They also show up in the "disasm" command output and you can trace
-calls to them with "trace cpu_symbols" (and DSP symbols with "trace
-dsp_symbols").
+By default, Hatari loads debug symbols for programs executed from
+GEMDOS HD whenever debugger is first invoked after that, if program
+includes debug symbols, or there's a separate *.sym file for them.
+</p>
+<p>
+Symbolic names for program function and data addresses can be used in
+arithmetic expressions and conditional breakpoint expressions. They
+show up in the "disasm" command output, and one can trace calls to
+them with "trace cpu_symbols" (and DSP symbols with "trace
+dsp_symbols").  If profiling was enabled with symbols present,
+debugger shows also a backtrace (for the program code executed since
+debugger was last invoked) whenever debugger is invoked.
+</p>
+<p>
+To load debugging symbols in other situations, use the debugger
+"symbols" command (and "dspsymbols" for DSP).
 </p>
 
 
@@ -519,7 +529,7 @@ removed when that program terminates.</p>
 
 <p>
 Above happens only if there are no symbols loaded when the program
-starts. If there are, you can load program symbol data manually with
+starts. If there are, one can load program symbol data manually with
 the following command, after program has been loaded to the memory by
 TOS (see <a href="#Breakpoint_variables">setting breakpoint at program
 startup</a>):
@@ -529,8 +539,8 @@ symbols prg
 </pre>
 
 <p>
-The options you need to add suitable symbol table to your programs,
-depend on which toolchain you use to build it:
+The options needed to add a suitable symbol table to the program,
+depend on which toolchain is used to build it:
 </p>
 <dl>
 <dt><em>Devpac</em>:</dt>
@@ -547,8 +557,8 @@ also "-Wl,--traditional-format" option was needed for linking)</dd>
     the linker</em></dd>
 </dl>
 
-<p>You can view the generated symbols (and convert them to debugger
-ASCII format) with tool installed with Hatari:</p>
+<p>Generated symbols can be viewed (and converted to debugger
+ASCII format) with a tool installed with Hatari:</p>
 <pre>
 $ gst2ascii program.tos &gt; program.sym
 </pre>
@@ -579,10 +589,9 @@ started).</p>
 <h4>For a program on a (disk) image</h4>
 
 <p>
-If the program isn't run from a GEMDOS HD emulated drive, but from
-a cartridge, floppy or HD image, you need to have the corresponding
-program also as a normal host file which location you can give to
-the debugger:
+If the program isn't run from a GEMDOS HD emulated drive, but from a
+cartridge, floppy or HD image, corresponding program is needed also as
+a normal host file which location can be given to the debugger:
 </p>
 <pre>
 symbols /path/to/the/program.tos
@@ -592,15 +601,15 @@ symbols /path/to/the/program.tos
 <h4>ASCII debug symbol files</h4>
 
 <p>
-If Hatari complains that your program doesn't have debug symbol table,
-or its symbols are in some unsupported format, you have two options:
+If Hatari complains that program doesn't have debug symbol table,
+or its symbols are in some unsupported format, there are two options:
 </p>
 <ul>
 <li>Convert the symbols to ASCII format understood by the Hatari debugger.
     Writing converters for other ASCII formats is easy, and Hatari already
     contains converters for DSP LOD files, <span class="commandline">nm</span>
     output, and a few other formats.</li>
-<li>Create the ASCII symbols file by hand while you're debugging a program.</li>
+<li>Create the ASCII symbols file by hand while debugging a program.</li>
 </ul>
 
 <p><b>NOTE:</b> <span class="commandline">nm</span> output for GCC generated
@@ -629,36 +638,36 @@ starting with '#' (comments) are ignored.
 
 <p>
 Debugger will automatically "relocate" the symbol addresses when it
-loads them from a program binary, but with ASCII symbol files you need
-to give the relocation offset(s) separately, unless the symbol names
-are for fixed addresses (like is the case e.g. with EmuTOS):
+loads them from a program binary, but with ASCII symbol files
+relocation offset(s) need to be specified separately, unless the
+symbol names are for fixed addresses (like is the case e.g. with
+EmuTOS):
 </p>
 <pre>
 symbols program.sym TEXT DATA BSS
 </pre>
 <p>
-If you're interested only about code symbols, you can leave DATA and
-BSS offsets out (the values of the above virtual debugger variables
-like TEXT come from the currently loaded program's basepage, they're
-set after the program is loaded by TOS, see "info basepage" output).
+When only code symbols are needed, DATA and BSS offsets can be left
+out (the values of the above virtual debugger variables like TEXT come
+from the currently loaded program's basepage, they're set after the
+program is loaded by TOS, see "info basepage" output).
 </p>
 
 
 <h4>Debugging resident programs</h4>
 
 <p>When debugging resident (TSR) programs (terminated with a Ptermres()
-GEMDOS call), you'll probably have a 'trigger' program that invokes
-some functionality in the TSR you want to debug. Loading your 'trigger'
-program from a Hatari GEMDOS emulated drive will autoload its symbols,
-thus replacing the symbols of your TSR (which you are really interested
-in) you loaded previously.</p>
+GEMDOS call), it's common to have a 'trigger' program that invokes
+some functionality in the TSR being debugged.  With symbol autoloading
+enabled, executing the 'trigger' program from Hatari GEMDOS HD could
+replace symbols for the TSR with ones from the 'trigger' program.</p>
 
 <p>Symbol replacement can be avoided in two ways:</p>
 <ul>
 <li>Using "symbols autoload off" debugger command, or</li>
 <li>Loading TSR symbols from an ASCII file (see above). This is the way
-to go if your TSR is not a normal Atari program, or you want to filter or
-add some symbols (e.g. for profiling)</li>
+to go if TSR is not a normal Atari program, or some symbols need to
+be added or filtered out (e.g. for profiling)</li>
 </ul>
 
 
@@ -1977,10 +1986,15 @@ with the Hatari debugger:
 </p>
 
 <dl>
-<dt><em>Stopping on program startup and examining its data</em></dt>
-<dd>Please see <a href="#Breakpoint_variables">Breakpoint variables</a>
-and <a href="#Inspecting_emulation_state">Inspecting emulation state</a>
-sections.
+<dt><em>Stopping on program startup, e.g. to examine its data</em></dt>
+<dd>Run Hatari with options asking it to load symbols for a program
+when it's executed (from GEMDOS HD) and  parse a debugger input
+file (e.g. "break.ini") that sets breapoint on the first program
+instruction (i.e. at start of its TEXT section):
+<pre>
+$ echo "b pc = TEXT" &gt; break.ini
+$ hatari --symload exec --parse prg:break.ini ...
+</pre>
 </dd>
 
 <dt><em>Tracing specific things in the system</em></dt>
