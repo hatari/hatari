@@ -4398,7 +4398,9 @@ int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr, bool bFullBpSe
 		memtop = STMemory_ReadLong(0x436);
 	else
 		memtop = STMemory_ReadLong(0x5a4);
-	if (baseaddr + 0x100 + nTextLen + nDataLen + nBssLen > memtop)
+
+	const uint32_t nTextAddr = baseaddr + 0x100;
+	if (nTextAddr + nTextLen + nDataLen + nBssLen > memtop)
 	{
 		free(prg);
 		Log_Printf(LOG_ERROR, "Program too large: '%s'.\n", psPrgName);
@@ -4408,14 +4410,14 @@ int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr, bool bFullBpSe
 	/* relocation info is also written to this area */
 	M68000_Flush_All_Caches(baseaddr, 0x100 + nTextLen + nDataLen + nBssLen);
 
-	if (!STMemory_SafeCopy(baseaddr + 0x100, prg + 28, nTextLen + nDataLen, psPrgName))
+	if (!STMemory_SafeCopy(nTextAddr, prg + 28, nTextLen + nDataLen, psPrgName))
 	{
 		free(prg);
 		return GEMDOS_EIMBA;
 	}
 
 	/* Clear BSS */
-	if (!STMemory_SafeClear(baseaddr + 0x100 + nTextLen + nDataLen, nBssLen))
+	if (!STMemory_SafeClear(nTextAddr + nTextLen + nDataLen, nBssLen))
 	{
 		free(prg);
 		Log_Printf(LOG_ERROR, "Failed to clear BSS for '%s'.\n", psPrgName);
@@ -4423,11 +4425,11 @@ int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr, bool bFullBpSe
 	}
 
 	/* Set up basepage */
-	STMemory_WriteLong(baseaddr + 8, baseaddr + 0x100);                        /* p_tbase */
+	STMemory_WriteLong(baseaddr + 8, nTextAddr);                        /* p_tbase */
 	STMemory_WriteLong(baseaddr + 12, nTextLen);                               /* p_tlen */
-	STMemory_WriteLong(baseaddr + 16, baseaddr + 0x100 + nTextLen);            /* p_dbase */
+	STMemory_WriteLong(baseaddr + 16, nTextAddr + nTextLen);            /* p_dbase */
 	STMemory_WriteLong(baseaddr + 20, nDataLen);                               /* p_dlen */
-	STMemory_WriteLong(baseaddr + 24, baseaddr + 0x100 + nTextLen + nDataLen); /* p_bbase */
+	STMemory_WriteLong(baseaddr + 24, nTextAddr + nTextLen + nDataLen); /* p_bbase */
 	STMemory_WriteLong(baseaddr + 28, nBssLen);                                /* p_blen */
 	/* In case we run without TOS, set some of the other values as good as possible, too */
 	if (bFullBpSetup)
@@ -4445,7 +4447,7 @@ int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr, bool bFullBpSe
 	if (!(prg[25] & 1))
 	{
 		uint32_t nAddrLen;
-		nCurrAddr = baseaddr + 0x100 + nTextLen + nDataLen + nBssLen;
+		nCurrAddr = nTextAddr + nTextLen + nDataLen + nBssLen;
 		nAddrLen = STMemory_ReadLong(baseaddr + 4) - nCurrAddr;
 
 		M68000_Flush_All_Caches(baseaddr, nAddrLen);
@@ -4492,8 +4494,8 @@ int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr, bool bFullBpSe
 		return 0;
 	}
 
-	nCurrAddr = baseaddr + 0x100 + nRelOff;
-	STMemory_WriteLong(nCurrAddr, STMemory_ReadLong(nCurrAddr) + baseaddr + 0x100);
+	nCurrAddr = nTextAddr + nRelOff;
+	STMemory_WriteLong(nCurrAddr, STMemory_ReadLong(nCurrAddr) + nTextAddr);
 	nRelTabIdx += 4;
 
 	while (nRelTabIdx < nFileSize && prg[nRelTabIdx])
@@ -4505,8 +4507,8 @@ int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr, bool bFullBpSe
 			continue;
 		}
 		nRelOff += prg[nRelTabIdx];
-		nCurrAddr = baseaddr + 0x100 + nRelOff;
-		STMemory_WriteLong(nCurrAddr, STMemory_ReadLong(nCurrAddr) + baseaddr + 0x100);
+		nCurrAddr = nTextAddr + nRelOff;
+		STMemory_WriteLong(nCurrAddr, STMemory_ReadLong(nCurrAddr) + nTextAddr);
 		nRelTabIdx += 1;
 	}
 	free(prg);
