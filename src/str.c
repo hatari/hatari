@@ -258,6 +258,8 @@ void Str_UnEscape(char *s1)
  */
 bool Str_Filename_Invalid_Char(const char *name, int offset)
 {
+	const char *dot;
+
 	char c = name[offset];
 	if (c < 32 || c == 127)
 		return true;
@@ -275,7 +277,7 @@ bool Str_Filename_Invalid_Char(const char *name, int offset)
 		return true;
 	case '.':
 		/* last dot */
-		const char *dot = strrchr(name, '.');
+		dot = strrchr(name, '.');
 		/* extra dots are invalid chars, except for ".." */
 		if (dot != name + offset && strlen(name) > 2)
 			return true;
