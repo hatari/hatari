@@ -94,7 +94,7 @@ Emulator improvements:
 - Windows:
   - Fix: late locale init messes debugger readline history handling
 - GEMDOS HD:
-  - Fix: caches were no always flushed on writing to emulated memory
+  - Fix: caches were not always flushed on writing to emulated memory
 - Debugger:
   - Fix: show DEL character as non-printable in memdumps
 - CPU/FPU settings:
