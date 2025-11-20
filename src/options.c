@@ -236,6 +236,11 @@ typedef enum {
 } opt_id_t;
 
 typedef struct {
+	const char *key;
+	int value;
+} opt_keyval_t;
+
+typedef struct {
 	opt_id_t id;		/* option ID */
 	const char *chr;	/* short option */
 	const char *str;	/* long option */
@@ -818,6 +823,26 @@ static bool Opt_Bool(const char *arg, opt_id_t optid, bool *conf)
 }
 
 /**
+ * Set 'conf' to a value matching the provided (case-insensitive)
+ * 'key' in the provided 'keyval' array (of 'count' items).
+ *
+ * Return false if there's no match, otherwise true
+ */
+static bool Opt_SetKeyVal(const char *key, const opt_keyval_t *keyval, int count, int *conf)
+{
+	assert(conf);
+	for (int i = 0; i < count; i++)
+	{
+		if (strcasecmp(key, keyval[i].key) == 0)
+		{
+			*conf = keyval[i].value;
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
  * Set 'conf' to parsed country code value.
  * Return false for any other value, otherwise true
  */
@@ -1241,28 +1266,21 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_MONITOR:
-			if (strcasecmp(arg, "mono") == 0)
-			{
-				ConfigureParams.Screen.nMonitorType = MONITOR_TYPE_MONO;
-			}
-			else if (strcasecmp(arg, "rgb") == 0)
-			{
-				ConfigureParams.Screen.nMonitorType = MONITOR_TYPE_RGB;
-			}
-			else if (strcasecmp(arg, "vga") == 0)
-			{
-				ConfigureParams.Screen.nMonitorType = MONITOR_TYPE_VGA;
-			}
-			else if (strcasecmp(arg, "tv") == 0)
-			{
-				ConfigureParams.Screen.nMonitorType = MONITOR_TYPE_TV;
-			}
-			else
+		{
+			static const opt_keyval_t keyval[] = {
+				{"mono", MONITOR_TYPE_MONO},
+				{"rgb",  MONITOR_TYPE_RGB},
+				{"vga",  MONITOR_TYPE_VGA},
+				{"tv",   MONITOR_TYPE_TV},
+			};
+			if (!Opt_SetKeyVal(arg, keyval, ARRAY_SIZE(keyval), &val))
 			{
 				return Opt_ShowError(OPT_MONITOR, arg, "Unknown monitor type");
 			}
+			ConfigureParams.Screen.nMonitorType = val;
 			bLoadAutoSave = false;
 			break;
+		}
 
 		case OPT_TOS_RESOLUTION:
 			if (!INF_SetResolution(arg, OPT_TOS_RESOLUTION))
@@ -1375,19 +1393,21 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_VIDEO_TIMING:
-			if (strcasecmp(arg, "random") == 0)
-				ConfigureParams.System.VideoTimingMode = VIDEO_TIMING_MODE_RANDOM;
-			else if (strcasecmp(arg, "ws1") == 0)
-				ConfigureParams.System.VideoTimingMode = VIDEO_TIMING_MODE_WS1;
-			else if (strcasecmp(arg, "ws2") == 0)
-				ConfigureParams.System.VideoTimingMode = VIDEO_TIMING_MODE_WS2;
-			else if (strcasecmp(arg, "ws3") == 0)
-				ConfigureParams.System.VideoTimingMode = VIDEO_TIMING_MODE_WS3;
-			else if (strcasecmp(arg, "ws4") == 0)
-				ConfigureParams.System.VideoTimingMode = VIDEO_TIMING_MODE_WS4;
-			else
+		{
+			static const opt_keyval_t keyval[] = {
+				{"random", VIDEO_TIMING_MODE_RANDOM},
+				{"ws1", VIDEO_TIMING_MODE_WS1},
+				{"ws2", VIDEO_TIMING_MODE_WS2},
+				{"ws3", VIDEO_TIMING_MODE_WS3},
+				{"ws4", VIDEO_TIMING_MODE_WS4},
+			};
+			if (!Opt_SetKeyVal(arg, keyval, ARRAY_SIZE(keyval), &val))
+			{
 				return Opt_ShowError(OPT_VIDEO_TIMING, arg, "Unknown video timing mode");
+			}
+			ConfigureParams.System.VideoTimingMode = val;
 			break;
+		}
 
 			/* Falcon/TT display options */
 		case OPT_RESOLUTION:
@@ -1439,23 +1459,24 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_AVIRECORD_VCODEC:
-			if (strcasecmp(arg, "bmp") == 0)
-			{
-				ConfigureParams.Video.AviRecordVcodec = AVI_RECORD_VIDEO_CODEC_BMP;
-			}
-			else if (strcasecmp(arg, "png") == 0)
-			{
-				ConfigureParams.Video.AviRecordVcodec = AVI_RECORD_VIDEO_CODEC_PNG;
-			}
-			else
+		{
+			static const opt_keyval_t keyval[] = {
+				{"bmp", AVI_RECORD_VIDEO_CODEC_BMP},
+				{"png", AVI_RECORD_VIDEO_CODEC_PNG},
+			};
+			if (!Opt_SetKeyVal(arg, keyval, ARRAY_SIZE(keyval), &val))
 			{
 				return Opt_ShowError(OPT_AVIRECORD_VCODEC, arg, "Unknown video codec");
 			}
+			ConfigureParams.Video.AviRecordVcodec = val;
 			break;
+		}
 
 		case OPT_AVI_PNG_LEVEL:
 			if (!Avi_SetCompressionLevel(arg))
+			{
 				return Opt_ShowError(OPT_AVI_PNG_LEVEL, arg, "Invalid compression level");
+			}
 			break;
 
 		case OPT_AVIRECORD_FPS:
@@ -1480,27 +1501,20 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_SCRSHOT_FORMAT:
-			if (strcasecmp(arg, "bmp") == 0)
-			{
-				ConfigureParams.Screen.ScreenShotFormat = SCREEN_SNAPSHOT_BMP;
-			}
-			else if (strcasecmp(arg, "png") == 0)
-			{
-				ConfigureParams.Screen.ScreenShotFormat = SCREEN_SNAPSHOT_PNG;
-			}
-			else if (strcasecmp(arg, "neo") == 0)
-			{
-				ConfigureParams.Screen.ScreenShotFormat = SCREEN_SNAPSHOT_NEO;
-			}
-			else if (strcasecmp(arg, "ximg") == 0)
-			{
-				ConfigureParams.Screen.ScreenShotFormat = SCREEN_SNAPSHOT_XIMG;
-			}
-			else
+		{
+			static const opt_keyval_t keyval[] = {
+				{"bmp",  SCREEN_SNAPSHOT_BMP},
+				{"png",  SCREEN_SNAPSHOT_PNG},
+				{"neo",  SCREEN_SNAPSHOT_NEO},
+				{"ximg", SCREEN_SNAPSHOT_XIMG},
+			};
+			if (!Opt_SetKeyVal(arg, keyval, ARRAY_SIZE(keyval), &val))
 			{
 				return Opt_ShowError(OPT_SCRSHOT_FORMAT, arg, "Unknown screenshot format");
 			}
+			ConfigureParams.Screen.ScreenShotFormat = val;
 			break;
+		}
 
 			/* VDI options */
 		case OPT_VDI:
@@ -1561,29 +1575,25 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 		case OPT_JOYSTICK3:
 		case OPT_JOYSTICK4:
 		case OPT_JOYSTICK5:
+		{
 			port = opt[strlen(opt)-1] - '0';
 			if (port < 0 || port >= JOYSTICK_COUNT)
 			{
 				return Opt_ShowError(OPT_JOYSTICK0, opt, "Invalid joystick port");
 			}
-
-			if (strcasecmp(arg, "none") == 0 || strcasecmp(arg, "off") == 0)
-			{
-				ConfigureParams.Joysticks.Joy[port].nJoystickMode = JOYSTICK_DISABLED;
-			}
-			else if (strcasecmp(arg, "keys") == 0)
-			{
-				ConfigureParams.Joysticks.Joy[port].nJoystickMode = JOYSTICK_KEYBOARD;
-			}
-			else if (strcasecmp(arg, "real") == 0)
-			{
-				ConfigureParams.Joysticks.Joy[port].nJoystickMode = JOYSTICK_REALSTICK;
-			}
-			else
+			static const opt_keyval_t keyval[] = {
+				{"none", JOYSTICK_DISABLED},
+				{"off",  JOYSTICK_DISABLED},
+				{"keys", JOYSTICK_KEYBOARD},
+				{"real", JOYSTICK_REALSTICK},
+			};
+			if (!Opt_SetKeyVal(arg, keyval, ARRAY_SIZE(keyval), &val))
 			{
 				return Opt_ShowError(OPT_JOYSTICK0+port, arg, "Invalid joystick type");
 			}
+			ConfigureParams.Joysticks.Joy[port].nJoystickMode = val;
 			break;
+		}
 
 		case OPT_PRINTER:
 			ok = Opt_StrCpy(OPT_PRINTER, CHECK_NONE, ConfigureParams.Printer.szPrintToFileName,
@@ -1701,37 +1711,49 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_WRITEPROT_FLOPPY:
-			if (strcasecmp(arg, "off") == 0)
-				ConfigureParams.DiskImage.nWriteProtection = WRITEPROT_OFF;
-			else if (strcasecmp(arg, "on") == 0)
-				ConfigureParams.DiskImage.nWriteProtection = WRITEPROT_ON;
-			else if (strcasecmp(arg, "auto") == 0)
-				ConfigureParams.DiskImage.nWriteProtection = WRITEPROT_AUTO;
-			else
+		{
+			static const opt_keyval_t keyval[] = {
+				{"off",  WRITEPROT_OFF},
+				{"on",   WRITEPROT_ON},
+				{"auto", WRITEPROT_AUTO},
+			};
+			if (!Opt_SetKeyVal(arg, keyval, ARRAY_SIZE(keyval), &val))
+			{
 				return Opt_ShowError(OPT_WRITEPROT_FLOPPY, arg, "Unknown option value");
+			}
+			ConfigureParams.DiskImage.nWriteProtection = val;
 			break;
+		}
 
 		case OPT_WRITEPROT_HD:
-			if (strcasecmp(arg, "off") == 0)
-				ConfigureParams.HardDisk.nWriteProtection = WRITEPROT_OFF;
-			else if (strcasecmp(arg, "on") == 0)
-				ConfigureParams.HardDisk.nWriteProtection = WRITEPROT_ON;
-			else if (strcasecmp(arg, "auto") == 0)
-				ConfigureParams.HardDisk.nWriteProtection = WRITEPROT_AUTO;
-			else
+		{
+			static const opt_keyval_t keyval[] = {
+				{"off",  WRITEPROT_OFF},
+				{"on",   WRITEPROT_ON},
+				{"auto", WRITEPROT_AUTO},
+			};
+			if (!Opt_SetKeyVal(arg, keyval, ARRAY_SIZE(keyval), &val))
+			{
 				return Opt_ShowError(OPT_WRITEPROT_HD, arg, "Unknown option value");
+			}
+			ConfigureParams.HardDisk.nWriteProtection = val;
 			break;
+		}
 
 		case OPT_GEMDOS_CASE:
-			if (strcasecmp(arg, "off") == 0)
-				ConfigureParams.HardDisk.nGemdosCase = GEMDOS_NOP;
-			else if (strcasecmp(arg, "upper") == 0)
-				ConfigureParams.HardDisk.nGemdosCase = GEMDOS_UPPER;
-			else if (strcasecmp(arg, "lower") == 0)
-				ConfigureParams.HardDisk.nGemdosCase = GEMDOS_LOWER;
-			else
+		{
+			static const opt_keyval_t keyval[] = {
+				{"off",   GEMDOS_NOP},
+				{"upper", GEMDOS_UPPER},
+				{"lower", GEMDOS_LOWER},
+			};
+			if (!Opt_SetKeyVal(arg, keyval, ARRAY_SIZE(keyval), &val))
+			{
 				return Opt_ShowError(OPT_GEMDOS_CASE, arg, "Unknown option value");
+			}
+			ConfigureParams.HardDisk.nGemdosCase = val;
 			break;
+		}
 
 		case OPT_GEMDOS_HOSTTIME:
 			if (strcasecmp(arg, "atari") == 0)
@@ -1844,19 +1866,24 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_IDEBYTESWAP:
+		{
 			str = Opt_DriveValue(arg, &drive);
 			if (drive < 0 || drive > 1)
+			{
 				return Opt_ShowError(OPT_IDEBYTESWAP, str, "Invalid IDE drive <id>, must be 0/1");
-
-			if (strcasecmp(str, "off") == 0)
-				ConfigureParams.Ide[drive].nByteSwap = BYTESWAP_OFF;
-			else if (strcasecmp(str, "on") == 0)
-				ConfigureParams.Ide[drive].nByteSwap = BYTESWAP_ON;
-			else if (strcasecmp(str, "auto") == 0)
-				ConfigureParams.Ide[drive].nByteSwap = BYTESWAP_AUTO;
-			else
+			}
+			static const opt_keyval_t keyval[] = {
+				{"off",  BYTESWAP_OFF},
+				{"on",   BYTESWAP_ON},
+				{"auto", BYTESWAP_AUTO},
+			};
+			if (!Opt_SetKeyVal(str, keyval, ARRAY_SIZE(keyval), &val))
+			{
 				return Opt_ShowError(OPT_IDEBYTESWAP, arg, "Invalid byte-swap setting");
+			}
+			ConfigureParams.Ide[drive].nByteSwap = val;
 			break;
+		}
 
 			/* Memory options */
 		case OPT_MEMSIZE:
@@ -1958,28 +1985,22 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_FPU_TYPE:
-			if (strcasecmp(arg, "none") == 0 || strcasecmp(arg, "off") == 0)
-			{
-				ConfigureParams.System.n_FPUType = FPU_NONE;
-			}
-			else if (strcasecmp(arg, "68881") == 0)
-			{
-				ConfigureParams.System.n_FPUType = FPU_68881;
-			}
-			else if (strcasecmp(arg, "68882") == 0)
-			{
-				ConfigureParams.System.n_FPUType = FPU_68882;
-			}
-			else if (strcasecmp(arg, "internal") == 0)
-			{
-				ConfigureParams.System.n_FPUType = FPU_CPU;
-			}
-			else
+		{
+			static const opt_keyval_t keyval[] = {
+				{"none",  FPU_NONE},
+				{"off",   FPU_NONE},
+				{"68881", FPU_68881},
+				{"68882", FPU_68882},
+				{"internal", FPU_CPU},
+			};
+			if (!Opt_SetKeyVal(arg, keyval, ARRAY_SIZE(keyval), &val))
 			{
 				return Opt_ShowError(OPT_FPU_TYPE, arg, "Unknown FPU type");
 			}
+			ConfigureParams.System.n_FPUType = val;
 			bLoadAutoSave = false;
 			break;
+		}
 /*
 		case OPT_FPU_JIT_COMPAT:
 			ok = Opt_Bool(arg, OPT_FPU_COMPATIBLE, &ConfigureParams.System.bCompatibleFPU);
@@ -2073,28 +2094,27 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_DSP:
-			if (strcasecmp(arg, "none") == 0 || strcasecmp(arg, "off") == 0)
-			{
-				ConfigureParams.System.nDSPType = DSP_TYPE_NONE;
-			}
-			else if (strcasecmp(arg, "dummy") == 0)
-			{
-				ConfigureParams.System.nDSPType = DSP_TYPE_DUMMY;
-			}
-			else if (strcasecmp(arg, "emu") == 0)
-			{
-#if ENABLE_DSP_EMU
-				ConfigureParams.System.nDSPType = DSP_TYPE_EMU;
-#else
-				return Opt_ShowError(OPT_DSP, arg, "DSP type 'emu' support not compiled in");
-#endif
-			}
-			else
+		{
+			static const opt_keyval_t keyval[] = {
+				{"none",  DSP_TYPE_NONE},
+				{"off",   DSP_TYPE_NONE},
+				{"dummy", DSP_TYPE_DUMMY},
+				{"emu",  DSP_TYPE_EMU},
+			};
+			if (!Opt_SetKeyVal(arg, keyval, ARRAY_SIZE(keyval), &val))
 			{
 				return Opt_ShowError(OPT_DSP, arg, "Unknown DSP type");
 			}
+#if !ENABLE_DSP_EMU
+			if (val == DSP_TYPE_EMU)
+			{
+				return Opt_ShowError(OPT_DSP, arg, "DSP type 'emu' support not compiled in");
+			}
+#endif
+			ConfigureParams.System.nDSPType = val;
 			bLoadAutoSave = false;
 			break;
+		}
 
 		case OPT_RTC_YEAR:
 			year = atoi(arg);
@@ -2107,23 +2127,19 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 			/* sound options */
 		case OPT_YM_MIXING:
-			if (strcasecmp(arg, "linear") == 0)
-			{
-				ConfigureParams.Sound.YmVolumeMixing = YM_LINEAR_MIXING;
-			}
-			else if (strcasecmp(arg, "table") == 0)
-			{
-				ConfigureParams.Sound.YmVolumeMixing = YM_TABLE_MIXING;
-			}
-			else if (strcasecmp(arg, "model") == 0)
-			{
-				ConfigureParams.Sound.YmVolumeMixing = YM_MODEL_MIXING;
-			}
-			else
+		{
+			static const opt_keyval_t keyval[] = {
+				{"linear",  YM_LINEAR_MIXING},
+				{"table",   YM_TABLE_MIXING},
+				{"model",   YM_MODEL_MIXING},
+			};
+			if (!Opt_SetKeyVal(arg, keyval, ARRAY_SIZE(keyval), &val))
 			{
 				return Opt_ShowError(OPT_YM_MIXING, arg, "Unknown YM mixing method");
 			}
+			ConfigureParams.Sound.YmVolumeMixing = val;
 			break;
+		}
 
 		case OPT_SOUND:
 			if (strcasecmp(arg, "off") == 0)
