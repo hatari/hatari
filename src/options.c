@@ -809,11 +809,12 @@ static bool Opt_Bool(const char *arg, int optid, bool *conf)
 }
 
 /**
- * If 'conf' given, set it to parsed country code value
+ * Set 'conf' to parsed country code value.
  * Return false for any other value, otherwise true
  */
 static bool Opt_CountryCode(const char *arg, int optid, int *conf)
 {
+	assert(conf);
 	int val = TOS_ParseCountryCode(arg);
 	if (val != TOS_LANG_UNKNOWN)
 	{
@@ -823,7 +824,6 @@ static bool Opt_CountryCode(const char *arg, int optid, int *conf)
 	Opt_ShowError(optid, arg, "Invalid value");
 	TOS_ShowCountryCodes();
 	return false;
-
 }
 
 /**
