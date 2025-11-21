@@ -297,9 +297,15 @@ static bool	SCP_Insert_internal ( int Drive , const char *FilenameSCP , uint8_t 
 	SCP_State.SCP_Stream[ Drive ].track = -1;		/* no track loaded */
 	SCP_State.SCP_Stream[ Drive ].dat = NULL;		/* no track loaded */
 	SCP_State.SCP_Stream[ Drive ].revs = SCP_State.ImageStruct[ Drive ]->RevolutionsNbr;
-	SCP_State.SCP_Stream[ Drive ].index_cued = !!(SCP_State.ImageStruct[ Drive ]->Flags & (1u<<0)) || (SCP_State.SCP_Stream[ Drive ].revs == 1);
+
+	/* Ignore "cued" flag in Hatari, for ST dumps we consider the revs are read */
+	/* as soon as the index pulse is detected, the 1st rev is always complete */
+	/* so we always use all the revs */
+/*	SCP_State.SCP_Stream[ Drive ].index_cued = !!(SCP_State.ImageStruct[ Drive ]->Flags & (1u<<0)) || (SCP_State.SCP_Stream[ Drive ].revs == 1);
 	if ( !SCP_State.SCP_Stream[ Drive ].index_cued )
 		SCP_State.SCP_Stream[ Drive ].revs--;
+*/
+	SCP_State.SCP_Stream[ Drive ].index_cued = true;
 
 	SCP_State.SCP_Stream[ Drive ].index_off = malloc ( SCP_State.ImageStruct[ Drive ]->RevolutionsNbr * sizeof ( unsigned int ) );
 	if ( SCP_State.SCP_Stream[ Drive ].index_off == NULL )
@@ -504,9 +510,10 @@ SCP_MAIN_STRUCT	*SCP_BuildStruct ( uint8_t *pFileBuffer , int Debug )
 			pScpTrackRevs[ Rev ].DataOffset		=	Mem_ReadU32_LE ( pTrack ); pTrack += 4;
 
 			if ( Debug & SCP_DEBUG_FLAG_STRUCTURE )
-				fprintf ( stderr , "         Rev=%d Duration_ns=0x%x Flux_nbr=0x%x DataOffset=0x%x\n" ,
+				fprintf ( stderr , "         Rev=%d Duration_ns=0x%x Flux_nbr=0x%x DataOffset=0x%x (full offset=0x%x)\n" ,
 					Rev , pScpTrackRevs[ Rev ].Duration_ns , pScpTrackRevs[ Rev ].FluxNbr ,
-					pScpTrackRevs[ Rev ].DataOffset );
+					pScpTrackRevs[ Rev ].DataOffset ,
+					pScpTracks[ Track ].TrackHeaderOffset + pScpTrackRevs[ Rev ].DataOffset );
 		}
 	}
 
