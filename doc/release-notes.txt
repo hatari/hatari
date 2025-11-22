@@ -20,12 +20,21 @@ Following features are deprecated and will be removed in a future release:
  Development version
  -------------------
 
+API changes:
+- "--avirecord" option requires now bool argument to enable AVI
+  recording. This is to support skipping recording of the TOS boot
+  (using option "event" prefix to enable it later)
+
 Emulation improvements:
 
 Emulator improvements:
 - CLI options:
   - Both "" and "none" can be used to disable devices that are enabled
     by providing a <file> or <dir name> (revert v2.6.1 API change)
+  - "event" prefixes support for a subset of options (listed in manual).
+    They delay applying specified option until given emulation event.
+    E.g. to fast-forward until program starts (from GEMDOS HD),
+    use: "--fast-forward boot:on --fast-forward prg:off"
 - SDL GUI:
   - Fix: allow exit from text edit mode when using just joystick
   - Fix: do not show recording in progress, if starting it failed
@@ -51,6 +60,8 @@ Emulator improvements:
     and new tclow/tcmed/tchigh values for Falcon TC modes
 - NatFeats:
   - New NF_CYCLES call to retrieve (unsigned) 32-bit cycle counter
+- Tracing:
+  - "event" option for tracing option changes on events
 - Debugger:
   - Fix: dysfunctional WinUAE CPU core disasm wrapper
   - Fix: separate arguments output by "echo" command with a space

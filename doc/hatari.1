@@ -689,6 +689,70 @@ Unless you're specifically measuring emulator audio and screen
 processing speed, disable them (\-\-sound off / \-\-disable\-video on)
 to have as little OS overhead as possible
 
+.SS "Option argument types"
+Option argument type values:
+.TP
+.B <bool>
+Disable option with "n", "no", "off", "false", or "0" value.
+Enable with "y", "yes", "on", "true" or "1" value.
+.TP
+.B <file>
+Device options accept also special "stdout" and "stderr" file names
+(if you use "stdout" for midi or printer, set log output to "stderr").
+.TP
+.B <dir> / <file>
+Given device / disk can be disabled with "none" or "".
+
+.SS "Option argument event prefixes"
+Adding "<event>:" prefix to option values delays corresponding
+action / emulator config change until specified event happens.
+.PP
+This can be used with the following options:
+.TP
+.B \[bu] \-\-avirecord <bool>
+.TP
+.B \[bu] \-\-debug\-except <flags>
+.TP
+.B \[bu] \-\-fast\-forward <bool>
+.TP
+.B \[bu] \-\-frameskips <int>
+.TP
+.B \[bu] \-\-log-level <level>
+.TP
+.B \[bu] \-\-parse <file>
+.TP
+.B \[bu] \-\-run\-vbls <int>
+.TP
+.B \[bu] \-\-trace <flags>
+.TP
+.B \[bu] \-\-slowdown <int>
+.PP
+Events and when they happen:
+.PP
+.TP
+.B boot
+Before boot (after every emulation reset).
+.TP
+.B inf
+When TOS loads GEMDOS HD provided version of its INF file (virtual one
+used when either program autostarting or TOS resolution is specified
+on the Hatari command line).
+.TP
+.B prg
+When Atari program is started from GEMDOS HD (after program relocation
+is done for Pexec() call, but before program basepage is available
+from TOS).
+.PP
+For example, to fast-forward TOS startup (also after resets), but
+nothing after it, one can enable fast-forward for boot and disable it
+at Atari program autostart:
+.PP
+.nf
+.RS
+$ hatari --fast-forward boot:on --fast-forward prg:off <program>
+.RE
+.fi
+
 .SH "INPUT HANDLING"
 Hatari provides special input handling for different purposes.
 
