@@ -9,9 +9,16 @@
 const char Main_fileid[] = "Hatari main.c";
 
 #include <time.h>
-#include <SDL.h>
 
 #include "main.h"
+
+#if ENABLE_SDL3
+#define SDL_ENABLE_OLD_NAMES 1
+#include <SDL3/SDL.h>
+#else
+#include <SDL.h>
+#endif
+
 #include "version.h"
 #include "configuration.h"
 #include "control.h"
@@ -105,7 +112,11 @@ bool Main_PauseEmulation(bool visualize)
 
 		if (bGrabMouse || bInFullScreen)
 			/* Un-grab mouse pointer if necessary */
+#if ENABLE_SDL3
+			SDL_SetWindowRelativeMouseMode(sdlWindow, false);
+#else
 			SDL_SetRelativeMouseMode(false);
+#endif
 	}
 	return true;
 }
@@ -130,7 +141,11 @@ bool Main_UnPauseEmulation(void)
 
 	if (bGrabMouse || bInFullScreen)
 		/* Grab mouse pointer again */
+#if ENABLE_SDL3
+		SDL_SetWindowRelativeMouseMode(sdlWindow, true);
+#else
 		SDL_SetRelativeMouseMode(true);
+#endif
 	return true;
 }
 
@@ -203,6 +218,20 @@ bool Main_ShowCursor(bool show)
 {
 	bool bOldVisibility;
 
+#if ENABLE_SDL3
+	bOldVisibility = SDL_CursorVisible();
+	if (bOldVisibility != show)
+	{
+		if (show)
+		{
+			SDL_ShowCursor();
+		}
+		else
+		{
+			SDL_HideCursor();
+		}
+	}
+#else
 	bOldVisibility = SDL_ShowCursor(SDL_QUERY) == SDL_ENABLE;
 	if (bOldVisibility != show)
 	{
@@ -215,6 +244,7 @@ bool Main_ShowCursor(bool show)
 			SDL_ShowCursor(SDL_DISABLE);
 		}
 	}
+#endif
 	return bOldVisibility;
 }
 
@@ -326,17 +356,28 @@ void Main_EventHandler(void)
 			break;
 
 		 case SDL_KEYDOWN:
-			if (event.key.repeat) {
+			if (event.key.repeat)
+			{
 				bContinueProcessing = true;
 				break;
 			}
+#if ENABLE_SDL3
+			Keymap_KeyDown(event.key.mod, event.key.key,
+			               event.key.scancode);
+#else
 			Keymap_KeyDown(event.key.keysym.mod, event.key.keysym.sym,
 			               event.key.keysym.scancode);
+#endif
 			break;
 
 		 case SDL_KEYUP:
+#if ENABLE_SDL3
+			Keymap_KeyUp(event.key.mod, event.key.key,
+			             event.key.scancode);
+#else
 			Keymap_KeyUp(event.key.keysym.mod, event.key.keysym.sym,
 			             event.key.keysym.scancode);
+#endif
 			break;
 
 		 case SDL_MOUSEMOTION:               /* Read/Update internal mouse position */
@@ -396,9 +437,11 @@ void Main_EventHandler(void)
 			}
 			break;
 
+#ifndef ENABLE_SDL3
 		 case SDL_WINDOWEVENT:
 			Log_Printf(LOG_DEBUG, "SDL2 window event: 0x%x\n", event.window.event);
 			switch(event.window.event) {
+#endif
 			case SDL_WINDOWEVENT_EXPOSED:
 				if (!ConfigureParams.Screen.bUseSdlRenderer)
 				{
@@ -442,9 +485,11 @@ void Main_EventHandler(void)
 			case SDL_WINDOWEVENT_FOCUS_LOST:
 				bAllowMouseWarp = false;
 				break;
+#ifndef ENABLE_SDL3
 			}
 			bContinueProcessing = true;
 			break;
+#endif
 
 		 default:
 			/* don't let unknown events delay event processing */
@@ -485,7 +530,11 @@ static void Main_Init(void)
 
 	/* Init SDL's video subsystem. Note: Audio subsystem
 	   will be initialized later (failure not fatal). */
+#if ENABLE_SDL3
+	if (!SDL_Init(SDL_INIT_VIDEO))
+#else
 	if (SDL_Init(SDL_INIT_VIDEO) < 0)
+#endif
 	{
 		Main_ErrorExit("Could not initialize the SDL library:", SDL_GetError(), -1);
 	}
