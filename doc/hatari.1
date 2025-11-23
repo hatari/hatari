@@ -844,6 +844,43 @@ cancels the dialog/selection.
 .B Alert dialogs
 Enter accepts and ESC cancels the dialog.
 
+.SH "EXIT STATUS"
+Hatari exits with non-zero return value in following cases: non-zero
+exit value is specified for the debugger "quit" command or Native
+Features API NF_EXIT call, TOS image loading fails (\-2), video mode
+setting fails (\-2), or invalid command line option is given (1).
+.PP
+Internal checks for things that should "never" happen, e.g. allocation
+failures, will exit Hatari either with \-3, \-1 or 1.
+
+.SH "ENVIRONMENT"
+.TP
+.B HATARI_TEST
+If set, global config file is skipped. Used by Hatari tests.
+.TP
+.B HOME
+Used to locate user's Hatari config (on Windows,
+HOMEDRIVE and HOMEPATH are used instead).
+.TP
+.B LANG
+Fallback setting for NVRAM language value.
+.TP
+.B LINES
+Fallback setting for debugger console output page size.
+.TP
+.B PARENT_WIN_ID
+Tells Hatari to reparent itself under specified window,
+used by Python GUI for embedding Hatari.
+Works only under X window system.
+.TP
+.B PATH
+Used to locate Hatari executable, and based on that,
+the corresponding (OS specific) location for Hatari data files.
+.TP
+.B SDL_VIDEODRIVER
+Disables SDL2 (GPU) renderer use, if set to "dummy".
+Used by Hatari tests.
+
 .SH "FILES AND DIRECTORIES"
 .TP
 /etc/hatari.cfg (or /usr/local/etc/hatari.cfg)
