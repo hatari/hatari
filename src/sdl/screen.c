@@ -961,3 +961,21 @@ void Screen_MinimizeWindow(void)
 {
 	SDL_MinimizeWindow(sdlWindow);
 }
+
+/**
+ * Get mouse coordinates
+ */
+uint32_t Screen_GetMouseState(int *mx, int *my)
+{
+	uint32_t ret;
+
+#if ENABLE_SDL3
+	float fx, fy;
+	ret = SDL_GetMouseState(&fx, &fy);
+	*mx = fx;
+	*my = fy;
+#else
+	ret = SDL_GetMouseState(mx, my);
+#endif
+	return ret;
+}

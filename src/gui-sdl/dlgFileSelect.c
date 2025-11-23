@@ -19,6 +19,7 @@ const char DlgFileSelect_fileid[] = "Hatari dlgFileSelect.c";
 
 #include "main.h"
 #include "scandir.h"
+#include "screen.h"
 #include "sdlgui.h"
 #include "file.h"
 #include "paths.h"
@@ -302,7 +303,7 @@ static void DlgFileSelect_ManageScrollbar(void)
 	int scrollY, scrollYmin, scrollYmax, scrollH_half;
 	float scrollMove;
 
-	SDL_GetMouseState(&x, &y);
+	Screen_GetMouseState(&x, &y);
 	SDLGui_ScaleMouseStateCoordinates(&x, &y);
 
 	/* If mouse is down on the scrollbar for the first time */

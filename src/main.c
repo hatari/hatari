@@ -470,7 +470,7 @@ void Main_EventHandler(void)
 				if (mleave_x != -1)
 				{
 					int new_x, new_y;
-					SDL_GetMouseState(&new_x, &new_y);
+					Screen_GetMouseState(&new_x, &new_y);
 					Main_HandleMouseMotion(new_x - mleave_x,
 					                       new_y - mleave_y);
 					mleave_x = mleave_y = -1;
@@ -480,7 +480,7 @@ void Main_EventHandler(void)
 				bAllowMouseWarp = true;
 				break;
 			case SDL_WINDOWEVENT_LEAVE:
-				SDL_GetMouseState(&mleave_x, &mleave_y);
+				Screen_GetMouseState(&mleave_x, &mleave_y);
 				/* fall through */
 			case SDL_WINDOWEVENT_FOCUS_LOST:
 				bAllowMouseWarp = false;

@@ -38,5 +38,6 @@ void Screen_StatusbarMessage(const char *msg, uint32_t msecs);
 int Screen_GetUISocket(void);
 void Screen_SetTitle(const char *title);
 void Screen_MinimizeWindow(void);
+uint32_t Screen_GetMouseState(int *mx, int *my);
 
 #endif  /* ifndef HATARI_SCREEN_H */

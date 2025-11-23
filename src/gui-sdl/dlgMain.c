@@ -12,6 +12,7 @@ const char DlgMain_fileid[] = "Hatari dlgMain.c";
 #include "configuration.h"
 #include "dialog.h"
 #include "sdlgui.h"
+#include "screen.h"
 #include "screen_sdl.h"
 
 
@@ -84,7 +85,7 @@ int Dialog_MainDlg(bool *bReset, bool *bLoadedSnapshot)
 	if (SDLGui_SetScreen(sdlscrn))
 		return false;
 
-	SDL_GetMouseState(&nOldMouseX, &nOldMouseY);
+	Screen_GetMouseState(&nOldMouseX, &nOldMouseY);
 	bOldMouseVisibility = Main_ShowCursor(true);
 
 	SDLGui_CenterDlg(maindlg);
