@@ -22,6 +22,34 @@ static event_actions_t resetActions;
 static event_actions_t infLoadActions;
 static event_actions_t prgExecActions;
 
+/* Invalid value regardless of option */
+#define EVENT_ACT_UNSET -1
+
+
+/**
+ * Init event actions struct members to unset state
+ */
+void Event_Init(void)
+{
+	static const event_actions_t unset = {
+		/* string options */
+		.parseFile     = NULL,
+		.logLevel      = NULL,
+		.traceFlags    = NULL,
+		.exceptionMask = NULL,
+		/* integer options */
+		.slowDown   = EVENT_ACT_UNSET,
+		.frameSkips = EVENT_ACT_UNSET,
+		.runVBLs    = EVENT_ACT_UNSET,
+		/* bool options */
+		.aviRecord   = EVENT_ACT_UNSET,
+		.fastForward = EVENT_ACT_UNSET,
+	};
+
+	resetActions = unset;
+	infLoadActions = unset;
+	prgExecActions = unset;
+}
 
 /**
  * Check given option argument for event prefix and set
@@ -59,31 +87,33 @@ event_actions_t *Event_GetPrefixActions(const char **str)
 static void Event_PerformActions(event_actions_t *act)
 {
 	/* change AVI recording? */
-	if (act->aviRecord != Avi_AreWeRecording()) {
-		Avi_ToggleRecording();
+	if (act->aviRecord != EVENT_ACT_UNSET) {
+		if (act->aviRecord != Avi_AreWeRecording()) {
+			Avi_ToggleRecording();
+		}
 		Log_Printf(LOG_WARN, "AVI recording: %s\n", act->aviRecord ? "true" : "false");
 	}
 
 	/* change fast forwarding? */
-	if (act->fastForward != ConfigureParams.System.bFastForward) {
+	if (act->fastForward != EVENT_ACT_UNSET) {
 		ConfigureParams.System.bFastForward = act->fastForward;
 		Log_Printf(LOG_WARN, "Fast forward: %s\n", act->fastForward ? "true" : "false");
 	}
 
 	/* set frame skip? */
-	if (act->frameSkips) {
+	if (act->frameSkips != EVENT_ACT_UNSET) {
 		ConfigureParams.Screen.nFrameSkips = act->frameSkips;
 		Log_Printf(LOG_WARN, "Frame skips: %d\n", act->frameSkips);
 	}
 
 	/* set slowdown? */
-	if (act->slowDown) {
+	if (act->slowDown != EVENT_ACT_UNSET) {
 		Timing_SetVBLSlowdown(act->slowDown);
 		Log_Printf(LOG_WARN, "Slow down: %dx\n", act->slowDown);
 	}
 
 	/* set runVBLs? */
-	if (act->runVBLs) {
+	if (act->runVBLs != EVENT_ACT_UNSET) {
 		Timing_SetRunVBLs(act->runVBLs);
 		Log_Printf(LOG_WARN, "Exit after %d VBLs.\n", act->runVBLs);
 	}

@@ -781,6 +781,9 @@ int main(int argc, char *argv[])
 	/* Logs default to stderr at start */
 	Log_Default();
 
+	/* Initialize event actions */
+	Event_Init();
+
 	/* Initialize directory strings */
 	Paths_Init(argv[0]);
 

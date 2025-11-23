@@ -14,13 +14,16 @@ typedef struct {
 	const char *logLevel;
 	const char *traceFlags;
 	const char *exceptionMask;
+	/* normal integer options */
 	int slowDown;
 	int frameSkips;
 	int runVBLs;
-	bool aviRecord;
-	bool fastForward;
+	/* bool options are (ints, as they need 3 values) */
+	int aviRecord;
+	int fastForward;
 } event_actions_t;
 
+extern void Event_Init(void);
 extern event_actions_t *Event_GetPrefixActions(const char **str);
 
 extern void Event_DoResetActions(void);
