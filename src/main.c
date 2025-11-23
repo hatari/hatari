@@ -330,11 +330,13 @@ void Main_EventHandler(void)
 				bContinueProcessing = true;
 				break;
 			}
-			Keymap_KeyDown(&event.key.keysym);
+			Keymap_KeyDown(event.key.keysym.mod, event.key.keysym.sym,
+			               event.key.keysym.scancode);
 			break;
 
 		 case SDL_KEYUP:
-			Keymap_KeyUp(&event.key.keysym);
+			Keymap_KeyUp(event.key.keysym.mod, event.key.keysym.sym,
+			             event.key.keysym.scancode);
 			break;
 
 		 case SDL_MOUSEMOTION:               /* Read/Update internal mouse position */

@@ -83,11 +83,11 @@ void Keymap_InitShortcutDefaultKeys(void)
  * This contains the ST keycode used by the majority of TOS regions for
  * that semantic symbol.
  */
-static uint8_t Keymap_SymbolicToStScanCode_default(const SDL_Keysym* pKeySym)
+static uint8_t Keymap_SymbolicToStScanCode_default(SDL_Keycode symkey)
 {
 	uint8_t code;
 
-	switch (pKeySym->sym)
+	switch (symkey)
 	{
 	 case SDLK_BACKSPACE: code = 0x0E; break;
 	 case SDLK_TAB: code = 0x0F; break;
@@ -255,34 +255,34 @@ static uint8_t Keymap_SymbolicToStScanCode_default(const SDL_Keysym* pKeySym)
 	return code;
 }
 
-static uint8_t (*Keymap_SymbolicToStScanCode)(const SDL_Keysym* pKeySym) =
+static uint8_t (*Keymap_SymbolicToStScanCode)(SDL_Keycode symkey) =
 		Keymap_SymbolicToStScanCode_default;
 
-static uint8_t Keymap_SymbolicToStScanCode_US(const SDL_Keysym* keysym)
+static uint8_t Keymap_SymbolicToStScanCode_US(SDL_Keycode symkey)
 {
-	switch (keysym->sym)
+	switch (symkey)
 	{
 	 case SDLK_MINUS: return 0x0C;
-	 default: return Keymap_SymbolicToStScanCode_default(keysym);
+	 default: return Keymap_SymbolicToStScanCode_default(symkey);
 	}
 }
 
-static uint8_t Keymap_SymbolicToStScanCode_DE(const SDL_Keysym* keysym)
+static uint8_t Keymap_SymbolicToStScanCode_DE(SDL_Keycode symkey)
 {
-	switch (keysym->sym)
+	switch (symkey)
 	{
 	 case SDLK_HASH: return 0x29;
 	 case SDLK_PLUS: return 0x1B;
 	 case SDLK_SLASH: return 0x65;
 	 case SDLK_y: return 0x2C;
 	 case SDLK_z: return 0x15;
-	 default: return Keymap_SymbolicToStScanCode_default(keysym);
+	 default: return Keymap_SymbolicToStScanCode_default(symkey);
 	}
 }
 
-static uint8_t Keymap_SymbolicToStScanCode_FR(const SDL_Keysym* keysym)
+static uint8_t Keymap_SymbolicToStScanCode_FR(SDL_Keycode symkey)
 {
-	switch (keysym->sym)
+	switch (symkey)
 	{
 	 case SDLK_QUOTE: return 0x05;
 	 case SDLK_LEFTPAREN: return 0x06;
@@ -298,72 +298,72 @@ static uint8_t Keymap_SymbolicToStScanCode_FR(const SDL_Keysym* keysym)
 	 case SDLK_w: return 0x2C;
 	 case SDLK_z: return 0x11;
 	 case 167: return 0x07;		/* French § */
-	 default: return Keymap_SymbolicToStScanCode_default(keysym);
+	 default: return Keymap_SymbolicToStScanCode_default(symkey);
 	}
 }
 
-static uint8_t Keymap_SymbolicToStScanCode_UK(const SDL_Keysym* keysym)
+static uint8_t Keymap_SymbolicToStScanCode_UK(SDL_Keycode symkey)
 {
-	switch (keysym->sym)
+	switch (symkey)
 	{
 	 case SDLK_MINUS: return 0x0C;
 	 case SDLK_BACKSLASH: return 0x60;
-	 default: return Keymap_SymbolicToStScanCode_default(keysym);
+	 default: return Keymap_SymbolicToStScanCode_default(symkey);
 	}
 }
 
-static uint8_t Keymap_SymbolicToStScanCode_ES(const SDL_Keysym* keysym)
+static uint8_t Keymap_SymbolicToStScanCode_ES(SDL_Keycode symkey)
 {
-	switch (keysym->sym)
+	switch (symkey)
 	{
 	 case SDLK_MINUS: return 0x0C;
 	 case SDLK_SEMICOLON: return 0x28;
 	 case SDLK_BACKQUOTE: return 0x1B;
 	 case 231: return 0x29;		/* Spanish ç */
-	 default: return Keymap_SymbolicToStScanCode_default(keysym);
+	 default: return Keymap_SymbolicToStScanCode_default(symkey);
 	}
 }
 
-static uint8_t Keymap_SymbolicToStScanCode_IT(const SDL_Keysym* keysym)
+static uint8_t Keymap_SymbolicToStScanCode_IT(SDL_Keycode symkey)
 {
-	switch (keysym->sym)
+	switch (symkey)
 	{
 	 case SDLK_QUOTE: return 0x0C;
 	 case SDLK_PLUS: return 0x1B;
 	 case 224: return 0x28;		/* Italian à */
 	 case 232: return 0x1A;		/* Italian è */
 	 case 249: return 0x29;		/* Italian ù */
-	 default: return Keymap_SymbolicToStScanCode_default(keysym);
+	 default: return Keymap_SymbolicToStScanCode_default(symkey);
 	}
 }
 
-static uint8_t Keymap_SymbolicToStScanCode_SE(const SDL_Keysym* keysym)
+static uint8_t Keymap_SymbolicToStScanCode_SE(SDL_Keycode symkey)
 {
-	switch (keysym->sym)
+	switch (symkey)
 	{
 	 case SDLK_QUOTE: return 0x29;
 	 case SDLK_PLUS: return 0x0C;
 	 case 252: return 0x1b;		/* ü */
-	 default: return Keymap_SymbolicToStScanCode_default(keysym);
+	 default: return Keymap_SymbolicToStScanCode_default(symkey);
 	}
 }
 
 /* Mapping for both, French and German variant of Swiss keyboard */
-static uint8_t Keymap_SymbolicToStScanCode_CH(const SDL_Keysym* keysym)
+static uint8_t Keymap_SymbolicToStScanCode_CH(SDL_Keycode symkey)
 {
-	switch (keysym->sym)
+	switch (symkey)
 	{
 	 case SDLK_CARET: return 0x0D;
 	 case 224: return 0x28;		/* à */
 	 case 232: return 0x1A;		/* è */
 	 case 233: return 0x27;		/* é */
-	 default: return Keymap_SymbolicToStScanCode_default(keysym);
+	 default: return Keymap_SymbolicToStScanCode_default(symkey);
 	}
 }
 
-static uint8_t Keymap_SymbolicToStScanCode_NO(const SDL_Keysym* keysym)
+static uint8_t Keymap_SymbolicToStScanCode_NO(SDL_Keycode symkey)
 {
-	switch (keysym->sym)
+	switch (symkey)
 	{
 	 case SDLK_QUOTE: return 0x29;
 	 case SDLK_PLUS: return 0x0C;
@@ -371,13 +371,13 @@ static uint8_t Keymap_SymbolicToStScanCode_NO(const SDL_Keysym* keysym)
 	 case 233: return 0x0D;		/* é */
 	 case 248: return 0x27;		/* ø */
 	 case 252: return 0x1b;		/* ü */
-	 default: return Keymap_SymbolicToStScanCode_default(keysym);
+	 default: return Keymap_SymbolicToStScanCode_default(symkey);
 	}
 }
 
-static uint8_t Keymap_SymbolicToStScanCode_DK(const SDL_Keysym* keysym)
+static uint8_t Keymap_SymbolicToStScanCode_DK(SDL_Keycode symkey)
 {
-	switch (keysym->sym)
+	switch (symkey)
 	{
 	 case SDLK_QUOTE: return 0x0D;
 	 case SDLK_PLUS: return 0x0C;
@@ -385,23 +385,23 @@ static uint8_t Keymap_SymbolicToStScanCode_DK(const SDL_Keysym* keysym)
 	 case 230: return 0x27;		/* æ */
 	 case 233: return 0x29;		/* é */
 	 case 248: return 0x28;		/* ø */
-	 default: return Keymap_SymbolicToStScanCode_default(keysym);
+	 default: return Keymap_SymbolicToStScanCode_default(symkey);
 	}
 }
 
-static uint8_t Keymap_SymbolicToStScanCode_NL(const SDL_Keysym* keysym)
+static uint8_t Keymap_SymbolicToStScanCode_NL(SDL_Keycode symkey)
 {
-	switch (keysym->sym)
+	switch (symkey)
 	{
 	 case SDLK_MINUS: return 0x0C;
 	 case SDLK_BACKSLASH: return 0x60;
-	 default: return Keymap_SymbolicToStScanCode_default(keysym);
+	 default: return Keymap_SymbolicToStScanCode_default(symkey);
 	}
 }
 
-static uint8_t Keymap_SymbolicToStScanCode_CZ(const SDL_Keysym* keysym)
+static uint8_t Keymap_SymbolicToStScanCode_CZ(SDL_Keycode symkey)
 {
-	switch (keysym->sym)
+	switch (symkey)
 	{
 	 case SDLK_HASH: return 0x29;
 	 case SDLK_QUOTE: return 0x0D;
@@ -409,7 +409,7 @@ static uint8_t Keymap_SymbolicToStScanCode_CZ(const SDL_Keysym* keysym)
 	 case SDLK_y: return 0x2C;
 	 case SDLK_z: return 0x15;
 	 case 233: return 0x0B;		/* é */
-	 default: return Keymap_SymbolicToStScanCode_default(keysym);
+	 default: return Keymap_SymbolicToStScanCode_default(symkey);
 	}
 }
 
@@ -417,9 +417,9 @@ static uint8_t Keymap_SymbolicToStScanCode_CZ(const SDL_Keysym* keysym)
 /**
  * Remap SDL scancode key to ST Scan code
  */
-static uint8_t Keymap_PcToStScanCode(const SDL_Keysym* pKeySym)
+static uint8_t Keymap_PcToStScanCode(SDL_Scancode scancode)
 {
-	switch (pKeySym->scancode)
+	switch (scancode)
 	{
 	 case SDL_SCANCODE_A: return 0x1e;
 	 case SDL_SCANCODE_B: return 0x30;
@@ -543,16 +543,6 @@ static uint8_t Keymap_PcToStScanCode(const SDL_Keysym* pKeySym)
 	 case SDL_SCANCODE_RCTRL: return ST_CONTROL;
 	 case SDL_SCANCODE_RSHIFT: return ST_RSHIFT;
 	 default:
-		if (!pKeySym->scancode && pKeySym->sym)
-		{
-			/* assume SimulateKey
-			 * -> KeyUp/Down
-			 *    -> Remap (with scancode mode configured)
-			 *       -> PcToStScanCode
-			 */
-			return Keymap_SymbolicToStScanCode(pKeySym);
-		}
-		Log_Printf(LOG_WARN, "Unhandled scancode 0x%x!\n", pKeySym->scancode);
 		return ST_NO_SCANCODE;
 	}
 }
@@ -563,11 +553,11 @@ static uint8_t Keymap_PcToStScanCode(const SDL_Keysym* pKeySym)
  * so that we can easily toggle between number and cursor mode with the
  * numlock key.
  */
-static uint8_t Keymap_GetKeyPadScanCode(const SDL_Keysym* pKeySym)
+static uint8_t Keymap_GetKeyPadScanCode(SDL_Keycode symkey)
 {
 	if (SDL_GetModState() & KMOD_NUM)
 	{
-		switch (pKeySym->sym)
+		switch (symkey)
 		{
 		 case SDLK_KP_1:  return 0x6d;  /* NumPad 1 */
 		 case SDLK_KP_2:  return 0x6e;  /* NumPad 2 */
@@ -583,7 +573,7 @@ static uint8_t Keymap_GetKeyPadScanCode(const SDL_Keysym* pKeySym)
 	}
 	else
 	{
-		switch (pKeySym->sym)
+		switch (symkey)
 		{
 		 case SDLK_KP_1:  return 0x6d;  /* NumPad 1 */
 		 case SDLK_KP_2:  return 0x50;  /* Cursor down */
@@ -604,7 +594,7 @@ static uint8_t Keymap_GetKeyPadScanCode(const SDL_Keysym* pKeySym)
 /**
  * Remap SDL Key to ST Scan code
  */
-static uint8_t Keymap_RemapKeyToSTScanCode(const SDL_Keysym* pKeySym)
+static uint8_t Keymap_RemapKeyToSTScanCode(SDL_Keycode symkey, SDL_Scancode scancode)
 {
 	/* Use loaded keymap? */
 	if (keymap_loaded)
@@ -612,25 +602,37 @@ static uint8_t Keymap_RemapKeyToSTScanCode(const SDL_Keysym* pKeySym)
 		int i;
 		for (i = 0; i < KBD_MAX_SCANCODE && LoadedKeymap[i][1] != 0; i++)
 		{
-			if (pKeySym->sym == (SDL_Keycode)LoadedKeymap[i][0])
+			if (symkey == (SDL_Keycode)LoadedKeymap[i][0])
 				return LoadedKeymap[i][1];
 		}
 	}
 
 	/* Check for keypad first so we can handle numlock */
-	if (pKeySym->sym >= SDLK_KP_1 && pKeySym->sym <= SDLK_KP_9)
+	if (symkey >= SDLK_KP_1 && symkey <= SDLK_KP_9)
 	{
-		return Keymap_GetKeyPadScanCode(pKeySym);
+		return Keymap_GetKeyPadScanCode(symkey);
 	}
 
 	/* Remap from PC scancodes? */
 	if (ConfigureParams.Keyboard.nKeymapType == KEYMAP_SCANCODE)
 	{
-		return Keymap_PcToStScanCode(pKeySym);
+		uint8_t ret = Keymap_PcToStScanCode(scancode);
+
+		if (ret == ST_NO_SCANCODE && symkey)
+		{
+			/* assume SimulateKey
+			 * -> KeyUp/Down
+			 *    -> Remap (with scancode mode configured)
+			 *       -> PcToStScanCode
+			 */
+			return Keymap_SymbolicToStScanCode(symkey);
+		}
+		Log_Printf(LOG_WARN, "Unhandled scancode 0x%x!\n", scancode);
+		return ret;
 	}
 
 	/* Use symbolic mapping */
-	return Keymap_SymbolicToStScanCode(pKeySym);
+	return Keymap_SymbolicToStScanCode(symkey);
 }
 
 
@@ -810,14 +812,12 @@ static bool Keymap_IsShortCutMod(int modkey)
 /**
  * User pressed a key down
  */
-void Keymap_KeyDown(const SDL_Keysym *sdlkey)
+void Keymap_KeyDown(SDL_Keymod modkey, SDL_Keycode symkey, SDL_Scancode scancode)
 {
 	uint8_t STScanCode;
-	int symkey = sdlkey->sym;
-	int modkey = sdlkey->mod;
 
 	LOG_TRACE(TRACE_KEYMAP, "key down: sym=%i scan=%i mod=0x%x name='%s'\n",
-	          symkey, sdlkey->scancode, modkey, Keymap_GetKeyName(symkey));
+	          symkey, scancode, modkey, Keymap_GetKeyName(symkey));
 
 	if (symkey != SDLK_UNKNOWN)
 	{
@@ -837,7 +837,7 @@ void Keymap_KeyDown(const SDL_Keysym *sdlkey)
 	if (!IsKeyTranslatable(symkey))
 		return;
 
-	STScanCode = Keymap_RemapKeyToSTScanCode(sdlkey);
+	STScanCode = Keymap_RemapKeyToSTScanCode(symkey, scancode);
 	LOG_TRACE(TRACE_KEYMAP, "key map: sym=0x%x to ST-scan=0x%02x\n", symkey, STScanCode);
 	if (STScanCode != ST_NO_SCANCODE)
 	{
@@ -855,14 +855,12 @@ void Keymap_KeyDown(const SDL_Keysym *sdlkey)
 /**
  * User released a key
  */
-void Keymap_KeyUp(const SDL_Keysym *sdlkey)
+void Keymap_KeyUp(SDL_Keymod modkey, SDL_Keycode symkey, SDL_Scancode scancode)
 {
 	uint8_t STScanCode;
-	int symkey = sdlkey->sym;
-	int modkey = sdlkey->mod;
 
 	LOG_TRACE(TRACE_KEYMAP, "key up: sym=%i scan=%i mod=0x%x name='%s'\n",
-	          symkey, sdlkey->scancode, modkey, Keymap_GetKeyName(symkey));
+	          symkey, scancode, modkey, Keymap_GetKeyName(symkey));
 
 	/* Ignore short-cut keys here */
 	if (symkey != SDLK_UNKNOWN)
@@ -883,7 +881,7 @@ void Keymap_KeyUp(const SDL_Keysym *sdlkey)
 	if (!IsKeyTranslatable(symkey))
 		return;
 
-	STScanCode = Keymap_RemapKeyToSTScanCode(sdlkey);
+	STScanCode = Keymap_RemapKeyToSTScanCode(symkey, scancode);
 	/* Release key (only if was pressed) */
 	if (STScanCode != ST_NO_SCANCODE)
 	{
@@ -901,35 +899,34 @@ void Keymap_KeyUp(const SDL_Keysym *sdlkey)
  */
 void Keymap_SimulateCharacter(char asckey, bool press)
 {
-	SDL_Keysym sdlkey;
+	SDL_Keycode symkey;
+	SDL_Keymod modkey = KMOD_NONE;
 
-	sdlkey.mod = KMOD_NONE;
-	sdlkey.scancode = 0;
 	if (isupper((unsigned char)asckey))
 	{
 		if (press)
 		{
-			sdlkey.sym = SDLK_LSHIFT;
-			Keymap_KeyDown(&sdlkey);
+			symkey = SDLK_LSHIFT;
+			Keymap_KeyDown(modkey, symkey, 0);
 		}
-		sdlkey.sym = tolower((unsigned char)asckey);
-		sdlkey.mod = KMOD_LSHIFT;
+		symkey = tolower((unsigned char)asckey);
+		modkey = KMOD_LSHIFT;
 	}
 	else
 	{
-		sdlkey.sym = asckey;
+		symkey = asckey;
 	}
 	if (press)
 	{
-		Keymap_KeyDown(&sdlkey);
+		Keymap_KeyDown(modkey, symkey, 0);
 	}
 	else
 	{
-		Keymap_KeyUp(&sdlkey);
+		Keymap_KeyUp(modkey, symkey, 0);
 		if (isupper((unsigned char)asckey))
 		{
-			sdlkey.sym = SDLK_LSHIFT;
-			Keymap_KeyUp(&sdlkey);
+			symkey = SDLK_LSHIFT;
+			Keymap_KeyUp(modkey, symkey, 0);
 		}
 	}
 }
@@ -961,7 +958,7 @@ const char *Keymap_GetKeyName(int keycode)
  */
 void Keymap_SetCountry(int countrycode)
 {
-	uint8_t (*func)(const SDL_Keysym* pKeySym);
+	uint8_t (*func)(const SDL_Keycode keysym);
 
 	/* Prefer keyboard layout selected by user */
 	if (ConfigureParams.Keyboard.nKbdLayout >= 0 &&

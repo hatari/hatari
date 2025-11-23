@@ -10,7 +10,7 @@
 
 #include <SDL_keyboard.h>
 
-extern void Keymap_KeyDown(const SDL_Keysym *sdlkey);
-extern void Keymap_KeyUp(const SDL_Keysym *sdlkey);
+void Keymap_KeyDown(SDL_Keymod modkey, SDL_Keycode symkey, SDL_Scancode scancode);
+void Keymap_KeyUp(SDL_Keymod modkey, SDL_Keycode symkey, SDL_Scancode scancode);
 
 #endif
