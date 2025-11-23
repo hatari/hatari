@@ -1,8 +1,14 @@
 .\" Hey, EMACS: -*- nroff -*-
+.\" This manual page was originally written by Marco Herrn <marco@mherrn.de>
+.\" for the Debian project and later updated by Thomas Huth and Eero Tamminen
+.\" for newer Hatari releases.
+.\"
+.\" Check for errors: troff -man -w w hatari.1 > /dev/null
+.\"
 .\" First parameter, NAME, should be all caps
 .\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
 .\" other parameters are allowed: see man(7), man(1)
-.TH "HATARI" "1" "2020-11-27" "Hatari" ""
+.TH "HATARI" "1" "2025-11-23" "Hatari" ""
 .\" Please adjust this date whenever revising the manpage.
 
 .SH "NAME"
@@ -34,8 +40,8 @@ As an argument, one can give either a name of a directory that should
 be emulated as a virtual GEMDOS hard disk, a floppy disk image or an
 Atari program that should be autostarted.  In the last case the
 program's directory will be used as the C: drive from where this
-program will be started.  These shortcuts correspond to "-d <dir>",
-"--disk-a <floppy image>" and "-d <dir> --auto C:\\<program>"
+program will be started.  These shortcuts correspond to "\-d <dir>",
+"\-\-disk\-a <floppy image>" and "\-d <dir> \-\-auto C:\\<program>"
 options.
 .PP
 Booting will be done from the disk image or directory that's given
@@ -45,7 +51,7 @@ which corresponds to A: or C:).
 .SH "OPTIONS"
 Hatari options are split into several categories:
 
-.SH "General options"
+.SS "General options"
 .TP
 .B \-h, \-\-help
 Print command line options and terminate
@@ -68,13 +74,13 @@ fallback for keys not defined there
 .B \-\-country <x>
 Set EmuTOS ROM country code on Mega/ST/STe machines lacking NVRAM,
 when EmuTOS indicates supporting multiple ones.
-
+.IP
 In 512k EmuTOS images, country code selects the TOS keyboard layout
 and screen refresh (US = 60Hz NTSC, 50Hz PAL otherwise).  In 1024k
 EmuTOS images (coming with Hatari binaries and supporting multiple
 languages), country code selects also TOS language.
-
-Alternatively, one can use "tos-lang-change" tool from EmuTOS project
+.IP
+Alternatively, one can use "tos\-lang\-change" tool from EmuTOS project
 to modify country code in the ROM image file itself. That works
 also for TOS v4
 .TP
@@ -82,7 +88,7 @@ also for TOS v4
 Set NVRAM keyboard layout value. While both TT and Falcon machines
 have NVRAM, only TOS v4 and EmuTOS 512k / 1024k ROM versions support
 multiple layouts.
-
+.IP
 Regardless of whether keyboard layout change is done through the ROM
 country code or NVRAM setting, it may impact your key mappings in
 Hatari key mapping files, Hatari Python UI arguments, or key injection
@@ -97,7 +103,7 @@ languages.  Default is taken from the LANG environment variable
 .B \-\-fast\-forward <bool>
 Fast-forward through the boring parts by running emulator at maximum
 speed.  Done by skipping frame update VBL waits. Upper limit for frame
-skipping is given with the --frameskips option and shown in statusbar
+skipping is given with the \-\-frameskips option and shown in statusbar
 "FS" field
 .TP
 .B \-\-auto <program>
@@ -106,11 +112,11 @@ be given with full path it will have under emulation, for
 example "C:\\DIR\\PROGRAM.PRG". This is implemented by providing
 TOS a virtual INF file for the boot drive (A: or C:), which
 tells TOS to start the given program
-.B \-\-fast-forward-key-repeat <bool>
-Use keyboard auto repeat when using fast forward mode (default true)
 .TP
+.B \-\-fast\-forward\-key\-repeat <bool>
+Use keyboard auto repeat when using fast forward mode (default true)
 
-.SH "Common display options"
+.SS "Common display options"
 .TP
 .B \-m, \-\-mono
 Start in monochrome mode instead of color
@@ -118,7 +124,7 @@ Start in monochrome mode instead of color
 .B \-\-monitor <x>
 Select monitor type (x = mono/rgb/vga/tv)
 .TP
-.B \-\-tos-res <x>
+.B \-\-tos\-res <x>
 Select TOS resolution for color monitors, x = "low" / "med" / "high" /
 "ttlow" / "ttmed" / "tclow" / "tcmed" / "tchigh". Which correspond to
 standard 320x200@16 + 640x200@4 + 640x400@2 ST resolutions, 320x480@256
@@ -163,18 +169,18 @@ Preferred / maximum Hatari screen width
 .TP
 .B \-\-max\-height <x>
 Preferred / maximum Hatari screen height.
-
+.IP
 Maximum width and height options are part of Hatari's Atari monitor
 emulation. They limit the size Hatari should aim for its internal SDL
 framebuffer, and how much of the Atari screen borders are visible.
-
+.IP
 The framebuffer is then scaled to the Hatari output window based on
 the specified Hatari zoom factor (see below).
-
+.IP
 Aim of this is to have all resolutions show up in approximately same
 size, like on a real Atari monitor. Hatari's internal integer scaling
 support sets some limits on this, so it's an expert option.
-
+.IP
 Note: Only reason to change the defaults, should be limiting this to a
 smaller resolution for performance reasons, e.g. for video recording,
 or on really underpowered systems, to make monitor do all of the
@@ -185,18 +191,18 @@ resolution.
 This option overrides max width/height options so that e.g. ST-low
 resolution gets always doubled, and all resolutions (except TT-high)
 have approximately the same size, like on a real CRT monitor.
-
+.IP
 Zoom factor is then used to scale that up (or down) to the Hatari
 output window.  This way scaling results always in approximately
 same sized Hatari window.
-
+.IP
 With non-integer zoom factors, linear scaling is used to smooth out
 the output, with integer zoom factors, scaling is done using nearest
 neighboring pixels for sharper output.  This applies also to window
 resizes.
-
-To avoid zooming of low resolutions, use "--zoom 1 --max-width 416
---max-height 276" (if you don't need borders, 320x200 size is enough).
+.IP
+To avoid zooming of low resolutions, use "\-\-zoom 1 \-\-max\-width 416
+\-\-max\-height 276" (if you don't need borders, 320x200 size is enough).
 Disabling low resolution doubling like this is not recommended for
 Falcon emulation because TOS v4 bootup and some demos switch
 resolutions frequently.
@@ -207,14 +213,14 @@ Force internal bitdepth (x = 8/15/16/32, 0=disable)
 .B \-\-disable\-video <bool>
 Run emulation without displaying video (audio only)
 
-.SH "ST/STE specific display options"
+.SS "ST/STE specific display options"
 .TP
 .B \-\-spec512 <x>
 Hatari uses this threshold to decide when to render a screen with
 the slower but more accurate Spectrum512 screen conversion functions
 (0 <= x <= 512, 0=disable)
 .TP
-.B \-\-video-timing <x>
+.B \-\-video\-timing <x>
 Wakeup State for MMU/GLUE (x=ws1/ws2/ws3/ws4/random,
 default ws3). When powering on, the STF will randomly choose one of these
 wake up states. The state will then affect the timings where border removals
@@ -222,7 +228,7 @@ and other video tricks should be made, which can give different results on
 screen. For example, WS3 is known to be compatible with many demos, while WS1 can show
 more problems.
 
-.SH "TT/Falcon specific display options"
+.SS "TT/Falcon specific display options"
 Zooming to sizes specified below is internally done using integer scaling
 factors. This means that different Atari resolutions may show up with
 different sizes, but they are never blurry.
@@ -242,7 +248,7 @@ resolution. (disabled by default)
 .B \-\-aspect <bool>
 Whether to do monitor aspect ratio correction (enabled by default)
 
-.SH "VDI options"
+.SS "VDI options"
 .TP
 .B \-\-vdi <bool>
 Whether to use VDI screen mode.  Doesn't work with TOS v4. TOS v3
@@ -275,7 +281,7 @@ HD (1280x720), WXGA (1280x768) and XGA+ (1152x864)
 .B 4 plane mode (16-colors)
 qHD (960x540), DVGA (960x640) and WSVGA (1024x600)
 
-.SH "Screen capture options"
+.SS "Screen capture options"
 .TP
 .B \-\-crop <bool>
 Remove statusbar from the screen captures
@@ -306,7 +312,7 @@ Use <file> to record AVI
 Directory for saving screenshots (default Hatari directory for
 them is OS specific).
 
-.SH "Devices options"
+.SS "Devices options"
 .TP
 .B \-j, \-\-joystick <port>
 Emulate joystick with cursor keys in given port (0-5)
@@ -359,7 +365,7 @@ Enable SCC channel B serial port support and use <file> for the input
 Enable SCC channel B serial port support and use <file> for the output
 (only for Mega-STE, TT and Falcon)
 
-.SH "Floppy drive options"
+.SS "Floppy drive options"
 .TP
 .B \-\-drive\-a <bool>
 Enable/disable drive A (default is on)
@@ -386,7 +392,7 @@ speed up FDC emulation (can cause incompatibilities)
 Write protect floppy image contents (on/off/auto). With "auto" option
 write protection is according to the disk image file attributes
 
-.SH "Hard drive options"
+.SS "Hard drive options"
 .TP
 .B \-d, \-\-harddrive <dir>
 GEMDOS HD emulation.  Emulate harddrive partition(s) with <dir> contents.
@@ -453,7 +459,7 @@ Emulate an IDE 1 (slave) hard disk with an image <file>
 Set byte-swap option <x> (off/on/auto) for given IDE <id> (0/1).
 If just option is given, it is applied to IDE 0
 
-.SH "Memory options"
+.SS "Memory options"
 .TP
 .B \-\-memstate <file>
 Load memory snap-shot <file>
@@ -467,7 +473,7 @@ MegaSTE/TT up to 10 MiB, and Falcon up to 14 MiB RAM.
 .B \-\-ttram <x>
 Set amount of emulated TT RAM, x = 0 to 1024 MiB (in 4MiB steps)
 
-.SH "ROM options"
+.SS "ROM options"
 .TP
 .B \-t, \-\-tos <imagefile>
 Specify TOS ROM image to use
@@ -480,7 +486,7 @@ this enabled unless you know what you are doing!
 Use ROM cartridge image <file> (only works if GEMDOS HD emulation and
 extended VDI resolution are disabled)
 
-.SH "CPU/FPU/bus options"
+.SS "CPU/FPU/bus options"
 .TP
 .B \-\-cpulevel <x>
 Specify CPU (680x0) to use (use x >= 1 with EmuTOS or TOS >= 2.06 only!)
@@ -505,13 +511,13 @@ Use 24-bit instead of 32-bit addressing mode
 .B \-\-fpu <x>
 FPU type (x=none/68881/68882/internal)
 .TP
-.B \-\-fpu-softfloat <bool>
+.B \-\-fpu\-softfloat <bool>
 Use full software FPU emulation (Softfloat library)
 .TP
 .B \-\-mmu <bool>
 Use MMU emulation
 
-.SH "Misc system options"
+.SS "Misc system options"
 .TP
 .B \-\-machine <x>
 Select machine type (x = st, megast, ste, megaste, tt or falcon)
@@ -525,20 +531,20 @@ Falcon DSP emulation (x = none, dummy or emu, Falcon only)
 .B \-\-rtc\-year <x>
 With the default value 0, RTC date and time are taken from the host.
 If application does not handle current dates, this can be used to
-change RTC year to a more compatible one.  See also "--gemdos-time"
+change RTC year to a more compatible one.  See also "\-\-gemdos\-time"
 option.
 .TP
 .B \-\-timer\-d <bool>
-Patch redundantly high Timer-D frequency set by TOS.  This can
+Patch redundantly high Timer\-D frequency set by TOS.  This can
 increase Hatari speed significantly (especially for ST/e emulation) as
-the original Timer-D frequency causes large amount of extra interrupts
+the original Timer\-D frequency causes large amount of extra interrupts
 to emulate.
 .TP
 .B \-\-fast\-boot <bool>
 Patch TOS and initialize the so-called "memvalid" system variables to by-pass
 the memory test of TOS, so that the system boots faster.
 
-.SH "Sound options"
+.SS "Sound options"
 .TP
 .B \-\-mic <bool>
 Enable/disable (Falcon only) microphone
@@ -577,7 +583,7 @@ Select a method for mixing the three YM2149 voice volumes together.
 "table" uses a lookup table of audio output voltage values measured
 on STF and "linear" just averages the 3 YM voices.
 
-.SH "Debug options"
+.SS "Debug options"
 .TP
 .B \-W, \-\-wincon
 Open console window (Windows only)
@@ -608,7 +614,7 @@ Hatari screenshots. XBios(255) allows Atari programs to use Hatari
 debugger functionality, which allows e.g. invoking shortcuts and
 Hatari command line options. Last one is deprecated as it gives too
 much control to emulated program, please use NatFeats and remote
-control APIs (--natfeats, --cmd-fifo, hconsole) instead of XBios
+control APIs (\-\-natfeats, \-\-cmd\-fifo, hconsole) instead of XBios
 11 and 255.
 .TP
 .B \-\-conout <device>
@@ -672,36 +678,36 @@ Log output level (x=debug/todo/info/warn/error/fatal)
 Show dialog for log messages above given level
 .TP
 .B \-\-run\-vbls <x>
-Exit after X VBLs.  Used with --benchmark mode
+Exit after X VBLs.  Used with "\-\-benchmark" mode
 .TP
 .B \-\-benchmark
-Start in benchmark mode (use with --run-vbls). Same as --fast-forward
+Start in benchmark mode (use with \-\-run\-vbls). Same as \-\-fast\-forward
 mode, except it cannot be disabled at run-time, and FPS will be
 printed on emulation exit (and pausing) regardless of log level.
 Allows better measuring of emulation speed, in frames per second.
 Unless you're specifically measuring emulator audio and screen
-processing speed, disable them (--sound off/--disable-video on) to
-have as little OS overhead as possible
+processing speed, disable them (\-\-sound off / \-\-disable\-video on)
+to have as little OS overhead as possible
 
 .SH "INPUT HANDLING"
 Hatari provides special input handling for different purposes.
 
-.SH "Emulated Atari ST joystick"
+.SS "Emulated Atari ST joystick"
 Joystick can be emulated either with keyboard or any real joystick
 supported by your kernel / SDL library.  First joystick button
 acts as FIRE, second as SPACE key.
 
-.SH "Emulated Atari ST mouse"
+.SS "Emulated Atari ST mouse"
 Middle button mouse click is interpreted as double click, this
 is especially useful in Fast Forward mode.
 .PP
 Mouse scrollwheel will act as cursor up and down keys.
 
-.SH "Emulated Atari ST keyboard"
+.SS "Emulated Atari ST keyboard"
 Keys on the keyboard act as the normal Atari ST keys so pressing SPACE
 on your PC will result in an emulated press of the SPACE key on the
 ST. How the PC keys are mapped to Atari key codes, can be changed
-with keyboard config file (-k option).
+with keyboard config file (\-k option).
 .PP
 The following keys have special meanings:
 .TP
@@ -731,7 +737,7 @@ on joystick emulation via keyboard.
 The cursor keys will act as the cursor keys on the Atari ST as long as
 joystick emulation via keyboard has been turned off.
 
-.SH "Keyboard shortcuts during emulation"
+.SS "Keyboard shortcuts during emulation"
 The shortcut keys can be configured in the configuration file.
 The default settings are:
 .TP
@@ -806,7 +812,7 @@ Pauses the emulation
 .B AltGr + Pause
 Invokes the internal Hatari debugger
 
-.SH "Keyboard shortcuts for the SDL GUI"
+.SS "Keyboard shortcuts for the SDL GUI"
 There are multiple ways to interact with the SDL GUI.
 .PP
 TAB and cursor keys change the focus between UI elements. Home key
@@ -838,24 +844,6 @@ cancels the dialog/selection.
 .B Alert dialogs
 Enter accepts and ESC cancels the dialog.
 
-.SH "SEE ALSO"
-The main program documentation, usually in /usr/share/doc/.
-Among other things it contains an extensive usage manual,
-software compatibility list and release notes.
-.PP
-The homepage of Hatari: https://www.hatari-emu.org/
-.PP
-Other Hatari programs and utilities:
-.br
-.IR hmsa (1),
-.IR zip2st (1),
-.IR atari\-convert\-dir (1),
-.IR atari\-hd\-image (1),
-.IR hatariui (1),
-.IR hconsole (1),
-.IR gst2ascii (1),
-.IR hatari_profile (1)
-
 .SH "FILES AND DIRECTORIES"
 .TP
 /etc/hatari.cfg (or /usr/local/etc/hatari.cfg)
@@ -880,7 +868,24 @@ tos.img
 The TOS ROM image will be loaded from the data directory of Hatari unless it
 is specified on the command line or the configuration file.
 
-.SH "AUTHOR"
-This manual page was written by Marco Herrn <marco@mherrn.de> for the
-Debian project and later modified by Thomas Huth and Eero Tamminen to
-suit the latest version of Hatari.
+.SH "HISTORY"
+For Hatari development history, see "release\-notes.txt" and for the
+Hatari code (and documentation) origins, see "authors.txt".
+
+.SH "SEE ALSO"
+The main program documentation, usually in /usr/share/doc/.
+Among other things it contains an extensive usage manual,
+software compatibility list and release notes.
+.PP
+The homepage of Hatari: https://www.hatari\-emu.org/
+.PP
+Other Hatari programs and utilities:
+.br
+.IR hmsa (1),
+.IR zip2st (1),
+.IR atari\-convert\-dir (1),
+.IR atari\-hd\-image (1),
+.IR hatariui (1),
+.IR hconsole (1),
+.IR gst2ascii (1),
+.IR hatari_profile (1)
