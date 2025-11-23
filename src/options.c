@@ -74,7 +74,7 @@ typedef enum {
 
 
 /*  List of supported options. */
-enum {
+typedef enum {
 	OPT_HEADER,	/* options section header */
 
 	OPT_HELP,		/* general options */
@@ -228,19 +228,21 @@ enum {
 	OPT_ALERTLEVEL,
 	OPT_RUNVBLS,
 	OPT_BENCHMARK,
+
+	/* needs to be after last valid option, to terminate options help */
 	OPT_ERROR,
 	OPT_CONTINUE
-};
+} opt_id_t;
 
 typedef struct {
-	unsigned int id;	/* option ID */
+	opt_id_t id;		/* option ID */
 	const char *chr;	/* short option */
 	const char *str;	/* long option */
 	const char *arg;	/* type name for argument, if any */
 	const char *desc;	/* option description */
 } opt_t;
 
-/* it's easier to edit these if they are kept in the same order as the enums */
+/* These shoul be kept in the same order as the enums */
 static const opt_t HatariOptions[] = {
 
 	{ OPT_HEADER, NULL, NULL, NULL, "General" },
@@ -700,7 +702,7 @@ static void Opt_ShowHelp(void)
  * otherwise 'value' is show as the option user gave.
  * Return false if error string was given, otherwise true
  */
-bool Opt_ShowError(unsigned int optid, const char *value, const char *error)
+bool Opt_ShowError(opt_id_t optid, const char *value, const char *error)
 {
 	const opt_t *opt;
 
@@ -765,9 +767,9 @@ int Opt_ValueAlignMinMax(int value, int align, int min, int max)
  * If 'conf' given, set it:
  * - true if given option 'arg' is y/yes/on/true/1
  * - false if given option 'arg' is n/no/off/false/0
- * Return false for any other value, otherwise true
+ * Return false for any other value + show error, otherwise return true
  */
-static bool Opt_Bool(const char *arg, int optid, bool *conf)
+static bool Opt_Bool(const char *arg, opt_id_t optid, bool *conf)
 {
 	const char *enablers[] = { "y", "yes", "on", "true", "1", NULL };
 	const char *disablers[] = { "n", "no", "off", "false", "0", NULL };
@@ -812,7 +814,7 @@ static bool Opt_Bool(const char *arg, int optid, bool *conf)
  * Set 'conf' to parsed country code value.
  * Return false for any other value, otherwise true
  */
-static bool Opt_CountryCode(const char *arg, int optid, int *conf)
+static bool Opt_CountryCode(const char *arg, opt_id_t optid, int *conf)
 {
 	assert(conf);
 	int val = TOS_ParseCountryCode(arg);
@@ -848,7 +850,7 @@ static const char *Opt_DriveValue(const char *arg, int *drive)
  * If match is found, returns ID for that, otherwise OPT_CONTINUE
  * and OPT_ERROR for errors.
  */
-static int Opt_CheckBracketValue(const opt_t *opt, const char *str)
+static opt_id_t Opt_CheckBracketValue(const opt_t *opt, const char *str)
 {
 	const char *bracket, *optstr;
 	size_t offset;
@@ -900,11 +902,11 @@ static int Opt_CheckBracketValue(const opt_t *opt, const char *str)
  * If option is supposed to have argument, checks that there's one,
  * and increments index accordingly on success.
  */
-static int Opt_WhichOption(int argc, const char * const argv[], int *idx)
+static opt_id_t Opt_WhichOption(int argc, const char * const argv[], int *idx)
 {
 	const opt_t *opt;
 	const char *str = argv[*idx];
-	int id;
+	opt_id_t id;
 
 	for (opt = HatariOptions; opt->id != OPT_ERROR; opt++)
 	{
@@ -959,7 +961,7 @@ static int Opt_WhichOption(int argc, const char * const argv[], int *idx)
  *
  * Return false if there were errors, otherwise true
  */
-static bool Opt_StrCpy(int optid, fs_check_t check, char *dst, const char *path, size_t dstlen, bool *enabled)
+static bool Opt_StrCpy(opt_id_t optid, fs_check_t check, char *dst, const char *path, size_t dstlen, bool *enabled)
 {
 	const char *error = NULL;
 
@@ -1025,6 +1027,7 @@ static bool Opt_ValidateOptions(void)
 	const char *err, *val;
 	int opt_id;
 
+	/* returns zero (= OPT_HEADER) for error, option ID for success */
 	if ((opt_id = INF_ValidateAutoStart(&val, &err)))
 	{
 		return Opt_ShowError(opt_id, val, err);
@@ -1145,9 +1148,10 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 	/* common variables */
 	const char *errstr, *str, *opt, *arg;
 	bool valid, ok = true;
+	opt_id_t optid;
 	float zoom;
 	size_t len;
-	int i, val, optid;
+	int i, val;
 
 	/* Defaults for loading initial memory snap-shots */
 	bLoadMemorySave = false;
