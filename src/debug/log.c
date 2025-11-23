@@ -97,6 +97,8 @@ static flagname_t TraceFlags[] = {
 	{ TRACE_DSP_STATE	 , "dsp_state" },
 	{ TRACE_DSP_SYMBOLS	 , "dsp_symbols" },
 
+	{ TRACE_EVENT_ACTION	 , "event" },
+
 	{ TRACE_FDC		 , "fdc" },
 
 	{ TRACE_OS_GEMDOS	 , "gemdos" },

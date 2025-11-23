@@ -91,56 +91,58 @@ static void Event_PerformActions(event_actions_t *act)
 		if (act->aviRecord != Avi_AreWeRecording()) {
 			Avi_ToggleRecording();
 		}
-		Log_Printf(LOG_WARN, "AVI recording: %s\n", act->aviRecord ? "true" : "false");
+		LOG_TRACE(TRACE_EVENT_ACTION, "EVENT: AVI recording: %s\n",
+			  act->aviRecord ? "true" : "false");
 	}
 
 	/* change fast forwarding? */
 	if (act->fastForward != EVENT_ACT_UNSET) {
 		ConfigureParams.System.bFastForward = act->fastForward;
-		Log_Printf(LOG_WARN, "Fast forward: %s\n", act->fastForward ? "true" : "false");
+		LOG_TRACE(TRACE_EVENT_ACTION, "EVENT: Fast forward: %s\n",
+			  act->fastForward ? "true" : "false");
 	}
 
 	/* set frame skip? */
 	if (act->frameSkips != EVENT_ACT_UNSET) {
 		ConfigureParams.Screen.nFrameSkips = act->frameSkips;
-		Log_Printf(LOG_WARN, "Frame skips: %d\n", act->frameSkips);
+		LOG_TRACE(TRACE_EVENT_ACTION, "EVENT: Frame skips: %d\n", act->frameSkips);
 	}
 
 	/* set slowdown? */
 	if (act->slowDown != EVENT_ACT_UNSET) {
 		Timing_SetVBLSlowdown(act->slowDown);
-		Log_Printf(LOG_WARN, "Slow down: %dx\n", act->slowDown);
+		LOG_TRACE(TRACE_EVENT_ACTION, "EVENT: Slow down: %dx\n", act->slowDown);
 	}
 
 	/* set runVBLs? */
 	if (act->runVBLs != EVENT_ACT_UNSET) {
 		Timing_SetRunVBLs(act->runVBLs);
-		Log_Printf(LOG_WARN, "Exit after %d VBLs.\n", act->runVBLs);
+		LOG_TRACE(TRACE_EVENT_ACTION, "EVENT: Exit after %d VBLs.\n", act->runVBLs);
 	}
 
 	/* parse debugger commands? */
 	if (act->parseFile) {
-		Log_Printf(LOG_WARN, "Debugger file: '%s'\n", act->parseFile);
+		LOG_TRACE(TRACE_EVENT_ACTION, "EVENT: Debugger file: '%s'\n", act->parseFile);
 		DebugUI_AddParseFile(act->parseFile);
 	}
 
 	/* change log level? */
 	if (act->logLevel) {
 		ConfigureParams.Log.nTextLogLevel = Log_ParseOptions(act->logLevel);
-		Log_Printf(LOG_WARN, "Log level: '%s'\n", act->logLevel);
+		LOG_TRACE(TRACE_EVENT_ACTION, "EVENT: Log level: '%s'\n", act->logLevel);
 		Log_SetLevels();
 	}
 
 	/* set tracing? */
 	if (act->traceFlags) {
 		Log_SetTraceOptions(act->traceFlags);
-		Log_Printf(LOG_WARN, "Trace flags: '%s'\n", act->traceFlags);
+		LOG_TRACE(TRACE_EVENT_ACTION, "EVENT: Trace flags: '%s'\n", act->traceFlags);
 	}
 
 	/* set exception debug mask? */
 	if (act->exceptionMask) {
 		Log_SetExceptionDebugMask(act->exceptionMask);
-		Log_Printf(LOG_WARN, "Exception flags: '%s'\n", act->exceptionMask);
+		LOG_TRACE(TRACE_EVENT_ACTION, "EVENT: Exception flags: '%s'\n", act->exceptionMask);
 	}
 }
 
@@ -149,6 +151,7 @@ static void Event_PerformActions(event_actions_t *act)
  */
 void Event_DoResetActions(void)
 {
+	LOG_TRACE(TRACE_EVENT_ACTION, "EVENT: Boot/reset\n");
 	Event_PerformActions(&resetActions);
 }
 
@@ -157,6 +160,7 @@ void Event_DoResetActions(void)
  */
 void Event_DoPrgExecActions(void)
 {
+	LOG_TRACE(TRACE_EVENT_ACTION, "EVENT: Program exec\n");
 	Event_PerformActions(&prgExecActions);
 }
 
@@ -165,6 +169,7 @@ void Event_DoPrgExecActions(void)
  */
 void Event_DoInfLoadActions(void)
 {
+	LOG_TRACE(TRACE_EVENT_ACTION, "EVENT: .INF load\n");
 	Event_PerformActions(&infLoadActions);
 
 	/* legacy/backwards compatible action */
@@ -172,7 +177,7 @@ void Event_DoInfLoadActions(void)
 		int mask = ConfigureParams.Debugger.nExceptionDebugMask & ~EXCEPT_AUTOSTART;
 		if (ExceptionDebugMask != mask) {
 			ExceptionDebugMask = mask;
-			Log_Printf(LOG_WARN, "Exception flags: 0x%x)\n", mask);
+			LOG_TRACE(TRACE_EVENT_ACTION, "EVENT: Exception flags: 0x%x\n", mask);
 		}
 	}
 }
